@@ -1,0 +1,56 @@
+'use strict';
+
+const K7CSPECS = {
+  Ocelotlurker: ['kite', {"keep": 298, "cd": 1.7, "n": 2, "spread": 0.35, "spd": 281, "pierce": 0, "col": "#72c3e5"}],
+  Pollencircler: ['blink', {"cd": 2.6, "range": 147, "n": 2, "col": "#72c3e5"}],
+  Termitewarden: ['turret', {"cd": 2.1, "n": 8, "spread": 1.4, "spd": 249, "rot": 1.0, "col": "#72c3e5"}],
+  Blowgunsniper: ['mine', {"cd": 1.1, "fuse": 1.6, "r": 63, "mul": 0.68}],
+  Jungleprowler: ['summon', {"max": 3, "cd": 3.8, "spawn": "ocelotlurker"}],
+  Hornetflit: ['mine', {"cd": 1.4, "fuse": 1.6, "r": 57, "mul": 0.77}],
+  Puffballpod: ['aura', {"r": 128, "cd": 1.9, "n": 3, "col": "#72c3e5", "slam": 0, "mul": 0.6}],
+  Barkplate: ['orbit', {"range": 104, "spin": -1.9, "cd": 1.4, "n": 3, "spread": 0.4, "spd": 235, "col": "#72c3e5"}],
+  Peccaryram: ['aura', {"r": 119, "cd": 2.6, "n": 3, "col": "#72c3e5", "slam": 0, "mul": 0.6}],
+  Blowdartvine: ['kite', {"keep": 203, "cd": 2.1, "n": 3, "spread": 0.35, "spd": 274, "pierce": 1, "col": "#72c3e5"}],
+  Poisonfrog: ['charge', {"cd": 2.2, "dur": 0.56, "mul": 3.8}],
+  Venomspitter: ['slam', {"r": 85, "cd": 2.6, "ring": 1, "mul": 0.6, "col": "#72c3e5"}],
+  Sapmortar: ['phase', {"freq": 1.4, "mul": 1.8, "n": 3, "col": "#72c3e5"}],
+  Vinesnake: ['wander', {"freq": 6.5, "amp": 2.0, "mul": 1.1}],
+  Canopywatcher: ['aura', {"r": 147, "cd": 2.5, "n": 5, "col": "#72c3e5", "slam": 0, "mul": 0.6}],
+  Glowswirl: ['wander', {"freq": 7.8, "amp": 2.2, "mul": 1.04}],
+  Rootborer: ['hop', {"cd": 1.2, "dur": 0.45, "mul": 3.8, "land": 1, "col": "#72c3e5"}],
+  Armyants: ['phase', {"freq": 1.6, "mul": 1.5, "n": 2, "col": "#72c3e5"}],
+  Pollensack: ['hop', {"cd": 1.1, "dur": 0.32, "mul": 3.8, "land": 2, "col": "#72c3e5"}],
+  Antcaller: ['summon', {"max": 3, "cd": 3.2, "spawn": "ocelotlurker"}],
+  Liverwortmender: ['kite', {"keep": 246, "cd": 1.5, "n": 3, "spread": 0.35, "spd": 261, "pierce": 0, "col": "#72c3e5"}],
+  Grovewarden: ['charge', {"cd": 2.2, "dur": 0.52, "mul": 4.1}],
+  Blowgunmarksman: ['slam', {"r": 103, "cd": 3.0, "ring": 7, "mul": 0.55, "col": "#72c3e5"}],
+  Mistblink: ['charge', {"cd": 1.9, "dur": 0.65, "mul": 3.8}],
+  Jaguarlurker: ['charge', {"cd": 1.5, "dur": 0.41, "mul": 4.3}],
+  Silverbackbrute: ['phase', {"freq": 1.2, "mul": 1.5, "n": 2, "col": "#72c3e5"}],
+  Leafskitter: ['hop', {"cd": 1.0, "dur": 0.36, "mul": 3.1, "land": 1, "col": "#72c3e5"}],
+  Frogspitter: ['charge', {"cd": 1.6, "dur": 0.54, "mul": 4.0}],
+  Bombardierbeetle: ['hop', {"cd": 1.3, "dur": 0.37, "mul": 3.8, "land": 1, "col": "#72c3e5"}],
+  Nectarbat: ['slam', {"r": 118, "cd": 2.2, "ring": 0, "mul": 0.61, "col": "#72c3e5"}],
+  Rhinobeetle: ['wander', {"freq": 3.1, "amp": 2.4, "mul": 1.27}],
+  Fruitmortar: ['aura', {"r": 142, "cd": 1.8, "n": 4, "col": "#72c3e5", "slam": 0, "mul": 0.6}],
+  Grubdelver: ['turret', {"cd": 1.1, "n": 8, "spread": 2.0, "spd": 237, "rot": 0.8, "col": "#72c3e5"}],
+  Dragonflycircler: ['wander', {"freq": 5.4, "amp": 1.8, "mul": 1.04}],
+  Ruinwatcher: ['phase', {"freq": 1.4, "mul": 1.4, "n": 2, "col": "#72c3e5"}],
+  Humidshade: ['summon', {"max": 2, "cd": 3.2, "spawn": "ocelotlurker"}],
+  Carapacebulk: ['phase', {"freq": 1.3, "mul": 1.5, "n": 3, "col": "#72c3e5"}],
+  Grim7ccrawler: ['wander', {"freq": 3.0, "amp": 1.5, "mul": 1.12}],
+  Grim7cwarden: ['hop', {"cd": 1.7, "dur": 0.47, "mul": 3.1, "land": 4, "col": "#72c3e5"}],
+  Grim7clurker: ['charge', {"cd": 1.6, "dur": 0.66, "mul": 3.6}],
+  Grim7churler: ['orbit', {"range": 182, "spin": 1.6, "cd": 1.1, "n": 1, "spread": 0.4, "spd": 228, "col": "#72c3e5"}],
+  Grim7cbrute: ['turret', {"cd": 1.0, "n": 6, "spread": 2.0, "spd": 205, "rot": 0, "col": "#72c3e5"}],
+  Grim7cwisp: ['kite', {"keep": 238, "cd": 2.1, "n": 1, "spread": 0.35, "spd": 271, "pierce": 0, "col": "#72c3e5"}],
+  Grim7cstalker: ['slam', {"r": 123, "cd": 3.1, "ring": 2, "mul": 0.51, "col": "#72c3e5"}],
+  Grim7csentry: ['blink', {"cd": 2.0, "range": 142, "n": 2, "col": "#72c3e5"}],
+  Fell7ccrawler: ['summon', {"max": 3, "cd": 4.0, "spawn": "ocelotlurker"}],
+  Fell7cwarden: ['mine', {"cd": 1.9, "fuse": 1.8, "r": 63, "mul": 0.78}]
+};
+
+for (const k in K7CSPECS) {
+  const [a, c] = K7CSPECS[k];
+  ENEMY_BEHAVIOR_HANDLERS['k7c' + k] = function(game, e, dt){ FWF_ARCH[a](game, e, dt, c); };
+}

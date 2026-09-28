@@ -1,0 +1,328 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Balance Lab</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#12131a;color:#e6e6f0;margin:0;padding:16px}
+h1{font-size:20px;margin:0 0 10px}.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:10px}
+label{font-size:13px}input,select{background:#1d2030;color:#e6e6f0;border:1px solid #3a3f5a;padding:4px 6px;border-radius:4px}
+button{background:#3b6fe0;color:#fff;border:0;padding:8px 14px;border-radius:5px;cursor:pointer}button:disabled{opacity:.5}
+#log{background:#0b0c12;height:110px;overflow:auto;padding:8px;font:12px monospace;white-space:pre-wrap;border-radius:5px}
+#out{width:100%;height:420px;background:#0b0c12;color:#cfd3ea;font:12px monospace;border:1px solid #3a3f5a;border-radius:5px;margin-top:10px;box-sizing:border-box}
+</style></head><body>
+<h1>Balance Lab</h1>
+<div class="row">
+<label>Class <select id="cls"></select></label>
+<label>Seconds per enemy <input id="secs" type="number" value="15" min="3" max="60" style="width:60px"></label>
+<label>Stage filter (e.g. 14, 15C; blank = all) <input id="stage" style="width:70px"></label>
+<label><input id="quick" type="checkbox"> Quick (every 4th enemy)</label>
+<label><input id="sim" type="checkbox" checked> Run enemy simulation</label>
+<label><input id="syn" type="checkbox"> Synergy mode</label>
+<label>Sec/duel <input id="synsecs" type="number" value="6" min="2" max="20" style="width:50px"></label>
+<label>Pair top-N items (0 = skip pairs) <input id="pairtop" type="number" value="40" min="0" max="120" style="width:55px"></label>
+<label><input id="real" type="checkbox"> Real damage</label>
+<label><input id="move" type="checkbox"> Moving player</label>
+<label>Cross-class count <input id="clscount" type="number" value="3" min="1" max="8" style="width:45px"></label>
+<label><input id="boss" type="checkbox"> Boss duels</label>
+<label>Boss sec <input id="bosssecs" type="number" value="45" min="10" max="120" style="width:50px"></label>
+<button id="run">Run</button><button id="baseline">Save as baseline</button><button id="download">Download</button><button id="copy">Copy results</button><span id="progress"></span>
+</div>
+<div id="log"></div>
+<textarea id="out" placeholder="Results appear here"></textarea>
+<script>
+(function(){
+  var dummy=new Proxy(function(){},{get:function(t,k){if(k===Symbol.toPrimitive)return function(){return 0};if(k==='style'||k==='classList'||k==='dataset')return dummy;if(k==='length')return 0;if(k==='then')return undefined;return dummy},set:function(){return true},apply:function(){return dummy},construct:function(){return dummy}});
+  var g=document.getElementById.bind(document),q=document.querySelector.bind(document),qa=document.querySelectorAll.bind(document);
+  document.getElementById=function(i){return g(i)||dummy};
+  document.querySelector=function(s){return q(s)||dummy};
+  document.querySelectorAll=function(s){var r=qa(s);return r.length?r:[]};
+  window.__labDummy=dummy;
+})();
+</script>
+<script>
+function loadUnlocks(){return {};}
+function saveUnlocks(){}
+var keybinds={};var damageNumbersEnabled=false;var game=null;var DEFAULT_KEYBINDS={};var KEYBIND_LABELS={};var minimapCanvas=document.createElement('canvas');var screenshotBtn=window.__labDummy;var canvasWrap=window.__labDummy;var canvas=document.createElement('canvas');var currentDifficulty='normal';
+function difficultyStatMult(){return 1;}
+function keyCodeLabel(c){return c;}
+function refreshKeybindHints(){}
+function refreshAchievementsBadge(){}
+function refreshSkillTreeBadge(){}
+function markAchievementsSeen(){}
+function minimapPinsStorageKey(){return 'lab';}
+function loadMinimapPins(){return {};}
+function saveMinimapPins(){}
+function saveKeybindsPref(){}
+function saveDamageNumbersPref(){}
+</script>
+<script src="js/core/theme.js?v=1789874398"></script>
+<script src="js/core/rng.js?v=1789874398"></script>
+<script src="js/core/utils-1.js?v=1789874398"></script>
+<script src="js/core/utils-2.js?v=1789874398"></script>
+<script src="js/core/audio.js?v=1789874398"></script>
+<script src="js/data/core.js?v=1789874398"></script>
+<script src="js/data/items-1.js?v=1789874398"></script>
+<script src="js/data/items-2.js?v=1789874398"></script>
+<script src="js/data/items-3.js?v=1789874398"></script>
+<script src="js/data/items-4.js?v=1789874398"></script>
+<script src="js/data/items-5.js?v=1789874398"></script>
+<script src="js/data/items-6.js?v=1789874398"></script>
+<script src="js/data/items-7.js?v=1789874398"></script>
+<script src="js/data/items-8.js?v=1789874398"></script>
+<script src="js/data/items-9.js?v=1789874398"></script>
+<script src="js/data/items-10.js?v=1789874398"></script>
+<script src="js/data/protectedBasicItems.js?v=1789874398"></script>
+<script src="js/data/statConversions.js?v=1789874398"></script>
+<script src="js/data/trinkets-1.js?v=1789874398"></script>
+<script src="js/data/trinkets-2.js?v=1789874398"></script>
+<script src="js/data/trinkets-3.js?v=1789874398"></script>
+<script src="js/data/trinkets-4.js?v=1789874398"></script>
+<script src="js/data/familiars-1.js?v=1789874398"></script>
+<script src="js/data/familiars-3.js?v=1789874398"></script>
+<script src="js/data/familiars-2.js?v=1789874398"></script>
+<script src="js/data/familiars-4.js?v=1789874398"></script>
+<script src="js/data/lists.js?v=1789874398"></script>
+<script src="js/data/pickups.js?v=1789874398"></script>
+<script src="js/data/collectibles.js?v=1789874398"></script>
+<script src="js/data/economy.js?v=1789874398"></script>
+<script src="js/data/enemies/growth.js?v=1789874398"></script>
+<script src="js/data/enemies/types-1.js?v=1789874398"></script>
+<script src="js/data/enemies/types-2.js?v=1789874398"></script>
+<script src="js/data/enemies/types-3.js?v=1789874398"></script>
+<script src="js/data/enemies/types-4.js?v=1789874398"></script>
+<script src="js/data/enemies/legacy-extra.js?v=1789874398"></script>
+<script src="js/data/enemies/flies.js?v=1789874398"></script>
+<script src="js/data/enemies/crypt-extra.js?v=1789874398"></script>
+<script src="js/data/enemies/crypt-extra2.js?v=1789874398"></script>
+<script src="js/data/enemies/crypt-extra3.js?v=1789874398"></script>
+<script src="js/data/enemies/forest-extra.js?v=1789874398"></script>
+<script src="js/data/enemies/desert-extra.js?v=1789874398"></script>
+<script src="js/data/enemies/reckoning-new.js?v=1789874398"></script>
+<script src="js/data/enemies/uncharted-new.js?v=1789874398"></script>
+<script src="js/data/enemies/sunken-new.js?v=1789874398"></script>
+<script src="js/data/enemies/shattered-new.js?v=1789874398"></script>
+<script src="js/data/enemies/hollow-new.js?v=1789874398"></script>
+<script src="js/data/enemies/hollow-new2.js?v=1789874398"></script>
+<script src="js/data/enemies/waveform-new.js?v=1789874398"></script>
+<script src="js/data/enemies/t12b-new.js?v=1789874398"></script>
+<script src="js/data/enemies/t14c-new.js?v=1789874398"></script>
+<script src="js/data/enemies/t12a-new.js?v=1789874398"></script>
+<script src="js/data/enemies/t11b-new.js?v=1789874398"></script>
+<script src="js/data/enemies/t11a-new.js?v=1789874398"></script>
+<script src="js/data/enemies/t10a-new.js?v=1789874398"></script>
+<script src="js/data/enemies/t9b-new.js?v=1789874398"></script>
+<script src="js/data/enemies/k3c-new.js?v=1789874398"></script>
+<script src="js/data/enemies/k4d-new.js?v=1789874398"></script>
+<script src="js/data/enemies/k4c-new.js?v=1789874398"></script>
+<script src="js/data/enemies/k5d-new.js?v=1789874398"></script>
+<script src="js/data/enemies/k5c-new.js?v=1789874398"></script>
+<script src="js/data/enemies/k6d-new.js?v=1789874398"></script>
+<script src="js/data/enemies/k6c-new.js?v=1789874398"></script>
+<script src="js/data/enemies/k7d-new.js?v=1789874398"></script>
+<script src="js/data/enemies/k7c-new.js?v=1789874398"></script>
+<script src="js/data/enemies/k8d-new.js?v=1789874398"></script>
+<script src="js/data/enemies/k8c-new.js?v=1789874398"></script>
+<script src="js/data/enemies/k9d-new.js?v=1789874398"></script>
+<script src="js/data/enemies/k9c-new.js?v=1789874398"></script>
+<script src="js/data/enemies/k10d-new.js?v=1789874398"></script>
+<script src="js/data/enemies/k10c-new.js?v=1789874398"></script>
+<script src="js/data/enemies/k11c-new.js?v=1789874398"></script>
+<script src="js/data/enemies/k13c-new.js?v=1789874398"></script>
+<script src="js/data/enemies/c24-new.js?v=1789874398"></script>
+<script src="js/data/enemies/c23-new.js?v=1789874398"></script>
+<script src="js/data/enemies/c22-new.js?v=1789874398"></script>
+<script src="js/data/enemies/c21-new.js?v=1789874398"></script>
+<script src="js/data/enemies/c20-new.js?v=1789874398"></script>
+<script src="js/data/enemies/c19-new.js?v=1789874398"></script>
+<script src="js/data/enemies/c18-new.js?v=1789874398"></script>
+<script src="js/data/enemies/c17-new.js?v=1789874398"></script>
+<script src="js/data/enemies/c16-new.js?v=1789874398"></script>
+<script src="js/data/enemies/c15-new.js?v=1789874398"></script>
+<script src="js/data/enemies/cbranch2-enemies.js?v=1789874398"></script>
+<script src="js/data/enemies/stage4-6-enemies.js?v=1789874398"></script>
+<script src="js/data/enemies/stage7-9-enemies.js?v=1789874398"></script>
+<script src="js/data/enemies/stage10-13-enemies.js?v=1789874398"></script>
+<script src="js/data/enemies/lists.js?v=1789874398"></script>
+<script src="js/data/enemies/minibosses.js?v=1789874398"></script>
+<script src="js/data/enemies/bosses.js?v=1789874398"></script>
+<script src="js/data/enemies/legacy-extra-bosses.js?v=1789874398"></script>
+<script src="js/data/enemies/stage4-6-bosses.js?v=1789874398"></script>
+<script src="js/data/enemies/stage7-9-bosses.js?v=1789874398"></script>
+<script src="js/data/enemies/stage10-13-bosses.js?v=1789874398"></script>
+<script src="js/data/enemies/cbranch2-bosses.js?v=1789874398"></script>
+<script src="js/data/enemies/dbranch-bosses.js?v=1789874398"></script>
+<script src="js/data/enemies/superbosses.js?v=1789874398"></script>
+<script src="js/data/enemies/stage4-6-superbosses.js?v=1789874398"></script>
+<script src="js/data/enemies/stage7-9-superbosses.js?v=1789874398"></script>
+<script src="js/data/enemies/stage10-13-superbosses.js?v=1789874398"></script>
+<script src="js/data/enemies/cbranch2-superbosses.js?v=1789874398"></script>
+<script src="js/data/enemies/superboss-routes.js?v=1789874398"></script>
+<script src="js/data/stages.js?v=1789874398"></script>
+<script src="js/achievements/core.js?v=1789874398"></script>
+<script src="js/achievements/defs-1.js?v=1789874398"></script>
+<script src="js/achievements/defs-2.js?v=1789874398"></script>
+<script src="js/achievements/defs-3.js?v=1789874398"></script>
+<script src="js/achievements/defs-4.js?v=1789874398"></script>
+<script src="js/achievements/defs-5.js?v=1789874398"></script>
+<script src="js/achievements/defs-6.js?v=1789874398"></script>
+<script src="js/achievements/defs-7.js?v=1789874398"></script>
+<script src="js/achievements/defs-8.js?v=1789874398"></script>
+<script src="js/achievements/defs-9.js?v=1789874398"></script>
+<script src="js/achievements/defs-10.js?v=1789874398"></script>
+<script src="js/achievements/defs-11.js?v=1789874398"></script>
+<script src="js/achievements/defs-12.js?v=1789874398"></script>
+<script src="js/achievements/defs-13.js?v=1789874398"></script>
+<script src="js/achievements/defs-14.js?v=1789874398"></script>
+<script src="js/achievements/defs-mastery.js?v=1789874398"></script>
+<script src="js/achievements/defs-wavedefense.js?v=1789874398"></script>
+<script src="js/achievements/bestiary-tiers.js?v=1789874398"></script>
+<script src="js/achievements/logic.js?v=1789874398"></script>
+<script src="js/achievements/skilltree.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-2.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-3.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-4a.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-4b.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-4c.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-4d.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-4e.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-5a.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-5b.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-5c.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-5d.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-5e.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-6.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-7.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-8.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-9a.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-9b.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-9c.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-9d.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-9e.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-9f.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-10a.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-10g.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-10h.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-10i.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-characters-10j.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-capstones.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-ascensions.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-general.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-general-2.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-unlocks-stars.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-unlocks-familiars.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-unlocks-items.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-unlocks-items-2.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-unlocks-trinkets.js?v=1789874398"></script>
+<script src="js/achievements/skilltree-unlocks-starroom.js?v=1789874398"></script>
+<script src="js/ui/bestiary.js?v=1789874398"></script>
+<script src="js/data/roomTemplates/core.js?v=1789874398"></script>
+<script src="js/data/roomTemplates/wavearena.js?v=1789874398"></script>
+<script src="js/systems/dungeon.js?v=1789874398"></script>
+<script src="js/systems/room.js?v=1789874398"></script>
+<script src="js/systems/procgen-rooms.js?v=1789874398"></script>
+<script src="js/entities/entities.js?v=1789874398"></script>
+<script src="js/systems/attackStyles.js?v=1789874398"></script>
+<script src="js/systems/tearShapes.js?v=1789874398"></script>
+<script src="js/systems/combat-1.js?v=1789874398"></script>
+<script src="js/systems/combat-2.js?v=1789874398"></script>
+<script src="js/systems/combat-3.js?v=1789874398"></script>
+<script src="js/systems/combat-4.js?v=1789874398"></script>
+<script src="js/systems/ai-minibosses.js?v=1789874398"></script>
+<script src="js/systems/ai-newshared.js?v=1789874398"></script>
+<script src="js/systems/ai-legacy-bosses.js?v=1789874398"></script>
+<script src="js/systems/ai-flies.js?v=1789874398"></script>
+<script src="js/systems/ai-crypt.js?v=1789874398"></script>
+<script src="js/systems/ai-crypt2.js?v=1789874398"></script>
+<script src="js/systems/ai-cbranch2.js?v=1789874398"></script>
+<script src="js/systems/ai-cbranch2-bosses.js?v=1789874398"></script>
+<script src="js/systems/ai-dbranch-bosses.js?v=1789874398"></script>
+<script src="js/systems/ai-cbranch2-superbosses.js?v=1789874398"></script>
+<script src="js/systems/ai-1.js?v=1789874398"></script>
+<script src="js/systems/ai-2.js?v=1789874398"></script>
+<script src="js/systems/ai-3.js?v=1789874398"></script>
+<script src="js/systems/ai-4.js?v=1789874398"></script>
+<script src="js/systems/ai-stage4-6.js?v=1789874398"></script>
+<script src="js/systems/ai-stage7-9.js?v=1789874398"></script>
+<script src="js/systems/ai-stage10-13.js?v=1789874398"></script>
+<script src="js/systems/ai-crypt3.js?v=1789874398"></script>
+<script src="js/systems/ai-crypt4.js?v=1789874398"></script>
+<script src="js/systems/ai-crypt5.js?v=1789874398"></script>
+<script src="js/systems/ai-forest1.js?v=1789874398"></script>
+<script src="js/systems/ai-forest2.js?v=1789874398"></script>
+<script src="js/systems/ai-forest4.js?v=1789874398"></script>
+<script src="js/systems/ai-desert1.js?v=1789874398"></script>
+<script src="js/systems/ai-desert2.js?v=1789874398"></script>
+<script src="js/systems/ai-desert3.js?v=1789874398"></script>
+<script src="js/systems/ai-desert4.js?v=1789874398"></script>
+<script src="js/systems/ai-inferno1.js?v=1789874398"></script>
+<script src="js/systems/ai-inferno2.js?v=1789874398"></script>
+<script src="js/systems/ai-inferno3.js?v=1789874398"></script>
+<script src="js/systems/ai-reckoning1.js?v=1789874398"></script>
+<script src="js/systems/ai-reckoning2.js?v=1789874398"></script>
+<script src="js/systems/ai-reckoning3.js?v=1789874398"></script>
+<script src="js/systems/ai-uncharted1.js?v=1789874398"></script>
+<script src="js/systems/ai-uncharted2.js?v=1789874398"></script>
+<script src="js/systems/ai-uncharted3.js?v=1789874398"></script>
+<script src="js/systems/ai-sunken1.js?v=1789874398"></script>
+<script src="js/systems/ai-sunken2.js?v=1789874398"></script>
+<script src="js/systems/ai-sunken3.js?v=1789874398"></script>
+<script src="js/systems/ai-shattered1.js?v=1789874398"></script>
+<script src="js/systems/ai-shattered2.js?v=1789874398"></script>
+<script src="js/systems/ai-shattered3.js?v=1789874398"></script>
+<script src="js/systems/ai-hollow1.js?v=1789874398"></script>
+<script src="js/systems/ai-hollow2.js?v=1789874398"></script>
+<script src="js/systems/ai-hollow3.js?v=1789874398"></script>
+<script src="js/systems/ai-waveform1.js?v=1789874398"></script>
+<script src="js/systems/ai-waveform2.js?v=1789874398"></script>
+<script src="js/systems/ai-t12b.js?v=1789874398"></script>
+<script src="js/systems/ai-t14c.js?v=1789874398"></script>
+<script src="js/systems/ai-t12a.js?v=1789874398"></script>
+<script src="js/systems/ai-t11b.js?v=1789874398"></script>
+<script src="js/systems/ai-t11a.js?v=1789874398"></script>
+<script src="js/systems/ai-t10a.js?v=1789874398"></script>
+<script src="js/systems/ai-t9b.js?v=1789874398"></script>
+<script src="js/systems/ai-k3c.js?v=1789874398"></script>
+<script src="js/systems/ai-k4d.js?v=1789874398"></script>
+<script src="js/systems/ai-k4c.js?v=1789874398"></script>
+<script src="js/systems/ai-k5d.js?v=1789874398"></script>
+<script src="js/systems/ai-k5c.js?v=1789874398"></script>
+<script src="js/systems/ai-k6d.js?v=1789874398"></script>
+<script src="js/systems/ai-k6c.js?v=1789874398"></script>
+<script src="js/systems/ai-k7d.js?v=1789874398"></script>
+<script src="js/systems/ai-k7c.js?v=1789874398"></script>
+<script src="js/systems/ai-k8d.js?v=1789874398"></script>
+<script src="js/systems/ai-k8c.js?v=1789874398"></script>
+<script src="js/systems/ai-k9d.js?v=1789874398"></script>
+<script src="js/systems/ai-k9c.js?v=1789874398"></script>
+<script src="js/systems/ai-k10d.js?v=1789874398"></script>
+<script src="js/systems/ai-k10c.js?v=1789874398"></script>
+<script src="js/systems/ai-k11c.js?v=1789874398"></script>
+<script src="js/systems/ai-k13c.js?v=1789874398"></script>
+<script src="js/systems/ai-c24.js?v=1789874398"></script>
+<script src="js/systems/ai-c23.js?v=1789874398"></script>
+<script src="js/systems/ai-c22.js?v=1789874398"></script>
+<script src="js/systems/ai-c21.js?v=1789874398"></script>
+<script src="js/systems/ai-c20.js?v=1789874398"></script>
+<script src="js/systems/ai-c19.js?v=1789874398"></script>
+<script src="js/systems/ai-c18.js?v=1789874398"></script>
+<script src="js/systems/ai-c17.js?v=1789874398"></script>
+<script src="js/systems/ai-c16.js?v=1789874398"></script>
+<script src="js/systems/ai-c15.js?v=1789874398"></script>
+<script src="js/systems/ai-cmodassign.js?v=1789874398"></script>
+<script src="js/systems/ai-cmods.js?v=1789874398"></script>
+<script src="js/systems/ai-mirrorboss.js?v=1789874398"></script>
+<script src="js/systems/familiars.js?v=1789874398"></script>
+<script src="js/systems/pills.js?v=1789874398"></script>
+<script src="js/systems/stars.js?v=1789874398"></script>
+<script src="js/systems/items-1.js?v=1789874398"></script>
+<script src="js/systems/items-synergy.js?v=1789874398"></script>
+<script src="js/systems/items-2.js?v=1789874398"></script>
+<script src="js/systems/shop.js?v=1789874398"></script>
+<script src="js/systems/karma.js?v=1789874398"></script>
+<script src="js/systems/wavedefense.js?v=1789874398"></script>
+<script src="js/ui/ui.js?v=1789874398"></script>
+<script src="js/ui/minimap-pins.js?v=1789874398"></script>
+<script src="js/game.js?v=1789874398"></script>
+<script src="js/ui/render.js?v=1789874398"></script>
+<script src="tools/balance-lab.js?v=1789874398"></script>
+<script>Lab.init();</script>
+</body></html>

@@ -1,0 +1,56 @@
+'use strict';
+
+const K9CSPECS = {
+  Graveorchid: ['summon', {"max": 3, "cd": 3.2, "spawn": "driverants"}],
+  Shrikesniper: ['kite', {"keep": 225, "cd": 1.9, "n": 1, "spread": 0.35, "spd": 322, "pierce": 0, "col": "#b0e572"}],
+  Quagmiredelver: ['blink', {"cd": 2.5, "range": 169, "n": 3, "col": "#b0e572"}],
+  Bilebrewer: ['mine', {"cd": 1.6, "fuse": 1.9, "r": 69, "mul": 0.77}],
+  Blightprowler: ['charge', {"cd": 1.9, "dur": 0.67, "mul": 4.2}],
+  Waspflit: ['phase', {"freq": 1.7, "mul": 1.8, "n": 3, "col": "#b0e572"}],
+  Sporebulb: ['phase', {"freq": 1.8, "mul": 1.7, "n": 2, "col": "#b0e572"}],
+  Heartwoodplate: ['phase', {"freq": 1.6, "mul": 1.6, "n": 2, "col": "#b0e572"}],
+  Boarram: ['charge', {"cd": 2.5, "dur": 0.69, "mul": 4.2}],
+  Curarevine: ['turret', {"cd": 1.7, "n": 2, "spread": 1.8, "spd": 198, "rot": 1.2, "col": "#b0e572"}],
+  Mantellafrog: ['kite', {"keep": 288, "cd": 2.0, "n": 3, "spread": 0.35, "spd": 329, "pierce": 1, "col": "#b0e572"}],
+  Blightspitter: ['kite', {"keep": 215, "cd": 1.5, "n": 2, "spread": 0.35, "spd": 319, "pierce": 0, "col": "#b0e572"}],
+  Gallmortar: ['mine', {"cd": 1.9, "fuse": 1.3, "r": 55, "mul": 0.87}],
+  Anacondaweaver: ['wander', {"freq": 8.8, "amp": 2.4, "mul": 1.23}],
+  Obeliskwatcher: ['charge', {"cd": 2.5, "dur": 0.51, "mul": 3.6}],
+  Sporeswirl: ['orbit', {"range": 187, "spin": -1.5, "cd": 1.7, "n": 3, "spread": 0.4, "spd": 225, "col": "#b0e572"}],
+  Heartrootborer: ['blink', {"cd": 2.2, "range": 128, "n": 2, "col": "#b0e572"}],
+  Driverants: ['wander', {"freq": 8.0, "amp": 1.2, "mul": 1.17}],
+  Blightsack: ['charge', {"cd": 2.2, "dur": 0.78, "mul": 4.4}],
+  Brooddrummer: ['summon', {"max": 2, "cd": 4.0, "spawn": "driverants"}],
+  Mosswortmender: ['aura', {"r": 129, "cd": 2.3, "n": 3, "col": "#b0e572", "slam": 0, "mul": 0.6}],
+  Monolithwarden: ['aura', {"r": 119, "cd": 2.5, "n": 3, "col": "#b0e572", "slam": 0, "mul": 0.6}],
+  Toxinmarksman: ['kite', {"keep": 248, "cd": 1.7, "n": 2, "spread": 0.35, "spd": 274, "pierce": 0, "col": "#b0e572"}],
+  Rotblink: ['blink', {"cd": 1.8, "range": 163, "n": 4, "col": "#b0e572"}],
+  Pumalurker: ['phase', {"freq": 1.3, "mul": 1.6, "n": 2, "col": "#b0e572"}],
+  Mahoganybrute: ['charge', {"cd": 2.2, "dur": 0.58, "mul": 4.5}],
+  Blightrunner: ['charge', {"cd": 2.4, "dur": 0.61, "mul": 3.9}],
+  Wartspitter: ['kite', {"keep": 201, "cd": 1.8, "n": 1, "spread": 0.35, "spd": 333, "pierce": 0, "col": "#b0e572"}],
+  Waspbomber: ['blink', {"cd": 2.1, "range": 130, "n": 2, "col": "#b0e572"}],
+  Macawstriker: ['kite', {"keep": 283, "cd": 2.4, "n": 3, "spread": 0.35, "spd": 270, "pierce": 0, "col": "#b0e572"}],
+  Crocram: ['charge', {"cd": 1.8, "dur": 0.76, "mul": 3.5}],
+  Fungusmortar: ['mine', {"cd": 1.8, "fuse": 1.6, "r": 72, "mul": 0.68}],
+  Wormdelver: ['blink', {"cd": 2.1, "range": 137, "n": 4, "col": "#b0e572"}],
+  Hornetcircler: ['orbit', {"range": 158, "spin": 1.2, "cd": 1.3, "n": 3, "spread": 0.4, "spd": 274, "col": "#b0e572"}],
+  Stelawatcher: ['turret', {"cd": 1.6, "n": 6, "spread": 1.4, "spd": 237, "rot": 0, "col": "#b0e572"}],
+  Rotshade: ['blink', {"cd": 2.7, "range": 103, "n": 4, "col": "#b0e572"}],
+  Menhirbulk: ['slam', {"r": 105, "cd": 2.5, "ring": 2, "mul": 0.57, "col": "#b0e572"}],
+  Starkstalker: ['wander', {"freq": 3.2, "amp": 1.6, "mul": 1.06}],
+  Starksentry: ['hop', {"cd": 1.7, "dur": 0.48, "mul": 3.1, "land": 2, "col": "#b0e572"}],
+  Bittercrawler: ['charge', {"cd": 2.5, "dur": 0.44, "mul": 3.8}],
+  Bitterwarden: ['orbit', {"range": 196, "spin": -2.1, "cd": 1.8, "n": 3, "spread": 0.4, "spd": 225, "col": "#b0e572"}],
+  Bitterlurker: ['turret', {"cd": 1.5, "n": 7, "spread": 0.4, "spd": 190, "rot": 0, "col": "#b0e572"}],
+  Bitterhurler: ['kite', {"keep": 236, "cd": 1.7, "n": 3, "spread": 0.35, "spd": 299, "pierce": 0, "col": "#b0e572"}],
+  Bitterbrute: ['slam', {"r": 100, "cd": 2.1, "ring": 0, "mul": 0.54, "col": "#b0e572"}],
+  Bitterwisp: ['blink', {"cd": 2.2, "range": 116, "n": 4, "col": "#b0e572"}],
+  Bitterstalker: ['summon', {"max": 2, "cd": 5.0, "spawn": "driverants"}],
+  Bittersentry: ['mine', {"cd": 1.3, "fuse": 1.7, "r": 64, "mul": 0.65}]
+};
+
+for (const k in K9CSPECS) {
+  const [a, c] = K9CSPECS[k];
+  ENEMY_BEHAVIOR_HANDLERS['k9c' + k] = function(game, e, dt){ FWF_ARCH[a](game, e, dt, c); };
+}

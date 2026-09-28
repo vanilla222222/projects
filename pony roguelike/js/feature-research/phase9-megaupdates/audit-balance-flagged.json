@@ -1,0 +1,157 @@
+{
+  "itemFlagged": [],
+  "trinketFlagged": [],
+  "skillFlagged": [],
+  "unanalyzable": [
+    {
+      "id": "bentnail",
+      "kind": "trinket",
+      "reason": "two-sided trinket ternary trade-off (both branches nonzero)",
+      "sampleText": "(t === 'bentnail' ? 1.2 : 1)",
+      "file": "js/systems/items-1.js",
+      "line": 542,
+      "stat": "meleeRange"
+    },
+    {
+      "id": "spikedbard",
+      "kind": "item",
+      "reason": "referenced but shape not matched by any pattern (e.g. attackLayer-routed, or nonstandard expression)",
+      "sampleText": "(see manual grep)",
+      "file": "-",
+      "line": "-"
+    },
+    {
+      "id": "nightlens",
+      "kind": "item",
+      "reason": "referenced but shape not matched by any pattern (e.g. attackLayer-routed, or nonstandard expression)",
+      "sampleText": "(see manual grep)",
+      "file": "-",
+      "line": "-"
+    },
+    {
+      "id": "secondwind",
+      "kind": "item",
+      "reason": "referenced but shape not matched by any pattern (e.g. attackLayer-routed, or nonstandard expression)",
+      "sampleText": "(see manual grep)",
+      "file": "-",
+      "line": "-"
+    },
+    {
+      "id": "venom",
+      "kind": "item",
+      "reason": "referenced but shape not matched by any pattern (e.g. attackLayer-routed, or nonstandard expression)",
+      "sampleText": "(see manual grep)",
+      "file": "-",
+      "line": "-"
+    },
+    {
+      "id": "hardhitter",
+      "kind": "item",
+      "reason": "referenced but shape not matched by any pattern (e.g. attackLayer-routed, or nonstandard expression)",
+      "sampleText": "(see manual grep)",
+      "file": "-",
+      "line": "-"
+    },
+    {
+      "id": "flirtatious",
+      "kind": "item",
+      "reason": "referenced but shape not matched by any pattern (e.g. attackLayer-routed, or nonstandard expression)",
+      "sampleText": "(see manual grep)",
+      "file": "-",
+      "line": "-"
+    },
+    {
+      "id": "coldheart",
+      "kind": "item",
+      "reason": "referenced but shape not matched by any pattern (e.g. attackLayer-routed, or nonstandard expression)",
+      "sampleText": "(see manual grep)",
+      "file": "-",
+      "line": "-"
+    },
+    {
+      "id": "terrifying",
+      "kind": "item",
+      "reason": "referenced but shape not matched by any pattern (e.g. attackLayer-routed, or nonstandard expression)",
+      "sampleText": "(see manual grep)",
+      "file": "-",
+      "line": "-"
+    },
+    {
+      "id": "coinmagnet",
+      "kind": "item",
+      "reason": "referenced but shape not matched by any pattern (e.g. attackLayer-routed, or nonstandard expression)",
+      "sampleText": "(see manual grep)",
+      "file": "-",
+      "line": "-"
+    },
+    {
+      "id": "multishot",
+      "kind": "item",
+      "reason": "referenced but shape not matched by any pattern (e.g. attackLayer-routed, or nonstandard expression)",
+      "sampleText": "(see manual grep)",
+      "file": "-",
+      "line": "-"
+    },
+    {
+      "id": "borrowedwings",
+      "kind": "item",
+      "reason": "referenced but shape not matched by any pattern (e.g. attackLayer-routed, or nonstandard expression)",
+      "sampleText": "(see manual grep)",
+      "file": "-",
+      "line": "-"
+    },
+    {
+      "id": "holywater",
+      "kind": "item",
+      "reason": "referenced but shape not matched by any pattern (e.g. attackLayer-routed, or nonstandard expression)",
+      "sampleText": "(see manual grep)",
+      "file": "-",
+      "line": "-"
+    },
+    {
+      "id": "thornedvine",
+      "kind": "trinket",
+      "reason": "referenced but shape not matched by any pattern",
+      "sampleText": "(see manual grep)",
+      "file": "-",
+      "line": "-"
+    },
+    {
+      "id": "foxfirelantern",
+      "kind": "trinket",
+      "reason": "referenced but shape not matched by any pattern",
+      "sampleText": "(see manual grep)",
+      "file": "-",
+      "line": "-"
+    },
+    {
+      "id": "emberphylactery",
+      "kind": "trinket",
+      "reason": "referenced but shape not matched by any pattern",
+      "sampleText": "(see manual grep)",
+      "file": "-",
+      "line": "-"
+    },
+    {
+      "id": "kitestring",
+      "kind": "trinket",
+      "reason": "referenced but shape not matched by any pattern",
+      "sampleText": "(see manual grep)",
+      "file": "-",
+      "line": "-"
+    },
+    {
+      "id": "blessedcenser",
+      "kind": "trinket",
+      "reason": "referenced but shape not matched by any pattern",
+      "sampleText": "(see manual grep)",
+      "file": "-",
+      "line": "-"
+    }
+  ],
+  "counts": {
+    "items": 864,
+    "trinkets": 632,
+    "skillStatEffects": 180
+  }
+}

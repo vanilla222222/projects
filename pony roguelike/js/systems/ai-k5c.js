@@ -1,0 +1,57 @@
+'use strict';
+
+const K5CSPECS = {
+  Vaporshade: ['aura', {"r": 119, "cd": 2.3, "n": 3, "col": "#e572c4", "slam": 0, "mul": 0.6}],
+  Cisternweaver: ['orbit', {"range": 191, "spin": 2.4, "cd": 1.9, "n": 1, "spread": 0.4, "spd": 274, "col": "#e572c4"}],
+  Ductburrower: ['wander', {"freq": 3.6, "amp": 2.0, "mul": 1.03}],
+  Filthmender: ['blink', {"cd": 2.7, "range": 147, "n": 3, "col": "#e572c4"}],
+  Tunnelrat: ['turret', {"cd": 1.2, "n": 3, "spread": 1.0, "spd": 242, "rot": 0, "col": "#e572c4"}],
+  Sewerflit: ['summon', {"max": 2, "cd": 3.0, "spawn": "vaporshade"}],
+  Methanepod: ['turret', {"cd": 2.0, "n": 2, "spread": 1.5, "spd": 240, "rot": 0, "col": "#e572c4"}],
+  Corrodedplate: ['charge', {"cd": 2.3, "dur": 0.77, "mul": 4.1}],
+  Sludgehog: ['mine', {"cd": 1.4, "fuse": 1.8, "r": 59, "mul": 0.65}],
+  Effluentvalve: ['blink', {"cd": 2.7, "range": 117, "n": 3, "col": "#e572c4"}],
+  Pipeleaper: ['mine', {"cd": 1.6, "fuse": 1.4, "r": 58, "mul": 0.8}],
+  Toxicspitter: ['kite', {"keep": 228, "cd": 1.5, "n": 1, "spread": 0.35, "spd": 285, "pierce": 1, "col": "#e572c4"}],
+  Wastemortar: ['wander', {"freq": 8.1, "amp": 2.1, "mul": 1.17}],
+  Sewereel: ['phase', {"freq": 1.4, "mul": 1.6, "n": 3, "col": "#e572c4"}],
+  Manholewatcher: ['turret', {"cd": 1.4, "n": 5, "spread": 2.2, "spd": 235, "rot": 0.9, "col": "#e572c4"}],
+  Fumeswirl: ['wander', {"freq": 6.6, "amp": 2.1, "mul": 1.24}],
+  Grimeborer: ['turret', {"cd": 1.2, "n": 4, "spread": 2.3, "spd": 219, "rot": 0, "col": "#e572c4"}],
+  Sewermaggots: ['mine', {"cd": 1.5, "fuse": 1.5, "r": 63, "mul": 0.76}],
+  Bilesack: ['slam', {"r": 100, "cd": 2.8, "ring": 3, "mul": 0.59, "col": "#e572c4"}],
+  Vermincaller: ['slam', {"r": 115, "cd": 3.0, "ring": 4, "mul": 0.63, "col": "#e572c4"}],
+  Slimemender: ['blink', {"cd": 1.7, "range": 169, "n": 3, "col": "#e572c4"}],
+  Outfallwarden: ['kite', {"keep": 258, "cd": 2.3, "n": 1, "spread": 0.35, "spd": 339, "pierce": 0, "col": "#e572c4"}],
+  Conduitmarksman: ['wander', {"freq": 3.7, "amp": 1.3, "mul": 1.26}],
+  Siphonblink: ['kite', {"keep": 266, "cd": 2.4, "n": 1, "spread": 0.35, "spd": 289, "pierce": 0, "col": "#e572c4"}],
+  Drainlurker: ['hop', {"cd": 1.4, "dur": 0.42, "mul": 3.5, "land": 1, "col": "#e572c4"}],
+  Effluenthulk: ['hop', {"cd": 1.5, "dur": 0.4, "mul": 3.2, "land": 3, "col": "#e572c4"}],
+  Scumrunner: ['charge', {"cd": 2.3, "dur": 0.49, "mul": 4.0}],
+  Corrosionspitter: ['aura', {"r": 126, "cd": 2.0, "n": 4, "col": "#e572c4", "slam": 0, "mul": 0.6}],
+  Gasbladder: ['hop', {"cd": 1.3, "dur": 0.39, "mul": 3.7, "land": 4, "col": "#e572c4"}],
+  Sewerbat: ['hop', {"cd": 1.8, "dur": 0.43, "mul": 3.2, "land": 1, "col": "#e572c4"}],
+  Ironhog: ['turret', {"cd": 1.3, "n": 7, "spread": 1.3, "spd": 204, "rot": 0, "col": "#e572c4"}],
+  Offalmortar: ['summon', {"max": 3, "cd": 4.9, "spawn": "vaporshade"}],
+  Sludgedelver: ['charge', {"cd": 2.0, "dur": 0.79, "mul": 3.8}],
+  Vaporcircler: ['orbit', {"range": 104, "spin": -2.4, "cd": 1.5, "n": 1, "spread": 0.4, "spd": 223, "col": "#e572c4"}],
+  Pipewatcher: ['turret', {"cd": 1.5, "n": 8, "spread": 2.6, "spd": 215, "rot": 0, "col": "#e572c4"}],
+  Overflowshade: ['aura', {"r": 151, "cd": 2.0, "n": 5, "col": "#e572c4", "slam": 0, "mul": 0.6}],
+  Scaledbulk: ['turret', {"cd": 2.2, "n": 5, "spread": 2.3, "spd": 215, "rot": 0.9, "col": "#e572c4"}],
+  Drainlash: ['mine', {"cd": 1.7, "fuse": 1.3, "r": 70, "mul": 0.62}],
+  Grim5ccrawler: ['wander', {"freq": 4.6, "amp": 1.6, "mul": 1.23}],
+  Grim5cwarden: ['hop', {"cd": 1.2, "dur": 0.44, "mul": 4.0, "land": 2, "col": "#e572c4"}],
+  Grim5clurker: ['charge', {"cd": 1.5, "dur": 0.71, "mul": 3.5}],
+  Grim5churler: ['orbit', {"range": 196, "spin": 1.9, "cd": 1.1, "n": 3, "spread": 0.4, "spd": 221, "col": "#e572c4"}],
+  Grim5cbrute: ['turret', {"cd": 2.3, "n": 6, "spread": 0.7, "spd": 234, "rot": 1.1, "col": "#e572c4"}],
+  Grim5cwisp: ['kite', {"keep": 225, "cd": 1.3, "n": 1, "spread": 0.35, "spd": 326, "pierce": 0, "col": "#e572c4"}],
+  Grim5cstalker: ['slam', {"r": 103, "cd": 2.7, "ring": 0, "mul": 0.6, "col": "#e572c4"}],
+  Grim5csentry: ['blink', {"cd": 2.7, "range": 168, "n": 4, "col": "#e572c4"}],
+  Fell5ccrawler: ['summon', {"max": 3, "cd": 4.7, "spawn": "vaporshade"}],
+  Fell5cwarden: ['mine', {"cd": 1.0, "fuse": 1.4, "r": 61, "mul": 0.83}]
+};
+
+for (const k in K5CSPECS) {
+  const [a, c] = K5CSPECS[k];
+  ENEMY_BEHAVIOR_HANDLERS['k5c' + k] = function(game, e, dt){ FWF_ARCH[a](game, e, dt, c); };
+}

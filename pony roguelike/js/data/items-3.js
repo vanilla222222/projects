@@ -1,0 +1,43 @@
+'use strict';
+
+Object.assign(ITEMS, {
+
+  trophy_charnelwarden: { id:'trophy_charnelwarden', type:'passive', quality:2, name:"Charnel Warden's Greave", icon:'💀', color:'#c9c2b0', pools:POOLS_ALL,
+    locked:true, unlockedBy:'trophy_charnelwarden_kill', desc:'+1 damage to all attacks.' },
+  trophy_thornmother: { id:'trophy_thornmother', type:'passive', quality:2, name:"Thornmother's Bramble Heart", icon:'🌹', color:'#5cc96a', pools:POOLS_ALL,
+    locked:true, unlockedBy:'trophy_thornmother_kill', desc:'+1 damage to all attacks.' },
+  trophy_dunesovereign: { id:'trophy_dunesovereign', type:'passive', quality:2, name:"Dune Sovereign's Signet", icon:'👑', color:'#e0c374', pools:POOLS_ALL,
+    locked:true, unlockedBy:'trophy_dunesovereign_kill', desc:'A sand-scoured ring from a buried throne. +5% crit chance.' },
+  trophy_ashencolossus: { id:'trophy_ashencolossus', type:'passive', quality:3, name:'Ashen Colossus Ember-Core', icon:'🔥', color:'#e0895a', pools:POOLS_ALL,
+    locked:true, unlockedBy:'trophy_ashencolossus_kill', desc:'Still radiates heat from the slam that ended it. +15% bomb damage.' },
+
+  trophy_siltwarden: { id:'trophy_siltwarden', type:'passive', quality:2, name:"Silt Warden's Grasp", icon:'🦑', color:'#5a6a4a', pools:POOLS_ALL,
+    locked:true, unlockedBy:'trophy_siltwarden_kill', desc:'A silt-caked gauntlet that still twitches to grab. +4% stun chance.' },
+  trophy_drownedbellringer: { id:'trophy_drownedbellringer', type:'passive', quality:2, name:"Drowned Bellringer's Clapper", icon:'🔔', color:'#6a7a8a', pools:POOLS_ALL,
+    locked:true, unlockedBy:'trophy_drownedbellringer_kill', desc:'The clapper of a bell that never stops tolling underwater. +4% fear chance.' },
+  trophy_reefwraith: { id:'trophy_reefwraith', type:'passive', quality:2, name:"Reef Wraith's Barb", icon:'🪸', color:'#4a8a7a', pools:POOLS_ALL,
+    locked:true, unlockedBy:'trophy_reefwraith_kill', desc:'A coral barb still weeping a faint toxin. +4% venom chance.' },
+  trophy_barnaclecolossus: { id:'trophy_barnaclecolossus', type:'passive', quality:3, name:"Barnacle Colossus Plating", icon:'🪨', color:'#8a7a5a', pools:POOLS_ALL,
+    locked:true, unlockedBy:'trophy_barnaclecolossus_kill', desc:'A slab of shell-armor that takes the edge off incoming blows. -5% damage taken from bosses.' },
+  trophy_ventmatriarch: { id:'trophy_ventmatriarch', type:'passive', quality:2, name:"Vent Matriarch's Core", icon:'♨️', color:'#c9522e', pools:POOLS_ALL,
+    locked:true, unlockedBy:'trophy_ventmatriarch_kill', desc:'A thermal vent node, still faintly pulsing with pressure. +12% bomb radius.' },
+  trophy_pressurewraith: { id:'trophy_pressurewraith', type:'passive', quality:3, name:"Pressure Wraith's Lens", icon:'🔮', color:'#3a5a8a', pools:POOLS_ALL,
+    locked:true, unlockedBy:'trophy_pressurewraith_kill', desc:'A crushed lens that focuses a killing blow. +0.2 crit multiplier.' },
+  trophy_choirdrowned: { id:'trophy_choirdrowned', type:'passive', quality:2, name:"Choir Drowned's Locket", icon:'🎵', color:'#7a8ac0', pools:POOLS_ALL,
+    locked:true, unlockedBy:'trophy_choirdrowned_kill', desc:'A waterlogged locket that hums the choir\'s last note. +4% lifesteal chance.' },
+  trophy_bellcaster: { id:'trophy_bellcaster', type:'passive', quality:2, name:"Bellcaster's Chime", icon:'🎐', color:'#8a9ac0', pools:POOLS_ALL,
+    locked:true, unlockedBy:'trophy_bellcaster_kill', desc:'A cracked chime that still rings a half-beat of warning. +3% dodge chance.' },
+  trophy_undertowreaver: { id:'trophy_undertowreaver', type:'passive', quality:2, name:"Undertow Reaver's Hook", icon:'⚓', color:'#3a6a8a', pools:POOLS_ALL,
+    locked:true, unlockedBy:'trophy_undertowreaver_kill', desc:'A drift-hook that keeps snagging loose coin. +15 pickup magnet radius.' },
+  trophy_lightlessmarshal: { id:'trophy_lightlessmarshal', type:'passive', quality:3, name:"Lightless Marshal's Badge", icon:'🎖️', color:'#2a2a3a', pools:POOLS_ALL,
+    locked:true, unlockedBy:'trophy_lightlessmarshal_kill', desc:'A badge of an authority that no longer answers to anyone. -5% shop prices.' },
+  trophy_mawsentinel: { id:'trophy_mawsentinel', type:'passive', quality:3, name:"Maw Sentinel's Fang", icon:'🦷', color:'#8a3a3a', pools:POOLS_ALL,
+    locked:true, unlockedBy:'trophy_mawsentinel_kill', desc:'+1 damage to all attacks.' },
+  trophy_lastdiver: { id:'trophy_lastdiver', type:'passive', quality:4, name:"Last Diver's Harpoon Tip", icon:'🔱', color:'#c9522e', pools:POOLS_ALL,
+    locked:true, unlockedBy:'trophy_lastdiver_kill', desc:'+1 damage to all attacks.' },
+
+  trophy_mbmarrowcolossus: { id:'trophy_mbmarrowcolossus', type:'passive', quality:3, name:"Marrow Colossus Splinter", icon:'🦴', color:'#d8c88a', pools:POOLS_ALL,
+    locked:true, unlockedBy:'trophy_mbmarrowcolossus_kill', desc:'A bone splinter that still remembers being enormous. +3% damage to bosses.' },
+  trophy_mbhollowsentinel: { id:'trophy_mbhollowsentinel', type:'passive', quality:4, name:"Hollow Sentinel's Eye", icon:'👁️', color:'#7fd66a', pools:POOLS_ALL,
+    locked:true, unlockedBy:'trophy_mbhollowsentinel_kill', desc:'+1 Luck.' },
+});

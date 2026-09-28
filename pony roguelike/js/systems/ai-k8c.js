@@ -1,0 +1,56 @@
+'use strict';
+
+const K8CSPECS = {
+  Carrionmender: ['wander', {"freq": 4.7, "amp": 1.3, "mul": 1.19}],
+  Fungusplitter: ['summon', {"max": 2, "cd": 3.6, "spawn": "carrionmender"}],
+  Boglurker: ['wander', {"freq": 3.7, "amp": 2.1, "mul": 1.12}],
+  Plaguegnats: ['summon', {"max": 3, "cd": 3.0, "spawn": "carrionmender"}],
+  Rotcrawler: ['wander', {"freq": 4.7, "amp": 1.6, "mul": 1.13}],
+  Venomflit: ['blink', {"cd": 2.7, "range": 164, "n": 2, "col": "#72e594"}],
+  Toxinbloom: ['blink', {"cd": 2.8, "range": 121, "n": 3, "col": "#72e594"}],
+  Idolplate: ['wander', {"freq": 3.6, "amp": 1.0, "mul": 1.18}],
+  Tapirram: ['mine', {"cd": 1.8, "fuse": 1.5, "r": 58, "mul": 0.71}],
+  Thornspire: ['turret', {"cd": 2.5, "n": 5, "spread": 0.9, "spd": 243, "rot": 1.1, "col": "#72e594"}],
+  Dartfrog: ['blink', {"cd": 1.8, "range": 113, "n": 2, "col": "#72e594"}],
+  Spitcobra: ['slam', {"r": 97, "cd": 2.2, "ring": 1, "mul": 0.56, "col": "#72e594"}],
+  Resinmortar: ['wander', {"freq": 4.0, "amp": 1.9, "mul": 1.17}],
+  Boaweaver: ['hop', {"cd": 1.6, "dur": 0.31, "mul": 3.1, "land": 2, "col": "#72e594"}],
+  Templewatcher: ['orbit', {"range": 169, "spin": -1.7, "cd": 1.9, "n": 2, "spread": 0.4, "spd": 265, "col": "#72e594"}],
+  Pollenswirl: ['orbit', {"range": 164, "spin": 1.3, "cd": 1.6, "n": 1, "spread": 0.4, "spd": 265, "col": "#72e594"}],
+  Taprootborer: ['summon', {"max": 3, "cd": 3.1, "spawn": "carrionmender"}],
+  Bulletants: ['summon', {"max": 3, "cd": 4.7, "spawn": "carrionmender"}],
+  Venomsack: ['slam', {"r": 120, "cd": 2.7, "ring": 3, "mul": 0.58, "col": "#72e594"}],
+  Broodhivecaller: ['aura', {"r": 133, "cd": 1.9, "n": 5, "col": "#72e594", "slam": 0, "mul": 0.6}],
+  Lichenmender: ['summon', {"max": 2, "cd": 4.0, "spawn": "carrionmender"}],
+  Idolwarden: ['blink', {"cd": 1.9, "range": 137, "n": 2, "col": "#72e594"}],
+  Curaremarksman: ['mine', {"cd": 1.6, "fuse": 2.0, "r": 66, "mul": 0.84}],
+  Canopyblink: ['turret', {"cd": 1.4, "n": 7, "spread": 0.4, "spd": 226, "rot": 0, "col": "#72e594"}],
+  Blackjaguar: ['mine', {"cd": 1.5, "fuse": 1.3, "r": 73, "mul": 0.87}],
+  Ceibabrute: ['turret', {"cd": 1.8, "n": 6, "spread": 1.4, "spd": 205, "rot": 1.0, "col": "#72e594"}],
+  Toxinrunner: ['turret', {"cd": 1.1, "n": 7, "spread": 2.0, "spd": 226, "rot": 1.1, "col": "#72e594"}],
+  Toadspitter: ['orbit', {"range": 100, "spin": 1.7, "cd": 1.9, "n": 1, "spread": 0.4, "spd": 243, "col": "#72e594"}],
+  Hornetbomber: ['wander', {"freq": 9.3, "amp": 1.2, "mul": 1.23}],
+  Harpystriker: ['slam', {"r": 111, "cd": 2.9, "ring": 0, "mul": 0.52, "col": "#72e594"}],
+  Caimanram: ['wander', {"freq": 3.2, "amp": 1.5, "mul": 1.04}],
+  Miremortar: ['aura', {"r": 149, "cd": 2.5, "n": 4, "col": "#72e594", "slam": 0, "mul": 0.6}],
+  Centipededelver: ['kite', {"keep": 289, "cd": 1.8, "n": 2, "spread": 0.35, "spd": 337, "pierce": 1, "col": "#72e594"}],
+  Mothcircler: ['turret', {"cd": 1.2, "n": 3, "spread": 0.7, "spd": 256, "rot": 1.3, "col": "#72e594"}],
+  Glyphwatcher: ['charge', {"cd": 2.7, "dur": 0.64, "mul": 3.8}],
+  Fogshade: ['phase', {"freq": 1.7, "mul": 1.7, "n": 2, "col": "#72e594"}],
+  Monolithbulk: ['phase', {"freq": 1.7, "mul": 1.6, "n": 2, "col": "#72e594"}],
+  Grim8ccrawler: ['wander', {"freq": 3.9, "amp": 2.0, "mul": 1.13}],
+  Grim8cwarden: ['hop', {"cd": 1.2, "dur": 0.4, "mul": 3.5, "land": 4, "col": "#72e594"}],
+  Grim8clurker: ['charge', {"cd": 2.5, "dur": 0.77, "mul": 4.1}],
+  Grim8churler: ['orbit', {"range": 178, "spin": 2.3, "cd": 1.8, "n": 3, "spread": 0.4, "spd": 221, "col": "#72e594"}],
+  Grim8cbrute: ['turret', {"cd": 2.1, "n": 5, "spread": 1.8, "spd": 224, "rot": 1.0, "col": "#72e594"}],
+  Grim8cwisp: ['kite', {"keep": 258, "cd": 1.7, "n": 2, "spread": 0.35, "spd": 275, "pierce": 0, "col": "#72e594"}],
+  Grim8cstalker: ['slam', {"r": 87, "cd": 3.0, "ring": 1, "mul": 0.52, "col": "#72e594"}],
+  Grim8csentry: ['blink', {"cd": 2.7, "range": 153, "n": 3, "col": "#72e594"}],
+  Fell8ccrawler: ['summon', {"max": 3, "cd": 3.4, "spawn": "carrionmender"}],
+  Fell8cwarden: ['mine', {"cd": 1.6, "fuse": 1.7, "r": 57, "mul": 0.85}]
+};
+
+for (const k in K8CSPECS) {
+  const [a, c] = K8CSPECS[k];
+  ENEMY_BEHAVIOR_HANDLERS['k8c' + k] = function(game, e, dt){ FWF_ARCH[a](game, e, dt, c); };
+}

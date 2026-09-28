@@ -1,0 +1,56 @@
+'use strict';
+
+const K10CSPECS = {
+  Doomchoir: ['aura', {"r": 132, "cd": 2.0, "n": 5, "col": "#e5c672", "slam": 0, "mul": 0.6}],
+  Gildedmantis: ['phase', {"freq": 2.0, "mul": 1.5, "n": 3, "col": "#e5c672"}],
+  Reliquarysplitter: ['summon', {"max": 2, "cd": 4.3, "spawn": "cursemites"}],
+  Cursemites: ['wander', {"freq": 7.4, "amp": 2.4, "mul": 1.04}],
+  Cursedprowler: ['charge', {"cd": 2.1, "dur": 0.48, "mul": 4.3}],
+  Plagueflit: ['wander', {"freq": 10.3, "amp": 2.3, "mul": 1.08}],
+  Cankerbloom: ['kite', {"keep": 228, "cd": 1.8, "n": 2, "spread": 0.35, "spd": 265, "pierce": 1, "col": "#e5c672"}],
+  Sanctumplate: ['blink', {"cd": 2.5, "range": 158, "n": 4, "col": "#e5c672"}],
+  Gaurram: ['charge', {"cd": 2.4, "dur": 0.49, "mul": 4.2}],
+  Hexthorn: ['turret', {"cd": 2.0, "n": 2, "spread": 1.9, "spd": 257, "rot": 0, "col": "#e5c672"}],
+  Gildedfrog: ['blink', {"cd": 2.4, "range": 147, "n": 3, "col": "#e5c672"}],
+  Hexcobra: ['kite', {"keep": 257, "cd": 2.0, "n": 1, "spread": 0.35, "spd": 301, "pierce": 1, "col": "#e5c672"}],
+  Cursemortar: ['mine', {"cd": 1.3, "fuse": 2.0, "r": 64, "mul": 0.82}],
+  Constrictorweaver: ['wander', {"freq": 9.2, "amp": 1.6, "mul": 1.12}],
+  Shrinewatcher: ['slam', {"r": 102, "cd": 3.1, "ring": 3, "mul": 0.56, "col": "#e5c672"}],
+  Miasmaswirl: ['orbit', {"range": 147, "spin": 1.9, "cd": 2.0, "n": 1, "spread": 0.4, "spd": 235, "col": "#e5c672"}],
+  Deeprootborer: ['blink', {"cd": 2.2, "range": 146, "n": 4, "col": "#e5c672"}],
+  Siafuants: ['wander', {"freq": 8.1, "amp": 1.1, "mul": 1.28}],
+  Cursesack: ['slam', {"r": 123, "cd": 2.6, "ring": 3, "mul": 0.52, "col": "#e5c672"}],
+  Hivehierophant: ['summon', {"max": 2, "cd": 3.9, "spawn": "cursemites"}],
+  Fungusmender: ['aura', {"r": 150, "cd": 2.5, "n": 5, "col": "#e5c672", "slam": 0, "mul": 0.6}],
+  Shrinewarden: ['aura', {"r": 138, "cd": 2.2, "n": 3, "col": "#e5c672", "slam": 0, "mul": 0.6}],
+  Hexmarksman: ['kite', {"keep": 224, "cd": 1.8, "n": 3, "spread": 0.35, "spd": 342, "pierce": 0, "col": "#e5c672"}],
+  Miasmablink: ['blink', {"cd": 1.7, "range": 140, "n": 2, "col": "#e5c672"}],
+  Ghostjaguar: ['phase', {"freq": 1.5, "mul": 1.5, "n": 3, "col": "#e5c672"}],
+  Kapokbrute: ['charge', {"cd": 1.9, "dur": 0.66, "mul": 4.3}],
+  Cursedrunner: ['charge', {"cd": 1.7, "dur": 0.77, "mul": 3.9}],
+  Bufospitter: ['kite', {"keep": 212, "cd": 1.5, "n": 1, "spread": 0.35, "spd": 307, "pierce": 1, "col": "#e5c672"}],
+  Plaguebomber: ['slam', {"r": 87, "cd": 2.3, "ring": 2, "mul": 0.51, "col": "#e5c672"}],
+  Harpyshrieker: ['mine', {"cd": 1.0, "fuse": 2.1, "r": 55, "mul": 0.67}],
+  Rootram: ['charge', {"cd": 1.6, "dur": 0.51, "mul": 4.2}],
+  Rotmortar: ['mine', {"cd": 1.6, "fuse": 2.1, "r": 73, "mul": 0.78}],
+  Scolodelver: ['blink', {"cd": 1.7, "range": 127, "n": 2, "col": "#e5c672"}],
+  Wraithcircler: ['orbit', {"range": 106, "spin": -1.2, "cd": 1.6, "n": 1, "spread": 0.4, "spd": 260, "col": "#e5c672"}],
+  Sepulcherwatcher: ['mine', {"cd": 1.3, "fuse": 1.7, "r": 55, "mul": 0.89}],
+  Miasmashade: ['blink', {"cd": 2.1, "range": 150, "n": 2, "col": "#e5c672"}],
+  Zigguratbulk: ['hop', {"cd": 0.9, "dur": 0.32, "mul": 3.7, "land": 4, "col": "#e5c672"}],
+  Hushedlurker: ['wander', {"freq": 6.7, "amp": 1.2, "mul": 1.23}],
+  Hushedhurler: ['hop', {"cd": 1.3, "dur": 0.46, "mul": 3.6, "land": 5, "col": "#e5c672"}],
+  Hushedbrute: ['charge', {"cd": 2.6, "dur": 0.77, "mul": 4.1}],
+  Hushedwisp: ['orbit', {"range": 163, "spin": 1.3, "cd": 0.9, "n": 2, "spread": 0.4, "spd": 235, "col": "#e5c672"}],
+  Hushedstalker: ['turret', {"cd": 1.9, "n": 1, "spread": 1.8, "spd": 243, "rot": 0, "col": "#e5c672"}],
+  Hushedsentry: ['kite', {"keep": 259, "cd": 2.5, "n": 2, "spread": 0.35, "spd": 273, "pierce": 1, "col": "#e5c672"}],
+  Vagrantcrawler: ['slam', {"r": 86, "cd": 2.5, "ring": 0, "mul": 0.49, "col": "#e5c672"}],
+  Vagrantwarden: ['blink', {"cd": 1.8, "range": 129, "n": 3, "col": "#e5c672"}],
+  Vagrantlurker: ['summon', {"max": 3, "cd": 3.8, "spawn": "cursemites"}],
+  Vagranthurler: ['mine', {"cd": 1.8, "fuse": 1.7, "r": 60, "mul": 0.7}]
+};
+
+for (const k in K10CSPECS) {
+  const [a, c] = K10CSPECS[k];
+  ENEMY_BEHAVIOR_HANDLERS['k10c' + k] = function(game, e, dt){ FWF_ARCH[a](game, e, dt, c); };
+}

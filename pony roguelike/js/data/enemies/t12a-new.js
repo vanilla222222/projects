@@ -1,0 +1,28 @@
+'use strict';
+
+Object.assign(ENEMY_TYPES, {
+  grimcrawler12a: { id:'grimcrawler12a', name:'DNB Wintered Reaver', hp:5, dmg:2, speed:59, radius:11, color:'#886cd8', dark:'#382866',
+    behavior:'t12aGrimcrawler12a', floorKey:'12A' },
+  grimwarden12a: { id:'grimwarden12a', name:'DNB Frayed Howler', hp:5, dmg:2, speed:42, radius:11, color:'#906cd8', dark:'#3d2866',
+    behavior:'t12aGrimwarden12a', floorKey:'12A' },
+  grimlurker12a: { id:'grimlurker12a', name:'DNB Brackish Drifter', hp:8, dmg:2, speed:46, radius:11, color:'#986cd8', dark:'#412866',
+    behavior:'t12aGrimlurker12a', floorKey:'12A' },
+  grimhurler12a: { id:'grimhurler12a', name:'DNB Frayed Cutter', hp:5, dmg:2, speed:55, radius:11, color:'#9f6cd8', dark:'#452866',
+    behavior:'t12aGrimhurler12a', floorKey:'12A' },
+  grimbrute12a: { id:'grimbrute12a', name:'DNB Mournful Skulker', hp:11, dmg:3, speed:0, radius:15, color:'#a76cd8', dark:'#4a2866',
+    behavior:'t12aGrimbrute12a', floorKey:'12A' },
+  grimwisp12a: { id:'grimwisp12a', name:'DNB Sunless Crawler', hp:6, dmg:2, speed:46, radius:11, color:'#af6cd8', dark:'#4e2866',
+    behavior:'t12aGrimwisp12a', floorKey:'12A' },
+  grimstalker12a: { id:'grimstalker12a', name:'DNB Crimson Skulker', hp:15, dmg:3, speed:64, radius:15, color:'#b76cd8', dark:'#532866',
+    behavior:'t12aGrimstalker12a', floorKey:'12A' },
+  grimsentry12a: { id:'grimsentry12a', name:'DNB Gilded Reaver', hp:7, dmg:2, speed:53, radius:11, color:'#bf6cd8', dark:'#572866',
+    behavior:'t12aGrimsentry12a', floorKey:'12A' },
+  fellcrawler12a: { id:'fellcrawler12a', name:'DNB Tarnished Weeper', hp:6, dmg:2, speed:48, radius:11, color:'#c66cd8', dark:'#5b2866',
+    behavior:'t12aFellcrawler12a', floorKey:'12A' },
+  fellwarden12a: { id:'fellwarden12a', name:'DNB Brackish Shrieker', hp:5, dmg:2, speed:44, radius:11, color:'#ce6cd8', dark:'#602866',
+    behavior:'t12aFellwarden12a', floorKey:'12A' },
+  felllurker12a: { id:'felllurker12a', name:'DNB Sallow Shrieker', hp:11, dmg:3, speed:63, radius:15, color:'#d66cd8', dark:'#642866',
+    behavior:'t12aFelllurker12a', floorKey:'12A' },
+  fellhurler12a: { id:'fellhurler12a', name:'DNB Rustbound Warden', hp:9, dmg:2, speed:64, radius:11, color:'#d86cd3', dark:'#662862',
+    behavior:'t12aFellhurler12a', floorKey:'12A' },
+});

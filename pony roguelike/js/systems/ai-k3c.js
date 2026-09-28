@@ -1,0 +1,57 @@
+'use strict';
+
+const K3CSPECS = {
+  Sumppike: ['mine', {"cd": 1.2, "fuse": 1.7, "r": 72, "mul": 0.68}],
+  Effluentmite: ['aura', {"r": 129, "cd": 1.8, "n": 5, "col": "#c5e572", "slam": 0, "mul": 0.6}],
+  Culvertlobber: ['hop', {"cd": 1.1, "dur": 0.54, "mul": 3.2, "land": 1, "col": "#c5e572"}],
+  Pipewhistle: ['wander', {"freq": 8.9, "amp": 1.0, "mul": 1.01}],
+  Gutterrat: ['charge', {"cd": 1.8, "dur": 0.68, "mul": 4.3}],
+  Runoffwisp: ['wander', {"freq": 6.8, "amp": 2.0, "mul": 1.18}],
+  Gasbloat: ['kite', {"keep": 225, "cd": 2.0, "n": 3, "spread": 0.35, "spd": 334, "pierce": 0, "col": "#c5e572"}],
+  Grateguard: ['mine', {"cd": 1.2, "fuse": 1.5, "r": 58, "mul": 0.88}],
+  Silthog: ['orbit', {"range": 187, "spin": 1.7, "cd": 1.8, "n": 3, "spread": 0.4, "spd": 251, "col": "#c5e572"}],
+  Drainspout: ['summon', {"max": 2, "cd": 3.5, "spawn": "sumppike"}],
+  Gutterhopper: ['hop', {"cd": 1.0, "dur": 0.34, "mul": 3.4, "land": 3, "col": "#c5e572"}],
+  Sewerspitter: ['orbit', {"range": 177, "spin": 2.2, "cd": 2.0, "n": 3, "spread": 0.4, "spd": 250, "col": "#c5e572"}],
+  Sludgemortar: ['charge', {"cd": 2.1, "dur": 0.66, "mul": 3.5}],
+  Eelweaver: ['hop', {"cd": 1.2, "dur": 0.44, "mul": 3.6, "land": 5, "col": "#c5e572"}],
+  Gratewatcher: ['summon', {"max": 3, "cd": 3.8, "spawn": "sumppike"}],
+  Gnatswirl: ['slam', {"r": 108, "cd": 2.9, "ring": 8, "mul": 0.55, "col": "#c5e572"}],
+  Mudburrower: ['wander', {"freq": 8.9, "amp": 1.0, "mul": 1.2}],
+  Gutterlarvae: ['aura', {"r": 129, "cd": 2.1, "n": 3, "col": "#c5e572", "slam": 0, "mul": 0.6}],
+  Bloatsack: ['wander', {"freq": 5.1, "amp": 2.1, "mul": 1.1}],
+  Ratcaller: ['aura', {"r": 131, "cd": 2.6, "n": 5, "col": "#c5e572", "slam": 0, "mul": 0.6}],
+  Algaemender: ['mine', {"cd": 1.9, "fuse": 2.2, "r": 57, "mul": 0.89}],
+  Drainwarden: ['charge', {"cd": 1.6, "dur": 0.71, "mul": 4.2}],
+  Pipemarksman: ['aura', {"r": 145, "cd": 2.6, "n": 4, "col": "#c5e572", "slam": 0, "mul": 0.6}],
+  Overflowblink: ['hop', {"cd": 1.6, "dur": 0.36, "mul": 3.1, "land": 4, "col": "#c5e572"}],
+  Sumplurker: ['blink', {"cd": 2.6, "range": 139, "n": 2, "col": "#c5e572"}],
+  Sludgehulk: ['aura', {"r": 117, "cd": 2.1, "n": 4, "col": "#c5e572", "slam": 0, "mul": 0.6}],
+  Drainskitter: ['charge', {"cd": 2.3, "dur": 0.77, "mul": 4.1}],
+  Brinespitter: ['orbit', {"range": 144, "spin": 2.2, "cd": 1.0, "n": 2, "spread": 0.4, "spd": 244, "col": "#c5e572"}],
+  Fumedrone: ['aura', {"r": 136, "cd": 2.3, "n": 5, "col": "#c5e572", "slam": 0, "mul": 0.6}],
+  Gutterswoop: ['turret', {"cd": 1.4, "n": 2, "spread": 1.6, "spd": 206, "rot": 0, "col": "#c5e572"}],
+  Rustcharger: ['wander', {"freq": 10.1, "amp": 1.8, "mul": 1.29}],
+  Flotsamlobber: ['slam', {"r": 116, "cd": 2.5, "ring": 1, "mul": 0.52, "col": "#c5e572"}],
+  Gritdelver: ['summon', {"max": 2, "cd": 4.8, "spawn": "sumppike"}],
+  Driftcircler: ['blink', {"cd": 2.2, "range": 114, "n": 4, "col": "#c5e572"}],
+  Drainwatcher: ['aura', {"r": 150, "cd": 2.1, "n": 5, "col": "#c5e572", "slam": 0, "mul": 0.6}],
+  Culvertmarksman: ['aura', {"r": 115, "cd": 2.3, "n": 4, "col": "#c5e572", "slam": 0, "mul": 0.6}],
+  Puddleblink: ['phase', {"freq": 1.8, "mul": 1.6, "n": 2, "col": "#c5e572"}],
+  Gutterskirmisher: ['mine', {"cd": 1.5, "fuse": 2.2, "r": 61, "mul": 0.7}],
+  Grim3ccrawler: ['wander', {"freq": 8.6, "amp": 1.5, "mul": 1.15}],
+  Grim3cwarden: ['hop', {"cd": 0.9, "dur": 0.38, "mul": 3.4, "land": 3, "col": "#c5e572"}],
+  Grim3clurker: ['charge', {"cd": 1.9, "dur": 0.77, "mul": 4.1}],
+  Grim3churler: ['orbit', {"range": 160, "spin": -1.6, "cd": 1.5, "n": 2, "spread": 0.4, "spd": 235, "col": "#c5e572"}],
+  Grim3cbrute: ['turret', {"cd": 1.9, "n": 1, "spread": 0.6, "spd": 214, "rot": 1.1, "col": "#c5e572"}],
+  Grim3cwisp: ['kite', {"keep": 210, "cd": 1.8, "n": 2, "spread": 0.35, "spd": 348, "pierce": 0, "col": "#c5e572"}],
+  Grim3cstalker: ['slam', {"r": 98, "cd": 2.6, "ring": 7, "mul": 0.6, "col": "#c5e572"}],
+  Grim3csentry: ['blink', {"cd": 2.4, "range": 145, "n": 3, "col": "#c5e572"}],
+  Fell3ccrawler: ['summon', {"max": 2, "cd": 3.5, "spawn": "sumppike"}],
+  Fell3cwarden: ['mine', {"cd": 1.4, "fuse": 1.2, "r": 58, "mul": 0.62}]
+};
+
+for (const k in K3CSPECS) {
+  const [a, c] = K3CSPECS[k];
+  ENEMY_BEHAVIOR_HANDLERS['k3c' + k] = function(game, e, dt){ FWF_ARCH[a](game, e, dt, c); };
+}

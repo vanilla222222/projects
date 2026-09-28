@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nightfall Charge — Room Creator</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="css/room-editor.css">
+</head>
+<body>
+<div id="editorApp">
+  <a class="backlink" href="index.html">&larr; Back to game</a>
+  <h1 class="title">Room Creator</h1>
+  <p class="subtitle">Design a room, then copy the exported object into <code>js/data/roomTemplates/normal-*.js</code>.</p>
+
+  <div class="layout">
+
+    <div class="panel">
+      <h2>1 · Room</h2>
+      <div class="row">
+        <label>Type</label>
+        <select id="roomType">
+          <option value="normal">normal</option>
+          <option value="start">start</option>
+          <option value="boss">boss</option>
+          <option value="treasure">treasure</option>
+          <option value="shop">shop</option>
+          <option value="secret">secret</option>
+          <option value="petshop">petshop</option>
+          <option value="curse">curse</option>
+          <option value="sacrifice">sacrifice</option>
+          <option value="vault">vault</option>
+          <option value="challenge">challenge</option>
+          <option value="crystal">crystal</option>
+          <option value="sombra">sombra</option>
+          <option value="shrine">shrine</option>
+          <option value="arcade">arcade</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>Blocks (click to toggle, 1-4 total, one 10×10 tile block each)</label>
+      </div>
+      <div class="blockgrid" id="blockGrid"></div>
+      <div class="row" style="margin-top:8px;">
+        <span id="blockCount" class="ok">1 block</span>
+      </div>
+      <div class="row">
+        <button id="undoBtn" title="Ctrl+Z">↶ Undo</button>
+        <button id="redoBtn" title="Ctrl+Y">↷ Redo</button>
+      </div>
+      <div class="row">
+        <button id="resetSpawnersBtn">Clear spawners</button>
+        <button id="resetAllBtn">Reset room</button>
+      </div>
+      <div class="row">
+        <label>Zoom</label>
+        <div class="row catbtns" id="zoomBtns" style="margin-bottom:0;">
+          <button data-px="12">S</button>
+          <button data-px="16">M</button>
+          <button data-px="24">L</button>
+          <button data-px="32">XL</button>
+        </div>
+      </div>
+      <div class="row">
+        <label>Floors (toggle off = never spawns there; all on = any floor)</label>
+      </div>
+      <div class="row catbtns" id="floorPathBtns"></div>
+      <div class="row catbtns" id="floorBtns"></div>
+      <div class="row">
+        <label>Doors</label>
+      </div>
+      <p class="legend">Doors are per-block now — every 10x10 block in the room can have a door on each side that isn't shared with another block of this room. Click a marker on the canvas below to enable/disable a door there.</p>
+    </div>
+
+    <div class="panel">
+      <h2>2 · Layout</h2>
+      <div id="canvasWrap">
+        <canvas id="editorCanvas" width="400" height="400"></canvas>
+      </div>
+      <p class="legend" id="canvasInfo"></p>
+      <p id="statsReadout"></p>
+      <p id="roomWarning" class="warn"></p>
+    </div>
+
+    <div class="panel">
+      <h2>3 · Tool</h2>
+      <div class="row catbtns" id="categoryBtns">
+        <button data-cat="enemy">Enemy <kbd>1</kbd></button>
+        <button data-cat="pickup">Pickup <kbd>2</kbd></button>
+        <button data-cat="item">Item <kbd>3</kbd></button>
+        <button data-cat="deal">Deal <kbd>4</kbd></button>
+        <button data-cat="shop">Shop <kbd>5</kbd></button>
+        <button data-cat="obstacle">Obstacle <kbd>6</kbd></button>
+        <button data-cat="erase">Erase <kbd>7</kbd></button>
+      </div>
+      <div class="row catbtns" id="subGroupBtns" style="display:none;"></div>
+      <div class="row catbtns" id="enemyPathBtns" style="display:none;"></div>
+      <div class="row catbtns" id="subStageBtns" style="display:none;"></div>
+      <div class="row catbtns" id="recentToolBtns" style="display:none;"></div>
+      <div class="row">
+        <input type="text" id="paletteFilter" class="paletteFilter" placeholder="Filter by name...">
+      </div>
+      <div class="row">
+        <label id="specificLabel">Specific</label>
+        <select id="specificSelect"></select>
+      </div>
+      <div class="row" id="toolPreviewRow" style="display:none;">
+        <canvas id="toolPreviewCanvas" width="48" height="48"></canvas>
+        <div style="min-width:0;">
+          <div id="toolPreviewName" class="preview-name"></div>
+          <div id="toolPreviewDesc" class="preview-desc"></div>
+        </div>
+      </div>
+      <p class="legend">
+        <span style="background:#e35b6a"></span>Enemy &nbsp;
+        <span style="background:#e3c15b"></span>Pickup &nbsp;
+        <span style="background:#8b5cf6"></span>Item &nbsp;
+        <span style="background:#7a1f2e"></span>Deal &nbsp;
+        <span style="background:#4fd1c5"></span>Shop &nbsp;
+        <span style="background:#7a746a"></span>Obstacle &nbsp;
+        <span style="background:#463a5e;border:1px solid #e3c15b"></span>Possible door &nbsp;
+        <span style="background:#2f7a52;border:1px solid #8effc1;border-radius:50%"></span>Door on (click to disable) &nbsp;
+        <span style="background:#5a2436;border:1px solid #ff5a5a;border-radius:50%"></span>Door off (click to enable)
+      </p>
+      <p class="legend" id="toolHint">Click-drag to paint tiles. Right-click-drag always erases. <kbd>Ctrl+Z</kbd>/<kbd>Ctrl+Y</kbd> undo/redo.</p>
+
+      <h2 style="margin-top:14px;">Import</h2>
+      <p class="legend">Paste a previously exported line (or bare <code>{"m":...}</code> object) to load it back into the editor for tweaking.</p>
+      <textarea id="importArea" placeholder='ROOM_TEMPLATES.normal.push({"m":[[1,1]],"s":[[5,5,"e","g"]]});'></textarea>
+      <div class="row" style="margin-top:8px;">
+        <button id="importBtn">Load into editor</button>
+        <span id="importHint" class="warn"></span>
+      </div>
+    </div>
+
+  </div>
+
+  <details class="drawer" id="exportDrawer">
+    <summary>4 · Export</summary>
+    <div class="row">
+      <button id="exportBtn">Generate</button>
+      <button id="copyBtn">Copy to clipboard</button>
+      <button id="testInGameBtn" class="accentBtn">Test in game</button>
+      <button id="duplicateVariantBtn">Duplicate as new variant</button>
+      <button id="addToFileBtn">Add to file</button>
+      <button id="copyFileBtn">Copy full file</button>
+      <button id="clearFileBtn">Clear file</button>
+      <span id="exportHint" class="warn"></span>
+    </div>
+    <textarea id="exportArea" readonly placeholder="Click Generate..."></textarea>
+    <p class="legend">The generated line is a ready-to-run statement — paste it straight into <code>js/data/roomTemplates/normal-*.js</code>.</p>
+    <textarea id="fileBufferArea" readonly placeholder="Nothing added yet."></textarea>
+    <p class="legend">Accumulates multiple rooms' export lines across "Add to file" clicks, so you can copy them all out at once — persists in this browser via localStorage.</p>
+    <div id="variantList"></div>
+  </details>
+</div>
+
+<script src="js/core/theme.js"></script>
+<script src="js/core/rng.js"></script>
+<script src="js/core/utils-1.js"></script>
+<script src="js/core/utils-2.js"></script>
+<script src="js/core/audio.js"></script>
+<script src="js/data/core.js"></script>
+<script src="js/data/items-1.js"></script>
+<script src="js/data/items-2.js"></script>
+<script src="js/data/items-3.js"></script>
+<script src="js/data/items-4.js"></script>
+<script src="js/data/items-5.js"></script>
+<script src="js/data/items-6.js"></script>
+<script src="js/data/items-7.js"></script>
+<script src="js/data/items-8.js"></script>
+<script src="js/data/items-9.js"></script>
+<script src="js/data/items-10.js"></script>
+<script src="js/data/protectedBasicItems.js"></script>
+<script src="js/data/trinkets-1.js"></script>
+<script src="js/data/trinkets-2.js"></script>
+<script src="js/data/trinkets-3.js"></script>
+<script src="js/data/trinkets-4.js"></script>
+<script src="js/data/familiars-1.js"></script>
+<script src="js/data/familiars-3.js"></script>
+<script src="js/data/familiars-2.js"></script>
+<script src="js/data/familiars-4.js"></script>
+<script src="js/data/lists.js"></script>
+<script src="js/data/pickups.js"></script>
+<script src="js/data/collectibles.js"></script>
+<script src="js/data/economy.js"></script>
+<script src="js/data/enemies/growth.js"></script>
+<script src="js/data/enemies/types-1.js"></script>
+<script src="js/data/enemies/types-2.js"></script>
+<script src="js/data/enemies/types-3.js"></script>
+<script src="js/data/enemies/types-4.js"></script>
+<script src="js/data/enemies/legacy-extra.js"></script>
+<script src="js/data/enemies/flies.js"></script>
+<script src="js/data/enemies/crypt-extra.js"></script>
+<script src="js/data/enemies/crypt-extra2.js"></script>
+<script src="js/data/enemies/crypt-extra3.js"></script>
+<script src="js/data/enemies/forest-extra.js"></script>
+<script src="js/data/enemies/cbranch2-enemies.js"></script>
+<script src="js/data/enemies/stage4-6-enemies.js"></script>
+<script src="js/data/enemies/stage7-9-enemies.js"></script>
+<script src="js/data/enemies/stage10-13-enemies.js"></script>
+<script src="js/data/enemies/lists.js"></script>
+<script src="js/data/enemies/minibosses.js"></script>
+<script src="js/data/enemies/bosses.js"></script>
+<script src="js/data/enemies/legacy-extra-bosses.js"></script>
+<script src="js/data/enemies/stage4-6-bosses.js"></script>
+<script src="js/data/enemies/stage7-9-bosses.js"></script>
+<script src="js/data/enemies/stage10-13-bosses.js"></script>
+<script src="js/data/enemies/cbranch2-bosses.js"></script>
+<script src="js/data/enemies/dbranch-bosses.js"></script>
+<script src="js/data/enemies/superbosses.js"></script>
+<script src="js/data/enemies/stage4-6-superbosses.js"></script>
+<script src="js/data/enemies/stage7-9-superbosses.js"></script>
+<script src="js/data/enemies/stage10-13-superbosses.js"></script>
+<script src="js/data/enemies/cbranch2-superbosses.js"></script>
+<script src="js/data/enemies/superboss-routes.js"></script>
+<script src="js/data/stages.js"></script>
+<script src="js/achievements/core.js"></script>
+<script src="js/achievements/defs-1.js"></script>
+<script src="js/achievements/defs-2.js"></script>
+<script src="js/achievements/defs-3.js"></script>
+<script src="js/achievements/defs-4.js"></script>
+<script src="js/achievements/defs-5.js"></script>
+<script src="js/achievements/defs-6.js"></script>
+<script src="js/achievements/defs-7.js"></script>
+<script src="js/achievements/defs-8.js"></script>
+<script src="js/achievements/defs-9.js"></script>
+<script src="js/achievements/defs-10.js"></script>
+<script src="js/achievements/defs-11.js"></script>
+<script src="js/achievements/defs-12.js"></script>
+<script src="js/achievements/defs-13.js"></script>
+<script src="js/achievements/defs-14.js"></script>
+<script src="js/achievements/defs-mastery.js"></script>
+<script src="js/achievements/bestiary-tiers.js"></script>
+<script src="js/achievements/logic.js"></script>
+<script src="js/achievements/skilltree.js"></script>
+<script src="js/achievements/skilltree-characters.js"></script>
+<script src="js/achievements/skilltree-characters-2.js"></script>
+<script src="js/achievements/skilltree-characters-3.js"></script>
+<script src="js/achievements/skilltree-characters-4a.js"></script>
+<script src="js/achievements/skilltree-characters-4b.js"></script>
+<script src="js/achievements/skilltree-characters-4c.js"></script>
+<script src="js/achievements/skilltree-characters-4d.js"></script>
+<script src="js/achievements/skilltree-characters-4e.js"></script>
+<script src="js/achievements/skilltree-characters-5a.js"></script>
+<script src="js/achievements/skilltree-characters-5b.js"></script>
+<script src="js/achievements/skilltree-characters-5c.js"></script>
+<script src="js/achievements/skilltree-characters-5d.js"></script>
+<script src="js/achievements/skilltree-characters-5e.js"></script>
+<script src="js/achievements/skilltree-characters-6.js"></script>
+<script src="js/achievements/skilltree-characters-7.js"></script>
+<script src="js/achievements/skilltree-characters-8.js"></script>
+<script src="js/achievements/skilltree-capstones.js"></script>
+<script src="js/achievements/skilltree-ascensions.js"></script>
+<script src="js/achievements/skilltree-general.js"></script>
+<script src="js/achievements/skilltree-general-2.js"></script>
+<script src="js/achievements/skilltree-unlocks-stars.js"></script>
+<script src="js/achievements/skilltree-unlocks-familiars.js"></script>
+<script src="js/achievements/skilltree-unlocks-items.js"></script>
+<script src="js/achievements/skilltree-unlocks-items-2.js"></script>
+<script src="js/achievements/skilltree-unlocks-trinkets.js"></script>
+<script src="js/achievements/skilltree-unlocks-starroom.js"></script>
+<script src="js/ui/bestiary.js"></script>
+<script src="js/data/roomTemplates/core.js"></script>
+<script src="js/data/roomTemplates/normal-1.js"></script>
+<script src="js/data/roomTemplates/normal-2.js"></script>
+<script src="js/data/roomTemplates/normal-3.js"></script>
+<script src="js/data/roomTemplates/normal-4.js"></script>
+<script src="js/data/roomTemplates/firecolors.js"></script>
+<script src="js/data/roomTemplates/dnbfly-rooms.js"></script>
+<script src="js/data/roomTemplates/floorfeature.js"></script>
+<script src="js/data/roomTemplates/miniboss.js"></script>
+<script src="js/data/roomTemplates/stage4-6-floorfeature.js"></script>
+<script src="js/data/roomTemplates/stage7-9-floorfeature.js"></script>
+<script src="js/data/roomTemplates/stage10-13-floorfeature.js"></script>
+<script src="js/systems/dungeon.js"></script>
+<script src="js/systems/room.js"></script>
+<script src="js/entities/entities.js"></script>
+<script src="js/systems/attackStyles.js"></script>
+<script src="js/systems/tearShapes.js"></script>
+<script src="js/systems/combat-1.js"></script>
+<script src="js/systems/combat-2.js"></script>
+<script src="js/systems/combat-3.js"></script>
+<script src="js/systems/combat-4.js"></script>
+<script src="js/systems/ai-minibosses.js"></script>
+<script src="js/systems/ai-newshared.js"></script>
+<script src="js/systems/ai-legacy-bosses.js"></script>
+<script src="js/systems/ai-flies.js"></script>
+<script src="js/systems/ai-crypt.js"></script>
+<script src="js/systems/ai-crypt2.js"></script>
+<script src="js/systems/ai-cbranch2.js"></script>
+<script src="js/systems/ai-cbranch2-bosses.js"></script>
+<script src="js/systems/ai-dbranch-bosses.js"></script>
+<script src="js/systems/ai-cbranch2-superbosses.js"></script>
+<script src="js/systems/ai-1.js"></script>
+<script src="js/systems/ai-2.js"></script>
+<script src="js/systems/ai-3.js"></script>
+<script src="js/systems/ai-4.js"></script>
+<script src="js/systems/ai-stage4-6.js"></script>
+<script src="js/systems/ai-stage7-9.js"></script>
+<script src="js/systems/ai-stage10-13.js"></script>
+<script src="js/systems/ai-crypt3.js"></script>
+<script src="js/systems/ai-crypt4.js"></script>
+<script src="js/systems/ai-crypt5.js"></script>
+<script src="js/systems/ai-forest1.js"></script>
+<script src="js/systems/ai-forest2.js"></script>
+<script src="js/systems/ai-forest4.js"></script>
+<script src="js/systems/ai-mirrorboss.js"></script>
+<script src="js/systems/familiars.js"></script>
+<script src="js/systems/pills.js"></script>
+<script src="js/systems/stars.js"></script>
+<script src="js/systems/items-1.js"></script>
+<script src="js/systems/items-synergy.js"></script>
+<script src="js/systems/items-2.js"></script>
+<script src="js/systems/shop.js"></script>
+<script src="js/systems/karma.js"></script>
+<script src="js/ui/ui.js"></script>
+<script src="js/ui/minimap-pins.js"></script>
+<script src="js/ui/render.js"></script>
+<script src="js/ui/menu-backdrop.js"></script>
+<script src="js/ui/music-test.js"></script>
+<script src="js/ui/settings.js"></script>
+<script src="js/ui/roomEditor.js"></script>
+</body>
+</html>

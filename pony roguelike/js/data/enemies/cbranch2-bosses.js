@@ -1,0 +1,43 @@
+'use strict';
+
+const CBRANCH2_BOSS_TYPES = {
+  siltwarden: { id:'siltwarden', name:'The Silt Warden', hp:6, dmg:2, speed:50, radius:26,
+    color:'#3a4a52', dark:'#1c242a', behavior:'bossSiltWarden', floorKey:'13C' },
+  drownedbellringer: { id:'drownedbellringer', name:'The Drowned Bellringer', hp:6, dmg:2, speed:68, radius:27,
+    color:'#4a6a76', dark:'#22363c', behavior:'bossDrownedBellringer', floorKey:'13C' },
+  reefwraith: { id:'reefwraith', name:'The Reef Wraith', hp:6, dmg:2, speed:62, radius:26,
+    color:'#c9986a', dark:'#654e32', behavior:'bossReefWraith', floorKey:'15C' },
+  barnaclecolossus: { id:'barnaclecolossus', name:'The Barnacle Colossus', hp:6, dmg:2, speed:44, radius:32,
+    color:'#a8845a', dark:'#54422c', behavior:'bossBarnacleColossus', floorKey:'15C' },
+  ventmatriarch: { id:'ventmatriarch', name:'The Vent Matriarch', hp:7, dmg:2, speed:52, radius:27,
+    color:'#c9522e', dark:'#682a16', behavior:'bossVentMatriarch', floorKey:'17C' },
+  pressurewraith: { id:'pressurewraith', name:'The Pressure Wraith', hp:7, dmg:2, speed:56, radius:27,
+    color:'#8a4a2a', dark:'#452414', behavior:'bossPressureWraith', floorKey:'17C' },
+  choirdrowned: { id:'choirdrowned', name:'The Choir Drowned', hp:10, dmg:3, speed:54, radius:28,
+    color:'#6a5aa0', dark:'#332e50', behavior:'bossChoirDrowned', floorKey:'19C' },
+  bellcaster: { id:'bellcaster', name:'The Bellcaster', hp:10, dmg:2, speed:60, radius:28,
+    color:'#5a4a8a', dark:'#2c2445', behavior:'bossBellcaster', floorKey:'19C' },
+  undertowreaver: { id:'undertowreaver', name:'The Undertow Reaver', hp:19, dmg:3, speed:110, radius:29,
+    color:'#2c4ab0', dark:'#141e58', behavior:'bossUndertowReaver', floorKey:'21C' },
+  lightlessmarshal: { id:'lightlessmarshal', name:'The Lightless Marshal', hp:19, dmg:3, speed:64, radius:29,
+    color:'#1c2850', dark:'#0c1226', behavior:'bossLightlessMarshal', floorKey:'21C' },
+  mawsentinel: { id:'mawsentinel', name:'The Maw Sentinel', hp:50, dmg:3, speed:58, radius:32,
+    color:'#7a3a3a', dark:'#3d1c1c', behavior:'bossMawSentinel', floorKey:'23C' },
+  lastdiver: { id:'lastdiver', name:'The Last Diver', hp:50, dmg:3, speed:46, radius:33,
+    color:'#4a1a1a', dark:'#24100d', behavior:'bossLastDiver', floorKey:'23C' },
+
+  siltdrowned: { id:'siltdrowned', name:'The Silt Drowned', hp:6, dmg:2, speed:58, radius:26,
+    color:'#2c3a40', dark:'#141c20', behavior:'bossSiltWarden', floorKey:'13C' },
+  reefbellringer: { id:'reefbellringer', name:'The Reef Bellringer', hp:6, dmg:2, speed:48, radius:28,
+    color:'#96703e', dark:'#4a3820', behavior:'bossReefWraith', floorKey:'15C' },
+  ventpressurewraith: { id:'ventpressurewraith', name:'The Vent Pressure Wraith', hp:7, dmg:2, speed:58, radius:27,
+    color:'#a04a2e', dark:'#502414', behavior:'bossVentMatriarch', floorKey:'17C' },
+  drownedbellcaster: { id:'drownedbellcaster', name:'The Drowned Bellcaster', hp:10, dmg:3, speed:58, radius:28,
+    color:'#7a5aa8', dark:'#3a2c52', behavior:'bossChoirDrowned', floorKey:'19C' },
+  undertowmarshal: { id:'undertowmarshal', name:'The Undertow Marshal', hp:19, dmg:3, speed:82, radius:29,
+    color:'#243a80', dark:'#101c40', behavior:'bossUndertowReaver', floorKey:'21C' },
+  lightlessdiver: { id:'lightlessdiver', name:'The Lightless Diver', hp:50, dmg:3, speed:52, radius:33,
+    color:'#601a1a', dark:'#2e0d0d', behavior:'bossLastDiver', floorKey:'23C' },
+};
+Object.assign(BOSS_TYPES, CBRANCH2_BOSS_TYPES);
+BOSS_LIST.push(...Object.values(CBRANCH2_BOSS_TYPES));
