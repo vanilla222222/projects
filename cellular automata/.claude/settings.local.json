@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --check script.js)",
+      "Bash(python3 -c \"print\\('python3 available'\\)\")",
+      "Bash(python3 -c ' *)",
+      "Read(//usr/lib/**)",
+      "Bash(apt list *)",
+      "Bash(chromium-cli --help)",
+      "Bash(find / -maxdepth 6 -iname \"*chromium-cli*\")",
+      "Bash(find / -maxdepth 8 -iname \"*playwright*\")",
+      "Bash(python3 -c \"import playwright\")",
+      "Bash(grep -n \"============================================================$\" /home/vanilla/Downloads/gol/script.js)"
+    ]
+  }
+}

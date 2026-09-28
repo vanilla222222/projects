@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mule Run — a stubborn little endless runner</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🫏</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <main class="game-shell">
+    <header class="game-header">
+      <h1><span class="mule-emoji">🫏</span> Mule Run</h1>
+      <p class="tagline">One stubborn mule. One endless canyon. Zero shortcuts.</p>
+    </header>
+
+    <div class="stage" id="stage">
+      <canvas id="game-canvas"></canvas>
+
+      <div class="hud">
+        <div class="hud-score">
+          <span class="hud-label">SCORE</span>
+          <span id="score">0</span>
+        </div>
+        <div class="hud-stage" id="hud-stage" title="Grows over real time — even while you're away">
+          <span class="hud-label">MULE</span>
+          <span id="growth-stage">Foal</span>
+        </div>
+        <div class="hud-best">
+          <span class="hud-label">BEST</span>
+          <span id="best-score">0</span>
+        </div>
+      </div>
+
+      <div id="smash-bar" class="smash-bar hidden">
+        <span class="smash-label">🔪 SMASH MODE</span>
+        <div class="smash-track"><div id="smash-bar-fill" class="smash-bar-fill"></div></div>
+      </div>
+
+      <button id="mute-btn" class="icon-btn" title="Mute sound" aria-label="Toggle sound">🔊</button>
+
+      <div id="start-screen" class="overlay">
+        <div class="overlay-card">
+          <div class="big-mule">🫏</div>
+          <h2>Ready the mule?</h2>
+          <p>Press <kbd>Space</kbd> / <kbd>↑</kbd> or tap the trail to jump.<br>
+             Dodge cacti, rocks, LARPers &amp; swooping rocket monkeys. Snag carrots for points,
+             and grab the radioactive machete to smash through anything.</p>
+          <p id="welcome-back-msg" class="welcome-back hidden"></p>
+          <button id="start-btn" class="primary-btn">Hee-Haw, Let's Go!</button>
+        </div>
+      </div>
+
+      <div id="game-over-screen" class="overlay hidden">
+        <div class="overlay-card">
+          <div class="big-mule">😵</div>
+          <h2>The mule dug in its heels.</h2>
+          <p>Score: <strong id="final-score">0</strong></p>
+          <p id="new-best-msg" class="new-best hidden">🏆 New best distance!</p>
+          <button id="restart-btn" class="primary-btn">Try Again</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="hint">Space / ↑ / Tap = Jump &nbsp;•&nbsp; Your mule keeps growing even while you're away &nbsp;•&nbsp; 🎧 DNB while you run</p>
+    <footer class="game-footer">Built with HTML, CSS &amp; vanilla JS — no assets, no libraries, just a mule.</footer>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/entities.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>

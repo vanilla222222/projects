@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<title>Evolution Sim — World Map</title>
+	<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+	<header>
+		<h1>Evolution Sim</h1>
+		<p>Procedural world map generator — biomes from altitude, temperature &amp; humidity</p>
+	</header>
+
+	<div class="layout">
+		<aside class="controls">
+			<div class="control-group">
+				<label for="seedInput">Seed</label>
+				<div class="row">
+					<input id="seedInput" type="number" step="1" />
+					<button id="randomSeedBtn" class="secondary" title="Random seed">🎲</button>
+				</div>
+			</div>
+
+			<div class="control-group">
+				<label>Map size</label>
+				<div class="row">
+					<input id="widthInput" type="number" value="300" min="50" max="2000" />
+					<input id="heightInput" type="number" value="200" min="50" max="2000" />
+				</div>
+			</div>
+
+			<div class="control-group">
+				<label for="viewMode">View mode</label>
+				<select id="viewMode">
+					<option value="biome">Biomes</option>
+					<option value="altitude">Altitude</option>
+					<option value="temperature">Temperature</option>
+					<option value="humidity">Humidity</option>
+					<option value="fertility">Soil fertility</option>
+				</select>
+			</div>
+
+			<button id="generateBtn">Generate Map</button>
+
+			<hr class="divider" />
+
+			<div class="control-group">
+				<label>Plant Evolution</label>
+				<div class="row">
+					<button id="playPauseBtn">▶ Start</button>
+					<button id="stepBtn" class="secondary" title="Advance one tick">⏭ Step</button>
+				</div>
+			</div>
+
+			<div class="control-group">
+				<label for="speedInput">Speed — <span id="speedLabel">8 ticks/s</span></label>
+				<input id="speedInput" type="range" min="1" max="30" value="8" />
+			</div>
+
+			<div class="control-group row-check">
+				<label><input id="showPlants" type="checkbox" checked /> Show plants</label>
+				<label><input id="showAnimals" type="checkbox" checked /> Show herbivores</label>
+				<label><input id="showCarnivores" type="checkbox" checked /> Show carnivores</label>
+				<label><input id="showAquaticAnimals" type="checkbox" checked /> Show aquatic herbivores</label>
+				<label><input id="showAquaticCarnivores" type="checkbox" checked /> Show aquatic carnivores</label>
+			</div>
+
+			<div class="control-group stats">
+				<div><span>Tick</span><strong id="statTick">0</strong></div>
+				<div><span>Plants</span><strong id="statPlants">0</strong></div>
+				<div><span>Plant species</span><strong id="statSpecies">0</strong></div>
+				<div><span>Ever evolved</span><strong id="statSpeciesEver">0</strong></div>
+				<div><span>Herbivores</span><strong id="statAnimals">0</strong></div>
+				<div><span>Herbivore species</span><strong id="statAnimalSpecies">0</strong></div>
+				<div><span>Ever evolved</span><strong id="statAnimalSpeciesEver">0</strong></div>
+				<div><span>Carnivores</span><strong id="statCarnivores">0</strong></div>
+				<div><span>Carnivore species</span><strong id="statCarnivoreSpecies">0</strong></div>
+				<div><span>Ever evolved</span><strong id="statCarnivoreSpeciesEver">0</strong></div>
+				<div><span>Aquatic herbivores</span><strong id="statAquaticAnimals">0</strong></div>
+				<div><span>Species</span><strong id="statAquaticAnimalSpecies">0</strong></div>
+				<div><span>Ever evolved</span><strong id="statAquaticAnimalSpeciesEver">0</strong></div>
+				<div><span>Aquatic carnivores</span><strong id="statAquaticCarnivores">0</strong></div>
+				<div><span>Species</span><strong id="statAquaticCarnivoreSpecies">0</strong></div>
+				<div><span>Ever evolved</span><strong id="statAquaticCarnivoreSpeciesEver">0</strong></div>
+			</div>
+
+			<hr class="divider" />
+
+			<div class="control-group">
+				<label>Biome legend</label>
+				<div id="legend" class="legend"></div>
+			</div>
+		</aside>
+
+		<main class="map-area">
+			<div class="zoom-bar">
+				<button id="zoomOutBtn" class="secondary" title="Zoom out">−</button>
+				<span id="zoomLabel">100%</span>
+				<button id="zoomInBtn" class="secondary" title="Zoom in">+</button>
+				<button id="zoomResetBtn" class="secondary" title="Fit to view">Fit</button>
+				<span class="zoom-hint">Scroll to zoom · drag to pan</span>
+			</div>
+			<div class="map-viewport" id="mapViewport">
+				<canvas id="mapCanvas"></canvas>
+			</div>
+			<div id="tooltip"></div>
+		</main>
+
+		<aside class="species-panel">
+			<div class="panel-header">Plant Species</div>
+			<div id="speciesList" class="species-list"></div>
+
+			<hr class="divider" />
+
+			<div class="panel-header">Herbivore Species</div>
+			<div id="animalList" class="species-list"></div>
+
+			<hr class="divider" />
+
+			<div class="panel-header">Carnivore Species</div>
+			<div id="carnivoreList" class="species-list"></div>
+
+			<hr class="divider" />
+
+			<div class="panel-header">Aquatic Herbivore Species</div>
+			<div id="aquaticAnimalList" class="species-list"></div>
+
+			<hr class="divider" />
+
+			<div class="panel-header">Aquatic Carnivore Species</div>
+			<div id="aquaticCarnivoreList" class="species-list"></div>
+
+			<div id="speciesDetail" class="species-detail hidden">
+				<button id="closeDetailBtn" class="close-btn" title="Close">×</button>
+				<h3 id="detailName"></h3>
+				<div id="detailMeta" class="detail-meta"></div>
+				<canvas id="speciesChart" width="256" height="140"></canvas>
+				<div id="detailTraits" class="detail-traits"></div>
+			</div>
+
+			<hr class="divider" />
+
+			<div class="panel-header">
+				Notable Plants
+				<span class="panel-subhead">1000 / 5000 / 10000 peak pop.</span>
+			</div>
+			<div id="notableList" class="notable-list"></div>
+
+			<div class="panel-header">
+				Notable Herbivores
+				<span class="panel-subhead">100 / 250 / 500 peak pop.</span>
+			</div>
+			<div id="notableAnimalList" class="notable-list"></div>
+
+			<div class="panel-header">
+				Notable Carnivores
+				<span class="panel-subhead">25 / 50 / 100 peak pop.</span>
+			</div>
+			<div id="notableCarnivoreList" class="notable-list"></div>
+
+			<div class="panel-header">
+				Notable Aquatic Herbivores
+				<span class="panel-subhead">100 / 250 / 500 peak pop.</span>
+			</div>
+			<div id="notableAquaticAnimalList" class="notable-list"></div>
+
+			<div class="panel-header">
+				Notable Aquatic Carnivores
+				<span class="panel-subhead">25 / 50 / 100 peak pop.</span>
+			</div>
+			<div id="notableAquaticCarnivoreList" class="notable-list"></div>
+		</aside>
+	</div>
+
+	<script src="js/noise.js"></script>
+	<script src="js/biomes.js"></script>
+	<script src="js/mapGenerator.js"></script>
+	<script src="js/genetics.js"></script>
+	<script src="js/species.js"></script>
+	<script src="js/plantSystem.js"></script>
+	<script src="js/animalGenetics.js"></script>
+	<script src="js/animalSystem.js"></script>
+	<script src="js/renderer.js"></script>
+	<script src="js/chart.js"></script>
+	<script src="js/main.js"></script>
+</body>
+</html>

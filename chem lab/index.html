@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chemical Graph Constructor</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-theme="dark">
+<aside id="sidebar">
+  <div class="sidebar-head">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 27 9.5v13L16 29 5 22.5v-13z" fill="none" stroke="url(#brand-grad)" stroke-width="2.4" stroke-linejoin="round"/><circle cx="16" cy="16" r="3.2" fill="url(#brand-grad)"/><defs><linearGradient id="brand-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c8cf8"/><stop offset="1" stop-color="#4fd1e0"/></linearGradient></defs></svg>
+      <div>
+        <h1 class="app-title">Chemical Graph Constructor</h1>
+        <p class="app-subtitle">Organic skeletal structure editor</p>
+      </div>
+    </div>
+    <label class="search-box">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="m13.2 13.2 4 4"/></svg>
+      <input type="search" id="stamp-search" placeholder="Search stamps" autocomplete="off" spellcheck="false">
+      <kbd>/</kbd>
+    </label>
+  </div>
+  <section class="sidebar-section" data-section="elements">
+    <button type="button" class="section-toggle"><span>Elements</span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="m3 4.5 3 3 3-3"/></svg></button>
+    <div class="section-body">
+      <div id="element-buttons">
+        <button type="button" class="element-button selected" data-element="C" title="Carbon (C)">C<kbd>C</kbd></button>
+        <button type="button" class="element-button" data-element="N" title="Nitrogen (N)">N<kbd>N</kbd></button>
+        <button type="button" class="element-button" data-element="O" title="Oxygen (O)">O<kbd>O</kbd></button>
+        <button type="button" class="element-button" data-element="S" title="Sulfur (S)">S<kbd>S</kbd></button>
+        <button type="button" class="element-button" data-element="P" title="Phosphorus (P)">P<kbd>P</kbd></button>
+        <button type="button" class="element-button" data-element="F" title="Fluorine (F)">F<kbd>F</kbd></button>
+        <button type="button" class="element-button" data-element="Cl" title="Chlorine (L)">Cl<kbd>L</kbd></button>
+        <button type="button" class="element-button" data-element="Br" title="Bromine (B)">Br<kbd>B</kbd></button>
+        <button type="button" id="element-more" title="All elements: periodic table (Q)"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2" y="3" width="3" height="3" rx="0.6"/><rect x="15" y="3" width="3" height="3" rx="0.6"/><rect x="2" y="8" width="3" height="3" rx="0.6"/><rect x="6" y="8" width="3" height="3" rx="0.6"/><rect x="11" y="8" width="3" height="3" rx="0.6"/><rect x="15" y="8" width="3" height="3" rx="0.6"/><rect x="5" y="14" width="10" height="3" rx="0.6"/></svg><span id="element-more-label">More elements</span><kbd>Q</kbd></button>
+      </div>
+      <p class="section-hint">Hover an atom and press an element key to change it. Every other element, and deuterium, is in the periodic table.</p>
+    </div>
+  </section>
+  <section class="sidebar-section" data-section="recent" id="recent-section" hidden>
+    <button type="button" class="section-toggle"><span>Recent</span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="m3 4.5 3 3 3-3"/></svg></button>
+    <div class="section-body">
+      <div id="stamp-buttons-recent" class="stamp-grid"></div>
+      <p class="section-hint">Molecules you imported, exported, copied or cleared. Click to place again; right-click to forget.</p>
+    </div>
+  </section>
+  <section class="sidebar-section" data-section="carbocycles">
+    <button type="button" class="section-toggle"><span>Carbocycles</span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="m3 4.5 3 3 3-3"/></svg></button>
+    <div class="section-body">
+      <div id="stamp-buttons" class="stamp-grid">
+        <button type="button" class="stamp-button" data-stamp="cyclopropane" data-key="3">&#9651; Cyclopropane</button>
+        <button type="button" class="stamp-button" data-stamp="cyclobutane" data-key="4">&#9633; Cyclobutane</button>
+        <button type="button" class="stamp-button" data-stamp="cyclopentane" data-key="5">&#11040; Cyclopentane</button>
+        <button type="button" class="stamp-button" data-stamp="cyclohexane" data-key="6">&#11041; Cyclohexane</button>
+        <button type="button" class="stamp-button" data-stamp="benzene" data-key="&#8679;6">&#11041; Benzene</button>
+        <button type="button" class="stamp-button" data-stamp="cycloheptane" data-key="7">&#11040; Cycloheptane</button>
+        <button type="button" class="stamp-button" data-stamp="cyclooctane" data-key="8">&#11040; Cyclooctane</button>
+      </div>
+    </div>
+  </section>
+  <section class="sidebar-section" data-section="hetero">
+    <button type="button" class="section-toggle"><span>Aromatic heterocycles</span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="m3 4.5 3 3 3-3"/></svg></button>
+    <div class="section-body">
+      <div id="stamp-buttons-hetero" class="stamp-grid">
+        <button type="button" class="stamp-button" data-stamp="pyridine">&#11041; Pyridine</button>
+        <button type="button" class="stamp-button" data-stamp="furan">&#11040; Furan</button>
+        <button type="button" class="stamp-button" data-stamp="thiophene">&#11040; Thiophene</button>
+        <button type="button" class="stamp-button" data-stamp="pyrrole">&#11040; Pyrrole</button>
+        <button type="button" class="stamp-button" data-stamp="imidazole">&#11040; Imidazole</button>
+        <button type="button" class="stamp-button" data-stamp="pyrazole">&#11040; Pyrazole</button>
+        <button type="button" class="stamp-button" data-stamp="thiazole">&#11040; Thiazole</button>
+        <button type="button" class="stamp-button" data-stamp="oxazole">&#11040; Oxazole</button>
+      </div>
+    </div>
+  </section>
+  <section class="sidebar-section" data-section="saturated">
+    <button type="button" class="section-toggle"><span>Saturated heterocycles</span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="m3 4.5 3 3 3-3"/></svg></button>
+    <div class="section-body">
+      <div id="stamp-buttons-saturated" class="stamp-grid">
+        <button type="button" class="stamp-button" data-stamp="oxirane">&#9651; Oxirane</button>
+        <button type="button" class="stamp-button" data-stamp="aziridine">&#9651; Aziridine</button>
+        <button type="button" class="stamp-button" data-stamp="oxetane">&#9633; Oxetane</button>
+        <button type="button" class="stamp-button" data-stamp="oxane">&#11041; Oxane</button>
+        <button type="button" class="stamp-button" data-stamp="azetidine">&#9633; Azetidine</button>
+        <button type="button" class="stamp-button" data-stamp="pyrrolidine">&#11040; Pyrrolidine</button>
+        <button type="button" class="stamp-button" data-stamp="tetrahydrofuran">&#11040; Tetrahydrofuran</button>
+        <button type="button" class="stamp-button" data-stamp="tetrahydrothiophene">&#11040; Tetrahydrothiophene</button>
+        <button type="button" class="stamp-button" data-stamp="piperidine">&#11041; Piperidine</button>
+        <button type="button" class="stamp-button" data-stamp="morpholine">&#11041; Morpholine</button>
+        <button type="button" class="stamp-button" data-stamp="piperazine">&#11041; Piperazine</button>
+        <button type="button" class="stamp-button" data-stamp="thiomorpholine">&#11041; Thiomorpholine</button>
+        <button type="button" class="stamp-button" data-stamp="azepane">&#11040; Azepane</button>
+      </div>
+    </div>
+  </section>
+  <section class="sidebar-section" data-section="fused">
+    <button type="button" class="section-toggle"><span>Fused scaffolds</span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="m3 4.5 3 3 3-3"/></svg></button>
+    <div class="section-body">
+      <div id="stamp-buttons-fused" class="stamp-grid">
+        <button type="button" class="stamp-button" data-stamp="naphthalene">&#11041; Naphthalene</button>
+        <button type="button" class="stamp-button" data-stamp="tetralin">&#11041; Tetralin</button>
+        <button type="button" class="stamp-button" data-stamp="indole">&#11040; Indole</button>
+        <button type="button" class="stamp-button" data-stamp="benzofuran">&#11040; Benzofuran</button>
+        <button type="button" class="stamp-button" data-stamp="quinoline">&#11041; Quinoline</button>
+        <button type="button" class="stamp-button" data-stamp="isoquinoline">&#11041; Isoquinoline</button>
+        <button type="button" class="stamp-button" data-stamp="tryptoline">&#11040; Tetrahydro-&beta;-carboline</button>
+        <button type="button" class="stamp-button" data-stamp="noraporphine">&#11041; Noraporphine</button>
+        <button type="button" class="stamp-button" data-stamp="ergoline">&#11040; Ergoline</button>
+      </div>
+    </div>
+  </section>
+  <section class="sidebar-section" data-section="abbreviations">
+    <button type="button" class="section-toggle"><span>Abbreviations</span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="m3 4.5 3 3 3-3"/></svg></button>
+    <div class="section-body">
+      <div id="stamp-buttons-abbr" class="stamp-grid abbr-grid">
+        <button type="button" class="stamp-button abbr-button" data-stamp="abbr:Me" title="Abbreviation Me &mdash; drag from an atom to attach, click empty canvas to place">Me</button>
+        <button type="button" class="stamp-button abbr-button" data-stamp="abbr:Et" title="Abbreviation Et &mdash; drag from an atom to attach, click empty canvas to place">Et</button>
+        <button type="button" class="stamp-button abbr-button" data-stamp="abbr:iPr" title="Abbreviation iPr &mdash; drag from an atom to attach, click empty canvas to place">iPr</button>
+        <button type="button" class="stamp-button abbr-button" data-stamp="abbr:tBu" title="Abbreviation tBu &mdash; drag from an atom to attach, click empty canvas to place">tBu</button>
+        <button type="button" class="stamp-button abbr-button" data-stamp="abbr:Ph" title="Abbreviation Ph &mdash; drag from an atom to attach, click empty canvas to place">Ph</button>
+        <button type="button" class="stamp-button abbr-button" data-stamp="abbr:Bn" title="Abbreviation Bn &mdash; drag from an atom to attach, click empty canvas to place">Bn</button>
+        <button type="button" class="stamp-button abbr-button" data-stamp="abbr:Ac" title="Abbreviation Ac &mdash; drag from an atom to attach, click empty canvas to place">Ac</button>
+        <button type="button" class="stamp-button abbr-button" data-stamp="abbr:Boc" title="Abbreviation Boc &mdash; drag from an atom to attach, click empty canvas to place">Boc</button>
+        <button type="button" class="stamp-button abbr-button" data-stamp="abbr:Cbz" title="Abbreviation Cbz &mdash; drag from an atom to attach, click empty canvas to place">Cbz</button>
+        <button type="button" class="stamp-button abbr-button" data-stamp="abbr:TMS" title="Abbreviation TMS &mdash; drag from an atom to attach, click empty canvas to place">TMS</button>
+        <button type="button" class="stamp-button abbr-button" data-stamp="abbr:TBS" title="Abbreviation TBS &mdash; drag from an atom to attach, click empty canvas to place">TBS</button>
+        <button type="button" class="stamp-button abbr-button" data-stamp="abbr:OMe" title="Abbreviation OMe &mdash; drag from an atom to attach, click empty canvas to place">OMe</button>
+        <button type="button" class="stamp-button abbr-button" data-stamp="abbr:OAc" title="Abbreviation OAc &mdash; drag from an atom to attach, click empty canvas to place">OAc</button>
+        <button type="button" class="stamp-button abbr-button" data-stamp="abbr:OTs" title="Abbreviation OTs &mdash; drag from an atom to attach, click empty canvas to place">OTs</button>
+        <button type="button" class="stamp-button abbr-button" data-stamp="abbr:OMs" title="Abbreviation OMs &mdash; drag from an atom to attach, click empty canvas to place">OMs</button>
+        <button type="button" class="stamp-button abbr-button" data-stamp="abbr:CF3" title="Abbreviation CF3 &mdash; drag from an atom to attach, click empty canvas to place">CF<sub>3</sub></button>
+        <button type="button" class="stamp-button abbr-button" data-stamp="abbr:CO2Me" title="Abbreviation CO2Me &mdash; drag from an atom to attach, click empty canvas to place">CO<sub>2</sub>Me</button>
+        <button type="button" class="stamp-button abbr-button" data-stamp="abbr:CN" title="Abbreviation CN &mdash; drag from an atom to attach, click empty canvas to place">CN</button>
+        <button type="button" class="stamp-button abbr-button" data-stamp="abbr:NO2" title="Abbreviation NO2 &mdash; drag from an atom to attach, click empty canvas to place">NO<sub>2</sub></button>
+      </div>
+      <p class="section-hint">Shown as a label, named and exported as the full group. Right-click a label to expand it, or a substituent to collapse it.</p>
+    </div>
+  </section>
+  <section class="sidebar-section" data-section="saved" id="saved-section" hidden>
+    <button type="button" class="section-toggle"><span>Saved stamps</span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="m3 4.5 3 3 3-3"/></svg></button>
+    <div class="section-body">
+      <div id="stamp-buttons-saved" class="stamp-grid"></div>
+      <p class="section-hint">Middle-click a molecule to save it. Right-click a saved stamp to remove it.</p>
+    </div>
+  </section>
+  <p id="search-empty" class="section-hint" hidden>No stamps match.</p>
+  <div class="sidebar-foot">
+    <button type="button" class="link-button" id="help-button-side">Keyboard shortcuts &amp; gestures <kbd>?</kbd></button>
+  </div>
+</aside>
+<main id="workspace">
+  <nav id="view-tabs" role="tablist" aria-label="View">
+    <button type="button" role="tab" class="view-tab selected" data-view="editor" aria-selected="true">Editor</button>
+    <button type="button" role="tab" class="view-tab" data-view="reactions" aria-selected="false">Reactions</button>
+  </nav>
+  <header id="toolbar">
+    <div class="tool-group segmented" role="group" aria-label="Tool">
+      <button type="button" class="tool-button selected" data-tool="draw" title="Draw (Esc)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 16 16 4"/><circle cx="4" cy="16" r="1.8"/><circle cx="16" cy="4" r="1.8"/></svg><span>Draw</span></button>
+      <button type="button" class="tool-button" data-tool="select" title="Select (V) &mdash; drag a box, Shift adds, double-click selects a molecule"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3.5 15 9.2l-4.6 1.3-2.3 4.4z"/><path d="M3 3h1M3 3v1M17 17h-1M17 17v-1" stroke-dasharray="1 2"/></svg><span>Select</span></button>
+      <button type="button" class="tool-button" data-tool="move" title="Move molecules (M) &mdash; Shift-drag moves a single atom"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v16M2 10h16M10 2 7.5 4.5M10 2l2.5 2.5M10 18l-2.5-2.5M10 18l2.5-2.5M2 10l2.5-2.5M2 10l2.5 2.5M18 10l-2.5-2.5M18 10l-2.5 2.5"/></svg><span>Move</span></button>
+      <button type="button" class="tool-button" data-tool="erase" title="Erase (E) &mdash; click or drag over atoms and bonds"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m8 17-4.5-4.5a1.5 1.5 0 0 1 0-2.1L11 3a1.5 1.5 0 0 1 2.1 0l4 4a1.5 1.5 0 0 1 0 2.1L9 17zM8 17h9M6.5 8.5l5 5"/></svg><span>Erase</span></button>
+      <button type="button" class="tool-button" data-tool="arrow" title="Reaction arrow (A) &mdash; drag to draw, click an arrow to change its style"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 10h13M12 6.5l3.8 3.5-3.8 3.5"/></svg><span>Arrow</span></button>
+      <button type="button" class="tool-button" data-tool="curly" title="Curly arrow (U) &mdash; drag from an atom or bond to show electron movement; click an arrow to switch two-electron / fishhook"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 15C4 7 12 4.5 15.5 9.5"/><path d="m16.2 5.6-.7 3.9-3.8-1"/></svg><span>Curly</span></button>
+      <button type="button" class="tool-button" data-tool="text" title="Text label (T) &mdash; click to add, click a label to edit"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5V3.5h12V5M10 3.5v13M7.5 16.5h5"/></svg><span>Text</span></button>
+      <button type="button" class="tool-button" data-tool="plus" title="Plus sign (G) &mdash; click to place a + in a reaction scheme"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg><span>Plus</span></button>
+    </div>
+    <div class="tool-group">
+      <button type="button" class="icon-button" id="undo-button" title="Undo (Ctrl+Z)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 5 3 9l4 4"/><path d="M3 9h9a5 5 0 0 1 0 10h-2"/></svg></button>
+      <button type="button" class="icon-button" id="redo-button" title="Redo (Ctrl+Shift+Z)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m13 5 4 4-4 4"/><path d="M17 9H8a5 5 0 0 0 0 10h2"/></svg></button>
+    </div>
+    <div class="tool-group">
+      <button type="button" class="icon-button" id="zoom-out-button" title="Zoom out (-)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10h10"/></svg></button>
+      <button type="button" class="zoom-readout" id="zoom-reset-button" title="Reset zoom to 100%">100%</button>
+      <button type="button" class="icon-button" id="zoom-in-button" title="Zoom in (+)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10h10M10 5v10"/></svg></button>
+      <button type="button" class="icon-button" id="fit-button" title="Fit to content (0)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4"/></svg></button>
+      <button type="button" class="icon-button" id="cleanup-button" title="Clean up structure layout (K)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3.5 15.6 6.8v6.4L10 16.5l-5.6-3.3V6.8z"/><path d="M15.5 2v3M14 3.5h3M3.5 15v3M2 16.5h3"/></svg></button>
+    </div>
+    <div id="current-chip" title="Current drawing selection"><span class="chip-swatch"></span><span id="current-label">Carbon</span></div>
+    <div class="toolbar-spacer"></div>
+    <div class="tool-group">
+      <button type="button" class="text-button" id="import-button" title="Import a structure from a SMILES string or a name (Ctrl+V pastes SMILES directly)">Import</button>
+      <button type="button" class="text-button" id="smiles-button" title="Copy SMILES of everything on the canvas">Copy SMILES</button>
+      <button type="button" class="text-button" id="info-button" title="Open the properties panel for the hovered or largest molecule">Properties</button>
+    </div>
+    <div class="tool-group">
+      <button type="button" class="icon-button" id="open-button" title="Open a drawing, MOL or SDF file (Ctrl+O)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6.5V15a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 17 15V8a1.5 1.5 0 0 0-1.5-1.5H10L8.5 4.5h-4A1.5 1.5 0 0 0 3 6z"/></svg></button>
+      <button type="button" class="icon-button" id="save-button" title="Save drawing as a file (Ctrl+S)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v10M6 9l4 4 4-4M4 16h12"/></svg></button>
+      <button type="button" class="icon-button" id="export-button" title="Export PNG image"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="12" rx="1.5"/><circle cx="7.5" cy="8.5" r="1.3"/><path d="m4 15 4.5-4.5 3 3 2-2L17 15"/></svg></button>
+      <button type="button" class="icon-button" id="export-svg-button" title="Export SVG vector image"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 15 C6 5 14 15 16 5"/><rect x="2.5" y="13.5" width="3" height="3"/><rect x="14.5" y="3.5" width="3" height="3"/></svg></button>
+      <input type="file" id="open-input" accept=".json,.mol,.sdf,.sd,application/json,chemical/x-mdl-molfile,chemical/x-mdl-sdfile" hidden>
+    </div>
+    <div class="tool-group">
+      <button type="button" class="icon-button" id="locants-button" title="Show IUPAC locant numbers (#)" aria-pressed="false"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M8 3 6 17M14 3l-2 14M3.5 7.5h13M3 12.5h13"/></svg></button>
+      <button type="button" class="icon-button" id="theme-button" title="Toggle light / dark theme"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16 12.5A6.5 6.5 0 0 1 7.5 4 6.5 6.5 0 1 0 16 12.5z"/></svg></button>
+      <button type="button" class="icon-button" id="help-button" title="Shortcuts (?)"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M7.8 7.8a2.3 2.3 0 1 1 3.2 2.1c-.6.3-1 .8-1 1.5v.4"/><circle cx="10" cy="14.4" r=".6"/></svg></button>
+      <button type="button" class="icon-button danger" id="clear-button" title="Clear canvas (undoable)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M8 6V4h4v2M6 6l.8 10h6.4L14 6"/></svg></button>
+    </div>
+  </header>
+  <div id="canvas-wrapper">
+    <canvas id="editor-canvas"></canvas>
+    <textarea id="annotation-editor" rows="1" spellcheck="false" aria-label="Label text" hidden></textarea>
+    <div id="toast-stack" aria-live="polite"></div>
+  </div>
+  <footer id="statusbar">
+    <span id="status-counts">Empty canvas</span>
+    <span id="status-formula"></span>
+    <span id="status-mass"></span>
+    <button id="status-valence" type="button" hidden></button>
+    <span id="status-hover" class="status-grow"></span>
+    <span id="status-tool"></span>
+  </footer>
+  <section id="reaction-view" hidden>
+    <div class="rx-banner">
+      <div class="rx-banner-scheme">
+        <div class="rx-banner-head">
+          <h2>Reaction scheme</h2>
+          <span class="rx-banner-note">Predicted from textbook rules &middot; check against the literature</span>
+        </div>
+        <canvas id="rx-preview"></canvas>
+      </div>
+      <div class="rx-banner-side">
+        <div id="rx-summary"></div>
+        <div class="rx-actions">
+          <button type="button" class="text-button" id="rx-reset">Clear</button>
+          <button type="button" class="text-button primary" id="rx-send" title="Draw this scheme on the editor canvas">Send to editor</button>
+        </div>
+      </div>
+    </div>
+    <div class="rx-column rx-compounds">
+      <h2>Compounds</h2>
+      <div class="rx-input-row">
+        <input type="text" id="rx-input" placeholder="SMILES or name, e.g. CC=C or ethanol" spellcheck="false" autocomplete="off" aria-label="Compound SMILES or name">
+        <button type="button" class="text-button primary" id="rx-add">Add</button>
+      </div>
+      <div class="rx-input-row">
+        <div id="rx-message"></div>
+        <button type="button" class="text-button" id="rx-online" hidden>Search PubChem</button>
+      </div>
+      <button type="button" class="text-button" id="rx-from-editor" title="Add the selected molecules, or everything on the editor canvas">Add from editor</button>
+      <div id="rx-cards"></div>
+      <div id="rx-empty" class="rx-muted">No compounds yet. Add reactants, reagents, catalysts or solvents by SMILES or name; roles are guessed and can be changed on each card.</div>
+      <div class="rx-sheet-block" id="rx-sheet-block" hidden>
+        <div class="rx-sheet-head">
+          <span class="rx-label">Stoichiometry</span>
+          <label for="rx-scale">Scale</label>
+          <input type="number" id="rx-scale" min="0.001" max="100000" step="0.1" aria-label="Scale in mmol per equivalent">
+          <span class="rx-unit">mmol</span>
+        </div>
+        <table id="rx-sheet" class="rx-sheet"></table>
+      </div>
+    </div>
+    <div class="rx-column rx-conditions">
+      <h2>Conditions</h2>
+      <div class="rx-field">
+        <label for="rx-temp">Temperature</label>
+        <div class="rx-temp-row">
+          <input type="range" id="rx-temp" step="1">
+          <input type="number" id="rx-temp-value" step="1" aria-label="Temperature in degrees Celsius">
+          <span class="rx-unit">&deg;C</span>
+        </div>
+        <div class="rx-chip-row" id="rx-temp-presets"></div>
+      </div>
+      <div class="rx-field">
+        <label for="rx-solvent-search">Solvent</label>
+        <div class="rx-chip-row" id="rx-solvent-chosen"></div>
+        <input type="text" id="rx-solvent-search" placeholder="Search solvents" spellcheck="false" autocomplete="off">
+        <div id="rx-solvent-list"></div>
+      </div>
+      <div class="rx-field">
+        <span class="rx-label">Catalysts &amp; additives</span>
+        <div id="rx-additives"></div>
+      </div>
+      <div class="rx-field rx-inline">
+        <label for="rx-atmosphere">Atmosphere</label>
+        <select id="rx-atmosphere"></select>
+        <label for="rx-pressure">Pressure</label>
+        <input type="number" id="rx-pressure" min="0.1" max="500" step="0.1">
+        <span class="rx-unit">atm</span>
+      </div>
+      <div class="rx-field">
+        <span class="rx-label">Energy source</span>
+        <div class="rx-chip-row" id="rx-energy"></div>
+      </div>
+      <details class="rx-field" id="rx-advanced">
+        <summary>Advanced</summary>
+        <div class="rx-inline">
+          <label for="rx-time">Time</label>
+          <input type="text" id="rx-time" placeholder="e.g. 2 h" maxlength="40">
+          <label for="rx-conc">Concentration</label>
+          <input type="text" id="rx-conc" placeholder="e.g. 0.5 M" maxlength="40">
+        </div>
+        <label for="rx-notes">Notes</label>
+        <input type="text" id="rx-notes" placeholder="Work-up, order of addition&hellip;" maxlength="200">
+      </details>
+    </div>
+    <div class="rx-column rx-result">
+      <h2>Outcome</h2>
+      <div id="rx-route" hidden></div>
+      <div id="rx-prediction"></div>
+    </div>
+  </section>
+</main>
+<aside id="info-panel" hidden>
+  <div class="panel-head">
+    <span class="toolbar-label">Molecule properties</span>
+    <button type="button" id="info-close" aria-label="Close" title="Close (Esc)">&times;</button>
+  </div>
+  <div id="info-body"></div>
+</aside>
+<div id="context-menu" role="menu" hidden></div>
+<div id="import-overlay" class="modal-overlay" hidden>
+  <div class="modal-dialog import-dialog" role="dialog" aria-modal="true" aria-labelledby="import-title">
+    <div class="help-head">
+      <h2 id="import-title">Import SMILES or name</h2>
+      <button type="button" id="import-close" aria-label="Close">&times;</button>
+    </div>
+    <input type="text" id="import-input" spellcheck="false" autocomplete="off" placeholder="SMILES or a name, e.g. CC(=O)Oc1ccccc1C(=O)O or butan-2-ol">
+    <div id="import-preview"><canvas id="import-canvas"></canvas><div id="import-message"></div></div>
+    <div class="import-examples">
+      <span>Try:</span>
+      <button type="button" class="link-button" data-smiles="CC(=O)Oc1ccccc1C(=O)O">aspirin</button>
+      <button type="button" class="link-button" data-smiles="CN1C=NC2=C1C(=O)N(C(=O)N2C)C">caffeine</button>
+      <button type="button" class="link-button" data-smiles="C[C@@H](C(=O)O)N">L-alanine</button>
+      <button type="button" class="link-button" data-smiles="C/C=C/C(=O)O">crotonic acid</button>
+      <button type="button" class="link-button" data-smiles="[NH3+]CC(=O)[O-]">glycine zwitterion</button>
+      <button type="button" class="link-button" data-smiles="4-chloro-2-methylphenol">4-chloro-2-methylphenol</button>
+    </div>
+    <div class="import-actions">
+      <button type="button" class="text-button" id="import-online" hidden title="Send this name to PubChem to look up its structure">Search PubChem</button>
+      <button type="button" class="text-button" id="import-cancel">Cancel</button>
+      <button type="button" class="text-button primary" id="import-insert" disabled>Insert <kbd>Enter</kbd></button>
+    </div>
+  </div>
+</div>
+<div id="ptable-overlay" class="modal-overlay" hidden>
+  <div class="modal-dialog ptable-dialog" role="dialog" aria-modal="true" aria-labelledby="ptable-title">
+    <div class="help-head">
+      <h2 id="ptable-title">Periodic table</h2>
+      <label class="ptable-search">
+        <input type="search" id="ptable-search" placeholder="Symbol, name or number" autocomplete="off" spellcheck="false">
+      </label>
+      <button type="button" id="ptable-close" aria-label="Close" title="Close (Esc)">&times;</button>
+    </div>
+    <div id="ptable-grid"></div>
+    <div id="ptable-info"></div>
+    <div id="ptable-legend"></div>
+  </div>
+</div>
+<div id="help-overlay" hidden>
+  <div class="help-dialog" role="dialog" aria-modal="true" aria-labelledby="help-title">
+    <div class="help-head">
+      <h2 id="help-title">Shortcuts &amp; gestures</h2>
+      <button type="button" id="help-close" aria-label="Close">&times;</button>
+    </div>
+    <div class="help-grid">
+      <div>
+        <h3>Drawing</h3>
+        <dl>
+          <dt>Click canvas</dt><dd>Place atom or stamp</dd>
+          <dt>Click near an atom</dt><dd>Grow a bond (ghost preview)</dd>
+          <dt>Drag from atom</dt><dd>Draw bond / attach stamp</dd>
+          <dt>Click bond</dt><dd>Cycle single &rarr; double &rarr; triple &rarr; wedge &rarr; hash</dd>
+          <dt>Right-click</dt><dd>Context menu for atom, bond, molecule or canvas</dd>
+          <dt>Shift+right-click</dt><dd>Quick-delete atom or bond</dd>
+          <dt>Shift-drag atom</dt><dd>Move just that atom</dd>
+        </dl>
+        <h3>Hover an atom</h3>
+        <dl>
+          <dt><kbd>C</kbd> <kbd>N</kbd> <kbd>O</kbd> <kbd>S</kbd> <kbd>P</kbd> <kbd>D</kbd> <kbd>F</kbd> <kbd>L</kbd> <kbd>B</kbd> <kbd>I</kbd></dt><dd>Change element (L = Cl, B = Br)</dd>
+          <dt><kbd>Q</kbd></dt><dd>Pick any element from the periodic table</dd>
+          <dt><kbd>+</kbd> <kbd>-</kbd></dt><dd>Raise / lower formal charge</dd>
+          <dt><kbd>Del</kbd></dt><dd>Delete it</dd>
+        </dl>
+        <h3>Hover a bond</h3>
+        <dl>
+          <dt><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></dt><dd>Single / double / triple</dd>
+          <dt><kbd>W</kbd> <kbd>H</kbd></dt><dd>Wedge / hash (again to flip direction)</dd>
+          <dt><kbd>Del</kbd></dt><dd>Delete it</dd>
+        </dl>
+      </div>
+      <div>
+        <h3>Tools &amp; stamps</h3>
+        <dl>
+          <dt><kbd>Esc</kbd></dt><dd>Clear selection, drop stamp, draw tool, close panels</dd>
+          <dt><kbd>V</kbd> / <kbd>M</kbd> / <kbd>E</kbd></dt><dd>Select / move / erase tool</dd>
+          <dt><kbd>A</kbd> / <kbd>U</kbd> / <kbd>T</kbd></dt><dd>Reaction arrow / curly arrow / text label tool</dd>
+          <dt>Arrow tool</dt><dd>Drag to draw (Shift = free angle); click an arrow to cycle forward &rarr; equilibrium &rarr; resonance &rarr; retrosynthetic</dd>
+          <dt>Curly tool</dt><dd>Drag from an atom or bond to where the electrons go; ends snap to atoms and bond midpoints. Click an arrow to switch two-electron &harr; fishhook; right-click to flip the curve</dd>
+          <dt>Text tool</dt><dd>Click to add a label; Enter finishes, Shift+Enter adds a line; double-click a label to edit</dd>
+          <dt>Element key (no hover)</dt><dd>Pick element to draw with</dd>
+          <dt><kbd>Q</kbd> (no hover)</dt><dd>Periodic table: click an element, or type and press Enter</dd>
+          <dt><kbd>3</kbd>&ndash;<kbd>8</kbd></dt><dd>Cycloalkane stamp</dd>
+          <dt><kbd>Shift</kbd>+<kbd>6</kbd></dt><dd>Benzene stamp</dd>
+          <dt><kbd>/</kbd></dt><dd>Search stamps</dd>
+        </dl>
+        <h3>View</h3>
+        <dl>
+          <dt>Scroll wheel</dt><dd>Zoom at cursor</dd>
+          <dt>Drag empty canvas</dt><dd>Pan (also Space-drag, middle-drag)</dd>
+          <dt><kbd>+</kbd> <kbd>-</kbd> <kbd>0</kbd></dt><dd>Zoom in / out / fit (off an atom)</dd>
+          <dt>Pinch / two fingers</dt><dd>Zoom / pan on a touch screen or trackpad; long-press opens the context menu</dd>
+          <dt><kbd>#</kbd></dt><dd>Show / hide IUPAC locant numbers on the parent chain or ring</dd>
+        </dl>
+        <h3>Molecule names</h3>
+        <dl>
+          <dt>Click name</dt><dd>Copy it</dd>
+          <dt>Right-click name</dt><dd>Menu with properties, copy, transform</dd>
+          <dt>Middle-click molecule</dt><dd>Save as a stamp</dd>
+        </dl>
+        <h3>File</h3>
+        <dl>
+          <dt><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd></dt><dd>Undo / redo</dd>
+          <dt><kbd>Ctrl</kbd>+<kbd>S</kbd> / <kbd>Ctrl</kbd>+<kbd>O</kbd></dt><dd>Save / open drawing</dd>
+          <dt>Autosave</dt><dd>Your drawing is restored on reload</dd>
+        </dl>
+      </div>
+      <div>
+        <h3>Selecting</h3>
+        <dl>
+          <dt>Select tool drag</dt><dd>Box-select atoms</dd>
+          <dt>Shift-drag empty</dt><dd>Box-select from any tool (adds)</dd>
+          <dt>Double-click</dt><dd>Select a whole molecule</dd>
+          <dt>Drag selection</dt><dd>Move it (Select or Move tool)</dd>
+          <dt><kbd>Ctrl</kbd>+<kbd>A</kbd></dt><dd>Select all</dd>
+        </dl>
+        <h3>Editing</h3>
+        <dl>
+          <dt><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>X</kbd> / <kbd>V</kbd></dt><dd>Copy / cut / paste at cursor</dd>
+          <dt><kbd>Ctrl</kbd>+<kbd>D</kbd></dt><dd>Duplicate</dd>
+          <dt><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd></dt><dd>Copy SMILES of the canvas</dd>
+          <dt><kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&rarr;</kbd><kbd>&darr;</kbd></dt><dd>Nudge (Shift = further)</dd>
+          <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Rotate 15&deg;</dd>
+          <dt><kbd>{</kbd> <kbd>}</kbd></dt><dd>Rotate 90&deg;</dd>
+          <dt><kbd>X</kbd> / <kbd>Y</kbd></dt><dd>Flip horizontal / vertical</dd>
+          <dt><kbd>Del</kbd></dt><dd>Delete selection</dd>
+          <dt><kbd>K</kbd></dt><dd>Clean up layout</dd>
+          <dt>Drop onto atoms</dt><dd>Merge overlapping atoms (hold <kbd>Alt</kbd> to skip)</dd>
+          <dt>Paste SMILES</dt><dd><kbd>Ctrl</kbd>+<kbd>V</kbd> imports it at the cursor</dd>
+        </dl>
+        <p class="help-note">Editing keys act on the selection, or on the hovered molecule when nothing is selected.</p>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/elements.js"></script>
+<script src="js/graph.js"></script>
+<script src="js/valence.js"></script>
+<script src="js/stereo.js"></script>
+<script src="js/colors.js"></script>
+<script src="js/naming-core.js"></script>
+<script src="js/naming-chain.js"></script>
+<script src="js/naming-ring.js"></script>
+<script src="js/naming-scaffolds.js"></script>
+<script src="js/naming-general.js"></script>
+<script src="js/common-names-extra.js"></script>
+<script src="js/naming-elements.js"></script>
+<script src="js/properties.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/smiles.js"></script>
+<script src="js/name-lookup.js"></script>
+<script src="js/pubchem.js"></script>
+<script src="js/molfile.js"></script>
+<script src="js/scheme.js"></script>
+<script src="js/history.js"></script>
+<script src="js/svg-context.js"></script>
+<script src="js/renderer.js"></script>
+<script src="js/interactions.js"></script>
+<script src="js/stamps.js"></script>
+<script src="js/abbreviations.js"></script>
+<script src="js/recent.js"></script>
+<script src="js/reactions.js"></script>
+<script src="js/reaction-stereo.js"></script>
+<script src="js/reaction-rules.js"></script>
+<script src="js/reaction-rules-extra.js"></script>
+<script src="js/reaction-rules-extra2.js"></script>
+<script src="js/reaction-aromatic.js"></script>
+<script src="js/reaction-lab.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
