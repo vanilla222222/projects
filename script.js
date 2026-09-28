@@ -1,11 +1,11 @@
 // Each project folder in this directory that contains an index.html.
 // icon: one of the keys in ICONS below. accent: the card's highlight color.
 const PROJECTS = [
-    { folder: "cellular automata", name: "Automaton", tag: "Simulation", description: "Configurable cellular life. Tweak the rules and watch patterns emerge.", icon: "cells", accent: "#5ec4d3" },
-    { folder: "chem lab", name: "Chemical Graph Constructor", tag: "Tool", description: "Build molecules atom by atom and explore their structure.", icon: "molecule", accent: "#8e98d8" },
-    { folder: "Evolution Sim", name: "Evolution Sim", tag: "Simulation", description: "Procedural world maps with biomes from altitude, temperature and humidity.", icon: "globe", accent: "#7fd8a0" },
-    { folder: "mule run", name: "Mule Run", tag: "Game", description: "One stubborn mule. One endless canyon. Zero shortcuts.", icon: "run", accent: "#e3a45f" },
-    { folder: "pony roguelike", name: "Nightfall Charge", tag: "Game", description: "A bat pony's stand against the night. A roguelike.", icon: "moon", accent: "#c08cf0" },
+    { folder: "cellular automata", name: "Automaton", tag: "Simulation", description: "Configurable cellular life. Tweak the rules and watch patterns emerge.", icon: "cells", accent: "#4f9a8a" },
+    { folder: "chem lab", name: "Chemical Graph Constructor", tag: "Tool", description: "Build molecules atom by atom and explore their structure.", icon: "molecule", accent: "#8a6fb8" },
+    { folder: "Evolution Sim", name: "Evolution Sim", tag: "Simulation", description: "Procedural world maps with biomes from altitude, temperature and humidity.", icon: "globe", accent: "#6f9a4f" },
+    { folder: "mule run", name: "Mule Run", tag: "Game", description: "One stubborn mule. One endless canyon. Zero shortcuts.", icon: "run", accent: "#c4782a" },
+    { folder: "pony roguelike", name: "Nightfall Charge", tag: "Game", description: "A bat pony's stand against the night. A roguelike.", icon: "moon", accent: "#a0679e" },
 ];
 
 const ICONS = {
