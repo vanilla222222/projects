@@ -1,4 +1,4 @@
-const RETRO_LIMITS = { maxDepth: 3, budgetMs: 1500, maxHeavy: 60, maxPerTransform: 4, maxCandidates: 30, maxGrignardCarbons: 12 };
+const RETRO_LIMITS = { maxDepth: 3, budgetMs: 1500, maxHeavy: 60, maxPerTransform: 4, maxCandidates: 30, maxGrignardCarbons: 12, protectingGroupPenalty: 2, fgiPenalty: 1, maxProtectTries: 3 };
 
 const RETRO_REAGENTS = {
   water: { smiles: 'O', role: 'solvent', label: 'H2O' },
@@ -20,13 +20,26 @@ const RETRO_REAGENTS = {
   bromine: { smiles: 'BrBr', role: 'reagent', label: 'Br2' },
   chlorine: { smiles: 'ClCl', role: 'reagent', label: 'Cl2' },
   cyanoborohydride: { smiles: '[Na+].[BH3-]C#N', role: 'reagent', label: 'NaBH3CN' },
+  boc2o: { smiles: 'CC(C)(C)OC(=O)OC(=O)OC(C)(C)C', role: 'reagent', label: 'Boc2O' },
+  cbzcl: { smiles: 'O=C(Cl)OCc1ccccc1', role: 'reagent', label: 'CbzCl' },
+  fmoccl: { smiles: 'O=C(Cl)OCC1c2ccccc2-c2ccccc21', role: 'reagent', label: 'Fmoc-Cl' },
+  tbscl: { smiles: 'CC(C)(C)[Si](C)(C)Cl', role: 'reagent', label: 'TBSCl' },
+  tbdpscl: { smiles: 'CC(C)(C)[Si](Cl)(c1ccccc1)c1ccccc1', role: 'reagent', label: 'TBDPSCl' },
+  tipscl: { smiles: 'CC(C)[Si](Cl)(C(C)C)C(C)C', role: 'reagent', label: 'TIPSCl' },
+  bnbr: { smiles: 'BrCc1ccccc1', role: 'reagent', label: 'BnBr' },
+  pmbcl: { smiles: 'COc1ccc(CCl)cc1', role: 'reagent', label: 'PMBCl' },
+  tfa: { smiles: 'OC(=O)C(F)(F)F', role: 'reagent', label: 'TFA' },
+  tbaf: { smiles: 'CCCC[N+](CCCC)(CCCC)CCCC.[F-]', role: 'reagent', label: 'TBAF' },
+  isobutylene: { smiles: 'C=C(C)C', role: 'reagent', label: 'isobutylene' },
+  ethyleneGlycol: { smiles: 'OCCO', role: 'reactant', label: 'ethylene glycol' },
+  propanediol: { smiles: 'OCCCO', role: 'reactant', label: '1,3-propanediol' },
 };
 
 function retroIds(g) {
   return g.atoms.map((a) => a.id);
 }
 
-function retroClone(graph, ids) {
+function retroClone(graph, ids, out) {
   const keep = new Set((ids || retroIds(graph)).filter((id) => {
     const a = graph.getAtom(id);
     return a && a.element !== 'H';
@@ -48,18 +61,33 @@ function retroClone(graph, ids) {
       const bond = g.addBond(map.get(b.atomA), map.get(b.atomB));
       if (bond) {
         bond.order = b.order;
+        if (b.stereo) {
+          bond.stereo = b.stereo;
+        }
       }
     }
   });
+  if (out) {
+    out.map = map;
+  }
   return g;
 }
 
-function retroCanonical(g, ids) {
+function retroProps(g, ids) {
   try {
-    return computeProperties(g, ids || retroIds(g)).smiles || '';
+    const props = computeProperties(g, ids || retroIds(g));
+    return { smiles: props.smiles || '', isomericSmiles: props.isomericSmiles || props.smiles || '' };
   } catch (error) {
-    return '';
+    return { smiles: '', isomericSmiles: '' };
   }
+}
+
+function retroCanonical(g, ids) {
+  return retroProps(g, ids).smiles;
+}
+
+function retroHeavyKey(g, ids) {
+  return (ids || retroIds(g)).map((id) => g.getAtom(id).element).filter((e) => e !== 'H').sort().join(',');
 }
 
 function retroFromSmiles(smiles) {
@@ -114,6 +142,17 @@ function retroCut(g, a, b) {
     return false;
   }
   g.removeBond(bond.id);
+  (g.retroCuts = g.retroCuts || []).push([a, b]);
+  return true;
+}
+
+function retroBreak(g, a, b) {
+  const bond = g.getBond(a, b);
+  if (!bond) {
+    return false;
+  }
+  g.removeBond(bond.id);
+  (g.retroCuts = g.retroCuts || []).push([a, b]);
   return true;
 }
 
@@ -144,18 +183,62 @@ function retroValid(g) {
 function retroPieces(g) {
   return g.connectedComponents().map((c) => ({
     smiles: retroCanonical(g, c.atomIds),
+    ids: new Set(c.atomIds),
     elements: new Set(c.atomIds.map((id) => g.getAtom(id).element)),
     carbon: c.atomIds.some((id) => g.getAtom(id).element === 'C'),
   })).filter((p) => p.smiles);
 }
 
 function retroEdit(t, edit) {
-  const g = retroClone(t.graph);
+  const out = {};
+  const g = retroClone(t.graph, null, out);
+  g.retroCuts = [];
   if (edit(g) === false || !retroValid(g)) {
     return null;
   }
   const pieces = retroPieces(g);
-  return pieces.length ? pieces : null;
+  if (!pieces.length) {
+    return null;
+  }
+  const back = new Map();
+  out.map.forEach((to, from) => back.set(to, from));
+  pieces.cuts = g.retroCuts.map((pair) => pair.map((id) => back.get(id))).filter((pair) => pair.every((id) => id !== undefined));
+  if (t.edits) {
+    t.edits.push({ transform: t.currentTransform || null, pieces, cuts: pieces.cuts, graph: g, map: out.map, back, changed: null });
+  }
+  return pieces;
+}
+
+function retroChanged(t, record) {
+  if (record.changed) {
+    return record.changed;
+  }
+  const h = record.graph;
+  const changed = new Set();
+  t.graph.atoms.forEach((a) => {
+    const b = h.getAtom(record.map.get(a.id));
+    if (!b || b.element !== a.element || (b.charge || 0) !== (a.charge || 0)) {
+      changed.add(a.id);
+    }
+  });
+  t.graph.bonds.forEach((b) => {
+    const x = record.map.get(b.atomA);
+    const y = record.map.get(b.atomB);
+    const hb = h.getAtom(x) && h.getAtom(y) ? h.getBond(x, y) : null;
+    if (!hb || hb.order !== b.order) {
+      changed.add(b.atomA);
+      changed.add(b.atomB);
+    }
+  });
+  h.bonds.forEach((hb) => {
+    const a = record.back.get(hb.atomA);
+    const c = record.back.get(hb.atomB);
+    if (a === undefined || c === undefined || !t.graph.getBond(a, c)) {
+      [a, c].filter((id) => id !== undefined).forEach((id) => changed.add(id));
+    }
+  });
+  record.changed = changed;
+  return changed;
 }
 
 function retroSpec(precursors, reagents, conditions) {
@@ -265,6 +348,301 @@ function retroSixRings(t, a1, a2) {
         });
       });
     });
+  });
+  return out;
+}
+
+const RETRO_DIAZONIUM = {
+  Cl: { additives: ['nano2', 'hcl', 'cucl'], solvents: ['water'], temperature: 0 },
+  Br: { additives: ['nano2', 'hcl', 'cubr'], solvents: ['water'], temperature: 0 },
+  CN: { additives: ['nano2', 'hcl', 'cucn'], solvents: ['water'], temperature: 0 },
+  F: { additives: ['nano2', 'hbf4'], temperature: 100 },
+  I: { additives: ['nano2', 'hcl', 'ki'], solvents: ['water'], temperature: 0 },
+  OH: { additives: ['nano2', 'h2so4'], solvents: ['water'], temperature: 100 },
+};
+
+let retroReagentCanonicalCache = null;
+
+function retroReagentKey(smiles, keys) {
+  if (!retroReagentCanonicalCache) {
+    retroReagentCanonicalCache = new Map();
+    Object.keys(RETRO_REAGENTS).forEach((key) => {
+      retroReagentCanonicalCache.set(retroCanonicalSmiles(RETRO_REAGENTS[key].smiles), key);
+    });
+  }
+  const key = retroReagentCanonicalCache.get(smiles);
+  return key && (!keys || keys.includes(key)) ? key : null;
+}
+
+function retroFormulaLabel(smiles) {
+  try {
+    const g = retroFromSmiles(smiles);
+    return computeProperties(g, retroIds(g)).formula;
+  } catch (error) {
+    return smiles;
+  }
+}
+
+function retroTerminal(g, id) {
+  return rxNeighbors(g, id).length === 1;
+}
+
+function retroArylGroups(t) {
+  const g = t.graph;
+  const out = [];
+  g.atoms.forEach((a) => {
+    if (t.aromatic.has(a.id)) {
+      return;
+    }
+    const ring = rxNeighbors(g, a.id).find((n) => t.aromatic.has(n.atom.id) && n.bond.order === 1);
+    if (!ring) {
+      return;
+    }
+    const others = rxNeighbors(g, a.id).filter((n) => n.atom.id !== ring.atom.id);
+    let kind = null;
+    let drop = [];
+    if (a.element === 'N' && others.length === 2 && others.every((n) => n.atom.element === 'O' && retroTerminal(g, n.atom.id))) {
+      kind = 'nitro';
+      drop = [a.id].concat(others.map((n) => n.atom.id));
+    } else if (a.element === 'S' && others.length === 3 && others.every((n) => n.atom.element === 'O' && retroTerminal(g, n.atom.id))) {
+      kind = 'sulfo';
+      drop = [a.id].concat(others.map((n) => n.atom.id));
+    } else if (['F', 'Cl', 'Br', 'I'].includes(a.element)) {
+      kind = a.element;
+    } else if (a.element === 'O' && !others.length && !a.charge) {
+      kind = 'OH';
+    } else if (a.element === 'C' && others.length === 1 && others[0].atom.element === 'N' && others[0].bond.order === 3) {
+      kind = 'CN';
+      drop = [others[0].atom.id];
+    }
+    if (kind) {
+      out.push({ x: a.id, c: ring.atom.id, kind, drop });
+    }
+  });
+  return out;
+}
+
+function retroActivatedArene(t) {
+  return retroArylGroups(t).some((s) => s.kind === 'nitro' || s.kind === 'CN');
+}
+
+function retroAreneFromGroup(t, kinds) {
+  return retroUniquePieces(retroArylGroups(t).filter((s) => kinds.includes(s.kind)).map((s) => retroSinglePiece(t, (h) => {
+    s.drop.concat(s.drop.length ? [] : [s.x]).forEach((id) => h.removeAtom(id));
+  })));
+}
+
+function retroAnilines(t) {
+  const list = [];
+  retroArylGroups(t).filter((s) => RETRO_DIAZONIUM[s.kind]).forEach((s) => {
+    const piece = retroSinglePiece(t, (h) => {
+      s.drop.forEach((id) => h.removeAtom(id));
+      h.getAtom(s.x).element = 'N';
+    });
+    if (piece) {
+      list.push(Object.assign(piece, { kind: s.kind }));
+    }
+  });
+  return list;
+}
+
+function retroKey(pieces) {
+  return pieces.map((p) => p.smiles).sort().join('.');
+}
+
+function retroArylBonds(t, partner) {
+  const g = t.graph;
+  const out = [];
+  g.bonds.forEach((b) => {
+    if (b.order !== 1) {
+      return;
+    }
+    [[b.atomA, b.atomB], [b.atomB, b.atomA]].forEach(([ar, x]) => {
+      if (t.aromatic.has(ar) && g.getAtom(ar).element === 'C' && partner(x, ar)) {
+        out.push({ ar, x });
+      }
+    });
+  });
+  return out;
+}
+
+function retroVinylCarbon(t, id) {
+  const g = t.graph;
+  return g.getAtom(id).element === 'C' && !t.aromatic.has(id) && rxNeighbors(g, id).some((n) => n.bond.order === 2 && n.atom.element === 'C');
+}
+
+function retroCouplingPieces(t, bonds, edit) {
+  const out = [];
+  const seen = new Set();
+  bonds.forEach((bond) => {
+    const pieces = retroEdit(t, (h) => {
+      if (!retroCut(h, bond.ar, bond.x)) {
+        return false;
+      }
+      return edit(h, bond);
+    });
+    if (!pieces || pieces.length !== 2) {
+      return;
+    }
+    const key = retroKey(pieces);
+    if (!seen.has(key)) {
+      seen.add(key);
+      out.push(pieces);
+    }
+  });
+  return out.slice(0, RETRO_LIMITS.maxPerTransform);
+}
+
+function retroHalidePair(pieces, halogen) {
+  const halide = pieces.find((p) => p.elements.has(halogen));
+  const other = pieces.find((p) => p !== halide);
+  return halide && other ? [{ smiles: halide.smiles, role: 'reactant' }, { smiles: other.smiles, role: 'reactant' }] : null;
+}
+
+function retroEwgCarbon(g, id, skip) {
+  return rxNeighbors(g, id).some((n) => n.atom.id !== skip && n.atom.element === 'C' &&
+    rxNeighbors(g, n.atom.id).some((m) => (m.atom.element === 'O' && m.bond.order === 2) || (m.atom.element === 'N' && m.bond.order === 3)));
+}
+
+function retroAcceptorCarbons(t) {
+  const list = t.info.carbonyls.filter((c) => ['ketone', 'aldehyde', 'ester'].includes(c.kind)).map((c) => c.c);
+  return list.concat(t.info.nitriles.map((n) => n.c));
+}
+
+function retroBetaKetoEsters(t) {
+  const g = t.graph;
+  const out = [];
+  t.info.carbonyls.filter((e) => e.kind === 'ester').forEach((e) => {
+    rxCarbonNeighbors(g, e.c).filter((a) => rxIsSp3(g, a.atom.id)).forEach((a) => {
+      t.info.carbonyls.filter((k) => k.kind === 'ketone' && k.c !== e.c && g.getBond(k.c, a.atom.id)).forEach((k) => {
+        out.push({ e, a: a.atom.id, k, ring: !retroSide(g, a.atom.id, k.c) });
+      });
+    });
+  });
+  return out;
+}
+
+function retroEthoxyAcyl(h, c) {
+  const o = rxAttach(h, 'O', c);
+  const c1 = rxAttach(h, 'C', o.id);
+  rxAttach(h, 'C', c1.id);
+}
+
+function retroTertButyl(g, o, from) {
+  const c = rxNeighbors(g, o).find((n) => n.atom.id !== from && n.atom.element === 'C');
+  return c && rxNeighbors(g, c.atom.id).filter((n) => n.atom.id !== o && n.atom.element === 'C' && rxNeighbors(g, n.atom.id).length === 1).length === 3 ? c.atom.id : null;
+}
+
+function retroCarbamates(t) {
+  const g = t.graph;
+  const out = [];
+  t.info.carbonyls.forEach((c) => {
+    const n = rxNeighbors(g, c.c).find((x) => x.atom.element === 'N' && x.bond.order === 1);
+    const o = rxNeighbors(g, c.c).find((x) => x.atom.element === 'O' && x.bond.order === 1 && x.atom.id !== c.o);
+    if (!n || !o) {
+      return;
+    }
+    const pieces = retroEdit(t, (h) => {
+      if (!retroCut(h, c.c, n.atom.id)) {
+        return false;
+      }
+      rxAttach(h, 'Cl', c.c);
+      return true;
+    });
+    if (!pieces || pieces.length !== 2) {
+      return;
+    }
+    const amine = pieces.find((p) => !p.elements.has('Cl'));
+    const chloroformate = pieces.find((p) => p !== amine);
+    if (amine && chloroformate && amine.elements.has('N')) {
+      out.push({ amine, chloroformate, boc: !!retroTertButyl(g, o.atom.id, c.c) });
+    }
+  });
+  return out.slice(0, RETRO_LIMITS.maxPerTransform);
+}
+
+function retroConjugating(t, id, partner) {
+  const g = t.graph;
+  return rxNeighbors(g, id).some((n) => n.atom.id !== partner && (t.aromatic.has(n.atom.id) ||
+    rxNeighbors(g, n.atom.id).some((m) => (m.bond.order === 2 && m.atom.element === 'O') || (m.bond.order === 3 && m.atom.element === 'N'))));
+}
+
+function retroSilylEthers(t) {
+  const g = t.graph;
+  const out = [];
+  g.atoms.filter((si) => si.element === 'Si').forEach((si) => {
+    rxNeighbors(g, si.id).filter((o) => o.atom.element === 'O' && o.bond.order === 1 && rxNeighbors(g, o.atom.id).length === 2).forEach((o) => {
+      const pieces = retroEdit(t, (h) => {
+        if (!retroCut(h, si.id, o.atom.id)) {
+          return false;
+        }
+        rxAttach(h, 'Cl', si.id);
+        return true;
+      });
+      if (!pieces || pieces.length !== 2) {
+        return;
+      }
+      const silyl = pieces.find((p) => p.ids.has(si.id));
+      const alcohol = pieces.find((p) => p !== silyl);
+      const key = retroReagentKey(silyl.smiles, ['tbscl', 'tbdpscl', 'tipscl']);
+      if (key) {
+        out.push({ si: si.id, o: o.atom.id, atoms: [o.atom.id, si.id], alcohol, silyl, key });
+      }
+    });
+  });
+  return out;
+}
+
+function retroBenzylEthers(t) {
+  const g = t.graph;
+  const out = [];
+  g.atoms.filter((o) => o.element === 'O' && !o.charge && rxNeighbors(g, o.id).length === 2).forEach((o) => {
+    rxNeighbors(g, o.id).filter((ch2) => ch2.atom.element === 'C' && rxHydrogens(g, ch2.atom.id) === 2 &&
+      rxCarbonNeighbors(g, ch2.atom.id).some((n) => t.aromatic.has(n.atom.id))).forEach((ch2) => {
+      [['Br', 'bnbr', { additives: ['nah'], solvents: ['thf'] }], ['Cl', 'pmbcl', { additives: ['nah'], solvents: ['dmf'] }]].forEach(([halogen, key, conditions]) => {
+        const pieces = retroEdit(t, (h) => {
+          if (!retroCut(h, o.id, ch2.atom.id)) {
+            return false;
+          }
+          rxAttach(h, halogen, ch2.atom.id);
+          return true;
+        });
+        if (!pieces || pieces.length !== 2) {
+          return;
+        }
+        const benzyl = pieces.find((p) => p.ids.has(ch2.atom.id));
+        const alcohol = pieces.find((p) => p !== benzyl);
+        if (retroReagentKey(benzyl.smiles, [key])) {
+          out.push({ o: o.id, ch2: ch2.atom.id, atoms: [o.id, ch2.atom.id], alcohol, benzyl, key, conditions });
+        }
+      });
+    });
+  });
+  return out;
+}
+
+function retroAcetals(t) {
+  const g = t.graph;
+  const out = [];
+  g.atoms.filter((c) => c.element === 'C' && rxIsSp3(g, c.id)).forEach((c) => {
+    const oxygens = rxNeighbors(g, c.id).filter((n) => n.atom.element === 'O' && n.bond.order === 1 && rxNeighbors(g, n.atom.id).length === 2);
+    if (oxygens.length !== 2) {
+      return;
+    }
+    const pieces = retroEdit(t, (h) => {
+      oxygens.forEach((o) => retroBreak(h, c.id, o.atom.id));
+      rxAttach(h, 'O', c.id, 2);
+      return true;
+    });
+    if (!pieces || pieces.length !== 2) {
+      return;
+    }
+    const diol = pieces.find((p) => p.ids.has(oxygens[0].atom.id) && p.ids.has(oxygens[1].atom.id));
+    const carbonyl = pieces.find((p) => p.ids.has(c.id));
+    const key = diol && retroReagentKey(diol.smiles, ['ethyleneGlycol', 'propanediol']);
+    if (key && carbonyl) {
+      out.push({ c: c.id, oxygens: oxygens.map((o) => o.atom.id), atoms: [c.id].concat(oxygens.map((o) => o.atom.id)), carbonyl, diol, key });
+    }
   });
   return out;
 }
@@ -491,14 +869,22 @@ const RETRO_TRANSFORMS = [
       if (t.info.alkenes.length || t.info.alkynes.length) {
         return [];
       }
-      const list = [];
-      g.bonds.forEach((b) => {
-        const ok = (id) => g.getAtom(id).element === 'C' && !t.aromatic.has(id) && rxIsSp3(g, id) && rxHydrogens(g, id) >= 1 &&
-          rxNeighbors(g, id).every((n) => n.atom.element === 'C');
-        if (b.order === 1 && ok(b.atomA) && ok(b.atomB)) {
-          list.push(retroSinglePiece(t, (h) => retroOrder(h, b.atomA, b.atomB, 2)));
+      const ok = (id) => g.getAtom(id).element === 'C' && !t.aromatic.has(id) && rxIsSp3(g, id) && rxHydrogens(g, id) >= 1 &&
+        rxNeighbors(g, id).every((n) => n.atom.element === 'C');
+      const bonds = g.bonds.filter((b) => b.order === 1 && ok(b.atomA) && ok(b.atomB));
+      const useful = bonds.filter((b) => retroConjugating(t, b.atomA, b.atomB) || retroConjugating(t, b.atomB, b.atomA));
+      const piece = (b) => retroSinglePiece(t, (h) => retroOrder(h, b.atomA, b.atomB, 2));
+      let list = useful.map(piece);
+      if (!useful.length) {
+        const fallback = bonds.filter((b) => !retroSide(g, b.atomA, b.atomB)).concat(bonds.filter((b) => retroSide(g, b.atomA, b.atomB)));
+        for (const b of fallback) {
+          const p = piece(b);
+          if (p) {
+            list = [p];
+            break;
+          }
         }
-      });
+      }
       return retroUniquePieces(list).map((p) => retroSpec([{ smiles: p.smiles, role: 'reactant' }], [RETRO_REAGENTS.h2], { additives: ['pdc'] }));
     },
   },
@@ -616,8 +1002,8 @@ const RETRO_TRANSFORMS = [
         [[e.a, e.b], [e.b, e.a]].forEach(([a1, a2]) => {
           retroSixRings(t, a1, a2).forEach(([, , a3, a4, a5, a6]) => {
             const pieces = retroEdit(t, (h) => {
-              h.removeBond(h.getBond(a3, a4).id);
-              h.removeBond(h.getBond(a5, a6).id);
+              retroBreak(h, a3, a4);
+              retroBreak(h, a5, a6);
               retroOrder(h, a1, a2, 1);
               retroOrder(h, a6, a1, 2);
               retroOrder(h, a2, a3, 2);
@@ -772,10 +1158,350 @@ const RETRO_TRANSFORMS = [
       return out.slice(0, RETRO_LIMITS.maxPerTransform);
     },
   },
+  {
+    id: 'eas-nitration', name: 'Aromatic nitration', rule: 'nitration', group: 'Aromatics',
+    match: (t) => retroAreneFromGroup(t, ['nitro']).map((p) => retroSpec([{ smiles: p.smiles, role: 'reactant' }], [], { additives: ['hno3', 'h2so4'] })),
+  },
+  {
+    id: 'eas-sulfonation', name: 'Aromatic sulfonation', rule: 'sulfonation', group: 'Aromatics',
+    match: (t) => retroAreneFromGroup(t, ['sulfo']).map((p) => retroSpec([{ smiles: p.smiles, role: 'reactant' }], [], { additives: ['so3'] })),
+  },
+  {
+    id: 'snar', name: 'Nucleophilic aromatic substitution', rule: 'snar', group: 'Aromatics',
+    match: (t) => {
+      if (!retroActivatedArene(t)) {
+        return [];
+      }
+      const g = t.graph;
+      const out = [];
+      const seen = new Set();
+      retroArylBonds(t, (x) => ['O', 'N', 'S'].includes(g.getAtom(x).element) && !g.getAtom(x).charge && !t.aromatic.has(x) &&
+        rxNeighbors(g, x).length === 2 && rxNeighbors(g, x).every((n) => n.bond.order === 1 && n.atom.element === 'C') ||
+        (g.getAtom(x).element === 'N' && rxNeighbors(g, x).length === 3 && rxNeighbors(g, x).every((n) => n.bond.order === 1 && n.atom.element === 'C'))).forEach((bond) => {
+        const element = g.getAtom(bond.x).element;
+        ['F', 'Cl'].forEach((halogen) => {
+          const pieces = retroEdit(t, (h) => {
+            if (!retroCut(h, bond.ar, bond.x)) {
+              return false;
+            }
+            rxAttach(h, halogen, bond.ar);
+            if (element !== 'N') {
+              h.getAtom(bond.x).charge = -1;
+            }
+            return true;
+          });
+          const pair = pieces && pieces.length === 2 ? retroHalidePair(pieces, halogen) : null;
+          if (!pair || seen.has(retroKey(pieces))) {
+            return;
+          }
+          seen.add(retroKey(pieces));
+          if (element === 'N') {
+            out.push(retroSpec(pair, [], { solvents: ['dmso'], temperature: 100 }));
+          } else {
+            const salt = pair[1].smiles + '.[Na+]';
+            out.push(retroSpec([pair[0]], [{ smiles: salt, role: 'reagent', label: retroFormulaLabel(salt) }], {}));
+          }
+        });
+      });
+      return out.slice(0, RETRO_LIMITS.maxPerTransform);
+    },
+  },
+  {
+    id: 'sandmeyer', name: 'Sandmeyer reaction', rule: 'diazonium', group: 'Aromatics',
+    match: (t) => retroUniquePieces(retroAnilines(t).filter((p) => ['Cl', 'Br', 'CN'].includes(p.kind)))
+      .map((p) => retroSpec([{ smiles: p.smiles, role: 'reactant' }], [], RETRO_DIAZONIUM[p.kind])),
+  },
+  {
+    id: 'schiemann', name: 'Balz–Schiemann reaction', rule: 'diazonium', group: 'Aromatics',
+    match: (t) => retroUniquePieces(retroAnilines(t).filter((p) => p.kind === 'F'))
+      .map((p) => retroSpec([{ smiles: p.smiles, role: 'reactant' }], [], RETRO_DIAZONIUM.F)),
+  },
+  {
+    id: 'diazonium-iodide', name: 'Diazonium iodide substitution', rule: 'diazonium', group: 'Aromatics',
+    match: (t) => retroUniquePieces(retroAnilines(t).filter((p) => p.kind === 'I'))
+      .map((p) => retroSpec([{ smiles: p.smiles, role: 'reactant' }], [], RETRO_DIAZONIUM.I)),
+  },
+  {
+    id: 'diazonium-phenol', name: 'Phenol from a diazonium salt', rule: 'diazonium', group: 'Aromatics',
+    match: (t) => retroUniquePieces(retroAnilines(t).filter((p) => p.kind === 'OH'))
+      .map((p) => retroSpec([{ smiles: p.smiles, role: 'reactant' }], [], RETRO_DIAZONIUM.OH)),
+  },
+  {
+    id: 'azo-coupling', name: 'Azo coupling', rule: 'diazonium', group: 'Aromatics',
+    match: (t) => {
+      const g = t.graph;
+      const out = [];
+      g.bonds.filter((b) => b.order === 2 && g.getAtom(b.atomA).element === 'N' && g.getAtom(b.atomB).element === 'N').forEach((b) => {
+        [[b.atomA, b.atomB], [b.atomB, b.atomA]].forEach(([n1, n2]) => {
+          const aryl = (id, other) => rxNeighbors(g, id).filter((n) => n.atom.id !== other).every((n) => t.aromatic.has(n.atom.id));
+          if (!aryl(n1, n2) || !aryl(n2, n1)) {
+            return;
+          }
+          const pieces = retroEdit(t, (h) => {
+            rxNeighbors(h, n2).filter((n) => n.atom.id !== n1).forEach((n) => retroBreak(h, n2, n.atom.id));
+            h.removeAtom(n2);
+            return true;
+          });
+          if (!pieces || pieces.length !== 2) {
+            return;
+          }
+          const amine = pieces.find((p) => p.ids.has(n1));
+          const partner = pieces.find((p) => p !== amine);
+          if (amine && partner && (partner.elements.has('O') || partner.elements.has('N'))) {
+            out.push(retroSpec([{ smiles: amine.smiles, role: 'reactant' }, { smiles: partner.smiles, role: 'reactant' }], [], { additives: ['nano2', 'hcl'], solvents: ['water'], temperature: 0 }));
+          }
+        });
+      });
+      return out.slice(0, RETRO_LIMITS.maxPerTransform);
+    },
+  },
+  {
+    id: 'suzuki', name: 'Suzuki coupling', rule: 'suzuki', group: 'Couplings',
+    match: (t) => retroCouplingPieces(t, retroArylBonds(t, (x) => t.aromatic.has(x) || retroVinylCarbon(t, x))
+      .flatMap((b) => t.aromatic.has(b.x) ? [b] : [b, { ar: b.x, x: b.ar }]), (h, bond) => {
+      rxAttach(h, 'Br', bond.ar);
+      const boron = rxAttach(h, 'B', bond.x);
+      rxAttach(h, 'O', boron.id);
+      rxAttach(h, 'O', boron.id);
+      return true;
+    }).map((pieces) => {
+      const halide = pieces.find((p) => p.elements.has('Br'));
+      const boronic = pieces.find((p) => p !== halide);
+      return retroSpec([{ smiles: halide.smiles, role: 'reactant' }, { smiles: boronic.smiles, role: 'reactant' }], [], { additives: ['pdpph3', 'k2co3'], atmosphere: 'n2' });
+    }),
+  },
+  {
+    id: 'heck', name: 'Heck reaction', rule: 'heck', group: 'Couplings',
+    match: (t) => retroCouplingPieces(t, retroArylBonds(t, (x) => retroVinylCarbon(t, x)), (h, bond) => {
+      rxAttach(h, 'I', bond.ar);
+      return true;
+    }).map((pieces) => retroSpec(retroHalidePair(pieces, 'I'), [], { additives: ['pdoac2', 'et3n'], temperature: 100 })),
+  },
+  {
+    id: 'sonogashira', name: 'Sonogashira coupling', rule: 'sonogashira', group: 'Couplings',
+    match: (t) => retroCouplingPieces(t, retroArylBonds(t, (x) => t.graph.getAtom(x).element === 'C' && rxNeighbors(t.graph, x).some((n) => n.bond.order === 3 && n.atom.element === 'C')), (h, bond) => {
+      rxAttach(h, 'I', bond.ar);
+      return true;
+    }).map((pieces) => retroSpec(retroHalidePair(pieces, 'I'), [], { additives: ['pdpph3', 'cui', 'et3n'] })),
+  },
+  {
+    id: 'buchwald-hartwig', name: 'Buchwald–Hartwig amination', rule: 'buchwald-hartwig', group: 'Couplings',
+    match: (t) => {
+      if (retroActivatedArene(t)) {
+        return [];
+      }
+      const amines = new Set(retroAmineNitrogens(t));
+      return retroCouplingPieces(t, retroArylBonds(t, (x) => amines.has(x) && rxCarbonNeighbors(t.graph, x).length >= 2), (h, bond) => {
+        rxAttach(h, 'Br', bond.ar);
+        return true;
+      }).map((pieces) => retroSpec(retroHalidePair(pieces, 'Br'), [], { additives: ['pdoac2', 'kotbu'] }));
+    },
+  },
+  {
+    id: 'enolate-alkylation', name: 'Enolate alkylation', rule: 'enolate-alkylation', group: 'Enolates',
+    match: (t) => {
+      const g = t.graph;
+      const out = [];
+      const seen = new Set();
+      t.info.carbonyls.filter((c) => c.kind === 'ketone' || c.kind === 'ester').forEach((c) => {
+        rxCarbonNeighbors(g, c.c).filter((a) => rxIsSp3(g, a.atom.id)).forEach((a) => {
+          rxCarbonNeighbors(g, a.atom.id).filter((r) => r.atom.id !== c.c && rxIsSp3(g, r.atom.id) && rxCarbonNeighbors(g, r.atom.id).length <= 2).forEach((r) => {
+            const pieces = retroEdit(t, (h) => {
+              if (!retroCut(h, a.atom.id, r.atom.id)) {
+                return false;
+              }
+              rxAttach(h, 'I', r.atom.id);
+              return true;
+            });
+            const pair = pieces && pieces.length === 2 ? retroHalidePair(pieces, 'I') : null;
+            if (pair && !seen.has(retroKey(pieces))) {
+              seen.add(retroKey(pieces));
+              out.push(retroSpec([pair[1], pair[0]], [], { additives: ['lda'], solvents: ['thf'], temperature: -78 }));
+            }
+          });
+        });
+      });
+      return out.slice(0, RETRO_LIMITS.maxPerTransform);
+    },
+  },
+  {
+    id: 'michael', name: 'Michael addition', rule: 'michael', group: 'Enolates',
+    match: (t) => {
+      const g = t.graph;
+      const out = [];
+      const seen = new Set();
+      retroAcceptorCarbons(t).forEach((e) => {
+        rxCarbonNeighbors(g, e).filter((a) => rxIsSp3(g, a.atom.id) && rxHydrogens(g, a.atom.id) >= 1).forEach((a) => {
+          rxCarbonNeighbors(g, a.atom.id).filter((b) => b.atom.id !== e && rxIsSp3(g, b.atom.id)).forEach((b) => {
+            rxNeighbors(g, b.atom.id).filter((d) => d.atom.id !== a.atom.id && d.bond.order === 1 &&
+              ((d.atom.element === 'C' && rxIsSp3(g, d.atom.id) && retroEwgCarbon(g, d.atom.id, b.atom.id)) || d.atom.element === 'S')).forEach((d) => {
+              const pieces = retroEdit(t, (h) => {
+                if (!retroCut(h, b.atom.id, d.atom.id)) {
+                  return false;
+                }
+                retroOrder(h, a.atom.id, b.atom.id, 2);
+                return true;
+              });
+              if (!pieces || pieces.length !== 2 || seen.has(retroKey(pieces))) {
+                return;
+              }
+              seen.add(retroKey(pieces));
+              const donor = pieces.find((p) => p.ids.has(d.atom.id));
+              const acceptor = pieces.find((p) => p !== donor);
+              out.push(retroSpec([{ smiles: donor.smiles, role: 'reactant' }, { smiles: acceptor.smiles, role: 'reactant' }], [],
+                d.atom.element === 'S' ? {} : { additives: ['naoet'], solvents: ['ethanol'] }));
+            });
+          });
+        });
+      });
+      return out.slice(0, RETRO_LIMITS.maxPerTransform);
+    },
+  },
+  {
+    id: 'claisen', name: 'Claisen condensation', rule: 'claisen', group: 'Enolates',
+    match: (t) => {
+      const out = [];
+      const seen = new Set();
+      retroBetaKetoEsters(t).filter((x) => !x.ring).forEach((x) => {
+        const pieces = retroEdit(t, (h) => {
+          if (!retroCut(h, x.a, x.k.c)) {
+            return false;
+          }
+          retroEthoxyAcyl(h, x.k.c);
+          return true;
+        });
+        if (!pieces || pieces.length !== 2 || seen.has(retroKey(pieces))) {
+          return;
+        }
+        seen.add(retroKey(pieces));
+        out.push(retroSpec(retroReactants(retroUniquePieces(pieces)), [], { additives: ['naoet'], solvents: ['ethanol'] }));
+      });
+      return out.slice(0, RETRO_LIMITS.maxPerTransform);
+    },
+  },
+  {
+    id: 'dieckmann', name: 'Dieckmann condensation', rule: 'claisen', group: 'Enolates',
+    match: (t) => retroUniquePieces(retroBetaKetoEsters(t).filter((x) => x.ring).map((x) => retroSinglePiece(t, (h) => {
+      retroBreak(h, x.a, x.k.c);
+      retroEthoxyAcyl(h, x.k.c);
+    }))).map((p) => retroSpec([{ smiles: p.smiles, role: 'reactant' }], [], { additives: ['naoet'], solvents: ['ethanol'] })),
+  },
+  {
+    id: 'robinson', name: 'Robinson annulation', rule: 'robinson', group: 'Enolates',
+    match: (t) => {
+      const g = t.graph;
+      const out = [];
+      const seen = new Set();
+      t.info.carbonyls.filter((c) => c.kind === 'ketone').forEach((k) => {
+        rxCarbonNeighbors(g, k.c).forEach((al) => {
+          const be = rxNeighbors(g, al.atom.id).find((n) => n.bond.order === 2 && n.atom.element === 'C' && !t.aromatic.has(n.atom.id));
+          if (!be || t.aromatic.has(al.atom.id)) {
+            return;
+          }
+          rxCarbonNeighbors(g, k.c).filter((x) => x.atom.id !== al.atom.id && rxIsSp3(g, x.atom.id)).forEach((aa) => {
+            rxCarbonNeighbors(g, aa.atom.id).filter((x) => x.atom.id !== k.c && rxIsSp3(g, x.atom.id)).forEach((ab) => {
+              rxCarbonNeighbors(g, ab.atom.id).filter((x) => x.atom.id !== aa.atom.id && g.getBond(x.atom.id, be.atom.id)).forEach((ca) => {
+                const pieces = retroEdit(t, (h) => {
+                  retroBreak(h, al.atom.id, be.atom.id);
+                  retroBreak(h, ab.atom.id, ca.atom.id);
+                  rxAttach(h, 'O', be.atom.id, 2);
+                  retroOrder(h, aa.atom.id, ab.atom.id, 2);
+                  return true;
+                });
+                if (!pieces || pieces.length !== 2 || seen.has(retroKey(pieces))) {
+                  return;
+                }
+                seen.add(retroKey(pieces));
+                const donor = pieces.find((p) => p.ids.has(be.atom.id));
+                const enone = pieces.find((p) => p !== donor);
+                out.push(retroSpec([{ smiles: donor.smiles, role: 'reactant' }, { smiles: enone.smiles, role: 'reactant' }], [], { additives: ['naoet'], solvents: ['ethanol'], temperature: 78 }));
+              });
+            });
+          });
+        });
+      });
+      return out.slice(0, RETRO_LIMITS.maxPerTransform);
+    },
+  },
+  {
+    id: 'mannich', name: 'Mannich reaction', rule: 'mannich', group: 'Enolates',
+    match: (t) => {
+      const g = t.graph;
+      const out = [];
+      const seen = new Set();
+      const amines = new Set(retroAmineNitrogens(t));
+      t.info.carbonyls.filter((c) => c.kind === 'ketone' || c.kind === 'aldehyde').forEach((k) => {
+        rxCarbonNeighbors(g, k.c).filter((a) => rxIsSp3(g, a.atom.id)).forEach((a) => {
+          rxCarbonNeighbors(g, a.atom.id).filter((b) => b.atom.id !== k.c && rxHydrogens(g, b.atom.id) === 2).forEach((b) => {
+            rxNeighbors(g, b.atom.id).filter((n) => amines.has(n.atom.id)).forEach((n) => {
+              const pieces = retroEdit(t, (h) => {
+                if (!retroCut(h, a.atom.id, b.atom.id) || !retroCut(h, b.atom.id, n.atom.id)) {
+                  return false;
+                }
+                rxAttach(h, 'O', b.atom.id, 2);
+                return true;
+              });
+              if (!pieces || pieces.length !== 3 || seen.has(retroKey(pieces))) {
+                return;
+              }
+              seen.add(retroKey(pieces));
+              const order = [a.atom.id, b.atom.id, n.atom.id].map((id) => pieces.find((p) => p.ids.has(id)));
+              out.push(retroSpec(retroReactants(order), [], { additives: ['hcl'], solvents: ['ethanol'] }));
+            });
+          });
+        });
+      });
+      return out.slice(0, RETRO_LIMITS.maxPerTransform);
+    },
+  },
+  {
+    id: 'boc-install', name: 'Boc protection', rule: 'protection', group: 'Protecting groups',
+    match: (t) => retroCarbamates(t).filter((x) => x.boc)
+      .map((x) => retroSpec([{ smiles: x.amine.smiles, role: 'reactant' }], [RETRO_REAGENTS.boc2o], {})),
+  },
+  {
+    id: 'cbz-install', name: 'Cbz protection', rule: 'carbamate-protection', group: 'Protecting groups',
+    match: (t) => retroCarbamates(t).filter((x) => retroReagentKey(x.chloroformate.smiles, ['cbzcl']))
+      .map((x) => retroSpec([{ smiles: x.amine.smiles, role: 'reactant' }], [RETRO_REAGENTS.cbzcl], { additives: ['et3n'] })),
+  },
+  {
+    id: 'fmoc-install', name: 'Fmoc protection', rule: 'carbamate-protection', group: 'Protecting groups',
+    match: (t) => retroCarbamates(t).filter((x) => retroReagentKey(x.chloroformate.smiles, ['fmoccl']))
+      .map((x) => retroSpec([{ smiles: x.amine.smiles, role: 'reactant' }], [RETRO_REAGENTS.fmoccl], { additives: ['k2co3'] })),
+  },
+  {
+    id: 'silyl-install', name: 'Silyl ether protection', rule: 'protection', group: 'Protecting groups',
+    match: (t) => retroSilylEthers(t).slice(0, RETRO_LIMITS.maxPerTransform)
+      .map((x) => retroSpec([{ smiles: x.alcohol.smiles, role: 'reactant' }], [RETRO_REAGENTS[x.key]], { additives: ['imidazole'], solvents: ['dmf'] })),
+  },
+  {
+    id: 'benzyl-ether-install', name: 'Benzyl or PMB ether protection', rule: 'williamson', group: 'Protecting groups',
+    match: (t) => retroBenzylEthers(t).slice(0, RETRO_LIMITS.maxPerTransform)
+      .map((x) => retroSpec([{ smiles: x.alcohol.smiles, role: 'reactant' }], [RETRO_REAGENTS[x.key]], x.conditions)),
+  },
+  {
+    id: 'acetal-install', name: 'Cyclic acetal protection', rule: 'acetal', group: 'Protecting groups',
+    match: (t) => retroAcetals(t).slice(0, RETRO_LIMITS.maxPerTransform)
+      .map((x) => retroSpec([{ smiles: x.carbonyl.smiles, role: 'reactant' }, { smiles: x.diol.smiles, role: 'reactant' }], [], { additives: ['tsoh'], solvents: ['toluene'], temperature: 110 })),
+  },
+  {
+    id: 'tbu-ester-install', name: 'tert-Butyl ester protection', rule: 'ester-protection', group: 'Protecting groups',
+    match: (t) => {
+      const g = t.graph;
+      return retroUniquePieces(t.info.carbonyls.filter((c) => c.kind === 'ester').map((c) => {
+        const tbu = retroTertButyl(g, c.hetero, c.c);
+        if (!tbu) {
+          return null;
+        }
+        const drop = [tbu].concat(rxCarbonNeighbors(g, tbu).filter((n) => n.atom.id !== c.hetero).map((n) => n.atom.id));
+        return retroSinglePiece(t, (h) => drop.forEach((id) => h.removeAtom(id)));
+      })).map((p) => retroSpec([{ smiles: p.smiles, role: 'reactant' }], [RETRO_REAGENTS.isobutylene], { additives: ['h2so4'] }));
+    },
+  },
 ];
 
 const RETRO_DROPPED_TRANSFORMS = [
-  { id: 'eas-nitration', name: 'Aromatic nitration', reason: 'The forward engine has no nitration rule (HNO₃/H₂SO₄ is not recognised), so a nitration step could never be verified.' },
+  { id: 'hydro-deamination', name: 'Diazonium reduction (H₃PO₂)', reason: 'The forward deamination rule works, but a retro step ArH ← ArNH₂ would match every arene C–H and flood each aromatic target with amine precursors, so it stays forward only.' },
 ];
 
 let retroCommonCache = null;
@@ -810,7 +1536,7 @@ function retroFindProduct(list, smiles) {
   return (list || []).find((p) => p && p.smiles === smiles) || null;
 }
 
-function retroVerify(spec, targetSmiles) {
+function retroVerify(spec, targetSmiles, sink) {
   let compounds = null;
   try {
     compounds = spec.precursors.concat(spec.reagents).map(retroCompound);
@@ -819,6 +1545,9 @@ function retroVerify(spec, targetSmiles) {
   }
   const conditions = normalizeReactionConditions(spec.conditions);
   const result = predictReaction(compounds, conditions);
+  if (sink) {
+    sink.result = result;
+  }
   if (!result.best) {
     return null;
   }
@@ -839,6 +1568,14 @@ function retroVerify(spec, targetSmiles) {
   return null;
 }
 
+function retroTryVerify(spec, targetSmiles, sink) {
+  try {
+    return retroVerify(spec, targetSmiles, sink);
+  } catch (error) {
+    return null;
+  }
+}
+
 function retroSpecKey(spec) {
   return JSON.stringify([spec.precursors.map((p) => p.smiles + '@' + p.role).sort(), spec.reagents.map((r) => r.smiles).sort(), normalizeReactionConditions(spec.conditions)]);
 }
@@ -848,16 +1585,21 @@ function retroPrecursorInfo(item) {
   const ids = retroIds(g);
   return {
     smiles: item.smiles,
+    isomericSmiles: item.isomericSmiles || item.smiles,
     role: item.role,
     label: item.label || '',
     skeleton: retroSkeleton(g, ids),
     stereocentres: retroStereocentres(g, ids),
+    heavy: retroHeavyKey(g, ids),
     common: retroCommonName(item.smiles),
+    stock: typeof stockTier === 'function' ? stockTier(item.smiles) : null,
   };
 }
 
 function retroCompare(p, q) {
-  return p.rank.largest - q.rank.largest
+  return p.rank.adjusted - q.rank.adjusted
+    || (p.rank.stereo || 0) - (q.rank.stereo || 0)
+    || p.rank.largest - q.rank.largest
     || p.rank.stereocentres - q.rank.stereocentres
     || q.rank.common - p.rank.common
     || (p.minor ? 1 : 0) - (q.minor ? 1 : 0)
@@ -865,14 +1607,29 @@ function retroCompare(p, q) {
 }
 
 function retroTarget(graph, ids) {
-  const g = retroClone(graph, ids);
+  const out = {};
+  const g = retroClone(graph, ids, out);
   const allIds = retroIds(g);
+  const map = new Map();
+  out.map.forEach((to, from) => map.set(to, from));
+  const props = retroProps(g, allIds);
+  let stereocentres = [];
+  try {
+    stereocentres = findStereocenters(g, allIds).map((c) => ({ atomId: map.get(c.atomId), type: c.type }));
+  } catch (error) {
+    stereocentres = [];
+  }
   return {
     graph: g,
+    map,
     info: rxAnalyze(g),
     aromatic: rxAromaticRings(g).atoms,
-    smiles: retroCanonical(g, allIds),
+    smiles: props.smiles,
+    isomericSmiles: props.isomericSmiles,
+    stereocentres,
+    stereo: props.isomericSmiles.includes('@'),
     skeleton: retroSkeleton(g, allIds),
+    heavy: retroHeavyKey(g, allIds),
     components: g.connectedComponents().length,
   };
 }
@@ -881,11 +1638,317 @@ function retroNow() {
   return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 }
 
-function retroDisconnect(graph, ids, options) {
+function retroSpecRecord(t, spec, from) {
+  let best = null;
+  let score = 0;
+  for (let i = from; i < t.edits.length; i++) {
+    const smiles = new Set(t.edits[i].pieces.map((p) => p.smiles));
+    const hits = spec.precursors.filter((p) => smiles.has(p.smiles)).length;
+    if (hits > score) {
+      best = t.edits[i];
+      score = hits;
+    }
+  }
+  return best;
+}
+
+function retroMirror(smiles) {
+  return smiles.replace(/@@|@/g, (m) => (m === '@@' ? '@' : '@@'));
+}
+
+function retroPieceIsomeric(t, record, smiles) {
+  const piece = record && record.pieces.find((p) => p.smiles === smiles);
+  if (!piece) {
+    return smiles;
+  }
+  const touched = new Set([...retroChanged(t, record)].map((id) => record.map.get(id)));
+  const out = {};
+  const g = retroClone(record.graph, [...piece.ids], out);
+  const back = new Map();
+  out.map.forEach((to, from) => back.set(to, from));
+  g.bonds.forEach((b) => {
+    if (b.stereo && touched.has(back.get(b.atomA))) {
+      b.stereo = null;
+    }
+  });
+  const props = retroProps(g);
+  if (props.smiles !== smiles || !props.isomericSmiles) {
+    return smiles;
+  }
+  return [...piece.ids].some((id) => touched.has(id)) ? props.isomericSmiles.replace(/[/\\]/g, '') : props.isomericSmiles;
+}
+
+function retroStereoClass(t, spec, verified) {
+  if (!t.stereo) {
+    return { stereo: null, precursors: null };
+  }
+  const iso = spec.precursors.map((p) => Object.assign({}, p, { smiles: retroPieceIsomeric(t, spec.record, p.smiles) }));
+  const run = (list) => retroTryVerify({ precursors: list, reagents: spec.reagents, conditions: spec.conditions }, t.smiles);
+  const kind = (v) => (v && v.product && v.product.stereo && v.product.stereo.kind) || '';
+  if (iso.some((p) => p.smiles.includes('@'))) {
+    const direct = run(iso);
+    if (direct && direct.product.isomericSmiles === t.isomericSmiles) {
+      return { stereo: 'retained', precursors: iso };
+    }
+    const mirror = iso.map((p) => Object.assign({}, p, { smiles: retroMirror(p.smiles) }));
+    const flipped = run(mirror);
+    if (flipped && flipped.product.isomericSmiles === t.isomericSmiles) {
+      return { stereo: 'retained', precursors: mirror };
+    }
+    return ['racemic', 'diastereomers'].includes(kind(direct)) ? { stereo: 'racemic', precursors: iso } : { stereo: 'mismatch', precursors: iso };
+  }
+  const set = verified.product.isomericSmiles === t.isomericSmiles && kind(verified) !== 'racemic';
+  return { stereo: set ? 'set' : 'racemic', precursors: iso };
+}
+
+function retroRank(t, group, precursors, stereo) {
+  const rank = {
+    largest: Math.max.apply(null, precursors.map((p) => p.skeleton)),
+    penalty: group === 'Protecting groups' ? RETRO_LIMITS.protectingGroupPenalty : 0,
+    total: precursors.reduce((s, p) => s + p.skeleton, 0),
+    stereocentres: precursors.reduce((s, p) => s + p.stereocentres, 0),
+    common: precursors.filter((p) => p.common).length,
+    fgi: precursors.length === 1 && precursors[0].heavy === t.heavy ? 1 : 0,
+    stereo: stereo === 'racemic' ? 1 : 0,
+  };
+  rank.adjusted = rank.largest + rank.penalty + rank.fgi * RETRO_LIMITS.fgiPenalty;
+  return rank;
+}
+
+function retroEditAtoms(t, record) {
+  if (!record) {
+    return { bonds: [], changedAtoms: [] };
+  }
+  return {
+    bonds: record.cuts.map((pair) => pair.map((id) => t.map.get(id))),
+    changedAtoms: [...retroChanged(t, record)].map((id) => t.map.get(id)).sort((a, b) => a - b),
+  };
+}
+
+function retroCandidate(t, spec, verified) {
+  const stereo = retroStereoClass(t, spec, verified);
+  if (stereo.stereo === 'mismatch') {
+    return null;
+  }
+  const precursors = spec.precursors.map((p, i) => retroPrecursorInfo(Object.assign({}, p, { isomericSmiles: stereo.precursors ? stereo.precursors[i].smiles : p.smiles })));
+  const edit = retroEditAtoms(t, spec.record);
+  return {
+    transform: spec.transform.id,
+    name: spec.transform.name,
+    group: spec.transform.group,
+    rule: spec.transform.rule,
+    outcomeRule: verified.outcome.rule,
+    outcomeId: verified.outcome.id,
+    outcomeName: verified.outcome.name,
+    precursors,
+    reagents: spec.reagents.slice(),
+    conditions: verified.conditions,
+    compounds: verified.compounds,
+    outcome: verified.outcome,
+    product: verified.product,
+    minor: verified.minor,
+    labels: reactionConditionLabels(verified.conditions, verified.compounds),
+    key: spec.key,
+    bonds: edit.bonds,
+    changedAtoms: edit.changedAtoms,
+    stereo: stereo.stereo,
+    rank: retroRank(t, spec.transform.group, precursors, stereo.stereo),
+  };
+}
+
+function retroTertButylOn(g, id) {
+  const q = rxAttach(g, 'C', id);
+  for (let i = 0; i < 3; i++) {
+    rxAttach(g, 'C', q.id);
+  }
+  return q;
+}
+
+function retroProtectAmine(g, atoms) {
+  const n = atoms[0];
+  if (!g.getAtom(n) || rxHydrogens(g, n) < 1) {
+    return false;
+  }
+  const c = rxAttach(g, 'C', n);
+  rxAttach(g, 'O', c.id, 2);
+  retroTertButylOn(g, rxAttach(g, 'O', c.id).id);
+  return true;
+}
+
+function retroProtectAlcohol(g, atoms) {
+  const o = atoms[0];
+  if (!g.getAtom(o) || rxHydrogens(g, o) < 1) {
+    return false;
+  }
+  const si = rxAttach(g, 'Si', o);
+  rxAttach(g, 'C', si.id);
+  rxAttach(g, 'C', si.id);
+  retroTertButylOn(g, si.id);
+  return true;
+}
+
+function retroProtectCarbonyl(g, atoms) {
+  const bond = g.getAtom(atoms[0]) && g.getAtom(atoms[1]) ? g.getBond(atoms[0], atoms[1]) : null;
+  if (!bond || bond.order !== 2) {
+    return false;
+  }
+  bond.order = 1;
+  const o2 = rxAttach(g, 'O', atoms[0]);
+  const c1 = rxAttach(g, 'C', atoms[1]);
+  const c2 = rxAttach(g, 'C', c1.id);
+  g.addBond(c2.id, o2.id);
+  return true;
+}
+
+function retroProtectAcid(g, atoms) {
+  if (!g.getAtom(atoms[0])) {
+    return false;
+  }
+  const oh = rxNeighbors(g, atoms[0]).find((n) => n.atom.element === 'O' && n.bond.order === 1 && rxHydrogens(g, n.atom.id) >= 1);
+  if (!oh) {
+    return false;
+  }
+  retroTertButylOn(g, oh.atom.id);
+  return true;
+}
+
+const RETRO_PROTECTION = {
+  amine: { label: 'Boc', protect: [RETRO_REAGENTS.boc2o], protectConditions: {}, deprotect: [RETRO_REAGENTS.tfa], deprotectConditions: {}, apply: retroProtectAmine },
+  alcohol: { label: 'TBS', protect: [RETRO_REAGENTS.tbscl], protectConditions: { additives: ['imidazole'], solvents: ['dmf'] }, deprotect: [RETRO_REAGENTS.tbaf], deprotectConditions: { solvents: ['thf'] }, apply: retroProtectAlcohol },
+  ketone: { label: 'ethylene acetal', protect: [RETRO_REAGENTS.ethyleneGlycol], protectConditions: { additives: ['tsoh'], solvents: ['toluene'], temperature: 110 }, deprotect: [RETRO_REAGENTS.water], deprotectConditions: { additives: ['hcl'], solvents: ['water'] }, apply: retroProtectCarbonyl },
+  aldehyde: { label: 'ethylene acetal', protect: [RETRO_REAGENTS.ethyleneGlycol], protectConditions: { additives: ['tsoh'], solvents: ['toluene'], temperature: 110 }, deprotect: [RETRO_REAGENTS.water], deprotectConditions: { additives: ['hcl'], solvents: ['water'] }, apply: retroProtectCarbonyl },
+  acid: { label: 'tert-butyl ester', protect: [RETRO_REAGENTS.isobutylene], protectConditions: { additives: ['h2so4'] }, deprotect: [RETRO_REAGENTS.tfa], deprotectConditions: {}, apply: retroProtectAcid },
+};
+
+function retroGuardedAtoms(t) {
+  if (!t.guarded) {
+    const saved = t.currentTransform;
+    t.currentTransform = null;
+    t.guarded = new Set();
+    retroSilylEthers(t).concat(retroBenzylEthers(t), retroAcetals(t)).forEach((x) => x.atoms.forEach((id) => t.guarded.add(id)));
+    t.currentTransform = saved;
+  }
+  return t.guarded;
+}
+
+function retroProtectOptions(t, spec, chemo) {
+  const kinds = new Set((chemo.changed || []).concat((chemo.competing || []).map((c) => c.group)));
+  const changed = retroChanged(t, spec.record);
+  const guarded = retroGuardedAtoms(t);
+  const groups = rxChemoGroups(t.graph);
+  const options = [];
+  Object.keys(RETRO_PROTECTION).forEach((kind) => {
+    if (kinds.has(kind)) {
+      (groups[kind] || []).filter((atoms) => atoms.every((id) => !changed.has(id) && !guarded.has(id))).forEach((atoms) => options.push({ kind, atoms }));
+    }
+  });
+  return options.slice(0, RETRO_LIMITS.maxProtectTries);
+}
+
+function retroProtectTry(t, spec, option) {
+  const pg = RETRO_PROTECTION[option.kind];
+  const record = spec.record;
+  const hAtoms = option.atoms.map((id) => record.map.get(id));
+  const pOut = {};
+  const pGraph = retroClone(record.graph, null, pOut);
+  if (!pg.apply(pGraph, hAtoms.map((id) => pOut.map.get(id))) || !retroValid(pGraph)) {
+    return null;
+  }
+  const piece = record.pieces.find((p) => p.ids.has(hAtoms[0]));
+  const protectedPiece = retroPieces(pGraph).find((p) => p.ids.has(pOut.map.get(hAtoms[0])));
+  const index = piece ? spec.precursors.findIndex((p) => p.smiles === piece.smiles) : -1;
+  if (index < 0 || !protectedPiece) {
+    return null;
+  }
+  const tOut = {};
+  const tGraph = retroClone(t.graph, null, tOut);
+  if (!pg.apply(tGraph, option.atoms.map((id) => tOut.map.get(id))) || !retroValid(tGraph)) {
+    return null;
+  }
+  const protectedTarget = retroCanonical(tGraph);
+  if (!protectedTarget || protectedTarget === t.smiles) {
+    return null;
+  }
+  const protectSpec = retroSpec([{ smiles: piece.smiles, role: 'reactant' }], pg.protect, pg.protectConditions);
+  const protect = retroTryVerify(protectSpec, protectedPiece.smiles);
+  if (!protect) {
+    return null;
+  }
+  const stepSpec = retroSpec(spec.precursors.map((p, i) => (i === index ? Object.assign({}, p, { smiles: protectedPiece.smiles }) : p)), spec.reagents, spec.conditions);
+  const step = retroTryVerify(stepSpec, protectedTarget);
+  if (!step) {
+    return null;
+  }
+  const deprotectSpec = retroSpec([{ smiles: protectedTarget, role: 'reactant' }], pg.deprotect, pg.deprotectConditions);
+  const deprotect = retroTryVerify(deprotectSpec, t.smiles);
+  if (!deprotect) {
+    return null;
+  }
+  const pgSteps = [['protect', protectSpec, protect], ['step', stepSpec, step], ['deprotect', deprotectSpec, deprotect]].map(([role, s, v]) => ({
+    role,
+    precursors: s.precursors,
+    reagents: s.reagents,
+    target: v.product.smiles,
+    compounds: v.compounds,
+    conditions: v.conditions,
+    outcome: v.outcome,
+    product: v.product,
+    minor: v.minor,
+  }));
+  return { option, pg, precursor: piece.smiles, protectedPrecursor: protectedPiece.smiles, protectedTarget, pgSteps };
+}
+
+function retroProtectPlan(spec, target) {
+  const attempt = spec.attempt || {};
+  const outcome = attempt.verified ? attempt.verified.outcome : attempt.result && attempt.result.best;
+  const chemo = outcome && outcome.chemoselectivity;
+  if (!spec.record || !chemo || spec.transform.group === 'Protecting groups') {
+    return null;
+  }
+  for (const option of retroProtectOptions(target, spec, chemo)) {
+    const plan = retroProtectTry(target, spec, option);
+    if (plan) {
+      return retroProtectCandidate(target, spec, plan);
+    }
+  }
+  return null;
+}
+
+function retroProtectCandidate(t, spec, plan) {
+  const step = plan.pgSteps[1];
+  const precursors = spec.precursors.map(retroPrecursorInfo);
+  const edit = retroEditAtoms(t, spec.record);
+  const groupLabel = (typeof RX_CHEMO_GROUP_LABELS === 'object' && RX_CHEMO_GROUP_LABELS[plan.option.kind]) || plan.option.kind;
+  return {
+    transform: spec.transform.id,
+    name: spec.transform.name + ' with ' + plan.pg.label + '-protected ' + groupLabel,
+    group: 'Protecting groups',
+    rule: spec.transform.rule,
+    outcomeRule: step.outcome.rule,
+    outcomeId: step.outcome.id,
+    outcomeName: step.outcome.name,
+    precursors,
+    reagents: spec.reagents.slice(),
+    conditions: step.conditions,
+    compounds: step.compounds,
+    outcome: step.outcome,
+    product: plan.pgSteps[2].product,
+    minor: plan.pgSteps.some((s) => s.minor),
+    labels: reactionConditionLabels(step.conditions, step.compounds),
+    key: 'pg:' + plan.option.kind + ':' + plan.option.atoms.join(',') + ':' + spec.key,
+    bonds: edit.bonds,
+    changedAtoms: edit.changedAtoms,
+    stereo: null,
+    protection: { group: plan.option.kind, label: plan.pg.label, atoms: plan.option.atoms.map((id) => t.map.get(id)), precursor: plan.precursor, protectedPrecursor: plan.protectedPrecursor, protectedTarget: plan.protectedTarget },
+    pgSteps: plan.pgSteps,
+    rank: retroRank(t, 'Protecting groups', precursors, null),
+  };
+}
+
+function* retroDisconnectSteps(graph, ids, options) {
   const start = retroNow();
-  const budget = (options && options.budgetMs) || RETRO_LIMITS.budgetMs;
   const t = retroTarget(graph, ids);
-  const out = { smiles: t.smiles, candidates: [], tried: 0, truncated: false, reason: '', ms: 0 };
+  const out = { smiles: t.smiles, isomericSmiles: t.isomericSmiles, stereocentres: t.stereocentres, candidates: [], tried: 0, truncated: false, reason: '', ms: 0 };
   if (!t.graph.atoms.length || !t.smiles) {
     out.reason = 'empty';
     return out;
@@ -898,9 +1961,18 @@ function retroDisconnect(graph, ids, options) {
     out.reason = 'size';
     return out;
   }
+  const planning = !(options && options.protect === false);
+  t.edits = [];
   const specs = [];
   const seen = new Set();
-  RETRO_TRANSFORMS.forEach((transform) => {
+  let stopped = false;
+  for (const transform of RETRO_TRANSFORMS) {
+    if ((yield { phase: 'match', transform }) === false) {
+      stopped = true;
+      break;
+    }
+    const first = t.edits.length;
+    t.currentTransform = transform.id;
     let list = [];
     try {
       list = transform.match(t) || [];
@@ -914,56 +1986,52 @@ function retroDisconnect(graph, ids, options) {
       const key = retroSpecKey(spec);
       if (!seen.has(key)) {
         seen.add(key);
-        specs.push(Object.assign(spec, { transform, key }));
+        specs.push(Object.assign(spec, { transform, key, record: retroSpecRecord(t, spec, first) }));
       }
     });
-  });
-  for (const spec of specs) {
-    if (retroNow() - start > budget) {
-      out.truncated = true;
+  }
+  t.currentTransform = null;
+  const keys = new Set();
+  for (const spec of stopped ? [] : specs) {
+    if ((yield { phase: 'spec', spec }) === false) {
+      stopped = true;
       break;
     }
     out.tried += 1;
-    let verified = null;
-    try {
-      verified = retroVerify(spec, t.smiles);
-    } catch (error) {
-      verified = null;
+    const sink = {};
+    const verified = retroTryVerify(spec, t.smiles, sink);
+    spec.attempt = { verified, result: sink.result || null };
+    if (verified) {
+      const candidate = retroCandidate(t, spec, verified);
+      if (candidate) {
+        out.candidates.push(candidate);
+      }
     }
-    if (!verified) {
-      continue;
+    if (planning && (!verified || verified.outcome.chemoselectivity)) {
+      const plan = retroProtectPlan(spec, t);
+      if (plan && !keys.has(plan.key)) {
+        keys.add(plan.key);
+        out.candidates.push(plan);
+      }
     }
-    const precursors = spec.precursors.map(retroPrecursorInfo);
-    const labels = reactionConditionLabels(verified.conditions, verified.compounds);
-    out.candidates.push({
-      transform: spec.transform.id,
-      name: spec.transform.name,
-      group: spec.transform.group,
-      rule: spec.transform.rule,
-      outcomeRule: verified.outcome.rule,
-      outcomeId: verified.outcome.id,
-      outcomeName: verified.outcome.name,
-      precursors,
-      reagents: spec.reagents.slice(),
-      conditions: verified.conditions,
-      compounds: verified.compounds,
-      outcome: verified.outcome,
-      product: verified.product,
-      minor: verified.minor,
-      labels,
-      key: spec.key,
-      rank: {
-        largest: Math.max.apply(null, precursors.map((p) => p.skeleton)),
-        total: precursors.reduce((s, p) => s + p.skeleton, 0),
-        stereocentres: precursors.reduce((s, p) => s + p.stereocentres, 0),
-        common: precursors.filter((p) => p.common).length,
-      },
-    });
+    spec.attempt = null;
   }
+  out.truncated = stopped;
   out.candidates.sort(retroCompare);
   out.candidates = out.candidates.slice(0, RETRO_LIMITS.maxCandidates);
   out.ms = Math.round(retroNow() - start);
   return out;
+}
+
+function retroDisconnect(graph, ids, options) {
+  const start = retroNow();
+  const budget = (options && options.budgetMs) || RETRO_LIMITS.budgetMs;
+  const steps = retroDisconnectSteps(graph, ids, options);
+  let step = steps.next();
+  while (!step.done) {
+    step = steps.next(!(step.value.phase === 'spec' && retroNow() - start > budget));
+  }
+  return step.value;
 }
 
 function retroDisconnectSmiles(smiles, options) {
@@ -1017,9 +2085,21 @@ function retroRouteSteps(chain) {
   for (let i = chain.length - 1; i >= 0; i--) {
     const link = chain[i];
     const c = link.candidate;
-    c.compounds.forEach(retroDescribe);
     const next = chain[i + 1];
     const previous = next ? c.precursors[link.precursor].smiles : null;
+    if (c.pgSteps) {
+      let carried = previous === c.protection.precursor ? previous : null;
+      c.pgSteps.forEach((s) => {
+        s.compounds.forEach(retroDescribe);
+        const step = reactionRouteStep(s.compounds, s.conditions, s.outcome, s.product, s.minor, carried);
+        if (step) {
+          steps.push(step);
+        }
+        carried = s.product.smiles;
+      });
+      continue;
+    }
+    c.compounds.forEach(retroDescribe);
     const step = reactionRouteStep(c.compounds, c.conditions, c.outcome, c.product, c.minor, previous);
     if (step) {
       steps.push(step);
@@ -1029,6 +2109,12 @@ function retroRouteSteps(chain) {
 }
 
 function retroForwardCheck(candidate, targetSmiles) {
+  if (candidate.pgSteps) {
+    return candidate.pgSteps.every((s, i) => {
+      const verified = retroTryVerify({ precursors: s.precursors, reagents: s.reagents, conditions: s.conditions }, i === candidate.pgSteps.length - 1 ? targetSmiles : s.target);
+      return !!verified && verified.minor === s.minor;
+    });
+  }
   const spec = { precursors: candidate.precursors.map((p) => ({ smiles: p.smiles, role: p.role, label: p.label })), reagents: candidate.reagents, conditions: candidate.conditions };
   const verified = retroVerify(spec, targetSmiles);
   return !!verified && verified.minor === candidate.minor;

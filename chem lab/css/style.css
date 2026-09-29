@@ -1775,6 +1775,12 @@ body[data-view="reactions"] #info-panel {
   align-self: flex-start;
 }
 
+.rx-io-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 #rx-cards {
   display: flex;
   flex-direction: column;
@@ -2165,7 +2171,7 @@ details.rx-field > * + * {
 
 .rx-sheet th:first-child,
 .rx-sheet td:first-child {
-  width: 38%;
+  width: 26%;
   overflow: hidden;
   font-family: var(--font-ui);
   text-align: left;
@@ -2179,6 +2185,67 @@ details.rx-field > * + * {
 
 .rx-sheet tbody tr:hover td {
   background: var(--accent-soft);
+}
+
+.rx-sheet th:last-child {
+  width: 18%;
+}
+
+.rx-sheet td.rx-hazards {
+  white-space: normal;
+  line-height: 1.6;
+}
+
+.rx-hazard {
+  display: inline-block;
+  min-width: 16px;
+  margin-left: 2px;
+  padding: 0 3px;
+  font-size: 10px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--danger);
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  border-radius: 3px;
+  cursor: help;
+}
+
+.rx-green {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  font-size: 12px;
+}
+
+.rx-green[hidden] {
+  display: none;
+}
+
+.rx-green-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  cursor: help;
+}
+
+.rx-green-key {
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.rx-green-item strong {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.rx-green-note {
+  flex-basis: 100%;
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 #rx-prediction {
@@ -2464,6 +2531,39 @@ details.rx-field > * + * {
   padding-left: 18px;
   color: var(--warn);
   font-size: 12.5px;
+}
+
+.rx-chemo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--warn);
+  border-radius: 6px;
+}
+
+.rx-chemo-title {
+  font-weight: 600;
+  color: var(--warn);
+}
+
+.rx-chemo-text,
+.rx-chemo-suggestion {
+  margin: 0;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.rx-chemo-sites {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-primary);
+}
+
+.rx-chemo-suggestion {
+  color: var(--text-primary);
 }
 
 .rx-alternatives {

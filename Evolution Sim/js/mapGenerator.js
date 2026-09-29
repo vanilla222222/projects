@@ -2,6 +2,8 @@
 // then hydrology (ocean vs lake via flood fill, rivers sourced from lakes
 // and glaciers), then final biome classification per cell.
 
+const ALTITUDE_CURVE = 1.2;
+
 class WorldMap {
 	constructor(width, height, seed, options = {}) {
 		this.width = width;
@@ -160,9 +162,11 @@ class WorldMap {
 					a = a * (1 - blend * 0.45) + ridge * blend * 0.45;
 				}
 
-				const edgeDist = Math.min(x, width - 1 - x, y, height - 1 - y);
-				const edgeFalloff = Math.min(1, edgeDist / edgeMargin);
-				a = a * (0.4 + 0.6 * edgeFalloff);
+				const edgeWobble = warpNoiseY.noise2D(x * warpFreq * 2.7 + 31.7, y * warpFreq * 2.7 - 12.3);
+				const edgeDist = Math.min(x, width - 1 - x, y, height - 1 - y) + edgeWobble * edgeMargin * 0.9;
+				const e = Math.max(0, Math.min(1, edgeDist / (edgeMargin * 1.5)));
+				const edgeFalloff = e * e * (3 - 2 * e);
+				a = a * (0.35 + 0.65 * edgeFalloff);
 
 				this.altitude[this.idx(x, y)] = a;
 				if (a < minAlt) minAlt = a;
@@ -173,7 +177,7 @@ class WorldMap {
 		// Normalize altitude to fill 0..1 range for better contrast.
 		const range = Math.max(1e-6, maxAlt - minAlt);
 		for (let i = 0; i < this.altitude.length; i++) {
-			this.altitude[i] = (this.altitude[i] - minAlt) / range;
+			this.altitude[i] = Math.pow((this.altitude[i] - minAlt) / range, ALTITUDE_CURVE);
 		}
 
 		for (let y = 0; y < height; y++) {
@@ -192,9 +196,9 @@ class WorldMap {
 					gain: 0.5,
 				});
 				tempNoiseVal = (tempNoiseVal + 1) / 2;
-				let temp = (1 - latitude) * 0.75 + tempNoiseVal * 0.25;
+				let temp = (1 - Math.pow(latitude, 1.4)) * 0.72 + tempNoiseVal * 0.25 + 0.04;
 				const altitudeAboveSea = Math.max(0, a - BIOME_THRESHOLDS.seaLevel);
-				temp -= altitudeAboveSea * 0.9;
+				temp -= altitudeAboveSea * 0.75;
 				temp = Math.min(1, Math.max(0, temp));
 				this.temperature[i] = temp;
 

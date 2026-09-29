@@ -244,7 +244,7 @@
       <button type="button" class="icon-button" id="save-button" title="Save drawing as a file (Ctrl+S)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v10M6 9l4 4 4-4M4 16h12"/></svg></button>
       <button type="button" class="icon-button" id="export-button" title="Export PNG image"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="12" rx="1.5"/><circle cx="7.5" cy="8.5" r="1.3"/><path d="m4 15 4.5-4.5 3 3 2-2L17 15"/></svg></button>
       <button type="button" class="icon-button" id="export-svg-button" title="Export SVG vector image"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 15 C6 5 14 15 16 5"/><rect x="2.5" y="13.5" width="3" height="3"/><rect x="14.5" y="3.5" width="3" height="3"/></svg></button>
-      <input type="file" id="open-input" accept=".json,.mol,.sdf,.sd,application/json,chemical/x-mdl-molfile,chemical/x-mdl-sdfile" hidden>
+      <input type="file" id="open-input" accept=".json,.mol,.sdf,.sd,.rxn,application/json,chemical/x-mdl-molfile,chemical/x-mdl-sdfile,chemical/x-mdl-rxnfile" hidden>
     </div>
     <div class="tool-group">
       <div class="insight-anchor">
@@ -365,16 +365,23 @@
         <button type="button" class="text-button" id="rx-online" hidden>Search PubChem</button>
       </div>
       <button type="button" class="text-button" id="rx-from-editor" title="Add the selected molecules, or everything on the editor canvas">Add from editor</button>
+      <div class="rx-io-row">
+        <button type="button" class="text-button" id="rx-import" title="Open a .rxn or reaction SMILES file; reaction SMILES can also be pasted into the box above">Import reaction</button>
+        <button type="button" class="text-button" id="rx-copy-rsmiles" title="Copy the reaction as reaction SMILES (reactants&gt;agents&gt;products, with stereo)">Copy reaction SMILES</button>
+        <button type="button" class="text-button" id="rx-download-rxn" title="Download the reaction as an MDL .rxn file">Download .rxn</button>
+        <input type="file" id="rx-import-file" accept=".rxn,.smi,.txt,chemical/x-mdl-rxnfile" hidden>
+      </div>
       <div id="rx-cards"></div>
       <div id="rx-empty" class="rx-muted">No compounds yet. Add reactants, reagents, catalysts or solvents by SMILES or name; roles are guessed and can be changed on each card.</div>
       <div class="rx-sheet-block" id="rx-sheet-block" hidden>
         <div class="rx-sheet-head">
           <span class="rx-label">Stoichiometry</span>
           <label for="rx-scale">Scale</label>
-          <input type="number" id="rx-scale" min="0.001" max="100000" step="0.1" aria-label="Scale in mmol per equivalent">
+          <input type="number" id="rx-scale" min="0.001" max="100000" step="0.1" aria-label="Scale in mmol per equivalent" title="mmol per equivalent; a mass, volume or mmol typed on the first reactant overrides it">
           <span class="rx-unit">mmol</span>
         </div>
         <table id="rx-sheet" class="rx-sheet"></table>
+        <div id="rx-green" class="rx-green" hidden></div>
       </div>
     </div>
     <div class="rx-column rx-conditions">
@@ -769,12 +776,17 @@
 <script src="js/abbreviations.js"></script>
 <script src="js/recent.js"></script>
 <script src="js/reactions.js"></script>
+<script src="js/reagent-library.js"></script>
+<script src="js/reaction-io.js"></script>
 <script src="js/reaction-stereo.js"></script>
 <script src="js/reaction-rules.js"></script>
 <script src="js/reaction-rules-extra.js"></script>
 <script src="js/reaction-rules-extra2.js"></script>
 <script src="js/reaction-aromatic.js"></script>
+<script src="js/reaction-rules-extra3.js"></script>
+<script src="js/retro-stock.js"></script>
 <script src="js/retro.js"></script>
+<script src="js/retro-search.js"></script>
 <script src="js/reaction-lab.js"></script>
 <script src="js/spectra-view.js"></script>
 <script src="js/viewer3d.js"></script>

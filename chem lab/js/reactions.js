@@ -97,6 +97,12 @@ const REACTION_ADDITIVES = [
   { id: 'me3si', name: 'Me₃S⁺ I⁻', group: 'Reagent', label: 'Me3SI', smiles: 'C[S+](C)C.[I-]' },
   { id: 'me3soi', name: 'Me₃S(O)⁺ I⁻', group: 'Reagent', label: 'Me3SOI', smiles: '' },
   { id: 'ag2o', name: 'Ag₂O', group: 'Reagent', label: 'Ag2O', smiles: '' },
+  { id: 'hno3', name: 'HNO₃', group: 'Acid', label: 'HNO3', smiles: 'O[N+](=O)[O-]' },
+  { id: 'so3', name: 'SO₃ / fuming H₂SO₄', group: 'Acid', label: 'SO3', smiles: '' },
+  { id: 'h3po2', name: 'H₃PO₂', group: 'Reagent', label: 'H3PO2', smiles: '' },
+  { id: 'ddq', name: 'DDQ', group: 'Oxidant', label: 'DDQ', smiles: 'N#CC1=C(C#N)C(=O)C(Cl)=C(Cl)C1=O' },
+  { id: 'can', name: 'CAN', group: 'Oxidant', label: 'CAN', smiles: '' },
+  { id: 'tmschn2', name: 'TMSCHN₂', group: 'Reagent', label: 'TMSCHN2', smiles: 'C[Si](C)(C)C=[N+]=[N-]' },
 ];
 
 const REACTION_ATMOSPHERES = [
@@ -261,6 +267,20 @@ const REACTION_NAME_ALIASES = {
   '2-methylcyclohexanone': 'CC1CCCCC1=O',
   'cyclohexenone': 'O=C1CCCC=C1',
   'tetramethylammonium hydroxide': 'C[N+](C)(C)C.[OH-]',
+  'fmoc-cl': 'O=C(Cl)OCC1c2ccccc2-c2ccccc21',
+  'fmoc chloride': 'O=C(Cl)OCC1c2ccccc2-c2ccccc21',
+  'fmoc-osu': 'O=C1CCC(=O)N1OC(=O)OCC1c2ccccc2-c2ccccc21',
+  cbzcl: 'O=C(Cl)OCc1ccccc1',
+  'cbz-cl': 'O=C(Cl)OCc1ccccc1',
+  'benzyl chloroformate': 'O=C(Cl)OCc1ccccc1',
+  pmbcl: 'COc1ccc(CCl)cc1',
+  'pmb-cl': 'COc1ccc(CCl)cc1',
+  '4-methoxybenzyl chloride': 'COc1ccc(CCl)cc1',
+  tbdpscl: 'CC(C)(C)[Si](Cl)(c1ccccc1)c1ccccc1',
+  'tert-butyldiphenylsilyl chloride': 'CC(C)(C)[Si](Cl)(c1ccccc1)c1ccccc1',
+  ddq: 'N#CC1=C(C#N)C(=O)C(Cl)=C(Cl)C1=O',
+  tmschn2: 'C[Si](C)(C)C=[N+]=[N-]',
+  trimethylsilyldiazomethane: 'C[Si](C)(C)C=[N+]=[N-]',
 };
 
 function reactionAliasSmiles(text) {
@@ -616,14 +636,120 @@ function reactionRouteStep(compounds, conditions, outcome, product, minor, previ
   const selectivity = ratio ? ratio[minor ? 1 : 0] : 100;
   const conversion = outcome.stoichiometry && Number.isFinite(outcome.stoichiometry.conversion) ? Math.min(1, outcome.stoichiometry.conversion) : 1;
   const info = reactionDescribeFragment(fragment);
+  const rows = reactionMaterialRows(compounds, conditions, reactionScaleMmol(compounds, 1));
+  const metrics = reactionGreenMetrics(outcome, rows, selectivity, product);
+  if (metrics) {
+    const carriedRow = rows.find((r) => r.compound === carried);
+    metrics.carriedMg = carriedRow && carriedRow.mg !== null ? carriedRow.mg : 0;
+  }
   return {
-    from: { smiles: carried.smiles, name: carried.label || carried.name || carried.formula, fragment: carried.fragment },
-    to: { smiles: product.smiles, name: info.name || info.formula, fragment },
+    from: { smiles: carried.smiles, isomericSmiles: reactionIsomericSmiles(carried.fragment, carried.smiles), name: carried.label || carried.name || carried.formula, fragment: carried.fragment },
+    to: { smiles: product.smiles, isomericSmiles: product.isomericSmiles || reactionIsomericSmiles(fragment, product.smiles), name: info.name || info.formula, fragment },
     reaction: outcome.name,
     above: above.slice(0, REACTION_ROUTE_LIMITS.labelLength),
     below: labels.below.slice(0, REACTION_ROUTE_LIMITS.labelLength),
     yield: Math.max(0, Math.min(100, Math.round(selectivity * conversion))),
+    metrics,
   };
+}
+
+function reactionGraphProperties(graph) {
+  const props = computeProperties(graph, graph.atoms.map((a) => a.id));
+  const components = graph.connectedComponents();
+  if (components.length < 2) {
+    return props;
+  }
+  const parts = components.map((c) => computeProperties(graph, c.atomIds)).sort((a, b) => (a.smiles < b.smiles ? -1 : a.smiles > b.smiles ? 1 : 0));
+  return Object.assign({}, props, { smiles: parts.map((p) => p.smiles).join('.'), isomericSmiles: parts.map((p) => p.isomericSmiles || p.smiles).join('.') });
+}
+
+function reactionIsomericSmiles(fragment, fallback) {
+  if (!fragment) {
+    return fallback || '';
+  }
+  try {
+    return reactionGraphProperties(reactionFragmentGraph(fragment)).isomericSmiles || fallback || '';
+  } catch (error) {
+    return fallback || '';
+  }
+}
+
+function reactionMaterialRows(compounds, conditions, scaleMmol) {
+  const rows = reactionStoichiometry(compounds, scaleMmol, conditions);
+  reactionSolventUsage(compounds, conditions, scaleMmol).filter((x) => !x.compound).forEach((x) => {
+    rows.push({ name: x.name, role: 'solvent', mw: null, equiv: null, mmol: null, mg: x.mg, mL: x.mL, compound: null, hazard: x.hazard });
+  });
+  return rows;
+}
+
+function reactionProductMass(smiles) {
+  try {
+    return reactionGraphProperties(reactionFragmentGraph(smilesToFragment(smiles))).averageMass;
+  } catch (error) {
+    return null;
+  }
+}
+
+function reactionGreenMetrics(outcome, stoichRows, yieldPct, product) {
+  const main = product || (outcome && outcome.products && outcome.products[0]);
+  if (!main || !main.smiles) {
+    return null;
+  }
+  const productMw = reactionProductMass(main.smiles);
+  const count = main.count || 1;
+  const stoich = outcome.stoichiometry;
+  const needs = stoich ? stoich.rows : (outcome.consumes || []).filter((x) => x && x.compound && x.need > 0 && x.compound.role !== 'solvent' && x.compound.role !== 'catalyst');
+  const rows = stoichRows || [];
+  const mwOf = (compound) => {
+    const row = rows.find((r) => r.compound === compound);
+    return row && row.mw ? row.mw : compound.mass || null;
+  };
+  const consumedMass = needs.reduce((sum, x) => (sum === null || !mwOf(x.compound) ? null : sum + x.need * mwOf(x.compound)), 0);
+  const atomEconomy = productMw && consumedMass ? Math.min(100, productMw * count / consumedMass * 100) : null;
+  const fraction = (Number.isFinite(yieldPct) ? Math.max(0, Math.min(100, yieldPct)) : 100) / 100;
+  const baseRow = needs.length ? rows.find((r) => r.compound === needs[0].compound) : null;
+  const conversion = stoich && Number.isFinite(stoich.conversion) ? Math.min(1, stoich.conversion) : 1;
+  const productMmol = baseRow && baseRow.mmol !== null ? baseRow.mmol * conversion / needs[0].need * count * fraction : null;
+  const productMg = productMmol !== null && productMw ? productMmol * productMw : null;
+  const inputs = rows.filter((r) => r.role !== 'solvent');
+  const inputMg = inputs.every((r) => r.mg !== null || r.equiv === null) ? inputs.reduce((sum, r) => sum + (r.mg || 0), 0) : null;
+  const solventMg = rows.filter((r) => r.role === 'solvent').reduce((sum, r) => sum + (r.mg || 0), 0);
+  const ok = productMg && inputMg !== null;
+  return {
+    atomEconomy,
+    eFactor: ok ? (inputMg - productMg) / productMg : null,
+    pmi: ok ? (inputMg + solventMg) / productMg : null,
+    inputMg,
+    solventMg,
+    productMg,
+    productMmol,
+    yield: Math.round(fraction * conversion * 100),
+  };
+}
+
+function reactionRouteMetrics(steps) {
+  const list = steps || [];
+  if (!list.length) {
+    return null;
+  }
+  const overallYield = reactionRouteYield(list);
+  if (list.some((s) => !s.metrics || !s.metrics.productMg || s.metrics.inputMg === null)) {
+    return { overallYield, pmi: null, eFactor: null, steps: list.length };
+  }
+  let factor = 1;
+  let fresh = 0;
+  let freshInputs = 0;
+  for (let i = list.length - 1; i >= 0; i -= 1) {
+    const m = list[i].metrics;
+    const carried = i > 0 ? m.carriedMg || 0 : 0;
+    fresh += factor * (m.inputMg + m.solventMg - carried);
+    freshInputs += factor * (m.inputMg - carried);
+    if (i > 0) {
+      factor *= carried / list[i - 1].metrics.productMg;
+    }
+  }
+  const finalMg = list[list.length - 1].metrics.productMg;
+  return { overallYield, pmi: fresh / finalMg, eFactor: (freshInputs - finalMg) / finalMg, steps: list.length };
 }
 
 function reactionRouteYield(steps) {
@@ -679,15 +805,19 @@ function buildRouteScheme(steps) {
   });
   places.forEach((p) => out.annotations.push({ kind: 'text', x: p.x, y: lowest + 30, text: String(p.number) }));
   out.annotations.push({ kind: 'text', x: cursor / 2, y: lowest + 70, text: 'Overall yield: ' + reactionRouteYield(steps) + '% over ' + steps.length + ' step' + (steps.length === 1 ? '' : 's') });
+  const metrics = reactionRouteMetrics(steps);
+  if (metrics && metrics.pmi !== null) {
+    out.annotations.push({ kind: 'text', x: cursor / 2, y: lowest + 100, text: 'Route PMI ' + metrics.pmi.toFixed(1) + ', E-factor ' + metrics.eFactor.toFixed(1) });
+  }
   return out;
 }
 
 function reactionRouteSerialize(steps) {
-  return (steps || []).map((s) => ({
-    from: { smiles: s.from.smiles, name: s.from.name },
-    to: { smiles: s.to.smiles, name: s.to.name },
+  return (steps || []).map((s) => Object.assign({
+    from: { smiles: s.from.smiles, isomericSmiles: s.from.isomericSmiles || s.from.smiles, name: s.from.name },
+    to: { smiles: s.to.smiles, isomericSmiles: s.to.isomericSmiles || s.to.smiles, name: s.to.name },
     reaction: s.reaction, above: s.above, below: s.below, yield: s.yield,
-  }));
+  }, s.metrics ? { metrics: s.metrics } : {}));
 }
 
 function reactionRouteRestore(raw) {
@@ -699,17 +829,42 @@ function reactionRouteRestore(raw) {
     try {
       const text = (v) => (typeof v === 'string' ? v.slice(0, REACTION_ROUTE_LIMITS.labelLength) : '');
       const y = Number(s.yield);
-      steps.push({
-        from: { smiles: s.from.smiles, name: text(s.from.name), fragment: smilesToFragment(s.from.smiles) },
-        to: { smiles: s.to.smiles, name: text(s.to.name), fragment: smilesToFragment(s.to.smiles) },
+      const metrics = reactionRestoreMetrics(s.metrics);
+      steps.push(Object.assign({
+        from: reactionRestoreEnd(s.from, text),
+        to: reactionRestoreEnd(s.to, text),
         reaction: text(s.reaction), above: text(s.above), below: text(s.below),
         yield: Number.isFinite(y) ? Math.max(0, Math.min(100, Math.round(y))) : 100,
-      });
+      }, metrics ? { metrics } : {}));
     } catch (error) {
       return;
     }
   });
   return steps;
+}
+
+function reactionRestoreEnd(end, text) {
+  const iso = typeof end.isomericSmiles === 'string' ? end.isomericSmiles : '';
+  let fragment = null;
+  if (iso) {
+    try {
+      fragment = smilesToFragment(iso);
+    } catch (error) {
+      fragment = null;
+    }
+  }
+  return { smiles: end.smiles, isomericSmiles: fragment ? iso : end.smiles, name: text(end.name), fragment: fragment || smilesToFragment(end.smiles) };
+}
+
+function reactionRestoreMetrics(raw) {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const out = {};
+  ['atomEconomy', 'eFactor', 'pmi', 'inputMg', 'solventMg', 'productMg', 'productMmol', 'yield', 'carriedMg'].forEach((key) => {
+    out[key] = Number.isFinite(raw[key]) ? raw[key] : null;
+  });
+  return out;
 }
 
 function serializeReactionState(state) {
@@ -760,7 +915,7 @@ function restoreReactionState(text) {
 }
 
 function reactionParseAmount(text) {
-  const match = /^\s*(\d+(?:\.\d+)?|\.\d+)\s*(mol\s*%|%|mmol|mol|mg|g|equiv|eq|ml|mL)?\.?\s*$/i.exec(String(text || ''));
+  const match = /^\s*(\d+(?:\.\d+)?|\.\d+)\s*(mol\s*%|%|mmol|mol|mg|g|equiv|eq|ml|mL|µl|μl|ul|uL)?\.?\s*$/i.exec(String(text || ''));
   if (!match) {
     return null;
   }
@@ -785,29 +940,96 @@ function reactionParseAmount(text) {
     return { kind: 'mg', value: value * 1000 };
   }
   if (unit === 'ml') {
-    return null;
+    return { kind: 'mL', value };
+  }
+  if (unit === 'µl' || unit === 'μl' || unit === 'ul') {
+    return { kind: 'mL', value: value / 1000 };
   }
   return { kind: 'equiv', value };
 }
 
-function reactionStoichiometry(compounds, scaleMmol) {
+function reactionParseConcentration(text) {
+  const match = /^\s*(\d+(?:\.\d+)?|\.\d+)\s*(M|mol\s*\/\s*L|mM)\s*$/i.exec(String(text || ''));
+  if (!match) {
+    return null;
+  }
+  const value = Number(match[1]) / (/^mm$/i.test(match[2]) ? 1000 : 1);
+  return Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function reactionReagentInfo(compound) {
+  return typeof rglLookup === 'function' && compound ? rglLookup(compound.smiles) : null;
+}
+
+function reactionScaleMmol(compounds, fallback) {
+  const base = Number.isFinite(fallback) && fallback > 0 ? fallback : 1;
+  const first = (compounds || []).find((c) => c.role === 'reactant' && reactionParseAmount(c.equiv) && reactionParseAmount(c.equiv).kind !== 'equiv');
+  if (!first) {
+    return base;
+  }
+  const row = reactionStoichiometry([first], 1)[0];
+  return row.mmol > 0 ? row.mmol : base;
+}
+
+function reactionSolventVolume(conditions, scaleMmol) {
+  const molar = conditions ? reactionParseConcentration(conditions.concentration) : null;
   const scale = Number.isFinite(scaleMmol) && scaleMmol > 0 ? scaleMmol : 1;
+  return molar ? scale / molar : null;
+}
+
+function reactionSolventUsage(compounds, conditions, scaleMmol) {
+  const volume = reactionSolventVolume(conditions, scaleMmol);
+  const listed = (compounds || []).filter((c) => c.role === 'solvent').map((c) => ({ name: c.label || c.name || c.formula || c.input, info: reactionReagentInfo(c), compound: c }));
+  const chosen = ((conditions && conditions.solvents) || []).filter((id) => id !== 'none').map((id) => {
+    const solvent = REACTION_SOLVENTS.find((x) => x.id === id);
+    return { name: solvent ? solvent.name : id, info: typeof rglLookup === 'function' ? rglLookup(id) : null, compound: null };
+  });
+  const all = listed.concat(chosen);
+  return all.map((x) => {
+    const mL = volume && all.length ? volume / all.length : null;
+    const density = x.info && x.info.density ? x.info.density : null;
+    return { name: x.name, compound: x.compound, mL, mg: mL !== null && density ? mL * density * 1000 : null, hazard: x.info ? x.info.hazard.slice() : [] };
+  });
+}
+
+function reactionStoichiometry(compounds, scaleMmol, conditions) {
+  const scale = Number.isFinite(scaleMmol) && scaleMmol > 0 ? scaleMmol : 1;
+  const solvents = conditions ? reactionSolventUsage(compounds, conditions, scale) : [];
   return (compounds || []).map((c) => {
-    const mw = Number.isFinite(c.mass) && c.mass > 0 ? c.mass : null;
-    const row = { name: c.label || c.name || c.formula || c.input, role: c.role, mw, equiv: null, mmol: null, mg: null };
+    const info = reactionReagentInfo(c);
+    const mw = Number.isFinite(c.mass) && c.mass > 0 ? c.mass : info && info.mw ? info.mw : null;
+    const row = { name: c.label || c.name || c.formula || c.input, role: c.role, mw, equiv: null, mmol: null, mg: null, mL: null, compound: c, hazard: info ? info.hazard.slice() : [] };
     if (c.role === 'solvent') {
+      const used = solvents.find((x) => x.compound === c);
+      if (used) {
+        row.mL = used.mL;
+        row.mg = used.mg;
+      }
       return row;
     }
     const amount = reactionParseAmount(c.equiv);
     if (!amount) {
       return row;
     }
+    const density = info && info.density ? info.density : null;
+    const molar = info && info.conc ? info.conc : null;
     if (amount.kind === 'equiv') {
       row.equiv = amount.value;
       row.mmol = amount.value * scale;
     } else if (amount.kind === 'mmol') {
       row.mmol = amount.value;
       row.equiv = amount.value / scale;
+    } else if (amount.kind === 'mL') {
+      row.mL = amount.value;
+      if (molar) {
+        row.mmol = amount.value * molar;
+      } else if (density && mw) {
+        row.mg = amount.value * density * 1000;
+        row.mmol = row.mg / mw;
+      }
+      if (row.mmol !== null) {
+        row.equiv = row.mmol / scale;
+      }
     } else if (mw) {
       row.mg = amount.value;
       row.mmol = amount.value / mw;
@@ -815,6 +1037,13 @@ function reactionStoichiometry(compounds, scaleMmol) {
     }
     if (row.mg === null && row.mmol !== null && mw) {
       row.mg = row.mmol * mw;
+    }
+    if (row.mL === null && row.mmol !== null) {
+      if (molar) {
+        row.mL = row.mmol / molar;
+      } else if (density && row.mg !== null) {
+        row.mL = row.mg / (density * 1000);
+      }
     }
     return row;
   });

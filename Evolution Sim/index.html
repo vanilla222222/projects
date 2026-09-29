@@ -2,186 +2,192 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8" />
-	<title>Evolution Sim — World Map</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Evolution Sim</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
 	<link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-	<header>
-		<h1>Evolution Sim</h1>
-		<p>Procedural world map generator — biomes from altitude, temperature &amp; humidity</p>
+	<header class="topbar">
+		<div class="brand">
+			<span class="brand-mark" id="brandMark"></span>
+			<div>
+				<h1>Evolution Sim</h1>
+				<p>A living world of evolving plants &amp; animals</p>
+			</div>
+		</div>
+
+		<div class="world-controls">
+			<label class="field">
+				<span>Seed</span>
+				<input id="seedInput" type="number" step="1" />
+			</label>
+			<button id="randomSeedBtn" class="btn ghost icon-btn" title="Random seed">
+				<svg viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="3" width="18" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="16" cy="16" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="16" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="16" r="1.5" fill="currentColor"/></svg>
+			</button>
+			<label class="field">
+				<span>Size</span>
+				<select id="sizeSelect">
+					<option value="220x150">Small</option>
+					<option value="320x210" selected>Medium</option>
+					<option value="460x300">Large</option>
+					<option value="640x420">Huge</option>
+				</select>
+			</label>
+			<button id="newWorldBtn" class="btn">New world</button>
+		</div>
+
+		<div class="transport">
+			<button id="playBtn" class="btn primary play" title="Play / pause (Space)">
+				<svg class="i-play" viewBox="0 0 24 24" width="18" height="18"><path d="M7 4.5v15l12-7.5z" fill="currentColor"/></svg>
+				<svg class="i-pause" viewBox="0 0 24 24" width="18" height="18"><path d="M6.5 4.5h4v15h-4zM13.5 4.5h4v15h-4z" fill="currentColor"/></svg>
+				<span id="playLabel">Play</span>
+			</button>
+			<button id="stepBtn" class="btn ghost icon-btn" title="Step one tick (.)">
+				<svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 5v14l10-7z M16.5 5h2.5v14h-2.5z" fill="currentColor"/></svg>
+			</button>
+			<div class="speed" id="speedGroup" role="group" aria-label="Speed">
+				<button data-speed="4">¼×</button>
+				<button data-speed="15" class="active">1×</button>
+				<button data-speed="45">3×</button>
+				<button data-speed="120">8×</button>
+				<button data-speed="600">Max</button>
+			</div>
+		</div>
+
+		<div class="clock">
+			<div class="season" id="seasonBadge"><span class="season-dot"></span><span id="seasonLabel">Spring</span></div>
+			<div class="clock-text"><strong id="yearLabel">Year 1</strong><span id="tickLabel">tick 0</span></div>
+			<div class="perf" id="perfLabel" title="Simulation cost per tick · frames per second">–</div>
+		</div>
 	</header>
 
-	<div class="layout">
-		<aside class="controls">
-			<div class="control-group">
-				<label for="seedInput">Seed</label>
-				<div class="row">
-					<input id="seedInput" type="number" step="1" />
-					<button id="randomSeedBtn" class="secondary" title="Random seed">🎲</button>
+	<main class="layout">
+		<aside class="panel left">
+			<section class="card">
+				<div class="card-head">
+					<h2>Ecosystem</h2>
+					<span class="muted" id="speciesTotals"></span>
 				</div>
-			</div>
+				<div class="stats" id="statCards"></div>
+			</section>
 
-			<div class="control-group">
-				<label>Map size</label>
-				<div class="row">
-					<input id="widthInput" type="number" value="300" min="50" max="2000" />
-					<input id="heightInput" type="number" value="200" min="50" max="2000" />
+			<section class="card">
+				<div class="card-head">
+					<h2>Populations</h2>
+					<span class="muted">log scale</span>
 				</div>
-			</div>
+				<canvas id="popChart" class="chart"></canvas>
+				<div class="legend" id="popLegend"></div>
+			</section>
 
-			<div class="control-group">
-				<label for="viewMode">View mode</label>
-				<select id="viewMode">
-					<option value="biome">Biomes</option>
-					<option value="altitude">Altitude</option>
-					<option value="temperature">Temperature</option>
-					<option value="humidity">Humidity</option>
-					<option value="fertility">Soil fertility</option>
-				</select>
-			</div>
-
-			<button id="generateBtn">Generate Map</button>
-
-			<hr class="divider" />
-
-			<div class="control-group">
-				<label>Plant Evolution</label>
-				<div class="row">
-					<button id="playPauseBtn">▶ Start</button>
-					<button id="stepBtn" class="secondary" title="Advance one tick">⏭ Step</button>
+			<section class="card">
+				<div class="card-head"><h2>Map</h2></div>
+				<div class="seg" id="viewModes">
+					<button data-mode="biome" class="active">Biomes</button>
+					<button data-mode="vegetation">Plants</button>
+					<button data-mode="temperature">Heat</button>
+					<button data-mode="humidity">Moisture</button>
+					<button data-mode="altitude">Height</button>
+					<button data-mode="fertility">Soil</button>
 				</div>
-			</div>
-
-			<div class="control-group">
-				<label for="speedInput">Speed — <span id="speedLabel">8 ticks/s</span></label>
-				<input id="speedInput" type="range" min="1" max="30" value="8" />
-			</div>
-
-			<div class="control-group row-check">
-				<label><input id="showPlants" type="checkbox" checked /> Show plants</label>
-				<label><input id="showAnimals" type="checkbox" checked /> Show herbivores</label>
-				<label><input id="showCarnivores" type="checkbox" checked /> Show carnivores</label>
-				<label><input id="showAquaticAnimals" type="checkbox" checked /> Show aquatic herbivores</label>
-				<label><input id="showAquaticCarnivores" type="checkbox" checked /> Show aquatic carnivores</label>
-			</div>
-
-			<div class="control-group stats">
-				<div><span>Tick</span><strong id="statTick">0</strong></div>
-				<div><span>Plants</span><strong id="statPlants">0</strong></div>
-				<div><span>Plant species</span><strong id="statSpecies">0</strong></div>
-				<div><span>Ever evolved</span><strong id="statSpeciesEver">0</strong></div>
-				<div><span>Herbivores</span><strong id="statAnimals">0</strong></div>
-				<div><span>Herbivore species</span><strong id="statAnimalSpecies">0</strong></div>
-				<div><span>Ever evolved</span><strong id="statAnimalSpeciesEver">0</strong></div>
-				<div><span>Carnivores</span><strong id="statCarnivores">0</strong></div>
-				<div><span>Carnivore species</span><strong id="statCarnivoreSpecies">0</strong></div>
-				<div><span>Ever evolved</span><strong id="statCarnivoreSpeciesEver">0</strong></div>
-				<div><span>Aquatic herbivores</span><strong id="statAquaticAnimals">0</strong></div>
-				<div><span>Species</span><strong id="statAquaticAnimalSpecies">0</strong></div>
-				<div><span>Ever evolved</span><strong id="statAquaticAnimalSpeciesEver">0</strong></div>
-				<div><span>Aquatic carnivores</span><strong id="statAquaticCarnivores">0</strong></div>
-				<div><span>Species</span><strong id="statAquaticCarnivoreSpecies">0</strong></div>
-				<div><span>Ever evolved</span><strong id="statAquaticCarnivoreSpeciesEver">0</strong></div>
-			</div>
-
-			<hr class="divider" />
-
-			<div class="control-group">
-				<label>Biome legend</label>
-				<div id="legend" class="legend"></div>
-			</div>
+				<div class="toggles">
+					<label class="switch"><input type="checkbox" id="showPlants" checked /><span></span>Plant cover</label>
+					<label class="switch"><input type="checkbox" id="showAnimals" checked /><span></span>Animals</label>
+					<label class="switch"><input type="checkbox" id="optSeasons" checked /><span></span>Seasons</label>
+					<label class="switch" title="Re-introduce a trophic group if it dies out"><input type="checkbox" id="optMigrations" checked /><span></span>Migrations</label>
+				</div>
+				<details class="biome-legend">
+					<summary>Biome legend</summary>
+					<div id="biomeLegend"></div>
+				</details>
+			</section>
 		</aside>
 
-		<main class="map-area">
-			<div class="zoom-bar">
-				<button id="zoomOutBtn" class="secondary" title="Zoom out">−</button>
-				<span id="zoomLabel">100%</span>
-				<button id="zoomInBtn" class="secondary" title="Zoom in">+</button>
-				<button id="zoomResetBtn" class="secondary" title="Fit to view">Fit</button>
-				<span class="zoom-hint">Scroll to zoom · drag to pan</span>
+		<section class="map-wrap" id="mapWrap">
+			<canvas id="map"></canvas>
+			<div class="map-tooltip" id="tooltip" hidden></div>
+			<div class="map-controls">
+				<button id="zoomIn" title="Zoom in">+</button>
+				<button id="zoomOut" title="Zoom out">−</button>
+				<button id="zoomFit" title="Fit map">
+					<svg viewBox="0 0 24 24" width="16" height="16"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+				</button>
 			</div>
-			<div class="map-viewport" id="mapViewport">
-				<canvas id="mapCanvas"></canvas>
-			</div>
-			<div id="tooltip"></div>
-		</main>
+			<div class="map-hint" id="mapHint">Scroll to zoom · drag to pan · click a creature or plant to inspect it</div>
+			<div class="map-error" id="mapError" hidden></div>
+		</section>
 
-		<aside class="species-panel">
-			<div class="panel-header">Plant Species</div>
-			<div id="speciesList" class="species-list"></div>
+		<aside class="panel right">
+			<nav class="tabs" id="tabs">
+				<button data-tab="plant" class="active"><span class="tab-icon" data-icon="plant"></span>Plants <em id="countPlant">0</em></button>
+				<button data-tab="land"><span class="tab-icon" data-icon="paw"></span>Land <em id="countLand">0</em></button>
+				<button data-tab="water"><span class="tab-icon" data-icon="wave"></span>Water <em id="countWater">0</em></button>
+				<button data-tab="events">Events</button>
+			</nav>
 
-			<hr class="divider" />
-
-			<div class="panel-header">Herbivore Species</div>
-			<div id="animalList" class="species-list"></div>
-
-			<hr class="divider" />
-
-			<div class="panel-header">Carnivore Species</div>
-			<div id="carnivoreList" class="species-list"></div>
-
-			<hr class="divider" />
-
-			<div class="panel-header">Aquatic Herbivore Species</div>
-			<div id="aquaticAnimalList" class="species-list"></div>
-
-			<hr class="divider" />
-
-			<div class="panel-header">Aquatic Carnivore Species</div>
-			<div id="aquaticCarnivoreList" class="species-list"></div>
-
-			<div id="speciesDetail" class="species-detail hidden">
-				<button id="closeDetailBtn" class="close-btn" title="Close">×</button>
-				<h3 id="detailName"></h3>
-				<div id="detailMeta" class="detail-meta"></div>
-				<canvas id="speciesChart" width="256" height="140"></canvas>
-				<div id="detailTraits" class="detail-traits"></div>
+			<div class="tab-body" id="speciesView">
+				<div class="list-tools">
+					<label class="switch small"><input type="checkbox" id="showExtinct" /><span></span>Show extinct</label>
+					<select id="sortSelect">
+						<option value="pop">By population</option>
+						<option value="new">Newest first</option>
+						<option value="name">By name</option>
+					</select>
+				</div>
+				<ul class="species-list" id="speciesList"></ul>
 			</div>
 
-			<hr class="divider" />
-
-			<div class="panel-header">
-				Notable Plants
-				<span class="panel-subhead">1000 / 5000 / 10000 peak pop.</span>
+			<div class="tab-body" id="eventsView" hidden>
+				<div class="list-tools">
+					<div class="seg small" id="eventFilter">
+						<button data-f="all" class="active">All</button>
+						<button data-f="speciation">New species</button>
+						<button data-f="extinction">Extinct</button>
+						<button data-f="migration">Migrations</button>
+					</div>
+				</div>
+				<ul class="event-list" id="eventList"></ul>
 			</div>
-			<div id="notableList" class="notable-list"></div>
 
-			<div class="panel-header">
-				Notable Herbivores
-				<span class="panel-subhead">100 / 250 / 500 peak pop.</span>
+			<div class="detail" id="detail" hidden>
+				<div class="detail-head">
+					<button class="back" id="detailBack" title="Back to list">
+						<svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+					</button>
+					<div class="detail-icon" id="detailIcon"></div>
+					<div class="detail-title">
+						<h3 id="detailName"></h3>
+						<p id="detailSub"></p>
+					</div>
+				</div>
+				<div class="detail-badges" id="detailBadges"></div>
+				<div class="detail-grid" id="detailGrid"></div>
+				<h4>Population</h4>
+				<canvas id="speciesChart" class="chart small"></canvas>
+				<h4>Traits <span class="muted">population average</span></h4>
+				<div class="traits" id="detailTraits"></div>
+				<h4>Lineage</h4>
+				<div class="lineage" id="detailLineage"></div>
+				<div id="detailChildrenWrap">
+					<h4>Descendants</h4>
+					<div class="chips" id="detailChildren"></div>
+				</div>
 			</div>
-			<div id="notableAnimalList" class="notable-list"></div>
-
-			<div class="panel-header">
-				Notable Carnivores
-				<span class="panel-subhead">25 / 50 / 100 peak pop.</span>
-			</div>
-			<div id="notableCarnivoreList" class="notable-list"></div>
-
-			<div class="panel-header">
-				Notable Aquatic Herbivores
-				<span class="panel-subhead">100 / 250 / 500 peak pop.</span>
-			</div>
-			<div id="notableAquaticAnimalList" class="notable-list"></div>
-
-			<div class="panel-header">
-				Notable Aquatic Carnivores
-				<span class="panel-subhead">25 / 50 / 100 peak pop.</span>
-			</div>
-			<div id="notableAquaticCarnivoreList" class="notable-list"></div>
 		</aside>
-	</div>
+	</main>
 
 	<script src="js/noise.js"></script>
 	<script src="js/biomes.js"></script>
 	<script src="js/mapGenerator.js"></script>
-	<script src="js/genetics.js"></script>
-	<script src="js/species.js"></script>
-	<script src="js/plantSystem.js"></script>
-	<script src="js/animalGenetics.js"></script>
-	<script src="js/animalSystem.js"></script>
-	<script src="js/renderer.js"></script>
-	<script src="js/chart.js"></script>
+	<script src="js/sim/core.js"></script>
+	<script src="js/sim/plants.js"></script>
+	<script src="js/sim/animals.js"></script>
+	<script src="js/sim/ecosystem.js"></script>
+	<script src="js/icons.js"></script>
+	<script src="js/render.js"></script>
+	<script src="js/charts.js"></script>
 	<script src="js/main.js"></script>
 </body>
 </html>

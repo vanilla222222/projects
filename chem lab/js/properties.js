@@ -560,7 +560,8 @@ function propSymmetryClasses(ctx) {
   return propRefineRanks(ctx, invariant, bondLabel, ctx.ids.length + 1, true);
 }
 
-function propSmiles(ctx) {
+function propSmiles(ctx, options) {
+  const isomeric = !!(options && options.isomeric);
   if (ctx.ids.length === 0) {
     return '';
   }
@@ -605,6 +606,7 @@ function propSmiles(ctx) {
     });
   };
   visit(start, null);
+  const stereo = isomeric ? propSmilesStereo(ctx, start, children, openings, closings) : null;
   const free = [];
   let nextDigit = 1;
   const digitOf = new Map();
@@ -613,14 +615,16 @@ function propSmiles(ctx) {
   const atomText = (v) => {
     const q = ctx.charge.get(v);
     const e = ctx.el.get(v);
-    if (!q && PROP_SMILES_ORGANIC.has(e)) {
+    const chiral = stereo ? stereo.chiral.get(v) || '' : '';
+    if (!q && !chiral && PROP_SMILES_ORGANIC.has(e)) {
       return e;
     }
     const h = ctx.hydrogens.get(v);
     const mag = Math.abs(q);
     const qText = q ? (q > 0 ? '+' : '-') + (mag > 1 ? mag : '') : '';
-    return '[' + (e === 'D' ? '2H' : e) + (h ? 'H' + (h > 1 ? h : '') : '') + qText + ']';
+    return '[' + (e === 'D' ? '2H' : e) + chiral + (h ? 'H' + (h > 1 ? h : '') : '') + qText + ']';
   };
+  const edgeText = (v, w) => (stereo && stereo.dir.has(v + '>' + w) ? stereo.dir.get(v + '>' + w) : bondChar(orderOf(v, w)));
   const write = (v) => {
     let out = atomText(v);
     (closings.get(v) || []).forEach((w) => {
@@ -636,12 +640,112 @@ function propSmiles(ctx) {
     });
     const kids = children.get(v);
     kids.forEach((w, i) => {
-      const piece = bondChar(orderOf(v, w)) + write(w);
+      const piece = edgeText(v, w) + write(w);
       out += i < kids.length - 1 ? '(' + piece + ')' : piece;
     });
     return out;
   };
   return write(start);
+}
+
+function propPermutationParity(from, to) {
+  const perm = from.map((x) => to.indexOf(x));
+  let swaps = 0;
+  for (let i = 0; i < perm.length; i++) {
+    while (perm[i] !== i) {
+      const j = perm[i];
+      perm[i] = perm[j];
+      perm[j] = j;
+      swaps += 1;
+    }
+  }
+  return swaps % 2;
+}
+
+function propSmilesStereo(ctx, start, children, openings, closings) {
+  const graph = ctx.graph;
+  const parent = new Map([[start, null]]);
+  const pre = new Map();
+  const walk = (v) => {
+    pre.set(v, pre.size);
+    children.get(v).forEach((w) => {
+      parent.set(w, v);
+      walk(w);
+    });
+  };
+  walk(start);
+  const chiral = new Map();
+  findStereocenters(graph, ctx.ids).forEach((sc) => {
+    const v = sc.atomId;
+    const heavy = ctx.nbrs.get(v).map((x) => x.id);
+    const h = ctx.hydrogens.get(v);
+    if (heavy.length + h !== 4 || h > 1) {
+      return;
+    }
+    const written = [];
+    if (parent.get(v) !== null) {
+      written.push(parent.get(v));
+    }
+    if (h === 1) {
+      written.push(null);
+    }
+    (closings.get(v) || []).forEach((w) => written.push(w));
+    (openings.get(v) || []).forEach((w) => written.push(w));
+    children.get(v).forEach((w) => written.push(w));
+    if (written.length !== 4) {
+      return;
+    }
+    const cip = cipRankSubstituents(graph, v, h === 1 ? heavy.concat([null]) : heavy).order.map((n) => n.atomId);
+    const odd = propPermutationParity(written, cip) === 1;
+    chiral.set(v, (sc.type === 'R') !== odd ? '@@' : '@');
+  });
+  const dir = new Map();
+  const treeEdge = (a, b) => parent.get(b) === a || parent.get(a) === b;
+  const dbs = findStereoDoubleBonds(graph, ctx.ids)
+    .map((r) => graph.bonds.find((b) => b.id === r.bondId))
+    .filter((b) => b)
+    .sort((x, y) => Math.min(pre.get(x.atomA), pre.get(x.atomB)) - Math.min(pre.get(y.atomA), pre.get(y.atomB)));
+  const symbolFor = (end, ref, d) => {
+    const up = parent.get(end) === ref ? -d : d;
+    return up === 1 ? '/' : '\\';
+  };
+  const sideFromSymbol = (end, ref, sym) => {
+    const up = sym === '/' ? 1 : -1;
+    return parent.get(end) === ref ? -up : up;
+  };
+  const edgeKey = (end, ref) => (parent.get(ref) === end ? end + '>' + ref : ref + '>' + end);
+  dbs.forEach((db) => {
+    const A = graph.getAtom(db.atomA);
+    const B = graph.getAtom(db.atomB);
+    const ax = B.x - A.x;
+    const ay = B.y - A.y;
+    const refs = [];
+    [db.atomA, db.atomB].forEach((end) => {
+      const origin = graph.getAtom(end);
+      ctx.nbrs.get(end).forEach((x) => {
+        if (x.order !== 1 || !treeEdge(end, x.id)) {
+          return;
+        }
+        const p = graph.getAtom(x.id);
+        const cross = ax * (p.y - origin.y) - ay * (p.x - origin.x);
+        if (cross !== 0) {
+          refs.push({ end, ref: x.id, geo: cross > 0 ? 1 : -1 });
+        }
+      });
+    });
+    if (!refs.some((r) => r.end === db.atomA) || !refs.some((r) => r.end === db.atomB)) {
+      return;
+    }
+    const fixed = refs.find((r) => dir.has(edgeKey(r.end, r.ref)));
+    const frame = fixed ? sideFromSymbol(fixed.end, fixed.ref, dir.get(edgeKey(fixed.end, fixed.ref))) * fixed.geo : 1;
+    refs.forEach((r) => {
+      const key = edgeKey(r.end, r.ref);
+      if (!dir.has(key)) {
+        dir.set(key, symbolFor(r.end, r.ref, frame * r.geo));
+      }
+    });
+  });
+  return { chiral, dir };
 }
 
 function formulaHtml(formula) {
@@ -696,6 +800,7 @@ function computePropertiesProtio(graph, atomIds) {
     veber,
     ionizable: propIonizable(ctx),
     smiles: propSmiles(ctx),
+    isomericSmiles: propSmiles(ctx, { isomeric: true }),
     charge: propNetCharge(ctx),
   };
 }

@@ -68,7 +68,7 @@
         }
       }
     }
-    html += copyBlock('SMILES', p.smiles, '');
+    html += copyBlock('SMILES', p.isomericSmiles || p.smiles, '');
     if (p.deuterium) {
       html += '<div class="info-note">SMILES and PubChem data describe the non-deuterated compound.</div>';
     }
@@ -1416,11 +1416,12 @@
   textEditor.addEventListener('blur', () => closeTextEditor(true));
   interactions.onEditText = openTextEditor;
 
-  function allSmiles() {
+  function allSmiles(isomeric) {
     return graph.connectedComponents()
       .map((component) => {
         try {
-          return computeProperties(graph, component.atomIds).smiles;
+          const p = computeProperties(graph, component.atomIds);
+          return isomeric ? p.isomericSmiles || p.smiles : p.smiles;
         } catch (error) {
           return '';
         }
@@ -1430,7 +1431,7 @@
   }
 
   function copyAllSmiles() {
-    const smiles = allSmiles();
+    const smiles = allSmiles(true);
     if (!smiles) {
       toast('Nothing to copy yet — draw a molecule first', { kind: 'warn' });
       return;
@@ -1444,7 +1445,7 @@
 
   document.getElementById('smiles-button').addEventListener('click', copyAllSmiles);
 
-  function fragmentSmiles(fragment) {
+  function fragmentSmiles(fragment, isomeric) {
     const temp = new Graph();
     const idMap = new Map();
     fragment.atoms.forEach((a) => {
@@ -1464,7 +1465,8 @@
     return temp.connectedComponents()
       .map((component) => {
         try {
-          return computeProperties(temp, component.atomIds).smiles;
+          const p = computeProperties(temp, component.atomIds);
+          return isomeric ? p.isomericSmiles || p.smiles : p.smiles;
         } catch (error) {
           return '';
         }
@@ -1474,7 +1476,7 @@
   }
 
   function copySmilesFor(atomIds) {
-    const smiles = fragmentSmiles(interactions.extractFragment(atomIds));
+    const smiles = fragmentSmiles(interactions.extractFragment(atomIds), true);
     if (!smiles) {
       toast('Could not build SMILES for this structure', { kind: 'warn' });
       return;
@@ -1573,7 +1575,7 @@
     }
     clipboardFragment = interactions.extractFragment(atomIds, annotationIds);
     storageSet('clipboard', JSON.stringify(clipboardFragment));
-    const smiles = atomIds.length ? fragmentSmiles(clipboardFragment) : '';
+    const smiles = atomIds.length ? fragmentSmiles(clipboardFragment, true) : '';
     if (smiles) {
       copyText(smiles).catch(() => {});
     }
@@ -1665,7 +1667,7 @@
     const text = (raw || '').trim();
     const internal = readClipboard();
     const hasInternal = !!(internal && internal.atoms && internal.atoms.length);
-    if (text && !/\s/.test(text) && text.length <= 2000 && (!hasInternal || text !== fragmentSmiles(internal))) {
+    if (text && !/\s/.test(text) && text.length <= 2000 && (!hasInternal || text !== fragmentSmiles(internal, true))) {
       try {
         const fragment = smilesToFragment(text);
         const ids = insertSmilesFragment(fragment, null);
@@ -2348,6 +2350,16 @@
       return;
     }
     file.text().then((text) => {
+      if (/^\s*\$RXN/.test(text)) {
+        setView('reactions');
+        try {
+          reactionLab.importReaction(text);
+          toast('Opened ' + file.name + ' in the Reaction lab', { kind: 'ok' });
+        } catch (error) {
+          toast('Could not read ' + file.name + ' — ' + error.message, { kind: 'warn', duration: 3600 });
+        }
+        return;
+      }
       if (looksLikeMolfile(text)) {
         try {
           importMolfile(text, null);

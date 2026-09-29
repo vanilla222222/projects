@@ -73,6 +73,7 @@ function notebookEntry(graph, ids, opts) {
     mw: p.averageMass,
     exactMass: p.exactMass,
     smiles: p.smiles,
+    isomericSmiles: p.isomericSmiles || p.smiles,
     properties: null,
     nmrH: [],
     nmrC: [],
@@ -266,7 +267,7 @@ function notebookIdRows(entry) {
     ['Formula', entry.formula],
     ['Molecular weight', notebookFixed(entry.mw, 3) + ' g/mol'],
     ['Exact mass', notebookFixed(entry.exactMass, 4)],
-    ['SMILES', entry.smiles],
+    ['SMILES', entry.isomericSmiles || entry.smiles],
   ];
 }
 

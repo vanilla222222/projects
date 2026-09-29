@@ -991,7 +991,7 @@ function rxxRuleProtection(ctx) {
       const cl = silyl.ids.find((id) => silyl.graph.getAtom(id).element === 'Cl');
       g.removeAtom(map.get(cl));
       g.addBond(hit.a.o, map.get(si));
-      const name = { C6H15ClSi: 'TBS', C3H9ClSi: 'TMS', C9H21ClSi: 'TIPS' }[silyl.formula] || 'silyl';
+      const name = { C6H15ClSi: 'TBS', C3H9ClSi: 'TMS', C9H21ClSi: 'TIPS', C16H19ClSi: 'TBDPS' }[silyl.formula] || 'silyl';
       const o = rxOutcome('silyl-protection', name + ' protection', 'Protecting group (O)', g,
         'The alcohol attacks silicon and chloride leaves; imidazole or Et₃N acts as base and nucleophilic catalyst. The ' + name + ' ether survives bases, organometallics, oxidants and most reducing agents, and is removed with fluoride (TBAF) or acid.',
         { score: 14, byproducts: ['the amine hydrochloride'], consumes: [rxUse(hit.s, 1), rxUse(silyl, 1.1)] });

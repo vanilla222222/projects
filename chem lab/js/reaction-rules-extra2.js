@@ -943,6 +943,11 @@ function rxyRuleDiazonium(ctx) {
       o = rxOutcome('balz-schiemann', 'Balz–Schiemann reaction', 'Substitution (–N₂)', g,
         via + ' precipitates as its BF₄⁻ salt; heating the dry salt releases N₂ and BF₃, and fluoride from BF₄⁻ captures the aryl cation.',
         { score: 15, byproducts: ['N₂', 'BF₃'], consumes: [rxUse(s, 1)] });
+    } else if (ctx.has('hypophosphorous')) {
+      g.atoms.filter((a) => a.element === 'N' && rxPathLength(g, c, a.id) <= 2).map((a) => a.id).forEach((id) => g.removeAtom(id));
+      o = rxOutcome('deamination', 'Deamination (H₃PO₂)', 'Reduction (–N₂)', g,
+        via + ' is reduced by hypophosphorous acid: a radical chain replaces N₂ with H, so ArNH₂ becomes ArH. This removes an amino group after it has been used to direct substitution.',
+        { score: 15, byproducts: ['N₂', 'H₃PO₃'], consumes: [rxUse(s, 1)] });
     } else if (rxxWater(ctx) && ctx.temperature >= 40) {
       replace('O');
       o = rxOutcome('diazonium-phenol', 'Diazonium hydrolysis → phenol', 'Substitution (–N₂)', g,

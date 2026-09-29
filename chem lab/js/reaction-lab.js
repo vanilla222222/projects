@@ -28,6 +28,11 @@ function createReactionLab(host) {
   const sheetBlock = document.getElementById('rx-sheet-block');
   const sheet = document.getElementById('rx-sheet');
   const scaleInput = document.getElementById('rx-scale');
+  const greenBox = document.getElementById('rx-green');
+  const importButton = document.getElementById('rx-import');
+  const importFile = document.getElementById('rx-import-file');
+  const copyReactionButton = document.getElementById('rx-copy-rsmiles');
+  const rxnButton = document.getElementById('rx-download-rxn');
 
   const saved = restoreReactionState(host.storageGet('reaction') || '');
   const state = { compounds: saved.compounds, conditions: saved.conditions, route: saved.route, prediction: null, branches: null, selected: '' };
@@ -39,11 +44,59 @@ function createReactionLab(host) {
     return value === null ? '—' : value >= 1000 ? value.toFixed(0) : value.toFixed(digits);
   }
 
+  function gramText(mg) {
+    return mg === null ? '—' : (mg / 1000).toFixed(mg >= 10000 ? 2 : 3);
+  }
+
+  function volumeText(mL) {
+    return mL === null ? '—' : mL.toFixed(mL < 1 ? 3 : 2);
+  }
+
+  function sheetRows() {
+    return reactionMaterialRows(state.compounds, state.conditions, reactionScaleMmol(state.compounds, scale));
+  }
+
+  function hazardCell(codes) {
+    const td = document.createElement('td');
+    td.className = 'rx-hazards';
+    (codes || []).forEach((code) => {
+      const span = element('span', 'rx-hazard', code.replace('GHS0', '').replace('GHS', ''));
+      span.dataset.code = code;
+      span.title = code + ': ' + rglHazardText(code);
+      td.appendChild(span);
+    });
+    return td;
+  }
+
+  function renderGreen(rows) {
+    greenBox.innerHTML = '';
+    const outcome = state.compounds.length ? chosenOutcome() : null;
+    const metrics = outcome ? reactionGreenMetrics(outcome, rows, 100) : null;
+    greenBox.hidden = !metrics;
+    if (!metrics) {
+      return;
+    }
+    const show = (value, digits, suffix) => (value === null || !Number.isFinite(value) ? '—' : value.toFixed(digits) + (suffix || ''));
+    [
+      ['Atom economy', show(metrics.atomEconomy, 1, '%'), 'Product mass ÷ mass of all consumed reactants (balanced equation)'],
+      ['E-factor', show(metrics.eFactor, 2), 'kg waste per kg product, solvent excluded, at 100% yield'],
+      ['PMI', show(metrics.pmi, 2), 'kg of all inputs, including solvent from the concentration setting, per kg product at 100% yield'],
+    ].forEach(([key, value, title]) => {
+      const item = element('span', 'rx-green-item');
+      item.title = title;
+      item.append(element('span', 'rx-green-key', key), element('strong', '', value));
+      greenBox.appendChild(item);
+    });
+    if (metrics.productMg) {
+      greenBox.appendChild(element('span', 'rx-green-note', 'Theoretical product ' + gramText(metrics.productMg) + ' g' + (metrics.solventMg ? '' : ' · set a concentration to count solvent')));
+    }
+  }
+
   function renderSheet() {
     sheetBlock.hidden = state.compounds.length === 0;
     sheet.innerHTML = '';
     const head = document.createElement('tr');
-    ['Compound', 'MW', 'equiv', 'mmol', 'mg'].forEach((text) => {
+    ['Compound', 'MW', 'equiv', 'mmol', 'g', 'mL', 'Hazards'].forEach((text) => {
       const th = document.createElement('th');
       th.textContent = text;
       head.appendChild(th);
@@ -51,10 +104,11 @@ function createReactionLab(host) {
     const thead = document.createElement('thead');
     thead.appendChild(head);
     const tbody = document.createElement('tbody');
-    reactionStoichiometry(state.compounds, scale).forEach((row) => {
+    const rows = sheetRows();
+    rows.forEach((row) => {
       const tr = document.createElement('tr');
       tr.className = 'role-' + row.role;
-      const cells = [row.name, row.mw === null ? '—' : row.mw.toFixed(2), row.role === 'solvent' ? 'solvent' : amountText(row.equiv, 2), amountText(row.mmol, 2), amountText(row.mg, 1)];
+      const cells = [row.name, row.mw === null ? '—' : row.mw.toFixed(2), row.role === 'solvent' ? 'solvent' : amountText(row.equiv, 2), amountText(row.mmol, 2), gramText(row.mg), volumeText(row.mL)];
       cells.forEach((text, i) => {
         const td = document.createElement('td');
         td.textContent = text;
@@ -63,9 +117,11 @@ function createReactionLab(host) {
         }
         tr.appendChild(td);
       });
+      tr.appendChild(hazardCell(row.hazard));
       tbody.appendChild(tr);
     });
     sheet.append(thead, tbody);
+    renderGreen(rows);
   }
 
   function save() {
@@ -139,10 +195,71 @@ function createReactionLab(host) {
     return compound;
   }
 
+  function importReaction(text) {
+    const raw = String(text || '');
+    const parsed = /^\s*\$RXN/.test(raw) ? rxioParseRxn(raw) : rxioParseReactionSmiles(raw);
+    const items = parsed.compounds.slice(0, REACTION_LIMITS.maxCompounds).map((c) => ({ c, fragment: smilesToFragment(c.smiles) }));
+    if (!items.length) {
+      throw new Error('The reaction has no starting materials or reagents');
+    }
+    state.compounds = [];
+    state.conditions = defaultReactionConditions();
+    state.selected = '';
+    items.forEach(({ c, fragment }) => {
+      const compound = addCompound({ input: c.title || c.smiles, smiles: c.smiles, fragment, source: 'import' }, c.role);
+      if (compound && c.title && (!compound.name || compound.name === compound.formula)) {
+        compound.label = c.title.slice(0, 60);
+      }
+    });
+    save();
+    renderAll();
+    const expected = parsed.products.length ? ' · file lists ' + parsed.products.length + ' product' + (parsed.products.length === 1 ? '' : 's') : '';
+    setMessage('Imported ' + state.compounds.length + ' compound' + (state.compounds.length === 1 ? '' : 's') + expected, 'ok');
+    return parsed;
+  }
+
+  function currentProducts() {
+    const outcome = chosenOutcome();
+    return outcome ? outcome.products.map((pr) => ({ smiles: pr.isomericSmiles || pr.smiles, name: reactionDescribeFragment(reactionProductFragment(pr)).name || '' })) : [];
+  }
+
+  async function copyReactionSmiles() {
+    if (!state.compounds.length) {
+      setMessage('Add compounds first', 'error');
+      return;
+    }
+    const text = rxioToReactionSmiles(state.compounds, currentProducts());
+    try {
+      await navigator.clipboard.writeText(text);
+      setMessage('Copied reaction SMILES: ' + text, 'ok');
+    } catch (error) {
+      setMessage('Reaction SMILES: ' + text, '');
+    }
+  }
+
+  function downloadRxn() {
+    if (!state.compounds.length) {
+      setMessage('Add compounds first', 'error');
+      return;
+    }
+    download(new Blob([rxioToRxn(state.compounds, currentProducts())], { type: 'chemical/x-mdl-rxnfile' }), 'reaction.rxn');
+    setMessage('Downloaded reaction.rxn', 'ok');
+  }
+
   function addFromInput() {
     const text = input.value.trim();
     onlineButton.hidden = true;
     input.classList.remove('invalid');
+    if (rxioLooksLikeReaction(text)) {
+      try {
+        importReaction(text);
+        input.value = '';
+      } catch (error) {
+        input.classList.add('invalid');
+        setMessage(error.message, 'error');
+      }
+      return;
+    }
     try {
       const parsed = reactionParseCompound(text);
       const compound = addCompound(parsed);
@@ -251,7 +368,7 @@ function createReactionLab(host) {
       equiv.type = 'text';
       equiv.value = compound.equiv;
       equiv.setAttribute('aria-label', 'Equivalents');
-      equiv.title = 'Equivalents or amount (e.g. 1.2, 5 mol%, 2 mmol)';
+      equiv.title = 'Equivalents or amount (e.g. 1.2, 5 mol%, 2 mmol, 250 mg, 1.2 mL, 50 µL)';
       equiv.addEventListener('input', () => {
         compound.equiv = equiv.value.slice(0, 20);
         save();
@@ -260,7 +377,7 @@ function createReactionLab(host) {
       });
       const equivLabel = document.createElement('span');
       equivLabel.className = 'rx-equiv-label';
-      equivLabel.textContent = 'equiv';
+      equivLabel.textContent = 'equiv / amount';
       const remove = document.createElement('button');
       remove.type = 'button';
       remove.className = 'rx-remove';
@@ -641,10 +758,30 @@ function createReactionLab(host) {
       predictionBox.appendChild(element('div', 'rx-byproducts', 'Also formed: ' + outcome.byproducts.join(', ')));
     }
     predictionBox.appendChild(element('p', 'rx-reason', outcome.reason));
-    if (outcome.warnings.length) {
+    const chemo = outcome.chemoselectivity;
+    const warnings = chemo ? outcome.warnings.filter((w) => w.indexOf('Chemoselectivity: ') !== 0) : outcome.warnings;
+    if (warnings.length) {
       const list = element('ul', 'rx-warnings');
-      outcome.warnings.forEach((w) => list.appendChild(element('li', '', w)));
+      warnings.forEach((w) => list.appendChild(element('li', '', w)));
       predictionBox.appendChild(list);
+    }
+    if (chemo) {
+      const box = element('div', 'rx-chemo');
+      const label = (group) => RX_CHEMO_GROUP_LABELS[group] || group;
+      box.appendChild(element('div', 'rx-chemo-title', 'Chemoselectivity · ' + chemo.label));
+      const text = outcome.warnings.find((w) => w.indexOf('Chemoselectivity: ') === 0);
+      if (text) {
+        box.appendChild(element('p', 'rx-chemo-text', text.slice('Chemoselectivity: '.length)));
+      }
+      if (chemo.competing.length) {
+        const list = element('ul', 'rx-chemo-sites');
+        chemo.competing.forEach((c) => list.appendChild(element('li', '', label(c.group) + (c.count > 1 ? ' ×' + c.count : '') + ' still present')));
+        box.appendChild(list);
+      }
+      if (chemo.suggestion) {
+        box.appendChild(element('p', 'rx-chemo-suggestion', chemo.suggestion));
+      }
+      predictionBox.appendChild(box);
     }
     if ((outcome.whyNot || []).length) {
       const why = element('details', 'rx-why-not');
@@ -790,7 +927,9 @@ function createReactionLab(host) {
     });
     const list = element('ol', 'rx-route-steps');
     const refresh = () => {
-      total.textContent = state.route.length + ' step' + (state.route.length === 1 ? '' : 's') + ' \u00b7 overall ' + reactionRouteYield(state.route) + '%';
+      const metrics = reactionRouteMetrics(state.route);
+      total.textContent = state.route.length + ' step' + (state.route.length === 1 ? '' : 's') + ' \u00b7 overall ' + reactionRouteYield(state.route) + '%' +
+        (metrics && metrics.pmi !== null ? ' \u00b7 PMI ' + metrics.pmi.toFixed(1) : '');
       drawFragment(canvas, buildRouteScheme(state.route), 14);
     };
     state.route.forEach((step) => {
@@ -855,6 +994,7 @@ function createReactionLab(host) {
     const reactants = state.compounds.filter((c) => c.role === 'reactant');
     summary.innerHTML = '';
     predict();
+    renderSheet();
     const outcome = chosenOutcome();
     const lines = [
       ['Reactants', reactants.length ? reactants.map((c) => (c.equiv && c.equiv !== '1' ? c.equiv + ' × ' : '') + (c.label || c.name || c.formula)).join(' + ') : '—'],
@@ -918,6 +1058,21 @@ function createReactionLab(host) {
     onlineButton.hidden = true;
   });
   document.getElementById('rx-from-editor').addEventListener('click', addFromEditor);
+  importButton.addEventListener('click', () => importFile.click());
+  importFile.addEventListener('change', async () => {
+    const file = importFile.files && importFile.files[0];
+    importFile.value = '';
+    if (!file) {
+      return;
+    }
+    try {
+      importReaction(await file.text());
+    } catch (error) {
+      setMessage('Could not import ' + file.name + ': ' + error.message, 'error');
+    }
+  });
+  copyReactionButton.addEventListener('click', copyReactionSmiles);
+  rxnButton.addEventListener('click', downloadRxn);
   tempRange.min = String(REACTION_LIMITS.tempMin);
   tempRange.max = String(REACTION_LIMITS.tempMax);
   tempRange.addEventListener('input', () => updateConditions((c) => {
@@ -985,5 +1140,6 @@ function createReactionLab(host) {
     addSmiles(smiles, role) {
       return addCompound({ input: smiles, smiles, fragment: smilesToFragment(smiles), source: 'api' }, role);
     },
+    importReaction,
   };
 }

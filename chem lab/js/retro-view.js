@@ -1,4 +1,4 @@
-const RETRO_VIEW_COVERAGE = 'Disconnections are only offered when the Reaction lab rules run them forward to this exact structure. Covered: alcohols (hydration, hydroboration, carbonyl reduction, Grignard, SN2), alkyl halides, ethers, esters and amides, alkenes (dehydration, E2, Wittig, Diels–Alder), hydrogenation, oxidations, nitriles, aldol products, alkynes, epoxides, diols, and aromatic halogenation, Friedel–Crafts acylation, nitro reduction and reductive amination. Aromatic nitration has no forward rule, so nitroarenes have no disconnection.';
+const RETRO_VIEW_COVERAGE = 'Disconnections are only offered when the Reaction lab rules run them forward to this exact structure. Covered: alcohols (hydration, hydroboration, carbonyl reduction, Grignard, SN2), alkyl halides, ethers, esters and amides, alkenes (dehydration, E2, Wittig, Diels–Alder), hydrogenation, oxidations, nitriles, aldol products, alkynes, epoxides, diols, aromatics (halogenation, nitration, sulfonation, Friedel–Crafts acylation, SₙAr, Sandmeyer, Schiemann, diazonium iodide and phenol, azo coupling, nitro reduction, reductive amination), couplings (Suzuki, Heck, Sonogashira, Buchwald–Hartwig), enolates (alkylation, Michael, Claisen, Dieckmann, Robinson, Mannich) and protecting-group installs (Boc, Cbz, Fmoc, silyl, benzyl/PMB, cyclic acetal, tert-butyl ester), which rank below skeleton-building steps. Diazonium reduction with H₃PO₂ is forward only.';
 
 function retroViewName(smiles) {
   const common = retroCommonName(smiles);
@@ -108,7 +108,9 @@ function createRetroView(deps) {
     const figure = retroViewElement('div', 'retro-precursor');
     figure.appendChild(thumbnail(precursor.smiles));
     figure.appendChild(retroViewElement('div', 'retro-caption', precursor.label || nameFor(precursor.smiles)));
-    if (precursor.common) {
+    if (precursor.stock) {
+      figure.appendChild(retroViewElement('span', 'retro-badge common', 'stock · tier ' + precursor.stock.tier));
+    } else if (precursor.common) {
       figure.appendChild(retroViewElement('span', 'retro-badge common', 'common starting material'));
     }
     if (retroCanExpand(tree, child)) {

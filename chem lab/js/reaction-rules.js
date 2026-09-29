@@ -635,10 +635,21 @@ function rxProductList(g) {
     if (found) {
       found.count += 1;
     } else {
-      out.push(Object.assign({ smiles: item.smiles, count: 1 }, item.fragment ? { fragment: item.fragment } : {}, item.stereo ? { stereo: item.stereo } : {}));
+      out.push(Object.assign({ smiles: item.smiles, isomericSmiles: rxIsomericSmiles(item), count: 1 }, item.fragment ? { fragment: item.fragment } : {}, item.stereo ? { stereo: item.stereo } : {}));
     }
   });
   return out;
+}
+
+function rxIsomericSmiles(item) {
+  if (!item.fragment) {
+    return item.smiles;
+  }
+  try {
+    return reactionGraphProperties(reactionFragmentGraph(item.fragment)).isomericSmiles || item.smiles;
+  } catch (error) {
+    return item.smiles;
+  }
 }
 
 function rxUse(entry, need) {
@@ -2305,15 +2316,17 @@ function rxCompoundLabel(compound) {
   return compound.label || compound.name || compound.formula || compound.input || '?';
 }
 
-function rxStoichiometry(outcome) {
+function rxStoichiometry(outcome, compounds) {
   const rows = [];
+  const sheet = compounds && typeof reactionStoichiometry === 'function' ? reactionStoichiometry(compounds, reactionScaleMmol(compounds, 1)) : [];
   (outcome.consumes || []).filter((x) => x && x.compound && x.need > 0 && x.compound.role !== 'solvent' && x.compound.role !== 'catalyst').forEach((x) => {
     const found = rows.find((r) => r.compound === x.compound);
     if (found) {
       found.need += x.need;
       return;
     }
-    const have = parseFloat(x.compound.equiv);
+    const line = sheet.find((r) => r.compound === x.compound);
+    const have = line && line.equiv > 0 ? line.equiv : parseFloat(x.compound.equiv);
     rows.push({ compound: x.compound, label: rxCompoundLabel(x.compound), need: x.need, have: have > 0 ? have : 1 });
   });
   if (!rows.length) {
@@ -2346,6 +2359,176 @@ function rxStoichiometry(outcome) {
 
 function rxFormatEquiv(value) {
   return String(Math.round(value * 100) / 100);
+}
+
+const RX_CHEMOSELECTIVITY = [
+  { id: 'borohydride', label: 'NaBH₄', tags: ['borohydride'], attacks: ['aldehyde', 'ketone'] },
+  { id: 'alanate', label: 'LiAlH₄', tags: ['alanate'], attacks: ['aldehyde', 'ketone', 'acylChloride', 'ester', 'acid', 'epoxide', 'amide', 'nitrile'] },
+  { id: 'hydrogenation', label: 'H₂ with a metal catalyst', tags: ['H2', 'hydrogenationCatalyst'], attacks: ['alkyne', 'alkene', 'nitro', 'benzylEther', 'cbz'], advice: 'if the alkene must be reduced, protect the alcohol as a TBS ether instead of a benzyl ether, since TBS survives H₂/Pd' },
+  { id: 'organometallic', label: 'the organometallic reagent', tags: ['grignard'], attacks: ['aldehyde', 'ketone', 'acylChloride', 'ester', 'epoxide', 'nitrile'] },
+  { id: 'peracid', label: 'mCPBA', tags: ['mcpba'], attacks: ['alkene', 'ketone'] },
+  { id: 'permanganate', label: 'KMnO₄', tags: ['permanganate'], attacks: ['aldehyde', 'alkene', 'alcohol'] },
+  { id: 'chromium', label: 'the chromium(VI) oxidant', tags: ['jones'], attacks: ['aldehyde', 'alcohol'] },
+  { id: 'pcc', label: 'PCC', tags: ['pcc'], attacks: ['alcohol'] },
+  { id: 'ozone', label: 'O₃', tags: ['ozone'], attacks: ['alkene', 'alkyne'] },
+  { id: 'borane', label: 'BH₃', tags: ['borane'], attacks: ['alkene', 'alkyne', 'aldehyde', 'acid', 'ketone'] },
+  { id: 'fluoride', label: 'fluoride', tags: ['fluoride'], attacks: ['silylEther'] },
+  { id: 'acid', label: 'the strong acid', tags: ['strongAcid'], attacks: ['boc', 'tBuEster', 'silylEther'] },
+  { id: 'acylation', label: 'the acylating agent', acylating: true, attacks: ['amine', 'thiol', 'alcohol'] },
+];
+
+const RX_PROTECTION_SUGGESTIONS = {
+  amine: 'protect the amine as its Boc carbamate (Boc₂O, Et₃N; removed later with TFA)',
+  alcohol: 'protect the alcohol as a TBS ether (TBSCl, imidazole; removed later with TBAF)',
+  aldehyde: 'protect the aldehyde as a cyclic acetal (ethylene glycol, TsOH; removed later with aqueous acid)',
+  ketone: 'protect the ketone as a cyclic acetal (ethylene glycol, TsOH; removed later with aqueous acid)',
+  acid: 'protect the acid as its tert-butyl ester (isobutylene, H₂SO₄; removed later with TFA)',
+  terminalAlkyne: 'protect the terminal alkyne as its TMS alkyne (n-BuLi, then TMSCl; removed later with K₂CO₃/MeOH)',
+  thiol: 'protect the thiol as a trityl thioether (TrCl; removed later with TFA and a silane)',
+  benzylEther: 'protect the alcohol as a TBS ether rather than a benzyl ether, since TBS survives H₂/Pd',
+};
+
+const RX_CHEMO_GROUP_LABELS = {
+  aldehyde: 'aldehyde', ketone: 'ketone', ester: 'ester', acid: 'carboxylic acid', amide: 'amide', acylChloride: 'acyl chloride',
+  nitrile: 'nitrile', epoxide: 'epoxide', alkene: 'C=C', alkyne: 'C≡C', terminalAlkyne: 'terminal alkyne', nitro: 'nitro group',
+  benzylEther: 'benzyl ether', cbz: 'Cbz group', amine: 'amine', alcohol: 'alcohol', thiol: 'thiol', boc: 'Boc group',
+  tBuEster: 'tert-butyl ester', silylEther: 'silyl ether',
+};
+
+function rxChemoGroups(g) {
+  const info = rxAnalyze(g);
+  const groups = {};
+  const add = (group, atoms) => {
+    (groups[group] = groups[group] || []).push(atoms);
+  };
+  const tBu = (id) => {
+    const a = g.getAtom(id);
+    return a.element === 'C' && rxCarbonNeighbors(g, id).length === 3 && rxCarbonNeighbors(g, id).filter((n) => rxHydrogens(g, n.atom.id) === 3).length === 3;
+  };
+  const benzylic = (id) => {
+    const a = g.getAtom(id);
+    return a.element === 'C' && rxHydrogens(g, id) === 2 && rxCarbonNeighbors(g, id).some((n) => info.aromatic.atoms.has(n.atom.id));
+  };
+  info.carbonyls.forEach((c) => {
+    const ether = rxNeighbors(g, c.c).find((n) => n.atom.element === 'O' && n.atom.id !== c.o && n.bond.order === 1 && !n.atom.charge);
+    if ((c.kind === 'ester' || c.kind === 'amide') && ether) {
+      const alkyl = rxNeighbors(g, ether.atom.id).find((n) => n.atom.id !== c.c);
+      const onN = rxNeighbors(g, c.c).some((n) => n.atom.element === 'N');
+      if (alkyl && onN && tBu(alkyl.atom.id)) {
+        add('boc', [c.c, c.o]);
+        return;
+      }
+      if (alkyl && onN && benzylic(alkyl.atom.id)) {
+        add('cbz', [c.c, c.o]);
+        return;
+      }
+      if (alkyl && tBu(alkyl.atom.id)) {
+        add('tBuEster', [c.c, c.o]);
+        return;
+      }
+    }
+    if (RX_CHEMO_GROUP_LABELS[c.kind]) {
+      add(c.kind, [c.c, c.o]);
+    }
+  });
+  info.nitriles.forEach((n) => add('nitrile', [n.c, n.n]));
+  info.epoxides.forEach((e) => add('epoxide', [e.o, e.a, e.b]));
+  info.alkenes.forEach((e) => add('alkene', [e.a, e.b]));
+  info.alkynes.forEach((e) => {
+    add('alkyne', [e.a, e.b]);
+    if (rxHydrogens(g, e.a) || rxHydrogens(g, e.b)) {
+      add('terminalAlkyne', [e.a, e.b]);
+    }
+  });
+  info.amines.forEach((a) => add('amine', [a.n]));
+  info.alcohols.forEach((a) => add('alcohol', [a.o]));
+  g.atoms.forEach((atom) => {
+    const n = rxNeighbors(g, atom.id);
+    if (atom.element === 'N' && atom.charge === 1 && n.filter((x) => x.atom.element === 'O').length === 2 && n.some((x) => x.atom.element === 'C')) {
+      add('nitro', [atom.id]);
+    }
+    if (atom.element === 'S' && !atom.charge && n.length === 1 && n[0].atom.element === 'C' && rxHydrogens(g, atom.id) === 1) {
+      add('thiol', [atom.id]);
+    }
+    if (atom.element === 'O' && !atom.charge && n.length === 2 && n.every((x) => x.bond.order === 1)) {
+      if (n.some((x) => x.atom.element === 'Si') && n.some((x) => x.atom.element === 'C')) {
+        add('silylEther', [atom.id]);
+      } else if (n.every((x) => x.atom.element === 'C' && !rxNeighbors(g, x.atom.id).some((m) => m.bond.order === 2 && m.atom.element === 'O')) &&
+        n.some((x) => benzylic(x.atom.id)) && !g.getBond(n[0].atom.id, n[1].atom.id)) {
+        add('benzylEther', [atom.id]);
+      }
+    }
+  });
+  return groups;
+}
+
+function rxChemoEntry(ctx, outcome) {
+  const consumed = (compound) => compound && outcome.consumes.some((u) => u && u.compound === compound);
+  const acylating = ctx.substrates.filter((s) => consumed(s.compound) && s.info.carbonyls.some((c) => c.kind === 'acylChloride' || c.kind === 'anhydride'));
+  return RX_CHEMOSELECTIVITY.find((entry) => {
+    if (entry.acylating) {
+      return acylating.length > 0 && ctx.substrates.some((s) => consumed(s.compound) && !acylating.includes(s));
+    }
+    if (!entry.tags.every((tag) => ctx.has(tag))) {
+      return false;
+    }
+    const carriers = entry.tags.map((tag) => ctx.get(tag).compound).filter(Boolean);
+    return !carriers.length || carriers.some(consumed);
+  }) || null;
+}
+
+function rxChemoselectivity(ctx, outcome) {
+  outcome.chemoselectivity = null;
+  const entry = rxChemoEntry(ctx, outcome);
+  const main = outcome.products[0];
+  if (!entry || !main) {
+    return null;
+  }
+  const consumed = ctx.substrates.filter((s) => outcome.consumes.some((u) => u && u.compound === s.compound) &&
+    !(entry.acylating && s.info.carbonyls.some((c) => c.kind === 'acylChloride' || c.kind === 'anhydride')));
+  if (!consumed.length) {
+    return null;
+  }
+  const before = {};
+  consumed.forEach((s) => {
+    const groups = rxChemoGroups(s.graph);
+    Object.keys(groups).forEach((group) => {
+      before[group] = (before[group] || []).concat(groups[group]);
+    });
+  });
+  let after = {};
+  try {
+    after = rxChemoGroups(reactionFragmentGraph(smilesToFragment(main.smiles)));
+  } catch (error) {
+    return null;
+  }
+  const count = (map, group) => (map[group] || []).length;
+  const changed = entry.attacks.filter((group) => count(before, group) > count(after, group));
+  if (!changed.length) {
+    return null;
+  }
+  const competing = entry.attacks.filter((group) => count(before, group) > 0 && count(after, group) > 0)
+    .map((group) => ({ group, count: count(after, group), atoms: before[group].reduce((all, atoms) => all.concat(atoms), []) }));
+  if (!competing.length && changed.length < 2) {
+    return null;
+  }
+  const name = (group) => RX_CHEMO_GROUP_LABELS[group] || group;
+  const target = competing.length ? competing[0].group : changed[changed.length - 1];
+  const guard = changed.find((group) => group !== target && RX_PROTECTION_SUGGESTIONS[group]);
+  let suggestion = '';
+  if (guard) {
+    suggestion = 'To react only at the ' + name(target) + ', first ' + RX_PROTECTION_SUGGESTIONS[guard] + '.';
+  } else if (entry.advice) {
+    suggestion = 'To keep the ' + name(changed[0]) + ', ' + entry.advice + '.';
+  } else if (RX_PROTECTION_SUGGESTIONS[target]) {
+    suggestion = 'To keep the ' + name(target) + ' untouched, first ' + RX_PROTECTION_SUGGESTIONS[target] + '.';
+  }
+  const text = competing.length
+    ? 'Chemoselectivity: ' + entry.label + ' reacted at the ' + changed.map(name).join(' and ') + ' but can also attack the ' + competing.map((c) => name(c.group)).join(' and ') + ' in this molecule, so expect a mixture unless one site is protected.'
+    : 'Chemoselectivity: ' + entry.label + ' reacted at both the ' + changed.map(name).join(' and the ') + '; it cannot tell these groups apart.';
+  outcome.chemoselectivity = { reagent: entry.id, label: entry.label, changed, competing, suggestion };
+  outcome.warnings.push(text);
+  return outcome.chemoselectivity;
 }
 
 function rxAlphaCarbons(g, c) {
@@ -2939,7 +3122,8 @@ function predictReaction(compounds, conditions) {
   });
   const assumed = ctx.substrates.filter((s) => (s.graph.alkeneSpecs || []).length && !/[\/\\]/.test(s.compound.smiles || ''));
   outcomes.forEach((o) => {
-    o.stoichiometry = rxStoichiometry(o);
+    o.stoichiometry = rxStoichiometry(o, compounds);
+    rxChemoselectivity(ctx, o);
     const used = assumed.filter((s) => o.consumes.some((u) => u && u.compound === s.compound));
     if (used.length && o.products.concat(o.minor).some((p) => p.stereo || p.fragment)) {
       const form = used[0].graph.alkeneSpecs[0].cis ? 'Z' : 'E';

@@ -1,6 +1,6 @@
 # Code Reference — Chemical Graph Constructor
 
-A dependency-free, no-build browser editor for organic skeletal (line-angle) structures. Open `index.html` directly in a browser; scripts load as plain `<script>` tags in dependency order (as of session 39): `elements.js`, `graph.js`, `valence.js`, `stereo.js`, `colors.js`, `naming-core.js`, `naming-chain.js`, `naming-ring.js`, `naming-scaffolds.js`, `naming-general.js`, `common-names-extra.js`, `naming-elements.js`, `properties.js`, `layout.js`, `smiles.js`, `name-lookup.js`, `insight.js`, `resonance.js`, `substructure.js`, `spectra-nmr.js`, `spectra-ir.js`, `spectra-ms.js`, `pubchem.js`, `molfile.js`, `scheme.js`, `history.js`, `svg-context.js`, `renderer.js`, `interactions.js`, `stamps.js`, `abbreviations.js`, `recent.js`, `reactions.js`, `reaction-stereo.js`, `reaction-rules.js`, `reaction-rules-extra.js`, `reaction-rules-extra2.js`, `reaction-aromatic.js`, `reaction-lab.js`, `spectra-view.js`, `app.js`.
+A dependency-free, no-build browser editor for organic skeletal (line-angle) structures. Open `index.html` directly in a browser; scripts load as plain `<script>` tags in dependency order (as of session 43): `elements.js`, `graph.js`, `valence.js`, `stereo.js`, `colors.js`, `naming-core.js`, `naming-chain.js`, `naming-ring.js`, `naming-scaffolds.js`, `naming-general.js`, `common-names-extra.js`, `naming-elements.js`, `properties.js`, `layout.js`, `smiles.js`, `name-lookup.js`, `insight.js`, `isomers.js`, `polymer.js`, `geometry3d.js`, `projections.js`, `share.js`, `notebook.js`, `resonance.js`, `substructure.js`, `spectra-nmr.js`, `spectra-ir.js`, `spectra-ms.js`, `pubchem.js`, `molfile.js`, `scheme.js`, `history.js`, `svg-context.js`, `renderer.js`, `interactions.js`, `stamps.js`, `abbreviations.js`, `recent.js`, `reactions.js`, `reagent-library.js`, `reaction-io.js`, `reaction-stereo.js`, `reaction-rules.js`, `reaction-rules-extra.js`, `reaction-rules-extra2.js`, `reaction-aromatic.js`, `reaction-rules-extra3.js`, `retro.js`, `reaction-lab.js`, `spectra-view.js`, `viewer3d.js`, `retro-view.js`, `app.js`.
 
 ## Data model (`js/graph.js`)
 
@@ -2398,7 +2398,7 @@ Verified by:
   - naphthols and the chloropyridines;
   - ring-reaction partners: maleic anhydride, p-benzoquinone, DMAD.
   - Chromene and azepine were left out because the names are ambiguous (2H/4H, 1H/3H).
-- `index.html` loads `js/reaction-aromatic.js` after `js/reaction-rules-extra2.js`. The engine now has 91 rules.
+- `index.html` loads `js/reaction-aromatic.js` after `js/reaction-rules-extra2.js`. The engine now has 91 rules. Later session (42) raises this to 96; see below.
 - Verified by:
   - `test_reaction_rules.js`:
     - 29 new ring cases, including naphthalene, anthracene, phenanthrene and 2-methoxynaphthalene EAS; thiophene, pyrrole, indole, benzothiophene, benzofuran, carbazole, azulene and quinoline halogenation; tribromophenol and tribromoaniline; FC acylation of thiophene and naphthalene; the three hydrogenation levels; Birch on naphthalene; both aromatic Diels–Alder modes; Chichibabin on pyridine and quinoline; 2- and 4-halopyridine SNAr; tetralin → phthalic acid;
@@ -3058,13 +3058,13 @@ There are two new plain-script files. `js/retro.js` loads right after `js/reacti
 #### Engine (`js/retro.js`)
 - `RETRO_LIMITS`: `maxDepth` 3, `budgetMs` 1500 per disconnection call, `maxHeavy` 60, `maxPerTransform` 4, `maxCandidates` 30, `maxGrignardCarbons` 12. `RETRO_REAGENTS` holds the fixed reagent compounds (SMILES, role and the arrow label): water, BH₃, NaBH₄, NaOH, SOCl₂, PBr₃, HCl/HBr/HI, H₂, PCC, KMnO₄, NaCN, mCPBA, NaOEt, KOtBu, Br₂, Cl₂ and NaBH₃CN. Catalysts and conditions that the engine only knows as additives (`h2so4`, `pdc`, `nah`, `pyr`, `alcl3`, `febr3`, `oso4`, `nmo`, `fe`, `hcl`, `nanh2`, `naoh`) go into `conditions.additives`.
 - The target is `retroTarget(graph, ids)`. `retroClone` copies the atoms without explicit H, keeping ids sequential so they are stable across clones. The result carries `rxAnalyze` info, the `rxAromaticRings` atoms, the canonical SMILES (`computeProperties(...).smiles`, without stereo), the skeleton count (C/N/O/S/P) and the number of components.
-- `RETRO_TRANSFORMS` has 28 entries `{id, name, rule, group, match(t)}`. `match` returns specs `{precursors: [{smiles, role, label?}], reagents, conditions}` built with `retroEdit` / `retroSinglePiece` (edit a clone, check valence with `retroValid`, split into pieces) and `retroSpec`. `rule` is the RX_RULES id that the forward step must fire; the test suite checks that every one exists. Mapping, from transform to rule:
+- `RETRO_TRANSFORMS` has 28 entries `{id, name, rule, group, match(t)}` (53 after later session (42), Slice B; see below). `match` returns specs `{precursors: [{smiles, role, label?}], reagents, conditions}` built with `retroEdit` / `retroSinglePiece` (edit a clone, check valence with `retroValid`, split into pieces) and `retroSpec`. `rule` is the RX_RULES id that the forward step must fire; the test suite checks that every one exists. Mapping, from transform to rule:
   - Alcohols: `hydration` → `hydration`, `hydroboration` → `hydroboration`, `carbonyl-reduction` → `reduction`, `grignard` → `grignard` (R–MgBr as a reagent with a label, ether solvent; the Grignard piece is limited to 12 carbons), `alcohol-sn2` → `halide` (primary and secondary halide carbons only).
   - Halides and ethers: `halide-from-alcohol` → `alcohol-halide`, `hx-addition` → `hydrohalogenation` (plus HBr/peroxide), `williamson` → `williamson`.
   - Carbonyl derivatives: `fischer` → `fischer`, `ester-acyl-chloride` and `amide-acyl-chloride` → `acyl`, `alcohol-oxidation` / `acid-oxidation` → `oxidation`, `nitrile-hydrolysis` → `nitrile-hydrolysis`, `nitrile-sn2` → `halide`, `aldol` → `aldol` (5 °C addition, 80 °C condensation), `wittig` → `wittig`.
   - Alkenes and alkanes: `dehydration` → `dehydration` (temperature chosen by the alcohol's degree), `e2` → `halide` (NaOEt and KOtBu), `diels-alder` → `diels-alder`, `hydrogenation` → `hydrogenation` (only C=C/C≡C whose carbons have carbon neighbours only, so no enols, vinyl halides or vinyl ethers are proposed), `alkyne-alkylation` → `acetylide`, `epoxidation` → `epoxidation`, `dihydroxylation` → `osmium`.
   - Aromatics: `eas-halogenation` and `fc-acylation` → `aromatic`, `nitro-reduction` → `nitro-reduction`, `reductive-amination` → `imine`.
-- `RETRO_DROPPED_TRANSFORMS` lists `eas-nitration`: the forward engine has no nitration rule, so a nitroarene gets no disconnection. The view's empty state says so.
+- `RETRO_DROPPED_TRANSFORMS` lists `eas-nitration`: the forward engine has no nitration rule, so a nitroarene gets no disconnection. The view's empty state says so. Later session (42), Slice B, restores `eas-nitration` and lists `hydro-deamination` instead.
 - `retroVerify(spec, targetSmiles)` builds compounds in the Reaction-lab shape (`{input, smiles, fragment, role, equiv, label?}`), normalises the conditions and calls `predictReaction`. A candidate is a main route when a product of `best` equals the target SMILES. It is a minor route (`minor: true`) when the target is in `best.minor` or in any alternative's products or minors. Otherwise the spec is dropped.
 - `retroDisconnect(graph, ids, options)` → `{smiles, candidates, tried, truncated, reason, ms}`. `reason` is `'empty'`, `'components'` (more than one component) or `'size'`. Specs are de-duplicated by `retroSpecKey`, and verification stops at the time budget (`truncated`). Each candidate carries the transform id, name and group, the expected rule and the fired `outcomeRule` / `outcomeId`, `precursors` (from `retroPrecursorInfo`: skeleton size, stereocentres, and `common`, the `NAME_SMILES` name when the canonical SMILES matches one), the verified `compounds` / `conditions` / `outcome` / `product`, `labels` from `reactionConditionLabels`, and `rank`. `retroCompare` sorts by the largest precursor skeleton (smaller first), then stereocentres, then more common starting materials, then main before minor, then total size.
 - Tree: `retroTree(smiles, depth, budget)` → `{maxDepth, budgetMs, root}` expands the root. `retroExpand(tree, node)` disconnects a node lazily and gives every candidate `children` (one node per precursor, `depth + 1`). `retroCanExpand` is false at `maxDepth`.
@@ -3093,3 +3093,461 @@ There are two new plain-script files. `js/retro.js` loads right after `js/reacti
 - `drive_toolbar.py` now also checks that `#retro-button` is visible, sits next to `#viewer-button` and stays inside the viewport at each width.
 
 Numbers, the per-target table and deviations are in `feature-research/learning-sharing/audit.md`.
+
+## Update, later session (42) — reaction families
+
+### Slice A — nitration, sulfonation, H₃PO₂ deamination and protecting groups
+
+`js/reaction-rules-extra3.js` is a new plain-script file with the prefix `rxz` and no DOM code. It loads after `js/reaction-aromatic.js` and before `js/retro.js`. It extends the shared tag tables in place and pushes five rules, so the engine now has **96 rules**. `js/retro.js` is unchanged; `eas-nitration` is still in `RETRO_DROPPED_TRANSFORMS` until Slice B.
+
+#### Tags and additives
+- **`RX_FORMULA_TAGS`**:
+  - `HNO3` → `nitricAcid`; `O3S` → `sulfurTrioxide`, for charge-separated input only, because `O=S(=O)=O` fails the valence check;
+  - `C15H11ClO2` (Fmoc-Cl) and `C19H15NO5` (Fmoc-OSu) → `fmocReagent`; `C8H7ClO2` (CbzCl) → `cbzReagent`;
+  - `C8H9ClO` (PMBCl) → `pmbChloride`; `C16H19ClSi` (TBDPSCl) → `silylChloride`;
+  - `C8Cl2N2O2` → `ddq`; `C4H10N2Si` → `tmsDiazomethane`.
+- **`RX_FORMULA_GUARDS`**:
+  - the Fmoc and Cbz formulas require a chloroformate or an N-hydroxysuccinimidyl carbonate (`rxzChloroformate`); p-anisoyl chloride also has the formula C₈H₇ClO₂ and stays a substrate;
+  - `C8H9ClO` requires an ArCH₂Cl;
+  - `C16H19ClSi` requires an Si–Cl bond;
+  - `O3S` requires S.
+- **`RX_ADDITIVE_TAGS`**: `h2so4` also adds `sulfuricAcid`; `so3` → `sulfurTrioxide`; `h3po2` → `hypophosphorous`; `can` → `can`.
+- **`REACTION_ADDITIVES`** (`js/reactions.js`):
+  - `hno3` (Acid, SMILES `O[N+](=O)[O-]`);
+  - `so3` "SO₃ / fuming H₂SO₄" (Acid, no SMILES);
+  - `h3po2` (Reagent, no SMILES: the parser loses the P–H count, so H₃PO₂ cannot be drawn);
+  - `ddq` (Oxidant, with SMILES), `can` (Oxidant, no SMILES);
+  - `tmschn2` (Reagent, with SMILES).
+- **`REACTION_NAME_ALIASES`**: fmoc-cl, fmoc chloride, fmoc-osu, cbzcl, cbz-cl, benzyl chloroformate, pmbcl, pmb-cl, 4-methoxybenzyl chloride, tbdpscl, tert-butyldiphenylsilyl chloride, ddq, tmschn2, trimethylsilyldiazomethane.
+
+#### Helpers
+- `rxzChloroformate(g, ids)` → `{c, ether, leaving}` for an alkoxycarbonyl with a Cl or O–N leaving group, or null.
+- `rxzSulfuric(ctx)`: the `sulfuricAcid` tag or an H₂O₄S species.
+- `rxzAmineBase(ctx)`: the piperidine or DBU additive, or a C₉H₁₆N₂ species.
+- `rxzAcids(s)`, `rxzTertButylEsters(s)` → `[{c, o, t}]` (carbamates excluded), `rxzCarbamates(s)` → `[{kind: 'Fmoc'|'Cbz', c, n}]`, `rxzPmbEthers(s)` → `[{ch2, o}]`, `rxzSulfonicAcids(s)` → `[{s, c}]`, `rxzIsobutylene(s)`.
+- `rxzEasProducts(s, pos, attach)`: builds the major product, and the minor product plus ratio when `pos.minorAtom` is set. `rxzAttachNitro` writes the neutral N(=O)=O; `rxzAttachSulfo` writes S(=O)(=O)OH.
+- `rxzAcylate(ctx, hit, reagent)`: merges the chloroformate, drops the leaving group and bonds the carbonyl carbon to the amine N.
+
+#### Rules
+| Rule id | Outcome ids | Fires on | Score |
+|---|---|---|---|
+| `nitration` | `nitration` | `nitricAcid` + H₂SO₄ + an arene. The site comes from `rxaEasPlan(s, {protonate: true})`, so a lone benzene ring keeps the `rxEasPosition` ratios. HNO₃ alone gives a hint. A π-deficient ring gives a hint. | 13; 11 on a deactivated ring |
+| `sulfonation` | `sulfonation`, `desulfonation` | `sulfurTrioxide` + an arene → ArSO₃H. ArSO₃H + strong acid + water at ≥ 100 °C → ArH; below 100 °C, a hint. | 13 (11 deactivated); 14 |
+| `carbamate-protection` | `fmoc-protection`, `cbz-protection`, `fmoc-deprotection` | Fmoc-Cl/OSu or CbzCl + an amine (base warning when a chloroformate has no base). Fmoc removal needs piperidine/DBU or a secondary-amine substrate. | 15 |
+| `pmb-protection` | `pmb-protection`, `pmb-deprotection` | PMBCl + NaH on an alcohol, or + NaH/K₂CO₃/hydroxide on a phenol. DDQ or CAN on a PMB ether gives the alcohol and 4-methoxybenzaldehyde; water warning. | 15 |
+| `ester-protection` | `tbu-ester`, `methyl-ester`, `tbu-ester-deprotection` | Acid + isobutylene + strong acid, or acid + Boc₂O + DMAP with no amine present. Acid + TMSCHN₂ (MeOH warning), or acid + MeBr/MeI + a weak base. A tert-butyl ester + strong acid; when a Boc group is also present, both are removed in one outcome with a warning. | 15; 16 with Boc |
+
+The diazonium rule in `js/reaction-rules-extra2.js` has a new `deamination` branch (score 15, ArN₂⁺ → ArH, by-products N₂ and H₃PO₃) when `hypophosphorous` is present. It is checked before the water/phenol branch. `js/reaction-rules-extra.js` adds `C16H19ClSi: 'TBDPS'` to the silyl name map; the existing `silyl-protection`/`silyl-deprotection` do the chemistry. Cbz and PMB removal by H₂/Pd-C, and methyl ester removal by LiOH, use the existing `hydrogenolysis` and `saponification` rules.
+
+Precedence: nitration and sulfonation fire only with `nitricAcid` or `sulfurTrioxide`, so plain H₂SO₄ still gives dehydration and hydration. The named protecting-group outcomes (15–16) beat Williamson (13), acyl substitution (13) and boc-deprotection (15), because the combined tBu/Boc outcome scores 16.
+
+#### Tests
+- `test_reaction_rules.js`: rule-table size 96. There are 28 new outcome cases: nitration of toluene, nitrobenzene, anisole, chlorobenzene and naphthalene; sulfonation, desulfonation, deamination; each protecting group on and off; Boc plus tBu ester with TFA; MeI/K₂CO₃; LiOH. There are also checks on the o/p minor product and ratio, the forcing-conditions, phenol and aniline warnings, the HNO₃-only hint, H₂SO₄ precedence, the TBDPS name, and the aliases.
+- `test_retro.js` stays at 371/371.
+- Screenshot: `feature-research/reaction-families/screenshots/nitration.png`.
+
+### Slice B — retrosynthesis transforms for the new families
+
+`js/retro.js` gains 25 transforms, so `RETRO_TRANSFORMS` now has **53 entries**. There are two new groups, "Couplings" and "Enolates", and a "Protecting groups" group; the Aromatics group grows. The file still has no DOM code. `js/retro-view.js` only changes its coverage text. The card already shows `candidate.group`, so the new groups appear with no view change.
+
+#### New transforms and their forward rules
+| Transform id | Group | Forward rule | Precursors and conditions |
+|---|---|---|---|
+| `eas-nitration` | Aromatics | `nitration` | ArH + HNO₃ (`hno3` additive), H₂SO₄ |
+| `eas-sulfonation` | Aromatics | `sulfonation` | ArH + `so3` additive |
+| `snar` | Aromatics | `snar` | An activated aryl fluoride or chloride + a nucleophile. N nucleophile: the amine, DMSO, 100 °C. O/S nucleophile: the sodium alkoxide or thiolate (`[O-]R.[Na+]`) as the reagent, with a formula label |
+| `sandmeyer` | Aromatics | `diazonium` | ArNH₂ + NaNO₂/HCl, then `cucl` / `cubr` / `cucn` |
+| `schiemann` | Aromatics | `diazonium` | ArNH₂ + NaNO₂, `hbf4`, heat |
+| `diazonium-iodide` | Aromatics | `diazonium` | ArNH₂ + NaNO₂/HCl, `ki` |
+| `diazonium-phenol` | Aromatics | `diazonium` | ArNH₂ + NaNO₂/H₂SO₄, warm water |
+| `azo-coupling` | Aromatics | `diazonium` | ArNH₂ + an electron-rich arene (phenol or aniline), NaNO₂/HCl, 0–5 °C |
+| `suzuki` | Couplings | `suzuki` | ArBr + Ar′B(OH)₂ in both orientations (aryl–aryl and aryl–vinyl), `pdpph3`, K₂CO₃, N₂ |
+| `heck` | Couplings | `heck` | ArI + alkene, `pdoac2`, `et3n`, 100 °C (only ArI is proposed) |
+| `sonogashira` | Couplings | `sonogashira` | ArI + terminal alkyne, `pdpph3`, `cui`, `et3n` |
+| `buchwald-hartwig` | Couplings | `buchwald-hartwig` | ArBr + an amine with at least two carbon neighbours on N, `pdoac2`, `kotbu`. Skipped on an activated arene, where SNAr is the route |
+| `enolate-alkylation` | Enolates | `enolate-alkylation` | Carbonyl + R–I, `lda`, THF, −78 °C |
+| `michael` | Enolates | `michael` | Active-methylene donor + α,β-unsaturated acceptor, `naoet`/EtOH (no conditions for a thiol donor) |
+| `claisen` | Enolates | `claisen` | Two esters (β-keto ester cut), `naoet`/EtOH |
+| `dieckmann` | Enolates | `claisen` | Diester from a cyclic β-keto ester (`ring` flag), `naoet`/EtOH |
+| `robinson` | Enolates | `robinson` | Ketone + methyl vinyl ketone, `naoet`/EtOH, 78 °C |
+| `mannich` | Enolates | `mannich` | Ketone + formaldehyde + secondary amine (three pieces), HCl, EtOH |
+| `boc-install` | Protecting groups | `protection` | Amine + Boc₂O |
+| `cbz-install` | Protecting groups | `carbamate-protection` | Amine + CbzCl, `et3n` |
+| `fmoc-install` | Protecting groups | `carbamate-protection` | Amine + Fmoc-Cl, K₂CO₃ |
+| `silyl-install` | Protecting groups | `protection` | Alcohol + TBSCl / TBDPSCl / TIPSCl, `imidazole`, DMF |
+| `benzyl-ether-install` | Protecting groups | `williamson` (`pmb-protection` for PMB) | Alcohol + BnBr, `nah`, THF; or + PMBCl, `nah`, DMF |
+| `acetal-install` | Protecting groups | `acetal` | Ketone or aldehyde + ethylene glycol or 1,3-propanediol, `tsoh`, toluene, 110 °C |
+| `tbu-ester-install` | Protecting groups | `ester-protection` | Acid + isobutylene, H₂SO₄ |
+
+#### Engine changes
+- **`RETRO_REAGENTS`** gains `boc2o`, `cbzcl`, `fmoccl`, `tbscl`, `tbdpscl`, `tipscl`, `bnbr`, `pmbcl`, `isobutylene`, and `ethyleneGlycol` and `propanediol` (role `reactant`).
+- **`retroPieces`** now also returns `ids`, a Set of the atom ids in each piece. Clone ids are stable, so a transform can tell which piece holds a given atom (azo coupling uses it to find the amine).
+- **New helpers** (all before `RETRO_TRANSFORMS`):
+  - `RETRO_DIAZONIUM`: the conditions per leaving group (Cl, Br, CN, F, I, OH);
+  - `retroReagentKey(smiles, keys)`: a cached canonical-SMILES lookup in `RETRO_REAGENTS`;
+  - `retroFormulaLabel` and `retroTerminal`;
+  - `retroArylGroups`, which finds aryl nitro, sulfo, F, Cl, Br, I, OH and CN groups;
+  - `retroActivatedArene`, `retroAreneFromGroup` and `retroAnilines`;
+  - `retroKey` and `retroArylBonds(t, partner)`;
+  - `retroVinylCarbon`, `retroCouplingPieces` and `retroHalidePair`;
+  - `retroEwgCarbon`, `retroAcceptorCarbons`, `retroBetaKetoEsters` and `retroEthoxyAcyl`;
+  - `retroTertButyl` and `retroCarbamates`, which returns `{amine, chloroformate, boc}`.
+- **Ranking penalty.** `RETRO_LIMITS.protectingGroupPenalty` is 2. In `retroDisconnect`, each candidate's `rank` gains `penalty`, which is 2 for the "Protecting groups" group and 0 otherwise, and `adjusted = largest + penalty`. `retroCompare` sorts by `adjusted` first and then by the existing keys. As a result, a protecting-group install ranks below a real disconnection of similar size. For example, Williamson ranks above the benzyl install on benzyl cyclohexyl ether.
+- **`RETRO_DROPPED_TRANSFORMS`** no longer lists `eas-nitration`. It lists `hydro-deamination` (H₃PO₂). The forward rule exists, but a retro step ArH ← ArNH₂ would match every aromatic C–H.
+- **`RETRO_VIEW_COVERAGE`** (`js/retro-view.js`) lists the aromatic, coupling, enolate and protecting-group transforms. It notes that installs rank lower and that H₃PO₂ reduction is forward only.
+
+#### Tests
+- `test_retro.js`: PASS 875, FAIL 0, with 123 candidates re-verified forward.
+  - Nitrobenzene now has an `eas-nitration` route, and the original 15 targets keep their required routes.
+  - There are 23 new targets, each with its named route, and a coverage target for each of the 25 new transforms.
+  - Slice B checks cover:
+    - the groups, including the Suzuki card's group;
+    - the penalty and the Williamson-above-benzyl order;
+    - the SNAr alkoxide;
+    - no deamination route on toluene;
+    - Buchwald skipped on an activated arene;
+    - PMB going through `pmb-protection`;
+    - the dropped list.
+  - Every target takes 2–221 ms.
+- Screenshot: `feature-research/reaction-families/screenshots/retro-suzuki.png`.
+
+## Update, later session (43) — reactions roadmap 2–4
+
+### Slice A — engine accuracy and bench practicality
+
+Two new plain-script files have no DOM code: `js/reagent-library.js` (prefix `rgl`) and `js/reaction-io.js` (prefix `rxio`). Both load right after `js/reactions.js`. The plain `smiles` field of `computeProperties` is unchanged byte for byte. Stereo is only in the new `isomericSmiles`, and every existing comparison still uses the plain string.
+
+#### A1. Stereo-preserving SMILES (`js/properties.js`, `js/reactions.js`, `js/reaction-rules.js`)
+- **`propSmiles(ctx, options)`**:
+  - With `{isomeric: true}`, it writes `@`/`@@` and `/`/`\` marks.
+  - With no options, the output is exactly the old string.
+- **`propSmilesStereo(ctx, start, children, openings, closings)`** returns the chirality and bond-mark maps for the canonical DFS tree.
+  - **Chirality**: for each centre that `findStereocenters` resolves (4 substituents, at most one implicit H), it lists the neighbours in written order: parent, implicit H, ring closures, ring openings, children. It compares that list with the CIP order from `cipRankSubstituents`. `R` with even parity is `@@`.
+  - **E/Z**: for each double bond that `findStereoDoubleBonds` resolves, it puts `/` or `\` only on tree edges, so ring-closure digits carry no marks.
+- **`propPermutationParity(from, to)`** returns 0 or 1: the parity of the permutation that maps `from` onto `to`.
+- **`computeProperties(...)`** gains **`isomericSmiles`**. It equals `smiles` when there is no stereo.
+- **`reactionGraphProperties(graph)`** (`js/reactions.js`):
+  - It calls `computeProperties` with every atom id, since `computeProperties` needs an explicit id list.
+  - For a disconnected graph (salts, ion pairs), it sorts the per-component `smiles`/`isomericSmiles` and joins them with `.`. Without this, `computeProperties` would describe only the first component.
+- **`reactionIsomericSmiles(fragment, fallback)`** returns the stereo SMILES of a fragment, or `fallback` on any error.
+- **`rxIsomericSmiles(item)`** (`js/reaction-rules.js`): every product built by `rxProductList` now carries **`isomericSmiles`**. It is computed from the product fragment after the wedges from `rxsRealize` are set. A racemic product shows the one enantiomer that was drawn.
+- **Where the stereo string is now used**:
+  - the editor's info-panel SMILES block;
+  - Copy all SMILES, Copy SMILES for a selection, and the SMILES placed on the clipboard by Ctrl+C;
+  - the paste-echo check, which uses the same function as copy so a self-paste is still recognised;
+  - route steps (`from`/`to.isomericSmiles`) and their serialisation;
+  - the notebook SMILES row (`entry.isomericSmiles`);
+  - reaction SMILES and RXN export.
+
+  The share-link SMILES (`copySmilesLink`), `editorSmilesList`, the PubChem query and all dedupe stay plain.
+
+#### A2. Chemoselectivity (`js/reaction-rules.js`)
+- **`RX_CHEMOSELECTIVITY`** is a list of `{id, label, tags | acylating, attacks: [group…], advice?}`:
+
+  | id | Required tags | Attacks, in order |
+  |---|---|---|
+  | `borohydride` | `borohydride` | aldehyde, ketone |
+  | `alanate` | `alanate` | aldehyde, ketone, acylChloride, ester, acid, epoxide, amide, nitrile |
+  | `hydrogenation` | `H2` + `hydrogenationCatalyst` (has advice) | alkyne, alkene, nitro, benzylEther, cbz |
+  | `organometallic` | `grignard` | aldehyde, ketone, acylChloride, ester, epoxide, nitrile |
+  | `peracid` | `mcpba` | alkene, ketone |
+  | `permanganate` | `permanganate` | aldehyde, alkene, alcohol |
+  | `chromium` | `jones` | aldehyde, alcohol |
+  | `pcc` | `pcc` | alcohol |
+  | `ozone` | `ozone` | alkene, alkyne |
+  | `borane` | `borane` | alkene, alkyne, aldehyde, acid, ketone |
+  | `fluoride` | `fluoride` | silylEther |
+  | `acid` | `strongAcid` | boc, tBuEster, silylEther |
+  | `acylation` | `acylating: true` (a consumed acyl chloride or anhydride) | amine, thiol, alcohol |
+
+- **`RX_PROTECTION_SUGGESTIONS`**: group → the protecting-group advice text:
+
+  | Group | Advice |
+  |---|---|
+  | amine | Boc |
+  | alcohol | TBS |
+  | aldehyde/ketone | cyclic acetal |
+  | acid | t-Bu ester |
+  | terminal alkyne | TMS |
+  | thiol | trityl |
+  | benzyl ether | TBS instead of Bn |
+
+- **`RX_CHEMO_GROUP_LABELS`**: group → display label.
+- **`rxChemoGroups(g)`** → `{group: [atomIds…]}`. It is built from `rxAnalyze` (carbonyl kinds, nitriles, epoxides, alkenes, alkynes, amines, alcohols) plus local checks for nitro, thiol, silyl ether and benzyl ether.
+  - A carbonyl with a single-bonded ether O is treated as a carbamate or ester and split into `boc` (N–CO–O–tBu), `cbz` (N–CO–O–CH₂Ar) and `tBuEster`.
+- **`rxChemoEntry(ctx, outcome)`** returns the first table entry that fits:
+  - every tag of the entry must be present;
+  - the compound carrying the tag must have been consumed by the outcome;
+  - for `acylation`, the outcome must consume an acyl chloride or anhydride and another substrate.
+- **`rxChemoselectivity(ctx, outcome)`** is called in `predictReaction` right after `rxStoichiometry`.
+  - It compares the attacked groups on the consumed substrates (not counting the acylating agent) with the groups on `products[0]`.
+  - `changed` = attacked groups whose count dropped. `competing` = attacked groups still present.
+  - It sets `outcome.chemoselectivity = {reagent, label, changed, competing: [{group, count, atoms}], suggestion}` and pushes a warning starting `Chemoselectivity: `. This happens when a competing group remains, or when two or more groups changed.
+  - Otherwise `outcome.chemoselectivity` is `null`.
+- **`rxStoichiometry`** now reads the "have" amount through `reactionStoichiometry`, so mg, mL and mmol amounts count; before, it used `parseFloat` of the text. Plain equivalents give the same numbers as before.
+
+#### A3. Reagent library (`js/reagent-library.js`, `js/reactions.js`)
+- **`REAGENT_LIBRARY`** (106 entries) has the fields `{id, aliases?, name, smiles, mw, density (g/mL) | null, form: 'liquid'|'solid'|'gas'|'solution', conc (M) | null, equiv (typical), hazard: [GHS codes]}`.
+  - It covers every `REACTION_SOLVENTS` id, every `REACTION_ADDITIVES` entry with a SMILES, and every `RETRO_REAGENTS` key (by id or alias).
+  - It also has the common bench reagents: LiAlH₄, n-BuLi 2.5 M, DIBAL, TBAF, TMSCl, MeI, NBS, AcCl, Ac₂O, PPh₃ and others.
+- **`REAGENT_HAZARDS`**: GHS01–GHS09 → short text.
+- **`rglCanonical(smiles)`**: the canonical plain SMILES via `reactionGraphProperties`, so salts match whatever order their ions are written in.
+- **Lookup helpers**:
+  - `rglIndex()` builds the lazy canonical map `rglCanonicalCache`;
+  - `rglLookup(key)` matches the id or alias first, then the canonical SMILES, and memoises in `rglLookupCache`;
+  - `rglHazardText(code)` returns the text for a GHS code.
+- **`reactionParseAmount`** also accepts `mL` → `{kind: 'mL'}` and `µL`/`μL`/`uL` (converted to mL).
+- **`reactionParseConcentration(text)`** reads `M`, `mol/L` and `mM` into a molarity, or returns null.
+- **`reactionReagentInfo(compound)`** → `rglLookup(compound.smiles)`, when the library is loaded.
+- **`reactionScaleMmol(compounds, fallback)`**: the mmol of the first reactant given as an absolute amount; otherwise `fallback`.
+- **`reactionSolventVolume(conditions, scaleMmol)`** = scale ÷ molarity, in mL.
+- **`reactionSolventUsage(compounds, conditions, scaleMmol)`** → `[{name, compound|null, mL, mg, hazard}]`. It splits the volume evenly across solvent-role compounds and the chosen condition solvents.
+- **`reactionStoichiometry(compounds, scaleMmol, conditions?)`**: each row now also carries `mL`, `compound` and `hazard`.
+  - An mL amount converts through `conc` (solutions) or density × MW.
+  - mL is derived back from mmol the same way.
+  - The library MW is used when the compound has no mass.
+- **`reactionMaterialRows(compounds, conditions, scaleMmol)`**: the stoichiometry rows plus one `role: 'solvent'` row per condition solvent.
+
+#### A4. Green metrics (`js/reactions.js`)
+- **`reactionProductMass(smiles)`** returns the average mass, or null.
+- **`reactionGreenMetrics(outcome, stoichRows, yieldPct, product?)`** → `{atomEconomy, eFactor, pmi, inputMg, solventMg, productMg, productMmol, yield}`.
+  - **Atom economy** = MW(product) × count ÷ Σ(need × MW) over `outcome.stoichiometry.rows`, or `consumes` when there are no rows.
+  - **Product amount** comes from the first consumed row's mmol × conversion × yield.
+  - **E-factor** = (non-solvent input mass − product) ÷ product.
+  - **PMI** = (inputs + solvent mass) ÷ product.
+- **`reactionRouteStep`** adds `metrics` (with `carriedMg`, the mass of the carried material) and `isomericSmiles` on `from`/`to`.
+- **`reactionRouteMetrics(steps)`** → `{overallYield, pmi, eFactor, steps}`.
+  - It walks backward and scales each earlier step by how much of its product the next step carried. Only fresh material counts, and the final product mass is the denominator.
+  - `pmi`/`eFactor` are null when a step has no metrics.
+- **Route output**: `buildRouteScheme` adds a "Route PMI x, E-factor y" annotation under the overall-yield line.
+- **Serialisation**: `reactionRouteSerialize` writes `isomericSmiles` and `metrics`. `reactionRouteRestore` reads them back through the new helpers:
+  - `reactionRestoreEnd(end, text)` prefers a valid `isomericSmiles` for the fragment;
+  - `reactionRestoreMetrics(raw)` keeps only finite numeric fields.
+
+#### A5. Reaction file I/O (`js/reaction-io.js`)
+- **`RXIO_ROLE_ORDER`** = reagent, catalyst, solvent (the order of the agents field).
+- **`rxioCompoundSmiles(compound)`**: the isomeric SMILES of a lab compound or product.
+- **`rxioToReactionSmiles(compounds, products)`** → `reactants>agents>products`.
+- **`rxioFragmentCharge(fragment)`** and **`rxioSplitSide(text)`**: a side is split on `.`, and charged pieces are merged until the running charge is 0, so `[Na+].[BH4-]` stays one compound.
+- **`rxioParseReactionSmiles(text)`** → `{compounds: [{smiles, role}], products: [{smiles}]}`. Agents get their role from `reactionGuessRole`, with `reactant` mapped to `reagent`.
+- **`rxioMolBlock(item, title)`** and **`rxioToRxn(compounds, products)`** write MDL `$RXN` V2000 through `graphToMolfile`. The counts line lists reactants, products and, when present, agents; the blocks follow in that order.
+- **`rxioParseRxn(text)`** reads V2000 with `parseMolRecord`/`molRecordToGraph`. It rejects V3000. Each record becomes `{smiles (isomeric), title}`, and agents are assigned roles as above.
+- **`rxioLooksLikeReaction(text)`** is true for `$RXN` text or a single `a>b>c` token.
+
+#### Reaction lab UI (`js/reaction-lab.js`, `index.html`, `css/style.css`)
+- **Stoichiometry sheet** (`renderSheet`) uses `sheetRows()` = `reactionMaterialRows(state.compounds, state.conditions, reactionScaleMmol(state.compounds, scale))`.
+  - Columns: Compound, MW, equiv, mmol, g, mL, Hazards.
+  - Hazard chips are `span.rx-hazard` with `data-code` and a `title` from `rglHazardText`.
+  - New helpers: `gramText`, `volumeText`, `hazardCell`.
+  - `renderSummary` now re-renders the sheet after `predict()`, so a change of conditions (concentration or solvent) updates it.
+- **Green metrics**: `renderGreen(rows)` fills `#rx-green` (`.rx-green-item`, `.rx-green-key`, `.rx-green-note`) from `reactionGreenMetrics(chosenOutcome(), rows, 100)`.
+- **Chemoselectivity block**: `renderPrediction` shows a `.rx-chemo` block (`.rx-chemo-title`, `.rx-chemo-text`, `.rx-chemo-sites`, `.rx-chemo-suggestion`). The duplicate `Chemoselectivity:` line is removed from the warnings list.
+- **Amount field**: the compound card's field title and label now name mg/mL/µL/mmol.
+- **Import and export**: `.rx-io-row` holds `#rx-import` (opens the hidden `#rx-import-file`, which takes .rxn, .smi and .txt), `#rx-copy-rsmiles` and `#rx-download-rxn`. The new functions are:
+  - `importReaction(text)` replaces the compounds and conditions and reports how many products the file lists. It is exported on the lab API.
+  - `currentProducts()` returns the chosen outcome's products.
+  - `copyReactionSmiles()`: if the clipboard is unavailable, it shows the string instead.
+  - `downloadRxn()`.
+- **Pasting a reaction**: `addFromInput` routes a reaction SMILES typed or pasted into `#rx-input` to `importReaction`.
+- **Route header**: the route total now shows the route PMI.
+- **Opening a file** (`js/app.js`): the editor's file open accepts `.rxn`. `$RXN` text switches to the Reaction lab and calls `reactionLab.importReaction`.
+
+#### Tests
+- **`regress/test_reaction_accuracy.js`** (new, 80 checks):
+  - isomeric SMILES round trips (R/S-2-butanol, E/Z-2-butene, L-alanine, a ring stereocentre), with the plain SMILES unchanged, and SN2 inversion;
+  - chemoselectivity (keto ester with NaBH₄ and LiAlH₄, 4-aminobutanol with AcCl, H₂/Pd on a benzyl ether alkene, Boc detection);
+  - the reagent library (1.2 mL Et₃N = 8.61 mmol, n-BuLi 2.5 M, MW consistency, coverage, salt lookup);
+  - green metrics (Fischer AE 83.0%, E-factor 0.204, PMI with 2 mL toluene; Wittig AE 27.2%; 2-step route metrics and their serialisation);
+  - reaction SMILES and RXN round trips.
+- **Test runs**: runall has 38 files, all passing, and `test_retro.js` passes 875/875.
+- **Screenshot**: `feature-research/reactions-s234/screenshots/lab-stoich-metrics.png`.
+
+### Session 43 Slice B — retrosynthesis search, stock, protecting groups and stereo
+
+Two new plain-script files have no DOM code:
+- `js/retro-stock.js` (prefix `stock`) loads just before `js/retro.js`;
+- `js/retro-search.js` (prefix `rsearch`) loads just after it.
+
+`js/retro.js` changed in its engine only. The modal UI is untouched apart from the stock badge in `js/retro-view.js`. The plain `smiles` is unchanged everywhere; stereo lives in `isomericSmiles`.
+
+#### B0. Engine changes (`js/retro.js`)
+- **`RETRO_LIMITS`** gains `fgiPenalty: 1` and `maxProtectTries: 3`. **`RETRO_REAGENTS`** gains `tfa` and `tbaf`, used by the Boc, tBu ester and TBS deprotections.
+- **Graph and edit helpers**:
+  - `retroClone(graph, ids, out)` fills `out.map` (source id → clone id) and copies `bond.stereo` (wedges).
+  - `retroProps(g, ids)` → `{smiles, isomericSmiles}`. `retroCanonical` now uses it.
+  - `retroHeavyKey(g, ids)` → the sorted heavy-element string, used for the fgi test.
+  - `retroCut(g, a, b)` pushes `[a, b]` onto `g.retroCuts`.
+  - **`retroBreak(g, a, b)`** (new) records a bond and removes it without the single-bond check. Diels–Alder, Dieckmann, Robinson, acetal and azo coupling use it. Azo coupling breaks the N–aryl bonds before it removes the nitrogen.
+  - `retroEdit(t, fn)` clones with a map and starts `g.retroCuts = []`.
+    - The pieces list gets **`pieces.cuts`**, the cut bonds in `t` ids.
+    - When `t.edits` is set (during `retroDisconnectSteps`), it pushes an edit record `{transform, pieces, cuts, graph, map, back, changed: null}`.
+  - `retroChanged(t, record)` lazily builds the set of `t` atom ids the edit touched: atoms removed or with a changed element or charge, plus the ends of bonds that were removed, changed order or were added.
+  - `retroSpecRecord(t, spec, from)` picks the edit record whose piece SMILES match most of the spec's precursors. It searches from index `from`, the transform's first record.
+  - `retroEditAtoms(t, record)` → `{bonds, changedAtoms}` in source-graph ids (through `t.map`).
+- **`retroTarget(graph, ids)`** adds:
+  - `map` (clone id → source id);
+  - `isomericSmiles`;
+  - `stereocentres: [{atomId, type}]` (source ids);
+  - `stereo` (true when the isomeric SMILES contains `@`);
+  - `heavy` (the heavy key).
+- **Candidates** gain:
+  - `bonds: [[a, b]…]`, the bonds cut in the source graph (empty for pure FGIs);
+  - `changedAtoms: [id…]`;
+  - `stereo`: `null | 'retained' | 'set' | 'racemic'`;
+  - `rank.fgi`: 1 when there is a single precursor with the same heavy-atom multiset as the target;
+  - `rank.stereo`: 1 for racemic, otherwise 0.
+
+  `rank.adjusted = largest + penalty + fgi × fgiPenalty`.
+- **`retroCompare`** orders by `adjusted`, then `stereo` (retained/set before racemic), then the old keys.
+- **Hydrogenation cap**:
+  - `retroConjugating(t, id, partner)` is true when the carbon has an aromatic neighbour or a C=O/C≡N carbon neighbour.
+  - Hydrogenation proposes only bonds with a conjugating end. When there are none, it proposes a single bond, ring bonds first.
+- **`retroVerify(spec, targetSmiles, sink)`** stores the raw prediction in `sink.result`. `retroTryVerify` passes `sink` through.
+- **`retroPrecursorInfo(item)`** adds `isomericSmiles`, `heavy` and `stock` (the `stockTier` result, or null).
+- **`function* retroDisconnectSteps(graph, ids, options)`** is the generator form of `retroDisconnect`.
+  - It yields `{phase: 'match', transform}` before each transform's `match`, then `{phase: 'spec', spec}` before each forward verification.
+  - `next(false)` stops it, and the result is marked `truncated`.
+  - The return value is the old result object plus `isomericSmiles` and `stereocentres`.
+  - When a spec fails to verify, or verifies with a chemoselectivity warning, it calls `retroProtectPlan` (unless `options.protect === false`). PG candidates are deduplicated by key.
+- **`retroDisconnect(graph, ids, options)`** is now a synchronous driver over the generator. It passes `false` at the first spec phase after `budgetMs`. Its API and output are unchanged.
+- **`retroRouteSteps(chain)`** expands a candidate with `pgSteps` into its three steps, carrying each product forward.
+- **`retroForwardCheck(candidate, targetSmiles)`** re-verifies every PG step, the last one against the target. As for any other candidate, the target must be the canonical SMILES (`t.smiles`).
+
+#### B1. Stock (`js/retro-stock.js`)
+- **`STOCK_LIMITS`** = `{maxUser: 5000, storageKey: 'stock', defaultUserTier: 1, nameTier: 3, maxTier: 3}`.
+- **`STOCK_BUILTIN`** has 386 entries `{smiles, tier, name}`, with canonical plain SMILES.
+  - Tier 1: commodity chemicals, solvents and every `RETRO_REAGENTS` compound.
+  - Tier 2: common building blocks.
+  - Tier 3: less common compounds.
+- **`stockState`** = `{user: Map, builtin, names, canonical, load, save}`. The builtin, name and canonical maps are built lazily.
+- **Canonical form and lookup**:
+  - `stockCanonical(smiles)`: the canonical plain SMILES via `retroCanonicalSmiles`. Multi-component input is sorted and joined with `.`. The result is memoised.
+  - `stockBuiltinMap()` and `stockNameMap()`; the name map holds every `NAME_SMILES` value, canonicalised.
+  - `stockLookup(smiles)` checks the user list, then builtin, then names (at tier 3).
+  - **`stockTier(smiles)`** → `{tier, source: 'user'|'builtin'|'names', name} | null`. It tries a direct lookup, then a canonical one.
+  - `stockInStock(smiles, maxTier)`.
+- **Import**:
+  - `stockParseTier(value)` accepts 1–3; anything else gives `defaultUserTier`.
+  - `stockParseLine(line)` reads `smiles[,name[,tier]]` separated by commas, tabs or whitespace. It skips blank lines, `#` comments and a `smiles` header.
+  - **`stockImport(text)`** → `{added, updated, skipped: [{line, text, reason}], total}`. It canonicalises each SMILES, then persists.
+- **Editing**: `stockAdd(smiles, name, tier)`, `stockRemove(smiles)`, `stockClear()` and `stockUserList()`. The editing calls persist.
+- **Storage**:
+  - **`stockSerialize()`** → `JSON {version: 1, entries: [[smiles, name, tier]…]}`.
+  - **`stockRestore(text)`** replaces the user list and returns its size. It tolerates bad JSON.
+  - **`stockSetStorage(load, save)`** injects storage and restores from `load('stock')`.
+  - `stockPersist()` calls `save('stock', stockSerialize())`.
+  - `stockUseLocalStorage()` wires `localStorage` inside a try. It runs at load time only when `window` exists.
+- **Badge**: `js/retro-view.js` shows **"stock · tier N"** for a precursor with `precursor.stock`. Otherwise it keeps "common starting material".
+
+#### B2. Route search (`js/retro-search.js`)
+- **`RSEARCH_LIMITS`** = `{maxDepth: 5, budgetMs: 20000, maxBranch: 6, maxRoutes: 20, stockMaxTier: 2, nodeBudgetMs: 1500, maxNodes: 400, afterSolved: 12, cacheSize: 400, sliceMs: 40}`.
+- **Cache**: `rsearchCache` maps SMILES → disconnection result and persists across jobs.
+  - `rsearchCacheSet` evicts first-in, first-out at `cacheSize`.
+  - `rsearchClearCache()` empties it.
+- **`rsearchStock(smiles, maxTier)`** calls `stockTier`. A Grignard `X[Mg]R` counts as in stock when its halide is in stock (source `'grignard'`).
+- **The AND–OR graph**:
+  - **Molecule nodes** are shared by SMILES: `{smiles, heavy, skeleton, depth, path, stock, ands, parents, state, solved, dead, order}`. `rsearchMolecule` creates them; the root is never a stock leaf.
+  - **AND nodes** are `{candidate, children, solved, dead}`. `rsearchAttach` keeps at most `maxBranch` candidates. It drops any candidate whose precursor is the node itself or an ancestor.
+  - `rsearchUpdate` recomputes `solved` and `dead` to a fixpoint:
+    - solved: in stock, or has a solved AND;
+    - dead: not in stock and either fully expanded, too deep or left with only dead ANDs.
+- **Best-first expansion**:
+  - `rsearchNext` picks the open, non-dead molecule on a live branch (`rsearchRelevant`) with the lowest `heavy + depth`. Ties go to `order`.
+  - `rsearchBegin` uses the cache (and counts `cacheHits`) or starts a `retroDisconnectSteps` iterator.
+  - `rsearchAdvance` steps that iterator within the slice, stops it at `nodeBudgetMs`, and caches the result.
+- **The job**: **`rsearchCreate(targetSmiles, options)`** → `job` with `step(sliceMs) → progress`, `cancel() → progress`, `progress()`, `routes` and internal state.
+  - `progress` = `{done, progress (0–1), status: 'running'|'done'|'budget'|'cancelled', expanded, open, routes, solved, elapsedMs, cacheHits}`.
+  - The budget counts only working time inside `step` calls.
+  - The search stops when any of these happens:
+    - `afterSolved` expansions have run after the root was first solved;
+    - `maxNodes` nodes have been expanded;
+    - nothing is left open.
+  - `rsearchRun(targetSmiles, options)` is a synchronous loop, for tests and Node.
+- **Routes** are trees `{target, candidate, children, stock, skeleton}`. A stock leaf has `candidate: null` and `children: []`.
+  - `rsearchEnumerate` forms the combinations of solved ANDs, bounded by `4 × maxRoutes`.
+  - Routes are deduplicated by `rsearchRouteKey`, the sorted set of `target|candidate.key`.
+  - `rsearchFinish` scores each route (`route.metrics`), sorts by score and keeps `maxRoutes`.
+
+#### B3. Scoring (`js/retro-search.js`)
+- **`RSEARCH_WEIGHTS`** = `{steps: 10, longest: 5, yieldLoss: 0.3, stock: 4, pg: 6, convergent: -3, simplification: -1}`.
+- **`rsearchStepYield(outcome, minor)`** follows `reactionRouteStep`: selectivity (from `ratio`) × conversion, as a percentage.
+- **`rsearchCandidateSteps(candidate)`**:
+  - a `pgSteps` candidate counts as three steps, and its protect and deprotect steps count as PG steps;
+  - a plain candidate in the "Protecting groups" group counts as one PG step.
+- **`rsearchScore(route)`** → `{steps, longest, convergent, yield, complexity: [], stock, pg, score}`:
+  - `longest` is the longest chain of steps;
+  - `convergent` is true when some step has two or more non-leaf children;
+  - `yield` is the product of the step yields, as a percentage rounded to 0.1;
+  - `complexity` is, per step, the product skeleton minus the largest precursor skeleton;
+  - `stock` is the worst leaf tier;
+  - `score` is rounded to 0.1, and lower is better: `10·steps + 5·longest + 0.3·(100 − yield) + 4·max(0, stock − 1) + 6·pg − 3·[convergent] − mean(complexity)`.
+- **`rsearchSort(routes, key)`** returns a new array.
+  - Ascending keys: `score` (the default), `steps`, `longest`, `pg`, `stock`.
+  - Descending keys: `yield`, `convergent`.
+  - Ties are broken by score.
+- **`rsearchFilter(routes, {maxSteps, minYield, maxTier, noPG})`**.
+
+#### B4. Protecting-group planning (`js/retro.js`)
+- **Detectors** return `[{…, atoms}]` and back the install transforms:
+  - `retroSilylEthers(t)` → `{si, o, atoms, alcohol, silyl, key}` (TBS, TBDPS, TIPS);
+  - `retroBenzylEthers(t)` → `{o, ch2, atoms, alcohol, benzyl, key, conditions}` (Bn, PMB);
+  - `retroAcetals(t)` → `{c, oxygens, atoms, carbonyl, diol, key}` (ethylene glycol and 1,3-propanediol acetals).
+- **`RETRO_PROTECTION`** is keyed by chemoselectivity group: `amine`, `alcohol`, `ketone`, `aldehyde`, `acid`. Each entry is `{label, protect, protectConditions, deprotect, deprotectConditions, apply(g, atoms)}`:
+
+  | Group | Label | Protect | Deprotect |
+  |---|---|---|---|
+  | amine | Boc | Boc₂O | TFA |
+  | alcohol | TBS | TBSCl, imidazole, DMF | TBAF, THF |
+  | ketone, aldehyde | ethylene acetal | ethylene glycol, TsOH, toluene, 110 °C | H₂O, HCl |
+  | acid | tert-butyl ester | isobutylene, H₂SO₄ | TFA |
+
+  The `apply` functions are `retroProtectAmine`, `retroProtectAlcohol`, `retroProtectCarbonyl` and `retroProtectAcid`, all built on `retroTertButylOn`.
+- **Planning helpers**:
+  - `retroGuardedAtoms(t)` returns the atoms already in a silyl ether, benzyl ether or acetal. It is cached on `t.guarded`.
+  - `retroProtectOptions(t, spec, chemo)` takes the groups named in `chemo.changed` and `chemo.competing`. It keeps the instances from `rxChemoGroups(t.graph)` whose atoms the edit did not change and that are not guarded, up to `maxProtectTries`.
+  - `retroProtectTry(t, spec, option)`:
+    1. protects the group on the matching precursor piece and on the target;
+    2. forward-verifies protect → step → deprotect;
+    3. returns `{option, pg, precursor, protectedPrecursor, protectedTarget, pgSteps}`.
+- **`retroProtectPlan(spec, target)`** reads the outcome and its chemoselectivity from `spec.attempt`. It returns null for specs from the "Protecting groups" group, or when no option verifies.
+- **`retroProtectCandidate(t, spec, plan)`** builds the candidate:
+  - `transform` is the original transform id;
+  - `group` is "Protecting groups";
+  - `name` is "<transform> with Boc-protected amine", and so on;
+  - `key` is `pg:<kind>:<atoms>:<spec key>`;
+  - `pgSteps: [{role: 'protect'|'step'|'deprotect', precursors, reagents, target, compounds, conditions, outcome, product, minor}]`;
+  - `protection: {group, label, atoms (source ids), precursor, protectedPrecursor, protectedTarget}`;
+  - `product` is the deprotection product;
+  - the rank carries the PG penalty.
+
+  Only one group is protected per step.
+
+#### B5. Stereo-aware ranking (`js/retro.js`)
+- **`retroMirror(smiles)`** swaps `@` and `@@`.
+- **`retroPieceIsomeric(t, record, smiles)`** returns the isomeric SMILES of the matching edit piece.
+  - It drops wedges on atoms that the edit changed.
+  - It drops `/` and `\` from pieces that contain changed atoms.
+  - If no piece matches, it returns `smiles`.
+- **`retroStereoClass(t, spec, verified)`** → `{stereo, precursors}`:
+  - When the target has no `@`, `stereo` is null.
+  - **With a chiral precursor**, it verifies the isomeric precursors, then their mirror image:
+    - an exact isomeric match of the target gives `retained`, and the precursors that matched are kept;
+    - a racemic or diastereomer product gives `racemic`;
+    - anything else gives `mismatch`.
+  - **Without a chiral precursor**, it gives `set` when the verified product's isomeric SMILES equals the target's and its kind is not racemic. Otherwise it gives `racemic`.
+- **`retroCandidate`** returns null for `mismatch`, so the candidate is dropped. It stores the classified precursors, which keep `isomericSmiles`, and passes `stereo` to `retroRank`.
+
+#### Wiring
+- `index.html` loads `<script src="js/retro-stock.js">` before `js/retro.js` and `<script src="js/retro-search.js">` after it.
+- There is no new UI. The search, route list, canvas Disconnect mode and stock editor are left to Slice C.
+
+#### Tests
+- `test_retro_search.js` is new and has 141 checks:
+  - **B0**: cut records, generator = driver, fgi and the hydrogenation cap;
+  - **B1**: the stock builtin, import, tiers, serialize/restore and storage;
+  - **B2**: search on benzocaine, paracetamol, 2-methylcyclohexanone and 4-methylbiphenyl, plus cancel and slicing;
+  - **B3**: hand-checked scores (45.4 and 33.3), sort and filter;
+  - **B4**: the PG detectors, and plans for amine/Boc, ketone/acetal and aldehyde/acetal;
+  - **B5**: the stereo classes, including a crafted mismatch.
+- `test_retro.js` passes 1204/1204. It has a new "session 43 slice B engine" section, and the rank-formula check now includes fgi.
+- runall: 38 files, all passing. `test_reaction_accuracy.js`: 80/80.
