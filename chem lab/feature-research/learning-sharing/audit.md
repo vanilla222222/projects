@@ -227,7 +227,7 @@ None of the 15 targets yields a minor route. The minor-route path is covered by 
 - **Expand and send:**
   - "Disconnect" on acetone makes the breadcrumb "2-methylbutan-2-ol ⇒ acetone" and shows 1 card;
   - selecting it gives a 2-step route;
-  - "Send route to canvas" adds 14 atoms, 3 molecules and 5 annotations.
+  - "Send route to canvas" adds 14 atoms, 3 molecules and 6 annotations.
 - **Ethyl acetate:** Alt+T opens it. "Open in Reaction lab" switches to the Reactions view with ethanol + acetyl chloride and the verified conditions.
 - **Closing and coverage:**
   - Escape closes;
