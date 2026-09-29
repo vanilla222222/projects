@@ -56,6 +56,24 @@ const RENDER_SETTINGS = {
   curvedArrowTrim: 3,
   curvedArrowAtomTrim: 6,
   curvedArrowLabelTrim: 13,
+  lonePairLabelRadius: 13,
+  lonePairBareRadius: 8,
+  lonePairSpread: 2.6,
+  lonePairDot: 1.5,
+  heatRadius: 22,
+  heatClamp: 0.5,
+  heatAlpha: 0.55,
+  badgeFont: '600 10px ' + RENDER_FONT_FAMILY,
+  badgeHeight: 13,
+  badgeGap: 2,
+  deltaBadgeMin: 0.15,
+  pinFont: '600 10.5px ' + RENDER_FONT_FAMILY,
+  pinOffset: 30,
+  insightCacheLimit: 200,
+  bracketHalf: 19,
+  bracketSerif: 6,
+  bracketWidth: 1.6,
+  bracketLabelGap: 26,
 };
 
 const ARROW_STYLES = ['forward', 'equilibrium', 'resonance', 'retro', 'electron', 'fishhook'];
@@ -81,6 +99,16 @@ const RENDER_THEMES = {
     emptyText: 'rgba(139, 147, 163, 0.7)',
     locant: '#f5b86b',
     locantBg: 'rgba(13, 16, 23, 0.82)',
+    match: '52, 211, 153',
+    peak: '245, 158, 11',
+    lonePair: '#d8b4fe',
+    badgeText: '#cbd5e1',
+    badgeOx: '#f472b6',
+    badgeBg: 'rgba(13, 16, 23, 0.84)',
+    heatNeg: '248, 113, 113',
+    heatPos: '96, 165, 250',
+    acidPin: '#ef4444',
+    basePin: '#3b82f6',
   },
   light: {
     background: '#fbfcfe',
@@ -102,6 +130,16 @@ const RENDER_THEMES = {
     emptyText: 'rgba(71, 85, 105, 0.7)',
     locant: '#b45309',
     locantBg: 'rgba(251, 252, 254, 0.85)',
+    match: '5, 150, 105',
+    peak: '217, 119, 6',
+    lonePair: '#7c3aed',
+    badgeText: '#334155',
+    badgeOx: '#be185d',
+    badgeBg: 'rgba(251, 252, 254, 0.9)',
+    heatNeg: '220, 38, 38',
+    heatPos: '37, 99, 235',
+    acidPin: '#dc2626',
+    basePin: '#2563eb',
   },
 };
 
@@ -123,7 +161,14 @@ class Renderer {
     this.showEmptyHint = true;
     this.showNames = true;
     this.showLocants = false;
+    this.insight = { electrons: false, hybridization: false, oxidation: false, heatmap: false, acidBase: false };
+    this.matchAtoms = new Set();
+    this.peakAtoms = new Set();
+    this.matchBonds = new Set();
+    this.insightCache = new Map();
+    this.insightFrame = null;
     this.nameCache = new Map();
+    this.polymerCache = new Map();
     this.locantCache = new Map();
     this.nameBoxes = [];
     this.selection = new Set();
@@ -247,7 +292,92 @@ class Renderer {
     }, 0);
   }
 
+  polymerLabel(annotation) {
+    if (typeof annotation.label === 'string' && annotation.label.trim()) {
+      return annotation.label;
+    }
+    const crossings = bracketCrossings(this.graph, annotation.atomIds);
+    const signature = this.componentSignature(annotation.atomIds) + '|' + crossings.map((c) => c.inner + ':' + c.bond.order).join(',');
+    if (this.polymerCache.has(signature)) {
+      return this.polymerCache.get(signature);
+    }
+    let label = '';
+    try {
+      label = polymerName(this.graph, annotation);
+    } catch (error) {
+      label = '';
+    }
+    if (this.polymerCache.size > RENDER_SETTINGS.nameCacheLimit) {
+      this.polymerCache.clear();
+    }
+    this.polymerCache.set(signature, label);
+    return label;
+  }
+
+  bracketGeometry(annotation) {
+    if (!bracketValid(this.graph, annotation)) {
+      return null;
+    }
+    const half = RENDER_SETTINGS.bracketHalf;
+    const serif = RENDER_SETTINGS.bracketSerif;
+    const marks = bracketCrossings(this.graph, annotation.atomIds).map((crossing) => {
+      const a = this.graph.getAtom(crossing.inner);
+      const b = this.graph.getAtom(crossing.outer);
+      const length = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+      const dx = (b.x - a.x) / length;
+      const dy = (b.y - a.y) / length;
+      const mx = (a.x + b.x) / 2;
+      const my = (a.y + b.y) / 2;
+      const top = { x: mx - dy * half, y: my + dx * half };
+      const bottom = { x: mx + dy * half, y: my - dx * half };
+      const points = [
+        { x: top.x - dx * serif, y: top.y - dy * serif },
+        top,
+        bottom,
+        { x: bottom.x - dx * serif, y: bottom.y - dy * serif },
+      ];
+      points.dir = { x: dx, y: dy };
+      return points;
+    });
+    const right = marks.reduce((best, points) => (points[1].x + points[2].x > best[1].x + best[2].x ? points : best));
+    const low = right[1].y > right[2].y ? right[1] : right[2];
+    const bounds = this.contentBounds(annotation.atomIds);
+    const label = this.polymerLabel(annotation);
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.font = RENDER_SETTINGS.nameFont;
+    const width = ctx.measureText(label).width + RENDER_SETTINGS.namePadX * 2;
+    ctx.restore();
+    const height = 13 + RENDER_SETTINGS.namePadY * 2;
+    const flat = marks.flat();
+    const allY = flat.map((p) => p.y).concat(bounds ? [bounds.maxY] : []);
+    const cx = bounds ? (bounds.minX + bounds.maxX) / 2 : flat.reduce((sum, p) => sum + p.x, 0) / flat.length;
+    const cy = Math.max(...allY) + RENDER_SETTINGS.bracketLabelGap;
+    return {
+      marks,
+      n: { x: low.x + right.dir.x * 5 + 2, y: low.y + right.dir.y * 5 + 7 },
+      label,
+      labelBox: label ? { minX: cx - width / 2, minY: cy - height / 2, maxX: cx + width / 2, maxY: cy + height / 2 } : null,
+    };
+  }
+
   annotationBounds(annotation) {
+    if (annotation.kind === 'bracket') {
+      const geometry = this.bracketGeometry(annotation);
+      if (!geometry) {
+        return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+      }
+      const points = geometry.marks.flat().concat([{ x: geometry.n.x + 8, y: geometry.n.y + 6 }]);
+      if (geometry.labelBox) {
+        points.push({ x: geometry.labelBox.minX, y: geometry.labelBox.minY }, { x: geometry.labelBox.maxX, y: geometry.labelBox.maxY });
+      }
+      return {
+        minX: Math.min(...points.map((p) => p.x)),
+        minY: Math.min(...points.map((p) => p.y)),
+        maxX: Math.max(...points.map((p) => p.x)),
+        maxY: Math.max(...points.map((p) => p.y)),
+      };
+    }
     if (annotation.kind === 'arrow') {
       const pad = RENDER_SETTINGS.arrowHeadWidth + RENDER_SETTINGS.arrowGap;
       if (isCurvedArrow(annotation)) {
@@ -409,11 +539,16 @@ class Renderer {
     this.adjacency = this.buildAdjacency();
     this.hiddenAtoms = abbreviationHiddenIds(this.graph);
     this.problemAtoms = this.valenceMarks ? new Set(valenceProblems(this.graph).map((p) => p.atomId)) : new Set();
+    this.insightFrame = this.insightActive() ? this.buildInsightFrame() : null;
     this.drawValenceProblems();
     this.drawSelection();
     this.drawHover();
+    this.drawChargeHeatmap();
+    this.drawMatches();
+    this.drawPeaks();
     this.graph.bonds.forEach((bond) => this.drawBond(bond));
     this.graph.atoms.forEach((atom) => this.drawAtom(atom));
+    this.drawLonePairs();
     this.drawAnnotations();
     this.drawMergeTargets();
     this.drawGhost();
@@ -422,6 +557,8 @@ class Renderer {
     if (this.showLocants) {
       this.drawLocants();
     }
+    this.drawInsightBadges();
+    this.drawAcidBasePins();
     this.nameBoxes = [];
     if (this.showNames) {
       this.drawComponentNames();
@@ -545,31 +682,389 @@ class Renderer {
   }
 
   locantDirection(atom, centroid) {
+    return this.freeDirections(atom, 1, centroid)[0];
+  }
+
+  freeDirections(atom, count, centroid, extraAngles) {
     const angles = (this.adjacency.get(atom.id) || [])
       .map((id) => this.graph.getAtom(id))
       .filter((other) => other && (other.x !== atom.x || other.y !== atom.y))
       .map((other) => Math.atan2(other.y - atom.y, other.x - atom.x))
+      .concat(extraAngles || [])
       .sort((a, b) => a - b);
     let outX = atom.x - centroid.x;
     let outY = atom.y - centroid.y;
     const outLength = Math.hypot(outX, outY);
     outX = outLength > 1e-6 ? outX / outLength : 0.6;
     outY = outLength > 1e-6 ? outY / outLength : -0.8;
-    if (angles.length === 0) {
-      return { x: outX, y: outY };
+    const gaps = angles.length === 0
+      ? [{ start: Math.atan2(outY, outX) - Math.PI, size: Math.PI * 2, slots: 0 }]
+      : angles.map((angle, index) => ({ start: angle, size: (index + 1 < angles.length ? angles[index + 1] : angles[0] + Math.PI * 2) - angle, slots: 0 }));
+    for (let i = 0; i < count; i++) {
+      let best = null;
+      gaps.forEach((gap) => {
+        const middle = gap.start + gap.size / 2;
+        const score = gap.size / (gap.slots + 1) + RENDER_SETTINGS.locantOutwardBias * (Math.cos(middle) * outX + Math.sin(middle) * outY);
+        if (!best || score > best.score) {
+          best = { score, gap };
+        }
+      });
+      best.gap.slots += 1;
     }
-    let best = null;
-    angles.forEach((angle, index) => {
-      const next = index + 1 < angles.length ? angles[index + 1] : angles[0] + Math.PI * 2;
-      const gap = next - angle;
-      const middle = angle + gap / 2;
-      const direction = { x: Math.cos(middle), y: Math.sin(middle) };
-      const score = gap + RENDER_SETTINGS.locantOutwardBias * (direction.x * outX + direction.y * outY);
-      if (!best || score > best.score) {
-        best = { score, direction };
+    const directions = [];
+    gaps.forEach((gap) => {
+      for (let k = 0; k < gap.slots; k++) {
+        const angle = gap.start + (gap.size * (k + 1)) / (gap.slots + 1);
+        directions.push({ x: Math.cos(angle), y: Math.sin(angle) });
       }
     });
-    return best.direction;
+    return directions;
+  }
+
+  insightActive() {
+    const flags = this.insight || {};
+    return !!(flags.electrons || flags.hybridization || flags.oxidation || flags.heatmap || flags.acidBase);
+  }
+
+  insightSignature(atomIds) {
+    const idSet = new Set(atomIds);
+    return (
+      this.graph.atoms
+        .filter((a) => idSet.has(a.id))
+        .map((a) => a.id + a.element + (a.charge ? '^' + a.charge : '') + (Number.isInteger(a.hydrogens) ? 'h' + a.hydrogens : ''))
+        .join(';') +
+      '|' +
+      this.graph.bonds
+        .filter((b) => idSet.has(b.atomA))
+        .map((b) => b.atomA + '-' + b.atomB + ':' + b.order)
+        .join(';')
+    );
+  }
+
+  insightFor(atomIds) {
+    const signature = this.insightSignature(atomIds);
+    if (this.insightCache.has(signature)) {
+      return this.insightCache.get(signature);
+    }
+    let result = null;
+    try {
+      result = { atoms: insightAtoms(this.graph, atomIds), charges: gasteigerCharges(this.graph, atomIds), sites: acidBaseSites(this.graph, atomIds) };
+    } catch (error) {
+      result = null;
+    }
+    if (this.insightCache.size > RENDER_SETTINGS.insightCacheLimit) {
+      this.insightCache.clear();
+    }
+    this.insightCache.set(signature, result);
+    return result;
+  }
+
+  insightForAtom(atomId) {
+    const component = this.graph.connectedComponents().find((c) => c.atomIds.includes(atomId));
+    const data = component ? this.insightFor(component.atomIds) : null;
+    if (!data || !data.atoms.has(atomId)) {
+      return null;
+    }
+    return { info: data.atoms.get(atomId), charge: data.charges.get(atomId), unparameterized: data.charges.unparameterized.has(atomId) };
+  }
+
+  buildInsightFrame() {
+    const frame = { components: [], layout: new Map() };
+    this.graph.connectedComponents().forEach((component) => {
+      const data = this.insightFor(component.atomIds);
+      if (!data) {
+        return;
+      }
+      const members = component.atomIds.map((id) => this.graph.getAtom(id)).filter(Boolean);
+      const centroid = {
+        x: members.reduce((sum, a) => sum + a.x, 0) / members.length,
+        y: members.reduce((sum, a) => sum + a.y, 0) / members.length,
+      };
+      const pins = new Set();
+      if (this.insight.acidBase) {
+        if (data.sites.mostAcidic) {
+          pins.add(data.sites.mostAcidic.hydrogenOn);
+        }
+        if (data.sites.mostBasic) {
+          pins.add(data.sites.mostBasic.atomId);
+        }
+      }
+      frame.components.push({ atomIds: component.atomIds, data, centroid, pins });
+      members.forEach((atom) => {
+        if (this.hiddenAtoms.has(atom.id) || atom.abbr) {
+          return;
+        }
+        const info = data.atoms.get(atom.id);
+        const pairs = this.insight.electrons && info ? info.lonePairs + (info.radical ? 1 : 0) : 0;
+        const pin = pins.has(atom.id) ? 1 : 0;
+        const extra = this.isLabeled(atom) && this.implicitHydrogens(atom) > 0 ? [this.hydrogenSide(atom) > 0 ? 0 : Math.PI] : [];
+        const directions = this.freeDirections(atom, pairs + 1 + pin, centroid, extra);
+        const outward = (d) => d.x * (atom.x - centroid.x) + d.y * (atom.y - centroid.y) - d.y * 0.001;
+        const ranked = directions.map((d, i) => ({ d, i })).sort((a, b) => outward(b.d) - outward(a.d));
+        const badge = pin ? ranked[1].d : ranked[0].d;
+        const pinDirection = pin ? ranked[0].d : null;
+        const used = new Set([ranked[0].i].concat(pin ? [ranked[1].i] : []));
+        const electrons = directions.filter((d, i) => !used.has(i));
+        frame.layout.set(atom.id, { badge, pin: pinDirection, electrons, radical: !!(info && info.radical), lonePairs: info ? info.lonePairs : 0 });
+      });
+    });
+    return frame;
+  }
+
+  drawChargeHeatmap() {
+    if (!this.insightFrame || !this.insight.heatmap) {
+      return;
+    }
+    const ctx = this.ctx;
+    const palette = this.palette;
+    const radius = RENDER_SETTINGS.heatRadius;
+    ctx.save();
+    this.insightFrame.components.forEach((entry) => {
+      entry.data.charges.forEach((q, id) => {
+        const atom = this.graph.getAtom(id);
+        if (!atom || this.hiddenAtoms.has(id) || Math.abs(q) < 0.005) {
+          return;
+        }
+        const rgb = q < 0 ? palette.heatNeg : palette.heatPos;
+        const alpha = Math.min(1, Math.abs(q) / RENDER_SETTINGS.heatClamp) * RENDER_SETTINGS.heatAlpha;
+        const gradient = ctx.createRadialGradient(atom.x, atom.y, 0, atom.x, atom.y, radius);
+        gradient.addColorStop(0, 'rgba(' + rgb + ', ' + alpha.toFixed(3) + ')');
+        gradient.addColorStop(1, 'rgba(' + rgb + ', 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(atom.x, atom.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    });
+    ctx.restore();
+  }
+
+  drawMatches() {
+    if ((!this.matchAtoms || this.matchAtoms.size === 0) && (!this.matchBonds || this.matchBonds.size === 0)) {
+      return;
+    }
+    const ctx = this.ctx;
+    const rgb = this.palette.match;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(' + rgb + ', 0.34)';
+    ctx.lineWidth = RENDER_SETTINGS.hoverBondWidth;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    this.graph.bonds.forEach((bond) => {
+      if (!this.matchBonds.has(bond.id) || this.hiddenAtoms.has(bond.atomA) || this.hiddenAtoms.has(bond.atomB)) {
+        return;
+      }
+      const a = this.graph.getAtom(bond.atomA);
+      const b = this.graph.getAtom(bond.atomB);
+      if (a && b) {
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+      }
+    });
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(' + rgb + ', 0.22)';
+    ctx.strokeStyle = 'rgba(' + rgb + ', 0.9)';
+    ctx.lineWidth = 1.5;
+    this.matchAtoms.forEach((id) => {
+      const atom = this.graph.getAtom(id);
+      if (!atom || this.hiddenAtoms.has(id)) {
+        return;
+      }
+      ctx.beginPath();
+      ctx.arc(atom.x, atom.y, RENDER_SETTINGS.hoverAtomRadius - 1, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+
+  drawPeaks() {
+    if (!this.peakAtoms || this.peakAtoms.size === 0) {
+      return;
+    }
+    const ctx = this.ctx;
+    const rgb = this.palette.peak;
+    ctx.save();
+    ctx.fillStyle = 'rgba(' + rgb + ', 0.26)';
+    ctx.strokeStyle = 'rgba(' + rgb + ', 0.95)';
+    ctx.lineWidth = 1.8;
+    this.peakAtoms.forEach((id) => {
+      const atom = this.graph.getAtom(id);
+      if (!atom || this.hiddenAtoms.has(id)) {
+        return;
+      }
+      ctx.beginPath();
+      ctx.arc(atom.x, atom.y, RENDER_SETTINGS.hoverAtomRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+
+  drawLonePairs() {
+    if (!this.insightFrame || !this.insight.electrons) {
+      return;
+    }
+    const ctx = this.ctx;
+    const dot = RENDER_SETTINGS.lonePairDot;
+    const spread = RENDER_SETTINGS.lonePairSpread;
+    ctx.save();
+    ctx.fillStyle = this.palette.lonePair;
+    this.insightFrame.layout.forEach((layout, id) => {
+      if (layout.electrons.length === 0) {
+        return;
+      }
+      const atom = this.graph.getAtom(id);
+      const radius = this.isLabeled(atom) ? RENDER_SETTINGS.lonePairLabelRadius : RENDER_SETTINGS.lonePairBareRadius;
+      layout.electrons.forEach((d, index) => {
+        const cx = atom.x + d.x * radius;
+        const cy = atom.y + d.y * radius;
+        const single = layout.radical && index === layout.electrons.length - 1;
+        const offsets = single ? [0] : [-spread, spread];
+        offsets.forEach((o) => {
+          ctx.beginPath();
+          ctx.arc(cx - d.y * o, cy + d.x * o, dot, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      });
+    });
+    ctx.restore();
+  }
+
+  insightNumber(value, digits) {
+    const text = digits ? Math.abs(value).toFixed(digits) : String(Math.abs(value));
+    if (value > 0 && (digits ? Number(text) !== 0 : true)) {
+      return '+' + text;
+    }
+    return value < 0 && Number(text) !== 0 ? '−' + text : text;
+  }
+
+  insightBadges(atomId, data) {
+    const badges = [];
+    const info = data.atoms.get(atomId);
+    if (!info) {
+      return badges;
+    }
+    if (this.insight.hybridization && info.hybridization) {
+      badges.push({ text: info.hybridization.replace('sp3', 'sp³').replace('sp2', 'sp²'), color: this.palette.badgeText });
+    }
+    if (this.insight.oxidation && info.oxidationState !== null && info.oxidationState !== undefined) {
+      badges.push({ text: this.insightNumber(info.oxidationState, 0), color: this.palette.badgeOx });
+    }
+    if (this.insight.heatmap && !data.charges.unparameterized.has(atomId)) {
+      const q = data.charges.get(atomId);
+      if (Math.abs(q) >= RENDER_SETTINGS.deltaBadgeMin) {
+        badges.push({ text: 'δ' + this.insightNumber(q, 2), color: q < 0 ? 'rgb(' + this.palette.heatNeg + ')' : 'rgb(' + this.palette.heatPos + ')' });
+      }
+    }
+    return badges;
+  }
+
+  drawInsightBadges() {
+    if (!this.insightFrame || !(this.insight.hybridization || this.insight.oxidation || this.insight.heatmap)) {
+      return;
+    }
+    const ctx = this.ctx;
+    const palette = this.palette;
+    const height = RENDER_SETTINGS.badgeHeight;
+    const gap = RENDER_SETTINGS.badgeGap;
+    const zoom = Math.min(1.4, Math.max(0.7, this.view.scale));
+    ctx.save();
+    ctx.font = RENDER_SETTINGS.badgeFont;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    this.insightFrame.components.forEach((entry) => {
+      entry.atomIds.forEach((id) => {
+        const layout = this.insightFrame.layout.get(id);
+        if (!layout) {
+          return;
+        }
+        const badges = this.insightBadges(id, entry.data);
+        if (badges.length === 0) {
+          return;
+        }
+        const atom = this.graph.getAtom(id);
+        const center = this.toScreen(atom);
+        const d = layout.badge;
+        let distance = (this.isLabeled(atom) ? RENDER_SETTINGS.locantLabelOffset : RENDER_SETTINGS.locantOffset) * zoom;
+        let previous = 0;
+        badges.forEach((badge, index) => {
+          const width = ctx.measureText(badge.text).width + 6;
+          if (index > 0) {
+            const alongX = Math.abs(d.x) > 1e-3 ? (previous / 2 + width / 2 + gap) / Math.abs(d.x) : Infinity;
+            const alongY = Math.abs(d.y) > 1e-3 ? (height + gap) / Math.abs(d.y) : Infinity;
+            distance += Math.min(alongX, alongY);
+          } else {
+            distance += Math.max(0, Math.abs(d.x) * (width / 2 - height / 2));
+          }
+          const x = center.x + d.x * distance;
+          const y = center.y + d.y * distance;
+          ctx.fillStyle = palette.badgeBg;
+          this.roundedRect(x - width / 2, y - height / 2, width, height, 3);
+          ctx.fill();
+          ctx.fillStyle = badge.color;
+          ctx.fillText(badge.text, x, y + 0.5);
+          previous = width;
+        });
+      });
+    });
+    ctx.restore();
+  }
+
+  insightRange(site) {
+    const format = (v) => (v < 0 ? '−' + Math.abs(v) : String(v));
+    if (site.pKa[0] === site.pKa[1]) {
+      return format(site.pKa[0]);
+    }
+    return format(site.pKa[0]) + (site.pKa[0] < 0 ? ' to ' : '–') + format(site.pKa[1]);
+  }
+
+  drawAcidBasePins() {
+    if (!this.insightFrame || !this.insight.acidBase) {
+      return;
+    }
+    const ctx = this.ctx;
+    const palette = this.palette;
+    const zoom = Math.min(1.4, Math.max(0.7, this.view.scale));
+    ctx.save();
+    ctx.font = RENDER_SETTINGS.pinFont;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    this.insightFrame.components.forEach((entry) => {
+      const pins = [];
+      if (entry.data.sites.mostAcidic) {
+        pins.push({ id: entry.data.sites.mostAcidic.hydrogenOn, text: 'H⁺  pKa ≈ ' + this.insightRange(entry.data.sites.mostAcidic), color: palette.acidPin });
+      }
+      if (entry.data.sites.mostBasic) {
+        pins.push({ id: entry.data.sites.mostBasic.atomId, text: ':B  pKaH ≈ ' + this.insightRange(entry.data.sites.mostBasic), color: palette.basePin });
+      }
+      pins.forEach((pin) => {
+        const layout = this.insightFrame.layout.get(pin.id);
+        const atom = this.graph.getAtom(pin.id);
+        if (!layout || !atom || !layout.pin) {
+          return;
+        }
+        const center = this.toScreen(atom);
+        const width = ctx.measureText(pin.text).width + 12;
+        const height = 17;
+        const reach = RENDER_SETTINGS.pinOffset * zoom + Math.abs(layout.pin.x) * (width / 2 - height / 2);
+        const x = center.x + layout.pin.x * reach;
+        const y = center.y + layout.pin.y * reach;
+        const start = (this.isLabeled(atom) ? RENDER_SETTINGS.locantOffset : RENDER_SETTINGS.locantOffset / 2) * zoom;
+        ctx.strokeStyle = pin.color;
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(center.x + layout.pin.x * start, center.y + layout.pin.y * start);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.fillStyle = pin.color;
+        this.roundedRect(x - width / 2, y - height / 2, width, height, height / 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(pin.text, x, y + 0.5);
+      });
+    });
+    ctx.restore();
   }
 
   drawLocants() {
@@ -862,7 +1357,7 @@ class Renderer {
   drawAnnotations() {
     const hover = this.hover && this.hover.type === 'annotation' ? this.hover.id : null;
     this.graph.annotations.forEach((annotation) => {
-      if (annotation.id === this.editingAnnotationId) {
+      if (annotation.id === this.editingAnnotationId && annotation.kind !== 'bracket') {
         return;
       }
       const selected = this.annotationSelection.has(annotation.id);
@@ -874,6 +1369,8 @@ class Renderer {
         this.arrowLabels(annotation).forEach((label) => this.drawTextLabel(label));
       } else if (annotation.kind === 'plus') {
         this.drawPlus(annotation);
+      } else if (annotation.kind === 'bracket') {
+        this.drawBracket(annotation);
       } else {
         this.drawTextLabel(annotation);
       }
@@ -901,6 +1398,61 @@ class Renderer {
       ctx.stroke();
     }
     ctx.restore();
+  }
+
+  drawBracket(annotation) {
+    const geometry = this.bracketGeometry(annotation);
+    if (!geometry) {
+      return;
+    }
+    const ctx = this.ctx;
+    const palette = this.palette;
+    ctx.save();
+    ctx.strokeStyle = palette.bond;
+    ctx.lineWidth = RENDER_SETTINGS.bracketWidth;
+    ctx.lineJoin = 'miter';
+    geometry.marks.forEach((points) => this.strokePolyline(points));
+    ctx.fillStyle = palette.bond;
+    ctx.font = 'italic ' + RENDER_SETTINGS.annotationFont;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(annotation.n || 'n', geometry.n.x, geometry.n.y);
+    const box = geometry.labelBox;
+    if (box && annotation.id !== this.editingAnnotationId) {
+      const height = box.maxY - box.minY;
+      this.roundedRect(box.minX, box.minY, box.maxX - box.minX, height, height / 2);
+      ctx.fillStyle = palette.nameBg;
+      ctx.fill();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = palette.nameBorder;
+      ctx.stroke();
+      ctx.font = RENDER_SETTINGS.nameFont;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = palette.name;
+      ctx.fillText(geometry.label, (box.minX + box.maxX) / 2, (box.minY + box.maxY) / 2 + 0.5);
+    }
+    ctx.restore();
+  }
+
+  bracketHit(annotation, point, radius) {
+    const geometry = this.bracketGeometry(annotation);
+    if (!geometry) {
+      return false;
+    }
+    const box = geometry.labelBox;
+    if (box && point.x >= box.minX && point.x <= box.maxX && point.y >= box.minY && point.y <= box.maxY) {
+      return true;
+    }
+    if (Math.abs(point.x - geometry.n.x - 4) <= 8 && Math.abs(point.y - geometry.n.y) <= 9) {
+      return true;
+    }
+    return geometry.marks.some((points) => points.slice(1).some((p, k) => {
+      const a = points[k];
+      const vx = p.x - a.x;
+      const vy = p.y - a.y;
+      const t = Math.max(0, Math.min(1, ((point.x - a.x) * vx + (point.y - a.y) * vy) / (vx * vx + vy * vy || 1)));
+      return Math.hypot(point.x - a.x - vx * t, point.y - a.y - vy * t) <= radius;
+    }));
   }
 
   drawPlus(annotation) {

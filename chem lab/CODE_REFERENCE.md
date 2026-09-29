@@ -1,6 +1,6 @@
 # Code Reference — Chemical Graph Constructor
 
-A dependency-free, no-build browser editor for organic skeletal (line-angle) structures. Open `index.html` directly in a browser; scripts load as plain `<script>` tags in dependency order: `graph.js`, `valence.js`, `colors.js`, `naming-core.js`, `naming-chain.js`, `naming-ring.js`, `naming-scaffolds.js`, `renderer.js`, `interactions.js`, `app.js`.
+A dependency-free, no-build browser editor for organic skeletal (line-angle) structures. Open `index.html` directly in a browser; scripts load as plain `<script>` tags in dependency order (as of session 39): `elements.js`, `graph.js`, `valence.js`, `stereo.js`, `colors.js`, `naming-core.js`, `naming-chain.js`, `naming-ring.js`, `naming-scaffolds.js`, `naming-general.js`, `common-names-extra.js`, `naming-elements.js`, `properties.js`, `layout.js`, `smiles.js`, `name-lookup.js`, `insight.js`, `resonance.js`, `substructure.js`, `spectra-nmr.js`, `spectra-ir.js`, `spectra-ms.js`, `pubchem.js`, `molfile.js`, `scheme.js`, `history.js`, `svg-context.js`, `renderer.js`, `interactions.js`, `stamps.js`, `abbreviations.js`, `recent.js`, `reactions.js`, `reaction-stereo.js`, `reaction-rules.js`, `reaction-rules-extra.js`, `reaction-rules-extra2.js`, `reaction-aromatic.js`, `reaction-lab.js`, `spectra-view.js`, `app.js`.
 
 ## Data model (`js/graph.js`)
 
@@ -918,7 +918,7 @@ When a structure has no `systematicPrimary` (aminoindanes, diarylethylamines, ar
 **1-Acyl lysergamides.** Any scaffold name containing `acetyl` or `propionyl` matched the `wanted` regex in `nameStructureDetailed`, so ALD-52 and 1P-LSD showed the von Baeyer carboxamide as their full name, and their common names were reached only through `systematicPrimary`. `isFinalizedScaffoldName` now also ends-matches `lysergamide`, `lysergol`, `ergoline` and `ergoline-8-carboxylic acid`, so these keep the scaffold name and its `(5R,8R)` descriptors. In `nameErgoline`, the N1 substituent falls back to a local cyclopropanecarbonyl check when `resolveAcylBranch` returns null. The check looks for C(=O) bonded to a CH carbon whose two other neighbors are degree-2 carbons bonded to each other. Those five atoms are added to `skip`. The pendant cyclopropane is stripped from `coreAtomIds`, so dispatch still reaches the tetracyclic tier. Other cycloalkanecarbonyls and branched acyls are still rejected. `resolveAcylBranch` itself is unchanged because it has other callers. New keys: 1B-LSD, 1V-LSD, 1cP-LSD. `test_later_families.js` now has 121 cases.
 
 Update, later session (37), continued — reaction arrows and text labels. Reaction schemes can now be sketched with arrows and text labels next to the molecules.
-- **Data model (`js/graph.js`).** `Graph` gained `annotations` and `nextAnnotationId`, with `addAnnotation(fields)`, `getAnnotation(id)`, `removeAnnotation(id)` and `isEmpty()` (no atoms and no annotations). An annotation is either `{id, kind: 'arrow', x1, y1, x2, y2, style}` or `{id, kind: 'text', x, y, text}`. `style` is one of `ARROW_STYLES` (`forward`, `equilibrium`, `resonance`, `retro`, defined in `js/renderer.js`). Labels may contain `\n` for several lines. Annotations never touch the chemistry: naming, formulas, SMILES and `connectedComponents` see only atoms and bonds.
+- **Data model (`js/graph.js`).** `Graph` gained `annotations` and `nextAnnotationId`, with `addAnnotation(fields)`, `getAnnotation(id)`, `removeAnnotation(id)` and `isEmpty()` (no atoms and no annotations). An annotation is either `{id, kind: 'arrow', x1, y1, x2, y2, style}` or `{id, kind: 'text', x, y, text}`. `style` is one of `ARROW_STYLES` (`forward`, `equilibrium`, `resonance`, `retro`, defined in `js/renderer.js`). Labels may contain `\n` for several lines. Annotations never touch the chemistry: naming, formulas, SMILES and `connectedComponents` see only atoms and bonds. Later sessions added `{id, kind: 'plus', x, y}` and, in session (40), `{id, kind: 'bracket', atomIds, n, label?}` polymer brackets; see "Update, later session (40)".
 - **Persistence.** `History.snapshot()`/`restore()` include both new fields, and `restore` defaults them for older states. So undo/redo and the localStorage autosave cover annotations. `serializeGraph()` writes them. `loadGraphState()` passes them through `sanitizeAnnotations(list)`, which drops malformed entries and duplicate ids, clamps text to 500 characters and falls back to `forward` for unknown styles. Files without annotations still open. The file format stays at version 1.
 - **Rendering (`js/renderer.js`).** `drawAnnotations()` runs in world space after atoms. It skips the label being edited (`editingAnnotationId`), draws a highlight for hovered or selected annotations (`drawAnnotationHighlight`), and then calls `drawArrow(arrow, alpha)` or `drawTextLabel(annotation)`. `drawArrow` draws a filled head for `forward`, heads at both ends for `resonance`, two offset harpoons in the ⇌ orientation for `equilibrium`, and two parallel lines with an open chevron for `retro`. `renderer.arrowDraft` is drawn semi-transparent while an arrow is being dragged. `annotationBounds(annotation)` measures label text with `RENDER_SETTINGS.annotationFont`/`annotationLineHeight`. `contentBounds(atomIds, annotationIds)` includes every annotation when called with no arguments, so fit-to-screen and PNG export frame the whole scheme. It includes only the listed annotations otherwise. The empty-canvas hint now checks `graph.isEmpty()`.
 - **Interactions (`js/interactions.js`).** There are two new tools, `arrow` (key A) and `text` (key T). `hitTest` returns `{type: 'annotation'}` after atoms and bonds, using `annotationAt(point)`: segment distance for arrows and a padded text box for labels.
@@ -2418,3 +2418,678 @@ Verified by:
     - no page errors.
     - Screenshots: `shots/rx_rings_naphthalene.png`, `shots/rx_rings_indole.png`, `shots/rx_rings_furan_da.png`, `shots/rx_rings_chichibabin.png`, `shots/rx_rings_quinoline_hint.png`.
   - Full suite: 43/43 test files; drives all `ERRORS: []`.
+
+## Update, later session (38) — structure insight overlays
+
+Adds five toggleable teaching overlays, a substructure search and a resonance viewer to the editor. The work lives in three new plain-script files: `js/insight.js`, `js/resonance.js` and `js/substructure.js`. They load after `js/name-lookup.js` and before `js/pubchem.js`, and so before `js/renderer.js`. All three are free of DOM code and run in Node when concatenated in `index.html` order. The plan and audit are in `feature-research/insight-overlays/`.
+
+### `js/insight.js` — electrons, hybridization, oxidation states, Gasteiger charges, acid/base sites
+
+**Tables.**
+- `INSIGHT_ELECTRONEGATIVITY`: Pauling values, used for oxidation states. Metals not in the table fall back to 1.3, other elements to 2.2.
+- `INSIGHT_HYBRID_ELEMENTS`: B, C, N, O, P, S, Si and Se. Only these get a hybridization label.
+- `GASTEIGER_PARAMS`: the a, b, c parameters from RDKit's `GasteigerParams.cpp` (the Gasteiger–Marsili 1980 table with RDKit's additions), keyed by element and then by type:
+  - `sp3`, `sp2` and `sp`;
+  - S also has `so` (one S=O) and `so2` (two or more);
+  - H has one entry, `'*'`.
+- `GASTEIGER_SETTINGS`:
+  - `iterations: 6`;
+  - `damping: 0.5`, which halves every iteration;
+  - `hydrogenIonization: 20.02`, the fixed denominator RDKit uses for hydrogen.
+
+**Functions.**
+- `insightElectronegativity(element)` → a number.
+- `insightValenceElectrons(element)` → the valence-electron count: 1 for H/D, `group - 10` for groups 13–18, the group number for groups 1–2. Metals and unknowns give `null`.
+- `insightContext(graph, atomIds)` → a `propContext` extended with:
+  - `h`: a Map of implicit H counts, which honours an integer `atom.hydrogens` override (used by the radical test);
+  - `bondSum(id)`.
+- `insightPiNeighbor(ctx, neighborId, fromId)` → true when the neighbour is aromatic or carries a multiple bond to some other atom.
+- `insightAtomInfo(ctx, id)` → `{formalCharge, lonePairs, radical, hybridization ('sp3' | 'sp2' | 'sp' | null), stericNumber, oxidationState}`:
+  - Lone pairs: `left = valence e⁻ − charge − bond-order sum − H`. Then `lonePairs = floor(left / 2)` and `radical = left odd`.
+  - Steric number: σ-neighbours + H + lone pairs + radical.
+  - Overrides:
+    - a triple bond, or two double bonds, gives sp;
+    - a double bond or an aromatic atom gives sp²;
+    - an sp³ N/O/S with a lone pair next to a π system gives sp² (the amide, pyrrole and aniline N case).
+  - Oxidation state: each bond's order is assigned to the more electronegative atom, and H counts as 2.20.
+- `insightAtoms(graph, atomIds)` → a Map from id to `insightAtomInfo`.
+- `insightIsHypervalentNitro(ctx, id)`: detects a neutral 5-valent N with an =O. `smilesToFragment` neutralizes `[N+](=O)[O-]` into this form.
+- Gasteiger internals:
+  - `gasteigerType(ctx, id, info)` → the parameter triple or `null`. Missing sp types fall back to sp2 and then sp3.
+  - `gasteigerConjugated(...)` and `gasteigerStartCharges(ctx, infos)` follow RDKit: a formal charge is spread evenly over same-element atoms that sit two bonds away through a conjugated path, so carboxylate O's start at −0.5 each. A hypervalent nitro is first counted as N⁺/O⁻.
+- `gasteigerCharges(graph, atomIds)` → a Map from id to the partial charge summed with that atom's implicit H. It carries three extra properties:
+  - `.hydrogenCharges`: a Map of the summed implicit-H charge per heavy atom;
+  - `.heavyCharges`: a Map of the heavy-atom-only charge;
+  - `.unparameterized`: a Set of atoms with no parameters. They stay at 0 and take no part in the flow.
+
+  The update per iteration is `Δq_i = Σ_j (χ_j − χ_i) / D`. D is the ionization term `a + b + c` of the neighbour when `χ_j < χ_i`, otherwise of atom i. For implicit H, D is 20.02 when H is the less electronegative side. This denominator convention is what reproduces RDKit; the reverse convention was off by up to 0.11 e.
+- `insightHasOxo`, `insightIsCarbonylCarbon`, `insightIsNitro`, `insightRingNeighbors(ctx, ipso)` (ortho/para positions in an aromatic six-ring) and `insightNitroOrthoPara(ctx, ipso)`: small predicates used by the pKa rules.
+- `insightSite(atomId, hydrogenOn, group, lo, hi, note)` → `{atomId, group, pKa: [lo, hi], note, hydrogenOn?}`. `pKa` is the pKa for acids and the pKaH (of the conjugate acid) for bases.
+- `insightAcidAt(ctx, id)` and `insightBaseAt(ctx, id)` → a site or `null` for one atom.
+- `insightMid(site)` → the midpoint of the range.
+- `acidBaseSites(graph, atomIds)` → `{acids, bases, mostAcidic, mostBasic}`:
+  - Acids are sorted by midpoint ascending and bases by midpoint descending.
+  - For a carboxylic, sulfonic or phosphoric acid, `atomId` is the C/S/P and `hydrogenOn` is the O–H oxygen. For every other acid, `atomId === hydrogenOn`.
+  - When no acid site is found, one fallback C–H site is added so that `mostAcidic` always exists: 'Alkane C–H' (48–52) or 'Arene/alkene C–H' (43–45).
+
+**pKa table** (textbook ranges in water; typical values for the group, not predictions for the molecule):
+
+| Kind | Group | Range |
+|---|---|---|
+| acid | Sulfonic acid | −2 to −1 |
+| acid | Phosphoric/phosphonic acid | 1–2 |
+| acid | Carboxylic acid | 4–5 (2–3 with an α-halogen or α-ammonium) |
+| acid | Pyridinium N⁺–H | 5 |
+| acid | Anilinium N⁺–H | 4–5 |
+| acid | Phenol | 10 (7–8 with an o/p-nitro) |
+| acid | Imide N–H | 8–10 |
+| acid | Ammonium N⁺–H | 9–11 |
+| acid | 1,3-Dicarbonyl C–H | 9–13 |
+| acid | Thiol | 10–11 |
+| acid | Azole N–H | 14–18 |
+| acid | Water | 15.7 |
+| acid | Alcohol | 15–17 |
+| acid | Amide N–H | 15–17 |
+| acid | Ketone/aldehyde α-C–H | 19–20 |
+| acid | Ester α-C–H | 24–25 |
+| acid | Terminal alkyne C–H | 25 |
+| acid | Aniline N–H | 28–31 |
+| acid | Amine N–H | 35–38 |
+| acid (fallback) | Arene/alkene C–H | 43–45 |
+| acid (fallback) | Alkane C–H | 48–52 |
+| base (pKaH) | Guanidine | 13 |
+| base | Amidine | 12 |
+| base | Alkoxide | 15–16 |
+| base | Aliphatic amine | 10–11 |
+| base | Phenoxide | 10 |
+| base | Tertiary amine | 9.5–10.5 |
+| base | Imidazole N3 | 7 |
+| base | Pyridine-type N | 5 |
+| base | Aniline | 4–5 (1 with an o/p-nitro) |
+| base | Carboxylate | 4–5 |
+| base | Amide O | −0.5 |
+| base | Alcohol/ether O | −2 |
+| base | Carbonyl O | −7 to −6 |
+
+### `js/resonance.js` — resonance contributors
+
+- `RESONANCE_SETTINGS`:
+  - `max: 12` contributors;
+  - `expansions: 400`;
+  - score weights: `octetDeficit: 10`, `chargePair: 4`, `wrongAtom: 3`;
+  - `majorWindow: 1`.
+- A state is `{orders[], charges[], moves[]}` over the model's bond and atom index. `resonanceModel(graph, atomIds)` builds `{graph, ids, index, bonds, adj, el, ve, h, fixedH, en}`.
+- Helpers:
+  - `resonanceBondSum`, `resonanceLeft` (non-bonding electrons) and `resonanceShell` (electrons around the atom);
+  - `resonanceGraph(model, state)` → a `Graph` clone restricted to the atoms, with the state's orders and charges;
+  - `resonanceClone` and `resonancePairs` (the number of +/− pairs).
+- `resonanceSignature(model, state)` builds the dedupe key. In charged states, the bonds of every alternating six-ring that `kekuleRings` finds are written as `a`, so two Kekulé forms of an untouched benzene ring count as one contributor. This is why phenoxide gives 4 contributors and not 8. Neutral states keep the exact orders, so benzene still gives its 2 Kekulé structures.
+- `resonanceNormalize(model, state)` converts a hypervalent nitro into N⁺/O⁻ in the starting state. The first result is then flagged `normalized: true`.
+- `resonanceValid(model, state, base, baseProblems)` rejects a state when any of these holds:
+  - a changed atom has |charge| > 1;
+  - an atom has fewer than 0 non-bonding electrons;
+  - a period-2 atom's shell exceeds max(8, its shell in the base);
+  - an implicit H count would change;
+  - the state has more than one extra charge pair beyond the base;
+  - a `valenceProblems` entry appears on an atom that had none in the base.
+- `resonanceExpand(model, state)` → candidate states. The moves are:
+  - **'lone pair → π'**: an atom X with charge ≤ 0 and a lone pair, bonded by a single bond to Y, where Y=Z. The X–Y bond goes up by one and Y=Z goes down by one, so X gains +1 and Z gains −1.
+  - **'π → cation'**: a period-2 cation X with an incomplete octet next to Y=Z. The π bond shifts toward X, which moves the + charge to Z.
+  - **'ring flip'**: every alternating six-ring from `kekuleRings` is flipped.
+- `resonanceContributors(graph, atomIds, options?)` → `[{graph, charges: Map, score, label: 'major' | 'minor', moves: [string], normalized?}]`:
+  - It runs a breadth-first expansion from the drawn state.
+  - It then applies a terminal **'polarize C=O' / 'polarize C=N'** move from the base only. This is limited to double bonds that no other contributor moved, which gives the minor C⁺–O⁻ form of acetone without doubling up acetate or acetamide.
+  - Score = 4 × charge pairs + 10 per C/N/O below an octet + 3 × |charge| for each negative charge on an atom less electronegative than the best available negative site (and the same for positive charges on more electronegative atoms).
+  - A contributor is labelled `major` when its score is within 1 of the best score.
+  - The first entry is always the drawn (or normalized) structure. The rest are sorted by score, keeping discovery order on ties.
+
+### `js/substructure.js` — substructure search
+
+- `SUBSTRUCTURE_SETTINGS`: `{maxMatches: 200, maxSteps: 200000}`.
+- `substructureFromSmiles(text)` → a query `Graph`:
+  - atoms carry `aromatic` and `bracket` from the SMILES, and bonds carry `aromatic`;
+  - the query is also run through `propContext`, so a Kekulé-written ring such as `C1=CC=CC=C1` is marked aromatic and matches drawn benzene rings.
+- `substructureQuery(text)` → a query graph or `{error}`. When the text is not valid SMILES, it falls back to a `NAME_SMILES` lookup (lower-cased), so "pyridine" works.
+- `substructureOrder(query, targetCounts)` → `{order, parent, nbrs}`: a BFS order that starts from the query atom whose element is rarest in the target.
+- `substructureMatches(graph, query, atomIds?)` → `[{atoms: [targetAtomIds in query order], bonds: [targetBondIds]}]`. This is backtracking over the BFS order. The rules:
+  - Elements must match.
+  - A bracket atom's charge must match.
+  - Aromatic query atoms and bonds need aromatic target atoms and bonds. A non-aromatic single bond in the query does not match an aromatic ring bond. Other bonds need an equal order.
+  - Matches are deduplicated by their sorted atom set.
+  - The search stops at 200 matches or 200 000 steps.
+
+### `js/renderer.js`
+
+**Settings.** New `RENDER_SETTINGS` keys:
+- lone pairs: `lonePairLabelRadius` 13, `lonePairBareRadius` 8, `lonePairSpread` 2.6, `lonePairDot` 1.5;
+- heat map: `heatRadius` 22, `heatClamp` 0.5, `heatAlpha` 0.55;
+- badges: `badgeFont`, `badgeHeight` 13, `badgeGap` 2, `deltaBadgeMin` 0.15;
+- pins: `pinFont`, `pinOffset` 30;
+- `insightCacheLimit` 200.
+
+**Palette keys** (dark / light):
+
+| Key | Dark | Light |
+|---|---|---|
+| `match` | 52, 211, 153 | 5, 150, 105 |
+| `lonePair` | #d8b4fe | #7c3aed |
+| `badgeText` | #cbd5e1 | #334155 |
+| `badgeOx` | #f472b6 | #be185d |
+| `badgeBg` | rgba(13, 16, 23, 0.84) | rgba(251, 252, 254, 0.9) |
+| `heatNeg` | 248, 113, 113 | 220, 38, 38 |
+| `heatPos` | 96, 165, 250 | 37, 99, 235 |
+| `acidPin` | #ef4444 | #dc2626 |
+| `basePin` | #3b82f6 | #2563eb |
+
+`match`, `heatNeg` and `heatPos` are RGB triplets that are combined with an alpha at draw time.
+
+**State.**
+- `insight = {electrons, hybridization, oxidation, heatmap, acidBase}`, all false by default;
+- `matchAtoms` and `matchBonds` (Sets of ids);
+- `insightCache`: a Map keyed by `insightSignature`, cleared once it exceeds 200 entries;
+- `insightFrame`: rebuilt on every render, and `null` when no overlay is on.
+
+**Methods.**
+- `insightActive()`.
+- `insightSignature(atomIds)`: a structural key (ids, elements, charges, H overrides, bonds and orders) that ignores position. Moving atoms therefore does not recompute anything.
+- `insightFor(atomIds)` → a cached `{atoms, charges, sites}`, or `null` if a computation throws.
+- `insightForAtom(id)` → `{info, charge, unparameterized}`, used by the hover status.
+- `buildInsightFrame()` → `{components: [{atomIds, data, centroid, pins}], layout: Map(id → {badge, pin, electrons: [dirs], radical, lonePairs})}`:
+  - For each visible, non-abbreviated atom it asks `freeDirections(atom, pairs + 1 + pin, centroid, extraAngles)` for evenly spread free directions. The side of an implicit-H label counts as occupied.
+  - The pin (if the atom holds one) takes the most outward direction, the badge stack takes the next, and the lone pairs take the rest.
+- `freeDirections(atom, count, centroid, extraAngles)`: the gap-slot allocator that `locantDirection` now also uses. For a count of 1 it gives the same result as before.
+
+**Draw passes.**
+- World space, after `drawHover`:
+  - `drawChargeHeatmap`: a radial gradient per atom, with alpha proportional to |q| / 0.5, red for negative and blue for positive;
+  - `drawMatches`: a translucent green halo over matched bonds, and ringed atoms.
+- World space, after the atom loop: `drawLonePairs`, which draws dot pairs, or a single dot for a radical.
+- Screen space, after `drawLocants`:
+  - `drawInsightBadges`: stacked pills along the badge direction, holding the sp/sp²/sp³ label, the oxidation state with a sign, and δ±0.00 when |δ| ≥ 0.15. These are built by `insightBadges`, which formats numbers with `insightNumber` (U+2212 minus).
+  - `drawAcidBasePins`: a red "H⁺  pKa ≈ 4–5" pill on the most acidic O/N/C, and a blue ":B  pKaH ≈ 10–11" pill on the most basic atom, each with a leader line. Ranges come from `insightRange(site)`, which writes "−7 to −6" when the lower bound is negative.
+
+### `js/app.js`
+
+**Insight menu.**
+- `#insight-button` toggles `#insight-menu`. The menu is `position: fixed` and placed from the button's rect. It closes on an outside mousedown, on Esc, and when the resonance viewer opens.
+- Checkbox changes call `setInsight(key, on, announce)`, which follows the `setLocants` pattern:
+  - it sets `renderer.insight[key]`;
+  - it syncs the checkbox;
+  - it stores `'1'`/`'0'` under the storage keys below;
+  - `syncInsightButton` gives the toolbar button `.active` and `aria-pressed` while any overlay or search highlight is on;
+  - it re-renders.
+
+  The storage keys are `insightElectrons`, `insightHybridization`, `insightOxidation`, `insightHeatmap` and `insightAcidBase`. They are restored on load.
+
+**Shortcuts.** `INSIGHT_SHORTCUTS` is keyed by `event.code`, so the macOS Option characters do not matter:
+
+| Keys | Action |
+|---|---|
+| Alt+L | lone pairs |
+| Alt+H | hybridization |
+| Alt+O | oxidation states |
+| Alt+P | partial charges |
+| Alt+A | acid/base sites |
+| Alt+S | open the menu and focus the search |
+| Alt+R | resonance viewer |
+
+Any other Alt combination still returns early. The Alt shortcuts show a toast.
+
+**Esc.**
+- In the search field, Esc clears the search, or closes the menu when the field is already empty.
+- The global Esc chain is now: help → insight menu → selection → search → stamp → tool → panel.
+- While the resonance viewer is open, the keydown handler only handles Esc, which closes it.
+
+**Substructure search.**
+- The input is debounced by 160 ms and runs `runSubstructure` → `substructureQuery` → `substructureMatches` over the whole canvas.
+- The results are written to `renderer.matchAtoms`/`matchBonds`. The status reads "N matches", "No matches" or the error, and the input gets `.invalid` on an error.
+- ‹/› (and Enter / Shift+Enter in the field) step through the matches, centering the view on each one without changing the zoom.
+- `refreshSubstructure()` runs in `renderer.afterRender`. It recomputes the matches when `graphSignature()` (ids, elements, charges, bonds and orders) changes, so matches follow edits and undo.
+- The state lives in `substructureState`, which is declared before `afterRender` to stay clear of the temporal dead zone.
+
+**Resonance viewer.**
+- `#resonance-overlay` reuses the modal markup of `#import-overlay`.
+- `openResonance(atomIds)` is reached from:
+  - Alt+R and `#resonance-button`, via `openResonanceForTarget` (the same hovered-or-largest target rule as `#info-button`);
+  - the new "Resonance structures" item in `moleculeEntries()`;
+  - the panel's "Open viewer" button.
+- Each contributor is shown as a `.resonance-card` button holding a 180×140 thumbnail canvas. The thumbnail is drawn by a fresh `Renderer` on `contributor.graph` with `fitToContent(30)`. Cards are separated by `↔`, captioned major/minor, and their title lists the moves.
+- A single contributor shows "Only one contributor…".
+- "Place on canvas" (or a double-click on a card) builds a fragment and passes it to `insertSmilesFragment`, to the right of the source molecule. This commits to history, so it is undoable.
+
+**Hover status.** When any overlay is on, `insightHoverText` adds a suffix such as " · sp² · OS −2 · δ −0.25 · 2 lone pairs" (and "radical" when relevant).
+
+**Properties panel.** `insightPanelHtml(atomIds)` adds two blocks after the unchanged "Ionizable groups" block:
+- "Acid/base sites" lists every acid and base site with its range, plus a note that these are typical group values.
+- "Resonance" shows the contributor count ("12+" at the cap) and an "Open viewer" button (`#resonance-open-button`, class `info-button-inline`).
+
+**Export.** `renderExport` copies onto the export renderer:
+- `insight` (via `Object.assign`);
+- `insightCache`;
+- `matchAtoms` and `matchBonds`.
+
+Overlays and search highlights therefore appear in PNG and SVG exports. `SvgContext` already records radial gradients. Locants are still excluded from exports.
+
+### `index.html` and `css/style.css`
+
+- **Toolbar.** The view group has `div.insight-anchor` (`display: contents`) holding the lightbulb `#insight-button` and `#insight-menu` (role menu):
+  - five `label.insight-row` checkboxes with `data-insight`;
+  - `#substructure-input` with `#substructure-prev` and `#substructure-next` (`.step-button`) and `#substructure-status`;
+  - `#resonance-button`.
+- **Modal.** `#resonance-overlay` contains `.resonance-dialog` (960 px wide), `#resonance-summary`, `#resonance-grid` (flex wrap), `#resonance-hint`, `#resonance-cancel` and `#resonance-place`.
+- **Help.** The help overlay has an "Insight" block listing the Alt shortcuts.
+- **CSS.** The new rules are appended at the end of `css/style.css` and use only existing tokens, so light and dark both work.
+
+### Tests
+
+- `test_insight.js` (session scratchpad) covers every target in the plan, plus a Gasteiger comparison against RDKit 2026.3 `ComputeGasteigerCharges` on 20 molecules.
+- The old regression suite was rebuilt from the current `js/`.
+- `drive.py` (Playwright) exercises the UI.
+
+Numbers and deviations are in `feature-research/insight-overlays/audit.md`.
+
+## Update, later session (39) — spectroscopy
+
+Adds predicted ¹H NMR, ¹³C NMR, IR and EI mass spectra in a resizable dock under the editor canvas. Hovering a peak (on the plot or in the table) rings its atoms on the canvas; hovering an atom highlights its peaks. An "Identify the unknown" puzzle hides the structure and shows only its spectra. Everything is rule-based and offline: additive increment tables, no database and no network.
+
+There are four new plain-script files. `js/spectra-nmr.js`, `js/spectra-ir.js` and `js/spectra-ms.js` load after `js/substructure.js` and are free of DOM code, so they run in Node when concatenated in `index.html` order. `js/spectra-view.js` loads after `js/reaction-lab.js` and holds the dock UI. The plan, audit and screenshots are in `feature-research/spectroscopy/`.
+
+### `js/properties.js` — symmetry refactor
+
+The WL-style rank refinement that `propSmiles` used inline is now shared:
+- `propRefineRanks(ctx, invariant, bondLabel, rounds, untilStable)` → a Map from atom id to rank. It starts from `invariant(id)` strings and refines by sorted `(bondLabel(a, b), rank)` neighbour lists, for a fixed number of rounds or until the class count stops growing.
+- `propCanonicalRank(ctx)`: exactly the previous `propSmiles` ranking (6 rounds, same invariant and bond labels). `propSmiles` calls it, and its output is byte-identical to before on 50 test SMILES and all 158 `NAME_SMILES` values.
+- `propSymmetryClasses(ctx)` → a Map from atom id to class. Aromatic bonds are labelled `'a'` (so Kekulé placement cannot split benzene carbons), the invariant includes element, charge, H count, degree, aromaticity and ring membership, and it refines until stable. Atoms in the same class are topologically equivalent, and each class becomes one NMR signal.
+
+### Shared environment (`js/spectra-nmr.js`)
+
+- `spectraEnv(graph, atomIds)` → `{ctx, heavy, hn, hCount, dCount, cache, classes, cls, el, nb, h, aromatic, charge, inRing, ringBond, pos}`. It is built on `insightContext` and `propSymmetryClasses`. Explicit H atoms are folded into their heavy atom's H count; explicit D atoms are counted in `dCount` (no ¹H signal, but they still count for ¹³C type and mass).
+- Predicates: `spectraIsSp3Carbon`, `spectraOxo(env, id)` (the =O neighbour), `spectraIsCarbonyl`, `spectraIsNitro`.
+- `spectraCarbonylKind(env, c)` → `{kind, conj, aryl, formyl, ring, hetId, oxoId}`. `kind` is one of ketone, aldehyde, acid, carboxylate, ester, anhydride, amide, thioester, acidHalide or carbonic. `ring` is the smallest ring size containing the carbonyl carbon (for IR strain). The IR and MS rules share this one classifier.
+- `spectraCarbonylKey(env, c)` and `spectraGroup(env, from, x)` → the substituent key (e.g. `'OC(=O)R'`, `'C(=O)OR'`, `'aryl'`, `'Br'`, `'NR2'`) of neighbour `x` seen from atom `from`. The increment tables use these keys.
+- Aromatic helpers: `spectraAromaticRings`, `spectraRingOf`, `spectraRingDistance`, `spectraRingSubstituents`, `spectraPrincipalHetero`.
+
+### ¹³C NMR
+
+**Tables** (sources: Pretsch, *Structure Determination of Organic Compounds*; Silverstein/Webster-style additivity tables):
+- `NMR_C_GROUP`: α, β, γ increments for about 30 substituent keys, with a `pen` flag for the branching penalty.
+- `NMR_GP_STERIC`: Grant–Paul branching corrections, indexed by the carbon's own degree and its neighbour's degree.
+- `NMR_RING_CORRECTION`: sp³ ring-size corrections (3 to 7).
+- `NMR_AROMATIC_INCREMENTS`: benzene ipso/ortho/meta/para increments, `c` for ¹³C and `h` for ¹H (base 128.5 and 7.36).
+- `NMR_ALKENE_C`: α and α′ alkene increments on base 123.3.
+- `NMR_HETERO5` (furan, thiophene, pyrrole) and `NMR_PYRIDINE`: parent-ring shifts, with benzene increments added for substituents.
+
+**Functions.**
+- `spectraSp3Shift`, `spectraAlkeneShift`, `spectraCarbonylShift` (a base value per carbonyl kind, with conjugation and ring corrections) and `spectraAromaticShift(env, id, 'C' | 'H')`.
+- `spectraCarbonShift(env, c)` dispatches over these and handles nitriles, alkynes and allenes. It returns `{shift, note, type?}`.
+- `spectraCarbonType` → CH3, CH2, CH or C (a DEPT-style label). `spectraGroupByClass` groups atoms by symmetry class.
+- `predictCarbonNmr(graph, atomIds)` → `{signals: [{shift, atoms, count, type, note}], nucleus: '13C'}`, sorted by shift, highest first. Shifts are rounded to 0.1 ppm.
+
+### ¹H NMR
+
+**Tables.**
+- `NMR_H_ALPHA`: Shoolery/Pretsch-style α increments per CH₃, CH₂ and CH, plus a β increment, keyed by substituent.
+- `NMR_VINYL_Z`: Pascual–Meier–Simon gem, cis and trans increments on base 5.25.
+- `NMR_J`: vicinal 7, aldehyde 2.5, ortho 8, hetero-5 3.5, cis 10, trans 17, geminal 2 Hz.
+- `NMR_MULTIPLET_NAMES`: s, d, t, q, quint, sext, sept.
+
+**Functions.**
+- `spectraSp3ProtonShift(env, c)`: base 0.86/1.37/1.50 for CH₃/CH₂/CH, plus α and β increments.
+- `spectraVinylProtons(env, a, b)`: assigns each vinyl H its gem, cis and trans substituents. cis/trans are read from the 2D coordinates with `spectraSide`.
+- `spectraExchangeable(env, x)`: fixed shifts for exchangeable protons, flagged `broad`: CO₂H 11.5, phenol/enol OH 5.5, alcohol OH 2.0, amide NH 7.0, aromatic NH 8.0, aryl NH 3.6, amine NH 1.5, N⁺–H 7.5, SH 1.5 (3.4 on an arene).
+- `spectraProtonSites(env)` → one site per symmetry class of H-bearing atoms. Diastereotopic protons are not split.
+- `spectraCouplings(env, site, sites)` → the coupled neighbour sets `[{J, n}]` over three bonds. Exchangeable H do not couple. Sets with the same J are merged.
+- `spectraMultiplicity(sets)` gives a first-order name: a single set with n neighbours gives n+1 lines, two sets give names such as `dd` or `dt`, and more than two distinct J values give `m`.
+- `predictProtonNmr(graph, atomIds, {field})` → `{signals: [{shift, atoms, count, multiplicity, J, couplings, exchangeable, broad, note}], field, nucleus: '1H'}`. `atoms` holds the heavy atoms carrying the protons, and `count` is the number of H.
+- `nmrLineShape(signals, {nucleus, field, from, to, points})` → `[{x, y}]`, a sum of Lorentzians.
+  - For ¹H, each signal is split into its binomial multiplet with J/field ppm spacing. Width is 0.9 Hz, or 12 Hz when broad.
+  - For ¹³C, lines are single and quaternary carbons are drawn at 0.45 weight.
+
+### IR (`js/spectra-ir.js`)
+
+- `IR_INTENSITY_DEPTH`: s/m/w absorbance depths.
+- `irBand(list, from, to, intensity, shape, label, atoms)` adds `{from, to, center, intensity, shape: 'sharp' | 'broad' | 'very broad', label, atoms}`, merging a duplicate label/range into one band.
+- `irOopPattern(env, ring)` → mono, ortho, meta, para, poly or none, from the ring's substituent positions.
+- `predictIrBands(graph, atomIds)` → bands sorted by wavenumber, from a group-frequency table (Silverstein/Pavia ranges):
+  - O–H (alcohol, phenol, acid); N–H (two bands for primary, one for secondary, plus the N–H bend and amide II); S–H.
+  - C–H stretches (sp³, aromatic, alkene, alkyne) and the aldehyde Fermi pair.
+  - C≡N; C≡C, omitted when both ends are symmetry-equivalent. C=C, allene and C=N.
+  - C=O by carbonyl kind: −25 cm⁻¹ for conjugation; +30 or +35 for a five-ring; +60 for a four-ring, or +85 for a β-lactam.
+  - Aromatic 1600/1500 bands and out-of-plane bends by substitution pattern.
+  - NO₂, SO₂, S=O, C–O (ester, acid, aryl ether, alcohol, ether), C–F, C–Cl, C–Br, C–I, and CH₂/CH₃ bends.
+- `irSpectrum(bands, {from, to, points})` → `[{x, y}]` in %T = 100·exp(−1.2·absorbance). Sharp bands are Lorentzian (width at most 30 cm⁻¹); broad bands are Gaussian.
+
+### EI mass spectrum (`js/spectra-ms.js`)
+
+- `ISOTOPES`: IUPAC isotope masses and abundances for H, D, C, N, O, F, Si, P, S, Cl, Br, I, B and Se. Other elements fall back to a single `MONO_MASS` isotope (`msElementIsotopes`).
+- `msMainMass(el)`: the mass of the most abundant isotope.
+- `msConvolve(a, b, threshold)`, and `isotopePattern(counts, {threshold})` → `[{mz, mass, abundance}]`. Each element's distribution is raised to its count by binary exponentiation with pruning, and the patterns are convolved. Abundances are normalised to 100 for the largest peak.
+- `msFormulaString(counts)` (Hill order via `MS_HILL_ORDER`) and `msNominal(counts)`.
+- `predictMassSpectrum(graph, atomIds)` → `{molecularIon: {mz, exactMass, formula, pattern}, peaks: [{mz, intensity, label, lost, atoms, rule}], basePeak}`.
+  - Each fragmentation rule proposes an ion with a score. When several rules give the same m/z, the highest score wins.
+  - Rules: α-cleavage next to N, O and S (with a Stevenson bonus for losing the larger radical); ether C–O cleavage; carbonyl α-cleavage giving acylium and aroyl ions and loss of OR, OH or NR₂; aroyl minus CO; aldehyde M−1; McLafferty rearrangement (a γ-H required); benzylic and tropylium (m/z 91) cleavage; dehydration M−18; halogen loss; M−15; alkyl cations; the phenyl 77 and 51 ions; nitro M−46 and M−30; and tropylium → 65.
+  - The molecular-ion score depends on the compound class: strong for aromatics, weak for alcohols, amines, ethers and haloalkanes.
+  - Scores are normalised to a base peak of 100. Every Cl- or Br-bearing ion, and M itself, gets its isotope cluster. Peaks below 0.5 % are dropped.
+
+### Dock UI (`js/spectra-view.js`)
+
+**Pure helpers** (usable in Node):
+- `SPECTRA_TABS` (`h`, `c`, `ir`, `ms`), `spectraSubscript`, `spectraFixed` and `spectraCarbonField` (the ¹³C frequency is the ¹H field ÷ 4).
+- `spectraGraphFromSmiles(smiles)` → `{graph, ids}`, a detached graph laid out by `smilesToFragment`.
+- `spectraFormulaCounts(formula)` and `spectraUnsaturation(formula)` (degrees of unsaturation, with halogens counted as H and N adding ½).
+- `spectraFunctionalGroups(graph, ids)` → a list of group names, used for puzzle hints.
+- `spectraPeakList(tab, data, {field})` → a journal-style string, e.g. "Predicted ¹H NMR (400 MHz, CDCl₃) δ 4.12 (q, J = 7.0 Hz, 2H), …"; for ¹³C (100 MHz, CDCl₃) δ …; for IR ν (cm⁻¹) … (s/m/w, br); and for MS (EI, 70 eV) m/z (%) ….
+- Puzzle:
+  - `spectraPuzzlePool(NAME_SMILES)` → `[{name, smiles, heavy, difficulty}]`. It keeps entries that are neutral, single-component and made only of C, H, N, O, S, F, Cl, Br and I, with 3–14 heavy atoms including a carbon, no isotopes, and at least one ¹H signal. Duplicate SMILES are dropped, which leaves 126 molecules. Difficulty is easy for ≤7 heavy atoms, medium for ≤10 and hard above that.
+  - `spectraPuzzleCheck(graph, ids, targetSmiles)` → `{status: 'correct' | 'isomer' | 'formula', correct, message, yourFormula, targetFormula}`. Formulas are compared first, then `propSmiles`. If the SMILES differ, `spectraSameStructure` builds both molecules into one joint graph and compares their multisets of `propSymmetryClasses`, so drawings that differ only in Kekulé placement or atom order still count as correct.
+
+**`createSpectraView(deps)`.** `deps` is `{graph, renderer, storageGet, storageSet, toast, copyText, downloadBlob, insertSmiles, targetAtomIds, onLayout}`. It returns `{toggle, open, close, isOpen, setTab, structureChanged, refreshNow, repaint, hoverAtom, startPuzzle, startPuzzleWith, endPuzzle, inPuzzle, peakListText, highlightedIndices, hoverSignal, state}`.
+- The target follows `largestComponent()` in `app.js` (the hovered molecule, or else the largest one) through `targetAtomIds`. A structural signature (elements, charges, bonds) skips recomputation when nothing changed. `structureChanged` is debounced by 180 ms.
+- All four predictions are computed at once and cached. Canvas plots:
+  - NMR on a reversed δ axis, with peak labels and a translucent band on highlighted signals;
+  - IR as %T on a reversed wavenumber axis;
+  - MS as a stick plot with an "Isotope zoom" around M.
+- The table lists the signals. Hovering a row or a plot peak (within 10 px) calls `renderer.peakAtoms`, and the renderer's `drawPeaks` pass rings those atoms. `hoverAtom(id)` highlights every signal containing that atom. All highlighting is off in puzzle mode. On the MS tab, hovering a peak rings the atoms of that fragment ion, but hovering an atom does not highlight MS peaks, since most atoms appear in many fragments.
+- Dragging `#spectra-resize` sets the height (clamped to 150 px up to the larger of 180 px and 75 % of the window height). Copy peak list uses `spectraPeakList`. Export PNG saves the current plot canvas.
+- **Puzzle.** Start picks a random pool entry at the chosen difficulty (Any/Easy/Medium/Hard), never repeating the previous one. It shows the spectra of the hidden molecule, and the title shows only the formula and DoU. Check compares the canvas; Hint reveals up to three hints (key IR bands, functional groups, ¹H shifts with notes); Give up places the answer on the canvas and resets the streak; New starts another; Exit leaves puzzle mode.
+- **Storage keys.** `spectraDock` holds `{open, tab, height}`; `spectraPuzzle` holds `{streak, solved}`.
+
+### Integration
+
+- `js/renderer.js`: a `peak` theme colour (amber: 245,158,11 dark and 217,119,6 light), `peakAtoms` (a Set), and a `drawPeaks()` pass after `drawMatches()` that draws a filled and stroked ring of `hoverAtomRadius` on each atom. `renderExport` does not copy `peakAtoms`, so exports stay clean.
+- `js/app.js`:
+  - creates `spectraView` before the view-tab listener;
+  - forwards `onHoverChange` to `hoverAtom`, `afterRender` to `structureChanged`, and `applyTheme` to `repaint`;
+  - adds a context-menu item "Predicted spectra", a "Spectra" block in the properties panel (`#spectra-open-button`), and the shortcuts Alt+N (toggle dock) and Alt+U (new puzzle) in `INSIGHT_SHORTCUTS`.
+- `index.html`: `#spectra-button` in the view toolbar group; `<section id="spectra-dock" hidden>` between `#canvas-wrapper` and `#statusbar` (header with tabs, title and controls; puzzle bar; body with `.spectra-plot` and `.spectra-table-wrap`; footer disclaimer); help rows for Alt+N and Alt+U; the four script tags.
+- `css/style.css`: dock rules appended at the end, using existing tokens plus a dock-scoped `--spectra-peak`. The dock is hidden in the reactions view. At ≤640 px the table stacks under the plot.
+
+### Tests
+
+- `test_spectra.js` (session scratchpad), 107 checks:
+  - symmetry-class signal counts;
+  - multiplicities;
+  - accuracy against literature CDCl₃ shifts (targets: ¹H MAE ≤ 0.25 ppm with no signal off by more than 0.8; ¹³C MAE ≤ 4 ppm with none off by more than 12);
+  - IR band presence and absence;
+  - isotope ratios;
+  - molecular ions and key fragments;
+  - puzzle pool and check;
+  - no mutation of the input graph.
+- `drive_spectra.py` (Playwright) exercises the dock, hover linking, copy, the puzzle, theme, the reactions view and phone width.
+
+Numbers and deviations are in `feature-research/spectroscopy/audit.md`.
+
+## Update, later session (40) — structure tools & 3D
+
+Roadmap section 3, built in two slices. Slice A adds biomolecule template stamps, a constitutional isomer enumerator and polymer brackets. Slice B (3D viewer, chair, Newman, Fischer and Haworth projections) is documented in its own sub-section below. The plan, audit and screenshots are in `feature-research/structure-tools/`.
+
+### Slice A — templates, isomers and polymer brackets
+
+There are two new plain-script files. `js/isomers.js` and `js/polymer.js` load after `js/insight.js` (and before `js/resonance.js`), so before `js/renderer.js`. Both are free of DOM code and run in Node when concatenated in `index.html` order. `js/polymer.js` depends on `js/isomers.js` (canonical keys, formula text), `js/smiles.js` (known-unit SMILES), `js/valence.js` (`implicitHydrogenCount`) and `nameStructure`.
+
+#### Biomolecule stamps (`js/stamps.js`)
+- `BIO_STAMPS`: 34 entries in the `FUSED_STAMPS` shape `{label, smiles, group}`. `group` is `amino` (the 20 standard L-amino acids, neutral, with `@` stereo), `sugar` (open-chain D-glucose, D-galactose, D-mannose, D-fructose, D-ribose, 2-deoxy-D-ribose; α- and β-D-glucopyranose; β-D-ribofuranose) or `base` (adenine, guanine, cytosine, thymine, uracil).
+- `bioStampFragment(key)` parses the SMILES once and caches the custom-stamp fragment (with wedges from the SMILES stereo). `placeStamp` routes bio keys straight after the `FUSED_STAMPS` check, through `placeCustomStamp`.
+- `placeCustomStamp` now copies each fragment bond's `stereo`, so wedges survive placement. This also applies to saved custom stamps.
+- `index.html` has three new collapsible sidebar sections (`data-section` `amino`, `sugars`, `bases`) before "Abbreviations". `js/app.js` adds their grids (`stamp-buttons-amino`, `stamp-buttons-sugars`, `stamp-buttons-bases`) to `STAMP_THUMB_GRIDS`. `DEFAULT_COLLAPSED_SECTIONS` makes them start collapsed. Sections the user opens are remembered in the localStorage key `expandedSections`. The stamp search needs no changes.
+
+#### Isomer enumerator (`js/isomers.js`)
+- `ISOMER_SETTINGS = {maxHeavy: 12, limit: 2000, timeBudgetMs: 4000, stepMs: 25}`. The allowed elements and valences are in `ISOMER_VALENCE` (C4 N3 O2 S2 P3, halogens 1).
+- `parseFormula(text)` → element counts, or `{error}` with a user-facing message. It accepts Hill or free order and subscript digits, and rejects unknown elements, no heavy atoms, and a negative or fractional degree of unsaturation.
+- `isomerFormulaText(counts)` → a Hill-order string. `isomerHeavyCount` and `isomerUnsaturation` are small helpers.
+- **Canonical form.** `isomerCanonicalString(el, adj, extra)` works on an element array and a flat n×n bond-order matrix. It refines colours with a WL pass (`isomerRefine`), then backtracks over the tied cells to find the lexicographically smallest adjacency string. It is exact, not heuristic, and fast at 12 or fewer heavy atoms. `isomerStateFromGraph(graph, atomIds)` → `{el, adj, n, index, ids}` from a live `Graph`. `isomerCanonicalKey(graph, atomIds)` is the wrapper.
+- **Enumeration.** `isomerEnumerator(counts, options)` returns a job object `{isomers, complete, done, error, elapsed, visited, cancelled, stoppedBy, step(ms), result()}`.
+  - It grows heavy-atom trees one atom at a time from the highest-valence element, deduplicating every intermediate by canonical string. It then spends the degree of unsaturation by raising bond orders, which also closes rings.
+  - `step(ms)` runs for about `ms` and returns `done`. Setting `job.cancelled = true` stops it at the next step.
+  - The job also stops on `limit` or on `timeBudgetMs` of total work. `stoppedBy` is `'cancel'`, `'limit'` or `'time'`.
+  - `error` is `'too large'` (more than `maxHeavy` heavy atoms) or `'bad formula'`.
+- `enumerateIsomers(counts, options)` runs a job to completion and returns `{isomers: [{graph, key}], complete, count, stoppedBy}`. Options are `{stableOnly: true, limit, timeBudgetMs}`.
+- **`stableOnly` filter.** `isomerIsStable(state)` rejects:
+  - heteroatom–heteroatom single bonds other than N–N and S–S (pruned early during growth by `isomerPermanentHeteroLink`);
+  - enols and ynols;
+  - gem-diols and hemiacetals;
+  - aminals and carbinolamines;
+  - triple bonds in rings smaller than 8 and allenes in rings smaller than 9;
+  - bridgehead double bonds in rings smaller than 8 (Bredt).
+- `isomerBranching(graph)` is the sort key for the "branching" order. `isomerLayout(graph)` writes `computeLayout` coordinates into an isomer graph.
+- The returned graphs have every atom at (0, 0). `nameStructure` must be called before `isomerLayout`, because a laid-out graph picks up spurious E/Z prefixes from its drawn geometry.
+
+#### Isomer modal (`js/app.js`, `index.html`, `css/style.css`)
+- The `#isomer-overlay` modal follows the resonance modal. `resonanceThumbnail` is now the general `structureThumbnail(graph)`, used by both.
+- The controls are:
+  - a formula input (`#isomer-formula`) with Find and Stop buttons;
+  - a "Stable only" checkbox (on by default);
+  - a sort select (`branching`, the default, or `name`);
+  - a summary line ("5 isomers (stable only)", "2000+ shown, stopped at limit", "358 isomers shown, stopped at the 4 s time limit");
+  - a paged grid (`ISOMER_PAGE_SIZE` 48) with Prev/Next;
+  - Cancel, Place and Close buttons.
+- `openIsomers(atomIds)` prefills the formula from the target and starts the search straight away. `runIsomers` drives the job with `setTimeout` slices of `ISOMER_SETTINGS.stepMs`. `cancelIsomers` stops it and keeps what was found so far.
+- Pages are laid out and named lazily (`isomerItemName`), with names computed before layout. Sorting by name first names every item in time slices (`nameAllIsomers`).
+- A click selects a card. Double-click or "Place on canvas" calls `placeIsomer`, which goes through `insertSmilesFragment` to the right of the source molecule. Escape and the Close button call `closeIsomers`, and Enter in the formula input re-runs the search.
+- The modal is opened by Alt+I (`INSIGHT_SHORTCUTS`, `KeyI`) or by "Find isomers" in the molecule and selection context menus. `openIsomersForTarget` uses the selection, then the hovered molecule, then the largest molecule.
+
+#### Polymer brackets (`js/polymer.js` and plumbing)
+Annotations gain a fourth kind:
+
+```
+{id, kind: 'bracket', atomIds: [atom ids of one repeat unit], n: 'n', label?: string}
+```
+
+- A bracket is valid only when every atom in `atomIds` exists and exactly two bonds cross the unit boundary. It has no coordinates of its own. The geometry is recomputed every frame from the live atoms, so brackets follow the atoms when they are moved, rotated or cleaned up, and cannot be dragged on their own.
+- `n` is the subscript text (at most 8 characters, default `'n'`). `label` is an optional user name (at most 200 characters) that replaces the automatic polymer name.
+- Brackets are written by `serializeGraph` and kept by undo/redo and autosave like the other kinds. `sanitizeAnnotations` dedupes `atomIds` and clamps `n` and `label`.
+
+`js/polymer.js`:
+- `bracketCrossings(graph, atomIds)` → `[{bond, inner, outer}]`. `bracketValid(graph, bracket)` checks validity. `pruneBrackets(graph)` removes every invalid bracket and returns the count.
+- `polymerRepeatCounts(graph, atomIds)` counts the unit's atoms plus implicit H. `polymerRepeatFormula(graph, bracket)` gives it as a Hill string. `polymerSubscript(text)` turns digits into subscripts.
+- `polymerName(graph, bracket)` → a name, or `''` if the bracket is invalid. It tries three routes in order:
+  1. **Addition polymers.** `polymerAdditionName` handles units whose head-to-tail path is all carbon. A 2-carbon path with a single bond becomes C=C, and a 4-carbon path with orders 1-2-1 becomes a 1,3-diene. It then names the monomer with `nameStructure`, strips a leading stereo prefix, maps it through `POLYMER_MONOMER_NAMES` (propylene, vinyl chloride, isobutylene, chloroprene and others) and returns `poly(<monomer>)`. Examples are poly(ethylene), poly(styrene), poly(methyl methacrylate) and poly(isoprene).
+  2. **Known repeat units.** `polymerKnownName` matches `POLYMER_KNOWN_UNITS` (PET, nylon-6, nylon-6,6, poly(oxyethylene), poly(oxymethylene)). Each unit is closed into a three-copy head-to-tail ring (`polymerTrimerKey`) with alternating 6-rings aromatised (`polymerAromatize`) and compared by canonical string. This makes the match independent of which end the user bracketed and of the Kekulé form.
+  3. **Fallback.** `poly[(<subscripted formula>)]`, for example `poly[(C₃H₆O)]`.
+
+Plumbing:
+- **`js/renderer.js`.**
+  - `RENDER_SETTINGS` gains `bracketHalf`, `bracketSerif`, `bracketWidth` and `bracketLabelGap`.
+  - `bracketGeometry(annotation)` → `null` if invalid, else `{marks, n, label, labelBox}`. The two brackets are drawn perpendicular across the crossing bonds at their midpoints, with serifs pointing into the unit. `n` sits just past the lower end of the second bracket, and the name pill is centred under the unit.
+  - `drawBracket` draws them in the bond colour, with an italic `n` and a name pill in the name-label colours. `bracketHit` hit-tests the bracket strokes.
+  - `polymerLabel` returns the custom label, or a `polymerName` cached in `polymerCache` by structural signature.
+  - `annotationBounds` gains a bracket branch, so the generic highlight box covers hover and selection.
+- **`js/interactions.js`.**
+  - `annotationAt` finds brackets with `bracketHit`.
+  - `moveAnnotation`, `annotationPoints` and `transformAtoms` treat brackets as attached to atoms.
+  - `extractFragment` includes a bracket only when all its atoms are in the copied selection, and adds such brackets automatically.
+  - `insertFragment` remaps `atomIds` through the paste id map and keeps a bracket only if it is still valid.
+- **`js/app.js`.**
+  - `afterRender` starts with `pruneBrackets(graph)`. If anything was removed it re-renders, so the removal lands in the same history commit as the edit that broke the bracket (deleting a unit atom, or breaking or adding a bond across the boundary).
+  - The "Polymer brackets" selection entry and Alt+B (`KeyB`) call `addPolymerBrackets(ids)`. It toasts "Select one repeat unit with exactly two bonds leaving it" when the selection is invalid, and replaces a bracket on the same atoms.
+  - `annotationEntries` for a bracket has "Rename…" (`openBracketEditor`, the inline text editor over the name pill; an empty name or the automatic name clears `label`) and "Delete brackets".
+  - Hovering a bracket shows "Polymer brackets · (C₂H₃Cl)ₙ · poly(vinyl chloride) — right-click to rename, Del to delete" in the status bar.
+
+#### Tests
+- `test_structure_tools_a.js` (session scratchpad, bundle from `build_tools_a.sh`), 280 checks:
+  - bio stamp parsing, R/S labels and names;
+  - `parseFormula` errors;
+  - the plan's isomer count table, the stable C₃H₆O and C₂H₄O₂ sets, and C₈H₁₈ timing;
+  - time slicing, limit and cancel;
+  - 17 polymer names including reversed units, and the fallback;
+  - bracket validity, prune, save/load and copy/paste remapping.
+- `drive_tools_a.py` (Playwright), 44 browser checks:
+  - the new sections, and a stamp placed from each;
+  - the C₆H₁₄ and C₁₀H₂₂ isomer modal;
+  - PVC brackets through save and reopen, copy/paste, delete and undo;
+  - no horizontal overflow and no page errors.
+
+Numbers and deviations are in `feature-research/structure-tools/audit.md`.
+
+### Slice B — 3D viewer, chair, Newman, Fischer and Haworth
+
+There are three new plain-script files. `js/geometry3d.js` and `js/projections.js` load right after `js/polymer.js` (so after `js/insight.js` and before `js/resonance.js`). Neither has DOM code, and both run in Node when concatenated in `index.html` order. `js/viewer3d.js` is the DOM factory; it loads after `js/spectra-view.js` and before `js/app.js`. Dependencies: `insightContext`/`insightAtomInfo` (hybridization, rings, aromaticity), `findStereocenters`, `findStereoDoubleBonds`, `cipRankSubstituents` and `tetrahedralVolume` from `js/stereo.js`, and `colorForElement` for the viewer.
+
+#### 3D model and force field (`js/geometry3d.js`)
+- `GEO3D_SETTINGS = {bondLength 1.5, wedgeZ 0.8, pucker 0.25, jitter 0.05, maxSteps 2000, forceTol 0.02, maxMove 0.2, dtStart 0.02, dtMax 0.06, conformerRmsd 0.3, conformerCount 10, timeBudgetMs 2500, maxHeavy 200}`.
+- **Model shape** (`geo3dBuild`, returned by `embed3d`): `{graph, atomIds, ctx, atoms, bonds, index, ff?, energy?}`.
+  - `atoms: [{id, element, x, y, z, implicitH, hyb, aromatic, parent}]`. Heavy atoms keep their graph ids. Added hydrogens get negative ids, `implicitH: true` and `parent` = the heavy atom id.
+  - `bonds: [{id, atomA, atomB, order, stereo, ring}]`, with `order` 1.5 for aromatic bonds. An H bond's id is the H's negative id.
+  - `index` maps atom id → array index. `ctx` is the `insightContext` of the component.
+- **Start coordinates** (`geo3dStartCoordinates`): the 2D drawing is centred and scaled so the median bond is 1.5 Å, with Y negated (keeping the stereo sign convention of `js/stereo.js`). Z gets ±0.8 Å on the far atom of each wedge/hash, ±0.25 Å alternating pucker on all-sp³ six-membered rings, and seeded jitter (`geo3dRandom`, mulberry32). Hydrogens are placed around their parent before minimization.
+- **Force field** (`geo3dForceField` → `{bonds, angles, torsions, impropers, vdw, chiral, ez, nbrs, dist}`), constants in `GEO3D_FORCE`:
+  - bond stretch, harmonic, k 700, ideal length from single/sp²/sp/double/triple/aromatic covalent-radius tables (`geo3dBondLength`);
+  - angle bend in cos θ (k 100, 70 for angles involving H, divided by sin²θ₀), ideal by hybridization (`geo3dIdealAngle`: 109.47 / 120 / 180); centres with more than 4 neighbours get 1–3 repulsion only;
+  - torsions: sp³–sp³ threefold with barrier √(V_j·V_k) from `GEO3D_TORSION_V`; sp²–sp² twofold planar (30 double, 25 aromatic, 10 with N/O, else 5); split over the substituent pairs; none for sp³–sp² or sp;
+  - improper out-of-plane terms on sp² centres, k 15;
+  - soft repulsive vdW for 1–4 and beyond, (Bondi radii × `vdwScale` 1.1), weight 2, 1–4 pairs scaled by 0.5;
+  - a chirality restraint (k 20, floor 1) keeping each drawn stereocentre's signed volume in CIP order, and an E/Z restraint (k 30) on stereo double bonds (`geo3dRestraints`).
+  - `ff.holds` (optional): dihedral restraints `{i, j, k, l, target, force}`, E = force·(1 − cos(φ − target)), used by the Newman scan.
+- `geo3dEval(ff, p, g)` returns the energy and fills the analytic gradient (checked numerically to ~1e-8). `geo3dFire` is a FIRE minimizer.
+- Public API:
+  - `embed3d(graph, atomIds, {seed, minimize})` → a minimized model with `energy`.
+  - `minimize3d(model, {maxSteps})` → `{energy, steps, converged}`; `ff3dEnergy(model)`.
+  - `conformerSearch3d(graph, atomIds, {count, seed, timeBudgetMs})` → a time-sliced job `{step(ms), conformers, done, trials, maxTrials, cancelled, elapsedMs}`. Each trial kicks random rotatable torsions (`rotatableBonds3d`, `geo3dRotateAbout`) and flips a random flippable ring (`geo3dFlipRing`, which realigns axial↔equatorial substituents through `geo3dAlignSide`). Every 6th trial re-embeds from a new seed. Results are deduplicated at heavy-atom RMSD < 0.3 Å (`geo3dHeavyRmsd`, Horn quaternion fit via `geo3dJacobi4`) and sorted by energy. maxTrials is 3 for rigid molecules, else min(120, 12 + 10·rotors + 8·rings); the time budget is checked inside the loop.
+  - `conformers3d(graph, atomIds, opts)` runs the job to completion and adds `relEnergy`.
+  - `distance3d`, `angle3d`, `dihedral3d` (degrees, signed), `rmsd3d(ptsA, ptsB)`.
+  - `model3dStereo(model)` → `[{atomId, type: 'R'|'S'|null, drawn}]` from the 3D signed volumes.
+  - `graphFromSmiles3d(smiles)` → `{graph, ids}`: a fresh `Graph` built from `smilesToFragment` (charges, explicit H counts, bond orders and wedge/hash kept). The viewer uses it for its examples; the Node bundle uses it too.
+- Energies are kcal/mol-like but are shown as "relative, arbitrary units".
+
+#### Projections (`js/projections.js`)
+- Labels: `projLabel(ctx, fromId, id, left, depth)` condenses a substituent (OH/HO, NH2/H2N, CHO, COOH, CH2OH/HOCH2, CH3/H3C, Ph, CN, CH(CH3)2, …); `projGroupLabel(graph, ctx, fromId, id, side)` wraps it.
+- **Chair.** `chairAnalysis(graph, atomIds, {ringIndex})` → `{applicable, reason?, rings: [{index, atomIds, label}], ringIndex, ring, ringElements, substituents, ambiguous, energies: {A, B}, deltaG, stable: 'A'|'B'|null, ratio: [pA, pB]}`.
+  - Rings: saturated 6-membered carbocycles and pyranose rings (`projChairRings`), ring O first (`projRotateRing`).
+  - Reasons: when every six-membered ring is aromatic the reason says aromatic rings are flat and have no chair; otherwise the generic "Needs a saturated six-membered carbocycle or a pyranose ring".
+  - Faces come from the wedge/hash (`projRingFaces`). In chair A the axial position at even ring index points up; chair B swaps axial and equatorial.
+  - `substituents: [{ringPosition, ringAtomId, atomId, face, group, aValue, known, hydrogen, labelLeft, labelRight, axialA, axialB}]`. A-values from `CHAIR_A_VALUES`, unknown groups `CHAIR_DEFAULT_A` 1.7. ΔG = |ΣA(axial in A) − ΣA(axial in B)|; ratio from exp(−ΔG/RT) with RT 0.593 kcal/mol (25 °C). A single substituted position with no stereo is assigned an arbitrary face.
+- **Fischer.** `fischerProjection(graph, atomIds)` → `{applicable, reason?, chain, rows, dl, dlFrom, meso}`.
+  - Needs an acyclic component with ≥ 1 stereocentre on the longest carbon chain (`projCarbonChain`). The more oxidized end (`projOxidation`) goes on top.
+  - When no stereocentre is found, no bond in the component has a wedge/hash, and some carbon could be one (`projPotentialCenter`: sp³ C, at most one H, CIP-distinct substituents), the reason is "Draw wedge/hash bonds to set the stereocentres"; otherwise "Needs a stereocentre on the longest carbon chain".
+  - `rows: [{type: 'end', label} | {type: 'center', atomId, config, leftId, rightId, left, right} | {type: 'group', label}]`. Left/right are chosen so the Fischer template (`projFischerTemplateVolume`: vertical back, horizontal toward the viewer) reproduces the centre's actual R/S, with a signed-volume fallback.
+  - D/L from the bottom-most stereocentre, except for α-amino acids (top COOH, first centre carrying N), which use Cα. `meso` is set when the rows are a mirror image of themselves.
+- **Haworth.** `haworthProjection(graph, atomIds)` → `{applicable, reason?, ringSize, kind: 'pyranose'|'furanose', positions: [{atomId, element, role: 'O'|'C1'…, up, down, upId, downId}], anomer: 'α'|'β'|null, dl, label}`. The ring must have one O and ≥ 4 ring carbons carrying OH/CH₂OH. Positions start at the ring O, then the anomeric carbon (the O-neighbour bearing a heteroatom), going round. Up/down come from the wedge/hash faces, flipped if the drawn ring is clockwise. D/L from the exocyclic carbon on the last ring carbon (up = D); α/β from the anomeric O relative to that carbon (same face = β), only when the anomeric centre has a drawn wedge/hash.
+- **Newman.** Takes a 3D model.
+  - `newmanBonds(model)` → `[{bondId, atomA, atomB, label}]` from `rotatableBonds3d` (acyclic single bonds, both ends with ≥ 2 heavy neighbours, no sp atoms). `newmanDefaultBond(model, hoveredBondId)`: the hovered bond if listed, else the central bond of the longest carbon chain.
+  - `newmanData(model, bondId, dihedral, {relax})` → `{bondId, frontAtomId, backAtomId, front: [{atomId, label, angle, reference}], back, dihedral, startDihedral, energy, name, model}`. Angles are degrees clockwise from up in the Newman view; `reference` marks the highest-priority heavy group on each carbon, whose dihedral is the one set. `dihedral` null keeps the current one.
+  - `newmanRotated` rotates the back half rigidly, then (relax, the default) minimizes `NEWMAN_RELAX_STEPS` 600 steps with a `NEWMAN_HOLD` 400 dihedral hold; the reported energy is the unrestrained force field.
+  - `newmanCurve(model, bondId, step, {relax})` → `{points: [{angle, energy, rel}], min}`.
+  - `newmanConformationName(φ)`: |φ| < 30 'syn (eclipsed)', < 90 'gauche', < 150 'eclipsed', else 'anti'.
+
+#### Viewer (`js/viewer3d.js`, `index.html`, `css/style.css`, `js/app.js`)
+- `createViewer3d({graph, renderer, storageGet, storageSet, toast, downloadBlob, targetAtomIds, hoveredBondId})` → `{open, close, isOpen, selectTab, showExample, backToMolecule, redraw, state}`.
+- `#viewer-overlay` / `.viewer-dialog` is min(1100px, 95vw) × min(720px, 90vh): a tab row (`.viewer-tab[data-tab]` 3d, chair, newman, fischer, haworth), a canvas stage (`#viewer-canvas`, `#viewer-tip`, `#viewer-status`, the `#viewer-example` banner and the `#viewer-unavailable` message) and a side panel of `.viewer-pane[data-pane]` blocks plus `#viewer-export`. Style, H toggle and last tab persist under the `viewer3d` storage key.
+- The viewed molecule is `state.graph` + `state.ids`, not `deps.graph`: every model, conformer search, projection and label reads `state.graph`. `load(graph, ids)` embeds, resets picks/curve/ring/conformers, calls `evaluateTabs()` and renders; `startSearch()` starts a `conformerSearch3d` job pumped with `setTimeout` slices (cancelled on close or reload).
+- `open()` checks the canvas target (refuses empty or > `maxHeavy`), stores it as `state.homeIds`, loads it from `deps.graph` and reopens the remembered tab even when it does not apply.
+- Tabs are never disabled. `evaluateTabs()` runs `chairAnalysis`, `fischerProjection`, `haworthProjection` and `newmanBonds`, stores the reasons in `state.reasons`, and gives inapplicable tabs the muted `.unavailable` class and `title="Not available: <reason>"`. Selecting such a tab covers the stage with `#viewer-unavailable`: the reason, a one-line hint and `#viewer-example-button` "Show example: <name>".
+- Examples (`VIEWER3D_EXAMPLES`, keyed by tab, `{name, smiles, hint}`): chair menthol, newman butane, fischer D-glucose (open chain), haworth β-D-glucopyranose. `showExample(tab)` builds the graph with `graphFromSmiles3d`, loads it into the viewer only (the canvas graph is untouched), sets `state.example` and shows the `#viewer-example` banner "Example: <name> · Back to my molecule". `backToMolecule()` reloads `state.homeIds` from `deps.graph`. The hovered canvas bond is ignored as the Newman default while an example is shown.
+- **3D tab**: rotation matrix + zoom + centre; atoms and bond halves depth-sorted; radial-gradient spheres coloured by `colorForElement(el, renderer.theme)`; bonds as dark/light line pairs, double/triple as parallel lines, aromatic with a dashed second line. Styles ball / stick / space (vdW). Drag rotates (trackball about the axis perpendicular to the drag), wheel zooms, double-click recentres on an atom (or refits), auto-rotate uses `requestAnimationFrame`. Hover tooltip: atom name, hybridization, R/S from `model3dStereo`. Measure mode: 2/3/4 picks give distance/angle/dihedral in `#viewer-measure`. The conformer list (`#viewer-conformers`) shows ΔE; Minimize runs `minimize3d` on the current conformer; Export PNG saves the canvas.
+- **Chair tab**: both chairs drawn from an ideal chair in a fixed oblique view, axial bonds vertical, equatorial bonds radial; axial non-H groups highlighted; the stable chair's caption is green. `#viewer-chair-info` shows ΔG, the more stable chair, the 25 °C ratio and the per-substituent table. `#viewer-ring` picks the ring.
+- **Newman tab**: `#viewer-bond` picks the bond, `#viewer-angle` (0–360) sets the reference dihedral; the back carbon is a circle with spokes from its rim, the front carbon has spokes from the centre. The relaxed curve is computed lazily (10° steps, cached per bond and conformer) into `#viewer-curve` with the current angle marked.
+- **Fischer tab**: crossed-lines drawing with end labels, per-centre R/S, D/L (or meso) heading.
+- **Haworth tab**: flattened ring with thick front bonds, ring O at the back right, anomeric carbon on the right, up/down labels.
+- `js/app.js`: `let viewer3d`; `createViewer3d` wired after `createSpectraView`. Its `targetAtomIds` uses the connected component of the first selected atom (`interactions.selectedAtomIds()`) when atoms are selected, else `largestComponent()` (hovered, else largest); other features keep `largestComponent()`. `hoveredBondId` comes from `interactions.hover`; `#viewer-button` (toolbar, after the insight menu); `KeyD` in `INSIGHT_SHORTCUTS` (Alt+D); "3D & projections" in the molecule context menu; Escape closes the overlay in the global keydown handler. `index.html` also has the Alt+D help row.
+
+#### Tests
+- `test_structure_tools_b.js` (session scratchpad, bundle from `build_tools_b.sh`), 89 checks: the four viewer example SMILES make their tabs applicable, the benzene chair and unwedged-alanine Fischer reasons; bond-length and sp³-angle statistics, planarity, cyclohexane chair, amino-acid R/S, E/Z, butane anti, conformer dedup and time budget, all projection cases from the plan, the Newman butane profile, and the RDKit RMSD comparison (`rdkit_geom.py`, run from the test through the venv).
+- `drive_tools_b.py` (Playwright): menthol → Alt+D, tab availability/tooltips and no disabled tabs, conformer list, drag rotation, hover tooltip, distance measure, chair/Newman info, the unavailable Fischer tab showing its message, D-glucose Fischer and β-D-glucopyranose Haworth via stamps, the context-menu entry; benzene with every example (Haworth, Fischer, Chair, Newman), Back to my molecule and an unchanged canvas; selection targeting with two molecules; no page errors.
+
+Numbers and deviations are in `feature-research/structure-tools/audit.md`.
+
+## Update, later session (41) — sharing & retrosynthesis
+
+Roadmap section 4, built in slices. Slice A (share link and lab-notebook export) is documented below. Slice B (quizzes) was dropped, and the printable worksheet (A2) was dropped from Slice A. Slice C (retrosynthesis) is documented after it; the energy diagram (C2) was dropped. The plan, audit and screenshots are in `feature-research/learning-sharing/`.
+
+### Slice A — share link and lab notebook
+
+There are two new plain-script files. `js/share.js` and `js/notebook.js` load right after `js/projections.js`, in that order. Both are free of DOM code and run in Node when concatenated in `index.html` order. `js/notebook.js` calls `computeProperties`, `nameStructureDetailed`, the section-39 predictors and, when it is defined, `spectraPeakList` (from `js/spectra-view.js`, which loads later but is only called at run time). The browser-only parts (compression streams, SvgContext rendering, `window.print`, clipboard) live in `js/app.js`.
+
+#### Share link formats (`js/share.js`)
+- `#g=<payload>` stores the exact canvas. `shareEncodeGraph(state | JSON string)` turns `serializeGraph()` output into the compact JSON array `[1, [nextAtomId, nextBondId, nextAnnotationId], atoms, bonds, annotations]`. Coordinates are integer tenths (so they are rounded to 0.1), and trailing default values are trimmed (`shareTrim`).
+  - atom `[id, element, x10, y10, charge?, abbr?, abbrHidden 0/1?]`
+  - bond `[id, atomA, atomB, order?, stereo 0 none / 1 wedge / 2 hash?]`
+  - annotations `['a', id, x1, y1, x2, y2, style?, bend?, above?, below?]`, `['t', id, x, y, text]`, `['p', id, x, y]`, `['b', id, atomIds, n?, label?]`
+- The payload is one prefix letter plus base64url (no padding): `z` = the UTF-8 JSON deflated with `CompressionStream('deflate-raw')`, `u` = uncompressed UTF-8. `z` rather than a bare payload keeps the two unambiguous. A typical two-molecule drawing is about 370 characters; the 20-structure test drawing goes from 18,968 characters of JSON to 4,188 compact to 3,141 compressed.
+- `shareDecodeGraph(text)` validates every row (integer ids and coordinates, bond ends that exist, order 1–3, known stereo codes, well-formed annotation rows, header) and returns a `serializeGraph`-shaped state or `{error}`. `shareUnpackPayload`, `shareBase64UrlDecode` and `shareUtf8Decode` (fatal `TextDecoder`) reject damaged payloads. `SHARE_MAX_JSON_LENGTH` (4,000,000) caps the decoded text.
+- `#smiles=<urlencoded>` is the readable form: `allSmiles()` (components joined with `.`). It carries no stereo (the canonical `propSmiles` writes none) and no annotations.
+- `shareParseHash(hash)` → `{kind: 'g', payload}`, `{kind: 'smiles', payload: string | null}` (null when empty or not decodable) or null. `shareUrl(base, kind, payload)` rebuilds the link from the page URL without its hash.
+
+#### Share wiring (`js/app.js`)
+- `shareCompress(text)` / `shareDecompress(payload)` are the async wrappers. Compression falls back to `u` when `CompressionStream` is missing or fails. Decompression reads the `DecompressionStream` chunk by chunk and aborts past `SHARE_MAX_JSON_LENGTH`, so a deflate bomb cannot exhaust memory.
+- `copyShareLink()` (Alt+K, and "Copy share link" in `#share-menu`) copies the `#g=` link with `copyText`. The toast has a "SMILES link instead" action (`copySmilesLink()`). Links over `SHARE_LINK_WARN_LENGTH` (8,000 characters) get a warning toast that gives the length.
+- `loadShareHash()` runs at startup (after the autosave restore, the history setup and the saved-view restore, at the very end of the IIFE) and on every `hashchange`. It parses the hash and clears it at once with `window.history.replaceState` (`history` inside the IIFE is the undo History). It then decodes and validates everything, including unknown elements and empty drawings, before touching the canvas. Any failure is a warning toast "Could not open the shared link — <reason>", and the canvas is unchanged.
+- `applySharedState(apply)` switches to the editor view if needed, remembers the current drawing in Recent, clears the selection and hover, then mutates the graph (`loadGraphState(state)`, or `graph.clear()` plus `insertSmilesFragment` for `#smiles=`) with no render in between. The one render that follows (`fitToContent`) gives exactly one undo step, so Undo restores the previous drawing. The toast is "Loaded shared structure · Undo restores your previous drawing", with an Undo action. At startup, a share hash replaces the "Restored your previous drawing" toast.
+
+#### Lab notebook (`js/notebook.js`, `js/app.js`)
+- `notebookEntry(graph, ids, {field, sections})` → `{name, iupac, formula, mw, exactMass, smiles, properties, nmrH, nmrC, ir, ms, field, sections, peakLists, errors}`. `sections` maps the `NOTEBOOK_SECTIONS` keys (`properties`, `nmrH`, `nmrC`, `ir`, `ms`) to booleans (missing = on). A predictor that throws adds its key to `errors`, and that section says "No prediction available".
+- `notebookSpectrumSvg(kind, data, {width, height})` is a pure SVG string builder. ¹H: sticks with multiplicity labels. ¹³C: sticks, with H-free carbons at 0.45 height. IR: an `irSpectrum` %T curve with up to 10 band centres labelled. MS: bars with the top 5 m/z labelled.
+- `notebookBody(entries, meta, svgs)` builds `<div class="notebook">`: a header with the title and `notebookMetaLine` (date · app name), the escaped notes, then one `<article class="nb-entry">` per molecule with the structure SVG, an identity table and one `<section class="nb-section" data-section="key">` per wanted section. `notebookHtml` wraps it in a self-contained document with `NOTEBOOK_CSS` inline (every rule scoped under `.notebook`). `notebookMarkdown` writes the same content with property tables and a `data:image/svg+xml` image per structure (`notebookSvgDataUri`). All user text goes through `notebookEscape` / `notebookMdEscape`. `meta` is `{title, notes, date, appName}`.
+- UI: `#notebook-overlay` (`.notebook-dialog`) has `#notebook-title`, `#notebook-notes`, section checkboxes (`input[data-section]`) and Print / Download Markdown / Download HTML. `openNotebook()` (Alt+J, or "Lab notebook…" in `#share-menu`) targets whole components touched by the selection, otherwise every component, and shows the count in `#notebook-summary`. `structureSvg(ids)` renders one component into an `SvgContext` through a temporary `Graph` (light theme, no names, no grid) and strips the XML declaration. Files are named from the title, otherwise `fileBaseName()`, plus `-notebook.html` / `.md`. The date is the ISO date.
+
+#### Print root (`index.html`, `css/style.css`)
+- `<div id="print-root">` is a direct child of `body`, hidden on screen. `printNotebook()` fills it with `<style>NOTEBOOK_CSS</style>` plus `notebookBody(...)`, adds `body.printing`, and calls `window.print()`. `afterprint` removes the class and empties the root.
+- `@media print` only acts under `body.printing`: every other body child is hidden, `html`/`body` lose the full-height, flex and `overflow: hidden` app layout so long notebooks paginate, and the page is forced to white with dark text in both themes. A plain Ctrl+P without the notebook prints the normal page.
+
+#### Toolbar, shortcuts and help
+- `#share-button` + `#share-menu` sit in an `.insight-anchor` just before `#viewer-button`. The popover reuses the `#insight-menu` rules (fixed position, `.insight-title`) with `.share-row` buttons. It closes on outside mousedown, Escape inside it, and Escape in the global chain after the insight menu. Opening it closes the insight menu.
+- `INSIGHT_SHORTCUTS` gains `KeyK: copyShareLink` and `KeyJ: openNotebook`. The notebook overlay has its own early Escape branch in the global keydown handler, before the viewer branch. The "File" help group has rows for Alt+K and Alt+J.
+
+#### Toolbar compaction (`css/style.css`)
+- Buttons inside `#toolbar` are now sized by `#toolbar`-scoped rules, so dialogs that reuse `.text-button` / `.icon-button` keep the old 30px size. In the toolbar, icon and tool buttons are 28px (16px icons), groups have 2px padding and a 1px gap, and the toolbar has a 6px gap and 8px × 12px padding. Tool labels are hidden below 1900px (previously 1780px).
+- Up to 1400px, buttons are 26px (15px icons, the minimum hit target), text buttons are 12px with 6px padding, and the toolbar gap is 4px. Up to 1330px, `#smiles-button` is hidden (Copy SMILES stays in the context menu, Ctrl+Shift+C and the properties panel).
+- `body.panel-open #toolbar` wraps to a second row instead of overflowing, and hides `#smiles-button`. The panel's open/close already calls `resizeCanvas()`, so the canvas follows the taller toolbar. `overflow-x: auto` on `#toolbar` remains as the last resort. It fits on one row, with no document overflow, at 1280, 1366, 1440 and 1920 px.
+
+#### Tests
+- `test_share_export.js` (session scratchpad, bundle from `build_share.sh`), 429 checks:
+  - 21 `#g=` round trips (stereo, brackets, labelled and bent arrows, text, plus, abbreviations, annotation-only drawings);
+  - `u` and `z` payloads against Node zlib `deflateRaw`, and base64url against Node's encoder;
+  - malformed compact data and payloads, and `#smiles=` parsing;
+  - `notebookEntry` against `computeProperties` and each predictor;
+  - HTML and Markdown sections, escaping and self-containment, and SVG well-formedness via a tag balancer.
+- `drive_share.py` (Playwright) covers:
+  - the menu and shortcuts;
+  - copying a link and opening it in a fresh page (same atoms, bonds, stereo, annotations and name);
+  - Undo and Redo after loading, `#smiles=` via hashchange and at startup, and six malformed links;
+  - the notebook's selection vs all-components target, HTML and Markdown downloads, and Print with `emulate_media('print')` and `page.pdf()`;
+  - help rows, and no page errors.
+- `drive_toolbar.py` checks the toolbar fit at the four widths in both themes, and the wrap when the panel is open.
+
+Numbers and deviations are in `feature-research/learning-sharing/audit.md`.
+
+### Slice C — retrosynthesis
+
+There are two new plain-script files. `js/retro.js` loads right after `js/reaction-aromatic.js` and has no DOM code, so it runs in Node when concatenated in `index.html` order. `js/retro-view.js` loads just before `js/app.js` and exports the factory `createRetroView(deps)`. The approach is generate-and-test. Each transform proposes precursors by editing a copy of the target in reverse. The proposal is then run forward through `predictReaction`, and it is kept only if the forward engine gives back the target. No forward rules were added, and the naming engine is unchanged.
+
+#### Engine (`js/retro.js`)
+- `RETRO_LIMITS`: `maxDepth` 3, `budgetMs` 1500 per disconnection call, `maxHeavy` 60, `maxPerTransform` 4, `maxCandidates` 30, `maxGrignardCarbons` 12. `RETRO_REAGENTS` holds the fixed reagent compounds (SMILES, role and the arrow label): water, BH₃, NaBH₄, NaOH, SOCl₂, PBr₃, HCl/HBr/HI, H₂, PCC, KMnO₄, NaCN, mCPBA, NaOEt, KOtBu, Br₂, Cl₂ and NaBH₃CN. Catalysts and conditions that the engine only knows as additives (`h2so4`, `pdc`, `nah`, `pyr`, `alcl3`, `febr3`, `oso4`, `nmo`, `fe`, `hcl`, `nanh2`, `naoh`) go into `conditions.additives`.
+- The target is `retroTarget(graph, ids)`. `retroClone` copies the atoms without explicit H, keeping ids sequential so they are stable across clones. The result carries `rxAnalyze` info, the `rxAromaticRings` atoms, the canonical SMILES (`computeProperties(...).smiles`, without stereo), the skeleton count (C/N/O/S/P) and the number of components.
+- `RETRO_TRANSFORMS` has 28 entries `{id, name, rule, group, match(t)}`. `match` returns specs `{precursors: [{smiles, role, label?}], reagents, conditions}` built with `retroEdit` / `retroSinglePiece` (edit a clone, check valence with `retroValid`, split into pieces) and `retroSpec`. `rule` is the RX_RULES id that the forward step must fire; the test suite checks that every one exists. Mapping, from transform to rule:
+  - Alcohols: `hydration` → `hydration`, `hydroboration` → `hydroboration`, `carbonyl-reduction` → `reduction`, `grignard` → `grignard` (R–MgBr as a reagent with a label, ether solvent; the Grignard piece is limited to 12 carbons), `alcohol-sn2` → `halide` (primary and secondary halide carbons only).
+  - Halides and ethers: `halide-from-alcohol` → `alcohol-halide`, `hx-addition` → `hydrohalogenation` (plus HBr/peroxide), `williamson` → `williamson`.
+  - Carbonyl derivatives: `fischer` → `fischer`, `ester-acyl-chloride` and `amide-acyl-chloride` → `acyl`, `alcohol-oxidation` / `acid-oxidation` → `oxidation`, `nitrile-hydrolysis` → `nitrile-hydrolysis`, `nitrile-sn2` → `halide`, `aldol` → `aldol` (5 °C addition, 80 °C condensation), `wittig` → `wittig`.
+  - Alkenes and alkanes: `dehydration` → `dehydration` (temperature chosen by the alcohol's degree), `e2` → `halide` (NaOEt and KOtBu), `diels-alder` → `diels-alder`, `hydrogenation` → `hydrogenation` (only C=C/C≡C whose carbons have carbon neighbours only, so no enols, vinyl halides or vinyl ethers are proposed), `alkyne-alkylation` → `acetylide`, `epoxidation` → `epoxidation`, `dihydroxylation` → `osmium`.
+  - Aromatics: `eas-halogenation` and `fc-acylation` → `aromatic`, `nitro-reduction` → `nitro-reduction`, `reductive-amination` → `imine`.
+- `RETRO_DROPPED_TRANSFORMS` lists `eas-nitration`: the forward engine has no nitration rule, so a nitroarene gets no disconnection. The view's empty state says so.
+- `retroVerify(spec, targetSmiles)` builds compounds in the Reaction-lab shape (`{input, smiles, fragment, role, equiv, label?}`), normalises the conditions and calls `predictReaction`. A candidate is a main route when a product of `best` equals the target SMILES. It is a minor route (`minor: true`) when the target is in `best.minor` or in any alternative's products or minors. Otherwise the spec is dropped.
+- `retroDisconnect(graph, ids, options)` → `{smiles, candidates, tried, truncated, reason, ms}`. `reason` is `'empty'`, `'components'` (more than one component) or `'size'`. Specs are de-duplicated by `retroSpecKey`, and verification stops at the time budget (`truncated`). Each candidate carries the transform id, name and group, the expected rule and the fired `outcomeRule` / `outcomeId`, `precursors` (from `retroPrecursorInfo`: skeleton size, stereocentres, and `common`, the `NAME_SMILES` name when the canonical SMILES matches one), the verified `compounds` / `conditions` / `outcome` / `product`, `labels` from `reactionConditionLabels`, and `rank`. `retroCompare` sorts by the largest precursor skeleton (smaller first), then stereocentres, then more common starting materials, then main before minor, then total size.
+- Tree: `retroTree(smiles, depth, budget)` → `{maxDepth, budgetMs, root}` expands the root. `retroExpand(tree, node)` disconnects a node lazily and gives every candidate `children` (one node per precursor, `depth + 1`). `retroCanExpand` is false at `maxDepth`.
+- Routes: `retroRouteSteps(chain)` takes `[{candidate, precursor}]` from the target downwards and returns forward `reactionRouteStep` steps, deepest first, passing each step the precursor SMILES that the next step carries. `buildRouteScheme(steps)` turns them into a canvas fragment. `retroForwardCheck(candidate, smiles)` re-runs the verification (used by the tests).
+
+#### View (`js/retro-view.js`, `index.html`, `css/style.css`, `js/app.js`)
+- `#retro-overlay` (`.retro-dialog`) has a breadcrumb trail (`#retro-trail`), a target header with a thumbnail, count and time (`#retro-summary`), the card list (`#retro-list`), and Close / "Open in Reaction lab" / "Send route to canvas".
+- Each `.retro-card` shows the transform name and group, a "minor route" badge, the ⇒ arrow with the reagent labels above and below, and the precursor thumbnails (`deps.structureThumbnail`), captions (label, then common name, then `reactionDescribeFragment` name) and "common starting material" badges. Each precursor has a "Disconnect" button while `retroCanExpand` holds. It pushes `{candidate, precursor}` onto `state.chain` and renders the child node. Crumbs jump back up.
+- The route is `state.chain` plus the selected card at the current level. "Send route to canvas" calls `deps.sendScheme(buildRouteScheme(retroRouteSteps(route)), steps)`. "Open in Reaction lab" loads the last step's verified compounds and conditions through `deps.openInLab`.
+- Disconnection runs in a `setTimeout` behind a "Searching…" line and is cancelled on close through a job counter.
+- `js/app.js`:
+  - wiring: `openRetro(ids)`, `#retro-button` (next to `#viewer-button`), `KeyT` in `INSIGHT_SHORTCUTS` (Alt+T), "Retrosynthesis…" in the molecule and selection context menus, and an Escape branch after the viewer's;
+  - the target is the selected component, otherwise `largestComponent()`, or the atom ids passed from the context menu;
+  - `placeSchemeBelow(fragment)` is the placement code that used to be inside the Reaction lab's `sendScheme`, now shared by both;
+  - `openInLab` resets `reactionLab.state.compounds`, sets `state.conditions`, calls `addSmiles` per compound (restoring Grignard labels) and switches to the Reactions view.
+- `index.html` has the button, the overlay, the Alt+T help row and the two script tags. `css/style.css` adds `.retro-*` rules on the existing tokens only, so both themes follow. The toolbar still fits at 1280, 1366, 1440 and 1920 px with no breakpoint change. The spacer slack is now 44 px at 1280/1366 and 13 px at 1440.
+
+#### Tests
+- `test_retro.js` (session scratchpad, bundle from `build_retro.sh`), 371 checks:
+  - static checks (no DOM, no comments, every transform maps to a real rule, dropped transforms absent);
+  - the 15 target molecules, with a required route each, every candidate re-verified forward with its product SMILES equal to the target, ranking order, and time under 1.5 s;
+  - a coverage target for each of the 28 transforms;
+  - badges and labels, edge cases (empty, two components, methane, tiny budget);
+  - tree laziness, the depth limit, and a two-step route scheme.
+- `drive_retro.py` (Playwright, both themes): the toolbar button, 2-methyl-2-butanol cards (Grignard first, badges, labels), expanding a precursor, sending a two-step route to the canvas, Alt+T and "Open in Reaction lab" for ethyl acetate, Escape, the nitrobenzene empty state, and the context-menu entry. There are no page errors. It also writes `feature-research/learning-sharing/screenshots/retro.png`.
+- `drive_toolbar.py` now also checks that `#retro-button` is visible, sits next to `#viewer-button` and stays inside the viewport at each width.
+
+Numbers, the per-target table and deviations are in `feature-research/learning-sharing/audit.md`.

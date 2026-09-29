@@ -297,6 +297,12 @@ class Interactions {
         }
         continue;
       }
+      if (annotation.kind === 'bracket') {
+        if (this.renderer.bracketHit(annotation, point, INTERACTION_SETTINGS.bondHitRadius)) {
+          return annotation;
+        }
+        continue;
+      }
       const box = this.renderer.annotationBounds(annotation);
       const pad = INTERACTION_SETTINGS.textHitPad;
       if (point.x >= box.minX - pad && point.x <= box.maxX + pad && point.y >= box.minY - pad && point.y <= box.maxY + pad) {
@@ -611,6 +617,9 @@ class Interactions {
   }
 
   moveAnnotation(annotation, base, dx, dy) {
+    if (annotation.kind === 'bracket') {
+      return;
+    }
     if (annotation.kind === 'arrow') {
       annotation.x1 = base.x1 + dx;
       annotation.y1 = base.y1 + dy;
@@ -746,7 +755,7 @@ class Interactions {
 
   transformAtoms(atomIds, transform) {
     atomIds = withAbbreviationMembers(this.graph, atomIds);
-    const annotationIds = this.annotationTargets(atomIds);
+    const annotationIds = this.annotationTargets(atomIds).filter((id) => this.graph.getAnnotation(id).kind !== 'bracket');
     const bounds = this.renderer.contentBounds(atomIds, annotationIds);
     if (!bounds) {
       return false;
@@ -836,16 +845,26 @@ class Interactions {
         .filter((b) => ids.has(b.atomA) && ids.has(b.atomB))
         .map((b) => ({ atomA: b.atomA, atomB: b.atomB, order: b.order, stereo: b.stereo || null })),
     };
-    if (annotationIds && annotationIds.length) {
-      fragment.annotations = annotationIds
+    const brackets = this.graph.annotations
+      .filter((a) => a.kind === 'bracket' && a.atomIds.every((id) => ids.has(id)))
+      .map((a) => a.id);
+    const wanted = Array.from(new Set((annotationIds || []).concat(brackets)));
+    if (wanted.length) {
+      fragment.annotations = wanted
         .map((id) => this.graph.getAnnotation(id))
-        .filter((a) => a)
-        .map((a) => Object.assign({}, a));
+        .filter((a) => a && (a.kind !== 'bracket' || a.atomIds.every((id) => ids.has(id))))
+        .map((a) => (a.kind === 'bracket' ? Object.assign({}, a, { atomIds: a.atomIds.slice() }) : Object.assign({}, a)));
+      if (fragment.annotations.length === 0) {
+        delete fragment.annotations;
+      }
     }
     return fragment;
   }
 
   annotationPoints(annotation) {
+    if (annotation.kind === 'bracket') {
+      return [];
+    }
     return annotation.kind === 'arrow'
       ? [{ x: annotation.x1, y: annotation.y1 }, { x: annotation.x2, y: annotation.y2 }]
       : [{ x: annotation.x, y: annotation.y }];
@@ -856,8 +875,12 @@ class Interactions {
       ? fragment.annotations.filter((a) => a && (
         (a.kind === 'arrow' && [a.x1, a.y1, a.x2, a.y2].every(Number.isFinite)) ||
         (a.kind === 'plus' && Number.isFinite(a.x) && Number.isFinite(a.y)) ||
-        (a.kind === 'text' && Number.isFinite(a.x) && Number.isFinite(a.y) && typeof a.text === 'string' && a.text.trim())))
+        (a.kind === 'text' && Number.isFinite(a.x) && Number.isFinite(a.y) && typeof a.text === 'string' && a.text.trim()) ||
+        (a.kind === 'bracket' && Array.isArray(a.atomIds) && a.atomIds.length > 0)))
       : [];
+    if (fragment && Array.isArray(fragment.atoms) && fragment.atoms.length === 0 && annotations.every((a) => a.kind === 'bracket')) {
+      return [];
+    }
     if (!fragment || !Array.isArray(fragment.atoms) || (fragment.atoms.length === 0 && annotations.length === 0)) {
       return [];
     }
@@ -908,6 +931,16 @@ class Interactions {
       }
     });
     const annotationIds = annotations.map((a) => {
+      if (a.kind === 'bracket') {
+        if (!a.atomIds.every((id) => idMap.has(id))) {
+          return null;
+        }
+        const bracket = { kind: 'bracket', atomIds: a.atomIds.map((id) => idMap.get(id)), n: typeof a.n === 'string' && a.n.trim() ? a.n.slice(0, 8) : 'n' };
+        if (typeof a.label === 'string' && a.label.trim()) {
+          bracket.label = a.label.slice(0, 200);
+        }
+        return bracketValid(this.graph, bracket) ? this.graph.addAnnotation(bracket).id : null;
+      }
       const copy = a.kind === 'arrow'
         ? { kind: 'arrow', x1: a.x1 + dx, y1: a.y1 + dy, x2: a.x2 + dx, y2: a.y2 + dy, style: ARROW_STYLES.includes(a.style) ? a.style : 'forward' }
         : a.kind === 'plus'
@@ -923,7 +956,7 @@ class Interactions {
         });
       }
       return this.graph.addAnnotation(copy).id;
-    });
+    }).filter((id) => id !== null);
     this.selection.clear();
     this.annotationSelection.clear();
     newIds.filter((id) => !hidden.has(id)).forEach((id) => this.selection.add(id));

@@ -7,6 +7,9 @@
   const interactions = new Interactions(canvas, graph, renderer);
 
   let lastCanvasSize = null;
+  let spectraView = null;
+  let viewer3d = null;
+  let retroView = null;
 
   function resizeCanvas() {
     const rect = canvas.getBoundingClientRect();
@@ -96,6 +99,7 @@
       (p.ionizable.length
         ? '<ul class="info-list">' + p.ionizable.map((g) => '<li>' + g.label + ' &mdash; ' + g.note + '</li>').join('') + '</ul>'
         : '<div class="info-note">None detected</div>') + '</div>';
+    html += insightPanelHtml(atomIds);
     panelSmiles = p.smiles;
     html += '<div class="info-block" id="pubchem-box">' + pubchemPrompt() + '</div>';
     html += '<div class="info-note">logP and TPSA follow the Wildman-Crippen and Ertl methods. Click a value to copy it.</div>';
@@ -297,6 +301,17 @@
       runPubchem();
       return;
     }
+    if (event.target.id === 'spectra-open-button') {
+      spectraView.open();
+      return;
+    }
+    if (event.target.id === 'resonance-open-button') {
+      const component = graph.connectedComponents().find((c) => c.atomIds.includes(panelAnchor));
+      if (component) {
+        openResonance(component.atomIds);
+      }
+      return;
+    }
     const target = event.target.closest('[data-copy]');
     if (target) {
       copyText(target.dataset.copy).then(() => {
@@ -397,6 +412,13 @@
         }
         if (a.kind === 'plus' && Number.isFinite(a.x) && Number.isFinite(a.y)) {
           return { id: a.id, kind: 'plus', x: a.x, y: a.y };
+        }
+        if (a.kind === 'bracket' && Array.isArray(a.atomIds) && a.atomIds.length > 0 && a.atomIds.every(Number.isFinite)) {
+          const bracket = { id: a.id, kind: 'bracket', atomIds: Array.from(new Set(a.atomIds)), n: typeof a.n === 'string' && a.n.trim() ? a.n.slice(0, 8) : 'n' };
+          if (typeof a.label === 'string' && a.label.trim()) {
+            bracket.label = a.label.slice(0, 200);
+          }
+          return bracket;
         }
         return null;
       })
@@ -559,6 +581,7 @@
       statusHover.textContent = (ELEMENT_NAMES[atom.element] || atom.element) + charge + ' · ' +
         plural(graph.bondsForAtom(atom.id).length, 'bond') +
         (hydrogens ? ' · ' + hydrogens + ' H' : '') +
+        insightHoverText(atom.id) +
         (renderer.problemAtoms.has(atom.id) ? ' · \u26a0 valence problem, right-click to fix' : ' — element key to change, +/− charge, Del to delete');
     } else if (hover.type === 'bond') {
       const bond = graph.getBondById(hover.id);
@@ -579,6 +602,12 @@
           statusHover.textContent = schemeBalanceText(balance);
           return;
         }
+      }
+      if (annotation && annotation.kind === 'bracket') {
+        const label = renderer.polymerLabel(annotation);
+        statusHover.textContent = 'Polymer brackets · (' + polymerSubscript(polymerRepeatFormula(graph, annotation)) + ')' + (annotation.n || 'n').replace('n', 'ₙ') +
+          (label ? ' · ' + label : '') + ' — right-click to rename, Del to delete';
+        return;
       }
       statusHover.textContent = !annotation ? '' : annotation.kind === 'arrow'
         ? ARROW_LABELS[annotation.style] + ' — drag to move, click with the arrow tool to change style, Del to delete'
@@ -606,7 +635,12 @@
     zoomReadout.textContent = Math.round(renderer.view.scale * 100) + '%';
   }
 
-  interactions.onHoverChange = updateHoverStatus;
+  interactions.onHoverChange = (hover) => {
+    updateHoverStatus(hover);
+    if (spectraView) {
+      spectraView.hoverAtom(hover && hover.type === 'atom' ? hover.id : null);
+    }
+  };
   interactions.onViewChange = updateToolStatus;
   interactions.onBlocked = (elements) => {
     const unique = Array.from(new Set(elements));
@@ -624,7 +658,13 @@
   const textEditor = document.getElementById('annotation-editor');
   let textEditing = null;
 
+  const substructureState = { text: '', query: null, matches: [], index: -1, signature: null, timer: null };
+
   renderer.afterRender = () => {
+    if (pruneBrackets(graph) > 0) {
+      renderer.render();
+      return;
+    }
     interactions.selection.forEach((id) => {
       if (!graph.getAtom(id)) {
         interactions.selection.delete(id);
@@ -637,12 +677,16 @@
     });
     positionTextEditor();
     refreshPanel();
+    refreshSubstructure();
     if (!interactions.moving && history.commit()) {
       storageSet('autosave', history.states[history.index]);
     }
     syncHistoryButtons();
     updateStructureStatus();
     updateToolStatus();
+    if (spectraView) {
+      spectraView.structureChanged();
+    }
   };
 
   const stepHistory = (direction) => {
@@ -898,7 +942,7 @@
   document.getElementById('ptable-close').addEventListener('click', closePeriodicTable);
   elementMore.addEventListener('click', () => openPeriodicTable());
 
-  const STAMP_THUMB_GRIDS = ['stamp-buttons', 'stamp-buttons-hetero', 'stamp-buttons-saturated', 'stamp-buttons-fused'];
+  const STAMP_THUMB_GRIDS = ['stamp-buttons', 'stamp-buttons-hetero', 'stamp-buttons-saturated', 'stamp-buttons-fused', 'stamp-buttons-amino', 'stamp-buttons-sugars', 'stamp-buttons-bases'];
 
   elementButtons.forEach((button) => {
     const info = periodicElement(button.dataset.element);
@@ -1193,16 +1237,27 @@
   } catch (error) {
     collapsedSections = new Set();
   }
+  const DEFAULT_COLLAPSED_SECTIONS = ['amino', 'sugars', 'bases'];
+  let expandedSections = new Set();
+  try {
+    expandedSections = new Set(JSON.parse(storageGet('expandedSections') || '[]'));
+  } catch (error) {
+    expandedSections = new Set();
+  }
+  DEFAULT_COLLAPSED_SECTIONS.filter((key) => !expandedSections.has(key)).forEach((key) => collapsedSections.add(key));
 
   document.querySelectorAll('.sidebar-section').forEach((section) => {
     section.querySelector('.section-toggle').addEventListener('click', () => {
       const key = section.dataset.section;
       if (section.classList.contains('collapsed')) {
         collapsedSections.delete(key);
+        expandedSections.add(key);
       } else {
         collapsedSections.add(key);
+        expandedSections.delete(key);
       }
       storageSet('collapsedSections', JSON.stringify(Array.from(collapsedSections)));
+      storageSet('expandedSections', JSON.stringify(Array.from(expandedSections).filter((name) => DEFAULT_COLLAPSED_SECTIONS.includes(name))));
       applySearch();
     });
   });
@@ -1285,7 +1340,15 @@
     textEditor.hidden = true;
     renderer.editingArrowLabel = null;
     const text = textEditor.value.replace(/\s+$/, '').replace(/^\s*\n/, '');
-    if (editing.arrowLabel) {
+    if (editing.bracketLabel) {
+      if (commit && graph.getAnnotation(editing.bracketLabel.id)) {
+        if (text.trim() && text.trim() !== polymerName(graph, editing.bracketLabel)) {
+          editing.bracketLabel.label = text.trim().slice(0, 200);
+        } else {
+          delete editing.bracketLabel.label;
+        }
+      }
+    } else if (editing.arrowLabel) {
       const { arrow, slot } = editing.arrowLabel;
       if (commit && graph.getAnnotation(arrow.id)) {
         if (text.trim()) {
@@ -1941,6 +2004,11 @@
   function moleculeEntries(ids) {
     return [
       { label: 'Properties', run: () => openPanel({ atomIds: ids }) },
+      { label: 'Resonance structures', kbd: 'Alt+R', run: () => openResonance(ids) },
+      { label: 'Find isomers', kbd: 'Alt+I', run: () => openIsomers(ids) },
+      { label: 'Predicted spectra', kbd: 'Alt+N', run: () => spectraView.open() },
+      { label: '3D & projections', kbd: 'Alt+D', run: () => viewer3d.open() },
+      { label: 'Retrosynthesis…', kbd: 'Alt+T', run: () => openRetro(ids) },
       {
         label: 'Copy name',
         run: () => {
@@ -1975,6 +2043,9 @@
       { label: 'Cut', kbd: 'Ctrl+X', run: () => cutAtoms(ids) },
       { label: 'Duplicate', kbd: 'Ctrl+D', run: () => duplicateAtoms(ids) },
       { label: 'Copy SMILES', run: () => copySmilesFor(ids) },
+      { label: 'Polymer brackets', kbd: 'Alt+B', run: () => addPolymerBrackets(ids) },
+      { label: 'Find isomers', kbd: 'Alt+I', run: () => openIsomers(ids) },
+      { label: 'Retrosynthesis…', kbd: 'Alt+T', run: () => openRetro(ids) },
       { separator: true },
       { label: 'Rotate 90°', kbd: '}', run: () => interactions.rotateAtoms(ids, 90) },
       { label: 'Flip horizontal', kbd: 'X', run: () => interactions.flipAtoms(ids, 'horizontal') },
@@ -2131,6 +2202,14 @@
       return [
         { title: 'Plus sign' },
         { label: 'Delete plus', kbd: 'Del', danger: true, run: remove },
+      ];
+    }
+    if (annotation.kind === 'bracket') {
+      return [
+        { title: 'Polymer brackets' },
+        { label: 'Rename…', run: () => openBracketEditor(annotation) },
+        { separator: true },
+        { label: 'Delete brackets', kbd: 'Del', danger: true, run: remove },
       ];
     }
     if (annotation.kind === 'text') {
@@ -2324,6 +2403,10 @@
     exporter.showGrid = false;
     exporter.showEmptyHint = false;
     exporter.nameCache = renderer.nameCache;
+    exporter.insight = Object.assign({}, renderer.insight);
+    exporter.insightCache = renderer.insightCache;
+    exporter.matchAtoms = renderer.matchAtoms;
+    exporter.matchBonds = renderer.matchBonds;
     exporter.view = frame.view;
     exporter.render();
   }
@@ -2370,6 +2453,9 @@
     updateCurrentChip();
     renderer.render();
     reactionLab.repaint();
+    if (spectraView) {
+      spectraView.repaint();
+    }
   }
 
   const locantsButton = document.getElementById('locants-button');
@@ -2387,6 +2473,1134 @@
   if (storageGet('showLocants') === '1') {
     setLocants(true);
   }
+
+  const INSIGHT_KEYS = {
+    electrons: { storage: 'insightElectrons', label: 'Lone pairs & radicals' },
+    hybridization: { storage: 'insightHybridization', label: 'Hybridization' },
+    oxidation: { storage: 'insightOxidation', label: 'Oxidation states' },
+    heatmap: { storage: 'insightHeatmap', label: 'Partial charges' },
+    acidBase: { storage: 'insightAcidBase', label: 'Acid/base sites' },
+  };
+  const insightButton = document.getElementById('insight-button');
+  const insightMenu = document.getElementById('insight-menu');
+  const insightChecks = Array.from(insightMenu.querySelectorAll('input[data-insight]'));
+  const substructureInput = document.getElementById('substructure-input');
+  const substructurePrev = document.getElementById('substructure-prev');
+  const substructureNext = document.getElementById('substructure-next');
+  const substructureStatus = document.getElementById('substructure-status');
+
+  function syncInsightButton() {
+    const on = renderer.insightActive() || renderer.matchAtoms.size > 0;
+    insightButton.classList.toggle('active', on);
+    insightButton.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+
+  function setInsight(key, show, announce) {
+    renderer.insight[key] = show;
+    insightChecks.forEach((input) => {
+      if (input.dataset.insight === key) {
+        input.checked = show;
+      }
+    });
+    storageSet(INSIGHT_KEYS[key].storage, show ? '1' : '0');
+    syncInsightButton();
+    renderer.render();
+    if (announce) {
+      toast(INSIGHT_KEYS[key].label + (show ? ' shown' : ' hidden'), { duration: 1400 });
+    }
+  }
+
+  function positionInsightMenu() {
+    const rect = insightButton.getBoundingClientRect();
+    const width = insightMenu.offsetWidth || 272;
+    insightMenu.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)) + 'px';
+    insightMenu.style.top = (rect.bottom + 6) + 'px';
+  }
+
+  function openInsightMenu() {
+    closeContextMenu();
+    insightMenu.hidden = false;
+    insightButton.setAttribute('aria-expanded', 'true');
+    positionInsightMenu();
+  }
+
+  function closeInsightMenu() {
+    if (insightMenu.hidden) {
+      return;
+    }
+    insightMenu.hidden = true;
+    insightButton.setAttribute('aria-expanded', 'false');
+    if (insightMenu.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+  }
+
+  insightButton.addEventListener('click', () => {
+    if (insightMenu.hidden) {
+      openInsightMenu();
+    } else {
+      closeInsightMenu();
+    }
+  });
+  insightChecks.forEach((input) => {
+    input.addEventListener('change', () => setInsight(input.dataset.insight, input.checked, false));
+  });
+  document.addEventListener('mousedown', (event) => {
+    if (!insightMenu.hidden && !insightMenu.contains(event.target) && !insightButton.contains(event.target)) {
+      closeInsightMenu();
+    }
+  }, true);
+  insightMenu.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && event.target !== substructureInput) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeInsightMenu();
+      insightButton.focus();
+    }
+  });
+  window.addEventListener('resize', () => {
+    if (!insightMenu.hidden) {
+      positionInsightMenu();
+    }
+  });
+  Object.keys(INSIGHT_KEYS).forEach((key) => {
+    if (storageGet(INSIGHT_KEYS[key].storage) === '1') {
+      setInsight(key, true, false);
+    }
+  });
+
+  function insightSigned(value, digits) {
+    return renderer.insightNumber(value, digits);
+  }
+
+  function insightHoverText(atomId) {
+    if (!renderer.insightActive()) {
+      return '';
+    }
+    const data = renderer.insightForAtom(atomId);
+    if (!data) {
+      return '';
+    }
+    const parts = [];
+    if (data.info.hybridization) {
+      parts.push(data.info.hybridization.replace('2', '²').replace('3', '³'));
+    }
+    parts.push('OS ' + insightSigned(data.info.oxidationState, 0));
+    if (!data.unparameterized && Number.isFinite(data.charge)) {
+      parts.push('δ ' + insightSigned(data.charge, 2));
+    }
+    if (data.info.lonePairs) {
+      parts.push(plural(data.info.lonePairs, 'lone pair'));
+    }
+    if (data.info.radical) {
+      parts.push('radical');
+    }
+    return ' · ' + parts.join(' · ');
+  }
+
+  function insightPanelHtml(atomIds) {
+    let html = '';
+    try {
+      const sites = acidBaseSites(graph, atomIds);
+      const items = sites.acids.map((s) => '<li>Acid &middot; ' + escapeHtml(s.group) + ' &mdash; pK<sub>a</sub> &asymp; ' + renderer.insightRange(s) + '</li>')
+        .concat(sites.bases.map((s) => '<li>Base &middot; ' + escapeHtml(s.group) + ' &mdash; pK<sub>aH</sub> &asymp; ' + renderer.insightRange(s) + '</li>'));
+      html += '<div class="info-block"><h3>Acid/base sites</h3>' +
+        (items.length ? '<ul class="info-list">' + items.join('') + '</ul>' : '<div class="info-note">None detected</div>') +
+        '<div class="info-note">Typical ranges for the functional group in water, not a prediction for this exact molecule.</div></div>';
+    } catch (error) {
+      html += '';
+    }
+    let count = null;
+    try {
+      count = resonanceContributors(graph, atomIds).length;
+    } catch (error) {
+      count = null;
+    }
+    if (count !== null) {
+      html += '<div class="info-block"><h3>Resonance</h3><table class="info-table">' +
+        row('Contributors', (count >= RESONANCE_SETTINGS.max ? count + '+' : String(count)) +
+          '<button type="button" class="info-button-inline" id="resonance-open-button">Open viewer</button>') +
+        '</table></div>';
+    }
+    html += '<div class="info-block"><h3>Spectra</h3><table class="info-table">' +
+      row('¹H, ¹³C, IR, MS', '<button type="button" class="info-button-inline" id="spectra-open-button">Predicted spectra</button>') +
+      '</table></div>';
+    return html;
+  }
+
+  function graphSignature() {
+    return graph.atoms.map((a) => a.id + a.element + (a.charge || '')).join(';') + '|' +
+      graph.bonds.map((b) => b.atomA + '-' + b.atomB + ':' + b.order).join(';');
+  }
+
+  function applySubstructureMatches() {
+    renderer.matchAtoms = new Set();
+    renderer.matchBonds = new Set();
+    substructureState.matches.forEach((m) => {
+      m.atoms.forEach((id) => renderer.matchAtoms.add(id));
+      m.bonds.forEach((id) => renderer.matchBonds.add(id));
+    });
+    const count = substructureState.matches.length;
+    substructurePrev.disabled = count === 0;
+    substructureNext.disabled = count === 0;
+    if (substructureState.query && !substructureState.query.error) {
+      const capped = count >= SUBSTRUCTURE_SETTINGS.maxMatches ? '+' : '';
+      substructureStatus.textContent = count === 0 ? 'No matches' : (count === 1 ? '1 match' : count + capped + ' matches') +
+        (substructureState.index >= 0 ? ' · showing ' + (substructureState.index + 1) : '');
+      substructureStatus.className = count ? 'ok' : '';
+    }
+    syncInsightButton();
+  }
+
+  function runSubstructure() {
+    substructureState.timer = null;
+    const text = substructureInput.value.trim();
+    substructureState.text = text;
+    substructureState.index = -1;
+    substructureState.signature = graphSignature();
+    substructureInput.classList.remove('invalid');
+    if (!text) {
+      substructureState.query = null;
+      substructureState.matches = [];
+      substructureStatus.textContent = '';
+      substructureStatus.className = '';
+      applySubstructureMatches();
+      renderer.render();
+      return;
+    }
+    const query = substructureQuery(text);
+    substructureState.query = query;
+    if (query.error) {
+      substructureState.matches = [];
+      substructureInput.classList.add('invalid');
+      substructureStatus.textContent = query.error;
+      substructureStatus.className = 'error';
+    } else {
+      substructureState.matches = substructureMatches(graph, query);
+    }
+    applySubstructureMatches();
+    renderer.render();
+  }
+
+  function refreshSubstructure() {
+    if (!substructureState.query || substructureState.query.error) {
+      return;
+    }
+    const signature = graphSignature();
+    if (signature === substructureState.signature) {
+      return;
+    }
+    substructureState.signature = signature;
+    substructureState.matches = substructureMatches(graph, substructureState.query);
+    substructureState.index = -1;
+    applySubstructureMatches();
+    renderer.render();
+  }
+
+  function clearSubstructure() {
+    clearTimeout(substructureState.timer);
+    substructureInput.value = '';
+    runSubstructure();
+  }
+
+  function stepSubstructure(direction) {
+    const count = substructureState.matches.length;
+    if (!count) {
+      return;
+    }
+    substructureState.index = substructureState.index < 0
+      ? (direction > 0 ? 0 : count - 1)
+      : (substructureState.index + direction + count) % count;
+    const atoms = substructureState.matches[substructureState.index].atoms.map((id) => graph.getAtom(id)).filter(Boolean);
+    const cx = atoms.reduce((sum, a) => sum + a.x, 0) / atoms.length;
+    const cy = atoms.reduce((sum, a) => sum + a.y, 0) / atoms.length;
+    const size = renderer.viewportSize();
+    renderer.view.x = size.width / 2 - cx * renderer.view.scale;
+    renderer.view.y = size.height / 2 - cy * renderer.view.scale;
+    applySubstructureMatches();
+    renderer.render();
+  }
+
+  substructureInput.addEventListener('input', () => {
+    clearTimeout(substructureState.timer);
+    substructureState.timer = setTimeout(runSubstructure, 160);
+  });
+  substructureInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      if (substructureState.timer) {
+        clearTimeout(substructureState.timer);
+        runSubstructure();
+      }
+      stepSubstructure(event.shiftKey ? -1 : 1);
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      if (substructureInput.value) {
+        clearSubstructure();
+      } else {
+        closeInsightMenu();
+        insightButton.focus();
+      }
+    }
+  });
+  substructurePrev.addEventListener('click', () => stepSubstructure(-1));
+  substructureNext.addEventListener('click', () => stepSubstructure(1));
+
+  function focusSubstructure() {
+    openInsightMenu();
+    substructureInput.focus();
+    substructureInput.select();
+  }
+
+  const resonanceOverlay = document.getElementById('resonance-overlay');
+  const resonanceGrid = document.getElementById('resonance-grid');
+  const resonanceSummary = document.getElementById('resonance-summary');
+  const resonancePlace = document.getElementById('resonance-place');
+  const resonanceHint = document.getElementById('resonance-hint');
+  let resonanceList = [];
+  let resonanceSource = null;
+  let resonanceSelected = -1;
+
+  function structureThumbnail(structure) {
+    const thumb = document.createElement('canvas');
+    const ratio = window.devicePixelRatio || 1;
+    thumb.width = Math.round(180 * ratio);
+    thumb.height = Math.round(140 * ratio);
+    const preview = new Renderer(thumb.getContext('2d'), structure);
+    preview.theme = renderer.theme;
+    preview.pixelRatio = ratio;
+    preview.showGrid = false;
+    preview.showEmptyHint = false;
+    preview.showNames = false;
+    preview.fitToContent(30);
+    return thumb;
+  }
+
+  function selectResonance(index) {
+    resonanceSelected = index;
+    Array.from(resonanceGrid.querySelectorAll('.resonance-card')).forEach((card) => {
+      card.classList.toggle('selected', Number(card.dataset.index) === index);
+    });
+    resonancePlace.disabled = index < 0;
+    resonanceHint.textContent = index < 0 ? 'Click a structure to select it' : 'Contributor ' + (index + 1) + ' selected';
+  }
+
+  function openResonance(atomIds) {
+    closeContextMenu();
+    closeInsightMenu();
+    if (!atomIds || atomIds.length === 0) {
+      toast('Draw a molecule to see its resonance structures', { kind: 'warn' });
+      return;
+    }
+    try {
+      resonanceList = resonanceContributors(graph, atomIds);
+    } catch (error) {
+      toast('Could not compute resonance structures — ' + error.message, { kind: 'warn', duration: 3000 });
+      return;
+    }
+    resonanceSource = atomIds.slice();
+    resonanceGrid.innerHTML = '';
+    resonanceOverlay.hidden = false;
+    const majors = resonanceList.filter((r) => r.label === 'major').length;
+    if (resonanceList.length <= 1) {
+      resonanceSummary.textContent = 'Only one contributor — this structure has no significant resonance forms.';
+    } else {
+      resonanceSummary.textContent = plural(resonanceList.length, 'contributor') +
+        (resonanceList.length >= RESONANCE_SETTINGS.max ? ' (limit reached)' : '') +
+        ' · ' + majors + ' major' + (resonanceList[0].normalized ? ' · nitro groups drawn charge-separated' : '');
+    }
+    resonanceList.forEach((contributor, index) => {
+      if (index > 0) {
+        const arrow = document.createElement('span');
+        arrow.className = 'resonance-arrow';
+        arrow.textContent = '↔';
+        resonanceGrid.appendChild(arrow);
+      }
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'resonance-card';
+      card.dataset.index = String(index);
+      card.title = contributor.moves.length ? contributor.moves.join(', ') : 'As drawn';
+      card.appendChild(structureThumbnail(contributor.graph));
+      const caption = document.createElement('span');
+      caption.className = 'resonance-caption' + (contributor.label === 'major' ? ' major' : '');
+      caption.textContent = contributor.label;
+      card.appendChild(caption);
+      card.addEventListener('click', () => selectResonance(index));
+      card.addEventListener('dblclick', () => {
+        selectResonance(index);
+        placeResonance();
+      });
+      resonanceGrid.appendChild(card);
+    });
+    selectResonance(-1);
+    if (resonanceList.length <= 1) {
+      resonanceHint.textContent = '';
+    }
+  }
+
+  function closeResonance() {
+    resonanceOverlay.hidden = true;
+    resonanceGrid.innerHTML = '';
+    resonanceList = [];
+    resonanceSelected = -1;
+  }
+
+  function placeResonance() {
+    const contributor = resonanceList[resonanceSelected];
+    if (!contributor) {
+      return;
+    }
+    const fragment = {
+      atoms: contributor.graph.atoms.map((a) => {
+        const atom = { id: a.id, element: a.element, x: a.x, y: a.y };
+        if (a.charge) {
+          atom.charge = a.charge;
+        }
+        return atom;
+      }),
+      bonds: contributor.graph.bonds.map((b) => ({ atomA: b.atomA, atomB: b.atomB, order: b.order, stereo: b.stereo || null })),
+    };
+    const source = renderer.contentBounds(resonanceSource.filter((id) => graph.getAtom(id)));
+    const xs = fragment.atoms.map((a) => a.x);
+    const halfW = (Math.max(...xs) - Math.min(...xs)) / 2;
+    const center = source
+      ? { x: source.maxX + 75 + halfW, y: (source.minY + source.maxY) / 2 }
+      : null;
+    closeResonance();
+    const ids = insertSmilesFragment(fragment, center);
+    toast('Placed resonance contributor · ' + plural(ids.length, 'atom'), { kind: 'ok', duration: 1600 });
+  }
+
+  function openResonanceForTarget() {
+    const component = largestComponent();
+    openResonance(component ? component.atomIds : null);
+  }
+
+  document.getElementById('resonance-button').addEventListener('click', openResonanceForTarget);
+  document.getElementById('resonance-close').addEventListener('click', closeResonance);
+  document.getElementById('resonance-cancel').addEventListener('click', closeResonance);
+  resonancePlace.addEventListener('click', placeResonance);
+  resonanceOverlay.addEventListener('click', (event) => {
+    if (event.target === resonanceOverlay) {
+      closeResonance();
+    }
+  });
+
+  const isomerOverlay = document.getElementById('isomer-overlay');
+  const isomerFormula = document.getElementById('isomer-formula');
+  const isomerStable = document.getElementById('isomer-stable');
+  const isomerSort = document.getElementById('isomer-sort');
+  const isomerFind = document.getElementById('isomer-find');
+  const isomerStop = document.getElementById('isomer-stop');
+  const isomerSummary = document.getElementById('isomer-summary');
+  const isomerGrid = document.getElementById('isomer-grid');
+  const isomerPager = document.getElementById('isomer-pager');
+  const isomerPrev = document.getElementById('isomer-prev');
+  const isomerNext = document.getElementById('isomer-next');
+  const isomerPageLabel = document.getElementById('isomer-page');
+  const isomerPlace = document.getElementById('isomer-place');
+  const isomerHint = document.getElementById('isomer-hint');
+  const ISOMER_PAGE_SIZE = 48;
+  let isomerJob = null;
+  let isomerTimer = null;
+  let isomerItems = [];
+  let isomerPageIndex = 0;
+  let isomerSelected = -1;
+  let isomerSource = null;
+  let isomerNaming = false;
+
+  function isomerItemName(item) {
+    if (item.name === undefined) {
+      try {
+        item.name = nameStructure(item.graph, item.graph.atoms.map((a) => a.id)) || '';
+      } catch (error) {
+        item.name = '';
+      }
+    }
+    return item.name;
+  }
+
+  function isomerStatusText(job) {
+    const count = job.isomers.length;
+    if (!job.done) {
+      return 'Searching… ' + plural(count, 'isomer') + ' so far';
+    }
+    if (job.complete) {
+      return plural(count, 'isomer') + (isomerStable.checked ? ' (stable only)' : '');
+    }
+    if (job.stoppedBy === 'limit') {
+      return count + '+ shown, stopped at limit';
+    }
+    if (job.stoppedBy === 'time') {
+      return plural(count, 'isomer') + ' shown, stopped at the ' + ISOMER_SETTINGS.timeBudgetMs / 1000 + ' s time limit';
+    }
+    return plural(count, 'isomer') + ' shown, search cancelled';
+  }
+
+  function sortIsomers() {
+    if (isomerSort.value === 'name') {
+      isomerItems.sort((a, b) => isomerItemName(a).localeCompare(isomerItemName(b)) || a.key.localeCompare(b.key));
+    } else {
+      isomerItems.sort((a, b) => a.branching - b.branching || a.key.localeCompare(b.key));
+    }
+  }
+
+  function selectIsomer(index) {
+    isomerSelected = index;
+    Array.from(isomerGrid.querySelectorAll('.isomer-card')).forEach((card) => {
+      card.classList.toggle('selected', Number(card.dataset.index) === index);
+    });
+    isomerPlace.disabled = index < 0;
+    isomerHint.textContent = index < 0 ? (isomerItems.length ? 'Click a structure to select it' : '') : (isomerItemName(isomerItems[index]) || 'Isomer ' + (index + 1)) + ' selected';
+  }
+
+  function renderIsomerPage() {
+    isomerGrid.innerHTML = '';
+    const pages = Math.max(1, Math.ceil(isomerItems.length / ISOMER_PAGE_SIZE));
+    isomerPageIndex = Math.min(isomerPageIndex, pages - 1);
+    const start = isomerPageIndex * ISOMER_PAGE_SIZE;
+    isomerItems.slice(start, start + ISOMER_PAGE_SIZE).forEach((item, offset) => {
+      const index = start + offset;
+      const name = isomerItemName(item);
+      if (!item.laidOut) {
+        isomerLayout(item.graph);
+        item.laidOut = true;
+      }
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'isomer-card';
+      card.dataset.index = String(index);
+      card.title = name || isomerFormulaText(isomerCountsFor(item.graph));
+      card.appendChild(structureThumbnail(item.graph));
+      const caption = document.createElement('span');
+      caption.className = 'isomer-caption';
+      caption.textContent = name || '(unnamed)';
+      card.appendChild(caption);
+      card.addEventListener('click', () => selectIsomer(index));
+      card.addEventListener('dblclick', () => {
+        selectIsomer(index);
+        placeIsomer();
+      });
+      isomerGrid.appendChild(card);
+    });
+    isomerPager.hidden = pages <= 1;
+    isomerPageLabel.textContent = 'Page ' + (isomerPageIndex + 1) + ' of ' + pages;
+    isomerPrev.disabled = isomerPageIndex === 0;
+    isomerNext.disabled = isomerPageIndex >= pages - 1;
+    selectIsomer(isomerSelected >= start && isomerSelected < start + ISOMER_PAGE_SIZE ? isomerSelected : -1);
+  }
+
+  function isomerCountsFor(structure) {
+    const counts = {};
+    structure.atoms.forEach((atom) => {
+      counts[atom.element] = (counts[atom.element] || 0) + 1;
+      const h = implicitHydrogenCount(atom.element, atom.charge || 0, structure.totalBondOrder(atom.id));
+      if (h > 0) {
+        counts.H = (counts.H || 0) + h;
+      }
+    });
+    return counts;
+  }
+
+  function stopIsomerTimer() {
+    clearTimeout(isomerTimer);
+    isomerTimer = null;
+  }
+
+  function finishIsomers() {
+    isomerFind.disabled = false;
+    isomerStop.disabled = true;
+    isomerItems = isomerJob.isomers.map((entry) => ({ graph: entry.graph, key: entry.key, branching: isomerBranching(entry.graph) }));
+    isomerSummary.textContent = isomerStatusText(isomerJob);
+    isomerPageIndex = 0;
+    isomerSelected = -1;
+    if (isomerSort.value === 'name') {
+      nameAllIsomers();
+    } else {
+      sortIsomers();
+      renderIsomerPage();
+    }
+  }
+
+  function nameAllIsomers() {
+    isomerNaming = true;
+    let next = 0;
+    const run = () => {
+      const started = Date.now();
+      while (next < isomerItems.length && Date.now() - started < ISOMER_SETTINGS.stepMs) {
+        isomerItemName(isomerItems[next]);
+        next++;
+      }
+      if (next < isomerItems.length) {
+        isomerHint.textContent = 'Naming ' + next + ' / ' + isomerItems.length + '…';
+        isomerTimer = setTimeout(run, 0);
+        return;
+      }
+      isomerTimer = null;
+      isomerNaming = false;
+      sortIsomers();
+      renderIsomerPage();
+    };
+    run();
+  }
+
+  function runIsomers() {
+    stopIsomerTimer();
+    isomerNaming = false;
+    const counts = parseFormula(isomerFormula.value);
+    isomerItems = [];
+    isomerGrid.innerHTML = '';
+    isomerPager.hidden = true;
+    selectIsomer(-1);
+    if (counts.error) {
+      isomerSummary.textContent = counts.error;
+      return;
+    }
+    isomerJob = isomerEnumerator(counts, { stableOnly: isomerStable.checked });
+    if (isomerJob.error) {
+      isomerSummary.textContent = isomerJob.error === 'too large'
+        ? 'Too many heavy atoms — the isomer search is limited to ' + ISOMER_SETTINGS.maxHeavy
+        : 'This formula cannot form a neutral structure';
+      isomerJob = null;
+      return;
+    }
+    isomerFind.disabled = true;
+    isomerStop.disabled = false;
+    const job = isomerJob;
+    const tick = () => {
+      if (job !== isomerJob) {
+        return;
+      }
+      if (job.step(ISOMER_SETTINGS.stepMs)) {
+        isomerTimer = null;
+        finishIsomers();
+        return;
+      }
+      isomerSummary.textContent = isomerStatusText(job);
+      isomerTimer = setTimeout(tick, 0);
+    };
+    isomerSummary.textContent = isomerStatusText(job);
+    isomerTimer = setTimeout(tick, 0);
+  }
+
+  function cancelIsomers() {
+    if (isomerJob && !isomerJob.done) {
+      isomerJob.cancelled = true;
+    }
+  }
+
+  function openIsomers(atomIds) {
+    closeContextMenu();
+    closeInsightMenu();
+    const ids = (atomIds || []).filter((id) => graph.getAtom(id));
+    isomerSource = ids.length ? ids : null;
+    if (ids.length) {
+      isomerFormula.value = molecularFormula(graph, ids);
+    }
+    isomerOverlay.hidden = false;
+    if (isomerFormula.value.trim()) {
+      runIsomers();
+    } else {
+      isomerSummary.textContent = 'Enter a molecular formula, e.g. C6H14';
+    }
+    setTimeout(() => isomerFormula.focus(), 0);
+  }
+
+  function closeIsomers() {
+    stopIsomerTimer();
+    if (isomerJob) {
+      isomerJob.cancelled = true;
+    }
+    isomerJob = null;
+    isomerNaming = false;
+    isomerOverlay.hidden = true;
+    isomerGrid.innerHTML = '';
+    isomerItems = [];
+    isomerSelected = -1;
+    isomerFind.disabled = false;
+    isomerStop.disabled = true;
+  }
+
+  function placeIsomer() {
+    const item = isomerItems[isomerSelected];
+    if (!item) {
+      return;
+    }
+    const fragment = {
+      atoms: item.graph.atoms.map((a) => ({ id: a.id, element: a.element, x: a.x, y: a.y })),
+      bonds: item.graph.bonds.map((b) => ({ atomA: b.atomA, atomB: b.atomB, order: b.order, stereo: null })),
+    };
+    const source = isomerSource ? renderer.contentBounds(isomerSource.filter((id) => graph.getAtom(id))) : null;
+    const xs = fragment.atoms.map((a) => a.x);
+    const halfW = (Math.max(...xs) - Math.min(...xs)) / 2;
+    const center = source ? { x: source.maxX + 75 + halfW, y: (source.minY + source.maxY) / 2 } : null;
+    const name = isomerItemName(item);
+    closeIsomers();
+    const ids = insertSmilesFragment(fragment, center);
+    toast('Placed ' + (name || 'isomer') + ' · ' + plural(ids.length, 'atom'), { kind: 'ok', duration: 1600 });
+  }
+
+  function openIsomersForTarget() {
+    const selected = interactions.selectedAtomIds();
+    if (selected.length) {
+      openIsomers(selected);
+      return;
+    }
+    const component = largestComponent();
+    openIsomers(component ? component.atomIds : null);
+  }
+
+  function addPolymerBrackets(ids) {
+    const atomIds = Array.from(new Set(ids)).filter((id) => graph.getAtom(id));
+    const bracket = { kind: 'bracket', atomIds, n: 'n' };
+    if (!bracketValid(graph, bracket)) {
+      toast('Select one repeat unit with exactly two bonds leaving it', { kind: 'warn', duration: 3000 });
+      return;
+    }
+    graph.annotations
+      .filter((a) => a.kind === 'bracket' && a.atomIds.length === atomIds.length && a.atomIds.every((id) => atomIds.includes(id)))
+      .forEach((a) => graph.removeAnnotation(a.id));
+    const added = graph.addAnnotation(bracket);
+    renderer.render();
+    const label = renderer.polymerLabel(added);
+    toast('Polymer brackets' + (label ? ' · ' + label : ''), { kind: 'ok', duration: 1800 });
+  }
+
+  function openBracketEditor(bracket) {
+    closeTextEditor(true);
+    const geometry = renderer.bracketGeometry(bracket);
+    if (!geometry || !geometry.labelBox) {
+      return;
+    }
+    const box = geometry.labelBox;
+    textEditing = { bracketLabel: bracket, point: { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 } };
+    renderer.editingAnnotationId = bracket.id;
+    textEditor.value = geometry.label;
+    textEditor.hidden = false;
+    positionTextEditor();
+    renderer.render();
+    setTimeout(() => {
+      if (textEditing) {
+        textEditor.focus();
+        textEditor.select();
+      }
+    }, 0);
+  }
+
+  document.getElementById('isomer-close').addEventListener('click', closeIsomers);
+  document.getElementById('isomer-cancel').addEventListener('click', closeIsomers);
+  isomerFind.addEventListener('click', runIsomers);
+  isomerStop.addEventListener('click', cancelIsomers);
+  isomerPlace.addEventListener('click', placeIsomer);
+  isomerPrev.addEventListener('click', () => {
+    isomerPageIndex = Math.max(0, isomerPageIndex - 1);
+    renderIsomerPage();
+  });
+  isomerNext.addEventListener('click', () => {
+    isomerPageIndex++;
+    renderIsomerPage();
+  });
+  isomerSort.addEventListener('change', () => {
+    if (!isomerItems.length || isomerNaming) {
+      return;
+    }
+    if (isomerSort.value === 'name') {
+      nameAllIsomers();
+    } else {
+      sortIsomers();
+      renderIsomerPage();
+    }
+  });
+  isomerStable.addEventListener('change', () => {
+    if (isomerFormula.value.trim()) {
+      runIsomers();
+    }
+  });
+  isomerFormula.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      runIsomers();
+    }
+  });
+  isomerOverlay.addEventListener('click', (event) => {
+    if (event.target === isomerOverlay) {
+      closeIsomers();
+    }
+  });
+
+  const shareButton = document.getElementById('share-button');
+  const shareMenu = document.getElementById('share-menu');
+
+  function positionShareMenu() {
+    const rect = shareButton.getBoundingClientRect();
+    const width = shareMenu.offsetWidth || 240;
+    shareMenu.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)) + 'px';
+    shareMenu.style.top = (rect.bottom + 6) + 'px';
+  }
+
+  function openShareMenu() {
+    closeContextMenu();
+    closeInsightMenu();
+    shareMenu.hidden = false;
+    shareButton.setAttribute('aria-expanded', 'true');
+    positionShareMenu();
+  }
+
+  function closeShareMenu() {
+    if (shareMenu.hidden) {
+      return;
+    }
+    shareMenu.hidden = true;
+    shareButton.setAttribute('aria-expanded', 'false');
+    if (shareMenu.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+  }
+
+  shareButton.addEventListener('click', () => {
+    if (shareMenu.hidden) {
+      openShareMenu();
+    } else {
+      closeShareMenu();
+    }
+  });
+  document.addEventListener('mousedown', (event) => {
+    if (!shareMenu.hidden && !shareMenu.contains(event.target) && !shareButton.contains(event.target)) {
+      closeShareMenu();
+    }
+  }, true);
+  shareMenu.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      closeShareMenu();
+      shareButton.focus();
+    }
+  });
+  window.addEventListener('resize', () => {
+    if (!shareMenu.hidden) {
+      positionShareMenu();
+    }
+  });
+  document.getElementById('share-link-button').addEventListener('click', () => {
+    closeShareMenu();
+    copyShareLink();
+  });
+  document.getElementById('notebook-button').addEventListener('click', () => {
+    closeShareMenu();
+    openNotebook();
+  });
+
+  function shareCompress(text) {
+    const bytes = shareUtf8Encode(text);
+    if (typeof CompressionStream !== 'function') {
+      return Promise.resolve(sharePackPayload(bytes, false));
+    }
+    return Promise.resolve()
+      .then(() => new Response(new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer())
+      .then((buffer) => sharePackPayload(new Uint8Array(buffer), true))
+      .catch(() => sharePackPayload(bytes, false));
+  }
+
+  function shareInflate(bytes) {
+    if (typeof DecompressionStream !== 'function') {
+      return Promise.reject(new Error('this browser cannot read compressed links'));
+    }
+    const reader = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw')).getReader();
+    const chunks = [];
+    let total = 0;
+    const pump = () => reader.read().then(({ done, value }) => {
+      if (done) {
+        const out = new Uint8Array(total);
+        let offset = 0;
+        chunks.forEach((chunk) => {
+          out.set(chunk, offset);
+          offset += chunk.length;
+        });
+        return out;
+      }
+      total += value.length;
+      if (total > SHARE_MAX_JSON_LENGTH) {
+        reader.cancel().catch(() => {});
+        throw new Error('the link is too large');
+      }
+      chunks.push(value);
+      return pump();
+    });
+    return pump().catch((error) => {
+      throw new Error(error && /too large|cannot read/.test(error.message) ? error.message : 'the link payload is damaged');
+    });
+  }
+
+  function shareDecompress(payload) {
+    return Promise.resolve().then(() => {
+      const unpacked = shareUnpackPayload(payload);
+      if (unpacked.error) {
+        throw new Error(unpacked.error);
+      }
+      return unpacked.compressed ? shareInflate(unpacked.bytes) : unpacked.bytes;
+    }).then((bytes) => {
+      try {
+        return shareUtf8Decode(bytes);
+      } catch (error) {
+        throw new Error('the link payload is damaged');
+      }
+    });
+  }
+
+  function shareBaseUrl() {
+    return window.location.href.split('#')[0];
+  }
+
+  function copySmilesLink() {
+    const smiles = allSmiles();
+    if (!smiles) {
+      toast('Nothing to share yet', { kind: 'warn' });
+      return;
+    }
+    const url = shareUrl(shareBaseUrl(), 'smiles', smiles);
+    copyText(url).then(
+      () => toast('SMILES link copied (no stereo or annotations)', { kind: 'ok', duration: 3200 }),
+      () => toast('Could not copy the link', { kind: 'warn' }));
+  }
+
+  function copyShareLink() {
+    if (graph.isEmpty()) {
+      toast('Nothing to share yet', { kind: 'warn' });
+      return;
+    }
+    shareCompress(shareEncodeGraph(serializeGraph())).then((payload) => {
+      const url = shareUrl(shareBaseUrl(), 'g', payload);
+      return copyText(url).then(() => {
+        const long = url.length > SHARE_LINK_WARN_LENGTH;
+        const message = long
+          ? 'Share link copied · ' + url.length.toLocaleString() + ' characters, may be too long for some chat apps'
+          : 'Share link copied';
+        toast(message, { kind: long ? 'warn' : 'ok', action: { label: 'SMILES link instead', run: copySmilesLink }, duration: long ? 7000 : 4500 });
+      });
+    }).catch(() => toast('Could not copy the share link', { kind: 'warn' }));
+  }
+
+  function clearShareHash() {
+    if (window.location.hash) {
+      window.history.replaceState(null, '', shareBaseUrl());
+    }
+  }
+
+  function applySharedState(apply) {
+    if (document.body.dataset.view === 'reactions') {
+      setView('editor');
+    }
+    closeShareMenu();
+    if (!graph.isEmpty()) {
+      rememberRecent();
+    }
+    interactions.setHover(null);
+    interactions.updateGhost(null);
+    interactions.clearSelection();
+    apply();
+    renderer.fitToContent();
+    toast('Loaded shared structure · Undo restores your previous drawing', { kind: 'ok', action: { label: 'Undo', run: () => stepHistory(-1) }, duration: 6000 });
+  }
+
+  function loadShareHash() {
+    const parsed = shareParseHash(window.location.hash);
+    if (!parsed) {
+      return;
+    }
+    clearShareHash();
+    const fail = (reason) => toast('Could not open the shared link — ' + reason, { kind: 'warn', duration: 4200 });
+    if (parsed.kind === 'smiles') {
+      if (!parsed.payload) {
+        fail('the SMILES is empty or malformed');
+        return;
+      }
+      let fragment = null;
+      try {
+        fragment = smilesToFragment(parsed.payload);
+      } catch (error) {
+        fail(error.message);
+        return;
+      }
+      applySharedState(() => {
+        graph.clear();
+        insertSmilesFragment(fragment, null);
+      });
+      return;
+    }
+    shareDecompress(parsed.payload).then((text) => {
+      const state = shareDecodeGraph(text);
+      if (state.error) {
+        fail(state.error);
+        return;
+      }
+      if (!state.atoms.every((a) => Object.prototype.hasOwnProperty.call(MAX_VALENCE, a.element))) {
+        fail('the link contains an unknown element');
+        return;
+      }
+      if (state.atoms.length === 0 && state.annotations.length === 0) {
+        fail('the link contains an empty drawing');
+        return;
+      }
+      applySharedState(() => loadGraphState(state));
+    }, (error) => fail(error.message));
+  }
+
+  const notebookOverlay = document.getElementById('notebook-overlay');
+  const notebookTitle = document.getElementById('notebook-title');
+  const notebookNotes = document.getElementById('notebook-notes');
+  const notebookSummary = document.getElementById('notebook-summary');
+  const notebookChecks = Array.from(notebookOverlay.querySelectorAll('input[data-section]'));
+  const printRoot = document.getElementById('print-root');
+
+  function notebookTargets() {
+    const selected = new Set(interactions.selectedAtomIds());
+    return graph.connectedComponents()
+      .filter((component) => selected.size === 0 || component.atomIds.some((id) => selected.has(id)))
+      .map((component) => component.atomIds);
+  }
+
+  function structureSvg(ids) {
+    const fragment = interactions.extractFragment(ids);
+    const temp = new Graph();
+    temp.atoms = fragment.atoms.map((a) => Object.assign({}, a));
+    temp.bonds = graph.bonds.filter((b) => ids.includes(b.atomA) && ids.includes(b.atomB)).map((b) => Object.assign({}, b));
+    temp.annotations = (fragment.annotations || []).map((a) => Object.assign({}, a, a.atomIds ? { atomIds: a.atomIds.slice() } : {}));
+    const sizer = new Renderer(new SvgContext(10, 10), temp);
+    const bounds = sizer.contentBounds();
+    if (!bounds) {
+      return '';
+    }
+    const pad = 30;
+    const width = Math.max(120, bounds.maxX - bounds.minX + pad * 2);
+    const height = Math.max(80, bounds.maxY - bounds.minY + pad * 2);
+    const ctx = new SvgContext(width, height);
+    const exporter = new Renderer(ctx, temp);
+    exporter.theme = 'light';
+    exporter.pixelRatio = 1;
+    exporter.showGrid = false;
+    exporter.showEmptyHint = false;
+    exporter.showNames = false;
+    exporter.view = { x: width / 2 - (bounds.minX + bounds.maxX) / 2, y: height / 2 - (bounds.minY + bounds.maxY) / 2, scale: 1 };
+    exporter.render();
+    return ctx.toSvg().replace(/^<\?xml[^>]*>\s*/, '');
+  }
+
+  function buildNotebook() {
+    const targets = notebookTargets();
+    if (targets.length === 0) {
+      toast('Draw a molecule to fill the notebook', { kind: 'warn' });
+      return null;
+    }
+    const sections = {};
+    notebookChecks.forEach((input) => {
+      sections[input.dataset.section] = input.checked;
+    });
+    const entries = [];
+    const svgs = [];
+    targets.forEach((ids) => {
+      try {
+        entries.push(notebookEntry(graph, ids, { field: 400, sections }));
+      } catch (error) {
+        return;
+      }
+      let svg = '';
+      try {
+        svg = structureSvg(ids);
+      } catch (error) {
+        svg = '';
+      }
+      svgs.push(svg);
+    });
+    if (entries.length === 0) {
+      toast('Could not describe these structures', { kind: 'warn' });
+      return null;
+    }
+    const meta = { title: notebookTitle.value.trim(), notes: notebookNotes.value, date: new Date().toISOString().slice(0, 10), appName: NOTEBOOK_APP_NAME };
+    return { entries, svgs, meta };
+  }
+
+  function notebookFileName() {
+    const slug = notebookTitle.value.trim().replace(/[^A-Za-z0-9,()\-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+    return (slug || fileBaseName()) + '-notebook';
+  }
+
+  function openNotebook() {
+    closeShareMenu();
+    const targets = notebookTargets();
+    if (targets.length === 0) {
+      toast('Draw a molecule to fill the notebook', { kind: 'warn' });
+      return;
+    }
+    const scope = interactions.selectedAtomIds().length ? 'from the selection' : 'on the canvas';
+    notebookSummary.textContent = plural(targets.length, 'structure') + ' ' + scope;
+    notebookOverlay.hidden = false;
+    notebookTitle.focus();
+  }
+
+  function closeNotebook() {
+    notebookOverlay.hidden = true;
+  }
+
+  function downloadNotebook(kind) {
+    const book = buildNotebook();
+    if (!book) {
+      return;
+    }
+    rememberRecent();
+    if (kind === 'md') {
+      downloadBlob(new Blob([notebookMarkdown(book.entries, book.meta, book.svgs)], { type: 'text/markdown' }), notebookFileName() + '.md');
+      toast('Notebook exported as Markdown', { kind: 'ok' });
+    } else {
+      downloadBlob(new Blob([notebookHtml(book.entries, book.meta, book.svgs)], { type: 'text/html' }), notebookFileName() + '.html');
+      toast('Notebook exported as HTML', { kind: 'ok' });
+    }
+  }
+
+  function printNotebook() {
+    const book = buildNotebook();
+    if (!book) {
+      return;
+    }
+    printRoot.innerHTML = '<style>' + NOTEBOOK_CSS + '</style>' + notebookBody(book.entries, book.meta, book.svgs);
+    document.body.classList.add('printing');
+    window.print();
+  }
+
+  window.addEventListener('afterprint', () => {
+    document.body.classList.remove('printing');
+    printRoot.innerHTML = '';
+  });
+  document.getElementById('notebook-close').addEventListener('click', closeNotebook);
+  document.getElementById('notebook-html').addEventListener('click', () => downloadNotebook('html'));
+  document.getElementById('notebook-md').addEventListener('click', () => downloadNotebook('md'));
+  document.getElementById('notebook-print').addEventListener('click', printNotebook);
+  notebookOverlay.addEventListener('click', (event) => {
+    if (event.target === notebookOverlay) {
+      closeNotebook();
+    }
+  });
+  window.addEventListener('hashchange', loadShareHash);
+
+  const INSIGHT_SHORTCUTS = {
+    KeyL: () => setInsight('electrons', !renderer.insight.electrons, true),
+    KeyH: () => setInsight('hybridization', !renderer.insight.hybridization, true),
+    KeyO: () => setInsight('oxidation', !renderer.insight.oxidation, true),
+    KeyP: () => setInsight('heatmap', !renderer.insight.heatmap, true),
+    KeyA: () => setInsight('acidBase', !renderer.insight.acidBase, true),
+    KeyS: focusSubstructure,
+    KeyR: openResonanceForTarget,
+    KeyN: () => spectraView.toggle(),
+    KeyU: () => spectraView.startPuzzle(),
+    KeyI: openIsomersForTarget,
+    KeyB: () => addPolymerBrackets(interactions.selectedAtomIds()),
+    KeyD: () => viewer3d.open(),
+    KeyT: () => openRetro(null),
+    KeyK: copyShareLink,
+    KeyJ: openNotebook,
+  };
 
   document.getElementById('theme-button').addEventListener('click', () => {
     applyTheme(renderer.theme === 'dark' ? 'light' : 'dark');
@@ -2414,6 +3628,41 @@
 
   document.addEventListener('keydown', (event) => {
     if (!ptableOverlay.hidden || document.body.dataset.view === 'reactions') {
+      return;
+    }
+    if (!resonanceOverlay.hidden) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeResonance();
+      }
+      return;
+    }
+    if (!isomerOverlay.hidden) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeIsomers();
+      }
+      return;
+    }
+    if (!notebookOverlay.hidden) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeNotebook();
+      }
+      return;
+    }
+    if (viewer3d && viewer3d.isOpen()) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        viewer3d.close();
+      }
+      return;
+    }
+    if (retroView && retroView.isOpen()) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        retroView.close();
+      }
       return;
     }
     if (isTyping(event.target) || !importOverlay.hidden) {
@@ -2482,6 +3731,11 @@
       return;
     }
     if (event.altKey) {
+      const shortcut = INSIGHT_SHORTCUTS[event.code];
+      if (shortcut && !event.shiftKey) {
+        event.preventDefault();
+        shortcut();
+      }
       return;
     }
     if (event.key === ' ') {
@@ -2494,8 +3748,14 @@
     if (event.key === 'Escape') {
       if (!helpOverlay.hidden) {
         toggleHelp(false);
+      } else if (!insightMenu.hidden) {
+        closeInsightMenu();
+      } else if (!shareMenu.hidden) {
+        closeShareMenu();
       } else if (interactions.clearSelection()) {
         return;
+      } else if (substructureState.text) {
+        clearSubstructure();
       } else if (interactions.selectedStamp) {
         deselectStamp();
       } else if (interactions.tool !== 'draw') {
@@ -2658,9 +3918,12 @@
       })
       .catch(() => {});
   }
+  const startupShare = shareParseHash(window.location.hash);
   if (restoredSession) {
     renderer.fitToContent();
-    toast('Restored your previous drawing', { action: { label: 'Clear', run: clearCanvas }, duration: 4500 });
+    if (!startupShare) {
+      toast('Restored your previous drawing', { action: { label: 'Clear', run: clearCanvas }, duration: 4500 });
+    }
   }
   function editorSmilesList() {
     const selected = Array.from(interactions.selection);
@@ -2695,24 +3958,96 @@
     }
   }
 
+  function placeSchemeBelow(fragment) {
+    setView('editor');
+    let center = null;
+    if (graph.atoms.length || graph.annotations.length) {
+      const bounds = renderer.contentBounds();
+      const ys = fragment.atoms.map((a) => a.y).concat(0);
+      center = { x: (bounds.minX + bounds.maxX) / 2, y: bounds.maxY + 110 + (Math.max.apply(null, ys) - Math.min.apply(null, ys)) / 2 };
+    }
+    const ids = insertSmilesFragment(fragment, center);
+    renderer.fitToContent();
+    return ids;
+  }
+
+  function openRetro(ids) {
+    closeContextMenu();
+    closeInsightMenu();
+    retroView.open(ids && ids.length ? ids : null);
+  }
+
   const reactionLab = createReactionLab({
     theme: () => renderer.theme,
     storageGet,
     storageSet,
     editorSmiles: editorSmilesList,
     sendScheme(fragment) {
-      setView('editor');
-      let center = null;
-      if (graph.atoms.length || graph.annotations.length) {
-        const bounds = renderer.contentBounds();
-        const ys = fragment.atoms.map((a) => a.y).concat(0);
-        center = { x: (bounds.minX + bounds.maxX) / 2, y: bounds.maxY + 110 + (Math.max.apply(null, ys) - Math.min.apply(null, ys)) / 2 };
-      }
-      const ids = insertSmilesFragment(fragment, center);
-      renderer.fitToContent();
+      const ids = placeSchemeBelow(fragment);
       toast('Reaction scheme added (' + plural(ids.length, 'atom') + ')', { kind: 'ok', duration: 2200 });
     },
   });
+  spectraView = createSpectraView({
+    graph,
+    renderer,
+    storageGet,
+    storageSet,
+    toast,
+    copyText,
+    downloadBlob,
+    insertSmiles: (fragment) => insertSmilesFragment(fragment, null),
+    targetAtomIds: () => {
+      const component = largestComponent();
+      return component ? component.atomIds : null;
+    },
+    onLayout: resizeCanvas,
+  });
+  document.getElementById('spectra-button').addEventListener('click', () => spectraView.toggle());
+  viewer3d = createViewer3d({
+    graph,
+    renderer,
+    storageGet,
+    storageSet,
+    toast,
+    downloadBlob,
+    targetAtomIds: () => {
+      const selected = interactions.selectedAtomIds().find((id) => graph.getAtom(id));
+      const component = selected !== undefined
+        ? graph.connectedComponents().find((c) => c.atomIds.includes(selected))
+        : largestComponent();
+      return component ? component.atomIds : [];
+    },
+    hoveredBondId: () => (interactions.hover && interactions.hover.type === 'bond' ? interactions.hover.id : null),
+  });
+  document.getElementById('viewer-button').addEventListener('click', () => viewer3d.open());
+  retroView = createRetroView({
+    graph,
+    toast,
+    structureThumbnail,
+    targetAtomIds: () => {
+      const selected = interactions.selectedAtomIds().find((id) => graph.getAtom(id));
+      const component = selected !== undefined
+        ? graph.connectedComponents().find((c) => c.atomIds.includes(selected))
+        : largestComponent();
+      return component ? component.atomIds : [];
+    },
+    sendScheme(fragment, steps) {
+      placeSchemeBelow(fragment);
+      toast('Route added to the canvas (' + plural(steps, 'step') + ')', { kind: 'ok', duration: 2200 });
+    },
+    openInLab(compounds, conditions) {
+      reactionLab.state.compounds = [];
+      reactionLab.state.conditions = normalizeReactionConditions(JSON.parse(JSON.stringify(conditions)));
+      compounds.forEach((c) => {
+        const added = reactionLab.addSmiles(c.smiles, c.role);
+        if (added && c.label) {
+          added.label = c.label;
+        }
+      });
+      setView('reactions');
+    },
+  });
+  document.getElementById('retro-button').addEventListener('click', () => openRetro(null));
   viewTabs.forEach((tab) => tab.addEventListener('click', () => setView(tab.dataset.view)));
   if (storageGet('view') === 'reactions') {
     setView('reactions');
@@ -2721,4 +4056,7 @@
   }
 
   syncHistoryButtons();
+  if (startupShare) {
+    loadShareHash();
+  }
 })();

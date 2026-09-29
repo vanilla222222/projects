@@ -111,6 +111,61 @@
       </div>
     </div>
   </section>
+  <section class="sidebar-section" data-section="amino">
+    <button type="button" class="section-toggle"><span>Amino acids</span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="m3 4.5 3 3 3-3"/></svg></button>
+    <div class="section-body">
+      <div id="stamp-buttons-amino" class="stamp-grid">
+        <button type="button" class="stamp-button" data-stamp="glycine">&#9670; Glycine</button>
+        <button type="button" class="stamp-button" data-stamp="alanine">&#9670; L-Alanine</button>
+        <button type="button" class="stamp-button" data-stamp="valine">&#9670; L-Valine</button>
+        <button type="button" class="stamp-button" data-stamp="leucine">&#9670; L-Leucine</button>
+        <button type="button" class="stamp-button" data-stamp="isoleucine">&#9670; L-Isoleucine</button>
+        <button type="button" class="stamp-button" data-stamp="proline">&#11040; L-Proline</button>
+        <button type="button" class="stamp-button" data-stamp="phenylalanine">&#11041; L-Phenylalanine</button>
+        <button type="button" class="stamp-button" data-stamp="tryptophan">&#11041; L-Tryptophan</button>
+        <button type="button" class="stamp-button" data-stamp="methionine">&#9670; L-Methionine</button>
+        <button type="button" class="stamp-button" data-stamp="serine">&#9670; L-Serine</button>
+        <button type="button" class="stamp-button" data-stamp="threonine">&#9670; L-Threonine</button>
+        <button type="button" class="stamp-button" data-stamp="cysteine">&#9670; L-Cysteine</button>
+        <button type="button" class="stamp-button" data-stamp="tyrosine">&#11041; L-Tyrosine</button>
+        <button type="button" class="stamp-button" data-stamp="asparagine">&#9670; L-Asparagine</button>
+        <button type="button" class="stamp-button" data-stamp="glutamine">&#9670; L-Glutamine</button>
+        <button type="button" class="stamp-button" data-stamp="aspartic-acid">&#9670; L-Aspartic acid</button>
+        <button type="button" class="stamp-button" data-stamp="glutamic-acid">&#9670; L-Glutamic acid</button>
+        <button type="button" class="stamp-button" data-stamp="lysine">&#9670; L-Lysine</button>
+        <button type="button" class="stamp-button" data-stamp="arginine">&#9670; L-Arginine</button>
+        <button type="button" class="stamp-button" data-stamp="histidine">&#11041; L-Histidine</button>
+      </div>
+    </div>
+  </section>
+  <section class="sidebar-section" data-section="sugars">
+    <button type="button" class="section-toggle"><span>Sugars</span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="m3 4.5 3 3 3-3"/></svg></button>
+    <div class="section-body">
+      <div id="stamp-buttons-sugars" class="stamp-grid">
+        <button type="button" class="stamp-button" data-stamp="d-glucose">&#9670; D-Glucose</button>
+        <button type="button" class="stamp-button" data-stamp="d-galactose">&#9670; D-Galactose</button>
+        <button type="button" class="stamp-button" data-stamp="d-mannose">&#9670; D-Mannose</button>
+        <button type="button" class="stamp-button" data-stamp="d-fructose">&#9670; D-Fructose</button>
+        <button type="button" class="stamp-button" data-stamp="d-ribose">&#9670; D-Ribose</button>
+        <button type="button" class="stamp-button" data-stamp="d-deoxyribose">&#9670; 2-Deoxy-D-ribose</button>
+        <button type="button" class="stamp-button" data-stamp="alpha-d-glucopyranose">&#11041; D-Glucopyranose (&alpha;)</button>
+        <button type="button" class="stamp-button" data-stamp="beta-d-glucopyranose">&#11041; D-Glucopyranose (&beta;)</button>
+        <button type="button" class="stamp-button" data-stamp="beta-d-ribofuranose">&#11040; D-Ribofuranose (&beta;)</button>
+      </div>
+    </div>
+  </section>
+  <section class="sidebar-section" data-section="bases">
+    <button type="button" class="section-toggle"><span>Nucleobases</span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="m3 4.5 3 3 3-3"/></svg></button>
+    <div class="section-body">
+      <div id="stamp-buttons-bases" class="stamp-grid">
+        <button type="button" class="stamp-button" data-stamp="adenine">&#11041; Adenine</button>
+        <button type="button" class="stamp-button" data-stamp="guanine">&#11041; Guanine</button>
+        <button type="button" class="stamp-button" data-stamp="cytosine">&#11041; Cytosine</button>
+        <button type="button" class="stamp-button" data-stamp="thymine">&#11041; Thymine</button>
+        <button type="button" class="stamp-button" data-stamp="uracil">&#11041; Uracil</button>
+      </div>
+    </div>
+  </section>
   <section class="sidebar-section" data-section="abbreviations">
     <button type="button" class="section-toggle"><span>Abbreviations</span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="m3 4.5 3 3 3-3"/></svg></button>
     <div class="section-body">
@@ -192,6 +247,38 @@
       <input type="file" id="open-input" accept=".json,.mol,.sdf,.sd,application/json,chemical/x-mdl-molfile,chemical/x-mdl-sdfile" hidden>
     </div>
     <div class="tool-group">
+      <div class="insight-anchor">
+        <button type="button" class="icon-button" id="insight-button" title="Structure insight overlays (lone pairs, hybridization, charges, acid/base, search, resonance)" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.2 13.2c0-1.6-2.7-2.9-2.7-5.9a5.5 5.5 0 0 1 11 0c0 3-2.7 4.3-2.7 5.9z"/><path d="M7.6 15.6h4.8M8.4 18h3.2"/></svg></button>
+        <div id="insight-menu" role="menu" hidden>
+          <div class="insight-title">Structure insight</div>
+          <label class="insight-row"><input type="checkbox" data-insight="electrons"><span>Lone pairs &amp; radicals</span><kbd>Alt+L</kbd></label>
+          <label class="insight-row"><input type="checkbox" data-insight="hybridization"><span>Hybridization</span><kbd>Alt+H</kbd></label>
+          <label class="insight-row"><input type="checkbox" data-insight="oxidation"><span>Oxidation states</span><kbd>Alt+O</kbd></label>
+          <label class="insight-row"><input type="checkbox" data-insight="heatmap"><span>Partial charges</span><kbd>Alt+P</kbd></label>
+          <label class="insight-row"><input type="checkbox" data-insight="acidBase"><span>Acid/base sites</span><kbd>Alt+A</kbd></label>
+          <div class="insight-sep"></div>
+          <label class="insight-label" for="substructure-input">Find substructure <kbd>Alt+S</kbd></label>
+          <div class="insight-search">
+            <input type="text" id="substructure-input" spellcheck="false" autocomplete="off" placeholder="SMILES or name, e.g. C(=O)O">
+            <button type="button" class="step-button" id="substructure-prev" title="Previous match" disabled>&lsaquo;</button>
+            <button type="button" class="step-button" id="substructure-next" title="Next match" disabled>&rsaquo;</button>
+          </div>
+          <div id="substructure-status"></div>
+          <div class="insight-sep"></div>
+          <button type="button" class="text-button insight-resonance" id="resonance-button">Resonance structures&hellip; <kbd>Alt+R</kbd></button>
+        </div>
+      </div>
+      <div class="insight-anchor">
+        <button type="button" class="icon-button" id="share-button" title="Share &amp; export: share link, lab notebook" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="14.5" cy="4.8" r="2.3"/><circle cx="5.5" cy="10" r="2.3"/><circle cx="14.5" cy="15.2" r="2.3"/><path d="m7.5 8.8 5-2.8M7.5 11.2l5 2.8"/></svg></button>
+        <div id="share-menu" role="menu" hidden>
+          <div class="insight-title">Share &amp; export</div>
+          <button type="button" class="share-row" id="share-link-button" role="menuitem"><span>Copy share link</span><kbd>Alt+K</kbd></button>
+          <button type="button" class="share-row" id="notebook-button" role="menuitem"><span>Lab notebook&hellip;</span><kbd>Alt+J</kbd></button>
+        </div>
+      </div>
+      <button type="button" class="icon-button" id="viewer-button" title="3D model &amp; projections: chair, Newman, Fischer, Haworth (Alt+D)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5 16.5 6v8L10 17.5 3.5 14V6z"/><path d="M3.5 6 10 9.5 16.5 6M10 9.5v8"/></svg></button>
+      <button type="button" class="icon-button" id="retro-button" title="Retrosynthesis: disconnections verified by the reaction rules (Alt+T)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 7.5h10M2.5 12.5h10M10.5 4l6 6-6 6"/></svg></button>
+      <button type="button" class="icon-button" id="spectra-button" title="Predicted spectra: ¹H/¹³C NMR, IR, MS (Alt+N)" aria-pressed="false"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 16.5h15"/><path d="M3 16c2 0 2.4-.4 3-3.5.5-2.5.8-9 1.5-9s1 6.5 1.5 9c.4 2 .8 1.5 1.3-1 .4-2 .6-3 1-3s.6 1 1 3c.5 2.6 1 3.5 3.7 4.5"/></svg></button>
       <button type="button" class="icon-button" id="locants-button" title="Show IUPAC locant numbers (#)" aria-pressed="false"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M8 3 6 17M14 3l-2 14M3.5 7.5h13M3 12.5h13"/></svg></button>
       <button type="button" class="icon-button" id="theme-button" title="Toggle light / dark theme"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16 12.5A6.5 6.5 0 0 1 7.5 4 6.5 6.5 0 1 0 16 12.5z"/></svg></button>
       <button type="button" class="icon-button" id="help-button" title="Shortcuts (?)"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M7.8 7.8a2.3 2.3 0 1 1 3.2 2.1c-.6.3-1 .8-1 1.5v.4"/><circle cx="10" cy="14.4" r=".6"/></svg></button>
@@ -203,6 +290,45 @@
     <textarea id="annotation-editor" rows="1" spellcheck="false" aria-label="Label text" hidden></textarea>
     <div id="toast-stack" aria-live="polite"></div>
   </div>
+  <section id="spectra-dock" aria-label="Predicted spectra" hidden>
+    <div id="spectra-resize" role="separator" aria-orientation="horizontal" title="Drag to resize"></div>
+    <div class="spectra-header">
+      <div class="spectra-tabs" role="tablist">
+        <button type="button" class="spectra-tab" data-tab="h" role="tab">¹H NMR</button>
+        <button type="button" class="spectra-tab" data-tab="c" role="tab">¹³C NMR</button>
+        <button type="button" class="spectra-tab" data-tab="ir" role="tab">IR</button>
+        <button type="button" class="spectra-tab" data-tab="ms" role="tab">MS</button>
+      </div>
+      <span id="spectra-title"></span>
+      <div class="spectra-controls">
+        <select id="spectra-field" title="Spectrometer frequency"><option value="400">400 MHz</option><option value="60">60 MHz</option></select>
+        <button type="button" class="text-button" id="spectra-ms-zoom" hidden>Isotope zoom</button>
+        <button type="button" class="text-button" id="spectra-copy">Copy peak list</button>
+        <button type="button" class="text-button" id="spectra-export">Export PNG</button>
+        <button type="button" class="text-button" id="spectra-puzzle" title="Identify the unknown (Alt+U)">Puzzle</button>
+        <button type="button" class="step-button" id="spectra-close" title="Close (Alt+N)" aria-label="Close spectra">&times;</button>
+      </div>
+    </div>
+    <div id="spectra-puzzle-bar" hidden>
+      <div class="spectra-puzzle-row">
+        <strong>Identify the unknown</strong>
+        <select id="spectra-difficulty" title="Difficulty"><option value="any">Any</option><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select>
+        <button type="button" class="text-button" id="spectra-check">Check</button>
+        <button type="button" class="text-button" id="spectra-hint">Hint</button>
+        <button type="button" class="text-button" id="spectra-giveup">Give up</button>
+        <button type="button" class="text-button" id="spectra-next">New</button>
+        <button type="button" class="text-button" id="spectra-puzzle-exit">Exit</button>
+        <span id="spectra-puzzle-info"></span>
+      </div>
+      <div id="spectra-puzzle-feedback" class="spectra-feedback" aria-live="polite"></div>
+      <div id="spectra-hints"></div>
+    </div>
+    <div class="spectra-body">
+      <div class="spectra-plot"><canvas id="spectra-canvas"></canvas><div id="spectra-empty">Draw a molecule to see its predicted spectra</div></div>
+      <div class="spectra-table-wrap"><table id="spectra-table"></table></div>
+    </div>
+    <div class="spectra-foot">Predicted by additive rules (CDCl₃, EI 70 eV) — estimates, not measured data</div>
+  </section>
   <footer id="statusbar">
     <span id="status-counts">Empty canvas</span>
     <span id="status-formula"></span>
@@ -334,6 +460,147 @@
     </div>
   </div>
 </div>
+<div id="resonance-overlay" class="modal-overlay" hidden>
+  <div class="modal-dialog resonance-dialog" role="dialog" aria-modal="true" aria-labelledby="resonance-title">
+    <div class="help-head">
+      <h2 id="resonance-title">Resonance structures</h2>
+      <button type="button" id="resonance-close" aria-label="Close" title="Close (Esc)">&times;</button>
+    </div>
+    <div id="resonance-summary"></div>
+    <div id="resonance-grid"></div>
+    <div class="import-actions">
+      <span id="resonance-hint">Click a structure to select it</span>
+      <button type="button" class="text-button" id="resonance-cancel">Close</button>
+      <button type="button" class="text-button primary" id="resonance-place" disabled>Place on canvas</button>
+    </div>
+  </div>
+</div>
+<div id="isomer-overlay" class="modal-overlay" hidden>
+  <div class="modal-dialog isomer-dialog" role="dialog" aria-modal="true" aria-labelledby="isomer-title">
+    <div class="help-head">
+      <h2 id="isomer-title">Constitutional isomers</h2>
+      <button type="button" id="isomer-close" aria-label="Close" title="Close (Esc)">&times;</button>
+    </div>
+    <div class="isomer-controls">
+      <label class="isomer-field">Formula <input type="text" id="isomer-formula" spellcheck="false" autocomplete="off" placeholder="C6H14"></label>
+      <label class="isomer-check"><input type="checkbox" id="isomer-stable" checked> Stable only</label>
+      <label class="isomer-field">Sort <select id="isomer-sort"><option value="branching">Branching</option><option value="name">Name</option></select></label>
+      <button type="button" class="text-button primary" id="isomer-find">Find</button>
+      <button type="button" class="text-button" id="isomer-stop" disabled>Cancel</button>
+    </div>
+    <div id="isomer-summary"></div>
+    <div id="isomer-grid"></div>
+    <div id="isomer-pager" hidden>
+      <button type="button" class="text-button" id="isomer-prev">&lsaquo; Prev</button>
+      <span id="isomer-page"></span>
+      <button type="button" class="text-button" id="isomer-next">Next &rsaquo;</button>
+    </div>
+    <div class="import-actions">
+      <span id="isomer-hint"></span>
+      <button type="button" class="text-button" id="isomer-cancel">Close</button>
+      <button type="button" class="text-button primary" id="isomer-place" disabled>Place on canvas</button>
+    </div>
+  </div>
+</div>
+<div id="retro-overlay" class="modal-overlay" hidden>
+  <div class="modal-dialog retro-dialog" role="dialog" aria-modal="true" aria-labelledby="retro-title">
+    <div class="help-head">
+      <h2 id="retro-title">Retrosynthesis</h2>
+      <button type="button" id="retro-close" aria-label="Close" title="Close (Esc)">&times;</button>
+    </div>
+    <nav id="retro-trail" aria-label="Disconnection path"></nav>
+    <div id="retro-summary"></div>
+    <div id="retro-list"></div>
+    <div class="import-actions">
+      <span id="retro-hint"></span>
+      <button type="button" class="text-button" id="retro-cancel">Close</button>
+      <button type="button" class="text-button" id="retro-lab" disabled>Open in Reaction lab</button>
+      <button type="button" class="text-button primary" id="retro-send" disabled>Send route to canvas</button>
+    </div>
+  </div>
+</div>
+<div id="viewer-overlay" class="modal-overlay" hidden>
+  <div class="modal-dialog viewer-dialog" role="dialog" aria-modal="true" aria-labelledby="viewer-title">
+    <div class="help-head viewer-head">
+      <h2 id="viewer-title">3D &amp; projections</h2>
+      <div class="viewer-tabs" role="tablist">
+        <button type="button" class="viewer-tab" role="tab" data-tab="3d">3D</button>
+        <button type="button" class="viewer-tab" role="tab" data-tab="chair">Chair</button>
+        <button type="button" class="viewer-tab" role="tab" data-tab="newman">Newman</button>
+        <button type="button" class="viewer-tab" role="tab" data-tab="fischer">Fischer</button>
+        <button type="button" class="viewer-tab" role="tab" data-tab="haworth">Haworth</button>
+      </div>
+      <button type="button" id="viewer-close" aria-label="Close" title="Close (Esc)">&times;</button>
+    </div>
+    <div class="viewer-body">
+      <div class="viewer-stage">
+        <canvas id="viewer-canvas"></canvas>
+        <div id="viewer-tip" hidden></div>
+        <div id="viewer-status"></div>
+        <div id="viewer-example" hidden>Example: <strong id="viewer-example-name"></strong> · <button type="button" id="viewer-back">Back to my molecule</button></div>
+        <div id="viewer-unavailable" hidden>
+          <p id="viewer-unavailable-reason"></p>
+          <p id="viewer-unavailable-hint"></p>
+          <button type="button" class="text-button" id="viewer-example-button"></button>
+        </div>
+      </div>
+      <aside class="viewer-side">
+        <div class="viewer-pane" data-pane="3d">
+          <label class="viewer-field">Style <select id="viewer-style"><option value="ball">Ball &amp; stick</option><option value="stick">Sticks</option><option value="space">Space-filling</option></select></label>
+          <label class="viewer-check"><input type="checkbox" id="viewer-hydrogens" checked> Show hydrogens</label>
+          <label class="viewer-check"><input type="checkbox" id="viewer-spin"> Auto-rotate</label>
+          <label class="viewer-check"><input type="checkbox" id="viewer-measure-toggle"> Measure</label>
+          <div id="viewer-measure"></div>
+          <button type="button" class="text-button" id="viewer-minimize">Minimize</button>
+          <div class="viewer-subhead" title="Force-field energies are relative, arbitrary units">Conformers <span>(relative, arbitrary units)</span></div>
+          <ol id="viewer-conformers"></ol>
+        </div>
+        <div class="viewer-pane" data-pane="chair" hidden>
+          <label class="viewer-field">Ring <select id="viewer-ring"></select></label>
+          <div id="viewer-chair-info"></div>
+        </div>
+        <div class="viewer-pane" data-pane="newman" hidden>
+          <label class="viewer-field">Bond <select id="viewer-bond"></select></label>
+          <label class="viewer-field">Rotate back carbon <span id="viewer-angle-value">180°</span></label>
+          <input type="range" id="viewer-angle" min="0" max="360" step="1" value="180">
+          <div id="viewer-newman-info"></div>
+          <div class="viewer-curve-host"><canvas id="viewer-curve"></canvas></div>
+        </div>
+        <div class="viewer-pane" data-pane="fischer" hidden>
+          <div id="viewer-fischer-info"></div>
+        </div>
+        <div class="viewer-pane" data-pane="haworth" hidden>
+          <div id="viewer-haworth-info"></div>
+        </div>
+        <button type="button" class="text-button" id="viewer-export">Export PNG</button>
+      </aside>
+    </div>
+  </div>
+</div>
+<div id="notebook-overlay" class="modal-overlay" hidden>
+  <div class="modal-dialog notebook-dialog" role="dialog" aria-modal="true" aria-labelledby="notebook-heading">
+    <div class="help-head">
+      <h2 id="notebook-heading">Lab notebook</h2>
+      <button type="button" id="notebook-close" aria-label="Close" title="Close (Esc)">&times;</button>
+    </div>
+    <div id="notebook-summary"></div>
+    <label class="notebook-field">Experiment title <input type="text" id="notebook-title" spellcheck="false" autocomplete="off" placeholder="e.g. Fischer esterification of acetic acid"></label>
+    <label class="notebook-field">Notes / procedure <textarea id="notebook-notes" rows="6" placeholder="Reagents, amounts, conditions, observations&hellip;"></textarea></label>
+    <div class="notebook-sections" role="group" aria-label="Sections">
+      <label class="isomer-check"><input type="checkbox" data-section="properties" checked> Properties</label>
+      <label class="isomer-check"><input type="checkbox" data-section="nmrH" checked> &sup1;H NMR</label>
+      <label class="isomer-check"><input type="checkbox" data-section="nmrC" checked> &sup1;&sup3;C NMR</label>
+      <label class="isomer-check"><input type="checkbox" data-section="ir" checked> IR</label>
+      <label class="isomer-check"><input type="checkbox" data-section="ms" checked> MS</label>
+    </div>
+    <div class="import-actions">
+      <span id="notebook-hint">Spectra are rule-based predictions</span>
+      <button type="button" class="text-button" id="notebook-print">Print</button>
+      <button type="button" class="text-button" id="notebook-md">Download Markdown</button>
+      <button type="button" class="text-button primary" id="notebook-html">Download HTML</button>
+    </div>
+  </div>
+</div>
 <div id="ptable-overlay" class="modal-overlay" hidden>
   <div class="modal-dialog ptable-dialog" role="dialog" aria-modal="true" aria-labelledby="ptable-title">
     <div class="help-head">
@@ -403,6 +670,22 @@
           <dt>Pinch / two fingers</dt><dd>Zoom / pan on a touch screen or trackpad; long-press opens the context menu</dd>
           <dt><kbd>#</kbd></dt><dd>Show / hide IUPAC locant numbers on the parent chain or ring</dd>
         </dl>
+        <h3>Insight</h3>
+        <dl>
+          <dt><kbd>Alt</kbd>+<kbd>L</kbd></dt><dd>Lone pairs &amp; radicals</dd>
+          <dt><kbd>Alt</kbd>+<kbd>H</kbd></dt><dd>Hybridization badges</dd>
+          <dt><kbd>Alt</kbd>+<kbd>O</kbd></dt><dd>Oxidation states</dd>
+          <dt><kbd>Alt</kbd>+<kbd>P</kbd></dt><dd>Partial-charge heat map (Gasteiger)</dd>
+          <dt><kbd>Alt</kbd>+<kbd>A</kbd></dt><dd>Most acidic / most basic site pins</dd>
+          <dt><kbd>Alt</kbd>+<kbd>S</kbd></dt><dd>Find a substructure (SMILES or name); <kbd>Esc</kbd> clears it</dd>
+          <dt><kbd>Alt</kbd>+<kbd>R</kbd></dt><dd>Resonance structures of the hovered or largest molecule</dd>
+          <dt><kbd>Alt</kbd>+<kbd>N</kbd></dt><dd>Predicted spectra dock (¹H/¹³C NMR, IR, MS)</dd>
+          <dt><kbd>Alt</kbd>+<kbd>U</kbd></dt><dd>"Identify the unknown" spectra puzzle</dd>
+          <dt><kbd>Alt</kbd>+<kbd>I</kbd></dt><dd>Find constitutional isomers of the selection, hovered or largest molecule</dd>
+          <dt><kbd>Alt</kbd>+<kbd>B</kbd></dt><dd>Polymer brackets around the selected repeat unit</dd>
+          <dt><kbd>Alt</kbd>+<kbd>D</kbd></dt><dd>3D model and chair, Newman, Fischer, Haworth projections</dd>
+          <dt><kbd>Alt</kbd>+<kbd>T</kbd></dt><dd>Retrosynthesis of the selection or largest molecule</dd>
+        </dl>
         <h3>Molecule names</h3>
         <dl>
           <dt>Click name</dt><dd>Copy it</dd>
@@ -414,6 +697,8 @@
           <dt><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd></dt><dd>Undo / redo</dd>
           <dt><kbd>Ctrl</kbd>+<kbd>S</kbd> / <kbd>Ctrl</kbd>+<kbd>O</kbd></dt><dd>Save / open drawing</dd>
           <dt>Autosave</dt><dd>Your drawing is restored on reload</dd>
+          <dt><kbd>Alt</kbd>+<kbd>K</kbd></dt><dd>Copy a share link to this drawing</dd>
+          <dt><kbd>Alt</kbd>+<kbd>J</kbd></dt><dd>Lab notebook export (HTML, Markdown, print)</dd>
         </dl>
       </div>
       <div>
@@ -444,6 +729,7 @@
     </div>
   </div>
 </div>
+<div id="print-root" aria-hidden="true"></div>
 <script src="js/elements.js"></script>
 <script src="js/graph.js"></script>
 <script src="js/valence.js"></script>
@@ -460,6 +746,18 @@
 <script src="js/layout.js"></script>
 <script src="js/smiles.js"></script>
 <script src="js/name-lookup.js"></script>
+<script src="js/insight.js"></script>
+<script src="js/isomers.js"></script>
+<script src="js/polymer.js"></script>
+<script src="js/geometry3d.js"></script>
+<script src="js/projections.js"></script>
+<script src="js/share.js"></script>
+<script src="js/notebook.js"></script>
+<script src="js/resonance.js"></script>
+<script src="js/substructure.js"></script>
+<script src="js/spectra-nmr.js"></script>
+<script src="js/spectra-ir.js"></script>
+<script src="js/spectra-ms.js"></script>
 <script src="js/pubchem.js"></script>
 <script src="js/molfile.js"></script>
 <script src="js/scheme.js"></script>
@@ -476,7 +774,11 @@
 <script src="js/reaction-rules-extra.js"></script>
 <script src="js/reaction-rules-extra2.js"></script>
 <script src="js/reaction-aromatic.js"></script>
+<script src="js/retro.js"></script>
 <script src="js/reaction-lab.js"></script>
+<script src="js/spectra-view.js"></script>
+<script src="js/viewer3d.js"></script>
+<script src="js/retro-view.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

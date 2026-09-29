@@ -183,6 +183,54 @@ function fusedStampFragment(stampKey) {
   return fused.fragment;
 }
 
+const BIO_STAMPS = {
+  glycine: { label: 'Glycine', smiles: 'NCC(=O)O', group: 'amino' },
+  alanine: { label: 'L-Alanine', smiles: 'C[C@H](N)C(=O)O', group: 'amino' },
+  valine: { label: 'L-Valine', smiles: 'CC(C)[C@H](N)C(=O)O', group: 'amino' },
+  leucine: { label: 'L-Leucine', smiles: 'CC(C)C[C@H](N)C(=O)O', group: 'amino' },
+  isoleucine: { label: 'L-Isoleucine', smiles: 'CC[C@H](C)[C@H](N)C(=O)O', group: 'amino' },
+  proline: { label: 'L-Proline', smiles: 'OC(=O)[C@@H]1CCCN1', group: 'amino' },
+  phenylalanine: { label: 'L-Phenylalanine', smiles: 'N[C@@H](Cc1ccccc1)C(=O)O', group: 'amino' },
+  tryptophan: { label: 'L-Tryptophan', smiles: 'N[C@@H](Cc1c[nH]c2ccccc12)C(=O)O', group: 'amino' },
+  methionine: { label: 'L-Methionine', smiles: 'CSCC[C@H](N)C(=O)O', group: 'amino' },
+  serine: { label: 'L-Serine', smiles: 'OC[C@H](N)C(=O)O', group: 'amino' },
+  threonine: { label: 'L-Threonine', smiles: 'C[C@@H](O)[C@H](N)C(=O)O', group: 'amino' },
+  cysteine: { label: 'L-Cysteine', smiles: 'SC[C@H](N)C(=O)O', group: 'amino' },
+  tyrosine: { label: 'L-Tyrosine', smiles: 'N[C@@H](Cc1ccc(O)cc1)C(=O)O', group: 'amino' },
+  asparagine: { label: 'L-Asparagine', smiles: 'NC(=O)C[C@H](N)C(=O)O', group: 'amino' },
+  glutamine: { label: 'L-Glutamine', smiles: 'NC(=O)CC[C@H](N)C(=O)O', group: 'amino' },
+  'aspartic-acid': { label: 'L-Aspartic acid', smiles: 'OC(=O)C[C@H](N)C(=O)O', group: 'amino' },
+  'glutamic-acid': { label: 'L-Glutamic acid', smiles: 'OC(=O)CC[C@H](N)C(=O)O', group: 'amino' },
+  lysine: { label: 'L-Lysine', smiles: 'NCCCC[C@H](N)C(=O)O', group: 'amino' },
+  arginine: { label: 'L-Arginine', smiles: 'NC(=N)NCCC[C@H](N)C(=O)O', group: 'amino' },
+  histidine: { label: 'L-Histidine', smiles: 'N[C@@H](Cc1c[nH]cn1)C(=O)O', group: 'amino' },
+  'd-glucose': { label: 'D-Glucose', smiles: 'O=C[C@H](O)[C@@H](O)[C@H](O)[C@H](O)CO', group: 'sugar' },
+  'd-galactose': { label: 'D-Galactose', smiles: 'O=C[C@H](O)[C@@H](O)[C@@H](O)[C@H](O)CO', group: 'sugar' },
+  'd-mannose': { label: 'D-Mannose', smiles: 'O=C[C@@H](O)[C@@H](O)[C@H](O)[C@H](O)CO', group: 'sugar' },
+  'd-fructose': { label: 'D-Fructose', smiles: 'OCC(=O)[C@@H](O)[C@H](O)[C@H](O)CO', group: 'sugar' },
+  'd-ribose': { label: 'D-Ribose', smiles: 'O=C[C@H](O)[C@H](O)[C@H](O)CO', group: 'sugar' },
+  'd-deoxyribose': { label: '2-Deoxy-D-ribose', smiles: 'O=CC[C@H](O)[C@H](O)CO', group: 'sugar' },
+  'alpha-d-glucopyranose': { label: 'D-Glucopyranose (α)', smiles: 'OC[C@H]1O[C@H](O)[C@H](O)[C@@H](O)[C@@H]1O', group: 'sugar' },
+  'beta-d-glucopyranose': { label: 'D-Glucopyranose (β)', smiles: 'OC[C@H]1O[C@@H](O)[C@H](O)[C@@H](O)[C@@H]1O', group: 'sugar' },
+  'beta-d-ribofuranose': { label: 'D-Ribofuranose (β)', smiles: 'OC[C@H]1O[C@@H](O)[C@H](O)[C@@H]1O', group: 'sugar' },
+  adenine: { label: 'Adenine', smiles: 'Nc1ncnc2[nH]cnc12', group: 'base' },
+  guanine: { label: 'Guanine', smiles: 'Nc1nc2[nH]cnc2c(=O)[nH]1', group: 'base' },
+  cytosine: { label: 'Cytosine', smiles: 'Nc1cc[nH]c(=O)n1', group: 'base' },
+  thymine: { label: 'Thymine', smiles: 'Cc1c[nH]c(=O)[nH]c1=O', group: 'base' },
+  uracil: { label: 'Uracil', smiles: 'O=c1cc[nH]c(=O)[nH]1', group: 'base' },
+};
+
+function bioStampFragment(stampKey) {
+  const bio = Object.prototype.hasOwnProperty.call(BIO_STAMPS, stampKey) ? BIO_STAMPS[stampKey] : null;
+  if (!bio) {
+    return null;
+  }
+  if (!bio.fragment) {
+    bio.fragment = smilesToFragment(bio.smiles);
+  }
+  return bio.fragment;
+}
+
 function placeCustomStamp(graph, custom, point, originAtomId, anchorId) {
   let cx = 0;
   let cy = 0;
@@ -243,6 +291,9 @@ function placeCustomStamp(graph, custom, point, originAtomId, anchorId) {
     const bond = graph.addBond(map.get(b.atomA).id, map.get(b.atomB).id);
     if (bond) {
       bond.order = b.order;
+      if (b.order === 1 && (b.stereo === 'wedge' || b.stereo === 'hash')) {
+        bond.stereo = b.stereo;
+      }
     }
   });
   if (hasOrigin) {
@@ -262,6 +313,10 @@ function placeStamp(graph, stampKey, point, originAtomId) {
   const fusedFragment = fusedStampFragment(stampKey);
   if (fusedFragment) {
     return placeCustomStamp(graph, fusedFragment, point, originAtomId);
+  }
+  const bioFragment = bioStampFragment(stampKey);
+  if (bioFragment) {
+    return placeCustomStamp(graph, bioFragment, point, originAtomId);
   }
   const definition = STAMP_DEFINITIONS[stampKey];
   if (!definition) {

@@ -517,30 +517,54 @@ function propIonizable(ctx) {
   return groups;
 }
 
-function propSmiles(ctx) {
-  if (ctx.ids.length === 0) {
-    return '';
-  }
-  const invariant = new Map();
-  ctx.ids.forEach((id) => {
-    const n = ctx.nbrs.get(id);
-    invariant.set(id, [ctx.el.get(id), n.length, ctx.hydrogens.get(id), n.map((x) => x.order).sort().join(''), ctx.charge.get(id)].join('|'));
-  });
-  let rank = new Map();
+function propRefineRanks(ctx, invariant, bondLabel, rounds, untilStable) {
   const assign = (labels) => {
     const sorted = Array.from(new Set(labels.values())).sort();
     const next = new Map();
     labels.forEach((v, id) => next.set(id, sorted.indexOf(v)));
     return next;
   };
-  rank = assign(invariant);
-  for (let round = 0; round < 6; round++) {
+  let rank = assign(invariant);
+  let count = new Set(rank.values()).size;
+  for (let round = 0; round < rounds; round++) {
     const labels = new Map();
     ctx.ids.forEach((id) => {
-      labels.set(id, String(rank.get(id)).padStart(5, '0') + ':' + ctx.nbrs.get(id).map((x) => x.order + '.' + String(rank.get(x.id)).padStart(5, '0')).sort().join(','));
+      labels.set(id, String(rank.get(id)).padStart(5, '0') + ':' + ctx.nbrs.get(id).map((x) => bondLabel(id, x) + '.' + String(rank.get(x.id)).padStart(5, '0')).sort().join(','));
     });
     rank = assign(labels);
+    const nextCount = new Set(rank.values()).size;
+    if (untilStable && nextCount === count) {
+      break;
+    }
+    count = nextCount;
   }
+  return rank;
+}
+
+function propCanonicalRank(ctx) {
+  const invariant = new Map();
+  ctx.ids.forEach((id) => {
+    const n = ctx.nbrs.get(id);
+    invariant.set(id, [ctx.el.get(id), n.length, ctx.hydrogens.get(id), n.map((x) => x.order).sort().join(''), ctx.charge.get(id)].join('|'));
+  });
+  return propRefineRanks(ctx, invariant, (id, x) => x.order, 6, false);
+}
+
+function propSymmetryClasses(ctx) {
+  const bondLabel = (id, x) => (ctx.isAromatic(id) && ctx.isAromatic(x.id) && ctx.isRingBond(id, x.id) ? 'a' : String(x.order));
+  const invariant = new Map();
+  ctx.ids.forEach((id) => {
+    const n = ctx.nbrs.get(id);
+    invariant.set(id, [ctx.el.get(id), n.length, ctx.hydrogens.get(id), n.map((x) => bondLabel(id, x)).sort().join(''), ctx.charge.get(id), ctx.isAromatic(id) ? 'ar' : ''].join('|'));
+  });
+  return propRefineRanks(ctx, invariant, bondLabel, ctx.ids.length + 1, true);
+}
+
+function propSmiles(ctx) {
+  if (ctx.ids.length === 0) {
+    return '';
+  }
+  const rank = propCanonicalRank(ctx);
   const order = (a, b) => rank.get(a) - rank.get(b) || a - b;
   const start = ctx.ids.slice().sort((a, b) => {
     const da = ctx.nbrs.get(a).length;
