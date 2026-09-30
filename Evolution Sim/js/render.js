@@ -15,6 +15,7 @@ uniform float u_vegAmount;
 uniform float u_winter;
 uniform float u_time;
 uniform float u_grid;
+uniform float u_overlay;
 out vec4 outColor;
 
 void main() {
@@ -32,10 +33,10 @@ void main() {
 	vec3 col = t.rgb;
 	col = mix(col, v.rgb, v.a * u_vegAmount);
 	float water = info.g;
-	float snow = smoothstep(0.42, 0.18, info.r + 0.22 * (1.0 - u_winter)) * (1.0 - water) * u_winter;
+	float snow = smoothstep(0.42, 0.18, info.r + 0.22 * (1.0 - u_winter)) * (1.0 - water) * u_winter * (1.0 - u_overlay);
 	col = mix(col, vec3(0.93, 0.95, 0.97), snow * 0.8);
 	float sh = sin(w.x * 0.9 + u_time * 1.3) * sin(w.y * 1.1 - u_time * 1.1);
-	col += water * sh * 0.025;
+	col += water * sh * 0.025 * (1.0 - u_overlay);
 	col *= t.a * 2.0;
 	if (u_grid > 0.0) {
 		vec2 f = abs(fract(w) - 0.5);
@@ -125,7 +126,57 @@ const RAMPS = {
 	temperature: [[0, '#2c3e8f'], [0.3, '#4aa3d8'], [0.5, '#d9e6a0'], [0.72, '#f0a84a'], [1, '#c2352b']],
 	humidity: [[0, '#b58a4a'], [0.35, '#e0d08a'], [0.6, '#6bbf8a'], [1, '#1b5c8f']],
 	fertility: [[0, '#5a4636'], [0.4, '#8f8350'], [0.7, '#7cae55'], [1, '#2f7d3c']],
+	nutrients: [[0, '#6b6259'], [0.1, '#8a7650'], [0.25, '#9c9a4e'], [0.45, '#4f8a3c'], [0.7, '#1f4d24'], [1, '#12331a']],
+	litter: [[0, '#5d6360'], [0.15, '#7a6a4c'], [0.4, '#8f6a3a'], [0.7, '#6b4424'], [1, '#3a2312']],
+	bugs: [[0, '#1b1d20'], [0.12, '#2f2a22'], [0.35, '#8a5a1c'], [0.6, '#e0a02a'], [0.82, '#f0605e'], [1, '#ff3fa4']],
+	disease: [[0, '#16191a'], [0.1, '#262b22'], [0.35, '#4d5b2a'], [0.6, '#8ea636'], [0.85, '#c8d84a'], [1, '#eef27a']],
 };
+
+const LIVE_MODES = { nutrients: 1, litter: 1, bugs: 1, disease: 1 };
+const BUG_DOT = 0.1;
+const BUG_DOT_PX = 4.5;
+const BUG_HL_SCALE = 1.6;
+const BUG_PER_DENSITY = 4;
+const BUG_JITTER = [0.05, 0.03, 0.04, 0.12];
+const BUG_SPEED = [1.6, 0.7, 1.1, 2.6];
+const FLOWER_LEAF = [92, 138, 66];
+const FLOWER_TINT = 0.7;
+const FLOWER_SHADED = 0.3;
+const FRUIT_SHOW = 0.06;
+const FRUIT_EMPTY_SIZE = 0.85;
+const FUNGUS_SCALE = 0.5;
+
+function percentile99(src, out) {
+	const n = src.length;
+	let max = 0;
+	for (let i = 0; i < n; i++) if (src[i] > max) max = src[i];
+	if (!(max > 0)) {
+		out.fill(0);
+		return 0;
+	}
+	const bins = new Uint32Array(1024);
+	let count = 0;
+	for (let i = 0; i < n; i++) {
+		const v = src[i];
+		if (v > 0) {
+			bins[Math.min(1023, ((v / max) * 1024) | 0)]++;
+			count++;
+		}
+	}
+	let want = count * 0.99;
+	let k = 0;
+	while (k < 1023 && want > bins[k]) want -= bins[k++];
+	const p = ((k + 1) / 1024) * max;
+	for (let i = 0; i < n; i++) out[i] = Math.min(1, src[i] / p);
+	return p;
+}
+
+const SICK_RGB = [150, 120, 50];
+const SICK_MIX = 0.65;
+const BLIGHT_RGB = [125, 140, 115];
+const BLIGHT_MIX = 0.6;
+const INFECT_MIX = 0.55;
+const MARK_SCALE = 0.4;
 
 function rampLookup(stops) {
 	const lut = new Uint8Array(256 * 3);
@@ -230,6 +281,8 @@ class WorldRenderer {
 
 		this.vegDirty = true;
 		this.lastVegUpdate = 0;
+		this.lastSoilUpdate = 0;
+		this._tint = new Uint8Array(9);
 	}
 
 	_ensureCapacity(n) {
@@ -279,6 +332,8 @@ class WorldRenderer {
 		this.terrainTex = this._tex(W, H, this.terrainData, true);
 		this.vegTex = this._tex(W, H, this.vegData, true);
 		this.infoTex = this._tex(W, H, info, true);
+		this.soilField = new Float32Array(W * H);
+		this.sickField = new Float32Array(W * H);
 		this._computeShade();
 		this.setMode(this.mode);
 		this.spLookupTick = -1;
@@ -317,7 +372,44 @@ class WorldRenderer {
 		const out = this.terrainData;
 		const sea = BIOME_THRESHOLDS.seaLevel;
 		const lut = RAMPS[mode] ? rampLookup(RAMPS[mode]) : null;
-		const field = mode === 'altitude' ? w.altitude : mode === 'temperature' ? w.temperature : mode === 'humidity' ? w.humidity : mode === 'fertility' ? w.fertility : null;
+		let field = mode === 'altitude' ? w.altitude : mode === 'temperature' ? w.temperature : mode === 'humidity' ? w.humidity : mode === 'fertility' ? w.fertility : null;
+		if (mode === 'nutrients') {
+			const nut = this.eco.plants.soil.nutrient;
+			field = this.soilField;
+			for (let i = 0; i < n; i++) field[i] = nut[i] / SOIL_MAX;
+			this.lastSoilUpdate = performance.now();
+		} else if (mode === 'litter') {
+			field = this.soilField;
+			const lit = this.eco.plants.soil.litter;
+			if (lit) percentile99(lit, field);
+			else field.fill(0);
+			this.lastSoilUpdate = performance.now();
+		} else if (mode === 'bugs') {
+			field = this.soilField;
+			const B = this.eco.bugs;
+			if (B && B.total) percentile99(B.total, field);
+			else field.fill(0);
+			this.lastSoilUpdate = performance.now();
+		} else if (mode === 'disease') {
+			field = this.soilField;
+			const D = this.eco.disease;
+			const src = this.sickField;
+			src.fill(0);
+			if (D && D.on) {
+				const A = this.eco.animals;
+				const W = w.width;
+				for (let i = 0; i < A.count; i++) {
+					if (!A.strain[i]) continue;
+					const x = Math.min(W - 1, Math.max(0, Math.floor(A.x[i])));
+					const y = Math.min(w.height - 1, Math.max(0, Math.floor(A.y[i])));
+					src[y * W + x] += 1;
+				}
+				const bl = this.eco.plants.blight;
+				if (bl) for (let p = 0; p < bl.length; p++) if (bl[p]) src[p % n] += 0.5;
+			}
+			percentile99(src, field);
+			this.lastSoilUpdate = performance.now();
+		}
 		const water = this.eco.plants.water;
 		for (let i = 0; i < n; i++) {
 			let r;
@@ -372,6 +464,13 @@ class WorldRenderer {
 		this.vegDirty = true;
 	}
 
+	_hostHighlight() {
+		const hl = this.highlight;
+		if (hl === null) return null;
+		const sp = this.eco.registry.get(hl);
+		return sp && (sp.group === 'bug' || sp.group === 'pathogen') ? null : hl;
+	}
+
 	_refreshSpeciesLookup() {
 		const reg = this.eco.registry;
 		const size = reg.nextId + 64;
@@ -405,29 +504,69 @@ class WorldRenderer {
 		const P = this.eco.plants;
 		const out = this.vegData;
 		const col = this.spCol;
-		const hl = this.highlight;
+		const hl = this._hostHighlight();
 		const n = P.n;
+		const health = P.health;
+		const blight = P.blight;
+		const icons = this.spIcon;
+		const flowerIcon = ICON_INDEX.flower;
+		const seasons = this.eco.options.seasons;
+		let bloom = typeof P.bloomNow === 'number' ? P.bloomNow : typeof bloomFactor === 'function' ? (seasons ? bloomFactor(P.season || 0) : 0.5) : 0;
+		bloom = Math.max(0, Math.min(1, bloom || 0)) * FLOWER_TINT;
 		for (let i = 0; i < n; i++) {
-			const id = P.species[i];
+			const u = n + i;
+			const top = P.species[i];
+			const low = P.species[u];
 			const o = i * 4;
-			if (!id) {
+			if (!top && !low) {
 				out[o + 3] = 0;
 				continue;
 			}
-			const b = P.biomass[i];
+			const p = top && (P.biomass[i] > 0.3 || !low) ? i : u;
+			const id = P.species[p];
+			const b = P.biomass[i] + P.biomass[u];
 			const wet = P.water[i];
 			let a = wet ? Math.min(1, b / 1.4) * 0.4 : Math.min(1, b / 1.8) * 0.85;
-			if (hl !== null) a = id === hl ? 1 : a * 0.25;
+			const lit = top === hl || low === hl;
+			if (hl !== null) a = lit ? 1 : a * 0.25;
 			const c = id * 9;
-			if (wet && id !== hl) {
-				out[o] = col[c] * 0.35 + 20;
-				out[o + 1] = col[c + 1] * 0.35 + 95;
-				out[o + 2] = col[c + 2] * 0.35 + 80;
+			let r;
+			let g;
+			let bl;
+			if (wet && !lit) {
+				r = col[c] * 0.35 + 20;
+				g = col[c + 1] * 0.35 + 95;
+				bl = col[c + 2] * 0.35 + 80;
 			} else {
-				out[o] = col[c];
-				out[o + 1] = col[c + 1];
-				out[o + 2] = col[c + 2];
+				r = col[c];
+				g = col[c + 1];
+				bl = col[c + 2];
 			}
+			if (low && icons[low] === flowerIcon && !wet && !(lit && top === hl)) {
+				const fc = low * 9;
+				let f = bloom;
+				if (p === i) f *= FLOWER_SHADED;
+				else {
+					r = FLOWER_LEAF[0];
+					g = FLOWER_LEAF[1];
+					bl = FLOWER_LEAF[2];
+				}
+				r += (col[fc] - r) * f;
+				g += (col[fc + 1] - g) * f;
+				bl += (col[fc + 2] - bl) * f;
+			}
+			const k = (1 - health[p]) * SICK_MIX;
+			r += (SICK_RGB[0] - r) * k;
+			g += (SICK_RGB[1] - g) * k;
+			bl += (SICK_RGB[2] - bl) * k;
+			if (blight && blight[p]) {
+				r += (BLIGHT_RGB[0] - r) * BLIGHT_MIX;
+				g += (BLIGHT_RGB[1] - g) * BLIGHT_MIX;
+				bl += (BLIGHT_RGB[2] - bl) * BLIGHT_MIX;
+			}
+			out[o] = r;
+			out[o + 1] = g;
+			out[o + 2] = bl;
 			out[o + 3] = a * 255;
 		}
 		const gl = this.gl;
@@ -510,6 +649,7 @@ class WorldRenderer {
 			this._updateVegetation();
 			this.lastVegUpdate = now;
 		}
+		if (LIVE_MODES[this.mode] && now - this.lastSoilUpdate > 500) this.setMode(this.mode);
 
 		gl.viewport(0, 0, this.canvas.width, this.canvas.height);
 		gl.disable(gl.BLEND);
@@ -533,6 +673,7 @@ class WorldRenderer {
 		gl.uniform1f(tp.u.u_winter, Math.max(0, -season));
 		gl.uniform1f(tp.u.u_time, this.time);
 		gl.uniform1f(tp.u.u_grid, c.zoom > 20 ? Math.min(1, (c.zoom - 20) / 20) * 0.5 : 0);
+		gl.uniform1f(tp.u.u_overlay, RAMPS[this.mode] ? 1 : 0);
 		gl.bindVertexArray(this.fsVao);
 		gl.drawArrays(gl.TRIANGLES, 0, 3);
 
@@ -542,6 +683,7 @@ class WorldRenderer {
 		const y1 = Math.min(H, Math.ceil(oy + this.cssH / c.zoom) + 2);
 		let n = 0;
 		if (this.showPlants && vegOn && c.zoom >= 9) n = this._pushPlants(n, x0, y0, x1, y1);
+		if (c.zoom >= 9) n = this._pushBugs(n, x0, y0, x1, y1);
 		if (this.showAnimals) n = this._pushAnimals(n, alpha, x0, y0, x1, y1);
 		this.spriteCount = n;
 		if (!n) return;
@@ -585,30 +727,117 @@ class WorldRenderer {
 		return n + 1;
 	}
 
+	_tinted(id, h, col, blt) {
+		const t = this._tint;
+		const k = (1 - h) * SICK_MIX;
+		const kb = blt ? BLIGHT_MIX : 0;
+		const o = id * 9;
+		for (let q = 0; q < 9; q++) {
+			let v = col[o + q];
+			v += (SICK_RGB[q % 3] - v) * k;
+			t[q] = v + (BLIGHT_RGB[q % 3] - v) * kb;
+		}
+		return t;
+	}
+
+	_infected(id, col) {
+		const t = this._tint;
+		const o = id * 9;
+		for (let q = 0; q < 9; q++) {
+			const v = col[o + q];
+			t[q] = v + (BLIGHT_RGB[q % 3] - v) * INFECT_MIX;
+		}
+		return t;
+	}
+
 	_pushPlants(n, x0, y0, x1, y1) {
 		const P = this.eco.plants;
 		const W = this.world.width;
+		const N = P.n;
 		const icons = this.spIcon;
 		const col = this.spCol;
-		const hl = this.highlight;
-		this._ensureCapacity(n + (x1 - x0) * (y1 - y0) + 1);
+		const hl = this._hostHighlight();
+		const kind = P.kind;
+		const fruit = P.fruit;
+		const blight = P.blight;
+		const fruitA = ICON_INDEX.fruittree;
+		const fruitB = ICON_INDEX.berrybush;
+		const fruitScale = (p, ic, b) => {
+			if (ic !== fruitA && ic !== fruitB) return 1;
+			const f = fruit ? Math.min(1, fruit[p] / (FRUIT_SHOW * Math.max(b, 0.1))) : 0;
+			return FRUIT_EMPTY_SIZE + (1 - FRUIT_EMPTY_SIZE) * f;
+		};
+		this._ensureCapacity(n + 2 * (x1 - x0) * (y1 - y0) + 1);
 		for (let y = y0; y < y1; y++) {
 			for (let x = x0; x < x1; x++) {
 				const i = y * W + x;
-				const id = P.species[i];
-				if (!id) continue;
-				const b = P.biomass[i];
-				if (b < 0.08) continue;
-				const water = P.water[i];
-				const full = P.cap[i] > 0 ? Math.min(1, b / P.cap[i]) : 0.5;
-				const size = (0.45 + 0.55 * Math.sqrt(Math.min(b, 3.2) / 3.2)) * (0.65 + 0.35 * full);
 				const h = Math.imul(i, 2654435761) >>> 0;
 				const jx = ((h & 255) / 255 - 0.5) * 0.35;
 				const jy = (((h >>> 8) & 255) / 255 - 0.5) * 0.25;
 				const flip = h & 0x10000 ? 1 : -1;
+				const water = P.water[i];
+				const u = N + i;
+				const low = P.species[u];
+				const lb = P.biomass[u];
+				if (low && lb >= 0.08) {
+					const full = P.cap[u] > 0 ? Math.min(1, lb / P.cap[u]) : 0.5;
+					const ls = kind && kind[u] ? FUNGUS_SCALE : 0.6;
+					const size = ls * (0.45 + 0.55 * Math.sqrt(Math.min(lb, 3.2) / 3.2)) * (0.65 + 0.35 * full) * fruitScale(u, icons[low], lb);
+					let a = water ? 0.75 : 1;
+					if (hl !== null && low !== hl) a *= 0.3;
+					n = this._put(n, x + 0.28 + jx * 0.5, y + 0.97 - size * 0.5, size, icons[low], -flip, a, 0, this._tinted(low, P.health[u], col, blight && blight[u]));
+				}
+				const id = P.species[i];
+				if (!id) continue;
+				const b = P.biomass[i];
+				if (b < 0.08) continue;
+				const full = P.cap[i] > 0 ? Math.min(1, b / P.cap[i]) : 0.5;
+				const size = (0.45 + 0.55 * Math.sqrt(Math.min(b, 3.2) / 3.2)) * (0.65 + 0.35 * full) * fruitScale(i, icons[id], b);
 				let a = water ? 0.75 : 1;
 				if (hl !== null && id !== hl) a *= 0.3;
-				n = this._put(n, x + 0.5 + jx, y + 0.9 - size * 0.5 + jy, size, icons[id], flip, a, id * 9, col);
+				n = this._put(n, x + 0.5 + jx, y + 0.9 - size * 0.5 + jy, size, icons[id], flip, a, 0, this._tinted(id, P.health[i], col, blight && blight[i]));
+			}
+		}
+		return n;
+	}
+
+	_pushBugs(n, x0, y0, x1, y1) {
+		const B = this.eco.bugs;
+		if (!B || !B.density || !B.species) return n;
+		const W = this.world.width;
+		const N = W * this.world.height;
+		const niches = Math.min(BUG_JITTER.length, Math.floor(B.density.length / N));
+		const dens = B.density;
+		const spc = B.species;
+		const col = this.spCol;
+		const hl = this.highlight;
+		const t = this.time;
+		const dotIcon = ICON_INDEX.dot;
+		const size = Math.max(BUG_DOT, BUG_DOT_PX / this.cam.zoom);
+		this._ensureCapacity(n + (x1 - x0) * (y1 - y0) * 2 + 1);
+		for (let y = y0; y < y1; y++) {
+			for (let x = x0; x < x1; x++) {
+				const i = y * W + x;
+				for (let k = 0; k < niches; k++) {
+					const q = k * N + i;
+					const d = dens[q];
+					if (!(d > 0)) continue;
+					const id = spc[q];
+					if (!id) continue;
+					const cnt = Math.ceil(Math.min(1, d) * BUG_PER_DENSITY);
+					const a = hl !== null && id !== hl ? 0.3 : 0.95;
+					const s = id === hl ? size * BUG_HL_SCALE : size;
+					const amp = BUG_JITTER[k];
+					for (let j = 0; j < cnt; j++) {
+						const h = Math.imul(q * 8 + j + 1, 2654435761) >>> 0;
+						const h2 = Math.imul(h ^ (h >>> 15), 2246822519) >>> 0;
+						const ph = ((h >>> 16) & 255) * 0.0246;
+						const sp = BUG_SPEED[k] * (0.7 + (h2 & 255) / 425);
+						const bx = x + 0.12 + ((h & 255) / 255) * 0.76 + Math.sin(t * sp + ph) * amp;
+						const by = y + 0.12 + (((h >>> 8) & 255) / 255) * 0.76 + Math.cos(t * sp * 1.3 + ph) * amp;
+						n = this._put(n, bx, by, s, dotIcon, 1, a, id * 9, col);
+					}
+				}
 			}
 		}
 		return n;
@@ -619,15 +848,20 @@ class WorldRenderer {
 		const icons = this.spIcon;
 		const col = this.spCol;
 		const zoom = this.cam.zoom;
-		const hl = this.highlight;
+		const hl = this._hostHighlight();
+		const hsp = this.highlight !== null ? this.eco.registry.get(this.highlight) : null;
+		const hs = hsp && hsp.group === 'pathogen' && hsp.hostKind !== 'plant' ? hsp.id : 0;
+		const strain = A.strain;
+		const dmode = this.mode === 'disease';
 		const dots = zoom < 3;
 		const dotIcon = ICON_INDEX.dot;
 		const ringIcon = ICON_INDEX.ring;
+		const virusIcon = ICON_INDEX.virus;
 		const white = this._white || (this._white = new Uint8Array(9).fill(255));
-		this._ensureCapacity(n + A.count * 2 + 1);
-		if (hl !== null) {
+		this._ensureCapacity(n + A.count * 3 + 1);
+		if (hl !== null || hs) {
 			for (let i = 0; i < A.count; i++) {
-				if (A.sp[i] !== hl) continue;
+				if (A.sp[i] !== hl && (!hs || strain[i] !== hs)) continue;
 				const x = A.px[i] + (A.x[i] - A.px[i]) * alpha;
 				const y = A.py[i] + (A.y[i] - A.py[i]) * alpha;
 				if (x < x0 || y < y0 || x > x1 || y > y1) continue;
@@ -640,12 +874,16 @@ class WorldRenderer {
 			const y = A.py[i] + (A.y[i] - A.py[i]) * alpha;
 			if (x < x0 || y < y0 || x > x1 || y > y1) continue;
 			const id = A.sp[i];
-			const a = hl !== null && id !== hl ? 0.35 : 1;
+			const sick = strain[i];
+			const a = (hl !== null && id !== hl) || (hs && sick !== hs) || (dmode && !sick) ? 0.35 : 1;
+			const ca = sick ? this._infected(id, col) : col;
+			const co = sick ? 0 : id * 9;
 			if (dots) {
-				n = this._put(n, x, y, (3 + A.mass[i] * 0.9) / zoom, dotIcon, 1, a, id * 9, col);
+				n = this._put(n, x, y, (3 + A.mass[i] * 0.9) / zoom, dotIcon, 1, a, co, ca);
 			} else {
 				const size = Math.max(12 / zoom, 0.8 + 0.45 * A.mass[i]);
-				n = this._put(n, x, y - size * 0.1, size, icons[id], A.face[i], a, id * 9, col);
+				n = this._put(n, x, y - size * 0.1, size, icons[id], A.face[i], a, co, ca);
+				if (sick) n = this._put(n, x + size * 0.38, y - size * 0.5, size * MARK_SCALE, virusIcon, 1, a, 0, white);
 			}
 		}
 		return n;

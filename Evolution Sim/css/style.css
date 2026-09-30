@@ -395,6 +395,28 @@ select option {
 	display: block;
 }
 
+.stat-sub {
+	grid-column: span 2;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2px 9px;
+	margin-top: 4px;
+	font-size: 10.5px;
+	color: var(--muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.stat-sub span {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.tt-row small.tt-hint {
+	color: var(--accent);
+	font-size: 10px;
+}
+
 .stat.zero .stat-value {
 	color: var(--danger);
 }
@@ -656,25 +678,26 @@ select option {
 /* ---------- right panel ---------- */
 .tabs {
 	display: flex;
-	padding: 10px 10px 0;
-	gap: 2px;
+	padding: 10px 4px 0;
+	gap: 0;
 	border-bottom: 1px solid var(--line);
 	flex: none;
 }
 
 .tabs button {
-	flex: 1;
+	flex: 1 1 auto;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	gap: 5px;
+	gap: 1px;
+	min-width: 0;
 	background: none;
 	border: 0;
 	border-bottom: 2px solid transparent;
-	padding: 8px 4px 9px;
+	padding: 8px 0 9px;
 	color: var(--muted);
 	font-weight: 600;
-	font-size: 12px;
+	font-size: 11px;
 	cursor: pointer;
 	white-space: nowrap;
 }
@@ -684,13 +707,17 @@ select option {
 	font-size: 10px;
 	background: #243029;
 	border-radius: 8px;
-	padding: 1px 6px;
+	padding: 1px 3px;
 	color: var(--muted);
 }
 
 .tabs button.active {
 	color: var(--text);
 	border-bottom-color: var(--accent);
+}
+
+.tabs button:not(.active) .tab-icon {
+	display: none;
 }
 
 .tab-body {
@@ -816,6 +843,11 @@ select option {
 .role-omnivore { background: rgba(231, 185, 92, 0.14); color: #e7b95c; }
 .role-carnivore { background: rgba(224, 112, 95, 0.16); color: #ec8a79; }
 .role-plant { background: rgba(111, 183, 224, 0.12); color: #8cc6e6; }
+.role-bug-pest { background: rgba(214, 170, 60, 0.15); color: #e0b64c; }
+.role-bug-detritivore { background: rgba(170, 128, 90, 0.18); color: #c99a72; }
+.role-bug-parasite { background: rgba(214, 92, 120, 0.16); color: #e7849c; }
+.role-bug-pollinator { background: rgba(238, 127, 180, 0.15); color: #f29cc6; }
+.role-pathogen { background: rgba(168, 192, 74, 0.16); color: #bcd35a; }
 
 .empty {
 	color: var(--faint);
@@ -859,6 +891,7 @@ select option {
 .ev-speciation .ev-dot { background: rgba(143, 208, 122, 0.15); color: var(--accent); }
 .ev-extinction .ev-dot { background: rgba(224, 112, 95, 0.15); color: var(--danger); }
 .ev-migration .ev-dot { background: rgba(111, 183, 224, 0.15); color: var(--sky); }
+.ev-outbreak .ev-dot { background: rgba(188, 200, 70, 0.16); color: #c6cf4e; }
 .ev-info .ev-dot { background: rgba(214, 235, 222, 0.1); color: var(--muted); }
 
 .seg.small button {
@@ -1104,6 +1137,15 @@ select option {
 	opacity: 0.5;
 }
 
+.chip small {
+	color: var(--muted);
+	font-size: 10px;
+}
+
+.tt-row small.tt-sick {
+	color: #bcd35a;
+}
+
 /* ---------- responsive ---------- */
 @media (max-width: 1250px) {
 	.layout {
@@ -1114,6 +1156,15 @@ select option {
 	}
 	.brand {
 		min-width: 0;
+	}
+	.tabs .tab-icon {
+		display: none;
+	}
+	.tabs button {
+		font-size: 10.5px;
+	}
+	.tabs button em {
+		padding: 1px 2px;
 	}
 }
 

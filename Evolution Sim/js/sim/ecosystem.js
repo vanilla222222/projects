@@ -13,15 +13,15 @@ class Ecosystem {
 	constructor(world, seed, options = {}) {
 		this.world = world;
 		this.seed = seed;
-		this.options = Object.assign({ migrations: true, seasons: true }, options);
+		this.options = Object.assign({ migrations: true, seasons: true, disease: true }, options);
 		this.rng = new FastRng(seed * 7 + 11);
 		this.tick = 0;
 		this.log = new EventLog();
 		this.registry = new SpeciesRegistry(new FastRng(seed + 99));
 		this.plants = new PlantLayer(world, this.registry, new FastRng(seed + 555), this.log);
 		this.animals = new AnimalPool(world, this.plants, this.registry, new FastRng(seed + 777), this.log);
-		this.stats = { plants: 0, plantBiomass: 0 };
-		this.history = { tick: [], plants: [] };
+		this.stats = { plants: 0, plantBiomass: 0, fruit: 0, fungi: 0, flowers: 0, litter: 0, bugs: 0, pests: 0, detritivores: 0, parasites: 0, pollinators: 0, pollination: 0, sick: 0, blight: 0, strains: 0, diseaseDeaths: 0 };
+		this.history = { tick: [], plants: [], bugs: [], sick: [] };
 		for (const g of STAT_GROUPS) {
 			this.stats[g.key] = 0;
 			this.history[g.key] = [];
@@ -29,6 +29,12 @@ class Ecosystem {
 		this.historyStep = HISTORY_EVERY;
 		this.plants.refreshSpeciesMeans();
 		for (const a of ANIMAL_ARCHETYPES) this._introduce(a, 'founder');
+		this.bugs = typeof BugLayer === 'function' ? new BugLayer(world, this.plants, this.animals, this.registry, this.log, new FastRng(seed + 333)) : null;
+		this.animals.bugs = this.bugs;
+		if (this.bugs) this.bugs.refreshSpeciesMeans();
+		this.disease = typeof DiseaseLayer === 'function' ? new DiseaseLayer(world, this.plants, this.animals, this.registry, this.log, new FastRng(seed + 444)) : null;
+		this.animals.disease = this.disease;
+		this.plants.disease = this.disease;
 		this.log.push(0, 'info', 'A new world begins.');
 		this._computeStats();
 		this._sampleHistory(true);
@@ -76,13 +82,23 @@ class Ecosystem {
 		if (!this.options.seasons) plants.seasonAmp.fill(0);
 		else if (this._seasonsWereOff) plants._prepareClimate();
 		this._seasonsWereOff = !this.options.seasons;
+		plants.seasonsOn = !!this.options.seasons;
+		const D = this.disease;
+		if (D) {
+			D.on = !!this.options.disease;
+			if (!D.on) D.clearAll();
+		}
 
 		plants.step(this.tick);
+		if (this.bugs) this.bugs.step(this.tick);
 		this.animals.step(this.tick);
+		if (D) D.step(this.tick);
 
 		if (this.tick % 20 === 0) {
 			plants.refreshSpeciesMeans();
 			this.animals.refreshSpeciesMeans();
+			if (this.bugs) this.bugs.refreshSpeciesMeans();
+			if (D) D.refreshSpeciesMeans();
 		}
 		this._computeStats();
 		this._logExtinctions();
@@ -101,15 +117,35 @@ class Ecosystem {
 		}
 		s.plants = this.plants.coverTiles;
 		s.plantBiomass = this.plants.totalBiomass;
+		s.fruit = this.plants.totalFruit;
+		s.fungi = this.plants.fungusTiles;
+		s.flowers = this.plants.flowerTiles;
+		s.litter = this.plants.soil.totalLitter;
 		s.animals = A.count;
+		s.pollination = this.plants.flowerPoll;
+		const B = this.bugs;
+		if (B) {
+			s.bugs = Math.round(B.mass[0] + B.mass[1] + B.mass[2] + B.mass[3]);
+			s.pests = B.tiles[0];
+			s.detritivores = B.tiles[1];
+			s.parasites = B.tiles[2];
+			s.pollinators = B.tiles[3];
+		}
+		const D = this.disease;
+		if (D) {
+			s.sick = D.sickAnimals;
+			s.blight = D.blightSlots;
+			s.strains = D.live.size;
+			s.diseaseDeaths = D.animalDeaths;
+		}
 	}
 
 	_logExtinctions() {
 		const list = this.registry.recentlyExtinct;
 		if (!list.length) return;
 		for (const sp of list) {
-			const notable = sp.group === 'plant' ? sp.peak >= 60 : sp.peak >= 12;
-			if (notable) this.log.push(this.tick, 'extinction', `${sp.name} went extinct (peak ${sp.peak})`, sp.id);
+			const notable = sp.group === 'pathogen' ? sp.peak >= 15 : sp.group === 'plant' || sp.group === 'bug' ? sp.peak >= 60 : sp.peak >= 12;
+			if (notable) this.log.push(this.tick, 'extinction', `${sp.name} ${sp.group === 'pathogen' ? 'burned out' : 'went extinct'} (peak ${sp.peak})`, sp.id);
 			sp.pushHistory(this.tick, 0);
 		}
 		list.length = 0;
@@ -129,12 +165,17 @@ class Ecosystem {
 		else if (s.landCarn === 0 && s.landHerb > 250) tryIntro(pick('land', (d) => d > 0.66), 'unchecked prey drew predators');
 		if (s.waterHerb + s.waterOmni < 20) tryIntro(pick('water', (d) => d < 0.33), 'the waters were empty');
 		else if (s.waterCarn === 0 && s.waterHerb > 250) tryIntro(pick('water', (d) => d > 0.66), 'unchecked prey drew predators');
+		const B = this.bugs;
+		if (B) for (let k = 0; k < 4; k++) if (B.tiles[k] === 0) B.reintroduce(k);
+		if (this.disease && this.options.disease) this.disease.maybeEmerge(this.tick);
 	}
 
 	_sampleHistory() {
 		const h = this.history;
 		h.tick.push(this.tick);
 		h.plants.push(Math.round(this.stats.plantBiomass));
+		h.bugs.push(this.stats.bugs);
+		h.sick.push(this.stats.sick);
 		for (const g of STAT_GROUPS) h[g.key].push(this.stats[g.key]);
 		if (h.tick.length > 800) {
 			for (const k of Object.keys(h)) h[k] = h[k].filter((_, idx) => idx % 2 === 0);

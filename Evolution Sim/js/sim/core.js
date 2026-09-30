@@ -83,6 +83,11 @@ const NAME_PARTS = {
 		b: ['i', 'o', 'a'],
 		c: ['ichthys', 'pterus', 'donta', 'soma', 'lepis', 'branchus', 'nectes', 'selachus', 'rhynchus'],
 	},
+	pathogen: {
+		a: ['Morb', 'Pest', 'Febr', 'Lu', 'Tab', 'Sept', 'Scab', 'Strept', 'Plasm', 'Rub', 'Varr', 'Cont', 'Putr', 'Rhabd', 'Clostr'],
+		b: ['o', 'i', 'a', 'u'],
+		c: ['virus', 'coccus', 'bacter', 'phage', 'myces', 'spora', 'plasma', 'vibrio', 'phthora', 'monas'],
+	},
 };
 
 class Species {
@@ -159,7 +164,7 @@ class SpeciesRegistry {
 
 	create(opts, hsl) {
 		const id = this.nextId++;
-		const pool = opts.group === 'plant' ? 'plant' : opts.domain === 'water' ? 'fish' : 'animal';
+		const pool = opts.group === 'pathogen' ? 'pathogen' : opts.group === 'plant' ? 'plant' : opts.domain === 'water' ? 'fish' : 'animal';
 		const sp = new Species(id, { ...opts, hsl, name: this._name(pool) });
 		this.all.set(id, sp);
 		if (sp.parentId) this.all.get(sp.parentId).children.push(sp);

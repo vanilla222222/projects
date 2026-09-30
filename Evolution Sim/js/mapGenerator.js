@@ -4,6 +4,22 @@
 
 const ALTITUDE_CURVE = 1.2;
 
+const HYDRO_MEANDER = 0.004;
+const HYDRO_WIGGLE = 0.45;
+const HYDRO_WIGGLE_FREQ = 0.045;
+const HYDRO_VALLEY = 0.014;
+const HYDRO_BANK_WET = 0.12;
+const HYDRO_BANK_RANGE = 3;
+const HYDRO_POND_DEPTH = 0.004;
+const HYDRO_LAKE_DEPTH = 0.015;
+const HYDRO_LAKE_MIN = 10;
+const HYDRO_POND_MAX = 14;
+const HYDRO_POND_MIN = 4;
+const HYDRO_MELT = 2.5;
+const HYDRO_RIVER_FLOW = 190;
+const HYDRO_WIDE_1 = 5;
+const HYDRO_WIDE_2 = 18;
+
 class WorldMap {
 	constructor(width, height, seed, options = {}) {
 		this.width = width;
@@ -64,8 +80,11 @@ class WorldMap {
 		this._carveLakeBasins();
 		this._computeHydrologyBasins();
 		this._computeGlacierMask();
+		this._fillDepressions();
+		this._markDepressionLakes();
 		this._generateRivers();
 		this._generatePonds();
+		this._shapeRiverBanks();
 		this._classifyBiomes();
 	}
 
@@ -76,6 +95,7 @@ class WorldMap {
 	_carveLakeBasins() {
 		const { width, height, options } = this;
 		const rng = new SeededRandom(this.seed + 66778);
+		const shoreNoise = new PerlinNoise(this.seed + 66779);
 		const seaLevel = BIOME_THRESHOLDS.seaLevel;
 		let placed = 0;
 		let attempts = 0;
@@ -90,18 +110,25 @@ class WorldMap {
 			// carved basin reads as a distinct lake rather than an ocean inlet.
 			if (centerAlt < seaLevel + 0.12 || centerAlt > BIOME_THRESHOLDS.hillLevel) continue;
 
-			const radius = 3 + Math.floor(rng.next() * 6); // 3-8 cells
+			const radius = 3 + Math.floor(rng.next() * 6);
+			const reach = Math.ceil(radius * 1.6);
+			const ang = rng.next() * Math.PI;
+			const stretch = 1 + rng.next() * 0.8;
+			const ca = Math.cos(ang);
+			const sa = Math.sin(ang);
 			const targetDepth = seaLevel - 0.12;
-			for (let dy = -radius; dy <= radius; dy++) {
+			for (let dy = -reach; dy <= reach; dy++) {
 				const ny = cy + dy;
 				if (ny < 0 || ny >= height) continue;
-				for (let dx = -radius; dx <= radius; dx++) {
+				for (let dx = -reach; dx <= reach; dx++) {
 					const nx = cx + dx;
 					if (nx < 0 || nx >= width) continue;
-					const dist = Math.sqrt(dx * dx + dy * dy);
-					if (dist > radius) continue;
+					const u = (dx * ca + dy * sa) / stretch;
+					const v = (dy * ca - dx * sa) * (stretch > 1.4 ? 1.1 : 1);
+					const dist = Math.sqrt(u * u + v * v) / radius + shoreNoise.noise2D(nx * 0.28, ny * 0.28) * 0.35;
+					if (dist > 1) continue;
 					const ni = this.idx(nx, ny);
-					const falloff = 1 - dist / radius; // 1 at center, 0 at rim
+					const falloff = 1 - dist;
 					this.altitude[ni] = this.altitude[ni] * (1 - falloff) + targetDepth * falloff;
 				}
 			}
@@ -374,131 +401,229 @@ class WorldMap {
 		}
 	}
 
-	// Rivers are sourced from lake overflow points and glacier melt peaks, then
-	// walk downhill to the ocean/another lake. A low-frequency noise field
-	// nudges the path sideways among any near-equal-altitude neighbors so
-	// rivers wind naturally instead of beelining straight downhill.
+	_fillDepressions() {
+		const { width, height } = this;
+		const n = width * height;
+		const alt = this.altitude;
+		const filled = new Float32Array(n);
+		const down = new Int32Array(n).fill(-1);
+		const done = new Uint8Array(n);
+		const order = new Int32Array(n);
+		const heapI = new Int32Array(n + 8);
+		const heapK = new Float32Array(n + 8);
+		const jitter = new PerlinNoise(this.seed + 7777);
+		let size = 0;
+		let count = 0;
+
+		const push = (i, k) => {
+			let c = size++;
+			while (c > 0) {
+				const p = (c - 1) >> 1;
+				if (heapK[p] <= k) break;
+				heapI[c] = heapI[p];
+				heapK[c] = heapK[p];
+				c = p;
+			}
+			heapI[c] = i;
+			heapK[c] = k;
+		};
+		const pop = () => {
+			const top = heapI[0];
+			const li = heapI[--size];
+			const lk = heapK[size];
+			let c = 0;
+			for (;;) {
+				let m = 2 * c + 1;
+				if (m >= size) break;
+				if (m + 1 < size && heapK[m + 1] < heapK[m]) m++;
+				if (heapK[m] >= lk) break;
+				heapI[c] = heapI[m];
+				heapK[c] = heapK[m];
+				c = m;
+			}
+			heapI[c] = li;
+			heapK[c] = lk;
+			return top;
+		};
+
+		let seeded = 0;
+		for (let i = 0; i < n; i++) {
+			if (!this.isOcean[i]) continue;
+			done[i] = 1;
+			filled[i] = alt[i];
+			push(i, alt[i]);
+			seeded++;
+		}
+		if (seeded === 0) {
+			for (let i = 0; i < n; i++) {
+				const x = i % width;
+				const y = (i - x) / width;
+				if (x === 0 || y === 0 || x === width - 1 || y === height - 1) {
+					done[i] = 1;
+					filled[i] = alt[i];
+					push(i, alt[i]);
+				}
+			}
+		}
+
+		while (size > 0) {
+			const c = pop();
+			order[count++] = c;
+			const x = c % width;
+			const y = (c - x) / width;
+			const fc = filled[c];
+			for (let dy = -1; dy <= 1; dy++) {
+				const ny = y + dy;
+				if (ny < 0 || ny >= height) continue;
+				for (let dx = -1; dx <= 1; dx++) {
+					if (dx === 0 && dy === 0) continue;
+					const nx = x + dx;
+					if (nx < 0 || nx >= width) continue;
+					const ni = ny * width + nx;
+					if (done[ni]) continue;
+					done[ni] = 1;
+					const f = Math.max(alt[ni], fc + 1e-5);
+					filled[ni] = f;
+					down[ni] = c;
+					push(ni, f + (jitter.noise2D(nx * 0.09, ny * 0.09) + 1) * HYDRO_MEANDER);
+				}
+			}
+		}
+
+		const rank = new Int32Array(n);
+		for (let k = 0; k < count; k++) rank[order[k]] = k;
+		const wiggle = new PerlinNoise(this.seed + 7778);
+		for (let c = 0; c < n; c++) {
+			if (down[c] < 0) continue;
+			const x = c % width;
+			const y = (c - x) / width;
+			const fc = filled[c];
+			const rc = rank[c];
+			let maxDrop = 1e-6;
+			for (let dy = -1; dy <= 1; dy++) {
+				const ny = y + dy;
+				if (ny < 0 || ny >= height) continue;
+				for (let dx = -1; dx <= 1; dx++) {
+					if (dx === 0 && dy === 0) continue;
+					const nx = x + dx;
+					if (nx < 0 || nx >= width) continue;
+					const ni = ny * width + nx;
+					if (rank[ni] >= rc) continue;
+					const drop = (fc - filled[ni]) / (dx !== 0 && dy !== 0 ? 1.4142 : 1);
+					if (drop > maxDrop) maxDrop = drop;
+				}
+			}
+			const bend = wiggle.noise2D(x * HYDRO_WIGGLE_FREQ, y * HYDRO_WIGGLE_FREQ) * Math.PI * 2;
+			const bx = Math.cos(bend);
+			const by = Math.sin(bend);
+			let best = down[c];
+			let bestScore = -Infinity;
+			for (let dy = -1; dy <= 1; dy++) {
+				const ny = y + dy;
+				if (ny < 0 || ny >= height) continue;
+				for (let dx = -1; dx <= 1; dx++) {
+					if (dx === 0 && dy === 0) continue;
+					const nx = x + dx;
+					if (nx < 0 || nx >= width) continue;
+					const ni = ny * width + nx;
+					if (rank[ni] >= rc) continue;
+					const diag = dx !== 0 && dy !== 0;
+					const dist = diag ? 1.4142 : 1;
+					const drop = (fc - filled[ni]) / dist;
+					const score = drop / maxDrop + ((dx * bx + dy * by) / dist) * HYDRO_WIGGLE;
+					if (score > bestScore) {
+						bestScore = score;
+						best = ni;
+					}
+				}
+			}
+			down[c] = best;
+		}
+
+		this.filled = filled;
+		this.down = down;
+		this.flowOrder = order.subarray(0, count);
+	}
+
+	_markDepressionLakes() {
+		const { width, height } = this;
+		const n = width * height;
+		const deep = new Uint8Array(n);
+		for (let i = 0; i < n; i++) {
+			if (this.isOcean[i] || this.isGlacier[i]) continue;
+			const depth = this.filled[i] - this.altitude[i];
+			if (depth > HYDRO_POND_DEPTH) deep[i] = depth > HYDRO_LAKE_DEPTH ? 2 : 1;
+		}
+		const seen = new Uint8Array(n);
+		const stack = [];
+		const cells = [];
+		for (let s = 0; s < n; s++) {
+			if (!deep[s] || seen[s]) continue;
+			seen[s] = 1;
+			stack.push(s);
+			cells.length = 0;
+			let hasDeep = false;
+			while (stack.length) {
+				const i = stack.pop();
+				cells.push(i);
+				if (deep[i] === 2) hasDeep = true;
+				const x = i % width;
+				const y = (i - x) / width;
+				for (let d = 0; d < 4; d++) {
+					const nx = x + (d === 0 ? 1 : d === 1 ? -1 : 0);
+					const ny = y + (d === 2 ? 1 : d === 3 ? -1 : 0);
+					if (!this.inBounds(nx, ny)) continue;
+					const ni = ny * width + nx;
+					if (deep[ni] && !seen[ni]) {
+						seen[ni] = 1;
+						stack.push(ni);
+					}
+				}
+			}
+			if (hasDeep && cells.length >= HYDRO_LAKE_MIN) {
+				for (const i of cells) this.isLake[i] = 1;
+			} else if (cells.length >= HYDRO_POND_MIN && cells.length <= HYDRO_POND_MAX) {
+				for (const i of cells) this.isPond[i] = 1;
+			}
+		}
+	}
+
 	_generateRivers() {
-		const { width, height, options } = this;
-		const rng = new SeededRandom(this.seed + 9999);
-		const meanderNoise = new PerlinNoise(this.seed + 7777);
-
-		const sources = [];
-		for (const g of this.glacierSources) sources.push(g);
-		for (const l of this.lakeOutlets) sources.push(l);
-
-		for (let i = sources.length - 1; i > 0; i--) {
-			const j = Math.floor(rng.next() * (i + 1));
-			const tmp = sources[i];
-			sources[i] = sources[j];
-			sources[j] = tmp;
+		const { width, height } = this;
+		const n = width * height;
+		const flow = new Float32Array(n);
+		const order = this.flowOrder;
+		const down = this.down;
+		for (let i = 0; i < n; i++) {
+			if (this.isOcean[i]) continue;
+			flow[i] = 0.25 + this.humidity[i] + (this.isGlacier[i] ? HYDRO_MELT : 0);
+		}
+		for (let k = order.length - 1; k >= 0; k--) {
+			const c = order[k];
+			const d = down[c];
+			if (d >= 0) flow[d] += flow[c];
 		}
 
-		const maxSteps = width + height;
-		const slack = 0.006;
-		const acceptedPaths = [];
-		let created = 0;
-
-		for (const src of sources) {
-			if (created >= options.riverCount) break;
-
-			let x = src.x;
-			let y = src.y;
-			const path = [];
-			const visitedThisRun = new Set();
-			let reachedWater = false;
-
-			for (let step = 0; step < maxSteps; step++) {
-				const i = this.idx(x, y);
-				if (this.isOcean[i] || this.isLake[i]) {
-					reachedWater = path.length > 0;
-					break;
-				}
-				if (visitedThisRun.has(i)) break; // stuck in a loop/basin
-				visitedThisRun.add(i);
-				path.push({ x, y, i });
-
-				const curAlt = this.altitude[i];
-
-				// Among neighbors at or below current altitude (+ small slack for
-				// flat ground), pick by lowness blended with meander noise.
-				let bestI = -1;
-				let bestScore = Infinity;
-				for (let dy = -1; dy <= 1; dy++) {
-					for (let dx = -1; dx <= 1; dx++) {
-						if (dx === 0 && dy === 0) continue;
-						const nx = x + dx;
-						const ny = y + dy;
-						if (!this.inBounds(nx, ny)) continue;
-						const ni = this.idx(nx, ny);
-						const nAlt = this.altitude[ni];
-						if (nAlt > curAlt + slack) continue;
-						const meander = meanderNoise.noise2D(nx * 0.07, ny * 0.07);
-						const score = nAlt * 2.2 + meander * 0.18;
-						if (score < bestScore) {
-							bestScore = score;
-							bestI = ni;
-						}
-					}
-				}
-
-				if (bestI === -1) {
-					// Flat/uphill dead end: fall back to strict steepest descent.
-					let bestAlt = curAlt;
-					for (let dy = -1; dy <= 1; dy++) {
-						for (let dx = -1; dx <= 1; dx++) {
-							if (dx === 0 && dy === 0) continue;
-							const nx = x + dx;
-							const ny = y + dy;
-							if (!this.inBounds(nx, ny)) continue;
-							const ni = this.idx(nx, ny);
-							if (this.altitude[ni] < bestAlt) {
-								bestAlt = this.altitude[ni];
-								bestI = ni;
-							}
-						}
-					}
-				}
-
-				if (bestI === -1) break; // true local minimum: abandon this river
-				x = bestI % width;
-				y = (bestI - x) / width;
-			}
-
-			if (reachedWater && path.length >= 2) {
-				acceptedPaths.push(path);
-				created++;
-			}
+		const scale = Math.sqrt((width * height) / 67200);
+		const threshold = HYDRO_RIVER_FLOW * scale;
+		for (let i = 0; i < n; i++) {
+			this.riverFlow[i] = this.isOcean[i] ? 0 : flow[i] / threshold;
 		}
 
-		// Flow accumulation: every accepted path adds +1 along its whole route,
-		// so confluences downstream of multiple sources naturally read as wider.
-		for (const path of acceptedPaths) {
-			for (const step of path) this.riverFlow[step.i] += 1;
-		}
-
-		// Carve each path into the grid, thickening by flow strength and filling
-		// the "corner" cells on diagonal moves so the line reads as continuous
-		// instead of a staircase of touching-only-at-a-point pixels.
-		for (const path of acceptedPaths) {
-			for (let s = 0; s < path.length; s++) {
-				const { x, y, i } = path[s];
-				this.isRiver[i] = 1;
-
-				const flow = this.riverFlow[i];
-				const radius = flow >= 10 ? 2 : flow >= 4 ? 1 : 0;
-				if (radius > 0) this._widenRiverAt(x, y, radius);
-
-				if (s < path.length - 1) {
-					const next = path[s + 1];
-					const dx = next.x - x;
-					const dy = next.y - y;
-					if (dx !== 0 && dy !== 0) {
-						// Diagonal step: fill both orthogonal corner cells.
-						this._markRiverCell(x + dx, y);
-						this._markRiverCell(x, y + dy);
-					}
-				}
+		for (let c = 0; c < n; c++) {
+			if (this.isOcean[c] || this.isLake[c] || this.isGlacier[c]) continue;
+			const f = this.riverFlow[c];
+			if (f < 1) continue;
+			const x = c % width;
+			const y = (c - x) / width;
+			this._markRiverCell(x, y);
+			const radius = f >= HYDRO_WIDE_2 ? 2 : f >= HYDRO_WIDE_1 ? 1 : 0;
+			if (radius > 0) this._widenRiverAt(x, y, radius);
+			const d = down[c];
+			if (d >= 0) {
+				const nx = d % width;
+				const ny = (d - nx) / width;
+				if (nx !== x && ny !== y) this._markRiverCell(nx, y);
 			}
 		}
 	}
@@ -506,8 +631,9 @@ class WorldMap {
 	_markRiverCell(x, y) {
 		if (!this.inBounds(x, y)) return;
 		const i = this.idx(x, y);
-		if (this.isOcean[i] || this.isLake[i]) return;
+		if (this.isOcean[i] || this.isLake[i] || this.isGlacier[i]) return;
 		this.isRiver[i] = 1;
+		this.isPond[i] = 0;
 	}
 
 	_widenRiverAt(cx, cy, radius) {
@@ -519,55 +645,103 @@ class WorldMap {
 		}
 	}
 
-	// Scatters small standalone ponds across the land — unlike lakes (basins
-	// below sea level) these are shallow water features dropped onto
-	// ordinary land, giving animals more accessible drinking spots than
-	// relying on the ocean/lake/river network alone.
 	_generatePonds() {
 		const { width, height, options } = this;
 		const rng = new SeededRandom(this.seed + 55443);
+		const shape = new PerlinNoise(this.seed + 55444);
 		const seaLevel = BIOME_THRESHOLDS.seaLevel;
+		const blocked = (i) => this.isOcean[i] || this.isLake[i] || this.isRiver[i] || this.isGlacier[i] || this.isPond[i];
 		let placed = 0;
 		let attempts = 0;
-		const maxAttempts = options.pondCount * 40;
+		const maxAttempts = options.pondCount * 60;
 
 		while (placed < options.pondCount && attempts < maxAttempts) {
 			attempts++;
-			const x = Math.floor(rng.next() * width);
-			const y = Math.floor(rng.next() * height);
-			const i = this.idx(x, y);
-			const alt = this.altitude[i];
-			if (alt < seaLevel + 0.05 || alt > BIOME_THRESHOLDS.hillLevel) continue;
-			if (this.isOcean[i] || this.isLake[i] || this.isRiver[i] || this.isGlacier[i]) continue;
-
-			const radius = 1 + Math.floor(rng.next() * 2); // 1-2 cell radius
+			let best = -1;
+			let bestScore = -Infinity;
+			for (let k = 0; k < 6; k++) {
+				const x = 3 + Math.floor(rng.next() * (width - 6));
+				const y = 3 + Math.floor(rng.next() * (height - 6));
+				const i = this.idx(x, y);
+				const alt = this.altitude[i];
+				if (alt < seaLevel + 0.03 || alt > BIOME_THRESHOLDS.hillLevel || blocked(i)) continue;
+				const score = this.humidity[i] + Math.min(1, this.riverFlow[i]) * 0.8 - this._slopeAt(x, y) * 40;
+				if (score > bestScore) {
+					bestScore = score;
+					best = i;
+				}
+			}
+			if (best < 0) continue;
+			const cx = best % width;
+			const cy = (best - cx) / width;
+			const radius = 1.8 + rng.next() * 1.8;
+			const r = Math.ceil(radius);
 			const cells = [];
 			let clear = true;
-			for (let dy = -radius; dy <= radius && clear; dy++) {
-				for (let dx = -radius; dx <= radius; dx++) {
-					if (dx * dx + dy * dy > radius * radius + 0.5) continue;
-					const nx = x + dx;
-					const ny = y + dy;
+			for (let dy = -r; dy <= r && clear; dy++) {
+				for (let dx = -r; dx <= r; dx++) {
+					const nx = cx + dx;
+					const ny = cy + dy;
+					const dist = Math.sqrt(dx * dx + dy * dy) / radius + shape.noise2D(nx * 0.45, ny * 0.45) * 0.45;
+					if (dist > 1) continue;
 					if (!this.inBounds(nx, ny)) {
 						clear = false;
 						break;
 					}
 					const ni = this.idx(nx, ny);
-					if (this.isOcean[ni] || this.isLake[ni] || this.isRiver[ni] || this.isGlacier[ni]) {
+					if (this.isOcean[ni] || this.isLake[ni] || this.isGlacier[ni] || this.altitude[ni] < seaLevel) {
 						clear = false;
 						break;
 					}
-					if (this.altitude[ni] < seaLevel) {
-						clear = false;
-						break;
-					}
-					cells.push(ni);
+					if (!this.isRiver[ni]) cells.push(ni);
 				}
 			}
-			if (!clear || cells.length === 0) continue;
-
+			if (!clear || cells.length < HYDRO_POND_MIN) continue;
 			for (const ni of cells) this.isPond[ni] = 1;
 			placed++;
+		}
+	}
+
+	_shapeRiverBanks() {
+		const { width, height } = this;
+		const n = width * height;
+		const seaLevel = BIOME_THRESHOLDS.seaLevel;
+		const dist = new Uint8Array(n).fill(255);
+		let frontier = [];
+		for (let i = 0; i < n; i++) {
+			if (this.isRiver[i] || this.isPond[i] || this.isLake[i]) {
+				dist[i] = 0;
+				frontier.push(i);
+			}
+		}
+		for (let d = 1; d <= HYDRO_BANK_RANGE && frontier.length; d++) {
+			const next = [];
+			for (const i of frontier) {
+				const x = i % width;
+				const y = (i - x) / width;
+				for (let k = 0; k < 4; k++) {
+					const nx = x + (k === 0 ? 1 : k === 1 ? -1 : 0);
+					const ny = y + (k === 2 ? 1 : k === 3 ? -1 : 0);
+					if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+					const ni = ny * width + nx;
+					if (dist[ni] !== 255 || this.isOcean[ni]) continue;
+					dist[ni] = d;
+					next.push(ni);
+				}
+			}
+			frontier = next;
+		}
+		for (let i = 0; i < n; i++) {
+			const d = dist[i];
+			if (d === 255 || this.isOcean[i]) continue;
+			const w = 1 - d / (HYDRO_BANK_RANGE + 1);
+			this.humidity[i] = Math.min(1, this.humidity[i] + HYDRO_BANK_WET * w);
+			if (this.isRiver[i]) {
+				const cut = HYDRO_VALLEY * Math.min(1, this.riverFlow[i] / HYDRO_WIDE_1);
+				this.altitude[i] = Math.max(seaLevel + 0.002, this.altitude[i] - cut);
+			} else if (d > 0 && !this.isLake[i] && !this.isPond[i]) {
+				this.altitude[i] = Math.max(seaLevel + 0.002, this.altitude[i] - HYDRO_VALLEY * 0.5 * w * w);
+			}
 		}
 	}
 

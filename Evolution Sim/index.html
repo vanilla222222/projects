@@ -91,12 +91,17 @@
 					<button data-mode="humidity">Moisture</button>
 					<button data-mode="altitude">Height</button>
 					<button data-mode="fertility">Soil</button>
+					<button data-mode="nutrients">Nutrients</button>
+					<button data-mode="litter">Litter</button>
+					<button data-mode="bugs">Bugs</button>
+					<button data-mode="disease">Disease</button>
 				</div>
 				<div class="toggles">
 					<label class="switch"><input type="checkbox" id="showPlants" checked /><span></span>Plant cover</label>
 					<label class="switch"><input type="checkbox" id="showAnimals" checked /><span></span>Animals</label>
 					<label class="switch"><input type="checkbox" id="optSeasons" checked /><span></span>Seasons</label>
 					<label class="switch" title="Re-introduce a trophic group if it dies out"><input type="checkbox" id="optMigrations" checked /><span></span>Migrations</label>
+					<label class="switch" title="Pathogens emerge, spread and evolve"><input type="checkbox" id="optDisease" checked /><span></span>Disease</label>
 				</div>
 				<details class="biome-legend">
 					<summary>Biome legend</summary>
@@ -115,7 +120,7 @@
 					<svg viewBox="0 0 24 24" width="16" height="16"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
 				</button>
 			</div>
-			<div class="map-hint" id="mapHint">Scroll to zoom · drag to pan · click a creature or plant to inspect it</div>
+			<div class="map-hint" id="mapHint">Scroll to zoom · drag to pan · click a creature, plant or swarm to inspect it</div>
 			<div class="map-error" id="mapError" hidden></div>
 		</section>
 
@@ -124,6 +129,8 @@
 				<button data-tab="plant" class="active"><span class="tab-icon" data-icon="plant"></span>Plants <em id="countPlant">0</em></button>
 				<button data-tab="land"><span class="tab-icon" data-icon="paw"></span>Land <em id="countLand">0</em></button>
 				<button data-tab="water"><span class="tab-icon" data-icon="wave"></span>Water <em id="countWater">0</em></button>
+				<button data-tab="bug"><span class="tab-icon" data-icon="bug"></span>Bugs <em id="countBug">0</em></button>
+				<button data-tab="disease"><span class="tab-icon" data-icon="virus"></span>Disease <em id="countDisease">0</em></button>
 				<button data-tab="events">Events</button>
 			</nav>
 
@@ -146,6 +153,7 @@
 						<button data-f="speciation">New species</button>
 						<button data-f="extinction">Extinct</button>
 						<button data-f="migration">Migrations</button>
+						<button data-f="outbreak">Outbreaks</button>
 					</div>
 				</div>
 				<ul class="event-list" id="eventList"></ul>
@@ -164,6 +172,10 @@
 				</div>
 				<div class="detail-badges" id="detailBadges"></div>
 				<div class="detail-grid" id="detailGrid"></div>
+				<div id="detailHostsWrap" hidden>
+					<h4>Hosts <span class="muted">infected now</span></h4>
+					<div class="chips" id="detailHosts"></div>
+				</div>
 				<h4>Population</h4>
 				<canvas id="speciesChart" class="chart small"></canvas>
 				<h4>Traits <span class="muted">population average</span></h4>
@@ -182,8 +194,11 @@
 	<script src="js/biomes.js"></script>
 	<script src="js/mapGenerator.js"></script>
 	<script src="js/sim/core.js"></script>
+	<script src="js/sim/soil.js"></script>
 	<script src="js/sim/plants.js"></script>
 	<script src="js/sim/animals.js"></script>
+	<script src="js/sim/bugs.js"></script>
+	<script src="js/sim/disease.js"></script>
 	<script src="js/sim/ecosystem.js"></script>
 	<script src="js/icons.js"></script>
 	<script src="js/render.js"></script>

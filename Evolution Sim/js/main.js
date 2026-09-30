@@ -8,7 +8,15 @@ const GROUP_COLORS = {
 	waterHerb: '#6fc3e6',
 	waterOmni: '#c9a0e8',
 	waterCarn: '#5c86e6',
+	bugs: '#ee7fb4',
+	disease: '#a8c04a',
 };
+
+const TAB_GROUP = { plant: 'plant', bug: 'bug', disease: 'pathogen' };
+
+const SWARM_NICHES = ['pest', 'detritivore', 'parasite', 'pollinator'];
+const SWARM_NICHE_ICON = ['aphid', 'beetle', 'tick', 'bee'];
+const SWARM_LABEL = { aphid: 'Aphid', locust: 'Locust', beetle: 'Beetle', worm: 'Worm', tick: 'Tick', leech: 'Leech', bee: 'Bee', butterfly: 'Butterfly' };
 
 function mixHex(hex, target, t) {
 	const a = hexToRgb(hex);
@@ -62,6 +70,7 @@ function newWorld() {
 		const eco = new Ecosystem(world, seed, {
 			seasons: $('optSeasons').checked,
 			migrations: $('optMigrations').checked,
+			disease: $('optDisease').checked,
 		});
 		app.world = world;
 		app.eco = eco;
@@ -134,6 +143,20 @@ function buildStatCards() {
 		<div class="stat-label">Plant biomass</div>
 		<div class="stat-value" data-v>0</div>
 		<canvas data-spark></canvas>
+	</div>
+	<div class="stat wide" data-key="bugs">
+		${iconSVG('bug', paletteFor(GROUP_COLORS.bugs), 30)}
+		<div class="stat-label">Bugs · swarm density</div>
+		<div class="stat-value" data-v>0</div>
+		<div class="stat-sub" data-sub></div>
+		<canvas data-spark></canvas>
+	</div>
+	<div class="stat wide" data-key="disease">
+		${iconSVG('virus', NEUTRAL, 30)}
+		<div class="stat-label">Disease · sick animals</div>
+		<div class="stat-value" data-v>0</div>
+		<div class="stat-sub" data-sub></div>
+		<canvas data-spark></canvas>
 	</div>`;
 	for (const g of STAT_GROUPS) {
 		html += `<div class="stat" data-key="${g.key}" title="${g.domain ? 'Water' : 'Land'} ${g.role}s">
@@ -146,7 +169,7 @@ function buildStatCards() {
 	wrap.innerHTML = html;
 
 	const legend = $('popLegend');
-	legend.innerHTML = [['plants', 'Plants ÷10'], ...STAT_GROUPS.map((g) => [g.key, g.label])]
+	legend.innerHTML = [['plants', 'Plants ÷10'], ...STAT_GROUPS.map((g) => [g.key, g.label]), ['bugs', 'Bugs']]
 		.map(([k, label]) => `<button data-key="${k}"><i style="background:${GROUP_COLORS[k]}"></i>${label}</button>`)
 		.join('');
 	legend.addEventListener('click', (e) => {
@@ -166,18 +189,30 @@ function updateStats() {
 	const h = eco.history;
 	for (const el of $('statCards').children) {
 		const k = el.dataset.key;
-		const v = k === 'plants' ? s.plantBiomass : s[k];
+		const dis = k === 'disease';
+		const v = (k === 'plants' ? s.plantBiomass : dis ? s.sick : s[k]) || 0;
 		el.querySelector('[data-v]').textContent = formatCount(v);
-		el.classList.toggle('zero', k !== 'plants' && v === 0);
-		drawSparkline(el.querySelector('[data-spark]'), k === 'plants' ? h.plants : h[k], GROUP_COLORS[k]);
+		el.classList.toggle('zero', k !== 'plants' && v === 0 && (k !== 'bugs' || !!eco.bugs));
+		if (k === 'bugs') el.querySelector('[data-sub]').innerHTML = bugStatLine(s);
+		else if (dis) el.querySelector('[data-sub]').textContent = `${formatCount(s.strains || 0)} strains · ${formatCount(s.blight || 0)} blighted tiles`;
+		drawSparkline(el.querySelector('[data-spark]'), k === 'plants' ? h.plants : dis ? h.sick || [] : h[k] || [], GROUP_COLORS[k]);
 	}
 	drawPopChart();
+}
+
+function bugStatLine(s) {
+	const keys = ['pests', 'detritivores', 'parasites', 'pollinators'];
+	const pal = paletteFor(GROUP_COLORS.bugs);
+	let html = keys.map((k, i) => `<span title="${SWARM_NICHES[i]} tiles">${iconSVG(SWARM_NICHE_ICON[i], pal, 13)}${formatCount(s[k] || 0)}</span>`).join('');
+	if (typeof s.pollination === 'number') html += `<span title="Mean pollination on flowering tiles">pollination ${pct(s.pollination)}</span>`;
+	return html;
 }
 
 function drawPopChart() {
 	const h = app.eco.history;
 	const series = [{ values: h.plants.map((v) => v / 10), color: GROUP_COLORS.plants, hidden: app.hidden.has('plants'), dim: true, width: 1.2 }];
 	for (const g of STAT_GROUPS) series.push({ values: h[g.key], color: GROUP_COLORS[g.key], hidden: app.hidden.has(g.key) });
+	if (h.bugs) series.push({ values: h.bugs, color: GROUP_COLORS.bugs, hidden: app.hidden.has('bugs') });
 	drawPopulationChart($('popChart'), h.tick, series, { yearTicks: YEAR_TICKS });
 }
 
@@ -202,24 +237,43 @@ function updateClock() {
 function speciesInTab(tab) {
 	const out = [];
 	for (const sp of app.eco.registry.all.values()) {
-		if (tab === 'plant' ? sp.group !== 'plant' : sp.group !== 'animal' || sp.domain !== tab) continue;
+		const g = TAB_GROUP[tab];
+		if (g ? sp.group !== g : sp.group !== 'animal' || sp.domain !== tab) continue;
 		out.push(sp);
 	}
 	return out;
 }
 
 function roleOf(sp) {
-	return sp.group === 'plant' ? 'plant' : sp.role || dietRole(sp.mean[G_DIET]);
+	return sp.group === 'plant' ? 'plant' : sp.group === 'bug' ? 'bug' : sp.group === 'pathogen' ? 'pathogen' : sp.role || dietRole(sp.mean[G_DIET]);
+}
+
+function bugNiche(sp) {
+	const k = nicheIndex(sp);
+	return k >= 0 ? SWARM_NICHES[k] : 'bug';
+}
+
+function nicheIndex(sp) {
+	if (typeof sp.nicheIndex === 'number') return sp.nicheIndex;
+	if (typeof sp.niche === 'number') return sp.niche;
+	return SWARM_NICHES.indexOf(sp.niche);
+}
+
+function bugGeneShown(niche, k, fallback) {
+	if (typeof BUG_MASKS !== 'undefined' && BUG_MASKS[niche]) return !!BUG_MASKS[niche][k];
+	return !fallback || fallback.includes(niche);
 }
 
 function categoryLabel(sp) {
+	if (sp.group === 'pathogen') return sp.hostKind === 'plant' ? 'Plant blight' : 'Animal disease';
+	if (sp.group === 'bug') return (typeof BUG_CATEGORY_LABEL !== 'undefined' && BUG_CATEGORY_LABEL[sp.category]) || SWARM_LABEL[sp.icon || sp.category] || 'Bug';
 	return sp.group === 'plant' ? PLANT_CATEGORY_LABEL[sp.category] || 'Plant' : ANIMAL_CATEGORY_LABEL[sp.category] || 'Animal';
 }
 
 function roleTag(sp) {
 	const r = roleOf(sp);
-	const label = r === 'plant' ? (sp.domain === 'water' ? 'aquatic' : 'plant') : r;
-	return `<span class="role-tag role-${r}">${label}</span>`;
+	const label = r === 'plant' ? (sp.domain === 'water' ? 'aquatic' : 'plant') : r === 'bug' ? bugNiche(sp) : r === 'pathogen' ? (sp.hostKind === 'plant' ? 'blight' : 'disease') : r;
+	return `<span class="role-tag role-${r === 'bug' ? 'bug-' + bugNiche(sp) : r}">${label}</span>`;
 }
 
 function yearOf(tick) {
@@ -230,17 +284,23 @@ function updateTabCounts() {
 	let p = 0;
 	let l = 0;
 	let w = 0;
+	let b = 0;
+	let d = 0;
 	const reg = app.eco.registry;
 	for (const id of reg.living) {
 		const sp = reg.get(id);
 		if (sp.group === 'plant') p++;
+		else if (sp.group === 'bug') b++;
+		else if (sp.group === 'pathogen') d++;
 		else if (sp.domain === 'land') l++;
 		else w++;
 	}
 	$('countPlant').textContent = p;
 	$('countLand').textContent = l;
 	$('countWater').textContent = w;
-	$('speciesTotals').textContent = `${p + l + w} living species`;
+	$('countBug').textContent = b;
+	$('countDisease').textContent = d;
+	$('speciesTotals').textContent = `${p + l + w + b} living species${d ? ` · ${d} strains` : ''}`;
 }
 
 function renderSpeciesList() {
@@ -254,12 +314,12 @@ function renderSpeciesList() {
 	const total = items.length;
 	items = items.slice(0, 160);
 	if (!items.length) {
-		list.innerHTML = `<li class="empty">No ${showExtinct ? '' : 'living '}species here yet.</li>`;
+		list.innerHTML = app.tab === 'disease' ? `<li class="empty">No ${showExtinct ? '' : 'active '}outbreaks yet.</li>` : `<li class="empty">No ${showExtinct ? '' : 'living '}species here yet.</li>`;
 		return;
 	}
 	let max = 1;
 	for (const sp of items) if (sp.population > max) max = sp.population;
-	const unit = app.tab === 'plant' ? ' tiles' : '';
+	const unit = app.tab === 'plant' || app.tab === 'bug' ? ' tiles' : '';
 	let html = '';
 	for (const sp of items) {
 		const dead = sp.population <= 0;
@@ -271,7 +331,7 @@ function renderSpeciesList() {
 				<div class="sp-sub">${roleTag(sp)}${categoryLabel(sp)}${dead ? ' · extinct Y' + yearOf(sp.extinctTick) : ''}</div>
 			</div>
 			<div>
-				<div class="sp-pop">${dead ? '–' : formatCount(sp.population) + unit}</div>
+				<div class="sp-pop">${dead ? '–' : formatCount(sp.population) + (sp.group === 'pathogen' ? (sp.hostKind === 'plant' ? ' tiles' : ' hosts') : unit)}</div>
 				<div class="sp-bar"><i style="width:${pct}%;background:${sp.color}"></i></div>
 			</div>
 		</li>`;
@@ -282,7 +342,7 @@ function renderSpeciesList() {
 	list.scrollTop = scroll;
 }
 
-const EVENT_GLYPH = { speciation: '+', extinction: '×', migration: '→', info: '•' };
+const EVENT_GLYPH = { speciation: '+', extinction: '×', migration: '→', outbreak: '!', info: '•' };
 
 function renderEvents(force) {
 	const log = app.eco.log;
@@ -312,9 +372,48 @@ const PLANT_TRAITS = [
 	['Moisture / depth', 1, (v) => pct(v)],
 	['Generalist', 2, (v) => pct(v)],
 	['Woodiness', 3, (v) => pct(v)],
-	['Toxicity', 4, (v) => pct(v)],
-	['Seed dispersal', 5, (v) => pct(v)],
+	['Toxicity', 4, (v) => pct(v), 'Toxin potency'],
+	['Seed dispersal', 5, (v) => pct(v), 'Spore spread'],
+	['Shade tolerance', 6, (v) => pct(v)],
+	['Root vigour', 7, (v) => pct(v)],
+	['Fruiting', 8, (v) => pct(v), null],
+	['Sweetness', 9, (v) => pct(v), null],
+	['Seed toxicity', 10, (v) => pct(v), 'Toxin type', (v) => TOXIN_WORDS[toxinIndex(v)]],
+	['Bloom', 11, (v) => pct(v), 'Mycorrhizal', (v) => (v > 0.5 ? 'Symbiont' : 'Decomposer')],
+	['Hue', 12, (v) => Math.round(v * 360) + '°'],
+	['Pest defence', 13, (v) => pct(v), null],
+	['Blight resistance', 14, (v) => pct(v)],
 ];
+
+const BUG_TRAITS = [
+	['Heat preference', 0, (v) => tempWord(v)],
+	['Moisture', 1, (v) => pct(v)],
+	['Appetite', 2, (v) => pct(v)],
+	['Mobility', 3, (v) => pct(v)],
+	['Fecundity', 4, (v) => pct(v)],
+	['Swarming', 5, (v) => pct(v), [0]],
+	['Flower hue', 6, (v) => `<i style="display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px;vertical-align:-1px;background:hsl(${Math.round(v * 360)},62%,56%)"></i>${Math.round(v * 360)}°`, [3]],
+	['Specialism', 7, (v) => pct(v), [3]],
+	['Host size', 8, (v) => pct(v), [2]],
+];
+
+const TOXIN_WORDS = ['Mild', 'Neurotoxic', 'Lethal'];
+
+function toxinIndex(v) {
+	return v < 0.33 ? 0 : v < 0.66 ? 1 : 2;
+}
+
+function fungusType(g, o = 0) {
+	if (g[o + 11] > 0.5) return 'symbiont';
+	const t = typeof toxinType === 'function' ? toxinType(g, o) : toxinIndex(g[o + 10] || 0);
+	return TOXIN_WORDS[t].toLowerCase();
+}
+
+function hueSwatches(list) {
+	return list
+		.map((a) => `<i title="strength ${pct(Math.min(1, a.strength))}" style="display:inline-block;width:14px;height:14px;border-radius:4px;border:1px solid rgba(0,0,0,.35);background:hsl(${Math.round(a.hue * 360)},62%,52%);opacity:${(0.35 + 0.65 * Math.min(1, a.strength)).toFixed(2)}"></i>`)
+		.join('');
+}
 
 const ANIMAL_TRAITS = [
 	['Body size', G_SIZE, (v) => pct(v)],
@@ -326,6 +425,13 @@ const ANIMAL_TRAITS = [
 	['Fertility', G_FEC, (v) => pct(v)],
 	['Toxin resistance', G_TOXR, (v) => pct(v)],
 	['Armor', G_ARMOR, (v) => pct(v)],
+	['Resistance', G_RES, (v) => pct(v)],
+];
+
+const DISEASE_TRAITS = [
+	['Transmissibility', 0, (v) => pct(v)],
+	['Virulence', 1, (v) => pct(v)],
+	['Host range', 2, (v) => pct(v)],
 ];
 
 function pct(v) {
@@ -342,7 +448,8 @@ function selectSpecies(id) {
 	app.selected = id;
 	app.renderer.highlight = id;
 	app.renderer.vegDirty = true;
-	if (sp.group === 'plant') setTab('plant', false);
+	if (sp.group === 'pathogen') setTab('disease', false);
+	else if (sp.group === 'plant' || sp.group === 'bug') setTab(sp.group, false);
 	else setTab(sp.domain, false);
 	$('detail').hidden = false;
 	$('detail').scrollTop = 0;
@@ -368,32 +475,73 @@ function renderDetail() {
 	const alive = sp.population > 0;
 	$('detailIcon').innerHTML = iconSVG(sp.icon || sp.category, colors, 54);
 	$('detailName').textContent = sp.name;
-	$('detailSub').textContent = `${categoryLabel(sp)} · ${sp.domain === 'water' ? 'aquatic' : 'terrestrial'}`;
-	const origin = sp.origin === 'founder' ? 'Founder' : sp.origin === 'migrated' ? 'Migrant' : `Generation ${sp.generation}`;
+	const patho = sp.group === 'pathogen';
+	const host = patho ? eco.registry.get(sp.hostId) : null;
+	$('detailSub').textContent = patho ? `${categoryLabel(sp)} · from ${host ? host.name : 'unknown host'}` : sp.group === 'bug' ? `${categoryLabel(sp)} swarm · ${bugNiche(sp)}` : `${categoryLabel(sp)} · ${sp.domain === 'water' ? 'aquatic' : 'terrestrial'}`;
+	const origin = sp.origin === 'founder' ? 'Founder' : sp.origin === 'migrated' ? 'Migrant' : sp.origin === 'emerged' ? 'Emerged' : sp.origin === 'jump' ? 'Host jump' : `Generation ${sp.generation}`;
 	$('detailBadges').innerHTML = [
 		roleTag(sp).replace('role-tag', 'badge role-tag'),
-		alive ? '<span class="badge alive">Living</span>' : `<span class="badge dead">Extinct · Year ${yearOf(sp.extinctTick)}</span>`,
+		alive ? `<span class="badge alive">${patho ? 'Active' : 'Living'}</span>` : `<span class="badge dead">${patho ? 'Burned out' : 'Extinct'} · Year ${yearOf(sp.extinctTick)}</span>`,
 		`<span class="badge">${origin}</span>`,
+		...(sp.group === 'plant' && sp.kind === 1 ? ['<span class="badge">Fungus</span>', `<span class="badge">${fungusType(sp.mean)[0].toUpperCase() + fungusType(sp.mean).slice(1)}</span>`] : []),
+		...(sp.group === 'bug' && sp.domain ? [`<span class="badge">${sp.domain === 'water' ? 'Aquatic' : 'Land'}</span>`] : []),
 	].join('');
-	const unit = sp.group === 'plant' ? ' tiles' : '';
-	const cells = [
-		['Population', alive ? formatCount(sp.population) + unit : '0'],
-		['Peak', formatCount(sp.peak) + unit],
-		['Appeared', 'Year ' + yearOf(sp.createdTick)],
-		[sp.group === 'plant' ? 'Biomass' : 'Descendants', sp.group === 'plant' ? formatCount(sp.biomass || 0) : sp.children.length],
-	];
+	const bug = sp.group === 'bug';
+	const unit = sp.group === 'plant' || bug ? ' tiles' : patho ? (sp.hostKind === 'plant' ? ' tiles' : ' hosts') : '';
+	const cells = patho
+		? [
+				['Infected', alive ? formatCount(sp.population) + unit : '0'],
+				['Peak', formatCount(sp.peak) + unit],
+				['Deaths', formatCount(sp.deaths || 0)],
+				['Appeared', 'Year ' + yearOf(sp.createdTick)],
+			]
+		: [
+				['Population', alive ? formatCount(sp.population) + unit : '0'],
+				['Peak', formatCount(sp.peak) + unit],
+				['Appeared', 'Year ' + yearOf(sp.createdTick)],
+				bug ? ['Mean density', alive ? pct(sp.density || 0) : '—'] : [sp.group === 'plant' ? 'Biomass' : 'Descendants', sp.group === 'plant' ? formatCount(sp.biomass || 0) : sp.children.length],
+			];
+	if (sp.group === 'plant') cells.push(['Health', alive ? pct(sp.health ?? 1) : '—']);
+	const resK = sp.group === 'plant' ? 14 : sp.group === 'animal' ? G_RES : -1;
+	if (resK >= 0 && sp.mean && resK < sp.mean.length) cells.push(['Avg resistance', pct(sp.mean[resK])]);
+	if (!patho && sp.infected > 0) cells.push(['Infected', formatCount(sp.infected) + unit]);
 	$('detailGrid').innerHTML = cells.map(([k, v]) => `<div><small>${k}</small><strong>${v}</strong></div>`).join('');
-	drawSpeciesChart($('speciesChart'), sp.history.concat(alive ? [eco.tick, sp.population] : []), sp.color, eco.tick);
-
-	const defs = sp.group === 'plant' ? PLANT_TRAITS : ANIMAL_TRAITS;
-	$('detailTraits').innerHTML = defs
-		.map(([label, k, fmt]) => {
-			const v = sp.mean[k];
-			let lbl = label;
-			if (sp.group === 'plant' && k === 1) lbl = sp.domain === 'water' ? 'Depth' : 'Moisture';
-			return `<div class="trait"><span>${lbl}</span><div class="track"><i style="width:${Math.max(3, v * 100)}%;background:${sp.color}"></i></div><em>${fmt(v)}</em></div>`;
+	const hosts = patho && sp.hosts ? [...sp.hosts].sort((a, b) => b[1] - a[1]) : [];
+	if (patho && !hosts.length && host) hosts.push([host.id, 0]);
+	$('detailHostsWrap').hidden = !patho;
+	$('detailHosts').innerHTML = hosts
+		.map(([id, c]) => {
+			const h = eco.registry.get(id);
+			return h ? `<span class="chip${h.population <= 0 ? ' gone' : ''}" data-id="${h.id}">${iconSVG(h.icon || h.category, speciesColors(h), 18)}${h.name}<small>${c ? formatCount(c) : 'origin'}</small></span>` : '';
 		})
 		.join('');
+	drawSpeciesChart($('speciesChart'), sp.history.concat(alive ? [eco.tick, sp.population] : []), sp.color, eco.tick);
+
+	const defs = sp.group === 'plant' ? PLANT_TRAITS : bug ? BUG_TRAITS : patho ? DISEASE_TRAITS : ANIMAL_TRAITS;
+	const fungus = sp.group === 'plant' && sp.kind === 1;
+	const niche = bug ? nicheIndex(sp) : -1;
+	const mean = sp.mean || sp.genome || [];
+	let traits = defs
+		.map(([label, k, fmt, fLabel, fFmt]) => {
+			if (k >= mean.length) return '';
+			if (bug) {
+				if (!bugGeneShown(niche, k, fLabel)) return '';
+				return `<div class="trait"><span>${label}</span><div class="track"><i style="width:${Math.max(3, mean[k] * 100)}%;background:${sp.color}"></i></div><em>${fmt(mean[k])}</em></div>`;
+			}
+			if (fungus && fLabel === null) return '';
+			if (sp.group === 'plant' && sp.domain === 'water' && k >= 8 && k !== 14) return '';
+			const v = sp.mean[k];
+			let lbl = fungus && fLabel ? fLabel : label;
+			const f = fungus && fFmt ? fFmt : fmt;
+			if (sp.group === 'plant' && k === 1) lbl = sp.domain === 'water' ? 'Depth' : 'Moisture';
+			return `<div class="trait"><span>${lbl}</span><div class="track"><i style="width:${Math.max(3, v * 100)}%;background:${sp.color}"></i></div><em>${f(v)}</em></div>`;
+		})
+		.join('');
+	if (sp.group === 'animal') {
+		const av = sp.aversion && sp.aversion.length ? sp.aversion : null;
+		traits += `<div class="trait"><span>Avoids</span><div style="grid-column:span 2;display:flex;flex-wrap:wrap;gap:4px;align-items:center">${av ? hueSwatches(av) : '<em style="text-align:left;color:var(--muted)">nothing yet</em>'}</div></div>`;
+	}
+	$('detailTraits').innerHTML = traits;
 
 	const chain = eco.registry.lineage(sp).reverse();
 	const row = (s, cur) =>
@@ -453,6 +601,42 @@ function tileAt(wx, wy) {
 	return y * w.width + x;
 }
 
+function bugsAt(t) {
+	const B = app.eco.bugs;
+	const out = [];
+	if (!B || !B.density || !B.species || t < 0) return out;
+	const n = app.eco.plants.n;
+	const niches = Math.min(SWARM_NICHES.length, Math.floor(B.density.length / n));
+	for (let k = 0; k < niches; k++) {
+		const q = k * n + t;
+		const d = B.density[q];
+		if (d > 0 && B.species[q]) out.push({ k, id: B.species[q], d });
+	}
+	return out;
+}
+
+function densestBug(t) {
+	let best = 0;
+	let bd = 0;
+	for (const b of bugsAt(t)) {
+		if (b.d > bd) {
+			bd = b.d;
+			best = b.id;
+		}
+	}
+	return best;
+}
+
+function clickTarget(wx, wy) {
+	const t = tileAt(wx, wy);
+	const bug = densestBug(t);
+	if (bug && app.renderer.mode === 'bugs') return bug;
+	const a = pickAnimal(wx, wy);
+	if (a >= 0) return app.eco.animals.sp[a];
+	const plant = t >= 0 ? app.eco.plants.topSpecies(t) : 0;
+	return plant || bug || 0;
+}
+
 function updateTooltip() {
 	const tt = $('tooltip');
 	const h = app.hover;
@@ -472,17 +656,38 @@ function updateTooltip() {
 	const reg = app.eco.registry;
 	const biome = BIOME_INFO[BIOME_LIST[w.biome[t]]];
 	const temp = Math.round(w.temperature[t] * 50 - 15);
-	let html = `<div class="tt-meta">${biome.name} · ${temp}°C · ${P.water[t] ? 'depth ' + pct(P.depth[t]) : 'moisture ' + pct(w.humidity[t])}</div>`;
+	const poll = P.poll && !P.water[t] ? ' · pollination ' + pct(Math.min(1, P.poll[t])) : '';
+	let html = `<div class="tt-meta">${biome.name} · ${temp}°C · ${P.water[t] ? 'depth ' + pct(P.depth[t]) : 'moisture ' + pct(w.humidity[t])} · nutrients ${pct(P.soil.nutrient[t] / SOIL_MAX)}${P.soil.litter ? ' · litter ' + P.soil.litter[t].toFixed(2) : ''}${poll}</div>`;
+	const target = clickTarget(wx, wy);
+	let bugHtml = '';
+	for (const b of bugsAt(t)) {
+		const sp = reg.get(b.id);
+		if (!sp) continue;
+		const hint = sp.id === target ? '<small class="tt-hint">click to inspect this swarm</small>' : '';
+		bugHtml += `<div class="tt-row">${iconSVG(sp.icon || sp.category, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)} swarm</small><small>density ${pct(Math.min(1, b.d))}</small>${hint}</div></div>`;
+	}
+	if (app.renderer.mode === 'bugs') html += bugHtml;
 	const a = pickAnimal(wx, wy);
 	if (a >= 0) {
 		const sp = reg.get(A.sp[a]);
 		const states = ['resting', 'grazing', 'foraging', 'hunting', 'fleeing'];
-		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${states[A.state[a]]} · energy ${pct(Math.max(0, A.energy[a] / A.emax[a]))} · age ${A.age[a]}</small></div></div>`;
+		const st = A.strain && A.strain[a] ? reg.get(A.strain[a]) : null;
+		const sick = st ? `<small class="tt-sick">sick: ${st.name}</small>` : '';
+		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${states[A.state[a]]} · energy ${pct(Math.max(0, A.energy[a] / A.emax[a]))} · age ${A.age[a]}</small>${sick}</div></div>`;
 	}
-	if (P.species[t]) {
-		const sp = reg.get(P.species[t]);
-		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${categoryLabel(sp)} · biomass ${P.biomass[t].toFixed(2)}</small></div></div>`;
+	for (let slot = 0; slot < 2; slot++) {
+		const p = slot * P.n + t;
+		if (!P.species[p]) continue;
+		const sp = reg.get(P.species[p]);
+		const fungal = P.kind && P.kind[p] === 1;
+		let extra = '';
+		if (fungal) extra = ' · ' + fungusType(P.genome, p * PG);
+		else if (P.fruit && (P.fruit[p] > 0.001 || P.genome[p * PG + 8] > 0.5)) extra = ' · fruit ' + P.fruit[p].toFixed(2);
+		const bst = P.blight && P.blight[p] ? reg.get(P.blight[p]) : null;
+		const blt = bst ? `<small class="tt-sick">blight: ${bst.name}</small>` : '';
+		html += `<div class="tt-row">${iconSVG(sp.icon || sp.category, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${categoryLabel(sp)} · ${slot ? 'understory' : 'canopy'}${fungal ? ' · fungus' : ''}</small><small>biomass ${P.biomass[p].toFixed(2)} · health ${pct(P.health[p])}${extra}</small>${blt}</div></div>`;
 	}
+	if (app.renderer.mode !== 'bugs') html += bugHtml;
 	tt.innerHTML = html;
 	tt.hidden = false;
 	const wrap = $('mapWrap').getBoundingClientRect();
@@ -549,10 +754,8 @@ function setupMapInput() {
 		if (drag && drag.moved <= 4 && app.eco) {
 			const [x, y] = local(e);
 			const [wx, wy] = app.renderer.screenToWorld(x, y);
-			const a = pickAnimal(wx, wy);
-			const t = tileAt(wx, wy);
-			if (a >= 0) selectSpecies(app.eco.animals.sp[a]);
-			else if (t >= 0 && app.eco.plants.species[t]) selectSpecies(app.eco.plants.species[t]);
+			const id = clickTarget(wx, wy);
+			if (id) selectSpecies(id);
 			else closeDetail();
 		}
 		if (pointers.size < 2) pinch = null;
@@ -615,6 +818,7 @@ function setupControls() {
 	$('showAnimals').onchange = (e) => (app.renderer.showAnimals = e.target.checked);
 	$('optSeasons').onchange = (e) => app.eco && (app.eco.options.seasons = e.target.checked);
 	$('optMigrations').onchange = (e) => app.eco && (app.eco.options.migrations = e.target.checked);
+	$('optDisease').onchange = (e) => app.eco && (app.eco.options.disease = e.target.checked);
 
 	$('tabs').addEventListener('click', (e) => {
 		const b = e.target.closest('button');
@@ -641,6 +845,7 @@ function setupControls() {
 	$('eventList').addEventListener('click', pickId);
 	$('detailLineage').addEventListener('click', pickId);
 	$('detailChildren').addEventListener('click', pickId);
+	$('detailHosts').addEventListener('click', pickId);
 	$('detailBack').onclick = closeDetail;
 
 	document.addEventListener('keydown', (e) => {
