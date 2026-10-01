@@ -315,6 +315,16 @@ const SICK_MIX = 0.65;
 const BLIGHT_RGB = [125, 140, 115];
 const BLIGHT_MIX = 0.6;
 const INFECT_MIX = 0.55;
+const SHOW_BASE = 0.3;
+const SHOW_SAT = 1.6;
+const SHOW_LIFT = 40;
+const CREST_ZOOM = 6;
+const CREST_MIN = 0.45;
+const CREST_SCALE = 0.45;
+const PACK_LINK_ZOOM = 4;
+const PACK_LINK_DOTS = 3;
+const PACK_LINK_ALPHA = 0.55;
+const PACK_LINK_RGB = [235, 225, 200];
 const OLD_RGB = [160, 160, 160];
 const OLD_MIX = 0.25;
 const MARK_SCALE = 0.4;
@@ -1128,6 +1138,51 @@ class WorldRenderer {
 		return t;
 	}
 
+	_showy(co, ca, s) {
+		const t = this._showTint || (this._showTint = new Uint8Array(9));
+		const k = 1 + SHOW_SAT * (s - SHOW_BASE);
+		const lift = SHOW_LIFT * (s - SHOW_BASE);
+		for (let q = 0; q < 9; q += 3) {
+			const r = ca[co + q];
+			const g = ca[co + q + 1];
+			const b = ca[co + q + 2];
+			const m = (r + g + b) / 3;
+			t[q] = Math.max(0, Math.min(255, m + (r - m) * k + lift));
+			t[q + 1] = Math.max(0, Math.min(255, m + (g - m) * k + lift));
+			t[q + 2] = Math.max(0, Math.min(255, m + (b - m) * k + lift));
+		}
+		return t;
+	}
+
+	_pushPackLinks(n, alpha, x0, y0, x1, y1) {
+		const A = this.eco.animals;
+		const pk = A.pk;
+		const pn = A.pn;
+		if (!pk || !pn) return n;
+		const map = this._packMap || (this._packMap = new Map());
+		map.clear();
+		for (let i = 0; i < A.count; i++) if (pn[i] > 1 && pk[i] === A.uid[i]) map.set(pk[i], i);
+		if (!map.size) return n;
+		const rgb = this._packRgb || (this._packRgb = Uint8Array.from([...PACK_LINK_RGB, ...PACK_LINK_RGB, ...PACK_LINK_RGB]));
+		const dotIcon = ICON_INDEX.dot;
+		const s = Math.max(3 / this.cam.zoom, 0.18);
+		for (let i = 0; i < A.count; i++) {
+			if (pn[i] < 2 || pk[i] === A.uid[i]) continue;
+			const j = map.get(pk[i]);
+			if (j === undefined) continue;
+			const xa = A.px[i] + (A.x[i] - A.px[i]) * alpha;
+			const ya = A.py[i] + (A.y[i] - A.py[i]) * alpha;
+			const xb = A.px[j] + (A.x[j] - A.px[j]) * alpha;
+			const yb = A.py[j] + (A.y[j] - A.py[j]) * alpha;
+			if (Math.max(xa, xb) < x0 || Math.min(xa, xb) > x1 || Math.max(ya, yb) < y0 || Math.min(ya, yb) > y1) continue;
+			for (let q = 1; q <= PACK_LINK_DOTS; q++) {
+				const f = q / (PACK_LINK_DOTS + 1);
+				n = this._put(n, xa + (xb - xa) * f, ya + (yb - ya) * f, s, dotIcon, 1, PACK_LINK_ALPHA, 0, rgb);
+			}
+		}
+		return n;
+	}
+
 	_infected(id, col) {
 		const t = this._tint;
 		const o = id * 9;
@@ -1284,6 +1339,9 @@ class WorldRenderer {
 				n = this._put(n, x, y, s, ringIcon, 1, 0.9, 0, white);
 			}
 		}
+		if (zoom >= PACK_LINK_ZOOM) n = this._pushPackLinks(n, alpha, x0, y0, x1, y1);
+		const show = A.show;
+		const crestIcon = ICON_INDEX.crest;
 		for (let k = 0, cnt = A.count; k < cnt * 2; k++) {
 			const i = k < cnt ? k : k - cnt;
 			const air = dom[i] === 3;
@@ -1296,14 +1354,17 @@ class WorldRenderer {
 			const g = gf ? gf[i] : 1;
 			const th = wmode && dom[i] !== 1 && wat[i] < THIRSTY ? (wat[i] <= 0 ? DRY_TINT : THIRST_TINT) : null;
 			const a = ((hl !== null && id !== hl) || (hs && sick !== hs) || (dmode && !sick) || (wmode && !th) ? 0.35 : 1) * (ef && ef[i] < 1 ? ELDER_ALPHA : 1);
-			const ca = sick ? this._infected(id, col) : col;
-			const co = sick ? 0 : id * 9;
+			const sv = show && !sick ? show[i] : 0;
+			const bright = sv > SHOW_BASE;
+			const ca = sick ? this._infected(id, col) : bright ? this._showy(id * 9, col, sv) : col;
+			const co = sick || bright ? 0 : id * 9;
 			if (dots) {
 				const ds = ((3 + A.mass[i] * 0.9) / zoom) * g;
 				n = th ? this._put(n, x, y, ds * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, a, 0, th) : this._put(n, x, y, ds, dotIcon, 1, a, co, ca);
 			} else {
 				const size = Math.max(12 / zoom, 0.8 + 0.45 * A.mass[i]) * g;
 				const ly = air && fly[i] ? y - size * FLY_LIFT : y;
+				if (sv >= CREST_MIN && zoom >= CREST_ZOOM) n = this._put(n, x - size * 0.12 * A.face[i], ly - size * 0.62, size * CREST_SCALE * (0.6 + sv), crestIcon, A.face[i], a, co, ca);
 				n = this._put(n, x, ly - size * 0.1, size, icons[id], A.face[i], a, co, ca);
 				if (sick) n = this._put(n, x + size * 0.38, ly - size * 0.5, size * MARK_SCALE, virusIcon, 1, a, 0, white);
 				if (th) n = this._put(n, x - size * 0.38, ly - size * 0.5, size * MARK_SCALE * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, 1, 0, th);
