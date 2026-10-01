@@ -9,6 +9,8 @@ const EGG_FAIL = 0.0015;
 const EGG_PARA = 0.02;
 const GUARD_K = 3;
 const CA_FAIL = 0.35;
+const DIA_MIN = 0.4;
+const DIA_MAX = 400;
 
 class EggPool {
 	constructor(world, animals, registry) {
@@ -33,6 +35,8 @@ class EggPool {
 		this.eaten = 0;
 		this.failed = 0;
 		this.caFailed = 0;
+		this.diapause = 0;
+		this.diaHatched = 0;
 	}
 
 	_grow(newCap) {
@@ -53,6 +57,7 @@ class EggPool {
 		this.nst = grow(this.nst, Uint8Array, 1);
 		this.str = grow(this.str, Int32Array, 1);
 		this.ca = grow(this.ca, Uint8Array, 1);
+		this.dia = grow(this.dia, Uint16Array, 1);
 		this.alive = grow(this.alive, Uint8Array, 1);
 		this.next = grow(this.next, Int32Array, 1);
 		this.genome = grow(this.genome, Float32Array, AG);
@@ -75,6 +80,7 @@ class EggPool {
 		this.nst[e] = nst ? 1 : 0;
 		this.str[e] = str || 0;
 		this.ca[e] = ca ? 1 : 0;
+		this.dia[e] = 0;
 		if (nst) this.nestLaid++;
 		this.alive[e] = 1;
 		this.next[e] = this.head[tile];
@@ -126,13 +132,22 @@ class EggPool {
 		const pl = A.parasiteLoad;
 		const W = this.world.width;
 		const D = A.disease && A.disease.on ? A.disease : null;
+		const winter = Wx && Wx.season < DORM_SEASON;
+		let paused = 0;
 		for (let e = 0; e < n; e++) {
 			if (!this.alive[e]) continue;
 			const t = this.tile[e];
 			const dom = this.dom[e];
-			if (rng.next() < EGG_FAIL || (snow && dom !== 1 && (snow[t] > SNOW_SHOW || (dom === 2 && !fresh[t] && wet[t] <= EGG_WET)))) {
+			const bad = snow && dom !== 1 && (snow[t] > SNOW_SHOW || (dom === 2 && !fresh[t] && wet[t] <= EGG_WET));
+			const canDia = dom !== 1 && this.genome[e * AG + G_DORMANCY] > DIA_MIN && this.dia[e] < DIA_MAX;
+			if (rng.next() < EGG_FAIL || (bad && !canDia)) {
 				this.alive[e] = 0;
 				this.failed++;
+				continue;
+			}
+			if (canDia && (bad || (winter && temp[t] + seasonT < DORM_T))) {
+				this.dia[e]++;
+				paused++;
 				continue;
 			}
 			if (this.nst[e] && pl[t] > 0 && rng.next() < EGG_PARA * pl[t]) {
@@ -171,7 +186,9 @@ class EggPool {
 				if (D && this.str[e]) D.exposeAnimal(j, this.str[e], 1);
 			}
 			this.hatched++;
+			if (this.dia[e]) this.diaHatched++;
 		}
+		this.diapause = paused;
 		this._compact();
 	}
 
@@ -193,6 +210,7 @@ class EggPool {
 				this.nst[w] = this.nst[e];
 				this.str[w] = this.str[e];
 				this.ca[w] = this.ca[e];
+				this.dia[w] = this.dia[e];
 				this.alive[w] = 1;
 				this.genome.copyWithin(w * AG, e * AG, e * AG + AG);
 			}

@@ -302,7 +302,7 @@ It also keeps some scalar fields:
 - `seasonsOn`, set by the ecosystem from `options.seasons`.
 - `moistMul`: the `WeatherLayer.moistMul` Float32 `n` array, assigned by the ecosystem, or `null` (no weather layer). Read in the growth loop, by germination and by the seed-bank gate in `plantSeed`.
 - `snow`: the `WeatherLayer.snow` Float32 `n` array, assigned by the ecosystem, or `null`. Read by germination and the seed-bank gate.
-- Life stage fields: `stages` is `{seedTiles, seedlings, mature, old}`, refreshed each step (`seedTiles` on age-step ticks). Cumulative counters `oldDeaths`, `germinated` and `grazedSeedlings`.
+- Life stage fields: `stages` is `{seedTiles, seedDormant, seedlings, mature, old}` (`seedDormant`, slice 6, is the number of resting banks on the last age-step tick, counted in `seedResting`), refreshed each step (`seedTiles` on age-step ticks). Cumulative counters `oldDeaths`, `germinated` and `grazedSeedlings`.
 - `bloomNow` and `fruitNow`, this tick's `bloomFactor` and lagged `fruitFactor`. Both are 0.5 when seasons are off.
 - `soil`, the `SoilLayer` instance.
 - `season`, the current value of `sin(2π·tick/YEAR_TICKS)`.
@@ -373,7 +373,7 @@ Public methods:
   - Biomass never drops below 0.004. A dying lineage can therefore persist at a trace level, and a grazed patch can always regrow.
   - Plants with `K < 0.015` (including deeply shaded understory) lose 0.01 per tick and are cleared once they reach 0.
   - When a plant is more than 30% full and has health of at least `HEALTH_SPREAD_MIN`, it attempts `_spread` with probability `(0.006 + 0.045*disp)*fullness*(1 + _bloomK*bloomNow*(POLL_WIND+(1-POLL_WIND)*poll[i]))`, where `_bloomK = bloom*FLOWER_SEED_BONUS*FRUIT_WIND`.
-  - The cover pass multiplies `poll` by `POLL_DECAY` and sets `flowerPoll` to the mean `poll` over flower tiles. On age-step ticks it also decays each tile's seed bank by `SEED_DECAY` (clearing it below `SEED_MIN`) and calls `_germinate`.
+  - The cover pass multiplies `poll` by `POLL_DECAY` and sets `flowerPoll` to the mean `poll` over flower tiles. On age-step ticks it calls `_seedTick(i, tick)` for each tile with a seed bank. Since v3 Part 1 slice 6 a bank on a tile with `snow > SNOW_SHOW` or `moistMul < SEED_REST_DRY` (0.7) rests: no decay, no germination, counted in `seedResting`. Otherwise it decays by `SEED_DECAY` (clearing it below `SEED_MIN`) and calls `_germinate`. `PlantGpu`'s JS seed loop calls the same `_seedTick`; the WGSL kernels do not touch seed banks.
 - **`damage(i, amount)`** is the pest bite. It takes biomass from the understory plant first (skipping fungi), then the canopy, only above the woody floor (reach 0), and lowers each bitten plant's health by `taken*PEST_HEALTH`, clamped at 0. It returns the total taken.
 - **`nectar(i)`** returns the summed `_bloomK` over both slots of tile `i` (unseasoned) and sets `nectarHue` to the hue of the strongest bloomer.
 - **Pollination fields:** `poll` (Float32 `n`, 0..1, raised by pollinator bugs) and `flowerPoll` (mean `poll` on flower tiles).
@@ -507,7 +507,7 @@ Animals are agents stored as structure-of-arrays. There is one typed array per f
 
 ### Constants
 
-- **`AG = 20`**: the number of animal genes. Gene layout by index, with its named index constant:
+- **`AG = 21`**: the number of animal genes. Gene layout by index, with its named index constant:
 
   | Index | Gene | Constant |
   | --- | --- | --- |
@@ -531,14 +531,17 @@ Animals are agents stored as structure-of-arrays. There is one typed array per f
   | 17 | display | `G_DISPLAY` |
   | 18 | choosiness | `G_CHOOSY` |
   | 19 | appetite (v3 Part 1 slice 5) | `G_APPETITE` |
+  | 20 | dormancy (v3 Part 1 slice 6) | `G_DORMANCY` |
 
   Genes 15–18 were appended in v3 Part 1 slice 1 as groundwork. They mutate, count in `geneDistance` and are saved. Slice 3 gave gene 15 (nesting) its effect, see Nests and dens below; slice 4 gives genes 16–18 their effects (pack hunting, display and choosiness; see **Packs, display and mate choice** below). Most founders use `[nest, pack, display, choosy]` = `0.3, 0.15, 0.3, 0.3`; the carnivore founders raise pack to 0.4 (the seal 0.5), and the invertebrates use low values (nest 0.05–0.2, pack 0.05–0.1). Slice 3 raised the nest gene on chosen founders so nesting starts in several lineages: rabbit 0.55, fox 0.55, the boar-line omnivore 0.5, wolf 0.5, land scavenger 0.5, crocodile 0.5, reef fish 0.45, frog 0.45, sea turtle 0.45, and the birds 0.5 (seed), 0.42 (insect), 0.45 (fishing), 0.55 (raptor) and 0.35 (carrion). The deer, bison, arid runner, cold grazer and seal use 0.25, below `NEST_MIN`, so they start as non-nesters. Slice 4 overrides two of these at module load: land mammal carnivores (`cls` mammal, land, diet > 0.66) get pack `FOUNDER_PACK` (0.6), and non-fisher birds (`!nic`) with diet < 0.66 get choosiness `FOUNDER_CHOOSY` (0.55).
 
   Gene 19 (appetite) was appended in v3 Part 1 slice 5. The archetype literals still list 19 genes; the founder loop at module load sets `g[G_APPETITE] = FOUNDER_APPETITE` (0.35), plus `FOUNDER_APP_COLD` (0.2) when `prefTemp < 0.4` and `FOUNDER_APP_BIRD` (0.15) for birds. See **Nutrition and body condition** below.
 
+  Gene 20 (dormancy) was appended in v3 Part 1 slice 6, also set by the founder loop: `FOUNDER_DORM[cls]` (fish 0.1, amphibian 0.5, reptile 0.5, mammal 0.3, bird 0.3, invertebrate 0.45) plus `FOUNDER_DORM_COLD` (0.25) for mammals with `prefTemp < 0.4`. See **Dormancy** below.
+
   Genes 11–14 were appended in Part 3 slice 2 as `[terr, herd, cold, dry]`: land herbivores `0.05, 0.6, 0.05, 0.3`, the land omnivore `0.35, 0.1`, land carnivores `0.5, 0.1`, water herbivores `0.05, 0.5`, the crustacean `0.35, 0.1`, water carnivores `0.5, 0.1`, the carrion eater `0.35, 0.1, 0.05, 0.3`.
 
-- **`ANIMAL_WEIGHTS`** is `[1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6, 0.3, 0.3, 0.3, 0.3, 0.5]` (appetite weighs 0.5). Diet carries the most weight; the four slice 1 genes weigh 0.3 each. **`ANIMAL_SPECIATION`** is `0.18`. **`ANIMAL_SPLIT_MIN_POP`** is 12.
+- **`ANIMAL_WEIGHTS`** is `[1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6, 0.3, 0.3, 0.3, 0.3, 0.5, 0.5]` (appetite and dormancy weigh 0.5 each). Diet carries the most weight; the four slice 1 genes weigh 0.3 each. **`ANIMAL_SPECIATION`** is `0.18`. **`ANIMAL_SPLIT_MIN_POP`** is 12.
 - **`GRID = 6`**: the spatial grid cell size, in tiles.
 - **Classes (v3 Part 1 slice 1):**
   - **`ANIMAL_CLASSES`** is `['fish', 'amphibian', 'reptile', 'mammal', 'bird', 'invertebrate']`, with index constants `CLS_FISH` 0, `CLS_AMPH` 1, `CLS_REPT` 2, `CLS_MAMM` 3, `CLS_BIRD` 4 and `CLS_INVT` 5. Slice 2 added five bird founders.
@@ -1222,6 +1225,30 @@ The energy column is descriptive only; energy gains keep their existing per-food
 - **`refreshSpeciesMeans`** adds `sp.fat` (mean fat share), `sp.protDef` and `sp.minDef` (deficient shares), then calls **`_condTrack(sp)`**. It appends `[tick, fat, max(protDef, minDef)]` to `sp.condHist` every `sp.condStep` ticks (doubling past `COND_HIST`) and logs "<name> is suffering from protein deficiency" (info) once when `protDef > DEF_EVENT`, population ≥ `DEF_EVENT_POP` and the species is at least `DEF_EVENT_AGE` ticks old; the alert re-arms below `DEF_REARM`.
 - The pool counters `caClutches` and `fatBurned` are cumulative.
 
+### Dormancy: hibernation, brumation, aestivation and torpor (v3 Part 1 slice 6)
+
+New Int pool fields (`ANIMAL_FIELDS_I.push('dorm', 'dormT')`), both 0 in `spawn`: `dorm` is the dormancy kind (0 awake, 1 hibernation, 2 brumation, 3 aestivation, 4 torpor; `DORM_NAMES`), `dormT` counts ticks in the current bout, and a negative `dormT` is a post-wake cooldown that counts back up to 0 (no re-entry meanwhile). New state 7 = heading to den. Cumulative counters `dormEntered`, `dormStarved` (non-torpor bouts ended by an empty fat store), `dormBurned`. The dormancy gene costs metabolism ×`1 + DORM_COST*g` in `_decode`.
+
+| Constant | Value | Meaning |
+| --- | --- | --- |
+| `DORM_MIN`, `TORPOR_MIN` | 0.4, 0.3 | Gene thresholds for seasonal dormancy and for torpor. |
+| `DORM_EVERY` | 5 | Awake animals check entry on `(tick+i) % 5 === 0` (every tick while in state 7). |
+| `DORM_T`, `DORM_SEASON`, `DORM_HYST` | 0.35, -0.2, 0.06 | Winter entry needs `Wx.season < DORM_SEASON` and effective tile temperature below `DORM_T`; wake at `season >= 0` or temperature `>= DORM_T + DORM_HYST`. |
+| `DORM_FAT`, `DORM_ECTO_E` | 0.05, 0.4 | Hibernation needs fat > 5% of `emax*gf`; brumation needs fat > 1% or energy > 40%. |
+| `DORM_BURN` | `[0, 0.15, 0.08, 0.12, 0.5]` | Metabolic cost multiplier by kind, then ×`1.4 - DORM_GENE_BURN*g` (`DORM_GENE_BURN` 0.8). |
+| `TORPOR_TICKS`, `TORPOR_MASS`, `TORPOR_E` | 24, 0.9, 0.5 | Torpor lasts 24 ticks; needs `mass*gf < 0.9`, a tile colder than `pT - tol` and energy below 50%. Also the post-wake cooldown length. |
+| `AEST_WET`, `AEST_SEASON`, `AEST_WATER` | 0.25, 0.3, 0.5 | Aestivation: drought or `season > 0.3`, `wet < 0.25`, no water within 1 tile, `water < 0.5`. Wakes when neither drought nor high summer holds, or `wet >= AEST_WET + DORM_HYST`. |
+| `DORM_WAKE_E` | 0.3 | With no fat left and energy below 30% the animal wakes starving. |
+| `DORMANT_CATCH` | 1.8 | Catch chance multiplier against dormant prey (capped at 0.95). |
+| `DORM_SUS`, `DORM_SICK`, `DORM_ITIME` | 0.6, 0.5, 4 | Disease while dormant: susceptibility ×1.6, sick cost and death roll ×0.5, infection time only counts down every 4th tick. |
+| `DORM_EVENT`, `DORM_REARM`, `DORM_EVENT_POP` | 0.5, 0.1, 20 | Species event thresholds. |
+
+- **`_dormWant(i, tile, et, Wx, e, em0)`** returns the kind an awake animal wants (0 none). Water-domain animals never go dormant. Hibernation: mammals. Brumation: reptiles, amphibians and land invertebrates. Aestivation: amphibians and land invertebrates with diet < 0.5. Torpor: small birds and mammals.
+- **Entry** (in `step`, before the action chain; skipped while flying, fleeing or confused): hibernators and brumators with a home farther than `NEST_NEAR` walk to it first (state 7); otherwise, or when they cannot move, **`_dormEnter(i, k)`** sets `dorm`, zeroes `dormT`, `state` and `ttl`. Animals without a home go dormant where they stand.
+- **`_dormStep(i, tile, et, Wx, D)`** runs right after the tile is computed for a dormant animal and replaces the rest of the tick when it returns true: wake checks (above; `_dormWake` sets `dormT = -TORPOR_TICKS`), the reduced burn, fat refill below `FAT_BURN`, the dormant disease rules (a den-mate contact roll via `_denContact` when at home), then starvation and old-age deaths. Water, territory, eating, moving and breeding are frozen.
+- **Predation:** `_nearest` skips dormant predators (mode 0) and dormant prey sitting at their home (mode 1, Manhattan distance ≤ `NEST_NEAR`), so den sleepers are safe; dormant prey in the open are caught at ×`DORMANT_CATCH`, and a failed attack wakes them and they flee. `_social` skips dormant animals as pack members.
+- **`refreshSpeciesMeans`** sums dormancy by kind (`AG + 5 .. AG + 8`) and calls **`_dormTrack(sp, s)`**: `sp.dormShare` (all kinds) and, once per bout, "<name> went into hibernation | brumation | aestivation" (info) when the leading seasonal kind's share passes `DORM_EVENT` with at least `DORM_EVENT_POP` members; `sp.dormAlert` re-arms below `DORM_REARM`.
+
 ---
 
 ## Eggs (`js/sim/eggs.js`)
@@ -1242,12 +1269,14 @@ Part 3b slice 1. A compact structure-of-arrays store for laid eggs. Eggs are not
 | `EGG_PARA` | 0.02 | A nest egg fails with chance `EGG_PARA*parasiteLoad` per tick on its tile (slice 3). |
 | `GUARD_K` | 3 | Weight of the guard's mass when a raider rolls against it (slice 3). |
 | `CA_FAIL` | 0.35 | A calcium-poor egg (`ca`) fails at hatching with this chance (v3 Part 1 slice 5). |
+| `DIA_MIN` | 0.4 | Dormancy gene above which a non-water egg can enter diapause (v3 Part 1 slice 6). |
+| `DIA_MAX` | 400 | Most ticks an egg can spend in diapause; after that it fails as before. |
 
 ### `EggPool(world, animals, registry)`
 
-- Per-egg arrays (capacity starts at 512 and doubles): `x`, `y` (Float32), `tile`, `sp`, `imm` (innate immunity strain), `next` (Int32), `energy`, `timer` (Float32), `dom` (Uint8, the parent's domain), `nst` (Uint8, 1 for a nest egg), `str` (Int32, a disease strain passed to the chick), `ca` (Uint8, 1 for a calcium-poor egg, slice 5), `alive` (Uint8) and `genome` (`Float32Array(cap*AG)`).
+- Per-egg arrays (capacity starts at 512 and doubles): `x`, `y` (Float32), `tile`, `sp`, `imm` (innate immunity strain), `next` (Int32), `energy`, `timer` (Float32), `dom` (Uint8, the parent's domain), `nst` (Uint8, 1 for a nest egg), `str` (Int32, a disease strain passed to the chick), `ca` (Uint8, 1 for a calcium-poor egg, slice 5), `dia` (Uint16, ticks spent in diapause, slice 6), `alive` (Uint8) and `genome` (`Float32Array(cap*AG)`).
 - `head` (Int32, one per tile, -1 when empty) with `next` forms a per-tile linked list, so eaters find eggs on their tile in O(eggs on tile).
-- Cumulative counters: `laid`, `hatched`, `eaten`, `failed`, and for slice 3 `nestLaid`, `nestHatched`, `raids` (nest eggs eaten), `repelled` (raids stopped by a guard), `paraFailed` (nest eggs lost to parasites) and `caFailed` (calcium-poor eggs that failed, also counted in `failed`). `count` is the number of eggs.
+- Cumulative counters: `laid`, `hatched`, `eaten`, `failed`, and for slice 3 `nestLaid`, `nestHatched`, `raids` (nest eggs eaten), `repelled` (raids stopped by a guard), `paraFailed` (nest eggs lost to parasites) and `caFailed` (calcium-poor eggs that failed, also counted in `failed`), and for slice 6 `diaHatched` (eggs that hatched after diapause). `diapause` is the number of eggs paused on the last step. `count` is the number of eggs.
 - Per-tile guard arrays: `guardM` (Float32, the heaviest guard mass this tick) and `guardT` (Int32, the tick it was set). `nestCell` (Int32, one per animal grid cell, -1 when none) holds one tile with nest eggs per cell, for the raid lure in `_pickForage`.
 
 ### Methods
@@ -1258,6 +1287,7 @@ Part 3b slice 1. A compact structure-of-arrays store for laid eggs. Eggs are not
 - **`step(Wx)`** runs after `animals.step`. For each egg:
   - Every egg first fails with chance `EGG_FAIL` (drawn from `animals.rng`), counted in `failed`.
   - With weather, a non-water egg fails if its tile has `snow > SNOW_SHOW`, and an amphibian egg fails if its tile is neither `fresh` nor `wet > EGG_WET` (dried out).
+  - Diapause (slice 6): a non-water egg whose genome has `G_DORMANCY > DIA_MIN` and `dia < DIA_MAX` pauses instead of failing from snow or drying, and also pauses when `Wx.season < DORM_SEASON` and its tile temperature is below `DORM_T`. A paused egg increments `dia`, keeps its timer and counts in `diapause`; one that later hatches with `dia > 0` counts in `diaHatched`.
   - A nest egg on a tile with parasites fails with chance `EGG_PARA*parasiteLoad`, counted in `failed` and `paraFailed`.
   - The timer drops by 1 per tick; reptile eggs (domain 0) drop by `max(EGG_COLD_RATE, 1 - (0.5-et)*2*(1-EGG_COLD_RATE))` when effective temperature `et = temperature + seasonT` is below 0.5, so 0.5× at `et <= 0.25`.
   - At 0 a `ca` egg first fails with chance `CA_FAIL` (counted in `failed` and `caFailed`).
@@ -1283,7 +1313,10 @@ Bugs are density fields, not agents. There are four niche planes, each holding a
   | Constant | Value | Use |
   | --- | --- | --- |
   | `BUG_EVERY` | 6 | The layer steps every 6 ticks; all rates are multiplied by it. |
-  | `BUG_MIN` | 0.01 | A cell below this density is cleared. |
+  | `BUG_MIN` | 0.01 | A cell below this density is cleared (or held as a winter reserve, slice 6). |
+  | `BUG_RESERVE` | 0.03 | Density a winter reserve returns at when it wakes (v3 Part 1 slice 6). |
+  | `BUG_RES_DIE` | 0.012 | Chance per bug step that a winter reserve dies. |
+  | `BUG_RES_FIT` | 0.05 | Minimum `fit` for a dying cell to become a reserve. |
   | `BUG_SEED_D` | 0.06 | Density of a newly colonised cell. |
   | `BUG_TOL` | 0.2 | Climate tolerance (moisture uses 1.2×). |
   | `BUG_R` | 0.08 | Base logistic growth rate. |
@@ -1347,7 +1380,7 @@ Bug species are registry species with `group 'bug'` plus `niche`, `nicheIndex`, 
 Runs only when `tick % BUG_EVERY === 0`. Updates `trace`, zeroes `animals.parasiteLoad`, then for each niche plane and occupied cell (inlined loops, food computed as above):
 
 - Pest locust check first (see below).
-- Logistic growth toward K (`fit*food*BUG_K_SCALE`) below it, `d -= (d-K)*BUG_DECLINE*dt` above it, then `d -= BUG_MORT*dt*(0.5+appetite)*(1+BUG_CROWD*d)*d`. Cells under `BUG_MIN` are cleared.
+- Logistic growth toward K (`fit*food*BUG_K_SCALE`) below it, `d -= (d-K)*BUG_DECLINE*dt` above it, then `d -= BUG_MORT*dt*(0.5+appetite)*(1+BUG_CROWD*d)*d`. Cells under `BUG_MIN` are cleared, except in winter (`Wx.season < 0`) when a cell with `fit > BUG_RES_FIT` becomes a dormant reserve (slice 6): `dorm` 1, density 0, species and genome kept, so it is not eaten and does not spread. A reserve dies with chance `BUG_RES_DIE` per step (then cleared) and wakes at `BUG_RESERVE` density once `season >= 0`, counted in `reserveWoke`. `reserve` is the reserve count on the last step.
 - Effects:
   - Pest: `plants.damage(i, d*appetite*PEST_BITE*dt)`, summed into `pestDamage`.
   - Detritivore: `soil.consumeLitter(i, litter*d*DETRI_RATE*dt)`; `DETRI_RECYCLE` of it goes to nutrients (clamped at `SOIL_MAX`).
@@ -1599,12 +1632,13 @@ Scratch arrays: `_evapK` (per-tile `EVAP*(0.5+temperature)`), `_mark` (Int32 rai
   - `animals.setWeather(weather)` runs right after the weather layer is built, before the founders; `_introduce` gives amphibious archetypes domain 2 and skips sites with `waterDist > 2`.
   - `stats.weather` is `{storms, rainTiles, snowTiles, drought, droughts}` and `stats.meanWet` is the mean land `wet`, copied from the weather layer in `_computeStats`.
   - `eggs` is the `EggPool` (or `null` when `eggs.js` is not loaded), built right after `animals.setWeather` and assigned to `animals.eggs`.
-  - `stats.plantStages` is `{seedTiles, seedlings, mature, old, oldDeaths, germinated, grazedSeedlings}`, copied in `_computeStats` from `plants.stages` and the three cumulative plant counters.
+  - `stats.plantStages` is `{seedTiles, seedDormant, seedlings, mature, old, oldDeaths, germinated, grazedSeedlings}`, copied in `_computeStats` from `plants.stages` and the three cumulative plant counters.
   - `stats.stages` is `{eggs, juveniles, adults, elders}`: `eggs` is `eggs.count`; each animal is a juvenile (`age < mature`), an elder (`age > ELDER_AGE*maxAge`) or an adult. `stats.eggs` is `{laid, hatched, eaten, failed}`, cumulative copies of the `EggPool` counters. Both are set in `_computeStats`.
   - `stats.birdNiches` (slice 2) maps each `BIRD_NICHES` key to its live bird count (fisher when `nic`, otherwise by role), and `stats.birdMigrants` copies `animals.birdMigrants`; both are set in `_computeStats`.
   - `stats.nests` (slice 3) is `{nests, dens, nesters, natal, nestEggs, eggsPerNest, raids, repelled, paraFailed}`, set by `_nestStats()` every 20 ticks: distinct nest and den tiles, animals holding a nest or den, natal young, live nest eggs, nest eggs per nest tile (2 decimals), and the cumulative `EggPool` raid, repel and parasite-failure counters.
   - `stats.packs` (packs with 2+ members), `stats.packSize` (mean members per pack, 2 decimals), `stats.packKills`, `stats.bigKills`, `stats.mateRefusals` (cumulative pool counters) and `stats.packCls` (`{<group key>: [packs, members]}`) come from `_packStats()`, which runs every 20 ticks after `_herdStats` (v3 Part 1 slice 4).
   - `stats.nutrition` (v3 Part 1 slice 5) is `{lean, fit, heavy, obese, meanFat, deficient, defShare, defProt, defMin, caFailed, caClutches, fatBurned}`, set by `_nutStats()` every 20 ticks: animals per body condition class, mean fat share, deficient animals and their share, low-protein and low-mineral counts, and the cumulative calcium egg failures, calcium-poor clutches and fat burned. `history.nutrition` (deficient %) and `history.meanFat` are pushed with the other history.
+  - `stats.dormancy` (v3 Part 1 slice 6) is `{total, hib, brum, aest, torpor, entered, starved, eggDiapause, diaHatched, bugReserve, bugWoke, seedDormant}`, set by `_dormStats()` every 20 ticks after `_nutStats`: dormant animals by kind (`A.dorm` 1-4), the cumulative entries and starving wakes from `animals.dormEntered`/`dormStarved`, `eggs.diapause`/`diaHatched`, `bugs.reserve`/`reserveWoke` and `plants.stages.seedDormant`. `stats.dormCls[key]` is the dormant count per class key. `history.dormancy` (dormant animals) is pushed with the other history.
   - `history` holds `tick`, `plants` (rounded biomass), `bugs`, `sick`, `thirstDeaths`, `herds`, `territories`, `eggs` (`stats.stages.eggs`), `nests` and `dens` (`stats.nests`), `packs`, `packSize`, `birdNiche.<niche>` per bird niche, one array per group key, and one per class and role as `<key>.<role>` (for example `mammal.carn`, `invert.herb`), which feed the class card role sparklines. When it passes 800 samples, it keeps every second sample.
 
 ### Methods
@@ -1697,6 +1731,7 @@ The vector icons are drawn on a 32×32 box, in side view, facing right. The same
     | `crocodile` | Long low body, `dark` back scutes and fixed white teeth (`#f4f1e6`). |
   - `egg` (Part 3b slice 3), appended after `crocodile` at index 144, so the atlas holds 145 icons in 13 rows. An upright egg: `body` shell, a `dark` lower shadow band, a `light` highlight stroke on the upper left and five `dark` speckles. It is only drawn on the map (by `_pushEggs`), never as a species icon.
   - `nest` and `den` (v3 Part 1 slice 3), inserted right after `egg` (indices 152 and 153). `nest` is a woven `body` bowl with a `dark` cup opening, `light` weave lines and stray twigs; `den` is a `body` burrow mound with a fixed black entrance (`#141414`) inside a `dark` arch, `light` pebbles and a ground line. Both are map-only markers drawn by `_pushHomes` and the Nests & dens stat card.
+  - `sleep` (v3 Part 1 slice 6), appended after `flag`: two stroked `body` "Z" shapes, drawn as the dormancy marker over sleeping animals.
   - Bug categories (Part 3), the values `bugCategory` returns:
 
     | Icon | Niche | Design |
@@ -1973,7 +2008,7 @@ The CPU copy is `bugData` (`Uint8Array(n*4)`); `lastBugUpdate` holds the last re
    - **Animals:** drawn when `showAnimals` is on.
      - Positions are interpolated as `p + (x - p)*alpha` between the previous and current tick.
      - Below zoom 3, animals are drawn as `dot` sprites.
-     - Life stages (Part 3b slice 3): the sprite size `max(12/zoom, 0.8 + 0.45*mass)`, the dot size `(3 + 0.9*mass)/zoom`, the shadow and the highlight ring are all multiplied by the animal's growth factor `animals.gf[i]` (0.4-1), after the pixel floor, so juveniles stay smaller than adults at every zoom. Elders (`animals.ef[i] < 1`) draw at alpha × `ELDER_ALPHA` (0.8).
+     - Life stages (Part 3b slice 3): the sprite size `max(12/zoom, 0.8 + 0.45*mass)`, the dot size `(3 + 0.9*mass)/zoom`, the shadow and the highlight ring are all multiplied by the animal's growth factor `animals.gf[i]` (0.4-1), after the pixel floor, so juveniles stay smaller than adults at every zoom. Elders (`animals.ef[i] < 1`) draw at alpha × `ELDER_ALPHA` (0.8). Dormant animals (`animals.dorm[i] > 0`, slice 6) draw at alpha × `DORM_ALPHA` (0.55), size × `DORM_SHRINK` (0.8) and width × `DORM_WIDE` (1.25), curled up, with a white `sleep` marker at `zoom ≥ DORM_ZOOM` (6).
      - At `zoom ≥ SHADOW_ZOOM` (6), a `shadow` icon is pushed first under each animal at `(x, y + 0.32*size)`, 0.9× size, alpha `SHADOW_ALPHA` (0.45), in plain white colors.
      - Flying birds (`domain 3`, `fly` set) get a second, offset shadow at `(x + FLY_SHADOW[0]*size, y + FLY_SHADOW[1]*size)`, `FLY_SHADOW[2]` (0.6) times the size and alpha `FLY_SHADOW_ALPHA` (0.22), where the plain shadow would go; `FLY_SHADOW` is `[0.45, 0.95, 0.6]`.
      - **Homes (`_pushHomes`)** (slice 3) are pushed after the shadows and before the eggs at `zoom ≥ EGG_ZOOM`. One marker per distinct home tile in view (animals with `home` 1 or 2, keyed by the tile of `nx`/`ny`): the `nest` icon in `NEST_TINT` or the `den` icon in `DEN_TINT`, size `max(HOME_PX/zoom, HOME_SIZE)` (8 px floor, 1.1 tiles), nudged up by 0.05 (nest) or 0.2 (den) of the size. Natal young draw no marker.
@@ -1998,7 +2033,7 @@ Other public members:
 
 - `compileProgram(gl, vs, fs)` returns `{p, u}`, where `u` maps uniform names to their locations.
 - `RAMPS` and `rampLookup(stops)` build a 256-entry RGB lookup table from color stops.
-- `LIVE_MODES`, `FLOWER_LEAF`, `FLOWER_TINT`, `FLOWER_SHADED`, `FRUIT_SHOW`, `FRUIT_EMPTY_SIZE`, `FUNGUS_SCALE`, `BUG_DOT`, `BUG_DOT_PX`, `BUG_HL_SCALE`, `BUG_PER_DENSITY`, `BUG_CLOUD_MS`, `BUG_CLOUD_FULL`, `CLOUD_FADE`, `WARP_ZOOM`, `SHADOW_ZOOM`, `SHADOW_ALPHA`, `BUG_JITTER`, `BUG_SPEED`, `BLIGHT_RGB`, `BLIGHT_MIX`, `INFECT_MIX`, `MARK_SCALE`, `TERR_MIX`, `TERR_SAT`, `TERR_FADE`, `TERR_EDGE_MIX`, `TERR_EDGE_DARK`, `ELDER_ALPHA`, `EGG_ZOOM`, `EGG_PX`, `EGG_BASE`, `EGG_SIZE_K`, `EGG_WATER_ALPHA`, `EGG_PALE`, `HOME_SIZE`, `HOME_PX`, `NEST_TINT`, `DEN_TINT`, `FLY_SHADOW`, `FLY_SHADOW_ALPHA`, `FLY_LIFT`, `TRAIL_K`, `FRESH_RGB`, `DIM_WATER_RGB`, `RAIN_VIEW_K`, `THIRST_TINT`, `DRY_TINT`, `DRY_MARK`, `WX_ZOOM`, `WX_TIME_WRAP` and `percentile99` are described above.
+- `LIVE_MODES`, `FLOWER_LEAF`, `FLOWER_TINT`, `FLOWER_SHADED`, `FRUIT_SHOW`, `FRUIT_EMPTY_SIZE`, `FUNGUS_SCALE`, `BUG_DOT`, `BUG_DOT_PX`, `BUG_HL_SCALE`, `BUG_PER_DENSITY`, `BUG_CLOUD_MS`, `BUG_CLOUD_FULL`, `CLOUD_FADE`, `WARP_ZOOM`, `SHADOW_ZOOM`, `SHADOW_ALPHA`, `BUG_JITTER`, `BUG_SPEED`, `BLIGHT_RGB`, `BLIGHT_MIX`, `INFECT_MIX`, `MARK_SCALE`, `TERR_MIX`, `TERR_SAT`, `TERR_FADE`, `TERR_EDGE_MIX`, `TERR_EDGE_DARK`, `ELDER_ALPHA`, `DORM_ALPHA`, `DORM_SHRINK`, `DORM_WIDE`, `DORM_ZOOM`, `EGG_ZOOM`, `EGG_PX`, `EGG_BASE`, `EGG_SIZE_K`, `EGG_WATER_ALPHA`, `EGG_PALE`, `HOME_SIZE`, `HOME_PX`, `NEST_TINT`, `DEN_TINT`, `FLY_SHADOW`, `FLY_SHADOW_ALPHA`, `FLY_LIFT`, `TRAIL_K`, `FRESH_RGB`, `DIM_WATER_RGB`, `RAIN_VIEW_K`, `THIRST_TINT`, `DRY_TINT`, `DRY_MARK`, `WX_ZOOM`, `WX_TIME_WRAP` and `percentile99` are described above.
 - `ALPINE_ID`, `GLACIER_ID`, `FROZEN_DESERT_ID` and `FROZEN_OCEAN_ID` are biome ids.
 
 ---
@@ -2134,7 +2169,7 @@ The simulation runs in a Web Worker, so the UI thread only renders and never blo
 | When | What (`SNAP_*` constants) |
 | --- | --- |
 | Every frame whose tick moved | Primitive scalars of every layer in `SNAP_LAYERS` plus soil. All pool arrays of `SNAP_POOLS` (`animals`, `eggs`) cut to `count` rows: any typed array whose length is a multiple of `cap` with at most 64 values per row, so new per-animal fields are picked up automatically. Weather `storms`. Species created since the last frame, plus their parents. |
-| Every `FIELD_MS` (180 ms) | Grid arrays listed in `SNAP_GRIDS` (plant slots, soil nutrient and litter, bug density/species/total, weather wet/snow/fresh/waterDist, animal territory arrays). A renderer or UI read of a new grid field must be added here. |
+| Every `FIELD_MS` (180 ms) | Grid arrays listed in `SNAP_GRIDS` (plant slots, soil nutrient and litter, bug density/species/total/dorm, weather wet/snow/fresh/waterDist, animal territory arrays). A renderer or UI read of a new grid field must be added here. |
 | Every `GENE_MS` (1 s) | Plant genes `SNAP_PLANT_GENES` (8 fruit, 10 toxin, 11 symbiont) for both slots, packed, which the client scatters into a `2n × PG` `Float32Array` as `plants.genome`. |
 | Every `SLOW_MS` (240 ms) | Every species that is living now or was living at the last slow frame, `registry.living`, `nextId` and `speciations`, `eco.stats`, and history deltas. |
 | When `log.version` changes | `log.items` and `version`. |
@@ -2265,7 +2300,7 @@ Other globals:
 - `TAB_GROUP` maps every species tab to its registry group: `plant`, `animal`, `bug`, and `disease` → `pathogen`. `speciesInTab` uses it, and on the Animals tab also skips species whose `sp.cls` differs from `app.cls` (when it is not -1).
 - `SWARM_NICHES`, `SWARM_NICHE_ICON` and `SWARM_LABEL` are UI fallbacks for the niche names, a representative icon per niche, and category labels. They are named apart from the sim's `BUG_*` globals so the app still loads without `bugs.js`.
 - `mixHex`, `paletteFor(hex)` and `NEUTRAL` build body/dark/light palettes for the UI icons.
-- `STAT_EXTRA` lists the Part 4 stat cards appended after the group cards as `{key, label, icon, color, wide, sub, noSpark}`: `thirstDeaths` (drop), `herds` (bison), `territories` (flag), `eggs` (egg, wide), `stages` ("Life stages · animals", deer, wide, no sparkline) and, since v3 Part 1 slice 4, `packs` ("Hunting packs", wolf, with a sub-line), and since slice 5 `nutrition` ("Body condition", boar, wide, with a sub-line) before `stages`. `STAT_EXTRA_KEYS` is their key set.
+- `STAT_EXTRA` lists the Part 4 stat cards appended after the group cards as `{key, label, icon, color, wide, sub, noSpark}`: `thirstDeaths` (drop), `herds` (bison), `territories` (flag), `eggs` (egg, wide), `stages` ("Life stages · animals", deer, wide, no sparkline) and, since v3 Part 1 slice 4, `packs` ("Hunting packs", wolf, with a sub-line), and since slice 5 `nutrition` ("Body condition", boar, wide, with a sub-line) before `stages`, and since slice 6 `dormancy` ("Dormancy", bear, `#8fa7d6`, wide, with a sub-line). `STAT_EXTRA_KEYS` is their key set.
 - `WEATHER_LOOK` maps each weather badge kind (`off`, `clear`, `rain`, `snow`, `storms`, `drought`) to `[icon, color]`.
 
 ### Tick accumulator and interpolation (`frame`)
@@ -2314,6 +2349,7 @@ Save and load (see the Save section for the file format):
   - **Switches:** `#optWeather` ("Weather", after Seasons, on by default) is passed as `options.weather` to `new Ecosystem` and sets `eco.options.weather` live. `#showWeather` ("Weather overlay", after Bug swarms) sets `renderer.showWeather`.
   - v3 Part 1 slice 4 adds a **Hunting packs** card (`packs`, `wolf` icon): value `stats.packs`, sparkline `history.packs`, sub-line "mean size N · N kills · N big game" from `stats.packSize`, `packKills` and `bigKills`. In open class cards `packRow(row, k, s)` relabels the Predators role row to "Predators · N packs" from `stats.packCls[k]`, with a title giving the mean size and the all-pack kill and big-kill counts.
   - v3 Part 1 slice 5 adds a wide **Body condition** card (`nutrition`, `boar` icon): value the deficient share (`stats.nutrition.defShare`) with "deficient" in a `<small>`, sparkline `history.nutrition`, sub-line lean, fit, heavy, obese, low protein, low minerals and "eggs failed (calcium)".
+  - v3 Part 1 slice 6 adds a wide **Dormancy** card (`dormancy`, `bear` icon): value `stats.dormancy.total` with "dormant" in a `<small>`, sparkline `history.dormancy`, sub-line hibernating, brumating, aestivating, in torpor, woke starving, eggs in diapause, bug reserves and resting seed banks. Class cards add "N dormant" in a `<small>` from `stats.dormCls`, and the trait list gains Dormancy (gene 20).
   - **Part 4 stat cards** (`STAT_EXTRA`, filled by `updateExtraStat(el, k, s, h)`): Thirst deaths (`stats.thirstDeaths`, sub-line "x% of land deaths" from `stats.thirstShare`), Herds (`stats.herds`), Territories (`stats.territories`), Eggs (the current count `stats.stages.eggs`, sub-line laid, hatched, eaten and failed from `stats.eggs`), Nests & dens (slice 3, `nest` icon, wide: nest tiles with the den count in a `<small>`, sub-line parents, young at home, eggs/nest, raided and raids repelled from `stats.nests`, sparkline `history.nests`) and Life stages (total animals with the elder share in a `<small>`, sub-line juveniles, adults and elders from `stats.stages`). Sparklines read `h[k] || []`, so a missing history key draws empty.
   - A wide **Bugs** stat card sits under Plant biomass. Its value is `stats.bugs` (rounded total density), its sparkline `history.bugs`, and its sub-line (`bugStatLine(stats)`, CSS `.stat-sub`) shows the occupied tiles per niche (`stats.pests`, `detritivores`, `parasites`, `pollinators`) next to niche icons, plus `pollination NN%` from `stats.pollination`. Missing fields read as 0, and the card is only marked `zero` when `eco.bugs` exists.
   - A wide **Disease** stat card (`data-key="disease"`, `virus` icon, "Disease · sick animals") follows. Its value is `stats.sick`, its sparkline `history.sick`, and its sub-line reads "N strains · N blighted tiles" from `stats.strains` and `stats.blight`.
@@ -2370,7 +2406,7 @@ Helpers: `TOXIN_WORDS`, `toxinIndex(v)` (the same thresholds as `toxinType`), `f
   - Clicking anything else closes the detail view.
 - Hovering shows a tooltip (`updateTooltip`):
   - The meta line gives biome, °C (`temp*50-15`), moisture or depth, soil nutrients as `soil.nutrient[t] / SOIL_MAX`, and `litter` (`soil.litter[t]`, two decimals, when the field exists).
-  - Then the animal under the cursor, with `sick: <strain>` (`.tt-sick`) when it is infected. Its lines read "state · stage · age N" (stage from `animalStage`; birds prefix "flying · " or "perched · " from `A.fly`, and the state list ends with "heading home" for state 6), followed by " · has a nest", " · has a den" or " · young of a den" from `A.home` and "energy N%" (`energy / (emax*gf)`, clamped to 0–100%), plus " · water N%" for non-water animals. Since slice 5 a condition line reads "<word> · protein N% · minerals N%" (a store under `DEFICIT` shows "low"), with class `tt-sick` when deficient.
+  - Then the animal under the cursor, with `sick: <strain>` (`.tt-sick`) when it is infected. Its lines read "state · stage · age N" (stage from `animalStage`; birds prefix "flying · " or "perched · " from `A.fly`, and the state list ends with "heading home" for state 6 and "heading to den" for state 7; a dormant animal shows "hibernating", "brumating", "aestivating" or "in torpor" instead), followed by " · has a nest", " · has a den" or " · young of a den" from `A.home` and "energy N%" (`energy / (emax*gf)`, clamped to 0–100%), plus " · water N%" for non-water animals. Since slice 5 a condition line reads "<word> · protein N% · minerals N%" (a store under `DEFICIT` shows "low"), with class `tt-sick` when deficient.
   - Then one row per occupied plant slot (plane `slot*n + t`), with icon, name, category, "canopy" or "understory", biomass and health %, plus `blight: <strain>` when the slot is blighted.
     - Fungi (`plants.kind[p] === 1`) add "fungus" to the category line and their type (`fungusType(plants.genome, p*PG)`) to the stats line.
     - Other plants show `fruit x.xx` (the `plants.fruit[p]` stock) when it is above 0.001 or the plant's fruiting gene is above 0.5.

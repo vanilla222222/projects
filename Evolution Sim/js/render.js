@@ -324,6 +324,10 @@ const SHOW_BASE = 0.3;
 const SHOW_SAT = 1.6;
 const SHOW_LIFT = 40;
 const CREST_ZOOM = 6;
+const DORM_ALPHA = 0.55;
+const DORM_SHRINK = 0.8;
+const DORM_WIDE = 1.25;
+const DORM_ZOOM = 6;
 const CREST_MIN = 0.45;
 const CREST_SCALE = 0.45;
 const PACK_LINK_ZOOM = 4;
@@ -1321,6 +1325,8 @@ class WorldRenderer {
 		const dotIcon = ICON_INDEX.dot;
 		const ringIcon = ICON_INDEX.ring;
 		const virusIcon = ICON_INDEX.virus;
+		const sleepIcon = ICON_INDEX.sleep;
+		const dormA = A.dorm;
 		const white = this._white || (this._white = new Uint8Array(9).fill(255));
 		const gf = A.gf;
 		const ef = A.ef;
@@ -1366,7 +1372,8 @@ class WorldRenderer {
 			const sick = strain[i];
 			const g = gf ? gf[i] : 1;
 			const th = wmode && dom[i] !== 1 && wat[i] < THIRSTY ? (wat[i] <= 0 ? DRY_TINT : THIRST_TINT) : null;
-			const a = ((hl !== null && id !== hl) || (hs && sick !== hs) || (dmode && !sick) || (wmode && !th) ? 0.35 : 1) * (ef && ef[i] < 1 ? ELDER_ALPHA : 1);
+			const zz = dormA ? dormA[i] : 0;
+			const a = ((hl !== null && id !== hl) || (hs && sick !== hs) || (dmode && !sick) || (wmode && !th) ? 0.35 : 1) * (ef && ef[i] < 1 ? ELDER_ALPHA : 1) * (zz ? DORM_ALPHA : 1);
 			const sv = show && !sick ? show[i] : 0;
 			const bright = sv > SHOW_BASE;
 			const ca = sick ? this._infected(id, col) : bright ? this._showy(id * 9, col, sv) : col;
@@ -1375,14 +1382,15 @@ class WorldRenderer {
 				const ds = ((3 + A.mass[i] * 0.9) / zoom) * g;
 				n = th ? this._put(n, x, y, ds * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, a, 0, th) : this._put(n, x, y, ds, dotIcon, 1, a, co, ca);
 			} else {
-				const size = Math.max(12 / zoom, 0.8 + 0.45 * A.mass[i]) * g;
+				const size = Math.max(12 / zoom, 0.8 + 0.45 * A.mass[i]) * g * (zz ? DORM_SHRINK : 1);
 				const ly = air && fly[i] ? y - size * FLY_LIFT : y;
 				const cap = emx[i] * g;
 				const fr = fat ? fat[i] / cap : 0;
 				const er = en[i] / cap;
 				const wd = fr > 0 ? 1 + Math.min(FAT_WIDE_MAX, fr * FAT_WIDE) : er < THIN_AT ? THIN_MIN + (1 - THIN_MIN) * (er > 0 ? er / THIN_AT : 0) : 1;
 				if (sv >= CREST_MIN && zoom >= CREST_ZOOM) n = this._put(n, x - size * 0.12 * A.face[i], ly - size * 0.62, size * CREST_SCALE * (0.6 + sv), crestIcon, A.face[i], a, co, ca);
-				n = this._put(n, x, ly - size * 0.1, size, icons[id], A.face[i] * wd, a, co, ca);
+				n = this._put(n, x, ly - size * 0.1, size, icons[id], A.face[i] * wd * (zz ? DORM_WIDE : 1), a, co, ca);
+				if (zz && zoom >= DORM_ZOOM) n = this._put(n, x + size * 0.4, ly - size * 0.6, size * MARK_SCALE, sleepIcon, 1, 0.9, 0, white);
 				if (sick) n = this._put(n, x + size * 0.38, ly - size * 0.5, size * MARK_SCALE, virusIcon, 1, a, 0, white);
 				if (th) n = this._put(n, x - size * 0.38, ly - size * 0.5, size * MARK_SCALE * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, 1, 0, th);
 			}

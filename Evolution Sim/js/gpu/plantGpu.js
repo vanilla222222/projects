@@ -326,24 +326,16 @@ const PlantGpu = (() => {
 		let cover = 0;
 		let seedTiles = 0;
 		const seedDens = L.seedDens;
-		const moistMul = L.moistMul;
-		const snow = L.snow;
 		for (let i = 0; i < n; i++) {
-			if (ck && seedDens[i] > 0) {
-				const d = seedDens[i] * SEED_DECAY;
-				if (d < SEED_MIN) {
-					seedDens[i] = 0;
-					L.seedSp[i] = 0;
-				} else {
-					seedDens[i] = d;
-					seedTiles++;
-					L._germinate(i, d, (moistMul ? moistMul[i] : 1) * (snow ? 1 - snow[i] : 1), tick);
-				}
-			}
+			if (ck && seedDens[i] > 0) seedTiles += L._seedTick(i, tick);
 			if (species[i] || species[n + i]) cover++;
 		}
 		L.coverTiles = cover;
-		if (ck) L.stages.seedTiles = seedTiles;
+		if (ck) {
+			L.stages.seedTiles = seedTiles;
+			L.stages.seedDormant = L.seedResting;
+			L.seedResting = 0;
+		}
 	}
 
 	function addPatch(ctx, t, idx) {

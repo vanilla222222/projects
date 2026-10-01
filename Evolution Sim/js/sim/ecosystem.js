@@ -50,6 +50,9 @@ class Ecosystem {
 		this.stats.nutrition = { lean: 0, fit: 0, heavy: 0, obese: 0, meanFat: 0, deficient: 0, defShare: 0, defProt: 0, defMin: 0, caFailed: 0, caClutches: 0, fatBurned: 0 };
 		this.history.nutrition = [];
 		this.history.meanFat = [];
+		this.stats.dormancy = { total: 0, hib: 0, brum: 0, aest: 0, torpor: 0, entered: 0, starved: 0, eggDiapause: 0, diaHatched: 0, bugReserve: 0, bugWoke: 0, seedDormant: 0 };
+		this.stats.dormCls = {};
+		this.history.dormancy = [];
 		for (const k of BIRD_NICHES) {
 			this.stats.birdNiches[k] = 0;
 			this.history['birdNiche.' + k] = [];
@@ -58,6 +61,7 @@ class Ecosystem {
 		for (const g of STAT_GROUPS) {
 			this.stats[g.key] = 0;
 			this.stats.roles[g.key] = { herb: 0, omni: 0, carn: 0, scav: 0 };
+			this.stats.dormCls[g.key] = 0;
 			this.history[g.key] = [];
 			for (const r of ROLE_KEYS) this.history[g.key + '.' + r] = [];
 		}
@@ -160,6 +164,7 @@ class Ecosystem {
 			this._nestStats();
 			this._packStats();
 			this._nutStats();
+			this._dormStats();
 			if (this.bugs) this.bugs.refreshSpeciesMeans();
 			if (D) D.refreshSpeciesMeans();
 		}
@@ -310,6 +315,32 @@ class Ecosystem {
 		s.packKills = A.packKills;
 		s.bigKills = A.bigKills;
 		s.mateRefusals = A.mateRefusals;
+	}
+
+	_dormStats() {
+		const A = this.animals;
+		const s = this.stats.dormancy;
+		const k = [0, 0, 0, 0, 0];
+		const c = [0, 0, 0, 0, 0, 0];
+		for (let i = 0; i < A.count; i++) {
+			const d = A.dorm[i];
+			if (!d || !A.alive[i]) continue;
+			k[d]++;
+			c[A.cls[i]]++;
+		}
+		s.hib = k[1];
+		s.brum = k[2];
+		s.aest = k[3];
+		s.torpor = k[4];
+		s.total = k[1] + k[2] + k[3] + k[4];
+		s.entered = A.dormEntered;
+		s.starved = A.dormStarved;
+		s.eggDiapause = this.eggs ? this.eggs.diapause : 0;
+		s.diaHatched = this.eggs ? this.eggs.diaHatched : 0;
+		s.bugReserve = this.bugs ? this.bugs.reserve : 0;
+		s.bugWoke = this.bugs ? this.bugs.reserveWoke : 0;
+		s.seedDormant = this.plants.stages.seedDormant | 0;
+		for (const g of STAT_GROUPS) this.stats.dormCls[g.key] = c[g.cls];
 	}
 
 	_nutStats() {
@@ -526,6 +557,7 @@ class Ecosystem {
 		h.packSize.push(this.stats.packSize);
 		h.nutrition.push(Math.round(this.stats.nutrition.defShare * 100));
 		h.meanFat.push(this.stats.nutrition.meanFat);
+		h.dormancy.push(this.stats.dormancy.total);
 		for (const k of BIRD_NICHES) h['birdNiche.' + k].push(this.stats.birdNiches[k]);
 		for (const g of STAT_GROUPS) {
 			h[g.key].push(this.stats[g.key]);
