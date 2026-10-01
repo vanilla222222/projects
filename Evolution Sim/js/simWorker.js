@@ -15,6 +15,7 @@ const GENE_MS = 1000;
 const SLOW_MS = 240;
 const SLICE_MS = 12;
 const MAX_SPEED = 600;
+const GPU_SCRIPTS = ['gpu/plantKernels.js', 'gpu/plantGpu.js'];
 
 const sim = {
 	eco: null,
@@ -27,6 +28,11 @@ const sim = {
 	msPerTick: 0,
 	scheduled: false,
 	sent: null,
+	gpu: false,
+	fast: false,
+	attaching: 0,
+	waiting: false,
+	saving: false,
 };
 
 const wake = new MessageChannel();
@@ -39,10 +45,29 @@ function schedule(delay) {
 	else wake.port2.postMessage(0);
 }
 
+function gpuHold(eco) {
+	if (sim.saving) return true;
+	if (!sim.gpu || !PlantGpu.busy(eco.plants)) return false;
+	if (!sim.waiting) {
+		sim.waiting = true;
+		PlantGpu.whenIdle(eco.plants).then(() => {
+			sim.waiting = false;
+			schedule(0);
+		});
+	}
+	return true;
+}
+
+function fastOn() {
+	if (sim.fast && !sim.attaching && sim.eco && !PlantGpu.active(sim.eco.plants)) sim.fast = false;
+	return sim.fast;
+}
+
 function loop() {
 	sim.scheduled = false;
 	const eco = sim.eco;
 	if (!eco) return;
+	let held = false;
 	const now = performance.now();
 	const dt = Math.min(0.1, (now - sim.last) / 1000);
 	sim.last = now;
@@ -54,6 +79,10 @@ function loop() {
 	let steps = 0;
 	try {
 		while (performance.now() - now < SLICE_MS) {
+			if (gpuHold(eco)) {
+				held = true;
+				break;
+			}
 			if (sim.queue > 0) sim.queue--;
 			else if (max) {}
 			else if (sim.running && sim.acc >= 1) sim.acc -= 1;
@@ -71,6 +100,7 @@ function loop() {
 		const per = (performance.now() - now) / steps;
 		sim.msPerTick += (per - sim.msPerTick) * 0.1;
 	}
+	if (held) return;
 	if (sim.queue > 0 || max || (sim.running && sim.acc >= 1)) schedule(0);
 	else if (sim.running) schedule(Math.max(1, Math.min(50, ((1 - sim.acc) / sim.speed) * 1000)));
 }
@@ -172,7 +202,7 @@ function frameSnapshot(force) {
 	const sent = sim.sent;
 	const now = performance.now();
 	const transfer = [];
-	const msg = { type: 'frame', gen: sim.gen, tick: eco.tick, ms: sim.msPerTick, running: sim.running, layers: {} };
+	const msg = { type: 'frame', gen: sim.gen, tick: eco.tick, ms: sim.msPerTick, running: sim.running, fast: fastOn(), layers: {} };
 	const tickMoved = eco.tick !== sent.frameTick;
 	const slow = force || (eco.tick !== sent.slowTick && now - sent.slowAt > SLOW_MS);
 	if (tickMoved || force) {
@@ -240,7 +270,10 @@ function worldInit(world, transfer) {
 }
 
 function install(eco, id, meta) {
+	if (sim.gpu && sim.eco) PlantGpu.drop(sim.eco.plants);
 	sim.eco = eco;
+	sim.waiting = false;
+	if (sim.fast) attachGpu(eco);
 	sim.gen++;
 	sim.sent = freshSent();
 	sim.acc = 0;
@@ -268,10 +301,31 @@ function fail(id, err) {
 	post({ type: 'error', id, message: (err && err.message) || String(err), stack: err && err.stack });
 }
 
+async function attachGpu(eco) {
+	sim.attaching++;
+	let ok = false;
+	try {
+		ok = await PlantGpu.attach(eco.plants);
+	} finally {
+		sim.attaching--;
+	}
+	if (!ok && sim.eco === eco) sim.fast = false;
+	if (ok && sim.eco !== eco) PlantGpu.drop(eco.plants);
+	return ok;
+}
+
 const handlers = {
 	init(m) {
 		importScripts(...(m.scripts && m.scripts.length ? m.scripts : DEFAULT_SCRIPTS));
-		post({ type: 'hello' });
+		if (m.gpu && self.navigator && self.navigator.gpu) {
+			try {
+				importScripts(...GPU_SCRIPTS);
+				sim.gpu = true;
+			} catch (err) {
+				console.warn('Fast mode unavailable, GPU scripts failed to load', err);
+			}
+		}
+		post({ type: 'hello', gpu: sim.gpu });
 	},
 	create(m) {
 		const world = new WorldMap(m.w, m.h, m.seed);
@@ -283,9 +337,26 @@ const handlers = {
 	},
 	async save(m) {
 		if (!sim.eco) throw new Error('No world to save');
-		const name = EvoSave.fileName(sim.eco);
-		const bytes = await EvoSave.encode(sim.eco, m.meta || {});
-		post({ type: 'reply', id: m.id, name, bytes }, [bytes.buffer]);
+		const eco = sim.eco;
+		sim.saving = true;
+		try {
+			const fast = fastOn() && (await PlantGpu.sync(eco.plants));
+			const name = EvoSave.fileName(eco);
+			const bytes = await EvoSave.encode(eco, m.meta || {}, fast ? { fast: true } : undefined);
+			post({ type: 'reply', id: m.id, name, bytes }, [bytes.buffer]);
+		} finally {
+			sim.saving = false;
+			schedule(0);
+		}
+	},
+	async gpu(m) {
+		const on = !!m.on && sim.gpu;
+		sim.fast = on;
+		const eco = sim.eco;
+		if (eco && on) await attachGpu(eco);
+		else if (eco && sim.gpu) await PlantGpu.detach(eco.plants);
+		schedule(0);
+		post({ type: 'reply', id: m.id, fast: fastOn() });
 	},
 	run(m) {
 		if (m.running && !sim.running) {

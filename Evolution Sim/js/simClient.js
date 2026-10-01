@@ -11,6 +11,9 @@ const SimClient = (() => {
 		pending: new Map(),
 		gen: 0,
 		view: null,
+		gpu: false,
+		fast: false,
+		onFast: null,
 	};
 
 	function wantWorker() {
@@ -18,6 +21,13 @@ const SimClient = (() => {
 			if (new URLSearchParams(location.search).get('worker') === '0') return false;
 		} catch (e) {}
 		return typeof Worker === 'function';
+	}
+
+	function wantGpu() {
+		try {
+			if (new URLSearchParams(location.search).get('gpu') === '0') return false;
+		} catch (e) {}
+		return true;
 	}
 
 	function simScripts() {
@@ -69,12 +79,13 @@ const SimClient = (() => {
 						clearTimeout(timer);
 						state.worker = worker;
 						state.mode = 'worker';
+						state.gpu = !!m.gpu;
 						worker.onmessage = (ev) => receive(ev.data);
 						resolve('worker');
 					} else if (m.type === 'error') fallback(m.message);
 				}
 			};
-			worker.postMessage({ type: 'init', scripts: simScripts() });
+			worker.postMessage({ type: 'init', scripts: simScripts(), gpu: wantGpu() });
 		});
 		return state.starting;
 	}
@@ -116,6 +127,7 @@ const SimClient = (() => {
 			if (!v || m.gen !== v.gen) return;
 			v.waiting = false;
 			if (m.stale) return;
+			if (m.fast !== undefined) noteFast(m.fast);
 			applyFrame(v, m);
 			if (v.readyId) {
 				const id = v.readyId;
@@ -133,6 +145,19 @@ const SimClient = (() => {
 			if (m.stack) err.stack = m.stack;
 			if (m.id == null || !settle(m.id, false, err)) console.error('Sim worker error', err);
 		}
+	}
+
+	function noteFast(on) {
+		if (on === state.fast) return;
+		state.fast = on;
+		if (state.onFast) state.onFast(on);
+	}
+
+	async function setFast(on) {
+		if (state.mode !== 'worker' || !state.gpu) return false;
+		const r = await request('gpu', { on: !!on });
+		noteFast(!!r.fast);
+		return !!r.fast;
 	}
 
 	function setArray(obj, key, d) {
@@ -314,8 +339,18 @@ const SimClient = (() => {
 		load,
 		save,
 		stats,
+		setFast,
 		get mode() {
 			return state.mode;
+		},
+		get gpu() {
+			return state.mode === 'worker' && state.gpu;
+		},
+		get fast() {
+			return state.fast;
+		},
+		set onFast(f) {
+			state.onFast = f;
 		},
 	};
 })();

@@ -161,7 +161,7 @@ const EvoSave = (() => {
 		return new Uint8Array(out);
 	}
 
-	async function encode(eco, meta = {}) {
+	async function encode(eco, meta = {}, flags = {}) {
 		const { records, chunks, bytes } = serialize(eco);
 		const header = {
 			version: SAVE_VERSION,
@@ -173,6 +173,7 @@ const EvoSave = (() => {
 			records,
 			bin: bytes,
 		};
+		if (flags.fast) header.fast = true;
 		const json = new TextEncoder().encode(JSON.stringify(header));
 		const head = new Uint8Array(8);
 		const dv = new DataView(head.buffer);
@@ -219,7 +220,7 @@ const EvoSave = (() => {
 		const world = makeWorld(header.w, header.h, header.seed);
 		const eco = deserialize(header.records, bin, world);
 		if (!eco || eco.world !== world || eco.tick !== header.tick) throw new Error('Save file contents are inconsistent');
-		return { eco, world, meta: header.meta || {} };
+		return { eco, world, meta: header.meta || {}, fast: !!header.fast };
 	}
 
 	function fileName(eco) {
