@@ -49,6 +49,7 @@ const SEED_MAX = 1;
 const SEED_DECAY = 0.985;
 const SEED_MIN = 0.02;
 const GERM_P = 0.12;
+const SEED_REST_DRY = 0.7;
 const GERM_USE = 0.5;
 const OLD_SEED = 1;
 
@@ -219,7 +220,7 @@ class PlantLayer {
 		this.seedDens = new Float32Array(n);
 		this.seedSp = new Int32Array(n);
 		this.seedGenome = new Float32Array(n * PG);
-		this.stages = { seedTiles: 0, seedlings: 0, mature: 0, old: 0 };
+		this.stages = { seedTiles: 0, seedDormant: 0, seedlings: 0, mature: 0, old: 0 };
 		this.oldDeaths = 0;
 		this.germinated = 0;
 		this.grazedSeedlings = 0;
@@ -270,6 +271,7 @@ class PlantLayer {
 		this.seasonsOn = true;
 		this.season = 0;
 		this.moistMul = null;
+		this.seedResting = 0;
 		this.bloomNow = 0.5;
 		this.fruitNow = 0.5;
 		this.soil = new SoilLayer(world);
@@ -572,6 +574,7 @@ class PlantLayer {
 	}
 
 	step(tick) {
+		if (typeof PlantGpu !== 'undefined' && PlantGpu.step(this, tick)) return;
 		const { rng, world } = this;
 		const n = this.n;
 		const W = world.width;
@@ -751,19 +754,8 @@ class PlantLayer {
 		let cover = 0;
 		let seedTiles = 0;
 		const seedDens = this.seedDens;
-		const snow = this.snow;
 		for (let i = 0; i < n; i++) {
-			if (ck && seedDens[i] > 0) {
-				const d = seedDens[i] * SEED_DECAY;
-				if (d < SEED_MIN) {
-					seedDens[i] = 0;
-					this.seedSp[i] = 0;
-				} else {
-					seedDens[i] = d;
-					seedTiles++;
-					this._germinate(i, d, (moistMul ? moistMul[i] : 1) * (snow ? 1 - snow[i] : 1), tick);
-				}
-			}
+			if (ck && seedDens[i] > 0) seedTiles += this._seedTick(i, tick);
 			if (species[i] || species[n + i]) cover++;
 			if (poll[i] > 0) poll[i] *= POLL_DECAY;
 		}
@@ -777,8 +769,31 @@ class PlantLayer {
 		st.seedlings = seedlings;
 		st.mature = mature;
 		st.old = old;
-		if (ck) st.seedTiles = seedTiles;
+		if (ck) {
+			st.seedTiles = seedTiles;
+			st.seedDormant = this.seedResting;
+			this.seedResting = 0;
+		}
 		this.version++;
+	}
+
+	_seedTick(i, tick) {
+		const sd = this.seedDens;
+		const mm = this.moistMul ? this.moistMul[i] : 1;
+		const sn = this.snow ? this.snow[i] : 0;
+		if (sn > SNOW_SHOW || mm < SEED_REST_DRY) {
+			this.seedResting++;
+			return 1;
+		}
+		const d = sd[i] * SEED_DECAY;
+		if (d < SEED_MIN) {
+			sd[i] = 0;
+			this.seedSp[i] = 0;
+			return 0;
+		}
+		sd[i] = d;
+		this._germinate(i, d, mm * (1 - sn), tick);
+		return 1;
 	}
 
 	_germinate(i, d, wk, tick) {

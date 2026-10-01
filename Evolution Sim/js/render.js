@@ -103,7 +103,8 @@ out vec3 v_c1;
 out vec3 v_c2;
 out float v_alpha;
 void main() {
-	vec2 w = a_inst.xy + a_corner * a_inst.z;
+	float fw = abs(a_extra.x);
+	vec2 w = a_inst.xy + a_corner * vec2(a_inst.z * (fw < 0.01 ? 1.0 : fw), a_inst.z);
 	vec2 p = (w - u_origin) / u_scale;
 	gl_Position = vec4(p.x / u_res.x * 2.0 - 1.0, 1.0 - p.y / u_res.y * 2.0, 0.0, 1.0);
 	float icon = a_inst.w;
@@ -271,6 +272,14 @@ const BUG_CLOUD_FULL = 1.2;
 const CLOUD_FADE = [9, 14];
 const SHADOW_ZOOM = 6;
 const SHADOW_ALPHA = 0.45;
+const FLY_SHADOW_ALPHA = 0.22;
+const FLY_SHADOW = [0.45, 0.95, 0.6];
+const FLY_LIFT = 0.3;
+const FAT_WIDE = 0.6;
+const FAT_WIDE_MAX = 0.3;
+const THIN_AT = 0.25;
+const THIN_MIN = 0.8;
+const TRAIL_K = 0.6;
 const WARP_ZOOM = [4, 6];
 const BUG_JITTER = [0.05, 0.03, 0.04, 0.12];
 const BUG_SPEED = [1.6, 0.7, 1.1, 2.6];
@@ -311,6 +320,23 @@ const SICK_MIX = 0.65;
 const BLIGHT_RGB = [125, 140, 115];
 const BLIGHT_MIX = 0.6;
 const INFECT_MIX = 0.55;
+const SHOW_BASE = 0.3;
+const SHOW_SAT = 1.6;
+const SHOW_LIFT = 40;
+const CREST_ZOOM = 6;
+const DORM_ALPHA = 0.55;
+const DORM_SHRINK = 0.8;
+const DORM_WIDE = 1.25;
+const DORM_ZOOM = 6;
+const CREST_MIN = 0.45;
+const CREST_SCALE = 0.45;
+const ALARM_RING_ZOOM = 4;
+const ALARM_RING_GROW = 2.2;
+const ALARM_RING_ALPHA = 0.85;
+const PACK_LINK_ZOOM = 4;
+const PACK_LINK_DOTS = 3;
+const PACK_LINK_ALPHA = 0.55;
+const PACK_LINK_RGB = [235, 225, 200];
 const OLD_RGB = [160, 160, 160];
 const OLD_MIX = 0.25;
 const MARK_SCALE = 0.4;
@@ -323,6 +349,10 @@ const ELDER_ALPHA = 0.8;
 const EGG_ZOOM = 3;
 const EGG_PX = 4;
 const EGG_BASE = 0.34;
+const HOME_SIZE = 1.1;
+const HOME_PX = 8;
+const NEST_TINT = new Uint8Array([160, 122, 69, 94, 68, 38, 214, 181, 122]);
+const DEN_TINT = new Uint8Array([122, 90, 60, 62, 44, 28, 168, 136, 100]);
 const EGG_SIZE_K = 0.24;
 const EGG_WATER_ALPHA = 0.85;
 const EGG_PALE = 0.15;
@@ -614,6 +644,8 @@ class WorldRenderer {
 				}
 				const bl = this.eco.plants.blight;
 				if (bl) for (let p = 0; p < bl.length; p++) if (bl[p]) src[p % n] += 0.5;
+				const vl = D.vectorLoad;
+				for (let p = 0; p < n; p++) if (vl[p] > 0) src[p] += vl[p] * TRAIL_K;
 			}
 			percentile99(src, field);
 			this.lastSoilUpdate = performance.now();
@@ -1122,6 +1154,51 @@ class WorldRenderer {
 		return t;
 	}
 
+	_showy(co, ca, s) {
+		const t = this._showTint || (this._showTint = new Uint8Array(9));
+		const k = 1 + SHOW_SAT * (s - SHOW_BASE);
+		const lift = SHOW_LIFT * (s - SHOW_BASE);
+		for (let q = 0; q < 9; q += 3) {
+			const r = ca[co + q];
+			const g = ca[co + q + 1];
+			const b = ca[co + q + 2];
+			const m = (r + g + b) / 3;
+			t[q] = Math.max(0, Math.min(255, m + (r - m) * k + lift));
+			t[q + 1] = Math.max(0, Math.min(255, m + (g - m) * k + lift));
+			t[q + 2] = Math.max(0, Math.min(255, m + (b - m) * k + lift));
+		}
+		return t;
+	}
+
+	_pushPackLinks(n, alpha, x0, y0, x1, y1) {
+		const A = this.eco.animals;
+		const pk = A.pk;
+		const pn = A.pn;
+		if (!pk || !pn) return n;
+		const map = this._packMap || (this._packMap = new Map());
+		map.clear();
+		for (let i = 0; i < A.count; i++) if (pn[i] > 1 && pk[i] === A.uid[i]) map.set(pk[i], i);
+		if (!map.size) return n;
+		const rgb = this._packRgb || (this._packRgb = Uint8Array.from([...PACK_LINK_RGB, ...PACK_LINK_RGB, ...PACK_LINK_RGB]));
+		const dotIcon = ICON_INDEX.dot;
+		const s = Math.max(3 / this.cam.zoom, 0.18);
+		for (let i = 0; i < A.count; i++) {
+			if (pn[i] < 2 || pk[i] === A.uid[i]) continue;
+			const j = map.get(pk[i]);
+			if (j === undefined) continue;
+			const xa = A.px[i] + (A.x[i] - A.px[i]) * alpha;
+			const ya = A.py[i] + (A.y[i] - A.py[i]) * alpha;
+			const xb = A.px[j] + (A.x[j] - A.px[j]) * alpha;
+			const yb = A.py[j] + (A.y[j] - A.py[j]) * alpha;
+			if (Math.max(xa, xb) < x0 || Math.min(xa, xb) > x1 || Math.max(ya, yb) < y0 || Math.min(ya, yb) > y1) continue;
+			for (let q = 1; q <= PACK_LINK_DOTS; q++) {
+				const f = q / (PACK_LINK_DOTS + 1);
+				n = this._put(n, xa + (xb - xa) * f, ya + (yb - ya) * f, s, dotIcon, 1, PACK_LINK_ALPHA, 0, rgb);
+			}
+		}
+		return n;
+	}
+
 	_infected(id, col) {
 		const t = this._tint;
 		const o = id * 9;
@@ -1246,15 +1323,19 @@ class WorldRenderer {
 		const wmode = this.mode === 'water';
 		const wat = A.water;
 		const dom = A.domain;
+		const fly = A.fly;
 		const dots = zoom < 3;
 		const dotIcon = ICON_INDEX.dot;
 		const ringIcon = ICON_INDEX.ring;
 		const virusIcon = ICON_INDEX.virus;
+		const sleepIcon = ICON_INDEX.sleep;
+		const dormA = A.dorm;
+		const almA = zoom >= ALARM_RING_ZOOM ? A.alm : null;
 		const white = this._white || (this._white = new Uint8Array(9).fill(255));
 		const gf = A.gf;
 		const ef = A.ef;
 		const E = this.eco.eggs;
-		this._ensureCapacity(n + A.count * 4 + (E ? E.count : 0) + 1);
+		this._ensureCapacity(n + A.count * 6 + (E ? E.count : 0) + 1);
 		if (zoom >= SHADOW_ZOOM) {
 			const shadowIcon = ICON_INDEX.shadow;
 			for (let i = 0; i < A.count; i++) {
@@ -1262,9 +1343,11 @@ class WorldRenderer {
 				const y = A.py[i] + (A.y[i] - A.py[i]) * alpha;
 				if (x < x0 || y < y0 || x > x1 || y > y1) continue;
 				const size = Math.max(12 / zoom, 0.8 + 0.45 * A.mass[i]) * (gf ? gf[i] : 1);
-				n = this._put(n, x, y + size * 0.32, size * 0.9, shadowIcon, 1, SHADOW_ALPHA, 0, white);
+				if (dom[i] === 3 && fly[i]) n = this._put(n, x + size * FLY_SHADOW[0], y + size * FLY_SHADOW[1], size * FLY_SHADOW[2], shadowIcon, 1, FLY_SHADOW_ALPHA, 0, white);
+				else n = this._put(n, x, y + size * 0.32, size * 0.9, shadowIcon, 1, SHADOW_ALPHA, 0, white);
 			}
 		}
+		if (zoom >= EGG_ZOOM && A.home) n = this._pushHomes(n, A, x0, y0, x1, y1);
 		if (E && zoom >= EGG_ZOOM) n = this._pushEggs(n, E, x0, y0, x1, y1, hl);
 		if (hl !== null || hs) {
 			for (let i = 0; i < A.count; i++) {
@@ -1276,7 +1359,16 @@ class WorldRenderer {
 				n = this._put(n, x, y, s, ringIcon, 1, 0.9, 0, white);
 			}
 		}
-		for (let i = 0; i < A.count; i++) {
+		if (zoom >= PACK_LINK_ZOOM) n = this._pushPackLinks(n, alpha, x0, y0, x1, y1);
+		const show = A.show;
+		const crestIcon = ICON_INDEX.crest;
+		const fat = A.fat;
+		const en = A.energy;
+		const emx = A.emax;
+		for (let k = 0, cnt = A.count; k < cnt * 2; k++) {
+			const i = k < cnt ? k : k - cnt;
+			const air = dom[i] === 3;
+			if (air !== k >= cnt) continue;
 			const x = A.px[i] + (A.x[i] - A.px[i]) * alpha;
 			const y = A.py[i] + (A.y[i] - A.py[i]) * alpha;
 			if (x < x0 || y < y0 || x > x1 || y > y1) continue;
@@ -1284,18 +1376,54 @@ class WorldRenderer {
 			const sick = strain[i];
 			const g = gf ? gf[i] : 1;
 			const th = wmode && dom[i] !== 1 && wat[i] < THIRSTY ? (wat[i] <= 0 ? DRY_TINT : THIRST_TINT) : null;
-			const a = ((hl !== null && id !== hl) || (hs && sick !== hs) || (dmode && !sick) || (wmode && !th) ? 0.35 : 1) * (ef && ef[i] < 1 ? ELDER_ALPHA : 1);
-			const ca = sick ? this._infected(id, col) : col;
-			const co = sick ? 0 : id * 9;
+			const zz = dormA ? dormA[i] : 0;
+			const a = ((hl !== null && id !== hl) || (hs && sick !== hs) || (dmode && !sick) || (wmode && !th) ? 0.35 : 1) * (ef && ef[i] < 1 ? ELDER_ALPHA : 1) * (zz ? DORM_ALPHA : 1);
+			const sv = show && !sick ? show[i] : 0;
+			const bright = sv > SHOW_BASE;
+			const ca = sick ? this._infected(id, col) : bright ? this._showy(id * 9, col, sv) : col;
+			const co = sick || bright ? 0 : id * 9;
 			if (dots) {
 				const ds = ((3 + A.mass[i] * 0.9) / zoom) * g;
 				n = th ? this._put(n, x, y, ds * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, a, 0, th) : this._put(n, x, y, ds, dotIcon, 1, a, co, ca);
 			} else {
-				const size = Math.max(12 / zoom, 0.8 + 0.45 * A.mass[i]) * g;
-				n = this._put(n, x, y - size * 0.1, size, icons[id], A.face[i], a, co, ca);
-				if (sick) n = this._put(n, x + size * 0.38, y - size * 0.5, size * MARK_SCALE, virusIcon, 1, a, 0, white);
-				if (th) n = this._put(n, x - size * 0.38, y - size * 0.5, size * MARK_SCALE * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, 1, 0, th);
+				const size = Math.max(12 / zoom, 0.8 + 0.45 * A.mass[i]) * g * (zz ? DORM_SHRINK : 1);
+				const ly = air && fly[i] ? y - size * FLY_LIFT : y;
+				const cap = emx[i] * g;
+				const fr = fat ? fat[i] / cap : 0;
+				const er = en[i] / cap;
+				const wd = fr > 0 ? 1 + Math.min(FAT_WIDE_MAX, fr * FAT_WIDE) : er < THIN_AT ? THIN_MIN + (1 - THIN_MIN) * (er > 0 ? er / THIN_AT : 0) : 1;
+				if (sv >= CREST_MIN && zoom >= CREST_ZOOM) n = this._put(n, x - size * 0.12 * A.face[i], ly - size * 0.62, size * CREST_SCALE * (0.6 + sv), crestIcon, A.face[i], a, co, ca);
+				n = this._put(n, x, ly - size * 0.1, size, icons[id], A.face[i] * wd * (zz ? DORM_WIDE : 1), a, co, ca);
+				const am = almA ? almA[i] : 0;
+				if (am > ALARM_COOL - ALARM_RING) {
+					const rt = (ALARM_COOL - am) / ALARM_RING;
+					n = this._put(n, x, ly - size * 0.1, size * (1 + ALARM_RING_GROW * rt), ringIcon, 1, ALARM_RING_ALPHA * (1 - rt), 0, white);
+				}
+				if (zz && zoom >= DORM_ZOOM) n = this._put(n, x + size * 0.4, ly - size * 0.6, size * MARK_SCALE, sleepIcon, 1, 0.9, 0, white);
+				if (sick) n = this._put(n, x + size * 0.38, ly - size * 0.5, size * MARK_SCALE, virusIcon, 1, a, 0, white);
+				if (th) n = this._put(n, x - size * 0.38, ly - size * 0.5, size * MARK_SCALE * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, 1, 0, th);
 			}
+		}
+		return n;
+	}
+
+	_pushHomes(n, A, x0, y0, x1, y1) {
+		const seen = this._homeSeen || (this._homeSeen = new Set());
+		seen.clear();
+		const W = this.world.width;
+		const size = Math.max(HOME_PX / this.cam.zoom, HOME_SIZE);
+		const nestIcon = ICON_INDEX.nest;
+		const denIcon = ICON_INDEX.den;
+		for (let i = 0; i < A.count; i++) {
+			const h = A.home[i];
+			if (h !== 1 && h !== 2) continue;
+			const x = A.nx[i];
+			const y = A.ny[i];
+			if (x < x0 || y < y0 || x > x1 || y > y1) continue;
+			const t = (y | 0) * W + (x | 0);
+			if (seen.has(t)) continue;
+			seen.add(t);
+			n = h === 1 ? this._put(n, x, y - size * 0.05, size, nestIcon, 1, 1, 0, NEST_TINT) : this._put(n, x, y - size * 0.2, size, denIcon, 1, 1, 0, DEN_TINT);
 		}
 		return n;
 	}

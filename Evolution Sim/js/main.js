@@ -2,20 +2,20 @@ const $ = (id) => document.getElementById(id);
 
 const GROUP_COLORS = {
 	plants: '#7cc46e',
-	landHerb: '#b5de8c',
-	landOmni: '#e7b95c',
-	landCarn: '#ec7a67',
-	landScav: '#b98a62',
-	waterHerb: '#6fc3e6',
-	waterOmni: '#c9a0e8',
-	waterCarn: '#5c86e6',
+	fish: '#5fb6e6',
 	amphib: '#2fae94',
 	reptile: '#b8901c',
+	mammal: '#e7a25c',
+	bird: '#c98ee8',
+	invert: '#ec7a8f',
 	bugs: '#ee7fb4',
 	disease: '#a8c04a',
 };
 
-const TAB_GROUP = { plant: 'plant', bug: 'bug', disease: 'pathogen' };
+const TAB_GROUP = { plant: 'plant', animal: 'animal', bug: 'bug', disease: 'pathogen' };
+const ROLE_COLORS = { herb: '#9fd98b', omni: '#e7b95c', carn: '#ec8a79', scav: '#c9a27a' };
+const CLASS_NAME = ['Fish', 'Amphibian', 'Reptile', 'Mammal', 'Bird', 'Invertebrate'];
+const OPEN_KEY = 'evo.openClasses';
 
 const SWARM_NICHES = ['pest', 'detritivore', 'parasite', 'pollinator'];
 const SWARM_NICHE_ICON = ['aphid', 'beetle', 'tick', 'bee'];
@@ -38,7 +38,12 @@ const STAT_EXTRA = [
 	{ key: 'thirstDeaths', label: 'Thirst deaths', icon: 'drop', color: '#6fb7e0', sub: true },
 	{ key: 'herds', label: 'Herds', icon: 'bison', color: '#c9a86a' },
 	{ key: 'territories', label: 'Territories', icon: 'flag', color: '#e0906a' },
+	{ key: 'packs', label: 'Hunting packs', icon: 'wolf', color: '#d07a5a', sub: true },
+	{ key: 'alarms', label: 'Alarms', icon: 'owl', color: '#e8c25a', wide: true, sub: true },
 	{ key: 'eggs', label: 'Eggs', icon: 'egg', color: '#e6d3a3', wide: true, sub: true },
+	{ key: 'nests', label: 'Nests & dens', icon: 'nest', color: '#c79a5b', wide: true, sub: true },
+	{ key: 'nutrition', label: 'Body condition', icon: 'boar', color: '#d9a066', wide: true, sub: true },
+	{ key: 'dormancy', label: 'Dormancy', icon: 'bear', color: '#8fa7d6', wide: true, sub: true },
 	{ key: 'stages', label: 'Life stages · animals', icon: 'deer', color: '#9fd98b', wide: true, sub: true, noSpark: true },
 ];
 const STAT_EXTRA_KEYS = new Set(STAT_EXTRA.map((x) => x.key));
@@ -91,6 +96,10 @@ const app = {
 	theme: 'auto',
 	tree: null,
 	overlay: null,
+	cls: -1,
+	openClasses: new Set(),
+	busy: false,
+	messageTimer: 0,
 };
 
 function readSize() {
@@ -99,38 +108,162 @@ function readSize() {
 }
 
 function newWorld() {
+	if (app.busy) return;
 	let seed = parseInt($('seedInput').value, 10);
 	if (!Number.isFinite(seed)) {
 		seed = Math.floor(Math.random() * 1e6);
 		$('seedInput').value = seed;
 	}
 	const { w, h } = readSize();
-	const overlay = $('mapError');
-	overlay.hidden = false;
-	overlay.innerHTML = '<div><div class="spinner"></div>Growing a new world…</div>';
+	showBusy('Growing a new world…');
 	setTimeout(() => {
 		const t0 = performance.now();
-		const world = new WorldMap(w, h, seed);
-		const eco = new Ecosystem(world, seed, {
+		SimClient.create(w, h, seed, {
 			seasons: $('optSeasons').checked,
 			migrations: $('optMigrations').checked,
 			disease: $('optDisease').checked,
 			weather: $('optWeather').checked,
-		});
-		app.world = world;
-		app.eco = eco;
-		app.selected = null;
-		app.acc = 0;
-		app.lastLogVersion = -1;
-		app.renderer.highlight = null;
-		app.renderer.setWorld(world, eco);
-		closeOverlay();
-		closeDetail();
-		overlay.hidden = true;
-		history.replaceState(null, '', '#' + seed);
-		console.log(`World ${w}×${h} ready in ${Math.round(performance.now() - t0)} ms`);
-		updateUi(true);
+		}).then(
+			({ world, eco }) => {
+				installWorld(world, eco);
+				hideBusy();
+				console.log(`World ${w}×${h} ready in ${Math.round(performance.now() - t0)} ms`);
+				updateUi(true);
+			},
+			(err) => {
+				console.error(err);
+				showMessage('Could not grow the world: ' + err.message);
+			}
+		);
 	}, 30);
+}
+
+function installWorld(world, eco) {
+	app.world = world;
+	app.eco = eco;
+	app.selected = null;
+	app.acc = 0;
+	app.lastLogVersion = -1;
+	app.renderer.highlight = null;
+	app.renderer.setWorld(world, eco);
+	$('fastWrap').hidden = !SimClient.gpu;
+	closeOverlay();
+	closeDetail();
+	history.replaceState(null, '', '#' + eco.seed);
+}
+
+const LAYER_SWITCHES = { showPlants: 'showPlants', showAnimals: 'showAnimals', showSwarms: 'showSwarms', showWeather: 'showWeather' };
+const OPTION_SWITCHES = { seasons: 'optSeasons', migrations: 'optMigrations', disease: 'optDisease', weather: 'optWeather' };
+
+function showBusy(text) {
+	const box = $('mapError');
+	clearTimeout(app.messageTimer);
+	box.hidden = false;
+	box.innerHTML = '<div><div class="spinner"></div><span></span></div>';
+	box.querySelector('span').textContent = text;
+}
+
+function showMessage(text) {
+	const box = $('mapError');
+	box.hidden = false;
+	box.textContent = text;
+	clearTimeout(app.messageTimer);
+	app.messageTimer = setTimeout(() => (box.hidden = true), 5000);
+	box.onclick = () => {
+		clearTimeout(app.messageTimer);
+		box.hidden = true;
+		box.onclick = null;
+	};
+}
+
+function hideBusy() {
+	$('mapError').hidden = true;
+}
+
+function saveMeta() {
+	const r = app.renderer;
+	const layers = {};
+	for (const k of Object.keys(LAYER_SWITCHES)) layers[k] = !!r[k];
+	return { speed: app.speed, mode: r.mode, cam: { x: r.cam.x, y: r.cam.y, zoom: r.cam.zoom }, layers };
+}
+
+function saveWorld() {
+	if (!app.eco || app.busy) return;
+	app.busy = true;
+	showBusy('Saving the world…');
+	setTimeout(async () => {
+		try {
+			const t0 = performance.now();
+			const { name, bytes: data } = await SimClient.save(app.eco, saveMeta());
+			const url = URL.createObjectURL(new Blob([data], { type: 'application/octet-stream' }));
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = name;
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+			setTimeout(() => URL.revokeObjectURL(url), 10000);
+			hideBusy();
+			console.log(`Saved ${name}: ${(data.length / 1048576).toFixed(1)} MB in ${Math.round(performance.now() - t0)} ms`);
+		} catch (err) {
+			console.error(err);
+			showMessage('Could not save the world: ' + err.message);
+		} finally {
+			app.busy = false;
+		}
+	}, 30);
+}
+
+function loadWorld(file) {
+	if (!file || app.busy) return;
+	app.busy = true;
+	setRunning(false);
+	showBusy(`Loading ${file.name}…`);
+	setTimeout(async () => {
+		try {
+			const t0 = performance.now();
+			const bytes = new Uint8Array(await file.arrayBuffer());
+			const { world, eco, meta } = await SimClient.load(bytes);
+			applyLoaded(world, eco, meta);
+			hideBusy();
+			console.log(`Loaded ${file.name} (year ${yearOf(eco.tick)}) in ${Math.round(performance.now() - t0)} ms`);
+		} catch (err) {
+			console.warn(err);
+			showMessage(`Could not load ${file.name}: ${err.message}. The current world was kept.`);
+		} finally {
+			app.busy = false;
+		}
+	}, 30);
+}
+
+function applyLoaded(world, eco, meta) {
+	$('seedInput').value = eco.seed;
+	const size = `${world.width}x${world.height}`;
+	const sel = $('sizeSelect');
+	if (![...sel.options].some((o) => o.value === size)) sel.add(new Option(`${world.width}×${world.height}`, size));
+	sel.value = size;
+	for (const [k, id] of Object.entries(OPTION_SWITCHES)) $(id).checked = !!eco.options[k];
+	installWorld(world, eco);
+	const r = app.renderer;
+	const layers = meta.layers || {};
+	for (const [k, id] of Object.entries(LAYER_SWITCHES)) {
+		if (typeof layers[k] !== 'boolean') continue;
+		$(id).checked = layers[k];
+		r[k] = layers[k];
+	}
+	const modeBtn = [...$('viewModes').children].find((b) => b.dataset.mode === meta.mode);
+	if (modeBtn) {
+		for (const x of $('viewModes').children) x.classList.toggle('active', x === modeBtn);
+		r.setMode(meta.mode);
+	}
+	const speedBtn = [...$('speedGroup').children].find((b) => Number(b.dataset.speed) === meta.speed);
+	if (speedBtn) {
+		app.speed = meta.speed;
+		for (const x of $('speedGroup').children) x.classList.toggle('active', x === speedBtn);
+	}
+	const c = meta.cam;
+	if (c && [c.x, c.y, c.zoom].every(Number.isFinite) && c.zoom > 0) Object.assign(r.cam, { x: c.x, y: c.y, zoom: c.zoom });
+	updateUi(true);
 }
 
 let lastFrame = performance.now();
@@ -140,7 +273,8 @@ function frame(now) {
 	lastFrame = now;
 	app.fps += (1 / Math.max(dt, 0.001) - app.fps) * 0.05;
 	const eco = app.eco;
-	if (eco && app.running) {
+	if (eco && eco.remote) app.msPerTick = eco.sync(app.running, app.speed);
+	else if (eco && app.running) {
 		app.acc += dt * app.speed;
 		const t0 = performance.now();
 		const budget = app.speed >= 600 ? 30 : 16;
@@ -157,7 +291,7 @@ function frame(now) {
 		if (app.acc > 2) app.acc = 1;
 	}
 	if (app.renderer && app.world) {
-		const alpha = app.running ? Math.min(1, Math.max(0, app.acc)) : 1;
+		const alpha = eco && eco.remote ? eco.alpha : app.running ? Math.min(1, Math.max(0, app.acc)) : 1;
 		app.renderer.draw(alpha, dt);
 	}
 	if (eco && now - app.lastUi > 250) {
@@ -205,11 +339,14 @@ function buildStatCards() {
 		<canvas data-spark></canvas>
 	</div>`;
 	for (const g of STAT_GROUPS) {
-		html += `<div class="stat" data-key="${g.key}" title="${g.domain === 2 ? 'Amphibious' : g.domain ? 'Water' : 'Land'} ${g.role}s">
+		const rows = ROLE_KEYS.map((r, k) => `<button class="role-row" data-role="${r}" hidden><i style="background:${ROLE_COLORS[r]}"></i><span>${ROLE_LABELS[k]}</span><b data-n>0</b><canvas data-rspark></canvas></button>`).join('');
+		const swarm = g.key === 'invert' ? `<button class="role-row" data-role="swarms" title="Bug swarms (open the Bugs tab)"><i style="background:${GROUP_COLORS.bugs}"></i><span>Swarms</span><b data-n>0</b><canvas data-rspark></canvas></button>` : '';
+		html += `<div class="stat cls" data-key="${g.key}" role="button" tabindex="0" aria-expanded="false" title="${g.label}: click for the role breakdown">
 			${iconSVG(g.icon, paletteFor(GROUP_COLORS[g.key]), 28)}
-			<div class="stat-label">${g.label}</div>
+			<div class="stat-label">${g.label}<span class="chev"></span></div>
 			<div class="stat-value" data-v>0</div>
 			<canvas data-spark></canvas>
+			<div class="stat-roles" data-roles>${rows}${swarm}</div>
 		</div>`;
 	}
 	for (const x of STAT_EXTRA) {
@@ -222,6 +359,34 @@ function buildStatCards() {
 		</div>`;
 	}
 	wrap.innerHTML = html;
+	try {
+		const open = JSON.parse(storeGet(OPEN_KEY) || '[]');
+		if (Array.isArray(open)) app.openClasses = new Set(open);
+	} catch (e) {}
+	for (const el of wrap.querySelectorAll('.stat.cls')) setClassOpen(el, app.openClasses.has(el.dataset.key));
+	const toggle = (e) => {
+		const row = e.target.closest('.role-row');
+		if (row && row.dataset.role === 'swarms') {
+			if (!$('detail').hidden) closeDetail();
+			setTab('bug');
+			return;
+		}
+		const el = e.target.closest('.stat.cls');
+		if (!el) return;
+		const on = !el.classList.contains('open');
+		setClassOpen(el, on);
+		if (on) app.openClasses.add(el.dataset.key);
+		else app.openClasses.delete(el.dataset.key);
+		storeSet(OPEN_KEY, JSON.stringify([...app.openClasses]));
+		if (app.eco) updateStats();
+	};
+	wrap.addEventListener('click', toggle);
+	wrap.addEventListener('keydown', (e) => {
+		if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.stat.cls')) {
+			e.preventDefault();
+			toggle(e);
+		}
+	});
 
 	const legend = $('popLegend');
 	legend.innerHTML = [['plants', 'Plants ÷10'], ...STAT_GROUPS.map((g) => [g.key, g.label]), ['bugs', 'Bugs']]
@@ -238,6 +403,37 @@ function buildStatCards() {
 	});
 }
 
+function setClassOpen(el, on) {
+	el.classList.toggle('open', on);
+	el.classList.toggle('wide', on);
+	el.setAttribute('aria-expanded', String(on));
+}
+
+function updateClassRoles(el, k, s, h) {
+	const roles = (s.roles && s.roles[k]) || {};
+	for (const row of el.querySelectorAll('.role-row')) {
+		const r = row.dataset.role;
+		const swarm = r === 'swarms';
+		const v = swarm ? s.bugs || 0 : roles[r] || 0;
+		const hist = swarm ? h.bugs || [] : h[k + '.' + r] || [];
+		const seen = swarm ? !!app.eco.bugs : v > 0 || hist.some((x) => x > 0);
+		row.hidden = !seen;
+		if (!seen) continue;
+		row.classList.toggle('zero', v === 0);
+		row.querySelector('[data-n]').textContent = formatCount(v);
+		drawSparkline(row.querySelector('[data-rspark]'), hist, swarm ? GROUP_COLORS.bugs : ROLE_COLORS[r]);
+		if (r === 'carn') packRow(row, k, s);
+	}
+}
+
+function packRow(row, k, s) {
+	const p = (s.packCls && s.packCls[k]) || [0, 0];
+	const span = row.querySelector('span');
+	const text = p[0] ? `Predators · ${p[0]} pack${p[0] === 1 ? '' : 's'}` : 'Predators';
+	if (span.textContent !== text) span.textContent = text;
+	row.title = p[0] ? `${p[0]} hunting pack${p[0] === 1 ? '' : 's'}, mean size ${(p[1] / p[0]).toFixed(1)}. All packs: ${formatCount(s.packKills || 0)} kills, ${formatCount(s.bigKills || 0)} of prey over 1.5× the hunter's mass` : '';
+}
+
 function updateStats() {
 	const eco = app.eco;
 	const s = eco.stats;
@@ -250,11 +446,17 @@ function updateStats() {
 			continue;
 		}
 		const v = (k === 'plants' ? s.plantBiomass : dis ? s.sick : s[k]) || 0;
-		el.querySelector('[data-v]').textContent = formatCount(v);
+		if (el.classList.contains('cls')) {
+			el.hidden = v === 0 && !(h[k] || []).some((x) => x > 0);
+			if (el.hidden) continue;
+		}
+		const dz = el.classList.contains('cls') && s.dormCls ? s.dormCls[k] || 0 : 0;
+		el.querySelector('[data-v]').innerHTML = dz ? `${formatCount(v)}<small>${formatCount(dz)} dormant</small>` : formatCount(v);
 		el.classList.toggle('zero', k !== 'plants' && v === 0 && (k !== 'bugs' || !!eco.bugs));
 		if (k === 'bugs') el.querySelector('[data-sub]').innerHTML = bugStatLine(s);
 		else if (dis) el.querySelector('[data-sub]').textContent = `${formatCount(s.strains || 0)} strains · ${formatCount(s.blight || 0)} blighted tiles`;
 		drawSparkline(el.querySelector('[data-spark]'), k === 'plants' ? h.plants : dis ? h.sick || [] : h[k] || [], GROUP_COLORS[k]);
+		if (el.classList.contains('open')) updateClassRoles(el, k, s, h);
 	}
 	drawPopChart();
 }
@@ -271,13 +473,30 @@ function updateExtraStat(el, k, s, h) {
 		sub.innerHTML = `<span>${formatCount(j)} juveniles</span><span>${formatCount(a)} adults</span><span>${formatCount(e)} elders</span>`;
 		return;
 	}
-	if (k === 'eggs') {
+	if (k === 'nutrition') {
+		const nu = s.nutrition || {};
+		v.innerHTML = `${pct(nu.defShare || 0)}<small>deficient</small>`;
+		sub.innerHTML = `<span>${formatCount(nu.lean || 0)} lean</span><span>${formatCount(nu.fit || 0)} fit</span><span>${formatCount(nu.heavy || 0)} heavy</span><span>${formatCount(nu.obese || 0)} obese</span><span>${formatCount(nu.defProt || 0)} low protein</span><span>${formatCount(nu.defMin || 0)} low minerals</span><span>${formatCount(nu.caFailed || 0)} eggs failed (calcium)</span>`;
+	} else if (k === 'dormancy') {
+		const dm = s.dormancy || {};
+		v.innerHTML = `${formatCount(dm.total || 0)}<small>dormant</small>`;
+		sub.innerHTML = `<span>${formatCount(dm.hib || 0)} hibernating</span><span>${formatCount(dm.brum || 0)} brumating</span><span>${formatCount(dm.aest || 0)} aestivating</span><span>${formatCount(dm.torpor || 0)} in torpor</span><span>${formatCount(dm.starved || 0)} woke starving</span><span>${formatCount(dm.eggDiapause || 0)} eggs in diapause</span><span>${formatCount(dm.bugReserve || 0)} bug reserves</span><span>${formatCount(dm.seedDormant || 0)} resting seed banks</span>`;
+	} else if (k === 'alarms') {
+		const so = s.social || {};
+		v.innerHTML = `${formatCount(so.alarms || 0)}<small>group ${(so.meanGroup || 0).toFixed(1)}</small>`;
+		sub.innerHTML = `<span>${formatCount(so.heard || 0)} heard</span><span>${formatCount(so.sentinel || 0)} sentinel</span><span>${formatCount(so.colonies || 0)} colonies</span><span>${formatCount(so.dispersals || 0)} dispersals</span><span>${formatCount(so.dispSplits || 0)} dispersal splits</span><span>${formatCount(so.solitary || 0)} solitary · ${formatCount(so.colonial || 0)} colonial species</span><span>${formatCount(so.rankBlocked || 0)} outranked</span>`;
+	} else if (k === 'eggs') {
 		const eg = s.eggs || {};
 		v.textContent = formatCount(st.eggs || 0);
 		sub.innerHTML = ['laid', 'hatched', 'eaten', 'failed'].map((x) => `<span>${formatCount(eg[x] || 0)} ${x}</span>`).join('');
+	} else if (k === 'nests') {
+		const ns = s.nests || {};
+		v.innerHTML = `${formatCount(ns.nests || 0)}<small>${formatCount(ns.dens || 0)} dens</small>`;
+		sub.innerHTML = `<span>${formatCount(ns.nesters || 0)} parents</span><span>${formatCount(ns.natal || 0)} young at home</span><span>${(ns.eggsPerNest || 0).toFixed(1)} eggs/nest</span><span>${formatCount(ns.raids || 0)} raided</span><span>${formatCount(ns.repelled || 0)} raids repelled</span>`;
 	} else {
 		v.textContent = formatCount(s[k] || 0);
 		if (k === 'thirstDeaths') sub.textContent = `${pct(s.thirstShare || 0)} of land deaths`;
+		if (k === 'packs') sub.innerHTML = `<span>mean size ${(s.packSize || 0).toFixed(1)}</span><span>${formatCount(s.packKills || 0)} kills</span><span>${formatCount(s.bigKills || 0)} big game</span>`;
 	}
 	drawSparkline(el.querySelector('[data-spark]'), h[k] || [], STAT_EXTRA.find((d) => d.key === k).color);
 }
@@ -338,7 +557,8 @@ function speciesInTab(tab) {
 	const out = [];
 	for (const sp of app.eco.registry.all.values()) {
 		const g = TAB_GROUP[tab];
-		if (g ? sp.group !== g : sp.group !== 'animal' || (sp.domain === 'water' ? 'water' : 'land') !== tab) continue;
+		if (!g || sp.group !== g) continue;
+		if (tab === 'animal' && app.cls >= 0 && sp.cls !== app.cls) continue;
 		out.push(sp);
 	}
 	return out;
@@ -382,25 +602,30 @@ function yearOf(tick) {
 
 function updateTabCounts() {
 	let p = 0;
-	let l = 0;
-	let w = 0;
+	let a = 0;
 	let b = 0;
 	let d = 0;
+	const byCls = new Array(CLASS_NAME.length).fill(0);
 	const reg = app.eco.registry;
 	for (const id of reg.living) {
 		const sp = reg.get(id);
 		if (sp.group === 'plant') p++;
 		else if (sp.group === 'bug') b++;
 		else if (sp.group === 'pathogen') d++;
-		else if (sp.domain === 'water') w++;
-		else l++;
+		else {
+			a++;
+			if (sp.cls >= 0) byCls[sp.cls]++;
+		}
 	}
 	$('countPlant').textContent = formatCount(p);
-	$('countLand').textContent = formatCount(l);
-	$('countWater').textContent = formatCount(w);
+	$('countAnimal').textContent = formatCount(a);
 	$('countBug').textContent = formatCount(b);
 	$('countDisease').textContent = formatCount(d);
-	$('speciesTotals').textContent = `${p + l + w + b} living species${d ? ` · ${d} strains` : ''}`;
+	$('speciesTotals').textContent = `${p + a + b} living species${d ? ` · ${d} strains` : ''}`;
+	for (const c of $('classChips').children) {
+		const k = Number(c.dataset.cls);
+		c.querySelector('em').textContent = formatCount(k < 0 ? a : byCls[k]);
+	}
 }
 
 function sparkSVG(sp, alive) {
@@ -531,6 +756,10 @@ function hueSwatches(list) {
 		.join('');
 }
 
+function socialWord(v) {
+	return (v < SOC_MIN ? 'Solitary' : v < COLONY_MIN ? 'Social' : 'Colonial') + ' · ' + pct(v);
+}
+
 const ANIMAL_TRAITS = [
 	['Body size', G_SIZE, (v) => pct(v)],
 	['Speed', G_SPEED, (v) => pct(v)],
@@ -547,6 +776,13 @@ const ANIMAL_TRAITS = [
 	['Herding', G_HERD, (v) => pct(v)],
 	['Cold-blooded', G_COLD, (v) => (v > 0.5 ? 'Cold-blooded' : 'Warm-blooded')],
 	['Drought tolerance', G_DRY, (v) => pct(v)],
+	['Pack hunting', G_PACK, (v) => pct(v)],
+	['Display', G_DISPLAY, (v) => pct(v)],
+	['Choosiness', G_CHOOSY, (v) => pct(v)],
+	['Appetite', G_APPETITE, (v) => pct(v)],
+	['Dormancy', G_DORMANCY, (v) => pct(v)],
+	['Alarm calls', G_ALARM, (v) => (v > ALARM_MIN ? 'Caller · ' : '') + pct(v)],
+	['Sociality', G_SOCIAL, (v) => socialWord(v)],
 ];
 
 const DISEASE_TRAITS = [
@@ -554,6 +790,10 @@ const DISEASE_TRAITS = [
 	['Virulence', 1, (v) => pct(v)],
 	['Host range', 2, (v) => pct(v)],
 ];
+
+function conditionWord(f) {
+	return f < FAT_LEAN ? 'lean' : f < FAT_HEAVY ? 'fit' : f < FAT_OBESE ? 'heavy' : 'obese';
+}
 
 function pct(v) {
 	return Math.round(v * 100) + '%';
@@ -575,7 +815,10 @@ function selectSpecies(id) {
 	app.renderer.vegDirty = true;
 	if (sp.group === 'pathogen') setTab('disease', false);
 	else if (sp.group === 'plant' || sp.group === 'bug') setTab(sp.group, false);
-	else setTab(sp.domain === 'water' ? 'water' : 'land', false);
+	else {
+		if (app.cls >= 0 && sp.cls !== app.cls) setClassFilter(-1, false);
+		setTab('animal', false);
+	}
 	$('detail').hidden = false;
 	$('detail').scrollTop = 0;
 	renderDetail();
@@ -602,7 +845,7 @@ function renderDetail() {
 	$('detailName').textContent = sp.name;
 	const patho = sp.group === 'pathogen';
 	const host = patho ? eco.registry.get(sp.hostId) : null;
-	$('detailSub').textContent = patho ? `${categoryLabel(sp)} · from ${host ? host.name : 'unknown host'}` : sp.group === 'bug' ? `${categoryLabel(sp)} swarm · ${bugNiche(sp)}` : `${categoryLabel(sp)} · ${sp.domain === 'water' ? 'aquatic' : sp.domain === 'amph' ? 'amphibious' : 'terrestrial'}`;
+	$('detailSub').textContent = patho ? `${categoryLabel(sp)} · from ${host ? host.name : 'unknown host'}` : sp.group === 'bug' ? `${categoryLabel(sp)} swarm · ${bugNiche(sp)}` : `${categoryLabel(sp)} · ${sp.domain === 'water' ? 'aquatic' : sp.domain === 'amph' ? 'amphibious' : sp.domain === 'air' ? 'flying' : 'terrestrial'}`;
 	const origin = sp.origin === 'founder' ? 'Founder' : sp.origin === 'migrated' ? 'Migrant' : sp.origin === 'emerged' ? 'Emerged' : sp.origin === 'jump' ? 'Host jump' : `Generation ${sp.generation}`;
 	$('detailBadges').innerHTML = [
 		roleTag(sp).replace('role-tag', 'badge role-tag'),
@@ -631,8 +874,11 @@ function renderDetail() {
 	if (resK >= 0 && sp.mean && resK < sp.mean.length) cells.push(['Avg resistance', pct(sp.mean[resK])]);
 	if (!patho && sp.infected > 0) cells.push(['Infected', formatCount(sp.infected) + unit]);
 	if (sp.group === 'animal') {
-		cells.push(['Habitat', (sp.domain === 'water' ? 'Water' : sp.domain === 'amph' ? 'Amphibious' : 'Land') + (sp.mean[G_DRY] > 0.6 ? ' · dry-adapted' : '')]);
+		cells.push(['Class', `${CLASS_NAME[sp.cls] || 'Animal'} · ${sp.role}`]);
+		cells.push(['Habitat', (sp.domain === 'water' ? 'Water' : sp.domain === 'amph' ? 'Amphibious' : sp.domain === 'air' ? (sp.nic ? 'Air · fishes the shallows' : 'Air · perches on land') : 'Land') + (sp.mean[G_DRY] > 0.6 ? ' · dry-adapted' : '')]);
 		const c = stageCounts(sp.id);
+		if (sp.fat !== undefined) cells.push(['Body condition', `${conditionWord(sp.fat)} · fat ${pct(sp.fat)} · ${pct(Math.max(sp.protDef || 0, sp.minDef || 0))} deficient`, true]);
+		if (sp.grpMean !== undefined) cells.push(['Mean group size', `${sp.grpMean.toFixed(1)}${sp.colonies ? ` · ${formatCount(sp.colonies)} colonies` : ''}${sp.dispersal ? ' · founded by dispersers' : ''}`]);
 		cells.push(['Stages', `${formatCount(c[0])} juv · ${formatCount(c[1])} adult · ${formatCount(c[2])} elder · ${formatCount(c[3])} eggs`, true]);
 	}
 	$('detailGrid').innerHTML = cells.map(([k, v, wide]) => `<div${wide ? ' class="wide"' : ''}><small>${k}</small><strong>${v}</strong></div>`).join('');
@@ -671,7 +917,13 @@ function renderDetail() {
 		const av = sp.aversion && sp.aversion.length ? sp.aversion : null;
 		traits += `<div class="trait"><span>Avoids</span><div style="grid-column:span 2;display:flex;flex-wrap:wrap;gap:4px;align-items:center">${av ? hueSwatches(av) : '<em style="text-align:left;color:var(--muted)">nothing yet</em>'}</div></div>`;
 	}
+	const showHist = sp.group === 'animal' && sp.showHist && sp.showHist.length >= 4 ? sp.showHist : null;
+	if (showHist) traits += `<div class="trait" title="Mean display over time${sp.showy ? ' · showy' : ''}"><span>Display trend</span><canvas data-show-spark style="width:100%;height:20px;margin:0"></canvas><em>${pct(showHist[showHist.length - 1])}</em></div>`;
+	const condHist = sp.group === 'animal' && sp.condHist && sp.condHist.length >= 6 ? sp.condHist : null;
+	if (condHist) traits += `<div class="trait" title="Mean fat over time (body condition)"><span>Condition trend</span><canvas data-cond-spark style="width:100%;height:20px;margin:0"></canvas><em>${pct(condHist[condHist.length - 2])}</em></div>`;
 	$('detailTraits').innerHTML = traits;
+	if (condHist) drawSparkline($('detailTraits').querySelector('[data-cond-spark]'), condHist.filter((v, k) => k % 3 === 1), sp.color);
+	if (showHist) drawSparkline($('detailTraits').querySelector('[data-show-spark]'), showHist.filter((v, k) => k % 2 === 1), sp.color);
 
 	const chain = eco.registry.lineage(sp).reverse();
 	const row = (s, cur) =>
@@ -698,8 +950,22 @@ function animalStage(A, i) {
 	return A.age[i] < A.mature[i] ? 0 : A.age[i] > ELDER_AGE * A.maxAge[i] ? 2 : 1;
 }
 
+function setClassFilter(cls, render = true) {
+	app.cls = cls;
+	for (const c of $('classChips').children) c.classList.toggle('active', Number(c.dataset.cls) === cls);
+	if (render) renderSpeciesList();
+}
+
+function buildClassChips() {
+	const pal = (k) => paletteFor(k < 0 ? '#a9bcb0' : GROUP_COLORS[STAT_GROUPS[k].key]);
+	$('classChips').innerHTML = [-1, ...STAT_GROUPS.map((g) => g.cls)]
+		.map((k) => `<button data-cls="${k}" class="${k === app.cls ? 'active' : ''}" title="${k < 0 ? 'All animals' : STAT_GROUPS[k].label}">${k < 0 ? '' : iconSVG(STAT_GROUPS[k].icon, pal(k), 14)}<span>${k < 0 ? 'All' : STAT_GROUPS[k].label}</span><em>0</em></button>`)
+		.join('');
+}
+
 function setTab(tab, render = true) {
 	app.tab = tab;
+	$('classChips').hidden = tab !== 'animal';
 	for (const b of $('tabs').children) b.classList.toggle('active', b.dataset.tab === tab);
 	$('speciesView').hidden = tab === 'events';
 	$('eventsView').hidden = tab !== 'events';
@@ -814,12 +1080,18 @@ function updateTooltip() {
 	const a = pickAnimal(wx, wy);
 	if (a >= 0) {
 		const sp = reg.get(A.sp[a]);
-		const states = ['resting', 'grazing', 'foraging', 'hunting', 'fleeing', 'seeking water'];
+		const states = ['resting', 'grazing', 'foraging', 'hunting', 'fleeing', 'seeking water', 'heading home', 'heading to den', 'dispersing'];
+		const dormWords = ['', 'hibernating', 'brumating', 'aestivating', 'in torpor'];
+		const home = A.home && A.home[a] ? ` · ${['', 'has a nest', 'has a den', 'young of a den'][A.home[a]]}` : '';
 		const st = A.strain && A.strain[a] ? reg.get(A.strain[a]) : null;
 		const sick = st ? `<small class="tt-sick">sick: ${st.name}</small>` : '';
 		const cap = A.emax[a] * A.gf[a];
+		const fr = A.fat && cap > 0 ? A.fat[a] / cap : 0;
+		const lowP = A.nProt && A.nProt[a] < DEFICIT;
+		const lowM = A.nMin && A.nMin[a] < DEFICIT;
+		const cond = A.fat ? `<small${lowP || lowM ? ' class="tt-sick"' : ''}>${conditionWord(fr)} · protein ${lowP ? 'low' : pct(Math.min(1, A.nProt[a]))} · minerals ${lowM ? 'low' : pct(Math.min(1, A.nMin[a]))}</small>` : '';
 		const water = A.domain[a] !== 1 && A.water ? ` · water ${pct(Math.min(1, Math.max(0, A.water[a])))}` : '';
-		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${states[A.state[a]]} · ${['juvenile', 'adult', 'elder'][animalStage(A, a)]} · age ${A.age[a]}</small><small>energy ${pct(cap > 0 ? Math.min(1, Math.max(0, A.energy[a] / cap)) : 0)}${water}</small>${sick}</div></div>`;
+		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${A.domain[a] === 3 ? (A.fly[a] ? 'flying · ' : 'perched · ') : ''}${A.dorm && A.dorm[a] ? dormWords[A.dorm[a]] : states[A.state[a]]} · ${['juvenile', 'adult', 'elder'][animalStage(A, a)]} · age ${A.age[a]}${home}</small><small>energy ${pct(cap > 0 ? Math.min(1, Math.max(0, A.energy[a] / cap)) : 0)}${water}</small>${cond}${sick}</div></div>`;
 	}
 	for (let slot = 0; slot < 2; slot++) {
 		const p = slot * P.n + t;
@@ -945,6 +1217,12 @@ function setupControls() {
 		if (e.key === 'Enter') newWorld();
 	});
 	$('sizeSelect').onchange = newWorld;
+	$('saveBtn').onclick = saveWorld;
+	$('loadBtn').onclick = () => !app.busy && $('loadInput').click();
+	$('loadInput').onchange = (e) => {
+		loadWorld(e.target.files[0]);
+		e.target.value = '';
+	};
 
 	$('speedGroup').addEventListener('click', (e) => {
 		const b = e.target.closest('button');
@@ -972,6 +1250,22 @@ function setupControls() {
 		updateWeatherBadge();
 	};
 	$('showWeather').onchange = (e) => (app.renderer.showWeather = e.target.checked);
+	$('optFast').onchange = async (e) => {
+		const box = e.target;
+		if (box.checked && !confirm('Fast mode runs the plant and soil step on the GPU.\n\nRuns stop being exactly repeatable: the same seed and settings can play out differently. Saves still load in either mode.\n\nTurn fast mode on?')) {
+			box.checked = false;
+			return;
+		}
+		box.disabled = true;
+		try {
+			box.checked = await SimClient.setFast(box.checked);
+		} catch (err) {
+			console.warn('Fast mode could not be changed', err);
+			box.checked = SimClient.fast;
+		}
+		box.disabled = false;
+	};
+	SimClient.onFast = (on) => ($('optFast').checked = on);
 
 	$('tabs').addEventListener('click', (e) => {
 		const b = e.target.closest('button');
@@ -981,6 +1275,10 @@ function setupControls() {
 	});
 	for (const el of document.querySelectorAll('.tab-icon')) el.innerHTML = iconSVG(el.dataset.icon, NEUTRAL, 14);
 	$('showExtinct').onchange = renderSpeciesList;
+	$('classChips').addEventListener('click', (e) => {
+		const b = e.target.closest('button');
+		if (b) setClassFilter(Number(b.dataset.cls));
+	});
 	$('sortSelect').onchange = renderSpeciesList;
 	$('eventFilter').addEventListener('click', (e) => {
 		const b = e.target.closest('button');
@@ -1109,6 +1407,7 @@ function init() {
 	$('seedInput').value = Number.isFinite(fromHash) ? fromHash : Math.floor(Math.random() * 1e6);
 	setTheme(storeGet(THEME_KEY));
 	buildStatCards();
+	buildClassChips();
 	buildBiomeLegend();
 	setupControls();
 	try {
