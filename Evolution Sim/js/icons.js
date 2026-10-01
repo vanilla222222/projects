@@ -1480,6 +1480,7 @@ const ICONS = {
 		['dark', 'M9 17c4-2 8 2 12 0s5-1 6.5-.5v-1.7c-1.5-.5-3.5-1.5-6.5.5-4 2-8-2-12 0z'],
 		['light', 'M11 7.3c2.5-.6 4.4.6 6.4 1.2', 1.2],
 	],
+	sleep: [['body', 'M9 8h8l-8 9h8 M19 17h6l-6 7h6', 2.4]],
 };
 
 const ICON_NAMES = Object.keys(ICONS);

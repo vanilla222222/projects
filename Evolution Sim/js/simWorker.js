@@ -4,7 +4,7 @@ const SNAP_POOLS = ['animals', 'eggs'];
 const SNAP_GRIDS = {
 	plants: ['species', 'biomass', 'cap', 'age', 'life', 'health', 'blight', 'kind', 'fruit', 'poll'],
 	soil: ['nutrient', 'litter'],
-	bugs: ['species', 'density', 'total'],
+	bugs: ['species', 'density', 'total', 'dorm'],
 	weather: ['wet', 'snow', 'fresh', 'waterDist'],
 	animals: ['terrSp', 'terrUid', 'terrUntil'],
 };

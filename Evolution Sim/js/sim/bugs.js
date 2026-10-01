@@ -26,6 +26,9 @@ const BUG_SPECIATION = 0.2;
 const BUG_SPLIT_MIN_POP = 40;
 const BUG_EVERY = 6;
 const BUG_MIN = 0.01;
+const BUG_RESERVE = 0.03;
+const BUG_RES_DIE = 0.012;
+const BUG_RES_FIT = 0.05;
 const BUG_SEED_D = 0.06;
 const BUG_TOL = 0.2;
 const BUG_R = 0.08;
@@ -117,6 +120,9 @@ class BugLayer {
 		this.app = new Float32Array(4 * n);
 		this.mob = new Float32Array(4 * n);
 		this.genome = new Float32Array(4 * n * BG);
+		this.dorm = new Uint8Array(4 * n);
+		this.reserve = 0;
+		this.reserveWoke = 0;
 		this.total = new Float32Array(n);
 		this.trace = new Float32Array(n);
 		this.tiles = [0, 0, 0, 0];
@@ -255,6 +261,7 @@ class BugLayer {
 		this.mob[q] = this.genome[base + B_MOBILITY];
 		this.rate[q] = BUG_R * BUG_EVERY * (0.5 + this.genome[base + B_FEC]) * (0.7 + 0.6 * app);
 		this.density[q] = d < 1 ? d : 1;
+		this.dorm[q] = 0;
 	}
 
 	_clear(q) {
@@ -263,6 +270,7 @@ class BugLayer {
 		this.registry.remove(this.registry.get(id));
 		this.species[q] = 0;
 		this.density[q] = 0;
+		this.dorm[q] = 0;
 	}
 
 	edibleAt(i) {
@@ -353,6 +361,10 @@ class BugLayer {
 		const mort = BUG_MORT * dt;
 		const decl = BUG_DECLINE * dt;
 		const spreadP = BUG_SPREAD * dt;
+		const Wx = A.weather;
+		const winter = Wx && Wx.season < 0;
+		const dormA = this.dorm;
+		let reserve = 0;
 
 		for (let niche = 0; niche < 4; niche++) {
 			const q0 = niche * n;
@@ -360,6 +372,17 @@ class BugLayer {
 				const q = q0 + i;
 				const id = species[q];
 				if (!id) continue;
+				if (dormA[q]) {
+					if (!winter || density[q] > 0) {
+						dormA[q] = 0;
+						if (density[q] < BUG_RESERVE) density[q] = BUG_RESERVE;
+						this.reserveWoke++;
+					} else {
+						if (rng.next() < BUG_RES_DIE) this._clear(q);
+						else reserve++;
+						continue;
+					}
+				}
 				const o = q * BG;
 				const app = appA[q];
 				let food;
@@ -413,7 +436,11 @@ class BugLayer {
 				else d -= (d - K) * decl;
 				d -= mort * (0.5 + app) * (1 + BUG_CROWD * d) * d;
 				if (d < BUG_MIN) {
-					this._clear(q);
+					if (winter && fitA[q] > BUG_RES_FIT) {
+						density[q] = 0;
+						dormA[q] = 1;
+						reserve++;
+					} else this._clear(q);
 					continue;
 				}
 				if (d > 1) d = 1;
@@ -438,6 +465,7 @@ class BugLayer {
 				if (rng.next() < mobA[q] * d * spreadP) this._spread(q, niche, i, W, H, tick);
 			}
 		}
+		this.reserve = reserve;
 		this._sumTotals();
 		this._checkCollapse(tick);
 		this.version++;

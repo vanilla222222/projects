@@ -42,6 +42,7 @@ const STAT_EXTRA = [
 	{ key: 'eggs', label: 'Eggs', icon: 'egg', color: '#e6d3a3', wide: true, sub: true },
 	{ key: 'nests', label: 'Nests & dens', icon: 'nest', color: '#c79a5b', wide: true, sub: true },
 	{ key: 'nutrition', label: 'Body condition', icon: 'boar', color: '#d9a066', wide: true, sub: true },
+	{ key: 'dormancy', label: 'Dormancy', icon: 'bear', color: '#8fa7d6', wide: true, sub: true },
 	{ key: 'stages', label: 'Life stages · animals', icon: 'deer', color: '#9fd98b', wide: true, sub: true, noSpark: true },
 ];
 const STAT_EXTRA_KEYS = new Set(STAT_EXTRA.map((x) => x.key));
@@ -448,7 +449,8 @@ function updateStats() {
 			el.hidden = v === 0 && !(h[k] || []).some((x) => x > 0);
 			if (el.hidden) continue;
 		}
-		el.querySelector('[data-v]').textContent = formatCount(v);
+		const dz = el.classList.contains('cls') && s.dormCls ? s.dormCls[k] || 0 : 0;
+		el.querySelector('[data-v]').innerHTML = dz ? `${formatCount(v)}<small>${formatCount(dz)} dormant</small>` : formatCount(v);
 		el.classList.toggle('zero', k !== 'plants' && v === 0 && (k !== 'bugs' || !!eco.bugs));
 		if (k === 'bugs') el.querySelector('[data-sub]').innerHTML = bugStatLine(s);
 		else if (dis) el.querySelector('[data-sub]').textContent = `${formatCount(s.strains || 0)} strains · ${formatCount(s.blight || 0)} blighted tiles`;
@@ -474,6 +476,10 @@ function updateExtraStat(el, k, s, h) {
 		const nu = s.nutrition || {};
 		v.innerHTML = `${pct(nu.defShare || 0)}<small>deficient</small>`;
 		sub.innerHTML = `<span>${formatCount(nu.lean || 0)} lean</span><span>${formatCount(nu.fit || 0)} fit</span><span>${formatCount(nu.heavy || 0)} heavy</span><span>${formatCount(nu.obese || 0)} obese</span><span>${formatCount(nu.defProt || 0)} low protein</span><span>${formatCount(nu.defMin || 0)} low minerals</span><span>${formatCount(nu.caFailed || 0)} eggs failed (calcium)</span>`;
+	} else if (k === 'dormancy') {
+		const dm = s.dormancy || {};
+		v.innerHTML = `${formatCount(dm.total || 0)}<small>dormant</small>`;
+		sub.innerHTML = `<span>${formatCount(dm.hib || 0)} hibernating</span><span>${formatCount(dm.brum || 0)} brumating</span><span>${formatCount(dm.aest || 0)} aestivating</span><span>${formatCount(dm.torpor || 0)} in torpor</span><span>${formatCount(dm.starved || 0)} woke starving</span><span>${formatCount(dm.eggDiapause || 0)} eggs in diapause</span><span>${formatCount(dm.bugReserve || 0)} bug reserves</span><span>${formatCount(dm.seedDormant || 0)} resting seed banks</span>`;
 	} else if (k === 'eggs') {
 		const eg = s.eggs || {};
 		v.textContent = formatCount(st.eggs || 0);
@@ -765,6 +771,7 @@ const ANIMAL_TRAITS = [
 	['Display', G_DISPLAY, (v) => pct(v)],
 	['Choosiness', G_CHOOSY, (v) => pct(v)],
 	['Appetite', G_APPETITE, (v) => pct(v)],
+	['Dormancy', G_DORMANCY, (v) => pct(v)],
 ];
 
 const DISEASE_TRAITS = [
@@ -1061,7 +1068,8 @@ function updateTooltip() {
 	const a = pickAnimal(wx, wy);
 	if (a >= 0) {
 		const sp = reg.get(A.sp[a]);
-		const states = ['resting', 'grazing', 'foraging', 'hunting', 'fleeing', 'seeking water', 'heading home'];
+		const states = ['resting', 'grazing', 'foraging', 'hunting', 'fleeing', 'seeking water', 'heading home', 'heading to den'];
+		const dormWords = ['', 'hibernating', 'brumating', 'aestivating', 'in torpor'];
 		const home = A.home && A.home[a] ? ` · ${['', 'has a nest', 'has a den', 'young of a den'][A.home[a]]}` : '';
 		const st = A.strain && A.strain[a] ? reg.get(A.strain[a]) : null;
 		const sick = st ? `<small class="tt-sick">sick: ${st.name}</small>` : '';
@@ -1071,7 +1079,7 @@ function updateTooltip() {
 		const lowM = A.nMin && A.nMin[a] < DEFICIT;
 		const cond = A.fat ? `<small${lowP || lowM ? ' class="tt-sick"' : ''}>${conditionWord(fr)} · protein ${lowP ? 'low' : pct(Math.min(1, A.nProt[a]))} · minerals ${lowM ? 'low' : pct(Math.min(1, A.nMin[a]))}</small>` : '';
 		const water = A.domain[a] !== 1 && A.water ? ` · water ${pct(Math.min(1, Math.max(0, A.water[a])))}` : '';
-		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${A.domain[a] === 3 ? (A.fly[a] ? 'flying · ' : 'perched · ') : ''}${states[A.state[a]]} · ${['juvenile', 'adult', 'elder'][animalStage(A, a)]} · age ${A.age[a]}${home}</small><small>energy ${pct(cap > 0 ? Math.min(1, Math.max(0, A.energy[a] / cap)) : 0)}${water}</small>${cond}${sick}</div></div>`;
+		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${A.domain[a] === 3 ? (A.fly[a] ? 'flying · ' : 'perched · ') : ''}${A.dorm && A.dorm[a] ? dormWords[A.dorm[a]] : states[A.state[a]]} · ${['juvenile', 'adult', 'elder'][animalStage(A, a)]} · age ${A.age[a]}${home}</small><small>energy ${pct(cap > 0 ? Math.min(1, Math.max(0, A.energy[a] / cap)) : 0)}${water}</small>${cond}${sick}</div></div>`;
 	}
 	for (let slot = 0; slot < 2; slot++) {
 		const p = slot * P.n + t;
