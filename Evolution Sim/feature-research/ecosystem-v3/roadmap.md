@@ -1,0 +1,76 @@
+# Ecosystem v3 roadmap
+
+Three parts. Each ships on its own and the sim stays balanced, playable and verified with screenshots after every part. Items marked **(+)** go beyond the original request.
+
+Each part follows the same loop as v2: scout the code, write `plan.md` for approval, implement in slices, write an `audit-slice*.md` per slice and take screenshots.
+
+Gates for every part, measured on seeds 42, 7 and 123 over 3000 ticks, with longer runs where a part's goals need them:
+- **Performance:** per-tick cost may grow by at most about 25% per part. Part 2 must bring it down.
+- **Balance:** every animal class, and every role inside it that existed at the start, is still alive after the run.
+- **Save/load:** a save and load mid-run must stay byte-identical (the `js/save.js` determinism test). Any new class must be added to `classTable()`.
+
+---
+
+## Part 1: Behaviour, taxonomy and birds
+
+### 1.1 Nests and dens
+- **Nest/den gene.** Animals that carry it pick a home site when they mature and return to it to breed.
+- **Nests** (birds, reptiles, amphibians and egg-laying fish): eggs are laid in the nest, not wherever the parent stands. Nest sites need cover: trees and shrubs for birds, warm dry ground for reptiles, shallow fresh water for amphibians.
+- **Dens** (mammals): young are born in the den and stay near it until they mature. A den shelters its occupants from cold, storms and some predation.
+- **Guarding:** parents near a nest or den defend it, so eggs and young are eaten less. This also gives egg predators a target, which fixes the v2 egg-loss miss.
+- **(+) Nest view** on the map: nests and dens drawn as small icons when zoomed in, plus a Nests stat card.
+
+### 1.2 Pack hunting
+- **Pack gene** for predators (and some omnivores): packmates of the same species near each other hunt together.
+- Pack members share a target. The kill chance rises with pack size, so packs can bring down prey much bigger than one hunter.
+- The meat is shared, so each member gets less per kill. This creates a real trade-off against hunting alone.
+- Prey herding (v2) now matters more: herds against packs.
+- **(+)** Packs are counted in the stats and shown as linked dots when zoomed in.
+
+### 1.3 Sexual selection
+- **Display gene** (an ornament: crest, plumage, colour intensity or antler size) and **choosiness gene**.
+- Mates are chosen by display. A choosy animal rejects mates below its threshold, so displays spread when choosiness is common.
+- Displays cost energy and make the animal easier for predators to spot. This is the classic runaway against survival trade-off.
+- **(+) Sprites show the display:** a brighter colour and a scaled crest or plumage mark.
+- **(+)** Species detail gets Display and Choosiness traits, and a chart of mean display over time.
+
+### 1.4 Taxonomy instead of roles
+- The animal stat groups become **classes: Fish, Amphibians, Reptiles, Mammals, Birds and Invertebrates.**
+- An animal's class is fixed per lineage (inherited from its founder, like its domain), so a species can't drift from mammal to reptile.
+- **Expandable class cards:** clicking a class card opens a breakdown by role (herbivore, omnivore, predator, scavenger) with counts and sparklines.
+- The population chart and its legend show the classes. One Animals tab with class filter chips replaces the Land and Water tabs.
+
+### 1.5 Birds
+- **A new flying domain.** Birds fly over land and water, and rest and nest on land.
+- **Roles:** seed and fruit eaters, insect eaters (eating bugs), fishing birds (catching small fish in shallow water), raptors (hunting small land animals and birds) and carrion birds (vultures move here from the land scavengers).
+- **Flight:** fast travel and long sense range, paid for with a higher metabolism and a small body size cap.
+- **(+) Seasonal migration:** birds fly toward warmer latitudes in winter.
+- **Designs:** sparrow, parrot, duck, heron, owl, hawk/eagle, crow, vulture and gull. The existing `owl`, `hawk`, `crow`, `chicken` and `vulture` icons move from the mammal variant lists to birds.
+
+---
+
+## Part 2: Balance and design
+
+1. **Balance pass** covering all the v2 leftovers: speciation that actually produces a readable family tree, disease resistance that rises under pressure, land scavengers that find carrion, the plant cover and tree/grass targets, and the new Part 1 systems.
+2. **Better graphics:** sprite and terrain polish, clearer elders and juveniles, and storm rain readable in the Rainfall view.
+3. **Greatly enhanced world generation:** continents and islands, mountain ranges with rain shadows, better coastlines, river deltas and lake systems.
+4. **More biomes**, for example mangrove, cloud forest, salt flat, steppe, tundra bog and coral reef, each with its own plant and animal pressures.
+5. **Biome adaptation:** stronger, biome-specific selection, so desert, tundra and rainforest lineages end up looking and behaving differently.
+6. **Performance:** profile and speed up the hot loops in animals, plants and bugs. Smaller save files come with this.
+
+## Part 3: God tools
+
+A tool palette on the map. Examples, to be finalised in the Part 3 plan:
+- Spawn animals or plants of a chosen species, or design a new species from sliders.
+- Paint terrain, water, biomes, temperature and moisture.
+- Disasters: fire, flood, drought, meteor, disease outbreak and plague of locusts.
+- Bless or curse: feed, heal, sterilise or cull an area or a species.
+- Time controls: rewind to the last autosave, and snapshots.
+
+---
+
+## Decisions (Part 1)
+1. **Real classes:** Fish, Amphibians, Reptiles, Mammals, Birds and Invertebrates. Sharks are fish, sea turtles are reptiles, seals and orcas are mammals, and crabs are invertebrates.
+2. **Tabs:** one Animals tab with class filter chips replaces Land and Water.
+3. **Birds:** all five roles and seasonal migration in Part 1.
+4. **Class is fixed per lineage.** The cold-blooded gene is clamped to each class's range.
