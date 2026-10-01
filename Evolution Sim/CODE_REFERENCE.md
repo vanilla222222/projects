@@ -503,10 +503,11 @@ Animals are agents stored as structure-of-arrays. There is one typed array per f
 
 - A counting-sort spatial grid is rebuilt every tick for neighbour queries.
 - A single continuous `diet` gene spans herbivore, omnivore and carnivore. Trophic roles therefore evolve rather than being hard-wired per system.
+- Since v3 Part 1 slice 1 every lineage also has a fixed class (fish, amphibian, reptile, mammal, bird, invertebrate). The class never evolves: founders set it and every daughter species inherits it.
 
 ### Constants
 
-- **`AG = 15`**: the number of animal genes. Gene layout by index, with its named index constant:
+- **`AG = 19`**: the number of animal genes. Gene layout by index, with its named index constant:
 
   | Index | Gene | Constant |
   | --- | --- | --- |
@@ -525,11 +526,32 @@ Animals are agents stored as structure-of-arrays. There is one typed array per f
   | 12 | herding | `G_HERD` |
   | 13 | cold-bloodedness | `G_COLD` |
   | 14 | drought tolerance | `G_DRY` |
+  | 15 | nesting | `G_NEST` |
+  | 16 | pack hunting | `G_PACK` |
+  | 17 | display | `G_DISPLAY` |
+  | 18 | choosiness | `G_CHOOSY` |
+
+  Genes 15–18 were appended in v3 Part 1 slice 1 as groundwork. They are neutral in slice 1: they mutate, count in `geneDistance` and are saved, but nothing reads them yet (slices 3 and 4 give them their effects). Most founders use `[nest, pack, display, choosy]` = `0.3, 0.15, 0.3, 0.3`; the carnivore founders raise pack to 0.4 (the seal 0.5), and the new invertebrates use low values (nest 0.05–0.2, pack 0.05–0.1).
 
   Genes 11–14 were appended in Part 3 slice 2 as `[terr, herd, cold, dry]`: land herbivores `0.05, 0.6, 0.05, 0.3`, the land omnivore `0.35, 0.1`, land carnivores `0.5, 0.1`, water herbivores `0.05, 0.5`, the crustacean `0.35, 0.1`, water carnivores `0.5, 0.1`, the carrion eater `0.35, 0.1, 0.05, 0.3`.
 
-- **`ANIMAL_WEIGHTS`** is `[1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6]`. Diet carries the most weight. **`ANIMAL_SPECIATION`** is `0.18`. **`ANIMAL_SPLIT_MIN_POP`** is 12.
+- **`ANIMAL_WEIGHTS`** is `[1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6, 0.3, 0.3, 0.3, 0.3]`. Diet carries the most weight; the four slice 1 genes weigh 0.3 each. **`ANIMAL_SPECIATION`** is `0.18`. **`ANIMAL_SPLIT_MIN_POP`** is 12.
 - **`GRID = 6`**: the spatial grid cell size, in tiles.
+- **Classes (v3 Part 1 slice 1):**
+  - **`ANIMAL_CLASSES`** is `['fish', 'amphibian', 'reptile', 'mammal', 'bird', 'invertebrate']`, with index constants `CLS_FISH` 0, `CLS_AMPH` 1, `CLS_REPT` 2, `CLS_MAMM` 3, `CLS_BIRD` 4 and `CLS_INVT` 5. No founder is a bird yet (slice 2).
+  - **`CLASS_PLURAL`** is `['fish', 'amphibians', 'reptiles', 'mammals', 'birds', 'invertebrates']`, used by the disease jump log.
+  - **`CLS_COLD`** holds the allowed cold-bloodedness range per class: `[0, 1]` fish, `[0.5, 1]` amphibians, reptiles and invertebrates, `[0, 0.45]` mammals and birds.
+  - **`ANIMAL_ROLES`** is `['herbivore', 'omnivore', 'carnivore', 'scavenger']`, indexed by `roleIndex`.
+- **Invertebrate constants (v3 Part 1 slice 1):**
+
+  | Constant | Value | Use |
+  | --- | --- | --- |
+  | `INVERT_SIZE` | 0.45 | Size gene cap for invertebrates, applied by `_clampClass`. |
+  | `INVERT_BUG` | 1.6 | `_bugEff` for a land invertebrate with diet at least 0.5 (spiders). |
+  | `INVERT_THIRST` | 0.5 | Water-loss multiplier for invertebrates; they also refill at `AMPH_DRINK_WET` like amphibians. |
+  | `LITTER_ENERGY` | 2.4 | Energy per unit of litter eaten by land invertebrate grazers (snails). |
+  | `JELLY_SPEED` | 0.3 | A water invertebrate carnivore with speed gene below this is a `jelly`; its attack `speedF` is a flat 0.5 instead of the speed ratio. |
+  | `INVERT_PREY` | 0.7 | Prey-mass limit for invertebrate hunters in `_nearest` mode 1 (prey mass at most `0.7×` their own), replacing the 1.8 and 0.6 diet limits. |
 - **Energy values:** `PLANT_ENERGY` is 3.2 per unit of biomass eaten, and `MEAT_ENERGY` is 20 per unit of prey mass.
 - **Fruit, poison and aversion constants:**
 
@@ -623,53 +645,78 @@ Animals are agents stored as structure-of-arrays. There is one typed array per f
   | `SCAV_PLANT` | 0.5 | A land animal with `scav > 0.5` gets plant energy `*(1-SCAV_PLANT*scav)`, so high-scav animals cannot live as omnivores. |
   | `EGG_LURE` | 4.5 | Forage score bonus in `_pickForage` for a sampled tile holding eggs (`eggs.head[j] >= 0`), for animals with diet at least 0.33. |
   | `HERB_GRAZE` | 1.15 | Plant energy multiplier for animals with diet below 0.33 (herbivore graze efficiency). |
-- **`ANIMAL_ARCHETYPES`**: 14 founders, each given as `{domain, n, g}` plus an optional `role` tag.
+- **`ANIMAL_ARCHETYPES`**: 29 founders, each given as `{domain, cls, n, g}`. Slice 1 replaced the `role` tags with `cls`; migrations now find archetypes by class, `roleIndex` and domain.
   - Land: hopper, browser, grazer, arid runner, cold grazer, omnivore, small hunter and pack hunter.
   - Water: shoal fish, reef fish, crustacean, pike and shark.
-  - Part 3 slice 2 appended eight role-tagged founders (`n` 16): `{domain: 'amph', role: 'amph'}` frog, newt, salamander and crocodile, and `{domain: 'land', role: 'reptile'}` lizard, tortoise, monitor and snake (cold 0.8–0.85, dry 0.7–0.8). `_introduce` founds them like the others; `pick()` in migrations skips role-tagged archetypes.
-  - The carrion eater is appended last, so the founders before it are placed in the same order as before. It is a land archetype with `role: 'scavenger'` and `n` 18, and its genes are `[0.38, 0.45, 0.6, 0.45, 0.5, 0.65, 0.6, 0.6, 0.2, 0.3, 0.8]`. The plan asked for speed 0.55, sense 0.78, diet 0.55, temp 0.55, tol 0.5, fec 0.55 and armor 0.3. That version starved: it paid for a high metabolism, and carrion made up only 2–4% of its income. Tuning lowered its running costs and widened its climate range. `Ecosystem._migrations` finds it by its `role` tag.
+  - Part 3 slice 2 appended eight founders (`n` 16): the amphibious frog, newt and salamander, and the land lizard, tortoise, monitor and snake (cold 0.8–0.85, dry 0.7–0.8). The crocodile is also amphibious (domain 2) but has `cls: CLS_REPT` since slice 1.
+  - The carrion eater (land, `n` 18, `CLS_MAMM`) has genes `[0.38, 0.45, 0.6, 0.45, 0.5, 0.65, 0.6, 0.6, 0.2, 0.3, 0.8, …]`. The plan asked for speed 0.55, sense 0.78, diet 0.55, temp 0.55, tol 0.5, fec 0.55 and armor 0.3. That version starved: it paid for a high metabolism, and carrion made up only 2–4% of its income. Tuning lowered its running costs and widened its climate range.
+  - Class mapping: the land herbivores, omnivore, hunters and carrion eater are mammals; the four lizard-line founders and the crocodile are reptiles; frog, newt and salamander are amphibians; the water grazers, pike and shark are fish; the crustacean is an invertebrate (its cold gene went from 0.05 to 0.5 to fit `CLS_COLD`).
+  - v3 Part 1 slice 1 appended seven founders after the reptiles, so the earlier ones are placed in the same order:
+
+    | Founder | Domain | Class | `n` | Category |
+    | --- | --- | --- | --- | --- |
+    | Sea turtle | water | reptile | 14 | `seaturtle` (herbivore, armour 0.75, cold 0.7) |
+    | Seal | water | mammal | 8 | `seal` (carnivore, pack 0.5) |
+    | Urchin | water | invertebrate | 30 | `urchin` (size 0.15, speed 0.15, armour 0.8) |
+    | Octopus | water | invertebrate | 12 | `octopus` (fast, sense 0.75, diet 0.8) |
+    | Jellyfish | water | invertebrate | 14 | `jelly` (speed 0.15, diet 0.75, toxR 0.7) |
+    | Snail | land | invertebrate | 30 | `snail` (size 0.06, speed 0.12, armour 0.6) |
+    | Spider | land | invertebrate | 24 | `spider` (size 0.08, diet 0.8, dry 0.6) |
 - **`dietRole(diet)`** returns `herbivore` below 0.33, `omnivore` below 0.66, and `carnivore` otherwise.
-- **`animalCategory(g, domain)`** combines role and size into an icon or category:
-  - Land herbivores are `rabbit`, `deer` or `bison`.
-  - Land omnivores are `mouse`, `boar` or `bear`.
-  - Land carnivores are `fox`, `wolf` or `bigcat`.
-  - A land animal whose diet is at least 0.33 and whose `scav` is above 0.5 is `carrion`, whatever its size. This test runs before the omnivore and carnivore size splits.
-  - Water herbivores are `fish` or `turtle`. Water omnivores are always `crab`. Water carnivores are `pike` or `shark`.
-  - Amphibious (domain 2): herbivore `newt`, omnivore `frog`, carnivore `salamander` (size below 0.55) or `crocodile`.
-  - A land animal with `cold > 0.5` (tested before the carrion test): herbivore `tortoise`, omnivore `lizard`, carnivore `snake` (size below 0.45) or `monitor`.
-  - The eight new categories got their own icons and `ANIMAL_ICON_VARIANTS` entries in Part 3 slice 3.
-- **`animalIcon(category, id)`** picks `sp.icon` from `ANIMAL_ICON_VARIANTS` by `id % variants.length`, so a species keeps the same look across `refreshSpeciesMeans` recomputes. The first entry is always the base icon, and the older variants kept their positions:
+- **`roleIndex(diet, scav)`** returns 3 (scavenger) when diet is at least 0.33 and `scav > 0.5`, else 0, 1 or 2 by the `dietRole` split. It is used for `sp.role`, the per-class role stats and migrations, in every domain (the old scavenger test was land only).
+- **`animalCategory(g, domain, cls = CLS_MAMM)`** keys off class first, then domain, role and size (`scav` below means diet at least 0.33 and `scav > 0.5`):
+
+  | Class | Categories |
+  | --- | --- |
+  | Invertebrate, water | herbivore `urchin`; omnivore or scavenger `crab`; carnivore `jelly` (speed gene below `JELLY_SPEED`) or `octopus` |
+  | Invertebrate, land | `snail` (diet below 0.5) or `spider` |
+  | Fish | herbivore `fish` (size below 0.45) or `ray`; omnivore `reeffish`; carnivore `pike` (size below 0.58) or `shark` |
+  | Amphibian | herbivore `newt`, omnivore `frog`, carnivore `salamander` |
+  | Reptile, water or amphibious | herbivore `seaturtle`, others `crocodile` |
+  | Reptile, land | herbivore `tortoise`, omnivore `lizard`, carnivore `snake` (size below 0.45) or `monitor` |
+  | Mammal, water | herbivore `manatee`, others `seal` |
+  | Mammal or bird, land | `carrion` when `scav`, whatever its size; else herbivore `rabbit`, `deer` or `bison`, omnivore `mouse`, `boar` or `bear`, carnivore `fox`, `wolf` or `bigcat` |
+
+  The old water `turtle` category is gone (replaced by `ray` for fish and `seaturtle` for reptiles), and the amphibious `crocodile` now comes from the reptile class.
+- **`animalIcon(category, id)`** picks `sp.icon` from `ANIMAL_ICON_VARIANTS` by `id % variants.length`, so a species keeps the same look across `refreshSpeciesMeans` recomputes. The first entry is always the base icon. Slice 1 filtered the lists by class: bird icons (`owl`, `hawk`, `chicken`, `crow`, `vulture`) left the mammal lists until slice 2 adds birds, sea mammals (`seal`, `orca`, `manatee`) only appear on water mammals, and invertebrate skins moved to the invertebrate categories:
 
   | Category | Variants |
   | --- | --- |
-  | fox | fox, weasel, owl |
-  | wolf | wolf, coyote, hawk |
+  | fox | fox, weasel |
+  | wolf | wolf, coyote |
   | bigcat | bigcat, tiger |
-  | rabbit | rabbit, chicken, squirrel |
+  | rabbit | rabbit, squirrel |
   | deer | deer, horse, goat, kangaroo |
   | bison | bison, cow, elephant, moose |
-  | mouse | mouse, chicken, crow |
+  | mouse | mouse, squirrel |
   | boar | boar, raccoon, badger, monkey |
   | bear | bear, ape |
-  | crab | crab, lobster, hermitcrab, starfish |
-  | carrion | vulture, hyena, jackal |
-  | fish | fish, shrimp, eel, puffer, seahorse |
-  | turtle | turtle, ray, manatee |
-  | pike | pike, barracuda, squid, seal |
-  | shark | shark, orca, swordfish |
+  | carrion | hyena, jackal |
+  | manatee | manatee |
+  | seal | seal, orca |
+  | crab | crab, lobster, hermitcrab, shrimp |
+  | urchin | urchin, seasnail, clam |
+  | octopus | octopus, squid, starfish |
+  | jelly | jellyfish |
+  | snail | snail, slug |
+  | spider | spider, scorpion, centipede |
+  | fish | fish, eel, seahorse |
+  | ray | ray |
+  | reeffish | puffer, fish |
+  | pike | pike, barracuda |
+  | shark | shark, swordfish |
   | frog | frog, toad |
   | newt | newt, axolotl |
   | salamander | salamander, axolotl |
   | crocodile | crocodile |
+  | seaturtle | turtle |
   | tortoise | tortoise, turtle |
   | lizard | lizard |
   | snake | snake |
   | monitor | monitor |
 
-  A species whose `id % length` changes because its list grew will get a different icon than it had before this change.
-
-  `sp.category` and the label stay unchanged.
-- **`ANIMAL_CATEGORY_LABEL`** maps each category to its UI label. `carrion` is "Scavenger" and `crab` is "Sea scavenger".
+  A species whose `id % length` changes because its list changed gets a different icon than before.
+- **`ANIMAL_CATEGORY_LABEL`** maps each category to its UI label. `carrion` is "Scavenger" and `crab` is "Sea scavenger". Slice 1 added `ray` "Large grazing fish", `reeffish` "Omnivorous fish", `manatee` "Sea mammal", `seal` "Marine predator", `urchin` "Sea grazer", `octopus` "Cephalopod", `jelly` "Drifting stinger", `snail` "Snail", `spider` "Arachnid hunter" and `seaturtle` "Sea turtle", and dropped `turtle`.
 
 ### `AnimalPool(world, plants, registry, rng, log)`: structure-of-arrays layout
 
@@ -715,6 +762,7 @@ Int32 fields (`ANIMAL_FIELDS_I`):
 | `ttl` | Ticks left on the current target or state. |
 | `face` | Facing: `+1` is right and `-1` is left. |
 | `domain` | 0 is land, 1 is water, 2 is amphibious. |
+| `cls` | Class index (`CLS_*`), copied from `sp.cls` in `spawn`. |
 | `alive` | 1 while alive. |
 | `state` | 0 idle, 1 grazing, 2 seeking food, 3 hunting, 4 fleeing, 5 seeking water. |
 | `seedSp`, `seedTtl` | The plant species whose seed is being carried, and the ticks until it drops. |
@@ -729,7 +777,7 @@ All five disease fields are initialised to 0 in `spawn`.
 
 The remaining structures are:
 
-- **`genome`**: a `Float32Array(cap*AG)`. Slot `i` uses `i*AG … i*AG+10`.
+- **`genome`**: a `Float32Array(cap*AG)`. Slot `i` uses `i*AG … i*AG+AG-1`.
 - **The spatial grid**:
   - `gcols` and `grows` give its size.
   - `gstart` is an `Int32Array` of prefix offsets per cell, with `cells+1` entries.
@@ -762,12 +810,12 @@ The remaining structures are:
 ### Public methods
 
 - `spawn(sp, genome, gOff, x, y, energyFrac)`
-- `newSpecies(genome, gOff, domain, parent, tick, origin)`. A daughter species' hue is offset 25–335° from its parent's, so relatives do not look alike. It sets `sp.aversion`, an array of `{hue, strength}` entries: a copy of the parent's, or `[]` for a founder.
+- `newSpecies(genome, gOff, domain, parent, tick, origin, cls = parent ? parent.cls : CLS_MAMM)`. A daughter species' hue is offset 25–335° from its parent's, so relatives do not look alike. It sets `sp.aversion`, an array of `{hue, strength}` entries: a copy of the parent's, or `[]` for a founder. It sets `sp.cls` (fixed for the lineage; `_introduce` passes `arch.cls`, daughters inherit the parent's), `sp.category = animalCategory(g, domain, cls)` and `sp.role = ANIMAL_ROLES[roleIndex(diet, scav)]`, so `sp.role` can now be `'scavenger'`.
 - `canStand`
 - `setWeather(Wx)`: stores the weather layer and adds the amphibious walk bit.
 - `step(tick)`
 - `reassignSpecies(fromSp, toSp)` rewrites `sp[i]` for every slot below `count` and returns the living members moved. Used by the ecosystem merge pass.
-- `refreshSpeciesMeans()`. It also sets `sp.infected` (the species' infected count) and fades every aversion by `1 - AVERSION_DECAY` and drops entries whose strength falls below 0.05.
+- `refreshSpeciesMeans()`. It recomputes `category` (with `sp.cls`), `icon` and `role` (`roleIndex`) from the mean genome. It also sets `sp.infected` (the species' infected count) and fades every aversion by `1 - AVERSION_DECAY` and drops entries whose strength falls below 0.05.
 
 ### Per-tick behaviour (`step`)
 
@@ -834,6 +882,13 @@ The grid is rebuilt first. Then each animal runs through the steps below in orde
 - `_decode` includes `(1+DRY_COST*dry)` in `meta`.
 - `_pickForage` adds `EGG_LURE` to a sampled tile's food score when that tile has eggs, for animals with diet at least 0.33.
 
+**v3 Part 1 slice 1 invertebrate rules in `step`:**
+
+- Thirst: an invertebrate (`cls === CLS_INVT`) refills at `wet > AMPH_DRINK_WET` like an amphibian and loses water `*INVERT_THIRST`.
+- Litter: a land invertebrate with diet below 0.5 (snails) and energy below `emax` eats `soil.consumeLitter(tile, bite)` each tick, gaining `taken*LITTER_ENERGY*plantK`. It runs right after the parasite drain, before the carrion bite, so snails speed up litter turnover.
+- Bugs, prey size and stings: see `_bugEff`, the prey-size limit and `_attack` below.
+- Eggs: the egg-layer test is unchanged (`domain !== 0 || cold > 0.5`). Water invertebrates always lay; land invertebrates lay through their cold gene, which `CLS_COLD` keeps at 0.5 or above.
+
 After the loop, `_compact()` fills each dead slot with the last live animal. The cost is O(deaths), not O(n), and slot order is not stable.
 
 ### Mechanics
@@ -849,7 +904,7 @@ After the loop, `_compact()` fills each dead slot with the last live animal. The
 
 **Prey-size limit:**
 
-- In mode 1, prey mass must be at most `1.8×` the hunter's own mass for carnivores (diet above 0.66), and at most `0.6×` for omnivores.
+- In mode 1, prey mass must be at most `1.8×` the hunter's own mass for carnivores (diet above 0.66), and at most `0.6×` for omnivores. Invertebrate hunters use `INVERT_PREY` (`0.7×`) whatever their diet.
 - Omnivores therefore only take small prey.
 - Mode 0 mirrors this rule: an animal more than 1.8× heavier than a predator does not treat it as a threat.
 
@@ -879,7 +934,9 @@ After the loop, `_compact()` fills each dead slot with the last live animal. The
 
 **Bug efficiency (`_bugEff`):**
 
-- 0 when `mass >= BUG_MASS` or `diet >= BUG_DIET_MAX`, so carnivores (the `dietRole` boundary) never eat or seek bugs.
+- 0 when `mass >= BUG_MASS`.
+- A land invertebrate with diet at least 0.5 (spiders) gets `INVERT_BUG` (1.6), ahead of the diet test, so they eat pest and parasite swarms through the usual bug path.
+- Otherwise 0 when `diet >= BUG_DIET_MAX`, so carnivores (the `dietRole` boundary) never eat or seek bugs.
 - Otherwise `1-(BUG_DIET_PEAK-diet)*1.4` below the peak and `1-(diet-BUG_DIET_PEAK)/(BUG_DIET_MAX-BUG_DIET_PEAK)` above it, clamped at 0.
 
 **Attack (`_attack`):**
@@ -887,7 +944,7 @@ After the loop, `_compact()` fills each dead slot with the last live animal. The
 - The success chance is `0.7 * sizeF * speedF * (1-0.6*armor) * (1-cover) * (1-0.5*scav)`, where:
   - `armor` belongs to the prey, and `scav` belongs to the hunter, so scavenging costs hunting skill.
   - `sizeF` is `clamp(massRatio*0.85, 0.15, 1.2)`.
-  - `speedF` is `spd_i/(spd_i + 0.7*spd_p)`.
+  - `speedF` is `spd_i/(spd_i + 0.7*spd_p)`, except a water invertebrate with speed gene below `JELLY_SPEED` (a jellyfish sting), which uses a flat 0.5.
 - Water cover:
   - Prey in water always gets a base cover of 0.3, because open-sea shoals scatter.
   - Kelp adds `min(0.3, cover*0.6)`, where `cover` is `plants.cover(tile)`, the combined woody floor of both slots on the prey's tile.
@@ -929,7 +986,7 @@ After the loop, `_compact()` fills each dead slot with the last live animal. The
 **Reproduction (`_reproduce`):**
 
 - The litter size is `litter`. The partner is the nearest mate, or the animal itself if none is in range, which makes it effectively asexual.
-- Each gene is inherited 50/50 from the two parents, then mutates at rate 0.25 with sd 0.04.
+- Each gene is inherited 50/50 from the two parents, then mutates at rate 0.25 with sd 0.04. `_clampClass(childG, cls[i])` then clamps the cold gene into `CLS_COLD[cls]` and, for invertebrates, the size gene to at most `INVERT_SIZE`. The class is never mutated, so a daughter species keeps it.
 - A fixed energy budget of `emax*0.38` is split across the litter, so big litters mean weak young. Each child's energy is capped at 60% of its own maximum.
 - The parent pays `1.1×` what it spent.
 - The breeding cooldown is `35 + 55*size - 10*fecundity`.
@@ -1098,6 +1155,8 @@ Pathogens are strains: registry species with `group: 'pathogen'`. A strain's `po
 | `RANGE_BASE`, `RANGE_SPAN` | 0.05, 0.25 | Host range radius `RANGE_BASE+RANGE_SPAN*range`, as a gene distance between host species genomes. |
 | `JUMP_K`, `JUMP_K_P` | 0.02, 0.001 | Jump multiplier for animal and plant exposures outside the host range. |
 | `JUMP_SPAN` | 0.15 | Distance beyond the host range at which jump chance falls to 0. |
+| `JUMP_CLS_K` | 0.5 | Multiplier on a cross-class transmission (v3 Part 1 slice 1), so jumps between classes are rarer than within one. |
+| `INVERT_EMERGE` | 0.15 | Invertebrate host species count `population*INVERT_EMERGE` in the emergence draw. |
 | `JUMP_LOG_GAP` | 1200 | Minimum ticks between jump log entries per strain-and-host pair. |
 | `PATHO_MUT` | 0.015 | Chance per transmission that the strain mutates. |
 | `PATHO_MUT_RATE`, `PATHO_MUT_SD` | 0.5, 0.05 | `mutateGenes` rate and sd for that mutation. |
@@ -1128,15 +1187,16 @@ Pathogens are strains: registry species with `group: 'pathogen'`. A strain's `po
 - **`live`**: a Set of strain species with population above 0. **`speciesStrain`**: a Map from host species id to its most prevalent strain id, rebuilt in `refreshSpeciesMeans`.
 - **Counters:** `sickAnimals`, `blightSlots`, `animalDeaths`, `plantDeaths`, `created`, `mutated`, `jumps`, `outbreaks`, `blights`.
 
-**Strain species fields:** `hostKind` (`'animal'` or `'plant'`), `hostId` and `hostGenome` (the host species' reference genome), `category` (`'virus'` or `'blight'`), `icon` (animal strains take `STRAIN_ICONS[id % 5]`, which are `virus`, `bacterium`, `protozoan`, `prion` and `helminth`; blights take `BLIGHT_ICONS[id % 2]`, which are `blight` and `mold`), `infected` (= `population`), `deaths`, `recentDeaths`, `hosts` (Map host species id to count, refreshed every 20 ticks), `origin` (`'emerged'`, `'jump'` or `null` for a mutation). Hue is 55–150° for animal strains and 18–68° for blights, from gene 3.
+**Strain species fields:** `hostKind` (`'animal'` or `'plant'`), `hostId` and `hostGenome` (the host species' reference genome), `category` (`'virus'` or `'blight'`), `icon` (animal strains take `STRAIN_ICONS[id % 5]`, which are `virus`, `bacterium`, `protozoan`, `prion` and `helminth`; blights take `BLIGHT_ICONS[id % 2]`, which are `blight` and `mold`), `infected` (= `population`), `deaths`, `recentDeaths`, `hosts` (Map host species id to count, refreshed every 20 ticks), `origin` (`'emerged'`, `'jump'` or `null` for a mutation), `hostCls` (the class index of the host species when the strain was created, from `sp.cls`; -1 for blights and hosts without a class). A strain's `hostCls` never changes; a jump strain takes its new host's class. Hue is 55–150° for animal strains and 18–68° for blights, from gene 3.
 
 ### Transmission
 
 - **`exposeAnimal(j, s, k)`**: no-op if `j` is infected, innately immune to `s`, or still immune to `s`. It rolls `r` once against `k*sTrans*(1-RES_EFFECT*res)*(1+ELDER_INFECT*(1-ef)/(1-ELDER_MIN))` (elders up to ×1.5), then against that times `_compat`.
 - **`_compat`** returns 1 when the host species is the strain's host or its reference genome is within `sRange` of `hostGenome`. Otherwise it is `jk*(1-(d-range)/JUMP_SPAN)` (0 when negative) and marks the transmission as a jump.
+  - Cross-class (v3 Part 1 slice 1): when `st.hostCls >= 0` and the host species' `cls` differs, the result is 0 if either class is invertebrate (invertebrate strains stay among invertebrates, so crabs and snails cannot become universal reservoirs). Otherwise an in-range host returns `JUMP_CLS_K` and is marked as a jump, and an out-of-range one is `jk*c*JUMP_CLS_K`.
 - **`_transmit`** returns the strain the new host gets: a jump goes through `_jump`; otherwise `_mutate`.
 - **`_mutate`**: with `PATHO_MUT`, mutates a copy of `mean`. Within `DISEASE_SPECIATION` of the strain's `mean` it only drifts `mean` (and re-caches the parameters). Otherwise it reuses a `matchDaughter` (full threshold, children and siblings); failing that it founds a new strain and logs a `'speciation'` entry, "X (new strain) branched from Y", but only when `registry.canSplit(st, DISEASE_SPLIT_MIN_POP)`. When the strain cannot split, the mutation only drifts `mean`.
-- **`_jump`**: reuses the living child strain already created for that host, or founds one (origin `'jump'`, host = the new species), increments `jumps` and logs an `'outbreak'` entry "X jumped to H as Y", rate-limited per pair.
+- **`_jump`**: reuses the living child strain already created for that host, or founds one (origin `'jump'`, host = the new species), increments `jumps` and logs an `'outbreak'` entry "X jumped to H as Y", rate-limited per pair. A class jump appends " — from <class> to <class>" (`CLASS_PLURAL`, for example "from mammals to reptiles").
 - **Registry bookkeeping:** every infection goes through `_add` (`registry.add`) and every release through `_drop` (`registry.remove`), so `population === infected` always holds.
 
 ### Animal and plant API
@@ -1154,7 +1214,7 @@ Runs after animals, only when `on`. Decays both exposure planes; every `BLIGHT_E
 ### Emergence
 
 - **`maybeEmerge(tick)`**, called from `Ecosystem.step` every `DISEASE_EVERY` (60) ticks when disease is on, whether or not migrations are on: per kind, emerges a strain when none of that kind has been live for `EMERGE_GAP` ticks, or with `EMERGE_P`.
-- **`emerge(kind, tick)`** picks a host species weighted by population (plants exclude fungi), creates a strain with origin `'emerged'`, seeds it (`_seedAnimals` or `_seedPlants`), increments `outbreaks` or `blights`, and logs an `'outbreak'` entry: "X broke out among H" or "X blight broke out in H". Returns the strain or `null`. Usable from the UI.
+- **`emerge(kind, tick)`** picks a host species weighted by population (plants exclude fungi; invertebrates weigh `population*INVERT_EMERGE`), creates a strain with origin `'emerged'`, seeds it (`_seedAnimals` or `_seedPlants`), increments `outbreaks` or `blights`, and logs an `'outbreak'` entry: "X broke out among H" or "X blight broke out in H". Returns the strain or `null`. Usable from the UI.
 
 ### Other methods
 
@@ -1253,14 +1313,24 @@ Scratch arrays: `_evapK` (per-tile `EVAP*(0.5+temperature)`), `_mark` (Int32 rai
 
 ### Globals
 
-- **`STAT_GROUPS`**: nine trophic groups, given as `{key, label, domain (0 land / 1 water / 2 amphibious), role, icon}`. The keys are `landHerb`, `landOmni`, `landCarn`, `landScav`, `waterHerb`, `waterOmni`, `waterCarn`, `amphib` ("Amphibians", domain 2, icon `frog`) and `reptile` ("Reptiles", domain 0, icon `lizard`).
-  - `_computeStats` classifies in order: domain 2 is `amphib`, a land animal with `cold > 0.5` is `reptile`, then the scavenger test, then the diet split.
-  - `landScav` is "Scavengers", with role `scavenger` and icon `vulture`.
-  - `waterOmni` is labelled "Sea scavengers".
+- **`STAT_GROUPS`**: one group per animal class since v3 Part 1 slice 1, given as `{key, cls, label, icon}` in `ANIMAL_CLASSES` order (the array index equals `cls`):
+
+  | Key | `cls` | Label | Icon |
+  | --- | --- | --- | --- |
+  | `fish` | 0 | Fish | `fish` |
+  | `amphib` | 1 | Amphibians | `frog` |
+  | `reptile` | 2 | Reptiles | `lizard` |
+  | `mammal` | 3 | Mammals | `deer` |
+  | `bird` | 4 | Birds | `owl` |
+  | `invert` | 5 | Invertebrates | `crab` |
+
+  The old domain-and-diet groups (`landHerb` … `waterCarn`, `landScav`) are gone.
+- **`ROLE_KEYS`** is `['herb', 'omni', 'carn', 'scav']` and **`ROLE_LABELS`** is `['Herbivores', 'Omnivores', 'Predators', 'Scavengers']`, both in `roleIndex` order.
+- **`MIGRATE_PREY = 150`**: the prey count a domain needs before `_migrations` revives a missing non-herbivore role.
 - **`HISTORY_EVERY = 5`**: the population history is sampled every 5 ticks.
 - **`MERGE_EVERY = 120`**, **`MERGE_MAX_AGE = 960`** (2 years) and **`MERGE_POP`** `{plant: 6, animal: 2, bug: 6, pathogen: 2}` drive `_mergePass`.
 - **`THIRST_EVERY = 60`**, **`THIRST_WINDOW = 8`** drive `_thirstStats`; **`HERD_STAT_EVERY = 20`**, **`HERD_STAT_POP = 12`** drive `_herdStats` (run in the 20-tick block).
-- **`HERB_RESCUE = 30`**: `_migrations` brings in land herbivores when `landHerb` is below this.
+- **`HERB_RESCUE = 30`**: `_migrations` brings in land mammal herbivores when mammal herbivores are below this.
 - **`DISEASE_EVERY = 60`**, **`DISEASE_WINDOW = 8`** and **`OUTBREAK_MIN_POP = 30`** drive emergence checks and `_diseaseStats` (window of 8 checks, about one year; outbreaks only count for hosts that peaked at 30 or more).
 
 ### `new Ecosystem(world, seed, options)`
@@ -1282,7 +1352,7 @@ Scratch arrays: `_evapK` (per-tile `EVAP*(0.5+temperature)`), `_mark` (Int32 rai
   - `world`, `seed`, `tick`, `log`, `registry`, `plants` and `animals`.
   - `stats` holds `plants` (cover tiles), `plantBiomass`, `animals`, and one count per `STAT_GROUPS` key.
   - `stats` also holds `fruit` (`plants.totalFruit`), `fungi` (`plants.fungusTiles`), `flowers` (`plants.flowerTiles`), `litter` (`soil.totalLitter`) and `carrion` (`soil.totalCarrion`).
-  - In `_computeStats`, a land animal with diet of at least 0.33 and `scav` above 0.5 counts as `landScav` and skips the diet split, so it is never counted twice. This matches the `carrion` category test.
+  - `stats.roles` holds one `{herb, omni, carn, scav}` object per group key. `_computeStats` counts every animal into an `Int32Array` at `cls*4 + roleIndex(diet, scav)`, writes the four role counts per class and sets `stats[key]` to their sum, so each animal is counted once. The scavenger split applies in every domain.
   - `stats` also holds `bugs` (rounded total density), `pests`, `detritivores`, `parasites`, `pollinators` (occupied tiles per niche) and `pollination` (`plants.flowerPoll`).
   - `bugs` is the `BugLayer` (or `null` when `bugs.js` is not loaded). It is built after the animal founders and assigned to `animals.bugs`.
   - `stats` also holds `sick` (`disease.sickAnimals`), `blight` (`disease.blightSlots`), `strains` (live strain count) and `diseaseDeaths` (`disease.animalDeaths`).
@@ -1297,7 +1367,7 @@ Scratch arrays: `_evapK` (per-tile `EVAP*(0.5+temperature)`), `_mark` (Int32 rai
   - `eggs` is the `EggPool` (or `null` when `eggs.js` is not loaded), built right after `animals.setWeather` and assigned to `animals.eggs`.
   - `stats.plantStages` is `{seedTiles, seedlings, mature, old, oldDeaths, germinated, grazedSeedlings}`, copied in `_computeStats` from `plants.stages` and the three cumulative plant counters.
   - `stats.stages` is `{eggs, juveniles, adults, elders}`: `eggs` is `eggs.count`; each animal is a juvenile (`age < mature`), an elder (`age > ELDER_AGE*maxAge`) or an adult. `stats.eggs` is `{laid, hatched, eaten, failed}`, cumulative copies of the `EggPool` counters. Both are set in `_computeStats`.
-  - `history` holds `tick`, `plants` (rounded biomass), `bugs`, `sick`, `thirstDeaths`, `herds`, `territories`, `eggs` (`stats.stages.eggs`) and one array per group key. When it passes 800 samples, it keeps every second sample.
+  - `history` holds `tick`, `plants` (rounded biomass), `bugs`, `sick`, `thirstDeaths`, `herds`, `territories`, `eggs` (`stats.stages.eggs`) one array per group key, and one per class and role as `<key>.<role>` (for example `mammal.carn`, `invert.herb`), which feed the class card role sparklines. When it passes 800 samples, it keeps every second sample.
 
 ### Methods
 
@@ -1314,23 +1384,20 @@ Scratch arrays: `_evapK` (per-tile `EVAP*(0.5+temperature)`), `_mark` (Int32 rai
 8a. Every `DISEASE_EVERY` (60) ticks, when a disease layer exists: calls `disease.maybeEmerge(tick)` if `options.disease` is on, then `_diseaseStats()`.
 9. Every 5 ticks, samples history.
 
-**`_introduce(arch, origin, count)`** places a founder or migrant group in clusters of 4–8, in good habitat:
+**`_introduce(arch, origin, count)`** places a founder or migrant group in clusters of 4–8, in good habitat. It passes `arch.cls` to `newSpecies` and `animalCategory`:
 
 - For the first 3000 of its 4000 placement attempts, the site needs a climate fit of at least 0.55. After that, 0.1 is enough.
 - The site needs food of at least 0.05. Only animals with diet below 0.6 check the site's actual edible biomass; the others treat food as 0.3.
 - Founders start between 0.6 and 1.6 times their maturity age.
 
-**`_migrations()`** is a safety net that re-introduces a trophic group that has died out. It picks a random archetype of the needed kind and brings in 60% of that archetype's founder count:
+**`_migrations()`** is a safety net that re-introduces a class role that has died out. Rewritten generically in v3 Part 1 slice 1 over `stats.roles`. `pick(cls, role, domain)` chooses a random archetype with that class, `ROLE_KEYS[roleIndex(diet, scav)]` and (when given) domain, or `null`; `tryIntro` brings in 60% of its founder count and logs "<name> migrated in — <why>":
 
-- If land herbivores fall below `HERB_RESCUE` (30), it brings in land herbivores ("grazers had vanished"). Before Part 3b slice 2 the test was land herbivores plus land omnivores below 20, which never fired because omnivores stayed in the hundreds.
-- Otherwise, if there are no land predators and land herbivores plus land omnivores exceed 250, it brings in land predators.
-- The water side follows the same two rules (water herbivores plus water omnivores). Since Part 3 slice 3 the water herbivore rule also fires whenever water herbivores are 0, regardless of the omnivore count ("the waters were empty"), so the group is revived even when crabs are plentiful. In that case the water predator rule (an `else`) does not run on that pass.
-- If there are no land scavengers and land herbivores plus land omnivores plus land predators exceed 150, it brings in an archetype tagged `role: 'scavenger'` (found by `pickRole(domain, role)`).
-- If there are no water omnivores and water herbivores exceed 150, it brings in a water archetype with an omnivore diet (0.33 to 0.66), which is the crustacean. Before this rule, nothing revived that group.
-- If there are no amphibians or no reptiles and land herbivores plus omnivores plus predators exceed 150, it brings in an archetype tagged `role: 'amph'` ("the wetlands were empty") or `role: 'reptile'` ("warm ground drew reptiles").
-- These rules are separate `if`s, so they can fire on the same pass as the herbivore and predator rules.
+1. **Mammal herbivore rescue:** mammal herbivores below `HERB_RESCUE` (30) bring in a land mammal herbivore ("grazers had vanished").
+2. **Fish rescue:** fewer than 20 fish, or 0 fish herbivores, bring in a fish herbivore ("the waters were empty").
+3. **Any founder role:** every archetype defines a key `<class>.<role>.<land|water>` (amphibious counts as land). Skipping the two keys above and repeats, a key fires when its class has 0 animals in that role (the count is per class, not per domain) and, for non-herbivore roles, the domain's prey is at least `MIGRATE_PREY` (150). Land prey is mammal herbivores and omnivores plus reptile and invertebrate herbivores; water prey is fish herbivores and omnivores plus invertebrate herbivores. Herbivore roles need no prey. It then picks an archetype of that class, role and the key archetype's domain. The reason reads "unchecked prey drew predators" (carnivores), "carcasses drew scavengers" (scavengers) or "the <class label> had vanished".
+
+- Every rule is a separate test, so several can fire on the same pass. Birds have no founders yet, so nothing revives them.
 - Any bug niche with 0 occupied tiles is reintroduced with `bugs.reintroduce(niche)`.
-- Part 2 slice 2 relaxed the predator and scavenger triggers to count omnivores as prey. Late in a run herbivores collapse to single digits while omnivores and crabs dominate, so the herbivore-only triggers never fired and lost predator or scavenger groups stayed gone.
 
 **`_diseaseStats()`** runs every `DISEASE_EVERY` ticks:
 
@@ -1412,6 +1479,19 @@ The vector icons are drawn on a 32×32 box, in side view, facing right. The same
     - Pathogens: `bacterium`, `protozoan`, `prion`, `helminth` and `mold`. Unlike `virus`, these use the three roles, so they take the strain's palette.
     - UI: `events` (a bulleted list), `shadow` (one fixed `#000000` ellipse; the renderer supplies the transparency), `sun`, `moon` and `auto` (half sun, half moon).
     - Weather and UI (Part 4 slice 2), appended after `egg` so the atlas holds 150 icons: `cloud`, `rain` (cloud with falling streaks), `snow` (a six-spoke flake), `drop` (a water drop) and `flag` (a pennant on a pole). They are used by the weather badge, the stat cards and the help overlay.
+    - Invertebrates (v3 Part 1 slice 1), nine icons inserted after `drop` and before `flag` (so `flag` moved from index 149 to 158; the atlas is rebuilt at load, so nothing depends on the old index). The atlas now holds 159 icons:
+
+      | Icon | Design |
+      | --- | --- |
+      | `urchin` | Low `body` dome under two rings of `dark` and `body` spines (`spokes`), with `dark` tubercle dots. |
+      | `seasnail` | Tall spiral `body` shell with `dark` whorl lines on a `light` foot and ground line. |
+      | `clam` | Ribbed `body` scallop shell over a `dark` lower valve, with a fixed pearl (`#f4f1e6`). |
+      | `octopus` | Round mantle with six thick curling `body` arms, `light` suckers and two eyes on fixed white patches. |
+      | `jellyfish` | Scalloped `body` bell with `light` trailing tentacles and `body` oral arms. |
+      | `slug` | Long low `body` with eye stalks, fixed black eye tips and a `dark` foot line. |
+      | `spider` | Round abdomen and head with eight `dark` jointed legs, a `dark` chevron mark and fixed black eyes. |
+      | `scorpion` | Segmented `body` with a curled stroked tail and `dark` sting, pincers and legs. |
+      | `centipede` | Five `body` segments in a row with `dark` leg pairs, a head with antennae and a fixed black eye. |
 
   Every `category` value in `plants.js` and `animals.js` is also an icon name.
 - **Helpers:**
@@ -1438,7 +1518,7 @@ The vector icons are drawn on a 32×32 box, in side view, facing right. The same
 
 ### `buildIconAtlas(cell = 64)`: texture channel layout
 
-The atlas is 12 columns wide, with `ceil(ICON_NAMES.length/12)` rows of `cell` pixels. With the current 134 icons that is 12 rows, 768×768 at the default 64px cell. It returns `{width, height, cols, rows, cell, role, fixed}`, where `role` and `fixed` are premultiplied-RGBA `Uint8Array`s with the same layout.
+The atlas is 12 columns wide, with `ceil(ICON_NAMES.length/12)` rows of `cell` pixels. With the current 159 icons that is 14 rows, 768×896 at the default 64px cell. It returns `{width, height, cols, rows, cell, role, fixed}`, where `role` and `fixed` are premultiplied-RGBA `Uint8Array`s with the same layout.
 
 **Role atlas:**
 
@@ -1739,11 +1819,11 @@ View and drawing:
 
 ### File format (`encode(eco, meta)`)
 
-The file is gzip (`CompressionStream`) of: a big-endian `u32` magic `SAVE_MAGIC` (`0x534f5645`), a `u32` header length, the UTF-8 JSON header, padding to 8 bytes, then the binary section. The header holds `version` (`SAVE_VERSION`, 1), `seed`, `w`, `h`, `tick`, the app `meta`, the `records` (record 0 is `eco`) and `bin` (binary length).
+The file is gzip (`CompressionStream`) of: a big-endian `u32` magic `SAVE_MAGIC` (`0x534f5645`), a `u32` header length, the UTF-8 JSON header, padding to 8 bytes, then the binary section. The header holds `version` (`SAVE_VERSION`, 2), `seed`, `w`, `h`, `tick`, the app `meta`, the `records` (record 0 is `eco`) and `bin` (binary length).
 
 ### Loading (`decode(bytes, makeWorld)`)
 
-1. Gunzip, check the magic, parse the header and check the version and lengths.
+1. Gunzip, check the magic, parse the header and check the version and lengths. Only the current `SAVE_VERSION` loads; anything else throws "Save version N is not supported (expected 2)". v3 Part 1 slice 1 raised it to 2 because the animal genome grew from 15 to 19 genes (and animals gained `cls`), so v1 files are refused rather than migrated.
 2. `makeWorld(w, h, seed)` rebuilds the world.
 3. Pass 1 creates every record: typed arrays copy their own buffer slice, classes use `Object.create(Class.prototype)` (constructors are not run).
 4. Pass 2 fills fields, array items, Map entries and Set items, resolving references.
@@ -1770,7 +1850,9 @@ The `app` object holds:
 | `running`, `speed` | Whether the sim runs, and its speed in ticks per second. |
 | `acc` | Tick accumulator. |
 | `selected` | The selected species id. |
-| `tab` | `plant`, `land`, `water`, `bug`, `disease` or `events`. |
+| `tab` | `plant`, `animal`, `bug`, `disease` or `events`. |
+| `cls` | The Animals tab class filter: -1 for All, else a class index. |
+| `openClasses` | A Set of class card keys that are expanded, restored from `OPEN_KEY` in `buildStatCards`. |
 | `eventFilter` | Filter for the event list. |
 | `hidden` | A Set of population-chart keys hidden via the legend. |
 | `lastUi`, `lastLogVersion` | UI refresh bookkeeping. |
@@ -1785,13 +1867,15 @@ The `app` object holds:
 Other globals:
 
 - `$(id)` is shorthand for `document.getElementById`.
-- `GROUP_COLORS` maps each stat group key (including `landScav`), plus `plants`, `bugs` and `disease`, to its color. `amphib` is teal-green `#2fae94` and `reptile` ochre `#b8901c`, chosen to read on both themes and stay apart from `plants` and `landOmni`.
+- `GROUP_COLORS` maps each class stat group key, plus `plants`, `bugs` and `disease`, to its color: `fish` `#5fb6e6`, `amphib` teal-green `#2fae94`, `reptile` ochre `#b8901c`, `mammal` `#e7a25c`, `bird` `#c98ee8` and `invert` `#ec7a8f`.
+- `ROLE_COLORS` maps the role keys to the class card row colors: `herb` `#9fd98b`, `omni` `#e7b95c`, `carn` `#ec8a79`, `scav` `#c9a27a`.
+- `CLASS_NAME` is `['Fish', 'Amphibian', 'Reptile', 'Mammal', 'Bird', 'Invertebrate']` (singular, by class index), used by the detail Class cell.
+- `OPEN_KEY` (`evo.openClasses`) is the storage key for the expanded class cards.
 - `storeGet(key)` and `storeSet(key, value)` wrap `localStorage` in try/catch.
 - Theme: `THEMES` (`auto`, `light`, `dark`), `THEME_ICON` (`auto`, `sun`, `moon`) and `THEME_KEY` (`evo.theme`). `setTheme(theme)` sets or removes `data-theme` on `<html>` (auto follows `prefers-color-scheme`), draws the icon into `#themeBtn` with its title, stores the choice and redraws the UI. `#themeBtn` cycles the three; `init` restores the stored theme. All colors live as tokens in `css/style.css`, with the light values under both the media query and `[data-theme='light']`.
 - Collapsible cards: `setupCards()` makes each `.card[data-card]` head (`ecosystem`, `populations`, `map`; `role=button`, chevron) toggle `.collapsed` and `aria-expanded` on click, Enter or Space. The collapsed set is stored under `CARDS_KEY` (`evo.collapsed`), and expanding redraws the stats so the charts get their size back.
 - `sparkSVG(sp, alive)` draws the species row sparkline: the population samples from `sp.history` plus the current count, reduced to `SPARK_POINTS` (24) points, as an inline 60×18 SVG with a light fill and a non-scaling stroke.
-- `TAB_GROUP` maps the tabs that list one registry group to it: `plant`, `bug`, and `disease` → `pathogen`. `speciesInTab` uses it.
-- Amphibians (`sp.domain === 'amph'`) belong to the Land tab: `speciesInTab`, `updateTabCounts` and `selectSpecies` treat every non-water animal as land. `renderDetail` labels them "amphibious", and the stat card tooltip reads Land, Water or Amphibious from the group's domain.
+- `TAB_GROUP` maps every species tab to its registry group: `plant`, `animal`, `bug`, and `disease` → `pathogen`. `speciesInTab` uses it, and on the Animals tab also skips species whose `sp.cls` differs from `app.cls` (when it is not -1).
 - `SWARM_NICHES`, `SWARM_NICHE_ICON` and `SWARM_LABEL` are UI fallbacks for the niche names, a representative icon per niche, and category labels. They are named apart from the sim's `BUG_*` globals so the app still loads without `bugs.js`.
 - `mixHex`, `paletteFor(hex)` and `NEUTRAL` build body/dark/light palettes for the UI icons.
 - `STAT_EXTRA` lists the Part 4 stat cards appended after the group cards as `{key, label, icon, color, wide, sub, noSpark}`: `thirstDeaths` (drop), `herds` (bison), `territories` (flag), `eggs` (egg, wide) and `stages` ("Life stages · animals", deer, wide, no sparkline). `STAT_EXTRA_KEYS` is their key set.
@@ -1845,8 +1929,13 @@ Save and load (see the Save section for the file format):
   - A wide **Disease** stat card (`data-key="disease"`, `virus` icon, "Disease · sick animals") follows. Its value is `stats.sick`, its sparkline `history.sick`, and its sub-line reads "N strains · N blighted tiles" from `stats.strains` and `stats.blight`.
   - The `#optDisease` switch (on by default) is passed as `options.disease` to `new Ecosystem` and sets `eco.options.disease` live.
   - The population chart has a `bugs` series (when `history.bugs` exists) with a "Bugs" legend toggle.
+  - **Class cards** (v3 Part 1 slice 1): one `.stat.cls` card per `STAT_GROUPS` class (`role=button`, `tabindex=0`, `aria-expanded`, a chevron in the label), so the chart and legend show six class lines plus Plants and Bugs.
+    - Each card holds a hidden `.stat-roles` block with one `.role-row` button per `ROLE_KEYS` entry (a `ROLE_COLORS` dot, the `ROLE_LABELS` name, a count and a `data-rspark` sparkline). The Invertebrates card adds a fifth **Swarms** row (`data-role="swarms"`) showing `stats.bugs` with `history.bugs`; clicking it closes the detail view and opens the Bugs tab.
+    - A click, Enter or Space on a card toggles it with `setClassOpen(el, on)` (`.open`, `.wide`, `aria-expanded`), updates `app.openClasses`, stores it under `OPEN_KEY` and redraws the stats.
+    - `updateStats` hides a class card while the class has 0 animals and its history has never been above 0 (so Birds stays hidden for now), and calls `updateClassRoles(el, k, s, h)` for open cards: each role row shows `stats.roles[k][role]` with the `<k>.<role>` history, is hidden while the role has never had members, and is marked `zero` when it is empty now. The Swarms row shows whenever `eco.bugs` exists.
 - **Right:**
-  - Species tabs (Plants, Land, Water, Bugs, Disease, then Events with an icon and no count), with sorting and an extinct toggle, capped at 160 rows (`renderSpeciesList`). Rows show a 36 px icon, the name, a sub-line (role tag, category tag, and "extinct Y…" when gone), and at the right the count (`formatCount`) over a `sparkSVG` sparkline. Role tags color from the `--c-*` tokens via `color-mix`. The Bugs tab (`data-tab="bug"`, count in `#countBug`) lists species with `group === 'bug'`; `speciesInTab`, `updateTabCounts`, `selectSpecies` and `setTab` route that group, and the list unit is " tiles" as for plants. Tabs use `flex: 1 1 auto` with tight padding and 11 px text (10.5 px below 1250 px). Every tab shows its icon and count (`formatCount`), each has a `title`, and only the active tab shows its `.tab-label`, so six fit in the 330 px column even with 4-character counts.
+  - Species tabs (Plants, Animals, Bugs, Disease, then Events with an icon and no count), with sorting and an extinct toggle, capped at 160 rows (`renderSpeciesList`). Rows show a 36 px icon, the name, a sub-line (role tag, category tag, and "extinct Y…" when gone), and at the right the count (`formatCount`) over a `sparkSVG` sparkline. Role tags color from the `--c-*` tokens via `color-mix`. The Bugs tab (`data-tab="bug"`, count in `#countBug`) lists species with `group === 'bug'`; `speciesInTab`, `updateTabCounts`, `selectSpecies` and `setTab` route that group, and the list unit is " tiles" as for plants. Tabs use `flex: 1 1 auto` with tight padding and 11 px text (10.5 px below 1250 px). Every tab shows its icon and count (`formatCount`), each has a `title`, and only the active tab shows its `.tab-label`, so they fit in the 330 px column even with 4-character counts.
+  - The **Animals** tab (`data-tab="animal"`, `paw` icon, count in `#countAnimal`) replaced the Land and Water tabs in v3 Part 1 slice 1. `#classChips` (above the list tools, shown only on this tab by `setTab`) is built by `buildClassChips()` in `init`: an All chip (`data-cls="-1"`) and one chip per class with its icon, label and count. A chip click calls `setClassFilter(cls, render = true)`, which sets `app.cls`, marks the active chip and re-renders the list. `updateTabCounts` counts living animal species per `sp.cls` for the chips; the tab count is their total. `selectSpecies` routes animals to this tab and resets the filter to All when the species is outside the current class.
   - The **Disease** tab (`data-tab="disease"`, `virus` icon, count in `#countDisease`) lists species with `group === 'pathogen'`; `selectSpecies` routes strains there. Its empty text is "No active outbreaks yet." and the row unit is " tiles" for plant strains (`hostKind === 'plant'`) and " hosts" otherwise. The species totals line adds " · N strains".
   - Pathogens: `roleOf` returns `'pathogen'`, `roleTag` shows "blight" or "disease" (class `role-pathogen`), and `categoryLabel` gives "Plant blight" or "Animal disease". The detail subtitle reads "<Category> · from <origin host>"; badges show Emerged or Host jump and Active or "Burned out · Year N"; the grid shows Infected, Peak, Deaths and Appeared. `#detailHostsWrap` (hidden for other groups) lists `sp.hosts` as chips (`data-id`, clicking selects the host), falling back to the origin host marked "origin". `DISEASE_TRAITS` shows Transmissibility, Virulence and Host range (genes 0–2).
   - `ANIMAL_TRAITS` includes **Scavenging** (`G_SCAV`, percent).
@@ -1855,7 +1944,7 @@ Save and load (see the Save section for the file format):
   - The events list, which re-renders only when `log.version` changes (`renderEvents`). A **Weather** filter (`data-f="weather"`) shows only weather events. The **Outbreaks** filter (`data-f="outbreak"`) shows `outbreak` events, drawn with `EVENT_GLYPH.outbreak` `!` and an amber-green dot (`.ev-outbreak`). Weather events (drought start and end) use `EVENT_GLYPH.weather` `~` and an amber dot (`.ev-weather`, from the `--amber` token).
   - The species detail view (`renderDetail`): badges, a stats grid, a history chart, trait bars from the `mean` genome, lineage and children. For plant species the stats grid also has a **Health** cell, the mean `sp.health` (a dash once extinct).
   - Fungus species (`sp.kind === 1`) get two extra badges: "Fungus" and the fungus type from `fungusType(sp.mean)` (Mild, Neurotoxic, Lethal or Symbiont).
-  - Animal details add a **Habitat** cell (land, water or amphibious) and a wide **Stages** cell, "N juv · N adult · N elder · N eggs" from `stageCounts(id)` (a pass over the animal pool with `animalStage(A, i)`: 0 juvenile below `A.mature`, 2 elder above `ELDER_AGE * A.maxAge`, else 1 adult, plus live eggs in `eco.eggs`). Detail cells take an optional third `wide` flag (CSS `.detail-grid div.wide`, span 2). `ANIMAL_TRAITS` adds Territorial (`G_TERR`), Herding (`G_HERD`), Cold-blooded (`G_COLD`, shown as Cold-blooded or Warm-blooded) and Drought tolerance (`G_DRY`).
+  - Animal details add a **Class** cell ("<CLASS_NAME> · <sp.role>", for example "Mammal · carnivore"), a **Habitat** cell (land, water or amphibious) and a wide **Stages** cell, "N juv · N adult · N elder · N eggs" from `stageCounts(id)` (a pass over the animal pool with `animalStage(A, i)`: 0 juvenile below `A.mature`, 2 elder above `ELDER_AGE * A.maxAge`, else 1 adult, plus live eggs in `eco.eggs`). Detail cells take an optional third `wide` flag (CSS `.detail-grid div.wide`, span 2). `ANIMAL_TRAITS` adds Territorial (`G_TERR`), Herding (`G_HERD`), Cold-blooded (`G_COLD`, shown as Cold-blooded or Warm-blooded) and Drought tolerance (`G_DRY`).
   - The Lineage heading has a **Family tree** button (`#treeBtn`) that opens the tree overlay for the selected species.
   - Animal species get an **Avoids** row at the end of the trait list: one colour swatch per `sp.aversion` entry (`hsl(hue*360, 62%, 52%)`, opacity `0.35 + 0.65*strength`, with the strength in the title), or "nothing yet" (`hueSwatches(list)`).
 
@@ -1915,7 +2004,7 @@ Helpers: `TOXIN_WORDS`, `toxinIndex(v)` (the same thresholds as `toxinType`), `f
 
 - `showOverlay(view, title)` sets `app.overlay`, shows the overlay and hides the map tooltip. `closeOverlay()` hides it and the tree tooltip. A pointerdown on the scrim itself closes it, and `installWorld` (new world or load) closes it.
 - `openTree(mode)` needs a selected species. It marks the active `#treeModes` button (`data-t` `species` "Lineage" or `kingdom` "Kingdom"), calls `app.tree.show(eco, selected, mode)` and sets the title from `app.tree.title()`. `selectSpecies` re-shows the tree when it is open and the id changes, `updateUi` redraws it, and a window resize redraws it.
-- `openHelp()` shows `#helpBody`: a static grid of Map views, Controls, Switches and Keyboard sections written in `index.html`. `#helpBtn` ("?", after the theme button) toggles it.
+- `openHelp()` shows `#helpBody`: a static grid of Map views, Controls, Switches and Keyboard sections written in `index.html`. The Controls list has a **Classes** line for the class cards and the Animals tab chips. `#helpBtn` ("?", after the theme button) toggles it.
 
 ---
 
