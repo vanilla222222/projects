@@ -9,6 +9,7 @@ const STAT_GROUPS = [
 const ROLE_KEYS = ['herb', 'omni', 'carn', 'scav'];
 const ROLE_LABELS = ['Herbivores', 'Omnivores', 'Predators', 'Scavengers'];
 const MIGRATE_PREY = 150;
+const BIRD_REVIVE = 5;
 
 const HISTORY_EVERY = 5;
 const MERGE_EVERY = 120;
@@ -36,6 +37,12 @@ class Ecosystem {
 		this.animals = new AnimalPool(world, this.plants, this.registry, new FastRng(seed + 777), this.log);
 		this.stats = { plants: 0, plantBiomass: 0, fruit: 0, fungi: 0, flowers: 0, litter: 0, carrion: 0, bugs: 0, pests: 0, detritivores: 0, parasites: 0, pollinators: 0, pollination: 0, sick: 0, blight: 0, strains: 0, diseaseDeaths: 0, diseaseShare: 0, worstOutbreak: null, swarms: 0, carrionShare: 0, weather: { storms: 0, rainTiles: 0, snowTiles: 0, drought: false, droughts: 0 }, meanWet: 0, thirstDeaths: 0, thirstShare: 0, herds: 0, territories: 0, deaths: {}, stages: { eggs: 0, juveniles: 0, adults: 0, elders: 0 }, eggs: { laid: 0, hatched: 0, eaten: 0, failed: 0 }, plantStages: { seedTiles: 0, seedlings: 0, mature: 0, old: 0, oldDeaths: 0, germinated: 0, grazedSeedlings: 0 } };
 		this.history = { tick: [], plants: [], bugs: [], sick: [], thirstDeaths: [], herds: [], territories: [], eggs: [] };
+		this.stats.birdNiches = {};
+		this.stats.birdMigrants = 0;
+		for (const k of BIRD_NICHES) {
+			this.stats.birdNiches[k] = 0;
+			this.history['birdNiche.' + k] = [];
+		}
 		this.stats.roles = {};
 		for (const g of STAT_GROUPS) {
 			this.stats[g.key] = 0;
@@ -77,10 +84,10 @@ class Ecosystem {
 		const W = this.world.width;
 		const H = this.world.height;
 		const rng = this.rng;
-		const domain = arch.domain === 'water' ? 1 : arch.domain === 'amph' ? 2 : 0;
+		const domain = domainIndex(arch.domain);
 		const wd = domain === 2 && this.weather ? this.weather.waterDist : null;
 		const genome = Float32Array.from(arch.g);
-		const sp = A.newSpecies(genome, 0, arch.domain, null, this.tick, origin, arch.cls);
+		const sp = A.newSpecies(genome, 0, arch.domain, null, this.tick, origin, arch.cls, arch.nic | 0);
 		const total = count || arch.n;
 		let placed = 0;
 		let clusters = 0;
@@ -90,6 +97,7 @@ class Ecosystem {
 			if (!A.canStand(domain, x, y)) continue;
 			const i = (y | 0) * W + (x | 0);
 			if (wd && wd[i] > 2) continue;
+			if (domain === 3 && !(A.walk[i] & 1)) continue;
 			const clim = gaussFit(this.world.temperature[i], arch.g[G_TEMP], 0.08 + 0.3 * arch.g[G_TOL]);
 			const food = arch.g[G_DIET] < 0.6 ? this.plants.edible(i) : 0.3;
 			const need = attempt < 3000 ? 0.55 : 0.1;
@@ -105,7 +113,7 @@ class Ecosystem {
 			}
 			clusters++;
 		}
-		sp.category = animalCategory(genome, arch.domain, arch.cls);
+		sp.category = animalCategory(genome, arch.domain, arch.cls, arch.nic | 0);
 		return placed > 0 ? sp : null;
 	}
 
@@ -159,6 +167,7 @@ class Ecosystem {
 		const keys = STAT_GROUPS.map((g) => g.key);
 		const roles = keys.map((k) => s.roles[k]);
 		const counts = new Int32Array(keys.length * 4);
+		const bn = new Int32Array(BIRD_NICHES.length);
 		const st = s.stages;
 		st.juveniles = st.adults = st.elders = 0;
 		for (let i = 0; i < A.count; i++) {
@@ -166,8 +175,12 @@ class Ecosystem {
 			if (age < A.mature[i]) st.juveniles++;
 			else if (age > ELDER_AGE * A.maxAge[i]) st.elders++;
 			else st.adults++;
-			counts[A.cls[i] * 4 + roleIndex(A.diet[i], A.scav[i])]++;
+			const ri = roleIndex(A.diet[i], A.scav[i]);
+			counts[A.cls[i] * 4 + ri]++;
+			if (A.cls[i] === CLS_BIRD) bn[A.nic[i] ? 2 : ri === 0 ? 0 : ri === 1 ? 1 : ri === 2 ? 3 : 4]++;
 		}
+		for (let k = 0; k < BIRD_NICHES.length; k++) s.birdNiches[BIRD_NICHES[k]] = bn[k];
+		s.birdMigrants = A.birdMigrants;
 		for (let c = 0; c < keys.length; c++) {
 			const r = roles[c];
 			let t = 0;
@@ -346,8 +359,8 @@ class Ecosystem {
 	_migrations() {
 		const s = this.stats;
 		const R = s.roles;
-		const pick = (cls, role, domain) => {
-			const opts = ANIMAL_ARCHETYPES.filter((a) => a.cls === cls && ROLE_KEYS[roleIndex(a.g[G_DIET], a.g[G_SCAV])] === role && (!domain || a.domain === domain));
+		const pick = (cls, role, domain, nic = 0) => {
+			const opts = ANIMAL_ARCHETYPES.filter((a) => a.cls === cls && ROLE_KEYS[roleIndex(a.g[G_DIET], a.g[G_SCAV])] === role && (!domain || a.domain === domain) && (a.nic | 0) === nic);
 			return opts.length ? opts[Math.floor(this.rng.next() * opts.length)] : null;
 		};
 		const tryIntro = (arch, why) => {
@@ -360,18 +373,24 @@ class Ecosystem {
 		const f = R.fish;
 		if (s.fish < 20 || f.herb === 0) tryIntro(pick(CLS_FISH, 'herb'), 'the waters were empty');
 		const prey = { land: m.herb + m.omni + R.reptile.herb + R.invert.herb, water: f.herb + f.omni + R.invert.herb };
-		const done = new Set(['mammal.herb.land', 'fish.herb.water']);
+		const A = this.animals;
+		const live = new Int32Array(STAT_GROUPS.length * 4 * 8);
+		for (let i = 0; i < A.count; i++) live[(A.cls[i] * 4 + roleIndex(A.diet[i], A.scav[i])) * 8 + A.domain[i]]++;
+		const done = new Set(['mammal.herb.land.0', 'fish.herb.water.0']);
 		for (const a of ANIMAL_ARCHETYPES) {
 			const g = STAT_GROUPS.find((x) => x.cls === a.cls);
-			const role = ROLE_KEYS[roleIndex(a.g[G_DIET], a.g[G_SCAV])];
-			const key = g.key + '.' + role + '.' + (a.domain === 'water' ? 'water' : 'land');
+			const ri = roleIndex(a.g[G_DIET], a.g[G_SCAV]);
+			const role = ROLE_KEYS[ri];
+			const nic = a.nic | 0;
+			const key = g.key + '.' + role + '.' + (a.domain || 'land') + '.' + nic;
 			if (done.has(key)) continue;
 			done.add(key);
-			if (R[g.key][role] > 0) continue;
-			const food = role === 'herb' ? Infinity : prey[a.domain === 'water' ? 'water' : 'land'];
+			const bird = a.cls === CLS_BIRD;
+			if (bird ? s.birdNiches[BIRD_NICHES[birdNiche(a.g[G_DIET], a.g[G_SCAV], nic)]] >= BIRD_REVIVE : live[(a.cls * 4 + ri) * 8 + domainIndex(a.domain)] > 0) continue;
+			const food = role === 'herb' ? Infinity : prey[a.domain === 'water' || nic ? 'water' : 'land'];
 			if (food < MIGRATE_PREY) continue;
-			const why = role === 'carn' ? 'unchecked prey drew predators' : role === 'scav' ? 'carcasses drew scavengers' : `the ${g.label.toLowerCase()} had vanished`;
-			tryIntro(pick(a.cls, role, a.domain), why);
+			const why = bird ? (nic ? 'fish in the shallows drew fishing birds' : role === 'carn' ? 'unchecked prey drew raptors' : role === 'scav' ? 'carcasses drew carrion birds' : 'the skies were empty') : role === 'carn' ? 'unchecked prey drew predators' : role === 'scav' ? 'carcasses drew scavengers' : `the ${g.label.toLowerCase()} had vanished`;
+			tryIntro(pick(a.cls, role, a.domain, nic), why);
 		}
 		const B = this.bugs;
 		if (B) for (let k = 0; k < 4; k++) if (B.tiles[k] === 0) B.reintroduce(k);
@@ -387,6 +406,7 @@ class Ecosystem {
 		h.herds.push(this.stats.herds);
 		h.territories.push(this.stats.territories);
 		h.eggs.push(this.stats.stages.eggs);
+		for (const k of BIRD_NICHES) h['birdNiche.' + k].push(this.stats.birdNiches[k]);
 		for (const g of STAT_GROUPS) {
 			h[g.key].push(this.stats[g.key]);
 			const r = this.stats.roles[g.key];
