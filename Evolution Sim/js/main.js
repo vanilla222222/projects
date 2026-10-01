@@ -38,6 +38,7 @@ const STAT_EXTRA = [
 	{ key: 'thirstDeaths', label: 'Thirst deaths', icon: 'drop', color: '#6fb7e0', sub: true },
 	{ key: 'herds', label: 'Herds', icon: 'bison', color: '#c9a86a' },
 	{ key: 'territories', label: 'Territories', icon: 'flag', color: '#e0906a' },
+	{ key: 'packs', label: 'Hunting packs', icon: 'wolf', color: '#d07a5a', sub: true },
 	{ key: 'eggs', label: 'Eggs', icon: 'egg', color: '#e6d3a3', wide: true, sub: true },
 	{ key: 'nests', label: 'Nests & dens', icon: 'nest', color: '#c79a5b', wide: true, sub: true },
 	{ key: 'stages', label: 'Life stages · animals', icon: 'deer', color: '#9fd98b', wide: true, sub: true, noSpark: true },
@@ -417,7 +418,16 @@ function updateClassRoles(el, k, s, h) {
 		row.classList.toggle('zero', v === 0);
 		row.querySelector('[data-n]').textContent = formatCount(v);
 		drawSparkline(row.querySelector('[data-rspark]'), hist, swarm ? GROUP_COLORS.bugs : ROLE_COLORS[r]);
+		if (r === 'carn') packRow(row, k, s);
 	}
+}
+
+function packRow(row, k, s) {
+	const p = (s.packCls && s.packCls[k]) || [0, 0];
+	const span = row.querySelector('span');
+	const text = p[0] ? `Predators · ${p[0]} pack${p[0] === 1 ? '' : 's'}` : 'Predators';
+	if (span.textContent !== text) span.textContent = text;
+	row.title = p[0] ? `${p[0]} hunting pack${p[0] === 1 ? '' : 's'}, mean size ${(p[1] / p[0]).toFixed(1)}. All packs: ${formatCount(s.packKills || 0)} kills, ${formatCount(s.bigKills || 0)} of prey over 1.5× the hunter's mass` : '';
 }
 
 function updateStats() {
@@ -469,6 +479,7 @@ function updateExtraStat(el, k, s, h) {
 	} else {
 		v.textContent = formatCount(s[k] || 0);
 		if (k === 'thirstDeaths') sub.textContent = `${pct(s.thirstShare || 0)} of land deaths`;
+		if (k === 'packs') sub.innerHTML = `<span>mean size ${(s.packSize || 0).toFixed(1)}</span><span>${formatCount(s.packKills || 0)} kills</span><span>${formatCount(s.bigKills || 0)} big game</span>`;
 	}
 	drawSparkline(el.querySelector('[data-spark]'), h[k] || [], STAT_EXTRA.find((d) => d.key === k).color);
 }
@@ -744,6 +755,9 @@ const ANIMAL_TRAITS = [
 	['Herding', G_HERD, (v) => pct(v)],
 	['Cold-blooded', G_COLD, (v) => (v > 0.5 ? 'Cold-blooded' : 'Warm-blooded')],
 	['Drought tolerance', G_DRY, (v) => pct(v)],
+	['Pack hunting', G_PACK, (v) => pct(v)],
+	['Display', G_DISPLAY, (v) => pct(v)],
+	['Choosiness', G_CHOOSY, (v) => pct(v)],
 ];
 
 const DISEASE_TRAITS = [
@@ -872,7 +886,10 @@ function renderDetail() {
 		const av = sp.aversion && sp.aversion.length ? sp.aversion : null;
 		traits += `<div class="trait"><span>Avoids</span><div style="grid-column:span 2;display:flex;flex-wrap:wrap;gap:4px;align-items:center">${av ? hueSwatches(av) : '<em style="text-align:left;color:var(--muted)">nothing yet</em>'}</div></div>`;
 	}
+	const showHist = sp.group === 'animal' && sp.showHist && sp.showHist.length >= 4 ? sp.showHist : null;
+	if (showHist) traits += `<div class="trait" title="Mean display over time${sp.showy ? ' · showy' : ''}"><span>Display trend</span><canvas data-show-spark style="width:100%;height:20px;margin:0"></canvas><em>${pct(showHist[showHist.length - 1])}</em></div>`;
 	$('detailTraits').innerHTML = traits;
+	if (showHist) drawSparkline($('detailTraits').querySelector('[data-show-spark]'), showHist.filter((v, k) => k % 2 === 1), sp.color);
 
 	const chain = eco.registry.lineage(sp).reverse();
 	const row = (s, cur) =>

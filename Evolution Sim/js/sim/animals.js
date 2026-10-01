@@ -201,6 +201,14 @@ const ANIMAL_ARCHETYPES = [
 	{ domain: 'air', cls: CLS_BIRD, n: 10, g: [0.55, 0.45, 0.9, 0.7, 0.65, 0.5, 0.4, 0.6, 0.05, 0.3, 0.85, 0.2, 0.3, 0.1, 0.6, 0.35, 0.1, 0.3, 0.3] },
 ];
 
+const FOUNDER_PACK = 0.6;
+const FOUNDER_CHOOSY = 0.55;
+for (const a of ANIMAL_ARCHETYPES) {
+	const g = a.g;
+	if (a.cls === CLS_MAMM && a.domain === 'land' && g[G_DIET] > 0.66) g[G_PACK] = FOUNDER_PACK;
+	if (a.cls === CLS_BIRD && !a.nic && g[G_DIET] < 0.66) g[G_CHOOSY] = FOUNDER_CHOOSY;
+}
+
 function domainIndex(d) {
 	return d === 'water' ? 1 : d === 'amph' ? 2 : d === 'air' ? 3 : 0;
 }
@@ -349,6 +357,35 @@ const ANIMAL_CATEGORY_LABEL = {
 	vulture: 'Carrion bird',
 };
 
+const PACK_MIN = 0.45;
+const PACK_R = 9;
+const PACK_MAX = 8;
+const PACK_K = 0.5;
+const PACK_CAP = 2.6;
+const PACK_PREY_K = 0.35;
+const PACK_PREY_CAP = 2.2;
+const PACK_HELP_R = 3;
+const PACK_PULL = 0.85;
+const PACK_HUNGRY = 0.65;
+const PACK_JOIN = 0.95;
+const PACK_PACE = 1.25;
+const PACK_SICK_SLOW = 0.5;
+const PACK_SICK_LEAD = 0.3;
+const PACK_BIG = 1.5;
+const DISPLAY_COST = 0.12;
+const DISPLAY_SPOT = 0.6;
+const DISPLAY_SEEN = 0.5;
+const SICK_DISPLAY = 0.35;
+const PARA_DULL = 0.5;
+const MATE_SAMPLES = 8;
+const MATE_SHARP = 60;
+const MATE_K = 0.4;
+const CHOOSY_WAIT = 12;
+const SHOWY_ON = 0.7;
+const SHOWY_OFF = 0.6;
+const SHOW_EVERY = 100;
+const SHOW_HIST = 120;
+
 const ANIMAL_FIELDS_F = [
 	'x', 'y', 'px', 'py', 'energy', 'age', 'tx', 'ty',
 	'mass', 'spd', 'range', 'plantEff', 'meatEff', 'emax', 'meta', 'mature', 'maxAge',
@@ -356,6 +393,8 @@ const ANIMAL_FIELDS_F = [
 	'terr', 'herd', 'cold', 'dry', 'hr', 'water', 'hx', 'hy', 'gf', 'ef', 'oy', 'nx', 'ny',
 ];
 const ANIMAL_FIELDS_I = ['sp', 'uid', 'cool', 'ttl', 'face', 'domain', 'cls', 'alive', 'state', 'seedSp', 'seedTtl', 'confuse', 'strain', 'itime', 'immune', 'imTime', 'natImm', 'parent', 'fly', 'nic', 'home'];
+ANIMAL_FIELDS_F.push('show');
+ANIMAL_FIELDS_I.push('pk', 'pn');
 
 class AnimalPool {
 	constructor(world, plants, registry, rng, log) {
@@ -414,6 +453,11 @@ class AnimalPool {
 		this._avoidLogged = new Map();
 		this._migLogged = new Map();
 		this.birdMigrants = 0;
+		this.packKills = 0;
+		this.bigKills = 0;
+		this.mateRefusals = 0;
+		this._packBuf = new Int32Array(PACK_MAX);
+		this._mateBuf = new Int32Array(MATE_SAMPLES);
 	}
 
 	_grow(newCap) {
@@ -500,6 +544,7 @@ class AnimalPool {
 		this.cold[i] = cold;
 		this.dry[i] = g[o + G_DRY];
 		this.hr[i] = 2 + 5 * size;
+		this.meta[i] *= 1 + DISPLAY_COST * g[o + G_DISPLAY];
 		if (this.cls[i] === CLS_BIRD) {
 			this.spd[i] *= BIRD_SPEED;
 			this.range[i] *= BIRD_SENSE;
@@ -554,6 +599,9 @@ class AnimalPool {
 		this.imTime[i] = 0;
 		this.natImm[i] = 0;
 		this.parent[i] = 0;
+		this.show[i] = 0;
+		this.pk[i] = 0;
+		this.pn[i] = 0;
 		this.registry.add(sp);
 		return i;
 	}
@@ -601,7 +649,7 @@ class AnimalPool {
 		for (let i = 0; i < n; i++) this.gitems[fill[this.gcell[i]]++] = i;
 	}
 
-	_nearest(i, r, mode) {
+	_nearest(i, r, mode, preyMul = 1) {
 		const x = this.x[i];
 		const y = this.y[i];
 		const cols = this.gcols;
@@ -614,7 +662,7 @@ class AnimalPool {
 		const mass = this.mass[i] * this.gf[i];
 		const sp = this.sp[i];
 		const role = diet < 0.33 ? 0 : diet < 0.66 ? 1 : 2;
-		const preyK = this.cls[i] === CLS_INVT ? INVERT_PREY : this.cls[i] === CLS_BIRD ? BIRD_PREY : diet > 0.66 ? 1.8 : 0.6;
+		const preyK = this.cls[i] === CLS_INVT ? INVERT_PREY : this.cls[i] === CLS_BIRD ? BIRD_PREY : diet > 0.66 ? 1.8 * preyMul : 0.6;
 		let best = -1;
 		let bestD = r * r;
 		for (let gy = r0; gy <= r1; gy++) {
@@ -643,7 +691,7 @@ class AnimalPool {
 					} else if (this.sp[j] !== sp || this.age[j] < this.mature[j]) continue;
 					const dx = this.x[j] - x;
 					const dy = this.y[j] - y;
-					const d = dx * dx + dy * dy;
+					const d = (dx * dx + dy * dy) * (mode === 1 ? 1 - DISPLAY_SEEN * this.show[j] : 1);
 					if (d < bestD) {
 						bestD = d;
 						best = j;
@@ -1194,6 +1242,15 @@ class AnimalPool {
 			bx = Math.min(W - 1, Math.max(0, this.x[i] + (this.rng.next() * 2 - 1) * r * 3));
 			by = Math.min(H - 1, Math.max(0, this.y[i] + my + (this.rng.next() * 2 - 1) * r * 3));
 		}
+		if (this.pn[i] > 1 && this._pr[i] !== i) {
+			const r = this._pr[i];
+			const hx = bx + (this.x[r] - bx) * PACK_PULL;
+			const hy = by + (this.y[r] - by) * PACK_PULL;
+			if (this.canStand(dom, hx, hy)) {
+				bx = hx;
+				by = hy;
+			}
+		}
 		const herd = this.herd[i];
 		if (herd > HERD_MIN && this._localCount(i) > 1) {
 			const k = HERD_PULL * herd;
@@ -1248,6 +1305,7 @@ class AnimalPool {
 		const stampTick = tick % TERR_EVERY === 0;
 		tileLoad.fill(0);
 		this._buildGrid();
+		this._social();
 		this.births = 0;
 		this.tick = tick;
 		let holders = 0;
@@ -1360,6 +1418,24 @@ class AnimalPool {
 				this.ttl[i]--;
 				if (this.ttl[i] <= 0) this.state[i] = 0;
 				acted = true;
+			}
+
+			if (!acted && this.pn[i] > 1 && this.cool[i] === 0 && e < emax * PACK_JOIN) {
+				const r = this._pr[i];
+				const p = this._pt[r];
+				if (p >= 0 && this.alive[p]) {
+					if (this.state[i] !== 3) this.ttl[i] = 18;
+					this.state[i] = 3;
+					const d0 = Math.hypot(this.x[p] - this.x[i], this.y[p] - this.y[i]);
+					moved = this._moveToward(i, this.x[p], this.y[p], (d0 < 4 ? PACK_PACE : 1) * (1 - (PACK_SICK_SLOW * this._pv[r]) / this.pn[i]));
+					const d = Math.hypot(this.x[p] - this.x[i], this.y[p] - this.y[i]);
+					if (d < 1) this._attack(i, p, tile, tick);
+					else if (--this.ttl[i] <= 0) {
+						this.cool[i] = 10;
+						this.state[i] = 0;
+					}
+					acted = true;
+				}
 			}
 
 			if (!acted && this.meatEff[i] > 0.25 && e < emax * (this.scav[i] > 0.5 ? SCAV_HUNT : this.nic[i] ? FISHER_HUNT : 0.6) && this.cool[i] === 0) {
@@ -1576,6 +1652,251 @@ class AnimalPool {
 		this._compact();
 	}
 
+	_social() {
+		const n = this.count;
+		if (!this._pr || this._pr.length < n + 1) {
+			const c = this.cap + 1;
+			this._pr = new Int32Array(c);
+			this._pt = new Int32Array(c);
+			this._pv = new Float32Array(c);
+			this._pe = new Float32Array(c);
+			this._ps = new Float32Array(c);
+		}
+		const W = this.world.width;
+		const g = this.genome;
+		const pl = this.parasiteLoad;
+		const pr = this._pr;
+		const ps = this._ps;
+		const pe = this._pe;
+		const pv = this._pv;
+		const pt = this._pt;
+		const pk = this.pk;
+		const pn = this.pn;
+		let m = 0;
+		for (let i = 0; i < n; i++) {
+			pk[i] = 0;
+			pn[i] = 0;
+			pr[i] = -1;
+			if (!this.alive[i]) {
+				this.show[i] = 0;
+				continue;
+			}
+			const load = this.fly[i] ? 0 : pl[(this.y[i] | 0) * W + (this.x[i] | 0)];
+			this.show[i] = g[i * AG + G_DISPLAY] * this.gf[i] * (this.strain[i] ? SICK_DISPLAY : 1) * (1 - PARA_DULL * (load < 1 ? load : 1));
+			if (this.diet[i] > 0.6 && this.scav[i] <= 0.5 && this.age[i] >= this.mature[i] && g[i * AG + G_PACK] > PACK_MIN) {
+				pr[i] = -2;
+				ps[i] = (this.energy[i] / this.emax[i]) * (this.strain[i] ? PACK_SICK_LEAD : 1);
+				m++;
+			}
+		}
+		if (m < 2) return;
+		const cols = this.gcols;
+		const R2 = PACK_R * PACK_R;
+		for (let i = 0; i < n; i++) {
+			if (pr[i] === -1) continue;
+			const x = this.x[i];
+			const y = this.y[i];
+			const s = this.sp[i];
+			const c0 = Math.max(0, ((x - PACK_R) / GRID) | 0);
+			const c1 = Math.min(cols - 1, ((x + PACK_R) / GRID) | 0);
+			const r0 = Math.max(0, ((y - PACK_R) / GRID) | 0);
+			const r1 = Math.min(this.grows - 1, ((y + PACK_R) / GRID) | 0);
+			let best = i;
+			let bs = ps[i];
+			for (let gy = r0; gy <= r1; gy++) {
+				for (let gx = c0; gx <= c1; gx++) {
+					const c = gy * cols + gx;
+					for (let k = this.gstart[c], e = this.gstart[c + 1]; k < e; k++) {
+						const j = this.gitems[k];
+						if (j === i || pr[j] === -1 || this.sp[j] !== s) continue;
+						const dx = this.x[j] - x;
+						const dy = this.y[j] - y;
+						if (dx * dx + dy * dy > R2) continue;
+						const sj = ps[j];
+						if (sj > bs || (sj === bs && this.uid[j] < this.uid[best])) {
+							best = j;
+							bs = sj;
+						}
+					}
+				}
+			}
+			pr[i] = best;
+		}
+		for (let i = 0; i < n; i++) {
+			if (pr[i] < 0) continue;
+			let r = i;
+			while (pr[r] !== r) r = pr[r];
+			pr[i] = r;
+			if (r === i) {
+				pn[i] = 1;
+				pe[i] = this.energy[i] / this.emax[i];
+				pv[i] = this.strain[i] ? 1 : 0;
+			}
+		}
+		for (let pass = 0; pass < 2; pass++) {
+			for (let i = 0; i < n; i++) {
+				const r = pr[i];
+				if (r < 0 || r === i || (this.strain[i] ? 1 : 0) !== pass) continue;
+				if (pn[r] < PACK_MAX) {
+					pn[r]++;
+					pe[r] += this.energy[i] / this.emax[i];
+					pv[r] += pass;
+				} else pr[i] = -1;
+			}
+		}
+		for (let i = 0; i < n; i++) {
+			const r = pr[i];
+			if (r < 0) continue;
+			if (r !== i) {
+				pn[i] = pn[r];
+				pk[i] = this.uid[r];
+				continue;
+			}
+			if (pn[i] < 2) {
+				pn[i] = 0;
+				pr[i] = -1;
+				continue;
+			}
+			pk[i] = this.uid[i];
+			pt[i] = -1;
+			if (pe[i] / pn[i] < PACK_HUNGRY && this.meatEff[i] > 0.25) pt[i] = this._nearest(i, this.range[i], 1, Math.min(PACK_PREY_CAP, 1 + PACK_PREY_K * (pn[i] - 1)));
+		}
+	}
+
+	_packHelp(i, p) {
+		const buf = this._packBuf;
+		const pr = this._pr;
+		const r = pr[i];
+		buf[0] = i;
+		let k = 1;
+		const x = this.x[p];
+		const y = this.y[p];
+		const R2 = PACK_HELP_R * PACK_HELP_R;
+		const cols = this.gcols;
+		const c0 = Math.max(0, ((x - PACK_HELP_R) / GRID) | 0);
+		const c1 = Math.min(cols - 1, ((x + PACK_HELP_R) / GRID) | 0);
+		const r0 = Math.max(0, ((y - PACK_HELP_R) / GRID) | 0);
+		const r1 = Math.min(this.grows - 1, ((y + PACK_HELP_R) / GRID) | 0);
+		for (let gy = r0; gy <= r1; gy++) {
+			for (let gx = c0; gx <= c1; gx++) {
+				const c = gy * cols + gx;
+				for (let q = this.gstart[c], e = this.gstart[c + 1]; q < e; q++) {
+					const j = this.gitems[q];
+					if (j === i || pr[j] !== r || !this.alive[j] || this.pn[j] < 2) continue;
+					const dx = this.x[j] - x;
+					const dy = this.y[j] - y;
+					if (dx * dx + dy * dy > R2) continue;
+					buf[k++] = j;
+					if (k === PACK_MAX) return k;
+				}
+			}
+		}
+		return k;
+	}
+
+	_packFeed(i, p, n, mp) {
+		const buf = this._packBuf;
+		const base = (mp * MEAT_ENERGY + this.energy[p] * 0.25) / n;
+		const ps = this.strain[p];
+		const D = ps && this.disease && this.disease.on ? this.disease : null;
+		for (let k = 0; k < n; k++) {
+			const j = buf[k];
+			let e = this.energy[j] + base * this.meatEff[j] * (1 - GEN_TAX * (1 - this._genT(j)));
+			const cap = this.emax[j] * this.gf[j];
+			if (j !== i && e > cap) e = cap;
+			this.energy[j] = e;
+			if (this.domain[j] !== 1) this.water[j] = Math.min(1, this.water[j] + MEAT_WATER);
+			if (D) D.exposeAnimal(j, ps, PREY_K);
+			this.cool[j] = 4;
+			if (j !== i) this.state[j] = 0;
+		}
+		this.packKills++;
+		if (mp > PACK_BIG * this.mass[i] * this.gf[i]) this.bigKills++;
+	}
+
+	_chooseMate(i) {
+		const rng = this.rng;
+		const r = this.range[i];
+		const x = this.x[i];
+		const y = this.y[i];
+		const s = this.sp[i];
+		const r2 = r * r;
+		const cols = this.gcols;
+		const c0 = Math.max(0, ((x - r) / GRID) | 0);
+		const c1 = Math.min(cols - 1, ((x + r) / GRID) | 0);
+		const r0 = Math.max(0, ((y - r) / GRID) | 0);
+		const r1 = Math.min(this.grows - 1, ((y + r) / GRID) | 0);
+		const buf = this._mateBuf;
+		let m = 0;
+		let seen = 0;
+		for (let gy = r0; gy <= r1; gy++) {
+			for (let gx = c0; gx <= c1; gx++) {
+				const c = gy * cols + gx;
+				for (let k = this.gstart[c], e = this.gstart[c + 1]; k < e; k++) {
+					const j = this.gitems[k];
+					if (j === i || !this.alive[j] || this.sp[j] !== s || this.age[j] < this.mature[j]) continue;
+					const dx = this.x[j] - x;
+					const dy = this.y[j] - y;
+					if (dx * dx + dy * dy > r2) continue;
+					seen++;
+					if (m < MATE_SAMPLES) buf[m++] = j;
+					else {
+						const q = (rng.next() * seen) | 0;
+						if (q < MATE_SAMPLES) buf[q] = j;
+					}
+				}
+			}
+		}
+		if (!m) return -1;
+		const ch = this.genome[i * AG + G_CHOOSY];
+		const sharp = MATE_SHARP * ch;
+		let top = 0;
+		for (let k = 0; k < m; k++) top = Math.max(top, this.show[buf[k]]);
+		let tot = 0;
+		for (let k = 0; k < m; k++) tot += Math.exp(sharp * (this.show[buf[k]] - top));
+		let u = rng.next() * tot;
+		let mate = buf[m - 1];
+		for (let k = 0; k < m; k++) {
+			u -= Math.exp(sharp * (this.show[buf[k]] - top));
+			if (u <= 0) {
+				mate = buf[k];
+				break;
+			}
+		}
+		const sp = this.registry.get(s);
+		if (sp && this.show[mate] < ch * sp.mean[G_DISPLAY]) {
+			this.cool[i] = CHOOSY_WAIT;
+			this.mateRefusals++;
+			return -2;
+		}
+		const ms = this.strain[mate];
+		if (ms && this.disease && this.disease.on) this.disease.exposeAnimal(i, ms, MATE_K);
+		return mate;
+	}
+
+	_showTrack(sp) {
+		const d = sp.mean[G_DISPLAY];
+		const t = this.tick;
+		if (!sp.showHist) {
+			sp.showHist = [];
+			sp.showStep = SHOW_EVERY;
+		}
+		if (t % sp.showStep === 0) {
+			sp.showHist.push(t, Math.round(d * 1000) / 1000);
+			if (sp.showHist.length > SHOW_HIST) {
+				const step = sp.showStep * 2;
+				const next = [];
+				for (let k = 0; k < sp.showHist.length; k += 2) if (sp.showHist[k] % step === 0) next.push(sp.showHist[k], sp.showHist[k + 1]);
+				sp.showHist = next;
+				sp.showStep = step;
+			}
+		}
+		if (!sp.showy && d > SHOWY_ON && sp.population >= 6) {
+			sp.showy = true;
+			this.log.push(t, 'info', `${sp.name} evolved a showy display`, sp.id);
+		} else if (sp.showy && d < SHOWY_OFF) sp.showy = false;
+	}
+
 	_contact(i, s) {
 		const D = this.disease;
 		const c = this.gcell[i];
@@ -1601,12 +1922,13 @@ class AnimalPool {
 			near++;
 			if (!this.strain[j] && rolls < CONTACT_MAX) buf[rolls++] = j;
 		}
-		const k = CONTACT_K * (1 + CROWD_K * (near < CROWD_N ? near / CROWD_N : 1)) * (1 + HERD_CONTACT * this.herd[i]);
+		const k = CONTACT_K * (1 + CROWD_K * (near < CROWD_N ? near / CROWD_N : 1)) * (1 + HERD_CONTACT * (this.pn[i] > 1 ? 1 : this.herd[i]));
 		for (let m = 0; m < rolls; m++) D.exposeAnimal(buf[m], s, k);
 	}
 
 	_attack(i, p, tile, tick) {
 		const mp = this.mass[p] * this.gf[p];
+		const pn = this.pn[i] > 1 ? this._packHelp(i, p) : 1;
 		const massRatio = (this.mass[i] * this.gf[i]) / mp;
 		const sizeF = Math.min(1.2, Math.max(0.15, massRatio * 0.85));
 		const speedF = this.cls[i] === CLS_INVT && this.domain[i] === 1 && this.genome[i * AG + G_SPEED] < JELLY_SPEED ? 0.5 : this.spd[i] / (this.spd[i] + this.spd[p] * 0.7);
@@ -1615,14 +1937,19 @@ class AnimalPool {
 			: this.domain[p] === 1
 			? 0.3 + Math.min(0.3, this.plants.cover(tile) * 0.6)
 			: Math.min(0.45, this.plants.cover(tile) * 0.5) + (this.home[p] > 1 && Math.hypot(this.x[p] - this.nx[p], this.y[p] - this.ny[p]) <= NEST_NEAR ? DEN_COVER * this.genome[p * AG + G_NEST] : 0);
-		let chance = 0.7 * sizeF * speedF * (1 - 0.6 * this.armor[p]) * (1 - cover) * (1 - 0.5 * this.scav[i]);
+		let chance = 0.7 * sizeF * speedF * (1 - 0.6 * this.armor[p]) * (1 - cover * (1 - DISPLAY_SPOT * this.show[p])) * (1 - 0.5 * this.scav[i]);
+		if (pn > 1) chance *= Math.min(PACK_CAP, 1 + PACK_K * (pn - 1));
 		if (this.domain[p] === 3 && this.domain[i] !== 3) chance *= BIRD_ESCAPE;
 		const herd = this.herd[p];
 		if (herd > 0) {
 			const n = this._localCount(p);
-			chance *= 1 - HERD_SAFE * herd * (n < HERD_SAFE_N ? n / HERD_SAFE_N : 1);
+			chance *= 1 - (HERD_SAFE / Math.sqrt(pn)) * herd * (n < HERD_SAFE_N ? n / HERD_SAFE_N : 1);
 		}
-		if (this.rng.next() < chance) {
+		if (pn > 1 && this.rng.next() < chance) {
+			this._packFeed(i, p, pn, mp);
+			this._kill(p, CARCASS_EATEN);
+			this.deaths.eaten++;
+		} else if (pn === 1 && this.rng.next() < chance) {
 			this.energy[i] += (mp * MEAT_ENERGY * this.meatEff[i] + this.energy[p] * 0.25) * (1 - GEN_TAX * (1 - this._genT(i)));
 			if (this.domain[i] !== 1) this.water[i] = Math.min(1, this.water[i] + MEAT_WATER);
 			const ps = this.strain[p];
@@ -1741,7 +2068,8 @@ class AnimalPool {
 		const D = this.disease && this.disease.on ? this.disease : null;
 		const vs = nest && D && this.strain[i] && rng.next() < EGG_VERT_K ? this.strain[i] : 0;
 		const litter = this.litter[i];
-		const mate = this._nearest(i, this.range[i], 2);
+		const mate = this._chooseMate(i);
+		if (mate === -2) return;
 		const parentSp = this.registry.get(this.sp[i]);
 		const childG = this.childGenome;
 		const oi = i * AG;
@@ -1867,6 +2195,7 @@ class AnimalPool {
 			sp.category = animalCategory(sp.mean, sp.domain, sp.cls, sp.nic | 0);
 			sp.icon = animalIcon(sp.category, sp.id);
 			sp.role = ANIMAL_ROLES[roleIndex(sp.mean[G_DIET], sp.mean[G_SCAV])];
+			this._showTrack(sp);
 			const av = sp.aversion;
 			if (av && av.length) {
 				for (const a of av) a.strength *= 1 - AVERSION_DECAY;

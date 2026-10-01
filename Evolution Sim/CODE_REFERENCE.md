@@ -531,7 +531,7 @@ Animals are agents stored as structure-of-arrays. There is one typed array per f
   | 17 | display | `G_DISPLAY` |
   | 18 | choosiness | `G_CHOOSY` |
 
-  Genes 15–18 were appended in v3 Part 1 slice 1 as groundwork. They mutate, count in `geneDistance` and are saved. Slice 3 gave gene 15 (nesting) its effect, see Nests and dens below; genes 16–18 are still neutral until slice 4. Most founders use `[nest, pack, display, choosy]` = `0.3, 0.15, 0.3, 0.3`; the carnivore founders raise pack to 0.4 (the seal 0.5), and the invertebrates use low values (nest 0.05–0.2, pack 0.05–0.1). Slice 3 raised the nest gene on chosen founders so nesting starts in several lineages: rabbit 0.55, fox 0.55, the boar-line omnivore 0.5, wolf 0.5, land scavenger 0.5, crocodile 0.5, reef fish 0.45, frog 0.45, sea turtle 0.45, and the birds 0.5 (seed), 0.42 (insect), 0.45 (fishing), 0.55 (raptor) and 0.35 (carrion). The deer, bison, arid runner, cold grazer and seal use 0.25, below `NEST_MIN`, so they start as non-nesters.
+  Genes 15–18 were appended in v3 Part 1 slice 1 as groundwork. They mutate, count in `geneDistance` and are saved. Slice 3 gave gene 15 (nesting) its effect, see Nests and dens below; slice 4 gives genes 16–18 their effects (pack hunting, display and choosiness; see **Packs, display and mate choice** below). Most founders use `[nest, pack, display, choosy]` = `0.3, 0.15, 0.3, 0.3`; the carnivore founders raise pack to 0.4 (the seal 0.5), and the invertebrates use low values (nest 0.05–0.2, pack 0.05–0.1). Slice 3 raised the nest gene on chosen founders so nesting starts in several lineages: rabbit 0.55, fox 0.55, the boar-line omnivore 0.5, wolf 0.5, land scavenger 0.5, crocodile 0.5, reef fish 0.45, frog 0.45, sea turtle 0.45, and the birds 0.5 (seed), 0.42 (insect), 0.45 (fishing), 0.55 (raptor) and 0.35 (carrion). The deer, bison, arid runner, cold grazer and seal use 0.25, below `NEST_MIN`, so they start as non-nesters. Slice 4 overrides two of these at module load: land mammal carnivores (`cls` mammal, land, diet > 0.66) get pack `FOUNDER_PACK` (0.6), and non-fisher birds (`!nic`) with diet < 0.66 get choosiness `FOUNDER_CHOOSY` (0.55).
 
   Genes 11–14 were appended in Part 3 slice 2 as `[terr, herd, cold, dry]`: land herbivores `0.05, 0.6, 0.05, 0.3`, the land omnivore `0.35, 0.1`, land carnivores `0.5, 0.1`, water herbivores `0.05, 0.5`, the crustacean `0.35, 0.1`, water carnivores `0.5, 0.1`, the carrion eater `0.35, 0.1, 0.05, 0.3`.
 
@@ -818,6 +818,7 @@ Float32 fields (`ANIMAL_FIELDS_F`):
 | `ef` | Elder factor, set by `_stage(i)`: 1 until `ELDER_AGE*maxAge`, then linear down to `ELDER_MIN` at `maxAge`. |
 | `oy` | Home latitude for bird migration: the spawn latitude, replaced by the nest row when a bird takes a nest (slice 3). |
 | `nx`, `ny` | Home (nest or den) centre, or -1 when `home` is 0. |
+| `show` | Expressed display (v3 Part 1 slice 4), set each tick by `_social`: `display*gf`, ×`SICK_DISPLAY` while infected, ×`1 - PARA_DULL*min(1, parasiteLoad)` on the tile (fliers skip the parasite term); 0 when dead. |
 
 Int32 fields (`ANIMAL_FIELDS_I`):
 
@@ -842,6 +843,8 @@ Int32 fields (`ANIMAL_FIELDS_I`):
 | `fly` | 1 while a bird is flying (set each tick from `FLY_MOVE` and the tile), 0 when perched or not a bird. |
 | `nic` | Fishing-bird lineage flag, copied from `sp.nic` in `spawn`. |
 | `home` | 0 none, 1 nest (egg layers), 2 den (live bearers), 3 natal young of a nest or den. |
+| `pk` | Pack key (v3 Part 1 slice 4): the `uid` of the pack leader, or 0 outside a pack. A leader has `pk === uid`. Rebuilt every tick by `_social`. |
+| `pn` | Pack size shared by every member (2..`PACK_MAX`), or 0 outside a pack. |
 
 All five disease fields are initialised to 0 in `spawn`.
 
@@ -1098,6 +1101,45 @@ After the loop, `_compact()` fills each dead slot with the last live animal. The
 - **Den effects:** a natal young at home has its climate and cold upkeep cut by `1 - DEN_SHELTER*G_NEST`, but takes `1 + DEN_PARA` times the parasite drain. An infected animal at home also exposes everyone sharing its home tile (`_denContact`, `DEN_CONTACT`). Prey within `NEST_NEAR` of a den gets extra cover `DEN_COVER*G_NEST` in `_attack`.
 - **Raids:** `_pickForage` adds the nearest nest tiles with eggs (`eggs.nestCell`, the 3×3 grid cells around the animal) as candidate targets scored with `EGG_LURE`. When `eggs.eatAt` returns -1 (repelled by a guard), the raider flees the tile unless it already acted.
 - **Following:** natal young follow their nearest parent-species adult only when `_homeR` is 0 (too hungry to stay at the den).
+
+### Packs, display and mate choice (v3 Part 1 slice 4)
+
+Constants (`animals.js`):
+
+| Constant | Value | Meaning |
+| --- | --- | --- |
+| `PACK_MIN` | 0.45 | Pack gene needed to join a pack (also diet > 0.6, `scav <= 0.5`, adult). |
+| `PACK_R` | 9 | Radius (tiles) within which same-species pack candidates link. |
+| `PACK_MAX` | 8 | Largest pack; extra members are dropped (healthy members fill first). |
+| `PACK_K`, `PACK_CAP` | 0.5, 2.6 | Kill chance ×`min(PACK_CAP, 1 + PACK_K*(n-1))` for `n` attackers. |
+| `PACK_PREY_K`, `PACK_PREY_CAP` | 0.35, 2.2 | The leader's prey-size limit (carnivore `1.8×` mass) is multiplied by `min(PACK_PREY_CAP, 1 + PACK_PREY_K*(pn-1))`. |
+| `PACK_HELP_R` | 3 | Members within this distance of the prey join a kill. |
+| `PACK_PULL` | 0.85 | A member's forage target is pulled this far toward its leader. |
+| `PACK_HUNGRY` | 0.65 | The pack picks a target when mean `energy/emax` is below this. |
+| `PACK_JOIN` | 0.95 | A member joins the pack's chase when below this share of `emax`. |
+| `PACK_PACE` | 1.25 | Speed multiplier within 4 tiles of the target. |
+| `PACK_SICK_SLOW`, `PACK_SICK_LEAD` | 0.5, 0.3 | Infected members slow the chase by `PACK_SICK_SLOW*sick/pn`; an infected candidate's leader score is ×`PACK_SICK_LEAD`. |
+| `PACK_BIG` | 1.5 | A pack kill of prey with mass over `PACK_BIG×` the hunter's effective mass counts as a big kill. |
+| `DISPLAY_COST` | 0.12 | Metabolism ×`1 + DISPLAY_COST*display` (set in `_decode`). |
+| `DISPLAY_SPOT` | 0.6 | Cover against predators is ×`1 - DISPLAY_SPOT*show` for the prey. |
+| `DISPLAY_SEEN` | 0.5 | In hunting searches (`_nearest` mode 1) prey distance² is ×`1 - DISPLAY_SEEN*show`, so showy prey are picked first. |
+| `SICK_DISPLAY`, `PARA_DULL` | 0.35, 0.5 | Honest-signal dulling by infection and tile parasite load. |
+| `MATE_SAMPLES`, `MATE_SHARP` | 8, 60 | Mates sampled (reservoir) and the softmax sharpness, scaled by choosiness. |
+| `MATE_K` | 0.4 | Exposure factor from an infected mate. |
+| `CHOOSY_WAIT` | 12 | Cooldown after a refusal. |
+| `SHOWY_ON`, `SHOWY_OFF` | 0.7, 0.6 | Mean display thresholds for the showy event (with hysteresis). |
+| `SHOW_EVERY`, `SHOW_HIST` | 100, 120 | `sp.showHist` sample spacing and its length cap (thinned by doubling the step). |
+
+Methods:
+
+- **`_social()`** runs at the start of `step`, right after `_buildGrid`. It sets `show` for every living animal, then forms packs: every eligible animal points at the highest-scoring same-species eligible animal within `PACK_R` (score `energy/emax`, ×`PACK_SICK_LEAD` when infected; ties go to the lower `uid`), and the pointers are followed to a root. Members are counted in two passes (healthy, then infected) up to `PACK_MAX`; roots left with fewer than 2 members dissolve. It fills `pk`/`pn` and the scratch arrays `_pr` (root slot), `_pt` (the pack's prey slot or -1), `_pv` (infected count), `_pe` (summed energy share) and `_ps` (score), all sized `cap + 1` so the worker snapshot skips them. A hungry pack (mean share < `PACK_HUNGRY`) whose leader has `meatEff > 0.25` picks its target with `_nearest(root, range, 1, preyMul)`.
+- **`_nearest(i, r, mode, preyMul = 1)`** gained `preyMul`, which scales the carnivore prey-size limit, and the `DISPLAY_SEEN` weighting in mode 1.
+- In `step`, a pack member that has not acted, has no cooldown and is below `PACK_JOIN` chases the pack's target (state 3, `ttl` 18) at `PACK_PACE` near the target, slowed by sick members, and attacks within 1 tile. `_pickForage` pulls a member's forage point toward its leader by `PACK_PULL` when that point is standable.
+- **`_attack`**: for a pack member, `_packHelp(i, p)` gathers the attacker plus pack mates within `PACK_HELP_R` of the prey into `_packBuf` (at most `PACK_MAX`). The kill chance is multiplied by the pack factor, herd safety is divided by `sqrt(n)`, and cover is reduced by the prey's `show`. A pack kill calls `_packFeed(i, p, n, mp)`: the meat energy plus a quarter of the prey's energy is split evenly; each member gains its share ×`meatEff` and the generalist meat factor, capped at `emax*gf` (except the killer), drinks `MEAT_WATER`, is exposed to an infected prey's strain with `PREY_K`, and takes a 4-tick cooldown. It counts `packKills` and `bigKills`. A solo kill keeps the old code path; both paths draw the RNG once.
+- **`_contact`**: a pack member counts as fully herding in the `HERD_CONTACT` term.
+- **`_chooseMate(i)`** replaces the `_nearest(i, range, 2)` mate search in `_reproduce`. It reservoir-samples up to `MATE_SAMPLES` adult same-species animals within `range` (sim RNG), then picks one by softmax over `show` with sharpness `MATE_SHARP*choosy`. If the pick's `show` is below `choosy*sp.mean[G_DISPLAY]`, the animal refuses: `cool = CHOOSY_WAIT`, `mateRefusals++`, it returns -2 and `_reproduce` returns without breeding. An infected mate exposes the chooser with `MATE_K`. With no candidates it returns -1, as before.
+- **`_showTrack(sp)`** runs from `refreshSpeciesMeans`. It appends `[tick, meanDisplay]` to `sp.showHist` every `sp.showStep` ticks (starting at `SHOW_EVERY`, doubling when the array passes `SHOW_HIST`), and logs "<name> evolved a showy display" (info) when the mean display passes `SHOWY_ON` with population at least 6 (`sp.showy`, reset below `SHOWY_OFF`).
+- `packKills`, `bigKills` and `mateRefusals` are cumulative pool counters; `_packBuf` and `_mateBuf` are preallocated `Int32Array`s.
 
 ---
 
@@ -1478,7 +1520,8 @@ Scratch arrays: `_evapK` (per-tile `EVAP*(0.5+temperature)`), `_mark` (Int32 rai
   - `stats.stages` is `{eggs, juveniles, adults, elders}`: `eggs` is `eggs.count`; each animal is a juvenile (`age < mature`), an elder (`age > ELDER_AGE*maxAge`) or an adult. `stats.eggs` is `{laid, hatched, eaten, failed}`, cumulative copies of the `EggPool` counters. Both are set in `_computeStats`.
   - `stats.birdNiches` (slice 2) maps each `BIRD_NICHES` key to its live bird count (fisher when `nic`, otherwise by role), and `stats.birdMigrants` copies `animals.birdMigrants`; both are set in `_computeStats`.
   - `stats.nests` (slice 3) is `{nests, dens, nesters, natal, nestEggs, eggsPerNest, raids, repelled, paraFailed}`, set by `_nestStats()` every 20 ticks: distinct nest and den tiles, animals holding a nest or den, natal young, live nest eggs, nest eggs per nest tile (2 decimals), and the cumulative `EggPool` raid, repel and parasite-failure counters.
-  - `history` holds `tick`, `plants` (rounded biomass), `bugs`, `sick`, `thirstDeaths`, `herds`, `territories`, `eggs` (`stats.stages.eggs`), `nests` and `dens` (`stats.nests`), `birdNiche.<niche>` per bird niche, one array per group key, and one per class and role as `<key>.<role>` (for example `mammal.carn`, `invert.herb`), which feed the class card role sparklines. When it passes 800 samples, it keeps every second sample.
+  - `stats.packs` (packs with 2+ members), `stats.packSize` (mean members per pack, 2 decimals), `stats.packKills`, `stats.bigKills`, `stats.mateRefusals` (cumulative pool counters) and `stats.packCls` (`{<group key>: [packs, members]}`) come from `_packStats()`, which runs every 20 ticks after `_herdStats` (v3 Part 1 slice 4).
+  - `history` holds `tick`, `plants` (rounded biomass), `bugs`, `sick`, `thirstDeaths`, `herds`, `territories`, `eggs` (`stats.stages.eggs`), `nests` and `dens` (`stats.nests`), `packs`, `packSize`, `birdNiche.<niche>` per bird niche, one array per group key, and one per class and role as `<key>.<role>` (for example `mammal.carn`, `invert.herb`), which feed the class card role sparklines. When it passes 800 samples, it keeps every second sample.
 
 ### Methods
 
@@ -1583,7 +1626,7 @@ The vector icons are drawn on a 32×32 box, in side view, facing right. The same
     | `bee` | pollinator (generalist) | Oval `body` with `dark` stripes and head, and fixed pale-blue wings (`#dbe8f0`). |
     | `butterfly` | pollinator (specialist) | Top view: four `body` wings with `light` spots and a `dark` body and antennae. |
 
-  - Utility: `dot` (the zoomed-out animal marker and the bug swarm particle), `ring` (the highlight ring), `plant`, `paw`, `bug` (the Bugs tab and stat card), `wave`, `virus` (the Disease tab, stat card and sick-animal marker) and `blight` (a spotted leaf). Both disease icons use fixed hex colours for every part, so they read the same whatever the species palette.
+  - Utility: `dot` (the zoomed-out animal marker and the bug swarm particle), `ring` (the highlight ring), `plant`, `paw`, `bug` (the Bugs tab and stat card), `wave`, `virus` (the Disease tab, stat card and sick-animal marker) and `blight` (a spotted leaf). Both disease icons use fixed hex colours for every part, so they read the same whatever the species palette. `crest` (v3 Part 1 slice 4) follows `virus`: a three-feather fan (`dark` outer feathers, a `body` centre feather, `light` highlights and a `dark` base), drawn on showy animals.
 
   - Ecosystem v2 additions (81 icons, appended after `blight` so the older atlas indices are unchanged):
     - Plant variants (two per plant category, chosen by `plantIcon`): `tallgrass` (seed plumes), `wheat` (fixed gold ears), `cattail` (one fixed brown spike), `bamboo` (jointed culms), `lichen` (ringed crusts on a fixed grey rock), `clover` (trefoil with a fixed pink bloom), `hedge` (clipped box), `heather` (fixed purple flower spikes), `pricklypear` (pads with fixed red fruit), `agave` (spiky rosette), `oak` (lumpy canopy with fixed acorns), `birch` (fixed white trunk with black marks), `pine` (flat tiered clouds on a fixed red trunk), `cypress` (narrow column), `coconut` (leaning trunk with fixed brown nuts), `fanpalm` (jagged fan leaves), `sealettuce` (ruffled sheets), `redalgae` (fork-lobed frond), `seagrass` (ribbon blades on fixed sand), `bladderkelp` (bulb with streaming blades), `diatom` (striated pennate shell and a small disc), `radiolarian` (spined lattice sphere), `appletree` (round canopy with fixed red apples), `cherrytree` (fixed pink blossom and a cherry pair), `blueberry` (sprig with fixed blue berries), `raspberry` (fixed red drupelet cone), `tulip` (cup bloom with fixed green leaves), `sunflower` (fixed yellow petals and brown disc on `body` leaves), `earthstar` (ball on a star of rays), `coralfungus` (branching fingers), `morel` (pitted cone on a fixed off-white stem), `chanterelle` (ridged funnel), `bracket` (shelves on a fixed bark trunk), `porcini` (bun cap on a fixed bulbous stem), `stinkhorn` (thimble cap on a fixed white stalk and volva) and `jellyfungus` (folded lobes on a fixed bark branch).
@@ -1856,6 +1899,7 @@ The CPU copy is `bugData` (`Uint8Array(n*4)`); `lastBugUpdate` holds the last re
      - Infected animals are colored through `_infected`. Above the dot zoom they also get a `virus` marker at `(x + 0.38*size, y - 0.5*size)`, scaled by `MARK_SCALE` (0.4), in its fixed colors.
      - Alpha drops to 0.35 for animals outside the highlighted species, for animals not carrying a highlighted strain, and, in the `disease` view, for healthy animals.
      - In the `water` view, non-aquatic animals (`dom !== 1`) with `water < THIRSTY` get a thirst marker: `THIRST_TINT` (245, 140, 110), or `DRY_TINT` (225, 30, 35) at `water <= 0`. At dot zoom the dot itself takes the tint (×`DRY_MARK` 1.35 size when dry); above it a `dot` marker is drawn at `(x - 0.38*size, y - 0.5*size)`, `MARK_SCALE` size (×`DRY_MARK` when dry), alpha 1. Animals that are not thirsty draw at 0.35 alpha.
+     - Packs and display (v3 Part 1 slice 4): at `zoom >= PACK_LINK_ZOOM` (4), `_pushPackLinks` draws `PACK_LINK_DOTS` (3) `dot` instances in `PACK_LINK_RGB` at `PACK_LINK_ALPHA` (0.55) between each in-view pack member and its leader (found by `uid` through `_packMap`), before the bodies. A healthy animal with `show > SHOW_BASE` (0.3) is colored through `_showy`, which raises saturation by `1 + SHOW_SAT*(show - SHOW_BASE)` and lifts brightness by `SHOW_LIFT*(show - SHOW_BASE)` into `_showTint`. At `zoom >= CREST_ZOOM` (6), animals with `show >= CREST_MIN` (0.45) get a `crest` drawn before the body at the head, size `size*CREST_SCALE*(0.6 + show)`, in the same tint. The renderer reads `pk`, `pn` and `show`, which are pool fields and so are in the snapshot.
      - Capacity is reserved for five instances per animal (shadow, ring, body, marker, home) plus one per egg.
 3. Draws all sprites in one `drawArraysInstanced` call (skipped when there are none).
 4. Weather overlay (`_drawWeather`): when `showWeather` is on, the view is not flat (no ramp view or `territory`), `eco.weather` is on and has storms. Each storm's position is extrapolated between weather updates as `x + vx*(tick % WEATHER_EVERY + alpha)`; the rain is faded over the last 40 ticks of life; `u_snow` is set when `effTemp` at the centre is below `SNOW_T`. With `hz = smooth(WX_ZOOM)` (0 at zoom 6, 1 at 18), clouds draw at `1 - 0.75*hz` and precipitation at `1 - 0.5*hz`. `u_time` wraps at `WX_TIME_WRAP` (600 s).
@@ -2076,7 +2120,7 @@ Other globals:
 - `TAB_GROUP` maps every species tab to its registry group: `plant`, `animal`, `bug`, and `disease` → `pathogen`. `speciesInTab` uses it, and on the Animals tab also skips species whose `sp.cls` differs from `app.cls` (when it is not -1).
 - `SWARM_NICHES`, `SWARM_NICHE_ICON` and `SWARM_LABEL` are UI fallbacks for the niche names, a representative icon per niche, and category labels. They are named apart from the sim's `BUG_*` globals so the app still loads without `bugs.js`.
 - `mixHex`, `paletteFor(hex)` and `NEUTRAL` build body/dark/light palettes for the UI icons.
-- `STAT_EXTRA` lists the Part 4 stat cards appended after the group cards as `{key, label, icon, color, wide, sub, noSpark}`: `thirstDeaths` (drop), `herds` (bison), `territories` (flag), `eggs` (egg, wide) and `stages` ("Life stages · animals", deer, wide, no sparkline). `STAT_EXTRA_KEYS` is their key set.
+- `STAT_EXTRA` lists the Part 4 stat cards appended after the group cards as `{key, label, icon, color, wide, sub, noSpark}`: `thirstDeaths` (drop), `herds` (bison), `territories` (flag), `eggs` (egg, wide), `stages` ("Life stages · animals", deer, wide, no sparkline) and, since v3 Part 1 slice 4, `packs` ("Hunting packs", wolf, with a sub-line). `STAT_EXTRA_KEYS` is their key set.
 - `WEATHER_LOOK` maps each weather badge kind (`off`, `clear`, `rain`, `snow`, `storms`, `drought`) to `[icon, color]`.
 
 ### Tick accumulator and interpolation (`frame`)
@@ -2123,6 +2167,7 @@ Save and load (see the Save section for the file format):
 - **Left:** the stat cards and sparklines (`buildStatCards` and `updateStats`), the population chart (plant biomass is shown ÷10 so it shares the axis), the biome legend, and the clock and performance readout (`updateClock`). The `#viewModes` buttons in `index.html` (Biomes, Plants, Heat, Moisture, Height, Soil, Nutrients, Litter, Bugs, Disease, Territory, Rainfall, Water) call `renderer.setMode(button.dataset.mode)`; Rainfall is mode `rain` and Water is mode `water`.
   - **Weather badge:** `#weatherBadge` (`.season.weather`, after the season badge) is refreshed by `updateWeatherBadge()` from `updateClock`. Its kind is `off` (no `eco.weather` or `options.weather === false`, badge dimmed with `.off`), `drought` (`stats.weather.drought`), `storms` (more than one storm, label "Storms ×N"), `rain` or `snow` (one storm, by whether `rainTiles > 0`) or `clear`. The icon is only redrawn when the kind changes. The title lists mean wetness (`stats.meanWet`), rain and snow tile counts, and the drought count.
   - **Switches:** `#optWeather` ("Weather", after Seasons, on by default) is passed as `options.weather` to `new Ecosystem` and sets `eco.options.weather` live. `#showWeather` ("Weather overlay", after Bug swarms) sets `renderer.showWeather`.
+  - v3 Part 1 slice 4 adds a **Hunting packs** card (`packs`, `wolf` icon): value `stats.packs`, sparkline `history.packs`, sub-line "mean size N · N kills · N big game" from `stats.packSize`, `packKills` and `bigKills`. In open class cards `packRow(row, k, s)` relabels the Predators role row to "Predators · N packs" from `stats.packCls[k]`, with a title giving the mean size and the all-pack kill and big-kill counts.
   - **Part 4 stat cards** (`STAT_EXTRA`, filled by `updateExtraStat(el, k, s, h)`): Thirst deaths (`stats.thirstDeaths`, sub-line "x% of land deaths" from `stats.thirstShare`), Herds (`stats.herds`), Territories (`stats.territories`), Eggs (the current count `stats.stages.eggs`, sub-line laid, hatched, eaten and failed from `stats.eggs`), Nests & dens (slice 3, `nest` icon, wide: nest tiles with the den count in a `<small>`, sub-line parents, young at home, eggs/nest, raided and raids repelled from `stats.nests`, sparkline `history.nests`) and Life stages (total animals with the elder share in a `<small>`, sub-line juveniles, adults and elders from `stats.stages`). Sparklines read `h[k] || []`, so a missing history key draws empty.
   - A wide **Bugs** stat card sits under Plant biomass. Its value is `stats.bugs` (rounded total density), its sparkline `history.bugs`, and its sub-line (`bugStatLine(stats)`, CSS `.stat-sub`) shows the occupied tiles per niche (`stats.pests`, `detritivores`, `parasites`, `pollinators`) next to niche icons, plus `pollination NN%` from `stats.pollination`. Missing fields read as 0, and the card is only marked `zero` when `eco.bugs` exists.
   - A wide **Disease** stat card (`data-key="disease"`, `virus` icon, "Disease · sick animals") follows. Its value is `stats.sick`, its sparkline `history.sick`, and its sub-line reads "N strains · N blighted tiles" from `stats.strains` and `stats.blight`.

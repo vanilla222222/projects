@@ -39,6 +39,14 @@ class Ecosystem {
 		this.history = { tick: [], plants: [], bugs: [], sick: [], thirstDeaths: [], herds: [], territories: [], eggs: [], nests: [], dens: [] };
 		this.stats.birdNiches = {};
 		this.stats.birdMigrants = 0;
+		this.stats.packs = 0;
+		this.stats.packSize = 0;
+		this.stats.packKills = 0;
+		this.stats.bigKills = 0;
+		this.stats.mateRefusals = 0;
+		this.stats.packCls = {};
+		this.history.packs = [];
+		this.history.packSize = [];
 		for (const k of BIRD_NICHES) {
 			this.stats.birdNiches[k] = 0;
 			this.history['birdNiche.' + k] = [];
@@ -147,6 +155,7 @@ class Ecosystem {
 			this.animals.refreshSpeciesMeans();
 			this._herdStats();
 			this._nestStats();
+			this._packStats();
 			if (this.bugs) this.bugs.refreshSpeciesMeans();
 			if (D) D.refreshSpeciesMeans();
 		}
@@ -271,6 +280,32 @@ class Ecosystem {
 			if (sp.group === 'animal' && sp.population >= HERD_STAT_POP && sp.mean[G_HERD] > HERD_MIN && sp.mean[G_TERR] <= TERR_MIN) n++;
 		}
 		this.stats.herds = n;
+	}
+
+	_packStats() {
+		const A = this.animals;
+		const s = this.stats;
+		let packs = 0;
+		let members = 0;
+		const by = {};
+		for (const g of STAT_GROUPS) by[g.key] = [0, 0];
+		for (let i = 0; i < A.count; i++) {
+			if (A.pn[i] > 1 && A.pk[i] === A.uid[i]) {
+				packs++;
+				members += A.pn[i];
+				const g = STAT_GROUPS[A.cls[i]];
+				if (g) {
+					by[g.key][0]++;
+					by[g.key][1] += A.pn[i];
+				}
+			}
+		}
+		s.packCls = by;
+		s.packs = packs;
+		s.packSize = packs ? Math.round((members / packs) * 100) / 100 : 0;
+		s.packKills = A.packKills;
+		s.bigKills = A.bigKills;
+		s.mateRefusals = A.mateRefusals;
 	}
 
 	_diseaseStats() {
@@ -443,6 +478,8 @@ class Ecosystem {
 		h.eggs.push(this.stats.stages.eggs);
 		h.nests.push(this.stats.nests.nests);
 		h.dens.push(this.stats.nests.dens);
+		h.packs.push(this.stats.packs);
+		h.packSize.push(this.stats.packSize);
 		for (const k of BIRD_NICHES) h['birdNiche.' + k].push(this.stats.birdNiches[k]);
 		for (const g of STAT_GROUPS) {
 			h[g.key].push(this.stats[g.key]);
