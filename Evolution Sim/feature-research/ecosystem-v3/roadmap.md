@@ -63,6 +63,7 @@ Gates for every part, measured on seeds 42, 7 and 123 over 3000 ticks, with long
 4. **More biomes**, for example mangrove, cloud forest, salt flat, steppe, tundra bog and coral reef, each with its own plant and animal pressures.
 5. **Biome adaptation:** stronger, biome-specific selection, so desert, tundra and rainforest lineages end up looking and behaving differently.
 6. **Performance:** profile and speed up the hot loops in animals, plants and bugs. Smaller save files come with this.
+7. **Compute (started early, alongside Part 1):** the sim runs in a Web Worker, plus an optional WebGPU fast mode for grid layers. See `compute/plan.md`.
 
 ## Part 3: God tools
 
