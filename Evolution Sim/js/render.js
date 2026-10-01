@@ -271,6 +271,10 @@ const BUG_CLOUD_FULL = 1.2;
 const CLOUD_FADE = [9, 14];
 const SHADOW_ZOOM = 6;
 const SHADOW_ALPHA = 0.45;
+const FLY_SHADOW_ALPHA = 0.22;
+const FLY_SHADOW = [0.45, 0.95, 0.6];
+const FLY_LIFT = 0.3;
+const TRAIL_K = 0.6;
 const WARP_ZOOM = [4, 6];
 const BUG_JITTER = [0.05, 0.03, 0.04, 0.12];
 const BUG_SPEED = [1.6, 0.7, 1.1, 2.6];
@@ -614,6 +618,8 @@ class WorldRenderer {
 				}
 				const bl = this.eco.plants.blight;
 				if (bl) for (let p = 0; p < bl.length; p++) if (bl[p]) src[p % n] += 0.5;
+				const vl = D.vectorLoad;
+				for (let p = 0; p < n; p++) if (vl[p] > 0) src[p] += vl[p] * TRAIL_K;
 			}
 			percentile99(src, field);
 			this.lastSoilUpdate = performance.now();
@@ -1246,6 +1252,7 @@ class WorldRenderer {
 		const wmode = this.mode === 'water';
 		const wat = A.water;
 		const dom = A.domain;
+		const fly = A.fly;
 		const dots = zoom < 3;
 		const dotIcon = ICON_INDEX.dot;
 		const ringIcon = ICON_INDEX.ring;
@@ -1262,7 +1269,8 @@ class WorldRenderer {
 				const y = A.py[i] + (A.y[i] - A.py[i]) * alpha;
 				if (x < x0 || y < y0 || x > x1 || y > y1) continue;
 				const size = Math.max(12 / zoom, 0.8 + 0.45 * A.mass[i]) * (gf ? gf[i] : 1);
-				n = this._put(n, x, y + size * 0.32, size * 0.9, shadowIcon, 1, SHADOW_ALPHA, 0, white);
+				if (dom[i] === 3 && fly[i]) n = this._put(n, x + size * FLY_SHADOW[0], y + size * FLY_SHADOW[1], size * FLY_SHADOW[2], shadowIcon, 1, FLY_SHADOW_ALPHA, 0, white);
+				else n = this._put(n, x, y + size * 0.32, size * 0.9, shadowIcon, 1, SHADOW_ALPHA, 0, white);
 			}
 		}
 		if (E && zoom >= EGG_ZOOM) n = this._pushEggs(n, E, x0, y0, x1, y1, hl);
@@ -1276,7 +1284,10 @@ class WorldRenderer {
 				n = this._put(n, x, y, s, ringIcon, 1, 0.9, 0, white);
 			}
 		}
-		for (let i = 0; i < A.count; i++) {
+		for (let k = 0, cnt = A.count; k < cnt * 2; k++) {
+			const i = k < cnt ? k : k - cnt;
+			const air = dom[i] === 3;
+			if (air !== k >= cnt) continue;
 			const x = A.px[i] + (A.x[i] - A.px[i]) * alpha;
 			const y = A.py[i] + (A.y[i] - A.py[i]) * alpha;
 			if (x < x0 || y < y0 || x > x1 || y > y1) continue;
@@ -1292,9 +1303,10 @@ class WorldRenderer {
 				n = th ? this._put(n, x, y, ds * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, a, 0, th) : this._put(n, x, y, ds, dotIcon, 1, a, co, ca);
 			} else {
 				const size = Math.max(12 / zoom, 0.8 + 0.45 * A.mass[i]) * g;
-				n = this._put(n, x, y - size * 0.1, size, icons[id], A.face[i], a, co, ca);
-				if (sick) n = this._put(n, x + size * 0.38, y - size * 0.5, size * MARK_SCALE, virusIcon, 1, a, 0, white);
-				if (th) n = this._put(n, x - size * 0.38, y - size * 0.5, size * MARK_SCALE * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, 1, 0, th);
+				const ly = air && fly[i] ? y - size * FLY_LIFT : y;
+				n = this._put(n, x, ly - size * 0.1, size, icons[id], A.face[i], a, co, ca);
+				if (sick) n = this._put(n, x + size * 0.38, ly - size * 0.5, size * MARK_SCALE, virusIcon, 1, a, 0, white);
+				if (th) n = this._put(n, x - size * 0.38, ly - size * 0.5, size * MARK_SCALE * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, 1, 0, th);
 			}
 		}
 		return n;

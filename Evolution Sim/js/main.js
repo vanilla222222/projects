@@ -791,7 +791,7 @@ function renderDetail() {
 	$('detailName').textContent = sp.name;
 	const patho = sp.group === 'pathogen';
 	const host = patho ? eco.registry.get(sp.hostId) : null;
-	$('detailSub').textContent = patho ? `${categoryLabel(sp)} · from ${host ? host.name : 'unknown host'}` : sp.group === 'bug' ? `${categoryLabel(sp)} swarm · ${bugNiche(sp)}` : `${categoryLabel(sp)} · ${sp.domain === 'water' ? 'aquatic' : sp.domain === 'amph' ? 'amphibious' : 'terrestrial'}`;
+	$('detailSub').textContent = patho ? `${categoryLabel(sp)} · from ${host ? host.name : 'unknown host'}` : sp.group === 'bug' ? `${categoryLabel(sp)} swarm · ${bugNiche(sp)}` : `${categoryLabel(sp)} · ${sp.domain === 'water' ? 'aquatic' : sp.domain === 'amph' ? 'amphibious' : sp.domain === 'air' ? 'flying' : 'terrestrial'}`;
 	const origin = sp.origin === 'founder' ? 'Founder' : sp.origin === 'migrated' ? 'Migrant' : sp.origin === 'emerged' ? 'Emerged' : sp.origin === 'jump' ? 'Host jump' : `Generation ${sp.generation}`;
 	$('detailBadges').innerHTML = [
 		roleTag(sp).replace('role-tag', 'badge role-tag'),
@@ -821,7 +821,7 @@ function renderDetail() {
 	if (!patho && sp.infected > 0) cells.push(['Infected', formatCount(sp.infected) + unit]);
 	if (sp.group === 'animal') {
 		cells.push(['Class', `${CLASS_NAME[sp.cls] || 'Animal'} · ${sp.role}`]);
-		cells.push(['Habitat', (sp.domain === 'water' ? 'Water' : sp.domain === 'amph' ? 'Amphibious' : 'Land') + (sp.mean[G_DRY] > 0.6 ? ' · dry-adapted' : '')]);
+		cells.push(['Habitat', (sp.domain === 'water' ? 'Water' : sp.domain === 'amph' ? 'Amphibious' : sp.domain === 'air' ? (sp.nic ? 'Air · fishes the shallows' : 'Air · perches on land') : 'Land') + (sp.mean[G_DRY] > 0.6 ? ' · dry-adapted' : '')]);
 		const c = stageCounts(sp.id);
 		cells.push(['Stages', `${formatCount(c[0])} juv · ${formatCount(c[1])} adult · ${formatCount(c[2])} elder · ${formatCount(c[3])} eggs`, true]);
 	}
@@ -1023,7 +1023,7 @@ function updateTooltip() {
 		const sick = st ? `<small class="tt-sick">sick: ${st.name}</small>` : '';
 		const cap = A.emax[a] * A.gf[a];
 		const water = A.domain[a] !== 1 && A.water ? ` · water ${pct(Math.min(1, Math.max(0, A.water[a])))}` : '';
-		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${states[A.state[a]]} · ${['juvenile', 'adult', 'elder'][animalStage(A, a)]} · age ${A.age[a]}</small><small>energy ${pct(cap > 0 ? Math.min(1, Math.max(0, A.energy[a] / cap)) : 0)}${water}</small>${sick}</div></div>`;
+		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${A.domain[a] === 3 ? (A.fly[a] ? 'flying · ' : 'perched · ') : ''}${states[A.state[a]]} · ${['juvenile', 'adult', 'elder'][animalStage(A, a)]} · age ${A.age[a]}</small><small>energy ${pct(cap > 0 ? Math.min(1, Math.max(0, A.energy[a] / cap)) : 0)}${water}</small>${sick}</div></div>`;
 	}
 	for (let slot = 0; slot < 2; slot++) {
 		const p = slot * P.n + t;
