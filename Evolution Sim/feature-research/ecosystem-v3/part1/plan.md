@@ -15,7 +15,7 @@ Source: roadmap Part 1, with the decisions below.
 
 ## Slice order
 
-**1 → 2 → 3 → 4 → 5.** All five slices edit `animals.js`, so they run in sequence.
+**1 → 2 → … → 10.** Every slice edits `animals.js`, so they run in sequence. Slice 6 needs slice 5's fat stores, slice 7 builds on packs and herds, and slice 10 comes last because it is the hardest to balance.
 
 | Slice | Content | Main files |
 | --- | --- | --- |
@@ -24,6 +24,11 @@ Source: roadmap Part 1, with the decisions below.
 | 3 | Nests and dens | `animals.js`, `eggs.js`, `render.js`, `main.js` |
 | 4 | Pack hunting and sexual selection | `animals.js`, `render.js`, `main.js` |
 | 5 | Nutrition and body condition | `animals.js`, `plants.js`, `bugs.js`, `eggs.js`, `disease.js`, `ecosystem.js`, `render.js`, `main.js` |
+| 6 | Hibernation, dormancy and torpor | `animals.js`, `plants.js`, `eggs.js`, `bugs.js`, `render.js`, `main.js` |
+| 7 | Social structure and communication | `animals.js`, `disease.js`, `ecosystem.js`, `render.js`, `main.js` |
+| 8 | Life history and aging | `animals.js`, `eggs.js`, `ecosystem.js`, `icons.js`, `render.js`, `main.js` |
+| 9 | Symbiosis and coevolution | `animals.js`, `plants.js`, `bugs.js`, `disease.js`, `render.js`, `main.js` |
+| 10 | Intelligence and learning | `animals.js`, `ecosystem.js`, `render.js`, `main.js` |
 
 ---
 
@@ -255,10 +260,174 @@ Source: roadmap Part 1, with the decisions below.
 - Calcium-related egg failures stay a minor cause of egg loss (under a quarter of losses).
 - **Balance gate** holds for all classes and their roles. Save/load stays byte-identical. Per-tick cost grows by at most about 25%.
 
+## Genome growth (slices 5–10)
+`AG` grows by one or two genes per slice. Each gene gets an `ANIMAL_WEIGHTS` entry and archetype values, and older saves of unreleased Part 1 code are not supported.
+
+| Slice | New genes |
+| --- | --- |
+| 5 | `G_APPETITE` |
+| 6 | `G_DORMANCY` |
+| 7 | `G_SOCIAL`, `G_ALARM` |
+| 8 | `G_BROOD` (many cheap young against few cared-for ones), `G_CARE` |
+| 9 | `G_MIMIC`, `G_TONGUE` (flower match for pollinators) |
+| 10 | `G_BRAIN` |
+
+## Slice 6: hibernation, dormancy and torpor
+
+### Animals
+- **Hibernation** (mammals): with `G_DORMANCY` high and fat stored (slice 5), an animal goes into its den or a sheltered tile when its tile turns cold. It stops moving and eating, and burns fat at `HIB_BURN`, a fraction of normal metabolism.
+- **Brumation** (reptiles and amphibians): the same, triggered by cold, using less fat because these classes are cold-blooded.
+- **Aestivation:** amphibians and snails go dormant in drought, when the tile is dry and water is far away.
+- **Torpor** (small birds and small mammals): a short nightly or cold-snap version at lower savings.
+- **Waking:** at the spring temperature, or when fat runs out (then it wakes starving). A dormant animal is easy prey if found (`DORMANT_CATCH`), but hidden in a den it is safe.
+
+### Plants, eggs and bugs
+- **Seed banks:** seeds can lie dormant in the soil through drought and winter and germinate when conditions return.
+- **Egg diapause:** eggs of some lineages pause through winter or drought instead of failing.
+- **Bug overwintering:** swarms drop to a dormant reserve in winter and come back in spring, not from zero.
+
+### Bugs and diseases (slice 6)
+- Dormant animals have lowered immunity, so a disease in a shared den (slice 3) can spread over winter (a white-nose-style outbreak).
+- Waking dormant hosts can restart a strain in spring.
+
+### Look and stats
+- Dormant animals are drawn curled and dimmed, with a small "z" at zoom ≥ 6.
+- A dormant count per class on the class cards, and "<Species> went into hibernation" events.
+
+### Slice 6 targets
+- In at least one cold-biome mammal lineage per seed, more than half of the adults hibernate in winter, and winter deaths in that lineage fall compared with slice 5.
+- The dormancy gene rises in cold-biome lineages and stays low in the tropics.
+- Bug numbers recover faster in spring than in slice 5.
+- **Balance gate**, save/load and performance gates hold.
+
+## Slice 7: social structure and communication
+
+### Alarm calls
+- An animal with `G_ALARM` that spots a predator raises an alarm. Nearby members of its own species within `ALARM_R` flee as if they had seen the predator.
+- Birds' alarms are heard by every class within range, so birds act as sentinels.
+- **Cost:** the caller is more likely to be spotted (`ALARM_SPOT`). Kin selection pays it off, because the callers' relatives survive.
+
+### Dominance
+- Inside herds and packs, rank comes from size, age and energy. High-ranked animals eat first at a kill and win mating contests.
+- Low-ranked adults may leave and found a new group (`DISPERSE`), which spreads lineages and helps speciation.
+- Packs from slice 4 use rank for the leader.
+
+### Sociality
+- `G_SOCIAL` sets group size preference: solitary, small groups or big colonies.
+- **Benefits:** more eyes (detection range grows with group size), shared alarms and better pack kills.
+- **Costs:** food competition and more disease contact.
+- **Colonies:** highly social birds and invertebrates nest together (seabird colonies, and ant-style land invertebrates) using slice 3 nests.
+
+### Bugs and diseases (slice 7)
+- Contact rate grows with group size, so large colonies risk big outbreaks.
+- Sick animals are shunned. Group members keep their distance, which slows spread but costs the sick animal its group protection.
+- Low-ranked animals are more stressed and more susceptible.
+
+### Look and stats
+- An alarm shows as a short ripple ring at zoom ≥ 4.
+- The species detail shows mean group size, sociality and alarm traits.
+- An Alarms count on the stat cards, and "<Species> formed a colony" events.
+
+### Slice 7 targets
+- Alarm-calling lineages lose a smaller share of their animals to predators than non-callers of the same class.
+- Mean group size varies between lineages (solitary and colonial lineages both present on each seed).
+- At least one dispersal-founded species split on each seed over 35 years.
+- **Balance gate**, save/load and performance gates hold.
+
+## Slice 8: life history and aging
+
+### Reproductive strategy
+- `G_BROOD` trades litter or clutch size against offspring quality: many small, weak young against a few big, strong ones (the r/K trade-off).
+- `G_CARE` sets how long parents feed and guard young after birth or hatching. Care costs parent energy and delays the next breeding.
+- Unstable, high-death habitats should favour many cheap young, and stable, crowded ones few cared-for young.
+
+### Life stages
+- **Metamorphosis:** amphibians hatch as tadpoles (water only, herbivore) and become frogs at maturity, changing domain and diet. Some invertebrates have a larval stage too.
+- **Juvenile diet:** young carnivores and omnivores eat bugs before they can hunt.
+- **Aging:** elders get slower and weaker, but post-breeding elders with high care help raise their relatives' young (a grandmother effect).
+
+### Learned routes (light version of slice 10)
+- Elder birds lead migration, and elder mammals lead herds to remembered water in drought. Groups that lose their elders do worse.
+
+### Bugs and diseases (slice 8)
+- Tadpoles and larvae have their own water-borne strains.
+- Juveniles and elders are more susceptible. Parental care lowers juvenile infection.
+
+### Look and stats
+- Tadpole and larva sprites, and a juvenile tint.
+- The species detail shows clutch size, care time and mean lifespan, with sparklines.
+- Stage counts (juveniles, adults, elders) per class.
+
+### Slice 8 targets
+- On each seed, clutch size and care time differ clearly between at least two lineages of the same class.
+- Amphibians spend a visible tadpole stage, and their numbers stay at or above slice 7.
+- Herds with elders have fewer drought deaths than herds without.
+- **Balance gate**, save/load and performance gates hold.
+
+## Slice 9: symbiosis and coevolution
+
+### Cleaners
+- Cleaner birds (oxpecker style) and cleaner fish or shrimp remove parasite load from large animals they visit, and get energy for it.
+- Hosts that tolerate cleaners carry fewer parasites, and cleaner lineages specialise on them.
+
+### Pollination and fruit
+- `G_TONGUE` on pollinator bugs matches a flower-depth trait on plants. Matched pairs pollinate better, so specialist pairs can coevolve.
+- **Seed dispersal:** fruit eaten by animals drops seeds where the animal goes. Trees spread along animal routes, and animal-dispersed plant species get a fruit bonus.
+
+### Mimicry
+- `G_MIMIC` makes a harmless animal look like a toxic one of its class. Predators that learned to avoid the toxic look (or are put off by it) avoid the mimic too.
+- If mimics outnumber the toxic model, the protection fades (Batesian balance).
+
+### Bugs and diseases (slice 9)
+- Cleaners lower parasite deaths, but can carry strains between hosts.
+- Pollinator collapse (a bug disease) now hurts fruiting plants and the animals that eat their fruit.
+
+### Look and stats
+- Cleaners drawn riding hosts at zoom ≥ 6, and a matching-colour mark on mimics.
+- A Symbioses card: counts of cleaner pairs, specialist pollinator pairs and mimics.
+- "<Species> became a cleaner of <Species>" events.
+
+### Slice 9 targets
+- At least one cleaner relationship and one specialist pollinator pair form on each seed.
+- Parasite deaths fall compared with slice 8.
+- Mimics persist without wiping out their models.
+- **Balance gate**, save/load and performance gates hold.
+
+## Slice 10: intelligence and learning
+
+### Brains
+- `G_BRAIN` costs energy every tick (`BRAIN_COST`) and slows growth, so it only pays where its benefits beat that.
+
+### Memory
+- Smart animals remember a few good places: water, food patches and safe dens (`MEM_SLOTS` per animal in typed arrays). In drought or winter they go straight there instead of searching.
+- They also remember danger: a place where they were attacked is avoided for a while.
+
+### Learning
+- Smart prey learn a predator species after surviving an attack and react to it sooner.
+- Smart predators learn which prey are toxic (works with slice 9 mimicry).
+- Young learn from parents during care (slice 8), so learned routes pass on.
+
+### Tool use
+- A few high-brain lineages gain a tool action: crows and otters crack shells or nuts for extra food from hard foods (urchins, crabs and seeds). It unlocks only at high `G_BRAIN`.
+
+### Bugs and diseases (slice 10)
+- Smart animals avoid sick group members and carcasses of diseased animals.
+- Learned avoidance of poison plants lowers poison deaths.
+
+### Look and stats
+- The species detail shows Brain and a "learns" badge. A tool-use icon appears when a lineage gains it.
+- "<Species> learned to use tools" events.
+
+### Slice 10 targets
+- Brain size rises in at least one lineage per seed, in a harsh or variable habitat, and stays low elsewhere.
+- High-brain lineages have fewer thirst deaths in drought than low-brain lineages of the same class.
+- Tool use appears in at least one lineage on at least one seed by year 35.
+- **Balance gate**, save/load and performance gates hold. The memory arrays fit in the save size budget.
+
 ---
 
 ## Tests and gates (every slice)
-- Headless runs on seeds 42, 7 and 123 for 3000 ticks, with ms/tick and the balance gate reported. Year-35 runs for slices 3, 4 and 5.
+- Headless runs on seeds 42, 7 and 123 for 3000 ticks, with ms/tick and the balance gate reported. Year-35 runs for slices 3 to 10.
 - Determinism: the save/load test stays byte-identical.
 - A browser run with no console errors: cycle every view, expand every class card, use the Animals tab chips, and save and load.
 - No new code comments (grep of the diff).
@@ -268,9 +437,14 @@ Source: roadmap Part 1, with the decisions below.
   - Slice 3: nests and dens zoomed in (`nests.png`).
   - Slice 4: a pack chasing a large grazer, and showy displays (`packs-display.png`).
   - Slice 5: fat and lean animals, and the body condition stat (`nutrition.png`).
+  - Slice 6: hibernating animals in a winter den (`dormancy.png`).
+  - Slice 7: an alarm ripple and a colony (`social.png`).
+  - Slice 8: tadpoles, and clutch and care traits (`life-history.png`).
+  - Slice 9: a cleaner on its host and the Symbioses card (`symbiosis.png`).
+  - Slice 10: a tool-using lineage and the Brain trait (`intelligence.png`).
 
 ## Docs
-- **`CODE_REFERENCE.md`:** animals (genes, classes, birds, nests, packs, display, nutrition), ecosystem (class stats and roles), main.js (class cards, Animals tab) and save (version 2).
+- **`CODE_REFERENCE.md`:** animals (genes, classes, birds, nests, packs, display, nutrition, dormancy, social, life history, symbiosis and intelligence), ecosystem (class stats and roles), main.js (class cards, Animals tab) and save (version 2).
 - **`complexities.md`:** animals.js stays at 9 or goes to 9.5; ecosystem.js and main.js notes updated.
 
 ## Out of scope (Part 2 or 3)

@@ -53,6 +53,27 @@ Gates for every part, measured on seeds 42, 7 and 123 over 3000 ticks, with long
 - **Overeating stores fat.** Fat carries animals through winter and migration, but overweight animals are slower, easier to catch and more disease-prone. An appetite gene lets lineages evolve to be lean or heavy.
 - **(+)** A body condition stat, and fat animals drawn wider.
 
+
+### 1.7 Hibernation, dormancy and torpor
+- Animals sleep through winter on their fat stores: mammals hibernate, reptiles and amphibians brumate, and snails and amphibians aestivate in drought.
+- Seeds, eggs and bug swarms can also wait out bad seasons.
+
+### 1.8 Social structure and communication
+- **Alarm calls:** prey warn their own kind, and birds act as sentinels for all.
+- **Dominance and dispersal:** ranks inside herds and packs decide who eats and mates first, and low-ranked animals leave to found new groups.
+- **Sociality gene:** sets how solitary or colonial a lineage is, trading safety against food competition and disease.
+
+### 1.9 Life history and aging
+- **Reproduction:** a trade-off between many cheap young and a few cared-for young, plus parental care time.
+- **Life stages:** tadpole-to-frog metamorphosis and larval stages, and young that eat bugs before they can hunt.
+- **Elders** lead migration and find water in drought.
+
+### 1.10 Symbiosis and coevolution
+- Cleaner birds and fish, matched pollinator and flower pairs, animal seed dispersal and mimicry of toxic species.
+
+### 1.11 Intelligence and learning
+- A costly brain gene. It gives memory of water, food and danger, learned predator avoidance, learning from parents, and tool use in a few lineages.
+
 ---
 
 ## Part 2: Balance and design
@@ -84,3 +105,4 @@ A tool palette on the map. Examples, to be finalised in the Part 3 plan:
 5. **Invertebrates are a full class:** urchins, octopuses, jellyfish, land snails and spiders join the crabs, and the class card also shows bug swarms.
 6. **Bugs and diseases tie into every slice:** host classes for strains, insect birds, bird-borne outbreaks, nest parasites, shared-den spread, and sick animals showing dull displays (honest signals).
 7. **Nutrition is slice 5:** food contents, nutrient needs, and fat from overeating, after nests and packs.
+8. **More behaviour slices 6–10:** hibernation and dormancy, social structure, life history, symbiosis, and intelligence, each as its own slice in that order.
