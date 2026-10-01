@@ -360,14 +360,19 @@ class Ecosystem {
 		const f = R.fish;
 		if (s.fish < 20 || f.herb === 0) tryIntro(pick(CLS_FISH, 'herb'), 'the waters were empty');
 		const prey = { land: m.herb + m.omni + R.reptile.herb + R.invert.herb, water: f.herb + f.omni + R.invert.herb };
+		const A = this.animals;
+		const live = new Int32Array(STAT_GROUPS.length * 4 * 8);
+		for (let i = 0; i < A.count; i++) live[(A.cls[i] * 4 + roleIndex(A.diet[i], A.scav[i])) * 8 + A.domain[i]]++;
+		const domIdx = (d) => (d === 'water' ? 1 : d === 'amph' ? 2 : 0);
 		const done = new Set(['mammal.herb.land', 'fish.herb.water']);
 		for (const a of ANIMAL_ARCHETYPES) {
 			const g = STAT_GROUPS.find((x) => x.cls === a.cls);
-			const role = ROLE_KEYS[roleIndex(a.g[G_DIET], a.g[G_SCAV])];
-			const key = g.key + '.' + role + '.' + (a.domain === 'water' ? 'water' : 'land');
+			const ri = roleIndex(a.g[G_DIET], a.g[G_SCAV]);
+			const role = ROLE_KEYS[ri];
+			const key = g.key + '.' + role + '.' + (a.domain || 'land');
 			if (done.has(key)) continue;
 			done.add(key);
-			if (R[g.key][role] > 0) continue;
+			if (live[(a.cls * 4 + ri) * 8 + domIdx(a.domain)] > 0) continue;
 			const food = role === 'herb' ? Infinity : prey[a.domain === 'water' ? 'water' : 'land'];
 			if (food < MIGRATE_PREY) continue;
 			const why = role === 'carn' ? 'unchecked prey drew predators' : role === 'scav' ? 'carcasses drew scavengers' : `the ${g.label.toLowerCase()} had vanished`;

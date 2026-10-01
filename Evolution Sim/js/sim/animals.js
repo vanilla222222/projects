@@ -199,7 +199,7 @@ const ANIMAL_ICON_VARIANTS = {
 	seal: ['seal', 'orca'],
 	crab: ['crab', 'lobster', 'hermitcrab', 'shrimp'],
 	urchin: ['urchin', 'seasnail', 'clam'],
-	octopus: ['octopus', 'squid', 'starfish'],
+	octopus: ['octopus', 'squid'],
 	jelly: ['jellyfish'],
 	snail: ['snail', 'slug'],
 	spider: ['spider', 'scorpion', 'centipede'],
