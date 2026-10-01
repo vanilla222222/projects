@@ -39,6 +39,7 @@ const STAT_EXTRA = [
 	{ key: 'herds', label: 'Herds', icon: 'bison', color: '#c9a86a' },
 	{ key: 'territories', label: 'Territories', icon: 'flag', color: '#e0906a' },
 	{ key: 'packs', label: 'Hunting packs', icon: 'wolf', color: '#d07a5a', sub: true },
+	{ key: 'alarms', label: 'Alarms', icon: 'owl', color: '#e8c25a', wide: true, sub: true },
 	{ key: 'eggs', label: 'Eggs', icon: 'egg', color: '#e6d3a3', wide: true, sub: true },
 	{ key: 'nests', label: 'Nests & dens', icon: 'nest', color: '#c79a5b', wide: true, sub: true },
 	{ key: 'nutrition', label: 'Body condition', icon: 'boar', color: '#d9a066', wide: true, sub: true },
@@ -480,6 +481,10 @@ function updateExtraStat(el, k, s, h) {
 		const dm = s.dormancy || {};
 		v.innerHTML = `${formatCount(dm.total || 0)}<small>dormant</small>`;
 		sub.innerHTML = `<span>${formatCount(dm.hib || 0)} hibernating</span><span>${formatCount(dm.brum || 0)} brumating</span><span>${formatCount(dm.aest || 0)} aestivating</span><span>${formatCount(dm.torpor || 0)} in torpor</span><span>${formatCount(dm.starved || 0)} woke starving</span><span>${formatCount(dm.eggDiapause || 0)} eggs in diapause</span><span>${formatCount(dm.bugReserve || 0)} bug reserves</span><span>${formatCount(dm.seedDormant || 0)} resting seed banks</span>`;
+	} else if (k === 'alarms') {
+		const so = s.social || {};
+		v.innerHTML = `${formatCount(so.alarms || 0)}<small>group ${(so.meanGroup || 0).toFixed(1)}</small>`;
+		sub.innerHTML = `<span>${formatCount(so.heard || 0)} heard</span><span>${formatCount(so.sentinel || 0)} sentinel</span><span>${formatCount(so.colonies || 0)} colonies</span><span>${formatCount(so.dispersals || 0)} dispersals</span><span>${formatCount(so.dispSplits || 0)} dispersal splits</span><span>${formatCount(so.solitary || 0)} solitary · ${formatCount(so.colonial || 0)} colonial species</span><span>${formatCount(so.rankBlocked || 0)} outranked</span>`;
 	} else if (k === 'eggs') {
 		const eg = s.eggs || {};
 		v.textContent = formatCount(st.eggs || 0);
@@ -751,6 +756,10 @@ function hueSwatches(list) {
 		.join('');
 }
 
+function socialWord(v) {
+	return (v < SOC_MIN ? 'Solitary' : v < COLONY_MIN ? 'Social' : 'Colonial') + ' · ' + pct(v);
+}
+
 const ANIMAL_TRAITS = [
 	['Body size', G_SIZE, (v) => pct(v)],
 	['Speed', G_SPEED, (v) => pct(v)],
@@ -772,6 +781,8 @@ const ANIMAL_TRAITS = [
 	['Choosiness', G_CHOOSY, (v) => pct(v)],
 	['Appetite', G_APPETITE, (v) => pct(v)],
 	['Dormancy', G_DORMANCY, (v) => pct(v)],
+	['Alarm calls', G_ALARM, (v) => (v > ALARM_MIN ? 'Caller · ' : '') + pct(v)],
+	['Sociality', G_SOCIAL, (v) => socialWord(v)],
 ];
 
 const DISEASE_TRAITS = [
@@ -867,6 +878,7 @@ function renderDetail() {
 		cells.push(['Habitat', (sp.domain === 'water' ? 'Water' : sp.domain === 'amph' ? 'Amphibious' : sp.domain === 'air' ? (sp.nic ? 'Air · fishes the shallows' : 'Air · perches on land') : 'Land') + (sp.mean[G_DRY] > 0.6 ? ' · dry-adapted' : '')]);
 		const c = stageCounts(sp.id);
 		if (sp.fat !== undefined) cells.push(['Body condition', `${conditionWord(sp.fat)} · fat ${pct(sp.fat)} · ${pct(Math.max(sp.protDef || 0, sp.minDef || 0))} deficient`, true]);
+		if (sp.grpMean !== undefined) cells.push(['Mean group size', `${sp.grpMean.toFixed(1)}${sp.colonies ? ` · ${formatCount(sp.colonies)} colonies` : ''}${sp.dispersal ? ' · founded by dispersers' : ''}`]);
 		cells.push(['Stages', `${formatCount(c[0])} juv · ${formatCount(c[1])} adult · ${formatCount(c[2])} elder · ${formatCount(c[3])} eggs`, true]);
 	}
 	$('detailGrid').innerHTML = cells.map(([k, v, wide]) => `<div${wide ? ' class="wide"' : ''}><small>${k}</small><strong>${v}</strong></div>`).join('');
@@ -1068,7 +1080,7 @@ function updateTooltip() {
 	const a = pickAnimal(wx, wy);
 	if (a >= 0) {
 		const sp = reg.get(A.sp[a]);
-		const states = ['resting', 'grazing', 'foraging', 'hunting', 'fleeing', 'seeking water', 'heading home', 'heading to den'];
+		const states = ['resting', 'grazing', 'foraging', 'hunting', 'fleeing', 'seeking water', 'heading home', 'heading to den', 'dispersing'];
 		const dormWords = ['', 'hibernating', 'brumating', 'aestivating', 'in torpor'];
 		const home = A.home && A.home[a] ? ` · ${['', 'has a nest', 'has a den', 'young of a den'][A.home[a]]}` : '';
 		const st = A.strain && A.strain[a] ? reg.get(A.strain[a]) : null;
