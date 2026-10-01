@@ -1,6 +1,17 @@
-const AG = 15;
-const G_SIZE = 0, G_SPEED = 1, G_SENSE = 2, G_DIET = 3, G_TEMP = 4, G_TOL = 5, G_FEC = 6, G_TOXR = 7, G_ARMOR = 8, G_RES = 9, G_SCAV = 10, G_TERR = 11, G_HERD = 12, G_COLD = 13, G_DRY = 14;
-const ANIMAL_WEIGHTS = [1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6];
+const AG = 19;
+const G_SIZE = 0, G_SPEED = 1, G_SENSE = 2, G_DIET = 3, G_TEMP = 4, G_TOL = 5, G_FEC = 6, G_TOXR = 7, G_ARMOR = 8, G_RES = 9, G_SCAV = 10, G_TERR = 11, G_HERD = 12, G_COLD = 13, G_DRY = 14, G_NEST = 15, G_PACK = 16, G_DISPLAY = 17, G_CHOOSY = 18;
+const ANIMAL_WEIGHTS = [1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6, 0.3, 0.3, 0.3, 0.3];
+const ANIMAL_CLASSES = ['fish', 'amphibian', 'reptile', 'mammal', 'bird', 'invertebrate'];
+const CLS_FISH = 0, CLS_AMPH = 1, CLS_REPT = 2, CLS_MAMM = 3, CLS_BIRD = 4, CLS_INVT = 5;
+const CLS_COLD = [[0, 1], [0.5, 1], [0.5, 1], [0, 0.45], [0, 0.45], [0.5, 1]];
+const ANIMAL_ROLES = ['herbivore', 'omnivore', 'carnivore', 'scavenger'];
+const CLASS_PLURAL = ['fish', 'amphibians', 'reptiles', 'mammals', 'birds', 'invertebrates'];
+const INVERT_SIZE = 0.45;
+const INVERT_BUG = 1.6;
+const INVERT_THIRST = 0.5;
+const LITTER_ENERGY = 2.4;
+const JELLY_SPEED = 0.3;
+const INVERT_PREY = 0.7;
 const ANIMAL_SPECIATION = 0.18;
 const ANIMAL_SPLIT_MIN_POP = 12;
 const GRID = 6;
@@ -98,78 +109,110 @@ const EGG_LURE = 4.5;
 const HERB_GRAZE = 1.15;
 
 const ANIMAL_ARCHETYPES = [
-	{ domain: 'land', n: 50, g: [0.12, 0.5, 0.45, 0.04, 0.5, 0.65, 0.85, 0.3, 0.08, 0.15, 0.1, 0.05, 0.6, 0.05, 0.3] },
-	{ domain: 'land', n: 40, g: [0.45, 0.62, 0.55, 0.05, 0.45, 0.5, 0.4, 0.35, 0.2, 0.15, 0.1, 0.05, 0.6, 0.05, 0.3] },
-	{ domain: 'land', n: 25, g: [0.85, 0.28, 0.35, 0.04, 0.55, 0.5, 0.15, 0.55, 0.7, 0.15, 0.1, 0.05, 0.6, 0.05, 0.3] },
-	{ domain: 'land', n: 35, g: [0.32, 0.72, 0.5, 0.06, 0.8, 0.45, 0.5, 0.6, 0.15, 0.15, 0.1, 0.05, 0.6, 0.05, 0.3] },
-	{ domain: 'land', n: 30, g: [0.55, 0.45, 0.45, 0.05, 0.18, 0.45, 0.35, 0.3, 0.35, 0.15, 0.1, 0.05, 0.6, 0.05, 0.3] },
-	{ domain: 'land', n: 24, g: [0.42, 0.42, 0.45, 0.45, 0.5, 0.55, 0.55, 0.4, 0.2, 0.15, 0.1, 0.35, 0.1, 0.05, 0.3] },
-	{ domain: 'land', n: 10, g: [0.3, 0.68, 0.7, 0.88, 0.55, 0.6, 0.55, 0.3, 0.1, 0.15, 0.1, 0.5, 0.1, 0.05, 0.3] },
-	{ domain: 'land', n: 8, g: [0.62, 0.72, 0.75, 0.92, 0.42, 0.6, 0.35, 0.3, 0.25, 0.15, 0.1, 0.5, 0.1, 0.05, 0.3] },
-	{ domain: 'water', n: 60, g: [0.18, 0.5, 0.45, 0.04, 0.5, 0.6, 0.85, 0.3, 0.1, 0.15, 0.1, 0.05, 0.5, 0.05, 0.3] },
-	{ domain: 'water', n: 40, g: [0.32, 0.45, 0.45, 0.06, 0.78, 0.45, 0.6, 0.4, 0.3, 0.15, 0.1, 0.05, 0.5, 0.05, 0.3] },
-	{ domain: 'water', n: 24, g: [0.35, 0.3, 0.4, 0.45, 0.45, 0.55, 0.6, 0.3, 0.5, 0.15, 0.65, 0.35, 0.1, 0.05, 0.3] },
-	{ domain: 'water', n: 8, g: [0.4, 0.66, 0.65, 0.85, 0.35, 0.6, 0.5, 0.3, 0.15, 0.15, 0.1, 0.5, 0.1, 0.05, 0.3] },
-	{ domain: 'water', n: 6, g: [0.75, 0.72, 0.75, 0.92, 0.6, 0.55, 0.3, 0.3, 0.3, 0.15, 0.1, 0.5, 0.1, 0.05, 0.3] },
-	{ domain: 'land', role: 'scavenger', n: 18, g: [0.38, 0.45, 0.6, 0.45, 0.5, 0.65, 0.6, 0.6, 0.2, 0.3, 0.8, 0.35, 0.1, 0.05, 0.3] },
-	{ domain: 'amph', role: 'amph', n: 16, g: [0.14, 0.5, 0.45, 0.45, 0.55, 0.55, 0.8, 0.5, 0.05, 0.15, 0.1, 0.2, 0.2, 0.6, 0.2] },
-	{ domain: 'amph', role: 'amph', n: 16, g: [0.12, 0.4, 0.4, 0.08, 0.5, 0.55, 0.8, 0.4, 0.05, 0.15, 0.1, 0.05, 0.3, 0.6, 0.2] },
-	{ domain: 'amph', role: 'amph', n: 16, g: [0.25, 0.5, 0.5, 0.8, 0.5, 0.55, 0.6, 0.4, 0.1, 0.15, 0.1, 0.35, 0.1, 0.6, 0.2] },
-	{ domain: 'amph', role: 'amph', n: 16, g: [0.85, 0.4, 0.5, 0.9, 0.7, 0.5, 0.4, 0.5, 0.7, 0.15, 0.3, 0.5, 0.1, 0.8, 0.4] },
-	{ domain: 'land', role: 'reptile', n: 16, g: [0.2, 0.6, 0.5, 0.45, 0.8, 0.5, 0.6, 0.5, 0.15, 0.15, 0.1, 0.4, 0.1, 0.85, 0.8] },
-	{ domain: 'land', role: 'reptile', n: 16, g: [0.55, 0.15, 0.35, 0.05, 0.78, 0.5, 0.4, 0.5, 0.9, 0.15, 0.1, 0.05, 0.1, 0.85, 0.8] },
-	{ domain: 'land', role: 'reptile', n: 16, g: [0.55, 0.5, 0.55, 0.85, 0.8, 0.5, 0.4, 0.4, 0.3, 0.15, 0.3, 0.5, 0.1, 0.8, 0.7] },
-	{ domain: 'land', role: 'reptile', n: 16, g: [0.3, 0.45, 0.85, 0.9, 0.78, 0.5, 0.5, 0.5, 0.1, 0.15, 0.1, 0.5, 0.1, 0.85, 0.7] },
+	{ domain: 'land', cls: CLS_MAMM, n: 50, g: [0.12, 0.5, 0.45, 0.04, 0.5, 0.65, 0.85, 0.3, 0.08, 0.15, 0.1, 0.05, 0.6, 0.05, 0.3, 0.3, 0.15, 0.3, 0.3] },
+	{ domain: 'land', cls: CLS_MAMM, n: 40, g: [0.45, 0.62, 0.55, 0.05, 0.45, 0.5, 0.4, 0.35, 0.2, 0.15, 0.1, 0.05, 0.6, 0.05, 0.3, 0.3, 0.15, 0.3, 0.3] },
+	{ domain: 'land', cls: CLS_MAMM, n: 25, g: [0.85, 0.28, 0.35, 0.04, 0.55, 0.5, 0.15, 0.55, 0.7, 0.15, 0.1, 0.05, 0.6, 0.05, 0.3, 0.3, 0.15, 0.3, 0.3] },
+	{ domain: 'land', cls: CLS_MAMM, n: 35, g: [0.32, 0.72, 0.5, 0.06, 0.8, 0.45, 0.5, 0.6, 0.15, 0.15, 0.1, 0.05, 0.6, 0.05, 0.3, 0.3, 0.15, 0.3, 0.3] },
+	{ domain: 'land', cls: CLS_MAMM, n: 30, g: [0.55, 0.45, 0.45, 0.05, 0.18, 0.45, 0.35, 0.3, 0.35, 0.15, 0.1, 0.05, 0.6, 0.05, 0.3, 0.3, 0.15, 0.3, 0.3] },
+	{ domain: 'land', cls: CLS_MAMM, n: 24, g: [0.42, 0.42, 0.45, 0.45, 0.5, 0.55, 0.55, 0.4, 0.2, 0.15, 0.1, 0.35, 0.1, 0.05, 0.3, 0.3, 0.15, 0.3, 0.3] },
+	{ domain: 'land', cls: CLS_MAMM, n: 10, g: [0.3, 0.68, 0.7, 0.88, 0.55, 0.6, 0.55, 0.3, 0.1, 0.15, 0.1, 0.5, 0.1, 0.05, 0.3, 0.3, 0.4, 0.3, 0.3] },
+	{ domain: 'land', cls: CLS_MAMM, n: 8, g: [0.62, 0.72, 0.75, 0.92, 0.42, 0.6, 0.35, 0.3, 0.25, 0.15, 0.1, 0.5, 0.1, 0.05, 0.3, 0.3, 0.4, 0.3, 0.3] },
+	{ domain: 'water', cls: CLS_FISH, n: 60, g: [0.18, 0.5, 0.45, 0.04, 0.5, 0.6, 0.85, 0.3, 0.1, 0.15, 0.1, 0.05, 0.5, 0.05, 0.3, 0.3, 0.15, 0.3, 0.3] },
+	{ domain: 'water', cls: CLS_FISH, n: 40, g: [0.32, 0.45, 0.45, 0.06, 0.78, 0.45, 0.6, 0.4, 0.3, 0.15, 0.1, 0.05, 0.5, 0.05, 0.3, 0.3, 0.15, 0.3, 0.3] },
+	{ domain: 'water', cls: CLS_INVT, n: 24, g: [0.35, 0.3, 0.4, 0.45, 0.45, 0.55, 0.6, 0.3, 0.5, 0.15, 0.65, 0.35, 0.1, 0.5, 0.3, 0.3, 0.15, 0.3, 0.3] },
+	{ domain: 'water', cls: CLS_FISH, n: 8, g: [0.4, 0.66, 0.65, 0.85, 0.35, 0.6, 0.5, 0.3, 0.15, 0.15, 0.1, 0.5, 0.1, 0.05, 0.3, 0.3, 0.4, 0.3, 0.3] },
+	{ domain: 'water', cls: CLS_FISH, n: 6, g: [0.75, 0.72, 0.75, 0.92, 0.6, 0.55, 0.3, 0.3, 0.3, 0.15, 0.1, 0.5, 0.1, 0.05, 0.3, 0.3, 0.4, 0.3, 0.3] },
+	{ domain: 'land', cls: CLS_MAMM, n: 18, g: [0.38, 0.45, 0.6, 0.45, 0.5, 0.65, 0.6, 0.6, 0.2, 0.3, 0.8, 0.35, 0.1, 0.05, 0.3, 0.3, 0.15, 0.3, 0.3] },
+	{ domain: 'amph', cls: CLS_AMPH, n: 16, g: [0.14, 0.5, 0.45, 0.45, 0.55, 0.55, 0.8, 0.5, 0.05, 0.15, 0.1, 0.2, 0.2, 0.6, 0.2, 0.3, 0.15, 0.3, 0.3] },
+	{ domain: 'amph', cls: CLS_AMPH, n: 16, g: [0.12, 0.4, 0.4, 0.08, 0.5, 0.55, 0.8, 0.4, 0.05, 0.15, 0.1, 0.05, 0.3, 0.6, 0.2, 0.3, 0.15, 0.3, 0.3] },
+	{ domain: 'amph', cls: CLS_AMPH, n: 16, g: [0.25, 0.5, 0.5, 0.8, 0.5, 0.55, 0.6, 0.4, 0.1, 0.15, 0.1, 0.35, 0.1, 0.6, 0.2, 0.3, 0.4, 0.3, 0.3] },
+	{ domain: 'amph', cls: CLS_REPT, n: 16, g: [0.85, 0.4, 0.5, 0.9, 0.7, 0.5, 0.4, 0.5, 0.7, 0.15, 0.3, 0.5, 0.1, 0.8, 0.4, 0.3, 0.4, 0.3, 0.3] },
+	{ domain: 'land', cls: CLS_REPT, n: 16, g: [0.2, 0.6, 0.5, 0.45, 0.8, 0.5, 0.6, 0.5, 0.15, 0.15, 0.1, 0.4, 0.1, 0.85, 0.8, 0.3, 0.15, 0.3, 0.3] },
+	{ domain: 'land', cls: CLS_REPT, n: 16, g: [0.55, 0.15, 0.35, 0.05, 0.78, 0.5, 0.4, 0.5, 0.9, 0.15, 0.1, 0.05, 0.1, 0.85, 0.8, 0.3, 0.15, 0.3, 0.3] },
+	{ domain: 'land', cls: CLS_REPT, n: 16, g: [0.55, 0.5, 0.55, 0.85, 0.8, 0.5, 0.4, 0.4, 0.3, 0.15, 0.3, 0.5, 0.1, 0.8, 0.7, 0.3, 0.4, 0.3, 0.3] },
+	{ domain: 'land', cls: CLS_REPT, n: 16, g: [0.3, 0.45, 0.85, 0.9, 0.78, 0.5, 0.5, 0.5, 0.1, 0.15, 0.1, 0.5, 0.1, 0.85, 0.7, 0.3, 0.4, 0.3, 0.3] },
+	{ domain: 'water', cls: CLS_REPT, n: 14, g: [0.5, 0.35, 0.4, 0.06, 0.65, 0.5, 0.45, 0.4, 0.75, 0.15, 0.1, 0.05, 0.3, 0.7, 0.3, 0.3, 0.1, 0.3, 0.3] },
+	{ domain: 'water', cls: CLS_MAMM, n: 8, g: [0.55, 0.65, 0.65, 0.8, 0.3, 0.6, 0.35, 0.3, 0.2, 0.15, 0.1, 0.3, 0.4, 0.1, 0.3, 0.3, 0.5, 0.3, 0.3] },
+	{ domain: 'water', cls: CLS_INVT, n: 30, g: [0.15, 0.15, 0.3, 0.06, 0.5, 0.6, 0.85, 0.5, 0.8, 0.15, 0.2, 0.05, 0.2, 0.8, 0.3, 0.1, 0.1, 0.2, 0.2] },
+	{ domain: 'water', cls: CLS_INVT, n: 12, g: [0.28, 0.7, 0.75, 0.8, 0.5, 0.55, 0.7, 0.5, 0.05, 0.15, 0.2, 0.2, 0.1, 0.8, 0.3, 0.2, 0.1, 0.4, 0.3] },
+	{ domain: 'water', cls: CLS_INVT, n: 14, g: [0.2, 0.15, 0.3, 0.75, 0.55, 0.6, 0.85, 0.7, 0.05, 0.15, 0.1, 0.05, 0.3, 0.85, 0.3, 0.05, 0.1, 0.2, 0.2] },
+	{ domain: 'land', cls: CLS_INVT, n: 30, g: [0.06, 0.12, 0.3, 0.08, 0.5, 0.6, 0.9, 0.6, 0.6, 0.15, 0.1, 0.05, 0.1, 0.8, 0.2, 0.1, 0.1, 0.2, 0.2] },
+	{ domain: 'land', cls: CLS_INVT, n: 24, g: [0.08, 0.55, 0.6, 0.8, 0.6, 0.55, 0.85, 0.6, 0.3, 0.15, 0.1, 0.2, 0.05, 0.8, 0.6, 0.2, 0.05, 0.2, 0.2] },
 ];
 
 function dietRole(diet) {
 	return diet < 0.33 ? 'herbivore' : diet < 0.66 ? 'omnivore' : 'carnivore';
 }
 
-function animalCategory(g, domain) {
+function roleIndex(diet, scav) {
+	return diet >= 0.33 && scav > 0.5 ? 3 : diet < 0.33 ? 0 : diet < 0.66 ? 1 : 2;
+}
+
+function animalCategory(g, domain, cls = CLS_MAMM) {
 	const size = g[G_SIZE];
 	const role = dietRole(g[G_DIET]);
-	if (domain === 'water') {
-		if (role === 'herbivore') return size < 0.45 ? 'fish' : 'turtle';
-		if (role === 'omnivore') return 'crab';
+	const scav = role !== 'herbivore' && g[G_SCAV] > 0.5;
+	if (cls === CLS_INVT) {
+		if (domain === 'water') {
+			if (role === 'herbivore') return 'urchin';
+			if (role === 'omnivore' || scav) return 'crab';
+			return g[G_SPEED] < JELLY_SPEED ? 'jelly' : 'octopus';
+		}
+		return g[G_DIET] < 0.5 ? 'snail' : 'spider';
+	}
+	if (cls === CLS_FISH) {
+		if (role === 'herbivore') return size < 0.45 ? 'fish' : 'ray';
+		if (role === 'omnivore') return 'reeffish';
 		return size < 0.58 ? 'pike' : 'shark';
 	}
-	if (domain === 'amph') {
+	if (cls === CLS_AMPH) {
 		if (role === 'herbivore') return 'newt';
 		if (role === 'omnivore') return 'frog';
-		return size < 0.55 ? 'salamander' : 'crocodile';
+		return 'salamander';
 	}
-	if (g[G_COLD] > 0.5) {
+	if (cls === CLS_REPT) {
+		if (domain === 'water') return role === 'herbivore' ? 'seaturtle' : 'crocodile';
+		if (domain === 'amph') return role === 'herbivore' ? 'seaturtle' : 'crocodile';
 		if (role === 'herbivore') return 'tortoise';
 		if (role === 'omnivore') return 'lizard';
 		return size < 0.45 ? 'snake' : 'monitor';
 	}
-	if (role !== 'herbivore' && g[G_SCAV] > 0.5) return 'carrion';
+	if (domain === 'water') return role === 'herbivore' ? 'manatee' : 'seal';
+	if (scav) return 'carrion';
 	if (role === 'herbivore') return size < 0.28 ? 'rabbit' : size < 0.66 ? 'deer' : 'bison';
 	if (role === 'omnivore') return size < 0.35 ? 'mouse' : size < 0.72 ? 'boar' : 'bear';
 	return size < 0.42 ? 'fox' : size < 0.74 ? 'wolf' : 'bigcat';
 }
 
 const ANIMAL_ICON_VARIANTS = {
-	fox: ['fox', 'weasel', 'owl'],
-	wolf: ['wolf', 'coyote', 'hawk'],
+	fox: ['fox', 'weasel'],
+	wolf: ['wolf', 'coyote'],
 	bigcat: ['bigcat', 'tiger'],
-	rabbit: ['rabbit', 'chicken', 'squirrel'],
+	rabbit: ['rabbit', 'squirrel'],
 	deer: ['deer', 'horse', 'goat', 'kangaroo'],
 	bison: ['bison', 'cow', 'elephant', 'moose'],
-	mouse: ['mouse', 'chicken', 'crow'],
+	mouse: ['mouse', 'squirrel'],
 	boar: ['boar', 'raccoon', 'badger', 'monkey'],
 	bear: ['bear', 'ape'],
-	crab: ['crab', 'lobster', 'hermitcrab', 'starfish'],
-	carrion: ['vulture', 'hyena', 'jackal'],
-	fish: ['fish', 'shrimp', 'eel', 'puffer', 'seahorse'],
-	turtle: ['turtle', 'ray', 'manatee'],
-	pike: ['pike', 'barracuda', 'squid', 'seal'],
-	shark: ['shark', 'orca', 'swordfish'],
+	carrion: ['hyena', 'jackal'],
+	manatee: ['manatee'],
+	seal: ['seal', 'orca'],
+	crab: ['crab', 'lobster', 'hermitcrab', 'shrimp'],
+	urchin: ['urchin', 'seasnail', 'clam'],
+	octopus: ['octopus', 'squid', 'starfish'],
+	jelly: ['jellyfish'],
+	snail: ['snail', 'slug'],
+	spider: ['spider', 'scorpion', 'centipede'],
+	fish: ['fish', 'eel', 'seahorse'],
+	ray: ['ray'],
+	reeffish: ['puffer', 'fish'],
+	pike: ['pike', 'barracuda'],
+	shark: ['shark', 'swordfish'],
 	frog: ['frog', 'toad'],
 	newt: ['newt', 'axolotl'],
 	salamander: ['salamander', 'axolotl'],
 	crocodile: ['crocodile'],
+	seaturtle: ['turtle'],
 	tortoise: ['tortoise', 'turtle'],
 	lizard: ['lizard'],
 	snake: ['snake'],
@@ -193,10 +236,19 @@ const ANIMAL_CATEGORY_LABEL = {
 	bigcat: 'Apex predator',
 	carrion: 'Scavenger',
 	fish: 'Grazing fish',
-	turtle: 'Large grazer (aquatic)',
+	ray: 'Large grazing fish',
+	reeffish: 'Omnivorous fish',
 	crab: 'Sea scavenger',
 	pike: 'Predatory fish',
 	shark: 'Apex predator (aquatic)',
+	manatee: 'Sea mammal',
+	seal: 'Marine predator',
+	urchin: 'Sea grazer',
+	octopus: 'Cephalopod',
+	jelly: 'Drifting stinger',
+	snail: 'Snail',
+	spider: 'Arachnid hunter',
+	seaturtle: 'Sea turtle',
 	newt: 'Newt',
 	frog: 'Frog',
 	salamander: 'Salamander',
@@ -213,7 +265,7 @@ const ANIMAL_FIELDS_F = [
 	'litter', 'pT', 'tol', 'toxR', 'armor', 'diet', 'bite', 'carrionEff', 'scav',
 	'terr', 'herd', 'cold', 'dry', 'hr', 'water', 'hx', 'hy', 'gf', 'ef',
 ];
-const ANIMAL_FIELDS_I = ['sp', 'uid', 'cool', 'ttl', 'face', 'domain', 'alive', 'state', 'seedSp', 'seedTtl', 'confuse', 'strain', 'itime', 'immune', 'imTime', 'natImm', 'parent'];
+const ANIMAL_FIELDS_I = ['sp', 'uid', 'cool', 'ttl', 'face', 'domain', 'cls', 'alive', 'state', 'seedSp', 'seedTtl', 'confuse', 'strain', 'itime', 'immune', 'imTime', 'natImm', 'parent'];
 
 class AnimalPool {
 	constructor(world, plants, registry, rng, log) {
@@ -376,6 +428,7 @@ class AnimalPool {
 		this.ttl[i] = 0;
 		this.face[i] = this.rng.next() < 0.5 ? 1 : -1;
 		this.domain[i] = sp.domain === 'water' ? 1 : sp.domain === 'amph' ? 2 : 0;
+		this.cls[i] = sp.cls;
 		this.water[i] = 1;
 		this.hx[i] = -1;
 		this.hy[i] = -1;
@@ -394,7 +447,7 @@ class AnimalPool {
 		return i;
 	}
 
-	newSpecies(genome, gOff, domain, parent, tick, origin) {
+	newSpecies(genome, gOff, domain, parent, tick, origin, cls = parent ? parent.cls : CLS_MAMM) {
 		const g = genome.subarray(gOff, gOff + AG);
 		const r = this.rng;
 		const diet = g[G_DIET];
@@ -412,9 +465,10 @@ class AnimalPool {
 			},
 			hsl
 		);
-		sp.category = animalCategory(g, domain);
+		sp.cls = cls;
+		sp.category = animalCategory(g, domain, cls);
 		sp.icon = animalIcon(sp.category, sp.id);
-		sp.role = dietRole(diet);
+		sp.role = ANIMAL_ROLES[roleIndex(diet, g[G_SCAV])];
 		sp.aversion = parent && parent.aversion ? parent.aversion.map((a) => ({ hue: a.hue, strength: a.strength })) : [];
 		return sp;
 	}
@@ -448,6 +502,7 @@ class AnimalPool {
 		const mass = this.mass[i] * this.gf[i];
 		const sp = this.sp[i];
 		const role = diet < 0.33 ? 0 : diet < 0.66 ? 1 : 2;
+		const preyK = this.cls[i] === CLS_INVT ? INVERT_PREY : diet > 0.66 ? 1.8 : 0.6;
 		let best = -1;
 		let bestD = r * r;
 		for (let gy = r0; gy <= r1; gy++) {
@@ -461,7 +516,7 @@ class AnimalPool {
 					if (mode === 0) {
 						if (this.diet[j] - diet < 0.3 || this.meatEff[j] < 0.3 || mass > this.mass[j] * this.gf[j] * 1.8) continue;
 					} else if (mode === 1) {
-						if (diet - this.diet[j] < 0.3 || this.mass[j] * this.gf[j] > mass * (diet > 0.66 ? 1.8 : 0.6)) continue;
+						if (diet - this.diet[j] < 0.3 || this.mass[j] * this.gf[j] > mass * preyK) continue;
 					} else if (mode === 3) {
 						const dd = this.diet[j];
 						if ((dd < 0.33 ? 0 : dd < 0.66 ? 1 : 2) !== role) continue;
@@ -722,6 +777,7 @@ class AnimalPool {
 	_bugEff(i) {
 		if (this.mass[i] >= BUG_MASS) return 0;
 		const diet = this.diet[i];
+		if (this.cls[i] === CLS_INVT && !this.domain[i] && diet >= 0.5) return INVERT_BUG;
 		if (diet >= BUG_DIET_MAX) return 0;
 		const v = diet <= BUG_DIET_PEAK ? 1 - (BUG_DIET_PEAK - diet) * 1.4 : 1 - (diet - BUG_DIET_PEAK) / (BUG_DIET_MAX - BUG_DIET_PEAK);
 		return v > 0 ? v : 0;
@@ -884,10 +940,11 @@ class AnimalPool {
 			let thirsty = false;
 			if (Wx && dom !== 1) {
 				const amph = dom === 2;
+				const inv = this.cls[i] === CLS_INVT;
 				let wv = this.water[i];
-				if (Wx.waterDist[tile] <= 1 || Wx.wet[tile] > (amph ? AMPH_DRINK_WET : DRINK_WET)) wv = 1;
+				if (Wx.waterDist[tile] <= 1 || Wx.wet[tile] > (amph || inv ? AMPH_DRINK_WET : DRINK_WET)) wv = 1;
 				else {
-					wv -= THIRST * (1 - 0.6 * this.dry[i]) * (0.6 + temp[tile] + seasonT + droughtK) * (this.cold[i] > 0.5 ? 0.6 : 1) * (amph ? AMPH_DRY : 1);
+					wv -= THIRST * (1 - 0.6 * this.dry[i]) * (0.6 + temp[tile] + seasonT + droughtK) * (this.cold[i] > 0.5 ? 0.6 : 1) * (amph ? AMPH_DRY : 1) * (inv ? INVERT_THIRST : 1);
 					if (wv < 0) wv = 0;
 				}
 				this.water[i] = wv;
@@ -1054,6 +1111,7 @@ class AnimalPool {
 					bugs.parasiteDrain += drain;
 				}
 			}
+			if (this.cls[i] === CLS_INVT && !dom && dg < 0.5 && this.energy[i] < emax && soil.litter[tile] > 0) this.energy[i] += soil.consumeLitter(tile, bite) * LITTER_ENERGY * plantK;
 			if (carrion[tile] > 0 && this.energy[i] < emax * 0.92) {
 				const ce = soil.consumeCarrion(tile, bite * (1 + SCAV_BITE * this.scav[i])) * MEAT_ENERGY * this.carrionEff[i] * meatK;
 				this.energy[i] += ce;
@@ -1165,7 +1223,7 @@ class AnimalPool {
 		const mp = this.mass[p] * this.gf[p];
 		const massRatio = (this.mass[i] * this.gf[i]) / mp;
 		const sizeF = Math.min(1.2, Math.max(0.15, massRatio * 0.85));
-		const speedF = this.spd[i] / (this.spd[i] + this.spd[p] * 0.7);
+		const speedF = this.cls[i] === CLS_INVT && this.domain[i] === 1 && this.genome[i * AG + G_SPEED] < JELLY_SPEED ? 0.5 : this.spd[i] / (this.spd[i] + this.spd[p] * 0.7);
 		const cover = this.domain[p] === 1
 			? 0.3 + Math.min(0.3, this.plants.cover(tile) * 0.6)
 			: Math.min(0.45, this.plants.cover(tile) * 0.5);
@@ -1297,6 +1355,7 @@ class AnimalPool {
 			if (this.count >= this.maxAnimals + 1500) break;
 			for (let k = 0; k < AG; k++) childG[k] = rng.next() < 0.5 ? this.genome[oi + k] : this.genome[om + k];
 			mutateGenes(childG, 0, childG, 0, AG, rng, 0.25, 0.04);
+			this._clampClass(childG, this.cls[i]);
 			if (this.immune[i]) childG[G_RES] = Math.min(1, childG[G_RES] + RES_NUDGE);
 			const ang = rng.next() * Math.PI * 2;
 			const cx = this.x[i] + Math.cos(ang) * 0.8;
@@ -1339,6 +1398,13 @@ class AnimalPool {
 		}
 		this.energy[i] -= spent * 1.1 * (1 - TERR_REPRO * this._homeK(i));
 		this.cool[i] = Math.round(35 + 55 * this.genome[oi + G_SIZE] - 10 * this.genome[oi + G_FEC]);
+	}
+
+	_clampClass(g, cls) {
+		const r = CLS_COLD[cls];
+		const c = g[G_COLD];
+		g[G_COLD] = c < r[0] ? r[0] : c > r[1] ? r[1] : c;
+		if (cls === CLS_INVT && g[G_SIZE] > INVERT_SIZE) g[G_SIZE] = INVERT_SIZE;
 	}
 
 	_compact() {
@@ -1388,9 +1454,9 @@ class AnimalPool {
 			const sp = this.registry.get(id);
 			for (let k = 0; k < AG; k++) sp.mean[k] = s[k] / s[AG];
 			sp.infected = s[AG + 1];
-			sp.category = animalCategory(sp.mean, sp.domain);
+			sp.category = animalCategory(sp.mean, sp.domain, sp.cls);
 			sp.icon = animalIcon(sp.category, sp.id);
-			sp.role = dietRole(sp.mean[G_DIET]);
+			sp.role = ANIMAL_ROLES[roleIndex(sp.mean[G_DIET], sp.mean[G_SCAV])];
 			const av = sp.aversion;
 			if (av && av.length) {
 				for (const a of av) a.strength *= 1 - AVERSION_DECAY;

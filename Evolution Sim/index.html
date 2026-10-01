@@ -182,6 +182,7 @@
 							<dl>
 								<dt>Map</dt><dd>Scroll to zoom, drag to pan, click a creature, plant or swarm to inspect it</dd>
 								<dt>Species</dt><dd>Click a row, lineage entry or event to open its details</dd>
+								<dt>Classes</dt><dd>Click a class card (Fish, Amphibians, Reptiles, Mammals, Birds, Invertebrates) to see its herbivores, omnivores, predators and scavengers; the chips on the Animals tab filter the list by class</dd>
 								<dt>Family tree</dt><dd>Opens from a species' details; scroll zooms, drag pans, click a bar to select</dd>
 								<dt>Speed</dt><dd>¼× to Max; Max runs as fast as the machine allows</dd>
 								<dt>Seed</dt><dd>The same seed and size always grow the same world</dd>
@@ -219,14 +220,14 @@
 		<aside class="panel right">
 			<nav class="tabs" id="tabs">
 				<button data-tab="plant" class="active" title="Plants"><span class="tab-icon" data-icon="plant"></span><span class="tab-label">Plants</span><em id="countPlant">0</em></button>
-				<button data-tab="land" title="Land"><span class="tab-icon" data-icon="paw"></span><span class="tab-label">Land</span><em id="countLand">0</em></button>
-				<button data-tab="water" title="Water"><span class="tab-icon" data-icon="wave"></span><span class="tab-label">Water</span><em id="countWater">0</em></button>
+				<button data-tab="animal" title="Animals"><span class="tab-icon" data-icon="paw"></span><span class="tab-label">Animals</span><em id="countAnimal">0</em></button>
 				<button data-tab="bug" title="Bugs"><span class="tab-icon" data-icon="bug"></span><span class="tab-label">Bugs</span><em id="countBug">0</em></button>
 				<button data-tab="disease" title="Disease"><span class="tab-icon" data-icon="virus"></span><span class="tab-label">Disease</span><em id="countDisease">0</em></button>
 				<button data-tab="events" title="Events"><span class="tab-icon" data-icon="events"></span><span class="tab-label">Events</span></button>
 			</nav>
 
 			<div class="tab-body" id="speciesView">
+				<div class="class-chips" id="classChips" hidden></div>
 				<div class="list-tools">
 					<label class="switch small"><input type="checkbox" id="showExtinct" /><span></span>Show extinct</label>
 					<select id="sortSelect">

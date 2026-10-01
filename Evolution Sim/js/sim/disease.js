@@ -13,6 +13,8 @@ const RANGE_SPAN = 0.25;
 const JUMP_K = 0.02;
 const JUMP_K_P = 0.001;
 const JUMP_SPAN = 0.15;
+const JUMP_CLS_K = 0.5;
+const INVERT_EMERGE = 0.15;
 const JUMP_LOG_GAP = 1200;
 const PATHO_MUT = 0.015;
 const PATHO_MUT_RATE = 0.5;
@@ -126,6 +128,8 @@ class DiseaseLayer {
 		sp.hostKind = kind;
 		sp.hostId = hostId;
 		sp.hostGenome = Float32Array.from(hostGenome);
+		const hs = kind === 'animal' ? this.registry.get(hostId) : null;
+		sp.hostCls = hs && hs.cls !== undefined ? hs.cls : -1;
 		sp.category = kind === 'plant' ? 'blight' : 'virus';
 		sp.icon = kind === 'plant' ? BLIGHT_ICONS[sp.id % BLIGHT_ICONS.length] : STRAIN_ICONS[sp.id % STRAIN_ICONS.length];
 		sp.infected = 0;
@@ -145,13 +149,19 @@ class DiseaseLayer {
 		this._jumped = false;
 		if (hostId === st.hostId) return 1;
 		const h = this.registry.get(hostId);
+		const cross = st.hostCls >= 0 && h.cls !== undefined && h.cls !== st.hostCls;
+		if (cross && (h.cls === CLS_INVT || st.hostCls === CLS_INVT)) return 0;
 		const d = geneDistance(h.genome, 0, st.hostGenome, 0, weights);
 		const r = this.sRange[st.id];
-		if (d <= r) return 1;
+		if (d <= r) {
+			if (!cross) return 1;
+			this._jumped = true;
+			return JUMP_CLS_K;
+		}
 		const c = 1 - (d - r) / JUMP_SPAN;
 		if (!(c > 0)) return 0;
 		this._jumped = true;
-		return jk * c;
+		return jk * c * (cross ? JUMP_CLS_K : 1);
 	}
 
 	_transmit(st, hostId, tick) {
@@ -192,7 +202,8 @@ class DiseaseLayer {
 		const last = this._jumpLogged.get(key);
 		if (last === undefined || tick - last >= JUMP_LOG_GAP) {
 			this._jumpLogged.set(key, tick);
-			this.log.push(tick, 'outbreak', `${st.name} jumped to ${h.name} as ${sp.name}`, sp.id);
+			const from = st.hostCls >= 0 && sp.hostCls >= 0 && st.hostCls !== sp.hostCls ? ` — from ${CLASS_PLURAL[st.hostCls]} to ${CLASS_PLURAL[sp.hostCls]}` : '';
+			this.log.push(tick, 'outbreak', `${st.name} jumped to ${h.name} as ${sp.name}${from}`, sp.id);
 		}
 		return sp;
 	}
@@ -413,10 +424,11 @@ class DiseaseLayer {
 		const isP = kind === 'plant';
 		const group = isP ? 'plant' : 'animal';
 		const min = isP ? EMERGE_MIN_P : EMERGE_MIN_A;
+		const weight = (sp) => sp.population * (sp.cls === CLS_INVT ? INVERT_EMERGE : 1);
 		let total = 0;
 		for (const id of R.living) {
 			const sp = R.get(id);
-			if (sp.group === group && !(sp.kind | 0) && sp.population >= min) total += sp.population;
+			if (sp.group === group && !(sp.kind | 0) && sp.population >= min) total += weight(sp);
 		}
 		if (!total) return null;
 		let r = rng.next() * total;
@@ -425,7 +437,7 @@ class DiseaseLayer {
 			const sp = R.get(id);
 			if (sp.group !== group || sp.kind | 0 || sp.population < min) continue;
 			host = sp;
-			r -= sp.population;
+			r -= weight(sp);
 			if (r < 0) break;
 		}
 		const c = this._child;

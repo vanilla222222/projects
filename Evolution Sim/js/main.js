@@ -2,20 +2,20 @@ const $ = (id) => document.getElementById(id);
 
 const GROUP_COLORS = {
 	plants: '#7cc46e',
-	landHerb: '#b5de8c',
-	landOmni: '#e7b95c',
-	landCarn: '#ec7a67',
-	landScav: '#b98a62',
-	waterHerb: '#6fc3e6',
-	waterOmni: '#c9a0e8',
-	waterCarn: '#5c86e6',
+	fish: '#5fb6e6',
 	amphib: '#2fae94',
 	reptile: '#b8901c',
+	mammal: '#e7a25c',
+	bird: '#c98ee8',
+	invert: '#ec7a8f',
 	bugs: '#ee7fb4',
 	disease: '#a8c04a',
 };
 
-const TAB_GROUP = { plant: 'plant', bug: 'bug', disease: 'pathogen' };
+const TAB_GROUP = { plant: 'plant', animal: 'animal', bug: 'bug', disease: 'pathogen' };
+const ROLE_COLORS = { herb: '#9fd98b', omni: '#e7b95c', carn: '#ec8a79', scav: '#c9a27a' };
+const CLASS_NAME = ['Fish', 'Amphibian', 'Reptile', 'Mammal', 'Bird', 'Invertebrate'];
+const OPEN_KEY = 'evo.openClasses';
 
 const SWARM_NICHES = ['pest', 'detritivore', 'parasite', 'pollinator'];
 const SWARM_NICHE_ICON = ['aphid', 'beetle', 'tick', 'bee'];
@@ -91,6 +91,8 @@ const app = {
 	theme: 'auto',
 	tree: null,
 	overlay: null,
+	cls: -1,
+	openClasses: new Set(),
 	busy: false,
 	messageTimer: 0,
 };
@@ -325,11 +327,14 @@ function buildStatCards() {
 		<canvas data-spark></canvas>
 	</div>`;
 	for (const g of STAT_GROUPS) {
-		html += `<div class="stat" data-key="${g.key}" title="${g.domain === 2 ? 'Amphibious' : g.domain ? 'Water' : 'Land'} ${g.role}s">
+		const rows = ROLE_KEYS.map((r, k) => `<button class="role-row" data-role="${r}" hidden><i style="background:${ROLE_COLORS[r]}"></i><span>${ROLE_LABELS[k]}</span><b data-n>0</b><canvas data-rspark></canvas></button>`).join('');
+		const swarm = g.key === 'invert' ? `<button class="role-row" data-role="swarms" title="Bug swarms (open the Bugs tab)"><i style="background:${GROUP_COLORS.bugs}"></i><span>Swarms</span><b data-n>0</b><canvas data-rspark></canvas></button>` : '';
+		html += `<div class="stat cls" data-key="${g.key}" role="button" tabindex="0" aria-expanded="false" title="${g.label}: click for the role breakdown">
 			${iconSVG(g.icon, paletteFor(GROUP_COLORS[g.key]), 28)}
-			<div class="stat-label">${g.label}</div>
+			<div class="stat-label">${g.label}<span class="chev"></span></div>
 			<div class="stat-value" data-v>0</div>
 			<canvas data-spark></canvas>
+			<div class="stat-roles" data-roles>${rows}${swarm}</div>
 		</div>`;
 	}
 	for (const x of STAT_EXTRA) {
@@ -342,6 +347,34 @@ function buildStatCards() {
 		</div>`;
 	}
 	wrap.innerHTML = html;
+	try {
+		const open = JSON.parse(storeGet(OPEN_KEY) || '[]');
+		if (Array.isArray(open)) app.openClasses = new Set(open);
+	} catch (e) {}
+	for (const el of wrap.querySelectorAll('.stat.cls')) setClassOpen(el, app.openClasses.has(el.dataset.key));
+	const toggle = (e) => {
+		const row = e.target.closest('.role-row');
+		if (row && row.dataset.role === 'swarms') {
+			if (!$('detail').hidden) closeDetail();
+			setTab('bug');
+			return;
+		}
+		const el = e.target.closest('.stat.cls');
+		if (!el) return;
+		const on = !el.classList.contains('open');
+		setClassOpen(el, on);
+		if (on) app.openClasses.add(el.dataset.key);
+		else app.openClasses.delete(el.dataset.key);
+		storeSet(OPEN_KEY, JSON.stringify([...app.openClasses]));
+		if (app.eco) updateStats();
+	};
+	wrap.addEventListener('click', toggle);
+	wrap.addEventListener('keydown', (e) => {
+		if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.stat.cls')) {
+			e.preventDefault();
+			toggle(e);
+		}
+	});
 
 	const legend = $('popLegend');
 	legend.innerHTML = [['plants', 'Plants ÷10'], ...STAT_GROUPS.map((g) => [g.key, g.label]), ['bugs', 'Bugs']]
@@ -358,6 +391,28 @@ function buildStatCards() {
 	});
 }
 
+function setClassOpen(el, on) {
+	el.classList.toggle('open', on);
+	el.classList.toggle('wide', on);
+	el.setAttribute('aria-expanded', String(on));
+}
+
+function updateClassRoles(el, k, s, h) {
+	const roles = (s.roles && s.roles[k]) || {};
+	for (const row of el.querySelectorAll('.role-row')) {
+		const r = row.dataset.role;
+		const swarm = r === 'swarms';
+		const v = swarm ? s.bugs || 0 : roles[r] || 0;
+		const hist = swarm ? h.bugs || [] : h[k + '.' + r] || [];
+		const seen = swarm ? !!app.eco.bugs : v > 0 || hist.some((x) => x > 0);
+		row.hidden = !seen;
+		if (!seen) continue;
+		row.classList.toggle('zero', v === 0);
+		row.querySelector('[data-n]').textContent = formatCount(v);
+		drawSparkline(row.querySelector('[data-rspark]'), hist, swarm ? GROUP_COLORS.bugs : ROLE_COLORS[r]);
+	}
+}
+
 function updateStats() {
 	const eco = app.eco;
 	const s = eco.stats;
@@ -370,11 +425,16 @@ function updateStats() {
 			continue;
 		}
 		const v = (k === 'plants' ? s.plantBiomass : dis ? s.sick : s[k]) || 0;
+		if (el.classList.contains('cls')) {
+			el.hidden = v === 0 && !(h[k] || []).some((x) => x > 0);
+			if (el.hidden) continue;
+		}
 		el.querySelector('[data-v]').textContent = formatCount(v);
 		el.classList.toggle('zero', k !== 'plants' && v === 0 && (k !== 'bugs' || !!eco.bugs));
 		if (k === 'bugs') el.querySelector('[data-sub]').innerHTML = bugStatLine(s);
 		else if (dis) el.querySelector('[data-sub]').textContent = `${formatCount(s.strains || 0)} strains · ${formatCount(s.blight || 0)} blighted tiles`;
 		drawSparkline(el.querySelector('[data-spark]'), k === 'plants' ? h.plants : dis ? h.sick || [] : h[k] || [], GROUP_COLORS[k]);
+		if (el.classList.contains('open')) updateClassRoles(el, k, s, h);
 	}
 	drawPopChart();
 }
@@ -458,7 +518,8 @@ function speciesInTab(tab) {
 	const out = [];
 	for (const sp of app.eco.registry.all.values()) {
 		const g = TAB_GROUP[tab];
-		if (g ? sp.group !== g : sp.group !== 'animal' || (sp.domain === 'water' ? 'water' : 'land') !== tab) continue;
+		if (!g || sp.group !== g) continue;
+		if (tab === 'animal' && app.cls >= 0 && sp.cls !== app.cls) continue;
 		out.push(sp);
 	}
 	return out;
@@ -502,25 +563,30 @@ function yearOf(tick) {
 
 function updateTabCounts() {
 	let p = 0;
-	let l = 0;
-	let w = 0;
+	let a = 0;
 	let b = 0;
 	let d = 0;
+	const byCls = new Array(CLASS_NAME.length).fill(0);
 	const reg = app.eco.registry;
 	for (const id of reg.living) {
 		const sp = reg.get(id);
 		if (sp.group === 'plant') p++;
 		else if (sp.group === 'bug') b++;
 		else if (sp.group === 'pathogen') d++;
-		else if (sp.domain === 'water') w++;
-		else l++;
+		else {
+			a++;
+			if (sp.cls >= 0) byCls[sp.cls]++;
+		}
 	}
 	$('countPlant').textContent = formatCount(p);
-	$('countLand').textContent = formatCount(l);
-	$('countWater').textContent = formatCount(w);
+	$('countAnimal').textContent = formatCount(a);
 	$('countBug').textContent = formatCount(b);
 	$('countDisease').textContent = formatCount(d);
-	$('speciesTotals').textContent = `${p + l + w + b} living species${d ? ` · ${d} strains` : ''}`;
+	$('speciesTotals').textContent = `${p + a + b} living species${d ? ` · ${d} strains` : ''}`;
+	for (const c of $('classChips').children) {
+		const k = Number(c.dataset.cls);
+		c.querySelector('em').textContent = formatCount(k < 0 ? a : byCls[k]);
+	}
 }
 
 function sparkSVG(sp, alive) {
@@ -695,7 +761,10 @@ function selectSpecies(id) {
 	app.renderer.vegDirty = true;
 	if (sp.group === 'pathogen') setTab('disease', false);
 	else if (sp.group === 'plant' || sp.group === 'bug') setTab(sp.group, false);
-	else setTab(sp.domain === 'water' ? 'water' : 'land', false);
+	else {
+		if (app.cls >= 0 && sp.cls !== app.cls) setClassFilter(-1, false);
+		setTab('animal', false);
+	}
 	$('detail').hidden = false;
 	$('detail').scrollTop = 0;
 	renderDetail();
@@ -751,6 +820,7 @@ function renderDetail() {
 	if (resK >= 0 && sp.mean && resK < sp.mean.length) cells.push(['Avg resistance', pct(sp.mean[resK])]);
 	if (!patho && sp.infected > 0) cells.push(['Infected', formatCount(sp.infected) + unit]);
 	if (sp.group === 'animal') {
+		cells.push(['Class', `${CLASS_NAME[sp.cls] || 'Animal'} · ${sp.role}`]);
 		cells.push(['Habitat', (sp.domain === 'water' ? 'Water' : sp.domain === 'amph' ? 'Amphibious' : 'Land') + (sp.mean[G_DRY] > 0.6 ? ' · dry-adapted' : '')]);
 		const c = stageCounts(sp.id);
 		cells.push(['Stages', `${formatCount(c[0])} juv · ${formatCount(c[1])} adult · ${formatCount(c[2])} elder · ${formatCount(c[3])} eggs`, true]);
@@ -818,8 +888,22 @@ function animalStage(A, i) {
 	return A.age[i] < A.mature[i] ? 0 : A.age[i] > ELDER_AGE * A.maxAge[i] ? 2 : 1;
 }
 
+function setClassFilter(cls, render = true) {
+	app.cls = cls;
+	for (const c of $('classChips').children) c.classList.toggle('active', Number(c.dataset.cls) === cls);
+	if (render) renderSpeciesList();
+}
+
+function buildClassChips() {
+	const pal = (k) => paletteFor(k < 0 ? '#a9bcb0' : GROUP_COLORS[STAT_GROUPS[k].key]);
+	$('classChips').innerHTML = [-1, ...STAT_GROUPS.map((g) => g.cls)]
+		.map((k) => `<button data-cls="${k}" class="${k === app.cls ? 'active' : ''}" title="${k < 0 ? 'All animals' : STAT_GROUPS[k].label}">${k < 0 ? '' : iconSVG(STAT_GROUPS[k].icon, pal(k), 14)}<span>${k < 0 ? 'All' : STAT_GROUPS[k].label}</span><em>0</em></button>`)
+		.join('');
+}
+
 function setTab(tab, render = true) {
 	app.tab = tab;
+	$('classChips').hidden = tab !== 'animal';
 	for (const b of $('tabs').children) b.classList.toggle('active', b.dataset.tab === tab);
 	$('speciesView').hidden = tab === 'events';
 	$('eventsView').hidden = tab !== 'events';
@@ -1107,6 +1191,10 @@ function setupControls() {
 	});
 	for (const el of document.querySelectorAll('.tab-icon')) el.innerHTML = iconSVG(el.dataset.icon, NEUTRAL, 14);
 	$('showExtinct').onchange = renderSpeciesList;
+	$('classChips').addEventListener('click', (e) => {
+		const b = e.target.closest('button');
+		if (b) setClassFilter(Number(b.dataset.cls));
+	});
 	$('sortSelect').onchange = renderSpeciesList;
 	$('eventFilter').addEventListener('click', (e) => {
 		const b = e.target.closest('button');
@@ -1235,6 +1323,7 @@ function init() {
 	$('seedInput').value = Number.isFinite(fromHash) ? fromHash : Math.floor(Math.random() * 1e6);
 	setTheme(storeGet(THEME_KEY));
 	buildStatCards();
+	buildClassChips();
 	buildBiomeLegend();
 	setupControls();
 	try {

@@ -1,4 +1,4 @@
-const SAVE_VERSION = 1;
+const SAVE_VERSION = 2;
 const SAVE_MAGIC = 0x534f5645;
 const SAVE_ALIGN = 8;
 

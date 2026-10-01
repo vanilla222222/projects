@@ -1,14 +1,14 @@
 const STAT_GROUPS = [
-	{ key: 'landHerb', label: 'Grazers', domain: 0, role: 'herbivore', icon: 'deer' },
-	{ key: 'landOmni', label: 'Omnivores', domain: 0, role: 'omnivore', icon: 'boar' },
-	{ key: 'landCarn', label: 'Predators', domain: 0, role: 'carnivore', icon: 'wolf' },
-	{ key: 'landScav', label: 'Scavengers', domain: 0, role: 'scavenger', icon: 'vulture' },
-	{ key: 'waterHerb', label: 'Fish', domain: 1, role: 'herbivore', icon: 'fish' },
-	{ key: 'waterOmni', label: 'Sea scavengers', domain: 1, role: 'omnivore', icon: 'crab' },
-	{ key: 'waterCarn', label: 'Sea predators', domain: 1, role: 'carnivore', icon: 'shark' },
-	{ key: 'amphib', label: 'Amphibians', domain: 2, role: 'amphibian', icon: 'frog' },
-	{ key: 'reptile', label: 'Reptiles', domain: 0, role: 'reptile', icon: 'lizard' },
+	{ key: 'fish', cls: 0, label: 'Fish', icon: 'fish' },
+	{ key: 'amphib', cls: 1, label: 'Amphibians', icon: 'frog' },
+	{ key: 'reptile', cls: 2, label: 'Reptiles', icon: 'lizard' },
+	{ key: 'mammal', cls: 3, label: 'Mammals', icon: 'deer' },
+	{ key: 'bird', cls: 4, label: 'Birds', icon: 'owl' },
+	{ key: 'invert', cls: 5, label: 'Invertebrates', icon: 'crab' },
 ];
+const ROLE_KEYS = ['herb', 'omni', 'carn', 'scav'];
+const ROLE_LABELS = ['Herbivores', 'Omnivores', 'Predators', 'Scavengers'];
+const MIGRATE_PREY = 150;
 
 const HISTORY_EVERY = 5;
 const MERGE_EVERY = 120;
@@ -36,9 +36,12 @@ class Ecosystem {
 		this.animals = new AnimalPool(world, this.plants, this.registry, new FastRng(seed + 777), this.log);
 		this.stats = { plants: 0, plantBiomass: 0, fruit: 0, fungi: 0, flowers: 0, litter: 0, carrion: 0, bugs: 0, pests: 0, detritivores: 0, parasites: 0, pollinators: 0, pollination: 0, sick: 0, blight: 0, strains: 0, diseaseDeaths: 0, diseaseShare: 0, worstOutbreak: null, swarms: 0, carrionShare: 0, weather: { storms: 0, rainTiles: 0, snowTiles: 0, drought: false, droughts: 0 }, meanWet: 0, thirstDeaths: 0, thirstShare: 0, herds: 0, territories: 0, deaths: {}, stages: { eggs: 0, juveniles: 0, adults: 0, elders: 0 }, eggs: { laid: 0, hatched: 0, eaten: 0, failed: 0 }, plantStages: { seedTiles: 0, seedlings: 0, mature: 0, old: 0, oldDeaths: 0, germinated: 0, grazedSeedlings: 0 } };
 		this.history = { tick: [], plants: [], bugs: [], sick: [], thirstDeaths: [], herds: [], territories: [], eggs: [] };
+		this.stats.roles = {};
 		for (const g of STAT_GROUPS) {
 			this.stats[g.key] = 0;
+			this.stats.roles[g.key] = { herb: 0, omni: 0, carn: 0, scav: 0 };
 			this.history[g.key] = [];
+			for (const r of ROLE_KEYS) this.history[g.key + '.' + r] = [];
 		}
 		this.stats.speciations = this.registry.speciations;
 		this.historyStep = HISTORY_EVERY;
@@ -77,7 +80,7 @@ class Ecosystem {
 		const domain = arch.domain === 'water' ? 1 : arch.domain === 'amph' ? 2 : 0;
 		const wd = domain === 2 && this.weather ? this.weather.waterDist : null;
 		const genome = Float32Array.from(arch.g);
-		const sp = A.newSpecies(genome, 0, arch.domain, null, this.tick, origin);
+		const sp = A.newSpecies(genome, 0, arch.domain, null, this.tick, origin, arch.cls);
 		const total = count || arch.n;
 		let placed = 0;
 		let clusters = 0;
@@ -102,7 +105,7 @@ class Ecosystem {
 			}
 			clusters++;
 		}
-		sp.category = animalCategory(genome, arch.domain);
+		sp.category = animalCategory(genome, arch.domain, arch.cls);
 		return placed > 0 ? sp : null;
 	}
 
@@ -153,7 +156,9 @@ class Ecosystem {
 	_computeStats() {
 		const A = this.animals;
 		const s = this.stats;
-		for (const g of STAT_GROUPS) s[g.key] = 0;
+		const keys = STAT_GROUPS.map((g) => g.key);
+		const roles = keys.map((k) => s.roles[k]);
+		const counts = new Int32Array(keys.length * 4);
 		const st = s.stages;
 		st.juveniles = st.adults = st.elders = 0;
 		for (let i = 0; i < A.count; i++) {
@@ -161,22 +166,16 @@ class Ecosystem {
 			if (age < A.mature[i]) st.juveniles++;
 			else if (age > ELDER_AGE * A.maxAge[i]) st.elders++;
 			else st.adults++;
-			const d = A.diet[i];
-			const dm = A.domain[i];
-			if (dm === 2) {
-				s.amphib++;
-				continue;
+			counts[A.cls[i] * 4 + roleIndex(A.diet[i], A.scav[i])]++;
+		}
+		for (let c = 0; c < keys.length; c++) {
+			const r = roles[c];
+			let t = 0;
+			for (let k = 0; k < 4; k++) {
+				r[ROLE_KEYS[k]] = counts[c * 4 + k];
+				t += counts[c * 4 + k];
 			}
-			if (!dm && A.cold[i] > 0.5) {
-				s.reptile++;
-				continue;
-			}
-			if (!dm && d >= 0.33 && A.scav[i] > 0.5) {
-				s.landScav++;
-				continue;
-			}
-			const role = d < 0.33 ? 'Herb' : d < 0.66 ? 'Omni' : 'Carn';
-			s[(dm ? 'water' : 'land') + role]++;
+			s[keys[c]] = t;
 		}
 		const E = this.eggs;
 		if (E) {
@@ -346,27 +345,34 @@ class Ecosystem {
 
 	_migrations() {
 		const s = this.stats;
-		const pick = (domain, test) => {
-			const opts = ANIMAL_ARCHETYPES.filter((a) => a.domain === domain && !a.role && test(a.g[G_DIET]));
-			return opts[Math.floor(this.rng.next() * opts.length)];
-		};
-		const pickRole = (domain, role) => {
-			const opts = ANIMAL_ARCHETYPES.filter((a) => a.domain === domain && a.role === role);
-			return opts[Math.floor(this.rng.next() * opts.length)];
+		const R = s.roles;
+		const pick = (cls, role, domain) => {
+			const opts = ANIMAL_ARCHETYPES.filter((a) => a.cls === cls && ROLE_KEYS[roleIndex(a.g[G_DIET], a.g[G_SCAV])] === role && (!domain || a.domain === domain));
+			return opts.length ? opts[Math.floor(this.rng.next() * opts.length)] : null;
 		};
 		const tryIntro = (arch, why) => {
+			if (!arch) return;
 			const sp = this._introduce(arch, 'migrated', Math.ceil(arch.n * 0.6));
 			if (sp) this.log.push(this.tick, 'migration', `${sp.name} migrated in — ${why}`, sp.id);
 		};
-		if (s.landHerb < HERB_RESCUE) tryIntro(pick('land', (d) => d < 0.33), 'grazers had vanished');
-		else if (s.landCarn === 0 && s.landHerb + s.landOmni > 250) tryIntro(pick('land', (d) => d > 0.66), 'unchecked prey drew predators');
-		if (s.waterHerb + s.waterOmni < 20 || s.waterHerb === 0) tryIntro(pick('water', (d) => d < 0.33), 'the waters were empty');
-		else if (s.waterCarn === 0 && s.waterHerb + s.waterOmni > 250) tryIntro(pick('water', (d) => d > 0.66), 'unchecked prey drew predators');
-		if (s.landScav === 0 && s.landHerb + s.landOmni + s.landCarn > 150) tryIntro(pickRole('land', 'scavenger'), 'carcasses drew scavengers');
-		if (s.waterOmni === 0 && s.waterHerb > 150) tryIntro(pick('water', (d) => d >= 0.33 && d < 0.66), 'carcasses drew scavengers');
-		const land = s.landHerb + s.landOmni + s.landCarn;
-		if (s.amphib === 0 && land > 150) tryIntro(pickRole('amph', 'amph'), 'the wetlands were empty');
-		if (s.reptile === 0 && land > 150) tryIntro(pickRole('land', 'reptile'), 'warm ground drew reptiles');
+		const m = R.mammal;
+		if (m.herb < HERB_RESCUE) tryIntro(pick(CLS_MAMM, 'herb', 'land'), 'grazers had vanished');
+		const f = R.fish;
+		if (s.fish < 20 || f.herb === 0) tryIntro(pick(CLS_FISH, 'herb'), 'the waters were empty');
+		const prey = { land: m.herb + m.omni + R.reptile.herb + R.invert.herb, water: f.herb + f.omni + R.invert.herb };
+		const done = new Set(['mammal.herb.land', 'fish.herb.water']);
+		for (const a of ANIMAL_ARCHETYPES) {
+			const g = STAT_GROUPS.find((x) => x.cls === a.cls);
+			const role = ROLE_KEYS[roleIndex(a.g[G_DIET], a.g[G_SCAV])];
+			const key = g.key + '.' + role + '.' + (a.domain === 'water' ? 'water' : 'land');
+			if (done.has(key)) continue;
+			done.add(key);
+			if (R[g.key][role] > 0) continue;
+			const food = role === 'herb' ? Infinity : prey[a.domain === 'water' ? 'water' : 'land'];
+			if (food < MIGRATE_PREY) continue;
+			const why = role === 'carn' ? 'unchecked prey drew predators' : role === 'scav' ? 'carcasses drew scavengers' : `the ${g.label.toLowerCase()} had vanished`;
+			tryIntro(pick(a.cls, role, a.domain), why);
+		}
 		const B = this.bugs;
 		if (B) for (let k = 0; k < 4; k++) if (B.tiles[k] === 0) B.reintroduce(k);
 	}
@@ -381,7 +387,11 @@ class Ecosystem {
 		h.herds.push(this.stats.herds);
 		h.territories.push(this.stats.territories);
 		h.eggs.push(this.stats.stages.eggs);
-		for (const g of STAT_GROUPS) h[g.key].push(this.stats[g.key]);
+		for (const g of STAT_GROUPS) {
+			h[g.key].push(this.stats[g.key]);
+			const r = this.stats.roles[g.key];
+			for (const k of ROLE_KEYS) h[g.key + '.' + k].push(r[k]);
+		}
 		if (h.tick.length > 800) {
 			for (const k of Object.keys(h)) h[k] = h[k].filter((_, idx) => idx % 2 === 0);
 		}
