@@ -113,17 +113,23 @@ function newWorld() {
 	showBusy('Growing a new world…');
 	setTimeout(() => {
 		const t0 = performance.now();
-		const world = new WorldMap(w, h, seed);
-		const eco = new Ecosystem(world, seed, {
+		SimClient.create(w, h, seed, {
 			seasons: $('optSeasons').checked,
 			migrations: $('optMigrations').checked,
 			disease: $('optDisease').checked,
 			weather: $('optWeather').checked,
-		});
-		installWorld(world, eco);
-		hideBusy();
-		console.log(`World ${w}×${h} ready in ${Math.round(performance.now() - t0)} ms`);
-		updateUi(true);
+		}).then(
+			({ world, eco }) => {
+				installWorld(world, eco);
+				hideBusy();
+				console.log(`World ${w}×${h} ready in ${Math.round(performance.now() - t0)} ms`);
+				updateUi(true);
+			},
+			(err) => {
+				console.error(err);
+				showMessage('Could not grow the world: ' + err.message);
+			}
+		);
 	}, 30);
 }
 
@@ -182,8 +188,7 @@ function saveWorld() {
 	setTimeout(async () => {
 		try {
 			const t0 = performance.now();
-			const name = EvoSave.fileName(app.eco);
-			const data = await EvoSave.encode(app.eco, saveMeta());
+			const { name, bytes: data } = await SimClient.save(app.eco, saveMeta());
 			const url = URL.createObjectURL(new Blob([data], { type: 'application/octet-stream' }));
 			const a = document.createElement('a');
 			a.href = url;
@@ -212,7 +217,7 @@ function loadWorld(file) {
 		try {
 			const t0 = performance.now();
 			const bytes = new Uint8Array(await file.arrayBuffer());
-			const { world, eco, meta } = await EvoSave.decode(bytes, (w, h, seed) => new WorldMap(w, h, seed));
+			const { world, eco, meta } = await SimClient.load(bytes);
 			applyLoaded(world, eco, meta);
 			hideBusy();
 			console.log(`Loaded ${file.name} (year ${yearOf(eco.tick)}) in ${Math.round(performance.now() - t0)} ms`);
@@ -262,7 +267,8 @@ function frame(now) {
 	lastFrame = now;
 	app.fps += (1 / Math.max(dt, 0.001) - app.fps) * 0.05;
 	const eco = app.eco;
-	if (eco && app.running) {
+	if (eco && eco.remote) app.msPerTick = eco.sync(app.running, app.speed);
+	else if (eco && app.running) {
 		app.acc += dt * app.speed;
 		const t0 = performance.now();
 		const budget = app.speed >= 600 ? 30 : 16;
@@ -279,7 +285,7 @@ function frame(now) {
 		if (app.acc > 2) app.acc = 1;
 	}
 	if (app.renderer && app.world) {
-		const alpha = app.running ? Math.min(1, Math.max(0, app.acc)) : 1;
+		const alpha = eco && eco.remote ? eco.alpha : app.running ? Math.min(1, Math.max(0, app.acc)) : 1;
 		app.renderer.draw(alpha, dt);
 	}
 	if (eco && now - app.lastUi > 250) {

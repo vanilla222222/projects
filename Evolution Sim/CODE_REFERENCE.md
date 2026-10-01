@@ -1,6 +1,6 @@
 # Evolution Sim: code reference
 
-Vanilla JS with no build step. `index.html` loads these global scripts in this order: `noise.js`, `biomes.js`, `mapGenerator.js`, `sim/core.js`, `sim/soil.js`, `sim/plants.js`, `sim/animals.js`, `sim/bugs.js`, `sim/disease.js`, `sim/weather.js`, `sim/eggs.js`, `sim/ecosystem.js`, `icons.js`, `render.js`, `charts.js`, `tree.js`, `save.js`, `main.js`.
+Vanilla JS with no build step. `index.html` loads these global scripts in this order: `noise.js`, `biomes.js`, `mapGenerator.js`, `sim/core.js`, `sim/soil.js`, `sim/plants.js`, `sim/animals.js`, `sim/bugs.js`, `sim/disease.js`, `sim/weather.js`, `sim/eggs.js`, `sim/ecosystem.js`, `icons.js`, `render.js`, `charts.js`, `tree.js`, `save.js`, `simClient.js`, `main.js`. `simWorker.js` is not loaded by the page; `simClient.js` starts it as a Web Worker.
 
 - Each file relies on the globals of the files loaded before it.
 - The nine `sim/*` files plus the world-gen files have no DOM dependency, so they run headless in Node through `vm`.
@@ -1834,6 +1834,86 @@ The file is gzip (`CompressionStream`) of: a big-endian `u32` magic `SAVE_MAGIC`
 - Headless determinism (Node `vm`, Medium 320×210): run 1500 ticks, save, load, then step the original and the loaded copy 500 more ticks. On seeds 42, 7 and 123 the stats, the RNG states and a full re-save of both are byte-identical.
 - Size: about 15 MB at year 5 (tick 2400) on Medium seed 42, with save in about 1.3–2 s and load in about 0.6–1.7 s. Most of it is plant genomes (two slots × 15 floats per tile) and the seed bank, which are live high-entropy floats; zeroing empty slots saved under 2% and byte-plane shuffling made gzip worse, so the file stays lossless and unfiltered.
 
+## Sim worker (`js/simClient.js`, `js/simWorker.js`)
+
+The simulation runs in a Web Worker, so the UI thread only renders and never blocks on a tick. The worker owns the real `Ecosystem`. The page holds a read-only **view** built from snapshots. The view has the same shape as an `Ecosystem` for everything `main.js`, `render.js`, `tree.js` and `charts.js` read.
+
+### Modes
+
+- `SimClient` starts the worker lazily on the first `create` or `load`. It posts `init` with the absolute URLs of the page's sim scripts: every `<script>` matching `js/sim/*`, `noise`, `biomes`, `mapGenerator` or `save`. A sim file added to `index.html` is therefore loaded by the worker as well. Without a list, the worker falls back to `DEFAULT_SCRIPTS`.
+- The worker answers `hello` once `importScripts` succeeds.
+- The client falls back to **local mode** in any of these cases:
+  - `?worker=0` is in the URL.
+  - `Worker` is missing or `new Worker` throws.
+  - The worker posts an error, fires `error` before `hello`, or is silent for `START_TIMEOUT` (15 s).
+- Local mode is the old path: real `WorldMap`/`Ecosystem` on the main thread, the accumulator loop in `frame`, and `EvoSave` on the main thread. `SimClient.mode` reports `'worker'` or `'local'`.
+- Pages served from `file://` cannot start workers, so they land in local mode automatically.
+
+### API (`SimClient`)
+
+| Call | Result |
+| --- | --- |
+| `create(w, h, seed, options)` | Promise of `{world, eco}`. |
+| `load(bytes)` | Promise of `{world, eco, meta}`. In worker mode, a copy of the bytes is transferred. A decode error rejects, and the worker keeps its current world. |
+| `save(eco, meta)` | Promise of `{name, bytes}`. `EvoSave.encode` serializes synchronously before its first await, so the save is one consistent tick even while the worker runs. |
+| `stats(eco)` | Promise of `{tick, json, idle}`, where `json` is `JSON.stringify(eco.stats)` taken inside the worker. Used by tests. |
+
+### Worker loop (`simWorker.js`)
+
+- Ticks run in 12 ms slices (`SLICE_MS`). Between slices the loop yields through a `MessageChannel` self-post when more work is due, so messages are handled within one slice. Otherwise it sleeps with `setTimeout` until the next tick is due.
+- Below `MAX_SPEED` (600) it keeps an accumulator like the old frame loop. At Max it steps without a cap. `step {n}` adds to a queue that is drained first.
+- `msPerTick` is an exponential moving average, sent with every frame.
+- A tick that throws stops the run and posts `error`. The client logs it with `console.error`.
+
+### Messages
+
+- Client → worker: `init`, `create {id, w, h, seed, options}`, `load {id, bytes}`, `save {id, meta}`, `run {running, speed}`, `step {n}`, `option {key, value}`, `frame {gen}`, `stats {id}`.
+- Worker → client: `hello`, `ready`, `frame`, `reply {id, …}`, `error {id, message, stack}`.
+- `ready {id, gen, seed, options, world, statics, has, meta}` follows every `create` and `load`.
+  - `world` is the `WorldMap`'s typed arrays and scalars, copied once.
+  - `statics` holds grids the sim never changes (`plants.water`, `plants.depth`).
+  - `has` tells which layers exist.
+- `gen` is bumped on every install. Frames and frame requests carry it, and anything from an older generation is dropped.
+  - The `create`/`load` promise resolves only after the first frame of the new generation has been applied, so `installWorld` never sees an empty view.
+
+### Snapshot pacing and contents (`frameSnapshot`)
+
+- Snapshots are pulled, not pushed. Each `requestAnimationFrame`, `eco.sync` posts `frame {gen}` unless a request is already outstanding, and the worker answers with one snapshot. Frames therefore never queue up behind a slow page.
+- Every typed array is a fresh copy whose buffer goes in the transfer list. The worker's own arrays are never transferred or detached. Species objects are structured-cloned.
+- Tiers:
+
+| When | What (`SNAP_*` constants) |
+| --- | --- |
+| Every frame whose tick moved | Primitive scalars of every layer in `SNAP_LAYERS` plus soil. All pool arrays of `SNAP_POOLS` (`animals`, `eggs`) cut to `count` rows: any typed array whose length is a multiple of `cap` with at most 64 values per row, so new per-animal fields are picked up automatically. Weather `storms`. Species created since the last frame, plus their parents. |
+| Every `FIELD_MS` (180 ms) | Grid arrays listed in `SNAP_GRIDS` (plant slots, soil nutrient and litter, bug density/species/total, weather wet/snow/fresh/waterDist, animal territory arrays). A renderer or UI read of a new grid field must be added here. |
+| Every `GENE_MS` (1 s) | Plant genes `SNAP_PLANT_GENES` (8 fruit, 10 toxin, 11 symbiont) for both slots, packed, which the client scatters into a `2n × PG` `Float32Array` as `plants.genome`. |
+| Every `SLOW_MS` (240 ms) | Every species that is living now or was living at the last slow frame, `registry.living`, `nextId` and `speciations`, `eco.stats`, and history deltas. |
+| When `log.version` changes | `log.items` and `version`. |
+
+- History arrays (`eco.history[k]` and each `sp.history`) are sent as deltas. When the array object is the same and has only grown, the worker sends `{from, tail}`; otherwise `{full}`. The sim replaces these arrays when it downsamples, which forces a full send.
+
+### The view (`buildView`, `applyFrame`)
+
+- Objects are created with `Object.create(Class.prototype)` for `WorldMap`, `Ecosystem`, `SpeciesRegistry`, `EventLog`, `Species` and each layer class. Pure helpers then work on the view unchanged, for example `plants.matureAt`, `plants.topSpecies`, `weather.effTemp`, `registry.get`, `lineage`, `livingList`, `seasonName` and `year`. Each layer view gets `world` and `registry`.
+- Frame layers are applied with `Object.assign`, so the renderer and UI keep reading `eco.animals.x` and the like each frame.
+- `sp.children` is rebuilt from `childIds`. A species that arrives between slow frames with a population is added to `registry.living`, so its icon and color resolve at once.
+- `eco.options` is a `Proxy`. Assigning a field posts `option {key, value}`, and the worker sets it on the real `Ecosystem`.
+- View-only members:
+  - `remote: true`.
+  - `sync(running, speed)`, described above.
+  - `step(n = 1)` queues ticks.
+  - `alpha`, a getter: the time since the last new tick × speed, clamped to 0..1, or 1 when paused.
+
+### Verification (Phase 1)
+
+- `JSON.stringify(eco.stats)` at tick 3000 matches across Node, worker and `?worker=0` on seeds 42, 7 and 123.
+- A worker save decoded on the main thread matches every view array, species, history and log entry.
+- Max speed in headless Chromium with software GL, at the 320×210 fitted view:
+  - Worker: 30–40 ticks/s, 6–9 ms of main-thread JS per frame, and no long tasks.
+  - `?worker=0`: about 7 ticks/s, 23–30 ms per frame, and about 1 s of long tasks every 8 s.
+  - In both modes, fps there is capped by software GL, at about 4 fps even when paused.
+- See `feature-research/ecosystem-v3/compute/profile.md` for the per-layer cost breakdown behind the worker and GPU plan.
+
 ---
 
 ## App / main (`js/main.js`)
@@ -1889,6 +1969,7 @@ Other globals:
 - If `acc` is still above 2 afterwards, it is reset to 1. This stops a slow machine from building an ever-growing backlog.
 - The renderer draws with `alpha = clamp(acc, 0, 1)` while running, or 1 while paused. The fractional progress into the next tick interpolates animal positions between `px/py` and `x/y`.
 - `stepOnce()` pauses, steps once and sets `acc = 1`.
+- When the sim runs in the worker (`eco.remote`), the accumulator is not used: `frame` calls `eco.sync(app.running, app.speed)`, which sends the run state and asks for the next snapshot, and stores the returned worker `msPerTick`. The renderer uses `eco.alpha` instead. The worker does the pacing and `eco.step()` only queues a step, so the main thread never runs a tick.
 - The UI panels refresh every 250 ms.
 
 ### World lifecycle
@@ -1898,7 +1979,7 @@ Other globals:
 1. Reads the seed; a non-numeric seed becomes random.
 2. Reads the size, given as `WxH` in `#sizeSelect`.
 3. Shows a spinner overlay (`showBusy`).
-4. After a 30 ms delay, builds `WorldMap` and `Ecosystem` and hands them to `installWorld`.
+4. After a 30 ms delay, calls `SimClient.create(w, h, seed, options)` and hands the resolved `{world, eco}` to `installWorld`. Depending on the mode, that is the real pair or a worker view (see the Sim worker section).
 
 `installWorld(world, eco)` is shared by new worlds and loads: it sets `app.world` and `app.eco`, clears the selection, the accumulator and `lastLogVersion`, calls `renderer.setWorld` (which fits the camera), closes the overlay and the detail view, and writes `eco.seed` to `location.hash`.
 
@@ -1906,9 +1987,9 @@ Other globals:
 
 Save and load (see the Save section for the file format):
 
-- `#saveBtn` (down arrow, after New world) calls `saveWorld()`. After the spinner paints, it awaits `EvoSave.encode(eco, saveMeta())` and downloads the bytes as `EvoSave.fileName(eco)` (`evosim-<seed>-y<year>.evo`) through a temporary object URL. The sim keeps running; the snapshot is taken synchronously at the start of `encode`.
+- `#saveBtn` (down arrow, after New world) calls `saveWorld()`. After the spinner paints, it awaits `SimClient.save(eco, saveMeta())`, which runs `EvoSave.encode` in the worker or on the main thread, and downloads the bytes as `EvoSave.fileName(eco)` (`evosim-<seed>-y<year>.evo`) through a temporary object URL. The sim keeps running; the snapshot is taken synchronously at the start of `encode`.
 - `saveMeta()` records the app state that is not part of the sim: `speed`, the view `mode`, the camera (`x`, `y`, `zoom`) and the `LAYER_SWITCHES` renderer flags (`showPlants`, `showAnimals`, `showSwarms`, `showWeather`).
-- `#loadBtn` (up arrow) clicks the hidden `#loadInput` (`accept=".evo"`). `loadWorld(file)` pauses, shows the spinner and awaits `EvoSave.decode(bytes, (w, h, seed) => new WorldMap(w, h, seed))`.
+- `#loadBtn` (up arrow) clicks the hidden `#loadInput` (`accept=".evo"`). `loadWorld(file)` pauses, shows the spinner and awaits `SimClient.load(bytes)`, which runs `EvoSave.decode(bytes, (w, h, seed) => new WorldMap(w, h, seed))` in the worker or on the main thread.
 - `applyLoaded(world, eco, meta)` writes the seed, selects the size (adding a `W×H` option if the size is not in the list), sets the `OPTION_SWITCHES` checkboxes (`optSeasons`, `optMigrations`, `optDisease`, `optWeather`) from `eco.options`, calls `installWorld`, then restores the layer switches, the view button and mode, the speed button and the camera from `meta`, and refreshes the UI. The world is left paused.
 - Any error (not gzip, wrong magic, unsupported version, truncated or inconsistent file) is shown with `showMessage` ("… The current world was kept.") and logged with `console.warn`; the current world is untouched because nothing is installed until decoding succeeds.
 
