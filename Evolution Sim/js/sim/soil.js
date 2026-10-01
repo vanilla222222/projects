@@ -8,6 +8,9 @@ const SOIL_RECYCLE = 0.15;
 const LITTER_DECAY = 0.004;
 const LITTER_INIT = 0.2;
 const CARCASS_FRAC = 0.6;
+const CARRION_SHARE = 0.6;
+const CARRION_DECAY = 0.005;
+const CARRION_CELL_EVERY = 10;
 
 class SoilLayer {
 	constructor(world) {
@@ -18,6 +21,7 @@ class SoilLayer {
 		this.base = new Float32Array(n);
 		this.nutrient = new Float32Array(n);
 		this.litter = new Float32Array(n);
+		this.carrion = new Float32Array(n);
 		for (let i = 0; i < n; i++) {
 			const f = world.fertility[i];
 			const v = f > 0 ? (f < SOIL_MAX ? f : SOIL_MAX) : 0;
@@ -26,6 +30,10 @@ class SoilLayer {
 			this.litter[i] = v * LITTER_INIT;
 		}
 		this.totalLitter = 0;
+		this.totalCarrion = 0;
+		this.ccols = Math.ceil(this.W / GRID);
+		this.carrionCell = new Float32Array(this.ccols * Math.ceil(this.H / GRID));
+		this._cellTick = 0;
 		this.own = new Float32Array(n * 2);
 		this.tile = new Float32Array(n);
 		this.row = new Float32Array(n);
@@ -45,6 +53,7 @@ class SoilLayer {
 		const sat = P.sat;
 		const kind = P.kind;
 		const litter = this.litter;
+		const carrion = this.carrion;
 
 		for (let i = 0; i < n; i++) {
 			const u = n + i;
@@ -68,6 +77,7 @@ class SoilLayer {
 		}
 		const tail = n - W;
 		let totalLitter = 0;
+		let totalCarrion = 0;
 		for (let i = 0; i < n; i++) {
 			let around = row[i] - tile[i];
 			if (i >= W) around += row[i - W];
@@ -88,6 +98,13 @@ class SoilLayer {
 			N -= take;
 			if (N < 0) N = 0;
 			N += (base[i] - N) * SOIL_REFILL;
+			const C = carrion[i];
+			if (C > 0) {
+				const dc = C * CARRION_DECAY;
+				carrion[i] = C - dc;
+				totalCarrion += C - dc;
+				litter[i] += dc;
+			}
 			const L = litter[i];
 			if (L > 0) {
 				const d = L * LITTER_DECAY;
@@ -99,6 +116,24 @@ class SoilLayer {
 			nut[i] = N;
 		}
 		this.totalLitter = totalLitter;
+		this.totalCarrion = totalCarrion;
+		if (this._cellTick++ % CARRION_CELL_EVERY === 0) this._buildCarrionCells();
+	}
+
+	_buildCarrionCells() {
+		const cells = this.carrionCell;
+		const carrion = this.carrion;
+		const W = this.W;
+		const cols = this.ccols;
+		cells.fill(0);
+		for (let y = 0; y < this.H; y++) {
+			const o = y * W;
+			const r = ((y / GRID) | 0) * cols;
+			for (let x = 0; x < W; x++) {
+				const c = carrion[o + x];
+				if (c > 0) cells[r + ((x / GRID) | 0)] += c;
+			}
+		}
 	}
 
 	returnMatter(i, amount) {
@@ -116,6 +151,15 @@ class SoilLayer {
 
 	addCarcass(i, mass) {
 		if (!(mass > 0)) return;
-		this.litter[i] += mass * CARCASS_FRAC;
+		this.carrion[i] += mass * CARRION_SHARE;
+		this.litter[i] += mass * (1 - CARRION_SHARE) * CARCASS_FRAC;
+	}
+
+	consumeCarrion(i, amount) {
+		const C = this.carrion[i];
+		if (!(amount > 0) || !(C > 0)) return 0;
+		const take = amount < C ? amount : C;
+		this.carrion[i] = C - take;
+		return take;
 	}
 }

@@ -22,13 +22,16 @@ const BUG_MASKS = [
 ];
 const BUG_LAND_ONLY = [1, 0, 0, 1];
 const BUG_HUES = [95, 28, 350, 45];
-const BUG_SPECIATION = 0.14;
+const BUG_SPECIATION = 0.2;
+const BUG_SPLIT_MIN_POP = 40;
 const BUG_EVERY = 6;
 const BUG_MIN = 0.01;
 const BUG_SEED_D = 0.06;
 const BUG_TOL = 0.2;
 const BUG_R = 0.08;
 const BUG_MORT = 0.006;
+const BUG_K_SCALE = 0.7;
+const BUG_CROWD = 1.5;
 const BUG_DECLINE = 0.08;
 const BUG_SPREAD = 0.1;
 const BUG_MUT_RATE = 0.15;
@@ -48,11 +51,12 @@ const POLL_WINTER = 0.35;
 const POLL_HUE_SPAN = 0.25;
 const POLL_GENERALIST = 0.4;
 const POLL_DRIFT = 0.1;
-const LOCUST_DENSITY = 0.85;
-const LOCUST_SWARM_GENE = 0.6;
-const LOCUST_BARE = 0.05;
+const LOCUST_DENSITY = 0.3;
+const LOCUST_SWARM_GENE = 0.4;
+const LOCUST_BARE = 0.3;
 const LOCUST_FRAC = 0.7;
-const LOCUST_COOLDOWN = 40;
+const LOCUST_COOLDOWN = 1440;
+const LOCUST_GAP = 480;
 const LOCUST_LOG_GAP = 480;
 const COLLAPSE_FRAC = 0.25;
 const COLLAPSE_GAP = 960;
@@ -83,6 +87,19 @@ function bugCategory(g, niche, wet = false, o = 0) {
 	return g[o + B_SPEC] > 0.55 ? 'butterfly' : 'bee';
 }
 
+const BUG_ICON_VARIANTS = {
+	aphid: ['aphid', 'caterpillar'],
+	beetle: ['beetle', 'ant'],
+	worm: ['worm', 'snail'],
+	tick: ['tick', 'mosquito'],
+	bee: ['bee', 'moth'],
+};
+
+function bugIcon(category, id) {
+	const v = BUG_ICON_VARIANTS[category];
+	return v ? v[id % v.length] : category;
+}
+
 class BugLayer {
 	constructor(world, plants, animals, registry, log, rng) {
 		this.world = world;
@@ -109,12 +126,14 @@ class BugLayer {
 		this.parasiteDrain = 0;
 		this.eaten = 0;
 		this.swarms = 0;
+		this._lastSwarm = -LOCUST_GAP;
 		this.collapses = 0;
 		this.version = 0;
 		this._pollPeak = 0;
 		this._collapseTick = -COLLAPSE_GAP;
 		this._swarmLogged = new Map();
 		this._child = new Float32Array(BG);
+		this._cmp = new Float32Array(BG);
 		this._founders = BUG_ARCHETYPES.map((a) => ({ niche: a.niche, g: Float32Array.from(a.g), sp: null }));
 		const A = animals;
 		const W = world.width;
@@ -215,7 +234,7 @@ class BugLayer {
 		sp.niche = BUG_NICHES[niche];
 		sp.nicheIndex = niche;
 		sp.category = bugCategory(genome, niche, !!wet);
-		sp.icon = sp.category;
+		sp.icon = bugIcon(sp.category, sp.id);
 		sp.density = 0;
 		sp.wetFrac = wet ? 1 : 0;
 		sp._swarmTick = -LOCUST_COOLDOWN;
@@ -369,15 +388,15 @@ class BugLayer {
 						eff = (0.5 + 0.5 * spec) * match;
 					} else food = 0;
 				}
-				const K = fitA[q] * food;
+				const K = fitA[q] * food * BUG_K_SCALE;
 				let d = density[q];
 				if (niche === BUG_PEST && d > LOCUST_DENSITY && genome[o + B_SWARM] > LOCUST_SWARM_GENE && P.edible(i) < LOCUST_BARE) {
 					const sp = this.registry.get(id);
-					if (tick - sp._swarmTick >= LOCUST_COOLDOWN && this._swarm(q, i, d, sp, W, H, tick)) d = density[q];
+					if (tick - this._lastSwarm >= LOCUST_GAP && tick - sp._swarmTick >= LOCUST_COOLDOWN && this._swarm(q, i, d, sp, W, H, tick)) d = density[q];
 				}
 				if (d <= K) d += rate[q] * d * (1 - d / (K > 1e-6 ? K : 1e-6));
 				else d -= (d - K) * decl;
-				d -= mort * (0.5 + app) * d;
+				d -= mort * (0.5 + app) * (1 + BUG_CROWD * d) * d;
 				if (d < BUG_MIN) {
 					this._clear(q);
 					continue;
@@ -473,6 +492,7 @@ class BugLayer {
 		} else this._set(j, sp, this.genome, q * BG, moved);
 		this.density[q] = d - moved;
 		sp._swarmTick = tick;
+		this._lastSwarm = tick;
 		this.swarms++;
 		const last = this._swarmLogged.get(sp.id);
 		if (last === undefined || tick - last >= LOCUST_LOG_GAP) {
@@ -533,8 +553,14 @@ class BugLayer {
 
 	_assign(qj, niche, j, parentSp, child, tick, fit) {
 		let sp = parentSp;
-		if (geneDistance(child, 0, parentSp.genome, 0, BUG_WEIGHTS) > BUG_SPECIATION) {
-			sp = this.registry.matchDaughter(parentSp, child, BUG_WEIGHTS, BUG_SPECIATION * 0.8);
+		const cmp = this._cmp;
+		cmp.set(child);
+		const dh = child[B_HUE] - parentSp.mean[B_HUE];
+		if (dh > 0.5) cmp[B_HUE] -= 1;
+		else if (dh < -0.5) cmp[B_HUE] += 1;
+		if (geneDistance(cmp, 0, parentSp.mean, 0, BUG_WEIGHTS) > BUG_SPECIATION) {
+			sp = this.registry.matchDaughter(parentSp, cmp, BUG_WEIGHTS, BUG_SPECIATION);
+			if (!sp && !this.registry.canSplit(parentSp, BUG_SPLIT_MIN_POP)) sp = parentSp;
 			if (!sp) {
 				sp = this._newSpecies(child, niche, this.plants.water[j], parentSp, tick, null);
 				this.log.push(tick, 'speciation', `${sp.name} (${BUG_CATEGORY_LABEL[sp.category]}) branched from ${parentSp.name}`, sp.id);
@@ -568,6 +594,18 @@ class BugLayer {
 		return sp;
 	}
 
+	reassignSpecies(fromSp, toSp) {
+		const species = this.species;
+		const from = fromSp.id;
+		let moved = 0;
+		for (let q = 0; q < 4 * this.n; q++) {
+			if (species[q] !== from) continue;
+			species[q] = toSp.id;
+			moved++;
+		}
+		return moved;
+	}
+
 	refreshSpeciesMeans() {
 		const sums = new Map();
 		const water = this.plants.water;
@@ -577,7 +615,7 @@ class BugLayer {
 			if (!id) continue;
 			let s = sums.get(id);
 			if (!s) {
-				s = new Float64Array(BG + 3);
+				s = new Float64Array(BG + 5);
 				sums.set(id, s);
 			}
 			const base = q * BG;
@@ -585,14 +623,19 @@ class BugLayer {
 			s[BG] += 1;
 			s[BG + 1] += this.density[q];
 			if (water[q % n]) s[BG + 2] += 1;
+			const a = this.genome[base + B_HUE] * 2 * Math.PI;
+			s[BG + 3] += Math.cos(a);
+			s[BG + 4] += Math.sin(a);
 		}
 		for (const [id, s] of sums) {
 			const sp = this.registry.get(id);
 			for (let k = 0; k < BG; k++) sp.mean[k] = s[k] / s[BG];
+			const h = Math.atan2(s[BG + 4], s[BG + 3]) / (2 * Math.PI);
+			sp.mean[B_HUE] = h < 0 ? h + 1 : h;
 			sp.density = s[BG + 1] / s[BG];
 			sp.wetFrac = s[BG + 2] / s[BG];
 			sp.category = bugCategory(sp.mean, sp.nicheIndex, sp.wetFrac > 0.5);
-			sp.icon = sp.category;
+			sp.icon = bugIcon(sp.category, sp.id);
 		}
 	}
 }

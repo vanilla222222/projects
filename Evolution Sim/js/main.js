@@ -5,9 +5,12 @@ const GROUP_COLORS = {
 	landHerb: '#b5de8c',
 	landOmni: '#e7b95c',
 	landCarn: '#ec7a67',
+	landScav: '#b98a62',
 	waterHerb: '#6fc3e6',
 	waterOmni: '#c9a0e8',
 	waterCarn: '#5c86e6',
+	amphib: '#2fae94',
+	reptile: '#b8901c',
 	bugs: '#ee7fb4',
 	disease: '#a8c04a',
 };
@@ -31,6 +34,44 @@ function paletteFor(hex) {
 
 const NEUTRAL = paletteFor('#a9bcb0');
 
+const STAT_EXTRA = [
+	{ key: 'thirstDeaths', label: 'Thirst deaths', icon: 'drop', color: '#6fb7e0', sub: true },
+	{ key: 'herds', label: 'Herds', icon: 'bison', color: '#c9a86a' },
+	{ key: 'territories', label: 'Territories', icon: 'flag', color: '#e0906a' },
+	{ key: 'eggs', label: 'Eggs', icon: 'egg', color: '#e6d3a3', wide: true, sub: true },
+	{ key: 'stages', label: 'Life stages · animals', icon: 'deer', color: '#9fd98b', wide: true, sub: true, noSpark: true },
+];
+const STAT_EXTRA_KEYS = new Set(STAT_EXTRA.map((x) => x.key));
+
+const WEATHER_LOOK = {
+	off: ['cloud', '#8b9c92'],
+	clear: ['sun', '#e7b95c'],
+	rain: ['rain', '#b9c8d2'],
+	snow: ['snow', '#dbeef7'],
+	storms: ['cloud', '#9fb2c0'],
+	drought: ['sun', '#d9824a'],
+};
+
+const THEMES = ['auto', 'light', 'dark'];
+const THEME_ICON = { auto: 'auto', light: 'sun', dark: 'moon' };
+const THEME_KEY = 'evo.theme';
+const CARDS_KEY = 'evo.collapsed';
+const SPARK_POINTS = 24;
+
+function storeGet(key) {
+	try {
+		return localStorage.getItem(key);
+	} catch (e) {
+		return null;
+	}
+}
+
+function storeSet(key, value) {
+	try {
+		localStorage.setItem(key, value);
+	} catch (e) {}
+}
+
 const app = {
 	world: null,
 	eco: null,
@@ -47,6 +88,9 @@ const app = {
 	msPerTick: 0,
 	fps: 60,
 	hover: null,
+	theme: 'auto',
+	tree: null,
+	overlay: null,
 };
 
 function readSize() {
@@ -71,6 +115,7 @@ function newWorld() {
 			seasons: $('optSeasons').checked,
 			migrations: $('optMigrations').checked,
 			disease: $('optDisease').checked,
+			weather: $('optWeather').checked,
 		});
 		app.world = world;
 		app.eco = eco;
@@ -79,6 +124,7 @@ function newWorld() {
 		app.lastLogVersion = -1;
 		app.renderer.highlight = null;
 		app.renderer.setWorld(world, eco);
+		closeOverlay();
 		closeDetail();
 		overlay.hidden = true;
 		history.replaceState(null, '', '#' + seed);
@@ -159,11 +205,20 @@ function buildStatCards() {
 		<canvas data-spark></canvas>
 	</div>`;
 	for (const g of STAT_GROUPS) {
-		html += `<div class="stat" data-key="${g.key}" title="${g.domain ? 'Water' : 'Land'} ${g.role}s">
+		html += `<div class="stat" data-key="${g.key}" title="${g.domain === 2 ? 'Amphibious' : g.domain ? 'Water' : 'Land'} ${g.role}s">
 			${iconSVG(g.icon, paletteFor(GROUP_COLORS[g.key]), 28)}
 			<div class="stat-label">${g.label}</div>
 			<div class="stat-value" data-v>0</div>
 			<canvas data-spark></canvas>
+		</div>`;
+	}
+	for (const x of STAT_EXTRA) {
+		html += `<div class="stat${x.wide ? ' wide' : ''}" data-key="${x.key}">
+			${iconSVG(x.icon, paletteFor(x.color), x.wide ? 30 : 28)}
+			<div class="stat-label">${x.label}</div>
+			<div class="stat-value" data-v>0</div>
+			${x.sub ? '<div class="stat-sub" data-sub></div>' : ''}
+			${x.noSpark ? '' : '<canvas data-spark></canvas>'}
 		</div>`;
 	}
 	wrap.innerHTML = html;
@@ -190,6 +245,10 @@ function updateStats() {
 	for (const el of $('statCards').children) {
 		const k = el.dataset.key;
 		const dis = k === 'disease';
+		if (STAT_EXTRA_KEYS.has(k)) {
+			updateExtraStat(el, k, s, h);
+			continue;
+		}
 		const v = (k === 'plants' ? s.plantBiomass : dis ? s.sick : s[k]) || 0;
 		el.querySelector('[data-v]').textContent = formatCount(v);
 		el.classList.toggle('zero', k !== 'plants' && v === 0 && (k !== 'bugs' || !!eco.bugs));
@@ -198,6 +257,29 @@ function updateStats() {
 		drawSparkline(el.querySelector('[data-spark]'), k === 'plants' ? h.plants : dis ? h.sick || [] : h[k] || [], GROUP_COLORS[k]);
 	}
 	drawPopChart();
+}
+
+function updateExtraStat(el, k, s, h) {
+	const st = s.stages || {};
+	const sub = el.querySelector('[data-sub]');
+	const v = el.querySelector('[data-v]');
+	if (k === 'stages') {
+		const j = st.juveniles || 0;
+		const a = st.adults || 0;
+		const e = st.elders || 0;
+		v.innerHTML = `${formatCount(j + a + e)}<small>${pct(j + a + e ? e / (j + a + e) : 0)} elders</small>`;
+		sub.innerHTML = `<span>${formatCount(j)} juveniles</span><span>${formatCount(a)} adults</span><span>${formatCount(e)} elders</span>`;
+		return;
+	}
+	if (k === 'eggs') {
+		const eg = s.eggs || {};
+		v.textContent = formatCount(st.eggs || 0);
+		sub.innerHTML = ['laid', 'hatched', 'eaten', 'failed'].map((x) => `<span>${formatCount(eg[x] || 0)} ${x}</span>`).join('');
+	} else {
+		v.textContent = formatCount(s[k] || 0);
+		if (k === 'thirstDeaths') sub.textContent = `${pct(s.thirstShare || 0)} of land deaths`;
+	}
+	drawSparkline(el.querySelector('[data-spark]'), h[k] || [], STAT_EXTRA.find((d) => d.key === k).color);
 }
 
 function bugStatLine(s) {
@@ -230,15 +312,33 @@ function updateClock() {
 	$('seasonBadge').dataset.season = eco.options.seasons ? season : '';
 	$('yearLabel').textContent = 'Year ' + eco.year();
 	$('tickLabel').textContent = 'tick ' + eco.tick.toLocaleString();
+	updateWeatherBadge();
 	const ms = app.running ? app.msPerTick.toFixed(1) + ' ms/tick' : 'paused';
 	$('perfLabel').textContent = `${ms} · ${Math.round(app.fps)} fps`;
+}
+
+function updateWeatherBadge() {
+	const eco = app.eco;
+	const w = eco.stats.weather;
+	const on = !!eco.weather && eco.options.weather !== false;
+	const kind = !on ? 'off' : w.drought ? 'drought' : w.storms > 1 ? 'storms' : w.storms ? (w.rainTiles ? 'rain' : 'snow') : 'clear';
+	const label = { off: 'Off', clear: 'Clear', rain: 'Rain', snow: 'Snow', storms: `Storms ×${w.storms}`, drought: 'Drought' }[kind];
+	const badge = $('weatherBadge');
+	if (badge.dataset.kind !== kind) {
+		badge.dataset.kind = kind;
+		const [icon, color] = WEATHER_LOOK[kind];
+		$('weatherIcon').innerHTML = iconSVG(icon, paletteFor(color), 16);
+	}
+	badge.classList.toggle('off', !on);
+	$('weatherLabel').textContent = label;
+	badge.title = on ? `Weather: ${label}\nMean wetness ${pct(eco.stats.meanWet || 0)}\nRain on ${formatCount(w.rainTiles)} tiles · snow on ${formatCount(w.snowTiles)} tiles\n${formatCount(w.droughts)} drought${w.droughts === 1 ? '' : 's'} so far` : 'Weather is switched off';
 }
 
 function speciesInTab(tab) {
 	const out = [];
 	for (const sp of app.eco.registry.all.values()) {
 		const g = TAB_GROUP[tab];
-		if (g ? sp.group !== g : sp.group !== 'animal' || sp.domain !== tab) continue;
+		if (g ? sp.group !== g : sp.group !== 'animal' || (sp.domain === 'water' ? 'water' : 'land') !== tab) continue;
 		out.push(sp);
 	}
 	return out;
@@ -292,15 +392,34 @@ function updateTabCounts() {
 		if (sp.group === 'plant') p++;
 		else if (sp.group === 'bug') b++;
 		else if (sp.group === 'pathogen') d++;
-		else if (sp.domain === 'land') l++;
-		else w++;
+		else if (sp.domain === 'water') w++;
+		else l++;
 	}
-	$('countPlant').textContent = p;
-	$('countLand').textContent = l;
-	$('countWater').textContent = w;
-	$('countBug').textContent = b;
-	$('countDisease').textContent = d;
+	$('countPlant').textContent = formatCount(p);
+	$('countLand').textContent = formatCount(l);
+	$('countWater').textContent = formatCount(w);
+	$('countBug').textContent = formatCount(b);
+	$('countDisease').textContent = formatCount(d);
 	$('speciesTotals').textContent = `${p + l + w + b} living species${d ? ` · ${d} strains` : ''}`;
+}
+
+function sparkSVG(sp, alive) {
+	const h = sp.history;
+	const vals = [];
+	for (let i = 1; i < h.length; i += 2) vals.push(h[i]);
+	if (alive) vals.push(sp.population);
+	if (vals.length < 2) return '<svg class="sp-spark" viewBox="0 0 60 18"></svg>';
+	const m = Math.min(SPARK_POINTS, vals.length);
+	let max = 1;
+	const pts = [];
+	for (let j = 0; j < m; j++) {
+		const v = vals[Math.round((j / (m - 1)) * (vals.length - 1))];
+		if (v > max) max = v;
+		pts.push(v);
+	}
+	let d = '';
+	for (let j = 0; j < m; j++) d += `${j ? 'L' : 'M'}${((j / (m - 1)) * 60).toFixed(1)} ${(17 - (pts[j] / max) * 15).toFixed(1)}`;
+	return `<svg class="sp-spark" viewBox="0 0 60 18" preserveAspectRatio="none"><path d="${d}L60 18L0 18Z" fill="${sp.color}" fill-opacity=".16"/><path d="${d}" fill="none" stroke="${sp.color}" stroke-width="1.4" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>`;
 }
 
 function renderSpeciesList() {
@@ -317,22 +436,19 @@ function renderSpeciesList() {
 		list.innerHTML = app.tab === 'disease' ? `<li class="empty">No ${showExtinct ? '' : 'active '}outbreaks yet.</li>` : `<li class="empty">No ${showExtinct ? '' : 'living '}species here yet.</li>`;
 		return;
 	}
-	let max = 1;
-	for (const sp of items) if (sp.population > max) max = sp.population;
 	const unit = app.tab === 'plant' || app.tab === 'bug' ? ' tiles' : '';
 	let html = '';
 	for (const sp of items) {
 		const dead = sp.population <= 0;
-		const pct = (sp.population / max) * 100;
 		html += `<li class="sp-row${dead ? ' extinct' : ''}${sp.id === app.selected ? ' selected' : ''}" data-id="${sp.id}">
-			<div class="sp-icon">${iconSVG(sp.icon || sp.category, speciesColors(sp), 32)}</div>
-			<div style="min-width:0">
+			<div class="sp-icon">${iconSVG(sp.icon || sp.category, speciesColors(sp), 36)}</div>
+			<div class="sp-main">
 				<div class="sp-name">${sp.name}</div>
-				<div class="sp-sub">${roleTag(sp)}${categoryLabel(sp)}${dead ? ' · extinct Y' + yearOf(sp.extinctTick) : ''}</div>
+				<div class="sp-sub">${roleTag(sp)}<span class="cat-tag">${categoryLabel(sp)}</span>${dead ? '<span class="sp-gone">extinct Y' + yearOf(sp.extinctTick) + '</span>' : ''}</div>
 			</div>
-			<div>
+			<div class="sp-side">
 				<div class="sp-pop">${dead ? '–' : formatCount(sp.population) + (sp.group === 'pathogen' ? (sp.hostKind === 'plant' ? ' tiles' : ' hosts') : unit)}</div>
-				<div class="sp-bar"><i style="width:${pct}%;background:${sp.color}"></i></div>
+				${sparkSVG(sp, !dead)}
 			</div>
 		</li>`;
 	}
@@ -342,7 +458,7 @@ function renderSpeciesList() {
 	list.scrollTop = scroll;
 }
 
-const EVENT_GLYPH = { speciation: '+', extinction: '×', migration: '→', outbreak: '!', info: '•' };
+const EVENT_GLYPH = { speciation: '+', extinction: '×', migration: '→', outbreak: '!', weather: '~', info: '•' };
 
 function renderEvents(force) {
 	const log = app.eco.log;
@@ -426,6 +542,11 @@ const ANIMAL_TRAITS = [
 	['Toxin resistance', G_TOXR, (v) => pct(v)],
 	['Armor', G_ARMOR, (v) => pct(v)],
 	['Resistance', G_RES, (v) => pct(v)],
+	['Scavenging', G_SCAV, (v) => pct(v)],
+	['Territorial', G_TERR, (v) => pct(v)],
+	['Herding', G_HERD, (v) => pct(v)],
+	['Cold-blooded', G_COLD, (v) => (v > 0.5 ? 'Cold-blooded' : 'Warm-blooded')],
+	['Drought tolerance', G_DRY, (v) => pct(v)],
 ];
 
 const DISEASE_TRAITS = [
@@ -446,11 +567,15 @@ function selectSpecies(id) {
 	const sp = app.eco.registry.get(id);
 	if (!sp) return;
 	app.selected = id;
+	if (app.overlay === 'tree' && app.tree.focus !== id) {
+		app.tree.show(app.eco, id);
+		$('overlayTitle').textContent = app.tree.title();
+	}
 	app.renderer.highlight = id;
 	app.renderer.vegDirty = true;
 	if (sp.group === 'pathogen') setTab('disease', false);
 	else if (sp.group === 'plant' || sp.group === 'bug') setTab(sp.group, false);
-	else setTab(sp.domain, false);
+	else setTab(sp.domain === 'water' ? 'water' : 'land', false);
 	$('detail').hidden = false;
 	$('detail').scrollTop = 0;
 	renderDetail();
@@ -477,7 +602,7 @@ function renderDetail() {
 	$('detailName').textContent = sp.name;
 	const patho = sp.group === 'pathogen';
 	const host = patho ? eco.registry.get(sp.hostId) : null;
-	$('detailSub').textContent = patho ? `${categoryLabel(sp)} · from ${host ? host.name : 'unknown host'}` : sp.group === 'bug' ? `${categoryLabel(sp)} swarm · ${bugNiche(sp)}` : `${categoryLabel(sp)} · ${sp.domain === 'water' ? 'aquatic' : 'terrestrial'}`;
+	$('detailSub').textContent = patho ? `${categoryLabel(sp)} · from ${host ? host.name : 'unknown host'}` : sp.group === 'bug' ? `${categoryLabel(sp)} swarm · ${bugNiche(sp)}` : `${categoryLabel(sp)} · ${sp.domain === 'water' ? 'aquatic' : sp.domain === 'amph' ? 'amphibious' : 'terrestrial'}`;
 	const origin = sp.origin === 'founder' ? 'Founder' : sp.origin === 'migrated' ? 'Migrant' : sp.origin === 'emerged' ? 'Emerged' : sp.origin === 'jump' ? 'Host jump' : `Generation ${sp.generation}`;
 	$('detailBadges').innerHTML = [
 		roleTag(sp).replace('role-tag', 'badge role-tag'),
@@ -505,7 +630,12 @@ function renderDetail() {
 	const resK = sp.group === 'plant' ? 14 : sp.group === 'animal' ? G_RES : -1;
 	if (resK >= 0 && sp.mean && resK < sp.mean.length) cells.push(['Avg resistance', pct(sp.mean[resK])]);
 	if (!patho && sp.infected > 0) cells.push(['Infected', formatCount(sp.infected) + unit]);
-	$('detailGrid').innerHTML = cells.map(([k, v]) => `<div><small>${k}</small><strong>${v}</strong></div>`).join('');
+	if (sp.group === 'animal') {
+		cells.push(['Habitat', (sp.domain === 'water' ? 'Water' : sp.domain === 'amph' ? 'Amphibious' : 'Land') + (sp.mean[G_DRY] > 0.6 ? ' · dry-adapted' : '')]);
+		const c = stageCounts(sp.id);
+		cells.push(['Stages', `${formatCount(c[0])} juv · ${formatCount(c[1])} adult · ${formatCount(c[2])} elder · ${formatCount(c[3])} eggs`, true]);
+	}
+	$('detailGrid').innerHTML = cells.map(([k, v, wide]) => `<div${wide ? ' class="wide"' : ''}><small>${k}</small><strong>${v}</strong></div>`).join('');
 	const hosts = patho && sp.hosts ? [...sp.hosts].sort((a, b) => b[1] - a[1]) : [];
 	if (patho && !hosts.length && host) hosts.push([host.id, 0]);
 	$('detailHostsWrap').hidden = !patho;
@@ -555,6 +685,19 @@ function renderDetail() {
 		.join('');
 }
 
+function stageCounts(id) {
+	const A = app.eco.animals;
+	const out = [0, 0, 0, 0];
+	for (let i = 0; i < A.count; i++) if (A.sp[i] === id) out[animalStage(A, i)]++;
+	const E = app.eco.eggs;
+	if (E) for (let e = 0; e < E.count; e++) if (E.alive[e] && E.sp[e] === id) out[3]++;
+	return out;
+}
+
+function animalStage(A, i) {
+	return A.age[i] < A.mature[i] ? 0 : A.age[i] > ELDER_AGE * A.maxAge[i] ? 2 : 1;
+}
+
 function setTab(tab, render = true) {
 	app.tab = tab;
 	for (const b of $('tabs').children) b.classList.toggle('active', b.dataset.tab === tab);
@@ -574,6 +717,7 @@ function updateUi(force) {
 	if (!$('detail').hidden) renderDetail();
 	else if (app.tab === 'events') renderEvents(force);
 	else renderSpeciesList();
+	if (app.overlay === 'tree') app.tree.draw();
 }
 
 function pickAnimal(wx, wy) {
@@ -670,10 +814,12 @@ function updateTooltip() {
 	const a = pickAnimal(wx, wy);
 	if (a >= 0) {
 		const sp = reg.get(A.sp[a]);
-		const states = ['resting', 'grazing', 'foraging', 'hunting', 'fleeing'];
+		const states = ['resting', 'grazing', 'foraging', 'hunting', 'fleeing', 'seeking water'];
 		const st = A.strain && A.strain[a] ? reg.get(A.strain[a]) : null;
 		const sick = st ? `<small class="tt-sick">sick: ${st.name}</small>` : '';
-		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${states[A.state[a]]} · energy ${pct(Math.max(0, A.energy[a] / A.emax[a]))} · age ${A.age[a]}</small>${sick}</div></div>`;
+		const cap = A.emax[a] * A.gf[a];
+		const water = A.domain[a] !== 1 && A.water ? ` · water ${pct(Math.min(1, Math.max(0, A.water[a])))}` : '';
+		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${states[A.state[a]]} · ${['juvenile', 'adult', 'elder'][animalStage(A, a)]} · age ${A.age[a]}</small><small>energy ${pct(cap > 0 ? Math.min(1, Math.max(0, A.energy[a] / cap)) : 0)}${water}</small>${sick}</div></div>`;
 	}
 	for (let slot = 0; slot < 2; slot++) {
 		const p = slot * P.n + t;
@@ -819,6 +965,13 @@ function setupControls() {
 	$('optSeasons').onchange = (e) => app.eco && (app.eco.options.seasons = e.target.checked);
 	$('optMigrations').onchange = (e) => app.eco && (app.eco.options.migrations = e.target.checked);
 	$('optDisease').onchange = (e) => app.eco && (app.eco.options.disease = e.target.checked);
+	$('showSwarms').onchange = (e) => (app.renderer.showSwarms = e.target.checked);
+	$('optWeather').onchange = (e) => {
+		if (!app.eco) return;
+		app.eco.options.weather = e.target.checked;
+		updateWeatherBadge();
+	};
+	$('showWeather').onchange = (e) => (app.renderer.showWeather = e.target.checked);
 
 	$('tabs').addEventListener('click', (e) => {
 		const b = e.target.closest('button');
@@ -847,23 +1000,114 @@ function setupControls() {
 	$('detailChildren').addEventListener('click', pickId);
 	$('detailHosts').addEventListener('click', pickId);
 	$('detailBack').onclick = closeDetail;
+	$('treeBtn').onclick = () => openTree();
+	$('helpBtn').onclick = () => (app.overlay === 'help' ? closeOverlay() : openHelp());
+	$('overlayClose').onclick = closeOverlay;
+	$('overlay').addEventListener('pointerdown', (e) => e.target === $('overlay') && closeOverlay());
+	$('treeModes').addEventListener('click', (e) => {
+		const b = e.target.closest('button');
+		if (b) openTree(b.dataset.t);
+	});
 
 	document.addEventListener('keydown', (e) => {
-		if (e.target.matches('input, select')) return;
+		if (e.target.matches('input, select') || e.ctrlKey || e.metaKey || e.altKey) return;
+		const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
 		if (e.code === 'Space') {
 			e.preventDefault();
 			setRunning(!app.running);
-		} else if (e.key === '.') stepOnce();
-		else if (e.key === 'f') app.renderer.fit();
-		else if (e.key === 'Escape') closeDetail();
+		} else if (k === '.') stepOnce();
+		else if (k === 'f') app.renderer.fit();
+		else if (k === 't') openTree();
+		else if (k === '?' || k === 'h') openHelp();
+		else if (k === 'w') {
+			const box = $('showWeather');
+			box.checked = !box.checked;
+			app.renderer.showWeather = box.checked;
+		} else if (k === 'Escape') {
+			if (app.overlay) closeOverlay();
+			else closeDetail();
+		}
 	});
 
 	$('brandMark').innerHTML = iconSVG('deer', paletteFor('#c9955c'), 28);
+	$('themeBtn').onclick = () => setTheme(THEMES[(THEMES.indexOf(app.theme) + 1) % THEMES.length]);
+	setupCards();
+}
+
+function showOverlay(view, title) {
+	app.overlay = view;
+	const el = $('overlay');
+	el.dataset.view = view;
+	el.hidden = false;
+	$('overlayTitle').textContent = title;
+	$('tooltip').hidden = true;
+}
+
+function openTree(mode) {
+	if (!app.eco || !app.eco.registry.get(app.selected)) return;
+	showOverlay('tree', '');
+	for (const b of $('treeModes').children) b.classList.toggle('active', b.dataset.t === (mode || app.tree.mode));
+	app.tree.show(app.eco, app.selected, mode);
+	$('overlayTitle').textContent = app.tree.title();
+}
+
+function openHelp() {
+	showOverlay('help', 'Help · views, controls and shortcuts');
+	$('helpBody').scrollTop = 0;
+}
+
+function closeOverlay() {
+	app.overlay = null;
+	$('overlay').hidden = true;
+	$('treeTip').hidden = true;
+}
+
+function setTheme(theme) {
+	app.theme = THEMES.includes(theme) ? theme : 'auto';
+	if (app.theme === 'auto') delete document.documentElement.dataset.theme;
+	else document.documentElement.dataset.theme = app.theme;
+	const btn = $('themeBtn');
+	btn.innerHTML = iconSVG(THEME_ICON[app.theme], NEUTRAL, 18);
+	btn.title = `Theme: ${app.theme} (click to change)`;
+	storeSet(THEME_KEY, app.theme);
+	if (app.eco) updateUi(true);
+}
+
+function setupCards() {
+	let collapsed = [];
+	try {
+		collapsed = JSON.parse(storeGet(CARDS_KEY) || '[]');
+	} catch (e) {}
+	if (!Array.isArray(collapsed)) collapsed = [];
+	const cards = document.querySelectorAll('.card[data-card]');
+	const save = () => storeSet(CARDS_KEY, JSON.stringify([...cards].filter((c) => c.classList.contains('collapsed')).map((c) => c.dataset.card)));
+	for (const card of cards) {
+		const head = card.querySelector('.card-head');
+		const set = (on) => {
+			card.classList.toggle('collapsed', on);
+			head.setAttribute('aria-expanded', String(!on));
+		};
+		set(collapsed.includes(card.dataset.card));
+		const toggle = () => {
+			set(!card.classList.contains('collapsed'));
+			save();
+			if (app.eco && !card.classList.contains('collapsed')) updateStats();
+		};
+		head.addEventListener('click', toggle);
+		head.addEventListener('keydown', (e) => {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				e.stopPropagation();
+				toggle();
+			}
+		});
+	}
 }
 
 function init() {
 	const fromHash = parseInt(location.hash.slice(1), 10);
 	$('seedInput').value = Number.isFinite(fromHash) ? fromHash : Math.floor(Math.random() * 1e6);
+	setTheme(storeGet(THEME_KEY));
 	buildStatCards();
 	buildBiomeLegend();
 	setupControls();
@@ -877,7 +1121,11 @@ function init() {
 		return;
 	}
 	setupMapInput();
-	window.addEventListener('resize', () => app.renderer.resize());
+	app.tree = new FamilyTree($('treeCanvas'), $('treeTip'), selectSpecies);
+	window.addEventListener('resize', () => {
+		app.renderer.resize();
+		if (app.overlay === 'tree') app.tree.draw();
+	});
 	newWorld();
 	if (/[?&]play\b/.test(location.search)) setRunning(true);
 	requestAnimationFrame(frame);

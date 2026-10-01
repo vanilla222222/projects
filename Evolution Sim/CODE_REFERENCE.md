@@ -1,9 +1,9 @@
 # Evolution Sim: code reference
 
-Vanilla JS with no build step. `index.html` loads these global scripts in this order: `noise.js`, `biomes.js`, `mapGenerator.js`, `sim/core.js`, `sim/soil.js`, `sim/plants.js`, `sim/animals.js`, `sim/bugs.js`, `sim/disease.js`, `sim/ecosystem.js`, `icons.js`, `render.js`, `charts.js`, `main.js`.
+Vanilla JS with no build step. `index.html` loads these global scripts in this order: `noise.js`, `biomes.js`, `mapGenerator.js`, `sim/core.js`, `sim/soil.js`, `sim/plants.js`, `sim/animals.js`, `sim/bugs.js`, `sim/disease.js`, `sim/weather.js`, `sim/eggs.js`, `sim/ecosystem.js`, `icons.js`, `render.js`, `charts.js`, `main.js`.
 
 - Each file relies on the globals of the files loaded before it.
-- The seven `sim/*` files plus the world-gen files have no DOM dependency, so they run headless in Node through `vm`.
+- The nine `sim/*` files plus the world-gen files have no DOM dependency, so they run headless in Node through `vm`.
 - Source files carry no comments. Design intent is recorded here.
 
 Unless stated otherwise, every gene value is a float in `0..1`.
@@ -43,8 +43,9 @@ Holds the prefix, middle and suffix pools for generated Latin-ish names. There a
 | `group` | `'plant'`, `'animal'`, `'bug'` or `'pathogen'` (a disease strain, see the Disease section). |
 | `domain` | `'land'` or `'water'`. |
 | `parentId`, `createdTick`, `generation`, `origin` | Ancestry. `origin` is `'founder'`, `'migrated'` or `null` (evolved). |
-| `genome` | A `Float32Array` holding the reference genome. It is the speciation anchor and never changes after creation. |
-| `mean` | A `Float32Array` holding the current population mean. It is refreshed every 20 ticks and drives `category` and `icon`. |
+| `merged` | Set to the parent's id when `registry.merge` folded this species back into its parent. It is then extinct but never logged as an extinction. |
+| `genome` | A `Float32Array` holding the founding genome. It never changes after creation. Speciation checks no longer use it (they use `mean`); disease still uses it for host compatibility. |
+| `mean` | A `Float32Array` holding the current population mean, initialised to `genome`. Plants, animals and bugs refresh it every 20 ticks (`Ecosystem.step`); strains drift it in `_mutate`. It drives `category`, `icon`, every speciation check and `matchDaughter`. |
 | `hsl`, `color` | The base hue as an `[h, s, l]` triple, and the same color as hex. |
 | `rgb`, `rgbDark`, `rgbLight` | 0..1 float triples used by the renderer. |
 | `colorDark`, `colorLight` | Hex strings used by the UI icons. Dark is `l-0.28` with `s*0.9`; light is `l+0.3` with `s*0.6`. |
@@ -61,10 +62,14 @@ Holds the prefix, middle and suffix pools for generated Latin-ish names. There a
 
 ### `SpeciesRegistry(rng)`
 
-- **Fields:** `all` is a Map from id to Species. `living` is a Set of ids. Also `nextId`, `tick`, `recentlyExtinct` and `names`.
-- **`create(opts, hsl)`** assigns an id and a unique name, then links the new species into the parent's `children`.
+- **`SPLIT_MIN_AGE = 480`** (1 year): a species must be at least this many ticks old before a child can found a new species from it.
+- **Fields:** `all` is a Map from id to Species. `living` is a Set of ids. Also `nextId`, `tick`, `recentlyExtinct`, `names` and `speciations`.
+- **`speciations`** is `{plant, animal, bug, pathogen}`, counting species created with a parent and no `origin` (speciation and strain mutation). Founders, migrants, emerged strains and host jumps are not counted. `Ecosystem` exposes the same object as `stats.speciations`.
+- **`create(opts, hsl)`** assigns an id and a unique name, then links the new species into the parent's `children` and bumps `speciations` when it counts.
+- **`canSplit(parent, minPop)`** is true when `parent.population >= minPop` and the parent is at least `SPLIT_MIN_AGE` ticks old. Each layer passes its own minimum population.
 - **`add(sp, n)` and `remove(sp, n)`** are the only way population changes. `remove` marks a species extinct when its population reaches 0 and queues it in `recentlyExtinct`, which `Ecosystem` drains.
-- **`matchDaughter(parent, genome, weights, threshold)`** returns the closest living child of `parent` within `threshold` of `genome`. This absorbs a drifting population into an existing daughter species, so one population does not found dozens of near-identical species.
+- **`matchDaughter(parent, genome, weights, threshold)`** returns the closest living species within `threshold` of `genome`, compared with each candidate's `mean`. Candidates are `parent`'s children and `parent`'s siblings (the grandparent's living children, excluding `parent`). This absorbs a drifting population into an existing daughter or sister species, so one population does not found dozens of near-identical species. All four call sites pass the full speciation threshold (factor 1.0).
+- **`merge(child, parent)`** moves `child.population` to `parent` through `remove` and `add` and sets `child.merged = parent.id`. The caller must first move every member's id with the layer's `reassignSpecies`. The child's `children` links are kept.
 - **`livingList()`** returns the living species. **`lineage(sp)`** returns up to 12 ancestors, nearest first.
 
 ### `EventLog(limit = 120)`
@@ -105,7 +110,7 @@ Vegetation is tile-based, with two slots per tile:
   | 13 | `defence` against pest bugs (fungi 0) |
   | 14 | `blightRes`, resistance to plant blight (every archetype row starts at 0.15) |
 
-- **`PLANT_WEIGHTS`** is `[1.4, 1.4, 0.6, 1.2, 0.8, 0.5, 0.7, 0.7, 0.6, 0.5, 0.6, 0.6, 0.4, 0.6, 0.3]`. **`PLANT_SPECIATION`** is `0.13`.
+- **`PLANT_WEIGHTS`** is `[1.4, 1.4, 0.6, 1.2, 0.8, 0.5, 0.7, 0.7, 0.6, 0.5, 0.6, 0.6, 0.4, 0.6, 0.3]`. **`PLANT_SPECIATION`** is `0.25`. **`PLANT_SPLIT_MIN_POP`** is 40 (occupied slots).
 - **Fruit, flower and fungus constants:**
 
   | Constant | Value | Use |
@@ -143,6 +148,26 @@ Vegetation is tile-based, with two slots per tile:
   | `POLL_FRUIT_BASE` | 0.4 | Share of the fruit target reached with zero pollination. |
   | `POLL_DECAY` | 0.95 | Per-tick decay of `poll`. |
   | `PEST_HEALTH` | 1.5 | Health lost per unit of biomass taken by pests. |
+- **Life stage constants (Part 3b slice P):** ages are counted in units of `AGE_STEP` ticks.
+
+  | Constant | Value | Use |
+  | --- | --- | --- |
+  | `AGE_STEP` | 8 | Ticks per age unit; ages advance and old-death rolls happen on ticks with `tick & 7 === 0`. |
+  | `PLANT_LIFE_BASE`, `PLANT_LIFE_WOOD` | 1.5, 40 | Plant lifespan in years, `PLANT_LIFE_BASE + PLANT_LIFE_WOOD*wood^2` (grass about 1.5–4 years, trees about 16–46). Part 3b slice 2 raised `PLANT_LIFE_WOOD` from 30 to 40 for the tree/grass age ratio. |
+  | `FUNGUS_LIFE` | 1 | Fungus lifespan in years. |
+  | `LIFE_JITTER` | 0.15 | Per-slot lifespan jitter, uniform ±15%. |
+  | `SEEDLING_FRAC`, `SEEDLING_MIN` | 0.05, 30 | A slot is a seedling while `age < matureAt(p) = max(life*SEEDLING_FRAC, SEEDLING_MIN/AGE_STEP)`. |
+  | `SEEDLING_K0` | 0.3 | Seedling K multiplier ramps from `SEEDLING_K0` to 1 over the seedling stage. |
+  | `SEEDLING_KILL` | 0.03 | A seedling bitten below this biomass is killed. |
+  | `OLD_FRAC` | 0.8 | A slot is old once `age > OLD_FRAC*life`. |
+  | `OLD_GROWTH`, `OLD_FRUIT` | 0.6, 0.5 | Growth-rate and fruit-target multipliers for old slots. |
+  | `OLD_DEATH_FRAC`, `OLD_DEATH_P`, `OLD_DEATH_K` | 0.9, 0.006, 8 | Past `OLD_DEATH_FRAC*life`, each age step dies with probability `OLD_DEATH_P*exp(OLD_DEATH_K*(age/life - OLD_DEATH_FRAC))`. |
+  | `SEED_DRY` | 0.9 | Land seeds on tiles with `moistMul` below this (or snow above `SNOW_SHOW`) are banked instead of planted. |
+  | `SEED_ADD`, `SEED_MAX` | 0.1, 1 | Seed density added per banked seed, and its cap. |
+  | `SEED_DECAY`, `SEED_MIN` | 0.985, 0.02 | Seed density decay per age step, and the level below which the bank is cleared. |
+  | `GERM_P` | 0.12 | Germination chance per age step is `GERM_P*density*moistMul*(1-snow)`. |
+  | `GERM_USE` | 0.5 | Seed density multiplier after a germination. |
+  | `OLD_SEED` | 1 | Seed density written by `_selfSeed` when a slot dies of old age. |
 
 - **`YEAR_TICKS = 480`**: the length of one simulated year, used by the season sine. It is shared by ecosystem, main and charts.
 - **`PLANT_ARCHETYPES`**: 21 founders. Each entry is `{ g, domain, kind? }`.
@@ -204,6 +229,29 @@ Wood, toxicity, dispersal, shade tolerance, root vigour, fruiting and sweetness 
 
 `PLANT_CATEGORY_LABEL` maps each category to its UI label, including Fruit tree, Berry bush, Wildflower, Puffball, Inkcap, Toadstool and Truffle.
 
+**`plantIcon(category, id)`** picks `sp.icon` from `PLANT_ICON_VARIANTS` by `id % variants.length`, the same way `animalIcon` does. `sp.category` and its label stay unchanged. `_newSpecies` and `refreshSpeciesMeans` both set the icon through it. Every one of the 18 categories has three variants, and the first is the base icon:
+
+| Category | Variants |
+| --- | --- |
+| grass | grass, tallgrass, wheat |
+| reed | reed, cattail, bamboo |
+| moss | moss, lichen, clover |
+| shrub | shrub, hedge, heather |
+| cactus | cactus, pricklypear, agave |
+| tree | tree, oak, birch |
+| conifer | conifer, pine, cypress |
+| palm | palm, coconut, fanpalm |
+| algae | algae, sealettuce, redalgae |
+| kelp | kelp, seagrass, bladderkelp |
+| plankton | plankton, diatom, radiolarian |
+| fruittree | fruittree, appletree, cherrytree |
+| berrybush | berrybush, blueberry, raspberry |
+| flower | flower, tulip, sunflower |
+| puffball | puffball, earthstar, coralfungus |
+| inkcap | inkcap, morel, chanterelle |
+| toadstool | toadstool, bracket, porcini |
+| truffle | truffle, stinkhorn, jellyfungus |
+
 ### `PlantLayer(world, registry, rng, log)`
 
 The data is structure-of-arrays, where `n = width*height`. Per-plant arrays have `2n` entries laid out as two planes: the plant in slot `s` on tile `i` sits at index `p = s*n + i`. Indices below `n` are the canopy plane, so a plain tile index still reads the canopy plant.
@@ -233,6 +281,12 @@ The data is structure-of-arrays, where `n = width*height`. Per-plant arrays have
 | `depth` | Float32 | Water depth, `(sea - altitude)/sea`, clamped. It is 0 on land. |
 | `habit` | Float32 | Habitat quality: `(0.45+0.55*fertility) * light * harshPenalty`. |
 | `seasonAmp` | Float32 | Seasonal growth swing, `0.75*(1-temperature)`. Cold tiles swing more. |
+| `floorM` | Float32 `2n` | The mature woody floor set by `_set`; `floor` is 0 while the slot is a seedling and is restored from `floorM` on the first age step after it matures. |
+| `age` | Uint16 `2n` | Slot age in `AGE_STEP` units. Reset to 0 by `_set`; kept by an in-place same-species upgrade in `_assign`. |
+| `life` | Uint16 `2n` | Slot lifespan in `AGE_STEP` units, rolled in `_set`. |
+| `seedDens` | Float32 `n` | Seed bank density per tile, 0..`SEED_MAX`. |
+| `seedSp` | Int32 `n` | Species id of the banked seed, or 0. |
+| `seedGenome` | Float32 `n*PG` | The one genome banked on the tile. |
 
 It also keeps some scalar fields:
 
@@ -246,6 +300,9 @@ It also keeps some scalar fields:
 - Counters: `seedDrops`, `fruitEaten`, and `poisoned`, a 3-element array indexed by toxin type.
 - Totals refreshed every step: `totalFruit`, `fungusTiles`, and `flowerTiles` (land understory plants with a bloom factor above that of bloom 0.55).
 - `seasonsOn`, set by the ecosystem from `options.seasons`.
+- `moistMul`: the `WeatherLayer.moistMul` Float32 `n` array, assigned by the ecosystem, or `null` (no weather layer). Read in the growth loop, by germination and by the seed-bank gate in `plantSeed`.
+- `snow`: the `WeatherLayer.snow` Float32 `n` array, assigned by the ecosystem, or `null`. Read by germination and the seed-bank gate.
+- Life stage fields: `stages` is `{seedTiles, seedlings, mature, old}`, refreshed each step (`seedTiles` on age-step ticks). Cumulative counters `oldDeaths`, `germinated` and `grazedSeedlings`.
 - `bloomNow` and `fruitNow`, this tick's `bloomFactor` and lagged `fruitFactor`. Both are 0.5 when seasons are off.
 - `soil`, the `SoilLayer` instance.
 - `season`, the current value of `sin(2π·tick/YEAR_TICKS)`.
@@ -288,13 +345,15 @@ Public methods:
   - It takes up to `amount` of fruit, canopy first and then understory berries, with the same `tall` rule.
   - It returns the amount eaten and sets `fruitSp`, `fruitSweet` and `fruitSeedTox` from the first source.
   - It increments `fruitEaten` when anything was eaten.
-- **`plantSeed(j, genome, parentSp, tick)`**:
-  - It is the resident-competition and assign step taken out of `_spread`. `_spread` calls it, and so do animal seed drops.
+- **`plantSeed(j, genome, parentSp, tick, bank = true)`**:
+  - It is the resident-competition and assign step taken out of `_spread`. `_spread` calls it, and so do animal seed drops and germination (with `bank` false).
+  - With `bank` true, a climate-viable seed (`fit >= 0.04`) that fails is banked on tile `j` through `_bank`: a land tile too dry (`moistMul < SEED_DRY`) or snowy (`snow > SNOW_SHOW`), `childK < 0.04`, a same-species resident not beaten by 2%, or a lost competition.
   - Its checks are:
     - The domain must match `parentSp`.
     - For fungi, genes 8 and 9 are zeroed.
     - The slot comes from `slotOf(genome, water, 0, kind)`.
   - It returns true when the seed took the slot.
+- **`matureAt(p)`** returns the age (in `AGE_STEP` units) at which slot `p` stops being a seedling.
 - **`topSpecies(i)`** returns the canopy species id if present, else the understory one (0 if the tile is bare).
 - **`cover(i)`** returns `floor[i] + floor[n+i]`, the combined woody floor used as prey cover.
 - **`step(tick)`** first calls `soil.step(this)` to fill `sat`, then runs growth, health and spreading over both planes:
@@ -305,17 +364,21 @@ Public methods:
     - A mycorrhizal fungus has `K = cap*min(1, canopyBiomass/MYCO_HOST_K)`.
   - A canopy plant with a mycorrhizal fungus beneath it gets `sat *= MYCO_BOOST` (clamped at 1 and written back) and growth `*= MYCO_TAX`.
   - Health: if `sat >= SAT_OK` health gains `HEALTH_RECOVER`, otherwise it loses `(SAT_OK - sat)*HEALTH_DECAY`, clamped to 0..1. At 0 the plant dies: its biomass returns to the soil, the slot is cleared, and `starved` increments.
-  - Growth follows `b += r*max(b,0.03)*(1-b/K)`, where `r = growth * max(0.05, 1 + seasonAmp*season) * light * (0.35 + 0.65*health)`.
+  - Ageing: on ticks with `tick & 7 === 0` each slot's `age` increments; past `OLD_DEATH_FRAC*life` it may die of old age (`oldDeaths++`, `_selfSeed`, `_clear`). Each slot is counted as a seedling (`age < matureAt`), old (`age > OLD_FRAC*life`) or mature into `stages`.
+  - A seedling's `K` is multiplied by `SEEDLING_K0 + (1-SEEDLING_K0)*age/matureAt` (after the `K < 0.015` check), and it neither fruits nor spreads.
+  - Growth follows `b += r*max(b,0.03)*(1-b/K)`, where `r = growth * max(0.05, 1 + seasonAmp*season) * light * (0.35 + 0.65*health) * tax * moistMul[i] * old` (`tax` is `MYCO_TAX` or 1; `moistMul[i]` is 1 when `moistMul` is `null`; `old` is `OLD_GROWTH` for old slots, else 1). Old slots' fruit target is also multiplied by `OLD_FRUIT`.
+  - Weather acts on the rate, not on `K`: capacity is cached per slot in `cap[p]`, so live moisture cannot go through `moistAt`. Water tiles always have `moistMul` 1.
   - A decomposer then takes `d = litter*FUNGUS_DECOMP*min(1, fullness)` from its tile's litter and adds `d*FUNGUS_RETURN` to nutrients, clamped at `SOIL_MAX`.
   - Fruit: when `_fruitK > 0`, the target is `fruitMax = _fruitK*b*fruitNow*health*(POLL_FRUIT_BASE+(1-POLL_FRUIT_BASE)*poll[i])`, where `_fruitK = fruiting*FRUIT_FRAC*FRUIT_WIND`. It is set only for land plants with wood of at least 0.3 and fruiting above 0.2. The stock rises toward the target at `FRUIT_RATE`. Any excess rots into litter at `FRUIT_ROT`.
   - Biomass never drops below 0.004. A dying lineage can therefore persist at a trace level, and a grazed patch can always regrow.
   - Plants with `K < 0.015` (including deeply shaded understory) lose 0.01 per tick and are cleared once they reach 0.
   - When a plant is more than 30% full and has health of at least `HEALTH_SPREAD_MIN`, it attempts `_spread` with probability `(0.006 + 0.045*disp)*fullness*(1 + _bloomK*bloomNow*(POLL_WIND+(1-POLL_WIND)*poll[i]))`, where `_bloomK = bloom*FLOWER_SEED_BONUS*FRUIT_WIND`.
-  - The cover pass multiplies `poll` by `POLL_DECAY` and sets `flowerPoll` to the mean `poll` over flower tiles.
+  - The cover pass multiplies `poll` by `POLL_DECAY` and sets `flowerPoll` to the mean `poll` over flower tiles. On age-step ticks it also decays each tile's seed bank by `SEED_DECAY` (clearing it below `SEED_MIN`) and calls `_germinate`.
 - **`damage(i, amount)`** is the pest bite. It takes biomass from the understory plant first (skipping fungi), then the canopy, only above the woody floor (reach 0), and lowers each bitten plant's health by `taken*PEST_HEALTH`, clamped at 0. It returns the total taken.
 - **`nectar(i)`** returns the summed `_bloomK` over both slots of tile `i` (unseasoned) and sets `nectarHue` to the hue of the strongest bloomer.
 - **Pollination fields:** `poll` (Float32 `n`, 0..1, raised by pollinator bugs) and `flowerPoll` (mean `poll` on flower tiles).
 - **`refreshSpeciesMeans()`** recomputes each living species' `mean` genome, `biomass`, mean `health`, `infected` (blighted slot count), `category` and `icon` over both planes.
+- **`reassignSpecies(fromSp, toSp)`** rewrites every canopy and understory slot of `fromSp` to `toSp` (and its `hue`), and `seedSp` entries of `fromSp`, and returns the slot count. Used by the ecosystem merge pass.
 
 ### Mechanics
 
@@ -347,6 +410,15 @@ Public methods:
 - When the resident belongs to the same species, the child replaces it only if it is more than 2% better, and then only 50% of the time. The 50% coin is drawn before mutation, when the same-slot resident on the target tile already belongs to the parent's species; this skips most mutation work, since about 90% of spread attempts hit a same-species neighbour.
 - A freshly taken slot starts at biomass 0.04. The displaced resident's biomass returns to the soil.
 
+**Life stages and seed bank:**
+
+- `_set` rolls `life` (years from `PLANT_LIFE_BASE + PLANT_LIFE_WOOD*wood^2`, or `FUNGUS_LIFE`, times ±`LIFE_JITTER`), sets `age` 0 and `floor` 0, and stores the mature floor in `floorM`. Founders (`_seedFounder`) get a random age in `0..OLD_FRAC*life` and their floor at once when mature.
+- `_assign` keeps `age` (and the mature floor) on an in-place same-species upgrade, so a slightly better sibling does not restart the plant as a seedling.
+- `graze` kills a bitten land seedling left below `SEEDLING_KILL` biomass (`grazedSeedlings++`, `_clear`), understory first, then canopy. Water-tile seedlings are never killed by a bite (Part 3b slice 2).
+- A slot that dies of old age first calls `_selfSeed(p, i, id)`: its own genome and species go into tile `i`'s seed bank at density `OLD_SEED` (1), replacing whatever was banked, so a tile whose only plants were founders (glacier, alpine, tundra, water) can regrow the same lineage.
+- `_bank(j, genome, off, id)` adds `SEED_ADD` density (capped at `SEED_MAX`) and replaces the stored genome and species with probability `SEED_ADD/(density+SEED_ADD)` (always on an empty bank). `_spread` banks the parent genome on a same-species skip, and `plantSeed` banks failed viable seeds.
+- `_germinate(i, d, wk, tick)` clears the bank when its species is extinct. If the target slot of the banked genome is empty, it germinates with probability `GERM_P*d*wk` through `plantSeed(..., false)`; success multiplies the density by `GERM_USE` and counts `germinated`, failure clears the bank.
+
 **Blight:**
 
 - `_set` and `_clear` release any blight on the slot through `disease.releasePlant(p)` and reset `blightImm`.
@@ -357,8 +429,8 @@ Public methods:
 
 **Speciation (`_assign`):**
 
-- A child genome more than `PLANT_SPECIATION` from its parent species' reference genome first tries `matchDaughter`, with 0.8 times the threshold.
-- If no daughter matches, it founds a new species and logs the event.
+- A child genome more than `PLANT_SPECIATION` from its parent species' `mean` first tries `matchDaughter` at the full threshold.
+- If no daughter or sibling matches, it founds a new species and logs the event, but only when `registry.canSplit(parentSp, PLANT_SPLIT_MIN_POP)`. Otherwise the child stays in the parent species.
 - Water plants get hues 150–205° and land plants 62–150°. Fungi and flowers take their hue from gene 12. Lightness drops with woodiness.
 
 ---
@@ -380,7 +452,9 @@ Public methods:
 | `SOIL_RECYCLE` | 0.15 | Fraction of decayed litter returned to the store. |
 | `LITTER_DECAY` | 0.004 | Per-tick fraction of litter that decays. |
 | `LITTER_INIT` | 0.2 | Starting litter as a fraction of `base`. |
-| `CARCASS_FRAC` | 0.6 | Fraction of a dead animal's mass that becomes litter. |
+| `CARCASS_FRAC` | 0.6 | Fraction of the non-carrion part of a carcass that becomes litter. |
+| `CARRION_SHARE` | 0.6 | Fraction of a dead animal's mass that becomes carrion. |
+| `CARRION_DECAY` | 0.005 | Per-tick fraction of carrion that rots into litter. The plan value was 0.02; it was lowered in tuning so carrion lasts long enough for scavengers to find it. |
 
 ### Fields
 
@@ -388,7 +462,10 @@ Public methods:
 - `nutrient` (Float32 `n`): the current store. It starts at `base`.
 - `litter` (Float32 `n`): dead matter. It starts at `base*LITTER_INIT`.
 - `totalLitter`: the map-wide litter sum, refreshed each step.
+- `carrion` (Float32 `n`): fresh carcass meat that animals can eat. It starts at 0.
+- `totalCarrion`: the map-wide carrion sum, refreshed each step. The ecosystem exposes it as `stats.carrion`.
 - `own` (Float32 `2n`), `tile` and `row` (Float32 `n`): per-tick scratch.
+- `carrionCell` (Float32, one per 6×6 animal grid cell, `ccols = ceil(W/6)`): the carrion sum per cell, rebuilt by `_buildCarrionCells()` every `CARRION_CELL_EVERY` (10) steps. Scavengers use it in `_pickCarrion`.
 
 ### `step(plants)`
 
@@ -397,7 +474,8 @@ Public methods:
 3. Pressure on plant `p` on tile `i`: `own[p] + SOIL_SAME_TILE_W*own[other slot] + SOIL_NEIGHBOUR_W*Σ tile[8 neighbours]`.
 4. Satisfaction: `sat[p] = min(1, nutrient[i]*SOIL_SUPPLY/pressure)`, or 1 when the pressure is 0. A fungus always gets `sat = 1`.
 5. Withdrawal: `nutrient[i] -= Σ own*sat` over both slots, floored at 0, then `nutrient += (base - nutrient)*SOIL_REFILL`.
-6. Litter decay: `d = litter*LITTER_DECAY` leaves the litter, and `d*SOIL_RECYCLE` is added to the nutrient store, clamped to `SOIL_MAX`.
+6. Carrion rot: `dc = carrion*CARRION_DECAY` leaves the carrion and is added to `litter` on the same tile, before that tile's litter decay runs.
+7. Litter decay: `d = litter*LITTER_DECAY` leaves the litter, and `d*SOIL_RECYCLE` is added to the nutrient store, clamped to `SOIL_MAX`.
 
 Plants on crowded, heavily rooted or poor ground see lower satisfaction, which drains their health (see Plants, `step`).
 
@@ -411,7 +489,11 @@ Removes up to `amount` from `litter[i]` and returns what was taken (0 for a non-
 
 ### `addCarcass(i, mass)`
 
-Adds `mass*CARCASS_FRAC` to `litter[i]`. `animals._kill` calls it with the animal's full mass, or with `mass*CARCASS_EATEN` when the animal was eaten by a predator.
+Splits the carcass. `mass*CARRION_SHARE` goes to `carrion[i]`, and the rest follows the old litter path: `mass*(1-CARRION_SHARE)*CARCASS_FRAC` goes to `litter[i]`. `animals._kill` calls it with the animal's full mass, or with `mass*CARCASS_EATEN` when the animal was eaten by a predator.
+
+### `consumeCarrion(i, amount)`
+
+Removes up to `amount` from `carrion[i]` and returns what was taken (0 for a non-positive or non-finite amount, or an empty tile). Animals call it in their carrion eat block.
 
 ---
 
@@ -424,7 +506,7 @@ Animals are agents stored as structure-of-arrays. There is one typed array per f
 
 ### Constants
 
-- **`AG = 10`**: the number of animal genes. Gene layout by index, with its named index constant:
+- **`AG = 15`**: the number of animal genes. Gene layout by index, with its named index constant:
 
   | Index | Gene | Constant |
   | --- | --- | --- |
@@ -438,8 +520,15 @@ Animals are agents stored as structure-of-arrays. There is one typed array per f
   | 7 | toxResist | `G_TOXR` |
   | 8 | armor | `G_ARMOR` |
   | 9 | disease resistance (every archetype starts at 0.15) | `G_RES` |
+  | 10 | scavenging (0.1 for most archetypes, 0.65 for the crustacean, 0.8 for the carrion eater) | `G_SCAV` |
+  | 11 | territoriality | `G_TERR` |
+  | 12 | herding | `G_HERD` |
+  | 13 | cold-bloodedness | `G_COLD` |
+  | 14 | drought tolerance | `G_DRY` |
 
-- **`ANIMAL_WEIGHTS`** is `[1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25]`. Diet carries the most weight. **`ANIMAL_SPECIATION`** is `0.12`.
+  Genes 11–14 were appended in Part 3 slice 2 as `[terr, herd, cold, dry]`: land herbivores `0.05, 0.6, 0.05, 0.3`, the land omnivore `0.35, 0.1`, land carnivores `0.5, 0.1`, water herbivores `0.05, 0.5`, the crustacean `0.35, 0.1`, water carnivores `0.5, 0.1`, the carrion eater `0.35, 0.1, 0.05, 0.3`.
+
+- **`ANIMAL_WEIGHTS`** is `[1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6]`. Diet carries the most weight. **`ANIMAL_SPECIATION`** is `0.18`. **`ANIMAL_SPLIT_MIN_POP`** is 12.
 - **`GRID = 6`**: the spatial grid cell size, in tiles.
 - **Energy values:** `PLANT_ENERGY` is 3.2 per unit of biomass eaten, and `MEAT_ENERGY` is 20 per unit of prey mass.
 - **Fruit, poison and aversion constants:**
@@ -451,6 +540,11 @@ Animals are agents stored as structure-of-arrays. There is one typed array per f
   | `BERRY_MASS` | 1.2 | Animals lighter than this can eat understory berries without reach. |
   | `FRUIT_MIN_BITE` | 0.3 | Fruit must exceed `bite*FRUIT_MIN_BITE` to be eaten instead of grazing. |
   | `CARCASS_EATEN` | 0.35 | Carcass mass fraction left when a predator eats its prey. |
+  | `CARRION_LURE` | 6 | Weight of `carrion*carrionEff` in the forage score. The plan left the value open; 2 was tried first, and 6 was kept after tuning. |
+  | `SCAV_LURE` | 3 | The carrion lure is multiplied by `1 + SCAV_LURE*scav`. |
+  | `SCAV_BITE` | 2 | The carrion bite is `bite*(1 + SCAV_BITE*scav)`. |
+  | `SCAV_SAMPLES`, `SCAV_RANGE` | 12, 1.5 | An animal with `scav > 0.5` takes this many forage samples (instead of 8) over `range*SCAV_RANGE`. |
+  | `SCAV_HUNT` | 0.35 | An animal with `scav > 0.5` only hunts below this fraction of `emax` (others hunt below 0.6). |
   | `MILD_LOSS` | 0.25 | Mild poison energy loss per unit of excess potency, times `emax`. |
   | `NEURO_TICKS` | 25 | Confusion length after a neurotoxin. |
   | `LETHAL_P` | 0.5 | Death chance per unit of excess potency for a lethal toxin. |
@@ -474,36 +568,108 @@ Animals are agents stored as structure-of-arrays. There is one typed array per f
 
   | Constant | Value | Use |
   | --- | --- | --- |
-  | `RES_COST` | 0.2 | Metabolism multiplier `1 + RES_COST*res`. |
+  | `RES_COST` | 0.1 | Metabolism multiplier `1 + RES_COST*res`. |
+  | `RES_EFFECT` | 0.85 | Resistance factor `1 - RES_EFFECT*res` on the sickness death chance and on infection (`disease.exposeAnimal`). |
   | `SICK_COST` | 0.5 | Extra energy cost per tick while infected, `SICK_COST*vir*mass^0.75`. |
   | `SICK_SLOW` | 0.4 | Speed multiplier `1 - SICK_SLOW*vir` while infected (in `_moveToward`). |
-  | `SICK_DEATH` | 0.01 | Per-tick death chance `SICK_DEATH*vir*(1-0.7*res)`. |
+  | `SICK_DEATH` | 0.005 | Per-tick death chance `SICK_DEATH*vir*(1-RES_EFFECT*res)`. The plan kept 0.01; it was halved in Part 2 tuning because the rolling disease share reached 15–33% at year 10 and 27–52% at year 20. |
   | `IMMUNE_TICKS` | 900 | Ticks of immunity to a strain after recovering from it. |
-  | `CONTACT_R` | 1.5 | Contact radius, in tiles. |
+  | `CONTACT_R` | 1.5 | Contact radius, in tiles. The plan's 2 was tuned back down. |
   | `CONTACT_K` | 0.35 | Contact exposure strength. |
-  | `CONTACT_MAX` | 3 | Maximum contact rolls per infected animal per contact pass. |
+  | `CONTACT_MAX` | 3 | Maximum contact rolls per infected animal per contact pass. The plan's 6 was tuned back down. |
+  | `CROWD_K`, `CROWD_N` | 0.5, 6 | Crowding: each contact roll uses `CONTACT_K*(1 + CROWD_K*min(1, near/CROWD_N))`, where `near` is every live same-domain animal within `CONTACT_R`. |
   | `PREY_K` | 0.5 | Exposure strength for a predator killing infected prey. |
   | `CARCASS_K` | 0.1 | Exposure strength per unit of carcass load on the tile. |
   | `VECTOR_K` | 0.05 | Exposure strength per unit of vector load on the tile. |
   | `NATIMM_P` | 0.003 | Chance per newborn to gain innate immunity to the strain most prevalent in its parent species. |
-- **`ANIMAL_ARCHETYPES`**: 13 founders, each given as `{domain, n, g}`.
+  | `RES_NUDGE` | 0.02 | A parent that has recovered from a strain (`immune` set) adds this to its child's resistance gene after mutation, capped at 1. Partly Lamarckian, approved in the Part 3 plan. |
+- **Domain, thirst, territory and herd constants (Part 3 slice 2):**
+
+  | Constant | Value | Use |
+  | --- | --- | --- |
+  | `DOMAIN_BIT` | `[1, 2, 4]` | `walk` bit per domain: land, water, amphibious. |
+  | `THIRST` | 0.02 | Base water loss per tick, `THIRST*(1-0.6*dry)*(0.6+temp+seasonT+droughtK)*(cold>0.5 ? 0.6 : 1)*(amph ? AMPH_DRY : 1)`. The plan's 0.004 gave 0 thirst deaths; 5× was needed. |
+  | `THIRSTY` | 0.35 | Below this `water`, an animal seeks water. |
+  | `DRINK_WET`, `AMPH_DRINK_WET` | 0.6, 0.5 | Water refills to 1 on a tile with `waterDist <= 1` or `wet` above this. The plan's 0.35 let almost any rained-on tile refill. |
+  | `AMPH_DRY`, `AMPH_RANGE`, `AMPH_DEPTH` | 2, 5, 0.35 | Amphibian water-loss multiplier; amphibians may stand on land within `waterDist <= AMPH_RANGE` and on non-ocean water shallower than `AMPH_DEPTH`. |
+  | `DEHYDRATE_COST`, `DEHYDRATE_DEATH` | 2.5, 0.02 | At `water <= 0` the tick's cost is multiplied by 2.5 and a death roll runs. The plan's 0.004 was raised 5× in tuning. A starvation death while dehydrated also counts as `thirst`. |
+  | `FRUIT_WATER`, `GRAZE_WATER`, `MEAT_WATER` | 0.15, 0.02, 0.2 | Water gained per fruit bite, graze bite, and kill or carrion bite. |
+  | `WATERHOLE`, `WATER_SAMPLES` | 0.25, 8 | Forage lure `WATERHOLE/(1+waterDist)` for grazers (diet above 0.6 excluded); samples for `_pickWater`. |
+  | `COLD_META`, `COLD_SLOW` | 0.225, 0.9 | Plan values 0.45 and 0.6; tuned to the ±50% limit because reptiles displaced every land group by year 35. Cold-blooded metabolism `*(1-COLD_META*cold)`; speed `*(1-COLD_SLOW*cold*(0.5-temp)*2)` below temperature 0.5. |
+  | `TERR_MIN`, `TERR_EVERY`, `TERR_HOLD` | 0.5, 10, 30 | Territory gene threshold, stamp period and ownership lifetime in ticks. |
+  | `TERR_RIVAL`, `TERR_BITE` | 0.3, 0.15 | Forage score `*TERR_RIVAL` on a tile owned by a rival of the same species or role; bite `*(1+TERR_BITE*homeK)` at home. |
+  | `TERR_REPRO`, `TERR_COST` | 0.15, 0.08 | Reproduction cost `*(1-TERR_REPRO*homeK)`; metabolism `*(1+TERR_COST*terr)`. |
+  | `HERD_MIN`, `HERD_PULL` | 0.4, 0.6 | Herd gene threshold and centroid pull. |
+  | `HERD_SAFE`, `HERD_SAFE_N` | 0.5, 6 | Attack chance `*(1-HERD_SAFE*herd*min(1, n/HERD_SAFE_N))` against herding prey. |
+  | `HERD_CONTACT` | 0.6 | Disease contact `*(1+HERD_CONTACT*herd)`. |
+- **Life stage constants (Part 3b slice 1):**
+
+  | Constant | Value | Use |
+  | --- | --- | --- |
+  | `MATURE_BASE`, `MATURE_SIZE` | 90, 160 | `mature = MATURE_BASE + MATURE_SIZE*size` (was `45 + 110*size`). |
+  | `JUV_MIN` | 0.4 | Growth factor at birth; `gf = JUV_MIN + (1-JUV_MIN)*min(1, age/mature)`. |
+  | `ELDER_AGE`, `ELDER_MIN` | 0.75, 0.6 | Elders are `age > ELDER_AGE*maxAge`; `ef` falls linearly from 1 there to `ELDER_MIN` at `maxAge` and stays there. |
+  | `ELDER_FERTILE` | 0.9 | No breeding once `age >= ELDER_FERTILE*maxAge`. |
+  | `ELDER_INFECT` | 0.5 | Infection chance `*(1 + ELDER_INFECT*(1-ef)/(1-ELDER_MIN))`, so ×1.5 at `ef = 0.6` (applied in `DiseaseLayer.exposeAnimal`). |
+  | `OLD_START`, `OLD_P`, `OLD_K` | 0.85, 0.0015, 12 | Old-age death chance per tick `OLD_P*exp(OLD_K*(age/maxAge - OLD_START))` once `age/maxAge > OLD_START` (about 0.9% at `maxAge`). Replaces the flat 5% past `maxAge`. |
+  | `FOLLOW_EVERY` | 4 | Live-born juveniles step toward an adult of their species every 4 ticks. |
+- **Balance constants (Part 3b slice 2):**
+
+  | Constant | Value | Use |
+  | --- | --- | --- |
+  | `GEN_TAX`, `GEN_LO`, `GEN_HI` | 0.22, 0.2, 0.8 | Generalist tax. `_genT(i)` maps diet to 0 at or below `GEN_LO`, 1 at or above `GEN_HI`, linear between. Plant energy (graze and fruit) `*(1-GEN_TAX*t)`; meat energy (kills, carrion) `*(1-GEN_TAX*(1-t))`. Pushes diets away from the middle, so herbivores do not drift toward 0.33. |
+  | `COLD_UPKEEP` | 0.15 | An animal with `cold > 0.5` pays `meta*gf*COLD_UPKEEP*(0.5-et)*2` extra per tick when `et = temperature + seasonT` is below 0.5. |
+  | `DRY_COST` | 0.08 | Metabolism `*(1+DRY_COST*dry)` in `_decode`, so drought tolerance is no longer free. |
+  | `SCAV_PLANT` | 0.5 | A land animal with `scav > 0.5` gets plant energy `*(1-SCAV_PLANT*scav)`, so high-scav animals cannot live as omnivores. |
+  | `EGG_LURE` | 4.5 | Forage score bonus in `_pickForage` for a sampled tile holding eggs (`eggs.head[j] >= 0`), for animals with diet at least 0.33. |
+  | `HERB_GRAZE` | 1.15 | Plant energy multiplier for animals with diet below 0.33 (herbivore graze efficiency). |
+- **`ANIMAL_ARCHETYPES`**: 14 founders, each given as `{domain, n, g}` plus an optional `role` tag.
   - Land: hopper, browser, grazer, arid runner, cold grazer, omnivore, small hunter and pack hunter.
   - Water: shoal fish, reef fish, crustacean, pike and shark.
+  - Part 3 slice 2 appended eight role-tagged founders (`n` 16): `{domain: 'amph', role: 'amph'}` frog, newt, salamander and crocodile, and `{domain: 'land', role: 'reptile'}` lizard, tortoise, monitor and snake (cold 0.8–0.85, dry 0.7–0.8). `_introduce` founds them like the others; `pick()` in migrations skips role-tagged archetypes.
+  - The carrion eater is appended last, so the founders before it are placed in the same order as before. It is a land archetype with `role: 'scavenger'` and `n` 18, and its genes are `[0.38, 0.45, 0.6, 0.45, 0.5, 0.65, 0.6, 0.6, 0.2, 0.3, 0.8]`. The plan asked for speed 0.55, sense 0.78, diet 0.55, temp 0.55, tol 0.5, fec 0.55 and armor 0.3. That version starved: it paid for a high metabolism, and carrion made up only 2–4% of its income. Tuning lowered its running costs and widened its climate range. `Ecosystem._migrations` finds it by its `role` tag.
 - **`dietRole(diet)`** returns `herbivore` below 0.33, `omnivore` below 0.66, and `carnivore` otherwise.
 - **`animalCategory(g, domain)`** combines role and size into an icon or category:
   - Land herbivores are `rabbit`, `deer` or `bison`.
   - Land omnivores are `mouse`, `boar` or `bear`.
   - Land carnivores are `fox`, `wolf` or `bigcat`.
+  - A land animal whose diet is at least 0.33 and whose `scav` is above 0.5 is `carrion`, whatever its size. This test runs before the omnivore and carnivore size splits.
   - Water herbivores are `fish` or `turtle`. Water omnivores are always `crab`. Water carnivores are `pike` or `shark`.
-- **`animalIcon(category, id)`** picks `sp.icon` from `ANIMAL_ICON_VARIANTS` by `id % variants.length`, so a species keeps the same look across `refreshSpeciesMeans` recomputes:
-  - rabbit and mouse can show as `chicken`
-  - deer can show as `horse`
-  - bison can show as `cow`
-  - crab can show as `lobster`
-  - fish can show as `shrimp`
+  - Amphibious (domain 2): herbivore `newt`, omnivore `frog`, carnivore `salamander` (size below 0.55) or `crocodile`.
+  - A land animal with `cold > 0.5` (tested before the carrion test): herbivore `tortoise`, omnivore `lizard`, carnivore `snake` (size below 0.45) or `monitor`.
+  - The eight new categories got their own icons and `ANIMAL_ICON_VARIANTS` entries in Part 3 slice 3.
+- **`animalIcon(category, id)`** picks `sp.icon` from `ANIMAL_ICON_VARIANTS` by `id % variants.length`, so a species keeps the same look across `refreshSpeciesMeans` recomputes. The first entry is always the base icon, and the older variants kept their positions:
+
+  | Category | Variants |
+  | --- | --- |
+  | fox | fox, weasel, owl |
+  | wolf | wolf, coyote, hawk |
+  | bigcat | bigcat, tiger |
+  | rabbit | rabbit, chicken, squirrel |
+  | deer | deer, horse, goat, kangaroo |
+  | bison | bison, cow, elephant, moose |
+  | mouse | mouse, chicken, crow |
+  | boar | boar, raccoon, badger, monkey |
+  | bear | bear, ape |
+  | crab | crab, lobster, hermitcrab, starfish |
+  | carrion | vulture, hyena, jackal |
+  | fish | fish, shrimp, eel, puffer, seahorse |
+  | turtle | turtle, ray, manatee |
+  | pike | pike, barracuda, squid, seal |
+  | shark | shark, orca, swordfish |
+  | frog | frog, toad |
+  | newt | newt, axolotl |
+  | salamander | salamander, axolotl |
+  | crocodile | crocodile |
+  | tortoise | tortoise, turtle |
+  | lizard | lizard |
+  | snake | snake |
+  | monitor | monitor |
+
+  A species whose `id % length` changes because its list grew will get a different icon than it had before this change.
 
   `sp.category` and the label stay unchanged.
-- **`ANIMAL_CATEGORY_LABEL`** maps each category to its UI label.
+- **`ANIMAL_CATEGORY_LABEL`** maps each category to its UI label. `carrion` is "Scavenger" and `crab` is "Sea scavenger".
 
 ### `AnimalPool(world, plants, registry, rng, log)`: structure-of-arrays layout
 
@@ -524,12 +690,20 @@ Float32 fields (`ANIMAL_FIELDS_F`):
 | `meatEff` | `diet^1.2`. |
 | `emax` | `22*mass`. |
 | `meta` | Metabolism per tick, `0.05*mass^0.75*(1 + 0.9*speed^2 + 0.35*sense + 0.3*armor + 0.2*toxR + 0.15*tol)*(1 + RES_COST*res)`. |
-| `mature` | Maturity age, `45 + 110*size`. |
+| `mature` | Maturity age, `MATURE_BASE + MATURE_SIZE*size` (`90 + 160*size`). |
 | `maxAge` | `500 + 1300*size`. |
 | `litter` | `1 + round(3*fecundity)`. |
 | `pT`, `tol` | Preferred temperature, and tolerance `0.08 + 0.3*tempTol`. |
 | `toxR`, `armor`, `diet` | Copied from the genes. |
 | `bite` | Biomass per grazing bite, `0.058*mass^0.75`. |
+| `carrionEff` | `meatEff*(0.2 + 0.8*scav)`: energy efficiency on carrion. |
+| `scav` | Copied from the scavenging gene. |
+| `terr`, `herd`, `cold`, `dry` | Copied from genes 11–14; `herd` is 0 when `terr > TERR_MIN`. |
+| `hr` | Home radius `2 + 5*size`. |
+| `water` | Hydration 0..1, set to 1 at spawn. Water animals skip thirst. |
+| `hx`, `hy` | Home centre, or -1 when the animal holds no territory. |
+| `gf` | Growth factor, set by `_stage(i)` at spawn and at the start of each animal's tick: `JUV_MIN + (1-JUV_MIN)*age/mature` for juveniles (`age < mature`), else 1. |
+| `ef` | Elder factor, set by `_stage(i)`: 1 until `ELDER_AGE*maxAge`, then linear down to `ELDER_MIN` at `maxAge`. |
 
 Int32 fields (`ANIMAL_FIELDS_I`):
 
@@ -540,21 +714,22 @@ Int32 fields (`ANIMAL_FIELDS_I`):
 | `cool` | Cooldown ticks after hunting or breeding. |
 | `ttl` | Ticks left on the current target or state. |
 | `face` | Facing: `+1` is right and `-1` is left. |
-| `domain` | 0 is land and 1 is water. |
+| `domain` | 0 is land, 1 is water, 2 is amphibious. |
 | `alive` | 1 while alive. |
-| `state` | 0 idle, 1 grazing, 2 seeking food, 3 hunting, 4 fleeing. |
+| `state` | 0 idle, 1 grazing, 2 seeking food, 3 hunting, 4 fleeing, 5 seeking water. |
 | `seedSp`, `seedTtl` | The plant species whose seed is being carried, and the ticks until it drops. |
 | `confuse` | Ticks of neurotoxin confusion left. |
 | `strain` | Infecting strain id, or 0. |
 | `itime` | Ticks of infection left. |
 | `immune`, `imTime` | The strain last recovered from, and the ticks of immunity to it left. |
 | `natImm` | A strain id this animal is innately immune to, or 0. Inherited from either parent. |
+| `parent` | The `uid` of the parent for a live-born animal, or 0 (founders, migrants and hatchlings). Only a non-zero `parent` juvenile follows adults. |
 
 All five disease fields are initialised to 0 in `spawn`.
 
 The remaining structures are:
 
-- **`genome`**: a `Float32Array(cap*AG)`. Slot `i` uses `i*AG … i*AG+9`.
+- **`genome`**: a `Float32Array(cap*AG)`. Slot `i` uses `i*AG … i*AG+10`.
 - **The spatial grid**:
   - `gcols` and `grows` give its size.
   - `gstart` is an `Int32Array` of prefix offsets per cell, with `cells+1` entries.
@@ -568,7 +743,7 @@ The remaining structures are:
   | 2 | Water only. |
   | 3 | Both land and water animals (rivers and ponds, which are shallow). |
 
-  `canStand(domain, x, y)` tests `walk & (domain ? 2 : 1)`.
+  Bit 4 (amphibious) is set by `setWeather(Wx)` on non-ocean water tiles shallower than `AMPH_DEPTH` and on land tiles with `waterDist <= AMPH_RANGE` (all land when there is no weather layer). `canStand(domain, x, y)` tests `walk & DOMAIN_BIT[domain]`.
 - **Counters:**
   - `count` is the number of live slots.
   - `maxAnimals` is 7000.
@@ -581,13 +756,17 @@ The remaining structures are:
   - `parasiteLoad` and `parasiteHost` (Float32 `n`): written by `BugLayer.step` (load `density*appetite` and the parasite's host-size gene).
   - `bugs`: the `BugLayer`, or `null`. `deaths` also holds `parasite`.
 - **Disease fields:** `disease` is the `DiseaseLayer`, or `null`. `deaths` also holds `disease`.
+- **`eggs`**: the `EggPool`, or `null` (set by the ecosystem).
+- **Weather and territory fields:** `weather` (the `WeatherLayer`, or `null`, set by `setWeather`); `deaths.thirst`; `landDeaths` (every non-water death, from `_kill`); `terrSp`, `terrUid`, `terrUntil` (Int32 `n`) and `terrRole` (Uint8 `n`), the per-tile territory owner; `holders` (territory holders last step); `tick`; `_cx`, `_cy` (the centroid from `_localCount`).
 
 ### Public methods
 
 - `spawn(sp, genome, gOff, x, y, energyFrac)`
 - `newSpecies(genome, gOff, domain, parent, tick, origin)`. A daughter species' hue is offset 25–335° from its parent's, so relatives do not look alike. It sets `sp.aversion`, an array of `{hue, strength}` entries: a copy of the parent's, or `[]` for a founder.
 - `canStand`
+- `setWeather(Wx)`: stores the weather layer and adds the amphibious walk bit.
 - `step(tick)`
+- `reassignSpecies(fromSp, toSp)` rewrites `sp[i]` for every slot below `count` and returns the living members moved. Used by the ecosystem merge pass.
 - `refreshSpeciesMeans()`. It also sets `sp.infected` (the species' infected count) and fades every aversion by `1 - AVERSION_DECAY` and drops entries whose strength falls below 0.05.
 
 ### Per-tick behaviour (`step`)
@@ -598,34 +777,62 @@ The grid is rebuilt first. Then each animal runs through the steps below in orde
 
 0. **Confusion.** While `confuse > 0`, the animal counts it down and makes a random 3-tile move at 0.8× speed. Its state and ttl are reset.
 1. **Flee.** This applies only when diet is below 0.7. The check runs on every other tick, offset by slot, and then passes a 70% roll. The animal looks for the nearest threat within `range*0.8`. If it finds one, it sets a target 6 tiles directly away and enters state 4 for 3 ticks, moving at 1.1× speed.
-2. **Hunt.** This requires `meatEff > 0.25`, energy below 60% of max, and no cooldown. The animal chases the nearest prey within `range`, using 1.6× speed once within 4 tiles.
+2. **Hunt.** This requires `meatEff > 0.25`, energy below 60% of max (`SCAV_HUNT`, 35%, when `scav > 0.5`), and no cooldown. The animal chases the nearest prey within `range`, using 1.6× speed once within 4 tiles.
    - It attacks when within 1 tile.
    - It gives up after 18 ticks, which sets a 10-tick cooldown.
-3. **Eat.** This requires `plantEff > 0.12` and energy below 92% of max.
+3. **Seek carrion.** This applies when `scav > 0.5`, energy is below 92% of max and the current tile has no carrion. The animal re-picks a target with `_pickForage` when its ttl has run out or its state is not 2, and sets state 2. If the target tile has carrion, it moves there at full speed and the later steps are skipped. Otherwise it falls through to step 3a, which continues toward the same target or eats where it stands.
+3a. **Eat.** This requires `plantEff > 0.12` and energy below 92% of max.
    - **Fruit first.** The animal can reach fruit if `_reach > 0` (all fruit) or `mass < BERRY_MASS` (plants with wood below 0.62). If `fruitAt` exceeds `bite*FRUIT_MIN_BITE`, it eats one bite with `eatFruit`.
-     - The energy gained is `eaten*FRUIT_ENERGY*(0.6+sweet)*plantEff*(1-1.6*max(0, seedTox*0.7 - toxR))`.
+     - The energy gained is `eaten*FRUIT_ENERGY*(0.6+sweet)*plantEff*plantK*(1-1.6*max(0, seedTox*0.7 - toxR))`, where `plantK` is the slice 2 plant multiplier (generalist tax, scavenger penalty, `HERB_GRAZE`).
      - If the animal carries no seed, it picks one up: `seedSp = fruitSp` and `seedTtl = 20..59`.
    - **Otherwise it grazes.** If edible biomass on the current tile exceeds half a bite, the animal eats one bite.
-     - The energy gained is `eaten*PLANT_ENERGY*plantEff*(1-1.6*max(0, plantTox - toxR))`.
+     - The energy gained is `eaten*PLANT_ENERGY*plantEff*plantK*(1-1.6*max(0, plantTox - toxR))`.
      - If the understory is a fungus the species' aversion rates above 0.5 (mimics included), the graze skips the understory (`skipUnder`).
      - If fungus was eaten, `_poison` runs.
    - Otherwise it moves toward a spot chosen by `_pickForage`.
 4. **Roam.** If nothing else acted, the animal drifts at 0.45× speed toward a comfortable spot.
 5. **Pay costs.** The cost is `meta*(1+1.3*(1-climateFit)) + moved*0.012*mass`, plus the parasite drain.
    - Before paying, an animal lighter than `BUG_MASS` with energy below max eats `bugs.eat(tile, bite*_bugEff)` and gains `taken*BUG_ENERGY`.
+   - Carrion, after the bug block: if the tile has carrion and energy is below 92% of max, the animal takes `soil.consumeCarrion(tile, bite*(1+SCAV_BITE*scav))` and gains `taken*MEAT_ENERGY*carrionEff*meatK` (`meatK = 1-GEN_TAX*(1-_genT(i))`). Every animal runs this block, but only a high `scav` makes it worthwhile. If disease is on, the animal is healthy and the tile has carcass load, the bite also calls `disease.exposeAnimal` with `CARCASS_K*carcassLoad`, the same exposure used for carcass contact.
+   - Land scavenger counters: for a land animal with diet of at least 0.33 and `scav > 0.5` (the `landScav` test), the carrion gain is added to `carrionEnergy`, and the net energy gained this tick before costs (energy now minus energy at the start of the tick, when positive) is added to `scavEnergy`. The ecosystem reports their ratio as `stats.carrionShare`.
    - Parasite drain: `parasiteLoad*PARASITE_DRAIN*mass*(1-0.6*armor)*(0.4+0.6*gaussFit(size, parasiteHost, PARASITE_HOST_TOL))`, also added to `bugs.parasiteDrain`.
    - A starvation death counts as `deaths.parasite` when the drain exceeds `cost*PARASITE_DEATH_SHARE`, otherwise `deaths.starved`.
    - A lethal poisoning kills the animal here, and `deaths.poison` increments.
    - Disease (only when `disease.on`): `imTime` counts down. An infected animal pays `SICK_COST*vir*mass^0.75`, then rolls the sickness death chance. If it survives, `itime` counts down and it recovers at 0 (`disease.recoverAnimal`). Otherwise, it stamps its strain into the vector plane when the tile has parasite load, and on alternate ticks (`(tick+i)&1`) runs `_contact`. A healthy animal is exposed on alternate ticks to the tile's carcass and vector loads.
    - A sickness death runs after the poison check: `disease.countDeath`, `_kill`, and `deaths.disease` increments.
    - If energy falls to 0 or below, the animal starves.
-   - Past `maxAge`, it has a 5% chance per tick of dying of old age.
+   - Old age: once `age/maxAge > OLD_START` it dies with chance `OLD_P*exp(OLD_K*(age/maxAge-OLD_START))` per tick, counted in `deaths.old`.
 6. **Reproduce.** This requires all of the following:
-   - The animal is mature.
+   - The animal is mature and `age < ELDER_FERTILE*maxAge`.
    - It has no cooldown.
    - Energy is above 70% of max.
    - `count < maxAnimals`. Carnivores with diet above 0.6 may exceed the cap by up to 1500 more.
    - Fewer than 14 same-species animals share its grid cell. This is a density-dependence limit.
+
+**Part 3 slice 2 additions to `step`:**
+
+- **Thirst** (non-water animals, with weather): refill to 1 on a drinking tile, otherwise lose water (see `THIRST`). `thirsty` is `water < THIRSTY`. A thirsty animal that did not flee or hunt runs `_seekWater` (before carrion seeking and eating): step to the standable 4-neighbour with the lowest `waterDist` (state 5), or, on a flat or capped (40) field, `_pickWater` samples 8 points within `max(6, range*1.5)` scored by `(d0-waterDist)*0.1 + wet + fresh` and heads there for 6–11 ticks. Fruit, graze, kill and carrion bites add water. Amphibians breed only next to water.
+- **Territory:** a mature animal with `terr > TERR_MIN` that is neither thirsty nor fleeing claims a home at its position; holders `_stamp` their disc into the terr arrays every `TERR_EVERY` ticks with `until = tick + TERR_HOLD`. `_homeK(i)` is `0.4+0.6*diet` inside the disc. On alternate ticks `_chaseRival` finds the nearest same-role animal (mode 3) within `range*0.5` and, if it is inside the disc, sets it fleeing. Holders' forage targets are clamped to the home disc.
+- **Herds:** in `_pickForage`, an animal with `herd > HERD_MIN` and local company lerps its target toward the same-species centroid of its grid cell by `HERD_PULL`.
+- **Carrion seek** now uses `_pickCarrion` (the best `soil.carrionCell` within `range*SCAV_RANGE`, then its richest tile) and falls back to `_pickForage`.
+- **Climate:** `_clim(i, t)` widens tolerance by `1+dry` on the hot side.
+- `_nearest` treats domains as compatible when equal or when either is amphibious; mode 3 finds the nearest animal of the same diet role.
+
+**Part 3b slice 1 life stages in `step`:**
+
+- `age++` is followed by `_stage(i)`; the tick then uses `gf` and `ef` at the points of use (`_decode` values stay genetic):
+  - metabolism `meta*gf`, maximum energy `emax*gf` (every `emax` threshold and the end-of-tick cap), bite `bite*gf*ef*(1+TERR_BITE*homeK)`, and bug bites `bite*gf*ef*_bugEff`;
+  - speed in `_moveToward` is multiplied by `ef`;
+  - predation uses effective mass `mass*gf`: `_nearest` modes 0 and 1, `_attack` (`massRatio` and meat gained) and the carcass left by `_kill`.
+- **Follow parent:** after the thirst step, a juvenile with non-zero `parent` that did not act, on ticks where `(tick+i) % FOLLOW_EVERY === 0` and not in state 1 (eating), finds the nearest adult of its species within `range` (`_nearest` mode 2) and, if more than 1.5 tiles away, moves toward it at full speed (state 0) and skips the later behaviour steps.
+- **Egg eating:** right after that, every animal with diet at least 0.33 (omnivores, carnivores, scavengers), and since slice 2 every water animal (so water herbivores too), with energy below its `emax*gf` eats eggs on its current tile, whether or not it acted this tick: `eggs.eatAt(tile, dom !== 1, sp, (emax - energy)/EGG_FOOD)` returns the egg energy taken and the animal gains `EGG_FOOD` times it. Water animals eat water eggs; land and amphibious animals eat land and amphibious eggs; own-species eggs are skipped.
+
+**Part 3b slice 2 balance terms in `step`:**
+
+- Per animal, `plantK = (1-GEN_TAX*t) * (land && scav > 0.5 ? 1-SCAV_PLANT*scav : 1) * (diet < 0.33 ? HERB_GRAZE : 1)` and `meatK = 1-GEN_TAX*(1-t)`, with `t = _genT(i)`. `plantK` scales graze and fruit energy; `meatK` scales carrion energy, and `_attack` applies the same meat factor to the kill's energy.
+- Cold upkeep: with `cold > 0.5` and `et < 0.5`, the base cost gains `meta*gf*COLD_UPKEEP*(0.5-et)*2`. Cold-blooded herbivores in cool places drift back to warm-blooded; reptiles in warm deserts pay nothing.
+- `_decode` includes `(1+DRY_COST*dry)` in `meta`.
+- `_pickForage` adds `EGG_LURE` to a sampled tile's food score when that tile has eggs, for animals with diet at least 0.33.
 
 After the loop, `_compact()` fills each dead slot with the last live animal. The cost is O(deaths), not O(n), and slot order is not stable.
 
@@ -636,7 +843,9 @@ After the loop, `_compact()` fills each dead slot with the last live animal. The
 - It scans the grid cells overlapping radius `r` and considers only animals in the same domain.
 - Mode 0 finds the nearest threat: an animal whose diet is at least 0.3 higher, whose `meatEff` is at least 0.3, and where the searcher's mass is no more than 1.8× the threat's.
 - Mode 1 finds the nearest prey: an animal whose diet is at least 0.3 lower.
-- Mode 2 finds the nearest mate: a mature animal of the same species.
+- Mode 2 finds the nearest mate: a mature animal of the same species. Parent-following juveniles reuse it.
+- Modes 0 and 1 compare effective masses `mass*gf`, so predators can take juveniles of larger species.
+- Mode 3 finds the nearest animal of the same diet role (territory rivals).
 
 **Prey-size limit:**
 
@@ -659,11 +868,12 @@ After the loop, `_compact()` fills each dead slot with the last live animal. The
 
 **Forage choice (`_pickForage`):**
 
-- The animal samples 8 random points within `range` that it can stand on.
+- The animal samples 8 random points within `range` that it can stand on. An animal with `scav > 0.5` samples `SCAV_SAMPLES` (12) points within `range*SCAV_RANGE`.
 - Each point is scored as `(food+0.02)*(0.25+climateFit)/(1+dist*0.08)`, plus a small random jitter.
 - Animals without a plant diet use a fixed `food = 0.2`.
 - Fruit eaters add `fruitAt*FRUIT_LURE*(0.6+sweet)` to `food`.
 - Bug eaters add `bugs.edibleAt(j)*_bugEff*BUG_LURE` to `food`.
+- Every animal adds `soil.carrion[j]*carrionEff*CARRION_LURE*(1+SCAV_LURE*scav)` to `food`.
 - A point whose understory is a fungus has its food multiplied by `1 - aversion(hue)`.
 - The chosen target is held for 6–13 ticks.
 
@@ -674,7 +884,8 @@ After the loop, `_compact()` fills each dead slot with the last live animal. The
 
 **Attack (`_attack`):**
 
-- The success chance is `0.7 * sizeF * speedF * (1-0.6*armor) * (1-cover)`, where:
+- The success chance is `0.7 * sizeF * speedF * (1-0.6*armor) * (1-cover) * (1-0.5*scav)`, where:
+  - `armor` belongs to the prey, and `scav` belongs to the hunter, so scavenging costs hunting skill.
   - `sizeF` is `clamp(massRatio*0.85, 0.15, 1.2)`.
   - `speedF` is `spd_i/(spd_i + 0.7*spd_p)`.
 - Water cover:
@@ -694,7 +905,7 @@ After the loop, `_compact()` fills each dead slot with the last live animal. The
 
 **Disease spread:**
 
-- **Contact (`_contact(i, s)`):** scans only the infected animal's own grid cell (`gstart`/`gitems`/`gcell`), skipping itself, dead, other-domain and already infected animals. Up to `CONTACT_MAX` animals within `CONTACT_R` are exposed with `CONTACT_K`. No allocation.
+- **Contact (`_contact(i, s)`):** scans the infected animal's whole own grid cell (`gstart`/`gitems`/`gcell`), skipping itself, dead and other-domain animals. It counts every animal within `CONTACT_R` as `near` (infected ones included) and buffers up to `CONTACT_MAX` uninfected ones in the preallocated `_contactBuf`. Each buffered animal is then exposed with `CONTACT_K*(1 + CROWD_K*min(1, near/CROWD_N))`. No allocation.
 - **Predation:** in `_attack`, a successful kill of infected prey exposes the predator with `PREY_K` before the prey is removed.
 - **Carcass:** `_kill` of an infected animal calls `disease.animalDied(i, tile, frac)`, which releases the infection and writes the strain and `frac` into the tile's carcass plane.
 - **Vector:** see the per-tick disease step above.
@@ -722,7 +933,49 @@ After the loop, `_compact()` fills each dead slot with the last live animal. The
 - A fixed energy budget of `emax*0.38` is split across the litter, so big litters mean weak young. Each child's energy is capped at 60% of its own maximum.
 - The parent pays `1.1×` what it spent.
 - The breeding cooldown is `35 + 55*size - 10*fecundity`.
-- The speciation check matches the plant one (`matchDaughter` at 0.8 times the threshold). A new species is logged, with a note when its role differs from the parent's.
+- Live-born children spawn with energy `min(perChild, emax*gf*0.6)` and `parent = uid` of the breeder.
+- **Egg layers** (Part 3b slice 1): water animals (domain 1), amphibians (domain 2) and reptiles (land with `cold > 0.5`) lay a clutch into `eggs` instead of spawning young, when the ecosystem has an `EggPool`.
+  - `_eggTile(i)` picks the laying tile: the animal's own tile, except for amphibians, which need a tile among their own and its 4 neighbours with the amphibious walk bit and `fresh` or `wet > EGG_WET`. With no such tile the animal gets a 10-tick cooldown and nothing is spent.
+  - The clutch is `round(litter*EGG_CLUTCH_MUL)` eggs, each with `perChild*EGG_COST` energy; the parent pays `1.1×` the eggs' total. Eggs sit at random points inside the laying tile.
+  - Speciation is decided at laying with the same rules. Because a daughter created by an egg has population 0 (so `matchDaughter` skips it), later eggs of the same clutch reuse it (`clutchSp`) when within the threshold of its mean. A daughter whose eggs all fail stays in `registry.all` with peak 0.
+  - `natImm` is decided per egg and stored with it.
+- The speciation check matches the plant one: distance to the parent's `mean`, `matchDaughter` at the full threshold, and a new species only when `registry.canSplit(parentSp, ANIMAL_SPLIT_MIN_POP)` (otherwise the child joins the parent species). A new species is logged, with a note when its role differs from the parent's.
+
+---
+
+## Eggs (`js/sim/eggs.js`)
+
+Part 3b slice 1. A compact structure-of-arrays store for laid eggs. Eggs are not animals: they are not in the animal arrays, the spatial grid or registry populations. It loads after `weather.js` and before `ecosystem.js`; `Ecosystem` builds it only when `EggPool` is defined.
+
+### Constants
+
+| Constant | Value | Use |
+| --- | --- | --- |
+| `EGG_CLUTCH_MUL` | 1.5 | Clutch = `round(litter*EGG_CLUTCH_MUL)` (plan 2; tuned). |
+| `EGG_COST` | 0.67 | Egg energy as a share of a live child's `perChild` (plan 0.5; tuned). |
+| `EGG_TIME`, `EGG_TIME_SIZE` | 25, 30 | Incubation `EGG_TIME + EGG_TIME_SIZE*size` ticks. |
+| `EGG_FOOD` | 0.8 | Energy an egg eater gains per unit of egg energy. |
+| `EGG_WET` | 0.5 | Minimum `wet` for an amphibian laying tile that is not `fresh`, and below which a non-fresh amphibian egg tile has dried out. |
+| `EGG_COLD_RATE` | 0.5 | Slowest development rate of reptile eggs. |
+| `EGG_FAIL` | 0.0015 | Base failure chance per egg per tick (slice 2). |
+
+### `EggPool(world, animals, registry)`
+
+- Per-egg arrays (capacity starts at 512 and doubles): `x`, `y` (Float32), `tile`, `sp`, `imm` (innate immunity strain), `next` (Int32), `energy`, `timer` (Float32), `dom` (Uint8, the parent's domain), `alive` (Uint8) and `genome` (`Float32Array(cap*AG)`).
+- `head` (Int32, one per tile, -1 when empty) with `next` forms a per-tile linked list, so eaters find eggs on their tile in O(eggs on tile).
+- Cumulative counters: `laid`, `hatched`, `eaten`, `failed`. `count` is the number of eggs.
+
+### Methods
+
+- **`lay(sp, genome, gOff, x, y, tile, energy, dom, imm)`** appends an egg, sets `timer = EGG_TIME + EGG_TIME_SIZE*size` and pushes it on the tile's list.
+- **`eatAt(tile, landEater, sp, room)`** marks eggs on the tile dead (skipping dead eggs, own-species eggs, and water eggs for land eaters or non-water eggs for water eaters) until the energy taken reaches `room`; each counts in `eaten`. Returns the energy taken.
+- **`step(Wx)`** runs after `animals.step`. For each egg:
+  - Every egg first fails with chance `EGG_FAIL` (drawn from `animals.rng`), counted in `failed`.
+  - With weather, a non-water egg fails if its tile has `snow > SNOW_SHOW`, and an amphibian egg fails if its tile is neither `fresh` nor `wet > EGG_WET` (dried out).
+  - The timer drops by 1 per tick; reptile eggs (domain 0) drop by `max(EGG_COLD_RATE, 1 - (0.5-et)*2*(1-EGG_COLD_RATE))` when effective temperature `et = temperature + seasonT` is below 0.5, so 0.5× at `et <= 0.25`.
+  - At 0 it hatches through `animals.spawn(sp, genome, e*AG, x, y, 0)` (so registry population is added only now), with energy `min(eggEnergy, emax*gf*0.6)`, `natImm = imm` and `parent = 0`. It fails instead when its species is gone (`population <= 0` after having lived, `peak > 0`) or the animal cap `maxAnimals + 1500` is reached.
+  - Then `_compact()` drops dead eggs and rebuilds the tile lists.
+- **`reassignSpecies(fromSp, toSp)`** rewrites egg species ids; called by `Ecosystem._mergePass`.
 
 ---
 
@@ -734,7 +987,7 @@ Bugs are density fields, not agents. There are four niche planes, each holding a
 
 - **`BG = 9`** bug genes: `B_TEMP 0`, `B_MOIST 1`, `B_APPETITE 2`, `B_MOBILITY 3`, `B_FEC 4`, `B_SWARM 5`, `B_HUE 6` (pollinator flower hue), `B_SPEC 7` (pollinator specialism), `B_HOST 8` (parasite host size).
 - **`BUG_NICHES`** is `['pest', 'detritivore', 'parasite', 'pollinator']`, with plane constants `BUG_PEST 0`, `BUG_DETRI 1`, `BUG_PARA 2`, `BUG_POLL 3`. `BUG_NICHE_LABEL` and `BUG_CATEGORY_LABEL` hold UI labels.
-- **`BUG_WEIGHTS`** is `[1.4, 1.4, 0.8, 0.6, 0.6, 0.6, 0.8, 0.8, 0.5]`. **`BUG_SPECIATION`** is 0.14.
+- **`BUG_WEIGHTS`** is `[1.4, 1.4, 0.8, 0.6, 0.6, 0.6, 0.8, 0.8, 0.5]`. **`BUG_SPECIATION`** is 0.2. **`BUG_SPLIT_MIN_POP`** is 40 (occupied tiles).
 - **`BUG_MASKS`**: per niche, which genes mean anything. Masked genes are copied, not mutated, on spread. **`BUG_LAND_ONLY`** is `[1, 0, 0, 1]` (pests and pollinators never enter water). **`BUG_HUES`** gives the base species hue per niche.
 - **Tunables:**
 
@@ -745,7 +998,9 @@ Bugs are density fields, not agents. There are four niche planes, each holding a
   | `BUG_SEED_D` | 0.06 | Density of a newly colonised cell. |
   | `BUG_TOL` | 0.2 | Climate tolerance (moisture uses 1.2×). |
   | `BUG_R` | 0.08 | Base logistic growth rate. |
-  | `BUG_MORT` | 0.006 | Base mortality, times `0.5 + appetite`. |
+  | `BUG_MORT` | 0.006 | Base mortality, times `0.5 + appetite` and `1 + BUG_CROWD*d`. |
+  | `BUG_K_SCALE` | 0.7 | Scales every cell's carrying capacity `K = fit*food*BUG_K_SCALE`. The plan's 0.6 cut bug mass by about 50% at year 10 and was eased. |
+  | `BUG_CROWD` | 1.5 | Crowding mortality: the mortality term is `BUG_MORT*(0.5+appetite)*(1+BUG_CROWD*d)*d`. The plan's 2 was eased with `BUG_K_SCALE`. |
   | `BUG_DECLINE` | 0.08 | Rate at which density above K falls back. |
   | `BUG_SPREAD` | 0.1 | Spread chance, times `mobility*density`. |
   | `BUG_MUT_RATE`, `BUG_MUT_SD` | 0.15, 0.02 | Mutation on spread. |
@@ -754,12 +1009,22 @@ Bugs are density fields, not agents. There are four niche planes, each holding a
   | `DETRI_FULL`, `DETRI_RATE`, `DETRI_RECYCLE` | 0.3, 0.004, 0.5 | Litter for full food, share of litter eaten per density, and share returned as nutrient. |
   | `PARA_FULL`, `PARA_TRACE_DECAY` | 5, 0.95 | Host trace for full food, and trace decay per bug step. |
   | `POLL_FULL`, `POLL_WINTER`, `POLL_HUE_SPAN`, `POLL_GENERALIST`, `POLL_DRIFT` | 0.5, 0.35, 0.25, 0.4, 0.1 | Nectar for full food, off-season floor, hue match width, generalist food bonus, and hue drift toward the local flower on spread. |
-  | `LOCUST_DENSITY`, `LOCUST_SWARM_GENE`, `LOCUST_BARE`, `LOCUST_FRAC`, `LOCUST_COOLDOWN`, `LOCUST_LOG_GAP` | 0.85, 0.6, 0.05, 0.7, 40, 480 | Swarm trigger density, swarm gene and bare-tile edible threshold; share moved, per-species cooldown and log rate limit. |
+  | `LOCUST_DENSITY`, `LOCUST_SWARM_GENE`, `LOCUST_BARE`, `LOCUST_FRAC`, `LOCUST_COOLDOWN`, `LOCUST_LOG_GAP` | 0.3, 0.4, 0.3, 0.7, 1440, 480 | Swarm trigger density, swarm gene and bare-tile edible threshold; share moved, per-species cooldown and log rate limit. |
+  | `LOCUST_GAP` | 480 | Minimum ticks between any two swarms in the world (`_lastSwarm`), so swarms stay rare. |
   | `COLLAPSE_FRAC`, `COLLAPSE_GAP`, `COLLAPSE_PEAK_DECAY`, `COLLAPSE_MIN_PEAK` | 0.25, 960, 0.999, 30 | Pollinator collapse detection. |
   | `REINTRO_TILES` | 80 | Cells placed by `reintroduce`. |
 
 - **`BUG_ARCHETYPES`**: 13 founders (3 pest, one of them swarm-prone; 3 detritivore; 3 parasite with different host sizes; 4 pollinator with different hues and specialism).
 - **`bugCategory(g, niche, wet, o)`**: pest `locust` (swarm > 0.6) or `aphid`; detritivore `worm` (wet or moisture > 0.7) or `beetle`; parasite `leech` (wet) or `tick`; pollinator `butterfly` (specialism > 0.55) or `bee`.
+- **`bugIcon(category, id)`** picks `sp.icon` from `BUG_ICON_VARIANTS` by `id % variants.length`, the same way `animalIcon` does. Categories with no entry (`locust`, `leech`, `butterfly`) use the category name. `sp.category` and the label stay unchanged. `_newSpecies` and `refreshSpeciesMeans` both set the icon through it.
+
+  | Category | Variants |
+  | --- | --- |
+  | aphid | aphid, caterpillar |
+  | beetle | beetle, ant |
+  | worm | worm, snail |
+  | tick | tick, mosquito |
+  | bee | bee, moth |
 
 ### `BugLayer(world, plants, animals, registry, log, rng)`
 
@@ -793,7 +1058,7 @@ Bug species are registry species with `group 'bug'` plus `niche`, `nicheIndex`, 
 Runs only when `tick % BUG_EVERY === 0`. Updates `trace`, zeroes `animals.parasiteLoad`, then for each niche plane and occupied cell (inlined loops, food computed as above):
 
 - Pest locust check first (see below).
-- Logistic growth toward K below it, `d -= (d-K)*BUG_DECLINE*dt` above it, then `d -= BUG_MORT*dt*(0.5+appetite)*d`. Cells under `BUG_MIN` are cleared.
+- Logistic growth toward K (`fit*food*BUG_K_SCALE`) below it, `d -= (d-K)*BUG_DECLINE*dt` above it, then `d -= BUG_MORT*dt*(0.5+appetite)*(1+BUG_CROWD*d)*d`. Cells under `BUG_MIN` are cleared.
 - Effects:
   - Pest: `plants.damage(i, d*appetite*PEST_BITE*dt)`, summed into `pestDamage`.
   - Detritivore: `soil.consumeLitter(i, litter*d*DETRI_RATE*dt)`; `DETRI_RECYCLE` of it goes to nutrients (clamped at `SOIL_MAX`).
@@ -806,12 +1071,13 @@ Then `_sumTotals` and `_checkCollapse`.
 ### Mechanics
 
 - **Spread (`_spread`):** a target 1–2 tiles away (1–3 when mobility > 0.7), never water for land-only niches. A same-species resident just gains `BUG_SEED_D*0.5`. Otherwise food is pre-checked with the parent genome and a stronger resident rejects early; then the child mutates (masked genes kept), pollinator hue drifts `POLL_DRIFT` toward the target's `nectarHue`, and the child needs `fit*food >= 2*BUG_MIN`. Against a resident, strength is `density*fit` and the invader wins with probability `(cs-rs)/cs`.
-- **Speciation (`_assign`):** as for plants, with `BUG_WEIGHTS`, `BUG_SPECIATION` and `matchDaughter` at 0.8×; logs a `'speciation'` entry.
-- **Locust swarms (`_swarm`):** a pest cell with density > `LOCUST_DENSITY`, swarm gene > `LOCUST_SWARM_GENE` and `plants.edible(i) < LOCUST_BARE` moves `LOCUST_FRAC` of its density to a land tile 4–8 away, at most once per `LOCUST_COOLDOWN` ticks per species. Logs "<name> locusts are swarming" (rate-limited per species).
+- **Speciation (`_assign`):** as for plants, with `BUG_WEIGHTS`, `BUG_SPECIATION`, distance to the parent's `mean`, `matchDaughter` at the full threshold and `canSplit(parentSp, BUG_SPLIT_MIN_POP)`; logs a `'speciation'` entry. The comparison runs on a copy of the child (`_cmp`) whose hue is unwrapped to within 0.5 of the parent's mean hue, and that copy is what `matchDaughter` sees.
+- **Locust swarms (`_swarm`):** a pest cell with density > `LOCUST_DENSITY`, swarm gene > `LOCUST_SWARM_GENE` and `plants.edible(i) < LOCUST_BARE` moves `LOCUST_FRAC` of its density to a land tile 4–8 away, at most once per `LOCUST_COOLDOWN` ticks per species and once per `LOCUST_GAP` ticks world-wide (`_lastSwarm`, set by `_swarm`). The trigger uses the density before the step's K decline. Logs "<name> locusts are swarming" (rate-limited per species).
 - **Pollinator collapse (`_checkCollapse`):** tracks a decaying peak of pollinator mass; when mass falls below `COLLAPSE_FRAC` of a peak of at least `COLLAPSE_MIN_PEAK`, increments `collapses` and logs, at most once per `COLLAPSE_GAP`.
 - **`edibleAt(i)`** is pest + detritivore + pollinator density. **`eat(i, amount)`** removes density proportionally from those three planes, clears cells under `BUG_MIN`, updates `total` and `eaten`, and returns the amount taken.
 - **`reintroduce(niche)`** places a random founder of that niche on up to `REINTRO_TILES` empty cells with `K >= 0.15` and logs a `'migration'` entry.
-- **`refreshSpeciesMeans()`** recomputes each bug species' `mean`, `density`, `wetFrac`, `category` and `icon`.
+- **`refreshSpeciesMeans()`** recomputes each bug species' `mean`, `density`, `wetFrac`, `category` and `icon`. `mean[B_HUE]` is a circular mean (via summed cos and sin), because pollinator hue wraps at 0/1.
+- **`reassignSpecies(fromSp, toSp)`** rewrites `species[niche*n+i]` on all four planes and returns the tile count. Used by the ecosystem merge pass.
 
 ---
 
@@ -821,26 +1087,28 @@ Pathogens are strains: registry species with `group: 'pathogen'`. A strain's `po
 
 ### Constants
 
-- **`DG = 4`**: strain genes. `D_TRANS` 0 (transmissibility), `D_VIR` 1 (virulence), `D_RANGE` 2 (host range), `D_HUE` 3 (colour). **`DISEASE_WEIGHTS`** is `[1, 1, 0.8, 0.3]` and **`DISEASE_SPECIATION`** is 0.12. **`DISEASE_KINDS`** is `['animal', 'plant']`.
+- **`DG = 4`**: strain genes. `D_TRANS` 0 (transmissibility), `D_VIR` 1 (virulence), `D_RANGE` 2 (host range), `D_HUE` 3 (colour). **`DISEASE_WEIGHTS`** is `[1, 1, 0.8, 0.3]` and **`DISEASE_SPECIATION`** is 0.1. **`DISEASE_SPLIT_MIN_POP`** is 10 (hosts). **`DISEASE_KINDS`** is `['animal', 'plant']`.
 
 | Constant | Value | Use |
 | --- | --- | --- |
-| `VIR_TRADE` | 0.6 | Effective transmissibility `trans*(1-VIR_TRADE*vir)`. |
+| `VIR_TRADE` | 0.75 | Effective transmissibility `trans*(1-VIR_TRADE*vir)`. The plan asked for 0.5; 0.75 was kept after tuning because lower values let the disease death share pass 25% by year 20. |
 | `DUR_BASE` | 200 | Animal infection duration `DUR_BASE*(1-0.5*vir)`. |
+| `RES_DUR` | 0.6 | `infectAnimal` shortens the infection to `max(1, sDur*(1-RES_DUR*res))`. Together with `RES_NUDGE` in animals.js (a recovered parent adds 0.02 to its child's resistance), this lets resistance climb in heavily infected species. |
 | `BLIGHT_DUR` | 150 | Blight duration base, same formula. |
 | `RANGE_BASE`, `RANGE_SPAN` | 0.05, 0.25 | Host range radius `RANGE_BASE+RANGE_SPAN*range`, as a gene distance between host species genomes. |
 | `JUMP_K`, `JUMP_K_P` | 0.02, 0.001 | Jump multiplier for animal and plant exposures outside the host range. |
 | `JUMP_SPAN` | 0.15 | Distance beyond the host range at which jump chance falls to 0. |
 | `JUMP_LOG_GAP` | 1200 | Minimum ticks between jump log entries per strain-and-host pair. |
-| `PATHO_MUT` | 0.03 | Chance per transmission that the strain mutates. |
+| `PATHO_MUT` | 0.015 | Chance per transmission that the strain mutates. |
 | `PATHO_MUT_RATE`, `PATHO_MUT_SD` | 0.5, 0.05 | `mutateGenes` rate and sd for that mutation. |
 | `PATHO_DRIFT` | 0.5 | Share by which a sub-threshold mutation moves the strain's `mean`. |
-| `SEED_HOSTS`, `SEED_R` | 6, 6 | Animals infected at emergence, within this radius of the index case. |
+| `SEED_HOSTS`, `SEED_R` | 10, 6 | Animals infected at emergence, within this radius of the index case. |
 | `SEED_TILES`, `SEED_TILE_R` | 12, 3 | Plant slots infected at emergence, within this square radius. |
 | `EMERGE_MIN_A`, `EMERGE_MIN_P` | 40, 150 | Minimum host species population to be picked for emergence. |
 | `EMERGE_GAP` | 900 | Ticks without any live strain of a kind after which one emerges. |
-| `EMERGE_P` | 0.04 | Chance per emergence check (every 60 ticks) of a spontaneous emergence per kind. |
-| `EMERGE_SD` | 0.08 | Spread of emerged strain genes around trans 0.5, vir 0.35, range 0.3. |
+| `EMERGE_P` | 0.05 | Chance per emergence check (every 60 ticks) of a spontaneous emergence per kind. |
+| `EMERGE_VIR` | 0.45 | Mean virulence gene of an emerged strain. |
+| `EMERGE_SD` | 0.08 | Spread of emerged strain genes around trans 0.5, vir `EMERGE_VIR`, range 0.3. |
 | `BLIGHT_EVERY` | 3 | The blight pass runs every 3 ticks. |
 | `BLIGHT_DMG` | 0.08 | Health loss per tick `BLIGHT_DMG*vir*(1-BLIGHT_RES*blightRes)`. |
 | `BLIGHT_SPREAD` | 0.08 | Neighbour infection chance factor on effective transmissibility. |
@@ -860,14 +1128,14 @@ Pathogens are strains: registry species with `group: 'pathogen'`. A strain's `po
 - **`live`**: a Set of strain species with population above 0. **`speciesStrain`**: a Map from host species id to its most prevalent strain id, rebuilt in `refreshSpeciesMeans`.
 - **Counters:** `sickAnimals`, `blightSlots`, `animalDeaths`, `plantDeaths`, `created`, `mutated`, `jumps`, `outbreaks`, `blights`.
 
-**Strain species fields:** `hostKind` (`'animal'` or `'plant'`), `hostId` and `hostGenome` (the host species' reference genome), `category`/`icon` (`'virus'` or `'blight'`), `infected` (= `population`), `deaths`, `recentDeaths`, `hosts` (Map host species id to count, refreshed every 20 ticks), `origin` (`'emerged'`, `'jump'` or `null` for a mutation). Hue is 55–150° for animal strains and 18–68° for blights, from gene 3.
+**Strain species fields:** `hostKind` (`'animal'` or `'plant'`), `hostId` and `hostGenome` (the host species' reference genome), `category` (`'virus'` or `'blight'`), `icon` (animal strains take `STRAIN_ICONS[id % 5]`, which are `virus`, `bacterium`, `protozoan`, `prion` and `helminth`; blights take `BLIGHT_ICONS[id % 2]`, which are `blight` and `mold`), `infected` (= `population`), `deaths`, `recentDeaths`, `hosts` (Map host species id to count, refreshed every 20 ticks), `origin` (`'emerged'`, `'jump'` or `null` for a mutation). Hue is 55–150° for animal strains and 18–68° for blights, from gene 3.
 
 ### Transmission
 
-- **`exposeAnimal(j, s, k)`**: no-op if `j` is infected, innately immune to `s`, or still immune to `s`. It rolls `r` once against `k*sTrans*(1-0.7*res)`, then against that times `_compat`.
+- **`exposeAnimal(j, s, k)`**: no-op if `j` is infected, innately immune to `s`, or still immune to `s`. It rolls `r` once against `k*sTrans*(1-RES_EFFECT*res)*(1+ELDER_INFECT*(1-ef)/(1-ELDER_MIN))` (elders up to ×1.5), then against that times `_compat`.
 - **`_compat`** returns 1 when the host species is the strain's host or its reference genome is within `sRange` of `hostGenome`. Otherwise it is `jk*(1-(d-range)/JUMP_SPAN)` (0 when negative) and marks the transmission as a jump.
 - **`_transmit`** returns the strain the new host gets: a jump goes through `_jump`; otherwise `_mutate`.
-- **`_mutate`**: with `PATHO_MUT`, mutates a copy of `mean`. Within `DISEASE_SPECIATION` of the strain's founding genome it only drifts `mean` (and re-caches the parameters). Otherwise it reuses a `matchDaughter` (0.8×) or founds a new strain and logs a `'speciation'` entry, "X (new strain) branched from Y".
+- **`_mutate`**: with `PATHO_MUT`, mutates a copy of `mean`. Within `DISEASE_SPECIATION` of the strain's `mean` it only drifts `mean` (and re-caches the parameters). Otherwise it reuses a `matchDaughter` (full threshold, children and siblings); failing that it founds a new strain and logs a `'speciation'` entry, "X (new strain) branched from Y", but only when `registry.canSplit(st, DISEASE_SPLIT_MIN_POP)`. When the strain cannot split, the mutation only drifts `mean`.
 - **`_jump`**: reuses the living child strain already created for that host, or founds one (origin `'jump'`, host = the new species), increments `jumps` and logs an `'outbreak'` entry "X jumped to H as Y", rate-limited per pair.
 - **Registry bookkeeping:** every infection goes through `_add` (`registry.add`) and every release through `_drop` (`registry.remove`), so `population === infected` always holds.
 
@@ -885,14 +1153,97 @@ Runs after animals, only when `on`. Decays both exposure planes; every `BLIGHT_E
 
 ### Emergence
 
-- **`maybeEmerge(tick)`**, called from `Ecosystem._migrations` (every 60 ticks when both migrations and disease are on): per kind, emerges a strain when none of that kind has been live for `EMERGE_GAP` ticks, or with `EMERGE_P`.
+- **`maybeEmerge(tick)`**, called from `Ecosystem.step` every `DISEASE_EVERY` (60) ticks when disease is on, whether or not migrations are on: per kind, emerges a strain when none of that kind has been live for `EMERGE_GAP` ticks, or with `EMERGE_P`.
 - **`emerge(kind, tick)`** picks a host species weighted by population (plants exclude fungi), creates a strain with origin `'emerged'`, seeds it (`_seedAnimals` or `_seedPlants`), increments `outbreaks` or `blights`, and logs an `'outbreak'` entry: "X broke out among H" or "X blight broke out in H". Returns the strain or `null`. Usable from the UI.
 
 ### Other methods
 
 - **`clearAll()`**: releases every infection and blight, clears the planes, list and `speciesStrain`. Idempotent through `dirty`. The ecosystem calls it every tick while disease is off.
 - **`refreshSpeciesMeans()`**: rebuilds each live strain's `hosts` and `infected`, and `speciesStrain`.
+- **`reassignSpecies(fromSp, toSp)`**: rewrites strain id `fromSp` to `toSp` in `animals.strain`, `animals.immune`, `animals.natImm`, `plants.blight`, `plants.blightImm`, `carcassStrain` and `vectorStrain`, removes `fromSp` from `live` and returns the infected hosts moved. Used by the ecosystem merge pass.
+- **`remapHost(fromSp, toSp)`**: points every live strain whose `hostId` is `fromSp` at `toSp`. The merge pass calls it when a plant or animal species merges, so its strains do not start jumping.
 - **`hostIndices(strainId, out = [])`**: the animal slot indices (animal strain) or plant slot indices `p` (blight) currently infected.
+
+---
+
+## Weather (`js/sim/weather.js`)
+
+`WeatherLayer` adds runtime water to the static map: per-tile surface wetness and snow, moving storms, droughts, a drinkable-water mask and a distance-to-fresh-water field. It is DOM-free, allocates everything in the constructor, and does its per-tile work every `WEATHER_EVERY` ticks.
+
+### Constants
+
+| Constant | Value | Meaning |
+| --- | --- | --- |
+| `WEATHER_EVERY` | 4 | Ticks between tile, storm and drought updates. |
+| `WATER_DIST_MAX` | 40 | Cap (and unreached value) of `waterDist`. |
+| `MAX_STORMS` | 8 | Storm pool size. |
+| `STORM_P` | 0.2 | Base spawn chance per update, times `1 - STORM_SEASON*season`. |
+| `STORM_SEASON` | 0.8 | Seasonal skew: spawns run 0.2x at `season = 1` and 1.8x at `season = -1` (the wet season is the negative half of the sine, autumn and winter). |
+| `STORM_R_MIN`, `STORM_R_MAX` | 6, 18 | Storm radius range. |
+| `STORM_RAIN` | 0.25 | Mean rain per update at the storm centre (each storm draws 0.6–1.4x). |
+| `STORM_SPEED` | 0.7 | Tiles per tick along the prevailing wind (each storm draws 0.6–1.4x, then eases toward the wind at 5% per update). |
+| `STORM_LIFE_MIN`, `STORM_LIFE_MAX` | 120, 360 | Storm lifetime in ticks. Rain fades over the last 40. |
+| `STORM_SAMPLES` | 5 | Random tiles sampled per spawn; the most humid one is the spawn point. |
+| `WIND_TURN` | 0.01 | The wind angle turns by `WIND_TURN*(0.5+rand)` radians per update. |
+| `EVAP` | 0.0017 | Evaporation: `wet -= wet*EVAP*(0.5+temperature)` per update, doubled in a drought. |
+| `SNOW_T` | 0.28 | Effective temperature below which storms drop snow instead of rain, and above which snow melts. |
+| `SEASON_T` | 0.08 | Seasonal temperature swing: `seasonT = SEASON_T*season`. |
+| `SNOW_MELT` | 0.02 | Snow melted into `wet` per update when warm enough. |
+| `SNOW_SHOW` | 0.1 | Snow depth counted as snow cover in `snowTiles`. |
+| `POOL_WET` | 0.7 | A land tile wetter than this is a pool and is marked `fresh`. |
+| `DROUGHT_P` | 0.2 | Chance of a drought at each year boundary. |
+| `DROUGHT_MIN`, `DROUGHT_MAX` | 240, 720 | Drought length in ticks. |
+| `DROUGHT_STORMS` | 0.2 | Spawn chance multiplier during a drought. |
+| `DROUGHT_EVAP` | 2 | Evaporation multiplier during a drought. |
+| `DROUGHT_MOIST` | 0.8 | `moistMul` multiplier in a drought on tiles with `wet < 0.1`. |
+| `DRY_FLOW` | 0.5 | River and pond tiles with `riverFlow` below this stop being fresh in a drought. Lakes never dry. |
+| `MOIST_BASE`, `MOIST_K` | 0.8, 0.4 | `moistMul = MOIST_BASE + MOIST_K*wet`. |
+| `STORM_LOG_R` | 12 | Minimum radius for a new storm to be logged. |
+| `STORM_LOG_EVERY` | 240 | Minimum ticks between logged storms. |
+| `COMPASS` | 8 names | Compass directions from `north` clockwise, used by `_logStorm`. |
+
+### `WeatherLayer(world, plants, log, rng)`
+
+"Land" below means `plants.water[i] === 0`. Water tiles never get rain, snow or evaporation, and keep `moistMul` 1.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `wet` | Float32 `n` | Surface wetness 0..1. Starts at `world.humidity` on land. |
+| `snow` | Float32 `n` | Snow depth 0..1. |
+| `moistMul` | Float32 `n` | Plant growth-rate multiplier (see Plants). Shared by reference as `plants.moistMul`. |
+| `fresh` | Uint8 `n` | 1 where the tile is drinkable now: lake, river or pond tiles (minus low-flow river and pond tiles in a drought), plus land pools (`wet > POOL_WET`). Pools are refreshed every update. |
+| `waterDist` | Uint8 `n` | 4-neighbour BFS steps to the nearest fresh lake, river or pond tile, capped at `WATER_DIST_MAX`. Ocean is salt: it is never a source and the BFS does not cross it. Pools are not sources. Rebuilt only at construction and when a drought starts or ends. |
+| `storms` | Array of 8 | Preallocated `{on, x, y, vx, vy, r, rain, life, p1, p2}`; `p1`, `p2` are phases of the edge noise. |
+| `stormCount` | int | Active storms. |
+| `windA` | float | Prevailing wind angle (radians). |
+| `season`, `seasonT` | float | The season value passed to `step` (0 when seasons are off) and `SEASON_T*season`. |
+| `drought`, `droughtEnd`, `lastDroughtEnd`, `droughts` | | Drought flag, end tick, the tick the last one ended, and the number started. |
+| `rainTiles` | int | Land tiles that received rain in the last update (each counted once, through the `_mark`/`_pass` stamp). |
+| `snowTiles` | int | Land tiles with `snow > SNOW_SHOW`. |
+| `meanWet`, `meanMoist` | float | Mean `wet` and mean `moistMul` over land, from the last update. |
+| `on` | bool | Set through `setOn(on, tick)`. |
+| `lastStormLog` | int | Tick of the last logged storm, starting at `-STORM_LOG_EVERY`. |
+
+Scratch arrays: `_evapK` (per-tile `EVAP*(0.5+temperature)`), `_mark` (Int32 rain stamp), `_queue` (Int32 BFS queue).
+
+### Methods
+
+- **`effTemp(i)`** returns `world.temperature[i] + seasonT`. Snow and melt use it, and animal temperature effects should use it too.
+- **`step(tick, season)`** sets `season`/`seasonT` every tick, then returns unless the layer is on and `tick % WEATHER_EVERY === 0`. Otherwise, in order:
+  1. Ends the drought when `tick >= droughtEnd`.
+  2. At a year boundary, with no drought and at least `YEAR_TICKS` since the last one ended, starts a drought with chance `DROUGHT_P`.
+  3. Turns the wind and maybe spawns one storm (`_spawnStorm(tick)`: best of `STORM_SAMPLES` humid sample tiles, heading within ±0.4 rad of the wind). A new storm with `r >= STORM_LOG_R` is logged by `_logStorm` when at least `STORM_LOG_EVERY` ticks have passed since the last log.
+  4. Moves each storm (`_moveStorm`) and deposits on a noisy disc: the edge radius is `r*(0.75 + 0.125*(2 + sin(x*0.47+p1) + sin(y*0.53+p2)))`, the amount `rain*fade*(1 - d/edge)`. Where `effTemp < SNOW_T` it adds to `snow`, otherwise to `wet` (both clamped at 1). A storm dies when its life runs out or it leaves the map.
+  5. `_updateTiles`: evaporation, snow melt (`min(snow, SNOW_MELT)` moves into `wet` when `effTemp > SNOW_T`), `moistMul`, pool `fresh` flags, `snowTiles`, `meanWet`, `meanMoist`.
+- **`_logStorm(tick, s)`** pushes a `'weather'` event "Storm over the <biome> in the <place>", or "Blizzard over …" when `effTemp` at the centre tile is below `SNOW_T`. The biome is the centre tile's `BIOME_INFO` name; the place is "the heartland" within about 0.14 map widths of the centre, otherwise the `COMPASS` direction from the map centre. It uses no RNG and sets `lastStormLog`.
+- **`setOn(on, tick)`**: turning off clears storms, sets `moistMul` to 1 and ends any drought silently (restoring `fresh` and `waterDist`). `wet` and `snow` stay frozen while off.
+- **`_startDrought(tick)`** / **`_endDrought(tick, silent)`** set the flag, recompute the base `fresh` mask (`_setFresh`) and rebuild `waterDist` (`_buildWaterDist`), and log `'weather'` events.
+
+### Tuning notes
+
+- Mean `moistMul` over land outside droughts is 1.00–1.05 on seeds 42, 7 and 123, so baseline plant cover holds. Cold land is drier than average, because its storms drop snow that only melts in the warm half of the year.
+- Tiles with base temperature below about 0.2 never melt, so they keep permanent snow.
+- Weather is independent of animals: with the same seed and world, storms and droughts are identical whatever the animals do.
 
 ---
 
@@ -902,12 +1253,19 @@ Runs after animals, only when `on`. Decays both exposure planes; every `BLIGHT_E
 
 ### Globals
 
-- **`STAT_GROUPS`**: six trophic groups, given as `{key, label, domain (0 land / 1 water), role, icon}`. The keys are `landHerb`, `landOmni`, `landCarn`, `waterHerb`, `waterOmni` and `waterCarn`.
+- **`STAT_GROUPS`**: nine trophic groups, given as `{key, label, domain (0 land / 1 water / 2 amphibious), role, icon}`. The keys are `landHerb`, `landOmni`, `landCarn`, `landScav`, `waterHerb`, `waterOmni`, `waterCarn`, `amphib` ("Amphibians", domain 2, icon `frog`) and `reptile` ("Reptiles", domain 0, icon `lizard`).
+  - `_computeStats` classifies in order: domain 2 is `amphib`, a land animal with `cold > 0.5` is `reptile`, then the scavenger test, then the diet split.
+  - `landScav` is "Scavengers", with role `scavenger` and icon `vulture`.
+  - `waterOmni` is labelled "Sea scavengers".
 - **`HISTORY_EVERY = 5`**: the population history is sampled every 5 ticks.
+- **`MERGE_EVERY = 120`**, **`MERGE_MAX_AGE = 960`** (2 years) and **`MERGE_POP`** `{plant: 6, animal: 2, bug: 6, pathogen: 2}` drive `_mergePass`.
+- **`THIRST_EVERY = 60`**, **`THIRST_WINDOW = 8`** drive `_thirstStats`; **`HERD_STAT_EVERY = 20`**, **`HERD_STAT_POP = 12`** drive `_herdStats` (run in the 20-tick block).
+- **`HERB_RESCUE = 30`**: `_migrations` brings in land herbivores when `landHerb` is below this.
+- **`DISEASE_EVERY = 60`**, **`DISEASE_WINDOW = 8`** and **`OUTBREAK_MIN_POP = 30`** drive emergence checks and `_diseaseStats` (window of 8 checks, about one year; outbreaks only count for hosts that peaked at 30 or more).
 
 ### `new Ecosystem(world, seed, options)`
 
-- **Options:** `{migrations: true, seasons: true, disease: true}` by default. All three can be toggled at runtime through `eco.options`.
+- **Options:** `{migrations: true, seasons: true, disease: true, weather: true}` by default. All four can be toggled at runtime through `eco.options`. With `weather` off, `wet` and `snow` freeze, `moistMul` is 1, and there are no storms or droughts.
 - **RNG streams:** each part of the system uses its own RNG stream, so adding draws in one subsystem does not reshuffle the others.
 
   | Stream | Seed |
@@ -918,16 +1276,28 @@ Runs after animals, only when `on`. Decays both exposure planes; every `BLIGHT_E
   | Animals | `seed+777` |
   | Bugs | `seed+333` |
   | Disease | `seed+444` |
+  | Weather | `seed+888` |
 
 - **Fields:**
   - `world`, `seed`, `tick`, `log`, `registry`, `plants` and `animals`.
   - `stats` holds `plants` (cover tiles), `plantBiomass`, `animals`, and one count per `STAT_GROUPS` key.
-  - `stats` also holds `fruit` (`plants.totalFruit`), `fungi` (`plants.fungusTiles`), `flowers` (`plants.flowerTiles`) and `litter` (`soil.totalLitter`).
+  - `stats` also holds `fruit` (`plants.totalFruit`), `fungi` (`plants.fungusTiles`), `flowers` (`plants.flowerTiles`), `litter` (`soil.totalLitter`) and `carrion` (`soil.totalCarrion`).
+  - In `_computeStats`, a land animal with diet of at least 0.33 and `scav` above 0.5 counts as `landScav` and skips the diet split, so it is never counted twice. This matches the `carrion` category test.
   - `stats` also holds `bugs` (rounded total density), `pests`, `detritivores`, `parasites`, `pollinators` (occupied tiles per niche) and `pollination` (`plants.flowerPoll`).
   - `bugs` is the `BugLayer` (or `null` when `bugs.js` is not loaded). It is built after the animal founders and assigned to `animals.bugs`.
   - `stats` also holds `sick` (`disease.sickAnimals`), `blight` (`disease.blightSlots`), `strains` (live strain count) and `diseaseDeaths` (`disease.animalDeaths`).
+  - `stats` also holds `diseaseShare` (rolling one-year disease share of animal deaths, a fraction) and `worstOutbreak` (`{tick, id, from, to, drop}` or `null`), both set by `_diseaseStats`; `swarms` (`bugs.swarms`, cumulative); and `carrionShare` (`animals.carrionEnergy / animals.scavEnergy`, cumulative, 0 before any land scavenger has gained energy).
+  - Internal disease bookkeeping: `_deathRing` (`Float64Array` of 16), `_deathIdx`, `_deathLast`, `_outbreaks` and `_obPeak`.
+  - `stats.speciations` is the same object as `registry.speciations` (per-group speciation counts).
   - `disease` is the `DiseaseLayer` (or `null` when `disease.js` is not loaded). It is built after the bugs with its own RNG and assigned to `animals.disease` and `plants.disease`.
-  - `history` holds `tick`, `plants` (rounded biomass), `bugs`, `sick` and one array per group key. When it passes 800 samples, it keeps every second sample.
+  - `weather` is the `WeatherLayer` (or `null` when `weather.js` is not loaded). It is built right after the plants, before the animal founders, and its `moistMul` and `snow` are assigned to `plants.moistMul` and `plants.snow`.
+  - `stats` also holds `thirstDeaths` (`animals.deaths.thirst`), `thirstShare` (rolling one-year thirst share of land deaths, from `_thirstStats`), `herds` (living animal species with population of at least 12, mean herd above 0.4 and mean terr at most 0.5, from `_herdStats`), `territories` (`animals.holders`) and `deaths` (a copy of `animals.deaths`, including `thirst`).
+  - `animals.setWeather(weather)` runs right after the weather layer is built, before the founders; `_introduce` gives amphibious archetypes domain 2 and skips sites with `waterDist > 2`.
+  - `stats.weather` is `{storms, rainTiles, snowTiles, drought, droughts}` and `stats.meanWet` is the mean land `wet`, copied from the weather layer in `_computeStats`.
+  - `eggs` is the `EggPool` (or `null` when `eggs.js` is not loaded), built right after `animals.setWeather` and assigned to `animals.eggs`.
+  - `stats.plantStages` is `{seedTiles, seedlings, mature, old, oldDeaths, germinated, grazedSeedlings}`, copied in `_computeStats` from `plants.stages` and the three cumulative plant counters.
+  - `stats.stages` is `{eggs, juveniles, adults, elders}`: `eggs` is `eggs.count`; each animal is a juvenile (`age < mature`), an elder (`age > ELDER_AGE*maxAge`) or an adult. `stats.eggs` is `{laid, hatched, eaten, failed}`, cumulative copies of the `EggPool` counters. Both are set in `_computeStats`.
+  - `history` holds `tick`, `plants` (rounded biomass), `bugs`, `sick`, `thirstDeaths`, `herds`, `territories`, `eggs` (`stats.stages.eggs`) and one array per group key. When it passes 800 samples, it keeps every second sample.
 
 ### Methods
 
@@ -936,11 +1306,13 @@ Runs after animals, only when `on`. Decays both exposure planes; every `BLIGHT_E
 1. Advances `tick`.
 2. Handles the seasons toggle. When seasons are off, `plants.seasonAmp` is zeroed. When seasons are switched back on, it is rebuilt through `plants._prepareClimate()`. It also sets `plants.seasonsOn` from `options.seasons`, which pins `bloomNow` and `fruitNow` at 0.5 when seasons are off.
 3. Sets `disease.on` from `options.disease`, and calls `disease.clearAll()` while it is off.
-4. Steps the plants, then the bugs, then the animals, then the disease layer.
+4. Steps the plants, then the weather (`weather.setOn(options.weather, tick)`, then `weather.step(tick, seasons ? plants.season : 0)`), then the bugs, then the animals, then the eggs (`eggs.step(weather)`), then the disease layer.
 5. Every 20 ticks, refreshes the species means of all four layers.
-6. Computes stats and logs extinctions.
-7. Every 60 ticks, runs migrations if they are enabled.
-8. Every 5 ticks, samples history.
+6. Every `MERGE_EVERY` ticks, runs `_mergePass`.
+7. Computes stats and logs extinctions.
+8. Every 60 ticks, runs migrations if they are enabled.
+8a. Every `DISEASE_EVERY` (60) ticks, when a disease layer exists: calls `disease.maybeEmerge(tick)` if `options.disease` is on, then `_diseaseStats()`.
+9. Every 5 ticks, samples history.
 
 **`_introduce(arch, origin, count)`** places a founder or migrant group in clusters of 4–8, in good habitat:
 
@@ -950,15 +1322,28 @@ Runs after animals, only when `on`. Decays both exposure planes; every `BLIGHT_E
 
 **`_migrations()`** is a safety net that re-introduces a trophic group that has died out. It picks a random archetype of the needed kind and brings in 60% of that archetype's founder count:
 
-- If land herbivores plus land omnivores fall below 20, it brings in land herbivores.
-- Otherwise, if there are no land predators and more than 250 land herbivores, it brings in land predators.
-- The water side follows the same two rules.
+- If land herbivores fall below `HERB_RESCUE` (30), it brings in land herbivores ("grazers had vanished"). Before Part 3b slice 2 the test was land herbivores plus land omnivores below 20, which never fired because omnivores stayed in the hundreds.
+- Otherwise, if there are no land predators and land herbivores plus land omnivores exceed 250, it brings in land predators.
+- The water side follows the same two rules (water herbivores plus water omnivores). Since Part 3 slice 3 the water herbivore rule also fires whenever water herbivores are 0, regardless of the omnivore count ("the waters were empty"), so the group is revived even when crabs are plentiful. In that case the water predator rule (an `else`) does not run on that pass.
+- If there are no land scavengers and land herbivores plus land omnivores plus land predators exceed 150, it brings in an archetype tagged `role: 'scavenger'` (found by `pickRole(domain, role)`).
+- If there are no water omnivores and water herbivores exceed 150, it brings in a water archetype with an omnivore diet (0.33 to 0.66), which is the crustacean. Before this rule, nothing revived that group.
+- If there are no amphibians or no reptiles and land herbivores plus omnivores plus predators exceed 150, it brings in an archetype tagged `role: 'amph'` ("the wetlands were empty") or `role: 'reptile'` ("warm ground drew reptiles").
+- These rules are separate `if`s, so they can fire on the same pass as the herbivore and predator rules.
 - Any bug niche with 0 occupied tiles is reintroduced with `bugs.reintroduce(niche)`.
-- When `options.disease` is on, calls `disease.maybeEmerge(tick)`.
+- Part 2 slice 2 relaxed the predator and scavenger triggers to count omnivores as prey. Late in a run herbivores collapse to single digits while omnivores and crabs dominate, so the herbivore-only triggers never fired and lost predator or scavenger groups stayed gone.
+
+**`_diseaseStats()`** runs every `DISEASE_EVERY` ticks:
+
+- Keeps a ring of the last `DISEASE_WINDOW` (8) deltas of total animal deaths and disease deaths (a counter reset outside the ecosystem is treated as a restart) and sets `stats.diseaseShare` to disease deaths over all deaths in the window, as a fraction (about one year).
+- For each animal host species of a live strain (`disease.speciesStrain`), tracks `{from, low}` in `_obPeak`: `from` is the peak population since tracking began and `low` the lowest since that peak. When a host species leaves the map it pushes an outbreak `{tick, id, from, to, drop}` if `from >= OUTBREAK_MIN_POP` (30); an extinct, non-merged host counts as `to = 0`, `drop = 1`.
+- `stats.worstOutbreak` is the entry with the largest `drop` among outbreaks from the last `YEAR_TICKS`, or `null`.
+
+**`_mergePass()`** folds tiny young offshoots back into their parent. A living species qualifies when it has a parent and no `origin` (so founders, migrants, emerged strains and host jumps never merge), is younger than `MERGE_MAX_AGE`, has a population at or below `MERGE_POP[group]`, and its parent is alive. The matching layer's `reassignSpecies` moves every member (plants, animals, bugs, or the disease layer for strains); for a plant or animal it also calls `disease.remapHost`; for an animal it also calls `eggs.reassignSpecies` so pending eggs follow the merge; then `registry.merge` moves the count and sets `merged`.
 
 **`_logExtinctions()`**:
 
 - Logs an extinction only when the species was notable: a plant or bug with a peak of at least 60 tiles, an animal with a peak of at least 12, or a pathogen with a peak of at least 15. A pathogen's entry reads "burned out" instead of "went extinct".
+- Skips the log line for a merged species (`sp.merged`).
 - Pushes a final 0 into the species' history.
 
 **`seasonName()`** returns Spring, Summer, Autumn or Winter, by quarter of `YEAR_TICKS`. **`year()`** returns the 1-based year.
@@ -989,6 +1374,21 @@ The vector icons are drawn on a 32×32 box, in side view, facing right. The same
   - Land animals: `rabbit`, `deer`, `bison`, `mouse`, `boar`, `bear`, `fox`, `wolf` and `bigcat`.
   - Water animals: `fish`, `turtle`, `crab`, `pike` and `shark`.
   - Alternative animal skins: `chicken`, `cow`, `horse`, `lobster` and `shrimp`, chosen by `animalIcon`.
+  - Amphibians and reptiles (Part 3 slice 3), appended last so earlier atlas cells keep their positions (144 icons, 12 atlas rows):
+
+    | Icon | Design |
+    | --- | --- |
+    | `frog` | Sitting pose with a bent thigh line, `dark` spots, `light` belly and a gold eye with an oval pupil. |
+    | `toad` | Squat dome with warts, a parotoid gland, stubby `dark` legs and a gold eye with a horizontal pupil. |
+    | `newt` | Slim body with a crested tail fin, a wavy `dark` crest and a `light` belly. |
+    | `salamander` | Stout body with big `light` spots. |
+    | `axolotl` | Fixed pink gill strokes (`#e5728f`), a `light` tail fin and a smile. |
+    | `lizard` | Slim body, stroked curled tail, bent legs and a `light` dorsal stripe. |
+    | `snake` | S-coil stroke (width 3.6), oval head and a fixed red tongue (`#d8423a`). |
+    | `tortoise` | High dome with hex scutes, `light` columnar legs and a `dark` rim. |
+    | `monitor` | Bulky spotted body, long tapering tail, thick legs and a tongue. |
+    | `crocodile` | Long low body, `dark` back scutes and fixed white teeth (`#f4f1e6`). |
+  - `egg` (Part 3b slice 3), appended after `crocodile` at index 144, so the atlas holds 145 icons in 13 rows. An upright egg: `body` shell, a `dark` lower shadow band, a `light` highlight stroke on the upper left and five `dark` speckles. It is only drawn on the map (by `_pushEggs`), never as a species icon.
   - Bug categories (Part 3), the values `bugCategory` returns:
 
     | Icon | Niche | Design |
@@ -1004,12 +1404,25 @@ The vector icons are drawn on a 32×32 box, in side view, facing right. The same
 
   - Utility: `dot` (the zoomed-out animal marker and the bug swarm particle), `ring` (the highlight ring), `plant`, `paw`, `bug` (the Bugs tab and stat card), `wave`, `virus` (the Disease tab, stat card and sick-animal marker) and `blight` (a spotted leaf). Both disease icons use fixed hex colours for every part, so they read the same whatever the species palette.
 
+  - Ecosystem v2 additions (81 icons, appended after `blight` so the older atlas indices are unchanged):
+    - Plant variants (two per plant category, chosen by `plantIcon`): `tallgrass` (seed plumes), `wheat` (fixed gold ears), `cattail` (one fixed brown spike), `bamboo` (jointed culms), `lichen` (ringed crusts on a fixed grey rock), `clover` (trefoil with a fixed pink bloom), `hedge` (clipped box), `heather` (fixed purple flower spikes), `pricklypear` (pads with fixed red fruit), `agave` (spiky rosette), `oak` (lumpy canopy with fixed acorns), `birch` (fixed white trunk with black marks), `pine` (flat tiered clouds on a fixed red trunk), `cypress` (narrow column), `coconut` (leaning trunk with fixed brown nuts), `fanpalm` (jagged fan leaves), `sealettuce` (ruffled sheets), `redalgae` (fork-lobed frond), `seagrass` (ribbon blades on fixed sand), `bladderkelp` (bulb with streaming blades), `diatom` (striated pennate shell and a small disc), `radiolarian` (spined lattice sphere), `appletree` (round canopy with fixed red apples), `cherrytree` (fixed pink blossom and a cherry pair), `blueberry` (sprig with fixed blue berries), `raspberry` (fixed red drupelet cone), `tulip` (cup bloom with fixed green leaves), `sunflower` (fixed yellow petals and brown disc on `body` leaves), `earthstar` (ball on a star of rays), `coralfungus` (branching fingers), `morel` (pitted cone on a fixed off-white stem), `chanterelle` (ridged funnel), `bracket` (shelves on a fixed bark trunk), `porcini` (bun cap on a fixed bulbous stem), `stinkhorn` (thimble cap on a fixed white stalk and volva) and `jellyfungus` (folded lobes on a fixed bark branch).
+    - Land animals: `weasel`, `owl` (front view), `coyote`, `hawk` (soaring, seen from below), `tiger`, `squirrel`, `goat`, `kangaroo`, `elephant`, `moose`, `crow`, `raccoon`, `badger`, `monkey`, `ape`, `vulture`, `hyena` and `jackal`.
+    - Water animals: `hermitcrab` (fixed tan shell), `starfish` (top view), `eel`, `puffer`, `seahorse`, `ray` (top view), `manatee`, `barracuda`, `squid`, `seal`, `orca` (fixed white patches) and `swordfish`.
+    - Bugs: `caterpillar`, `ant`, `snail`, `mosquito` and `moth` (top view).
+    - Pathogens: `bacterium`, `protozoan`, `prion`, `helminth` and `mold`. Unlike `virus`, these use the three roles, so they take the strain's palette.
+    - UI: `events` (a bulleted list), `shadow` (one fixed `#000000` ellipse; the renderer supplies the transparency), `sun`, `moon` and `auto` (half sun, half moon).
+    - Weather and UI (Part 4 slice 2), appended after `egg` so the atlas holds 150 icons: `cloud`, `rain` (cloud with falling streaks), `snow` (a six-spoke flake), `drop` (a water drop) and `flag` (a pennant on a pole). They are used by the weather badge, the stat cards and the help overlay.
+
   Every `category` value in `plants.js` and `animals.js` is also an icon name.
 - **Helpers:**
   - `circ(x, y, r)` builds a circle path.
   - `EYE(x, y, r)` builds a fixed-color eye part.
   - `BARK` is the fixed bark color, and `STEM` the fixed green flower-stem color.
   - `petals(cx, cy, d, r)` builds five petal circles at distance `d` around a centre.
+  - `ell(x, y, rx, ry)` builds an axis-aligned ellipse path, and `ellR(x, y, rx, ry, deg)` a rotated one.
+  - `spokes(cx, cy, r1, r2, n, a0 = 0, span = 360)` builds `n` radial line segments from radius `r1` to `r2`. With `span < 360` the first and last spokes sit on the ends of the arc.
+  - `starPath(cx, cy, ro, ri, n, sy = 1, a0 = -90)` builds an `n`-pointed star polygon, squashed vertically by `sy`.
+  - `ringOf(cx, cy, d, r, n, a0 = -90)` builds `n` circles of radius `r` evenly spaced at distance `d`.
 - **Lookups:**
   - `ICON_NAMES` lists the icon names in definition order.
   - `ICON_INDEX` maps a name to its atlas index.
@@ -1025,7 +1438,7 @@ The vector icons are drawn on a 32×32 box, in side view, facing right. The same
 
 ### `buildIconAtlas(cell = 64)`: texture channel layout
 
-The atlas is 8 columns wide, with `ceil(ICON_NAMES.length/8)` rows of `cell` pixels. It returns `{width, height, cols, rows, cell, role, fixed}`, where `role` and `fixed` are premultiplied-RGBA `Uint8Array`s with the same layout.
+The atlas is 12 columns wide, with `ceil(ICON_NAMES.length/12)` rows of `cell` pixels. With the current 134 icons that is 12 rows, 768×768 at the default 64px cell. It returns `{width, height, cols, rows, cell, role, fixed}`, where `role` and `fixed` are premultiplied-RGBA `Uint8Array`s with the same layout.
 
 **Role atlas:**
 
@@ -1076,14 +1489,21 @@ The sprite shader recombines the two atlases with each instance's three colors (
   | `u_winter` | Winter strength. |
   | `u_time` | Animation time. |
   | `u_grid` | Tile-grid strength. |
-  | `u_overlay` | 1 in the data-overlay views (any mode with a `RAMPS` entry), otherwise 0. |
+  | `u_overlay` | 1 in the data-overlay views (any mode with a `RAMPS` entry) and in `territory`, otherwise 0. |
+  | `u_bugs` | The bug cloud texture `bugTex` (texture unit 3). |
+  | `u_warp` | Domain-warp strength: `smooth(WARP_ZOOM)` = 0 at zoom 4 up to 1 at zoom 6, and 0 in overlay views and `territory`. |
+  | `u_cloud` | Bug cloud strength: `1 - smooth(CLOUD_FADE)` (1 below zoom 9, 0 from zoom 14), and 0 when `showSwarms` is off, in overlay views or in `territory`. |
 
 - Effects, in order:
+  - Domain warp: the terrain and info lookups (not the vegetation) are offset by value noise (`hash`, `vnoise`) of up to ±0.35 tiles × `u_warp`, so tile edges read as organic shapes when zoomed in.
+  - Water darkens with depth: `col *= 1 - water*smoothstep(0.08, 0.9, depth)*0.3`.
   - The vegetation tint is mixed in by `v.a*u_vegAmount`.
   - In winter, snow creeps down from cold ground: `smoothstep(0.42, 0.18, temp + 0.22*(1-winter))`, on land only.
-  - Water gets a gentle sine shimmer.
-  - Both the snow and the shimmer are multiplied by `1 - u_overlay`, so the data views (temperature, humidity, altitude, fertility, nutrients and litter) show their raw ramp in winter too.
+  - A pale shore band, `(0.62, 0.8, 0.78)` at 0.28 × `water*(1 - smoothstep(0, 0.07, depth))`, lightens shallow water.
+  - Water gets a gentle two-octave sine shimmer (amplitude 0.022).
+  - The depth darkening, shore band, snow and shimmer are multiplied by `1 - u_overlay`, so the data views (temperature, humidity, altitude, fertility, nutrients and litter) show their raw ramp in winter too.
   - The result is multiplied by hillshade, `t.a*2`.
+  - Bug clouds (when `u_cloud > 0`): `u_bugs` is sampled with a 4-tap blur at a noise-warped, drifting position; its alpha is shaped by drifting two-octave value noise (`smoothstep(0.25, 0.7, nz + a*0.3)`), and the unpremultiplied swarm color is mixed in at `a*0.55*u_cloud`, giving soft moving colored haze over swarm-dense land.
   - A faint tile grid appears when zoomed far in (zoom above 20).
   - A soft vignette darkens the last 2.5 tiles at the map edge.
 - Anything outside the map is drawn in the background color.
@@ -1103,6 +1523,14 @@ The sprite shader recombines the two atlases with each instance's three colors (
   - It outputs `tint*max(r.a - f.a, 0) + f.rgb`, with alpha `r.a`, all times the instance alpha.
 - Both atlases are premultiplied, and `r.a` is the total coverage. Blending is `ONE, ONE_MINUS_SRC_ALPHA`.
 
+**`WX_VS` / `WX_FS`** (weather overlay, `wxProg` with `wxVao` on the shared quad buffer):
+
+- One draw per active storm: a quad of ±1.3r tiles around the storm centre; `v_q` is the offset in tiles.
+- Uniforms: `u_origin`, `u_scale`, `u_res`, `u_map` as in the terrain pass, plus `u_storm` (`x, y, r, rain × life fade`), `u_seed` (`p1`, `p2`), `u_snow`, `u_time`, `u_px` (tiles per CSS pixel), `u_cloud` and `u_dens`.
+- Fragments outside the map are discarded. The cloud edge is noise-shaped (`rr = r*(0.78 + 0.34*n1 + 0.12*n2)`), the body is `1 - smoothstep(0.5rr, 1.05rr, d)`, and the colour runs from light grey to slate by rain strength, darker toward the core and lighter in noise puffs.
+- Precipitation is in screen pixels: slanted rain streaks in 6 px columns falling at 260 px/s, or swaying snow flakes on an 11 px grid when `u_snow` is set. Density is `u_dens*(0.3 + 0.7*heavy)`.
+- Output is premultiplied, blended `ONE, ONE_MINUS_SRC_ALPHA`.
+
 ### Terrain texture layouts
 
 All three are RGBA8 at `width × height`, one texel per tile, with linear filtering.
@@ -1116,8 +1544,17 @@ All three are RGBA8 at `width × height`, one texel per tile, with linear filter
 
 The base color depends on the view mode:
 
-- Numeric views use `RAMPS` through `rampLookup`. The modes are `altitude`, `temperature`, `humidity`, `fertility`, `nutrients`, `litter`, `bugs` and `disease`.
-- The `nutrients` view reads live soil: `plants.soil.nutrient[i] / SOIL_MAX` is written into the scratch `soilField` (`Float32Array(n)`, made in `setWorld`) and mapped through `RAMPS.nutrients`, from barren grey-brown to rich dark green. Because the soil changes every tick, `draw` calls `setMode(mode)` again for any mode in `LIVE_MODES` (`nutrients`, `litter`) whenever more than 500 ms have passed since `lastSoilUpdate`.
+- Numeric views use `RAMPS` through `rampLookup`. The modes are `altitude`, `temperature`, `humidity`, `rain`, `water`, `fertility`, `nutrients`, `litter`, `bugs` and `disease`.
+- The `humidity` view (Moisture) is live when `eco.weather` exists: `soilField` gets `clamp01(humidity + 0.5*weather.wet)`, and after the ramp lookup each tile is blended toward white (240, 244, 248) by `min(1, snow)*0.75`. Without weather it shows the static `world.humidity`. `humidity` is in `LIVE_MODES`.
+- The `rain` view (Rainfall) is live: `soilField` gets `weather.wet`, then `_stormRain(field, Wx)` adds `rain*fade*RAIN_VIEW_K*(1 - d/r)` inside each active storm (clamped at 1). `RAMPS.rain` runs from dry tan to deep blue. Water tiles are drawn `DIM_WATER_RGB` (30, 46, 68), and snow gets the white tint as in `humidity`.
+- The `water` view (Water / Thirst) is live: `soilField` gets `waterDist/WATER_DIST_MAX` and `RAMPS.water` runs from teal (at water) to red (far). Tiles with `weather.fresh` set are drawn `FRESH_RGB` (70, 165, 250); other water tiles are `DIM_WATER_RGB`. There is no snow tint. Without weather both views show an all-0 field.
+- The `territory` view is categorical: it uses the biome base below, then, on tiles where `animals.terrUntil[i] > animals.tick` and `terrSp[i]` is set, tints the tile with its owner (Part 3b slice 3):
+  - The owner of a tile is `terrUid[j]` (or -1 for uid 0) while `terrUntil[j] > tick` and `0 < terrSp[j] < spLookupSize`, otherwise 0 (the local `terrOwner` closure). `_refreshSpeciesLookup` runs before the loop.
+  - Interior tiles: the species body color (`spCol[sp*9]`) pushed away from its grey mean by `TERR_SAT` (1.4), clamped to 0-255, then mixed over the terrain at `TERR_MIX` (0.8).
+  - Edge tiles (a 4-neighbour has a different owner or none, or the tile is on the map border): the species dark color (`spCol[sp*9+3]`) times `TERR_EDGE_DARK` (0.7), mixed at `TERR_EDGE_MIX` (1). Owners are individual animals, so neighbouring territories of one species are also outlined.
+  - Both mixes are scaled by `min(1, (terrUntil - tick)/TERR_FADE)` with `TERR_FADE` 10, so claims fade over their last 10 ticks.
+  - In `draw`, `flat = ramp || mode === 'territory'` drives `u_overlay`, `u_warp` and `u_cloud`, so in this view the snow, shore, depth shading, shimmer, domain warp and bug clouds are off. Plant cover is off because `vegOn` is false. `territory` is in `LIVE_MODES`.
+- The `nutrients` view reads live soil: `plants.soil.nutrient[i] / SOIL_MAX` is written into the scratch `soilField` (`Float32Array(n)`, made in `setWorld`) and mapped through `RAMPS.nutrients`, from barren grey-brown to rich dark green. Because the soil changes every tick, `draw` calls `setMode(mode)` again for any mode in `LIVE_MODES` (`nutrients`, `litter`, `bugs`, `disease`, `humidity`, `territory`, `rain`, `water`) whenever more than 500 ms have passed since `lastSoilUpdate`.
 - The `litter` view reads `plants.soil.litter`. `percentile99(src, out)` finds the 99th percentile of the positive values with a 1024-bin histogram (O(n), no sort), then writes `min(1, litter/p99)` into `soilField`. `RAMPS.litter` runs from grey (none) through tan and rust to dark brown (deep litter). If `soil.litter` is missing, the field is all 0.
 - The `bugs` view reads `eco.bugs.total` (summed swarm density of all four niches per tile) through `percentile99` into `soilField`. `RAMPS.bugs` runs from near-black (no bugs) through amber to hot pink (the densest 1%). If `eco.bugs` is missing, the field is all 0. `bugs` is in `LIVE_MODES`, so it re-bakes every 500 ms.
 - The `disease` view builds the scratch `sickField` (`Float32Array(n)`, made in `setWorld`): +1 on the tile of every infected animal (`animals.strain[i]` non-zero) and +0.5 on the tile of every blighted plant slot (`plants.blight[p]`, tile `p % n`). It is left all 0 when `eco.disease` is missing or off. The field goes through `percentile99` into `soilField` and `RAMPS.disease`, from near-black through olive to pale yellow-green. `disease` is in `LIVE_MODES`.
@@ -1143,6 +1580,15 @@ The base color depends on the view mode:
 - Health tint: the color is lerped toward `SICK_RGB` `(150,120,50)` by `(1 - health)*SICK_MIX`, with `SICK_MIX = 0.65`. It is applied after the bloom tint.
 - Blight tint: when `plants.blight[p]` is set for the chosen slot, the color is then mixed toward `BLIGHT_RGB` `(125,140,115)` by `BLIGHT_MIX` (0.6), a grey-green cast.
 
+**`bugTex`**, made in `setWorld` (deleted with the old world) and rebuilt by `_updateBugCloud` at most every `BUG_CLOUD_MS` (300 ms) while `u_cloud > 0`:
+
+| Channel | Contents |
+| --- | --- |
+| RGB | Color of the densest bug species on the tile, premultiplied by A. |
+| A | `min(1, total density / BUG_CLOUD_FULL)` with `BUG_CLOUD_FULL = 1.2`; ×0.3 on tiles without a highlighted bug species. |
+
+The CPU copy is `bugData` (`Uint8Array(n*4)`); `lastBugUpdate` holds the last rebuild time.
+
 **`infoTex`**, built once in `setWorld`:
 
 | Channel | Contents |
@@ -1156,7 +1602,7 @@ The base color depends on the view mode:
 
 - It uses the altitude gradient toward the left and upper neighbours, so the map is lit from the north-west.
 - Water neighbours count as level ground, so coastlines do not read as cliffs.
-- The result is clamped to 0.68–1.22.
+- The gradient factor is 20 and the result is clamped to 0.62–1.28.
 
 ### Species color lookup (`_refreshSpeciesLookup`)
 
@@ -1164,8 +1610,10 @@ The base color depends on the view mode:
 - `spCol` is a `Uint8Array(size*9)` holding 9 bytes per species id: `[body r,g,b, dark r,g,b, light r,g,b]`, at offset `id*9`.
 - Both grow to `max(nextId+64, 2*size, 256)` when needed. They are refreshed at most once per sim tick, for living species only.
 - Instances copy their 9 color bytes from `spCol[id*9…]` into the 12-byte-stride color buffer, which includes 3 padding bytes.
-- Plant instances instead copy from `_tinted(id, health, col, blt)`, which fills the 9-byte scratch `_tint` with the species colors lerped toward `SICK_RGB` by `(1 - health)*SICK_MIX`, then toward `BLIGHT_RGB` by `BLIGHT_MIX` when `blt` (the slot's `plants.blight` entry) is set, and pass it to `_put` with offset 0.
+- Plant instances instead copy from `_tinted(id, health, col, blt, old)`, which fills the 9-byte scratch `_tint` with the species colors lerped toward `SICK_RGB` by `(1 - health)*SICK_MIX`, then toward `BLIGHT_RGB` by `BLIGHT_MIX` when `blt` (the slot's `plants.blight` entry) is set, then toward `OLD_RGB` (160,160,160) by `OLD_MIX` (0.25) when `old` is set, and pass it to `_put` with offset 0.
 - Infected animals copy from `_infected(id, col)`, which fills `_tint` with the species colors mixed toward `BLIGHT_RGB` by `INFECT_MIX` (0.55).
+- Eggs copy from `_eggTint(id, col)`: body = the species light color mixed toward white by `EGG_PALE` (0.15), dark = the species body color, light = white.
+- `_writeCol(id, sp)` writes one species' 9 bytes. `_refreshSpeciesLookup` uses it for living species, and `_pushEggs` uses it for egg-only daughter species (population 0, so not in `registry.living`).
 
 ### Instance buffers
 
@@ -1190,10 +1638,11 @@ The base color depends on the view mode:
      - Each tile gets a stable jitter and flip from a per-tile hash (`i*2654435761`), so the forest does not look like a grid.
      - The understory plant (plane `n + i`) is pushed first, at 0.6× size (fungi, `plants.kind[n+i] === 1`, at `FUNGUS_SCALE` 0.5×), offset toward the lower-left of the tile and flipped opposite to the canopy; the canopy icon then draws over it.
      - Fruit display: plants drawn with the `fruittree` or `berrybush` icon are scaled by `FRUIT_EMPTY_SIZE + (1 - FRUIT_EMPTY_SIZE)*f`, where `FRUIT_EMPTY_SIZE = 0.85` and `f = min(1, plants.fruit[p] / (FRUIT_SHOW*max(b, 0.1)))` with `FRUIT_SHOW = 0.06`. A bare tree is drawn at 0.85×; a laden one at full size. The icon's fruit dots are fixed, so the size change is the fruit cue.
-     - Both icons are health-tinted through `_tinted`.
+     - Both icons are health-tinted through `_tinted`; old slots (`age > OLD_FRAC*life`) are also greyed.
+     - Seedlings (`age < plants.matureAt(p)`) are drawn at `0.5 + 0.5*age/matureAt` of their normal size.
      - Capacity is reserved for two plant instances per visible tile.
-   - **Bug swarms (`_pushBugs`):** drawn at `zoom ≥ 9` in every view mode, not gated on `vegOn` or `showPlants`. Skipped when `eco.bugs` is missing.
-     - For each visible tile and each niche plane `k` (cell `q = k*n + i`) with density above 0 and a species id, it pushes `ceil(min(1, density)*BUG_PER_DENSITY)` `dot` sprites (`BUG_PER_DENSITY = 4`).
+   - **Bug swarms (`_pushBugs`):** drawn when `showSwarms` is on and `zoom > 9`, in every view mode, not gated on `vegOn` or `showPlants`. Skipped when `eco.bugs` is missing. Particle alpha is multiplied by `smooth(CLOUD_FADE)`, so dots fade in from zoom 9 to 14 as the terrain bug clouds fade out.
+     - For each visible tile and each niche plane `k` (cell `q = k*n + i`) with density above 0 and a species id, it pushes `ceil(min(1, density)*BUG_PER_DENSITY)` `dot` sprites (`BUG_PER_DENSITY = 2`).
      - Each particle's base position inside the tile comes from a hash of `(q, j)`. It is jittered by `sin/cos(time*speed + phase)*BUG_JITTER[k]`, with `BUG_JITTER = [0.05, 0.03, 0.04, 0.12]` and `BUG_SPEED = [1.6, 0.7, 1.1, 2.6]` per niche (pest, detritivore, parasite, pollinator), so pollinators flit widely and detritivores barely move.
      - Size is `max(BUG_DOT, BUG_DOT_PX/zoom)` (0.1 world units, or at least 4.5 CSS px), and the colour is the species colour from `spCol`.
      - While a bug species is highlighted, its particles draw at `BUG_HL_SCALE` (1.6×) and the other swarms at 0.3 alpha.
@@ -1202,22 +1651,27 @@ The base color depends on the view mode:
    - **Animals:** drawn when `showAnimals` is on.
      - Positions are interpolated as `p + (x - p)*alpha` between the previous and current tick.
      - Below zoom 3, animals are drawn as `dot` sprites.
-     - Highlight rings are pushed first, so the animals draw on top. A ring goes on each animal of the highlighted species and, when the highlight is an animal strain (a pathogen whose `hostKind` is not `plant`), on each animal carrying that strain (`animals.strain[i]`).
+     - Life stages (Part 3b slice 3): the sprite size `max(12/zoom, 0.8 + 0.45*mass)`, the dot size `(3 + 0.9*mass)/zoom`, the shadow and the highlight ring are all multiplied by the animal's growth factor `animals.gf[i]` (0.4-1), after the pixel floor, so juveniles stay smaller than adults at every zoom. Elders (`animals.ef[i] < 1`) draw at alpha × `ELDER_ALPHA` (0.8).
+     - At `zoom ≥ SHADOW_ZOOM` (6), a `shadow` icon is pushed first under each animal at `(x, y + 0.32*size)`, 0.9× size, alpha `SHADOW_ALPHA` (0.45), in plain white colors.
+     - **Eggs (`_pushEggs`)** are pushed after the shadows and before rings and bodies, only when `eco.eggs` exists and `zoom ≥ EGG_ZOOM` (3); there are no egg dots below that. Each live egg in view draws the `egg` icon at its stored `(x, y)`. The sim already scatters a clutch across 0.15-0.85 of the tile at laying, which gives the clutch jitter. Size is `max(EGG_PX/zoom, EGG_BASE + EGG_SIZE_K*genome[G_SIZE])` (4 px floor, 0.34 + 0.24×size gene tiles), colors from `_eggTint`, alpha `EGG_WATER_ALPHA` (0.85) for water eggs (`dom === 1`) and ×0.35 outside a highlighted species.
+     - Highlight rings are pushed next, so the animals draw on top. A ring goes on each animal of the highlighted species and, when the highlight is an animal strain (a pathogen whose `hostKind` is not `plant`), on each animal carrying that strain (`animals.strain[i]`).
      - Infected animals are colored through `_infected`. Above the dot zoom they also get a `virus` marker at `(x + 0.38*size, y - 0.5*size)`, scaled by `MARK_SCALE` (0.4), in its fixed colors.
      - Alpha drops to 0.35 for animals outside the highlighted species, for animals not carrying a highlighted strain, and, in the `disease` view, for healthy animals.
-     - Capacity is reserved for three instances per animal (ring, body, marker).
-3. Draws all sprites in one `drawArraysInstanced` call.
+     - In the `water` view, non-aquatic animals (`dom !== 1`) with `water < THIRSTY` get a thirst marker: `THIRST_TINT` (245, 140, 110), or `DRY_TINT` (225, 30, 35) at `water <= 0`. At dot zoom the dot itself takes the tint (×`DRY_MARK` 1.35 size when dry); above it a `dot` marker is drawn at `(x - 0.38*size, y - 0.5*size)`, `MARK_SCALE` size (×`DRY_MARK` when dry), alpha 1. Animals that are not thirsty draw at 0.35 alpha.
+     - Capacity is reserved for four instances per animal (shadow, ring, body, marker) plus one per egg.
+3. Draws all sprites in one `drawArraysInstanced` call (skipped when there are none).
+4. Weather overlay (`_drawWeather`): when `showWeather` is on, the view is not flat (no ramp view or `territory`), `eco.weather` is on and has storms. Each storm's position is extrapolated between weather updates as `x + vx*(tick % WEATHER_EVERY + alpha)`; the rain is faded over the last 40 ticks of life; `u_snow` is set when `effTemp` at the centre is below `SNOW_T`. With `hz = smooth(WX_ZOOM)` (0 at zoom 6, 1 at 18), clouds draw at `1 - 0.75*hz` and precipitation at `1 - 0.5*hz`. `u_time` wraps at `WX_TIME_WRAP` (600 s).
 
 Other public members:
 
-- Fields: `mode`, `showPlants`, `showAnimals`, `highlight` (a species id or `null`), `vegDirty` and `spriteCount`.
+- Fields: `mode`, `showPlants`, `showAnimals`, `showSwarms` (bug clouds and particles, default on, set by the `#showSwarms` switch), `showWeather` (storm cloud and precipitation overlay, default on), `highlight` (a species id or `null`), `vegDirty` and `spriteCount`.
 - Methods: `setWorld(world, eco)` and `setMode(mode)`.
 
 ### Other globals
 
 - `compileProgram(gl, vs, fs)` returns `{p, u}`, where `u` maps uniform names to their locations.
 - `RAMPS` and `rampLookup(stops)` build a 256-entry RGB lookup table from color stops.
-- `LIVE_MODES`, `FLOWER_LEAF`, `FLOWER_TINT`, `FLOWER_SHADED`, `FRUIT_SHOW`, `FRUIT_EMPTY_SIZE`, `FUNGUS_SCALE`, `BUG_DOT`, `BUG_DOT_PX`, `BUG_HL_SCALE`, `BUG_PER_DENSITY`, `BUG_JITTER`, `BUG_SPEED`, `BLIGHT_RGB`, `BLIGHT_MIX`, `INFECT_MIX`, `MARK_SCALE` and `percentile99` are described above.
+- `LIVE_MODES`, `FLOWER_LEAF`, `FLOWER_TINT`, `FLOWER_SHADED`, `FRUIT_SHOW`, `FRUIT_EMPTY_SIZE`, `FUNGUS_SCALE`, `BUG_DOT`, `BUG_DOT_PX`, `BUG_HL_SCALE`, `BUG_PER_DENSITY`, `BUG_CLOUD_MS`, `BUG_CLOUD_FULL`, `CLOUD_FADE`, `WARP_ZOOM`, `SHADOW_ZOOM`, `SHADOW_ALPHA`, `BUG_JITTER`, `BUG_SPEED`, `BLIGHT_RGB`, `BLIGHT_MIX`, `INFECT_MIX`, `MARK_SCALE`, `TERR_MIX`, `TERR_SAT`, `TERR_FADE`, `TERR_EDGE_MIX`, `TERR_EDGE_DARK`, `ELDER_ALPHA`, `EGG_ZOOM`, `EGG_PX`, `EGG_BASE`, `EGG_SIZE_K`, `EGG_WATER_ALPHA`, `EGG_PALE`, `FRESH_RGB`, `DIM_WATER_RGB`, `RAIN_VIEW_K`, `THIRST_TINT`, `DRY_TINT`, `DRY_MARK`, `WX_ZOOM`, `WX_TIME_WRAP` and `percentile99` are described above.
 - `ALPINE_ID`, `GLACIER_ID`, `FROZEN_DESERT_ID` and `FROZEN_OCEAN_ID` are biome ids.
 
 ---
@@ -1229,6 +1683,7 @@ Small 2D-canvas charts. Each is DPR-aware (capped at 2) and redraws from scratch
 | Function | Purpose |
 | --- | --- |
 | `prepCanvas(canvas)` | Resizes the backing store to the CSS size times the DPR, clears it, and returns `{ctx, w, h}` in CSS pixels. |
+| `chartInk()` | Reads `--chart-text` and `--chart-grid` from the root style (falling back to the old fixed rgba values), so axis labels and gridlines follow the theme. Used by `drawPopulationChart` and `drawSpeciesChart`. |
 | `formatCount(n)` | Formats `1234` as `1.2k`, `12345` as `12k` and `1.2e6` as `1.2M`. |
 | `drawSparkline(canvas, values, color, maxPoints = 120)` | Line plus a filled area over the last `maxPoints` values, on a linear scale. |
 | `drawPopulationChart(canvas, ticks, series, opts)` | Multi-series population chart (details below). |
@@ -1240,6 +1695,35 @@ Small 2D-canvas charts. Each is DPR-aware (capped at 2) and redraws from scratch
 - It uses a log10 scale, so predators (tens) and grazers (thousands) stay readable on one axis.
 - It draws gridlines at powers of 10.
 - If `opts.yearTicks` is set, it adds year labels (`Y1`, `Y2`, …).
+
+---
+
+## Tree (`js/tree.js`)
+
+`FamilyTree` draws a species family tree on a 2D canvas as a timeline: one row per species, a bar from `createdTick` to `extinctTick` (or now), and a connector from the parent's row at the child's birth tick.
+
+| Member | Purpose |
+| --- | --- |
+| `TREE_PAD` | Plot padding `{l, r, t, b}` in CSS pixels; the top pad holds the year labels. |
+| `TREE_GROUP_LABEL` | Plural group names for the kingdom title. |
+| `new FamilyTree(canvas, tip, onPick)` | Binds pointer and wheel input on the canvas. `onPick(id)` is called when a bar is clicked. |
+| `show(eco, id, mode)` | Sets the focus species and mode (`species` or `kingdom`, kept when omitted), rebuilds, fits and centres on the focus, then draws. |
+| `title()` | "Name · N in lineage", or "All <group> · N species" in kingdom mode. |
+| `draw()` | Redraws from the current view (called by the app on UI refresh and resize). |
+| `centerOn(id)` | Scrolls the focus row into view and pans the time axis when its start is off screen. |
+
+Building (`_build`):
+
+- **Species mode** takes the focus's ancestor chain (via `parentId`) plus all its descendants (via `children`).
+- **Kingdom mode** takes every species of the focus's group, hiding merged species (`sp.merged`).
+- A hidden parent resolves to its nearest visible ancestor. Rows are ordered by an iterative depth-first preorder, oldest roots and children first.
+
+View and drawing:
+
+- `_fit` spans the time axis from the earliest node to now (at least one year, `YEAR_TICKS`) and sets the row height `rh` to 3–18 px. `_clampY` keeps the rows in range.
+- Year gridlines with `Y` labels, connectors, and bars in the species colour; extinct bars use `--faint` at half alpha. The focus and hovered bars get an outline.
+- Labels are drawn when `rh ≥ 11`, or always for the focus: right of the bar if it fits, else left, else inside the bar on a `--card` pill. Colours come from the theme tokens, so the tree follows the theme.
+- Input: drag pans (a move of 4 px or less counts as a click and calls `onPick`), the wheel zooms both axes about the cursor, hovering shows the tooltip (`_showTip`: name, years alive, merged state, peak and current population), and leaving the canvas hides it. `_nodeAt(mx, my)` does the hit test.
 
 ---
 
@@ -1263,14 +1747,24 @@ The `app` object holds:
 | `lastUi`, `lastLogVersion` | UI refresh bookkeeping. |
 | `msPerTick`, `fps` | Performance meters. |
 | `hover` | Mouse position over the map, or `null`. |
+| `theme` | `auto`, `light` or `dark`. |
+| `tree` | The `FamilyTree` instance (created in `init` on `#treeCanvas` and `#treeTip`, with `selectSpecies` as its pick callback). |
+| `overlay` | `'tree'`, `'help'` or `null`: which map overlay is open. |
 
 Other globals:
 
 - `$(id)` is shorthand for `document.getElementById`.
-- `GROUP_COLORS` maps each stat group key, plus `plants`, `bugs` and `disease`, to its color.
+- `GROUP_COLORS` maps each stat group key (including `landScav`), plus `plants`, `bugs` and `disease`, to its color. `amphib` is teal-green `#2fae94` and `reptile` ochre `#b8901c`, chosen to read on both themes and stay apart from `plants` and `landOmni`.
+- `storeGet(key)` and `storeSet(key, value)` wrap `localStorage` in try/catch.
+- Theme: `THEMES` (`auto`, `light`, `dark`), `THEME_ICON` (`auto`, `sun`, `moon`) and `THEME_KEY` (`evo.theme`). `setTheme(theme)` sets or removes `data-theme` on `<html>` (auto follows `prefers-color-scheme`), draws the icon into `#themeBtn` with its title, stores the choice and redraws the UI. `#themeBtn` cycles the three; `init` restores the stored theme. All colors live as tokens in `css/style.css`, with the light values under both the media query and `[data-theme='light']`.
+- Collapsible cards: `setupCards()` makes each `.card[data-card]` head (`ecosystem`, `populations`, `map`; `role=button`, chevron) toggle `.collapsed` and `aria-expanded` on click, Enter or Space. The collapsed set is stored under `CARDS_KEY` (`evo.collapsed`), and expanding redraws the stats so the charts get their size back.
+- `sparkSVG(sp, alive)` draws the species row sparkline: the population samples from `sp.history` plus the current count, reduced to `SPARK_POINTS` (24) points, as an inline 60×18 SVG with a light fill and a non-scaling stroke.
 - `TAB_GROUP` maps the tabs that list one registry group to it: `plant`, `bug`, and `disease` → `pathogen`. `speciesInTab` uses it.
+- Amphibians (`sp.domain === 'amph'`) belong to the Land tab: `speciesInTab`, `updateTabCounts` and `selectSpecies` treat every non-water animal as land. `renderDetail` labels them "amphibious", and the stat card tooltip reads Land, Water or Amphibious from the group's domain.
 - `SWARM_NICHES`, `SWARM_NICHE_ICON` and `SWARM_LABEL` are UI fallbacks for the niche names, a representative icon per niche, and category labels. They are named apart from the sim's `BUG_*` globals so the app still loads without `bugs.js`.
 - `mixHex`, `paletteFor(hex)` and `NEUTRAL` build body/dark/light palettes for the UI icons.
+- `STAT_EXTRA` lists the Part 4 stat cards appended after the group cards as `{key, label, icon, color, wide, sub, noSpark}`: `thirstDeaths` (drop), `herds` (bison), `territories` (flag), `eggs` (egg, wide) and `stages` ("Life stages · animals", deer, wide, no sparkline). `STAT_EXTRA_KEYS` is their key set.
+- `WEATHER_LOOK` maps each weather badge kind (`off`, `clear`, `rain`, `snow`, `storms`, `drought`) to `[icon, color]`.
 
 ### Tick accumulator and interpolation (`frame`)
 
@@ -1301,20 +1795,26 @@ Other globals:
 
 ### Panels
 
-- **Left:** the stat cards and sparklines (`buildStatCards` and `updateStats`), the population chart (plant biomass is shown ÷10 so it shares the axis), the biome legend, and the clock and performance readout (`updateClock`). The `#viewModes` buttons in `index.html` (Biomes, Plants, Heat, Moisture, Height, Soil, Nutrients, Litter, Bugs, Disease) call `renderer.setMode(button.dataset.mode)`.
+- **Left:** the stat cards and sparklines (`buildStatCards` and `updateStats`), the population chart (plant biomass is shown ÷10 so it shares the axis), the biome legend, and the clock and performance readout (`updateClock`). The `#viewModes` buttons in `index.html` (Biomes, Plants, Heat, Moisture, Height, Soil, Nutrients, Litter, Bugs, Disease, Territory, Rainfall, Water) call `renderer.setMode(button.dataset.mode)`; Rainfall is mode `rain` and Water is mode `water`.
+  - **Weather badge:** `#weatherBadge` (`.season.weather`, after the season badge) is refreshed by `updateWeatherBadge()` from `updateClock`. Its kind is `off` (no `eco.weather` or `options.weather === false`, badge dimmed with `.off`), `drought` (`stats.weather.drought`), `storms` (more than one storm, label "Storms ×N"), `rain` or `snow` (one storm, by whether `rainTiles > 0`) or `clear`. The icon is only redrawn when the kind changes. The title lists mean wetness (`stats.meanWet`), rain and snow tile counts, and the drought count.
+  - **Switches:** `#optWeather` ("Weather", after Seasons, on by default) is passed as `options.weather` to `new Ecosystem` and sets `eco.options.weather` live. `#showWeather` ("Weather overlay", after Bug swarms) sets `renderer.showWeather`.
+  - **Part 4 stat cards** (`STAT_EXTRA`, filled by `updateExtraStat(el, k, s, h)`): Thirst deaths (`stats.thirstDeaths`, sub-line "x% of land deaths" from `stats.thirstShare`), Herds (`stats.herds`), Territories (`stats.territories`), Eggs (the current count `stats.stages.eggs`, sub-line laid, hatched, eaten and failed from `stats.eggs`) and Life stages (total animals with the elder share in a `<small>`, sub-line juveniles, adults and elders from `stats.stages`). Sparklines read `h[k] || []`, so a missing history key draws empty.
   - A wide **Bugs** stat card sits under Plant biomass. Its value is `stats.bugs` (rounded total density), its sparkline `history.bugs`, and its sub-line (`bugStatLine(stats)`, CSS `.stat-sub`) shows the occupied tiles per niche (`stats.pests`, `detritivores`, `parasites`, `pollinators`) next to niche icons, plus `pollination NN%` from `stats.pollination`. Missing fields read as 0, and the card is only marked `zero` when `eco.bugs` exists.
   - A wide **Disease** stat card (`data-key="disease"`, `virus` icon, "Disease · sick animals") follows. Its value is `stats.sick`, its sparkline `history.sick`, and its sub-line reads "N strains · N blighted tiles" from `stats.strains` and `stats.blight`.
   - The `#optDisease` switch (on by default) is passed as `options.disease` to `new Ecosystem` and sets `eco.options.disease` live.
   - The population chart has a `bugs` series (when `history.bugs` exists) with a "Bugs" legend toggle.
 - **Right:**
-  - Species tabs (Plants, Land, Water, Bugs, then Events as text only), with sorting and an extinct toggle, capped at 160 rows (`renderSpeciesList`). The Bugs tab (`data-tab="bug"`, count in `#countBug`) lists species with `group === 'bug'`; `speciesInTab`, `updateTabCounts`, `selectSpecies` and `setTab` route that group, and the list unit is " tiles" as for plants. Tabs use `flex: 1 1 auto` with tight padding and 11 px text (10.5 px below 1250 px) so six fit in the 330 px column; each tab's icon shows only while it is active (`.tabs button:not(.active) .tab-icon`).
+  - Species tabs (Plants, Land, Water, Bugs, Disease, then Events with an icon and no count), with sorting and an extinct toggle, capped at 160 rows (`renderSpeciesList`). Rows show a 36 px icon, the name, a sub-line (role tag, category tag, and "extinct Y…" when gone), and at the right the count (`formatCount`) over a `sparkSVG` sparkline. Role tags color from the `--c-*` tokens via `color-mix`. The Bugs tab (`data-tab="bug"`, count in `#countBug`) lists species with `group === 'bug'`; `speciesInTab`, `updateTabCounts`, `selectSpecies` and `setTab` route that group, and the list unit is " tiles" as for plants. Tabs use `flex: 1 1 auto` with tight padding and 11 px text (10.5 px below 1250 px). Every tab shows its icon and count (`formatCount`), each has a `title`, and only the active tab shows its `.tab-label`, so six fit in the 330 px column even with 4-character counts.
   - The **Disease** tab (`data-tab="disease"`, `virus` icon, count in `#countDisease`) lists species with `group === 'pathogen'`; `selectSpecies` routes strains there. Its empty text is "No active outbreaks yet." and the row unit is " tiles" for plant strains (`hostKind === 'plant'`) and " hosts" otherwise. The species totals line adds " · N strains".
   - Pathogens: `roleOf` returns `'pathogen'`, `roleTag` shows "blight" or "disease" (class `role-pathogen`), and `categoryLabel` gives "Plant blight" or "Animal disease". The detail subtitle reads "<Category> · from <origin host>"; badges show Emerged or Host jump and Active or "Burned out · Year N"; the grid shows Infected, Peak, Deaths and Appeared. `#detailHostsWrap` (hidden for other groups) lists `sp.hosts` as chips (`data-id`, clicking selects the host), falling back to the origin host marked "origin". `DISEASE_TRAITS` shows Transmissibility, Virulence and Host range (genes 0–2).
+  - `ANIMAL_TRAITS` includes **Scavenging** (`G_SCAV`, percent).
   - Plant and animal details add **Avg resistance** (`mean[14]` for plants, `mean[G_RES]` for animals) and **Infected** when `sp.infected > 0`. `PLANT_TRAITS` gains gene 14 "Blight resistance" (shown for water plants too) and `ANIMAL_TRAITS` gains "Resistance" (`G_RES`).
   - Bug species: `roleOf` returns `'bug'` and `roleTag` shows the niche (`bugNiche(sp)`, from `sp.nicheIndex`, via `nicheIndex(sp)`) with a per-niche colour class `role-bug-<niche>`. `categoryLabel` uses `BUG_CATEGORY_LABEL` when defined. The detail subtitle reads "<Category> swarm · <niche>", the badges add Land or Aquatic from `sp.domain`, and the stats grid shows Population (tiles), Peak, Appeared and **Mean density** (`sp.density`).
-  - The events list, which re-renders only when `log.version` changes (`renderEvents`). The **Outbreaks** filter (`data-f="outbreak"`) shows `outbreak` events, drawn with `EVENT_GLYPH.outbreak` `!` and an amber-green dot (`.ev-outbreak`).
+  - The events list, which re-renders only when `log.version` changes (`renderEvents`). A **Weather** filter (`data-f="weather"`) shows only weather events. The **Outbreaks** filter (`data-f="outbreak"`) shows `outbreak` events, drawn with `EVENT_GLYPH.outbreak` `!` and an amber-green dot (`.ev-outbreak`). Weather events (drought start and end) use `EVENT_GLYPH.weather` `~` and an amber dot (`.ev-weather`, from the `--amber` token).
   - The species detail view (`renderDetail`): badges, a stats grid, a history chart, trait bars from the `mean` genome, lineage and children. For plant species the stats grid also has a **Health** cell, the mean `sp.health` (a dash once extinct).
   - Fungus species (`sp.kind === 1`) get two extra badges: "Fungus" and the fungus type from `fungusType(sp.mean)` (Mild, Neurotoxic, Lethal or Symbiont).
+  - Animal details add a **Habitat** cell (land, water or amphibious) and a wide **Stages** cell, "N juv · N adult · N elder · N eggs" from `stageCounts(id)` (a pass over the animal pool with `animalStage(A, i)`: 0 juvenile below `A.mature`, 2 elder above `ELDER_AGE * A.maxAge`, else 1 adult, plus live eggs in `eco.eggs`). Detail cells take an optional third `wide` flag (CSS `.detail-grid div.wide`, span 2). `ANIMAL_TRAITS` adds Territorial (`G_TERR`), Herding (`G_HERD`), Cold-blooded (`G_COLD`, shown as Cold-blooded or Warm-blooded) and Drought tolerance (`G_DRY`).
+  - The Lineage heading has a **Family tree** button (`#treeBtn`) that opens the tree overlay for the selected species.
   - Animal species get an **Avoids** row at the end of the trait list: one colour swatch per `sp.aversion` entry (`hsl(hue*360, 62%, 52%)`, opacity `0.35 + 0.65*strength`, with the strength in the title), or "nothing yet" (`hueSwatches(list)`).
 
 `PLANT_TRAITS` and `ANIMAL_TRAITS` map each gene index to a label and formatter. `PLANT_TRAITS` covers all 15 plant genes. Its rows are `[label, gene, fmt, fungusLabel, fungusFmt]`; for fungi the fungus label and formatter are used when given, and a `null` fungus label hides the row:
@@ -1347,7 +1847,7 @@ Helpers: `TOXIN_WORDS`, `toxinIndex(v)` (the same thresholds as `toxinType`), `f
   - Clicking anything else closes the detail view.
 - Hovering shows a tooltip (`updateTooltip`):
   - The meta line gives biome, °C (`temp*50-15`), moisture or depth, soil nutrients as `soil.nutrient[t] / SOIL_MAX`, and `litter` (`soil.litter[t]`, two decimals, when the field exists).
-  - Then the animal under the cursor, with `sick: <strain>` (`.tt-sick`) when it is infected.
+  - Then the animal under the cursor, with `sick: <strain>` (`.tt-sick`) when it is infected. Its lines read "state · stage · age N" (stage from `animalStage`) and "energy N%" (`energy / (emax*gf)`, clamped to 0–100%), plus " · water N%" for non-water animals.
   - Then one row per occupied plant slot (plane `slot*n + t`), with icon, name, category, "canopy" or "understory", biomass and health %, plus `blight: <strain>` when the slot is blighted.
     - Fungi (`plants.kind[p] === 1`) add "fungus" to the category line and their type (`fungusType(plants.genome, p*PG)`) to the stats line.
     - Other plants show `fruit x.xx` (the `plants.fruit[p]` stock) when it is above 0.001 or the plant's fruiting gene is above 0.5.
@@ -1360,7 +1860,20 @@ Helpers: `TOXIN_WORDS`, `toxinIndex(v)` (the same thresholds as `toxinType`), `f
   | Space | Play/pause |
   | `.` | Step once |
   | `f` | Fit the map |
-  | Esc | Close the detail view |
+  | `t` | Open the family tree for the selected species |
+  | `?` or `h` | Open help |
+  | `w` | Toggle the weather overlay (`#showWeather`) |
+  | Esc | Close the overlay if one is open, else the detail view |
+
+  Keys are ignored while typing in an input or select and when Ctrl, Meta or Alt is held; letter keys are matched in lower case.
+
+### Overlays
+
+`#overlay` sits inside `#mapWrap` (absolute, `z-index: 7`, dimmed with the `--scrim` token). Its box has a head (`#overlayTitle`, the `#treeModes` segment and `#overlayClose`) and two bodies, `#treeBody` and `#helpBody`; `data-view` on the overlay hides the one not in use.
+
+- `showOverlay(view, title)` sets `app.overlay`, shows the overlay and hides the map tooltip. `closeOverlay()` hides it and the tree tooltip. A pointerdown on the scrim itself closes it, and `newWorld` closes it.
+- `openTree(mode)` needs a selected species. It marks the active `#treeModes` button (`data-t` `species` "Lineage" or `kingdom` "Kingdom"), calls `app.tree.show(eco, selected, mode)` and sets the title from `app.tree.title()`. `selectSpecies` re-shows the tree when it is open and the id changes, `updateUi` redraws it, and a window resize redraws it.
+- `openHelp()` shows `#helpBody`: a static grid of Map views, Controls, Switches and Keyboard sections written in `index.html`. `#helpBtn` ("?", after the theme button) toggles it.
 
 ---
 

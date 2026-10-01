@@ -1,6 +1,7 @@
 const PG = 15;
 const PLANT_WEIGHTS = [1.4, 1.4, 0.6, 1.2, 0.8, 0.5, 0.7, 0.7, 0.6, 0.5, 0.6, 0.6, 0.4, 0.6, 0.3];
-const PLANT_SPECIATION = 0.13;
+const PLANT_SPECIATION = 0.25;
+const PLANT_SPLIT_MIN_POP = 40;
 const YEAR_TICKS = 480;
 const SHADE_MAX = 0.8;
 const SHADE_FULL_BIOMASS = 2.0;
@@ -27,6 +28,29 @@ const POLL_FRUIT_BASE = 0.4;
 const POLL_DECAY = 0.95;
 const PEST_HEALTH = 1.5;
 const BLIGHT_RES_COST = 0.15;
+const AGE_STEP = 8;
+const PLANT_LIFE_BASE = 1.5;
+const PLANT_LIFE_WOOD = 40;
+const FUNGUS_LIFE = 1;
+const LIFE_JITTER = 0.15;
+const SEEDLING_MIN = 30;
+const SEEDLING_FRAC = 0.05;
+const SEEDLING_K0 = 0.3;
+const SEEDLING_KILL = 0.03;
+const OLD_FRAC = 0.8;
+const OLD_GROWTH = 0.6;
+const OLD_FRUIT = 0.5;
+const OLD_DEATH_FRAC = 0.9;
+const OLD_DEATH_P = 0.006;
+const OLD_DEATH_K = 8;
+const SEED_DRY = 0.9;
+const SEED_ADD = 0.1;
+const SEED_MAX = 1;
+const SEED_DECAY = 0.985;
+const SEED_MIN = 0.02;
+const GERM_P = 0.12;
+const GERM_USE = 0.5;
+const OLD_SEED = 1;
 
 const PLANT_ARCHETYPES = [
 	{ g: [0.82, 0.12, 0.5, 0.45, 0.35, 0.4, 0.2, 0.6, 0.15, 0.2, 0.3, 0.15, 0.5, 0.3, 0.15], domain: 'land' },
@@ -128,6 +152,32 @@ function plantCategory(g, domain, kind = 0) {
 	return 'tree';
 }
 
+const PLANT_ICON_VARIANTS = {
+	grass: ['grass', 'tallgrass', 'wheat'],
+	reed: ['reed', 'cattail', 'bamboo'],
+	moss: ['moss', 'lichen', 'clover'],
+	shrub: ['shrub', 'hedge', 'heather'],
+	cactus: ['cactus', 'pricklypear', 'agave'],
+	tree: ['tree', 'oak', 'birch'],
+	conifer: ['conifer', 'pine', 'cypress'],
+	palm: ['palm', 'coconut', 'fanpalm'],
+	algae: ['algae', 'sealettuce', 'redalgae'],
+	kelp: ['kelp', 'seagrass', 'bladderkelp'],
+	plankton: ['plankton', 'diatom', 'radiolarian'],
+	fruittree: ['fruittree', 'appletree', 'cherrytree'],
+	berrybush: ['berrybush', 'blueberry', 'raspberry'],
+	flower: ['flower', 'tulip', 'sunflower'],
+	puffball: ['puffball', 'earthstar', 'coralfungus'],
+	inkcap: ['inkcap', 'morel', 'chanterelle'],
+	toadstool: ['toadstool', 'bracket', 'porcini'],
+	truffle: ['truffle', 'stinkhorn', 'jellyfungus'],
+};
+
+function plantIcon(category, id) {
+	const v = PLANT_ICON_VARIANTS[category];
+	return v ? v[id % v.length] : category;
+}
+
 const PLANT_CATEGORY_LABEL = {
 	grass: 'Grass',
 	reed: 'Reed',
@@ -163,6 +213,17 @@ class PlantLayer {
 		this.cap = new Float32Array(n2);
 		this.growth = new Float32Array(n2);
 		this.floor = new Float32Array(n2);
+		this.floorM = new Float32Array(n2);
+		this.age = new Uint16Array(n2);
+		this.life = new Uint16Array(n2);
+		this.seedDens = new Float32Array(n);
+		this.seedSp = new Int32Array(n);
+		this.seedGenome = new Float32Array(n * PG);
+		this.stages = { seedTiles: 0, seedlings: 0, mature: 0, old: 0 };
+		this.oldDeaths = 0;
+		this.germinated = 0;
+		this.grazedSeedlings = 0;
+		this.snow = null;
 		this.tox = new Float32Array(n2);
 		this.disp = new Float32Array(n2);
 		this.genome = new Float32Array(n2 * PG);
@@ -208,6 +269,7 @@ class PlantLayer {
 		this.flowerTiles = 0;
 		this.seasonsOn = true;
 		this.season = 0;
+		this.moistMul = null;
 		this.bloomNow = 0.5;
 		this.fruitNow = 0.5;
 		this.soil = new SoilLayer(world);
@@ -290,6 +352,8 @@ class PlantLayer {
 		if (!f.sp) f.sp = this._newSpecies(f.g, f.domain, null, 0, 'founder', f.kind);
 		this._set(p, f.sp, f.g, 0);
 		this.biomass[p] = this.cap[p] * (0.4 + 0.4 * this.rng.next());
+		this.age[p] = Math.floor(this.rng.next() * OLD_FRAC * this.life[p]);
+		if (this.age[p] >= this.matureAt(p)) this.floor[p] = this.floorM[p];
 	}
 
 	_newSpecies(genome, domain, parent, tick, origin, kind = 0) {
@@ -314,7 +378,7 @@ class PlantLayer {
 		);
 		sp.kind = k;
 		sp.category = category;
-		sp.icon = category;
+		sp.icon = plantIcon(category, sp.id);
 		return sp;
 	}
 
@@ -333,15 +397,19 @@ class PlantLayer {
 		const t = plantTraitsFrom(this.genome, base);
 		this.cap[p] = this.capFor(t, i);
 		const floor = this.cap[p] * 0.55 * t.wood * t.wood;
+		const years = kind ? FUNGUS_LIFE : PLANT_LIFE_BASE + PLANT_LIFE_WOOD * t.wood * t.wood;
+		this.life[p] = Math.round(((years * YEAR_TICKS) / AGE_STEP) * (1 - LIFE_JITTER + 2 * LIFE_JITTER * this.rng.next()));
+		this.age[p] = 0;
+		this.floor[p] = 0;
 		if (kind === 0) {
 			this.growth[p] = t.growth * (1 - 0.2 * t.bloom);
-			this.floor[p] = floor * (1 + 0.2 * (1 - t.fruiting));
+			this.floorM[p] = floor * (1 + 0.2 * (1 - t.fruiting));
 			this.myco[p] = 0;
 			this._fruitK[p] = !this.water[i] && t.wood >= 0.3 && t.fruiting > 0.2 ? t.fruiting * FRUIT_FRAC * FRUIT_WIND : 0;
 			this._bloomK[p] = t.bloom * FLOWER_SEED_BONUS * FRUIT_WIND;
 		} else {
 			this.growth[p] = t.growth;
-			this.floor[p] = floor;
+			this.floorM[p] = floor;
 			this.myco[p] = t.bloom > 0.5 ? 1 : 0;
 			this._fruitK[p] = 0;
 			this._bloomK[p] = 0;
@@ -373,6 +441,11 @@ class PlantLayer {
 		this.fruitMax[p] = 0;
 		this._fruitK[p] = 0;
 		this._bloomK[p] = 0;
+	}
+
+	matureAt(p) {
+		const m = this.life[p] * SEEDLING_FRAC;
+		return m > SEEDLING_MIN / AGE_STEP ? m : SEEDLING_MIN / AGE_STEP;
 	}
 
 	_fungusK(isMyco, j) {
@@ -456,6 +529,14 @@ class PlantLayer {
 			this.grazeToxType = toxinType(this.genome, u * PG);
 			this.grazePotency = this.tox[u];
 		} else this.grazeFungus = 0;
+		if (a > 0 && !this.water[i] && this.biomass[u] < SEEDLING_KILL && this.age[u] < this.matureAt(u)) {
+			this.grazedSeedlings++;
+			this._clear(u);
+		}
+		if (b > 0 && !this.water[i] && this.biomass[i] < SEEDLING_KILL && this.age[i] < this.matureAt(i)) {
+			this.grazedSeedlings++;
+			this._clear(i);
+		}
 		return take;
 	}
 
@@ -522,6 +603,15 @@ class PlantLayer {
 		const seasonAmp = this.seasonAmp;
 		const poll = this.poll;
 		const blight = this.blight;
+		const moistMul = this.moistMul;
+		const age = this.age;
+		const life = this.life;
+		const floor = this.floor;
+		const floorM = this.floorM;
+		const ck = (tick & 7) === 0;
+		let seedlings = 0;
+		let mature = 0;
+		let old = 0;
 		this.soil.step(this);
 		let total = 0;
 		let totalFruit = 0;
@@ -534,6 +624,27 @@ class PlantLayer {
 			if (!id) continue;
 			const under = p >= n;
 			const i = under ? p - n : p;
+			let ag = age[p];
+			const lf = life[p];
+			if (ck) {
+				ag++;
+				age[p] = ag;
+				if (ag > OLD_DEATH_FRAC * lf && rng.next() < OLD_DEATH_P * Math.exp(OLD_DEATH_K * (ag / lf - OLD_DEATH_FRAC))) {
+					this.oldDeaths++;
+					this._selfSeed(p, i, id);
+					this._clear(p);
+					continue;
+				}
+			}
+			const mt = lf * SEEDLING_FRAC > SEEDLING_MIN / AGE_STEP ? lf * SEEDLING_FRAC : SEEDLING_MIN / AGE_STEP;
+			const young = ag < mt;
+			const aged = ag > OLD_FRAC * lf;
+			if (young) seedlings++;
+			else {
+				if (ck && floor[p] !== floorM[p]) floor[p] = floorM[p];
+				if (aged) old++;
+				else mature++;
+			}
 			const fk = kind[p];
 			let light = 1;
 			let K;
@@ -598,8 +709,9 @@ class PlantLayer {
 				}
 			}
 			health[p] = h;
+			if (young) K *= SEEDLING_K0 + ((1 - SEEDLING_K0) * ag) / mt;
 			const sm = 1 + seasonAmp[i] * season;
-			const r = growth[p] * (sm > 0.05 ? sm : 0.05) * light * (0.35 + 0.65 * h) * tax;
+			const r = growth[p] * (sm > 0.05 ? sm : 0.05) * light * (0.35 + 0.65 * h) * tax * (moistMul ? moistMul[i] : 1) * (aged ? OLD_GROWTH : 1);
 			const bb = b > 0.03 ? b : 0.03;
 			b += r * bb * (1 - b / K);
 			if (b > K) b = K;
@@ -617,9 +729,10 @@ class PlantLayer {
 					nut[i] = N < SOIL_MAX ? N : SOIL_MAX;
 				}
 			}
+			if (young) continue;
 			const fq = fruitK[p];
 			if (fq > 0) {
-				const target = fq * b * fruitNow * h * (POLL_FRUIT_BASE + (1 - POLL_FRUIT_BASE) * poll[i]);
+				const target = fq * b * fruitNow * h * (POLL_FRUIT_BASE + (1 - POLL_FRUIT_BASE) * poll[i]) * (aged ? OLD_FRUIT : 1);
 				fruitMax[p] = target;
 				let f = fruit[p];
 				if (f < target) f += (target - f) * FRUIT_RATE;
@@ -636,7 +749,21 @@ class PlantLayer {
 			}
 		}
 		let cover = 0;
+		let seedTiles = 0;
+		const seedDens = this.seedDens;
+		const snow = this.snow;
 		for (let i = 0; i < n; i++) {
+			if (ck && seedDens[i] > 0) {
+				const d = seedDens[i] * SEED_DECAY;
+				if (d < SEED_MIN) {
+					seedDens[i] = 0;
+					this.seedSp[i] = 0;
+				} else {
+					seedDens[i] = d;
+					seedTiles++;
+					this._germinate(i, d, (moistMul ? moistMul[i] : 1) * (snow ? 1 - snow[i] : 1), tick);
+				}
+			}
 			if (species[i] || species[n + i]) cover++;
 			if (poll[i] > 0) poll[i] *= POLL_DECAY;
 		}
@@ -646,7 +773,52 @@ class PlantLayer {
 		this.fungusTiles = fungi;
 		this.flowerTiles = flowers;
 		this.flowerPoll = flowers ? flowerPoll / flowers : 0;
+		const st = this.stages;
+		st.seedlings = seedlings;
+		st.mature = mature;
+		st.old = old;
+		if (ck) st.seedTiles = seedTiles;
 		this.version++;
+	}
+
+	_germinate(i, d, wk, tick) {
+		const sp = this.registry.get(this.seedSp[i]);
+		if (!sp || sp.population <= 0) {
+			this.seedDens[i] = 0;
+			this.seedSp[i] = 0;
+			return;
+		}
+		const pj = slotOf(this.seedGenome, this.water[i], i * PG, sp.kind | 0) * this.n + i;
+		if (this.species[pj] || this.rng.next() >= GERM_P * d * wk) return;
+		const g = this._scratch;
+		const base = i * PG;
+		for (let k = 0; k < PG; k++) g[k] = this.seedGenome[base + k];
+		if (this.plantSeed(i, g, sp, tick, false)) {
+			this.germinated++;
+			this.seedDens[i] = d * GERM_USE;
+		} else {
+			this.seedDens[i] = 0;
+			this.seedSp[i] = 0;
+		}
+	}
+
+	_selfSeed(p, i, id) {
+		const base = i * PG;
+		const src = p * PG;
+		for (let k = 0; k < PG; k++) this.seedGenome[base + k] = this.genome[src + k];
+		this.seedSp[i] = id;
+		this.seedDens[i] = OLD_SEED;
+	}
+
+	_bank(j, genome, off, id) {
+		const d = this.seedDens[j];
+		if (d <= 0 || this.rng.next() * (d + SEED_ADD) < SEED_ADD) {
+			const base = j * PG;
+			for (let k = 0; k < PG; k++) this.seedGenome[base + k] = genome[off + k];
+			this.seedSp[j] = id;
+		}
+		const v = d + SEED_ADD;
+		this.seedDens[j] = v < SEED_MAX ? v : SEED_MAX;
 	}
 
 	_spread(p, i, W, H, tick) {
@@ -662,13 +834,16 @@ class PlantLayer {
 
 		const parentId = this.species[p];
 		const same = this.species[p < this.n ? j : this.n + j] === parentId;
-		if (same && rng.next() >= 0.5) return;
+		if (same && rng.next() >= 0.5) {
+			this._bank(j, this.genome, p * PG, parentId);
+			return;
+		}
 		const child = this._scratch;
 		mutateGenes(this.genome, p * PG, child, 0, PG, rng, 0.2, 0.025);
 		this.plantSeed(j, child, this.registry.get(parentId), tick);
 	}
 
-	plantSeed(j, genome, parentSp, tick) {
+	plantSeed(j, genome, parentSp, tick, bank = true) {
 		if (!parentSp) return false;
 		const rng = this.rng;
 		const kind = parentSp.kind | 0;
@@ -680,8 +855,8 @@ class PlantLayer {
 		}
 		const bound = (0.8 + 2.4 * genome[3]) * (1 - 0.3 * genome[2]) * this.habit[j];
 		if (bound < 0.04) return false;
-		const pj = slotOf(genome, wet, 0, kind) * this.n + j;
 		const parentId = parentSp.id;
+		const pj = slotOf(genome, wet, 0, kind) * this.n + j;
 		const resident = this.species[pj];
 		let resK = 0;
 		let resStrength = 0;
@@ -690,27 +865,34 @@ class PlantLayer {
 		if (resident) {
 			resK = this.kind[pj] ? this.cap[pj] * this._fungusK(this.myco[pj] === 1, j) : this.cap[pj] * (1 - sf * (1 - this.shade[pj]));
 			resStrength = resK * (0.45 + 0.55 * this.biomass[pj] / Math.max(resK, 1e-6)) * (0.5 + 0.5 * this.health[pj]);
-			if (resident === parentId) {
-				if (bound <= resK * 1.02) return false;
-			} else if (bound * 0.85 <= resStrength) return false;
+			if (resident === parentId ? bound <= resK * 1.02 : bound * 0.85 <= resStrength) {
+				if (bank) this._bank(j, genome, 0, parentId);
+				return false;
+			}
 		}
 		const tol = 0.09 + 0.22 * genome[2];
-		let childK = bound * gaussFit(this.world.temperature[j], genome[0], tol) * gaussFit(this.moistAt(j), genome[1], tol * 1.2);
-		if (kind === 1) childK *= this._fungusK(genome[11] > 0.5, j);
-		else childK *= 1 - sf * (1 - genome[6]);
-		if (!(childK >= 0.04)) return false;
+		const fit = bound * gaussFit(this.world.temperature[j], genome[0], tol) * gaussFit(this.moistAt(j), genome[1], tol * 1.2);
+		if (!(fit >= 0.04)) return false;
+		const childK = fit * (kind === 1 ? this._fungusK(genome[11] > 0.5, j) : 1 - sf * (1 - genome[6]));
+		if (!(childK >= 0.04) || (bank && !wet && ((this.moistMul && this.moistMul[j] < SEED_DRY) || (this.snow && this.snow[j] > SNOW_SHOW)))) {
+			if (bank) this._bank(j, genome, 0, parentId);
+			return false;
+		}
 
 		if (resident === parentId) {
 			if (childK > resK * 1.02) {
 				this._assign(pj, parentSp, genome, tick, false);
 				return true;
 			}
+			if (bank) this._bank(j, genome, 0, parentId);
 			return false;
 		}
 		if (resident) {
 			const invStrength = childK * 0.85;
-			if (invStrength <= resStrength) return false;
-			if (rng.next() > (invStrength - resStrength) / invStrength) return false;
+			if (invStrength <= resStrength || rng.next() > (invStrength - resStrength) / invStrength) {
+				if (bank) this._bank(j, genome, 0, parentId);
+				return false;
+			}
 		}
 		this._assign(pj, parentSp, genome, tick, true);
 		return true;
@@ -720,8 +902,9 @@ class PlantLayer {
 		let sp = parentSp;
 		const j = pj < this.n ? pj : pj - this.n;
 		const domain = this.water[j] ? 'water' : 'land';
-		if (geneDistance(child, 0, parentSp.genome, 0, PLANT_WEIGHTS) > PLANT_SPECIATION) {
-			sp = this.registry.matchDaughter(parentSp, child, PLANT_WEIGHTS, PLANT_SPECIATION * 0.8);
+		if (geneDistance(child, 0, parentSp.mean, 0, PLANT_WEIGHTS) > PLANT_SPECIATION) {
+			sp = this.registry.matchDaughter(parentSp, child, PLANT_WEIGHTS, PLANT_SPECIATION);
+			if (!sp && !this.registry.canSplit(parentSp, PLANT_SPLIT_MIN_POP)) sp = parentSp;
 			if (!sp) {
 				sp = this._newSpecies(child, domain, parentSp, tick, null);
 				this.log.push(tick, 'speciation', `${sp.name} (${PLANT_CATEGORY_LABEL[sp.category]}) branched from ${parentSp.name}`, sp.id);
@@ -729,8 +912,29 @@ class PlantLayer {
 		}
 		if (fresh && this.species[pj]) this.soil.returnMatter(j, this.biomass[pj] + this.fruit[pj]);
 		const keep = fresh ? 0.04 : this.biomass[pj];
+		const ag = fresh ? 0 : this.age[pj];
 		this._set(pj, sp, child, 0);
 		this.biomass[pj] = Math.min(keep, this.cap[pj]);
+		if (ag) {
+			this.age[pj] = ag;
+			if (ag >= this.matureAt(pj)) this.floor[pj] = this.floorM[pj];
+		}
+	}
+
+	reassignSpecies(fromSp, toSp) {
+		const species = this.species;
+		const from = fromSp.id;
+		const hue = toSp.hsl[0] / 360;
+		let moved = 0;
+		for (let p = 0; p < 2 * this.n; p++) {
+			if (species[p] !== from) continue;
+			species[p] = toSp.id;
+			this.hue[p] = hue;
+			moved++;
+		}
+		const seedSp = this.seedSp;
+		for (let i = 0; i < this.n; i++) if (seedSp[i] === from) seedSp[i] = toSp.id;
+		return moved;
 	}
 
 	refreshSpeciesMeans() {
@@ -757,7 +961,7 @@ class PlantLayer {
 			sp.health = s[PG + 2] / s[PG];
 			sp.infected = s[PG + 3];
 			sp.category = plantCategory(sp.mean, sp.domain, sp.kind | 0);
-			sp.icon = sp.category;
+			sp.icon = plantIcon(sp.category, sp.id);
 		}
 	}
 }

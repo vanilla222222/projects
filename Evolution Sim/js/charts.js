@@ -12,6 +12,11 @@ function prepCanvas(canvas) {
 	return { ctx, w, h };
 }
 
+function chartInk() {
+	const cs = getComputedStyle(document.documentElement);
+	return { text: cs.getPropertyValue('--chart-text').trim() || 'rgba(200,215,205,0.45)', grid: cs.getPropertyValue('--chart-grid').trim() || 'rgba(200,215,205,0.08)' };
+}
+
 function formatCount(n) {
 	if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
 	if (n >= 1e4) return Math.round(n / 1e3) + 'k';
@@ -54,9 +59,10 @@ function drawPopulationChart(canvas, ticks, series, opts = {}) {
 	const pw = w - padL - 4;
 	const ph = h - padB - 6;
 	const n = ticks.length;
+	const ink = chartInk();
 	ctx.font = '10px Inter, system-ui, sans-serif';
-	ctx.fillStyle = 'rgba(200,215,205,0.45)';
-	ctx.strokeStyle = 'rgba(200,215,205,0.08)';
+	ctx.fillStyle = ink.text;
+	ctx.strokeStyle = ink.grid;
 	ctx.lineWidth = 1;
 	let max = 10;
 	for (const s of series) if (!s.hidden) for (const v of s.values) if (v > max) max = v;
@@ -106,9 +112,10 @@ function drawPopulationChart(canvas, ticks, series, opts = {}) {
 function drawSpeciesChart(canvas, history, color, nowTick) {
 	const { ctx, w, h } = prepCanvas(canvas);
 	const n = history.length / 2;
+	const ink = chartInk();
 	ctx.font = '10px Inter, system-ui, sans-serif';
 	if (n < 2) {
-		ctx.fillStyle = 'rgba(200,215,205,0.4)';
+		ctx.fillStyle = ink.text;
 		ctx.textAlign = 'center';
 		ctx.fillText('Collecting data…', w / 2, h / 2 + 3);
 		return;
@@ -122,8 +129,8 @@ function drawSpeciesChart(canvas, history, color, nowTick) {
 	const t1 = Math.max(nowTick, history[history.length - 2]);
 	const xOf = (t) => padL + ((t - t0) / (t1 - t0 || 1)) * pw;
 	const yOf = (v) => 6 + ph - (v / max) * ph;
-	ctx.fillStyle = 'rgba(200,215,205,0.45)';
-	ctx.strokeStyle = 'rgba(200,215,205,0.08)';
+	ctx.fillStyle = ink.text;
+	ctx.strokeStyle = ink.grid;
 	ctx.textAlign = 'right';
 	for (const v of [0, max / 2, max]) {
 		const y = Math.round(yOf(v)) + 0.5;

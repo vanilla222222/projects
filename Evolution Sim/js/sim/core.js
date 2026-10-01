@@ -137,6 +137,8 @@ class Species {
 	}
 }
 
+const SPLIT_MIN_AGE = 480;
+
 class SpeciesRegistry {
 	constructor(rng) {
 		this.rng = rng;
@@ -146,6 +148,7 @@ class SpeciesRegistry {
 		this.tick = 0;
 		this.recentlyExtinct = [];
 		this.names = new Set();
+		this.speciations = { plant: 0, animal: 0, bug: 0, pathogen: 0 };
 	}
 
 	_name(pool) {
@@ -167,22 +170,41 @@ class SpeciesRegistry {
 		const pool = opts.group === 'pathogen' ? 'pathogen' : opts.group === 'plant' ? 'plant' : opts.domain === 'water' ? 'fish' : 'animal';
 		const sp = new Species(id, { ...opts, hsl, name: this._name(pool) });
 		this.all.set(id, sp);
-		if (sp.parentId) this.all.get(sp.parentId).children.push(sp);
+		if (sp.parentId) {
+			this.all.get(sp.parentId).children.push(sp);
+			if (!sp.origin) this.speciations[sp.group]++;
+		}
 		return sp;
+	}
+
+	canSplit(parent, minPop) {
+		return parent.population >= minPop && this.tick - parent.createdTick >= SPLIT_MIN_AGE;
 	}
 
 	matchDaughter(parent, genome, weights, threshold) {
 		let best = null;
 		let bestD = threshold;
-		for (const c of parent.children) {
-			if (c.population <= 0) continue;
-			const d = geneDistance(genome, 0, c.genome, 0, weights);
-			if (d < bestD) {
-				bestD = d;
-				best = c;
+		const grand = parent.parentId ? this.all.get(parent.parentId) : null;
+		for (let pass = 0; pass < 2; pass++) {
+			const list = pass === 0 ? parent.children : grand ? grand.children : null;
+			if (!list) break;
+			for (const c of list) {
+				if (c.population <= 0 || c === parent) continue;
+				const d = geneDistance(genome, 0, c.mean, 0, weights);
+				if (d < bestD) {
+					bestD = d;
+					best = c;
+				}
 			}
 		}
 		return best;
+	}
+
+	merge(child, parent) {
+		const n = child.population;
+		child.merged = parent.id;
+		this.remove(child, n);
+		this.add(parent, n);
 	}
 
 	get(id) {

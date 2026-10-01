@@ -1,10 +1,12 @@
 const DG = 4;
 const D_TRANS = 0, D_VIR = 1, D_RANGE = 2, D_HUE = 3;
 const DISEASE_WEIGHTS = [1, 1, 0.8, 0.3];
-const DISEASE_SPECIATION = 0.12;
+const DISEASE_SPECIATION = 0.1;
+const DISEASE_SPLIT_MIN_POP = 10;
 const DISEASE_KINDS = ['animal', 'plant'];
-const VIR_TRADE = 0.6;
+const VIR_TRADE = 0.75;
 const DUR_BASE = 200;
+const RES_DUR = 0.6;
 const BLIGHT_DUR = 150;
 const RANGE_BASE = 0.05;
 const RANGE_SPAN = 0.25;
@@ -12,18 +14,19 @@ const JUMP_K = 0.02;
 const JUMP_K_P = 0.001;
 const JUMP_SPAN = 0.15;
 const JUMP_LOG_GAP = 1200;
-const PATHO_MUT = 0.03;
+const PATHO_MUT = 0.015;
 const PATHO_MUT_RATE = 0.5;
 const PATHO_MUT_SD = 0.05;
 const PATHO_DRIFT = 0.5;
-const SEED_HOSTS = 6;
+const SEED_HOSTS = 10;
 const SEED_TILES = 12;
 const SEED_R = 6;
 const SEED_TILE_R = 3;
 const EMERGE_MIN_A = 40;
 const EMERGE_MIN_P = 150;
 const EMERGE_GAP = 900;
-const EMERGE_P = 0.04;
+const EMERGE_P = 0.05;
+const EMERGE_VIR = 0.45;
 const EMERGE_SD = 0.08;
 const BLIGHT_EVERY = 3;
 const BLIGHT_DMG = 0.08;
@@ -37,6 +40,8 @@ const DIEOFF_EVERY = 60;
 const DIEOFF_WINDOW = 5;
 const DIEOFF_MIN = 20;
 const DIEOFF_FRAC = 0.3;
+const STRAIN_ICONS = ['virus', 'bacterium', 'protozoan', 'prion', 'helminth'];
+const BLIGHT_ICONS = ['blight', 'mold'];
 
 class DiseaseLayer {
 	constructor(world, plants, animals, registry, log, rng) {
@@ -122,7 +127,7 @@ class DiseaseLayer {
 		sp.hostId = hostId;
 		sp.hostGenome = Float32Array.from(hostGenome);
 		sp.category = kind === 'plant' ? 'blight' : 'virus';
-		sp.icon = sp.category;
+		sp.icon = kind === 'plant' ? BLIGHT_ICONS[sp.id % BLIGHT_ICONS.length] : STRAIN_ICONS[sp.id % STRAIN_ICONS.length];
 		sp.infected = 0;
 		sp.deaths = 0;
 		sp.recentDeaths = 0;
@@ -158,13 +163,14 @@ class DiseaseLayer {
 		if (rng.next() >= PATHO_MUT) return st;
 		const c = this._child;
 		mutateGenes(st.mean, 0, c, 0, DG, rng, PATHO_MUT_RATE, PATHO_MUT_SD);
-		if (geneDistance(c, 0, st.genome, 0, DISEASE_WEIGHTS) <= DISEASE_SPECIATION) {
+		const far = geneDistance(c, 0, st.mean, 0, DISEASE_WEIGHTS) > DISEASE_SPECIATION;
+		let sp = far ? this.registry.matchDaughter(st, c, DISEASE_WEIGHTS, DISEASE_SPECIATION) : null;
+		if (!far || (!sp && !this.registry.canSplit(st, DISEASE_SPLIT_MIN_POP))) {
 			const m = st.mean;
 			for (let k = 0; k < DG; k++) m[k] += (c[k] - m[k]) * PATHO_DRIFT;
 			this._params(st);
 			return st;
 		}
-		let sp = this.registry.matchDaughter(st, c, DISEASE_WEIGHTS, DISEASE_SPECIATION * 0.8);
 		if (!sp) {
 			sp = this._newStrain(c, st.hostKind, st.hostId, st.hostGenome, st, tick, null);
 			this.mutated++;
@@ -210,7 +216,7 @@ class DiseaseLayer {
 		const st = this.registry.get(s);
 		if (!st || st.population <= 0) return false;
 		const r = this.rng.next();
-		const b = k * this.sTrans[s] * (1 - 0.7 * A.genome[j * AG + G_RES]);
+		const b = k * this.sTrans[s] * (1 - RES_EFFECT * A.genome[j * AG + G_RES]) * (1 + (ELDER_INFECT * (1 - A.ef[j])) / (1 - ELDER_MIN));
 		if (r >= b) return false;
 		const hsp = A.sp[j];
 		if (r >= b * this._compat(st, hsp, ANIMAL_WEIGHTS, JUMP_K)) return false;
@@ -221,7 +227,7 @@ class DiseaseLayer {
 	infectAnimal(i, s) {
 		const A = this.animals;
 		A.strain[i] = s;
-		A.itime[i] = this.sDur[s] | 0;
+		A.itime[i] = Math.max(1, (this.sDur[s] * (1 - RES_DUR * A.genome[i * AG + G_RES])) | 0);
 		this._add(this.registry.get(s));
 		this.sickAnimals++;
 	}
@@ -424,7 +430,7 @@ class DiseaseLayer {
 		}
 		const c = this._child;
 		c[D_TRANS] = clamp01(0.5 + gaussRand(rng) * EMERGE_SD);
-		c[D_VIR] = clamp01(0.35 + gaussRand(rng) * EMERGE_SD);
+		c[D_VIR] = clamp01(EMERGE_VIR + gaussRand(rng) * EMERGE_SD);
 		c[D_RANGE] = clamp01(0.3 + gaussRand(rng) * EMERGE_SD);
 		c[D_HUE] = rng.next();
 		const st = this._newStrain(c, kind, host.id, host.genome, null, tick, 'emerged');
@@ -564,6 +570,42 @@ class DiseaseLayer {
 				}
 			}
 		}
+	}
+
+	reassignSpecies(fromSp, toSp) {
+		const from = fromSp.id;
+		const to = toSp.id;
+		const A = this.animals;
+		let moved = 0;
+		for (let i = 0; i < A.count; i++) {
+			if (A.strain[i] === from) {
+				A.strain[i] = to;
+				if (A.alive[i]) moved++;
+			}
+			if (A.immune[i] === from) A.immune[i] = to;
+			if (A.natImm[i] === from) A.natImm[i] = to;
+		}
+		const P = this.plants;
+		for (let p = 0; p < 2 * this.n; p++) {
+			if (P.blight[p] === from) {
+				P.blight[p] = to;
+				moved++;
+			}
+			if (P.blightImm[p] === from) P.blightImm[p] = to;
+		}
+		const cs = this.carcassStrain;
+		const vs = this.vectorStrain;
+		for (let i = 0; i < this.n; i++) {
+			if (cs[i] === from) cs[i] = to;
+			if (vs[i] === from) vs[i] = to;
+		}
+		this.live.delete(fromSp);
+		fromSp.infected = 0;
+		return moved;
+	}
+
+	remapHost(fromSp, toSp) {
+		for (const st of this.live) if (st.hostId === fromSp.id) st.hostId = toSp.id;
 	}
 
 	hostIndices(strainId, out = []) {
