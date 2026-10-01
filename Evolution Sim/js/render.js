@@ -327,6 +327,10 @@ const ELDER_ALPHA = 0.8;
 const EGG_ZOOM = 3;
 const EGG_PX = 4;
 const EGG_BASE = 0.34;
+const HOME_SIZE = 1.1;
+const HOME_PX = 8;
+const NEST_TINT = new Uint8Array([160, 122, 69, 94, 68, 38, 214, 181, 122]);
+const DEN_TINT = new Uint8Array([122, 90, 60, 62, 44, 28, 168, 136, 100]);
 const EGG_SIZE_K = 0.24;
 const EGG_WATER_ALPHA = 0.85;
 const EGG_PALE = 0.15;
@@ -1261,7 +1265,7 @@ class WorldRenderer {
 		const gf = A.gf;
 		const ef = A.ef;
 		const E = this.eco.eggs;
-		this._ensureCapacity(n + A.count * 4 + (E ? E.count : 0) + 1);
+		this._ensureCapacity(n + A.count * 5 + (E ? E.count : 0) + 1);
 		if (zoom >= SHADOW_ZOOM) {
 			const shadowIcon = ICON_INDEX.shadow;
 			for (let i = 0; i < A.count; i++) {
@@ -1273,6 +1277,7 @@ class WorldRenderer {
 				else n = this._put(n, x, y + size * 0.32, size * 0.9, shadowIcon, 1, SHADOW_ALPHA, 0, white);
 			}
 		}
+		if (zoom >= EGG_ZOOM && A.home) n = this._pushHomes(n, A, x0, y0, x1, y1);
 		if (E && zoom >= EGG_ZOOM) n = this._pushEggs(n, E, x0, y0, x1, y1, hl);
 		if (hl !== null || hs) {
 			for (let i = 0; i < A.count; i++) {
@@ -1308,6 +1313,27 @@ class WorldRenderer {
 				if (sick) n = this._put(n, x + size * 0.38, ly - size * 0.5, size * MARK_SCALE, virusIcon, 1, a, 0, white);
 				if (th) n = this._put(n, x - size * 0.38, ly - size * 0.5, size * MARK_SCALE * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, 1, 0, th);
 			}
+		}
+		return n;
+	}
+
+	_pushHomes(n, A, x0, y0, x1, y1) {
+		const seen = this._homeSeen || (this._homeSeen = new Set());
+		seen.clear();
+		const W = this.world.width;
+		const size = Math.max(HOME_PX / this.cam.zoom, HOME_SIZE);
+		const nestIcon = ICON_INDEX.nest;
+		const denIcon = ICON_INDEX.den;
+		for (let i = 0; i < A.count; i++) {
+			const h = A.home[i];
+			if (h !== 1 && h !== 2) continue;
+			const x = A.nx[i];
+			const y = A.ny[i];
+			if (x < x0 || y < y0 || x > x1 || y > y1) continue;
+			const t = (y | 0) * W + (x | 0);
+			if (seen.has(t)) continue;
+			seen.add(t);
+			n = h === 1 ? this._put(n, x, y - size * 0.05, size, nestIcon, 1, 1, 0, NEST_TINT) : this._put(n, x, y - size * 0.2, size, denIcon, 1, 1, 0, DEN_TINT);
 		}
 		return n;
 	}

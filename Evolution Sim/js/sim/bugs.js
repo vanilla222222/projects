@@ -300,6 +300,21 @@ class BugLayer {
 		return took;
 	}
 
+	clean(i, f) {
+		const q = 2 * this.n + i;
+		const a = this.density[q];
+		if (!(a > 0)) return;
+		let na = a * (1 - f);
+		if (na < BUG_MIN) {
+			this._clear(q);
+			na = 0;
+		} else this.density[q] = na;
+		const t = this.total[i] - (a - na);
+		this.total[i] = t > 0 ? t : 0;
+		const pl = this.animals.parasiteLoad;
+		pl[i] = a > 0 ? pl[i] * (na / a) : 0;
+	}
+
 	step(tick) {
 		if (tick % BUG_EVERY !== 0) return;
 		const n = this.n;
