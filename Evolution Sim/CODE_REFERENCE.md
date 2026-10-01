@@ -1937,7 +1937,7 @@ View and drawing:
 
 ### File format (`encode(eco, meta)`)
 
-The file is gzip (`CompressionStream`) of: a big-endian `u32` magic `SAVE_MAGIC` (`0x534f5645`), a `u32` header length, the UTF-8 JSON header, padding to 8 bytes, then the binary section. The header holds `version` (`SAVE_VERSION`, 2), `seed`, `w`, `h`, `tick`, the app `meta`, the `records` (record 0 is `eco`) and `bin` (binary length).
+The file is gzip (`CompressionStream`) of: a big-endian `u32` magic `SAVE_MAGIC` (`0x534f5645`), a `u32` header length, the UTF-8 JSON header, padding to 8 bytes, then the binary section. The header holds `version` (`SAVE_VERSION`, 2), `seed`, `w`, `h`, `tick`, the app `meta`, the `records` (record 0 is `eco`) and `bin` (binary length). `encode(eco, meta, flags)` adds `fast: true` when `flags.fast` is set (a save made in GPU fast mode); otherwise the header has no `fast` key, so CPU saves are unchanged. `decode` returns `fast` as a boolean.
 
 ### Loading (`decode(bytes, makeWorld)`)
 
@@ -1975,6 +1975,8 @@ The simulation runs in a Web Worker, so the UI thread only renders and never blo
 | `load(bytes)` | Promise of `{world, eco, meta}`. In worker mode, a copy of the bytes is transferred. A decode error rejects, and the worker keeps its current world. |
 | `save(eco, meta)` | Promise of `{name, bytes}`. `EvoSave.encode` serializes synchronously before its first await, so the save is one consistent tick even while the worker runs. |
 | `stats(eco)` | Promise of `{tick, json, idle}`, where `json` is `JSON.stringify(eco.stats)` taken inside the worker. Used by tests. |
+| `setFast(on)` | Promise of the resulting fast flag. Sends `gpu {on}`; resolves false in local mode or without GPU support. See the GPU fast mode section. |
+| `gpu`, `fast`, `onFast` | Getters for GPU support (worker mode only) and the current fast flag, and a setter for a callback run whenever the flag changes. |
 
 ### Worker loop (`simWorker.js`)
 
@@ -1985,8 +1987,8 @@ The simulation runs in a Web Worker, so the UI thread only renders and never blo
 
 ### Messages
 
-- Client → worker: `init`, `create {id, w, h, seed, options}`, `load {id, bytes}`, `save {id, meta}`, `run {running, speed}`, `step {n}`, `option {key, value}`, `frame {gen}`, `stats {id}`.
-- Worker → client: `hello`, `ready`, `frame`, `reply {id, …}`, `error {id, message, stack}`.
+- Client → worker: `init {scripts, gpu}`, `create {id, w, h, seed, options}`, `load {id, bytes}`, `save {id, meta}`, `run {running, speed}`, `step {n}`, `option {key, value}`, `frame {gen}`, `stats {id}`, `gpu {id, on}`.
+- Worker → client: `hello {gpu}`, `ready`, `frame` (carries `fast`), `reply {id, …}`, `error {id, message, stack}`.
 - `ready {id, gen, seed, options, world, statics, has, meta}` follows every `create` and `load`.
   - `world` is the `WorldMap`'s typed arrays and scalars, copied once.
   - `statics` holds grids the sim never changes (`plants.water`, `plants.depth`).
@@ -2031,6 +2033,64 @@ The simulation runs in a Web Worker, so the UI thread only renders and never blo
   - `?worker=0`: about 7 ticks/s, 23–30 ms per frame, and about 1 s of long tasks every 8 s.
   - In both modes, fps there is capped by software GL, at about 4 fps even when paused.
 - See `feature-research/ecosystem-v3/compute/profile.md` for the per-layer cost breakdown behind the worker and GPU plan.
+
+## GPU fast mode (`js/gpu/plantKernels.js`, `js/gpu/plantGpu.js`)
+
+Phase 2 moves the plant growth/spread step and the soil step onto WebGPU compute when the player turns on **Fast mode (GPU)**. It is off by default. With it off, nothing in the sim changes: the GPU scripts are only an early-return hook in `PlantLayer.step`, and stats and saves stay byte-identical to the CPU build. With it on, runs stop being exactly repeatable, because the GPU uses its own hash RNG and float32 maths and the readback lags one tick.
+
+### Loading and availability
+
+- The page never loads `js/gpu/*`. `simClient.js` posts `init {scripts, gpu}`, where `gpu` is false when the URL has `?gpu=0`. The worker then imports `GPU_SCRIPTS` (`gpu/plantKernels.js`, `gpu/plantGpu.js`) only when `gpu` is true and `self.navigator.gpu` exists, and answers `hello {gpu}`.
+- `SimClient.gpu` is true only in worker mode with a GPU-capable worker. `installWorld` sets `#fastWrap.hidden = !SimClient.gpu`, so the switch never shows in local mode (`?worker=0`), with `?gpu=0`, or without `navigator.gpu`.
+- `#optFast` (inside `#fastWrap`, after Disease): turning it on asks `confirm()` with the repeatability warning. The box is disabled while `SimClient.setFast(on)` (message `gpu {on}`, reply `{fast}`) runs, then shows the real result. Frames carry `fast`, and `SimClient.onFast` keeps the box in sync when the worker drops back to the CPU on its own.
+- The fast flag belongs to the worker session, not to the world. `install` (create or load) drops the old world's GPU context and attaches the new world when fast is on.
+
+### `PlantKernels` (WGSL sources)
+
+- Generated strings with the sim constants baked in as float literals (`f(x)`), so they read the same globals as `plants.js` and `soil.js`. Workgroup size `WG` is 64.
+- One bind group layout for every pipeline: 0 uniform `U` (`n, W, H, tick, seed, nwg, patches, ck` as `u32`, then `season, bloomNow, fruitNow, flowerK` as `f32`, 48 bytes), 1 `sF` slot floats, 2 `sU` slot uints, 3 `tF` tile floats, 4 `part` partial sums, 5 `mask` (`atomic<u32>` spread bits), 6 `pq` patch triples (read-only).
+- Field-major layouts, indexed `field * 2n + p` for slots and `field * n + i` for tiles:
+  - `SLOT_F` (12): bio, health, fruit, cap, growth, shade, disp, fruitK, bloomK, root, sat, own.
+  - `SLOT_U` (6): occ, kind, myco, life, age, blight.
+  - `TILE_F` (9): nut, litter, carrion, poll, moist, samp, base, water, tile.
+  - `PART` (10): total, fruit, fungi, flowers, flowerPoll, seedlings, mature, old, litter, carrion.
+- Kernels, run in this order in one compute pass:
+  1. `patchShader`: applies the CPU's patch triples `(target 0 = sF / 1 = sU / 2 = tF, index, bits)`.
+  2. `soilAShader`: per-slot nutrient demand (`own`) and per-tile total (`tile`).
+  3. `soilBShader`: the soil step (3×3 demand neighbourhood, saturation `sat`, nutrient regen/uptake, carrion and litter decay into nutrient) and the litter and carrion partial sums.
+  4. `plantShader`: canopy then understory per tile, mirroring `PlantLayer.step`: carrying capacity (fungus litter and mycorrhiza host limits, canopy shade), health from saturation (mycorrhiza boost and tax), logistic growth with season, moisture and age, fungal litter decomposition, fruit and fruit rot into litter, flower counts, then pollination decay. A death writes a negative biomass sentinel: -1 decline, -2 blight, -3 starve. A spread roll sets bit `p` in `mask`. Eight stat fields are reduced per workgroup into `part`.
+- Random numbers come from a PCG hash of `(p, tick, seed)`, where `seed` is drawn once per context from `Math.random`. The CPU `rng` is never touched by the GPU.
+
+### `PlantGpu` (host side, in the worker)
+
+- `attach(layer)` gets or creates the shared device and pipelines (`createComputePipelineAsync`, with `getCompilationInfo` errors raised as exceptions), then allocates the layer's buffers. Contexts live in a `WeakMap` keyed by the `PlantLayer`, so the layer gains no fields and `EvoSave` output is unchanged.
+- The hook: `PlantLayer.step` starts with `if (typeof PlantGpu !== 'undefined' && PlantGpu.step(this, tick)) return;`. `step` returns false (CPU path) when the layer has no context or its context failed.
+- One tick of `step(L, tick)`:
+  1. Sets `season`, `bloomNow` and `fruitNow` as the CPU does.
+  2. `consume`: merges last tick's readback into the CPU arrays, handles deaths (blight deaths call `disease.blightDeath`), sets the totals from the partial sums, and runs `_spread` for each mask bit in ascending slot order.
+  3. `cpuPart`: the parts that touch the CPU rng or the seed bank stay on the CPU. On every 8th tick (`ck`) that is aging, old-age death with `_selfSeed`, the seedling floor and seed-bank germination. Every tick it counts cover.
+  4. Upload: `diffUpload` sends only patches. If they overflow `patchCap` (max(65536, n)), or after a sync or the first tick, `fullUpload` sends everything. On `ck` ticks the whole age array is written.
+  5. `dispatch` writes the uniforms and patches, clears the mask, runs the four kernels, copies slot bio/health/fruit, the four live tile fields, the partials and the mask into one `MAP_READ` staging buffer, and calls `mapAsync`.
+  6. Builds the carrion cells on the soil's usual schedule and bumps `L.version`.
+- **Delta merge.** Animals, bugs, disease and weather keep changing the CPU arrays while the GPU works. For biomass, health, fruit, nutrient, litter, carrion and pollination, the CPU value becomes `C = R + (C - B)`, where `R` is the readback and `B` is the value uploaded for that tick. A slot whose occupancy, `cap` or `life` changed on the CPU since the upload counts as dirty: it keeps its CPU values, its spread bit is ignored, and its statics are re-patched next tick.
+- **Lag and pacing.** `busy(layer)` is true while a readback is in flight. The worker loop's `gpuHold` stops the slice before the next tick and resumes on `whenIdle`, so the GPU result is consumed at most one tick late. The GPU compute overlaps the rest of the CPU tick (animals, bugs, eggs, disease).
+- `sync(L)` waits for the readback, consumes it and marks the next upload as full. `save` sets `sim.saving` (which also holds the loop), awaits `sync` when fast is on, and passes `{fast: true}` to `EvoSave.encode`.
+- `detach` syncs then frees the buffers. `drop` frees them without syncing, for a world that is being replaced.
+
+### Fallback
+
+- No adapter, `requestDevice` failure, a shader compile error or buffer allocation failure: `attach` returns false with a `console.warn` ("Fast mode: … , using the CPU path"), and the worker clears `fast`.
+- `device.lost`, an `uncapturederror`, a failed `mapAsync` or an exception inside `step`: the context is marked failed and the next `step` warns, frees it and returns false, so that tick and every later one run on the CPU. The arrays keep their last merged values. `fastOn()` then reports false in frames and the switch unticks.
+- `?gpu=0` keeps the GPU scripts from loading at all.
+
+### Saves
+
+- `EvoSave.encode(eco, meta, flags)` writes `header.fast = true` when `flags.fast`. `decode` returns `fast` alongside `{eco, world, meta}`. A fast save is an ordinary save of CPU arrays and loads in either mode.
+
+### Keeping both paths in step
+
+- Any change to the plant or soil grid step (constants, new per-tile fields, new death causes) must be mirrored in `plantShader`/`soilBShader` and in the field tables, or fast mode will drift from the CPU rules. New CPU-only plant or soil state that the kernels do not know about is safe only if it is read after `consume`.
+- The full parity and gate numbers are in `feature-research/ecosystem-v3/compute/audit-phase2.md`.
 
 ---
 
@@ -2127,6 +2187,7 @@ Save and load (see the Save section for the file format):
   - A wide **Bugs** stat card sits under Plant biomass. Its value is `stats.bugs` (rounded total density), its sparkline `history.bugs`, and its sub-line (`bugStatLine(stats)`, CSS `.stat-sub`) shows the occupied tiles per niche (`stats.pests`, `detritivores`, `parasites`, `pollinators`) next to niche icons, plus `pollination NN%` from `stats.pollination`. Missing fields read as 0, and the card is only marked `zero` when `eco.bugs` exists.
   - A wide **Disease** stat card (`data-key="disease"`, `virus` icon, "Disease · sick animals") follows. Its value is `stats.sick`, its sparkline `history.sick`, and its sub-line reads "N strains · N blighted tiles" from `stats.strains` and `stats.blight`.
   - The `#optDisease` switch (on by default) is passed as `options.disease` to `new Ecosystem` and sets `eco.options.disease` live.
+  - `#optFast` ("Fast mode (GPU)", in `#fastWrap` after Disease, off by default and hidden unless `SimClient.gpu`) confirms the repeatability warning, then calls `SimClient.setFast`. It is not an `Ecosystem` option and is not part of `OPTION_SWITCHES`. See the GPU fast mode section.
   - The population chart has a `bugs` series (when `history.bugs` exists) with a "Bugs" legend toggle.
   - **Class cards** (v3 Part 1 slice 1): one `.stat.cls` card per `STAT_GROUPS` class (`role=button`, `tabindex=0`, `aria-expanded`, a chevron in the label), so the chart and legend show six class lines plus Plants and Bugs.
     - Each card holds a hidden `.stat-roles` block with one `.role-row` button per `ROLE_KEYS` entry (a `ROLE_COLORS` dot, the `ROLE_LABELS` name, a count and a `data-rspark` sparkline). The Invertebrates card adds a fifth **Swarms** row (`data-role="swarms"`) showing `stats.bugs` with `history.bugs`; clicking it closes the detail view and opens the Bugs tab.

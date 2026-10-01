@@ -572,6 +572,7 @@ class PlantLayer {
 	}
 
 	step(tick) {
+		if (typeof PlantGpu !== 'undefined' && PlantGpu.step(this, tick)) return;
 		const { rng, world } = this;
 		const n = this.n;
 		const W = world.width;

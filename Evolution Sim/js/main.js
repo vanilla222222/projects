@@ -142,6 +142,7 @@ function installWorld(world, eco) {
 	app.lastLogVersion = -1;
 	app.renderer.highlight = null;
 	app.renderer.setWorld(world, eco);
+	$('fastWrap').hidden = !SimClient.gpu;
 	closeOverlay();
 	closeDetail();
 	history.replaceState(null, '', '#' + eco.seed);
@@ -1194,6 +1195,22 @@ function setupControls() {
 		updateWeatherBadge();
 	};
 	$('showWeather').onchange = (e) => (app.renderer.showWeather = e.target.checked);
+	$('optFast').onchange = async (e) => {
+		const box = e.target;
+		if (box.checked && !confirm('Fast mode runs the plant and soil step on the GPU.\n\nRuns stop being exactly repeatable: the same seed and settings can play out differently. Saves still load in either mode.\n\nTurn fast mode on?')) {
+			box.checked = false;
+			return;
+		}
+		box.disabled = true;
+		try {
+			box.checked = await SimClient.setFast(box.checked);
+		} catch (err) {
+			console.warn('Fast mode could not be changed', err);
+			box.checked = SimClient.fast;
+		}
+		box.disabled = false;
+	};
+	SimClient.onFast = (on) => ($('optFast').checked = on);
 
 	$('tabs').addEventListener('click', (e) => {
 		const b = e.target.closest('button');
