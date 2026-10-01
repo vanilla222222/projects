@@ -10,6 +10,8 @@ Source: roadmap Part 1, with the decisions below.
 2. **Tabs:** Land and Water merge into one **Animals** tab with class filter chips.
 3. **Birds:** all five roles (seed/fruit, insect, fishing, raptor, carrion) plus seasonal migration.
 4. **Class is fixed per lineage.** It is inherited from the founder like the domain. The cold-blooded gene still mutates, but each class clamps it to its own range.
+5. **A full invertebrate class.** Crabs get company in the water and on land (see 1b), and the Invertebrates card also shows the bug swarms.
+6. **Bugs and diseases are part of every slice.** Each new system gets its bug and disease links (see "Bugs and diseases" in each slice).
 
 ## Slice order
 
@@ -44,6 +46,20 @@ Source: roadmap Part 1, with the decisions below.
 - **(+) New water founders** so the water classes exist from the start:
   - a sea turtle (reptile, water grazer);
   - a seal (mammal, water predator).
+- **New invertebrate founders**, to live alongside the crab:
+
+  | Domain | Role | Category | Designs |
+  | --- | --- | --- | --- |
+  | water | grazer | `urchin` (grazes algae and kelp, slow and armoured) | sea urchin, sea snail, clam |
+  | water | scavenger | `crab` (existing) | crab, lobster, hermit crab, shrimp |
+  | water | predator | `octopus` (small, fast, sense-heavy; eats small fish and crabs) | octopus, squid, starfish |
+  | water | drifter predator | `jelly` (moves with little control, stings with a toxin, cheap metabolism) | jellyfish |
+  | land | grazer | `snail` (slow and tiny; eats litter and seedlings, needs wet ground) | snail, slug |
+  | land | predator | `spider` (tiny, eats bugs from swarms, ambush-hunts small animals) | spider, scorpion, centipede |
+
+  - **Invertebrate rules:** no thirst on wet tiles, cold-blooded (gene ≥ 0.5), a size cap of 0.45 (`INVERT_SIZE`), and large egg clutches (they always lay eggs).
+  - **Icons:** `snail`, `squid`, `starfish`, `shrimp`, `lobster` and `hermitcrab` already exist. New ones are added: `octopus`, `jellyfish`, `urchin`, `clam`, `slug`, `spider`, `scorpion` and `centipede`.
+  - **(+) Bug eaters:** spiders take density from the pest and parasite swarm planes through the existing bug-eating path, with a higher bug efficiency. Snails speed up litter turnover.
 - **Inheritance:** children and new species inherit `cls`. The cold gene is clamped per class: reptiles, amphibians, fish and invertebrates ≥ 0.5; mammals and birds ≤ 0.45.
 - **Categories and icons:** `animalCategory` keys off class and domain. Icon variants are filtered by class, so seals and orcas only appear on water mammals, and turtles only on reptiles.
 
@@ -65,8 +81,18 @@ Source: roadmap Part 1, with the decisions below.
   - The tab count is the sum of the classes.
 - **Species detail:** a Class line (for example "Mammal · predator") next to Habitat.
 - **Help:** updated for the new cards and tabs.
+- **Invertebrates card:** it gets a fifth row, **Swarms**, showing total bug density and live bug species from `stats.bugs`. Clicking it opens the Bugs tab. The bug layer stays a density field and is not turned into individual animals.
+
+### 1e. Bugs and diseases (slice 1)
+- **Disease host range by class.** Strains get a host-class affinity: a strain's `hostCls` bitmask is set at emergence from its first host's class.
+  - Host jumps to another class are rarer (`JUMP_CLS_K`) than jumps within a class. Strains that manage one are logged as "jumped from mammals to birds".
+  - Invertebrates can only catch invertebrate strains, which keeps crabs and snails from becoming universal reservoirs.
+- **Pathogen detail:** a Hosts-by-class line (for example "Mammals 80% · Birds 20%").
+- **Disease tab:** each strain's row shows its main host class as a chip.
 
 ### Slice 1 targets
+- Every new invertebrate role (water grazer, water predator, drifter, land grazer and land predator) is alive at 3000 ticks on all three seeds.
+- Disease still causes 5–15% of animal deaths (the v2 band).
 - The balance gate is met for all six classes and their starting roles.
 - With no new behaviours yet, the populations stay close to v2: each existing group within ±25% at 3000 ticks on seed 42.
 - Save/load stays byte-identical.
@@ -103,6 +129,13 @@ Source: roadmap Part 1, with the decisions below.
 - **New icons:** sparrow, parrot, swallow, heron, gull, duck and eagle. The existing owl, hawk, crow and vulture icons move out of the mammal variant lists, and `chicken` becomes a ground bird variant.
 - **Sprites:** birds are drawn above everything else, with a soft offset shadow on the ground.
 
+### Bugs and diseases (slice 2)
+- **Insect birds** eat swarms directly (pest, pollinator and locust planes) with a higher bug efficiency than mammals. Locust outbreaks become food bursts for birds.
+- **Bird-borne disease ("avian flu").** Birds carry strains far, and migration can seed outbreaks in distant regions.
+  - Birds use the existing contact spread, plus a small chance per tick (`BIRD_DROP_K`) to leave strain exposure on the carcass/vector plane under their flight path.
+  - The Disease view shows these exposure trails.
+- **Fishing and carrion birds** pick up strains from what they eat, through the existing prey and carcass exposure paths.
+
 ### Slice 2 targets
 - All five bird roles are alive at 3000 ticks on all three seeds.
 - Birds make up 5–20% of animals.
@@ -138,6 +171,11 @@ Source: roadmap Part 1, with the decisions below.
 - **Map:** nests and dens get small icons (`nest`, `den`) at zoom ≥ 3.
 - **Stats:** a Nests card showing active nests and dens, eggs per nest, and nest raids. It also gets history keys.
 
+### Bugs and diseases (slice 3)
+- **Nest parasites.** Parasite swarms (ticks and leeches) on a nest or den tile drain the eggs (they fail more) and the young (they lose energy). Cleaning behaviour comes from the nest gene: high nesters lower the local parasite density.
+- **Disease in shared homes.** Animals sharing a den, and parents with eggs, get an extra contact-spread roll (`DEN_CONTACT`). Dens shelter animals from weather, but they help outbreaks spread.
+- **Egg-borne infection.** An infected parent can pass its strain to eggs (`EGG_VERT_K`), which hatch sick.
+
 ### Slice 3 targets
 - Egg loss rises into 10–40%, with nest raids as the main cause. This fixes the v2 miss.
 - Juvenile survival is better for nesters than for non-nesters of the same class.
@@ -168,10 +206,16 @@ Source: roadmap Part 1, with the decisions below.
   - Species detail gets Display and Choosiness traits, and a Display-over-time sparkline from the species history.
 - **Events:** "<Species> evolved a showy display" when the species mean display crosses 0.7.
 
+### Bugs and diseases (slice 4)
+- **Honest signals (Hamilton–Zuk).** Infected animals and heavily parasitized animals show their display at reduced strength (`SICK_DISPLAY`), so choosy mates avoid sick partners. Resistance then gets selected through mate choice. This is a design-level fix for the v2 miss where disease resistance never rose.
+- **Packs spread disease.** Pack members get the herd contact multiplier. Sick pack members slow the pack, and the leader prefers healthy followers.
+- **Pack kills expose the whole pack** to the prey's strain, not just the killer.
+
 ### Slice 4 targets
 - **Packs:** on all three seeds, at least one predator lineage forms packs (mean size ≥ 3), and pack kills of large grazers appear (prey mass > hunter mass × 1.5).
 - **Sexual selection:** in at least one lineage per seed, mean display rises by ≥ 0.15 over 3000 ticks while choosiness is above 0.4. Display falls in at least one heavily hunted lineage.
 - **Balance gate** holds for all classes and their roles.
+- **Resistance:** in the most-infected choosy lineage, mean resistance rises from year 5 to year 35 on at least two of the three seeds.
 
 ---
 

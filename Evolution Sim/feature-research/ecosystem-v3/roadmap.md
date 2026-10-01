@@ -74,3 +74,5 @@ A tool palette on the map. Examples, to be finalised in the Part 3 plan:
 2. **Tabs:** one Animals tab with class filter chips replaces Land and Water.
 3. **Birds:** all five roles and seasonal migration in Part 1.
 4. **Class is fixed per lineage.** The cold-blooded gene is clamped to each class's range.
+5. **Invertebrates are a full class:** urchins, octopuses, jellyfish, land snails and spiders join the crabs, and the class card also shows bug swarms.
+6. **Bugs and diseases tie into every slice:** host classes for strains, insect birds, bird-borne outbreaks, nest parasites, shared-den spread, and sick animals showing dull displays (honest signals).
