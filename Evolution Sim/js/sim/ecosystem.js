@@ -47,6 +47,9 @@ class Ecosystem {
 		this.stats.packCls = {};
 		this.history.packs = [];
 		this.history.packSize = [];
+		this.stats.nutrition = { lean: 0, fit: 0, heavy: 0, obese: 0, meanFat: 0, deficient: 0, defShare: 0, defProt: 0, defMin: 0, caFailed: 0, caClutches: 0, fatBurned: 0 };
+		this.history.nutrition = [];
+		this.history.meanFat = [];
 		for (const k of BIRD_NICHES) {
 			this.stats.birdNiches[k] = 0;
 			this.history['birdNiche.' + k] = [];
@@ -156,6 +159,7 @@ class Ecosystem {
 			this._herdStats();
 			this._nestStats();
 			this._packStats();
+			this._nutStats();
 			if (this.bugs) this.bugs.refreshSpeciesMeans();
 			if (D) D.refreshSpeciesMeans();
 		}
@@ -306,6 +310,46 @@ class Ecosystem {
 		s.packKills = A.packKills;
 		s.bigKills = A.bigKills;
 		s.mateRefusals = A.mateRefusals;
+	}
+
+	_nutStats() {
+		const A = this.animals;
+		const s = this.stats.nutrition;
+		let lean = 0;
+		let fit = 0;
+		let heavy = 0;
+		let obese = 0;
+		let fat = 0;
+		let def = 0;
+		let dp = 0;
+		let dm = 0;
+		for (let i = 0; i < A.count; i++) {
+			if (!A.alive[i]) continue;
+			const f = A.fat[i] / (A.emax[i] * A.gf[i]);
+			fat += f;
+			if (f < FAT_LEAN) lean++;
+			else if (f < FAT_HEAVY) fit++;
+			else if (f < FAT_OBESE) heavy++;
+			else obese++;
+			const p = A.nProt[i] < DEFICIT;
+			const m = A.nMin[i] < DEFICIT;
+			if (p) dp++;
+			if (m) dm++;
+			if (p || m) def++;
+		}
+		const n = lean + fit + heavy + obese;
+		s.lean = lean;
+		s.fit = fit;
+		s.heavy = heavy;
+		s.obese = obese;
+		s.meanFat = n ? Math.round((fat / n) * 1000) / 1000 : 0;
+		s.deficient = def;
+		s.defShare = n ? Math.round((def / n) * 1000) / 1000 : 0;
+		s.defProt = dp;
+		s.defMin = dm;
+		s.caFailed = this.eggs ? this.eggs.caFailed : 0;
+		s.caClutches = A.caClutches;
+		s.fatBurned = Math.round(A.fatBurned);
 	}
 
 	_diseaseStats() {
@@ -480,6 +524,8 @@ class Ecosystem {
 		h.dens.push(this.stats.nests.dens);
 		h.packs.push(this.stats.packs);
 		h.packSize.push(this.stats.packSize);
+		h.nutrition.push(Math.round(this.stats.nutrition.defShare * 100));
+		h.meanFat.push(this.stats.nutrition.meanFat);
 		for (const k of BIRD_NICHES) h['birdNiche.' + k].push(this.stats.birdNiches[k]);
 		for (const g of STAT_GROUPS) {
 			h[g.key].push(this.stats[g.key]);

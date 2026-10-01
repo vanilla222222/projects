@@ -41,6 +41,7 @@ const STAT_EXTRA = [
 	{ key: 'packs', label: 'Hunting packs', icon: 'wolf', color: '#d07a5a', sub: true },
 	{ key: 'eggs', label: 'Eggs', icon: 'egg', color: '#e6d3a3', wide: true, sub: true },
 	{ key: 'nests', label: 'Nests & dens', icon: 'nest', color: '#c79a5b', wide: true, sub: true },
+	{ key: 'nutrition', label: 'Body condition', icon: 'boar', color: '#d9a066', wide: true, sub: true },
 	{ key: 'stages', label: 'Life stages · animals', icon: 'deer', color: '#9fd98b', wide: true, sub: true, noSpark: true },
 ];
 const STAT_EXTRA_KEYS = new Set(STAT_EXTRA.map((x) => x.key));
@@ -469,7 +470,11 @@ function updateExtraStat(el, k, s, h) {
 		sub.innerHTML = `<span>${formatCount(j)} juveniles</span><span>${formatCount(a)} adults</span><span>${formatCount(e)} elders</span>`;
 		return;
 	}
-	if (k === 'eggs') {
+	if (k === 'nutrition') {
+		const nu = s.nutrition || {};
+		v.innerHTML = `${pct(nu.defShare || 0)}<small>deficient</small>`;
+		sub.innerHTML = `<span>${formatCount(nu.lean || 0)} lean</span><span>${formatCount(nu.fit || 0)} fit</span><span>${formatCount(nu.heavy || 0)} heavy</span><span>${formatCount(nu.obese || 0)} obese</span><span>${formatCount(nu.defProt || 0)} low protein</span><span>${formatCount(nu.defMin || 0)} low minerals</span><span>${formatCount(nu.caFailed || 0)} eggs failed (calcium)</span>`;
+	} else if (k === 'eggs') {
 		const eg = s.eggs || {};
 		v.textContent = formatCount(st.eggs || 0);
 		sub.innerHTML = ['laid', 'hatched', 'eaten', 'failed'].map((x) => `<span>${formatCount(eg[x] || 0)} ${x}</span>`).join('');
@@ -759,6 +764,7 @@ const ANIMAL_TRAITS = [
 	['Pack hunting', G_PACK, (v) => pct(v)],
 	['Display', G_DISPLAY, (v) => pct(v)],
 	['Choosiness', G_CHOOSY, (v) => pct(v)],
+	['Appetite', G_APPETITE, (v) => pct(v)],
 ];
 
 const DISEASE_TRAITS = [
@@ -766,6 +772,10 @@ const DISEASE_TRAITS = [
 	['Virulence', 1, (v) => pct(v)],
 	['Host range', 2, (v) => pct(v)],
 ];
+
+function conditionWord(f) {
+	return f < FAT_LEAN ? 'lean' : f < FAT_HEAVY ? 'fit' : f < FAT_OBESE ? 'heavy' : 'obese';
+}
 
 function pct(v) {
 	return Math.round(v * 100) + '%';
@@ -849,6 +859,7 @@ function renderDetail() {
 		cells.push(['Class', `${CLASS_NAME[sp.cls] || 'Animal'} · ${sp.role}`]);
 		cells.push(['Habitat', (sp.domain === 'water' ? 'Water' : sp.domain === 'amph' ? 'Amphibious' : sp.domain === 'air' ? (sp.nic ? 'Air · fishes the shallows' : 'Air · perches on land') : 'Land') + (sp.mean[G_DRY] > 0.6 ? ' · dry-adapted' : '')]);
 		const c = stageCounts(sp.id);
+		if (sp.fat !== undefined) cells.push(['Body condition', `${conditionWord(sp.fat)} · fat ${pct(sp.fat)} · ${pct(Math.max(sp.protDef || 0, sp.minDef || 0))} deficient`, true]);
 		cells.push(['Stages', `${formatCount(c[0])} juv · ${formatCount(c[1])} adult · ${formatCount(c[2])} elder · ${formatCount(c[3])} eggs`, true]);
 	}
 	$('detailGrid').innerHTML = cells.map(([k, v, wide]) => `<div${wide ? ' class="wide"' : ''}><small>${k}</small><strong>${v}</strong></div>`).join('');
@@ -889,7 +900,10 @@ function renderDetail() {
 	}
 	const showHist = sp.group === 'animal' && sp.showHist && sp.showHist.length >= 4 ? sp.showHist : null;
 	if (showHist) traits += `<div class="trait" title="Mean display over time${sp.showy ? ' · showy' : ''}"><span>Display trend</span><canvas data-show-spark style="width:100%;height:20px;margin:0"></canvas><em>${pct(showHist[showHist.length - 1])}</em></div>`;
+	const condHist = sp.group === 'animal' && sp.condHist && sp.condHist.length >= 6 ? sp.condHist : null;
+	if (condHist) traits += `<div class="trait" title="Mean fat over time (body condition)"><span>Condition trend</span><canvas data-cond-spark style="width:100%;height:20px;margin:0"></canvas><em>${pct(condHist[condHist.length - 2])}</em></div>`;
 	$('detailTraits').innerHTML = traits;
+	if (condHist) drawSparkline($('detailTraits').querySelector('[data-cond-spark]'), condHist.filter((v, k) => k % 3 === 1), sp.color);
 	if (showHist) drawSparkline($('detailTraits').querySelector('[data-show-spark]'), showHist.filter((v, k) => k % 2 === 1), sp.color);
 
 	const chain = eco.registry.lineage(sp).reverse();
@@ -1052,8 +1066,12 @@ function updateTooltip() {
 		const st = A.strain && A.strain[a] ? reg.get(A.strain[a]) : null;
 		const sick = st ? `<small class="tt-sick">sick: ${st.name}</small>` : '';
 		const cap = A.emax[a] * A.gf[a];
+		const fr = A.fat && cap > 0 ? A.fat[a] / cap : 0;
+		const lowP = A.nProt && A.nProt[a] < DEFICIT;
+		const lowM = A.nMin && A.nMin[a] < DEFICIT;
+		const cond = A.fat ? `<small${lowP || lowM ? ' class="tt-sick"' : ''}>${conditionWord(fr)} · protein ${lowP ? 'low' : pct(Math.min(1, A.nProt[a]))} · minerals ${lowM ? 'low' : pct(Math.min(1, A.nMin[a]))}</small>` : '';
 		const water = A.domain[a] !== 1 && A.water ? ` · water ${pct(Math.min(1, Math.max(0, A.water[a])))}` : '';
-		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${A.domain[a] === 3 ? (A.fly[a] ? 'flying · ' : 'perched · ') : ''}${states[A.state[a]]} · ${['juvenile', 'adult', 'elder'][animalStage(A, a)]} · age ${A.age[a]}${home}</small><small>energy ${pct(cap > 0 ? Math.min(1, Math.max(0, A.energy[a] / cap)) : 0)}${water}</small>${sick}</div></div>`;
+		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${A.domain[a] === 3 ? (A.fly[a] ? 'flying · ' : 'perched · ') : ''}${states[A.state[a]]} · ${['juvenile', 'adult', 'elder'][animalStage(A, a)]} · age ${A.age[a]}${home}</small><small>energy ${pct(cap > 0 ? Math.min(1, Math.max(0, A.energy[a] / cap)) : 0)}${water}</small>${cond}${sick}</div></div>`;
 	}
 	for (let slot = 0; slot < 2; slot++) {
 		const p = slot * P.n + t;

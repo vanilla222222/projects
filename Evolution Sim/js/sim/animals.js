@@ -1,6 +1,6 @@
-const AG = 19;
-const G_SIZE = 0, G_SPEED = 1, G_SENSE = 2, G_DIET = 3, G_TEMP = 4, G_TOL = 5, G_FEC = 6, G_TOXR = 7, G_ARMOR = 8, G_RES = 9, G_SCAV = 10, G_TERR = 11, G_HERD = 12, G_COLD = 13, G_DRY = 14, G_NEST = 15, G_PACK = 16, G_DISPLAY = 17, G_CHOOSY = 18;
-const ANIMAL_WEIGHTS = [1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6, 0.3, 0.3, 0.3, 0.3];
+const AG = 20;
+const G_SIZE = 0, G_SPEED = 1, G_SENSE = 2, G_DIET = 3, G_TEMP = 4, G_TOL = 5, G_FEC = 6, G_TOXR = 7, G_ARMOR = 8, G_RES = 9, G_SCAV = 10, G_TERR = 11, G_HERD = 12, G_COLD = 13, G_DRY = 14, G_NEST = 15, G_PACK = 16, G_DISPLAY = 17, G_CHOOSY = 18, G_APPETITE = 19;
+const ANIMAL_WEIGHTS = [1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6, 0.3, 0.3, 0.3, 0.3, 0.5];
 const ANIMAL_CLASSES = ['fish', 'amphibian', 'reptile', 'mammal', 'bird', 'invertebrate'];
 const CLS_FISH = 0, CLS_AMPH = 1, CLS_REPT = 2, CLS_MAMM = 3, CLS_BIRD = 4, CLS_INVT = 5;
 const CLS_COLD = [[0, 1], [0.5, 1], [0.5, 1], [0, 0.45], [0, 0.45], [0.5, 1]];
@@ -163,6 +163,76 @@ const FEED_R = 8;
 const FEED_TOP = 0.8;
 const FEED_EFF = 0.8;
 const EGG_VERT_K = 0.3;
+const FOOD_GRASS = 0, FOOD_LEAF = 1, FOOD_FRUIT = 2, FOOD_SEED = 3, FOOD_BUG = 4, FOOD_MEAT = 5, FOOD_FISH = 6, FOOD_CARRION = 7, FOOD_LITTER = 8, FOOD_EGG = 9;
+const FOOD_NAMES = ['grass', 'leaves', 'fruit', 'seeds', 'bugs', 'meat', 'fish', 'carrion', 'litter', 'eggs'];
+const FOOD_NUTRIENTS = [
+	0.15, 0.3, 0.8, 0.3,
+	0.25, 0.3, 0.6, 0.35,
+	0.08, 0.9, 0.2, 0.15,
+	0.35, 0.7, 0.3, 0.4,
+	0.8, 0.4, 0.1, 0.3,
+	0.9, 0.5, 0, 0.4,
+	0.85, 0.5, 0, 0.7,
+	0.7, 0.4, 0, 0.4,
+	0.15, 0.2, 0.9, 0.5,
+	0.7, 0.5, 0, 0.9,
+];
+const NUT_K = 3.5;
+const NUT_START = 0.7;
+const DEFICIT = 0.25;
+const NEED_P0 = 0.06;
+const NEED_PD = 0.5;
+const NEED_M = 0.24;
+const NEED_JUV_P = 1.4;
+const NEED_JUV_M = 1.3;
+const NEED_BIRD = 1.15;
+const NEED_ECTO = 0.8;
+const FIBRE_K = 0.15;
+const SOIL_NUT_LO = 0.5;
+const SOIL_NUT_K = 0.8;
+const SICK_EAT = 0.3;
+const SICK_ABSORB = 0.3;
+const PARA_NUT = 0.5;
+const DEF_GROW = 0.4;
+const DEF_FERT = 0.5;
+const EGG_CA = 0.1;
+const EGG_CA_MIN = 0.4;
+const FAT_EFF = 0.8;
+const FAT_MAX = 0.7;
+const FAT_MIG = 1.5;
+const FAT_BURN = 0.5;
+const FAT_STORE = 0.6;
+const FAT_RATE = 0.01;
+const FAT_BURN_MIG = 0.75;
+const FAT_COLD_T = 0.4;
+const FAT_PREP_STORE = 0.5;
+const FAT_PREP_BURN = 0.35;
+const FAT_PREP_RATE = 2;
+const APP_OVER = 0.3;
+const FAT_HEAVY = 0.25;
+const FAT_OBESE = 0.45;
+const FAT_LEAN = 0.05;
+const FAT_SLOW = 0.6;
+const FAT_CATCH = 1.2;
+const FAT_META = 0.5;
+const FAT_INS = 0.5;
+const FAT_HOT = 0.25;
+const OMNI_SEEK = 0.5;
+const OMNI_PROT_LURE = 2;
+const OMNI_FRUIT_CUT = 0.6;
+const OMNI_FRUIT_LURE = 1.6;
+const OMNI_HUNT = 0.85;
+const COND_EVERY = 100;
+const COND_HIST = 120;
+const DEF_EVENT = 0.4;
+const DEF_REARM = 0.25;
+const DEF_EVENT_POP = 30;
+const DEF_EVENT_AGE = 300;
+const MALNOURISHED_SUS = 0.5;
+const FAT_SUS = 0.8;
+const FOUNDER_APPETITE = 0.35;
+const FOUNDER_APP_COLD = 0.2;
+const FOUNDER_APP_BIRD = 0.15;
 
 const ANIMAL_ARCHETYPES = [
 	{ domain: 'land', cls: CLS_MAMM, n: 50, g: [0.12, 0.5, 0.45, 0.04, 0.5, 0.65, 0.85, 0.3, 0.08, 0.15, 0.1, 0.05, 0.6, 0.05, 0.3, 0.55, 0.15, 0.3, 0.3] },
@@ -207,6 +277,7 @@ for (const a of ANIMAL_ARCHETYPES) {
 	const g = a.g;
 	if (a.cls === CLS_MAMM && a.domain === 'land' && g[G_DIET] > 0.66) g[G_PACK] = FOUNDER_PACK;
 	if (a.cls === CLS_BIRD && !a.nic && g[G_DIET] < 0.66) g[G_CHOOSY] = FOUNDER_CHOOSY;
+	g[G_APPETITE] = FOUNDER_APPETITE + (g[G_TEMP] < 0.4 ? FOUNDER_APP_COLD : 0) + (a.cls === CLS_BIRD ? FOUNDER_APP_BIRD : 0);
 }
 
 function domainIndex(d) {
@@ -395,6 +466,7 @@ const ANIMAL_FIELDS_F = [
 const ANIMAL_FIELDS_I = ['sp', 'uid', 'cool', 'ttl', 'face', 'domain', 'cls', 'alive', 'state', 'seedSp', 'seedTtl', 'confuse', 'strain', 'itime', 'immune', 'imTime', 'natImm', 'parent', 'fly', 'nic', 'home'];
 ANIMAL_FIELDS_F.push('show');
 ANIMAL_FIELDS_I.push('pk', 'pn');
+ANIMAL_FIELDS_F.push('fat', 'nProt', 'nMin', 'app', 'needP', 'needM');
 
 class AnimalPool {
 	constructor(world, plants, registry, rng, log) {
@@ -456,6 +528,8 @@ class AnimalPool {
 		this.packKills = 0;
 		this.bigKills = 0;
 		this.mateRefusals = 0;
+		this.caClutches = 0;
+		this.fatBurned = 0;
 		this._packBuf = new Int32Array(PACK_MAX);
 		this._mateBuf = new Int32Array(MATE_SAMPLES);
 	}
@@ -545,6 +619,11 @@ class AnimalPool {
 		this.dry[i] = g[o + G_DRY];
 		this.hr[i] = 2 + 5 * size;
 		this.meta[i] *= 1 + DISPLAY_COST * g[o + G_DISPLAY];
+		this.app[i] = g[o + G_APPETITE];
+		const ck = this.cls[i];
+		const ek = ck === CLS_BIRD ? NEED_BIRD : ck === CLS_REPT || ck === CLS_AMPH ? NEED_ECTO : 1;
+		this.needP[i] = (NEED_P0 + NEED_PD * diet) * ek;
+		this.needM[i] = NEED_M * ek;
 		if (this.cls[i] === CLS_BIRD) {
 			this.spd[i] *= BIRD_SPEED;
 			this.range[i] *= BIRD_SENSE;
@@ -602,6 +681,9 @@ class AnimalPool {
 		this.show[i] = 0;
 		this.pk[i] = 0;
 		this.pn[i] = 0;
+		this.fat[i] = 0;
+		this.nProt[i] = NUT_START;
+		this.nMin[i] = NUT_START;
 		this.registry.add(sp);
 		return i;
 	}
@@ -927,6 +1009,11 @@ class AnimalPool {
 					const give = need < spare ? need : spare;
 					this.energy[j] += give * FEED_EFF;
 					this.energy[i] -= give;
+					const r = ((give * FEED_EFF) / (this.emax[j] * this.gf[j])) * NUT_K;
+					const fp = this.nProt[j] + r * this.nProt[i];
+					const fm = this.nMin[j] + r * this.nMin[i];
+					this.nProt[j] = fp < 1 ? fp : 1;
+					this.nMin[j] = fm < 1 ? fm : 1;
 					spare -= give;
 					if (spare <= 0) return;
 				}
@@ -1078,6 +1165,7 @@ class AnimalPool {
 		if (d < 1e-4) return 0;
 		const sk = this.strain[i];
 		let v = (sk ? this.spd[i] * (1 - SICK_SLOW * this.disease.sVir[sk]) : this.spd[i]) * this.ef[i];
+		if (this.fat[i] > 0) v *= 1 - FAT_SLOW * this._heavy(i);
 		const cold = this.cold[i];
 		if (cold > 0) {
 			const et = this.world.temperature[(y | 0) * this.world.width + (x | 0)] + (this.weather ? this.weather.seasonT : 0);
@@ -1109,8 +1197,39 @@ class AnimalPool {
 		return 0;
 	}
 
+	_heavy(i) {
+		const h = this.fat[i] / (this.emax[i] * this.gf[i]) - FAT_HEAVY;
+		return h > 0 ? (h < 1 ? h : 1) : 0;
+	}
+
+	_sus(i) {
+		return (this._deficient(i) ? 1 + MALNOURISHED_SUS : 1) * (this.fat[i] > 0 ? 1 + FAT_SUS * this._heavy(i) : 1);
+	}
+
+	_deficient(i) {
+		return this.nProt[i] < DEFICIT || this.nMin[i] < DEFICIT;
+	}
+
+	_eat(i, g, f, sk) {
+		if (!(g > 0)) return 0;
+		const o = f * 4;
+		const fn = FOOD_NUTRIENTS;
+		const gain = g * (1 - FIBRE_K * fn[o + 2] * this.diet[i]);
+		const r = (gain / (this.emax[i] * this.gf[i])) * NUT_K * (sk ? 1 - SICK_ABSORB * this.disease.sVir[sk] : 1);
+		let soil = 1;
+		if (f === FOOD_GRASS || f === FOOD_LEAF || f === FOOD_SEED) {
+			const nu = this.plants.soil.nutrient[(this.y[i] | 0) * this.world.width + (this.x[i] | 0)];
+			soil = SOIL_NUT_LO + SOIL_NUT_K * (nu < SOIL_MAX ? nu / SOIL_MAX : 1);
+		}
+		const p = this.nProt[i] + r * fn[o] * soil;
+		const m = this.nMin[i] + r * fn[o + 3] * soil;
+		this.nProt[i] = p < 1 ? p : 1;
+		this.nMin[i] = m < 1 ? m : 1;
+		return gain;
+	}
+
 	_bugEff(i) {
-		if (this.mass[i] >= BUG_MASS) return 0;
+		if (this.mass[i] * this.gf[i] >= BUG_MASS) return 0;
 		const diet = this.diet[i];
 		if (this.cls[i] === CLS_INVT && !this.domain[i] && diet >= 0.5) return INVERT_BUG;
 		if (diet >= BUG_DIET_MAX) return 0;
@@ -1157,9 +1276,14 @@ class AnimalPool {
 		const asp = this.registry.get(this.sp[i]);
 		const av = asp && asp.aversion && asp.aversion.length ? asp.aversion : null;
 		const bugs = this.bugs;
-		const bugEff = bugs ? this._bugEff(i) * BUG_LURE : 0;
+		const od = this.diet[i];
+		const omni = od >= 0.33 && od < 0.66;
+		const protShort = omni && this.nProt[i] < OMNI_SEEK;
+		const pk = protShort ? OMNI_PROT_LURE : 1;
+		const fk = protShort ? OMNI_FRUIT_CUT : omni && this.energy[i] < this.emax[i] * this.gf[i] * FAT_BURN ? OMNI_FRUIT_LURE : 1;
+		const bugEff = bugs ? this._bugEff(i) * BUG_LURE * pk : 0;
 		const carrion = plants.soil.carrion;
-		const carrionLure = this.carrionEff[i] * CARRION_LURE * (1 + SCAV_LURE * this.scav[i]);
+		const carrionLure = this.carrionEff[i] * CARRION_LURE * (1 + SCAV_LURE * this.scav[i]) * pk;
 		const eggHead = this.eggs && this.diet[i] >= 0.33 ? this.eggs.head : null;
 		const Wx = this.weather;
 		const wd = Wx && dom !== 1 && this.diet[i] > 0.6 ? Wx.waterDist : null;
@@ -1196,13 +1320,13 @@ class AnimalPool {
 				food = plants.edible(j, reach);
 				if (fruitEater) {
 					const fr = plants.fruitAt(j, tall);
-					if (fr > 0) food += fr * FRUIT_LURE * (0.6 + plants.genome[j * PG + 9]);
+					if (fr > 0) food += fr * FRUIT_LURE * fk * (0.6 + plants.genome[j * PG + 9]);
 				}
 				if (av && plants.kind[pn + j] && plants.species[pn + j]) food *= 1 - this._aversion(av, plants.hue[pn + j]);
 			}
 			if (bugEff > 0) food += bugs.edibleAt(j) * bugEff;
 			if (land && carrion[j] > 0) food += carrion[j] * carrionLure;
-			if (land && eggHead && eggHead[j] >= 0) food += EGG_LURE;
+			if (land && eggHead && eggHead[j] >= 0) food += EGG_LURE * pk;
 			const clim = this._clim(i, temp[j]);
 			const dist = Math.hypot(tx - this.x[i], ty - this.y[i]);
 			let score = ((food + 0.02) * (0.25 + clim) * perchK) / (1 + dist * 0.08) + this.rng.next() * 0.002;
@@ -1314,7 +1438,7 @@ class AnimalPool {
 			if (!this.alive[i]) continue;
 			this.px[i] = this.x[i];
 			this.py[i] = this.y[i];
-			this.age[i]++;
+			if (this.age[i] >= this.mature[i] || (tick + i) % 5 >= 5 * DEF_GROW || !this._deficient(i)) this.age[i]++;
 			this._stage(i);
 			const gf = this.gf[i];
 			const ef = this.ef[i];
@@ -1373,8 +1497,17 @@ class AnimalPool {
 			const shelter = hk === 3 && atHome ? 1 - DEN_SHELTER * ng : 1;
 			const homeK = this._homeK(i);
 			if (homeK > 0 && ((tick + i) & 1) === 1) this._chaseRival(i);
-			const bite = this.bite[i] * gf * ef * (1 + TERR_BITE * homeK) * (dom === 3 ? BIRD_BITE : 1);
-			let cost = m75 * (1 + 1.3 * (1 - clim) * shelter) * (flying ? FLY_META : 1);
+			const sk0 = this.strain[i];
+			const bite = this.bite[i] * gf * ef * (1 + TERR_BITE * homeK) * (dom === 3 ? BIRD_BITE : 1) * (sk0 ? 1 - SICK_EAT * this.disease.sVir[sk0] : 1);
+			const fat = this.fat[i];
+			const em0 = this.emax[i] * gf;
+			let climK = 1;
+			if (fat > 0) {
+				const fi = fat < em0 * FAT_HEAVY ? fat / (em0 * FAT_HEAVY) : 1;
+				climK = temp[tile] + seasonT < this.pT[i] ? 1 - FAT_INS * fi : 1 + FAT_HOT * fi;
+			}
+			let cost = m75 * (1 + 1.3 * (1 - clim) * shelter * climK) * (flying ? FLY_META : 1);
+			if (fat > em0 * FAT_HEAVY) cost *= 1 + FAT_META * this._heavy(i);
 			if (this.cold[i] > 0.5) {
 				const et = temp[tile] + seasonT;
 				if (et < 0.5) cost += m75 * COLD_UPKEEP * (0.5 - et) * 2 * shelter;
@@ -1384,8 +1517,13 @@ class AnimalPool {
 				tileLoad[tile] = lw < 65535 ? lw : 65535;
 			}
 			let drain = 0;
-			const emax = this.emax[i] * gf;
+			const emax = em0;
 			const e = this.energy[i];
+			const mig = dom === 3 && temp[tile] - SEASON_T < this.pT[i];
+			const prep = mig || temp[tile] < FAT_COLD_T;
+			const fatCap = emax * FAT_MAX * this.app[i] * (prep ? FAT_MIG : 1);
+			const full = fat < fatCap ? emax * (1 + APP_OVER * this.app[i]) : emax;
+			const protShort = dg >= 0.33 && dg < 0.66 && this.nProt[i] < OMNI_SEEK;
 			const landScav = !dom && this.scav[i] > 0.5 && this.diet[i] >= 0.33;
 			let moved = 0;
 			let acted = false;
@@ -1438,7 +1576,7 @@ class AnimalPool {
 				}
 			}
 
-			if (!acted && this.meatEff[i] > 0.25 && e < emax * (this.scav[i] > 0.5 ? SCAV_HUNT : this.nic[i] ? FISHER_HUNT : 0.6) && this.cool[i] === 0) {
+			if (!acted && this.meatEff[i] > 0.25 && e < emax * (this.scav[i] > 0.5 ? SCAV_HUNT : this.nic[i] ? FISHER_HUNT : protShort ? OMNI_HUNT : 0.6) && this.cool[i] === 0) {
 				const p = this._nearest(i, this.nic[i] ? this.range[i] * FISHER_RANGE : this.range[i], 1);
 				if (p >= 0) {
 					if (this.state[i] !== 3) this.ttl[i] = 18;
@@ -1480,13 +1618,13 @@ class AnimalPool {
 				}
 			}
 
-			if (eggs && (dg >= 0.33 || dom === 1) && this.energy[i] < emax && eggs.head[tile] >= 0) {
-				const got = eggs.eatAt(tile, dom !== 1, this.sp[i], (emax - this.energy[i]) / EGG_FOOD, this.mass[i] * gf, tick);
-				if (got > 0) this.energy[i] += got * EGG_FOOD;
+			if (eggs && (dg >= 0.33 || dom === 1) && this.energy[i] < full && eggs.head[tile] >= 0) {
+				const got = eggs.eatAt(tile, dom !== 1, this.sp[i], (full - this.energy[i]) / EGG_FOOD, this.mass[i] * gf, tick);
+				if (got > 0) this.energy[i] += this._eat(i, got * EGG_FOOD, FOOD_EGG, sk0);
 				else if (got < 0 && !acted) this._flee(i, (tile % W) + 0.5, (tile - (tile % W)) / W + 0.5);
 			}
 
-			if (!acted && this.scav[i] > 0.5 && e < emax * 0.92 && !(carrion[tile] > 0)) {
+			if (!acted && this.scav[i] > 0.5 && e < full * 0.92 && !(carrion[tile] > 0)) {
 				if ((this.ttl[i] <= 0 || this.state[i] !== 2) && !this._pickCarrion(i)) this._pickForage(i);
 				this.state[i] = 2;
 				if (carrion[(this.ty[i] | 0) * W + (this.tx[i] | 0)] > 0) {
@@ -1496,7 +1634,7 @@ class AnimalPool {
 				}
 			}
 
-			if (!acted && this.plantEff[i] > 0.12 && e < emax * 0.92 && !(dom === 3 && dg >= 0.33)) {
+			if (!acted && this.plantEff[i] > 0.12 && e < full * 0.92 && !(dom === 3 && dg >= 0.33)) {
 				const ok = (this.walk[tile] & FEED_BIT[dom]) !== 0;
 				const reach = this._reach(i);
 				const tall = reach > 0 || dom === 3;
@@ -1512,9 +1650,10 @@ class AnimalPool {
 				const avail = ok ? plants.edible(tile, reach, skip) : 0;
 				if (fr > bite * FRUIT_MIN_BITE) {
 					this.state[i] = 1;
+					const ff = plants.fruit[tile] > 0 && plants.species[tile] ? FOOD_SEED : FOOD_FRUIT;
 					const eaten = plants.eatFruit(tile, bite, tall);
 					const seedHit = plants.fruitSeedTox * 0.7 - this.toxR[i];
-					this.energy[i] += eaten * FRUIT_ENERGY * (0.6 + plants.fruitSweet) * this.plantEff[i] * plantK * (1 - 1.6 * (seedHit > 0 ? seedHit : 0)) * (dom === 3 ? BIRD_FRUIT : 1);
+					this.energy[i] += this._eat(i, eaten * FRUIT_ENERGY * (0.6 + plants.fruitSweet) * this.plantEff[i] * plantK * (1 - 1.6 * (seedHit > 0 ? seedHit : 0)) * (dom === 3 ? BIRD_FRUIT : 1), ff, sk0);
 					if (plants.fruitSp && !this.seedSp[i]) {
 						this.seedSp[i] = plants.fruitSp;
 						this.seedTtl[i] = (20 + ((rng.next() * 40) | 0)) * (dom === 3 ? BIRD_SEED : 1);
@@ -1523,10 +1662,17 @@ class AnimalPool {
 					acted = true;
 				} else if (avail > bite * 0.5) {
 					this.state[i] = 1;
+					const u = plants.n + tile;
+					const ua = skip || !plants.species[u] || plants.kind[u] ? 0 : plants.biomass[u] - plants.floor[u] * (1 - reach);
 					const eaten = plants.graze(tile, bite, reach, skip);
 					if (eaten > 0) this.water[i] = Math.min(1, this.water[i] + GRAZE_WATER);
 					const toxHit = Math.max(0, plants.grazeTox - this.toxR[i]);
-					this.energy[i] += eaten * PLANT_ENERGY * this.plantEff[i] * plantK * (1 - 1.6 * toxHit);
+					const ge = eaten * PLANT_ENERGY * this.plantEff[i] * plantK * (1 - 1.6 * toxHit);
+					if (ge > 0) {
+						const lf = ua > 0 ? (ua < bite ? ua : bite) / eaten : 0;
+						const ls = lf < 1 ? lf : 1;
+						this.energy[i] += this._eat(i, ge * ls, FOOD_LEAF, sk0) + this._eat(i, ge * (1 - ls), FOOD_GRASS, sk0);
+					}
 					if (plants.grazeFungus) poisonDead = this._poison(i, tick);
 					acted = true;
 				} else {
@@ -1550,9 +1696,9 @@ class AnimalPool {
 			if (dom === 3) this.fly[i] = moved > FLY_MOVE || !(this.walk[(this.y[i] | 0) * W + (this.x[i] | 0)] & 1) ? 1 : 0;
 
 			if (bugs) {
-				if (this.mass[i] < BUG_MASS && bugs.total[tile] > 0 && this.energy[i] < emax) {
+				if (this.mass[i] * gf < BUG_MASS && bugs.total[tile] > 0 && this.energy[i] < full) {
 					const be = this._bugEff(i);
-					if (be > 0) this.energy[i] += bugs.eat(tile, this.bite[i] * gf * ef * be) * (dom === 3 && dg >= 0.33 ? BIRD_BUG_ENERGY : BUG_ENERGY);
+					if (be > 0) this.energy[i] += this._eat(i, bugs.eat(tile, this.bite[i] * gf * ef * be) * (dom === 3 && dg >= 0.33 ? BIRD_BUG_ENERGY : BUG_ENERGY), FOOD_BUG, sk0);
 				}
 				const pl = flying ? 0 : parasiteLoad[tile];
 				if (pl > 0) {
@@ -1561,9 +1707,9 @@ class AnimalPool {
 					bugs.parasiteDrain += drain;
 				}
 			}
-			if (this.cls[i] === CLS_INVT && !dom && dg < 0.5 && this.energy[i] < emax && soil.litter[tile] > 0) this.energy[i] += soil.consumeLitter(tile, bite) * LITTER_ENERGY * plantK;
-			if (carrion[tile] > 0 && this.energy[i] < emax * 0.92 && (dom !== 3 || this.walk[tile] & 1)) {
-				const ce = soil.consumeCarrion(tile, bite * (1 + SCAV_BITE * this.scav[i])) * MEAT_ENERGY * this.carrionEff[i] * meatK;
+			if (this.cls[i] === CLS_INVT && !dom && dg < 0.5 && this.energy[i] < full && soil.litter[tile] > 0) this.energy[i] += this._eat(i, soil.consumeLitter(tile, bite) * LITTER_ENERGY * plantK, FOOD_LITTER, sk0);
+			if (carrion[tile] > 0 && this.energy[i] < full * 0.92 && (dom !== 3 || this.walk[tile] & 1)) {
+				const ce = this._eat(i, soil.consumeCarrion(tile, bite * (1 + SCAV_BITE * this.scav[i])) * MEAT_ENERGY * this.carrionEff[i] * meatK, FOOD_CARRION, sk0);
 				this.energy[i] += ce;
 				if (ce > 0) this.water[i] = Math.min(1, this.water[i] + MEAT_WATER);
 				if (landScav) this.carrionEnergy += ce;
@@ -1603,7 +1749,38 @@ class AnimalPool {
 			if (dry) cost *= DEHYDRATE_COST;
 			cost += moved * 0.012 * this.mass[i];
 			this.energy[i] -= cost;
-			if (this.energy[i] > emax) this.energy[i] = emax;
+			const jv = gf < 1;
+			const rt = (cost / emax) * NUT_K;
+			const pd = drain > 0 ? (drain / emax) * NUT_K * PARA_NUT : 0;
+			const np = this.nProt[i] - rt * this.needP[i] * (jv ? NEED_JUV_P : 1) - pd;
+			const nm = this.nMin[i] - rt * this.needM[i] * (jv ? NEED_JUV_M : 1) - pd;
+			this.nProt[i] = np > 0 ? np : 0;
+			this.nMin[i] = nm > 0 ? nm : 0;
+			const en = this.energy[i];
+			if (en > emax) {
+				this.energy[i] = emax;
+				if (fat < fatCap) {
+					const nf = fat + (en - emax) * FAT_EFF;
+					this.fat[i] = nf < fatCap ? nf : fatCap;
+				}
+			} else if (!away && en > emax * (prep ? FAT_PREP_STORE : FAT_STORE) && fat < fatCap) {
+				const lo = emax * (prep ? FAT_PREP_STORE : FAT_STORE);
+				let mv = FAT_RATE * this.app[i] * emax * (prep ? FAT_PREP_RATE : 1);
+				const room = (fatCap - fat) / FAT_EFF;
+				if (mv > room) mv = room;
+				if (mv > en - lo) mv = en - lo;
+				this.energy[i] = en - mv;
+				this.fat[i] = fat + mv * FAT_EFF;
+			} else if (fat > 0) {
+				const lo = emax * (away ? FAT_BURN_MIG : prep ? FAT_PREP_BURN : FAT_BURN);
+				if (en < lo) {
+					const want = lo - en;
+					const take = want < fat ? want : fat;
+					this.energy[i] = en + take;
+					this.fat[i] = fat - take;
+					this.fatBurned += take;
+				}
+			}
 
 			if (poisonDead) {
 				this._kill(i);
@@ -1639,12 +1816,19 @@ class AnimalPool {
 				this.age[i] > this.mature[i] &&
 				ar < ELDER_FERTILE &&
 				this.cool[i] === 0 &&
-				this.energy[i] > emax * 0.7 &&
+				this.energy[i] + this.fat[i] > emax * 0.7 &&
 				(this.count < this.maxAnimals || (this.diet[i] > 0.6 && this.count < this.maxAnimals + 1500)) &&
 				(dom !== 2 || !Wx || Wx.waterDist[tile] <= 1 || (this.walk[tile] & 2) !== 0 || hk === 1) &&
 				(hk === 0 || hk === 3 || Math.hypot(this.x[i] - this.nx[i], this.y[i] - this.ny[i]) <= NEST_NEAR) &&
-				this._localCount(i) < (dom === 3 ? BIRD_CROWD : 14)
+				this._localCount(i) < (dom === 3 ? BIRD_CROWD : 14) &&
+				(!this._deficient(i) || rng.next() >= DEF_FERT)
 			) {
+				const short = emax * 0.7 - this.energy[i];
+				if (short > 0) {
+					this.energy[i] += short;
+					this.fat[i] -= short;
+					this.fatBurned += short;
+				}
 				this._reproduce(i, tick);
 			}
 		}
@@ -1796,12 +1980,13 @@ class AnimalPool {
 
 	_packFeed(i, p, n, mp) {
 		const buf = this._packBuf;
-		const base = (mp * MEAT_ENERGY + this.energy[p] * 0.25) / n;
+		const base = (mp * MEAT_ENERGY + (this.energy[p] + this.fat[p]) * 0.25) / n;
 		const ps = this.strain[p];
 		const D = ps && this.disease && this.disease.on ? this.disease : null;
+		const mf = this.domain[p] === 1 || this.cls[p] === CLS_FISH ? FOOD_FISH : FOOD_MEAT;
 		for (let k = 0; k < n; k++) {
 			const j = buf[k];
-			let e = this.energy[j] + base * this.meatEff[j] * (1 - GEN_TAX * (1 - this._genT(j)));
+			let e = this.energy[j] + this._eat(j, base * this.meatEff[j] * (1 - GEN_TAX * (1 - this._genT(j))), mf, this.strain[j]);
 			const cap = this.emax[j] * this.gf[j];
 			if (j !== i && e > cap) e = cap;
 			this.energy[j] = e;
@@ -1897,6 +2082,28 @@ class AnimalPool {
 		} else if (sp.showy && d < SHOWY_OFF) sp.showy = false;
 	}
 
+	_condTrack(sp) {
+		const t = this.tick;
+		if (!sp.condHist) {
+			sp.condHist = [];
+			sp.condStep = COND_EVERY;
+		}
+		if (t % sp.condStep === 0) {
+			sp.condHist.push(t, sp.fat, Math.max(sp.protDef, sp.minDef));
+			if (sp.condHist.length > COND_HIST) {
+				const step = sp.condStep * 2;
+				const next = [];
+				for (let k = 0; k < sp.condHist.length; k += 3) if (sp.condHist[k] % step === 0) next.push(sp.condHist[k], sp.condHist[k + 1], sp.condHist[k + 2]);
+				sp.condHist = next;
+				sp.condStep = step;
+			}
+		}
+		if (!sp.protAlert && sp.protDef > DEF_EVENT && sp.population >= DEF_EVENT_POP && t - sp.createdTick >= DEF_EVENT_AGE) {
+			sp.protAlert = true;
+			this.log.push(t, 'info', `${sp.name} is suffering from protein deficiency`, sp.id);
+		} else if (sp.protAlert && sp.protDef < DEF_REARM) sp.protAlert = false;
+	}
+
 	_contact(i, s) {
 		const D = this.disease;
 		const c = this.gcell[i];
@@ -1939,6 +2146,7 @@ class AnimalPool {
 			: Math.min(0.45, this.plants.cover(tile) * 0.5) + (this.home[p] > 1 && Math.hypot(this.x[p] - this.nx[p], this.y[p] - this.ny[p]) <= NEST_NEAR ? DEN_COVER * this.genome[p * AG + G_NEST] : 0);
 		let chance = 0.7 * sizeF * speedF * (1 - 0.6 * this.armor[p]) * (1 - cover * (1 - DISPLAY_SPOT * this.show[p])) * (1 - 0.5 * this.scav[i]);
 		if (pn > 1) chance *= Math.min(PACK_CAP, 1 + PACK_K * (pn - 1));
+		if (this.fat[p] > 0) chance *= 1 + FAT_CATCH * this._heavy(p);
 		if (this.domain[p] === 3 && this.domain[i] !== 3) chance *= BIRD_ESCAPE;
 		const herd = this.herd[p];
 		if (herd > 0) {
@@ -1950,7 +2158,7 @@ class AnimalPool {
 			this._kill(p, CARCASS_EATEN);
 			this.deaths.eaten++;
 		} else if (pn === 1 && this.rng.next() < chance) {
-			this.energy[i] += (mp * MEAT_ENERGY * this.meatEff[i] + this.energy[p] * 0.25) * (1 - GEN_TAX * (1 - this._genT(i)));
+			this.energy[i] += this._eat(i, (mp * MEAT_ENERGY * this.meatEff[i] + (this.energy[p] + this.fat[p]) * 0.25) * (1 - GEN_TAX * (1 - this._genT(i))), this.domain[p] === 1 || this.cls[p] === CLS_FISH ? FOOD_FISH : FOOD_MEAT, this.strain[i]);
 			if (this.domain[i] !== 1) this.water[i] = Math.min(1, this.water[i] + MEAT_WATER);
 			const ps = this.strain[p];
 			if (ps && this.disease.on) this.disease.exposeAnimal(i, ps, PREY_K);
@@ -2083,6 +2291,7 @@ class AnimalPool {
 		let spent = 0;
 		const ni = this.natImm[i];
 		const nm = mate >= 0 ? this.natImm[mate] : 0;
+		const ca = layer && this.nMin[i] < EGG_CA_MIN ? 1 : 0;
 		for (let c = 0; c < brood; c++) {
 			if (this.count >= this.maxAnimals + 1500) break;
 			for (let k = 0; k < AG; k++) childG[k] = rng.next() < 0.5 ? this.genome[oi + k] : this.genome[om + k];
@@ -2117,13 +2326,15 @@ class AnimalPool {
 			}
 			if (layer) {
 				const cost = perChild * EGG_COST;
-				this.eggs.lay(sp, childG, 0, ex + 0.15 + 0.7 * rng.next(), ey + 0.15 + 0.7 * rng.next(), eggTile, cost, eggDom, im, nest, vs);
+				this.eggs.lay(sp, childG, 0, ex + 0.15 + 0.7 * rng.next(), ey + 0.15 + 0.7 * rng.next(), eggTile, cost, eggDom, im, nest, vs, ca);
 				spent += cost;
 				continue;
 			}
 			const j = this.spawn(sp, childG, 0, x, y, 0);
 			this.energy[j] = Math.min(perChild, this.emax[j] * this.gf[j] * 0.6);
 			this.natImm[j] = im;
+			this.nProt[j] = this.nProt[i];
+			this.nMin[j] = this.nMin[i];
 			this.parent[j] = this.uid[i];
 			if (ntile >= 0) {
 				this.home[j] = 3;
@@ -2134,6 +2345,11 @@ class AnimalPool {
 			this.births++;
 		}
 		this.energy[i] -= spent * 1.1 * (1 - TERR_REPRO * this._homeK(i));
+		if (layer && spent > 0) {
+			if (ca) this.caClutches++;
+			const m = this.nMin[i] - EGG_CA * (spent / perChild);
+			this.nMin[i] = m > 0 ? m : 0;
+		}
 		this.cool[i] = Math.round(35 + 55 * this.genome[oi + G_SIZE] - 10 * this.genome[oi + G_FEC]);
 	}
 
@@ -2180,13 +2396,16 @@ class AnimalPool {
 			const id = this.sp[i];
 			let s = sums.get(id);
 			if (!s) {
-				s = new Float64Array(AG + 2);
+				s = new Float64Array(AG + 5);
 				sums.set(id, s);
 			}
 			const o = i * AG;
 			for (let k = 0; k < AG; k++) s[k] += this.genome[o + k];
 			s[AG]++;
 			if (this.strain[i]) s[AG + 1]++;
+			s[AG + 2] += this.fat[i] / (this.emax[i] * this.gf[i]);
+			if (this.nProt[i] < DEFICIT) s[AG + 3]++;
+			if (this.nMin[i] < DEFICIT) s[AG + 4]++;
 		}
 		for (const [id, s] of sums) {
 			const sp = this.registry.get(id);
@@ -2196,6 +2415,10 @@ class AnimalPool {
 			sp.icon = animalIcon(sp.category, sp.id);
 			sp.role = ANIMAL_ROLES[roleIndex(sp.mean[G_DIET], sp.mean[G_SCAV])];
 			this._showTrack(sp);
+			sp.fat = Math.round((s[AG + 2] / s[AG]) * 1000) / 1000;
+			sp.protDef = Math.round((s[AG + 3] / s[AG]) * 1000) / 1000;
+			sp.minDef = Math.round((s[AG + 4] / s[AG]) * 1000) / 1000;
+			this._condTrack(sp);
 			const av = sp.aversion;
 			if (av && av.length) {
 				for (const a of av) a.strength *= 1 - AVERSION_DECAY;

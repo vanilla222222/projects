@@ -8,6 +8,7 @@ const EGG_COLD_RATE = 0.5;
 const EGG_FAIL = 0.0015;
 const EGG_PARA = 0.02;
 const GUARD_K = 3;
+const CA_FAIL = 0.35;
 
 class EggPool {
 	constructor(world, animals, registry) {
@@ -31,6 +32,7 @@ class EggPool {
 		this.hatched = 0;
 		this.eaten = 0;
 		this.failed = 0;
+		this.caFailed = 0;
 	}
 
 	_grow(newCap) {
@@ -50,13 +52,14 @@ class EggPool {
 		this.dom = grow(this.dom, Uint8Array, 1);
 		this.nst = grow(this.nst, Uint8Array, 1);
 		this.str = grow(this.str, Int32Array, 1);
+		this.ca = grow(this.ca, Uint8Array, 1);
 		this.alive = grow(this.alive, Uint8Array, 1);
 		this.next = grow(this.next, Int32Array, 1);
 		this.genome = grow(this.genome, Float32Array, AG);
 		this.cap = newCap;
 	}
 
-	lay(sp, genome, gOff, x, y, tile, energy, dom, imm, nst, str) {
+	lay(sp, genome, gOff, x, y, tile, energy, dom, imm, nst, str, ca) {
 		if (this.count >= this.cap) this._grow(this.cap * 2);
 		const e = this.count++;
 		const o = e * AG;
@@ -71,6 +74,7 @@ class EggPool {
 		this.dom[e] = dom;
 		this.nst[e] = nst ? 1 : 0;
 		this.str[e] = str || 0;
+		this.ca[e] = ca ? 1 : 0;
 		if (nst) this.nestLaid++;
 		this.alive[e] = 1;
 		this.next[e] = this.head[tile];
@@ -145,6 +149,11 @@ class EggPool {
 			this.timer[e] -= rate;
 			if (this.timer[e] > 0) continue;
 			this.alive[e] = 0;
+			if (this.ca[e] && rng.next() < CA_FAIL) {
+				this.failed++;
+				this.caFailed++;
+				continue;
+			}
 			const sp = R.get(this.sp[e]);
 			if (!sp || (sp.population <= 0 && sp.peak > 0) || A.count >= A.maxAnimals + 1500) {
 				this.failed++;
@@ -183,6 +192,7 @@ class EggPool {
 				this.dom[w] = this.dom[e];
 				this.nst[w] = this.nst[e];
 				this.str[w] = this.str[e];
+				this.ca[w] = this.ca[e];
 				this.alive[w] = 1;
 				this.genome.copyWithin(w * AG, e * AG, e * AG + AG);
 			}
