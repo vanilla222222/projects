@@ -227,7 +227,7 @@ class DiseaseLayer {
 		const st = this.registry.get(s);
 		if (!st || st.population <= 0) return false;
 		const r = this.rng.next();
-		const b = k * this.sTrans[s] * (1 - RES_EFFECT * A.genome[j * AG + G_RES]) * (1 + (ELDER_INFECT * (1 - A.ef[j])) / (1 - ELDER_MIN));
+		const b = k * this.sTrans[s] * (1 - RES_EFFECT * A.genome[j * AG + G_RES]) * (1 + (ELDER_INFECT * (1 - A.ef[j])) / (1 - ELDER_MIN)) * A._sus(j);
 		if (r >= b) return false;
 		const hsp = A.sp[j];
 		if (r >= b * this._compat(st, hsp, ANIMAL_WEIGHTS, JUMP_K)) return false;

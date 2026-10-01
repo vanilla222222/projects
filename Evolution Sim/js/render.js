@@ -103,7 +103,8 @@ out vec3 v_c1;
 out vec3 v_c2;
 out float v_alpha;
 void main() {
-	vec2 w = a_inst.xy + a_corner * a_inst.z;
+	float fw = abs(a_extra.x);
+	vec2 w = a_inst.xy + a_corner * vec2(a_inst.z * (fw < 0.01 ? 1.0 : fw), a_inst.z);
 	vec2 p = (w - u_origin) / u_scale;
 	gl_Position = vec4(p.x / u_res.x * 2.0 - 1.0, 1.0 - p.y / u_res.y * 2.0, 0.0, 1.0);
 	float icon = a_inst.w;
@@ -274,6 +275,10 @@ const SHADOW_ALPHA = 0.45;
 const FLY_SHADOW_ALPHA = 0.22;
 const FLY_SHADOW = [0.45, 0.95, 0.6];
 const FLY_LIFT = 0.3;
+const FAT_WIDE = 0.6;
+const FAT_WIDE_MAX = 0.3;
+const THIN_AT = 0.25;
+const THIN_MIN = 0.8;
 const TRAIL_K = 0.6;
 const WARP_ZOOM = [4, 6];
 const BUG_JITTER = [0.05, 0.03, 0.04, 0.12];
@@ -1347,6 +1352,9 @@ class WorldRenderer {
 		if (zoom >= PACK_LINK_ZOOM) n = this._pushPackLinks(n, alpha, x0, y0, x1, y1);
 		const show = A.show;
 		const crestIcon = ICON_INDEX.crest;
+		const fat = A.fat;
+		const en = A.energy;
+		const emx = A.emax;
 		for (let k = 0, cnt = A.count; k < cnt * 2; k++) {
 			const i = k < cnt ? k : k - cnt;
 			const air = dom[i] === 3;
@@ -1369,8 +1377,12 @@ class WorldRenderer {
 			} else {
 				const size = Math.max(12 / zoom, 0.8 + 0.45 * A.mass[i]) * g;
 				const ly = air && fly[i] ? y - size * FLY_LIFT : y;
+				const cap = emx[i] * g;
+				const fr = fat ? fat[i] / cap : 0;
+				const er = en[i] / cap;
+				const wd = fr > 0 ? 1 + Math.min(FAT_WIDE_MAX, fr * FAT_WIDE) : er < THIN_AT ? THIN_MIN + (1 - THIN_MIN) * (er > 0 ? er / THIN_AT : 0) : 1;
 				if (sv >= CREST_MIN && zoom >= CREST_ZOOM) n = this._put(n, x - size * 0.12 * A.face[i], ly - size * 0.62, size * CREST_SCALE * (0.6 + sv), crestIcon, A.face[i], a, co, ca);
-				n = this._put(n, x, ly - size * 0.1, size, icons[id], A.face[i], a, co, ca);
+				n = this._put(n, x, ly - size * 0.1, size, icons[id], A.face[i] * wd, a, co, ca);
 				if (sick) n = this._put(n, x + size * 0.38, ly - size * 0.5, size * MARK_SCALE, virusIcon, 1, a, 0, white);
 				if (th) n = this._put(n, x - size * 0.38, ly - size * 0.5, size * MARK_SCALE * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, 1, 0, th);
 			}
