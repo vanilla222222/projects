@@ -23,6 +23,9 @@ const THIRST_WINDOW = 8;
 const HERD_STAT_EVERY = 20;
 const HERD_STAT_POP = 12;
 const HERB_RESCUE = 30;
+const SOLO_GROUP = 1.6;
+const COLONY_GROUP = 5;
+const SOC_STAT_POP = 10;
 
 class Ecosystem {
 	constructor(world, seed, options = {}) {
@@ -53,6 +56,9 @@ class Ecosystem {
 		this.stats.dormancy = { total: 0, hib: 0, brum: 0, aest: 0, torpor: 0, entered: 0, starved: 0, eggDiapause: 0, diaHatched: 0, bugReserve: 0, bugWoke: 0, seedDormant: 0 };
 		this.stats.dormCls = {};
 		this.history.dormancy = [];
+		this.stats.social = { alarms: 0, heard: 0, sentinel: 0, colonies: 0, colonySp: 0, dispersals: 0, dispSplits: 0, rankBlocked: 0, meanGroup: 0, solitary: 0, colonial: 0, callerLoss: 0, quietLoss: 0, lossCls: {} };
+		this.socExposure = new Float64Array(12);
+		this.history.alarms = [];
 		for (const k of BIRD_NICHES) {
 			this.stats.birdNiches[k] = 0;
 			this.history['birdNiche.' + k] = [];
@@ -165,6 +171,7 @@ class Ecosystem {
 			this._packStats();
 			this._nutStats();
 			this._dormStats();
+			this._socialStats();
 			if (this.bugs) this.bugs.refreshSpeciesMeans();
 			if (D) D.refreshSpeciesMeans();
 		}
@@ -315,6 +322,72 @@ class Ecosystem {
 		s.packKills = A.packKills;
 		s.bigKills = A.bigKills;
 		s.mateRefusals = A.mateRefusals;
+	}
+
+	_socialStats() {
+		const A = this.animals;
+		const R = this.registry;
+		const s = this.stats.social;
+		if (!this.socExposure) this.socExposure = new Float64Array(12);
+		const ex = this.socExposure;
+		const call = new Map();
+		let gs = 0;
+		let n = 0;
+		for (let i = 0; i < A.count; i++) {
+			if (!A.alive[i]) continue;
+			gs += A.grp[i];
+			n++;
+			if (A.diet[i] >= 0.66) continue;
+			const id = A.sp[i];
+			let c = call.get(id);
+			if (c === undefined) {
+				const sp = R.get(id);
+				c = sp && sp.mean[G_ALARM] > ALARM_MIN ? 1 : 0;
+				call.set(id, c);
+			}
+			ex[A.cls[i] * 2 + c] += 20;
+		}
+		let solo = 0;
+		let colonial = 0;
+		let colonies = 0;
+		let colonySp = 0;
+		for (const id of R.living) {
+			const sp = R.get(id);
+			if (!sp || sp.group !== 'animal') continue;
+			colonies += sp.colonies | 0;
+			if (sp.colonies > 0) colonySp++;
+			if (sp.population < SOC_STAT_POP || sp.grpMean === undefined) continue;
+			if (sp.grpMean < SOLO_GROUP) solo++;
+			else if (sp.grpMean >= COLONY_GROUP || sp.colonies > 0) colonial++;
+		}
+		const eb = A.eatenBy;
+		let lq = 0;
+		let lc = 0;
+		let eq = 0;
+		let ec = 0;
+		const by = {};
+		for (const g of STAT_GROUPS) {
+			const k = g.cls * 2;
+			lq += eb[k];
+			lc += eb[k + 1];
+			eq += ex[k];
+			ec += ex[k + 1];
+			by[g.key] = [ex[k] > 0 ? Math.round((eb[k] / ex[k]) * 1e5) / 100 : -1, ex[k + 1] > 0 ? Math.round((eb[k + 1] / ex[k + 1]) * 1e5) / 100 : -1];
+		}
+		s.lossCls = by;
+		s.quietLoss = eq > 0 ? Math.round((lq / eq) * 1e5) / 100 : 0;
+		s.callerLoss = ec > 0 ? Math.round((lc / ec) * 1e5) / 100 : 0;
+		s.alarms = A.alarms;
+		s.heard = A.alarmHeard;
+		s.sentinel = A.sentinel;
+		s.dispersals = A.dispersals;
+		s.dispSplits = A.dispSplits;
+		s.rankBlocked = A.rankBlocked;
+		s.colonies = colonies;
+		s.colonySp = colonySp;
+		s.solitary = solo;
+		s.colonial = colonial;
+		s.meanGroup = n ? Math.round((gs / n) * 100) / 100 : 0;
 	}
 
 	_dormStats() {
@@ -558,6 +631,7 @@ class Ecosystem {
 		h.nutrition.push(Math.round(this.stats.nutrition.defShare * 100));
 		h.meanFat.push(this.stats.nutrition.meanFat);
 		h.dormancy.push(this.stats.dormancy.total);
+		if (h.alarms) h.alarms.push(this.stats.social.alarms);
 		for (const k of BIRD_NICHES) h['birdNiche.' + k].push(this.stats.birdNiches[k]);
 		for (const g of STAT_GROUPS) {
 			h[g.key].push(this.stats[g.key]);

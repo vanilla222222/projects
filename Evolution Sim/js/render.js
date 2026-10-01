@@ -330,6 +330,9 @@ const DORM_WIDE = 1.25;
 const DORM_ZOOM = 6;
 const CREST_MIN = 0.45;
 const CREST_SCALE = 0.45;
+const ALARM_RING_ZOOM = 4;
+const ALARM_RING_GROW = 2.2;
+const ALARM_RING_ALPHA = 0.85;
 const PACK_LINK_ZOOM = 4;
 const PACK_LINK_DOTS = 3;
 const PACK_LINK_ALPHA = 0.55;
@@ -1327,11 +1330,12 @@ class WorldRenderer {
 		const virusIcon = ICON_INDEX.virus;
 		const sleepIcon = ICON_INDEX.sleep;
 		const dormA = A.dorm;
+		const almA = zoom >= ALARM_RING_ZOOM ? A.alm : null;
 		const white = this._white || (this._white = new Uint8Array(9).fill(255));
 		const gf = A.gf;
 		const ef = A.ef;
 		const E = this.eco.eggs;
-		this._ensureCapacity(n + A.count * 5 + (E ? E.count : 0) + 1);
+		this._ensureCapacity(n + A.count * 6 + (E ? E.count : 0) + 1);
 		if (zoom >= SHADOW_ZOOM) {
 			const shadowIcon = ICON_INDEX.shadow;
 			for (let i = 0; i < A.count; i++) {
@@ -1390,6 +1394,11 @@ class WorldRenderer {
 				const wd = fr > 0 ? 1 + Math.min(FAT_WIDE_MAX, fr * FAT_WIDE) : er < THIN_AT ? THIN_MIN + (1 - THIN_MIN) * (er > 0 ? er / THIN_AT : 0) : 1;
 				if (sv >= CREST_MIN && zoom >= CREST_ZOOM) n = this._put(n, x - size * 0.12 * A.face[i], ly - size * 0.62, size * CREST_SCALE * (0.6 + sv), crestIcon, A.face[i], a, co, ca);
 				n = this._put(n, x, ly - size * 0.1, size, icons[id], A.face[i] * wd * (zz ? DORM_WIDE : 1), a, co, ca);
+				const am = almA ? almA[i] : 0;
+				if (am > ALARM_COOL - ALARM_RING) {
+					const rt = (ALARM_COOL - am) / ALARM_RING;
+					n = this._put(n, x, ly - size * 0.1, size * (1 + ALARM_RING_GROW * rt), ringIcon, 1, ALARM_RING_ALPHA * (1 - rt), 0, white);
+				}
 				if (zz && zoom >= DORM_ZOOM) n = this._put(n, x + size * 0.4, ly - size * 0.6, size * MARK_SCALE, sleepIcon, 1, 0.9, 0, white);
 				if (sick) n = this._put(n, x + size * 0.38, ly - size * 0.5, size * MARK_SCALE, virusIcon, 1, a, 0, white);
 				if (th) n = this._put(n, x - size * 0.38, ly - size * 0.5, size * MARK_SCALE * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, 1, 0, th);
