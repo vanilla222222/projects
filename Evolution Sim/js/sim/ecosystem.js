@@ -35,8 +35,8 @@ class Ecosystem {
 		this.registry = new SpeciesRegistry(new FastRng(seed + 99));
 		this.plants = new PlantLayer(world, this.registry, new FastRng(seed + 555), this.log);
 		this.animals = new AnimalPool(world, this.plants, this.registry, new FastRng(seed + 777), this.log);
-		this.stats = { plants: 0, plantBiomass: 0, fruit: 0, fungi: 0, flowers: 0, litter: 0, carrion: 0, bugs: 0, pests: 0, detritivores: 0, parasites: 0, pollinators: 0, pollination: 0, sick: 0, blight: 0, strains: 0, diseaseDeaths: 0, diseaseShare: 0, worstOutbreak: null, swarms: 0, carrionShare: 0, weather: { storms: 0, rainTiles: 0, snowTiles: 0, drought: false, droughts: 0 }, meanWet: 0, thirstDeaths: 0, thirstShare: 0, herds: 0, territories: 0, deaths: {}, stages: { eggs: 0, juveniles: 0, adults: 0, elders: 0 }, eggs: { laid: 0, hatched: 0, eaten: 0, failed: 0 }, plantStages: { seedTiles: 0, seedlings: 0, mature: 0, old: 0, oldDeaths: 0, germinated: 0, grazedSeedlings: 0 } };
-		this.history = { tick: [], plants: [], bugs: [], sick: [], thirstDeaths: [], herds: [], territories: [], eggs: [] };
+		this.stats = { plants: 0, plantBiomass: 0, fruit: 0, fungi: 0, flowers: 0, litter: 0, carrion: 0, bugs: 0, pests: 0, detritivores: 0, parasites: 0, pollinators: 0, pollination: 0, sick: 0, blight: 0, strains: 0, diseaseDeaths: 0, diseaseShare: 0, worstOutbreak: null, swarms: 0, carrionShare: 0, weather: { storms: 0, rainTiles: 0, snowTiles: 0, drought: false, droughts: 0 }, meanWet: 0, thirstDeaths: 0, thirstShare: 0, herds: 0, territories: 0, deaths: {}, stages: { eggs: 0, juveniles: 0, adults: 0, elders: 0 }, eggs: { laid: 0, hatched: 0, eaten: 0, failed: 0 }, nests: { nests: 0, dens: 0, nesters: 0, natal: 0, nestEggs: 0, eggsPerNest: 0, raids: 0, repelled: 0, paraFailed: 0 }, plantStages: { seedTiles: 0, seedlings: 0, mature: 0, old: 0, oldDeaths: 0, germinated: 0, grazedSeedlings: 0 } };
+		this.history = { tick: [], plants: [], bugs: [], sick: [], thirstDeaths: [], herds: [], territories: [], eggs: [], nests: [], dens: [] };
 		this.stats.birdNiches = {};
 		this.stats.birdMigrants = 0;
 		for (const k of BIRD_NICHES) {
@@ -146,6 +146,7 @@ class Ecosystem {
 			plants.refreshSpeciesMeans();
 			this.animals.refreshSpeciesMeans();
 			this._herdStats();
+			this._nestStats();
 			if (this.bugs) this.bugs.refreshSpeciesMeans();
 			if (D) D.refreshSpeciesMeans();
 		}
@@ -396,6 +397,40 @@ class Ecosystem {
 		if (B) for (let k = 0; k < 4; k++) if (B.tiles[k] === 0) B.reintroduce(k);
 	}
 
+	_nestStats() {
+		const A = this.animals;
+		const E = this.eggs;
+		const W = this.world.width;
+		const nests = new Set();
+		const dens = new Set();
+		let nesters = 0;
+		let natal = 0;
+		for (let i = 0; i < A.count; i++) {
+			const h = A.home[i];
+			if (!h) continue;
+			if (h === 3) {
+				natal++;
+				continue;
+			}
+			nesters++;
+			const t = (A.ny[i] | 0) * W + (A.nx[i] | 0);
+			if (h === 1) nests.add(t);
+			else dens.add(t);
+		}
+		let ne = 0;
+		if (E) for (let e = 0; e < E.count; e++) if (E.nst[e]) ne++;
+		const s = this.stats.nests;
+		s.nests = nests.size;
+		s.dens = dens.size;
+		s.nesters = nesters;
+		s.natal = natal;
+		s.nestEggs = ne;
+		s.eggsPerNest = nests.size ? +(ne / nests.size).toFixed(2) : 0;
+		s.raids = E ? E.raids : 0;
+		s.repelled = E ? E.repelled : 0;
+		s.paraFailed = E ? E.paraFailed : 0;
+	}
+
 	_sampleHistory() {
 		const h = this.history;
 		h.tick.push(this.tick);
@@ -406,6 +441,8 @@ class Ecosystem {
 		h.herds.push(this.stats.herds);
 		h.territories.push(this.stats.territories);
 		h.eggs.push(this.stats.stages.eggs);
+		h.nests.push(this.stats.nests.nests);
+		h.dens.push(this.stats.nests.dens);
 		for (const k of BIRD_NICHES) h['birdNiche.' + k].push(this.stats.birdNiches[k]);
 		for (const g of STAT_GROUPS) {
 			h[g.key].push(this.stats[g.key]);

@@ -39,6 +39,7 @@ const STAT_EXTRA = [
 	{ key: 'herds', label: 'Herds', icon: 'bison', color: '#c9a86a' },
 	{ key: 'territories', label: 'Territories', icon: 'flag', color: '#e0906a' },
 	{ key: 'eggs', label: 'Eggs', icon: 'egg', color: '#e6d3a3', wide: true, sub: true },
+	{ key: 'nests', label: 'Nests & dens', icon: 'nest', color: '#c79a5b', wide: true, sub: true },
 	{ key: 'stages', label: 'Life stages · animals', icon: 'deer', color: '#9fd98b', wide: true, sub: true, noSpark: true },
 ];
 const STAT_EXTRA_KEYS = new Set(STAT_EXTRA.map((x) => x.key));
@@ -455,6 +456,10 @@ function updateExtraStat(el, k, s, h) {
 		const eg = s.eggs || {};
 		v.textContent = formatCount(st.eggs || 0);
 		sub.innerHTML = ['laid', 'hatched', 'eaten', 'failed'].map((x) => `<span>${formatCount(eg[x] || 0)} ${x}</span>`).join('');
+	} else if (k === 'nests') {
+		const ns = s.nests || {};
+		v.innerHTML = `${formatCount(ns.nests || 0)}<small>${formatCount(ns.dens || 0)} dens</small>`;
+		sub.innerHTML = `<span>${formatCount(ns.nesters || 0)} parents</span><span>${formatCount(ns.natal || 0)} young at home</span><span>${(ns.eggsPerNest || 0).toFixed(1)} eggs/nest</span><span>${formatCount(ns.raids || 0)} raided</span><span>${formatCount(ns.repelled || 0)} raids repelled</span>`;
 	} else {
 		v.textContent = formatCount(s[k] || 0);
 		if (k === 'thirstDeaths') sub.textContent = `${pct(s.thirstShare || 0)} of land deaths`;
@@ -1018,12 +1023,13 @@ function updateTooltip() {
 	const a = pickAnimal(wx, wy);
 	if (a >= 0) {
 		const sp = reg.get(A.sp[a]);
-		const states = ['resting', 'grazing', 'foraging', 'hunting', 'fleeing', 'seeking water'];
+		const states = ['resting', 'grazing', 'foraging', 'hunting', 'fleeing', 'seeking water', 'heading home'];
+		const home = A.home && A.home[a] ? ` · ${['', 'has a nest', 'has a den', 'young of a den'][A.home[a]]}` : '';
 		const st = A.strain && A.strain[a] ? reg.get(A.strain[a]) : null;
 		const sick = st ? `<small class="tt-sick">sick: ${st.name}</small>` : '';
 		const cap = A.emax[a] * A.gf[a];
 		const water = A.domain[a] !== 1 && A.water ? ` · water ${pct(Math.min(1, Math.max(0, A.water[a])))}` : '';
-		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${A.domain[a] === 3 ? (A.fly[a] ? 'flying · ' : 'perched · ') : ''}${states[A.state[a]]} · ${['juvenile', 'adult', 'elder'][animalStage(A, a)]} · age ${A.age[a]}</small><small>energy ${pct(cap > 0 ? Math.min(1, Math.max(0, A.energy[a] / cap)) : 0)}${water}</small>${sick}</div></div>`;
+		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${A.domain[a] === 3 ? (A.fly[a] ? 'flying · ' : 'perched · ') : ''}${states[A.state[a]]} · ${['juvenile', 'adult', 'elder'][animalStage(A, a)]} · age ${A.age[a]}${home}</small><small>energy ${pct(cap > 0 ? Math.min(1, Math.max(0, A.energy[a] / cap)) : 0)}${water}</small>${sick}</div></div>`;
 	}
 	for (let slot = 0; slot < 2; slot++) {
 		const p = slot * P.n + t;
