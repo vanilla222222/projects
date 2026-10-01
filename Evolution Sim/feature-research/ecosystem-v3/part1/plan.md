@@ -15,7 +15,7 @@ Source: roadmap Part 1, with the decisions below.
 
 ## Slice order
 
-**1 → 2 → 3 → 4.** All four slices edit `animals.js`, so they run in sequence.
+**1 → 2 → 3 → 4 → 5.** All five slices edit `animals.js`, so they run in sequence.
 
 | Slice | Content | Main files |
 | --- | --- | --- |
@@ -23,6 +23,7 @@ Source: roadmap Part 1, with the decisions below.
 | 2 | Birds | `animals.js`, `ecosystem.js`, `icons.js`, `render.js` |
 | 3 | Nests and dens | `animals.js`, `eggs.js`, `render.js`, `main.js` |
 | 4 | Pack hunting and sexual selection | `animals.js`, `render.js`, `main.js` |
+| 5 | Nutrition and body condition | `animals.js`, `plants.js`, `bugs.js`, `eggs.js`, `disease.js`, `ecosystem.js`, `render.js`, `main.js` |
 
 ---
 
@@ -217,10 +218,47 @@ Source: roadmap Part 1, with the decisions below.
 - **Balance gate** holds for all classes and their roles.
 - **Resistance:** in the most-infected choosy lineage, mean resistance rises from year 5 to year 35 on at least two of the three seeds.
 
+## Slice 5: nutrition and body condition
+
+### Food contents
+- Every food type carries four nutrients: **protein**, **energy** (fat and sugar), **fibre** and **minerals** (calcium).
+- A `FOOD_NUTRIENTS` table gives constant values per food type: grass, tree leaves and fruit, seeds, bugs, meat, fish, carrion and leaf litter. For example, grass is high fibre and low protein, fruit is high energy, bugs and meat are high protein, and fish is protein plus minerals.
+- Plants take a small soil influence: fertile soil raises protein and minerals in grass and seeds.
+
+### Needs and stores
+- Each animal has small nutrient stores (`nProt`, `nMin`) in `AnimalPool` typed arrays. Eating fills them and metabolism drains them.
+- Needs are set by diet, class and size: grazers digest fibre well, carnivores need more protein, egg layers need more calcium when breeding, and small animals drain faster.
+- **Deficiency** (a store below `DEFICIT`) means slower growth, lower fertility, weaker immunity and, for egg layers short of calcium, a higher chance that an egg fails to hatch.
+
+### Fat and overeating
+- A `fat` store: energy eaten past satiety turns into fat at `FAT_EFF` instead of being wasted.
+- Fat burns first when energy runs low, so it carries animals through winter, droughts, hibernation and bird migration.
+- **Overweight** (fat above `FAT_HEAVY`): slower speed, a higher chance of being caught, higher metabolism and higher disease susceptibility.
+- New `G_APPETITE` gene (`AG` goes to 20): high appetite eats past satiety and stores fat, low appetite stays lean. Cold climates and migrants should favour fat, and heavily hunted prey should favour lean.
+- **Omnivores seek what they lack:** an omnivore short of protein weights bugs and meat higher, and one short of energy weights fruit and seeds higher.
+
+### Bugs and diseases (slice 5)
+- Bugs become a key protein source for insect eaters, birds and young animals.
+- Parasite load drains the nutrient stores.
+- Malnourished and overweight animals are both more susceptible (`MALNOURISHED_SUS`, `FAT_SUS`).
+- Sick animals eat less, so stores fall during an infection.
+
+### Look and stats
+- **Body condition stat** in animal detail: lean, fit, heavy or obese, plus protein and mineral status.
+- The species detail shows mean body condition and the share of deficient animals, with a sparkline from the species history.
+- Fat animals are drawn slightly wider, and starving animals thinner.
+- **Events:** "<Species> is suffering from protein deficiency" when over 40% of a large species is deficient.
+
+### Slice 5 targets
+- A mix of lean and fat animals on every seed. Mean fat is higher in cold biomes and in migratory birds than in tropical residents.
+- Deficiency is visible in at least one lineage per seed, and appetite or diet shifts in response over 35 years.
+- Calcium-related egg failures stay a minor cause of egg loss (under a quarter of losses).
+- **Balance gate** holds for all classes and their roles. Save/load stays byte-identical. Per-tick cost grows by at most about 25%.
+
 ---
 
 ## Tests and gates (every slice)
-- Headless runs on seeds 42, 7 and 123 for 3000 ticks, with ms/tick and the balance gate reported. Year-35 runs for slices 3 and 4.
+- Headless runs on seeds 42, 7 and 123 for 3000 ticks, with ms/tick and the balance gate reported. Year-35 runs for slices 3, 4 and 5.
 - Determinism: the save/load test stays byte-identical.
 - A browser run with no console errors: cycle every view, expand every class card, use the Animals tab chips, and save and load.
 - No new code comments (grep of the diff).
@@ -229,9 +267,10 @@ Source: roadmap Part 1, with the decisions below.
   - Slice 2: birds over the map, and the migration shift (`birds.png`).
   - Slice 3: nests and dens zoomed in (`nests.png`).
   - Slice 4: a pack chasing a large grazer, and showy displays (`packs-display.png`).
+  - Slice 5: fat and lean animals, and the body condition stat (`nutrition.png`).
 
 ## Docs
-- **`CODE_REFERENCE.md`:** animals (genes, classes, birds, nests, packs, display), ecosystem (class stats and roles), main.js (class cards, Animals tab) and save (version 2).
+- **`CODE_REFERENCE.md`:** animals (genes, classes, birds, nests, packs, display, nutrition), ecosystem (class stats and roles), main.js (class cards, Animals tab) and save (version 2).
 - **`complexities.md`:** animals.js stays at 9 or goes to 9.5; ecosystem.js and main.js notes updated.
 
 ## Out of scope (Part 2 or 3)

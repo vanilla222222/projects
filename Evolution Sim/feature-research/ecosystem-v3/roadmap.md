@@ -47,6 +47,12 @@ Gates for every part, measured on seeds 42, 7 and 123 over 3000 ticks, with long
 - **(+) Seasonal migration:** birds fly toward warmer latitudes in winter.
 - **Designs:** sparrow, parrot, duck, heron, owl, hawk/eagle, crow, vulture and gull. The existing `owl`, `hawk`, `crow`, `chicken` and `vulture` icons move from the mammal variant lists to birds.
 
+### 1.6 Nutrition and body condition
+- **Food contents:** every food (grass, fruit, seeds, bugs, meat, fish, carrion and litter) carries protein, energy, fibre and minerals.
+- **Needs** depend on diet, class and size. Deficiency slows growth, lowers fertility, weakens immunity and makes eggs fail.
+- **Overeating stores fat.** Fat carries animals through winter and migration, but overweight animals are slower, easier to catch and more disease-prone. An appetite gene lets lineages evolve to be lean or heavy.
+- **(+)** A body condition stat, and fat animals drawn wider.
+
 ---
 
 ## Part 2: Balance and design
@@ -76,3 +82,4 @@ A tool palette on the map. Examples, to be finalised in the Part 3 plan:
 4. **Class is fixed per lineage.** The cold-blooded gene is clamped to each class's range.
 5. **Invertebrates are a full class:** urchins, octopuses, jellyfish, land snails and spiders join the crabs, and the class card also shows bug swarms.
 6. **Bugs and diseases tie into every slice:** host classes for strains, insect birds, bird-borne outbreaks, nest parasites, shared-den spread, and sick animals showing dull displays (honest signals).
+7. **Nutrition is slice 5:** food contents, nutrient needs, and fat from overeating, after nests and packs.
