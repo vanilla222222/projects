@@ -74,6 +74,12 @@ Gates for every part, measured on seeds 42, 7 and 123 over 3000 ticks, with long
 ### 1.11 Intelligence and learning
 - A costly brain gene. It gives memory of water, food and danger, learned predator avoidance, learning from parents, and tool use in a few lineages.
 
+### 1.12 Natural disasters and succession
+- **Wildfires** start from lightning in dry seasons and spread with fuel, wind and slope. Water, rock and fresh burns stop them. They clear plants, return ash to the soil, and kill or scatter animals.
+- **Floods, severe droughts and windthrow** (storm-felled trees) also clear ground.
+- **Succession:** pioneer plants move into the cleared ground, followed by shrubs and then trees. A fire-adaptation plant gene evolves where fires are common, and new species can arise in the open niches.
+- **(+)** A Disasters map view and stat card, fire fronts with smoke, burn scars that fade as plants regrow, and an options toggle.
+
 ---
 
 ## Part 2: Balance and design
@@ -91,7 +97,7 @@ Gates for every part, measured on seeds 42, 7 and 123 over 3000 ticks, with long
 A tool palette on the map. Examples, to be finalised in the Part 3 plan:
 - Spawn animals or plants of a chosen species, or design a new species from sliders.
 - Paint terrain, water, biomes, temperature and moisture.
-- Disasters: fire, flood, drought, meteor, disease outbreak and plague of locusts.
+- Disasters: start the slice 11 fire, flood or drought by hand, plus meteor, disease outbreak and plague of locusts.
 - Bless or curse: feed, heal, sterilise or cull an area or a species.
 - Time controls: rewind to the last autosave, and snapshots.
 
@@ -106,3 +112,4 @@ A tool palette on the map. Examples, to be finalised in the Part 3 plan:
 6. **Bugs and diseases tie into every slice:** host classes for strains, insect birds, bird-borne outbreaks, nest parasites, shared-den spread, and sick animals showing dull displays (honest signals).
 7. **Nutrition is slice 5:** food contents, nutrient needs, and fat from overeating, after nests and packs.
 8. **More behaviour slices 6–10:** hibernation and dormancy, social structure, life history, symbiosis, and intelligence, each as its own slice in that order.
+9. **Natural disasters are slice 11:** wildfires, floods, droughts and windthrow arise from the weather and clear ground for succession and new species. Part 3's disaster tools reuse the same code.

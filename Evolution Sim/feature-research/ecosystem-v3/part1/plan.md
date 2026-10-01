@@ -15,7 +15,7 @@ Source: roadmap Part 1, with the decisions below.
 
 ## Slice order
 
-**1 → 2 → … → 10.** Every slice edits `animals.js`, so they run in sequence. Slice 6 needs slice 5's fat stores, slice 7 builds on packs and herds, and slice 10 comes last because it is the hardest to balance.
+**1 → 2 → … → 11.** Every slice edits `animals.js`, so they run in sequence. Slice 6 needs slice 5's fat stores, slice 7 builds on packs and herds, slice 10 is the hardest to balance, and slice 11 comes last because disasters stress every system before it.
 
 | Slice | Content | Main files |
 | --- | --- | --- |
@@ -29,6 +29,7 @@ Source: roadmap Part 1, with the decisions below.
 | 8 | Life history and aging | `animals.js`, `eggs.js`, `ecosystem.js`, `icons.js`, `render.js`, `main.js` |
 | 9 | Symbiosis and coevolution | `animals.js`, `plants.js`, `bugs.js`, `disease.js`, `render.js`, `main.js` |
 | 10 | Intelligence and learning | `animals.js`, `ecosystem.js`, `render.js`, `main.js` |
+| 11 | Natural disasters and succession | new `sim/disasters.js`, `plants.js`, `soil.js`, `weather.js`, `animals.js`, `ecosystem.js`, `save.js`, `simWorker.js`, `render.js`, `main.js` |
 
 ---
 
@@ -260,7 +261,7 @@ Source: roadmap Part 1, with the decisions below.
 - Calcium-related egg failures stay a minor cause of egg loss (under a quarter of losses).
 - **Balance gate** holds for all classes and their roles. Save/load stays byte-identical. Per-tick cost grows by at most about 25%.
 
-## Genome growth (slices 5–10)
+## Genome growth (slices 5–11)
 `AG` grows by one or two genes per slice. Each gene gets an `ANIMAL_WEIGHTS` entry and archetype values, and older saves of unreleased Part 1 code are not supported.
 
 | Slice | New genes |
@@ -271,6 +272,7 @@ Source: roadmap Part 1, with the decisions below.
 | 8 | `G_BROOD` (many cheap young against few cared-for ones), `G_CARE` |
 | 9 | `G_MIMIC`, `G_TONGUE` (flower match for pollinators) |
 | 10 | `G_BRAIN` |
+| 11 | Plant gene `PG_FIRE` (fire-adapted: resprouting and fire-cued seeds); no new animal gene |
 
 ## Slice 6: hibernation, dormancy and torpor
 
@@ -424,10 +426,56 @@ Source: roadmap Part 1, with the decisions below.
 - Tool use appears in at least one lineage on at least one seed by year 35.
 - **Balance gate**, save/load and performance gates hold. The memory arrays fit in the save size budget.
 
+## Slice 11: natural disasters and succession
+
+Disasters come out of the weather and the land, not from a timer. They clear ground so that pioneer species can move in, and the map then fills back up through succession. Part 3 god tools reuse the same code to start a disaster by hand.
+
+### Wildfire (the main disaster)
+- **Fuel:** dry plant biomass and litter. A tile's fire risk rises with fuel, heat, dryness (`weather.wet`), drought length and season. Grassland, savanna, shrubland and dry forest burn most; rainforest and tundra rarely.
+- **Ignition:** lightning from storms (`weather.storms`), most often dry storms late in the dry season, with a low base rate (`FIRE_IGNITE`).
+- **Spread:** a fire front moves tile to tile on a `DisasterLayer` grid, faster downwind and uphill and with more fuel. Water, rock, bare ground, snow and recently burnt tiles act as firebreaks. Rain puts it out.
+- **Effects:** burnt tiles lose most of their plant biomass, and most litter becomes ash, which adds a pulse of soil nutrient (`FIRE_ASH`). Animals caught in the front take damage. Most flee, and slow animals, eggs, nests and the young in dens are lost. Bug swarms on the tile die back.
+- **Burn scar:** a burnt tile is marked with an age (`burnAge`). While the scar is fresh, nothing burns there again and seedlings get full light and nutrients.
+
+### Other disasters
+- **Floods:** heavy storms on wet ground make rivers and lakes overflow onto nearby low tiles for a few days. Land plants there are drowned and burrowers lose their dens. The flood leaves silt behind (+nutrient), and amphibians and fish gain short-lived shallow habitat.
+- **Severe drought:** a long dry spell over a region. Shallow water dries up, plants wilt and the fire risk rises. It ends in rain, often with floods.
+- **Windthrow:** strong storms knock down mature trees in a storm's path. The tiles open up to light and leave a lot of litter, which feeds beetles and later fires.
+
+### Succession
+- **Pioneers:** cleared tiles favour fast-growing, wind-seeded, sun-loving plants (high growth, low size). Seeds from the soil seed bank (slice 6) and nearby survivors land first.
+- **Fire-adapted plants:** a new plant gene, `PG_FIRE`. A high value means a plant resprouts after fire or releases seeds that need fire to sprout, at the cost of slower growth in quiet years. It should rise in fire-prone biomes and stay low in wet ones.
+- **Stages:** bare → grass and herbs → shrubs → trees over several years, with the slower species shading out the pioneers. New plant species can speciate into the open niche, and the family tree shows the bursts.
+- **Animals follow:** grazers come for the regrowth. Raptors and insect birds hunt at the fire front, scavengers find the burnt carcasses, and wood beetles swarm on windthrow and burnt trees.
+
+### Bugs and diseases (slice 11)
+- Floodwater spreads waterborne strains, so outbreaks follow floods.
+- Animals crowded together after fleeing a disaster spread disease faster for a while.
+- Locusts boom on fresh regrowth after drought breaks.
+
+### Look and stats
+- **Fire front:** glowing orange tiles with smoke that drifts with the wind. Burn scars are drawn dark and fade to green as plants regrow. Flood water gets a muddy tint, and windthrow shows fallen-tree marks.
+- **Disasters view** on the map: fire risk, active fires and floods, and burn scar age.
+- **Disasters stat card:** area burnt this year, active fires, floods and droughts, plus a chart of burnt area over time.
+- Events: "Wildfire in the <biome> near …", "<River> flooded", "Drought ended" and "<Species> recolonised the burn".
+- An options toggle for Disasters, like Weather and Disease, so it can be turned off.
+
+### Save and worker
+- `DisasterLayer` joins `classTable()` in `save.js`. Its grids join `SNAP_GRIDS` in `simWorker.js`, and any new pool fields are copied automatically.
+- Fire spread must stay deterministic: the order of tiles is fixed, and all randomness uses the sim RNG.
+
+### Slice 11 targets
+- On each seed by year 35, at least one wildfire burns at least 1% of land. Burnt area per year varies, with big fire years after droughts. No single fire burns more than about 15% of land.
+- Burnt tiles return to at least 70% of their old plant biomass within 3–6 years, passing through the grass and shrub stages.
+- `PG_FIRE` rises in at least one savanna or shrubland plant lineage and stays low in rainforest.
+- At least one new plant species per seed arises in, or spreads mainly through, burnt or flooded ground.
+- Floods and droughts each happen at least once per seed in 35 years.
+- **Balance gate:** every founder group survives, and no class falls below 30% of its slice 10 level for more than a year after a disaster. Save/load stays byte-identical, and per-tick cost grows by at most about 25% (fire spread only runs on active tiles).
+
 ---
 
 ## Tests and gates (every slice)
-- Headless runs on seeds 42, 7 and 123 for 3000 ticks, with ms/tick and the balance gate reported. Year-35 runs for slices 3 to 10.
+- Headless runs on seeds 42, 7 and 123 for 3000 ticks, with ms/tick and the balance gate reported. Year-35 runs for slices 3 to 11.
 - Determinism: the save/load test stays byte-identical.
 - A browser run with no console errors: cycle every view, expand every class card, use the Animals tab chips, and save and load.
 - No new code comments (grep of the diff).
@@ -442,9 +490,10 @@ Source: roadmap Part 1, with the decisions below.
   - Slice 8: tadpoles, and clutch and care traits (`life-history.png`).
   - Slice 9: a cleaner on its host and the Symbioses card (`symbiosis.png`).
   - Slice 10: a tool-using lineage and the Brain trait (`intelligence.png`).
+  - Slice 11: a wildfire front with smoke, and a burn scar regrowing a year later (`disasters.png`).
 
 ## Docs
-- **`CODE_REFERENCE.md`:** animals (genes, classes, birds, nests, packs, display, nutrition, dormancy, social, life history, symbiosis and intelligence), ecosystem (class stats and roles), main.js (class cards, Animals tab) and save (version 2).
+- **`CODE_REFERENCE.md`:** animals (genes, classes, birds, nests, packs, display, nutrition, dormancy, social, life history, symbiosis and intelligence), disasters (`DisasterLayer`, fire, floods, droughts, windthrow and succession), ecosystem (class stats and roles), main.js (class cards, Animals tab) and save (version 2).
 - **`complexities.md`:** animals.js stays at 9 or goes to 9.5; ecosystem.js and main.js notes updated.
 
 ## Out of scope (Part 2 or 3)
