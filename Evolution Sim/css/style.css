@@ -1558,6 +1558,22 @@ select option {
 }
 
 /* ---------- responsive ---------- */
+@media (max-width: 1700px) {
+	.brand p {
+		display: none;
+	}
+	.brand {
+		min-width: 0;
+	}
+	.topbar {
+		gap: 14px;
+	}
+	.world-controls,
+	.transport {
+		gap: 6px;
+	}
+}
+
 @media (max-width: 1250px) {
 	.layout {
 		grid-template-columns: 260px minmax(0, 1fr) 300px;
@@ -1609,6 +1625,7 @@ select option {
 	background: rgba(11, 15, 14, 0.72);
 	z-index: 6;
 	font-size: 14px;
+	color: #dfe8e2;
 }
 
 .spinner {

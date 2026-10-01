@@ -16,7 +16,7 @@ State as of 2026-09-30: the ecosystem-expansion roadmap (parts 1-4) is complete 
 ## Possible new features
 
 6. **Family tree view.** An interactive tree of species descent (parent to children) across plants, animals, bugs and strains.
-7. **Save and load.** Export and import a world's full state to a file, so long runs survive a page reload.
+7. **Save and load.** Done in ecosystem-v2 Part 4 slice 3 (`js/save.js`). Files are about 15 MB on Medium at year 5; a smaller format would need derived arrays rebuilt on load.
 8. **Climate drift and disasters.** Slow long-term warming or cooling, plus occasional drought, flood or fire events that reshape biomes.
 9. **Group behaviour.** Herding and schooling for prey, pack hunting for predators, and seasonal migration routes.
 10. **Data export.** Download population and trait history as CSV for outside analysis.

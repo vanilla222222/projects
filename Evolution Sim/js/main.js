@@ -91,6 +91,8 @@ const app = {
 	theme: 'auto',
 	tree: null,
 	overlay: null,
+	busy: false,
+	messageTimer: 0,
 };
 
 function readSize() {
@@ -99,15 +101,14 @@ function readSize() {
 }
 
 function newWorld() {
+	if (app.busy) return;
 	let seed = parseInt($('seedInput').value, 10);
 	if (!Number.isFinite(seed)) {
 		seed = Math.floor(Math.random() * 1e6);
 		$('seedInput').value = seed;
 	}
 	const { w, h } = readSize();
-	const overlay = $('mapError');
-	overlay.hidden = false;
-	overlay.innerHTML = '<div><div class="spinner"></div>Growing a new world…</div>';
+	showBusy('Growing a new world…');
 	setTimeout(() => {
 		const t0 = performance.now();
 		const world = new WorldMap(w, h, seed);
@@ -117,20 +118,139 @@ function newWorld() {
 			disease: $('optDisease').checked,
 			weather: $('optWeather').checked,
 		});
-		app.world = world;
-		app.eco = eco;
-		app.selected = null;
-		app.acc = 0;
-		app.lastLogVersion = -1;
-		app.renderer.highlight = null;
-		app.renderer.setWorld(world, eco);
-		closeOverlay();
-		closeDetail();
-		overlay.hidden = true;
-		history.replaceState(null, '', '#' + seed);
+		installWorld(world, eco);
+		hideBusy();
 		console.log(`World ${w}×${h} ready in ${Math.round(performance.now() - t0)} ms`);
 		updateUi(true);
 	}, 30);
+}
+
+function installWorld(world, eco) {
+	app.world = world;
+	app.eco = eco;
+	app.selected = null;
+	app.acc = 0;
+	app.lastLogVersion = -1;
+	app.renderer.highlight = null;
+	app.renderer.setWorld(world, eco);
+	closeOverlay();
+	closeDetail();
+	history.replaceState(null, '', '#' + eco.seed);
+}
+
+const LAYER_SWITCHES = { showPlants: 'showPlants', showAnimals: 'showAnimals', showSwarms: 'showSwarms', showWeather: 'showWeather' };
+const OPTION_SWITCHES = { seasons: 'optSeasons', migrations: 'optMigrations', disease: 'optDisease', weather: 'optWeather' };
+
+function showBusy(text) {
+	const box = $('mapError');
+	clearTimeout(app.messageTimer);
+	box.hidden = false;
+	box.innerHTML = '<div><div class="spinner"></div><span></span></div>';
+	box.querySelector('span').textContent = text;
+}
+
+function showMessage(text) {
+	const box = $('mapError');
+	box.hidden = false;
+	box.textContent = text;
+	clearTimeout(app.messageTimer);
+	app.messageTimer = setTimeout(() => (box.hidden = true), 5000);
+	box.onclick = () => {
+		clearTimeout(app.messageTimer);
+		box.hidden = true;
+		box.onclick = null;
+	};
+}
+
+function hideBusy() {
+	$('mapError').hidden = true;
+}
+
+function saveMeta() {
+	const r = app.renderer;
+	const layers = {};
+	for (const k of Object.keys(LAYER_SWITCHES)) layers[k] = !!r[k];
+	return { speed: app.speed, mode: r.mode, cam: { x: r.cam.x, y: r.cam.y, zoom: r.cam.zoom }, layers };
+}
+
+function saveWorld() {
+	if (!app.eco || app.busy) return;
+	app.busy = true;
+	showBusy('Saving the world…');
+	setTimeout(async () => {
+		try {
+			const t0 = performance.now();
+			const name = EvoSave.fileName(app.eco);
+			const data = await EvoSave.encode(app.eco, saveMeta());
+			const url = URL.createObjectURL(new Blob([data], { type: 'application/octet-stream' }));
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = name;
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+			setTimeout(() => URL.revokeObjectURL(url), 10000);
+			hideBusy();
+			console.log(`Saved ${name}: ${(data.length / 1048576).toFixed(1)} MB in ${Math.round(performance.now() - t0)} ms`);
+		} catch (err) {
+			console.error(err);
+			showMessage('Could not save the world: ' + err.message);
+		} finally {
+			app.busy = false;
+		}
+	}, 30);
+}
+
+function loadWorld(file) {
+	if (!file || app.busy) return;
+	app.busy = true;
+	setRunning(false);
+	showBusy(`Loading ${file.name}…`);
+	setTimeout(async () => {
+		try {
+			const t0 = performance.now();
+			const bytes = new Uint8Array(await file.arrayBuffer());
+			const { world, eco, meta } = await EvoSave.decode(bytes, (w, h, seed) => new WorldMap(w, h, seed));
+			applyLoaded(world, eco, meta);
+			hideBusy();
+			console.log(`Loaded ${file.name} (year ${yearOf(eco.tick)}) in ${Math.round(performance.now() - t0)} ms`);
+		} catch (err) {
+			console.warn(err);
+			showMessage(`Could not load ${file.name}: ${err.message}. The current world was kept.`);
+		} finally {
+			app.busy = false;
+		}
+	}, 30);
+}
+
+function applyLoaded(world, eco, meta) {
+	$('seedInput').value = eco.seed;
+	const size = `${world.width}x${world.height}`;
+	const sel = $('sizeSelect');
+	if (![...sel.options].some((o) => o.value === size)) sel.add(new Option(`${world.width}×${world.height}`, size));
+	sel.value = size;
+	for (const [k, id] of Object.entries(OPTION_SWITCHES)) $(id).checked = !!eco.options[k];
+	installWorld(world, eco);
+	const r = app.renderer;
+	const layers = meta.layers || {};
+	for (const [k, id] of Object.entries(LAYER_SWITCHES)) {
+		if (typeof layers[k] !== 'boolean') continue;
+		$(id).checked = layers[k];
+		r[k] = layers[k];
+	}
+	const modeBtn = [...$('viewModes').children].find((b) => b.dataset.mode === meta.mode);
+	if (modeBtn) {
+		for (const x of $('viewModes').children) x.classList.toggle('active', x === modeBtn);
+		r.setMode(meta.mode);
+	}
+	const speedBtn = [...$('speedGroup').children].find((b) => Number(b.dataset.speed) === meta.speed);
+	if (speedBtn) {
+		app.speed = meta.speed;
+		for (const x of $('speedGroup').children) x.classList.toggle('active', x === speedBtn);
+	}
+	const c = meta.cam;
+	if (c && [c.x, c.y, c.zoom].every(Number.isFinite) && c.zoom > 0) Object.assign(r.cam, { x: c.x, y: c.y, zoom: c.zoom });
+	updateUi(true);
 }
 
 let lastFrame = performance.now();
@@ -945,6 +1065,12 @@ function setupControls() {
 		if (e.key === 'Enter') newWorld();
 	});
 	$('sizeSelect').onchange = newWorld;
+	$('saveBtn').onclick = saveWorld;
+	$('loadBtn').onclick = () => !app.busy && $('loadInput').click();
+	$('loadInput').onchange = (e) => {
+		loadWorld(e.target.files[0]);
+		e.target.value = '';
+	};
 
 	$('speedGroup').addEventListener('click', (e) => {
 		const b = e.target.closest('button');

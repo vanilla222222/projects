@@ -1,6 +1,6 @@
 # Evolution Sim: code reference
 
-Vanilla JS with no build step. `index.html` loads these global scripts in this order: `noise.js`, `biomes.js`, `mapGenerator.js`, `sim/core.js`, `sim/soil.js`, `sim/plants.js`, `sim/animals.js`, `sim/bugs.js`, `sim/disease.js`, `sim/weather.js`, `sim/eggs.js`, `sim/ecosystem.js`, `icons.js`, `render.js`, `charts.js`, `main.js`.
+Vanilla JS with no build step. `index.html` loads these global scripts in this order: `noise.js`, `biomes.js`, `mapGenerator.js`, `sim/core.js`, `sim/soil.js`, `sim/plants.js`, `sim/animals.js`, `sim/bugs.js`, `sim/disease.js`, `sim/weather.js`, `sim/eggs.js`, `sim/ecosystem.js`, `icons.js`, `render.js`, `charts.js`, `tree.js`, `save.js`, `main.js`.
 
 - Each file relies on the globals of the files loaded before it.
 - The nine `sim/*` files plus the world-gen files have no DOM dependency, so they run headless in Node through `vm`.
@@ -1725,6 +1725,35 @@ View and drawing:
 - Labels are drawn when `rh ≥ 11`, or always for the focus: right of the bar if it fits, else left, else inside the bar on a `--card` pill. Colours come from the theme tokens, so the tree follows the theme.
 - Input: drag pans (a move of 4 px or less counts as a click and calls `onPick`), the wheel zooms both axes about the cursor, hovering shows the tooltip (`_showTip`: name, years alive, merged state, peak and current population), and leaving the canvas hides it. `_nodeAt(mx, my)` does the hit test.
 
+## Save (`js/save.js`)
+
+`EvoSave` (an IIFE exposing `encode`, `decode`, `fileName` and `serialize`) saves a whole `Ecosystem` losslessly, so a loaded world continues tick for tick exactly as the original would have. It is generic: it walks the object graph instead of listing fields, so new sim state is saved automatically as long as it is made of the supported value kinds.
+
+### Object graph (`serialize(eco)`)
+
+- A breadth-first walk from `eco` gives every object an id on first sight; references are written as `{$r: id}`, so shared objects and aliases (`plants.moistMul === weather.moistMul`, `plants.snow`, `animals.eggs`, `plants.disease`, the registry, the log, the rngs, species `parent`/`children` links) come back as the same object.
+- `eco.world` is written as `{$w: 1}` and each of its typed-array layers as `{$wa: key}`: the `WorldMap` is never mutated by the sim, so it is regenerated from seed, width and height on load instead of being stored.
+- Records: typed arrays `{t: type, o: offset, n: length}` (bytes go to the binary section, 8-byte aligned), arrays `{a: [...]}`, Maps `{m: [[k, v], ...]}` (insertion order kept), Sets `{s: [...]}`, and objects `{c: class, f: {field: value}}` where `c` is `'Object'`, `null` (null prototype) or a class name from `classTable()`: `Ecosystem`, `FastRng`, `Species`, `SpeciesRegistry`, `EventLog`, `PlantLayer`, `AnimalPool`, `SoilLayer`, `BugLayer`, `DiseaseLayer`, `WeatherLayer`, `EggPool`.
+- Numbers JSON cannot hold (`NaN`, `±Infinity`, `-0`) are written as `{$n: '…'}` and `undefined` as `{$u: 1}`.
+- A function, a BigInt, an unknown class or an unsupported view throws with the property path (for example `eco.animals.foo`), so adding such state to the sim makes saving fail loudly rather than silently lose it.
+
+### File format (`encode(eco, meta)`)
+
+The file is gzip (`CompressionStream`) of: a big-endian `u32` magic `SAVE_MAGIC` (`0x534f5645`), a `u32` header length, the UTF-8 JSON header, padding to 8 bytes, then the binary section. The header holds `version` (`SAVE_VERSION`, 1), `seed`, `w`, `h`, `tick`, the app `meta`, the `records` (record 0 is `eco`) and `bin` (binary length).
+
+### Loading (`decode(bytes, makeWorld)`)
+
+1. Gunzip, check the magic, parse the header and check the version and lengths.
+2. `makeWorld(w, h, seed)` rebuilds the world.
+3. Pass 1 creates every record: typed arrays copy their own buffer slice, classes use `Object.create(Class.prototype)` (constructors are not run).
+4. Pass 2 fills fields, array items, Map entries and Set items, resolving references.
+5. It checks that record 0 is an ecosystem on the new world at the header's tick, and returns `{eco, world, meta}`.
+
+### Gate and size
+
+- Headless determinism (Node `vm`, Medium 320×210): run 1500 ticks, save, load, then step the original and the loaded copy 500 more ticks. On seeds 42, 7 and 123 the stats, the RNG states and a full re-save of both are byte-identical.
+- Size: about 15 MB at year 5 (tick 2400) on Medium seed 42, with save in about 1.3–2 s and load in about 0.6–1.7 s. Most of it is plant genomes (two slots × 15 floats per tile) and the seed bank, which are live high-entropy floats; zeroing empty slots saved under 2% and byte-plane shuffling made gzip worse, so the file stays lossless and unfiltered.
+
 ---
 
 ## App / main (`js/main.js`)
@@ -1750,6 +1779,8 @@ The `app` object holds:
 | `theme` | `auto`, `light` or `dark`. |
 | `tree` | The `FamilyTree` instance (created in `init` on `#treeCanvas` and `#treeTip`, with `selectSpecies` as its pick callback). |
 | `overlay` | `'tree'`, `'help'` or `null`: which map overlay is open. |
+| `busy` | True while a world is being generated, saved or loaded; `newWorld`, `saveWorld` and `loadWorld` return early while it is set. |
+| `messageTimer` | Timeout id that hides a `showMessage` line. |
 
 Other globals:
 
@@ -1782,9 +1813,20 @@ Other globals:
 
 1. Reads the seed; a non-numeric seed becomes random.
 2. Reads the size, given as `WxH` in `#sizeSelect`.
-3. Shows a spinner overlay.
-4. After a 30 ms delay, builds `WorldMap` and `Ecosystem` and calls `renderer.setWorld`.
-5. Writes the seed to `location.hash`.
+3. Shows a spinner overlay (`showBusy`).
+4. After a 30 ms delay, builds `WorldMap` and `Ecosystem` and hands them to `installWorld`.
+
+`installWorld(world, eco)` is shared by new worlds and loads: it sets `app.world` and `app.eco`, clears the selection, the accumulator and `lastLogVersion`, calls `renderer.setWorld` (which fits the camera), closes the overlay and the detail view, and writes `eco.seed` to `location.hash`.
+
+`#mapError` doubles as the status layer: `showBusy(text)` shows the spinner with a text line, `hideBusy()` hides it, and `showMessage(text)` shows a plain line that hides itself after 5 s or on click.
+
+Save and load (see the Save section for the file format):
+
+- `#saveBtn` (down arrow, after New world) calls `saveWorld()`. After the spinner paints, it awaits `EvoSave.encode(eco, saveMeta())` and downloads the bytes as `EvoSave.fileName(eco)` (`evosim-<seed>-y<year>.evo`) through a temporary object URL. The sim keeps running; the snapshot is taken synchronously at the start of `encode`.
+- `saveMeta()` records the app state that is not part of the sim: `speed`, the view `mode`, the camera (`x`, `y`, `zoom`) and the `LAYER_SWITCHES` renderer flags (`showPlants`, `showAnimals`, `showSwarms`, `showWeather`).
+- `#loadBtn` (up arrow) clicks the hidden `#loadInput` (`accept=".evo"`). `loadWorld(file)` pauses, shows the spinner and awaits `EvoSave.decode(bytes, (w, h, seed) => new WorldMap(w, h, seed))`.
+- `applyLoaded(world, eco, meta)` writes the seed, selects the size (adding a `W×H` option if the size is not in the list), sets the `OPTION_SWITCHES` checkboxes (`optSeasons`, `optMigrations`, `optDisease`, `optWeather`) from `eco.options`, calls `installWorld`, then restores the layer switches, the view button and mode, the speed button and the camera from `meta`, and refreshes the UI. The world is left paused.
+- Any error (not gzip, wrong magic, unsupported version, truncated or inconsistent file) is shown with `showMessage` ("… The current world was kept.") and logged with `console.warn`; the current world is untouched because nothing is installed until decoding succeeds.
 
 `init()`:
 
@@ -1871,7 +1913,7 @@ Helpers: `TOXIN_WORDS`, `toxinIndex(v)` (the same thresholds as `toxinType`), `f
 
 `#overlay` sits inside `#mapWrap` (absolute, `z-index: 7`, dimmed with the `--scrim` token). Its box has a head (`#overlayTitle`, the `#treeModes` segment and `#overlayClose`) and two bodies, `#treeBody` and `#helpBody`; `data-view` on the overlay hides the one not in use.
 
-- `showOverlay(view, title)` sets `app.overlay`, shows the overlay and hides the map tooltip. `closeOverlay()` hides it and the tree tooltip. A pointerdown on the scrim itself closes it, and `newWorld` closes it.
+- `showOverlay(view, title)` sets `app.overlay`, shows the overlay and hides the map tooltip. `closeOverlay()` hides it and the tree tooltip. A pointerdown on the scrim itself closes it, and `installWorld` (new world or load) closes it.
 - `openTree(mode)` needs a selected species. It marks the active `#treeModes` button (`data-t` `species` "Lineage" or `kingdom` "Kingdom"), calls `app.tree.show(eco, selected, mode)` and sets the title from `app.tree.title()`. `selectSpecies` re-shows the tree when it is open and the id changes, `updateUi` redraws it, and a window resize redraws it.
 - `openHelp()` shows `#helpBody`: a static grid of Map views, Controls, Switches and Keyboard sections written in `index.html`. `#helpBtn` ("?", after the theme button) toggles it.
 
