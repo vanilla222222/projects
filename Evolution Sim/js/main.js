@@ -45,6 +45,7 @@ const STAT_EXTRA = [
 	{ key: 'nutrition', label: 'Body condition', icon: 'boar', color: '#d9a066', wide: true, sub: true },
 	{ key: 'dormancy', label: 'Dormancy', icon: 'bear', color: '#8fa7d6', wide: true, sub: true },
 	{ key: 'symb', label: 'Symbioses', icon: 'bee', color: '#b48fd9', wide: true, sub: true },
+	{ key: 'brain', label: 'Intelligence', icon: 'crow', color: '#e0a3c8', wide: true, sub: true },
 	{ key: 'stages', label: 'Life stages · animals', icon: 'deer', color: '#9fd98b', wide: true, sub: true, noSpark: true },
 ];
 const STAT_EXTRA_KEYS = new Set(STAT_EXTRA.map((x) => x.key));
@@ -495,6 +496,11 @@ function updateExtraStat(el, k, s, h) {
 		const sy = s.symb || {};
 		v.innerHTML = `${formatCount((sy.cleanerPairs || 0) + (sy.pollPairs || 0))}<small>pairs</small>`;
 		sub.innerHTML = `<span>${formatCount(sy.cleanerPairs || 0)} cleaner pairs</span><span>${formatCount(sy.pollPairs || 0)} specialist pollinator pairs</span><span>${formatCount(sy.mimics || 0)} mimics · ${formatCount(sy.mimicSp || 0)} species</span><span>${formatCount(sy.models || 0)} toxic models</span><span>${formatCount(sy.riding || 0)} riding</span><span>${formatCount(sy.cleanings || 0)} cleanings</span><span>${formatCount(sy.toxHits || 0)} toxic bites</span><span>${formatCount(sy.animalSeeded || 0)} seeds sown by animals</span>`;
+	} else if (k === 'brain') {
+		const br = s.brain || {};
+		const bc = br.cls || [];
+		v.innerHTML = `${pct(br.mean || 0)}<small>mean brain</small>`;
+		sub.innerHTML = `<span>${formatCount(br.toolSp || 0)} tool-using species</span><span>${formatCount(br.learnedN || 0)} learned avoidances</span><span>mammals ${pct(bc[3] || 0)} · birds ${pct(bc[4] || 0)}</span><span>${formatCount(br.toolUses || 0)} tool uses</span><span>${formatCount(br.fledEarly || 0)} fled early</span><span>${formatCount((br.memWater || 0) + (br.memFood || 0))} trips from memory</span><span>${formatCount(br.memDanger || 0)} danger spots avoided</span><span>${formatCount(br.taught || 0)} lessons taught</span>`;
 	} else if (k === 'eggs') {
 		const eg = s.eggs || {};
 		v.textContent = formatCount(st.eggs || 0);
@@ -801,6 +807,7 @@ const ANIMAL_TRAITS = [
 	['Host tolerance', G_TOLER, (v) => pct(v)],
 	['Toxicity', G_TOXIC, (v) => (v > TOX_MIN ? 'Toxic · ' : '') + pct(v)],
 	['Mimicry', G_MIMIC, (v) => pct(v)],
+	['Brain', G_BRAIN, (v) => (v > TOOL_MIN ? 'Tool user · ' : '') + pct(v)],
 ];
 
 const DISEASE_TRAITS = [
@@ -939,6 +946,8 @@ function renderDetail() {
 		const nm = (id) => { const o = app.eco.registry.get(id); return o ? o.name : '#' + id; };
 		if (sp.cleanOf) traits += `<div class="trait"><span>Cleaner of</span><em style="grid-column:span 2;text-align:left">${nm(sp.cleanOf)}</em></div>`;
 		if (sp.mimicOf) traits += `<div class="trait"><span>Mimic of</span><em style="grid-column:span 2;text-align:left">${nm(sp.mimicOf)}</em></div>`;
+		if (sp.tools) traits += `<div class="trait"><span>Tool use</span><em style="grid-column:span 2;text-align:left">since year ${Math.floor(sp.tools / YEAR_TICKS) + 1}${sp.toolN >= 1 ? ' · ' + Math.round(sp.toolN) + ' recent uses' : ''}</em></div>`;
+		if (sp.learnedN) traits += `<div class="trait"><span>Wary of predators</span><em style="grid-column:span 2;text-align:left">${formatCount(sp.learnedN)} individuals</em></div>`;
 	}
 	if (sp.group === 'bug' && sp.pollOf) {
 		const o = app.eco.registry.get(sp.pollOf);
