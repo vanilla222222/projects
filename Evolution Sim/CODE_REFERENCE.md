@@ -1363,9 +1363,9 @@ New pool fields: Float `mwx`/`mwy` (last water), `mfx`/`mfy` (last good food), `
 | `LEARN_ADD`, `LEARN_BASE` | 0.6, 0.3 | Surviving an attack adds `0.6*(0.3 + brain)` to `lst` for the attacker's species (or replaces a weaker one). |
 | `LEARN_RANGE`, `LEARN_DECAY`, `LEARN_MIN` | 0.8, 0.03, 0.05 | Threat search radius for the learned species ×`1 + 0.8*lst*brain`; `lst` decays 3% per refresh and clears (with the danger memory) below 0.05. |
 | `TEACH_LIVE`, `TEACH_CARE`, `TEACH_KEEP` | 0.9, 0.25, 0.6 | Teaching chance per memory `k*brain` of the parent, at live birth (0.9) and on each care visit (0.25, also grandparents); taught avoidance is `0.6*lst`. |
-| `TOOL_MIN`, `TOOL_SPAN` | 0.5, 0.3 | Tool skill `clamp((brain-0.5)/0.3)` for mammals and birds only. |
+| `TOOL_MIN`, `TOOL_SPAN` | 0.42, 0.3 | Tool skill `clamp((brain-0.42)/0.3)` for mammals and birds only. |
 | `TOOL_K`, `TOOL_CRACK`, `TOOL_ARMOR` | 0.3, 0.5, 0.4 | Hard food (seed fruit, invertebrate prey or prey armour above 0.4) gives `+30%*skill` energy; prey armour's catch penalty is cut by `50%*skill`. |
-| `TOOL_LOG`, `TOOL_DECAY`, `TOOL_SP` | 20, 0.9, 1 | `sp.toolN` is a 0.9-decayed per-refresh sum of `tl`; a species logs "X started using tools" once when it reaches 20 (`sp.tools` = tick); species with `toolN` ≥ 1 count in `toolSp`. |
+| `TOOL_LOG`, `TOOL_DECAY`, `TOOL_SP` | 4, 0.97, 1 | `sp.toolN` is a 0.97-decayed per-refresh sum of `tl`; a species logs "X started using tools" once when it reaches 4 (`sp.tools` = tick); species with `toolN` ≥ 1 count in `toolSp`. |
 
 - **Memory**: per-slot coordinates. `_pickWater` returns to remembered water (`memWater`), `_pickForage` returns to remembered food when the area is poor (`memFood`) and steers away from the danger spot (`memDanger`).
 - **Learned predator avoidance (`_survive`)**: called from the failed-attack branch of `_attack` and when toxic prey is spat out in `_taste`. It sets `lsp`/`lst` and the danger memory. In the flee check, `_nearest` mode 0 scans a radius enlarged by `_learnExt` but only the learned species counts beyond the normal radius (its distance is scaled by `1/ext²`); a flee from beyond the normal radius counts `fledEarly`.
