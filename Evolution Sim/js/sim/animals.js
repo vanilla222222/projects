@@ -157,6 +157,7 @@ const DOMAIN_BIT = [1, 2, 4, 8];
 const FEED_BIT = [1, 2, 4, 1];
 const THIRST = 0.02;
 const SALT_THIRST = 1.5;
+const SALT_THIRST_AMPH = 1.1;
 const MIRE_SLOW = 0.7;
 const REEF_COVER = 0.2;
 const THIRSTY = 0.35;
@@ -2101,7 +2102,7 @@ class AnimalPool {
 					wv = 1;
 				}
 				else {
-					wv -= THIRST * (1 - 0.6 * this.dry[i]) * (0.6 + temp[tile] + seasonT + droughtK) * (this.cold[i] > 0.5 ? 0.6 : 1) * (amph ? AMPH_DRY : 1) * (inv ? INVERT_THIRST : 1) * (herdM && this.ld[i] ? ELDER_THIRST : 1) * (this.walk[tile] & 64 ? SALT_THIRST : 1);
+					wv -= THIRST * (1 - 0.6 * this.dry[i]) * (0.6 + temp[tile] + seasonT + droughtK) * (this.cold[i] > 0.5 ? 0.6 : 1) * (amph ? AMPH_DRY : 1) * (inv ? INVERT_THIRST : 1) * (herdM && this.ld[i] ? ELDER_THIRST : 1) * (this.walk[tile] & 64 ? (amph ? SALT_THIRST_AMPH : SALT_THIRST) : 1);
 					if (wv < 0) wv = 0;
 				}
 				this.water[i] = wv;

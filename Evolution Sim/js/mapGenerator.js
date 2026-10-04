@@ -41,6 +41,10 @@ const WG_OUTFLOW = 0.4;
 const WG_DELTA_FLOW = 4;
 const WG_DELTA_LEN = 12;
 const WG_LAKE_MUL = 1.6;
+const WG_POND_MUL = 2.5;
+const WG_RIVER_K = 0.8;
+const WG_SALT_BASIN = 0.003;
+const WG_SALT_SHARE = 0.008;
 
 class WorldMap {
 	constructor(width, height, seed, options = {}) {
@@ -645,7 +649,7 @@ class WorldMap {
 		}
 
 		const scale = Math.sqrt((width * height) / 67200);
-		const threshold = HYDRO_RIVER_FLOW * scale;
+		const threshold = HYDRO_RIVER_FLOW * scale * (v3 ? WG_RIVER_K : 1);
 		for (let i = 0; i < n; i++) {
 			this.riverFlow[i] = this.isOcean[i] ? 0 : flow[i] / threshold;
 		}
@@ -693,9 +697,10 @@ class WorldMap {
 		const blocked = (i) => this.isOcean[i] || this.isLake[i] || this.isRiver[i] || this.isGlacier[i] || this.isPond[i];
 		let placed = 0;
 		let attempts = 0;
-		const maxAttempts = options.pondCount * 60;
+		const want = Math.round(options.pondCount * (this.gen >= 3 ? WG_POND_MUL : 1));
+		const maxAttempts = want * 60;
 
-		while (placed < options.pondCount && attempts < maxAttempts) {
+		while (placed < want && attempts < maxAttempts) {
 			attempts++;
 			let best = -1;
 			let bestScore = -Infinity;
@@ -1114,6 +1119,7 @@ class WorldMap {
 		const seen = new Uint8Array(n);
 		const stack = [];
 		const cells = [];
+		const basins = [];
 		for (let s = 0; s < n; s++) {
 			if (!this.isLake[s] || seen[s]) continue;
 			seen[s] = 1;
@@ -1140,7 +1146,18 @@ class WorldMap {
 				}
 			}
 			if (hs / cells.length >= WG_SALT_HUM || ts / cells.length < 0.4) continue;
-			for (const i of cells) {
+			basins.push({ h: hs / cells.length, cells: cells.slice() });
+		}
+		basins.sort((a, b) => a.h - b.h || a.cells[0] - b.cells[0]);
+		let left = Math.floor(n * WG_SALT_SHARE);
+		const cap = Math.floor(n * WG_SALT_BASIN);
+		for (const b of basins) {
+			const take = Math.min(b.cells.length, cap, left);
+			if (take < HYDRO_LAKE_MIN) continue;
+			if (take < b.cells.length) b.cells.sort((p, q) => this.altitude[q] - this.altitude[p] || p - q);
+			left -= take;
+			for (let k = 0; k < take; k++) {
+				const i = b.cells[k];
 				this.isLake[i] = 0;
 				this.isSalt[i] = 1;
 				this.altitude[i] = sea + 0.004;
