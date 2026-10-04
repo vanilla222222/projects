@@ -346,6 +346,8 @@ const TERR_FADE = 10;
 const TERR_EDGE_MIX = 1;
 const TERR_EDGE_DARK = 0.7;
 const ELDER_ALPHA = 0.8;
+const LARVA_SHRINK = 0.75;
+const JUV_PALE = 0.3;
 const EGG_ZOOM = 3;
 const EGG_PX = 4;
 const EGG_BASE = 0.34;
@@ -1154,6 +1156,12 @@ class WorldRenderer {
 		return t;
 	}
 
+	_juvTint(co, ca) {
+		const t = this._juvT || (this._juvT = new Uint8Array(9));
+		for (let q = 0; q < 9; q++) t[q] = ca[co + q] + (255 - ca[co + q]) * JUV_PALE;
+		return t;
+	}
+
 	_showy(co, ca, s) {
 		const t = this._showTint || (this._showTint = new Uint8Array(9));
 		const k = 1 + SHOW_SAT * (s - SHOW_BASE);
@@ -1365,6 +1373,9 @@ class WorldRenderer {
 		const fat = A.fat;
 		const en = A.energy;
 		const emx = A.emax;
+		const lvA = A.lv;
+		const tadIcon = ICON_INDEX.tadpole;
+		const larIcon = ICON_INDEX.caterpillar;
 		for (let k = 0, cnt = A.count; k < cnt * 2; k++) {
 			const i = k < cnt ? k : k - cnt;
 			const air = dom[i] === 3;
@@ -1380,20 +1391,22 @@ class WorldRenderer {
 			const a = ((hl !== null && id !== hl) || (hs && sick !== hs) || (dmode && !sick) || (wmode && !th) ? 0.35 : 1) * (ef && ef[i] < 1 ? ELDER_ALPHA : 1) * (zz ? DORM_ALPHA : 1);
 			const sv = show && !sick ? show[i] : 0;
 			const bright = sv > SHOW_BASE;
-			const ca = sick ? this._infected(id, col) : bright ? this._showy(id * 9, col, sv) : col;
-			const co = sick || bright ? 0 : id * 9;
+			const lv = lvA ? lvA[i] : 0;
+			const juv = !sick && !bright && g < 1;
+			const ca = sick ? this._infected(id, col) : bright ? this._showy(id * 9, col, sv) : juv ? this._juvTint(id * 9, col) : col;
+			const co = sick || bright || juv ? 0 : id * 9;
 			if (dots) {
 				const ds = ((3 + A.mass[i] * 0.9) / zoom) * g;
 				n = th ? this._put(n, x, y, ds * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, a, 0, th) : this._put(n, x, y, ds, dotIcon, 1, a, co, ca);
 			} else {
-				const size = Math.max(12 / zoom, 0.8 + 0.45 * A.mass[i]) * g * (zz ? DORM_SHRINK : 1);
+				const size = Math.max(12 / zoom, 0.8 + 0.45 * A.mass[i]) * g * (zz ? DORM_SHRINK : 1) * (lv ? LARVA_SHRINK : 1);
 				const ly = air && fly[i] ? y - size * FLY_LIFT : y;
 				const cap = emx[i] * g;
 				const fr = fat ? fat[i] / cap : 0;
 				const er = en[i] / cap;
 				const wd = fr > 0 ? 1 + Math.min(FAT_WIDE_MAX, fr * FAT_WIDE) : er < THIN_AT ? THIN_MIN + (1 - THIN_MIN) * (er > 0 ? er / THIN_AT : 0) : 1;
 				if (sv >= CREST_MIN && zoom >= CREST_ZOOM) n = this._put(n, x - size * 0.12 * A.face[i], ly - size * 0.62, size * CREST_SCALE * (0.6 + sv), crestIcon, A.face[i], a, co, ca);
-				n = this._put(n, x, ly - size * 0.1, size, icons[id], A.face[i] * wd * (zz ? DORM_WIDE : 1), a, co, ca);
+				n = this._put(n, x, ly - size * 0.1, size, lv === 1 ? tadIcon : lv === 2 ? larIcon : icons[id], A.face[i] * wd * (zz ? DORM_WIDE : 1), a, co, ca);
 				const am = almA ? almA[i] : 0;
 				if (am > ALARM_COOL - ALARM_RING) {
 					const rt = (ALARM_COOL - am) / ALARM_RING;

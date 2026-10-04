@@ -1481,6 +1481,12 @@ const ICONS = {
 		['light', 'M11 7.3c2.5-.6 4.4.6 6.4 1.2', 1.2],
 	],
 	sleep: [['body', 'M9 8h8l-8 9h8 M19 17h6l-6 7h6', 2.4]],
+	tadpole: [
+		['body', 'M14 16c-4 0-7 2-11 1 2 2 6 4 11 2', 1.6],
+		['body', circ(20, 17, 5.5)],
+		['light', 'M17 14.5c1.5-1.2 4-1.4 5.5-.4', 1],
+		['dark', circ(22.5, 15.8, 0.9)],
+	],
 };
 
 const ICON_NAMES = Object.keys(ICONS);
