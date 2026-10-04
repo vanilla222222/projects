@@ -682,7 +682,7 @@ class WorldRenderer {
 				const bl = this.eco.plants.blight;
 				if (bl) for (let p = 0; p < bl.length; p++) if (bl[p]) src[p % n] += 0.5;
 				const vl = D.vectorLoad;
-				for (let p = 0; p < n; p++) if (vl[p] > 0) src[p] += vl[p] * TRAIL_K;
+				if (vl) for (let p = 0; p < n; p++) if (vl[p] > 0) src[p] += vl[p] * TRAIL_K;
 			}
 			percentile99(src, field);
 			this.lastSoilUpdate = performance.now();

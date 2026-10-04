@@ -8,6 +8,7 @@ const SNAP_GRIDS = {
 	weather: ['wet', 'snow', 'fresh', 'waterDist'],
 	animals: ['terrSp', 'terrUid', 'terrUntil'],
 	disasters: ['fire', 'flood', 'scar', 'scarK', 'risk'],
+	disease: ['vectorLoad'],
 };
 const SNAP_STATIC = { plants: ['water', 'depth'] };
 const SNAP_PLANT_GENES = [8, 10, 11];
