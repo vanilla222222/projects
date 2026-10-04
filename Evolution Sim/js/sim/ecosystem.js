@@ -59,6 +59,8 @@ class Ecosystem {
 		this.stats.social = { alarms: 0, heard: 0, sentinel: 0, colonies: 0, colonySp: 0, dispersals: 0, dispSplits: 0, rankBlocked: 0, meanGroup: 0, solitary: 0, colonial: 0, callerLoss: 0, quietLoss: 0, lossCls: {} };
 		this.socExposure = new Float64Array(12);
 		this.history.alarms = [];
+		this.stats.life = { tadpoles: 0, larvae: 0, cared: 0, metamorphs: 0, careGiven: 0, granGiven: 0, granFeeds: 0, juvBug: 0, shed: 0, ledMig: 0, ledRate: 0, loneRate: 0, ledT: 0, loneT: 0, headStarts: 0 };
+		this.stats.stageCls = {};
 		for (const k of BIRD_NICHES) {
 			this.stats.birdNiches[k] = 0;
 			this.history['birdNiche.' + k] = [];
@@ -172,6 +174,7 @@ class Ecosystem {
 			this._nutStats();
 			this._dormStats();
 			this._socialStats();
+			this._lifeStats();
 			if (this.bugs) this.bugs.refreshSpeciesMeans();
 			if (D) D.refreshSpeciesMeans();
 		}
@@ -196,16 +199,21 @@ class Ecosystem {
 		const bn = new Int32Array(BIRD_NICHES.length);
 		const st = s.stages;
 		st.juveniles = st.adults = st.elders = 0;
+		const sc = new Int32Array(keys.length * 3);
 		for (let i = 0; i < A.count; i++) {
 			const age = A.age[i];
-			if (age < A.mature[i]) st.juveniles++;
-			else if (age > ELDER_AGE * A.maxAge[i]) st.elders++;
+			const k = age < A.mature[i] ? 0 : age > ELDER_AGE * A.maxAge[i] ? 2 : 1;
+			if (k === 0) st.juveniles++;
+			else if (k === 2) st.elders++;
 			else st.adults++;
+			sc[A.cls[i] * 3 + k]++;
 			const ri = roleIndex(A.diet[i], A.scav[i]);
 			counts[A.cls[i] * 4 + ri]++;
 			if (A.cls[i] === CLS_BIRD) bn[A.nic[i] ? 2 : ri === 0 ? 0 : ri === 1 ? 1 : ri === 2 ? 3 : 4]++;
 		}
 		for (let k = 0; k < BIRD_NICHES.length; k++) s.birdNiches[BIRD_NICHES[k]] = bn[k];
+		if (!s.stageCls) s.stageCls = {};
+		for (let c = 0; c < keys.length; c++) s.stageCls[keys[c]] = [sc[c * 3], sc[c * 3 + 1], sc[c * 3 + 2]];
 		s.birdMigrants = A.birdMigrants;
 		for (let c = 0; c < keys.length; c++) {
 			const r = roles[c];
@@ -322,6 +330,37 @@ class Ecosystem {
 		s.packKills = A.packKills;
 		s.bigKills = A.bigKills;
 		s.mateRefusals = A.mateRefusals;
+	}
+
+	_lifeStats() {
+		const A = this.animals;
+		if (!this.stats.life) this.stats.life = {};
+		const s = this.stats.life;
+		let tad = 0;
+		let lar = 0;
+		let cared = 0;
+		for (let i = 0; i < A.count; i++) {
+			if (!A.alive[i]) continue;
+			if (A.lv[i] === 1) tad++;
+			else if (A.lv[i] === 2) lar++;
+			if (A.cr[i] > 0) cared++;
+		}
+		const L = A.life;
+		s.tadpoles = tad;
+		s.larvae = lar;
+		s.cared = cared;
+		s.metamorphs = L.metamorphs;
+		s.careGiven = Math.round(L.careGiven);
+		s.granGiven = Math.round(L.granGiven);
+		s.granFeeds = L.granFeeds;
+		s.juvBug = Math.round(L.juvBug);
+		s.shed = L.shed;
+		s.ledMig = L.ledMig;
+		s.headStarts = L.headStarts;
+		s.ledT = L.ledT;
+		s.loneT = L.loneT;
+		s.ledRate = L.ledT > 0 ? +((L.ledD * 1000) / L.ledT).toFixed(2) : 0;
+		s.loneRate = L.loneT > 0 ? +((L.loneD * 1000) / L.loneT).toFixed(2) : 0;
 	}
 
 	_socialStats() {

@@ -470,7 +470,12 @@ function updateExtraStat(el, k, s, h) {
 		const a = st.adults || 0;
 		const e = st.elders || 0;
 		v.innerHTML = `${formatCount(j + a + e)}<small>${pct(j + a + e ? e / (j + a + e) : 0)} elders</small>`;
-		sub.innerHTML = `<span>${formatCount(j)} juveniles</span><span>${formatCount(a)} adults</span><span>${formatCount(e)} elders</span>`;
+		const sc = s.stageCls || {};
+		const li = s.life || {};
+		const per = STAT_GROUPS.filter((g) => sc[g.key] && sc[g.key][0] + sc[g.key][1] + sc[g.key][2] > 0)
+			.map((g) => `<span title="juveniles · adults · elders">${g.label} ${formatCount(sc[g.key][0])}/${formatCount(sc[g.key][1])}/${formatCount(sc[g.key][2])}</span>`)
+			.join('');
+		sub.innerHTML = `<span>${formatCount(j)} juveniles</span><span>${formatCount(a)} adults</span><span>${formatCount(e)} elders</span><span>${formatCount(li.tadpoles || 0)} tadpoles</span><span>${formatCount(li.larvae || 0)} larvae</span><span>${formatCount(li.cared || 0)} cared for</span>${per}`;
 		return;
 	}
 	if (k === 'nutrition') {
@@ -783,6 +788,8 @@ const ANIMAL_TRAITS = [
 	['Dormancy', G_DORMANCY, (v) => pct(v)],
 	['Alarm calls', G_ALARM, (v) => (v > ALARM_MIN ? 'Caller · ' : '') + pct(v)],
 	['Sociality', G_SOCIAL, (v) => socialWord(v)],
+	['Brood size', G_BROOD, (v) => (v < 0.4 ? 'Few young · ' : v > 0.6 ? 'Many young · ' : '') + pct(v)],
+	['Parental care', G_CARE, (v) => pct(v)],
 ];
 
 const DISEASE_TRAITS = [
@@ -921,7 +928,15 @@ function renderDetail() {
 	if (showHist) traits += `<div class="trait" title="Mean display over time${sp.showy ? ' · showy' : ''}"><span>Display trend</span><canvas data-show-spark style="width:100%;height:20px;margin:0"></canvas><em>${pct(showHist[showHist.length - 1])}</em></div>`;
 	const condHist = sp.group === 'animal' && sp.condHist && sp.condHist.length >= 6 ? sp.condHist : null;
 	if (condHist) traits += `<div class="trait" title="Mean fat over time (body condition)"><span>Condition trend</span><canvas data-cond-spark style="width:100%;height:20px;margin:0"></canvas><em>${pct(condHist[condHist.length - 2])}</em></div>`;
+	const lifeHist = sp.group === 'animal' && sp.lifeHist && sp.lifeHist.length >= 8 ? sp.lifeHist : null;
+	if (sp.group === 'animal' && sp.clutch !== undefined) {
+		const lifeCell = (lbl, n, val, tip) => `<div class="trait" title="${tip}"><span>${lbl}</span>${lifeHist ? `<canvas data-life-spark="${n}" style="width:100%;height:20px;margin:0"></canvas>` : '<i></i>'}<em>${val}</em></div>`;
+		traits += lifeCell('Clutch size', 1, (sp.clutch || 0).toFixed(1), 'Young per breeding (eggs for egg layers)');
+		traits += lifeCell('Care time', 2, `${sp.careT || 0} t`, 'Ticks a parent spends feeding and guarding its young');
+		traits += lifeCell('Mean lifespan', 3, `${Math.round(sp.lifespan || 0)} t`, 'Mean age at death');
+	}
 	$('detailTraits').innerHTML = traits;
+	if (lifeHist) for (const c of $('detailTraits').querySelectorAll('[data-life-spark]')) { const n = +c.dataset.lifeSpark; drawSparkline(c, lifeHist.filter((v, k) => k % 4 === n), sp.color); }
 	if (condHist) drawSparkline($('detailTraits').querySelector('[data-cond-spark]'), condHist.filter((v, k) => k % 3 === 1), sp.color);
 	if (showHist) drawSparkline($('detailTraits').querySelector('[data-show-spark]'), showHist.filter((v, k) => k % 2 === 1), sp.color);
 
@@ -1091,7 +1106,7 @@ function updateTooltip() {
 		const lowM = A.nMin && A.nMin[a] < DEFICIT;
 		const cond = A.fat ? `<small${lowP || lowM ? ' class="tt-sick"' : ''}>${conditionWord(fr)} · protein ${lowP ? 'low' : pct(Math.min(1, A.nProt[a]))} · minerals ${lowM ? 'low' : pct(Math.min(1, A.nMin[a]))}</small>` : '';
 		const water = A.domain[a] !== 1 && A.water ? ` · water ${pct(Math.min(1, Math.max(0, A.water[a])))}` : '';
-		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${A.domain[a] === 3 ? (A.fly[a] ? 'flying · ' : 'perched · ') : ''}${A.dorm && A.dorm[a] ? dormWords[A.dorm[a]] : states[A.state[a]]} · ${['juvenile', 'adult', 'elder'][animalStage(A, a)]} · age ${A.age[a]}${home}</small><small>energy ${pct(cap > 0 ? Math.min(1, Math.max(0, A.energy[a] / cap)) : 0)}${water}</small>${cond}${sick}</div></div>`;
+		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${A.domain[a] === 3 ? (A.fly[a] ? 'flying · ' : 'perched · ') : ''}${A.dorm && A.dorm[a] ? dormWords[A.dorm[a]] : states[A.state[a]]} · ${A.lv && A.lv[a] ? ['', 'tadpole', 'larva'][A.lv[a]] : ['juvenile', 'adult', 'elder'][animalStage(A, a)]}${A.cr && A.cr[a] > 0 ? ' · cared for' : ''}${A.ld && A.ld[a] ? ' · leads' : ''} · age ${A.age[a]}${home}</small><small>energy ${pct(cap > 0 ? Math.min(1, Math.max(0, A.energy[a] / cap)) : 0)}${water}</small>${cond}${sick}</div></div>`;
 	}
 	for (let slot = 0; slot < 2; slot++) {
 		const p = slot * P.n + t;
