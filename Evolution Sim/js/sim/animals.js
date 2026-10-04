@@ -1,6 +1,6 @@
-const AG = 29;
-const G_SIZE = 0, G_SPEED = 1, G_SENSE = 2, G_DIET = 3, G_TEMP = 4, G_TOL = 5, G_FEC = 6, G_TOXR = 7, G_ARMOR = 8, G_RES = 9, G_SCAV = 10, G_TERR = 11, G_HERD = 12, G_COLD = 13, G_DRY = 14, G_NEST = 15, G_PACK = 16, G_DISPLAY = 17, G_CHOOSY = 18, G_APPETITE = 19, G_DORMANCY = 20, G_ALARM = 21, G_SOCIAL = 22, G_BROOD = 23, G_CARE = 24, G_CLEAN = 25, G_TOLER = 26, G_TOXIC = 27, G_MIMIC = 28;
-const ANIMAL_WEIGHTS = [1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6, 0.3, 0.3, 0.3, 0.3, 0.5, 0.5, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4];
+const AG = 30;
+const G_SIZE = 0, G_SPEED = 1, G_SENSE = 2, G_DIET = 3, G_TEMP = 4, G_TOL = 5, G_FEC = 6, G_TOXR = 7, G_ARMOR = 8, G_RES = 9, G_SCAV = 10, G_TERR = 11, G_HERD = 12, G_COLD = 13, G_DRY = 14, G_NEST = 15, G_PACK = 16, G_DISPLAY = 17, G_CHOOSY = 18, G_APPETITE = 19, G_DORMANCY = 20, G_ALARM = 21, G_SOCIAL = 22, G_BROOD = 23, G_CARE = 24, G_CLEAN = 25, G_TOLER = 26, G_TOXIC = 27, G_MIMIC = 28, G_BRAIN = 29;
+const ANIMAL_WEIGHTS = [1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6, 0.3, 0.3, 0.3, 0.3, 0.5, 0.5, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.5];
 const ANIMAL_CLASSES = ['fish', 'amphibian', 'reptile', 'mammal', 'bird', 'invertebrate'];
 const CLS_FISH = 0, CLS_AMPH = 1, CLS_REPT = 2, CLS_MAMM = 3, CLS_BIRD = 4, CLS_INVT = 5;
 const CLS_COLD = [[0, 1], [0.5, 1], [0.5, 1], [0, 0.45], [0, 0.45], [0.5, 1]];
@@ -91,10 +91,39 @@ const TOX_HIT = 0.25;
 const TOX_SPIT = 0.8;
 const TOX_LEARN = 0.45;
 const PREY_HUE = 0.04;
-const PREY_AV_DECAY = 0.04;
+const PREY_AV_DECAY = 0.08;
 const MIMIC_UNLEARN = 0.3;
 const PREY_AV_SKIP = 0.6;
-const PREY_AV_DIST = 2;
+const PREY_AV_DIST = 1;
+const PREY_GEN = 0.7;
+const PREY_AV_HUNGRY = 0.5;
+const MODEL_SWITCH = 1.5;
+const MODEL_KEEP = 0.5;
+const BRAIN_COST = 0.25;
+const BRAIN_MATURE = 60;
+const MEM_USE = 1.5;
+const MEM_FAR = 40;
+const MEM_LOW = 0.05;
+const MEM_GOOD = 0.4;
+const MEM_WATER_REC = 0.9;
+const MEM_WATER_OK = 2;
+const DANGER_R = 5;
+const LEARN_ADD = 0.6;
+const LEARN_BASE = 0.3;
+const LEARN_RANGE = 0.8;
+const LEARN_DECAY = 0.03;
+const LEARN_MIN = 0.05;
+const TEACH_LIVE = 0.9;
+const TEACH_CARE = 0.25;
+const TEACH_KEEP = 0.6;
+const TOOL_MIN = 0.42;
+const TOOL_SPAN = 0.3;
+const TOOL_K = 0.3;
+const TOOL_CRACK = 0.5;
+const TOOL_ARMOR = 0.4;
+const TOOL_LOG = 4;
+const TOOL_DECAY = 0.97;
+const TOOL_SP = 1;
 const MIMIC_LO = 0.2;
 const MIMIC_SPAN = 0.35;
 const MIMIC_GENE = 0.45;
@@ -408,8 +437,11 @@ const FOUNDER_MIMIC = { 15: 0.6, 28: 0.5 };
 const FOUNDER_TRAIT_LO = 0.05;
 const FOUNDER_TOLER = 0.3;
 const FOUNDER_TOLER_HERB = 0.5;
+const FOUNDER_BRAIN = [0.08, 0.08, 0.12, 0.25, 0.3, 0.03];
+const FOUNDER_BRAIN_SP = { 5: 0.45, 6: 0.4, 7: 0.4, 13: 0.45, 23: 0.5, 30: 0.45, 32: 0.35, 33: 0.5 };
 ANIMAL_ARCHETYPES.forEach((a, k) => {
 	const g = a.g;
+	g[G_BRAIN] = FOUNDER_BRAIN_SP[k] || FOUNDER_BRAIN[a.cls];
 	g[G_CLEAN] = FOUNDER_CLEAN[k] || FOUNDER_TRAIT_LO;
 	g[G_TOLER] = g[G_DIET] < 0.33 ? FOUNDER_TOLER_HERB : FOUNDER_TOLER;
 	g[G_TOXIC] = FOUNDER_TOXIC[k] || FOUNDER_TRAIT_LO;
@@ -646,6 +678,8 @@ ANIMAL_FIELDS_I.push('alm', 'grp', 'dsp', 'fnd');
 ANIMAL_FIELDS_I.push('lv', 'brd', 'cr', 'ld');
 ANIMAL_FIELDS_F.push('lk', 'pb');
 ANIMAL_FIELDS_I.push('cln');
+ANIMAL_FIELDS_F.push('mwx', 'mwy', 'mfx', 'mfy', 'mdx', 'mdy', 'lst', 'tl');
+ANIMAL_FIELDS_I.push('lsp');
 
 class AnimalPool {
 	constructor(world, plants, registry, rng, log) {
@@ -729,6 +763,13 @@ class AnimalPool {
 		this._cleanPref = 0;
 		this._cleanRide = false;
 		this.symb = { cleanings: 0, cleanFail: 0, cleanEaten: 0, cleanCarry: 0, toxHits: 0, toxSpit: 0, mimicFooled: 0, avoidSkips: 0, protectedTicks: 0 };
+		this.brain = { toolUses: 0, toolGain: 0, learned: 0, fledEarly: 0, memWater: 0, memFood: 0, memDanger: 0, taught: 0 };
+		this.brainMean = 0;
+		this.brainCls = new Float32Array(6);
+		this.learnedN = 0;
+		this.toolSp = 0;
+		this._learnSp = 0;
+		this._learnExt = 1;
 		this.life = { metamorphs: 0, careGiven: 0, granGiven: 0, granFeeds: 0, juvBug: 0, shed: 0, ledMig: 0, ledT: 0, loneT: 0, ledD: 0, loneD: 0, headStarts: 0 };
 	}
 
@@ -820,6 +861,9 @@ class AnimalPool {
 		this.app[i] = g[o + G_APPETITE];
 		this.meta[i] *= 1 + DORM_COST * g[o + G_DORMANCY];
 		this.meta[i] *= (1 + TOX_COST * g[o + G_TOXIC]) * (1 + MIMIC_COST * g[o + G_MIMIC]);
+		const brain = g[o + G_BRAIN];
+		this.meta[i] *= 1 + BRAIN_COST * brain * brain;
+		this.mature[i] += BRAIN_MATURE * brain;
 		const ck = this.cls[i];
 		const ek = ck === CLS_BIRD ? NEED_BIRD : ck === CLS_REPT || ck === CLS_AMPH ? NEED_ECTO : 1;
 		this.needP[i] = (NEED_P0 + NEED_PD * diet) * ek;
@@ -898,6 +942,10 @@ class AnimalPool {
 		this.lk[i] = this._look(sp, this.genome[o + G_MIMIC]);
 		this.pb[i] = 0;
 		this.cln[i] = 0;
+		this.mwx[i] = this.mwy[i] = this.mfx[i] = this.mfy[i] = this.mdx[i] = this.mdy[i] = -1;
+		this.lst[i] = 0;
+		this.tl[i] = 0;
+		this.lsp[i] = 0;
 		this.registry.add(sp);
 		return i;
 	}
@@ -926,7 +974,7 @@ class AnimalPool {
 		sp.icon = animalIcon(sp.category, sp.id);
 		sp.role = ANIMAL_ROLES[roleIndex(diet, g[G_SCAV])];
 		sp.aversion = parent && parent.aversion ? parent.aversion.map((a) => ({ hue: a.hue, strength: a.strength })) : [];
-		sp.preyAv = parent && parent.preyAv ? parent.preyAv.map((a) => ({ hue: a.hue, cls: a.cls, strength: a.strength })) : [];
+		sp.preyAv = parent && parent.preyAv ? parent.preyAv.map((a) => ({ hue: a.hue, cls: a.cls, sp: a.sp | 0, strength: a.strength })) : [];
 		sp.cleanOf = parent && parent.cleanOf ? parent.cleanOf : 0;
 		sp.cleanN = {};
 		sp.cleanLogged = parent && parent.cleanLogged ? parent.cleanLogged.slice() : [];
@@ -953,10 +1001,13 @@ class AnimalPool {
 		const x = this.x[i];
 		const y = this.y[i];
 		const cols = this.gcols;
-		const c0 = Math.max(0, ((x - r) / GRID) | 0);
-		const c1 = Math.min(cols - 1, ((x + r) / GRID) | 0);
-		const r0 = Math.max(0, ((y - r) / GRID) | 0);
-		const r1 = Math.min(this.grows - 1, ((y + r) / GRID) | 0);
+		const lsp = mode === 0 ? this._learnSp : 0;
+		const rr = lsp ? r * this._learnExt : r;
+		const lk = lsp ? 1 / (this._learnExt * this._learnExt) : 1;
+		const c0 = Math.max(0, ((x - rr) / GRID) | 0);
+		const c1 = Math.min(cols - 1, ((x + rr) / GRID) | 0);
+		const r0 = Math.max(0, ((y - rr) / GRID) | 0);
+		const r1 = Math.min(this.grows - 1, ((y + rr) / GRID) | 0);
 		const dom = this.domain[i];
 		const diet = this.diet[i];
 		const mass = this.mass[i] * this.gf[i];
@@ -965,6 +1016,7 @@ class AnimalPool {
 		const preyK = this.cls[i] === CLS_INVT ? INVERT_PREY : this.cls[i] === CLS_BIRD ? BIRD_PREY : diet > 0.66 ? 1.8 * preyMul : 0.6;
 		const psp = mode === 1 ? this.registry.get(sp) : null;
 		const pav = psp && psp.preyAv && psp.preyAv.length ? psp.preyAv : null;
+		const fed = pav ? this.energy[i] > this.emax[i] * this.gf[i] * PREY_AV_HUNGRY : false;
 		const ride = this._cleanRide;
 		const pref = this._cleanPref;
 		let best = -1;
@@ -1005,14 +1057,15 @@ class AnimalPool {
 					if (mode === 1) {
 						dk = 1 - DISPLAY_SEEN * this.show[j] - (this.alm[j] > 0 ? ALARM_SPOT : 0);
 						if (pav) {
-							const a = this._preyAversion(pav, this.lk[j], this.cls[j]);
-							if (a > PREY_AV_SKIP) {
+							const a = this._preyAversion(pav, this.lk[j], this.cls[j], this.sp[j]);
+							if (a > PREY_AV_SKIP && fed && this.rng.next() < (a - PREY_AV_SKIP) / (1 - PREY_AV_SKIP)) {
 								this.symb.avoidSkips++;
 								continue;
 							}
 							dk *= 1 + PREY_AV_DIST * a;
 						}
-					} else if (mode === 5 && pref && this.sp[j] === pref) dk = CLEAN_SPEC;
+					} else if (lsp && this.sp[j] === lsp) dk = lk;
+					else if (mode === 5 && pref && this.sp[j] === pref) dk = CLEAN_SPEC;
 					const d = (dx * dx + dy * dy) * dk;
 					if (d < bestD) {
 						bestD = d;
@@ -1329,6 +1382,7 @@ class AnimalPool {
 					const dy = this.y[j] - y;
 					if (dx * dx + dy * dy > R2) continue;
 					this.cr[j] = CARE_MARK;
+					this._teach(i, j, TEACH_CARE);
 					const need = this.emax[j] * this.gf[j] * CARE_TOP - this.energy[j];
 					if (need <= 0) continue;
 					const give = need < spare ? need : spare;
@@ -1436,6 +1490,20 @@ class AnimalPool {
 				bestScore = score;
 				bx = tx;
 				by = ty;
+			}
+		}
+		const mx = this.mwx[i];
+		if (mx >= 0) {
+			const my = this.mwy[i];
+			const mt = (my | 0) * W + (mx | 0);
+			if (wd[mt] > MEM_WATER_OK) {
+				this.mwx[i] = this.mwy[i] = -1;
+			} else if (this.rng.next() < MEM_USE * this.genome[i * AG + G_BRAIN] && Math.hypot(mx - this.x[i], my - this.y[i]) < MEM_FAR) {
+				this.brain.memWater++;
+				this.tx[i] = mx;
+				this.ty[i] = my;
+				this.ttl[i] = 12;
+				return;
 			}
 		}
 		this.tx[i] = bx;
@@ -1854,9 +1922,32 @@ class AnimalPool {
 				}
 			}
 		}
+		if (bestScore > MEM_GOOD) {
+			this.mfx[i] = bx;
+			this.mfy[i] = by;
+		} else if (bestScore < MEM_LOW && this.mfx[i] >= 0) {
+			const fx = this.mfx[i];
+			const fy = this.mfy[i];
+			if (this.rng.next() < MEM_USE * this.genome[i * AG + G_BRAIN] && Math.hypot(fx - this.x[i], fy - this.y[i]) < MEM_FAR) {
+				this.brain.memFood++;
+				bx = fx;
+				by = fy;
+				bestScore = MEM_LOW;
+				this.mfx[i] = this.mfy[i] = -1;
+			}
+		}
 		if (bird && bestScore < 0) {
 			bx = Math.min(W - 1, Math.max(0, this.x[i] + (this.rng.next() * 2 - 1) * r * 3));
 			by = Math.min(H - 1, Math.max(0, this.y[i] + my + (this.rng.next() * 2 - 1) * r * 3));
+		}
+		if (this.mdx[i] >= 0 && Math.hypot(bx - this.mdx[i], by - this.mdy[i]) < DANGER_R && this.rng.next() < MEM_USE * this.genome[i * AG + G_BRAIN]) {
+			const ax = 2 * this.x[i] - bx;
+			const ay = 2 * this.y[i] - by;
+			if (this.canStand(dom, ax, ay)) {
+				bx = ax;
+				by = ay;
+				this.brain.memDanger++;
+			}
 		}
 		if (this.pn[i] > 1 && this._pr[i] !== i) {
 			const r = this._pr[i];
@@ -1967,7 +2058,13 @@ class AnimalPool {
 					else this.life.loneT++;
 				}
 				let wv = this.water[i];
-				if (Wx.waterDist[tile] <= 1 || Wx.wet[tile] > (amph || inv ? AMPH_DRINK_WET : DRINK_WET)) wv = 1;
+				if (Wx.waterDist[tile] <= 1 || Wx.wet[tile] > (amph || inv ? AMPH_DRINK_WET : DRINK_WET)) {
+					if (wv < MEM_WATER_REC) {
+						this.mwx[i] = this.x[i];
+						this.mwy[i] = this.y[i];
+					}
+					wv = 1;
+				}
 				else {
 					wv -= THIRST * (1 - 0.6 * this.dry[i]) * (0.6 + temp[tile] + seasonT + droughtK) * (this.cold[i] > 0.5 ? 0.6 : 1) * (amph ? AMPH_DRY : 1) * (inv ? INVERT_THIRST : 1) * (herdM && this.ld[i] ? ELDER_THIRST : 1);
 					if (wv < 0) wv = 0;
@@ -2070,8 +2167,16 @@ class AnimalPool {
 			if (!acted && this.diet[i] < 0.7 && (tick + i) % 2 === 0 && rng.next() < 0.7) {
 				const gq = this.grp[i] - 1;
 				const eyes = this.strain[i] || gq <= 0 ? 1 : 1 + SOC_EYES * this.genome[i * AG + G_SOCIAL] * (gq < SOC_N ? gq / SOC_N : 1);
-				const t = this._nearest(i, this.range[i] * 0.8 * eyes, 0);
+				const fr = this.range[i] * 0.8 * eyes;
+				const ls = this.lst[i];
+				if (ls > 0) {
+					this._learnSp = this.lsp[i];
+					this._learnExt = 1 + LEARN_RANGE * ls * this.genome[i * AG + G_BRAIN];
+				}
+				const t = this._nearest(i, fr, 0);
+				this._learnSp = 0;
 				if (t >= 0) {
+					if (ls > 0 && this.sp[t] === this.lsp[i] && Math.hypot(this.x[t] - this.x[i], this.y[t] - this.y[i]) > fr) this.brain.fledEarly++;
 					const ax = this.x[i] - this.x[t];
 					const ay = this.y[i] - this.y[t];
 					const d = Math.hypot(ax, ay) || 1;
@@ -2233,7 +2338,10 @@ class AnimalPool {
 					const eaten = plants.eatFruit(tile, bite, tall);
 					if (eaten > 0) plants.fruitBonus(tile, eaten);
 					const seedHit = plants.fruitSeedTox * 0.7 - this.toxR[i];
-					this.energy[i] += this._eat(i, eaten * FRUIT_ENERGY * (0.6 + plants.fruitSweet) * this.plantEff[i] * plantK * (1 - 1.6 * (seedHit > 0 ? seedHit : 0)) * (dom === 3 ? BIRD_FRUIT : 1), ff, sk0);
+					const fg = eaten * FRUIT_ENERGY * (0.6 + plants.fruitSweet) * this.plantEff[i] * plantK * (1 - 1.6 * (seedHit > 0 ? seedHit : 0)) * (dom === 3 ? BIRD_FRUIT : 1);
+					const ftk = ff === FOOD_SEED && fg > 0 ? this._tool(i) : 0;
+					if (ftk > 0) this._toolUse(i, fg * TOOL_K * ftk);
+					this.energy[i] += this._eat(i, fg * (1 + TOOL_K * ftk), ff, sk0);
 					if (plants.fruitSp && !this.seedSp[i]) {
 						this.seedSp[i] = plants.fruitSp;
 						this.seedTtl[i] = (20 + ((rng.next() * 40) | 0)) * (dom === 3 ? BIRD_SEED : 1);
@@ -2838,7 +2946,8 @@ class AnimalPool {
 			: this.domain[p] === 1
 			? 0.3 + Math.min(0.3, this.plants.cover(tile) * 0.6)
 			: Math.min(0.45, this.plants.cover(tile) * 0.5) + (this.home[p] > 1 && Math.hypot(this.x[p] - this.nx[p], this.y[p] - this.ny[p]) <= NEST_NEAR ? DEN_COVER * this.genome[p * AG + G_NEST] : 0);
-		let chance = 0.7 * sizeF * speedF * (1 - 0.6 * this.armor[p]) * (1 - cover * (1 - DISPLAY_SPOT * this.show[p] - (this.alm[p] > 0 ? ALARM_SPOT : 0))) * (1 - 0.5 * this.scav[i]);
+		const tk = this.armor[p] > TOOL_ARMOR || this.cls[p] === CLS_INVT ? this._tool(i) : 0;
+		let chance = 0.7 * sizeF * speedF * (1 - 0.6 * this.armor[p] * (1 - TOOL_CRACK * tk)) * (1 - cover * (1 - DISPLAY_SPOT * this.show[p] - (this.alm[p] > 0 ? ALARM_SPOT : 0))) * (1 - 0.5 * this.scav[i]);
 		if (pn > 1) chance *= Math.min(PACK_CAP, 1 + PACK_K * (1 + SOC_PACK * (this.genome[i * AG + G_SOCIAL] - 0.5)) * (pn - 1));
 		if (this.fat[p] > 0) chance *= 1 + FAT_CATCH * this._heavy(p);
 		if (this.dorm[p]) chance = Math.min(0.95, chance * DORMANT_CATCH);
@@ -2858,7 +2967,9 @@ class AnimalPool {
 			this._kill(p, CARCASS_EATEN);
 			this.deaths.eaten++;
 		} else if (pn === 1 && this.rng.next() < chance && !this._taste(i, p, tick)) {
-			this.energy[i] += this._eat(i, (mp * MEAT_ENERGY * this.meatEff[i] + (this.energy[p] + this.fat[p]) * 0.25) * (1 - GEN_TAX * (1 - this._genT(i))), this.domain[p] === 1 || this.cls[p] === CLS_FISH ? FOOD_FISH : FOOD_MEAT, this.strain[i]);
+			const mg = (mp * MEAT_ENERGY * this.meatEff[i] + (this.energy[p] + this.fat[p]) * 0.25) * (1 - GEN_TAX * (1 - this._genT(i)));
+			if (tk > 0) this._toolUse(i, mg * TOOL_K * tk);
+			this.energy[i] += this._eat(i, mg * (1 + TOOL_K * tk), this.domain[p] === 1 || this.cls[p] === CLS_FISH ? FOOD_FISH : FOOD_MEAT, this.strain[i]);
 			if (this.domain[i] !== 1) this.water[i] = Math.min(1, this.water[i] + MEAT_WATER);
 			const ps = this.strain[p];
 			if (ps && this.disease.on) this.disease.exposeAnimal(i, ps, PREY_K);
@@ -2874,7 +2985,63 @@ class AnimalPool {
 			this.ttl[p] = 4;
 			this.tx[p] = this.x[p] + (this.x[p] - this.x[i]) * 6;
 			this.ty[p] = this.y[p] + (this.y[p] - this.y[i]) * 6;
+			this._survive(p, i);
 		}
+	}
+
+	_survive(p, i) {
+		const b = this.genome[p * AG + G_BRAIN];
+		const add = LEARN_ADD * (LEARN_BASE + b);
+		const s = this.sp[i];
+		if (this.lsp[p] === s) {
+			const v = this.lst[p] + add;
+			this.lst[p] = v < 1 ? v : 1;
+		} else if (this.lst[p] < add) {
+			this.lsp[p] = s;
+			this.lst[p] = add < 1 ? add : 1;
+		}
+		this.mdx[p] = this.x[i];
+		this.mdy[p] = this.y[i];
+		this.brain.learned++;
+	}
+
+	_tool(i) {
+		const c = this.cls[i];
+		if (c !== CLS_MAMM && c !== CLS_BIRD) return 0;
+		const v = (this.genome[i * AG + G_BRAIN] - TOOL_MIN) / TOOL_SPAN;
+		return v <= 0 ? 0 : v < 1 ? v : 1;
+	}
+
+	_toolUse(i, gain) {
+		this.tl[i]++;
+		this.brain.toolUses++;
+		this.brain.toolGain += gain;
+	}
+
+	_teach(i, j, k) {
+		if (this.mwx[i] < 0 && this.mfx[i] < 0 && this.lst[i] <= 0) return;
+		const f = k * this.genome[i * AG + G_BRAIN];
+		const rng = this.rng;
+		let got = false;
+		if (this.mwx[i] >= 0 && this.mwx[j] < 0 && rng.next() < f) {
+			this.mwx[j] = this.mwx[i];
+			this.mwy[j] = this.mwy[i];
+			got = true;
+		}
+		if (this.mfx[i] >= 0 && this.mfx[j] < 0 && rng.next() < f) {
+			this.mfx[j] = this.mfx[i];
+			this.mfy[j] = this.mfy[i];
+			got = true;
+		}
+		const v = this.lst[i] * TEACH_KEEP;
+		if (v > LEARN_MIN && v > this.lst[j] && rng.next() < f) {
+			this.lsp[j] = this.lsp[i];
+			this.lst[j] = v;
+			this.mdx[j] = this.mdx[i];
+			this.mdy[j] = this.mdy[i];
+			got = true;
+		}
+		if (got) this.brain.taught++;
 	}
 
 	_look(sp, mimic) {
@@ -2889,9 +3056,13 @@ class AnimalPool {
 		return h < 0 ? h + 1 : h >= 1 ? h - 1 : h;
 	}
 
-	_preyAversion(av, hue, cls) {
+	_preyAversion(av, hue, cls, spj) {
 		let m = 0;
-		for (const a of av) if (a.strength > m && a.cls === cls && hueDist(a.hue, hue) <= PREY_HUE) m = a.strength;
+		for (const a of av) {
+			if (a.cls !== cls) continue;
+			const v = a.sp === spj ? a.strength : hueDist(a.hue, hue) <= PREY_HUE ? a.strength * PREY_GEN : 0;
+			if (v > m) m = v;
+		}
 		return m;
 	}
 
@@ -2902,19 +3073,23 @@ class AnimalPool {
 		const tox = this.genome[p * AG + G_TOXIC];
 		const hue = this.lk[p];
 		const cls = this.cls[p];
+		const psp = this.sp[p];
 		let entry = null;
+		let near = null;
 		let bestD = PREY_HUE;
 		for (const a of sp.preyAv) {
 			if (a.cls !== cls) continue;
+			if (a.sp === psp) entry = a;
 			const d = hueDist(a.hue, hue);
 			if (d <= bestD) {
 				bestD = d;
-				entry = a;
+				near = a;
 			}
 		}
 		if (tox <= TOX_MIN) {
-			if (entry && entry.strength > 0) {
-				entry.strength *= 1 - MIMIC_UNLEARN;
+			const fool = entry || near;
+			if (fool && fool.strength > 0) {
+				fool.strength *= 1 - MIMIC_UNLEARN;
 				this.symb.mimicFooled++;
 			}
 			return 0;
@@ -2923,9 +3098,10 @@ class AnimalPool {
 		if (hit > 0) this.energy[i] -= hit * TOX_HIT * this.emax[i] * this.gf[i];
 		this.symb.toxHits++;
 		if (!entry) {
-			entry = { hue, cls, strength: 0 };
+			entry = { hue, cls, sp: psp, strength: 0 };
 			sp.preyAv.push(entry);
 		}
+		entry.hue = hue;
 		const before = entry.strength;
 		const add = TOX_LEARN * tox;
 		entry.strength = before + add < 1 ? before + add : 1;
@@ -2951,6 +3127,7 @@ class AnimalPool {
 		this.ttl[p] = 4;
 		this.tx[p] = this.x[p] + (this.x[p] - this.x[i]) * 6;
 		this.ty[p] = this.y[p] + (this.y[p] - this.y[i]) * 6;
+		this._survive(p, i);
 		return true;
 	}
 
@@ -3230,6 +3407,7 @@ class AnimalPool {
 			this.nProt[j] = this.nProt[i];
 			this.nMin[j] = this.nMin[i];
 			this.parent[j] = this.uid[i];
+			this._teach(i, j, TEACH_LIVE);
 			this.fnd[j] = fd > 0 ? fd - 1 : 0;
 			if (ntile >= 0) {
 				this.home[j] = 3;
@@ -3295,12 +3473,34 @@ class AnimalPool {
 		const nest = new Map();
 		const W = this.world.width;
 		const ntiles = W * this.world.height;
+		const bs = new Float64Array(6);
+		const bn = new Float64Array(6);
+		let learned = 0;
 		for (let i = 0; i < this.count; i++) {
 			const id = this.sp[i];
 			let s = sums.get(id);
 			if (!s) {
-				s = new Float64Array(AG + 11);
+				s = new Float64Array(AG + 13);
 				sums.set(id, s);
+			}
+			if (this.alive[i]) {
+				const c = this.cls[i];
+				bs[c] += this.genome[i * AG + G_BRAIN];
+				bn[c]++;
+			}
+			s[AG + 11] += this.tl[i];
+			this.tl[i] = 0;
+			if (this.lst[i] > 0) {
+				const v = this.lst[i] * (1 - LEARN_DECAY);
+				if (v < LEARN_MIN) {
+					this.lst[i] = 0;
+					this.lsp[i] = 0;
+					this.mdx[i] = this.mdy[i] = -1;
+				} else {
+					this.lst[i] = v;
+					learned++;
+					s[AG + 12]++;
+				}
 			}
 			const o = i * AG;
 			for (let k = 0; k < AG; k++) s[k] += this.genome[o + k];
@@ -3319,6 +3519,16 @@ class AnimalPool {
 				nest.set(key, (nest.get(key) || 0) + 1);
 			}
 		}
+		let ball = 0;
+		let nall = 0;
+		for (let c = 0; c < 6; c++) {
+			this.brainCls[c] = bn[c] ? bs[c] / bn[c] : 0;
+			ball += bs[c];
+			nall += bn[c];
+		}
+		this.brainMean = nall ? ball / nall : 0;
+		this.learnedN = learned;
+		let tools = 0;
 		const cols = new Map();
 		for (const [key, c] of nest) {
 			if (c < COLONY_N) continue;
@@ -3350,22 +3560,32 @@ class AnimalPool {
 				for (const a of av) a.strength *= 1 - AVERSION_DECAY;
 				sp.aversion = av.filter((a) => a.strength >= 0.05);
 			}
+			sp.toolN = (sp.toolN || 0) * TOOL_DECAY + s[AG + 11];
+			sp.learnedN = s[AG + 12];
+			if (sp.toolN >= TOOL_SP) tools++;
+			if (!sp.tools && sp.toolN >= TOOL_LOG) {
+				sp.tools = this.tick;
+				this.log.push(this.tick, 'info', `${sp.name} started using tools`, sp.id);
+			}
 			const pa = sp.preyAv;
 			if (pa && pa.length) {
 				for (const a of pa) a.strength *= 1 - PREY_AV_DECAY;
 				sp.preyAv = pa.filter((a) => a.strength >= 0.05);
 			}
 		}
+		this.toolSp = tools;
 		this._symbTrack(sums);
 	}
 
 	_symbTrack(sums) {
 		const best = new Float64Array(6);
 		const bestSp = new Int32Array(6);
+		const cur = new Float64Array(6);
 		let pairs = 0;
 		for (const [id, s] of sums) {
 			const sp = this.registry.get(id);
 			const tox = sp.mean[G_TOXIC];
+			if (id === this.modelSp[sp.cls] && tox > TOX_MIN && s[AG] >= MODEL_POP * MODEL_KEEP) cur[sp.cls] = s[AG] * tox;
 			if (tox > TOX_MIN && s[AG] >= MODEL_POP && s[AG] * tox > best[sp.cls]) {
 				best[sp.cls] = s[AG] * tox;
 				bestSp[sp.cls] = id;
@@ -3400,6 +3620,7 @@ class AnimalPool {
 			} else if (sp.cleanOf && !(host && host.population > 0 && top === sp.cleanOf)) sp.cleanOf = 0;
 		}
 		for (let c = 0; c < 6; c++) {
+			if (cur[c] > 0 && best[c] < cur[c] * MODEL_SWITCH) bestSp[c] = this.modelSp[c];
 			const m = bestSp[c] ? this.registry.get(bestSp[c]) : null;
 			this.modelSp[c] = m ? m.id : 0;
 			this.modelHue[c] = m ? m.hsl[0] / 360 : -1;
