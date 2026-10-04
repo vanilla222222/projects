@@ -44,6 +44,7 @@ const STAT_EXTRA = [
 	{ key: 'nests', label: 'Nests & dens', icon: 'nest', color: '#c79a5b', wide: true, sub: true },
 	{ key: 'nutrition', label: 'Body condition', icon: 'boar', color: '#d9a066', wide: true, sub: true },
 	{ key: 'dormancy', label: 'Dormancy', icon: 'bear', color: '#8fa7d6', wide: true, sub: true },
+	{ key: 'symb', label: 'Symbioses', icon: 'bee', color: '#b48fd9', wide: true, sub: true },
 	{ key: 'stages', label: 'Life stages · animals', icon: 'deer', color: '#9fd98b', wide: true, sub: true, noSpark: true },
 ];
 const STAT_EXTRA_KEYS = new Set(STAT_EXTRA.map((x) => x.key));
@@ -490,6 +491,10 @@ function updateExtraStat(el, k, s, h) {
 		const so = s.social || {};
 		v.innerHTML = `${formatCount(so.alarms || 0)}<small>group ${(so.meanGroup || 0).toFixed(1)}</small>`;
 		sub.innerHTML = `<span>${formatCount(so.heard || 0)} heard</span><span>${formatCount(so.sentinel || 0)} sentinel</span><span>${formatCount(so.colonies || 0)} colonies</span><span>${formatCount(so.dispersals || 0)} dispersals</span><span>${formatCount(so.dispSplits || 0)} dispersal splits</span><span>${formatCount(so.solitary || 0)} solitary · ${formatCount(so.colonial || 0)} colonial species</span><span>${formatCount(so.rankBlocked || 0)} outranked</span>`;
+	} else if (k === 'symb') {
+		const sy = s.symb || {};
+		v.innerHTML = `${formatCount((sy.cleanerPairs || 0) + (sy.pollPairs || 0))}<small>pairs</small>`;
+		sub.innerHTML = `<span>${formatCount(sy.cleanerPairs || 0)} cleaner pairs</span><span>${formatCount(sy.pollPairs || 0)} specialist pollinator pairs</span><span>${formatCount(sy.mimics || 0)} mimics · ${formatCount(sy.mimicSp || 0)} species</span><span>${formatCount(sy.models || 0)} toxic models</span><span>${formatCount(sy.riding || 0)} riding</span><span>${formatCount(sy.cleanings || 0)} cleanings</span><span>${formatCount(sy.toxHits || 0)} toxic bites</span><span>${formatCount(sy.animalSeeded || 0)} seeds sown by animals</span>`;
 	} else if (k === 'eggs') {
 		const eg = s.eggs || {};
 		v.textContent = formatCount(st.eggs || 0);
@@ -729,6 +734,7 @@ const PLANT_TRAITS = [
 	['Hue', 12, (v) => Math.round(v * 360) + '°'],
 	['Pest defence', 13, (v) => pct(v), null],
 	['Blight resistance', 14, (v) => pct(v)],
+	['Flower depth', 15, (v) => pct(v), null],
 ];
 
 const BUG_TRAITS = [
@@ -741,6 +747,7 @@ const BUG_TRAITS = [
 	['Flower hue', 6, (v) => `<i style="display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px;vertical-align:-1px;background:hsl(${Math.round(v * 360)},62%,56%)"></i>${Math.round(v * 360)}°`, [3]],
 	['Specialism', 7, (v) => pct(v), [3]],
 	['Host size', 8, (v) => pct(v), [2]],
+	['Tongue length', 9, (v) => pct(v), [3]],
 ];
 
 const TOXIN_WORDS = ['Mild', 'Neurotoxic', 'Lethal'];
@@ -790,6 +797,10 @@ const ANIMAL_TRAITS = [
 	['Sociality', G_SOCIAL, (v) => socialWord(v)],
 	['Brood size', G_BROOD, (v) => (v < 0.4 ? 'Few young · ' : v > 0.6 ? 'Many young · ' : '') + pct(v)],
 	['Parental care', G_CARE, (v) => pct(v)],
+	['Cleaner', G_CLEAN, (v) => (v > CLEAN_MIN ? 'Cleaner · ' : '') + pct(v)],
+	['Host tolerance', G_TOLER, (v) => pct(v)],
+	['Toxicity', G_TOXIC, (v) => (v > TOX_MIN ? 'Toxic · ' : '') + pct(v)],
+	['Mimicry', G_MIMIC, (v) => pct(v)],
 ];
 
 const DISEASE_TRAITS = [
@@ -923,6 +934,15 @@ function renderDetail() {
 	if (sp.group === 'animal') {
 		const av = sp.aversion && sp.aversion.length ? sp.aversion : null;
 		traits += `<div class="trait"><span>Avoids</span><div style="grid-column:span 2;display:flex;flex-wrap:wrap;gap:4px;align-items:center">${av ? hueSwatches(av) : '<em style="text-align:left;color:var(--muted)">nothing yet</em>'}</div></div>`;
+		const pa = sp.preyAv && sp.preyAv.length ? sp.preyAv : null;
+		if (pa) traits += `<div class="trait"><span>Avoids prey</span><div style="grid-column:span 2;display:flex;flex-wrap:wrap;gap:4px;align-items:center">${hueSwatches(pa)}</div></div>`;
+		const nm = (id) => { const o = app.eco.registry.get(id); return o ? o.name : '#' + id; };
+		if (sp.cleanOf) traits += `<div class="trait"><span>Cleaner of</span><em style="grid-column:span 2;text-align:left">${nm(sp.cleanOf)}</em></div>`;
+		if (sp.mimicOf) traits += `<div class="trait"><span>Mimic of</span><em style="grid-column:span 2;text-align:left">${nm(sp.mimicOf)}</em></div>`;
+	}
+	if (sp.group === 'bug' && sp.pollOf) {
+		const o = app.eco.registry.get(sp.pollOf);
+		traits += `<div class="trait"><span>Pollinates</span><em style="grid-column:span 2;text-align:left">${o ? o.name : '#' + sp.pollOf}</em></div>`;
 	}
 	const showHist = sp.group === 'animal' && sp.showHist && sp.showHist.length >= 4 ? sp.showHist : null;
 	if (showHist) traits += `<div class="trait" title="Mean display over time${sp.showy ? ' · showy' : ''}"><span>Display trend</span><canvas data-show-spark style="width:100%;height:20px;margin:0"></canvas><em>${pct(showHist[showHist.length - 1])}</em></div>`;
@@ -1095,7 +1115,7 @@ function updateTooltip() {
 	const a = pickAnimal(wx, wy);
 	if (a >= 0) {
 		const sp = reg.get(A.sp[a]);
-		const states = ['resting', 'grazing', 'foraging', 'hunting', 'fleeing', 'seeking water', 'heading home', 'heading to den', 'dispersing'];
+		const states = ['resting', 'grazing', 'foraging', 'hunting', 'fleeing', 'seeking water', 'heading home', 'heading to den', 'dispersing', 'cleaning', 'seeking a host'];
 		const dormWords = ['', 'hibernating', 'brumating', 'aestivating', 'in torpor'];
 		const home = A.home && A.home[a] ? ` · ${['', 'has a nest', 'has a den', 'young of a den'][A.home[a]]}` : '';
 		const st = A.strain && A.strain[a] ? reg.get(A.strain[a]) : null;

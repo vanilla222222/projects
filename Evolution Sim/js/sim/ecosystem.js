@@ -62,6 +62,7 @@ class Ecosystem {
 		this.stats.life = { tadpoles: 0, larvae: 0, cared: 0, metamorphs: 0, careGiven: 0, granGiven: 0, granFeeds: 0, juvBug: 0, shed: 0, ledMig: 0, ledRate: 0, loneRate: 0, ledT: 0, loneT: 0, headStarts: 0 };
 		this.stats.stageCls = {};
 		this.stats.symb = { cleanerPairs: 0, pollPairs: 0, mimicSp: 0, mimics: 0, models: 0, riding: 0, cleanings: 0, cleanFail: 0, cleanEaten: 0, cleanCarry: 0, toxHits: 0, toxSpit: 0, mimicFooled: 0, avoidSkips: 0, protectedTicks: 0, animalSeeded: 0, dispBonus: 0 };
+		this.history.symb = [];
 		for (const k of BIRD_NICHES) {
 			this.stats.birdNiches[k] = 0;
 			this.history['birdNiche.' + k] = [];
@@ -693,6 +694,7 @@ class Ecosystem {
 		h.meanFat.push(this.stats.nutrition.meanFat);
 		h.dormancy.push(this.stats.dormancy.total);
 		if (h.alarms) h.alarms.push(this.stats.social.alarms);
+		if (h.symb) h.symb.push(this.stats.symb.cleanerPairs + this.stats.symb.pollPairs + this.stats.symb.mimicSp);
 		for (const k of BIRD_NICHES) h['birdNiche.' + k].push(this.stats.birdNiches[k]);
 		for (const g of STAT_GROUPS) {
 			h[g.key].push(this.stats[g.key]);

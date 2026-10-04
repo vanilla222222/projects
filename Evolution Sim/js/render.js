@@ -340,6 +340,10 @@ const PACK_LINK_RGB = [235, 225, 200];
 const OLD_RGB = [160, 160, 160];
 const OLD_MIX = 0.25;
 const MARK_SCALE = 0.4;
+const SYMB_ZOOM = 6;
+const RIDE_LIFT = 0.55;
+const RIDE_SHRINK = 0.7;
+const MIMIC_MARK = 0.3;
 const TERR_MIX = 0.8;
 const TERR_SAT = 1.4;
 const TERR_FADE = 10;
@@ -362,6 +366,20 @@ const FRESH_RGB = [70, 165, 250];
 const DIM_WATER_RGB = [30, 46, 68];
 const RAIN_VIEW_K = 2;
 const THIRST_TINT = new Uint8Array(9).map((_, q) => [245, 140, 110][q % 3]);
+function hueRgb(h, out) {
+	const f = (q) => {
+		const k = (q + h * 12) % 12;
+		return Math.round(255 * (0.52 - 0.3 * Math.max(-1, Math.min(k - 3, 9 - k, 1))));
+	};
+	const r = f(0), g = f(8), b = f(4);
+	for (let q = 0; q < 9; q += 3) {
+		out[q] = r;
+		out[q + 1] = g;
+		out[q + 2] = b;
+	}
+	return out;
+}
+
 const DRY_TINT = new Uint8Array(9).map((_, q) => [225, 30, 35][q % 3]);
 const DRY_MARK = 1.35;
 const WX_ZOOM = [6, 18];
@@ -1376,6 +1394,11 @@ class WorldRenderer {
 		const lvA = A.lv;
 		const tadIcon = ICON_INDEX.tadpole;
 		const larIcon = ICON_INDEX.caterpillar;
+		const symb = zoom >= SYMB_ZOOM;
+		const stA = A.state;
+		const lkA = A.lk;
+		const reg = this.eco.registry;
+		const mim = this._mimCol || (this._mimCol = new Uint8Array(9));
 		for (let k = 0, cnt = A.count; k < cnt * 2; k++) {
 			const i = k < cnt ? k : k - cnt;
 			const air = dom[i] === 3;
@@ -1399,8 +1422,9 @@ class WorldRenderer {
 				const ds = ((3 + A.mass[i] * 0.9) / zoom) * g;
 				n = th ? this._put(n, x, y, ds * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, a, 0, th) : this._put(n, x, y, ds, dotIcon, 1, a, co, ca);
 			} else {
-				const size = Math.max(12 / zoom, 0.8 + 0.45 * A.mass[i]) * g * (zz ? DORM_SHRINK : 1) * (lv ? LARVA_SHRINK : 1);
-				const ly = air && fly[i] ? y - size * FLY_LIFT : y;
+				const ride = symb && stA && stA[i] === 9;
+				const size = Math.max(12 / zoom, 0.8 + 0.45 * A.mass[i]) * g * (zz ? DORM_SHRINK : 1) * (lv ? LARVA_SHRINK : 1) * (ride ? RIDE_SHRINK : 1);
+				const ly = ride ? y - size * (RIDE_LIFT + 0.6) : air && fly[i] ? y - size * FLY_LIFT : y;
 				const cap = emx[i] * g;
 				const fr = fat ? fat[i] / cap : 0;
 				const er = en[i] / cap;
@@ -1415,6 +1439,13 @@ class WorldRenderer {
 				if (zz && zoom >= DORM_ZOOM) n = this._put(n, x + size * 0.4, ly - size * 0.6, size * MARK_SCALE, sleepIcon, 1, 0.9, 0, white);
 				if (sick) n = this._put(n, x + size * 0.38, ly - size * 0.5, size * MARK_SCALE, virusIcon, 1, a, 0, white);
 				if (th) n = this._put(n, x - size * 0.38, ly - size * 0.5, size * MARK_SCALE * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, 1, 0, th);
+				if (symb && lkA && lkA[i] >= 0) {
+					const ms = reg.get(id);
+					if (ms && ms.mimicOf) {
+						hueRgb(lkA[i], mim);
+						n = this._put(n, x, ly - size * 0.1, size * MIMIC_MARK, dotIcon, 1, a, 0, mim);
+					}
+				}
 			}
 		}
 		return n;
