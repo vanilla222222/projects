@@ -1,5 +1,5 @@
-const BG = 9;
-const B_TEMP = 0, B_MOIST = 1, B_APPETITE = 2, B_MOBILITY = 3, B_FEC = 4, B_SWARM = 5, B_HUE = 6, B_SPEC = 7, B_HOST = 8;
+const BG = 10;
+const B_TEMP = 0, B_MOIST = 1, B_APPETITE = 2, B_MOBILITY = 3, B_FEC = 4, B_SWARM = 5, B_HUE = 6, B_SPEC = 7, B_HOST = 8, B_TONGUE = 9;
 const BUG_NICHES = ['pest', 'detritivore', 'parasite', 'pollinator'];
 const BUG_PEST = 0, BUG_DETRI = 1, BUG_PARA = 2, BUG_POLL = 3;
 const BUG_NICHE_LABEL = { pest: 'Pest', detritivore: 'Detritivore', parasite: 'Parasite', pollinator: 'Pollinator' };
@@ -13,12 +13,12 @@ const BUG_CATEGORY_LABEL = {
 	bee: 'Bee',
 	butterfly: 'Butterfly',
 };
-const BUG_WEIGHTS = [1.4, 1.4, 0.8, 0.6, 0.6, 0.6, 0.8, 0.8, 0.5];
+const BUG_WEIGHTS = [1.4, 1.4, 0.8, 0.6, 0.6, 0.6, 0.8, 0.8, 0.5, 0.6];
 const BUG_MASKS = [
-	[1, 1, 1, 1, 1, 1, 0, 0, 0],
-	[1, 1, 1, 1, 1, 0, 0, 0, 0],
-	[1, 1, 1, 1, 1, 0, 0, 0, 1],
-	[1, 1, 1, 1, 1, 0, 1, 1, 0],
+	[1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+	[1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+	[1, 1, 1, 1, 1, 0, 0, 0, 1, 0],
+	[1, 1, 1, 1, 1, 0, 1, 1, 0, 1],
 ];
 const BUG_LAND_ONLY = [1, 0, 0, 1];
 const BUG_HUES = [95, 28, 350, 45];
@@ -54,6 +54,12 @@ const POLL_WINTER = 0.35;
 const POLL_HUE_SPAN = 0.25;
 const POLL_GENERALIST = 0.4;
 const POLL_DRIFT = 0.1;
+const TONGUE_SPAN = 0.35;
+const TONGUE_DRIFT = 0.1;
+const PAIR_SPEC = 0.55;
+const PAIR_MATCH = 0.7;
+const PAIR_CELLS = 12;
+const BUG_TONGUE = [0.45, 0.75, 0.25, 0.45];
 const LOCUST_DENSITY = 0.3;
 const LOCUST_SWARM_GENE = 0.4;
 const LOCUST_BARE = 0.3;
@@ -82,6 +88,9 @@ const BUG_ARCHETYPES = [
 	{ niche: BUG_POLL, g: [0.65, 0.4, 0.45, 0.6, 0.5, 0, 0.15, 0.7, 0] },
 	{ niche: BUG_POLL, g: [0.3, 0.5, 0.5, 0.5, 0.55, 0, 0.5, 0.3, 0] },
 ];
+BUG_ARCHETYPES.forEach((a, k) => {
+	a.g[B_TONGUE] = a.niche === BUG_POLL ? BUG_TONGUE[k - 9] : 0;
+});
 
 function bugCategory(g, niche, wet = false, o = 0) {
 	if (niche === BUG_PEST) return g[o + B_SWARM] > 0.6 ? 'locust' : 'aphid';
@@ -134,6 +143,9 @@ class BugLayer {
 		this.swarms = 0;
 		this._lastSwarm = -LOCUST_GAP;
 		this.collapses = 0;
+		this.pairCells = new Map();
+		this.specPairs = 0;
+		this.pairLogged = [];
 		this.version = 0;
 		this._pollPeak = 0;
 		this._collapseTick = -COLLAPSE_GAP;
@@ -187,7 +199,8 @@ class BugLayer {
 		if (!(nec > 0)) return 0;
 		const spec = g[o + B_SPEC];
 		const hd = hueDist(P.nectarHue, g[o + B_HUE]) / POLL_HUE_SPAN;
-		const match = 1 - spec * (hd < 1 ? hd : 1);
+		const td = Math.abs(P.nectarDepth - g[o + B_TONGUE]) / TONGUE_SPAN;
+		const match = (1 - spec * (hd < 1 ? hd : 1)) * (1 - spec * (td < 1 ? td : 1));
 		const sf = POLL_WINTER + (1 - POLL_WINTER) * P.bloomNow;
 		const f = (nec * sf * match * (1 + POLL_GENERALIST * (1 - spec))) / POLL_FULL;
 		return f < 1 ? f : 1;
@@ -364,6 +377,7 @@ class BugLayer {
 		const Wx = A.weather;
 		const winter = Wx && Wx.season < 0;
 		const dormA = this.dorm;
+		const pairs = this.pairCells;
 		let reserve = 0;
 
 		for (let niche = 0; niche < 4; niche++) {
@@ -414,13 +428,21 @@ class BugLayer {
 					const bb = pspecies[u] ? bloomK[u] : 0;
 					const nec = ba + bb;
 					if (nec > 0) {
-						const hue = ba >= bb ? phue[i] : phue[u];
+						const top = ba >= bb ? i : u;
+						const hue = phue[top];
 						const spec = genome[o + B_SPEC];
 						let hd = hue - genome[o + B_HUE];
 						if (hd < 0) hd = -hd;
 						if (hd > 0.5) hd = 1 - hd;
 						hd /= POLL_HUE_SPAN;
-						const match = 1 - spec * (hd < 1 ? hd : 1);
+						let td = pgen[top * PG + 15] - genome[o + B_TONGUE];
+						if (td < 0) td = -td;
+						td /= TONGUE_SPAN;
+						const match = (1 - spec * (hd < 1 ? hd : 1)) * (1 - spec * (td < 1 ? td : 1));
+						if (spec > PAIR_SPEC && match > PAIR_MATCH && density[q] > BUG_MIN) {
+							const key = id * 1048576 + pspecies[top];
+							pairs.set(key, (pairs.get(key) || 0) + 1);
+						}
 						const f = (nec * sf * match * (1 + POLL_GENERALIST * (1 - spec))) / POLL_FULL;
 						food = f < 1 ? f : 1;
 						eff = (0.5 + 0.5 * spec) * match;
@@ -582,6 +604,8 @@ class BugLayer {
 			if (v < 0) v += 1;
 			else if (v >= 1) v -= 1;
 			child[B_HUE] = v;
+			const t = child[B_TONGUE] + (P.nectarDepth - child[B_TONGUE]) * TONGUE_DRIFT;
+			child[B_TONGUE] = t < 0 ? 0 : t > 1 ? 1 : t;
 			food = this._food(niche, child, 0, j);
 		}
 		if (!(childFit * food >= BUG_MIN * 2)) return;
@@ -679,6 +703,34 @@ class BugLayer {
 			sp.wetFrac = s[BG + 2] / s[BG];
 			sp.category = bugCategory(sp.mean, sp.nicheIndex, sp.wetFrac > 0.5);
 			sp.icon = bugIcon(sp.category, sp.id);
+			sp.pollOf = 0;
 		}
+		this._pairTrack();
+	}
+
+	_pairTrack() {
+		const best = new Map();
+		for (const [key, c] of this.pairCells) {
+			if (c < PAIR_CELLS) continue;
+			const b = Math.floor(key / 1048576);
+			const p = key - b * 1048576;
+			const cur = best.get(b);
+			if (!cur || c > cur[1]) best.set(b, [p, c]);
+		}
+		this.pairCells.clear();
+		let n = 0;
+		for (const [b, [p]] of best) {
+			const bs = this.registry.get(b);
+			const ps = this.registry.get(p);
+			if (!bs || !ps || bs.population <= 0 || ps.population <= 0) continue;
+			n++;
+			bs.pollOf = p;
+			const key = b * 1048576 + p;
+			if (this.pairLogged.indexOf(key) < 0) {
+				this.pairLogged.push(key);
+				this.log.push(this.registry.tick, 'info', `${bs.name} became a specialist pollinator of ${ps.name}`, b);
+			}
+		}
+		this.specPairs = n;
 	}
 }

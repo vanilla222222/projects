@@ -1,5 +1,5 @@
-const PG = 15;
-const PLANT_WEIGHTS = [1.4, 1.4, 0.6, 1.2, 0.8, 0.5, 0.7, 0.7, 0.6, 0.5, 0.6, 0.6, 0.4, 0.6, 0.3];
+const PG = 16;
+const PLANT_WEIGHTS = [1.4, 1.4, 0.6, 1.2, 0.8, 0.5, 0.7, 0.7, 0.6, 0.5, 0.6, 0.6, 0.4, 0.6, 0.3, 0.4];
 const PLANT_SPECIATION = 0.25;
 const PLANT_SPLIT_MIN_POP = 40;
 const YEAR_TICKS = 480;
@@ -76,6 +76,15 @@ const PLANT_ARCHETYPES = [
 	{ g: [0.48, 0.48, 0.6, 0.05, 0.65, 0.6, 0.05, 0.05, 0, 0, 0.85, 0.2, 0.01, 0, 0.15], domain: 'land', kind: 1 },
 	{ g: [0.45, 0.42, 0.6, 0.05, 0.1, 0.4, 0.05, 0.05, 0, 0, 0.1, 0.8, 0.08, 0, 0.15], domain: 'land', kind: 1 },
 ];
+const PLANT_DEPTH = { 13: 0.5, 14: 0.3, 15: 0.75, 16: 0.25 };
+const PLANT_DEPTH_BASE = 0.45;
+const DISP_FULL = 40;
+const DISP_BONUS = 0.35;
+const DISP_DECAY = 0.97;
+const DISP_DUNG = 0.03;
+PLANT_ARCHETYPES.forEach((a, k) => {
+	a.g[15] = a.kind ? 0 : PLANT_DEPTH[k] !== undefined ? PLANT_DEPTH[k] : PLANT_DEPTH_BASE;
+});
 
 function plantTraitsFrom(g, o = 0) {
 	const niche = g[o + 2];
@@ -263,6 +272,10 @@ class PlantLayer {
 		this.fruitSweet = 0;
 		this.fruitSeedTox = 0;
 		this.seedDrops = 0;
+		this.animalSeeded = 0;
+		this.dispBonus = 0;
+		this.nectarDepth = 0;
+		this.nectarSp = 0;
 		this.fruitEaten = 0;
 		this.poisoned = [0, 0, 0];
 		this.totalFruit = 0;
@@ -570,7 +583,33 @@ class PlantLayer {
 		const a = this.species[i] ? bk[i] : 0;
 		const b = this.species[u] ? bk[u] : 0;
 		this.nectarHue = a >= b ? this.hue[i] : this.hue[u];
+		this.nectarDepth = this.genome[(a >= b ? i : u) * PG + 15];
+		this.nectarSp = a >= b ? this.species[i] : this.species[u];
 		return a + b;
+	}
+
+	animalSeed(j, sp) {
+		sp.animalSeeds = (sp.animalSeeds || 0) + 1;
+		this.animalSeeded++;
+		const nut = this.soil.nutrient;
+		if (nut) nut[j] += DISP_DUNG;
+	}
+
+	fruitBonus(i, got) {
+		const src = this.fruitSp;
+		if (!src || !(got > 0)) return 0;
+		const sp = this.registry.get(src);
+		const a = sp ? sp.animalSeeds || 0 : 0;
+		if (!(a > 0)) return 0;
+		const k = a < DISP_FULL ? a / DISP_FULL : 1;
+		for (let p = i; p < 2 * this.n; p += this.n) {
+			if (this.species[p] !== src) continue;
+			const add = got * DISP_BONUS * k;
+			this.fruit[p] += add;
+			this.dispBonus += add;
+			return add;
+		}
+		return 0;
 	}
 
 	step(tick) {
@@ -977,6 +1016,7 @@ class PlantLayer {
 			sp.infected = s[PG + 3];
 			sp.category = plantCategory(sp.mean, sp.domain, sp.kind | 0);
 			sp.icon = plantIcon(sp.category, sp.id);
+			if (sp.animalSeeds) sp.animalSeeds = sp.animalSeeds * DISP_DECAY < 0.05 ? 0 : sp.animalSeeds * DISP_DECAY;
 		}
 	}
 }

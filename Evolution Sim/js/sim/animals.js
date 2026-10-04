@@ -1,6 +1,6 @@
-const AG = 25;
-const G_SIZE = 0, G_SPEED = 1, G_SENSE = 2, G_DIET = 3, G_TEMP = 4, G_TOL = 5, G_FEC = 6, G_TOXR = 7, G_ARMOR = 8, G_RES = 9, G_SCAV = 10, G_TERR = 11, G_HERD = 12, G_COLD = 13, G_DRY = 14, G_NEST = 15, G_PACK = 16, G_DISPLAY = 17, G_CHOOSY = 18, G_APPETITE = 19, G_DORMANCY = 20, G_ALARM = 21, G_SOCIAL = 22, G_BROOD = 23, G_CARE = 24;
-const ANIMAL_WEIGHTS = [1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6, 0.3, 0.3, 0.3, 0.3, 0.5, 0.5, 0.4, 0.4, 0.4, 0.4];
+const AG = 29;
+const G_SIZE = 0, G_SPEED = 1, G_SENSE = 2, G_DIET = 3, G_TEMP = 4, G_TOL = 5, G_FEC = 6, G_TOXR = 7, G_ARMOR = 8, G_RES = 9, G_SCAV = 10, G_TERR = 11, G_HERD = 12, G_COLD = 13, G_DRY = 14, G_NEST = 15, G_PACK = 16, G_DISPLAY = 17, G_CHOOSY = 18, G_APPETITE = 19, G_DORMANCY = 20, G_ALARM = 21, G_SOCIAL = 22, G_BROOD = 23, G_CARE = 24, G_CLEAN = 25, G_TOLER = 26, G_TOXIC = 27, G_MIMIC = 28;
+const ANIMAL_WEIGHTS = [1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6, 0.3, 0.3, 0.3, 0.3, 0.5, 0.5, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4];
 const ANIMAL_CLASSES = ['fish', 'amphibian', 'reptile', 'mammal', 'bird', 'invertebrate'];
 const CLS_FISH = 0, CLS_AMPH = 1, CLS_REPT = 2, CLS_MAMM = 3, CLS_BIRD = 4, CLS_INVT = 5;
 const CLS_COLD = [[0, 1], [0.5, 1], [0.5, 1], [0, 0.45], [0, 0.45], [0.5, 1]];
@@ -63,6 +63,43 @@ const LETHAL_P = 0.5;
 const AVERSION_DECAY = 0.015;
 const MIMIC_HUE = 0.07;
 const AVERSION_LOG_GAP = 2400;
+const CLEAN_MIN = 0.4;
+const CLEAN_MASS = 1.6;
+const CLEAN_EVERY = 3;
+const CLEAN_RANGE = 0.8;
+const CLEAN_BURDEN = 0.0015;
+const CLEAN_TICKS = 60;
+const CLEAN_CUT = 0.2;
+const CLEAN_GAIN = 0.1;
+const CLEAN_FULL = 0.012;
+const CLEAN_TILE = 0.5;
+const CLEAN_SICK = 6;
+const CLEAN_CARRY = 0.5;
+const CLEAN_EAT = 0.5;
+const CLEAN_RIDE = 5;
+const CLEAN_SPEC = 0.45;
+const CLEAN_HUNGRY = 0.9;
+const CLEAN_COOL = 12;
+const CLEAN_PAIR_N = 10;
+const CLEAN_PAIR_SHARE = 0.4;
+const CLEAN_COUNT_DECAY = 0.9;
+const CLEAN_POP = 4;
+const TOX_MIN = 0.4;
+const TOX_COST = 0.1;
+const MIMIC_COST = 0.05;
+const TOX_HIT = 0.25;
+const TOX_SPIT = 0.8;
+const TOX_LEARN = 0.45;
+const PREY_HUE = 0.04;
+const PREY_AV_DECAY = 0.04;
+const MIMIC_UNLEARN = 0.3;
+const PREY_AV_SKIP = 0.6;
+const PREY_AV_DIST = 2;
+const MIMIC_LO = 0.2;
+const MIMIC_SPAN = 0.35;
+const MIMIC_GENE = 0.45;
+const MIMIC_TOX = 0.3;
+const MODEL_POP = 6;
 const BUG_MASS = 1.4;
 const BUG_ENERGY = 0.3;
 const BUG_LURE = 1;
@@ -365,6 +402,19 @@ for (const a of ANIMAL_ARCHETYPES) {
 		g[G_NEST] = FOUNDER_HIVE_NEST;
 	}
 }
+const FOUNDER_CLEAN = { 8: 0.35, 10: 0.6, 30: 0.6 };
+const FOUNDER_TOXIC = { 14: 0.65, 26: 0.6, 27: 0.55 };
+const FOUNDER_MIMIC = { 15: 0.6, 28: 0.5 };
+const FOUNDER_TRAIT_LO = 0.05;
+const FOUNDER_TOLER = 0.3;
+const FOUNDER_TOLER_HERB = 0.5;
+ANIMAL_ARCHETYPES.forEach((a, k) => {
+	const g = a.g;
+	g[G_CLEAN] = FOUNDER_CLEAN[k] || FOUNDER_TRAIT_LO;
+	g[G_TOLER] = g[G_DIET] < 0.33 ? FOUNDER_TOLER_HERB : FOUNDER_TOLER;
+	g[G_TOXIC] = FOUNDER_TOXIC[k] || FOUNDER_TRAIT_LO;
+	g[G_MIMIC] = FOUNDER_MIMIC[k] || FOUNDER_TRAIT_LO;
+});
 
 function domainIndex(d) {
 	return d === 'water' ? 1 : d === 'amph' ? 2 : d === 'air' ? 3 : 0;
@@ -594,6 +644,8 @@ ANIMAL_FIELDS_I.push('dorm', 'dormT');
 ANIMAL_FIELDS_F.push('rnk');
 ANIMAL_FIELDS_I.push('alm', 'grp', 'dsp', 'fnd');
 ANIMAL_FIELDS_I.push('lv', 'brd', 'cr', 'ld');
+ANIMAL_FIELDS_F.push('lk', 'pb');
+ANIMAL_FIELDS_I.push('cln');
 
 class AnimalPool {
 	constructor(world, plants, registry, rng, log) {
@@ -669,6 +721,14 @@ class AnimalPool {
 		this.dispSplits = 0;
 		this.rankBlocked = 0;
 		this.eatenBy = new Float64Array(12);
+		this.modelHue = new Float32Array(6).fill(-1);
+		this.modelSp = new Int32Array(6);
+		this.cleanerPairs = 0;
+		this.mimicSp = 0;
+		this.mimics = 0;
+		this._cleanPref = 0;
+		this._cleanRide = false;
+		this.symb = { cleanings: 0, cleanFail: 0, cleanEaten: 0, cleanCarry: 0, toxHits: 0, toxSpit: 0, mimicFooled: 0, avoidSkips: 0, protectedTicks: 0 };
 		this.life = { metamorphs: 0, careGiven: 0, granGiven: 0, granFeeds: 0, juvBug: 0, shed: 0, ledMig: 0, ledT: 0, loneT: 0, ledD: 0, loneD: 0, headStarts: 0 };
 	}
 
@@ -759,6 +819,7 @@ class AnimalPool {
 		this.meta[i] *= 1 + DISPLAY_COST * g[o + G_DISPLAY];
 		this.app[i] = g[o + G_APPETITE];
 		this.meta[i] *= 1 + DORM_COST * g[o + G_DORMANCY];
+		this.meta[i] *= (1 + TOX_COST * g[o + G_TOXIC]) * (1 + MIMIC_COST * g[o + G_MIMIC]);
 		const ck = this.cls[i];
 		const ek = ck === CLS_BIRD ? NEED_BIRD : ck === CLS_REPT || ck === CLS_AMPH ? NEED_ECTO : 1;
 		this.needP[i] = (NEED_P0 + NEED_PD * diet) * ek;
@@ -834,6 +895,9 @@ class AnimalPool {
 		this.brd[i] = 0;
 		this.cr[i] = 0;
 		this.ld[i] = 0;
+		this.lk[i] = this._look(sp, this.genome[o + G_MIMIC]);
+		this.pb[i] = 0;
+		this.cln[i] = 0;
 		this.registry.add(sp);
 		return i;
 	}
@@ -862,6 +926,10 @@ class AnimalPool {
 		sp.icon = animalIcon(sp.category, sp.id);
 		sp.role = ANIMAL_ROLES[roleIndex(diet, g[G_SCAV])];
 		sp.aversion = parent && parent.aversion ? parent.aversion.map((a) => ({ hue: a.hue, strength: a.strength })) : [];
+		sp.preyAv = parent && parent.preyAv ? parent.preyAv.map((a) => ({ hue: a.hue, cls: a.cls, strength: a.strength })) : [];
+		sp.cleanOf = parent && parent.cleanOf ? parent.cleanOf : 0;
+		sp.cleanN = {};
+		sp.cleanLogged = parent && parent.cleanLogged ? parent.cleanLogged.slice() : [];
 		return sp;
 	}
 
@@ -895,6 +963,10 @@ class AnimalPool {
 		const sp = this.sp[i];
 		const role = diet < 0.33 ? 0 : diet < 0.66 ? 1 : 2;
 		const preyK = this.cls[i] === CLS_INVT ? INVERT_PREY : this.cls[i] === CLS_BIRD ? BIRD_PREY : diet > 0.66 ? 1.8 * preyMul : 0.6;
+		const psp = mode === 1 ? this.registry.get(sp) : null;
+		const pav = psp && psp.preyAv && psp.preyAv.length ? psp.preyAv : null;
+		const ride = this._cleanRide;
+		const pref = this._cleanPref;
 		let best = -1;
 		let bestD = r * r;
 		for (let gy = r0; gy <= r1; gy++) {
@@ -906,7 +978,9 @@ class AnimalPool {
 					const dj = this.domain[j];
 					if (dj !== dom || dom === 3) {
 						if (dj === 3 || dom === 3) {
-							if (mode === 1) {
+							if (mode === 5) {
+								if (dj === 3) continue;
+							} else if (mode === 1) {
 								if (!this._canEat(i, j)) continue;
 							} else if (mode === 0) {
 								if (!this._canEat(j, i)) continue;
@@ -918,13 +992,28 @@ class AnimalPool {
 						if (this.diet[j] - diet < 0.3 || this.meatEff[j] < 0.3 || mass > this.mass[j] * this.gf[j] * 1.8) continue;
 					} else if (mode === 1) {
 						if (diet - this.diet[j] < 0.3 || this.mass[j] * this.gf[j] > mass * preyK) continue;
+					} else if (mode === 5) {
+						if (this.sp[j] === sp || this.mass[j] * this.gf[j] < mass * CLEAN_MASS || this.dorm[j] || (dom === 1 && dj !== 1)) continue;
+						if (!ride && (this.cln[j] > 0 || (this.pb[j] < CLEAN_BURDEN && !this.strain[j]))) continue;
 					} else if (mode === 3) {
 						const dd = this.diet[j];
 						if ((dd < 0.33 ? 0 : dd < 0.66 ? 1 : 2) !== role) continue;
 					} else if (this.sp[j] !== sp || (mode === 4 ? this.home[j] !== 1 && this.home[j] !== 2 : this.age[j] < this.mature[j])) continue;
 					const dx = this.x[j] - x;
 					const dy = this.y[j] - y;
-					const d = (dx * dx + dy * dy) * (mode === 1 ? 1 - DISPLAY_SEEN * this.show[j] - (this.alm[j] > 0 ? ALARM_SPOT : 0) : 1);
+					let dk = 1;
+					if (mode === 1) {
+						dk = 1 - DISPLAY_SEEN * this.show[j] - (this.alm[j] > 0 ? ALARM_SPOT : 0);
+						if (pav) {
+							const a = this._preyAversion(pav, this.lk[j], this.cls[j]);
+							if (a > PREY_AV_SKIP) {
+								this.symb.avoidSkips++;
+								continue;
+							}
+							dk *= 1 + PREY_AV_DIST * a;
+						}
+					} else if (mode === 5 && pref && this.sp[j] === pref) dk = CLEAN_SPEC;
+					const d = (dx * dx + dy * dy) * dk;
 					if (d < bestD) {
 						bestD = d;
 						best = j;
@@ -2057,6 +2146,15 @@ class AnimalPool {
 				}
 			}
 
+			if (!acted && !thirsty && this.cool[i] === 0 && e < full * CLEAN_HUNGRY && this.genome[i * AG + G_CLEAN] > CLEAN_MIN && (dom === 1 || (dom === 3 && dg < 0.66 && !this.nic[i])) && this.age[i] >= this.mature[i] * JUV_HUNT && (this.state[i] >= 9 || (tick + i) % CLEAN_EVERY === 0)) {
+				const cm = this._cleanStep(i, tick);
+				if (!this.alive[i]) continue;
+				if (cm >= 0) {
+					moved = cm;
+					acted = true;
+				}
+			}
+
 			if (!acted && this.meatEff[i] > 0.25 && e < emax * (this.scav[i] > 0.5 ? SCAV_HUNT : this.nic[i] ? FISHER_HUNT : protShort ? OMNI_HUNT : 0.6) && this.cool[i] === 0 && this.age[i] >= this.mature[i] * JUV_HUNT) {
 				const p = this._nearest(i, this.nic[i] ? this.range[i] * FISHER_RANGE : this.range[i], 1);
 				if (p >= 0) {
@@ -2133,6 +2231,7 @@ class AnimalPool {
 					this.state[i] = 1;
 					const ff = plants.fruit[tile] > 0 && plants.species[tile] ? FOOD_SEED : FOOD_FRUIT;
 					const eaten = plants.eatFruit(tile, bite, tall);
+					if (eaten > 0) plants.fruitBonus(tile, eaten);
 					const seedHit = plants.fruitSeedTox * 0.7 - this.toxR[i];
 					this.energy[i] += this._eat(i, eaten * FRUIT_ENERGY * (0.6 + plants.fruitSweet) * this.plantEff[i] * plantK * (1 - 1.6 * (seedHit > 0 ? seedHit : 0)) * (dom === 3 ? BIRD_FRUIT : 1), ff, sk0);
 					if (plants.fruitSp && !this.seedSp[i]) {
@@ -2188,6 +2287,10 @@ class AnimalPool {
 				const pl = flying ? 0 : parasiteLoad[tile];
 				if (pl > 0) {
 					drain = pl * PARASITE_DRAIN * this.mass[i] * (1 - 0.6 * this.armor[i]) * (0.4 + 0.6 * gaussFit(this.genome[i * AG + G_SIZE], this.parasiteHost[tile], PARASITE_HOST_TOL)) * (hk === 3 && atHome ? 1 + DEN_PARA : 1);
+					if (this.cln[i] > 0) {
+						drain *= CLEAN_CUT;
+						this.symb.protectedTicks++;
+					}
 					cost += drain;
 					bugs.parasiteDrain += drain;
 				}
@@ -2231,9 +2334,11 @@ class AnimalPool {
 					}
 				} else if (((tick + i) & 1) === 0) {
 					if (D.carcassLoad[tile] > 0) D.exposeAnimal(i, D.carcassStrain[tile], CARCASS_K * D.carcassLoad[tile]);
-					if (!this.strain[i] && D.vectorLoad[tile] > 0) D.exposeAnimal(i, D.vectorStrain[tile], VECTOR_K * D.vectorLoad[tile]);
+					if (!this.strain[i] && D.vectorLoad[tile] > 0 && this.cln[i] === 0) D.exposeAnimal(i, D.vectorStrain[tile], VECTOR_K * D.vectorLoad[tile]);
 				}
 			}
+			this.pb[i] = drain / this.mass[i];
+			if (this.cln[i] > 0) this.cln[i]--;
 			if (landScav && this.energy[i] > e) this.scavEnergy += this.energy[i] - e;
 			const dry = Wx && dom !== 1 && this.water[i] <= 0;
 			if (dry) cost *= DEHYDRATE_COST;
@@ -2747,11 +2852,12 @@ class AnimalPool {
 			chance *= 1 - (HERD_SAFE / Math.sqrt(pn)) * herd * (n < HERD_SAFE_N ? n / HERD_SAFE_N : 1) * (this.strain[p] ? SHUN_SAFE : 1);
 		}
 		if (pn > 1 && this.rng.next() < chance) {
+			this._preyLearn(i, p, tick);
 			this._packFeed(i, p, pn, mp);
 			this._eaten(p);
 			this._kill(p, CARCASS_EATEN);
 			this.deaths.eaten++;
-		} else if (pn === 1 && this.rng.next() < chance) {
+		} else if (pn === 1 && this.rng.next() < chance && !this._taste(i, p, tick)) {
 			this.energy[i] += this._eat(i, (mp * MEAT_ENERGY * this.meatEff[i] + (this.energy[p] + this.fat[p]) * 0.25) * (1 - GEN_TAX * (1 - this._genT(i))), this.domain[p] === 1 || this.cls[p] === CLS_FISH ? FOOD_FISH : FOOD_MEAT, this.strain[i]);
 			if (this.domain[i] !== 1) this.water[i] = Math.min(1, this.water[i] + MEAT_WATER);
 			const ps = this.strain[p];
@@ -2768,6 +2874,165 @@ class AnimalPool {
 			this.ttl[p] = 4;
 			this.tx[p] = this.x[p] + (this.x[p] - this.x[i]) * 6;
 			this.ty[p] = this.y[p] + (this.y[p] - this.y[i]) * 6;
+		}
+	}
+
+	_look(sp, mimic) {
+		const own = sp.hsl[0] / 360;
+		const mh = this.modelHue[sp.cls];
+		const w = (mimic - MIMIC_LO) / MIMIC_SPAN;
+		if (mh < 0 || w <= 0 || this.modelSp[sp.cls] === sp.id) return own;
+		let d = mh - own;
+		if (d > 0.5) d -= 1;
+		else if (d < -0.5) d += 1;
+		const h = own + d * (w < 1 ? w : 1);
+		return h < 0 ? h + 1 : h >= 1 ? h - 1 : h;
+	}
+
+	_preyAversion(av, hue, cls) {
+		let m = 0;
+		for (const a of av) if (a.strength > m && a.cls === cls && hueDist(a.hue, hue) <= PREY_HUE) m = a.strength;
+		return m;
+	}
+
+	_preyLearn(i, p, tick) {
+		const sp = this.registry.get(this.sp[i]);
+		if (!sp) return 0;
+		if (!sp.preyAv) sp.preyAv = [];
+		const tox = this.genome[p * AG + G_TOXIC];
+		const hue = this.lk[p];
+		const cls = this.cls[p];
+		let entry = null;
+		let bestD = PREY_HUE;
+		for (const a of sp.preyAv) {
+			if (a.cls !== cls) continue;
+			const d = hueDist(a.hue, hue);
+			if (d <= bestD) {
+				bestD = d;
+				entry = a;
+			}
+		}
+		if (tox <= TOX_MIN) {
+			if (entry && entry.strength > 0) {
+				entry.strength *= 1 - MIMIC_UNLEARN;
+				this.symb.mimicFooled++;
+			}
+			return 0;
+		}
+		const hit = tox - this.toxR[i];
+		if (hit > 0) this.energy[i] -= hit * TOX_HIT * this.emax[i] * this.gf[i];
+		this.symb.toxHits++;
+		if (!entry) {
+			entry = { hue, cls, strength: 0 };
+			sp.preyAv.push(entry);
+		}
+		const before = entry.strength;
+		const add = TOX_LEARN * tox;
+		entry.strength = before + add < 1 ? before + add : 1;
+		if (before <= PREY_AV_SKIP && entry.strength > PREY_AV_SKIP) {
+			const msp = this.registry.get(this.sp[p]);
+			const key = sp.id + '>' + this.sp[p];
+			const last = this._avoidLogged.get(key);
+			if (msp && (last === undefined || tick - last >= AVERSION_LOG_GAP)) {
+				this._avoidLogged.set(key, tick);
+				this.log.push(tick, 'info', `${sp.name} learned to avoid ${msp.name}`, sp.id);
+			}
+		}
+		return hit;
+	}
+
+	_taste(i, p, tick) {
+		const hit = this._preyLearn(i, p, tick);
+		if (!(hit > 0) || this.rng.next() >= hit * TOX_SPIT) return false;
+		this.symb.toxSpit++;
+		this.cool[i] = 8;
+		this.energy[p] -= this.emax[p] * this.gf[p] * 0.2;
+		this.state[p] = 4;
+		this.ttl[p] = 4;
+		this.tx[p] = this.x[p] + (this.x[p] - this.x[i]) * 6;
+		this.ty[p] = this.y[p] + (this.y[p] - this.y[i]) * 6;
+		return true;
+	}
+
+	_cleanStep(i, tick) {
+		const csp = this.registry.get(this.sp[i]);
+		const riding = this.state[i] === 9;
+		this._cleanPref = csp ? csp.cleanOf | 0 : 0;
+		this._cleanRide = riding;
+		const h = this._nearest(i, riding ? 1.5 : this.range[i] * CLEAN_RANGE, 5);
+		this._cleanRide = false;
+		this._cleanPref = 0;
+		if (h < 0) {
+			if (this.state[i] >= 9) {
+				this.state[i] = 0;
+				this.ttl[i] = 0;
+			}
+			return -1;
+		}
+		if (riding) {
+			this.x[i] = this.x[h];
+			this.y[i] = this.y[h];
+			if (--this.ttl[i] <= 0) {
+				this.state[i] = 0;
+				this.cool[i] = CLEAN_COOL;
+			}
+			return 0;
+		}
+		if (this.state[i] !== 10) this.ttl[i] = 12;
+		this.state[i] = 10;
+		let moved = 0;
+		if (Math.hypot(this.x[h] - this.x[i], this.y[h] - this.y[i]) > 1) moved = this._moveToward(i, this.x[h], this.y[h], 1.2);
+		if (Math.hypot(this.x[h] - this.x[i], this.y[h] - this.y[i]) <= 1) this._clean(i, h, tick, csp);
+		else if (--this.ttl[i] <= 0) {
+			this.state[i] = 0;
+			this.cool[i] = CLEAN_COOL;
+		}
+		return moved;
+	}
+
+	_clean(i, h, tick, csp) {
+		const tol = this.genome[h * AG + G_TOLER];
+		const rng = this.rng;
+		if (rng.next() >= 0.3 + 0.7 * tol) {
+			this.symb.cleanFail++;
+			this.state[i] = 0;
+			this.cool[i] = CLEAN_COOL;
+			if (this.diet[h] > 0.66 && rng.next() < CLEAN_EAT * (1 - tol)) {
+				this.energy[h] += this._eat(h, this.mass[i] * this.gf[i] * MEAT_ENERGY * this.meatEff[h], FOOD_MEAT, this.strain[h]);
+				this.symb.cleanEaten++;
+				this._eaten(i);
+				this._kill(i, CARCASS_EATEN);
+				this.deaths.eaten++;
+			}
+			return;
+		}
+		const W = this.world.width;
+		const tile = (this.y[h] | 0) * W + (this.x[h] | 0);
+		const pb = this.pb[h];
+		const sick = this.strain[h];
+		const gain = CLEAN_GAIN * this.emax[i] * this.gf[i] * (0.3 + (pb < CLEAN_FULL ? pb / CLEAN_FULL : 1) + (sick ? 0.3 : 0));
+		this.energy[i] += this._eat(i, gain, FOOD_BUG, this.strain[i]);
+		this.cln[h] = CLEAN_TICKS;
+		if (this.bugs && this.parasiteLoad[tile] > 0) this.bugs.clean(tile, CLEAN_TILE);
+		const D = this.disease && this.disease.on ? this.disease : null;
+		if (sick) {
+			this.itime[h] = this.itime[h] > CLEAN_SICK ? this.itime[h] - CLEAN_SICK : 1;
+			if (D && !this.strain[i]) {
+				D.exposeAnimal(i, sick, CLEAN_CARRY);
+				if (this.strain[i]) this.symb.cleanCarry++;
+			}
+		} else if (D && this.strain[i]) {
+			D.exposeAnimal(h, this.strain[i], CLEAN_CARRY);
+			if (this.strain[h]) this.symb.cleanCarry++;
+		}
+		this.x[i] = this.x[h];
+		this.y[i] = this.y[h];
+		this.state[i] = 9;
+		this.ttl[i] = CLEAN_RIDE;
+		this.symb.cleanings++;
+		if (csp && csp.cleanN) {
+			const hs = this.sp[h];
+			csp.cleanN[hs] = (csp.cleanN[hs] || 0) + 1;
 		}
 	}
 
@@ -2803,7 +3068,7 @@ class AnimalPool {
 		if (this.rng.next() >= 0.45 + 0.4 * sp.mean[10]) return;
 		mutateGenes(sp.mean, 0, this.seedGenome, 0, PG, this.rng, 0.2, 0.025);
 		this.plants.seedDrops++;
-		this.plants.plantSeed(tile, this.seedGenome, sp, tick);
+		if (this.plants.plantSeed(tile, this.seedGenome, sp, tick)) this.plants.animalSeed(tile, sp);
 	}
 
 	_poison(i, tick) {
@@ -3047,6 +3312,7 @@ class AnimalPool {
 			if (this.dorm[i]) s[AG + 4 + this.dorm[i]]++;
 			s[AG + 9] += this.grp[i];
 			if (this.lv[i]) s[AG + 10]++;
+			this.lk[i] = this._look(this.registry.get(id), this.genome[o + G_MIMIC]);
 			const h = this.home[i];
 			if (h === 1 || h === 2) {
 				const key = id * ntiles + (this.ny[i] | 0) * W + (this.nx[i] | 0);
@@ -3084,6 +3350,74 @@ class AnimalPool {
 				for (const a of av) a.strength *= 1 - AVERSION_DECAY;
 				sp.aversion = av.filter((a) => a.strength >= 0.05);
 			}
+			const pa = sp.preyAv;
+			if (pa && pa.length) {
+				for (const a of pa) a.strength *= 1 - PREY_AV_DECAY;
+				sp.preyAv = pa.filter((a) => a.strength >= 0.05);
+			}
 		}
+		this._symbTrack(sums);
+	}
+
+	_symbTrack(sums) {
+		const best = new Float64Array(6);
+		const bestSp = new Int32Array(6);
+		let pairs = 0;
+		for (const [id, s] of sums) {
+			const sp = this.registry.get(id);
+			const tox = sp.mean[G_TOXIC];
+			if (tox > TOX_MIN && s[AG] >= MODEL_POP && s[AG] * tox > best[sp.cls]) {
+				best[sp.cls] = s[AG] * tox;
+				bestSp[sp.cls] = id;
+			}
+			const cn = sp.cleanN;
+			if (!cn) continue;
+			let tot = 0;
+			let top = 0;
+			let topN = 0;
+			for (const k in cn) {
+				const v = cn[k] * CLEAN_COUNT_DECAY;
+				if (v < 0.5) {
+					delete cn[k];
+					continue;
+				}
+				cn[k] = v;
+				tot += v;
+				if (v > topN) {
+					topN = v;
+					top = +k;
+				}
+			}
+			const host = top ? this.registry.get(top) : null;
+			if (host && host.population > 0 && topN >= CLEAN_PAIR_N && topN >= tot * CLEAN_PAIR_SHARE && s[AG] >= CLEAN_POP) {
+				sp.cleanOf = top;
+				pairs++;
+				if (!sp.cleanLogged) sp.cleanLogged = [];
+				if (sp.cleanLogged.indexOf(top) < 0) {
+					sp.cleanLogged.push(top);
+					this.log.push(this.tick, 'info', `${sp.name} became a cleaner of ${host.name}`, sp.id);
+				}
+			} else if (sp.cleanOf && !(host && host.population > 0 && top === sp.cleanOf)) sp.cleanOf = 0;
+		}
+		for (let c = 0; c < 6; c++) {
+			const m = bestSp[c] ? this.registry.get(bestSp[c]) : null;
+			this.modelSp[c] = m ? m.id : 0;
+			this.modelHue[c] = m ? m.hsl[0] / 360 : -1;
+		}
+		let mimicSp = 0;
+		let mimics = 0;
+		for (const [id, s] of sums) {
+			const sp = this.registry.get(id);
+			const mh = this.modelHue[sp.cls];
+			sp.mimicOf = 0;
+			if (mh < 0 || this.modelSp[sp.cls] === id || sp.mean[G_MIMIC] <= MIMIC_GENE || sp.mean[G_TOXIC] >= MIMIC_TOX) continue;
+			if (hueDist(this._look(sp, sp.mean[G_MIMIC]), mh) > MIMIC_HUE) continue;
+			sp.mimicOf = this.modelSp[sp.cls];
+			mimicSp++;
+			mimics += s[AG];
+		}
+		this.cleanerPairs = pairs;
+		this.mimicSp = mimicSp;
+		this.mimics = mimics;
 	}
 }
