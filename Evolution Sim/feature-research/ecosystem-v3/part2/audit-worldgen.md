@@ -33,45 +33,63 @@ Items 3 and 4 of Part 2: a reworked world generator and six new biomes.
   - The header gains `worldGen`. Decode rebuilds the world with `gen = worldGen || 2`, so a save made before this change regenerates its original world.
   - `SAVE_VERSION` stays 2.
 
+## Follow-up fixes
+
+These address open issues 1–3 from the first gate run.
+
+- **Fresh water for amphibians:**
+  - Gen 3 places 2.5× as many ponds (`WG_POND_MUL`).
+  - Rivers start at a 0.8× flow threshold (`WG_RIVER_K`).
+  - The land humidity ceiling rose from 0.66 to 0.72 (`WG_HUM_HI`), which adds forest and wetter river catchments.
+  - Amphibians pay 1.1× water loss on saline tiles instead of 1.5× (`SALT_THIRST_AMPH`).
+- **Bird niches:** `BIRD_REVIVE` went from 5 to 10, so `_migrations` refills a bird niche before it can die out between its 60-tick checks.
+- **Salt basins:**
+  - Candidates are taken driest first.
+  - Each basin may turn at most 0.3% of the map into salt flat (`WG_SALT_BASIN`), and the total is capped at 0.8% (`WG_SALT_SHARE`).
+  - A basin bigger than its share keeps its deep core as a terminal lake, and only its shallow rim becomes salt flat.
+- **Gen 2 unchanged:** gen 2 output is still tile-identical to base on seeds 42, 7 and 123.
+- **Variant test:** the second test run compared the fixes with the humidity ceiling at 0.66 and at 0.72. The 0.72 version gave more amphibians (mean of per-seed averages 154 against 103) and better timing, so it was kept.
+
 ## Biome area shares (Medium 320×210, %)
 
 | Biome | 42 | 7 | 123 |
 | --- | --- | --- | --- |
-| Mangrove | 1.74 | 2.46 | 2.57 |
-| Coral reef | 1.23 | 2.20 | 2.14 |
-| Salt flat | 3.66 | 0.87 | 1.07 |
-| Steppe | 3.96 | 6.46 | 3.91 |
-| Cloud forest | 0.43 | 0.07 | 0.12 |
-| Tundra bog | 0.00 | 0.20 | 0.20 |
-| River | 1.57 | 2.05 | 2.20 |
-| Lake | 2.38 | 2.46 | 2.03 |
-| Alpine | 4.28 | 7.25 | 5.63 |
+| Mangrove | 1.96 | 2.89 | 2.97 |
+| Coral reef | 1.16 | 2.14 | 2.10 |
+| Salt flat | 0.30 | 0.48 | 0.79 |
+| Steppe | 3.70 | 5.61 | 3.32 |
+| Cloud forest | 0.56 | 0.14 | 0.19 |
+| Tundra bog | 0.03 | 0.42 | 0.26 |
+| River | 2.12 | 2.65 | 2.75 |
+| Lake | 5.74 | 2.85 | 2.31 |
+| Pond | 0.66 | 0.77 | 0.77 |
+| Wetland | 5.64 | 6.85 | 8.13 |
+| Alpine | 4.27 | 7.21 | 5.60 |
 
-- **Land share:** 0.64 on all three seeds.
-- **Landmasses of at least 30 tiles:** 8 on seed 42 (three continents), 2 on seed 7 (one large continent) and 4 on seed 123.
+- **Land share:** 0.61, 0.64 and 0.64 on seeds 42, 7 and 123.
+- **Landmasses of at least 30 tiles:** 8, 2 and 4.
 - **Old generator:** about 0.65 land share, a single landmass, and about 17% alpine.
-- **Generation time:** about 1.0 s, against about 0.65 s for the old generator.
+- **Generation time:** about 1.0–1.2 s, against about 0.65 s for the old generator.
 
-## Gates (3000 ticks, Medium, seeds 42 / 7 / 123)
+## Gates (final run; base and new run side by side; 3000 ticks, Medium, seeds 42 / 7 / 123)
 
 | Gate | Base (ad45c35) | New |
 | --- | --- | --- |
-| ms/tick | 40.96 / 40.79 / 42.85 (mean 41.53) | 43.85 / 41.99 / 41.71 (mean 42.52, +2.4%) |
+| ms/tick | 42.27 / 41.01 / 43.81 (mean 42.36) | 44.92 / 41.91 / 41.27 (mean 42.70, +0.8%) |
 | Founder animal species | 34 / 34 / 34 | 34 / 34 / 34 |
-| Classes alive at 3000 (fish, amph, rept, mamm, bird, invert) | all; amph 241 / 582 / 246 | all; amph 20 / 109 / 101 |
-| Bird niches at 3000 (seed, insect, fisher, raptor, carrion) | 128/120/8/3/22, 17/102/12/6/22, 11/56/10/27/21 | 22/21/7/20/20, 63/24/30/20/25, 15/35/1/9/28 |
-| Lowest niche count from tick 500 | ≥ 2 | 0 for the seed and raptor niches on seed 42 at some point (both recovered by 3000); fisher fell to 1 on seed 123 |
-| Animal species at 3000 | 33 / 31 / 36 | 37 / 34 / 35 |
-| Save, load and step 500 (det.js, seed 42) | — | stats, full state and RNGs equal |
+| Classes alive at 3000 (fish/amph/rept/mamm/bird/invert) | 1621/241/723/1058/281/2328, 1127/582/464/1360/159/1910, 1473/246/836/944/125/3084 | 3275/338/547/1027/167/2659, 2297/141/660/1501/171/1275, 2702/72/1080/1467/168/1414 |
+| Amphibian mean from tick 1000 | 124 / 329 / 154 | 296 / 115 / 50 (first run: 52 / 89 / 53) |
+| Bird niches at 3000 (seed/insect/fisher/raptor/carrion) | 128/120/8/3/22, 17/102/12/6/22, 11/56/10/27/21 | 95/12/38/6/16, 55/37/10/24/45, 65/35/31/6/31 |
+| Lowest niche count from tick 500 | 39/8/2/2/5, 5/5/4/3/5, 11/21/3/3/9 | 40/12/8/4/8, 9/22/2/4/6, 4/35/6/2/10 (none reach 0; first run had 0s on seed 42) |
+| Animal species at 3000 | 33 / 31 / 36 | 39 / 35 / 36 |
+| Save, load and step 500 (det.js, seed 42) | — | stats, full state (17.4 MB) and RNGs equal |
 | Old save loads (base save at tick 300 loaded by new code) | — | world identical (gen 2), steps, re-saves, continuation equal |
 
 The founder count comes from the species roster, not from the map, so it is 34 on both versions.
 
 ## Open issues
 
-- **Amphibians:** amphibians are fewer, most of all on seed 42 (mean 52 against 124 on base). The likely causes are fewer ponds and wetland edges near continents and the saline thirst penalty.
-- **Bird niches:** bird niches swing more. On seed 42 the seed and raptor niches touched 0 before migration brought them back, and on seed 123 the fisher niche ended at 1.
-- **Large salt basins on seed 42:** seed 42 has a 3.7% salt flat share at Medium, in big basins enclosed by mountains. Lowering `WG_SALT_HUM` or capping the basin size would shrink them.
-- **Rare biomes:** tundra bog is absent on seed 42, and cloud forest is rare on seeds 7 and 123.
-- **Rivers:** rivers cover a little less of the map than on the old generator (1.6–2.2% against about 2.5–3%).
+- **Amphibians on seeds 7 and 123:** amphibians are now above base on seed 42 but below it on seeds 7 and 123, most of all on 123 (mean 50 against 154, ending at 72). That is up from the first run (53), but not back to base.
+- **Fewer trees on seeds 42 and 123:** tree slots are about half of base on seed 42 and two thirds on 123, because gen 3 has more open plains and steppe. Seed 7 has more trees than base.
+- **Low niche floors:** the seed niche on seed 123 still dips to 4 and the raptor niche to 2, so the niches stay alive but some floors are low.
 - **Render:** the render code was not changed beyond biome colours. The graphics agent's terrain shading may want to treat `isDelta` and `isSalt`.

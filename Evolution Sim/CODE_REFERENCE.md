@@ -903,7 +903,7 @@ The remaining structures are:
   | +8 | Air: every in-map tile, glacier included (slice 2). |
   | +16 | Perch: beach and cliff tiles (slice 2). |
   | +32 | Rough: hills, badlands, mountains and cliff, a den site for mammals (slice 3). |
-  | +64 | Saline: salt flat and mangrove. Water loss there is multiplied by `SALT_THIRST` (1.5). |
+  | +64 | Saline: salt flat and mangrove. Water loss there is multiplied by `SALT_THIRST` (1.5), or `SALT_THIRST_AMPH` (1.1) for amphibians. |
   | +128 | Mire or reef: tundra bog, bog and coral reef. Land animals (not tadpoles) move at `MIRE_SLOW` (0.7) speed; water prey on such a tile get `REEF_COVER` (0.2) extra cover against attacks. |
 
   `_perch(j)` is true on a land tile with bit 16 or cover above `PERCH_COVER`. Bit 4 (amphibious) is set by `setWeather(Wx)` on non-ocean water tiles shallower than `AMPH_DEPTH` and on land tiles with `waterDist <= AMPH_RANGE` (all land when there is no weather layer); tiles with neither the land nor the water bit are skipped, so glacier gets no amphibious bit. `canStand(domain, x, y)` tests `walk & DOMAIN_BIT[domain]`.
@@ -1773,7 +1773,7 @@ Log entries (type `disaster`): "Wildfire in the <biome> in the <direction>", "Th
 - **`MERGE_EVERY = 120`**, **`MERGE_MAX_AGE = 960`** (2 years) and **`MERGE_POP`** `{plant: 6, animal: 2, bug: 6, pathogen: 2}` drive `_mergePass`.
 - **`THIRST_EVERY = 60`**, **`THIRST_WINDOW = 8`** drive `_thirstStats`; **`HERD_STAT_EVERY = 20`**, **`HERD_STAT_POP = 12`** drive `_herdStats` (run in the 20-tick block).
 - **`HERB_RESCUE = 30`**: `_migrations` brings in land mammal herbivores when mammal herbivores are below this.
-- **`BIRD_REVIVE = 5`** (slice 2): `_migrations` revives a bird niche whose live count (`stats.birdNiches`) is below this.
+- **`BIRD_REVIVE = 10`** (slice 2; raised from 5 in Part 2 so a niche is refilled before it can die out between 60-tick checks): `_migrations` revives a bird niche whose live count (`stats.birdNiches`) is below this.
 - **`DISEASE_EVERY = 60`**, **`DISEASE_WINDOW = 8`** and **`OUTBREAK_MIN_POP = 30`** drive emergence checks and `_diseaseStats` (window of 8 checks, about one year; outbreaks only count for hosts that peaked at 30 or more).
 
 ### `new Ecosystem(world, seed, options)`
@@ -2657,7 +2657,7 @@ Helpers: `TOXIN_WORDS`, `toxinIndex(v)` (the same thresholds as `toxinType`), `f
 
 ### Gen 3 generator (Part 2 world generation)
 
-- **Constants:** `WG_GEN` 3, `WG_WATER` 0.34 (target ocean share), `WG_CONT_AREA` 22000 and `WG_ISLE_AREA` 4200 (tiles per continent and per island, scaled by map area), `WG_COAST_WARP` 9, `WG_RIDGE_FREQ` 1/95, `WG_RIDGE_POW` 10, `WG_RIDGE_K` 0.75, `WG_LAND_CURVE` 1.0, `WG_STRAIT` 0.2, `WG_HUM_LO`/`WG_HUM_HI` 0.2/0.66, `WG_ORO` 5, `WG_RAIN` 0.004, `WG_RECHARGE` 0.1, `WG_TRADE_LAT` 0.36, `WG_SALT_HUM` 0.24, `WG_OUTFLOW` 0.4, `WG_DELTA_FLOW` 4, `WG_DELTA_LEN` 12, `WG_LAKE_MUL` 1.6.
+- **Constants:** `WG_GEN` 3, `WG_WATER` 0.34 (target ocean share), `WG_CONT_AREA` 22000 and `WG_ISLE_AREA` 4200 (tiles per continent and per island, scaled by map area), `WG_COAST_WARP` 9, `WG_RIDGE_FREQ` 1/95, `WG_RIDGE_POW` 10, `WG_RIDGE_K` 0.75, `WG_LAND_CURVE` 1.0, `WG_STRAIT` 0.2, `WG_HUM_LO`/`WG_HUM_HI` 0.2/0.72, `WG_ORO` 5, `WG_RAIN` 0.004, `WG_RECHARGE` 0.1, `WG_TRADE_LAT` 0.36, `WG_SALT_HUM` 0.24, `WG_OUTFLOW` 0.4, `WG_DELTA_FLOW` 4, `WG_DELTA_LEN` 12, `WG_LAKE_MUL` 1.6, `WG_POND_MUL` 2.5 (gen 3 places 2.5× `pondCount` ponds), `WG_RIVER_K` 0.8 (gen 3 river flow threshold multiplier), `WG_SALT_BASIN` 0.003 and `WG_SALT_SHARE` 0.008 (salt flat cap per basin and in total, as fractions of the map).
 - **`_generateFieldsV3`:**
   - Continents are rotated ellipses placed best-of-12 for spread, radius `sqrt(n/nCont)*(0.36..0.54)`; islands are small stamps. Both are sampled through a two-scale domain warp, which gives fractal coasts.
   - Base height is `min(max(continent, island), 0.55)*0.7 + fbm(1/90)*0.25 + fbm(1/14)*0.07`.
@@ -2669,7 +2669,7 @@ Helpers: `TOXIN_WORDS`, `toxinIndex(v)` (the same thresholds as `toxinType`), `f
   - `_sanitizeFields` replaces any non-finite value, so gen 3 has no NaN tiles.
   - Helpers: `_blurField(f, r)`, `_distField(isSrc, through, maxD)` (BFS distance).
 - **Lakes and rivers:** gen 3 carves `WG_LAKE_MUL` times as many lake basins, below mountain level. Rivers start at a lower flow threshold out of lakes (`WG_OUTFLOW`), so lakes get outflow rivers; salt basins block flow.
-- **`_markSaltBasins`:** a lake whose mean humidity is below `WG_SALT_HUM` and mean temperature at least 0.4 becomes an endorheic salt basin (`isSalt`), its water removed and its floor set just above sea level.
+- **`_markSaltBasins`:** a lake whose mean humidity is below `WG_SALT_HUM` and mean temperature at least 0.4 is a salt candidate. Candidates are taken driest first; each turns at most `WG_SALT_BASIN` of the map into salt flat (`isSalt`, water removed, floor just above sea level) until the `WG_SALT_SHARE` budget is spent. A basin larger than its share keeps its deepest tiles as a terminal lake and only its shallow rim becomes salt flat; a share under `HYDRO_LAKE_MIN` tiles is skipped.
 - **`_buildDeltas`:** at river mouths with flow of at least `WG_DELTA_FLOW`, walks about `WG_DELTA_LEN` tiles upstream to an apex, flattens the land, cuts 2–3 distributary arms to the sea and builds sediment fans (`isDelta`).
 - **`_classifyBiomesV3`** order: river, lake, pond; ocean (coral reef on warm shallow shelf near land, away from river mouths, in noise patches); salt flat; mangrove (warm coast or delta); other delta tiles to wetland, swamp or bog; beach; cliff; arid low basins to salt flat; then `classifyLandBiomeV3` (steppe on cool dry plains, cloud forest on wet warm slopes, tundra bog on wet cold flats, plus the gen-2 biomes).
 - Generation takes about 0.85–1.05 s at 300×200, against about 0.65 s for gen 2.
