@@ -719,9 +719,10 @@ class AnimalPool {
 			if (b === BIOME_ID.HILLS || b === BIOME_ID.BADLANDS || b === BIOME_ID.MOUNTAINS || b === BIOME_ID.CLIFF) this.walk[i] |= 32;
 		}
 		this.childGenome = new Float32Array(AG);
-		this.deaths = { starved: 0, eaten: 0, old: 0, poison: 0, parasite: 0, disease: 0, thirst: 0 };
+		this.deaths = { starved: 0, eaten: 0, old: 0, poison: 0, parasite: 0, disease: 0, thirst: 0, fire: 0, flood: 0 };
 		this.landDeaths = 0;
 		this.weather = null;
+		this.dis = null;
 		this.terrSp = new Int32Array(n);
 		this.terrUid = new Int32Array(n);
 		this.terrUntil = new Int32Array(n);
@@ -1265,6 +1266,32 @@ class AnimalPool {
 		const E = this.eggs;
 		if (h === 1 && E && E.head[(this.ny[i] | 0) * this.world.width + (this.nx[i] | 0)] >= 0 && this.energy[i] > this.emax[i] * this.gf[i] * GUARD_E) return GUARD_R;
 		return 0;
+	}
+
+	_hazard(i, h, dz, Wx) {
+		const flying = this.domain[i] === 3 && this.fly[i] === 1;
+		const slow = 0.3 + (this.spd[i] < 1.4 ? 1 - this.spd[i] / 1.4 : 0);
+		const juv = this.gf[i] < 1 ? 1.5 : 1;
+		if (h === 1) {
+			const wa = Wx ? Wx.windA : 0;
+			if (!flying && this.rng.next() < FIRE_KILL * slow * juv * (this.dorm[i] ? 3 : 1)) {
+				this.deaths.fire++;
+				dz.killed++;
+				this._kill(i);
+				return true;
+			}
+			this._flee(i, this.x[i] + Math.cos(wa), this.y[i] + Math.sin(wa));
+			return false;
+		}
+		if (this.domain[i] !== 0) return false;
+		if (this.rng.next() < FLOOD_DROWN * slow * juv * (this.dorm[i] ? 2 : 1)) {
+			this.deaths.flood++;
+			dz.drowned++;
+			this._kill(i);
+			return true;
+		}
+		this._flee(i, dz.floodX, dz.floodY);
+		return false;
 	}
 
 	_flee(i, fx, fy) {
@@ -2016,6 +2043,7 @@ class AnimalPool {
 		const seasonT = Wx ? Wx.seasonT : 0;
 		const droughtK = Wx && Wx.drought ? 0.4 : 0;
 		const eggs = this.eggs;
+		const dz = this.dis && this.dis.on ? this.dis : null;
 		const stampTick = tick % TERR_EVERY === 0;
 		tileLoad.fill(0);
 		this._buildGrid();
@@ -2036,6 +2064,7 @@ class AnimalPool {
 			const ef = this.ef[i];
 			if (this.cool[i] > 0) this.cool[i]--;
 			const tile = (this.y[i] | 0) * W + (this.x[i] | 0);
+			if (dz && dz.haz[tile] && this.domain[i] !== 1 && this._hazard(i, dz.haz[tile], dz, Wx)) continue;
 			if (this.dorm[i] && this._dormStep(i, tile, temp[tile] + seasonT, Wx, D)) {
 				if (this.hx[i] >= 0 && this.terr[i] > TERR_MIN) holders++;
 				continue;

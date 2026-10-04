@@ -1439,6 +1439,7 @@ select option {
 .ev-migration .ev-dot { background: rgba(111, 183, 224, 0.15); color: var(--sky); }
 .ev-outbreak .ev-dot { background: rgba(188, 200, 70, 0.16); color: var(--c-outbreak); }
 .ev-weather .ev-dot { background: color-mix(in srgb, var(--amber) 15%, transparent); color: var(--amber); }
+.ev-disaster .ev-dot { background: rgba(232, 116, 60, 0.16); color: #e8743c; }
 .ev-info .ev-dot { background: rgba(214, 235, 222, 0.1); color: var(--muted); }
 
 .seg.small button {

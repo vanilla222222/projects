@@ -1,5 +1,5 @@
-const PG = 16;
-const PLANT_WEIGHTS = [1.4, 1.4, 0.6, 1.2, 0.8, 0.5, 0.7, 0.7, 0.6, 0.5, 0.6, 0.6, 0.4, 0.6, 0.3, 0.4];
+const PG = 17;
+const PLANT_WEIGHTS = [1.4, 1.4, 0.6, 1.2, 0.8, 0.5, 0.7, 0.7, 0.6, 0.5, 0.6, 0.6, 0.4, 0.6, 0.3, 0.4, 0.5];
 const PLANT_SPECIATION = 0.25;
 const PLANT_SPLIT_MIN_POP = 40;
 const YEAR_TICKS = 480;
@@ -28,6 +28,7 @@ const POLL_FRUIT_BASE = 0.4;
 const POLL_DECAY = 0.95;
 const PEST_HEALTH = 1.5;
 const BLIGHT_RES_COST = 0.15;
+const FIRE_COST = 0.12;
 const AGE_STEP = 8;
 const PLANT_LIFE_BASE = 1.5;
 const PLANT_LIFE_WOOD = 40;
@@ -84,6 +85,7 @@ const DISP_DECAY = 0.97;
 const DISP_DUNG = 0.03;
 PLANT_ARCHETYPES.forEach((a, k) => {
 	a.g[15] = a.kind ? 0 : PLANT_DEPTH[k] !== undefined ? PLANT_DEPTH[k] : PLANT_DEPTH_BASE;
+	a.g[16] = a.kind || a.domain !== 'land' ? 0 : a.g[1] < 0.45 ? 0.35 : 0.1;
 });
 
 function plantTraitsFrom(g, o = 0) {
@@ -112,8 +114,9 @@ function plantTraitsFrom(g, o = 0) {
 		hue: g[o + 12],
 		defence: g[o + 13],
 		blightRes: g[o + 14],
+		fire: g[o + 16],
 		formCap: 0.8 + 2.4 * wood,
-		growth: 0.05 * (1 - 0.72 * wood) * (1 - 0.35 * tox) * (1 - 0.12 * disp) * (1 - 0.3 * shade) * (1 - 0.2 * root) * (1 - 0.25 * fruiting - 0.15 * sweet) * (1 - DEFENCE_COST * g[o + 13]) * (1 - BLIGHT_RES_COST * g[o + 14]),
+		growth: 0.05 * (1 - 0.72 * wood) * (1 - 0.35 * tox) * (1 - 0.12 * disp) * (1 - 0.3 * shade) * (1 - 0.2 * root) * (1 - 0.25 * fruiting - 0.15 * sweet) * (1 - DEFENCE_COST * g[o + 13]) * (1 - BLIGHT_RES_COST * g[o + 14]) * (1 - FIRE_COST * g[o + 16]),
 	};
 }
 
