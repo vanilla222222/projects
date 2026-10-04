@@ -1552,9 +1552,9 @@ function buildIconAtlas(cell = 64) {
 		}
 		if (name !== 'ring') {
 			for (const [, p, sw] of parts) {
-				rc.lineWidth = fc.lineWidth = (sw || 0) + 1.8;
+				rc.lineWidth = fc.lineWidth = (sw || 0) + 2.2;
 				rc.strokeStyle = '#000';
-				fc.strokeStyle = 'rgba(10,14,12,0.9)';
+				fc.strokeStyle = 'rgba(8,11,10,0.92)';
 				rc.stroke(p);
 				fc.stroke(p);
 			}
