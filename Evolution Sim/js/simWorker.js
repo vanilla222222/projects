@@ -333,7 +333,7 @@ const handlers = {
 		install(new Ecosystem(world, m.seed, m.options), m.id);
 	},
 	async load(m) {
-		const { eco, meta } = await EvoSave.decode(m.bytes, (w, h, seed) => new WorldMap(w, h, seed));
+		const { eco, meta } = await EvoSave.decode(m.bytes, (w, h, seed, o) => new WorldMap(w, h, seed, o));
 		install(eco, m.id, meta);
 	},
 	async save(m) {

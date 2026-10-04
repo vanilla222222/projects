@@ -307,6 +307,11 @@ class PlantLayer {
 			[BIOME_ID.BEACH]: 0.55,
 			[BIOME_ID.MOUNTAINS]: 0.55,
 			[BIOME_ID.BADLANDS]: 0.6,
+			[BIOME_ID.SALT_FLAT]: 0.3,
+			[BIOME_ID.MANGROVE]: 1.05,
+			[BIOME_ID.TUNDRA_BOG]: 0.7,
+			[BIOME_ID.CLOUD_FOREST]: 1.15,
+			[BIOME_ID.CORAL_REEF]: 1.5,
 		};
 		for (let i = 0; i < this.n; i++) {
 			const b = w.biome[i];
@@ -329,6 +334,7 @@ class PlantLayer {
 			t.formCap *
 			t.peak *
 			this.habit[i] *
+			biomeFit(this.world.biome[i], t.wood, t.root, t.shade) *
 			gaussFit(this.world.temperature[i], t.prefTemp, t.tol) *
 			gaussFit(this.moistAt(i), t.prefMoist, t.tol * 1.2)
 		);
@@ -910,7 +916,7 @@ class PlantLayer {
 			genome[8] = 0;
 			genome[9] = 0;
 		}
-		const bound = (0.8 + 2.4 * genome[3]) * (1 - 0.3 * genome[2]) * this.habit[j];
+		const bound = (0.8 + 2.4 * genome[3]) * (1 - 0.3 * genome[2]) * this.habit[j] * biomeFit(this.world.biome[j], genome[3], genome[7], genome[6]);
 		if (bound < 0.04) return false;
 		const parentId = parentSp.id;
 		const pj = slotOf(genome, wet, 0, kind) * this.n + j;
@@ -1031,4 +1037,20 @@ const WATER_BIOME_SET = new Set([
 	BIOME_ID.LAKE,
 	BIOME_ID.RIVER,
 	BIOME_ID.POND,
+	BIOME_ID.CORAL_REEF,
 ]);
+
+const BIOME_SALT = new Float32Array(BIOME_LIST.length);
+const BIOME_WOOD = new Float32Array(BIOME_LIST.length);
+const BIOME_SHADE = new Float32Array(BIOME_LIST.length);
+BIOME_SALT[BIOME_ID.SALT_FLAT] = 0.85;
+BIOME_SALT[BIOME_ID.MANGROVE] = 0.45;
+BIOME_WOOD[BIOME_ID.SALT_FLAT] = 0.6;
+BIOME_WOOD[BIOME_ID.MANGROVE] = -0.2;
+BIOME_WOOD[BIOME_ID.STEPPE] = 0.55;
+BIOME_WOOD[BIOME_ID.TUNDRA_BOG] = 0.6;
+BIOME_SHADE[BIOME_ID.CLOUD_FOREST] = 0.25;
+
+function biomeFit(b, wood, root, shade) {
+	return (1 - BIOME_SALT[b] * (1 - root)) * (1 - BIOME_WOOD[b] * wood) * (1 + BIOME_SHADE[b] * shade);
+}
