@@ -39,6 +39,9 @@ const BIOME = {
 	ALPINE: 'ALPINE',
 	GLACIER: 'GLACIER',
 	CLIFF: 'CLIFF',
+	SALT_FLAT: 'SALT_FLAT',
+	TUNDRA_BOG: 'TUNDRA_BOG',
+	CORAL_REEF: 'CORAL_REEF',
 };
 
 // Display metadata: color used by the renderer and a human-readable label.
@@ -79,6 +82,9 @@ const BIOME_INFO = {
 	[BIOME.ALPINE]: { name: 'Alpine / Snow Peak', color: '#f2f5f7' },
 	[BIOME.GLACIER]: { name: 'Glacier', color: '#a9dcee' },
 	[BIOME.CLIFF]: { name: 'Cliff', color: '#6b5f56' },
+	[BIOME.SALT_FLAT]: { name: 'Salt Flat', color: '#e9e4d6' },
+	[BIOME.TUNDRA_BOG]: { name: 'Tundra Bog', color: '#6e8a78' },
+	[BIOME.CORAL_REEF]: { name: 'Coral Reef', color: '#2bb3ad' },
 };
 
 // Numeric biome IDs: the world grid stores these (a Uint8Array) instead of
@@ -187,4 +193,68 @@ function classifyLandBiome(altitude, temperature, humidity, t = BIOME_THRESHOLDS
 function classifyWaterBiome(altitude, temperature, t = BIOME_THRESHOLDS) {
 	if (temperature < 0.15) return BIOME.FROZEN_OCEAN;
 	return altitude < t.deepOceanLevel ? BIOME.OCEAN_DEEP : BIOME.OCEAN;
+}
+
+const BIOME_V3 = {
+	reefTemp: 0.6,
+	reefDepth: 0.07,
+	reefMin: 0.008,
+	mangroveTemp: 0.56,
+	mangroveHumidity: 0.42,
+	mangroveWidth: 0.045,
+	saltHumidity: 0.14,
+	saltTemp: 0.48,
+	saltRise: 0.14,
+	saltSlope: 0.008,
+	bogTemp: 0.27,
+	bogHumidity: 0.5,
+	bogSlope: 0.012,
+	steppeTemp: 0.54,
+	steppeHumidity: 0.3,
+	cloudHumidity: 0.6,
+	cloudTemp: 0.36,
+};
+
+function classifyLandBiomeV3(altitude, temperature, humidity, slope, t = BIOME_THRESHOLDS, v = BIOME_V3) {
+	if (altitude >= t.mountainLevel) {
+		if (isGlacierConditions(altitude, temperature, t)) return BIOME.GLACIER;
+		if (humidity > v.cloudHumidity + 0.06 && temperature >= v.cloudTemp + 0.06 && altitude < t.mountainLevel + 0.05) return BIOME.CLOUD_FOREST;
+		return temperature < 0.45 ? BIOME.ALPINE : BIOME.MOUNTAINS;
+	}
+	if (altitude >= t.hillLevel) {
+		if (temperature < 0.28) return BIOME.ALPINE;
+		if (humidity < t.aridHumidity) return BIOME.BADLANDS;
+		if (humidity > v.cloudHumidity && temperature >= v.cloudTemp) return BIOME.CLOUD_FOREST;
+		if (humidity < v.steppeHumidity + 0.02 && temperature < v.steppeTemp) return BIOME.STEPPE;
+		return BIOME.HILLS;
+	}
+	const cold = temperature < t.coldTemp;
+	const hot = temperature > t.hotTemp;
+	const lowLying = altitude < t.seaLevel + 0.08;
+	if (lowLying && humidity > t.mediumHumidity) {
+		if (humidity <= t.humidHumidity) return BIOME.WETLAND;
+		if (temperature < v.bogTemp) return BIOME.TUNDRA_BOG;
+		return cold ? BIOME.BOG : BIOME.SWAMP;
+	}
+	if (cold) {
+		if (humidity < 0.3) return BIOME.FROZEN_DESERT;
+		if (temperature < v.bogTemp && humidity >= v.bogHumidity && slope < v.bogSlope) return BIOME.TUNDRA_BOG;
+		if (humidity < 0.42 && temperature >= v.bogTemp) return BIOME.STEPPE;
+		if (humidity < t.mediumHumidity) return BIOME.TUNDRA;
+		return BIOME.TAIGA;
+	}
+	if (hot) {
+		if (humidity < t.aridHumidity) return BIOME.DESERT;
+		if (humidity < t.dryHumidity) return BIOME.SAVANNA;
+		if (humidity < t.mediumHumidity) return BIOME.DRY_FOREST;
+		if (humidity < t.humidHumidity) return BIOME.JUNGLE;
+		return BIOME.RAINFOREST;
+	}
+	if (humidity < 0.13) return temperature > 0.52 ? BIOME.DESERT : BIOME.STEPPE;
+	if (humidity < v.steppeHumidity) return temperature < v.steppeTemp ? BIOME.STEPPE : BIOME.SHRUBLAND;
+	if (humidity < t.dryHumidity) return BIOME.GRASSLAND;
+	if (humidity < t.mediumHumidity) return BIOME.PLAINS;
+	if (humidity < t.veryHumidHumidity) return BIOME.WOODLAND;
+	if (humidity < t.humidHumidity) return BIOME.FOREST_TEMPERATE;
+	return BIOME.REDWOOD_FOREST;
 }
