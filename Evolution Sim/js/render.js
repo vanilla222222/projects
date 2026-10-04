@@ -8,6 +8,7 @@ uniform sampler2D u_terrain;
 uniform sampler2D u_veg;
 uniform sampler2D u_info;
 uniform sampler2D u_bugs;
+uniform sampler2D u_alt;
 uniform vec2 u_origin;
 uniform float u_scale;
 uniform vec2 u_res;
@@ -57,7 +58,9 @@ void main() {
 	float land = 1.0 - u_overlay;
 	float water = info.g;
 	float dep = info.b;
+	float ppt = 1.0 / u_scale;
 	col *= 1.0 - water * smoothstep(0.08, 0.9, dep) * 0.3 * land;
+	col = mix(col, col * vec3(0.55, 0.72, 0.95) + vec3(0.0, 0.03, 0.08), water * smoothstep(0.2, 1.0, dep) * 0.45 * land);
 	col = mix(col, v.rgb, v.a * u_vegAmount);
 	float snow = smoothstep(0.42, 0.18, info.r + 0.22 * (1.0 - u_winter)) * (1.0 - water) * u_winter * land;
 	col = mix(col, vec3(0.93, 0.95, 0.97), snow * 0.8);
@@ -66,7 +69,31 @@ void main() {
 	float sh = sin(w.x * 0.9 + u_time * 1.3) * sin(w.y * 1.1 - u_time * 1.1);
 	sh += 0.5 * sin(w.x * 2.3 + w.y * 0.7 - u_time * 2.1) * sin(w.y * 2.6 - w.x * 0.5 + u_time * 1.7);
 	col += water * sh * 0.022 * land;
-	col *= t.a * 2.0;
+	float cz = smoothstep(2.5, 7.0, ppt) * land;
+	if (cz > 0.0) {
+		float wetSand = smoothstep(0.1, 0.42, water) * (1.0 - smoothstep(0.42, 0.5, water));
+		float foam = 1.0 - smoothstep(0.0, 0.16, abs(water - 0.5));
+		col *= 1.0 - wetSand * 0.14 * cz;
+		col = mix(col, vec3(0.86, 0.93, 0.92), foam * (0.3 + 0.1 * sh) * cz);
+	}
+	float tz = smoothstep(5.0, 14.0, ppt) * land * (1.0 - water);
+	if (tz > 0.0) {
+		float tn = vnoise(w * 3.1) * 0.6 + vnoise(w * 7.3 + 3.3) * 0.4;
+		col *= 1.0 + (tn - 0.5) * 0.14 * tz;
+	}
+	float shade = t.a * 2.0;
+	if (land > 0.0) {
+		vec2 tx = 1.0 / u_map;
+		float hl = texture(u_alt, tuv - vec2(tx.x, 0.0)).r;
+		float hr = texture(u_alt, tuv + vec2(tx.x, 0.0)).r;
+		float hu = texture(u_alt, tuv - vec2(0.0, tx.y)).r;
+		float hd = texture(u_alt, tuv + vec2(0.0, tx.y)).r;
+		vec3 nrm = normalize(vec3(-(hr - hl) * 13.0, -(hd - hu) * 13.0, 1.0));
+		vec3 lit = vec3(-0.5, -0.5, 0.7071);
+		float hs = clamp(dot(nrm, lit) / lit.z, 0.58, 1.3);
+		shade = mix(shade, hs, land);
+	}
+	col *= shade;
 	if (u_cloud > 0.0) {
 		vec2 drift = vec2(u_time * 0.35, -u_time * 0.27);
 		vec2 bw = (w + (vec2(vnoise(w * 0.3 + drift * 0.5), vnoise(w * 0.3 - drift * 0.5 + 9.1)) - 0.5) * 2.0) / u_map;
@@ -386,6 +413,16 @@ const DRY_MARK = 1.35;
 const WX_ZOOM = [6, 18];
 const WX_TIME_WRAP = 600;
 
+const RAMP_LUTS = {};
+function rampFor(mode) {
+	return RAMPS[mode] ? RAMP_LUTS[mode] || (RAMP_LUTS[mode] = rampLookup(RAMPS[mode])) : null;
+}
+
+function smooth01(a, b, v) {
+	const k = Math.max(0, Math.min(1, (v - a) / (b - a)));
+	return k * k * (3 - 2 * k);
+}
+
 function rampLookup(stops) {
 	const lut = new Uint8Array(256 * 3);
 	const rgb = stops.map(([t, c]) => [t, hexToRgb(c)]);
@@ -421,6 +458,9 @@ class WorldRenderer {
 		this.showWeather = true;
 		this.highlight = null;
 		this.time = 0;
+		this._sizeDirty = true;
+		this._ro = typeof ResizeObserver === 'function' ? new ResizeObserver(() => (this._sizeDirty = true)) : null;
+		if (this._ro) this._ro.observe(canvas);
 
 		this.terrainProg = compileProgram(gl, TERRAIN_VS, TERRAIN_FS);
 		this.spriteProg = compileProgram(gl, SPRITE_VS, SPRITE_FS);
@@ -530,9 +570,25 @@ class WorldRenderer {
 		return tex;
 	}
 
+	_altTex(W, H, alt) {
+		const gl = this.gl;
+		const sea = BIOME_THRESHOLDS.seaLevel;
+		const f = new Float32Array(W * H);
+		for (let i = 0; i < W * H; i++) f[i] = alt[i] > sea ? alt[i] : sea;
+		const tex = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, tex);
+		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16F, W, H, 0, gl.RED, gl.FLOAT, f);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		return tex;
+	}
+
 	setWorld(world, eco) {
 		const gl = this.gl;
-		for (const t of [this.terrainTex, this.vegTex, this.infoTex, this.bugTex]) if (t) gl.deleteTexture(t);
+		for (const t of [this.terrainTex, this.vegTex, this.infoTex, this.bugTex, this.altTex]) if (t) gl.deleteTexture(t);
 		this.world = world;
 		this.eco = eco;
 		const W = world.width;
@@ -550,6 +606,7 @@ class WorldRenderer {
 		this.terrainTex = this._tex(W, H, this.terrainData, true);
 		this.vegTex = this._tex(W, H, this.vegData, true);
 		this.infoTex = this._tex(W, H, info, true);
+		this.altTex = this._altTex(W, H, world.altitude);
 		this.bugData = new Uint8Array(W * H * 4);
 		this.bugTex = this._tex(W, H, this.bugData, true);
 		this.lastBugUpdate = 0;
@@ -592,7 +649,7 @@ class WorldRenderer {
 		const n = w.width * w.height;
 		const out = this.terrainData;
 		const sea = BIOME_THRESHOLDS.seaLevel;
-		const lut = RAMPS[mode] ? rampLookup(RAMPS[mode]) : null;
+		const lut = rampFor(mode);
 		let field = mode === 'altitude' ? w.altitude : mode === 'temperature' ? w.temperature : mode === 'humidity' ? w.humidity : mode === 'fertility' ? w.fertility : null;
 		const Wx = mode === 'humidity' || mode === 'rain' || mode === 'water' ? this.eco.weather : null;
 		const snow = Wx && mode !== 'water' ? Wx.snow : null;
@@ -974,6 +1031,7 @@ class WorldRenderer {
 			this.canvas.height = h;
 		}
 		this.dpr = dpr;
+		this._sizeDirty = !this._ro;
 		this.cssW = r.width;
 		this.cssH = r.height;
 	}
@@ -1021,7 +1079,7 @@ class WorldRenderer {
 	draw(alpha, dt) {
 		if (!this.world) return;
 		this.time += dt;
-		this.resize();
+		if (this._sizeDirty) this.resize();
 		const gl = this.gl;
 		const eco = this.eco;
 		const c = this.cam;
@@ -1041,10 +1099,7 @@ class WorldRenderer {
 		if (LIVE_MODES[this.mode] && now - this.lastSoilUpdate > 500) this.setMode(this.mode);
 		const ramp = RAMPS[this.mode] ? 1 : 0;
 		const flat = ramp || this.mode === 'territory' ? 1 : 0;
-		const smooth = (a, b, v) => {
-			const k = Math.max(0, Math.min(1, (v - a) / (b - a)));
-			return k * k * (3 - 2 * k);
-		};
+		const smooth = smooth01;
 		const cloud = this.showSwarms && !flat ? 1 - smooth(CLOUD_FADE[0], CLOUD_FADE[1], c.zoom) : 0;
 		if (cloud > 0 && now - this.lastBugUpdate > BUG_CLOUD_MS) {
 			this._updateBugCloud();
@@ -1067,6 +1122,9 @@ class WorldRenderer {
 		gl.uniform1i(tp.u.u_veg, 1);
 		gl.uniform1i(tp.u.u_info, 2);
 		gl.uniform1i(tp.u.u_bugs, 3);
+		gl.activeTexture(gl.TEXTURE4);
+		gl.bindTexture(gl.TEXTURE_2D, this.altTex);
+		gl.uniform1i(tp.u.u_alt, 4);
 		gl.uniform2f(tp.u.u_origin, ox, oy);
 		gl.uniform1f(tp.u.u_scale, scale);
 		gl.uniform2f(tp.u.u_res, this.canvas.width, this.canvas.height);
