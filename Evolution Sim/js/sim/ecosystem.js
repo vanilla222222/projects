@@ -63,6 +63,8 @@ class Ecosystem {
 		this.stats.stageCls = {};
 		this.stats.symb = { cleanerPairs: 0, pollPairs: 0, mimicSp: 0, mimics: 0, models: 0, riding: 0, cleanings: 0, cleanFail: 0, cleanEaten: 0, cleanCarry: 0, toxHits: 0, toxSpit: 0, mimicFooled: 0, avoidSkips: 0, protectedTicks: 0, animalSeeded: 0, dispBonus: 0 };
 		this.history.symb = [];
+		this.stats.brain = { mean: 0, cls: [0, 0, 0, 0, 0, 0], toolSp: 0, learnedN: 0, toolUses: 0, toolGain: 0, learned: 0, fledEarly: 0, memWater: 0, memFood: 0, memDanger: 0, taught: 0 };
+		this.history.brain = [];
 		for (const k of BIRD_NICHES) {
 			this.stats.birdNiches[k] = 0;
 			this.history['birdNiche.' + k] = [];
@@ -180,6 +182,7 @@ class Ecosystem {
 			if (this.bugs) this.bugs.refreshSpeciesMeans();
 			if (D) D.refreshSpeciesMeans();
 			this._symbStats();
+			this._brainStats();
 		}
 		if (this.tick % MERGE_EVERY === 0) this._mergePass();
 		this._computeStats();
@@ -384,6 +387,18 @@ class Ecosystem {
 		s.riding = riding;
 		s.animalSeeded = P.animalSeeded;
 		s.dispBonus = Math.round(P.dispBonus * 10) / 10;
+	}
+
+	_brainStats() {
+		const A = this.animals;
+		if (!this.stats.brain) this.stats.brain = {};
+		const s = this.stats.brain;
+		Object.assign(s, A.brain);
+		s.toolGain = Math.round(A.brain.toolGain * 10) / 10;
+		s.mean = Math.round(A.brainMean * 1000) / 1000;
+		s.cls = Array.from(A.brainCls, (v) => Math.round(v * 1000) / 1000);
+		s.toolSp = A.toolSp;
+		s.learnedN = A.learnedN;
 	}
 
 	_socialStats() {
@@ -694,6 +709,7 @@ class Ecosystem {
 		h.meanFat.push(this.stats.nutrition.meanFat);
 		h.dormancy.push(this.stats.dormancy.total);
 		if (h.alarms) h.alarms.push(this.stats.social.alarms);
+		if (h.brain) h.brain.push(this.stats.brain ? this.stats.brain.mean : 0);
 		if (h.symb) h.symb.push(this.stats.symb.cleanerPairs + this.stats.symb.pollPairs + this.stats.symb.mimicSp);
 		for (const k of BIRD_NICHES) h['birdNiche.' + k].push(this.stats.birdNiches[k]);
 		for (const g of STAT_GROUPS) {
