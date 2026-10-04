@@ -1025,6 +1025,64 @@ select option {
 	transition: opacity 0.6s;
 }
 
+.map-legend {
+	position: absolute;
+	left: 14px;
+	top: 14px;
+	width: 150px;
+	font-size: 11px;
+	color: var(--text);
+	background: var(--float);
+	border: 1px solid var(--line);
+	padding: 8px 10px;
+	border-radius: 10px;
+	pointer-events: none;
+}
+
+.map-legend[hidden] {
+	display: none;
+}
+
+.ml-title {
+	font-weight: 600;
+	margin-bottom: 5px;
+}
+
+.ml-ramp {
+	height: 8px;
+	border-radius: 4px;
+	background: linear-gradient(90deg, #b58a4a 0%, #d8c68a 20%, #8cc4b0 45%, #3f8fc8 70%, #1b3f8f 100%);
+}
+
+.ml-ends {
+	display: flex;
+	justify-content: space-between;
+	color: var(--muted);
+	margin: 2px 0 6px;
+}
+
+.ml-row {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	margin-top: 3px;
+}
+
+.ml-cell {
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	flex: none;
+	border: 2px dashed #e4f2ff;
+	box-shadow: 0 0 0 1px #081022;
+	background: repeating-linear-gradient(105deg, rgba(13, 26, 77, 0.35) 0 3px, rgba(225, 242, 255, 0.9) 3px 4px);
+}
+
+.ml-cell.snow {
+	border-color: #ffffff;
+	background: radial-gradient(circle, #ffffff 0 1.5px, transparent 2px) 0 0 / 6px 6px, rgba(190, 210, 235, 0.5);
+}
+
 .map-error {
 	position: absolute;
 	inset: 0;

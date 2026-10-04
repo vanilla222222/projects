@@ -259,6 +259,7 @@ function applyLoaded(world, eco, meta) {
 	if (modeBtn) {
 		for (const x of $('viewModes').children) x.classList.toggle('active', x === modeBtn);
 		r.setMode(meta.mode);
+		showMapLegend(meta.mode);
 	}
 	const speedBtn = [...$('speedGroup').children].find((b) => Number(b.dataset.speed) === meta.speed);
 	if (speedBtn) {
@@ -304,6 +305,10 @@ function frame(now) {
 		if (app.hover) updateTooltip();
 	}
 	requestAnimationFrame(frame);
+}
+
+function showMapLegend(mode) {
+	$('rainLegend').hidden = mode !== 'rain';
 }
 
 function setRunning(on) {
@@ -1288,6 +1293,7 @@ function setupControls() {
 		if (!b) return;
 		for (const x of $('viewModes').children) x.classList.toggle('active', x === b);
 		app.renderer.setMode(b.dataset.mode);
+		showMapLegend(b.dataset.mode);
 	});
 	$('showPlants').onchange = (e) => (app.renderer.showPlants = e.target.checked);
 	$('showAnimals').onchange = (e) => (app.renderer.showAnimals = e.target.checked);

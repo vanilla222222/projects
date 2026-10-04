@@ -8,6 +8,7 @@ uniform sampler2D u_terrain;
 uniform sampler2D u_veg;
 uniform sampler2D u_info;
 uniform sampler2D u_bugs;
+uniform sampler2D u_alt;
 uniform vec2 u_origin;
 uniform float u_scale;
 uniform vec2 u_res;
@@ -57,7 +58,9 @@ void main() {
 	float land = 1.0 - u_overlay;
 	float water = info.g;
 	float dep = info.b;
+	float ppt = 1.0 / u_scale;
 	col *= 1.0 - water * smoothstep(0.08, 0.9, dep) * 0.3 * land;
+	col = mix(col, col * vec3(0.55, 0.72, 0.95) + vec3(0.0, 0.03, 0.08), water * smoothstep(0.2, 1.0, dep) * 0.45 * land);
 	col = mix(col, v.rgb, v.a * u_vegAmount);
 	float snow = smoothstep(0.42, 0.18, info.r + 0.22 * (1.0 - u_winter)) * (1.0 - water) * u_winter * land;
 	col = mix(col, vec3(0.93, 0.95, 0.97), snow * 0.8);
@@ -66,7 +69,31 @@ void main() {
 	float sh = sin(w.x * 0.9 + u_time * 1.3) * sin(w.y * 1.1 - u_time * 1.1);
 	sh += 0.5 * sin(w.x * 2.3 + w.y * 0.7 - u_time * 2.1) * sin(w.y * 2.6 - w.x * 0.5 + u_time * 1.7);
 	col += water * sh * 0.022 * land;
-	col *= t.a * 2.0;
+	float cz = smoothstep(2.5, 7.0, ppt) * land;
+	if (cz > 0.0) {
+		float wetSand = smoothstep(0.1, 0.42, water) * (1.0 - smoothstep(0.42, 0.5, water));
+		float foam = 1.0 - smoothstep(0.0, 0.16, abs(water - 0.5));
+		col *= 1.0 - wetSand * 0.14 * cz;
+		col = mix(col, vec3(0.86, 0.93, 0.92), foam * (0.3 + 0.1 * sh) * cz);
+	}
+	float tz = smoothstep(5.0, 14.0, ppt) * land * (1.0 - water);
+	if (tz > 0.0) {
+		float tn = vnoise(w * 3.1) * 0.6 + vnoise(w * 7.3 + 3.3) * 0.4;
+		col *= 1.0 + (tn - 0.5) * 0.14 * tz;
+	}
+	float shade = t.a * 2.0;
+	if (land > 0.0) {
+		vec2 tx = 1.0 / u_map;
+		float hl = texture(u_alt, tuv - vec2(tx.x, 0.0)).r;
+		float hr = texture(u_alt, tuv + vec2(tx.x, 0.0)).r;
+		float hu = texture(u_alt, tuv - vec2(0.0, tx.y)).r;
+		float hd = texture(u_alt, tuv + vec2(0.0, tx.y)).r;
+		vec3 nrm = normalize(vec3(-(hr - hl) * 13.0, -(hd - hu) * 13.0, 1.0));
+		vec3 lit = vec3(-0.5, -0.5, 0.7071);
+		float hs = clamp(dot(nrm, lit) / lit.z, 0.58, 1.3);
+		shade = mix(shade, hs, land);
+	}
+	col *= shade;
 	if (u_cloud > 0.0) {
 		vec2 drift = vec2(u_time * 0.35, -u_time * 0.27);
 		vec2 bw = (w + (vec2(vnoise(w * 0.3 + drift * 0.5), vnoise(w * 0.3 - drift * 0.5 + 9.1)) - 0.5) * 2.0) / u_map;
@@ -129,9 +156,9 @@ in vec3 v_c2;
 in float v_alpha;
 out vec4 outColor;
 void main() {
-	vec4 r = texture(u_role, v_uv);
+	vec4 r = texture(u_role, v_uv, -0.6);
 	if (r.a < 0.01) discard;
-	vec4 f = texture(u_fixed, v_uv);
+	vec4 f = texture(u_fixed, v_uv, -0.6);
 	float s = r.r + r.g + r.b;
 	vec3 tint = s > 0.001 ? (r.r * v_c0 + r.g * v_c1 + r.b * v_c2) / s : vec3(0.0);
 	vec3 col = tint * max(r.a - f.a, 0.0) + f.rgb;
@@ -161,6 +188,7 @@ uniform float u_time;
 uniform float u_px;
 uniform float u_cloud;
 uniform float u_dens;
+uniform float u_cell;
 uniform vec2 u_map;
 in vec2 v_q;
 out vec4 outColor;
@@ -222,6 +250,26 @@ void main() {
 		float on = step(hash(c + u_seed.yx + 1.3), dens);
 		pa = on * (1.0 - smoothstep(0.08, 0.16, length(f - o))) * 0.85;
 		pc = vec3(0.97, 0.98, 1.0);
+	}
+	if (u_cell > 0.5) {
+		pa *= (1.0 - smoothstep(rr * 0.6, rr * 0.9, d)) * 1.25;
+		pa = min(pa, 0.9);
+		float dpx = (d - rr * 0.9) / u_px;
+		float ang = atan(v_q.y, v_q.x) / 6.2832;
+		float dashes = max(6.0, floor(6.2832 * rr * 0.9 / u_px / 16.0));
+		float dash = step(0.38, fract(ang * dashes + u_time * 0.08));
+		float edgeD = (1.0 - smoothstep(1.4, 2.8, abs(dpx))) * dash;
+		float edgeL = (1.0 - smoothstep(0.3, 1.1, abs(dpx))) * dash;
+		float fill = (1.0 - smoothstep(rr * 0.8, rr * 0.9, d)) * (0.1 + 0.16 * heavy);
+		vec3 fc = u_snow < 0.5 ? vec3(0.05, 0.1, 0.3) : vec3(0.75, 0.82, 0.92);
+		vec3 lc = u_snow < 0.5 ? vec3(0.85, 0.94, 1.0) : vec3(1.0);
+		pc = u_snow < 0.5 ? vec3(0.88, 0.95, 1.0) : vec3(1.0);
+		vec4 o = vec4(fc * fill, fill);
+		o = vec4(pc * pa, pa) + o * (1.0 - pa);
+		o = vec4(vec3(0.03, 0.05, 0.12) * edgeD * 0.9, edgeD * 0.9) + o * (1.0 - edgeD * 0.9);
+		o = vec4(lc * edgeL, edgeL) + o * (1.0 - edgeL);
+		outColor = o;
+		return;
 	}
 	pa *= 1.0 - smoothstep(rr * 0.3, rr * 0.9, d);
 	outColor = vec4(pc * pa + cc * ca * (1.0 - pa), pa + ca * (1.0 - pa));
@@ -350,9 +398,14 @@ const TERR_SAT = 1.4;
 const TERR_FADE = 10;
 const TERR_EDGE_MIX = 1;
 const TERR_EDGE_DARK = 0.7;
-const ELDER_ALPHA = 0.8;
+const ELDER_ALPHA = 0.92;
+const ELDER_GREY = [0.35, 0.7];
+const ELDER_RGB = [178, 178, 172];
+const ELDER_MIN_EF = 0.6;
 const LARVA_SHRINK = 0.75;
-const JUV_PALE = 0.3;
+const JUV_PALE = 0.42;
+const JUV_ROUND = 1.14;
+const ATLAS_CELL = 128;
 const EGG_ZOOM = 3;
 const EGG_PX = 4;
 const EGG_BASE = 0.34;
@@ -385,6 +438,16 @@ const DRY_TINT = new Uint8Array(9).map((_, q) => [225, 30, 35][q % 3]);
 const DRY_MARK = 1.35;
 const WX_ZOOM = [6, 18];
 const WX_TIME_WRAP = 600;
+
+const RAMP_LUTS = {};
+function rampFor(mode) {
+	return RAMPS[mode] ? RAMP_LUTS[mode] || (RAMP_LUTS[mode] = rampLookup(RAMPS[mode])) : null;
+}
+
+function smooth01(a, b, v) {
+	const k = Math.max(0, Math.min(1, (v - a) / (b - a)));
+	return k * k * (3 - 2 * k);
+}
 
 function rampLookup(stops) {
 	const lut = new Uint8Array(256 * 3);
@@ -421,6 +484,9 @@ class WorldRenderer {
 		this.showWeather = true;
 		this.highlight = null;
 		this.time = 0;
+		this._sizeDirty = true;
+		this._ro = typeof ResizeObserver === 'function' ? new ResizeObserver(() => (this._sizeDirty = true)) : null;
+		if (this._ro) this._ro.observe(canvas);
 
 		this.terrainProg = compileProgram(gl, TERRAIN_VS, TERRAIN_FS);
 		this.spriteProg = compileProgram(gl, SPRITE_VS, SPRITE_FS);
@@ -475,7 +541,7 @@ class WorldRenderer {
 		gl.bindVertexArray(null);
 		this._ensureCapacity(8192);
 
-		const atlas = buildIconAtlas(64);
+		const atlas = buildIconAtlas(ATLAS_CELL);
 		this.atlas = atlas;
 		const up = (data) => {
 			const tex = gl.createTexture();
@@ -530,9 +596,25 @@ class WorldRenderer {
 		return tex;
 	}
 
+	_altTex(W, H, alt) {
+		const gl = this.gl;
+		const sea = BIOME_THRESHOLDS.seaLevel;
+		const f = new Float32Array(W * H);
+		for (let i = 0; i < W * H; i++) f[i] = alt[i] > sea ? alt[i] : sea;
+		const tex = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, tex);
+		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16F, W, H, 0, gl.RED, gl.FLOAT, f);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		return tex;
+	}
+
 	setWorld(world, eco) {
 		const gl = this.gl;
-		for (const t of [this.terrainTex, this.vegTex, this.infoTex, this.bugTex]) if (t) gl.deleteTexture(t);
+		for (const t of [this.terrainTex, this.vegTex, this.infoTex, this.bugTex, this.altTex]) if (t) gl.deleteTexture(t);
 		this.world = world;
 		this.eco = eco;
 		const W = world.width;
@@ -550,6 +632,7 @@ class WorldRenderer {
 		this.terrainTex = this._tex(W, H, this.terrainData, true);
 		this.vegTex = this._tex(W, H, this.vegData, true);
 		this.infoTex = this._tex(W, H, info, true);
+		this.altTex = this._altTex(W, H, world.altitude);
 		this.bugData = new Uint8Array(W * H * 4);
 		this.bugTex = this._tex(W, H, this.bugData, true);
 		this.lastBugUpdate = 0;
@@ -592,7 +675,7 @@ class WorldRenderer {
 		const n = w.width * w.height;
 		const out = this.terrainData;
 		const sea = BIOME_THRESHOLDS.seaLevel;
-		const lut = RAMPS[mode] ? rampLookup(RAMPS[mode]) : null;
+		const lut = rampFor(mode);
 		let field = mode === 'altitude' ? w.altitude : mode === 'temperature' ? w.temperature : mode === 'humidity' ? w.humidity : mode === 'fertility' ? w.fertility : null;
 		const Wx = mode === 'humidity' || mode === 'rain' || mode === 'water' ? this.eco.weather : null;
 		const snow = Wx && mode !== 'water' ? Wx.snow : null;
@@ -974,6 +1057,7 @@ class WorldRenderer {
 			this.canvas.height = h;
 		}
 		this.dpr = dpr;
+		this._sizeDirty = !this._ro;
 		this.cssW = r.width;
 		this.cssH = r.height;
 	}
@@ -1021,7 +1105,7 @@ class WorldRenderer {
 	draw(alpha, dt) {
 		if (!this.world) return;
 		this.time += dt;
-		this.resize();
+		if (this._sizeDirty) this.resize();
 		const gl = this.gl;
 		const eco = this.eco;
 		const c = this.cam;
@@ -1041,10 +1125,7 @@ class WorldRenderer {
 		if (LIVE_MODES[this.mode] && now - this.lastSoilUpdate > 500) this.setMode(this.mode);
 		const ramp = RAMPS[this.mode] ? 1 : 0;
 		const flat = ramp || this.mode === 'territory' ? 1 : 0;
-		const smooth = (a, b, v) => {
-			const k = Math.max(0, Math.min(1, (v - a) / (b - a)));
-			return k * k * (3 - 2 * k);
-		};
+		const smooth = smooth01;
 		const cloud = this.showSwarms && !flat ? 1 - smooth(CLOUD_FADE[0], CLOUD_FADE[1], c.zoom) : 0;
 		if (cloud > 0 && now - this.lastBugUpdate > BUG_CLOUD_MS) {
 			this._updateBugCloud();
@@ -1067,6 +1148,9 @@ class WorldRenderer {
 		gl.uniform1i(tp.u.u_veg, 1);
 		gl.uniform1i(tp.u.u_info, 2);
 		gl.uniform1i(tp.u.u_bugs, 3);
+		gl.activeTexture(gl.TEXTURE4);
+		gl.bindTexture(gl.TEXTURE_2D, this.altTex);
+		gl.uniform1i(tp.u.u_alt, 4);
 		gl.uniform2f(tp.u.u_origin, ox, oy);
 		gl.uniform1f(tp.u.u_scale, scale);
 		gl.uniform2f(tp.u.u_res, this.canvas.width, this.canvas.height);
@@ -1114,10 +1198,11 @@ class WorldRenderer {
 			gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, n);
 			gl.bindVertexArray(null);
 		}
-		if (this.showWeather && !flat) this._drawWeather(alpha, ox, oy, scale, smooth(WX_ZOOM[0], WX_ZOOM[1], c.zoom));
+		if (this.mode === 'rain') this._drawWeather(alpha, ox, oy, scale, 0, 1);
+		else if (this.showWeather && !flat) this._drawWeather(alpha, ox, oy, scale, smooth(WX_ZOOM[0], WX_ZOOM[1], c.zoom), 0);
 	}
 
-	_drawWeather(alpha, ox, oy, scale, hz) {
+	_drawWeather(alpha, ox, oy, scale, hz, cell) {
 		const Wx = this.eco.weather;
 		if (!Wx || !Wx.on || !Wx.stormCount) return;
 		const gl = this.gl;
@@ -1136,6 +1221,7 @@ class WorldRenderer {
 		gl.uniform1f(u.u_px, 1 / this.cam.zoom);
 		gl.uniform1f(u.u_cloud, 1 - 0.75 * hz);
 		gl.uniform1f(u.u_dens, 1 - 0.5 * hz);
+		gl.uniform1f(u.u_cell, cell);
 		gl.uniform2f(u.u_map, W, H);
 		gl.bindVertexArray(this.wxVao);
 		for (const s of Wx.storms) {
@@ -1187,6 +1273,19 @@ class WorldRenderer {
 			t[q] = col[o + 6 + q] + (255 - col[o + 6 + q]) * EGG_PALE;
 			t[q + 3] = col[o + q];
 			t[q + 6] = 255;
+		}
+		return t;
+	}
+
+	_elderTint(co, ca, ef) {
+		const t = this._eldT || (this._eldT = new Uint8Array(9));
+		const k = ELDER_GREY[0] + (ELDER_GREY[1] - ELDER_GREY[0]) * Math.min(1, (1 - ef) / (1 - ELDER_MIN_EF));
+		for (let q = 0; q < 9; q += 3) {
+			const m = (ca[co + q] * 0.3 + ca[co + q + 1] * 0.59 + ca[co + q + 2] * 0.11) * 0.6;
+			for (let c = 0; c < 3; c++) {
+				const v = ca[co + q + c];
+				t[q + c] = v + (m + ELDER_RGB[c] * 0.4 - v) * k;
+			}
 		}
 		return t;
 	}
@@ -1433,8 +1532,11 @@ class WorldRenderer {
 			const bright = sv > SHOW_BASE;
 			const lv = lvA ? lvA[i] : 0;
 			const juv = !sick && !bright && g < 1;
-			const ca = sick ? this._infected(id, col) : bright ? this._showy(id * 9, col, sv) : juv ? this._juvTint(id * 9, col) : col;
-			const co = sick || bright || juv ? 0 : id * 9;
+			const ca0 = sick ? this._infected(id, col) : bright ? this._showy(id * 9, col, sv) : juv ? this._juvTint(id * 9, col) : col;
+			const co0 = sick || bright || juv ? 0 : id * 9;
+			const old = !sick && ef && ef[i] < 1;
+			const ca = old ? this._elderTint(co0, ca0, ef[i]) : ca0;
+			const co = old ? 0 : co0;
 			if (dots) {
 				const ds = ((3 + A.mass[i] * 0.9) / zoom) * g;
 				n = th ? this._put(n, x, y, ds * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, a, 0, th) : this._put(n, x, y, ds, dotIcon, 1, a, co, ca);
@@ -1445,7 +1547,7 @@ class WorldRenderer {
 				const cap = emx[i] * g;
 				const fr = fat ? fat[i] / cap : 0;
 				const er = en[i] / cap;
-				const wd = fr > 0 ? 1 + Math.min(FAT_WIDE_MAX, fr * FAT_WIDE) : er < THIN_AT ? THIN_MIN + (1 - THIN_MIN) * (er > 0 ? er / THIN_AT : 0) : 1;
+				const wd = (fr > 0 ? 1 + Math.min(FAT_WIDE_MAX, fr * FAT_WIDE) : er < THIN_AT ? THIN_MIN + (1 - THIN_MIN) * (er > 0 ? er / THIN_AT : 0) : 1) * (g < 1 && !lv ? 1 + (JUV_ROUND - 1) * (1 - g) / (1 - JUV_MIN) : 1);
 				if (sv >= CREST_MIN && zoom >= CREST_ZOOM) n = this._put(n, x - size * 0.12 * A.face[i], ly - size * 0.62, size * CREST_SCALE * (0.6 + sv), crestIcon, A.face[i], a, co, ca);
 				n = this._put(n, x, ly - size * 0.1, size, lv === 1 ? tadIcon : lv === 2 ? larIcon : icons[id], A.face[i] * wd * (zz ? DORM_WIDE : 1), a, co, ca);
 				const am = almA ? almA[i] : 0;
