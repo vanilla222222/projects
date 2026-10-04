@@ -315,7 +315,7 @@ const SimClient = (() => {
 			const copy = bytes.slice();
 			return request('load', { bytes: copy }, [copy.buffer]);
 		}
-		return EvoSave.decode(bytes, (w, h, seed) => new WorldMap(w, h, seed));
+		return EvoSave.decode(bytes, (w, h, seed, o) => new WorldMap(w, h, seed, o));
 	}
 
 	async function save(eco, meta) {

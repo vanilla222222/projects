@@ -156,6 +156,10 @@ const NATIMM_P = 0.003;
 const DOMAIN_BIT = [1, 2, 4, 8];
 const FEED_BIT = [1, 2, 4, 1];
 const THIRST = 0.02;
+const SALT_THIRST = 1.5;
+const SALT_THIRST_AMPH = 1.1;
+const MIRE_SLOW = 0.7;
+const REEF_COVER = 0.2;
 const THIRSTY = 0.35;
 const DRINK_WET = 0.6;
 const AMPH_DRINK_WET = 0.5;
@@ -717,6 +721,8 @@ class AnimalPool {
 			else this.walk[i] = b === BIOME_ID.GLACIER ? 0 : b === BIOME_ID.BEACH || b === BIOME_ID.CLIFF ? 17 : 1;
 			this.walk[i] |= 8;
 			if (b === BIOME_ID.HILLS || b === BIOME_ID.BADLANDS || b === BIOME_ID.MOUNTAINS || b === BIOME_ID.CLIFF) this.walk[i] |= 32;
+			if (b === BIOME_ID.SALT_FLAT || b === BIOME_ID.MANGROVE) this.walk[i] |= 64;
+			if (b === BIOME_ID.TUNDRA_BOG || b === BIOME_ID.BOG || b === BIOME_ID.CORAL_REEF) this.walk[i] |= 128;
 		}
 		this.childGenome = new Float32Array(AG);
 		this.deaths = { starved: 0, eaten: 0, old: 0, poison: 0, parasite: 0, disease: 0, thirst: 0, fire: 0, flood: 0 };
@@ -1607,10 +1613,11 @@ class AnimalPool {
 			const et = this.world.temperature[(y | 0) * this.world.width + (x | 0)] + (this.weather ? this.weather.seasonT : 0);
 			if (et < 0.5) v *= 1 - COLD_SLOW * cold * (0.5 - et) * 2;
 		}
+		const tad = this.lv[i] === 1;
+		if (!tad && this.domain[i] === 0 && this.walk[(y | 0) * this.world.width + (x | 0)] & 128) v *= MIRE_SLOW;
 		const step = Math.min(d, v * frac);
 		dx /= d;
 		dy /= d;
-		const tad = this.lv[i] === 1;
 		const dom = tad ? 2 : this.domain[i];
 		const W = this.world.width;
 		const angles = [0, 0.7, -0.7, 1.4, -1.4, 2.2, -2.2];
@@ -2095,7 +2102,7 @@ class AnimalPool {
 					wv = 1;
 				}
 				else {
-					wv -= THIRST * (1 - 0.6 * this.dry[i]) * (0.6 + temp[tile] + seasonT + droughtK) * (this.cold[i] > 0.5 ? 0.6 : 1) * (amph ? AMPH_DRY : 1) * (inv ? INVERT_THIRST : 1) * (herdM && this.ld[i] ? ELDER_THIRST : 1);
+					wv -= THIRST * (1 - 0.6 * this.dry[i]) * (0.6 + temp[tile] + seasonT + droughtK) * (this.cold[i] > 0.5 ? 0.6 : 1) * (amph ? AMPH_DRY : 1) * (inv ? INVERT_THIRST : 1) * (herdM && this.ld[i] ? ELDER_THIRST : 1) * (this.walk[tile] & 64 ? (amph ? SALT_THIRST_AMPH : SALT_THIRST) : 1);
 					if (wv < 0) wv = 0;
 				}
 				this.water[i] = wv;
@@ -2973,7 +2980,7 @@ class AnimalPool {
 		const cover = this.nic[i]
 			? BIRD_STRIKE
 			: this.domain[p] === 1
-			? 0.3 + Math.min(0.3, this.plants.cover(tile) * 0.6)
+			? 0.3 + Math.min(0.3, this.plants.cover(tile) * 0.6) + (this.walk[tile] & 128 ? REEF_COVER : 0)
 			: Math.min(0.45, this.plants.cover(tile) * 0.5) + (this.home[p] > 1 && Math.hypot(this.x[p] - this.nx[p], this.y[p] - this.ny[p]) <= NEST_NEAR ? DEN_COVER * this.genome[p * AG + G_NEST] : 0);
 		const tk = this.armor[p] > TOOL_ARMOR || this.cls[p] === CLS_INVT ? this._tool(i) : 0;
 		let chance = 0.7 * sizeF * speedF * (1 - 0.6 * this.armor[p] * (1 - TOOL_CRACK * tk)) * (1 - cover * (1 - DISPLAY_SPOT * this.show[p] - (this.alm[p] > 0 ? ALARM_SPOT : 0))) * (1 - 0.5 * this.scav[i]);

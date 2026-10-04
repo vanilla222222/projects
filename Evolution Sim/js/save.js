@@ -169,6 +169,7 @@ const EvoSave = (() => {
 			seed: eco.seed,
 			w: eco.world.width,
 			h: eco.world.height,
+			worldGen: eco.world.gen || 2,
 			tick: eco.tick,
 			meta,
 			records,
@@ -218,7 +219,7 @@ const EvoSave = (() => {
 
 	async function decode(gz, makeWorld) {
 		const { header, bin } = await readHeader(gz);
-		const world = makeWorld(header.w, header.h, header.seed);
+		const world = makeWorld(header.w, header.h, header.seed, { gen: header.worldGen || 2 });
 		const eco = deserialize(header.records, bin, world);
 		if (!eco || eco.world !== world || eco.tick !== header.tick) throw new Error('Save file contents are inconsistent');
 		return { eco, world, meta: header.meta || {}, fast: !!header.fast };
