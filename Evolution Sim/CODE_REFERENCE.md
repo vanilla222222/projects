@@ -1967,7 +1967,7 @@ The vector icons are drawn on a 32×32 box, in side view, facing right. The same
 
 ### `buildIconAtlas(cell = 64)`: texture channel layout
 
-The atlas is 12 columns wide, with `ceil(ICON_NAMES.length/12)` rows of `cell` pixels. With the current 159 icons that is 14 rows, 768×896 at the default 64px cell. It returns `{width, height, cols, rows, cell, role, fixed}`, where `role` and `fixed` are premultiplied-RGBA `Uint8Array`s with the same layout.
+The atlas is 12 columns wide, with `ceil(ICON_NAMES.length/12)` rows of `cell` pixels. With the current 159 icons that is 14 rows, 768×896 at the default 64px cell; the renderer passes `ATLAS_CELL` (128), giving 1536×1792. It returns `{width, height, cols, rows, cell, role, fixed}`, where `role` and `fixed` are premultiplied-RGBA `Uint8Array`s with the same layout.
 
 **Role atlas:**
 
@@ -1984,13 +1984,13 @@ The atlas is 12 columns wide, with `ceil(ICON_NAMES.length/12)` rows of `cell` p
 
 **Fixed atlas:**
 
-- Holds the fixed-color parts and the outline, in dark ink `rgba(10,14,12,0.9)`.
+- Holds the fixed-color parts and the outline, in dark ink `rgba(8,11,10,0.92)`.
 - Tinted parts are cut out of it with `destination-out`.
 
 **Outline:**
 
 - The outline is stroked under every icon except `ring`.
-- Its width is the part's stroke width plus 1.8.
+- Its width is the part's stroke width plus 2.2, so the contrast edge survives the larger cell and the lower mips.
 
 The sprite shader recombines the two atlases with each instance's three colors (see the Renderer section).
 
@@ -2000,7 +2000,7 @@ The sprite shader recombines the two atlases with each instance's three colors (
 
 `WorldRenderer` is a WebGL2 renderer with two passes:
 
-- **Terrain:** a single fullscreen triangle draws the terrain from three tile textures through a camera transform, so panning and zooming cost nothing on the CPU.
+- **Terrain:** a single fullscreen triangle draws the terrain from three tile textures and an altitude texture through a camera transform, so panning and zooming cost nothing on the CPU.
 - **Sprites:** plants (only when zoomed in) and animals are drawn as instanced quads sampling the icon atlas. Each instance carries its three species colors.
 
 ### Shaders
@@ -2020,18 +2020,22 @@ The sprite shader recombines the two atlases with each instance's three colors (
   | `u_grid` | Tile-grid strength. |
   | `u_overlay` | 1 in the data-overlay views (any mode with a `RAMPS` entry) and in `territory`, otherwise 0. |
   | `u_bugs` | The bug cloud texture `bugTex` (texture unit 3). |
+  | `u_alt` | The altitude texture `altTex` (texture unit 4), see Hillshade below. |
   | `u_warp` | Domain-warp strength: `smooth(WARP_ZOOM)` = 0 at zoom 4 up to 1 at zoom 6, and 0 in overlay views and `territory`. |
   | `u_cloud` | Bug cloud strength: `1 - smooth(CLOUD_FADE)` (1 below zoom 9, 0 from zoom 14), and 0 when `showSwarms` is off, in overlay views or in `territory`. |
 
 - Effects, in order:
   - Domain warp: the terrain and info lookups (not the vegetation) are offset by value noise (`hash`, `vnoise`) of up to ±0.35 tiles × `u_warp`, so tile edges read as organic shapes when zoomed in.
   - Water darkens with depth: `col *= 1 - water*smoothstep(0.08, 0.9, depth)*0.3`.
+  - Depth tint (Part 2 graphics): deep water is also mixed toward a cooler blue, `col*(0.55, 0.72, 0.95) + (0, 0.03, 0.08)`, by `water*smoothstep(0.2, 1, depth)*0.45`.
   - The vegetation tint is mixed in by `v.a*u_vegAmount`.
   - In winter, snow creeps down from cold ground: `smoothstep(0.42, 0.18, temp + 0.22*(1-winter))`, on land only.
   - A pale shore band, `(0.62, 0.8, 0.78)` at 0.28 × `water*(1 - smoothstep(0, 0.07, depth))`, lightens shallow water.
   - Water gets a gentle two-octave sine shimmer (amplitude 0.022).
-  - The depth darkening, shore band, snow and shimmer are multiplied by `1 - u_overlay`, so the data views (temperature, humidity, altitude, fertility, nutrients and litter) show their raw ramp in winter too.
-  - The result is multiplied by hillshade, `t.a*2`.
+  - Soft shore (Part 2 graphics), faded in by `cz = smoothstep(2.5, 7, ppt)` where `ppt = 1/u_scale` is device pixels per tile: the warped, linearly filtered water channel gives a band on the land side of the coast (`smoothstep(0.1, 0.42, water)*(1 - smoothstep(0.42, 0.5, water))`) that darkens wet sand by 0.14, and a thin foam line at `water ≈ 0.5` (`1 - smoothstep(0, 0.16, |water - 0.5|)`) mixed toward `(0.86, 0.93, 0.92)` at `0.3 + 0.1*shimmer`.
+  - Land grain: from `tz = smoothstep(5, 14, ppt)` on dry land, two octaves of `vnoise` vary brightness by ±7%, so close-up ground is not flat colour.
+  - The depth darkening and tint, shore band, foam, wet sand, grain, snow and shimmer are multiplied by `1 - u_overlay`, so the data views (temperature, humidity, altitude, fertility, nutrients and litter) show their raw ramp in winter too.
+  - The result is multiplied by the shade: in normal views the GPU hillshade (see Hillshade below), in data views the baked CPU shade `t.a*2`.
   - Bug clouds (when `u_cloud > 0`): `u_bugs` is sampled with a 4-tap blur at a noise-warped, drifting position; its alpha is shaped by drifting two-octave value noise (`smoothstep(0.25, 0.7, nz + a*0.3)`), and the unpremultiplied swarm color is mixed in at `a*0.55*u_cloud`, giving soft moving colored haze over swarm-dense land.
   - A faint tile grid appears when zoomed far in (zoom above 20).
   - A soft vignette darkens the last 2.5 tiles at the map edge.
@@ -2047,7 +2051,8 @@ The sprite shader recombines the two atlases with each instance's three colors (
   | `a_extra` | `(flip ±1 × width, alpha)`; the vertex shader uses `abs(x)` as the quad's width factor (1 when below 0.01) |
   | `a_c0`, `a_c1`, `a_c2` | body, dark and light colors, as normalized `UNSIGNED_BYTE`s |
 
-- The fragment shader samples both atlases:
+- The fragment shader samples both atlases with an LOD bias of -0.6, so zoomed-out sprites pick a sharper mip.
+- It then:
   - It computes `tint = (r.r*c0 + r.g*c1 + r.b*c2)/(r.r+r.g+r.b)`.
   - It outputs `tint*max(r.a - f.a, 0) + f.rgb`, with alpha `r.a`, all times the instance alpha.
 - Both atlases are premultiplied, and `r.a` is the total coverage. Blending is `ONE, ONE_MINUS_SRC_ALPHA`.
@@ -2058,6 +2063,7 @@ The sprite shader recombines the two atlases with each instance's three colors (
 - Uniforms: `u_origin`, `u_scale`, `u_res`, `u_map` as in the terrain pass, plus `u_storm` (`x, y, r, rain × life fade`), `u_seed` (`p1`, `p2`), `u_snow`, `u_time`, `u_px` (tiles per CSS pixel), `u_cloud` and `u_dens`.
 - Fragments outside the map are discarded. The cloud edge is noise-shaped (`rr = r*(0.78 + 0.34*n1 + 0.12*n2)`), the body is `1 - smoothstep(0.5rr, 1.05rr, d)`, and the colour runs from light grey to slate by rain strength, darker toward the core and lighter in noise puffs.
 - Precipitation is in screen pixels: slanted rain streaks in 6 px columns falling at 260 px/s, or swaying snow flakes on an 11 px grid when `u_snow` is set. Density is `u_dens*(0.3 + 0.7*heavy)`.
+- `u_cell` (Part 2 graphics) switches to storm-cell mode, used by the Rainfall view. There is no cloud body; instead, inside `0.9rr` the streaks or flakes draw at full density (alpha ×1.25, max 0.9) over a faint fill (`0.1 + 0.16*heavy`), and the cell edge at `0.9rr` is a dashed ring that slowly rotates: a dark outer line plus a light inner line, with `max(6, floor(circumference_px/16))` dashes. Snow cells use pale blue-white colours.
 - Output is premultiplied, blended `ONE, ONE_MINUS_SRC_ALPHA`.
 
 ### Terrain texture layouts
@@ -2127,11 +2133,17 @@ The CPU copy is `bugData` (`Uint8Array(n*4)`); `lastBugUpdate` holds the last re
 | B | `depth*255` |
 | A | 255 |
 
-**Hillshade (`_computeShade`):**
+**Hillshade:**
 
-- It uses the altitude gradient toward the left and upper neighbours, so the map is lit from the north-west.
-- Water neighbours count as level ground, so coastlines do not read as cliffs.
-- The gradient factor is 20 and the result is clamped to 0.62–1.28.
+- CPU (`_computeShade`), baked into the terrain A channel and used only by the data views (`u_overlay = 1`):
+  - It uses the altitude gradient toward the left and upper neighbours, so the map is lit from the north-west.
+  - Water neighbours count as level ground, so coastlines do not read as cliffs.
+  - The gradient factor is 20 and the result is clamped to 0.62–1.28.
+- GPU (Part 2 graphics), used in all other views:
+  - `_altTex(W, H, alt)` uploads `max(alt, seaLevel)` as an `R16F` texture (`altTex`, `LINEAR`, clamped to edge), made in `setWorld` and deleted with the other textures. Clamping to sea level keeps coasts from reading as cliffs.
+  - The shader takes four taps of `u_alt` one texel left, right, up and down at the warped position and builds the normal `normalize((-(hr - hl)*13, -(hd - hu)*13, 1))`.
+  - The light comes from the north-west, `(-0.5, -0.5, 0.7071)`; the shade is `clamp(dot(n, light)/light.z, 0.58, 1.3)`, so flat ground is 1.
+  - Because the altitude is filtered, slopes are smooth inside tiles instead of stepping per tile. On water the baked `t.a*2` is kept.
 
 ### Species color lookup (`_refreshSpeciesLookup`)
 
@@ -2153,7 +2165,7 @@ The CPU copy is `bugData` (`Uint8Array(n*4)`); `lastBugUpdate` holds the last re
 ### Camera
 
 - `cam = {x, y, zoom}`. `x` and `y` are the world tile at the screen centre, and `zoom` is CSS pixels per tile.
-- `resize()` caps the device pixel ratio at 2.
+- `resize()` caps the device pixel ratio at 2. A `ResizeObserver` on the canvas sets `_sizeDirty`, and `draw` calls `resize()` only when it is set, so there is no `getBoundingClientRect` layout read every frame. Without `ResizeObserver`, `_sizeDirty` stays true and `draw` resizes every frame as before.
 - `fit()` shows the whole map at 98%.
 - `clampCam()` keeps zoom between `minZoom()` (90% fit) and 64, and keeps the centre inside the map.
 - Other methods: `screenToWorld(sx, sy)`, `zoomAt(factor, sx, sy)` (keeps the point under the cursor fixed) and `pan(dx, dy)`.
@@ -2180,7 +2192,7 @@ The CPU copy is `bugData` (`Uint8Array(n*4)`); `lastBugUpdate` holds the last re
    - **Animals:** drawn when `showAnimals` is on.
      - Positions are interpolated as `p + (x - p)*alpha` between the previous and current tick.
      - Below zoom 3, animals are drawn as `dot` sprites.
-     - Life stages (Part 3b slice 3): the sprite size `max(12/zoom, 0.8 + 0.45*mass)`, the dot size `(3 + 0.9*mass)/zoom`, the shadow and the highlight ring are all multiplied by the animal's growth factor `animals.gf[i]` (0.4-1), after the pixel floor, so juveniles stay smaller than adults at every zoom. Elders (`animals.ef[i] < 1`) draw at alpha × `ELDER_ALPHA` (0.8). Dormant animals (`animals.dorm[i] > 0`, slice 6) draw at alpha × `DORM_ALPHA` (0.55), size × `DORM_SHRINK` (0.8) and width × `DORM_WIDE` (1.25), curled up, with a white `sleep` marker at `zoom ≥ DORM_ZOOM` (6). An animal that called an alarm (slice 7, `animals.alm[i] > ALARM_COOL - ALARM_RING`) gets a white ripple `ring` at `zoom ≥ ALARM_RING_ZOOM` (4) that grows to ×`1 + ALARM_RING_GROW` (2.2) and fades from `ALARM_RING_ALPHA` (0.85) over `ALARM_RING` ticks; the sprite buffer reserves 6 entries per animal. Since slice 8, tadpoles (`animals.lv[i] === 1`) draw with the `tadpole` icon and larvae (`lv === 2`) with the `caterpillar` icon, both at size ×`LARVA_SHRINK` (0.75), and healthy plain juveniles (`gf < 1`) use `_juvTint`, the species colors mixed toward white by `JUV_PALE` (0.3). Since slice 9, at `zoom ≥ SYMB_ZOOM` (6) a cleaner riding a host (`animals.state[i] === 9`) draws at size ×`RIDE_SHRINK` (0.7) lifted by `RIDE_LIFT + 0.6` of its size onto the host's back, and an animal of a species with `mimicOf` gets a centre dot of size ×`MIMIC_MARK` (0.3) in its look colour (`hueRgb(animals.lk[i])`, the model's hue).
+     - Life stages (Part 3b slice 3): the sprite size `max(12/zoom, 0.8 + 0.45*mass)`, the dot size `(3 + 0.9*mass)/zoom`, the shadow and the highlight ring are all multiplied by the animal's growth factor `animals.gf[i]` (0.4-1), after the pixel floor, so juveniles stay smaller than adults at every zoom. Elders (`animals.ef[i] < 1`) draw at alpha × `ELDER_ALPHA` (0.92) and, when healthy, through `_elderTint(co, ca, ef)` (Part 2 graphics), applied on top of any juvenile, showy or other tint: each colour is mixed toward `lum*0.6 + ELDER_RGB*0.4` (`ELDER_RGB` 178, 178, 172) by `k = ELDER_GREY[0] + ELDER_GREY[1]*min(1, (1 - ef)/(1 - ELDER_MIN_EF))` (`ELDER_GREY` [0.35, 0.7], `ELDER_MIN_EF` 0.6) into the scratch `_eldT`, so elders read as greyed-out rather than just faint. Dormant animals (`animals.dorm[i] > 0`, slice 6) draw at alpha × `DORM_ALPHA` (0.55), size × `DORM_SHRINK` (0.8) and width × `DORM_WIDE` (1.25), curled up, with a white `sleep` marker at `zoom ≥ DORM_ZOOM` (6). An animal that called an alarm (slice 7, `animals.alm[i] > ALARM_COOL - ALARM_RING`) gets a white ripple `ring` at `zoom ≥ ALARM_RING_ZOOM` (4) that grows to ×`1 + ALARM_RING_GROW` (2.2) and fades from `ALARM_RING_ALPHA` (0.85) over `ALARM_RING` ticks; the sprite buffer reserves 6 entries per animal. Since slice 8, tadpoles (`animals.lv[i] === 1`) draw with the `tadpole` icon and larvae (`lv === 2`) with the `caterpillar` icon, both at size ×`LARVA_SHRINK` (0.75), and healthy plain juveniles (`gf < 1`) use `_juvTint`, the species colors mixed toward white by `JUV_PALE` (0.42). Non-larval juveniles are also drawn wider, rounder, by ×`1 + (JUV_ROUND - 1)*(1 - gf)/(1 - JUV_MIN)` (`JUV_ROUND` 1.14). Since slice 9, at `zoom ≥ SYMB_ZOOM` (6) a cleaner riding a host (`animals.state[i] === 9`) draws at size ×`RIDE_SHRINK` (0.7) lifted by `RIDE_LIFT + 0.6` of its size onto the host's back, and an animal of a species with `mimicOf` gets a centre dot of size ×`MIMIC_MARK` (0.3) in its look colour (`hueRgb(animals.lk[i])`, the model's hue).
      - At `zoom ≥ SHADOW_ZOOM` (6), a `shadow` icon is pushed first under each animal at `(x, y + 0.32*size)`, 0.9× size, alpha `SHADOW_ALPHA` (0.45), in plain white colors.
      - Flying birds (`domain 3`, `fly` set) get a second, offset shadow at `(x + FLY_SHADOW[0]*size, y + FLY_SHADOW[1]*size)`, `FLY_SHADOW[2]` (0.6) times the size and alpha `FLY_SHADOW_ALPHA` (0.22), where the plain shadow would go; `FLY_SHADOW` is `[0.45, 0.95, 0.6]`.
      - **Homes (`_pushHomes`)** (slice 3) are pushed after the shadows and before the eggs at `zoom ≥ EGG_ZOOM`. One marker per distinct home tile in view (animals with `home` 1 or 2, keyed by the tile of `nx`/`ny`): the `nest` icon in `NEST_TINT` or the `den` icon in `DEN_TINT`, size `max(HOME_PX/zoom, HOME_SIZE)` (8 px floor, 1.1 tiles), nudged up by 0.05 (nest) or 0.2 (den) of the size. Natal young draw no marker.
@@ -2194,7 +2206,7 @@ The CPU copy is `bugData` (`Uint8Array(n*4)`); `lastBugUpdate` holds the last re
      - Packs and display (v3 Part 1 slice 4): at `zoom >= PACK_LINK_ZOOM` (4), `_pushPackLinks` draws `PACK_LINK_DOTS` (3) `dot` instances in `PACK_LINK_RGB` at `PACK_LINK_ALPHA` (0.55) between each in-view pack member and its leader (found by `uid` through `_packMap`), before the bodies. A healthy animal with `show > SHOW_BASE` (0.3) is colored through `_showy`, which raises saturation by `1 + SHOW_SAT*(show - SHOW_BASE)` and lifts brightness by `SHOW_LIFT*(show - SHOW_BASE)` into `_showTint`. At `zoom >= CREST_ZOOM` (6), animals with `show >= CREST_MIN` (0.45) get a `crest` drawn before the body at the head, size `size*CREST_SCALE*(0.6 + show)`, in the same tint. The renderer reads `pk`, `pn` and `show`, which are pool fields and so are in the snapshot.
      - Capacity is reserved for five instances per animal (shadow, ring, body, marker, home) plus one per egg.
 3. Draws all sprites in one `drawArraysInstanced` call (skipped when there are none).
-4. Weather overlay (`_drawWeather`): when `showWeather` is on, the view is not flat (no ramp view or `territory`), `eco.weather` is on and has storms. Each storm's position is extrapolated between weather updates as `x + vx*(tick % WEATHER_EVERY + alpha)`; the rain is faded over the last 40 ticks of life; `u_snow` is set when `effTemp` at the centre is below `SNOW_T`. With `hz = smooth(WX_ZOOM)` (0 at zoom 6, 1 at 18), clouds draw at `1 - 0.75*hz` and precipitation at `1 - 0.5*hz`. `u_time` wraps at `WX_TIME_WRAP` (600 s).
+4. Weather overlay (`_drawWeather(alpha, ox, oy, scale, hz, cell)`): in the `rain` view it always draws in cell mode (`hz` 0, `cell` 1, see `u_cell`), regardless of `showWeather`. Otherwise it draws normally when `showWeather` is on, the view is not flat (no ramp view or `territory`), `eco.weather` is on and has storms. Each storm's position is extrapolated between weather updates as `x + vx*(tick % WEATHER_EVERY + alpha)`; the rain is faded over the last 40 ticks of life; `u_snow` is set when `effTemp` at the centre is below `SNOW_T`. With `hz = smooth(WX_ZOOM)` (0 at zoom 6, 1 at 18), clouds draw at `1 - 0.75*hz` and precipitation at `1 - 0.5*hz`. `u_time` wraps at `WX_TIME_WRAP` (600 s).
 
 Other public members:
 
@@ -2204,8 +2216,10 @@ Other public members:
 ### Other globals
 
 - `compileProgram(gl, vs, fs)` returns `{p, u}`, where `u` maps uniform names to their locations.
-- `RAMPS` and `rampLookup(stops)` build a 256-entry RGB lookup table from color stops.
-- `LIVE_MODES`, `FLOWER_LEAF`, `FLOWER_TINT`, `FLOWER_SHADED`, `FRUIT_SHOW`, `FRUIT_EMPTY_SIZE`, `FUNGUS_SCALE`, `BUG_DOT`, `BUG_DOT_PX`, `BUG_HL_SCALE`, `BUG_PER_DENSITY`, `BUG_CLOUD_MS`, `BUG_CLOUD_FULL`, `CLOUD_FADE`, `WARP_ZOOM`, `SHADOW_ZOOM`, `SHADOW_ALPHA`, `BUG_JITTER`, `BUG_SPEED`, `BLIGHT_RGB`, `BLIGHT_MIX`, `INFECT_MIX`, `MARK_SCALE`, `TERR_MIX`, `TERR_SAT`, `TERR_FADE`, `TERR_EDGE_MIX`, `TERR_EDGE_DARK`, `ELDER_ALPHA`, `DORM_ALPHA`, `DORM_SHRINK`, `DORM_WIDE`, `DORM_ZOOM`, `SYMB_ZOOM`, `RIDE_LIFT`, `RIDE_SHRINK`, `MIMIC_MARK`, `hueRgb`, `ALARM_RING_ZOOM`, `ALARM_RING_GROW`, `ALARM_RING_ALPHA`, `EGG_ZOOM`, `EGG_PX`, `EGG_BASE`, `EGG_SIZE_K`, `EGG_WATER_ALPHA`, `EGG_PALE`, `HOME_SIZE`, `HOME_PX`, `NEST_TINT`, `DEN_TINT`, `FLY_SHADOW`, `FLY_SHADOW_ALPHA`, `FLY_LIFT`, `TRAIL_K`, `FRESH_RGB`, `DIM_WATER_RGB`, `RAIN_VIEW_K`, `THIRST_TINT`, `DRY_TINT`, `DRY_MARK`, `WX_ZOOM`, `WX_TIME_WRAP` and `percentile99` are described above.
+- `RAMPS` and `rampLookup(stops)` build a 256-entry RGB lookup table from color stops. `rampFor(mode)` caches each table in `RAMP_LUTS`, so the live views no longer rebuild their lookup table every 500 ms.
+- `smooth01(a, b, v)` is the module-level smoothstep that `draw` uses (it used to be a closure built each frame).
+- `ATLAS_CELL` (128) is the atlas cell size passed to `buildIconAtlas`, twice the old 64, so sprites stay crisp when zoomed in.
+- `LIVE_MODES`, `FLOWER_LEAF`, `FLOWER_TINT`, `FLOWER_SHADED`, `FRUIT_SHOW`, `FRUIT_EMPTY_SIZE`, `FUNGUS_SCALE`, `BUG_DOT`, `BUG_DOT_PX`, `BUG_HL_SCALE`, `BUG_PER_DENSITY`, `BUG_CLOUD_MS`, `BUG_CLOUD_FULL`, `CLOUD_FADE`, `WARP_ZOOM`, `SHADOW_ZOOM`, `SHADOW_ALPHA`, `BUG_JITTER`, `BUG_SPEED`, `BLIGHT_RGB`, `BLIGHT_MIX`, `INFECT_MIX`, `MARK_SCALE`, `TERR_MIX`, `TERR_SAT`, `TERR_FADE`, `TERR_EDGE_MIX`, `TERR_EDGE_DARK`, `ELDER_ALPHA`, `ELDER_GREY`, `ELDER_RGB`, `ELDER_MIN_EF`, `JUV_PALE`, `JUV_ROUND`, `DORM_ALPHA`, `DORM_SHRINK`, `DORM_WIDE`, `DORM_ZOOM`, `SYMB_ZOOM`, `RIDE_LIFT`, `RIDE_SHRINK`, `MIMIC_MARK`, `hueRgb`, `ALARM_RING_ZOOM`, `ALARM_RING_GROW`, `ALARM_RING_ALPHA`, `EGG_ZOOM`, `EGG_PX`, `EGG_BASE`, `EGG_SIZE_K`, `EGG_WATER_ALPHA`, `EGG_PALE`, `HOME_SIZE`, `HOME_PX`, `NEST_TINT`, `DEN_TINT`, `FLY_SHADOW`, `FLY_SHADOW_ALPHA`, `FLY_LIFT`, `TRAIL_K`, `FRESH_RGB`, `DIM_WATER_RGB`, `RAIN_VIEW_K`, `THIRST_TINT`, `DRY_TINT`, `DRY_MARK`, `WX_ZOOM`, `WX_TIME_WRAP` and `percentile99` are described above.
 - `ALPINE_ID`, `GLACIER_ID`, `FROZEN_DESERT_ID` and `FROZEN_OCEAN_ID` are biome ids.
 
 ---
@@ -2516,7 +2530,7 @@ Save and load (see the Save section for the file format):
 
 ### Panels
 
-- **Left:** the stat cards and sparklines (`buildStatCards` and `updateStats`), the population chart (plant biomass is shown ÷10 so it shares the axis), the biome legend, and the clock and performance readout (`updateClock`). The `#viewModes` buttons in `index.html` (Biomes, Plants, Heat, Moisture, Height, Soil, Nutrients, Litter, Bugs, Disease, Territory, Rainfall, Water) call `renderer.setMode(button.dataset.mode)`; Rainfall is mode `rain` and Water is mode `water`.
+- **Left:** the stat cards and sparklines (`buildStatCards` and `updateStats`), the population chart (plant biomass is shown ÷10 so it shares the axis), the biome legend, and the clock and performance readout (`updateClock`). The `#viewModes` buttons in `index.html` (Biomes, Plants, Heat, Moisture, Height, Soil, Nutrients, Litter, Bugs, Disease, Territory, Rainfall, Water) call `renderer.setMode(button.dataset.mode)`; Rainfall is mode `rain` and Water is mode `water`. After `setMode`, the click handler (and the meta restore on load) calls `showMapLegend(mode)`, which shows the `#rainLegend` card (class `map-legend`, top-left inside `#mapWrap`, no pointer events) only in the `rain` view: a dry-to-soaked gradient using the `RAMPS.rain` colours, plus swatches for a rain storm cell and a snow storm cell.
   - **Weather badge:** `#weatherBadge` (`.season.weather`, after the season badge) is refreshed by `updateWeatherBadge()` from `updateClock`. Its kind is `off` (no `eco.weather` or `options.weather === false`, badge dimmed with `.off`), `drought` (`stats.weather.drought`), `storms` (more than one storm, label "Storms ×N"), `rain` or `snow` (one storm, by whether `rainTiles > 0`) or `clear`. The icon is only redrawn when the kind changes. The title lists mean wetness (`stats.meanWet`), rain and snow tile counts, and the drought count.
   - **Switches:** `#optWeather` ("Weather", after Seasons, on by default) is passed as `options.weather` to `new Ecosystem` and sets `eco.options.weather` live. `#showWeather` ("Weather overlay", after Bug swarms) sets `renderer.showWeather`.
   - v3 Part 1 slice 4 adds a **Hunting packs** card (`packs`, `wolf` icon): value `stats.packs`, sparkline `history.packs`, sub-line "mean size N · N kills · N big game" from `stats.packSize`, `packKills` and `bigKills`. In open class cards `packRow(row, k, s)` relabels the Predators role row to "Predators · N packs" from `stats.packCls[k]`, with a title giving the mean size and the all-pack kill and big-kill counts.
