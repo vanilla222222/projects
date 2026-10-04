@@ -91,6 +91,10 @@ Gates for every part, measured on seeds 42, 7 and 123 over 3000 ticks, with long
 5. **Biome adaptation:** stronger, biome-specific selection, so desert, tundra and rainforest lineages end up looking and behaving differently.
 6. **Performance:** profile and speed up the hot loops in animals, plants and bugs. Smaller save files come with this.
 7. **Compute (started early, alongside Part 1):** the sim runs in a Web Worker, plus an optional WebGPU fast mode for grid layers. See `compute/plan.md`.
+8. **Plant life (slice A):** annual, biennial and perennial life cycles; deciduous versus evergreen leaves; evolving flowering, fruiting and seed-release timing; autumn colour and blossom on the map; four vertical layers (emergent, canopy, shrub, ground) with a height gene; vines and epiphytes on host trees; clonal spread by runners and rhizomes; plant speciation with a plant family tree and species detail.
+9. **Plant strategies (slice B):** succulents, cacti and heat-adapted grasses; nitrogen fixers that enrich soil; carnivorous bog plants that eat bugs; parasitic plants on host trees; allelopathy; thorns versus toxins and induced defences; kelp forests, seagrass meadows, plankton and algae blooms that crash oxygen; forests that cool their area and add rainfall; leaf litter, peat and roots that stop erosion.
+
+Items 8 and 9 run after items 1–6 and before Part 3. Any change to plant or soil stepping must be mirrored in the WebGPU fast mode (`js/gpu`).
 
 ## Part 3: God tools
 
