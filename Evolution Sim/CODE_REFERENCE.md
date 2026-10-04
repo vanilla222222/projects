@@ -90,7 +90,7 @@ Vegetation is tile-based, with two slots per tile:
 
 ### Constants
 
-- **`PG = 15`**: the number of plant genes. Gene layout by index:
+- **`PG = 17`**: the number of plant genes (15 before slice 9, 16 in slice 9, 17 from slice 11). Gene layout by index:
 
   | Index | Gene |
   | --- | --- |
@@ -109,6 +109,8 @@ Vegetation is tile-based, with two slots per tile:
   | 12 | `hue` (flower or cap colour, 0..1) |
   | 13 | `defence` against pest bugs (fungi 0) |
   | 14 | `blightRes`, resistance to plant blight (every archetype row starts at 0.15) |
+  | 15 | flower depth (slice 9) |
+  | 16 | `fire` resistance (slice 11, `PG_FIRE`): 0 for fungi and water plants, 0.35 for dry-adapted land archetypes (`prefMoist` below 0.45), otherwise 0.1. Growth is multiplied by `1 - FIRE_COST*fire` (`FIRE_COST` 0.12). `PLANT_WEIGHTS[16]` is 0.5. |
 
 - **`PLANT_WEIGHTS`** is `[1.4, 1.4, 0.6, 1.2, 0.8, 0.5, 0.7, 0.7, 0.6, 0.5, 0.6, 0.6, 0.4, 0.6, 0.3]`. **`PLANT_SPECIATION`** is `0.25`. **`PLANT_SPLIT_MIN_POP`** is 40 (occupied slots).
 - **Fruit, flower and fungus constants:**
@@ -267,7 +269,7 @@ The data is structure-of-arrays, where `n = width*height`. Per-plant arrays have
 | `shade`, `root` | Float32 `2n` | Cached shade tolerance and root vigour genes, so the hot loops avoid strided genome reads. |
 | `health` | Float32 `2n` | 0..1, starts at 1 when a plant is placed. |
 | `sat` | Float32 `2n` | Nutrient satisfaction written by `soil.step` each tick. |
-| `genome` | Float32 `2n*PG` | The per-plant genome at `p*PG … p*PG+14`. |
+| `genome` | Float32 `2n*PG` | The per-plant genome at `p*PG … p*PG+PG-1`. |
 | `kind` | Uint8 `2n` | 0 for a plant, 1 for a fungus, copied from `sp.kind`. |
 | `myco` | Uint8 `2n` | 1 for a mycorrhizal fungus (gene 11 above 0.5). |
 | `hue` | Float32 `2n` | The species hue divided by 360, used for aversion and mimicry. |
@@ -1695,6 +1697,47 @@ Scratch arrays: `_evapK` (per-tile `EVAP*(0.5+temperature)`), `_mark` (Int32 rai
 - Mean `moistMul` over land outside droughts is 1.00–1.05 on seeds 42, 7 and 123, so baseline plant cover holds. Cold land is drier than average, because its storms drop snow that only melts in the warm half of the year.
 - Tiles with base temperature below about 0.2 never melt, so they keep permanent snow.
 - Weather is independent of animals: with the same seed and world, storms and droughts are identical whatever the animals do.
+
+---
+
+## Disasters (`js/sim/disasters.js`, v3 Part 1 slice 11)
+
+`DisasterLayer(world, plants, weather, animals, eggs, bugs, log, rng)` gets its own stream, `new FastRng(seed + 999)`. It is built in `Ecosystem` after the disease layer when `options.disasters` is not false, and `animals.dis` points at it. `setOn(on)` and `step(tick)` run right after the weather step. Every edit it makes to plant or soil arrays happens outside `PlantLayer.step`, so the fast-mode GPU merge (`diffUpload`/`consume`) picks them up and no GPU file changes.
+
+### Grids
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `fire` | Uint8 `n` | Remaining burn ticks (0 to `FIRE_BURN` 5). |
+| `flood` | Uint8 `n` | Remaining flood life of a tile (`FLOOD_LIFE` 4 disaster ticks). |
+| `haz` | Uint8 `n` | 1 burning, 2 flooded; read by `AnimalPool._hazard`. |
+| `scar` | Uint8 `n` | Age of the disturbance scar in succession steps (0 = none, cleared at `SCAR_MAX` 60). |
+| `scarK` | Uint8 `n` | Scar cause: 1 fire, 2 flood, 3 windthrow. |
+| `preBio` | Float32 `n` | Plant biomass on the tile before the disturbance (recovery baseline). |
+| `risk` | Float32 `n` | Fire risk 0..1 (`_fuel * _dry`), refreshed every 40 ticks for the view. |
+
+### Events
+
+- **Wildfire.** Every `DIS_EVERY` (8) ticks with no active fire and the yearly cap not reached, an ignition attempt happens with chance `FIRE_IGNITE` (0.08) × (0.6 + 0.8×summer season), ×`FIRE_DROUGHT` (3) during a weather drought. It samples `FIRE_SAMPLES` (12) random land tiles, takes the one with the highest fuel × dryness × heat (warm tiles only), and ignites it with that score as the chance. The log notes when a drought made the land tinder-dry. Fire spreads every `FIRE_STEP` (2) ticks to the 4 neighbours, scaled by `FIRE_SPREAD`, fuel (`FIRE_FUEL`), the weather wind (`FIRE_WIND`) and slope; recent burn scars act as firebreaks and wet tiles (`FIRE_OUT_WET`) put it out. One fire is capped at `FIRE_EVENT_CAP` (2%) of land and a year at `FIRE_YEAR_CAP` (3.5%). `_burnTile` lets a plant survive with chance `FIRE_SURV + FIRE_SURV_WOOD*wood + FIRE_SURV_ADAPT*fire` (survivors resprout at low health); plants with fire above `FIRE_CUE` (0.25) bank a fire-cued seed, other seed banks are cut ×0.4; litter turns to ash nutrient; bugs ×`FIRE_BUGS`; eggs on the tile die.
+- **Flood.** Outside droughts, a storm with rain of at least `FLOOD_RAIN` and radius of at least `FLOOD_R` starts a flood with chance `FLOOD_P` (cooldown `FLOOD_COOL` 360). Land tiles within 0.8× the storm radius that are within `FLOOD_DIST` of water, wetter than `FLOOD_WET` and not snowy flood (at least `FLOOD_MIN`, at most `FLOOD_MAX` tiles). Flooded tiles damage understory (`FLOOD_UNDER`) and canopy (`FLOOD_CANOPY`), cut bugs (`FLOOD_BUGS`), kill eggs and get silt nutrient (`FLOOD_SILT`).
+- **Drought** is the weather drought; the layer only counts it and uses it to raise fire risk.
+- **Windthrow.** A storm with radius of at least `WIND_R` (14) has chance `WIND_P` (cooldown `WIND_COOL` 240) to knock down woody canopy plants (woodiness above `WIND_WOOD`, chance `WIND_KNOCK`) near its centre, leaving windthrow scars and litter; at least `WIND_MIN` trees must fall for it to count.
+- **Animals.** `AnimalPool._hazard(i, h, dz, Wx)`: on a burning tile, non-flyers die with chance `FIRE_KILL`×slowness×juvenile×(dormant ×3), otherwise flee upwind; on a flooded tile land animals drown with chance `FLOOD_DROWN`×…×(dormant ×2), otherwise flee from the flood centre. Deaths are counted as `deaths.fire` and `deaths.flood`.
+
+### Succession
+
+Every `SCAR_EVERY` (40) ticks `_succession` ages scars (cleared after `SCAR_MAX` 60 steps, about 5 years). `recovery` is the mean of (canopy + understory biomass) / `preBio` over scars at least one year old (`SCAR_YEAR` 12 steps), each capped at 1.5. `pioneerYoung` and `pioneerOld` are the understory share of biomass in scars up to one year old and older than two years. While a scar is at most `PIONEER_AGE` (18) steps old and its understory slot is empty, with chance `PIONEER_P` a non-woody (woodiness below `PIONEER_WOOD` 0.3) understory plant within 2 tiles seeds it through `mutateGenes` and `plants.plantSeed`. The log reports "<species> recolonised the burn" at most once per year.
+
+### Log and stats
+
+Log entries (type `disaster`): "Wildfire in the <biome> in the <direction>", "The wildfire burned out after scorching N tiles" (N ≥ 25), "Flood in the … — the rivers burst their banks", "A windstorm flattened N trees in the …". `stats()` returns `activeFires, fires, burnt, burntShare, floods, flooded, flooding, droughts, drought, windthrow, felled, killed, drowned, eggsLost, plantsBurnt, survived, adaptShare, recolonised, scarTiles, recovery, pioneerYoung, pioneerOld`, stored in `eco.stats.disasters` every 20 ticks; `history.disasters` samples `scarTiles`.
+
+### Wiring
+
+- `save.js` `classTable` has `DisasterLayer`; SAVE_VERSION stays 2. Saves from before slice 11 do not load because `PG` changed.
+- `simWorker.js`: `sim/disasters.js` is in `DEFAULT_SCRIPTS` before `ecosystem.js`; `disasters` is in `SNAP_LAYERS` and `SNAP_GRIDS.disasters` is `['fire','flood','scar','scarK','risk']`. `simClient.js` `layerClasses()` includes it.
+- `render.js`: the `disasters` view (in `LIVE_MODES`) maps burning tiles to 0.74–1.0, flooded tiles to 0.62, scars to 0.21–0.5 by age and otherwise `risk*0.2` through `RAMPS.disasters`.
+- `main.js`: the "Disasters" stat card (`flame` icon), the Fire resistance plant trait (gene 16), the `optDisasters` switch and the "Disasters" event filter (glyph `^`, `.ev-disaster`).
 
 ---
 
