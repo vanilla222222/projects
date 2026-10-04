@@ -1,5 +1,5 @@
-const DEFAULT_SCRIPTS = ['noise.js', 'biomes.js', 'mapGenerator.js', 'sim/core.js', 'sim/soil.js', 'sim/plants.js', 'sim/animals.js', 'sim/bugs.js', 'sim/disease.js', 'sim/weather.js', 'sim/eggs.js', 'sim/ecosystem.js', 'save.js'];
-const SNAP_LAYERS = ['plants', 'animals', 'eggs', 'bugs', 'weather', 'disease'];
+const DEFAULT_SCRIPTS = ['noise.js', 'biomes.js', 'mapGenerator.js', 'sim/core.js', 'sim/soil.js', 'sim/plants.js', 'sim/animals.js', 'sim/bugs.js', 'sim/disease.js', 'sim/weather.js', 'sim/eggs.js', 'sim/disasters.js', 'sim/ecosystem.js', 'save.js'];
+const SNAP_LAYERS = ['plants', 'animals', 'eggs', 'bugs', 'weather', 'disease', 'disasters'];
 const SNAP_POOLS = ['animals', 'eggs'];
 const SNAP_GRIDS = {
 	plants: ['species', 'biomass', 'cap', 'age', 'life', 'health', 'blight', 'kind', 'fruit', 'poll'],
@@ -7,6 +7,7 @@ const SNAP_GRIDS = {
 	bugs: ['species', 'density', 'total', 'dorm'],
 	weather: ['wet', 'snow', 'fresh', 'waterDist'],
 	animals: ['terrSp', 'terrUid', 'terrUntil'],
+	disasters: ['fire', 'flood', 'scar', 'scarK', 'risk'],
 };
 const SNAP_STATIC = { plants: ['water', 'depth'] };
 const SNAP_PLANT_GENES = [8, 10, 11];

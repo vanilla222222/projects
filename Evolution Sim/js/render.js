@@ -260,9 +260,10 @@ const RAMPS = {
 	disease: [[0, '#16191a'], [0.1, '#262b22'], [0.35, '#4d5b2a'], [0.6, '#8ea636'], [0.85, '#c8d84a'], [1, '#eef27a']],
 	rain: [[0, '#b58a4a'], [0.2, '#d8c68a'], [0.45, '#8cc4b0'], [0.7, '#3f8fc8'], [1, '#1b3f8f']],
 	water: [[0, '#2aa39a'], [0.2, '#6fbf94'], [0.45, '#d9cb8a'], [0.7, '#d99a55'], [1, '#b8413a']],
+	disasters: [[0, '#26282a'], [0.2, '#8a521c'], [0.21, '#34302c'], [0.3, '#4a4a40'], [0.5, '#5f9a44'], [0.54, '#5e4a30'], [0.7, '#9a7a48'], [0.74, '#b8301c'], [0.88, '#f07a22'], [1, '#ffe066']],
 };
 
-const LIVE_MODES = { nutrients: 1, litter: 1, bugs: 1, disease: 1, humidity: 1, territory: 1, rain: 1, water: 1 };
+const LIVE_MODES = { nutrients: 1, litter: 1, bugs: 1, disease: 1, humidity: 1, territory: 1, rain: 1, water: 1, disasters: 1 };
 const BUG_DOT = 0.1;
 const BUG_DOT_PX = 4.5;
 const BUG_HL_SCALE = 1.6;
@@ -596,7 +597,7 @@ class WorldRenderer {
 		const Wx = mode === 'humidity' || mode === 'rain' || mode === 'water' ? this.eco.weather : null;
 		const snow = Wx && mode !== 'water' ? Wx.snow : null;
 		const fresh = mode === 'water' && Wx ? Wx.fresh : null;
-		const dimW = mode === 'rain' || mode === 'water';
+		const dimW = mode === 'rain' || mode === 'water' || mode === 'disasters';
 		const A = mode === 'territory' ? this.eco.animals : null;
 		let terrOwner = null;
 		if (A) {
@@ -647,6 +648,22 @@ class WorldRenderer {
 			const B = this.eco.bugs;
 			if (B && B.total) percentile99(B.total, field);
 			else field.fill(0);
+			this.lastSoilUpdate = performance.now();
+		} else if (mode === 'disasters') {
+			field = this.soilField;
+			const Dz = this.eco.disasters;
+			if (Dz && Dz.fire) {
+				const fire = Dz.fire;
+				const flood = Dz.flood;
+				const scar = Dz.scar;
+				const risk = Dz.risk;
+				for (let i = 0; i < n; i++) {
+					if (fire[i]) field[i] = 0.74 + 0.26 * Math.min(1, fire[i] / FIRE_BURN);
+					else if (flood[i]) field[i] = 0.62;
+					else if (scar[i]) field[i] = 0.21 + 0.29 * Math.min(1, scar[i] / (SCAR_MAX * 0.6));
+					else field[i] = risk ? 0.2 * Math.min(1, risk[i] * 1.6) : 0;
+				}
+			} else field.fill(0);
 			this.lastSoilUpdate = performance.now();
 		} else if (mode === 'disease') {
 			field = this.soilField;

@@ -113,6 +113,7 @@
 					<button data-mode="territory">Territory</button>
 					<button data-mode="rain">Rainfall</button>
 					<button data-mode="water">Water</button>
+					<button data-mode="disasters">Disasters</button>
 				</div>
 				<div class="toggles">
 					<label class="switch"><input type="checkbox" id="showPlants" checked /><span></span>Plant cover</label>
@@ -121,6 +122,7 @@
 					<label class="switch" title="Storms, rain, snow and droughts"><input type="checkbox" id="optWeather" checked /><span></span>Weather</label>
 					<label class="switch" title="Re-introduce a trophic group if it dies out"><input type="checkbox" id="optMigrations" checked /><span></span>Migrations</label>
 					<label class="switch" title="Pathogens emerge, spread and evolve"><input type="checkbox" id="optDisease" checked /><span></span>Disease</label>
+					<label class="switch" title="Wildfires, floods and windstorms strike the land"><input type="checkbox" id="optDisasters" checked /><span></span>Disasters</label>
 					<label class="switch" id="fastWrap" hidden title="Run the plant and soil step on the GPU. Faster, but runs are no longer exactly repeatable"><input type="checkbox" id="optFast" /><span></span>Fast mode (GPU)</label>
 					<label class="switch" title="Show bug swarms as drifting clouds and, up close, as dots"><input type="checkbox" id="showSwarms" checked /><span></span>Bug swarms</label>
 					<label class="switch" title="Draw storm clouds, rain and snow over the map"><input type="checkbox" id="showWeather" checked /><span></span>Weather overlay</label>
@@ -176,6 +178,7 @@
 								<dt>Territory</dt><dd>Land held by territorial animals</dd>
 								<dt>Rainfall</dt><dd>Wet ground and live storm rain, snow in white</dd>
 								<dt>Water</dt><dd>Drinkable water, distance to it, and thirsty animals</dd>
+								<dt>Disasters</dt><dd>Live fire in orange, floods in brown, burn and storm scars fading from ash to green as they regrow; dark amber marks dry, fuel-heavy ground at risk of fire</dd>
 							</dl>
 						</section>
 						<section>
@@ -197,6 +200,7 @@
 								<dt>Weather</dt><dd>Storms, rain, snow and droughts in the simulation</dd>
 								<dt>Migrations</dt><dd>Re-introduce a trophic group if it dies out</dd>
 								<dt>Disease</dt><dd>Pathogens emerge, spread and evolve</dd>
+								<dt>Disasters</dt><dd>Wildfires, floods and windstorms; cleared ground regrows pioneers first</dd>
 								<dt>Bug swarms</dt><dd>Draw swarms as clouds and, up close, dots</dd>
 								<dt>Weather overlay</dt><dd>Draw storm clouds, rain and snow over the map</dd>
 							</dl>
@@ -249,6 +253,7 @@
 						<button data-f="migration">Migrations</button>
 						<button data-f="outbreak">Outbreaks</button>
 						<button data-f="weather">Weather</button>
+						<button data-f="disaster">Disasters</button>
 					</div>
 				</div>
 				<ul class="event-list" id="eventList"></ul>
@@ -296,6 +301,7 @@
 	<script src="js/sim/disease.js"></script>
 	<script src="js/sim/weather.js"></script>
 	<script src="js/sim/eggs.js"></script>
+	<script src="js/sim/disasters.js"></script>
 	<script src="js/sim/ecosystem.js"></script>
 	<script src="js/icons.js"></script>
 	<script src="js/render.js"></script>

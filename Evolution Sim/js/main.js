@@ -46,6 +46,7 @@ const STAT_EXTRA = [
 	{ key: 'dormancy', label: 'Dormancy', icon: 'bear', color: '#8fa7d6', wide: true, sub: true },
 	{ key: 'symb', label: 'Symbioses', icon: 'bee', color: '#b48fd9', wide: true, sub: true },
 	{ key: 'brain', label: 'Intelligence', icon: 'crow', color: '#e0a3c8', wide: true, sub: true },
+	{ key: 'disasters', label: 'Disasters', icon: 'flame', color: '#e8743c', wide: true, sub: true },
 	{ key: 'stages', label: 'Life stages · animals', icon: 'deer', color: '#9fd98b', wide: true, sub: true, noSpark: true },
 ];
 const STAT_EXTRA_KEYS = new Set(STAT_EXTRA.map((x) => x.key));
@@ -125,6 +126,7 @@ function newWorld() {
 			migrations: $('optMigrations').checked,
 			disease: $('optDisease').checked,
 			weather: $('optWeather').checked,
+			disasters: $('optDisasters').checked,
 		}).then(
 			({ world, eco }) => {
 				installWorld(world, eco);
@@ -155,7 +157,7 @@ function installWorld(world, eco) {
 }
 
 const LAYER_SWITCHES = { showPlants: 'showPlants', showAnimals: 'showAnimals', showSwarms: 'showSwarms', showWeather: 'showWeather' };
-const OPTION_SWITCHES = { seasons: 'optSeasons', migrations: 'optMigrations', disease: 'optDisease', weather: 'optWeather' };
+const OPTION_SWITCHES = { seasons: 'optSeasons', migrations: 'optMigrations', disease: 'optDisease', weather: 'optWeather', disasters: 'optDisasters' };
 
 function showBusy(text) {
 	const box = $('mapError');
@@ -501,6 +503,10 @@ function updateExtraStat(el, k, s, h) {
 		const bc = br.cls || [];
 		v.innerHTML = `${pct(br.mean || 0)}<small>mean brain</small>`;
 		sub.innerHTML = `<span>${formatCount(br.toolSp || 0)} tool-using species</span><span>${formatCount(br.learnedN || 0)} learned avoidances</span><span>mammals ${pct(bc[3] || 0)} · birds ${pct(bc[4] || 0)}</span><span>${formatCount(br.toolUses || 0)} tool uses</span><span>${formatCount(br.fledEarly || 0)} fled early</span><span>${formatCount((br.memWater || 0) + (br.memFood || 0))} trips from memory</span><span>${formatCount(br.memDanger || 0)} danger spots avoided</span><span>${formatCount(br.taught || 0)} lessons taught</span>`;
+	} else if (k === 'disasters') {
+		const dz = s.disasters || {};
+		v.innerHTML = `${formatCount(dz.activeFires || 0)}<small>burning · ${dz.burntShare || 0}% land burnt</small>`;
+		sub.innerHTML = `<span>${formatCount(dz.fires || 0)} wildfires</span><span>${formatCount(dz.burnt || 0)} tiles burnt</span><span>${formatCount(dz.floods || 0)} floods${dz.flooding ? ' · flooding now' : ''}</span><span>${formatCount(dz.droughts || 0)} droughts${dz.drought ? ' · in drought' : ''}</span><span>${formatCount(dz.windthrow || 0)} windstorms · ${formatCount(dz.felled || 0)} trees felled</span><span>${formatCount((dz.killed || 0) + (dz.drowned || 0))} animals killed · ${formatCount(dz.eggsLost || 0)} eggs lost</span><span>${formatCount(dz.scarTiles || 0)} scarred tiles · ${dz.recovery || 0}% recovered</span><span>pioneers ${dz.pioneerYoung || 0}% young · ${dz.pioneerOld || 0}% old scars</span><span>${formatCount(dz.recolonised || 0)} recolonised</span><span>${dz.adaptShare || 0}% of survivors fire-adapted</span>`;
 	} else if (k === 'eggs') {
 		const eg = s.eggs || {};
 		v.textContent = formatCount(st.eggs || 0);
@@ -699,7 +705,7 @@ function renderSpeciesList() {
 	list.scrollTop = scroll;
 }
 
-const EVENT_GLYPH = { speciation: '+', extinction: '×', migration: '→', outbreak: '!', weather: '~', info: '•' };
+const EVENT_GLYPH = { speciation: '+', extinction: '×', migration: '→', outbreak: '!', weather: '~', disaster: '^', info: '•' };
 
 function renderEvents(force) {
 	const log = app.eco.log;
@@ -741,6 +747,7 @@ const PLANT_TRAITS = [
 	['Pest defence', 13, (v) => pct(v), null],
 	['Blight resistance', 14, (v) => pct(v)],
 	['Flower depth', 15, (v) => pct(v), null],
+	['Fire resistance', 16, (v) => pct(v), null],
 ];
 
 const BUG_TRAITS = [
@@ -1287,6 +1294,7 @@ function setupControls() {
 	$('optSeasons').onchange = (e) => app.eco && (app.eco.options.seasons = e.target.checked);
 	$('optMigrations').onchange = (e) => app.eco && (app.eco.options.migrations = e.target.checked);
 	$('optDisease').onchange = (e) => app.eco && (app.eco.options.disease = e.target.checked);
+	$('optDisasters').onchange = (e) => app.eco && (app.eco.options.disasters = e.target.checked);
 	$('showSwarms').onchange = (e) => (app.renderer.showSwarms = e.target.checked);
 	$('optWeather').onchange = (e) => {
 		if (!app.eco) return;

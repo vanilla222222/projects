@@ -31,7 +31,7 @@ class Ecosystem {
 	constructor(world, seed, options = {}) {
 		this.world = world;
 		this.seed = seed;
-		this.options = Object.assign({ migrations: true, seasons: true, disease: true, weather: true }, options);
+		this.options = Object.assign({ migrations: true, seasons: true, disease: true, weather: true, disasters: true }, options);
 		this.rng = new FastRng(seed * 7 + 11);
 		this.tick = 0;
 		this.log = new EventLog();
@@ -65,6 +65,8 @@ class Ecosystem {
 		this.history.symb = [];
 		this.stats.brain = { mean: 0, cls: [0, 0, 0, 0, 0, 0], toolSp: 0, learnedN: 0, toolUses: 0, toolGain: 0, learned: 0, fledEarly: 0, memWater: 0, memFood: 0, memDanger: 0, taught: 0 };
 		this.history.brain = [];
+		this.stats.disasters = { activeFires: 0, fires: 0, burnt: 0, burntShare: 0, floods: 0, flooded: 0, flooding: 0, droughts: 0, drought: false, windthrow: 0, felled: 0, killed: 0, drowned: 0, eggsLost: 0, plantsBurnt: 0, survived: 0, adaptShare: 0, recolonised: 0, scarTiles: 0, recovery: 0, pioneerYoung: 0, pioneerOld: 0 };
+		this.history.disasters = [];
 		for (const k of BIRD_NICHES) {
 			this.stats.birdNiches[k] = 0;
 			this.history['birdNiche.' + k] = [];
@@ -101,6 +103,8 @@ class Ecosystem {
 		this.disease = typeof DiseaseLayer === 'function' ? new DiseaseLayer(world, this.plants, this.animals, this.registry, this.log, new FastRng(seed + 444)) : null;
 		this.animals.disease = this.disease;
 		this.plants.disease = this.disease;
+		this.disasters = typeof DisasterLayer === 'function' ? new DisasterLayer(world, this.plants, this.weather, this.animals, this.eggs, this.bugs, this.log, new FastRng(seed + 999)) : null;
+		this.animals.dis = this.disasters;
 		this.log.push(0, 'info', 'A new world begins.');
 		this._computeStats();
 		this._sampleHistory(true);
@@ -164,6 +168,11 @@ class Ecosystem {
 			Wx.setOn(!!this.options.weather, this.tick);
 			Wx.step(this.tick, this.options.seasons ? plants.season : 0);
 		}
+		const Dz = this.disasters;
+		if (Dz) {
+			Dz.setOn(!!this.options.disasters);
+			Dz.step(this.tick);
+		}
 		if (this.bugs) this.bugs.step(this.tick);
 		this.animals.step(this.tick);
 		if (this.eggs) this.eggs.step(Wx);
@@ -183,6 +192,7 @@ class Ecosystem {
 			if (D) D.refreshSpeciesMeans();
 			this._symbStats();
 			this._brainStats();
+			if (Dz) this.stats.disasters = Dz.stats();
 		}
 		if (this.tick % MERGE_EVERY === 0) this._mergePass();
 		this._computeStats();
@@ -709,6 +719,7 @@ class Ecosystem {
 		h.meanFat.push(this.stats.nutrition.meanFat);
 		h.dormancy.push(this.stats.dormancy.total);
 		if (h.alarms) h.alarms.push(this.stats.social.alarms);
+		if (h.disasters) h.disasters.push(this.stats.disasters ? this.stats.disasters.scarTiles : 0);
 		if (h.brain) h.brain.push(this.stats.brain ? this.stats.brain.mean : 0);
 		if (h.symb) h.symb.push(this.stats.symb.cleanerPairs + this.stats.symb.pollPairs + this.stats.symb.mimicSp);
 		for (const k of BIRD_NICHES) h['birdNiche.' + k].push(this.stats.birdNiches[k]);

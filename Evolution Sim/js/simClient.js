@@ -42,6 +42,7 @@ const SimClient = (() => {
 			bugs: typeof BugLayer === 'function' ? BugLayer : null,
 			weather: typeof WeatherLayer === 'function' ? WeatherLayer : null,
 			disease: typeof DiseaseLayer === 'function' ? DiseaseLayer : null,
+			disasters: typeof DisasterLayer === 'function' ? DisasterLayer : null,
 		};
 	}
 

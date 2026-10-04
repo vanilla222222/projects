@@ -18,6 +18,7 @@ const EvoSave = (() => {
 		add('DiseaseLayer', typeof DiseaseLayer === 'function' && DiseaseLayer);
 		add('WeatherLayer', typeof WeatherLayer === 'function' && WeatherLayer);
 		add('EggPool', typeof EggPool === 'function' && EggPool);
+		add('DisasterLayer', typeof DisasterLayer === 'function' && DisasterLayer);
 		return t;
 	};
 
