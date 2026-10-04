@@ -61,6 +61,7 @@ class Ecosystem {
 		this.history.alarms = [];
 		this.stats.life = { tadpoles: 0, larvae: 0, cared: 0, metamorphs: 0, careGiven: 0, granGiven: 0, granFeeds: 0, juvBug: 0, shed: 0, ledMig: 0, ledRate: 0, loneRate: 0, ledT: 0, loneT: 0, headStarts: 0 };
 		this.stats.stageCls = {};
+		this.stats.symb = { cleanerPairs: 0, pollPairs: 0, mimicSp: 0, mimics: 0, models: 0, riding: 0, cleanings: 0, cleanFail: 0, cleanEaten: 0, cleanCarry: 0, toxHits: 0, toxSpit: 0, mimicFooled: 0, avoidSkips: 0, protectedTicks: 0, animalSeeded: 0, dispBonus: 0 };
 		for (const k of BIRD_NICHES) {
 			this.stats.birdNiches[k] = 0;
 			this.history['birdNiche.' + k] = [];
@@ -177,6 +178,7 @@ class Ecosystem {
 			this._lifeStats();
 			if (this.bugs) this.bugs.refreshSpeciesMeans();
 			if (D) D.refreshSpeciesMeans();
+			this._symbStats();
 		}
 		if (this.tick % MERGE_EVERY === 0) this._mergePass();
 		this._computeStats();
@@ -361,6 +363,26 @@ class Ecosystem {
 		s.loneT = L.loneT;
 		s.ledRate = L.ledT > 0 ? +((L.ledD * 1000) / L.ledT).toFixed(2) : 0;
 		s.loneRate = L.loneT > 0 ? +((L.loneD * 1000) / L.loneT).toFixed(2) : 0;
+	}
+
+	_symbStats() {
+		const A = this.animals;
+		const P = this.plants;
+		if (!this.stats.symb) this.stats.symb = {};
+		const s = this.stats.symb;
+		let riding = 0;
+		for (let i = 0; i < A.count; i++) if (A.alive[i] && A.state[i] === 9) riding++;
+		let models = 0;
+		for (let c = 0; c < 6; c++) if (A.modelSp[c]) models++;
+		Object.assign(s, A.symb);
+		s.cleanerPairs = A.cleanerPairs;
+		s.pollPairs = this.bugs ? this.bugs.specPairs : 0;
+		s.mimicSp = A.mimicSp;
+		s.mimics = A.mimics;
+		s.models = models;
+		s.riding = riding;
+		s.animalSeeded = P.animalSeeded;
+		s.dispBonus = Math.round(P.dispBonus * 10) / 10;
 	}
 
 	_socialStats() {
