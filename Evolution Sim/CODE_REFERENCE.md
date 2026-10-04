@@ -110,7 +110,7 @@ Vegetation is tile-based, with two slots per tile:
   | 13 | `defence` against pest bugs (fungi 0) |
   | 14 | `blightRes`, resistance to plant blight (every archetype row starts at 0.15) |
   | 15 | flower depth (slice 9) |
-  | 16 | `fire` resistance (slice 11, `PG_FIRE`): 0 for fungi and water plants, 0.35 for dry-adapted land archetypes (`prefMoist` below 0.45), otherwise 0.1. Growth is multiplied by `1 - FIRE_COST*fire` (`FIRE_COST` 0.12). `PLANT_WEIGHTS[16]` is 0.5. |
+  | 16 | `fire` resistance (slice 11, `PG_FIRE`): 0 for fungi and water plants, 0.35 for dry-adapted land archetypes (`prefMoist` below 0.45), otherwise 0.1. Growth is multiplied by `1 - FIRE_COST*fire` (`FIRE_COST` 0.06, halved in the v3 Part 2 balance pass). `PLANT_WEIGHTS[16]` is 0.5. |
 
 - **`PLANT_WEIGHTS`** is `[1.4, 1.4, 0.6, 1.2, 0.8, 0.5, 0.7, 0.7, 0.6, 0.5, 0.6, 0.6, 0.4, 0.6, 0.3]`. **`PLANT_SPECIATION`** is `0.25`. **`PLANT_SPLIT_MIN_POP`** is 40 (occupied slots).
 - **Fruit, flower and fungus constants:**
@@ -562,7 +562,7 @@ Animals are agents stored as structure-of-arrays. There is one typed array per f
 
   Genes 11–14 were appended in Part 3 slice 2 as `[terr, herd, cold, dry]`: land herbivores `0.05, 0.6, 0.05, 0.3`, the land omnivore `0.35, 0.1`, land carnivores `0.5, 0.1`, water herbivores `0.05, 0.5`, the crustacean `0.35, 0.1`, water carnivores `0.5, 0.1`, the carrion eater `0.35, 0.1, 0.05, 0.3`.
 
-- **`ANIMAL_WEIGHTS`** is `[1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6, 0.3, 0.3, 0.3, 0.3, 0.5, 0.5, 0.4, 0.4]` (appetite and dormancy weigh 0.5 each, alarm and sociality 0.4 each). Diet carries the most weight; the four slice 1 genes weigh 0.3 each. **`ANIMAL_SPECIATION`** is `0.18`. **`ANIMAL_SPLIT_MIN_POP`** is 12.
+- **`ANIMAL_WEIGHTS`** is `[1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6, 0.3, 0.3, 0.3, 0.3, 0.5, 0.5, 0.4, 0.4]` (appetite and dormancy weigh 0.5 each, alarm and sociality 0.4 each). Diet carries the most weight; the four slice 1 genes weigh 0.3 each. **`ANIMAL_SPECIATION`** is `0.15` (0.18 before the v3 Part 2 balance pass). **`ANIMAL_SPLIT_MIN_POP`** is 12.
 - **`GRID = 6`**: the spatial grid cell size, in tiles.
 - **Classes (v3 Part 1 slice 1):**
   - **`ANIMAL_CLASSES`** is `['fish', 'amphibian', 'reptile', 'mammal', 'bird', 'invertebrate']`, with index constants `CLS_FISH` 0, `CLS_AMPH` 1, `CLS_REPT` 2, `CLS_MAMM` 3, `CLS_BIRD` 4 and `CLS_INVT` 5. Slice 2 added five bird founders.
@@ -574,7 +574,7 @@ Animals are agents stored as structure-of-arrays. There is one typed array per f
   | Constant | Value | Use |
   | --- | --- | --- |
   | `INVERT_SIZE` | 0.45 | Size gene cap for invertebrates, applied by `_clampClass`. |
-  | `INVERT_BUG` | 1.6 | `_bugEff` for a land invertebrate with diet at least 0.5 (spiders). |
+  | `INVERT_BUG` | 1.3 | `_bugEff` for a land invertebrate with diet at least 0.5 (spiders). |
   | `INVERT_THIRST` | 0.5 | Water-loss multiplier for invertebrates; they also refill at `AMPH_DRINK_WET` like amphibians. |
   | `LITTER_ENERGY` | 2.4 | Energy per unit of litter eaten by land invertebrate grazers (snails). |
   | `JELLY_SPEED` | 0.3 | A water invertebrate carnivore with speed gene below this is a `jelly`; its attack `speedF` is a flat 0.5 instead of the speed ratio. |
@@ -592,7 +592,7 @@ Animals are agents stored as structure-of-arrays. There is one typed array per f
   | `CARRION_LURE` | 6 | Weight of `carrion*carrionEff` in the forage score. The plan left the value open; 2 was tried first, and 6 was kept after tuning. |
   | `SCAV_LURE` | 3 | The carrion lure is multiplied by `1 + SCAV_LURE*scav`. |
   | `SCAV_BITE` | 2 | The carrion bite is `bite*(1 + SCAV_BITE*scav)`. |
-  | `SCAV_SAMPLES`, `SCAV_RANGE` | 12, 1.5 | An animal with `scav > 0.5` takes this many forage samples (instead of 8) over `range*SCAV_RANGE`. |
+  | `SCAV_SAMPLES`, `SCAV_RANGE` | 12, 2.5 | An animal with `scav > 0.5` takes this many forage samples (instead of 8) over `range*SCAV_RANGE`. |
   | `SCAV_HUNT` | 0.35 | An animal with `scav > 0.5` only hunts below this fraction of `emax` (others hunt below 0.6). |
   | `MILD_LOSS` | 0.25 | Mild poison energy loss per unit of excess potency, times `emax`. |
   | `NEURO_TICKS` | 25 | Confusion length after a neurotoxin. |
@@ -617,11 +617,11 @@ Animals are agents stored as structure-of-arrays. There is one typed array per f
 
   | Constant | Value | Use |
   | --- | --- | --- |
-  | `RES_COST` | 0.1 | Metabolism multiplier `1 + RES_COST*res`. |
+  | `RES_COST` | 0.05 | Metabolism multiplier `1 + RES_COST*res`. |
   | `RES_EFFECT` | 0.85 | Resistance factor `1 - RES_EFFECT*res` on the sickness death chance and on infection (`disease.exposeAnimal`). |
   | `SICK_COST` | 0.5 | Extra energy cost per tick while infected, `SICK_COST*vir*mass^0.75`. |
   | `SICK_SLOW` | 0.4 | Speed multiplier `1 - SICK_SLOW*vir` while infected (in `_moveToward`). |
-  | `SICK_DEATH` | 0.005 | Per-tick death chance `SICK_DEATH*vir*(1-RES_EFFECT*res)`. The plan kept 0.01; it was halved in Part 2 tuning because the rolling disease share reached 15–33% at year 10 and 27–52% at year 20. |
+  | `SICK_DEATH` | 0.01 | Per-tick death chance `SICK_DEATH*vir*(1-RES_EFFECT*res)`. The plan kept 0.01; it was halved in Part 2 tuning because the rolling disease share reached 15–33% at year 10 and 27–52% at year 20. The v3 Part 2 balance pass restored 0.01 so resistance is under selection again; disease stays at 1–3% of deaths over 3000 ticks. |
   | `IMMUNE_TICKS` | 900 | Ticks of immunity to a strain after recovering from it. |
   | `CONTACT_R` | 1.5 | Contact radius, in tiles. The plan's 2 was tuned back down. |
   | `CONTACT_K` | 0.35 | Contact exposure strength. |
@@ -631,7 +631,7 @@ Animals are agents stored as structure-of-arrays. There is one typed array per f
   | `CARCASS_K` | 0.1 | Exposure strength per unit of carcass load on the tile. |
   | `VECTOR_K` | 0.05 | Exposure strength per unit of vector load on the tile. |
   | `NATIMM_P` | 0.003 | Chance per newborn to gain innate immunity to the strain most prevalent in its parent species. |
-  | `RES_NUDGE` | 0.02 | A parent that has recovered from a strain (`immune` set) adds this to its child's resistance gene after mutation, capped at 1. Partly Lamarckian, approved in the Part 3 plan. |
+  | `RES_NUDGE` | 0.05 | A parent that has recovered from a strain (`immune` set) adds this to its child's resistance gene after mutation, capped at 1. Partly Lamarckian, approved in the Part 3 plan. |
 - **Domain, thirst, territory and herd constants (Part 3 slice 2):**
 
   | Constant | Value | Use |
@@ -641,7 +641,7 @@ Animals are agents stored as structure-of-arrays. There is one typed array per f
   | `THIRST` | 0.02 | Base water loss per tick, `THIRST*(1-0.6*dry)*(0.6+temp+seasonT+droughtK)*(cold>0.5 ? 0.6 : 1)*(amph ? AMPH_DRY : 1)`. The plan's 0.004 gave 0 thirst deaths; 5× was needed. |
   | `THIRSTY` | 0.35 | Below this `water`, an animal seeks water. |
   | `DRINK_WET`, `AMPH_DRINK_WET` | 0.6, 0.5 | Water refills to 1 on a tile with `waterDist <= 1` or `wet` above this. The plan's 0.35 let almost any rained-on tile refill. |
-  | `AMPH_DRY`, `AMPH_RANGE`, `AMPH_DEPTH` | 2, 5, 0.35 | Amphibian water-loss multiplier; amphibians may stand on land within `waterDist <= AMPH_RANGE` and on non-ocean water shallower than `AMPH_DEPTH`. |
+  | `AMPH_DRY`, `AMPH_RANGE`, `AMPH_DEPTH` | 1.6, 5, 0.35 | Amphibian water-loss multiplier; amphibians may stand on land within `waterDist <= AMPH_RANGE` and on non-ocean water shallower than `AMPH_DEPTH`. |
   | `DEHYDRATE_COST`, `DEHYDRATE_DEATH` | 2.5, 0.02 | At `water <= 0` the tick's cost is multiplied by 2.5 and a death roll runs. The plan's 0.004 was raised 5× in tuning. A starvation death while dehydrated also counts as `thirst`. |
   | `FRUIT_WATER`, `GRAZE_WATER`, `MEAT_WATER` | 0.15, 0.02, 0.2 | Water gained per fruit bite, graze bite, and kill or carrion bite. |
   | `WATERHOLE`, `WATER_SAMPLES` | 0.25, 8 | Forage lure `WATERHOLE/(1+waterDist)` for grazers (diet above 0.6 excluded); samples for `_pickWater`. |
@@ -678,16 +678,16 @@ Animals are agents stored as structure-of-arrays. There is one typed array per f
   | Constant | Value | Use |
   | --- | --- | --- |
   | `BIRD_SIZE` | 0.6 | Size gene cap for birds, applied by `_clampClass`. |
-  | `FLY_META` | 1.3 | Cost multiplier while `fly` is set; a perched bird pays the normal cost. |
+  | `FLY_META` | 1.2 | Cost multiplier while `fly` is set; a perched bird pays the normal cost. |
   | `FLY_MOVE` | 0.15 | A bird that moved more than this in a tick, or is off a land tile, is flying. |
   | `BIRD_SPEED`, `BIRD_SENSE` | 1.45, 1.4 | `spd` and `range` multipliers in `_decode`. Birds hold no territory but keep herding. |
   | `BIRD_BITE`, `BIRD_FRUIT` | 0.85, 1.4 | Graze bite multiplier, and fruit energy multiplier (birds also reach canopy fruit). |
-  | `BIRD_CROWD` | 8 | Same-species grid-cell limit for bird breeding (others use 14). |
+  | `BIRD_CROWD` | 10 | Same-species grid-cell limit for bird breeding (others use 14). |
   | `BIRD_ESCAPE` | 0.35 | Attack chance multiplier when a land or amphibious predator takes a perched bird. |
   | `BIRD_BUG`, `BIRD_BUG_ENERGY`, `BIRD_BUG_LO`, `BIRD_BUG_SPAN` | 6, 0.9, 0.25, 0.15 | `_bugEff` ramps up to `×BIRD_BUG` between diet 0.25 and 0.40; bird omnivores get `BIRD_BUG_ENERGY` per unit of bug eaten. |
-  | `BIRD_PREY` | 0.8 | Raptor prey-mass limit (prey at most `0.8×` its own mass). |
+  | `BIRD_PREY` | 1 | Raptor prey-mass limit (prey at most `1×` its own mass). |
   | `BIRD_FISH_MASS`, `BIRD_DEPTH`, `BIRD_FISH_LURE`, `BIRD_STRIKE` | 1.25, 0.5, 0.6, 0.1 | Fishing birds take water and amphibious prey lighter than 1.25 in water shallower than 0.5, are lured to shallows by `tileLoad`, and strike with a flat cover of 0.1 in place of water cover. |
-  | `FISHER_HUNT`, `FISHER_RANGE` | 0.85, 1.5 | Fishing birds hunt below this energy fraction, over `range*1.5`. |
+  | `FISHER_HUNT`, `FISHER_RANGE` | 0.85, 2 | Fishing birds hunt below this energy fraction, over `range*2`. |
   | `BIRD_SEED` | 1.8 | Seed carry time multiplier; a seed over water waits for land in `_dropSeed`. |
   | `BIRD_PERCH`, `BIRD_REST_P`, `PERCH_COVER` | 1.4, 0.6, 0.25 | Forage score bonus on a perch, chance per tick that a fed perched bird stays, and the plant cover that makes a land tile a perch. |
   | `MIGRATE_RANGE`, `MIGRATE_HOME` | 36, 3 | Maximum migration offset from `oy` in tiles, and the dead band around the goal. |
@@ -1043,7 +1043,7 @@ After the loop, `_compact()` fills each dead slot with the last live animal. The
 **Bug efficiency (`_bugEff`):**
 
 - 0 when `mass >= BUG_MASS`.
-- A land invertebrate with diet at least 0.5 (spiders) gets `INVERT_BUG` (1.6), ahead of the diet test, so they eat pest and parasite swarms through the usual bug path.
+- A land invertebrate with diet at least 0.5 (spiders) gets `INVERT_BUG` (1.3), ahead of the diet test, so they eat pest and parasite swarms through the usual bug path.
 - Otherwise 0 when `diet >= BUG_DIET_MAX`, so carnivores (the `dietRole` boundary) never eat or seek bugs.
 - Otherwise `1-(BUG_DIET_PEAK-diet)*1.4` below the peak and `1-(diet-BUG_DIET_PEAK)/(BUG_DIET_MAX-BUG_DIET_PEAK)` above it, clamped at 0.
 
@@ -1203,7 +1203,7 @@ The energy column is descriptive only; energy gains keep their existing per-food
 | `NEED_P0`, `NEED_PD` | 0.06, 0.5 | Protein need `NEED_P0 + NEED_PD*diet`. |
 | `NEED_M` | 0.24 | Mineral need. |
 | `NEED_JUV_P`, `NEED_JUV_M` | 1.4, 1.3 | Juvenile (`gf < 1`) need multipliers. |
-| `NEED_BIRD`, `NEED_ECTO` | 1.15, 0.8 | Need multipliers for birds and for reptiles and amphibians. |
+| `NEED_BIRD`, `NEED_ECTO` | 1.15, 0.7 | Need multipliers for birds and for reptiles and amphibians. |
 | `FIBRE_K` | 0.15 | Energy gain ×`1 - FIBRE_K*fibre*diet`. |
 | `SOIL_NUT_LO`, `SOIL_NUT_K` | 0.5, 0.8 | Grass, leaf and seed nutrients ×`SOIL_NUT_LO + SOIL_NUT_K*min(1, nutrient/SOIL_MAX)` (reads `soil.nutrient`, never writes it). |
 | `SICK_EAT`, `SICK_ABSORB` | 0.3, 0.3 | Infected animals bite ×`1 - SICK_EAT*virulence` and absorb nutrients ×`1 - SICK_ABSORB*virulence`. |
@@ -1213,9 +1213,9 @@ The energy column is descriptive only; energy gains keep their existing per-food
 | `EGG_CA`, `EGG_CA_MIN` | 0.1, 0.4 | Each egg drains `EGG_CA` minerals; a layer below `EGG_CA_MIN` lays calcium-poor eggs. |
 | `FAT_EFF` | 0.8 | Energy to fat conversion. |
 | `FAT_MAX`, `FAT_MIG` | 0.7, 1.5 | `fatCap = emax*gf*FAT_MAX*app`, ×`FAT_MIG` when preparing (`prep`). |
-| `FAT_STORE`, `FAT_RATE` | 0.6, 0.01 | Above `FAT_STORE*emax` energy moves to fat at `FAT_RATE*app*emax` per tick. |
+| `FAT_STORE`, `FAT_RATE` | 0.52, 0.02 | Above `FAT_STORE*emax` energy moves to fat at `FAT_RATE*app*emax` per tick. |
 | `FAT_PREP_STORE`, `FAT_PREP_RATE` | 0.5, 2 | The same while preparing. |
-| `FAT_BURN`, `FAT_PREP_BURN`, `FAT_BURN_MIG` | 0.5, 0.35, 0.75 | Fat refills energy up to this share of `emax` (normal, preparing, away on migration). |
+| `FAT_BURN`, `FAT_PREP_BURN`, `FAT_BURN_MIG` | 0.42, 0.35, 0.75 | Fat refills energy up to this share of `emax` (normal, preparing, away on migration). |
 | `FAT_COLD_T` | 0.4 | Tiles colder than this make an animal prepare. |
 | `APP_OVER` | 0.3 | While below `fatCap`, an animal keeps eating up to `emax*(1 + APP_OVER*app)` (`full`). |
 | `FAT_LEAN`, `FAT_HEAVY`, `FAT_OBESE` | 0.05, 0.25, 0.45 | Body condition thresholds on `fat/(emax*gf)`. |
@@ -1286,7 +1286,7 @@ New pool fields: Float `rnk` (rank within the local group, 1 = average) and Int 
 | `RANK_FEED`, `RANK_MATE`, `RANK_SUS`, `RANK_SICK` | 0.5, 0.8, 0.5, 0.6 | Pack share weighted by rank; outranked animals (`grp ≥ 3`, `rnk < 1`) skip a breeding attempt with chance `RANK_MATE*(1-rnk)`; `_sus` ×`1 + RANK_SUS*(1-rnk)` in groups; sick animals' rank score ×0.6. |
 | `DISP_EVERY`, `DISP_N`, `DISP_REL`, `DISP_P` | 20, 5, 0.8, 0.15 | Dispersal check cadence, minimum group size, rank below which adults may leave, chance per check. |
 | `DISP_DIST`, `DISP_TICKS`, `DISP_GEN`, `DISP_DRIFT` | 25, 40, 3, 1.5 | Target distance, travel time limit, founder generations, mutation ×1.5 while `fnd > 0`. |
-| `DISP_SPLIT_P`, `DISP_SPLIT_POP` | 0.03, 30 | A founder's first brood founds a daughter species with this chance when the parent species can split with at least 30 members. |
+| `DISP_SPLIT_P`, `DISP_SPLIT_POP` | 0.2, 20 | A founder's first brood founds a daughter species with this chance when the parent species can split with at least 20 members. |
 | `COLONY_MIN`, `COLONY_R`, `COLONY_N`, `COLONY_POP` | 0.6, 1.5, 4, 15 | Colonial sociality; nest search radius ×1.5 toward same-species nests; a tile with 4+ same-species nests or dens is a colony; event population. |
 
 - **Rank (`_rank`)**: `_social` computes a rank score per animal, `rs = mass*gf*ef*(0.5 + min(1, energy/(emax*gf)))`, ×`RANK_SICK` when infected. `_rank()` then makes one pass per grid cell (no pair loops): per species it counts members and sums `rs` into `_spc`/`_sps` (sized `registry.nextId + 257`), sets `grp` to the count and `rnk = rs*count/sum`, then clears the scratch. Pack leaders use the same score (`PACK_SICK_LEAD` for sick ones); dispersing animals do not join packs.
@@ -1334,17 +1334,17 @@ New pool fields: Float `lk` (displayed hue 0..1, a mimic's look) and `pb` (paras
 | `CLEAN_CARRY` | 0.5 | Exposure chance factor for strains passing either way between cleaner and host. |
 | `CLEAN_EAT` | 0.5 | A failed cleaning on a carnivore host kills the cleaner with chance `0.5*(1-tol)`. |
 | `CLEAN_RIDE`, `CLEAN_COOL` | 5, 12 | Ride ticks per cleaning (state 9, snapped to the host); approach budget (state 10). |
-| `CLEAN_SPEC` | 0.45 | Distance multiplier for the species a cleaner species is specialised on (`cleanOf`). |
+| `CLEAN_SPEC` | 0.3 | Distance multiplier for the species a cleaner species is specialised on (`cleanOf`). |
 | `CLEAN_HUNGRY` | 0.9 | Cleaners only clean below 90% of full energy. |
-| `CLEAN_PAIR_N`, `CLEAN_PAIR_SHARE`, `CLEAN_COUNT_DECAY`, `CLEAN_POP` | 10, 0.4, 0.9, 4 | A cleaner species becomes a cleaner of a host species when the decaying count `cleanN[host]` is ≥ 10 and ≥ 40% of its cleanings, with population ≥ 4. |
-| `TOX_MIN`, `TOX_COST`, `MIMIC_COST` | 0.4, 0.1, 0.05 | Toxic above 0.4; metabolic cost of toxicity and mimicry. |
-| `TOX_HIT`, `TOX_SPIT`, `TOX_LEARN` | 0.25, 0.8, 0.45 | A predator that kills toxic prey loses `hit*0.25*emax*gf`; a solo attacker spits out toxic prey with chance `hit*0.8`; aversion strength grows by `0.45*tox`. |
+| `CLEAN_PAIR_N`, `CLEAN_PAIR_SHARE`, `CLEAN_COUNT_DECAY`, `CLEAN_POP` | 10, 0.25, 0.9, 4 | A cleaner species becomes a cleaner of a host species when the decaying count `cleanN[host]` is ≥ 10 and ≥ 25% of its cleanings, with population ≥ 4. |
+| `TOX_MIN`, `TOX_COST`, `MIMIC_COST` | 0.4, 0.06, 0.05 | Toxic above 0.4; metabolic cost of toxicity and mimicry. |
+| `TOX_HIT`, `TOX_SPIT`, `TOX_LEARN` | 0.15, 0.8, 0.45 | A predator that kills toxic prey loses `hit*0.15*emax*gf`; a solo attacker spits out toxic prey with chance `hit*0.8`; aversion strength grows by `0.45*tox`. |
 | `PREY_HUE`, `PREY_AV_DECAY`, `PREY_AV_SKIP`, `PREY_AV_DIST` | 0.04, 0.08, 0.6, 1 | Prey aversion is full strength for the learned prey species and ×`PREY_GEN` for other same-class prey within 0.04 hue; decays 8% per refresh; above 0.6 a fed predator skips the prey in `_nearest` with chance `(a-0.6)/0.4`, otherwise distance ×`1 + a` (slice 10 values). |
 | `PREY_GEN`, `PREY_AV_HUNGRY` | 0.7, 0.5 | Look-alike generalisation of an aversion; predators below 50% of `emax*gf` never skip (slice 10). |
 | `MODEL_SWITCH`, `MODEL_KEEP` | 1.5, 0.5 | Model hysteresis: the current class model stays while it is toxic with population ≥ `MODEL_POP*0.5`, unless a challenger scores 1.5× its `pop*tox` (slice 10). |
 | `MIMIC_UNLEARN` | 0.3 | Eating a harmless prey of an avoided look weakens that entry by 30% (the Batesian brake). |
 | `MIMIC_LO`, `MIMIC_SPAN`, `MIMIC_GENE`, `MIMIC_TOX` | 0.2, 0.35, 0.45, 0.3 | Look `lk` is the species hue lerped (circularly) toward the class model by `clamp((mimic-0.2)/0.35)`; a species counts as a mimic with mean mimicry ≥ 0.45 and toxicity ≤ 0.3. |
-| `MODEL_POP` | 6 | Minimum population of a class model. |
+| `MODEL_POP` | 4 | Minimum population of a class model. |
 
 - **Cleaning (`_cleanStep`, `_clean`)**: water animals and non-fisher birds with diet below 0.66, cleaner gene above `CLEAN_MIN`, adult enough to hunt and not thirsty or hungry-full, try a cleaning before hunting. `_nearest` mode 5 finds a host (other species, large enough, awake, in water for water cleaners, not air; when not riding it skips hosts already under `cln` or without burden). `_clean` succeeds with chance `0.3 + 0.7*tol`, feeds the cleaner as `FOOD_BUG`, protects the host, cleans the tile's parasite plane, shortens a sick host's infection and cross-exposes strains (`cleanCarry`). Failure chases the cleaner off and a carnivore host may eat it (`cleanEaten`).
 - **Toxicity and learning (`_preyLearn`, `_taste`)**: kills go through `_preyLearn`: toxic prey hurts the predator and strengthens the `sp.preyAv` entry for that prey species (`[{hue, cls, sp, strength}]`, logged once as "X learned to avoid Y" when strength passes 0.6); harmless prey of an avoided look weakens the matching entry (`mimicFooled`). `_taste` lets solo prey be spat out. Since slice 10 the aversion is species-specific (look-alikes get ×0.7), skipping is probabilistic and only when fed, so predators no longer starve around toxic prey.
@@ -1357,15 +1357,15 @@ New pool fields: Float `mwx`/`mwy` (last water), `mfx`/`mfy` (last good food), `
 
 | Constant | Value | Meaning |
 | --- | --- | --- |
-| `BRAIN_COST`, `BRAIN_MATURE` | 0.25, 60 | Upkeep `meta *= 1 + 0.25*brain²`; maturity delay `+60*brain` ticks. |
+| `BRAIN_COST`, `BRAIN_MATURE` | 0.15, 60 | Upkeep `meta *= 1 + 0.15*brain²`; maturity delay `+60*brain` ticks. |
 | `MEM_USE`, `MEM_FAR` | 1.5, 40 | Chance `1.5*brain` to use a memory; memories farther than 40 tiles are ignored. |
 | `MEM_LOW`, `MEM_GOOD` | 0.05, 0.4 | `_pickForage` records the target as food memory when its score is above 0.4, and heads to the remembered spot (then forgets it) when the best sampled score is below 0.05. |
-| `MEM_WATER_REC`, `MEM_WATER_OK` | 0.9, 2 | Water memory is written when an animal drinks with water below 0.9; `_pickWater` forgets it when `waterDist` there exceeds 2. |
+| `MEM_WATER_REC`, `MEM_WATER_OK` | 0.99, 2 | Water memory is written when an animal drinks with water below 0.99; `_pickWater` forgets it when `waterDist` there exceeds 2. |
 | `DANGER_R` | 5 | `_pickForage` mirrors a target within 5 tiles of the danger memory (chance `1.5*brain`). |
 | `LEARN_ADD`, `LEARN_BASE` | 0.6, 0.3 | Surviving an attack adds `0.6*(0.3 + brain)` to `lst` for the attacker's species (or replaces a weaker one). |
 | `LEARN_RANGE`, `LEARN_DECAY`, `LEARN_MIN` | 0.8, 0.03, 0.05 | Threat search radius for the learned species ×`1 + 0.8*lst*brain`; `lst` decays 3% per refresh and clears (with the danger memory) below 0.05. |
 | `TEACH_LIVE`, `TEACH_CARE`, `TEACH_KEEP` | 0.9, 0.25, 0.6 | Teaching chance per memory `k*brain` of the parent, at live birth (0.9) and on each care visit (0.25, also grandparents); taught avoidance is `0.6*lst`. |
-| `TOOL_MIN`, `TOOL_SPAN` | 0.42, 0.3 | Tool skill `clamp((brain-0.42)/0.3)` for mammals and birds only. |
+| `TOOL_MIN`, `TOOL_SPAN` | 0.35, 0.3 | Tool skill `clamp((brain-0.35)/0.3)` for mammals and birds only. |
 | `TOOL_K`, `TOOL_CRACK`, `TOOL_ARMOR` | 0.3, 0.5, 0.4 | Hard food (seed fruit, invertebrate prey or prey armour above 0.4) gives `+30%*skill` energy; prey armour's catch penalty is cut by `50%*skill`. |
 | `TOOL_LOG`, `TOOL_DECAY`, `TOOL_SP` | 4, 0.97, 1 | `sp.toolN` is a 0.97-decayed per-refresh sum of `tl`; a species logs "X started using tools" once when it reaches 4 (`sp.tools` = tick); species with `toolN` ≥ 1 count in `toolSp`. |
 
@@ -1543,7 +1543,7 @@ Pathogens are strains: registry species with `group: 'pathogen'`. A strain's `po
 | --- | --- | --- |
 | `VIR_TRADE` | 0.75 | Effective transmissibility `trans*(1-VIR_TRADE*vir)`. The plan asked for 0.5; 0.75 was kept after tuning because lower values let the disease death share pass 25% by year 20. |
 | `DUR_BASE` | 200 | Animal infection duration `DUR_BASE*(1-0.5*vir)`. |
-| `RES_DUR` | 0.6 | `infectAnimal` shortens the infection to `max(1, sDur*(1-RES_DUR*res))`. Together with `RES_NUDGE` in animals.js (a recovered parent adds 0.02 to its child's resistance), this lets resistance climb in heavily infected species. |
+| `RES_DUR` | 0.6 | `infectAnimal` shortens the infection to `max(1, sDur*(1-RES_DUR*res))`. Together with `RES_NUDGE` in animals.js (a recovered parent adds 0.05 to its child's resistance), this lets resistance climb in heavily infected species. |
 | `BLIGHT_DUR` | 150 | Blight duration base, same formula. |
 | `RANGE_BASE`, `RANGE_SPAN` | 0.05, 0.25 | Host range radius `RANGE_BASE+RANGE_SPAN*range`, as a gene distance between host species genomes. |
 | `JUMP_K`, `JUMP_K_P` | 0.02, 0.001 | Jump multiplier for animal and plant exposures outside the host range. |
