@@ -322,11 +322,17 @@ Climate preparation (`_prepareClimate`):
   | Frozen ocean | 0.25 |
   | Cliff | 0.4 |
   | Beach | 0.55 |
+  | Salt flat | 0.3 |
+  | Tundra bog | 0.7 |
+  | Mangrove | 1.05 |
+  | Cloud forest | 1.15 |
+  | Coral reef | 1.5 |
   | Mountains | 0.55 |
   | Badlands | 0.6 |
 
 - **`moistAt(i)`** is `depth` in water and `humidity` on land. The same gene is therefore read as moisture preference on land and depth preference in water.
-- **`capFor(t, i)`** is `formCap * peak * habit * gaussFit(temp) * gaussFit(moist, tol*1.2)`.
+- **`capFor(t, i)`** is `formCap * peak * habit * gaussFit(temp) * gaussFit(moist, tol*1.2) * biomeFit(biome, wood, root, shade)`.
+- **`biomeFit(b, wood, root, shade)`** (module level, Part 2 biomes) is `(1 - salt*(1-root)) * (1 - wood*woodPen) * (1 + shade*shadeK)`, read from the per-biome tables `BIOME_SALT` (salt flat 0.85, mangrove 0.45), `BIOME_WOOD` (salt flat 0.6, mangrove -0.2 so trees gain, steppe 0.55, tundra bog 0.6) and `BIOME_SHADE` (cloud forest 0.25). Deep roots resist salt, woody plants are held back on steppe, bog and salt flat, and shade-tolerant plants gain in cloud forest. The seed-bank gate in `plantSeed` applies the same factor with the seed's genome. The GPU path only reads `cap`, so it needs no mirror. `CORAL_REEF` is in `WATER_BIOME_SET`.
 
 Seeding (`_seed`):
 
@@ -897,6 +903,8 @@ The remaining structures are:
   | +8 | Air: every in-map tile, glacier included (slice 2). |
   | +16 | Perch: beach and cliff tiles (slice 2). |
   | +32 | Rough: hills, badlands, mountains and cliff, a den site for mammals (slice 3). |
+  | +64 | Saline: salt flat and mangrove. Water loss there is multiplied by `SALT_THIRST` (1.5). |
+  | +128 | Mire or reef: tundra bog, bog and coral reef. Land animals (not tadpoles) move at `MIRE_SLOW` (0.7) speed; water prey on such a tile get `REEF_COVER` (0.2) extra cover against attacks. |
 
   `_perch(j)` is true on a land tile with bit 16 or cover above `PERCH_COVER`. Bit 4 (amphibious) is set by `setWeather(Wx)` on non-ocean water tiles shallower than `AMPH_DEPTH` and on land tiles with `waterDist <= AMPH_RANGE` (all land when there is no weather layer); tiles with neither the land nor the water bit are skipped, so glacier gets no amphibious bit. `canStand(domain, x, y)` tests `walk & DOMAIN_BIT[domain]`.
 - **Counters:**
@@ -2273,12 +2281,12 @@ View and drawing:
 
 ### File format (`encode(eco, meta)`)
 
-The file is gzip (`CompressionStream`) of: a big-endian `u32` magic `SAVE_MAGIC` (`0x534f5645`), a `u32` header length, the UTF-8 JSON header, padding to 8 bytes, then the binary section. The header holds `version` (`SAVE_VERSION`, 2), `seed`, `w`, `h`, `tick`, the app `meta`, the `records` (record 0 is `eco`) and `bin` (binary length). `encode(eco, meta, flags)` adds `fast: true` when `flags.fast` is set (a save made in GPU fast mode); otherwise the header has no `fast` key, so CPU saves are unchanged. `decode` returns `fast` as a boolean.
+The file is gzip (`CompressionStream`) of: a big-endian `u32` magic `SAVE_MAGIC` (`0x534f5645`), a `u32` header length, the UTF-8 JSON header, padding to 8 bytes, then the binary section. The header holds `version` (`SAVE_VERSION`, 2), `seed`, `w`, `h`, `worldGen` (the world generator version, `world.gen`; Part 2 biomes), `tick`, the app `meta`, the `records` (record 0 is `eco`) and `bin` (binary length). `encode(eco, meta, flags)` adds `fast: true` when `flags.fast` is set (a save made in GPU fast mode); otherwise the header has no `fast` key, so CPU saves are unchanged. `decode` returns `fast` as a boolean.
 
 ### Loading (`decode(bytes, makeWorld)`)
 
 1. Gunzip, check the magic, parse the header and check the version and lengths. Only the current `SAVE_VERSION` loads; anything else throws "Save version N is not supported (expected 2)". v3 Part 1 slice 1 raised it to 2 because the animal genome grew from 15 to 19 genes (and animals gained `cls`), so v1 files are refused rather than migrated.
-2. `makeWorld(w, h, seed)` rebuilds the world.
+2. `makeWorld(w, h, seed, {gen})` rebuilds the world, with `gen = header.worldGen || 2`, so saves made before the generator rework (no `worldGen`) regenerate their original gen-2 world. `simClient.js` and `simWorker.js` pass the options through to `WorldMap`. `SAVE_VERSION` stays 2.
 3. Pass 1 creates every record: typed arrays copy their own buffer slice, classes use `Object.create(Class.prototype)` (constructors are not run).
 4. Pass 2 fills fields, array items, Map entries and Set items, resolving references.
 5. It checks that record 0 is an ecosystem on the new world at the header's tick, and returns `{eco, world, meta}`.
@@ -2616,7 +2624,8 @@ Helpers: `TOXIN_WORDS`, `toxinIndex(v)` (the same thresholds as `toxinType`), `f
 
 `biomes.js` provides:
 
-- `BIOME`, `BIOME_INFO` (name and color per key), `BIOME_KEYS`, `BIOME_LIST` (id to key) and `BIOME_ID` (key to id).
+- `BIOME`, `BIOME_INFO` (name and color per key), `BIOME_KEYS`, `BIOME_LIST` (id to key) and `BIOME_ID` (key to id). `SALT_FLAT`, `TUNDRA_BOG` and `CORAL_REEF` are appended at the end so legacy ids stay stable; `MANGROVE`, `CLOUD_FOREST` and `STEPPE` already existed and are now produced by the gen-3 classifier.
+- `BIOME_V3` thresholds and `classifyLandBiomeV3(altitude, temperature, humidity, slope, t, v)`, the gen-3 land classifier (returns a `BIOME` key).
 - `BIOME_COLOR_TABLE`, a `Uint8Array` of RGB per id.
 - `BIOME_THRESHOLDS`, including `seaLevel`, which is 0.42.
 - The classifier functions.
@@ -2625,10 +2634,12 @@ Helpers: `TOXIN_WORDS`, `toxinIndex(v)` (the same thresholds as `toxinType`), `f
 
 - **Per-tile fields**, where the tile at `(x, y)` has index `y*width + x`:
   - `altitude`, `temperature`, `humidity` and `fertility` are `Float32Array`s in 0..1.
-  - `fertility` also seeds the soil: `SoilLayer` starts each tile's nutrient store at its fertility and refills toward it. Seed 123 at 300×200 produces one tile (index 59465) whose fertility, temperature and depth are NaN; the soil reads it as 0, but the plant layer's pre-existing NaN there still turns `totalBiomass` into NaN on that seed.
+  - `fertility` also seeds the soil: `SoilLayer` starts each tile's nutrient store at its fertility and refills toward it. On gen 2, seed 123 at 300×200 produces one tile (index 59465) whose fertility, temperature and depth are NaN; the soil reads it as 0, but the plant layer's pre-existing NaN there still turns `totalBiomass` into NaN on that seed.
   - `isOcean`, `isLake`, `isRiver`, `isGlacier` and `isPond` are `Uint8Array` flags.
   - `riverFlow` is a `Float32Array`.
   - `biome` is a `Uint8Array` of numeric `BIOME_ID` values.
+- `isSalt` and `isDelta` are `Uint8Array` flags (gen 3 only; all zero on gen 2). `gen` is the generator version.
+- **`options.gen`:** `WG_GEN` (3) by default; 2 runs the legacy generator unchanged (verified tile-identical to the pre-rework code on seeds 42, 7 and 123).
 - **Methods:** `idx`, `inBounds`, `isWaterTile` and `getCell`.
 - **Pipeline:**
   1. `_generateFields`
@@ -2641,6 +2652,27 @@ Helpers: `TOXIN_WORDS`, `toxinIndex(v)` (the same thresholds as `toxinType`), `f
   8. `_generatePonds`
   9. `_shapeRiverBanks`
   10. `_classifyBiomes`
+
+  Gen 3 replaces step 1 with `_generateFieldsV3`, adds `_markSaltBasins` after the depression lakes and `_buildDeltas` after the rivers, and ends with `_classifyBiomesV3`.
+
+### Gen 3 generator (Part 2 world generation)
+
+- **Constants:** `WG_GEN` 3, `WG_WATER` 0.34 (target ocean share), `WG_CONT_AREA` 22000 and `WG_ISLE_AREA` 4200 (tiles per continent and per island, scaled by map area), `WG_COAST_WARP` 9, `WG_RIDGE_FREQ` 1/95, `WG_RIDGE_POW` 10, `WG_RIDGE_K` 0.75, `WG_LAND_CURVE` 1.0, `WG_STRAIT` 0.2, `WG_HUM_LO`/`WG_HUM_HI` 0.2/0.66, `WG_ORO` 5, `WG_RAIN` 0.004, `WG_RECHARGE` 0.1, `WG_TRADE_LAT` 0.36, `WG_SALT_HUM` 0.24, `WG_OUTFLOW` 0.4, `WG_DELTA_FLOW` 4, `WG_DELTA_LEN` 12, `WG_LAKE_MUL` 1.6.
+- **`_generateFieldsV3`:**
+  - Continents are rotated ellipses placed best-of-12 for spread, radius `sqrt(n/nCont)*(0.36..0.54)`; islands are small stamps. Both are sampled through a two-scale domain warp, which gives fractal coasts.
+  - Base height is `min(max(continent, island), 0.55)*0.7 + fbm(1/90)*0.25 + fbm(1/14)*0.07`.
+  - Straits: a Voronoi term between the two nearest continent centres lowers land along their bisector (`WG_STRAIT`), so continents stay separate.
+  - Mountain ridges are `(1-|fbm|)^WG_RIDGE_POW` from two noises, masked to inland tiles, scaled by `WG_RIDGE_K` and ridged detail.
+  - Sea level is set by quantile from a 4096-bin histogram so the ocean share is `WG_WATER`; altitude is normalised against the 99.7th percentile.
+  - Temperature as in gen 2.
+  - Humidity: a per-row wind sweep (westerlies or trade winds by latitude, `WG_TRADE_LAT`) carries moisture over a blurred altitude. Air recharges over sea (`WG_RECHARGE`), rains out on climbs (`WG_ORO`) and steadily (`WG_RAIN`), so leeward sides of ridges get rain shadows. The field is blurred, mixed with latitude bands, and land humidity is rescaled so p10 maps to `WG_HUM_LO` and p90 to `WG_HUM_HI`.
+  - `_sanitizeFields` replaces any non-finite value, so gen 3 has no NaN tiles.
+  - Helpers: `_blurField(f, r)`, `_distField(isSrc, through, maxD)` (BFS distance).
+- **Lakes and rivers:** gen 3 carves `WG_LAKE_MUL` times as many lake basins, below mountain level. Rivers start at a lower flow threshold out of lakes (`WG_OUTFLOW`), so lakes get outflow rivers; salt basins block flow.
+- **`_markSaltBasins`:** a lake whose mean humidity is below `WG_SALT_HUM` and mean temperature at least 0.4 becomes an endorheic salt basin (`isSalt`), its water removed and its floor set just above sea level.
+- **`_buildDeltas`:** at river mouths with flow of at least `WG_DELTA_FLOW`, walks about `WG_DELTA_LEN` tiles upstream to an apex, flattens the land, cuts 2–3 distributary arms to the sea and builds sediment fans (`isDelta`).
+- **`_classifyBiomesV3`** order: river, lake, pond; ocean (coral reef on warm shallow shelf near land, away from river mouths, in noise patches); salt flat; mangrove (warm coast or delta); other delta tiles to wetland, swamp or bog; beach; cliff; arid low basins to salt flat; then `classifyLandBiomeV3` (steppe on cool dry plains, cloud forest on wet warm slopes, tundra bog on wet cold flats, plus the gen-2 biomes).
+- Generation takes about 0.85–1.05 s at 300×200, against about 0.65 s for gen 2.
 
 ### Hydrology
 
