@@ -368,6 +368,9 @@ const SICK_RGB = [150, 120, 50];
 const SICK_MIX = 0.65;
 const BLIGHT_RGB = [125, 140, 115];
 const BLIGHT_MIX = 0.6;
+const ALGAE_RGB = [96, 150, 40];
+const ALGAE_SHOW = 0.1;
+const ALGAE_ALPHA = 190;
 const PHENO_RGB = [null, [214, 104, 38], [128, 100, 72], [246, 198, 214]];
 const PHENO_MIX = [0, 0.62, 0.55, 0.5];
 const INFECT_MIX = 0.55;
@@ -968,13 +971,20 @@ class WorldRenderer {
 		const pheno = P.pheno;
 		let bloom = typeof P.bloomNow === 'number' ? P.bloomNow : typeof bloomFactor === 'function' ? (seasons ? bloomFactor(P.season || 0) : 0.5) : 0;
 		bloom = Math.max(0, Math.min(1, bloom || 0)) * FLOWER_TINT;
+		const algae = P.bloom;
 		for (let i = 0; i < n; i++) {
 			const u = n + i;
 			const top = P.species[i];
 			const low = P.species[u];
 			const o = i * 4;
+			const am = algae && hl === null ? Math.min(1, algae[i]) : 0;
 			if (!top && !low) {
-				out[o + 3] = 0;
+				if (am > ALGAE_SHOW) {
+					out[o] = ALGAE_RGB[0];
+					out[o + 1] = ALGAE_RGB[1];
+					out[o + 2] = ALGAE_RGB[2];
+					out[o + 3] = am * ALGAE_ALPHA;
+				} else out[o + 3] = 0;
 				continue;
 			}
 			const p = top && (P.biomass[i] > 0.3 || !low) ? i : u;
@@ -1026,6 +1036,12 @@ class WorldRenderer {
 				r += (BLIGHT_RGB[0] - r) * BLIGHT_MIX;
 				g += (BLIGHT_RGB[1] - g) * BLIGHT_MIX;
 				bl += (BLIGHT_RGB[2] - bl) * BLIGHT_MIX;
+			}
+			if (am > ALGAE_SHOW) {
+				r += (ALGAE_RGB[0] - r) * am;
+				g += (ALGAE_RGB[1] - g) * am;
+				bl += (ALGAE_RGB[2] - bl) * am;
+				a = Math.max(a, am * ALGAE_ALPHA / 255);
 			}
 			out[o] = r;
 			out[o + 1] = g;
