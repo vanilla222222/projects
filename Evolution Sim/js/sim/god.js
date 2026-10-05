@@ -445,6 +445,7 @@ class GodTools {
 				}
 			}
 		}
+		const where = this._where(eco, s.x, s.y);
 		const edit = { brush: 'crater', value, pts: s.pts, r: rc };
 		const before = { water: P.water.slice(), depth: P.depth.slice(), sal: P.sal.slice(), habit: P.habit.slice() };
 		const tiles = GodTools.paintWorld(world, edit);
@@ -478,7 +479,6 @@ class GodTools {
 		}
 		this.meteorKills = (this.meteorKills | 0) + killed;
 		this._count('meteors');
-		const where = this._where(eco, s.x, s.y);
 		const what = value === 'VOLCANIC' ? 'a rocky crater' : value === 'OCEAN' ? 'a flooded sea crater' : 'a crater lake';
 		const tail = killed ? `, killing ${killed} animal${killed === 1 ? '' : 's'}` : '';
 		const fire = burning ? ' and setting the edge alight' : '';
