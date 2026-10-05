@@ -478,6 +478,18 @@ const ALPINE_ID = BIOME_LIST.indexOf('ALPINE');
 const GLACIER_ID = BIOME_LIST.indexOf('GLACIER');
 const FROZEN_DESERT_ID = BIOME_LIST.indexOf('FROZEN_DESERT');
 const FROZEN_OCEAN_ID = BIOME_LIST.indexOf('FROZEN_OCEAN');
+const ALPINE_MEADOW_ID = BIOME_LIST.indexOf('ALPINE_MEADOW');
+const VOLCANIC_ID = BIOME_LIST.indexOf('VOLCANIC');
+const OASIS_ID = BIOME_LIST.indexOf('OASIS');
+const DUNES_ID = BIOME_LIST.indexOf('DUNES');
+const FLOODPLAIN_ID = BIOME_LIST.indexOf('FLOODPLAIN');
+
+function texHash(i) {
+	let h = Math.imul(i ^ 0x9e3779b9, 0x85ebca6b);
+	h ^= h >>> 13;
+	h = Math.imul(h, 0xc2b2ae35);
+	return (h ^ (h >>> 16)) >>> 0;
+}
 
 class WorldRenderer {
 	constructor(canvas) {
@@ -821,6 +833,48 @@ class WorldRenderer {
 					r = 172; g = 180; b = 176;
 				} else if (bk === FROZEN_OCEAN_ID) {
 					r = 150; g = 190; b = 204;
+				} else if (bk >= ALPINE_MEADOW_ID) {
+					const tx = i % w.width;
+					const ty = (i - tx) / w.width;
+					const hh = texHash(i);
+					if (bk === DUNES_ID) {
+						const k = 0.9 + 0.1 * Math.sin(tx * 0.55 + ty * 0.3 + Math.sin(ty * 0.11 + tx * 0.04) * 2.4);
+						r *= k;
+						g *= k;
+						b *= k;
+					} else if (bk === VOLCANIC_ID) {
+						if ((hh & 63) === 0) {
+							r = 190; g = 74; b = 38;
+						} else {
+							const k = 0.78 + ((hh >>> 8) & 31) * 0.012;
+							r *= k;
+							g *= k;
+							b *= k;
+						}
+					} else if (bk === ALPINE_MEADOW_ID) {
+						const f = hh & 31;
+						if (f === 0) {
+							r = 228; g = 212; b = 120;
+						} else if (f === 1) {
+							r = 198; g = 150; b = 204;
+						} else {
+							const k = 0.94 + ((hh >>> 8) & 15) * 0.008;
+							r *= k;
+							g *= k;
+							b *= k;
+						}
+					} else if (bk === OASIS_ID) {
+						if ((hh & 7) < 2) {
+							r = 44; g = 108; b = 48;
+						} else if ((hh & 7) === 2) {
+							r = 214; g = 192; b = 120;
+						}
+					} else if (bk === FLOODPLAIN_ID) {
+						const k = 0.93 + 0.07 * Math.sin((tx + ty) * 0.8 + Math.sin(tx * 0.07) * 3);
+						r *= k;
+						g *= k;
+						b *= k;
+					}
 				}
 				if (water[i]) {
 					const depth = Math.max(0, (sea - w.altitude[i]) / sea);

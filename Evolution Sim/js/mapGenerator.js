@@ -20,7 +20,7 @@ const HYDRO_RIVER_FLOW = 190;
 const HYDRO_WIDE_1 = 5;
 const HYDRO_WIDE_2 = 18;
 
-const WG_GEN = 3;
+const WG_GEN = 4;
 const WG_WATER = 0.34;
 const WG_CONT_AREA = 22000;
 const WG_ISLE_AREA = 4200;
@@ -45,6 +45,16 @@ const WG_POND_MUL = 2.5;
 const WG_RIVER_K = 0.8;
 const WG_SALT_BASIN = 0.003;
 const WG_SALT_SHARE = 0.008;
+const WG4_WARP = 14;
+const WG4_BELT = 0.36;
+const WG4_RIDGE_K = 0.55;
+const WG4_CONTI = 0.2;
+const WG4_HUM_LO = 0.1;
+const WG4_HUM_HI = 0.8;
+const WG4_RIVER_K = 0.7;
+const WG4_POLAR_LAT = 0.72;
+const WG4_VOLC_AREA = 40000;
+const WG4_OASIS_AREA = 26000;
 
 class WorldMap {
 	constructor(width, height, seed, options = {}) {
@@ -118,8 +128,10 @@ class WorldMap {
 		this._generateRivers();
 		if (v3) this._buildDeltas();
 		this._generatePonds();
+		if (this.gen >= 4) this._placeOases();
 		this._shapeRiverBanks();
-		if (v3) this._classifyBiomesV3();
+		if (this.gen >= 4) this._classifyBiomesV4();
+		else if (v3) this._classifyBiomesV3();
 		else this._classifyBiomes();
 	}
 
@@ -649,7 +661,7 @@ class WorldMap {
 		}
 
 		const scale = Math.sqrt((width * height) / 67200);
-		const threshold = HYDRO_RIVER_FLOW * scale * (v3 ? WG_RIVER_K : 1);
+		const threshold = HYDRO_RIVER_FLOW * scale * (this.gen >= 4 ? WG4_RIVER_K : v3 ? WG_RIVER_K : 1);
 		for (let i = 0; i < n; i++) {
 			this.riverFlow[i] = this.isOcean[i] ? 0 : flow[i] / threshold;
 		}
@@ -876,6 +888,11 @@ class WorldMap {
 			const t = clamp01(v);
 			return t * t * (3 - 2 * t);
 		};
+		const g4 = this.gen >= 4;
+		const rng4 = g4 ? new SeededRandom(seed + 94000) : null;
+		const w4x = g4 ? new PerlinNoise(seed + 94001) : null;
+		const w4y = g4 ? new PerlinNoise(seed + 94002) : null;
+		const belt4 = g4 ? new PerlinNoise(seed + 94003) : null;
 
 		const nCont = Math.max(2, Math.min(12, Math.round(n / WG_CONT_AREA)));
 		const conts = [];
@@ -905,6 +922,15 @@ class WorldMap {
 				sa: Math.sin(ang),
 				h: 0.8 + 0.2 * rng.next(),
 			});
+		}
+		if (g4) {
+			for (const o of conts) {
+				o.bOff = (rng4.next() - 0.5) * 0.6;
+				o.bBend = (rng4.next() - 0.5) * 1.2;
+				o.bW = 0.1 + 0.08 * rng4.next();
+				o.bK = 0.75 + 0.5 * rng4.next();
+				o.bLen = 0.7 + 0.35 * rng4.next();
+			}
 		}
 
 		const isl = new Float32Array(n);
@@ -944,11 +970,18 @@ class WorldMap {
 		for (let y = 0; y < height; y++) {
 			for (let x = 0; x < width; x++) {
 				const i = y * width + x;
-				const wx = x + warpNoiseX.noise2D(x * warpFreq, y * warpFreq) * options.warpStrength + midX.noise2D(x / 48, y / 48) * WG_COAST_WARP;
-				const wy = y + warpNoiseY.noise2D(x * warpFreq, y * warpFreq) * options.warpStrength + midY.noise2D(x / 48, y / 48) * WG_COAST_WARP;
+				let wx = x + warpNoiseX.noise2D(x * warpFreq, y * warpFreq) * options.warpStrength + midX.noise2D(x / 48, y / 48) * WG_COAST_WARP;
+				let wy = y + warpNoiseY.noise2D(x * warpFreq, y * warpFreq) * options.warpStrength + midY.noise2D(x / 48, y / 48) * WG_COAST_WARP;
+				if (g4) {
+					const qx = wx;
+					const qy = wy;
+					wx += w4x.noise2D(qx / 64, qy / 64) * WG4_WARP;
+					wy += w4y.noise2D(qx / 64 + 5.2, qy / 64 - 1.3) * WG4_WARP;
+				}
 				let c = 0;
 				let d1 = 1e9;
 				let d2 = 1e9;
+				let belt = 0;
 				for (const o of conts) {
 					const dx = wx - o.x;
 					const dy = wy - o.y;
@@ -957,6 +990,11 @@ class WorldMap {
 					const dd = Math.sqrt(u * u + v * v);
 					const val = o.h * smooth((1.2 - dd) / 0.9);
 					if (val > c) c = val;
+					if (g4) {
+						const bv = v - o.bOff - o.bBend * u * u;
+						const bb = Math.exp(-((bv / o.bW) ** 2)) * smooth((o.bLen - Math.abs(u)) / 0.35) * o.bK;
+						if (bb > belt) belt = bb;
+					}
 					if (dd < d1) {
 						d2 = d1;
 						d1 = dd;
@@ -972,7 +1010,12 @@ class WorldMap {
 					const r1 = Math.pow(1 - Math.abs(ridgeA.fbm(wx * WG_RIDGE_FREQ, wy * WG_RIDGE_FREQ, { octaves: 3 })), WG_RIDGE_POW);
 					const r2 = Math.pow(1 - Math.abs(ridgeB.fbm(wx * WG_RIDGE_FREQ * 1.7 + 17.3, wy * WG_RIDGE_FREQ * 1.7 - 5.1, { octaves: 3 })), WG_RIDGE_POW) * 0.5;
 					const det = ridgeD.ridgedFbm(wx / 30, wy / 30, { octaves: 3 });
-					a += inland * Math.max(r1, r2) * WG_RIDGE_K * (0.55 + 0.45 * det);
+					if (g4) a += inland * Math.max(r1, r2) * WG4_RIDGE_K * (0.55 + 0.45 * det);
+					else a += inland * Math.max(r1, r2) * WG_RIDGE_K * (0.55 + 0.45 * det);
+				}
+				if (g4 && belt > 0.01) {
+					const rb = belt4.ridgedFbm(wx / 26, wy / 26, { octaves: 4 });
+					a += belt * smooth((c - 0.2) / 0.35) * WG4_BELT * (0.35 + 0.65 * rb);
 				}
 				const edgeWobble = warpNoiseY.noise2D(x * warpFreq * 2.7 + 31.7, y * warpFreq * 2.7 - 12.3);
 				const edgeDist = Math.min(x, width - 1 - x, y, height - 1 - y) + edgeWobble * margin * 0.9;
@@ -1014,7 +1057,7 @@ class WorldMap {
 		this._blurField(sAlt, 3);
 		for (let y = 0; y < height; y++) {
 			const lat = Math.abs(y / height - 0.5) * 2;
-			const dir = lat < WG_TRADE_LAT ? -1 : 1;
+			const dir = lat < WG_TRADE_LAT || (g4 && lat > WG4_POLAR_LAT) ? -1 : 1;
 			let M = 1;
 			let prev = sea;
 			for (let k = 0; k < width; k++) {
@@ -1037,6 +1080,13 @@ class WorldMap {
 		}
 		this._blurField(air, 4);
 		this._blurField(oro, 3);
+		let landB = null;
+		if (g4) {
+			landB = new Float32Array(n);
+			for (let i = 0; i < n; i++) landB[i] = alt[i] >= sea ? 1 : 0;
+			this._blurField(landB, 9);
+			this._blurField(landB, 9);
+		}
 
 		for (let y = 0; y < height; y++) {
 			const lat = Math.abs(y / height - 0.5) * 2;
@@ -1049,7 +1099,8 @@ class WorldMap {
 				let temp = (1 - Math.pow(lat, 1.4)) * 0.72 + tn * 0.25 + 0.04 - above * 0.75;
 				this.temperature[i] = clamp01(temp);
 				const hn = (humNoise.fbm(x * freqH, y * freqH, { octaves: 4, lacunarity: 2.0, gain: 0.5 }) + 1) / 2;
-				const hum = 0.45 * hn + 0.38 * air[i] + oro[i] * 2.5 + band - above * 0.2 + 0.02;
+				let hum = 0.45 * hn + 0.38 * air[i] + oro[i] * 2.5 + band - above * 0.2 + 0.02;
+				if (g4) hum -= WG4_CONTI * (landB[i] - 0.6);
 				this.humidity[i] = clamp01(hum);
 				let fert = (fertNoise.fbm(x * freqF, y * freqF, { octaves: 3, lacunarity: 2.0, gain: 0.55 }) + 1) / 2;
 				fert *= 1 - Math.min(1, above * 1.4);
@@ -1070,8 +1121,9 @@ class WorldMap {
 			if (s < landN * 0.1) p10 = (b + 1) / 256;
 			if (s < landN * 0.9) p90 = (b + 1) / 256;
 		}
-		const hk = (WG_HUM_HI - WG_HUM_LO) / Math.max(0.02, p90 - p10);
-		for (let i = 0; i < n; i++) this.humidity[i] = clamp01(WG_HUM_LO + (this.humidity[i] - p10) * hk);
+		const hLo = g4 ? WG4_HUM_LO : WG_HUM_LO;
+		const hk = ((g4 ? WG4_HUM_HI : WG_HUM_HI) - hLo) / Math.max(0.02, p90 - p10);
+		for (let i = 0; i < n; i++) this.humidity[i] = clamp01(hLo + (this.humidity[i] - p10) * hk);
 		this._sanitizeFields();
 	}
 
@@ -1377,6 +1429,250 @@ class WorldMap {
 				this.biome[i] = BIOME_ID[classifyLandBiomeV3(a, t, h, slope)];
 			}
 		}
+	}
+
+	_placeOases() {
+		const { width, height } = this;
+		const n = width * height;
+		const sea = BIOME_THRESHOLDS.seaLevel;
+		const w4 = BIOME_V4;
+		const rng = new SeededRandom(this.seed + 94200);
+		const shape = new PerlinNoise(this.seed + 94201);
+		const src = new Uint8Array(n);
+		const want = Math.max(2, Math.round(n / WG4_OASIS_AREA));
+		const spots = [];
+		let attempts = 0;
+		while (spots.length < want && attempts < want * 80) {
+			attempts++;
+			let best = -1;
+			let bestH = Infinity;
+			for (let k = 0; k < 10; k++) {
+				const x = 5 + Math.floor(rng.next() * (width - 10));
+				const y = 5 + Math.floor(rng.next() * (height - 10));
+				const i = y * width + x;
+				const a = this.altitude[i];
+				if (a < sea + 0.02 || a > BIOME_THRESHOLDS.hillLevel) continue;
+				if (this.isOcean[i] || this.isLake[i] || this.isRiver[i] || this.isPond[i] || this.isSalt[i] || this.isGlacier[i]) continue;
+				const t = this.temperature[i];
+				const h = this.humidity[i];
+				if (t < w4.oasisTemp || h >= w4.oasisHum + 0.08) continue;
+				let far = true;
+				for (const s of spots) if (Math.abs(s.x - x) < 24 && Math.abs(s.y - y) < 24) far = false;
+				if (!far) continue;
+				if (h < bestH) {
+					bestH = h;
+					best = i;
+				}
+			}
+			if (best < 0) continue;
+			const cx = best % width;
+			const cy = (best - cx) / width;
+			const radius = 1.4 + rng.next() * 1.3;
+			const r = Math.ceil(radius);
+			const cells = [];
+			let clear = true;
+			for (let dy = -r; dy <= r && clear; dy++) {
+				for (let dx = -r; dx <= r; dx++) {
+					const nx = cx + dx;
+					const ny = cy + dy;
+					const d = Math.sqrt(dx * dx + dy * dy) / radius + shape.noise2D(nx * 0.5, ny * 0.5) * 0.35;
+					if (d > 1) continue;
+					const ni = ny * width + nx;
+					if (this.isOcean[ni] || this.isLake[ni] || this.isGlacier[ni] || this.isSalt[ni] || this.altitude[ni] < sea) {
+						clear = false;
+						break;
+					}
+					if (!this.isRiver[ni]) cells.push(ni);
+				}
+			}
+			if (!clear || cells.length < 3) continue;
+			for (const ni of cells) {
+				this.isPond[ni] = 1;
+				src[ni] = 1;
+			}
+			spots.push({ x: cx, y: cy });
+			const R = 7;
+			for (let dy = -R; dy <= R; dy++) {
+				for (let dx = -R; dx <= R; dx++) {
+					const nx = cx + dx;
+					const ny = cy + dy;
+					if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+					const w = 1 - Math.sqrt(dx * dx + dy * dy) / (R + 1);
+					if (w <= 0) continue;
+					const ni = ny * width + nx;
+					this.humidity[ni] = Math.min(1, this.humidity[ni] + 0.16 * w);
+					this.fertility[ni] = Math.min(1, this.fertility[ni] + 0.2 * w);
+				}
+			}
+		}
+		this._oasisSrc = src;
+	}
+
+	_volcanicMask() {
+		const { width, height } = this;
+		const n = width * height;
+		const sea = BIOME_THRESHOLDS.seaLevel;
+		const rng = new SeededRandom(this.seed + 94100);
+		const edge = new PerlinNoise(this.seed + 94101);
+		const mask = new Uint8Array(n);
+		const want = Math.max(1, Math.round(n / WG4_VOLC_AREA));
+		const spots = [];
+		for (let s = 0; s < want; s++) {
+			let best = -1;
+			let bestA = -1;
+			for (let k = 0; k < 40; k++) {
+				const x = 8 + Math.floor(rng.next() * (width - 16));
+				const y = 8 + Math.floor(rng.next() * (height - 16));
+				const i = y * width + x;
+				if (this.isOcean[i] || this.isLake[i] || this.isGlacier[i] || this.isRiver[i]) continue;
+				let far = true;
+				for (const p of spots) if (Math.abs(p.x - x) < 40 && Math.abs(p.y - y) < 40) far = false;
+				if (!far) continue;
+				const a = this.altitude[i] + rng.next() * 0.08;
+				if (a > bestA) {
+					bestA = a;
+					best = i;
+				}
+			}
+			if (best < 0 || this.altitude[best] < sea + 0.08) continue;
+			const cx = best % width;
+			const cy = (best - cx) / width;
+			spots.push({ x: cx, y: cy });
+			const radius = 4 + rng.next() * 5;
+			const r = Math.ceil(radius * 1.4);
+			for (let dy = -r; dy <= r; dy++) {
+				for (let dx = -r; dx <= r; dx++) {
+					const nx = cx + dx;
+					const ny = cy + dy;
+					if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+					const d = Math.sqrt(dx * dx + dy * dy) / radius + edge.noise2D(nx * 0.18, ny * 0.18) * 0.4;
+					if (d > 1) continue;
+					const ni = ny * width + nx;
+					if (this.isOcean[ni] || this.isLake[ni] || this.isRiver[ni] || this.isPond[ni] || this.isGlacier[ni] || this.isSalt[ni]) continue;
+					mask[ni] = 1;
+				}
+			}
+		}
+		return mask;
+	}
+
+	_classifyBiomesV4() {
+		const { width, height } = this;
+		const n = width * height;
+		const sea = BIOME_THRESHOLDS.seaLevel;
+		const v = BIOME_V3;
+		const w4 = BIOME_V4;
+		const patch = new PerlinNoise(this.seed + 93001);
+		const jt = new PerlinNoise(this.seed + 94301);
+		const jh = new PerlinNoise(this.seed + 94302);
+		const dn = new PerlinNoise(this.seed + 94303);
+		const oasis = this._oasisSrc || new Uint8Array(n);
+		const volc = this._volcanicMask();
+		const oceanD = this._distField((i) => this.isOcean[i], (i) => !this.isOcean[i], 3);
+		const landD = this._distField((i) => !this.isOcean[i] && !this.isRiver[i], (i) => this.isOcean[i], 6);
+		const riverD = this._distField((i) => this.isRiver[i], () => true, 3);
+		const wideD = this._distField((i) => this.isRiver[i] && this.riverFlow[i] >= HYDRO_WIDE_1, (i) => !this.isOcean[i] && !this.isLake[i], 4);
+		const oasisD = this._distField((i) => oasis[i] === 1, (i) => !this.isOcean[i] && !this.isLake[i], 4);
+		const generic = new Uint8Array(n);
+		for (let y = 0; y < height; y++) {
+			for (let x = 0; x < width; x++) {
+				const i = y * width + x;
+				const a = this.altitude[i];
+				const t = this.temperature[i];
+				const h = this.humidity[i];
+				if (this.isRiver[i] && a >= sea) {
+					this.biome[i] = BIOME_ID.RIVER;
+					continue;
+				}
+				if (this.isLake[i]) {
+					this.biome[i] = BIOME_ID.LAKE;
+					continue;
+				}
+				if (this.isPond[i]) {
+					this.biome[i] = BIOME_ID.POND;
+					continue;
+				}
+				if (this.isOcean[i]) {
+					if (t >= v.reefTemp && a >= sea - v.reefDepth && a <= sea - v.reefMin && landD[i] <= 5 && riverD[i] > 3 && patch.noise2D(x * 0.09, y * 0.09) > -0.15) {
+						this.biome[i] = BIOME_ID.CORAL_REEF;
+					} else {
+						this.biome[i] = BIOME_ID[classifyWaterBiome(a, t)];
+					}
+					continue;
+				}
+				if (this.isSalt[i]) {
+					this.biome[i] = BIOME_ID.SALT_FLAT;
+					continue;
+				}
+				if ((oceanD[i] <= 2 && a < sea + v.mangroveWidth && t >= v.mangroveTemp && h >= v.mangroveHumidity) || (this.isDelta[i] && t >= 0.55 && h >= v.mangroveHumidity)) {
+					this.biome[i] = BIOME_ID.MANGROVE;
+					continue;
+				}
+				if (this.isDelta[i]) {
+					const cold = t < BIOME_THRESHOLDS.coldTemp;
+					this.biome[i] = BIOME_ID[cold ? (t < v.bogTemp ? BIOME.TUNDRA_BOG : BIOME.BOG) : h > BIOME_THRESHOLDS.humidHumidity ? BIOME.SWAMP : BIOME.WETLAND];
+					continue;
+				}
+				if (a < sea + BIOME_THRESHOLDS.beachWidth && this._touchesWater(x, y)) {
+					this.biome[i] = BIOME_ID.BEACH;
+					continue;
+				}
+				const slope = this._slopeAt(x, y);
+				if (volc[i]) {
+					this.biome[i] = BIOME_ID.VOLCANIC;
+					continue;
+				}
+				if (slope > BIOME_THRESHOLDS.cliffSlope) {
+					this.biome[i] = BIOME_ID.CLIFF;
+					continue;
+				}
+				if (oasisD[i] !== 255 && oasisD[i] > 0 && t >= w4.oasisTemp - 0.04) {
+					this.biome[i] = BIOME_ID.OASIS;
+					continue;
+				}
+				if (h < v.saltHumidity && t > v.saltTemp && a < sea + v.saltRise && slope < v.saltSlope && patch.noise2D(x * 0.05 + 40.7, y * 0.05) > 0.1) {
+					this.biome[i] = BIOME_ID.SALT_FLAT;
+					continue;
+				}
+				const tj = t + jt.noise2D(x * 0.13, y * 0.13) * w4.jitter;
+				const hj = h + jh.noise2D(x * 0.13 + 7.7, y * 0.13 - 2.9) * w4.jitter;
+				if (wideD[i] !== 255 && wideD[i] > 0 && a < sea + w4.floodRise && slope < w4.floodSlope && tj >= w4.floodTemp && hj >= w4.floodHum) {
+					this.biome[i] = BIOME_ID.FLOODPLAIN;
+					continue;
+				}
+				let b = classifyLandBiomeV4(a, tj, hj, slope);
+				if (b === BIOME.DUNES && dn.noise2D(x * 0.06, y * 0.06) < -0.2) b = BIOME.DESERT;
+				this.biome[i] = BIOME_ID[b];
+				generic[i] = 1;
+			}
+		}
+		const out = Uint8Array.from(this.biome);
+		const cnt = new Uint8Array(BIOME_LIST.length);
+		for (let y = 1; y < height - 1; y++) {
+			for (let x = 1; x < width - 1; x++) {
+				const i = y * width + x;
+				if (!generic[i]) continue;
+				let top = this.biome[i];
+				let topN = 0;
+				for (let dy = -1; dy <= 1; dy++) {
+					for (let dx = -1; dx <= 1; dx++) {
+						if (dx === 0 && dy === 0) continue;
+						const j = i + dy * width + dx;
+						if (!generic[j]) continue;
+						const b = this.biome[j];
+						const c = ++cnt[b];
+						if (c > topN) {
+							topN = c;
+							top = b;
+						}
+					}
+				}
+				for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) cnt[this.biome[i + dy * width + dx]] = 0;
+				if (topN >= 5 && top !== this.biome[i]) out[i] = top;
+			}
+		}
+		this.biome.set(out);
+		this._oasisSrc = null;
 	}
 
 	_slopeAt(x, y) {

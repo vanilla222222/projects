@@ -19,6 +19,10 @@ function clamp01(v) {
 	return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
+function dist2d(x, y) {
+	return Math.sqrt(x * x + y * y);
+}
+
 function gaussFit(value, pref, tol) {
 	const d = (value - pref) / tol;
 	return Math.exp(-d * d);
@@ -29,11 +33,14 @@ function gaussRand(rng) {
 }
 
 function mutateGenes(src, srcOff, dst, dstOff, n, rng, rate, sd) {
-	for (let i = 0; i < n; i++) {
-		let v = src[srcOff + i];
-		if (rng.next() < rate) v = clamp01(v + gaussRand(rng) * sd);
-		dst[dstOff + i] = v;
+	for (let i = 0; i < n; i++) dst[dstOff + i] = src[srcOff + i];
+	if (!(rate > 0)) return;
+	if (rate >= 1) {
+		for (let i = 0; i < n; i++) dst[dstOff + i] = clamp01(dst[dstOff + i] + gaussRand(rng) * sd);
+		return;
 	}
+	const lq = 1 / Math.log(1 - rate);
+	for (let i = Math.floor(Math.log(1 - rng.next()) * lq); i < n; i += 1 + Math.floor(Math.log(1 - rng.next()) * lq)) dst[dstOff + i] = clamp01(dst[dstOff + i] + gaussRand(rng) * sd);
 }
 
 function geneDistance(a, aOff, b, bOff, weights) {
