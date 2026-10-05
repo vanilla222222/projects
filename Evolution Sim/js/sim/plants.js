@@ -288,11 +288,13 @@ const PLANT_ARCHETYPES = [
 	{ g: [0.55, 0.15, 0.6, 0.05, 0.05, 0.8, 0.3, 0.1, 0, 0, 0, 0.2, 0.5, 0.1, 0.15], domain: 'water', fresh: 0.9, float: 0.85 },
 	{ g: [0.5, 0.72, 0.9, 0.05, 0.05, 0.45, 0.9, 0.3, 0, 0, 0, 0, 0.5, 0.1, 0.15], domain: 'water', chemo: 0.9 },
 	{ g: [0.82, 0.1, 0.45, 0.15, 0.2, 0.5, 0.3, 0.6, 0, 0, 0, 0.1, 0.5, 0.35, 0.15], domain: 'water' },
+	{ g: [0.5, 0.9, 0.5, 0.75, 0.2, 0.4, 0.4, 0.6, 0.1, 0.15, 0.2, 0.1, 0.5, 0.25, 0.15], domain: 'land' },
 ];
 const PLANT_FLOAT = { 12: 0.85, 26: 0.85 };
 const WATER_HUE = { cattail: 72, mangrove: 118, pondweed: 128, sargassum: 48, chemomat: 28, coralalgae: 345, floatmat: 96 };
 const PLANT_DEPTH = { 13: 0.5, 14: 0.3, 15: 0.75, 16: 0.25 };
 const PLANT_DEPTH_BASE = 0.45;
+const WILLOW_M = 0.78;
 const DISP_FULL = 40;
 const DISP_BONUS = 0.35;
 const DISP_DECAY = 0.97;
@@ -520,6 +522,7 @@ function plantCategory(g, domain, kind = 0) {
 	if (g[8] > 0.5) return 'fruittree';
 	if (t < 0.38) return 'conifer';
 	if (t > 0.7 && m > 0.6) return 'palm';
+	if (m > WILLOW_M) return 'willow';
 	return 'tree';
 }
 
@@ -530,6 +533,7 @@ const PLANT_ICON_VARIANTS = {
 	shrub: ['shrub', 'hedge', 'heather'],
 	cactus: ['cactus', 'pricklypear', 'agave'],
 	tree: ['tree', 'oak', 'birch'],
+	willow: ['birch', 'tree', 'birch'],
 	conifer: ['conifer', 'pine', 'cypress'],
 	palm: ['palm', 'coconut', 'fanpalm'],
 	algae: ['algae', 'sealettuce', 'redalgae'],
@@ -569,6 +573,7 @@ const PLANT_CATEGORY_LABEL = {
 	shrub: 'Shrub',
 	cactus: 'Succulent',
 	tree: 'Broadleaf tree',
+	willow: 'Willow',
 	conifer: 'Conifer',
 	palm: 'Palm',
 	algae: 'Algae',
@@ -591,7 +596,7 @@ const PLANT_CATEGORY_LABEL = {
 	vine: 'Vine',
 	epiphyte: 'Epiphyte',
 	sargassum: 'Sargassum',
-	floatmat: 'Floating mat',
+	floatmat: 'Duckweed',
 	chemomat: 'Chemosynthetic mat',
 	coralalgae: 'Coral algae',
 };

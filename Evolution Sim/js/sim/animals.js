@@ -127,7 +127,7 @@ const PAD_RTOX = 0.1, PAD_TOXK = 0.2;
 const ACT_PATTERNS = ['diurnal', 'crepuscular', 'nocturnal', 'cathemeral'];
 const ACT_GENE = [0.12, 0.37, 0.62, 0.88];
 const PAD_ACT = 0.88;
-const FOUNDER_ACT = [2, 1, 3, 0, 3, 2, 1, 2, 0, 0, 2, 1, 3, 2, 0, 2, 2, 3, 0, 0, 0, 2, 3, 3, 2, 2, 3, 2, 2, 0, 0, 1, 0, 0, 2, 0, 3, 3, 0, 1, 1, 0, 3, 1, 2, 0];
+const FOUNDER_ACT = [2, 1, 3, 0, 3, 2, 1, 2, 0, 0, 2, 1, 3, 2, 0, 2, 2, 3, 0, 0, 0, 2, 3, 3, 2, 2, 3, 2, 2, 0, 0, 1, 0, 0, 2, 0, 3, 3, 0, 1, 1, 0, 3, 1, 2, 0, 3, 2, 1, 2, 3, 0, 0, 1, 0, 1, 3];
 const SLEEP_META = 0.5;
 const SLEEP_FED = 0.7;
 const SLEEP_WAKE = 0.45;
@@ -483,6 +483,17 @@ const ANIMAL_ARCHETYPES = [
 	{ domain: 'water', cls: CLS_FISH, n: 10, g: [0.6, 0.32, 0.6, 0.84, 0.72, 0.55, 0.5, 0.3, 0.3, 0.15, 0.1, 0.6, 0.05, 0.05, 0.3, 0.3, 0.2, 0.3, 0.3] },
 	{ domain: 'water', cls: CLS_FISH, n: 32, g: [0.12, 0.55, 0.55, 0.2, 0.38, 0.6, 0.85, 0.3, 0.05, 0.15, 0.1, 0.05, 0.6, 0.05, 0.3, 0.3, 0.15, 0.3, 0.3] },
 	{ domain: 'water', cls: CLS_FISH, n: 20, g: [0.25, 0.22, 0.5, 0.5, 0.7, 0.6, 0.7, 0.4, 0.3, 0.15, 0.3, 0.2, 0.2, 0.05, 0.3, 0.35, 0.2, 0.3, 0.3] },
+	{ domain: 'water', cls: CLS_FISH, n: 30, g: [0.36, 0.7, 0.55, 0.5, 0.4, 0.6, 0.75, 0.35, 0.15, 0.15, 0.2, 0.1, 0.6, 0.05, 0.3, 0.35, 0.15, 0.3, 0.3] },
+	{ domain: 'water', cls: CLS_FISH, n: 24, g: [0.34, 0.3, 0.6, 0.55, 0.6, 0.6, 0.7, 0.4, 0.3, 0.15, 0.75, 0.2, 0.2, 0.05, 0.3, 0.35, 0.15, 0.3, 0.3] },
+	{ domain: 'water', cls: CLS_FISH, n: 12, g: [0.45, 0.55, 0.7, 0.88, 0.45, 0.6, 0.55, 0.3, 0.15, 0.15, 0.1, 0.5, 0.05, 0.05, 0.3, 0.3, 0.2, 0.3, 0.3] },
+	{ domain: 'amph', cls: CLS_MAMM, n: 12, g: [0.3, 0.65, 0.6, 0.85, 0.45, 0.6, 0.5, 0.3, 0.1, 0.15, 0.1, 0.4, 0.2, 0.3, 0.3, 0.6, 0.2, 0.3, 0.3] },
+	{ domain: 'amph', cls: CLS_MAMM, n: 14, g: [0.38, 0.4, 0.45, 0.06, 0.4, 0.55, 0.5, 0.35, 0.2, 0.15, 0.1, 0.4, 0.4, 0.4, 0.3, 0.6, 0.15, 0.3, 0.3] },
+	{ domain: 'air', cls: CLS_BIRD, nic: 1, n: 12, g: [0.5, 0.4, 0.7, 0.85, 0.5, 0.6, 0.55, 0.3, 0.05, 0.15, 0.1, 0.4, 0.2, 0.1, 0.3, 0.45, 0.1, 0.4, 0.3] },
+	{ domain: 'air', cls: CLS_BIRD, nic: 1, n: 14, g: [0.12, 0.7, 0.7, 0.82, 0.55, 0.55, 0.75, 0.3, 0.02, 0.15, 0.1, 0.4, 0.1, 0.1, 0.3, 0.55, 0.1, 0.5, 0.3] },
+	{ domain: 'amph', cls: CLS_REPT, n: 8, g: [0.8, 0.35, 0.55, 0.92, 0.78, 0.45, 0.45, 0.5, 0.8, 0.15, 0.3, 0.6, 0.05, 0.85, 0.4, 0.55, 0.1, 0.3, 0.3] },
+	{ domain: 'air', cls: CLS_INVT, n: 30, g: [0.06, 0.7, 0.7, 0.85, 0.65, 0.5, 0.85, 0.4, 0.05, 0.15, 0.1, 0.2, 0.1, 0.6, 0.3, 0.1, 0.05, 0.3, 0.2] },
+	{ domain: 'air', cls: CLS_INVT, n: 40, g: [0.03, 0.5, 0.4, 0.06, 0.55, 0.55, 0.95, 0.4, 0.02, 0.15, 0.1, 0.05, 0.7, 0.6, 0.3, 0.05, 0.05, 0.3, 0.2] },
+	{ domain: 'water', cls: CLS_INVT, n: 30, g: [0.12, 0.05, 0.25, 0.06, 0.5, 0.6, 0.85, 0.4, 0.85, 0.15, 0.1, 0.05, 0.6, 0.6, 0.3, 0.05, 0.05, 0.2, 0.2] },
 ];
 const MARINE_ARCH = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 
@@ -524,8 +535,8 @@ for (const a of ANIMAL_ARCHETYPES) {
 	}
 }
 const FOUNDER_CLEAN = { 8: 0.35, 10: 0.6, 30: 0.6 };
-const FOUNDER_DEPTH = { 8: 0.12, 9: 0.15, 10: 0.12, 11: 0.35, 12: 0.7, 22: 0.15, 23: 0.45, 24: 0.12, 25: 0.6, 26: 0.5, 34: 0.15, 35: 0.15, 36: 0.66, 37: 0.56, 38: 0.04, 39: 0.5, 40: 0.6, 41: 0.3, 42: 0.16, 43: 0.22, 44: 0.5, 45: 0.1 };
-const FOUNDER_SALT = { 8: 0.4, 9: 1, 10: 0.7, 11: 0.5, 12: 1, 22: 0.6, 23: 1, 24: 0.6, 25: 1, 26: 1, 34: 0, 35: 1, 36: 1, 37: 1, 38: 1, 39: 1, 40: 1, 41: 1, 42: 1, 43: 1, 44: 1, 45: 1 };
+const FOUNDER_DEPTH = { 8: 0.12, 9: 0.15, 10: 0.12, 11: 0.35, 12: 0.7, 22: 0.15, 23: 0.45, 24: 0.12, 25: 0.6, 26: 0.5, 34: 0.15, 35: 0.15, 36: 0.66, 37: 0.56, 38: 0.04, 39: 0.5, 40: 0.6, 41: 0.3, 42: 0.16, 43: 0.22, 44: 0.5, 45: 0.1, 46: 0.08, 47: 0.2, 48: 0.1, 54: 0.05, 55: 0.05, 56: 0.12 };
+const FOUNDER_SALT = { 8: 0.4, 9: 1, 10: 0.7, 11: 0.5, 12: 1, 22: 0.6, 23: 1, 24: 0.6, 25: 1, 26: 1, 34: 0, 35: 1, 36: 1, 37: 1, 38: 1, 39: 1, 40: 1, 41: 1, 42: 1, 43: 1, 44: 1, 45: 1, 46: 0, 47: 0, 48: 0, 54: 0.05, 55: 0.05, 56: 0 };
 const TUNA_SPEED = 0.8;
 const MANTA_SIZE = 0.6;
 const LANTERN_SIZE = 0.3;
@@ -550,9 +561,15 @@ const UP_COST = 0.006;
 const CROC_BANK = 1.6;
 const SALMON_DIE = 0.75;
 const FRESH_SALT = 0.2;
-const NURSERY_K = 0.35;
+const NURSERY_K = 0.45;
+const FRESH_K = 0.3;
+const FRESH_FOOD = 1.6;
 const AQ_LARVA_DIET = 0.5;
 const AQ_EGG_R = 3;
+const RIVER_SEEK = 5;
+const HERON_SIZE = 0.45;
+const KINGFISHER_SIZE = 0.2;
+const SALMON_SPEED = 0.62;
 const SCHOOL_HERD = 0.7;
 const SCHOOL_DEPTH = 0.15;
 const FLAT_DEPTH = 0.4;
@@ -671,14 +688,16 @@ function animalCategory(g, domain, cls = CLS_MAMM, nic = 0) {
 	const role = dietRole(g[G_DIET]);
 	const scav = role !== 'herbivore' && g[G_SCAV] > 0.5;
 	if (cls === CLS_BIRD) {
-		if (nic) return 'wader';
+		if (nic) return size >= HERON_SIZE ? 'heron' : size < KINGFISHER_SIZE ? 'kingfisher' : 'wader';
 		if (scav) return 'vulture';
 		if (role === 'herbivore') return size < 0.4 ? 'seedbird' : 'fowl';
 		if (role === 'omnivore') return 'insectbird';
 		return 'raptor';
 	}
 	if (cls === CLS_INVT) {
+		if (domain === 'air') return g[G_DIET] < 0.5 ? 'mayfly' : 'dragonfly';
 		if (domain === 'water') {
+			if (role === 'herbivore' && g[G_SALT] < FRESH_SALT) return 'mussel';
 			if (role === 'herbivore') return g[G_DEPTH] >= VENT_DEPTH ? 'ventshrimp' : 'urchin';
 			if (role === 'omnivore' || scav) return 'crab';
 			return g[G_SPEED] < JELLY_SPEED ? 'jelly' : 'octopus';
@@ -693,6 +712,8 @@ function animalCategory(g, domain, cls = CLS_MAMM, nic = 0) {
 			if (size >= MANTA_SIZE && dp < LVL_MID) return 'manta';
 			return size < 0.45 ? 'fish' : 'ray';
 		}
+		if (g[G_SALT] < FRESH_SALT && scav) return 'catfish';
+		if (role === 'omnivore' && g[G_SALT] < FRESH_SALT && g[G_SPEED] >= SALMON_SPEED) return 'salmon';
 		if (role === 'omnivore') return g[G_TOXIC] >= PUFFER_TOX ? 'puffer' : dp >= FLAT_DEPTH ? 'flatfish' : 'reeffish';
 		if (g[G_SPEED] < AMBUSH_SPEED) return dp >= DEEP_CARN ? 'anglerfish' : 'grouper';
 		if (g[G_SPEED] >= TUNA_SPEED && dp >= LVL_MID && dp < LVL_FLOOR) return 'tuna';
@@ -711,6 +732,7 @@ function animalCategory(g, domain, cls = CLS_MAMM, nic = 0) {
 		return size < 0.45 ? 'snake' : 'monitor';
 	}
 	if (domain === 'water') return role === 'herbivore' ? 'manatee' : 'seal';
+	if (domain === 'amph') return role === 'herbivore' ? 'beaver' : 'otter';
 	if (scav) return 'carrion';
 	if (role === 'herbivore') return size < 0.28 ? 'rabbit' : size < 0.66 ? 'deer' : 'bison';
 	if (role === 'omnivore') return size < 0.35 ? 'mouse' : size < 0.72 ? 'boar' : 'bear';
@@ -764,6 +786,15 @@ const ANIMAL_ICON_VARIANTS = {
 	fowl: ['chicken'],
 	insectbird: ['swallow', 'crow'],
 	wader: ['heron', 'gull', 'duck'],
+	heron: ['heron'],
+	kingfisher: ['swallow'],
+	salmon: ['fish'],
+	catfish: ['eel', 'fish'],
+	otter: ['weasel'],
+	beaver: ['raccoon', 'badger'],
+	dragonfly: ['mosquito'],
+	mayfly: ['moth'],
+	mussel: ['clam'],
 	raptor: ['hawk', 'eagle', 'owl'],
 	vulture: ['vulture'],
 };
@@ -820,6 +851,15 @@ const ANIMAL_CATEGORY_LABEL = {
 	fowl: 'Ground bird',
 	insectbird: 'Insect bird',
 	wader: 'Fishing bird',
+	heron: 'Heron',
+	kingfisher: 'Kingfisher',
+	salmon: 'Salmon',
+	catfish: 'Catfish',
+	otter: 'Otter',
+	beaver: 'Beaver',
+	dragonfly: 'Dragonfly',
+	mayfly: 'Mayfly',
+	mussel: 'Freshwater mussel',
 	raptor: 'Raptor',
 	vulture: 'Carrion bird',
 };
@@ -2321,6 +2361,27 @@ class AnimalPool {
 				}
 			}
 		}
+		if (dom === 1 && needFood && this.rivers) {
+			const t0 = (this.y[i] | 0) * W + (this.x[i] | 0);
+			if (plants.sal[t0] === 0) {
+				const RV = this.rivers;
+				for (let k = 0; k < 2; k++) {
+					const nx = k === 0 ? RV.dn : RV.up;
+					const steps = 1 + ((this.rng.next() * RIVER_SEEK) | 0);
+					let j = t0;
+					for (let s = 0; s < steps && nx[j] >= 0; s++) j = nx[j];
+					if (j === t0) continue;
+					const cx = (j % W) + 0.5;
+					const cy = ((j / W) | 0) + 0.5;
+					const score = ((plants.edible(j, reach) + 0.02) * (0.25 + this._clim(i, temp[j]))) / (1 + dist2d(cx - this.x[i], cy - this.y[i]) * 0.08);
+					if (score > bestScore) {
+						bestScore = score;
+						bx = cx;
+						by = cy;
+					}
+				}
+			}
+		}
 		if (eggHead && this.eggs.nestCell) {
 			const cols = this.gcols;
 			const gx = (this.x[i] / GRID) | 0;
@@ -2571,7 +2632,7 @@ class AnimalPool {
 			}
 			let cost = m75 * (1 + 1.3 * (1 - clim) * shelter * climK) * (flying ? FLY_META : 1);
 			if (fat > em0 * FAT_HEAVY) cost *= 1 + FAT_META * this._heavy(i);
-			if (this.cold[i] > 0.5) {
+			if (this.cold[i] > 0.5 && !(dom === 1 && plants.sal[tile] === 0)) {
 				const et = temp[tile] + seasonT;
 				if (et < 0.5) cost += m75 * COLD_UPKEEP * (0.5 - et) * 2 * shelter;
 			} else if (dom === 0) {
@@ -2584,7 +2645,7 @@ class AnimalPool {
 			else if (dom === 2 && zn >= ZONE_MIRE) cost *= 1 - (zn === ZONE_MIRE ? AMPH_MIRE : AMPH_FRESH) * (1 - 0.5 * this.dry[i]);
 			if (dom === 1) {
 				cost += m75 * (AQ_K * aquaMisfit(this.genome[i * AG + G_DEPTH], this.genome[i * AG + G_SALT], plants.depth[tile], plants.sal[tile]) + DIVE_K * dive);
-				if (plants.sal[tile] === 0 && this.age[i] < this.mature[i]) cost *= 1 - NURSERY_K;
+				if (plants.sal[tile] === 0) cost *= 1 - (this.age[i] < this.mature[i] ? NURSERY_K : FRESH_K);
 			}
 			let dk = domK[this.sp[i]] || 0;
 			if (dk > 0) {
@@ -2847,7 +2908,7 @@ class AnimalPool {
 						skip = asp.aversion.length > 0 && this._aversion(asp.aversion, plants.hue[u]) > 0.5;
 					}
 				}
-				if (lv === 0 && lcap > 0) skip = true;
+				if (lv === 0 && lcap > 0 && plants.sal[tile] !== 0) skip = true;
 				const avail = ok ? plants.edible(tile, reach, skip, lv === 2) : 0;
 				if (fr > bite * FRUIT_MIN_BITE) {
 					this.state[i] = 1;
@@ -2872,7 +2933,7 @@ class AnimalPool {
 					const eaten = plants.graze(tile, bite, reach, skip, lv === 2);
 					if (eaten > 0) this.water[i] = Math.min(1, this.water[i] + GRAZE_WATER);
 					const toxHit = Math.max(0, plants.grazeTox - this.toxR[i]);
-					const ge = eaten * PLANT_ENERGY * this.plantEff[i] * plantK * (1 - 1.6 * toxHit);
+					const ge = eaten * PLANT_ENERGY * this.plantEff[i] * plantK * (1 - 1.6 * toxHit) * (dom === 1 && plants.sal[tile] === 0 ? FRESH_FOOD : 1);
 					if (ge > 0) {
 						const lf = ua > 0 ? (ua < bite ? ua : bite) / eaten : 0;
 						const ls = lf < 1 ? lf : 1;
