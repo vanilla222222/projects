@@ -1898,3 +1898,240 @@ select option {
 .badge.tox-geno, .badge.fx-5 { color: #7fe0a8; border-color: rgba(110, 220, 160, 0.45); background: rgba(110, 220, 160, 0.1); }
 .tt-row small.tt-fx { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
 .tt-row small.tt-fx .badge { font-size: 10px; padding: 1px 6px; }
+
+.god-toggle {
+	position: absolute;
+	right: 14px;
+	top: 14px;
+	width: 38px;
+	height: 38px;
+	display: grid;
+	place-items: center;
+	border-radius: 10px;
+	border: 1px solid var(--line-2);
+	background: var(--float);
+	color: var(--text);
+	cursor: pointer;
+	z-index: 4;
+}
+
+.god-toggle:hover,
+.god-toggle[aria-pressed='true'] {
+	background: var(--active);
+	color: var(--accent);
+}
+
+.god-palette {
+	position: absolute;
+	right: 14px;
+	top: 60px;
+	width: 244px;
+	max-height: calc(100% - 130px);
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 10px;
+	font-size: 12px;
+	color: var(--text);
+	background: var(--float);
+	border: 1px solid var(--line-2);
+	border-radius: 12px;
+	box-shadow: 0 8px 24px var(--shadow);
+	backdrop-filter: blur(6px);
+	z-index: 4;
+}
+
+.god-palette[hidden],
+.gp-pane[hidden],
+.god-ring[hidden] {
+	display: none;
+}
+
+.gp-head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.gp-active {
+	flex: 1;
+	text-align: right;
+	color: var(--muted);
+	font-size: 11px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.gp-active.on {
+	color: var(--accent);
+	font-weight: 600;
+}
+
+.gp-close {
+	border: 0;
+	background: transparent;
+	color: var(--muted);
+	cursor: pointer;
+	border-radius: 6px;
+	width: 22px;
+	height: 22px;
+}
+
+.gp-close:hover {
+	background: var(--active);
+	color: var(--text);
+}
+
+.gp-tools {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 4px;
+}
+
+.gp-tools button {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	padding: 6px 2px;
+	font-size: 11px;
+	color: var(--text);
+	background: transparent;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	cursor: pointer;
+}
+
+.gp-tools button:hover {
+	background: var(--active);
+}
+
+.gp-tools button.active {
+	border-color: var(--accent);
+	background: var(--active);
+	color: var(--accent);
+	font-weight: 600;
+}
+
+.gp-ico {
+	display: grid;
+	place-items: center;
+	height: 20px;
+}
+
+.gp-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--muted);
+}
+
+.gp-row input[type='range'] {
+	flex: 1;
+	min-width: 0;
+	accent-color: var(--accent);
+}
+
+.gp-row output {
+	width: 26px;
+	text-align: right;
+	color: var(--text);
+	font-variant-numeric: tabular-nums;
+}
+
+.gp-pane {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.gp-search {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 5px 8px;
+	font: inherit;
+	color: var(--text);
+	background: transparent;
+	border: 1px solid var(--line-2);
+	border-radius: 7px;
+}
+
+.gp-list {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	max-height: 220px;
+	overflow-y: auto;
+}
+
+.gp-item {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 3px 6px;
+	border: 1px solid transparent;
+	border-radius: 7px;
+	background: transparent;
+	color: var(--text);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.gp-item:hover {
+	background: var(--active);
+}
+
+.gp-item.active {
+	border-color: var(--accent);
+	background: var(--active);
+}
+
+.gp-item span {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.gp-item small {
+	color: var(--muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.gp-item i {
+	width: 14px;
+	height: 14px;
+	border-radius: 4px;
+	flex: none;
+	border: 1px solid var(--line-2);
+}
+
+.gp-empty {
+	color: var(--muted);
+	padding: 4px 6px;
+}
+
+.gp-hint {
+	color: var(--muted);
+	font-size: 11px;
+	line-height: 1.4;
+}
+
+#map.god-tool,
+#map.god-tool.dragging {
+	cursor: crosshair;
+}
+
+.god-ring {
+	position: absolute;
+	pointer-events: none;
+	border: 1.5px solid var(--accent);
+	border-radius: 50%;
+	box-shadow: 0 0 0 1px var(--shadow);
+	transform: translate(-50%, -50%);
+	z-index: 3;
+}

@@ -104,6 +104,7 @@ const app = {
 	openClasses: new Set(),
 	busy: false,
 	messageTimer: 0,
+	god: { open: false, tool: null, sp: 0, biome: 'GRASSLAND', r: 2, n: 10, strokeId: 0, stroke: null, chain: Promise.resolve(), seen: 0, listAt: 0 },
 };
 
 function readSize() {
@@ -162,6 +163,8 @@ function installWorld(world, eco) {
 	app.lastLogVersion = -1;
 	app.renderer.highlight = null;
 	app.renderer.setWorld(world, eco);
+	app.god.seen = godVer(eco);
+	cancelGodStroke();
 	buildBiomeLegend();
 	$('fastWrap').hidden = !SimClient.gpu;
 	closeOverlay();
@@ -308,6 +311,13 @@ function frame(now) {
 		}
 		if (app.acc > 2) app.acc = 1;
 	}
+	if (app.renderer && app.world && eco) {
+		const gv = godVer(eco);
+		if (gv !== app.god.seen) {
+			app.god.seen = gv;
+			app.renderer.refreshWorld();
+		}
+	}
 	if (app.renderer && app.world) {
 		const alpha = eco && eco.remote ? eco.alpha : app.running ? Math.min(1, Math.max(0, app.acc)) : 1;
 		app.renderer.draw(alpha, dt);
@@ -315,6 +325,7 @@ function frame(now) {
 	if (eco && now - app.lastUi > 250) {
 		app.lastUi = now;
 		updateUi(false);
+		refreshGodSpecies(false);
 		if (app.hover) updateTooltip();
 	}
 	requestAnimationFrame(frame);
@@ -804,7 +815,7 @@ function renderSpeciesList() {
 	list.scrollTop = scroll;
 }
 
-const EVENT_GLYPH = { speciation: '+', extinction: '×', migration: '→', outbreak: '!', weather: '~', disaster: '^', info: '•', secret: '✦' };
+const EVENT_GLYPH = { speciation: '+', extinction: '×', migration: '→', outbreak: '!', weather: '~', disaster: '^', god: '*', info: '•', secret: '✦' };
 
 function renderEvents(force) {
 	const log = app.eco.log;
@@ -1373,6 +1384,249 @@ function updateTooltip() {
 	tt.style.top = Math.max(4, y) + 'px';
 }
 
+const GOD_TOOLS = {
+	spawn: { label: 'Spawn' },
+	biome: { label: 'Biome', brush: 'biome' },
+	warm: { label: 'Warmer', brush: 'temp', value: 1 },
+	cold: { label: 'Colder', brush: 'temp', value: -1 },
+	wet: { label: 'Wetter', brush: 'moist', value: 1 },
+	dry: { label: 'Drier', brush: 'moist', value: -1 },
+};
+
+function godVer(eco) {
+	if (!eco) return 0;
+	if (eco.remote) return eco._godVersion || 0;
+	return eco.god ? eco.god.version : 0;
+}
+
+function setGodOpen(on) {
+	const g = app.god;
+	g.open = on;
+	$('godPalette').hidden = !on;
+	$('godToggle').setAttribute('aria-pressed', on ? 'true' : 'false');
+	if (!on) setGodTool(null);
+	else refreshGodSpecies(true);
+}
+
+function setGodTool(tool) {
+	const g = app.god;
+	g.tool = tool && GOD_TOOLS[tool] ? tool : null;
+	for (const b of $('godTools').children) b.classList.toggle('active', b.dataset.tool === g.tool);
+	$('godSpawnPane').hidden = g.tool !== 'spawn';
+	$('godBiomePane').hidden = g.tool !== 'biome';
+	$('map').classList.toggle('god-tool', !!g.tool);
+	if (!g.tool) {
+		$('godRing').hidden = true;
+		cancelGodStroke();
+	}
+	if (g.tool === 'spawn') refreshGodSpecies(true);
+	updateGodActive();
+}
+
+function updateGodActive() {
+	const g = app.god;
+	const el = $('godActive');
+	let text = 'No tool';
+	if (g.tool === 'spawn') {
+		const sp = app.eco && app.eco.registry.get(g.sp);
+		text = sp ? `Spawn ${g.n} ${sp.name}` : 'Spawn: pick a species';
+	} else if (g.tool === 'biome') text = 'Paint ' + (BIOME_INFO[g.biome] ? BIOME_INFO[g.biome].name : g.biome);
+	else if (g.tool) text = GOD_TOOLS[g.tool].label;
+	el.textContent = text;
+	el.title = text;
+	el.classList.toggle('on', !!g.tool);
+}
+
+function godHint(text) {
+	$('godHint').textContent = text;
+}
+
+function godSpeciesList() {
+	const out = [];
+	if (!app.eco) return out;
+	const q = $('godSearch').value.trim().toLowerCase();
+	for (const sp of app.eco.registry.all.values()) {
+		if ((sp.group !== 'animal' && sp.group !== 'plant') || !(sp.population > 0)) continue;
+		if (q && !sp.name.toLowerCase().includes(q) && !categoryLabel(sp).toLowerCase().includes(q)) continue;
+		out.push(sp);
+	}
+	out.sort((a, b) => b.population - a.population || a.id - b.id);
+	return out;
+}
+
+function refreshGodSpecies(force) {
+	const g = app.god;
+	if (!g.open || g.tool !== 'spawn' || !app.eco) return;
+	const now = performance.now();
+	if (!force && now - g.listAt < 2000) return;
+	g.listAt = now;
+	const list = godSpeciesList();
+	const cur = app.eco.registry.get(g.sp);
+	if ((!cur || !(cur.population > 0)) && list.length) g.sp = list[0].id;
+	$('godSpecies').innerHTML = list.length
+		? list.slice(0, 150).map((sp) => `<button class="gp-item${sp.id === g.sp ? ' active' : ''}" data-id="${sp.id}" title="${sp.name} · ${categoryLabel(sp)}">${iconSVG(sp.icon || sp.category, speciesColors(sp), 20)}<span>${sp.name}</span><small>${formatCount(sp.population)}</small></button>`).join('')
+		: '<div class="gp-empty">No living species match.</div>';
+	updateGodActive();
+}
+
+function buildGodBiomes() {
+	const g = app.god;
+	const keys = GodTools.paintable();
+	if (!keys.includes(g.biome)) g.biome = keys.includes('GRASSLAND') ? 'GRASSLAND' : keys[0];
+	$('godBiomes').innerHTML = keys
+		.map((k) => `<button class="gp-item${k === g.biome ? ' active' : ''}" data-biome="${k}"><i style="background:${BIOME_INFO[k].color}"></i><span>${BIOME_INFO[k].name}</span></button>`)
+		.join('');
+}
+
+function godSend(action) {
+	const eco = app.eco;
+	if (!eco) return;
+	const g = app.god;
+	g.chain = g.chain
+		.then(() => SimClient.god(eco, action))
+		.then((res) => {
+			if (eco !== app.eco) return;
+			godResult(action, res || { ok: false, count: 0 });
+		})
+		.catch((err) => {
+			console.error(err);
+			godHint('That did not work: ' + err.message);
+		});
+}
+
+function godResult(action, res) {
+	if (action.kind === 'spawn') {
+		const sp = app.eco.registry.get(action.sp);
+		const name = sp ? sp.name : 'that species';
+		godHint(res.ok ? `Spawned ${res.count} ${name}.` : `No room for ${name} there. Try its own habitat.`);
+		refreshGodSpecies(true);
+	} else godHint(res.ok ? `Changed ${res.count} tiles.` : 'Nothing to change there.');
+	updateUi(true);
+}
+
+function godAction(pts) {
+	const g = app.god;
+	const t = GOD_TOOLS[g.tool];
+	const base = { pts, r: g.r, stroke: g.strokeId };
+	if (g.tool === 'spawn') return Object.assign({ kind: 'spawn', sp: g.sp, n: g.n }, base);
+	return Object.assign({ kind: 'paint', brush: t.brush, value: t.brush === 'biome' ? g.biome : t.value }, base);
+}
+
+function startGodStroke(wx, wy) {
+	const g = app.god;
+	if (g.tool === 'spawn' && !(app.eco.registry.get(g.sp) || {}).population) {
+		godHint('Pick a living species first.');
+		return false;
+	}
+	g.strokeId++;
+	g.stroke = { pts: [wx, wy], last: [wx, wy], timer: 0 };
+	if (g.tool !== 'spawn') g.stroke.timer = setInterval(() => flushGodStroke(false), 120);
+	return true;
+}
+
+function addGodPoint(wx, wy) {
+	const g = app.god;
+	const s = g.stroke;
+	if (!s) return;
+	const [lx, ly] = s.last;
+	const d = Math.hypot(wx - lx, wy - ly);
+	const step = Math.max(0.75, g.r * 0.75);
+	if (d < step) return;
+	const n = Math.ceil(d / step);
+	for (let k = 1; k <= n; k++) {
+		s.pts.push(lx + ((wx - lx) * k) / n, ly + ((wy - ly) * k) / n);
+		if (s.pts.length >= 128) {
+			if (g.tool === 'spawn') s.pts = s.pts.filter((_, i) => (i >> 1) % 2 === 0);
+			else flushGodStroke(false);
+		}
+	}
+	s.last = [wx, wy];
+}
+
+function flushGodStroke(done) {
+	const g = app.god;
+	const s = g.stroke;
+	if (!s) return;
+	if (s.pts.length && (g.tool !== 'spawn' || done)) {
+		godSend(godAction(s.pts));
+		s.pts = [];
+	}
+	if (done) {
+		clearInterval(s.timer);
+		g.stroke = null;
+	}
+}
+
+function cancelGodStroke() {
+	const s = app.god.stroke;
+	if (!s) return;
+	clearInterval(s.timer);
+	app.god.stroke = null;
+}
+
+function placeGodRing(x, y) {
+	const ring = $('godRing');
+	if (!app.god.tool || !app.renderer) {
+		ring.hidden = true;
+		return;
+	}
+	const r = app.god.tool === 'spawn' ? Math.max(0.5, app.god.r) : app.god.r + 0.5;
+	const d = Math.max(6, r * 2 * app.renderer.cam.zoom);
+	ring.hidden = false;
+	ring.style.left = x + 'px';
+	ring.style.top = y + 'px';
+	ring.style.width = d + 'px';
+	ring.style.height = d + 'px';
+}
+
+function setupGodPalette() {
+	const g = app.god;
+	for (const b of $('godTools').children) {
+		if (b.dataset.icon) b.querySelector('.gp-ico').innerHTML = iconSVG(b.dataset.icon, NEUTRAL, 18);
+	}
+	buildGodBiomes();
+	$('godToggle').onclick = () => setGodOpen(!g.open);
+	$('godClose').onclick = () => setGodOpen(false);
+	$('godTools').addEventListener('click', (e) => {
+		const b = e.target.closest('button');
+		if (b) setGodTool(g.tool === b.dataset.tool ? null : b.dataset.tool);
+	});
+	const brush = $('godBrush');
+	brush.addEventListener('input', () => {
+		g.r = brush.value | 0;
+		$('godBrushOut').textContent = g.r;
+	});
+	const count = $('godCount');
+	count.addEventListener('input', () => {
+		g.n = count.value | 0;
+		$('godCountOut').textContent = g.n;
+		updateGodActive();
+	});
+	const search = $('godSearch');
+	search.addEventListener('input', () => refreshGodSpecies(true));
+	search.addEventListener('keydown', (e) => {
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			search.blur();
+			setGodTool(null);
+		}
+	});
+	$('godSpecies').addEventListener('pointerdown', (e) => {
+		const b = e.target.closest('.gp-item');
+		if (!b) return;
+		g.sp = +b.dataset.id;
+		for (const x of $('godSpecies').children) x.classList.toggle('active', x === b);
+		updateGodActive();
+	});
+	$('godBiomes').addEventListener('click', (e) => {
+		const b = e.target.closest('.gp-item');
+		if (!b) return;
+		g.biome = b.dataset.biome;
+		for (const x of $('godBiomes').children) x.classList.toggle('active', x === b);
+		updateGodActive();
+	});
+}
+
 function setupMapInput() {
 	const canvas = $('map');
 	const pointers = new Map();
@@ -1388,8 +1642,14 @@ function setupMapInput() {
 		canvas.setPointerCapture(e.pointerId);
 		const [x, y] = local(e);
 		pointers.set(e.pointerId, [x, y]);
-		if (pointers.size === 1) drag = { x, y, moved: 0 };
+		if (pointers.size === 1 && app.god.tool && app.eco && e.button === 0) {
+			const [wx, wy] = app.renderer.screenToWorld(x, y);
+			drag = null;
+			if (startGodStroke(wx, wy)) placeGodRing(x, y);
+			$('tooltip').hidden = true;
+		} else if (pointers.size === 1) drag = { x, y, moved: 0 };
 		else if (pointers.size === 2) {
+			cancelGodStroke();
 			const [a, b] = [...pointers.values()];
 			pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]) };
 			drag = null;
@@ -1404,6 +1664,12 @@ function setupMapInput() {
 			const d = Math.hypot(a[0] - b[0], a[1] - b[1]);
 			app.renderer.zoomAt(d / pinch.d, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
 			pinch.d = d;
+			return;
+		}
+		if (app.god.tool) placeGodRing(x, y);
+		if (app.god.stroke && pointers.has(e.pointerId)) {
+			const [wx, wy] = app.renderer.screenToWorld(x, y);
+			addGodPoint(wx, wy);
 			return;
 		}
 		if (drag) {
@@ -1423,6 +1689,10 @@ function setupMapInput() {
 
 	const end = (e) => {
 		pointers.delete(e.pointerId);
+		if (app.god.stroke && pointers.size === 0) {
+			if (e.type === 'pointercancel') cancelGodStroke();
+			else flushGodStroke(true);
+		}
 		if (drag && drag.moved <= 4 && app.eco) {
 			const [x, y] = local(e);
 			const [wx, wy] = app.renderer.screenToWorld(x, y);
@@ -1438,6 +1708,7 @@ function setupMapInput() {
 	canvas.addEventListener('pointercancel', end);
 	canvas.addEventListener('pointerleave', () => {
 		app.hover = null;
+		$('godRing').hidden = true;
 		$('tooltip').hidden = true;
 	});
 
@@ -1449,6 +1720,7 @@ function setupMapInput() {
 			const k = e.deltaMode === 1 ? 0.05 : 0.0016;
 			app.renderer.zoomAt(Math.exp(-e.deltaY * k), x, y);
 			$('mapHint').style.opacity = 0;
+			if (app.god.tool) placeGodRing(x, y);
 		},
 		{ passive: false }
 	);
@@ -1578,8 +1850,10 @@ function setupControls() {
 			const box = $('showWeather');
 			box.checked = !box.checked;
 			app.renderer.showWeather = box.checked;
-		} else if (k === 'Escape') {
+		} else if (k === 'g') setGodOpen(!app.god.open);
+		else if (k === 'Escape') {
 			if (app.overlay) closeOverlay();
+			else if (app.god.tool) setGodTool(null);
 			else closeDetail();
 		}
 	});
@@ -1677,6 +1951,7 @@ function init() {
 		return;
 	}
 	setupMapInput();
+	setupGodPalette();
 	app.tree = new FamilyTree($('treeCanvas'), $('treeTip'), selectSpecies);
 	window.addEventListener('resize', () => {
 		app.renderer.resize();
