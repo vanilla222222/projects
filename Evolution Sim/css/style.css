@@ -1879,3 +1879,10 @@ select option {
 .badge.secret.magic { color: var(--secret-mag); border-color: rgba(120, 220, 210, 0.5); background: linear-gradient(90deg, rgba(160, 100, 255, 0.16), rgba(60, 210, 200, 0.16)); }
 .tt-secret.nuclear { color: var(--secret-nuc); font-weight: 600; }
 .tt-secret.magic { color: var(--secret-mag); font-weight: 600; }
+.badge.tox-poison, .badge.fx-1 { color: #e0705f; border-color: rgba(224, 112, 95, 0.45); background: rgba(224, 112, 95, 0.1); }
+.badge.tox-trip, .badge.fx-2 { color: #c79bff; border-color: rgba(170, 120, 255, 0.45); background: linear-gradient(90deg, rgba(200, 90, 255, 0.14), rgba(80, 200, 220, 0.14)); }
+.badge.tox-stim, .badge.fx-3 { color: #ffd166; border-color: rgba(255, 200, 90, 0.45); background: rgba(255, 200, 90, 0.1); }
+.badge.fx-4 { color: #9aa3b5; border-color: rgba(150, 160, 180, 0.45); background: rgba(120, 130, 150, 0.12); }
+.badge.tox-geno, .badge.fx-5 { color: #7fe0a8; border-color: rgba(110, 220, 160, 0.45); background: rgba(110, 220, 160, 0.1); }
+.tt-row small.tt-fx { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+.tt-row small.tt-fx .badge { font-size: 10px; padding: 1px 6px; }

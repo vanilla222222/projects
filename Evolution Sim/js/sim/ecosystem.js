@@ -423,7 +423,17 @@ class Ecosystem {
 		if (!this.stats.symb) this.stats.symb = {};
 		const s = this.stats.symb;
 		let riding = 0;
-		for (let i = 0; i < A.count; i++) if (A.alive[i] && A.state[i] === 9) riding++;
+		const fxN = [0, 0, 0, 0, 0];
+		let loaded = 0;
+		const fx = A.fx;
+		const gl = A.gl;
+		for (let i = 0; i < A.count; i++) {
+			if (!A.alive[i]) continue;
+			if (A.state[i] === 9) riding++;
+			if (fx) fxN[fx[i]]++;
+			if (gl && gl[i] > 0.1) loaded++;
+		}
+		this.stats.toxins = Object.assign({}, A.toxfx, { nowPoisoned: fxN[1], nowTripping: fxN[2], nowStim: fxN[3], nowCrash: fxN[4], genoLoaded: loaded });
 		let models = 0;
 		for (let c = 0; c < 6; c++) if (A.modelSp[c]) models++;
 		Object.assign(s, A.symb);

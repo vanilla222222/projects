@@ -1,7 +1,8 @@
-const PG = 29;
+const PG = 32;
 const PG_V1 = 17;
 const PG_V2 = 23;
-const PLANT_WEIGHTS = [1.4, 1.4, 0.6, 1.2, 0.8, 0.5, 0.7, 0.7, 0.6, 0.5, 0.6, 0.6, 0.4, 0.6, 0.3, 0.4, 0.5, 0.6, 0.5, 0.3, 0.4, 0.7, 0.4, 0.5, 0.5, 0.6, 0.4, 0.4, 0.3];
+const PG_V3 = 29;
+const PLANT_WEIGHTS = [1.4, 1.4, 0.6, 1.2, 0.8, 0.5, 0.7, 0.7, 0.6, 0.5, 0.6, 0.6, 0.4, 0.6, 0.3, 0.4, 0.5, 0.6, 0.5, 0.3, 0.4, 0.7, 0.4, 0.5, 0.5, 0.6, 0.4, 0.4, 0.3, 0.5, 0.4, 0.5];
 const PLANT_SPECIATION = 0.25;
 const PLANT_SPLIT_MIN_POP = 40;
 const YEAR_TICKS = 480;
@@ -129,6 +130,9 @@ const ALLELO_SEED = 0.6;
 const THORN_COST = 0.15;
 const THORN_K = 0.4;
 const INDUCE_COST = 0.06;
+const NEURO_COST = 0.2;
+const GENO_COST = 0.2;
+const STIM_AT = 0.5;
 const INDUCE_MAX = 0.6;
 const INDUCE_UP = 0.08;
 const INDUCE_DECAY = 0.9;
@@ -230,7 +234,23 @@ PLANT_ARCHETYPES.forEach((a, k) => {
 	if (a.domain !== 'land' || a.kind) for (let k = 23; k < PG; k++) a.g[k] = a.domain === 'water' && k === 23 ? 0.1 : 0;
 	if (a.het) a.g[25] = a.het;
 	if (a.domain === 'water') a.g[25] = a.fresh || 0;
+	plantToxinDefaults(a.g, 0, a.domain !== 'land', a.kind);
 });
+
+function plantToxinDefaults(g, o = 0, water = false, fungus = false) {
+	if (fungus) {
+		g[o + 29] = 0;
+		g[o + 30] = 0;
+		g[o + 31] = 0;
+		return;
+	}
+	const t = g[o];
+	const m = g[o + 1];
+	const herb = g[o + 3] < HERB_WOOD;
+	g[o + 29] = water ? 0.04 : herb && g[o + 11] > 0.55 ? 0.35 : herb ? 0.15 : 0.08;
+	g[o + 30] = g[o + 9] > 0.3 ? 0.7 : 0.3;
+	g[o + 31] = water ? 0.03 : t > 0.6 && m < 0.45 ? 0.25 : 0.06;
+}
 
 function plantStrategyDefaults(g, o = 0) {
 	const t = g[o];
@@ -261,12 +281,13 @@ function plantLifeDefaults(g, o = 0) {
 function padPlantGenes(src, count) {
 	if (!src || !count) return src;
 	const from = src.length / count;
-	if (from !== PG_V1 && from !== PG_V2) return src;
+	if (from !== PG_V1 && from !== PG_V2 && from !== PG_V3) return src;
 	const out = new Float32Array(count * PG);
 	for (let k = 0, a = 0, b = 0; k < count; k++, a += from, b += PG) {
 		for (let j = 0; j < from; j++) out[b + j] = src[a + j];
 		if (from === PG_V1) plantLifeDefaults(out, b);
-		plantStrategyDefaults(out, b);
+		if (from !== PG_V3) plantStrategyDefaults(out, b);
+		plantToxinDefaults(out, b);
 	}
 	return out;
 }
@@ -352,7 +373,7 @@ function plantTraitsFrom(g, o = 0) {
 		fire: g[o + 16],
 		fresh: g[o + 25],
 		formCap: (0.8 + 2.4 * wood) * (1 + HEIGHT_CAP * (g[o + 20] - 0.5) * wood),
-		growth: 0.05 * (1 - HEIGHT_GROWTH * (g[o + 20] - 0.5) * wood) * (1 - CLONAL_COST * g[o + 22]) * (1 - 0.72 * wood) * (1 - 0.35 * tox) * (1 - 0.12 * disp) * (1 - 0.3 * shade) * (1 - 0.2 * root) * (1 - 0.25 * fruiting - 0.15 * sweet) * (1 - DEFENCE_COST * g[o + 13]) * (1 - BLIGHT_RES_COST * g[o + 14]) * (1 - FIRE_COST * g[o + 16]) * (1 - FIX_COST * g[o + 23]) * (1 - SUCC_COST * g[o + 24]) * (1 - ALLELO_COST * g[o + 26]) * (1 - THORN_COST * g[o + 27]) * (1 - INDUCE_COST * g[o + 28]),
+		growth: 0.05 * (1 - HEIGHT_GROWTH * (g[o + 20] - 0.5) * wood) * (1 - CLONAL_COST * g[o + 22]) * (1 - 0.72 * wood) * (1 - 0.35 * tox) * (1 - 0.12 * disp) * (1 - 0.3 * shade) * (1 - 0.2 * root) * (1 - 0.25 * fruiting - 0.15 * sweet) * (1 - DEFENCE_COST * g[o + 13]) * (1 - BLIGHT_RES_COST * g[o + 14]) * (1 - FIRE_COST * g[o + 16]) * (1 - FIX_COST * g[o + 23]) * (1 - SUCC_COST * g[o + 24]) * (1 - ALLELO_COST * g[o + 26]) * (1 - THORN_COST * g[o + 27]) * (1 - INDUCE_COST * g[o + 28]) * (1 - NEURO_COST * g[o + 29]) * (1 - GENO_COST * g[o + 31]),
 	};
 }
 
@@ -550,6 +571,9 @@ class PlantLayer {
 		this.grazeFungus = 0;
 		this.grazeToxType = 0;
 		this.grazePotency = 0;
+		this.grazeNeu = 0;
+		this.grazeStim = 0;
+		this.grazeGen = 0;
 		this.fruitSp = 0;
 		this.fruitSweet = 0;
 		this.fruitSeedTox = 0;
@@ -1013,6 +1037,18 @@ class PlantLayer {
 		const take = a + b;
 		const ind = this.induced;
 		this.grazeTox = take > 0 ? (a * (this.tox[u] + ind[u]) + b * (this.tox[i] + ind[i])) / take : 0;
+		if (take > 0) {
+			const wa = this.kind[u] ? 0 : a;
+			const ou = u * PG;
+			const oi = i * PG;
+			this.grazeNeu = (wa * g[ou + 29] + b * g[oi + 29]) / take;
+			this.grazeGen = (wa * g[ou + 31] + b * g[oi + 31]) / take;
+			this.grazeStim = (wa >= b ? g[ou + 30] : g[oi + 30]) >= STIM_AT ? 1 : 0;
+		} else {
+			this.grazeNeu = 0;
+			this.grazeGen = 0;
+			this.grazeStim = 0;
+		}
 		if (a > 0) {
 			const k = g[u * PG + 28];
 			const v = ind[u] + INDUCE_UP * k;

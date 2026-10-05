@@ -513,8 +513,9 @@ function updateExtraStat(el, k, s, h) {
 		sub.innerHTML = `<span>${formatCount(so.heard || 0)} heard</span><span>${formatCount(so.sentinel || 0)} sentinel</span><span>${formatCount(so.colonies || 0)} colonies</span><span>${formatCount(so.dispersals || 0)} dispersals</span><span>${formatCount(so.dispSplits || 0)} dispersal splits</span><span>${formatCount(so.solitary || 0)} solitary · ${formatCount(so.colonial || 0)} colonial species</span><span>${formatCount(so.rankBlocked || 0)} outranked</span>`;
 	} else if (k === 'symb') {
 		const sy = s.symb || {};
+		const tx = s.toxins;
 		v.innerHTML = `${formatCount((sy.cleanerPairs || 0) + (sy.pollPairs || 0))}<small>pairs</small>`;
-		sub.innerHTML = `<span>${formatCount(sy.cleanerPairs || 0)} cleaner pairs</span><span>${formatCount(sy.pollPairs || 0)} specialist pollinator pairs</span><span>${formatCount(sy.mimics || 0)} mimics · ${formatCount(sy.mimicSp || 0)} species</span><span>${formatCount(sy.models || 0)} toxic models</span><span>${formatCount(sy.riding || 0)} riding</span><span>${formatCount(sy.cleanings || 0)} cleanings</span><span>${formatCount(sy.toxHits || 0)} toxic bites</span><span>${formatCount(sy.animalSeeded || 0)} seeds sown by animals</span>`;
+		sub.innerHTML = `<span>${formatCount(sy.cleanerPairs || 0)} cleaner pairs</span><span>${formatCount(sy.pollPairs || 0)} specialist pollinator pairs</span><span>${formatCount(sy.mimics || 0)} mimics · ${formatCount(sy.mimicSp || 0)} species</span><span>${formatCount(sy.models || 0)} toxic models</span><span>${formatCount(sy.riding || 0)} riding</span><span>${formatCount(sy.cleanings || 0)} cleanings</span><span>${formatCount(sy.toxHits || 0)} toxic bites</span><span>${formatCount(sy.animalSeeded || 0)} seeds sown by animals</span>${tx ? `<span>${formatCount(tx.nowPoisoned || 0)} poisoned</span><span>${formatCount(tx.nowTripping || 0)} tripping</span><span>${formatCount(tx.nowStim || 0)} stimulated · ${formatCount(tx.nowCrash || 0)} crashing</span><span>${formatCount(tx.genoLoaded || 0)} gene-damaged</span><span>${formatCount(tx.toxDeaths || 0)} killed by plant poison</span>` : ''}`;
 	} else if (k === 'brain') {
 		const br = s.brain || {};
 		const bc = br.cls || [];
@@ -797,7 +798,7 @@ const PLANT_TRAITS = [
 	['Moisture / depth', 1, (v) => pct(v)],
 	['Generalist', 2, (v) => pct(v)],
 	['Woodiness', 3, (v) => pct(v)],
-	['Toxicity', 4, (v) => pct(v), 'Toxin potency'],
+	['Poison', 4, (v) => pct(v), 'Toxin potency'],
 	['Seed dispersal', 5, (v) => pct(v), 'Spore spread'],
 	['Shade tolerance', 6, (v) => pct(v)],
 	['Root vigour', 7, (v) => pct(v)],
@@ -822,7 +823,36 @@ const PLANT_TRAITS = [
 	['Allelopathy', 26, (v) => pct(v), null],
 	['Thorns', 27, (v) => pct(v), null],
 	['Induced defence', 28, (v) => pct(v), null],
+	['Neurotoxin', 29, (v) => pct(v), null],
+	['Neurotoxin kind', 30, (v) => (v >= 0.5 ? 'Stimulant' : 'Psychedelic'), null],
+	['Genotoxin', 31, (v) => pct(v), null],
 ];
+
+const PLANT_TOX_SHOW = 0.3;
+
+function plantToxinBadges(sp) {
+	const g = sp.mean;
+	if (sp.group !== 'plant' || sp.kind === 1 || !g || g.length < PG) return [];
+	const out = [];
+	if (g[4] > PLANT_TOX_SHOW) out.push(['Poisonous', g[4], 'tox-poison']);
+	if (g[29] > PLANT_TOX_SHOW) out.push([g[30] >= 0.5 ? 'Stimulant' : 'Psychedelic', g[29], g[30] >= 0.5 ? 'tox-stim' : 'tox-trip']);
+	if (g[31] > PLANT_TOX_SHOW) out.push(['Genotoxic', g[31], 'tox-geno']);
+	return out.map(([t, v, c]) => `<span class="badge ${c}" title="toxin strength ${pct(v)}">${t} · ${pct(v)}</span>`);
+}
+
+const FX_WORDS = ['', 'poisoned', 'tripping', 'stimulated', 'crashing'];
+
+function toxStatusCount(spId) {
+	const A = app.eco && app.eco.animals;
+	const n = [0, 0, 0, 0, 0, 0];
+	if (!A || !A.fx) return n;
+	for (let i = 0; i < A.count; i++) {
+		if (A.sp[i] !== spId || !A.alive[i]) continue;
+		n[A.fx[i]]++;
+		if (A.gl && A.gl[i] > 0.1) n[5]++;
+	}
+	return n;
+}
 
 function plantLifeBadges(sp) {
 	const g = sp.mean;
@@ -886,7 +916,9 @@ const ANIMAL_TRAITS = [
 	['Heat preference', G_TEMP, (v) => tempWord(v)],
 	['Climate range', G_TOL, (v) => pct(v)],
 	['Fertility', G_FEC, (v) => pct(v)],
-	['Toxin resistance', G_TOXR, (v) => pct(v)],
+	['Poison resistance', G_TOXR, (v) => pct(v)],
+	['Neurotoxin resistance', G_RNEU, (v) => pct(v)],
+	['Genotoxin resistance', G_RGEN, (v) => pct(v)],
 	['Armor', G_ARMOR, (v) => pct(v)],
 	['Resistance', G_RES, (v) => pct(v)],
 	['Scavenging', G_SCAV, (v) => pct(v)],
@@ -906,6 +938,7 @@ const ANIMAL_TRAITS = [
 	['Cleaner', G_CLEAN, (v) => (v > CLEAN_MIN ? 'Cleaner · ' : '') + pct(v)],
 	['Host tolerance', G_TOLER, (v) => pct(v)],
 	['Toxicity', G_TOXIC, (v) => (v > TOX_MIN ? 'Toxic · ' : '') + pct(v)],
+	['Toxin kind', G_TOXK, (v) => ANIMAL_TOX_WORDS[toxKind(v)]],
 	['Mimicry', G_MIMIC, (v) => pct(v)],
 	['Brain', G_BRAIN, (v) => (v > TOOL_MIN ? 'Tool user · ' : '') + pct(v)],
 	['Preferred depth', G_DEPTH, (v) => depthWord(v)],
@@ -913,6 +946,7 @@ const ANIMAL_TRAITS = [
 ];
 
 const SAL_WORDS = ['fresh', 'brackish', 'salt'];
+const ANIMAL_TOX_WORDS = ['Poison', 'Neurotoxin', 'Genotoxin'];
 
 function depthWord(v) {
 	return (v < 0.18 ? 'Shallow' : v < 0.4 ? 'Shelf' : 'Deep') + ' · ' + pct(v);
@@ -999,6 +1033,7 @@ function renderDetail() {
 		`<span class="badge">${origin}</span>`,
 		...(sp.group === 'plant' && sp.kind === 1 ? ['<span class="badge">Fungus</span>', `<span class="badge">${fungusType(sp.mean)[0].toUpperCase() + fungusType(sp.mean).slice(1)}</span>`] : []),
 		...plantLifeBadges(sp),
+		...plantToxinBadges(sp),
 		...(sp.group === 'bug' && sp.domain ? [`<span class="badge">${sp.domain === 'water' ? 'Aquatic' : 'Land'}</span>`] : []),
 		...secretBadges(sp),
 	].join('');
@@ -1028,6 +1063,8 @@ function renderDetail() {
 		if (sp.fat !== undefined) cells.push(['Body condition', `${conditionWord(sp.fat)} · fat ${pct(sp.fat)} · ${pct(Math.max(sp.protDef || 0, sp.minDef || 0))} deficient`, true]);
 		if (sp.grpMean !== undefined) cells.push(['Mean group size', `${sp.grpMean.toFixed(1)}${sp.colonies ? ` · ${formatCount(sp.colonies)} colonies` : ''}${sp.dispersal ? ' · founded by dispersers' : ''}`]);
 		cells.push(['Stages', `${formatCount(c[0])} juv · ${formatCount(c[1])} adult · ${formatCount(c[2])} elder · ${formatCount(c[3])} eggs`, true]);
+		const fxn = toxStatusCount(sp.id);
+		if (fxn[1] + fxn[2] + fxn[3] + fxn[4] + fxn[5] > 0) cells.push(['Intoxicated', [1, 2, 3, 4].filter((k) => fxn[k]).map((k) => `${formatCount(fxn[k])} ${FX_WORDS[k]}`).concat(fxn[5] ? [`${formatCount(fxn[5])} gene-damaged`] : []).join(' · '), true]);
 	}
 	$('detailGrid').innerHTML = cells.map(([k, v, wide]) => `<div${wide ? ' class="wide"' : ''}><small>${k}</small><strong>${v}</strong></div>`).join('');
 	const hosts = patho && sp.hosts ? [...sp.hosts].sort((a, b) => b[1] - a[1]) : [];
@@ -1053,7 +1090,7 @@ function renderDetail() {
 				return `<div class="trait"><span>${label}</span><div class="track"><i style="width:${Math.max(3, mean[k] * 100)}%;background:${sp.color}"></i></div><em>${fmt(mean[k])}</em></div>`;
 			}
 			if (fungus && fLabel === null) return '';
-			if (sp.group === 'plant' && sp.domain === 'water' && k >= 8 && k !== 14 && k !== 25) return '';
+			if (sp.group === 'plant' && sp.domain === 'water' && k >= 8 && k !== 14 && k !== 25 && k < 29) return '';
 			if (sp.group === 'animal' && sp.domain !== 'water' && (k === G_DEPTH || k === G_SALT)) return '';
 			if (sp.group === 'plant' && sp.domain === 'water' && k === 25) return `<div class="trait"><span>Salinity</span><div class="track"><i style="width:${Math.max(3, (1 - mean[k]) * 100)}%;background:${sp.color}"></i></div><em>${salWord(1 - mean[k])}</em></div>`;
 			const v = sp.mean[k];
@@ -1261,7 +1298,10 @@ function updateTooltip() {
 		const lowM = A.nMin && A.nMin[a] < DEFICIT;
 		const cond = A.fat ? `<small${lowP || lowM ? ' class="tt-sick"' : ''}>${conditionWord(fr)} · protein ${lowP ? 'low' : pct(Math.min(1, A.nProt[a]))} · minerals ${lowM ? 'low' : pct(Math.min(1, A.nMin[a]))}</small>` : '';
 		const water = A.domain[a] !== 1 && A.water ? ` · water ${pct(Math.min(1, Math.max(0, A.water[a])))}` : '';
-		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${A.domain[a] === 3 ? (A.fly[a] ? 'flying · ' : 'perched · ') : ''}${A.dorm && A.dorm[a] ? dormWords[A.dorm[a]] : states[A.state[a]]} · ${A.lv && A.lv[a] ? ['', 'tadpole', 'larva'][A.lv[a]] : ['juvenile', 'adult', 'elder'][animalStage(A, a)]}${A.cr && A.cr[a] > 0 ? ' · cared for' : ''}${A.ld && A.ld[a] ? ' · leads' : ''} · age ${A.age[a]}${home}</small><small>energy ${pct(cap > 0 ? Math.min(1, Math.max(0, A.energy[a] / cap)) : 0)}${water}</small>${cond}${sick}${A.lin && A.lin[a] && w.secretKinds ? `<small class="tt-secret ${A.lin[a] === 1 ? 'nuclear' : 'magic'}">${SECRET_LINEAGE[A.lin[a]]}</small>` : ''}</div></div>`;
+		const fxk = A.fx ? A.fx[a] : 0;
+		const gd = A.gl && A.gl[a] > 0.1;
+		const fxs = fxk || gd ? `<small class="tt-fx">${fxk ? `<span class="badge fx-${fxk}">${FX_WORDS[fxk]}</span>` : ''}${gd ? `<span class="badge fx-5">gene-damaged ${pct(Math.min(1, A.gl[a]))}</span>` : ''}</small>` : '';
+		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${A.domain[a] === 3 ? (A.fly[a] ? 'flying · ' : 'perched · ') : ''}${A.dorm && A.dorm[a] ? dormWords[A.dorm[a]] : states[A.state[a]]} · ${A.lv && A.lv[a] ? ['', 'tadpole', 'larva'][A.lv[a]] : ['juvenile', 'adult', 'elder'][animalStage(A, a)]}${A.cr && A.cr[a] > 0 ? ' · cared for' : ''}${A.ld && A.ld[a] ? ' · leads' : ''} · age ${A.age[a]}${home}</small><small>energy ${pct(cap > 0 ? Math.min(1, Math.max(0, A.energy[a] / cap)) : 0)}${water}</small>${cond}${sick}${fxs}${A.lin && A.lin[a] && w.secretKinds ? `<small class="tt-secret ${A.lin[a] === 1 ? 'nuclear' : 'magic'}">${SECRET_LINEAGE[A.lin[a]]}</small>` : ''}</div></div>`;
 	}
 	for (let slot = 0; slot < 2; slot++) {
 		const p = slot * P.n + t;
@@ -1273,7 +1313,8 @@ function updateTooltip() {
 		else if (P.fruit && (P.fruit[p] > 0.001 || P.genome[p * PG + 8] > 0.5)) extra = ' · fruit ' + P.fruit[p].toFixed(2);
 		const bst = P.blight && P.blight[p] ? reg.get(P.blight[p]) : null;
 		const blt = bst ? `<small class="tt-sick">blight: ${bst.name}</small>` : '';
-		html += `<div class="tt-row">${iconSVG(sp.icon || sp.category, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${categoryLabel(sp)} · ${slot ? 'understory' : 'canopy'}${fungal ? ' · fungus' : ''}</small><small>biomass ${P.biomass[p].toFixed(2)} · health ${pct(P.health[p])}${extra}</small>${blt}</div></div>`;
+		const txb = sp && !fungal ? plantToxinBadges(sp).join('') : '';
+		html += `<div class="tt-row">${iconSVG(sp.icon || sp.category, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${categoryLabel(sp)} · ${slot ? 'understory' : 'canopy'}${fungal ? ' · fungus' : ''}</small><small>biomass ${P.biomass[p].toFixed(2)} · health ${pct(P.health[p])}${extra}</small>${txb ? `<small class="tt-fx">${txb}</small>` : ''}${blt}</div></div>`;
 	}
 	if (app.renderer.mode !== 'bugs') html += bugHtml;
 	tt.innerHTML = html;
