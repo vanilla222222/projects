@@ -55,6 +55,29 @@ const WG4_RIVER_K = 0.7;
 const WG4_POLAR_LAT = 0.72;
 const WG4_VOLC_AREA = 40000;
 const WG4_OASIS_AREA = 26000;
+const SECRET_CHANCE = 0.005;
+const SECRET_NUCLEAR = 1;
+const SECRET_MAGIC = 2;
+
+function secretRoll(seed, salt) {
+	let h = (seed | 0) ^ Math.imul(salt, 0x9e3779b1);
+	h = Math.imul(h ^ (h >>> 16), 0x85ebca6b);
+	h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+	h ^= h >>> 16;
+	return new SeededRandom(h >>> 0).next();
+}
+
+function secretKindsForSeed(seed, gen = WG_GEN, force = null) {
+	if (gen < 4) return 0;
+	if (force === 'nuclear') return SECRET_NUCLEAR;
+	if (force === 'magic') return SECRET_MAGIC;
+	if (force === 'both') return SECRET_NUCLEAR | SECRET_MAGIC;
+	if (force === 'none') return 0;
+	let k = 0;
+	if (secretRoll(seed, 0x6e75636c) < SECRET_CHANCE) k |= SECRET_NUCLEAR;
+	if (secretRoll(seed, 0x6d616769) < SECRET_CHANCE) k |= SECRET_MAGIC;
+	return k;
+}
 
 class WorldMap {
 	constructor(width, height, seed, options = {}) {
@@ -93,6 +116,14 @@ class WorldMap {
 		this.biome = new Uint8Array(width * height); // numeric BIOME_ID values, not the string keys
 		this.isSalt = new Uint8Array(width * height);
 		this.isDelta = new Uint8Array(width * height);
+		this.secret = new Uint8Array(width * height);
+		this.secretKinds = 0;
+		this.secretNx = -1;
+		this.secretNy = -1;
+		this.secretNr = 0;
+		this.secretMx = -1;
+		this.secretMy = -1;
+		this.secretMr = 0;
 		this.gen = this.options.gen;
 
 		this._generate();
@@ -133,6 +164,85 @@ class WorldMap {
 		if (this.gen >= 4) this._classifyBiomesV4();
 		else if (v3) this._classifyBiomesV3();
 		else this._classifyBiomes();
+		const sk = secretKindsForSeed(this.seed, this.gen, this.options.secret || null);
+		if (sk) this._placeSecrets(sk);
+	}
+
+	_secretLand(i) {
+		return !(this.isOcean[i] || this.isLake[i] || this.isRiver[i] || this.isPond[i] || this.isGlacier[i] || this.isSalt[i]) && this.altitude[i] >= BIOME_THRESHOLDS.seaLevel;
+	}
+
+	_placeSecrets(kinds) {
+		const { width, height } = this;
+		const n = width * height;
+		let hs = (this.seed | 0) ^ 0x5ec2e7;
+		hs = Math.imul(hs ^ (hs >>> 15), 0x2c1b3c6d);
+		const rng = new SeededRandom(hs >>> 0);
+		const shape = new PerlinNoise((hs ^ 0x3d) >>> 0);
+		const radius = Math.max(5, Math.min(9, 5 + Math.sqrt(n) / 120));
+		const placed = [];
+		for (const kind of [SECRET_NUCLEAR, SECRET_MAGIC]) {
+			if (!(kinds & kind)) continue;
+			const m = Math.ceil(radius * 1.4);
+			let best = -1;
+			let bestScore = -1;
+			for (let k = 0; k < 400; k++) {
+				const x = m + Math.floor(rng.next() * Math.max(1, width - 2 * m));
+				const y = m + Math.floor(rng.next() * Math.max(1, height - 2 * m));
+				const i = y * width + x;
+				if (!this._secretLand(i)) continue;
+				let far = true;
+				for (const p of placed) if (Math.hypot(p.x - x, p.y - y) < radius * 4) far = false;
+				if (!far) continue;
+				let land = 0;
+				let tot = 0;
+				for (let dy = -m; dy <= m; dy += 2) {
+					for (let dx = -m; dx <= m; dx += 2) {
+						const nx = x + dx;
+						const ny = y + dy;
+						if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+						tot++;
+						if (this._secretLand(ny * width + nx)) land++;
+					}
+				}
+				const score = tot ? land / tot : 0;
+				if (score > bestScore) {
+					bestScore = score;
+					best = i;
+				}
+				if (score >= 0.98 && k > 40) break;
+			}
+			if (best < 0) continue;
+			const cx = best % width;
+			const cy = (best - cx) / width;
+			const r = Math.ceil(radius * 1.4);
+			let cells = 0;
+			for (let dy = -r; dy <= r; dy++) {
+				for (let dx = -r; dx <= r; dx++) {
+					const nx = cx + dx;
+					const ny = cy + dy;
+					if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+					const d = Math.sqrt(dx * dx + dy * dy) / radius + shape.noise2D(nx * 0.18, ny * 0.18) * 0.45;
+					if (d > 1) continue;
+					const ni = ny * width + nx;
+					if (!this._secretLand(ni) || this.secret[ni]) continue;
+					this.secret[ni] = kind;
+					cells++;
+				}
+			}
+			if (!cells) continue;
+			placed.push({ x: cx, y: cy });
+			this.secretKinds |= kind;
+			if (kind === SECRET_NUCLEAR) {
+				this.secretNx = cx;
+				this.secretNy = cy;
+				this.secretNr = radius;
+			} else {
+				this.secretMx = cx;
+				this.secretMy = cy;
+				this.secretMr = radius;
+			}
+		}
 	}
 
 	// Terrain noise alone doesn't always carve enough inland basins to feel

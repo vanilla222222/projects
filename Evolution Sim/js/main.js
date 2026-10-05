@@ -110,6 +110,16 @@ function readSize() {
 	return { w, h };
 }
 
+function secretOverride() {
+	let v = null;
+	try {
+		v = new URLSearchParams(location.search).get('secret');
+	} catch (e) {
+		v = null;
+	}
+	return v === 'nuclear' || v === 'magic' || v === 'both' || v === 'none' ? { secret: v } : {};
+}
+
 function newWorld() {
 	if (app.busy) return;
 	let seed = parseInt($('seedInput').value, 10);
@@ -127,7 +137,7 @@ function newWorld() {
 			disease: $('optDisease').checked,
 			weather: $('optWeather').checked,
 			disasters: $('optDisasters').checked,
-		}).then(
+		}, secretOverride()).then(
 			({ world, eco }) => {
 				installWorld(world, eco);
 				hideBusy();

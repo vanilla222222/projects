@@ -382,7 +382,7 @@ const handlers = {
 		post({ type: 'hello', gpu: sim.gpu });
 	},
 	create(m) {
-		const world = new WorldMap(m.w, m.h, m.seed);
+		const world = new WorldMap(m.w, m.h, m.seed, m.world || {});
 		install(new Ecosystem(world, m.seed, m.options), m.id);
 	},
 	async load(m) {

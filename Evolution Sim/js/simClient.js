@@ -302,10 +302,10 @@ const SimClient = (() => {
 		}
 	}
 
-	async function create(w, h, seed, options) {
+	async function create(w, h, seed, options, worldOpts) {
 		const mode = await start();
-		if (mode === 'worker') return request('create', { w, h, seed, options });
-		const world = new WorldMap(w, h, seed);
+		if (mode === 'worker') return request('create', { w, h, seed, options, world: worldOpts || {} });
+		const world = new WorldMap(w, h, seed, worldOpts || {});
 		return { world, eco: new Ecosystem(world, seed, options) };
 	}
 
