@@ -295,13 +295,18 @@ const EvoSave = (() => {
 		const A = eco.animals;
 		if (A && A.genome && A.cap) A.genome = padAnimalGenes(A.genome, A.cap);
 		if (A && A.childGenome && A.childGenome.length < AG) A.childGenome = new Float32Array(AG);
+		if (A && A.cap && typeof ANIMAL_FIELDS_F !== 'undefined') {
+			for (const f of ANIMAL_FIELDS_F) if (!A[f] || A[f].length < A.cap) A[f] = new Float32Array(A.cap);
+			for (const f of ANIMAL_FIELDS_I) if (!A[f] || A[f].length < A.cap) A[f] = new Int32Array(A.cap);
+		}
+		if (A && !A.toxfx && typeof toxFxStats === 'function') A.toxfx = toxFxStats();
 		const E = eco.eggs;
 		if (E && E.genome && E.cap) E.genome = padAnimalGenes(E.genome, E.cap);
 		if (!eco.registry || !eco.registry.all) return;
 		for (const sp of eco.registry.all.values()) {
 			if (sp.group !== 'animal') continue;
-			if (sp.mean && sp.mean.length === AG_V1) sp.mean = padAnimalGenes(sp.mean, 1);
-			if (sp.genome && sp.genome.length === AG_V1) sp.genome = padAnimalGenes(sp.genome, 1);
+			if (sp.mean && sp.mean.length < AG) sp.mean = padAnimalGenes(sp.mean, 1);
+			if (sp.genome && sp.genome.length < AG) sp.genome = padAnimalGenes(sp.genome, 1);
 		}
 	}
 

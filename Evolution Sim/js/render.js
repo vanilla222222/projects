@@ -549,6 +549,10 @@ const WX_TIME_WRAP = 600;
 const SECRET_FX = 4096;
 const SECRET_HALO = 1.45;
 const SECRET_HALO_ALPHA = 0.32;
+const FX_HALO = 1.35;
+const FX_HALO_ALPHA = 0.4;
+const FX_TRIP_SPIN = 0.0009;
+const FX_RGB = [null, new Uint8Array([170, 210, 60, 130, 180, 40, 200, 230, 90]), null, new Uint8Array([255, 214, 90, 240, 180, 50, 255, 236, 140]), new Uint8Array([120, 128, 145, 95, 100, 115, 150, 158, 172])];
 const SECRET_NUC_RGB = new Uint8Array([120, 255, 70, 90, 220, 50, 160, 255, 110]);
 const SECRET_MAG_RGB = new Uint8Array([190, 110, 255, 80, 230, 220, 240, 180, 255]);
 
@@ -1713,7 +1717,7 @@ class WorldRenderer {
 		const gf = A.gf;
 		const ef = A.ef;
 		const E = this.eco.eggs;
-		this._ensureCapacity(n + A.count * 6 + (E ? E.count : 0) + 1);
+		this._ensureCapacity(n + A.count * 7 + (E ? E.count : 0) + 1);
 		if (zoom >= SHADOW_ZOOM) {
 			const shadowIcon = ICON_INDEX.shadow;
 			for (let i = 0; i < A.count; i++) {
@@ -1753,6 +1757,9 @@ class WorldRenderer {
 		const mim = this._mimCol || (this._mimCol = new Uint8Array(9));
 		const linA = this.world && this.world.secretKinds ? A.lin : null;
 		const uidA = A.uid;
+		const fxA = A.fx;
+		const tripCol = this._tripCol || (this._tripCol = new Uint8Array(9));
+		const tw = performance.now() * FX_TRIP_SPIN;
 		for (let k = 0, cnt = A.count; k < cnt * 2; k++) {
 			const i = k < cnt ? k : k - cnt;
 			const air = dom[i] === 3;
@@ -1777,8 +1784,11 @@ class WorldRenderer {
 			const co = old ? 0 : co0;
 			const lk = linA ? linA[i] : 0;
 			const fx = lk ? (lk + 3 * (uidA[i] & 15)) * SECRET_FX : 0;
+			const fk = fxA ? fxA[i] : 0;
+			const frgb = fk === 2 ? hueRgb((tw + (uidA[i] & 15) / 16) % 1, tripCol) : fk ? FX_RGB[fk] : null;
 			if (dots) {
 				const ds = ((3 + A.mass[i] * 0.9) / zoom) * g;
+				if (frgb) n = this._put(n, x, y, ds * FX_HALO, dotIcon, 1, a * FX_HALO_ALPHA, 0, frgb);
 				if (lk) n = this._put(n, x, y, ds * SECRET_HALO, dotIcon, 1, a * SECRET_HALO_ALPHA, 0, lk === 1 ? SECRET_NUC_RGB : SECRET_MAG_RGB);
 				n = th ? this._put(n, x, y, ds * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, a, 0, th) : this._put(n, x, y, ds, dotIcon + fx, 1, a, co, ca);
 			} else {
@@ -1790,6 +1800,7 @@ class WorldRenderer {
 				const er = en[i] / cap;
 				const wd = (fr > 0 ? 1 + Math.min(FAT_WIDE_MAX, fr * FAT_WIDE) : er < THIN_AT ? THIN_MIN + (1 - THIN_MIN) * (er > 0 ? er / THIN_AT : 0) : 1) * (g < 1 && !lv ? 1 + (JUV_ROUND - 1) * (1 - g) / (1 - JUV_MIN) : 1);
 				if (sv >= CREST_MIN && zoom >= CREST_ZOOM) n = this._put(n, x - size * 0.12 * A.face[i], ly - size * 0.62, size * CREST_SCALE * (0.6 + sv), crestIcon, A.face[i], a, co, ca);
+				if (frgb) n = this._put(n, x, ly - size * 0.1, size * FX_HALO, dotIcon, 1, a * FX_HALO_ALPHA, 0, frgb);
 				if (lk) n = this._put(n, x, ly - size * 0.1, size * SECRET_HALO, dotIcon, 1, a * SECRET_HALO_ALPHA, 0, lk === 1 ? SECRET_NUC_RGB : SECRET_MAG_RGB);
 				n = this._put(n, x, ly - size * 0.1, size, (lv === 1 ? tadIcon : lv === 2 ? larIcon : icons[id]) + fx, A.face[i] * wd * (zz ? DORM_WIDE : 1) * (lv ? 1 : this.spWide[id]), a, co, ca);
 				const am = almA ? almA[i] : 0;

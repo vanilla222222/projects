@@ -1,7 +1,8 @@
-const AG = 32;
+const AG = 35;
 const AG_V1 = 30;
-const G_SIZE = 0, G_SPEED = 1, G_SENSE = 2, G_DIET = 3, G_TEMP = 4, G_TOL = 5, G_FEC = 6, G_TOXR = 7, G_ARMOR = 8, G_RES = 9, G_SCAV = 10, G_TERR = 11, G_HERD = 12, G_COLD = 13, G_DRY = 14, G_NEST = 15, G_PACK = 16, G_DISPLAY = 17, G_CHOOSY = 18, G_APPETITE = 19, G_DORMANCY = 20, G_ALARM = 21, G_SOCIAL = 22, G_BROOD = 23, G_CARE = 24, G_CLEAN = 25, G_TOLER = 26, G_TOXIC = 27, G_MIMIC = 28, G_BRAIN = 29, G_DEPTH = 30, G_SALT = 31;
-const ANIMAL_WEIGHTS = [1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6, 0.3, 0.3, 0.3, 0.3, 0.5, 0.5, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.5, 0.6, 0.6];
+const AG_V2 = 32;
+const G_SIZE = 0, G_SPEED = 1, G_SENSE = 2, G_DIET = 3, G_TEMP = 4, G_TOL = 5, G_FEC = 6, G_TOXR = 7, G_ARMOR = 8, G_RES = 9, G_SCAV = 10, G_TERR = 11, G_HERD = 12, G_COLD = 13, G_DRY = 14, G_NEST = 15, G_PACK = 16, G_DISPLAY = 17, G_CHOOSY = 18, G_APPETITE = 19, G_DORMANCY = 20, G_ALARM = 21, G_SOCIAL = 22, G_BROOD = 23, G_CARE = 24, G_CLEAN = 25, G_TOLER = 26, G_TOXIC = 27, G_MIMIC = 28, G_BRAIN = 29, G_DEPTH = 30, G_SALT = 31, G_RNEU = 32, G_RGEN = 33, G_TOXK = 34;
+const ANIMAL_WEIGHTS = [1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6, 0.3, 0.3, 0.3, 0.3, 0.5, 0.5, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.5, 0.6, 0.6, 0.5, 0.5, 0.4];
 const ANIMAL_CLASSES = ['fish', 'amphibian', 'reptile', 'mammal', 'bird', 'invertebrate'];
 const CLS_FISH = 0, CLS_AMPH = 1, CLS_REPT = 2, CLS_MAMM = 3, CLS_BIRD = 4, CLS_INVT = 5;
 const CLS_COLD = [[0, 1], [0.5, 1], [0.5, 1], [0, 0.45], [0, 0.45], [0.5, 1]];
@@ -90,6 +91,38 @@ const TOX_COST = 0.06;
 const MIMIC_COST = 0.05;
 const TOX_HIT = 0.15;
 const TOX_SPIT = 0.8;
+const RES_TOX_COST = 0.06;
+const FX_POISON = 1, FX_TRIP = 2, FX_STIM = 3, FX_CRASH = 4;
+const FX_COST = [1, 1.2, 1.05, 0.85, 1.1];
+const FX_SPEED = [1, 0.9, 1, 1.3, 0.8];
+const POI_MIN = 0.15;
+const POI_TICKS = 20;
+const POI_LOSS = 0.04;
+const POI_LETHAL = 0.25;
+const POI_KILL = 0.05;
+const NEU_MIN = 0.1;
+const NEU_P = 0.9;
+const TRIP_TICKS = 20;
+const TRIP_WANDER = 0.35;
+const TRIP_EAT = 0.7;
+const STIM_TICKS = 20;
+const CRASH_TICKS = 20;
+const CRAVE_LURE = 1.6;
+const GEN_MIN = 0.05;
+const GEN_LOAD = 0.025;
+const GL_DECAY = 0.993;
+const GL_MUT = 1;
+const GL_SD = 0.5;
+const GL_STERILE = 0.3;
+const AVOID_K = 1.4;
+const AVOID_FLOOR = 0.15;
+const TOXK_NEU = 0.4;
+const TOXK_GEN = 0.7;
+const PREY_TRIP = 1.2;
+const PREY_GL = 0.15;
+const FOUNDER_TOXK = { 14: 0.15, 26: 0.55, 27: 0.85 };
+const FOUNDER_RNEU = 0.08, FOUNDER_RGEN = 0.08, FOUNDER_RNEU_HERB = 0.2, FOUNDER_RGEN_HERB = 0.15;
+const PAD_RTOX = 0.1, PAD_TOXK = 0.2;
 const TOX_LEARN = 0.45;
 const PREY_HUE = 0.04;
 const PREY_AV_DECAY = 0.08;
@@ -481,7 +514,7 @@ const DOM_DIS = 1;
 const DOM_PREY = 0.4;
 const DOM_CATCH = 0.3;
 const DOM_FRESH = 1;
-const DOM_CLS = 1800;
+const DOM_CLS = 1500;
 const DOM_CLS_SPAN = 1800;
 const RSPLIT_POP = 500;
 const RSPLIT_SD = 16;
@@ -505,7 +538,18 @@ ANIMAL_ARCHETYPES.forEach((a, k) => {
 	g[G_MIMIC] = FOUNDER_MIMIC[k] || FOUNDER_TRAIT_LO;
 	g[G_DEPTH] = FOUNDER_DEPTH[k] ?? AQ_DEPTH_DEF;
 	g[G_SALT] = FOUNDER_SALT[k] ?? AQ_SALT_DEF;
+	g[G_RNEU] = g[G_DIET] < 0.66 ? FOUNDER_RNEU_HERB : FOUNDER_RNEU;
+	g[G_RGEN] = g[G_DIET] < 0.66 ? FOUNDER_RGEN_HERB : FOUNDER_RGEN;
+	g[G_TOXK] = FOUNDER_TOXK[k] ?? PAD_TOXK;
 });
+
+function toxFxStats() {
+	return { poisoned: 0, trips: 0, stims: 0, crashes: 0, genoBirths: 0, toxDeaths: 0, preyTrips: 0, preyGeno: 0 };
+}
+
+function toxKind(v) {
+	return v < TOXK_NEU ? 0 : v < TOXK_GEN ? 1 : 2;
+}
 
 function aquaMisfit(gDepth, gSalt, depth, sal) {
 	const m = Math.abs(depth - gDepth) * AQ_DEPTH_W + Math.abs(sal * 0.5 - gSalt) * AQ_SAL_W;
@@ -513,12 +557,19 @@ function aquaMisfit(gDepth, gSalt, depth, sal) {
 }
 
 function padAnimalGenes(src, count) {
-	if (!src || !count || src.length !== count * AG_V1) return src;
+	if (!src || !count) return src;
+	const from = src.length / count;
+	if (from !== AG_V1 && from !== AG_V2) return src;
 	const out = new Float32Array(count * AG);
-	for (let k = 0, a = 0, b = 0; k < count; k++, a += AG_V1, b += AG) {
-		for (let j = 0; j < AG_V1; j++) out[b + j] = src[a + j];
-		out[b + G_DEPTH] = AQ_DEPTH_DEF;
-		out[b + G_SALT] = AQ_SALT_DEF;
+	for (let k = 0, a = 0, b = 0; k < count; k++, a += from, b += AG) {
+		for (let j = 0; j < from; j++) out[b + j] = src[a + j];
+		if (from === AG_V1) {
+			out[b + G_DEPTH] = AQ_DEPTH_DEF;
+			out[b + G_SALT] = AQ_SALT_DEF;
+		}
+		out[b + G_RNEU] = PAD_RTOX;
+		out[b + G_RGEN] = PAD_RTOX;
+		out[b + G_TOXK] = PAD_TOXK;
 	}
 	return out;
 }
@@ -761,6 +812,8 @@ ANIMAL_FIELDS_I.push('cln');
 ANIMAL_FIELDS_F.push('mwx', 'mwy', 'mfx', 'mfy', 'mdx', 'mdy', 'lst', 'tl');
 ANIMAL_FIELDS_I.push('lsp');
 ANIMAL_FIELDS_I.push('lin');
+ANIMAL_FIELDS_I.push('fx', 'fxT', 'crv');
+ANIMAL_FIELDS_F.push('gl');
 
 class AnimalPool {
 	constructor(world, plants, registry, rng, log) {
@@ -804,6 +857,7 @@ class AnimalPool {
 		this.zone = new Uint8Array(n);
 		for (let i = 0; i < n; i++) this.zone[i] = BIOME_ZONE[world.biome[i]];
 		this.childGenome = new Float32Array(AG);
+		this.toxfx = toxFxStats();
 		this.deaths = { starved: 0, eaten: 0, old: 0, poison: 0, parasite: 0, disease: 0, thirst: 0, fire: 0, flood: 0 };
 		this.landDeaths = 0;
 		this.weather = null;
@@ -947,7 +1001,7 @@ class AnimalPool {
 		this.meta[i] *= 1 + DISPLAY_COST * g[o + G_DISPLAY];
 		this.app[i] = g[o + G_APPETITE];
 		this.meta[i] *= 1 + DORM_COST * g[o + G_DORMANCY];
-		this.meta[i] *= (1 + TOX_COST * g[o + G_TOXIC]) * (1 + MIMIC_COST * g[o + G_MIMIC]);
+		this.meta[i] *= (1 + TOX_COST * g[o + G_TOXIC]) * (1 + MIMIC_COST * g[o + G_MIMIC]) * (1 + RES_TOX_COST * (g[o + G_RNEU] + g[o + G_RGEN]));
 		const brain = g[o + G_BRAIN];
 		this.meta[i] *= 1 + BRAIN_COST * brain * brain;
 		this.mature[i] += BRAIN_MATURE * brain;
@@ -1003,6 +1057,10 @@ class AnimalPool {
 		this.seedSp[i] = 0;
 		this.seedTtl[i] = 0;
 		this.confuse[i] = 0;
+		this.fx[i] = 0;
+		this.fxT[i] = 0;
+		this.crv[i] = 0;
+		this.gl[i] = 0;
 		this.strain[i] = 0;
 		this.itime[i] = 0;
 		this.immune[i] = 0;
@@ -1747,6 +1805,7 @@ class AnimalPool {
 		const sk = this.strain[i];
 		let v = (sk ? this.spd[i] * (1 - SICK_SLOW * this.disease.sVir[sk]) : this.spd[i]) * this.ef[i];
 		if (this.fat[i] > 0) v *= 1 - FAT_SLOW * this._heavy(i);
+		if (this.fx[i]) v *= FX_SPEED[this.fx[i]];
 		const cold = this.cold[i];
 		if (cold > 0) {
 			const et = this.world.temperature[(y | 0) * this.world.width + (x | 0)] + (this.weather ? this.weather.seasonT : 0);
@@ -2064,6 +2123,7 @@ class AnimalPool {
 					if (fr > 0) food += fr * FRUIT_LURE * fk * (0.6 + plants.genome[j * PG + 9]);
 				}
 				if (av && plants.kind[pn + j] && plants.species[pn + j]) food *= 1 - this._aversion(av, plants.hue[pn + j]);
+				if (food > 0) food *= this._toxAvoid(i, j);
 			}
 			if (bugEff > 0) food += bugs.edibleAt(j) * bugEff;
 			if (land && carrion[j] > 0) food += carrion[j] * carrionLure;
@@ -2077,6 +2137,20 @@ class AnimalPool {
 				bestScore = score;
 				bx = tx;
 				by = ty;
+			}
+		}
+		if (needFood && this.fx[i] === FX_CRASH && this.crv[i] > 0) {
+			const j = this.crv[i] - 1;
+			const cx = (j % W) + 0.5;
+			const cy = ((j / W) | 0) + 0.5;
+			const dist = dist2d(cx - this.x[i], cy - this.y[i]);
+			if (dist < r * 2 && this.canStand(dom, cx, cy)) {
+				const score = ((plants.edible(j, reach) + 0.02) * CRAVE_LURE) / (1 + dist * 0.08);
+				if (score > bestScore) {
+					bestScore = score;
+					bx = cx;
+					by = cy;
+				}
 			}
 		}
 		if (eggHead && this.eggs.nestCell) {
@@ -2298,7 +2372,7 @@ class AnimalPool {
 			const gq = this.grp[i] - 1;
 			const rk = 2 - this.rnk[i];
 			const comp = gq > 0 ? 1 - (SOC_COMP * gq < SOC_COMP_CAP ? SOC_COMP * gq : SOC_COMP_CAP) * (rk < 0.25 ? 0.25 : rk > 1.75 ? 1.75 : rk) : 1;
-			const bite = comp * this.bite[i] * gf * ef * (1 + TERR_BITE * homeK) * (dom === 3 ? BIRD_BITE : 1) * (sk0 ? 1 - SICK_EAT * this.disease.sVir[sk0] : 1);
+			const bite = comp * this.bite[i] * gf * ef * (1 + TERR_BITE * homeK) * (dom === 3 ? BIRD_BITE : 1) * (sk0 ? 1 - SICK_EAT * this.disease.sVir[sk0] : 1) * (this.fx[i] === FX_TRIP ? TRIP_EAT : 1);
 			const fat = this.fat[i];
 			const em0 = this.emax[i] * gf;
 			let climK = 1;
@@ -2324,6 +2398,25 @@ class AnimalPool {
 			if (dk > 0) {
 				if (dom === 1 && plants.sal[tile] === 0) dk *= 1 + DOM_FRESH * this.genome[i * AG + G_SALT];
 				cost += m75 * DOM_META * dk;
+			}
+			const fxk = this.fx[i];
+			if (fxk) {
+				cost *= FX_COST[fxk];
+				if (--this.fxT[i] <= 0) {
+					if (fxk === FX_STIM) {
+						this.fx[i] = FX_CRASH;
+						this.fxT[i] = CRASH_TICKS;
+						this.toxfx.crashes++;
+					} else {
+						this.fx[i] = 0;
+						this.fxT[i] = 0;
+						this.crv[i] = 0;
+					}
+				}
+			}
+			if (this.gl[i] > 0) {
+				const gv = this.gl[i] * GL_DECAY;
+				this.gl[i] = gv > 0.002 ? gv : 0;
 			}
 			if (!flying) {
 				const lw = tileLoad[tile] + ((this.mass[i] * TILE_LOAD_SCALE + 0.5) | 0);
@@ -2354,8 +2447,8 @@ class AnimalPool {
 				} else if (this.state[i] === 7) this.state[i] = 0;
 			}
 
-			if (!acted && this.confuse[i] > 0) {
-				this.confuse[i]--;
+			if (!acted && (this.confuse[i] > 0 || (this.fx[i] === FX_TRIP && rng.next() < TRIP_WANDER))) {
+				if (this.confuse[i] > 0) this.confuse[i]--;
 				const ang = rng.next() * Math.PI * 2;
 				moved = this._moveToward(i, this.x[i] + Math.cos(ang) * 3, this.y[i] + Math.sin(ang) * 3, 0.8);
 				this.state[i] = 0;
@@ -2561,6 +2654,7 @@ class AnimalPool {
 						this.energy[i] += this._eat(i, ge * ls, FOOD_LEAF, sk0) + this._eat(i, ge * (1 - ls), FOOD_GRASS, sk0);
 					}
 					if (plants.grazeFungus) poisonDead = this._poison(i, tick);
+					if (eaten > 0 && this._plantTox(i, toxHit, tile)) poisonDead = true;
 					acted = true;
 				} else {
 					if (this.ttl[i] <= 0 || this.state[i] !== 2) this._pickForage(i);
@@ -3300,8 +3394,19 @@ class AnimalPool {
 			}
 			return 0;
 		}
-		const hit = tox - this.toxR[i];
-		if (hit > 0) this.energy[i] -= hit * TOX_HIT * this.emax[i] * this.gf[i];
+		const kind = toxKind(this.genome[p * AG + G_TOXK]);
+		const hit = tox - (kind === 0 ? this.toxR[i] : this.genome[i * AG + (kind === 1 ? G_RNEU : G_RGEN)]);
+		if (hit > 0) {
+			this.energy[i] -= hit * TOX_HIT * this.emax[i] * this.gf[i] * (kind === 0 ? 1 : 0.5);
+			if (kind === 1 && this.rng.next() < hit * PREY_TRIP && this._dose(i, FX_TRIP, TRIP_TICKS)) {
+				this.toxfx.trips++;
+				this.toxfx.preyTrips++;
+			} else if (kind === 2) {
+				const v = this.gl[i] + hit * PREY_GL;
+				this.gl[i] = v < 1 ? v : 1;
+				this.toxfx.preyGeno++;
+			}
+		}
 		this.symb.toxHits++;
 		if (!entry) {
 			entry = { hue, cls, sp: psp, strength: 0 };
@@ -3462,6 +3567,66 @@ class AnimalPool {
 		if (this.plants.plantSeed(tile, this.seedGenome, sp, tick)) this.plants.animalSeed(tile, sp);
 	}
 
+	_toxAvoid(i, j) {
+		const P = this.plants;
+		const u = P.n + j;
+		const p = P.species[u] && !P.kind[u] ? u : j;
+		if (!P.species[p] || P.kind[p]) return 1;
+		const o = i * AG;
+		const q = p * PG;
+		const g = this.genome;
+		const pg = P.genome;
+		const a = P.tox[p] + P.induced[p] - this.toxR[i];
+		const b = pg[q + 29] - g[o + G_RNEU];
+		const c = pg[q + 31] - g[o + G_RGEN];
+		const load = (a > 0 ? a : 0) + 0.5 * (b > 0 ? b : 0) + 0.5 * (c > 0 ? c : 0);
+		const k = 1 - AVOID_K * load;
+		return k > AVOID_FLOOR ? k : AVOID_FLOOR;
+	}
+
+	_dose(i, k, t) {
+		const c = this.fx[i];
+		if (k !== FX_POISON && c !== 0 && c !== FX_CRASH) return false;
+		this.fx[i] = k;
+		this.fxT[i] = t;
+		if (k === FX_POISON) this.crv[i] = 0;
+		return true;
+	}
+
+	_plantTox(i, toxHit, tile) {
+		const P = this.plants;
+		const o = i * AG;
+		const fx = this.toxfx;
+		let dead = false;
+		if (toxHit > POI_MIN) {
+			if (this.fx[i] !== FX_POISON) fx.poisoned++;
+			this._dose(i, FX_POISON, POI_TICKS);
+			this.energy[i] -= toxHit * POI_LOSS * this.emax[i] * this.gf[i];
+			if (toxHit > POI_LETHAL && this.rng.next() < (toxHit - POI_LETHAL) * POI_KILL) {
+				dead = true;
+				fx.toxDeaths++;
+			}
+		}
+		const nh = P.grazeNeu - this.genome[o + G_RNEU];
+		const c = this.fx[i];
+		if (nh > NEU_MIN && (c === 0 || c === FX_CRASH) && this.rng.next() < nh * NEU_P) {
+			if (P.grazeStim) {
+				this._dose(i, FX_STIM, STIM_TICKS);
+				this.crv[i] = tile + 1;
+				fx.stims++;
+			} else {
+				this._dose(i, FX_TRIP, TRIP_TICKS);
+				fx.trips++;
+			}
+		}
+		const gh = P.grazeGen - this.genome[o + G_RGEN];
+		if (gh > GEN_MIN) {
+			const v = this.gl[i] + gh * GEN_LOAD;
+			this.gl[i] = v < 1 ? v : 1;
+		}
+		return dead;
+	}
+
 	_poison(i, tick) {
 		const P = this.plants;
 		const excess = P.grazePotency - this.toxR[i];
@@ -3545,9 +3710,17 @@ class AnimalPool {
 			this.rankBlocked++;
 			return;
 		}
+		const gl = this.gl[i];
+		if (gl > 0 && rng.next() < GL_STERILE * gl) {
+			this.cool[i] = 10;
+			return;
+		}
 		const mate = this._chooseMate(i);
 		if (mate === -2) return;
 		const fd = this.fnd[i];
+		const mutR = gl > 0 ? 0.25 * (1 + GL_MUT * gl) : 0.25;
+		const mutS = (fd > 0 ? 0.04 * DISP_DRIFT : 0.04) * (gl > 0 ? 1 + GL_SD * gl : 1);
+		if (gl > 0.1) this.toxfx.genoBirths++;
 		const parentSp = this.registry.get(this.sp[i]);
 		const childG = this.childGenome;
 		const oi = i * AG;
@@ -3569,7 +3742,7 @@ class AnimalPool {
 		for (let c = 0; c < brood; c++) {
 			if (this.count >= this.maxAnimals + 1500) break;
 			for (let k = 0; k < AG; k++) childG[k] = rng.next() < 0.5 ? this.genome[oi + k] : this.genome[om + k];
-			mutateGenes(childG, 0, childG, 0, AG, rng, 0.25, fd > 0 ? 0.04 * DISP_DRIFT : 0.04);
+			mutateGenes(childG, 0, childG, 0, AG, rng, mutR, mutS);
 			this._clampClass(childG, this.cls[i]);
 			if (dom !== 1) {
 				childG[G_DEPTH] = this.genome[oi + G_DEPTH];
