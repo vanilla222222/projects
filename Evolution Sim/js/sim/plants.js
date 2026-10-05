@@ -1002,20 +1002,25 @@ class PlantLayer {
 
 	refreshSpeciesMeans() {
 		const sums = new Map();
+		const species = this.species, genome = this.genome, biomass = this.biomass, health = this.health, blight = this.blight;
+		let lastId = 0, s = null;
 		for (let p = 0; p < 2 * this.n; p++) {
-			const id = this.species[p];
+			const id = species[p];
 			if (!id) continue;
-			let s = sums.get(id);
-			if (!s) {
-				s = new Float64Array(PG + 4);
-				sums.set(id, s);
+			if (id !== lastId) {
+				s = sums.get(id);
+				if (!s) {
+					s = new Float64Array(PG + 4);
+					sums.set(id, s);
+				}
+				lastId = id;
 			}
 			const base = p * PG;
-			for (let k = 0; k < PG; k++) s[k] += this.genome[base + k];
+			for (let k = 0; k < PG; k++) s[k] += genome[base + k];
 			s[PG] += 1;
-			s[PG + 1] += this.biomass[p];
-			s[PG + 2] += this.health[p];
-			if (this.blight[p]) s[PG + 3] += 1;
+			s[PG + 1] += biomass[p];
+			s[PG + 2] += health[p];
+			if (blight[p]) s[PG + 3] += 1;
 		}
 		for (const [id, s] of sums) {
 			const sp = this.registry.get(id);
