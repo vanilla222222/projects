@@ -104,7 +104,7 @@ const app = {
 	openClasses: new Set(),
 	busy: false,
 	messageTimer: 0,
-	god: { open: false, tool: null, sp: 0, biome: 'GRASSLAND', r: 2, n: 10, strokeId: 0, stroke: null, hintStroke: -1, hintCount: 0, chain: Promise.resolve(), seen: 0, listAt: 0 },
+	god: { open: false, tool: null, sp: 0, biome: 'GRASSLAND', r: 2, n: 10, strokeId: 0, stroke: null, hintStroke: -1, hintCount: 0, chain: Promise.resolve(), seen: 0, listAt: 0, dcls: 'sp', coolUntil: 0 },
 };
 
 function readSize() {
@@ -1391,9 +1391,27 @@ const GOD_TOOLS = {
 	cold: { label: 'Colder', brush: 'temp', value: -1 },
 	wet: { label: 'Wetter', brush: 'moist', value: 1 },
 	dry: { label: 'Drier', brush: 'moist', value: -1 },
+	fire: { label: 'Wildfire', kind: 'fire', min: 0 },
+	flood: { label: 'Flood', kind: 'flood', min: 1 },
+	drought: { label: 'Drought', kind: 'drought', min: 0 },
+	meteor: { label: 'Meteor', kind: 'meteor', min: 2 },
+	disease: { label: 'Disease', kind: 'disease', min: 3 },
+	locust: { label: 'Locusts', kind: 'locust', min: 1 },
 };
 
-const GOD_TOOL_COLORS = { spawn: '#e7a25c', warm: '#e8b04a', cold: '#7fc4e8', wet: '#5fb6e6', dry: '#e0734a' };
+const GOD_TOOL_COLORS = { spawn: '#e7a25c', warm: '#e8b04a', cold: '#7fc4e8', wet: '#5fb6e6', dry: '#e0734a', fire: '#ec6a3c', flood: '#4a9fe0', drought: '#d9a441', disease: '#9bd06a', locust: '#b7c24a' };
+const GOD_DISASTER_R = 12;
+const GOD_COOLDOWN_MS = 900;
+const GOD_DISEASE_CLASSES = [['sp', 'Species'], ...STAT_GROUPS.map((s) => [s.cls, s.label]), [6, 'Plants']];
+
+function godToolButtons() {
+	return [...$('godTools').children, ...$('godDisasters').children];
+}
+
+function godPicking() {
+	const g = app.god;
+	return g.tool === 'spawn' || (g.tool === 'disease' && g.dcls === 'sp');
+}
 
 function godVer(eco) {
 	if (!eco) return 0;
@@ -1413,16 +1431,32 @@ function setGodOpen(on) {
 function setGodTool(tool) {
 	const g = app.god;
 	g.tool = tool && GOD_TOOLS[tool] ? tool : null;
-	for (const b of $('godTools').children) b.classList.toggle('active', b.dataset.tool === g.tool);
+	for (const b of godToolButtons()) b.classList.toggle('active', b.dataset.tool === g.tool);
 	$('godSpawnPane').hidden = g.tool !== 'spawn';
 	$('godBiomePane').hidden = g.tool !== 'biome';
+	$('godDiseasePane').hidden = g.tool !== 'disease';
+	$('godPickPane').hidden = !godPicking();
 	$('map').classList.toggle('god-tool', !!g.tool);
-	if (!g.tool) {
-		$('godRing').hidden = true;
-		cancelGodStroke();
-	}
-	if (g.tool === 'spawn') refreshGodSpecies(true);
+	cancelGodStroke();
+	if (!g.tool) $('godRing').hidden = true;
+	if (godPicking()) refreshGodSpecies(true);
+	if (g.tool && GOD_TOOLS[g.tool].kind) godHint(g.tool === 'disease' ? 'Pick a species or a class, then click where the outbreak starts.' : 'Click the map to strike. The brush sets the size.');
 	updateGodActive();
+}
+
+function godDiseaseTarget() {
+	const g = app.god;
+	if (g.dcls !== 'sp') {
+		const c = GOD_DISEASE_CLASSES.find((x) => x[0] === g.dcls);
+		return c ? c[1] : 'animals';
+	}
+	const sp = app.eco && app.eco.registry.get(g.sp);
+	return sp && sp.population > 0 ? sp.name : null;
+}
+
+function buildGodClasses() {
+	const g = app.god;
+	$('godClasses').innerHTML = GOD_DISEASE_CLASSES.map(([k, label]) => `<button data-cls="${k}" class="${k === g.dcls ? 'active' : ''}">${label}</button>`).join('');
 }
 
 function updateGodActive() {
@@ -1433,7 +1467,10 @@ function updateGodActive() {
 		const sp = app.eco && app.eco.registry.get(g.sp);
 		text = sp ? `Spawn ${g.n} ${sp.name}` : 'Spawn: pick a species';
 	} else if (g.tool === 'biome') text = 'Paint ' + (BIOME_INFO[g.biome] ? BIOME_INFO[g.biome].name : g.biome);
-	else if (g.tool) text = GOD_TOOLS[g.tool].label;
+	else if (g.tool === 'disease') {
+		const t = godDiseaseTarget();
+		text = t ? `Disease in ${t}` : 'Disease: pick a target';
+	} else if (g.tool) text = GOD_TOOLS[g.tool].label;
 	el.textContent = text;
 	el.title = text;
 	el.classList.toggle('on', !!g.tool);
@@ -1447,8 +1484,10 @@ function godSpeciesList() {
 	const out = [];
 	if (!app.eco) return out;
 	const q = $('godSearch').value.trim().toLowerCase();
+	const sick = app.god.tool === 'disease';
 	for (const sp of app.eco.registry.all.values()) {
 		if ((sp.group !== 'animal' && sp.group !== 'plant') || !(sp.population > 0)) continue;
+		if (sick && sp.kind | 0) continue;
 		if (q && !sp.name.toLowerCase().includes(q) && !categoryLabel(sp).toLowerCase().includes(q)) continue;
 		out.push(sp);
 	}
@@ -1458,7 +1497,7 @@ function godSpeciesList() {
 
 function refreshGodSpecies(force) {
 	const g = app.god;
-	if (!g.open || g.tool !== 'spawn' || !app.eco) return;
+	if (!g.open || !godPicking() || !app.eco) return;
 	const now = performance.now();
 	if (!force && now - g.listAt < 2000) return;
 	g.listAt = now;
@@ -1508,8 +1547,49 @@ function godResult(action, res) {
 		const name = sp ? sp.name : 'that species';
 		godHint(res.ok ? `Spawned ${res.count} ${name}.` : `No room for ${name} there. Try its own habitat.`);
 		refreshGodSpecies(true);
-	} else godHint(g.hintCount > 0 ? `Changed ${g.hintCount} tiles.` : 'Nothing to change there.');
+	} else if (action.kind === 'paint') godHint(g.hintCount > 0 ? `Changed ${g.hintCount} tiles.` : 'Nothing to change there.');
+	else godHint(godDisasterHint(action, res));
+	if (action.kind === 'meteor' && res.ok && app.renderer && app.renderer.impact) app.renderer.impact(res.x, res.y, res.r);
 	updateUi(true);
+}
+
+function godDisasterHint(action, res) {
+	const c = res.count | 0;
+	if (res.reason === 'off') return action.kind === 'drought' ? 'Weather is switched off, so there is no drought to call.' : action.kind === 'disease' ? 'Disease is switched off.' : action.kind === 'locust' ? 'Bugs are not running in this world.' : 'Disasters are switched off.';
+	if (action.kind === 'fire') return res.ok ? `Wildfire set: ${c} tiles alight.` : 'Nothing there will burn.';
+	if (action.kind === 'flood') return res.ok ? `Flood: ${c} tiles under water.` : 'No dry land to flood there.';
+	if (action.kind === 'drought') return res.ok ? `Drought: ${c} tiles parched.` : 'Nothing to dry out there.';
+	if (action.kind === 'meteor') return res.ok ? `Impact! ${res.killed | 0} animals killed.` : 'The meteor missed the map.';
+	if (action.kind === 'disease') return res.ok ? `Outbreak seeded in ${c} hosts.` : res.reason === 'host' ? 'Pick a living species first.' : 'No suitable hosts there.';
+	if (action.kind === 'locust') return res.ok ? `Locusts swarm over ${c} tiles.` : 'Locusts need dry land.';
+	return '';
+}
+
+function godDisaster(wx, wy) {
+	const g = app.god;
+	const t = GOD_TOOLS[g.tool];
+	const now = performance.now();
+	if (now < g.coolUntil) {
+		godHint('Give the world a moment to recover.');
+		return;
+	}
+	if (g.tool === 'disease' && !godDiseaseTarget()) {
+		godHint('Pick a living species first.');
+		return;
+	}
+	g.coolUntil = now + GOD_COOLDOWN_MS;
+	const btns = godToolButtons().filter((b) => GOD_TOOLS[b.dataset.tool] && GOD_TOOLS[b.dataset.tool].kind);
+	for (const b of btns) b.classList.add('cooling');
+	setTimeout(() => {
+		for (const b of btns) b.classList.remove('cooling');
+	}, GOD_COOLDOWN_MS);
+	g.strokeId++;
+	const action = { kind: t.kind, pts: [wx, wy], r: Math.max(t.min, Math.min(GOD_DISASTER_R, g.r)), stroke: g.strokeId };
+	if (t.kind === 'disease') {
+		if (g.dcls === 'sp') action.sp = g.sp;
+		else action.cls = g.dcls;
+	}
+	godSend(action);
 }
 
 function godAction(pts) {
@@ -1522,6 +1602,10 @@ function godAction(pts) {
 
 function startGodStroke(wx, wy) {
 	const g = app.god;
+	if (GOD_TOOLS[g.tool] && GOD_TOOLS[g.tool].kind) {
+		godDisaster(wx, wy);
+		return true;
+	}
 	if (g.tool === 'spawn' && !(app.eco.registry.get(g.sp) || {}).population) {
 		godHint('Pick a living species first.');
 		return false;
@@ -1578,7 +1662,8 @@ function placeGodRing(x, y) {
 		ring.hidden = true;
 		return;
 	}
-	const r = app.god.tool === 'spawn' ? Math.max(0.5, app.god.r) : app.god.r + 0.5;
+	const t = GOD_TOOLS[app.god.tool];
+	const r = app.god.tool === 'spawn' ? Math.max(0.5, app.god.r) : t.kind ? Math.max(t.min, Math.min(GOD_DISASTER_R, app.god.r)) + 0.5 : app.god.r + 0.5;
 	const d = Math.max(6, r * 2 * app.renderer.cam.zoom);
 	ring.hidden = false;
 	ring.style.left = x + 'px';
@@ -1589,15 +1674,27 @@ function placeGodRing(x, y) {
 
 function setupGodPalette() {
 	const g = app.god;
-	for (const b of $('godTools').children) {
+	for (const b of godToolButtons()) {
 		if (b.dataset.icon) b.querySelector('.gp-ico').innerHTML = iconSVG(b.dataset.icon, paletteFor(GOD_TOOL_COLORS[b.dataset.tool] || '#a9bcb0'), 18);
 	}
 	buildGodBiomes();
+	buildGodClasses();
 	$('godToggle').onclick = () => setGodOpen(!g.open);
 	$('godClose').onclick = () => setGodOpen(false);
-	$('godTools').addEventListener('click', (e) => {
+	const pick = (e) => {
 		const b = e.target.closest('button');
 		if (b) setGodTool(g.tool === b.dataset.tool ? null : b.dataset.tool);
+	};
+	$('godTools').addEventListener('click', pick);
+	$('godDisasters').addEventListener('click', pick);
+	$('godClasses').addEventListener('click', (e) => {
+		const b = e.target.closest('button');
+		if (!b) return;
+		g.dcls = b.dataset.cls === 'sp' ? 'sp' : +b.dataset.cls;
+		buildGodClasses();
+		$('godPickPane').hidden = !godPicking();
+		if (godPicking()) refreshGodSpecies(true);
+		updateGodActive();
 	});
 	const brush = $('godBrush');
 	brush.addEventListener('input', () => {

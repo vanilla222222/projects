@@ -184,6 +184,26 @@ class WeatherLayer {
 		this.log.push(tick, 'weather', 'A drought has begun — streams and ponds are drying up');
 	}
 
+	godDrought(tick, tiles, len, dry) {
+		const end = tick + len;
+		if (!this.drought) {
+			this.drought = true;
+			this.droughtEnd = end;
+			this.droughts++;
+			this._setFresh();
+			this._buildWaterDist();
+		} else if (end > this.droughtEnd) this.droughtEnd = end;
+		const water = this.plants.water;
+		let c = 0;
+		for (const i of tiles) {
+			if (water[i]) continue;
+			this.wet[i] *= dry;
+			c++;
+		}
+		this._updateTiles(false);
+		return c;
+	}
+
 	_endDrought(tick, silent) {
 		this.drought = false;
 		this.lastDroughtEnd = tick;

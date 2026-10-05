@@ -365,35 +365,61 @@ class DisasterLayer {
 		this.flooded += c;
 		this.floodX = s.x;
 		this.floodY = s.y;
+		for (let k = 0; k < c; k++) this._floodTile(list[k]);
+		this.log.push(tick, 'disaster', `Flood in the ${this._where(s.x, s.y)} — the rivers burst their banks`);
+	}
+
+	_floodTile(i) {
+		const P = this.plants;
+		const Wx = this.weather;
 		const n = this.n;
-		const rng = this.rng;
 		const soil = P.soil;
 		const B = this.bugs;
-		for (let k = 0; k < c; k++) {
-			const i = list[k];
-			this.flood[i] = FLOOD_LIFE;
-			if (!this.haz[i]) this.haz[i] = 2;
-			Wx.wet[i] = 1;
-			const u = n + i;
-			if (P.species[u] && !P.kind[u] && P.genome[u * PG + 3] < PIONEER_WOOD && rng.next() < FLOOD_UNDER) {
-				if (!this.scar[i]) {
-					this.preBio[i] = (P.species[i] ? P.biomass[i] : 0) + P.biomass[u];
-					this.scar[i] = 1;
-					this.scarK[i] = 2;
-				}
-				P._clear(u);
+		this.flood[i] = FLOOD_LIFE;
+		if (!this.haz[i]) this.haz[i] = 2;
+		if (Wx) Wx.wet[i] = 1;
+		const u = n + i;
+		if (P.species[u] && !P.kind[u] && P.genome[u * PG + 3] < PIONEER_WOOD && this.rng.next() < FLOOD_UNDER) {
+			if (!this.scar[i]) {
+				this.preBio[i] = (P.species[i] ? P.biomass[i] : 0) + P.biomass[u];
+				this.scar[i] = 1;
+				this.scarK[i] = 2;
 			}
-			if (P.species[i]) {
-				P.biomass[i] *= FLOOD_CANOPY;
-				P.health[i] *= FLOOD_CANOPY;
-			}
-			P.seedDens[i] *= 0.5;
-			const N = soil.nutrient[i] + FLOOD_SILT;
-			soil.nutrient[i] = N < SOIL_MAX ? N : SOIL_MAX;
-			if (B) for (let q = 0; q < 4; q++) B.density[q * n + i] *= FLOOD_BUGS;
-			this._killEggs(i);
+			P._clear(u);
 		}
-		this.log.push(tick, 'disaster', `Flood in the ${this._where(s.x, s.y)} — the rivers burst their banks`);
+		if (P.species[i]) {
+			P.biomass[i] *= FLOOD_CANOPY;
+			P.health[i] *= FLOOD_CANOPY;
+		}
+		P.seedDens[i] *= 0.5;
+		const N = soil.nutrient[i] + FLOOD_SILT;
+		soil.nutrient[i] = N < SOIL_MAX ? N : SOIL_MAX;
+		if (B) for (let q = 0; q < 4; q++) B.density[q * n + i] *= FLOOD_BUGS;
+		this._killEggs(i);
+	}
+
+	godFlood(tiles, x, y, tick) {
+		const P = this.plants;
+		const Wx = this.weather;
+		const list = this.floodList;
+		let w = 0;
+		for (let k = 0; k < this.floodN; k++) if (this.flood[list[k]]) list[w++] = list[k];
+		const start = w;
+		for (const i of tiles) {
+			if (w >= FLOOD_MAX) break;
+			if (P.water[i] || this.flood[i] || (Wx && Wx.snow[i] > 0.1)) continue;
+			list[w++] = i;
+		}
+		this.floodN = w;
+		const c = w - start;
+		if (!c) return 0;
+		this.floods++;
+		this.flooded += c;
+		this.floodX = x;
+		this.floodY = y;
+		this.lastFlood = tick;
+		for (let k = start; k < w; k++) this._floodTile(list[k]);
+		return c;
 	}
 
 	_floodTick() {

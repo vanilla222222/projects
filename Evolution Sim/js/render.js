@@ -284,6 +284,8 @@ void main() {
 	outColor = vec4(col * v_night, r.a) * v_alpha;
 }`;
 
+const IMPACT_SECS = 1.2;
+
 const WX_VS = `#version 300 es
 in vec2 a_corner;
 uniform vec4 u_storm;
@@ -296,6 +298,35 @@ void main() {
 	v_q = q;
 	vec2 p = (u_storm.xy + q - u_origin) / u_scale;
 	gl_Position = vec4(p.x / u_res.x * 2.0 - 1.0, 1.0 - p.y / u_res.y * 2.0, 0.0, 1.0);
+}`;
+
+const IMPACT_VS = `#version 300 es
+in vec2 a_corner;
+uniform vec3 u_hit;
+uniform vec2 u_origin;
+uniform float u_scale;
+uniform vec2 u_res;
+out vec2 v_q;
+void main() {
+	vec2 q = a_corner * 2.0;
+	v_q = q;
+	vec2 p = (u_hit.xy + q * u_hit.z * 1.6 - u_origin) / u_scale;
+	gl_Position = vec4(p.x / u_res.x * 2.0 - 1.0, 1.0 - p.y / u_res.y * 2.0, 0.0, 1.0);
+}`;
+
+const IMPACT_FS = `#version 300 es
+precision highp float;
+uniform float u_age;
+in vec2 v_q;
+out vec4 outColor;
+void main() {
+	float d = length(v_q) * 1.6;
+	float flash = exp(-u_age * 6.0) * smoothstep(1.0, 0.0, d);
+	float front = u_age * 1.5;
+	float ring = exp(-pow((d - front) * 9.0, 2.0)) * (1.0 - u_age);
+	float a = clamp(flash * 0.9 + ring * 0.7, 0.0, 1.0);
+	vec3 col = mix(vec3(1.0, 0.55, 0.2), vec3(1.0, 0.97, 0.85), clamp(flash * 1.4, 0.0, 1.0));
+	outColor = vec4(col * a, a);
 }`;
 
 const WX_FS = `#version 300 es
@@ -695,6 +726,14 @@ class WorldRenderer {
 		const wc = gl.getAttribLocation(this.wxProg.p, 'a_corner');
 		gl.enableVertexAttribArray(wc);
 		gl.vertexAttribPointer(wc, 2, gl.FLOAT, false, 0, 0);
+		this.impactProg = compileProgram(gl, IMPACT_VS, IMPACT_FS);
+		this.impactVao = gl.createVertexArray();
+		gl.bindVertexArray(this.impactVao);
+		gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+		const ic = gl.getAttribLocation(this.impactProg.p, 'a_corner');
+		gl.enableVertexAttribArray(ic);
+		gl.vertexAttribPointer(ic, 2, gl.FLOAT, false, 0, 0);
+		this.impacts = [];
 		gl.bindVertexArray(null);
 		this._ensureCapacity(8192);
 
@@ -1498,6 +1537,32 @@ class WorldRenderer {
 		}
 		if (this.mode === 'rain') this._drawWeather(alpha, ox, oy, scale, 0, 1);
 		else if (this.showWeather && !flat) this._drawWeather(alpha, ox, oy, scale, smooth(WX_ZOOM[0], WX_ZOOM[1], c.zoom), 0);
+		if (this.impacts.length) this._drawImpacts(ox, oy, scale);
+	}
+
+	impact(x, y, r) {
+		this.impacts.push({ x, y, r: Math.max(2, r), t: this.time });
+	}
+
+	_drawImpacts(ox, oy, scale) {
+		const gl = this.gl;
+		const p = this.impactProg;
+		const u = p.u;
+		this.impacts = this.impacts.filter((h) => this.time - h.t < IMPACT_SECS);
+		if (!this.impacts.length) return;
+		gl.enable(gl.BLEND);
+		gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+		gl.useProgram(p.p);
+		gl.uniform2f(u.u_origin, ox, oy);
+		gl.uniform1f(u.u_scale, scale);
+		gl.uniform2f(u.u_res, this.canvas.width, this.canvas.height);
+		gl.bindVertexArray(this.impactVao);
+		for (const h of this.impacts) {
+			gl.uniform3f(u.u_hit, h.x, h.y, h.r);
+			gl.uniform1f(u.u_age, Math.max(0, this.time - h.t) / IMPACT_SECS);
+			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+		}
+		gl.bindVertexArray(null);
 	}
 
 	_dayUniform(alpha) {

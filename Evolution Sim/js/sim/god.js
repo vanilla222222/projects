@@ -8,6 +8,19 @@ const GOD_REEF_LO = 0.37;
 const GOD_REEF_HI = 0.4;
 const GOD_LAND_MIN = 0.43;
 const GOD_PAINT_BRUSHES = ['biome', 'temp', 'moist'];
+const GOD_DIS_R = 12;
+const GOD_FIRE_FUEL = 0.05;
+const GOD_DROUGHT_BASE = 240;
+const GOD_DROUGHT_PER_R = 20;
+const GOD_DROUGHT_DRY = 0.15;
+const GOD_CRATER_DEPTH = 0.06;
+const GOD_CRATER_RIM = 0.03;
+const GOD_CRATER_WATER_R = 4;
+const GOD_SICK_ANIMALS = 40;
+const GOD_SICK_PLANTS = 60;
+const GOD_LOCUST_STRIP = 0.3;
+const GOD_LOCUST_SWARM = 0.75;
+const GOD_PLANT_CLS = 6;
 
 class GodTools {
 	constructor() {
@@ -65,49 +78,86 @@ class GodTools {
 		return out;
 	}
 
+	static setBiome(world, i, b) {
+		const sea = BIOME_THRESHOLDS.seaLevel;
+		const alt = world.altitude;
+		world.biome[i] = b;
+		world.isOcean[i] = 0;
+		world.isLake[i] = 0;
+		world.isRiver[i] = 0;
+		world.isPond[i] = 0;
+		world.isGlacier[i] = 0;
+		world.isSalt[i] = 0;
+		if (world.isDelta) world.isDelta[i] = 0;
+		const flow = world.riverFlow[i];
+		world.riverFlow[i] = 0;
+		if (b === BIOME_ID.OCEAN_DEEP) {
+			world.isOcean[i] = 1;
+			alt[i] = Math.min(alt[i], GOD_DEEP_TOP);
+		} else if (b === BIOME_ID.OCEAN || b === BIOME_ID.FROZEN_OCEAN) {
+			world.isOcean[i] = 1;
+			alt[i] = Math.max(BIOME_THRESHOLDS.deepOceanLevel + 0.01, Math.min(alt[i], GOD_OCEAN_TOP));
+		} else if (b === BIOME_ID.CORAL_REEF) {
+			world.isOcean[i] = 1;
+			alt[i] = Math.max(GOD_REEF_LO, Math.min(alt[i], GOD_REEF_HI));
+		} else if (b === BIOME_ID.LAKE) {
+			world.isLake[i] = 1;
+			alt[i] = Math.min(alt[i], sea - 0.01);
+		} else if (b === BIOME_ID.RIVER) {
+			world.isRiver[i] = 1;
+			world.riverFlow[i] = Math.max(flow, 1);
+			alt[i] = Math.min(alt[i], sea - 0.005);
+		} else if (b === BIOME_ID.POND) {
+			world.isPond[i] = 1;
+			alt[i] = Math.min(alt[i], sea - 0.005);
+		} else {
+			alt[i] = Math.max(alt[i], GOD_LAND_MIN);
+			if (b === BIOME_ID.GLACIER) world.isGlacier[i] = 1;
+			else if (b === BIOME_ID.SALT_FLAT) world.isSalt[i] = 1;
+		}
+	}
+
+	static crater(world, e) {
+		const b = BIOME_ID[e.value];
+		if (b === undefined || (e.value !== 'OCEAN' && e.value !== 'LAKE' && e.value !== 'VOLCANIC')) return [];
+		const W = world.width;
+		const alt = world.altitude;
+		const sea = BIOME_THRESHOLDS.seaLevel;
+		const inner = GodTools.tiles(world, e.pts, e.r);
+		const outer = GodTools.tiles(world, e.pts, e.r + 1);
+		const cx = Math.floor(e.pts[0]) + 0.5;
+		const cy = Math.floor(e.pts[1]) + 0.5;
+		const span = e.r + 1;
+		const mark = new Set(inner);
+		for (const i of inner) {
+			GodTools.setBiome(world, i, b);
+			const dx = (i % W) + 0.5 - cx;
+			const dy = Math.floor(i / W) + 0.5 - cy;
+			const k = 1 - Math.sqrt(dx * dx + dy * dy) / span;
+			const bowl = k > 0 ? k : 0;
+			if (b === BIOME_ID.OCEAN) alt[i] = Math.max(BIOME_THRESHOLDS.deepOceanLevel + 0.01, alt[i] - GOD_CRATER_DEPTH * bowl);
+			else if (b === BIOME_ID.LAKE) alt[i] = Math.max(0, Math.min(alt[i], sea - 0.01) - GOD_CRATER_DEPTH * bowl);
+			else alt[i] = Math.max(GOD_LAND_MIN, alt[i] - GOD_CRATER_DEPTH * bowl);
+		}
+		const out = inner.slice();
+		for (const i of outer) {
+			if (mark.has(i) || world.isOcean[i] || world.isLake[i] || world.isRiver[i] || world.isPond[i]) continue;
+			GodTools.setBiome(world, i, BIOME_ID.VOLCANIC);
+			const v = alt[i] + GOD_CRATER_RIM;
+			alt[i] = v < 1 ? v : 1;
+			out.push(i);
+		}
+		out.sort((a, b2) => a - b2);
+		return out;
+	}
+
 	static paintWorld(world, e) {
+		if (e.brush === 'crater') return GodTools.crater(world, e);
 		const tiles = GodTools.tiles(world, e.pts, e.r);
 		if (e.brush === 'biome') {
 			const b = BIOME_ID[e.value];
 			if (b === undefined) return [];
-			const sea = BIOME_THRESHOLDS.seaLevel;
-			const alt = world.altitude;
-			for (const i of tiles) {
-				world.biome[i] = b;
-				world.isOcean[i] = 0;
-				world.isLake[i] = 0;
-				world.isRiver[i] = 0;
-				world.isPond[i] = 0;
-				world.isGlacier[i] = 0;
-				world.isSalt[i] = 0;
-				if (world.isDelta) world.isDelta[i] = 0;
-				const flow = world.riverFlow[i];
-				world.riverFlow[i] = 0;
-				if (b === BIOME_ID.OCEAN_DEEP) {
-					world.isOcean[i] = 1;
-					alt[i] = Math.min(alt[i], GOD_DEEP_TOP);
-				} else if (b === BIOME_ID.OCEAN || b === BIOME_ID.FROZEN_OCEAN) {
-					world.isOcean[i] = 1;
-					alt[i] = Math.max(BIOME_THRESHOLDS.deepOceanLevel + 0.01, Math.min(alt[i], GOD_OCEAN_TOP));
-				} else if (b === BIOME_ID.CORAL_REEF) {
-					world.isOcean[i] = 1;
-					alt[i] = Math.max(GOD_REEF_LO, Math.min(alt[i], GOD_REEF_HI));
-				} else if (b === BIOME_ID.LAKE) {
-					world.isLake[i] = 1;
-					alt[i] = Math.min(alt[i], sea - 0.01);
-				} else if (b === BIOME_ID.RIVER) {
-					world.isRiver[i] = 1;
-					world.riverFlow[i] = Math.max(flow, 1);
-					alt[i] = Math.min(alt[i], sea - 0.005);
-				} else if (b === BIOME_ID.POND) {
-					world.isPond[i] = 1;
-					alt[i] = Math.min(alt[i], sea - 0.005);
-				} else {
-					alt[i] = Math.max(alt[i], GOD_LAND_MIN);
-					if (b === BIOME_ID.GLACIER) world.isGlacier[i] = 1;
-					else if (b === BIOME_ID.SALT_FLAT) world.isSalt[i] = 1;
-				}
-			}
+			for (const i of tiles) GodTools.setBiome(world, i, b);
 		} else if (e.brush === 'temp' || e.brush === 'moist') {
 			const arr = e.brush === 'temp' ? world.temperature : world.humidity;
 			const d = (e.value > 0 ? 1 : -1) * GOD_CLIMATE_STEP;
@@ -139,6 +189,12 @@ class GodTools {
 		if (!a || typeof a !== 'object') return { ok: false, count: 0 };
 		if (a.kind === 'spawn') return this._spawn(eco, a);
 		if (a.kind === 'paint') return this._paint(eco, a);
+		if (a.kind === 'fire') return this._fire(eco, a);
+		if (a.kind === 'flood') return this._flood(eco, a);
+		if (a.kind === 'drought') return this._drought(eco, a);
+		if (a.kind === 'meteor') return this._meteor(eco, a);
+		if (a.kind === 'disease') return this._disease(eco, a);
+		if (a.kind === 'locust') return this._locust(eco, a);
 		return { ok: false, count: 0 };
 	}
 
@@ -258,6 +314,316 @@ class GodTools {
 		if (brush === 'biome') this._log(eco, a.stroke | 0, (c) => `You painted ${c} tiles of ${what}${tail}`, tiles.length);
 		else this._log(eco, a.stroke | 0, (c) => `You made ${c} tiles ${what}`, tiles.length);
 		return { ok: true, count: tiles.length, lost };
+	}
+
+	_spot(eco, a, min) {
+		const c = GodTools.clean(eco.world, a);
+		if (!c.pts.length) return null;
+		const r = Math.max(min, Math.min(GOD_DIS_R, c.r));
+		const pts = [c.pts[0], c.pts[1]];
+		return { pts, r, x: pts[0], y: pts[1], tiles: GodTools.tiles(eco.world, pts, r) };
+	}
+
+	_count(key) {
+		this[key] = (this[key] | 0) + 1;
+	}
+
+	_where(eco, x, y) {
+		const Dz = eco.disasters;
+		return Dz ? Dz._where(x, y) : 'that spot';
+	}
+
+	_fire(eco, a) {
+		const Dz = eco.disasters;
+		if (!Dz || !Dz.on) return { ok: false, count: 0, reason: 'off' };
+		const s = this._spot(eco, a, 0);
+		if (!s) return { ok: false, count: 0 };
+		const c = this._light(eco, s.tiles);
+		if (!c) return { ok: false, count: 0, reason: 'fuel' };
+		this._count('fires');
+		const where = Dz._where(s.x, s.y);
+		this._log(eco, 0, () => `You set a wildfire in the ${where} (${c} tile${c === 1 ? '' : 's'} alight)`, c);
+		return { ok: true, count: c };
+	}
+
+	_light(eco, tiles) {
+		const Dz = eco.disasters;
+		const P = eco.plants;
+		const fresh = Dz.fireN === 0;
+		let c = 0;
+		for (const i of tiles) {
+			if (P.water[i] || Dz.fire[i] || Dz._fuel(i) < GOD_FIRE_FUEL) continue;
+			if (fresh && !c) {
+				Dz.eventBurnt = 0;
+				Dz.eventLogged = false;
+			}
+			Dz._ignite(i, eco.tick);
+			c++;
+		}
+		if (c && fresh) Dz.fires++;
+		return c;
+	}
+
+	_flood(eco, a) {
+		const Dz = eco.disasters;
+		if (!Dz || !Dz.on || !eco.weather) return { ok: false, count: 0, reason: 'off' };
+		const s = this._spot(eco, a, 1);
+		if (!s) return { ok: false, count: 0 };
+		const c = Dz.godFlood(s.tiles, s.x, s.y, eco.tick);
+		if (!c) return { ok: false, count: 0, reason: 'land' };
+		this._count('floods');
+		const where = Dz._where(s.x, s.y);
+		this._log(eco, 0, () => `You flooded ${c} tile${c === 1 ? '' : 's'} in the ${where}`, c);
+		return { ok: true, count: c };
+	}
+
+	_drought(eco, a) {
+		const Wx = eco.weather;
+		if (!Wx || !Wx.on) return { ok: false, count: 0, reason: 'off' };
+		const s = this._spot(eco, a, 0);
+		if (!s) return { ok: false, count: 0 };
+		const was = Wx.drought;
+		const c = Wx.godDrought(eco.tick, s.tiles, GOD_DROUGHT_BASE + GOD_DROUGHT_PER_R * s.r, GOD_DROUGHT_DRY);
+		this._count('droughts');
+		const where = this._where(eco, s.x, s.y);
+		this._log(eco, 0, () => (was ? `You deepened the drought, parching ${c} tiles in the ${where}` : `You called down a drought, parching ${c} tiles in the ${where}`), c);
+		return { ok: true, count: c };
+	}
+
+	_meteor(eco, a) {
+		const s = this._spot(eco, a, 2);
+		if (!s) return { ok: false, count: 0 };
+		const world = eco.world;
+		const P = eco.plants;
+		const A = eco.animals;
+		const B = eco.bugs;
+		const E = eco.eggs;
+		const Dz = eco.disasters;
+		const n = P.n;
+		const W = world.width;
+		const R = s.r;
+		const rc = Math.max(1, Math.round(R * 0.5));
+		const cx = Math.floor(s.x) + 0.5;
+		const cy = Math.floor(s.y) + 0.5;
+		const inner = GodTools.tiles(world, s.pts, rc);
+		const rim = GodTools.tiles(world, s.pts, rc + 1);
+		let wet = rc >= GOD_CRATER_WATER_R;
+		for (const i of inner) if (P.water[i]) wet = true;
+		let sea = false;
+		for (const i of rim) if (world.isOcean[i]) sea = true;
+		const value = wet ? (sea ? 'OCEAN' : 'LAKE') : 'VOLCANIC';
+		const rr = R * R + R;
+		let killed = 0;
+		for (let k = 0; k < A.count; k++) {
+			if (!A.alive[k]) continue;
+			const dx = A.x[k] - cx;
+			const dy = A.y[k] - cy;
+			if (dx * dx + dy * dy > rr) continue;
+			A._kill(k, 1);
+			killed++;
+		}
+		if (killed) A._compact();
+		const blast = s.tiles;
+		const pre = new Float32Array(blast.length);
+		const soil = P.soil;
+		for (let t = 0; t < blast.length; t++) {
+			const i = blast[t];
+			pre[t] = (P.species[i] ? P.biomass[i] : 0) + (P.species[n + i] ? P.biomass[n + i] : 0);
+			P._clear(i);
+			P._clear(n + i);
+			P.seedDens[i] = 0;
+			const L = soil.litter[i];
+			soil.litter[i] = 0;
+			const N = soil.nutrient[i] + L * FIRE_ASH;
+			soil.nutrient[i] = N < SOIL_MAX ? N : SOIL_MAX;
+			if (B) for (let k = 0; k < 4; k++) B._clear(k * n + i);
+			if (E) {
+				for (let e = E.head[i]; e >= 0; e = E.next[e]) {
+					if (!E.alive[e]) continue;
+					E.alive[e] = 0;
+					E.failed++;
+				}
+			}
+		}
+		const where = this._where(eco, s.x, s.y);
+		const edit = { brush: 'crater', value, pts: s.pts, r: rc };
+		const before = { water: P.water.slice(), depth: P.depth.slice(), sal: P.sal.slice(), habit: P.habit.slice() };
+		const tiles = GodTools.paintWorld(world, edit);
+		this.edits.push(edit);
+		this.version++;
+		this.painted += tiles.length;
+		killed += this._refresh(eco, tiles, before);
+		let burning = 0;
+		if (Dz) {
+			for (let t = 0; t < blast.length; t++) {
+				const i = blast[t];
+				if (P.water[i]) continue;
+				Dz.preBio[i] = pre[t];
+				Dz.scar[i] = 1;
+				Dz.scarK[i] = 1;
+			}
+			if (Dz.on) {
+				const ring = GodTools.tiles(world, s.pts, R + 2);
+				const edge = [];
+				for (const i of ring) {
+					const dx = (i % W) + 0.5 - cx;
+					const dy = Math.floor(i / W) + 0.5 - cy;
+					if (dx * dx + dy * dy > rr) edge.push(i);
+				}
+				burning = this._light(eco, edge);
+			}
+		}
+		if (B) {
+			B._sumTotals();
+			B.version++;
+		}
+		this.meteorKills = (this.meteorKills | 0) + killed;
+		this._count('meteors');
+		const what = value === 'VOLCANIC' ? 'a rocky crater' : value === 'OCEAN' ? 'a flooded sea crater' : 'a crater lake';
+		const tail = killed ? `, killing ${killed} animal${killed === 1 ? '' : 's'}` : '';
+		const fire = burning ? ' and setting the edge alight' : '';
+		this._log(eco, 0, () => `A meteor struck the ${where}, leaving ${what}${tail}${fire}`, 1);
+		return { ok: true, count: blast.length, killed, x: cx, y: cy, r: R, crater: value };
+	}
+
+	_disease(eco, a) {
+		const D = eco.disease;
+		if (!D || !D.on) return { ok: false, count: 0, reason: 'off' };
+		const s = this._spot(eco, a, 3);
+		if (!s) return { ok: false, count: 0 };
+		const Rg = eco.registry;
+		const A = eco.animals;
+		const P = eco.plants;
+		const n = P.n;
+		const rr = s.r * s.r + s.r;
+		let host = null;
+		let isP = false;
+		if (a.sp) {
+			host = Rg.get(a.sp | 0);
+			if (!host || !(host.population > 0) || (host.group !== 'animal' && host.group !== 'plant') || host.kind | 0) return { ok: false, count: 0, reason: 'host' };
+			isP = host.group === 'plant';
+		} else {
+			const cls = a.cls | 0;
+			if (cls < 0 || cls > GOD_PLANT_CLS) return { ok: false, count: 0, reason: 'host' };
+			isP = cls === GOD_PLANT_CLS;
+			const tally = new Map();
+			if (isP) {
+				for (const i of s.tiles) {
+					for (let k = 0; k < 2; k++) {
+						const q = k * n + i;
+						const id = P.species[q];
+						if (id && !P.kind[q] && !P.blight[q]) tally.set(id, (tally.get(id) || 0) + 1);
+					}
+				}
+			} else {
+				for (let k = 0; k < A.count; k++) {
+					if (!A.alive[k] || A.cls[k] !== cls || A.strain[k]) continue;
+					const dx = A.x[k] - s.x;
+					const dy = A.y[k] - s.y;
+					if (dx * dx + dy * dy > rr) continue;
+					tally.set(A.sp[k], (tally.get(A.sp[k]) || 0) + 1);
+				}
+			}
+			let best = 0;
+			let bid = 0;
+			for (const [id, c] of tally) {
+				if (c > best || (c === best && id < bid)) {
+					best = c;
+					bid = id;
+				}
+			}
+			host = bid ? Rg.get(bid) : null;
+			if (!host) return { ok: false, count: 0, reason: 'none' };
+		}
+		const hosts = [];
+		if (isP) {
+			for (const i of s.tiles) {
+				for (let k = 0; k < 2 && hosts.length < GOD_SICK_PLANTS; k++) {
+					const q = k * n + i;
+					if (P.species[q] === host.id && !P.blight[q]) hosts.push(q);
+				}
+			}
+		} else {
+			for (let k = 0; k < A.count && hosts.length < GOD_SICK_ANIMALS; k++) {
+				if (!A.alive[k] || A.sp[k] !== host.id || A.strain[k]) continue;
+				const dx = A.x[k] - s.x;
+				const dy = A.y[k] - s.y;
+				if (dx * dx + dy * dy <= rr) hosts.push(k);
+			}
+		}
+		if (!hosts.length) return { ok: false, count: 0, reason: 'none' };
+		const rng = D.rng;
+		const g = new Float32Array(DG);
+		g[D_TRANS] = clamp01(0.5 + gaussRand(rng) * EMERGE_SD);
+		g[D_VIR] = clamp01(EMERGE_VIR + gaussRand(rng) * EMERGE_SD);
+		g[D_RANGE] = clamp01(0.3 + gaussRand(rng) * EMERGE_SD);
+		g[D_HUE] = rng.next();
+		const kind = isP ? 'plant' : 'animal';
+		const st = D._newStrain(g, kind, host.id, host.genome, null, eco.tick, 'emerged');
+		for (const h of hosts) {
+			if (isP) D.infectPlant(h, st.id);
+			else D.infectAnimal(h, st.id);
+		}
+		D.lastHad[isP ? 1 : 0] = eco.tick;
+		if (isP) D.blights++;
+		else D.outbreaks++;
+		this._count('plagues');
+		const c = hosts.length;
+		const hname = host.name;
+		const sname = st.name;
+		this._log(eco, 0, () => (isP ? `You blighted ${c} ${hname} with ${sname}` : `You infected ${c} ${hname} with ${sname}`), c, st.id);
+		return { ok: true, count: c, strain: st.id, host: host.id };
+	}
+
+	_locust(eco, a) {
+		const B = eco.bugs;
+		if (!B) return { ok: false, count: 0, reason: 'off' };
+		const s = this._spot(eco, a, 1);
+		if (!s) return { ok: false, count: 0 };
+		const P = eco.plants;
+		const n = P.n;
+		const land = s.tiles.filter((i) => !P.water[i]);
+		if (!land.length) return { ok: false, count: 0, reason: 'land' };
+		const Rg = eco.registry;
+		let sp = null;
+		for (const id of Rg.living) {
+			const x = Rg.get(id);
+			if (x && x.group === 'bug' && x.nicheIndex === BUG_PEST && x.category === 'locust' && x.population > 0 && (!sp || x.population > sp.population)) sp = x;
+		}
+		const g = new Float32Array(BG);
+		if (sp) {
+			const src = sp.mean && sp.mean.length >= BG ? sp.mean : sp.genome;
+			for (let k = 0; k < BG; k++) g[k] = src[k];
+		} else {
+			const arch = BUG_ARCHETYPES[1].g;
+			for (let k = 0; k < BG && k < arch.length; k++) g[k] = arch[k];
+		}
+		if (g[B_SWARM] < GOD_LOCUST_SWARM) g[B_SWARM] = GOD_LOCUST_SWARM;
+		if (!sp) sp = B._newSpecies(g, BUG_PEST, 0, null, eco.tick, 'migrated');
+		let stripped = 0;
+		for (const i of land) {
+			B._set(i, sp, g, 0, 1);
+			const u = n + i;
+			if (P.species[i]) {
+				stripped += P.biomass[i] * (1 - GOD_LOCUST_STRIP);
+				P.biomass[i] *= GOD_LOCUST_STRIP;
+				P.fruit[i] = 0;
+			}
+			if (P.species[u] && !P.kind[u]) {
+				stripped += P.biomass[u] * (1 - GOD_LOCUST_STRIP);
+				P.biomass[u] *= GOD_LOCUST_STRIP;
+				P.fruit[u] = 0;
+			}
+		}
+		B.pestDamage += stripped;
+		B._sumTotals();
+		B.version++;
+		P.version++;
+		this._count('locusts');
+		const c = land.length;
+		const name = sp.name;
+		this._log(eco, 0, () => `You loosed a plague of ${name} locusts over ${c} tiles`, c, sp.id);
+		return { ok: true, count: c, sp: sp.id };
 	}
 
 	_refresh(eco, tiles, before) {
