@@ -96,7 +96,9 @@ class Ecosystem {
 		this.eggs = typeof EggPool === 'function' ? new EggPool(world, this.animals, this.registry) : null;
 		this.animals.eggs = this.eggs;
 		this.plants.refreshSpeciesMeans();
-		for (const a of ANIMAL_ARCHETYPES) this._introduce(a, 'founder');
+		const cfg = world.cfg || worldCfgParams(null);
+		if (!cfg.div && cfg.animalK === 1) for (const a of ANIMAL_ARCHETYPES) this._introduce(a, 'founder');
+		else this._introduceFounders(cfg);
 		this.bugs = typeof BugLayer === 'function' ? new BugLayer(world, this.plants, this.animals, this.registry, this.log, new FastRng(seed + 333)) : null;
 		this.animals.bugs = this.bugs;
 		if (this.bugs) this.bugs.refreshSpeciesMeans();
@@ -146,6 +148,22 @@ class Ecosystem {
 			this.log.push(0, 'secret', text);
 		}
 	}
+	_introduceFounders(cfg) {
+		const seen = new Set();
+		const scale = (n) => Math.max(4, Math.round(n * cfg.animalK));
+		ANIMAL_ARCHETYPES.forEach((a, k) => {
+			const key = a.domain + ':' + a.cls + ':' + (a.nic | 0);
+			const first = !seen.has(key);
+			seen.add(key);
+			if (cfg.div < 0 && !first && k % 2 === 1) return;
+			this._introduce(a, 'founder', scale(a.n));
+		});
+		if (cfg.div > 0) {
+			const rng = new FastRng(this.seed + 2323);
+			for (const a of ANIMAL_ARCHETYPES) this._introduce({ ...a, g: jitterGenes(a.g, rng, 0.1) }, 'founder', scale(Math.ceil(a.n * 0.6)));
+		}
+	}
+
 	_introduce(arch, origin, count) {
 		const A = this.animals;
 		const W = this.world.width;

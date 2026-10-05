@@ -2508,7 +2508,7 @@ class AnimalPool {
 			let drain = 0;
 			const emax = em0;
 			const e = this.energy[i];
-			const mig = dom === 3 && temp[tile] - SEASON_T < this.pT[i];
+			const mig = dom === 3 && temp[tile] - SEASON_T * (this.world.seasonK || 1) < this.pT[i];
 			const prep = mig || temp[tile] < FAT_COLD_T;
 			const fatCap = emax * FAT_MAX * this.app[i] * (prep ? FAT_MIG : 1);
 			const full = fat < fatCap ? emax * (1 + APP_OVER * this.app[i]) : emax;

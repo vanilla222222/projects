@@ -215,6 +215,7 @@ const EvoSave = (() => {
 			h: eco.world.height,
 			worldGen: eco.world.gen || 2,
 			secret: (eco.world.options && eco.world.options.secret) || undefined,
+			cfg: eco.world.options && eco.world.options.cfg ? worldCfgOf(eco.world.options.cfg) : undefined,
 			tick: eco.tick,
 			meta,
 			records,
@@ -315,7 +316,10 @@ const EvoSave = (() => {
 
 	async function decode(gz, makeWorld) {
 		const { header, bin } = await readHeader(gz);
-		const world = makeWorld(header.w, header.h, header.seed, header.secret ? { gen: header.worldGen || 2, secret: header.secret } : { gen: header.worldGen || 2 });
+		const wopts = { gen: header.worldGen || 2 };
+		if (header.secret) wopts.secret = header.secret;
+		if (header.cfg && typeof header.cfg === 'object') wopts.cfg = worldCfgOf(header.cfg);
+		const world = makeWorld(header.w, header.h, header.seed, wopts);
 		if (Array.isArray(header.god) && header.god.length) {
 			if (typeof GodTools !== 'function') throw new Error('Save file needs the god tools');
 			for (const e of header.god) GodTools.paintWorld(world, e);

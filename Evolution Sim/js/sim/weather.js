@@ -161,7 +161,7 @@ class WeatherLayer {
 
 	step(tick, season) {
 		this.season = season;
-		this.seasonT = SEASON_T * season;
+		this.seasonT = SEASON_T * (this.world.seasonK || 1) * season;
 		if (!this.on || tick % WEATHER_EVERY !== 0) return;
 		if (this.drought && tick >= this.droughtEnd) this._endDrought(tick, false);
 		if (tick % YEAR_TICKS === 0 && !this.drought && tick - this.lastDroughtEnd >= YEAR_TICKS && this.rng.next() < DROUGHT_P) this._startDrought(tick);
