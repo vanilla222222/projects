@@ -59,13 +59,14 @@ class EggPool {
 		this.ca = grow(this.ca, Uint8Array, 1);
 		this.dia = grow(this.dia, Uint16Array, 1);
 		this.par = grow(this.par, Int32Array, 1);
+		this.lin = grow(this.lin, Uint8Array, 1);
 		this.alive = grow(this.alive, Uint8Array, 1);
 		this.next = grow(this.next, Int32Array, 1);
 		this.genome = grow(this.genome, Float32Array, AG);
 		this.cap = newCap;
 	}
 
-	lay(sp, genome, gOff, x, y, tile, energy, dom, imm, nst, str, ca, par) {
+	lay(sp, genome, gOff, x, y, tile, energy, dom, imm, nst, str, ca, par, lin) {
 		if (this.count >= this.cap) this._grow(this.cap * 2);
 		const e = this.count++;
 		const o = e * AG;
@@ -83,6 +84,7 @@ class EggPool {
 		this.ca[e] = ca ? 1 : 0;
 		this.dia[e] = 0;
 		this.par[e] = par || 0;
+		this.lin[e] = lin || 0;
 		if (nst) this.nestLaid++;
 		this.alive[e] = 1;
 		this.next[e] = this.head[tile];
@@ -178,6 +180,7 @@ class EggPool {
 			}
 			const j = A.spawn(sp, this.genome, e * AG, this.x[e], this.y[e], 0);
 			A._hatch(j, t, this.par[e]);
+			if (A.lin && this.lin) A.lin[j] = this.lin[e];
 			A.energy[j] = Math.min(this.energy[e], A.emax[j] * A.gf[j] * 0.6);
 			A.natImm[j] = this.imm[e];
 			if (this.nst[e]) {
@@ -215,6 +218,7 @@ class EggPool {
 				this.ca[w] = this.ca[e];
 				this.dia[w] = this.dia[e];
 				this.par[w] = this.par[e];
+				if (this.lin) this.lin[w] = this.lin[e];
 				this.alive[w] = 1;
 				this.genome.copyWithin(w * AG, e * AG, e * AG + AG);
 			}

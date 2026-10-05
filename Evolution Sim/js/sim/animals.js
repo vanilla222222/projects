@@ -739,6 +739,7 @@ ANIMAL_FIELDS_F.push('lk', 'pb');
 ANIMAL_FIELDS_I.push('cln');
 ANIMAL_FIELDS_F.push('mwx', 'mwy', 'mfx', 'mfy', 'mdx', 'mdy', 'lst', 'tl');
 ANIMAL_FIELDS_I.push('lsp');
+ANIMAL_FIELDS_I.push('lin');
 
 class AnimalPool {
 	constructor(world, plants, registry, rng, log) {
@@ -1010,6 +1011,7 @@ class AnimalPool {
 		this.lst[i] = 0;
 		this.tl[i] = 0;
 		this.lsp[i] = 0;
+		this.lin[i] = 0;
 		this.registry.add(sp);
 		return i;
 	}
@@ -3534,12 +3536,13 @@ class AnimalPool {
 			}
 			if (layer) {
 				const cost = perChild * EGG_COST;
-				this.eggs.lay(sp, childG, 0, ex + 0.15 + 0.7 * rng.next(), ey + 0.15 + 0.7 * rng.next(), eggTile, cost, eggDom, im, nest, vs, ca, this.uid[i]);
+				this.eggs.lay(sp, childG, 0, ex + 0.15 + 0.7 * rng.next(), ey + 0.15 + 0.7 * rng.next(), eggTile, cost, eggDom, im, nest, vs, ca, this.uid[i], this.lin[i]);
 				spent += cost;
 				continue;
 			}
 			const j = this.spawn(sp, childG, 0, x, y, 0);
 			this._hatch(j, -1, 0);
+			this.lin[j] = this.lin[i];
 			this.energy[j] = Math.min(perChild, this.emax[j] * this.gf[j] * 0.6);
 			this.natImm[j] = im;
 			this.nProt[j] = this.nProt[i];

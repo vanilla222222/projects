@@ -9,6 +9,7 @@ uniform sampler2D u_veg;
 uniform sampler2D u_info;
 uniform sampler2D u_bugs;
 uniform sampler2D u_alt;
+uniform sampler2D u_secret;
 uniform vec2 u_origin;
 uniform float u_scale;
 uniform vec2 u_res;
@@ -94,6 +95,53 @@ void main() {
 		shade = mix(shade, hs, land);
 	}
 	col *= shade;
+	vec4 sc = texture(u_secret, uv);
+	float nuc = sc.r * land;
+	float mag = sc.g * land;
+	if (nuc > 0.002) {
+		float cz2 = smoothstep(1.5, 5.0, ppt);
+		vec2 cp = w * 1.3;
+		vec2 ci = floor(cp);
+		vec2 cf = fract(cp);
+		float d1 = 9.0;
+		float d2 = 9.0;
+		for (int j = -1; j <= 1; j++) {
+			for (int i = -1; i <= 1; i++) {
+				vec2 g = vec2(float(i), float(j));
+				vec2 o = vec2(hash(ci + g), hash(ci + g + 19.1));
+				float d = length(g + o - cf);
+				if (d < d1) {
+					d2 = d1;
+					d1 = d;
+				} else if (d < d2) d2 = d;
+			}
+		}
+		float crack = (1.0 - smoothstep(0.02, 0.07 + u_scale * 2.0, d2 - d1)) * cz2;
+		float pulse = 0.6 + 0.4 * sin(u_time * 2.2 + vnoise(w * 0.4) * 6.2832);
+		vec3 sick = mix(col, vec3(dot(col, vec3(0.3, 0.5, 0.2))) * vec3(0.78, 0.9, 0.42), 0.65) * 0.82;
+		sick = mix(sick, vec3(0.08, 0.1, 0.05), crack * 0.75);
+		sick += vec3(0.35, 1.0, 0.2) * crack * pulse * 0.6;
+		sick += vec3(0.22, 0.65, 0.08) * vnoise(w * 0.7 + u_time * 0.15) * 0.18 * pulse;
+		col = mix(col, sick, nuc);
+	}
+	if (mag > 0.002) {
+		float hue = vnoise(w * 0.35 + vec2(u_time * 0.08, -u_time * 0.05)) * 1.6 + u_time * 0.05;
+		vec3 pt = mix(vec3(0.58, 0.26, 0.88), vec3(0.12, 0.82, 0.76), 0.5 + 0.5 * sin(hue * 6.2832));
+		vec3 m = mix(col, col * 0.5 + pt * 0.6, 0.7);
+		vec2 sp = w * 2.0;
+		vec2 si = floor(sp);
+		vec2 sf = fract(sp);
+		float h = hash(si + 7.3);
+		vec2 so = vec2(hash(si + 3.1), hash(si + 5.7)) * 0.6 + 0.2;
+		vec2 dd = abs(sf - so);
+		float tw = pow(max(0.0, sin(u_time * (1.5 + h * 2.5) + h * 40.0)), 12.0) * step(0.45, h);
+		float core = exp(-dot(dd, dd) * 300.0);
+		float cross = exp(-dd.x * 60.0 - dd.y * 600.0) + exp(-dd.y * 60.0 - dd.x * 600.0);
+		float sfade = smoothstep(1.0, 4.0, ppt);
+		m += vec3(0.95, 0.95, 1.0) * (core + cross * 0.7) * tw * sfade;
+		m += pt * 0.08 * (1.0 - sfade) * (0.5 + 0.5 * sin(u_time * 1.7 + w.x * 0.3));
+		col = mix(col, m, mag);
+	}
 	if (u_cloud > 0.0) {
 		vec2 drift = vec2(u_time * 0.35, -u_time * 0.27);
 		vec2 bw = (w + (vec2(vnoise(w * 0.3 + drift * 0.5), vnoise(w * 0.3 - drift * 0.5 + 9.1)) - 0.5) * 2.0) / u_map;
@@ -129,14 +177,21 @@ out vec3 v_c0;
 out vec3 v_c1;
 out vec3 v_c2;
 out float v_alpha;
+out vec2 v_q;
+flat out float v_fx;
+flat out float v_seed;
 void main() {
 	float fw = abs(a_extra.x);
 	vec2 w = a_inst.xy + a_corner * vec2(a_inst.z * (fw < 0.01 ? 1.0 : fw), a_inst.z);
 	vec2 p = (w - u_origin) / u_scale;
 	gl_Position = vec4(p.x / u_res.x * 2.0 - 1.0, 1.0 - p.y / u_res.y * 2.0, 0.0, 1.0);
-	float icon = a_inst.w;
+	float code = floor(a_inst.w / 4096.0);
+	float icon = a_inst.w - code * 4096.0;
+	v_fx = mod(code, 3.0);
+	v_seed = floor(code / 3.0) / 16.0;
 	vec2 cell = vec2(mod(icon, u_grid.x), floor(icon / u_grid.x));
 	vec2 c = a_corner + 0.5;
+	v_q = c;
 	if (a_extra.x < 0.0) c.x = 1.0 - c.x;
 	v_uv = (cell + c) / u_grid;
 	v_c0 = a_c0;
@@ -154,7 +209,16 @@ in vec3 v_c0;
 in vec3 v_c1;
 in vec3 v_c2;
 in float v_alpha;
+in vec2 v_q;
+flat in float v_fx;
+flat in float v_seed;
+uniform float u_time;
 out vec4 outColor;
+float h21(vec2 p) {
+	p = fract(p * vec2(123.34, 456.21));
+	p += dot(p, p + 45.32);
+	return fract(p.x * p.y);
+}
 void main() {
 	vec4 r = texture(u_role, v_uv, -0.6);
 	if (r.a < 0.01) discard;
@@ -162,6 +226,36 @@ void main() {
 	float s = r.r + r.g + r.b;
 	vec3 tint = s > 0.001 ? (r.r * v_c0 + r.g * v_c1 + r.b * v_c2) / s : vec3(0.0);
 	vec3 col = tint * max(r.a - f.a, 0.0) + f.rgb;
+	if (v_fx > 0.5) {
+		float t = u_time + v_seed * 37.0;
+		if (v_fx < 1.5) {
+			float pulse = 0.65 + 0.35 * sin(t * 3.0);
+			vec3 g = mix(col, vec3(dot(col, vec3(0.3, 0.55, 0.15))) * vec3(0.55, 1.15, 0.35), 0.7);
+			g += vec3(0.12, 0.42, 0.06) * pulse * r.a;
+			vec2 sp = v_q * 3.2 + v_seed * 11.0;
+			vec2 si = floor(sp);
+			vec2 so = vec2(h21(si), h21(si + 5.1)) * 0.5 + 0.25;
+			float d = length(fract(sp) - so);
+			float on = step(0.5, h21(si + 2.7));
+			float spot = (1.0 - smoothstep(0.14, 0.2, d)) * on;
+			float ring = (1.0 - smoothstep(0.0, 0.07, abs(d - 0.24))) * on;
+			g = mix(g, vec3(0.06, 0.09, 0.03) * r.a, spot * 0.85);
+			g += vec3(0.5, 1.0, 0.25) * ring * pulse * 0.5 * r.a;
+			col = g;
+		} else {
+			float hue = v_q.x * 0.7 + v_q.y * 0.5 + t * 0.3;
+			vec3 ir = 0.55 + 0.45 * cos(6.2832 * (hue + vec3(0.0, 0.33, 0.67)));
+			col = mix(col, (col * 0.55 + ir * 0.55) * r.a, 0.6);
+			vec2 sp = v_q * 4.0 + v_seed * 13.0;
+			vec2 si = floor(sp);
+			vec2 so = vec2(h21(si + 1.3), h21(si + 8.9)) * 0.6 + 0.2;
+			vec2 dd = abs(fract(sp) - so);
+			float hs = h21(si + 4.4);
+			float tw = pow(max(0.0, sin(t * (2.0 + hs * 3.0) + hs * 30.0)), 10.0);
+			float star = exp(-dot(dd, dd) * 180.0) + exp(-dd.x * 40.0 - dd.y * 300.0) + exp(-dd.y * 40.0 - dd.x * 300.0);
+			col += vec3(1.0, 0.97, 1.0) * star * tw * r.a * 0.9;
+		}
+	}
 	outColor = vec4(col, r.a) * v_alpha;
 }`;
 
@@ -452,6 +546,11 @@ const DRY_TINT = new Uint8Array(9).map((_, q) => [225, 30, 35][q % 3]);
 const DRY_MARK = 1.35;
 const WX_ZOOM = [6, 18];
 const WX_TIME_WRAP = 600;
+const SECRET_FX = 4096;
+const SECRET_HALO = 1.45;
+const SECRET_HALO_ALPHA = 0.32;
+const SECRET_NUC_RGB = new Uint8Array([120, 255, 70, 90, 220, 50, 160, 255, 110]);
+const SECRET_MAG_RGB = new Uint8Array([190, 110, 255, 80, 230, 220, 240, 180, 255]);
 
 const RAMP_LUTS = {};
 function rampFor(mode) {
@@ -639,9 +738,20 @@ class WorldRenderer {
 		return tex;
 	}
 
+	_secretTex(W, H, sec) {
+		if (!sec) return this._tex(1, 1, new Uint8Array(4), false);
+		const d = new Uint8Array(W * H * 4);
+		for (let i = 0; i < W * H; i++) {
+			const k = sec[i];
+			if (k === 1) d[i * 4] = 255;
+			else if (k === 2) d[i * 4 + 1] = 255;
+		}
+		return this._tex(W, H, d, true);
+	}
+
 	setWorld(world, eco) {
 		const gl = this.gl;
-		for (const t of [this.terrainTex, this.vegTex, this.infoTex, this.bugTex, this.altTex]) if (t) gl.deleteTexture(t);
+		for (const t of [this.terrainTex, this.vegTex, this.infoTex, this.bugTex, this.altTex, this.secretTex]) if (t) gl.deleteTexture(t);
 		this.world = world;
 		this.eco = eco;
 		const W = world.width;
@@ -660,6 +770,7 @@ class WorldRenderer {
 		this.vegTex = this._tex(W, H, this.vegData, true);
 		this.infoTex = this._tex(W, H, info, true);
 		this.altTex = this._altTex(W, H, world.altitude);
+		this.secretTex = this._secretTex(W, H, world.secretKinds ? world.secret : null);
 		this.bugData = new Uint8Array(W * H * 4);
 		this.bugTex = this._tex(W, H, this.bugData, true);
 		this.lastBugUpdate = 0;
@@ -1272,6 +1383,9 @@ class WorldRenderer {
 		gl.activeTexture(gl.TEXTURE4);
 		gl.bindTexture(gl.TEXTURE_2D, this.altTex);
 		gl.uniform1i(tp.u.u_alt, 4);
+		gl.activeTexture(gl.TEXTURE5);
+		gl.bindTexture(gl.TEXTURE_2D, this.secretTex);
+		gl.uniform1i(tp.u.u_secret, 5);
 		gl.uniform2f(tp.u.u_origin, ox, oy);
 		gl.uniform1f(tp.u.u_scale, scale);
 		gl.uniform2f(tp.u.u_res, this.canvas.width, this.canvas.height);
@@ -1315,6 +1429,7 @@ class WorldRenderer {
 			gl.uniform1f(sp.u.u_scale, scale);
 			gl.uniform2f(sp.u.u_res, this.canvas.width, this.canvas.height);
 			gl.uniform2f(sp.u.u_grid, this.atlas.cols, this.atlas.rows);
+			gl.uniform1f(sp.u.u_time, this.time % WX_TIME_WRAP);
 			gl.bindVertexArray(this.spriteVao);
 			gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, n);
 			gl.bindVertexArray(null);
@@ -1636,6 +1751,8 @@ class WorldRenderer {
 		const lkA = A.lk;
 		const reg = this.eco.registry;
 		const mim = this._mimCol || (this._mimCol = new Uint8Array(9));
+		const linA = this.world && this.world.secretKinds ? A.lin : null;
+		const uidA = A.uid;
 		for (let k = 0, cnt = A.count; k < cnt * 2; k++) {
 			const i = k < cnt ? k : k - cnt;
 			const air = dom[i] === 3;
@@ -1658,9 +1775,12 @@ class WorldRenderer {
 			const old = !sick && ef && ef[i] < 1;
 			const ca = old ? this._elderTint(co0, ca0, ef[i]) : ca0;
 			const co = old ? 0 : co0;
+			const lk = linA ? linA[i] : 0;
+			const fx = lk ? (lk + 3 * (uidA[i] & 15)) * SECRET_FX : 0;
 			if (dots) {
 				const ds = ((3 + A.mass[i] * 0.9) / zoom) * g;
-				n = th ? this._put(n, x, y, ds * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, a, 0, th) : this._put(n, x, y, ds, dotIcon, 1, a, co, ca);
+				if (lk) n = this._put(n, x, y, ds * SECRET_HALO, dotIcon, 1, a * SECRET_HALO_ALPHA, 0, lk === 1 ? SECRET_NUC_RGB : SECRET_MAG_RGB);
+				n = th ? this._put(n, x, y, ds * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, a, 0, th) : this._put(n, x, y, ds, dotIcon + fx, 1, a, co, ca);
 			} else {
 				const ride = symb && stA && stA[i] === 9;
 				const size = Math.max(12 / zoom, 0.8 + 0.45 * A.mass[i]) * g * (zz ? DORM_SHRINK : 1) * (lv ? LARVA_SHRINK : 1) * (ride ? RIDE_SHRINK : 1);
@@ -1670,7 +1790,8 @@ class WorldRenderer {
 				const er = en[i] / cap;
 				const wd = (fr > 0 ? 1 + Math.min(FAT_WIDE_MAX, fr * FAT_WIDE) : er < THIN_AT ? THIN_MIN + (1 - THIN_MIN) * (er > 0 ? er / THIN_AT : 0) : 1) * (g < 1 && !lv ? 1 + (JUV_ROUND - 1) * (1 - g) / (1 - JUV_MIN) : 1);
 				if (sv >= CREST_MIN && zoom >= CREST_ZOOM) n = this._put(n, x - size * 0.12 * A.face[i], ly - size * 0.62, size * CREST_SCALE * (0.6 + sv), crestIcon, A.face[i], a, co, ca);
-				n = this._put(n, x, ly - size * 0.1, size, lv === 1 ? tadIcon : lv === 2 ? larIcon : icons[id], A.face[i] * wd * (zz ? DORM_WIDE : 1) * (lv ? 1 : this.spWide[id]), a, co, ca);
+				if (lk) n = this._put(n, x, ly - size * 0.1, size * SECRET_HALO, dotIcon, 1, a * SECRET_HALO_ALPHA, 0, lk === 1 ? SECRET_NUC_RGB : SECRET_MAG_RGB);
+				n = this._put(n, x, ly - size * 0.1, size, (lv === 1 ? tadIcon : lv === 2 ? larIcon : icons[id]) + fx, A.face[i] * wd * (zz ? DORM_WIDE : 1) * (lv ? 1 : this.spWide[id]), a, co, ca);
 				const am = almA ? almA[i] : 0;
 				if (am > ALARM_COOL - ALARM_RING) {
 					const rt = (ALARM_COOL - am) / ALARM_RING;

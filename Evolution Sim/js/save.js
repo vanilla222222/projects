@@ -213,6 +213,7 @@ const EvoSave = (() => {
 			w: eco.world.width,
 			h: eco.world.height,
 			worldGen: eco.world.gen || 2,
+			secret: (eco.world.options && eco.world.options.secret) || undefined,
 			tick: eco.tick,
 			meta,
 			records,
@@ -269,7 +270,15 @@ const EvoSave = (() => {
 		return { header, bin };
 	}
 
+	function upgradeLineage(eco) {
+		const A = eco.animals;
+		if (A && A.cap && (!A.lin || A.lin.length < A.cap)) A.lin = new Int32Array(A.cap);
+		const E = eco.eggs;
+		if (E && E.cap && (!E.lin || E.lin.length < E.cap)) E.lin = new Uint8Array(E.cap);
+	}
+
 	function upgrade(eco) {
+		upgradeLineage(eco);
 		if (typeof PG !== 'number') return;
 		const grow = (o, k) => {
 			if (o && o[k] && o[k].length < PG) o[k] = new Float32Array(PG);
@@ -298,7 +307,7 @@ const EvoSave = (() => {
 
 	async function decode(gz, makeWorld) {
 		const { header, bin } = await readHeader(gz);
-		const world = makeWorld(header.w, header.h, header.seed, { gen: header.worldGen || 2 });
+		const world = makeWorld(header.w, header.h, header.seed, header.secret ? { gen: header.worldGen || 2, secret: header.secret } : { gen: header.worldGen || 2 });
 		const eco = deserialize(header.records, bin, world);
 		if (!eco || eco.world !== world || eco.tick !== header.tick) throw new Error('Save file contents are inconsistent');
 		upgrade(eco);
