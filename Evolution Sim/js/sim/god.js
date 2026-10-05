@@ -28,6 +28,11 @@ const GOD_STER_MIN = 10;
 const GOD_STER_MAX = 5000;
 const GOD_FX_MAX = 12;
 const GOD_BLESS = ['feed', 'heal', 'sterile', 'cull'];
+const GOD_DESIGN_MAX = 60;
+const GOD_DESIGN_TRAITS = { size: G_SIZE, speed: G_SPEED, sense: G_SENSE, temp: G_TEMP, tol: G_TOL, fec: G_FEC, armor: G_ARMOR, herd: G_HERD, brain: G_BRAIN };
+const GOD_DESIGN_HABITATS = [['water'], ['amph'], ['land', 'water', 'amph'], ['land', 'water'], ['air'], ['land', 'water']];
+const GOD_DESIGN_DIETS = { herb: [0.08, 0.1], omni: [0.5, 0.1], carn: [0.85, 0.1], scav: [0.75, 0.85], fisher: [0.78, 0.1] };
+const GOD_NAME_MAX = 24;
 
 class GodTools {
 	constructor() {
@@ -204,6 +209,7 @@ class GodTools {
 		if (a.kind === 'locust') return this._locust(eco, a);
 		if (GOD_BLESS.includes(a.kind)) return this._bless(eco, a);
 		if (a.kind === 'fertilise' || a.kind === 'blight') return this._soil(eco, a);
+		if (a.kind === 'design') return this._design(eco, a);
 		return { ok: false, count: 0 };
 	}
 
@@ -257,6 +263,119 @@ class GodTools {
 			placed++;
 		}
 		return placed;
+	}
+
+	static designGenome(d) {
+		if (!d || typeof d !== 'object') return null;
+		const cls = d.cls | 0;
+		if (!(cls >= 0 && cls < ANIMAL_CLASSES.length) || String(d.cls) !== String(cls)) return null;
+		const habs = GOD_DESIGN_HABITATS[cls];
+		const domain = habs.includes(d.habitat) ? d.habitat : habs[0];
+		const dietKey = GOD_DESIGN_DIETS[d.diet] && (d.diet !== 'fisher' || cls === CLS_BIRD) ? d.diet : 'herb';
+		const nic = dietKey === 'fisher' ? 1 : 0;
+		const [diet, scav] = GOD_DESIGN_DIETS[dietKey];
+		let base = null;
+		let best = Infinity;
+		for (const arch of ANIMAL_ARCHETYPES) {
+			if (arch.cls !== cls) continue;
+			const dist = (arch.domain === domain ? 0 : 10) + ((arch.nic | 0) === nic ? 0 : 5) + Math.abs(arch.g[G_DIET] - diet) + Math.abs(arch.g[G_SCAV] - scav);
+			if (dist < best) {
+				best = dist;
+				base = arch;
+			}
+		}
+		if (!base) return null;
+		const g = new Float32Array(AG);
+		for (let k = 0; k < AG && k < base.g.length; k++) g[k] = base.g[k];
+		g[G_DIET] = diet;
+		g[G_SCAV] = scav;
+		const src = d.genes && typeof d.genes === 'object' ? d.genes : {};
+		for (const key of Object.keys(GOD_DESIGN_TRAITS)) {
+			const v = +src[key];
+			if (!Number.isFinite(v)) continue;
+			g[GOD_DESIGN_TRAITS[key]] = Math.round((v < 0 ? 0 : v > 1 ? 1 : v) * 100) / 100;
+		}
+		for (let k = 0; k < AG; k++) g[k] = g[k] < 0 ? 0 : g[k] > 1 ? 1 : g[k];
+		AnimalPool.prototype._clampClass(g, cls);
+		return { g, cls, domain, nic, diet: dietKey };
+	}
+
+	static designStats(d) {
+		const res = GodTools.designGenome(d);
+		if (!res) return null;
+		const store = { genome: res.g, cls: [res.cls] };
+		const fake = new Proxy(store, { get: (o, k) => (k in o ? o[k] : (o[k] = [0])) });
+		AnimalPool.prototype._decode.call(fake, 0);
+		const pick = (k) => store[k][0];
+		return {
+			cls: res.cls,
+			domain: res.domain,
+			nic: res.nic,
+			genome: res.g,
+			category: animalCategory(res.g, res.domain, res.cls, res.nic),
+			role: ANIMAL_ROLES[roleIndex(res.g[G_DIET], res.g[G_SCAV])],
+			mass: pick('mass'),
+			speed: pick('spd'),
+			range: pick('range'),
+			meta: pick('meta'),
+			litter: pick('litter'),
+			mature: pick('mature'),
+			maxAge: pick('maxAge'),
+			tempLo: Math.max(0, pick('pT') - pick('tol')),
+			tempHi: Math.min(1, pick('pT') + pick('tol')),
+		};
+	}
+
+	static designName(v) {
+		if (typeof v !== 'string') return '';
+		return v.replace(/[^A-Za-z' -]/g, '').replace(/\s+/g, ' ').trim().slice(0, GOD_NAME_MAX);
+	}
+
+	_design(eco, a) {
+		const res = GodTools.designGenome(a);
+		if (!res) return { ok: false, count: 0, reason: 'genome' };
+		const { pts, r } = GodTools.clean(eco.world, a);
+		if (!pts.length) return { ok: false, count: 0 };
+		const A = eco.animals;
+		const rng = eco.rng;
+		const dom = domainIndex(res.domain);
+		const n = Math.max(1, Math.min(GOD_DESIGN_MAX, a.n | 0));
+		const spread = Math.max(0.5, r);
+		const spots = [];
+		for (let k = 0; k < n; k++) {
+			if (A.count + spots.length / 2 >= A.maxAnimals + 1500) break;
+			for (let t = 0; t < 12; t++) {
+				const cx = pts[0] + (rng.next() * 2 - 1) * spread;
+				const cy = pts[1] + (rng.next() * 2 - 1) * spread;
+				if (A.canStand(dom, cx, cy)) {
+					spots.push(cx, cy);
+					break;
+				}
+			}
+		}
+		if (!spots.length) return { ok: false, count: 0, reason: 'spot' };
+		const sp = A.newSpecies(res.g, 0, res.domain, null, eco.tick, 'created', res.cls, res.nic);
+		const want = GodTools.designName(a.name);
+		const reg = eco.registry;
+		if (want && !reg.names.has(want)) {
+			reg.names.delete(sp.name);
+			reg.names.add(want);
+			sp.name = want;
+		}
+		const g = new Float32Array(AG);
+		for (let k = 0; k + 1 < spots.length; k += 2) {
+			mutateGenes(res.g, 0, g, 0, AG, rng, 0.25, 0.02);
+			A._clampClass(g, res.cls);
+			const idx = A.spawn(sp, g, 0, spots[k], spots[k + 1], 0.8);
+			A.age[idx] = Math.floor(A.mature[idx] * (0.6 + rng.next()));
+		}
+		const count = spots.length >> 1;
+		this.created = (this.created | 0) + 1;
+		this.spawned += count;
+		const name = sp.name;
+		const what = ANIMAL_CLASSES[res.cls];
+		this._log(eco, 0, () => `You created ${name}, a new ${what} species (${count} placed)`, count, sp.id);
+		return { ok: true, count, sp: sp.id, name };
 	}
 
 	_spawnPlants(eco, sp, pts, r, n) {
