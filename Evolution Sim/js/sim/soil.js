@@ -39,22 +39,29 @@ class SoilLayer {
 		this.row = new Float32Array(n);
 	}
 
-	step(P) {
+	restoreDerived(world) {
 		const n = this.n;
-		const W = this.W;
-		const H = this.H;
+		this.base = new Float32Array(n);
+		for (let i = 0; i < n; i++) {
+			const f = world.fertility[i];
+			this.base[i] = f > 0 ? (f < SOIL_MAX ? f : SOIL_MAX) : 0;
+		}
+		this.own = new Float32Array(n * 2);
+		this.tile = new Float32Array(n);
+		this.row = new Float32Array(n);
+	}
+
+	step(P) {
+		this._uptake(P.biomass, P.root, P.kind);
+		this._rows();
+		this._flow(P.sat, P.kind);
+		if (this._cellTick++ % CARRION_CELL_EVERY === 0) this._buildCarrionCells();
+	}
+
+	_uptake(bio, root, kind) {
+		const n = this.n;
 		const own = this.own;
 		const tile = this.tile;
-		const row = this.row;
-		const nut = this.nutrient;
-		const base = this.base;
-		const bio = P.biomass;
-		const root = P.root;
-		const sat = P.sat;
-		const kind = P.kind;
-		const litter = this.litter;
-		const carrion = this.carrion;
-
 		for (let i = 0; i < n; i++) {
 			const u = n + i;
 			let a = bio[i] * SOIL_UPTAKE * (0.5 + root[i]);
@@ -65,6 +72,13 @@ class SoilLayer {
 			own[u] = b;
 			tile[i] = a + b;
 		}
+	}
+
+	_rows() {
+		const W = this.W;
+		const H = this.H;
+		const tile = this.tile;
+		const row = this.row;
 		for (let y = 0; y < H; y++) {
 			const o = y * W;
 			const last = o + W - 1;
@@ -75,6 +89,18 @@ class SoilLayer {
 				row[i] = s;
 			}
 		}
+	}
+
+	_flow(sat, kind) {
+		const n = this.n;
+		const W = this.W;
+		const own = this.own;
+		const tile = this.tile;
+		const row = this.row;
+		const nut = this.nutrient;
+		const base = this.base;
+		const litter = this.litter;
+		const carrion = this.carrion;
 		const tail = n - W;
 		let totalLitter = 0;
 		let totalCarrion = 0;
@@ -117,7 +143,6 @@ class SoilLayer {
 		}
 		this.totalLitter = totalLitter;
 		this.totalCarrion = totalCarrion;
-		if (this._cellTick++ % CARRION_CELL_EVERY === 0) this._buildCarrionCells();
 	}
 
 	_buildCarrionCells() {

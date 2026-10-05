@@ -277,6 +277,24 @@ class BugLayer {
 		this.dorm[q] = 0;
 	}
 
+	restoreDerived() {
+		const m = this.genome.length / BG;
+		const g = this.genome;
+		this.app = new Float32Array(m);
+		this.mob = new Float32Array(m);
+		this.rate = new Float32Array(m);
+		for (let q = 0; q < m; q++) {
+			const base = q * BG;
+			let used = false;
+			for (let k = 0; k < BG; k++) if (g[base + k] !== 0) used = true;
+			if (!used) continue;
+			const app = g[base + B_APPETITE];
+			this.app[q] = app;
+			this.mob[q] = g[base + B_MOBILITY];
+			this.rate[q] = BUG_R * BUG_EVERY * (0.5 + g[base + B_FEC]) * (0.7 + 0.6 * app);
+		}
+	}
+
 	_clear(q) {
 		const id = this.species[q];
 		if (!id) return;
@@ -677,22 +695,34 @@ class BugLayer {
 		const sums = new Map();
 		const water = this.plants.water;
 		const n = this.n;
-		for (let q = 0; q < 4 * n; q++) {
-			const id = this.species[q];
+		const species = this.species, genome = this.genome, density = this.density;
+		let lastId = 0, s = null, lastHue = NaN, hc = 0, hs = 0;
+		for (let q = 0, c = 0; q < 4 * n; q++, c++) {
+			if (c === n) c = 0;
+			const id = species[q];
 			if (!id) continue;
-			let s = sums.get(id);
-			if (!s) {
-				s = new Float64Array(BG + 5);
-				sums.set(id, s);
+			if (id !== lastId) {
+				s = sums.get(id);
+				if (!s) {
+					s = new Float64Array(BG + 5);
+					sums.set(id, s);
+				}
+				lastId = id;
 			}
 			const base = q * BG;
-			for (let k = 0; k < BG; k++) s[k] += this.genome[base + k];
+			for (let k = 0; k < BG; k++) s[k] += genome[base + k];
 			s[BG] += 1;
-			s[BG + 1] += this.density[q];
-			if (water[q % n]) s[BG + 2] += 1;
-			const a = this.genome[base + B_HUE] * 2 * Math.PI;
-			s[BG + 3] += Math.cos(a);
-			s[BG + 4] += Math.sin(a);
+			s[BG + 1] += density[q];
+			if (water[c]) s[BG + 2] += 1;
+			const hue = genome[base + B_HUE];
+			if (hue !== lastHue) {
+				const a = hue * 2 * Math.PI;
+				hc = Math.cos(a);
+				hs = Math.sin(a);
+				lastHue = hue;
+			}
+			s[BG + 3] += hc;
+			s[BG + 4] += hs;
 		}
 		for (const [id, s] of sums) {
 			const sp = this.registry.get(id);

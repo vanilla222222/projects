@@ -682,6 +682,11 @@ const COLONY_MIN = 0.6;
 const COLONY_R = 1.5;
 const COLONY_N = 4;
 const COLONY_POP = 15;
+const MOVE_ANG = [0, 0.7, -0.7, 1.4, -1.4, 2.2, -2.2];
+const MOVE_COS_P = new Float64Array(MOVE_ANG.map((a) => Math.cos(a)));
+const MOVE_SIN_P = new Float64Array(MOVE_ANG.map((a) => Math.sin(a)));
+const MOVE_COS_N = new Float64Array(MOVE_ANG.map((a) => Math.cos(a * -1)));
+const MOVE_SIN_N = new Float64Array(MOVE_ANG.map((a) => Math.sin(a * -1)));
 
 const ANIMAL_FIELDS_F = [
 	'x', 'y', 'px', 'py', 'energy', 'age', 'tx', 'ty',
@@ -1004,6 +1009,10 @@ class AnimalPool {
 		sp.cleanOf = parent && parent.cleanOf ? parent.cleanOf : 0;
 		sp.cleanN = {};
 		sp.cleanLogged = parent && parent.cleanLogged ? parent.cleanLogged.slice() : [];
+		sp.lifeSum = 0;
+		sp.lifeN = 0;
+		sp.colonyAlert = false;
+		sp.tools = 0;
 		return sp;
 	}
 
@@ -1647,12 +1656,12 @@ class AnimalPool {
 		dy /= d;
 		const dom = tad ? 2 : this.domain[i];
 		const W = this.world.width;
-		const angles = [0, 0.7, -0.7, 1.4, -1.4, 2.2, -2.2];
-		const start = this.rng.next() < 0.5 ? 1 : -1;
-		for (let a = 0; a < angles.length; a++) {
-			const ang = angles[a] * start;
-			const cs = Math.cos(ang);
-			const sn = Math.sin(ang);
+		const pos = this.rng.next() < 0.5;
+		const COS = pos ? MOVE_COS_P : MOVE_COS_N;
+		const SIN = pos ? MOVE_SIN_P : MOVE_SIN_N;
+		for (let a = 0; a < 7; a++) {
+			const cs = COS[a];
+			const sn = SIN[a];
 			const mx = dx * cs - dy * sn;
 			const my = dx * sn + dy * cs;
 			const nx = x + mx * step;

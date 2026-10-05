@@ -325,9 +325,8 @@ const PlantGpu = (() => {
 		}
 		let cover = 0;
 		let seedTiles = 0;
-		const seedDens = L.seedDens;
+		if (ck) seedTiles = L._seedPass(tick);
 		for (let i = 0; i < n; i++) {
-			if (ck && seedDens[i] > 0) seedTiles += L._seedTick(i, tick);
 			if (species[i] || species[n + i]) cover++;
 		}
 		L.coverTiles = cover;

@@ -296,6 +296,27 @@ class PlantLayer {
 		this._seed();
 	}
 
+	restoreDerived() {
+		const n = this.n;
+		const n2 = 2 * n;
+		this.water = new Uint8Array(n);
+		this.depth = new Float32Array(n);
+		this.habit = new Float32Array(n);
+		this.seasonAmp = new Float32Array(n);
+		this._prepareClimate();
+		const g = this.genome;
+		const tox = (this.tox = new Float32Array(n2));
+		const disp = (this.disp = new Float32Array(n2));
+		const shade = (this.shade = new Float32Array(n2));
+		const root = (this.root = new Float32Array(n2));
+		for (let p = 0, o = 0; p < n2; p++, o += PG) {
+			tox[p] = g[o + 4];
+			disp[p] = g[o + 5];
+			shade[p] = g[o + 6];
+			root[p] = g[o + 7];
+		}
+	}
+
 	_prepareClimate() {
 		const w = this.world;
 		const sea = BIOME_THRESHOLDS.seaLevel;
@@ -403,6 +424,7 @@ class PlantLayer {
 		sp.kind = k;
 		sp.category = category;
 		sp.icon = plantIcon(category, sp.id);
+		sp.animalSeeds = 0;
 		return sp;
 	}
 
@@ -801,9 +823,8 @@ class PlantLayer {
 		}
 		let cover = 0;
 		let seedTiles = 0;
-		const seedDens = this.seedDens;
+		if (ck) seedTiles = this._seedPass(tick);
 		for (let i = 0; i < n; i++) {
-			if (ck && seedDens[i] > 0) seedTiles += this._seedTick(i, tick);
 			if (species[i] || species[n + i]) cover++;
 			if (poll[i] > 0) poll[i] *= POLL_DECAY;
 		}
@@ -823,6 +844,66 @@ class PlantLayer {
 			this.seedResting = 0;
 		}
 		this.version++;
+	}
+
+	_seedPass(tick) {
+		const n = this.n;
+		const sd = this.seedDens;
+		const seedSp = this.seedSp;
+		const seedGenome = this.seedGenome;
+		const species = this.species;
+		const water = this.water;
+		const moistMul = this.moistMul;
+		const snow = this.snow;
+		const registry = this.registry;
+		const rng = this.rng;
+		const g = this._scratch;
+		let lastId = 0;
+		let sp = null;
+		let tiles = 0;
+		let resting = 0;
+		for (let i = 0; i < n; i++) {
+			const s0 = sd[i];
+			if (!(s0 > 0)) continue;
+			tiles++;
+			const mm = moistMul ? moistMul[i] : 1;
+			const sn = snow ? snow[i] : 0;
+			if (sn > SNOW_SHOW || mm < SEED_REST_DRY) {
+				resting++;
+				continue;
+			}
+			const d = s0 * SEED_DECAY;
+			if (d < SEED_MIN) {
+				sd[i] = 0;
+				seedSp[i] = 0;
+				tiles--;
+				continue;
+			}
+			sd[i] = d;
+			const id = seedSp[i];
+			if (id !== lastId) {
+				sp = registry.get(id);
+				lastId = id;
+			}
+			if (!sp || sp.population <= 0) {
+				sd[i] = 0;
+				seedSp[i] = 0;
+				continue;
+			}
+			const base = i * PG;
+			const pj = slotOf(seedGenome, water[i], base, sp.kind | 0) * n + i;
+			if (species[pj] || rng.next() >= GERM_P * d * (mm * (1 - sn))) continue;
+			for (let k = 0; k < PG; k++) g[k] = seedGenome[base + k];
+			if (this.plantSeed(i, g, sp, tick, false)) {
+				this.germinated++;
+				sd[i] = d * GERM_USE;
+			} else {
+				sd[i] = 0;
+				seedSp[i] = 0;
+			}
+		}
+		this.seedResting += resting;
+		return tiles;
 	}
 
 	_seedTick(i, tick) {
@@ -1002,20 +1083,25 @@ class PlantLayer {
 
 	refreshSpeciesMeans() {
 		const sums = new Map();
+		const species = this.species, genome = this.genome, biomass = this.biomass, health = this.health, blight = this.blight;
+		let lastId = 0, s = null;
 		for (let p = 0; p < 2 * this.n; p++) {
-			const id = this.species[p];
+			const id = species[p];
 			if (!id) continue;
-			let s = sums.get(id);
-			if (!s) {
-				s = new Float64Array(PG + 4);
-				sums.set(id, s);
+			if (id !== lastId) {
+				s = sums.get(id);
+				if (!s) {
+					s = new Float64Array(PG + 4);
+					sums.set(id, s);
+				}
+				lastId = id;
 			}
 			const base = p * PG;
-			for (let k = 0; k < PG; k++) s[k] += this.genome[base + k];
+			for (let k = 0; k < PG; k++) s[k] += genome[base + k];
 			s[PG] += 1;
-			s[PG + 1] += this.biomass[p];
-			s[PG + 2] += this.health[p];
-			if (this.blight[p]) s[PG + 3] += 1;
+			s[PG + 1] += biomass[p];
+			s[PG + 2] += health[p];
+			if (blight[p]) s[PG + 3] += 1;
 		}
 		for (const [id, s] of sums) {
 			const sp = this.registry.get(id);
