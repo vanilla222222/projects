@@ -270,7 +270,15 @@ const EvoSave = (() => {
 		return { header, bin };
 	}
 
+	function upgradeLineage(eco) {
+		const A = eco.animals;
+		if (A && A.cap && (!A.lin || A.lin.length < A.cap)) A.lin = new Int32Array(A.cap);
+		const E = eco.eggs;
+		if (E && E.cap && (!E.lin || E.lin.length < E.cap)) E.lin = new Uint8Array(E.cap);
+	}
+
 	function upgrade(eco) {
+		upgradeLineage(eco);
 		if (typeof PG !== 'number') return;
 		const grow = (o, k) => {
 			if (o && o[k] && o[k].length < PG) o[k] = new Float32Array(PG);

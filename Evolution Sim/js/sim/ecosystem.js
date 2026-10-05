@@ -107,10 +107,45 @@ class Ecosystem {
 		this.disasters = typeof DisasterLayer === 'function' ? new DisasterLayer(world, this.plants, this.weather, this.animals, this.eggs, this.bugs, this.log, new FastRng(seed + 999)) : null;
 		this.animals.dis = this.disasters;
 		this.log.push(0, 'info', 'A new world begins.');
+		this._markSecretFounders();
 		this._computeStats();
 		this._sampleHistory(true);
 	}
 
+	_markSecretFounders() {
+		const w = this.world;
+		const A = this.animals;
+		if (!w || !w.secretKinds || !A || !A.lin) return;
+		const spots = [];
+		if (w.secretKinds & 1) spots.push({ kind: 1, x: w.secretNx + 0.5, y: w.secretNy + 0.5, r: w.secretNr });
+		if (w.secretKinds & 2) spots.push({ kind: 2, x: w.secretMx + 0.5, y: w.secretMy + 0.5, r: w.secretMr });
+		for (const s of spots) {
+			const reach = Math.max(18, s.r * 2.5);
+			const near = [];
+			let marked = 0;
+			for (let i = 0; i < A.count; i++) {
+				if (!A.alive[i] || A.lin[i]) continue;
+				const d = Math.hypot(A.x[i] - s.x, A.y[i] - s.y);
+				if (d <= reach) {
+					A.lin[i] = s.kind;
+					marked++;
+				} else near.push(d, i);
+			}
+			if (marked < 16) {
+				const order = [];
+				for (let k = 0; k < near.length; k += 2) order.push(k);
+				order.sort((a, b) => near[a] - near[b] || near[a + 1] - near[b + 1]);
+				for (let k = 0; k < order.length && marked < 16; k++) {
+					const i = near[order[k] + 1];
+					if (A.lin[i]) continue;
+					A.lin[i] = s.kind;
+					marked++;
+				}
+			}
+			const text = s.kind === 1 ? 'A strange glow on the horizon… something stirs in the cracked earth.' : 'A strange shimmer on the horizon… the air sparkles over a hidden glade.';
+			this.log.push(0, 'secret', text);
+		}
+	}
 	_introduce(arch, origin, count) {
 		const A = this.animals;
 		const W = this.world.width;
