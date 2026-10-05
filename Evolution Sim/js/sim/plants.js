@@ -156,6 +156,30 @@ const LITTER_HOLD = 0.15;
 const PHENO_AUTUMN = 1;
 const PHENO_BARE = 2;
 const PHENO_BLOSSOM = 3;
+const SAL_FRESH = 0;
+const SAL_BRACKISH = 1;
+const SAL_SALT = 2;
+const SAL_MISFIT = 0.55;
+const DEPTH_DIST_MAX = 16;
+const SHELF_MIN = 0.04;
+const SHELF_BASE = 0.08;
+const SHELF_STEP = 0.05;
+const REEF_DEPTH = 0.15;
+const RIVER_DEPTH = 0.05;
+const RIVER_DEEP = 0.1;
+const RIVER_FLOW_DEEP = 12;
+const DELTA_DEPTH = 0.05;
+const POND_DEPTH = 0.1;
+const LAKE_BASE = 0.12;
+const LAKE_STEP = 0.04;
+const LAKE_MAX = 0.45;
+const BRACKISH_SEA = 3;
+const BRACKISH_UP = 2;
+const DELTA_SHALLOW = 0.2;
+const DELTA_FERT = 1.3;
+const NB4X = [1, -1, 0, 0];
+const NB4Y = [0, 0, 1, -1];
+const OCEAN_SET = new Set([BIOME_ID.OCEAN, BIOME_ID.OCEAN_DEEP, BIOME_ID.FROZEN_OCEAN, BIOME_ID.CORAL_REEF]);
 
 const PLANT_ARCHETYPES = [
 	{ g: [0.82, 0.12, 0.5, 0.45, 0.35, 0.4, 0.2, 0.6, 0.15, 0.2, 0.3, 0.15, 0.5, 0.3, 0.15], domain: 'land' },
@@ -184,7 +208,12 @@ const PLANT_ARCHETYPES = [
 	{ g: [0.45, 0.88, 0.55, 0.08, 0.2, 0.5, 0.4, 0.15, 0.05, 0.1, 0.2, 0.6, 0.95, 0.1, 0.15], domain: 'land', het: 0.85 },
 	{ g: [0.56, 0.55, 0.55, 0.1, 0.25, 0.65, 0.4, 0.1, 0.05, 0.1, 0.2, 0.3, 0.2, 0.15, 0.15], domain: 'land', climb: 0.85, het: 0.85 },
 	{ g: [0.6, 0.3, 0.55, 0.35, 0.1, 0.5, 0.4, 0.6, 0, 0, 0, 0, 0.5, 0.15, 0.15], domain: 'water' },
+	{ g: [0.6, 0.18, 0.55, 0.08, 0.1, 0.6, 0.5, 0.45, 0, 0, 0, 0.7, 0.9, 0.1, 0.15], domain: 'water', fresh: 0.9 },
+	{ g: [0.5, 0.12, 0.55, 0.4, 0.1, 0.6, 0.2, 0.6, 0, 0, 0, 0.2, 0.5, 0.15, 0.15], domain: 'water', fresh: 0.85 },
+	{ g: [0.8, 0.14, 0.5, 0.55, 0.15, 0.5, 0.4, 0.7, 0.1, 0, 0, 0.1, 0.5, 0.2, 0.15], domain: 'water', fresh: 0.5 },
+	{ g: [0.5, 0.5, 0.6, 0.05, 0.05, 0.7, 0.5, 0.4, 0, 0, 0, 0.1, 0.5, 0.1, 0.15], domain: 'water', fresh: 0.85 },
 ];
+const WATER_HUE = { cattail: 72, mangrove: 118, pondweed: 128 };
 const PLANT_DEPTH = { 13: 0.5, 14: 0.3, 15: 0.75, 16: 0.25 };
 const PLANT_DEPTH_BASE = 0.45;
 const DISP_FULL = 40;
@@ -200,6 +229,7 @@ PLANT_ARCHETYPES.forEach((a, k) => {
 	plantStrategyDefaults(a.g, 0);
 	if (a.domain !== 'land' || a.kind) for (let k = 23; k < PG; k++) a.g[k] = a.domain === 'water' && k === 23 ? 0.1 : 0;
 	if (a.het) a.g[25] = a.het;
+	if (a.domain === 'water') a.g[25] = a.fresh || 0;
 });
 
 function plantStrategyDefaults(g, o = 0) {
@@ -320,6 +350,7 @@ function plantTraitsFrom(g, o = 0) {
 		defence: g[o + 13],
 		blightRes: g[o + 14],
 		fire: g[o + 16],
+		fresh: g[o + 25],
 		formCap: (0.8 + 2.4 * wood) * (1 + HEIGHT_CAP * (g[o + 20] - 0.5) * wood),
 		growth: 0.05 * (1 - HEIGHT_GROWTH * (g[o + 20] - 0.5) * wood) * (1 - CLONAL_COST * g[o + 22]) * (1 - 0.72 * wood) * (1 - 0.35 * tox) * (1 - 0.12 * disp) * (1 - 0.3 * shade) * (1 - 0.2 * root) * (1 - 0.25 * fruiting - 0.15 * sweet) * (1 - DEFENCE_COST * g[o + 13]) * (1 - BLIGHT_RES_COST * g[o + 14]) * (1 - FIRE_COST * g[o + 16]) * (1 - FIX_COST * g[o + 23]) * (1 - SUCC_COST * g[o + 24]) * (1 - ALLELO_COST * g[o + 26]) * (1 - THORN_COST * g[o + 27]) * (1 - INDUCE_COST * g[o + 28]),
 	};
@@ -358,7 +389,12 @@ function plantCategory(g, domain, kind = 0) {
 	const t = g[0];
 	const m = g[1];
 	const wood = g[3];
-	if (domain === 'water') return wood > 0.25 ? (m > 0.45 ? 'kelp' : 'seagrass') : m > 0.45 ? 'plankton' : 'algae';
+	if (domain === 'water') {
+		const fr = g[25];
+		if (wood > 0.25) return m > 0.45 ? 'kelp' : fr < 0.35 ? 'seagrass' : fr < 0.7 ? 'mangrove' : 'cattail';
+		if (m > 0.45) return fr >= 0.5 ? 'pondweed' : 'plankton';
+		return fr >= 0.5 && g[11] > 0.5 ? 'lily' : 'algae';
+	}
 	if (wood < 0.3) {
 		if (g[25] > HET_AT) return g[21] > CLIMB_AT ? 'parasite' : 'carnivore';
 		if (g[21] > CLIMB_AT) return g[7] < EPI_ROOT ? 'epiphyte' : 'vine';
@@ -387,6 +423,10 @@ const PLANT_ICON_VARIANTS = {
 	carnivore: ['flytrap', 'pitcher', 'sundew'],
 	parasite: ['mistletoe', 'dodder', 'mistletoe'],
 	plankton: ['plankton', 'diatom', 'radiolarian'],
+	cattail: ['cattail', 'reed', 'cattail'],
+	mangrove: ['mangrove', 'mangrove', 'mangrove'],
+	pondweed: ['pondweed', 'eelgrass', 'pondweed'],
+	lily: ['waterlily', 'lotus', 'waterlily'],
 	fruittree: ['fruittree', 'appletree', 'cherrytree'],
 	berrybush: ['berrybush', 'blueberry', 'raspberry'],
 	flower: ['flower', 'tulip', 'sunflower'],
@@ -417,7 +457,11 @@ const PLANT_CATEGORY_LABEL = {
 	seagrass: 'Seagrass',
 	carnivore: 'Carnivorous plant',
 	parasite: 'Parasitic plant',
-	plankton: 'Plankton',
+	plankton: 'Phytoplankton',
+	cattail: 'Marsh reed',
+	mangrove: 'Mangrove',
+	pondweed: 'Pondweed',
+	lily: 'Water lily',
 	fruittree: 'Fruit tree',
 	berrybush: 'Berry bush',
 	flower: 'Wildflower',
@@ -493,6 +537,7 @@ class PlantLayer {
 		this.nectarHue = 0;
 		this.water = new Uint8Array(n);
 		this.depth = new Float32Array(n);
+		this.sal = new Uint8Array(n);
 		this.habit = new Float32Array(n);
 		this.seasonAmp = new Float32Array(n);
 		this.version = 0;
@@ -536,6 +581,7 @@ class PlantLayer {
 		this.upgradeGenes();
 		this.water = new Uint8Array(n);
 		this.depth = new Float32Array(n);
+		this.sal = new Uint8Array(n);
 		this.habit = new Float32Array(n);
 		this.seasonAmp = new Float32Array(n);
 		this._prepareClimate();
@@ -607,10 +653,110 @@ class PlantLayer {
 			const isWater = WATER_BIOME_SET.has(b);
 			this.water[i] = isWater ? 1 : 0;
 			this.depth[i] = isWater ? clamp01((sea - w.altitude[i]) / sea) : 0;
+		}
+		this._prepareWater();
+		for (let i = 0; i < this.n; i++) {
+			const b = w.biome[i];
+			const isWater = this.water[i];
 			const fert = 0.45 + 0.55 * w.fertility[i];
 			const light = isWater ? 2 - 1.1 * this.depth[i] : 1;
-			this.habit[i] = fert * light * (harsh[b] ?? 1);
+			const delta = isWater && this.sal[i] === SAL_BRACKISH && this.depth[i] < DELTA_SHALLOW ? DELTA_FERT : 1;
+			this.habit[i] = fert * light * delta * (harsh[b] ?? 1);
 			this.seasonAmp[i] = 0.75 * (1 - w.temperature[i]);
+		}
+	}
+
+	_prepareWater() {
+		const w = this.world;
+		const W = w.width;
+		const H = w.height;
+		const n = this.n;
+		const water = this.water;
+		const depth = this.depth;
+		const sal = this.sal;
+		const dist = new Uint8Array(n).fill(255);
+		const q = new Int32Array(n);
+		let qh = 0;
+		let qt = 0;
+		for (let i = 0; i < n; i++) {
+			if (!water[i]) {
+				dist[i] = 0;
+				q[qt++] = i;
+			}
+		}
+		const sea = (i) => w.isOcean[i] || OCEAN_SET.has(w.biome[i]);
+		while (qh < qt) {
+			const c = q[qh++];
+			const d = dist[c] + 1;
+			if (d > DEPTH_DIST_MAX) continue;
+			const x = c % W;
+			const y = (c / W) | 0;
+			for (let k = 0; k < 4; k++) {
+				const nx = x + NB4X[k];
+				const ny = y + NB4Y[k];
+				if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+				const j = ny * W + nx;
+				if (dist[j] <= d) continue;
+				if (!water[j] || (sea(j) !== sea(c) && dist[c] > 0)) continue;
+				dist[j] = d;
+				q[qt++] = j;
+			}
+		}
+		for (let i = 0; i < n; i++) {
+			sal[i] = SAL_FRESH;
+			if (!water[i]) continue;
+			const d = Math.min(dist[i], DEPTH_DIST_MAX);
+			const b = w.biome[i];
+			if (sea(i)) {
+				sal[i] = SAL_SALT;
+				let v = Math.max(SHELF_MIN, Math.min(depth[i], SHELF_BASE + SHELF_STEP * d));
+				if (b === BIOME_ID.CORAL_REEF) v = Math.min(v, REEF_DEPTH);
+				depth[i] = v;
+			} else if (w.isRiver[i] && !w.isLake[i]) {
+				depth[i] = w.isDelta[i] ? DELTA_DEPTH : RIVER_DEPTH + RIVER_DEEP * clamp01(w.riverFlow[i] / RIVER_FLOW_DEEP);
+			} else if (w.isPond[i] || b === BIOME_ID.POND) {
+				depth[i] = POND_DEPTH;
+			} else {
+				depth[i] = Math.min(LAKE_MAX, LAKE_BASE + LAKE_STEP * d);
+				if (w.isSalt[i]) sal[i] = SAL_SALT;
+			}
+		}
+		qh = 0;
+		qt = 0;
+		const reach = dist;
+		reach.fill(255);
+		for (let i = 0; i < n; i++) {
+			if (!water[i] || sea(i)) continue;
+			let mouth = w.isDelta[i] === 1;
+			if (!mouth) {
+				const x = i % W;
+				const y = (i / W) | 0;
+				for (let k = 0; k < 4 && !mouth; k++) {
+					const nx = x + NB4X[k];
+					const ny = y + NB4Y[k];
+					if (nx >= 0 && ny >= 0 && nx < W && ny < H && sea(ny * W + nx)) mouth = true;
+				}
+			}
+			if (!mouth) continue;
+			reach[i] = 0;
+			q[qt++] = i;
+		}
+		while (qh < qt) {
+			const c = q[qh++];
+			sal[c] = SAL_BRACKISH;
+			const d = reach[c] + 1;
+			const x = c % W;
+			const y = (c / W) | 0;
+			for (let k = 0; k < 4; k++) {
+				const nx = x + NB4X[k];
+				const ny = y + NB4Y[k];
+				if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+				const j = ny * W + nx;
+				if (!water[j] || reach[j] <= d) continue;
+				if (d > (sea(j) ? BRACKISH_SEA : BRACKISH_UP)) continue;
+				reach[j] = d;
+				q[qt++] = j;
+			}
 		}
 	}
 
@@ -618,8 +764,13 @@ class PlantLayer {
 		return this.water[i] ? this.depth[i] : this.world.humidity[i];
 	}
 
+	salFit(t, i) {
+		return 1 - SAL_MISFIT * Math.abs(1 - t.fresh - this.sal[i] * 0.5);
+	}
+
 	capFor(t, i) {
 		return (
+			(this.water[i] ? this.salFit(t, i) : 1) *
 			t.formCap *
 			t.peak *
 			this.habit[i] *
@@ -675,7 +826,7 @@ class PlantLayer {
 		const k = parent ? parent.kind | 0 : kind;
 		const category = plantCategory(genome, domain, k);
 		const base = domain === 'water' ? 150 + r.next() * 55 : 62 + r.next() * 88;
-		const hue = k === 1 || category === 'flower' ? genome[12] * 360 : base;
+		const hue = k === 1 || category === 'flower' || category === 'lily' ? genome[12] * 360 : WATER_HUE[category] ?? base;
 		const hsl = [hue, 0.45 + r.next() * 0.25, 0.5 - wood * 0.14 + (r.next() - 0.5) * 0.08];
 		const sp = this.registry.create(
 			{

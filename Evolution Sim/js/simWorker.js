@@ -11,7 +11,7 @@ const SNAP_GRIDS = {
 	disease: ['vectorLoad'],
 };
 const SNAP_VOLATILE = new Set(['plants.species', 'plants.biomass', 'plants.cap', 'plants.age', 'plants.life', 'plants.health', 'plants.kind', 'plants.fruit', 'plants.poll', 'soil.nutrient', 'soil.litter', 'bugs.species', 'bugs.density', 'bugs.total', 'weather.wet', 'weather.fresh']);
-const SNAP_STATIC = { plants: ['water', 'depth'] };
+const SNAP_STATIC = { plants: ['water', 'depth', 'sal'] };
 const SNAP_PLANT_GENES = [8, 10, 11];
 const FIELD_MS = 180;
 const GENE_MS = 1000;

@@ -548,8 +548,15 @@ function buildBiomeLegend() {
 	const skip = new Set(['CLIFF', 'FROZEN_DESERT']);
 	$('biomeLegend').innerHTML = BIOME_LIST.filter((k) => !skip.has(k))
 		.map((k) => `<div class="biome-item"><i style="background:${BIOME_INFO[k].color}"></i>${BIOME_INFO[k].name}</div>`)
-		.join('');
+		.join('') + WATER_LEGEND.map(([c, t]) => `<div class="biome-item"><i style="background:${c}"></i>${t}</div>`).join('');
 }
+
+const WATER_LEGEND = [
+	['#3f86b8', 'Shallow water (rivers, ponds, shelf)'],
+	['#2d6795', 'Moderate depth (lakes, outer shelf)'],
+	['#1b3f66', 'Deep ocean'],
+	['#4f7f86', 'Brackish water (deltas, estuaries)'],
+];
 
 function updateClock() {
 	const eco = app.eco;
@@ -851,7 +858,19 @@ const ANIMAL_TRAITS = [
 	['Toxicity', G_TOXIC, (v) => (v > TOX_MIN ? 'Toxic · ' : '') + pct(v)],
 	['Mimicry', G_MIMIC, (v) => pct(v)],
 	['Brain', G_BRAIN, (v) => (v > TOOL_MIN ? 'Tool user · ' : '') + pct(v)],
+	['Preferred depth', G_DEPTH, (v) => depthWord(v)],
+	['Salinity', G_SALT, (v) => salWord(v)],
 ];
+
+const SAL_WORDS = ['fresh', 'brackish', 'salt'];
+
+function depthWord(v) {
+	return (v < 0.18 ? 'Shallow' : v < 0.4 ? 'Shelf' : 'Deep') + ' · ' + pct(v);
+}
+
+function salWord(v) {
+	return SAL_WORDS[v < 0.3 ? 0 : v < 0.7 ? 1 : 2];
+}
 
 const DISEASE_TRAITS = [
 	['Transmissibility', 0, (v) => pct(v)],
@@ -974,7 +993,9 @@ function renderDetail() {
 				return `<div class="trait"><span>${label}</span><div class="track"><i style="width:${Math.max(3, mean[k] * 100)}%;background:${sp.color}"></i></div><em>${fmt(mean[k])}</em></div>`;
 			}
 			if (fungus && fLabel === null) return '';
-			if (sp.group === 'plant' && sp.domain === 'water' && k >= 8 && k !== 14) return '';
+			if (sp.group === 'plant' && sp.domain === 'water' && k >= 8 && k !== 14 && k !== 25) return '';
+			if (sp.group === 'animal' && sp.domain !== 'water' && (k === G_DEPTH || k === G_SALT)) return '';
+			if (sp.group === 'plant' && sp.domain === 'water' && k === 25) return `<div class="trait"><span>Salinity</span><div class="track"><i style="width:${Math.max(3, (1 - mean[k]) * 100)}%;background:${sp.color}"></i></div><em>${salWord(1 - mean[k])}</em></div>`;
 			const v = sp.mean[k];
 			let lbl = fungus && fLabel ? fLabel : label;
 			const f = fungus && fFmt ? fFmt : fmt;
@@ -1155,7 +1176,7 @@ function updateTooltip() {
 	const biome = BIOME_INFO[BIOME_LIST[w.biome[t]]];
 	const temp = Math.round(w.temperature[t] * 50 - 15);
 	const poll = P.poll && !P.water[t] ? ' · pollination ' + pct(Math.min(1, P.poll[t])) : '';
-	let html = `<div class="tt-meta">${biome.name} · ${temp}°C · ${P.water[t] ? 'depth ' + pct(P.depth[t]) : 'moisture ' + pct(w.humidity[t])} · nutrients ${pct(P.soil.nutrient[t] / SOIL_MAX)}${P.soil.litter ? ' · litter ' + P.soil.litter[t].toFixed(2) : ''}${poll}</div>`;
+	let html = `<div class="tt-meta">${biome.name} · ${temp}°C · ${P.water[t] ? 'depth ' + depthWord(P.depth[t]).toLowerCase() + (P.sal ? ' · ' + SAL_WORDS[P.sal[t]] + ' water' : '') : 'moisture ' + pct(w.humidity[t])} · nutrients ${pct(P.soil.nutrient[t] / SOIL_MAX)}${P.soil.litter ? ' · litter ' + P.soil.litter[t].toFixed(2) : ''}${poll}</div>`;
 	const target = clickTarget(wx, wy);
 	let bugHtml = '';
 	for (const b of bugsAt(t)) {

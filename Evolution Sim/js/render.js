@@ -427,6 +427,10 @@ const COAT_LANK = 0.12;
 const EGG_WATER_ALPHA = 0.85;
 const EGG_PALE = 0.15;
 const FRESH_RGB = [70, 165, 250];
+const DEPTH_SHALLOW = 0.18;
+const DEPTH_SHELF = 0.4;
+const BRACKISH_RGB = [96, 140, 120];
+const BRACKISH_MIX = 0.3;
 const DIM_WATER_RGB = [30, 46, 68];
 const RAIN_VIEW_K = 2;
 const THIRST_TINT = new Uint8Array(9).map((_, q) => [245, 140, 110][q % 3]);
@@ -794,6 +798,8 @@ class WorldRenderer {
 			this.lastSoilUpdate = performance.now();
 		}
 		const water = this.eco.plants.water;
+		const wDepth = this.eco.plants.depth;
+		const wSal = this.eco.plants.sal;
 		for (let i = 0; i < n; i++) {
 			let r;
 			let g;
@@ -877,11 +883,17 @@ class WorldRenderer {
 					}
 				}
 				if (water[i]) {
-					const depth = Math.max(0, (sea - w.altitude[i]) / sea);
-					const k = 1 - depth * 0.55;
+					const depth = wDepth ? wDepth[i] : Math.max(0, (sea - w.altitude[i]) / sea);
+					const band = depth < DEPTH_SHALLOW ? 1.12 : depth < DEPTH_SHELF ? 1 : 0.9;
+					const k = (1 - depth * 0.55) * band;
 					r *= k;
 					g *= k;
 					b *= k * 0.95 + 0.05;
+					if (wSal && wSal[i] === 1) {
+						r += (BRACKISH_RGB[0] - r) * BRACKISH_MIX;
+						g += (BRACKISH_RGB[1] - g) * BRACKISH_MIX;
+						b += (BRACKISH_RGB[2] - b) * BRACKISH_MIX;
+					}
 				}
 				if (mode === 'vegetation') {
 					const m = (r + g + b) / 3;

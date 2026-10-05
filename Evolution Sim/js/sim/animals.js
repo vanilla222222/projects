@@ -1,6 +1,7 @@
-const AG = 30;
-const G_SIZE = 0, G_SPEED = 1, G_SENSE = 2, G_DIET = 3, G_TEMP = 4, G_TOL = 5, G_FEC = 6, G_TOXR = 7, G_ARMOR = 8, G_RES = 9, G_SCAV = 10, G_TERR = 11, G_HERD = 12, G_COLD = 13, G_DRY = 14, G_NEST = 15, G_PACK = 16, G_DISPLAY = 17, G_CHOOSY = 18, G_APPETITE = 19, G_DORMANCY = 20, G_ALARM = 21, G_SOCIAL = 22, G_BROOD = 23, G_CARE = 24, G_CLEAN = 25, G_TOLER = 26, G_TOXIC = 27, G_MIMIC = 28, G_BRAIN = 29;
-const ANIMAL_WEIGHTS = [1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6, 0.3, 0.3, 0.3, 0.3, 0.5, 0.5, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.5];
+const AG = 32;
+const AG_V1 = 30;
+const G_SIZE = 0, G_SPEED = 1, G_SENSE = 2, G_DIET = 3, G_TEMP = 4, G_TOL = 5, G_FEC = 6, G_TOXR = 7, G_ARMOR = 8, G_RES = 9, G_SCAV = 10, G_TERR = 11, G_HERD = 12, G_COLD = 13, G_DRY = 14, G_NEST = 15, G_PACK = 16, G_DISPLAY = 17, G_CHOOSY = 18, G_APPETITE = 19, G_DORMANCY = 20, G_ALARM = 21, G_SOCIAL = 22, G_BROOD = 23, G_CARE = 24, G_CLEAN = 25, G_TOLER = 26, G_TOXIC = 27, G_MIMIC = 28, G_BRAIN = 29, G_DEPTH = 30, G_SALT = 31;
+const ANIMAL_WEIGHTS = [1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6, 0.3, 0.3, 0.3, 0.3, 0.5, 0.5, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.5, 0.6, 0.6];
 const ANIMAL_CLASSES = ['fish', 'amphibian', 'reptile', 'mammal', 'bird', 'invertebrate'];
 const CLS_FISH = 0, CLS_AMPH = 1, CLS_REPT = 2, CLS_MAMM = 3, CLS_BIRD = 4, CLS_INVT = 5;
 const CLS_COLD = [[0, 1], [0.5, 1], [0.5, 1], [0, 0.45], [0, 0.45], [0.5, 1]];
@@ -417,6 +418,8 @@ const ANIMAL_ARCHETYPES = [
 	{ domain: 'air', cls: CLS_BIRD, nic: 1, n: 20, g: [0.32, 0.42, 0.55, 0.78, 0.5, 0.55, 0.7, 0.3, 0.05, 0.15, 0.1, 0.2, 0.3, 0.1, 0.3, 0.45, 0.1, 0.4, 0.3] },
 	{ domain: 'air', cls: CLS_BIRD, n: 12, g: [0.42, 0.7, 0.85, 0.9, 0.5, 0.55, 0.55, 0.3, 0.05, 0.15, 0.1, 0.3, 0.05, 0.1, 0.4, 0.55, 0.1, 0.4, 0.3] },
 	{ domain: 'air', cls: CLS_BIRD, n: 10, g: [0.55, 0.45, 0.9, 0.7, 0.65, 0.5, 0.4, 0.6, 0.05, 0.3, 0.85, 0.2, 0.3, 0.1, 0.6, 0.35, 0.1, 0.3, 0.3] },
+	{ domain: 'water', cls: CLS_FISH, n: 50, g: [0.26, 0.5, 0.5, 0.5, 0.6, 0.6, 0.7, 0.35, 0.2, 0.15, 0.3, 0.2, 0.4, 0.05, 0.3, 0.35, 0.2, 0.3, 0.3] },
+	{ domain: 'water', cls: CLS_FISH, n: 44, g: [0.3, 0.5, 0.5, 0.52, 0.65, 0.5, 0.65, 0.4, 0.3, 0.15, 0.3, 0.3, 0.3, 0.05, 0.3, 0.35, 0.2, 0.4, 0.3] },
 ];
 
 const FOUNDER_ALARM_BIRD = 0.55;
@@ -457,6 +460,14 @@ for (const a of ANIMAL_ARCHETYPES) {
 	}
 }
 const FOUNDER_CLEAN = { 8: 0.35, 10: 0.6, 30: 0.6 };
+const FOUNDER_DEPTH = { 8: 0.12, 9: 0.15, 10: 0.12, 11: 0.35, 12: 0.7, 22: 0.15, 23: 0.45, 24: 0.12, 25: 0.6, 26: 0.5, 34: 0.15, 35: 0.15 };
+const FOUNDER_SALT = { 8: 0.4, 9: 1, 10: 0.7, 11: 0.5, 12: 1, 22: 0.6, 23: 1, 24: 0.6, 25: 1, 26: 1, 34: 0, 35: 1 };
+const AQ_DEPTH_DEF = 0.3;
+const AQ_SALT_DEF = 0.75;
+const AQ_K = 0.25;
+const AQ_DEPTH_W = 1.6;
+const AQ_SAL_W = 0.9;
+const AQ_PLACE = 0.55;
 const FOUNDER_TOXIC = { 14: 0.65, 26: 0.6, 27: 0.55 };
 const FOUNDER_MIMIC = { 15: 0.6, 28: 0.5 };
 const FOUNDER_TRAIT_LO = 0.05;
@@ -471,7 +482,25 @@ ANIMAL_ARCHETYPES.forEach((a, k) => {
 	g[G_TOLER] = g[G_DIET] < 0.33 ? FOUNDER_TOLER_HERB : FOUNDER_TOLER;
 	g[G_TOXIC] = FOUNDER_TOXIC[k] || FOUNDER_TRAIT_LO;
 	g[G_MIMIC] = FOUNDER_MIMIC[k] || FOUNDER_TRAIT_LO;
+	g[G_DEPTH] = FOUNDER_DEPTH[k] ?? AQ_DEPTH_DEF;
+	g[G_SALT] = FOUNDER_SALT[k] ?? AQ_SALT_DEF;
 });
+
+function aquaMisfit(gDepth, gSalt, depth, sal) {
+	const m = Math.abs(depth - gDepth) * AQ_DEPTH_W + Math.abs(sal * 0.5 - gSalt) * AQ_SAL_W;
+	return m < 1 ? m : 1;
+}
+
+function padAnimalGenes(src, count) {
+	if (!src || !count || src.length !== count * AG_V1) return src;
+	const out = new Float32Array(count * AG);
+	for (let k = 0, a = 0, b = 0; k < count; k++, a += AG_V1, b += AG) {
+		for (let j = 0; j < AG_V1; j++) out[b + j] = src[a + j];
+		out[b + G_DEPTH] = AQ_DEPTH_DEF;
+		out[b + G_SALT] = AQ_SALT_DEF;
+	}
+	return out;
+}
 
 function domainIndex(d) {
 	return d === 'water' ? 1 : d === 'amph' ? 2 : d === 'air' ? 3 : 0;
@@ -2218,6 +2247,7 @@ class AnimalPool {
 			if (zn === ZONE_ARID && dom === 0) cost += m75 * ARID_K * (ARID_BASE + ARID_SIZE * this.genome[i * AG + G_SIZE]) * (1 - this.dry[i]) * (this.cold[i] > 0.5 ? ARID_ECTO : 1) * shelter;
 			else if (zn === ZONE_ALPINE && dom === 0) cost += m75 * ALPINE_AIR_K * this.genome[i * AG + G_SIZE] * shelter;
 			else if (dom === 2 && zn >= ZONE_MIRE) cost *= 1 - (zn === ZONE_MIRE ? AMPH_MIRE : AMPH_FRESH) * (1 - 0.5 * this.dry[i]);
+			if (dom === 1) cost += m75 * AQ_K * aquaMisfit(this.genome[i * AG + G_DEPTH], this.genome[i * AG + G_SALT], plants.depth[tile], plants.sal[tile]);
 			if (!flying) {
 				const lw = tileLoad[tile] + ((this.mass[i] * TILE_LOAD_SCALE + 0.5) | 0);
 				tileLoad[tile] = lw < 65535 ? lw : 65535;
@@ -3461,6 +3491,10 @@ class AnimalPool {
 			for (let k = 0; k < AG; k++) childG[k] = rng.next() < 0.5 ? this.genome[oi + k] : this.genome[om + k];
 			mutateGenes(childG, 0, childG, 0, AG, rng, 0.25, fd > 0 ? 0.04 * DISP_DRIFT : 0.04);
 			this._clampClass(childG, this.cls[i]);
+			if (dom !== 1) {
+				childG[G_DEPTH] = this.genome[oi + G_DEPTH];
+				childG[G_SALT] = this.genome[oi + G_SALT];
+			}
 			if (this.immune[i]) childG[G_RES] = Math.min(1, childG[G_RES] + RES_NUDGE);
 			const ang = rng.next() * Math.PI * 2;
 			const cx = this.x[i] + Math.cos(ang) * 0.8;
