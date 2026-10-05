@@ -84,7 +84,7 @@ class WeatherLayer {
 	}
 
 	effTemp(i) {
-		return this.world.temperature[i] + this.seasonT - this.cool[i];
+		return this.world.temperature[i] + this.seasonT - (this.cool ? this.cool[i] : 0);
 	}
 
 	upgrade() {
