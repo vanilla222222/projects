@@ -248,7 +248,7 @@ function plantToxinDefaults(g, o = 0, water = false, fungus = false) {
 	const m = g[o + 1];
 	const herb = g[o + 3] < HERB_WOOD;
 	g[o + 29] = water ? 0.04 : herb && g[o + 11] > 0.55 ? 0.35 : herb ? 0.15 : 0.08;
-	g[o + 30] = g[o + 9] > 0.3 ? 0.7 : 0.3;
+	g[o + 30] = g[o + 9] > 0.3 || g[o + 11] > 0.7 ? 0.7 : 0.3;
 	g[o + 31] = water ? 0.03 : t > 0.6 && m < 0.45 ? 0.25 : 0.06;
 }
 
