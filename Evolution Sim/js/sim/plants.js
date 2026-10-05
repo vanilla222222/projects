@@ -801,9 +801,8 @@ class PlantLayer {
 		}
 		let cover = 0;
 		let seedTiles = 0;
-		const seedDens = this.seedDens;
+		if (ck) seedTiles = this._seedPass(tick);
 		for (let i = 0; i < n; i++) {
-			if (ck && seedDens[i] > 0) seedTiles += this._seedTick(i, tick);
 			if (species[i] || species[n + i]) cover++;
 			if (poll[i] > 0) poll[i] *= POLL_DECAY;
 		}
@@ -823,6 +822,66 @@ class PlantLayer {
 			this.seedResting = 0;
 		}
 		this.version++;
+	}
+
+	_seedPass(tick) {
+		const n = this.n;
+		const sd = this.seedDens;
+		const seedSp = this.seedSp;
+		const seedGenome = this.seedGenome;
+		const species = this.species;
+		const water = this.water;
+		const moistMul = this.moistMul;
+		const snow = this.snow;
+		const registry = this.registry;
+		const rng = this.rng;
+		const g = this._scratch;
+		let lastId = 0;
+		let sp = null;
+		let tiles = 0;
+		let resting = 0;
+		for (let i = 0; i < n; i++) {
+			const s0 = sd[i];
+			if (!(s0 > 0)) continue;
+			tiles++;
+			const mm = moistMul ? moistMul[i] : 1;
+			const sn = snow ? snow[i] : 0;
+			if (sn > SNOW_SHOW || mm < SEED_REST_DRY) {
+				resting++;
+				continue;
+			}
+			const d = s0 * SEED_DECAY;
+			if (d < SEED_MIN) {
+				sd[i] = 0;
+				seedSp[i] = 0;
+				tiles--;
+				continue;
+			}
+			sd[i] = d;
+			const id = seedSp[i];
+			if (id !== lastId) {
+				sp = registry.get(id);
+				lastId = id;
+			}
+			if (!sp || sp.population <= 0) {
+				sd[i] = 0;
+				seedSp[i] = 0;
+				continue;
+			}
+			const base = i * PG;
+			const pj = slotOf(seedGenome, water[i], base, sp.kind | 0) * n + i;
+			if (species[pj] || rng.next() >= GERM_P * d * (mm * (1 - sn))) continue;
+			for (let k = 0; k < PG; k++) g[k] = seedGenome[base + k];
+			if (this.plantSeed(i, g, sp, tick, false)) {
+				this.germinated++;
+				sd[i] = d * GERM_USE;
+			} else {
+				sd[i] = 0;
+				seedSp[i] = 0;
+			}
+		}
+		this.seedResting += resting;
+		return tiles;
 	}
 
 	_seedTick(i, tick) {
