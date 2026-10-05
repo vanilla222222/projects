@@ -300,6 +300,7 @@ const EvoSave = (() => {
 			for (const f of ANIMAL_FIELDS_I) if (!A[f] || A[f].length < A.cap) A[f] = new Int32Array(A.cap);
 		}
 		if (A && !A.toxfx && typeof toxFxStats === 'function') A.toxfx = toxFxStats();
+		if (A && !A.sleep && typeof sleepStats === 'function') A.sleep = sleepStats();
 		const E = eco.eggs;
 		if (E && E.genome && E.cap) E.genome = padAnimalGenes(E.genome, E.cap);
 		if (!eco.registry || !eco.registry.all) return;

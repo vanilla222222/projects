@@ -21,6 +21,16 @@ uniform float u_grid;
 uniform float u_overlay;
 uniform float u_warp;
 uniform float u_cloud;
+uniform vec3 u_day;
+uniform float u_mapH;
+float dayLightAt(float y) {
+	if (u_day.z < 0.5) return 1.0;
+	float lat = abs(clamp(y / u_mapH, 0.0, 1.0) * 2.0 - 1.0);
+	float f = 0.5 + ${DAY_LAT.toFixed(3)} * u_day.y * lat;
+	float d = f * 0.5 - abs(u_day.x - 0.5);
+	float x = clamp(d / ${(2 * DAY_TWI).toFixed(4)} + 0.5, 0.0, 1.0);
+	return x * x * (3.0 - 2.0 * x);
+}
 out vec4 outColor;
 
 float hash(vec2 p) {
@@ -156,6 +166,8 @@ void main() {
 		float g = smoothstep(0.5 - u_scale * 1.2, 0.5, max(f.x, f.y));
 		col = mix(col, col * 0.8, g * u_grid);
 	}
+	float dl = dayLightAt(w.y);
+	col = mix(col * vec3(0.26, 0.32, 0.55), col, dl);
 	vec2 e = min(w, u_map - w);
 	float edge = smoothstep(0.0, 2.5, min(e.x, e.y));
 	outColor = vec4(mix(bg, col, 0.35 + 0.65 * edge), 1.0);
@@ -172,7 +184,18 @@ uniform vec2 u_origin;
 uniform float u_scale;
 uniform vec2 u_res;
 uniform vec2 u_grid;
+uniform vec3 u_day;
+uniform float u_mapH;
+float dayLightAt(float y) {
+	if (u_day.z < 0.5) return 1.0;
+	float lat = abs(clamp(y / u_mapH, 0.0, 1.0) * 2.0 - 1.0);
+	float f = 0.5 + ${DAY_LAT.toFixed(3)} * u_day.y * lat;
+	float d = f * 0.5 - abs(u_day.x - 0.5);
+	float x = clamp(d / ${(2 * DAY_TWI).toFixed(4)} + 0.5, 0.0, 1.0);
+	return x * x * (3.0 - 2.0 * x);
+}
 out vec2 v_uv;
+out vec3 v_night;
 out vec3 v_c0;
 out vec3 v_c1;
 out vec3 v_c2;
@@ -198,6 +221,7 @@ void main() {
 	v_c1 = a_c1;
 	v_c2 = a_c2;
 	v_alpha = a_extra.y;
+	v_night = mix(vec3(0.5, 0.56, 0.78), vec3(1.0), dayLightAt(a_inst.y));
 }`;
 
 const SPRITE_FS = `#version 300 es
@@ -212,6 +236,7 @@ in float v_alpha;
 in vec2 v_q;
 flat in float v_fx;
 flat in float v_seed;
+in vec3 v_night;
 uniform float u_time;
 out vec4 outColor;
 float h21(vec2 p) {
@@ -256,7 +281,7 @@ void main() {
 			col += vec3(1.0, 0.97, 1.0) * star * tw * r.a * 0.9;
 		}
 	}
-	outColor = vec4(col, r.a) * v_alpha;
+	outColor = vec4(col * v_night, r.a) * v_alpha;
 }`;
 
 const WX_VS = `#version 300 es
@@ -473,6 +498,8 @@ const SHOW_SAT = 1.6;
 const SHOW_LIFT = 40;
 const CREST_ZOOM = 6;
 const DORM_ALPHA = 0.55;
+const SLEEP_ALPHA = 0.7;
+const SLEEP_MARK = 0.3;
 const DORM_SHRINK = 0.8;
 const DORM_WIDE = 1.25;
 const DORM_ZOOM = 6;
@@ -611,6 +638,7 @@ class WorldRenderer {
 		this.showAnimals = true;
 		this.showSwarms = true;
 		this.showWeather = true;
+		this.showNight = true;
 		this.highlight = null;
 		this.time = 0;
 		this._sizeDirty = true;
@@ -1402,6 +1430,9 @@ class WorldRenderer {
 		gl.uniform1f(tp.u.u_overlay, flat);
 		gl.uniform1f(tp.u.u_warp, flat ? 0 : smooth(WARP_ZOOM[0], WARP_ZOOM[1], c.zoom));
 		gl.uniform1f(tp.u.u_cloud, cloud);
+		const day = this._dayUniform(alpha);
+		gl.uniform3f(tp.u.u_day, day[0], day[1], day[2]);
+		gl.uniform1f(tp.u.u_mapH, H);
 		gl.bindVertexArray(this.fsVao);
 		gl.drawArrays(gl.TRIANGLES, 0, 3);
 
@@ -1434,12 +1465,24 @@ class WorldRenderer {
 			gl.uniform2f(sp.u.u_res, this.canvas.width, this.canvas.height);
 			gl.uniform2f(sp.u.u_grid, this.atlas.cols, this.atlas.rows);
 			gl.uniform1f(sp.u.u_time, this.time % WX_TIME_WRAP);
+			gl.uniform3f(sp.u.u_day, day[0], day[1], day[2]);
+			gl.uniform1f(sp.u.u_mapH, H);
 			gl.bindVertexArray(this.spriteVao);
 			gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, n);
 			gl.bindVertexArray(null);
 		}
 		if (this.mode === 'rain') this._drawWeather(alpha, ox, oy, scale, 0, 1);
 		else if (this.showWeather && !flat) this._drawWeather(alpha, ox, oy, scale, smooth(WX_ZOOM[0], WX_ZOOM[1], c.zoom), 0);
+	}
+
+	_dayUniform(alpha) {
+		const d = this._day || (this._day = new Float32Array(3));
+		const eco = this.eco;
+		const t = (eco.tick || 0) + (alpha > 0 && alpha < 1 ? alpha : 0);
+		d[0] = dayPhase(t);
+		d[1] = eco.options.seasons ? eco.plants.season || 0 : 0;
+		d[2] = this.showNight && !RAMPS[this.mode] && this.mode !== 'territory' ? 1 : 0;
+		return d;
 	}
 
 	_drawWeather(alpha, ox, oy, scale, hz, cell) {
@@ -1712,6 +1755,7 @@ class WorldRenderer {
 		const virusIcon = ICON_INDEX.virus;
 		const sleepIcon = ICON_INDEX.sleep;
 		const dormA = A.dorm;
+		const slpA = A.slp;
 		const almA = zoom >= ALARM_RING_ZOOM ? A.alm : null;
 		const white = this._white || (this._white = new Uint8Array(9).fill(255));
 		const gf = A.gf;
@@ -1772,7 +1816,8 @@ class WorldRenderer {
 			const g = gf ? gf[i] : 1;
 			const th = wmode && dom[i] !== 1 && wat[i] < THIRSTY ? (wat[i] <= 0 ? DRY_TINT : THIRST_TINT) : null;
 			const zz = dormA ? dormA[i] : 0;
-			const a = ((hl !== null && id !== hl) || (hs && sick !== hs) || (dmode && !sick) || (wmode && !th) ? 0.35 : 1) * (ef && ef[i] < 1 ? ELDER_ALPHA : 1) * (zz ? DORM_ALPHA : 1);
+			const zs = !zz && slpA ? slpA[i] : 0;
+			const a = ((hl !== null && id !== hl) || (hs && sick !== hs) || (dmode && !sick) || (wmode && !th) ? 0.35 : 1) * (ef && ef[i] < 1 ? ELDER_ALPHA : 1) * (zz ? DORM_ALPHA : zs ? SLEEP_ALPHA : 1);
 			const sv = show && !sick ? show[i] : 0;
 			const bright = sv > SHOW_BASE;
 			const lv = lvA ? lvA[i] : 0;
@@ -1809,6 +1854,7 @@ class WorldRenderer {
 					n = this._put(n, x, ly - size * 0.1, size * (1 + ALARM_RING_GROW * rt), ringIcon, 1, ALARM_RING_ALPHA * (1 - rt), 0, white);
 				}
 				if (zz && zoom >= DORM_ZOOM) n = this._put(n, x + size * 0.4, ly - size * 0.6, size * MARK_SCALE, sleepIcon, 1, 0.9, 0, white);
+				else if (zs && zoom >= DORM_ZOOM) n = this._put(n, x + size * 0.35, ly - size * 0.55, size * SLEEP_MARK, sleepIcon, 1, 0.75, 0, white);
 				if (sick) n = this._put(n, x + size * 0.38, ly - size * 0.5, size * MARK_SCALE, virusIcon, 1, a, 0, white);
 				if (th) n = this._put(n, x - size * 0.38, ly - size * 0.5, size * MARK_SCALE * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, 1, 0, th);
 				if (symb && lkA && lkA[i] >= 0) {

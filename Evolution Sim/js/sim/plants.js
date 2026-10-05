@@ -39,6 +39,63 @@ const FRUIT_ROT_S = 1 - Math.pow(1 - FRUIT_ROT, PLANT_STRIDE);
 const FUNGUS_DECOMP_S = FUNGUS_DECOMP * PLANT_STRIDE;
 const HEALTH_RECOVER_S = HEALTH_RECOVER * PLANT_STRIDE;
 const HEALTH_DECAY_S = HEALTH_DECAY * PLANT_STRIDE;
+const DAY_TICKS = 40;
+const DAY_BINS = 8;
+const DAY_START = 0.25;
+const DAY_TWI = 0.035;
+const DAY_LAT = 0.2;
+const NIGHT_GROW = 0.05;
+const DAY_K = new Float32Array(DAY_BINS);
+const DAY_MEAN = new Float32Array(DAY_BINS);
+
+function dayPhase(tick) {
+	const p = tick / DAY_TICKS + DAY_START;
+	return p - Math.floor(p);
+}
+
+function dayLength(season, b) {
+	return 0.5 + DAY_LAT * season * Math.abs(((b + 0.5) / DAY_BINS) * 2 - 1);
+}
+
+function sunEdge(ph, f) {
+	return f * 0.5 - Math.abs(ph - 0.5);
+}
+
+function sunLight(d) {
+	let x = d / (2 * DAY_TWI) + 0.5;
+	x = x < 0 ? 0 : x > 1 ? 1 : x;
+	return x * x * (3 - 2 * x);
+}
+
+function dayLight(tick, season, b) {
+	return sunLight(sunEdge(dayPhase(tick), dayLength(season, b)));
+}
+
+function dayBin(y, H) {
+	const b = ((y * DAY_BINS) / H) | 0;
+	return b < 0 ? 0 : b >= DAY_BINS ? DAY_BINS - 1 : b;
+}
+
+function dayMeans(season) {
+	for (let b = 0; b < DAY_BINS; b++) {
+		const f = dayLength(season, b);
+		let s = 0;
+		for (let k = 0; k < DAY_TICKS; k++) s += NIGHT_GROW + (1 - NIGHT_GROW) * sunLight(sunEdge(dayPhase(k), f));
+		DAY_MEAN[b] = s / DAY_TICKS;
+	}
+	return DAY_MEAN;
+}
+
+function dayGrowth(tick, season, span, out) {
+	const mean = dayMeans(season);
+	for (let b = 0; b < DAY_BINS; b++) {
+		const f = dayLength(season, b);
+		let s = 0;
+		for (let j = 0; j < span; j++) s += NIGHT_GROW + (1 - NIGHT_GROW) * sunLight(sunEdge(dayPhase(tick - j), f));
+		out[b] = s / (span * mean[b]);
+	}
+	return out;
+}
 const PLANT_LIFE_BASE = 1.5;
 const PLANT_LIFE_WOOD = 40;
 const FUNGUS_LIFE = 1;
@@ -1155,6 +1212,8 @@ class PlantLayer {
 		this.bloomNow = bloomNow;
 		this.fruitNow = fruitNow;
 		this.phaseTick(tick, season);
+		const dayK = dayGrowth(tick, this.seasonsOn ? season : 0, PLANT_STRIDE, DAY_K);
+		const dayH = DAY_BINS / H;
 		const bloomBin = this.bloomBin;
 		const fruitBin = this.fruitBin;
 		const form = this.form;
@@ -1295,7 +1354,7 @@ class PlantLayer {
 			if (young) K *= SEEDLING_K0 + ((1 - SEEDLING_K0) * ag) / mt;
 			const sm = 1 + seasonAmp[i] * season;
 			const mm = moistMul ? moistMul[i] : 1;
-			const r = PLANT_STRIDE * growth[p] * (sm > 0.05 ? sm : 0.05) * light * (0.35 + 0.65 * h) * tax * (mm < 1 && form[p] & FORM_SUCC ? mm + (1 - mm) * SUCC_DRY : mm) * (aged ? OLD_GROWTH : 1);
+			const r = PLANT_STRIDE * growth[p] * (sm > 0.05 ? sm : 0.05) * light * (0.35 + 0.65 * h) * tax * (mm < 1 && form[p] & FORM_SUCC ? mm + (1 - mm) * SUCC_DRY : mm) * (aged ? OLD_GROWTH : 1) * (fk ? 1 : dayK[(((i / W) | 0) * dayH) | 0]);
 			const bb = b > 0.03 ? b : 0.03;
 			b += r * bb * (1 - b / K);
 			if (b > K) b = K;

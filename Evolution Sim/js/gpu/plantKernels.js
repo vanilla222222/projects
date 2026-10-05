@@ -8,7 +8,7 @@ const PlantKernels = (() => {
 	const NU_SLOT = 7;
 	const NF_TILE = 10;
 	const N_PART = 10;
-	const UNIFORM_BYTES = 112;
+	const UNIFORM_BYTES = 144;
 
 	function f(v) {
 		const s = String(v);
@@ -32,6 +32,7 @@ struct U {
 	flowerK: f32,
 	bloomB: array<vec4<f32>, 2>,
 	fruitB: array<vec4<f32>, 2>,
+	dayB: array<vec4<f32>, 2>,
 };
 @group(0) @binding(0) var<uniform> u: U;
 @group(0) @binding(1) var<storage, read_write> sF: array<f32>;
@@ -44,6 +45,7 @@ struct U {
 fn fi(field: u32, p: u32) -> u32 { return field * u.n * 2u + p; }
 fn ti(field: u32, i: u32) -> u32 { return field * u.n + i; }
 fn bloomAt(fm: u32) -> f32 { let b = (fm >> 3u) & 7u; return u.bloomB[b >> 2u][b & 3u]; }
+fn dayAt(i: u32) -> f32 { let b = min(7u, ((i / u.W) * 8u) / u.H); return u.dayB[b >> 2u][b & 3u]; }
 fn fruitAt(fm: u32) -> f32 { let b = (fm >> 3u) & 7u; return u.fruitB[b >> 2u][b & 3u]; }
 `;
 	}
@@ -274,7 +276,7 @@ fn slot(p: u32, i: u32, under: bool) -> bool {
 	let sm = 1.0 + tF[ti(${TILE_F.samp}u, i)] * u.season;
 	let mo = tF[ti(${TILE_F.moist}u, i)];
 	let mm = select(mo, mo + (1.0 - mo) * ${f(SUCC_DRY)}, mo < 1.0 && (fm & ${FORM_SUCC}u) != 0u);
-	let r = sF[fi(${SLOT_F.growth}u, p)] * select(0.05, sm, sm > 0.05) * light * (0.35 + 0.65 * h) * tax * mm * select(1.0, ${f(OLD_GROWTH)}, aged);
+	let r = sF[fi(${SLOT_F.growth}u, p)] * select(0.05, sm, sm > 0.05) * light * (0.35 + 0.65 * h) * tax * mm * select(1.0, ${f(OLD_GROWTH)}, aged) * select(dayAt(i), 1.0, fk);
 	let bb = select(0.03, b, b > 0.03);
 	b += r * bb * (1.0 - b / K);
 	if (b > K) { b = K; }

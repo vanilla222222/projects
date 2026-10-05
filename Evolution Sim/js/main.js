@@ -44,6 +44,7 @@ const STAT_EXTRA = [
 	{ key: 'nests', label: 'Nests & dens', icon: 'nest', color: '#c79a5b', wide: true, sub: true },
 	{ key: 'nutrition', label: 'Body condition', icon: 'boar', color: '#d9a066', wide: true, sub: true },
 	{ key: 'dormancy', label: 'Dormancy', icon: 'bear', color: '#8fa7d6', wide: true, sub: true },
+	{ key: 'sleep', label: 'Sleep · animals', icon: 'sleep', color: '#9fb4e8', wide: true, sub: true, noSpark: true },
 	{ key: 'symb', label: 'Symbioses', icon: 'bee', color: '#b48fd9', wide: true, sub: true },
 	{ key: 'brain', label: 'Intelligence', icon: 'crow', color: '#e0a3c8', wide: true, sub: true },
 	{ key: 'disasters', label: 'Disasters', icon: 'flame', color: '#e8743c', wide: true, sub: true },
@@ -168,7 +169,7 @@ function installWorld(world, eco) {
 	history.replaceState(null, '', '#' + eco.seed);
 }
 
-const LAYER_SWITCHES = { showPlants: 'showPlants', showAnimals: 'showAnimals', showSwarms: 'showSwarms', showWeather: 'showWeather' };
+const LAYER_SWITCHES = { showPlants: 'showPlants', showAnimals: 'showAnimals', showSwarms: 'showSwarms', showWeather: 'showWeather', showNight: 'showNight' };
 const OPTION_SWITCHES = { seasons: 'optSeasons', migrations: 'optMigrations', disease: 'optDisease', weather: 'optWeather', disasters: 'optDisasters' };
 
 function showBusy(text) {
@@ -486,6 +487,25 @@ function updateExtraStat(el, k, s, h) {
 	const st = s.stages || {};
 	const sub = el.querySelector('[data-sub]');
 	const v = el.querySelector('[data-v]');
+	if (k === 'sleep') {
+		const A = app.eco.animals;
+		let up = 0;
+		let zz = 0;
+		let dz = 0;
+		if (A && A.alive) {
+			for (let i = 0; i < A.count; i++) {
+				if (!A.alive[i]) continue;
+				if (A.dorm && A.dorm[i]) dz++;
+				else if (A.slp && A.slp[i]) zz++;
+				else up++;
+			}
+		}
+		const sl = s.sleep || {};
+		const pt = sl.patterns || {};
+		v.innerHTML = `${formatCount(up)}<small>awake · ${formatCount(zz)} asleep</small>`;
+		sub.innerHTML = `<span>${formatCount(dz)} dormant</span><span>${pct(sl.asleepShare || 0)} asleep on average</span>${ACT_PATTERNS.map((p) => `<span>${formatCount(pt[p] || 0)} ${p}</span>`).join('')}<span>${formatCount(sl.homeSleep || 0)} sleeping at home</span><span>${formatCount(sl.woken || 0)} woken by attacks</span>`;
+		return;
+	}
 	if (k === 'stages') {
 		const j = st.juveniles || 0;
 		const a = st.adults || 0;
@@ -617,8 +637,24 @@ function updateClock() {
 	$('yearLabel').textContent = 'Year ' + eco.year();
 	$('tickLabel').textContent = 'tick ' + eco.tick.toLocaleString();
 	updateWeatherBadge();
+	updateDayBadge();
 	const ms = app.running ? app.msPerTick.toFixed(1) + ' ms/tick' : 'paused';
 	$('perfLabel').textContent = `${ms} · ${Math.round(app.fps)} fps`;
+}
+
+function updateDayBadge() {
+	const eco = app.eco;
+	const ph = dayPhase(eco.tick);
+	const season = eco.options.seasons && eco.plants ? eco.plants.season || 0 : 0;
+	const light = dayLight(eco.tick, season, DAY_BINS >> 1);
+	const phase = light > 0.85 ? 'day' : light < 0.15 ? 'night' : ph < 0.5 ? 'dawn' : 'dusk';
+	const hr = Math.floor(ph * 24);
+	const label = { day: ph < 0.5 ? 'Morning' : 'Afternoon', night: 'Night', dawn: 'Dawn', dusk: 'Dusk' }[phase];
+	const badge = $('dayBadge');
+	badge.dataset.phase = phase;
+	$('dayLabel').textContent = label;
+	const sl = eco.stats.sleep;
+	badge.title = `${label} · ${String(hr).padStart(2, '0')}:${String(Math.floor((ph * 24 - hr) * 60)).padStart(2, '0')}\nOne day lasts ${DAY_TICKS} ticks${sl ? `\n${pct(sl.asleepShare || 0)} of animals asleep over recent ticks` : ''}`;
 }
 
 function updateWeatherBadge() {
@@ -943,9 +979,15 @@ const ANIMAL_TRAITS = [
 	['Brain', G_BRAIN, (v) => (v > TOOL_MIN ? 'Tool user · ' : '') + pct(v)],
 	['Preferred depth', G_DEPTH, (v) => depthWord(v)],
 	['Salinity', G_SALT, (v) => salWord(v)],
+	['Activity', G_ACT, (v) => actWord(v)],
 ];
 
 const SAL_WORDS = ['fresh', 'brackish', 'salt'];
+
+function actWord(v) {
+	const w = ACT_PATTERNS[actPattern(v)];
+	return w[0].toUpperCase() + w.slice(1);
+}
 const ANIMAL_TOX_WORDS = ['Poison', 'Neurotoxin', 'Genotoxin'];
 
 function depthWord(v) {
@@ -1035,6 +1077,7 @@ function renderDetail() {
 		...plantLifeBadges(sp),
 		...plantToxinBadges(sp),
 		...(sp.group === 'bug' && sp.domain ? [`<span class="badge">${sp.domain === 'water' ? 'Aquatic' : 'Land'}</span>`] : []),
+		...(sp.group === 'animal' && sp.mean ? [`<span class="badge">${actWord(sp.mean[G_ACT] ?? PAD_ACT)}</span>`] : []),
 		...secretBadges(sp),
 	].join('');
 	const bug = sp.group === 'bug';
@@ -1301,7 +1344,7 @@ function updateTooltip() {
 		const fxk = A.fx ? A.fx[a] : 0;
 		const gd = A.gl && A.gl[a] > 0.1;
 		const fxs = fxk || gd ? `<small class="tt-fx">${fxk ? `<span class="badge fx-${fxk}">${FX_WORDS[fxk]}</span>` : ''}${gd ? `<span class="badge fx-5">gene-damaged ${pct(Math.min(1, A.gl[a]))}</span>` : ''}</small>` : '';
-		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${A.domain[a] === 3 ? (A.fly[a] ? 'flying · ' : 'perched · ') : ''}${A.dorm && A.dorm[a] ? dormWords[A.dorm[a]] : states[A.state[a]]} · ${A.lv && A.lv[a] ? ['', 'tadpole', 'larva'][A.lv[a]] : ['juvenile', 'adult', 'elder'][animalStage(A, a)]}${A.cr && A.cr[a] > 0 ? ' · cared for' : ''}${A.ld && A.ld[a] ? ' · leads' : ''} · age ${A.age[a]}${home}</small><small>energy ${pct(cap > 0 ? Math.min(1, Math.max(0, A.energy[a] / cap)) : 0)}${water}</small>${cond}${sick}${fxs}${A.lin && A.lin[a] && w.secretKinds ? `<small class="tt-secret ${A.lin[a] === 1 ? 'nuclear' : 'magic'}">${SECRET_LINEAGE[A.lin[a]]}</small>` : ''}</div></div>`;
+		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${A.domain[a] === 3 ? (A.fly[a] ? 'flying · ' : 'perched · ') : ''}${A.dorm && A.dorm[a] ? dormWords[A.dorm[a]] : A.slp && A.slp[a] ? 'asleep' : states[A.state[a]]} · ${A.lv && A.lv[a] ? ['', 'tadpole', 'larva'][A.lv[a]] : ['juvenile', 'adult', 'elder'][animalStage(A, a)]}${A.cr && A.cr[a] > 0 ? ' · cared for' : ''}${A.ld && A.ld[a] ? ' · leads' : ''} · age ${A.age[a]}${home}</small><small>${A.genome ? actWord(A.genome[a * AG + G_ACT]) : ''}${A.dorm && A.dorm[a] ? ' · dormant' : A.slp && A.slp[a] ? ' · asleep' : ' · awake'}</small><small>energy ${pct(cap > 0 ? Math.min(1, Math.max(0, A.energy[a] / cap)) : 0)}${water}</small>${cond}${sick}${fxs}${A.lin && A.lin[a] && w.secretKinds ? `<small class="tt-secret ${A.lin[a] === 1 ? 'nuclear' : 'magic'}">${SECRET_LINEAGE[A.lin[a]]}</small>` : ''}</div></div>`;
 	}
 	for (let slot = 0; slot < 2; slot++) {
 		const p = slot * P.n + t;
@@ -1463,6 +1506,7 @@ function setupControls() {
 		updateWeatherBadge();
 	};
 	$('showWeather').onchange = (e) => (app.renderer.showWeather = e.target.checked);
+	$('showNight').onchange = (e) => (app.renderer.showNight = e.target.checked);
 	$('optFast').onchange = async (e) => {
 		const box = e.target;
 		if (box.checked && !confirm('Fast mode runs the plant and soil step on the GPU.\n\nRuns stop being exactly repeatable: the same seed and settings can play out differently. Saves still load in either mode.\n\nTurn fast mode on?')) {

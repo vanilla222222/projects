@@ -66,6 +66,7 @@
 
 		<div class="clock">
 			<div class="season" id="seasonBadge"><span class="season-dot"></span><span id="seasonLabel">Spring</span></div>
+			<div class="season daytime" id="dayBadge"><span class="day-dot"></span><span id="dayLabel">Morning</span></div>
 			<div class="season weather" id="weatherBadge"><span id="weatherIcon"></span><span id="weatherLabel">Clear</span></div>
 			<div class="clock-text"><strong id="yearLabel">Year 1</strong><span id="tickLabel">tick 0</span></div>
 			<div class="perf" id="perfLabel" title="Simulation cost per tick · frames per second">–</div>
@@ -127,6 +128,7 @@
 					<label class="switch" id="fastWrap" hidden title="Run the plant and soil step on the GPU. Faster, but runs are no longer exactly repeatable"><input type="checkbox" id="optFast" /><span></span>Fast mode (GPU)</label>
 					<label class="switch" title="Show bug swarms as drifting clouds and, up close, as dots"><input type="checkbox" id="showSwarms" checked /><span></span>Bug swarms</label>
 					<label class="switch" title="Draw storm clouds, rain and snow over the map"><input type="checkbox" id="showWeather" checked /><span></span>Weather overlay</label>
+					<label class="switch" title="Darken the map at night with moonlit twilight at dusk and dawn"><input type="checkbox" id="showNight" checked /><span></span>Day and night</label>
 				</div>
 				<details class="biome-legend">
 					<summary>Biome legend</summary>

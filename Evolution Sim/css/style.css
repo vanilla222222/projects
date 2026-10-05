@@ -419,6 +419,18 @@ select option {
 .season[data-season='Autumn'] .season-dot { background: #d9824a; }
 .season[data-season='Winter'] .season-dot { background: #bfe0f0; }
 
+.day-dot {
+	width: 9px;
+	height: 9px;
+	border-radius: 50%;
+	background: var(--amber);
+	box-shadow: 0 0 8px currentColor;
+}
+
+.season.daytime[data-phase='dusk'] .day-dot,
+.season.daytime[data-phase='dawn'] .day-dot { background: #e08a6a; }
+.season.daytime[data-phase='night'] .day-dot { background: #9fb4e8; box-shadow: inset -3px -1px 0 #4a5a8a; }
+
 .season.weather {
 	gap: 5px;
 	padding-left: 8px;

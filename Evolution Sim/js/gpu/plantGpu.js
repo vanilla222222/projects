@@ -99,6 +99,8 @@ const PlantGpu = (() => {
 			patch: buf(patchCap * 12, B.STORAGE | B.COPY_DST),
 			staging: buf(slotBytes + tileBytes + partBytes + maskBytes, B.MAP_READ | B.COPY_DST),
 			uniU: new Uint32Array(K.UNIFORM_BYTES / 4),
+			dayAcc: new Float64Array(DAY_BINS),
+			dayN: 0,
 			patchU: new Uint32Array(patchCap * 3),
 			patchF: null,
 			patches: 0,
@@ -545,6 +547,11 @@ const PlantGpu = (() => {
 			uf[12 + b] = L.bloomBin[b];
 			uf[20 + b] = L.fruitBin[b];
 		}
+		for (let b = 0; b < DAY_BINS; b++) {
+			uf[28 + b] = ctx.dayN ? ctx.dayAcc[b] / ctx.dayN : 1;
+			ctx.dayAcc[b] = 0;
+		}
+		ctx.dayN = 0;
 		q.writeBuffer(ctx.uni, 0, u);
 		if (ctx.patches) q.writeBuffer(ctx.patch, 0, ctx.patchU, 0, ctx.patches * 3);
 		const enc = d.createCommandEncoder();
@@ -595,6 +602,9 @@ const PlantGpu = (() => {
 		L.bloomNow = L.seasonsOn ? bloomFactor(season) : 0.5;
 		L.fruitNow = L.seasonsOn ? fruitFactor(Math.sin((tick / YEAR_TICKS - FRUIT_LAG) * Math.PI * 2)) : 0.5;
 		L.phaseTick(tick, season);
+		const dk = dayGrowth(tick, L.seasonsOn ? season : 0, 1, DAY_K);
+		for (let b = 0; b < DAY_BINS; b++) ctx.dayAcc[b] += dk[b];
+		ctx.dayN++;
 		const ck = (tick & 7) === 0;
 		if (ctx.pending && !ctx.ready) {
 			L.version++;
