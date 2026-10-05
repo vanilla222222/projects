@@ -52,20 +52,20 @@ class SoilLayer {
 	}
 
 	step(P) {
-		this._uptake(P.biomass, P.root, P.kind);
+		this._uptake(P.biomass, P.root, P.kind, P.form);
 		this._rows();
-		this._flow(P.sat, P.kind);
+		this._flow(P.sat, P.kind, P.form);
 		if (this._cellTick++ % CARRION_CELL_EVERY === 0) this._buildCarrionCells();
 	}
 
-	_uptake(bio, root, kind) {
+	_uptake(bio, root, kind, form) {
 		const n = this.n;
 		const own = this.own;
 		const tile = this.tile;
 		for (let i = 0; i < n; i++) {
 			const u = n + i;
 			let a = bio[i] * SOIL_UPTAKE * (0.5 + root[i]);
-			let b = kind[u] ? 0 : bio[u] * SOIL_UPTAKE * (0.5 + root[u]);
+			let b = kind[u] || (form && form[u] & 4) ? 0 : bio[u] * SOIL_UPTAKE * (0.5 + root[u]);
 			if (!(a > 0)) a = 0;
 			if (!(b > 0)) b = 0;
 			own[i] = a;
@@ -91,7 +91,7 @@ class SoilLayer {
 		}
 	}
 
-	_flow(sat, kind) {
+	_flow(sat, kind, form) {
 		const n = this.n;
 		const W = this.W;
 		const own = this.own;
@@ -119,7 +119,7 @@ class SoilLayer {
 			const va = sa < 1 ? sa : 1;
 			const vb = sb < 1 ? sb : 1;
 			sat[i] = va;
-			sat[n + i] = kind[n + i] ? 1 : vb;
+			sat[n + i] = kind[n + i] || (form && form[n + i] & 4) ? 1 : vb;
 			const take = a * va + b * vb;
 			N -= take;
 			if (N < 0) N = 0;

@@ -1,5 +1,6 @@
-const PG = 17;
-const PLANT_WEIGHTS = [1.4, 1.4, 0.6, 1.2, 0.8, 0.5, 0.7, 0.7, 0.6, 0.5, 0.6, 0.6, 0.4, 0.6, 0.3, 0.4, 0.5];
+const PG = 23;
+const PG_V1 = 17;
+const PLANT_WEIGHTS = [1.4, 1.4, 0.6, 1.2, 0.8, 0.5, 0.7, 0.7, 0.6, 0.5, 0.6, 0.6, 0.4, 0.6, 0.3, 0.4, 0.5, 0.6, 0.5, 0.3, 0.4, 0.7, 0.4];
 const PLANT_SPECIATION = 0.25;
 const PLANT_SPLIT_MIN_POP = 40;
 const YEAR_TICKS = 480;
@@ -53,6 +54,48 @@ const GERM_P = 0.12;
 const SEED_REST_DRY = 0.7;
 const GERM_USE = 0.5;
 const OLD_SEED = 1;
+const CYCLE_ANNUAL = 0.33;
+const CYCLE_BIENNIAL = 0.66;
+const ANNUAL_YEARS = 0.8;
+const BIENNIAL_YEARS = 2;
+const ANNUAL_GROWTH = 1.12;
+const BIENNIAL_CAP = 1.1;
+const HERB_WOOD = 0.3;
+const TREE_WOOD = 0.62;
+const DECID_AT = 0.5;
+const DECID_BASE = 0.92;
+const DECID_AMP = 0.5;
+const LEAF_OFF = -0.2;
+const LEAF_AMP = 0.15;
+const LEAF_DROP = 0.06;
+const AUTUMN_AT = 0.45;
+const PHASE_BINS = 8;
+const PHASE_COST = 0.6;
+const BLOSSOM_AT = 0.85;
+const BLOSSOM_GENE = 0.45;
+const HEIGHT_CAP = 0.3;
+const HEIGHT_GROWTH = 0.2;
+const HEIGHT_REACH = 2;
+const EMERGENT_AT = 0.65;
+const CLIMB_AT = 0.6;
+const EPI_ROOT = 0.35;
+const CLIMB_SHADE = 0.25;
+const CLIMB_ALONE = 0.5;
+const CLIMB_GROWTH = 0.9;
+const VINE_TAX = 0.94;
+const EPI_DRY = 0.3;
+const CLONAL_MIN = 0.25;
+const CLONAL_K = 0.6;
+const CLONAL_COST = 0.08;
+const CLONE_BIO = 0.1;
+const SPROUT_BIO = 0.04;
+const FORM_DECID = 1;
+const FORM_VINE = 2;
+const FORM_EPI = 4;
+const FORM_CLIMB = 6;
+const PHENO_AUTUMN = 1;
+const PHENO_BARE = 2;
+const PHENO_BLOSSOM = 3;
 
 const PLANT_ARCHETYPES = [
 	{ g: [0.82, 0.12, 0.5, 0.45, 0.35, 0.4, 0.2, 0.6, 0.15, 0.2, 0.3, 0.15, 0.5, 0.3, 0.15], domain: 'land' },
@@ -76,6 +119,8 @@ const PLANT_ARCHETYPES = [
 	{ g: [0.28, 0.44, 0.6, 0.05, 0.5, 0.6, 0.05, 0.05, 0, 0, 0.5, 0.2, 0.72, 0, 0.15], domain: 'land', kind: 1 },
 	{ g: [0.48, 0.48, 0.6, 0.05, 0.65, 0.6, 0.05, 0.05, 0, 0, 0.85, 0.2, 0.01, 0, 0.15], domain: 'land', kind: 1 },
 	{ g: [0.45, 0.42, 0.6, 0.05, 0.1, 0.4, 0.05, 0.05, 0, 0, 0.1, 0.8, 0.08, 0, 0.15], domain: 'land', kind: 1 },
+	{ g: [0.7, 0.68, 0.5, 0.12, 0.2, 0.5, 0.4, 0.5, 0.2, 0.25, 0.2, 0.35, 0.3, 0.2, 0.15], domain: 'land', climb: 0.85 },
+	{ g: [0.76, 0.84, 0.55, 0.08, 0.1, 0.6, 0.5, 0.15, 0.05, 0.1, 0.2, 0.72, 0.88, 0.15, 0.15], domain: 'land', climb: 0.85 },
 ];
 const PLANT_DEPTH = { 13: 0.5, 14: 0.3, 15: 0.75, 16: 0.25 };
 const PLANT_DEPTH_BASE = 0.45;
@@ -86,7 +131,64 @@ const DISP_DUNG = 0.03;
 PLANT_ARCHETYPES.forEach((a, k) => {
 	a.g[15] = a.kind ? 0 : PLANT_DEPTH[k] !== undefined ? PLANT_DEPTH[k] : PLANT_DEPTH_BASE;
 	a.g[16] = a.kind || a.domain !== 'land' ? 0 : a.g[1] < 0.45 ? 0.35 : 0.1;
+	plantLifeDefaults(a.g, 0);
+	if (a.climb) a.g[21] = a.climb;
+	if (a.kind) a.g[22] = 0;
 });
+
+function plantLifeDefaults(g, o = 0) {
+	const t = g[o];
+	const m = g[o + 1];
+	const wood = g[o + 3];
+	const herb = wood < HERB_WOOD;
+	g[o + 17] = herb ? (t > 0.62 && m < 0.4 ? 0.2 : g[o + 11] > 0.55 ? 0.5 : 0.8) : 0.85;
+	g[o + 18] = !herb && t >= 0.3 && t <= 0.7 ? 0.7 : 0.25;
+	g[o + 19] = 0.5;
+	g[o + 20] = herb ? 0.3 : wood > 0.88 ? 0.72 : 0.5;
+	g[o + 21] = 0.1;
+	g[o + 22] = herb ? (m > 0.75 ? 0.7 : g[o + 11] > 0.55 ? 0.35 : 0.5) : wood < TREE_WOOD ? 0.3 : 0.1;
+}
+
+function padPlantGenes(src, count) {
+	if (!src || src.length !== count * PG_V1) return src;
+	const out = new Float32Array(count * PG);
+	for (let k = 0, a = 0, b = 0; k < count; k++, a += PG_V1, b += PG) {
+		for (let j = 0; j < PG_V1; j++) out[b + j] = src[a + j];
+		plantLifeDefaults(out, b);
+	}
+	return out;
+}
+
+function plantCycle(g, o = 0) {
+	if (g[o + 3] >= HERB_WOOD) return 2;
+	const c = g[o + 17];
+	return c < CYCLE_ANNUAL ? 0 : c < CYCLE_BIENNIAL ? 1 : 2;
+}
+
+function plantLayerOf(g, o = 0) {
+	const wood = g[o + 3];
+	if (wood < HERB_WOOD) return 3;
+	if (wood < TREE_WOOD) return 2;
+	return g[o + 20] > EMERGENT_AT ? 0 : 1;
+}
+
+function plantPhaseBin(g, o = 0) {
+	const b = Math.floor(g[o + 19] * PHASE_BINS);
+	return b < PHASE_BINS ? b : PHASE_BINS - 1;
+}
+
+function plantForm(g, o, landPlant) {
+	if (!landPlant) return 4 << 3;
+	const wood = g[o + 3];
+	let f = plantPhaseBin(g, o) << 3;
+	if (wood >= HERB_WOOD && g[o + 18] > DECID_AT) f |= FORM_DECID;
+	if (wood < HERB_WOOD && g[o + 21] > CLIMB_AT) f |= g[o + 7] < EPI_ROOT ? FORM_EPI : FORM_VINE;
+	return f;
+}
+
+function phaseCurve(out, tick, lag, on) {
+	for (let b = 0; b < PHASE_BINS; b++) out[b] = on ? 0.5 + 0.5 * Math.sin((tick / YEAR_TICKS - lag - (b - 4) / PHASE_BINS) * Math.PI * 2) : 0.5;
+}
 
 function plantTraitsFrom(g, o = 0) {
 	const niche = g[o + 2];
@@ -115,8 +217,8 @@ function plantTraitsFrom(g, o = 0) {
 		defence: g[o + 13],
 		blightRes: g[o + 14],
 		fire: g[o + 16],
-		formCap: 0.8 + 2.4 * wood,
-		growth: 0.05 * (1 - 0.72 * wood) * (1 - 0.35 * tox) * (1 - 0.12 * disp) * (1 - 0.3 * shade) * (1 - 0.2 * root) * (1 - 0.25 * fruiting - 0.15 * sweet) * (1 - DEFENCE_COST * g[o + 13]) * (1 - BLIGHT_RES_COST * g[o + 14]) * (1 - FIRE_COST * g[o + 16]),
+		formCap: (0.8 + 2.4 * wood) * (1 + HEIGHT_CAP * (g[o + 20] - 0.5) * wood),
+		growth: 0.05 * (1 - HEIGHT_GROWTH * (g[o + 20] - 0.5) * wood) * (1 - CLONAL_COST * g[o + 22]) * (1 - 0.72 * wood) * (1 - 0.35 * tox) * (1 - 0.12 * disp) * (1 - 0.3 * shade) * (1 - 0.2 * root) * (1 - 0.25 * fruiting - 0.15 * sweet) * (1 - DEFENCE_COST * g[o + 13]) * (1 - BLIGHT_RES_COST * g[o + 14]) * (1 - FIRE_COST * g[o + 16]),
 	};
 }
 
@@ -155,6 +257,7 @@ function plantCategory(g, domain, kind = 0) {
 	const wood = g[3];
 	if (domain === 'water') return m > 0.45 ? (wood > 0.25 ? 'kelp' : 'plankton') : 'algae';
 	if (wood < 0.3) {
+		if (g[21] > CLIMB_AT) return g[7] < EPI_ROOT ? 'epiphyte' : 'vine';
 		if (g[11] > 0.55) return 'flower';
 		return t < 0.3 ? 'moss' : m > 0.75 ? 'reed' : 'grass';
 	}
@@ -184,6 +287,8 @@ const PLANT_ICON_VARIANTS = {
 	inkcap: ['inkcap', 'morel', 'chanterelle'],
 	toadstool: ['toadstool', 'bracket', 'porcini'],
 	truffle: ['truffle', 'stinkhorn', 'jellyfungus'],
+	vine: ['vine', 'ivy', 'vine'],
+	epiphyte: ['orchid', 'bromeliad', 'orchid'],
 };
 
 function plantIcon(category, id) {
@@ -210,7 +315,12 @@ const PLANT_CATEGORY_LABEL = {
 	inkcap: 'Inkcap',
 	toadstool: 'Toadstool',
 	truffle: 'Truffle',
+	vine: 'Vine',
+	epiphyte: 'Epiphyte',
 };
+
+const PLANT_CYCLE_LABEL = ['Annual', 'Biennial', 'Perennial'];
+const PLANT_LAYER_LABEL = ['Emergent', 'Canopy', 'Shrub layer', 'Ground layer'];
 
 class PlantLayer {
 	constructor(world, registry, rng, log) {
@@ -255,6 +365,13 @@ class PlantLayer {
 		this.fruitMax = new Float32Array(n2);
 		this._fruitK = new Float32Array(n2);
 		this._bloomK = new Float32Array(n2);
+		this.form = new Uint8Array(n2);
+		this.pheno = new Uint8Array(n);
+		this.bloomBin = new Float32Array(PHASE_BINS).fill(0.5);
+		this.fruitBin = new Float32Array(PHASE_BINS).fill(0.5);
+		this.leafOff = false;
+		this.clones = 0;
+		this._keep = SPROUT_BIO;
 		this.poll = new Float32Array(n);
 		this.flowerPoll = 0;
 		this.nectarHue = 0;
@@ -299,6 +416,7 @@ class PlantLayer {
 	restoreDerived() {
 		const n = this.n;
 		const n2 = 2 * n;
+		this.upgradeGenes();
 		this.water = new Uint8Array(n);
 		this.depth = new Float32Array(n);
 		this.habit = new Float32Array(n);
@@ -309,11 +427,32 @@ class PlantLayer {
 		const disp = (this.disp = new Float32Array(n2));
 		const shade = (this.shade = new Float32Array(n2));
 		const root = (this.root = new Float32Array(n2));
+		const form = (this.form = new Uint8Array(n2));
 		for (let p = 0, o = 0; p < n2; p++, o += PG) {
 			tox[p] = g[o + 4];
 			disp[p] = g[o + 5];
 			shade[p] = g[o + 6];
 			root[p] = g[o + 7];
+			if (this.species[p]) form[p] = plantForm(g, o, !this.water[p < n ? p : p - n] && !this.kind[p]);
+		}
+	}
+
+	upgradeGenes() {
+		const n2 = 2 * this.n;
+		if (this.genome.length === n2 * PG_V1) this.genome = padPlantGenes(this.genome, n2);
+		if (this.seedGenome.length === this.n * PG_V1) this.seedGenome = padPlantGenes(this.seedGenome, this.n);
+		if (!this._scratch || this._scratch.length < PG) this._scratch = new Float32Array(PG);
+		if (!this.pheno || this.pheno.length !== this.n) this.pheno = new Uint8Array(this.n);
+		if (!this.bloomBin) this.bloomBin = new Float32Array(PHASE_BINS).fill(this.bloomNow);
+		if (!this.fruitBin) this.fruitBin = new Float32Array(PHASE_BINS).fill(this.fruitNow);
+		if (!(this._keep > 0)) this._keep = SPROUT_BIO;
+		if (!this.clones) this.clones = 0;
+		if (this.registry && this.registry.all) {
+			for (const sp of this.registry.all.values()) {
+				if (sp.group !== 'plant') continue;
+				if (sp.mean && sp.mean.length === PG_V1) sp.mean = padPlantGenes(sp.mean, 1);
+				if (sp.genome && sp.genome.length === PG_V1) sp.genome = padPlantGenes(sp.genome, 1);
+			}
 		}
 	}
 
@@ -441,18 +580,32 @@ class PlantLayer {
 		const base = p * PG;
 		for (let k = 0; k < PG; k++) this.genome[base + k] = genome[off + k];
 		const t = plantTraitsFrom(this.genome, base);
-		this.cap[p] = this.capFor(t, i);
+		const landPlant = !kind && !this.water[i];
+		const fm = plantForm(this.genome, base, landPlant);
+		const cyc = landPlant ? plantCycle(this.genome, base) : 2;
+		const amp = this.seasonAmp[i];
+		this.form[p] = fm;
+		let cap = this.capFor(t, i);
+		let gm = 1;
+		if (cyc === 0) gm = ANNUAL_GROWTH;
+		else if (cyc === 1) cap *= BIENNIAL_CAP;
+		if (fm & FORM_DECID) gm *= DECID_BASE + DECID_AMP * amp;
+		if (fm & FORM_CLIMB) gm *= CLIMB_GROWTH;
+		if (fm & FORM_EPI) cap *= EPI_DRY + (1 - EPI_DRY) * this.world.humidity[i];
+		this.cap[p] = cap;
+		const shift = ((fm >> 3) - 4) / PHASE_BINS;
+		const timing = landPlant ? 1 + PHASE_COST * amp * (Math.cos(shift * Math.PI * 2) - 1) : 1;
 		const floor = this.cap[p] * 0.55 * t.wood * t.wood;
-		const years = kind ? FUNGUS_LIFE : PLANT_LIFE_BASE + PLANT_LIFE_WOOD * t.wood * t.wood;
+		const years = kind ? FUNGUS_LIFE : cyc === 0 ? ANNUAL_YEARS : cyc === 1 ? BIENNIAL_YEARS : PLANT_LIFE_BASE + PLANT_LIFE_WOOD * t.wood * t.wood;
 		this.life[p] = Math.round(((years * YEAR_TICKS) / AGE_STEP) * (1 - LIFE_JITTER + 2 * LIFE_JITTER * this.rng.next()));
 		this.age[p] = 0;
 		this.floor[p] = 0;
 		if (kind === 0) {
-			this.growth[p] = t.growth * (1 - 0.2 * t.bloom);
+			this.growth[p] = t.growth * (1 - 0.2 * t.bloom) * gm;
 			this.floorM[p] = floor * (1 + 0.2 * (1 - t.fruiting));
 			this.myco[p] = 0;
-			this._fruitK[p] = !this.water[i] && t.wood >= 0.3 && t.fruiting > 0.2 ? t.fruiting * FRUIT_FRAC * FRUIT_WIND : 0;
-			this._bloomK[p] = t.bloom * FLOWER_SEED_BONUS * FRUIT_WIND;
+			this._fruitK[p] = !this.water[i] && t.wood >= 0.3 && t.fruiting > 0.2 ? t.fruiting * FRUIT_FRAC * FRUIT_WIND * timing : 0;
+			this._bloomK[p] = t.bloom * FLOWER_SEED_BONUS * FRUIT_WIND * timing;
 		} else {
 			this.growth[p] = t.growth;
 			this.floorM[p] = floor;
@@ -487,6 +640,7 @@ class PlantLayer {
 		this.fruitMax[p] = 0;
 		this._fruitK[p] = 0;
 		this._bloomK[p] = 0;
+		this.form[p] = 0;
 	}
 
 	matureAt(p) {
@@ -655,6 +809,11 @@ class PlantLayer {
 		const fruitNow = this.seasonsOn ? fruitFactor(Math.sin((tick / YEAR_TICKS - FRUIT_LAG) * Math.PI * 2)) : 0.5;
 		this.bloomNow = bloomNow;
 		this.fruitNow = fruitNow;
+		this.phaseTick(tick, season);
+		const bloomBin = this.bloomBin;
+		const fruitBin = this.fruitBin;
+		const form = this.form;
+		const leafOff = this.leafOff;
 		const kind = this.kind;
 		const myco = this.myco;
 		const fruit = this.fruit;
@@ -708,6 +867,7 @@ class PlantLayer {
 					this._clear(p);
 					continue;
 				}
+				if (leafOff && form[p] & FORM_DECID) this._dropLeaves(p, i);
 			}
 			const mt = lf * SEEDLING_FRAC > SEEDLING_MIN / AGE_STEP ? lf * SEEDLING_FRAC : SEEDLING_MIN / AGE_STEP;
 			const young = ag < mt;
@@ -731,12 +891,14 @@ class PlantLayer {
 				}
 				fungi++;
 			} else {
+				const climb = under && form[p] & FORM_CLIMB;
 				if (under && species[i]) {
 					const cb = bio[i];
-					const sf = SHADE_MAX * (cb < SHADE_FULL_BIOMASS ? cb / SHADE_FULL_BIOMASS : 1);
+					const sf = SHADE_MAX * (cb < SHADE_FULL_BIOMASS ? cb / SHADE_FULL_BIOMASS : 1) * (climb ? CLIMB_SHADE : 1);
 					light = 1 - sf * (1 - shade[p]);
 				}
 				K = cap[p] * light;
+				if (climb && !species[i]) K *= CLIMB_ALONE;
 				if (under && bloomK[p] > flowerK && !water[i]) {
 					flowers++;
 					flowerPoll += poll[i];
@@ -767,6 +929,7 @@ class PlantLayer {
 				sat[p] = s;
 				tax = MYCO_TAX;
 			}
+			if (!under && form[n + i] & FORM_VINE && species[n + i]) tax *= VINE_TAX;
 			if (s >= SAT_OK) {
 				h += HEALTH_RECOVER;
 				if (h > 1) h = 1;
@@ -805,7 +968,7 @@ class PlantLayer {
 			if (young) continue;
 			const fq = fruitK[p];
 			if (fq > 0) {
-				const target = fq * b * fruitNow * h * (POLL_FRUIT_BASE + (1 - POLL_FRUIT_BASE) * poll[i]) * (aged ? OLD_FRUIT : 1);
+				const target = fq * b * fruitBin[form[p] >> 3] * h * (POLL_FRUIT_BASE + (1 - POLL_FRUIT_BASE) * poll[i]) * (aged ? OLD_FRUIT : 1);
 				fruitMax[p] = target;
 				let f = fruit[p];
 				if (f < target) f += (target - f) * FRUIT_RATE;
@@ -817,13 +980,16 @@ class PlantLayer {
 				fruit[p] = f;
 				totalFruit += f;
 			}
-			if (h >= HEALTH_SPREAD_MIN && fullness > 0.3 && rng.next() < (0.006 + 0.045 * disp[p]) * fullness * (1 + bloomK[p] * bloomNow * (POLL_WIND + (1 - POLL_WIND) * poll[i]))) {
+			if (h >= HEALTH_SPREAD_MIN && fullness > 0.3 && rng.next() < (0.006 + 0.045 * disp[p]) * fullness * (1 + bloomK[p] * bloomBin[form[p] >> 3] * (POLL_WIND + (1 - POLL_WIND) * poll[i]))) {
 				this._spread(p, i, W, H, tick);
 			}
 		}
 		let cover = 0;
 		let seedTiles = 0;
-		if (ck) seedTiles = this._seedPass(tick);
+		if (ck) {
+			seedTiles = this._seedPass(tick);
+			this.updatePheno(tick, season);
+		}
 		for (let i = 0; i < n; i++) {
 			if (species[i] || species[n + i]) cover++;
 			if (poll[i] > 0) poll[i] *= POLL_DECAY;
@@ -844,6 +1010,57 @@ class PlantLayer {
 			this.seedResting = 0;
 		}
 		this.version++;
+	}
+
+	phaseTick(tick, season) {
+		const on = this.seasonsOn;
+		phaseCurve(this.bloomBin, tick, 0, on);
+		phaseCurve(this.fruitBin, tick, FRUIT_LAG, on);
+		this.leafOff = on && season < LEAF_OFF;
+	}
+
+	_dropLeaves(p, i) {
+		const amp = this.seasonAmp[i];
+		if (amp <= LEAF_AMP) return;
+		const b = this.biomass[p];
+		const fl = this.floor[p] > 0.004 ? this.floor[p] : 0.004;
+		if (b <= fl) return;
+		const d = (b - fl) * LEAF_DROP * amp;
+		this.biomass[p] = b - d;
+		this.soil.litter[i] += d;
+	}
+
+	updatePheno(tick, season) {
+		const n = this.n;
+		const pheno = this.pheno;
+		const species = this.species;
+		const kind = this.kind;
+		const water = this.water;
+		const form = this.form;
+		const amp = this.seasonAmp;
+		const g = this.genome;
+		const bloomBin = this.bloomBin;
+		if (!this.seasonsOn) {
+			pheno.fill(0);
+			return;
+		}
+		const falling = Math.cos((tick / YEAR_TICKS) * Math.PI * 2) < 0;
+		const bare = season < LEAF_OFF;
+		const autumn = falling && season < AUTUMN_AT;
+		for (let i = 0; i < n; i++) {
+			let v = 0;
+			if (water[i]) {
+				pheno[i] = 0;
+				continue;
+			}
+			if (species[i] && form[i] & FORM_DECID && amp[i] > LEAF_AMP) v = bare ? PHENO_BARE : autumn ? PHENO_AUTUMN : 0;
+			if (!v) {
+				const u = n + i;
+				const pb = species[i] && g[i * PG + 11] > BLOSSOM_GENE ? i : species[u] && !kind[u] && g[u * PG + 11] > BLOSSOM_GENE ? u : -1;
+				if (pb >= 0 && bloomBin[form[pb] >> 3] > BLOSSOM_AT) v = PHENO_BLOSSOM;
+			}
+			pheno[i] = v;
+		}
 	}
 
 	_seedPass(tick) {
@@ -966,10 +1183,20 @@ class PlantLayer {
 	}
 
 	_spread(p, i, W, H, tick) {
+		const base = p * PG;
+		const g = this.genome;
+		const landPlant = !this.kind[p] && !this.water[i];
+		if (landPlant && plantCycle(g, base) === 1 && this.age[p] * 2 < this.life[p]) return;
 		const rng = this.rng;
 		const x = i % W;
 		const y = (i / W) | 0;
-		const reach = 1 + Math.floor(rng.next() * (1 + this.disp[p] * 4));
+		const cl = this.kind[p] ? 0 : g[base + 22] - CLONAL_MIN;
+		if (cl > 0 && rng.next() < cl * CLONAL_K) {
+			this._clone(p, i, x, y, W, H, tick);
+			return;
+		}
+		const lift = landPlant ? HEIGHT_REACH * g[base + 20] * g[base + 3] : 0;
+		const reach = 1 + Math.floor(rng.next() * (1 + this.disp[p] * 4 + lift));
 		const tx = x + Math.round((rng.next() * 2 - 1) * reach);
 		const ty = y + Math.round((rng.next() * 2 - 1) * reach);
 		if (tx < 0 || ty < 0 || tx >= W || ty >= H) return;
@@ -985,6 +1212,22 @@ class PlantLayer {
 		const child = this._scratch;
 		mutateGenes(this.genome, p * PG, child, 0, PG, rng, 0.2, 0.025);
 		this.plantSeed(j, child, this.registry.get(parentId), tick);
+	}
+
+	_clone(p, i, x, y, W, H, tick) {
+		const rng = this.rng;
+		const tx = x + Math.round(rng.next() * 2 - 1);
+		const ty = y + Math.round(rng.next() * 2 - 1);
+		if (tx < 0 || ty < 0 || tx >= W || ty >= H) return;
+		const j = ty * W + tx;
+		if (j === i || this.water[j] !== this.water[i]) return;
+		const parentId = this.species[p];
+		const child = this._scratch;
+		const base = p * PG;
+		for (let k = 0; k < PG; k++) child[k] = this.genome[base + k];
+		this._keep = CLONE_BIO;
+		if (this.plantSeed(j, child, this.registry.get(parentId), tick, false)) this.clones++;
+		this._keep = SPROUT_BIO;
 	}
 
 	plantSeed(j, genome, parentSp, tick, bank = true) {
@@ -1055,7 +1298,7 @@ class PlantLayer {
 			}
 		}
 		if (fresh && this.species[pj]) this.soil.returnMatter(j, this.biomass[pj] + this.fruit[pj]);
-		const keep = fresh ? 0.04 : this.biomass[pj];
+		const keep = fresh ? this._keep : this.biomass[pj];
 		const ag = fresh ? 0 : this.age[pj];
 		this._set(pj, sp, child, 0);
 		this.biomass[pj] = Math.min(keep, this.cap[pj]);

@@ -253,7 +253,7 @@ class Ecosystem {
 		s.thirstDeaths = A.deaths.thirst;
 		Object.assign(s.deaths, A.deaths);
 		s.plants = this.plants.coverTiles;
-		Object.assign(s.plantStages, this.plants.stages, { oldDeaths: this.plants.oldDeaths, germinated: this.plants.germinated, grazedSeedlings: this.plants.grazedSeedlings });
+		Object.assign(s.plantStages, this.plants.stages, { oldDeaths: this.plants.oldDeaths, germinated: this.plants.germinated, grazedSeedlings: this.plants.grazedSeedlings, clones: this.plants.clones });
 		s.plantBiomass = this.plants.totalBiomass;
 		s.fruit = this.plants.totalFruit;
 		s.fungi = this.plants.fungusTiles;

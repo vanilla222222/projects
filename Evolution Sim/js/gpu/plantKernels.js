@@ -1,14 +1,14 @@
 const PlantKernels = (() => {
 	const WG = 64;
 	const SLOT_F = { bio: 0, health: 1, fruit: 2, cap: 3, growth: 4, shade: 5, disp: 6, fruitK: 7, bloomK: 8, root: 9, sat: 10, own: 11 };
-	const SLOT_U = { occ: 0, kind: 1, myco: 2, life: 3, age: 4, blight: 5 };
+	const SLOT_U = { occ: 0, kind: 1, myco: 2, life: 3, age: 4, blight: 5, form: 6 };
 	const TILE_F = { nut: 0, litter: 1, carrion: 2, poll: 3, moist: 4, samp: 5, base: 6, water: 7, tile: 8 };
 	const PART = { total: 0, fruit: 1, fungi: 2, flowers: 3, flowerPoll: 4, seedlings: 5, mature: 6, old: 7, litter: 8, carrion: 9 };
 	const NF_SLOT = 12;
-	const NU_SLOT = 6;
+	const NU_SLOT = 7;
 	const NF_TILE = 9;
 	const N_PART = 10;
-	const UNIFORM_BYTES = 48;
+	const UNIFORM_BYTES = 112;
 
 	function f(v) {
 		const s = String(v);
@@ -30,6 +30,8 @@ struct U {
 	bloomNow: f32,
 	fruitNow: f32,
 	flowerK: f32,
+	bloomB: array<vec4<f32>, 2>,
+	fruitB: array<vec4<f32>, 2>,
 };
 @group(0) @binding(0) var<uniform> u: U;
 @group(0) @binding(1) var<storage, read_write> sF: array<f32>;
@@ -41,6 +43,8 @@ struct U {
 
 fn fi(field: u32, p: u32) -> u32 { return field * u.n * 2u + p; }
 fn ti(field: u32, i: u32) -> u32 { return field * u.n + i; }
+fn bloomAt(fm: u32) -> f32 { let b = (fm >> 3u) & 7u; return u.bloomB[b >> 2u][b & 3u]; }
+fn fruitAt(fm: u32) -> f32 { let b = (fm >> 3u) & 7u; return u.fruitB[b >> 2u][b & 3u]; }
 `;
 	}
 
@@ -74,7 +78,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 	let un = u.n + i;
 	var a = sF[fi(${SLOT_F.bio}u, i)] * ${f(SOIL_UPTAKE)} * (0.5 + sF[fi(${SLOT_F.root}u, i)]);
 	var b = 0.0;
-	if (sU[fi(${SLOT_U.kind}u, un)] == 0u) { b = sF[fi(${SLOT_F.bio}u, un)] * ${f(SOIL_UPTAKE)} * (0.5 + sF[fi(${SLOT_F.root}u, un)]); }
+	if (sU[fi(${SLOT_U.kind}u, un)] == 0u && (sU[fi(${SLOT_U.form}u, un)] & 4u) == 0u) { b = sF[fi(${SLOT_F.bio}u, un)] * ${f(SOIL_UPTAKE)} * (0.5 + sF[fi(${SLOT_F.root}u, un)]); }
 	a = select(0.0, a, a > 0.0);
 	b = select(0.0, b, b > 0.0);
 	sF[fi(${SLOT_F.own}u, i)] = a;
@@ -123,7 +127,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>, @builtin(local_invocation
 		let va = select(1.0, sa, sa < 1.0);
 		let vb = select(1.0, sb, sb < 1.0);
 		sF[fi(${SLOT_F.sat}u, i)] = va;
-		sF[fi(${SLOT_F.sat}u, un)] = select(vb, 1.0, sU[fi(${SLOT_U.kind}u, un)] != 0u);
+		sF[fi(${SLOT_F.sat}u, un)] = select(vb, 1.0, sU[fi(${SLOT_U.kind}u, un)] != 0u || (sU[fi(${SLOT_U.form}u, un)] & 4u) != 0u);
 		N -= a * va + b * vb;
 		if (N < 0.0) { N = 0.0; }
 		N += (tF[ti(${TILE_F.base}u, i)] - N) * ${f(SOIL_REFILL)};
@@ -202,6 +206,7 @@ fn slot(p: u32, i: u32, under: bool) -> bool {
 	let cap = sF[fi(${SLOT_F.cap}u, p)];
 	let poll = tF[ti(${TILE_F.poll}u, i)];
 	let bk = sF[fi(${SLOT_F.bloomK}u, p)];
+	let fm = sU[fi(${SLOT_U.form}u, p)];
 	var light = 1.0;
 	var K = 0.0;
 	if (fk) {
@@ -215,12 +220,14 @@ fn slot(p: u32, i: u32, under: bool) -> bool {
 		}
 		acc[2] += 1.0;
 	} else {
+		let climb = under && (fm & ${FORM_CLIMB}u) != 0u;
 		if (under && canopy) {
 			let cb = sF[fi(${SLOT_F.bio}u, i)];
-			let sf = ${f(SHADE_MAX)} * select(1.0, cb / ${f(SHADE_FULL_BIOMASS)}, cb < ${f(SHADE_FULL_BIOMASS)});
+			let sf = ${f(SHADE_MAX)} * select(1.0, cb / ${f(SHADE_FULL_BIOMASS)}, cb < ${f(SHADE_FULL_BIOMASS)}) * select(1.0, ${f(CLIMB_SHADE)}, climb);
 			light = 1.0 - sf * (1.0 - sF[fi(${SLOT_F.shade}u, p)]);
 		}
 		K = cap * light;
+		if (climb && !canopy) { K *= ${f(CLIMB_ALONE)}; }
 		if (under && bk > u.flowerK && tF[ti(${TILE_F.water}u, i)] == 0.0) {
 			acc[3] += 1.0;
 			acc[4] += poll;
@@ -251,6 +258,7 @@ fn slot(p: u32, i: u32, under: bool) -> bool {
 		sF[fi(${SLOT_F.sat}u, p)] = s;
 		tax = ${f(MYCO_TAX)};
 	}
+	if (!under && (sU[fi(${SLOT_U.form}u, un)] & ${FORM_VINE}u) != 0u && sU[fi(${SLOT_U.occ}u, un)] != 0u) { tax *= ${f(VINE_TAX)}; }
 	if (s >= ${f(SAT_OK)}) {
 		h += ${f(HEALTH_RECOVER)};
 		if (h > 1.0) { h = 1.0; }
@@ -284,7 +292,7 @@ fn slot(p: u32, i: u32, under: bool) -> bool {
 	if (young) { return true; }
 	let fq = sF[fi(${SLOT_F.fruitK}u, p)];
 	if (fq > 0.0) {
-		let goal = fq * b * u.fruitNow * h * (${f(POLL_FRUIT_BASE)} + (1.0 - ${f(POLL_FRUIT_BASE)}) * poll) * select(1.0, ${f(OLD_FRUIT)}, aged);
+		let goal = fq * b * fruitAt(fm) * h * (${f(POLL_FRUIT_BASE)} + (1.0 - ${f(POLL_FRUIT_BASE)}) * poll) * select(1.0, ${f(OLD_FRUIT)}, aged);
 		var fr = sF[fi(${SLOT_F.fruit}u, p)];
 		if (fr < goal) { fr += (goal - fr) * ${f(FRUIT_RATE)}; }
 		else {
@@ -296,7 +304,7 @@ fn slot(p: u32, i: u32, under: bool) -> bool {
 		acc[1] += fr;
 	}
 	if (h >= ${f(HEALTH_SPREAD_MIN)} && fullness > 0.3) {
-		let chance = (0.006 + 0.045 * sF[fi(${SLOT_F.disp}u, p)]) * fullness * (1.0 + bk * u.bloomNow * (${f(POLL_WIND)} + (1.0 - ${f(POLL_WIND)}) * poll));
+		let chance = (0.006 + 0.045 * sF[fi(${SLOT_F.disp}u, p)]) * fullness * (1.0 + bk * bloomAt(fm) * (${f(POLL_WIND)} + (1.0 - ${f(POLL_WIND)}) * poll));
 		if (rnd(p) < chance) { atomicOr(&mask[p >> 5u], 1u << (p & 31u)); }
 	}
 	return true;

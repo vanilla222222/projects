@@ -23,7 +23,7 @@ const EvoSave = (() => {
 	};
 
 	const DERIVED = {
-		PlantLayer: ['water', 'depth', 'habit', 'seasonAmp', 'tox', 'disp', 'shade', 'root'],
+		PlantLayer: ['water', 'depth', 'habit', 'seasonAmp', 'tox', 'disp', 'shade', 'root', 'form'],
 		SoilLayer: ['base', 'own', 'tile', 'row'],
 		WeatherLayer: ['_evapK', '_queue'],
 		BugLayer: ['app', 'mob', 'rate'],
@@ -269,11 +269,22 @@ const EvoSave = (() => {
 		return { header, bin };
 	}
 
+	function upgrade(eco) {
+		if (typeof PG !== 'number') return;
+		const grow = (o, k) => {
+			if (o && o[k] && o[k].length < PG) o[k] = new Float32Array(PG);
+		};
+		grow(eco.animals, 'seedGenome');
+		grow(eco.disasters, '_scratch');
+		if (eco.plants && typeof eco.plants.upgradeGenes === 'function') eco.plants.upgradeGenes();
+	}
+
 	async function decode(gz, makeWorld) {
 		const { header, bin } = await readHeader(gz);
 		const world = makeWorld(header.w, header.h, header.seed, { gen: header.worldGen || 2 });
 		const eco = deserialize(header.records, bin, world);
 		if (!eco || eco.world !== world || eco.tick !== header.tick) throw new Error('Save file contents are inconsistent');
+		upgrade(eco);
 		return { eco, world, meta: header.meta || {}, fast: !!header.fast };
 	}
 

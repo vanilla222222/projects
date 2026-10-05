@@ -110,6 +110,7 @@ const PlantGpu = (() => {
 			sCap: new Float32Array(n2),
 			sLife: new Uint16Array(n2),
 			sBlight: new Uint8Array(n2),
+			sForm: new Uint8Array(n2),
 			sMoist: new Float32Array(n),
 			sAmp: new Float32Array(n),
 			ageU: new Uint32Array(n2),
@@ -319,6 +320,7 @@ const PlantGpu = (() => {
 					L._clear(p);
 					continue;
 				}
+				if (L.leafOff && L.form[p] & FORM_DECID) L._dropLeaves(p, p < n ? p : p - n);
 				const mt = lf * SEEDLING_FRAC > SEEDLING_MIN / AGE_STEP ? lf * SEEDLING_FRAC : SEEDLING_MIN / AGE_STEP;
 				if (ag >= mt && floor[p] !== floorM[p]) floor[p] = floorM[p];
 			}
@@ -334,6 +336,7 @@ const PlantGpu = (() => {
 			L.stages.seedTiles = seedTiles;
 			L.stages.seedDormant = L.seedResting;
 			L.seedResting = 0;
+			L.updatePheno(tick, L.season);
 		}
 	}
 
@@ -389,6 +392,8 @@ const PlantGpu = (() => {
 			sU[SU.life * n2 + p] = L.life[p];
 			sU[SU.age * n2 + p] = L.age[p];
 			sU[SU.blight * n2 + p] = bl;
+			sU[SU.form * n2 + p] = L.form[p];
+			ctx.sForm[p] = L.form[p];
 			ctx.sOcc[p] = occ;
 			ctx.sCap[p] = L.cap[p];
 			ctx.sLife[p] = L.life[p];
@@ -461,18 +466,20 @@ const PlantGpu = (() => {
 		const health = L.health;
 		const fruit = L.fruit;
 		const blight = L.blight;
-		const { sOcc, sCap, sLife, sBlight, bBio, bHealth, bFruit } = ctx;
+		const { sOcc, sCap, sLife, sBlight, sForm, bBio, bHealth, bFruit } = ctx;
+		const form = L.form;
 		for (let p = 0; p < n2; p++) {
 			const occ = species[p] ? 1 : 0;
 			const b = bio[p];
 			const h = health[p];
 			const fr = fruit[p];
-			if (occ !== sOcc[p] || (occ && (cap[p] !== sCap[p] || life[p] !== sLife[p]))) {
+			if (occ !== sOcc[p] || form[p] !== sForm[p] || (occ && (cap[p] !== sCap[p] || life[p] !== sLife[p]))) {
 				const ok =
 					patchU(ctx, SU.occ * n2 + p, occ) &&
 					patchU(ctx, SU.kind * n2 + p, L.kind[p]) &&
 					patchU(ctx, SU.myco * n2 + p, L.myco[p]) &&
 					patchU(ctx, SU.life * n2 + p, life[p]) &&
+						patchU(ctx, SU.form * n2 + p, form[p]) &&
 					(ck || patchU(ctx, SU.age * n2 + p, L.age[p])) &&
 					patchF(ctx, 0, SF.cap * n2 + p, cap[p]) &&
 					patchF(ctx, 0, SF.growth * n2 + p, L.growth[p]) &&
@@ -488,6 +495,7 @@ const PlantGpu = (() => {
 				sOcc[p] = occ;
 				sCap[p] = cap[p];
 				sLife[p] = life[p];
+				sForm[p] = form[p];
 			} else {
 				if (b !== R[p] && !patchF(ctx, 0, SF.bio * n2 + p, b)) return false;
 				if (h !== R[n2 + p] && !patchF(ctx, 0, SF.health * n2 + p, h)) return false;
@@ -529,6 +537,10 @@ const PlantGpu = (() => {
 		uf[9] = L.bloomNow;
 		uf[10] = L.fruitNow;
 		uf[11] = 0.55 * FLOWER_SEED_BONUS * FRUIT_WIND;
+		for (let b = 0; b < PHASE_BINS; b++) {
+			uf[12 + b] = L.bloomBin[b];
+			uf[20 + b] = L.fruitBin[b];
+		}
 		q.writeBuffer(ctx.uni, 0, u);
 		if (ctx.patches) q.writeBuffer(ctx.patch, 0, ctx.patchU, 0, ctx.patches * 3);
 		const enc = d.createCommandEncoder();
@@ -578,6 +590,7 @@ const PlantGpu = (() => {
 		L.season = season;
 		L.bloomNow = L.seasonsOn ? bloomFactor(season) : 0.5;
 		L.fruitNow = L.seasonsOn ? fruitFactor(Math.sin((tick / YEAR_TICKS - FRUIT_LAG) * Math.PI * 2)) : 0.5;
+		L.phaseTick(tick, season);
 		const ck = (tick & 7) === 0;
 		if (ctx.pending && !ctx.ready) {
 			L.version++;
