@@ -235,6 +235,7 @@ const JUV_HUNT = 0.35;
 const META_AGE = 0.5;
 const TAD_DIET = 0.1;
 const TAD_FOOD = 1.8;
+const TAD_ALGAE = 0.8;
 const TAD_HIDE = 0.55;
 const TAD_WANDER = 3;
 const LARVA_DIET = 0.2;
@@ -2288,7 +2289,7 @@ class AnimalPool {
 					this.ttl[i]--;
 					acted = true;
 				}
-				if (this.walk[tile] & 2 && this.energy[i] < full) this.energy[i] += this._eat(i, m75 * TAD_FOOD, FOOD_LEAF, sk0);
+				if (this.walk[tile] & 2 && this.energy[i] < full) this.energy[i] += this._eat(i, m75 * TAD_FOOD * this._algae(tile), FOOD_LEAF, sk0);
 			}
 
 			if (!acted && this.dsp[i] > 0) {
@@ -2531,7 +2532,7 @@ class AnimalPool {
 			const dry = Wx && dom !== 1 && this.water[i] <= 0;
 			if (dry) cost *= DEHYDRATE_COST;
 			cost += moved * 0.012 * this.mass[i];
-			if (dom === 1) {
+			if (dom === 1 && !this.lv[i]) {
 				const o2 = this.plants.oxygen[tile];
 				if (o2 < HYPOXIA) cost *= 1 + HYPOXIA_COST * (HYPOXIA - o2) / HYPOXIA;
 			}
@@ -3301,6 +3302,14 @@ class AnimalPool {
 		if (this.diet[p] >= 0.66) return;
 		const sp = this.registry.get(this.sp[p]);
 		this.eatenBy[this.cls[p] * 2 + (sp && sp.mean[G_ALARM] > ALARM_MIN ? 1 : 0)]++;
+	}
+
+	_algae(tile) {
+		const P = this.plants;
+		let a = P.bloom[tile];
+		const u = P.n + tile;
+		if (P.water[tile] && P.species[u]) a += P.biomass[u];
+		return 1 + TAD_ALGAE * (a < 1 ? a : 1);
 	}
 
 	_kill(i, frac = 1) {
