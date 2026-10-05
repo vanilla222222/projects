@@ -21,6 +21,13 @@ const GOD_SICK_PLANTS = 60;
 const GOD_LOCUST_STRIP = 0.3;
 const GOD_LOCUST_SWARM = 0.75;
 const GOD_PLANT_CLS = 6;
+const GOD_FEED_FAT = 0.5;
+const GOD_FERT = 0.5;
+const GOD_BLIGHT = 0.3;
+const GOD_STER_MIN = 10;
+const GOD_STER_MAX = 5000;
+const GOD_FX_MAX = 12;
+const GOD_BLESS = ['feed', 'heal', 'sterile', 'cull'];
 
 class GodTools {
 	constructor() {
@@ -195,6 +202,8 @@ class GodTools {
 		if (a.kind === 'meteor') return this._meteor(eco, a);
 		if (a.kind === 'disease') return this._disease(eco, a);
 		if (a.kind === 'locust') return this._locust(eco, a);
+		if (GOD_BLESS.includes(a.kind)) return this._bless(eco, a);
+		if (a.kind === 'fertilise' || a.kind === 'blight') return this._soil(eco, a);
 		return { ok: false, count: 0 };
 	}
 
@@ -624,6 +633,212 @@ class GodTools {
 		const name = sp.name;
 		this._log(eco, 0, () => `You loosed a plague of ${name} locusts over ${c} tiles`, c, sp.id);
 		return { ok: true, count: c, sp: sp.id };
+	}
+
+	_aim(eco, a) {
+		const Rg = eco.registry;
+		let sp = 0;
+		let cls = -1;
+		let label = 'animals';
+		if (a.sp) {
+			const h = Rg.get(a.sp | 0);
+			if (!h || !(h.population > 0) || h.group !== 'animal') return { reason: 'host' };
+			sp = h.id;
+			label = h.name;
+		} else if (a.cls !== undefined && a.cls !== null && a.cls !== '') {
+			cls = a.cls | 0;
+			if (cls < 0 || cls >= CLASS_PLURAL.length) return { reason: 'host' };
+			label = CLASS_PLURAL[cls];
+		}
+		const all = !!a.all && (sp > 0 || cls >= 0);
+		let s = null;
+		if (!all) {
+			const c = GodTools.clean(eco.world, a);
+			if (!c.pts.length) return { reason: 'spot' };
+			s = { x: c.pts[0], y: c.pts[1], r: Math.max(1, c.r) };
+		}
+		const A = eco.animals;
+		const rr = s ? s.r * s.r + s.r : 0;
+		const list = [];
+		for (let k = 0; k < A.count; k++) {
+			if (!A.alive[k]) continue;
+			if (sp && A.sp[k] !== sp) continue;
+			if (cls >= 0 && A.cls[k] !== cls) continue;
+			if (s) {
+				const dx = A.x[k] - s.x;
+				const dy = A.y[k] - s.y;
+				if (dx * dx + dy * dy > rr) continue;
+			}
+			list.push(k);
+		}
+		return { list, s, sp, cls, all, label };
+	}
+
+	_fx(eco, t, list) {
+		if (t.s) return [t.s.x, t.s.y, t.s.r];
+		const A = eco.animals;
+		const out = [];
+		const n = list.length;
+		const step = n > GOD_FX_MAX ? n / GOD_FX_MAX : 1;
+		for (let j = 0; j < GOD_FX_MAX && Math.floor(j * step) < n; j++) {
+			const k = list[Math.floor(j * step)];
+			out.push(Math.round(A.x[k] * 100) / 100, Math.round(A.y[k] * 100) / 100, 2);
+		}
+		return out;
+	}
+
+	_bless(eco, a) {
+		const t = this._aim(eco, a);
+		if (t.reason) return { ok: false, count: 0, reason: t.reason };
+		const A = eco.animals;
+		const D = eco.disease;
+		const kind = a.kind;
+		let hit = [];
+		let ticks = 0;
+		if (kind === 'feed') {
+			for (const k of t.list) {
+				const em = A.emax[k] * A.gf[k];
+				const cap = em * FAT_MAX * A.app[k];
+				const want = cap * GOD_FEED_FAT;
+				let did = false;
+				if (A.energy[k] < em) {
+					A.energy[k] = em;
+					did = true;
+				}
+				if (A.fat[k] < want) {
+					A.fat[k] = want;
+					did = true;
+				}
+				if (did) hit.push(k);
+			}
+		} else if (kind === 'heal') {
+			for (const k of t.list) {
+				let did = false;
+				if (A.strain[k]) {
+					if (D) D.recoverAnimal(k);
+					else {
+						A.strain[k] = 0;
+						A.itime[k] = 0;
+					}
+					did = true;
+				}
+				if (A.fx[k] || A.confuse[k] || A.gl[k] > 0 || A.crv[k]) {
+					A.fx[k] = 0;
+					A.fxT[k] = 0;
+					A.crv[k] = 0;
+					A.confuse[k] = 0;
+					A.gl[k] = 0;
+					did = true;
+				}
+				if (did) hit.push(k);
+			}
+		} else if (kind === 'sterile') {
+			ticks = Math.max(GOD_STER_MIN, Math.min(GOD_STER_MAX, Math.round(+a.ticks || 0)));
+			if (t.list.length && !A.ster) A.ster = new Int32Array(A.cap);
+			const until = eco.tick + ticks;
+			for (const k of t.list) {
+				if (A.ster[k] < until) A.ster[k] = until;
+				hit.push(k);
+			}
+		} else {
+			const frac = Math.max(0.05, Math.min(1, +a.frac || 0));
+			const n = t.list.length;
+			const k = n ? Math.max(1, Math.min(n, Math.round(frac * n))) : 0;
+			const pick = t.list.slice();
+			const rng = eco.rng;
+			for (let j = 0; j < k; j++) {
+				const q = j + Math.floor(rng.next() * (n - j));
+				const v = pick[q];
+				pick[q] = pick[j];
+				pick[j] = v;
+			}
+			hit = pick.slice(0, k).sort((x, y) => x - y);
+		}
+		const c = hit.length;
+		if (!c) return { ok: false, count: 0, reason: t.list.length ? 'none' : 'empty', fx: this._fx(eco, t, t.list) };
+		const fx = this._fx(eco, t, hit);
+		if (kind === 'cull') {
+			for (const k of hit) A._kill(k, 1);
+			A._compact();
+			A.deaths.divine = (A.deaths.divine | 0) + c;
+		}
+		const key = kind === 'feed' ? 'fed' : kind === 'heal' ? 'healed' : kind === 'sterile' ? 'sterilised' : 'culled';
+		this[key] = (this[key] | 0) + c;
+		const label = t.label;
+		const where = t.all ? ' everywhere' : ` in the ${this._where(eco, t.s.x, t.s.y)}`;
+		const verb = kind === 'feed' ? 'fed' : kind === 'heal' ? 'healed' : kind === 'sterile' ? 'sterilised' : 'struck down';
+		const tail = kind === 'sterile' ? ` for ${ticks} ticks` : '';
+		this._log(eco, 0, () => `You ${verb} ${c} ${label}${where}${tail}`, c, t.sp || null);
+		return { ok: true, count: c, kind, curse: kind === 'sterile' || kind === 'cull', fx, ticks };
+	}
+
+	_soil(eco, a) {
+		const P = eco.plants;
+		const n = P.n;
+		let sp = null;
+		if (a.sp) {
+			sp = eco.registry.get(a.sp | 0);
+			if (!sp || !(sp.population > 0) || sp.group !== 'plant') return { ok: false, count: 0, reason: 'host' };
+		}
+		const all = !!a.all && !!sp;
+		let tiles;
+		let fx = [];
+		if (all) {
+			tiles = [];
+			for (let i = 0; i < n; i++) if (P.species[i] === sp.id || P.species[n + i] === sp.id) tiles.push(i);
+		} else {
+			const c = GodTools.clean(eco.world, a);
+			if (!c.pts.length) return { ok: false, count: 0, reason: 'spot' };
+			tiles = GodTools.tiles(eco.world, c.pts, c.r);
+			for (let k = 0; k + 1 < c.pts.length; k += 2) fx.push(c.pts[k], c.pts[k + 1], Math.max(1, c.r));
+		}
+		const fert = a.kind === 'fertilise';
+		const soil = P.soil;
+		const W = eco.world.width;
+		const hit = [];
+		for (const i of tiles) {
+			if (P.water[i]) continue;
+			let s0 = !!P.species[i];
+			let s1 = !!P.species[n + i] && !P.kind[n + i];
+			if (sp) {
+				s0 = s0 && P.species[i] === sp.id;
+				s1 = s1 && P.species[n + i] === sp.id;
+				if (!s0 && !s1) continue;
+			}
+			if (fert) {
+				if (!soil || soil.nutrient[i] >= SOIL_MAX) continue;
+				const v = soil.nutrient[i] + GOD_FERT;
+				soil.nutrient[i] = v < SOIL_MAX ? v : SOIL_MAX;
+				hit.push(i);
+			} else {
+				if (!s0 && !s1) continue;
+				if (s0) {
+					P.biomass[i] *= GOD_BLIGHT;
+					P.fruit[i] = 0;
+				}
+				if (s1) {
+					P.biomass[n + i] *= GOD_BLIGHT;
+					P.fruit[n + i] = 0;
+				}
+				hit.push(i);
+			}
+		}
+		if (all) {
+			const step = hit.length > GOD_FX_MAX ? hit.length / GOD_FX_MAX : 1;
+			for (let j = 0; j < GOD_FX_MAX && Math.floor(j * step) < hit.length; j++) {
+				const i = hit[Math.floor(j * step)];
+				fx.push((i % W) + 0.5, Math.floor(i / W) + 0.5, 2);
+			}
+		}
+		const c = hit.length;
+		if (!c) return { ok: false, count: 0, reason: 'none', fx };
+		P.version++;
+		const key = fert ? 'fertilised' : 'blighted';
+		this[key] = (this[key] | 0) + c;
+		const name = sp ? sp.name : '';
+		const text = fert ? (k) => `You fertilised ${k} tiles${name ? ` of ${name}` : ''}${all ? ' everywhere' : ''}` : (k) => `You withered ${k} tiles of ${name || 'plants'}${all ? ' everywhere' : ''}`;
+		this._log(eco, all ? 0 : a.stroke | 0, text, c, sp ? sp.id : null);
+		return { ok: true, count: c, kind: a.kind, curse: !fert, fx };
 	}
 
 	_refresh(eco, tiles, before) {
