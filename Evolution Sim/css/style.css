@@ -2333,3 +2333,155 @@ select option {
 	color: var(--muted);
 	font-size: 10px;
 }
+
+.wc-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 40;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	background: var(--scrim);
+	backdrop-filter: blur(3px);
+}
+
+.wc-modal[hidden] {
+	display: none;
+}
+
+.wc-box {
+	width: 100%;
+	max-width: 600px;
+	max-height: calc(100vh - 32px);
+	display: flex;
+	flex-direction: column;
+	background: var(--panel);
+	border: 1px solid var(--line-2);
+	border-radius: var(--r-lg);
+	box-shadow: 0 18px 50px var(--shadow);
+	overflow: hidden;
+	animation: slideIn 0.18s ease-out;
+}
+
+.wc-head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 10px 10px 18px;
+	border-bottom: 1px solid var(--line);
+}
+
+.wc-head h3 {
+	flex: 1;
+	margin: 0;
+	font-size: 15px;
+}
+
+.wc-body {
+	padding: 16px 18px;
+	overflow-y: auto;
+	min-height: 0;
+}
+
+.wc-top {
+	display: grid;
+	grid-template-columns: 1fr 1.4fr;
+	gap: 10px;
+	margin-bottom: 12px;
+}
+
+.wc-field {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	min-width: 0;
+}
+
+.wc-field span,
+.wc-set > span {
+	font-size: 11px;
+	color: var(--muted);
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+
+.wc-field input,
+.wc-field select {
+	height: 34px;
+	padding: 0 10px;
+	background: var(--card);
+	border: 1px solid var(--line);
+	border-radius: var(--r-sm);
+	outline: none;
+	min-width: 0;
+	width: 100%;
+}
+
+.wc-field input:focus,
+.wc-field select:focus {
+	border-color: var(--accent);
+}
+
+.wc-warn {
+	margin: -4px 0 12px;
+	padding: 8px 10px;
+	font-size: 12px;
+	color: var(--amber);
+	background: rgba(231, 185, 92, 0.1);
+	border: 1px solid rgba(231, 185, 92, 0.3);
+	border-radius: var(--r-sm);
+}
+
+.wc-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px 14px;
+}
+
+.wc-set {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	min-width: 0;
+}
+
+.wc-set .seg button {
+	flex: 1;
+	padding: 0 6px;
+}
+
+.wc-foot {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 12px 18px;
+	border-top: 1px solid var(--line);
+}
+
+.wc-gap {
+	flex: 1;
+}
+
+@media (max-width: 560px) {
+	.wc-modal {
+		padding: 10px;
+	}
+	.wc-box {
+		max-height: calc(100vh - 20px);
+	}
+	.wc-top,
+	.wc-grid {
+		grid-template-columns: 1fr;
+	}
+	.wc-body {
+		padding: 14px;
+	}
+	.wc-foot {
+		padding: 10px 14px;
+		flex-wrap: wrap;
+	}
+	.wc-foot .btn.primary {
+		min-width: 0;
+	}
+}

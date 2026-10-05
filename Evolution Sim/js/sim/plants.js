@@ -401,6 +401,20 @@ function phaseCurve(out, tick, lag, on) {
 	for (let b = 0; b < PHASE_BINS; b++) out[b] = on ? 0.5 + 0.5 * Math.sin((tick / YEAR_TICKS - lag - (b - 4) / PHASE_BINS) * Math.PI * 2) : 0.5;
 }
 
+function jitterGenes(g, rng, amp) {
+	return g.map((v) => (v === 0 ? 0 : Math.min(1, Math.max(0, v + (rng.next() - 0.5) * amp))));
+}
+
+function plantFounders(div, seed) {
+	const mk = (a) => ({ ...a, kind: a.kind || 0, t: plantTraitsFrom(a.g), sp: null });
+	if (!div) return PLANT_ARCHETYPES.map(mk);
+	if (div < 0) return PLANT_ARCHETYPES.filter((a, k) => a.kind || k % 2 === 0).map(mk);
+	const rng = new FastRng(seed + 1717);
+	const out = PLANT_ARCHETYPES.map(mk);
+	for (const a of PLANT_ARCHETYPES) if (!a.kind) out.push(mk({ ...a, g: jitterGenes(a.g, rng, 0.14) }));
+	return out;
+}
+
 function plantTraitsFrom(g, o = 0) {
 	const niche = g[o + 2];
 	const wood = g[o + 3];
@@ -743,7 +757,7 @@ class PlantLayer {
 			const light = isWater ? 2 - 1.1 * this.depth[i] : 1;
 			const delta = isWater && this.sal[i] === SAL_BRACKISH && this.depth[i] < DELTA_SHALLOW ? DELTA_FERT : 1;
 			this.habit[i] = fert * light * delta * (harsh[b] ?? 1);
-			this.seasonAmp[i] = 0.75 * (1 - w.temperature[i]);
+			this.seasonAmp[i] = 0.75 * (w.seasonK || 1) * (1 - w.temperature[i]);
 		}
 	}
 
@@ -863,8 +877,10 @@ class PlantLayer {
 
 	_seed() {
 		const n = this.n;
-		const founders = PLANT_ARCHETYPES.map((a) => ({ ...a, kind: a.kind || 0, t: plantTraitsFrom(a.g), sp: null }));
+		const cfg = this.world.cfg || worldCfgParams(null);
+		const founders = plantFounders(cfg.div, this.world.seed);
 		const fungi = founders.filter((f) => f.kind === 1);
+		const keepP = cfg.plantP;
 		for (let i = 0; i < n; i++) {
 			const wet = this.water[i];
 			const domain = wet ? 'water' : 'land';
@@ -879,7 +895,7 @@ class PlantLayer {
 						best = f;
 					}
 				}
-				if (!best || bestK < 0.06 || this.rng.next() > 0.45) {
+				if (!best || bestK < 0.06 || this.rng.next() > keepP) {
 					if (slot === 1 && !wet && this.species[i] && this.rng.next() < FUNGUS_SEED_P) this._seedFungus(i, fungi[Math.floor(this.rng.next() * fungi.length)]);
 					continue;
 				}

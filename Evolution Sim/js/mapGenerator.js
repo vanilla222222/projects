@@ -59,6 +59,47 @@ const SECRET_CHANCE = 0.005;
 const SECRET_NUCLEAR = 1;
 const SECRET_MAGIC = 2;
 
+const WORLD_CFG_KEYS = ['cont', 'hum', 'rough', 'temp', 'rivers', 'life', 'div', 'season'];
+
+function worldCfgOf(o) {
+	const out = {};
+	for (const k of WORLD_CFG_KEYS) {
+		const v = o ? Number(o[k]) : 0;
+		out[k] = v === -1 || v === 1 ? v : 0;
+	}
+	return out;
+}
+
+function worldCfgIsDefault(o) {
+	const c = worldCfgOf(o);
+	return WORLD_CFG_KEYS.every((k) => c[k] === 0);
+}
+
+function worldCfgParams(o) {
+	const c = worldCfgOf(o);
+	const pick = (v, lo, mid, hi) => (v < 0 ? lo : v > 0 ? hi : mid);
+	return {
+		raw: c,
+		cont: c.cont,
+		contK: pick(c.cont, 1, 1, 2.6),
+		isleK: pick(c.cont, 0.35, 1, 2.2),
+		water: pick(c.hum, 0.2, WG_WATER, 0.5),
+		humOff: pick(c.hum, -0.07, 0, 0.07),
+		ridgeK: pick(c.rough, 0.35, 1, 1.8),
+		landCurve: pick(c.rough, 1.45, 1, 0.6),
+		reliefK: pick(c.rough, 1.3, 1, 0.85),
+		depthPow: pick(c.rough, 0.6, 0.9, 1.45),
+		tempOff: pick(c.temp, -0.13, 0, 0.13),
+		riverK: pick(c.rivers, 1.9, 1, 0.5),
+		lakeK: pick(c.rivers, 0.35, 1, 2.2),
+		pondK: pick(c.rivers, 0.35, 1, 2.2),
+		plantP: pick(c.life, 0.22, 0.45, 0.68),
+		animalK: pick(c.life, 0.5, 1, 1.8),
+		div: c.div,
+		seasonK: pick(c.season, 0.5, 1, 1.6),
+	};
+}
+
 function secretRoll(seed, salt) {
 	let h = (seed | 0) ^ Math.imul(salt, 0x9e3779b1);
 	h = Math.imul(h ^ (h >>> 16), 0x85ebca6b);
@@ -125,6 +166,8 @@ class WorldMap {
 		this.secretMy = -1;
 		this.secretMr = 0;
 		this.gen = this.options.gen;
+		this.cfg = worldCfgParams(this.gen >= 4 ? this.options.cfg : null);
+		this.seasonK = this.cfg.seasonK;
 
 		this._generate();
 	}
@@ -256,7 +299,7 @@ class WorldMap {
 		const seaLevel = BIOME_THRESHOLDS.seaLevel;
 		let placed = 0;
 		let attempts = 0;
-		const lakeCount = this.gen >= 3 ? Math.round(options.lakeCount * WG_LAKE_MUL) : options.lakeCount;
+		const lakeCount = this.gen >= 3 ? Math.round(options.lakeCount * WG_LAKE_MUL * this.cfg.lakeK) : options.lakeCount;
 		const hiCap = this.gen >= 3 ? BIOME_THRESHOLDS.mountainLevel : BIOME_THRESHOLDS.hillLevel;
 		const maxAttempts = lakeCount * 50;
 
@@ -771,7 +814,7 @@ class WorldMap {
 		}
 
 		const scale = Math.sqrt((width * height) / 67200);
-		const threshold = HYDRO_RIVER_FLOW * scale * (this.gen >= 4 ? WG4_RIVER_K : v3 ? WG_RIVER_K : 1);
+		const threshold = HYDRO_RIVER_FLOW * scale * (this.gen >= 4 ? WG4_RIVER_K * this.cfg.riverK : v3 ? WG_RIVER_K : 1);
 		for (let i = 0; i < n; i++) {
 			this.riverFlow[i] = this.isOcean[i] ? 0 : flow[i] / threshold;
 		}
@@ -819,7 +862,7 @@ class WorldMap {
 		const blocked = (i) => this.isOcean[i] || this.isLake[i] || this.isRiver[i] || this.isGlacier[i] || this.isPond[i];
 		let placed = 0;
 		let attempts = 0;
-		const want = Math.round(options.pondCount * (this.gen >= 3 ? WG_POND_MUL : 1));
+		const want = Math.round(options.pondCount * (this.gen >= 3 ? WG_POND_MUL * this.cfg.pondK : 1));
 		const maxAttempts = want * 60;
 
 		while (placed < want && attempts < maxAttempts) {
@@ -1004,7 +1047,8 @@ class WorldMap {
 		const w4y = g4 ? new PerlinNoise(seed + 94002) : null;
 		const belt4 = g4 ? new PerlinNoise(seed + 94003) : null;
 
-		const nCont = Math.max(2, Math.min(12, Math.round(n / WG_CONT_AREA)));
+		const cfg = this.cfg;
+		const nCont = cfg.cont < 0 ? 1 : cfg.cont > 0 ? Math.max(5, Math.min(30, Math.round((n / WG_CONT_AREA) * cfg.contK))) : Math.max(2, Math.min(12, Math.round(n / WG_CONT_AREA)));
 		const conts = [];
 		for (let c = 0; c < nCont; c++) {
 			let bx = width / 2;
@@ -1044,7 +1088,7 @@ class WorldMap {
 		}
 
 		const isl = new Float32Array(n);
-		const nIsle = Math.round(n / WG_ISLE_AREA);
+		const nIsle = Math.round((n / WG_ISLE_AREA) * cfg.isleK);
 		for (let k = 0; k < nIsle; k++) {
 			const cx = margin + rng.next() * Math.max(1, width - margin * 2);
 			const cy = margin + rng.next() * Math.max(1, height - margin * 2);
@@ -1120,12 +1164,12 @@ class WorldMap {
 					const r1 = Math.pow(1 - Math.abs(ridgeA.fbm(wx * WG_RIDGE_FREQ, wy * WG_RIDGE_FREQ, { octaves: 3 })), WG_RIDGE_POW);
 					const r2 = Math.pow(1 - Math.abs(ridgeB.fbm(wx * WG_RIDGE_FREQ * 1.7 + 17.3, wy * WG_RIDGE_FREQ * 1.7 - 5.1, { octaves: 3 })), WG_RIDGE_POW) * 0.5;
 					const det = ridgeD.ridgedFbm(wx / 30, wy / 30, { octaves: 3 });
-					if (g4) a += inland * Math.max(r1, r2) * WG4_RIDGE_K * (0.55 + 0.45 * det);
+					if (g4) a += inland * Math.max(r1, r2) * WG4_RIDGE_K * cfg.ridgeK * (0.55 + 0.45 * det);
 					else a += inland * Math.max(r1, r2) * WG_RIDGE_K * (0.55 + 0.45 * det);
 				}
 				if (g4 && belt > 0.01) {
 					const rb = belt4.ridgedFbm(wx / 26, wy / 26, { octaves: 4 });
-					a += belt * smooth((c - 0.2) / 0.35) * WG4_BELT * (0.35 + 0.65 * rb);
+					a += belt * smooth((c - 0.2) / 0.35) * WG4_BELT * cfg.ridgeK * (0.35 + 0.65 * rb);
 				}
 				const edgeWobble = warpNoiseY.noise2D(x * warpFreq * 2.7 + 31.7, y * warpFreq * 2.7 - 12.3);
 				const edgeDist = Math.min(x, width - 1 - x, y, height - 1 - y) + edgeWobble * margin * 0.9;
@@ -1145,7 +1189,7 @@ class WorldMap {
 		let acc = 0;
 		let qBin = 0;
 		let topBin = BINS - 1;
-		const waterN = n * WG_WATER;
+		const waterN = n * cfg.water;
 		const topN = n * 0.997;
 		for (let b = 0; b < BINS; b++) {
 			acc += hist[b];
@@ -1153,11 +1197,12 @@ class WorldMap {
 			if (acc < topN) topBin = b + 1;
 		}
 		const q = minA + (qBin / BINS) * span;
-		const top = Math.max(q + 1e-4, minA + (topBin / BINS) * span);
+		let top = Math.max(q + 1e-4, minA + (topBin / BINS) * span);
+		if (cfg.reliefK !== 1) top = q + (top - q) * cfg.reliefK;
 		for (let i = 0; i < n; i++) {
 			const v = raw[i];
-			if (v < q) raw[i] = sea * Math.pow(clamp01((v - minA) / Math.max(1e-6, q - minA)), 0.9) * 0.999;
-			else raw[i] = sea + (1 - sea) * Math.pow(clamp01((v - q) / (top - q)), WG_LAND_CURVE);
+			if (v < q) raw[i] = sea * Math.pow(clamp01((v - minA) / Math.max(1e-6, q - minA)), cfg.depthPow) * 0.999;
+			else raw[i] = sea + (1 - sea) * Math.pow(clamp01((v - q) / (top - q)), WG_LAND_CURVE * cfg.landCurve);
 		}
 
 		const alt = raw;
@@ -1207,6 +1252,7 @@ class WorldMap {
 				const above = Math.max(0, a - sea);
 				let tn = (tempNoise.fbm(x * freqT, y * freqT, { octaves: 4, lacunarity: 2.0, gain: 0.5 }) + 1) / 2;
 				let temp = (1 - Math.pow(lat, 1.4)) * 0.72 + tn * 0.25 + 0.04 - above * 0.75;
+				if (cfg.tempOff) temp += cfg.tempOff;
 				this.temperature[i] = clamp01(temp);
 				const hn = (humNoise.fbm(x * freqH, y * freqH, { octaves: 4, lacunarity: 2.0, gain: 0.5 }) + 1) / 2;
 				let hum = 0.45 * hn + 0.38 * air[i] + oro[i] * 2.5 + band - above * 0.2 + 0.02;
@@ -1231,8 +1277,8 @@ class WorldMap {
 			if (s < landN * 0.1) p10 = (b + 1) / 256;
 			if (s < landN * 0.9) p90 = (b + 1) / 256;
 		}
-		const hLo = g4 ? WG4_HUM_LO : WG_HUM_LO;
-		const hk = ((g4 ? WG4_HUM_HI : WG_HUM_HI) - hLo) / Math.max(0.02, p90 - p10);
+		const hLo = g4 ? WG4_HUM_LO + cfg.humOff : WG_HUM_LO;
+		const hk = ((g4 ? WG4_HUM_HI + cfg.humOff : WG_HUM_HI) - hLo) / Math.max(0.02, p90 - p10);
 		for (let i = 0; i < n; i++) this.humidity[i] = clamp01(hLo + (this.humidity[i] - p10) * hk);
 		this._sanitizeFields();
 	}

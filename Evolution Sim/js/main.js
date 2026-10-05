@@ -109,9 +109,115 @@ const app = {
 	time: { snaps: [], auto: null, autoTick: 0, seq: 0, saving: false, restoring: false, arm: null, armTimer: 0 },
 };
 
-function readSize() {
-	const [w, h] = $('sizeSelect').value.split('x').map(Number);
-	return { w, h };
+const WORLD_KEY = 'evo.newWorld';
+const WORLD_SIZE_DEFAULT = '320x210';
+const WORLD_SETTINGS = [
+	['cont', 'Continents', ['One', 'Few', 'Many']],
+	['hum', 'Water', ['Little', 'Normal', 'Lots']],
+	['rough', 'Roughness', ['Little', 'Normal', 'Lots']],
+	['temp', 'Temperature', ['Cold', 'Normal', 'Hot']],
+	['rivers', 'Rivers & lakes', ['Few', 'Normal', 'Many']],
+	['life', 'Starting life', ['Sparse', 'Normal', 'Abundant']],
+	['div', 'Species diversity', ['Few', 'Normal', 'Many']],
+	['season', 'Seasons', ['Mild', 'Normal', 'Harsh']],
+];
+
+function randomSeed() {
+	return Math.floor(Math.random() * 1e6);
+}
+
+function readWorldPrefs() {
+	let p = null;
+	try {
+		p = JSON.parse(storeGet(WORLD_KEY) || 'null');
+	} catch (e) {
+		p = null;
+	}
+	if (!p || typeof p !== 'object') p = {};
+	const size = typeof p.size === 'string' && [...$('wcSize').options].some((o) => o.value === p.size) ? p.size : WORLD_SIZE_DEFAULT;
+	const seed = typeof p.seed === 'string' && /^-?\d*$/.test(p.seed) ? p.seed : '';
+	return { seed, size, cfg: worldCfgOf(p.cfg) };
+}
+
+function buildWorldModal() {
+	$('wcGrid').innerHTML = WORLD_SETTINGS.map(
+		([k, label, opts]) => `<div class="wc-set"><span>${label}</span><div class="seg" data-key="${k}">${opts.map((t, j) => `<button type="button" data-v="${j - 1}">${t}</button>`).join('')}</div></div>`
+	).join('');
+	$('wcGrid').addEventListener('click', (e) => {
+		const b = e.target.closest('button[data-v]');
+		if (!b) return;
+		for (const x of b.parentNode.children) x.classList.toggle('active', x === b);
+	});
+	$('wcSize').onchange = () => ($('wcWarn').hidden = $('wcSize').value !== '1200x780');
+	$('worldForm').onsubmit = (e) => {
+		e.preventDefault();
+		createFromModal();
+	};
+	$('worldClose').onclick = closeWorldModal;
+	$('worldCancel').onclick = closeWorldModal;
+	$('worldRandom').onclick = randomizeWorldModal;
+	$('worldModal').addEventListener('mousedown', (e) => {
+		if (e.target === $('worldModal')) closeWorldModal();
+	});
+	$('worldModal').addEventListener('keydown', (e) => {
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			e.stopPropagation();
+			closeWorldModal();
+		}
+	});
+}
+
+function setWorldModal(p) {
+	$('wcSeed').value = p.seed;
+	$('wcSize').value = p.size;
+	$('wcWarn').hidden = p.size !== '1200x780';
+	for (const seg of $('wcGrid').querySelectorAll('.seg')) {
+		const v = String(p.cfg[seg.dataset.key] || 0);
+		for (const b of seg.children) b.classList.toggle('active', b.dataset.v === v);
+	}
+}
+
+function readWorldModal() {
+	const cfg = {};
+	for (const seg of $('wcGrid').querySelectorAll('.seg')) {
+		const b = seg.querySelector('button.active');
+		cfg[seg.dataset.key] = b ? Number(b.dataset.v) : 0;
+	}
+	return { seed: $('wcSeed').value.trim(), size: $('wcSize').value, cfg: worldCfgOf(cfg) };
+}
+
+function randomizeWorldModal() {
+	const seed = randomSeed();
+	const r = new SeededRandom(seed ^ 0x5eed);
+	const cfg = {};
+	for (const [k] of WORLD_SETTINGS) cfg[k] = Math.floor(r.next() * 3) - 1;
+	setWorldModal({ seed: String(seed), size: $('wcSize').value, cfg });
+}
+
+function openWorldModal() {
+	if (app.busy) return;
+	setWorldModal(readWorldPrefs());
+	$('worldModal').hidden = false;
+	app.worldModal = true;
+	$('wcSeed').focus({ preventScroll: true });
+}
+
+function closeWorldModal() {
+	const inside = $('worldModal').contains(document.activeElement);
+	$('worldModal').hidden = true;
+	app.worldModal = false;
+	if (inside) $('newWorldBtn').focus({ preventScroll: true });
+}
+
+function createFromModal() {
+	const p = readWorldModal();
+	storeSet(WORLD_KEY, JSON.stringify(p));
+	let seed = parseInt(p.seed, 10);
+	if (!Number.isFinite(seed)) seed = randomSeed();
+	const [w, h] = p.size.split('x').map(Number);
+	closeWorldModal();
+	newWorld({ seed, w, h, cfg: p.cfg });
 }
 
 function secretOverride() {
@@ -124,15 +230,12 @@ function secretOverride() {
 	return v === 'nuclear' || v === 'magic' || v === 'both' || v === 'none' ? { secret: v } : {};
 }
 
-function newWorld() {
+function newWorld(p) {
 	if (app.busy) return;
-	let seed = parseInt($('seedInput').value, 10);
-	if (!Number.isFinite(seed)) {
-		seed = Math.floor(Math.random() * 1e6);
-		$('seedInput').value = seed;
-	}
-	const { w, h } = readSize();
-	showBusy('Growing a new world…');
+	const seed = p.seed;
+	const { w, h } = p;
+	const worldOpts = Object.assign({ cfg: worldCfgOf(p.cfg) }, secretOverride());
+	showBusy(w * h >= 900000 ? 'Growing a titanic world, this can take a while…' : 'Growing a new world…');
 	setTimeout(() => {
 		const t0 = performance.now();
 		SimClient.create(w, h, seed, {
@@ -141,7 +244,7 @@ function newWorld() {
 			disease: $('optDisease').checked,
 			weather: $('optWeather').checked,
 			disasters: $('optDisasters').checked,
-		}, secretOverride()).then(
+		}, worldOpts).then(
 			({ world, eco }) => {
 				installWorld(world, eco);
 				hideBusy();
@@ -260,11 +363,6 @@ function loadWorld(file) {
 }
 
 function applyLoaded(world, eco, meta) {
-	$('seedInput').value = eco.seed;
-	const size = `${world.width}x${world.height}`;
-	const sel = $('sizeSelect');
-	if (![...sel.options].some((o) => o.value === size)) sel.add(new Option(`${world.width}×${world.height}`, size));
-	sel.value = size;
 	for (const [k, id] of Object.entries(OPTION_SWITCHES)) $(id).checked = !!eco.options[k];
 	installWorld(world, eco);
 	const r = app.renderer;
@@ -2289,15 +2387,8 @@ function setupMapInput() {
 function setupControls() {
 	$('playBtn').onclick = () => setRunning(!app.running);
 	$('stepBtn').onclick = stepOnce;
-	$('newWorldBtn').onclick = newWorld;
-	$('randomSeedBtn').onclick = () => {
-		$('seedInput').value = Math.floor(Math.random() * 1e6);
-		newWorld();
-	};
-	$('seedInput').addEventListener('keydown', (e) => {
-		if (e.key === 'Enter') newWorld();
-	});
-	$('sizeSelect').onchange = newWorld;
+	$('newWorldBtn').onclick = openWorldModal;
+	buildWorldModal();
 	$('saveBtn').onclick = saveWorld;
 	$('loadBtn').onclick = () => !app.busy && $('loadInput').click();
 	$('loadInput').onchange = (e) => {
@@ -2392,6 +2483,10 @@ function setupControls() {
 	});
 
 	document.addEventListener('keydown', (e) => {
+		if (app.worldModal) {
+			if (e.key === 'Escape') closeWorldModal();
+			return;
+		}
 		if (e.target.matches('input, select') || e.ctrlKey || e.metaKey || e.altKey) return;
 		const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
 		if (e.code === 'Space') {
@@ -2406,6 +2501,7 @@ function setupControls() {
 			box.checked = !box.checked;
 			app.renderer.showWeather = box.checked;
 		} else if (k === 'g') setGodOpen(!app.god.open);
+		else if (k === 'n') openWorldModal();
 		else if (k === 'Escape') {
 			if (app.overlay) closeOverlay();
 			else if (app.god.tool) setGodTool(null);
@@ -2490,7 +2586,7 @@ function setupCards() {
 
 function init() {
 	const fromHash = parseInt(location.hash.slice(1), 10);
-	$('seedInput').value = Number.isFinite(fromHash) ? fromHash : Math.floor(Math.random() * 1e6);
+	const startSeed = Number.isFinite(fromHash) ? fromHash : randomSeed();
 	setTheme(storeGet(THEME_KEY));
 	buildStatCards();
 	buildClassChips();
@@ -2512,7 +2608,7 @@ function init() {
 		app.renderer.resize();
 		if (app.overlay === 'tree') app.tree.draw();
 	});
-	newWorld();
+	newWorld({ seed: startSeed, w: 320, h: 210, cfg: null });
 	if (/[?&]play\b/.test(location.search)) setRunning(true);
 	requestAnimationFrame(frame);
 }
