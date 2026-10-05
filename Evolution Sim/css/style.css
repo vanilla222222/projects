@@ -10,6 +10,8 @@
 	--muted: #8b9c92;
 	--faint: #5d6d64;
 	--accent: #8fd07a;
+	--secret-nuc: #a8f57a;
+	--secret-mag: #cdb3ff;
 	--accent-2: #5fae6a;
 	--amber: #e7b95c;
 	--danger: #e0705f;
@@ -70,6 +72,8 @@
 		--muted: #56675d;
 		--faint: #8a988f;
 		--accent: #3f9440;
+		--secret-nuc: #3d8a12;
+		--secret-mag: #7a3fc8;
 		--accent-2: #4fa65a;
 		--amber: #a8730f;
 		--danger: #c0402e;
@@ -123,6 +127,8 @@
 	--muted: #56675d;
 	--faint: #8a988f;
 	--accent: #3f9440;
+	--secret-nuc: #3d8a12;
+	--secret-mag: #7a3fc8;
 	--accent-2: #4fa65a;
 	--amber: #a8730f;
 	--danger: #c0402e;
@@ -1868,8 +1874,8 @@ select option {
 	from { opacity: 0; transform: translate(-50%, -8px); }
 	to { opacity: 1; transform: translate(-50%, 0); }
 }
-.ev-secret .ev-dot { background: rgba(170, 120, 255, 0.16); color: #c9a6ff; }
-.badge.secret.nuclear { color: #b6ff8a; border-color: rgba(140, 255, 90, 0.5); background: rgba(110, 220, 60, 0.12); }
-.badge.secret.magic { color: #d8c2ff; border-color: rgba(120, 220, 210, 0.5); background: linear-gradient(90deg, rgba(160, 100, 255, 0.16), rgba(60, 210, 200, 0.16)); }
-.tt-secret.nuclear { color: #a8f57a; }
-.tt-secret.magic { color: #cdb3ff; }
+.ev-secret .ev-dot { background: rgba(170, 120, 255, 0.16); color: var(--secret-mag); }
+.badge.secret.nuclear { color: var(--secret-nuc); border-color: rgba(140, 255, 90, 0.5); background: rgba(110, 220, 60, 0.12); }
+.badge.secret.magic { color: var(--secret-mag); border-color: rgba(120, 220, 210, 0.5); background: linear-gradient(90deg, rgba(160, 100, 255, 0.16), rgba(60, 210, 200, 0.16)); }
+.tt-secret.nuclear { color: var(--secret-nuc); font-weight: 600; }
+.tt-secret.magic { color: var(--secret-mag); font-weight: 600; }
