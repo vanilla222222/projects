@@ -1842,3 +1842,34 @@ select option {
 		transform: rotate(360deg);
 	}
 }
+
+.secret-toast {
+	position: absolute;
+	top: 18px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 6;
+	max-width: min(520px, calc(100% - 32px));
+	padding: 10px 18px;
+	border-radius: 999px;
+	font-size: 14px;
+	font-style: italic;
+	letter-spacing: 0.02em;
+	color: #eef6ef;
+	background: rgba(11, 15, 14, 0.82);
+	cursor: pointer;
+	animation: secret-in 1.6s ease-out;
+}
+.secret-toast[hidden] { display: none; }
+.secret-toast.nuclear { box-shadow: 0 0 22px rgba(130, 255, 80, 0.45); border: 1px solid rgba(140, 255, 90, 0.55); }
+.secret-toast.magic { box-shadow: 0 0 22px rgba(170, 110, 255, 0.45); border: 1px solid rgba(80, 220, 210, 0.55); }
+.secret-toast.both { box-shadow: 0 0 22px rgba(130, 255, 80, 0.35), 0 0 30px rgba(170, 110, 255, 0.35); border: 1px solid rgba(200, 200, 255, 0.5); }
+@keyframes secret-in {
+	from { opacity: 0; transform: translate(-50%, -8px); }
+	to { opacity: 1; transform: translate(-50%, 0); }
+}
+.ev-secret .ev-dot { background: rgba(170, 120, 255, 0.16); color: #c9a6ff; }
+.badge.secret.nuclear { color: #b6ff8a; border-color: rgba(140, 255, 90, 0.5); background: rgba(110, 220, 60, 0.12); }
+.badge.secret.magic { color: #d8c2ff; border-color: rgba(120, 220, 210, 0.5); background: linear-gradient(90deg, rgba(160, 100, 255, 0.16), rgba(60, 210, 200, 0.16)); }
+.tt-secret.nuclear { color: #a8f57a; }
+.tt-secret.magic { color: #cdb3ff; }

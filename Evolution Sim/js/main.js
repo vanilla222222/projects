@@ -141,6 +141,7 @@ function newWorld() {
 			({ world, eco }) => {
 				installWorld(world, eco);
 				hideBusy();
+				announceSecret(world);
 				console.log(`World ${w}×${h} ready in ${Math.round(performance.now() - t0)} ms`);
 				updateUi(true);
 			},
@@ -160,6 +161,7 @@ function installWorld(world, eco) {
 	app.lastLogVersion = -1;
 	app.renderer.highlight = null;
 	app.renderer.setWorld(world, eco);
+	buildBiomeLegend();
 	$('fastWrap').hidden = !SimClient.gpu;
 	closeOverlay();
 	closeDetail();
@@ -556,9 +558,47 @@ function drawPopChart() {
 
 function buildBiomeLegend() {
 	const skip = new Set(['CLIFF', 'FROZEN_DESERT']);
+	const sk = app.world ? app.world.secretKinds || 0 : 0;
 	$('biomeLegend').innerHTML = BIOME_LIST.filter((k) => !skip.has(k))
 		.map((k) => `<div class="biome-item"><i style="background:${BIOME_INFO[k].color}"></i>${BIOME_INFO[k].name}</div>`)
-		.join('') + WATER_LEGEND.map(([c, t]) => `<div class="biome-item"><i style="background:${c}"></i>${t}</div>`).join('');
+		.join('') + WATER_LEGEND.map(([c, t]) => `<div class="biome-item"><i style="background:${c}"></i>${t}</div>`).join('') + SECRET_LEGEND.filter(([k]) => sk & k).map(([, c, t]) => `<div class="biome-item secret"><i style="background:${c}"></i>${t}</div>`).join('');
+}
+
+const SECRET_LEGEND = [
+	[1, 'radial-gradient(circle, #9dff5c 0%, #4f7a2a 55%, #2a3320 100%)', 'Nuclear wasteland (cosmetic, rare)'],
+	[2, 'linear-gradient(135deg, #a46bff 0%, #3fd6c8 60%, #f4e9ff 100%)', 'Enchanted glade (cosmetic, rare)'],
+];
+
+const SECRET_LINEAGE = ['', 'Irradiated lineage', 'Enchanted lineage'];
+const SECRET_PLACE = ['', 'a strange green glow', 'a strange shimmer'];
+
+function announceSecret(world) {
+	const sk = world ? world.secretKinds || 0 : 0;
+	const box = $('secretToast');
+	if (!box || !sk) return;
+	const text = sk === 3 ? 'A strange glow on the horizon… and a shimmer of something stranger still.' : sk & 1 ? 'A strange glow on the horizon…' : 'A strange shimmer on the horizon…';
+	box.textContent = text;
+	box.className = 'secret-toast ' + (sk === 3 ? 'both' : sk & 1 ? 'nuclear' : 'magic');
+	box.hidden = false;
+	clearTimeout(app.secretTimer);
+	app.secretTimer = setTimeout(() => (box.hidden = true), 7000);
+	box.onclick = () => {
+		clearTimeout(app.secretTimer);
+		box.hidden = true;
+	};
+}
+
+function secretLineageCount(spId) {
+	const A = app.eco && app.eco.animals;
+	if (!A || !A.lin || !app.world || !app.world.secretKinds) return [0, 0];
+	let nuc = 0;
+	let mag = 0;
+	for (let i = 0; i < A.count; i++) {
+		if (A.sp[i] !== spId || !A.lin[i]) continue;
+		if (A.lin[i] === 1) nuc++;
+		else mag++;
+	}
+	return [nuc, mag];
 }
 
 const WATER_LEGEND = [
@@ -727,7 +767,7 @@ function renderSpeciesList() {
 	list.scrollTop = scroll;
 }
 
-const EVENT_GLYPH = { speciation: '+', extinction: '×', migration: '→', outbreak: '!', weather: '~', disaster: '^', info: '•' };
+const EVENT_GLYPH = { speciation: '+', extinction: '×', migration: '→', outbreak: '!', weather: '~', disaster: '^', info: '•', secret: '✦' };
 
 function renderEvents(force) {
 	const log = app.eco.log;
@@ -932,6 +972,15 @@ function closeDetail() {
 	if (app.eco) renderSpeciesList();
 }
 
+function secretBadges(sp) {
+	if (sp.group !== 'animal') return [];
+	const [nuc, mag] = secretLineageCount(sp.id);
+	const out = [];
+	if (nuc) out.push(`<span class="badge secret nuclear" title="${formatCount(nuc)} living individuals carry the mark">${SECRET_LINEAGE[1]} · ${formatCount(nuc)}</span>`);
+	if (mag) out.push(`<span class="badge secret magic" title="${formatCount(mag)} living individuals carry the mark">${SECRET_LINEAGE[2]} · ${formatCount(mag)}</span>`);
+	return out;
+}
+
 function renderDetail() {
 	const eco = app.eco;
 	const sp = eco.registry.get(app.selected);
@@ -951,6 +1000,7 @@ function renderDetail() {
 		...(sp.group === 'plant' && sp.kind === 1 ? ['<span class="badge">Fungus</span>', `<span class="badge">${fungusType(sp.mean)[0].toUpperCase() + fungusType(sp.mean).slice(1)}</span>`] : []),
 		...plantLifeBadges(sp),
 		...(sp.group === 'bug' && sp.domain ? [`<span class="badge">${sp.domain === 'water' ? 'Aquatic' : 'Land'}</span>`] : []),
+		...secretBadges(sp),
 	].join('');
 	const bug = sp.group === 'bug';
 	const unit = sp.group === 'plant' || bug ? ' tiles' : patho ? (sp.hostKind === 'plant' ? ' tiles' : ' hosts') : '';
@@ -1186,7 +1236,8 @@ function updateTooltip() {
 	const biome = BIOME_INFO[BIOME_LIST[w.biome[t]]];
 	const temp = Math.round(w.temperature[t] * 50 - 15);
 	const poll = P.poll && !P.water[t] ? ' · pollination ' + pct(Math.min(1, P.poll[t])) : '';
-	let html = `<div class="tt-meta">${biome.name} · ${temp}°C · ${P.water[t] ? 'depth ' + depthWord(P.depth[t]).toLowerCase() + (P.sal ? ' · ' + SAL_WORDS[P.sal[t]] + ' water' : '') : 'moisture ' + pct(w.humidity[t])} · nutrients ${pct(P.soil.nutrient[t] / SOIL_MAX)}${P.soil.litter ? ' · litter ' + P.soil.litter[t].toFixed(2) : ''}${poll}</div>`;
+	const glow = w.secret && w.secretKinds && w.secret[t] ? ' · ' + SECRET_PLACE[w.secret[t]] : '';
+	let html = `<div class="tt-meta">${biome.name}${glow} · ${temp}°C · ${P.water[t] ? 'depth ' + depthWord(P.depth[t]).toLowerCase() + (P.sal ? ' · ' + SAL_WORDS[P.sal[t]] + ' water' : '') : 'moisture ' + pct(w.humidity[t])} · nutrients ${pct(P.soil.nutrient[t] / SOIL_MAX)}${P.soil.litter ? ' · litter ' + P.soil.litter[t].toFixed(2) : ''}${poll}</div>`;
 	const target = clickTarget(wx, wy);
 	let bugHtml = '';
 	for (const b of bugsAt(t)) {
@@ -1210,7 +1261,7 @@ function updateTooltip() {
 		const lowM = A.nMin && A.nMin[a] < DEFICIT;
 		const cond = A.fat ? `<small${lowP || lowM ? ' class="tt-sick"' : ''}>${conditionWord(fr)} · protein ${lowP ? 'low' : pct(Math.min(1, A.nProt[a]))} · minerals ${lowM ? 'low' : pct(Math.min(1, A.nMin[a]))}</small>` : '';
 		const water = A.domain[a] !== 1 && A.water ? ` · water ${pct(Math.min(1, Math.max(0, A.water[a])))}` : '';
-		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${A.domain[a] === 3 ? (A.fly[a] ? 'flying · ' : 'perched · ') : ''}${A.dorm && A.dorm[a] ? dormWords[A.dorm[a]] : states[A.state[a]]} · ${A.lv && A.lv[a] ? ['', 'tadpole', 'larva'][A.lv[a]] : ['juvenile', 'adult', 'elder'][animalStage(A, a)]}${A.cr && A.cr[a] > 0 ? ' · cared for' : ''}${A.ld && A.ld[a] ? ' · leads' : ''} · age ${A.age[a]}${home}</small><small>energy ${pct(cap > 0 ? Math.min(1, Math.max(0, A.energy[a] / cap)) : 0)}${water}</small>${cond}${sick}</div></div>`;
+		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${A.domain[a] === 3 ? (A.fly[a] ? 'flying · ' : 'perched · ') : ''}${A.dorm && A.dorm[a] ? dormWords[A.dorm[a]] : states[A.state[a]]} · ${A.lv && A.lv[a] ? ['', 'tadpole', 'larva'][A.lv[a]] : ['juvenile', 'adult', 'elder'][animalStage(A, a)]}${A.cr && A.cr[a] > 0 ? ' · cared for' : ''}${A.ld && A.ld[a] ? ' · leads' : ''} · age ${A.age[a]}${home}</small><small>energy ${pct(cap > 0 ? Math.min(1, Math.max(0, A.energy[a] / cap)) : 0)}${water}</small>${cond}${sick}${A.lin && A.lin[a] && w.secretKinds ? `<small class="tt-secret ${A.lin[a] === 1 ? 'nuclear' : 'magic'}">${SECRET_LINEAGE[A.lin[a]]}</small>` : ''}</div></div>`;
 	}
 	for (let slot = 0; slot < 2; slot++) {
 		const p = slot * P.n + t;
