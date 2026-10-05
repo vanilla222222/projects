@@ -32,6 +32,12 @@ const PEST_HEALTH = 1.5;
 const BLIGHT_RES_COST = 0.15;
 const FIRE_COST = 0.06;
 const AGE_STEP = 8;
+const PLANT_STRIDE = 8;
+const FRUIT_RATE_S = 1 - Math.pow(1 - FRUIT_RATE, PLANT_STRIDE);
+const FRUIT_ROT_S = 1 - Math.pow(1 - FRUIT_ROT, PLANT_STRIDE);
+const FUNGUS_DECOMP_S = FUNGUS_DECOMP * PLANT_STRIDE;
+const HEALTH_RECOVER_S = HEALTH_RECOVER * PLANT_STRIDE;
+const HEALTH_DECAY_S = HEALTH_DECAY * PLANT_STRIDE;
 const PLANT_LIFE_BASE = 1.5;
 const PLANT_LIFE_WOOD = 40;
 const FUNGUS_LIFE = 1;
@@ -492,6 +498,7 @@ class PlantLayer {
 		this.version = 0;
 		this.totalBiomass = 0;
 		this.coverTiles = 0;
+		this._ph = new Float64Array(PLANT_STRIDE * 8);
 		this.starved = 0;
 		this.blighted = 0;
 		this.grazeTox = 0;
@@ -562,6 +569,7 @@ class PlantLayer {
 		if (!this.bloomBin) this.bloomBin = new Float32Array(PHASE_BINS).fill(this.bloomNow);
 		if (!this.fruitBin) this.fruitBin = new Float32Array(PHASE_BINS).fill(this.fruitNow);
 		if (!(this._keep > 0)) this._keep = SPROUT_BIO;
+		if (!this._ph || this._ph.length !== PLANT_STRIDE * 8) this._ph = new Float64Array(PLANT_STRIDE * 8);
 		if (!this.clones) this.clones = 0;
 		if (this.registry && this.registry.all) {
 			for (const sp of this.registry.all.values()) {
@@ -986,24 +994,26 @@ class PlantLayer {
 		const floor = this.floor;
 		const floorM = this.floorM;
 		const ck = (tick & 7) === 0;
+		const phase = tick & (PLANT_STRIDE - 1);
 		let seedlings = 0;
 		let mature = 0;
 		let old = 0;
 		this.soil.step(this);
+		const ph = this._ph;
 		let total = 0;
 		let totalFruit = 0;
 		let fungi = 0;
 		let flowers = 0;
 		let flowerPoll = 0;
 
-		for (let p = 0; p < 2 * n; p++) {
+		for (let p = phase; p < 2 * n; p += PLANT_STRIDE) {
 			const id = species[p];
 			if (!id) continue;
 			const under = p >= n;
 			const i = under ? p - n : p;
 			let ag = age[p];
 			const lf = life[p];
-			if (ck) {
+			{
 				ag++;
 				age[p] = ag;
 				if (ag > OLD_DEATH_FRAC * lf && rng.next() < OLD_DEATH_P * Math.exp(OLD_DEATH_K * (ag / lf - OLD_DEATH_FRAC))) {
@@ -1019,7 +1029,7 @@ class PlantLayer {
 			const aged = ag > OLD_FRAC * lf;
 			if (young) seedlings++;
 			else {
-				if (ck && floor[p] !== floorM[p]) floor[p] = floorM[p];
+				if (floor[p] !== floorM[p]) floor[p] = floorM[p];
 				if (aged) old++;
 				else mature++;
 			}
@@ -1051,7 +1061,7 @@ class PlantLayer {
 			}
 			let b = bio[p];
 			if (K < 0.015) {
-				b -= 0.01;
+				b -= 0.01 * PLANT_STRIDE;
 				if (b <= 0) {
 					this._clear(p);
 					continue;
@@ -1076,10 +1086,10 @@ class PlantLayer {
 			}
 			if (!under && form[n + i] & FORM_VINE && species[n + i]) tax *= VINE_TAX;
 			if (s >= SAT_OK) {
-				h += HEALTH_RECOVER;
+				h += HEALTH_RECOVER_S;
 				if (h > 1) h = 1;
 			} else {
-				h -= (SAT_OK - s) * HEALTH_DECAY;
+				h -= (SAT_OK - s) * HEALTH_DECAY_S;
 				if (h <= 0) {
 					if (blight[p]) {
 						this.disease.blightDeath(p);
@@ -1093,7 +1103,7 @@ class PlantLayer {
 			if (young) K *= SEEDLING_K0 + ((1 - SEEDLING_K0) * ag) / mt;
 			const sm = 1 + seasonAmp[i] * season;
 			const mm = moistMul ? moistMul[i] : 1;
-			const r = growth[p] * (sm > 0.05 ? sm : 0.05) * light * (0.35 + 0.65 * h) * tax * (mm < 1 && form[p] & FORM_SUCC ? mm + (1 - mm) * SUCC_DRY : mm) * (aged ? OLD_GROWTH : 1);
+			const r = PLANT_STRIDE * growth[p] * (sm > 0.05 ? sm : 0.05) * light * (0.35 + 0.65 * h) * tax * (mm < 1 && form[p] & FORM_SUCC ? mm + (1 - mm) * SUCC_DRY : mm) * (aged ? OLD_GROWTH : 1);
 			const bb = b > 0.03 ? b : 0.03;
 			b += r * bb * (1 - b / K);
 			if (b > K) b = K;
@@ -1105,7 +1115,7 @@ class PlantLayer {
 			if (fk && !myco[p]) {
 				const L = litter[i];
 				if (L > 0) {
-					const d = L * FUNGUS_DECOMP * (fullness < 1 ? fullness : 1);
+					const d = L * FUNGUS_DECOMP_S * (fullness < 1 ? fullness : 1);
 					litter[i] = L - d;
 					const N = nut[i] + d * FUNGUS_RETURN;
 					nut[i] = N < SOIL_MAX ? N : SOIL_MAX;
@@ -1117,17 +1127,19 @@ class PlantLayer {
 				const target = fq * b * fruitBin[(form[p] >> 3) & 7] * h * (POLL_FRUIT_BASE + (1 - POLL_FRUIT_BASE) * poll[i]) * (aged ? OLD_FRUIT : 1);
 				fruitMax[p] = target;
 				let f = fruit[p];
-				if (f < target) f += (target - f) * FRUIT_RATE;
+				if (f < target) f += (target - f) * FRUIT_RATE_S;
 				else {
-					const rot = (f - target) * FRUIT_ROT;
+					const rot = (f - target) * FRUIT_ROT_S;
 					f -= rot;
 					litter[i] += rot;
 				}
 				fruit[p] = f;
 				totalFruit += f;
 			}
-			if (h >= HEALTH_SPREAD_MIN && fullness > 0.3 && rng.next() < (0.006 + 0.045 * disp[p]) * fullness * (1 + bloomK[p] * bloomBin[(form[p] >> 3) & 7] * (POLL_WIND + (1 - POLL_WIND) * poll[i]))) {
-				this._spread(p, i, W, H, tick);
+			if (h >= HEALTH_SPREAD_MIN && fullness > 0.3) {
+				for (let q = PLANT_STRIDE * (0.006 + 0.045 * disp[p]) * fullness * (1 + bloomK[p] * bloomBin[(form[p] >> 3) & 7] * (POLL_WIND + (1 - POLL_WIND) * poll[i])); q > 0; q -= 1) {
+					if (rng.next() < q) this._spread(p, i, W, H, tick);
+				}
 			}
 		}
 		let cover = 0;
@@ -1141,16 +1153,28 @@ class PlantLayer {
 			if (species[i] || species[n + i]) cover++;
 			if (poll[i] > 0) poll[i] *= POLL_DECAY;
 		}
-		this.totalBiomass = total;
+		const po = phase * 8;
+		ph[po] = total;
+		ph[po + 1] = totalFruit;
+		ph[po + 2] = fungi;
+		ph[po + 3] = flowers;
+		ph[po + 4] = flowerPoll;
+		ph[po + 5] = seedlings;
+		ph[po + 6] = mature;
+		ph[po + 7] = old;
+		const sum = this._phSum || (this._phSum = new Float64Array(8));
+		sum.fill(0);
+		for (let k = 0; k < PLANT_STRIDE; k++) for (let c = 0; c < 8; c++) sum[c] += ph[k * 8 + c];
+		this.totalBiomass = sum[0];
 		this.coverTiles = cover;
-		this.totalFruit = totalFruit;
-		this.fungusTiles = fungi;
-		this.flowerTiles = flowers;
-		this.flowerPoll = flowers ? flowerPoll / flowers : 0;
+		this.totalFruit = sum[1];
+		this.fungusTiles = sum[2];
+		this.flowerTiles = sum[3];
+		this.flowerPoll = sum[3] ? sum[4] / sum[3] : 0;
 		const st = this.stages;
-		st.seedlings = seedlings;
-		st.mature = mature;
-		st.old = old;
+		st.seedlings = sum[5];
+		st.mature = sum[6];
+		st.old = sum[7];
 		if (ck) {
 			st.seedTiles = seedTiles;
 			st.seedDormant = this.seedResting;
@@ -1502,9 +1526,47 @@ class PlantLayer {
 			this._bank(j, this.genome, p * PG, parentId);
 			return;
 		}
+		const parentSp = this.registry.get(parentId);
+		if (!parentSp) return;
+		const doom = this._doomed(j, g, base, parentSp);
+		if (doom === 1) return;
 		const child = this._scratch;
-		mutateGenes(this.genome, p * PG, child, 0, PG, rng, 0.2, 0.025);
-		this.plantSeed(j, child, this.registry.get(parentId), tick);
+		if (doom === 2) {
+			const d = this.seedDens[j];
+			if (d <= 0 || rng.next() * (d + SEED_ADD) < SEED_ADD) {
+				mutateGenes(g, base, child, 0, PG, rng, 0.2, 0.025);
+				if ((parentSp.kind | 0) === 1) {
+					child[8] = 0;
+					child[9] = 0;
+				}
+				const o = j * PG;
+				for (let k = 0; k < PG; k++) this.seedGenome[o + k] = child[k];
+				this.seedSp[j] = parentId;
+			}
+			const v = d + SEED_ADD;
+			this.seedDens[j] = v < SEED_MAX ? v : SEED_MAX;
+			return;
+		}
+		mutateGenes(g, base, child, 0, PG, rng, 0.2, 0.025);
+		this.plantSeed(j, child, parentSp, tick);
+	}
+
+	_doomed(j, g, o, parentSp) {
+		const kind = parentSp.kind | 0;
+		const wet = this.water[j];
+		if (wet !== (parentSp.domain === 'water' ? 1 : 0)) return 1;
+		const bound = (0.8 + 2.4 * g[o + 3]) * (1 - 0.3 * g[o + 2]) * this.habit[j] * biomeFit(this.world.biome[j], g[o + 3], g[o + 7], g[o + 6]);
+		if (bound < 0.035) return 1;
+		if (kind !== 1 && (wet ? Math.abs(g[o + 1] - 0.45) < 0.09 || Math.abs(g[o + 3] - 0.25) < 0.09 : Math.abs(g[o + 3] - 0.3) < 0.09)) return 0;
+		const pj = slotOf(g, wet, o, kind) * this.n + j;
+		const resident = this.species[pj];
+		if (!resident) return 0;
+		const mixed = pj >= this.n && this.kind[pj] !== kind && this.species[j];
+		const sf = mixed ? SHADE_MAX * (this.biomass[j] < SHADE_FULL_BIOMASS ? this.biomass[j] / SHADE_FULL_BIOMASS : 1) : 0;
+		const resK = this.kind[pj] ? this.cap[pj] * this._fungusK(this.myco[pj] === 1, j) : this.cap[pj] * (1 - sf * (1 - this.shade[pj]));
+		if (resident === parentSp.id) return bound * 1.1 <= resK * 1.02 ? 2 : 0;
+		const resStrength = resK * (0.45 + (0.55 * this.biomass[pj]) / Math.max(resK, 1e-6)) * (0.5 + 0.5 * this.health[pj]);
+		return bound * 0.85 * 1.1 <= resStrength ? 2 : 0;
 	}
 
 	_clone(p, i, x, y, W, H, tick) {

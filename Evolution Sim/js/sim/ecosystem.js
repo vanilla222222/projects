@@ -180,7 +180,7 @@ class Ecosystem {
 		if (D) D.step(this.tick);
 
 		if (this.tick % 20 === 0) {
-			plants.refreshSpeciesMeans();
+			if (this.tick % 40 === 0) plants.refreshSpeciesMeans();
 			this.animals.refreshSpeciesMeans();
 			this._herdStats();
 			this._nestStats();
@@ -189,7 +189,7 @@ class Ecosystem {
 			this._dormStats();
 			this._socialStats();
 			this._lifeStats();
-			if (this.bugs) this.bugs.refreshSpeciesMeans();
+			if (this.bugs && this.tick % 40 === 20) this.bugs.refreshSpeciesMeans();
 			if (D) D.refreshSpeciesMeans();
 			this._symbStats();
 			this._brainStats();

@@ -11,6 +11,11 @@ const CARCASS_FRAC = 0.6;
 const CARRION_SHARE = 0.6;
 const CARRION_DECAY = 0.005;
 const CARRION_CELL_EVERY = 10;
+const SOIL_UPTAKE_S = SOIL_UPTAKE * 2;
+const SOIL_SUPPLY_S = SOIL_SUPPLY * 2;
+const SOIL_REFILL_S = 1 - (1 - SOIL_REFILL) * (1 - SOIL_REFILL);
+const CARRION_DECAY_S = 1 - (1 - CARRION_DECAY) * (1 - CARRION_DECAY);
+const LITTER_DECAY_S = LITTER_DECAY * 2;
 const PEAT_SLOW = 2.5;
 const SLOPE_K = 30;
 
@@ -84,10 +89,12 @@ class SoilLayer {
 	}
 
 	step(P) {
+		const c = this._cellTick++;
+		if (c % CARRION_CELL_EVERY === 0) this._buildCarrionCells();
+		if (c & 1) return;
 		this._uptake(P.biomass, P.root, P.kind, P.form);
 		this._rows();
 		this._flow(P.sat, P.kind, P.form);
-		if (this._cellTick++ % CARRION_CELL_EVERY === 0) this._buildCarrionCells();
 	}
 
 	_uptake(bio, root, kind, form) {
@@ -96,8 +103,8 @@ class SoilLayer {
 		const tile = this.tile;
 		for (let i = 0; i < n; i++) {
 			const u = n + i;
-			let a = bio[i] * SOIL_UPTAKE * (0.5 + root[i]);
-			let b = kind[u] || (form && form[u] & 4) ? 0 : bio[u] * SOIL_UPTAKE * (0.5 + root[u]);
+			let a = bio[i] * SOIL_UPTAKE_S * (0.5 + root[i]);
+			let b = kind[u] || (form && form[u] & 4) ? 0 : bio[u] * SOIL_UPTAKE_S * (0.5 + root[u]);
 			if (!(a > 0)) a = 0;
 			if (!(b > 0)) b = 0;
 			own[i] = a;
@@ -147,8 +154,8 @@ class SoilLayer {
 			const b = own[n + i];
 			const pa = a + SOIL_SAME_TILE_W * b + around;
 			const pb = b + SOIL_SAME_TILE_W * a + around;
-			const sa = pa > 0 ? (N * SOIL_SUPPLY) / pa : 1;
-			const sb = pb > 0 ? (N * SOIL_SUPPLY) / pb : 1;
+			const sa = pa > 0 ? (N * SOIL_SUPPLY_S) / pa : 1;
+			const sb = pb > 0 ? (N * SOIL_SUPPLY_S) / pb : 1;
 			const va = sa < 1 ? sa : 1;
 			const vb = sb < 1 ? sb : 1;
 			sat[i] = va;
@@ -156,17 +163,17 @@ class SoilLayer {
 			const take = a * va + b * vb;
 			N -= take;
 			if (N < 0) N = 0;
-			N += (base[i] - N) * SOIL_REFILL;
+			N += (base[i] - N) * SOIL_REFILL_S;
 			const C = carrion[i];
 			if (C > 0) {
-				const dc = C * CARRION_DECAY;
+				const dc = C * CARRION_DECAY_S;
 				carrion[i] = C - dc;
 				totalCarrion += C - dc;
 				litter[i] += dc;
 			}
 			const L = litter[i];
 			if (L > 0) {
-				const d = L * LITTER_DECAY * decayK[i];
+				const d = L * LITTER_DECAY_S * decayK[i];
 				litter[i] = L - d;
 				totalLitter += L - d;
 				N += d * SOIL_RECYCLE;

@@ -1058,12 +1058,20 @@ class AnimalPool {
 		const pref = this._cleanPref;
 		let best = -1;
 		let bestD = r * r;
+		const unitK = mode !== 1 && mode !== 5 && !lsp;
+		const ax = this.x;
+		const ay = this.y;
 		for (let gy = r0; gy <= r1; gy++) {
 			for (let gx = c0; gx <= c1; gx++) {
 				const c = gy * cols + gx;
 				for (let k = this.gstart[c], e = this.gstart[c + 1]; k < e; k++) {
 					const j = this.gitems[k];
 					if (j === i || !this.alive[j]) continue;
+					if (unitK) {
+						const qx = ax[j] - x;
+						const qy = ay[j] - y;
+						if (qx * qx + qy * qy >= bestD) continue;
+					}
 					const dj = this.domain[j];
 					if (dj !== dom || dom === 3) {
 						if (dj === 3 || dom === 3) {
@@ -1222,7 +1230,7 @@ class AnimalPool {
 		if (ex * ex + ey * ey > r * r) return;
 		const ax = this.x[j] - this.x[i];
 		const ay = this.y[j] - this.y[i];
-		const d = Math.hypot(ax, ay) || 1;
+		const d = dist2d(ax, ay) || 1;
 		this.state[j] = 4;
 		this.ttl[j] = 3;
 		this.tx[j] = this.x[j] + (ax / d) * 6;
@@ -1333,7 +1341,7 @@ class AnimalPool {
 	_flee(i, fx, fy) {
 		const ax = this.x[i] - fx;
 		const ay = this.y[i] - fy;
-		const d = Math.hypot(ax, ay) || 1;
+		const d = dist2d(ax, ay) || 1;
 		this.tx[i] = this.x[i] + (ax / d) * 6;
 		this.ty[i] = this.y[i] + (ay / d) * 6;
 		this.ttl[i] = 3;
@@ -1561,7 +1569,7 @@ class AnimalPool {
 			const mt = (my | 0) * W + (mx | 0);
 			if (wd[mt] > MEM_WATER_OK) {
 				this.mwx[i] = this.mwy[i] = -1;
-			} else if (this.rng.next() < MEM_USE * this.genome[i * AG + G_BRAIN] && Math.hypot(mx - this.x[i], my - this.y[i]) < MEM_FAR) {
+			} else if (this.rng.next() < MEM_USE * this.genome[i * AG + G_BRAIN] && dist2d(mx - this.x[i], my - this.y[i]) < MEM_FAR) {
 				this.brain.memWater++;
 				this.tx[i] = mx;
 				this.ty[i] = my;
@@ -1593,7 +1601,7 @@ class AnimalPool {
 				const c = gy * cols + gx;
 				const v = cells[c];
 				if (!(v > 0)) continue;
-				const d = Math.hypot((gx + 0.5) * GRID - x, (gy + 0.5) * GRID - y);
+				const d = dist2d((gx + 0.5) * GRID - x, (gy + 0.5) * GRID - y);
 				if (d > r) continue;
 				const score = v / (1 + d * 0.1);
 				if (score > best) {
@@ -1633,7 +1641,7 @@ class AnimalPool {
 		const y = this.y[i];
 		let dx = tx - x;
 		let dy = ty - y;
-		const d = Math.hypot(dx, dy);
+		const d = dist2d(dx, dy);
 		if (d < 1e-4) return 0;
 		const sk = this.strain[i];
 		let v = (sk ? this.spd[i] * (1 - SICK_SLOW * this.disease.sVir[sk]) : this.spd[i]) * this.ef[i];
@@ -1805,7 +1813,7 @@ class AnimalPool {
 				cost += SICK_COST * DORM_SICK * vir * m75;
 				if (this.rng.next() < SICK_DEATH * DORM_SICK * vir * (1 - RES_EFFECT * this.genome[i * AG + G_RES])) sickDead = s;
 				else if (dt % DORM_ITIME === 0 && --this.itime[i] <= 0) D.recoverAnimal(i);
-				else if (((this.tick + i) & 1) === 0 && this.home[i] && Math.hypot(this.x[i] - this.nx[i], this.y[i] - this.ny[i]) <= NEST_NEAR) this._denContact(i, s);
+				else if (((this.tick + i) & 1) === 0 && this.home[i] && dist2d(this.x[i] - this.nx[i], this.y[i] - this.ny[i]) <= NEST_NEAR) this._denContact(i, s);
 			}
 		}
 		let en = this.energy[i] - cost;
@@ -1960,7 +1968,7 @@ class AnimalPool {
 			if (land && carrion[j] > 0) food += carrion[j] * carrionLure;
 			if (land && eggHead && eggHead[j] >= 0) food += EGG_LURE * pk;
 			const clim = this._clim(i, temp[j]);
-			const dist = Math.hypot(tx - this.x[i], ty - this.y[i]);
+			const dist = dist2d(tx - this.x[i], ty - this.y[i]);
 			let score = ((food + 0.02) * (0.25 + clim) * perchK) / (1 + dist * 0.08) + this.rng.next() * 0.002;
 			if (wd) score += WATERHOLE / (1 + wd[j]);
 			if (tUntil[j] > tick && tUid[j] !== uid && (tSp[j] === sp || tRole[j] === role)) score *= TERR_RIVAL;
@@ -1983,7 +1991,7 @@ class AnimalPool {
 					if (j < 0 || eggHead[j] < 0) continue;
 					const tx = (j % W) + 0.5;
 					const ty = (j - (j % W)) / W + 0.5;
-					const dist = Math.hypot(tx - this.x[i], ty - this.y[i]);
+					const dist = dist2d(tx - this.x[i], ty - this.y[i]);
 					if (dist > r || !this.canStand(dom, tx, ty)) continue;
 					const score = (EGG_LURE * (0.25 + this._clim(i, temp[j]))) / (1 + dist * 0.08);
 					if (score > bestScore) {
@@ -2000,7 +2008,7 @@ class AnimalPool {
 		} else if (bestScore < MEM_LOW && this.mfx[i] >= 0) {
 			const fx = this.mfx[i];
 			const fy = this.mfy[i];
-			if (this.rng.next() < MEM_USE * this.genome[i * AG + G_BRAIN] && Math.hypot(fx - this.x[i], fy - this.y[i]) < MEM_FAR) {
+			if (this.rng.next() < MEM_USE * this.genome[i * AG + G_BRAIN] && dist2d(fx - this.x[i], fy - this.y[i]) < MEM_FAR) {
 				this.brain.memFood++;
 				bx = fx;
 				by = fy;
@@ -2012,7 +2020,7 @@ class AnimalPool {
 			bx = Math.min(W - 1, Math.max(0, this.x[i] + (this.rng.next() * 2 - 1) * r * 3));
 			by = Math.min(H - 1, Math.max(0, this.y[i] + my + (this.rng.next() * 2 - 1) * r * 3));
 		}
-		if (this.mdx[i] >= 0 && Math.hypot(bx - this.mdx[i], by - this.mdy[i]) < DANGER_R && this.rng.next() < MEM_USE * this.genome[i * AG + G_BRAIN]) {
+		if (this.mdx[i] >= 0 && dist2d(bx - this.mdx[i], by - this.mdy[i]) < DANGER_R && this.rng.next() < MEM_USE * this.genome[i * AG + G_BRAIN]) {
 			const ax = 2 * this.x[i] - bx;
 			const ay = 2 * this.y[i] - by;
 			if (this.canStand(dom, ax, ay)) {
@@ -2054,7 +2062,7 @@ class AnimalPool {
 			const r = hR > 0 ? hR : this.hr[i];
 			const ex = bx - ox;
 			const ey = by - oy;
-			const e = Math.hypot(ex, ey);
+			const e = dist2d(ex, ey);
 			if (e > r) {
 				const cx = ox + (ex / e) * r;
 				const cy = oy + (ey / e) * r;
@@ -2162,11 +2170,11 @@ class AnimalPool {
 			let hd = 0;
 			const away = dom === 3 && seasonT < 0 && temp[tile] + seasonT < this.pT[i];
 			if (hk) {
-				hd = Math.hypot(this.x[i] - this.nx[i], this.y[i] - this.ny[i]);
+				hd = dist2d(this.x[i] - this.nx[i], this.y[i] - this.ny[i]);
 				if ((hk === 3 && this.age[i] > this.mature[i]) || hd > NEST_FAR || (away && hk !== 3)) hk = this._dropHome(i);
 			} else if (ng > NEST_MIN && (tick + i) % NEST_EVERY === 0 && this.age[i] > this.mature[i] && !thirsty && !away && this.state[i] !== 4) {
 				hk = this._pickHome(i);
-				if (hk) hd = Math.hypot(this.x[i] - this.nx[i], this.y[i] - this.ny[i]);
+				if (hk) hd = dist2d(this.x[i] - this.nx[i], this.y[i] - this.ny[i]);
 			}
 			const ntile = hk ? (this.ny[i] | 0) * W + (this.nx[i] | 0) : -1;
 			const atHome = hk > 0 && hd <= NEST_NEAR;
@@ -2257,10 +2265,10 @@ class AnimalPool {
 				const t = this._nearest(i, fr, 0);
 				this._learnSp = 0;
 				if (t >= 0) {
-					if (ls > 0 && this.sp[t] === this.lsp[i] && Math.hypot(this.x[t] - this.x[i], this.y[t] - this.y[i]) > fr) this.brain.fledEarly++;
+					if (ls > 0 && this.sp[t] === this.lsp[i] && dist2d(this.x[t] - this.x[i], this.y[t] - this.y[i]) > fr) this.brain.fledEarly++;
 					const ax = this.x[i] - this.x[t];
 					const ay = this.y[i] - this.y[t];
-					const d = Math.hypot(ax, ay) || 1;
+					const d = dist2d(ax, ay) || 1;
 					this.tx[i] = this.x[i] + (ax / d) * 6;
 					this.ty[i] = this.y[i] + (ay / d) * 6;
 					this.ttl[i] = 3;
@@ -2296,7 +2304,7 @@ class AnimalPool {
 				if (thirsty) this.dsp[i] = 0;
 				else {
 					moved = this._moveToward(i, this.tx[i], this.ty[i], 1);
-					const dd = Math.hypot(this.tx[i] - this.x[i], this.ty[i] - this.y[i]);
+					const dd = dist2d(this.tx[i] - this.x[i], this.ty[i] - this.y[i]);
 					if (--this.dsp[i] <= 0 || dd < 1.5 || moved <= 0) {
 						this.dsp[i] = 0;
 						this.fnd[i] = DISP_GEN;
@@ -2320,9 +2328,9 @@ class AnimalPool {
 				if (p >= 0 && this.alive[p]) {
 					if (this.state[i] !== 3) this.ttl[i] = 18;
 					this.state[i] = 3;
-					const d0 = Math.hypot(this.x[p] - this.x[i], this.y[p] - this.y[i]);
+					const d0 = dist2d(this.x[p] - this.x[i], this.y[p] - this.y[i]);
 					moved = this._moveToward(i, this.x[p], this.y[p], (d0 < 4 ? PACK_PACE : 1) * (1 - (PACK_SICK_SLOW * this._pv[r]) / this.pn[i]));
-					const d = Math.hypot(this.x[p] - this.x[i], this.y[p] - this.y[i]);
+					const d = dist2d(this.x[p] - this.x[i], this.y[p] - this.y[i]);
 					if (d < 1) this._attack(i, p, tile, tick);
 					else if (--this.ttl[i] <= 0) {
 						this.cool[i] = 10;
@@ -2346,9 +2354,9 @@ class AnimalPool {
 				if (p >= 0) {
 					if (this.state[i] !== 3) this.ttl[i] = 18;
 					this.state[i] = 3;
-					const d0 = Math.hypot(this.x[p] - this.x[i], this.y[p] - this.y[i]);
+					const d0 = dist2d(this.x[p] - this.x[i], this.y[p] - this.y[i]);
 					moved = this._moveToward(i, this.x[p], this.y[p], d0 < 4 ? 1.6 : 1);
-					const d = Math.hypot(this.x[p] - this.x[i], this.y[p] - this.y[i]);
+					const d = dist2d(this.x[p] - this.x[i], this.y[p] - this.y[i]);
 					if (d < 1) this._attack(i, p, tile, tick);
 					else if (--this.ttl[i] <= 0) {
 						this.cool[i] = 10;
@@ -2376,7 +2384,7 @@ class AnimalPool {
 
 			if (!acted && (!hk || (hk === 3 && !homeR)) && this.parent[i] && gf < 1 && (tick + i) % FOLLOW_EVERY === 0 && this.state[i] !== 1) {
 				const p = this._nearest(i, this.range[i], 2);
-				if (p >= 0 && Math.hypot(this.x[p] - this.x[i], this.y[p] - this.y[i]) > 1.5) {
+				if (p >= 0 && dist2d(this.x[p] - this.x[i], this.y[p] - this.y[i]) > 1.5) {
 					moved = this._moveToward(i, this.x[p], this.y[p], 1);
 					this.state[i] = 0;
 					acted = true;
@@ -2607,7 +2615,7 @@ class AnimalPool {
 				this.energy[i] + this.fat[i] > emax * 0.7 &&
 				(this.count < this.maxAnimals || (this.diet[i] > 0.6 && this.count < this.maxAnimals + 1500)) &&
 				(dom !== 2 || !Wx || Wx.waterDist[tile] <= 1 || (this.walk[tile] & 2) !== 0 || hk === 1) &&
-				(hk === 0 || hk === 3 || Math.hypot(this.x[i] - this.nx[i], this.y[i] - this.ny[i]) <= NEST_NEAR) &&
+				(hk === 0 || hk === 3 || dist2d(this.x[i] - this.nx[i], this.y[i] - this.ny[i]) <= NEST_NEAR) &&
 				this._localCount(i) < (dom === 3 ? BIRD_CROWD : 14) &&
 				(!this._deficient(i) || rng.next() >= DEF_FERT)
 			) {
@@ -3030,7 +3038,7 @@ class AnimalPool {
 			? BIRD_STRIKE
 			: this.domain[p] === 1
 			? 0.3 + Math.min(0.3, this.plants.cover(tile) * 0.6) + (this.walk[tile] & 128 ? REEF_COVER : 0)
-			: Math.min(0.45, this.plants.cover(tile) * 0.5) + (this.home[p] > 1 && Math.hypot(this.x[p] - this.nx[p], this.y[p] - this.ny[p]) <= NEST_NEAR ? DEN_COVER * this.genome[p * AG + G_NEST] : 0);
+			: Math.min(0.45, this.plants.cover(tile) * 0.5) + (this.home[p] > 1 && dist2d(this.x[p] - this.nx[p], this.y[p] - this.ny[p]) <= NEST_NEAR ? DEN_COVER * this.genome[p * AG + G_NEST] : 0);
 		const tk = this.armor[p] > TOOL_ARMOR || this.cls[p] === CLS_INVT ? this._tool(i) : 0;
 		let chance = 0.7 * sizeF * speedF * (1 - 0.6 * this.armor[p] * (1 - TOOL_CRACK * tk)) * (1 - cover * (1 - DISPLAY_SPOT * this.show[p] - (this.alm[p] > 0 ? ALARM_SPOT : 0))) * (1 - 0.5 * this.scav[i]);
 		if (pn > 1) chance *= Math.min(PACK_CAP, 1 + PACK_K * (1 + SOC_PACK * (this.genome[i * AG + G_SOCIAL] - 0.5)) * (pn - 1));
@@ -3243,8 +3251,8 @@ class AnimalPool {
 		if (this.state[i] !== 10) this.ttl[i] = 12;
 		this.state[i] = 10;
 		let moved = 0;
-		if (Math.hypot(this.x[h] - this.x[i], this.y[h] - this.y[i]) > 1) moved = this._moveToward(i, this.x[h], this.y[h], 1.2);
-		if (Math.hypot(this.x[h] - this.x[i], this.y[h] - this.y[i]) <= 1) this._clean(i, h, tick, csp);
+		if (dist2d(this.x[h] - this.x[i], this.y[h] - this.y[i]) > 1) moved = this._moveToward(i, this.x[h], this.y[h], 1.2);
+		if (dist2d(this.x[h] - this.x[i], this.y[h] - this.y[i]) <= 1) this._clean(i, h, tick, csp);
 		else if (--this.ttl[i] <= 0) {
 			this.state[i] = 0;
 			this.cool[i] = CLEAN_COOL;

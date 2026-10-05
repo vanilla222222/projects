@@ -19,6 +19,10 @@ function clamp01(v) {
 	return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
+function dist2d(x, y) {
+	return Math.sqrt(x * x + y * y);
+}
+
 function gaussFit(value, pref, tol) {
 	const d = (value - pref) / tol;
 	return Math.exp(-d * d);
