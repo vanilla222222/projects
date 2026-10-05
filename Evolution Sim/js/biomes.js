@@ -47,6 +47,9 @@ const BIOME = {
 	OASIS: 'OASIS',
 	DUNES: 'DUNES',
 	FLOODPLAIN: 'FLOODPLAIN',
+	TRENCH: 'TRENCH',
+	VENTS: 'VENTS',
+	COLD_SEEP: 'COLD_SEEP',
 };
 
 // Display metadata: color used by the renderer and a human-readable label.
@@ -95,6 +98,9 @@ const BIOME_INFO = {
 	[BIOME.OASIS]: { name: 'Oasis', color: '#5f9e4a' },
 	[BIOME.DUNES]: { name: 'Sand Dunes', color: '#edcf86' },
 	[BIOME.FLOODPLAIN]: { name: 'Floodplain', color: '#7fa65a' },
+	[BIOME.TRENCH]: { name: 'Ocean Trench', color: '#061e3a' },
+	[BIOME.VENTS]: { name: 'Hydrothermal Vents', color: '#5a3a4e' },
+	[BIOME.COLD_SEEP]: { name: 'Cold Seep', color: '#2f5a62' },
 };
 
 // Numeric biome IDs: the world grid stores these (a Uint8Array) instead of

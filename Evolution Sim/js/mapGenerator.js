@@ -20,7 +20,7 @@ const HYDRO_RIVER_FLOW = 190;
 const HYDRO_WIDE_1 = 5;
 const HYDRO_WIDE_2 = 18;
 
-const WG_GEN = 4;
+const WG_GEN = 5;
 const WG_WATER = 0.34;
 const WG_CONT_AREA = 22000;
 const WG_ISLE_AREA = 4200;
@@ -207,6 +207,7 @@ class WorldMap {
 		if (this.gen >= 4) this._classifyBiomesV4();
 		else if (v3) this._classifyBiomesV3();
 		else this._classifyBiomes();
+		if (this.gen >= 5) this._oceanBiomesV5();
 		const sk = secretKindsForSeed(this.seed, this.gen, this.options.secret || null);
 		if (sk) this._placeSecrets(sk);
 	}
@@ -1710,6 +1711,39 @@ class WorldMap {
 			}
 		}
 		return mask;
+	}
+
+	_oceanBiomesV5() {
+		const { width, height } = this;
+		const deep = BIOME_THRESHOLDS.deepOceanLevel;
+		const band = new PerlinNoise(this.seed + 95001);
+		const spot = new PerlinNoise(this.seed + 95002);
+		const seep = new PerlinNoise(this.seed + 95003);
+		const O = BIOME_ID.OCEAN, D = BIOME_ID.OCEAN_DEEP;
+		const da = [];
+		for (let i = 0; i < width * height; i++) if (this.biome[i] === D) da.push(this.altitude[i]);
+		da.sort((p, q) => p - q);
+		const trenchTop = da.length ? da[Math.floor(da.length * 0.2)] : 0;
+		for (let y = 0; y < height; y++) {
+			for (let x = 0; x < width; x++) {
+				const i = y * width + x;
+				const b = this.biome[i];
+				if (b !== O && b !== D) continue;
+				const a = this.altitude[i];
+				if (b === D) {
+					const bn = band.noise2D(x * 0.035, y * 0.035) * 0.04;
+					if (a + bn < trenchTop) {
+						this.biome[i] = BIOME_ID.TRENCH;
+						this.temperature[i] = Math.max(0.16, this.temperature[i] * 0.8);
+					} else if (spot.noise2D(x * 0.21, y * 0.21) > 0.52) {
+						this.biome[i] = BIOME_ID.VENTS;
+						this.temperature[i] = Math.min(1, this.temperature[i] + 0.12);
+					}
+				} else if (a < deep + 0.1 && seep.noise2D(x * 0.13, y * 0.13) > 0.5) {
+					this.biome[i] = BIOME_ID.COLD_SEEP;
+				}
+			}
+		}
 	}
 
 	_classifyBiomesV4() {
