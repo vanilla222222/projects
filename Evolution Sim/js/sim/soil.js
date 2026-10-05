@@ -11,6 +11,8 @@ const CARCASS_FRAC = 0.6;
 const CARRION_SHARE = 0.6;
 const CARRION_DECAY = 0.005;
 const CARRION_CELL_EVERY = 10;
+const PEAT_SLOW = 2.5;
+const SLOPE_K = 30;
 
 class SoilLayer {
 	constructor(world) {
@@ -37,6 +39,35 @@ class SoilLayer {
 		this.own = new Float32Array(n * 2);
 		this.tile = new Float32Array(n);
 		this.row = new Float32Array(n);
+		this._terrain(world);
+	}
+
+	_terrain(world) {
+		const n = this.n;
+		const W = this.W;
+		const H = this.H;
+		const alt = world.altitude;
+		const decayK = (this.decayK = new Float32Array(n));
+		const slope = (this.slope = new Float32Array(n));
+		const down = (this.down = new Int32Array(n).fill(-1));
+		for (let i = 0; i < n; i++) {
+			const b = world.biome[i];
+			const k = 1 - PEAT_SLOW * (typeof BIOME_SOGGY !== 'undefined' ? BIOME_SOGGY[b] : 0);
+			decayK[i] = k > 0.1 ? k : 0.1;
+			if (WATER_BIOME_SET.has(b)) continue;
+			const x = i % W;
+			const y = (i / W) | 0;
+			let best = -1;
+			let lo = alt[i];
+			if (x > 0 && alt[i - 1] < lo) { lo = alt[i - 1]; best = i - 1; }
+			if (x < W - 1 && alt[i + 1] < lo) { lo = alt[i + 1]; best = i + 1; }
+			if (y > 0 && alt[i - W] < lo) { lo = alt[i - W]; best = i - W; }
+			if (y < H - 1 && alt[i + W] < lo) { lo = alt[i + W]; best = i + W; }
+			if (best < 0) continue;
+			const s = (alt[i] - lo) * SLOPE_K;
+			slope[i] = s < 1 ? s : 1;
+			down[i] = best;
+		}
 	}
 
 	restoreDerived(world) {
@@ -49,6 +80,7 @@ class SoilLayer {
 		this.own = new Float32Array(n * 2);
 		this.tile = new Float32Array(n);
 		this.row = new Float32Array(n);
+		this._terrain(world);
 	}
 
 	step(P) {
@@ -101,6 +133,7 @@ class SoilLayer {
 		const base = this.base;
 		const litter = this.litter;
 		const carrion = this.carrion;
+		const decayK = this.decayK;
 		const tail = n - W;
 		let totalLitter = 0;
 		let totalCarrion = 0;
@@ -133,7 +166,7 @@ class SoilLayer {
 			}
 			const L = litter[i];
 			if (L > 0) {
-				const d = L * LITTER_DECAY;
+				const d = L * LITTER_DECAY * decayK[i];
 				litter[i] = L - d;
 				totalLitter += L - d;
 				N += d * SOIL_RECYCLE;

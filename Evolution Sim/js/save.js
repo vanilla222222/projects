@@ -24,7 +24,7 @@ const EvoSave = (() => {
 
 	const DERIVED = {
 		PlantLayer: ['water', 'depth', 'habit', 'seasonAmp', 'tox', 'disp', 'shade', 'root', 'form'],
-		SoilLayer: ['base', 'own', 'tile', 'row'],
+		SoilLayer: ['base', 'own', 'tile', 'row', 'decayK', 'slope', 'down'],
 		WeatherLayer: ['_evapK', '_queue'],
 		BugLayer: ['app', 'mob', 'rate'],
 	};
@@ -277,6 +277,8 @@ const EvoSave = (() => {
 		grow(eco.animals, 'seedGenome');
 		grow(eco.disasters, '_scratch');
 		if (eco.plants && typeof eco.plants.upgradeGenes === 'function') eco.plants.upgradeGenes();
+		if (eco.plants && !eco.plants.bugs && eco.bugs) eco.plants.bugs = eco.bugs;
+		if (eco.weather && typeof eco.weather.upgrade === 'function') eco.weather.upgrade();
 	}
 
 	async function decode(gz, makeWorld) {

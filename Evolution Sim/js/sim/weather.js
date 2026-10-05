@@ -26,6 +26,9 @@ const DROUGHT_MOIST = 0.8;
 const DRY_FLOW = 0.5;
 const MOIST_BASE = 0.8;
 const MOIST_K = 0.4;
+const FOREST_EVAP = 0.35;
+const FOREST_RAIN = 0.004;
+const FOREST_COOL = 0.04;
 const STORM_LOG_R = 12;
 const STORM_LOG_EVERY = 240;
 const COMPASS = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
@@ -45,6 +48,8 @@ class WeatherLayer {
 		this.fresh = new Uint8Array(n);
 		this.waterDist = new Uint8Array(n);
 		this._evapK = new Float32Array(n);
+		this.cool = new Float32Array(n);
+		this.forest = 0;
 		this._mark = new Int32Array(n);
 		this._queue = new Int32Array(n);
 		this._pass = 0;
@@ -79,7 +84,12 @@ class WeatherLayer {
 	}
 
 	effTemp(i) {
-		return this.world.temperature[i] + this.seasonT;
+		return this.world.temperature[i] + this.seasonT - this.cool[i];
+	}
+
+	upgrade() {
+		if (!this.cool || this.cool.length !== this.n) this.cool = new Float32Array(this.n);
+		if (!this.forest) this.forest = 0;
 	}
 
 	_setFresh() {
@@ -300,7 +310,14 @@ class WeatherLayer {
 		const mm = this.moistMul;
 		const fresh = this.fresh;
 		const evapK = this._evapK;
+		const cool = this.cool;
+		const P = this.plants;
+		const pSp = P.species;
+		const pBio = P.biomass;
+		const pKind = P.kind;
+		const pG = P.genome;
 		const w = this.world;
+		let forest = 0;
 		const drought = this.drought;
 		const ev = drought ? DROUGHT_EVAP : 1;
 		const sT = SNOW_T - this.seasonT;
@@ -310,8 +327,16 @@ class WeatherLayer {
 		for (let i = 0; i < n; i++) {
 			if (water[i]) continue;
 			let v = wet[i];
+			let c = 0;
+			if (pSp[i] && !pKind[i] && pG[i * PG + 3] >= TREE_WOOD) {
+				c = pBio[i] / SHADE_FULL_BIOMASS;
+				if (c > 1) c = 1;
+				forest += c;
+			}
+			cool[i] = FOREST_COOL * c;
 			if (live) {
-				v -= v * evapK[i] * ev;
+				v -= v * evapK[i] * ev * (1 - FOREST_EVAP * c);
+				v += FOREST_RAIN * c * (1 - v);
 				const sn = snow[i];
 				if (sn > 0 && temp[i] > sT) {
 					const m = sn < SNOW_MELT ? sn : SNOW_MELT;
@@ -334,5 +359,6 @@ class WeatherLayer {
 		this.meanWet = sumWet / L;
 		this.meanMoist = sumMoist / L;
 		this.snowTiles = snowTiles;
+		this.forest = forest / L;
 	}
 }

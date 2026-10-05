@@ -169,6 +169,7 @@ const BERG_K = 0.22;
 const FOREST_SLOW = 0.7;
 const FOREST_FREE = 0.25;
 const AMPH_MIRE = 0.22;
+const HYPOXIA_COST = 1.5;
 const AMPH_FRESH = 0.1;
 const AEST_MAMM_MASS = 1.2;
 const BIOME_ZONE = new Uint8Array(BIOME_LIST.length);
@@ -2139,7 +2140,7 @@ class AnimalPool {
 					wv = 1;
 				}
 				else {
-					wv -= THIRST * (1 - 0.6 * this.dry[i]) * (0.6 + temp[tile] + seasonT + droughtK) * (this.cold[i] > 0.5 ? 0.6 : 1) * (amph ? AMPH_DRY : 1) * (inv ? INVERT_THIRST : 1) * (herdM && this.ld[i] ? ELDER_THIRST : 1) * (this.walk[tile] & 64 ? 1 + ((amph ? SALT_THIRST_AMPH : SALT_THIRST) - 1) * (1 - 0.7 * this.dry[i]) : 1);
+					wv -= THIRST * (1 - 0.6 * this.dry[i]) * (0.6 + temp[tile] + seasonT - Wx.cool[tile] + droughtK) * (this.cold[i] > 0.5 ? 0.6 : 1) * (amph ? AMPH_DRY : 1) * (inv ? INVERT_THIRST : 1) * (herdM && this.ld[i] ? ELDER_THIRST : 1) * (this.walk[tile] & 64 ? 1 + ((amph ? SALT_THIRST_AMPH : SALT_THIRST) - 1) * (1 - 0.7 * this.dry[i]) : 1);
 					if (wv < 0) wv = 0;
 				}
 				this.water[i] = wv;
@@ -2530,6 +2531,10 @@ class AnimalPool {
 			const dry = Wx && dom !== 1 && this.water[i] <= 0;
 			if (dry) cost *= DEHYDRATE_COST;
 			cost += moved * 0.012 * this.mass[i];
+			if (dom === 1) {
+				const o2 = this.plants.oxygen[tile];
+				if (o2 < HYPOXIA) cost *= 1 + HYPOXIA_COST * (HYPOXIA - o2) / HYPOXIA;
+			}
 			this.energy[i] -= cost;
 			const jv = gf < 1;
 			const rt = (cost / emax) * NUT_K;
