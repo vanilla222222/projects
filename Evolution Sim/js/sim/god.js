@@ -790,7 +790,9 @@ class GodTools {
 			const c = GodTools.clean(eco.world, a);
 			if (!c.pts.length) return { ok: false, count: 0, reason: 'spot' };
 			tiles = GodTools.tiles(eco.world, c.pts, c.r);
-			for (let k = 0; k + 1 < c.pts.length; k += 2) fx.push(c.pts[k], c.pts[k + 1], Math.max(1, c.r));
+			const np = c.pts.length >> 1;
+			const every = Math.max(1, Math.ceil(np / 6));
+			for (let k = 0; k < np; k += every) fx.push(c.pts[k * 2], c.pts[k * 2 + 1], Math.max(1, c.r));
 		}
 		const fert = a.kind === 'fertilise';
 		const soil = P.soil;
