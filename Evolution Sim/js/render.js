@@ -368,6 +368,8 @@ const SICK_RGB = [150, 120, 50];
 const SICK_MIX = 0.65;
 const BLIGHT_RGB = [125, 140, 115];
 const BLIGHT_MIX = 0.6;
+const PHENO_RGB = [null, [214, 104, 38], [128, 100, 72], [246, 198, 214]];
+const PHENO_MIX = [0, 0.62, 0.55, 0.5];
 const INFECT_MIX = 0.55;
 const SHOW_BASE = 0.3;
 const SHOW_SAT = 1.6;
@@ -963,6 +965,7 @@ class WorldRenderer {
 		const icons = this.spIcon;
 		const flowerIcon = ICON_INDEX.flower;
 		const seasons = this.eco.options.seasons;
+		const pheno = P.pheno;
 		let bloom = typeof P.bloomNow === 'number' ? P.bloomNow : typeof bloomFactor === 'function' ? (seasons ? bloomFactor(P.season || 0) : 0.5) : 0;
 		bloom = Math.max(0, Math.min(1, bloom || 0)) * FLOWER_TINT;
 		for (let i = 0; i < n; i++) {
@@ -1006,6 +1009,14 @@ class WorldRenderer {
 				r += (col[fc] - r) * f;
 				g += (col[fc + 1] - g) * f;
 				bl += (col[fc + 2] - bl) * f;
+			}
+			const ph = pheno && !lit ? pheno[i] : 0;
+			if (ph) {
+				const pc = PHENO_RGB[ph];
+				const pm = PHENO_MIX[ph] * (ph === 2 ? 1 : 0.6 + 0.4 * Math.min(1, P.biomass[i]));
+				r += (pc[0] - r) * pm;
+				g += (pc[1] - g) * pm;
+				bl += (pc[2] - bl) * pm;
 			}
 			const k = (1 - health[p]) * SICK_MIX;
 			r += (SICK_RGB[0] - r) * k;
