@@ -104,7 +104,7 @@ const app = {
 	openClasses: new Set(),
 	busy: false,
 	messageTimer: 0,
-	god: { open: false, tool: null, sp: 0, biome: 'GRASSLAND', r: 2, n: 10, strokeId: 0, stroke: null, chain: Promise.resolve(), seen: 0, listAt: 0 },
+	god: { open: false, tool: null, sp: 0, biome: 'GRASSLAND', r: 2, n: 10, strokeId: 0, stroke: null, hintStroke: -1, hintCount: 0, chain: Promise.resolve(), seen: 0, listAt: 0 },
 };
 
 function readSize() {
@@ -1393,6 +1393,8 @@ const GOD_TOOLS = {
 	dry: { label: 'Drier', brush: 'moist', value: -1 },
 };
 
+const GOD_TOOL_COLORS = { spawn: '#e7a25c', warm: '#e8b04a', cold: '#7fc4e8', wet: '#5fb6e6', dry: '#e0734a' };
+
 function godVer(eco) {
 	if (!eco) return 0;
 	if (eco.remote) return eco._godVersion || 0;
@@ -1495,12 +1497,18 @@ function godSend(action) {
 }
 
 function godResult(action, res) {
+	const g = app.god;
+	if (g.hintStroke !== action.stroke) {
+		g.hintStroke = action.stroke;
+		g.hintCount = 0;
+	}
+	g.hintCount += res.count | 0;
 	if (action.kind === 'spawn') {
 		const sp = app.eco.registry.get(action.sp);
 		const name = sp ? sp.name : 'that species';
 		godHint(res.ok ? `Spawned ${res.count} ${name}.` : `No room for ${name} there. Try its own habitat.`);
 		refreshGodSpecies(true);
-	} else godHint(res.ok ? `Changed ${res.count} tiles.` : 'Nothing to change there.');
+	} else godHint(g.hintCount > 0 ? `Changed ${g.hintCount} tiles.` : 'Nothing to change there.');
 	updateUi(true);
 }
 
@@ -1582,7 +1590,7 @@ function placeGodRing(x, y) {
 function setupGodPalette() {
 	const g = app.god;
 	for (const b of $('godTools').children) {
-		if (b.dataset.icon) b.querySelector('.gp-ico').innerHTML = iconSVG(b.dataset.icon, NEUTRAL, 18);
+		if (b.dataset.icon) b.querySelector('.gp-ico').innerHTML = iconSVG(b.dataset.icon, paletteFor(GOD_TOOL_COLORS[b.dataset.tool] || '#a9bcb0'), 18);
 	}
 	buildGodBiomes();
 	$('godToggle').onclick = () => setGodOpen(!g.open);

@@ -254,7 +254,7 @@ class GodTools {
 		this.painted += tiles.length;
 		const lost = this._refresh(eco, tiles, before);
 		const what = brush === 'biome' ? BIOME_INFO[value].name : brush === 'temp' ? (value > 0 ? 'warmer' : 'colder') : value > 0 ? 'wetter' : 'drier';
-		const tail = lost > 0 ? ` (${lost} animals lost)` : '';
+		const tail = lost > 0 ? ` (${lost} animal${lost === 1 ? '' : 's'} lost)` : '';
 		if (brush === 'biome') this._log(eco, a.stroke | 0, (c) => `You painted ${c} tiles of ${what}${tail}`, tiles.length);
 		else this._log(eco, a.stroke | 0, (c) => `You made ${c} tiles ${what}`, tiles.length);
 		return { ok: true, count: tiles.length, lost };

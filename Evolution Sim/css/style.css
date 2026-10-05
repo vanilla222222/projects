@@ -1912,7 +1912,7 @@ select option {
 	background: var(--float);
 	color: var(--text);
 	cursor: pointer;
-	z-index: 4;
+	z-index: 6;
 }
 
 .god-toggle:hover,
@@ -1939,7 +1939,7 @@ select option {
 	border-radius: 12px;
 	box-shadow: 0 8px 24px var(--shadow);
 	backdrop-filter: blur(6px);
-	z-index: 4;
+	z-index: 6;
 }
 
 .god-palette[hidden],
