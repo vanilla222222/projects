@@ -507,6 +507,7 @@ class Ecosystem {
 		s.sentinel = A.sentinel;
 		s.dispersals = A.dispersals;
 		s.dispSplits = A.dispSplits;
+		s.rangeSplits = A.rangeSplits | 0;
 		s.rankBlocked = A.rankBlocked;
 		s.colonies = colonies;
 		s.colonySp = colonySp;
