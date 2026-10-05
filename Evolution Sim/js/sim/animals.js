@@ -545,6 +545,14 @@ const LVL_NAMES = ['surface', 'midwater', 'sea floor'];
 const DEEP_CARN = 0.6;
 const DEEP_EEL = 0.48;
 const AMBUSH_SPEED = 0.45;
+const UP_SLOW = 0.35;
+const UP_COST = 0.006;
+const CROC_BANK = 1.6;
+const SALMON_DIE = 0.75;
+const FRESH_SALT = 0.2;
+const NURSERY_K = 0.35;
+const AQ_LARVA_DIET = 0.5;
+const AQ_EGG_R = 3;
 const SCHOOL_HERD = 0.7;
 const SCHOOL_DEPTH = 0.15;
 const FLAT_DEPTH = 0.4;
@@ -942,7 +950,7 @@ class AnimalPool {
 		this.walk = new Uint8Array(n);
 		for (let i = 0; i < n; i++) {
 			const b = world.biome[i];
-			if (b === BIOME_ID.RIVER || b === BIOME_ID.POND || b === BIOME_ID.RAPIDS) this.walk[i] = 3;
+			if (b === BIOME_ID.RIVER || b === BIOME_ID.POND || b === BIOME_ID.RAPIDS || b === BIOME_ID.BEAVER_POND) this.walk[i] = 3;
 			else if (WATER_BIOME_SET.has(b)) this.walk[i] = 2;
 			else this.walk[i] = b === BIOME_ID.GLACIER ? 0 : b === BIOME_ID.BEACH || b === BIOME_ID.CLIFF ? 17 : 1;
 			this.walk[i] |= 8;
@@ -1667,6 +1675,10 @@ class AnimalPool {
 				this.lv[j] = 1;
 				this.domain[j] = 1;
 				this._larvaDiet(j, TAD_DIET);
+			} else if (c === CLS_INVT && this.domain[j] === 3 && tile >= 0 && this.walk[tile] & 2 && this.genome[o + G_SALT] < FRESH_SALT) {
+				this.lv[j] = 1;
+				this.domain[j] = 1;
+				this._larvaDiet(j, this.diet[j] < AQ_LARVA_DIET ? this.diet[j] : AQ_LARVA_DIET);
 			} else if (c === CLS_INVT && this.domain[j] === 0 && this.diet[j] < LARVA_MAX_DIET) {
 				this.lv[j] = 2;
 				this._larvaDiet(j, LARVA_DIET);
@@ -1929,11 +1941,20 @@ class AnimalPool {
 				else if (sz > FOREST_FREE) v *= 1 - FOREST_SLOW * (sz - FOREST_FREE);
 			}
 		}
-		const step = Math.min(d, v * frac);
+		let step = Math.min(d, v * frac);
 		dx /= d;
 		dy /= d;
 		const dom = tad ? 2 : this.domain[i];
 		const W = this.world.width;
+		const RV = this.rivers;
+		if (RV && dom !== 0 && dom !== 3) {
+			const t0 = (y | 0) * W + (x | 0);
+			const fdot = dx * RV.fdx[t0] + dy * RV.fdy[t0];
+			if (fdot < 0) {
+				step *= 1 + UP_SLOW * fdot;
+				this.energy[i] += UP_COST * fdot * step * this.mass[i];
+			}
+		}
 		const pos = this.rng.next() < 0.5;
 		const COS = pos ? MOVE_COS_P : MOVE_COS_N;
 		const SIN = pos ? MOVE_SIN_P : MOVE_SIN_N;
@@ -2561,7 +2582,10 @@ class AnimalPool {
 			if (zn === ZONE_ARID && dom === 0) cost += m75 * ARID_K * (ARID_BASE + ARID_SIZE * this.genome[i * AG + G_SIZE]) * (1 - this.dry[i]) * (this.cold[i] > 0.5 ? ARID_ECTO : 1) * shelter;
 			else if (zn === ZONE_ALPINE && dom === 0) cost += m75 * ALPINE_AIR_K * this.genome[i * AG + G_SIZE] * shelter;
 			else if (dom === 2 && zn >= ZONE_MIRE) cost *= 1 - (zn === ZONE_MIRE ? AMPH_MIRE : AMPH_FRESH) * (1 - 0.5 * this.dry[i]);
-			if (dom === 1) cost += m75 * (AQ_K * aquaMisfit(this.genome[i * AG + G_DEPTH], this.genome[i * AG + G_SALT], plants.depth[tile], plants.sal[tile]) + DIVE_K * dive);
+			if (dom === 1) {
+				cost += m75 * (AQ_K * aquaMisfit(this.genome[i * AG + G_DEPTH], this.genome[i * AG + G_SALT], plants.depth[tile], plants.sal[tile]) + DIVE_K * dive);
+				if (plants.sal[tile] === 0 && this.age[i] < this.mature[i]) cost *= 1 - NURSERY_K;
+			}
 			let dk = domK[this.sp[i]] || 0;
 			if (dk > 0) {
 				if (dom === 1 && plants.sal[tile] === 0) dk *= 1 + DOM_FRESH * this.genome[i * AG + G_SALT];
@@ -3463,6 +3487,7 @@ class AnimalPool {
 		else if (this.slp[p]) chance = Math.min(0.95, chance * SLEEP_CATCH);
 		chance *= this._visT ? this._visT[this._actIdx(i)] : 1;
 		if (this.domain[p] === 3 && this.domain[i] !== 3) chance *= BIRD_ESCAPE;
+		if (this.cls[i] === CLS_REPT && this.domain[i] === 2 && this.domain[p] !== 1 && this.diet[i] > 0.66 && this.walk[tile] & 2) chance *= CROC_BANK;
 		if (this.lv[p] === 1) chance *= TAD_HIDE;
 		const pd = this._domK[this.sp[p]] || 0;
 		if (pd > 0) chance *= 1 + DOM_CATCH * pd;
@@ -3891,6 +3916,7 @@ class AnimalPool {
 		const W = this.world.width;
 		const tile = (this.y[i] | 0) * W + (this.x[i] | 0);
 		const Wx = this.weather;
+		if (this.domain[i] === 3 && this.cls[i] === CLS_INVT && this.genome[i * AG + G_SALT] < FRESH_SALT) return this._pondTile(tile);
 		if (this.domain[i] === 3) return this._perch(tile) ? tile : -1;
 		if (this.domain[i] !== 2 || !Wx) return tile;
 		const x = tile % W;
@@ -3900,9 +3926,47 @@ class AnimalPool {
 		return -1;
 	}
 
+	_pondTile(tile) {
+		const W = this.world.width;
+		const H = this.world.height;
+		const P = this.plants;
+		const x0 = tile % W;
+		const y0 = (tile - x0) / W;
+		let best = -1;
+		let bd = 1e9;
+		for (let dy = -AQ_EGG_R; dy <= AQ_EGG_R; dy++) {
+			const y = y0 + dy;
+			if (y < 0 || y >= H) continue;
+			for (let dx = -AQ_EGG_R; dx <= AQ_EGG_R; dx++) {
+				const x = x0 + dx;
+				if (x < 0 || x >= W) continue;
+				const t = y * W + x;
+				const d = dx * dx + dy * dy;
+				if (d < bd && P.water[t] && P.sal[t] === 0) {
+					bd = d;
+					best = t;
+				}
+			}
+		}
+		return best;
+	}
+
+	_salmonHold(i) {
+		const RV = this.rivers;
+		if (!RV) return false;
+		const sp = this.registry.get(this.sp[i]);
+		if (!sp || sp.category !== 'salmon') return false;
+		const t = (this.y[i] | 0) * this.world.width + (this.x[i] | 0);
+		return RiverLayer.flowing(this.world.biome[t]) && RV.up[t] >= 0 && this.world.riverFlow[t] > SALMON_HEAD;
+	}
+
 	_reproduce(i, tick) {
 		const rng = this.rng;
 		const dom = this.domain[i];
+		if (dom === 1 && this._salmonHold(i)) {
+			this.cool[i] = 10;
+			return;
+		}
 		const layer = this.eggs && (dom !== 0 || this.cold[i] > 0.5);
 		const hk = this.home[i];
 		const W = this.world.width;
@@ -3918,7 +3982,7 @@ class AnimalPool {
 			this.cool[i] = 10;
 			return;
 		}
-		const eggDom = nest && this.cls[i] === CLS_REPT ? 0 : dom;
+		const eggDom = nest && this.cls[i] === CLS_REPT ? 0 : dom === 3 && this.cls[i] === CLS_INVT && this.genome[i * AG + G_SALT] < FRESH_SALT ? 1 : dom;
 		const D = this.disease && this.disease.on ? this.disease : null;
 		const vs = nest && D && this.strain[i] && rng.next() < EGG_VERT_K ? this.strain[i] : 0;
 		const litter = this.litter[i];
@@ -4027,6 +4091,7 @@ class AnimalPool {
 			this.births++;
 		}
 		this.energy[i] -= spent * 1.1 * (1 - TERR_REPRO * this._homeK(i));
+		if (spent > 0 && dom === 1 && this.rivers && parentSp.category === 'salmon' && rng.next() < SALMON_DIE) this.energy[i] = -1;
 		if (layer && spent > 0) {
 			if (ca) this.caClutches++;
 			const m = this.nMin[i] - EGG_CA * (spent / perChild);

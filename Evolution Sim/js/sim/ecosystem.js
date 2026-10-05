@@ -109,6 +109,8 @@ class Ecosystem {
 		this.plants.bugs = this.bugs;
 		this.disasters = typeof DisasterLayer === 'function' ? new DisasterLayer(world, this.plants, this.weather, this.animals, this.eggs, this.bugs, this.log, new FastRng(seed + 999)) : null;
 		this.animals.dis = this.disasters;
+		this.rivers = typeof RiverLayer === 'function' ? new RiverLayer(world, new FastRng(seed + 1212)) : null;
+		this.animals.rivers = this.rivers;
 		this.log.push(0, 'info', 'A new world begins.');
 		this._markSecretFounders();
 		this._computeStats();
@@ -231,6 +233,7 @@ class Ecosystem {
 		}
 		if (this.bugs) this.bugs.step(this.tick);
 		this.animals.step(this.tick);
+		if (this.rivers) this.rivers.step(this.tick, this);
 		if (this.eggs) this.eggs.step(Wx);
 		if (D) D.step(this.tick);
 

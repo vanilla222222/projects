@@ -20,6 +20,7 @@ const EvoSave = (() => {
 		add('EggPool', typeof EggPool === 'function' && EggPool);
 		add('DisasterLayer', typeof DisasterLayer === 'function' && DisasterLayer);
 		add('GodTools', typeof GodTools === 'function' && GodTools);
+		add('RiverLayer', typeof RiverLayer === 'function' && RiverLayer);
 		return t;
 	};
 
@@ -28,6 +29,7 @@ const EvoSave = (() => {
 		SoilLayer: ['base', 'own', 'tile', 'row', 'decayK', 'slope', 'down'],
 		WeatherLayer: ['_evapK', '_queue'],
 		BugLayer: ['app', 'mob', 'rate'],
+		RiverLayer: ['dn', 'up', 'fdx', 'fdy', 'flow', 'flood', 'still'],
 	};
 	const SHUFFLE_MIN = 4096;
 
@@ -292,6 +294,8 @@ const EvoSave = (() => {
 		if (eco.plants && !eco.plants.bugs && eco.bugs) eco.plants.bugs = eco.bugs;
 		if (eco.weather && typeof eco.weather.upgrade === 'function') eco.weather.upgrade();
 		if (typeof padAnimalGenes === 'function') upgradeAnimals(eco);
+		if (!eco.rivers && typeof RiverLayer === 'function') eco.rivers = new RiverLayer(eco.world, new FastRng(eco.seed + 1212));
+		if (eco.animals && eco.rivers) eco.animals.rivers = eco.rivers;
 	}
 
 	function upgradeAnimals(eco) {
