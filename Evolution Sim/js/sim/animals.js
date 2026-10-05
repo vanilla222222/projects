@@ -159,20 +159,23 @@ const THIRST = 0.02;
 const SALT_THIRST = 1.5;
 const SALT_THIRST_AMPH = 1.1;
 const MIRE_DRAG = 0.3;
-const ZONE_ARID = 1, ZONE_DENSE = 3, ZONE_MIRE = 4;
-const ARID_K = 0.22;
+const ZONE_ARID = 1, ZONE_DENSE = 3, ZONE_MIRE = 4, ZONE_FRESH = 5;
+const ARID_K = 0.25;
+const ARID_SIZE = 1.6;
 const ARID_BASE = 0.2;
 const ARID_ECTO = 0.45;
 const BERG_T = 0.4;
 const BERG_K = 0.22;
-const FOREST_SLOW = 0.5;
+const FOREST_SLOW = 0.7;
 const FOREST_FREE = 0.25;
 const AMPH_MIRE = 0.22;
+const AMPH_FRESH = 0.1;
 const AEST_MAMM_MASS = 1.2;
 const BIOME_ZONE = new Uint8Array(BIOME_LIST.length);
 for (const k of ['DESERT', 'SALT_FLAT', 'BADLANDS']) BIOME_ZONE[BIOME_ID[k]] = ZONE_ARID;
 for (const k of ['RAINFOREST', 'JUNGLE', 'CLOUD_FOREST', 'REDWOOD_FOREST']) BIOME_ZONE[BIOME_ID[k]] = ZONE_DENSE;
 for (const k of ['WETLAND', 'BOG', 'SWAMP', 'MANGROVE', 'TUNDRA_BOG', 'POND']) BIOME_ZONE[BIOME_ID[k]] = ZONE_MIRE;
+for (const k of ['LAKE', 'RIVER']) BIOME_ZONE[BIOME_ID[k]] = ZONE_FRESH;
 const REEF_COVER = 0.2;
 const THIRSTY = 0.35;
 const DRINK_WET = 0.6;
@@ -2191,8 +2194,8 @@ class AnimalPool {
 				if (et < BERG_T) cost += m75 * BERG_K * ((BERG_T - et) / BERG_T) * (1 - this.genome[i * AG + G_SIZE]) * shelter;
 			}
 			const zn = zone[tile];
-			if (zn === ZONE_ARID && dom !== 3) cost += m75 * ARID_K * (ARID_BASE + this.genome[i * AG + G_SIZE]) * (1 - this.dry[i]) * (this.cold[i] > 0.5 ? ARID_ECTO : 1) * shelter;
-			else if (zn === ZONE_MIRE && dom === 2) cost *= 1 - AMPH_MIRE * (1 - 0.5 * this.dry[i]);
+			if (zn === ZONE_ARID && dom === 0) cost += m75 * ARID_K * (ARID_BASE + ARID_SIZE * this.genome[i * AG + G_SIZE]) * (1 - this.dry[i]) * (this.cold[i] > 0.5 ? ARID_ECTO : 1) * shelter;
+			else if (dom === 2 && zn >= ZONE_MIRE) cost *= 1 - (zn === ZONE_MIRE ? AMPH_MIRE : AMPH_FRESH) * (1 - 0.5 * this.dry[i]);
 			if (!flying) {
 				const lw = tileLoad[tile] + ((this.mass[i] * TILE_LOAD_SCALE + 0.5) | 0);
 				tileLoad[tile] = lw < 65535 ? lw : 65535;
