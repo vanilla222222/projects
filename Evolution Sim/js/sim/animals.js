@@ -121,13 +121,13 @@ const TOXK_NEU = 0.4;
 const TOXK_GEN = 0.7;
 const PREY_TRIP = 1.2;
 const PREY_GL = 0.15;
-const FOUNDER_TOXK = { 14: 0.15, 26: 0.55, 27: 0.85 };
+const FOUNDER_TOXK = { 14: 0.15, 26: 0.55, 27: 0.85, 45: 0.15 };
 const FOUNDER_RNEU = 0.08, FOUNDER_RGEN = 0.08, FOUNDER_RNEU_HERB = 0.2, FOUNDER_RGEN_HERB = 0.15;
 const PAD_RTOX = 0.1, PAD_TOXK = 0.2;
 const ACT_PATTERNS = ['diurnal', 'crepuscular', 'nocturnal', 'cathemeral'];
 const ACT_GENE = [0.12, 0.37, 0.62, 0.88];
 const PAD_ACT = 0.88;
-const FOUNDER_ACT = [2, 1, 3, 0, 3, 2, 1, 2, 0, 0, 2, 1, 3, 2, 0, 2, 2, 3, 0, 0, 0, 2, 3, 3, 2, 2, 3, 2, 2, 0, 0, 1, 0, 0, 2, 0, 2, 3, 0, 2, 2];
+const FOUNDER_ACT = [2, 1, 3, 0, 3, 2, 1, 2, 0, 0, 2, 1, 3, 2, 0, 2, 2, 3, 0, 0, 0, 2, 3, 3, 2, 2, 3, 2, 2, 0, 0, 1, 0, 0, 2, 0, 3, 3, 0, 1, 1, 0, 3, 1, 2, 0];
 const SLEEP_META = 0.5;
 const SLEEP_FED = 0.7;
 const SLEEP_WAKE = 0.45;
@@ -478,7 +478,13 @@ const ANIMAL_ARCHETYPES = [
 	{ domain: 'water', cls: CLS_FISH, n: 60, g: [0.1, 0.62, 0.45, 0.04, 0.45, 0.6, 0.9, 0.3, 0.05, 0.15, 0.1, 0.05, 0.88, 0.05, 0.3, 0.3, 0.15, 0.3, 0.3] },
 	{ domain: 'water', cls: CLS_FISH, n: 30, g: [0.3, 0.3, 0.5, 0.5, 0.38, 0.6, 0.7, 0.35, 0.3, 0.15, 0.3, 0.2, 0.1, 0.05, 0.3, 0.35, 0.2, 0.3, 0.3] },
 	{ domain: 'water', cls: CLS_FISH, n: 12, g: [0.45, 0.6, 0.6, 0.82, 0.32, 0.6, 0.5, 0.3, 0.15, 0.15, 0.1, 0.5, 0.05, 0.05, 0.3, 0.3, 0.4, 0.3, 0.3] },
+	{ domain: 'water', cls: CLS_FISH, n: 12, g: [0.52, 0.88, 0.65, 0.84, 0.48, 0.6, 0.5, 0.3, 0.1, 0.15, 0.1, 0.05, 0.45, 0.05, 0.3, 0.3, 0.65, 0.3, 0.3] },
+	{ domain: 'water', cls: CLS_FISH, n: 12, g: [0.72, 0.5, 0.45, 0.06, 0.55, 0.6, 0.4, 0.3, 0.2, 0.15, 0.1, 0.05, 0.3, 0.05, 0.3, 0.3, 0.15, 0.3, 0.3] },
+	{ domain: 'water', cls: CLS_FISH, n: 10, g: [0.6, 0.32, 0.6, 0.84, 0.72, 0.55, 0.5, 0.3, 0.3, 0.15, 0.1, 0.6, 0.05, 0.05, 0.3, 0.3, 0.2, 0.3, 0.3] },
+	{ domain: 'water', cls: CLS_FISH, n: 50, g: [0.12, 0.55, 0.55, 0.2, 0.38, 0.6, 0.85, 0.3, 0.05, 0.15, 0.1, 0.05, 0.6, 0.05, 0.3, 0.3, 0.15, 0.3, 0.3] },
+	{ domain: 'water', cls: CLS_FISH, n: 30, g: [0.25, 0.22, 0.5, 0.5, 0.7, 0.6, 0.7, 0.4, 0.3, 0.15, 0.3, 0.2, 0.2, 0.05, 0.3, 0.35, 0.2, 0.3, 0.3] },
 ];
+const MARINE_ARCH = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 
 const FOUNDER_ALARM_BIRD = 0.55;
 const FOUNDER_ALARM_PREY = 0.5;
@@ -518,8 +524,16 @@ for (const a of ANIMAL_ARCHETYPES) {
 	}
 }
 const FOUNDER_CLEAN = { 8: 0.35, 10: 0.6, 30: 0.6 };
-const FOUNDER_DEPTH = { 8: 0.12, 9: 0.15, 10: 0.12, 11: 0.35, 12: 0.7, 22: 0.15, 23: 0.45, 24: 0.12, 25: 0.6, 26: 0.5, 34: 0.15, 35: 0.15, 36: 0.72, 37: 0.56, 38: 0.04, 39: 0.5, 40: 0.6 };
-const FOUNDER_SALT = { 8: 0.4, 9: 1, 10: 0.7, 11: 0.5, 12: 1, 22: 0.6, 23: 1, 24: 0.6, 25: 1, 26: 1, 34: 0, 35: 1, 36: 1, 37: 1, 38: 1, 39: 1, 40: 1 };
+const FOUNDER_DEPTH = { 8: 0.12, 9: 0.15, 10: 0.12, 11: 0.35, 12: 0.7, 22: 0.15, 23: 0.45, 24: 0.12, 25: 0.6, 26: 0.5, 34: 0.15, 35: 0.15, 36: 0.66, 37: 0.56, 38: 0.04, 39: 0.5, 40: 0.6, 41: 0.3, 42: 0.16, 43: 0.22, 44: 0.5, 45: 0.1 };
+const FOUNDER_SALT = { 8: 0.4, 9: 1, 10: 0.7, 11: 0.5, 12: 1, 22: 0.6, 23: 1, 24: 0.6, 25: 1, 26: 1, 34: 0, 35: 1, 36: 1, 37: 1, 38: 1, 39: 1, 40: 1, 41: 1, 42: 1, 43: 1, 44: 1, 45: 1 };
+const TUNA_SPEED = 0.8;
+const MANTA_SIZE = 0.6;
+const LANTERN_SIZE = 0.3;
+const PUFFER_TOX = 0.5;
+const SNOW_EAT = 0.3;
+const AMBUSH_F = 0.7;
+const AQ_PLACE_DEEP = 0.25;
+const DEEP_BAND = 0.25;
 const LVL_MID = 0.2;
 const LVL_FLOOR = 0.45;
 const LVL_CAP1 = 0.15;
@@ -562,7 +576,7 @@ const RSPLIT_AGE = 600;
 const RSPLIT_P = 0.3;
 const RSPLIT_LO = 150;
 const RSPLIT_SHARE = 0.45;
-const FOUNDER_TOXIC = { 14: 0.65, 26: 0.6, 27: 0.55 };
+const FOUNDER_TOXIC = { 14: 0.65, 26: 0.6, 27: 0.55, 45: 0.75 };
 const FOUNDER_MIMIC = { 15: 0.6, 28: 0.5 };
 const FOUNDER_TRAIT_LO = 0.05;
 const FOUNDER_TOLER = 0.3;
@@ -665,9 +679,15 @@ function animalCategory(g, domain, cls = CLS_MAMM, nic = 0) {
 	}
 	if (cls === CLS_FISH) {
 		const dp = g[G_DEPTH];
-		if (role === 'herbivore') return g[G_HERD] >= SCHOOL_HERD && dp < SCHOOL_DEPTH && size < 0.45 ? 'sardine' : size < 0.45 ? 'fish' : 'ray';
-		if (role === 'omnivore') return dp >= FLAT_DEPTH ? 'flatfish' : 'reeffish';
-		if (dp >= DEEP_CARN && g[G_SPEED] < AMBUSH_SPEED) return 'anglerfish';
+		if (role === 'herbivore') {
+			if (dp >= LVL_MID && size < LANTERN_SIZE && actPattern(g[G_ACT]) === 2) return 'lanternfish';
+			if (g[G_HERD] >= SCHOOL_HERD && dp < SCHOOL_DEPTH && size < 0.45) return 'sardine';
+			if (size >= MANTA_SIZE && dp < LVL_MID) return 'manta';
+			return size < 0.45 ? 'fish' : 'ray';
+		}
+		if (role === 'omnivore') return g[G_TOXIC] >= PUFFER_TOX ? 'puffer' : dp >= FLAT_DEPTH ? 'flatfish' : 'reeffish';
+		if (g[G_SPEED] < AMBUSH_SPEED) return dp >= DEEP_CARN ? 'anglerfish' : 'grouper';
+		if (g[G_SPEED] >= TUNA_SPEED && dp >= LVL_MID && dp < LVL_FLOOR) return 'tuna';
 		return size < 0.58 ? (dp >= DEEP_EEL ? 'deepeel' : 'pike') : 'shark';
 	}
 	if (cls === CLS_AMPH) {
@@ -717,6 +737,11 @@ const ANIMAL_ICON_VARIANTS = {
 	sardine: ['fish'],
 	flatfish: ['ray'],
 	ventshrimp: ['shrimp'],
+	tuna: ['swordfish'],
+	manta: ['ray'],
+	grouper: ['pike'],
+	lanternfish: ['fish'],
+	puffer: ['puffer'],
 	shark: ['shark', 'swordfish'],
 	frog: ['frog', 'toad'],
 	newt: ['newt', 'axolotl'],
@@ -761,6 +786,11 @@ const ANIMAL_CATEGORY_LABEL = {
 	sardine: 'Schooling fish',
 	flatfish: 'Flatfish',
 	ventshrimp: 'Vent shrimp',
+	tuna: 'Tuna',
+	manta: 'Manta ray',
+	grouper: 'Grouper',
+	lanternfish: 'Lanternfish',
+	puffer: 'Pufferfish',
 	shark: 'Apex predator (aquatic)',
 	manatee: 'Sea mammal',
 	seal: 'Marine predator',
@@ -1907,6 +1937,8 @@ class AnimalPool {
 		const pos = this.rng.next() < 0.5;
 		const COS = pos ? MOVE_COS_P : MOVE_COS_N;
 		const SIN = pos ? MOVE_SIN_P : MOVE_SIN_N;
+		const gdp = dom === 1 ? this.genome[i * AG + G_DEPTH] : 0;
+		const dmin = gdp >= LVL_FLOOR && this.plants.depth[(y | 0) * W + (x | 0)] >= gdp - DEEP_BAND ? gdp - DEEP_BAND : -1;
 		for (let a = 0; a < 7; a++) {
 			const cs = COS[a];
 			const sn = SIN[a];
@@ -1914,7 +1946,7 @@ class AnimalPool {
 			const my = dx * sn + dy * cs;
 			const nx = x + mx * step;
 			const ny = y + my * step;
-			if (this.canStand(dom, nx, ny) && (!tad || this.walk[(ny | 0) * W + (nx | 0)] & 2)) {
+			if (this.canStand(dom, nx, ny) && (!tad || this.walk[(ny | 0) * W + (nx | 0)] & 2) && (dmin < 0 || this.plants.depth[(ny | 0) * W + (nx | 0)] >= dmin)) {
 				this.x[i] = nx;
 				this.y[i] = ny;
 				if (Math.abs(mx) > 0.2) this.face[i] = mx > 0 ? 1 : -1;
@@ -2426,6 +2458,7 @@ class AnimalPool {
 				const td = plants.depth[tile];
 				lcap = td < LVL_CAP1 ? 0 : td < LVL_CAP2 ? 1 : 2;
 				lv = gd < LVL_MID ? 0 : gd < LVL_FLOOR ? 1 : 2;
+				if (lv && this.cls[i] === CLS_FISH && gd >= LVL_MID && this._visT && actPattern(this.genome[i * AG + G_ACT]) === 2 && this._actT[this._actIdx(i)]) lv = 0;
 				if (lv > lcap) lv = lcap;
 				const ol = this.lvl[i];
 				if (lv !== ol) {
@@ -2502,7 +2535,7 @@ class AnimalPool {
 			const homeK = this._homeK(i);
 			if (homeK > 0 && ((tick + i) & 1) === 1) this._chaseRival(i);
 			const ai = this._actIdx(i);
-			const vis = lv ? this._visT[ai] * (1 - LVL_VIS * lv) : this._visT[ai];
+			const vis = lv && !(this.cls[i] === CLS_FISH && this.genome[i * AG + G_SPEED] < AMBUSH_SPEED) ? this._visT[ai] * (1 - LVL_VIS * lv) : this._visT[ai];
 			const sk0 = this.strain[i];
 			const gq = this.grp[i] - 1;
 			const rk = 2 - this.rnk[i];
@@ -2864,7 +2897,7 @@ class AnimalPool {
 					bugs.parasiteDrain += drain;
 				}
 			}
-			if (!sl && this.cls[i] === CLS_INVT && (!dom || (dom === 1 && lv === 2)) && dg < 0.5 && this.energy[i] < full && soil.litter[tile] > 0) this.energy[i] += this._eat(i, soil.consumeLitter(tile, bite) * LITTER_ENERGY * plantK, FOOD_LITTER, sk0);
+			if (!sl && this.cls[i] === CLS_INVT && (!dom || (dom === 1 && lv === 2)) && dg < 0.5 && this.energy[i] < full && soil.litter[tile] > 0) this.energy[i] += this._eat(i, soil.consumeLitter(tile, bite) * LITTER_ENERGY * plantK * (dom ? SNOW_EAT : 1), FOOD_LITTER, sk0);
 			if (!sl && carrion[tile] > 0 && this.energy[i] < full * 0.92 && (dom !== 3 || this.walk[tile] & 1)) {
 				const ce = this._eat(i, soil.consumeCarrion(tile, bite * (1 + SCAV_BITE * this.scav[i])) * MEAT_ENERGY * this.carrionEff[i] * meatK, FOOD_CARRION, sk0);
 				this.energy[i] += ce;
@@ -3415,7 +3448,8 @@ class AnimalPool {
 		const pn = this.pn[i] > 1 ? this._packHelp(i, p) : 1;
 		const massRatio = (this.mass[i] * this.gf[i]) / mp;
 		const sizeF = Math.min(1.2, Math.max(0.15, massRatio * 0.85));
-		const speedF = this.cls[i] === CLS_INVT && this.domain[i] === 1 && this.genome[i * AG + G_SPEED] < JELLY_SPEED ? 0.5 : this.spd[i] / (this.spd[i] + this.spd[p] * 0.7);
+		const sf0 = this.cls[i] === CLS_INVT && this.domain[i] === 1 && this.genome[i * AG + G_SPEED] < JELLY_SPEED ? 0.5 : this.spd[i] / (this.spd[i] + this.spd[p] * 0.7);
+		const speedF = this.cls[i] === CLS_FISH && this.domain[i] === 1 && this.genome[i * AG + G_SPEED] < AMBUSH_SPEED && sf0 < AMBUSH_F ? AMBUSH_F : sf0;
 		const cover = this.nic[i]
 			? BIRD_STRIKE
 			: this.domain[p] === 1

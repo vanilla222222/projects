@@ -23,6 +23,7 @@ const THIRST_WINDOW = 8;
 const HERD_STAT_EVERY = 20;
 const HERD_STAT_POP = 12;
 const HERB_RESCUE = 30;
+const MARINE_RESCUE = 240;
 const SOLO_GROUP = 1.6;
 const COLONY_GROUP = 5;
 const SOC_STAT_POP = 10;
@@ -183,7 +184,7 @@ class Ecosystem {
 			const i = (y | 0) * W + (x | 0);
 			if (wd && wd[i] > 2) continue;
 			if (domain === 3 && !(A.walk[i] & 1)) continue;
-			if (domain === 1 && attempt < 3000 && aquaMisfit(arch.g[G_DEPTH], arch.g[G_SALT], this.plants.depth[i], this.plants.sal[i]) > AQ_PLACE) continue;
+			if (domain === 1 && attempt < 3000 && aquaMisfit(arch.g[G_DEPTH], arch.g[G_SALT], this.plants.depth[i], this.plants.sal[i]) > (arch.g[G_DEPTH] >= LVL_FLOOR ? AQ_PLACE_DEEP : AQ_PLACE)) continue;
 			const clim = gaussFit(this.world.temperature[i], arch.g[G_TEMP], 0.08 + 0.3 * arch.g[G_TOL]);
 			const food = arch.g[G_DIET] < 0.6 ? this.plants.edible(i) : 0.3;
 			const need = attempt < 3000 ? 0.55 : 0.1;
@@ -736,6 +737,15 @@ class Ecosystem {
 			if (food < MIGRATE_PREY) continue;
 			const why = bird ? (nic ? 'fish in the shallows drew fishing birds' : role === 'carn' ? 'unchecked prey drew raptors' : role === 'scav' ? 'carcasses drew carrion birds' : 'the skies were empty') : role === 'carn' ? 'unchecked prey drew predators' : role === 'scav' ? 'carcasses drew scavengers' : `the ${g.label.toLowerCase()} had vanished`;
 			tryIntro(pick(a.cls, role, a.domain, nic), why);
+		}
+		if (this.tick % MARINE_RESCUE === 0) {
+			const seen = new Set();
+			for (let i = 0; i < A.count; i++) if (A.alive[i] && A.domain[i] === 1) seen.add(this.registry.get(A.sp[i]).category);
+			for (const k of MARINE_ARCH) {
+				const a = ANIMAL_ARCHETYPES[k];
+				const cat = animalCategory(a.g, a.domain, a.cls, a.nic | 0);
+				if (!seen.has(cat)) tryIntro(a, `${ANIMAL_CATEGORY_LABEL[cat].toLowerCase()} returned from the open sea`);
+			}
 		}
 		const B = this.bugs;
 		if (B) for (let k = 0; k < 4; k++) if (B.tiles[k] === 0) B.reintroduce(k);
