@@ -93,6 +93,14 @@ class WeatherLayer {
 		}
 	}
 
+	restoreDerived() {
+		const w = this.world;
+		const n = this.n;
+		this._evapK = new Float32Array(n);
+		this._queue = new Int32Array(n);
+		for (let i = 0; i < n; i++) this._evapK[i] = EVAP * (0.5 + w.temperature[i]);
+	}
+
 	_buildWaterDist() {
 		const w = this.world;
 		const W = w.width;

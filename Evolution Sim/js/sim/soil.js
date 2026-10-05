@@ -39,6 +39,18 @@ class SoilLayer {
 		this.row = new Float32Array(n);
 	}
 
+	restoreDerived(world) {
+		const n = this.n;
+		this.base = new Float32Array(n);
+		for (let i = 0; i < n; i++) {
+			const f = world.fertility[i];
+			this.base[i] = f > 0 ? (f < SOIL_MAX ? f : SOIL_MAX) : 0;
+		}
+		this.own = new Float32Array(n * 2);
+		this.tile = new Float32Array(n);
+		this.row = new Float32Array(n);
+	}
+
 	step(P) {
 		this._uptake(P.biomass, P.root, P.kind);
 		this._rows();

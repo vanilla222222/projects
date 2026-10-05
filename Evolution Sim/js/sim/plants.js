@@ -296,6 +296,27 @@ class PlantLayer {
 		this._seed();
 	}
 
+	restoreDerived() {
+		const n = this.n;
+		const n2 = 2 * n;
+		this.water = new Uint8Array(n);
+		this.depth = new Float32Array(n);
+		this.habit = new Float32Array(n);
+		this.seasonAmp = new Float32Array(n);
+		this._prepareClimate();
+		const g = this.genome;
+		const tox = (this.tox = new Float32Array(n2));
+		const disp = (this.disp = new Float32Array(n2));
+		const shade = (this.shade = new Float32Array(n2));
+		const root = (this.root = new Float32Array(n2));
+		for (let p = 0, o = 0; p < n2; p++, o += PG) {
+			tox[p] = g[o + 4];
+			disp[p] = g[o + 5];
+			shade[p] = g[o + 6];
+			root[p] = g[o + 7];
+		}
+	}
+
 	_prepareClimate() {
 		const w = this.world;
 		const sea = BIOME_THRESHOLDS.seaLevel;

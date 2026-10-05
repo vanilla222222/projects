@@ -277,6 +277,24 @@ class BugLayer {
 		this.dorm[q] = 0;
 	}
 
+	restoreDerived() {
+		const m = this.genome.length / BG;
+		const g = this.genome;
+		this.app = new Float32Array(m);
+		this.mob = new Float32Array(m);
+		this.rate = new Float32Array(m);
+		for (let q = 0; q < m; q++) {
+			const base = q * BG;
+			let used = false;
+			for (let k = 0; k < BG; k++) if (g[base + k] !== 0) used = true;
+			if (!used) continue;
+			const app = g[base + B_APPETITE];
+			this.app[q] = app;
+			this.mob[q] = g[base + B_MOBILITY];
+			this.rate[q] = BUG_R * BUG_EVERY * (0.5 + g[base + B_FEC]) * (0.7 + 0.6 * app);
+		}
+	}
+
 	_clear(q) {
 		const id = this.species[q];
 		if (!id) return;

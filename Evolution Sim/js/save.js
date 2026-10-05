@@ -22,6 +22,14 @@ const EvoSave = (() => {
 		return t;
 	};
 
+	const DERIVED = {
+		PlantLayer: ['water', 'depth', 'habit', 'seasonAmp', 'tox', 'disp', 'shade', 'root'],
+		SoilLayer: ['base', 'own', 'tile', 'row'],
+		WeatherLayer: ['_evapK', '_queue'],
+		BugLayer: ['app', 'mob', 'rate'],
+	};
+	const SHUFFLE_MIN = 4096;
+
 	const TYPED = ['Float32Array', 'Float64Array', 'Int8Array', 'Int16Array', 'Int32Array', 'Uint8Array', 'Uint8ClampedArray', 'Uint16Array', 'Uint32Array'];
 	const tagOf = (o) => Object.prototype.toString.call(o).slice(8, -1);
 
@@ -33,6 +41,28 @@ const EvoSave = (() => {
 	function decodeNumber(s) {
 		return s === '-0' ? -0 : Number(s);
 	}
+
+	function shuffle(src, width) {
+		const m = src.length / width;
+		const out = new Uint8Array(src.length);
+		for (let k = 0; k < width; k++) {
+			const o = k * m;
+			for (let i = 0, j = k; i < m; i++, j += width) out[o + i] = src[j];
+		}
+		return out;
+	}
+
+	function unshuffle(src, width) {
+		const m = src.length / width;
+		const out = new Uint8Array(src.length);
+		for (let k = 0; k < width; k++) {
+			const o = k * m;
+			for (let i = 0, j = k; i < m; i++, j += width) out[j] = src[o + i];
+		}
+		return out;
+	}
+
+	const shuffles = (o, path) => o.BYTES_PER_ELEMENT > 1 && o.length >= SHUFFLE_MIN && !/enome$/.test(path);
 
 	function serialize(eco) {
 		const classes = classTable();
@@ -83,8 +113,14 @@ const EvoSave = (() => {
 				const pad = (SAVE_ALIGN - (bytes % SAVE_ALIGN)) % SAVE_ALIGN;
 				if (pad) chunks.push(new Uint8Array(pad));
 				bytes += pad;
-				records.push({ t: tag, o: bytes, n: o.length });
-				chunks.push(new Uint8Array(o.buffer, o.byteOffset, o.byteLength));
+				const raw = new Uint8Array(o.buffer, o.byteOffset, o.byteLength);
+				if (shuffles(o, path)) {
+					records.push({ t: tag, o: bytes, n: o.length, x: 1 });
+					chunks.push(shuffle(raw, o.BYTES_PER_ELEMENT));
+				} else {
+					records.push({ t: tag, o: bytes, n: o.length });
+					chunks.push(raw);
+				}
 				bytes += o.byteLength;
 			} else if (Array.isArray(o)) {
 				records.push({ a: o.map((v, k) => enc(v, path + '[' + k + ']')) });
@@ -104,7 +140,8 @@ const EvoSave = (() => {
 				else c = nameOf.get(proto);
 				if (c === undefined) throw new Error(`Cannot save ${(o.constructor && o.constructor.name) || tag} at ${path}`);
 				const f = {};
-				for (const k of Object.keys(o)) f[k] = enc(o[k], path + '.' + k);
+				const skip = c && DERIVED[c] && typeof o.restoreDerived === 'function' ? DERIVED[c] : null;
+				for (const k of Object.keys(o)) if (!skip || !skip.includes(k)) f[k] = enc(o[k], path + '.' + k);
 				records.push({ c, f });
 			}
 		}
@@ -121,7 +158,8 @@ const EvoSave = (() => {
 				if (!TYPED.includes(r.t) || typeof C !== 'function') throw new Error('Unknown array type ' + r.t);
 				const len = r.n * C.BYTES_PER_ELEMENT;
 				if (r.o + len > bin.byteLength) throw new Error('Save file is truncated');
-				objs[i] = new C(bin.buffer.slice(bin.byteOffset + r.o, bin.byteOffset + r.o + len));
+				const part = bin.subarray(r.o, r.o + len);
+				objs[i] = new C(r.x ? unshuffle(part, C.BYTES_PER_ELEMENT).buffer : bin.buffer.slice(bin.byteOffset + r.o, bin.byteOffset + r.o + len));
 			} else if (r.a) objs[i] = new Array(r.a.length);
 			else if (r.m) objs[i] = new Map();
 			else if (r.s) objs[i] = new Set();
@@ -153,6 +191,11 @@ const EvoSave = (() => {
 			else if (r.m) for (const [k, v] of r.m) o.set(dec(k), dec(v));
 			else if (r.s) for (const v of r.s) o.add(dec(v));
 			else if (r.f) for (const k of Object.keys(r.f)) o[k] = dec(r.f[k]);
+		}
+		for (let i = 0; i < records.length; i++) {
+			const r = records[i];
+			const d = r.c && DERIVED[r.c];
+			if (d && d.some((k) => !(k in r.f)) && typeof objs[i].restoreDerived === 'function') objs[i].restoreDerived(world);
 		}
 		return objs[0];
 	}
@@ -189,15 +232,24 @@ const EvoSave = (() => {
 			raw.set(p, at);
 			at += p.length;
 		}
-		return pipe(raw, new CompressionStream('gzip'));
+		if (typeof CompressionStream !== 'function') return raw;
+		try {
+			return await pipe(raw, new CompressionStream('gzip'));
+		} catch (e) {
+			return raw;
+		}
 	}
 
 	async function readHeader(gz) {
 		let raw;
-		try {
-			raw = await pipe(gz, new DecompressionStream('gzip'));
-		} catch (e) {
-			throw new Error('Not a save file (could not decompress)');
+		if (gz.length >= 4 && new DataView(gz.buffer, gz.byteOffset, gz.byteLength).getUint32(0) === SAVE_MAGIC) raw = gz;
+		else {
+			if (typeof DecompressionStream !== 'function') throw new Error('This browser cannot read compressed save files');
+			try {
+				raw = await pipe(gz, new DecompressionStream('gzip'));
+			} catch (e) {
+				throw new Error('Not a save file (could not decompress)');
+			}
 		}
 		if (raw.length < 8) throw new Error('Save file is empty');
 		const dv = new DataView(raw.buffer, raw.byteOffset, raw.byteLength);
