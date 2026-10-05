@@ -126,6 +126,10 @@ const INDUCE_COST = 0.06;
 const INDUCE_MAX = 0.6;
 const INDUCE_UP = 0.08;
 const INDUCE_DECAY = 0.9;
+const SF_FIX = 1;
+const SF_THORN = 2;
+const SF_ALLELO = 4;
+const SF_TREE = 8;
 const BLOOM_N = 0.58;
 const BLOOM_T = 0.5;
 const BLOOM_UP = 0.6;
@@ -233,6 +237,10 @@ function padPlantGenes(src, count) {
 
 function plantStratStats() {
 	return { fixers: 0, succulents: 0, carnivores: 0, parasites: 0, allelopaths: 0, thorny: 0, induced: 0, blooms: 0, hypoxic: 0, peat: 0, eroded: 0 };
+}
+
+function plantStratFlags(g, o) {
+	return (g[o + 23] > FIX_AT ? SF_FIX : 0) | (g[o + 27] > 0.4 ? SF_THORN : 0) | (g[o + 26] > ALLELO_AT ? SF_ALLELO : 0) | (g[o + 3] >= TREE_WOOD ? SF_TREE : 0);
 }
 
 function plantStrategyCap(g, o, fm, temp, hum, b) {
@@ -463,6 +471,7 @@ class PlantLayer {
 		this._bloomK = new Float32Array(n2);
 		this.form = new Uint8Array(n2);
 		this.induced = new Float32Array(n2);
+		this.sflag = new Uint8Array(n2);
 		this.bloom = new Float32Array(n);
 		this.oxygen = new Float32Array(n).fill(1);
 		this.bugs = null;
@@ -529,7 +538,9 @@ class PlantLayer {
 		const shade = (this.shade = new Float32Array(n2));
 		const root = (this.root = new Float32Array(n2));
 		const form = (this.form = new Uint8Array(n2));
+		const sflag = (this.sflag = new Uint8Array(n2));
 		for (let p = 0, o = 0; p < n2; p++, o += PG) {
+			if (this.species[p]) sflag[p] = plantStratFlags(g, o);
 			tox[p] = g[o + 4];
 			disp[p] = g[o + 5];
 			shade[p] = g[o + 6];
@@ -690,6 +701,7 @@ class PlantLayer {
 		const cyc = landPlant ? plantCycle(this.genome, base) : 2;
 		const amp = this.seasonAmp[i];
 		this.form[p] = fm;
+		this.sflag[p] = plantStratFlags(this.genome, base);
 		let cap = this.capFor(t, i);
 		let gm = 1;
 		if (cyc === 0) gm = ANNUAL_GROWTH;
@@ -748,6 +760,7 @@ class PlantLayer {
 		this._fruitK[p] = 0;
 		this._bloomK[p] = 0;
 		this.form[p] = 0;
+		this.sflag[p] = 0;
 		this.induced[p] = 0;
 	}
 
@@ -836,8 +849,16 @@ class PlantLayer {
 		const take = a + b;
 		const ind = this.induced;
 		this.grazeTox = take > 0 ? (a * (this.tox[u] + ind[u]) + b * (this.tox[i] + ind[i])) / take : 0;
-		if (a > 0) this._induce(u);
-		if (b > 0) this._induce(i);
+		if (a > 0) {
+			const k = g[u * PG + 28];
+			const v = ind[u] + INDUCE_UP * k;
+			ind[u] = v < INDUCE_MAX * k ? v : INDUCE_MAX * k;
+		}
+		if (b > 0) {
+			const k = g[i * PG + 28];
+			const v = ind[i] + INDUCE_UP * k;
+			ind[i] = v < INDUCE_MAX * k ? v : INDUCE_MAX * k;
+		}
 		if (a > 0 && this.kind[u]) {
 			this.grazeFungus = this.species[u];
 			this.grazeToxType = toxinType(this.genome, u * PG);
@@ -854,13 +875,6 @@ class PlantLayer {
 		return take;
 	}
 
-	_induce(p) {
-		const k = this.genome[p * PG + 28];
-		const top = INDUCE_MAX * k;
-		const v = this.induced[p] + INDUCE_UP * k;
-		this.induced[p] = v < top ? v : top;
-	}
-
 	damage(i, amount) {
 		const u = this.n + i;
 		const health = this.health;
@@ -868,7 +882,11 @@ class PlantLayer {
 		if (this.species[u] && !this.kind[u]) {
 			a = this._bite(u, amount, 0);
 			if (a > 0) {
-				this._induce(u);
+				const k = this.genome[u * PG + 28];
+				if (k > 0) {
+					const v = this.induced[u] + INDUCE_UP * k;
+					this.induced[u] = v < INDUCE_MAX * k ? v : INDUCE_MAX * k;
+				}
 				const h = health[u] - a * PEST_HEALTH;
 				health[u] = h > 0 ? h : 0;
 			}
@@ -877,7 +895,11 @@ class PlantLayer {
 		if (a < amount && this.species[i]) {
 			b = this._bite(i, amount - a, 0);
 			if (b > 0) {
-				this._induce(i);
+				const k = this.genome[i * PG + 28];
+				if (k > 0) {
+					const v = this.induced[i] + INDUCE_UP * k;
+					this.induced[i] = v < INDUCE_MAX * k ? v : INDUCE_MAX * k;
+				}
 				const h = health[i] - b * PEST_HEALTH;
 				health[i] = h > 0 ? h : 0;
 			}
@@ -1160,6 +1182,11 @@ class PlantLayer {
 		const hum = this.world.humidity;
 		const bugs = this.bugs;
 		const st = this.strat;
+		const root = this.root;
+		const sflag = this.sflag;
+		const decayK = soil.decayK;
+		const par = (tick >> 3) & 1;
+		const decay2 = INDUCE_DECAY * INDUCE_DECAY;
 		let fixers = 0, succ = 0, carn = 0, para = 0, allelo = 0, thorny = 0, ind = 0, blooms = 0, hypoxic = 0, peat = 0, eroded = 0;
 		for (let i = 0; i < n; i++) {
 			if (water[i]) {
@@ -1185,45 +1212,45 @@ class PlantLayer {
 				if (o < HYPOXIA) hypoxic++;
 				continue;
 			}
+			if ((i ^ par) & 1) continue;
 			let hold = 0;
 			for (let p = i; p < 2 * n; p += n) {
 				if (!species[p] || kind[p]) continue;
-				const o = p * PG;
 				const b = bio[p];
-				hold += b * this.root[p];
+				hold += b * root[p];
 				if (induced[p] > 0) {
 					if (induced[p] > 0.05) ind++;
-					induced[p] *= INDUCE_DECAY;
+					induced[p] *= decay2;
 					if (induced[p] < 0.001) induced[p] = 0;
 				}
-				const fx = g[o + 23];
-				if (fx > FIX_AT) {
+				const sf = sflag[p];
+				if (sf & SF_FIX) {
 					fixers++;
-					const N = nut[i] + FIX_RATE * fx * (b < 1 ? b : 1);
+					const N = nut[i] + 2 * FIX_RATE * g[p * PG + 23] * (b < 1 ? b : 1);
 					nut[i] = N < SOIL_MAX ? N : SOIL_MAX;
 				}
 				const fm = form[p];
 				if (fm & FORM_SUCC) succ++;
-				if (g[o + 27] > 0.4) thorny++;
+				if (sf & SF_THORN) thorny++;
 				if (fm & FORM_HET) {
 					if (fm & FORM_EPI) {
 						para++;
 						const hp = p - n;
 						if (p >= n && species[hp] && !kind[hp] && g[hp * PG + 3] >= HERB_WOOD) {
 							const ex = bio[hp] - floor[hp];
-							const want = PARA_DRAIN * b;
+							const want = 2 * PARA_DRAIN * b;
 							const take = ex <= 0 ? 0 : want < ex ? want : ex;
 							bio[hp] -= take;
 							const nb = b + take * PARA_EFF;
 							bio[p] = nb < cap[p] ? nb : cap[p];
 						} else {
-							const h = health[p] - PARA_STARVE;
+							const h = health[p] - 2 * PARA_STARVE;
 							health[p] = h > 0 ? h : 0;
 						}
 					} else {
 						carn++;
 						if (bugs) {
-							const got = bugs.eat(i, CARN_EAT * b);
+							const got = bugs.eat(i, 2 * CARN_EAT * b);
 							if (got > 0) {
 								const nb = b + got * CARN_BIO;
 								bio[p] = nb < cap[p] ? nb : cap[p];
@@ -1235,23 +1262,23 @@ class PlantLayer {
 						}
 					}
 				}
-				const al = g[o + 26] - ALLELO_AT;
-				if (al > 0) {
+				if (sf & SF_ALLELO) {
+					const al = g[p * PG + 26] - ALLELO_AT;
 					allelo++;
 					const q = p < n ? p + n : p - n;
 					if (species[q] && species[q] !== species[p] && !kind[q]) {
 						const ex = bio[q] - floor[q];
-						if (ex > 0) bio[q] -= ex * ALLELO_DMG * al;
+						if (ex > 0) bio[q] -= ex * 2 * ALLELO_DMG * al;
 					}
 				}
 			}
-			if (soil.decayK[i] < 0.9 && litter[i] > PEAT_SHOW) peat++;
+			if (decayK[i] < 0.9 && litter[i] > PEAT_SHOW) peat++;
 			const sl = slope[i];
 			const d = down[i];
 			if (sl > 0 && d >= 0) {
 				const h = hold / ROOT_HOLD + litter[i] / LITTER_HOLD;
 				if (h < 1) {
-					const f = EROSION_K * sl * hum[i] * (1 - h);
+					const f = 2 * EROSION_K * sl * hum[i] * (1 - h);
 					const dn = nut[i] * f;
 					const dl = litter[i] * f;
 					if (dn + dl > EROSION_MIN) {
@@ -1265,17 +1292,17 @@ class PlantLayer {
 				}
 			}
 		}
-		st.fixers = fixers;
-		st.succulents = succ;
-		st.carnivores = carn;
-		st.parasites = para;
-		st.allelopaths = allelo;
-		st.thorny = thorny;
-		st.induced = ind;
+		st.fixers = 2 * fixers;
+		st.succulents = 2 * succ;
+		st.carnivores = 2 * carn;
+		st.parasites = 2 * para;
+		st.allelopaths = 2 * allelo;
+		st.thorny = 2 * thorny;
+		st.induced = 2 * ind;
 		st.blooms = blooms;
 		st.hypoxic = hypoxic;
-		st.peat = peat;
-		st.eroded = eroded;
+		st.peat = 2 * peat;
+		st.eroded = 2 * eroded;
 	}
 
 	phaseTick(tick, season) {
@@ -1528,7 +1555,7 @@ class PlantLayer {
 		if (!(fit >= 0.04)) return false;
 		let childK = fit * (kind === 1 ? this._fungusK(genome[11] > 0.5, j) : 1 - sf * (1 - genome[6]));
 		const oj = pj < this.n ? pj + this.n : pj - this.n;
-		if (!kind && this.species[oj] && this.species[oj] !== parentId && !this.kind[oj]) {
+		if (!kind && this.sflag[oj] & SF_ALLELO && this.species[oj] !== parentId && !this.kind[oj]) {
 			const al = this.genome[oj * PG + 26] - ALLELO_AT;
 			if (al > 0) childK *= 1 - ALLELO_SEED * al;
 		}

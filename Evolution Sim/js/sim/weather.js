@@ -315,7 +315,7 @@ class WeatherLayer {
 		const pSp = P.species;
 		const pBio = P.biomass;
 		const pKind = P.kind;
-		const pG = P.genome;
+		const pF = P.sflag;
 		const w = this.world;
 		let forest = 0;
 		const drought = this.drought;
@@ -328,7 +328,7 @@ class WeatherLayer {
 			if (water[i]) continue;
 			let v = wet[i];
 			let c = 0;
-			if (pSp[i] && !pKind[i] && pG[i * PG + 3] >= TREE_WOOD) {
+			if (pSp[i] && !pKind[i] && pF[i] & SF_TREE) {
 				c = pBio[i] / SHADE_FULL_BIOMASS;
 				if (c > 1) c = 1;
 				forest += c;
