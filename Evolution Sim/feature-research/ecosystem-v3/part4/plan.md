@@ -1,12 +1,17 @@
 # Part 4: Pre-balance world slices
 
-These six slices run in order, before the balance cleanup:
+These eleven slices run in order, before the balance cleanup:
 1. World gen configs (4.1)
 2. Ocean update 2 (4.2)
-3. Mountains revamp (4.3)
-4. Temperate revamp (4.4)
-5. Desert revamp (4.5)
-6. Tundra revamp (4.6)
+3. Rivers and wetlands revamp (4.3)
+4. Coasts and islands revamp (4.4)
+5. Mountains revamp (4.5)
+6. Caves and underground (4.6)
+7. Temperate revamp (4.7)
+8. Tropical revamp (4.8)
+9. Savanna and grassland revamp (4.9)
+10. Desert revamp (4.10)
+11. Tundra revamp (4.11)
 
 Each revamp follows the same pattern as the ocean update:
 - new sub-biomes;
@@ -64,7 +69,7 @@ Each revamp follows the same pattern as the ocean update:
   - flatfish (floor);
   - deep-sea eels.
 
-## 4.3 Mountains revamp
+## 4.5 Mountains revamp
 
 - **New and reworked biomes:**
   - **Scree slope:** loose rock with sparse cushion plants.
@@ -92,7 +97,7 @@ Each revamp follows the same pattern as the ocean update:
   - condor and eagle (soaring raptors that use updrafts);
   - alpine salamander.
 
-## 4.4 Temperate revamp
+## 4.7 Temperate revamp
 
 - **New and reworked biomes:**
   - **Deciduous forest:** leaves drop seasonally.
@@ -121,7 +126,7 @@ Each revamp follows the same pattern as the ocean update:
   - owl (night raptor);
   - frog and newt (breed in ponds).
 
-## 4.5 Desert revamp
+## 4.10 Desert revamp
 
 - **New and reworked biomes:**
   - **Rocky / hamada desert.**
@@ -150,7 +155,7 @@ Each revamp follows the same pattern as the ocean update:
   - vulture (scavenger niche).
   - A water-economy gene trades lower water need for slower growth.
 
-## 4.6 Tundra revamp
+## 4.11 Tundra revamp
 
 - **New and reworked biomes:**
   - **Arctic tundra** (rework).
@@ -180,8 +185,143 @@ Each revamp follows the same pattern as the ocean update:
   - ptarmigan.
   - Insulation and fat genes are used heavily.
 
+## 4.3 Rivers and wetlands revamp
+
+- **Biomes reworked:** river, lake, pond, swamp, bog, wetland and floodplain.
+- **New biomes:**
+  - rapids;
+  - oxbow lake;
+  - reed marsh;
+  - beaver pond, which beavers create.
+- **Flow mechanic:**
+  - Rivers have a downstream direction from the heightmap.
+  - Nutrients, detritus, eggs and larvae drift downstream.
+  - Upstream travel costs extra energy.
+  - Floodplains get seasonal nutrient pulses. These reuse the flood code.
+- **Lake layers:** the depth-layer framework from ocean update 2 is reused for lakes.
+  - Surface, mid and bottom layers.
+  - Lakes turn over in spring and autumn.
+- **Plants:**
+  - reeds;
+  - water lilies (surface);
+  - pondweed (floor);
+  - duckweed blooms;
+  - riverside willows.
+- **Ecosystem engineers:** beavers dam rivers. A dam turns river tiles upstream into a pond, raises the water table and kills trees nearby. The dam is a stored tile edit, so saves replay it.
+- **Animals:**
+  - salmon (migrates upstream to spawn, then dies and fertilises the river);
+  - catfish and pike;
+  - otter;
+  - heron and kingfisher (fisher niche);
+  - crocodile (ambush at the bank);
+  - dragonfly and mayfly (aquatic larvae that emerge as flyers);
+  - freshwater mussel (filter feeder that cleans water).
+- **Goal:** freshwater fish persist on every seed, which fixes the known die-off.
+
+## 4.4 Coasts and islands revamp
+
+- **New and reworked biomes:**
+  - rocky shore and rock pools;
+  - sea cliff colony;
+  - salt marsh;
+  - lagoon;
+  - kelp-fringed coast;
+  - atoll.
+  - Beach and Coral Reef are reworked.
+- **Tides:** a tide cycle exposes and covers the intertidal tiles.
+  - Rock pools trap animals at low tide.
+  - Shorebirds feed on exposed flats.
+- **Coral bleaching:** reefs bleach when sea temperature stays high, and recover slowly. This links to the weather system.
+- **Island rules:** isolated populations drift in body size over time.
+  - Island dwarfism for large animals.
+  - Island gigantism for small ones.
+  - This works through a selection bias on small landmasses.
+- **Nesting beaches:** sea turtles come ashore to lay eggs. Hatchlings are a food pulse for predators.
+- **Animals:**
+  - shore crab and barnacle (invertebrates);
+  - puffin and gannet (cliff-nesting seabirds);
+  - seal and sea lion (haul out on rocks);
+  - sea otter (eats urchins and protects kelp);
+  - sea turtle;
+  - mudskipper (amphibious fish).
+
+## 4.6 Caves and underground
+
+- **Underground layer:** cave networks under mountain, hill and karst tiles, entered from the mountain revamp's cave mouths.
+  - This is a sparse second layer, not a full map.
+  - Each cave is a small graph of chambers linked to the surface tiles above.
+- **Mechanics:**
+  - There is no light underground, so there are no plants.
+  - Food comes from the surface: bat guano, washed-in detritus and roots hanging from the surface plants above.
+  - Temperature is constant all year.
+  - Caves are winter shelter for hibernators. This reuses the hibernation slice.
+- **Burrows:** burrowing animals (marmot, badger, rabbit, lemming) dig tunnel tiles that give shelter from predators and weather.
+- **Animals:**
+  - bats (roost in caves and hunt insects at night; a guano economy);
+  - blind cave fish;
+  - olm / cave salamander;
+  - cave cricket;
+  - cave spider.
+  - There is cave adaptation: unused eyes and pigment are lost over generations, with the energy saved going to other senses.
+- **Rendering:** a toggle shows the underground layer. Cave chambers are in `SNAP_STATIC`, and occupancy is in `SNAP_GRIDS`.
+
+## 4.8 Tropical revamp
+
+- **Biomes reworked:** jungle, rainforest, cloud forest and mangrove.
+- **New biomes:**
+  - tropical dry forest;
+  - bamboo forest;
+  - tepui / table mountain.
+- **Forest layers:** rainforest gets vertical layers, reusing the depth-layer framework.
+  - The layers are floor, understory, canopy and emergent.
+  - Arboreal animals live in the canopy, and ground animals rarely meet them.
+  - Light falls sharply through the layers.
+- **Plants:**
+  - lianas and vines (climb trees and compete for canopy light);
+  - strangler figs (a keystone fruit source all year round);
+  - epiphytes and bromeliads (tiny water pools that frogs breed in);
+  - buttress-root giants.
+- **Seasons:** a wet and dry season replaces winter in the tropics.
+- **Animals:**
+  - monkey (canopy omnivore, social);
+  - sloth (slow canopy browser);
+  - jaguar (floor and river ambush);
+  - tapir;
+  - toucan and parrot (fruit birds that spread seeds);
+  - poison dart frog (toxic, warning colours, linked to the toxin genes);
+  - army ant swarm and leafcutter ant (invertebrate colonies).
+
+## 4.9 Savanna and grassland revamp
+
+- **Biomes reworked:** savanna, steppe, grassland, plains and shrubland.
+- **New biomes:**
+  - acacia savanna;
+  - prairie;
+  - kopje / rock outcrop;
+  - seasonal waterhole.
+- **Fire regime:** grass fires come on a natural cycle.
+  - They keep trees out of grassland.
+  - Grasses regrow fast after a fire, and fire-resistant trees survive.
+  - This reuses the wildfire code.
+- **Grazing:** grass regrows from the base, so moderate grazing raises productivity. Overgrazing turns the land into bare scrub.
+- **Migration:** big herds follow the rain. Herd animals get a migration drive, like seasonal bird migration.
+- **Termite mounds:** these are fertile hotspots that grow lush patches and give shelter.
+- **Waterholes:** they shrink in the dry season and concentrate predators and prey.
+- **Animals:**
+  - wildebeest and zebra (migrating herds);
+  - bison (prairie);
+  - lion (prides that hunt together, using the social slice);
+  - cheetah (sprint specialist);
+  - hyena (scavenger and clan hunter);
+  - elephant (ecosystem engineer that knocks down trees and opens grassland);
+  - giraffe (high browser);
+  - termite colony;
+  - ostrich.
+
 ## Order and dependencies
 
-- 4.1 lands first, because the revamps add their new biomes as world gen options. The temperature, humidity and roughness settings then drive how much of each zone appears.
-- 4.2 introduces the depth-layer framework. 4.3 reuses its layer idea for elevation bands, and 4.5 and 4.6 reuse the soil-layer idea: permafrost, and seed banks.
-- The balance cleanup runs after 4.6, because the new archetypes will shift every food web.
+- 4.1 lands first, because every revamp adds its new biomes as world gen options. The temperature, humidity and roughness settings drive how much of each zone appears.
+- 4.2 introduces the depth-layer framework. Lakes (4.3), mountain elevation bands (4.5) and rainforest canopy layers (4.8) all reuse it.
+- 4.3 goes early because it fixes the freshwater fish die-off and adds water flow, which later slices depend on: floodplains, wadis and waterholes.
+- 4.6 needs the cave mouths from 4.5, and its burrows feed the later temperate, savanna and tundra animals.
+- The balance cleanup runs after 4.11, because the new archetypes will shift every food web.
