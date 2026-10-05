@@ -2041,6 +2041,7 @@ function timeRestore(bytes, label, asAuto) {
 	const t = app.time;
 	app.busy = true;
 	const run = app.running;
+	setRunning(false);
 	cancelGodStroke();
 	showBusy(`Going back to ${label}…`);
 	timeQueue(async () => {
@@ -2063,6 +2064,7 @@ function timeRestore(bytes, label, asAuto) {
 		} catch (err) {
 			console.warn(err);
 			showMessage(`Could not go back: ${err.message}. The current world was kept.`);
+			setRunning(run);
 		}
 	}).then(() => (app.busy = false));
 }
