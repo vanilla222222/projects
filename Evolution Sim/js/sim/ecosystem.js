@@ -433,6 +433,13 @@ class Ecosystem {
 			if (fx) fxN[fx[i]]++;
 			if (gl && gl[i] > 0.1) loaded++;
 		}
+		if (A.sleep) {
+			const pat = [0, 0, 0, 0];
+			const G = A.genome;
+			for (let i = 0; i < A.count; i++) if (A.alive[i]) pat[actPattern(G[i * AG + G_ACT])]++;
+			const t = A.sleep.sumAsleep + A.sleep.sumAwake;
+			this.stats.sleep = Object.assign({}, A.sleep, { asleepShare: t > 0 ? A.sleep.sumAsleep / t : 0, patterns: { diurnal: pat[0], crepuscular: pat[1], nocturnal: pat[2], cathemeral: pat[3] } });
+		}
 		this.stats.toxins = Object.assign({}, A.toxfx, { nowPoisoned: fxN[1], nowTripping: fxN[2], nowStim: fxN[3], nowCrash: fxN[4], genoLoaded: loaded });
 		let models = 0;
 		for (let c = 0; c < 6; c++) if (A.modelSp[c]) models++;

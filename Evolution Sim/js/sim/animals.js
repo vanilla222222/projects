@@ -1,8 +1,9 @@
-const AG = 35;
+const AG = 36;
 const AG_V1 = 30;
 const AG_V2 = 32;
-const G_SIZE = 0, G_SPEED = 1, G_SENSE = 2, G_DIET = 3, G_TEMP = 4, G_TOL = 5, G_FEC = 6, G_TOXR = 7, G_ARMOR = 8, G_RES = 9, G_SCAV = 10, G_TERR = 11, G_HERD = 12, G_COLD = 13, G_DRY = 14, G_NEST = 15, G_PACK = 16, G_DISPLAY = 17, G_CHOOSY = 18, G_APPETITE = 19, G_DORMANCY = 20, G_ALARM = 21, G_SOCIAL = 22, G_BROOD = 23, G_CARE = 24, G_CLEAN = 25, G_TOLER = 26, G_TOXIC = 27, G_MIMIC = 28, G_BRAIN = 29, G_DEPTH = 30, G_SALT = 31, G_RNEU = 32, G_RGEN = 33, G_TOXK = 34;
-const ANIMAL_WEIGHTS = [1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6, 0.3, 0.3, 0.3, 0.3, 0.5, 0.5, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.5, 0.6, 0.6, 0.5, 0.5, 0.4];
+const AG_V3 = 35;
+const G_SIZE = 0, G_SPEED = 1, G_SENSE = 2, G_DIET = 3, G_TEMP = 4, G_TOL = 5, G_FEC = 6, G_TOXR = 7, G_ARMOR = 8, G_RES = 9, G_SCAV = 10, G_TERR = 11, G_HERD = 12, G_COLD = 13, G_DRY = 14, G_NEST = 15, G_PACK = 16, G_DISPLAY = 17, G_CHOOSY = 18, G_APPETITE = 19, G_DORMANCY = 20, G_ALARM = 21, G_SOCIAL = 22, G_BROOD = 23, G_CARE = 24, G_CLEAN = 25, G_TOLER = 26, G_TOXIC = 27, G_MIMIC = 28, G_BRAIN = 29, G_DEPTH = 30, G_SALT = 31, G_RNEU = 32, G_RGEN = 33, G_TOXK = 34, G_ACT = 35;
+const ANIMAL_WEIGHTS = [1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6, 0.3, 0.3, 0.3, 0.3, 0.5, 0.5, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.5, 0.6, 0.6, 0.5, 0.5, 0.4, 0.4];
 const ANIMAL_CLASSES = ['fish', 'amphibian', 'reptile', 'mammal', 'bird', 'invertebrate'];
 const CLS_FISH = 0, CLS_AMPH = 1, CLS_REPT = 2, CLS_MAMM = 3, CLS_BIRD = 4, CLS_INVT = 5;
 const CLS_COLD = [[0, 1], [0.5, 1], [0.5, 1], [0, 0.45], [0, 0.45], [0.5, 1]];
@@ -123,6 +124,25 @@ const PREY_GL = 0.15;
 const FOUNDER_TOXK = { 14: 0.15, 26: 0.55, 27: 0.85 };
 const FOUNDER_RNEU = 0.08, FOUNDER_RGEN = 0.08, FOUNDER_RNEU_HERB = 0.2, FOUNDER_RGEN_HERB = 0.15;
 const PAD_RTOX = 0.1, PAD_TOXK = 0.2;
+const ACT_PATTERNS = ['diurnal', 'crepuscular', 'nocturnal', 'cathemeral'];
+const ACT_GENE = [0.12, 0.37, 0.62, 0.88];
+const PAD_ACT = 0.88;
+const FOUNDER_ACT = [2, 1, 3, 0, 3, 2, 1, 2, 0, 0, 2, 1, 3, 2, 0, 2, 2, 3, 0, 0, 0, 2, 3, 3, 2, 2, 3, 2, 2, 0, 0, 1, 0, 0, 2, 0];
+const SLEEP_META = 0.5;
+const SLEEP_FED = 0.4;
+const SLEEP_WAKE = 0.2;
+const SLEEP_CATCH = 1.5;
+const SLEEP_HOME = 10;
+const SLEEP_EDGE = 0.02;
+const CREP_W = 0.12;
+const NAP_CYCLE = 20;
+const NAP_LEN = 6;
+const VIS_DAY_LO = 0.7;
+const VIS_NOC_HI = 1.05;
+const VIS_NOC_LO = 0.8;
+const VIS_CREP_LO = 0.85;
+const VIS_CREP_HI = 1.05;
+const VIS_CATH = 0.95;
 const TOX_LEARN = 0.45;
 const PREY_HUE = 0.04;
 const PREY_AV_DECAY = 0.08;
@@ -541,7 +561,16 @@ ANIMAL_ARCHETYPES.forEach((a, k) => {
 	g[G_RNEU] = g[G_DIET] < 0.66 ? FOUNDER_RNEU_HERB : FOUNDER_RNEU;
 	g[G_RGEN] = g[G_DIET] < 0.66 ? FOUNDER_RGEN_HERB : FOUNDER_RGEN;
 	g[G_TOXK] = FOUNDER_TOXK[k] ?? PAD_TOXK;
+	g[G_ACT] = ACT_GENE[FOUNDER_ACT[k] ?? 3];
 });
+
+function actPattern(g) {
+	return g < 0.25 ? 0 : g < 0.5 ? 1 : g < 0.75 ? 2 : 3;
+}
+
+function sleepStats() {
+	return { asleep: 0, awake: 0, sumAsleep: 0, sumAwake: 0, slept: 0, woken: 0, homeSleep: 0 };
+}
 
 function toxFxStats() {
 	return { poisoned: 0, trips: 0, stims: 0, crashes: 0, genoBirths: 0, toxDeaths: 0, preyTrips: 0, preyGeno: 0 };
@@ -559,7 +588,7 @@ function aquaMisfit(gDepth, gSalt, depth, sal) {
 function padAnimalGenes(src, count) {
 	if (!src || !count) return src;
 	const from = src.length / count;
-	if (from !== AG_V1 && from !== AG_V2) return src;
+	if (from !== AG_V1 && from !== AG_V2 && from !== AG_V3) return src;
 	const out = new Float32Array(count * AG);
 	for (let k = 0, a = 0, b = 0; k < count; k++, a += from, b += AG) {
 		for (let j = 0; j < from; j++) out[b + j] = src[a + j];
@@ -567,9 +596,12 @@ function padAnimalGenes(src, count) {
 			out[b + G_DEPTH] = AQ_DEPTH_DEF;
 			out[b + G_SALT] = AQ_SALT_DEF;
 		}
-		out[b + G_RNEU] = PAD_RTOX;
-		out[b + G_RGEN] = PAD_RTOX;
-		out[b + G_TOXK] = PAD_TOXK;
+		if (from !== AG_V3) {
+			out[b + G_RNEU] = PAD_RTOX;
+			out[b + G_RGEN] = PAD_RTOX;
+			out[b + G_TOXK] = PAD_TOXK;
+		}
+		out[b + G_ACT] = PAD_ACT;
 	}
 	return out;
 }
@@ -814,6 +846,7 @@ ANIMAL_FIELDS_I.push('lsp');
 ANIMAL_FIELDS_I.push('lin');
 ANIMAL_FIELDS_I.push('fx', 'fxT', 'crv');
 ANIMAL_FIELDS_F.push('gl');
+ANIMAL_FIELDS_I.push('slp');
 
 class AnimalPool {
 	constructor(world, plants, registry, rng, log) {
@@ -858,6 +891,7 @@ class AnimalPool {
 		for (let i = 0; i < n; i++) this.zone[i] = BIOME_ZONE[world.biome[i]];
 		this.childGenome = new Float32Array(AG);
 		this.toxfx = toxFxStats();
+		this.sleep = sleepStats();
 		this.deaths = { starved: 0, eaten: 0, old: 0, poison: 0, parasite: 0, disease: 0, thirst: 0, fire: 0, flood: 0 };
 		this.landDeaths = 0;
 		this.weather = null;
@@ -1061,6 +1095,7 @@ class AnimalPool {
 		this.fxT[i] = 0;
 		this.crv[i] = 0;
 		this.gl[i] = 0;
+		this.slp[i] = 0;
 		this.strain[i] = 0;
 		this.itime[i] = 0;
 		this.immune[i] = 0;
@@ -1197,7 +1232,7 @@ class AnimalPool {
 							} else if (dj !== dom) continue;
 						} else if (dj !== 2 && dom !== 2) continue;
 					}
-					if (this.dorm[j] && (mode === 0 || (mode === 1 && this.home[j] && Math.abs(this.x[j] - this.nx[j]) + Math.abs(this.y[j] - this.ny[j]) <= NEST_NEAR))) continue;
+					if ((this.dorm[j] || this.slp[j]) && (mode === 0 || (mode === 1 && this.home[j] && Math.abs(this.x[j] - this.nx[j]) + Math.abs(this.y[j] - this.ny[j]) <= NEST_NEAR))) continue;
 					if (mode === 0) {
 						if (this.diet[j] - diet < 0.3 || this.meatEff[j] < 0.3 || mass > this.mass[j] * this.gf[j] * 1.8) continue;
 					} else if (mode === 1) {
@@ -1913,6 +1948,42 @@ class AnimalPool {
 		return (this._deficient(i) ? 1 + MALNOURISHED_SUS : 1) * (this.fat[i] > 0 ? 1 + FAT_SUS * this._heavy(i) : 1) * (this.dorm[i] ? 1 + DORM_SUS : 1) * (this.grp[i] > 1 && this.rnk[i] < 1 ? 1 + RANK_SUS * (1 - this.rnk[i]) : 1) * (this.gf[i] < 1 ? JUV_SUS * (this.cr[i] > 0 ? 1 - CARE_SUS : 1) : 1);
 	}
 
+	_dayTables(tick) {
+		if (!this._visT) {
+			this._visT = new Float32Array(4 * DAY_BINS);
+			this._actT = new Uint8Array(4 * DAY_BINS);
+		}
+		if (!this.sleep) this.sleep = sleepStats();
+		const P = this.plants;
+		const season = P && P.seasonsOn ? P.season || 0 : 0;
+		const ph = dayPhase(tick);
+		this._binK = DAY_BINS / this.world.height;
+		for (let b = 0; b < DAY_BINS; b++) {
+			const d = sunEdge(ph, dayLength(season, b));
+			const L = sunLight(d);
+			const ad = d < 0 ? -d : d;
+			const tw = ad < CREP_W ? 1 - ad / CREP_W : 0;
+			this._actT[b] = d > -SLEEP_EDGE ? 1 : 0;
+			this._actT[DAY_BINS + b] = ad < CREP_W ? 1 : 0;
+			this._actT[2 * DAY_BINS + b] = d < SLEEP_EDGE ? 1 : 0;
+			this._actT[3 * DAY_BINS + b] = 1;
+			this._visT[b] = VIS_DAY_LO + (1 - VIS_DAY_LO) * L;
+			this._visT[DAY_BINS + b] = VIS_CREP_LO + (VIS_CREP_HI - VIS_CREP_LO) * tw;
+			this._visT[2 * DAY_BINS + b] = VIS_NOC_HI - (VIS_NOC_HI - VIS_NOC_LO) * L;
+			this._visT[3 * DAY_BINS + b] = VIS_CATH;
+		}
+	}
+
+	_actIdx(i) {
+		const b = (this.y[i] * this._binK) | 0;
+		return actPattern(this.genome[i * AG + G_ACT]) * DAY_BINS + (b < 0 ? 0 : b >= DAY_BINS ? DAY_BINS - 1 : b);
+	}
+
+	_awake(i, ai, tick) {
+		if (ai >= 3 * DAY_BINS) return (tick + this.uid[i] * 7) % NAP_CYCLE >= NAP_LEN;
+		return this._actT[ai] === 1;
+	}
+
 	_dormWant(i, tile, et, Wx, e, em0) {
 		const dom = this.domain[i];
 		if (dom === 1) return 0;
@@ -1929,6 +2000,7 @@ class AnimalPool {
 	}
 
 	_dormEnter(i, k) {
+		this.slp[i] = 0;
 		this.dorm[i] = k;
 		this.dormT[i] = 0;
 		this.state[i] = 0;
@@ -2279,9 +2351,12 @@ class AnimalPool {
 		this._census();
 		const domK = this._domK;
 		this._social();
+		this._dayTables(tick);
 		this.births = 0;
 		this.tick = tick;
 		let holders = 0;
+		let nSleep = 0;
+		let nAwake = 0;
 
 		for (let i = 0; i < n; i++) {
 			if (!this.alive[i]) continue;
@@ -2368,11 +2443,13 @@ class AnimalPool {
 			const shelter = hk === 3 && atHome ? 1 - DEN_SHELTER * ng : 1;
 			const homeK = this._homeK(i);
 			if (homeK > 0 && ((tick + i) & 1) === 1) this._chaseRival(i);
+			const ai = this._actIdx(i);
+			const vis = this._visT[ai];
 			const sk0 = this.strain[i];
 			const gq = this.grp[i] - 1;
 			const rk = 2 - this.rnk[i];
 			const comp = gq > 0 ? 1 - (SOC_COMP * gq < SOC_COMP_CAP ? SOC_COMP * gq : SOC_COMP_CAP) * (rk < 0.25 ? 0.25 : rk > 1.75 ? 1.75 : rk) : 1;
-			const bite = comp * this.bite[i] * gf * ef * (1 + TERR_BITE * homeK) * (dom === 3 ? BIRD_BITE : 1) * (sk0 ? 1 - SICK_EAT * this.disease.sVir[sk0] : 1) * (this.fx[i] === FX_TRIP ? TRIP_EAT : 1);
+			const bite = comp * this.bite[i] * gf * ef * (1 + TERR_BITE * homeK) * (dom === 3 ? BIRD_BITE : 1) * (sk0 ? 1 - SICK_EAT * this.disease.sVir[sk0] : 1) * (this.fx[i] === FX_TRIP ? TRIP_EAT : 1) * vis;
 			const fat = this.fat[i];
 			const em0 = this.emax[i] * gf;
 			let climK = 1;
@@ -2447,6 +2524,38 @@ class AnimalPool {
 				} else if (this.state[i] === 7) this.state[i] = 0;
 			}
 
+			let sl = this.slp[i] > 0;
+			if (!acted) {
+				const aw = this._awake(i, ai, tick);
+				if (sl && (aw || e < em0 * SLEEP_WAKE || thirsty || flying || this.confuse[i] > 0)) {
+					this.slp[i] = 0;
+					sl = false;
+				} else if (!sl && !aw && !flying && !thirsty && e > em0 * SLEEP_FED && this.confuse[i] === 0 && !this.lv[i] && this.state[i] < 3 && (dom !== 3 || this.walk[tile] & 1)) {
+					if (hk && hd > NEST_NEAR && hd < SLEEP_HOME) {
+						moved = this._moveToward(i, this.nx[i], this.ny[i], 1);
+						this.state[i] = 0;
+						acted = true;
+					} else {
+						this.slp[i] = 1;
+						this.sleep.slept++;
+						if (atHome) this.sleep.homeSleep++;
+						sl = true;
+					}
+				}
+				if (sl) {
+					cost *= SLEEP_META;
+					this.state[i] = 0;
+					this.ttl[i] = 0;
+					acted = true;
+				}
+			} else if (sl) {
+				this.slp[i] = 0;
+				sl = false;
+			}
+
+			if (sl) nSleep++;
+			else nAwake++;
+
 			if (!acted && (this.confuse[i] > 0 || (this.fx[i] === FX_TRIP && rng.next() < TRIP_WANDER))) {
 				if (this.confuse[i] > 0) this.confuse[i]--;
 				const ang = rng.next() * Math.PI * 2;
@@ -2459,7 +2568,7 @@ class AnimalPool {
 			if (!acted && this.diet[i] < 0.7 && (tick + i) % 2 === 0 && rng.next() < 0.7) {
 				const gq = this.grp[i] - 1;
 				const eyes = this.strain[i] || gq <= 0 ? 1 : 1 + SOC_EYES * this.genome[i * AG + G_SOCIAL] * (gq < SOC_N ? gq / SOC_N : 1);
-				const fr = this.range[i] * 0.8 * eyes;
+				const fr = this.range[i] * 0.8 * eyes * vis;
 				const ls = this.lst[i];
 				if (ls > 0) {
 					this._learnSp = this.lsp[i];
@@ -2553,7 +2662,7 @@ class AnimalPool {
 			}
 
 			if (!acted && this.meatEff[i] > 0.25 && e < emax * (this.scav[i] > 0.5 ? SCAV_HUNT : this.nic[i] ? FISHER_HUNT : protShort ? OMNI_HUNT : 0.6) && this.cool[i] === 0 && this.age[i] >= this.mature[i] * JUV_HUNT) {
-				const p = this._nearest(i, this.nic[i] ? this.range[i] * FISHER_RANGE : this.range[i], 1);
+				const p = this._nearest(i, (this.nic[i] ? this.range[i] * FISHER_RANGE : this.range[i]) * vis, 1);
 				if (p >= 0) {
 					if (this.state[i] !== 3) this.ttl[i] = 18;
 					this.state[i] = 3;
@@ -2594,7 +2703,7 @@ class AnimalPool {
 				}
 			}
 
-			if (eggs && (dg >= 0.33 || dom === 1) && this.energy[i] < full && eggs.head[tile] >= 0) {
+			if (!sl && eggs && (dg >= 0.33 || dom === 1) && this.energy[i] < full && eggs.head[tile] >= 0) {
 				const got = eggs.eatAt(tile, dom !== 1, this.sp[i], (full - this.energy[i]) / EGG_FOOD, this.mass[i] * gf, tick);
 				if (got > 0) this.energy[i] += this._eat(i, got * EGG_FOOD, FOOD_EGG, sk0);
 				else if (got < 0 && !acted) this._flee(i, (tile % W) + 0.5, (tile - (tile % W)) / W + 0.5);
@@ -2677,7 +2786,7 @@ class AnimalPool {
 			if (dom === 3) this.fly[i] = moved > FLY_MOVE || !(this.walk[(this.y[i] | 0) * W + (this.x[i] | 0)] & 1) ? 1 : 0;
 
 			if (bugs) {
-				if (this.mass[i] * gf < BUG_MASS && bugs.total[tile] > 0 && this.energy[i] < full) {
+				if (!sl && this.mass[i] * gf < BUG_MASS && bugs.total[tile] > 0 && this.energy[i] < full) {
 					const be = this._bugEff(i);
 					if (be > 0) {
 						const bg = this._eat(i, bugs.eat(tile, this.bite[i] * gf * ef * be) * (dom === 3 && dg >= 0.33 ? BIRD_BUG_ENERGY : BUG_ENERGY), FOOD_BUG, sk0);
@@ -2696,8 +2805,8 @@ class AnimalPool {
 					bugs.parasiteDrain += drain;
 				}
 			}
-			if (this.cls[i] === CLS_INVT && !dom && dg < 0.5 && this.energy[i] < full && soil.litter[tile] > 0) this.energy[i] += this._eat(i, soil.consumeLitter(tile, bite) * LITTER_ENERGY * plantK, FOOD_LITTER, sk0);
-			if (carrion[tile] > 0 && this.energy[i] < full * 0.92 && (dom !== 3 || this.walk[tile] & 1)) {
+			if (!sl && this.cls[i] === CLS_INVT && !dom && dg < 0.5 && this.energy[i] < full && soil.litter[tile] > 0) this.energy[i] += this._eat(i, soil.consumeLitter(tile, bite) * LITTER_ENERGY * plantK, FOOD_LITTER, sk0);
+			if (!sl && carrion[tile] > 0 && this.energy[i] < full * 0.92 && (dom !== 3 || this.walk[tile] & 1)) {
 				const ce = this._eat(i, soil.consumeCarrion(tile, bite * (1 + SCAV_BITE * this.scav[i])) * MEAT_ENERGY * this.carrionEff[i] * meatK, FOOD_CARRION, sk0);
 				this.energy[i] += ce;
 				if (ce > 0) this.water[i] = Math.min(1, this.water[i] + MEAT_WATER);
@@ -2834,6 +2943,11 @@ class AnimalPool {
 			}
 		}
 		this.holders = holders;
+		const S = this.sleep;
+		S.asleep = nSleep;
+		S.awake = nAwake;
+		S.sumAsleep += nSleep;
+		S.sumAwake += nAwake;
 		this._compact();
 	}
 
@@ -3249,6 +3363,8 @@ class AnimalPool {
 		if (pn > 1) chance *= Math.min(PACK_CAP, 1 + PACK_K * (1 + SOC_PACK * (this.genome[i * AG + G_SOCIAL] - 0.5)) * (pn - 1));
 		if (this.fat[p] > 0) chance *= 1 + FAT_CATCH * this._heavy(p);
 		if (this.dorm[p]) chance = Math.min(0.95, chance * DORMANT_CATCH);
+		else if (this.slp[p]) chance = Math.min(0.95, chance * SLEEP_CATCH);
+		chance *= this._visT ? this._visT[this._actIdx(i)] : 1;
 		if (this.domain[p] === 3 && this.domain[i] !== 3) chance *= BIRD_ESCAPE;
 		if (this.lv[p] === 1) chance *= TAD_HIDE;
 		const pd = this._domK[this.sp[p]] || 0;
@@ -3281,6 +3397,10 @@ class AnimalPool {
 			this.cool[i] = 8;
 			this.energy[i] -= this.meta[i] * 2;
 			if (this.dorm[p]) this._dormWake(p);
+			if (this.slp[p]) {
+				this.slp[p] = 0;
+				this.sleep.woken++;
+			}
 			this.state[p] = 4;
 			this.ttl[p] = 4;
 			this.tx[p] = this.x[p] + (this.x[p] - this.x[i]) * 6;
