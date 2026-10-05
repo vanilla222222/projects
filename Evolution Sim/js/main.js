@@ -753,7 +753,26 @@ const PLANT_TRAITS = [
 	['Blight resistance', 14, (v) => pct(v)],
 	['Flower depth', 15, (v) => pct(v), null],
 	['Fire resistance', 16, (v) => pct(v), null],
+	['Life span', 17, (v) => pct(v), null],
+	['Leaf shedding', 18, (v) => pct(v), null],
+	['Season timing', 19, (v) => (v < 0.4 ? 'Early' : v > 0.6 ? 'Late' : 'Mid'), null],
+	['Height', 20, (v) => pct(v), null],
+	['Climbing', 21, (v) => pct(v), null],
+	['Clonal spread', 22, (v) => pct(v), null],
 ];
+
+function plantLifeBadges(sp) {
+	const g = sp.mean;
+	if (sp.group !== 'plant' || sp.kind === 1 || sp.domain === 'water' || !g || g.length < PG) return [];
+	const out = [];
+	const herb = g[3] < HERB_WOOD;
+	const climb = herb && g[21] > CLIMB_AT;
+	out.push(climb ? (g[7] < EPI_ROOT ? 'Epiphyte' : 'Vine') : PLANT_LAYER_LABEL[plantLayerOf(g, 0)]);
+	out.push(PLANT_CYCLE_LABEL[plantCycle(g, 0)]);
+	if (!herb) out.push(g[18] > DECID_AT ? 'Deciduous' : 'Evergreen');
+	if (g[22] > 0.5) out.push(herb ? 'Spreads by runners' : 'Suckers');
+	return out.map((t) => `<span class="badge">${t}</span>`);
+}
 
 const BUG_TRAITS = [
 	['Heat preference', 0, (v) => tempWord(v)],
@@ -889,6 +908,7 @@ function renderDetail() {
 		alive ? `<span class="badge alive">${patho ? 'Active' : 'Living'}</span>` : `<span class="badge dead">${patho ? 'Burned out' : 'Extinct'} · Year ${yearOf(sp.extinctTick)}</span>`,
 		`<span class="badge">${origin}</span>`,
 		...(sp.group === 'plant' && sp.kind === 1 ? ['<span class="badge">Fungus</span>', `<span class="badge">${fungusType(sp.mean)[0].toUpperCase() + fungusType(sp.mean).slice(1)}</span>`] : []),
+		...plantLifeBadges(sp),
 		...(sp.group === 'bug' && sp.domain ? [`<span class="badge">${sp.domain === 'water' ? 'Aquatic' : 'Land'}</span>`] : []),
 	].join('');
 	const bug = sp.group === 'bug';
