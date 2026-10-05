@@ -481,10 +481,14 @@ const DOM_DIS = 1;
 const DOM_PREY = 0.4;
 const DOM_CATCH = 0.3;
 const DOM_FRESH = 1;
+const DOM_CLS = 1800;
+const DOM_CLS_SPAN = 1800;
 const RSPLIT_POP = 500;
 const RSPLIT_SD = 16;
 const RSPLIT_AGE = 600;
 const RSPLIT_P = 0.3;
+const RSPLIT_LO = 150;
+const RSPLIT_SHARE = 0.45;
 const FOUNDER_TOXIC = { 14: 0.65, 26: 0.6, 27: 0.55 };
 const FOUNDER_MIMIC = { 15: 0.6, 28: 0.5 };
 const FOUNDER_TRAIT_LO = 0.05;
@@ -1238,7 +1242,10 @@ class AnimalPool {
 			const a = (p - DOM_POP) / DOM_POP_SPAN;
 			const w = (p - DOM_SHARE_MIN) / DOM_SHARE_RAMP;
 			const b = w > 0 && ct > 0 ? ((p / ct - DOM_SHARE) / DOM_SHARE_SPAN) * (w < 1 ? w : 1) : 0;
-			const d = a > b ? a : b;
+			const v = (p - DOM_SHARE_MIN) / DOM_POP;
+			const c = v > 0 ? ((ct - DOM_CLS) / DOM_CLS_SPAN) * (v < 1 ? v : 1) : 0;
+			let d = a > b ? a : b;
+			if (c > d) d = c;
 			domK[s] = d > 0 ? (d < 1 ? d : 1) : 0;
 		}
 		this._spM = m;
@@ -3795,13 +3802,14 @@ class AnimalPool {
 
 	_rangeSplit(sums) {
 		const R = this.registry;
+		const clsN = this._clsN;
 		let best = null;
 		let bs = null;
 		for (const [id, s] of sums) {
 			const n = s[AG];
-			if (n < RSPLIT_POP || (best && n <= bs[AG])) continue;
+			if (n < RSPLIT_LO || (best && n <= bs[AG])) continue;
 			const sp = R.get(id);
-			if (sp.population < RSPLIT_POP || this.tick - sp.createdTick < RSPLIT_AGE) continue;
+			if (this.tick - sp.createdTick < RSPLIT_AGE || (n < RSPLIT_POP && !(clsN && n >= RSPLIT_SHARE * clsN[sp.cls | 0])) || sp.population < RSPLIT_LO) continue;
 			const mx = s[AG + 13] / n;
 			const my = s[AG + 14] / n;
 			const vx = s[AG + 15] / n - mx * mx;
@@ -3825,7 +3833,7 @@ class AnimalPool {
 			for (let k = 0; k < AG; k++) g[k] += this.genome[o + k];
 			m++;
 		}
-		if (m < RSPLIT_POP * 0.2 || n - m < RSPLIT_POP * 0.2) return;
+		if (m < n * 0.25 || n - m < n * 0.25) return;
 		const cg = this.childGenome;
 		for (let k = 0; k < AG; k++) cg[k] = g[k] / m;
 		const sp = this.newSpecies(cg, 0, best.domain, best, this.tick, null);
