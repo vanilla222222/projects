@@ -1009,6 +1009,10 @@ class AnimalPool {
 		sp.cleanOf = parent && parent.cleanOf ? parent.cleanOf : 0;
 		sp.cleanN = {};
 		sp.cleanLogged = parent && parent.cleanLogged ? parent.cleanLogged.slice() : [];
+		sp.lifeSum = 0;
+		sp.lifeN = 0;
+		sp.colonyAlert = false;
+		sp.tools = 0;
 		return sp;
 	}
 

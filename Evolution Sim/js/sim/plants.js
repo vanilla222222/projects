@@ -403,6 +403,7 @@ class PlantLayer {
 		sp.kind = k;
 		sp.category = category;
 		sp.icon = plantIcon(category, sp.id);
+		sp.animalSeeds = 0;
 		return sp;
 	}
 
