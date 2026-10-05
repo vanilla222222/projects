@@ -93,8 +93,14 @@ Gates for every part, measured on seeds 42, 7 and 123 over 3000 ticks, with long
 7. **Compute (started early, alongside Part 1):** the sim runs in a Web Worker, plus an optional WebGPU fast mode for grid layers. See `compute/plan.md`.
 8. **Plant life (slice A):** annual, biennial and perennial life cycles; deciduous versus evergreen leaves; evolving flowering, fruiting and seed-release timing; autumn colour and blossom on the map; four vertical layers (emergent, canopy, shrub, ground) with a height gene; vines and epiphytes on host trees; clonal spread by runners and rhizomes; plant speciation with a plant family tree and species detail.
 9. **Plant strategies (slice B):** succulents, cacti and heat-adapted grasses; nitrogen fixers that enrich soil; carnivorous bog plants that eat bugs; parasitic plants on host trees; allelopathy; thorns versus toxins and induced defences; kelp forests, seagrass meadows, plankton and algae blooms that crash oxygen; forests that cool their area and add rainfall; leaf litter, peat and roots that stop erosion.
+10. **Performance and world generation update 2:** better world generation; enough speed to allow larger worlds; five more new biomes.
+11. **Bodies of water:** depth shown on river, lake and ocean tiles; aquatic animals with preferred depths; omnivore fish; river deltas; salt versus fresh water; more variety of water plants.
+12. **Secrets:** a nuclear biome and a magic biome, each with a 0.5% chance of appearing on a seed. Both are cosmetic: they give the founding animals there a unique texture.
+13. **Overpopulation control:** stop runaway species, for example founder fish that reach 2,000 and never decline. Candidates are density-dependent disease, crowding stress on breeding, and predators and parasites drawn to abundant prey.
+14. **Plant and animal toxins:** split toxicity into types that vary between plants and animals: poison (hurts or kills), neurotoxins (psychedelic and stimulant), and genotoxins.
+15. **Day and night cycle with sleep:** light drives plant growth; animals evolve diurnal, nocturnal, crepuscular or cathemeral activity, and sleep in their off hours.
 
-Items 8 and 9 run after items 1–6 and before Part 3. Any change to plant or soil stepping must be mirrored in the WebGPU fast mode (`js/gpu`).
+Items 8 and 9 run after items 1–6. Items 10–15 run after the plant slices, in that order, and before Part 3. Any change to plant or soil stepping must be mirrored in the WebGPU fast mode (`js/gpu`).
 
 ## Part 3: God tools
 
