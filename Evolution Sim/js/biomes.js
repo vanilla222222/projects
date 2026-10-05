@@ -42,6 +42,11 @@ const BIOME = {
 	SALT_FLAT: 'SALT_FLAT',
 	TUNDRA_BOG: 'TUNDRA_BOG',
 	CORAL_REEF: 'CORAL_REEF',
+	ALPINE_MEADOW: 'ALPINE_MEADOW',
+	VOLCANIC: 'VOLCANIC',
+	OASIS: 'OASIS',
+	DUNES: 'DUNES',
+	FLOODPLAIN: 'FLOODPLAIN',
 };
 
 // Display metadata: color used by the renderer and a human-readable label.
@@ -85,6 +90,11 @@ const BIOME_INFO = {
 	[BIOME.SALT_FLAT]: { name: 'Salt Flat', color: '#e9e4d6' },
 	[BIOME.TUNDRA_BOG]: { name: 'Tundra Bog', color: '#6e8a78' },
 	[BIOME.CORAL_REEF]: { name: 'Coral Reef', color: '#2bb3ad' },
+	[BIOME.ALPINE_MEADOW]: { name: 'Alpine Meadow', color: '#9cba78' },
+	[BIOME.VOLCANIC]: { name: 'Volcanic Field', color: '#4a3f3c' },
+	[BIOME.OASIS]: { name: 'Oasis', color: '#5f9e4a' },
+	[BIOME.DUNES]: { name: 'Sand Dunes', color: '#edcf86' },
+	[BIOME.FLOODPLAIN]: { name: 'Floodplain', color: '#7fa65a' },
 };
 
 // Numeric biome IDs: the world grid stores these (a Uint8Array) instead of
@@ -257,4 +267,31 @@ function classifyLandBiomeV3(altitude, temperature, humidity, slope, t = BIOME_T
 	if (humidity < t.veryHumidHumidity) return BIOME.WOODLAND;
 	if (humidity < t.humidHumidity) return BIOME.FOREST_TEMPERATE;
 	return BIOME.REDWOOD_FOREST;
+}
+
+const BIOME_V4 = {
+	jitter: 0.022,
+	meadowAlt: 0.05,
+	meadowTempLo: 0.28,
+	meadowTempHi: 0.5,
+	meadowHum: 0.38,
+	meadowSlope: 0.03,
+	duneHum: 0.14,
+	duneTemp: 0.6,
+	duneSlope: 0.014,
+	floodRise: 0.1,
+	floodSlope: 0.014,
+	floodTemp: 0.3,
+	floodHum: 0.25,
+	oasisTemp: 0.56,
+	oasisHum: 0.24,
+};
+
+function classifyLandBiomeV4(altitude, temperature, humidity, slope, t = BIOME_THRESHOLDS, v = BIOME_V3, w = BIOME_V4) {
+	if (altitude >= t.hillLevel && altitude < t.mountainLevel) {
+		if (altitude >= t.hillLevel + w.meadowAlt && temperature >= w.meadowTempLo && temperature < w.meadowTempHi && humidity >= w.meadowHum && slope < w.meadowSlope) return BIOME.ALPINE_MEADOW;
+	}
+	const b = classifyLandBiomeV3(altitude, temperature, humidity, slope, t, v);
+	if (b === BIOME.DESERT && temperature > w.duneTemp && humidity < w.duneHum && slope < w.duneSlope) return BIOME.DUNES;
+	return b;
 }

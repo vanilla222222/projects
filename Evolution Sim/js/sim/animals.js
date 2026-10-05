@@ -159,7 +159,8 @@ const THIRST = 0.02;
 const SALT_THIRST = 1.5;
 const SALT_THIRST_AMPH = 1.1;
 const MIRE_DRAG = 0.3;
-const ZONE_ARID = 1, ZONE_DENSE = 3, ZONE_MIRE = 4, ZONE_FRESH = 5;
+const ZONE_ARID = 1, ZONE_ALPINE = 2, ZONE_DENSE = 3, ZONE_MIRE = 4, ZONE_FRESH = 5;
+const ALPINE_AIR_K = 0.08;
 const ARID_K = 0.25;
 const ARID_SIZE = 1.6;
 const ARID_BASE = 0.2;
@@ -173,10 +174,11 @@ const HYPOXIA_COST = 1.5;
 const AMPH_FRESH = 0.1;
 const AEST_MAMM_MASS = 1.2;
 const BIOME_ZONE = new Uint8Array(BIOME_LIST.length);
-for (const k of ['DESERT', 'SALT_FLAT', 'BADLANDS']) BIOME_ZONE[BIOME_ID[k]] = ZONE_ARID;
+for (const k of ['DESERT', 'SALT_FLAT', 'BADLANDS', 'DUNES', 'VOLCANIC']) BIOME_ZONE[BIOME_ID[k]] = ZONE_ARID;
 for (const k of ['RAINFOREST', 'JUNGLE', 'CLOUD_FOREST', 'REDWOOD_FOREST']) BIOME_ZONE[BIOME_ID[k]] = ZONE_DENSE;
-for (const k of ['WETLAND', 'BOG', 'SWAMP', 'MANGROVE', 'TUNDRA_BOG', 'POND']) BIOME_ZONE[BIOME_ID[k]] = ZONE_MIRE;
+for (const k of ['WETLAND', 'BOG', 'SWAMP', 'MANGROVE', 'TUNDRA_BOG', 'POND', 'FLOODPLAIN', 'OASIS']) BIOME_ZONE[BIOME_ID[k]] = ZONE_MIRE;
 for (const k of ['LAKE', 'RIVER']) BIOME_ZONE[BIOME_ID[k]] = ZONE_FRESH;
+BIOME_ZONE[BIOME_ID.ALPINE_MEADOW] = ZONE_ALPINE;
 const REEF_COVER = 0.2;
 const THIRSTY = 0.35;
 const DRINK_WET = 0.6;
@@ -744,7 +746,7 @@ class AnimalPool {
 			else if (WATER_BIOME_SET.has(b)) this.walk[i] = 2;
 			else this.walk[i] = b === BIOME_ID.GLACIER ? 0 : b === BIOME_ID.BEACH || b === BIOME_ID.CLIFF ? 17 : 1;
 			this.walk[i] |= 8;
-			if (b === BIOME_ID.HILLS || b === BIOME_ID.BADLANDS || b === BIOME_ID.MOUNTAINS || b === BIOME_ID.CLIFF) this.walk[i] |= 32;
+			if (b === BIOME_ID.HILLS || b === BIOME_ID.BADLANDS || b === BIOME_ID.MOUNTAINS || b === BIOME_ID.CLIFF || b === BIOME_ID.VOLCANIC || b === BIOME_ID.ALPINE_MEADOW) this.walk[i] |= 32;
 			if (b === BIOME_ID.SALT_FLAT || b === BIOME_ID.MANGROVE) this.walk[i] |= 64;
 			if (b === BIOME_ID.TUNDRA_BOG || b === BIOME_ID.BOG || b === BIOME_ID.CORAL_REEF) this.walk[i] |= 128;
 		}
@@ -2214,6 +2216,7 @@ class AnimalPool {
 			}
 			const zn = zone[tile];
 			if (zn === ZONE_ARID && dom === 0) cost += m75 * ARID_K * (ARID_BASE + ARID_SIZE * this.genome[i * AG + G_SIZE]) * (1 - this.dry[i]) * (this.cold[i] > 0.5 ? ARID_ECTO : 1) * shelter;
+			else if (zn === ZONE_ALPINE && dom === 0) cost += m75 * ALPINE_AIR_K * this.genome[i * AG + G_SIZE] * shelter;
 			else if (dom === 2 && zn >= ZONE_MIRE) cost *= 1 - (zn === ZONE_MIRE ? AMPH_MIRE : AMPH_FRESH) * (1 - 0.5 * this.dry[i]);
 			if (!flying) {
 				const lw = tileLoad[tile] + ((this.mass[i] * TILE_LOAD_SCALE + 0.5) | 0);
