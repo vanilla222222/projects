@@ -23,7 +23,7 @@ const EvoSave = (() => {
 	};
 
 	const DERIVED = {
-		PlantLayer: ['water', 'depth', 'habit', 'seasonAmp', 'tox', 'disp', 'shade', 'root', 'form', 'sflag'],
+		PlantLayer: ['water', 'depth', 'sal', 'habit', 'seasonAmp', 'tox', 'disp', 'shade', 'root', 'form', 'sflag'],
 		SoilLayer: ['base', 'own', 'tile', 'row', 'decayK', 'slope', 'down'],
 		WeatherLayer: ['_evapK', '_queue'],
 		BugLayer: ['app', 'mob', 'rate'],
