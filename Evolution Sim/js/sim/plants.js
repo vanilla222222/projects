@@ -240,6 +240,8 @@ const RIVER_DEEP = 0.1;
 const RIVER_FLOW_DEEP = 12;
 const DELTA_DEPTH = 0.05;
 const POND_DEPTH = 0.1;
+const RAPIDS_DEPTH = 0.035;
+const BEAVER_DEPTH = 0.2;
 const LAKE_BASE = 0.12;
 const LAKE_STEP = 0.04;
 const LAKE_MAX = 0.45;
@@ -773,6 +775,10 @@ class PlantLayer {
 			[BIOME_ID.ALPINE_MEADOW]: 0.9,
 			[BIOME_ID.TRENCH]: 0.35,
 			[BIOME_ID.COLD_SEEP]: 0.9,
+			[BIOME_ID.RAPIDS]: 0.8,
+			[BIOME_ID.OXBOW]: 1.25,
+			[BIOME_ID.REED_MARSH]: 1.2,
+			[BIOME_ID.BEAVER_POND]: 1.3,
 		};
 		const calm = (b) => b === BIOME_ID.TRENCH || b === BIOME_ID.VENTS || b === BIOME_ID.COLD_SEEP;
 		this.snowK = new Float32Array(this.n);
@@ -842,7 +848,9 @@ class PlantLayer {
 				if (b === BIOME_ID.CORAL_REEF) v = Math.min(v, REEF_DEPTH);
 				depth[i] = v;
 			} else if (w.isRiver[i] && !w.isLake[i]) {
-				depth[i] = w.isDelta[i] ? DELTA_DEPTH : RIVER_DEPTH + RIVER_DEEP * clamp01(w.riverFlow[i] / RIVER_FLOW_DEEP);
+				depth[i] = w.isDelta[i] ? DELTA_DEPTH : b === BIOME_ID.RAPIDS ? RAPIDS_DEPTH : RIVER_DEPTH + RIVER_DEEP * clamp01(w.riverFlow[i] / RIVER_FLOW_DEEP);
+			} else if (b === BIOME_ID.BEAVER_POND) {
+				depth[i] = BEAVER_DEPTH;
 			} else if (w.isPond[i] || b === BIOME_ID.POND) {
 				depth[i] = POND_DEPTH;
 			} else {
@@ -2045,6 +2053,9 @@ const WATER_BIOME_SET = new Set([
 	BIOME_ID.TRENCH,
 	BIOME_ID.VENTS,
 	BIOME_ID.COLD_SEEP,
+	BIOME_ID.RAPIDS,
+	BIOME_ID.OXBOW,
+	BIOME_ID.BEAVER_POND,
 ]);
 
 const BIOME_SALT = new Float32Array(BIOME_LIST.length);
@@ -2087,6 +2098,8 @@ BIOME_SHADE[BIOME_ID.OASIS] = 0.1;
 BIOME_SOGGY[BIOME_ID.FLOODPLAIN] = 0.1;
 BIOME_WOOD[BIOME_ID.FLOODPLAIN] = 0.1;
 BIOME_WOOD[BIOME_ID.ALPINE_MEADOW] = 0.45;
+BIOME_SOGGY[BIOME_ID.REED_MARSH] = 0.25;
+BIOME_WOOD[BIOME_ID.REED_MARSH] = 0.35;
 
 function biomeFit(b, wood, root, shade) {
 	return (1 - BIOME_SALT[b] * (1 - root)) * (1 - BIOME_WOOD[b] * wood) * (1 + BIOME_SHADE[b] * shade) * (1 - BIOME_DEEP[b] * (1 - root)) * (1 - BIOME_SOGGY[b] * root);

@@ -112,14 +112,14 @@ class GodTools {
 		} else if (b === BIOME_ID.CORAL_REEF) {
 			world.isOcean[i] = 1;
 			alt[i] = Math.max(GOD_REEF_LO, Math.min(alt[i], GOD_REEF_HI));
-		} else if (b === BIOME_ID.LAKE) {
+		} else if (b === BIOME_ID.LAKE || b === BIOME_ID.OXBOW) {
 			world.isLake[i] = 1;
 			alt[i] = Math.min(alt[i], sea - 0.01);
-		} else if (b === BIOME_ID.RIVER) {
+		} else if (b === BIOME_ID.RIVER || b === BIOME_ID.RAPIDS) {
 			world.isRiver[i] = 1;
 			world.riverFlow[i] = Math.max(flow, 1);
 			alt[i] = Math.min(alt[i], sea - 0.005);
-		} else if (b === BIOME_ID.POND) {
+		} else if (b === BIOME_ID.POND || b === BIOME_ID.BEAVER_POND) {
 			world.isPond[i] = 1;
 			alt[i] = Math.min(alt[i], sea - 0.005);
 		} else {
@@ -1075,7 +1075,7 @@ class GodTools {
 		for (let i = 0; i < n; i++) {
 			const b = world.biome[i];
 			let w;
-			if (b === BIOME_ID.RIVER || b === BIOME_ID.POND) w = 3;
+			if (b === BIOME_ID.RIVER || b === BIOME_ID.POND || b === BIOME_ID.RAPIDS) w = 3;
 			else if (WATER_BIOME_SET.has(b)) w = 2;
 			else w = b === BIOME_ID.GLACIER ? 0 : b === BIOME_ID.BEACH || b === BIOME_ID.CLIFF ? 17 : 1;
 			w |= 8;

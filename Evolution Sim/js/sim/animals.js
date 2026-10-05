@@ -230,8 +230,8 @@ const AEST_MAMM_MASS = 1.2;
 const BIOME_ZONE = new Uint8Array(BIOME_LIST.length);
 for (const k of ['DESERT', 'SALT_FLAT', 'BADLANDS', 'DUNES', 'VOLCANIC']) BIOME_ZONE[BIOME_ID[k]] = ZONE_ARID;
 for (const k of ['RAINFOREST', 'JUNGLE', 'CLOUD_FOREST', 'REDWOOD_FOREST']) BIOME_ZONE[BIOME_ID[k]] = ZONE_DENSE;
-for (const k of ['WETLAND', 'BOG', 'SWAMP', 'MANGROVE', 'TUNDRA_BOG', 'POND', 'FLOODPLAIN', 'OASIS']) BIOME_ZONE[BIOME_ID[k]] = ZONE_MIRE;
-for (const k of ['LAKE', 'RIVER']) BIOME_ZONE[BIOME_ID[k]] = ZONE_FRESH;
+for (const k of ['WETLAND', 'BOG', 'SWAMP', 'MANGROVE', 'TUNDRA_BOG', 'POND', 'FLOODPLAIN', 'OASIS', 'REED_MARSH', 'BEAVER_POND']) BIOME_ZONE[BIOME_ID[k]] = ZONE_MIRE;
+for (const k of ['LAKE', 'RIVER', 'RAPIDS', 'OXBOW']) BIOME_ZONE[BIOME_ID[k]] = ZONE_FRESH;
 BIOME_ZONE[BIOME_ID.ALPINE_MEADOW] = ZONE_ALPINE;
 const REEF_COVER = 0.2;
 const THIRSTY = 0.35;
@@ -942,7 +942,7 @@ class AnimalPool {
 		this.walk = new Uint8Array(n);
 		for (let i = 0; i < n; i++) {
 			const b = world.biome[i];
-			if (b === BIOME_ID.RIVER || b === BIOME_ID.POND) this.walk[i] = 3;
+			if (b === BIOME_ID.RIVER || b === BIOME_ID.POND || b === BIOME_ID.RAPIDS) this.walk[i] = 3;
 			else if (WATER_BIOME_SET.has(b)) this.walk[i] = 2;
 			else this.walk[i] = b === BIOME_ID.GLACIER ? 0 : b === BIOME_ID.BEACH || b === BIOME_ID.CLIFF ? 17 : 1;
 			this.walk[i] |= 8;

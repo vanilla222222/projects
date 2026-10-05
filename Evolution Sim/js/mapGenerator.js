@@ -20,7 +20,11 @@ const HYDRO_RIVER_FLOW = 190;
 const HYDRO_WIDE_1 = 5;
 const HYDRO_WIDE_2 = 18;
 
-const WG_GEN = 5;
+const WG_GEN = 6;
+const WG6_RAPIDS = 0.024;
+const WG6_OXBOW = 0.28;
+const WG6_REED = -0.15;
+const WG6_WET = 0.06;
 const WG_WATER = 0.34;
 const WG_CONT_AREA = 22000;
 const WG_ISLE_AREA = 4200;
@@ -208,6 +212,7 @@ class WorldMap {
 		else if (v3) this._classifyBiomesV3();
 		else this._classifyBiomes();
 		if (this.gen >= 5) this._oceanBiomesV5();
+		if (this.gen >= 6) this._riversV6();
 		const sk = secretKindsForSeed(this.seed, this.gen, this.options.secret || null);
 		if (sk) this._placeSecrets(sk);
 	}
@@ -1743,6 +1748,44 @@ class WorldMap {
 					this.biome[i] = BIOME_ID.COLD_SEEP;
 				}
 			}
+		}
+	}
+
+	_riversV6() {
+		const { width, height } = this;
+		const sea = BIOME_THRESHOLDS.seaLevel;
+		const ox = new PerlinNoise(this.seed + 96001);
+		const rd = new PerlinNoise(this.seed + 96002);
+		const fresh = (i) => this.isRiver[i] || this.isLake[i] || this.isPond[i];
+		const freshD = this._distField(fresh, (i) => !this.isOcean[i], 2);
+		const wideD = this._distField((i) => this.isRiver[i] && !this.isLake[i], (i) => !this.isOcean[i] && !this.isLake[i] && !this.isRiver[i], 4);
+		const R = BIOME_ID.RIVER, FP = BIOME_ID.FLOODPLAIN;
+		const wetSet = new Set([BIOME_ID.WETLAND, BIOME_ID.SWAMP, BIOME_ID.BOG, FP]);
+		const oxbow = [];
+		for (let y = 1; y < height - 1; y++) {
+			for (let x = 1; x < width - 1; x++) {
+				const i = y * width + x;
+				const b = this.biome[i];
+				if (b === R) {
+					if (this.riverFlow[i] < HYDRO_WIDE_2 && this._slopeAt(x, y) > WG6_RAPIDS) this.biome[i] = BIOME_ID.RAPIDS;
+					continue;
+				}
+				if (!wetSet.has(b)) continue;
+				if (wideD[i] >= 2 && wideD[i] <= 4 && this.altitude[i] < sea + 0.1) {
+					const v = ox.noise2D(x * 0.12, y * 0.12);
+					if (v > WG6_OXBOW && Math.abs(ox.noise2D(x * 0.05 + 3.1, y * 0.05 - 1.7)) < 0.35) {
+						oxbow.push(i);
+						continue;
+					}
+				}
+				if (freshD[i] <= 2 && rd.noise2D(x * 0.09, y * 0.09) > WG6_REED) this.biome[i] = BIOME_ID.REED_MARSH;
+				this.humidity[i] = Math.min(1, this.humidity[i] + WG6_WET);
+			}
+		}
+		for (const i of oxbow) {
+			this.biome[i] = BIOME_ID.OXBOW;
+			this.isLake[i] = 1;
+			this.altitude[i] = Math.min(this.altitude[i], sea - 0.006);
 		}
 	}
 
