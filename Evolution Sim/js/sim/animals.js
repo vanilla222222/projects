@@ -1052,24 +1052,13 @@ class AnimalPool {
 		const pref = this._cleanPref;
 		let best = -1;
 		let bestD = r * r;
-		const gstart = this.gstart;
-		const gitems = this.gitems;
-		const alive = this.alive;
-		const domain = this.domain;
-		const X = this.x;
-		const Y = this.y;
-		const early = !pav;
-		const dkMin = mode === 1 ? 0.1 : lsp && lk < 1 ? lk : mode === 5 && pref && CLEAN_SPEC < 1 ? CLEAN_SPEC : 1;
 		for (let gy = r0; gy <= r1; gy++) {
 			for (let gx = c0; gx <= c1; gx++) {
 				const c = gy * cols + gx;
-				for (let k = gstart[c], e = gstart[c + 1]; k < e; k++) {
-					const j = gitems[k];
-					if (j === i || !alive[j]) continue;
-					const dx = X[j] - x;
-					const dy = Y[j] - y;
-					if (early && (dx * dx + dy * dy) * dkMin >= bestD) continue;
-					const dj = domain[j];
+				for (let k = this.gstart[c], e = this.gstart[c + 1]; k < e; k++) {
+					const j = this.gitems[k];
+					if (j === i || !this.alive[j]) continue;
+					const dj = this.domain[j];
 					if (dj !== dom || dom === 3) {
 						if (dj === 3 || dom === 3) {
 							if (mode === 5) {
@@ -1093,6 +1082,8 @@ class AnimalPool {
 						const dd = this.diet[j];
 						if ((dd < 0.33 ? 0 : dd < 0.66 ? 1 : 2) !== role) continue;
 					} else if (this.sp[j] !== sp || (mode === 4 ? this.home[j] !== 1 && this.home[j] !== 2 : this.age[j] < this.mature[j])) continue;
+					const dx = this.x[j] - x;
+					const dy = this.y[j] - y;
 					let dk = 1;
 					if (mode === 1) {
 						dk = 1 - DISPLAY_SEEN * this.show[j] - (this.alm[j] > 0 ? ALARM_SPOT : 0);
