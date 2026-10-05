@@ -103,6 +103,7 @@ class Ecosystem {
 		this.disease = typeof DiseaseLayer === 'function' ? new DiseaseLayer(world, this.plants, this.animals, this.registry, this.log, new FastRng(seed + 444)) : null;
 		this.animals.disease = this.disease;
 		this.plants.disease = this.disease;
+		this.plants.bugs = this.bugs;
 		this.disasters = typeof DisasterLayer === 'function' ? new DisasterLayer(world, this.plants, this.weather, this.animals, this.eggs, this.bugs, this.log, new FastRng(seed + 999)) : null;
 		this.animals.dis = this.disasters;
 		this.log.push(0, 'info', 'A new world begins.');
@@ -257,6 +258,7 @@ class Ecosystem {
 		s.plantBiomass = this.plants.totalBiomass;
 		s.fruit = this.plants.totalFruit;
 		s.fungi = this.plants.fungusTiles;
+		s.plantStrat = Object.assign({}, this.plants.strat);
 		s.flowers = this.plants.flowerTiles;
 		s.litter = this.plants.soil.totalLitter;
 		s.carrion = this.plants.soil.totalCarrion;

@@ -327,7 +327,10 @@ const PlantGpu = (() => {
 		}
 		let cover = 0;
 		let seedTiles = 0;
-		if (ck) seedTiles = L._seedPass(tick);
+		if (ck) {
+			L._strategies(tick);
+			seedTiles = L._seedPass(tick);
+		}
 		for (let i = 0; i < n; i++) {
 			if (species[i] || species[n + i]) cover++;
 		}
@@ -407,6 +410,7 @@ const PlantGpu = (() => {
 		t(TF.samp, L.seasonAmp);
 		t(TF.base, soil.base);
 		t(TF.water, L.water);
+		t(TF.decay, soil.decayK);
 		if (L.moistMul) t(TF.moist, L.moistMul);
 		else tF.fill(1, TF.moist * n, TF.moist * n + n);
 		ctx.sMoist.set(tF.subarray(TF.moist * n, TF.moist * n + n));

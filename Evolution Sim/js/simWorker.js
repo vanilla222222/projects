@@ -2,10 +2,10 @@ const DEFAULT_SCRIPTS = ['noise.js', 'biomes.js', 'mapGenerator.js', 'sim/core.j
 const SNAP_LAYERS = ['plants', 'animals', 'eggs', 'bugs', 'weather', 'disease', 'disasters'];
 const SNAP_POOLS = ['animals', 'eggs'];
 const SNAP_GRIDS = {
-	plants: ['species', 'biomass', 'cap', 'age', 'life', 'health', 'blight', 'kind', 'fruit', 'poll', 'pheno'],
+	plants: ['species', 'biomass', 'cap', 'age', 'life', 'health', 'blight', 'kind', 'fruit', 'poll', 'pheno', 'bloom'],
 	soil: ['nutrient', 'litter'],
 	bugs: ['species', 'density', 'total', 'dorm'],
-	weather: ['wet', 'snow', 'fresh', 'waterDist'],
+	weather: ['wet', 'snow', 'fresh', 'waterDist', 'cool'],
 	animals: ['terrSp', 'terrUid', 'terrUntil'],
 	disasters: ['fire', 'flood', 'scar', 'scarK', 'risk'],
 	disease: ['vectorLoad'],

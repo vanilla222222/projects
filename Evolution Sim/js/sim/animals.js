@@ -169,6 +169,7 @@ const BERG_K = 0.22;
 const FOREST_SLOW = 0.7;
 const FOREST_FREE = 0.25;
 const AMPH_MIRE = 0.22;
+const HYPOXIA_COST = 1.5;
 const AMPH_FRESH = 0.1;
 const AEST_MAMM_MASS = 1.2;
 const BIOME_ZONE = new Uint8Array(BIOME_LIST.length);
@@ -234,6 +235,7 @@ const JUV_HUNT = 0.35;
 const META_AGE = 0.5;
 const TAD_DIET = 0.1;
 const TAD_FOOD = 1.8;
+const TAD_ALGAE = 0.8;
 const TAD_HIDE = 0.55;
 const TAD_WANDER = 3;
 const LARVA_DIET = 0.2;
@@ -2139,7 +2141,7 @@ class AnimalPool {
 					wv = 1;
 				}
 				else {
-					wv -= THIRST * (1 - 0.6 * this.dry[i]) * (0.6 + temp[tile] + seasonT + droughtK) * (this.cold[i] > 0.5 ? 0.6 : 1) * (amph ? AMPH_DRY : 1) * (inv ? INVERT_THIRST : 1) * (herdM && this.ld[i] ? ELDER_THIRST : 1) * (this.walk[tile] & 64 ? 1 + ((amph ? SALT_THIRST_AMPH : SALT_THIRST) - 1) * (1 - 0.7 * this.dry[i]) : 1);
+					wv -= THIRST * (1 - 0.6 * this.dry[i]) * (0.6 + temp[tile] + seasonT - Wx.cool[tile] + droughtK) * (this.cold[i] > 0.5 ? 0.6 : 1) * (amph ? AMPH_DRY : 1) * (inv ? INVERT_THIRST : 1) * (herdM && this.ld[i] ? ELDER_THIRST : 1) * (this.walk[tile] & 64 ? 1 + ((amph ? SALT_THIRST_AMPH : SALT_THIRST) - 1) * (1 - 0.7 * this.dry[i]) : 1);
 					if (wv < 0) wv = 0;
 				}
 				this.water[i] = wv;
@@ -2287,7 +2289,7 @@ class AnimalPool {
 					this.ttl[i]--;
 					acted = true;
 				}
-				if (this.walk[tile] & 2 && this.energy[i] < full) this.energy[i] += this._eat(i, m75 * TAD_FOOD, FOOD_LEAF, sk0);
+				if (this.walk[tile] & 2 && this.energy[i] < full) this.energy[i] += this._eat(i, m75 * TAD_FOOD * this._algae(tile), FOOD_LEAF, sk0);
 			}
 
 			if (!acted && this.dsp[i] > 0) {
@@ -2530,6 +2532,10 @@ class AnimalPool {
 			const dry = Wx && dom !== 1 && this.water[i] <= 0;
 			if (dry) cost *= DEHYDRATE_COST;
 			cost += moved * 0.012 * this.mass[i];
+			if (dom === 1 && !this.lv[i]) {
+				const o2 = this.plants.oxygen[tile];
+				if (o2 < HYPOXIA) cost *= 1 + HYPOXIA_COST * (HYPOXIA - o2) / HYPOXIA;
+			}
 			this.energy[i] -= cost;
 			const jv = gf < 1;
 			const rt = (cost / emax) * NUT_K;
@@ -3296,6 +3302,14 @@ class AnimalPool {
 		if (this.diet[p] >= 0.66) return;
 		const sp = this.registry.get(this.sp[p]);
 		this.eatenBy[this.cls[p] * 2 + (sp && sp.mean[G_ALARM] > ALARM_MIN ? 1 : 0)]++;
+	}
+
+	_algae(tile) {
+		const P = this.plants;
+		let a = P.bloom[tile];
+		const u = P.n + tile;
+		if (P.water[tile] && P.species[u]) a += P.biomass[u];
+		return 1 + TAD_ALGAE * (a < 1 ? a : 1);
 	}
 
 	_kill(i, frac = 1) {

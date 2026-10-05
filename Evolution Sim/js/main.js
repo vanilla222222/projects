@@ -759,6 +759,12 @@ const PLANT_TRAITS = [
 	['Height', 20, (v) => pct(v), null],
 	['Climbing', 21, (v) => pct(v), null],
 	['Clonal spread', 22, (v) => pct(v), null],
+	['Nitrogen fixing', 23, (v) => pct(v), null],
+	['Water storage', 24, (v) => pct(v), null],
+	['Heterotrophy', 25, (v) => pct(v), null],
+	['Allelopathy', 26, (v) => pct(v), null],
+	['Thorns', 27, (v) => pct(v), null],
+	['Induced defence', 28, (v) => pct(v), null],
 ];
 
 function plantLifeBadges(sp) {
@@ -771,6 +777,12 @@ function plantLifeBadges(sp) {
 	out.push(PLANT_CYCLE_LABEL[plantCycle(g, 0)]);
 	if (!herb) out.push(g[18] > DECID_AT ? 'Deciduous' : 'Evergreen');
 	if (g[22] > 0.5) out.push(herb ? 'Spreads by runners' : 'Suckers');
+	if (g[23] > FIX_AT) out.push('Nitrogen fixer');
+	if (g[24] > SUCC_AT) out.push('Succulent');
+	if (herb && g[25] > HET_AT) out.push(climb ? 'Parasitic' : 'Carnivorous');
+	if (g[26] > ALLELO_AT) out.push('Allelopathic');
+	if (g[27] > 0.4) out.push('Thorny');
+	if (g[28] > 0.4) out.push('Induced defence');
 	return out.map((t) => `<span class="badge">${t}</span>`);
 }
 

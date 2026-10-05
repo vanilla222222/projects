@@ -2,11 +2,11 @@ const PlantKernels = (() => {
 	const WG = 64;
 	const SLOT_F = { bio: 0, health: 1, fruit: 2, cap: 3, growth: 4, shade: 5, disp: 6, fruitK: 7, bloomK: 8, root: 9, sat: 10, own: 11 };
 	const SLOT_U = { occ: 0, kind: 1, myco: 2, life: 3, age: 4, blight: 5, form: 6 };
-	const TILE_F = { nut: 0, litter: 1, carrion: 2, poll: 3, moist: 4, samp: 5, base: 6, water: 7, tile: 8 };
+	const TILE_F = { nut: 0, litter: 1, carrion: 2, poll: 3, moist: 4, samp: 5, base: 6, water: 7, tile: 8, decay: 9 };
 	const PART = { total: 0, fruit: 1, fungi: 2, flowers: 3, flowerPoll: 4, seedlings: 5, mature: 6, old: 7, litter: 8, carrion: 9 };
 	const NF_SLOT = 12;
 	const NU_SLOT = 7;
-	const NF_TILE = 9;
+	const NF_TILE = 10;
 	const N_PART = 10;
 	const UNIFORM_BYTES = 112;
 
@@ -140,7 +140,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>, @builtin(local_invocation
 		}
 		let L = tF[ti(${TILE_F.litter}u, i)];
 		if (L > 0.0) {
-			let d = L * ${f(LITTER_DECAY)};
+			let d = L * ${f(LITTER_DECAY)} * tF[ti(${TILE_F.decay}u, i)];
 			tF[ti(${TILE_F.litter}u, i)] = L - d;
 			tl = L - d;
 			N += d * ${f(SOIL_RECYCLE)};
@@ -272,7 +272,9 @@ fn slot(p: u32, i: u32, under: bool) -> bool {
 	sF[fi(${SLOT_F.health}u, p)] = h;
 	if (young) { K *= ${f(SEEDLING_K0)} + ((1.0 - ${f(SEEDLING_K0)}) * ag) / mt; }
 	let sm = 1.0 + tF[ti(${TILE_F.samp}u, i)] * u.season;
-	let r = sF[fi(${SLOT_F.growth}u, p)] * select(0.05, sm, sm > 0.05) * light * (0.35 + 0.65 * h) * tax * tF[ti(${TILE_F.moist}u, i)] * select(1.0, ${f(OLD_GROWTH)}, aged);
+	let mo = tF[ti(${TILE_F.moist}u, i)];
+	let mm = select(mo, mo + (1.0 - mo) * ${f(SUCC_DRY)}, mo < 1.0 && (fm & ${FORM_SUCC}u) != 0u);
+	let r = sF[fi(${SLOT_F.growth}u, p)] * select(0.05, sm, sm > 0.05) * light * (0.35 + 0.65 * h) * tax * mm * select(1.0, ${f(OLD_GROWTH)}, aged);
 	let bb = select(0.03, b, b > 0.03);
 	b += r * bb * (1.0 - b / K);
 	if (b > K) { b = K; }

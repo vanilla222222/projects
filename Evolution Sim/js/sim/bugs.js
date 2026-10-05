@@ -175,12 +175,12 @@ class BugLayer {
 			if (P.species[i]) {
 				const v = P.biomass[i];
 				b += v;
-				def += v * P.genome[i * PG + 13];
+				def += v * Math.min(1, P.genome[i * PG + 13] + P.induced[i]);
 			}
 			if (P.species[u] && !P.kind[u]) {
 				const v = P.biomass[u];
 				b += v;
-				def += v * P.genome[u * PG + 13];
+				def += v * Math.min(1, P.genome[u * PG + 13] + P.induced[u]);
 			}
 			if (!(b > 0)) return 0;
 			const f = (b < PEST_FULL ? b / PEST_FULL : 1) * (1 - (PEST_DEFENCE * def) / b);
@@ -386,6 +386,7 @@ class BugLayer {
 		const pspecies = P.species;
 		const pkind = P.kind;
 		const pgen = P.genome;
+		const pind = P.induced;
 		const bloomK = P._bloomK;
 		const phue = P.hue;
 		const sf = POLL_WINTER + (1 - POLL_WINTER) * P.bloomNow;
@@ -426,12 +427,12 @@ class BugLayer {
 					if (pspecies[i]) {
 						const v = pbio[i];
 						b = v;
-						def = v * pgen[i * PG + 13];
+						def = v * Math.min(1, pgen[i * PG + 13] + pind[i]);
 					}
 					if (pspecies[u] && !pkind[u]) {
 						const v = pbio[u];
 						b += v;
-						def += v * pgen[u * PG + 13];
+						def += v * Math.min(1, pgen[u * PG + 13] + pind[u]);
 					}
 					food = b > 0 ? (b < PEST_FULL ? b / PEST_FULL : 1) * (1 - (PEST_DEFENCE * def) / b) : 0;
 				} else if (niche === BUG_DETRI) {
