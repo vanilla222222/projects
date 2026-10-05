@@ -302,6 +302,13 @@ class DiseaseLayer {
 
 	step(tick) {
 		if (!this.on) return;
+		this._decay();
+		if (tick % BLIGHT_EVERY === 0 && this.bCount) this._blightPass(tick);
+		if (tick % DIEOFF_EVERY === 0) this._dieoff(tick);
+		this.version++;
+	}
+
+	_decay() {
 		const n = this.n;
 		const cs = this.carcassStrain;
 		const cl = this.carcassLoad;
@@ -327,9 +334,6 @@ class DiseaseLayer {
 				vl[i] = v;
 			}
 		}
-		if (tick % BLIGHT_EVERY === 0 && this.bCount) this._blightPass(tick);
-		if (tick % DIEOFF_EVERY === 0) this._dieoff(tick);
-		this.version++;
 	}
 
 	_blightPass(tick) {
