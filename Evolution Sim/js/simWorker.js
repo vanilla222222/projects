@@ -10,11 +10,14 @@ const SNAP_GRIDS = {
 	disasters: ['fire', 'flood', 'scar', 'scarK', 'risk'],
 	disease: ['vectorLoad'],
 };
+const SNAP_VOLATILE = new Set(['plants.species', 'plants.biomass', 'plants.cap', 'plants.age', 'plants.life', 'plants.health', 'plants.kind', 'plants.fruit', 'plants.poll', 'soil.nutrient', 'soil.litter', 'bugs.species', 'bugs.density', 'bugs.total', 'weather.wet', 'weather.fresh']);
 const SNAP_STATIC = { plants: ['water', 'depth'] };
 const SNAP_PLANT_GENES = [8, 10, 11];
 const FIELD_MS = 180;
 const GENE_MS = 1000;
 const SLOW_MS = 240;
+const GRID_HOT = 3;
+const GRID_RETRY = 24;
 const SLICE_MS = 12;
 const MAX_SPEED = 600;
 const GPU_SCRIPTS = ['gpu/plantKernels.js', 'gpu/plantGpu.js'];
@@ -108,7 +111,7 @@ function loop() {
 }
 
 function freshSent() {
-	return { frameTick: -1, fieldTick: -1, fieldAt: 0, geneTick: -1, geneAt: 0, slowTick: -1, slowAt: 0, logVersion: -1, nextId: 1, living: new Set(), species: new Map(), history: new Map() };
+	return { frameTick: -1, fieldTick: -1, fieldAt: 0, geneTick: -1, geneAt: 0, slowTick: -1, slowAt: 0, logVersion: -1, nextId: 1, living: new Set(), species: new Map(), history: new Map(), grids: new Map() };
 }
 
 function copyOf(a, n, transfer) {
@@ -141,6 +144,55 @@ function poolArrays(pool, out, transfer) {
 
 function gridArrays(o, keys, out, transfer) {
 	for (const k of keys) if (o && ArrayBuffer.isView(o[k])) out[k] = copyOf(o[k], undefined, transfer);
+}
+
+function wordsOf(a) {
+	return a.byteLength % 4 === 0 ? new Int32Array(a.buffer, a.byteOffset, a.byteLength >> 2) : new Uint8Array(a.buffer, a.byteOffset, a.byteLength);
+}
+
+function sameWords(a, b) {
+	if (a.length !== b.length) return false;
+	for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+	return true;
+}
+
+function gridChanged(id, a, force) {
+	const grids = sim.sent.grids;
+	let e = grids.get(id);
+	if (!e) {
+		e = { ref: null, shadow: null, words: null, hot: 0, wait: 0 };
+		grids.set(id, e);
+	}
+	const same = e.ref === a;
+	if (!force && same && e.words && sameWords(e.words, wordsOf(a))) {
+		e.hot = 0;
+		return false;
+	}
+	const tracked = same && e.words !== null;
+	e.ref = a;
+	e.hot = tracked ? e.hot + 1 : 0;
+	if (e.hot >= GRID_HOT) {
+		e.shadow = null;
+		e.words = null;
+		e.hot = 0;
+		e.wait = GRID_RETRY;
+	} else if (e.wait > 0) e.wait--;
+	else {
+		if (!e.shadow || e.shadow.length !== a.length || e.shadow.constructor !== a.constructor) {
+			e.shadow = a.slice();
+			e.words = wordsOf(e.shadow);
+		} else e.shadow.set(a);
+	}
+	return true;
+}
+
+function changedGrids(name, o, keys, out, transfer, force) {
+	for (const k of keys) {
+		const a = o && o[k];
+		if (!ArrayBuffer.isView(a)) continue;
+		const id = name + '.' + k;
+		if (SNAP_VOLATILE.has(id) || gridChanged(id, a, force)) out[k] = copyOf(a, undefined, transfer);
+	}
 }
 
 function arrayDelta(key, arr, out) {
@@ -228,7 +280,7 @@ function frameSnapshot(force) {
 			const src = k === 'soil' ? eco.plants.soil : eco[k];
 			if (!src) continue;
 			L[k] = L[k] || {};
-			gridArrays(src, SNAP_GRIDS[k], L[k], transfer);
+			changedGrids(k, src, SNAP_GRIDS[k], L[k], transfer, force);
 		}
 	}
 	if (force || (eco.tick !== sent.geneTick && now - sent.geneAt > GENE_MS)) {
@@ -236,9 +288,9 @@ function frameSnapshot(force) {
 		sent.geneAt = now;
 		const P = eco.plants;
 		const slots = 2 * P.n;
-		const g = new Float32Array(slots * SNAP_PLANT_GENES.length);
-		const G = P.genome;
 		const m = SNAP_PLANT_GENES.length;
+		const g = new Float32Array(slots * m);
+		const G = P.genome;
 		for (let p = 0; p < slots; p++) {
 			const o = p * PG;
 			for (let j = 0; j < m; j++) g[p * m + j] = G[o + SNAP_PLANT_GENES[j]];
