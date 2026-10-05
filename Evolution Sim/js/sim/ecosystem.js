@@ -9,7 +9,7 @@ const STAT_GROUPS = [
 const ROLE_KEYS = ['herb', 'omni', 'carn', 'scav'];
 const ROLE_LABELS = ['Herbivores', 'Omnivores', 'Predators', 'Scavengers'];
 const MIGRATE_PREY = 150;
-const BIRD_REVIVE = 10;
+const BIRD_REVIVE = 16;
 
 const HISTORY_EVERY = 5;
 const MERGE_EVERY = 120;

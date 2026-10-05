@@ -271,18 +271,18 @@ function classifyLandBiomeV3(altitude, temperature, humidity, slope, t = BIOME_T
 
 const BIOME_V4 = {
 	jitter: 0.022,
-	meadowAlt: 0.05,
-	meadowTempLo: 0.28,
-	meadowTempHi: 0.5,
-	meadowHum: 0.38,
-	meadowSlope: 0.03,
-	duneHum: 0.14,
-	duneTemp: 0.6,
-	duneSlope: 0.014,
-	floodRise: 0.1,
-	floodSlope: 0.014,
+	meadowAlt: 0.02,
+	meadowTempLo: 0.25,
+	meadowTempHi: 0.52,
+	meadowHum: 0.3,
+	meadowSlope: 0.05,
+	duneHum: 0.2,
+	duneTemp: 0.54,
+	duneSlope: 0.022,
+	floodRise: 0.14,
+	floodSlope: 0.022,
 	floodTemp: 0.3,
-	floodHum: 0.25,
+	floodHum: 0.2,
 	oasisTemp: 0.56,
 	oasisHum: 0.24,
 };
@@ -293,5 +293,6 @@ function classifyLandBiomeV4(altitude, temperature, humidity, slope, t = BIOME_T
 	}
 	const b = classifyLandBiomeV3(altitude, temperature, humidity, slope, t, v);
 	if (b === BIOME.DESERT && temperature > w.duneTemp && humidity < w.duneHum && slope < w.duneSlope) return BIOME.DUNES;
+	if (b === BIOME.BADLANDS && temperature > w.duneTemp + 0.04 && humidity < w.duneHum - 0.04 && slope < w.duneSlope * 0.6) return BIOME.DUNES;
 	return b;
 }

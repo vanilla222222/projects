@@ -1571,7 +1571,7 @@ class WorldMap {
 		const oceanD = this._distField((i) => this.isOcean[i], (i) => !this.isOcean[i], 3);
 		const landD = this._distField((i) => !this.isOcean[i] && !this.isRiver[i], (i) => this.isOcean[i], 6);
 		const riverD = this._distField((i) => this.isRiver[i], () => true, 3);
-		const wideD = this._distField((i) => this.isRiver[i] && this.riverFlow[i] >= HYDRO_WIDE_1, (i) => !this.isOcean[i] && !this.isLake[i], 3);
+		const wideD = this._distField((i) => this.isRiver[i] && this.riverFlow[i] >= HYDRO_WIDE_1, (i) => !this.isOcean[i] && !this.isLake[i], 4);
 		const oasisD = this._distField((i) => oasis[i] === 1, (i) => !this.isOcean[i] && !this.isLake[i], 4);
 		const generic = new Uint8Array(n);
 		for (let y = 0; y < height; y++) {
