@@ -749,6 +749,14 @@ class Ecosystem {
 				const cat = animalCategory(a.g, a.domain, a.cls, a.nic | 0);
 				if (!seen.has(cat)) tryIntro(a, `${ANIMAL_CATEGORY_LABEL[cat].toLowerCase()} returned from the open sea`);
 			}
+			if (this.rivers) {
+				for (let i = 0; i < A.count; i++) if (A.alive[i] && A.domain[i] !== 1) seen.add(this.registry.get(A.sp[i]).category);
+				for (const k of RIVER_ARCH) {
+					const a = ANIMAL_ARCHETYPES[k];
+					const cat = animalCategory(a.g, a.domain, a.cls, a.nic | 0);
+					if (!seen.has(cat)) tryIntro(a, `${ANIMAL_CATEGORY_LABEL[cat].toLowerCase()} came back up the river`);
+				}
+			}
 		}
 		const B = this.bugs;
 		if (B) for (let k = 0; k < 4; k++) if (B.tiles[k] === 0) B.reintroduce(k);

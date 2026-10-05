@@ -493,9 +493,10 @@ const ANIMAL_ARCHETYPES = [
 	{ domain: 'amph', cls: CLS_REPT, n: 8, g: [0.8, 0.35, 0.55, 0.92, 0.78, 0.45, 0.45, 0.5, 0.8, 0.15, 0.3, 0.6, 0.05, 0.85, 0.4, 0.55, 0.1, 0.3, 0.3] },
 	{ domain: 'air', cls: CLS_INVT, n: 30, g: [0.06, 0.7, 0.7, 0.85, 0.65, 0.5, 0.85, 0.4, 0.05, 0.15, 0.1, 0.2, 0.1, 0.6, 0.3, 0.1, 0.05, 0.3, 0.2] },
 	{ domain: 'air', cls: CLS_INVT, n: 24, g: [0.03, 0.5, 0.4, 0.06, 0.55, 0.55, 0.7, 0.4, 0.02, 0.15, 0.1, 0.05, 0.7, 0.6, 0.3, 0.05, 0.05, 0.3, 0.2] },
-	{ domain: 'water', cls: CLS_INVT, n: 30, g: [0.12, 0.05, 0.25, 0.06, 0.5, 0.6, 0.85, 0.4, 0.85, 0.15, 0.1, 0.05, 0.6, 0.6, 0.3, 0.05, 0.05, 0.2, 0.2] },
+	{ domain: 'water', cls: CLS_INVT, n: 30, g: [0.12, 0.05, 0.25, 0.06, 0.5, 0.6, 0.55, 0.4, 0.85, 0.15, 0.1, 0.05, 0.6, 0.6, 0.3, 0.05, 0.05, 0.2, 0.2] },
 ];
 const MARINE_ARCH = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
+const RIVER_ARCH = [48, 49, 50, 51, 52, 53, 54, 55, 56];
 
 const FOUNDER_ALARM_BIRD = 0.55;
 const FOUNDER_ALARM_PREY = 0.5;
@@ -3534,7 +3535,7 @@ class AnimalPool {
 		const massRatio = (this.mass[i] * this.gf[i]) / mp;
 		const sizeF = Math.min(1.2, Math.max(0.15, massRatio * 0.85));
 		const sf0 = this.cls[i] === CLS_INVT && this.domain[i] === 1 && this.genome[i * AG + G_SPEED] < JELLY_SPEED ? 0.5 : this.spd[i] / (this.spd[i] + this.spd[p] * 0.7);
-		const speedF = this.cls[i] === CLS_FISH && this.domain[i] === 1 && this.genome[i * AG + G_SPEED] < AMBUSH_SPEED && sf0 < AMBUSH_F ? AMBUSH_F : sf0;
+		const speedF = this.cls[i] === CLS_FISH && this.domain[i] === 1 && (this.genome[i * AG + G_SPEED] < AMBUSH_SPEED || this.plants.sal[tile] === 0) && sf0 < AMBUSH_F ? AMBUSH_F : sf0;
 		const cover = this.nic[i]
 			? BIRD_STRIKE
 			: this.domain[p] === 1
@@ -3566,7 +3567,7 @@ class AnimalPool {
 			this._kill(p, CARCASS_EATEN);
 			this.deaths.eaten++;
 		} else if (pn === 1 && this.rng.next() < chance && !this._taste(i, p, tick)) {
-			const mg = (mp * MEAT_ENERGY * this.meatEff[i] + (this.energy[p] + this.fat[p]) * 0.25) * (1 - GEN_TAX * (1 - this._genT(i)));
+			const mg = (mp * MEAT_ENERGY * this.meatEff[i] + (this.energy[p] + this.fat[p]) * 0.25) * (1 - GEN_TAX * (1 - this._genT(i))) * (this.domain[i] === 1 && this.plants.sal[tile] === 0 ? FRESH_FOOD : 1);
 			if (tk > 0) this._toolUse(i, mg * TOOL_K * tk);
 			this.energy[i] += this._eat(i, mg * (1 + TOOL_K * tk), this.domain[p] === 1 || this.cls[p] === CLS_FISH ? FOOD_FISH : FOOD_MEAT, this.strain[i]);
 			if (this.domain[i] !== 1) this.water[i] = Math.min(1, this.water[i] + MEAT_WATER);

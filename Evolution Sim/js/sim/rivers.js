@@ -9,9 +9,11 @@ const RIV_WASH_FLOW = 2;
 const SALMON_RUN = 0.45;
 const SALMON_READY = 0.45;
 const SALMON_HEAD = 1.6;
-const MUSSEL_FILTER = 0.05;
+const MUSSEL_FILTER = 0.2;
 const MUSSEL_E = 2.4;
 const MUSSEL_NUT = 0.5;
+const MUSSEL_PLANK = 0.05;
+const MUSSEL_PE = 12;
 const FLOOD_AT = 60;
 const FLOOD_PULSE = 0.08;
 const RIV_FLOOD_R = 7;
@@ -242,7 +244,8 @@ class RiverLayer {
 			if (dom === 1 && A.lv[i] > 0 && flowing && (fdx[t] || fdy[t])) {
 				const nx = x + fdx[t] * RIV_LARVA;
 				const ny = y + fdy[t] * RIV_LARVA;
-				if (A.canStand(1, nx, ny) && A.walk[(ny | 0) * W + (nx | 0)] & 2) {
+				const nt = (ny | 0) * W + (nx | 0);
+				if (A.canStand(1, nx, ny) && A.walk[nt] & 2 && (P.sal[nt] === 0 || P.sal[t] !== 0)) {
 					A.x[i] = nx;
 					A.y[i] = ny;
 					this.larvaDrift++;
@@ -278,12 +281,21 @@ class RiverLayer {
 				if (room <= 0) continue;
 				let f = S.litter[t] * MUSSEL_FILTER;
 				if (f * MUSSEL_E > room) f = room / MUSSEL_E;
-				if (f <= 0) continue;
-				S.litter[t] -= f;
-				const v = S.nutrient[t] + f * MUSSEL_NUT;
-				S.nutrient[t] = v < SOIL_MAX ? v : SOIL_MAX;
-				A.energy[i] += f * MUSSEL_E;
-				this.filtered += f;
+				if (f > 0) {
+					S.litter[t] -= f;
+					const v = S.nutrient[t] + f * MUSSEL_NUT;
+					S.nutrient[t] = v < SOIL_MAX ? v : SOIL_MAX;
+					A.energy[i] += f * MUSSEL_E;
+					this.filtered += f;
+				}
+				const r2 = full - A.energy[i];
+				let q = S.nutrient[t] * MUSSEL_PLANK;
+				if (q * MUSSEL_PE > r2) q = r2 / MUSSEL_PE;
+				if (q > 0) {
+					S.nutrient[t] -= q;
+					A.energy[i] += q * MUSSEL_PE;
+					this.filtered += q;
+				}
 			} else if (k === KIND_BEAVER) {
 				if (!canDam || dam >= 0 || !flowing || A.age[i] < A.mature[i] || A.energy[i] < full * DAM_READY) continue;
 				if (this.rng.next() < DAM_P) {
