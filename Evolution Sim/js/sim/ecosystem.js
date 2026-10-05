@@ -801,4 +801,14 @@ class Ecosystem {
 	year() {
 		return Math.floor(this.tick / YEAR_TICKS) + 1;
 	}
+
+	applyGod(action) {
+		if (typeof GodTools !== 'function') return { ok: false, count: 0 };
+		if (!this.god) this.god = new GodTools();
+		return this.god.apply(this, action);
+	}
+
+	godVersion() {
+		return this.god ? this.god.version : this._godVersion || 0;
+	}
 }

@@ -1,4 +1,4 @@
-const DEFAULT_SCRIPTS = ['noise.js', 'biomes.js', 'mapGenerator.js', 'sim/core.js', 'sim/soil.js', 'sim/plants.js', 'sim/animals.js', 'sim/bugs.js', 'sim/disease.js', 'sim/weather.js', 'sim/eggs.js', 'sim/disasters.js', 'sim/ecosystem.js', 'save.js'];
+const DEFAULT_SCRIPTS = ['noise.js', 'biomes.js', 'mapGenerator.js', 'sim/core.js', 'sim/soil.js', 'sim/plants.js', 'sim/animals.js', 'sim/bugs.js', 'sim/disease.js', 'sim/weather.js', 'sim/eggs.js', 'sim/disasters.js', 'sim/god.js', 'sim/ecosystem.js', 'save.js'];
 const SNAP_LAYERS = ['plants', 'animals', 'eggs', 'bugs', 'weather', 'disease', 'disasters'];
 const SNAP_POOLS = ['animals', 'eggs'];
 const SNAP_GRIDS = {
@@ -38,6 +38,7 @@ const sim = {
 	attaching: 0,
 	waiting: false,
 	saving: false,
+	godDirty: false,
 };
 
 const wake = new MessageChannel();
@@ -111,7 +112,7 @@ function loop() {
 }
 
 function freshSent() {
-	return { frameTick: -1, fieldTick: -1, fieldAt: 0, geneTick: -1, geneAt: 0, slowTick: -1, slowAt: 0, logVersion: -1, nextId: 1, living: new Set(), species: new Map(), history: new Map(), grids: new Map() };
+	return { frameTick: -1, fieldTick: -1, fieldAt: 0, geneTick: -1, geneAt: 0, slowTick: -1, slowAt: 0, logVersion: -1, worldVersion: -1, nextId: 1, living: new Set(), species: new Map(), history: new Map(), grids: new Map() };
 }
 
 function copyOf(a, n, transfer) {
@@ -253,6 +254,10 @@ function historyDelta() {
 
 function frameSnapshot(force) {
 	const eco = sim.eco;
+	if (sim.godDirty) {
+		force = true;
+		sim.godDirty = false;
+	}
 	const sent = sim.sent;
 	const now = performance.now();
 	const transfer = [];
@@ -305,6 +310,19 @@ function frameSnapshot(force) {
 		msg.stats = eco.stats;
 		msg.history = historyDelta();
 	}
+	const wv = eco.godVersion();
+	if (wv !== sent.worldVersion) {
+		sent.worldVersion = wv;
+		msg.worldVersion = wv;
+		if (wv > 0) {
+			msg.world = worldInit(eco.world, transfer);
+			msg.statics = {};
+			for (const k of Object.keys(SNAP_STATIC)) {
+				msg.statics[k] = {};
+				gridArrays(eco[k], SNAP_STATIC[k], msg.statics[k], transfer);
+			}
+		}
+	}
 	if (eco.log.version !== sent.logVersion) {
 		sent.logVersion = eco.log.version;
 		msg.log = { items: eco.log.items, version: eco.log.version };
@@ -342,6 +360,7 @@ function install(eco, id, meta) {
 	}
 	const has = {};
 	for (const k of SNAP_LAYERS) has[k] = !!eco[k];
+	sim.sent.worldVersion = eco.godVersion();
 	post({ type: 'ready', id, gen: sim.gen, seed: eco.seed, options: Object.assign({}, eco.options), world: worldInit(eco.world, transfer), statics, has, meta: meta || null }, transfer);
 	frameSnapshot(true);
 	schedule(0);
@@ -398,6 +417,21 @@ const handlers = {
 			const name = EvoSave.fileName(eco);
 			const bytes = await EvoSave.encode(eco, m.meta || {}, fast ? { fast: true } : undefined);
 			post({ type: 'reply', id: m.id, name, bytes }, [bytes.buffer]);
+		} finally {
+			sim.saving = false;
+			schedule(0);
+		}
+	},
+	async god(m) {
+		if (!sim.eco) throw new Error('No world');
+		const eco = sim.eco;
+		sim.saving = true;
+		try {
+			const fast = fastOn() && (await PlantGpu.sync(eco.plants));
+			const result = eco.applyGod(m.action);
+			if (fast) PlantGpu.invalidate(eco.plants);
+			sim.godDirty = true;
+			post({ type: 'reply', id: m.id, result });
 		} finally {
 			sim.saving = false;
 			schedule(0);

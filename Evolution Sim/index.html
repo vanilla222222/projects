@@ -147,6 +147,35 @@
 					<svg viewBox="0 0 24 24" width="16" height="16"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
 				</button>
 			</div>
+			<button class="god-toggle" id="godToggle" title="God tools (G)" aria-pressed="false" aria-controls="godPalette">
+				<svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z M19 16l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" fill="currentColor"/></svg>
+			</button>
+			<div class="god-palette" id="godPalette" role="toolbar" aria-label="God tools" hidden>
+				<div class="gp-head">
+					<strong>God tools</strong>
+					<span class="gp-active" id="godActive">No tool</span>
+					<button class="gp-close" id="godClose" title="Close (G)">✕</button>
+				</div>
+				<div class="gp-tools" id="godTools">
+					<button data-tool="spawn" title="Spawn a species" data-icon="paw"><span class="gp-ico"></span><span>Spawn</span></button>
+					<button data-tool="biome" title="Paint a biome"><span class="gp-ico"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M14.5 3.5l6 6-8.5 8.5-6-6z M5 13.5l5.5 5.5c-1.5 2-4 2.5-7 2 .3-2.6.4-5.3 1.5-7.5z" fill="currentColor"/></svg></span><span>Biome</span></button>
+					<button data-tool="warm" title="Make tiles warmer" data-icon="sun"><span class="gp-ico"></span><span>Warmer</span></button>
+					<button data-tool="cold" title="Make tiles colder" data-icon="snow"><span class="gp-ico"></span><span>Colder</span></button>
+					<button data-tool="wet" title="Make tiles wetter" data-icon="drop"><span class="gp-ico"></span><span>Wetter</span></button>
+					<button data-tool="dry" title="Make tiles drier" data-icon="flame"><span class="gp-ico"></span><span>Drier</span></button>
+				</div>
+				<label class="gp-row">Brush <input type="range" id="godBrush" min="0" max="12" value="2"><output id="godBrushOut">2</output></label>
+				<div class="gp-pane" id="godSpawnPane" hidden>
+					<label class="gp-row">Count <input type="range" id="godCount" min="1" max="100" value="10"><output id="godCountOut">10</output></label>
+					<input type="search" class="gp-search" id="godSearch" placeholder="Search living species" autocomplete="off">
+					<div class="gp-list" id="godSpecies"></div>
+				</div>
+				<div class="gp-pane" id="godBiomePane" hidden>
+					<div class="gp-list gp-biomes" id="godBiomes"></div>
+				</div>
+				<div class="gp-hint" id="godHint">Pick a tool, then click or drag on the map. Esc drops the tool.</div>
+			</div>
+			<div class="god-ring" id="godRing" hidden></div>
 			<div class="map-legend" id="rainLegend" hidden>
 				<div class="ml-title">Rainfall</div>
 				<div class="ml-ramp"></div>
@@ -224,6 +253,7 @@
 								<dt><kbd>F</kbd></dt><dd>Fit the map</dd>
 								<dt><kbd>T</kbd></dt><dd>Family tree of the selected species</dd>
 								<dt><kbd>W</kbd></dt><dd>Toggle the weather overlay</dd>
+								<dt><kbd>G</kbd></dt><dd>God tools palette (Esc drops the tool)</dd>
 								<dt><kbd>?</kbd> <kbd>H</kbd></dt><dd>This help</dd>
 								<dt><kbd>Esc</kbd></dt><dd>Close an overlay, then the details panel</dd>
 							</dl>
@@ -265,6 +295,7 @@
 						<button data-f="outbreak">Outbreaks</button>
 						<button data-f="weather">Weather</button>
 						<button data-f="disaster">Disasters</button>
+						<button data-f="god">God</button>
 					</div>
 				</div>
 				<ul class="event-list" id="eventList"></ul>
@@ -313,6 +344,7 @@
 	<script src="js/sim/weather.js"></script>
 	<script src="js/sim/eggs.js"></script>
 	<script src="js/sim/disasters.js"></script>
+	<script src="js/sim/god.js"></script>
 	<script src="js/sim/ecosystem.js"></script>
 	<script src="js/icons.js"></script>
 	<script src="js/render.js"></script>

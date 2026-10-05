@@ -104,7 +104,7 @@ Items 8 and 9 run after items 1–6. Items 10–15 run after the plant slices, i
 
 ## Part 3: God tools
 
-A tool palette on the map. Examples, to be finalised in the Part 3 plan:
+A tool palette on the map. The slices, scopes and gates are in [part3/plan.md](part3/plan.md). Examples:
 - Spawn animals or plants of a chosen species, or design a new species from sliders.
 - Paint terrain, water, biomes, temperature and moisture.
 - Disasters: start the slice 11 fire, flood or drought by hand, plus meteor, disease outbreak and plague of locusts.

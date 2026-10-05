@@ -816,6 +816,31 @@ class WorldRenderer {
 		this.fit();
 	}
 
+	refreshWorld() {
+		const world = this.world;
+		const eco = this.eco;
+		if (!world || !eco) return;
+		const gl = this.gl;
+		const W = world.width;
+		const H = world.height;
+		const info = new Uint8Array(W * H * 4);
+		const water = eco.plants.water;
+		const depth = eco.plants.depth;
+		for (let i = 0; i < W * H; i++) {
+			info[i * 4] = world.temperature[i] * 255;
+			info[i * 4 + 1] = water[i] ? 255 : 0;
+			info[i * 4 + 2] = depth[i] * 255;
+			info[i * 4 + 3] = 255;
+		}
+		for (const t of [this.infoTex, this.altTex]) if (t) gl.deleteTexture(t);
+		this.infoTex = this._tex(W, H, info, true);
+		this.altTex = this._altTex(W, H, world.altitude);
+		this._computeShade();
+		this.setMode(this.mode);
+		this.spLookupTick = -1;
+		this.vegDirty = true;
+	}
+
 	_computeShade() {
 		const w = this.world;
 		const W = w.width;
