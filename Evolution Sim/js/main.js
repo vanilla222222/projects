@@ -1483,7 +1483,7 @@ function updateTooltip() {
 		const bst = P.blight && P.blight[p] ? reg.get(P.blight[p]) : null;
 		const blt = bst ? `<small class="tt-sick">blight: ${bst.name}</small>` : '';
 		const txb = sp && !fungal ? plantToxinBadges(sp).join('') : '';
-		html += `<div class="tt-row">${iconSVG(sp.icon || sp.category, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${categoryLabel(sp)} · ${slot ? 'understory' : 'canopy'}${fungal ? ' · fungus' : ''}</small><small>biomass ${P.biomass[p].toFixed(2)} · health ${pct(P.health[p])}${extra}</small>${txb ? `<small class="tt-fx">${txb}</small>` : ''}${blt}</div></div>`;
+		html += `<div class="tt-row">${iconSVG(sp.icon || sp.category, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${categoryLabel(sp)} · ${P.water && P.water[t] ? (slot ? 'sea floor' : 'surface') : slot ? 'understory' : 'canopy'}${fungal ? ' · fungus' : ''}</small><small>biomass ${P.biomass[p].toFixed(2)} · health ${pct(P.health[p])}${extra}</small>${txb ? `<small class="tt-fx">${txb}</small>` : ''}${blt}</div></div>`;
 	}
 	if (app.renderer.mode !== 'bugs') html += bugHtml;
 	tt.innerHTML = html;

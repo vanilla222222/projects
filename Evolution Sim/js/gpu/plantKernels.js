@@ -209,6 +209,7 @@ fn slot(p: u32, i: u32, under: bool) -> bool {
 	let poll = tF[ti(${TILE_F.poll}u, i)];
 	let bk = sF[fi(${SLOT_F.bloomK}u, p)];
 	let fm = sU[fi(${SLOT_U.form}u, p)];
+	let chemo = tF[ti(${TILE_F.water}u, i)] != 0.0 && (fm & ${FORM_SUCC}u) != 0u;
 	var light = 1.0;
 	var K = 0.0;
 	if (fk) {
@@ -223,7 +224,7 @@ fn slot(p: u32, i: u32, under: bool) -> bool {
 		acc[2] += 1.0;
 	} else {
 		let climb = under && (fm & ${FORM_CLIMB}u) != 0u;
-		if (under && canopy) {
+		if (under && canopy && !chemo) {
 			let cb = sF[fi(${SLOT_F.bio}u, i)];
 			let sf = ${f(SHADE_MAX)} * select(1.0, cb / ${f(SHADE_FULL_BIOMASS)}, cb < ${f(SHADE_FULL_BIOMASS)}) * select(1.0, ${f(CLIMB_SHADE)}, climb);
 			light = 1.0 - sf * (1.0 - sF[fi(${SLOT_F.shade}u, p)]);
@@ -276,7 +277,7 @@ fn slot(p: u32, i: u32, under: bool) -> bool {
 	let sm = 1.0 + tF[ti(${TILE_F.samp}u, i)] * u.season;
 	let mo = tF[ti(${TILE_F.moist}u, i)];
 	let mm = select(mo, mo + (1.0 - mo) * ${f(SUCC_DRY)}, mo < 1.0 && (fm & ${FORM_SUCC}u) != 0u);
-	let r = sF[fi(${SLOT_F.growth}u, p)] * select(0.05, sm, sm > 0.05) * light * (0.35 + 0.65 * h) * tax * mm * select(1.0, ${f(OLD_GROWTH)}, aged) * select(dayAt(i), 1.0, fk);
+	let r = sF[fi(${SLOT_F.growth}u, p)] * select(0.05, sm, sm > 0.05) * light * (0.35 + 0.65 * h) * tax * mm * select(1.0, ${f(OLD_GROWTH)}, aged) * select(dayAt(i), 1.0, fk || chemo);
 	let bb = select(0.03, b, b > 0.03);
 	b += r * bb * (1.0 - b / K);
 	if (b > K) { b = K; }
