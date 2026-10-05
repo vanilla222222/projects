@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tier List Maker</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="top">
+      <a class="back" href="../index.html" aria-label="Back to projects">&larr;</a>
+      <input id="title" class="title" type="text" maxlength="80" placeholder="Untitled tier list" aria-label="Tier list title">
+    </header>
+
+    <div class="actions">
+      <button id="save-image" type="button">Save as image</button>
+      <button id="export" type="button">Export JSON</button>
+      <button id="import" type="button">Import JSON</button>
+      <button id="reset" type="button" class="danger">Reset</button>
+      <input id="import-file" type="file" accept="application/json,.json" hidden>
+    </div>
+
+    <section id="tiers" class="tiers" aria-label="Tiers"></section>
+
+    <form id="add-form" class="add">
+      <input id="add-text" type="text" maxlength="60" placeholder="Add a word or phrase" aria-label="New text item">
+      <button type="submit">Add</button>
+      <button id="add-images" type="button">Add images</button>
+      <input id="image-file" type="file" accept="image/*" multiple hidden>
+    </form>
+
+    <section class="pool-wrap">
+      <h2>Unranked</h2>
+      <div id="pool" class="zone pool" data-zone="pool"></div>
+      <p class="hint">Drag items into tiers. Drop or paste images anywhere. Right-click or long-press an item to remove it.</p>
+    </section>
+  </main>
+
+  <div id="trash" class="trash zone" data-zone="trash">Drop here to remove</div>
+
+  <div id="menu" class="menu" hidden>
+    <button type="button" data-action="remove">Remove item</button>
+  </div>
+
+  <dialog id="tier-dialog" class="dialog">
+    <form method="dialog">
+      <label>Label <input id="tier-name" type="text" maxlength="24"></label>
+      <div id="swatches" class="swatches"></div>
+      <label>Custom color <input id="tier-color" type="color"></label>
+      <div class="dialog-actions">
+        <button value="ok" type="submit" class="primary">Save</button>
+        <button value="cancel" type="submit">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+  <div id="drop-overlay" class="drop-overlay" hidden>Drop images to add them</div>
+
+  <script src="script.js"></script>
+</body>
+</html>
