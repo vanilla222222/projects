@@ -30,6 +30,7 @@ const EMERGE_GAP = 900;
 const EMERGE_P = 0.05;
 const EMERGE_VIR = 0.45;
 const EMERGE_SD = 0.08;
+const DOM_EMERGE = 3;
 const BLIGHT_EVERY = 3;
 const BLIGHT_DMG = 0.08;
 const BLIGHT_SPREAD = 0.08;
@@ -428,7 +429,8 @@ class DiseaseLayer {
 		const isP = kind === 'plant';
 		const group = isP ? 'plant' : 'animal';
 		const min = isP ? EMERGE_MIN_P : EMERGE_MIN_A;
-		const weight = (sp) => sp.population * (sp.cls === CLS_INVT ? INVERT_EMERGE : 1);
+		const dk = !isP && this.animals && this.animals._domK;
+		const weight = (sp) => sp.population * (sp.cls === CLS_INVT ? INVERT_EMERGE : 1) * (dk ? 1 + DOM_EMERGE * (dk[sp.id] || 0) : 1);
 		let total = 0;
 		for (const id of R.living) {
 			const sp = R.get(id);

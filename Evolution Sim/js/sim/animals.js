@@ -468,6 +468,23 @@ const AQ_K = 0.25;
 const AQ_DEPTH_W = 1.6;
 const AQ_SAL_W = 0.9;
 const AQ_PLACE = 0.55;
+const DOM_POP = 300;
+const DOM_POP_SPAN = 700;
+const DOM_SHARE = 0.3;
+const DOM_SHARE_SPAN = 0.4;
+const DOM_SHARE_MIN = 60;
+const DOM_SHARE_RAMP = 180;
+const DOM_META = 0.2;
+const DOM_FERT = 0.5;
+const DOM_LOCAL_N = 6;
+const DOM_DIS = 1;
+const DOM_PREY = 0.4;
+const DOM_CATCH = 0.3;
+const DOM_FRESH = 1;
+const RSPLIT_POP = 500;
+const RSPLIT_SD = 16;
+const RSPLIT_AGE = 600;
+const RSPLIT_P = 0.3;
 const FOUNDER_TOXIC = { 14: 0.65, 26: 0.6, 27: 0.55 };
 const FOUNDER_MIMIC = { 15: 0.6, 28: 0.5 };
 const FOUNDER_TRAIT_LO = 0.05;
@@ -817,6 +834,7 @@ class AnimalPool {
 		this.sentinel = 0;
 		this.dispersals = 0;
 		this.dispSplits = 0;
+		this.rangeSplits = 0;
 		this.rankBlocked = 0;
 		this.eatenBy = new Float64Array(12);
 		this.modelHue = new Float32Array(6).fill(-1);
@@ -1131,7 +1149,7 @@ class AnimalPool {
 					const dy = this.y[j] - y;
 					let dk = 1;
 					if (mode === 1) {
-						dk = 1 - DISPLAY_SEEN * this.show[j] - (this.alm[j] > 0 ? ALARM_SPOT : 0);
+						dk = (1 - DISPLAY_SEEN * this.show[j] - (this.alm[j] > 0 ? ALARM_SPOT : 0)) * (1 - DOM_PREY * (this._domK[this.sp[j]] || 0));
 						if (pav) {
 							const a = this._preyAversion(pav, this.lk[j], this.cls[j], this.sp[j]);
 							if (a > PREY_AV_SKIP && fed && this.rng.next() < (a - PREY_AV_SKIP) / (1 - PREY_AV_SKIP)) {
@@ -1189,6 +1207,48 @@ class AnimalPool {
 		return dy > r ? r : dy < -r ? -r : dy;
 	}
 
+	_census() {
+		const R = this.registry;
+		const len = R.nextId + 256;
+		if (!this._domK || this._domK.length < len) {
+			this._domK = new Float32Array(len + 1024);
+			this._spN = new Int32Array(len + 1024);
+			this._spList = new Int32Array(len + 1024);
+		}
+		const spN = this._spN;
+		const domK = this._domK;
+		const list = this._spList;
+		const clsN = this._clsN || (this._clsN = new Int32Array(6));
+		clsN.fill(0);
+		for (let k = 0, e = this._spM | 0; k < e; k++) domK[list[k]] = 0;
+		let m = 0;
+		const n = this.count;
+		for (let i = 0; i < n; i++) {
+			if (!this.alive[i]) continue;
+			const s = this.sp[i];
+			if (spN[s]++ === 0) list[m++] = s;
+			clsN[this.cls[i]]++;
+		}
+		for (let k = 0; k < m; k++) {
+			const s = list[k];
+			const p = spN[s];
+			spN[s] = 0;
+			const sp = R.get(s);
+			const ct = clsN[sp.cls | 0];
+			const a = (p - DOM_POP) / DOM_POP_SPAN;
+			const w = (p - DOM_SHARE_MIN) / DOM_SHARE_RAMP;
+			const b = w > 0 && ct > 0 ? ((p / ct - DOM_SHARE) / DOM_SHARE_SPAN) * (w < 1 ? w : 1) : 0;
+			const d = a > b ? a : b;
+			domK[s] = d > 0 ? (d < 1 ? d : 1) : 0;
+		}
+		this._spM = m;
+	}
+
+	_crowd(i) {
+		const n = this._lcN / DOM_LOCAL_N;
+		return n < 1 ? n : 1;
+	}
+
 	_localCount(i) {
 		const c = this.gcell[i];
 		const sp = this.sp[i];
@@ -1204,6 +1264,7 @@ class AnimalPool {
 		}
 		this._cx = n ? sx / n : this.x[i];
 		this._cy = n ? sy / n : this.y[i];
+		this._lcN = n;
 		return n;
 	}
 
@@ -2132,6 +2193,8 @@ class AnimalPool {
 		const stampTick = tick % TERR_EVERY === 0;
 		tileLoad.fill(0);
 		this._buildGrid();
+		this._census();
+		const domK = this._domK;
 		this._social();
 		this.births = 0;
 		this.tick = tick;
@@ -2248,6 +2311,11 @@ class AnimalPool {
 			else if (zn === ZONE_ALPINE && dom === 0) cost += m75 * ALPINE_AIR_K * this.genome[i * AG + G_SIZE] * shelter;
 			else if (dom === 2 && zn >= ZONE_MIRE) cost *= 1 - (zn === ZONE_MIRE ? AMPH_MIRE : AMPH_FRESH) * (1 - 0.5 * this.dry[i]);
 			if (dom === 1) cost += m75 * AQ_K * aquaMisfit(this.genome[i * AG + G_DEPTH], this.genome[i * AG + G_SALT], plants.depth[tile], plants.sal[tile]);
+			let dk = domK[this.sp[i]] || 0;
+			if (dk > 0) {
+				if (dom === 1 && plants.sal[tile] === 0) dk *= 1 + DOM_FRESH * this.genome[i * AG + G_SALT];
+				cost += m75 * DOM_META * dk;
+			}
 			if (!flying) {
 				const lw = tileLoad[tile] + ((this.mass[i] * TILE_LOAD_SCALE + 0.5) | 0);
 				tileLoad[tile] = lw < 65535 ? lw : 65535;
@@ -2650,7 +2718,8 @@ class AnimalPool {
 				(dom !== 2 || !Wx || Wx.waterDist[tile] <= 1 || (this.walk[tile] & 2) !== 0 || hk === 1) &&
 				(hk === 0 || hk === 3 || dist2d(this.x[i] - this.nx[i], this.y[i] - this.ny[i]) <= NEST_NEAR) &&
 				this._localCount(i) < (dom === 3 ? BIRD_CROWD : 14) &&
-				(!this._deficient(i) || rng.next() >= DEF_FERT)
+				(!this._deficient(i) || rng.next() >= DEF_FERT) &&
+				(dk <= 0 || rng.next() >= DOM_FERT * (dk < 1 ? dk : 1) * this._crowd(i))
 			) {
 				const short = emax * 0.7 - this.energy[i];
 				if (short > 0) {
@@ -3057,7 +3126,7 @@ class AnimalPool {
 		const sp = this.sp[i];
 		for (let m = 0; m < rolls; m++) {
 			const j = buf[m];
-			D.exposeAnimal(j, s, this.sp[j] === sp ? k * (1 - SHUN_K * this.genome[j * AG + G_SOCIAL]) : k);
+			D.exposeAnimal(j, s, this.sp[j] === sp ? k * (1 - SHUN_K * this.genome[j * AG + G_SOCIAL]) * (1 + DOM_DIS * (this._domK[sp] || 0)) : k);
 		}
 	}
 
@@ -3079,6 +3148,8 @@ class AnimalPool {
 		if (this.dorm[p]) chance = Math.min(0.95, chance * DORMANT_CATCH);
 		if (this.domain[p] === 3 && this.domain[i] !== 3) chance *= BIRD_ESCAPE;
 		if (this.lv[p] === 1) chance *= TAD_HIDE;
+		const pd = this._domK[this.sp[p]] || 0;
+		if (pd > 0) chance *= 1 + DOM_CATCH * pd;
 		if (this.cr[p] > 0) chance *= 1 - CARE_GUARD * this.genome[p * AG + G_CARE];
 		const sp0 = this.genome[p * AG + G_SOCIAL];
 		const herd = this.herd[p] > sp0 || sp0 <= SOC_MIN ? this.herd[p] : sp0;
@@ -3618,9 +3689,15 @@ class AnimalPool {
 			const id = this.sp[i];
 			let s = sums.get(id);
 			if (!s) {
-				s = new Float64Array(AG + 13);
+				s = new Float64Array(AG + 17);
 				sums.set(id, s);
 			}
+			const px = this.x[i];
+			const py = this.y[i];
+			s[AG + 13] += px;
+			s[AG + 14] += py;
+			s[AG + 15] += px * px;
+			s[AG + 16] += py * py;
 			if (this.alive[i]) {
 				const c = this.cls[i];
 				bs[c] += this.genome[i * AG + G_BRAIN];
@@ -3713,6 +3790,51 @@ class AnimalPool {
 		}
 		this.toolSp = tools;
 		this._symbTrack(sums);
+		this._rangeSplit(sums);
+	}
+
+	_rangeSplit(sums) {
+		const R = this.registry;
+		let best = null;
+		let bs = null;
+		for (const [id, s] of sums) {
+			const n = s[AG];
+			if (n < RSPLIT_POP || (best && n <= bs[AG])) continue;
+			const sp = R.get(id);
+			if (sp.population < RSPLIT_POP || this.tick - sp.createdTick < RSPLIT_AGE) continue;
+			const mx = s[AG + 13] / n;
+			const my = s[AG + 14] / n;
+			const vx = s[AG + 15] / n - mx * mx;
+			const vy = s[AG + 16] / n - my * my;
+			if ((vx > vy ? vx : vy) < RSPLIT_SD * RSPLIT_SD) continue;
+			best = sp;
+			bs = s;
+		}
+		if (!best || this.rng.next() >= RSPLIT_P) return;
+		const n = bs[AG];
+		const mx = bs[AG + 13] / n;
+		const my = bs[AG + 14] / n;
+		const onX = bs[AG + 15] / n - mx * mx > bs[AG + 16] / n - my * my;
+		const id = best.id;
+		const g = this._splitG || (this._splitG = new Float64Array(AG));
+		g.fill(0);
+		let m = 0;
+		for (let i = 0; i < this.count; i++) {
+			if (this.sp[i] !== id || !this.alive[i] || (onX ? this.x[i] <= mx : this.y[i] <= my)) continue;
+			const o = i * AG;
+			for (let k = 0; k < AG; k++) g[k] += this.genome[o + k];
+			m++;
+		}
+		if (m < RSPLIT_POP * 0.2 || n - m < RSPLIT_POP * 0.2) return;
+		const cg = this.childGenome;
+		for (let k = 0; k < AG; k++) cg[k] = g[k] / m;
+		const sp = this.newSpecies(cg, 0, best.domain, best, this.tick, null);
+		sp.rangeSplit = true;
+		for (let i = 0; i < this.count; i++) if (this.sp[i] === id && this.alive[i] && (onX ? this.x[i] > mx : this.y[i] > my)) this.sp[i] = sp.id;
+		R.remove(best, m);
+		R.add(sp, m);
+		this.rangeSplits = (this.rangeSplits | 0) + 1;
+		this.log.push(this.tick, 'speciation', `${sp.name} split from ${best.name} as its range spread`, sp.id);
 	}
 
 	_symbTrack(sums) {
