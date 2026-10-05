@@ -104,7 +104,9 @@ const app = {
 	openClasses: new Set(),
 	busy: false,
 	messageTimer: 0,
-	god: { open: false, tool: null, sp: 0, biome: 'GRASSLAND', r: 2, n: 10, strokeId: 0, stroke: null, hintStroke: -1, hintCount: 0, chain: Promise.resolve(), seen: 0, listAt: 0, dcls: 'sp', bcls: 'all', pcls: 'all', all: false, ticks: 500, frac: 50, coolUntil: 0 },
+	god: { open: false, tool: null, sp: 0, biome: 'GRASSLAND', r: 2, n: 10, strokeId: 0, stroke: null, hintStroke: -1, hintCount: 0, chain: Promise.resolve(), seen: 0, listAt: 0, dcls: 'sp', bcls: 'all', pcls: 'all', all: false, ticks: 500, frac: 50, coolUntil: 0, designUntil: 0 },
+	design: { cls: 3, habitat: 'land', diet: 'herb', genes: {}, n: 20, name: '' },
+	time: { snaps: [], auto: null, autoTick: 0, seq: 0, saving: false, restoring: false, arm: null, armTimer: 0 },
 };
 
 function readSize() {
@@ -170,6 +172,7 @@ function installWorld(world, eco) {
 	closeOverlay();
 	closeDetail();
 	history.replaceState(null, '', '#' + eco.seed);
+	if (!app.time.restoring) timeReset(eco);
 }
 
 const LAYER_SWITCHES = { showPlants: 'showPlants', showAnimals: 'showAnimals', showSwarms: 'showSwarms', showWeather: 'showWeather', showNight: 'showNight' };
@@ -326,6 +329,7 @@ function frame(now) {
 		app.lastUi = now;
 		updateUi(false);
 		refreshGodSpecies(false);
+		timeTick();
 		if (app.hover) updateTooltip();
 	}
 	requestAnimationFrame(frame);
@@ -1089,7 +1093,7 @@ function renderDetail() {
 	const patho = sp.group === 'pathogen';
 	const host = patho ? eco.registry.get(sp.hostId) : null;
 	$('detailSub').textContent = patho ? `${categoryLabel(sp)} · from ${host ? host.name : 'unknown host'}` : sp.group === 'bug' ? `${categoryLabel(sp)} swarm · ${bugNiche(sp)}` : `${categoryLabel(sp)} · ${sp.domain === 'water' ? 'aquatic' : sp.domain === 'amph' ? 'amphibious' : sp.domain === 'air' ? 'flying' : 'terrestrial'}`;
-	const origin = sp.origin === 'founder' ? 'Founder' : sp.origin === 'migrated' ? 'Migrant' : sp.origin === 'emerged' ? 'Emerged' : sp.origin === 'jump' ? 'Host jump' : `Generation ${sp.generation}`;
+	const origin = sp.origin === 'founder' ? 'Founder' : sp.origin === 'migrated' ? 'Migrant' : sp.origin === 'emerged' ? 'Emerged' : sp.origin === 'jump' ? 'Host jump' : sp.origin === 'created' ? 'Created' : `Generation ${sp.generation}`;
 	$('detailBadges').innerHTML = [
 		roleTag(sp).replace('role-tag', 'badge role-tag'),
 		alive ? `<span class="badge alive">${patho ? 'Active' : 'Living'}</span>` : `<span class="badge dead">${patho ? 'Burned out' : 'Extinct'} · Year ${yearOf(sp.extinctTick)}</span>`,
@@ -1399,6 +1403,7 @@ function updateTooltip() {
 
 const GOD_TOOLS = {
 	spawn: { label: 'Spawn' },
+	design: { label: 'Design', design: true },
 	biome: { label: 'Biome', brush: 'biome' },
 	warm: { label: 'Warmer', brush: 'temp', value: 1 },
 	cold: { label: 'Colder', brush: 'temp', value: -1 },
@@ -1504,6 +1509,8 @@ function setGodTool(tool) {
 	g.tool = tool && GOD_TOOLS[tool] ? tool : null;
 	for (const b of godToolButtons()) b.classList.toggle('active', b.dataset.tool === g.tool);
 	$('godSpawnPane').hidden = g.tool !== 'spawn';
+	$('godDesignPane').hidden = g.tool !== 'design';
+	if (g.tool === 'design') buildDesignPane();
 	$('godBiomePane').hidden = g.tool !== 'biome';
 	$('godDiseasePane').hidden = g.tool !== 'disease';
 	const bt = g.tool ? GOD_TOOLS[g.tool] : null;
@@ -1514,7 +1521,8 @@ function setGodTool(tool) {
 	cancelGodStroke();
 	if (!g.tool) $('godRing').hidden = true;
 	if (godPicking()) refreshGodSpecies(true);
-	if (GOD_BLESS_HINTS[g.tool]) godHint(GOD_BLESS_HINTS[g.tool]);
+	if (g.tool === 'design') godHint('Shape the species, then click the map to release it. Each click founds a new species.');
+	else if (GOD_BLESS_HINTS[g.tool]) godHint(GOD_BLESS_HINTS[g.tool]);
 	else if (g.tool && GOD_TOOLS[g.tool].kind) godHint(g.tool === 'disease' ? 'Pick a species or a class, then click where the outbreak starts.' : 'Click the map to strike. The brush sets the size.');
 	updateGodActive();
 }
@@ -1541,6 +1549,9 @@ function updateGodActive() {
 	if (g.tool === 'spawn') {
 		const sp = app.eco && app.eco.registry.get(g.sp);
 		text = sp ? `Spawn ${g.n} ${sp.name}` : 'Spawn: pick a species';
+	} else if (g.tool === 'design') {
+		const d = app.design;
+		text = `Design ${d.n} ${ANIMAL_CLASSES[d.cls]}${d.name ? ' · ' + d.name : ''}`;
 	} else if (g.tool === 'biome') text = 'Paint ' + (BIOME_INFO[g.biome] ? BIOME_INFO[g.biome].name : g.biome);
 	else if (g.tool === 'disease') {
 		const t = godDiseaseTarget();
@@ -1625,7 +1636,9 @@ function godResult(action, res) {
 		g.hintCount = 0;
 	}
 	g.hintCount += res.count | 0;
-	if (action.kind === 'spawn') {
+	if (action.kind === 'design') {
+		godHint(res.ok ? `Created ${res.name}: ${res.count} placed. Find it in the species list.` : res.reason === 'spot' ? 'No room there for that habitat. Try somewhere it can live.' : 'That design did not work.');
+	} else if (action.kind === 'spawn') {
 		const sp = app.eco.registry.get(action.sp);
 		const name = sp ? sp.name : 'that species';
 		godHint(res.ok ? `Spawned ${res.count} ${name}.` : `No room for ${name} there. Try its own habitat.`);
@@ -1720,6 +1733,7 @@ function godAction(pts) {
 
 function startGodStroke(wx, wy) {
 	const g = app.god;
+	if (g.tool === 'design') return designPlace(wx, wy);
 	if (GOD_TOOLS[g.tool] && GOD_TOOLS[g.tool].kind) {
 		godDisaster(wx, wy);
 		return true;
@@ -1796,13 +1810,286 @@ function placeGodRing(x, y) {
 		ring.hidden = true;
 		return;
 	}
-	const r = app.god.tool === 'spawn' ? Math.max(0.5, app.god.r) : t.bless ? Math.max(1, app.god.r) + 0.5 : t.kind ? Math.max(t.min, Math.min(GOD_DISASTER_R, app.god.r)) + 0.5 : app.god.r + 0.5;
+	const r = app.god.tool === 'spawn' ? Math.max(0.5, app.god.r) : t.design ? Math.max(1, app.god.r) + 0.5 : t.bless ? Math.max(1, app.god.r) + 0.5 : t.kind ? Math.max(t.min, Math.min(GOD_DISASTER_R, app.god.r)) + 0.5 : app.god.r + 0.5;
 	const d = Math.max(6, r * 2 * app.renderer.cam.zoom);
 	ring.hidden = false;
 	ring.style.left = x + 'px';
 	ring.style.top = y + 'px';
 	ring.style.width = d + 'px';
 	ring.style.height = d + 'px';
+}
+
+const DESIGN_TRAITS = [['size', 'Size'], ['speed', 'Speed'], ['sense', 'Senses'], ['temp', 'Warmth'], ['tol', 'Hardiness'], ['fec', 'Fertility'], ['armor', 'Armour'], ['herd', 'Herding'], ['brain', 'Brain']];
+const DESIGN_HAB_LABELS = { water: 'Water', land: 'Land', amph: 'Shore', air: 'Air' };
+const DESIGN_DIETS = [['herb', 'Herbivore'], ['omni', 'Omnivore'], ['carn', 'Carnivore'], ['scav', 'Scavenger'], ['fisher', 'Fisher']];
+const DESIGN_COOLDOWN_MS = 500;
+const TIME_MAX_SNAPS = 5;
+const TIME_AUTO_EVERY = 1500;
+const TIME_CONFIRM_MS = 4000;
+
+function escHtml(s) {
+	return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+}
+
+function designAction() {
+	const d = app.design;
+	return { cls: d.cls, habitat: d.habitat, diet: d.diet, genes: Object.assign({}, d.genes), n: d.n, name: d.name };
+}
+
+function designSizeCap(cls) {
+	return cls === CLS_BIRD ? BIRD_SIZE : cls === CLS_INVT ? INVERT_SIZE : 1;
+}
+
+function resetDesignGenes() {
+	const d = app.design;
+	const res = GodTools.designGenome({ cls: d.cls, habitat: d.habitat, diet: d.diet });
+	d.genes = {};
+	if (!res) return;
+	for (const [k] of DESIGN_TRAITS) d.genes[k] = Math.round(res.g[GOD_DESIGN_TRAITS[k]] * 100) / 100;
+}
+
+function buildDesignPane() {
+	const d = app.design;
+	const habs = GOD_DESIGN_HABITATS[d.cls];
+	if (!habs.includes(d.habitat)) d.habitat = habs[0];
+	if (d.diet === 'fisher' && d.cls !== CLS_BIRD) d.diet = 'herb';
+	if (!Number.isFinite(d.genes.size)) resetDesignGenes();
+	const chip = (v, label, on) => `<button data-v="${v}" class="${on ? 'active' : ''}">${label}</button>`;
+	$('godDesignCls').innerHTML = ANIMAL_CLASSES.map((c, k) => chip(k, c[0].toUpperCase() + c.slice(1), k === d.cls)).join('');
+	$('godDesignHab').innerHTML = habs.map((h) => chip(h, DESIGN_HAB_LABELS[h] || h, h === d.habitat)).join('');
+	$('godDesignDiet').innerHTML = DESIGN_DIETS.filter(([k]) => k !== 'fisher' || d.cls === CLS_BIRD)
+		.map(([k, label]) => chip(k, label, k === d.diet))
+		.join('');
+	const cap = designSizeCap(d.cls);
+	$('godDesignTraits').innerHTML = DESIGN_TRAITS.map(([k, label]) => {
+		const max = k === 'size' ? cap : 1;
+		const v = Math.round(Math.min(max, d.genes[k] || 0) * 100);
+		d.genes[k] = v / 100;
+		return `<label class="gp-row">${label} <input type="range" data-k="${k}" min="0" max="${Math.round(max * 100)}" value="${v}"><output>${v}</output></label>`;
+	}).join('');
+	updateDesignStats();
+}
+
+function updateDesignStats() {
+	const s = GodTools.designStats(designAction());
+	const box = $('godDesignStats');
+	if (!s) {
+		box.innerHTML = '';
+		return;
+	}
+	const c = (v) => Math.round(v * 50 - 15);
+	const rows = [
+		['Type', ANIMAL_CATEGORY_LABEL[s.category] || 'Animal'],
+		['Role', s.role[0].toUpperCase() + s.role.slice(1)],
+		['Mass', s.mass.toFixed(2)],
+		['Speed', s.speed.toFixed(2)],
+		['Sight', s.range.toFixed(1) + ' tiles'],
+		['Upkeep', s.meta.toFixed(3)],
+		['Litter', s.litter],
+		['Matures', Math.round(s.mature) + ' ticks'],
+		['Lifespan', Math.round(s.maxAge) + ' ticks'],
+		['Comfort', `${c(s.tempLo)} to ${c(s.tempHi)}°C`],
+	];
+	box.innerHTML = rows.map(([k, v]) => `<span>${k}</span><b>${v}</b>`).join('');
+}
+
+function designPlace(wx, wy) {
+	const g = app.god;
+	const now = performance.now();
+	if (now < g.designUntil) return false;
+	g.designUntil = now + DESIGN_COOLDOWN_MS;
+	g.strokeId++;
+	godSend(Object.assign({ kind: 'design', pts: [wx, wy], r: Math.max(1, g.r), stroke: g.strokeId }, designAction()));
+	return true;
+}
+
+function setupDesignPane() {
+	const d = app.design;
+	const chips = (id, fn) =>
+		$(id).addEventListener('click', (e) => {
+			const b = e.target.closest('button');
+			if (!b) return;
+			fn(b.dataset.v);
+			resetDesignGenes();
+			buildDesignPane();
+			updateGodActive();
+		});
+	chips('godDesignCls', (v) => (d.cls = v | 0));
+	chips('godDesignHab', (v) => (d.habitat = v));
+	chips('godDesignDiet', (v) => (d.diet = v));
+	$('godDesignTraits').addEventListener('input', (e) => {
+		const el = e.target;
+		if (!el.dataset || !el.dataset.k) return;
+		d.genes[el.dataset.k] = (el.value | 0) / 100;
+		el.nextElementSibling.textContent = el.value;
+		updateDesignStats();
+	});
+	$('godDesignName').addEventListener('input', (e) => {
+		d.name = GodTools.designName(e.target.value);
+		updateGodActive();
+	});
+	const n = $('godDesignN');
+	n.addEventListener('input', () => {
+		d.n = n.value | 0;
+		$('godDesignNOut').textContent = d.n;
+		updateGodActive();
+	});
+	resetDesignGenes();
+}
+
+function timeQueue(fn) {
+	const g = app.god;
+	g.chain = g.chain.then(fn).catch((err) => {
+		console.error(err);
+		godHint('That did not work: ' + err.message);
+	});
+	return g.chain;
+}
+
+function timeCapture() {
+	const eco = app.eco;
+	const tick = eco.tick;
+	return SimClient.save(eco, saveMeta()).then(({ bytes }) => (eco === app.eco ? { tick, bytes } : null));
+}
+
+function timeLabel(tick) {
+	return `Year ${yearOf(tick)} · tick ${formatCount(tick)}`;
+}
+
+function timeArm(key) {
+	const t = app.time;
+	clearTimeout(t.armTimer);
+	if (t.arm === key) {
+		t.arm = null;
+		renderTime();
+		return true;
+	}
+	t.arm = key;
+	t.armTimer = setTimeout(() => {
+		t.arm = null;
+		renderTime();
+	}, TIME_CONFIRM_MS);
+	renderTime();
+	return false;
+}
+
+function renderTime() {
+	const t = app.time;
+	$('godSnaps').innerHTML = t.snaps.length
+		? t.snaps
+				.map((s) => {
+					const armed = t.arm === 'snap' + s.id;
+					return `<div class="gp-snap"><div><strong title="${escHtml(s.name)}">${escHtml(s.name)}</strong><small>${timeLabel(s.tick)}</small></div><button data-act="restore" data-id="${s.id}" class="${armed ? 'arm' : ''}" title="Go back to this snapshot">${armed ? 'Sure?' : 'Restore'}</button><button data-act="del" data-id="${s.id}" class="gp-x" title="Forget this snapshot">✕</button></div>`;
+				})
+				.join('')
+		: '<div class="gp-empty">No snapshots yet. The last five are kept.</div>';
+	const rw = $('godRewind');
+	rw.disabled = !t.auto;
+	rw.classList.toggle('arm', t.arm === 'rewind');
+	rw.textContent = t.arm === 'rewind' ? 'Click again to rewind' : 'Rewind to autosave';
+	$('godAuto').textContent = t.auto ? `Autosave: ${timeLabel(t.auto.tick)}` : 'No autosave yet';
+	$('godSnap').disabled = !app.eco;
+}
+
+function timeReset(eco) {
+	const t = app.time;
+	t.snaps = [];
+	t.auto = null;
+	t.arm = null;
+	t.autoTick = eco.tick - TIME_AUTO_EVERY;
+	renderTime();
+}
+
+function timeAutosave() {
+	const t = app.time;
+	if (!app.eco || app.busy || t.saving) return;
+	t.saving = true;
+	t.autoTick = app.eco.tick;
+	timeQueue(async () => {
+		const c = await timeCapture();
+		if (c) {
+			t.auto = c;
+			renderTime();
+		}
+	}).then(() => (t.saving = false));
+}
+
+function timeTick() {
+	const t = app.time;
+	if (app.eco && !app.busy && !t.saving && app.eco.tick - t.autoTick >= TIME_AUTO_EVERY) timeAutosave();
+}
+
+function takeSnapshot() {
+	if (!app.eco || app.busy) return;
+	const t = app.time;
+	const raw = $('godSnapName').value.replace(/[^\w' .:-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 24);
+	const name = raw || `Year ${yearOf(app.eco.tick)}`;
+	$('godSnapName').value = '';
+	timeQueue(async () => {
+		const c = await timeCapture();
+		if (!c) return;
+		t.seq++;
+		t.snaps.unshift({ id: t.seq, name, tick: c.tick, bytes: c.bytes });
+		if (t.snaps.length > TIME_MAX_SNAPS) t.snaps.length = TIME_MAX_SNAPS;
+		renderTime();
+		godHint(`Snapshot "${name}" kept.`);
+	});
+}
+
+function timeRestore(bytes, label, asAuto) {
+	if (app.busy) return;
+	const t = app.time;
+	app.busy = true;
+	const run = app.running;
+	setRunning(false);
+	cancelGodStroke();
+	showBusy(`Going back to ${label}…`);
+	timeQueue(async () => {
+		try {
+			const t0 = performance.now();
+			const { world, eco, meta } = await SimClient.load(bytes);
+			t.restoring = true;
+			try {
+				applyLoaded(world, eco, Object.assign({}, meta, { cam: null }));
+			} finally {
+				t.restoring = false;
+			}
+			t.autoTick = eco.tick;
+			if (asAuto) t.auto = { tick: eco.tick, bytes };
+			hideBusy();
+			setRunning(run);
+			renderTime();
+			godHint(`Back to ${label}.`);
+			console.log(`Restored ${label} in ${Math.round(performance.now() - t0)} ms`);
+		} catch (err) {
+			console.warn(err);
+			showMessage(`Could not go back: ${err.message}. The current world was kept.`);
+			setRunning(run);
+		}
+	}).then(() => (app.busy = false));
+}
+
+function setupTimePane() {
+	const t = app.time;
+	$('godSnap').onclick = takeSnapshot;
+	$('godSnapName').addEventListener('keydown', (e) => {
+		if (e.key === 'Enter') takeSnapshot();
+	});
+	$('godSnaps').addEventListener('click', (e) => {
+		const b = e.target.closest('button');
+		if (!b) return;
+		const s = t.snaps.find((x) => x.id === +b.dataset.id);
+		if (!s) return;
+		if (b.dataset.act === 'del') {
+			t.snaps = t.snaps.filter((x) => x !== s);
+			renderTime();
+		} else if (timeArm('snap' + s.id)) timeRestore(s.bytes, `"${s.name}"`, true);
+	});
+	$('godRewind').onclick = () => {
+		if (!t.auto) return;
+		if (timeArm('rewind')) timeRestore(t.auto.bytes, 'the autosave', false);
+	};
+	renderTime();
 }
 
 function setupGodPalette() {
@@ -1812,6 +2099,8 @@ function setupGodPalette() {
 	}
 	buildGodBiomes();
 	buildGodClasses();
+	setupDesignPane();
+	setupTimePane();
 	$('godToggle').onclick = () => setGodOpen(!g.open);
 	$('godClose').onclick = () => setGodOpen(false);
 	const pick = (e) => {
