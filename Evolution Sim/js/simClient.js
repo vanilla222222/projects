@@ -280,6 +280,9 @@ const SimClient = (() => {
 			if (target) Object.assign(target, m.layers[k]);
 		}
 		if (m.storms && eco.weather) eco.weather.storms = m.storms;
+		if (m.world) Object.assign(eco.world, m.world);
+		if (m.statics) for (const k of Object.keys(m.statics)) if (eco[k]) Object.assign(eco[k], m.statics[k]);
+		if (m.worldVersion !== undefined) eco._godVersion = m.worldVersion;
 		if (m.plantGenes && eco.plants) {
 			const P = eco.plants;
 			const slots = 2 * P.n;
@@ -327,6 +330,14 @@ const SimClient = (() => {
 		return { name, bytes: await EvoSave.encode(eco, meta) };
 	}
 
+	async function god(eco, action) {
+		if (eco && eco.remote) {
+			const r = await request('god', { action });
+			return r.result;
+		}
+		return eco.applyGod(action);
+	}
+
 	async function stats(eco) {
 		if (eco && eco.remote) {
 			const r = await request('stats', {});
@@ -339,6 +350,7 @@ const SimClient = (() => {
 		create,
 		load,
 		save,
+		god,
 		stats,
 		setFast,
 		get mode() {

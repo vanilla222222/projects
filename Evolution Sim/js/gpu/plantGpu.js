@@ -661,5 +661,10 @@ const PlantGpu = (() => {
 		if (ctx) destroy(ctx);
 	}
 
-	return { available, attach, detach, drop, step, sync, busy, whenIdle, active };
+	function invalidate(L) {
+		const ctx = contexts.get(L);
+		if (ctx) ctx.full = true;
+	}
+
+	return { available, attach, detach, drop, step, sync, invalidate, busy, whenIdle, active };
 })();

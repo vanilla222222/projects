@@ -19,6 +19,7 @@ const EvoSave = (() => {
 		add('WeatherLayer', typeof WeatherLayer === 'function' && WeatherLayer);
 		add('EggPool', typeof EggPool === 'function' && EggPool);
 		add('DisasterLayer', typeof DisasterLayer === 'function' && DisasterLayer);
+		add('GodTools', typeof GodTools === 'function' && GodTools);
 		return t;
 	};
 
@@ -220,6 +221,7 @@ const EvoSave = (() => {
 			bin: bytes,
 		};
 		if (flags.fast) header.fast = true;
+		if (eco.god && eco.god.edits && eco.god.edits.length) header.god = eco.god.edits;
 		const json = new TextEncoder().encode(JSON.stringify(header));
 		const head = new Uint8Array(8);
 		const dv = new DataView(head.buffer);
@@ -314,6 +316,10 @@ const EvoSave = (() => {
 	async function decode(gz, makeWorld) {
 		const { header, bin } = await readHeader(gz);
 		const world = makeWorld(header.w, header.h, header.seed, header.secret ? { gen: header.worldGen || 2, secret: header.secret } : { gen: header.worldGen || 2 });
+		if (Array.isArray(header.god) && header.god.length) {
+			if (typeof GodTools !== 'function') throw new Error('Save file needs the god tools');
+			for (const e of header.god) GodTools.paintWorld(world, e);
+		}
 		const eco = deserialize(header.records, bin, world);
 		if (!eco || eco.world !== world || eco.tick !== header.tick) throw new Error('Save file contents are inconsistent');
 		upgrade(eco);
