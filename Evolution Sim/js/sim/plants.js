@@ -208,6 +208,15 @@ const O2_KELP = 0.25;
 const O2_BLOOM = 0.9;
 const O2_ROT = 1.5;
 const ROT_FREE = 0.15;
+const CHEMO_AT = 0.5;
+const CHEMO_BASE = 0.06;
+const FLOOR_LIGHT0 = 1.2;
+const FLOOR_LIGHT_K = 1.2;
+const FLOOR_LIGHT_MIN = 0.08;
+const SNOW_DEPTH = 0.45;
+const SNOW_K = 0.006;
+const SNOW_TRENCH = 0.012;
+const SNOW_CAP = 0.12;
 const HYPOXIA = 0.5;
 const PEAT_SHOW = 0.4;
 const EROSION_K = 0.004;
@@ -240,7 +249,7 @@ const DELTA_SHALLOW = 0.2;
 const DELTA_FERT = 1.3;
 const NB4X = [1, -1, 0, 0];
 const NB4Y = [0, 0, 1, -1];
-const OCEAN_SET = new Set([BIOME_ID.OCEAN, BIOME_ID.OCEAN_DEEP, BIOME_ID.FROZEN_OCEAN, BIOME_ID.CORAL_REEF]);
+const OCEAN_SET = new Set([BIOME_ID.OCEAN, BIOME_ID.OCEAN_DEEP, BIOME_ID.FROZEN_OCEAN, BIOME_ID.CORAL_REEF, BIOME_ID.TRENCH, BIOME_ID.VENTS, BIOME_ID.COLD_SEEP]);
 
 const PLANT_ARCHETYPES = [
 	{ g: [0.82, 0.12, 0.5, 0.45, 0.35, 0.4, 0.2, 0.6, 0.15, 0.2, 0.3, 0.15, 0.5, 0.3, 0.15], domain: 'land' },
@@ -273,8 +282,13 @@ const PLANT_ARCHETYPES = [
 	{ g: [0.5, 0.12, 0.55, 0.4, 0.1, 0.6, 0.2, 0.6, 0, 0, 0, 0.2, 0.5, 0.15, 0.15], domain: 'water', fresh: 0.85 },
 	{ g: [0.8, 0.14, 0.5, 0.55, 0.15, 0.5, 0.4, 0.7, 0.1, 0, 0, 0.1, 0.5, 0.2, 0.15], domain: 'water', fresh: 0.5 },
 	{ g: [0.5, 0.5, 0.6, 0.05, 0.05, 0.7, 0.5, 0.4, 0, 0, 0, 0.1, 0.5, 0.1, 0.15], domain: 'water', fresh: 0.85 },
+	{ g: [0.66, 0.32, 0.55, 0.3, 0.12, 0.7, 0.3, 0.2, 0, 0, 0, 0.1, 0.5, 0.15, 0.15], domain: 'water', float: 0.85 },
+	{ g: [0.55, 0.15, 0.6, 0.05, 0.05, 0.8, 0.3, 0.1, 0, 0, 0, 0.2, 0.5, 0.1, 0.15], domain: 'water', fresh: 0.9, float: 0.85 },
+	{ g: [0.5, 0.72, 0.9, 0.05, 0.05, 0.45, 0.9, 0.3, 0, 0, 0, 0, 0.5, 0.1, 0.15], domain: 'water', chemo: 0.9 },
+	{ g: [0.82, 0.1, 0.45, 0.15, 0.2, 0.5, 0.3, 0.6, 0, 0, 0, 0.1, 0.5, 0.35, 0.15], domain: 'water' },
 ];
-const WATER_HUE = { cattail: 72, mangrove: 118, pondweed: 128 };
+const PLANT_FLOAT = { 12: 0.85, 26: 0.85 };
+const WATER_HUE = { cattail: 72, mangrove: 118, pondweed: 128, sargassum: 48, chemomat: 28, coralalgae: 345, floatmat: 96 };
 const PLANT_DEPTH = { 13: 0.5, 14: 0.3, 15: 0.75, 16: 0.25 };
 const PLANT_DEPTH_BASE = 0.45;
 const DISP_FULL = 40;
@@ -291,6 +305,8 @@ PLANT_ARCHETYPES.forEach((a, k) => {
 	if (a.domain !== 'land' || a.kind) for (let k = 23; k < PG; k++) a.g[k] = a.domain === 'water' && k === 23 ? 0.1 : 0;
 	if (a.het) a.g[25] = a.het;
 	if (a.domain === 'water') a.g[25] = a.fresh || 0;
+	if (a.domain === 'water' && (a.float || PLANT_FLOAT[k])) a.g[21] = a.float || PLANT_FLOAT[k];
+	if (a.chemo) a.g[24] = a.chemo;
 	plantToxinDefaults(a.g, 0, a.domain !== 'land', a.kind);
 });
 
@@ -386,8 +402,8 @@ function plantPhaseBin(g, o = 0) {
 	return b < PHASE_BINS ? b : PHASE_BINS - 1;
 }
 
-function plantForm(g, o, landPlant) {
-	if (!landPlant) return 4 << 3;
+function plantForm(g, o, landPlant, wet = 0) {
+	if (!landPlant) return wet && g[o + 24] > CHEMO_AT ? (4 << 3) | FORM_SUCC : 4 << 3;
 	const wood = g[o + 3];
 	let f = plantPhaseBin(g, o) << 3;
 	if (wood >= HERB_WOOD && g[o + 18] > DECID_AT) f |= FORM_DECID;
@@ -443,6 +459,8 @@ function plantTraitsFrom(g, o = 0) {
 		blightRes: g[o + 14],
 		fire: g[o + 16],
 		fresh: g[o + 25],
+		float: g[o + 21],
+		chemo: g[o + 24],
 		formCap: (0.8 + 2.4 * wood) * (1 + HEIGHT_CAP * (g[o + 20] - 0.5) * wood),
 		growth: 0.05 * (1 - HEIGHT_GROWTH * (g[o + 20] - 0.5) * wood) * (1 - CLONAL_COST * g[o + 22]) * (1 - 0.72 * wood) * (1 - 0.35 * tox) * (1 - 0.12 * disp) * (1 - 0.3 * shade) * (1 - 0.2 * root) * (1 - 0.25 * fruiting - 0.15 * sweet) * (1 - DEFENCE_COST * g[o + 13]) * (1 - BLIGHT_RES_COST * g[o + 14]) * (1 - FIRE_COST * g[o + 16]) * (1 - FIX_COST * g[o + 23]) * (1 - SUCC_COST * g[o + 24]) * (1 - ALLELO_COST * g[o + 26]) * (1 - THORN_COST * g[o + 27]) * (1 - INDUCE_COST * g[o + 28]) * (1 - NEURO_COST * g[o + 29]) * (1 - GENO_COST * g[o + 31]),
 	};
@@ -468,7 +486,7 @@ function fruitFactor(season) {
 
 function slotOf(g, water, o = 0, kind = 0) {
 	if (kind === 1) return 1;
-	if (water) return g[o + 1] > 0.45 && g[o + 3] > 0.25 ? 0 : 1;
+	if (water) return g[o + 21] > CLIMB_AT ? 0 : 1;
 	return g[o + 3] >= 0.3 ? 0 : 1;
 }
 
@@ -483,6 +501,9 @@ function plantCategory(g, domain, kind = 0) {
 	const wood = g[3];
 	if (domain === 'water') {
 		const fr = g[25];
+		if (g[24] > CHEMO_AT) return 'chemomat';
+		if (g[21] > CLIMB_AT) return fr >= 0.5 ? (g[11] > 0.5 ? 'lily' : 'floatmat') : wood > 0.2 ? 'sargassum' : 'plankton';
+		if (t > 0.72 && fr < 0.35 && wood < 0.25 && m < 0.45) return 'coralalgae';
 		if (wood > 0.25) return m > 0.45 ? 'kelp' : fr < 0.35 ? 'seagrass' : fr < 0.7 ? 'mangrove' : 'cattail';
 		if (m > 0.45) return fr >= 0.5 ? 'pondweed' : 'plankton';
 		return fr >= 0.5 && g[11] > 0.5 ? 'lily' : 'algae';
@@ -528,6 +549,10 @@ const PLANT_ICON_VARIANTS = {
 	truffle: ['truffle', 'stinkhorn', 'jellyfungus'],
 	vine: ['vine', 'ivy', 'vine'],
 	epiphyte: ['orchid', 'bromeliad', 'orchid'],
+	sargassum: ['bladderkelp', 'kelp', 'bladderkelp'],
+	floatmat: ['pondweed', 'sealettuce', 'pondweed'],
+	chemomat: ['redalgae', 'algae', 'redalgae'],
+	coralalgae: ['redalgae', 'sealettuce', 'redalgae'],
 };
 
 function plantIcon(category, id) {
@@ -563,6 +588,10 @@ const PLANT_CATEGORY_LABEL = {
 	truffle: 'Truffle',
 	vine: 'Vine',
 	epiphyte: 'Epiphyte',
+	sargassum: 'Sargassum',
+	floatmat: 'Floating mat',
+	chemomat: 'Chemosynthetic mat',
+	coralalgae: 'Coral algae',
 };
 
 const PLANT_CYCLE_LABEL = ['Annual', 'Biennial', 'Perennial'];
@@ -693,7 +722,7 @@ class PlantLayer {
 			disp[p] = g[o + 5];
 			shade[p] = g[o + 6];
 			root[p] = g[o + 7];
-			if (this.species[p]) form[p] = plantForm(g, o, !this.water[p < n ? p : p - n] && !this.kind[p]);
+			if (this.species[p]) form[p] = plantForm(g, o, !this.water[p < n ? p : p - n] && !this.kind[p], !this.kind[p] && this.water[p < n ? p : p - n]);
 		}
 	}
 
@@ -742,7 +771,11 @@ class PlantLayer {
 			[BIOME_ID.OASIS]: 1.2,
 			[BIOME_ID.FLOODPLAIN]: 1.2,
 			[BIOME_ID.ALPINE_MEADOW]: 0.9,
+			[BIOME_ID.TRENCH]: 0.35,
+			[BIOME_ID.COLD_SEEP]: 0.9,
 		};
+		const calm = (b) => b === BIOME_ID.TRENCH || b === BIOME_ID.VENTS || b === BIOME_ID.COLD_SEEP;
+		this.snowK = new Float32Array(this.n);
 		for (let i = 0; i < this.n; i++) {
 			const b = w.biome[i];
 			const isWater = WATER_BIOME_SET.has(b);
@@ -757,7 +790,8 @@ class PlantLayer {
 			const light = isWater ? 2 - 1.1 * this.depth[i] : 1;
 			const delta = isWater && this.sal[i] === SAL_BRACKISH && this.depth[i] < DELTA_SHALLOW ? DELTA_FERT : 1;
 			this.habit[i] = fert * light * delta * (harsh[b] ?? 1);
-			this.seasonAmp[i] = 0.75 * (w.seasonK || 1) * (1 - w.temperature[i]);
+			this.seasonAmp[i] = calm(b) ? 0 : 0.75 * (w.seasonK || 1) * (1 - w.temperature[i]);
+			this.snowK[i] = isWater && this.sal[i] === SAL_SALT && this.depth[i] > SNOW_DEPTH ? (b === BIOME_ID.TRENCH ? SNOW_TRENCH : SNOW_K * (this.depth[i] - SNOW_DEPTH)) : 0;
 		}
 	}
 
@@ -863,9 +897,19 @@ class PlantLayer {
 		return 1 - SAL_MISFIT * Math.abs(1 - t.fresh - this.sal[i] * 0.5);
 	}
 
+	aquaLight(t, i) {
+		if (t.chemo > CHEMO_AT) {
+			const b = this.world.biome[i];
+			return b === BIOME_ID.VENTS ? 1.8 : b === BIOME_ID.COLD_SEEP ? 1.1 : b === BIOME_ID.TRENCH ? 0.15 : CHEMO_BASE;
+		}
+		if (t.float > CLIMB_AT) return 1;
+		const v = FLOOR_LIGHT0 - FLOOR_LIGHT_K * this.depth[i];
+		return v < FLOOR_LIGHT_MIN ? FLOOR_LIGHT_MIN : v > 1 ? 1 : v;
+	}
+
 	capFor(t, i) {
 		return (
-			(this.water[i] ? this.salFit(t, i) : 1) *
+			(this.water[i] ? this.salFit(t, i) * this.aquaLight(t, i) : 1) *
 			t.formCap *
 			t.peak *
 			this.habit[i] *
@@ -958,7 +1002,7 @@ class PlantLayer {
 		for (let k = 0; k < PG; k++) this.genome[base + k] = genome[off + k];
 		const t = plantTraitsFrom(this.genome, base);
 		const landPlant = !kind && !this.water[i];
-		const fm = plantForm(this.genome, base, landPlant);
+		const fm = plantForm(this.genome, base, landPlant, !kind && this.water[i]);
 		const cyc = landPlant ? plantCycle(this.genome, base) : 2;
 		const amp = this.seasonAmp[i];
 		this.form[p] = fm;
@@ -1047,10 +1091,10 @@ class PlantLayer {
 		return this.floor[i] + this.floor[this.n + i];
 	}
 
-	edible(i, reach = 0, skipUnder = false) {
+	edible(i, reach = 0, skipUnder = false, skipTop = false) {
 		const u = this.n + i;
 		const r = 1 - reach;
-		const a = this.biomass[i] - this.floor[i] * r;
+		const a = skipTop ? 0 : this.biomass[i] - this.floor[i] * r;
 		const b = skipUnder ? 0 : this.biomass[u] - this.floor[u] * r;
 		return (a > 0 ? a : 0) + (b > 0 ? b : 0);
 	}
@@ -1100,13 +1144,13 @@ class PlantLayer {
 		return take;
 	}
 
-	graze(i, amount, reach = 0, skipUnder = false) {
+	graze(i, amount, reach = 0, skipUnder = false, skipTop = false) {
 		const u = this.n + i;
 		const g = this.genome;
 		const ku = 1 - THORN_K * g[u * PG + 27];
 		const ki = 1 - THORN_K * g[i * PG + 27];
 		const a = skipUnder ? 0 : this._bite(u, amount * ku, reach);
-		const b = a < amount * ku ? this._bite(i, (amount - a / ku) * ki, reach) : 0;
+		const b = a < amount * ku && !skipTop ? this._bite(i, (amount - a / ku) * ki, reach) : 0;
 		const take = a + b;
 		const ind = this.induced;
 		this.grazeTox = take > 0 ? (a * (this.tox[u] + ind[u]) + b * (this.tox[i] + ind[i])) / take : 0;
@@ -1314,7 +1358,7 @@ class PlantLayer {
 				fungi++;
 			} else {
 				const climb = under && form[p] & FORM_CLIMB;
-				if (under && species[i]) {
+				if (under && species[i] && !(water[i] && form[p] & FORM_SUCC)) {
 					const cb = bio[i];
 					const sf = SHADE_MAX * (cb < SHADE_FULL_BIOMASS ? cb / SHADE_FULL_BIOMASS : 1) * (climb ? CLIMB_SHADE : 1);
 					light = 1 - sf * (1 - shade[p]);
@@ -1370,7 +1414,7 @@ class PlantLayer {
 			if (young) K *= SEEDLING_K0 + ((1 - SEEDLING_K0) * ag) / mt;
 			const sm = 1 + seasonAmp[i] * season;
 			const mm = moistMul ? moistMul[i] : 1;
-			const r = PLANT_STRIDE * growth[p] * (sm > 0.05 ? sm : 0.05) * light * (0.35 + 0.65 * h) * tax * (mm < 1 && form[p] & FORM_SUCC ? mm + (1 - mm) * SUCC_DRY : mm) * (aged ? OLD_GROWTH : 1) * (fk ? 1 : dayK[(((i / W) | 0) * dayH) | 0]);
+			const r = PLANT_STRIDE * growth[p] * (sm > 0.05 ? sm : 0.05) * light * (0.35 + 0.65 * h) * tax * (mm < 1 && form[p] & FORM_SUCC ? mm + (1 - mm) * SUCC_DRY : mm) * (aged ? OLD_GROWTH : 1) * (fk || (water[i] && form[p] & FORM_SUCC) ? 1 : dayK[(((i / W) | 0) * dayH) | 0]);
 			const bb = b > 0.03 ? b : 0.03;
 			b += r * bb * (1 - b / K);
 			if (b > K) b = K;
@@ -1469,6 +1513,7 @@ class PlantLayer {
 		const down = soil.down;
 		const bloom = this.bloom;
 		const oxygen = this.oxygen;
+		const snowK = this.snowK;
 		const temp = this.world.temperature;
 		const hum = this.world.humidity;
 		const bugs = this.bugs;
@@ -1495,7 +1540,10 @@ class PlantLayer {
 				}
 				if (bl > BLOOM_SHOW) blooms++;
 				let kelp = 0;
-				if (species[i] && g[i * PG + 3] > 0.25) kelp = bio[i] < 1 ? bio[i] : 1;
+				const kp = species[n + i] && g[(n + i) * PG + 3] > 0.25 ? n + i : species[i] && g[i * PG + 3] > 0.25 ? i : -1;
+				if (kp >= 0) kelp = bio[kp] < 1 ? bio[kp] : 1;
+				const sk = snowK ? snowK[i] : 0;
+				if (sk > 0 && litter[i] < SNOW_CAP) litter[i] += sk;
 				const rot = litter[i] - ROT_FREE;
 				let o = 1 + O2_KELP * kelp - O2_BLOOM * bl - (rot > 0 ? O2_ROT * rot : 0);
 				o = o < 0 ? 0 : o > 1 ? 1 : o;
@@ -1824,7 +1872,7 @@ class PlantLayer {
 		if (wet !== (parentSp.domain === 'water' ? 1 : 0)) return 1;
 		const bound = (0.8 + 2.4 * g[o + 3]) * (1 - 0.3 * g[o + 2]) * this.habit[j] * biomeFit(this.world.biome[j], g[o + 3], g[o + 7], g[o + 6]);
 		if (bound < 0.035) return 1;
-		if (kind !== 1 && (wet ? Math.abs(g[o + 1] - 0.45) < 0.09 || Math.abs(g[o + 3] - 0.25) < 0.09 : Math.abs(g[o + 3] - 0.3) < 0.09)) return 0;
+		if (kind !== 1 && (wet ? Math.abs(g[o + 21] - CLIMB_AT) < 0.09 : Math.abs(g[o + 3] - 0.3) < 0.09)) return 0;
 		const pj = slotOf(g, wet, o, kind) * this.n + j;
 		const resident = this.species[pj];
 		if (!resident) return 0;
@@ -1994,6 +2042,9 @@ const WATER_BIOME_SET = new Set([
 	BIOME_ID.RIVER,
 	BIOME_ID.POND,
 	BIOME_ID.CORAL_REEF,
+	BIOME_ID.TRENCH,
+	BIOME_ID.VENTS,
+	BIOME_ID.COLD_SEEP,
 ]);
 
 const BIOME_SALT = new Float32Array(BIOME_LIST.length);

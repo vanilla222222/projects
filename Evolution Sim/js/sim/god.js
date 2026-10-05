@@ -103,10 +103,10 @@ class GodTools {
 		if (world.isDelta) world.isDelta[i] = 0;
 		const flow = world.riverFlow[i];
 		world.riverFlow[i] = 0;
-		if (b === BIOME_ID.OCEAN_DEEP) {
+		if (b === BIOME_ID.OCEAN_DEEP || b === BIOME_ID.TRENCH || b === BIOME_ID.VENTS) {
 			world.isOcean[i] = 1;
 			alt[i] = Math.min(alt[i], GOD_DEEP_TOP);
-		} else if (b === BIOME_ID.OCEAN || b === BIOME_ID.FROZEN_OCEAN) {
+		} else if (b === BIOME_ID.OCEAN || b === BIOME_ID.FROZEN_OCEAN || b === BIOME_ID.COLD_SEEP) {
 			world.isOcean[i] = 1;
 			alt[i] = Math.max(BIOME_THRESHOLDS.deepOceanLevel + 0.01, Math.min(alt[i], GOD_OCEAN_TOP));
 		} else if (b === BIOME_ID.CORAL_REEF) {
