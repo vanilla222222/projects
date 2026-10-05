@@ -495,6 +495,8 @@ const SHADOW_ALPHA = 0.45;
 const FLY_SHADOW_ALPHA = 0.22;
 const FLY_SHADOW = [0.45, 0.95, 0.6];
 const FLY_LIFT = 0.3;
+const LVL_ALPHA = [1, 0.82, 0.64];
+const LVL_SHRINK = [1, 0.94, 0.88];
 const FAT_WIDE = 0.6;
 const FAT_WIDE_MAX = 0.3;
 const THIN_AT = 0.25;
@@ -1867,6 +1869,7 @@ class WorldRenderer {
 		const wat = A.water;
 		const dom = A.domain;
 		const fly = A.fly;
+		const lvlA = A.lvl;
 		const dots = zoom < 3;
 		const dotIcon = ICON_INDEX.dot;
 		const ringIcon = ICON_INDEX.ring;
@@ -1935,7 +1938,7 @@ class WorldRenderer {
 			const th = wmode && dom[i] !== 1 && wat[i] < THIRSTY ? (wat[i] <= 0 ? DRY_TINT : THIRST_TINT) : null;
 			const zz = dormA ? dormA[i] : 0;
 			const zs = !zz && slpA ? slpA[i] : 0;
-			const a = ((hl !== null && id !== hl) || (hs && sick !== hs) || (dmode && !sick) || (wmode && !th) ? 0.35 : 1) * (ef && ef[i] < 1 ? ELDER_ALPHA : 1) * (zz ? DORM_ALPHA : zs ? SLEEP_ALPHA : 1);
+			const a = ((hl !== null && id !== hl) || (hs && sick !== hs) || (dmode && !sick) || (wmode && !th) ? 0.35 : 1) * (ef && ef[i] < 1 ? ELDER_ALPHA : 1) * (zz ? DORM_ALPHA : zs ? SLEEP_ALPHA : 1) * (lvlA && dom[i] === 1 ? LVL_ALPHA[lvlA[i]] || 1 : 1);
 			const sv = show && !sick ? show[i] : 0;
 			const bright = sv > SHOW_BASE;
 			const lv = lvA ? lvA[i] : 0;
@@ -1956,7 +1959,7 @@ class WorldRenderer {
 				n = th ? this._put(n, x, y, ds * (th === DRY_TINT ? DRY_MARK : 1), dotIcon, 1, a, 0, th) : this._put(n, x, y, ds, dotIcon + fx, 1, a, co, ca);
 			} else {
 				const ride = symb && stA && stA[i] === 9;
-				const size = Math.max(12 / zoom, 0.8 + 0.45 * A.mass[i]) * g * (zz ? DORM_SHRINK : 1) * (lv ? LARVA_SHRINK : 1) * (ride ? RIDE_SHRINK : 1);
+				const size = Math.max(12 / zoom, 0.8 + 0.45 * A.mass[i]) * g * (zz ? DORM_SHRINK : 1) * (lv ? LARVA_SHRINK : 1) * (ride ? RIDE_SHRINK : 1) * (lvlA && dom[i] === 1 ? LVL_SHRINK[lvlA[i]] || 1 : 1);
 				const ly = ride ? y - size * (RIDE_LIFT + 0.6) : air && fly[i] ? y - size * FLY_LIFT : y;
 				const cap = emx[i] * g;
 				const fr = fat ? fat[i] / cap : 0;
