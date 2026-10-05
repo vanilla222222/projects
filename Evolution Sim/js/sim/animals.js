@@ -158,7 +158,24 @@ const FEED_BIT = [1, 2, 4, 1];
 const THIRST = 0.02;
 const SALT_THIRST = 1.5;
 const SALT_THIRST_AMPH = 1.1;
-const MIRE_SLOW = 0.7;
+const MIRE_DRAG = 0.3;
+const ZONE_ARID = 1, ZONE_DENSE = 3, ZONE_MIRE = 4, ZONE_FRESH = 5;
+const ARID_K = 0.25;
+const ARID_SIZE = 1.6;
+const ARID_BASE = 0.2;
+const ARID_ECTO = 0.45;
+const BERG_T = 0.4;
+const BERG_K = 0.22;
+const FOREST_SLOW = 0.7;
+const FOREST_FREE = 0.25;
+const AMPH_MIRE = 0.22;
+const AMPH_FRESH = 0.1;
+const AEST_MAMM_MASS = 1.2;
+const BIOME_ZONE = new Uint8Array(BIOME_LIST.length);
+for (const k of ['DESERT', 'SALT_FLAT', 'BADLANDS']) BIOME_ZONE[BIOME_ID[k]] = ZONE_ARID;
+for (const k of ['RAINFOREST', 'JUNGLE', 'CLOUD_FOREST', 'REDWOOD_FOREST']) BIOME_ZONE[BIOME_ID[k]] = ZONE_DENSE;
+for (const k of ['WETLAND', 'BOG', 'SWAMP', 'MANGROVE', 'TUNDRA_BOG', 'POND']) BIOME_ZONE[BIOME_ID[k]] = ZONE_MIRE;
+for (const k of ['LAKE', 'RIVER']) BIOME_ZONE[BIOME_ID[k]] = ZONE_FRESH;
 const REEF_COVER = 0.2;
 const THIRSTY = 0.35;
 const DRINK_WET = 0.6;
@@ -724,6 +741,8 @@ class AnimalPool {
 			if (b === BIOME_ID.SALT_FLAT || b === BIOME_ID.MANGROVE) this.walk[i] |= 64;
 			if (b === BIOME_ID.TUNDRA_BOG || b === BIOME_ID.BOG || b === BIOME_ID.CORAL_REEF) this.walk[i] |= 128;
 		}
+		this.zone = new Uint8Array(n);
+		for (let i = 0; i < n; i++) this.zone[i] = BIOME_ZONE[world.biome[i]];
 		this.childGenome = new Float32Array(AG);
 		this.deaths = { starved: 0, eaten: 0, old: 0, poison: 0, parasite: 0, disease: 0, thirst: 0, fire: 0, flood: 0 };
 		this.landDeaths = 0;
@@ -1614,7 +1633,15 @@ class AnimalPool {
 			if (et < 0.5) v *= 1 - COLD_SLOW * cold * (0.5 - et) * 2;
 		}
 		const tad = this.lv[i] === 1;
-		if (!tad && this.domain[i] === 0 && this.walk[(y | 0) * this.world.width + (x | 0)] & 128) v *= MIRE_SLOW;
+		if (!tad && this.domain[i] === 0) {
+			const t0 = (y | 0) * this.world.width + (x | 0);
+			const zn = this.zone[t0];
+			if (zn === ZONE_DENSE || this.walk[t0] & 128) {
+				const sz = this.genome[i * AG + G_SIZE];
+				if (this.walk[t0] & 128) v *= 1 - MIRE_DRAG * (0.4 + sz);
+				else if (sz > FOREST_FREE) v *= 1 - FOREST_SLOW * (sz - FOREST_FREE);
+			}
+		}
 		const step = Math.min(d, v * frac);
 		dx /= d;
 		dy /= d;
@@ -1717,7 +1744,7 @@ class AnimalPool {
 			if (c === CLS_MAMM && this.fat[i] > DORM_FAT * em0) return 1;
 			if ((c === CLS_REPT || c === CLS_AMPH || land) && (this.fat[i] > DORM_FAT * em0 * 0.2 || e > DORM_ECTO_E * em0)) return 2;
 		}
-		if (g > DORM_MIN && (c === CLS_AMPH || (land && this.diet[i] < 0.5)) && (Wx.drought || Wx.season > AEST_SEASON) && Wx.wet[tile] < AEST_WET && Wx.waterDist[tile] > 1 && this.water[i] < AEST_WATER) return 3;
+		if (g > DORM_MIN && (c === CLS_AMPH || (land && this.diet[i] < 0.5) || (this.zone[tile] === ZONE_ARID && (c === CLS_REPT || (c === CLS_MAMM && this.mass[i] < AEST_MAMM_MASS)))) && (Wx.drought || Wx.season > AEST_SEASON) && Wx.wet[tile] < AEST_WET && Wx.waterDist[tile] > 1 && this.water[i] < AEST_WATER) return 3;
 		if (g > TORPOR_MIN && (c === CLS_BIRD || c === CLS_MAMM) && this.mass[i] * this.gf[i] < TORPOR_MASS && et < this.pT[i] - this.tol[i] && e < TORPOR_E * em0) return 4;
 		return 0;
 	}
@@ -2042,6 +2069,7 @@ class AnimalPool {
 		const rng = this.rng;
 		const bugs = this.bugs;
 		const tileLoad = this.tileLoad;
+		const zone = this.zone;
 		const parasiteLoad = this.parasiteLoad;
 		const D = this.disease && this.disease.on ? this.disease : null;
 		const soil = plants.soil;
@@ -2102,7 +2130,7 @@ class AnimalPool {
 					wv = 1;
 				}
 				else {
-					wv -= THIRST * (1 - 0.6 * this.dry[i]) * (0.6 + temp[tile] + seasonT + droughtK) * (this.cold[i] > 0.5 ? 0.6 : 1) * (amph ? AMPH_DRY : 1) * (inv ? INVERT_THIRST : 1) * (herdM && this.ld[i] ? ELDER_THIRST : 1) * (this.walk[tile] & 64 ? (amph ? SALT_THIRST_AMPH : SALT_THIRST) : 1);
+					wv -= THIRST * (1 - 0.6 * this.dry[i]) * (0.6 + temp[tile] + seasonT + droughtK) * (this.cold[i] > 0.5 ? 0.6 : 1) * (amph ? AMPH_DRY : 1) * (inv ? INVERT_THIRST : 1) * (herdM && this.ld[i] ? ELDER_THIRST : 1) * (this.walk[tile] & 64 ? 1 + ((amph ? SALT_THIRST_AMPH : SALT_THIRST) - 1) * (1 - 0.7 * this.dry[i]) : 1);
 					if (wv < 0) wv = 0;
 				}
 				this.water[i] = wv;
@@ -2161,7 +2189,13 @@ class AnimalPool {
 			if (this.cold[i] > 0.5) {
 				const et = temp[tile] + seasonT;
 				if (et < 0.5) cost += m75 * COLD_UPKEEP * (0.5 - et) * 2 * shelter;
+			} else if (dom === 0) {
+				const et = temp[tile] + seasonT;
+				if (et < BERG_T) cost += m75 * BERG_K * ((BERG_T - et) / BERG_T) * (1 - this.genome[i * AG + G_SIZE]) * shelter;
 			}
+			const zn = zone[tile];
+			if (zn === ZONE_ARID && dom === 0) cost += m75 * ARID_K * (ARID_BASE + ARID_SIZE * this.genome[i * AG + G_SIZE]) * (1 - this.dry[i]) * (this.cold[i] > 0.5 ? ARID_ECTO : 1) * shelter;
+			else if (dom === 2 && zn >= ZONE_MIRE) cost *= 1 - (zn === ZONE_MIRE ? AMPH_MIRE : AMPH_FRESH) * (1 - 0.5 * this.dry[i]);
 			if (!flying) {
 				const lw = tileLoad[tile] + ((this.mass[i] * TILE_LOAD_SCALE + 0.5) | 0);
 				tileLoad[tile] = lw < 65535 ? lw : 65535;

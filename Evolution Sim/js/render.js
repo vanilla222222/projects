@@ -414,6 +414,11 @@ const HOME_PX = 8;
 const NEST_TINT = new Uint8Array([160, 122, 69, 94, 68, 38, 214, 181, 122]);
 const DEN_TINT = new Uint8Array([122, 90, 60, 62, 44, 28, 168, 136, 100]);
 const EGG_SIZE_K = 0.24;
+const SAND_RGB = [214, 184, 124];
+const SNOW_RGB = [236, 240, 246];
+const COAT_MAX = 0.6;
+const COAT_WIDE = 0.16;
+const COAT_LANK = 0.12;
 const EGG_WATER_ALPHA = 0.85;
 const EGG_PALE = 0.15;
 const FRESH_RGB = [70, 165, 250];
@@ -558,6 +563,7 @@ class WorldRenderer {
 		this.fixedTex = up(atlas.fixed);
 
 		this.spIcon = new Int16Array(0);
+		this.spWide = new Float32Array(0);
 		this.spCol = new Uint8Array(0);
 		this.spLookupTick = -1;
 		this.spLookupSize = 0;
@@ -897,6 +903,7 @@ class WorldRenderer {
 		if (size > this.spLookupSize) {
 			const n = Math.max(size, this.spLookupSize * 2, 256);
 			this.spIcon = new Int16Array(n);
+			this.spWide = new Float32Array(n).fill(1);
 			this.spCol = new Uint8Array(n * 9);
 			this.spLookupSize = n;
 			this.spLookupTick = -1;
@@ -907,7 +914,28 @@ class WorldRenderer {
 			const sp = reg.get(id);
 			this.spIcon[id] = ICON_INDEX[sp.icon || sp.category] ?? ICON_INDEX.dot;
 			this._writeCol(id, sp);
+			this.spWide[id] = sp.group === 'animal' && sp.mean && sp.domain !== 'water' ? this._coat(id, sp.mean) : 1;
 		}
+	}
+
+	_coat(id, m) {
+		const cl = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+		const arid = cl((m[G_DRY] - 0.25) / 0.45) * cl((m[G_TEMP] - 0.45) / 0.3);
+		const cold = m[G_COLD] < 0.5 ? cl((0.42 - m[G_TEMP]) / 0.3) : 0;
+		if (arid <= 0 && cold <= 0) return 1;
+		const c = this.spCol;
+		const o = id * 9;
+		const ka = COAT_MAX * arid;
+		const kc = COAT_MAX * cold;
+		for (let q = 0; q < 9; q++) {
+			const L = q < 3 ? 1 : q < 6 ? 0.62 : 1.12;
+			const k = q % 3;
+			let v = c[o + q];
+			v += (Math.min(255, SAND_RGB[k] * L) - v) * ka;
+			v += (Math.min(255, SNOW_RGB[k] * L) - v) * kc;
+			c[o + q] = v;
+		}
+		return 1 + COAT_WIDE * cold - COAT_LANK * arid;
 	}
 
 	_writeCol(id, sp) {
@@ -1549,7 +1577,7 @@ class WorldRenderer {
 				const er = en[i] / cap;
 				const wd = (fr > 0 ? 1 + Math.min(FAT_WIDE_MAX, fr * FAT_WIDE) : er < THIN_AT ? THIN_MIN + (1 - THIN_MIN) * (er > 0 ? er / THIN_AT : 0) : 1) * (g < 1 && !lv ? 1 + (JUV_ROUND - 1) * (1 - g) / (1 - JUV_MIN) : 1);
 				if (sv >= CREST_MIN && zoom >= CREST_ZOOM) n = this._put(n, x - size * 0.12 * A.face[i], ly - size * 0.62, size * CREST_SCALE * (0.6 + sv), crestIcon, A.face[i], a, co, ca);
-				n = this._put(n, x, ly - size * 0.1, size, lv === 1 ? tadIcon : lv === 2 ? larIcon : icons[id], A.face[i] * wd * (zz ? DORM_WIDE : 1), a, co, ca);
+				n = this._put(n, x, ly - size * 0.1, size, lv === 1 ? tadIcon : lv === 2 ? larIcon : icons[id], A.face[i] * wd * (zz ? DORM_WIDE : 1) * (lv ? 1 : this.spWide[id]), a, co, ca);
 				const am = almA ? almA[i] : 0;
 				if (am > ALARM_COOL - ALARM_RING) {
 					const rt = (ALARM_COOL - am) / ALARM_RING;
