@@ -2015,6 +2015,47 @@ select option {
 	font-weight: 600;
 }
 
+.gp-group {
+	margin-top: 2px;
+	color: var(--muted);
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.gp-tools button.cooling {
+	opacity: 0.55;
+}
+
+.gp-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.gp-chips button {
+	padding: 3px 8px;
+	font: inherit;
+	font-size: 11px;
+	color: var(--text);
+	background: transparent;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	cursor: pointer;
+}
+
+.gp-chips button:hover {
+	background: var(--active);
+}
+
+.gp-chips button.active {
+	border-color: var(--accent);
+	background: var(--active);
+	color: var(--accent);
+	font-weight: 600;
+}
+
 .gp-ico {
 	display: grid;
 	place-items: center;
