@@ -86,7 +86,8 @@ function worldCfgParams(o) {
 		water: pick(c.hum, 0.2, WG_WATER, 0.5),
 		humOff: pick(c.hum, -0.07, 0, 0.07),
 		ridgeK: pick(c.rough, 0.35, 1, 1.8),
-		landCurve: pick(c.rough, 1.45, 1, 0.72),
+		landCurve: pick(c.rough, 1.45, 1, 0.6),
+		reliefK: pick(c.rough, 1.3, 1, 0.85),
 		depthPow: pick(c.rough, 0.6, 0.9, 1.45),
 		tempOff: pick(c.temp, -0.13, 0, 0.13),
 		riverK: pick(c.rivers, 1.9, 1, 0.5),
@@ -1196,7 +1197,8 @@ class WorldMap {
 			if (acc < topN) topBin = b + 1;
 		}
 		const q = minA + (qBin / BINS) * span;
-		const top = Math.max(q + 1e-4, minA + (topBin / BINS) * span);
+		let top = Math.max(q + 1e-4, minA + (topBin / BINS) * span);
+		if (cfg.reliefK !== 1) top = q + (top - q) * cfg.reliefK;
 		for (let i = 0; i < n; i++) {
 			const v = raw[i];
 			if (v < q) raw[i] = sea * Math.pow(clamp01((v - minA) / Math.max(1e-6, q - minA)), cfg.depthPow) * 0.999;

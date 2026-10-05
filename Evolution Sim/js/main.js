@@ -200,12 +200,14 @@ function openWorldModal() {
 	setWorldModal(readWorldPrefs());
 	$('worldModal').hidden = false;
 	app.worldModal = true;
-	$('wcSeed').focus();
+	$('wcSeed').focus({ preventScroll: true });
 }
 
 function closeWorldModal() {
+	const inside = $('worldModal').contains(document.activeElement);
 	$('worldModal').hidden = true;
 	app.worldModal = false;
+	if (inside) $('newWorldBtn').focus({ preventScroll: true });
 }
 
 function createFromModal() {
