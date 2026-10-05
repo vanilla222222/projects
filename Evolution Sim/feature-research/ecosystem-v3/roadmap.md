@@ -111,6 +111,8 @@ A tool palette on the map. The slices, scopes and gates are in [part3/plan.md](p
 - Bless or curse: feed, heal, sterilise or cull an area or a species.
 - Time controls: rewind to the last autosave, and snapshots.
 
+
+
 ---
 
 ## Decisions (Part 1)
