@@ -69,122 +69,6 @@ Each revamp follows the same pattern as the ocean update:
   - flatfish (floor);
   - deep-sea eels.
 
-## 4.5 Mountains revamp
-
-- **New and reworked biomes:**
-  - **Scree slope:** loose rock with sparse cushion plants.
-  - **Montane forest band:** forest at mid elevation that thins with height.
-  - **Krummholz:** stunted trees at the treeline.
-  - **High plateau:** flat, cold and windy.
-  - **Alpine lake / tarn.**
-  - **Cave mouths:** shelter with no plant growth.
-- **Elevation bands:** the existing Mountains, Alpine, Alpine Meadow and Cliff biomes are reworked into a clear lapse rate, about −6°C per 1000 m. A treeline depends on temperature and latitude.
-- **Terrain mechanic:**
-  - Slope affects movement cost. Climbers ignore this; everything else pays.
-  - Altitude sickness: low oxygen costs energy unless an animal has a high lung capacity, which comes from a new or existing gene.
-  - Avalanches are a natural disaster in snow areas after heavy snowfall, and reuse the windthrow and flood code.
-  - Rain shadow: the leeward side of ranges is drier. This links to world gen.
-- **Plants:**
-  - cushion plants;
-  - lichens;
-  - edelweiss-style alpine flowers;
-  - dwarf conifers.
-  - Strong UV makes plants invest more in protective toxins.
-- **Animals:**
-  - mountain goat / ibex (climber grazer);
-  - snow leopard (ambush on slopes);
-  - pika and marmot (burrowing hibernators);
-  - condor and eagle (soaring raptors that use updrafts);
-  - alpine salamander.
-
-## 4.7 Temperate revamp
-
-- **New and reworked biomes:**
-  - **Deciduous forest:** leaves drop seasonally.
-  - **Mixed forest.**
-  - **Temperate rainforest** (coastal).
-  - **Meadow.**
-  - **Heathland.**
-  - **Hedgerow and forest edge:** an edge habitat with high diversity.
-- **Seasonal mechanic:**
-  - **Leaf fall:** deciduous plants lose canopy in autumn. This gives the understory a spring light window, and there are spring ephemeral flowers.
-  - **Leaf litter:** it builds up on the floor and feeds the soil, decomposers and invertebrates.
-  - **Mast years:** oak and beech trees fruit in big synchronised bursts every few years, which drives rodent booms and then predator booms.
-  - **Phenology:** flowering, breeding and migration are cued by day length.
-- **Plants:**
-  - oak, beech, maple (deciduous) and pine (evergreen) types;
-  - bramble and berry shrubs;
-  - ferns;
-  - bluebell-style ephemerals.
-- **Animals:**
-  - deer (browser);
-  - wild boar (rooting omnivore that disturbs the soil);
-  - fox;
-  - badger (den builder);
-  - squirrel (caches nuts and plants trees);
-  - woodpecker;
-  - owl (night raptor);
-  - frog and newt (breed in ponds).
-
-## 4.10 Desert revamp
-
-- **New and reworked biomes:**
-  - **Rocky / hamada desert.**
-  - **Sand sea:** shifting dunes.
-  - **Cactus scrub.**
-  - **Wadi / dry riverbed:** it floods briefly after rain.
-  - **Mesa and canyon.**
-  - **Coastal fog desert.**
-- **Climate mechanic:**
-  - **Day and night extremes:** a big temperature swing using the day/night system. Animals with the activity gene are favoured toward night activity.
-  - **Flash floods and wadis:** rare heavy rain fills wadis for a short time.
-  - **Superbloom:** dormant seed banks germinate all at once after rain.
-  - **Moving dunes:** dune tiles migrate slowly downwind and bury plants.
-- **Plants:**
-  - succulents and cacti (CAM: they store water and close their stomata by day);
-  - deep-rooted mesquite (uses the existing deep-root trait);
-  - ephemeral annuals with long-lived seed banks;
-  - spiny defences.
-- **Animals:**
-  - camel (stores water and fat);
-  - fennec fox (night hunter, big ears for heat loss);
-  - jerboa and kangaroo rat (no drinking, water from food);
-  - rattlesnake and sidewinder (reptiles, heat sensing);
-  - scorpion (invertebrate, toxin user);
-  - roadrunner;
-  - vulture (scavenger niche).
-  - A water-economy gene trades lower water need for slower growth.
-
-## 4.11 Tundra revamp
-
-- **New and reworked biomes:**
-  - **Arctic tundra** (rework).
-  - **Polar desert.**
-  - **Permafrost bog** (Tundra Bog rework).
-  - **Pingo / frost-heave hills.**
-  - **Ice sheet edge.**
-  - **Sea-ice coast:** a seasonal ice shelf that land animals can walk on.
-- **Climate mechanic:**
-  - **Permafrost layer:** the soil only thaws to a shallow active layer in summer, which limits root depth. Warming can thaw it and release nutrients and methane.
-  - **Polar day and night:** long summer days and long winter nights at high latitude, with a very short growing season.
-  - **Snow cover:** it insulates small animals living under the snow and hides plants from grazers.
-  - **Seasonal sea ice:** it forms in winter and opens up land bridges. This links to Frozen Ocean.
-- **Plants:**
-  - mosses;
-  - lichens, which reindeer eat in winter;
-  - dwarf willow and birch;
-  - cotton grass;
-  - Arctic poppy, which tracks the sun for warmth.
-- **Animals:**
-  - caribou / reindeer (long-distance migration herds);
-  - musk ox (huddling defence);
-  - Arctic fox and Arctic hare (seasonal coat colour change linked to camouflage);
-  - lemming (boom-and-bust cycles);
-  - snowy owl;
-  - polar bear (hunts on sea ice);
-  - ptarmigan.
-  - Insulation and fat genes are used heavily.
-
 ## 4.3 Rivers and wetlands revamp
 
 - **Biomes reworked:** river, lake, pond, swamp, bog, wetland and floodplain.
@@ -245,6 +129,34 @@ Each revamp follows the same pattern as the ocean update:
   - sea turtle;
   - mudskipper (amphibious fish).
 
+## 4.5 Mountains revamp
+
+- **New and reworked biomes:**
+  - **Scree slope:** loose rock with sparse cushion plants.
+  - **Montane forest band:** forest at mid elevation that thins with height.
+  - **Krummholz:** stunted trees at the treeline.
+  - **High plateau:** flat, cold and windy.
+  - **Alpine lake / tarn.**
+  - **Cave mouths:** shelter with no plant growth.
+- **Elevation bands:** the existing Mountains, Alpine, Alpine Meadow and Cliff biomes are reworked into a clear lapse rate, about −6°C per 1000 m. A treeline depends on temperature and latitude.
+- **Terrain mechanic:**
+  - Slope affects movement cost. Climbers ignore this; everything else pays.
+  - Altitude sickness: low oxygen costs energy unless an animal has a high lung capacity, which comes from a new or existing gene.
+  - Avalanches are a natural disaster in snow areas after heavy snowfall, and reuse the windthrow and flood code.
+  - Rain shadow: the leeward side of ranges is drier. This links to world gen.
+- **Plants:**
+  - cushion plants;
+  - lichens;
+  - edelweiss-style alpine flowers;
+  - dwarf conifers.
+  - Strong UV makes plants invest more in protective toxins.
+- **Animals:**
+  - mountain goat / ibex (climber grazer);
+  - snow leopard (ambush on slopes);
+  - pika and marmot (burrowing hibernators);
+  - condor and eagle (soaring raptors that use updrafts);
+  - alpine salamander.
+
 ## 4.6 Caves and underground
 
 - **Underground layer:** cave networks under mountain, hill and karst tiles, entered from the mountain revamp's cave mouths.
@@ -264,6 +176,35 @@ Each revamp follows the same pattern as the ocean update:
   - cave spider.
   - There is cave adaptation: unused eyes and pigment are lost over generations, with the energy saved going to other senses.
 - **Rendering:** a toggle shows the underground layer. Cave chambers are in `SNAP_STATIC`, and occupancy is in `SNAP_GRIDS`.
+
+## 4.7 Temperate revamp
+
+- **New and reworked biomes:**
+  - **Deciduous forest:** leaves drop seasonally.
+  - **Mixed forest.**
+  - **Temperate rainforest** (coastal).
+  - **Meadow.**
+  - **Heathland.**
+  - **Hedgerow and forest edge:** an edge habitat with high diversity.
+- **Seasonal mechanic:**
+  - **Leaf fall:** deciduous plants lose canopy in autumn. This gives the understory a spring light window, and there are spring ephemeral flowers.
+  - **Leaf litter:** it builds up on the floor and feeds the soil, decomposers and invertebrates.
+  - **Mast years:** oak and beech trees fruit in big synchronised bursts every few years, which drives rodent booms and then predator booms.
+  - **Phenology:** flowering, breeding and migration are cued by day length.
+- **Plants:**
+  - oak, beech, maple (deciduous) and pine (evergreen) types;
+  - bramble and berry shrubs;
+  - ferns;
+  - bluebell-style ephemerals.
+- **Animals:**
+  - deer (browser);
+  - wild boar (rooting omnivore that disturbs the soil);
+  - fox;
+  - badger (den builder);
+  - squirrel (caches nuts and plants trees);
+  - woodpecker;
+  - owl (night raptor);
+  - frog and newt (breed in ponds).
 
 ## 4.8 Tropical revamp
 
@@ -317,6 +258,65 @@ Each revamp follows the same pattern as the ocean update:
   - giraffe (high browser);
   - termite colony;
   - ostrich.
+
+## 4.10 Desert revamp
+
+- **New and reworked biomes:**
+  - **Rocky / hamada desert.**
+  - **Sand sea:** shifting dunes.
+  - **Cactus scrub.**
+  - **Wadi / dry riverbed:** it floods briefly after rain.
+  - **Mesa and canyon.**
+  - **Coastal fog desert.**
+- **Climate mechanic:**
+  - **Day and night extremes:** a big temperature swing using the day/night system. Animals with the activity gene are favoured toward night activity.
+  - **Flash floods and wadis:** rare heavy rain fills wadis for a short time.
+  - **Superbloom:** dormant seed banks germinate all at once after rain.
+  - **Moving dunes:** dune tiles migrate slowly downwind and bury plants.
+- **Plants:**
+  - succulents and cacti (CAM: they store water and close their stomata by day);
+  - deep-rooted mesquite (uses the existing deep-root trait);
+  - ephemeral annuals with long-lived seed banks;
+  - spiny defences.
+- **Animals:**
+  - camel (stores water and fat);
+  - fennec fox (night hunter, big ears for heat loss);
+  - jerboa and kangaroo rat (no drinking, water from food);
+  - rattlesnake and sidewinder (reptiles, heat sensing);
+  - scorpion (invertebrate, toxin user);
+  - roadrunner;
+  - vulture (scavenger niche).
+  - A water-economy gene trades lower water need for slower growth.
+
+## 4.11 Tundra revamp
+
+- **New and reworked biomes:**
+  - **Arctic tundra** (rework).
+  - **Polar desert.**
+  - **Permafrost bog** (Tundra Bog rework).
+  - **Pingo / frost-heave hills.**
+  - **Ice sheet edge.**
+  - **Sea-ice coast:** a seasonal ice shelf that land animals can walk on.
+- **Climate mechanic:**
+  - **Permafrost layer:** the soil only thaws to a shallow active layer in summer, which limits root depth. Warming can thaw it and release nutrients and methane.
+  - **Polar day and night:** long summer days and long winter nights at high latitude, with a very short growing season.
+  - **Snow cover:** it insulates small animals living under the snow and hides plants from grazers.
+  - **Seasonal sea ice:** it forms in winter and opens up land bridges. This links to Frozen Ocean.
+- **Plants:**
+  - mosses;
+  - lichens, which reindeer eat in winter;
+  - dwarf willow and birch;
+  - cotton grass;
+  - Arctic poppy, which tracks the sun for warmth.
+- **Animals:**
+  - caribou / reindeer (long-distance migration herds);
+  - musk ox (huddling defence);
+  - Arctic fox and Arctic hare (seasonal coat colour change linked to camouflage);
+  - lemming (boom-and-bust cycles);
+  - snowy owl;
+  - polar bear (hunts on sea ice);
+  - ptarmigan.
+  - Insulation and fat genes are used heavily.
 
 ## Order and dependencies
 
