@@ -130,6 +130,7 @@ class Ecosystem {
 			const i = (y | 0) * W + (x | 0);
 			if (wd && wd[i] > 2) continue;
 			if (domain === 3 && !(A.walk[i] & 1)) continue;
+			if (domain === 1 && attempt < 3000 && aquaMisfit(arch.g[G_DEPTH], arch.g[G_SALT], this.plants.depth[i], this.plants.sal[i]) > AQ_PLACE) continue;
 			const clim = gaussFit(this.world.temperature[i], arch.g[G_TEMP], 0.08 + 0.3 * arch.g[G_TOL]);
 			const food = arch.g[G_DIET] < 0.6 ? this.plants.edible(i) : 0.3;
 			const need = attempt < 3000 ? 0.55 : 0.1;

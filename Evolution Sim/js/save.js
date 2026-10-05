@@ -279,6 +279,21 @@ const EvoSave = (() => {
 		if (eco.plants && typeof eco.plants.upgradeGenes === 'function') eco.plants.upgradeGenes();
 		if (eco.plants && !eco.plants.bugs && eco.bugs) eco.plants.bugs = eco.bugs;
 		if (eco.weather && typeof eco.weather.upgrade === 'function') eco.weather.upgrade();
+		if (typeof padAnimalGenes === 'function') upgradeAnimals(eco);
+	}
+
+	function upgradeAnimals(eco) {
+		const A = eco.animals;
+		if (A && A.genome && A.cap) A.genome = padAnimalGenes(A.genome, A.cap);
+		if (A && A.childGenome && A.childGenome.length < AG) A.childGenome = new Float32Array(AG);
+		const E = eco.eggs;
+		if (E && E.genome && E.cap) E.genome = padAnimalGenes(E.genome, E.cap);
+		if (!eco.registry || !eco.registry.all) return;
+		for (const sp of eco.registry.all.values()) {
+			if (sp.group !== 'animal') continue;
+			if (sp.mean && sp.mean.length === AG_V1) sp.mean = padAnimalGenes(sp.mean, 1);
+			if (sp.genome && sp.genome.length === AG_V1) sp.genome = padAnimalGenes(sp.genome, 1);
+		}
 	}
 
 	async function decode(gz, makeWorld) {
