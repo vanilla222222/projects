@@ -173,12 +173,27 @@
 					<button data-tool="disease" title="Seed a disease outbreak (click)" data-icon="virus"><span class="gp-ico"></span><span>Disease</span></button>
 					<button data-tool="locust" title="Loose a plague of locusts (click)" data-icon="locust"><span class="gp-ico"></span><span>Locusts</span></button>
 				</div>
+				<div class="gp-group">Bless &amp; curse</div>
+				<div class="gp-tools" id="godBless">
+					<button data-tool="feed" title="Feed animals (click)" class="gp-bless"><span class="gp-ico"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 3c3.5 3 5.5 6.5 5.5 10a5.5 5.5 0 0 1-11 0C6.5 9.5 8.5 6 12 3z" fill="#e8b65a"/><path d="M12 8v10" stroke="#8a5a1c" stroke-width="1.4" stroke-linecap="round"/></svg></span><span>Feed</span></button>
+					<button data-tool="heal" title="Cure disease and poison (click)" class="gp-bless"><span class="gp-ico"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M9.5 3h5v6.5H21v5h-6.5V21h-5v-6.5H3v-5h6.5z" fill="#7fe0a8"/></svg></span><span>Heal</span></button>
+					<button data-tool="sterile" title="Stop animals breeding for a while (click)" class="gp-curse"><span class="gp-ico"><svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="8" fill="none" stroke="#b79be8" stroke-width="2.2"/><path d="M6.5 17.5l11-11" stroke="#b79be8" stroke-width="2.2" stroke-linecap="round"/></svg></span><span>Sterilise</span></button>
+					<button data-tool="cull" title="Strike down a share of the animals (click)" class="gp-curse"><span class="gp-ico"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M13.5 2L6 13.5h5L9.5 22 18 9.5h-5.2z" fill="#c78cf0"/></svg></span><span>Cull</span></button>
+					<button data-tool="fertilise" title="Enrich the soil (drag)" class="gp-bless"><span class="gp-ico"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 21v-8" stroke="#8fd16a" stroke-width="1.8" stroke-linecap="round"/><path d="M12 13c0-4 3-7 8-7 0 5-3 7-8 7zM12 15c0-3-2.5-5.5-7-5.5 0 4 2.5 5.5 7 5.5z" fill="#8fd16a"/><path d="M4 21h16" stroke="#a07a4a" stroke-width="2" stroke-linecap="round"/></svg></span><span>Fertilise</span></button>
+					<button data-tool="blight" title="Wither plants (drag)" class="gp-curse"><span class="gp-ico"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 21v-7" stroke="#8a7a52" stroke-width="1.8" stroke-linecap="round"/><path d="M12 14c-1-4 1-8 6-9 0 5-2 8-6 9zM12 16c-1-3-3.5-4.5-7-4 .5 3.5 3 4.5 7 4z" fill="#8a7a52"/><circle cx="17" cy="16" r="1.4" fill="#5c4f8a"/><circle cx="7" cy="7" r="1.1" fill="#5c4f8a"/></svg></span><span>Blight</span></button>
+				</div>
 				<label class="gp-row">Brush <input type="range" id="godBrush" min="0" max="12" value="2"><output id="godBrushOut">2</output></label>
 				<div class="gp-pane" id="godSpawnPane" hidden>
 					<label class="gp-row">Count <input type="range" id="godCount" min="1" max="100" value="10"><output id="godCountOut">10</output></label>
 				</div>
 				<div class="gp-pane" id="godDiseasePane" hidden>
 					<div class="gp-chips" id="godClasses"></div>
+				</div>
+				<div class="gp-pane" id="godBlessPane" hidden>
+					<div class="gp-chips" id="godTargets"></div>
+					<label class="gp-check"><input type="checkbox" id="godAll"> <span id="godAllLabel">Everywhere on the map</span></label>
+					<label class="gp-row" id="godTicksRow" hidden>Ticks <input type="range" id="godTicks" min="50" max="2000" step="50" value="500"><output id="godTicksOut">500</output></label>
+					<label class="gp-row" id="godFracRow" hidden>Share <input type="range" id="godFrac" min="10" max="100" step="5" value="50"><output id="godFracOut">50%</output></label>
 				</div>
 				<div class="gp-pane" id="godPickPane" hidden>
 					<input type="search" class="gp-search" id="godSearch" placeholder="Search living species" autocomplete="off">

@@ -104,7 +104,7 @@ const app = {
 	openClasses: new Set(),
 	busy: false,
 	messageTimer: 0,
-	god: { open: false, tool: null, sp: 0, biome: 'GRASSLAND', r: 2, n: 10, strokeId: 0, stroke: null, hintStroke: -1, hintCount: 0, chain: Promise.resolve(), seen: 0, listAt: 0, dcls: 'sp', coolUntil: 0 },
+	god: { open: false, tool: null, sp: 0, biome: 'GRASSLAND', r: 2, n: 10, strokeId: 0, stroke: null, hintStroke: -1, hintCount: 0, chain: Promise.resolve(), seen: 0, listAt: 0, dcls: 'sp', bcls: 'all', pcls: 'all', all: false, ticks: 500, frac: 50, coolUntil: 0 },
 };
 
 function readSize() {
@@ -555,7 +555,7 @@ function updateExtraStat(el, k, s, h) {
 	} else if (k === 'disasters') {
 		const dz = s.disasters || {};
 		v.innerHTML = `${formatCount(dz.activeFires || 0)}<small>burning · ${dz.burntShare || 0}% land burnt</small>`;
-		sub.innerHTML = `<span>${formatCount(dz.fires || 0)} wildfires</span><span>${formatCount(dz.burnt || 0)} tiles burnt</span><span>${formatCount(dz.floods || 0)} floods${dz.flooding ? ' · flooding now' : ''}</span><span>${formatCount(dz.droughts || 0)} droughts${dz.drought ? ' · in drought' : ''}</span><span>${formatCount(dz.windthrow || 0)} windstorms · ${formatCount(dz.felled || 0)} trees felled</span><span>${formatCount((dz.killed || 0) + (dz.drowned || 0))} animals killed · ${formatCount(dz.eggsLost || 0)} eggs lost</span><span>${formatCount(dz.scarTiles || 0)} scarred tiles · ${dz.recovery || 0}% recovered</span><span>pioneers ${dz.pioneerYoung || 0}% young · ${dz.pioneerOld || 0}% old scars</span><span>${formatCount(dz.recolonised || 0)} recolonised</span><span>${dz.adaptShare || 0}% of survivors fire-adapted</span>`;
+		sub.innerHTML = `<span>${formatCount(dz.fires || 0)} wildfires</span><span>${formatCount(dz.burnt || 0)} tiles burnt</span><span>${formatCount(dz.floods || 0)} floods${dz.flooding ? ' · flooding now' : ''}</span><span>${formatCount(dz.droughts || 0)} droughts${dz.drought ? ' · in drought' : ''}</span><span>${formatCount(dz.windthrow || 0)} windstorms · ${formatCount(dz.felled || 0)} trees felled</span><span>${formatCount((dz.killed || 0) + (dz.drowned || 0))} animals killed · ${formatCount(dz.eggsLost || 0)} eggs lost</span>${s.deaths && s.deaths.divine ? `<span>${formatCount(s.deaths.divine)} struck down by the divine hand</span>` : ''}<span>${formatCount(dz.scarTiles || 0)} scarred tiles · ${dz.recovery || 0}% recovered</span><span>pioneers ${dz.pioneerYoung || 0}% young · ${dz.pioneerOld || 0}% old scars</span><span>${formatCount(dz.recolonised || 0)} recolonised</span><span>${dz.adaptShare || 0}% of survivors fire-adapted</span>`;
 	} else if (k === 'eggs') {
 		const eg = s.eggs || {};
 		v.textContent = formatCount(st.eggs || 0);
@@ -901,6 +901,16 @@ function toxStatusCount(spId) {
 	return n;
 }
 
+function sterileCount(spId) {
+	const eco = app.eco;
+	const A = eco && eco.animals;
+	if (!A || !A.ster) return 0;
+	const t = eco.tick;
+	let n = 0;
+	for (let i = 0; i < A.count; i++) if (A.sp[i] === spId && A.alive[i] && A.ster[i] > t) n++;
+	return n;
+}
+
 function plantLifeBadges(sp) {
 	const g = sp.mean;
 	if (sp.group !== 'plant' || sp.kind === 1 || sp.domain === 'water' || !g || g.length < PG) return [];
@@ -1118,6 +1128,8 @@ function renderDetail() {
 		if (sp.grpMean !== undefined) cells.push(['Mean group size', `${sp.grpMean.toFixed(1)}${sp.colonies ? ` · ${formatCount(sp.colonies)} colonies` : ''}${sp.dispersal ? ' · founded by dispersers' : ''}`]);
 		cells.push(['Stages', `${formatCount(c[0])} juv · ${formatCount(c[1])} adult · ${formatCount(c[2])} elder · ${formatCount(c[3])} eggs`, true]);
 		const fxn = toxStatusCount(sp.id);
+		const nst = sterileCount(sp.id);
+		if (nst) cells.push(['Sterilised', `${formatCount(nst)} cannot breed`]);
 		if (fxn[1] + fxn[2] + fxn[3] + fxn[4] + fxn[5] > 0) cells.push(['Intoxicated', [1, 2, 3, 4].filter((k) => fxn[k]).map((k) => `${formatCount(fxn[k])} ${FX_WORDS[k]}`).concat(fxn[5] ? [`${formatCount(fxn[5])} gene-damaged`] : []).join(' · '), true]);
 	}
 	$('detailGrid').innerHTML = cells.map(([k, v, wide]) => `<div${wide ? ' class="wide"' : ''}><small>${k}</small><strong>${v}</strong></div>`).join('');
@@ -1354,7 +1366,8 @@ function updateTooltip() {
 		const water = A.domain[a] !== 1 && A.water ? ` · water ${pct(Math.min(1, Math.max(0, A.water[a])))}` : '';
 		const fxk = A.fx ? A.fx[a] : 0;
 		const gd = A.gl && A.gl[a] > 0.1;
-		const fxs = fxk || gd ? `<small class="tt-fx">${fxk ? `<span class="badge fx-${fxk}">${FX_WORDS[fxk]}</span>` : ''}${gd ? `<span class="badge fx-5">gene-damaged ${pct(Math.min(1, A.gl[a]))}</span>` : ''}</small>` : '';
+		const stl = A.ster && A.ster[a] > app.eco.tick ? A.ster[a] - app.eco.tick : 0;
+		const fxs = fxk || gd || stl ? `<small class="tt-fx">${fxk ? `<span class="badge fx-${fxk}">${FX_WORDS[fxk]}</span>` : ''}${gd ? `<span class="badge fx-5">gene-damaged ${pct(Math.min(1, A.gl[a]))}</span>` : ''}${stl ? `<span class="badge sterile">sterile · ${formatCount(stl)} ticks</span>` : ''}</small>` : '';
 		html += `<div class="tt-row">${iconSVG(sp.icon, speciesColors(sp), 30)}<div><strong>${sp.name}</strong><small>${roleTag(sp)}${categoryLabel(sp)}</small><small>${A.domain[a] === 3 ? (A.fly[a] ? 'flying · ' : 'perched · ') : ''}${A.dorm && A.dorm[a] ? dormWords[A.dorm[a]] : A.slp && A.slp[a] ? 'asleep' : states[A.state[a]]} · ${A.lv && A.lv[a] ? ['', 'tadpole', 'larva'][A.lv[a]] : ['juvenile', 'adult', 'elder'][animalStage(A, a)]}${A.cr && A.cr[a] > 0 ? ' · cared for' : ''}${A.ld && A.ld[a] ? ' · leads' : ''} · age ${A.age[a]}${home}</small><small>${A.genome ? actWord(A.genome[a * AG + G_ACT]) : ''}${A.dorm && A.dorm[a] ? ' · dormant' : A.slp && A.slp[a] ? ' · asleep' : ' · awake'}</small><small>energy ${pct(cap > 0 ? Math.min(1, Math.max(0, A.energy[a] / cap)) : 0)}${water}</small>${cond}${sick}${fxs}${A.lin && A.lin[a] && w.secretKinds ? `<small class="tt-secret ${A.lin[a] === 1 ? 'nuclear' : 'magic'}">${SECRET_LINEAGE[A.lin[a]]}</small>` : ''}</div></div>`;
 	}
 	for (let slot = 0; slot < 2; slot++) {
@@ -1397,20 +1410,78 @@ const GOD_TOOLS = {
 	meteor: { label: 'Meteor', kind: 'meteor', min: 2 },
 	disease: { label: 'Disease', kind: 'disease', min: 3 },
 	locust: { label: 'Locusts', kind: 'locust', min: 1 },
+	feed: { label: 'Feed', bless: 'feed' },
+	heal: { label: 'Heal', bless: 'heal' },
+	sterile: { label: 'Sterilise', bless: 'sterile' },
+	cull: { label: 'Cull', bless: 'cull' },
+	fertilise: { label: 'Fertilise', soil: 'fertilise' },
+	blight: { label: 'Blight', soil: 'blight' },
 };
 
 const GOD_TOOL_COLORS = { spawn: '#e7a25c', warm: '#e8b04a', cold: '#7fc4e8', wet: '#5fb6e6', dry: '#e0734a', fire: '#ec6a3c', flood: '#4a9fe0', drought: '#d9a441', disease: '#9bd06a', locust: '#b7c24a' };
+const GOD_BLESS_CLASSES = [['all', 'All'], ['sp', 'Species'], ...STAT_GROUPS.map((s) => [s.cls, s.label])];
+const GOD_SOIL_TARGETS = [['all', 'Any plant'], ['sp', 'Species']];
+const GOD_BLESS_HINTS = {
+	feed: 'Click to feed every animal under the brush, or pick a target and tick Everywhere.',
+	heal: 'Click to cure disease and poisoning under the brush, or pick a target and tick Everywhere.',
+	sterile: 'Click to stop animals breeding for the set number of ticks.',
+	cull: 'Click to strike down the set share of the targets.',
+	fertilise: 'Drag to enrich the soil. Pick a species and tick Everywhere to feed all its tiles.',
+	blight: 'Drag to wither plants. Pick a species and tick Everywhere to blight it all.',
+};
 const GOD_DISASTER_R = 12;
 const GOD_COOLDOWN_MS = 900;
 const GOD_DISEASE_CLASSES = [['sp', 'Species'], ...STAT_GROUPS.map((s) => [s.cls, s.label]), [6, 'Plants']];
 
 function godToolButtons() {
-	return [...$('godTools').children, ...$('godDisasters').children];
+	return [...$('godTools').children, ...$('godDisasters').children, ...$('godBless').children];
 }
 
 function godPicking() {
 	const g = app.god;
-	return g.tool === 'spawn' || (g.tool === 'disease' && g.dcls === 'sp');
+	const t = GOD_TOOLS[g.tool];
+	return g.tool === 'spawn' || (g.tool === 'disease' && g.dcls === 'sp') || (!!t && !!t.bless && g.bcls === 'sp') || (!!t && !!t.soil && g.pcls === 'sp');
+}
+
+function godBlessTargetKey() {
+	const g = app.god;
+	const t = GOD_TOOLS[g.tool];
+	return t && t.soil ? g.pcls : g.bcls;
+}
+
+function godBlessEverywhere() {
+	return app.god.all && godBlessTargetKey() !== 'all';
+}
+
+function godBlessTarget() {
+	const g = app.god;
+	const t = GOD_TOOLS[g.tool];
+	if (!t) return null;
+	const key = godBlessTargetKey();
+	if (key === 'sp') {
+		const sp = app.eco && app.eco.registry.get(g.sp);
+		const ok = sp && sp.population > 0 && sp.group === (t.soil ? 'plant' : 'animal');
+		return ok ? sp.name : null;
+	}
+	if (t.soil) return 'plants';
+	if (key === 'all') return 'animals';
+	const c = GOD_BLESS_CLASSES.find((x) => x[0] === key);
+	return c ? c[1].toLowerCase() : 'animals';
+}
+
+function buildGodBlessPane() {
+	const g = app.god;
+	const t = GOD_TOOLS[g.tool];
+	if (!t || (!t.bless && !t.soil)) return;
+	const list = t.soil ? GOD_SOIL_TARGETS : GOD_BLESS_CLASSES;
+	const key = godBlessTargetKey();
+	$('godTargets').innerHTML = list.map(([k, label]) => `<button data-cls="${k}" class="${k === key ? 'active' : ''}">${label}</button>`).join('');
+	const all = $('godAll');
+	all.disabled = key === 'all';
+	all.checked = !!g.all && key !== 'all';
+	$('godAllLabel').textContent = t.soil ? 'Everywhere it grows' : key === 'sp' ? 'Whole species, everywhere' : 'Everywhere on the map';
+	$('godTicksRow').hidden = g.tool !== 'sterile';
+	$('godFracRow').hidden = g.tool !== 'cull';
 }
 
 function godVer(eco) {
@@ -1435,12 +1506,16 @@ function setGodTool(tool) {
 	$('godSpawnPane').hidden = g.tool !== 'spawn';
 	$('godBiomePane').hidden = g.tool !== 'biome';
 	$('godDiseasePane').hidden = g.tool !== 'disease';
+	const bt = g.tool ? GOD_TOOLS[g.tool] : null;
+	$('godBlessPane').hidden = !(bt && (bt.bless || bt.soil));
+	buildGodBlessPane();
 	$('godPickPane').hidden = !godPicking();
 	$('map').classList.toggle('god-tool', !!g.tool);
 	cancelGodStroke();
 	if (!g.tool) $('godRing').hidden = true;
 	if (godPicking()) refreshGodSpecies(true);
-	if (g.tool && GOD_TOOLS[g.tool].kind) godHint(g.tool === 'disease' ? 'Pick a species or a class, then click where the outbreak starts.' : 'Click the map to strike. The brush sets the size.');
+	if (GOD_BLESS_HINTS[g.tool]) godHint(GOD_BLESS_HINTS[g.tool]);
+	else if (g.tool && GOD_TOOLS[g.tool].kind) godHint(g.tool === 'disease' ? 'Pick a species or a class, then click where the outbreak starts.' : 'Click the map to strike. The brush sets the size.');
 	updateGodActive();
 }
 
@@ -1470,6 +1545,11 @@ function updateGodActive() {
 	else if (g.tool === 'disease') {
 		const t = godDiseaseTarget();
 		text = t ? `Disease in ${t}` : 'Disease: pick a target';
+	} else if (g.tool && (GOD_TOOLS[g.tool].bless || GOD_TOOLS[g.tool].soil)) {
+		const t = godBlessTarget();
+		const lab = GOD_TOOLS[g.tool].label;
+		const extra = g.tool === 'sterile' ? ` for ${g.ticks} ticks` : g.tool === 'cull' ? ` (${g.frac}%)` : '';
+		text = t ? `${lab} ${t}${godBlessEverywhere() ? ' everywhere' : ''}${extra}` : `${lab}: pick a species`;
 	} else if (g.tool) text = GOD_TOOLS[g.tool].label;
 	el.textContent = text;
 	el.title = text;
@@ -1485,9 +1565,12 @@ function godSpeciesList() {
 	if (!app.eco) return out;
 	const q = $('godSearch').value.trim().toLowerCase();
 	const sick = app.god.tool === 'disease';
+	const bt = GOD_TOOLS[app.god.tool] || {};
+	const only = bt.bless ? 'animal' : bt.soil ? 'plant' : null;
 	for (const sp of app.eco.registry.all.values()) {
 		if ((sp.group !== 'animal' && sp.group !== 'plant') || !(sp.population > 0)) continue;
-		if (sick && sp.kind | 0) continue;
+		if ((sick || bt.soil) && sp.kind | 0) continue;
+		if (only && sp.group !== only) continue;
 		if (q && !sp.name.toLowerCase().includes(q) && !categoryLabel(sp).toLowerCase().includes(q)) continue;
 		out.push(sp);
 	}
@@ -1548,7 +1631,12 @@ function godResult(action, res) {
 		godHint(res.ok ? `Spawned ${res.count} ${name}.` : `No room for ${name} there. Try its own habitat.`);
 		refreshGodSpecies(true);
 	} else if (action.kind === 'paint') godHint(g.hintCount > 0 ? `Changed ${g.hintCount} tiles.` : 'Nothing to change there.');
+	else if (GOD_TOOLS[action.kind] && (GOD_TOOLS[action.kind].bless || GOD_TOOLS[action.kind].soil)) godHint(godBlessHint(action, res, g.hintCount));
 	else godHint(godDisasterHint(action, res));
+	if (res.fx && app.renderer && app.renderer.pulse) {
+		const mode = res.curse || action.kind === 'cull' || action.kind === 'sterile' || action.kind === 'blight' ? 2 : 1;
+		if (res.ok) for (let k = 0; k + 2 < res.fx.length; k += 3) app.renderer.pulse(res.fx[k], res.fx[k + 1], res.fx[k + 2], mode);
+	}
 	if (action.kind === 'meteor' && res.ok && app.renderer && app.renderer.impact) app.renderer.impact(res.x, res.y, res.r);
 	updateUi(true);
 }
@@ -1563,6 +1651,35 @@ function godDisasterHint(action, res) {
 	if (action.kind === 'disease') return res.ok ? `Outbreak seeded in ${c} hosts.` : res.reason === 'host' ? 'Pick a living species first.' : 'No suitable hosts there.';
 	if (action.kind === 'locust') return res.ok ? `Locusts swarm over ${c} tiles.` : 'Locusts need dry land.';
 	return '';
+}
+
+function godBlessHint(action, res, total) {
+	const c = res.count | 0;
+	const plural = (n, one, many) => `${formatCount(n)} ${n === 1 ? one : many}`;
+	if (res.reason === 'host') return 'Pick a living species first.';
+	if (action.kind === 'feed') return res.ok ? `Fed ${plural(c, 'animal', 'animals')}.` : res.reason === 'empty' ? 'No animals there.' : 'Everyone there is already well fed.';
+	if (action.kind === 'heal') return res.ok ? `Healed ${plural(c, 'animal', 'animals')}.` : res.reason === 'empty' ? 'No animals there.' : 'Nobody there is sick or poisoned.';
+	if (action.kind === 'sterile') return res.ok ? `Sterilised ${plural(c, 'animal', 'animals')} for ${res.ticks} ticks.` : 'No animals there.';
+	if (action.kind === 'cull') return res.ok ? `Struck down ${plural(c, 'animal', 'animals')}.` : 'No animals there.';
+	const n = action.all ? c : total;
+	if (action.kind === 'fertilise') return n > 0 ? `Fertilised ${plural(n, 'tile', 'tiles')}.` : 'That soil is already rich.';
+	if (action.kind === 'blight') return n > 0 ? `Withered plants on ${plural(n, 'tile', 'tiles')}.` : 'No plants there to blight.';
+	return '';
+}
+
+function godBlessAction(wx, wy) {
+	const g = app.god;
+	const t = GOD_TOOLS[g.tool];
+	const kind = t.bless || t.soil;
+	const key = godBlessTargetKey();
+	g.strokeId++;
+	const action = { kind, pts: [wx, wy], r: g.r, stroke: g.strokeId };
+	if (key === 'sp') action.sp = g.sp;
+	else if (key !== 'all') action.cls = key;
+	if (godBlessEverywhere()) action.all = 1;
+	if (kind === 'sterile') action.ticks = g.ticks;
+	if (kind === 'cull') action.frac = g.frac / 100;
+	return action;
 }
 
 function godDisaster(wx, wy) {
@@ -1597,6 +1714,7 @@ function godAction(pts) {
 	const t = GOD_TOOLS[g.tool];
 	const base = { pts, r: g.r, stroke: g.strokeId };
 	if (g.tool === 'spawn') return Object.assign({ kind: 'spawn', sp: g.sp, n: g.n }, base);
+	if (t.soil) return Object.assign({ kind: t.soil }, g.pcls === 'sp' ? { sp: g.sp } : {}, base);
 	return Object.assign({ kind: 'paint', brush: t.brush, value: t.brush === 'biome' ? g.biome : t.value }, base);
 }
 
@@ -1605,6 +1723,17 @@ function startGodStroke(wx, wy) {
 	if (GOD_TOOLS[g.tool] && GOD_TOOLS[g.tool].kind) {
 		godDisaster(wx, wy);
 		return true;
+	}
+	const bt = GOD_TOOLS[g.tool];
+	if (bt && (bt.bless || bt.soil)) {
+		if (godBlessTargetKey() === 'sp' && !godBlessTarget()) {
+			godHint('Pick a living species first.');
+			return false;
+		}
+		if (bt.bless || godBlessEverywhere()) {
+			godSend(godBlessAction(wx, wy));
+			return !godBlessEverywhere();
+		}
 	}
 	if (g.tool === 'spawn' && !(app.eco.registry.get(g.sp) || {}).population) {
 		godHint('Pick a living species first.');
@@ -1663,7 +1792,11 @@ function placeGodRing(x, y) {
 		return;
 	}
 	const t = GOD_TOOLS[app.god.tool];
-	const r = app.god.tool === 'spawn' ? Math.max(0.5, app.god.r) : t.kind ? Math.max(t.min, Math.min(GOD_DISASTER_R, app.god.r)) + 0.5 : app.god.r + 0.5;
+	if ((t.bless || t.soil) && godBlessEverywhere()) {
+		ring.hidden = true;
+		return;
+	}
+	const r = app.god.tool === 'spawn' ? Math.max(0.5, app.god.r) : t.bless ? Math.max(1, app.god.r) + 0.5 : t.kind ? Math.max(t.min, Math.min(GOD_DISASTER_R, app.god.r)) + 0.5 : app.god.r + 0.5;
 	const d = Math.max(6, r * 2 * app.renderer.cam.zoom);
 	ring.hidden = false;
 	ring.style.left = x + 'px';
@@ -1687,6 +1820,34 @@ function setupGodPalette() {
 	};
 	$('godTools').addEventListener('click', pick);
 	$('godDisasters').addEventListener('click', pick);
+	$('godBless').addEventListener('click', pick);
+	$('godTargets').addEventListener('click', (e) => {
+		const b = e.target.closest('button');
+		if (!b) return;
+		const v = b.dataset.cls === 'sp' || b.dataset.cls === 'all' ? b.dataset.cls : +b.dataset.cls;
+		if (GOD_TOOLS[g.tool] && GOD_TOOLS[g.tool].soil) g.pcls = v;
+		else g.bcls = v;
+		buildGodBlessPane();
+		$('godPickPane').hidden = !godPicking();
+		if (godPicking()) refreshGodSpecies(true);
+		updateGodActive();
+	});
+	$('godAll').addEventListener('change', () => {
+		g.all = $('godAll').checked;
+		updateGodActive();
+	});
+	const ticks = $('godTicks');
+	ticks.addEventListener('input', () => {
+		g.ticks = ticks.value | 0;
+		$('godTicksOut').textContent = g.ticks;
+		updateGodActive();
+	});
+	const frac = $('godFrac');
+	frac.addEventListener('input', () => {
+		g.frac = frac.value | 0;
+		$('godFracOut').textContent = g.frac + '%';
+		updateGodActive();
+	});
 	$('godClasses').addEventListener('click', (e) => {
 		const b = e.target.closest('button');
 		if (!b) return;

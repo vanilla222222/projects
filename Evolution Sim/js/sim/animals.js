@@ -964,6 +964,11 @@ class AnimalPool {
 		if (old) g.set(this.genome);
 		this.genome = g;
 		this.cap = newCap;
+		if (this.ster) {
+			const st = new Int32Array(newCap);
+			st.set(this.ster);
+			this.ster = st;
+		}
 		if (this.gitems) {
 			this.gitems = new Int32Array(newCap);
 			this.gcell = new Int32Array(newCap);
@@ -1091,6 +1096,7 @@ class AnimalPool {
 		this.seedSp[i] = 0;
 		this.seedTtl[i] = 0;
 		this.confuse[i] = 0;
+		if (this.ster) this.ster[i] = 0;
 		this.fx[i] = 0;
 		this.fxT[i] = 0;
 		this.crv[i] = 0;
@@ -2925,6 +2931,7 @@ class AnimalPool {
 				this.age[i] > this.mature[i] &&
 				ar < ELDER_FERTILE &&
 				this.cool[i] === 0 &&
+				(!this.ster || this.ster[i] < tick) &&
 				this.energy[i] + this.fat[i] > emax * 0.7 &&
 				(this.count < this.maxAnimals || (this.diet[i] > 0.6 && this.count < this.maxAnimals + 1500)) &&
 				(dom !== 2 || !Wx || Wx.waterDist[tile] <= 1 || (this.walk[tile] & 2) !== 0 || hk === 1) &&
@@ -3169,8 +3176,9 @@ class AnimalPool {
 		if (mp > PACK_BIG * this.mass[i] * this.gf[i]) this.bigKills++;
 	}
 
-	_chooseMate(i) {
+	_chooseMate(i, tick) {
 		const rng = this.rng;
+		const st = this.ster;
 		const r = this.range[i];
 		const x = this.x[i];
 		const y = this.y[i];
@@ -3189,7 +3197,7 @@ class AnimalPool {
 				const c = gy * cols + gx;
 				for (let k = this.gstart[c], e = this.gstart[c + 1]; k < e; k++) {
 					const j = this.gitems[k];
-					if (j === i || !this.alive[j] || this.sp[j] !== s || this.age[j] < this.mature[j]) continue;
+					if (j === i || !this.alive[j] || this.sp[j] !== s || this.age[j] < this.mature[j] || (st && st[j] >= tick)) continue;
 					const dx = this.x[j] - x;
 					const dy = this.y[j] - y;
 					if (dx * dx + dy * dy > r2) continue;
@@ -3835,7 +3843,7 @@ class AnimalPool {
 			this.cool[i] = 10;
 			return;
 		}
-		const mate = this._chooseMate(i);
+		const mate = this._chooseMate(i, tick);
 		if (mate === -2) return;
 		const fd = this.fnd[i];
 		const mutR = gl > 0 ? 0.25 * (1 + GL_MUT * gl) : 0.25;
@@ -3966,6 +3974,7 @@ class AnimalPool {
 		for (const f of ANIMAL_FIELDS_F) this[f][to] = this[f][from];
 		for (const f of ANIMAL_FIELDS_I) this[f][to] = this[f][from];
 		this.genome.copyWithin(to * AG, from * AG, from * AG + AG);
+		if (this.ster) this.ster[to] = this.ster[from];
 	}
 
 	reassignSpecies(fromSp, toSp) {

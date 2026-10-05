@@ -285,6 +285,8 @@ void main() {
 }`;
 
 const IMPACT_SECS = 1.2;
+const PULSE_SECS = 1.1;
+const PULSE_MAX = 64;
 
 const WX_VS = `#version 300 es
 in vec2 a_corner;
@@ -317,10 +319,29 @@ void main() {
 const IMPACT_FS = `#version 300 es
 precision highp float;
 uniform float u_age;
+uniform int u_mode;
 in vec2 v_q;
 out vec4 outColor;
 void main() {
 	float d = length(v_q) * 1.6;
+	if (u_mode == 1) {
+		float rise = smoothstep(0.0, 0.18, u_age) * (1.0 - smoothstep(0.35, 1.0, u_age));
+		float disc = smoothstep(1.0, 0.15, d) * rise;
+		float halo = exp(-pow((d - 0.55 - u_age * 0.4) * 6.0, 2.0)) * (1.0 - u_age);
+		float a = clamp(disc * 0.45 + halo * 0.5, 0.0, 1.0);
+		vec3 col = mix(vec3(0.62, 0.95, 0.45), vec3(1.0, 0.92, 0.55), clamp(halo * 1.5, 0.0, 1.0));
+		outColor = vec4(col * a, a * 0.6);
+		return;
+	}
+	if (u_mode == 2) {
+		float beat = smoothstep(0.0, 0.15, u_age) * (1.0 - smoothstep(0.3, 1.0, u_age));
+		float core = smoothstep(1.0, 0.0, d) * beat;
+		float edge = exp(-pow((d - 1.0 + u_age * 0.6) * 7.0, 2.0)) * (1.0 - u_age);
+		float a = clamp(core * 0.55 + edge * 0.45, 0.0, 0.8);
+		vec3 col = mix(vec3(0.05, 0.0, 0.08), vec3(0.45, 0.2, 0.6), clamp(edge * 1.2, 0.0, 1.0));
+		outColor = vec4(col * a, a);
+		return;
+	}
 	float flash = exp(-u_age * 6.0) * smoothstep(1.0, 0.0, d);
 	float front = u_age * 1.5;
 	float ring = exp(-pow((d - front) * 9.0, 2.0)) * (1.0 - u_age);
@@ -1541,14 +1562,20 @@ class WorldRenderer {
 	}
 
 	impact(x, y, r) {
-		this.impacts.push({ x, y, r: Math.max(2, r), t: this.time });
+		this.impacts.push({ x, y, r: Math.max(2, r), t: this.time, m: 0, s: IMPACT_SECS });
+	}
+
+	pulse(x, y, r, mode) {
+		if (!(x >= 0 && y >= 0)) return;
+		if (this.impacts.length >= PULSE_MAX) this.impacts.shift();
+		this.impacts.push({ x, y, r: Math.max(1.5, r + 0.5), t: this.time, m: mode === 2 ? 2 : 1, s: PULSE_SECS });
 	}
 
 	_drawImpacts(ox, oy, scale) {
 		const gl = this.gl;
 		const p = this.impactProg;
 		const u = p.u;
-		this.impacts = this.impacts.filter((h) => this.time - h.t < IMPACT_SECS);
+		this.impacts = this.impacts.filter((h) => this.time - h.t < (h.s || IMPACT_SECS));
 		if (!this.impacts.length) return;
 		gl.enable(gl.BLEND);
 		gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -1559,7 +1586,8 @@ class WorldRenderer {
 		gl.bindVertexArray(this.impactVao);
 		for (const h of this.impacts) {
 			gl.uniform3f(u.u_hit, h.x, h.y, h.r);
-			gl.uniform1f(u.u_age, Math.max(0, this.time - h.t) / IMPACT_SECS);
+			gl.uniform1f(u.u_age, Math.max(0, this.time - h.t) / (h.s || IMPACT_SECS));
+			gl.uniform1i(u.u_mode, h.m | 0);
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 		}
 		gl.bindVertexArray(null);

@@ -2088,6 +2088,35 @@ select option {
 	gap: 6px;
 }
 
+.gp-check {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--muted);
+	font-size: 11px;
+	cursor: pointer;
+}
+
+.gp-check input {
+	accent-color: var(--accent);
+	margin: 0;
+}
+
+.gp-check input:disabled + span {
+	opacity: 0.5;
+}
+
+#godFracOut,
+#godTicksOut {
+	width: 36px;
+}
+
+.badge.sterile {
+	color: #b79be8;
+	border-color: rgba(183, 155, 232, 0.45);
+	background: rgba(150, 110, 220, 0.12);
+}
+
 .gp-search {
 	width: 100%;
 	box-sizing: border-box;
