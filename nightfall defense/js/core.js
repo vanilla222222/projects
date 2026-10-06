@@ -4,7 +4,8 @@
   const WORLD = { L: 1400, W: 800, towerR: 20, minGap: 44 };
   const MAX_WAVE = 100;
   const LIVES = 10;
-  const SAVE_VER = 5;
+  const SAVE_VER = 6;
+  const MAX_STARS = 5;
   const SPAWN_GUARD = 15;
   const UNLOCK_AT = 50;
   const BASE_LEN = 1480;
@@ -19,6 +20,57 @@
     infBase: 4, infGrowth: 4, infMul: 1.25,
     startCash: 160,
   };
+
+  const STAR = { hp: 0.3, speed: 0.03, cash: 0.25, moon: 20, mapMoon: 0.5, bossPlate: 0.06, swift: 0.75, regen: 0.006, lives: 7, eliteFrom: 20, eliteAdd: 0.1 };
+  const STAR_MODS = [
+    { id: 'plated', star: 1, name: 'Armored bosses', short: 'Plated', desc: 'Bosses wear iron plates: every hit loses a flat chunk of damage.' },
+    { id: 'swift', star: 2, name: 'Faster spawns', short: 'Swift', desc: 'DNBs march in 25% closer together.' },
+    { id: 'regen', star: 3, name: 'Enemy regen', short: 'Regen', desc: 'DNBs regrow 0.6% of their HP each second, bosses half that.' },
+    { id: 'fragile', star: 4, name: 'Fewer lives', short: '7 lives', desc: 'Every wave starts with 7 lives instead of 10.' },
+    { id: 'elite', star: 5, name: 'Elites common', short: 'Elites', desc: 'Elite DNBs appear from wave 20 and 10% more often.' },
+  ];
+
+  const BRANCHES = [
+    { id: 'eco', name: 'Economy', color: '#e3c15b', desc: 'Cash, bonuses and interest.' },
+    { id: 'pony', name: 'Ponies', color: '#8fd18b', desc: 'Damage, range and race training.' },
+    { id: 'abil', name: 'Abilities', color: '#c39bff', desc: 'Signature power and cooldowns.' },
+    { id: 'util', name: 'Utility', color: '#7fc8ff', desc: 'Lives, wave skips and Moonstones.' },
+  ];
+  const RESEARCH = [
+    { id: 'eco_start', br: 'eco', name: 'Nest Egg', max: 3, base: 4, pos: [1, 0], req: [], per: '+50% starting cash on every map', total: lv => '+' + 50 * lv + '% starting cash' },
+    { id: 'eco_kill', br: 'eco', name: 'Bounty Ledger', max: 5, base: 6, pos: [0, 1], req: ['eco_start'], per: '+6% cash from every kill', total: lv => '+' + 6 * lv + '% kill cash' },
+    { id: 'eco_first', br: 'eco', name: 'Victory Purse', max: 5, base: 6, pos: [2, 1], req: ['eco_start'], per: '+10% first-clear bonus', total: lv => '+' + 10 * lv + '% first-clear bonus' },
+    { id: 'eco_interest', br: 'eco', name: 'Moonlit Interest', max: 3, base: 10, pos: [0, 2], req: ['eco_kill'], per: 'Every win pays 1% of held cash, capped at half a clear bonus per level', total: lv => lv + '% interest per win' },
+    { id: 'eco_sell', br: 'eco', name: 'Fair Trade', max: 2, base: 10, pos: [1, 2], req: ['eco_kill'], per: '+5% sell refund', total: lv => 'Sell refund ' + (70 + 5 * lv) + '%' },
+    { id: 'eco_boss', br: 'eco', name: 'Boss Bounty', max: 3, base: 10, pos: [2, 2], req: ['eco_first'], per: '+25% cash from boss kills', total: lv => '+' + 25 * lv + '% boss cash' },
+    { id: 'eco_master', br: 'eco', name: 'Golden Age', max: 1, base: 90, pos: [1, 3], req: ['eco_interest', 'eco_boss'], per: '+15% to all cash', total: () => '+15% all cash' },
+    { id: 'pony_dmg', br: 'pony', name: 'Drill Yard', max: 5, base: 4, pos: [1, 0], req: [], per: '+10% damage for every pony', total: lv => '+' + 10 * lv + '% damage' },
+    { id: 'pony_cheap', br: 'pony', name: 'Recruiting Fair', max: 2, base: 6, pos: [0, 1], req: ['pony_dmg'], per: 'The first pony of each race costs 25% less', total: lv => 'First copy -' + 25 * lv + '%' },
+    { id: 'pony_rate', br: 'pony', name: 'Quick Hooves', max: 4, base: 6, pos: [1, 1], req: ['pony_dmg'], per: '+5% attack speed for every pony', total: lv => '+' + 5 * lv + '% attack speed' },
+    { id: 'pony_range', br: 'pony', name: 'Keen Eyes', max: 3, base: 6, pos: [2, 1], req: ['pony_dmg'], per: '+4% range for every pony', total: lv => '+' + 4 * lv + '% range' },
+    { id: 'pony_earth', br: 'pony', name: 'Earth Training', max: 3, base: 10, pos: [0, 2], req: ['pony_cheap'], race: 'earth', per: 'Earth ponies: +10% damage, +5% attack speed', total: lv => 'Earth +' + 10 * lv + '% dmg, +' + 5 * lv + '% speed' },
+    { id: 'pony_unicorn', br: 'pony', name: 'Unicorn Training', max: 3, base: 10, pos: [1, 2], req: ['pony_rate'], race: 'unicorn', per: 'Unicorns: +10% damage, +5% attack speed', total: lv => 'Unicorn +' + 10 * lv + '% dmg, +' + 5 * lv + '% speed' },
+    { id: 'pony_pegasus', br: 'pony', name: 'Pegasus Training', max: 3, base: 10, pos: [2, 2], req: ['pony_range'], race: 'pegasus', per: 'Pegasi: +10% damage, +5% attack speed', total: lv => 'Pegasus +' + 10 * lv + '% dmg, +' + 5 * lv + '% speed' },
+    { id: 'pony_bat', br: 'pony', name: 'Bat Training', max: 3, base: 14, pos: [0.5, 3], req: ['pony_unicorn'], race: 'bat', per: 'Bat ponies: +10% damage, +5% attack speed', total: lv => 'Bat +' + 10 * lv + '% dmg, +' + 5 * lv + '% speed' },
+    { id: 'pony_crystal', br: 'pony', name: 'Crystal Training', max: 3, base: 14, pos: [1.5, 3], req: ['pony_unicorn'], race: 'crystal', per: 'Crystal ponies: +10% damage, +5% attack speed', total: lv => 'Crystal +' + 10 * lv + '% dmg, +' + 5 * lv + '% speed' },
+    { id: 'abil_power', br: 'abil', name: 'Spark of Power', max: 5, base: 4, pos: [1, 0], req: [], per: '+15% signature damage', total: lv => '+' + 15 * lv + '% signature damage' },
+    { id: 'abil_cd', br: 'abil', name: 'Second Wind', max: 4, base: 6, pos: [0, 1], req: ['abil_power'], per: 'Signature cooldowns 5% shorter', total: lv => 'Cooldowns -' + 5 * lv + '%' },
+    { id: 'abil_crit', br: 'abil', name: 'Lucky Horseshoe', max: 3, base: 6, pos: [2, 1], req: ['abil_power'], per: '+2% crit chance for every pony', total: lv => '+' + 2 * lv + '% crit chance' },
+    { id: 'abil_stun', br: 'abil', name: 'Lingering Hex', max: 3, base: 10, pos: [0, 2], req: ['abil_cd'], per: 'Stuns and slows last 10% longer', total: lv => '+' + 10 * lv + '% stun and slow time' },
+    { id: 'abil_first', br: 'abil', name: 'Ready Stance', max: 1, base: 40, pos: [1, 2], req: ['abil_cd'], per: 'Signatures start every wave fully charged', total: () => 'Signatures start charged' },
+    { id: 'abil_aura', br: 'abil', name: 'Bright Auras', max: 3, base: 10, pos: [2, 2], req: ['abil_crit'], per: 'Auras grant 15% more damage and speed', total: lv => '+' + 15 * lv + '% aura strength' },
+    { id: 'abil_master', br: 'abil', name: 'Mythic Surge', max: 1, base: 90, pos: [1, 3], req: ['abil_stun', 'abil_aura'], per: '+25% signature damage, cooldowns 10% shorter', total: () => '+25% power, -10% cooldowns' },
+    { id: 'util_lives', br: 'util', name: 'Sturdy Gate', max: 3, base: 4, pos: [1, 0], req: [], per: '+1 life every wave', total: lv => '+' + lv + ' lives' },
+    { id: 'util_skip', br: 'util', name: 'Head Start', max: 3, base: 6, pos: [0, 1], req: ['util_lives'], per: 'After a star-up, skip 3 more opening waves (bonuses paid)', total: lv => 'Skip ' + 3 * lv + ' waves after star-up' },
+    { id: 'util_leak', br: 'util', name: 'Boss Wardens', max: 2, base: 6, pos: [1, 1], req: ['util_lives'], per: 'Leaked bosses cost 1 life less (min 1)', total: lv => 'Boss leaks -' + lv + ' lives' },
+    { id: 'util_moon', br: 'util', name: 'Moon Lens', max: 5, base: 6, pos: [2, 1], req: ['util_lives'], per: '+10% Moonstones from every source', total: lv => '+' + 10 * lv + '% Moonstones' },
+    { id: 'util_auto', br: 'util', name: 'Muster Plans', max: 1, base: 30, pos: [0, 2], req: ['util_skip'], per: 'Save your layout on star-up and rebuild it with one click', total: () => 'Layout presets unlocked' },
+    { id: 'util_star', br: 'util', name: 'Star Hunter', max: 3, base: 10, pos: [2, 2], req: ['util_moon'], per: '+1 Moonstone per first-clear boss wave', total: lv => '+' + lv + ' per boss wave' },
+    { id: 'util_master', br: 'util', name: 'Moonlit Crown', max: 1, base: 90, pos: [1, 3], req: ['util_auto', 'util_star'], per: '+2 lives and +20% Moonstones', total: () => '+2 lives, +20% Moonstones' },
+  ];
+  const RESEARCH_BY_ID = {};
+  for (const r of RESEARCH) RESEARCH_BY_ID[r.id] = r;
+  const NO_RS = {};
 
   const RACES = {
     earth: {
