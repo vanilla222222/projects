@@ -284,13 +284,26 @@ function prestige() {
   const target = Number(process.env.STARS) || (MAP.id === 'moonlit' ? C.MAX_STARS : 1);
   const runs = [];
   const t0 = Date.now();
-  if (process.env.RESEARCH) {
+  if (process.env.RESEARCH || Number(process.env.FROM_STAR) > 1) {
     S.cleared = C.MAX_WAVE;
     runs.push({ star: 0, skipped: true });
   } else {
     console.log('== ' + MAP.id + ' 0 stars');
     const r = climb(S);
     runs.push({ star: 0, hours: r.hours, w50h: r.w50h, w100h: r.w100h, losses: r.losses, worst: r.worstWaveLosses, reached: r.reached });
+  }
+  const from = Number(process.env.FROM_STAR) || 0;
+  if (from > 1 && !process.env.RESEARCH) {
+    runs.length = 0;
+    S.cleared = C.MAX_WAVE;
+    while (C.starOf(S) < from - 1) {
+      const up = C.starUp(S);
+      if (up.star > 0) C.grantMoon(S, 10 * (1 + C.rl(S, 'util_star')) * C.moonMul(S));
+      const bought = buyResearch(S);
+      runs.push({ star: up.star, skipped: true, gain: up.gain, bought });
+      console.log(`== ${MAP.id} fast star up to ${up.star}: +${up.gain} Moonstones, bought ${bought.join(',') || 'nothing'}, ${S.moon} left`);
+      S.cleared = C.MAX_WAVE;
+    }
   }
   while (C.starOf(S) < target && S.cleared >= C.MAX_WAVE) {
     const up = C.starUp(S);
@@ -329,7 +342,11 @@ function child(id, extra) {
 async function runPrestige() {
   const t0 = Date.now();
   const base = JSON.parse(fs.readFileSync(path.join(__dirname, 'balance-results.json'), 'utf8')).results;
-  const first = await child('moonlit', {});
+  let first;
+  if (process.env.FIRST) {
+    const line = fs.readFileSync(process.env.FIRST, 'utf8').split('\n').find(l => l.startsWith('RESULT '));
+    first = JSON.parse(line.slice(7));
+  } else first = await child('moonlit', {});
   const others = C.MAP_IDS.filter(id => id !== 'moonlit');
   const rest = await Promise.all(others.map(id => child(id, { RESEARCH: JSON.stringify(first.research || {}), MOON: String(first.moon || 0), STARS: '1' })));
   const all = [first].concat(rest);
