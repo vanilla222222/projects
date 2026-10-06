@@ -353,7 +353,7 @@ async function fastForward(page, maxSeconds) {
     const deny = await page.evaluate(() => ({ n: __nd.S.towers.length, banner: document.getElementById('banner').textContent }));
     ok(deny.n === 0 && /tree/i.test(deny.banner), 'trees block building ' + JSON.stringify(deny));
     await page.keyboard.press('Escape');
-    const spot = await page.evaluate(() => { const S = __nd.S; for (let y = 40; y < 760; y += 10) for (let x = 40; x < 1360; x += 10) if (NDCore.canPlace(S, x, y)) return [x, y]; return null; });
+    const spot = await page.evaluate(() => { const S = __nd.S; let best = null, bd = 1e18; for (let y = 40; y < 760; y += 10) for (let x = 40; x < 1360; x += 10) { const d = (x - 700) ** 2 + (y - 400) ** 2; if (d < bd && NDCore.canPlace(S, x, y)) { bd = d; best = [x, y]; } } return best; });
     await placeAt(page, 'unicorn', spot[0], spot[1]);
     await page.keyboard.press('Escape');
     ok(await page.evaluate(() => __nd.S.towers.length) === 1, 'pony placed on woods');
