@@ -242,6 +242,9 @@ const DELTA_DEPTH = 0.05;
 const POND_DEPTH = 0.1;
 const RAPIDS_DEPTH = 0.035;
 const BEAVER_DEPTH = 0.2;
+const ROCKPOOL_DEPTH = 0.03;
+const LAGOON_DEPTH = 0.08;
+const KELP_DEPTH = 0.2;
 const LAKE_BASE = 0.12;
 const LAKE_STEP = 0.04;
 const LAKE_MAX = 0.45;
@@ -251,7 +254,7 @@ const DELTA_SHALLOW = 0.2;
 const DELTA_FERT = 1.3;
 const NB4X = [1, -1, 0, 0];
 const NB4Y = [0, 0, 1, -1];
-const OCEAN_SET = new Set([BIOME_ID.OCEAN, BIOME_ID.OCEAN_DEEP, BIOME_ID.FROZEN_OCEAN, BIOME_ID.CORAL_REEF, BIOME_ID.TRENCH, BIOME_ID.VENTS, BIOME_ID.COLD_SEEP]);
+const OCEAN_SET = new Set([BIOME_ID.OCEAN, BIOME_ID.OCEAN_DEEP, BIOME_ID.FROZEN_OCEAN, BIOME_ID.CORAL_REEF, BIOME_ID.TRENCH, BIOME_ID.VENTS, BIOME_ID.COLD_SEEP, BIOME_ID.ROCKY_SHORE, BIOME_ID.LAGOON, BIOME_ID.KELP_COAST]);
 
 const PLANT_ARCHETYPES = [
 	{ g: [0.82, 0.12, 0.5, 0.45, 0.35, 0.4, 0.2, 0.6, 0.15, 0.2, 0.3, 0.15, 0.5, 0.3, 0.15], domain: 'land' },
@@ -784,6 +787,12 @@ class PlantLayer {
 			[BIOME_ID.OXBOW]: 1.25,
 			[BIOME_ID.REED_MARSH]: 1.2,
 			[BIOME_ID.BEAVER_POND]: 1.3,
+			[BIOME_ID.ROCKY_SHORE]: 0.85,
+			[BIOME_ID.SEA_CLIFF]: 0.4,
+			[BIOME_ID.SALT_MARSH]: 1.15,
+			[BIOME_ID.LAGOON]: 1.3,
+			[BIOME_ID.KELP_COAST]: 1.45,
+			[BIOME_ID.ATOLL]: 0.6,
 		};
 		const calm = (b) => b === BIOME_ID.TRENCH || b === BIOME_ID.VENTS || b === BIOME_ID.COLD_SEEP;
 		this.snowK = new Float32Array(this.n);
@@ -851,6 +860,9 @@ class PlantLayer {
 				sal[i] = SAL_SALT;
 				let v = Math.max(SHELF_MIN, Math.min(depth[i], SHELF_BASE + SHELF_STEP * d));
 				if (b === BIOME_ID.CORAL_REEF) v = Math.min(v, REEF_DEPTH);
+				else if (b === BIOME_ID.ROCKY_SHORE) v = ROCKPOOL_DEPTH;
+				else if (b === BIOME_ID.LAGOON) v = Math.min(v, LAGOON_DEPTH);
+				else if (b === BIOME_ID.KELP_COAST) v = Math.min(v, KELP_DEPTH);
 				depth[i] = v;
 			} else if (w.isRiver[i] && !w.isLake[i]) {
 				depth[i] = w.isDelta[i] ? DELTA_DEPTH : b === BIOME_ID.RAPIDS ? RAPIDS_DEPTH : RIVER_DEPTH + RIVER_DEEP * clamp01(w.riverFlow[i] / RIVER_FLOW_DEEP);
@@ -2061,6 +2073,9 @@ const WATER_BIOME_SET = new Set([
 	BIOME_ID.RAPIDS,
 	BIOME_ID.OXBOW,
 	BIOME_ID.BEAVER_POND,
+	BIOME_ID.ROCKY_SHORE,
+	BIOME_ID.LAGOON,
+	BIOME_ID.KELP_COAST,
 ]);
 
 const BIOME_SALT = new Float32Array(BIOME_LIST.length);
@@ -2105,6 +2120,15 @@ BIOME_WOOD[BIOME_ID.FLOODPLAIN] = 0.1;
 BIOME_WOOD[BIOME_ID.ALPINE_MEADOW] = 0.45;
 BIOME_SOGGY[BIOME_ID.REED_MARSH] = 0.25;
 BIOME_WOOD[BIOME_ID.REED_MARSH] = 0.35;
+BIOME_SALT[BIOME_ID.SALT_MARSH] = 0.55;
+BIOME_SOGGY[BIOME_ID.SALT_MARSH] = 0.15;
+BIOME_WOOD[BIOME_ID.SALT_MARSH] = 0.5;
+BIOME_SALT[BIOME_ID.ATOLL] = 0.3;
+BIOME_DEEP[BIOME_ID.ATOLL] = 0.3;
+BIOME_WOOD[BIOME_ID.SEA_CLIFF] = 0.45;
+BIOME_SALT[BIOME_ID.SEA_CLIFF] = 0.2;
+BIOME_SALT[BIOME_ID.BEACH] = 0.25;
+BIOME_DEEP[BIOME_ID.BEACH] = 0.2;
 
 function biomeFit(b, wood, root, shade) {
 	return (1 - BIOME_SALT[b] * (1 - root)) * (1 - BIOME_WOOD[b] * wood) * (1 + BIOME_SHADE[b] * shade) * (1 - BIOME_DEEP[b] * (1 - root)) * (1 - BIOME_SOGGY[b] * root);

@@ -183,6 +183,14 @@ class EggPool {
 			if (A.lin && this.lin) A.lin[j] = this.lin[e];
 			A.energy[j] = Math.min(this.energy[e], A.emax[j] * A.gf[j] * 0.6);
 			A.natImm[j] = this.imm[e];
+			const C = A.coast;
+			if (C && A.domain[j] === 1 && C.seaward[t] >= 0) {
+				const st = C.seaward[t];
+				const sx = st % W;
+				A.x[j] = A.px[j] = A.tx[j] = sx + 0.5;
+				A.y[j] = A.py[j] = A.ty[j] = (st - sx) / W + 0.5;
+				C.hatchRuns++;
+			}
 			if (this.nst[e]) {
 				this.nestHatched++;
 				const tx = t % W;
