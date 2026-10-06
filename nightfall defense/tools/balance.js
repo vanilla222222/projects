@@ -5,6 +5,7 @@ const C = require('../js/core.js');
 if (process.env.TUNE) Object.assign(C.TUNE, JSON.parse(process.env.TUNE));
 if (process.env.STARTUNE) Object.assign(C.STAR, JSON.parse(process.env.STARTUNE));
 if (process.env.HEROTUNE) Object.assign(C.HERO_TUNE, JSON.parse(process.env.HEROTUNE));
+if (process.env.CHALTUNE) Object.assign(C.CHAL_ECO, JSON.parse(process.env.CHALTUNE));
 if (process.env.OFFTUNE) Object.assign(C.OFFLINE, JSON.parse(process.env.OFFTUNE));
 
 const DT = 1 / 20;
@@ -18,7 +19,13 @@ let diagDone = false;
 const PLAN = { earth: [0, 1], unicorn: [0, 1], pegasus: [2, 4], bat: [0, 3], crystal: [0, 3] };
 const SHARE = { earth: 0.3, unicorn: 0.3, pegasus: 0.15, bat: 0.15, crystal: 0.1 };
 const BOT_RACES = (process.env.BOT_RACES || C.RACE_IDS.join(',')).split(',').filter(r => C.RACES[r]);
+const CHAL = process.env.CHAL ? (process.env.CHAL.charAt(0) === '{' ? JSON.parse(process.env.CHAL) : C.CHAL_BY_ID[process.env.CHAL]) : null;
+const CMODS = {};
+if (CHAL) for (const m of CHAL.mods) CMODS[m] = true;
+const ACH_MODE = process.env.ACH || '';
+const ACH_PRIOR = ['p_w1', 'p_w10', 'p_w25', 'p_w50', 'p_w75', 'p_w100', 'p_map2', 'c_k1', 'c_k2', 'c_b1', 'c_b2', 'c_el', 'c_flaw', 'c_clutch', 'e_1', 'e_2', 'e_3', 'e_up', 'e_off', 'h_field', 'h_10', 'r_herd', 'r_army', 'p_codex', 'ch_d1', 'ch_p1'];
 
+if (!process.env.MAP && CHAL) process.env.MAP = CHAL.map;
 if (!process.env.MAP) { if (process.env.PRESTIGE) runPrestige(); else runAll(); return; }
 
 const MAP = C.getMap(process.env.MAP);
@@ -70,7 +77,7 @@ function coverSlots() {
 }
 
 const HERO_FOR = { moonlit: 'nova', woods: 'ironmane', caverns: 'nova', cliffs: 'skyflick', castle: 'skyflick' };
-const HERO = process.env.HERO === '0' ? '' : (C.HEROES[process.env.HERO] ? process.env.HERO : HERO_FOR[MAP.id]);
+const HERO = (process.env.HERO === '0' || CMODS.nohero) ? '' : (C.HEROES[process.env.HERO] ? process.env.HERO : HERO_FOR[MAP.id]);
 let heroCov = null, heroTowers = -1;
 function heroCover() {
   const d = C.HEROES[HERO], R = d.range * 1.15, R2 = R * R, out = [];
@@ -162,9 +169,17 @@ function needs(S, n) {
   }
   return (needCache[key] = out);
 }
+function chalNeed(S, t, i) {
+  const allowed = C.chalRaces(S);
+  const air = CMODS.flyers || (allowed.indexOf('pegasus') < 0 && allowed.indexOf('bat') < 0);
+  if (t.race === 'unicorn' && i === 1) { const want = CMODS.stealth ? 3 : air ? 1 : 0; if (t.paths[1] < want) return 0.02; }
+  if (t.race === 'bat' && i === 1 && CMODS.stealth && t.paths[1] < 1) return 0.02;
+  if (CMODS.armored && i === 0 && (t.race === 'earth' || t.race === 'unicorn') && t.paths[0] < 6) return 0.3;
+  return 1;
+}
 function counterBoost(S, n, t, i) {
   const nd = needs(S, n);
-  let m = 1;
+  let m = S.chal ? chalNeed(S, t, i) : 1;
   for (const k in COUNTER) {
     if (!nd[k]) continue;
     for (const [race, path, lv] of COUNTER[k]) {
@@ -176,21 +191,32 @@ function counterBoost(S, n, t, i) {
   return m;
 }
 
+function chalAllowed(S) {
+  let list = C.chalRaces(S).filter(r => BOT_RACES.indexOf(r) >= 0);
+  if (CMODS.flyers) list = list.filter(r => r !== 'earth');
+  return list;
+}
+function planFor(S, race) { return S.chal && CMODS.stealth && race === 'bat' ? [0, 1] : PLAN[race]; }
 function options(S, n) {
   const opts = [];
   const total = S.towers.length || 1;
-  for (const r of BOT_RACES) {
+  const ch = !!S.chal, races = ch ? chalAllowed(S) : BOT_RACES;
+  const capped = ch && S.chal.def.cap && S.towers.length >= S.chal.def.cap;
+  for (const r of races) {
+    if (capped) break;
     const have = C.owned(S, r);
     let cost = C.nextTowerCost(S, r);
-    let weight = cost * (1 + Math.max(0, have / total - SHARE[r]) * 4);
-    if (r === 'pegasus' && have === 0 && n >= 5) weight = 0;
-    if (r === 'unicorn' && have === 0 && n >= 7) weight = 0;
+    const share = ch ? SHARE[r] / races.reduce((v, q) => v + SHARE[q], 0) : SHARE[r];
+    let weight = cost * (1 + Math.max(0, have / total - share) * 4);
+    if (!ch && r === 'pegasus' && have === 0 && n >= 5) weight = 0;
+    if (!ch && r === 'unicorn' && have === 0 && n >= 7) weight = 0;
     if (r === 'pegasus' && have === 0 && n < 4) weight *= 3;
     if (r === 'crystal' && total < 6) weight *= 4;
+    if (ch && S.chal.def.cap) weight *= 0.5;
     opts.push({ cost, weight, kind: 'tower', race: r });
   }
   for (const t of S.towers) {
-    for (const i of PLAN[t.race]) {
+    for (const i of planFor(S, t.race)) {
       if (t.paths[i] >= 10) continue;
       const c = C.nextNodeCost(t, i);
       if (!isFinite(c)) continue;
@@ -387,10 +413,44 @@ function prestige() {
   console.log('RESULT ' + JSON.stringify(res));
 }
 
+function achSeed(S) {
+  if (ACH_MODE === '0') { S.ach = null; return; }
+  if (!ACH_MODE) return;
+  if (MAP.id !== 'moonlit') for (const id of ACH_PRIOR) S.ach[id] = 1;
+  C.recalcBonus(S);
+}
+function playChallenge() {
+  const P = C.newState(MAP.id);
+  P.fxOn = false;
+  if (HERO) { P.heroUnlocks[HERO] = 1; C.pickHero(P, HERO); }
+  const tries = Number(process.env.TRIES) || 3;
+  let res = null;
+  for (let a = 1; a <= tries; a++) {
+    const X = C.startChallenge(P, CHAL, 1e12);
+    X.fxOn = false;
+    heroTowers = -1;
+    let time = 0;
+    while (!X.chal.over) {
+      const n = X.cleared + 1;
+      shop(X, n);
+      placeHero(X);
+      const r = play(X, n);
+      time += r.t;
+      if (!X.chal.over && !r.won && !X.run) break;
+    }
+    const out = X.chal.result || {};
+    res = { id: CHAL.id, map: CHAL.map, from: CHAL.from, mods: CHAL.mods, cap: CHAL.cap || 0, won: out.result === 'won', waves: out.waves, total: out.total, lives: out.lives, livesMax: X.chal.livesMax, score: out.score, attempts: a, towers: X.towers.length, minutes: +(time / 60).toFixed(1), leaks: Object.assign({}, LEAKS) };
+    if (res.won) break;
+  }
+  console.log('RESULT ' + JSON.stringify(res));
+}
+
 function main() {
+  if (CHAL) { playChallenge(); return; }
   if (process.env.PRESTIGE) { prestige(); return; }
   const S = C.newState(MAP.id);
   S.fxOn = false;
+  achSeed(S);
   console.log('RESULT ' + JSON.stringify(climb(S)));
 }
 

@@ -956,28 +956,33 @@
   }
 
   const CHAL_MODS = {
-    unicorns: { name: 'Unicorns only', desc: 'Only unicorns can be placed.', races: ['unicorn'], w: 1 },
-    grounded: { name: 'Grounded', desc: 'No pegasi or bat ponies.', ban: ['pegasus', 'bat'], w: 0.5 },
+    unicorns: { name: 'Unicorns only', desc: 'Only unicorns can be placed. They are priced like a mixed herd.', races: ['unicorn'], w: 1.5 },
+    grounded: { name: 'Grounded', desc: 'No pegasi or bat ponies. The rest are priced like a mixed herd.', ban: ['pegasus', 'bat'], w: 0.5 },
     nosell: { name: 'No selling', desc: 'Ponies cannot be sold.', w: 0.5 },
     flyers: { name: 'Flyers only', desc: 'Every DNB flies.', w: 1 },
     double: { name: 'Double speed', desc: 'DNBs move twice as fast.', w: 1.5 },
-    halfrange: { name: 'Half range', desc: 'Ponies and the hero have half range.', w: 1.5 },
+    short: { name: 'Short sight', desc: 'Ponies and the hero have 25% less range.', w: 1.5 },
     nohero: { name: 'No hero', desc: 'Heroes stay home.', w: 0.5 },
-    bosses5: { name: 'Boss tide', desc: 'A boss every 5 waves.', w: 1 },
-    stealth: { name: 'Stealth everywhere', desc: 'Every DNB is cloaked.', w: 1 },
+    bosses5: { name: 'Boss tide', desc: 'A boss every 5 waves.', w: 1.5 },
+    stealth: { name: 'Shadow march', desc: 'Half of all DNBs are cloaked.', w: 1.5 },
     armored: { name: 'Armored horde', desc: 'Every DNB wears plate.', w: 1 },
-    onelife: { name: 'One life', desc: 'A single leak ends the run.', w: 2 },
-    limit: { name: 'Small herd', desc: 'Only a few ponies allowed.', w: 1 },
+    onelife: { name: 'One life', desc: 'A single leak ends the run.', w: 2, perm: true },
+    limit: { name: 'Small herd', desc: 'Only a few ponies allowed.', w: 2 },
     rich: { name: 'Golden start', desc: 'Triple starting cash, but kills pay nothing.', w: 1 },
     tough: { name: 'Thick hides', desc: 'DNBs have 40% more health.', w: 1 },
-    glass: { name: 'Glass cannon', desc: 'Ponies deal 50% more damage, but only 5 lives.', w: 1 },
+    glass: { name: 'Glass cannon', desc: 'Ponies deal 50% more damage, but only 10 lives.', w: 1 },
   };
   const CHAL_IDS = Object.keys(CHAL_MODS);
-  const CHAL_CLASH = [['unicorns', 'flyers'], ['grounded', 'flyers'], ['unicorns', 'grounded'], ['onelife', 'glass'], ['onelife', 'double'], ['onelife', 'bosses5'], ['onelife', 'halfrange']];
+  const DAILY_MODS = CHAL_IDS.filter(id => !CHAL_MODS[id].perm);
+  const CHAL_CLASH = [['unicorns', 'flyers'], ['grounded', 'flyers'], ['unicorns', 'grounded'], ['onelife', 'glass'], ['onelife', 'double'], ['onelife', 'bosses5'], ['onelife', 'short']];
   const CHAL_LIVES = 20;
+  const CHAL_ECO = { start: 3, kill: 2, clear: 2, hp: 0.4, boss: 0.6, soft: 0.15 };
+  const DAILY_WEIGHT = 3.5;
   const DAILY_BANDS = { moonlit: [1, 11, 21, 31], woods: [1, 11, 21], caverns: [1, 11, 21], cliffs: [1, 11], castle: [1, 11] };
   function chalClash(a, b) { return CHAL_CLASH.some(c => (c[0] === a && c[1] === b) || (c[0] === b && c[1] === a)); }
-  function chalLives(mods, lives) { return mods.indexOf('onelife') >= 0 ? 1 : mods.indexOf('glass') >= 0 ? 5 : lives || CHAL_LIVES; }
+  function chalLives(mods, lives) { return mods.indexOf('onelife') >= 0 ? 1 : mods.indexOf('glass') >= 0 ? 10 : lives || CHAL_LIVES; }
+  function chalWeight(mods) { let w = 0; for (const m of mods) w += CHAL_MODS[m] ? CHAL_MODS[m].w : 0; return w; }
+  function chalHpMul(def) { return CHAL_ECO.hp / (1 + CHAL_ECO.soft * chalWeight(def.mods)); }
   const CHALLENGES = [
     { id: 'horn', name: 'Horn and Hoof', map: 'moonlit', from: 1, to: 20, mods: ['unicorns'], diff: 1, reward: { moon: 15 }, blurb: 'A herd of unicorns holds the moonlit road alone.' },
     { id: 'nosell', name: 'Nothing to Sell', map: 'moonlit', from: 1, to: 25, mods: ['nosell', 'limit'], cap: 8, diff: 2, reward: { rp: 10 }, blurb: 'Eight ponies, placed for keeps.' },
@@ -985,7 +990,7 @@
     { id: 'lightless', name: 'Lightless', map: 'caverns', from: 1, to: 20, mods: ['stealth'], diff: 3, reward: { token: 'lantern' }, blurb: 'Nothing in the caverns can be seen without help.' },
     { id: 'iron', name: 'Iron Tide', map: 'castle', from: 1, to: 20, mods: ['armored'], diff: 3, reward: { rp: 15 }, blurb: 'Plated DNBs march on the castle.' },
     { id: 'glass', name: 'Glass Gate', map: 'moonlit', from: 11, to: 30, mods: ['onelife'], diff: 4, reward: { moon: 40 }, blurb: 'One leak and the gate shatters.' },
-    { id: 'rest', name: 'Hero\'s Rest', map: 'woods', from: 1, to: 25, mods: ['nohero', 'halfrange'], diff: 3, reward: { hero: 'ironmane' }, blurb: 'No hero, and the trees crowd every pony\'s view.' },
+    { id: 'rest', name: 'Hero\'s Rest', map: 'woods', from: 1, to: 25, mods: ['nohero', 'short'], diff: 3, reward: { hero: 'ironmane' }, blurb: 'No hero, and the trees crowd every pony\'s view.' },
     { id: 'rush', name: 'Boss Rush', map: 'moonlit', from: 1, to: 25, mods: ['bosses5'], diff: 3, reward: { token: 'crown' }, blurb: 'A boss walks the road every five waves.' },
     { id: 'stampede', name: 'Stampede', map: 'woods', from: 1, to: 20, mods: ['double'], diff: 3, reward: { moon: 30 }, blurb: 'Everything runs twice as fast.' },
     { id: 'golden', name: 'Golden Hooves', map: 'cliffs', from: 1, to: 25, mods: ['rich'], diff: 2, reward: { token: 'gild' }, blurb: 'A fortune up front, and not a coin after.' },
@@ -993,7 +998,7 @@
     { id: 'nightfall', name: 'Nightfall', map: 'castle', from: 21, to: 40, mods: ['stealth', 'armored', 'bosses5'], diff: 5, reward: { moon: 60, token: 'nightfall' }, blurb: 'Cloaked, plated and led by bosses. The last trial.' },
   ];
   const CHAL_BY_ID = {};
-  for (const c of CHALLENGES) { c.kind = 'perm'; c.lives = chalLives(c.mods, c.lives); CHAL_BY_ID[c.id] = c; }
+  for (const c of CHALLENGES) { c.kind = 'perm'; c.w = chalWeight(c.mods); c.lives = chalLives(c.mods, c.lives); CHAL_BY_ID[c.id] = c; }
   function dayIndex(now) { return Math.floor((+now || 0) / 864e5); }
   function dayLabel(day) { return new Date(day * 864e5).toISOString().slice(0, 10); }
   function dailyDef(day) {
@@ -1005,15 +1010,15 @@
     const k = rng() < 0.4 ? 3 : 2;
     const mods = [];
     for (let g = 0; mods.length < k && g < 60; g++) {
-      const m = CHAL_IDS[Math.floor(rng() * CHAL_IDS.length)];
+      const m = DAILY_MODS[Math.floor(rng() * DAILY_MODS.length)];
       if (mods.indexOf(m) >= 0 || mods.some(o => chalClash(o, m))) continue;
+      if (mods.length >= 2 && chalWeight(mods.concat(m)) > DAILY_WEIGHT) continue;
       mods.push(m);
     }
-    const cap = mods.indexOf('limit') >= 0 ? 6 + Math.floor(rng() * 3) : 0;
-    let w = 0;
-    for (const m of mods) w += CHAL_MODS[m].w;
+    const cap = mods.indexOf('limit') >= 0 ? 8 + Math.floor(rng() * 3) : 0;
+    const w = chalWeight(mods);
     const diff = Math.max(1, Math.min(5, Math.round(w + (from - 1) / 15 + (MAPS[map].order - 1) * 0.25)));
-    return { id: 'daily', kind: 'daily', day, name: 'Daily ' + dayLabel(day), map, from, to: from + 19, mods, cap, diff, lives: chalLives(mods), reward: { moon: 15 } };
+    return { id: 'daily', kind: 'daily', day, name: 'Daily ' + dayLabel(day), map, from, to: from + 19, mods, cap, diff, w, lives: chalLives(mods), reward: { moon: 15 } };
   }
   function dailyMoon(streak) { return 15 + Math.min(10, Math.max(0, streak - 1)); }
   function rollDaily(P, day) {
@@ -1051,11 +1056,12 @@
   }
   function chalEnemy(cm, e) {
     if (cm.flyers) e.flying = true;
-    if (cm.stealth) e.stealth = true;
+    if (cm.stealth && e.id % 2 === 0) e.stealth = true;
     if (cm.armored) e.plate = Math.max(e.plate, 0.04 * e.plateBase);
   }
   function chalRun(S, run, ch) {
     const m = ch.mods;
+    run.cashMul *= CHAL_ECO.kill; run.clearMul *= CHAL_ECO.clear; run.hpMul *= chalHpMul(ch.def); run.bossHp = CHAL_ECO.boss;
     if (m.tough) run.hpMul *= 1.4;
     if (m.double) run.spdMul *= 2;
     if (m.rich) { run.cashMul = 0; run.bossCash = 0; }
@@ -1073,7 +1079,7 @@
   }
   const CHAL_SHARED = ['stats', 'settings', 'codex', 'research', 'heroUnlocks', 'ach', 'feats', 'bonus', 'daily', 'chalDone', 'chalBest', 'tokens'];
   function chalStartCash(X, def, map) {
-    let c = mapStartCash(map, X) + Math.round(skipCash(X, map, def.from - 1, 0) * 0.85);
+    let c = Math.round((mapStartCash(map, X) + skipCash(X, map, def.from - 1, 0) * 0.85) * CHAL_ECO.start);
     if (def.mods.indexOf('rich') >= 0) c *= 3;
     return c;
   }
@@ -1088,7 +1094,7 @@
     X.seed = hashSeed(P.seed, def.kind === 'daily' ? def.day : def.from * 131 + def.to, 99);
     const mods = {};
     for (const m of def.mods) mods[m] = true;
-    X.cm = (mods.halfrange || mods.glass) ? { range: mods.halfrange ? 0.5 : 1, dmg: mods.glass ? 1.5 : 1 } : null;
+    X.cm = (mods.short || mods.glass) ? { range: mods.short ? 0.75 : 1, dmg: mods.glass ? 1.5 : 1 } : null;
     X.stars = {}; X.moon = 0; X.moonTotal = 0; X.presets = {}; X.slots = {}; X.boards = {}; X.lastSeen = 0;
     Object.assign(X, newBoard(map, X));
     X.cash = chalStartCash(X, def, map);
@@ -1241,7 +1247,8 @@
 
   function owned(S, race) { let c = 0; for (const t of S.towers) if (t.race === race) c++; return c; }
   function nextTowerCost(S, race) {
-    const k = owned(S, race);
+    let k = owned(S, race);
+    if (S.chal) { const n = chalRaces(S).length; if (n < RACE_IDS.length) k = Math.floor(k * n / RACE_IDS.length); }
     const c = towerCost(race, k, priceOf(mapOf(S)));
     return k === 0 ? Math.round(c * (1 - 0.25 * rl(S, 'pony_cheap'))) : c;
   }
@@ -1562,7 +1569,7 @@
     if (e.boss) {
       const b = (opts && opts.xb && run.xboss) || run.spec.boss || BOSSES[0];
       e.bossDef = b; e.trick = b.trick; e.name = b.name; e.color = b.color; e.dark = b.dark; e.leak = 5;
-      e.hpMax = e.hp = base * def.hp * (1 + n / 100) * (b.hpMul || 1);
+      e.hpMax = e.hp = base * def.hp * (1 + n / 100) * (b.hpMul || 1) * (run.bossHp || 1);
       if (run.star >= 1) e.starPlate = STAR.bossPlate * base;
       e.thresholds = [0.75, 0.5, 0.25];
       if (e.trick === 'flying') e.flying = true;
@@ -3611,7 +3618,7 @@
     slotCount, slotsOf, cleanName, savePreset, deletePreset, renamePreset, loadPreset, cancelBuild, buildPending, buildStep, buildProgress, planCost,
     cleanFarm, cleanSlots, cleanBuild,
     BONUS_KEYS, BONUS_NAMES, newBonus, newStats, cleanStats, TOKENS, profileOf, feat, ACH, ACH_BY_ID, ACH_CATS, bonusText, recalcBonus, checkAch, achList, bestCleared,
-    CHAL_MODS, CHAL_IDS, CHAL_CLASH, CHALLENGES, CHAL_BY_ID, DAILY_BANDS, chalClash, dayIndex, dayLabel, dailyDef, dailyMoon, dailyStreak, modText, modDesc, rewardText,
+    CHAL_ECO, CHAL_MODS, CHAL_IDS, DAILY_MODS, CHAL_CLASH, CHALLENGES, CHAL_BY_ID, DAILY_BANDS, chalClash, chalWeight, chalHpMul, dayIndex, dayLabel, dailyDef, dailyMoon, dailyStreak, modText, modDesc, rewardText,
     chalRaces, chalHas, chalBlock, startChallenge, quitChallenge, chalFinish, chalScore, chalInfo, chalStartCash, tickPlay, statsSummary, newDaily,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
