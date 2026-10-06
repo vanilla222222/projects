@@ -126,7 +126,33 @@
     ctx.restore();
   }
 
+  function drawHorns(ctx, kind, hx, hy, r, col) {
+    ctx.fillStyle = col;
+    ctx.strokeStyle = col;
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      if (kind === 'antler') {
+        ctx.lineWidth = Math.max(1.5, r * 0.09); ctx.lineCap = 'round';
+        ctx.moveTo(hx + s * r * 0.25, hy - r * 0.35); ctx.lineTo(hx + s * r * 0.55, hy - r * 1.0);
+        ctx.moveTo(hx + s * r * 0.4, hy - r * 0.65); ctx.lineTo(hx + s * r * 0.75, hy - r * 0.8);
+        ctx.moveTo(hx + s * r * 0.5, hy - r * 0.88); ctx.lineTo(hx + s * r * 0.38, hy - r * 1.12);
+        ctx.stroke(); continue;
+      }
+      if (kind === 'ears') { ctx.moveTo(hx + s * r * 0.18, hy - r * 0.35); ctx.lineTo(hx + s * r * 0.42, hy - r * 0.95); ctx.lineTo(hx + s * r * 0.44, hy - r * 0.25); }
+      else if (kind === 'spike') { ctx.moveTo(hx + s * r * 0.1, hy - r * 0.42); ctx.lineTo(hx + s * r * 0.22, hy - r * 1.05); ctx.lineTo(hx + s * r * 0.32, hy - r * 0.38); }
+      else if (kind === 'curl') {
+        ctx.lineWidth = Math.max(2, r * 0.14); ctx.lineCap = 'round';
+        ctx.arc(hx + s * r * 0.5, hy - r * 0.35, r * 0.28, s > 0 ? Math.PI * 0.9 : Math.PI * 0.1, s > 0 ? Math.PI * 2.3 : -Math.PI * 1.3, s < 0);
+        ctx.stroke(); continue;
+      }
+      else { ctx.moveTo(hx + s * r * 0.35, hy - r * 0.15); ctx.lineTo(hx + s * r * 0.7, hy - r * 0.7); ctx.lineTo(hx + s * r * 0.12, hy - r * 0.32); }
+      ctx.closePath(); ctx.fill();
+    }
+  }
+
   function drawDNB(ctx, e, x, y, r, now) {
+    const look = e.bossDef && e.bossDef.look;
+    if (look && look.size && !e.splitDone) r *= look.size;
     const flash = e.hit > 0;
     const col = flash ? '#ffffff' : e.color, dark = flash ? '#eeeeee' : e.dark;
     const ph = e.seed || 0;
@@ -141,6 +167,16 @@
       g.addColorStop(0, 'rgba(192,139,255,.9)'); g.addColorStop(1, 'rgba(192,139,255,0)');
       ctx.fillStyle = g;
       ctx.beginPath(); ctx.arc(x, y, r * 1.7, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+    if (look && look.aura && !flash) {
+      const p = 0.5 + 0.5 * Math.sin(now / 300 + ph);
+      ctx.save();
+      ctx.globalAlpha *= 0.3 + 0.2 * p;
+      const g = ctx.createRadialGradient(x, y, r * 0.3, x, y, r * 2);
+      g.addColorStop(0, look.aura); g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(x, y, r * 2, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
     }
     ctx.fillStyle = 'rgba(0,0,0,.25)';
@@ -178,7 +214,17 @@
       ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.lineWidth = Math.max(1, r * 0.1);
       ctx.beginPath(); ctx.ellipse(x, y, r * 0.6, r * 0.82, 0, Math.PI * 1.12, Math.PI * 1.62); ctx.stroke();
     }
-    if (e.type === 'tanky' || (e.boss && !fl)) {
+    if (look && look.spikes) {
+      ctx.fillStyle = flash ? '#eee' : shade(dark, -0.2);
+      for (let i = 0; i < 4; i++) {
+        const a = Math.PI * (0.62 + i * 0.25);
+        const bx = x + Math.cos(a) * r * 0.6, by = y + Math.sin(a) * r * 0.82;
+        ctx.beginPath(); ctx.moveTo(bx - r * 0.1, by); ctx.lineTo(bx + Math.cos(a) * r * 0.42, by + Math.sin(a) * r * 0.42); ctx.lineTo(bx + r * 0.1, by + r * 0.08); ctx.closePath(); ctx.fill();
+      }
+    }
+    if (look) {
+      if (look.horns !== 'none') drawHorns(ctx, look.horns || 'tusk', hx, hy, r, flash ? '#eee' : '#e8e4dc');
+    } else if (e.type === 'tanky' || (e.boss && !fl)) {
       ctx.fillStyle = flash ? '#eee' : '#e8e4dc';
       for (const s of [-1, 1]) {
         ctx.beginPath(); ctx.moveTo(hx + s * r * 0.35, hy - r * 0.15); ctx.lineTo(hx + s * r * 0.6, hy - r * 0.55); ctx.lineTo(hx + s * r * 0.12, hy - r * 0.32); ctx.closePath(); ctx.fill();
@@ -198,6 +244,18 @@
       }
       ctx.restore();
     }
+    if (e.cut > 0) {
+      ctx.save();
+      ctx.strokeStyle = e.shellT > 0 ? '#e8dcc0' : '#9a9488'; ctx.lineWidth = Math.max(2, r * 0.2);
+      ctx.globalAlpha *= 0.5 + e.cut * 0.5;
+      if (e.shellT > 0) { ctx.shadowColor = '#fff0c8'; ctx.shadowBlur = 8; circle(ctx, x, y - r * 0.1, r * 1.08); ctx.stroke(); }
+      else { ctx.beginPath(); ctx.arc(x, y - r * 0.1, r * 0.95, Math.PI * 1.05, Math.PI * 1.95); ctx.stroke(); }
+      ctx.restore();
+    }
+    if (e.hasteT > 0) {
+      ctx.strokeStyle = 'rgba(255,220,120,.55)'; ctx.lineWidth = 1.2;
+      for (let i = 0; i < 2; i++) { ctx.beginPath(); ctx.moveTo(x - r * 1.0, y - r * 0.2 + i * r * 0.5); ctx.lineTo(x - r * 1.6, y - r * 0.2 + i * r * 0.5); ctx.stroke(); }
+    }
     if (e.armor && e.hp > e.hpMax * 0.5) {
       ctx.strokeStyle = '#9a9488'; ctx.lineWidth = Math.max(2, r * 0.18);
       ctx.beginPath(); ctx.arc(x, y - r * 0.1, r * 0.95, Math.PI * 1.05, Math.PI * 1.95); ctx.stroke();
@@ -209,7 +267,7 @@
       ctx.lineTo(hx, hy - r * 0.86); ctx.lineTo(hx + r * 0.12, hy - r * 0.55); ctx.lineTo(hx + r * 0.3, hy - r * 0.78); ctx.lineTo(hx + r * 0.35, hy - r * 0.42);
       ctx.closePath(); ctx.fill();
     }
-    const eyeCol = e.boss ? '#ff6a5a' : (magic ? '#e8c8ff' : '#1a1420');
+    const eyeCol = look && look.eyes ? look.eyes : e.boss ? '#ff6a5a' : (magic ? '#e8c8ff' : '#1a1420');
     ctx.fillStyle = flash ? '#1a1420' : eyeCol;
     if (e.boss || magic) { ctx.shadowColor = eyeCol; ctx.shadowBlur = 6; }
     ctx.beginPath(); ctx.arc(x - r * 0.18, y - r * 0.78, r * 0.08, 0, Math.PI * 2); ctx.fill();
@@ -251,8 +309,20 @@
   const PROJ_COL = { unicorn: '#c9a4ff', pegasus: '#bff4ee', earth: '#e3a95b' };
   const BURST_N = 9, BURST_BIG = 22;
 
-  function drawRange(ctx, x, y, range, ok, faint) {
+  function drawRange(ctx, x, y, range, ok, faint, base) {
     const [sx, sy] = View.toScreen(x, y);
+    if (base && base > range + 0.5) {
+      circle(ctx, sx, sy, base * View.sc);
+      ctx.strokeStyle = faint ? 'rgba(160,150,200,.18)' : 'rgba(160,150,200,.45)';
+      ctx.lineWidth = 1; ctx.setLineDash([2, 6]); ctx.stroke(); ctx.setLineDash([]);
+      if (!faint) {
+        ctx.save();
+        ctx.font = '700 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+        ctx.fillStyle = 'rgba(200,190,240,.8)';
+        ctx.fillText('dark: ' + Math.round(100 * range / base) + '% range', sx, sy - range * View.sc - 4);
+        ctx.restore();
+      }
+    }
     circle(ctx, sx, sy, range * View.sc);
     ctx.fillStyle = ok ? (faint ? 'rgba(79,209,197,.035)' : 'rgba(79,209,197,.08)') : 'rgba(227,91,106,.1)';
     ctx.fill();
@@ -394,6 +464,310 @@
     return true;
   }
 
+  function worldPoly(g, pts) {
+    g.beginPath();
+    pts.forEach((p, i) => { const [sx, sy] = View.toScreen(p[0], p[1]); if (i) g.lineTo(sx, sy); else g.moveTo(sx, sy); });
+    g.closePath();
+  }
+
+  function drawBlock(g, b, P, sc, rng) {
+    const [bx, by] = View.toScreen(b.x, b.y);
+    const r = b.r * sc;
+    if (b.kind === 'tree') {
+      const cols = P.canopy || [P.tree, P.tree, P.tree];
+      g.fillStyle = 'rgba(0,0,0,.35)';
+      g.beginPath(); g.ellipse(bx + r * 0.25, by + r * 0.35, r * 1.05, r * 0.7, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#2a1e14';
+      g.fillRect(bx - r * 0.12, by, r * 0.24, r * 0.55);
+      for (let i = 0; i < 5; i++) {
+        const a = rng() * Math.PI * 2, d = r * 0.35 * rng();
+        g.fillStyle = cols[i % cols.length];
+        circle(g, bx + Math.cos(a) * d, by - r * 0.15 + Math.sin(a) * d, r * (0.55 + rng() * 0.3)); g.fill();
+      }
+      g.fillStyle = 'rgba(200,255,180,.08)';
+      circle(g, bx - r * 0.3, by - r * 0.45, r * 0.4); g.fill();
+      return;
+    }
+    if (b.kind === 'crystal') {
+      const cols = P.crystal || ['#b48bff'];
+      g.save();
+      g.shadowColor = cols[0]; g.shadowBlur = 18;
+      for (let i = 0; i < 4; i++) {
+        const a = -Math.PI / 2 + (i - 1.5) * 0.45, h = r * (1.6 - Math.abs(i - 1.5) * 0.35), w = r * 0.34;
+        const tx = bx + Math.cos(a) * h, ty = by + Math.sin(a) * h;
+        const nx = -Math.sin(a) * w, ny = Math.cos(a) * w;
+        g.fillStyle = cols[i % cols.length];
+        g.beginPath(); g.moveTo(bx + nx, by + ny); g.lineTo(tx, ty); g.lineTo(bx - nx, by - ny); g.closePath(); g.fill();
+        g.fillStyle = 'rgba(255,255,255,.35)';
+        g.beginPath(); g.moveTo(bx + nx * 0.2, by + ny * 0.2); g.lineTo(tx, ty); g.lineTo(bx - nx * 0.6, by - ny * 0.6); g.closePath(); g.fill();
+      }
+      g.restore();
+      return;
+    }
+    if (b.kind === 'stalagmite') {
+      g.fillStyle = 'rgba(0,0,0,.35)';
+      g.beginPath(); g.ellipse(bx, by + r * 0.4, r, r * 0.4, 0, 0, Math.PI * 2); g.fill();
+      for (const [ox, h, w] of [[-0.45, 1.3, 0.45], [0.35, 1.7, 0.55], [0, 2.1, 0.6]]) {
+        const gr = g.createLinearGradient(bx + ox * r - w * r, 0, bx + ox * r + w * r, 0);
+        gr.addColorStop(0, '#2a2638'); gr.addColorStop(0.5, '#4e4864'); gr.addColorStop(1, '#1c1a28');
+        g.fillStyle = gr;
+        g.beginPath(); g.moveTo(bx + ox * r - w * r, by + r * 0.4); g.lineTo(bx + ox * r, by + r * 0.4 - h * r); g.lineTo(bx + ox * r + w * r, by + r * 0.4); g.closePath(); g.fill();
+      }
+      return;
+    }
+    if (b.kind === 'boulder') {
+      g.fillStyle = 'rgba(0,0,0,.35)';
+      g.beginPath(); g.ellipse(bx + r * 0.2, by + r * 0.3, r * 1.05, r * 0.75, 0, 0, Math.PI * 2); g.fill();
+      const gr = g.createRadialGradient(bx - r * 0.3, by - r * 0.4, r * 0.1, bx, by, r * 1.1);
+      gr.addColorStop(0, '#8a8680'); gr.addColorStop(0.6, '#5a5650'); gr.addColorStop(1, '#2e2c2a');
+      g.fillStyle = gr;
+      g.beginPath(); g.ellipse(bx, by, r, r * 0.82, rng() * 0.6, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = 'rgba(20,18,16,.5)'; g.lineWidth = Math.max(1, r * 0.06);
+      g.beginPath(); g.moveTo(bx - r * 0.2, by - r * 0.6); g.lineTo(bx, by - r * 0.1); g.lineTo(bx - r * 0.15, by + r * 0.4); g.stroke();
+      return;
+    }
+    if (b.kind === 'pillar' || b.kind === 'keep') {
+      const cols = P.stone || ['#3a343e', '#4a424e', '#2a2430'];
+      g.fillStyle = 'rgba(0,0,0,.4)';
+      g.beginPath(); g.ellipse(bx + r * 0.2, by + r * 0.3, r * 1.1, r * 0.8, 0, 0, Math.PI * 2); g.fill();
+      if (b.kind === 'pillar') {
+        g.fillStyle = cols[2]; circle(g, bx, by, r); g.fill();
+        g.fillStyle = cols[1]; circle(g, bx, by - r * 0.15, r * 0.82); g.fill();
+        g.strokeStyle = cols[0]; g.lineWidth = Math.max(1, r * 0.1); circle(g, bx, by - r * 0.15, r * 0.55); g.stroke();
+        return;
+      }
+      const s = r * 1.05;
+      g.fillStyle = cols[2]; g.fillRect(bx - s, by - s, s * 2, s * 2);
+      g.fillStyle = cols[1]; g.fillRect(bx - s * 0.85, by - s * 0.85, s * 1.7, s * 1.7);
+      g.fillStyle = cols[0];
+      for (let i = 0; i < 4; i++) for (const [qx, qy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+        const t = -0.85 + i * 0.5;
+        g.fillRect(bx + (qy === qx ? t : qx * 0.85) * s - s * 0.08, by + (qy === qx ? qy * 0.85 : t) * s - s * 0.08, s * 0.16, s * 0.16);
+      }
+      g.save();
+      g.shadowColor = P.gate; g.shadowBlur = 22;
+      g.fillStyle = 'rgba(255,106,138,.75)';
+      circle(g, bx, by, s * 0.35); g.fill();
+      g.restore();
+      return;
+    }
+    g.fillStyle = P.rock; circle(g, bx, by, r); g.fill();
+  }
+
+  function drawBridges(g, map, P, sc) {
+    const cols = P.bridge || ['#5a4430', '#7a5c40', '#3a2a1c'];
+    for (const R of map.route) {
+      for (const c of C.crossings(R)) {
+        const L = map.half + 34, Wd = map.half + 6;
+        const ax = c.tx, ay = c.ty, nx = -ay, ny = ax;
+        const corner = (u, v) => [c.x + ax * u + nx * v, c.y + ay * u + ny * v];
+        g.save();
+        g.fillStyle = 'rgba(0,0,0,.45)';
+        worldPoly(g, [corner(-L, -Wd - 10), corner(L, -Wd - 10), corner(L, Wd + 10), corner(-L, Wd + 10)]); g.fill();
+        g.fillStyle = cols[0];
+        worldPoly(g, [corner(-L, -Wd), corner(L, -Wd), corner(L, Wd), corner(-L, Wd)]); g.fill();
+        g.strokeStyle = cols[2]; g.lineWidth = Math.max(1, 2 * sc);
+        for (let u = -L + 6; u < L; u += 9) {
+          const [x1, y1] = View.toScreen(...corner(u, -Wd)), [x2, y2] = View.toScreen(...corner(u, Wd));
+          g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
+        }
+        g.strokeStyle = cols[1]; g.lineWidth = Math.max(2, 5 * sc);
+        for (const v of [-Wd, Wd]) {
+          const [x1, y1] = View.toScreen(...corner(-L, v)), [x2, y2] = View.toScreen(...corner(L, v));
+          g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
+          g.fillStyle = cols[2];
+          for (let u = -L; u <= L; u += L / 2) { const [px, py] = View.toScreen(...corner(u, v)); circle(g, px, py, Math.max(2, 4.5 * sc)); g.fill(); }
+        }
+        g.restore();
+      }
+    }
+  }
+
+  function paintMap(g, cw, ch, map, mini) {
+    const P = map.palette, D = map.decor;
+    const sc = View.sc;
+    const grd = g.createRadialGradient(cw * 0.5, ch * 0.45, 10, cw * 0.5, ch * 0.5, Math.max(cw, ch) * 0.8);
+    grd.addColorStop(0, P.ground[0]); grd.addColorStop(0.55, P.ground[1]); grd.addColorStop(1, P.ground[2]);
+    g.fillStyle = grd; g.fillRect(0, 0, cw, ch);
+    const rng = C.mulberry(D.seed);
+    const k = mini ? 0.25 : 1;
+    g.lineWidth = 1;
+    for (let i = 0; i < D.grass * k; i++) {
+      const sx = rng() * cw, sy = rng() * ch;
+      g.strokeStyle = P.grass[rng() < 0.5 ? 0 : 1];
+      g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx - 2, sy - 5 * Math.max(0.6, sc)); g.moveTo(sx, sy); g.lineTo(sx + 2, sy - 4 * Math.max(0.6, sc)); g.stroke();
+    }
+    g.globalAlpha = 0.45;
+    for (let i = 0; i < D.flowers; i++) {
+      const sx = rng() * cw, sy = rng() * ch;
+      g.fillStyle = P.flowers[i % P.flowers.length];
+      g.beginPath(); g.arc(sx, sy, mini ? 0.8 : 1.6, 0, Math.PI * 2); g.fill();
+    }
+    g.globalAlpha = 1;
+    for (let i = 0; i < D.rocks; i++) {
+      const sx = rng() * cw, sy = rng() * ch, rr = (4 + rng() * 6) * Math.max(mini ? 0.2 : 0.5, sc);
+      g.fillStyle = P.rock;
+      g.beginPath(); g.ellipse(sx, sy, rr, rr * 0.7, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = 'rgba(255,255,255,.06)';
+      g.beginPath(); g.ellipse(sx - rr * 0.2, sy - rr * 0.2, rr * 0.5, rr * 0.3, 0, 0, Math.PI * 2); g.fill();
+    }
+    const half = map.half * sc;
+    g.lineJoin = 'round'; g.lineCap = 'butt';
+    for (const R of map.route) {
+      const pts = routeScreen(R);
+      g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = half * 2 + 8 * Math.min(1, sc * 2); strokePath(g, pts);
+    }
+    for (const R of map.route) {
+      const pts = routeScreen(R);
+      g.strokeStyle = P.roadEdge; g.lineWidth = half * 2 + 3 * Math.min(1, sc * 2); strokePath(g, pts);
+      g.strokeStyle = P.road[0]; g.lineWidth = half * 2; strokePath(g, pts);
+    }
+    for (const R of map.route) {
+      const pts = routeScreen(R);
+      g.strokeStyle = P.road[1]; g.lineWidth = half * 1.1; g.globalAlpha = 0.8; strokePath(g, pts); g.globalAlpha = 1;
+      if (P.stone) {
+        g.strokeStyle = 'rgba(10,8,12,.35)'; g.lineWidth = half * 2; g.setLineDash([Math.max(1, 1.5 * sc), Math.max(3, 14 * sc)]); strokePath(g, pts); g.setLineDash([]);
+        g.strokeStyle = 'rgba(255,220,235,.05)'; g.lineWidth = half * 1.6; g.setLineDash([Math.max(2, 10 * sc), Math.max(2, 6 * sc)]); strokePath(g, pts); g.setLineDash([]);
+      } else if (!mini) {
+        g.strokeStyle = P.roadLine; g.lineWidth = 2; g.setLineDash([10, 14]); strokePath(g, pts); g.setLineDash([]);
+      }
+      if (!mini) {
+        g.fillStyle = P.pebble;
+        const nPeb = Math.round(R.len / 12);
+        for (let i = 0; i < nPeb; i++) {
+          C.routePos(R, rng() * R.len, tmpPos);
+          const o = (rng() - 0.5) * map.half * 1.8;
+          const [sx, sy] = View.toScreen(tmpPos.x - tmpPos.ty * o, tmpPos.y + tmpPos.tx * o);
+          g.beginPath(); g.arc(sx, sy, 1 + rng() * 1.8, 0, Math.PI * 2); g.fill();
+        }
+      }
+    }
+    drawBridges(g, map, P, sc);
+    const starts = new Set();
+    for (const R of map.route) {
+      const s0 = R.segs[0];
+      const key = s0.x1 + ',' + s0.y1;
+      if (!starts.has(key)) {
+        starts.add(key);
+        g.fillStyle = P.tree;
+        for (let i = 0; i < D.trees; i++) {
+          const o = (i - (D.trees - 1) / 2) * map.half * 0.6;
+          const along = 30 + rng() * 20;
+          const [tx, ty] = View.toScreen(s0.x1 + s0.tx * along - s0.ty * o, s0.y1 + s0.ty * along + s0.tx * o);
+          g.beginPath(); g.moveTo(tx, ty - 30 * sc - 10 * k); g.lineTo(tx - 12 * sc - 6 * k, ty + 10 * k); g.lineTo(tx + 12 * sc + 6 * k, ty + 10 * k); g.closePath(); g.fill();
+        }
+        if (map.route.length > 1 && !mini) {
+          g.save();
+          g.shadowColor = '#ff4a4a'; g.shadowBlur = 16; g.fillStyle = 'rgba(255,90,90,.55)';
+          const [gx, gy] = View.toScreen(Math.max(14, Math.min(C.WORLD.L - 14, s0.x1 + s0.tx * 60)), s0.y1 + s0.ty * 60);
+          circle(g, gx, gy, Math.max(3, 6 * sc)); g.fill();
+          g.restore();
+        }
+      }
+      const sl = R.segs[R.segs.length - 1];
+      const ex = Math.min(C.WORLD.L - 14, sl.x2), ey = sl.y2;
+      g.save();
+      g.shadowColor = P.gate; g.shadowBlur = mini ? 8 : 24;
+      g.fillStyle = 'rgba(227,193,91,.75)';
+      for (const s of [-1, 1]) {
+        const o = s * (map.half + 16);
+        const [lx, ly] = View.toScreen(ex - sl.ty * o, ey + sl.tx * o);
+        g.beginPath(); g.arc(lx, ly, Math.max(mini ? 1.5 : 3, 7 * sc), 0, Math.PI * 2); g.fill();
+      }
+      g.restore();
+    }
+    const brng = C.mulberry(D.seed + 7);
+    const blocks = map.blocks.slice().sort((a, b) => View.toScreen(a.x, a.y)[1] - View.toScreen(b.x, b.y)[1]);
+    for (const b of blocks) drawBlock(g, b, P, sc, brng);
+    if (map.dark) {
+      const c = document.createElement('canvas');
+      c.width = g.canvas.width; c.height = g.canvas.height;
+      const d = c.getContext('2d');
+      d.setTransform(g.getTransform());
+      d.fillStyle = 'rgba(4,2,12,.55)'; d.fillRect(0, 0, cw, ch);
+      d.globalCompositeOperation = 'destination-out';
+      for (const q of map.crystals) {
+        const [qx, qy] = View.toScreen(q.x, q.y);
+        const rr = q.r * sc;
+        const gr = d.createRadialGradient(qx, qy, rr * 0.2, qx, qy, rr);
+        gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.8, 'rgba(0,0,0,.85)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+        d.fillStyle = gr; circle(d, qx, qy, rr); d.fill();
+      }
+      g.save();
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.drawImage(c, 0, 0);
+      g.restore();
+      const cols = P.crystal || ['#b48bff'];
+      map.crystals.forEach((q, i) => {
+        const [qx, qy] = View.toScreen(q.x, q.y);
+        const rr = q.r * sc;
+        g.save();
+        g.globalAlpha = 0.16;
+        const gr = g.createRadialGradient(qx, qy, 0, qx, qy, rr);
+        gr.addColorStop(0, cols[i % cols.length]); gr.addColorStop(1, 'rgba(0,0,0,0)');
+        g.fillStyle = gr; circle(g, qx, qy, rr); g.fill();
+        g.globalAlpha = 0.35; g.strokeStyle = cols[i % cols.length]; g.lineWidth = 1; g.setLineDash([3, 7]);
+        circle(g, qx, qy, rr); g.stroke();
+        g.restore();
+      });
+    }
+  }
+
+  function drawWind(ctx, run, now, cw, ch) {
+    const w = run.map.wind;
+    if (!w) return;
+    const sc = View.sc;
+    const a = run.gustOn ? run.gust : run.gustWarn * 0.25;
+    if (a > 0.01) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(220,235,255,1)'; ctx.lineCap = 'round';
+      const back = run.gustKind === 'back';
+      const dx = back ? -1 : 0, dy = back ? 0 : run.gustDir;
+      const rng = C.mulberry(77);
+      const t = now / 1000;
+      for (let i = 0; i < 46; i++) {
+        const spd = 260 + rng() * 260;
+        const len = 40 + rng() * 60;
+        let x = rng() * C.WORLD.L, y = rng() * C.WORLD.W;
+        if (back) x = (((x - t * spd) % C.WORLD.L) + C.WORLD.L) % C.WORLD.L;
+        else y = (((y + dy * t * spd) % C.WORLD.W) + C.WORLD.W) % C.WORLD.W;
+        const [x1, y1] = View.toScreen(x, y), [x2, y2] = View.toScreen(x - dx * len, y - dy * len);
+        ctx.globalAlpha = a * (0.25 + rng() * 0.35);
+        ctx.lineWidth = Math.max(1, (1 + rng() * 1.5) * sc * 1.4);
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      }
+      ctx.restore();
+    }
+    const gx = 10, gy = ch - 52, gw = 150;
+    ctx.save();
+    ctx.fillStyle = 'rgba(12,10,20,.75)';
+    ctx.fillRect(gx - 4, gy - 16, gw + 8, 28);
+    ctx.font = '700 11px system-ui, sans-serif'; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+    const c = run.windT % w.every;
+    const frac = run.gustOn ? 1 : Math.min(1, c / (w.every - w.dur));
+    const arrow = run.gustKind === 'back' ? (View.portrait ? '↑' : '←') : ((run.gustDir > 0) === View.portrait ? (View.portrait ? '→' : '↓') : (View.portrait ? '←' : '↑'));
+    let label = 'Wind calm';
+    if (run.gustOn) label = 'GUST ' + arrow + ' flyers pushed ' + (run.gustKind === 'back' ? 'back' : 'aside');
+    else if (run.gustWarn > 0) label = 'Gust incoming ' + arrow;
+    ctx.fillStyle = run.gustOn ? '#bfe8ff' : run.gustWarn > 0 ? '#ffd27a' : 'rgba(243,240,251,.7)';
+    ctx.fillText(label, gx, gy - 3);
+    ctx.fillStyle = '#1e2430'; ctx.fillRect(gx, gy + 1, gw, 5);
+    ctx.fillStyle = run.gustOn ? '#bfe8ff' : run.gustWarn > 0 ? '#ffd27a' : '#6a8aa8';
+    ctx.fillRect(gx, gy + 1, gw * frac, 5);
+    ctx.restore();
+  }
+
+  function underBridge(map, e) {
+    if (e.flying || !map.bridges) return false;
+    for (const b of map.bridges) if (b.route === e.path && Math.abs(e.d - b.dUnder) < map.half + 40) return true;
+    return false;
+  }
+  for (const id of C.MAP_IDS) {
+    const m = C.MAPS[id], list = [];
+    m.route.forEach((R, ri) => { for (const c of C.crossings(R)) list.push({ route: ri, dUnder: c.dUnder }); });
+    m.bridges = list.length ? list : null;
+  }
+
   const Render = {
     View, drawPony, drawDNB, shade, drawRange,
     bg: null, bgKey: '', shakeT: 0, shakeAmp: 0, bossBar: false,
@@ -410,7 +784,13 @@
         type, hit: 0, seed: 1, burrowT: 0, flying: !!d.flying, magical: !!d.magical, boss: type === 'boss', noBar: true,
         color: bossDef ? bossDef.color : d.color, dark: bossDef ? bossDef.dark : d.dark, hp: 1, hpMax: 1, stunT: 0, slow: 0, hexT: 0, dispelT: 0,
       };
-      if (bossDef) { if (bossDef.trick === 'flying' || bossDef.trick === 'phase') e.flying = true; if (bossDef.trick === 'magical') e.magical = true; if (bossDef.trick === 'armor') e.armor = true; }
+      if (bossDef) {
+        e.bossDef = bossDef;
+        const tr = bossDef.tricks ? Object.keys(bossDef.tricks) : [bossDef.trick];
+        if (tr.includes('flying') || tr.includes('fly') || tr.includes('phase')) e.flying = true;
+        if (tr.includes('magical') || tr.includes('magic')) e.magical = true;
+        if (tr.includes('armor')) e.armor = true;
+      }
       drawDNB(g, e, c.width / 2, c.height * 0.6, c.width * 0.26, now || 0);
     },
     buildBg(cw, ch, dpr, map) {
@@ -418,78 +798,24 @@
       const key = cw + 'x' + ch + 'x' + dpr + (View.portrait ? 'p' : 'l') + map.id;
       if (this.bgKey === key) return;
       this.bgKey = key;
-      const P = map.palette, D = map.decor;
-      const c = document.createElement('canvas');
-      c.width = Math.round(cw * dpr); c.height = Math.round(ch * dpr);
-      const g = c.getContext('2d');
-      g.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const grd = g.createRadialGradient(cw * 0.5, ch * 0.45, 10, cw * 0.5, ch * 0.5, Math.max(cw, ch) * 0.8);
-      grd.addColorStop(0, P.ground[0]); grd.addColorStop(0.55, P.ground[1]); grd.addColorStop(1, P.ground[2]);
-      g.fillStyle = grd; g.fillRect(0, 0, cw, ch);
-      const rng = C.mulberry(D.seed);
-      const sc = View.sc;
-      g.lineWidth = 1;
-      for (let i = 0; i < D.grass; i++) {
-        const sx = rng() * cw, sy = rng() * ch;
-        g.strokeStyle = P.grass[rng() < 0.5 ? 0 : 1];
-        g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx - 2, sy - 5 * Math.max(0.6, sc)); g.moveTo(sx, sy); g.lineTo(sx + 2, sy - 4 * Math.max(0.6, sc)); g.stroke();
-      }
-      g.globalAlpha = 0.45;
-      for (let i = 0; i < D.flowers; i++) {
-        const sx = rng() * cw, sy = rng() * ch;
-        g.fillStyle = P.flowers[i % P.flowers.length];
-        g.beginPath(); g.arc(sx, sy, 1.6, 0, Math.PI * 2); g.fill();
-      }
-      g.globalAlpha = 1;
-      for (let i = 0; i < D.rocks; i++) {
-        const sx = rng() * cw, sy = rng() * ch, rr = (4 + rng() * 6) * Math.max(0.5, sc);
-        g.fillStyle = P.rock;
-        g.beginPath(); g.ellipse(sx, sy, rr, rr * 0.7, 0, 0, Math.PI * 2); g.fill();
-        g.fillStyle = 'rgba(255,255,255,.06)';
-        g.beginPath(); g.ellipse(sx - rr * 0.2, sy - rr * 0.2, rr * 0.5, rr * 0.3, 0, 0, Math.PI * 2); g.fill();
-      }
-      for (const b of map.blocks) {
-        const [bx, by] = View.toScreen(b.x, b.y);
-        g.fillStyle = P.rock; circle(g, bx, by, b.r * sc); g.fill();
-      }
-      const half = map.half * sc;
-      g.lineJoin = 'round'; g.lineCap = 'butt';
-      for (const R of map.route) {
-        const pts = routeScreen(R);
-        g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = half * 2 + 8; strokePath(g, pts);
-        g.strokeStyle = P.roadEdge; g.lineWidth = half * 2 + 3; strokePath(g, pts);
-        g.strokeStyle = P.road[0]; g.lineWidth = half * 2; strokePath(g, pts);
-        g.strokeStyle = P.road[1]; g.lineWidth = half * 1.1; g.globalAlpha = 0.8; strokePath(g, pts); g.globalAlpha = 1;
-        g.strokeStyle = P.roadLine; g.lineWidth = 2; g.setLineDash([10, 14]); strokePath(g, pts); g.setLineDash([]);
-        g.fillStyle = P.pebble;
-        const nPeb = Math.round(R.len / 12);
-        for (let i = 0; i < nPeb; i++) {
-          C.routePos(R, rng() * R.len, tmpPos);
-          const o = (rng() - 0.5) * map.half * 1.8;
-          const [sx, sy] = View.toScreen(tmpPos.x - tmpPos.ty * o, tmpPos.y + tmpPos.tx * o);
-          g.beginPath(); g.arc(sx, sy, 1 + rng() * 1.8, 0, Math.PI * 2); g.fill();
-        }
-        const s0 = R.segs[0];
-        g.fillStyle = P.tree;
-        for (let i = 0; i < D.trees; i++) {
-          const o = (i - (D.trees - 1) / 2) * map.half * 0.6;
-          const along = 30 + rng() * 20;
-          const [tx, ty] = View.toScreen(s0.x1 + s0.tx * along - s0.ty * o, s0.y1 + s0.ty * along + s0.tx * o);
-          g.beginPath(); g.moveTo(tx, ty - 30 * sc - 10); g.lineTo(tx - 12 * sc - 6, ty + 10); g.lineTo(tx + 12 * sc + 6, ty + 10); g.closePath(); g.fill();
-        }
-        const sl = R.segs[R.segs.length - 1];
-        const ex = Math.min(C.WORLD.L - 14, sl.x2), ey = sl.y2;
-        g.save();
-        g.shadowColor = P.gate; g.shadowBlur = 24;
-        g.fillStyle = 'rgba(227,193,91,.75)';
-        for (const s of [-1, 1]) {
-          const o = s * (map.half + 16);
-          const [lx, ly] = View.toScreen(ex - sl.ty * o, ey + sl.tx * o);
-          g.beginPath(); g.arc(lx, ly, Math.max(3, 7 * sc), 0, Math.PI * 2); g.fill();
-        }
-        g.restore();
-      }
+      const mk = () => { const c = document.createElement('canvas'); c.width = Math.round(cw * dpr); c.height = Math.round(ch * dpr); const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); return [c, g]; };
+      const [c, g] = mk();
+      paintMap(g, cw, ch, map, false);
       this.bg = c;
+      this.bridgeImg = null;
+      if (map.bridges) { const [c2, g2] = mk(); drawBridges(g2, map, map.palette, View.sc); this.bridgeImg = c2; }
+    },
+    drawMapPreview(canvas, map) {
+      const keep = { portrait: View.portrait, sc: View.sc, ox: View.ox, oy: View.oy, cw: View.cw, ch: View.ch };
+      View.portrait = false;
+      const along = canvas.width, across = canvas.height;
+      View.sc = Math.min(along / W.L, across / W.W);
+      View.ox = (canvas.width - W.L * View.sc) / 2; View.oy = (canvas.height - W.W * View.sc) / 2;
+      const g = canvas.getContext('2d');
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.clearRect(0, 0, canvas.width, canvas.height);
+      paintMap(g, canvas.width, canvas.height, map, true);
+      Object.assign(View, keep);
     },
     drawScene(ctx, S, ui, now, dt, cw, ch, dpr) {
       const W = C.WORLD, sc = View.sc;
@@ -505,11 +831,12 @@
       }
       if (this.bg) ctx.drawImage(this.bg, 0, 0, cw, ch);
       const sel = ui.sel;
-      if (ui.showAll) for (const t of S.towers) if (t !== sel) drawRange(ctx, t.x, t.y, C.stats(t).range, true, true);
-      if (sel) drawRange(ctx, sel.x, sel.y, C.stats(sel).range, true);
+      if (ui.showAll) for (const t of S.towers) if (t !== sel) { const st = C.stats(t); drawRange(ctx, t.x, t.y, st.range, true, true, st.baseRange); }
+      if (sel) { const st = C.stats(sel); drawRange(ctx, sel.x, sel.y, st.range, true, false, st.baseRange); }
       if (ui.placing && ui.ghost) {
         const ok = C.canPlace(S, ui.ghost.x, ui.ghost.y) && S.cash >= C.nextTowerCost(S, ui.placing);
-        drawRange(ctx, ui.ghost.x, ui.ghost.y, C.RACES[ui.placing].range, ok);
+        const br = C.RACES[ui.placing].range, lr = C.lightAt(C.mapOf(S), ui.ghost.x, ui.ghost.y);
+        drawRange(ctx, ui.ghost.x, ui.ghost.y, br * lr, ok, false, lr < 1 ? br : 0);
       }
       if (ui.placing) {
         ctx.strokeStyle = 'rgba(227,91,106,.25)'; ctx.lineWidth = 1;
@@ -526,7 +853,12 @@
       }
       if (S.run) {
         const es = S.run.enemies.slice().sort((a, b) => a.y - b.y);
-        for (const e of es) { const [sx, sy] = View.toScreen(e.x, e.y); drawDNB(ctx, e, sx, sy, e.r * sc, now); }
+        const m = S.run.map;
+        if (this.bridgeImg && m.bridges) {
+          for (const e of es) if (underBridge(m, e)) { const [sx, sy] = View.toScreen(e.x, e.y); drawDNB(ctx, e, sx, sy, e.r * sc, now); }
+          ctx.drawImage(this.bridgeImg, 0, 0, cw, ch);
+          for (const e of es) if (!underBridge(m, e)) { const [sx, sy] = View.toScreen(e.x, e.y); drawDNB(ctx, e, sx, sy, e.r * sc, now); }
+        } else for (const e of es) { const [sx, sy] = View.toScreen(e.x, e.y); drawDNB(ctx, e, sx, sy, e.r * sc, now); }
         for (const p of S.run.proj) drawProj(ctx, p, sc);
       }
       for (const f of S.fx) drawFx(ctx, S, f);
@@ -537,6 +869,7 @@
         ctx.restore();
       }
       if (shook) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (S.run && S.run.map.wind) drawWind(ctx, S.run, now, cw, ch);
       this.bossBar = S.run ? drawBossBar(ctx, S, cw) : false;
       if (S.run) {
         ctx.save();

@@ -1,4 +1,6 @@
 'use strict';
+const path = require('path');
+const fs = require('fs');
 const C = require('../js/core.js');
 if (process.env.TUNE) Object.assign(C.TUNE, JSON.parse(process.env.TUNE));
 
@@ -11,9 +13,12 @@ let diagDone = false;
 const PLAN = { earth: [0, 1], unicorn: [0, 1], pegasus: [2, 4] };
 const SHARE = { earth: 0.4, unicorn: 0.35, pegasus: 0.25 };
 
-const MAP = C.getMap(process.env.MAP || 'moonlit');
+if (!process.env.MAP) { runAll(); return; }
 
-function makeSlots() {
+const MAP = C.getMap(process.env.MAP);
+if (process.env.MAPTUNE) Object.assign(MAP, JSON.parse(process.env.MAPTUNE));
+
+function legacySlots() {
   const W = C.WORLD, out = [];
   const cy = MAP.routes[0][0][1];
   for (const dy of [62, 108, 154]) {
@@ -24,9 +29,49 @@ function makeSlots() {
   out.sort((a, b) => a.row - b.row || Math.abs(a.x - 760) - Math.abs(b.x - 760));
   return out;
 }
-const SLOTS = makeSlots();
+
+function routeSamples() {
+  const out = [];
+  const nR = MAP.route.length;
+  MAP.route.forEach((P, ri) => {
+    const pos = { x: 0, y: 0 };
+    for (let d = 15; d < P.len; d += 12) { C.routePos(P, d, pos); out.push({ x: pos.x, y: pos.y, w: 1 / nR, ri }); }
+  });
+  return out;
+}
+
+function coverSlots() {
+  const S0 = C.newState(MAP.id);
+  const samples = routeSamples();
+  const cands = [];
+  for (let x = 30; x <= C.WORLD.L - 30; x += 23) {
+    for (let y = 30; y <= C.WORLD.W - 30; y += 23) {
+      if (!C.canPlace(S0, x, y)) continue;
+      const light = C.lightAt(MAP, x, y);
+      const score = {};
+      for (const r of C.RACE_IDS) {
+        const R = C.RACES[r].range * light, R2 = R * R;
+        let s = 0;
+        for (const p of samples) if ((p.x - x) ** 2 + (p.y - y) ** 2 <= R2) s += p.w;
+        score[r] = s;
+      }
+      cands.push({ x, y, score });
+    }
+  }
+  const lists = {};
+  for (const r of C.RACE_IDS) lists[r] = cands.filter(c => c.score[r] > 0).sort((a, b) => b.score[r] - a.score[r]);
+  return lists;
+}
+
+const LEGACY = MAP.id === 'moonlit';
+const SLOTS = LEGACY ? legacySlots() : null;
+const COVER = LEGACY ? null : coverSlots();
 
 function freeSlot(S, race) {
+  if (!LEGACY) {
+    for (const s of COVER[race]) if (C.canPlace(S, s.x, s.y)) return s;
+    return null;
+  }
   for (const s of SLOTS) {
     if (race !== 'earth' && s.row === 62 && SLOTS.filter(q => q.row === 62 && C.canPlace(S, q.x, q.y)).length < 12) continue;
     if (C.canPlace(S, s.x, s.y)) return s;
@@ -96,12 +141,15 @@ function play(S, n) {
   return { won: ev && ev.type === 'won', t: t + OVERHEAD };
 }
 
+function netWorth(S) { return S.cash + S.towers.reduce((a, t) => a + t.spent, 0); }
+
 function main() {
   const S = C.newState(MAP.id);
   S.fxOn = false;
   let time = 0, attempts = 0, farms = 0, losses = 0;
   const marks = {};
   const lossAt = {};
+  let worth50 = null, towers50 = null;
   const t0 = Date.now();
   while (S.cleared < C.MAX_WAVE && time < LIMIT_H * 3600) {
     const n = S.cleared + 1;
@@ -110,6 +158,7 @@ function main() {
     const r = play(S, n);
     time += r.t;
     if (r.won) {
+      if (S.cleared === 50) { worth50 = netWorth(S); towers50 = S.towers.length; }
       if (S.cleared % 10 === 0) {
         marks[S.cleared] = time;
         const peak = Math.max(...S.towers.map(t => t.paths.reduce((a, b) => a + b, 0)));
@@ -130,11 +179,63 @@ function main() {
   console.log(`smoothness: worst decade-to-decade ratio ${jump.toFixed(2)}x, most losses on one wave ${worst}`);
   let h = 2166136261;
   for (const ch of JSON.stringify([marks, lossAt, S.cash, S.towers.map(t => [t.race, t.paths, t.infD, t.infR])])) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
-  console.log('fingerprint ' + h.toString(16));
+  const fp = h.toString(16);
+  console.log('fingerprint ' + fp);
   console.log('losses by wave: ' + Object.entries(lossAt).map(([k, v]) => k + 'x' + v).join(' '));
   console.log(`reached wave ${S.cleared} in ${(time / 3600).toFixed(2)}h of game time (${attempts} attempts, ${losses} losses, ${farms} farm runs)`);
   console.error(`${((Date.now() - t0) / 1000).toFixed(0)}s real`);
   console.log(`wave 50 at ${marks[50] ? (marks[50] / 3600).toFixed(2) + 'h' : 'not reached'} (target ~2h), wave 100 at ${marks[100] ? (marks[100] / 3600).toFixed(2) + 'h' : 'not reached'} (target ~6h)`);
+  if (worth50 != null) console.log(`net worth at wave 50: ${C.fmt(worth50)} (${worth50.toExponential(3)}) with ${towers50} towers`);
+  const res = {
+    map: MAP.id, name: MAP.name, hpMul: MAP.hpMul, cashMul: MAP.cashMul, startCash: C.mapStartCash(MAP),
+    reached: S.cleared, hours: +(time / 3600).toFixed(3),
+    w50h: marks[50] ? +(marks[50] / 3600).toFixed(3) : null, w100h: marks[100] ? +(marks[100] / 3600).toFixed(3) : null,
+    decades: segs.map(v => +v.toFixed(3)), worth50, towers50, losses, attempts, farms, worstWaveLosses: worst, fingerprint: fp,
+    wave1Hp: C.hpFor(1, MAP), wave50Hp: C.hpFor(50, MAP), wave1Cash: C.killCash(1, MAP), wave50Cash: C.killCash(50, MAP),
+  };
+  console.log('RESULT ' + JSON.stringify(res));
+}
+
+function runAll() {
+  const { spawn } = require('child_process');
+  const ids = (process.env.MAPS || C.MAP_IDS.join(',')).split(',');
+  const par = Number(process.env.PAR) || 3;
+  const results = {};
+  let next = 0, live = 0;
+  const t0 = Date.now();
+  const launch = () => {
+    while (live < par && next < ids.length) {
+      const id = ids[next++];
+      live++;
+      const child = spawn(process.execPath, [__filename], { env: Object.assign({}, process.env, { MAP: id }) });
+      let out = '';
+      child.stdout.on('data', d => { out += d; });
+      child.on('close', () => {
+        live--;
+        const line = out.split('\n').find(l => l.startsWith('RESULT '));
+        results[id] = line ? JSON.parse(line.slice(7)) : { map: id, error: true };
+        console.log(`== ${id}\n` + out.split('\n').filter(l => l && !l.startsWith('RESULT ')).join('\n'));
+        if (live === 0 && next >= ids.length) finish();
+        else launch();
+      });
+    }
+  };
+  const finish = () => {
+    const rows = C.MAP_IDS.filter(id => results[id]).map(id => results[id]);
+    console.log('\nmap        w50     w100    reached  hpMul      cashMul    startCash  worth50');
+    for (const r of rows) console.log(`${r.map.padEnd(10)} ${String(r.w50h).padEnd(7)} ${String(r.w100h).padEnd(7)} ${String(r.reached).padEnd(8)} ${Number(r.hpMul).toExponential(2).padEnd(10)} ${Number(r.cashMul).toExponential(2).padEnd(10)} ${Number(r.startCash).toExponential(2).padEnd(10)} ${r.worth50 != null ? r.worth50.toExponential(2) : '-'}`);
+    for (let i = 1; i < rows.length; i++) {
+      const a = rows[i - 1], b = rows[i];
+      if (a.wave50Hp && b.wave1Hp) console.log(`${b.map} wave 1 vs ${a.map} wave 50: hp x${(b.wave1Hp / a.wave50Hp).toFixed(2)}, kill cash x${(b.wave1Cash / a.wave50Cash).toFixed(2)}, start cash vs worth50 x${a.worth50 ? (b.startCash / a.worth50).toFixed(2) : '-'}`);
+    }
+    if (!process.env.MAPS) {
+      const file = path.join(__dirname, 'balance-results.json');
+      fs.writeFileSync(file, JSON.stringify({ generated: new Date().toISOString().slice(0, 10), dt: DT, results: rows }, null, 2) + '\n');
+      console.log('wrote ' + path.relative(process.cwd(), file));
+    }
+    console.error(`${((Date.now() - t0) / 1000).toFixed(0)}s real total`);
+  };
+  launch();
 }
 
 main();
