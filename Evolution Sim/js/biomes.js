@@ -54,6 +54,12 @@ const BIOME = {
 	OXBOW: 'OXBOW',
 	REED_MARSH: 'REED_MARSH',
 	BEAVER_POND: 'BEAVER_POND',
+	ROCKY_SHORE: 'ROCKY_SHORE',
+	SEA_CLIFF: 'SEA_CLIFF',
+	SALT_MARSH: 'SALT_MARSH',
+	LAGOON: 'LAGOON',
+	KELP_COAST: 'KELP_COAST',
+	ATOLL: 'ATOLL',
 };
 
 // Display metadata: color used by the renderer and a human-readable label.
@@ -109,6 +115,12 @@ const BIOME_INFO = {
 	[BIOME.OXBOW]: { name: 'Oxbow Lake', color: '#3f86a8' },
 	[BIOME.REED_MARSH]: { name: 'Reed Marsh', color: '#8fa24e' },
 	[BIOME.BEAVER_POND]: { name: 'Beaver Pond', color: '#4d8aa0' },
+	[BIOME.ROCKY_SHORE]: { name: 'Rocky Shore', color: '#6f8790' },
+	[BIOME.SEA_CLIFF]: { name: 'Sea Cliff Colony', color: '#a49c8a' },
+	[BIOME.SALT_MARSH]: { name: 'Salt Marsh', color: '#8e9c5a' },
+	[BIOME.LAGOON]: { name: 'Lagoon', color: '#4fc4c4' },
+	[BIOME.KELP_COAST]: { name: 'Kelp Forest', color: '#2f6a5a' },
+	[BIOME.ATOLL]: { name: 'Atoll', color: '#f2e2a8' },
 };
 
 // Numeric biome IDs: the world grid stores these (a Uint8Array) instead of

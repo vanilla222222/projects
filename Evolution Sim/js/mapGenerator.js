@@ -20,7 +20,12 @@ const HYDRO_RIVER_FLOW = 190;
 const HYDRO_WIDE_1 = 5;
 const HYDRO_WIDE_2 = 18;
 
-const WG_GEN = 6;
+const WG_GEN = 7;
+const WG7_ATOLL = 48;
+const WG7_ROCK = 0.035;
+const WG7_REEF = 0.62;
+const WG7_KELP_LO = 0.3;
+const WG7_KELP_HI = 0.58;
 const WG6_RAPIDS = 0.024;
 const WG6_OXBOW = 0.28;
 const WG6_REED = -0.15;
@@ -213,6 +218,7 @@ class WorldMap {
 		else this._classifyBiomes();
 		if (this.gen >= 5) this._oceanBiomesV5();
 		if (this.gen >= 6) this._riversV6();
+		if (this.gen >= 7) this._coastsV7();
 		const sk = secretKindsForSeed(this.seed, this.gen, this.options.secret || null);
 		if (sk) this._placeSecrets(sk);
 	}
@@ -1747,6 +1753,129 @@ class WorldMap {
 				} else if (a < deep + 0.1 && seep.noise2D(x * 0.13, y * 0.13) > 0.5) {
 					this.biome[i] = BIOME_ID.COLD_SEEP;
 				}
+			}
+		}
+	}
+
+	_landmassSizes() {
+		const { width, height } = this;
+		const n = width * height;
+		const size = new Int32Array(n);
+		const q = new Int32Array(n);
+		const seen = new Uint8Array(n);
+		for (let s = 0; s < n; s++) {
+			if (seen[s] || this.isOcean[s]) continue;
+			let qh = 0, qt = 0;
+			q[qt++] = s;
+			seen[s] = 1;
+			while (qh < qt) {
+				const c = q[qh++];
+				const x = c % width;
+				const y = (c - x) / width;
+				if (x > 0 && !seen[c - 1] && !this.isOcean[c - 1]) { seen[c - 1] = 1; q[qt++] = c - 1; }
+				if (x < width - 1 && !seen[c + 1] && !this.isOcean[c + 1]) { seen[c + 1] = 1; q[qt++] = c + 1; }
+				if (y > 0 && !seen[c - width] && !this.isOcean[c - width]) { seen[c - width] = 1; q[qt++] = c - width; }
+				if (y < height - 1 && !seen[c + width] && !this.isOcean[c + width]) { seen[c + width] = 1; q[qt++] = c + width; }
+			}
+			for (let k = 0; k < qt; k++) size[q[k]] = qt;
+		}
+		return size;
+	}
+
+	_coastsV7() {
+		const { width, height } = this;
+		const n = width * height;
+		const sea = BIOME_THRESHOLDS.seaLevel;
+		const deep = BIOME_THRESHOLDS.deepOceanLevel;
+		const rock = new PerlinNoise(this.seed + 97001);
+		const kelp = new PerlinNoise(this.seed + 97002);
+		const marsh = new PerlinNoise(this.seed + 97003);
+		const reef = new PerlinNoise(this.seed + 97004);
+		const O = BIOME_ID.OCEAN, BE = BIOME_ID.BEACH, CL = BIOME_ID.CLIFF;
+		const land = (i) => !this.isOcean[i];
+		const farD = this._distField(land, (i) => this.isOcean[i] === 1, 3);
+		const cay = new PerlinNoise(this.seed + 97005);
+		for (let y = 2; y < height - 2; y++) {
+			for (let x = 2; x < width - 2; x++) {
+				const i = y * width + x;
+				if (this.biome[i] !== BIOME_ID.CORAL_REEF || farD[i] < 3) continue;
+				if (this.altitude[i] > sea - 0.045 && cay.noise2D(x * 0.23, y * 0.23) > 0.5) {
+					this.isOcean[i] = 0;
+					this.altitude[i] = sea + 0.004;
+					this.biome[i] = BE;
+				}
+			}
+		}
+		const size = this._landmassSizes();
+		const seaD = this._distField(land, (i) => this.isOcean[i] === 1, 4);
+		const landD = this._distField((i) => this.isOcean[i] === 1, land, 3);
+		const fixed = new Set([BIOME_ID.RIVER, BIOME_ID.RAPIDS, BIOME_ID.LAKE, BIOME_ID.OXBOW, BIOME_ID.POND, BIOME_ID.GLACIER, BIOME_ID.VOLCANIC, BIOME_ID.OASIS, BIOME_ID.SALT_FLAT, BIOME_ID.REED_MARSH]);
+		const atoll = new Uint8Array(n);
+		for (let y = 1; y < height - 1; y++) {
+			for (let x = 1; x < width - 1; x++) {
+				const i = y * width + x;
+				const b = this.biome[i];
+				if (this.isOcean[i]) continue;
+				if (fixed.has(b) || this.isRiver[i] || this.isLake[i] || this.isPond[i]) continue;
+				const t = this.temperature[i];
+				if (b === BIOME_ID.MANGROVE && size[i] > WG7_ATOLL) continue;
+				if (size[i] <= WG7_ATOLL && t > 0.55) {
+					this.biome[i] = BIOME_ID.ATOLL;
+					atoll[i] = 1;
+					continue;
+				}
+				if (landD[i] > 2) continue;
+				const a = this.altitude[i];
+				const sl = this._slopeAt(x, y);
+				const r = rock.noise2D(x * 0.08, y * 0.08);
+				if ((b === CL || sl > WG7_ROCK + 0.02 || a > sea + 0.07) && r > -0.25 && t > 0.12) {
+					this.biome[i] = BIOME_ID.SEA_CLIFF;
+					continue;
+				}
+				if (a < sea + 0.035 && sl < 0.02 && t > 0.3 && t < 0.62 && this.humidity[i] > 0.42 && marsh.noise2D(x * 0.07, y * 0.07) > -0.05) {
+					this.biome[i] = BIOME_ID.SALT_MARSH;
+					continue;
+				}
+				if (b !== BE && landD[i] === 1 && a < sea + 0.03 && sl < 0.02 && t > 0.45 && r < 0.1) this.biome[i] = BE;
+			}
+		}
+		const atollD = this._distField((i) => atoll[i] === 1, (i) => this.isOcean[i] === 1, 2);
+		for (let y = 1; y < height - 1; y++) {
+			for (let x = 1; x < width - 1; x++) {
+				const i = y * width + x;
+				if (!this.isOcean[i]) continue;
+				const b = this.biome[i];
+				if (b !== O && b !== BIOME_ID.CORAL_REEF) continue;
+				const t = this.temperature[i];
+				const a = this.altitude[i];
+				if (atollD[i] >= 1 && atollD[i] <= 2) {
+					this.biome[i] = BIOME_ID.LAGOON;
+					continue;
+				}
+				if (b !== O) continue;
+				const d = seaD[i];
+				if (d === 1) {
+					let shore = 0, rocky = 0;
+					for (let k = 0; k < 8; k++) {
+						const j = i + (k < 3 ? -width : k > 4 ? width : 0) + (k === 0 || k === 3 || k === 5 ? -1 : k === 2 || k === 4 || k === 7 ? 1 : 0);
+						if (this.isOcean[j]) continue;
+						shore++;
+						if (this.biome[j] === BIOME_ID.SEA_CLIFF) rocky++;
+					}
+					if (shore >= 5 && t > 0.4) {
+						this.biome[i] = BIOME_ID.LAGOON;
+						continue;
+					}
+					if (rocky > 0 && t > 0.15 && t < 0.72) {
+						this.biome[i] = BIOME_ID.ROCKY_SHORE;
+						continue;
+					}
+				}
+				if (d >= 1 && d <= 3 && t >= WG7_KELP_LO && t < WG7_KELP_HI && kelp.noise2D(x * 0.06, y * 0.06) > -0.05) {
+					this.biome[i] = BIOME_ID.KELP_COAST;
+					continue;
+				}
+				if (d >= 2 && d <= 4 && t > WG7_REEF && a > deep + 0.08 && reef.noise2D(x * 0.1, y * 0.1) > 0) this.biome[i] = BIOME_ID.CORAL_REEF;
 			}
 		}
 	}
