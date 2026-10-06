@@ -31,6 +31,10 @@
     split: { gap: 0.2, gain: 0.07, voices: [{ type: 'square', f: 300, f2: 600, dur: 0.06 }, { type: 'square', f: 450, f2: 900, dur: 0.06, at: 0.05 }] },
     burrow: { gap: 0.5, gain: 0.06, voices: [{ type: 'triangle', f: 110, f2: 70, dur: 0.22 }], noise: 0.25 },
     codex: { gap: 0.5, gain: 0.07, voices: [{ type: 'sine', f: 784, dur: 0.1 }, { type: 'triangle', f: 1175, dur: 0.2, at: 0.08 }] },
+    levelup: { gap: 0.4, gain: 0.13, voices: [{ type: 'triangle', f: 587, dur: 0.1 }, { type: 'triangle', f: 784, dur: 0.1, at: 0.08 }, { type: 'triangle', f: 988, dur: 0.1, at: 0.16 }, { type: 'sine', f: 1175, f2: 1568, dur: 0.35, at: 0.24 }] },
+    cast: { gap: 0.15, gain: 0.09, voices: [{ type: 'sine', f: 660, f2: 1320, dur: 0.16 }, { type: 'triangle', f: 990, f2: 1980, dur: 0.14, at: 0.04 }], noise: 0.05 },
+    roar: { gap: 1, gain: 0.13, voices: [{ type: 'sawtooth', f: 140, f2: 70, dur: 0.55 }, { type: 'square', f: 95, f2: 60, dur: 0.5, at: 0.03 }], noise: 0.35 },
+    herostun: { gap: 0.8, gain: 0.08, voices: [{ type: 'sine', f: 1200, f2: 800, dur: 0.12 }, { type: 'sine', f: 1000, f2: 600, dur: 0.14, at: 0.12 }, { type: 'sine', f: 800, f2: 400, dur: 0.2, at: 0.26 }] },
     deny: { gap: 0.15, gain: 0.08, voices: [{ type: 'square', f: 160, dur: 0.08 }, { type: 'square', f: 120, dur: 0.1, at: 0.09 }] },
   };
   const MAX_VOICES = 24;

@@ -50,6 +50,7 @@
     ctx.beginPath(); ctx.ellipse(0, size * 0.42 - bob, size * 0.45, size * 0.13, 0, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = shade(body, -0.35);
     for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(s * size * 0.24, size * 0.32, size * 0.115, size * 0.145, 0, 0, Math.PI * 2); ctx.fill(); }
+    if (o.cape) drawCape(ctx, size, angle, o.cape, o.accent || o.cape, now);
     if (o.batWings) drawBatWings(ctx, size, body, mane, now, o.seed || 0);
     if (o.wings) {
       const flap = Math.sin(now / 160 + (o.seed || 0)) * 0.25;
@@ -151,6 +152,7 @@
     ctx.beginPath();
     ctx.ellipse(hx - Math.cos(angle) * size * 0.08, hy - Math.sin(angle) * size * 0.08 - size * 0.04, size * 0.16, size * 0.22, angle, 0, Math.PI * 2);
     ctx.fill();
+    if (o.crown) drawCrown(ctx, o.crown, hx, hy, size, angle, o.accent || '#ffe066', o.cape || mane, now);
     const blink = ((now + (o.seed || 0) * 700) % 3600) < 110;
     for (const s of [-1, 1]) {
       const ex = hx + Math.cos(angle) * size * 0.1 + Math.cos(angle + s * 1.2) * size * 0.12;
@@ -176,6 +178,72 @@
     ctx.restore();
   }
 
+  function drawCape(ctx, size, angle, col, edge, now) {
+    const sway = Math.sin(now / 300) * size * 0.05;
+    const bx = -Math.cos(angle) * size * 0.5, by = -Math.sin(angle) * size * 0.2 + size * 0.22;
+    ctx.save();
+    ctx.fillStyle = shade(col, -0.15);
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.34, -size * 0.12);
+    ctx.quadraticCurveTo(bx - size * 0.45 + sway, by, bx - size * 0.3 + sway, by + size * 0.24);
+    ctx.lineTo(bx + sway * 0.5, by + size * 0.3);
+    ctx.lineTo(bx + size * 0.3 + sway, by + size * 0.24);
+    ctx.quadraticCurveTo(bx + size * 0.45 + sway, by, size * 0.34, -size * 0.12);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = edge; ctx.lineWidth = size * 0.035;
+    ctx.beginPath();
+    ctx.moveTo(bx - size * 0.3 + sway, by + size * 0.24); ctx.lineTo(bx + sway * 0.5, by + size * 0.3); ctx.lineTo(bx + size * 0.3 + sway, by + size * 0.24);
+    ctx.stroke();
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.ellipse(0, -size * 0.12, size * 0.36, size * 0.1, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = edge;
+    ctx.beginPath(); ctx.arc(Math.cos(angle) * size * 0.2, -size * 0.1, size * 0.055, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  function drawCrown(ctx, kind, hx, hy, size, angle, acc, col, now) {
+    ctx.save();
+    const top = hy - size * 0.27;
+    if (kind === 'tiara') {
+      ctx.fillStyle = acc; ctx.shadowColor = acc; ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.moveTo(hx - size * 0.17, top + size * 0.04);
+      ctx.lineTo(hx - size * 0.11, top - size * 0.06);
+      ctx.lineTo(hx - size * 0.05, top);
+      ctx.lineTo(hx, top - size * 0.12);
+      ctx.lineTo(hx + size * 0.05, top);
+      ctx.lineTo(hx + size * 0.11, top - size * 0.06);
+      ctx.lineTo(hx + size * 0.17, top + size * 0.04);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#7a5cff';
+      ctx.beginPath(); ctx.arc(hx, top - size * 0.03, size * 0.03, 0, Math.PI * 2); ctx.fill();
+    } else if (kind === 'helm') {
+      ctx.fillStyle = shade(acc, -0.1);
+      ctx.beginPath(); ctx.ellipse(hx, top + size * 0.03, size * 0.22, size * 0.12, 0, Math.PI, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = acc;
+      ctx.fillRect(hx - size * 0.23, top + size * 0.02, size * 0.46, size * 0.05);
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.moveTo(hx - size * 0.03, top - size * 0.08); ctx.quadraticCurveTo(hx - size * 0.2, top - size * 0.28, hx - size * 0.28, top - size * 0.12); ctx.quadraticCurveTo(hx - size * 0.12, top - size * 0.12, hx + size * 0.03, top - size * 0.05); ctx.closePath(); ctx.fill();
+    } else if (kind === 'goggles') {
+      ctx.strokeStyle = '#3a2a1a'; ctx.lineWidth = size * 0.04;
+      ctx.beginPath(); ctx.moveTo(hx - size * 0.24, top + size * 0.08); ctx.lineTo(hx + size * 0.24, top + size * 0.08); ctx.stroke();
+      for (const s2 of [-1, 1]) {
+        ctx.fillStyle = '#ffd24a';
+        ctx.beginPath(); ctx.arc(hx + s2 * size * 0.09, top + size * 0.05, size * 0.075, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(160,230,255,.9)';
+        ctx.beginPath(); ctx.arc(hx + s2 * size * 0.09, top + size * 0.05, size * 0.05, 0, Math.PI * 2); ctx.fill();
+      }
+    } else if (kind === 'hood') {
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      ctx.moveTo(hx - size * 0.3, hy + size * 0.05);
+      ctx.quadraticCurveTo(hx - size * 0.32, top - size * 0.12, hx, top - size * 0.16);
+      ctx.quadraticCurveTo(hx + size * 0.32, top - size * 0.12, hx + size * 0.3, hy + size * 0.05);
+      ctx.quadraticCurveTo(hx, top + size * 0.02, hx - size * 0.3, hy + size * 0.05);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = acc; ctx.lineWidth = size * 0.025; ctx.stroke();
+    }
+    ctx.restore();
+  }
   function drawBatWings(ctx, size, body, mane, now, seed) {
     const flap = Math.sin(now / 130 + seed) * 0.3;
     for (const s of [-1, 1]) {
@@ -733,6 +801,49 @@
         }
         break;
       }
+      case 'nova': {
+        const R = f.r * sc * (0.25 + 0.75 * Math.min(1, k * 2));
+        const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, Math.max(1, R));
+        g.addColorStop(0, 'rgba(255,255,255,.9)'); g.addColorStop(0.4, f.c); g.addColorStop(1, 'rgba(122,92,255,0)');
+        ctx.fillStyle = g; circle(ctx, sx, sy, R); ctx.fill();
+        for (let i = 0; i < 8; i++) {
+          const a = i / 8 * Math.PI * 2 + k * 2, r = R * 0.9;
+          starShape(ctx, sx + Math.cos(a) * r, sy + Math.sin(a) * r, 6 * Math.max(0.6, sc), i % 2 ? f.c : f.c2);
+        }
+        break;
+      }
+      case 'quake': {
+        ctx.globalAlpha = Math.min(1, (1 - k) * 3) * 0.8;
+        const rng = C.mulberry(Math.floor(f.t * 8) + 5);
+        ctx.fillStyle = 'rgba(140,100,60,.22)'; circle(ctx, sx, sy, f.r * sc); ctx.fill();
+        ctx.strokeStyle = 'rgba(90,60,30,.9)'; ctx.lineWidth = 2;
+        for (let i = 0; i < 7; i++) {
+          const a = i / 7 * Math.PI * 2 + rng() * 0.4;
+          ctx.beginPath(); ctx.moveTo(sx, sy);
+          let px = sx, py = sy;
+          for (let j = 1; j <= 3; j++) { const rr = f.r * sc * j / 3.2; px = sx + Math.cos(a + (rng() - 0.5) * 0.5) * rr; py = sy + Math.sin(a + (rng() - 0.5) * 0.5) * rr; ctx.lineTo(px, py); }
+          ctx.stroke();
+        }
+        ctx.strokeStyle = 'rgba(255,200,120,.5)'; circle(ctx, sx, sy, f.r * sc * ((f.t * 2) % 1)); ctx.stroke();
+        break;
+      }
+      case 'roar': {
+        ctx.strokeStyle = '#ff6a3a'; ctx.lineWidth = 3;
+        for (let i = 0; i < 3; i++) { const q = Math.min(1, k * 1.4 + i * 0.12); ctx.globalAlpha = Math.max(0, 1 - q) * 0.8; circle(ctx, sx, sy, f.r * sc * q); ctx.stroke(); }
+        break;
+      }
+      case 'levelup': {
+        const H = S.hero;
+        const [hx, hy] = H ? View.toScreen(H.x, H.y) : [sx, sy];
+        ctx.shadowColor = '#ffe066'; ctx.shadowBlur = 16;
+        ctx.strokeStyle = f.rank ? '#ffe066' : '#c9b8ff'; ctx.lineWidth = 3;
+        circle(ctx, hx, hy, (20 + 60 * k) * Math.max(0.6, sc)); ctx.stroke();
+        for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2 + k * 3; starShape(ctx, hx + Math.cos(a) * 34 * sc, hy - 20 * sc + Math.sin(a) * 18 * sc - k * 30 * sc, 5 * Math.max(0.7, sc), '#ffe066'); }
+        ctx.font = '800 ' + Math.round(13 + 6 * Math.max(0.6, sc)) + 'px system-ui'; ctx.textAlign = 'center';
+        ctx.fillStyle = f.rank ? '#ffe066' : '#f3f0fb';
+        ctx.fillText(f.rank ? 'RANK UP!' : 'LEVEL UP!', hx, hy - 50 * Math.max(0.7, sc) - k * 20);
+        break;
+      }
       case 'starup': {
         const R = 260 * sc * (0.2 + 0.8 * Math.min(1, k * 1.6));
         ctx.globalAlpha = Math.max(0, 1 - k) * 0.9;
@@ -761,6 +872,7 @@
   }
 
   function drawProj(ctx, p, sc) {
+    if (p.kind === 'hero') { drawHeroProj(ctx, p, sc); return; }
     const col = PROJ_COL[p.kind] || '#fff';
     const tr = p._tr || (p._tr = []);
     tr.push(p.x, p.y);
@@ -797,6 +909,80 @@
     ctx.restore();
   }
 
+  function drawHeroProj(ctx, p, sc) {
+    const [sx, sy] = View.toScreen(p.x, p.y), rr = 5 * Math.max(0.7, sc), a = View.angle(p.a || 0);
+    ctx.save();
+    ctx.fillStyle = p.c; ctx.shadowColor = p.c; ctx.shadowBlur = 12;
+    if (p.hk === 'nova') starShape(ctx, sx, sy, rr * 1.5, p.c);
+    else if (p.hk === 'duskfang') {
+      ctx.translate(sx, sy); ctx.rotate(a);
+      ctx.beginPath(); ctx.arc(0, 0, rr * 1.4, -1.2, 1.2); ctx.arc(-rr * 0.6, 0, rr * 1.1, 1.1, -1.1, true); ctx.closePath(); ctx.fill();
+    } else {
+      ctx.translate(sx, sy); ctx.rotate(a);
+      ctx.beginPath(); ctx.moveTo(rr * 2, 0); ctx.lineTo(-rr, -rr * 0.5); ctx.lineTo(-rr * 0.4, 0); ctx.lineTo(-rr, rr * 0.5); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+  function heroOpts(id) {
+    const d = C.HEROES[id];
+    return {
+      body: d.body, mane: d.mane, horn: !!d.horn, wings: !!d.wings, batWings: !!d.batWings, tufts: !!d.batWings, slit: d.batWings ? '#ff5c7a' : '',
+      glow: d.accent, mark: d.accent, cape: d.cape, accent: d.accent, crown: d.crown, seed: 7,
+    };
+  }
+  function drawHero(ctx, S, ui, now) {
+    const h = S.hero;
+    if (!h || !h.id) return;
+    const d = C.HEROES[h.id], st = C.stats(h), sc = View.sc, W = C.WORLD;
+    const [sx, sy] = View.toScreen(h.x, h.y);
+    const size = W.towerR * 3.2 * sc;
+    const selHero = ui.heroSel;
+    ctx.save();
+    const ar = st.auraR * sc;
+    ctx.globalAlpha = selHero || ui.showAll ? 0.9 : 0.45;
+    ctx.fillStyle = d.accent ? d.accent + '14' : 'rgba(255,255,255,.06)';
+    ctx.strokeStyle = d.cape; ctx.lineWidth = 1.5; ctx.setLineDash([6, 8]); ctx.lineDashOffset = -now / 60;
+    circle(ctx, sx, sy, ar); ctx.fill(); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+    if (selHero) {
+      drawRange(ctx, h.x, h.y, st.range, true, false, 0);
+      if (Math.hypot(h.tx - h.x, h.ty - h.y) > 2) {
+        const [tx, ty] = View.toScreen(h.tx, h.ty);
+        ctx.save(); ctx.strokeStyle = 'rgba(255,224,102,.8)'; ctx.lineWidth = 2; ctx.setLineDash([4, 5]);
+        ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(tx, ty); ctx.stroke(); ctx.setLineDash([]);
+        circle(ctx, tx, ty, 8 * Math.max(0.7, sc)); ctx.stroke();
+        ctx.restore();
+      }
+    }
+    ctx.save();
+    ctx.strokeStyle = selHero ? '#ffe066' : 'rgba(255,224,102,.45)'; ctx.lineWidth = selHero ? 2.5 : 1.5;
+    ctx.beginPath(); ctx.ellipse(sx, sy + size * 0.42, size * 0.55, size * 0.18, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+    const hop = h.anim > 0 ? Math.min(1, h.anim * 4) * 0.5 : h.moving ? Math.abs(Math.sin(h.walk * 9)) * 0.3 : 0;
+    ctx.save();
+    if (h.stunT > 0) ctx.globalAlpha = 0.75;
+    if (h.frenzyT > 0) { ctx.shadowColor = '#ff3a5c'; ctx.shadowBlur = 18; }
+    drawPony(ctx, sx, sy, size, Object.assign(heroOpts(h.id), { angle: View.angle(h.face || 0), now, hop }));
+    ctx.restore();
+    const prog = C.heroProg(h), maxed = prog.lv >= C.HERO_TUNE.maxLv;
+    const fs = Math.round(Math.max(10, 9 + 4 * sc));
+    ctx.save();
+    ctx.font = '800 ' + fs + 'px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const label = d.name + '  Lv ' + prog.lv;
+    const tw = ctx.measureText(label).width + 14, ty = sy - size * 0.95;
+    ctx.fillStyle = 'rgba(12,10,22,.82)';
+    ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(sx - tw / 2, ty - fs * 0.75, tw, fs * 1.5 + 5, 6); else ctx.rect(sx - tw / 2, ty - fs * 0.75, tw, fs * 1.5 + 5); ctx.fill();
+    ctx.strokeStyle = d.cape; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = '#f3f0fb'; ctx.fillText(label, sx, ty);
+    const bw = tw - 10, by = ty + fs * 0.62;
+    ctx.fillStyle = 'rgba(255,255,255,.15)'; ctx.fillRect(sx - bw / 2, by, bw, 3);
+    ctx.fillStyle = maxed ? '#ffe066' : '#9fe6ff'; ctx.fillRect(sx - bw / 2, by, bw * (maxed ? 1 : Math.min(1, prog.xp / C.xpNeed(prog.lv))), 3);
+    if (h.stunT > 0) {
+      for (let i = 0; i < 3; i++) { const a = now / 200 + i * 2.1; starShape(ctx, sx + Math.cos(a) * size * 0.35, sy - size * 0.55 + Math.sin(a) * size * 0.1, 4 * Math.max(0.7, sc), '#ffe066'); }
+    }
+    ctx.restore();
+  }
   function drawBossBar(ctx, S, cw) {
     const b = C.bossStatus(S.run);
     if (!b) return false;
@@ -1173,7 +1359,13 @@
   }
 
   const Render = {
-    View, drawPony, drawDNB, shade, drawRange,
+    View, drawPony, drawDNB, shade, drawRange, heroOpts,
+    heroIcon(c, id, now) {
+      const g = c.getContext('2d');
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.clearRect(0, 0, c.width, c.height);
+      drawPony(g, c.width / 2, c.height * 0.58, c.width * 0.62, Object.assign(heroOpts(id), { angle: Math.PI / 2, now: now || 0 }));
+    },
     bg: null, bgKey: '', shakeT: 0, shakeAmp: 0, bossBar: false,
     ponyOpts(race, t) {
       const R = C.RACES[race];
@@ -1263,6 +1455,7 @@
         if (ring >= 10) { ctx.strokeStyle = ring >= 20 ? 'rgba(227,193,91,.7)' : 'rgba(169,139,255,.5)'; ctx.lineWidth = 1.5; circle(ctx, sx, sy + W.towerR * sc * 0.45, W.towerR * sc * 0.9); ctx.stroke(); }
         drawPony(ctx, sx, sy, W.towerR * 2.3 * sc, Object.assign(this.ponyOpts(t.race, t), { angle: View.angle(t.face), now, hop: t.anim > 0 ? Math.min(1, t.anim * 4) : 0 }));
       }
+      drawHero(ctx, S, ui, now);
       if (S.run) {
         const es = S.run.enemies.slice().sort((a, b) => a.y - b.y);
         const m = S.run.map;

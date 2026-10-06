@@ -28,6 +28,7 @@
   const ui = {
     placing: null, ghost: null, ghostTouch: false, selId: 0, hoverId: 0, sellArm: 0, autoNext: 0,
     infoKey: '', waveKey: '', buildKey: '', ledgerKey: '', speedKey: '', showAll: false, paused: false, sel: null, tipEl: null,
+    heroSel: false, heroKey: '', heroBarKey: '', heroListKey: '',
   };
 
   const cv = $('cv');
@@ -62,7 +63,7 @@
   function setPlacing(race) {
     ui.placing = ui.placing === race ? null : race;
     ui.ghost = null;
-    if (ui.placing) ui.selId = 0;
+    if (ui.placing) { ui.selId = 0; ui.heroSel = false; }
     updateHint();
     ui.buildKey = ''; ui.infoKey = '';
   }
@@ -106,6 +107,7 @@
     const [x, y] = eventWorld(ev);
     if (ui.placing) {
       const touch = ev.pointerType !== 'mouse';
+      ui.heroSel = false;
       if (touch) {
         const g = ui.ghost;
         const near = g && ui.ghostTouch && Math.hypot(g.x - x, g.y - y) < 30;
@@ -116,11 +118,41 @@
       tryPlace(x, y);
       return;
     }
+    if (S.hero && C.heroAt(S, x, y)) { selectHero(!ui.heroSel); return; }
     const t = towerAt(x, y);
+    if (ui.heroSel && !t) { orderMove(x, y); return; }
+    ui.heroSel = false;
     ui.selId = t ? t.id : 0;
     ui.sellArm = 0;
     ui.infoKey = '';
   });
+
+  const HERO_ICONS = { bolt: '\u26A1', burst: '\u2739', cage: '\u25A6', dagger: '\u2020', eye: '\u25C9', mark: '\u2316', moon: '\u263E', quake: '\u2248', shield: '\u26E8', shout: '\u203C', swirl: '\u058E', wind: '\u27BF' };
+  function heroIc(id) { return HERO_ICONS[id] || '\u2726'; }
+  function selectHero(on) {
+    if (!S.hero || !S.hero.id) { ui.heroSel = false; if (on) openHeroes(); return; }
+    ui.heroSel = !!on;
+    if (ui.heroSel) { ui.selId = 0; if (ui.placing) setPlacing(null); }
+    const h = $('placeHint');
+    if (ui.heroSel) {
+      h.textContent = 'Tap or click the field to move ' + C.HEROES[S.hero.id].name + '. Esc or tap the hero to stop.';
+      h.className = 'placehint show';
+    } else if (!ui.placing) h.className = 'placehint';
+    ui.infoKey = ''; ui.heroBarKey = ''; ui.heroKey = '';
+  }
+  function orderMove(x, y) {
+    if (!C.moveHero(S, x, y)) return;
+    A.play('click');
+  }
+  const CAST_MSG = { idle: 'Hero abilities work during a wave', stunned: 'Your hero is stunned', notarget: 'No target in range for that ability' };
+  function doCast(i) {
+    if (!S.hero || !S.hero.id) { openHeroes(); return false; }
+    const r = C.castHero(S, i);
+    if (r === true) { ui.heroBarKey = ''; return true; }
+    A.play('deny');
+    if (CAST_MSG[r]) banner(CAST_MSG[r], r === 'stunned' ? 'bad' : '');
+    return r;
+  }
 
   const BLOCK_MSG = {
     edge: 'Too close to the edge of the map', road: 'Too close to the road', pony: 'Too close to another pony',
@@ -194,8 +226,11 @@
     if (!$('codexModal').hidden) { if (k === 'Escape') closeCodex(); return; }
     if (!$('starModal').hidden) { if (k === 'Escape') closeStar(); return; }
     if (!$('researchModal').hidden) { if (k === 'Escape' || k === 'r') closeResearch(); return; }
+    if (!$('heroModal').hidden) { if (k === 'Escape' || k === 'h') closeHeroes(); return; }
     const t = selTower();
-    if (k === 'Escape') { if (ui.placing) setPlacing(null); else { ui.selId = 0; ui.infoKey = ''; } }
+    if (k === 'Escape') { if (ui.placing) setPlacing(null); else if (ui.heroSel) selectHero(false); else { ui.selId = 0; ui.infoKey = ''; } }
+    else if (k === 'q' || k === 'w' || k === 'e') doCast('qwe'.indexOf(k));
+    else if (k === 'h') { if (!S.hero || !S.hero.id) openHeroes(); else selectHero(!ui.heroSel); }
     else if (/^[1-9]$/.test(k) && C.RACE_IDS[+k - 1]) setPlacing(C.RACE_IDS[+k - 1]);
     else if (k === ' ') { ev.preventDefault(); if (!S.run) startSelected(); else togglePause(); }
     else if (k === 'p') togglePause();
@@ -676,7 +711,8 @@
       + '<li>' + (S.towers.length === 1 ? 'Your 1 pony on the board is removed' : 'All ' + S.towers.length + ' ponies on the board are removed') + '</li>'
       + '<li>Cash goes back to ' + C.fmt(C.mapStartCash(map, S)) + (skip ? ' plus the skipped waves’ pay' : '') + '</li>'
       + '<li>Wave progress restarts at wave ' + (skip + 1) + ' (best ' + S.cleared + ')</li>'
-      + '<li>First-clear records reset, so every first-clear bonus pays again</li></ul>';
+      + '<li>First-clear records reset, so every first-clear bonus pays again</li>'
+      + (S.hero ? '<li>' + C.HEROES[S.hero.id].name + ' goes back to level 1 (the hero choice and unlocks stay)</li>' : '') + '</ul>';
     h += '<h3>You gain</h3><ul class="gains">'
       + '<li><span class="gain">+' + gain + ' Moonstones</span> for permanent research</li>'
       + '<li>Rewards +' + pctOf(C.starCashMul(next)) + '% cash (was +' + pctOf(C.starCashMul(cur)) + '%)</li>'
@@ -800,6 +836,161 @@
     const n = ev.target.closest('[data-res]');
     if (n) tryResearch(n.dataset.res);
   });
+
+
+  function heroLockText(d) {
+    const u = d.unlock;
+    return u.free ? 'Free' : 'Unlock with ◆ ' + u.moon + ' or: ' + u.text;
+  }
+  function buildHeroList() {
+    const box = $('heroList');
+    $('heroMoon').textContent = '◆ ' + C.fmt(S.moon || 0);
+    let h = '';
+    for (const id of C.HERO_IDS) {
+      const d = C.HEROES[id], own = C.heroUnlocked(S, id), cur = S.hero && S.hero.id === id;
+      const lv = S.hero && S.hero.prog && S.hero.prog[id] ? S.hero.prog[id].lv : 1;
+      let act;
+      if (cur) act = '<span class="hpick cur">Active on this map</span>';
+      else if (own) act = '<button type="button" class="primary hpick" data-pick="' + id + '"' + (S.run ? ' disabled' : '') + '>' + (S.run ? 'Pick after this wave' : 'Pick ' + esc(d.name)) + '</button>';
+      else act = '<button type="button" class="starbtn hpick" data-buy="' + id + '"' + ((S.moon || 0) < d.unlock.moon ? ' disabled' : '') + '>Unlock ◆ ' + d.unlock.moon + '</button><div class="hlock">or: ' + esc(d.unlock.text) + '</div>';
+      let ab = '';
+      d.abil.forEach((a, i) => { ab += '<li><kbd>' + 'QWE'[i] + '</kbd><b>' + heroIc(a.icon) + ' ' + esc(a.name) + '</b> <span class="hcdt">' + a.cd + 's</span><div>' + esc(a.text(1)) + '</div></li>'; });
+      h += '<article class="hcard' + (cur ? ' on' : '') + (own ? '' : ' locked') + '" data-hero="' + id + '">'
+        + '<div class="htop"><canvas width="120" height="120" data-hicon="' + id + '"></canvas><div><h3>' + esc(d.name) + '</h3><div class="hrole">' + esc(d.role) + ' &middot; ' + esc(d.title) + '</div>'
+        + '<div class="hblurb">' + esc(d.blurb) + '</div>' + (own ? '<div class="hlvl">Level ' + lv + ' on this map</div>' : '') + '</div></div>'
+        + '<div class="haura"><b>' + esc(d.aura.name) + '</b> (aura): ' + esc(d.aura.text(d.aura.base)) + '</div>'
+        + '<ul class="habil">' + ab + '</ul>' + act + '</article>';
+    }
+    box.innerHTML = h;
+    drawHeroIcons(performance.now());
+    ui.heroListKey = heroListKey();
+  }
+  function heroListKey() { return (S.moon || 0) + '|' + !!S.run + '|' + (S.hero ? S.hero.id : '') + '|' + C.HERO_IDS.map(id => C.heroUnlocked(S, id) ? 1 : 0).join(''); }
+  function drawHeroIcons(now) {
+    for (const c of document.querySelectorAll('canvas[data-hicon]')) if (c.offsetParent) R.heroIcon(c, c.dataset.hicon, now);
+  }
+  function openHeroes() {
+    lastFocus = document.activeElement;
+    buildHeroList();
+    $('heroModal').hidden = false;
+    $('heroClose').focus();
+  }
+  function closeHeroes() {
+    if ($('heroModal').hidden) return;
+    $('heroModal').hidden = true;
+    hideTip();
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function doPickHero(id) {
+    if (!C.pickHero(S, id)) { A.play('deny'); return false; }
+    A.play('research');
+    banner(C.HEROES[id].name + ' joins the defense. Tap the hero, then the field to move.', 'good');
+    buildHeroList();
+    ui.heroKey = ''; ui.heroBarKey = '';
+    writeSave();
+    return true;
+  }
+  function doUnlockHero(id) {
+    if (!C.unlockHero(S, id)) { A.play('deny'); return false; }
+    buildHeroList();
+    dirty(); writeSave();
+    return true;
+  }
+  $('heroClose').addEventListener('click', closeHeroes);
+  $('heroModal').addEventListener('click', ev => {
+    if (ev.target === $('heroModal')) { closeHeroes(); return; }
+    const pk = ev.target.closest('[data-pick]');
+    if (pk && !pk.disabled) { if (doPickHero(pk.dataset.pick)) closeHeroes(); return; }
+    const bu = ev.target.closest('[data-buy]');
+    if (bu && !bu.disabled) doUnlockHero(bu.dataset.buy);
+  });
+  $('heroFace').addEventListener('click', () => { if (!S.hero || !S.hero.id) openHeroes(); else selectHero(!ui.heroSel); });
+  for (const b of document.querySelectorAll('#heroBar .hab')) b.addEventListener('click', () => doCast(+b.dataset.ab));
+
+  function refreshHeroBar(now) {
+    const bar = $('heroBar');
+    const inf = C.heroInfo(S);
+    bar.hidden = false;
+    bar.classList.toggle('none', !inf);
+    const face = $('heroFace');
+    face.classList.toggle('on', !!ui.heroSel);
+    face.setAttribute('aria-pressed', ui.heroSel ? 'true' : 'false');
+    const fc = face.querySelector('canvas');
+    if (inf) R.heroIcon(fc, inf.id, now);
+    else { const g = fc.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, fc.width, fc.height); }
+    const k = inf ? inf.id + inf.lv + '|' + inf.abil.map(a => Math.round(a.left * 4) + (a.ready ? 'r' : '')).join() + '|' + (inf.stunT > 0) + !!S.run : 'none';
+    if (k === ui.heroBarKey) return;
+    ui.heroBarKey = k;
+    $('heroFaceLv').textContent = inf ? inf.lv : '+';
+    face.dataset.tip = inf ? inf.def.name + ', level ' + inf.lv + (inf.max ? ' (max)' : '') + '\nSelect, then tap the field to move (H).' : 'Pick a hero for this map (H)';
+    face.setAttribute('aria-label', inf ? 'Select ' + inf.def.name + ' (H)' : 'Pick a hero (H)');
+    document.querySelectorAll('#heroBar .hab').forEach((b, i) => {
+      const a = inf && inf.abil[i];
+      b.hidden = !a;
+      if (!a) return;
+      b.querySelector('.hic').textContent = heroIc(a.icon);
+      const p = a.ready ? 0 : Math.min(1, a.left / a.cd);
+      b.style.setProperty('--cd', (p * 360).toFixed(1) + 'deg');
+      b.querySelector('.hcd').textContent = a.ready ? '' : Math.ceil(a.left);
+      b.classList.toggle('ready', a.ready && !!S.run && !(inf.stunT > 0));
+      b.classList.toggle('cooling', !a.ready);
+      b.disabled = false;
+      b.setAttribute('aria-label', a.name + ' (' + a.key + ')' + (a.ready ? '' : ', ' + Math.ceil(a.left) + ' seconds'));
+      b.dataset.tip = a.name + ' (' + a.key + ') - cooldown ' + a.cd.toFixed(1) + 's\n' + a.text + (S.run ? '' : '\nUsable during a wave.');
+    });
+  }
+
+  function heroCardSkeleton(inf) {
+    const box = $('heroCard');
+    if (!inf) {
+      box.innerHTML = '<h2>Hero</h2><p class="hint">No hero on this map yet. A hero stands on the field, auto-attacks, casts Q/W/E abilities and boosts nearby ponies.</p><button type="button" class="primary hchoose pulse" data-heroes>Pick a hero</button>';
+      return;
+    }
+    let ab = '';
+    inf.abil.forEach((a, i) => { ab += '<li class="hcab" data-i="' + i + '" tabindex="0"><kbd>' + a.key + '</kbd><span class="hn"></span><span class="hcdt"></span></li>'; });
+    box.innerHTML = '<h2>Hero</h2><div class="hctop"><canvas width="96" height="96" data-hicon="' + inf.id + '"></canvas><div class="hcmain"><div class="hcname"></div><div class="hcrole"></div>'
+      + '<div class="hclv"></div><div class="hxp" role="progressbar" aria-label="Hero experience" aria-valuemin="0" aria-valuemax="100"><i></i></div><div class="hcxp"></div></div></div>'
+      + '<div class="hcaura"></div><ul class="hcabs">' + ab + '</ul><div class="hcstat"></div>'
+      + '<div class="hcrow"><label class="auto hauto"><input type="checkbox" id="heroAuto"><span class="sw"></span><span>Auto-cast</span></label><button type="button" class="ghost hchoose" data-heroes>Change hero</button></div>';
+    $('heroAuto').addEventListener('change', ev => { if (S.hero) { S.hero.auto = ev.target.checked; writeSave(); } });
+  }
+  $('heroCard').addEventListener('click', ev => {
+    if (ev.target.closest('[data-heroes]')) { openHeroes(); return; }
+    const li = ev.target.closest('.hcab');
+    if (li) doCast(+li.dataset.i);
+  });
+  function refreshHeroCard() {
+    const inf = C.heroInfo(S);
+    const sk = inf ? inf.id + '|' + S.map : 'none|' + S.map;
+    if (sk !== ui.heroKey) { ui.heroKey = sk; heroCardSkeleton(inf); }
+    if (!inf) return;
+    const box = $('heroCard');
+    box.querySelector('.hcname').textContent = inf.def.name;
+    box.querySelector('.hcrole').textContent = inf.def.role;
+    box.querySelector('.hclv').textContent = 'Level ' + inf.lv + ' / 30 · Rank ' + inf.rank + (inf.nextRank ? ' (next at ' + inf.nextRank + ')' : '');
+    const pct = inf.max ? 100 : Math.min(100, inf.xp / inf.need * 100);
+    const bar = box.querySelector('.hxp');
+    bar.firstChild.style.width = pct.toFixed(1) + '%';
+    bar.setAttribute('aria-valuenow', Math.round(pct));
+    box.querySelector('.hcxp').textContent = inf.max ? 'Max level' : 'XP ' + C.fmt(Math.floor(inf.xp)) + ' / ' + C.fmt(Math.ceil(inf.need));
+    box.querySelector('.hcaura').innerHTML = '<b>' + esc(inf.def.aura.name) + '</b> · ' + esc(inf.auraText) + ' (radius ' + Math.round(inf.auraR) + ')';
+    box.querySelectorAll('.hcab').forEach((li, i) => {
+      const a = inf.abil[i];
+      li.querySelector('.hn').textContent = heroIc(a.icon) + ' ' + a.name;
+      li.querySelector('.hcdt').textContent = a.ready ? 'Ready' : Math.ceil(a.left) + 's';
+      li.classList.toggle('ready', a.ready);
+      li.dataset.tip = a.name + ' (' + a.key + ') - cooldown ' + a.cd.toFixed(1) + 's\n' + a.text;
+    });
+    box.querySelector('.hcstat').textContent = 'Range ' + Math.round(inf.range) + ' · ' + inf.rate.toFixed(2) + ' hits/s · kills ' + C.fmt(inf.kills || 0) + (inf.stunT > 0 ? ' · stunned!' : '');
+    const au = $('heroAuto');
+    if (au.checked !== inf.auto) au.checked = inf.auto;
+    const ch = box.querySelector('.hcrow .hchoose');
+    ch.disabled = false;
+    ch.dataset.tip = S.run ? 'You can change hero between waves' : 'Pick another hero for this map';
+    const c = box.querySelector('canvas[data-hicon]');
+    if (c) R.heroIcon(c, inf.id, performance.now());
+    if (!$('heroModal').hidden && heroListKey() !== ui.heroListKey) buildHeroList();
+  }
 
   const codexUi = { tab: 'e', pick: null, toastT: 0 };
   function codexEntries() { const L = C.codexList(); return codexUi.tab === 'b' ? L.b : L.e; }
@@ -993,6 +1184,11 @@
         if (S.settings.shake) R.kick(6, 0.5);
       }
       else if (e.type === 'research') { dirty(); continue; }
+      else if (e.type === 'herolv') { if (e.rankUp) banner(e.name + ' reached level ' + e.lv + '! Abilities and aura upgraded', 'good'); ui.heroBarKey = ''; continue; }
+      else if (e.type === 'heroUnlock') { A.play('unlocked'); banner(e.name + ' is unlocked! Pick heroes from the hero card.', 'good'); ui.heroListKey = ''; continue; }
+      else if (e.type === 'herostun') { banner(e.name + ' stuns your hero!', 'bad'); continue; }
+      else if (e.type === 'heroPick') { ui.heroKey = ''; ui.heroBarKey = ''; continue; }
+      else if (e.type === 'herocast') { ui.heroBarKey = ''; continue; }
       else if (e.type === 'leak') continue;
       ui.waveKey = ''; ui.infoKey = '';
     }
@@ -1041,8 +1237,10 @@
     board.classList.toggle('bossfight', R.bossBar);
     if (now - uiT > 120) {
       uiT = now;
-      refreshHud(); refreshBuild(); refreshWave(); refreshInfo(); refreshSpeed(); drawIcons(now);
+      refreshHud(); refreshBuild(); refreshWave(); refreshInfo(); refreshSpeed(); drawIcons(now); refreshHeroCard();
+      if (!$('heroModal').hidden) drawHeroIcons(now);
     }
+    refreshHeroBar(now);
     if (now - ledT > 500) { ledT = now; refreshLedger(); }
     if (now - saveT > 10000) { saveT = now; writeSave(); }
     requestAnimationFrame(frame);
@@ -1054,5 +1252,9 @@
   window.__nd = { get S() { return S; }, ui, save: writeSave, audio: A, setSpeed, togglePause, refresh: dirty, openMaps, closeMaps, chooseMap, openCodex, closeCodex,
     openStar, closeStar, confirmStar, openResearch, closeResearch, buyResearch: tryResearch,
     forceClear(n) { if (S.run) return false; S.cleared = Math.max(S.cleared, Math.min(C.MAX_WAVE, n)); S.sel = C.topWave(S); dirty(); return true; },
-    grantMoon(n) { C.grantMoon(S, n); dirty(); return S.moon; } };
+    grantMoon(n) { C.grantMoon(S, n); dirty(); return S.moon; },
+    openHeroes, closeHeroes, pickHero: doPickHero, unlockHero: doUnlockHero, castHero: doCast, selectHero,
+    moveHero(x, y) { return C.moveHero(S, x, y); }, heroInfo() { return C.heroInfo(S); }, heroXp(n) { const r = C.addHeroXp(S, n); handleEvents(); return r; },
+    heroScreen() { if (!S.hero || !S.hero.id) return null; const r = cv.getBoundingClientRect(), p = V.toScreen(S.hero.x, S.hero.y - 8); return [r.left + p[0], r.top + p[1]]; },
+    worldToClient(x, y) { const r = cv.getBoundingClientRect(), p = V.toScreen(x, y); return [r.left + p[0], r.top + p[1]]; } };
 })();

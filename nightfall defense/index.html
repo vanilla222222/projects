@@ -37,6 +37,12 @@
       <div id="banner" class="banner"></div>
       <div id="placeHint" class="placehint"></div>
       <div id="codexToast" class="codextoast" role="status" aria-live="polite"></div>
+      <div id="heroBar" class="herobar" role="group" aria-label="Hero" hidden>
+        <button id="heroFace" class="hface" type="button" aria-label="Select hero (H)" aria-pressed="false" data-tip="Select your hero, then tap the field to move (H)"><canvas width="88" height="88"></canvas><span id="heroFaceLv" class="hflv">1</span></button>
+        <button class="hab" type="button" data-ab="0"><span class="hic"></span><kbd>Q</kbd><span class="hcd"></span></button>
+        <button class="hab" type="button" data-ab="1"><span class="hic"></span><kbd>W</kbd><span class="hcd"></span></button>
+        <button class="hab" type="button" data-ab="2"><span class="hic"></span><kbd>E</kbd><span class="hcd"></span></button>
+      </div>
     </div>
     <aside id="side">
       <section class="card wavebox">
@@ -63,6 +69,7 @@
         <h2>Ponies</h2>
         <div id="buildList" class="buildlist"></div>
       </section>
+      <section id="heroCard" class="card herocard"></section>
       <section id="info" class="card info"></section>
       <section id="ledger" class="card ledger"></section>
       <section class="card misc">
@@ -91,6 +98,7 @@
       <li><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><kbd>5</kbd> pick Earth, Unicorn, Pegasus, Bat, Crystal</li>
       <li><kbd>Space</kbd> start wave, or pause during one</li>
       <li><kbd>P</kbd> pause &middot; <kbd>F</kbd> cycle speed &middot; <kbd>M</kbd> mute &middot; <kbd>C</kbd> codex &middot; <kbd>R</kbd> research</li>
+      <li><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> hero abilities &middot; <kbd>H</kbd> select hero, then click the field to move it</li>
       <li><kbd>U</kbd> open upgrades for the pony under the cursor</li>
       <li><kbd>B</kbd> upgrade max affordable &middot; <kbd>S</kbd> sell (press twice)</li>
       <li>Hold <kbd>Shift</kbd> to show every range &middot; <kbd>Esc</kbd> cancel</li>
@@ -124,6 +132,13 @@
     <div class="dhead"><h2 id="researchTitle">Research</h2><span id="resMoon" class="resmoon"></span><button id="researchClose" class="ghost x" type="button">Close</button></div>
     <p class="hint">Research is permanent and works on every map. Earn Moonstones by starring up maps and by clearing boss waves on starred maps for the first time. On starred maps each research level also makes DNBs <span id="resPress"></span> tougher.</p>
     <div id="resTree" class="restree"></div>
+  </div>
+</div>
+<div id="heroModal" class="modal" hidden>
+  <div class="dialog wide heroes" role="dialog" aria-modal="true" aria-labelledby="heroTitle">
+    <div class="dhead"><h2 id="heroTitle">Heroes</h2><span id="heroMoon" class="resmoon"></span><button id="heroClose" class="ghost x" type="button">Close</button></div>
+    <p class="hint">One hero per map. Heroes cannot fall, level up from kills on this map and keep their choice when you star up. You can change hero between waves.</p>
+    <div id="heroList" class="herolist"></div>
   </div>
 </div>
 <div id="starBurst" class="starburst" aria-hidden="true"></div>
