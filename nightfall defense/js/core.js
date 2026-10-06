@@ -4,14 +4,14 @@
   const WORLD = { L: 1400, W: 800, towerR: 20, minGap: 44 };
   const MAX_WAVE = 100;
   const LIVES = 10;
-  const SAVE_VER = 3;
+  const SAVE_VER = 4;
   const SPAWN_GUARD = 15;
   const UNLOCK_AT = 50;
   const BASE_LEN = 1480;
 
   const TUNE = {
     hp0: 14,
-    hpCurve: [[1, 1.25], [10, 1.21], [20, 1.2], [30, 1.185], [35, 1.16], [45, 1.17], [50, 1.15], [55, 1.09], [60, 1.085], [80, 1.072], [100, 1.058]],
+    hpCurve: [[1, 1.25], [10, 1.21], [20, 1.2], [30, 1.185], [35, 1.16], [45, 1.17], [50, 1.15], [55, 1.105], [60, 1.1], [80, 1.085], [100, 1.05]],
     cash0: 2.2, cashGrowth: 1.2,
     clear0: 45, clearGrowth: 1.2,
     towerGrowth: 1.5, sellRate: 0.7,
@@ -37,10 +37,22 @@
       id: 'pegasus', name: 'Pegasus', cost: 70, range: 150, dmg: 5, rate: 2.0,
       body: '#a9cdea', mane: '#4fd1c5', accent: '#4fd1c5',
       role: 'Sky skirmisher',
-      ability: 'Skyward Eye: rapid feather darts. The only base pony that can see and hit flying DNBs. Cannot harm magical DNBs.',
+      ability: 'Skyward Eye: rapid feather darts that see and hit flying DNBs from long range. Cannot harm magical DNBs.',
+    },
+    bat: {
+      id: 'bat', name: 'Bat Pony', cost: 80, range: 145, dmg: 7, rate: 1.6,
+      body: '#5b5470', mane: '#2b2238', accent: '#ff5a7a',
+      role: 'Night hunter',
+      ability: 'Echo Fang: quick sonic bites that see flyers and deal 50% more damage to fast or sprinting DNBs. Cannot harm magical DNBs.',
+    },
+    crystal: {
+      id: 'crystal', name: 'Crystal Pony', cost: 110, range: 130, dmg: 7, rate: 0.8,
+      body: '#9fe6ff', mane: '#d68bff', accent: '#7fe8ff',
+      role: 'Gem support',
+      ability: 'Heartglow: ponies within 130 deal 4% more damage and attack 2% faster. Fires crystal shards at ground DNBs and lights up dark caves. Cannot see flyers or harm magical DNBs.',
     },
   };
-  const RACE_IDS = ['earth', 'unicorn', 'pegasus'];
+  const RACE_IDS = ['earth', 'unicorn', 'pegasus', 'bat', 'crystal'];
 
   function pct(v) { return Math.round(v * 100) + '%'; }
 
@@ -110,6 +122,50 @@
         node: '+1 extra target at nodes 3, 6 and 9. +6% damage.',
         sig: 'Feather Storm', sigDesc: 'Every attack fires at every valid DNB in range.',
         apply(lv, s) { s.multi += (lv >= 3) + (lv >= 6) + (lv >= 9); s.dmg *= 1 + 0.06 * lv; if (lv >= 10) s.sigs.push('featherstorm'); } },
+    ],
+    bat: [
+      { id: 'nightstalker', name: 'Nightstalker', blurb: 'Hunts whatever runs fastest.',
+        node: '+12% damage, +10% vs fast DNBs.',
+        sig: 'Midnight Feast', sigDesc: 'Fast DNBs take triple damage, and every bite on one slows it by 30% for 2s.',
+        apply(lv, s) { s.dmg *= 1 + 0.12 * lv; s.fastMul *= 1 + 0.1 * lv; if (lv >= 10) { s.fastMul *= 3; s.sigs.push('nightfeast'); } } },
+      { id: 'sonar', name: 'Echolocation', blurb: 'Sonar that finds whatever hides. Reveals stealthy DNBs.',
+        node: 'Node 1 lets this bat detect stealthy DNBs. +6% range. From node 5, ponies within 160 detect them too.',
+        sig: 'Deep Echo', sigDesc: 'Every 5s a sonar pulse reveals every DNB within twice this bat\'s range for 4s: any pony can hit them and they take 20% more damage. This bat can also bite burrowed DNBs.',
+        apply(lv, s) { if (lv >= 1) s.detects = true; s.range *= 1 + 0.06 * lv; if (lv >= 5) s.detectR = Math.max(s.detectR, 160); if (lv >= 10) { s.seesBurrow = true; s.sigs.push('deepecho'); } } },
+      { id: 'colony', name: 'Colony', blurb: 'A bat pony never hunts alone.',
+        node: '+1 extra target at nodes 3, 6 and 9. +6% damage.',
+        sig: 'Swarm Night', sigDesc: 'Every 7s releases 8 swarm bats that seek DNBs in range for 3x damage each.',
+        apply(lv, s) { s.multi += (lv >= 3) + (lv >= 6) + (lv >= 9); s.dmg *= 1 + 0.06 * lv; if (lv >= 10) s.sigs.push('swarmnight'); } },
+      { id: 'crimson', name: 'Crimson Fang', blurb: 'Bites that always find the vein.',
+        node: '+3% crit chance, crits deal 3x. +5% damage.',
+        sig: 'Blood Moon', sigDesc: 'Every 14s, for 5s, every bite crits and lands on every valid DNB in range.',
+        apply(lv, s) { s.crit += 0.03 * lv; if (lv >= 1) s.critMul = Math.max(s.critMul, 3); s.dmg *= 1 + 0.05 * lv; if (lv >= 10) s.sigs.push('bloodmoon'); } },
+      { id: 'terror', name: 'Night Terror', blurb: 'Shrieks that rattle anything with wings.',
+        node: '+12% vs flyers, +4% attack speed. From node 5, bites may stun for 0.4s.',
+        sig: 'Dread Screech', sigDesc: 'Every 9s a screech stuns every DNB in range for 1s (bosses 0.3s) and hexes them to take 25% more damage for 4s.',
+        apply(lv, s) { s.flyMul *= 1 + 0.12 * lv; s.rate *= 1 + 0.04 * lv; if (lv >= 5) { s.stunCh = Math.max(s.stunCh, 0.1); s.stunDur = Math.max(s.stunDur, 0.4); } if (lv >= 10) s.sigs.push('dreadscreech'); } },
+    ],
+    crystal: [
+      { id: 'resonance', name: 'Resonance', blurb: 'A gem song that lifts every pony nearby.',
+        node: 'Aura +0.8% damage, +0.5% attack speed, +4 radius.',
+        sig: 'Harmonic Chorus', sigDesc: 'Every 10s a harmonic surge gives every pony in the aura +25% attack speed for 3s.',
+        apply(lv, s) { s.auraDmg += 0.008 * lv; s.auraRate += 0.005 * lv; s.auraR += 4 * lv; if (lv >= 10) s.sigs.push('chorus'); } },
+      { id: 'wall', name: 'Crystal Wall', blurb: 'Grows a crystal wall across the nearest road to bog DNBs down.',
+        node: 'Ground DNBs inside the wall move 5% slower per node (bosses half). +4 wall radius.',
+        sig: 'Prism Fortress', sigDesc: 'Every 3s the wall pulses: 6x damage to every ground DNB inside it and a 0.6s stun (bosses 0.2s).',
+        apply(lv, s) { s.wall = 0.05 * lv; s.wallR = 46 + 4 * lv; if (lv >= 10) s.sigs.push('fortress'); } },
+      { id: 'spellshard', name: 'Spellshard', blurb: 'Shards cut with old unicorn runes. Lets a crystal pony hurt magical DNBs.',
+        node: 'Node 1 unlocks damage to magical DNBs. +8% damage, +12% vs magical.',
+        sig: 'Dispel Prism', sigDesc: 'Shards strip magic from DNBs for 4s so any pony can hit them, and deal triple damage to magical foes.',
+        apply(lv, s) { if (lv >= 1) s.canMagic = true; s.dmg *= 1 + 0.08 * lv; s.magicMul *= 1 + 0.12 * lv; if (lv >= 10) { s.magicMul *= 3; s.sigs.push('dispelprism'); } } },
+      { id: 'lumen', name: 'Lumen', blurb: 'A heart of light that pushes back the dark and sharpens every eye.',
+        node: '+14 light radius, ponies in the aura gain +0.6% range. +4% damage.',
+        sig: 'Dawnstone', sigDesc: 'The light fills the whole aura, ponies in it gain another +3% range, and they all detect stealthy DNBs.',
+        apply(lv, s) { s.lightR += 14 * lv; s.auraRange += 0.006 * lv; s.dmg *= 1 + 0.04 * lv; if (lv >= 10) { s.auraRange += 0.03; s.detects = true; s.sigs.push('dawnstone'); } } },
+      { id: 'geode', name: 'Geode Burst', blurb: 'Shards that burst into glittering fragments.',
+        node: 'Shards splash (radius grows), +8% damage.',
+        sig: 'Crystal Cataclysm', sigDesc: 'Every 8s a giant crystal erupts under the toughest DNB in range: 15x damage to everything nearby and a 1s encase (bosses 0.3s).',
+        apply(lv, s) { if (lv > 0) s.splash = Math.max(s.splash, 22 + 6 * lv); s.dmg *= 1 + 0.08 * lv; if (lv >= 10) s.sigs.push('cataclysm'); } },
     ],
   };
 
@@ -222,7 +278,7 @@
         tricks: { burrow: { every: 4.5, dur: 1.4 }, blink: { every: 6, dist: 100 } }, look: { horns: 'spike', aura: '#b48bff', eyes: '#e0c8ff' } },
       { id: 'gate-wardens', name: 'Twin Gate Wardens', hpMul: 0.35, desc: 'One warden at each gate. Each hardens for 2.5s every 5s, blocking 70% of damage.', color: '#6a5a4a', dark: '#342a22',
         tricks: { twin: true, shell: { every: 5, dur: 2.5, cut: 0.7 } }, look: { horns: 'antler', spikes: true, eyes: '#ffd27a', size: 1.1 } },
-      { id: 'lich-regent', name: 'The Lich Regent', hpMul: 0.2, desc: 'Magical. Regrows 1.2% HP per second, calls Hexlings at each third of his HP, and splits into 2 liches when slain.', color: '#4a3e5a', dark: '#221c2c',
+      { id: 'lich-regent', name: 'The Lich Regent', hpMul: 0.12, desc: 'Magical. Regrows 1.2% HP per second, calls Hexlings at each third of his HP, and splits into 2 liches when slain.', color: '#4a3e5a', dark: '#221c2c',
         tricks: { magic: true, regen: { rate: 0.012, aura: 140 }, brood: { type: 'magical', n: 5, at: [0.66, 0.33] }, split: { n: 2, frac: 0.25, name: 'Lesser Lich' } }, look: { horns: 'spike', aura: '#a08bff', eyes: '#8affd8', size: 1.15 } },
       { id: 'shadow-queen', name: 'The Shadow Queen', hpMul: 0.14, desc: 'Shelled and sprinting, then airborne with Duskwings, then magical, regrowing and hastening. Splits into 2 shades when slain.', color: '#2e2234', dark: '#140e18',
         tricks: { split: { n: 2, frac: 0.2, name: 'Queen\'s Shade' }, stages: [{ above: 0.66, shell: { every: 5, dur: 2.5, cut: 0.65 }, sprint: { every: 6, dur: 1.4, mul: 2.5 } }, { above: 0.33, fly: true, brood: { type: 'flying', n: 5, at: [0.6, 0.45] } }, { above: 0, magic: true, regen: { rate: 0.015, aura: 150 }, haste: { r: 180, mul: 1.6 } }] },
@@ -344,7 +400,7 @@
       routes: [WOODS_ROUTE],
       half: 36,
       blocks: scatter({ seed: 4242, n: 38, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 17, rmax: 27, routes: [WOODS_ROUTE], half: 36, pad: 6, gap: 10, kind: 'tree' }),
-      hpShift: 49, hpMul: 0.7, cashMul: 7583.7, startCash: 1.958e7,
+      hpShift: 16, hpMul: 1, cashMul: 7583.7, startCash: 1.958e7, priceMul: 1900, hpCurve: [[1, 1.14], [50, 1.12], [80, 1.09], [95, 1.05], [100, 1.03]],
       bosses: MAP_BOSSES.woods.map(b => b.id),
       waves: waveVariant({ count: { base: 9 }, types: { fast: { from: 2, w: 7, theme: 10 }, tanky: { w: 2 } } }),
       palette: {
@@ -365,7 +421,7 @@
       crystals: CRYSTALS,
       blocks: scatter({ seed: 777, n: 14, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 12, rmax: 20, routes: [CAVE_A, CAVE_B], half: 34, pad: 8, gap: 30, kind: 'stalagmite',
         keep: CRYSTALS.map(c => ({ x: c.x, y: c.y, r: 16, kind: 'crystal' })) }),
-      hpShift: 98, hpMul: 0.125, cashMul: 5.75e7, startCash: 1.372e11,
+      hpShift: 14, hpMul: 1, cashMul: 5.75e7, startCash: 1.372e11, priceMul: 1.44e7, hpCurve: [[1, 1.14], [50, 1.12], [80, 1.085], [90, 1.05], [100, 1.04]],
       bosses: MAP_BOSSES.caverns.map(b => b.id),
       waves: waveVariant({ types: { magical: { from: 5, w: 6, theme: 10 }, flying: { w: 2 } } }),
       palette: {
@@ -384,7 +440,7 @@
       half: 34,
       wind: { every: 14, dur: 3.2, warn: 2.2, push: 120, side: 70, bossMul: 0.4 },
       blocks: scatter({ seed: 9191, n: 16, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 16, rmax: 30, routes: [CLIFF_ROUTE], half: 34, pad: 8, gap: 24, kind: 'boulder' }),
-      hpShift: 147, hpMul: 0.07, cashMul: 4.36e11, startCash: 1.075e15,
+      hpShift: 17, hpMul: 1, cashMul: 4.36e11, startCash: 1.075e15, priceMul: 1.09e11, hpCurve: [[1, 1.145], [40, 1.125], [60, 1.1], [75, 1.08], [90, 1.05], [100, 1.04]],
       bosses: MAP_BOSSES.cliffs.map(b => b.id),
       waves: waveVariant({ types: { flying: { from: 3, w: 6, theme: 10 } }, themes: [{ id: 'boss', mod: 10, rem: 0 }, { id: 'flying', at: [3], mod: 6, rem: 0 }, { id: 'magical', at: [8], mod: 11, rem: 6 }, { id: 'fast', mod: 7, rem: 0 }, { id: 'tanky', mod: 8, rem: 4 }] }),
       palette: {
@@ -403,7 +459,7 @@
       half: 30,
       blocks: scatter({ seed: 5150, n: 8, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 14, rmax: 18, routes: [CASTLE_A, CASTLE_B], half: 30, pad: 6, gap: 60, kind: 'pillar',
         keep: [{ x: 700, y: 400, r: 46, kind: 'keep' }] }),
-      hpShift: 196, hpMul: 0.01, cashMul: 3.31e15, startCash: 7.925e18,
+      hpShift: 15, hpMul: 1, cashMul: 3.31e15, startCash: 7.925e18, priceMul: 8.3e14, gateFrom: 4, hpCurve: [[1, 1.14], [50, 1.12], [70, 1.088], [84, 1.055], [100, 1.035]],
       bosses: MAP_BOSSES.castle.map(b => b.id),
       waves: waveVariant({ count: { base: 11, per: 0.55 }, types: { basic: { w: 8 }, fast: { from: 2, w: 5 }, tanky: { from: 3, w: 4 }, flying: { from: 4, w: 4 }, magical: { from: 5, w: 4 } } }),
       palette: {
@@ -505,7 +561,21 @@
     while (hpCache.length < n) hpCache.push(hpCache[hpCache.length - 1] * growthAt(TUNE.hpCurve, hpCache.length + 1));
     return hpCache[n - 1];
   }
-  function hpFor(n, map) { return map ? hpBase(n + (map.hpShift || 0)) * map.hpMul : hpBase(n); }
+  const mapHp = {};
+  function hpMap(n, map) {
+    let c = mapHp[map.id];
+    const key = map.hpCurve, b0 = hpBase(1 + (map.hpShift || 0)) * map.hpMul;
+    if (!c || c.key !== key || c.b0 !== b0) { c = mapHp[map.id] = [b0]; c.key = key; c.b0 = b0; }
+    n = Math.max(1, n | 0);
+    while (c.length < n) c.push(c[c.length - 1] * growthAt(key, c.length + 1));
+    return c[n - 1];
+  }
+  function hpFor(n, map) {
+    if (!map) return hpBase(n);
+    if (map.hpCurve) return hpMap(n, map);
+    return hpBase(n + (map.hpShift || 0)) * map.hpMul;
+  }
+  function priceOf(map) { return (map && map.priceMul) || 1; }
   function killCash(n, map) { return TUNE.cash0 * Math.pow(TUNE.cashGrowth, n - 1) * (map ? map.cashMul : 1); }
   function clearBonus(n, map) { return Math.round(TUNE.clear0 * (1 + 0.1 * n) * Math.pow(TUNE.clearGrowth, n - 1) * (n % 10 === 0 ? 2.5 : 1) * (map ? map.cashMul : 1)); }
   function bossFor(n, map) {
@@ -549,10 +619,11 @@
       t += gap * (gen.spacing[type] || 1) * (1 - gen.gap.jitter / 2 + rng() * gen.gap.jitter);
     }
     const nR = map.route.length;
-    if (nR > 1) list.forEach((e, i) => { e.route = i % nR; });
+    const oneGate = nR > 1 && map.gateFrom && n < map.gateFrom;
+    if (nR > 1) list.forEach((e, i) => { e.route = oneGate ? 0 : i % nR; });
     if (boss) {
       const b = { t: t + gen.bossLead, type: 'boss' };
-      if (nR > 1) b.route = (n / gen.bossEvery) % nR;
+      if (nR > 1) b.route = oneGate ? 0 : (n / gen.bossEvery) % nR;
       list.push(b);
       if (boss.tricks && boss.tricks.twin) list.push({ t: b.t + (nR > 1 ? 0 : 1.6), type: 'boss', route: nR > 1 ? (b.route + 1) % nR : 0, twin: true });
     }
@@ -563,8 +634,8 @@
     return spec;
   }
 
-  function towerCost(race, owned) { return Math.round(RACES[race].cost * Math.pow(TUNE.towerGrowth, owned)); }
-  function nodeCost(race, k) { return Math.round(RACES[race].cost * TUNE.nodeBase * Math.pow(TUNE.nodeGrowth, k)); }
+  function towerCost(race, owned, pm) { return Math.round(RACES[race].cost * Math.pow(TUNE.towerGrowth, owned) * (pm || 1)); }
+  function nodeCost(race, k, pm) { return Math.round(RACES[race].cost * TUNE.nodeBase * Math.pow(TUNE.nodeGrowth, k) * (pm || 1)); }
   function infCost(race, lv) { return Math.round(RACES[race].cost * TUNE.infBase * Math.pow(TUNE.infGrowth, lv)); }
 
   const DEFAULT_SETTINGS = { sound: true, vol: 0.6, shake: true, dmgNums: true, numFmt: 'short', speed: 1 };
@@ -604,7 +675,7 @@
   }
   function prepTowers(S) {
     const map = mapOf(S);
-    for (const t of S.towers) { t.face = faceRoad(map, t.x, t.y); t.light = lightAt(map, t.x, t.y); t._s = null; }
+    for (const t of S.towers) { t.face = faceRoad(map, t.x, t.y); t.light = lightAt(map, t.x, t.y); t.wallPt = null; t.pm = map.priceMul || 1; t._s = null; }
     S.buffsDirty = true;
   }
   function switchMap(S, id) {
@@ -622,7 +693,7 @@
   }
 
   function owned(S, race) { let c = 0; for (const t of S.towers) if (t.race === race) c++; return c; }
-  function nextTowerCost(S, race) { return towerCost(race, owned(S, race)); }
+  function nextTowerCost(S, race) { return towerCost(race, owned(S, race), priceOf(mapOf(S))); }
 
   function placeBlockReason(S, x, y, ignore) {
     const R = WORLD.towerR, map = mapOf(S);
@@ -640,7 +711,8 @@
   function makeTower(S, race, x, y) {
     return {
       id: S.nextId++, race, x, y, spent: 0, paths: [0, 0, 0, 0, 0], infD: 0, infR: 0, mode: 'first',
-      cd: 0, sigT: 0, stomp: 0, boomT: 0, face: 0, kills: 0, dmg: 0, wDmg: 0, wKills: 0, anim: 0, _s: null,
+      cd: 0, sigT: 0, sigTs: {}, stomp: 0, boomT: 0, bloodT: 0, surgeT: 0, face: 0, kills: 0, dmg: 0, wDmg: 0, wKills: 0, anim: 0,
+      pm: priceOf(mapOf(S)), buff: null, wallPt: null, _s: null,
     };
   }
 
@@ -676,7 +748,7 @@
     if (t.paths[i] > 0) return 'chosen';
     return ch.length >= 2 ? 'locked' : 'open';
   }
-  function nextNodeCost(t, i) { return t.paths[i] >= 10 ? Infinity : nodeCost(t.race, t.paths[i]); }
+  function nextNodeCost(t, i) { return t.paths[i] >= 10 ? Infinity : nodeCost(t.race, t.paths[i], t.pm); }
   function buyNode(S, t, i) {
     const st = pathState(t, i);
     if (st === 'locked' || st === 'maxed') return false;
@@ -685,7 +757,7 @@
     S.cash -= c; t.spent += c; t.paths[i]++; t._s = null; S.buffsDirty = true;
     return true;
   }
-  function infNext(t, which) { return infCost(t.race, which === 'dmg' ? t.infD : t.infR); }
+  function infNext(t, which) { return Math.round(infCost(t.race, which === 'dmg' ? t.infD : t.infR) * (t.pm || 1)); }
   function buyInf(S, t, which) {
     const c = infNext(t, which);
     if (S.cash < c) return false;
@@ -714,7 +786,7 @@
     return { count, spent };
   }
   function maxAffordablePreview(S, t) {
-    const clone = { race: t.race, paths: t.paths.slice(), infD: t.infD, infR: t.infR, spent: 0, _s: null };
+    const clone = { race: t.race, paths: t.paths.slice(), infD: t.infD, infR: t.infR, spent: 0, pm: t.pm, _s: null };
     const sim = { cash: S.cash, buffsDirty: false };
     const r = buyMaxAffordable(sim, clone);
     return { count: r.count, spent: r.spent, paths: clone.paths, infD: clone.infD, infR: clone.infR };
@@ -722,14 +794,22 @@
 
   function computeStats(t) {
     const r = RACES[t.race];
+    const crystal = t.race === 'crystal';
     const s = {
       range: r.range, dmg: r.dmg, rate: r.rate,
-      canFly: t.race === 'pegasus', canMagic: t.race === 'unicorn',
-      flyMul: 1, magicMul: 1, splash: 0, chain: 0, slow: 0, slowDur: 0, stunCh: 0, stunDur: 0,
-      knock: 0, multi: 1, crit: 0, critMul: 2.5, hex: 0, cash: 1, auraR: 0, auraDmg: 0, auraRate: 0, sigs: [],
+      canFly: t.race === 'pegasus' || t.race === 'bat', canMagic: t.race === 'unicorn',
+      flyMul: 1, magicMul: 1, fastMul: t.race === 'bat' ? 1.5 : 1, splash: 0, chain: 0, slow: 0, slowDur: 0, stunCh: 0, stunDur: 0,
+      knock: 0, multi: 1, crit: 0, critMul: 2.5, hex: 0, cash: 1,
+      auraR: crystal ? 130 : 0, auraDmg: crystal ? 0.04 : 0, auraRate: crystal ? 0.02 : 0, auraRange: 0,
+      detects: false, detectR: 0, seesBurrow: false, wall: 0, wallR: 0, lightR: crystal ? 110 : 0, sigs: [],
     };
     PATHS[t.race].forEach((p, i) => { if (t.paths[i] > 0) p.apply(t.paths[i], s); });
     s.slow = Math.min(0.6, s.slow);
+    s.wall = Math.min(0.5, s.wall);
+    if (s.sigs.indexOf('dawnstone') >= 0) { s.lightR = Math.max(s.lightR, s.auraR); s.detectR = Math.max(s.detectR, s.auraR); }
+    const bf = t.buff || {};
+    if (bf.detect) s.detects = true;
+    if (bf.range) s.range *= 1 + bf.range;
     if (t.light && t.light !== 1) { s.baseRange = s.range; s.range *= t.light; }
     s.dmg *= Math.pow(TUNE.infMul, t.infD || 0);
     s.rate *= Math.pow(TUNE.infMul, t.infR || 0);
@@ -762,27 +842,68 @@
     if (s1.knock > s0.knock) lines.push('Knockback ' + s1.knock);
     if (s1.hex > s0.hex) lines.push('Hex +' + pct(s1.hex) + ' damage taken');
     if (s1.cash > s0.cash) lines.push('Kill cash x' + (Math.round(s1.cash * 100) / 100));
-    if (s1.auraDmg > s0.auraDmg) lines.push('Herd aura +' + pct(s1.auraDmg) + ' damage');
+    if (s1.auraDmg > s0.auraDmg) lines.push((t.race === 'crystal' ? 'Gem aura +' : 'Herd aura +') + pct(s1.auraDmg) + ' damage');
+    if (s1.auraRate > s0.auraRate) lines.push('Aura +' + pct(s1.auraRate) + ' attack speed');
+    if (s1.auraR > s0.auraR && s0.auraR) lines.push('Aura radius ' + Math.round(s1.auraR));
+    if (s1.auraRange > s0.auraRange) lines.push('Aura +' + pct(s1.auraRange) + ' range');
+    if (s1.fastMul > s0.fastMul) rel(s0.fastMul, s1.fastMul, 'vs fast DNBs');
+    if (s1.detects && !s0.detects) lines.push('Detects stealthy DNBs');
+    if (s1.detectR > s0.detectR) lines.push('Ponies within ' + Math.round(s1.detectR) + ' detect stealth');
+    if (s1.wall > s0.wall) lines.push('Wall slow ' + pct(s1.wall) + ', radius ' + Math.round(s1.wallR));
+    if (s1.lightR > s0.lightR) lines.push('Light radius ' + Math.round(s1.lightR));
+    if (s1.critMul > s0.critMul) lines.push('Crits deal ' + s1.critMul + 'x');
     const p = PATHS[t.race][i];
     if (k === 10) lines.push('Signature: ' + p.sig);
-    return { name: p.name, k, cost: nodeCost(t.race, k - 1), lines, sig: k === 10 ? p.sigDesc : '' };
+    return { name: p.name, k, cost: nodeCost(t.race, k - 1, t.pm), lines, sig: k === 10 ? p.sigDesc : '' };
   }
 
+  function stackBuff(list) {
+    if (!list.length) return 0;
+    list.sort((a, b) => b - a);
+    let sum = 0, w = 1;
+    for (const v of list) { sum += v * w; w *= 0.3; }
+    return sum;
+  }
+  function lightSources(S) {
+    const out = [];
+    for (const t of S.towers) { const s = stats(t); if (s.lightR > 0) out.push({ x: t.x, y: t.y, r: s.lightR, t }); }
+    return out;
+  }
+  function lightFor(S, x, y, srcs) {
+    const map = mapOf(S);
+    const base = lightAt(map, x, y);
+    if (base >= 1) return base;
+    for (const c of srcs || lightSources(S)) if ((c.x - x) ** 2 + (c.y - y) ** 2 <= c.r * c.r) return 1;
+    return base;
+  }
   function refreshBuffs(S) {
-    for (const t of S.towers) t.buff = { dmg: 0, rate: 0 };
-    for (const a of S.towers) {
-      const s = stats(a);
-      if (!s.auraR) continue;
-      for (const b of S.towers) {
-        if (a === b) continue;
-        if ((a.x - b.x) ** 2 + (a.y - b.y) ** 2 <= s.auraR * s.auraR) { b.buff.dmg += s.auraDmg; b.buff.rate += s.auraRate; }
+    const T = S.towers;
+    const src = T.map(stats);
+    const lights = lightSources(S);
+    for (const b of T) {
+      const dm = [], rt = [], rg = [];
+      let detect = false;
+      for (let i = 0; i < T.length; i++) {
+        const a = T[i], s = src[i];
+        const d2 = (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
+        if (s.detectR && d2 <= s.detectR * s.detectR) detect = true;
+        if (a === b || !s.auraR || d2 > s.auraR * s.auraR) continue;
+        if (s.auraDmg) dm.push(s.auraDmg);
+        if (s.auraRate) rt.push(s.auraRate);
+        if (s.auraRange) rg.push(s.auraRange);
       }
+      const buff = { dmg: stackBuff(dm), rate: stackBuff(rt), range: stackBuff(rg), detect };
+      const light = lightFor(S, b.x, b.y, lights);
+      const old = b.buff || {};
+      if (b.light !== light || (old.range || 0) !== buff.range || !!old.detect !== detect) b._s = null;
+      b.light = light;
+      b.buff = buff;
     }
     S.buffsDirty = false;
   }
 
   function effDmg(t) { return stats(t).dmg * (1 + ((t.buff && t.buff.dmg) || 0)); }
-  function effRate(t) { return stats(t).rate * (1 + ((t.buff && t.buff.rate) || 0)) * (t.boomT > 0 ? 3 : 1); }
+  function effRate(t) { return stats(t).rate * (1 + ((t.buff && t.buff.rate) || 0)) * (t.boomT > 0 ? 3 : 1) * (t.surgeT > 0 ? 1.25 : 1); }
 
   function topWave(S) { return Math.min(MAX_WAVE, S.cleared + 1); }
 
@@ -799,13 +920,14 @@
       fresh: n > S.cleared, over: null, rng: mulberry(hashSeed(S.seed, n, S.stats.played)), bossIds: [],
       enrageAt: spec.duration + 75 * Math.max(1, map.maxLen / BASE_LEN), windT: 0, gust: 0, gustWarn: 0, gustKind: '', gustDir: 1, gustOn: false,
     };
-    for (const t of S.towers) { t.cd = 0; t.sigT = 0; t.boomT = 0; t.stomp = 0; t.wDmg = 0; t.wKills = 0; }
+    for (const t of S.towers) { t.cd = 0; t.sigT = 0; t.sigTs = {}; t.boomT = 0; t.bloodT = 0; t.surgeT = 0; t.stomp = 0; t.wDmg = 0; t.wKills = 0; }
     emit(S, 'start', { n, boss: spec.boss });
     return true;
   }
 
   function emit(S, type, data) { S.events.push(Object.assign({ type }, data || {})); }
   function fx(S, o) { if (S.fxOn && S.fx.length < 700) { o.t = 0; S.fx.push(o); } }
+  function snd(S, k) { if (S.sfx) S.sfx[k] = (S.sfx[k] || 0) + 1; }
 
   function spawnEnemy(S, run, type, d, opts) {
     const n = run.n;
@@ -816,7 +938,7 @@
       hpMax, hp: hpMax, speed: def.speed, r: def.r, flying: !!def.flying, magical: !!def.magical,
       boss: type === 'boss', cash: def.cash, color: def.color, dark: def.dark, alive: true,
       slow: 0, slowT: 0, stunT: 0, hexAmp: 0, hexT: 0, doom: false, dispelT: 0, burrowT: 0, trickT: 0, sprintT: 0,
-      quag: false, hit: 0, leak: 1, phase: 0, seed: (run.eid * 977) % 1000, dn: 0, dnT: 0, dnCrit: false,
+      quag: false, wallSlow: 0, revealT: 0, echoAmp: 0, stealth: !!def.stealth, hit: 0, leak: 1, phase: 0, seed: (run.eid * 977) % 1000, dn: 0, dnT: 0, dnCrit: false,
     };
     if (e.boss) {
       const b = run.spec.boss || BOSSES[0];
@@ -887,8 +1009,12 @@
 
   function isFly(e) { return e.flying; }
   function isMagic(e) { return e.magical && !(e.dispelT > 0); }
+  function isFast(e) { return e.speed >= 90 || e.sprintT > 0 || e.hasteT > 0; }
+  function isHidden(e) { return !!e.stealth && !(e.revealT > 0); }
   function canHit(s, e) {
-    if (!e.alive || e.burrowT > 0 || e.d < SPAWN_GUARD) return false;
+    if (!e.alive || e.d < SPAWN_GUARD) return false;
+    if (e.burrowT > 0 && !s.seesBurrow) return false;
+    if (isHidden(e) && !s.detects) return false;
     if (isFly(e) && !s.canFly) return false;
     if (isMagic(e) && !s.canMagic) return false;
     return true;
@@ -921,7 +1047,7 @@
 
   function damage(S, run, e, amt, t, crit) {
     if (!e.alive || amt <= 0) return;
-    let m = 1 + (e.hexT > 0 ? e.hexAmp : 0) + (e.quag ? 0.15 : 0);
+    let m = 1 + (e.hexT > 0 ? e.hexAmp : 0) + (e.quag ? 0.15 : 0) + (e.revealT > 0 && e.echoAmp ? e.echoAmp : 0);
     if (e.armor && e.hp > e.hpMax * 0.5) m *= 0.4;
     if (e.cut) m *= 1 - e.cut;
     const dealt = amt * m;
@@ -994,13 +1120,15 @@
     }
   }
 
-  function hitEnemy(S, run, t, s, e, base) {
+  function hitEnemy(S, run, t, s, e, base, force) {
     if (!e.alive) return;
     let d = base;
     if (isFly(e)) d *= s.flyMul;
-    if (isMagic(e) || (e.magical && s.has.leyrupture)) d *= s.magicMul;
+    if (isMagic(e) || (e.magical && (s.has.leyrupture || s.has.dispelprism))) d *= s.magicMul;
+    const fast = s.fastMul !== 1 && isFast(e);
+    if (fast) d *= s.fastMul;
     let crit = false;
-    if (s.crit > 0 && run.rng() < s.crit) { crit = true; d *= (s.has.raptordive && isFly(e)) ? 5 : s.critMul; S.sfx.crit++; }
+    if (force || (s.crit > 0 && run.rng() < s.crit)) { crit = true; d *= (s.has.raptordive && isFly(e)) ? 5 : s.critMul; S.sfx.crit++; }
     damage(S, run, e, d, t, crit);
     if (crit) fx(S, { k: 'spark', x: e.x, y: e.y, c: '#fff2a8', life: 0.3 });
     if (!e.alive) return;
@@ -1008,9 +1136,11 @@
     if (s.stunCh > 0 && run.rng() < s.stunCh) stunE(e, e.boss ? s.stunDur * 0.3 : s.stunDur);
     if (s.hex > 0) { e.hexAmp = Math.max(e.hexAmp, s.hex); e.hexT = 4; if (s.has.doomhex) e.doom = true; }
     if (s.knock > 0) e.d = Math.max(16, e.d - s.knock * (e.boss ? 0.15 : 1));
+    if (fast && s.has.nightfeast) { e.slow = Math.max(e.slow, e.boss ? 0.15 : 0.3); e.slowT = Math.max(e.slowT, 2); }
     if (s.has.raptordive && isFly(e) && !e.boss && e.hp < e.hpMax * 0.2) kill(S, run, e, t);
   }
 
+  const PROJ_SPEED = { unicorn: 560, pegasus: 820, bat: 900, crystal: 640 };
   function fire(S, run, t, s, targets, dmg) {
     if (t.race === 'earth') {
       t.stomp++;
@@ -1029,7 +1159,8 @@
     t.face = Math.atan2(first.y - t.y, first.x - t.x);
     t.anim = 0.2;
     let list;
-    if (s.has.featherstorm) list = targets;
+    const blood = s.has.bloodmoon && t.bloodT > 0;
+    if (s.has.featherstorm || blood) list = targets;
     else {
       list = [first];
       if (s.multi > 1) {
@@ -1038,8 +1169,10 @@
       }
     }
     for (const e of list) {
-      run.proj.push({ x: t.x, y: t.y - 10, e, t, dmg, sp: t.race === 'unicorn' ? 560 : 820, kind: t.race, life: 3, a: 0 });
+      run.proj.push({ x: t.x, y: t.y - 10, e, t, dmg, sp: PROJ_SPEED[t.race] || 820, kind: t.race, life: 3, a: 0, crit: blood });
     }
+    if (list.length && t.race === 'bat') snd(S, 'chirp');
+    else if (list.length && t.race === 'crystal') snd(S, 'chime');
   }
 
   function projHit(S, run, p) {
@@ -1061,6 +1194,21 @@
         const fl = run.enemies.filter(o => o !== e && o.alive && o.flying && canHit(s, o) && dist2(o, p) <= 160 * 160).slice(0, 2);
         for (const o of fl) { fx(S, { k: 'zap', x1: p.x, y1: p.y, x2: o.x, y2: o.y, c: '#7dffcf', life: 0.25 }); hitEnemy(S, run, t, s, o, d); }
       }
+    } else if (t.race === 'crystal') {
+      const d = p.dmg;
+      if (s.has.dispelprism && e.magical) e.dispelT = Math.max(e.dispelT, 4);
+      hitEnemy(S, run, t, s, e, d);
+      if (s.splash > 0) {
+        fx(S, { k: 'shards', x: p.x, y: p.y, r: s.splash, c: '#9fe6ff', seed: e.id, life: 0.35 });
+        for (const o of run.enemies) {
+          if (o === e || dist2(o, p) > s.splash * s.splash) continue;
+          if (s.has.dispelprism && o.magical && o.alive) o.dispelT = Math.max(o.dispelT, 4);
+          if (canHit(s, o)) hitEnemy(S, run, t, s, o, d * 0.6);
+        }
+      }
+    } else if (t.race === 'bat') {
+      hitEnemy(S, run, t, s, e, p.dmg, p.crit);
+      if (p.crit || p.kind === 'swarm') fx(S, { k: 'bite', x: e.x, y: e.y, c: p.crit ? '#ff3a5c' : '#c9b8ff', life: 0.25 });
     } else {
       hitEnemy(S, run, t, s, e, p.dmg);
       if (s.chain > 0) {
@@ -1080,33 +1228,37 @@
   }
 
   function signatures(S, run, t, s, dt, targets, dmg) {
-    if (!s.sigs.length) return;
-    t.sigT += dt;
     if (t.boomT > 0) t.boomT -= dt;
-    const every = (sec) => { if (t.sigT >= sec) { t.sigT = 0; return true; } return false; };
-    if (s.has.starfall && targets.length && every(6)) {
+    if (t.bloodT > 0) t.bloodT -= dt;
+    if (!s.sigs.length) return;
+    const T = t.sigTs || (t.sigTs = {});
+    for (const k of s.sigs) T[k] = (T[k] || 0) + dt;
+    let cur = '';
+    const every = (sec) => { if (T[cur] >= sec) { T[cur] = 0; return true; } return false; };
+    const on = (k) => { cur = k; return !!s.has[k]; };
+    if (on('starfall') && targets.length && every(6)) {
       let best = targets[0]; for (const e of targets) if (e.hp > best.hp) best = e;
       const R = 75;
       fx(S, { k: 'star', x: best.x, y: best.y, r: R, c: '#ffe9a8', life: 0.6 });
       for (const o of run.enemies) if (o.alive && o.burrowT <= 0 && dist2(o, best) <= R * R) damage(S, run, o, dmg * 12, t);
     }
-    if (s.has.timestop && targets.length && every(10)) {
+    if (on('timestop') && targets.length && every(10)) {
       fx(S, { k: 'ring', x: t.x, y: t.y, r: s.range, c: '#9fe3ff', life: 0.6 });
       for (const o of run.enemies) if (o.alive && inRange(t, o, s.range)) stunE(o, o.boss ? 0.5 : 1.5);
     }
-    if (s.has.thunderhead && targets.length && every(5)) {
+    if (on('thunderhead') && targets.length && every(5)) {
       const list = targets.slice().sort((a, b) => b.hp - a.hp).slice(0, 8);
       for (const o of list) { fx(S, { k: 'bolt', x: o.x, y: o.y, c: '#e6f4ff', life: 0.3 }); hitEnemy(S, run, t, s, o, dmg * 5); }
     }
-    if (s.has.cyclone && targets.length && every(9)) {
+    if (on('cyclone') && targets.length && every(9)) {
       fx(S, { k: 'swirl', x: t.x, y: t.y, r: s.range, c: '#bdf5ee', life: 0.7 });
       for (const o of run.enemies) if (o.alive && !o.boss && inRange(t, o, s.range)) { o.d = Math.max(16, o.d - 150); stunE(o, 0.6); }
     }
-    if (s.has.rainboom && targets.length && every(15)) {
+    if (on('rainboom') && targets.length && every(15)) {
       t.boomT = 4;
       fx(S, { k: 'rainbow', x: t.x, y: t.y, r: s.range, life: 0.9 });
     }
-    if (s.has.stampede && every(12)) {
+    if (on('stampede') && every(12)) {
       let any = false;
       for (const o of run.enemies) {
         if (!o.alive || o.flying || o.burrowT > 0 || o.d < SPAWN_GUARD) continue;
@@ -1114,7 +1266,55 @@
         any = true; hitEnemy(S, run, t, s, o, dmg * 6);
       }
       if (any) fx(S, { k: 'stampede', x: 0, y: 0, life: 0.9 });
-      else t.sigT = 12;
+      else T.stampede = 12;
+    }
+    if (on('deepecho') && every(5)) {
+      const R = s.range * 2;
+      fx(S, { k: 'sonar', x: t.x, y: t.y, r: R, c: '#ff8fb0', life: 0.8 }); snd(S, 'sonar');
+      for (const o of run.enemies) if (o.alive && dist2(o, t) <= R * R) { o.revealT = 4; o.echoAmp = Math.max(o.echoAmp || 0, 0.2); }
+    }
+    if (on('swarmnight') && targets.length && every(7)) {
+      for (let i = 0; i < 8; i++) {
+        const e = targets[i % targets.length];
+        const a = i / 8 * Math.PI * 2;
+        run.proj.push({ x: t.x + Math.cos(a) * 16, y: t.y - 10 + Math.sin(a) * 12, e, t, dmg: dmg * 3, sp: 520, kind: 'swarm', life: 3, a });
+      }
+      fx(S, { k: 'ring', x: t.x, y: t.y, r: 34, c: '#c9b8ff', life: 0.4 }); snd(S, 'swarm');
+    }
+    if (on('bloodmoon') && targets.length && every(14)) {
+      t.bloodT = 5;
+      fx(S, { k: 'bloodmoon', x: t.x, y: t.y, r: s.range, life: 1 }); snd(S, 'bloodmoon');
+    }
+    if (on('dreadscreech') && targets.length && every(9)) {
+      fx(S, { k: 'screech', x: t.x, y: t.y, r: s.range, c: '#ff5a7a', life: 0.6 }); snd(S, 'screech');
+      for (const o of run.enemies) if (o.alive && inRange(t, o, s.range) && canHit(s, o)) { stunE(o, o.boss ? 0.3 : 1); o.hexAmp = Math.max(o.hexAmp, 0.25); o.hexT = Math.max(o.hexT, 4); }
+    }
+    if (on('chorus') && every(10)) {
+      let any = false;
+      for (const o of S.towers) if (o !== t && dist2(o, t) <= s.auraR * s.auraR) { o.surgeT = 3; any = true; }
+      if (any) { fx(S, { k: 'chorus', x: t.x, y: t.y, r: s.auraR, life: 0.9 }); snd(S, 'chorus'); }
+    }
+    if (on('fortress') && every(3)) {
+      const W = t.wallPt || (t.wallPt = nearestOnMap(run.map, t.x, t.y));
+      let any = false;
+      for (const o of run.enemies) {
+        if (!o.alive || o.flying || o.burrowT > 0 || o.d < SPAWN_GUARD || dist2(o, W) > s.wallR * s.wallR) continue;
+        if (isHidden(o) && !s.detects) continue;
+        any = true;
+        hitEnemy(S, run, t, s, o, dmg * 6);
+        if (o.alive) stunE(o, o.boss ? 0.2 : 0.6);
+      }
+      if (any) { fx(S, { k: 'wallpulse', x: W.x, y: W.y, r: s.wallR, life: 0.5 }); snd(S, 'quake'); }
+    }
+    if (on('cataclysm') && targets.length && every(8)) {
+      let best = targets[0]; for (const e of targets) if (e.hp > best.hp) best = e;
+      const R = 80;
+      fx(S, { k: 'cataclysm', x: best.x, y: best.y, r: R, seed: best.id, life: 0.8 }); snd(S, 'cataclysm');
+      for (const o of run.enemies) {
+        if (!o.alive || dist2(o, best) > R * R || !canHit(s, o)) continue;
+        damage(S, run, o, dmg * 15, t);
+        if (o.alive) stunE(o, o.boss ? 0.3 : 1);
+      }
     }
   }
 
@@ -1125,10 +1325,11 @@
     if (e.dn > 0) { e.dnT -= dt; if (e.dnT <= 0) flushNum(S, e); }
     if (e.hexT > 0) { e.hexT -= dt; if (e.hexT <= 0) { e.hexAmp = 0; } }
     if (e.dispelT > 0) e.dispelT -= dt;
+    if (e.revealT > 0) { e.revealT -= dt; if (e.revealT <= 0) e.echoAmp = 0; }
     if (e.slowT > 0) { e.slowT -= dt; if (e.slowT <= 0) e.slow = 0; }
     if (e.boss) bossTrick(S, run, e, dt);
     if (e.stunImm > 0) e.stunT = 0;
-    let sp = e.speed * (1 - e.slow) * (e.quag ? 0.5 : 1) * (e.sprintT > 0 ? (e.sprintMul || 3) : 1);
+    let sp = e.speed * (1 - e.slow) * (e.quag ? 0.5 : 1) * (1 - (e.wallSlow || 0)) * (e.sprintT > 0 ? (e.sprintMul || 3) : 1);
     if (e.hasteT > 0) { e.hasteT -= dt; sp *= e.hasteMul || 1; }
     if (e.stunT > 0) { e.stunT -= dt; sp = 0; if (e.stunT <= 0) e.stunImm = e.boss ? 2.5 : 1.2; }
     if (e.stunImm > 0) e.stunImm -= dt;
@@ -1252,21 +1453,25 @@
   function step(S, dt) {
     S.time += dt;
     for (let i = S.fx.length - 1; i >= 0; i--) { const f = S.fx[i]; f.t += dt; if (f.t >= f.life) S.fx.splice(i, 1); }
-    for (const t of S.towers) if (t.anim > 0) t.anim -= dt;
+    for (const t of S.towers) { if (t.anim > 0) t.anim -= dt; if (t.surgeT > 0) t.surgeT -= dt; }
+    if (S.buffsDirty) refreshBuffs(S);
     const run = S.run;
     if (!run || run.over) return;
-    if (S.buffsDirty) refreshBuffs(S);
     run.t += dt;
     if (S.records) S.records.time += dt;
     if (!run.queue.length && !run.enrage && run.t > run.enrageAt) { run.enrage = true; emit(S, 'enrage', {}); }
     while (run.queue.length && run.queue[0].t <= run.t) { const it = run.queue.shift(); spawnEnemy(S, run, it.type, undefined, it.route != null ? { path: it.route, quiet: !!it.twin } : undefined); }
     if (run.map.wind) windStep(S, run, dt);
 
-    for (const e of run.enemies) e.quag = false;
+    for (const e of run.enemies) { e.quag = false; e.wallSlow = 0; }
     for (const t of S.towers) {
       const s = stats(t);
-      if (!s.has.quagmire) continue;
-      for (const e of run.enemies) if (e.alive && !e.flying && inRange(t, e, s.range)) e.quag = true;
+      if (s.has.quagmire) for (const e of run.enemies) if (e.alive && !e.flying && inRange(t, e, s.range)) e.quag = true;
+      if (s.wall > 0) {
+        const W = t.wallPt || (t.wallPt = nearestOnMap(run.map, t.x, t.y));
+        const R2 = s.wallR * s.wallR;
+        for (const e of run.enemies) if (e.alive && !e.flying && dist2(e, W) <= R2) e.wallSlow = Math.max(e.wallSlow, e.boss ? s.wall * 0.5 : s.wall);
+      }
     }
 
     for (const e of run.enemies) if (e.alive) enemyUpdate(S, run, e, dt);
@@ -1288,7 +1493,7 @@
       const p = run.proj[i];
       p.life -= dt;
       const e = p.e;
-      if (!e.alive || p.life <= 0 || e.burrowT > 0) { run.proj.splice(i, 1); continue; }
+      if (!e.alive || p.life <= 0 || (e.burrowT > 0 && !stats(p.t).seesBurrow)) { run.proj.splice(i, 1); continue; }
       const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy), mv = p.sp * dt;
       if (d <= mv + e.r * 0.5) { p.x = e.x; p.y = e.y; run.proj.splice(i, 1); projHit(S, run, p); }
       else { p.x += dx / d * mv; p.y += dy / d * mv; p.a = Math.atan2(dy, dx); }
@@ -1348,6 +1553,16 @@
       o.ver = 3;
       return o;
     },
+    3(o) {
+      const boards = o.boards && typeof o.boards === 'object' ? o.boards : {};
+      for (const id in boards) {
+        const b = boards[id];
+        if (!b || !Array.isArray(b.towers)) continue;
+        b.towers = b.towers.filter(t => t && RACES[t.race]);
+      }
+      o.ver = 4;
+      return o;
+    },
   };
   function saveVersion(o) { return o.ver | 0 || (o.v === 1 ? 1 : 0); }
   function migrate(o) {
@@ -1397,7 +1612,7 @@
       t.id = r.id | 0; t.spent = +r.spent || 0; t.paths = (r.paths || [0, 0, 0, 0, 0]).slice(0, 5).map(v => Math.max(0, Math.min(10, v | 0)));
       while (t.paths.length < 5) t.paths.push(0);
       t.infD = r.infD | 0; t.infR = r.infR | 0; t.mode = r.mode || 'first'; t.kills = r.kills | 0; t.dmg = +r.dmg || 0;
-      t.face = faceRoad(map, t.x, t.y); t.light = lightAt(map, t.x, t.y);
+      t.face = faceRoad(map, t.x, t.y); t.light = lightAt(map, t.x, t.y); t.pm = priceOf(map);
       b.towers.push(t);
     }
     return b;
@@ -1461,7 +1676,8 @@
     hpFor, killCash, clearBonus, waveSpec, bossFor, themeFor, towerCost, nodeCost, infCost, getMap, mapOf, routePos, nearestOnMap, faceRoad,
     newState, owned, nextTowerCost, canPlace, placeTower, sellTower, sellValue, chosenPaths, pathState, nextNodeCost, buyNode, infNext, buyInf,
     upgradeOptions, buyMaxAffordable, maxAffordablePreview, nodeInfo, topWave, bossStatus,
-    stats, computeStats, effDmg, effRate, refreshBuffs, startWave, step, canHit, isMagic, isFly,
+    stats, computeStats, effDmg, effRate, refreshBuffs, startWave, step, canHit, isMagic, isFly, isFast, isHidden,
+    lightFor, lightSources, stackBuff, priceOf, spawnEnemy,
     serialize, deserialize, migrate, cleanSettings, fmt, setNumFormat, pct, mulberry, hashSeed,
     MAP_BOSSES, UNLOCK_AT, lightAt, crossings, placeBlockReason, switchMap, mapUnlocked, mapCleared, boardOf, newBoard, mapStartCash, activeTricks,
   };

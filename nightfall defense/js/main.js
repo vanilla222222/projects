@@ -70,7 +70,7 @@
     const h = $('placeHint');
     if (!ui.placing) { h.className = 'placehint'; return; }
     const name = C.RACES[ui.placing].name;
-    const extra = C.mapOf(S).dark ? ' Ponies outside crystal light lose range.' : '';
+    const extra = C.mapOf(S).dark ? (ui.placing === 'crystal' ? ' Crystal ponies glow: they keep full range and light up the ponies around them.' : ' Ponies outside crystal light lose range. Crystal ponies carry their own light.') : '';
     h.textContent = (ui.ghostTouch && ui.ghost ? 'Tap the same spot again to place the ' + name + '. Tap a button to cancel.' : 'Place the ' + name + ' anywhere off the road. Esc or right-click cancels.') + extra;
     h.className = 'placehint show';
   }
@@ -193,7 +193,7 @@
     if (!$('mapModal').hidden) { if (k === 'Escape') closeMaps(); return; }
     const t = selTower();
     if (k === 'Escape') { if (ui.placing) setPlacing(null); else { ui.selId = 0; ui.infoKey = ''; } }
-    else if (k === '1' || k === '2' || k === '3') setPlacing(C.RACE_IDS[+k - 1]);
+    else if (/^[1-9]$/.test(k) && C.RACE_IDS[+k - 1]) setPlacing(C.RACE_IDS[+k - 1]);
     else if (k === ' ') { ev.preventDefault(); if (!S.run) startSelected(); else togglePause(); }
     else if (k === 'p') togglePause();
     else if (k === 'f') cycleSpeed();
@@ -249,7 +249,8 @@
       b.querySelector('.rc').textContent = C.fmt(cost);
       b.classList.toggle('on', ui.placing === id);
       b.classList.toggle('poor', S.cash < cost);
-      b.dataset.tip = C.RACES[id].name + ' (hotkey ' + (C.RACE_IDS.indexOf(id) + 1) + ')\n' + C.RACES[id].ability + '\nOwned: ' + C.owned(S, id) + '. Each extra copy costs x' + C.TUNE.towerGrowth + '.';
+      const r0 = C.RACES[id], b0 = C.computeStats({ race: id, paths: [0, 0, 0, 0, 0], infD: 0, infR: 0 });
+      b.dataset.tip = r0.name + ' (hotkey ' + (C.RACE_IDS.indexOf(id) + 1) + ') - ' + r0.role + '\n' + r0.ability + '\nDamage ' + C.fmt(b0.dmg) + ' base, ' + b0.rate + '/s, range ' + Math.round(b0.range) + '.\nOwned: ' + C.owned(S, id) + '. Each extra copy costs x' + C.TUNE.towerGrowth + '.';
     }
   }
 
@@ -310,8 +311,9 @@
     const tk = (spec.boss && spec.boss.tricks) || {};
     const bFly = bt === 'flying' || bt === 'phase' || bt === 'mother' || !!tk.fly || !!tk.phase;
     const bMag = bt === 'magical' || bt === 'phase' || bt === 'mother' || !!tk.magic || !!tk.phase;
-    if ((spec.counts.flying || bFly) && !fly) out.push('No pony can hit flyers yet. Add a Pegasus.');
-    if ((spec.counts.magical || bMag) && !mag) out.push('No pony can harm magical DNBs yet. Add a Unicorn.');
+    if ((spec.counts.flying || bFly) && !fly) out.push('No pony can hit flyers yet. Add a Pegasus or a Bat Pony.');
+    if ((spec.counts.magical || bMag) && !mag) out.push('No pony can harm magical DNBs yet. Add a Unicorn, or a Crystal Pony on the Spellshard path.');
+    if (spec.counts.stealth && !S.towers.some(t => C.stats(t).detects)) out.push('Stealthy DNBs ahead. Only ponies that detect them can aim: a Bat Pony on Echolocation, or a Crystal Pony with Dawnstone.');
     const map = C.mapOf(S);
     if (map.wind && spec.counts.flying) out.push('Wind gusts on this map push flyers back or sideways.');
     return out;
@@ -390,7 +392,7 @@
     const paths = C.PATHS[t.race];
     const aff = paths.map((p, i) => S.cash >= C.nextNodeCost(t, i) ? 1 : 0).join('') + (S.cash >= C.infNext(t, 'dmg') ? 1 : 0) + (S.cash >= C.infNext(t, 'rate') ? 1 : 0);
     const pv = C.maxAffordablePreview(S, t);
-    const key = [t.id, t.paths.join(''), t.infD, t.infR, t.mode, aff, pv.count, ui.sellArm > performance.now(), (t.buff && t.buff.dmg + ',' + t.buff.rate) || '', C.fmt(1e6)].join('|');
+    const key = [t.id, t.paths.join(''), t.infD, t.infR, t.mode, aff, pv.count, ui.sellArm > performance.now(), (t.buff && t.buff.dmg + ',' + t.buff.rate + ',' + t.buff.range + ',' + t.buff.detect) || '', C.fmt(1e6)].join('|');
     if (key === ui.infoKey) { refreshPonyStats(t); return; }
     ui.infoKey = key;
     hideTip();
@@ -401,7 +403,13 @@
     h += '<div class="statgrid">' + stat('Damage', C.fmt(dmg)) + stat('Rate', (Math.round(rate * 100) / 100) + '/s') + stat('Range', Math.round(s.range)) + stat('DPS', C.fmt(dmg * rate * (s.multi || 1))) + '</div>';
     h += '<div class="statgrid" id="pStats">' + stat('Dealt', '', 'psDealt') + stat('Kills', '', 'psKills') + stat('Wave', '', 'psWave') + stat('Share', '', 'psShare') + '</div>';
     h += '<div class="tags"><span class="tag ' + (s.canFly ? 'yes' : '') + '">' + (s.canFly ? 'Hits flyers' : 'No flyers') + '</span><span class="tag mag ' + (s.canMagic ? 'yes' : '') + '">' + (s.canMagic ? 'Hurts magical' : 'No magical') + '</span>';
-    if (t.buff && (t.buff.dmg || t.buff.rate)) h += '<span class="tag yes">Herd aura +' + C.pct(t.buff.dmg) + ' dmg</span>';
+    if (t.buff && (t.buff.dmg || t.buff.rate)) h += '<span class="tag yes">Aura +' + C.pct(t.buff.dmg) + ' dmg +' + C.pct(t.buff.rate) + ' rate</span>';
+    if (t.buff && t.buff.range) h += '<span class="tag yes">Aura +' + C.pct(t.buff.range) + ' range</span>';
+    if (s.detects) h += '<span class="tag yes">Detects stealth</span>';
+    if (s.auraR) h += '<span class="tag yes">Aura ' + Math.round(s.auraR) + '</span>';
+    if (s.lightR && C.mapOf(S).dark) h += '<span class="tag yes">Light ' + Math.round(s.lightR) + '</span>';
+    if (s.wall) h += '<span class="tag yes">Wall -' + C.pct(s.wall) + ' speed</span>';
+    if (s.fastMul > 1) h += '<span class="tag yes">x' + (Math.round(s.fastMul * 100) / 100) + ' vs fast</span>';
     h += '</div><p class="ability">' + esc(r.ability) + '</p>';
     h += '<div class="modes">' + ['first', 'last', 'strong', 'close'].map(m => '<button type="button" data-act="mode" data-v="' + m + '" class="' + (t.mode === m ? 'on' : '') + '">' + m[0].toUpperCase() + m.slice(1) + '</button>').join('') + '</div>';
     const maxTip = pv.count ? 'Buys ' + pv.count + ' upgrade' + (pv.count > 1 ? 's' : '') + ', cheapest first, among chosen paths and endless training. Hotkey B.' : 'Nothing affordable yet. Pick a path first, or earn more cash. Hotkey B.';

@@ -2,7 +2,7 @@
 const path = require('path');
 const { execSync } = require('child_process');
 const { chromium } = require(path.join(execSync('npm root -g').toString().trim(), 'playwright'));
-const BASE = process.env.BASE || 'http://localhost:8803/';
+const BASE = process.env.BASE || 'http://localhost:8804/';
 const SHOTS = process.env.SHOTS || '';
 const GAME = BASE + 'nightfall%20defense/index.html';
 
@@ -12,12 +12,17 @@ async function test(name, fn) {
   catch (err) { results.push(['FAIL', name, err.message]); }
 }
 function ok(cond, msg) { if (!cond) throw new Error(msg); }
+function watch(page, errors) {
+  page.on('console', m => { if (m.type() === 'error') errors.push(m.text() + ' @ ' + ((m.location() || {}).url || '')); });
+  page.on('pageerror', e => errors.push(String(e)));
+  page.on('response', r => { if (r.status() >= 400) errors.push('HTTP ' + r.status() + ' ' + r.url()); });
+  page.on('requestfailed', r => { if (/favicon/.test(r.url())) errors.push('request failed ' + r.url()); });
+}
 
 async function openGame(browser, viewport) {
   const page = await browser.newPage({ viewport });
   const errors = [];
-  page.on('console', m => { if (m.type() === 'error' && !/favicon\.ico/.test((m.location() || {}).url || '')) errors.push(m.text()); });
-  page.on('pageerror', e => errors.push(String(e)));
+  watch(page, errors);
   await page.goto(GAME);
   await page.waitForTimeout(400);
   return { page, errors };
@@ -203,6 +208,86 @@ async function fastForward(page, maxSeconds) {
     await page.close();
   });
 
+  await test('bat and crystal ponies: hotkeys 4/5, shop, upgrades, crystal aura, bat vs flyers, stealth hook', async () => {
+    const { page, errors } = await openGame(browser, { width: 1280, height: 800 });
+    await page.evaluate(() => { localStorage.clear(); const S = __nd.S; S.towers = []; S.cash = 5000; __nd.refresh(); });
+    await page.locator('#cv').hover();
+    for (const [key, race] of [['4', 'bat'], ['5', 'crystal']]) {
+      await page.keyboard.press(key);
+      ok(await page.evaluate(() => __nd.ui.placing) === race, 'hotkey ' + key + ' picks ' + race);
+    }
+    await page.keyboard.press('Escape');
+    const shop = await page.evaluate(() => [...document.querySelectorAll('.race')].map(b => b.dataset.race + ':' + (b.getBoundingClientRect().width > 0)).join());
+    ok(/bat:true/.test(shop) && /crystal:true/.test(shop), 'shop shows bat and crystal ' + shop);
+    await placeAt(page, 'bat', 600, 330);
+    await placeAt(page, 'crystal', 700, 470);
+    await page.keyboard.press('Escape');
+    ok(await page.evaluate(() => __nd.S.towers.map(t => t.race).join()) === 'bat,crystal', 'bat and crystal placed from the shop');
+    const costs = await page.evaluate(() => ({ bat: NDCore.nextTowerCost(__nd.S, 'bat'), base: NDCore.towerCost('bat', 0, NDCore.priceOf(NDCore.mapOf(__nd.S))) }));
+    ok(costs.bat > costs.base, 'second bat costs more ' + JSON.stringify(costs));
+    for (const id of [1, 2]) {
+      await page.evaluate(i => { __nd.ui.selId = i; __nd.ui.infoKey = ''; }, id);
+      await page.waitForTimeout(200);
+      await page.click('#info [data-act="node"][data-v="1"]');
+      await page.waitForTimeout(150);
+      await page.click('#info [data-act="inf"][data-v="rate"]');
+      await page.waitForTimeout(150);
+    }
+    const lv = await page.evaluate(() => __nd.S.towers.map(t => t.paths[1] + ':' + t.infR).join());
+    ok(lv === '1:1,1:1', 'bat and crystal upgraded via panel, got ' + lv);
+    const aura = await page.evaluate(() => {
+      const C = NDCore, S = __nd.S, cr = S.towers[1];
+      S.cash = 1e6;
+      let nb = null;
+      for (let r = 50; r <= 110 && !nb; r += 15) for (let a = 0; a < 6.28 && !nb; a += 0.4) {
+        const x = cr.x + Math.cos(a) * r, y = cr.y + Math.sin(a) * r;
+        if (C.canPlace(S, x, y)) nb = C.placeTower(S, 'earth', x, y);
+      }
+      if (!nb) return { placed: false };
+      C.refreshBuffs(S);
+      return { placed: true, dmg: nb.buff.dmg, rate: nb.buff.rate, eff: C.effDmg(nb), raw: C.stats(nb).dmg, self: cr.buff.dmg };
+    });
+    ok(aura.placed && aura.dmg > 0 && aura.rate > 0 && aura.eff > aura.raw && aura.self === 0, 'crystal aura buffs a neighbour ' + JSON.stringify(aura));
+    const fly = await page.evaluate(() => {
+      const C = NDCore, S = __nd.S, bat = S.towers[0];
+      C.startWave(S, 1);
+      S.run.queue = [];
+      S.run.lives = 1e9;
+      const list = [];
+      for (let d = 20; d < S.run.map.maxLen; d += 30) { const e = C.spawnEnemy(S, S.run, 'flying', d); e.hp = e.hpMax = 1e12; e.speed = 0; list.push(e); }
+      const before = bat.dmg;
+      for (let i = 0; i < 90; i++) C.step(S, 1 / 30);
+      const hit = list.some(e => e.hp < e.hpMax);
+      const can = C.canHit(C.stats(bat), list[0]);
+      const earthCan = C.canHit(C.stats(S.towers[2]), list[0]);
+      S.run.enemies = []; S.run = null;
+      return { hit, dealt: bat.dmg - before, can, earthCan };
+    });
+    ok(fly.hit && fly.dealt > 0 && fly.can && !fly.earthCan, 'bat hits flyers ' + JSON.stringify(fly));
+    const stealth = await page.evaluate(() => {
+      const C = NDCore, S = __nd.S;
+      C.startWave(S, 1);
+      S.run.queue = [];
+      const e = C.spawnEnemy(S, S.run, 'basic', 300, { stealth: true });
+      const tw = (race, paths, buff) => C.computeStats({ race, paths, infD: 0, infR: 0, buff });
+      const out = [
+        C.isHidden(e),
+        C.canHit(tw('bat', [0, 0, 0, 0, 0]), e),
+        C.canHit(tw('bat', [0, 1, 0, 0, 0]), e),
+        C.canHit(tw('earth', [0, 0, 0, 0, 0]), e),
+        C.canHit(tw('earth', [0, 0, 0, 0, 0], { dmg: 0, rate: 0, range: 0, detect: true }), e),
+        tw('bat', [0, 5, 0, 0, 0]).detectR > 0,
+      ];
+      e.revealT = 1;
+      out.push(C.isHidden(e), C.canHit(tw('earth', [0, 0, 0, 0, 0]), e));
+      S.run.enemies = []; S.run = null;
+      return out.join();
+    });
+    ok(stealth === 'true,false,true,false,true,true,false,true', 'stealth hook ' + stealth);
+    ok(!errors.length, 'console errors: ' + errors.join(' | '));
+    await page.close();
+  });
+
   await test('wave preview, boss card and boss bar on wave 10', async () => {
     const { page, errors } = await openGame(browser, { width: 1280, height: 800 });
     await page.evaluate(() => { const S = __nd.S; S.cleared = 9; S.sel = 10; S.cash = 1e5; __nd.refresh(); });
@@ -245,7 +330,7 @@ async function fastForward(page, maxSeconds) {
     await page.waitForTimeout(400);
     const s2 = await page.evaluate(() => ({ s: __nd.S.settings, ver: JSON.parse(localStorage.getItem('nightfall-defense-save-v1')).ver, radio: document.querySelector('input[name="numFmt"][value="sci"]').checked }));
     ok(!s2.s.shake && !s2.s.dmgNums && s2.s.numFmt === 'sci' && !s2.s.sound && s2.radio, 'settings survived reload ' + JSON.stringify(s2));
-    ok(s2.ver === 3, 'save has ver 3');
+    ok(s2.ver === 4, 'save has ver 4, got ' + s2.ver);
     await page.click('#setBtn');
     await page.click('#setReset');
     await page.keyboard.press('Escape');
@@ -259,21 +344,19 @@ async function fastForward(page, maxSeconds) {
   await test('old v1 save loads and migrates', async () => {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     const errors = [];
-    page.on('console', m => { if (m.type() === 'error' && !/favicon\.ico/.test((m.location() || {}).url || '')) errors.push(m.text()); });
-    page.on('pageerror', e => errors.push(String(e)));
-    await page.goto(BASE + 'index.html');
-    await page.evaluate(() => localStorage.setItem('nightfall-defense-save-v1', JSON.stringify({
+    await page.addInitScript(s => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('nightfall-defense-save-v1', s); } }, JSON.stringify({
       v: 1, cash: 777, cleared: 12, sel: 13, auto: false, nextId: 3, totalKills: 456,
       towers: [{ id: 1, race: 'earth', x: 600, y: 330, spent: 90, paths: [2, 0, 0, 1, 0], infD: 1, infR: 0, mode: 'strong', kills: 50 },
         { id: 2, race: 'pegasus', x: 800, y: 470, spent: 140, paths: [0, 0, 3, 0, 0], infD: 0, infR: 2, mode: 'first', kills: 70 }],
-    })));
+    }));
+    watch(page, errors);
     await page.goto(GAME);
     await page.waitForTimeout(500);
     const m = await page.evaluate(() => { const S = __nd.S; return { cash: Math.floor(S.cash), cleared: S.cleared, n: S.towers.length, p: S.towers[0].paths.join(), mode: S.towers[0].mode, dmg: S.towers[1].dmg, map: S.map, set: !!S.settings && S.settings.speed }; });
     ok(m.cash === 777 && m.cleared === 12 && m.n === 2 && m.p === '2,0,0,1,0' && m.mode === 'strong' && m.dmg === 0 && m.map === 'moonlit' && m.set === 1, 'migrated ' + JSON.stringify(m));
     await page.evaluate(() => __nd.save());
     const ver = await page.evaluate(() => { const o = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return o.ver + ':' + ('v' in o); });
-    ok(ver === '3:false', 'resaved as ver 3, got ' + ver);
+    ok(ver === '4:false', 'resaved as ver 4, got ' + ver);
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
@@ -281,14 +364,12 @@ async function fastForward(page, maxSeconds) {
   await test('old v2 save moves onto the Moonlit Road board', async () => {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     const errors = [];
-    page.on('pageerror', e => errors.push(String(e)));
-    page.on('console', m => { if (m.type() === 'error' && !/favicon\.ico/.test((m.location() || {}).url || '')) errors.push(m.text()); });
-    await page.goto(BASE + 'index.html');
-    await page.evaluate(() => localStorage.setItem('nightfall-defense-save-v1', JSON.stringify({
+    await page.addInitScript(s => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('nightfall-defense-save-v1', s); } }, JSON.stringify({
       ver: 2, map: 'moonlit', seed: 99, cash: 4321, cleared: 57, sel: 58, auto: true, nextId: 5, totalKills: 900,
       stats: { played: 70, dmg: 1e6, bossKills: 5, earned: 5e5 }, settings: { speed: 2, sound: false, vol: 0.4, shake: true, dmgNums: true, numFmt: 'short' },
       towers: [{ id: 4, race: 'unicorn', x: 700, y: 300, spent: 900, paths: [3, 0, 2, 0, 0], infD: 2, infR: 1, mode: 'last', kills: 40, dmg: 5000 }],
-    })));
+    }));
+    watch(page, errors);
     await page.goto(GAME);
     await page.waitForTimeout(500);
     const m = await page.evaluate(() => { const S = __nd.S; return { map: S.map, cash: Math.floor(S.cash), cleared: S.cleared, sel: S.sel, auto: S.auto, n: S.towers.length, p: S.towers[0].paths.join(), mode: S.towers[0].mode, dmg: S.towers[0].dmg, played: S.stats.played, speed: S.settings.speed, woods: NDCore.mapUnlocked(S, 'woods'), caverns: NDCore.mapUnlocked(S, 'caverns') }; });
@@ -296,7 +377,7 @@ async function fastForward(page, maxSeconds) {
     ok(m.woods && !m.caverns, 'wave 57 on map 1 unlocks map 2 only');
     await page.evaluate(() => __nd.save());
     const o = await page.evaluate(() => JSON.parse(localStorage.getItem('nightfall-defense-save-v1')));
-    ok(o.ver === 3 && o.boards && o.boards.moonlit && o.boards.moonlit.cleared === 57 && o.boards.moonlit.towers.length === 1 && !('towers' in o), 'ver 3 layout ' + JSON.stringify(Object.keys(o)));
+    ok(o.ver === 4 && o.boards && o.boards.moonlit && o.boards.moonlit.cleared === 57 && o.boards.moonlit.towers.length === 1 && !('towers' in o), 'ver 4 layout ' + JSON.stringify(Object.keys(o)));
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
@@ -345,6 +426,7 @@ async function fastForward(page, maxSeconds) {
     ok(await page.locator('#mapList .mapcard.locked').count() === 3, 'three maps still locked');
     await page.click('#mapList .mapcard[data-map="woods"]');
     await page.waitForTimeout(300);
+    await page.waitForFunction(() => /Whispering/.test(document.getElementById('mapName').textContent), null, { timeout: 5000 }).catch(() => {});
     const w = await page.evaluate(() => ({ map: __nd.S.map, n: __nd.S.towers.length, cleared: __nd.S.cleared, cash: __nd.S.cash, start: NDCore.mapStartCash(NDCore.MAPS.woods), modal: document.getElementById('mapModal').hidden, name: document.getElementById('mapName').textContent }));
     ok(w.map === 'woods' && w.n === 0 && w.cleared === 0 && w.cash === w.start && w.modal && /Whispering Woods/.test(w.name), 'fresh woods board ' + JSON.stringify(w));
     const tree = await page.evaluate(() => { const b = NDCore.MAPS.woods.blocks[0]; return [b.x, b.y]; });
@@ -391,7 +473,7 @@ async function fastForward(page, maxSeconds) {
         __nd.chooseMap(id);
         S.cash = 1e300;
         const spots = [];
-        for (let y = 30; y < 780 && spots.length < 18; y += 37) for (let x = 30; x < 1380 && spots.length < 18; x += 53) if (C.canPlace(S, x, y)) { const t = C.placeTower(S, C.RACE_IDS[spots.length % 3], x, y); if (t) { spots.push(t); t.infD = 40; t.paths[1] = 2; t._s = null; } }
+        for (let y = 30; y < 780 && spots.length < 18; y += 37) for (let x = 30; x < 1380 && spots.length < 18; x += 53) if (C.canPlace(S, x, y)) { const t = C.placeTower(S, C.RACE_IDS[spots.length % 5], x, y); if (t) { spots.push(t); t.infD = 40; t.paths[1] = 2; t._s = null; } }
         const n = id === 'cliffs' ? 14 : 20;
         S.cleared = n - 1; S.sel = n;
         C.startWave(S, n); S.run.lives = 1e9;

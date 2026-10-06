@@ -10,8 +10,9 @@ const FARM_PER_LOSS = 3;
 const LIMIT_H = Number(process.env.LIMIT_H) || 16;
 const DIAG = Number(process.env.DIAG) || 0;
 let diagDone = false;
-const PLAN = { earth: [0, 1], unicorn: [0, 1], pegasus: [2, 4] };
-const SHARE = { earth: 0.4, unicorn: 0.35, pegasus: 0.25 };
+const PLAN = { earth: [0, 1], unicorn: [0, 1], pegasus: [2, 4], bat: [0, 3], crystal: [0, 3] };
+const SHARE = { earth: 0.3, unicorn: 0.3, pegasus: 0.15, bat: 0.15, crystal: 0.1 };
+const BOT_RACES = (process.env.BOT_RACES || C.RACE_IDS.join(',')).split(',').filter(r => C.RACES[r]);
 
 if (!process.env.MAP) { runAll(); return; }
 
@@ -67,7 +68,26 @@ const LEGACY = MAP.id === 'moonlit';
 const SLOTS = LEGACY ? legacySlots() : null;
 const COVER = LEGACY ? null : coverSlots();
 
+function auraScore(S, s) {
+  const R = C.computeStats({ race: 'crystal', paths: [0, 0, 0, 0, 0], infD: 0, infR: 0 }).auraR;
+  let v = 0;
+  for (const t of S.towers) if (t.race !== 'crystal' && (t.x - s.x) ** 2 + (t.y - s.y) ** 2 <= R * R) v += 1;
+  for (const t of S.towers) if (t.race === 'crystal' && (t.x - s.x) ** 2 + (t.y - s.y) ** 2 <= R * R) v -= 0.5;
+  return v;
+}
+function crystalSlot(S) {
+  const pool = LEGACY ? SLOTS : COVER.crystal;
+  let best = null, bv = -1e9, seen = 0;
+  for (const s of pool) {
+    if (!C.canPlace(S, s.x, s.y)) continue;
+    const v = auraScore(S, s) + (LEGACY ? 0 : s.score.crystal * 0.05);
+    if (v > bv) { bv = v; best = s; }
+    if (++seen >= 160) break;
+  }
+  return best;
+}
 function freeSlot(S, race) {
+  if (race === 'crystal') return crystalSlot(S);
   if (!LEGACY) {
     for (const s of COVER[race]) if (C.canPlace(S, s.x, s.y)) return s;
     return null;
@@ -82,13 +102,14 @@ function freeSlot(S, race) {
 function options(S, n) {
   const opts = [];
   const total = S.towers.length || 1;
-  for (const r of C.RACE_IDS) {
+  for (const r of BOT_RACES) {
     const have = C.owned(S, r);
     let cost = C.nextTowerCost(S, r);
     let weight = cost * (1 + Math.max(0, have / total - SHARE[r]) * 4);
     if (r === 'pegasus' && have === 0 && n >= 5) weight = 0;
     if (r === 'unicorn' && have === 0 && n >= 7) weight = 0;
     if (r === 'pegasus' && have === 0 && n < 4) weight *= 3;
+    if (r === 'crystal' && total < 6) weight *= 4;
     opts.push({ cost, weight, kind: 'tower', race: r });
   }
   for (const t of S.towers) {
@@ -97,8 +118,9 @@ function options(S, n) {
       const c = C.nextNodeCost(t, i);
       opts.push({ cost: c, weight: c * 0.8, kind: 'node', t, i });
     }
-    opts.push({ cost: C.infNext(t, 'dmg'), weight: C.infNext(t, 'dmg'), kind: 'infD', t });
-    opts.push({ cost: C.infNext(t, 'rate'), weight: C.infNext(t, 'rate') * 1.1, kind: 'infR', t });
+    const sup = t.race === 'crystal' ? 4 : 1;
+    opts.push({ cost: C.infNext(t, 'dmg'), weight: C.infNext(t, 'dmg') * sup, kind: 'infD', t });
+    opts.push({ cost: C.infNext(t, 'rate'), weight: C.infNext(t, 'rate') * 1.1 * sup, kind: 'infR', t });
   }
   return opts.sort((a, b) => a.weight - b.weight);
 }
@@ -188,6 +210,7 @@ function main() {
   if (worth50 != null) console.log(`net worth at wave 50: ${C.fmt(worth50)} (${worth50.toExponential(3)}) with ${towers50} towers`);
   const res = {
     map: MAP.id, name: MAP.name, hpShift: MAP.hpShift || 0, hpMul: MAP.hpMul, cashMul: MAP.cashMul, startCash: C.mapStartCash(MAP),
+    races: BOT_RACES.join(','), owned: Object.fromEntries(C.RACE_IDS.map(r => [r, C.owned(S, r)])),
     reached: S.cleared, hours: +(time / 3600).toFixed(3),
     w50h: marks[50] ? +(marks[50] / 3600).toFixed(3) : null, w100h: marks[100] ? +(marks[100] / 3600).toFixed(3) : null,
     decades: segs.map(v => +v.toFixed(3)), worth50, towers50, losses, attempts, farms, worstWaveLosses: worst, fingerprint: fp,

@@ -15,6 +15,15 @@
     click: { gap: 0.03, gain: 0.06, voices: [{ type: 'square', f: 880, dur: 0.03 }] },
     wind: { gap: 2, gain: 0.07, voices: [{ type: 'sine', f: 180, f2: 120, dur: 0.9 }], noise: 0.9 },
     unlocked: { gap: 1, gain: 0.14, voices: [{ type: 'sine', f: 659, dur: 0.12 }, { type: 'sine', f: 880, dur: 0.12, at: 0.1 }, { type: 'sine', f: 1175, dur: 0.12, at: 0.2 }, { type: 'triangle', f: 1319, dur: 0.45, at: 0.3 }] },
+    chirp: { gap: 0.09, gain: 0.04, voices: [{ type: 'sine', f: 2600, f2: 4200, dur: 0.04 }, { type: 'sine', f: 3400, f2: 5200, dur: 0.03, at: 0.035 }] },
+    chime: { gap: 0.1, gain: 0.05, voices: [{ type: 'sine', f: 1568, dur: 0.18 }, { type: 'triangle', f: 2349, dur: 0.22, at: 0.02 }] },
+    sonar: { gap: 0.6, gain: 0.08, voices: [{ type: 'sine', f: 1800, f2: 900, dur: 0.35 }, { type: 'sine', f: 1800, f2: 900, dur: 0.3, at: 0.18 }] },
+    swarm: { gap: 0.6, gain: 0.07, voices: [{ type: 'square', f: 3000, f2: 4400, dur: 0.05 }, { type: 'square', f: 2800, f2: 4000, dur: 0.05, at: 0.06 }, { type: 'square', f: 3200, f2: 4600, dur: 0.05, at: 0.12 }], noise: 0.15 },
+    bloodmoon: { gap: 1, gain: 0.12, voices: [{ type: 'sawtooth', f: 110, f2: 220, dur: 0.6 }, { type: 'sine', f: 440, f2: 330, dur: 0.6, at: 0.1 }] },
+    screech: { gap: 0.6, gain: 0.08, voices: [{ type: 'sawtooth', f: 2400, f2: 900, dur: 0.3 }, { type: 'square', f: 3100, f2: 1200, dur: 0.25, at: 0.03 }], noise: 0.2 },
+    chorus: { gap: 0.8, gain: 0.09, voices: [{ type: 'sine', f: 1047, dur: 0.5 }, { type: 'sine', f: 1319, dur: 0.5, at: 0.05 }, { type: 'sine', f: 1568, dur: 0.6, at: 0.1 }] },
+    quake: { gap: 0.4, gain: 0.1, voices: [{ type: 'triangle', f: 140, f2: 60, dur: 0.3 }, { type: 'sine', f: 2093, dur: 0.12, at: 0.02 }], noise: 0.2 },
+    cataclysm: { gap: 0.8, gain: 0.13, voices: [{ type: 'sawtooth', f: 90, f2: 40, dur: 0.6 }, { type: 'sine', f: 2637, f2: 1760, dur: 0.4, at: 0.05 }], noise: 0.4 },
     deny: { gap: 0.15, gain: 0.08, voices: [{ type: 'square', f: 160, dur: 0.08 }, { type: 'square', f: 120, dur: 0.1, at: 0.09 }] },
   };
   const MAX_VOICES = 24;
@@ -90,6 +99,7 @@
       if (sfx.kill) this.play('kill', sfx.kill);
       if (sfx.leak) this.play('leak', sfx.leak);
       sfx.hit = sfx.crit = sfx.kill = sfx.leak = 0;
+      for (const k in sfx) if (sfx[k]) { this.play(k, sfx[k]); sfx[k] = 0; }
     },
   };
   window.NDAudio = A;
