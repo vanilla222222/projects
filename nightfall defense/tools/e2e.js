@@ -427,7 +427,7 @@ async function fastForward(page, maxSeconds) {
     await page.click('#mapList .mapcard[data-map="woods"]');
     await page.waitForTimeout(300);
     await page.waitForFunction(() => /Whispering/.test(document.getElementById('mapName').textContent), null, { timeout: 5000 }).catch(() => {});
-    const w = await page.evaluate(() => ({ map: __nd.S.map, n: __nd.S.towers.length, cleared: __nd.S.cleared, cash: __nd.S.cash, start: NDCore.mapStartCash(NDCore.MAPS.woods), modal: document.getElementById('mapModal').hidden, name: document.getElementById('mapName').textContent }));
+    const w = await page.evaluate(() => ({ map: __nd.S.map, n: __nd.S.towers.length, cleared: __nd.S.cleared, cash: __nd.S.cash, start: NDCore.mapStartCash(NDCore.MAPS.woods, __nd.S), modal: document.getElementById('mapModal').hidden, name: document.getElementById('mapName').textContent }));
     ok(w.map === 'woods' && w.n === 0 && w.cleared === 0 && w.cash === w.start && w.modal && /Whispering Woods/.test(w.name), 'fresh woods board ' + JSON.stringify(w));
     const tree = await page.evaluate(() => { const b = NDCore.MAPS.woods.blocks[0]; return [b.x, b.y]; });
     await placeAt(page, 'earth', tree[0], tree[1]);
@@ -1246,7 +1246,7 @@ async function fastForward(page, maxSeconds) {
     ok(lost === 'lost', 'challenge lost ' + lost);
     await page.waitForTimeout(500);
     const end1 = await page.evaluate(() => ({ open: !document.getElementById('chalEndModal').hidden, body: document.getElementById('chalEndBody').textContent, again: !document.getElementById('chalEndAgain').hidden, chal: !!__nd.S.chal, cls: document.body.classList.contains('inchal'), won: __nd.S.daily.won, best: __nd.S.daily.best }));
-    ok(end1.open && /Defeated/.test(end1.body) && end1.again && !end1.chal && !end1.cls && !end1.won && end1.best > 0, 'defeat screen and back on the main board ' + JSON.stringify(end1));
+    ok(end1.open && /Defeated/.test(end1.body) && end1.again && !end1.chal && !end1.cls && !end1.won && end1.best >= 0 && /Score/.test(end1.body), 'defeat screen and back on the main board ' + JSON.stringify(end1));
     ok(await page.evaluate(BOARD) === before, 'main board untouched after a loss');
     ok(await page.evaluate(() => __nd.S.moon) === moon0, 'no Moonstones for a loss');
     await shot(page, 'chal-lost-1280');

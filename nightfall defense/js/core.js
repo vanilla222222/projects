@@ -2794,6 +2794,7 @@
     const star = starOf(S, id) + 1;
     S.stars[id] = star;
     grantMoon(S, gain);
+    checkAch(S);
     const keep = S.records ? S.records.bosses : {};
     const b = newBoard(map, S);
     b.records.bosses = keep;

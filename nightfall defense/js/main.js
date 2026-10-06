@@ -1525,6 +1525,7 @@
     A.play('research');
     banner('Saved plan "' + sl.name + '" with ' + sl.towers.length + ' ponies', 'good');
     ui.rulesKey = ''; ui.waveKey = '';
+    refreshRulesBtn();
     writeSave();
     if (!$('plansModal').hidden) buildPlans();
     return sl;
@@ -1771,6 +1772,7 @@
     updateHint();
     R.bgKey = ''; resize();
     dirty();
+    refreshHud(); refreshBuild(); refreshWave(); refreshInfo(); refreshRulesBtn(); refreshChalCard();
   }
   function startChal(id) {
     const P = prof();
