@@ -60,6 +60,12 @@ const BIOME = {
 	LAGOON: 'LAGOON',
 	KELP_COAST: 'KELP_COAST',
 	ATOLL: 'ATOLL',
+	SCREE: 'SCREE',
+	MONTANE_FOREST: 'MONTANE_FOREST',
+	KRUMMHOLZ: 'KRUMMHOLZ',
+	HIGH_PLATEAU: 'HIGH_PLATEAU',
+	TARN: 'TARN',
+	CAVE_MOUTH: 'CAVE_MOUTH',
 };
 
 // Display metadata: color used by the renderer and a human-readable label.
@@ -121,6 +127,12 @@ const BIOME_INFO = {
 	[BIOME.LAGOON]: { name: 'Lagoon', color: '#4fc4c4' },
 	[BIOME.KELP_COAST]: { name: 'Kelp Forest', color: '#2f6a5a' },
 	[BIOME.ATOLL]: { name: 'Atoll', color: '#f2e2a8' },
+	[BIOME.SCREE]: { name: 'Scree Slope', color: '#8d8780' },
+	[BIOME.MONTANE_FOREST]: { name: 'Montane Forest', color: '#3f6a4c' },
+	[BIOME.KRUMMHOLZ]: { name: 'Krummholz', color: '#5f7a5a' },
+	[BIOME.HIGH_PLATEAU]: { name: 'High Plateau', color: '#a8a27a' },
+	[BIOME.TARN]: { name: 'Alpine Tarn', color: '#4f9cc0' },
+	[BIOME.CAVE_MOUTH]: { name: 'Cave Mouth', color: '#2e2a28' },
 };
 
 // Numeric biome IDs: the world grid stores these (a Uint8Array) instead of

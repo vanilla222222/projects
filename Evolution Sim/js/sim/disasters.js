@@ -48,6 +48,10 @@ const PIONEER_P = 0.3;
 const PIONEER_WOOD = 0.3;
 const RECOL_LOG_EVERY = 480;
 
+const AV_UNDER = 0.7;
+const AV_KILL = 0.6;
+const AV_CLIMB = 0.7;
+
 class DisasterLayer {
 	constructor(world, plants, weather, animals, eggs, bugs, log, rng) {
 		this.world = world;
@@ -483,6 +487,48 @@ class DisasterLayer {
 		this.windthrow++;
 		this.felled += c;
 		this.log.push(tick, 'disaster', `A windstorm flattened ${c} trees in the ${this._where(cx, cy)}`);
+	}
+
+	avalanche(tiles, cx, cy, tick) {
+		const P = this.plants;
+		const A = this.animals;
+		const n = this.n;
+		const rng = this.rng;
+		const hit = new Uint8Array(n);
+		let trees = 0;
+		for (const i of tiles) {
+			if (hit[i]) continue;
+			hit[i] = 1;
+			if (P.water[i]) continue;
+			if (P.species[i] && !P.kind[i]) {
+				if (!this.scar[i] || this.scarK[i] === 3) {
+					this.preBio[i] = P.biomass[i] + (P.species[n + i] ? P.biomass[n + i] : 0);
+					this.scar[i] = 1;
+					this.scarK[i] = 3;
+				}
+				if (P.genome[i * PG + 3] >= WIND_WOOD) trees++;
+				P._clear(i);
+			}
+			const u = n + i;
+			if (P.species[u] && !P.kind[u] && rng.next() < AV_UNDER) P._clear(u);
+			this._killEggs(i);
+		}
+		let killed = 0;
+		if (A) {
+			const W = this.world.width;
+			for (let a = 0; a < A.count; a++) {
+				if (!A.alive[a] || A.domain[a] === 1 || (A.domain[a] === 3 && A.fly[a] === 1)) continue;
+				const t = (A.y[a] | 0) * W + (A.x[a] | 0);
+				if (!hit[t]) continue;
+				if (rng.next() >= AV_KILL * (1 - AV_CLIMB * A.genome[a * AG + G_CLIMB])) continue;
+				A.deaths.avalanche = (A.deaths.avalanche || 0) + 1;
+				A._kill(a);
+				killed++;
+			}
+		}
+		this.avalanches = (this.avalanches || 0) + 1;
+		this.log.push(tick, 'disaster', `An avalanche swept down the ${this._where(cx, cy)}${killed ? ` and buried ${killed} animal${killed > 1 ? 's' : ''}` : ''}`);
+		return { trees, killed };
 	}
 
 	_succession(tick) {

@@ -20,7 +20,20 @@ const HYDRO_RIVER_FLOW = 190;
 const HYDRO_WIDE_1 = 5;
 const HYDRO_WIDE_2 = 18;
 
-const WG_GEN = 7;
+const WG_GEN = 8;
+const WG8_LAPSE = 0.11;
+const WG8_SHADOW = 1.6;
+const WG8_SHADOW_DECAY = 0.985;
+const WG8_TREE_T = 0.37;
+const WG8_TREE_LAT = 0.06;
+const WG8_KRUMM = 0.06;
+const WG8_ZONE = 0.05;
+const WG8_SCREE = 0.03;
+const WG8_FLAT = 0.008;
+const WG8_PLATEAU = 0.03;
+const WG8_TARN = 0.48;
+const WG8_CAVE = 0.4;
+const WG8_CAVE_GAP = 5;
 const WG7_ATOLL = 48;
 const WG7_ROCK = 0.035;
 const WG7_REEF = 0.62;
@@ -219,6 +232,7 @@ class WorldMap {
 		if (this.gen >= 5) this._oceanBiomesV5();
 		if (this.gen >= 6) this._riversV6();
 		if (this.gen >= 7) this._coastsV7();
+		if (this.gen >= 8) this._mountainsV8();
 		const sk = secretKindsForSeed(this.seed, this.gen, this.options.secret || null);
 		if (sk) this._placeSecrets(sk);
 	}
@@ -1876,6 +1890,92 @@ class WorldMap {
 					continue;
 				}
 				if (d >= 2 && d <= 4 && t > WG7_REEF && a > deep + 0.08 && reef.noise2D(x * 0.1, y * 0.1) > 0) this.biome[i] = BIOME_ID.CORAL_REEF;
+			}
+		}
+	}
+
+	_mountainsV8() {
+		const { width, height } = this;
+		const n = width * height;
+		const sea = BIOME_THRESHOLDS.seaLevel;
+		const hill = BIOME_THRESHOLDS.hillLevel;
+		const mtn = BIOME_THRESHOLDS.mountainLevel;
+		const alt = this.altitude;
+		const tarnN = new PerlinNoise(this.seed + 98001);
+		const caveN = new PerlinNoise(this.seed + 98002);
+		const sAlt = Float32Array.from(alt);
+		this._blurField(sAlt, 2);
+		for (let y = 0; y < height; y++) {
+			const lat = Math.abs(y / height - 0.5) * 2;
+			const dir = lat < WG_TRADE_LAT || lat > WG4_POLAR_LAT ? -1 : 1;
+			let ridge = sea;
+			for (let k = 0; k < width; k++) {
+				const x = dir > 0 ? k : width - 1 - k;
+				const i = y * width + x;
+				const a = sAlt[i];
+				ridge = sea + (ridge - sea) * WG8_SHADOW_DECAY;
+				if (a > ridge) ridge = a;
+				if (this.isOcean[i]) continue;
+				const above = alt[i] > sea ? alt[i] - sea : 0;
+				this.temperature[i] = clamp01(this.temperature[i] - WG8_LAPSE * above);
+				const lee = ridge - a;
+				if (lee > 0.02 && ridge >= hill) this.humidity[i] = clamp01(this.humidity[i] - WG8_SHADOW * (lee - 0.02) * (ridge - hill + 0.1));
+			}
+		}
+		const fixed = new Set([BIOME_ID.RIVER, BIOME_ID.RAPIDS, BIOME_ID.LAKE, BIOME_ID.OXBOW, BIOME_ID.POND, BIOME_ID.GLACIER, BIOME_ID.VOLCANIC, BIOME_ID.OASIS, BIOME_ID.SALT_FLAT, BIOME_ID.REED_MARSH, BIOME_ID.BEAVER_POND, BIOME_ID.SEA_CLIFF, BIOME_ID.BEACH, BIOME_ID.ATOLL, BIOME_ID.CLOUD_FOREST, BIOME_ID.MANGROVE]);
+		const slope = new Float32Array(n);
+		for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) slope[y * width + x] = this._slopeAt(x, y);
+		const caves = [];
+		for (let y = 1; y < height - 1; y++) {
+			const lat = Math.abs(y / height - 0.5) * 2;
+			const treeT = WG8_TREE_T - WG8_TREE_LAT * (1 - lat);
+			for (let x = 1; x < width - 1; x++) {
+				const i = y * width + x;
+				const a = alt[i];
+				if (this.isOcean[i] || this.isRiver[i] || this.isLake[i] || this.isPond[i] || this.isGlacier[i] || this.isSalt[i]) continue;
+				const b = this.biome[i];
+				if (fixed.has(b) || a < hill + WG8_ZONE) continue;
+				const t = this.temperature[i];
+				const h = this.humidity[i];
+				const sl = slope[i];
+				if (b === BIOME_ID.CLIFF) continue;
+				if (sl < WG8_FLAT * 2 && a >= mtn - WG8_PLATEAU * 2 && t < treeT + 0.1 && tarnN.noise2D(x * 0.17, y * 0.17) > WG8_TARN && h > 0.16) {
+					this.biome[i] = BIOME_ID.TARN;
+					this.isLake[i] = 1;
+					continue;
+				}
+				if (sl >= WG8_SCREE * 0.7) {
+					let cliff = 0;
+					for (let k = 0; k < 4; k++) {
+						const j = k === 0 ? i - 1 : k === 1 ? i + 1 : k === 2 ? i - width : i + width;
+						if (this.biome[j] === BIOME_ID.CLIFF || slope[j] > WG8_SCREE * 1.6) cliff++;
+					}
+					if (cliff > 0 && caveN.noise2D(x * 0.31, y * 0.31) > WG8_CAVE && caves.every((c) => Math.abs((c % width) - x) + Math.abs(((c - (c % width)) / width) - y) > WG8_CAVE_GAP)) {
+						this.biome[i] = BIOME_ID.CAVE_MOUTH;
+						caves.push(i);
+						continue;
+					}
+				}
+				const above = t < treeT;
+				if (above && t >= treeT - WG8_KRUMM && h >= 0.2 && sl < WG8_SCREE * 1.4) {
+					this.biome[i] = BIOME_ID.KRUMMHOLZ;
+					continue;
+				}
+				if ((above && sl >= WG8_SCREE) || (a >= mtn && sl >= WG8_SCREE * 1.5)) {
+					this.biome[i] = BIOME_ID.SCREE;
+					continue;
+				}
+				if (sl < WG8_FLAT && a >= mtn - WG8_PLATEAU && h < 0.45) {
+					this.biome[i] = BIOME_ID.HIGH_PLATEAU;
+					continue;
+				}
+				if (above) {
+					if (t < BIOME_THRESHOLDS.glacierTemp + 0.04 || h < 0.22) this.biome[i] = BIOME_ID.ALPINE;
+					else this.biome[i] = sl < 0.03 ? BIOME_ID.ALPINE_MEADOW : BIOME_ID.ALPINE;
+					continue;
+				}
+				if (h >= 0.36) this.biome[i] = BIOME_ID.MONTANE_FOREST;
+				else if (a >= mtn) this.biome[i] = BIOME_ID.MOUNTAINS;
 			}
 		}
 	}

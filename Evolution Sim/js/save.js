@@ -22,6 +22,7 @@ const EvoSave = (() => {
 		add('GodTools', typeof GodTools === 'function' && GodTools);
 		add('RiverLayer', typeof RiverLayer === 'function' && RiverLayer);
 		add('CoastLayer', typeof CoastLayer === 'function' && CoastLayer);
+		add('MountainLayer', typeof MountainLayer === 'function' && MountainLayer);
 		return t;
 	};
 
@@ -32,6 +33,7 @@ const EvoSave = (() => {
 		BugLayer: ['app', 'mob', 'rate'],
 		RiverLayer: ['dn', 'up', 'fdx', 'fdy', 'flow', 'flood', 'still'],
 		CoastLayer: ['tidal', 'isle', 'shore', 'coastal', 'seaward', 'beachNear', 'reefs'],
+		MountainLayer: ['slope', 'sick', 'lift', 'cave', 'high', 'down', 'steep'],
 	};
 	const SHUFFLE_MIN = 4096;
 
@@ -300,6 +302,9 @@ const EvoSave = (() => {
 		if (eco.animals && eco.rivers) eco.animals.rivers = eco.rivers;
 		if (!eco.coast && typeof CoastLayer === 'function') eco.coast = new CoastLayer(eco.world, new FastRng(eco.seed + 1414));
 		if (eco.animals && eco.coast) eco.animals.coast = eco.coast;
+		if (!eco.mtn && typeof MountainLayer === 'function' && eco.world.gen >= 8) eco.mtn = new MountainLayer(eco.world, new FastRng(eco.seed + 1515));
+		if (!eco.mtn) eco.mtn = null;
+		if (eco.animals) eco.animals.mtn = eco.mtn;
 	}
 
 	function upgradeAnimals(eco) {

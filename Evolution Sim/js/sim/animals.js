@@ -1,9 +1,29 @@
-const AG = 36;
+const AG = 38;
 const AG_V1 = 30;
 const AG_V2 = 32;
 const AG_V3 = 35;
-const G_SIZE = 0, G_SPEED = 1, G_SENSE = 2, G_DIET = 3, G_TEMP = 4, G_TOL = 5, G_FEC = 6, G_TOXR = 7, G_ARMOR = 8, G_RES = 9, G_SCAV = 10, G_TERR = 11, G_HERD = 12, G_COLD = 13, G_DRY = 14, G_NEST = 15, G_PACK = 16, G_DISPLAY = 17, G_CHOOSY = 18, G_APPETITE = 19, G_DORMANCY = 20, G_ALARM = 21, G_SOCIAL = 22, G_BROOD = 23, G_CARE = 24, G_CLEAN = 25, G_TOLER = 26, G_TOXIC = 27, G_MIMIC = 28, G_BRAIN = 29, G_DEPTH = 30, G_SALT = 31, G_RNEU = 32, G_RGEN = 33, G_TOXK = 34, G_ACT = 35;
-const ANIMAL_WEIGHTS = [1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6, 0.3, 0.3, 0.3, 0.3, 0.5, 0.5, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.5, 0.6, 0.6, 0.5, 0.5, 0.4, 0.4];
+const AG_V4 = 36;
+const G_SIZE = 0, G_SPEED = 1, G_SENSE = 2, G_DIET = 3, G_TEMP = 4, G_TOL = 5, G_FEC = 6, G_TOXR = 7, G_ARMOR = 8, G_RES = 9, G_SCAV = 10, G_TERR = 11, G_HERD = 12, G_COLD = 13, G_DRY = 14, G_NEST = 15, G_PACK = 16, G_DISPLAY = 17, G_CHOOSY = 18, G_APPETITE = 19, G_DORMANCY = 20, G_ALARM = 21, G_SOCIAL = 22, G_BROOD = 23, G_CARE = 24, G_CLEAN = 25, G_TOLER = 26, G_TOXIC = 27, G_MIMIC = 28, G_BRAIN = 29, G_DEPTH = 30, G_SALT = 31, G_RNEU = 32, G_RGEN = 33, G_TOXK = 34, G_ACT = 35, G_LUNG = 36, G_CLIMB = 37;
+const ANIMAL_WEIGHTS = [1.3, 1, 0.7, 1.8, 1.2, 0.5, 0.8, 0.5, 0.8, 0.25, 0.9, 0.6, 0.6, 1.2, 0.6, 0.3, 0.3, 0.3, 0.3, 0.5, 0.5, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.5, 0.6, 0.6, 0.5, 0.5, 0.4, 0.4, 0.5, 0.5];
+const PAD_LUNG = 0.2;
+const PAD_CLIMB = 0.2;
+const MTN_GENE = 0.6;
+const LUNG_OK = 0.7;
+const CLIMB_OK = 0.7;
+const LUNG_COST = 0.04;
+const CLIMB_COST = 0.04;
+const SLOPE_SLOW = 0.55;
+const SLOPE_COST = 0.25;
+const SICK_K = 0.35;
+const SOAR_K = 0.4;
+const SLOPE_AMBUSH = 0.6;
+const CAVE_SHELTER = 0.4;
+const CAVE_DEN = 1.4;
+const MTN_PLACE = 0.04;
+const FOUNDER_LUNG = { 65: 0.8, 66: 0.8, 67: 0.8, 68: 0.75, 69: 0.85, 70: 0.85, 71: 0.75 };
+const FOUNDER_CLIMB = { 65: 0.9, 66: 0.85, 67: 0.55, 68: 0.45, 69: 0.3, 70: 0.3, 71: 0.4 };
+const FOUNDER_DORM_SP = { 67: 0.75, 68: 0.85, 71: 0.7 };
+const FOUNDER_SOLO = { 66: 1 };
 const ANIMAL_CLASSES = ['fish', 'amphibian', 'reptile', 'mammal', 'bird', 'invertebrate'];
 const CLS_FISH = 0, CLS_AMPH = 1, CLS_REPT = 2, CLS_MAMM = 3, CLS_BIRD = 4, CLS_INVT = 5;
 const CLS_COLD = [[0, 1], [0.5, 1], [0.5, 1], [0, 0.45], [0, 0.45], [0.5, 1]];
@@ -127,7 +147,7 @@ const PAD_RTOX = 0.1, PAD_TOXK = 0.2;
 const ACT_PATTERNS = ['diurnal', 'crepuscular', 'nocturnal', 'cathemeral'];
 const ACT_GENE = [0.12, 0.37, 0.62, 0.88];
 const PAD_ACT = 0.88;
-const FOUNDER_ACT = [2, 1, 3, 0, 3, 2, 1, 2, 0, 0, 2, 1, 3, 2, 0, 2, 2, 3, 0, 0, 0, 2, 3, 3, 2, 2, 3, 2, 2, 0, 0, 1, 0, 0, 2, 0, 3, 3, 0, 1, 1, 0, 3, 1, 2, 0, 3, 2, 1, 2, 3, 0, 0, 1, 0, 1, 3, 1, 2, 1, 1, 1, 2, 1, 1];
+const FOUNDER_ACT = [2, 1, 3, 0, 3, 2, 1, 2, 0, 0, 2, 1, 3, 2, 0, 2, 2, 3, 0, 0, 0, 2, 3, 3, 2, 2, 3, 2, 2, 0, 0, 1, 0, 0, 2, 0, 3, 3, 0, 1, 1, 0, 3, 1, 2, 0, 3, 2, 1, 2, 3, 0, 0, 1, 0, 1, 3, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 3, 1, 2];
 const SLEEP_META = 0.5;
 const SLEEP_FED = 0.7;
 const SLEEP_WAKE = 0.45;
@@ -233,6 +253,10 @@ for (const k of ['RAINFOREST', 'JUNGLE', 'CLOUD_FOREST', 'REDWOOD_FOREST']) BIOM
 for (const k of ['WETLAND', 'BOG', 'SWAMP', 'MANGROVE', 'TUNDRA_BOG', 'POND', 'FLOODPLAIN', 'OASIS', 'REED_MARSH', 'BEAVER_POND', 'SALT_MARSH']) BIOME_ZONE[BIOME_ID[k]] = ZONE_MIRE;
 for (const k of ['LAKE', 'RIVER', 'RAPIDS', 'OXBOW']) BIOME_ZONE[BIOME_ID[k]] = ZONE_FRESH;
 BIOME_ZONE[BIOME_ID.ALPINE_MEADOW] = ZONE_ALPINE;
+for (const k of ['SCREE', 'KRUMMHOLZ', 'HIGH_PLATEAU']) BIOME_ZONE[BIOME_ID[k]] = ZONE_ALPINE;
+BIOME_ZONE[BIOME_ID.MONTANE_FOREST] = ZONE_DENSE;
+BIOME_ZONE[BIOME_ID.TARN] = ZONE_FRESH;
+const MTN_RUGGED = new Set([BIOME_ID.SCREE, BIOME_ID.KRUMMHOLZ, BIOME_ID.HIGH_PLATEAU, BIOME_ID.CAVE_MOUTH, BIOME_ID.MONTANE_FOREST]);
 const REEF_COVER = 0.2;
 const COAST_AMPH = new Set([BIOME_ID.ROCKY_SHORE, BIOME_ID.LAGOON, BIOME_ID.KELP_COAST]);
 const THIRSTY = 0.35;
@@ -503,10 +527,18 @@ const ANIMAL_ARCHETYPES = [
 	{ domain: 'amph', cls: CLS_MAMM, coast: 1, n: 12, g: [0.55, 0.55, 0.6, 0.88, 0.3, 0.6, 0.4, 0.3, 0.25, 0.15, 0.1, 0.3, 0.6, 0.1, 0.3, 0.4, 0.3, 0.4, 0.3] },
 	{ domain: 'amph', cls: CLS_MAMM, coast: 1, n: 10, g: [0.7, 0.6, 0.6, 0.88, 0.5, 0.6, 0.35, 0.3, 0.3, 0.15, 0.1, 0.5, 0.6, 0.1, 0.3, 0.4, 0.3, 0.6, 0.3] },
 	{ domain: 'amph', cls: CLS_FISH, coast: 1, n: 20, g: [0.1, 0.45, 0.45, 0.5, 0.65, 0.6, 0.85, 0.4, 0.1, 0.15, 0.2, 0.4, 0.2, 0.05, 0.4, 0.3, 0.05, 0.6, 0.3] },
+	{ domain: 'land', cls: CLS_MAMM, mtn: 1, n: 30, g: [0.45, 0.6, 0.55, 0.05, 0.3, 0.55, 0.45, 0.65, 0.25, 0.15, 0.1, 0.1, 0.6, 0.75, 0.3, 0.25, 0.15, 0.4, 0.3] },
+	{ domain: 'land', cls: CLS_MAMM, mtn: 1, n: 10, g: [0.55, 0.6, 0.65, 0.9, 0.28, 0.55, 0.3, 0.3, 0.2, 0.15, 0.1, 0.5, 0.05, 0.75, 0.3, 0.3, 0.1, 0.3, 0.3] },
+	{ domain: 'land', cls: CLS_MAMM, mtn: 1, n: 40, g: [0.08, 0.5, 0.5, 0.04, 0.28, 0.55, 0.8, 0.55, 0.05, 0.15, 0.1, 0.3, 0.5, 0.7, 0.3, 0.6, 0.15, 0.3, 0.3] },
+	{ domain: 'land', cls: CLS_MAMM, mtn: 1, n: 30, g: [0.25, 0.4, 0.5, 0.04, 0.26, 0.55, 0.6, 0.55, 0.1, 0.15, 0.1, 0.3, 0.6, 0.65, 0.3, 0.65, 0.15, 0.3, 0.3] },
+	{ domain: 'air', cls: CLS_BIRD, mtn: 1, n: 10, g: [0.72, 0.5, 0.85, 0.75, 0.35, 0.6, 0.35, 0.6, 0.05, 0.3, 0.85, 0.2, 0.3, 0.4, 0.5, 0.35, 0.1, 0.3, 0.3] },
+	{ domain: 'air', cls: CLS_BIRD, mtn: 1, n: 10, g: [0.5, 0.72, 0.85, 0.9, 0.32, 0.55, 0.45, 0.3, 0.05, 0.15, 0.1, 0.4, 0.05, 0.4, 0.4, 0.55, 0.1, 0.4, 0.3] },
+	{ domain: 'amph', cls: CLS_AMPH, mtn: 1, n: 16, g: [0.14, 0.45, 0.45, 0.8, 0.3, 0.55, 0.6, 0.4, 0.1, 0.15, 0.1, 0.3, 0.1, 0.6, 0.3, 0.35, 0.3, 0.3, 0.3] },
 ];
 const MARINE_ARCH = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 const RIVER_ARCH = [48, 49, 50, 51, 52, 53, 54, 55, 56];
 const COAST_ARCH = [57, 58, 59, 60, 61, 62, 63, 64];
+const MOUNTAIN_ARCH = [65, 66, 67, 68, 69, 70, 71];
 
 const FOUNDER_ALARM_BIRD = 0.55;
 const FOUNDER_ALARM_PREY = 0.5;
@@ -636,6 +668,13 @@ ANIMAL_ARCHETYPES.forEach((a, k) => {
 	g[G_RGEN] = g[G_DIET] < 0.66 ? FOUNDER_RGEN_HERB : FOUNDER_RGEN;
 	g[G_TOXK] = FOUNDER_TOXK[k] ?? PAD_TOXK;
 	g[G_ACT] = ACT_GENE[FOUNDER_ACT[k] ?? 3];
+	g[G_LUNG] = FOUNDER_LUNG[k] ?? PAD_LUNG;
+	g[G_CLIMB] = FOUNDER_CLIMB[k] ?? PAD_CLIMB;
+	if (FOUNDER_DORM_SP[k]) g[G_DORMANCY] = FOUNDER_DORM_SP[k];
+	if (FOUNDER_SOLO[k]) {
+		g[G_PACK] = FOUNDER_TRAIT_LO;
+		g[G_SOCIAL] = FOUNDER_SOC_LONE;
+	}
 });
 
 function actPattern(g) {
@@ -662,7 +701,7 @@ function aquaMisfit(gDepth, gSalt, depth, sal) {
 function padAnimalGenes(src, count) {
 	if (!src || !count) return src;
 	const from = src.length / count;
-	if (from !== AG_V1 && from !== AG_V2 && from !== AG_V3) return src;
+	if (from !== AG_V1 && from !== AG_V2 && from !== AG_V3 && from !== AG_V4) return src;
 	const out = new Float32Array(count * AG);
 	for (let k = 0, a = 0, b = 0; k < count; k++, a += from, b += AG) {
 		for (let j = 0; j < from; j++) out[b + j] = src[a + j];
@@ -675,7 +714,9 @@ function padAnimalGenes(src, count) {
 			out[b + G_RGEN] = PAD_RTOX;
 			out[b + G_TOXK] = PAD_TOXK;
 		}
-		out[b + G_ACT] = PAD_ACT;
+		if (from !== AG_V4) out[b + G_ACT] = PAD_ACT;
+		out[b + G_LUNG] = PAD_LUNG;
+		out[b + G_CLIMB] = PAD_CLIMB;
 	}
 	return out;
 }
@@ -705,10 +746,10 @@ function animalCategory(g, domain, cls = CLS_MAMM, nic = 0) {
 	if (cls === CLS_BIRD) {
 		if (nic && g[G_DEPTH] >= DIVER_DEPTH) return size < PUFFIN_SIZE ? 'puffin' : 'gannet';
 		if (nic) return size >= HERON_SIZE ? 'heron' : size < KINGFISHER_SIZE ? 'kingfisher' : 'wader';
-		if (scav) return 'vulture';
+		if (scav) return g[G_LUNG] >= MTN_GENE ? 'condor' : 'vulture';
 		if (role === 'herbivore') return size < 0.4 ? 'seedbird' : 'fowl';
 		if (role === 'omnivore') return 'insectbird';
-		return 'raptor';
+		return g[G_LUNG] >= MTN_GENE ? 'eagle' : 'raptor';
 	}
 	if (cls === CLS_INVT) {
 		if (domain === 'air') return g[G_DIET] < 0.5 ? 'mayfly' : 'dragonfly';
@@ -741,7 +782,7 @@ function animalCategory(g, domain, cls = CLS_MAMM, nic = 0) {
 	if (cls === CLS_AMPH) {
 		if (role === 'herbivore') return 'newt';
 		if (role === 'omnivore') return 'frog';
-		return 'salamander';
+		return g[G_LUNG] >= MTN_GENE ? 'alpinesalamander' : 'salamander';
 	}
 	if (cls === CLS_REPT) {
 		if (domain === 'water') return role === 'herbivore' ? 'seaturtle' : 'crocodile';
@@ -754,8 +795,14 @@ function animalCategory(g, domain, cls = CLS_MAMM, nic = 0) {
 	if (domain === 'amph' && role !== 'herbivore' && g[G_SALT] >= COAST_SALT) return size < SEAOTTER_SIZE ? 'seaotter' : size < SEAL_SIZE ? 'seal' : 'sealion';
 	if (domain === 'amph') return role === 'herbivore' ? 'beaver' : 'otter';
 	if (scav) return 'carrion';
+	if (role === 'herbivore' && g[G_LUNG] >= MTN_GENE) {
+		if (size < 0.18) return 'pika';
+		if (size < 0.35) return 'marmot';
+		if (size < 0.66 && g[G_CLIMB] >= MTN_GENE) return 'ibex';
+	}
 	if (role === 'herbivore') return size < 0.28 ? 'rabbit' : size < 0.66 ? 'deer' : 'bison';
 	if (role === 'omnivore') return size < 0.35 ? 'mouse' : size < 0.72 ? 'boar' : 'bear';
+	if (role === 'carnivore' && g[G_CLIMB] >= MTN_GENE && size >= 0.42 && size < 0.74) return 'snowleopard';
 	return size < 0.42 ? 'fox' : size < 0.74 ? 'wolf' : 'bigcat';
 }
 
@@ -825,6 +872,13 @@ const ANIMAL_ICON_VARIANTS = {
 	mussel: ['clam'],
 	raptor: ['hawk', 'eagle', 'owl'],
 	vulture: ['vulture'],
+	ibex: ['goat', 'goat'],
+	snowleopard: ['bigcat', 'tiger'],
+	pika: ['mouse', 'rabbit'],
+	marmot: ['squirrel', 'badger'],
+	condor: ['vulture', 'crow'],
+	eagle: ['eagle', 'hawk'],
+	alpinesalamander: ['salamander', 'newt'],
 };
 
 function animalIcon(category, id) {
@@ -898,6 +952,13 @@ const ANIMAL_CATEGORY_LABEL = {
 	mussel: 'Freshwater mussel',
 	raptor: 'Raptor',
 	vulture: 'Carrion bird',
+	ibex: 'Ibex',
+	snowleopard: 'Snow leopard',
+	pika: 'Pika',
+	marmot: 'Marmot',
+	condor: 'Condor',
+	eagle: 'Eagle',
+	alpinesalamander: 'Alpine salamander',
 };
 
 const PACK_MIN = 0.45;
@@ -1028,9 +1089,9 @@ class AnimalPool {
 			const b = world.biome[i];
 			if (b === BIOME_ID.RIVER || b === BIOME_ID.POND || b === BIOME_ID.RAPIDS || b === BIOME_ID.BEAVER_POND || b === BIOME_ID.ROCKY_SHORE) this.walk[i] = 3;
 			else if (WATER_BIOME_SET.has(b)) this.walk[i] = 2;
-			else this.walk[i] = b === BIOME_ID.GLACIER ? 0 : b === BIOME_ID.BEACH || b === BIOME_ID.CLIFF || b === BIOME_ID.SEA_CLIFF || b === BIOME_ID.ATOLL ? 17 : 1;
+			else this.walk[i] = b === BIOME_ID.GLACIER ? 0 : b === BIOME_ID.BEACH || b === BIOME_ID.CLIFF || b === BIOME_ID.SEA_CLIFF || b === BIOME_ID.ATOLL || b === BIOME_ID.CAVE_MOUTH ? 17 : 1;
 			this.walk[i] |= 8;
-			if (b === BIOME_ID.HILLS || b === BIOME_ID.BADLANDS || b === BIOME_ID.MOUNTAINS || b === BIOME_ID.CLIFF || b === BIOME_ID.VOLCANIC || b === BIOME_ID.ALPINE_MEADOW || b === BIOME_ID.SEA_CLIFF) this.walk[i] |= 32;
+			if (b === BIOME_ID.HILLS || b === BIOME_ID.BADLANDS || b === BIOME_ID.MOUNTAINS || b === BIOME_ID.CLIFF || b === BIOME_ID.VOLCANIC || b === BIOME_ID.ALPINE_MEADOW || b === BIOME_ID.SEA_CLIFF || MTN_RUGGED.has(b)) this.walk[i] |= 32;
 			if (b === BIOME_ID.SALT_FLAT || b === BIOME_ID.MANGROVE || b === BIOME_ID.SALT_MARSH) this.walk[i] |= 64;
 			if (b === BIOME_ID.TUNDRA_BOG || b === BIOME_ID.BOG || b === BIOME_ID.CORAL_REEF) this.walk[i] |= 128;
 		}
@@ -1044,6 +1105,7 @@ class AnimalPool {
 		this.weather = null;
 		this.dis = null;
 		this.coast = null;
+		this.mtn = null;
 		this.terrSp = new Int32Array(n);
 		this.terrUid = new Int32Array(n);
 		this.terrUntil = new Int32Array(n);
@@ -1187,7 +1249,7 @@ class AnimalPool {
 		this.hr[i] = 2 + 5 * size;
 		this.meta[i] *= 1 + DISPLAY_COST * g[o + G_DISPLAY];
 		this.app[i] = g[o + G_APPETITE];
-		this.meta[i] *= 1 + DORM_COST * g[o + G_DORMANCY];
+		this.meta[i] *= (1 + DORM_COST * g[o + G_DORMANCY]) * (1 + LUNG_COST * g[o + G_LUNG] + CLIMB_COST * g[o + G_CLIMB]);
 		this.meta[i] *= (1 + TOX_COST * g[o + G_TOXIC]) * (1 + MIMIC_COST * g[o + G_MIMIC]) * (1 + RES_TOX_COST * (g[o + G_RNEU] + g[o + G_RGEN]));
 		const brain = g[o + G_BRAIN];
 		this.meta[i] *= 1 + BRAIN_COST * brain * brain;
@@ -1608,7 +1670,7 @@ class AnimalPool {
 			const t = this.world.temperature[j];
 			return t >= NEST_WARM && c < NEST_OPEN && !wet ? t * (1 - c) : 0;
 		}
-		if (cls === CLS_MAMM) return c >= DEN_SITE ? c : w & 32 ? 0.8 : 0;
+		if (cls === CLS_MAMM) return this.mtn && this.mtn.cave[j] ? CAVE_DEN : c >= DEN_SITE ? c : w & 32 ? 0.8 : 0;
 		return 0.3 + c;
 	}
 
@@ -2019,6 +2081,11 @@ class AnimalPool {
 				const sz = this.genome[i * AG + G_SIZE];
 				if (this.walk[t0] & 128) v *= 1 - MIRE_DRAG * (0.4 + sz);
 				else if (sz > FOREST_FREE) v *= 1 - FOREST_SLOW * (sz - FOREST_FREE);
+			}
+			const M = this.mtn;
+			if (M && M.slope[t0] > 0) {
+				const cl = this.genome[i * AG + G_CLIMB];
+				if (cl < CLIMB_OK) v *= 1 - SLOPE_SLOW * M.slope[t0] * (1 - cl / CLIMB_OK);
 			}
 		}
 		let step = Math.min(d, v * frac);
@@ -2658,7 +2725,7 @@ class AnimalPool {
 				this.brd[i]--;
 				if ((tick + i) % FEED_EVERY === 0) this._care(i, 0);
 			} else if ((tick + i) % GRAN_EVERY === 0 && this.age[i] > this.maxAge[i] * ELDER_FERTILE && this.genome[i * AG + G_CARE] > GRAN_MIN) this._care(i, 1);
-			const shelter = hk === 3 && atHome ? 1 - DEN_SHELTER * ng : 1;
+			const shelter = (hk === 3 && atHome ? 1 - DEN_SHELTER * ng : 1) * (this.mtn && this.mtn.cave[tile] ? CAVE_SHELTER : 1);
 			const homeK = this._homeK(i);
 			if (homeK > 0 && ((tick + i) & 1) === 1) this._chaseRival(i);
 			const ai = this._actIdx(i);
@@ -2686,8 +2753,20 @@ class AnimalPool {
 			}
 			const zn = zone[tile];
 			if (zn === ZONE_ARID && dom === 0) cost += m75 * ARID_K * (ARID_BASE + ARID_SIZE * this.genome[i * AG + G_SIZE]) * (1 - this.dry[i]) * (this.cold[i] > 0.5 ? ARID_ECTO : 1) * shelter;
-			else if (zn === ZONE_ALPINE && dom === 0) cost += m75 * ALPINE_AIR_K * this.genome[i * AG + G_SIZE] * shelter;
+			else if (zn === ZONE_ALPINE && dom === 0) cost += m75 * ALPINE_AIR_K * this.genome[i * AG + G_SIZE] * shelter * (this.mtn ? Math.max(0, 1 - this.genome[i * AG + G_LUNG] / LUNG_OK) : 1);
 			else if (dom === 2 && zn >= ZONE_MIRE) cost *= 1 - (zn === ZONE_MIRE ? AMPH_MIRE : AMPH_FRESH) * (1 - 0.5 * this.dry[i]);
+			const Mt = this.mtn;
+			if (Mt && dom !== 1) {
+				const sk = Mt.sick[tile];
+				if (sk > 0 && !this.dorm[i]) {
+					const lg = this.genome[i * AG + G_LUNG];
+					if (lg < LUNG_OK) cost += m75 * SICK_K * sk * (1 - lg / LUNG_OK);
+				}
+				if (dom === 0 && Mt.slope[tile] > 0) {
+					const cl = this.genome[i * AG + G_CLIMB];
+					if (cl < CLIMB_OK) cost *= 1 + SLOPE_COST * Mt.slope[tile] * (1 - cl / CLIMB_OK);
+				} else if (flying && Mt.lift[tile] > 0) cost *= 1 - SOAR_K * Mt.lift[tile] * this.genome[i * AG + G_SIZE];
+			}
 			if (dom === 1) {
 				cost += m75 * (AQ_K * aquaMisfit(this.genome[i * AG + G_DEPTH], this.genome[i * AG + G_SALT], plants.depth[tile], plants.sal[tile]) + DIVE_K * dive);
 				if (plants.sal[tile] === 0) cost *= 1 - (this.age[i] < this.mature[i] ? NURSERY_K : FRESH_K);
@@ -3598,6 +3677,10 @@ class AnimalPool {
 		else if (this.slp[p]) chance = Math.min(0.95, chance * SLEEP_CATCH);
 		chance *= this._visT ? this._visT[this._actIdx(i)] : 1;
 		if (this.domain[p] === 3 && this.domain[i] !== 3) chance *= BIRD_ESCAPE;
+		else if (this.mtn && this.domain[i] === 0 && this.walk[tile] & 32) {
+			const dc = this.genome[i * AG + G_CLIMB] - this.genome[p * AG + G_CLIMB];
+			chance *= 1 + SLOPE_AMBUSH * (dc < -1 ? -1 : dc) * (0.5 + this.mtn.slope[tile]);
+		}
 		if (this.cls[i] === CLS_REPT && this.domain[i] === 2 && this.domain[p] !== 1 && this.diet[i] > 0.66 && this.walk[tile] & 2) chance *= CROC_BANK;
 		if (this.lv[p] === 1) chance *= TAD_HIDE;
 		const pd = this._domK[this.sp[p]] || 0;

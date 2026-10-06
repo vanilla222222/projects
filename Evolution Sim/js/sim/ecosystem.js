@@ -99,8 +99,10 @@ class Ecosystem {
 		this.plants.refreshSpeciesMeans();
 		this.coast = typeof CoastLayer === 'function' ? new CoastLayer(world, new FastRng(seed + 1414)) : null;
 		this.animals.coast = this.coast;
+		this.mtn = typeof MountainLayer === 'function' && world.gen >= 8 ? new MountainLayer(world, new FastRng(seed + 1515)) : null;
+		this.animals.mtn = this.mtn;
 		const cfg = world.cfg || worldCfgParams(null);
-		if (!cfg.div && cfg.animalK === 1) for (const a of ANIMAL_ARCHETYPES) this._introduce(a, 'founder');
+		if (!cfg.div && cfg.animalK === 1) for (const a of ANIMAL_ARCHETYPES) if (!a.mtn || this.mtn) this._introduce(a, 'founder');
 		else this._introduceFounders(cfg);
 		this.bugs = typeof BugLayer === 'function' ? new BugLayer(world, this.plants, this.animals, this.registry, this.log, new FastRng(seed + 333)) : null;
 		this.animals.bugs = this.bugs;
@@ -161,11 +163,12 @@ class Ecosystem {
 			const first = !seen.has(key);
 			seen.add(key);
 			if (cfg.div < 0 && !first && k % 2 === 1) return;
+			if (a.mtn && !this.mtn) return;
 			this._introduce(a, 'founder', scale(a.n));
 		});
 		if (cfg.div > 0) {
 			const rng = new FastRng(this.seed + 2323);
-			for (const a of ANIMAL_ARCHETYPES) this._introduce({ ...a, g: jitterGenes(a.g, rng, 0.1) }, 'founder', scale(Math.ceil(a.n * 0.6)));
+			for (const a of ANIMAL_ARCHETYPES) if (!a.mtn || this.mtn) this._introduce({ ...a, g: jitterGenes(a.g, rng, 0.1) }, 'founder', scale(Math.ceil(a.n * 0.6)));
 		}
 	}
 
@@ -189,6 +192,7 @@ class Ecosystem {
 			if (wd && wd[i] > 2) continue;
 			if (domain === 3 && !(A.walk[i] & 1)) continue;
 			if (arch.coast && this.coast && attempt < 3000 && !this.coast.coastal[i]) continue;
+			if (arch.mtn && this.mtn && attempt < 3000 && !this.mtn.high[i]) continue;
 			if (domain === 1 && attempt < 3000 && aquaMisfit(arch.g[G_DEPTH], arch.g[G_SALT], this.plants.depth[i], this.plants.sal[i]) > (arch.g[G_DEPTH] >= LVL_FLOOR ? AQ_PLACE_DEEP : AQ_PLACE)) continue;
 			const clim = gaussFit(this.world.temperature[i], arch.g[G_TEMP], 0.08 + 0.3 * arch.g[G_TOL]);
 			const food = arch.g[G_DIET] < 0.6 ? this.plants.edible(i) : 0.3;
@@ -238,6 +242,7 @@ class Ecosystem {
 		this.animals.step(this.tick);
 		if (this.rivers) this.rivers.step(this.tick, this);
 		if (this.coast) this.coast.step(this.tick, this);
+		if (this.mtn) this.mtn.step(this.tick, this);
 		if (this.eggs) this.eggs.step(Wx);
 		if (D) D.step(this.tick);
 
@@ -713,7 +718,7 @@ class Ecosystem {
 		const s = this.stats;
 		const R = s.roles;
 		const pick = (cls, role, domain, nic = 0) => {
-			const opts = ANIMAL_ARCHETYPES.filter((a) => a.cls === cls && ROLE_KEYS[roleIndex(a.g[G_DIET], a.g[G_SCAV])] === role && (!domain || a.domain === domain) && (a.nic | 0) === nic);
+			const opts = ANIMAL_ARCHETYPES.filter((a) => a.cls === cls && ROLE_KEYS[roleIndex(a.g[G_DIET], a.g[G_SCAV])] === role && (!domain || a.domain === domain) && (a.nic | 0) === nic && (!a.mtn || this.mtn));
 			return opts.length ? opts[Math.floor(this.rng.next() * opts.length)] : null;
 		};
 		const tryIntro = (arch, why) => {
@@ -731,6 +736,7 @@ class Ecosystem {
 		for (let i = 0; i < A.count; i++) live[(A.cls[i] * 4 + roleIndex(A.diet[i], A.scav[i])) * 8 + A.domain[i]]++;
 		const done = new Set(['mammal.herb.land.0', 'fish.herb.water.0']);
 		for (const a of ANIMAL_ARCHETYPES) {
+			if (a.mtn && !this.mtn) continue;
 			const g = STAT_GROUPS.find((x) => x.cls === a.cls);
 			const ri = roleIndex(a.g[G_DIET], a.g[G_SCAV]);
 			const role = ROLE_KEYS[ri];
@@ -769,6 +775,16 @@ class Ecosystem {
 					if (seen.has(cat)) continue;
 					this.coast.rescues++;
 					tryIntro(a, `${ANIMAL_CATEGORY_LABEL[cat].toLowerCase()} returned to the coast`);
+				}
+			}
+			if (this.mtn) {
+				for (let i = 0; i < A.count; i++) if (A.alive[i]) seen.add(this.registry.get(A.sp[i]).category);
+				for (const k of MOUNTAIN_ARCH) {
+					const a = ANIMAL_ARCHETYPES[k];
+					const cat = animalCategory(a.g, a.domain, a.cls, a.nic | 0);
+					if (seen.has(cat)) continue;
+					this.mtn.rescues++;
+					tryIntro(a, `${ANIMAL_CATEGORY_LABEL[cat].toLowerCase()} returned to the mountains`);
 				}
 			}
 		}
