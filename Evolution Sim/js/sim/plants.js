@@ -240,6 +240,8 @@ const RIVER_DEEP = 0.1;
 const RIVER_FLOW_DEEP = 12;
 const DELTA_DEPTH = 0.05;
 const POND_DEPTH = 0.1;
+const RAPIDS_DEPTH = 0.035;
+const BEAVER_DEPTH = 0.2;
 const LAKE_BASE = 0.12;
 const LAKE_STEP = 0.04;
 const LAKE_MAX = 0.45;
@@ -286,11 +288,13 @@ const PLANT_ARCHETYPES = [
 	{ g: [0.55, 0.15, 0.6, 0.05, 0.05, 0.8, 0.3, 0.1, 0, 0, 0, 0.2, 0.5, 0.1, 0.15], domain: 'water', fresh: 0.9, float: 0.85 },
 	{ g: [0.5, 0.72, 0.9, 0.05, 0.05, 0.45, 0.9, 0.3, 0, 0, 0, 0, 0.5, 0.1, 0.15], domain: 'water', chemo: 0.9 },
 	{ g: [0.82, 0.1, 0.45, 0.15, 0.2, 0.5, 0.3, 0.6, 0, 0, 0, 0.1, 0.5, 0.35, 0.15], domain: 'water' },
+	{ g: [0.5, 0.9, 0.5, 0.75, 0.2, 0.4, 0.4, 0.6, 0.1, 0.15, 0.2, 0.1, 0.5, 0.25, 0.15], domain: 'land' },
 ];
 const PLANT_FLOAT = { 12: 0.85, 26: 0.85 };
 const WATER_HUE = { cattail: 72, mangrove: 118, pondweed: 128, sargassum: 48, chemomat: 28, coralalgae: 345, floatmat: 96 };
 const PLANT_DEPTH = { 13: 0.5, 14: 0.3, 15: 0.75, 16: 0.25 };
 const PLANT_DEPTH_BASE = 0.45;
+const WILLOW_M = 0.78;
 const DISP_FULL = 40;
 const DISP_BONUS = 0.35;
 const DISP_DECAY = 0.97;
@@ -518,6 +522,7 @@ function plantCategory(g, domain, kind = 0) {
 	if (g[8] > 0.5) return 'fruittree';
 	if (t < 0.38) return 'conifer';
 	if (t > 0.7 && m > 0.6) return 'palm';
+	if (m > WILLOW_M) return 'willow';
 	return 'tree';
 }
 
@@ -528,6 +533,7 @@ const PLANT_ICON_VARIANTS = {
 	shrub: ['shrub', 'hedge', 'heather'],
 	cactus: ['cactus', 'pricklypear', 'agave'],
 	tree: ['tree', 'oak', 'birch'],
+	willow: ['birch', 'tree', 'birch'],
 	conifer: ['conifer', 'pine', 'cypress'],
 	palm: ['palm', 'coconut', 'fanpalm'],
 	algae: ['algae', 'sealettuce', 'redalgae'],
@@ -567,6 +573,7 @@ const PLANT_CATEGORY_LABEL = {
 	shrub: 'Shrub',
 	cactus: 'Succulent',
 	tree: 'Broadleaf tree',
+	willow: 'Willow',
 	conifer: 'Conifer',
 	palm: 'Palm',
 	algae: 'Algae',
@@ -589,7 +596,7 @@ const PLANT_CATEGORY_LABEL = {
 	vine: 'Vine',
 	epiphyte: 'Epiphyte',
 	sargassum: 'Sargassum',
-	floatmat: 'Floating mat',
+	floatmat: 'Duckweed',
 	chemomat: 'Chemosynthetic mat',
 	coralalgae: 'Coral algae',
 };
@@ -773,6 +780,10 @@ class PlantLayer {
 			[BIOME_ID.ALPINE_MEADOW]: 0.9,
 			[BIOME_ID.TRENCH]: 0.35,
 			[BIOME_ID.COLD_SEEP]: 0.9,
+			[BIOME_ID.RAPIDS]: 0.8,
+			[BIOME_ID.OXBOW]: 1.25,
+			[BIOME_ID.REED_MARSH]: 1.2,
+			[BIOME_ID.BEAVER_POND]: 1.3,
 		};
 		const calm = (b) => b === BIOME_ID.TRENCH || b === BIOME_ID.VENTS || b === BIOME_ID.COLD_SEEP;
 		this.snowK = new Float32Array(this.n);
@@ -842,7 +853,9 @@ class PlantLayer {
 				if (b === BIOME_ID.CORAL_REEF) v = Math.min(v, REEF_DEPTH);
 				depth[i] = v;
 			} else if (w.isRiver[i] && !w.isLake[i]) {
-				depth[i] = w.isDelta[i] ? DELTA_DEPTH : RIVER_DEPTH + RIVER_DEEP * clamp01(w.riverFlow[i] / RIVER_FLOW_DEEP);
+				depth[i] = w.isDelta[i] ? DELTA_DEPTH : b === BIOME_ID.RAPIDS ? RAPIDS_DEPTH : RIVER_DEPTH + RIVER_DEEP * clamp01(w.riverFlow[i] / RIVER_FLOW_DEEP);
+			} else if (b === BIOME_ID.BEAVER_POND) {
+				depth[i] = BEAVER_DEPTH;
 			} else if (w.isPond[i] || b === BIOME_ID.POND) {
 				depth[i] = POND_DEPTH;
 			} else {
@@ -2045,6 +2058,9 @@ const WATER_BIOME_SET = new Set([
 	BIOME_ID.TRENCH,
 	BIOME_ID.VENTS,
 	BIOME_ID.COLD_SEEP,
+	BIOME_ID.RAPIDS,
+	BIOME_ID.OXBOW,
+	BIOME_ID.BEAVER_POND,
 ]);
 
 const BIOME_SALT = new Float32Array(BIOME_LIST.length);
@@ -2087,6 +2103,8 @@ BIOME_SHADE[BIOME_ID.OASIS] = 0.1;
 BIOME_SOGGY[BIOME_ID.FLOODPLAIN] = 0.1;
 BIOME_WOOD[BIOME_ID.FLOODPLAIN] = 0.1;
 BIOME_WOOD[BIOME_ID.ALPINE_MEADOW] = 0.45;
+BIOME_SOGGY[BIOME_ID.REED_MARSH] = 0.25;
+BIOME_WOOD[BIOME_ID.REED_MARSH] = 0.35;
 
 function biomeFit(b, wood, root, shade) {
 	return (1 - BIOME_SALT[b] * (1 - root)) * (1 - BIOME_WOOD[b] * wood) * (1 + BIOME_SHADE[b] * shade) * (1 - BIOME_DEEP[b] * (1 - root)) * (1 - BIOME_SOGGY[b] * root);

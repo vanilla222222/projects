@@ -50,6 +50,10 @@ const BIOME = {
 	TRENCH: 'TRENCH',
 	VENTS: 'VENTS',
 	COLD_SEEP: 'COLD_SEEP',
+	RAPIDS: 'RAPIDS',
+	OXBOW: 'OXBOW',
+	REED_MARSH: 'REED_MARSH',
+	BEAVER_POND: 'BEAVER_POND',
 };
 
 // Display metadata: color used by the renderer and a human-readable label.
@@ -101,6 +105,10 @@ const BIOME_INFO = {
 	[BIOME.TRENCH]: { name: 'Ocean Trench', color: '#061e3a' },
 	[BIOME.VENTS]: { name: 'Hydrothermal Vents', color: '#5a3a4e' },
 	[BIOME.COLD_SEEP]: { name: 'Cold Seep', color: '#2f5a62' },
+	[BIOME.RAPIDS]: { name: 'Rapids', color: '#8ccbe6' },
+	[BIOME.OXBOW]: { name: 'Oxbow Lake', color: '#3f86a8' },
+	[BIOME.REED_MARSH]: { name: 'Reed Marsh', color: '#8fa24e' },
+	[BIOME.BEAVER_POND]: { name: 'Beaver Pond', color: '#4d8aa0' },
 };
 
 // Numeric biome IDs: the world grid stores these (a Uint8Array) instead of

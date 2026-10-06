@@ -1,4 +1,4 @@
-const DEFAULT_SCRIPTS = ['noise.js', 'biomes.js', 'mapGenerator.js', 'sim/core.js', 'sim/soil.js', 'sim/plants.js', 'sim/animals.js', 'sim/bugs.js', 'sim/disease.js', 'sim/weather.js', 'sim/eggs.js', 'sim/disasters.js', 'sim/god.js', 'sim/ecosystem.js', 'save.js'];
+const DEFAULT_SCRIPTS = ['noise.js', 'biomes.js', 'mapGenerator.js', 'sim/core.js', 'sim/soil.js', 'sim/plants.js', 'sim/animals.js', 'sim/bugs.js', 'sim/disease.js', 'sim/weather.js', 'sim/eggs.js', 'sim/disasters.js', 'sim/god.js', 'sim/rivers.js', 'sim/ecosystem.js', 'save.js'];
 const SNAP_LAYERS = ['plants', 'animals', 'eggs', 'bugs', 'weather', 'disease', 'disasters'];
 const SNAP_POOLS = ['animals', 'eggs'];
 const SNAP_GRIDS = {

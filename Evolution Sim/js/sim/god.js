@@ -1,3 +1,4 @@
+const GOD_DAM_WET = 0.08;
 const GOD_MAX_R = 16;
 const GOD_MAX_PTS = 64;
 const GOD_MAX_SPAWN = 200;
@@ -112,14 +113,14 @@ class GodTools {
 		} else if (b === BIOME_ID.CORAL_REEF) {
 			world.isOcean[i] = 1;
 			alt[i] = Math.max(GOD_REEF_LO, Math.min(alt[i], GOD_REEF_HI));
-		} else if (b === BIOME_ID.LAKE) {
+		} else if (b === BIOME_ID.LAKE || b === BIOME_ID.OXBOW) {
 			world.isLake[i] = 1;
 			alt[i] = Math.min(alt[i], sea - 0.01);
-		} else if (b === BIOME_ID.RIVER) {
+		} else if (b === BIOME_ID.RIVER || b === BIOME_ID.RAPIDS) {
 			world.isRiver[i] = 1;
 			world.riverFlow[i] = Math.max(flow, 1);
 			alt[i] = Math.min(alt[i], sea - 0.005);
-		} else if (b === BIOME_ID.POND) {
+		} else if (b === BIOME_ID.POND || b === BIOME_ID.BEAVER_POND) {
 			world.isPond[i] = 1;
 			alt[i] = Math.min(alt[i], sea - 0.005);
 		} else {
@@ -127,6 +128,40 @@ class GodTools {
 			if (b === BIOME_ID.GLACIER) world.isGlacier[i] = 1;
 			else if (b === BIOME_ID.SALT_FLAT) world.isSalt[i] = 1;
 		}
+	}
+
+	static dam(world, e) {
+		const n = world.width * world.height;
+		const W = world.width;
+		const H = world.height;
+		const out = [];
+		for (const i of Array.isArray(e.t) ? e.t : []) {
+			if (!(i >= 0 && i < n) || i !== (i | 0)) continue;
+			const b = world.biome[i];
+			if (b !== BIOME_ID.RIVER && b !== BIOME_ID.RAPIDS && b !== BIOME_ID.BEAVER_POND) continue;
+			GodTools.setBiome(world, i, BIOME_ID.BEAVER_POND);
+			out.push(i);
+		}
+		const mark = new Uint8Array(n);
+		for (const i of out) {
+			const x = i % W;
+			const y = (i - x) / W;
+			for (let dy = -2; dy <= 2; dy++) {
+				const yy = y + dy;
+				if (yy < 0 || yy >= H) continue;
+				for (let dx = -2; dx <= 2; dx++) {
+					const xx = x + dx;
+					if (xx < 0 || xx >= W) continue;
+					const j = yy * W + xx;
+					if (mark[j]) continue;
+					mark[j] = 1;
+					const v = world.humidity[j] + GOD_DAM_WET;
+					world.humidity[j] = v < 1 ? v : 1;
+				}
+			}
+		}
+		out.sort((a, b) => a - b);
+		return out;
 	}
 
 	static crater(world, e) {
@@ -165,6 +200,7 @@ class GodTools {
 
 	static paintWorld(world, e) {
 		if (e.brush === 'crater') return GodTools.crater(world, e);
+		if (e.brush === 'dam') return GodTools.dam(world, e);
 		const tiles = GodTools.tiles(world, e.pts, e.r);
 		if (e.brush === 'biome') {
 			const b = BIOME_ID[e.value];
@@ -1075,7 +1111,7 @@ class GodTools {
 		for (let i = 0; i < n; i++) {
 			const b = world.biome[i];
 			let w;
-			if (b === BIOME_ID.RIVER || b === BIOME_ID.POND) w = 3;
+			if (b === BIOME_ID.RIVER || b === BIOME_ID.POND || b === BIOME_ID.RAPIDS || b === BIOME_ID.BEAVER_POND) w = 3;
 			else if (WATER_BIOME_SET.has(b)) w = 2;
 			else w = b === BIOME_ID.GLACIER ? 0 : b === BIOME_ID.BEACH || b === BIOME_ID.CLIFF ? 17 : 1;
 			w |= 8;
