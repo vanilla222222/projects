@@ -131,7 +131,25 @@ Hero hit power is `hpFor(wave) / hpAll x hit x pow`. It follows DNB HP, so the h
 ### Prestige
 Command: `PRESTIGE=1 node tools/balance.js`. Results are in `tools/prestige-results.json`. "vs 0★" divides wave-100 time by the slice-6 0★ time for that map.
 
-PRESTIGE_TABLE
+| map | star | wave 50 | wave 100 | total losses | worst single wave (losses) | vs 0★ | slice 5 vs 0★ |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| moonlit | 0★ | 1.75h | 6.70h | 72 | 18 | 1.00 | 1.00 |
+| moonlit | 1★ | 1.25h | 5.10h | 50 | 15 | 0.76 | 0.83 |
+| moonlit | 2★ | 0.97h | 5.01h | 55 | 26 | 0.75 | 0.73 |
+| moonlit | 3★ | 0.85h | 5.22h | 55 | 21 | 0.78 | 0.68 |
+| moonlit | 4★ | 0.69h | 5.65h | 66 | 27 | 0.84 | 0.53 |
+| moonlit | 5★ | 0.57h | 8.24h | 103 | 37 | 1.23 | 0.94 |
+| woods | 1★ | 1.00h | 3.38h | 5 | 5 | 0.50 | 0.42 |
+| caverns | 1★ | 0.61h | 2.94h | 18 | 10 | 0.42 | 0.34 |
+| cliffs | 1★ | 1.00h | 4.54h | 16 | 16 | 0.76 | 0.41 |
+| castle | 1★ | 0.84h | 2.40h | 2 | 2 | 0.38 | 0.35 |
+
+- The rows keep the slice-5 shape:
+  - moonlit stars 1 to 4 take 0.75 to 0.84 of the 0★ time;
+  - the other maps after the full moonlit loop take 0.38 to 0.76.
+- The hero resets to level 1 on each star-up, and the bot keeps Nova Quill on moonlit for every star.
+- 1★ to 4★ are flatter than in slice 5, and the 4★ dip is gone (0.84 against 0.53).
+- 5★ (elites common) is the one step above the 0★ time: 8.24h, 103 losses, worst wave 37. See known issues.
 
 ## Tests
 - `tools/e2e.js` passes 22 of 22 on Playwright run 1, the only run needed (1 of 3 used).
@@ -165,4 +183,5 @@ PRESTIGE_TABLE
 - **Global HP raised:** DNB HP is now x1.25 on every map, which offsets the hero's contribution. Playing without a hero (only possible on a brand-new v7 board before picking) is therefore harder than in slice 5: moonlit at 2.00h w50 and 9.04h w100 in the bot run.
 - **Small hit scale:** the hero's own hit scale is small (1% of a wave Shambler's HP per hit at level 1). Most of its value comes from auras and abilities, and abilities scale with the same base.
 - **Single-hero bot:** the bot uses one fixed hero per map and never switches. Duskfang is not used in the 0★ runs, because it unlocks with a star.
+- **Moonlit 5★:** 1.23 of the 0★ time (8.24h, 103 losses). Elite swarms from wave 20 on top of the global HP x1.25 make it the hardest prestige step. A softer elite rate at 5★ (`STAR` table) would pull it back, but it was left alone to keep the slice-5 star curve.
 - **Roar stuns:** these come from boss tricks, not a per-boss flag. A new boss with a sprint or stage trick roars automatically.
