@@ -344,7 +344,7 @@
       routes: [WOODS_ROUTE],
       half: 36,
       blocks: scatter({ seed: 4242, n: 38, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 17, rmax: 27, routes: [WOODS_ROUTE], half: 36, pad: 6, gap: 10, kind: 'tree' }),
-      hpMul: 1, cashMul: 1, startCash: 0,
+      hpShift: 49, hpMul: 0.7, cashMul: 7583.7, startCash: 1.958e7,
       bosses: MAP_BOSSES.woods.map(b => b.id),
       waves: waveVariant({ count: { base: 9 }, types: { fast: { from: 2, w: 7, theme: 10 }, tanky: { w: 2 } } }),
       palette: {
@@ -365,7 +365,7 @@
       crystals: CRYSTALS,
       blocks: scatter({ seed: 777, n: 14, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 12, rmax: 20, routes: [CAVE_A, CAVE_B], half: 34, pad: 8, gap: 30, kind: 'stalagmite',
         keep: CRYSTALS.map(c => ({ x: c.x, y: c.y, r: 16, kind: 'crystal' })) }),
-      hpMul: 1, cashMul: 1, startCash: 0,
+      hpShift: 98, hpMul: 0.125, cashMul: 5.75e7, startCash: 1.372e11,
       bosses: MAP_BOSSES.caverns.map(b => b.id),
       waves: waveVariant({ types: { magical: { from: 5, w: 6, theme: 10 }, flying: { w: 2 } } }),
       palette: {
@@ -384,7 +384,7 @@
       half: 34,
       wind: { every: 14, dur: 3.2, warn: 2.2, push: 120, side: 70, bossMul: 0.4 },
       blocks: scatter({ seed: 9191, n: 16, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 16, rmax: 30, routes: [CLIFF_ROUTE], half: 34, pad: 8, gap: 24, kind: 'boulder' }),
-      hpMul: 1, cashMul: 1, startCash: 0,
+      hpShift: 147, hpMul: 0.07, cashMul: 4.36e11, startCash: 1.075e15,
       bosses: MAP_BOSSES.cliffs.map(b => b.id),
       waves: waveVariant({ types: { flying: { from: 3, w: 6, theme: 10 } }, themes: [{ id: 'boss', mod: 10, rem: 0 }, { id: 'flying', at: [3], mod: 6, rem: 0 }, { id: 'magical', at: [8], mod: 11, rem: 6 }, { id: 'fast', mod: 7, rem: 0 }, { id: 'tanky', mod: 8, rem: 4 }] }),
       palette: {
@@ -403,7 +403,7 @@
       half: 30,
       blocks: scatter({ seed: 5150, n: 8, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 14, rmax: 18, routes: [CASTLE_A, CASTLE_B], half: 30, pad: 6, gap: 60, kind: 'pillar',
         keep: [{ x: 700, y: 400, r: 46, kind: 'keep' }] }),
-      hpMul: 1, cashMul: 1, startCash: 0,
+      hpShift: 196, hpMul: 0.01, cashMul: 3.31e15, startCash: 7.925e18,
       bosses: MAP_BOSSES.castle.map(b => b.id),
       waves: waveVariant({ count: { base: 11, per: 0.55 }, types: { basic: { w: 8 }, fast: { from: 2, w: 5 }, tanky: { from: 3, w: 4 }, flying: { from: 4, w: 4 }, magical: { from: 5, w: 4 } } }),
       palette: {

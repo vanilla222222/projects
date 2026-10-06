@@ -187,7 +187,7 @@ function main() {
   console.log(`wave 50 at ${marks[50] ? (marks[50] / 3600).toFixed(2) + 'h' : 'not reached'} (target ~2h), wave 100 at ${marks[100] ? (marks[100] / 3600).toFixed(2) + 'h' : 'not reached'} (target ~6h)`);
   if (worth50 != null) console.log(`net worth at wave 50: ${C.fmt(worth50)} (${worth50.toExponential(3)}) with ${towers50} towers`);
   const res = {
-    map: MAP.id, name: MAP.name, hpMul: MAP.hpMul, cashMul: MAP.cashMul, startCash: C.mapStartCash(MAP),
+    map: MAP.id, name: MAP.name, hpShift: MAP.hpShift || 0, hpMul: MAP.hpMul, cashMul: MAP.cashMul, startCash: C.mapStartCash(MAP),
     reached: S.cleared, hours: +(time / 3600).toFixed(3),
     w50h: marks[50] ? +(marks[50] / 3600).toFixed(3) : null, w100h: marks[100] ? +(marks[100] / 3600).toFixed(3) : null,
     decades: segs.map(v => +v.toFixed(3)), worth50, towers50, losses, attempts, farms, worstWaveLosses: worst, fingerprint: fp,
