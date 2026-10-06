@@ -101,8 +101,10 @@ class Ecosystem {
 		this.animals.coast = this.coast;
 		this.mtn = typeof MountainLayer === 'function' && world.gen >= 8 ? new MountainLayer(world, new FastRng(seed + 1515)) : null;
 		this.animals.mtn = this.mtn;
+		this.caves = typeof CaveLayer === 'function' && world.gen >= 9 ? new CaveLayer(world, new FastRng(seed + 1616)) : null;
+		this.animals.caves = this.caves;
 		const cfg = world.cfg || worldCfgParams(null);
-		if (!cfg.div && cfg.animalK === 1) for (const a of ANIMAL_ARCHETYPES) if (!a.mtn || this.mtn) this._introduce(a, 'founder');
+		if (!cfg.div && cfg.animalK === 1) for (const a of ANIMAL_ARCHETYPES) if ((!a.mtn || this.mtn) && (!a.cave || this.caves)) this._introduce(a, 'founder');
 		else this._introduceFounders(cfg);
 		this.bugs = typeof BugLayer === 'function' ? new BugLayer(world, this.plants, this.animals, this.registry, this.log, new FastRng(seed + 333)) : null;
 		this.animals.bugs = this.bugs;
@@ -163,16 +165,17 @@ class Ecosystem {
 			const first = !seen.has(key);
 			seen.add(key);
 			if (cfg.div < 0 && !first && k % 2 === 1) return;
-			if (a.mtn && !this.mtn) return;
+			if ((a.mtn && !this.mtn) || (a.cave && !this.caves)) return;
 			this._introduce(a, 'founder', scale(a.n));
 		});
 		if (cfg.div > 0) {
 			const rng = new FastRng(this.seed + 2323);
-			for (const a of ANIMAL_ARCHETYPES) if (!a.mtn || this.mtn) this._introduce({ ...a, g: jitterGenes(a.g, rng, 0.1) }, 'founder', scale(Math.ceil(a.n * 0.6)));
+			for (const a of ANIMAL_ARCHETYPES) if ((!a.mtn || this.mtn) && (!a.cave || this.caves)) this._introduce({ ...a, g: jitterGenes(a.g, rng, 0.1) }, 'founder', scale(Math.ceil(a.n * 0.6)));
 		}
 	}
 
 	_introduce(arch, origin, count) {
+		if (arch.cave) return this._introduceCave(arch, origin, count);
 		const A = this.animals;
 		const W = this.world.width;
 		const H = this.world.height;
@@ -213,6 +216,34 @@ class Ecosystem {
 		return placed > 0 ? sp : null;
 	}
 
+	_introduceCave(arch, origin, count) {
+		const A = this.animals;
+		const C = this.caves;
+		const W = this.world.width;
+		const rng = this.rng;
+		const genome = Float32Array.from(arch.g);
+		const sp = A.newSpecies(genome, 0, arch.domain, null, this.tick, origin, arch.cls, arch.nic | 0);
+		sp.category = animalCategory(genome, arch.domain, arch.cls, arch.nic | 0);
+		if (!C || !C.nc) return null;
+		const wet = arch.domain === 'water' || arch.domain === 'amph';
+		const total = count || arch.n;
+		let placed = 0;
+		for (let attempt = 0; attempt < 400 && placed < total; attempt++) {
+			const c = (rng.next() * C.nc) | 0;
+			if (wet && !C.cpool[c]) continue;
+			if (arch.domain === 'air' && C.cdepth[c] > 2) continue;
+			const t = C.ctile[c];
+			const size = Math.min(total - placed, 3 + Math.floor(rng.next() * 4));
+			for (let k = 0; k < size; k++) {
+				const idx = A.spawn(sp, genome, 0, (t % W) + 0.5, ((t / W) | 0) + 0.5, 0.8);
+				A.ug[idx] = 1;
+				A.age[idx] = Math.floor(A.mature[idx] * (0.6 + rng.next()));
+				placed++;
+			}
+		}
+		return placed > 0 ? sp : null;
+	}
+
 	step() {
 		this.tick++;
 		this.registry.tick = this.tick;
@@ -243,6 +274,7 @@ class Ecosystem {
 		if (this.rivers) this.rivers.step(this.tick, this);
 		if (this.coast) this.coast.step(this.tick, this);
 		if (this.mtn) this.mtn.step(this.tick, this);
+		if (this.caves) this.caves.step(this.tick, this);
 		if (this.eggs) this.eggs.step(Wx);
 		if (D) D.step(this.tick);
 
@@ -718,7 +750,7 @@ class Ecosystem {
 		const s = this.stats;
 		const R = s.roles;
 		const pick = (cls, role, domain, nic = 0) => {
-			const opts = ANIMAL_ARCHETYPES.filter((a) => a.cls === cls && ROLE_KEYS[roleIndex(a.g[G_DIET], a.g[G_SCAV])] === role && (!domain || a.domain === domain) && (a.nic | 0) === nic && (!a.mtn || this.mtn));
+			const opts = ANIMAL_ARCHETYPES.filter((a) => a.cls === cls && ROLE_KEYS[roleIndex(a.g[G_DIET], a.g[G_SCAV])] === role && (!domain || a.domain === domain) && (a.nic | 0) === nic && (!a.mtn || this.mtn) && !a.cave);
 			return opts.length ? opts[Math.floor(this.rng.next() * opts.length)] : null;
 		};
 		const tryIntro = (arch, why) => {
@@ -736,7 +768,7 @@ class Ecosystem {
 		for (let i = 0; i < A.count; i++) live[(A.cls[i] * 4 + roleIndex(A.diet[i], A.scav[i])) * 8 + A.domain[i]]++;
 		const done = new Set(['mammal.herb.land.0', 'fish.herb.water.0']);
 		for (const a of ANIMAL_ARCHETYPES) {
-			if (a.mtn && !this.mtn) continue;
+			if ((a.mtn && !this.mtn) || a.cave) continue;
 			const g = STAT_GROUPS.find((x) => x.cls === a.cls);
 			const ri = roleIndex(a.g[G_DIET], a.g[G_SCAV]);
 			const role = ROLE_KEYS[ri];

@@ -20,7 +20,10 @@ const HYDRO_RIVER_FLOW = 190;
 const HYDRO_WIDE_1 = 5;
 const HYDRO_WIDE_2 = 18;
 
-const WG_GEN = 8;
+const WG_GEN = 9;
+const WG9_KARST = 0.28;
+const WG9_CAVE = 0.3;
+const WG9_GAP = 7;
 const WG8_LAPSE = 0.11;
 const WG8_SHADOW = 1.6;
 const WG8_SHADOW_DECAY = 0.985;
@@ -233,6 +236,7 @@ class WorldMap {
 		if (this.gen >= 6) this._riversV6();
 		if (this.gen >= 7) this._coastsV7();
 		if (this.gen >= 8) this._mountainsV8();
+		if (this.gen >= 9) this._cavesV9();
 		const sk = secretKindsForSeed(this.seed, this.gen, this.options.secret || null);
 		if (sk) this._placeSecrets(sk);
 	}
@@ -1976,6 +1980,29 @@ class WorldMap {
 				}
 				if (h >= 0.36) this.biome[i] = BIOME_ID.MONTANE_FOREST;
 				else if (a >= mtn) this.biome[i] = BIOME_ID.MOUNTAINS;
+			}
+		}
+	}
+
+	_cavesV9() {
+		const { width, height } = this;
+		const hill = BIOME_THRESHOLDS.hillLevel;
+		const alt = this.altitude;
+		const karstN = new PerlinNoise(this.seed + 99001);
+		const mouthN = new PerlinNoise(this.seed + 99002);
+		const ok = new Set([BIOME_ID.HILLS, BIOME_ID.MOUNTAINS, BIOME_ID.MONTANE_FOREST, BIOME_ID.ALPINE, BIOME_ID.ALPINE_MEADOW, BIOME_ID.SCREE, BIOME_ID.TEMPERATE_FOREST, BIOME_ID.GRASSLAND, BIOME_ID.SHRUBLAND, BIOME_ID.BOREAL_FOREST, BIOME_ID.TROPICAL_FOREST, BIOME_ID.SAVANNA, BIOME_ID.TUNDRA, BIOME_ID.DESERT, BIOME_ID.HIGH_PLATEAU].filter((v) => v !== undefined));
+		const caves = [];
+		for (let i = 0; i < width * height; i++) if (this.biome[i] === BIOME_ID.CAVE_MOUTH) caves.push(i);
+		for (let y = 2; y < height - 2; y++) {
+			for (let x = 2; x < width - 2; x++) {
+				const i = y * width + x;
+				if (this.isOcean[i] || this.isRiver[i] || this.isLake[i] || this.isPond[i] || this.isGlacier[i] || this.isSalt[i]) continue;
+				if (!ok.has(this.biome[i]) || alt[i] < hill - 0.02) continue;
+				if (karstN.noise2D(x * 0.05, y * 0.05) < WG9_KARST) continue;
+				if (mouthN.noise2D(x * 0.37, y * 0.37) < WG9_CAVE) continue;
+				if (!caves.every((c) => Math.abs((c % width) - x) + Math.abs(((c - (c % width)) / width) - y) > WG9_GAP)) continue;
+				this.biome[i] = BIOME_ID.CAVE_MOUTH;
+				caves.push(i);
 			}
 		}
 	}
