@@ -86,10 +86,45 @@
 - `tools/balance.js` now buys counters. It looks ahead 4 waves for Lurkers or cloaks, plate, and big swarms, and boosts the detect, pierce and splash nodes until about one tower in eight has them.
 - It also logs which DNB types leaked on lost waves. The leak event carries `dnb` and `elite`.
 
-BALANCE_PLACEHOLDER
+## Balance
+
+Command: `PAR=5 node tools/balance.js`. The bot buys counters, and the results are in `tools/balance-results.json`.
+
+| map | wave 50 | wave 100 | worst single wave (losses) | total losses | pre-slice w50 / w100 / worst |
+| --- | --- | --- | --- | --- | --- |
+| moonlit | 1.66h | 5.68h | 85 (14) | 60 | 1.32h / 6.47h / 45 |
+| woods | 1.99h | 6.91h | 90 (9) | 32 | 2.03h / 5.59h / 10 |
+| caverns | 2.10h | 6.05h | 92 and 94 (10 each) | 61 | 2.36h / 5.83h / 19 |
+| cliffs | 2.45h | 6.17h | 94 (9) | 30 | 2.13h / 4.93h / 6 |
+| castle | 2.20h | 5.64h | 76 and 94 (5 each) | 33 | 1.71h / 5.49h / 25 |
+
+- **Targets:** every map reaches wave 50 in 1.5 to 2.5h and wave 100 in 5 to 8h.
+- **Worst waves:** the worst single wave anywhere is now 14 losses. Before this slice it was 45 on moonlit and 25 on castle.
+- **Castle wave 90:** softened from 25 losses to 3 (on wave 89).
+- **Moonlit late game:** the old wall is gone. Wave 100 now costs 9 attempts, and the worst moonlit wave is 85 with 14.
+- **Tuning steps:**
+  - Lowered the HP of the new DNBs, with Ironhide's plate at 3% and a floor of 20% of each hit.
+  - Shield regeneration went from 12%/s to 4%/s, and the combo boosts are milder.
+  - Elites come from wave 60 at 2.2x HP, with a chance of 2% plus 0.15% per wave, capped at 7%. Moonlit is capped at 5%.
+  - The elite traits are lighter: 2% plate and a 15% bubble.
+  - Each map's HP curve is flatter over waves 60 to 90 and keeps more growth over 90 to 100.
+  - The Nightmother's hpMul went from 0.13 to 0.11.
+- **Intermediate runs:**
+  - The first run, before tuning, walled on every map at waves 68 to 87, and no map reached 100 within 10h of game time.
+  - Most leaks on lost waves were basic and tanky DNBs plus elites with bubbles or plate, which meant raw HP, not missing counters.
+
 
 ## Tests
-E2E_PLACEHOLDER
+- `tools/e2e.js` passes 16 of 16 on the first Playwright run (1 of the 3 allowed).
+- New tests:
+  - **Lurker untargetable without detection:** a placed earth pony deals 0 damage to an unrevealed Lurker over 90 frames, a plain earth pony cannot hit it and an Echolocation bat can, and once revealed it takes damage.
+  - **Splitter splits:** it splits into 3 Splitlings on its own path within 40 paces.
+  - **Shields and plate:** a Bulwark bubble appears on a nearby DNB, and Ironhide plate reduces a hit.
+  - **Codex unlock at 1280 and 390:** a Mender spawn triggers the toast and the pulsing button, the save holds `ver: 5` with `codex.e.healer`, the modal opens with known and locked cells and no horizontal scroll, the detail panel shows weakness text and art, and the boss tab lists 50 entries.
+  - **Wave preview:** it lists at least 3 new DNB types on a mid-game wave.
+- All tests check for no console errors. The v1, v2 and v4 save migrations now check for `ver: 5`.
+- A node-only spot check of the stealth, splitter and codex logic passed before the browser run.
+
 
 ## Gates
 - `node --check` passes on every js file.
@@ -97,4 +132,8 @@ E2E_PLACEHOLDER
 - Save key unchanged, with `ver: 5`. The v1, v2 and v4 migrations are tested.
 
 ## Known issues
-ISSUES_PLACEHOLDER
+- Waves 21 to 40 are the slowest early stretch on woods, caverns and cliffs (0.5 to 1h per decade), while 41 to 60 is quick. This follows the pre-slice curve shape.
+- Moonlit wave 85 still costs the bot 14 attempts, and caverns waves 92 and 94 cost 10 each. These are well under the old peaks, but they remain the hardest waves.
+- The balance bot is deterministic and plays one strategy. Human runs that skip detection will find Ghost march waves (wave % 13 = 9, from 45) and caverns harder than the table suggests.
+- The intermediate runs used `MAPS`, so only the final full run is recorded in `tools/balance-results.json`.
+
