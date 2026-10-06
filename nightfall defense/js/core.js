@@ -798,7 +798,7 @@
 
   function newRecords() { return { time: 0, att: 0, wins: 0, bosses: {}, firsts: {} }; }
   function mapStartCash(map, S) { return Math.round((map.startCash || TUNE.startCash) * (1 + 0.5 * rl(S, 'eco_start'))); }
-  function newFarm() { return { on: false, pick: 0, fails: 0, safe: 0, val: 0, runs: 0 }; }
+  function newFarm() { return { on: false, pick: 0, fails: 0, safe: 0, val: 0, secs: 0, runs: 0, inG: 0, inT: 0 }; }
   function newBoard(map, S) { return { cash: mapStartCash(map, S), cleared: 0, sel: 1, auto: false, towers: [], records: newRecords(), hero: null, farm: newFarm(), build: null }; }
   const BOARD_KEYS = ['cash', 'cleared', 'sel', 'auto', 'towers', 'records', 'hero', 'farm', 'build'];
 
@@ -2308,6 +2308,7 @@
 
     if (run.lives <= 0) {
       run.over = 'lost';
+      trackIncome(S, run.earned, run.t);
       emit(S, 'lost', { n: run.n, earned: run.earned });
       S.run = null;
       return;
@@ -2325,8 +2326,9 @@
       if (S.records) S.records.wins++;
       if (S.farm && run.lives >= run.livesMax) {
         const val = boardValue(S.towers);
-        if (run.n > S.farm.safe || (run.n === S.farm.safe && (!S.farm.val || val < S.farm.val))) { S.farm.safe = run.n; S.farm.val = val; }
+        if (run.n > S.farm.safe || (run.n === S.farm.safe && (!S.farm.val || val < S.farm.val))) { S.farm.safe = run.n; S.farm.val = val; S.farm.secs = Math.round(run.t * 10) / 10; }
       }
+      trackIncome(S, run.earned + bonus + interest, run.t);
       if (bonus) syncHeroUnlocks(S);
       emit(S, 'won', { n: run.n, bonus, earned: run.earned, fresh: bonus > 0, lives: run.lives, moon, interest });
       S.run = null;
@@ -2384,13 +2386,20 @@
     }
     return n;
   }
-  const OFFLINE = { cap: 8 * 3600, capStep: 2 * 3600, eff: 0.35, boost: 0.2, side: 0.25, min: 60, overhead: 6, walk: 0.5, waveDrop: 1.2 };
+  const OFFLINE = { cap: 8 * 3600, capStep: 2 * 3600, eff: 0.35, boost: 0.2, side: 0.25, min: 60, overhead: 6, walk: 0.5, waveDrop: 1.2, decay: 0.85, minT: 60, floor: 0.85 };
   const SLOT_BASE = 3, SLOT_BONUS = 2, SLOT_MAX = 5;
   const RULE_KINDS = ['dmg', 'rate', 'path', 'cheap'];
   const RULE_TICKS = ['end', 'sec', 'both'];
   const RESERVES = [0, 10, 20, 30, 50];
   const RULE_MAX = 8;
 
+  function trackIncome(S, gain, t) {
+    const f = S.farm;
+    if (!f || !isFinite(gain) || !isFinite(t)) return;
+    f.inG = (f.inG || 0) * OFFLINE.decay + Math.max(0, gain);
+    f.inT = (f.inT || 0) * OFFLINE.decay + Math.max(0, t) + OFFLINE.overhead;
+  }
+  function incomeRate(f) { return f && f.inT >= OFFLINE.minT ? f.inG / f.inT : 0; }
   function boardValue(towers) { let v = 0; for (const t of towers || []) v += +t.spent || 0; return v; }
   function farmTarget(S) {
     const f = S.farm || newFarm();
@@ -2426,7 +2435,7 @@
   function safeWave(S, b) {
     if (!b || !b.towers || !b.towers.length || !b.cleared) return 0;
     const f = b.farm || newFarm();
-    let n = f.safe > 0 ? Math.min(f.safe, b.cleared) : Math.floor(b.cleared * 0.9);
+    let n = Math.min(b.cleared, Math.max(f.safe | 0, Math.floor(b.cleared * OFFLINE.floor)));
     const val = boardValue(b.towers);
     if (f.val > 0 && val < f.val) n -= Math.ceil(Math.log(f.val / Math.max(1, val)) / Math.log(OFFLINE.waveDrop));
     return Math.max(0, Math.min(MAX_WAVE, n));
@@ -2458,8 +2467,11 @@
     const n = safeWave(S, b);
     if (n < 1) return { wave: 0, rate: 0, cash: 0, time: 0 };
     const star = starOf(S, id);
-    const cash = farmCash(S, n, map, star), time = farmTime(n, map, star);
-    return { wave: n, cash, time, rate: cash / time * OFFLINE.eff * offlineMul(S) };
+    const f = b.farm || newFarm();
+    const cash = farmCash(S, n, map, star), time = f.secs > 0 && n === f.safe ? f.secs + OFFLINE.overhead : farmTime(n, map, star);
+    const inc = incomeRate(f), raw = cash / time;
+    const base = inc > 0 ? Math.min(raw, inc) : raw;
+    return { wave: n, cash, time, raw, inc, rate: base * OFFLINE.eff * offlineMul(S) };
   }
   function touchSeen(S, now) {
     if (isFinite(now) && now > (S.lastSeen || 0)) S.lastSeen = Math.floor(now);
@@ -2752,6 +2764,10 @@
     f.fails = Math.max(0, Math.min(1, src.fails | 0));
     f.safe = Math.max(0, Math.min(cleared, src.safe | 0));
     f.val = Math.max(0, +src.val || 0);
+    f.secs = Math.max(0, Math.min(3600, +src.secs || 0));
+    f.inG = Math.max(0, +src.inG || 0);
+    f.inT = Math.max(0, Math.min(1e6, +src.inT || 0));
+    if (!isFinite(f.inG)) f.inG = 0;
     f.runs = Math.max(0, src.runs | 0);
     return f;
   }
@@ -3130,7 +3146,7 @@
     HEROES, HERO_IDS, HERO_TUNE, xpNeed, rankFor, heroProg, heroStats, heroHome, heroAt, heroMilestone, heroUnlocked, syncHeroUnlocks, unlockHero,
     pickHero, moveHero, heroPow, addHeroXp, castHero, heroAuto, heroInfo, cleanHero, serHero, cleanUnlocks,
     OFFLINE, SLOT_BASE, SLOT_BONUS, SLOT_MAX, RULE_KINDS, RULE_TICKS, RESERVES, RULE_MAX,
-    newFarm, boardValue, farmTarget, setFarm, farmResult, safeWave, farmCash, farmTime, farmRate, offlineMul, offlineCap, touchSeen, offlineGain, applyOffline,
+    newFarm, trackIncome, incomeRate, boardValue, farmTarget, setFarm, farmResult, safeWave, farmCash, farmTime, farmRate, offlineMul, offlineCap, touchSeen, offlineGain, applyOffline,
     newRules, cleanRule, cleanRules, rulesFor, setRules, ruleText, ruleAction, runRules,
     slotCount, slotsOf, cleanName, savePreset, deletePreset, renamePreset, loadPreset, cancelBuild, buildPending, buildStep, buildProgress, planCost,
     cleanFarm, cleanSlots, cleanBuild,
