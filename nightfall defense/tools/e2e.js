@@ -1120,7 +1120,7 @@ async function fastForward(page, maxSeconds) {
       const a = C.placeTower(S, 'earth', 600, 330), b = C.placeTower(S, 'unicorn', 700, 470), c = C.placeTower(S, 'pegasus', 800, 330);
       for (let i = 0; i < 3; i++) C.buyNode(S, a, 0);
       C.buyNode(S, b, 1); C.buyInf(S, c, 'dmg');
-      return S.towers.map(t => t.race + t.paths.join('') + t.infD).join();
+      return S.towers.map(t => t.race + t.paths.join('') + t.infD).sort().join();
     });
     await page.click('#plansBtn');
     await page.waitForTimeout(200);
@@ -1149,9 +1149,9 @@ async function fastForward(page, maxSeconds) {
     ok(part.p && part.towers >= 1 && part.p.done < part.p.total && part.box && part.chip && /%/.test(part.pct) && part.bar, 'restore buys what it can and queues the rest ' + JSON.stringify(part));
     await page.evaluate(() => { __nd.S.cash = 1e9; __nd.idleTick(); });
     await page.waitForTimeout(300);
-    const done = await page.evaluate(() => ({ build: __nd.S.build, got: __nd.S.towers.map(t => t.race + t.paths.join('') + t.infD).join(), box: document.getElementById('buildBox').hidden, banner: document.getElementById('banner').textContent }));
+    const done = await page.evaluate(() => ({ build: __nd.S.build, got: __nd.S.towers.map(t => t.race + t.paths.join('') + t.infD).sort().join(), box: document.getElementById('buildBox').hidden, banner: document.getElementById('banner').textContent }));
     ok(!done.build && done.got === made && done.box && /rebuilt/.test(done.banner), 'queue finishes once cash arrives ' + JSON.stringify(done) + ' vs ' + made);
-    await page.evaluate(() => { __nd.grantMoon(500); __nd.buyResearch('util_skip'); __nd.buyResearch('util_auto'); });
+    await page.evaluate(() => { __nd.grantMoon(500); __nd.buyResearch('util_lives'); __nd.buyResearch('util_skip'); __nd.buyResearch('util_auto'); });
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(200);
     await page.click('#plansBtn');
