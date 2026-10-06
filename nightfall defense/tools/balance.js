@@ -97,8 +97,7 @@ function play(S, n) {
 }
 
 function main() {
-  const S = C.newState();
-  S.map = MAP.id;
+  const S = C.newState(MAP.id);
   S.fxOn = false;
   let time = 0, attempts = 0, farms = 0, losses = 0;
   const marks = {};
