@@ -292,6 +292,10 @@ const PLANT_ARCHETYPES = [
 	{ g: [0.5, 0.72, 0.9, 0.05, 0.05, 0.45, 0.9, 0.3, 0, 0, 0, 0, 0.5, 0.1, 0.15], domain: 'water', chemo: 0.9 },
 	{ g: [0.82, 0.1, 0.45, 0.15, 0.2, 0.5, 0.3, 0.6, 0, 0, 0, 0.1, 0.5, 0.35, 0.15], domain: 'water' },
 	{ g: [0.5, 0.9, 0.5, 0.75, 0.2, 0.4, 0.4, 0.6, 0.1, 0.15, 0.2, 0.1, 0.5, 0.25, 0.15], domain: 'land' },
+	{ g: [0.18, 0.35, 0.45, 0.12, 0.55, 0.35, 0.2, 0.7, 0.05, 0.1, 0.2, 0.3, 0.5, 0.15, 0.15], domain: 'land', alpine: 1 },
+	{ g: [0.12, 0.22, 0.6, 0.05, 0.45, 0.6, 0.3, 0.2, 0, 0, 0.1, 0.05, 0.5, 0.05, 0.15], domain: 'land', alpine: 1 },
+	{ g: [0.22, 0.45, 0.45, 0.1, 0.4, 0.55, 0.2, 0.45, 0.05, 0.3, 0.2, 0.8, 0.75, 0.15, 0.15], domain: 'land', alpine: 1 },
+	{ g: [0.2, 0.42, 0.45, 0.48, 0.4, 0.3, 0.35, 0.55, 0.15, 0.1, 0.2, 0.05, 0.5, 0.3, 0.15], domain: 'land', alpine: 1 },
 ];
 const PLANT_FLOAT = { 12: 0.85, 26: 0.85 };
 const WATER_HUE = { cattail: 72, mangrove: 118, pondweed: 128, sargassum: 48, chemomat: 28, coralalgae: 345, floatmat: 96 };
@@ -428,13 +432,14 @@ function jitterGenes(g, rng, amp) {
 	return g.map((v) => (v === 0 ? 0 : Math.min(1, Math.max(0, v + (rng.next() - 0.5) * amp))));
 }
 
-function plantFounders(div, seed) {
+function plantFounders(div, seed, gen = 8) {
 	const mk = (a) => ({ ...a, kind: a.kind || 0, t: plantTraitsFrom(a.g), sp: null });
-	if (!div) return PLANT_ARCHETYPES.map(mk);
-	if (div < 0) return PLANT_ARCHETYPES.filter((a, k) => a.kind || k % 2 === 0).map(mk);
+	const arch = gen >= 8 ? PLANT_ARCHETYPES : PLANT_ARCHETYPES.filter((a) => !a.alpine);
+	if (!div) return arch.map(mk);
+	if (div < 0) return arch.filter((a, k) => a.kind || a.alpine || k % 2 === 0).map(mk);
 	const rng = new FastRng(seed + 1717);
-	const out = PLANT_ARCHETYPES.map(mk);
-	for (const a of PLANT_ARCHETYPES) if (!a.kind) out.push(mk({ ...a, g: jitterGenes(a.g, rng, 0.14) }));
+	const out = arch.map(mk);
+	for (const a of arch) if (!a.kind) out.push(mk({ ...a, g: jitterGenes(a.g, rng, 0.14) }));
 	return out;
 }
 
@@ -518,9 +523,11 @@ function plantCategory(g, domain, kind = 0) {
 	if (wood < 0.3) {
 		if (g[25] > HET_AT) return g[21] > CLIMB_AT ? 'parasite' : 'carnivore';
 		if (g[21] > CLIMB_AT) return g[7] < EPI_ROOT ? 'epiphyte' : 'vine';
+		if (t < 0.3) return g[11] > 0.55 ? 'alpineflower' : m < 0.32 ? 'lichen' : g[4] >= 0.4 ? 'cushion' : 'moss';
 		if (g[11] > 0.55) return 'flower';
-		return t < 0.3 ? 'moss' : m > 0.75 ? 'reed' : 'grass';
+		return m > 0.75 ? 'reed' : 'grass';
 	}
+	if (wood < 0.62 && t < 0.3 && g[8] <= 0.5) return 'dwarfconifer';
 	if (wood < 0.62) return t > 0.62 && m < 0.32 ? 'cactus' : g[8] > 0.5 ? 'berrybush' : 'shrub';
 	if (g[8] > 0.5) return 'fruittree';
 	if (t < 0.38) return 'conifer';
@@ -562,6 +569,10 @@ const PLANT_ICON_VARIANTS = {
 	floatmat: ['pondweed', 'sealettuce', 'pondweed'],
 	chemomat: ['redalgae', 'algae', 'redalgae'],
 	coralalgae: ['redalgae', 'sealettuce', 'redalgae'],
+	cushion: ['moss', 'clover', 'moss'],
+	lichen: ['lichen', 'lichen', 'moss'],
+	alpineflower: ['flower', 'tulip', 'flower'],
+	dwarfconifer: ['pine', 'cypress', 'conifer'],
 };
 
 function plantIcon(category, id) {
@@ -598,6 +609,10 @@ const PLANT_CATEGORY_LABEL = {
 	truffle: 'Truffle',
 	vine: 'Vine',
 	epiphyte: 'Epiphyte',
+	cushion: 'Cushion plant',
+	lichen: 'Lichen',
+	alpineflower: 'Alpine flower',
+	dwarfconifer: 'Dwarf conifer',
 	sargassum: 'Sargassum',
 	floatmat: 'Duckweed',
 	chemomat: 'Chemosynthetic mat',
@@ -793,9 +808,23 @@ class PlantLayer {
 			[BIOME_ID.LAGOON]: 1.3,
 			[BIOME_ID.KELP_COAST]: 1.45,
 			[BIOME_ID.ATOLL]: 0.6,
+			[BIOME_ID.SCREE]: 0.35,
+			[BIOME_ID.KRUMMHOLZ]: 0.65,
+			[BIOME_ID.HIGH_PLATEAU]: 0.5,
+			[BIOME_ID.TARN]: 0.8,
+			[BIOME_ID.CAVE_MOUTH]: 0,
 		};
 		const calm = (b) => b === BIOME_ID.TRENCH || b === BIOME_ID.VENTS || b === BIOME_ID.COLD_SEEP;
 		this.snowK = new Float32Array(this.n);
+		this.uv = new Float32Array(this.n);
+		const hill = BIOME_THRESHOLDS.hillLevel;
+		const H = w.height;
+		for (let i = 0; i < this.n; i++) {
+			if (w.gen >= 8 && !WATER_BIOME_SET.has(w.biome[i]) && w.altitude[i] > hill) {
+				const lat = Math.abs((Math.floor(i / w.width) + 0.5) / H - 0.5) * 2;
+				this.uv[i] = clamp01((w.altitude[i] - hill) / (1 - hill)) * (0.75 + 0.25 * (1 - lat));
+			}
+		}
 		for (let i = 0; i < this.n; i++) {
 			const b = w.biome[i];
 			const isWater = WATER_BIOME_SET.has(b);
@@ -940,14 +969,15 @@ class PlantLayer {
 			this.habit[i] *
 			biomeFit(this.world.biome[i], t.wood, t.root, t.shade) *
 			gaussFit(this.world.temperature[i], t.prefTemp, t.tol) *
-			gaussFit(this.moistAt(i), t.prefMoist, t.tol * 1.2)
+			gaussFit(this.moistAt(i), t.prefMoist, t.tol * 1.2) *
+			uvFit(this.uv[i], t.tox)
 		);
 	}
 
 	_seed() {
 		const n = this.n;
 		const cfg = this.world.cfg || worldCfgParams(null);
-		const founders = plantFounders(cfg.div, this.world.seed);
+		const founders = plantFounders(cfg.div, this.world.seed, this.world.gen | 0);
 		const fungi = founders.filter((f) => f.kind === 1);
 		const keepP = cfg.plantP;
 		for (let i = 0; i < n; i++) {
@@ -1895,7 +1925,7 @@ class PlantLayer {
 		const kind = parentSp.kind | 0;
 		const wet = this.water[j];
 		if (wet !== (parentSp.domain === 'water' ? 1 : 0)) return 1;
-		const bound = (0.8 + 2.4 * g[o + 3]) * (1 - 0.3 * g[o + 2]) * this.habit[j] * biomeFit(this.world.biome[j], g[o + 3], g[o + 7], g[o + 6]);
+		const bound = (0.8 + 2.4 * g[o + 3]) * (1 - 0.3 * g[o + 2]) * this.habit[j] * biomeFit(this.world.biome[j], g[o + 3], g[o + 7], g[o + 6]) * uvFit(this.uv[j], g[o + 4]);
 		if (bound < 0.035) return 1;
 		if (kind !== 1 && (wet ? Math.abs(g[o + 21] - CLIMB_AT) < 0.09 : Math.abs(g[o + 3] - 0.3) < 0.09)) return 0;
 		const pj = slotOf(g, wet, o, kind) * this.n + j;
@@ -1935,7 +1965,7 @@ class PlantLayer {
 			genome[8] = 0;
 			genome[9] = 0;
 		}
-		const bound = (0.8 + 2.4 * genome[3]) * (1 - 0.3 * genome[2]) * this.habit[j] * biomeFit(this.world.biome[j], genome[3], genome[7], genome[6]);
+		const bound = (0.8 + 2.4 * genome[3]) * (1 - 0.3 * genome[2]) * this.habit[j] * biomeFit(this.world.biome[j], genome[3], genome[7], genome[6]) * uvFit(this.uv[j], genome[4]);
 		if (bound < 0.04) return false;
 		const parentId = parentSp.id;
 		const pj = slotOf(genome, wet, 0, kind) * this.n + j;
@@ -2076,6 +2106,7 @@ const WATER_BIOME_SET = new Set([
 	BIOME_ID.ROCKY_SHORE,
 	BIOME_ID.LAGOON,
 	BIOME_ID.KELP_COAST,
+	BIOME_ID.TARN,
 ]);
 
 const BIOME_SALT = new Float32Array(BIOME_LIST.length);
@@ -2129,6 +2160,19 @@ BIOME_WOOD[BIOME_ID.SEA_CLIFF] = 0.45;
 BIOME_SALT[BIOME_ID.SEA_CLIFF] = 0.2;
 BIOME_SALT[BIOME_ID.BEACH] = 0.25;
 BIOME_DEEP[BIOME_ID.BEACH] = 0.2;
+
+BIOME_WOOD[BIOME_ID.SCREE] = 0.5;
+BIOME_DEEP[BIOME_ID.SCREE] = 0.3;
+BIOME_WOOD[BIOME_ID.KRUMMHOLZ] = 0.25;
+BIOME_WOOD[BIOME_ID.HIGH_PLATEAU] = 0.5;
+BIOME_DEEP[BIOME_ID.HIGH_PLATEAU] = 0.2;
+BIOME_WOOD[BIOME_ID.MONTANE_FOREST] = -0.1;
+const UV_K = 0.5;
+const UV_TOX = 0.55;
+
+function uvFit(uv, tox) {
+	return uv > 0 && tox < UV_TOX ? 1 - UV_K * uv * (1 - tox / UV_TOX) : 1;
+}
 
 function biomeFit(b, wood, root, shade) {
 	return (1 - BIOME_SALT[b] * (1 - root)) * (1 - BIOME_WOOD[b] * wood) * (1 + BIOME_SHADE[b] * shade) * (1 - BIOME_DEEP[b] * (1 - root)) * (1 - BIOME_SOGGY[b] * root);
