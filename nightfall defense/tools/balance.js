@@ -11,11 +11,14 @@ let diagDone = false;
 const PLAN = { earth: [0, 1], unicorn: [0, 1], pegasus: [2, 4] };
 const SHARE = { earth: 0.4, unicorn: 0.35, pegasus: 0.25 };
 
+const MAP = C.getMap(process.env.MAP || 'moonlit');
+
 function makeSlots() {
   const W = C.WORLD, out = [];
+  const cy = MAP.routes[0][0][1];
   for (const dy of [62, 108, 154]) {
     for (let x = 40; x <= W.L - 40; x += 46) {
-      out.push({ x, y: W.cy - dy, row: dy }, { x, y: W.cy + dy, row: dy });
+      out.push({ x, y: cy - dy, row: dy }, { x, y: cy + dy, row: dy });
     }
   }
   out.sort((a, b) => a.row - b.row || Math.abs(a.x - 760) - Math.abs(b.x - 760));
@@ -95,6 +98,7 @@ function play(S, n) {
 
 function main() {
   const S = C.newState();
+  S.map = MAP.id;
   S.fxOn = false;
   let time = 0, attempts = 0, farms = 0, losses = 0;
   const marks = {};
@@ -118,8 +122,19 @@ function main() {
     lossAt[n] = (lossAt[n] || 0) + 1;
     for (let i = 0; i < FARM_PER_LOSS && S.cleared > 0; i++) { shop(S, n); time += play(S, S.cleared).t; farms++; }
   }
+  const segs = [];
+  for (let w = 10; w <= C.MAX_WAVE; w += 10) if (marks[w] != null) segs.push((marks[w] - (marks[w - 10] || 0)) / 3600);
+  console.log('decade hours: ' + segs.map((h, i) => (i * 10 + 1) + '-' + (i * 10 + 10) + ' ' + h.toFixed(2)).join('  '));
+  let jump = 0;
+  for (let i = 1; i < segs.length; i++) jump = Math.max(jump, segs[i] / Math.max(0.01, segs[i - 1]));
+  const worst = Math.max(0, ...Object.values(lossAt));
+  console.log(`smoothness: worst decade-to-decade ratio ${jump.toFixed(2)}x, most losses on one wave ${worst}`);
+  let h = 2166136261;
+  for (const ch of JSON.stringify([marks, lossAt, S.cash, S.towers.map(t => [t.race, t.paths, t.infD, t.infR])])) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+  console.log('fingerprint ' + h.toString(16));
   console.log('losses by wave: ' + Object.entries(lossAt).map(([k, v]) => k + 'x' + v).join(' '));
-  console.log(`reached wave ${S.cleared} in ${(time / 3600).toFixed(2)}h of game time (${attempts} attempts, ${losses} losses, ${farms} farm runs, ${((Date.now() - t0) / 1000).toFixed(0)}s real)`);
+  console.log(`reached wave ${S.cleared} in ${(time / 3600).toFixed(2)}h of game time (${attempts} attempts, ${losses} losses, ${farms} farm runs)`);
+  console.error(`${((Date.now() - t0) / 1000).toFixed(0)}s real`);
   console.log(`wave 50 at ${marks[50] ? (marks[50] / 3600).toFixed(2) + 'h' : 'not reached'} (target ~2h), wave 100 at ${marks[100] ? (marks[100] / 3600).toFixed(2) + 'h' : 'not reached'} (target ~6h)`);
 }
 
