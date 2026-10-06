@@ -4,6 +4,7 @@ const fs = require('fs');
 const C = require('../js/core.js');
 if (process.env.TUNE) Object.assign(C.TUNE, JSON.parse(process.env.TUNE));
 if (process.env.STARTUNE) Object.assign(C.STAR, JSON.parse(process.env.STARTUNE));
+if (process.env.HEROTUNE) Object.assign(C.HERO_TUNE, JSON.parse(process.env.HEROTUNE));
 
 const DT = 1 / 20;
 const OVERHEAD = 3;
@@ -63,6 +64,46 @@ function coverSlots() {
   const lists = {};
   for (const r of C.RACE_IDS) lists[r] = cands.filter(c => c.score[r] > 0).sort((a, b) => b.score[r] - a.score[r]);
   return lists;
+}
+
+const HERO_FOR = { moonlit: 'nova', woods: 'ironmane', caverns: 'nova', cliffs: 'skyflick', castle: 'skyflick' };
+const HERO = process.env.HERO === '0' ? '' : (C.HEROES[process.env.HERO] ? process.env.HERO : HERO_FOR[MAP.id]);
+let heroCov = null, heroTowers = -1;
+function heroCover() {
+  const d = C.HEROES[HERO], R = d.range * 1.15, R2 = R * R, out = [];
+  const samples = [];
+  MAP.route.forEach(P => { const pos = { x: 0, y: 0 }; for (let k = 15; k < P.len; k += 12) { C.routePos(P, k, pos); samples.push({ x: pos.x, y: pos.y, w: (0.4 + k / P.len) / MAP.route.length }); } });
+  for (let x = 30; x <= C.WORLD.L - 30; x += 20) for (let y = 30; y <= C.WORLD.W - 30; y += 20) {
+    let v = 0;
+    for (const p of samples) if ((p.x - x) ** 2 + (p.y - y) ** 2 <= R2) v += p.w;
+    if (v > 0) out.push({ x, y, v });
+  }
+  out.sort((a, b) => b.v - a.v);
+  return out.slice(0, 160);
+}
+function setupHero(S) {
+  if (!HERO) return;
+  S.heroUnlocks[HERO] = 1;
+  if (!S.hero || S.hero.id !== HERO) C.pickHero(S, HERO);
+  S.hero.auto = true;
+  heroTowers = -1;
+}
+function placeHero(S) {
+  if (!HERO || !S.hero) return;
+  if (S.towers.length === heroTowers) return;
+  heroTowers = S.towers.length;
+  if (!heroCov) heroCov = heroCover();
+  const hs = C.stats(S.hero), A2 = hs.auraR * hs.auraR, top = heroCov[0].v;
+  let best = null, bv = -1;
+  for (const c of heroCov) {
+    let n = 0;
+    if (C.HEROES[HERO].aura.kind !== 'slow') for (const t of S.towers) if ((t.x - c.x) ** 2 + (t.y - c.y) ** 2 <= A2) n++;
+    const v = c.v / top + 0.04 * n;
+    if (v > bv) { bv = v; best = c; }
+  }
+  C.moveHero(S, best.x, best.y);
+  S.hero.x = S.hero.tx; S.hero.y = S.hero.ty;
+  S.buffsDirty = true;
 }
 
 const LEGACY = MAP.id === 'moonlit';
@@ -161,6 +202,7 @@ function options(S, n) {
 
 function shop(S, n) {
   const banned = new Set();
+  heroShop(S);
   for (let guard = 0; guard < 2000; guard++) {
     const opts = options(S, n).filter(o => !banned.has(o.kind + (o.race || '')));
     const o = opts[0];
@@ -174,6 +216,7 @@ function shop(S, n) {
     if (!buy(S, o)) banned.add(o.kind + (o.race || ''));
   }
 }
+function heroShop(S) { if (HERO) { setupHero(S); placeHero(S); } }
 function buy(S, o) {
   if (o.kind === 'tower') { const s = freeSlot(S, o.race); return s ? !!C.placeTower(S, o.race, s.x, s.y) : false; }
   if (o.kind === 'node') return C.buyNode(S, o.t, o.i);
@@ -183,6 +226,7 @@ function buy(S, o) {
 }
 
 const LEAKS = {};
+const HLV = {};
 function play(S, n) {
   C.startWave(S, n);
   let t = 0;
@@ -211,6 +255,7 @@ function climb(S) {
   while (S.cleared < C.MAX_WAVE && time < LIMIT_H * 3600) {
     const n = S.cleared + 1;
     shop(S, n);
+    placeHero(S);
     attempts++;
     const r = play(S, n);
     time += r.t;
@@ -218,8 +263,9 @@ function climb(S) {
       if (S.cleared === 50) { worth50 = netWorth(S); towers50 = S.towers.length; }
       if (S.cleared % 10 === 0) {
         marks[S.cleared] = time;
+        if (S.hero) HLV[S.cleared] = C.heroProg(S.hero).lv;
         const peak = Math.max(...S.towers.map(t => t.paths.reduce((a, b) => a + b, 0)));
-        console.log(`wave ${String(S.cleared).padStart(3)}  ${(time / 3600).toFixed(2)}h  cash ${C.fmt(S.cash).padStart(8)}  towers ${S.towers.length}  maxNodes ${peak}  infD ${Math.max(...S.towers.map(t => t.infD))}  losses ${losses}  farms ${farms}`);
+        console.log(`wave ${String(S.cleared).padStart(3)}  ${(time / 3600).toFixed(2)}h  cash ${C.fmt(S.cash).padStart(8)}  towers ${S.towers.length}  hero ${S.hero ? S.hero.id + ' lv' + C.heroProg(S.hero).lv : '-'}  maxNodes ${peak}  infD ${Math.max(...S.towers.map(t => t.infD))}  losses ${losses}  farms ${farms}`);
       }
       continue;
     }
@@ -249,6 +295,7 @@ function climb(S) {
     races: BOT_RACES.join(','), owned: Object.fromEntries(C.RACE_IDS.map(r => [r, C.owned(S, r)])),
     reached: S.cleared, hours: +(time / 3600).toFixed(3),
     w50h: marks[50] ? +(marks[50] / 3600).toFixed(3) : null, w100h: marks[100] ? +(marks[100] / 3600).toFixed(3) : null,
+    hero: S.hero ? S.hero.id : null, heroLv: S.hero ? C.heroProg(S.hero).lv : 0, heroLvAt: Object.assign({}, HLV),
     decades: segs.map(v => +v.toFixed(3)), worth50, towers50, losses, attempts, farms, worstWaveLosses: worst, fingerprint: fp,
     wave1Hp: C.hpFor(1, MAP), wave50Hp: C.hpFor(50, MAP), wave1Cash: C.killCash(1, MAP), wave50Cash: C.killCash(50, MAP),
   };
@@ -259,6 +306,7 @@ const PRIORITY = {
   pony_dmg: 3, pony_rate: 2.5, pony_earth: 2, pony_unicorn: 2, pony_pegasus: 1.6, pony_bat: 1.6, pony_crystal: 1.6, pony_cheap: 1.2, pony_range: 1.4,
   eco_kill: 2, eco_start: 1.5, eco_first: 1.6, eco_boss: 1.2, eco_interest: 1.3, eco_sell: 0.6, eco_master: 1.5,
   abil_power: 1.6, abil_cd: 1.4, abil_crit: 1.3, abil_aura: 1.3, abil_stun: 1, abil_first: 1, abil_master: 1.4,
+  util_hero: HERO ? 1.1 : 0.0001, abil_hero: HERO ? 1.2 : 0.0001,
   util_lives: 1.5, util_skip: 2, util_leak: 1.2, util_moon: 1.3, util_star: 1.1, util_auto: 0.4, util_master: 1.2,
 };
 function buyResearch(S) {

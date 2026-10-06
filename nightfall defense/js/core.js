@@ -4,7 +4,7 @@
   const WORLD = { L: 1400, W: 800, towerR: 20, minGap: 44 };
   const MAX_WAVE = 100;
   const LIVES = 10;
-  const SAVE_VER = 6;
+  const SAVE_VER = 7;
   const MAX_STARS = 5;
   const SPAWN_GUARD = 15;
   const UNLOCK_AT = 50;
@@ -60,12 +60,14 @@
     { id: 'abil_first', br: 'abil', name: 'Ready Stance', max: 1, base: 40, pos: [1, 2], req: ['abil_cd'], per: 'Signatures start every wave fully charged', total: () => 'Signatures start charged' },
     { id: 'abil_aura', br: 'abil', name: 'Bright Auras', max: 3, base: 10, pos: [2, 2], req: ['abil_crit'], per: 'Auras grant 15% more damage and speed', total: lv => '+' + 15 * lv + '% aura strength' },
     { id: 'abil_master', br: 'abil', name: 'Mythic Surge', max: 1, base: 90, pos: [1, 3], req: ['abil_stun', 'abil_aura'], per: '+25% signature damage, cooldowns 10% shorter', total: () => '+25% power, -10% cooldowns' },
+    { id: 'abil_hero', br: 'abil', name: 'Heroic Legends', max: 3, base: 12, pos: [2, 3], req: ['abil_aura'], per: '+15% hero damage, hero cooldowns 8% shorter', total: lv => 'Hero +' + 15 * lv + '% dmg, -' + 8 * lv + '% cooldowns' },
     { id: 'util_lives', br: 'util', name: 'Sturdy Gate', max: 3, base: 4, pos: [1, 0], req: [], per: '+1 life every wave', total: lv => '+' + lv + ' lives' },
     { id: 'util_skip', br: 'util', name: 'Head Start', max: 3, base: 6, pos: [0, 1], req: ['util_lives'], per: 'After a star-up, skip 3 more opening waves (bonuses paid)', total: lv => 'Skip ' + 3 * lv + ' waves after star-up' },
     { id: 'util_leak', br: 'util', name: 'Boss Wardens', max: 2, base: 6, pos: [1, 1], req: ['util_lives'], per: 'Leaked bosses cost 1 life less (min 1)', total: lv => 'Boss leaks -' + lv + ' lives' },
     { id: 'util_moon', br: 'util', name: 'Moon Lens', max: 5, base: 6, pos: [2, 1], req: ['util_lives'], per: '+10% Moonstones from every source', total: lv => '+' + 10 * lv + '% Moonstones' },
     { id: 'util_auto', br: 'util', name: 'Muster Plans', max: 1, base: 30, pos: [0, 2], req: ['util_skip'], per: 'Save your layout on star-up and rebuild it with one click', total: () => 'Layout presets unlocked' },
     { id: 'util_star', br: 'util', name: 'Star Hunter', max: 3, base: 10, pos: [2, 2], req: ['util_moon'], per: '+1 Moonstone per first-clear boss wave', total: lv => '+' + lv + ' per boss wave' },
+    { id: 'util_hero', br: 'util', name: 'Hero Academy', max: 3, base: 8, pos: [1, 2], req: ['util_leak'], per: '+25% hero XP from every kill', total: lv => '+' + 25 * lv + '% hero XP' },
     { id: 'util_master', br: 'util', name: 'Moonlit Crown', max: 1, base: 90, pos: [1, 3], req: ['util_auto', 'util_star'], per: '+2 lives and +20% Moonstones', total: () => '+2 lives, +20% Moonstones' },
   ];
   const RESEARCH_BY_ID = {};
@@ -794,8 +796,8 @@
 
   function newRecords() { return { time: 0, att: 0, wins: 0, bosses: {}, firsts: {} }; }
   function mapStartCash(map, S) { return Math.round((map.startCash || TUNE.startCash) * (1 + 0.5 * rl(S, 'eco_start'))); }
-  function newBoard(map, S) { return { cash: mapStartCash(map, S), cleared: 0, sel: 1, auto: false, towers: [], records: newRecords() }; }
-  const BOARD_KEYS = ['cash', 'cleared', 'sel', 'auto', 'towers', 'records'];
+  function newBoard(map, S) { return { cash: mapStartCash(map, S), cleared: 0, sel: 1, auto: false, towers: [], records: newRecords(), hero: null }; }
+  const BOARD_KEYS = ['cash', 'cleared', 'sel', 'auto', 'towers', 'records', 'hero'];
 
   function newState(mapId) {
     const map = getMap(mapId);
@@ -807,7 +809,7 @@
       settings: Object.assign({}, DEFAULT_SETTINGS),
       sfx: { hit: 0, crit: 0, kill: 0, leak: 0 },
       codex: { e: {}, b: {} },
-      stars: {}, moon: 0, moonTotal: 0, research: {}, presets: {},
+      stars: {}, moon: 0, moonTotal: 0, research: {}, presets: {}, heroUnlocks: { nova: 1 },
     };
     Object.assign(S, newBoard(map, S));
     return S;
@@ -828,6 +830,7 @@
   function prepTowers(S) {
     const map = mapOf(S);
     for (const t of S.towers) { t.face = faceRoad(map, t.x, t.y); t.light = lightAt(map, t.x, t.y); t.wallPt = null; t.pm = map.priceMul || 1; t._s = null; }
+    if (S.hero) ensureHero(S, S.hero);
     S.buffsDirty = true;
   }
   function switchMap(S, id) {
@@ -966,6 +969,7 @@
     if (s.sigs.indexOf('dawnstone') >= 0) { s.lightR = Math.max(s.lightR, s.auraR); s.detectR = Math.max(s.detectR, s.auraR); s.revealR = Math.max(s.revealR, s.auraR); }
     const bf = t.buff || {};
     if (bf.detect) s.detects = true;
+    if (bf.crit) s.crit += bf.crit;
     if (bf.range) s.range *= 1 + bf.range;
     if (t.light && t.light !== 1) { s.baseRange = s.range; s.range *= t.light; }
     s.dmg *= Math.pow(TUNE.infMul, t.infD || 0);
@@ -989,7 +993,7 @@
     for (const k of s.sigs) s.has[k] = true;
     return s;
   }
-  function stats(t) { if (!t._s) t._s = computeStats(t); return t._s; }
+  function stats(t) { if (!t._s) t._s = t.isHero ? heroStats(t) : computeStats(t); return t._s; }
 
   function nodeInfo(t, i, k) {
     const a = t.paths.slice(), b = t.paths.slice();
@@ -1055,6 +1059,7 @@
     const T = S.towers;
     const src = T.map(stats);
     const lights = lightSources(S);
+    const H = S.hero && S.hero.id ? S.hero : null, hs = H ? stats(H) : null;
     for (const b of T) {
       const dm = [], rt = [], rg = [];
       let detect = false;
@@ -1067,10 +1072,16 @@
         if (s.auraRate) rt.push(s.auraRate);
         if (s.auraRange) rg.push(s.auraRange);
       }
-      const buff = { dmg: stackBuff(dm), rate: stackBuff(rt), range: stackBuff(rg), detect };
+      const buff = { dmg: stackBuff(dm), rate: stackBuff(rt), range: stackBuff(rg), detect, crit: 0, hero: false };
+      if (H && (H.x - b.x) ** 2 + (H.y - b.y) ** 2 <= hs.auraR * hs.auraR) {
+        buff.hero = true;
+        if (hs.auraKind === 'dmg') buff.dmg += hs.auraV;
+        else if (hs.auraKind === 'rate') buff.rate += hs.auraV;
+        else if (hs.auraKind === 'crit') { buff.crit = Math.round(hs.auraV * 1000) / 1000; buff.detect = true; }
+      }
       const light = lightFor(S, b.x, b.y, lights);
       const old = b.buff || {};
-      if (b.light !== light || (old.range || 0) !== buff.range || !!old.detect !== detect) b._s = null;
+      if (b.light !== light || (old.range || 0) !== buff.range || !!old.detect !== buff.detect || (old.crit || 0) !== buff.crit) b._s = null;
       b.light = light;
       b.buff = buff;
     }
@@ -1112,6 +1123,12 @@
     for (const t of S.towers) {
       t.cd = 0; t.sigT = 0; t.sigTs = {}; t.boomT = 0; t.bloodT = 0; t.surgeT = 0; t.stomp = 0; t.wDmg = 0; t.wKills = 0;
       if (ready) for (const k of stats(t).sigs) t.sigTs[k] = 999;
+    }
+    S.run.zones = [];
+    if (S.hero && S.hero.id) {
+      const h = S.hero;
+      ensureHero(S, h);
+      h.ab = [0, 0, 0]; h.cd = 0; h.stunT = 0; h.frenzyT = 0; h.wDmg = 0; h.wKills = 0; h.thinkT = 0;
     }
     emit(S, 'start', { n, boss: spec.boss });
     return true;
@@ -1227,7 +1244,7 @@
   function isHidden(e) { return !!e.stealth && !(e.revealT > 0); }
   function canHit(s, e) {
     if (!e.alive || e.d < SPAWN_GUARD) return false;
-    if (e.burrowT > 0 && !s.seesBurrow) return false;
+    if (e.burrowT > 0 && !s.seesBurrow && !(e.unearthT > 0)) return false;
     if (isHidden(e) && !s.detects) return false;
     if (isFly(e) && !s.canFly) return false;
     if (isMagic(e) && !s.canMagic) return false;
@@ -1316,6 +1333,7 @@
     S.cash += gain; run.earned += gain; run.kills++; S.totalKills++; S.stats.earned += gain;
     S.sfx.kill++;
     if (t) { t.kills++; t.wKills++; }
+    heroXp(S, run, e, t);
     fx(S, { k: 'puff', x: e.x, y: e.y, r: e.r, c: e.color, life: 0.45 });
     fx(S, { k: 'burst', x: e.x, y: e.y, r: e.r, c: e.color, c2: e.dark, seed: e.id * 7 + run.n, life: e.boss ? 0.9 : 0.5, big: e.boss });
     if (e.boss || mult > 1.5) fx(S, { k: 'text', x: e.x, y: e.y - 20, s: '+' + fmt(gain), c: '#e3c15b', life: 1.1 });
@@ -1412,7 +1430,9 @@
   }
 
   function projHit(S, run, p) {
-    const t = p.t, s = stats(t), e = p.e;
+    const t = p.t;
+    if (t.isHero) { heroProjHit(S, run, p); return; }
+    const s = stats(t), e = p.e;
     if (S.towers.indexOf(t) < 0) return;
     if (!e.alive) return;
     if (t.race === 'unicorn') {
@@ -1563,6 +1583,7 @@
     if (e.dn > 0) { e.dnT -= dt; if (e.dnT <= 0) flushNum(S, e); }
     if (e.hexT > 0) { e.hexT -= dt; if (e.hexT <= 0) { e.hexAmp = 0; } }
     if (e.dispelT > 0) e.dispelT -= dt;
+    if (e.unearthT > 0) e.unearthT -= dt;
     if (e.revealT > 0) { e.revealT -= dt; if (e.revealT <= 0) e.echoAmp = 0; }
     if (e.slowT > 0) { e.slowT -= dt; if (e.slowT <= 0) e.slow = 0; }
     if (e.shHit > 0) e.shHit -= dt;
@@ -1764,10 +1785,462 @@
     return { name, def, hp, max, count, frac: max ? hp / max : 0, lead };
   }
 
+  const HERO_TUNE = { hit: 0.5, grow: 1.045, xp0: 20, xpGrow: 1.16, maxLv: 30, ranks: [5, 10, 20, 30], roarR: 260, roarStun: 1.6, roarEvery: 9, think: 0.25, pickR: 30 };
+  function hm(R) { return 1 + 0.25 * (R - 1); }
+  function hNear(run, x, y, R, f) {
+    const out = [];
+    for (const e of run.enemies) if (e.alive && e.d >= SPAWN_GUARD && (e.x - x) ** 2 + (e.y - y) ** 2 <= (R + e.r * 0.5) ** 2 && (!f || f(e))) out.push(e);
+    return out;
+  }
+  function hStrong(list) { let b = null; for (const e of list) if (!b || (e.boss && !b.boss) || (e.boss === b.boss && e.hp > b.hp)) b = e; return b; }
+  function hCluster(run, h, s, r) {
+    const list = hNear(run, h.x, h.y, s.range, e => canHit(s.ab, e));
+    let best = null, bn = 0;
+    for (const e of list) {
+      let n = 0;
+      for (const o of list) if ((o.x - e.x) ** 2 + (o.y - e.y) ** 2 <= r * r) n += o.boss ? 4 : 1;
+      if (n > bn) { bn = n; best = e; }
+    }
+    return best ? { e: best, n: bn } : null;
+  }
+  const HEROES = {
+    nova: {
+      id: 'nova', name: 'Nova Quill', race: 'unicorn', role: 'Unicorn mage', title: 'Starlit scholar',
+      body: '#b89ae6', mane: '#2c2f6e', cape: '#5b3fa8', accent: '#ffd6f6', crown: 'tiara', horn: true,
+      range: 175, rate: 0.85, pow: 1, splash: 48, speed: 150, canFly: true, canMagic: true, attack: 'bolt', proj: { sp: 620, c: '#e6c8ff' },
+      blurb: 'Bolts of starlight that splash and hit every kind of DNB.',
+      aura: { kind: 'dmg', r: 150, base: 0.08, per: 0.004, name: 'Scholar\'s Glow', text: v => 'Ponies in the glow deal +' + pct(v) + ' damage' },
+      unlock: { free: true, moon: 0, text: 'Free' },
+      abil: [
+        { id: 'starburst', name: 'Starburst', cd: 12, icon: 'burst', text: R => 'Blast the thickest knot of DNBs for ' + (6 * hm(R)).toFixed(1) + 'x hit power and dispel magical DNBs there.',
+          want: (S, run, h, s) => { const c = hCluster(run, h, s, 90); return !!c && c.n >= 3; },
+          cast: (S, run, h, s, P, R) => {
+            const c = hCluster(run, h, s, 90);
+            if (!c) return false;
+            const r = 90 + 6 * R, x = c.e.x, y = c.e.y;
+            for (const e of hNear(run, x, y, r, o => canHit(s.ab, o) || o.magical)) {
+              if (e.magical) e.dispelT = Math.max(e.dispelT, 4);
+              if (canHit(s.ab, e)) hitEnemy(S, run, h, s.ab, e, 6 * P * hm(R));
+            }
+            fx(S, { k: 'nova', x, y, r, c: '#e6c8ff', c2: '#7a5cff', life: 0.55 });
+            h.face = Math.atan2(y - h.y, x - h.x);
+            return true;
+          } },
+        { id: 'reveal', name: 'Revealing Light', cd: 18, icon: 'eye', text: R => 'Reveal every DNB within ' + (R >= 5 ? 'the whole map' : (240 + 20 * R)) + ' for ' + (5 + R) + 's. Revealed DNBs take +' + pct(0.12 + 0.03 * R) + ' damage.',
+          want: (S, run, h, s) => { const l = hNear(run, h.x, h.y, s.rank >= 5 ? 9999 : 240 + 20 * s.rank); return l.some(e => e.stealth && !(e.revealT > 0.5)) || l.length >= 6 || l.some(e => e.boss); },
+          cast: (S, run, h, s, P, R) => {
+            const r = R >= 5 ? 9999 : 240 + 20 * R;
+            const l = hNear(run, h.x, h.y, r);
+            if (!l.length) return false;
+            for (const e of l) { e.revealT = Math.max(e.revealT, 5 + R); e.echoAmp = Math.max(e.echoAmp || 0, 0.12 + 0.03 * R); }
+            fx(S, { k: 'sonar', x: h.x, y: h.y, r: Math.min(r, 700), c: '#fff2c8', life: 0.8 });
+            return true;
+          } },
+        { id: 'prison', name: 'Arcane Prison', cd: 26, icon: 'cage', text: R => 'Freeze DNBs within 150 for ' + (1.5 + 0.25 * R).toFixed(2) + 's (bosses ' + (0.5 + 0.1 * R).toFixed(1) + 's) and deal ' + (2 * hm(R)).toFixed(1) + 'x hit power.',
+          want: (S, run, h, s) => { const l = hNear(run, h.x, h.y, 150, e => canHit(s.ab, e)); return l.length >= 6 || l.some(e => e.boss); },
+          cast: (S, run, h, s, P, R) => {
+            const l = hNear(run, h.x, h.y, 150, e => canHit(s.ab, e));
+            if (!l.length) return false;
+            for (const e of l) { stunE(e, e.boss ? 0.5 + 0.1 * R : 1.5 + 0.25 * R); hitEnemy(S, run, h, s.ab, e, 2 * P * hm(R)); }
+            fx(S, { k: 'ring', x: h.x, y: h.y, r: 150, c: '#b48bff', life: 0.6 });
+            return true;
+          } },
+      ],
+    },
+    ironmane: {
+      id: 'ironmane', name: 'Ironmane', race: 'earth', role: 'Earth pony tank', title: 'Wall of the valley',
+      body: '#c8875a', mane: '#f2e3b0', cape: '#8a2f2a', accent: '#e3c15b', crown: 'helm',
+      range: 90, rate: 0.8, pow: 1.1, speed: 115, canFly: false, canMagic: true, attack: 'stomp', stunCut: 0.5,
+      blurb: 'Stomps every ground DNB in reach. Cannot reach flyers. Boss roars stun him for half as long.',
+      aura: { kind: 'slow', r: 130, base: 0.1, per: 0.004, name: 'Stone Presence', text: v => 'DNBs near Ironmane move ' + pct(v) + ' slower (bosses half)' },
+      unlock: { moon: 15, map: 'moonlit', wave: 25, text: 'Clear wave 25 on Moonlit Road' },
+      abil: [
+        { id: 'breaker', name: 'Shield Breaker', cd: 10, icon: 'shield', text: R => 'Smash the toughest DNB nearby for ' + (8 * hm(R)).toFixed(1) + 'x hit power through any plate, and pop every shield within 70.',
+          want: (S, run, h, s) => { const l = hNear(run, h.x, h.y, s.range + 50, e => canHit(s.ab, e)); return l.some(e => e.sh > 0 || e.plate > 0 || e.boss || e.elite) || l.length >= 3; },
+          cast: (S, run, h, s, P, R) => {
+            const l = hNear(run, h.x, h.y, s.range + 50, e => canHit(s.ab, e));
+            if (!l.length) return false;
+            let tg = null, bv = -1;
+            for (const e of l) { const v = e.hp * (e.sh > 0 ? 3 : 1) * (e.plate > 0 || e.starPlate ? 2 : 1) * (e.boss ? 4 : 1); if (v > bv) { bv = v; tg = e; } }
+            for (const e of hNear(run, tg.x, tg.y, 70)) if (e.sh > 0) { e.sh = 0; if (e.ownSh) e.shMax = 0; fx(S, { k: 'shieldpop', x: e.x, y: e.y, r: e.r + 9, life: 0.4 }); snd(S, 'shield'); }
+            hitEnemy(S, run, h, s.abP, tg, 8 * P * hm(R));
+            fx(S, { k: 'stomp', x: tg.x, y: tg.y, r: 70, c: '#ffd27a', life: 0.4 });
+            h.face = Math.atan2(tg.y - h.y, tg.x - h.x);
+            return true;
+          } },
+        { id: 'bellow', name: 'Taunting Bellow', cd: 16, icon: 'shout', text: R => 'Stun DNBs within 140 for ' + (1.2 + 0.2 * R).toFixed(1) + 's (bosses ' + (0.4 + 0.08 * R).toFixed(2) + 's).',
+          want: (S, run, h) => { const l = hNear(run, h.x, h.y, 140, e => !(e.burrowT > 0)); return l.length >= 4 || l.some(e => e.boss); },
+          cast: (S, run, h, s, P, R) => {
+            const l = hNear(run, h.x, h.y, 140, e => !(e.burrowT > 0));
+            if (!l.length) return false;
+            for (const e of l) stunE(e, e.boss ? 0.4 + 0.08 * R : 1.2 + 0.2 * R);
+            fx(S, { k: 'ring', x: h.x, y: h.y, r: 140, c: '#ffb04a', life: 0.5 });
+            return true;
+          } },
+        { id: 'quake', name: 'Earthquake', cd: 24, icon: 'quake', text: R => 'Shake the ground within 130 for ' + (4 + 0.5 * R) + 's: ' + (1.2 * hm(R)).toFixed(1) + 'x hit power every half second, 40% slow, and burrowed DNBs are dragged up where any pony can hit them.',
+          want: (S, run, h) => { const l = hNear(run, h.x, h.y, 130, e => !e.flying); return l.length >= 4 || l.some(e => e.boss || e.burrowT > 0); },
+          cast: (S, run, h, s, P, R) => {
+            const l = hNear(run, h.x, h.y, 130, e => !e.flying);
+            if (!l.length) return false;
+            const life = 4 + 0.5 * R;
+            run.zones.push({ x: h.x, y: h.y, r: 130, life, t: 0, tick: 0, mul: 1.2 * hm(R) });
+            fx(S, { k: 'quake', x: h.x, y: h.y, r: 130, life });
+            return true;
+          } },
+      ],
+    },
+    skyflick: {
+      id: 'skyflick', name: 'Skyflick', race: 'pegasus', role: 'Pegasus speedster', title: 'Fastest wings in the vale',
+      body: '#8fd0f5', mane: '#ff7a59', cape: '#ffd24a', accent: '#ffffff', crown: 'goggles', wings: true,
+      range: 155, rate: 2.2, pow: 0.42, speed: 270, canFly: true, canMagic: false, flyMul: 2, attack: 'dart', proj: { sp: 980, c: '#bfe8ff' },
+      blurb: 'Rapid wind darts, double damage to flyers. Cannot harm magical DNBs. Moves faster than any hero.',
+      aura: { kind: 'rate', r: 150, base: 0.08, per: 0.004, name: 'Tailwind', text: v => 'Ponies in the tailwind attack ' + pct(v) + ' faster' },
+      unlock: { moon: 25, map: 'woods', wave: 50, text: 'Clear wave 50 on Whispering Woods' },
+      abil: [
+        { id: 'cyclone', name: 'Cyclone Nova', cd: 11, icon: 'swirl', text: R => 'Spin a cyclone of radius 160: ' + (3 * hm(R)).toFixed(1) + 'x hit power, triple against swarms, and knocks DNBs back.',
+          want: (S, run, h, s) => { const l = hNear(run, h.x, h.y, 160, e => canHit(s.ab, e)); return l.length >= 4 || l.filter(e => e.swarm).length >= 3; },
+          cast: (S, run, h, s, P, R) => {
+            const l = hNear(run, h.x, h.y, 160, e => canHit(s.ab, e));
+            if (!l.length) return false;
+            for (const e of l) {
+              hitEnemy(S, run, h, s.ab, e, 3 * P * hm(R) * (e.swarm ? 3 : 1));
+              if (e.alive && !e.boss) e.d = Math.max(16, e.d - (e.swarm ? 80 : 40));
+            }
+            fx(S, { k: 'swirl', x: h.x, y: h.y, r: 160, c: '#bfe8ff', life: 0.6 });
+            return true;
+          } },
+        { id: 'lightning', name: 'Lightning Strike', cd: 9, icon: 'bolt', text: R => 'Lightning leaps between ' + (4 + R) + ' DNBs for ' + (4 * hm(R)).toFixed(1) + 'x hit power each, double on flyers.',
+          want: (S, run, h, s) => { const l = hNear(run, h.x, h.y, s.range * 1.3, e => canHit(s.ab, e)); return l.length >= 2 || l.some(e => e.boss); },
+          cast: (S, run, h, s, P, R) => {
+            const l = hNear(run, h.x, h.y, s.range * 1.3, e => canHit(s.ab, e));
+            if (!l.length) return false;
+            let cur = pick(l, 'first', h);
+            const hit = new Set();
+            let from = { x: h.x, y: h.y - 18 };
+            for (let i = 0; i < 4 + R && cur; i++) {
+              hit.add(cur);
+              fx(S, { k: 'zap', x1: from.x, y1: from.y, x2: cur.x, y2: cur.y, c: '#fff6a0', life: 0.25 });
+              hitEnemy(S, run, h, s.ab, cur, 4 * P * hm(R) * (cur.flying ? 2 : 1));
+              from = { x: cur.x, y: cur.y };
+              let nx = null, bd = 150 * 150;
+              for (const o of run.enemies) { if (hit.has(o) || !canHit(s.ab, o)) continue; const dd = dist2(o, from); if (dd < bd) { bd = dd; nx = o; } }
+              cur = nx;
+            }
+            return true;
+          } },
+        { id: 'gale', name: 'Gale Wall', cd: 20, icon: 'wind', text: R => 'A wall of wind within 220 hurls flyers back and slows ground DNBs by 30% for ' + (3 + 0.5 * R) + 's.',
+          want: (S, run, h) => { const l = hNear(run, h.x, h.y, 220); return l.some(e => e.flying) || l.length >= 6; },
+          cast: (S, run, h, s, P, R) => {
+            const l = hNear(run, h.x, h.y, 220);
+            if (!l.length) return false;
+            for (const e of l) {
+              if (e.flying) e.d = Math.max(16, e.d - (e.boss ? 30 : 120));
+              else { e.slow = Math.max(e.slow, e.boss ? 0.15 : 0.3); e.slowT = Math.max(e.slowT, 3 + 0.5 * R); }
+              if (canHit(s.ab, e)) hitEnemy(S, run, h, s.ab, e, P * hm(R));
+            }
+            fx(S, { k: 'wallpulse', x: h.x, y: h.y, r: 220, c: '#d8f4ff', life: 0.6 });
+            return true;
+          } },
+      ],
+    },
+    duskfang: {
+      id: 'duskfang', name: 'Duskfang', race: 'bat', role: 'Bat pony assassin', title: 'Shadow of the moon',
+      body: '#4e4566', mane: '#c23a5a', cape: '#1c1426', accent: '#ff5c7a', crown: 'hood', batWings: true,
+      range: 145, rate: 0.6, pow: 2.2, crit: 0.2, critMul: 3, speed: 195, canFly: true, canMagic: true, detects: true, fastMul: 1.5, attack: 'fang', proj: { sp: 1100, c: '#ff5c7a' },
+      blurb: 'Heavy strikes on the strongest DNB in reach, with big crits. Sees stealthed DNBs.',
+      aura: { kind: 'crit', r: 140, base: 0.04, per: 0.002, name: 'Night Eyes', text: v => 'Ponies nearby see stealthed DNBs and gain +' + pct(v) + ' crit chance' },
+      unlock: { moon: 40, star: 1, text: 'Earn a first star on any map' },
+      abil: [
+        { id: 'assassinate', name: 'Assassinate', cd: 10, icon: 'dagger', text: R => 'Strike the strongest DNB in reach for ' + (10 * hm(R)).toFixed(1) + 'x hit power. Non-boss DNBs left under 30% HP are finished off.',
+          want: (S, run, h, s) => hNear(run, h.x, h.y, s.range * 1.3, e => canHit(s.ab, e)).length > 0,
+          cast: (S, run, h, s, P, R) => {
+            const tg = hStrong(hNear(run, h.x, h.y, s.range * 1.3, e => canHit(s.ab, e)));
+            if (!tg) return false;
+            hitEnemy(S, run, h, s.ab, tg, 10 * P * hm(R));
+            if (tg.alive && !tg.boss && tg.hp < tg.hpMax * 0.3) kill(S, run, tg, h);
+            fx(S, { k: 'bite', x: tg.x, y: tg.y, c: '#ff3a5c', life: 0.35 });
+            h.face = Math.atan2(tg.y - h.y, tg.x - h.x);
+            return true;
+          } },
+        { id: 'mark', name: 'Shadow Mark', cd: 15, icon: 'mark', text: R => 'Mark the ' + (2 + R) + ' strongest DNBs in reach for 6s: revealed, and they take +' + pct(0.25 + 0.03 * R) + ' damage.',
+          want: (S, run, h, s) => { const l = hNear(run, h.x, h.y, s.range * 1.5); return l.length >= 2 || l.some(e => e.boss); },
+          cast: (S, run, h, s, P, R) => {
+            const l = hNear(run, h.x, h.y, s.range * 1.5).sort((a, b) => (b.boss - a.boss) || (b.hp - a.hp)).slice(0, 2 + R);
+            if (!l.length) return false;
+            for (const e of l) { e.hexAmp = Math.max(e.hexAmp, 0.25 + 0.03 * R); e.hexT = Math.max(e.hexT, 6); e.revealT = Math.max(e.revealT, 6); fx(S, { k: 'spark', x: e.x, y: e.y - e.r, c: '#ff5c7a', life: 0.5 }); }
+            return true;
+          } },
+        { id: 'frenzy', name: 'Blood Frenzy', cd: 22, icon: 'moon', text: R => 'For ' + (5 + 0.5 * R) + 's Duskfang attacks 2.5x as fast with +25% crit chance.',
+          want: (S, run, h, s) => { const l = hNear(run, h.x, h.y, s.range, e => canHit(s, e)); return l.length >= 3 || l.some(e => e.boss); },
+          cast: (S, run, h, s, P, R) => {
+            h.frenzyT = 5 + 0.5 * R;
+            fx(S, { k: 'bloodmoon', x: h.x, y: h.y, r: 60, life: 0.8 });
+            return true;
+          } },
+      ],
+    },
+  };
+  const HERO_IDS = ['nova', 'ironmane', 'skyflick', 'duskfang'];
+  function xpNeed(lv) { return Math.round(HERO_TUNE.xp0 * Math.pow(HERO_TUNE.xpGrow, lv - 1)); }
+  function rankFor(lv) { let r = 1; for (const k of HERO_TUNE.ranks) if (lv >= k) r++; return r; }
+  function heroProg(h, id) { id = id || h.id; let p = h.prog[id]; if (!p) p = h.prog[id] = { lv: 1, xp: 0 }; return p; }
+  function heroStats(h) {
+    const d = HEROES[h.id], lv = heroProg(h).lv, rs = h.rs || NO_RS, R = rankFor(lv);
+    const s = {
+      range: d.range * (1 + 0.015 * (lv - 1)), rate: d.rate * (1 + 0.012 * (lv - 1)), canFly: !!d.canFly, canMagic: !!d.canMagic, detects: !!d.detects, seesBurrow: false,
+      flyMul: d.flyMul || 1, magicMul: 1, fastMul: d.fastMul || 1, swarmMul: 1, crit: d.crit || 0, critMul: d.critMul || 2.5, slow: 0, slowDur: 0, stunCh: 0, stunDur: 0,
+      hex: 0, knock: 0, pierce: 0, cash: 1, has: {}, sigs: [], splash: d.splash || 0, lv, rank: R,
+      pow: d.pow * Math.pow(HERO_TUNE.grow, lv - 1) * (1 + 0.15 * rsl(rs, 'abil_hero')),
+      cdMul: (1 - 0.08 * rsl(rs, 'abil_hero')) * (1 - 0.03 * (R - 1)),
+      auraR: d.aura.r + 2 * (lv - 1), auraV: (d.aura.base + d.aura.per * (lv - 1)) * (1 + 0.15 * rsl(rs, 'abil_aura')), auraKind: d.aura.kind,
+    };
+    s.ab = Object.assign({}, s, { canFly: true, canMagic: true, crit: 0, flyMul: 1, fastMul: 1 });
+    s.abP = Object.assign({}, s.ab, { pierce: 1 });
+    s.fz = Object.assign({}, s, { crit: s.crit + 0.25 });
+    return s;
+  }
+  function heroHome(map) {
+    const P = map.route[0], o = {};
+    routePos(P, P.len * 0.5, o);
+    return { x: Math.max(30, Math.min(WORLD.L - 30, o.x - o.ty * 54)), y: Math.max(30, Math.min(WORLD.W - 30, o.y + o.tx * 54)) };
+  }
+  function ensureHero(S, h) {
+    if (!h) return;
+    h.isHero = true;
+    if (!h.prog) h.prog = {};
+    if (!isFinite(h.x) || !isFinite(h.y)) { const p = heroHome(mapOf(S)); h.x = p.x; h.y = p.y; }
+    if (h.tx == null || !isFinite(h.tx)) { h.tx = h.x; h.ty = h.y; }
+    if (!h.ab) h.ab = [0, 0, 0];
+    for (const k of ['cd', 'stunT', 'frenzyT', 'anim', 'dmg', 'wDmg', 'kills', 'wKills', 'thinkT', 'moved', 'walk', 'lvT']) if (!isFinite(h[k])) h[k] = 0;
+    if (h.face == null) h.face = 0;
+    h.rs = S.research;
+    h._s = null;
+  }
+  function heroAt(S, x, y) {
+    const h = S.hero;
+    return h && h.id && (h.x - x) ** 2 + (h.y - 8 - y) ** 2 <= HERO_TUNE.pickR * HERO_TUNE.pickR;
+  }
+  function heroMilestone(S, id) {
+    const u = HEROES[id] && HEROES[id].unlock;
+    if (!u) return false;
+    if (u.free) return true;
+    if (u.map && mapCleared(S, u.map) >= u.wave) return true;
+    if (u.map && starOf(S, u.map) > 0) return true;
+    if (u.star) { for (const m of MAP_IDS) if (starOf(S, m) >= u.star) return true; }
+    return false;
+  }
+  function heroUnlocked(S, id) { return !!HEROES[id] && (!!HEROES[id].unlock.free || !!(S.heroUnlocks && S.heroUnlocks[id])); }
+  function syncHeroUnlocks(S, quiet) {
+    if (!S.heroUnlocks) S.heroUnlocks = { nova: 1 };
+    const got = [];
+    for (const id of HERO_IDS) {
+      if (S.heroUnlocks[id] || !heroMilestone(S, id)) continue;
+      S.heroUnlocks[id] = 1;
+      got.push(id);
+      if (!quiet) emit(S, 'heroUnlock', { id, name: HEROES[id].name, how: 'milestone' });
+    }
+    return got;
+  }
+  function unlockHero(S, id) {
+    const d = HEROES[id];
+    if (!d || heroUnlocked(S, id)) return false;
+    if ((S.moon || 0) < d.unlock.moon) return false;
+    S.moon -= d.unlock.moon;
+    S.heroUnlocks[id] = 1;
+    emit(S, 'heroUnlock', { id, name: d.name, how: 'moon' });
+    return true;
+  }
+  function pickHero(S, id) {
+    if (S.run || !HEROES[id] || !heroUnlocked(S, id)) return false;
+    if (!S.hero) { const p = heroHome(mapOf(S)); S.hero = { id, x: p.x, y: p.y, auto: false, prog: {} }; }
+    else S.hero.id = id;
+    ensureHero(S, S.hero);
+    heroProg(S.hero);
+    S.buffsDirty = true;
+    emit(S, 'heroPick', { id, name: HEROES[id].name });
+    return true;
+  }
+  function moveHero(S, x, y) {
+    const h = S.hero;
+    if (!h || !h.id || !isFinite(x) || !isFinite(y)) return false;
+    h.tx = Math.max(20, Math.min(WORLD.L - 20, x));
+    h.ty = Math.max(24, Math.min(WORLD.W - 16, y));
+    return true;
+  }
+  function heroPow(S, run, h) { return hpFor(run.n, run.map) * HERO_TUNE.hit * stats(h).pow; }
+  function castHero(S, i) {
+    const h = S.hero, run = S.run;
+    if (!h || !h.id) return 'none';
+    if (!run || run.over) return 'idle';
+    if (h.stunT > 0) return 'stunned';
+    if (h.ab[i] > 0) return 'cooldown';
+    const a = HEROES[h.id].abil[i];
+    if (!a) return 'none';
+    const s = stats(h);
+    if (!a.cast(S, run, h, s, heroPow(S, run, h), s.rank)) return 'notarget';
+    h.ab[i] = a.cd * s.cdMul;
+    h.anim = 0.35;
+    h.casts = (h.casts || 0) + 1;
+    snd(S, 'cast');
+    emit(S, 'herocast', { i, name: a.name });
+    return true;
+  }
+  function heroAuto(S) {
+    const h = S.hero, run = S.run;
+    if (!h || !h.id || !run || run.over || h.stunT > 0) return 0;
+    const d = HEROES[h.id], s = stats(h);
+    let n = 0;
+    for (let i = 0; i < 3; i++) if (h.ab[i] <= 0 && d.abil[i].want(S, run, h, s) && castHero(S, i) === true) n++;
+    return n;
+  }
+  function heroXp(S, run, e, t) {
+    const h = S.hero;
+    if (!h || !h.id) return;
+    const p = heroProg(h);
+    if (p.lv >= HERO_TUNE.maxLv) return;
+    p.xp += (e.boss ? 20 : e.elite ? 3 : 1) * (1 + 0.04 * run.n) * (t === h ? 2 : 1) * (1 + 0.25 * rl(S, 'util_hero'));
+    while (p.lv < HERO_TUNE.maxLv && p.xp >= xpNeed(p.lv)) {
+      p.xp -= xpNeed(p.lv);
+      p.lv++;
+      const rankUp = HERO_TUNE.ranks.indexOf(p.lv) >= 0;
+      h._s = null;
+      h.lvT = 1.2;
+      S.buffsDirty = true;
+      emit(S, 'herolv', { lv: p.lv, rank: rankFor(p.lv), rankUp, name: HEROES[h.id].name });
+      fx(S, { k: 'levelup', x: h.x, y: h.y, rank: rankUp, life: 1.2 });
+      snd(S, 'levelup');
+    }
+    if (p.lv >= HERO_TUNE.maxLv) p.xp = 0;
+  }
+  function heroMove(S, dt) {
+    const h = S.hero;
+    if (!h || !h.id) return;
+    if (h.anim > 0) h.anim -= dt;
+    if (h.lvT > 0) h.lvT -= dt;
+    if (h.stunT > 0) { h.stunT -= dt; return; }
+    const dx = h.tx - h.x, dy = h.ty - h.y, dd = Math.hypot(dx, dy);
+    if (dd > 0.5) {
+      const mv = Math.min(dd, HEROES[h.id].speed * dt);
+      h.x += dx / dd * mv; h.y += dy / dd * mv;
+      h.face = Math.atan2(dy, dx);
+      h.walk += dt;
+      h.moving = true;
+      h.moved += mv;
+      if (h.moved > 14) { h.moved = 0; S.buffsDirty = true; }
+    } else if (h.moving) { h.moving = false; h.moved = 0; S.buffsDirty = true; }
+  }
+  function heroAuraSlow(S, run) {
+    const h = S.hero;
+    if (!h || !h.id || HEROES[h.id].aura.kind !== 'slow') return;
+    const s = stats(h), R2 = s.auraR * s.auraR;
+    for (const e of run.enemies) if (e.alive && dist2(e, h) <= R2) e.wallSlow = Math.max(e.wallSlow, e.boss ? s.auraV * 0.5 : s.auraV);
+  }
+  function canRoar(e) {
+    if (!e.boss || e.splitDone) return false;
+    if (e.tk) return !!(e.tk.stages || e.tk.sprint || e.tk.twin);
+    return e.trick === 'sprint' || e.trick === 'mother';
+  }
+  function heroStep(S, run, dt) {
+    const h = S.hero;
+    if (!h || !h.id) return;
+    const d = HEROES[h.id], s = stats(h);
+    for (let i = 0; i < 3; i++) if (h.ab[i] > 0) h.ab[i] -= dt;
+    if (h.frenzyT > 0) h.frenzyT -= dt;
+    if (run.zones && run.zones.length) {
+      const P = heroPow(S, run, h);
+      for (let i = run.zones.length - 1; i >= 0; i--) {
+        const z = run.zones[i];
+        z.t += dt; z.tick -= dt;
+        const pulse = z.tick <= 0;
+        if (pulse) z.tick += 0.5;
+        for (const e of hNear(run, z.x, z.y, z.r, o => !o.flying)) {
+          e.unearthT = 0.3;
+          if (pulse) { e.slow = Math.max(e.slow, e.boss ? 0.2 : 0.4); e.slowT = Math.max(e.slowT, 0.6); if (canHit(s.ab, e)) hitEnemy(S, run, h, s.abP, e, P * z.mul); }
+        }
+        if (z.t >= z.life) run.zones.splice(i, 1);
+      }
+    }
+    for (const e of run.enemies) {
+      if (!canRoar(e) || !e.alive || !tick(e, 'roar', HERO_TUNE.roarEvery, dt)) continue;
+      fx(S, { k: 'roar', x: e.x, y: e.y, r: HERO_TUNE.roarR, life: 0.7 });
+      snd(S, 'roar');
+      if (dist2(e, h) <= HERO_TUNE.roarR * HERO_TUNE.roarR && !(h.stunT > 0)) {
+        h.stunT = HERO_TUNE.roarStun * (d.stunCut || 1);
+        h.stuns = (h.stuns || 0) + 1;
+        snd(S, 'herostun');
+        emit(S, 'herostun', { name: e.name, dur: h.stunT });
+      }
+    }
+    if (h.stunT > 0) return;
+    if (h.auto) { h.thinkT -= dt; if (h.thinkT <= 0) { h.thinkT = HERO_TUNE.think; heroAuto(S); } }
+    h.cd -= dt;
+    if (h.cd > 0) return;
+    const fz = h.frenzyT > 0;
+    const targets = targetsFor(run, h, s);
+    if (!targets.length) { h.cd = 0; return; }
+    h.cd += 1 / (s.rate * (fz ? 2.5 : 1));
+    if (h.cd < 0) h.cd = 0;
+    const P = heroPow(S, run, h);
+    const hs = fz ? s.fz : s;
+    h.anim = 0.22;
+    if (d.attack === 'stomp') {
+      for (const e of targets) hitEnemy(S, run, h, hs, e, P);
+      fx(S, { k: 'stomp', x: h.x, y: h.y, r: s.range, c: '#e0a86a', life: 0.35 });
+      return;
+    }
+    const e = d.attack === 'fang' ? hStrong(targets) : pick(targets, 'first', h);
+    h.face = Math.atan2(e.y - h.y, e.x - h.x);
+    run.proj.push({ x: h.x, y: h.y - 22, e, t: h, dmg: P, sp: d.proj.sp, kind: 'hero', c: d.proj.c, hk: h.id, life: 3, a: 0, fz });
+  }
+  function heroProjHit(S, run, p) {
+    const h = p.t, e = p.e;
+    if (S.hero !== h || !h.id || !e.alive) return;
+    const s = stats(h), hs = p.fz ? s.fz : s;
+    hitEnemy(S, run, h, hs, e, p.dmg);
+    if (s.splash > 0) {
+      fx(S, { k: 'ring', x: p.x, y: p.y, r: s.splash, c: p.c, life: 0.3 });
+      for (const o of run.enemies) if (o !== e && canHit(s, o) && dist2(o, p) <= s.splash * s.splash) hitEnemy(S, run, h, s, o, p.dmg * 0.5);
+    }
+  }
+  function heroInfo(S) {
+    const h = S.hero;
+    if (!h || !h.id) return null;
+    const d = HEROES[h.id], p = heroProg(h), s = stats(h);
+    return {
+      id: h.id, def: d, lv: p.lv, xp: p.xp, need: p.lv >= HERO_TUNE.maxLv ? 0 : xpNeed(p.lv), max: p.lv >= HERO_TUNE.maxLv, rank: s.rank,
+      nextRank: HERO_TUNE.ranks.find(k => k > p.lv) || 0, range: s.range, rate: s.rate, auraR: s.auraR, auraV: s.auraV, auraText: d.aura.text(s.auraV),
+      stunT: h.stunT, frenzyT: h.frenzyT, auto: !!h.auto, dmg: h.dmg, kills: h.kills,
+      abil: d.abil.map((a, i) => ({ key: 'QWE'[i], id: a.id, name: a.name, icon: a.icon, text: a.text(s.rank), cd: a.cd * s.cdMul, left: Math.max(0, h.ab[i]), ready: h.ab[i] <= 0 })),
+    };
+  }
+  function cleanHero(src) {
+    if (!src || typeof src !== 'object' || !HEROES[src.id]) return null;
+    const h = { id: src.id, x: +src.x, y: +src.y, auto: !!src.auto, prog: {} };
+    if (!isFinite(h.x) || !isFinite(h.y)) { h.x = NaN; h.y = NaN; }
+    else { h.x = Math.max(20, Math.min(WORLD.L - 20, h.x)); h.y = Math.max(24, Math.min(WORLD.W - 16, h.y)); }
+    if (src.prog && typeof src.prog === 'object') for (const id of HERO_IDS) {
+      const p = src.prog[id];
+      if (p && typeof p === 'object') h.prog[id] = { lv: Math.max(1, Math.min(HERO_TUNE.maxLv, p.lv | 0 || 1)), xp: Math.max(0, +p.xp || 0) };
+    }
+    return h;
+  }
+  function serHero(h) {
+    if (!h || !h.id) return null;
+    const prog = {};
+    for (const id in h.prog) prog[id] = { lv: h.prog[id].lv, xp: Math.round(h.prog[id].xp * 100) / 100 };
+    return { id: h.id, x: Math.round(h.tx != null ? h.tx : h.x), y: Math.round(h.ty != null ? h.ty : h.y), auto: !!h.auto, prog };
+  }
+  function cleanUnlocks(o) {
+    const out = { nova: 1 };
+    if (o && typeof o === 'object') for (const id of HERO_IDS) if (o[id]) out[id] = 1;
+    return out;
+  }
+
   function step(S, dt) {
     S.time += dt;
     for (let i = S.fx.length - 1; i >= 0; i--) { const f = S.fx[i]; f.t += dt; if (f.t >= f.life) S.fx.splice(i, 1); }
     for (const t of S.towers) { if (t.anim > 0) t.anim -= dt; if (t.surgeT > 0) t.surgeT -= dt; }
+    heroMove(S, dt);
     if (S.buffsDirty) refreshBuffs(S);
     const run = S.run;
     if (!run || run.over) return;
@@ -1788,6 +2261,7 @@
       }
     }
 
+    heroAuraSlow(S, run);
     for (const e of run.enemies) if (e.alive) enemyUpdate(S, run, e, dt);
     shieldRegen(run, dt);
     revealStep(S, run);
@@ -1804,12 +2278,13 @@
       if (t.cd < 0) t.cd = 0;
       fire(S, run, t, s, targets, dmg);
     }
+    heroStep(S, run, dt);
 
     for (let i = run.proj.length - 1; i >= 0; i--) {
       const p = run.proj[i];
       p.life -= dt;
       const e = p.e;
-      if (!e.alive || p.life <= 0 || (e.burrowT > 0 && !stats(p.t).seesBurrow)) { run.proj.splice(i, 1); continue; }
+      if (!e.alive || p.life <= 0 || (e.burrowT > 0 && !stats(p.t).seesBurrow && !(e.unearthT > 0))) { run.proj.splice(i, 1); continue; }
       const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy), mv = p.sp * dt;
       if (d <= mv + e.r * 0.5) { p.x = e.x; p.y = e.y; run.proj.splice(i, 1); projHit(S, run, p); }
       else { p.x += dx / d * mv; p.y += dy / d * mv; p.a = Math.atan2(dy, dx); }
@@ -1834,6 +2309,7 @@
       const iv = rl(S, 'eco_interest');
       if (iv) { interest = Math.min(Math.max(0, S.cash) * 0.01 * iv, clearBonus(run.n, run.map) * 0.5 * iv); S.cash += interest; }
       if (S.records) S.records.wins++;
+      if (bonus) syncHeroUnlocks(S);
       emit(S, 'won', { n: run.n, bonus, earned: run.earned, fresh: bonus > 0, lives: run.lives, moon, interest });
       S.run = null;
     }
@@ -1869,9 +2345,11 @@
     b.records.bosses = keep;
     const k = skipFor(S);
     if (k) { b.cleared = k; b.sel = k + 1; b.cash += skipCash(S, map, k, star); }
+    if (S.hero && S.hero.id) b.hero = { id: S.hero.id, x: S.hero.tx, y: S.hero.ty, auto: !!S.hero.auto, prog: {} };
     for (const key of BOARD_KEYS) S[key] = b[key];
     S.fx.length = 0;
     prepTowers(S);
+    syncHeroUnlocks(S);
     emit(S, 'starup', { id, star, gain, skip: k });
     snd(S, 'starup');
     fx(S, { k: 'starup', x: WORLD.L / 2, y: WORLD.W / 2, star, life: 2.4 });
@@ -1908,6 +2386,7 @@
     S.moon -= c;
     S.research[id] = rl(S, id) + 1;
     for (const t of S.towers) { t.rs = S.research; t._s = null; }
+    if (S.hero) { S.hero.rs = S.research; S.hero._s = null; }
     S.buffsDirty = true;
     emit(S, 'research', { id, lv: S.research[id] });
     return true;
@@ -1938,12 +2417,12 @@
     for (const id of MAP_IDS) {
       const b = boardOf(S, id);
       if (!b) continue;
-      boards[id] = { cash: b.cash, cleared: b.cleared, sel: b.sel, auto: b.auto, towers: b.towers.map(serTower), records: b.records };
+      boards[id] = { cash: b.cash, cleared: b.cleared, sel: b.sel, auto: b.auto, towers: b.towers.map(serTower), records: b.records, hero: serHero(b.hero) };
     }
     return JSON.stringify({
       ver: SAVE_VER, map: S.map, seed: S.seed, nextId: S.nextId, totalKills: S.totalKills,
       stats: S.stats, settings: S.settings, boards, codex: S.codex,
-      stars: S.stars, moon: S.moon, moonTotal: S.moonTotal, research: S.research, presets: S.presets,
+      stars: S.stars, moon: S.moon, moonTotal: S.moonTotal, research: S.research, presets: S.presets, heroUnlocks: S.heroUnlocks,
     });
   }
 
@@ -2002,6 +2481,13 @@
       o.research = {};
       o.presets = {};
       o.ver = 6;
+      return o;
+    },
+    6(o) {
+      o.heroUnlocks = { nova: 1 };
+      const boards = o.boards && typeof o.boards === 'object' ? o.boards : {};
+      for (const id in boards) if (boards[id] && typeof boards[id] === 'object') boards[id].hero = null;
+      o.ver = 7;
       return o;
     },
   };
@@ -2097,6 +2583,7 @@
     b.sel = Math.max(1, Math.min(Math.max(1, src.sel | 0), Math.min(MAX_WAVE, b.cleared + 1)));
     b.auto = !!src.auto;
     b.records = cleanRecords(src.records);
+    b.hero = cleanHero(src.hero);
     for (const r of src.towers || []) {
       if (!r || !RACES[r.race] || !isFinite(r.x) || !isFinite(r.y)) continue;
       const t = makeTower(S, r.race, +r.x, +r.y);
@@ -2124,6 +2611,7 @@
     S.moonTotal = Math.max(S.moon, Math.floor(+o.moonTotal || 0));
     S.research = cleanResearch(o.research);
     S.presets = cleanPresets(o.presets);
+    S.heroUnlocks = cleanUnlocks(o.heroUnlocks);
     setNumFormat(S.settings.numFmt);
     const src = o.boards && typeof o.boards === 'object' ? o.boards : {};
     const boards = {};
@@ -2142,6 +2630,8 @@
     delete boards[cur];
     for (const k of BOARD_KEYS) S[k] = b[k];
     S.nextId = Math.max(S.nextId, maxId + 1, 1);
+    syncHeroUnlocks(S, true);
+    for (const id of MAP_IDS) { const hb = id === S.map ? S : S.boards[id]; if (hb && hb.hero && !heroUnlocked(S, hb.hero.id)) hb.hero.id = 'nova'; }
     prepTowers(S);
     return S;
   }
@@ -2181,6 +2671,8 @@
     MAX_STARS, STAR, STAR_MODS, BRANCHES, RESEARCH, RESEARCH_BY_ID, rl, starOf, starMods, starHpMul, researchLevels, starSpeedMul, starCashMul,
     killMul, clearMul, moonMul, livesFor, canStarUp, starUpGain, starUp, skipFor, presetOf, placePreset,
     researchCost, researchTotal, researchState, buyResearch, grantMoon, cleanStars, cleanResearch, cleanPresets,
+    HEROES, HERO_IDS, HERO_TUNE, xpNeed, rankFor, heroProg, heroStats, heroHome, heroAt, heroMilestone, heroUnlocked, syncHeroUnlocks, unlockHero,
+    pickHero, moveHero, heroPow, castHero, heroAuto, heroInfo, cleanHero, serHero, cleanUnlocks,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.NDCore = API;
