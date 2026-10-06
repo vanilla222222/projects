@@ -505,7 +505,7 @@
     while (hpCache.length < n) hpCache.push(hpCache[hpCache.length - 1] * growthAt(TUNE.hpCurve, hpCache.length + 1));
     return hpCache[n - 1];
   }
-  function hpFor(n, map) { return hpBase(n) * (map ? map.hpMul : 1); }
+  function hpFor(n, map) { return map ? hpBase(n + (map.hpShift || 0)) * map.hpMul : hpBase(n); }
   function killCash(n, map) { return TUNE.cash0 * Math.pow(TUNE.cashGrowth, n - 1) * (map ? map.cashMul : 1); }
   function clearBonus(n, map) { return Math.round(TUNE.clear0 * (1 + 0.1 * n) * Math.pow(TUNE.clearGrowth, n - 1) * (n % 10 === 0 ? 2.5 : 1) * (map ? map.cashMul : 1)); }
   function bossFor(n, map) {

@@ -82,6 +82,30 @@ button:disabled { cursor: not-allowed; }
 }
 .mapbtn.on { color: var(--ink); border-color: var(--accent); }
 .mapbtn.locked { opacity: .55; border-style: dashed; }
+#mapBtn { display: flex; align-items: center; gap: 8px; text-align: left; font-size: 12px; padding: 6px 8px; }
+#mapBtn #mapName { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#mapBtn .mapgo { color: var(--accent2); font-weight: 700; }
+#mapBtn:hover { border-color: var(--accent2); }
+.dialog.wide { max-width: 760px; }
+.maplist { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 10px; }
+.mapcard {
+  display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 8px; border-radius: var(--radius-sm);
+  background: var(--panel2); border: 1px solid var(--border-soft); color: var(--ink); min-width: 0;
+}
+.mapcard:hover:not(:disabled) { border-color: var(--accent2); }
+.mapcard.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.mapcard canvas { width: 100%; height: auto; aspect-ratio: 7 / 4; border-radius: 6px; background: #0a0b13; display: block; }
+.mapcard .mt { display: flex; align-items: baseline; gap: 6px; font-weight: 700; font-size: 14px; }
+.mapcard .mt .mo { color: var(--muted); font-weight: 600; font-size: 12px; }
+.mapcard .mt .mb { margin-left: auto; color: var(--gold); font-size: 12px; white-space: nowrap; }
+.mapcard .mf { color: var(--accent2); font-size: 12px; font-weight: 600; }
+.mapcard .md { color: var(--muted); font-size: 12px; }
+.mapcard .mbar { height: 4px; border-radius: 2px; background: #15131f; overflow: hidden; }
+.mapcard .mbar i { display: block; height: 100%; background: var(--gold); }
+.mapcard .ml { font-size: 12px; font-weight: 700; color: var(--muted-dim); }
+.mapcard.locked canvas { filter: grayscale(.85) brightness(.55); }
+.mapcard.locked { cursor: not-allowed; }
+.mapcard .ml.ok { color: var(--green); }
 
 .waverow { display: flex; align-items: center; gap: 6px; }
 .sq {
@@ -248,6 +272,7 @@ button:disabled { cursor: not-allowed; }
 #pStats .stat { background: rgba(139, 92, 246, .14); }
 #pStats .v { color: #d8c8ff; }
 .info.pulse { animation: ndpulse .7s var(--ease); }
+#mapBtn.pulse { animation: ndpulse 1.2s var(--ease) infinite; border-color: var(--gold); }
 @keyframes ndpulse { 0% { box-shadow: 0 0 0 0 rgba(79, 209, 197, .7); } 100% { box-shadow: 0 0 0 10px rgba(79, 209, 197, 0); } }
 
 .ledger:empty { display: none; }
@@ -342,4 +367,6 @@ button:disabled { cursor: not-allowed; }
   .banner { top: 42px; font-size: 13px; }
   #board.bossfight .banner { top: 86px; }
   .tip { max-width: 220px; }
+  .maplist { grid-template-columns: 1fr; }
+  .dialog.wide { padding: 12px; }
 }
