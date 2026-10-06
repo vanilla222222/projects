@@ -14,6 +14,8 @@
     lose: { gap: 1, gain: 0.13, voices: [{ type: 'triangle', f: 392, f2: 370, dur: 0.25 }, { type: 'triangle', f: 330, f2: 311, dur: 0.25, at: 0.22 }, { type: 'triangle', f: 262, f2: 196, dur: 0.6, at: 0.44 }] },
     click: { gap: 0.03, gain: 0.06, voices: [{ type: 'square', f: 880, dur: 0.03 }] },
     wind: { gap: 2, gain: 0.07, voices: [{ type: 'sine', f: 180, f2: 120, dur: 0.9 }], noise: 0.9 },
+    starup: { gap: 1, gain: 0.16, voices: [{ type: 'triangle', f: 523, dur: 0.14 }, { type: 'triangle', f: 659, dur: 0.14, at: 0.12 }, { type: 'triangle', f: 784, dur: 0.14, at: 0.24 }, { type: 'sine', f: 1047, dur: 0.2, at: 0.36 }, { type: 'sine', f: 1319, f2: 1568, dur: 0.6, at: 0.5 }, { type: 'sine', f: 2093, dur: 0.5, at: 0.62 }], noise: 0.03 },
+    research: { gap: 0.1, gain: 0.12, voices: [{ type: 'sine', f: 880, dur: 0.08 }, { type: 'sine', f: 1319, dur: 0.18, at: 0.07 }] },
     unlocked: { gap: 1, gain: 0.14, voices: [{ type: 'sine', f: 659, dur: 0.12 }, { type: 'sine', f: 880, dur: 0.12, at: 0.1 }, { type: 'sine', f: 1175, dur: 0.12, at: 0.2 }, { type: 'triangle', f: 1319, dur: 0.45, at: 0.3 }] },
     chirp: { gap: 0.09, gain: 0.04, voices: [{ type: 'sine', f: 2600, f2: 4200, dur: 0.04 }, { type: 'sine', f: 3400, f2: 5200, dur: 0.03, at: 0.035 }] },
     chime: { gap: 0.1, gain: 0.05, voices: [{ type: 'sine', f: 1568, dur: 0.18 }, { type: 'triangle', f: 2349, dur: 0.22, at: 0.02 }] },

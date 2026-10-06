@@ -1,0 +1,451 @@
+{
+  "generated": "2026-10-06",
+  "dt": 0.05,
+  "star": {
+    "hp": [
+      0,
+      0.19,
+      0.21,
+      0.22,
+      0.23,
+      0.23
+    ],
+    "res": 0.019,
+    "speed": 0.03,
+    "cash": 0.25,
+    "moon": 20,
+    "mapMoon": 0.5,
+    "bossPlate": 0.06,
+    "swift": 0.75,
+    "regen": 0.003,
+    "lives": 7,
+    "eliteFrom": 20,
+    "eliteAdd": 0.1
+  },
+  "baseline": [
+    {
+      "map": "moonlit",
+      "w50h": 1.655,
+      "w100h": 5.675
+    },
+    {
+      "map": "woods",
+      "w50h": 1.985,
+      "w100h": 6.914
+    },
+    {
+      "map": "caverns",
+      "w50h": 2.1,
+      "w100h": 6.053
+    },
+    {
+      "map": "cliffs",
+      "w50h": 2.447,
+      "w100h": 6.17
+    },
+    {
+      "map": "castle",
+      "w50h": 2.196,
+      "w100h": 5.635
+    }
+  ],
+  "results": [
+    {
+      "map": "moonlit",
+      "runs": [
+        {
+          "star": 0,
+          "hours": 5.675,
+          "w50h": 1.655,
+          "w100h": 5.675,
+          "losses": 60,
+          "worst": 14,
+          "reached": 100
+        },
+        {
+          "star": 1,
+          "hours": 4.695,
+          "w50h": 1.102,
+          "w100h": 4.695,
+          "losses": 46,
+          "worst": 15,
+          "reached": 100,
+          "gain": 20,
+          "skip": 0,
+          "bought": [
+            "pony_dmg",
+            "pony_dmg",
+            "pony_rate"
+          ],
+          "moonAfter": 13,
+          "moonTotal": 30
+        },
+        {
+          "star": 2,
+          "hours": 4.12,
+          "w50h": 0.846,
+          "w100h": 4.12,
+          "losses": 42,
+          "worst": 14,
+          "reached": 100,
+          "gain": 40,
+          "skip": 0,
+          "bought": [
+            "abil_power",
+            "eco_start",
+            "util_lives",
+            "eco_kill",
+            "util_skip",
+            "eco_first",
+            "pony_dmg",
+            "pony_rate"
+          ],
+          "moonAfter": 21,
+          "moonTotal": 90
+        },
+        {
+          "star": 3,
+          "hours": 3.869,
+          "w50h": 0.689,
+          "w100h": 3.869,
+          "losses": 36,
+          "worst": 8,
+          "reached": 100,
+          "gain": 60,
+          "skip": 3,
+          "bought": [
+            "pony_range",
+            "abil_cd",
+            "abil_power",
+            "abil_crit",
+            "util_moon",
+            "eco_start",
+            "util_lives",
+            "eco_kill",
+            "pony_cheap",
+            "pony_earth",
+            "pony_unicorn"
+          ],
+          "moonAfter": 30,
+          "moonTotal": 180
+        },
+        {
+          "star": 4,
+          "hours": 3.012,
+          "w50h": 0.53,
+          "w100h": 3.012,
+          "losses": 26,
+          "worst": 6,
+          "reached": 100,
+          "gain": 88,
+          "skip": 3,
+          "bought": [
+            "util_skip",
+            "util_leak",
+            "eco_first",
+            "pony_pegasus",
+            "pony_dmg",
+            "pony_rate",
+            "pony_range",
+            "abil_cd",
+            "abil_power",
+            "eco_interest"
+          ],
+          "moonAfter": 43,
+          "moonTotal": 308
+        },
+        {
+          "star": 5,
+          "hours": 5.307,
+          "w50h": 0.531,
+          "w100h": 5.307,
+          "losses": 61,
+          "worst": 27,
+          "reached": 100,
+          "gain": 110,
+          "skip": 6,
+          "bought": [
+            "abil_crit",
+            "abil_aura",
+            "util_moon",
+            "eco_start",
+            "util_lives",
+            "eco_boss",
+            "pony_cheap",
+            "util_leak",
+            "eco_kill",
+            "pony_earth",
+            "pony_unicorn",
+            "util_skip"
+          ],
+          "moonAfter": 61,
+          "moonTotal": 478
+        }
+      ],
+      "research": {
+        "pony_dmg": 4,
+        "pony_rate": 3,
+        "abil_power": 3,
+        "eco_start": 3,
+        "util_lives": 3,
+        "eco_kill": 3,
+        "util_skip": 3,
+        "eco_first": 2,
+        "pony_range": 2,
+        "abil_cd": 2,
+        "abil_crit": 2,
+        "util_moon": 2,
+        "pony_cheap": 2,
+        "pony_earth": 2,
+        "pony_unicorn": 2,
+        "util_leak": 2,
+        "pony_pegasus": 1,
+        "eco_interest": 1,
+        "abil_aura": 1,
+        "eco_boss": 1
+      },
+      "moon": 61,
+      "moonTotal": 478
+    },
+    {
+      "map": "woods",
+      "runs": [
+        {
+          "star": 0,
+          "skipped": true
+        },
+        {
+          "star": 1,
+          "hours": 2.885,
+          "w50h": 0.875,
+          "w100h": 2.885,
+          "losses": 4,
+          "worst": 4,
+          "reached": 100,
+          "gain": 36,
+          "skip": 9,
+          "bought": [
+            "pony_bat",
+            "pony_crystal",
+            "util_star",
+            "abil_stun",
+            "eco_first",
+            "pony_pegasus",
+            "eco_sell"
+          ],
+          "moonAfter": 25,
+          "moonTotal": 56
+        }
+      ],
+      "research": {
+        "eco_start": 3,
+        "eco_kill": 3,
+        "eco_first": 3,
+        "eco_interest": 1,
+        "eco_boss": 1,
+        "pony_dmg": 4,
+        "pony_cheap": 2,
+        "pony_rate": 3,
+        "pony_range": 2,
+        "pony_earth": 2,
+        "pony_unicorn": 2,
+        "pony_pegasus": 2,
+        "abil_power": 3,
+        "abil_cd": 2,
+        "abil_crit": 2,
+        "abil_aura": 1,
+        "util_lives": 3,
+        "util_skip": 3,
+        "util_leak": 2,
+        "util_moon": 2,
+        "pony_bat": 1,
+        "pony_crystal": 1,
+        "util_star": 1,
+        "abil_stun": 1,
+        "eco_sell": 1
+      },
+      "moon": 25,
+      "moonTotal": 56
+    },
+    {
+      "map": "caverns",
+      "runs": [
+        {
+          "star": 0,
+          "skipped": true
+        },
+        {
+          "star": 1,
+          "hours": 2.05,
+          "w50h": 0.566,
+          "w100h": 2.05,
+          "losses": 8,
+          "worst": 3,
+          "reached": 100,
+          "gain": 48,
+          "skip": 9,
+          "bought": [
+            "pony_bat",
+            "pony_crystal",
+            "util_star",
+            "abil_stun",
+            "eco_first",
+            "pony_pegasus",
+            "pony_range",
+            "eco_sell"
+          ],
+          "moonAfter": 20,
+          "moonTotal": 68
+        }
+      ],
+      "research": {
+        "eco_start": 3,
+        "eco_kill": 3,
+        "eco_first": 3,
+        "eco_interest": 1,
+        "eco_boss": 1,
+        "pony_dmg": 4,
+        "pony_cheap": 2,
+        "pony_rate": 3,
+        "pony_range": 3,
+        "pony_earth": 2,
+        "pony_unicorn": 2,
+        "pony_pegasus": 2,
+        "abil_power": 3,
+        "abil_cd": 2,
+        "abil_crit": 2,
+        "abil_aura": 1,
+        "util_lives": 3,
+        "util_skip": 3,
+        "util_leak": 2,
+        "util_moon": 2,
+        "pony_bat": 1,
+        "pony_crystal": 1,
+        "util_star": 1,
+        "abil_stun": 1,
+        "eco_sell": 1
+      },
+      "moon": 20,
+      "moonTotal": 68
+    },
+    {
+      "map": "cliffs",
+      "runs": [
+        {
+          "star": 0,
+          "skipped": true
+        },
+        {
+          "star": 1,
+          "hours": 2.545,
+          "w50h": 0.894,
+          "w100h": 2.545,
+          "losses": 2,
+          "worst": 2,
+          "reached": 100,
+          "gain": 60,
+          "skip": 9,
+          "bought": [
+            "pony_bat",
+            "pony_crystal",
+            "util_star",
+            "abil_stun",
+            "eco_first",
+            "pony_pegasus",
+            "pony_dmg"
+          ],
+          "moonAfter": 26,
+          "moonTotal": 80
+        }
+      ],
+      "research": {
+        "eco_start": 3,
+        "eco_kill": 3,
+        "eco_first": 3,
+        "eco_interest": 1,
+        "eco_boss": 1,
+        "pony_dmg": 5,
+        "pony_cheap": 2,
+        "pony_rate": 3,
+        "pony_range": 2,
+        "pony_earth": 2,
+        "pony_unicorn": 2,
+        "pony_pegasus": 2,
+        "abil_power": 3,
+        "abil_cd": 2,
+        "abil_crit": 2,
+        "abil_aura": 1,
+        "util_lives": 3,
+        "util_skip": 3,
+        "util_leak": 2,
+        "util_moon": 2,
+        "pony_bat": 1,
+        "pony_crystal": 1,
+        "util_star": 1,
+        "abil_stun": 1
+      },
+      "moon": 26,
+      "moonTotal": 80
+    },
+    {
+      "map": "castle",
+      "runs": [
+        {
+          "star": 0,
+          "skipped": true
+        },
+        {
+          "star": 1,
+          "hours": 1.974,
+          "w50h": 0.752,
+          "w100h": 1.974,
+          "losses": 0,
+          "worst": 0,
+          "reached": 100,
+          "gain": 72,
+          "skip": 9,
+          "bought": [
+            "pony_bat",
+            "pony_crystal",
+            "util_star",
+            "abil_stun",
+            "eco_first",
+            "pony_pegasus",
+            "pony_dmg",
+            "pony_range"
+          ],
+          "moonAfter": 21,
+          "moonTotal": 92
+        }
+      ],
+      "research": {
+        "eco_start": 3,
+        "eco_kill": 3,
+        "eco_first": 3,
+        "eco_interest": 1,
+        "eco_boss": 1,
+        "pony_dmg": 5,
+        "pony_cheap": 2,
+        "pony_rate": 3,
+        "pony_range": 3,
+        "pony_earth": 2,
+        "pony_unicorn": 2,
+        "pony_pegasus": 2,
+        "abil_power": 3,
+        "abil_cd": 2,
+        "abil_crit": 2,
+        "abil_aura": 1,
+        "util_lives": 3,
+        "util_skip": 3,
+        "util_leak": 2,
+        "util_moon": 2,
+        "pony_bat": 1,
+        "pony_crystal": 1,
+        "util_star": 1,
+        "abil_stun": 1
+      },
+      "moon": 21,
+      "moonTotal": 92
+    }
+  ]
+}

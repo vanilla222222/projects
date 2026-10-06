@@ -733,8 +733,31 @@
         }
         break;
       }
+      case 'starup': {
+        const R = 260 * sc * (0.2 + 0.8 * Math.min(1, k * 1.6));
+        ctx.globalAlpha = Math.max(0, 1 - k) * 0.9;
+        ctx.shadowColor = '#ffe9a8'; ctx.shadowBlur = 24;
+        ctx.strokeStyle = '#ffe9a8'; ctx.lineWidth = 4 * Math.max(0.6, sc);
+        circle(ctx, sx, sy, R); ctx.stroke();
+        for (let i = 0; i < 12; i++) {
+          const a = i / 12 * Math.PI * 2 + k * 1.2, r = R * (0.55 + 0.1 * (i % 3));
+          starShape(ctx, sx + Math.cos(a) * r, sy + Math.sin(a) * r, (9 + (i % 3) * 4) * Math.max(0.6, sc), i % 2 ? '#ffe066' : '#c9b8ff');
+        }
+        starShape(ctx, sx, sy, 46 * Math.max(0.6, sc) * (1 + 0.2 * Math.sin(k * 12)), '#ffe066');
+        break;
+      }
     }
     ctx.restore();
+  }
+
+  function starShape(ctx, x, y, r, c) {
+    ctx.fillStyle = c;
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r;
+      if (i) ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); else ctx.moveTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+    }
+    ctx.closePath(); ctx.fill();
   }
 
   function drawProj(ctx, p, sc) {
@@ -1263,7 +1286,7 @@
       if (S.run) {
         ctx.save();
         ctx.font = '700 13px system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = 'rgba(243,240,251,.85)';
-        ctx.fillText('Lives ' + Math.max(0, S.run.lives) + ' / ' + C.LIVES + '   +' + C.fmt(S.run.earned) + ' this wave', 10, ch - 12);
+        ctx.fillText('Lives ' + Math.max(0, S.run.lives) + ' / ' + (S.run.livesMax || C.LIVES) + '   +' + C.fmt(S.run.earned) + ' this wave', 10, ch - 12);
         ctx.restore();
       }
       if (ui.paused) {

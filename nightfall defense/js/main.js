@@ -192,6 +192,8 @@
     if (!$('setModal').hidden) { if (k === 'Escape') closeSettings(); return; }
     if (!$('mapModal').hidden) { if (k === 'Escape') closeMaps(); return; }
     if (!$('codexModal').hidden) { if (k === 'Escape') closeCodex(); return; }
+    if (!$('starModal').hidden) { if (k === 'Escape') closeStar(); return; }
+    if (!$('researchModal').hidden) { if (k === 'Escape' || k === 'r') closeResearch(); return; }
     const t = selTower();
     if (k === 'Escape') { if (ui.placing) setPlacing(null); else { ui.selId = 0; ui.infoKey = ''; } }
     else if (/^[1-9]$/.test(k) && C.RACE_IDS[+k - 1]) setPlacing(C.RACE_IDS[+k - 1]);
@@ -200,6 +202,7 @@
     else if (k === 'f') cycleSpeed();
     else if (k === 'm') setSound(!S.settings.sound);
     else if (k === 'c') openCodex();
+    else if (k === 'r') openResearch();
     else if (k === 'u') {
       const h = ui.hoverId && S.towers.find(q => q.id === ui.hoverId);
       if (h) { ui.selId = h.id; ui.placing = null; updateHint(); ui.infoKey = ''; refreshInfo(); }
@@ -339,9 +342,14 @@
     const top = C.topWave(S);
     const n = S.run ? S.run.n : S.sel;
     const left = S.run ? S.run.enemies.length + S.run.queue.length : 0;
-    const key = [n, S.cleared, !!S.run, S.auto, S.run ? S.run.lives : 0, left, ui.autoNext > 0, S.towers.length, C.fmt(1e6)].join();
+    const star = C.starOf(S);
+    const key = [n, S.cleared, !!S.run, S.auto, S.run ? S.run.lives : 0, left, ui.autoNext > 0, S.towers.length, C.fmt(1e6), star, S.map, C.rl(S, 'util_auto'), C.rl(S, 'eco_first') + C.rl(S, 'eco_master')].join();
     if (key === ui.waveKey) return;
     ui.waveKey = key;
+    $('starMods').innerHTML = starPills(star, false);
+    $('starBtn').hidden = !C.canStarUp(S);
+    $('starBtn').textContent = 'Star up to ' + (star + 1) + '★';
+    $('presetBtn').hidden = !(C.rl(S, 'util_auto') && !S.run && !S.towers.length && C.presetOf(S).length);
     const fresh = n > S.cleared;
     $('wLabel').textContent = 'Wave ' + n + (n === C.MAX_WAVE ? ' (final)' : '');
     const sub = $('wSub');
@@ -358,7 +366,7 @@
       html += '<div class="bosscard"><canvas data-dnb="boss" width="64" height="64"></canvas><div><div class="bn">' + esc(spec.boss.name) + '</div><div class="bd">' + esc(spec.boss.desc) + '</div><div class="tags">' + tags + '</div></div></div>';
     }
     for (const w of warnings(spec)) html += '<div class="warn">' + esc(w) + '</div>';
-    if (fresh) html += '<div>First clear bonus: <b style="color:var(--gold)">+' + C.fmt(C.clearBonus(n, map)) + '</b></div>';
+    if (fresh) html += '<div>First clear bonus: <b style="color:var(--gold)">+' + C.fmt(Math.round(C.clearBonus(n, map) * C.clearMul(S, star))) + '</b></div>';
     if (S.run) {
       html += '<div>In progress: <b>' + left + '</b> DNBs left</div>';
       const nx = S.run.n + 1;
@@ -589,8 +597,14 @@
     if (cur) lock = '<span class="ml ok">Playing now</span>';
     else if (open) lock = '<span class="ml ok">' + (best ? 'Continue' : 'Unlocked, start fresh') + '</span>';
     else lock = '<span class="ml">Locked: clear wave ' + C.UNLOCK_AT + ' on ' + esc(prev.name) + ' (best ' + C.mapCleared(S, prev.id) + ')</span>';
+    const st = C.starOf(S, id);
+    if (st) { b.classList.add('starred'); b.style.setProperty('--sg', st); }
+    let stars = '';
+    for (let i = 1; i <= C.MAX_STARS; i++) stars += i <= st ? '<b>★</b>' : '☆';
     const info = document.createElement('div');
     info.innerHTML = '<div class="mt"><span class="mo">' + m.order + '</span><span>' + esc(m.name) + '</span><span class="mb">Best ' + best + ' / ' + C.MAX_WAVE + '</span></div>'
+      + '<div class="mstars" aria-label="' + st + ' of ' + C.MAX_STARS + ' stars" data-tip="' + esc(starTip(st)) + '">' + stars + '</div>'
+      + (st ? '<div class="smods">' + starPills(st, true) + '</div>' : '')
       + '<div class="mbar"><i style="width:' + best + '%"></i></div>'
       + '<div class="mf">' + esc(m.feature) + '</div><div class="md">' + esc(m.blurb) + '</div>' + lock;
     b.append(c, info);
@@ -634,6 +648,157 @@
     if (ev.target === $('mapModal')) { closeMaps(); return; }
     const card = ev.target.closest('.mapcard');
     if (card) chooseMap(card.dataset.map);
+  });
+
+  function pctOf(m) { return Math.round((m - 1) * 100); }
+  function starTip(st) {
+    if (!st) return 'No stars yet. Clear wave ' + C.MAX_WAVE + ' to star up this map.';
+    const lines = [st + '★: DNBs +' + pctOf(C.starHpMul(st, S)) + '% HP, +' + pctOf(C.starSpeedMul(st)) + '% speed. Rewards +' + pctOf(C.starCashMul(st)) + '% cash.'];
+    for (const m of C.starMods(st)) lines.push(m.star + '★ ' + m.name + ': ' + m.desc);
+    return lines.join('\n');
+  }
+  function starPills(st, compact) {
+    if (!st) return '';
+    let h = '<span class="smod lvl" data-tip="' + esc(starTip(st)) + '">' + st + '★</span>';
+    for (const m of C.starMods(st)) h += '<span class="smod" data-tip="' + esc(m.name + ': ' + m.desc) + '">' + esc(compact ? m.short : m.name) + '</span>';
+    return h;
+  }
+
+  function starBodyHtml() {
+    const map = C.mapOf(S), cur = C.starOf(S), next = cur + 1;
+    const gain = C.starUpGain(S), skip = C.skipFor(S);
+    const mod = C.STAR_MODS.find(m => m.star === next);
+    let line = '';
+    for (let i = 1; i <= C.MAX_STARS; i++) line += i <= next ? '★' : '<span class="dim">☆</span>';
+    let h = '<div class="stline">' + line + '</div>';
+    h += '<p>Raise <b>' + esc(map.name) + '</b> to <b>' + next + '★</b>? Clearing all ' + C.MAX_WAVE + ' waves again will be harder, and pay more.</p>';
+    h += '<h3>Resets on this map</h3><ul class="loses" id="starResets">'
+      + '<li>' + (S.towers.length === 1 ? 'Your 1 pony on the board is removed' : 'All ' + S.towers.length + ' ponies on the board are removed') + '</li>'
+      + '<li>Cash goes back to ' + C.fmt(C.mapStartCash(map, S)) + (skip ? ' plus the skipped waves’ pay' : '') + '</li>'
+      + '<li>Wave progress restarts at wave ' + (skip + 1) + ' (best ' + S.cleared + ')</li>'
+      + '<li>First-clear records reset, so every first-clear bonus pays again</li></ul>';
+    h += '<h3>You gain</h3><ul class="gains">'
+      + '<li><span class="gain">+' + gain + ' Moonstones</span> for permanent research</li>'
+      + '<li>Rewards +' + pctOf(C.starCashMul(next)) + '% cash (was +' + pctOf(C.starCashMul(cur)) + '%)</li>'
+      + '<li>DNBs +' + pctOf(C.starHpMul(next, S)) + '% HP, +' + pctOf(C.starSpeedMul(next)) + '% speed, counting ' + C.researchLevels(S) + ' research levels at ' + Math.round(C.STAR.res * 1000) / 10 + '% each</li>'
+      + (mod ? '<li>New modifier: <b>' + esc(mod.name) + '</b>. ' + esc(mod.desc) + '</li>' : '')
+      + '<li>Boss waves you clear for the first time drop Moonstones</li>'
+      + (skip ? '<li>Head Start skips waves 1 to ' + skip + ', bonuses paid</li>' : '')
+      + (C.rl(S, 'util_auto') ? '<li>Your current layout is saved as a preset</li>' : '')
+      + '</ul>';
+    h += '<p class="hint">Other maps, research, Moonstones and the Codex are not touched.</p>';
+    return h;
+  }
+  function openStar() {
+    if (!C.canStarUp(S)) { A.play('deny'); banner(S.run ? 'Finish the wave first' : 'Clear wave ' + C.MAX_WAVE + ' to star up this map', 'bad'); return false; }
+    lastFocus = document.activeElement;
+    $('starTitle').textContent = 'Star up to ' + (C.starOf(S) + 1) + '★';
+    $('starBody').innerHTML = starBodyHtml();
+    $('starModal').hidden = false;
+    $('starCancel').focus();
+    return true;
+  }
+  function closeStar() {
+    if ($('starModal').hidden) return;
+    $('starModal').hidden = true;
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function confirmStar() {
+    const r = C.starUp(S);
+    $('starModal').hidden = true;
+    if (!r) { A.play('deny'); return null; }
+    ui.selId = 0; ui.placing = null; ui.ghost = null; ui.autoNext = 0; ui.paused = false; S.auto = false;
+    updateHint(); dirty();
+    writeSave();
+    return r;
+  }
+  function starBurst(e) {
+    const el = $('starBurst');
+    let rays = '';
+    for (let i = 0; i < 12; i++) rays += '<i class="sbray" style="transform:rotate(' + (i * 30) + 'deg)"></i>';
+    el.innerHTML = rays + '<div class="sbstar">★</div><div class="sbtext">' + esc(C.MAPS[e.id].name) + ' ' + e.star + '★ · +' + e.gain + ' Moonstones</div>';
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+  }
+  $('starBtn').addEventListener('click', openStar);
+  $('starClose').addEventListener('click', closeStar);
+  $('starCancel').addEventListener('click', closeStar);
+  $('starConfirm').addEventListener('click', confirmStar);
+  $('starModal').addEventListener('click', ev => { if (ev.target === $('starModal')) closeStar(); });
+  $('presetBtn').addEventListener('click', () => {
+    const n = C.placePreset(S);
+    if (!n) { A.play('deny'); banner('Not enough cash to rebuild the saved layout yet', 'bad'); return; }
+    A.play('place');
+    banner('Rebuilt ' + n + ' ponies from your saved layout', 'good');
+    dirty(); writeSave();
+  });
+
+  function resTip(r) {
+    const lv = C.rl(S, r.id), st = C.researchState(S, r.id);
+    const lines = [r.name + ' ' + lv + '/' + r.max, r.per];
+    if (lv) lines.push('Now: ' + r.total(lv));
+    if (lv < r.max) lines.push('Next: ' + r.total(lv + 1) + ' for ' + C.researchCost(r.id, lv) + ' Moonstones');
+    else lines.push('Fully researched');
+    if (st === 'locked') lines.push('Requires ' + r.req.map(q => C.RESEARCH_BY_ID[q].name).join(' and '));
+    return lines.join('\n');
+  }
+  function buildResearch(flash) {
+    $('resMoon').textContent = C.fmt(S.moon || 0) + ' Moonstones';
+    $('resPress').textContent = Math.round(C.STAR.res * 1000) / 10 + '%';
+    const box = $('resTree');
+    let h = '';
+    for (const br of C.BRANCHES) {
+      const nodes = C.RESEARCH.filter(r => r.br === br.id);
+      let lines = '';
+      for (const r of nodes) for (const q of r.req) {
+        const p = C.RESEARCH_BY_ID[q];
+        lines += '<line x1="' + (p.pos[0] + 0.5) * 100 + '" y1="' + (p.pos[1] + 0.5) * 100 + '" x2="' + (r.pos[0] + 0.5) * 100 + '" y2="' + (r.pos[1] + 0.5) * 100 + '"' + (C.rl(S, q) ? ' class="on"' : '') + '/>';
+      }
+      let btns = '';
+      for (const r of nodes) {
+        const lv = C.rl(S, r.id), st = C.researchState(S, r.id);
+        let pips = '';
+        for (let i = 0; i < r.max; i++) pips += '<i' + (i < lv ? ' class="on"' : '') + '></i>';
+        const cost = st === 'maxed' ? 'Max' : '◆ ' + C.researchCost(r.id, lv);
+        btns += '<button type="button" class="rnode ' + st + (flash === r.id ? ' flash' : '') + '" data-res="' + r.id + '" style="left:' + ((r.pos[0] + 0.5) / 3 * 100).toFixed(2) + '%;top:' + ((r.pos[1] + 0.5) / 4 * 100).toFixed(2) + '%"'
+          + ' data-tip="' + esc(resTip(r)) + '" aria-label="' + esc(r.name + ', level ' + lv + ' of ' + r.max + ', ' + st) + '"'
+          + (st === 'locked' ? ' aria-disabled="true"' : '') + '><span class="rn">' + esc(r.name) + '</span><span class="rpips">' + pips + '</span><span class="rc">' + cost + '</span></button>';
+      }
+      h += '<section class="rbranch" style="--bc:' + br.color + ';--bcg:' + br.color + '73;--bcm:' + br.color + '38"><h3>' + esc(br.name) + '</h3><div class="rbd">' + esc(br.desc) + '</div>'
+        + '<div class="rgraph"><svg viewBox="0 0 300 400" preserveAspectRatio="none" aria-hidden="true">' + lines + '</svg>' + btns + '</div></section>';
+    }
+    box.innerHTML = h;
+  }
+  function openResearch() {
+    lastFocus = document.activeElement;
+    $('researchBtn').classList.remove('pulse');
+    buildResearch();
+    $('researchModal').hidden = false;
+    $('researchClose').focus();
+  }
+  function closeResearch() {
+    if ($('researchModal').hidden) return;
+    $('researchModal').hidden = true;
+    hideTip();
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function tryResearch(id) {
+    if (!C.buyResearch(S, id)) { A.play('deny'); return false; }
+    A.play('research');
+    buildResearch(id);
+    const el = $('resTree').querySelector('[data-res="' + id + '"]');
+    if (el) { el.focus(); if (el.matches(':hover')) showTip(el, false); }
+    dirty(); writeSave();
+    return true;
+  }
+  $('researchBtn').addEventListener('click', openResearch);
+  $('researchClose').addEventListener('click', closeResearch);
+  $('researchModal').addEventListener('click', ev => {
+    if (ev.target === $('researchModal')) { closeResearch(); return; }
+    const n = ev.target.closest('[data-res]');
+    if (n) tryResearch(n.dataset.res);
   });
 
   const codexUi = { tab: 'e', pick: null, toastT: 0 };
@@ -798,14 +963,15 @@
         if (!C.bossStatus(S.run)) { A.play('bossDown'); banner(e.name + ' is defeated!', 'good'); if (S.settings.shake) R.kick(5, 0.35); }
       } else if (e.type === 'won') {
         A.play('win');
-        banner(e.fresh ? 'Wave ' + e.n + ' cleared! Bonus +' + C.fmt(e.bonus) + ', kills +' + C.fmt(e.earned) : 'Wave ' + e.n + ' replayed: +' + C.fmt(e.earned) + ' kill cash', 'good');
+        banner((e.fresh ? 'Wave ' + e.n + ' cleared! Bonus +' + C.fmt(e.bonus) + ', kills +' + C.fmt(e.earned) : 'Wave ' + e.n + ' replayed: +' + C.fmt(e.earned) + ' kill cash') + (e.moon ? ' · +' + e.moon + ' Moonstones' : ''), 'good');
+        if (e.moon) $('researchBtn').classList.add('pulse');
         if (e.fresh) {
           if (e.n === C.UNLOCK_AT) {
             const nx = C.MAP_IDS[C.mapOf(S).order];
             if (nx) setTimeout(() => { banner('Wave ' + C.UNLOCK_AT + ' cleared! ' + C.MAPS[nx].name + ' is now unlocked.', 'good'); A.play('unlocked'); $('mapBtn').classList.add('pulse'); }, 2700);
           }
           if (S.sel === e.n && S.sel < C.MAX_WAVE) S.sel = C.topWave(S);
-          if (e.n === C.MAX_WAVE) setTimeout(() => banner('All 100 waves held. ' + C.mapOf(S).name + ' is safe!', 'good'), 2700);
+          if (e.n === C.MAX_WAVE) setTimeout(() => banner('All 100 waves held. ' + C.mapOf(S).name + ' is safe!' + (C.canStarUp(S) ? ' Star up for Moonstones.' : ''), 'good'), 2700);
         }
         if (S.auto && !(e.fresh && e.n === C.MAX_WAVE)) ui.autoNext = performance.now() + 1600;
         writeSave();
@@ -820,6 +986,13 @@
       } else if (e.type === 'gust') { A.play('wind'); continue; }
       else if (e.type === 'codex') { codexToast(e); continue; }
       else if (e.type === 'map') resize();
+      else if (e.type === 'starup') {
+        starBurst(e);
+        banner(C.MAPS[e.id].name + ' is now ' + e.star + '★! +' + e.gain + ' Moonstones', 'good');
+        $('researchBtn').classList.add('pulse');
+        if (S.settings.shake) R.kick(6, 0.5);
+      }
+      else if (e.type === 'research') { dirty(); continue; }
       else if (e.type === 'leak') continue;
       ui.waveKey = ''; ui.infoKey = '';
     }
@@ -827,7 +1000,17 @@
 
   function refreshHud() {
     $('hCash').textContent = C.fmt(S.cash);
-    $('hLives').textContent = S.run ? Math.max(0, S.run.lives) + '/' + C.LIVES : C.LIVES + '/' + C.LIVES;
+    const lm = S.run ? (S.run.livesMax || C.LIVES) : C.livesFor(S);
+    $('hLives').textContent = S.run ? Math.max(0, S.run.lives) + '/' + lm : lm + '/' + lm;
+    $('hMoon').textContent = C.fmt(S.moon || 0);
+    const st = C.starOf(S), sc = $('hStarChip');
+    const sk = S.map + st;
+    if (sc.dataset.k !== sk) {
+      sc.dataset.k = sk;
+      $('hStars').textContent = st ? st + '★' : '0';
+      sc.dataset.tip = starTip(st);
+      sc.classList.toggle('on', st > 0);
+    }
     $('hWave').textContent = S.run ? S.run.n : S.sel;
     $('hBest').textContent = S.cleared;
   }
@@ -868,5 +1051,8 @@
   window.addEventListener('pagehide', writeSave);
   $('saveNote').textContent = 'Progress saves automatically in this browser.';
   requestAnimationFrame(frame);
-  window.__nd = { get S() { return S; }, ui, save: writeSave, audio: A, setSpeed, togglePause, refresh: dirty, openMaps, closeMaps, chooseMap, openCodex, closeCodex };
+  window.__nd = { get S() { return S; }, ui, save: writeSave, audio: A, setSpeed, togglePause, refresh: dirty, openMaps, closeMaps, chooseMap, openCodex, closeCodex,
+    openStar, closeStar, confirmStar, openResearch, closeResearch, buyResearch: tryResearch,
+    forceClear(n) { if (S.run) return false; S.cleared = Math.max(S.cleared, Math.min(C.MAX_WAVE, n)); S.sel = C.topWave(S); dirty(); return true; },
+    grantMoon(n) { C.grantMoon(S, n); dirty(); return S.moon; } };
 })();

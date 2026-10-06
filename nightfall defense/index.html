@@ -19,6 +19,8 @@
       <div class="chip red" title="Lives this wave"><span class="k">Lives</span><span id="hLives">10</span></div>
       <div class="chip" title="Wave"><span class="k">Wave</span><span id="hWave">1</span></div>
       <div class="chip dim" title="Highest wave cleared"><span class="k">Best</span><span id="hBest">0</span></div>
+      <div id="hStarChip" class="chip star" data-tip="No stars on this map yet"><span class="k">Stars</span><span id="hStars">0</span></div>
+      <div class="chip moon" data-tip="Moonstones: spend them on permanent research"><span class="k">Moon</span><span id="hMoon">0</span></div>
       <button id="muteBtn" class="icobtn" type="button" aria-label="Mute sound" aria-pressed="false" data-tip="Sound on or off (M)">&#9834;</button>
       <button id="setBtn" class="icobtn" type="button" aria-label="Settings" aria-haspopup="dialog" data-tip="Settings">&#9881;</button>
     </div>
@@ -41,6 +43,7 @@
         <div class="maprow">
           <button id="mapBtn" class="mapbtn on" type="button" aria-haspopup="dialog"><span id="mapName">Map 1 &middot; Moonlit Road</span><span class="mapgo">Maps</span></button>
           <button id="codexBtn" class="mapbtn codexbtn" type="button" aria-haspopup="dialog" data-tip="Every DNB and boss you have met (C)">Codex</button>
+          <button id="researchBtn" class="mapbtn codexbtn resbtn" type="button" aria-haspopup="dialog" data-tip="Spend Moonstones on permanent research (R)">Research</button>
         </div>
         <div class="waverow">
           <button id="wPrev" class="sq" type="button" aria-label="Previous wave">&#8249;</button>
@@ -48,7 +51,10 @@
           <button id="wNext" class="sq" type="button" aria-label="Next wave">&#8250;</button>
           <button id="wTop" class="sq small" type="button" title="Jump to highest wave">Top</button>
         </div>
+        <div id="starMods" class="starmods"></div>
         <div class="waveinfo" id="wInfo"></div>
+        <button id="starBtn" class="starbtn" type="button" aria-haspopup="dialog" hidden>Star up</button>
+        <button id="presetBtn" class="ghost presetbtn" type="button" hidden>Rebuild saved layout</button>
         <button id="startBtn" class="primary" type="button">Start Wave 1</button>
         <label class="auto"><input type="checkbox" id="autoBox"><span class="sw"></span><span>Auto-continue</span></label>
         <p id="autoHint" class="hint"></p>
@@ -84,7 +90,7 @@
     <ul class="keys">
       <li><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><kbd>5</kbd> pick Earth, Unicorn, Pegasus, Bat, Crystal</li>
       <li><kbd>Space</kbd> start wave, or pause during one</li>
-      <li><kbd>P</kbd> pause &middot; <kbd>F</kbd> cycle speed &middot; <kbd>M</kbd> mute &middot; <kbd>C</kbd> codex</li>
+      <li><kbd>P</kbd> pause &middot; <kbd>F</kbd> cycle speed &middot; <kbd>M</kbd> mute &middot; <kbd>C</kbd> codex &middot; <kbd>R</kbd> research</li>
       <li><kbd>U</kbd> open upgrades for the pony under the cursor</li>
       <li><kbd>B</kbd> upgrade max affordable &middot; <kbd>S</kbd> sell (press twice)</li>
       <li>Hold <kbd>Shift</kbd> to show every range &middot; <kbd>Esc</kbd> cancel</li>
@@ -106,6 +112,21 @@
     <div class="cxbody"><div id="codexGrid" class="cxgrid"></div><div id="codexDetail" class="cxdetail"></div></div>
   </div>
 </div>
+<div id="starModal" class="modal" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="starTitle">
+    <div class="dhead"><h2 id="starTitle">Star up</h2><button id="starClose" class="ghost x" type="button">Close</button></div>
+    <div id="starBody" class="starbody"></div>
+    <div class="dactions"><button id="starCancel" class="ghost" type="button">Not yet</button><button id="starConfirm" class="starbtn" type="button">Star up</button></div>
+  </div>
+</div>
+<div id="researchModal" class="modal" hidden>
+  <div class="dialog wide research" role="dialog" aria-modal="true" aria-labelledby="researchTitle">
+    <div class="dhead"><h2 id="researchTitle">Research</h2><span id="resMoon" class="resmoon"></span><button id="researchClose" class="ghost x" type="button">Close</button></div>
+    <p class="hint">Research is permanent and works on every map. Earn Moonstones by starring up maps and by clearing boss waves on starred maps for the first time. On starred maps each research level also makes DNBs <span id="resPress"></span> tougher.</p>
+    <div id="resTree" class="restree"></div>
+  </div>
+</div>
+<div id="starBurst" class="starburst" aria-hidden="true"></div>
 <div id="tip" class="tip" role="tooltip" hidden></div>
 <script src="js/core.js"></script>
 <script src="js/render.js"></script>
