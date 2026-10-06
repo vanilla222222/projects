@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nightfall Defense</title>
+<meta name="description" content="Ponies hold the moonlit road against a hundred waves of DNBs. An incremental tower defense.">
+<meta name="theme-color" content="#0b0a13">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <a class="back" href="../index.html" aria-label="Back to projects">&#8592;</a>
+    <h1>Nightfall Defense</h1>
+    <div class="hud">
+      <div class="chip gold" title="Cash"><span class="k">Cash</span><span id="hCash">0</span></div>
+      <div class="chip red" title="Lives this wave"><span class="k">Lives</span><span id="hLives">10</span></div>
+      <div class="chip" title="Wave"><span class="k">Wave</span><span id="hWave">1</span></div>
+      <div class="chip dim" title="Highest wave cleared"><span class="k">Best</span><span id="hBest">0</span></div>
+    </div>
+  </header>
+  <main class="stage">
+    <div id="board">
+      <canvas id="cv"></canvas>
+      <div id="banner" class="banner"></div>
+      <div id="placeHint" class="placehint"></div>
+    </div>
+    <aside id="side">
+      <section class="card wavebox">
+        <div class="maprow">
+          <button class="mapbtn on" type="button">Map 1 &middot; Moonlit Road</button>
+          <button id="map2" class="mapbtn locked" type="button" disabled>Map 2 &middot; unlocks at wave 50</button>
+        </div>
+        <div class="waverow">
+          <button id="wPrev" class="sq" type="button" aria-label="Previous wave">&#8249;</button>
+          <div class="wsel"><div id="wLabel" class="wl">Wave 1</div><div id="wSub" class="ws">New wave</div></div>
+          <button id="wNext" class="sq" type="button" aria-label="Next wave">&#8250;</button>
+          <button id="wTop" class="sq small" type="button" title="Jump to highest wave">Top</button>
+        </div>
+        <div class="waveinfo" id="wInfo"></div>
+        <button id="startBtn" class="primary" type="button">Start Wave 1</button>
+        <label class="auto"><input type="checkbox" id="autoBox"><span class="sw"></span><span>Auto-continue</span></label>
+        <p id="autoHint" class="hint"></p>
+      </section>
+      <section class="card build">
+        <h2>Ponies</h2>
+        <div id="buildList" class="buildlist"></div>
+      </section>
+      <section id="info" class="card info"></section>
+      <section class="card misc">
+        <button id="resetBtn" class="ghost danger" type="button">Reset progress</button>
+        <span id="saveNote" class="hint"></span>
+      </section>
+    </aside>
+  </main>
+</div>
+<script src="js/core.js"></script>
+<script src="js/render.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
