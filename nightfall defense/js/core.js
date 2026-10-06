@@ -4,7 +4,7 @@
   const WORLD = { L: 1400, W: 800, towerR: 20, minGap: 44 };
   const MAX_WAVE = 100;
   const LIVES = 10;
-  const SAVE_VER = 8;
+  const SAVE_VER = 9;
   const MAX_STARS = 5;
   const SPAWN_GUARD = 15;
   const UNLOCK_AT = 50;
@@ -704,8 +704,9 @@
   function starSpeedMul(star) { return 1 + STAR.speed * star; }
   function starCashMul(star) { return 1 + STAR.cash * star; }
   function cashResearchMul(S) { return rl(S, 'eco_master') ? 1.15 : 1; }
-  function killMul(S, star) { return starCashMul(star) * (1 + 0.06 * rl(S, 'eco_kill')) * cashResearchMul(S); }
-  function clearMul(S, star) { return starCashMul(star) * (1 + 0.1 * rl(S, 'eco_first')) * cashResearchMul(S); }
+  function bon(S, k) { return (S && S.bonus && S.bonus[k]) || 0; }
+  function killMul(S, star) { return starCashMul(star) * (1 + 0.06 * rl(S, 'eco_kill')) * cashResearchMul(S) * (1 + bon(S, 'cash')); }
+  function clearMul(S, star) { return starCashMul(star) * (1 + 0.1 * rl(S, 'eco_first')) * cashResearchMul(S) * (1 + bon(S, 'clear')); }
   function moonMul(S) { return 1 + 0.1 * rl(S, 'util_moon') + (rl(S, 'util_master') ? 0.2 : 0); }
   function livesFor(S, star) {
     if (star == null) star = starOf(S);
@@ -796,8 +797,401 @@
   const NUM_FORMATS = ['short', 'sci', 'full'];
   const SPEEDS = [1, 2, 4];
 
+  const BONUS_KEYS = ['dmg', 'rate', 'range', 'cash', 'clear', 'start', 'xp'];
+  const BONUS_NAMES = { dmg: 'pony damage', rate: 'attack speed', range: 'range', cash: 'kill cash', clear: 'wave clear cash', start: 'starting cash', xp: 'hero XP' };
+  function newBonus() { const b = {}; for (const k of BONUS_KEYS) b[k] = 0; return b; }
+  function newStats() { return { played: 0, dmg: 0, bossKills: 0, earned: 0, killsBy: {}, eliteKills: 0, raceDmg: {}, heroDmg: {}, moonEarned: 0, playActive: 0, playOffline: 0, waves: 0, starUps: 0, upgrades: 0, sold: 0, mapKills: {} }; }
+  function newDaily() { return { day: 0, best: 0, won: 0, runs: 0, wins: 0, streak: 0, lastWin: 0, bestStreak: 0 }; }
+  const TOKENS = { lantern: 'Lantern', crown: 'Boss Crown', gild: 'Gilded Hooves', nightfall: 'Nightfall Banner' };
+  function numMap(o, ok, int) {
+    const out = {};
+    if (o && typeof o === 'object') for (const k in o) if (ok(k)) { const v = int ? o[k] | 0 : +o[k] || 0; if (v > 0 && isFinite(v)) out[k] = v; }
+    return out;
+  }
+  function cleanStats(st) {
+    const s = newStats();
+    if (!st || typeof st !== 'object') return s;
+    for (const k of ['played', 'bossKills', 'eliteKills', 'waves', 'starUps', 'upgrades', 'sold']) s[k] = Math.max(0, st[k] | 0);
+    for (const k of ['dmg', 'earned', 'moonEarned', 'playActive', 'playOffline']) s[k] = Math.max(0, +st[k] || 0);
+    s.killsBy = numMap(st.killsBy, k => !!ENEMIES[k] || k === 'boss', true);
+    s.raceDmg = numMap(st.raceDmg, k => !!RACES[k]);
+    s.heroDmg = numMap(st.heroDmg, k => !!HEROES[k]);
+    s.mapKills = numMap(st.mapKills, k => !!MAPS[k], true);
+    return s;
+  }
+  function cleanFlags(o, allowed) { const out = {}; if (o && typeof o === 'object') for (const k in o) if (allowed[k] && o[k]) out[k] = 1; return out; }
+  function cleanDaily(o) {
+    const d = newDaily();
+    if (!o || typeof o !== 'object') return d;
+    for (const k in d) d[k] = Math.max(0, Math.floor(+o[k] || 0));
+    d.won = d.won ? 1 : 0;
+    d.bestStreak = Math.max(d.bestStreak, d.streak);
+    return d;
+  }
+  function cleanChalDone(o) { const out = {}; if (o && typeof o === 'object') for (const k in o) if (CHAL_BY_ID[k] && o[k]) out[k] = { score: Math.max(0, (o[k].score | 0)) }; return out; }
+  function cleanChalBest(o) { return numMap(o, k => !!CHAL_BY_ID[k], true); }
+
+  function profileOf(S) { return S && S.chal ? S.chal.parent : S; }
+  function feat(S, id) { const P = profileOf(S); if (P && P.feats && !P.feats[id]) P.feats[id] = 1; }
+  function ft(P, id) { return P.feats && P.feats[id] ? 1 : 0; }
+  function boardsOf(P) { const out = [{ towers: P.towers, hero: P.hero, id: P.map }]; for (const id in P.boards || {}) out.push({ towers: P.boards[id].towers || [], hero: P.boards[id].hero, id }); return out; }
+  function scan(P, f) { for (const b of boardsOf(P)) if (f(b.towers || [])) return 1; return 0; }
+  function bestCleared(P) { let m = 0; for (const id of MAP_IDS) m = Math.max(m, starOf(P, id) > 0 ? MAX_WAVE : mapCleared(P, id)); return m; }
+  function mapsOpen(P) { let c = 0; for (const id of MAP_IDS) if (mapUnlocked(P, id)) c++; return c; }
+  function heroTop(P) { let m = 0; for (const b of boardsOf(P)) if (b.hero && b.hero.prog) for (const k in b.hero.prog) m = Math.max(m, b.hero.prog[k].lv | 0); return m; }
+  function starTotal(P) { let c = 0; for (const id of MAP_IDS) c += starOf(P, id); return c; }
+  function starMaps(P) { let c = 0; for (const id of MAP_IDS) if (starOf(P, id) > 0) c++; return c; }
+  function starTop(P) { let c = 0; for (const id of MAP_IDS) c = Math.max(c, starOf(P, id)); return c; }
+  function chalCount(P) { return Object.keys(P.chalDone || {}).length; }
+  function racePath(race) { return P => ft(P, 'r_' + race) || scan(P, l => l.some(t => t.race === race && t.paths.some(v => v >= 10))); }
+  function heroOwned(id) { return P => (P.heroUnlocks && P.heroUnlocks[id]) ? 1 : 0; }
+  const ACH_CATS = [
+    { id: 'progress', name: 'Progress' }, { id: 'combat', name: 'Combat' }, { id: 'economy', name: 'Economy' }, { id: 'races', name: 'Races' },
+    { id: 'heroes', name: 'Heroes' }, { id: 'stars', name: 'Stars' }, { id: 'challenges', name: 'Challenges' }, { id: 'secrets', name: 'Secrets' },
+  ];
+  const ACH = [
+    { id: 'p_w1', cat: 'progress', name: 'First Light', desc: 'Clear wave 1 on any map.', goal: 1, v: bestCleared, b: { dmg: 0.0025 } },
+    { id: 'p_w10', cat: 'progress', name: 'Holding the Line', desc: 'Clear wave 10 on any map.', goal: 10, v: bestCleared, b: { start: 0.01 } },
+    { id: 'p_w25', cat: 'progress', name: 'Quarter Moon', desc: 'Clear wave 25 on any map.', goal: 25, v: bestCleared, b: { rate: 0.0025 } },
+    { id: 'p_w50', cat: 'progress', name: 'Halfway Home', desc: 'Clear wave 50 on any map.', goal: 50, v: bestCleared, b: { xp: 0.05 } },
+    { id: 'p_w75', cat: 'progress', name: 'Long Night', desc: 'Clear wave 75 on any map.', goal: 75, v: bestCleared, b: { range: 0.0025 } },
+    { id: 'p_w100', cat: 'progress', name: 'Dawn Breaks', desc: 'Clear wave 100 on any map.', goal: 100, v: bestCleared, b: { dmg: 0.0025 } },
+    { id: 'p_map2', cat: 'progress', name: 'New Ground', desc: 'Open a second map.', goal: 2, v: mapsOpen, b: { clear: 0.01 } },
+    { id: 'p_map3', cat: 'progress', name: 'Wanderer', desc: 'Open three maps.', goal: 3, v: mapsOpen, b: { cash: 0.01 } },
+    { id: 'p_map5', cat: 'progress', name: 'Every Road', desc: 'Open all five maps.', goal: 5, v: mapsOpen, b: { dmg: 0.005 } },
+    { id: 'p_waves', cat: 'progress', name: 'Veteran', desc: 'Clear 250 waves in total, replays included.', goal: 250, v: P => P.stats.waves | 0, b: { xp: 0.05 } },
+    { id: 'p_codex', cat: 'progress', name: 'Field Guide', desc: 'Meet all 13 kinds of DNB.', goal: 13, v: P => Object.keys(P.codex.e).length, b: { range: 0.0025 } },
+    { id: 'p_bosses', cat: 'progress', name: 'Rogues Gallery', desc: 'Meet 10 different bosses.', goal: 10, v: P => Object.keys(P.codex.b).length, b: { dmg: 0.005 } },
+    { id: 'c_k1', cat: 'combat', name: 'First Thousand', desc: 'Defeat 1,000 DNBs.', goal: 1000, v: P => P.totalKills, b: { dmg: 0.0025 } },
+    { id: 'c_k2', cat: 'combat', name: 'Night Watch', desc: 'Defeat 25,000 DNBs.', goal: 25000, v: P => P.totalKills, b: { rate: 0.0025 } },
+    { id: 'c_k3', cat: 'combat', name: 'Endless Vigil', desc: 'Defeat 250,000 DNBs.', goal: 250000, v: P => P.totalKills, b: { dmg: 0.005 } },
+    { id: 'c_b1', cat: 'combat', name: 'Giant Slayer', desc: 'Defeat a boss.', goal: 1, v: P => P.stats.bossKills, b: { cash: 0.01 } },
+    { id: 'c_b2', cat: 'combat', name: 'Boss Hunter', desc: 'Defeat 25 bosses.', goal: 25, v: P => P.stats.bossKills, b: { dmg: 0.0025 } },
+    { id: 'c_b3', cat: 'combat', name: 'Legend of the Road', desc: 'Defeat 100 bosses.', goal: 100, v: P => P.stats.bossKills, b: { rate: 0.005 } },
+    { id: 'c_el', cat: 'combat', name: 'Elite Breaker', desc: 'Defeat 100 elite DNBs.', goal: 100, v: P => P.stats.eliteKills | 0, b: { cash: 0.005 } },
+    { id: 'c_flaw', cat: 'combat', name: 'Flawless', desc: 'Clear a boss wave without losing a life.', goal: 1, v: P => ft(P, 'c_flaw'), b: { range: 0.0025 } },
+    { id: 'c_clutch', cat: 'combat', name: 'By a Hair', desc: 'Clear a wave with exactly one life left.', goal: 1, v: P => ft(P, 'c_clutch'), b: { xp: 0.05 } },
+    { id: 'e_1', cat: 'economy', name: 'Pocket Change', desc: 'Earn 10K cash in total.', goal: 1e4, log: true, v: P => P.stats.earned, b: { start: 0.01 } },
+    { id: 'e_2', cat: 'economy', name: 'Saddlebags', desc: 'Earn 1B cash in total.', goal: 1e9, log: true, v: P => P.stats.earned, b: { cash: 0.01 } },
+    { id: 'e_3', cat: 'economy', name: 'Treasury', desc: 'Earn 1Qa cash in total.', goal: 1e15, log: true, v: P => P.stats.earned, b: { clear: 0.01 } },
+    { id: 'e_4', cat: 'economy', name: 'Dragon Hoard', desc: 'Earn 1Sx cash in total.', goal: 1e21, log: true, v: P => P.stats.earned, b: { cash: 0.01 } },
+    { id: 'e_5', cat: 'economy', name: 'Golden Moon', desc: 'Earn 1Oc cash in total.', goal: 1e27, log: true, v: P => P.stats.earned, b: { dmg: 0.005 } },
+    { id: 'e_up', cat: 'economy', name: 'Tinkerer', desc: 'Buy 500 upgrades.', goal: 500, v: P => P.stats.upgrades | 0, b: { rate: 0.0025 } },
+    { id: 'e_off', cat: 'economy', name: 'Paid in Dreams', desc: 'Collect offline earnings.', goal: 1, v: P => ft(P, 'e_off'), b: { start: 0.01 } },
+    { id: 'e_moon', cat: 'economy', name: 'Moon Collector', desc: 'Earn 100 Moonstones in total.', goal: 100, v: P => P.moonTotal | 0, b: { clear: 0.01 } },
+    { id: 'r_earth', cat: 'races', name: 'Bedrock', desc: 'Max an earth pony path.', goal: 1, v: racePath('earth'), b: { dmg: 0.0025 } },
+    { id: 'r_unicorn', cat: 'races', name: 'Archmage', desc: 'Max a unicorn path.', goal: 1, v: racePath('unicorn'), b: { dmg: 0.0025 } },
+    { id: 'r_pegasus', cat: 'races', name: 'Stormcaller', desc: 'Max a pegasus path.', goal: 1, v: racePath('pegasus'), b: { rate: 0.0025 } },
+    { id: 'r_bat', cat: 'races', name: 'Night Hunter', desc: 'Max a bat pony path.', goal: 1, v: racePath('bat'), b: { range: 0.0025 } },
+    { id: 'r_crystal', cat: 'races', name: 'Prism Heart', desc: 'Max a crystal pony path.', goal: 1, v: racePath('crystal'), b: { dmg: 0.0025 } },
+    { id: 'r_herd', cat: 'races', name: 'Full Herd', desc: 'Have all five races on one board.', goal: 1, v: P => scan(P, l => RACE_IDS.every(r => l.some(t => t.race === r))), b: { range: 0.0025 } },
+    { id: 'r_army', cat: 'races', name: 'Cavalry', desc: 'Have 25 ponies on one board.', goal: 1, v: P => ft(P, 'r_army') || scan(P, l => l.length >= 25), b: { rate: 0.0025 } },
+    { id: 'r_dual', cat: 'races', name: 'Twin Mastery', desc: 'Max two paths on one pony.', goal: 1, v: P => ft(P, 'r_dual') || scan(P, l => l.some(t => t.paths.filter(v => v >= 10).length >= 2)), b: { dmg: 0.005 } },
+    { id: 'h_field', cat: 'heroes', name: 'Champion', desc: 'Start a wave with a hero on the field.', goal: 1, v: P => ft(P, 'h_field') || (boardsOf(P).some(b => b.hero && b.hero.id) ? 1 : 0), b: { xp: 0.05 } },
+    { id: 'h_10', cat: 'heroes', name: 'Seasoned', desc: 'Raise a hero to level 10.', goal: 10, v: heroTop, b: { xp: 0.05 } },
+    { id: 'h_30', cat: 'heroes', name: 'Living Legend', desc: 'Raise a hero to level 30.', goal: 30, v: heroTop, b: { rate: 0.0025 } },
+    { id: 'h_iron', cat: 'heroes', name: 'Iron Will', desc: 'Unlock Ironmane.', goal: 1, v: heroOwned('ironmane'), b: { xp: 0.05 } },
+    { id: 'h_sky', cat: 'heroes', name: 'Sky Friend', desc: 'Unlock Skyflick.', goal: 1, v: heroOwned('skyflick'), b: { range: 0.0025 } },
+    { id: 'h_dusk', cat: 'heroes', name: 'Dusk Pact', desc: 'Unlock Duskfang.', goal: 1, v: heroOwned('duskfang'), b: { dmg: 0.0025 } },
+    { id: 'h_all', cat: 'heroes', name: 'Hall of Heroes', desc: 'Unlock every hero.', goal: 4, v: P => HERO_IDS.filter(id => heroUnlocked(P, id)).length, b: { rate: 0.005 } },
+    { id: 's_1', cat: 'stars', name: 'Rising Star', desc: 'Earn a star on any map.', goal: 1, v: starTotal, b: { dmg: 0.005 } },
+    { id: 's_5', cat: 'stars', name: 'Constellation', desc: 'Earn 5 stars in total.', goal: 5, v: starTotal, b: { cash: 0.01 } },
+    { id: 's_max', cat: 'stars', name: 'Supernova', desc: 'Reach 5 stars on one map.', goal: 5, v: starTop, b: { dmg: 0.01 } },
+    { id: 's_all', cat: 'stars', name: 'Starry Sky', desc: 'Earn a star on every map.', goal: 5, v: starMaps, b: { rate: 0.005 } },
+    { id: 's_res', cat: 'stars', name: 'Scholar', desc: 'Buy 10 research levels.', goal: 10, v: researchLevels, b: { range: 0.0025 } },
+    { id: 's_cap', cat: 'stars', name: 'Capstone', desc: 'Buy a capstone research.', goal: 1, v: P => (rl(P, 'eco_master') || rl(P, 'abil_master') || rl(P, 'util_master')) ? 1 : 0, b: { dmg: 0.005 } },
+    { id: 'ch_d1', cat: 'challenges', name: 'Daily Rider', desc: 'Win a daily challenge.', goal: 1, v: P => P.daily.wins | 0, b: { start: 0.01 } },
+    { id: 'ch_d3', cat: 'challenges', name: 'Good Habit', desc: 'Win dailies 3 days in a row.', goal: 3, v: P => P.daily.bestStreak | 0, b: { cash: 0.01 } },
+    { id: 'ch_d7', cat: 'challenges', name: 'Devotion', desc: 'Win dailies 7 days in a row.', goal: 7, v: P => P.daily.bestStreak | 0, b: { dmg: 0.005 } },
+    { id: 'ch_p1', cat: 'challenges', name: 'Challenger', desc: 'Complete a permanent challenge.', goal: 1, v: chalCount, b: { dmg: 0.0025 } },
+    { id: 'ch_p6', cat: 'challenges', name: 'Trial Master', desc: 'Complete 6 permanent challenges.', goal: 6, v: chalCount, b: { rate: 0.005 } },
+    { id: 'ch_p12', cat: 'challenges', name: 'Unbroken', desc: 'Complete every permanent challenge.', goal: 12, v: chalCount, b: { dmg: 0.01 } },
+    { id: 'x_lone', cat: 'secrets', name: 'Hero Alone', desc: 'Clear a wave with only your hero on the field.', goal: 1, hidden: true, v: P => ft(P, 'x_lone'), b: { xp: 0.1 } },
+    { id: 'x_fast', cat: 'secrets', name: 'Blur', desc: 'Clear a boss wave at 4x speed.', goal: 1, hidden: true, v: P => ft(P, 'x_fast'), b: { rate: 0.0025 } },
+    { id: 'x_gate', cat: 'secrets', name: 'Photo Finish', desc: 'Defeat a boss right at the gate.', goal: 1, hidden: true, v: P => ft(P, 'x_gate'), b: { range: 0.0025 } },
+    { id: 'x_sell', cat: 'secrets', name: 'Cold Feet', desc: 'Sell a pony while a boss is on the road.', goal: 1, hidden: true, v: P => ft(P, 'x_sell'), b: { cash: 0.005 } },
+    { id: 'x_owl', cat: 'secrets', name: 'Night Owl', desc: 'Play between midnight and 4 am.', goal: 1, hidden: true, v: P => ft(P, 'x_owl'), b: { start: 0.01 } },
+  ];
+  const ACH_BY_ID = {};
+  for (const a of ACH) ACH_BY_ID[a.id] = a;
+  function pctText(v) { return String(Math.round((+v || 0) * 10000) / 100) + '%'; }
+  function bonusText(b) { return Object.keys(b).map(k => '+' + pctText(b[k]) + ' ' + BONUS_NAMES[k]).join(', '); }
+  function achVal(P, a) { const v = +a.v(P) || 0; return isFinite(v) ? v : 0; }
+  function recalcBonus(S) {
+    const P = profileOf(S);
+    if (!P) return null;
+    if (!P.bonus) P.bonus = newBonus();
+    const b = P.bonus;
+    for (const k of BONUS_KEYS) b[k] = 0;
+    for (const a of ACH) if (P.ach && P.ach[a.id]) for (const k in a.b) b[k] += a.b[k];
+    for (const k of BONUS_KEYS) b[k] = Math.round(b[k] * 10000) / 10000;
+    for (const X of S === P ? [S] : [S, P]) {
+      for (const t of X.towers || []) { t.bo = b; t._s = null; }
+      if (X.hero) { X.hero.bo = b; X.hero._s = null; }
+      X.buffsDirty = true;
+    }
+    return b;
+  }
+  function checkAch(S, quiet) {
+    const P = profileOf(S);
+    if (!P || !P.ach || !P.stats) return [];
+    const got = [];
+    for (const a of ACH) {
+      if (P.ach[a.id] || achVal(P, a) < a.goal) continue;
+      P.ach[a.id] = 1;
+      got.push(a);
+    }
+    if (!got.length) return got;
+    recalcBonus(S);
+    if (quiet) emit(S, 'achRetro', { n: got.length, ids: got.map(a => a.id) });
+    else for (const a of got) emit(S, 'ach', { id: a.id, name: a.name, desc: a.desc, cat: a.cat, bonus: bonusText(a.b) });
+    return got;
+  }
+  function achList(S) {
+    const P = profileOf(S);
+    return ACH.map(a => {
+      const done = !!(P.ach && P.ach[a.id]), val = done ? a.goal : Math.min(a.goal, achVal(P, a));
+      const pct = done ? 1 : a.log ? Math.max(0, Math.min(1, Math.log10(Math.max(1, val)) / Math.log10(a.goal))) : Math.max(0, Math.min(1, val / a.goal));
+      return { id: a.id, cat: a.cat, name: a.name, desc: a.desc, goal: a.goal, val, pct, done, hidden: !!a.hidden && !done, bonus: bonusText(a.b), log: !!a.log };
+    });
+  }
+
+  const CHAL_MODS = {
+    unicorns: { name: 'Unicorns only', desc: 'Only unicorns can be placed. They are priced like a mixed herd.', races: ['unicorn'], w: 1.5 },
+    grounded: { name: 'Grounded', desc: 'No pegasi or bat ponies. The rest are priced like a mixed herd.', ban: ['pegasus', 'bat'], w: 0.5 },
+    nosell: { name: 'No selling', desc: 'Ponies cannot be sold.', w: 0.5 },
+    flyers: { name: 'Flyers only', desc: 'Every DNB flies.', w: 1 },
+    double: { name: 'Double speed', desc: 'DNBs move twice as fast.', w: 1.5 },
+    short: { name: 'Short sight', desc: 'Ponies and the hero have 25% less range.', w: 1.5 },
+    nohero: { name: 'No hero', desc: 'Heroes stay home.', w: 0.5 },
+    bosses5: { name: 'Boss tide', desc: 'A boss every 5 waves.', w: 1.5 },
+    stealth: { name: 'Shadow march', desc: 'Half of all DNBs are cloaked.', w: 1.5 },
+    armored: { name: 'Armored horde', desc: 'Every DNB wears plate.', w: 1.5 },
+    onelife: { name: 'One life', desc: 'A single leak ends the run.', w: 2, perm: true },
+    limit: { name: 'Small herd', desc: 'Only a few ponies allowed.', w: 2 },
+    rich: { name: 'Golden start', desc: 'Triple starting cash, but kills pay nothing.', w: 1 },
+    tough: { name: 'Thick hides', desc: 'DNBs have 40% more health.', w: 1 },
+    glass: { name: 'Glass cannon', desc: 'Ponies deal 50% more damage, but only 10 lives.', w: 1 },
+  };
+  const CHAL_IDS = Object.keys(CHAL_MODS);
+  const DAILY_MODS = CHAL_IDS.filter(id => !CHAL_MODS[id].perm);
+  const CHAL_CLASH = [['unicorns', 'flyers'], ['grounded', 'flyers'], ['unicorns', 'grounded'], ['onelife', 'glass'], ['onelife', 'double'], ['onelife', 'bosses5'], ['onelife', 'short'], ['armored', 'tough'], ['armored', 'short']];
+  const CHAL_LIVES = 20;
+  const CHAL_ECO = { start: 3, kill: 2, clear: 2, hp: 0.4, boss: 0.55, soft: 0.15 };
+  const DAILY_WEIGHT = 3.5;
+  const DAILY_BANDS = { moonlit: [1, 11, 21], woods: [1, 11, 21], caverns: [1, 11, 21], cliffs: [1], castle: [1, 11] };
+  function chalClash(a, b) { return CHAL_CLASH.some(c => (c[0] === a && c[1] === b) || (c[0] === b && c[1] === a)); }
+  function chalLives(mods, lives) { return mods.indexOf('onelife') >= 0 ? 1 : mods.indexOf('glass') >= 0 ? 10 : lives || CHAL_LIVES; }
+  function chalWeight(mods) { let w = 0; for (const m of mods) w += CHAL_MODS[m] ? CHAL_MODS[m].w : 0; return w; }
+  function chalHpMul(def) { return CHAL_ECO.hp / (1 + CHAL_ECO.soft * chalWeight(def.mods)); }
+  const CHALLENGES = [
+    { id: 'horn', name: 'Horn and Hoof', map: 'moonlit', from: 1, to: 20, mods: ['unicorns'], diff: 1, reward: { moon: 15 }, blurb: 'A herd of unicorns holds the moonlit road alone.' },
+    { id: 'nosell', name: 'Nothing to Sell', map: 'moonlit', from: 1, to: 25, mods: ['nosell', 'limit'], cap: 8, diff: 2, reward: { rp: 10 }, blurb: 'Eight ponies, placed for keeps.' },
+    { id: 'feather', name: 'Featherfall', map: 'cliffs', from: 1, to: 20, mods: ['flyers'], diff: 2, reward: { hero: 'skyflick' }, blurb: 'Every DNB on the cliffs takes to the wind.' },
+    { id: 'lightless', name: 'Lightless', map: 'caverns', from: 1, to: 20, mods: ['stealth'], diff: 3, reward: { token: 'lantern' }, blurb: 'Nothing in the caverns can be seen without help.' },
+    { id: 'iron', name: 'Iron Tide', map: 'castle', from: 1, to: 20, mods: ['armored'], diff: 3, reward: { rp: 15 }, blurb: 'Plated DNBs march on the castle.' },
+    { id: 'glass', name: 'Glass Gate', map: 'moonlit', from: 11, to: 30, mods: ['onelife'], diff: 4, reward: { moon: 40 }, blurb: 'One leak and the gate shatters.' },
+    { id: 'rest', name: 'Hero\'s Rest', map: 'woods', from: 1, to: 25, mods: ['nohero', 'short'], diff: 3, reward: { hero: 'ironmane' }, blurb: 'No hero, and the trees crowd every pony\'s view.' },
+    { id: 'rush', name: 'Boss Rush', map: 'moonlit', from: 1, to: 25, mods: ['bosses5'], diff: 3, reward: { token: 'crown' }, blurb: 'A boss walks the road every five waves.' },
+    { id: 'stampede', name: 'Stampede', map: 'woods', from: 1, to: 20, mods: ['double'], diff: 3, reward: { moon: 30 }, blurb: 'Everything runs twice as fast.' },
+    { id: 'golden', name: 'Golden Hooves', map: 'cliffs', from: 1, to: 25, mods: ['rich'], diff: 2, reward: { token: 'gild' }, blurb: 'A fortune up front, and not a coin after.' },
+    { id: 'few', name: 'Few and Proud', map: 'castle', from: 1, to: 25, mods: ['limit', 'tough'], cap: 5, diff: 4, reward: { hero: 'duskfang' }, blurb: 'Five ponies against thick-hided DNBs.' },
+    { id: 'nightfall', name: 'Nightfall', map: 'castle', from: 21, to: 40, mods: ['stealth', 'armored', 'bosses5'], diff: 5, reward: { moon: 60, token: 'nightfall' }, blurb: 'Cloaked, plated and led by bosses. The last trial.' },
+  ];
+  const CHAL_BY_ID = {};
+  for (const c of CHALLENGES) { c.kind = 'perm'; c.w = chalWeight(c.mods); c.lives = chalLives(c.mods, c.lives); CHAL_BY_ID[c.id] = c; }
+  function dayIndex(now) { return Math.floor((+now || 0) / 864e5); }
+  function dayLabel(day) { return new Date(day * 864e5).toISOString().slice(0, 10); }
+  function dailyDef(day) {
+    day = day | 0;
+    const rng = mulberry(hashSeed(day, 0x6d6f6f6e, 8));
+    const map = MAP_IDS[Math.floor(rng() * MAP_IDS.length)];
+    const bands = DAILY_BANDS[map];
+    const from = bands[Math.floor(rng() * bands.length)];
+    const k = rng() < 0.4 ? 3 : 2;
+    const mods = [];
+    for (let g = 0; mods.length < k && g < 60; g++) {
+      const m = DAILY_MODS[Math.floor(rng() * DAILY_MODS.length)];
+      if (mods.indexOf(m) >= 0 || mods.some(o => chalClash(o, m))) continue;
+      if (mods.length >= 2 && chalWeight(mods.concat(m)) > DAILY_WEIGHT) continue;
+      mods.push(m);
+    }
+    const cap = mods.indexOf('limit') >= 0 ? 8 + Math.floor(rng() * 3) : 0;
+    const w = chalWeight(mods);
+    const diff = Math.max(1, Math.min(5, Math.round(w + (from - 1) / 15 + (MAPS[map].order - 1) * 0.25)));
+    return { id: 'daily', kind: 'daily', day, name: 'Daily ' + dayLabel(day), map, from, to: from + 19, mods, cap, diff, w, lives: chalLives(mods), reward: { moon: 15 } };
+  }
+  function dailyMoon(streak) { return 15 + Math.min(10, Math.max(0, streak - 1)); }
+  function rollDaily(P, day) {
+    const d = P.daily || (P.daily = newDaily());
+    if (day > d.day) { d.day = day; d.best = 0; d.won = 0; d.runs = 0; }
+    return d;
+  }
+  function dailyStreak(P, day) { const d = P.daily; if (!d) return 0; return d.lastWin >= day - 1 ? d.streak : 0; }
+  function modText(id, def) { const m = CHAL_MODS[id]; if (!m) return ''; return id === 'limit' && def && def.cap ? m.name + ' (' + def.cap + ')' : m.name; }
+  function modDesc(id, def) { const m = CHAL_MODS[id]; if (!m) return ''; return id === 'limit' && def && def.cap ? 'At most ' + def.cap + ' ponies.' : m.desc; }
+  function rewardText(r) {
+    const out = [];
+    if (!r) return '';
+    if (r.moon) out.push(r.moon + ' Moonstones');
+    if (r.rp) out.push(r.rp + ' research points');
+    if (r.hero && HEROES[r.hero]) out.push('Hero: ' + HEROES[r.hero].name);
+    if (r.token && TOKENS[r.token]) out.push('Token: ' + TOKENS[r.token]);
+    return out.join(', ');
+  }
+  function chalRaces(S) {
+    const ch = S && S.chal;
+    if (!ch) return RACE_IDS.slice();
+    let list = RACE_IDS.slice();
+    for (const m of ch.def.mods) { const d = CHAL_MODS[m]; if (d.races) list = list.filter(r => d.races.indexOf(r) >= 0); if (d.ban) list = list.filter(r => d.ban.indexOf(r) < 0); }
+    return list;
+  }
+  function chalHas(S, id) { return !!(S && S.chal && S.chal.mods[id]); }
+  function chalBlock(S, race) {
+    const ch = S && S.chal;
+    if (!ch) return '';
+    if (ch.over) return 'over';
+    if (chalRaces(S).indexOf(race) < 0) return 'race';
+    if (ch.def.cap && S.towers.length >= ch.def.cap) return 'cap';
+    return '';
+  }
+  function chalEnemy(cm, e) {
+    if (cm.flyers) e.flying = true;
+    if (cm.stealth && e.id % 2 === 0) e.stealth = true;
+    if (cm.armored) e.plate = Math.max(e.plate, 0.04 * e.plateBase);
+  }
+  function chalRun(S, run, ch) {
+    const m = ch.mods;
+    run.cashMul *= CHAL_ECO.kill; run.clearMul *= CHAL_ECO.clear; run.hpMul *= chalHpMul(ch.def); run.bossHp = CHAL_ECO.boss;
+    if (m.tough) run.hpMul *= 1.4;
+    if (m.double) run.spdMul *= 2;
+    if (m.rich) { run.cashMul = 0; run.bossCash = 0; }
+    run.cm = (m.flyers || m.stealth || m.armored) ? { flyers: !!m.flyers, stealth: !!m.stealth, armored: !!m.armored } : null;
+    const n = run.n, map = run.map;
+    if (m.bosses5 && n % 5 === 0 && !run.spec.boss) {
+      const list = map.bosses;
+      run.xboss = BOSS_BY_ID[list[Math.min(list.length - 1, Math.floor(n / 10))]] || BOSSES[0];
+      const last = run.queue.length ? run.queue[run.queue.length - 1].t : 0;
+      const it = { t: last + map.waves.bossLead, type: 'boss', xb: true };
+      if (map.route.length > 1) it.route = (n / 5) % map.route.length;
+      run.queue.push(it);
+      run.enrageAt += map.waves.bossLead + 10;
+    }
+  }
+  const CHAL_SHARED = ['stats', 'settings', 'codex', 'research', 'heroUnlocks', 'ach', 'feats', 'bonus', 'daily', 'chalDone', 'chalBest', 'tokens'];
+  function chalStartCash(X, def, map) {
+    let c = Math.round((mapStartCash(map, X) + skipCash(X, map, def.from - 1, 0) * 0.85) * CHAL_ECO.start);
+    if (def.mods.indexOf('rich') >= 0) c *= 3;
+    return c;
+  }
+  function startChallenge(P, def, now) {
+    if (!P || P.chal || P.run) return null;
+    if (typeof def === 'string') def = def === 'daily' ? dailyDef(dayIndex(now || Date.now())) : CHAL_BY_ID[def];
+    if (!def || !MAPS[def.map]) return null;
+    const map = getMap(def.map);
+    const X = newState(map.id);
+    for (const k of CHAL_SHARED) X[k] = P[k];
+    X.fxOn = P.fxOn;
+    X.seed = hashSeed(P.seed, def.kind === 'daily' ? def.day : def.from * 131 + def.to, 99);
+    const mods = {};
+    for (const m of def.mods) mods[m] = true;
+    X.cm = (mods.short || mods.glass) ? { range: mods.short ? 0.75 : 1, dmg: mods.glass ? 1.5 : 1 } : null;
+    X.stars = {}; X.moon = 0; X.moonTotal = 0; X.presets = {}; X.slots = {}; X.boards = {}; X.lastSeen = 0;
+    Object.assign(X, newBoard(map, X));
+    X.cash = chalStartCash(X, def, map);
+    X.cleared = def.from - 1; X.sel = def.from;
+    const lives = def.lives || chalLives(def.mods);
+    X.chal = { id: def.id, kind: def.kind, def, mods, parent: P, from: def.from, to: def.to, lives, livesMax: lives, t: 0, waves: 0, over: null, day: def.day || 0, result: null };
+    if (!mods.nohero && P.hero && P.hero.id) {
+      const p = heroHome(map);
+      X.hero = { id: P.hero.id, x: p.x, y: p.y, auto: !!P.hero.auto, prog: JSON.parse(JSON.stringify(P.hero.prog || {})) };
+    }
+    prepTowers(X);
+    if (def.kind === 'daily') rollDaily(P, def.day).runs++;
+    emit(X, 'chalStart', { id: def.id, name: def.name });
+    return X;
+  }
+  function chalScore(waves, lives, t, won) { return waves * 1000 + (won ? lives * 100 + 5000 + Math.max(0, Math.round(4000 - 2 * t)) : 0); }
+  function grantReward(P, X, r) {
+    const got = [];
+    if (!r) return got;
+    if (r.moon) { grantMoon(P, r.moon); got.push(r.moon + ' Moonstones'); }
+    if (r.rp) { P.rp = (P.rp || 0) + r.rp; got.push(r.rp + ' research points'); }
+    if (r.hero && HEROES[r.hero]) {
+      if (heroUnlocked(P, r.hero)) { const m = HEROES[r.hero].unlock.moon || 0; grantMoon(P, m); got.push(m + ' Moonstones (' + HEROES[r.hero].name + ' already joined)'); }
+      else { P.heroUnlocks[r.hero] = 1; got.push('Hero: ' + HEROES[r.hero].name); emit(X, 'heroUnlock', { id: r.hero, name: HEROES[r.hero].name, how: 'challenge' }); }
+    }
+    if (r.token && TOKENS[r.token]) { P.tokens[r.token] = 1; got.push('Token: ' + TOKENS[r.token]); }
+    return got;
+  }
+  function chalFinish(X, result) {
+    const c = X && X.chal;
+    if (!c || c.over) return null;
+    c.over = result;
+    X.run = null;
+    const P = c.parent, def = c.def, won = result === 'won';
+    const score = chalScore(c.waves, c.lives, c.t, won);
+    const out = { id: def.id, kind: def.kind, name: def.name, result, waves: c.waves, total: def.to - def.from + 1, lives: won ? c.lives : 0, t: Math.round(c.t), score, reward: [], best: false, first: false, streak: 0 };
+    if (def.kind === 'daily') {
+      const d = rollDaily(P, def.day);
+      if (def.day === d.day) {
+        if (score > d.best) { d.best = score; out.best = true; }
+        if (won && !d.won) {
+          d.won = 1; d.wins++;
+          d.streak = d.lastWin === def.day - 1 ? d.streak + 1 : 1;
+          d.lastWin = def.day;
+          d.bestStreak = Math.max(d.bestStreak, d.streak);
+          out.first = true;
+          out.reward = grantReward(P, X, { moon: dailyMoon(d.streak) });
+        }
+        out.streak = dailyStreak(P, def.day);
+      }
+    } else {
+      if (score > (P.chalBest[def.id] | 0)) { P.chalBest[def.id] = score; out.best = true; }
+      if (won && !P.chalDone[def.id]) { P.chalDone[def.id] = { score }; out.first = true; out.reward = grantReward(P, X, def.reward); }
+    }
+    c.result = out;
+    emit(X, 'chalEnd', out);
+    checkAch(X);
+    return out;
+  }
+  function quitChallenge(X) {
+    const c = X && X.chal;
+    if (!c || c.over) return null;
+    if (X.run) { c.t += X.run.t; X.run = null; }
+    return chalFinish(X, 'quit');
+  }
+  function chalInfo(P, now) {
+    const day = dayIndex(now || Date.now());
+    const dd = dailyDef(day);
+    const d = P.daily || newDaily();
+    const today = d.day === day;
+    return {
+      daily: { def: dd, day, label: dayLabel(day), best: today ? d.best : 0, won: today && !!d.won, runs: today ? d.runs : 0, streak: dailyStreak(P, day), bestStreak: d.bestStreak, wins: d.wins, moon: dailyMoon(dailyStreak(P, day) + 1) },
+      perm: CHALLENGES.map(c => ({ def: c, done: !!P.chalDone[c.id], best: P.chalBest[c.id] | 0, reward: rewardText(c.reward) })),
+    };
+  }
+  function tickPlay(S, dt) { const P = profileOf(S); if (P && P.stats && dt > 0 && dt < 5) P.stats.playActive += dt; }
+  function statsSummary(S) {
+    const P = profileOf(S), st = P.stats;
+    let favP = null, favH = null;
+    for (const k in st.raceDmg) if (!favP || st.raceDmg[k] > favP.dmg) favP = { id: k, name: RACES[k].name, dmg: st.raceDmg[k] };
+    for (const k in st.heroDmg) if (!favH || st.heroDmg[k] > favH.dmg) favH = { id: k, name: HEROES[k].name, dmg: st.heroDmg[k] };
+    const maps = MAP_IDS.map(id => {
+      const b = boardOf(P, id), r = b && b.records;
+      let bosses = 0;
+      if (r) for (const k in r.bosses) bosses += r.bosses[k] | 0;
+      return { id, name: MAPS[id].name, open: mapUnlocked(P, id), cleared: b ? b.cleared : 0, stars: starOf(P, id), wins: r ? r.wins : 0, att: r ? r.att : 0, time: r ? r.time : 0, kills: st.mapKills[id] | 0, bosses };
+    });
+    return {
+      kills: P.totalKills, killsBy: Object.assign({}, st.killsBy), bossKills: st.bossKills, eliteKills: st.eliteKills, earned: st.earned, moonEarned: Math.max(st.moonEarned, P.moonTotal | 0),
+      playActive: st.playActive, playOffline: st.playOffline, waves: st.waves, starUps: st.starUps, upgrades: st.upgrades, sold: st.sold, played: st.played, dmg: st.dmg,
+      favPony: favP, favHero: favH, maps, ach: Object.keys(P.ach).length, achTotal: ACH.length, chal: chalCount(P), dailyWins: P.daily.wins, bestStreak: P.daily.bestStreak,
+    };
+  }
+
   function newRecords() { return { time: 0, att: 0, wins: 0, bosses: {}, firsts: {} }; }
-  function mapStartCash(map, S) { return Math.round((map.startCash || TUNE.startCash) * (1 + 0.5 * rl(S, 'eco_start'))); }
+  function mapStartCash(map, S) { return Math.round((map.startCash || TUNE.startCash) * (1 + 0.5 * rl(S, 'eco_start')) * (1 + bon(S, 'start'))); }
   function newFarm() { return { on: false, pick: 0, fails: 0, safe: 0, val: 0, secs: 0, runs: 0, inG: 0, inT: 0 }; }
   function newBoard(map, S) { return { cash: mapStartCash(map, S), cleared: 0, sel: 1, auto: false, towers: [], records: newRecords(), hero: null, farm: newFarm(), build: null }; }
   const BOARD_KEYS = ['cash', 'cleared', 'sel', 'auto', 'towers', 'records', 'hero', 'farm', 'build'];
@@ -808,12 +1202,13 @@
       ver: SAVE_VER, map: map.id, seed: 0x2545F491,
       cash: 0, cleared: 0, sel: 1, auto: false, towers: [], records: null, boards: {}, nextId: 1,
       run: null, time: 0, fxOn: true, fx: [], events: [], buffsDirty: true, totalKills: 0,
-      stats: { played: 0, dmg: 0, bossKills: 0, earned: 0 },
+      stats: newStats(),
       settings: Object.assign({}, DEFAULT_SETTINGS),
       sfx: { hit: 0, crit: 0, kill: 0, leak: 0 },
       codex: { e: {}, b: {} },
       stars: {}, moon: 0, moonTotal: 0, research: {}, presets: {}, heroUnlocks: { nova: 1 },
       slots: {}, rules: newRules(), lastSeen: 0,
+      ach: {}, feats: {}, bonus: newBonus(), daily: newDaily(), chalDone: {}, chalBest: {}, rp: 0, tokens: {}, chal: null, cm: null,
     };
     Object.assign(S, newBoard(map, S));
     return S;
@@ -853,7 +1248,8 @@
 
   function owned(S, race) { let c = 0; for (const t of S.towers) if (t.race === race) c++; return c; }
   function nextTowerCost(S, race) {
-    const k = owned(S, race);
+    let k = owned(S, race);
+    if (S.chal) { const n = chalRaces(S).length; if (n < RACE_IDS.length) k = Math.floor(k * n / RACE_IDS.length); }
     const c = towerCost(race, k, priceOf(mapOf(S)));
     return k === 0 ? Math.round(c * (1 - 0.25 * rl(S, 'pony_cheap'))) : c;
   }
@@ -875,12 +1271,12 @@
     return {
       id: S.nextId++, race, x, y, spent: 0, paths: [0, 0, 0, 0, 0], infD: 0, infR: 0, mode: 'first',
       cd: 0, sigT: 0, sigTs: {}, stomp: 0, boomT: 0, bloodT: 0, surgeT: 0, face: 0, kills: 0, dmg: 0, wDmg: 0, wKills: 0, anim: 0,
-      pm: priceOf(mapOf(S)), buff: null, wallPt: null, _s: null, rs: S.research,
+      pm: priceOf(mapOf(S)), buff: null, wallPt: null, _s: null, rs: S.research, bo: S.bonus, cm: S.cm,
     };
   }
 
   function placeTower(S, race, x, y) {
-    if (!canPlace(S, x, y)) return null;
+    if (!canPlace(S, x, y) || chalBlock(S, race)) return null;
     const cost = nextTowerCost(S, race);
     if (S.cash < cost) return null;
     S.cash -= cost;
@@ -890,13 +1286,16 @@
     t.light = lightAt(mapOf(S), x, y);
     S.towers.push(t);
     S.buffsDirty = true;
+    if (S.towers.length >= 25) feat(S, 'r_army');
     return t;
   }
 
   function sellValue(t) { return Math.floor(t.spent * (TUNE.sellRate + 0.05 * rsl(t.rs, 'eco_sell'))); }
   function sellTower(S, t) {
     const i = S.towers.indexOf(t);
-    if (i < 0) return 0;
+    if (i < 0 || chalHas(S, 'nosell')) return 0;
+    if (S.run && S.run.enemies.some(e => e.alive && e.boss)) feat(S, 'x_sell');
+    S.stats.sold = (S.stats.sold || 0) + 1;
     const refund = sellValue(t);
     S.cash += refund;
     S.towers.splice(i, 1);
@@ -918,6 +1317,8 @@
     const c = nextNodeCost(t, i);
     if (S.cash < c) return false;
     S.cash -= c; t.spent += c; t.paths[i]++; t._s = null; S.buffsDirty = true;
+    if (S.stats) S.stats.upgrades = (S.stats.upgrades || 0) + 1;
+    if (t.paths[i] >= 10 && S.stats) { feat(S, 'r_' + t.race); if (t.paths.filter(v => v >= 10).length >= 2) feat(S, 'r_dual'); }
     return true;
   }
   function infNext(t, which) { return Math.round(infCost(t.race, which === 'dmg' ? t.infD : t.infR) * (t.pm || 1)); }
@@ -927,6 +1328,7 @@
     S.cash -= c; t.spent += c;
     if (which === 'dmg') t.infD++; else t.infR++;
     t._s = null;
+    if (S.stats) S.stats.upgrades = (S.stats.upgrades || 0) + 1;
     return true;
   }
 
@@ -985,6 +1387,9 @@
     const rg = 1 + 0.04 * rsl(rs, 'pony_range');
     s.range *= rg;
     if (s.baseRange) s.baseRange *= rg;
+    const bo = t.bo, cm = t.cm;
+    if (bo) { s.dmg *= 1 + (bo.dmg || 0); s.rate *= 1 + (bo.rate || 0); s.range *= 1 + (bo.range || 0); if (s.baseRange) s.baseRange *= 1 + (bo.range || 0); }
+    if (cm) { s.dmg *= cm.dmg || 1; s.range *= cm.range || 1; if (s.baseRange) s.baseRange *= cm.range || 1; }
     s.crit += 0.02 * rsl(rs, 'abil_crit');
     const hold = 1 + 0.1 * rsl(rs, 'abil_stun');
     s.stunDur *= hold; s.slowDur *= hold;
@@ -1099,6 +1504,8 @@
 
   function startWave(S, n) {
     if (S.run) return false;
+    const ch = S.chal;
+    if (ch) { if (ch.over) return false; n = S.cleared + 1; if (n > ch.to) return false; }
     n = Math.max(1, Math.min(n || S.sel, topWave(S)));
     S.sel = n;
     const map = mapOf(S);
@@ -1115,14 +1522,15 @@
         for (const it of queue) if (!it.elite && it.type !== 'basic' && it.type !== 'boss' && er() < STAR.eliteAdd) it.elite = true;
       }
     }
-    const lives = livesFor(S, star);
+    const lives = ch ? ch.lives : livesFor(S, star);
     S.run = {
-      n, spec, map, route: map.route, queue, t: 0, lives, livesMax: lives, enemies: [], proj: [], earned: 0, kills: 0, eid: 1,
+      n, spec, map, route: map.route, queue, t: 0, lives, livesMax: ch ? ch.livesMax : lives, lives0: lives, enemies: [], proj: [], earned: 0, kills: 0, eid: 1,
       star, hpMul: starHpMul(star, S), spdMul: starSpeedMul(star), cashMul: killMul(S, star), clearMul: clearMul(S, star), regen: star >= 3 ? STAR.regen : 0,
       bossCash: 1 + 0.25 * rl(S, 'eco_boss'), leakCut: rl(S, 'util_leak'),
       fresh: n > S.cleared, over: null, rng: mulberry(hashSeed(S.seed, n, S.stats.played)), bossIds: [],
       enrageAt: (queue.length ? queue[queue.length - 1].t : 0) + 75 * Math.max(1, map.maxLen / BASE_LEN), windT: 0, gust: 0, gustWarn: 0, gustKind: '', gustDir: 1, gustOn: false,
     };
+    if (ch) chalRun(S, S.run, ch);
     const ready = rl(S, 'abil_first') > 0;
     for (const t of S.towers) {
       t.cd = 0; t.sigT = 0; t.sigTs = {}; t.boomT = 0; t.bloodT = 0; t.surgeT = 0; t.stomp = 0; t.wDmg = 0; t.wKills = 0;
@@ -1134,7 +1542,8 @@
       ensureHero(S, h);
       h.ab = [0, 0, 0]; h.cd = 0; h.stunT = 0; h.frenzyT = 0; h.wDmg = 0; h.wKills = 0; h.thinkT = 0;
     }
-    emit(S, 'start', { n, boss: spec.boss });
+    if (S.hero && S.hero.id) feat(S, 'h_field');
+    emit(S, 'start', { n, boss: spec.boss || S.run.xboss || null });
     return true;
   }
 
@@ -1159,9 +1568,9 @@
     e.plate = def.plate ? def.plate * e.plateBase : 0;
     if (def.heal) e.timers.heal = def.heal.every * e.seed / 1000;
     if (e.boss) {
-      const b = run.spec.boss || BOSSES[0];
+      const b = (opts && opts.xb && run.xboss) || run.spec.boss || BOSSES[0];
       e.bossDef = b; e.trick = b.trick; e.name = b.name; e.color = b.color; e.dark = b.dark; e.leak = 5;
-      e.hpMax = e.hp = base * def.hp * (1 + n / 100) * (b.hpMul || 1);
+      e.hpMax = e.hp = base * def.hp * (1 + n / 100) * (b.hpMul || 1) * (run.bossHp || 1);
       if (run.star >= 1) e.starPlate = STAR.bossPlate * base;
       e.thresholds = [0.75, 0.5, 0.25];
       if (e.trick === 'flying') e.flying = true;
@@ -1169,8 +1578,10 @@
       if (e.trick === 'armor') e.armor = true;
       if (e.trick === 'phase') e.flying = true;
       if (b.tricks) setupTricks(e, b);
+      if (opts && opts.xb) e.hpMax = e.hp = e.hpMax * 0.6;
     }
     if (opts) Object.assign(e, opts);
+    if (run.cm && !e.boss) chalEnemy(run.cm, e);
     if (run.spdMul) e.speed *= run.spdMul;
     if (e.elite) applyElite(e, n);
     if (S.codex) {
@@ -1298,7 +1709,7 @@
     }
     const real = Math.min(e.hp, dealt);
     S.stats.dmg += real;
-    if (t) { t.dmg += real; t.wDmg += real; }
+    if (t) { t.dmg += real; t.wDmg += real; const bx = t.isHero ? S.stats.heroDmg : S.stats.raceDmg, key = t.isHero ? t.id : t.race; if (bx && key) bx[key] = (bx[key] || 0) + real; }
     e.hp -= dealt;
     e.hit = 0.12;
     S.sfx.hit++;
@@ -1335,6 +1746,12 @@
     const mult = t ? stats(t).cash : 1;
     const gain = killCash(run.n, run.map) * e.cash * mult * (run.cashMul || 1) * (e.boss ? run.bossCash || 1 : 1);
     S.cash += gain; run.earned += gain; run.kills++; S.totalKills++; S.stats.earned += gain;
+    if (S.chal) S.chal.parent.totalKills++;
+    const st = S.stats;
+    if (st.killsBy) st.killsBy[e.boss ? 'boss' : e.type] = (st.killsBy[e.boss ? 'boss' : e.type] || 0) + 1;
+    if (e.elite) st.eliteKills = (st.eliteKills || 0) + 1;
+    if (!S.chal && st.mapKills) st.mapKills[run.map.id] = (st.mapKills[run.map.id] || 0) + 1;
+    if (e.boss && !e.splitDone) { const R = run.route[e.path] || run.route[0]; if (R && e.d > R.len - 90) feat(S, 'x_gate'); }
     S.sfx.kill++;
     if (t) { t.kills++; t.wKills++; }
     heroXp(S, run, e, t);
@@ -2000,6 +2417,9 @@
       cdMul: (1 - 0.08 * rsl(rs, 'abil_hero')) * (1 - 0.03 * (R - 1)),
       auraR: d.aura.r + 2 * (lv - 1), auraV: (d.aura.base + d.aura.per * (lv - 1)) * (1 + 0.15 * rsl(rs, 'abil_aura')), auraKind: d.aura.kind,
     };
+    const bo = h.bo, cm = h.cm;
+    if (bo) { s.pow *= 1 + (bo.dmg || 0); s.rate *= 1 + (bo.rate || 0); s.range *= 1 + (bo.range || 0); }
+    if (cm) { s.pow *= cm.dmg || 1; s.range *= cm.range || 1; }
     s.ab = Object.assign({}, s, { canFly: true, canMagic: true, crit: 0, flyMul: 1, fastMul: 1 });
     s.abP = Object.assign({}, s.ab, { pierce: 1 });
     s.fz = Object.assign({}, s, { crit: s.crit + 0.25 });
@@ -2020,6 +2440,8 @@
     for (const k of ['cd', 'stunT', 'frenzyT', 'anim', 'dmg', 'wDmg', 'kills', 'wKills', 'thinkT', 'moved', 'walk', 'lvT']) if (!isFinite(h[k])) h[k] = 0;
     if (h.face == null) h.face = 0;
     h.rs = S.research;
+    h.bo = S.bonus;
+    h.cm = S.cm;
     h._s = null;
   }
   function heroAt(S, x, y) {
@@ -2054,10 +2476,11 @@
     S.moon -= d.unlock.moon;
     S.heroUnlocks[id] = 1;
     emit(S, 'heroUnlock', { id, name: d.name, how: 'moon' });
+    checkAch(S);
     return true;
   }
   function pickHero(S, id) {
-    if (S.run || !HEROES[id] || !heroUnlocked(S, id)) return false;
+    if (S.run || !HEROES[id] || !heroUnlocked(S, id) || chalHas(S, 'nohero')) return false;
     if (!S.hero) { const p = heroHome(mapOf(S)); S.hero = { id, x: p.x, y: p.y, auto: false, prog: {} }; }
     else S.hero.id = id;
     ensureHero(S, S.hero);
@@ -2104,7 +2527,7 @@
     if (!h || !h.id) return;
     const p = heroProg(h);
     if (p.lv >= HERO_TUNE.maxLv) return;
-    addHeroXp(S, (e.boss ? 20 : e.elite ? 3 : 1) * (1 + 0.04 * run.n) * (t === h ? 2 : 1) * (1 + 0.25 * rl(S, 'util_hero')));
+    addHeroXp(S, (e.boss ? 20 : e.elite ? 3 : 1) * (1 + 0.04 * run.n) * (t === h ? 2 : 1) * (1 + 0.25 * rl(S, 'util_hero')) * (1 + bon(S, 'xp')));
   }
   function addHeroXp(S, amt) {
     const h = S.hero;
@@ -2261,7 +2684,7 @@
     run.t += dt;
     if (S.records) S.records.time += dt;
     if (!run.queue.length && !run.enrage && run.t > run.enrageAt) { run.enrage = true; emit(S, 'enrage', {}); }
-    while (run.queue.length && run.queue[0].t <= run.t) { const it = run.queue.shift(); const o = it.route != null ? { path: it.route, quiet: !!it.twin } : {}; if (it.elite) o.elite = true; spawnEnemy(S, run, it.type, undefined, o); }
+    while (run.queue.length && run.queue[0].t <= run.t) { const it = run.queue.shift(); const o = it.route != null ? { path: it.route, quiet: !!it.twin } : {}; if (it.elite) o.elite = true; if (it.xb) o.xb = true; spawnEnemy(S, run, it.type, undefined, o); }
     if (run.map.wind) windStep(S, run, dt);
 
     for (const e of run.enemies) { e.quag = false; e.wallSlow = 0; }
@@ -2308,9 +2731,11 @@
 
     if (run.lives <= 0) {
       run.over = 'lost';
-      trackIncome(S, run.earned, run.t);
+      if (!S.chal) trackIncome(S, run.earned, run.t);
       emit(S, 'lost', { n: run.n, earned: run.earned });
       S.run = null;
+      if (S.chal) { S.chal.t += run.t; S.chal.lives = 0; chalFinish(S, 'lost'); }
+      else checkAch(S);
       return;
     }
     if (!run.queue.length && !run.enemies.length) {
@@ -2328,19 +2753,28 @@
         const val = boardValue(S.towers);
         if (run.n > S.farm.safe || (run.n === S.farm.safe && (!S.farm.val || val < S.farm.val))) { S.farm.safe = run.n; S.farm.val = val; S.farm.secs = Math.round(run.t * 10) / 10; }
       }
-      trackIncome(S, run.earned + bonus + interest, run.t);
-      if (bonus) syncHeroUnlocks(S);
+      if (!S.chal) trackIncome(S, run.earned + bonus + interest, run.t);
+      if (bonus && !S.chal) syncHeroUnlocks(S);
+      S.stats.waves = (S.stats.waves || 0) + 1;
+      const bossWave = !!(run.spec.boss || run.xboss);
+      if (bossWave && run.lives >= run.lives0) feat(S, 'c_flaw');
+      if (run.lives === 1 && run.lives0 > 1) feat(S, 'c_clutch');
+      if (!S.towers.length && S.hero && S.hero.id && run.kills > 0) feat(S, 'x_lone');
+      if (bossWave && S.settings && S.settings.speed >= 4) feat(S, 'x_fast');
       emit(S, 'won', { n: run.n, bonus, earned: run.earned, fresh: bonus > 0, lives: run.lives, moon, interest });
       S.run = null;
+      if (S.chal) { const c = S.chal; c.lives = run.lives; c.t += run.t; c.waves++; if (run.n >= c.to) chalFinish(S, 'won'); }
+      checkAch(S);
     }
   }
 
   function grantMoon(S, amt) {
     const g = Math.max(0, Math.round(amt));
     S.moon = (S.moon || 0) + g; S.moonTotal = (S.moonTotal || 0) + g;
+    if (S.stats) S.stats.moonEarned = (S.stats.moonEarned || 0) + g;
     return g;
   }
-  function canStarUp(S) { return !S.run && S.cleared >= MAX_WAVE && starOf(S) < MAX_STARS; }
+  function canStarUp(S) { return !S.run && !S.chal && S.cleared >= MAX_WAVE && starOf(S) < MAX_STARS; }
   function starUpGain(S, id) {
     id = id || S.map;
     const m = MAPS[id], next = Math.min(MAX_STARS, starOf(S, id) + 1);
@@ -2360,6 +2794,7 @@
     const star = starOf(S, id) + 1;
     S.stars[id] = star;
     grantMoon(S, gain);
+    checkAch(S);
     const keep = S.records ? S.records.bosses : {};
     const b = newBoard(map, S);
     b.records.bosses = keep;
@@ -2370,7 +2805,9 @@
     S.fx.length = 0;
     prepTowers(S);
     syncHeroUnlocks(S);
+    S.stats.starUps = (S.stats.starUps || 0) + 1;
     emit(S, 'starup', { id, star, gain, skip: k });
+    checkAch(S);
     snd(S, 'starup');
     fx(S, { k: 'starup', x: WORLD.L / 2, y: WORLD.W / 2, star, life: 2.4 });
     return { id, star, gain, skip: k };
@@ -2502,8 +2939,11 @@
       else if (S.boards[m.id]) S.boards[m.id].cash += m.cash;
     }
     S.stats.earned += g.total;
+    S.stats.playOffline = (S.stats.playOffline || 0) + (g.secs || 0);
     touchSeen(S, g.now);
+    if (g.total > 0) feat(S, 'e_off');
     emit(S, 'offline', { total: g.total, secs: g.secs });
+    checkAch(S);
     return g.total;
   }
 
@@ -2823,17 +3263,20 @@
     const lv = rl(S, id);
     if (lv >= r.max) return 'maxed';
     for (const q of r.req) if (!rl(S, q)) return 'locked';
-    return (S.moon || 0) >= researchCost(id, lv) ? 'afford' : 'open';
+    return (S.moon || 0) + (S.rp || 0) >= researchCost(id, lv) ? 'afford' : 'open';
   }
   function buyResearch(S, id) {
-    if (researchState(S, id) !== 'afford') return false;
+    if (S.chal || researchState(S, id) !== 'afford') return false;
     const c = researchCost(id, rl(S, id));
-    S.moon -= c;
+    const fromRp = Math.min(S.rp || 0, c);
+    S.rp = (S.rp || 0) - fromRp;
+    S.moon -= c - fromRp;
     S.research[id] = rl(S, id) + 1;
     for (const t of S.towers) { t.rs = S.research; t._s = null; }
     if (S.hero) { S.hero.rs = S.research; S.hero._s = null; }
     S.buffsDirty = true;
-    emit(S, 'research', { id, lv: S.research[id] });
+    emit(S, 'research', { id, lv: S.research[id], rp: fromRp });
+    checkAch(S);
     return true;
   }
   function cleanStars(o) {
@@ -2869,6 +3312,7 @@
       stats: S.stats, settings: S.settings, boards, codex: S.codex,
       stars: S.stars, moon: S.moon, moonTotal: S.moonTotal, research: S.research, presets: S.presets, heroUnlocks: S.heroUnlocks,
       slots: S.slots, rules: S.rules, lastSeen: S.lastSeen || 0,
+      ach: S.ach, feats: S.feats, daily: S.daily, chalDone: S.chalDone, chalBest: S.chalBest, rp: S.rp || 0, tokens: S.tokens,
     });
   }
 
@@ -2951,6 +3395,23 @@
         b.build = null;
       }
       o.ver = 8;
+      return o;
+    },
+    8(o) {
+      const st = o.stats && typeof o.stats === 'object' ? o.stats : {};
+      const boards = o.boards && typeof o.boards === 'object' ? o.boards : {};
+      let waves = 0, mk = {};
+      for (const id of MAP_IDS) {
+        const b = boards[id];
+        if (!b || typeof b !== 'object') continue;
+        waves += (b.records && b.records.wins) | 0;
+      }
+      let ups = 0;
+      if (o.stars && typeof o.stars === 'object') for (const id of MAP_IDS) ups += Math.max(0, Math.min(MAX_STARS, o.stars[id] | 0));
+      for (const id of MAP_IDS) { const b = boards[id]; if (b && Array.isArray(b.towers)) { let k = 0; for (const t of b.towers) k += (t && t.kills) | 0; if (k) mk[id] = k; } }
+      o.stats = Object.assign({}, st, { waves: Math.max(st.waves | 0, waves), starUps: Math.max(st.starUps | 0, ups), moonEarned: Math.max(+st.moonEarned || 0, Math.floor(+o.moonTotal || 0)), mapKills: st.mapKills || mk });
+      o.ach = {}; o.feats = {}; o.daily = newDaily(); o.chalDone = {}; o.chalBest = {}; o.rp = 0; o.tokens = {};
+      o.ver = 9;
       return o;
     },
   };
@@ -3067,8 +3528,7 @@
     const S = newState();
     S.seed = o.seed >>> 0 || S.seed;
     S.nextId = o.nextId | 0 || 1; S.totalKills = o.totalKills | 0;
-    const st = o.stats || {};
-    S.stats = { played: st.played | 0, dmg: +st.dmg || 0, bossKills: st.bossKills | 0, earned: +st.earned || 0 };
+    S.stats = cleanStats(o.stats);
     S.settings = cleanSettings(o.settings);
     S.codex = cleanCodex(o.codex);
     S.stars = cleanStars(o.stars);
@@ -3080,6 +3540,14 @@
     S.slots = cleanSlots(o.slots);
     S.rules = cleanRules(o.rules);
     S.lastSeen = Math.max(0, Math.floor(+o.lastSeen || 0));
+    S.ach = cleanFlags(o.ach, ACH_BY_ID);
+    S.feats = cleanFlags(o.feats, ACH_BY_ID);
+    S.daily = cleanDaily(o.daily);
+    S.chalDone = cleanChalDone(o.chalDone);
+    S.chalBest = cleanChalBest(o.chalBest);
+    S.rp = Math.max(0, Math.floor(+o.rp || 0));
+    S.tokens = cleanFlags(o.tokens, TOKENS);
+    recalcBonus(S);
     setNumFormat(S.settings.numFmt);
     const src = o.boards && typeof o.boards === 'object' ? o.boards : {};
     const boards = {};
@@ -3105,6 +3573,7 @@
     syncHeroUnlocks(S, true);
     for (const id of MAP_IDS) { const hb = id === S.map ? S : S.boards[id]; if (hb && hb.hero && !heroUnlocked(S, hb.hero.id)) hb.hero.id = 'nova'; }
     prepTowers(S);
+    checkAch(S, true);
     return S;
   }
 
@@ -3150,6 +3619,9 @@
     newRules, cleanRule, cleanRules, rulesFor, setRules, ruleText, ruleAction, runRules,
     slotCount, slotsOf, cleanName, savePreset, deletePreset, renamePreset, loadPreset, cancelBuild, buildPending, buildStep, buildProgress, planCost,
     cleanFarm, cleanSlots, cleanBuild,
+    BONUS_KEYS, BONUS_NAMES, newBonus, newStats, cleanStats, TOKENS, profileOf, feat, ACH, ACH_BY_ID, ACH_CATS, bonusText, pctText, recalcBonus, checkAch, achList, bestCleared,
+    CHAL_ECO, CHAL_MODS, CHAL_IDS, DAILY_MODS, CHAL_CLASH, CHALLENGES, CHAL_BY_ID, DAILY_BANDS, chalClash, chalWeight, chalHpMul, dayIndex, dayLabel, dailyDef, dailyMoon, dailyStreak, modText, modDesc, rewardText,
+    chalRaces, chalHas, chalBlock, startChallenge, quitChallenge, chalFinish, chalScore, chalInfo, chalStartCash, tickPlay, statsSummary, newDaily,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.NDCore = API;

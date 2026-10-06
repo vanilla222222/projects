@@ -35,6 +35,7 @@
     cast: { gap: 0.15, gain: 0.09, voices: [{ type: 'sine', f: 660, f2: 1320, dur: 0.16 }, { type: 'triangle', f: 990, f2: 1980, dur: 0.14, at: 0.04 }], noise: 0.05 },
     roar: { gap: 1, gain: 0.13, voices: [{ type: 'sawtooth', f: 140, f2: 70, dur: 0.55 }, { type: 'square', f: 95, f2: 60, dur: 0.5, at: 0.03 }], noise: 0.35 },
     herostun: { gap: 0.8, gain: 0.08, voices: [{ type: 'sine', f: 1200, f2: 800, dur: 0.12 }, { type: 'sine', f: 1000, f2: 600, dur: 0.14, at: 0.12 }, { type: 'sine', f: 800, f2: 400, dur: 0.2, at: 0.26 }] },
+    ach: { gap: 0.6, gain: 0.12, voices: [{ type: 'triangle', f: 784, dur: 0.1 }, { type: 'triangle', f: 988, dur: 0.1, at: 0.09 }, { type: 'sine', f: 1319, dur: 0.12, at: 0.18 }, { type: 'sine', f: 1568, f2: 2093, dur: 0.45, at: 0.27 }], noise: 0.02 },
     deny: { gap: 0.15, gain: 0.08, voices: [{ type: 'square', f: 160, dur: 0.08 }, { type: 'square', f: 120, dur: 0.1, at: 0.09 }] },
   };
   const MAX_VOICES = 24;

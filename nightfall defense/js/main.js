@@ -17,14 +17,15 @@
   }
   let seenReady = false;
   function writeSave() {
-    if (seenReady && !ui.away) C.touchSeen(S, Date.now());
-    try { localStorage.setItem(SAVE_KEY, C.serialize(S)); return true; } catch (err) { return false; }
+    if (seenReady && !ui.away) C.touchSeen(prof(), Date.now());
+    try { localStorage.setItem(SAVE_KEY, C.serialize(prof())); return true; } catch (err) { return false; }
   }
   function clearSave() {
     try { localStorage.removeItem(SAVE_KEY); } catch (err) { }
   }
 
   let S = loadSave() || C.newState();
+  function prof() { return C.profileOf(S); }
   C.setNumFormat(S.settings.numFmt);
   A.set(S.settings.sound, S.settings.vol);
   const ui = {
@@ -64,6 +65,10 @@
   }
 
   function setPlacing(race) {
+    if (race && ui.placing !== race && S.chal) {
+      const why = C.chalBlock(S, race);
+      if (why === 'race' || why === 'over') { A.play('deny'); banner(CHAL_MSG[why], 'bad'); return; }
+    }
     ui.placing = ui.placing === race ? null : race;
     ui.ghost = null;
     if (ui.placing) { ui.selId = 0; ui.heroSel = false; }
@@ -164,6 +169,8 @@
   };
   function tryPlace(x, y) {
     const race = ui.placing;
+    const cb = C.chalBlock(S, race);
+    if (cb) { banner(CHAL_MSG[cb] + (cb === 'cap' ? ' (' + S.chal.def.cap + ')' : ''), 'bad'); A.play('deny'); return; }
     const why = C.placeBlockReason(S, x, y);
     if (why) { banner(BLOCK_MSG[why] || 'Something is in the way here', 'bad'); A.play('deny'); return; }
     const cost = C.nextTowerCost(S, race);
@@ -209,6 +216,7 @@
     ui.infoKey = ''; ui.buildKey = '';
   }
   function doSell(t) {
+    if (C.chalHas(S, 'nosell')) { A.play('deny'); banner('No selling in this challenge', 'bad'); return; }
     if (ui.sellArm > performance.now()) {
       const got = C.sellTower(S, t);
       ui.selId = 0; ui.sellArm = 0;
@@ -225,6 +233,10 @@
     const k = ev.key.length === 1 ? ev.key.toLowerCase() : ev.key;
     if (k === 'Shift') { ui.showAll = true; return; }
     if (!$('awayModal').hidden) { if (k === 'Escape' || k === 'Enter') { ev.preventDefault(); claimAway(); } return; }
+    if (!$('chalEndModal').hidden) { if (k === 'Escape' || k === 'Enter') { ev.preventDefault(); closeChalEnd(false); } return; }
+    if (!$('chalModal').hidden) { if (k === 'Escape' || k === 'g') closeChal(); return; }
+    if (!$('achModal').hidden) { if (k === 'Escape' || k === 'a') closeAch(); return; }
+    if (!$('statsModal').hidden) { if (k === 'Escape' || k === 't') closeStats(); return; }
     if (!$('rulesModal').hidden) { if (k === 'Escape') closeRules(); return; }
     if (!$('plansModal').hidden) { if (k === 'Escape') closePlans(); return; }
     if (!$('setModal').hidden) { if (k === 'Escape') closeSettings(); return; }
@@ -238,12 +250,16 @@
     else if (k === 'q' || k === 'w' || k === 'e') doCast('qwe'.indexOf(k));
     else if (k === 'h') { if (!S.hero || !S.hero.id) openHeroes(); else selectHero(!ui.heroSel); }
     else if (/^[1-9]$/.test(k) && C.RACE_IDS[+k - 1]) setPlacing(C.RACE_IDS[+k - 1]);
+    else if (k === 'x' && S.chal) quitChal(false);
     else if (k === ' ') { ev.preventDefault(); if (!S.run) startSelected(); else togglePause(); }
     else if (k === 'p') togglePause();
     else if (k === 'f') cycleSpeed();
     else if (k === 'm') setSound(!S.settings.sound);
     else if (k === 'c') openCodex();
     else if (k === 'r') openResearch();
+    else if (k === 'g') openChal();
+    else if (k === 'a') openAch();
+    else if (k === 't') openStats();
     else if (k === 'u') {
       const h = ui.hoverId && S.towers.find(q => q.id === ui.hoverId);
       if (h) { ui.selId = h.id; ui.placing = null; updateHint(); ui.infoKey = ''; refreshInfo(); }
@@ -287,11 +303,15 @@
     }
   }
   function refreshBuild() {
-    const key = C.RACE_IDS.map(id => C.nextTowerCost(S, id) + (S.cash >= C.nextTowerCost(S, id) ? 'y' : 'n')).join() + ui.placing + C.fmt(1e6);
+    const allow = C.chalRaces(S);
+    const key = C.RACE_IDS.map(id => C.nextTowerCost(S, id) + (S.cash >= C.nextTowerCost(S, id) ? 'y' : 'n')).join() + ui.placing + C.fmt(1e6) + allow.join() + (S.chal ? S.chal.id + S.towers.length : '');
     if (key === ui.buildKey) return;
     ui.buildKey = key;
+    const capped = S.chal && S.chal.def.cap && S.towers.length >= S.chal.def.cap;
     for (const b of $('buildList').children) {
       const id = b.dataset.race, cost = C.nextTowerCost(S, id);
+      b.hidden = allow.indexOf(id) < 0;
+      b.classList.toggle('capped', !!capped);
       b.querySelector('.rc').textContent = C.fmt(cost);
       b.classList.toggle('on', ui.placing === id);
       b.classList.toggle('poor', S.cash < cost);
@@ -316,6 +336,7 @@
     writeSave();
   });
   function resetAll() {
+    if (S.chal) { chalDeny('Resetting progress'); return; }
     if (!window.confirm('Reset all progress on every map? Every pony, upgrade, wave and coin will be lost.')) return;
     const keep = S.settings;
     clearSave();
@@ -400,9 +421,10 @@
     pb.hidden = !(!S.run && !S.towers.length && !S.build && (ls >= 0 || (C.rl(S, 'util_auto') && C.presetOf(S).length)));
     if (!pb.hidden) pb.textContent = ls >= 0 ? 'Restore plan: ' + C.slotsOf(S)[ls].name : 'Rebuild saved layout';
     const fresh = n > S.cleared;
+    const ch = S.chal;
     $('wLabel').textContent = 'Wave ' + n + (n === C.MAX_WAVE ? ' (final)' : '');
     const sub = $('wSub');
-    sub.textContent = fresh ? 'New wave: first clear pays a bonus' : 'Replay: kill cash only';
+    sub.textContent = ch ? (ch.over ? 'Challenge over' : 'Challenge wave ' + (n - ch.from + 1) + ' of ' + (ch.to - ch.from + 1)) : fresh ? 'New wave: first clear pays a bonus' : 'Replay: kill cash only';
     sub.className = 'ws' + (fresh ? ' new' : '');
     $('wPrev').disabled = !!S.run || S.sel <= 1;
     $('wNext').disabled = !!S.run || S.sel >= top;
@@ -426,12 +448,12 @@
     paintIcons(box, spec);
     if (S.run) { const up = box.querySelector('.upnext'); if (up) paintIcons(up, C.waveSpec(S.run.n + 1, map)); }
     const sb = $('startBtn');
-    sb.disabled = !!S.run;
-    sb.textContent = S.run ? 'Wave ' + S.run.n + ' running' : (ui.autoNext > 0 ? 'Auto-starting Wave ' + S.sel + '...' : (fresh ? 'Start Wave ' : 'Replay Wave ') + S.sel);
+    sb.disabled = !!S.run || !!(ch && ch.over);
+    sb.textContent = S.run ? 'Wave ' + S.run.n + ' running' : ch ? (ch.over ? 'Challenge over' : (ui.autoNext > 0 ? 'Auto-starting Wave ' + S.sel + '...' : 'Start Wave ' + S.sel)) : (ui.autoNext > 0 ? 'Auto-starting Wave ' + S.sel + '...' : (fresh ? 'Start Wave ' : 'Replay Wave ') + S.sel);
     $('autoBox').checked = !!S.auto;
-    const nm = 'Map ' + map.order + ' · ' + map.name;
+    const nm = ch ? 'Challenge · ' + map.name : 'Map ' + map.order + ' · ' + map.name;
     if ($('mapName').textContent !== nm) $('mapName').textContent = nm;
-    $('autoHint').textContent = !S.auto
+    $('autoHint').textContent = ch ? (S.auto ? 'Auto is on: each cleared challenge wave starts the next one by itself.' : 'Auto is off: press Start for each challenge wave. Waves can not be replayed in a challenge.') : !S.auto
       ? 'Auto is off: a wave only starts when you press Start.'
       : (S.sel > S.cleared
         ? 'Auto is on: each time you clear a new wave, the next new wave starts by itself. A lost wave stops auto so you can rebuild.'
@@ -669,6 +691,7 @@
     for (const id of C.MAP_IDS) box.appendChild(mapCard(id));
   }
   function openMaps() {
+    if (S.chal) { A.play('deny'); banner('Quit the challenge to go back to your maps', 'bad'); return false; }
     lastFocus = document.activeElement;
     $('mapBtn').classList.remove('pulse');
     buildMaps();
@@ -681,6 +704,7 @@
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
   function chooseMap(id) {
+    if (S.chal) return;
     if (id === S.map) { closeMaps(); return; }
     if (!C.mapUnlocked(S, id)) { A.play('deny'); banner('Clear wave ' + C.UNLOCK_AT + ' on the previous map to unlock this one', 'bad'); return; }
     if (S.run) { A.play('deny'); banner('Finish or lose the current wave before switching maps', 'bad'); return; }
@@ -744,6 +768,7 @@
     return h;
   }
   function openStar() {
+    if (S.chal) return chalDeny('Starring up');
     if (!C.canStarUp(S)) { A.play('deny'); banner(S.run ? 'Finish the wave first' : 'Clear wave ' + C.MAX_WAVE + ' to star up this map', 'bad'); return false; }
     lastFocus = document.activeElement;
     $('starTitle').textContent = 'Star up to ' + (C.starOf(S) + 1) + '★';
@@ -803,7 +828,7 @@
     return lines.join('\n');
   }
   function buildResearch(flash) {
-    $('resMoon').textContent = C.fmt(S.moon || 0) + ' Moonstones';
+    $('resMoon').textContent = C.fmt(S.moon || 0) + ' Moonstones' + (S.rp ? ' + ' + C.fmt(S.rp) + ' research points' : '');
     $('resPress').textContent = Math.round(C.STAR.res * 1000) / 10 + '%';
     const box = $('resTree');
     let h = '';
@@ -830,6 +855,7 @@
     box.innerHTML = h;
   }
   function openResearch() {
+    if (S.chal) return chalDeny('Research');
     lastFocus = document.activeElement;
     $('researchBtn').classList.remove('pulse');
     buildResearch();
@@ -866,7 +892,7 @@
   }
   function buildHeroList() {
     const box = $('heroList');
-    $('heroMoon').textContent = '◆ ' + C.fmt(S.moon || 0);
+    $('heroMoon').textContent = '◆ ' + C.fmt(prof().moon || 0);
     let h = '';
     for (const id of C.HERO_IDS) {
       const d = C.HEROES[id], own = C.heroUnlocked(S, id), cur = S.hero && S.hero.id === id;
@@ -904,6 +930,7 @@
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
   function doPickHero(id) {
+    if (C.chalHas(S, 'nohero')) { A.play('deny'); banner('No heroes in this challenge', 'bad'); return false; }
     if (!C.pickHero(S, id)) { A.play('deny'); return false; }
     A.play('research');
     banner(C.HEROES[id].name + ' joins the defense. Tap the hero, then the field to move.', 'good');
@@ -913,6 +940,7 @@
     return true;
   }
   function doUnlockHero(id) {
+    if (S.chal) return chalDeny('Unlocking heroes');
     if (!C.unlockHero(S, id)) { A.play('deny'); return false; }
     buildHeroList();
     dirty(); writeSave();
@@ -1169,7 +1197,7 @@
     return s + 's';
   }
   function anyModalOpen() {
-    for (const id of ['setModal', 'mapModal', 'codexModal', 'starModal', 'researchModal', 'heroModal', 'awayModal', 'rulesModal', 'plansModal']) if (!$(id).hidden) return true;
+    for (const id of ['setModal', 'mapModal', 'codexModal', 'starModal', 'researchModal', 'heroModal', 'awayModal', 'rulesModal', 'plansModal', 'chalModal', 'chalEndModal', 'achModal', 'statsModal']) if (!$(id).hidden) return true;
     return false;
   }
   function awayHtml(g) {
@@ -1178,8 +1206,8 @@
     h += '<ul class="awaylist" id="awayList">';
     for (const m of g.maps) h += '<li class="' + (m.active ? 'on' : '') + '"><span class="an">' + esc(m.name) + '</span><span class="aw">wave ' + m.wave + ' &middot; ' + C.fmt(m.rate * 60) + '/min</span><span class="ac">+' + C.fmt(m.cash) + '</span></li>';
     h += '</ul><div class="awaytot"><span>Total</span><b id="awayTotal">+' + C.fmt(g.total) + '</b></div>';
-    const r = C.rl(S, 'eco_offline'), c = C.rl(S, 'util_offline');
-    h += '<p class="hint">' + (r ? 'Night Shift adds +' + Math.round(C.OFFLINE.boost * r * 100) + '% to these earnings. ' : 'Night Shift research raises these earnings. ') + (c ? 'Long Watch extends the limit to ' + fmtAway(C.offlineCap(S)) + '.' : 'Long Watch research extends the 8h limit.') + '</p>';
+    const r = C.rl(prof(), 'eco_offline'), c = C.rl(prof(), 'util_offline');
+    h += '<p class="hint">' + (r ? 'Night Shift adds +' + Math.round(C.OFFLINE.boost * r * 100) + '% to these earnings. ' : 'Night Shift research raises these earnings. ') + (c ? 'Long Watch extends the limit to ' + fmtAway(C.offlineCap(prof())) + '.' : 'Long Watch research extends the 8h limit.') + '</p>';
     return h;
   }
   function openAway(g) {
@@ -1194,18 +1222,19 @@
     const g = ui.away;
     if (!g) { $('awayModal').hidden = true; return 0; }
     ui.away = null;
-    const got = C.applyOffline(S, g);
+    const got = C.applyOffline(prof(), g);
     $('awayModal').hidden = true;
     A.play('win');
     banner('Claimed ' + C.fmt(got) + ' earned while away', 'good');
     dirty(); writeSave();
     if (lastFocus && lastFocus.focus) lastFocus.focus();
-    if (S.build) C.buildStep(S);
+    if (S.build && !S.chal) C.buildStep(S);
     return got;
   }
   $('awayClaim').addEventListener('click', claimAway);
   function catchUp(now, quiet) {
     if (ui.away) return null;
+    const S = prof();
     if (S.lastSeen > now) { if (!quiet) banner('The clock went back. Offline earnings resume once it passes your last visit.', 'bad'); return null; }
     const g = C.offlineGain(S, now);
     if (!g) { C.touchSeen(S, now); return null; }
@@ -1223,6 +1252,7 @@
   function farmOn() { return !!(S.farm && S.farm.on); }
   function farmLabel() { return 'w' + C.farmTarget(S) + (S.farm && S.farm.fails ? ' !' : ''); }
   function setFarming(on, pick) {
+    if (S.chal) return chalDeny('Auto-farm');
     C.setFarm(S, on, pick);
     ui.autoNext = 0;
     if (on && !S.run) { S.sel = C.farmTarget(S); ui.farmNext = performance.now() + 900; }
@@ -1364,6 +1394,7 @@
     return true;
   }
   function openRules(scope, key) {
+    if (S.chal) return chalDeny('Upgrade rules');
     lastFocus = document.activeElement;
     if (scope === 'pony' && S.towers.some(t => t.id === key)) { rulesUi.scope = 'pony'; rulesUi.key = key; }
     else if (scope === 'race' && C.RACES[key]) { rulesUi.scope = 'race'; rulesUi.key = key; }
@@ -1473,6 +1504,7 @@
       + '<div class="bbfoot"><span class="hint">' + p.placed + ' / ' + p.towers + ' ponies placed' + (p.skipped ? ', ' + p.skipped + ' blocked' : '') + (p.next ? ' · next ' + C.fmt(p.next) : '') + '</span><button type="button" class="ghost" data-cancel>Stop</button></div></div>';
   }
   function openPlans() {
+    if (S.chal) return chalDeny('Muster plans');
     lastFocus = document.activeElement;
     buildPlans();
     $('plansModal').hidden = false;
@@ -1493,6 +1525,7 @@
     A.play('research');
     banner('Saved plan "' + sl.name + '" with ' + sl.towers.length + ' ponies', 'good');
     ui.rulesKey = ''; ui.waveKey = '';
+    refreshRulesBtn();
     writeSave();
     if (!$('plansModal').hidden) buildPlans();
     return sl;
@@ -1589,9 +1622,28 @@
   }
 
   function handleEvents() {
-    if (!S.events.length) return;
+    const P = prof();
+    if (!S.events.length && (P === S || !P.events.length)) return;
     const evs = S.events.splice(0);
+    if (P !== S) for (const e of P.events.splice(0)) evs.push(e);
+    let ended = null;
     for (const e of evs) {
+      if (e.type === 'chalStart') { ui.waveKey = ''; continue; }
+      if (e.type === 'chalEnd') { ended = e; continue; }
+      if (e.type === 'ach') { achToast(e); continue; }
+      if (e.type === 'achRetro') { banner(e.n + ' achievement' + (e.n > 1 ? 's' : '') + ' unlocked from your past progress', 'good'); $('achBtn').classList.add('pulse'); continue; }
+      if (S.chal && (e.type === 'won' || e.type === 'lost')) {
+        const c = S.chal, total = c.to - c.from + 1;
+        if (e.type === 'won') {
+          A.play('win');
+          if (!c.over) banner('Wave ' + (e.n - c.from + 1) + ' of ' + total + ' held! +' + C.fmt(e.bonus + e.earned) + ' cash', 'good');
+          if (S.auto && !c.over) ui.autoNext = performance.now() + 1600;
+          S.sel = Math.min(c.to, S.cleared + 1);
+          C.runRules(S, 'end');
+        } else { A.play('lose'); ui.autoNext = 0; }
+        ui.waveKey = ''; ui.infoKey = '';
+        continue;
+      }
       if (e.type === 'start') {
         if (e.boss) banner('Wave ' + e.n + ': ' + e.boss.name + ' approaches', 'boss');
         else banner('Wave ' + e.n + ' begins', '');
@@ -1646,13 +1698,282 @@
       else if (e.type === 'rules' || e.type === 'buildBuy' || e.type === 'offline' || e.type === 'farm' || e.type === 'buildStart' || e.type === 'slotSaved') { ui.farmKey = ''; ui.rulesKey = ''; ui.infoKey = ''; ui.buildKey = ''; continue; }
       ui.waveKey = ''; ui.infoKey = '';
     }
+    if (ended) {
+      leaveChal();
+      A.play(ended.result === 'won' ? 'unlocked' : ended.result === 'lost' ? 'lose' : 'click');
+      showChalEnd(ended);
+      if (ended.reward && ended.reward.length) $('researchBtn').classList.add('pulse');
+    }
+  }
+
+  const CHAL_MSG = { race: 'That race sits this challenge out', cap: 'This challenge allows only a few ponies', over: 'The challenge is over' };
+  const chalUi = { endT: 0, quitArm: 0, last: null, achTab: 'all', toasts: [], toastT: 0, cardKey: '', owlT: 0 };
+  function inChal() { return !!S.chal; }
+  function chalDeny(what) { A.play('deny'); banner(what + ' is not available during a challenge', 'bad'); return false; }
+  function diffStars(d) { return '★'.repeat(d) + '☆'.repeat(Math.max(0, 5 - d)); }
+  function fmtTime(sec) {
+    sec = Math.max(0, Math.floor(sec || 0));
+    const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+    if (h) return h + 'h ' + (m < 10 ? '0' : '') + m + 'm';
+    if (m) return m + 'm ' + (s < 10 ? '0' : '') + s + 's';
+    return s + 's';
+  }
+  function modsHtml(def) { return def.mods.map(m => '<span class="mod" data-tip="' + esc(C.modDesc(m, def)) + '">' + esc(C.modText(m, def)) + '</span>').join(''); }
+  function rulesHtml(def) {
+    const L = def.mods.map(m => '<li><b>' + esc(C.modText(m, def)) + ':</b> ' + esc(C.modDesc(m, def)) + '</li>');
+    L.push('<li>' + def.lives + ' li' + (def.lives === 1 ? 'fe' : 'ves') + ' for the whole run.</li>');
+    return L.join('');
+  }
+  function buildChal() {
+    const P = prof(), info = C.chalInfo(P, Date.now()), d = info.daily, dd = d.def, map = C.MAPS[dd.map];
+    const box = $('dailyCard');
+    box.className = 'dailycard' + (d.won ? ' won' : '');
+    box.innerHTML = '<div><div class="dtitle">Daily challenge &middot; ' + esc(d.label) + '</div><div class="dsub">' + esc(map.name) + ' &middot; waves ' + dd.from + '-' + dd.to + ' &middot; ' + dd.lives + ' lives</div></div>'
+      + '<span class="cdiff" data-tip="Difficulty">' + diffStars(dd.diff) + '</span>'
+      + '<div class="dmods">' + dd.mods.map(m => '<div><b>' + esc(C.modText(m, dd)) + '</b> ' + esc(C.modDesc(m, dd)) + '</div>').join('') + '</div>'
+      + '<div class="dstats"><span>Today\'s best <b id="dailyBest">' + (d.best ? C.fmt(d.best) : '-') + '</b></span><span>Runs <b>' + d.runs + '</b></span><span>Streak <b id="dailyStreak">' + d.streak + '</b></span><span>Best streak <b>' + d.bestStreak + '</b></span><span>Reward <b>' + (d.won ? 'claimed' : d.moon + ' Moonstones') + '</b></span></div>'
+      + '<p class="hint" style="grid-column:1/-1;margin:0">Score: 1,000 per wave held. A win adds 5,000, 100 per life left and a bonus for speed. The Moonstones are paid once per day, more for a longer streak. A new daily starts at midnight UTC.</p>'
+      + '<button class="primary" type="button" data-chal="daily">' + (d.won ? 'Play again for score' : d.runs ? 'Try again' : 'Start the daily') + '</button>';
+    const list = $('chalList');
+    list.innerHTML = '';
+    for (const it of info.perm) {
+      const c = it.def, el = document.createElement('div');
+      el.className = 'ccard' + (it.done ? ' done' : '');
+      el.dataset.id = c.id;
+      el.innerHTML = '<div class="ct"><span>' + esc(c.name) + '</span><span class="cdiff" data-tip="Difficulty ' + c.diff + ' of 5">' + diffStars(c.diff) + '</span></div>'
+        + '<div class="cw">' + esc(C.MAPS[c.map].name) + ' &middot; waves ' + c.from + '-' + c.to + '</div>'
+        + '<div class="cb">' + esc(c.blurb) + '</div>'
+        + '<ul class="crules">' + rulesHtml(c) + '</ul>'
+        + '<div class="crew">Reward: <b>' + esc(it.reward) + '</b></div>'
+        + '<div class="cstate">' + (it.done ? 'Completed' + (it.best ? ' &middot; best ' + C.fmt(it.best) : '') : it.best ? 'Not yet won &middot; best ' + C.fmt(it.best) : 'Not yet won') + '</div>'
+        + '<button class="primary" type="button" data-chal="' + c.id + '">' + (it.done ? 'Play again' : 'Start') + '</button>';
+      list.appendChild(el);
+    }
+  }
+  function openChal() {
+    if (inChal()) { A.play('deny'); banner('Finish or quit this challenge first', 'bad'); return false; }
+    lastFocus = document.activeElement;
+    $('chalBtn').classList.remove('pulse');
+    buildChal();
+    $('chalModal').hidden = false;
+    $('chalClose').focus();
+    return true;
+  }
+  function closeChal() {
+    if ($('chalModal').hidden) return;
+    $('chalModal').hidden = true;
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function enterBoard(X) {
+    S = X;
+    ui.selId = 0; ui.placing = null; ui.ghost = null; ui.ghostTouch = false; ui.autoNext = 0; ui.farmNext = 0; ui.paused = false; ui.heroSel = false;
+    ui.heroKey = ''; ui.heroBarKey = ''; ui.heroListKey = ''; chalUi.cardKey = ''; chalUi.quitArm = 0;
+    document.body.classList.toggle('inchal', !!S.chal);
+    updateHint();
+    R.bgKey = ''; resize();
+    dirty();
+    refreshHud(); refreshBuild(); refreshWave(); refreshInfo(); refreshRulesBtn(); refreshChalCard();
+  }
+  function startChal(id) {
+    const P = prof();
+    if (inChal()) return null;
+    if (P.run) { A.play('deny'); banner('Finish the current wave before starting a challenge', 'bad'); return null; }
+    const X = C.startChallenge(P, id, Date.now());
+    if (!X) return null;
+    writeSave();
+    closeChal();
+    enterBoard(X);
+    A.play('unlocked');
+    banner(X.chal.def.name + ': ' + C.fmt(X.cash) + ' cash, ' + X.chal.lives + ' lives. Good luck!', 'good');
+    return X;
+  }
+  function quitChal(force) {
+    if (!inChal()) return null;
+    if (!force && chalUi.quitArm < performance.now()) { chalUi.quitArm = performance.now() + 2500; chalUi.cardKey = ''; return null; }
+    chalUi.quitArm = 0;
+    const r = C.quitChallenge(S);
+    handleEvents();
+    return r;
+  }
+  function leaveChal() {
+    if (!S.chal) return;
+    const P = S.chal.parent;
+    enterBoard(P);
+    writeSave();
+  }
+  function chalEndHtml(e) {
+    const word = e.result === 'won' ? 'Victory' : e.result === 'lost' ? 'Defeated' : 'Run abandoned';
+    let h = '<div class="cres ' + e.result + '">' + word + '</div><p>' + esc(e.name) + '</p>';
+    h += '<div class="cgrid"><div>Waves held<b>' + e.waves + '/' + e.total + '</b></div><div>Lives left<b>' + e.lives + '</b></div><div>Time<b>' + fmtTime(e.t) + '</b></div><div>Score<b id="chalScore">' + C.fmt(e.score) + '</b></div></div>';
+    if (e.best) h += '<p class="hint">New best score' + (e.kind === 'daily' ? ' for today' : '') + '.</p>';
+    if (e.kind === 'daily' && e.streak) h += '<p class="hint">Daily streak: ' + e.streak + ' day' + (e.streak > 1 ? 's' : '') + '.</p>';
+    if (e.reward && e.reward.length) h += '<div class="creward" id="chalReward">Reward: ' + esc(e.reward.join(', ')) + '</div>';
+    else if (e.result === 'won') h += '<p class="hint">' + (e.kind === 'daily' ? 'Today\'s Moonstones were already claimed.' : 'The reward for this challenge was already claimed.') + '</p>';
+    h += '<p class="hint">Your maps are exactly as you left them.</p>';
+    return h;
+  }
+  function showChalEnd(e) {
+    chalUi.last = e;
+    $('chalEndTitle').textContent = e.kind === 'daily' ? 'Daily challenge' : 'Challenge';
+    $('chalEndBody').innerHTML = chalEndHtml(e);
+    $('chalEndAgain').hidden = e.kind !== 'daily' && e.result === 'won';
+    $('chalEndModal').hidden = false;
+    $('chalEndOk').focus();
+  }
+  function closeChalEnd(again) {
+    if ($('chalEndModal').hidden) return;
+    $('chalEndModal').hidden = true;
+    const e = chalUi.last;
+    if (again && e) startChal(e.kind === 'daily' ? 'daily' : e.id);
+  }
+  function refreshChalCard() {
+    const card = $('chalCard'), c = S.chal;
+    if (!c) { if (!card.hidden) card.hidden = true; return; }
+    card.hidden = false;
+    const total = c.to - c.from + 1, lives = S.run ? Math.max(0, S.run.lives) : c.lives;
+    const t = c.t + (S.run ? S.run.t : 0), armed = chalUi.quitArm > performance.now();
+    const key = c.id + '|' + c.waves + '|' + lives + '|' + Math.floor(t) + '|' + armed + '|' + !!c.over;
+    if (key === chalUi.cardKey) return;
+    chalUi.cardKey = key;
+    $('chalName').textContent = c.def.name;
+    $('chalDiff').textContent = diffStars(c.def.diff);
+    const mh = modsHtml(c.def);
+    if ($('chalMods').innerHTML !== mh) $('chalMods').innerHTML = mh;
+    $('chalProg').textContent = 'Wave ' + c.waves + '/' + total;
+    $('chalLives').textContent = 'Lives ' + lives + '/' + c.livesMax;
+    $('chalTime').textContent = fmtTime(t);
+    $('chalBar').style.width = Math.round(c.waves / total * 100) + '%';
+    const q = $('chalQuit');
+    q.textContent = armed ? 'Tap again to quit' : 'Quit challenge';
+    q.classList.toggle('armed', armed);
+  }
+  $('chalBtn').addEventListener('click', openChal);
+  $('chalClose').addEventListener('click', closeChal);
+  $('chalModal').addEventListener('click', ev => {
+    if (ev.target === $('chalModal')) { closeChal(); return; }
+    const b = ev.target.closest('[data-chal]');
+    if (b) startChal(b.dataset.chal);
+  });
+  $('chalQuit').addEventListener('click', () => quitChal(false));
+  $('chalEndOk').addEventListener('click', () => closeChalEnd(false));
+  $('chalEndAgain').addEventListener('click', () => closeChalEnd(true));
+
+  function achToast(e) {
+    chalUi.toasts.push(e);
+    if (!chalUi.toastT) nextToast();
+  }
+  function nextToast() {
+    const el = $('achToast');
+    const e = chalUi.toasts.shift();
+    if (!e) { el.className = 'achtoast'; chalUi.toastT = 0; return; }
+    el.innerHTML = '<div class="tk">Achievement unlocked</div><div class="tn"></div><div class="td"></div><div class="tb"></div>';
+    el.querySelector('.tn').textContent = e.name;
+    el.querySelector('.td').textContent = e.desc;
+    el.querySelector('.tb').textContent = e.bonus;
+    el.className = 'achtoast show';
+    A.play('ach');
+    $('achBtn').classList.add('pulse');
+    chalUi.toastT = setTimeout(() => { el.className = 'achtoast'; chalUi.toastT = setTimeout(nextToast, 350); }, 3200);
+  }
+  function achValText(a) {
+    if (a.goal <= 1) return a.done ? 'Done' : 'Not yet';
+    return C.fmt(Math.floor(a.val)) + ' / ' + C.fmt(a.goal);
+  }
+  function buildAch() {
+    const P = prof(), list = C.achList(S), done = list.filter(a => a.done).length;
+    $('achCount').textContent = done + ' / ' + list.length;
+    const bt = C.BONUS_KEYS.filter(k => P.bonus && P.bonus[k] > 0).map(k => '+' + C.pctText(P.bonus[k]) + ' ' + C.BONUS_NAMES[k]);
+    $('achBonus').textContent = 'Every achievement gives a small permanent bonus that works on every map and in challenges. ' + (bt.length ? 'Current total: ' + bt.join(', ') + '.' : 'No bonuses yet.');
+    const tabs = [{ id: 'all', name: 'All' }].concat(C.ACH_CATS);
+    $('achTabs').innerHTML = tabs.map(t => {
+      const L = t.id === 'all' ? list : list.filter(a => a.cat === t.id);
+      return '<button type="button" role="tab" data-acat="' + t.id + '" class="' + (chalUi.achTab === t.id ? 'on' : '') + '" aria-selected="' + (chalUi.achTab === t.id) + '">' + esc(t.name) + ' <b>' + L.filter(a => a.done).length + '/' + L.length + '</b></button>';
+    }).join('');
+    const catName = {};
+    for (const c of C.ACH_CATS) catName[c.id] = c.name;
+    const show = chalUi.achTab === 'all' ? list : list.filter(a => a.cat === chalUi.achTab);
+    $('achList').innerHTML = show.map(a => '<div class="arow' + (a.done ? ' done' : '') + (a.hidden ? ' secret' : '') + '" data-ach="' + a.id + '">'
+      + '<span class="an">' + (a.hidden ? '???' : esc(a.name)) + '</span><span class="ac">' + esc(catName[a.cat]) + '</span>'
+      + '<span class="ad">' + (a.hidden ? 'A secret achievement. Keep playing to find it.' : esc(a.desc)) + '</span>'
+      + '<span class="ab">' + esc(a.bonus) + '</span>'
+      + '<span class="abar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(a.pct * 100) + '"><i style="width:' + Math.round(a.pct * 100) + '%"></i></span>'
+      + '<span class="av">' + (a.hidden ? '' : achValText(a)) + '</span></div>').join('');
+  }
+  function openAch() {
+    lastFocus = document.activeElement;
+    $('achBtn').classList.remove('pulse');
+    buildAch();
+    $('achModal').hidden = false;
+    $('achClose').focus();
+  }
+  function closeAch() {
+    if ($('achModal').hidden) return;
+    $('achModal').hidden = true;
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  $('achBtn').addEventListener('click', openAch);
+  $('achClose').addEventListener('click', closeAch);
+  $('achModal').addEventListener('click', ev => {
+    if (ev.target === $('achModal')) { closeAch(); return; }
+    const b = ev.target.closest('[data-acat]');
+    if (b) { chalUi.achTab = b.dataset.acat; buildAch(); }
+  });
+
+  function statsHtml() {
+    const s = C.statsSummary(S);
+    const box = (k, v, id) => '<div>' + k + '<b' + (id ? ' id="' + id + '"' : '') + '>' + v + '</b></div>';
+    let h = '<h3>Overall</h3><div class="sgrid">';
+    h += box('DNBs defeated', C.fmt(s.kills), 'stKills') + box('Bosses defeated', C.fmt(s.bossKills), 'stBosses') + box('Elites defeated', C.fmt(s.eliteKills));
+    h += box('Cash earned', C.fmt(s.earned), 'stCash') + box('Moonstones earned', C.fmt(s.moonEarned), 'stMoon') + box('Damage dealt', C.fmt(s.dmg));
+    h += box('Waves cleared', C.fmt(s.waves), 'stWaves') + box('Waves started', C.fmt(s.played)) + box('Star-ups', C.fmt(s.starUps), 'stStars');
+    h += box('Upgrades bought', C.fmt(s.upgrades)) + box('Ponies sold', C.fmt(s.sold)) + box('Achievements', s.ach + ' / ' + s.achTotal);
+    h += box('Playtime, active', fmtTime(s.playActive), 'stActive') + box('Playtime, offline', fmtTime(s.playOffline), 'stOffline') + box('Playtime, total', fmtTime(s.playActive + s.playOffline));
+    h += box('Favourite pony', s.favPony ? esc(s.favPony.name) : '-', 'stFavPony') + box('Favourite hero', s.favHero ? esc(s.favHero.name) : '-', 'stFavHero') + box('Challenges won', s.chal + ' / ' + C.CHALLENGES.length);
+    h += box('Dailies won', C.fmt(s.dailyWins)) + box('Best daily streak', s.bestStreak) + '</div>';
+    h += '<h3>Kills by DNB type</h3><div class="kbars" id="stKillsBy">';
+    const keys = TYPE_ORDER.filter(k => s.killsBy[k]);
+    for (const k in s.killsBy) if (keys.indexOf(k) < 0) keys.push(k);
+    const top = Math.max(1, ...keys.map(k => s.killsBy[k]));
+    if (!keys.length) h += '<p class="hint">No DNBs defeated yet.</p>';
+    for (const k of keys) {
+      const nm = k === 'boss' ? 'Bosses' : C.ENEMIES[k] ? C.ENEMIES[k].short || C.ENEMIES[k].name : k;
+      h += '<div class="kbar" style="--kc:' + (TYPE_COL[k] || 'var(--accent)') + '"><span>' + esc(nm) + '</span><span class="kb"><i style="width:' + Math.max(2, Math.round(s.killsBy[k] / top * 100)) + '%"></i></span><span>' + C.fmt(s.killsBy[k]) + '</span></div>';
+    }
+    h += '</div><h3>Map records</h3><div class="mwrap"><table class="mtable" id="stMaps"><thead><tr><th>Map</th><th>Best wave</th><th>Stars</th><th>Kills</th><th>Boss wins</th><th>Waves won</th><th>Waves tried</th><th>Time</th></tr></thead><tbody>';
+    for (const m of s.maps) h += '<tr class="' + (m.open ? '' : 'locked') + '"><td>' + esc(m.name) + '</td><td>' + (m.open ? m.cleared : '-') + '</td><td>' + (m.stars ? m.stars + '★' : '-') + '</td><td>' + C.fmt(m.kills) + '</td><td>' + C.fmt(m.bosses) + '</td><td>' + C.fmt(m.wins) + '</td><td>' + C.fmt(m.att) + '</td><td>' + fmtTime(m.time) + '</td></tr>';
+    h += '</tbody></table></div><p class="hint">Challenge runs count toward kills, cash, playtime and achievements, but never toward map records.</p>';
+    return h;
+  }
+  function openStats() {
+    lastFocus = document.activeElement;
+    $('statsBody').innerHTML = statsHtml();
+    $('statsModal').hidden = false;
+    $('statsClose').focus();
+  }
+  function closeStats() {
+    if ($('statsModal').hidden) return;
+    $('statsModal').hidden = true;
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  $('statsBtn').addEventListener('click', openStats);
+  $('statsClose').addEventListener('click', closeStats);
+  $('statsModal').addEventListener('click', ev => { if (ev.target === $('statsModal')) closeStats(); });
+  function owlCheck(now) {
+    if (now - chalUi.owlT < 60000) return;
+    chalUi.owlT = now;
+    const h = new Date().getHours();
+    if (h >= 0 && h < 4) { C.feat(S, 'x_owl'); C.checkAch(S); }
   }
 
   function refreshHud() {
     $('hCash').textContent = C.fmt(S.cash);
-    const lm = S.run ? (S.run.livesMax || C.LIVES) : C.livesFor(S);
-    $('hLives').textContent = S.run ? Math.max(0, S.run.lives) + '/' + lm : lm + '/' + lm;
-    $('hMoon').textContent = C.fmt(S.moon || 0);
+    const ch = S.chal;
+    const lm = S.run ? (S.run.livesMax || C.LIVES) : ch ? ch.livesMax : C.livesFor(S);
+    $('hLives').textContent = S.run ? Math.max(0, S.run.lives) + '/' + lm : ch ? ch.lives + '/' + lm : lm + '/' + lm;
+    $('hMoon').textContent = C.fmt(prof().moon || 0);
+    const P = prof(), achN = P.ach ? Object.keys(P.ach).length : 0;
+    const as = $('achState');
+    if (as.textContent !== String(achN)) as.textContent = achN;
     const st = C.starOf(S), sc = $('hStarChip');
     const sk = S.map + st;
     if (sc.dataset.k !== sk) {
@@ -1662,7 +1983,7 @@
       sc.classList.toggle('on', st > 0);
     }
     $('hWave').textContent = S.run ? S.run.n : S.sel;
-    $('hBest').textContent = S.cleared;
+    $('hBest').textContent = ch ? ch.waves + '/' + (ch.to - ch.from + 1) : S.cleared;
   }
 
   buildList();
@@ -1680,6 +2001,7 @@
       while (acc >= DT && steps < cap) { C.step(S, DT); acc -= DT; steps++; }
       if (steps >= cap) acc = 0;
     } else acc = 0;
+    if (!ui.paused && !document.hidden) C.tickPlay(S, real);
     handleEvents();
     A.drain(S.sfx);
     if (!ui.paused && ui.autoNext && now >= ui.autoNext && !S.run) {
@@ -1700,7 +2022,7 @@
     if (now - uiT > 120) {
       uiT = now;
       refreshHud(); refreshBuild(); refreshWave(); refreshInfo(); refreshSpeed(); drawIcons(now); refreshHeroCard();
-      refreshFarm(); refreshRulesBtn(); refreshBuildBox();
+      refreshFarm(); refreshRulesBtn(); refreshBuildBox(); refreshChalCard(); owlCheck(now);
       if (!$('heroModal').hidden) drawHeroIcons(now);
     }
     refreshHeroBar(now);
@@ -1730,5 +2052,7 @@
     openHeroes, closeHeroes, pickHero: doPickHero, unlockHero: doUnlockHero, castHero: doCast, selectHero,
     moveHero(x, y) { return C.moveHero(S, x, y); }, heroInfo() { return C.heroInfo(S); }, heroXp(n) { const r = C.addHeroXp(S, n); handleEvents(); return r; },
     heroScreen() { if (!S.hero || !S.hero.id) return null; const r = cv.getBoundingClientRect(), p = V.toScreen(S.hero.x, S.hero.y - 8); return [r.left + p[0], r.top + p[1]]; },
-    worldToClient(x, y) { const r = cv.getBoundingClientRect(), p = V.toScreen(x, y); return [r.left + p[0], r.top + p[1]]; } };
+    worldToClient(x, y) { const r = cv.getBoundingClientRect(), p = V.toScreen(x, y); return [r.left + p[0], r.top + p[1]]; },
+    openChal, closeChal, startChal, quitChal(force) { return quitChal(force !== false); }, closeChalEnd, openAch, closeAch, openStats, closeStats,
+    achList() { return C.achList(S); }, prof, get chalUi() { return chalUi; } };
 })();
