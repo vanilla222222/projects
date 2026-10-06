@@ -711,7 +711,8 @@
       + '<li>' + (S.towers.length === 1 ? 'Your 1 pony on the board is removed' : 'All ' + S.towers.length + ' ponies on the board are removed') + '</li>'
       + '<li>Cash goes back to ' + C.fmt(C.mapStartCash(map, S)) + (skip ? ' plus the skipped waves’ pay' : '') + '</li>'
       + '<li>Wave progress restarts at wave ' + (skip + 1) + ' (best ' + S.cleared + ')</li>'
-      + '<li>First-clear records reset, so every first-clear bonus pays again</li></ul>';
+      + '<li>First-clear records reset, so every first-clear bonus pays again</li>'
+      + (S.hero ? '<li>' + C.HEROES[S.hero.id].name + ' goes back to level 1 (the hero choice and unlocks stay)</li>' : '') + '</ul>';
     h += '<h3>You gain</h3><ul class="gains">'
       + '<li><span class="gain">+' + gain + ' Moonstones</span> for permanent research</li>'
       + '<li>Rewards +' + pctOf(C.starCashMul(next)) + '% cash (was +' + pctOf(C.starCashMul(cur)) + '%)</li>'
