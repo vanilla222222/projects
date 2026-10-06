@@ -82,7 +82,7 @@ button:disabled { cursor: not-allowed; }
 }
 .mapbtn.on { color: var(--ink); border-color: var(--accent); }
 .mapbtn.locked { opacity: .55; border-style: dashed; }
-#mapBtn { display: flex; align-items: center; gap: 8px; text-align: left; font-size: 12px; padding: 6px 8px; }
+#mapBtn { display: flex; align-items: center; gap: 8px; text-align: left; font-size: 12px; padding: 6px 8px; min-width: 0; }
 #mapBtn #mapName { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #mapBtn .mapgo { color: var(--accent2); font-weight: 700; }
 #mapBtn:hover { border-color: var(--accent2); }
@@ -470,7 +470,7 @@ button:disabled { cursor: not-allowed; }
 .rbranch { background: var(--panel2); border: 1px solid var(--border-soft); border-top: 3px solid var(--bc); border-radius: var(--radius-md); padding: 8px; min-width: 0; }
 .dialog .rbranch h3 { margin: 0; color: var(--bc); }
 .rbranch .rbd { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
-.rgraph { position: relative; height: 290px; }
+.rgraph { position: relative; height: 300px; }
 .rgraph svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
 .rgraph line { stroke: var(--border); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .rgraph line.on { stroke: var(--bc); }
@@ -511,7 +511,7 @@ button:disabled { cursor: not-allowed; }
 }
 @media (max-width: 560px) {
   .restree { grid-template-columns: minmax(0, 1fr); }
-  .rgraph { height: 270px; }
+  .rgraph { height: 280px; }
   .starburst .sbstar { font-size: 84px; }
   .starburst .sbtext { font-size: 17px; top: calc(50% + 56px); }
   .resmoon { margin-left: 8px; }

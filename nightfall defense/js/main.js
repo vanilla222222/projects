@@ -673,7 +673,7 @@
     let h = '<div class="stline">' + line + '</div>';
     h += '<p>Raise <b>' + esc(map.name) + '</b> to <b>' + next + '★</b>? Clearing all ' + C.MAX_WAVE + ' waves again will be harder, and pay more.</p>';
     h += '<h3>Resets on this map</h3><ul class="loses" id="starResets">'
-      + '<li>All ' + S.towers.length + ' ponies on the board are removed</li>'
+      + '<li>' + (S.towers.length === 1 ? 'Your 1 pony on the board is removed' : 'All ' + S.towers.length + ' ponies on the board are removed') + '</li>'
       + '<li>Cash goes back to ' + C.fmt(C.mapStartCash(map, S)) + (skip ? ' plus the skipped waves’ pay' : '') + '</li>'
       + '<li>Wave progress restarts at wave ' + (skip + 1) + ' (best ' + S.cleared + ')</li>'
       + '<li>First-clear records reset, so every first-clear bonus pays again</li></ul>';
