@@ -4,8 +4,10 @@
   const WORLD = { L: 1400, W: 800, towerR: 20, minGap: 44 };
   const MAX_WAVE = 100;
   const LIVES = 10;
-  const SAVE_VER = 2;
+  const SAVE_VER = 3;
   const SPAWN_GUARD = 15;
+  const UNLOCK_AT = 50;
+  const BASE_LEN = 1480;
 
   const TUNE = {
     hp0: 14,
@@ -133,6 +135,101 @@
     { id: 'nightmother', name: 'The Nightmother', trick: 'mother', hpMul: 0.16, desc: 'Sprints and summons, then takes to the air, then turns magical and regrows.', color: '#3e2a3a', dark: '#1c121a' },
   ];
 
+  const MAP_BOSSES = {
+    woods: [
+      { id: 'thornback', name: 'Thornback Boar', hpMul: 0.85, desc: 'Charges in bursts of 2.6x speed every 5s. Its thorny hide blocks 40% of damage until it drops below 70% HP.', color: '#6a5232', dark: '#33261a',
+        tricks: { sprint: { every: 5, dur: 1.6, mul: 2.6 }, armor: { cut: 0.4, until: 0.7 } }, look: { horns: 'tusk', spikes: true, eyes: '#ffb04a' } },
+      { id: 'hollow-stag', name: 'Hollow Stag', hpMul: 0.95, desc: 'Fades into the trees every 4.5s and cannot be hit while hidden.', color: '#5e6650', dark: '#2c3226',
+        tricks: { burrow: { every: 4.5, dur: 1.4 } }, look: { horns: 'antler', eyes: '#d8f0a0' } },
+      { id: 'mossmother', name: 'Mossmother', hpMul: 0.8, desc: 'Sheds a pack of 5 Skitters every time she loses a fifth of her HP.', color: '#4f6a3a', dark: '#26341c',
+        tricks: { brood: { type: 'fast', n: 5, at: [0.8, 0.6, 0.4, 0.2] } }, look: { horns: 'ears', aura: '#7fd66a', eyes: '#c8ff8a' } },
+      { id: 'owlbear-shade', name: 'Owlbear Shade', hpMul: 0.55, desc: 'A winged beast that swoops at 2x speed every 6s. Only pegasi and sky-sighted unicorns can hit it.', color: '#6a5a4a', dark: '#342a22',
+        tricks: { fly: true, sprint: { every: 6, dur: 1.4, mul: 2 } }, look: { horns: 'ears', eyes: '#ffe066' } },
+      { id: 'willow-wisp', name: 'Willow Wisp', hpMul: 0.5, desc: 'A drifting magical light that blinks 110 paces ahead every 6s.', color: '#6a7a86', dark: '#2e3640',
+        tricks: { magic: true, blink: { every: 6, dist: 110 } }, look: { horns: 'none', aura: '#9fe8ff', eyes: '#e8ffff', size: 0.9 } },
+      { id: 'rootcrawler', name: 'Rootcrawler', hpMul: 0.7, desc: 'Burrows for 2s every 4s and regrows 1% HP per second.', color: '#5c4a30', dark: '#2a2014',
+        tricks: { burrow: { every: 4, dur: 2 }, regen: { rate: 0.01 } }, look: { horns: 'spike', spikes: true, eyes: '#ff9a5a' } },
+      { id: 'fungal-titan', name: 'Fungal Titan', hpMul: 0.5, desc: 'Regrows 1.2% HP per second, heals nearby DNBs, and bursts into Shamblers at half HP.', color: '#7a5a6a', dark: '#3a2a34',
+        tricks: { regen: { rate: 0.012, aura: 140 }, brood: { type: 'basic', n: 6, at: [0.5] } }, look: { horns: 'curl', aura: '#d68bff', eyes: '#ffd0f0', size: 1.15 } },
+      { id: 'barkskin-warden', name: 'Barkskin Warden', hpMul: 0.75, desc: 'Every 6s it hardens its bark for 3s, blocking 70% of damage.', color: '#6b5436', dark: '#33281a',
+        tricks: { shell: { every: 6, dur: 3, cut: 0.7 } }, look: { horns: 'antler', spikes: true, eyes: '#ffcf6a', size: 1.1 } },
+      { id: 'twin-dryads', name: 'Twin Dryads', hpMul: 0.32, desc: 'Two dryads walk together. Each one quickens the DNBs around her by 50%.', color: '#5a7a4a', dark: '#2a3a22',
+        tricks: { twin: true, haste: { r: 140, mul: 1.5 } }, look: { horns: 'ears', aura: '#9fe39a', eyes: '#f0ffc8', size: 0.9 } },
+      { id: 'elder-blight', name: 'The Elder Blight', hpMul: 0.17, desc: 'Armored and spawning Skitters, then airborne and hastening its kin, then magical and regrowing.', color: '#3a3a26', dark: '#1a1a10',
+        tricks: { brood: { type: 'fast', n: 5, at: [0.85, 0.7] }, stages: [{ above: 0.66, armor: { cut: 0.5, until: 0 } }, { above: 0.33, fly: true, haste: { r: 160, mul: 1.5 } }, { above: 0, magic: true, regen: { rate: 0.015, aura: 120 } }] },
+        look: { horns: 'antler', spikes: true, aura: '#8aff6a', eyes: '#c8ff3a', size: 1.2 } },
+    ],
+    caverns: [
+      { id: 'geode-grub', name: 'Geode Grub', hpMul: 0.95, desc: 'Tunnels through the rock for 1.8s every 5s.', color: '#6a5a6e', dark: '#342a36',
+        tricks: { burrow: { every: 5, dur: 1.8 } }, look: { horns: 'none', spikes: true, eyes: '#c8a8ff' } },
+      { id: 'shardling-queen', name: 'Shardling Queen', hpMul: 0.8, desc: 'Sheds 4 Hexlings each time she loses a quarter of her HP.', color: '#7a5a86', dark: '#3a2a40',
+        tricks: { brood: { type: 'magical', n: 4, at: [0.75, 0.5, 0.25] } }, look: { horns: 'spike', aura: '#c08bff', eyes: '#f0c8ff' } },
+      { id: 'quartz-golem', name: 'Quartz Golem', hpMul: 0.7, desc: 'Crystal plating blocks 65% of damage until it drops below half HP.', color: '#8a8a96', dark: '#44444c',
+        tricks: { armor: { cut: 0.65, until: 0.5 } }, look: { horns: 'spike', spikes: true, eyes: '#a8f0ff', size: 1.15 } },
+      { id: 'glimmer-moth', name: 'Glimmer Moth', hpMul: 0.55, desc: 'Flies, and blinks 120 paces ahead every 5s.', color: '#8a7a5a', dark: '#44382a',
+        tricks: { fly: true, blink: { every: 5, dist: 120 } }, look: { horns: 'curl', aura: '#ffe9a8', eyes: '#fff2c8', size: 0.9 } },
+      { id: 'echo-bat-lord', name: 'Echo Bat Lord', hpMul: 0.5, desc: 'Flies, and screeches out 4 Duskwings each time it loses a quarter of its HP.', color: '#5a4a5e', dark: '#2a2030',
+        tricks: { fly: true, brood: { type: 'flying', n: 4, at: [0.75, 0.5, 0.25] } }, look: { horns: 'ears', eyes: '#ff6a8a' } },
+      { id: 'amethyst-hex', name: 'Amethyst Hex', hpMul: 0.45, desc: 'Magical. Regrows 1.2% HP per second and heals nearby DNBs.', color: '#7a4a8a', dark: '#3a2244',
+        tricks: { magic: true, regen: { rate: 0.012, aura: 120 } }, look: { horns: 'curl', aura: '#c08bff', eyes: '#e8b0ff' } },
+      { id: 'prism-wyrm', name: 'Prism Wyrm', hpMul: 0.55, desc: 'Flickers between flying and magical forms every 3.5s and lunges at 2.4x speed every 7s.', color: '#5a6a8a', dark: '#2a3244',
+        tricks: { phase: { every: 3.5 }, sprint: { every: 7, dur: 1.2, mul: 2.4 } }, look: { horns: 'spike', aura: '#9fd0ff', eyes: '#c8f0ff', size: 1.1 } },
+      { id: 'deepvein-twins', name: 'Deepvein Twins', hpMul: 0.35, desc: 'One twin takes each tunnel. Both burrow for 1.5s every 5s.', color: '#6a4a3a', dark: '#34241a',
+        tricks: { twin: true, burrow: { every: 5, dur: 1.5 } }, look: { horns: 'tusk', spikes: true, eyes: '#ffa86a' } },
+      { id: 'obsidian-colossus', name: 'Obsidian Colossus', hpMul: 0.22, desc: 'Every 5s its obsidian shell blocks 75% of damage for 2.5s. Shatters into 3 shards when slain.', color: '#3a3440', dark: '#1a161e',
+        tricks: { shell: { every: 5, dur: 2.5, cut: 0.75 }, split: { n: 3, frac: 0.2, name: 'Obsidian Shard' } }, look: { horns: 'spike', spikes: true, eyes: '#ff5a3a', size: 1.25 } },
+      { id: 'crystal-heart', name: 'The Crystal Heart', hpMul: 0.15, desc: 'Magical and shelled, then flickering between forms, then airborne, regrowing and hastening every DNB near it.', color: '#8a5aa0', dark: '#40244e',
+        tricks: { stages: [{ above: 0.66, magic: true, shell: { every: 5, dur: 2.5, cut: 0.6 } }, { above: 0.33, phase: { every: 3 } }, { above: 0, fly: true, regen: { rate: 0.012, aura: 140 }, haste: { r: 170, mul: 1.6 } }] },
+        look: { horns: 'spike', spikes: true, aura: '#f08bff', eyes: '#ffe0ff', size: 1.2 } },
+    ],
+    cliffs: [
+      { id: 'gale-harpy', name: 'Gale Harpy', hpMul: 0.55, desc: 'Flies and rides the wind: gusts never push her back, and she surges at 2x speed during them.', color: '#6a6a7a', dark: '#32323c',
+        tricks: { fly: true, windrider: true }, look: { horns: 'ears', eyes: '#ffe066' } },
+      { id: 'cliff-crusher', name: 'Cliff Crusher', hpMul: 0.7, desc: 'A rock shell blocks 60% of damage above half HP, and it charges at 2.4x speed every 6s.', color: '#6a6256', dark: '#34302a',
+        tricks: { armor: { cut: 0.6, until: 0.5 }, sprint: { every: 6, dur: 1.4, mul: 2.4 } }, look: { horns: 'tusk', spikes: true, eyes: '#ffb04a', size: 1.15 } },
+      { id: 'thunder-ram', name: 'Thunder Ram', hpMul: 0.9, desc: 'Charges at 3.5x speed for 1.2s every 4s.', color: '#7a6a4a', dark: '#3a3222',
+        tricks: { sprint: { every: 4, dur: 1.2, mul: 3.5 } }, look: { horns: 'curl', eyes: '#a8e0ff' } },
+      { id: 'squall-brood', name: 'Squall Brood', hpMul: 0.5, desc: 'Flies, and releases 5 Duskwings each time it loses a quarter of its HP.', color: '#5a6a7a', dark: '#2a323c',
+        tricks: { fly: true, brood: { type: 'flying', n: 5, at: [0.75, 0.5, 0.25] } }, look: { horns: 'ears', aura: '#9fd0ff', eyes: '#c8f0ff' } },
+      { id: 'rain-wraith', name: 'Rain Wraith', hpMul: 0.5, desc: 'Magical. Regrows 1.5% HP per second and heals the DNBs around it.', color: '#4a5a6e', dark: '#222a36',
+        tricks: { magic: true, regen: { rate: 0.015, aura: 130 } }, look: { horns: 'none', aura: '#7fb8ff', eyes: '#d0e8ff' } },
+      { id: 'rockslide', name: 'Rockslide', hpMul: 0.22, desc: 'Plated in stone above 60% HP, and breaks into 4 boulders when slain.', color: '#7a6e5e', dark: '#3a342c',
+        tricks: { armor: { cut: 0.5, until: 0.6 }, split: { n: 4, frac: 0.17, name: 'Boulder' } }, look: { horns: 'spike', spikes: true, eyes: '#ffcf6a', size: 1.2 } },
+      { id: 'stormcaller', name: 'Stormcaller', hpMul: 0.6, desc: 'Quickens every DNB within 180 by 60%, and wraps itself in a storm shell for 2s every 6s.', color: '#5a5a7a', dark: '#2a2a3c',
+        tricks: { haste: { r: 180, mul: 1.6 }, shell: { every: 6, dur: 2, cut: 0.7 } }, look: { horns: 'curl', aura: '#bfe8ff', eyes: '#ffffff' } },
+      { id: 'lightning-drake', name: 'Lightning Drake', hpMul: 0.45, desc: 'Flies, rides the wind, and blinks 130 paces ahead every 5s.', color: '#4a5a8a', dark: '#222a44',
+        tricks: { fly: true, windrider: true, blink: { every: 5, dist: 130 } }, look: { horns: 'spike', aura: '#e6f4ff', eyes: '#fff27a', size: 1.1 } },
+      { id: 'tempest-twins', name: 'Tempest Twins', hpMul: 0.3, desc: 'A pair that flickers between flying and magical forms every 4s.', color: '#5a6a86', dark: '#2a3240',
+        tricks: { twin: true, phase: { every: 4 } }, look: { horns: 'ears', aura: '#9fd0ff', eyes: '#e8f4ff' } },
+      { id: 'eye-of-storm', name: 'The Eye of the Storm', hpMul: 0.15, desc: 'Charging behind a shell, then airborne and riding the wind, then magical, regrowing and hastening.', color: '#3a4a6a', dark: '#1a2234',
+        tricks: { windrider: true, stages: [{ above: 0.66, shell: { every: 5, dur: 2.5, cut: 0.6 }, sprint: { every: 6, dur: 1.4, mul: 2.5 } }, { above: 0.33, fly: true, brood: { type: 'flying', n: 5, at: [0.6, 0.45] } }, { above: 0, magic: true, regen: { rate: 0.015, aura: 140 }, haste: { r: 180, mul: 1.6 } }] },
+        look: { horns: 'curl', spikes: true, aura: '#bfe8ff', eyes: '#ffffff', size: 1.25 } },
+    ],
+    castle: [
+      { id: 'gargoyle', name: 'Gargoyle Sentinel', hpMul: 0.5, desc: 'Flies, and turns to stone for 2.5s every 5s, blocking 80% of damage.', color: '#5e5a62', dark: '#2c2a30',
+        tricks: { fly: true, shell: { every: 5, dur: 2.5, cut: 0.8 } }, look: { horns: 'curl', spikes: true, eyes: '#ff6a5a' } },
+      { id: 'iron-knight', name: 'Iron Knight', hpMul: 0.65, desc: 'Plate armor blocks 70% of damage until it drops below 40% HP.', color: '#6a6e78', dark: '#34363c',
+        tricks: { armor: { cut: 0.7, until: 0.4 } }, look: { horns: 'spike', eyes: '#ff8a5a', size: 1.1 } },
+      { id: 'hound-pack', name: 'Shadow Hound Pack', hpMul: 0.28, desc: 'Lunges at 2.5x speed every 5s and splits into 3 hounds when slain.', color: '#3e3434', dark: '#1c1616',
+        tricks: { sprint: { every: 5, dur: 1.2, mul: 2.5 }, split: { n: 3, frac: 0.3, name: 'Shadow Hound' } }, look: { horns: 'ears', eyes: '#ff3a3a' } },
+      { id: 'banshee', name: 'Banshee', hpMul: 0.5, desc: 'Flickers between flying and magical forms every 3s, and her wail quickens DNBs within 150 by 50%.', color: '#6a6a7e', dark: '#32323e',
+        tricks: { phase: { every: 3 }, haste: { r: 150, mul: 1.5 } }, look: { horns: 'none', aura: '#d0d8ff', eyes: '#e8f0ff' } },
+      { id: 'plague-abbot', name: 'Plague Abbot', hpMul: 0.42, desc: 'Magical. Regrows 1% HP per second, heals nearby DNBs, and calls 4 Hexlings at each third of his HP.', color: '#5a6a4a', dark: '#2a3222',
+        tricks: { magic: true, regen: { rate: 0.01, aura: 130 }, brood: { type: 'magical', n: 4, at: [0.66, 0.33] } }, look: { horns: 'curl', aura: '#a8e06a', eyes: '#d8ff8a' } },
+      { id: 'siege-engine', name: 'Dread Siege Engine', hpMul: 0.55, desc: 'Armored above 60% HP, and unloads 3 Brutes at each quarter of its HP.', color: '#5a4a3a', dark: '#2a221a',
+        tricks: { armor: { cut: 0.5, until: 0.6 }, brood: { type: 'tanky', n: 3, at: [0.75, 0.5, 0.25] } }, look: { horns: 'tusk', spikes: true, eyes: '#ffb04a', size: 1.25 } },
+      { id: 'phantom-duelist', name: 'Phantom Duelist', hpMul: 0.6, desc: 'Steps out of reality for 1.4s every 4.5s, and blinks 100 paces ahead every 6s.', color: '#5a4a6a', dark: '#2a2234',
+        tricks: { burrow: { every: 4.5, dur: 1.4 }, blink: { every: 6, dist: 100 } }, look: { horns: 'spike', aura: '#b48bff', eyes: '#e0c8ff' } },
+      { id: 'gate-wardens', name: 'Twin Gate Wardens', hpMul: 0.35, desc: 'One warden at each gate. Each hardens for 2.5s every 5s, blocking 70% of damage.', color: '#6a5a4a', dark: '#342a22',
+        tricks: { twin: true, shell: { every: 5, dur: 2.5, cut: 0.7 } }, look: { horns: 'antler', spikes: true, eyes: '#ffd27a', size: 1.1 } },
+      { id: 'lich-regent', name: 'The Lich Regent', hpMul: 0.2, desc: 'Magical. Regrows 1.2% HP per second, calls Hexlings at each third of his HP, and splits into 2 liches when slain.', color: '#4a3e5a', dark: '#221c2c',
+        tricks: { magic: true, regen: { rate: 0.012, aura: 140 }, brood: { type: 'magical', n: 5, at: [0.66, 0.33] }, split: { n: 2, frac: 0.25, name: 'Lesser Lich' } }, look: { horns: 'spike', aura: '#a08bff', eyes: '#8affd8', size: 1.15 } },
+      { id: 'shadow-queen', name: 'The Shadow Queen', hpMul: 0.14, desc: 'Shelled and sprinting, then airborne with Duskwings, then magical, regrowing and hastening. Splits into 2 shades when slain.', color: '#2e2234', dark: '#140e18',
+        tricks: { split: { n: 2, frac: 0.2, name: 'Queen\'s Shade' }, stages: [{ above: 0.66, shell: { every: 5, dur: 2.5, cut: 0.65 }, sprint: { every: 6, dur: 1.4, mul: 2.5 } }, { above: 0.33, fly: true, brood: { type: 'flying', n: 5, at: [0.6, 0.45] } }, { above: 0, magic: true, regen: { rate: 0.015, aura: 150 }, haste: { r: 180, mul: 1.6 } }] },
+        look: { horns: 'curl', spikes: true, aura: '#c06bff', eyes: '#ff4a8a', size: 1.3 } },
+    ],
+  };
+
   function mulberry(seed) {
     let a = seed >>> 0;
     return function () {
@@ -171,13 +268,65 @@
     bossEvery: 10, bossLead: 1.5,
   };
 
+  function waveVariant(o) {
+    const g = JSON.parse(JSON.stringify(WAVEGEN));
+    if (o.count) Object.assign(g.count, o.count);
+    if (o.gap) Object.assign(g.gap, o.gap);
+    if (o.types) for (const ty of g.types) if (o.types[ty.id]) Object.assign(ty, o.types[ty.id]);
+    if (o.themes) g.themes = o.themes;
+    return g;
+  }
+
+  function spiralArm(cx, cy, sx, sy, r0, r1, a0, span, lead, steps) {
+    const pts = [lead];
+    for (let i = 0; i <= steps; i++) {
+      const k = i / steps, a = a0 + span * k, r = r0 + (r1 - r0) * k;
+      pts.push([Math.round(cx + Math.cos(a) * r * sx), Math.round(cy + Math.sin(a) * r * sy)]);
+    }
+    pts.push([cx, cy]);
+    return pts;
+  }
+
+  function segDist(px, py, pts) {
+    let best = Infinity;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [x1, y1] = pts[i], [x2, y2] = pts[i + 1];
+      const dx = x2 - x1, dy = y2 - y1, l2 = dx * dx + dy * dy || 1;
+      const k = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / l2));
+      best = Math.min(best, Math.hypot(px - x1 - dx * k, py - y1 - dy * k));
+    }
+    return best;
+  }
+
+  function scatter(o) {
+    const rng = mulberry(o.seed), keep = o.keep || [], out = keep.slice();
+    for (let tries = 0; tries < 6000 && out.length < o.n + keep.length; tries++) {
+      const x = o.x0 + rng() * (o.x1 - o.x0), y = o.y0 + rng() * (o.y1 - o.y0), r = o.rmin + rng() * (o.rmax - o.rmin);
+      let ok = true;
+      for (const R of o.routes) if (segDist(x, y, R) < o.half + r + o.pad) { ok = false; break; }
+      if (ok) for (const b of out) if (Math.hypot(b.x - x, b.y - y) < b.r + r + o.gap) { ok = false; break; }
+      if (ok) out.push({ x: Math.round(x), y: Math.round(y), r: Math.round(r), kind: o.kind });
+    }
+    return out;
+  }
+
+  const WOODS_ROUTE = [[-40, 140], [1080, 140], [1080, 400], [320, 400], [320, 660], [1440, 660]];
+  const CAVE_A = [[-40, 400], [380, 400], [540, 210], [980, 210], [1140, 130], [1440, 130]];
+  const CAVE_B = [[-40, 400], [380, 400], [540, 590], [980, 590], [1140, 670], [1440, 670]];
+  const CLIFF_ROUTE = [[-40, 330], [950, 330], [950, 640], [480, 640], [480, 110], [1440, 110]];
+  const CASTLE_A = spiralArm(700, 400, 1.55, 0.9, 380, 92, Math.PI, Math.PI * 2, [-40, 400], 72);
+  const CASTLE_B = spiralArm(700, 400, 1.55, 0.9, 380, 92, 0, Math.PI * 2, [1440, 400], 72);
+  const CRYSTALS = [{ x: 760, y: 400, r: 140 }, { x: 250, y: 250, r: 140 }, { x: 250, y: 560, r: 140 }, { x: 1230, y: 400, r: 140 }, { x: 760, y: 70, r: 140 }, { x: 760, y: 735, r: 140 }];
+
   const MAPS = {
     moonlit: {
       id: 'moonlit', name: 'Moonlit Road', order: 1,
+      blurb: 'A straight road under the moon. Where every herd begins.',
+      feature: 'One straight road',
       routes: [[[-40, 400], [1440, 400]]],
       half: 38,
       blocks: [],
-      hpMul: 1, cashMul: 1,
+      hpMul: 1, cashMul: 1, startCash: 0,
       bosses: ['mudmaw', 'mother-mire', 'skyrend', 'hexhulk', 'gloamrunner', 'bramble-king', 'duskwraith', 'colossus', 'twin-shade', 'nightmother'],
       waves: WAVEGEN,
       palette: {
@@ -188,10 +337,88 @@
       },
       decor: { grass: 900, flowers: 40, rocks: 26, trees: 9, seed: 1234 },
     },
+    woods: {
+      id: 'woods', name: 'Whispering Woods', order: 2,
+      blurb: 'A winding trail through old trees. The trunks leave little room to build, and Skitters love the cover.',
+      feature: 'Winding S-path, trees block building',
+      routes: [WOODS_ROUTE],
+      half: 36,
+      blocks: scatter({ seed: 4242, n: 38, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 17, rmax: 27, routes: [WOODS_ROUTE], half: 36, pad: 6, gap: 10, kind: 'tree' }),
+      hpShift: 49, hpMul: 0.7, cashMul: 7583.7, startCash: 1.958e7,
+      bosses: MAP_BOSSES.woods.map(b => b.id),
+      waves: waveVariant({ count: { base: 9 }, types: { fast: { from: 2, w: 7, theme: 10 }, tanky: { w: 2 } } }),
+      palette: {
+        ground: ['#1a2a1c', '#111c14', '#080d0a'], grass: ['rgba(100,160,90,.26)', 'rgba(60,120,70,.28)'],
+        flowers: ['#e8f0a0', '#c8ffb0', '#ffd0e0'], rock: 'rgba(60,70,60,.6)',
+        road: ['#3a3022', '#4a3c2a'], roadEdge: 'rgba(16,12,8,.6)', roadLine: 'rgba(230,240,200,.06)', pebble: 'rgba(110,100,80,.35)',
+        tree: '#0a140c', gate: '#b8e36a', canopy: ['#1f3a22', '#2a4a2a', '#183020'],
+      },
+      decor: { grass: 1200, flowers: 34, rocks: 8, trees: 7, seed: 2222 },
+    },
+    caverns: {
+      id: 'caverns', name: 'Crystal Caverns', order: 3,
+      blurb: 'The tunnel forks and DNBs split between two exits. It is dark down here: ponies see 35% less far unless they stand in a crystal\'s glow.',
+      feature: 'Forked path, two exits, darkness',
+      routes: [CAVE_A, CAVE_B],
+      half: 34,
+      dark: { range: 0.65 },
+      crystals: CRYSTALS,
+      blocks: scatter({ seed: 777, n: 14, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 12, rmax: 20, routes: [CAVE_A, CAVE_B], half: 34, pad: 8, gap: 30, kind: 'stalagmite',
+        keep: CRYSTALS.map(c => ({ x: c.x, y: c.y, r: 16, kind: 'crystal' })) }),
+      hpShift: 98, hpMul: 0.125, cashMul: 5.75e7, startCash: 1.372e11,
+      bosses: MAP_BOSSES.caverns.map(b => b.id),
+      waves: waveVariant({ types: { magical: { from: 5, w: 6, theme: 10 }, flying: { w: 2 } } }),
+      palette: {
+        ground: ['#1a1830', '#100e20', '#06050c'], grass: ['rgba(120,100,180,.14)', 'rgba(80,70,140,.16)'],
+        flowers: ['#a8f0ff', '#d0a8ff', '#ffc8f0'], rock: 'rgba(60,56,84,.7)',
+        road: ['#2a2434', '#383044'], roadEdge: 'rgba(8,6,14,.7)', roadLine: 'rgba(200,180,255,.06)', pebble: 'rgba(120,110,150,.3)',
+        tree: '#0a0814', gate: '#c8a8ff', crystal: ['#b48bff', '#7fe8ff', '#ffb0f0'],
+      },
+      decor: { grass: 500, flowers: 60, rocks: 30, trees: 0, seed: 3333 },
+    },
+    cliffs: {
+      id: 'cliffs', name: 'Stormy Cliffs', order: 4,
+      blurb: 'The road loops back over itself on an old bridge. Gusts sweep the cliffs every few seconds and shove flyers around.',
+      feature: 'Self-crossing bridge, wind gusts move flyers',
+      routes: [CLIFF_ROUTE],
+      half: 34,
+      wind: { every: 14, dur: 3.2, warn: 2.2, push: 120, side: 70, bossMul: 0.4 },
+      blocks: scatter({ seed: 9191, n: 16, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 16, rmax: 30, routes: [CLIFF_ROUTE], half: 34, pad: 8, gap: 24, kind: 'boulder' }),
+      hpShift: 147, hpMul: 0.07, cashMul: 4.36e11, startCash: 1.075e15,
+      bosses: MAP_BOSSES.cliffs.map(b => b.id),
+      waves: waveVariant({ types: { flying: { from: 3, w: 6, theme: 10 } }, themes: [{ id: 'boss', mod: 10, rem: 0 }, { id: 'flying', at: [3], mod: 6, rem: 0 }, { id: 'magical', at: [8], mod: 11, rem: 6 }, { id: 'fast', mod: 7, rem: 0 }, { id: 'tanky', mod: 8, rem: 4 }] }),
+      palette: {
+        ground: ['#24282e', '#181c22', '#0b0d12'], grass: ['rgba(140,150,130,.18)', 'rgba(100,110,100,.2)'],
+        flowers: ['#d0d8e0', '#a8c0e0', '#fff0c0'], rock: 'rgba(80,84,92,.7)',
+        road: ['#3a3634', '#4a4440'], roadEdge: 'rgba(14,12,12,.65)', roadLine: 'rgba(230,230,240,.07)', pebble: 'rgba(130,126,120,.35)',
+        tree: '#0e1012', gate: '#9fd0ff', bridge: ['#5a4430', '#7a5c40', '#3a2a1c'],
+      },
+      decor: { grass: 600, flowers: 20, rocks: 50, trees: 5, seed: 4444 },
+    },
+    castle: {
+      id: 'castle', name: 'Castle of Shadows', order: 5,
+      blurb: 'Two gates, two spiral roads, one keep. The largest waves and the cruellest bosses march here.',
+      feature: 'Double spiral, two spawn gates, hardest waves',
+      routes: [CASTLE_A, CASTLE_B],
+      half: 30,
+      blocks: scatter({ seed: 5150, n: 8, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 14, rmax: 18, routes: [CASTLE_A, CASTLE_B], half: 30, pad: 6, gap: 60, kind: 'pillar',
+        keep: [{ x: 700, y: 400, r: 46, kind: 'keep' }] }),
+      hpShift: 196, hpMul: 0.01, cashMul: 3.31e15, startCash: 7.925e18,
+      bosses: MAP_BOSSES.castle.map(b => b.id),
+      waves: waveVariant({ count: { base: 11, per: 0.55 }, types: { basic: { w: 8 }, fast: { from: 2, w: 5 }, tanky: { from: 3, w: 4 }, flying: { from: 4, w: 4 }, magical: { from: 5, w: 4 } } }),
+      palette: {
+        ground: ['#221a26', '#16101a', '#08060a'], grass: ['rgba(120,90,130,.14)', 'rgba(90,70,100,.16)'],
+        flowers: ['#ff8a9a', '#c8a0ff', '#ffd0a0'], rock: 'rgba(64,58,70,.75)',
+        road: ['#2e2a30', '#3c363e'], roadEdge: 'rgba(8,6,10,.7)', roadLine: 'rgba(255,200,220,.06)', pebble: 'rgba(110,100,116,.35)',
+        tree: '#0a080c', gate: '#ff6a8a', stone: ['#3a343e', '#4a424e', '#2a2430'],
+      },
+      decor: { grass: 300, flowers: 24, rocks: 30, trees: 0, seed: 5555 },
+    },
   };
-  const MAP_IDS = ['moonlit'];
+  const MAP_IDS = ['moonlit', 'woods', 'caverns', 'cliffs', 'castle'];
   const BOSS_BY_ID = {};
   for (const b of BOSSES) BOSS_BY_ID[b.id] = b;
+  for (const k in MAP_BOSSES) for (const b of MAP_BOSSES[k]) { b.map = k; BOSS_BY_ID[b.id] = b; }
 
   function buildRoute(pts) {
     const segs = [];
@@ -199,12 +426,18 @@
     for (let i = 0; i < pts.length - 1; i++) {
       const [x1, y1] = pts[i], [x2, y2] = pts[i + 1];
       const l = Math.hypot(x2 - x1, y2 - y1);
+      if (l < 0.001) continue;
       segs.push({ x1, y1, x2, y2, tx: (x2 - x1) / l, ty: (y2 - y1) / l, l, s: len });
       len += l;
     }
     return { pts, segs, len };
   }
-  for (const id of MAP_IDS) MAPS[id].route = MAPS[id].routes.map(buildRoute);
+  for (const id of MAP_IDS) {
+    const m = MAPS[id];
+    m.route = m.routes.map(buildRoute);
+    m.maxLen = Math.max(...m.route.map(r => r.len));
+    m.bossList = m.bosses.map(b => BOSS_BY_ID[b]);
+  }
 
   function getMap(id) { return MAPS[id] || MAPS.moonlit; }
   function mapOf(S) { return getMap(S.map); }
@@ -213,7 +446,11 @@
     const segs = P.segs;
     let s = segs[segs.length - 1];
     if (d <= 0) s = segs[0];
-    else for (let i = 0; i < segs.length; i++) if (d < segs[i].s + segs[i].l) { s = segs[i]; break; }
+    else if (d < s.s + s.l) {
+      let lo = 0, hi = segs.length - 1;
+      while (lo < hi) { const mid = (lo + hi) >> 1; if (d < segs[mid].s + segs[mid].l) hi = mid; else lo = mid + 1; }
+      s = segs[lo];
+    }
     const k = d - s.s;
     out.x = s.x1 + s.tx * k; out.y = s.y1 + s.ty * k; out.tx = s.tx; out.ty = s.ty;
     return out;
@@ -234,6 +471,24 @@
     const p = nearestOnMap(map, x, y);
     return Math.atan2(p.y - y, p.x - x);
   }
+  function lightAt(map, x, y) {
+    if (!map.dark) return 1;
+    for (const c of map.crystals) if ((c.x - x) ** 2 + (c.y - y) ** 2 <= c.r * c.r) return 1;
+    return map.dark.range;
+  }
+  function crossings(P) {
+    const out = [];
+    const S = P.segs;
+    for (let i = 0; i < S.length; i++) for (let j = i + 2; j < S.length; j++) {
+      const a = S[i], b = S[j];
+      const den = a.tx * b.ty - a.ty * b.tx;
+      if (Math.abs(den) < 1e-6) continue;
+      const dx = b.x1 - a.x1, dy = b.y1 - a.y1;
+      const u = (dx * b.ty - dy * b.tx) / den, v = (dx * a.ty - dy * a.tx) / den;
+      if (u > 0 && u < a.l && v > 0 && v < b.l) out.push({ x: a.x1 + a.tx * u, y: a.y1 + a.ty * u, under: i, over: j, dUnder: a.s + u, dOver: b.s + v, tx: b.tx, ty: b.ty });
+    }
+    return out;
+  }
 
   let hpCache = null, hpCacheKey = null;
   function growthAt(curve, n) {
@@ -250,7 +505,7 @@
     while (hpCache.length < n) hpCache.push(hpCache[hpCache.length - 1] * growthAt(TUNE.hpCurve, hpCache.length + 1));
     return hpCache[n - 1];
   }
-  function hpFor(n, map) { return hpBase(n) * (map ? map.hpMul : 1); }
+  function hpFor(n, map) { return map ? hpBase(n + (map.hpShift || 0)) * map.hpMul : hpBase(n); }
   function killCash(n, map) { return TUNE.cash0 * Math.pow(TUNE.cashGrowth, n - 1) * (map ? map.cashMul : 1); }
   function clearBonus(n, map) { return Math.round(TUNE.clear0 * (1 + 0.1 * n) * Math.pow(TUNE.clearGrowth, n - 1) * (n % 10 === 0 ? 2.5 : 1) * (map ? map.cashMul : 1)); }
   function bossFor(n, map) {
@@ -293,7 +548,14 @@
       list.push({ t, type });
       t += gap * (gen.spacing[type] || 1) * (1 - gen.gap.jitter / 2 + rng() * gen.gap.jitter);
     }
-    if (boss) list.push({ t: t + gen.bossLead, type: 'boss' });
+    const nR = map.route.length;
+    if (nR > 1) list.forEach((e, i) => { e.route = i % nR; });
+    if (boss) {
+      const b = { t: t + gen.bossLead, type: 'boss' };
+      if (nR > 1) b.route = (n / gen.bossEvery) % nR;
+      list.push(b);
+      if (boss.tricks && boss.tricks.twin) list.push({ t: b.t + (nR > 1 ? 0 : 1.6), type: 'boss', route: nR > 1 ? (b.route + 1) % nR : 0, twin: true });
+    }
     const counts = {};
     for (const e of list) counts[e.type] = (counts[e.type] || 0) + 1;
     const spec = { n, list, boss, counts, theme, map: map.id, duration: list.length ? list[list.length - 1].t : 0 };
@@ -309,31 +571,71 @@
   const NUM_FORMATS = ['short', 'sci', 'full'];
   const SPEEDS = [1, 2, 4];
 
-  function newState() {
-    return {
-      ver: SAVE_VER, map: 'moonlit', seed: 0x2545F491,
-      cash: TUNE.startCash, cleared: 0, sel: 1, auto: false, towers: [], nextId: 1,
+  function newRecords() { return { time: 0, att: 0, wins: 0, bosses: {}, firsts: {} }; }
+  function mapStartCash(map) { return map.startCash || TUNE.startCash; }
+  function newBoard(map) { return { cash: mapStartCash(map), cleared: 0, sel: 1, auto: false, towers: [], records: newRecords() }; }
+  const BOARD_KEYS = ['cash', 'cleared', 'sel', 'auto', 'towers', 'records'];
+
+  function newState(mapId) {
+    const map = getMap(mapId);
+    const S = {
+      ver: SAVE_VER, map: map.id, seed: 0x2545F491,
+      cash: 0, cleared: 0, sel: 1, auto: false, towers: [], records: null, boards: {}, nextId: 1,
       run: null, time: 0, fxOn: true, fx: [], events: [], buffsDirty: true, totalKills: 0,
       stats: { played: 0, dmg: 0, bossKills: 0, earned: 0 },
       settings: Object.assign({}, DEFAULT_SETTINGS),
       sfx: { hit: 0, crit: 0, kill: 0, leak: 0 },
     };
+    Object.assign(S, newBoard(map));
+    return S;
+  }
+
+  function boardOf(S, id) {
+    if (id === S.map) { const b = {}; for (const k of BOARD_KEYS) b[k] = S[k]; return b; }
+    return S.boards[id] || null;
+  }
+  function mapCleared(S, id) { const b = boardOf(S, id); return b ? b.cleared : 0; }
+  function mapUnlocked(S, id) {
+    const m = MAPS[id];
+    if (!m) return false;
+    if (m.order <= 1) return true;
+    const prev = MAP_IDS[m.order - 2];
+    return mapCleared(S, prev) >= UNLOCK_AT;
+  }
+  function prepTowers(S) {
+    const map = mapOf(S);
+    for (const t of S.towers) { t.face = faceRoad(map, t.x, t.y); t.light = lightAt(map, t.x, t.y); t._s = null; }
+    S.buffsDirty = true;
+  }
+  function switchMap(S, id) {
+    if (S.run || !MAPS[id] || !mapUnlocked(S, id)) return false;
+    if (id === S.map) return true;
+    S.boards[S.map] = boardOf(S, S.map);
+    const b = S.boards[id] || newBoard(MAPS[id]);
+    delete S.boards[id];
+    S.map = id;
+    for (const k of BOARD_KEYS) S[k] = b[k];
+    S.fx.length = 0;
+    prepTowers(S);
+    emit(S, 'map', { id });
+    return true;
   }
 
   function owned(S, race) { let c = 0; for (const t of S.towers) if (t.race === race) c++; return c; }
   function nextTowerCost(S, race) { return towerCost(race, owned(S, race)); }
 
-  function canPlace(S, x, y, ignore) {
+  function placeBlockReason(S, x, y, ignore) {
     const R = WORLD.towerR, map = mapOf(S);
-    if (x < R || x > WORLD.L - R || y < R || y > WORLD.W - R) return false;
-    if (nearestOnMap(map, x, y).dist < map.half + R) return false;
-    for (const b of map.blocks) if ((b.x - x) ** 2 + (b.y - y) ** 2 < (b.r + R) ** 2) return false;
+    if (x < R || x > WORLD.L - R || y < R || y > WORLD.W - R) return 'edge';
+    if (nearestOnMap(map, x, y).dist < map.half + R) return 'road';
+    for (const b of map.blocks) if ((b.x - x) ** 2 + (b.y - y) ** 2 < (b.r + R) ** 2) return b.kind || 'rock';
     for (const t of S.towers) {
       if (t === ignore) continue;
-      if ((t.x - x) ** 2 + (t.y - y) ** 2 < WORLD.minGap * WORLD.minGap) return false;
+      if ((t.x - x) ** 2 + (t.y - y) ** 2 < WORLD.minGap * WORLD.minGap) return 'pony';
     }
-    return true;
+    return '';
   }
+  function canPlace(S, x, y, ignore) { return !placeBlockReason(S, x, y, ignore); }
 
   function makeTower(S, race, x, y) {
     return {
@@ -350,6 +652,7 @@
     const t = makeTower(S, race, x, y);
     t.spent = cost;
     t.face = faceRoad(mapOf(S), x, y);
+    t.light = lightAt(mapOf(S), x, y);
     S.towers.push(t);
     S.buffsDirty = true;
     return t;
@@ -427,6 +730,7 @@
     };
     PATHS[t.race].forEach((p, i) => { if (t.paths[i] > 0) p.apply(t.paths[i], s); });
     s.slow = Math.min(0.6, s.slow);
+    if (t.light && t.light !== 1) { s.baseRange = s.range; s.range *= t.light; }
     s.dmg *= Math.pow(TUNE.infMul, t.infD || 0);
     s.rate *= Math.pow(TUNE.infMul, t.infR || 0);
     s.has = {};
@@ -489,9 +793,11 @@
     const map = mapOf(S);
     const spec = waveSpec(n, map);
     S.stats.played++;
+    if (S.records) S.records.att++;
     S.run = {
       n, spec, map, route: map.route, queue: spec.list.slice(), t: 0, lives: LIVES, enemies: [], proj: [], earned: 0, kills: 0, eid: 1,
       fresh: n > S.cleared, over: null, rng: mulberry(hashSeed(S.seed, n, S.stats.played)), bossIds: [],
+      enrageAt: spec.duration + 75 * Math.max(1, map.maxLen / BASE_LEN), windT: 0, gust: 0, gustWarn: 0, gustKind: '', gustDir: 1, gustOn: false,
     };
     for (const t of S.towers) { t.cd = 0; t.sigT = 0; t.boomT = 0; t.stomp = 0; t.wDmg = 0; t.wKills = 0; }
     emit(S, 'start', { n, boss: spec.boss });
@@ -521,20 +827,62 @@
       if (e.trick === 'magical') e.magical = true;
       if (e.trick === 'armor') e.armor = true;
       if (e.trick === 'phase') e.flying = true;
+      if (b.tricks) setupTricks(e, b);
     }
     if (opts) Object.assign(e, opts);
     const rng = mulberry(n * 131 + e.id * 31);
     e.off = (rng() - 0.5) * (e.boss ? 10 : 34);
     placeOnRoute(run, e);
     run.enemies.push(e);
-    if (e.boss && !e.splitDone) { run.bossIds.push(e.id); emit(S, 'boss', { name: e.name, n }); }
+    if (e.boss && !e.splitDone) { run.bossIds.push(e.id); if (!e.quiet) emit(S, 'boss', { name: e.name, n }); }
     return e;
+  }
+
+  function setupTricks(e, b) {
+    const tk = b.tricks;
+    e.tk = tk;
+    e.trick = '';
+    e.stage = -1;
+    e.cut = 0;
+    e.timers = {};
+    e.broodQ = [];
+    const addBrood = (br) => { if (br) for (const at of br.at) e.broodQ.push({ at, type: br.type, n: br.n }); };
+    addBrood(tk.brood);
+    if (tk.stages) for (const st of tk.stages) addBrood(st.brood);
+    e.broodQ.sort((a, b2) => b2.at - a.at);
+    e.thresholds = null;
+    applyStage(e);
+    if (tk.phase && !tk.stages) e.flying = true;
+    if (tk.twin) e.leak = 3;
+  }
+
+  function activeTricks(e) {
+    const tk = e.tk;
+    if (!tk.stages) return tk;
+    const f = e.hp / e.hpMax;
+    let i = 0;
+    while (i < tk.stages.length - 1 && f <= tk.stages[i].above) i++;
+    if (i !== e.stage) {
+      e.stage = i;
+      e.eff = Object.assign({}, tk, tk.stages[i]);
+      e.stageNew = true;
+    }
+    return e.eff;
+  }
+
+  function applyStage(e) {
+    const t = activeTricks(e);
+    if (!t.phase) { e.flying = !!t.fly; e.magical = !!t.magic; }
+    else if (e.stageNew) { e.flying = true; e.magical = false; }
+    e.stageNew = false;
+    return t;
   }
 
   function placeOnRoute(run, e) {
     routePos(run.route[e.path] || run.route[0], e.d, e);
     const o = e.off + (e.flying ? Math.sin(e.phase * 2.2 + e.seed) * 22 : 0);
     e.x += -e.ty * o; e.y += e.tx * o;
+    if (e.wy) e.y += e.wy;
   }
 
   function isFly(e) { return e.flying; }
@@ -575,6 +923,7 @@
     if (!e.alive || amt <= 0) return;
     let m = 1 + (e.hexT > 0 ? e.hexAmp : 0) + (e.quag ? 0.15 : 0);
     if (e.armor && e.hp > e.hpMax * 0.5) m *= 0.4;
+    if (e.cut) m *= 1 - e.cut;
     const dealt = amt * m;
     const real = Math.min(e.hp, dealt);
     S.stats.dmg += real;
@@ -594,6 +943,17 @@
         fx(S, { k: 'ring', x: e.x, y: e.y, r: 60, c: '#a07a52', life: 0.5 });
       }
     }
+    if (e.broodQ && e.broodQ.length) {
+      while (e.broodQ.length && e.hp < e.hpMax * e.broodQ[0].at) {
+        const br = e.broodQ.shift();
+        const def = ENEMIES[br.type];
+        for (let i = 0; i < br.n; i++) {
+          const m2 = spawnEnemy(S, run, br.type, Math.max(20, e.d - 10 - i * 12), { path: e.path });
+          m2.hpMax = m2.hp = hpFor(run.n, run.map) * def.hp * 1.2;
+        }
+        fx(S, { k: 'ring', x: e.x, y: e.y, r: 60, c: e.bossDef.look && e.bossDef.look.aura || '#a07a52', life: 0.5 });
+      }
+    }
   }
 
   function kill(S, run, e, t) {
@@ -609,6 +969,7 @@
     fx(S, { k: 'burst', x: e.x, y: e.y, r: e.r, c: e.color, c2: e.dark, seed: e.id * 7 + run.n, life: e.boss ? 0.9 : 0.5, big: e.boss });
     if (e.boss || mult > 1.5) fx(S, { k: 'text', x: e.x, y: e.y - 20, s: '+' + fmt(gain), c: '#e3c15b', life: 1.1 });
     if (e.boss) { S.stats.bossKills++; emit(S, 'bossDown', { name: e.name, split: !!e.splitDone }); }
+    if (e.boss && !e.splitDone && e.bossDef.tricks && S.records) S.records.bosses[e.bossDef.id] = (S.records.bosses[e.bossDef.id] || 0) + 1;
     if (e.doom) {
       const R = 90, dmgAmt = e.hpMax * 0.25;
       fx(S, { k: 'ring', x: e.x, y: e.y, r: R, c: '#c06bff', life: 0.45 });
@@ -620,6 +981,16 @@
         c.hpMax = c.hp = e.hpMax * 0.25; c.splitDone = true; c.r = e.r * 0.75; c.leak = 3; c.speed = 46; c.name = 'Shade';
       }
       fx(S, { k: 'ring', x: e.x, y: e.y, r: 70, c: '#6b5a8a', life: 0.6 });
+    }
+    if (e.boss && e.tk && e.tk.split && !e.splitDone) {
+      const sp = e.tk.split;
+      for (let i = 0; i < sp.n; i++) {
+        const c = spawnEnemy(S, run, 'boss', Math.max(20, e.d - 20 - i * 24), { path: e.path, splitDone: true, quiet: true });
+        c.hpMax = c.hp = e.hpMax * sp.frac; c.r = e.r * 0.75; c.leak = 2; c.name = sp.name;
+        c.tk = { fly: e.flying, magic: e.magical }; c.eff = null; c.stage = -1; c.broodQ = []; c.cut = 0; c.timers = {};
+        c.flying = e.flying; c.magical = e.magical;
+      }
+      fx(S, { k: 'ring', x: e.x, y: e.y, r: 70, c: (e.bossDef.look && e.bossDef.look.aura) || e.color, life: 0.6 });
     }
   }
 
@@ -757,7 +1128,8 @@
     if (e.slowT > 0) { e.slowT -= dt; if (e.slowT <= 0) e.slow = 0; }
     if (e.boss) bossTrick(S, run, e, dt);
     if (e.stunImm > 0) e.stunT = 0;
-    let sp = e.speed * (1 - e.slow) * (e.quag ? 0.5 : 1) * (e.sprintT > 0 ? 3 : 1);
+    let sp = e.speed * (1 - e.slow) * (e.quag ? 0.5 : 1) * (e.sprintT > 0 ? (e.sprintMul || 3) : 1);
+    if (e.hasteT > 0) { e.hasteT -= dt; sp *= e.hasteMul || 1; }
     if (e.stunT > 0) { e.stunT -= dt; sp = 0; if (e.stunT <= 0) e.stunImm = e.boss ? 2.5 : 1.2; }
     if (e.stunImm > 0) e.stunImm -= dt;
     if (run.enrage) { e.stunT = 0; e.slow = 0; sp = e.speed * 1.6; }
@@ -779,6 +1151,7 @@
     e.trickT += dt;
     if (e.burrowT > 0) e.burrowT -= dt;
     if (e.sprintT > 0) e.sprintT -= dt;
+    if (e.tk) { tkTrick(S, run, e, dt); return; }
     const tr = e.trick;
     if (tr === 'burrow' && e.trickT >= 5) { e.trickT = 0; e.burrowT = 1.6; fx(S, { k: 'puff', x: e.x, y: e.y, r: 30, c: '#5a4030', life: 0.5 }); }
     if (tr === 'sprint' && e.trickT >= 6) { e.trickT = 0; e.sprintT = 1.5; }
@@ -792,6 +1165,74 @@
       if (f > 0.66) { if (e.trickT >= 7) { e.trickT = 0; e.sprintT = 1.2; } e.flying = false; e.magical = false; }
       else if (f > 0.33) { e.flying = true; e.magical = false; }
       else { e.flying = false; e.magical = true; }
+    }
+  }
+
+  function tick(e, key, every, dt) {
+    const T = e.timers;
+    T[key] = (T[key] || 0) + dt;
+    if (T[key] >= every) { T[key] -= every; return true; }
+    return false;
+  }
+
+  function tkTrick(S, run, e, dt) {
+    const t = applyStage(e);
+    const aura = (e.bossDef.look && e.bossDef.look.aura) || e.color;
+    if (t.burrow && tick(e, 'burrow', t.burrow.every, dt)) { e.burrowT = t.burrow.dur; fx(S, { k: 'puff', x: e.x, y: e.y, r: 30, c: e.dark, life: 0.5 }); }
+    if (t.sprint && tick(e, 'sprint', t.sprint.every, dt)) { e.sprintT = t.sprint.dur; e.sprintMul = t.sprint.mul; }
+    if (t.windrider && run.gustOn) { e.sprintT = Math.max(e.sprintT, 0.1); e.sprintMul = 2; }
+    if (t.regen) {
+      e.hp = Math.min(e.hpMax, e.hp + e.hpMax * t.regen.rate * dt);
+      const R2 = t.regen.aura * t.regen.aura;
+      for (const o of run.enemies) if (o !== e && o.alive && !o.boss && dist2(o, e) < R2) o.hp = Math.min(o.hpMax, o.hp + o.hpMax * t.regen.rate * 2 * dt);
+    }
+    let cut = 0;
+    if (t.armor && e.hp > e.hpMax * t.armor.until) cut = t.armor.cut;
+    if (t.shell) {
+      if (tick(e, 'shell', t.shell.every, dt)) { e.shellT = t.shell.dur; fx(S, { k: 'ring', x: e.x, y: e.y, r: 36, c: '#d8d0c0', life: 0.4 }); }
+      if (e.shellT > 0) { e.shellT -= dt; cut = Math.max(cut, t.shell.cut); }
+    } else e.shellT = 0;
+    e.cut = cut;
+    if (t.phase && tick(e, 'phase', t.phase.every, dt)) { e.flying = !e.flying; e.magical = !e.flying; fx(S, { k: 'ring', x: e.x, y: e.y, r: 40, c: e.magical ? '#c08bff' : '#9fd0ff', life: 0.4 }); }
+    if (t.haste) {
+      const R2 = t.haste.r * t.haste.r;
+      for (const o of run.enemies) if (o !== e && o.alive && !o.boss && dist2(o, e) < R2) { o.hasteT = 0.3; o.hasteMul = t.haste.mul; }
+    }
+    if (t.blink && tick(e, 'blink', t.blink.every, dt)) {
+      const P = run.route[e.path] || run.route[0];
+      if (e.d < P.len - 60) {
+        fx(S, { k: 'puff', x: e.x, y: e.y, r: 26, c: aura, life: 0.4 });
+        e.d = Math.min(P.len - 60, e.d + t.blink.dist);
+        placeOnRoute(run, e);
+        fx(S, { k: 'ring', x: e.x, y: e.y, r: 34, c: aura, life: 0.4 });
+      }
+    }
+  }
+
+  function windStep(S, run, dt) {
+    const w = run.map.wind;
+    run.windT += dt;
+    const c = run.windT % w.every;
+    const g0 = w.every - w.dur;
+    const k = Math.floor(run.windT / w.every);
+    const on = c >= g0;
+    run.gustWarn = !on && c >= g0 - w.warn ? (c - (g0 - w.warn)) / w.warn : 0;
+    run.gustKind = k % 2 ? 'side' : 'back';
+    run.gustDir = (k >> 1) % 2 ? 1 : -1;
+    if (on && !run.gustOn) emit(S, 'gust', { kind: run.gustKind, dir: run.gustDir });
+    run.gustOn = on;
+    run.gust = on ? Math.sin(Math.PI * (c - g0) / w.dur) : 0;
+    for (const e of run.enemies) {
+      if (!e.alive || !e.flying) continue;
+      const tt = e.tk && (e.eff || e.tk);
+      if (on && !(tt && tt.windrider)) {
+        const m = run.gust * (e.boss ? w.bossMul : 1) * dt;
+        if (run.gustKind === 'back') e.d = Math.max(20, e.d - w.push * m);
+        else e.wy = Math.max(-80, Math.min(80, (e.wy || 0) + run.gustDir * w.side * m));
+      } else if (e.wy) {
+        e.wy *= Math.max(0, 1 - dt * 0.6);
+        if (Math.abs(e.wy) < 0.5) e.wy = 0;
+      }
     }
   }
 
@@ -816,8 +1257,10 @@
     if (!run || run.over) return;
     if (S.buffsDirty) refreshBuffs(S);
     run.t += dt;
-    if (!run.queue.length && !run.enrage && run.t > run.spec.duration + 75) { run.enrage = true; emit(S, 'enrage', {}); }
-    while (run.queue.length && run.queue[0].t <= run.t) spawnEnemy(S, run, run.queue.shift().type);
+    if (S.records) S.records.time += dt;
+    if (!run.queue.length && !run.enrage && run.t > run.enrageAt) { run.enrage = true; emit(S, 'enrage', {}); }
+    while (run.queue.length && run.queue[0].t <= run.t) { const it = run.queue.shift(); spawnEnemy(S, run, it.type, undefined, it.route != null ? { path: it.route, quiet: !!it.twin } : undefined); }
+    if (run.map.wind) windStep(S, run, dt);
 
     for (const e of run.enemies) e.quag = false;
     for (const t of S.towers) {
@@ -862,18 +1305,27 @@
     if (!run.queue.length && !run.enemies.length) {
       run.over = 'won';
       let bonus = 0;
-      if (run.n > S.cleared) { bonus = clearBonus(run.n, run.map); S.cash += bonus; S.cleared = run.n; }
+      if (run.n > S.cleared) {
+        bonus = clearBonus(run.n, run.map); S.cash += bonus; S.cleared = run.n;
+        if (S.records) S.records.firsts[run.n] = { at: Math.round(S.records.time), att: S.records.att, lives: run.lives };
+      }
+      if (S.records) S.records.wins++;
       emit(S, 'won', { n: run.n, bonus, earned: run.earned, fresh: bonus > 0, lives: run.lives });
       S.run = null;
     }
   }
 
+  function serTower(t) { return { id: t.id, race: t.race, x: t.x, y: t.y, spent: t.spent, paths: t.paths, infD: t.infD, infR: t.infR, mode: t.mode, kills: t.kills, dmg: t.dmg }; }
   function serialize(S) {
+    const boards = {};
+    for (const id of MAP_IDS) {
+      const b = boardOf(S, id);
+      if (!b) continue;
+      boards[id] = { cash: b.cash, cleared: b.cleared, sel: b.sel, auto: b.auto, towers: b.towers.map(serTower), records: b.records };
+    }
     return JSON.stringify({
-      ver: SAVE_VER, map: S.map, seed: S.seed,
-      cash: S.cash, cleared: S.cleared, sel: S.sel, auto: S.auto, nextId: S.nextId, totalKills: S.totalKills,
-      stats: S.stats, settings: S.settings,
-      towers: S.towers.map(t => ({ id: t.id, race: t.race, x: t.x, y: t.y, spent: t.spent, paths: t.paths, infD: t.infD, infR: t.infR, mode: t.mode, kills: t.kills, dmg: t.dmg })),
+      ver: SAVE_VER, map: S.map, seed: S.seed, nextId: S.nextId, totalKills: S.totalKills,
+      stats: S.stats, settings: S.settings, boards,
     });
   }
 
@@ -886,6 +1338,14 @@
       for (const t of o.towers || []) t.dmg = 0;
       o.ver = 2;
       delete o.v;
+      return o;
+    },
+    2(o) {
+      const b = { cash: o.cash, cleared: o.cleared, sel: o.sel, auto: o.auto, towers: o.towers || [], records: newRecords() };
+      for (const k of ['cash', 'cleared', 'sel', 'auto', 'towers']) delete o[k];
+      o.boards = { moonlit: b };
+      o.map = 'moonlit';
+      o.ver = 3;
       return o;
     },
   };
@@ -912,29 +1372,65 @@
     return out;
   }
 
+  function cleanRecords(r) {
+    const out = newRecords();
+    if (!r || typeof r !== 'object') return out;
+    out.time = Math.max(0, +r.time || 0); out.att = r.att | 0; out.wins = r.wins | 0;
+    if (r.bosses && typeof r.bosses === 'object') for (const k in r.bosses) if (BOSS_BY_ID[k]) out.bosses[k] = r.bosses[k] | 0;
+    if (r.firsts && typeof r.firsts === 'object') for (const k in r.firsts) {
+      const n = k | 0, f = r.firsts[k];
+      if (n >= 1 && n <= MAX_WAVE && f && typeof f === 'object') out.firsts[n] = { at: Math.max(0, +f.at || 0), att: f.att | 0, lives: f.lives | 0 };
+    }
+    return out;
+  }
+
+  function loadBoard(S, map, src) {
+    const b = newBoard(map);
+    b.cash = Number(src.cash) || 0;
+    b.cleared = Math.max(0, Math.min(MAX_WAVE, src.cleared | 0));
+    b.sel = Math.max(1, Math.min(Math.max(1, src.sel | 0), Math.min(MAX_WAVE, b.cleared + 1)));
+    b.auto = !!src.auto;
+    b.records = cleanRecords(src.records);
+    for (const r of src.towers || []) {
+      if (!r || !RACES[r.race] || !isFinite(r.x) || !isFinite(r.y)) continue;
+      const t = makeTower(S, r.race, +r.x, +r.y);
+      t.id = r.id | 0; t.spent = +r.spent || 0; t.paths = (r.paths || [0, 0, 0, 0, 0]).slice(0, 5).map(v => Math.max(0, Math.min(10, v | 0)));
+      while (t.paths.length < 5) t.paths.push(0);
+      t.infD = r.infD | 0; t.infR = r.infR | 0; t.mode = r.mode || 'first'; t.kills = r.kills | 0; t.dmg = +r.dmg || 0;
+      t.face = faceRoad(map, t.x, t.y); t.light = lightAt(map, t.x, t.y);
+      b.towers.push(t);
+    }
+    return b;
+  }
+
   function deserialize(str) {
     const o = migrate(JSON.parse(str));
     if (!o) return null;
     const S = newState();
-    S.map = MAPS[o.map] ? o.map : 'moonlit';
     S.seed = o.seed >>> 0 || S.seed;
-    S.cash = Number(o.cash) || 0; S.cleared = Math.max(0, Math.min(MAX_WAVE, o.cleared | 0)); S.sel = Math.max(1, o.sel | 0); S.auto = !!o.auto; S.nextId = o.nextId | 0 || 1; S.totalKills = o.totalKills | 0;
+    S.nextId = o.nextId | 0 || 1; S.totalKills = o.totalKills | 0;
     const st = o.stats || {};
     S.stats = { played: st.played | 0, dmg: +st.dmg || 0, bossKills: st.bossKills | 0, earned: +st.earned || 0 };
     S.settings = cleanSettings(o.settings);
     setNumFormat(S.settings.numFmt);
-    const map = mapOf(S);
-    for (const r of o.towers || []) {
-      if (!RACES[r.race]) continue;
-      const t = makeTower(S, r.race, +r.x, +r.y);
-      t.id = r.id; t.spent = +r.spent || 0; t.paths = (r.paths || [0, 0, 0, 0, 0]).slice(0, 5).map(v => Math.max(0, Math.min(10, v | 0)));
-      while (t.paths.length < 5) t.paths.push(0);
-      t.infD = r.infD | 0; t.infR = r.infR | 0; t.mode = r.mode || 'first'; t.kills = r.kills | 0; t.dmg = +r.dmg || 0;
-      t.face = faceRoad(map, t.x, t.y);
-      S.towers.push(t);
+    const src = o.boards && typeof o.boards === 'object' ? o.boards : {};
+    const boards = {};
+    let maxId = 0;
+    for (const id of MAP_IDS) {
+      if (!src[id] || typeof src[id] !== 'object') continue;
+      boards[id] = loadBoard(S, MAPS[id], src[id]);
+      for (const t of boards[id].towers) maxId = Math.max(maxId, t.id);
     }
-    S.nextId = Math.max(S.nextId, ...S.towers.map(t => t.id + 1), 1);
-    S.sel = Math.min(S.sel, topWave(S));
+    let cur = MAPS[o.map] ? o.map : 'moonlit';
+    S.boards = boards;
+    S.map = cur;
+    if (cur !== 'moonlit' && !mapUnlocked(S, cur)) cur = 'moonlit';
+    S.map = cur;
+    const b = boards[cur] || newBoard(MAPS[cur]);
+    delete boards[cur];
+    for (const k of BOARD_KEYS) S[k] = b[k];
+    S.nextId = Math.max(S.nextId, maxId + 1, 1);
+    prepTowers(S);
     return S;
   }
 
@@ -967,6 +1463,7 @@
     upgradeOptions, buyMaxAffordable, maxAffordablePreview, nodeInfo, topWave, bossStatus,
     stats, computeStats, effDmg, effRate, refreshBuffs, startWave, step, canHit, isMagic, isFly,
     serialize, deserialize, migrate, cleanSettings, fmt, setNumFormat, pct, mulberry, hashSeed,
+    MAP_BOSSES, UNLOCK_AT, lightAt, crossings, placeBlockReason, switchMap, mapUnlocked, mapCleared, boardOf, newBoard, mapStartCash, activeTricks,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.NDCore = API;

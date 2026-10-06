@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Nightfall Defense</title>
+<link rel="icon" href="data:,">
 <meta name="description" content="Ponies hold the moonlit road against a hundred waves of DNBs. An incremental tower defense.">
 <meta name="theme-color" content="#0b0a13">
 <link rel="stylesheet" href="style.css">
@@ -37,8 +38,7 @@
     <aside id="side">
       <section class="card wavebox">
         <div class="maprow">
-          <button class="mapbtn on" type="button">Map 1 &middot; Moonlit Road</button>
-          <button id="map2" class="mapbtn locked" type="button" disabled>Map 2 &middot; unlocks at wave 50</button>
+          <button id="mapBtn" class="mapbtn on" type="button" aria-haspopup="dialog"><span id="mapName">Map 1 &middot; Moonlit Road</span><span class="mapgo">Maps</span></button>
         </div>
         <div class="waverow">
           <button id="wPrev" class="sq" type="button" aria-label="Previous wave">&#8249;</button>
@@ -88,6 +88,13 @@
       <li>Hold <kbd>Shift</kbd> to show every range &middot; <kbd>Esc</kbd> cancel</li>
     </ul>
     <button id="setReset" class="ghost" type="button">Restore default settings</button>
+  </div>
+</div>
+<div id="mapModal" class="modal" hidden>
+  <div class="dialog wide" role="dialog" aria-modal="true" aria-labelledby="mapTitle">
+    <div class="dhead"><h2 id="mapTitle">Choose a map</h2><button id="mapClose" class="ghost x" type="button">Close</button></div>
+    <p class="hint">Each map keeps its own ponies, cash and wave progress. Clear wave 50 on a map to unlock the next one.</p>
+    <div id="mapList" class="maplist"></div>
   </div>
 </div>
 <div id="tip" class="tip" role="tooltip" hidden></div>

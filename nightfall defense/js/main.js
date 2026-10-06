@@ -70,7 +70,8 @@
     const h = $('placeHint');
     if (!ui.placing) { h.className = 'placehint'; return; }
     const name = C.RACES[ui.placing].name;
-    h.textContent = ui.ghostTouch && ui.ghost ? 'Tap the same spot again to place the ' + name + '. Tap a button to cancel.' : 'Place the ' + name + ' anywhere off the road. Esc or right-click cancels.';
+    const extra = C.mapOf(S).dark ? ' Ponies outside crystal light lose range.' : '';
+    h.textContent = (ui.ghostTouch && ui.ghost ? 'Tap the same spot again to place the ' + name + '. Tap a button to cancel.' : 'Place the ' + name + ' anywhere off the road. Esc or right-click cancels.') + extra;
     h.className = 'placehint show';
   }
 
@@ -121,9 +122,15 @@
     ui.infoKey = '';
   });
 
+  const BLOCK_MSG = {
+    edge: 'Too close to the edge of the map', road: 'Too close to the road', pony: 'Too close to another pony',
+    tree: 'A tree is in the way', crystal: 'Crystals cannot be built on', stalagmite: 'A stalagmite is in the way',
+    boulder: 'A boulder is in the way', pillar: 'A pillar is in the way', keep: 'The keep tower is in the way', rock: 'A rock is in the way',
+  };
   function tryPlace(x, y) {
     const race = ui.placing;
-    if (!C.canPlace(S, x, y)) { banner('Too close to the road or another pony', 'bad'); A.play('deny'); return; }
+    const why = C.placeBlockReason(S, x, y);
+    if (why) { banner(BLOCK_MSG[why] || 'Something is in the way here', 'bad'); A.play('deny'); return; }
     const cost = C.nextTowerCost(S, race);
     if (S.cash < cost) { banner('Need ' + C.fmt(cost) + ' cash', 'bad'); A.play('deny'); return; }
     const t = C.placeTower(S, race, x, y);
@@ -183,6 +190,7 @@
     const k = ev.key.length === 1 ? ev.key.toLowerCase() : ev.key;
     if (k === 'Shift') { ui.showAll = true; return; }
     if (!$('setModal').hidden) { if (k === 'Escape') closeSettings(); return; }
+    if (!$('mapModal').hidden) { if (k === 'Escape') closeMaps(); return; }
     const t = selTower();
     if (k === 'Escape') { if (ui.placing) setPlacing(null); else { ui.selId = 0; ui.infoKey = ''; } }
     else if (k === '1' || k === '2' || k === '3') setPlacing(C.RACE_IDS[+k - 1]);
@@ -256,11 +264,12 @@
   $('wTop').addEventListener('click', () => { if (!S.run) { S.sel = C.topWave(S); ui.waveKey = ''; } });
   $('autoBox').addEventListener('change', ev => { S.auto = ev.target.checked; ui.waveKey = ''; if (!S.auto) ui.autoNext = 0; writeSave(); });
   function resetAll() {
-    if (!window.confirm('Reset all progress? Every pony, upgrade, wave and coin will be lost.')) return;
+    if (!window.confirm('Reset all progress on every map? Every pony, upgrade, wave and coin will be lost.')) return;
     const keep = S.settings;
     clearSave();
     S = C.newState();
     S.settings = keep;
+    R.bgKey = ''; resize();
     ui.selId = 0; ui.placing = null; ui.autoNext = 0; ui.paused = false;
     dirty();
     closeSettings();
@@ -298,8 +307,13 @@
     let fly = false, mag = false;
     for (const t of S.towers) { const s = C.stats(t); if (s.canFly) fly = true; if (s.canMagic) mag = true; }
     const bt = spec.boss && spec.boss.trick;
-    if ((spec.counts.flying || bt === 'flying' || bt === 'phase' || bt === 'mother') && !fly) out.push('No pony can hit flyers yet. Add a Pegasus.');
-    if ((spec.counts.magical || bt === 'magical' || bt === 'phase' || bt === 'mother') && !mag) out.push('No pony can harm magical DNBs yet. Add a Unicorn.');
+    const tk = (spec.boss && spec.boss.tricks) || {};
+    const bFly = bt === 'flying' || bt === 'phase' || bt === 'mother' || !!tk.fly || !!tk.phase;
+    const bMag = bt === 'magical' || bt === 'phase' || bt === 'mother' || !!tk.magic || !!tk.phase;
+    if ((spec.counts.flying || bFly) && !fly) out.push('No pony can hit flyers yet. Add a Pegasus.');
+    if ((spec.counts.magical || bMag) && !mag) out.push('No pony can harm magical DNBs yet. Add a Unicorn.');
+    const map = C.mapOf(S);
+    if (map.wind && spec.counts.flying) out.push('Wind gusts on this map push flyers back or sideways.');
     return out;
   }
 
@@ -337,7 +351,8 @@
     sb.disabled = !!S.run;
     sb.textContent = S.run ? 'Wave ' + S.run.n + ' running' : (ui.autoNext > 0 ? 'Auto-starting Wave ' + S.sel + '...' : (fresh ? 'Start Wave ' : 'Replay Wave ') + S.sel);
     $('autoBox').checked = !!S.auto;
-    $('map2').innerHTML = S.cleared >= 50 ? 'Map 2 &middot; unlocked, still being charted' : 'Map 2 &middot; unlocks at wave 50';
+    const nm = 'Map ' + map.order + ' · ' + map.name;
+    if ($('mapName').textContent !== nm) $('mapName').textContent = nm;
     $('autoHint').textContent = !S.auto
       ? 'Auto is off: a wave only starts when you press Start.'
       : (S.sel > S.cleared
@@ -532,6 +547,68 @@
     syncSettings(); dirty(); writeSave();
   });
 
+  function mapCard(id) {
+    const m = C.MAPS[id];
+    const open = C.mapUnlocked(S, id), best = C.mapCleared(S, id), cur = S.map === id;
+    const prev = m.order > 1 ? C.MAPS[C.MAP_IDS[m.order - 2]] : null;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'mapcard' + (cur ? ' on' : '') + (open ? '' : ' locked');
+    b.dataset.map = id;
+    if (!open) b.setAttribute('aria-disabled', 'true');
+    const c = document.createElement('canvas');
+    c.width = 336; c.height = 192;
+    let lock;
+    if (cur) lock = '<span class="ml ok">Playing now</span>';
+    else if (open) lock = '<span class="ml ok">' + (best ? 'Continue' : 'Unlocked, start fresh') + '</span>';
+    else lock = '<span class="ml">Locked: clear wave ' + C.UNLOCK_AT + ' on ' + esc(prev.name) + ' (best ' + C.mapCleared(S, prev.id) + ')</span>';
+    const info = document.createElement('div');
+    info.innerHTML = '<div class="mt"><span class="mo">' + m.order + '</span><span>' + esc(m.name) + '</span><span class="mb">Best ' + best + ' / ' + C.MAX_WAVE + '</span></div>'
+      + '<div class="mbar"><i style="width:' + best + '%"></i></div>'
+      + '<div class="mf">' + esc(m.feature) + '</div><div class="md">' + esc(m.blurb) + '</div>' + lock;
+    b.append(c, info);
+    R.drawMapPreview(c, m);
+    return b;
+  }
+  function buildMaps() {
+    const box = $('mapList');
+    box.innerHTML = '';
+    for (const id of C.MAP_IDS) box.appendChild(mapCard(id));
+  }
+  function openMaps() {
+    lastFocus = document.activeElement;
+    $('mapBtn').classList.remove('pulse');
+    buildMaps();
+    $('mapModal').hidden = false;
+    $('mapClose').focus();
+  }
+  function closeMaps() {
+    if ($('mapModal').hidden) return;
+    $('mapModal').hidden = true;
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function chooseMap(id) {
+    if (id === S.map) { closeMaps(); return; }
+    if (!C.mapUnlocked(S, id)) { A.play('deny'); banner('Clear wave ' + C.UNLOCK_AT + ' on the previous map to unlock this one', 'bad'); return; }
+    if (S.run) { A.play('deny'); banner('Finish or lose the current wave before switching maps', 'bad'); return; }
+    if (!C.switchMap(S, id)) return;
+    ui.selId = 0; ui.placing = null; ui.ghost = null; ui.autoNext = 0; ui.paused = false;
+    updateHint();
+    R.bgKey = ''; resize();
+    dirty();
+    closeMaps();
+    A.play('click');
+    banner(C.mapOf(S).name + (S.cleared ? ': best wave ' + S.cleared : ': a fresh board with ' + C.fmt(S.cash) + ' cash'), 'good');
+    writeSave();
+  }
+  $('mapBtn').addEventListener('click', openMaps);
+  $('mapClose').addEventListener('click', closeMaps);
+  $('mapModal').addEventListener('click', ev => {
+    if (ev.target === $('mapModal')) { closeMaps(); return; }
+    const card = ev.target.closest('.mapcard');
+    if (card) chooseMap(card.dataset.map);
+  });
+
   const tip = $('tip');
   function showTip(el, sticky) {
     const text = el.dataset.tip;
@@ -578,9 +655,12 @@
         A.play('win');
         banner(e.fresh ? 'Wave ' + e.n + ' cleared! Bonus +' + C.fmt(e.bonus) + ', kills +' + C.fmt(e.earned) : 'Wave ' + e.n + ' replayed: +' + C.fmt(e.earned) + ' kill cash', 'good');
         if (e.fresh) {
-          if (S.cleared >= 50 && e.n === 50) setTimeout(() => banner('Wave 50 cleared! Map 2 is still being charted.', 'good'), 2700);
+          if (e.n === C.UNLOCK_AT) {
+            const nx = C.MAP_IDS[C.mapOf(S).order];
+            if (nx) setTimeout(() => { banner('Wave ' + C.UNLOCK_AT + ' cleared! ' + C.MAPS[nx].name + ' is now unlocked.', 'good'); A.play('unlocked'); $('mapBtn').classList.add('pulse'); }, 2700);
+          }
           if (S.sel === e.n && S.sel < C.MAX_WAVE) S.sel = C.topWave(S);
-          if (e.n === C.MAX_WAVE) setTimeout(() => banner('All 100 waves held. The road is safe!', 'good'), 2700);
+          if (e.n === C.MAX_WAVE) setTimeout(() => banner('All 100 waves held. ' + C.mapOf(S).name + ' is safe!', 'good'), 2700);
         }
         if (S.auto && !(e.fresh && e.n === C.MAX_WAVE)) ui.autoNext = performance.now() + 1600;
         writeSave();
@@ -592,7 +672,9 @@
         writeSave();
       } else if (e.type === 'enrage') {
         banner('The stragglers are enraged and immune to control', 'bad');
-      } else if (e.type === 'leak') continue;
+      } else if (e.type === 'gust') { A.play('wind'); continue; }
+      else if (e.type === 'map') resize();
+      else if (e.type === 'leak') continue;
       ui.waveKey = ''; ui.infoKey = '';
     }
   }
@@ -640,5 +722,5 @@
   window.addEventListener('pagehide', writeSave);
   $('saveNote').textContent = 'Progress saves automatically in this browser.';
   requestAnimationFrame(frame);
-  window.__nd = { get S() { return S; }, ui, save: writeSave, audio: A, setSpeed, togglePause, refresh: dirty };
+  window.__nd = { get S() { return S; }, ui, save: writeSave, audio: A, setSpeed, togglePause, refresh: dirty, openMaps, closeMaps, chooseMap };
 })();

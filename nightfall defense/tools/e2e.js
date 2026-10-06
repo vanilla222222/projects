@@ -2,7 +2,8 @@
 const path = require('path');
 const { execSync } = require('child_process');
 const { chromium } = require(path.join(execSync('npm root -g').toString().trim(), 'playwright'));
-const BASE = process.env.BASE || 'http://localhost:8801/';
+const BASE = process.env.BASE || 'http://localhost:8803/';
+const SHOTS = process.env.SHOTS || '';
 const GAME = BASE + 'nightfall%20defense/index.html';
 
 const results = [];
@@ -15,7 +16,7 @@ function ok(cond, msg) { if (!cond) throw new Error(msg); }
 async function openGame(browser, viewport) {
   const page = await browser.newPage({ viewport });
   const errors = [];
-  page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('console', m => { if (m.type() === 'error' && !/favicon\.ico/.test((m.location() || {}).url || '')) errors.push(m.text()); });
   page.on('pageerror', e => errors.push(String(e)));
   await page.goto(GAME);
   await page.waitForTimeout(400);
@@ -40,7 +41,11 @@ async function fastForward(page, maxSeconds) {
 }
 
 (async () => {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({
+    executablePath: process.env.CHROME || '/opt/pw-browsers/chromium',
+    args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
+  });
+  const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: path.join(SHOTS, name + '.png') }); };
 
   await test('place, upgrade and win with every race; targeting rules', async () => {
     const { page, errors } = await openGame(browser, { width: 1280, height: 800 });
@@ -240,7 +245,7 @@ async function fastForward(page, maxSeconds) {
     await page.waitForTimeout(400);
     const s2 = await page.evaluate(() => ({ s: __nd.S.settings, ver: JSON.parse(localStorage.getItem('nightfall-defense-save-v1')).ver, radio: document.querySelector('input[name="numFmt"][value="sci"]').checked }));
     ok(!s2.s.shake && !s2.s.dmgNums && s2.s.numFmt === 'sci' && !s2.s.sound && s2.radio, 'settings survived reload ' + JSON.stringify(s2));
-    ok(s2.ver === 2, 'save has ver 2');
+    ok(s2.ver === 3, 'save has ver 3');
     await page.click('#setBtn');
     await page.click('#setReset');
     await page.keyboard.press('Escape');
@@ -254,7 +259,7 @@ async function fastForward(page, maxSeconds) {
   await test('old v1 save loads and migrates', async () => {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     const errors = [];
-    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+    page.on('console', m => { if (m.type() === 'error' && !/favicon\.ico/.test((m.location() || {}).url || '')) errors.push(m.text()); });
     page.on('pageerror', e => errors.push(String(e)));
     await page.goto(BASE + 'index.html');
     await page.evaluate(() => localStorage.setItem('nightfall-defense-save-v1', JSON.stringify({
@@ -268,7 +273,154 @@ async function fastForward(page, maxSeconds) {
     ok(m.cash === 777 && m.cleared === 12 && m.n === 2 && m.p === '2,0,0,1,0' && m.mode === 'strong' && m.dmg === 0 && m.map === 'moonlit' && m.set === 1, 'migrated ' + JSON.stringify(m));
     await page.evaluate(() => __nd.save());
     const ver = await page.evaluate(() => { const o = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return o.ver + ':' + ('v' in o); });
-    ok(ver === '2:false', 'resaved as ver 2, got ' + ver);
+    ok(ver === '3:false', 'resaved as ver 3, got ' + ver);
+    ok(!errors.length, 'console errors: ' + errors.join(' | '));
+    await page.close();
+  });
+
+  await test('old v2 save moves onto the Moonlit Road board', async () => {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    const errors = [];
+    page.on('pageerror', e => errors.push(String(e)));
+    page.on('console', m => { if (m.type() === 'error' && !/favicon\.ico/.test((m.location() || {}).url || '')) errors.push(m.text()); });
+    await page.goto(BASE + 'index.html');
+    await page.evaluate(() => localStorage.setItem('nightfall-defense-save-v1', JSON.stringify({
+      ver: 2, map: 'moonlit', seed: 99, cash: 4321, cleared: 57, sel: 58, auto: true, nextId: 5, totalKills: 900,
+      stats: { played: 70, dmg: 1e6, bossKills: 5, earned: 5e5 }, settings: { speed: 2, sound: false, vol: 0.4, shake: true, dmgNums: true, numFmt: 'short' },
+      towers: [{ id: 4, race: 'unicorn', x: 700, y: 300, spent: 900, paths: [3, 0, 2, 0, 0], infD: 2, infR: 1, mode: 'last', kills: 40, dmg: 5000 }],
+    })));
+    await page.goto(GAME);
+    await page.waitForTimeout(500);
+    const m = await page.evaluate(() => { const S = __nd.S; return { map: S.map, cash: Math.floor(S.cash), cleared: S.cleared, sel: S.sel, auto: S.auto, n: S.towers.length, p: S.towers[0].paths.join(), mode: S.towers[0].mode, dmg: S.towers[0].dmg, played: S.stats.played, speed: S.settings.speed, woods: NDCore.mapUnlocked(S, 'woods'), caverns: NDCore.mapUnlocked(S, 'caverns') }; });
+    ok(m.map === 'moonlit' && m.cash === 4321 && m.cleared === 57 && m.sel === 58 && m.auto === true && m.n === 1 && m.p === '3,0,2,0,0' && m.mode === 'last' && m.dmg === 5000 && m.played === 70 && m.speed === 2, 'migrated ' + JSON.stringify(m));
+    ok(m.woods && !m.caverns, 'wave 57 on map 1 unlocks map 2 only');
+    await page.evaluate(() => __nd.save());
+    const o = await page.evaluate(() => JSON.parse(localStorage.getItem('nightfall-defense-save-v1')));
+    ok(o.ver === 3 && o.boards && o.boards.moonlit && o.boards.moonlit.cleared === 57 && o.boards.moonlit.towers.length === 1 && !('towers' in o), 'ver 3 layout ' + JSON.stringify(Object.keys(o)));
+    ok(!errors.length, 'console errors: ' + errors.join(' | '));
+    await page.close();
+  });
+
+  await test('map select at phone width: previews, locks, unlock, switch and return', async () => {
+    const { page, errors } = await openGame(browser, { width: 390, height: 844 });
+    await page.evaluate(() => { localStorage.clear(); });
+    await page.reload();
+    await page.waitForTimeout(400);
+    await page.evaluate(() => { const S = __nd.S; S.cash = 5000; S.cleared = 49; S.sel = 49; __nd.refresh(); });
+    await placeAt(page, 'earth', 600, 330);
+    await page.keyboard.press('Escape');
+    ok(await page.evaluate(() => __nd.S.towers.length) === 1, 'pony placed on map 1');
+    await page.click('#mapBtn');
+    await page.waitForTimeout(250);
+    const m1 = await page.evaluate(() => {
+      const cards = [...document.querySelectorAll('#mapList .mapcard')];
+      const painted = cards.map(c => { const cv = c.querySelector('canvas'); const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 3; i < d.length; i += 40) if (d[i] > 0) n++; return n; });
+      return { open: !document.getElementById('mapModal').hidden, n: cards.length, locked: cards.filter(c => c.classList.contains('locked')).length, on: cards.findIndex(c => c.classList.contains('on')), painted: Math.min(...painted), best: cards[0].querySelector('.mb').textContent, sw: document.documentElement.scrollWidth, dw: document.querySelector('#mapModal .dialog').getBoundingClientRect().width };
+    });
+    ok(m1.open && m1.n === 5 && m1.locked === 4 && m1.on === 0, 'modal ' + JSON.stringify(m1));
+    ok(m1.painted > 100, 'every preview is drawn, min painted ' + m1.painted);
+    ok(m1.best === 'Best 49 / 100', 'best wave shown: ' + m1.best);
+    ok(m1.sw <= 390 && m1.dw <= 390, 'modal fits 390px ' + JSON.stringify(m1));
+    await shot(page, 'maps-locked-390');
+    await page.click('#mapList .mapcard[data-map="woods"]', { force: true });
+    await page.waitForTimeout(200);
+    ok(await page.evaluate(() => __nd.S.map) === 'moonlit', 'locked map cannot be chosen');
+    ok(/Clear wave 50/.test(await page.evaluate(() => document.getElementById('banner').textContent)), 'locked map explains itself');
+    await page.click('#mapClose');
+    await page.evaluate(() => {
+      const S = __nd.S; S.towers[0].paths[0] = 2; S.towers[0]._s = null;
+      S.cash = 1e6; NDCore.placeTower(S, 'pegasus', 600, 480); S.cash = 1e6;
+      NDCore.startWave(S, 50); S.run.lives = 1e9;
+      for (const t of S.towers) { t.infD = 60; t.paths[1] = 1; t._s = null; }
+      let k = 0;
+      while (S.run && k < 60000) { NDCore.step(S, 1 / 30); k++; }
+    });
+    await page.waitForTimeout(3200);
+    const won = await page.evaluate(() => ({ cleared: __nd.S.cleared, unlocked: NDCore.mapUnlocked(__nd.S, 'woods'), banner: document.getElementById('banner').textContent, pulse: document.getElementById('mapBtn').classList.contains('pulse') }));
+    ok(won.cleared === 50 && won.unlocked, 'wave 50 unlocks map 2 ' + JSON.stringify(won));
+    ok(/Whispering Woods is now unlocked/.test(won.banner) && won.pulse, 'unlock banner and pulsing map button ' + JSON.stringify(won));
+    const moon = await page.evaluate(() => ({ cash: __nd.S.cash, n: __nd.S.towers.length, p: __nd.S.towers[0].paths.join() }));
+    await page.click('#mapBtn');
+    await page.waitForTimeout(250);
+    ok(await page.locator('#mapList .mapcard.locked').count() === 3, 'three maps still locked');
+    await page.click('#mapList .mapcard[data-map="woods"]');
+    await page.waitForTimeout(300);
+    const w = await page.evaluate(() => ({ map: __nd.S.map, n: __nd.S.towers.length, cleared: __nd.S.cleared, cash: __nd.S.cash, start: NDCore.mapStartCash(NDCore.MAPS.woods), modal: document.getElementById('mapModal').hidden, name: document.getElementById('mapName').textContent }));
+    ok(w.map === 'woods' && w.n === 0 && w.cleared === 0 && w.cash === w.start && w.modal && /Whispering Woods/.test(w.name), 'fresh woods board ' + JSON.stringify(w));
+    const tree = await page.evaluate(() => { const b = NDCore.MAPS.woods.blocks[0]; return [b.x, b.y]; });
+    await placeAt(page, 'earth', tree[0], tree[1]);
+    await page.waitForTimeout(100);
+    const deny = await page.evaluate(() => ({ n: __nd.S.towers.length, banner: document.getElementById('banner').textContent }));
+    ok(deny.n === 0 && /tree/i.test(deny.banner), 'trees block building ' + JSON.stringify(deny));
+    await page.keyboard.press('Escape');
+    const spot = await page.evaluate(() => { const S = __nd.S; let best = null, bd = 1e18; for (let y = 40; y < 760; y += 10) for (let x = 40; x < 1360; x += 10) { const d = (x - 700) ** 2 + (y - 400) ** 2; if (d < bd && NDCore.canPlace(S, x, y)) { bd = d; best = [x, y]; } } return best; });
+    await placeAt(page, 'unicorn', spot[0], spot[1]);
+    await page.keyboard.press('Escape');
+    ok(await page.evaluate(() => __nd.S.towers.length) === 1, 'pony placed on woods');
+    await page.evaluate(() => { NDCore.startWave(__nd.S, 1); __nd.S.run.lives = 1e9; });
+    await page.waitForTimeout(600);
+    await shot(page, 'woods-390');
+    await page.evaluate(() => { const S = __nd.S; while (S.run) NDCore.step(S, 1 / 30); });
+    await page.click('#mapBtn');
+    await page.waitForTimeout(200);
+    await page.click('#mapList .mapcard[data-map="moonlit"]');
+    await page.waitForTimeout(300);
+    const back = await page.evaluate(() => ({ map: __nd.S.map, cash: __nd.S.cash, n: __nd.S.towers.length, p: __nd.S.towers[0].paths.join(), cleared: __nd.S.cleared, woods: NDCore.mapCleared(__nd.S, 'woods') }));
+    ok(back.map === 'moonlit' && back.cash === moon.cash && back.n === moon.n && back.p === moon.p && back.cleared === 50 && back.woods === 1, 'map 1 board restored ' + JSON.stringify(back) + ' vs ' + JSON.stringify(moon));
+    await page.evaluate(() => __nd.save());
+    await page.reload();
+    await page.waitForTimeout(500);
+    const re = await page.evaluate(() => ({ map: __nd.S.map, n: __nd.S.towers.length, woodsN: NDCore.boardOf(__nd.S, 'woods').towers.length, woods: NDCore.mapCleared(__nd.S, 'woods') }));
+    ok(re.map === 'moonlit' && re.n === moon.n && re.woodsN === 1 && re.woods === 1, 'both boards survive reload ' + JSON.stringify(re));
+    const ov = await page.evaluate(() => document.documentElement.scrollWidth);
+    ok(ov <= 390, 'no horizontal scroll at 390px, width ' + ov);
+    ok(!errors.length, 'console errors: ' + errors.join(' | '));
+    await page.close();
+  });
+
+  await test('every map renders and plays: forks, darkness, bridge and wind, two gates', async () => {
+    const { page, errors } = await openGame(browser, { width: 1280, height: 800 });
+    await page.evaluate(() => { localStorage.clear(); });
+    await page.reload();
+    await page.waitForTimeout(400);
+    const out = {};
+    for (const id of ['moonlit', 'woods', 'caverns', 'cliffs', 'castle']) {
+      const r = await page.evaluate(id => {
+        const C = NDCore, S = __nd.S;
+        S.cleared = Math.max(S.cleared, 50);
+        __nd.chooseMap(id);
+        S.cash = 1e300;
+        const spots = [];
+        for (let y = 30; y < 780 && spots.length < 18; y += 37) for (let x = 30; x < 1380 && spots.length < 18; x += 53) if (C.canPlace(S, x, y)) { const t = C.placeTower(S, C.RACE_IDS[spots.length % 3], x, y); if (t) { spots.push(t); t.infD = 40; t.paths[1] = 2; t._s = null; } }
+        const n = id === 'cliffs' ? 14 : 20;
+        S.cleared = n - 1; S.sel = n;
+        C.startWave(S, n); S.run.lives = 1e9;
+        const paths = new Set(); let gust = 0, warn = 0, k = 0;
+        while (S.run && S.run.t < 40 && k < 4000) {
+          C.step(S, 1 / 30); k++;
+          if (!S.run) break;
+          for (const e of S.run.enemies) paths.add(e.path);
+          if (S.run.gustOn) gust++; if (S.run.gustWarn > 0) warn++;
+        }
+        const dark = S.towers.filter(t => C.stats(t).baseRange).length;
+        return { map: S.map, towers: S.towers.length, paths: paths.size, gust, warn, dark, lit: S.towers.length - dark, bridges: (C.MAPS[id].bridges || []).length, run: !!S.run };
+      }, id);
+      await page.waitForTimeout(250);
+      if (id === 'cliffs') {
+        await page.evaluate(() => { const S = __nd.S; let k = 0; while (S.run && !S.run.gustOn && k < 4000) { NDCore.step(S, 1 / 30); k++; } });
+        await page.waitForTimeout(150);
+      }
+      if (id === 'caverns') await page.evaluate(() => { const t = __nd.S.towers.find(q => NDCore.stats(q).baseRange); if (t) __nd.ui.selId = t.id; });
+      await page.waitForTimeout(150);
+      await shot(page, 'map-' + id);
+      await page.evaluate(() => { __nd.ui.selId = 0; const S = __nd.S; if (S.run) S.run.lives = 1e9; let k = 0; while (S.run && k < 40000) { NDCore.step(S, 1 / 10); k++; } S.cleared = Math.max(S.cleared, 50); });
+      out[id] = r;
+    }
+    ok(Object.values(out).every(r => r.towers >= 6), 'towers placed on every map ' + JSON.stringify(out));
+    ok(out.caverns.paths === 2 && out.castle.paths === 2 && out.moonlit.paths === 1, 'forks and twin gates use both routes ' + JSON.stringify(out));
+    ok(out.caverns.dark > 0 && out.caverns.lit > 0 && out.moonlit.dark === 0, 'crystal light splits caverns ponies ' + JSON.stringify(out.caverns));
+    ok(out.cliffs.bridges >= 1 && out.cliffs.warn > 0 && out.cliffs.gust > 0, 'cliffs bridge and gusts ' + JSON.stringify(out.cliffs));
+    ok(await page.evaluate(() => NDCore.MAP_IDS.every(id => NDCore.mapUnlocked(__nd.S, id))), 'all maps unlocked in a chain');
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
