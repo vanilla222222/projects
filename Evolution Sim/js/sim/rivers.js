@@ -12,8 +12,8 @@ const SALMON_HEAD = 1.6;
 const MUSSEL_FILTER = 0.2;
 const MUSSEL_E = 2.4;
 const MUSSEL_NUT = 0.5;
-const MUSSEL_PLANK = 0.05;
-const MUSSEL_PE = 12;
+const MUSSEL_PLANK = 0.03;
+const MUSSEL_PE = 7;
 const FLOOD_AT = 60;
 const FLOOD_PULSE = 0.08;
 const RIV_FLOOD_R = 7;
@@ -245,7 +245,7 @@ class RiverLayer {
 				const nx = x + fdx[t] * RIV_LARVA;
 				const ny = y + fdy[t] * RIV_LARVA;
 				const nt = (ny | 0) * W + (nx | 0);
-				if (A.canStand(1, nx, ny) && A.walk[nt] & 2 && (P.sal[nt] === 0 || P.sal[t] !== 0)) {
+				if (A.canStand(1, nx, ny) && A.walk[nt] & 2) {
 					A.x[i] = nx;
 					A.y[i] = ny;
 					this.larvaDrift++;
