@@ -16,7 +16,7 @@ function ok(cond, msg) { if (!cond) throw new Error(msg); }
 async function openGame(browser, viewport) {
   const page = await browser.newPage({ viewport });
   const errors = [];
-  page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('console', m => { if (m.type() === 'error' && !/favicon\.ico/.test((m.location() || {}).url || '')) errors.push(m.text()); });
   page.on('pageerror', e => errors.push(String(e)));
   await page.goto(GAME);
   await page.waitForTimeout(400);
@@ -259,7 +259,7 @@ async function fastForward(page, maxSeconds) {
   await test('old v1 save loads and migrates', async () => {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     const errors = [];
-    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+    page.on('console', m => { if (m.type() === 'error' && !/favicon\.ico/.test((m.location() || {}).url || '')) errors.push(m.text()); });
     page.on('pageerror', e => errors.push(String(e)));
     await page.goto(BASE + 'index.html');
     await page.evaluate(() => localStorage.setItem('nightfall-defense-save-v1', JSON.stringify({
@@ -282,7 +282,7 @@ async function fastForward(page, maxSeconds) {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     const errors = [];
     page.on('pageerror', e => errors.push(String(e)));
-    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+    page.on('console', m => { if (m.type() === 'error' && !/favicon\.ico/.test((m.location() || {}).url || '')) errors.push(m.text()); });
     await page.goto(BASE + 'index.html');
     await page.evaluate(() => localStorage.setItem('nightfall-defense-save-v1', JSON.stringify({
       ver: 2, map: 'moonlit', seed: 99, cash: 4321, cleared: 57, sel: 58, auto: true, nextId: 5, totalKills: 900,
