@@ -6,7 +6,7 @@
   const LIVES = 10;
 
   const TUNE = {
-    hp0: 14, hpLin: 0.10, hpGrowth: 1.15, hpGrowth2: 1.075, hpKnee: 50,
+    hp0: 14, hpLin: 0.10, hpGrowth: 1.155, hpGrowth2: 1.0575, hpKnee: 50,
     cash0: 2.2, cashGrowth: 1.2,
     clear0: 45, clearGrowth: 1.2,
     towerGrowth: 1.5, sellRate: 0.7,
@@ -123,11 +123,11 @@
     { name: 'Skyrend', trick: 'flying', hpMul: 0.55, desc: 'A winged brute. Only pegasi and sky-sighted unicorns can hit it.', color: '#6b4d3c', dark: '#33231a' },
     { name: 'The Hexhulk', trick: 'magical', hpMul: 0.55, desc: 'Wrapped in dark magic. Only unicorns and ley-hoofed earth ponies can hurt it.', color: '#6e4a5c', dark: '#35222c' },
     { name: 'Gloamrunner', trick: 'sprint', hpMul: 1, desc: 'Breaks into a triple-speed sprint every 6 seconds.', color: '#8a6040', dark: '#432c1a' },
-    { name: 'Bramble King', trick: 'regen', hpMul: 0.85, desc: 'Regrows 1.5% HP per second and heals DNBs around him.', color: '#5c5a34', dark: '#2c2a16' },
+    { name: 'Bramble King', trick: 'regen', hpMul: 0.7, desc: 'Regrows 1.5% HP per second and heals DNBs around him.', color: '#5c5a34', dark: '#2c2a16' },
     { name: 'Duskwraith', trick: 'phase', hpMul: 0.6, desc: 'Flickers between flying and magical forms every 4 seconds.', color: '#5a4660', dark: '#2a2030' },
     { name: 'Stonehide Colossus', trick: 'armor', hpMul: 0.8, desc: 'A stone shell blocks 60% of damage until it drops below half HP.', color: '#6a6258', dark: '#34302a' },
-    { name: 'Twin Shade', trick: 'split', hpMul: 0.3, desc: 'Splits into two smaller shades when slain.', color: '#4e3a30', dark: '#241a14' },
-    { name: 'The Nightmother', trick: 'mother', hpMul: 0.35, desc: 'Sprints and summons, then takes to the air, then turns magical and regrows.', color: '#3e2a3a', dark: '#1c121a' },
+    { name: 'Twin Shade', trick: 'split', hpMul: 0.25, desc: 'Splits into two smaller shades when slain.', color: '#4e3a30', dark: '#241a14' },
+    { name: 'The Nightmother', trick: 'mother', hpMul: 0.27, desc: 'Sprints and summons, then takes to the air, then turns magical and regrows.', color: '#3e2a3a', dark: '#1c121a' },
   ];
 
   function mulberry(seed) {
