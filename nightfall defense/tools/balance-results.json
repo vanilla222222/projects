@@ -8,7 +8,7 @@
       "hpShift": 0,
       "hpMul": 1,
       "cashMul": 1,
-      "startCash": 160,
+      "startCash": 166,
       "star": 0,
       "races": "earth,unicorn,pegasus,bat,crystal",
       "owned": {
@@ -19,17 +19,17 @@
         "crystal": 34
       },
       "reached": 100,
-      "hours": 6.698,
-      "w50h": 1.747,
-      "w100h": 6.698,
+      "hours": 6.044,
+      "w50h": 1.606,
+      "w100h": 6.044,
       "hero": "nova",
       "heroLv": 30,
       "heroLvAt": {
         "10": 5,
-        "20": 10,
-        "30": 18,
+        "20": 11,
+        "30": 17,
         "40": 27,
-        "50": 28,
+        "50": 29,
         "60": 30,
         "70": 30,
         "80": 30,
@@ -39,57 +39,57 @@
       "decades": [
         0.089,
         0.1,
-        0.326,
-        0.935,
-        0.297,
-        0.162,
-        0.197,
-        0.6,
-        1.641,
-        2.352
+        0.246,
+        0.806,
+        0.365,
+        0.16,
+        0.193,
+        0.438,
+        1.518,
+        2.129
       ],
-      "worth50": 20445821.39973533,
+      "worth50": 20462374.375844218,
       "towers50": 79,
-      "losses": 72,
-      "attempts": 172,
-      "farms": 216,
-      "worstWaveLosses": 18,
-      "fingerprint": "ac9c5793",
+      "losses": 62,
+      "attempts": 162,
+      "farms": 186,
+      "worstWaveLosses": 17,
+      "fingerprint": "786367be",
       "offline": [
         {
           "wave": 20,
           "farm": 18,
           "offline": 161612,
-          "activePerMin": 3082.075397965648,
-          "minutes": 52.43609553052254
+          "activePerMin": 3088.201431221321,
+          "minutes": 52.33207858986249
         },
         {
           "wave": 40,
           "farm": 35,
-          "offline": 3059386,
-          "activePerMin": 91384.18456139896,
-          "minutes": 33.47828745951624
+          "offline": 3072377,
+          "activePerMin": 92515.95351936828,
+          "minutes": 33.20915888692425
         },
         {
           "wave": 60,
           "farm": 59,
-          "offline": 344081039,
-          "activePerMin": 4316655.877040388,
-          "minutes": 79.7100924421872
+          "offline": 363909438,
+          "activePerMin": 4262115.133139543,
+          "minutes": 85.38235749908952
         },
         {
           "wave": 80,
           "farm": 77,
-          "offline": 10089041683,
-          "activePerMin": 191109836.86159816,
-          "minutes": 52.79184917261213
+          "offline": 10125844476,
+          "activePerMin": 222380105.0446417,
+          "minutes": 45.53394951390677
         },
         {
           "wave": 100,
           "farm": 99,
-          "offline": 642796444586,
-          "activePerMin": 10049255253.507652,
-          "minutes": 63.96458527229015
+          "offline": 684061680627,
+          "activePerMin": 10227196211.795643,
+          "minutes": 66.88653140711531
         }
       ],
       "wave1Hp": 17.5,
@@ -103,88 +103,88 @@
       "hpShift": 16,
       "hpMul": 1,
       "cashMul": 7583.7,
-      "startCash": 19580000,
+      "startCash": 21146400,
       "star": 0,
       "races": "earth,unicorn,pegasus,bat,crystal",
       "owned": {
         "earth": 34,
-        "unicorn": 45,
-        "pegasus": 45,
+        "unicorn": 44,
+        "pegasus": 44,
         "bat": 43,
-        "crystal": 41
+        "crystal": 40
       },
       "reached": 100,
-      "hours": 6.812,
-      "w50h": 2.287,
-      "w100h": 6.812,
+      "hours": 4.494,
+      "w50h": 1.939,
+      "w100h": 4.494,
       "hero": "ironmane",
       "heroLv": 30,
       "heroLvAt": {
-        "10": 6,
-        "20": 10,
+        "10": 7,
+        "20": 12,
         "30": 20,
         "40": 23,
         "50": 25,
-        "60": 26,
-        "70": 28,
+        "60": 27,
+        "70": 29,
         "80": 30,
         "90": 30,
         "100": 30
       },
       "decades": [
-        0.187,
-        0.274,
-        1.108,
-        0.535,
-        0.184,
-        0.229,
-        0.324,
-        1.388,
-        0.849,
-        1.735
+        0.186,
+        0.267,
+        0.881,
+        0.419,
+        0.186,
+        0.219,
+        0.32,
+        0.804,
+        0.701,
+        0.51
       ],
-      "worth50": 139078634560.27435,
-      "towers50": 103,
-      "losses": 28,
-      "attempts": 128,
-      "farms": 84,
-      "worstWaveLosses": 9,
-      "fingerprint": "80395fb7",
+      "worth50": 140887206347.22845,
+      "towers50": 104,
+      "losses": 12,
+      "attempts": 112,
+      "farms": 36,
+      "worstWaveLosses": 3,
+      "fingerprint": "22984dfd",
       "offline": [
         {
           "wave": 20,
           "farm": 17,
-          "offline": 715788449,
-          "activePerMin": 8900032.61097616,
-          "minutes": 80.42537373596117
+          "offline": 733683160,
+          "activePerMin": 9340443.728034288,
+          "minutes": 78.54906911948228
         },
         {
           "wave": 40,
-          "farm": 39,
-          "offline": 30180768748,
-          "activePerMin": 565274837.4295487,
-          "minutes": 53.39131825722118
+          "farm": 34,
+          "offline": 21797550590,
+          "activePerMin": 589997120.8903134,
+          "minutes": 36.94518128682935
         },
         {
           "wave": 60,
           "farm": 59,
-          "offline": 1807413454779,
-          "activePerMin": 32857919578.857006,
-          "minutes": 55.00693525167708
+          "offline": 1936978290745,
+          "activePerMin": 32038107775.070488,
+          "minutes": 60.45857340714119
         },
         {
           "wave": 80,
           "farm": 78,
-          "offline": 50876362303142,
-          "activePerMin": 1124040492558.967,
-          "minutes": 45.26203694612277
+          "offline": 50518637880699,
+          "activePerMin": 1089814745721.9447,
+          "minutes": 46.35525265097516
         },
         {
           "wave": 100,
           "farm": 99,
-          "offline": 3015516944748302,
-          "activePerMin": 61110473330134.44,
-          "minutes": 49.34533772071617
+          "offline": 3186942795593458,
+          "activePerMin": 69629005713816.26,
+          "minutes": 45.770333252957585
         }
       ],
       "wave1Hp": 411.50223696433204,
@@ -198,88 +198,88 @@
       "hpShift": 14,
       "hpMul": 1,
       "cashMul": 57500000,
-      "startCash": 137200000000,
+      "startCash": 148176000000,
       "star": 0,
       "races": "earth,unicorn,pegasus,bat,crystal",
       "owned": {
         "earth": 25,
-        "unicorn": 47,
-        "pegasus": 29,
+        "unicorn": 45,
+        "pegasus": 28,
         "bat": 28,
         "crystal": 26
       },
       "reached": 100,
-      "hours": 7.037,
-      "w50h": 2.188,
-      "w100h": 7.037,
+      "hours": 5.207,
+      "w50h": 1.828,
+      "w100h": 5.207,
       "hero": "nova",
       "heroLv": 30,
       "heroLvAt": {
-        "10": 4,
-        "20": 13,
-        "30": 21,
+        "10": 5,
+        "20": 12,
+        "30": 20,
         "40": 24,
-        "50": 25,
-        "60": 27,
-        "70": 29,
+        "50": 26,
+        "60": 28,
+        "70": 30,
         "80": 30,
         "90": 30,
         "100": 30
       },
       "decades": [
         0.085,
-        0.64,
-        0.942,
-        0.419,
-        0.102,
-        0.131,
-        0.187,
-        0.821,
-        1.234,
-        2.476
+        0.466,
+        0.829,
+        0.347,
+        0.101,
+        0.125,
+        0.183,
+        0.299,
+        1.03,
+        1.742
       ],
-      "worth50": 1070469517182996.8,
+      "worth50": 1097585617439554.6,
       "towers50": 104,
-      "losses": 73,
-      "attempts": 173,
-      "farms": 219,
-      "worstWaveLosses": 15,
-      "fingerprint": "16054004",
+      "losses": 49,
+      "attempts": 149,
+      "farms": 147,
+      "worstWaveLosses": 8,
+      "fingerprint": "1efe8485",
       "offline": [
         {
           "wave": 20,
           "farm": 17,
-          "offline": 8032289209492,
-          "activePerMin": 64276509964.63404,
-          "minutes": 124.96461326091746
+          "offline": 8233096439729,
+          "activePerMin": 74151224397.07555,
+          "minutes": 111.03115972355684
         },
         {
           "wave": 40,
           "farm": 39,
-          "offline": 545928074885818,
-          "activePerMin": 4753508468282.201,
-          "minutes": 114.84739714434605
+          "offline": 633351258519585,
+          "activePerMin": 5051895859896.21,
+          "minutes": 125.36902503223752
         },
         {
           "wave": 60,
           "farm": 59,
-          "offline": 23813261515290716,
-          "activePerMin": 249599550837915.72,
-          "minutes": 95.4058668589292
+          "offline": 25607443399596016,
+          "activePerMin": 253503244935075.84,
+          "minutes": 101.01426278055841
         },
         {
           "wave": 80,
-          "farm": 77,
-          "offline": 551145819710819600,
-          "activePerMin": 11295512608184320,
-          "minutes": 48.79334288126767
+          "farm": 72,
+          "offline": 273149043064974850,
+          "activePerMin": 13639829131558756,
+          "minutes": 20.02584053146122
         },
         {
           "wave": 100,
           "farm": 99,
-          "offline": 43407001798580010000,
-          "activePerMin": 550966262724182500,
-          "minutes": 78.78341149957099
+          "offline": 45931831256047485000,
+          "activePerMin": 569702068975304260,
+          "minutes": 80.6243012925385
         }
       ],
       "wave1Hp": 284.1057910072079,
@@ -293,88 +293,88 @@
       "hpShift": 17,
       "hpMul": 0.92,
       "cashMul": 436000000000,
-      "startCash": 1075000000000000,
+      "startCash": 1161000000000000,
       "star": 0,
       "races": "earth,unicorn,pegasus,bat,crystal",
       "owned": {
-        "earth": 31,
+        "earth": 32,
         "unicorn": 45,
         "pegasus": 38,
-        "bat": 38,
+        "bat": 37,
         "crystal": 35
       },
       "reached": 100,
-      "hours": 6.14,
-      "w50h": 2.06,
-      "w100h": 6.14,
+      "hours": 5.272,
+      "w50h": 2.018,
+      "w100h": 5.272,
       "hero": "skyflick",
       "heroLv": 30,
       "heroLvAt": {
-        "10": 6,
-        "20": 10,
-        "30": 19,
-        "40": 22,
-        "50": 24,
-        "60": 26,
-        "70": 28,
+        "10": 7,
+        "20": 12,
+        "30": 20,
+        "40": 23,
+        "50": 25,
+        "60": 27,
+        "70": 29,
         "80": 30,
         "90": 30,
         "100": 30
       },
       "decades": [
-        0.166,
-        0.236,
-        0.891,
-        0.526,
-        0.241,
-        0.255,
-        0.332,
-        0.672,
-        1.199,
-        1.622
+        0.164,
+        0.227,
+        0.887,
+        0.518,
+        0.221,
+        0.252,
+        0.322,
+        0.349,
+        0.527,
+        1.804
       ],
-      "worth50": 7968811416560598000,
-      "towers50": 103,
-      "losses": 26,
-      "attempts": 126,
-      "farms": 78,
-      "worstWaveLosses": 9,
-      "fingerprint": "450e839c",
+      "worth50": 8213279478981331000,
+      "towers50": 105,
+      "losses": 21,
+      "attempts": 121,
+      "farms": 63,
+      "worstWaveLosses": 12,
+      "fingerprint": "661651f6",
       "offline": [
         {
           "wave": 20,
           "farm": 17,
-          "offline": 37531697318765416,
-          "activePerMin": 594157169311996,
-          "minutes": 63.1679617065384
+          "offline": 38469989751734550,
+          "activePerMin": 627696273456345.6,
+          "minutes": 61.28758665381821
         },
         {
           "wave": 40,
-          "farm": 34,
-          "offline": 1247746905374340400,
-          "activePerMin": 30602539567668550,
-          "minutes": 40.77265883817628
+          "farm": 39,
+          "offline": 1891397503692630000,
+          "activePerMin": 33165497815883370,
+          "minutes": 57.029070216060994
         },
         {
           "wave": 60,
           "farm": 59,
-          "offline": 110000188991719050000,
-          "activePerMin": 1792862588432385800,
-          "minutes": 61.354500730532415
+          "offline": 113684218989903250000,
+          "activePerMin": 1913083898707015400,
+          "minutes": 59.424586170391336
         },
         {
           "wave": 80,
           "farm": 77,
-          "offline": 2.611093894359175e+21,
-          "activePerMin": 81958514110004050000,
-          "minutes": 31.858726609594047
+          "offline": 2.7238552476196054e+21,
+          "activePerMin": 89774662545092870000,
+          "minutes": 30.341024632105317
         },
         {
           "wave": 100,
           "farm": 98,
-          "offline": 1.3621320255661077e+23,
-          "activePerMin": 4.01188480780919e+21,
-          "minutes": 33.95242113917874
+          "offline": 1.4516333707014722e+23,
+          "activePerMin": 3.905440459916265e+21,
+          "minutes": 37.169517384797004
         }
       ],
       "wave1Hp": 455.055633724637,
@@ -388,7 +388,7 @@
       "hpShift": 15,
       "hpMul": 0.92,
       "cashMul": 3310000000000000,
-      "startCash": 7925000000000000000,
+      "startCash": 8559000000000001000,
       "star": 0,
       "races": "earth,unicorn,pegasus,bat,crystal",
       "owned": {
@@ -399,9 +399,9 @@
         "crystal": 38
       },
       "reached": 100,
-      "hours": 6.244,
-      "w50h": 2.245,
-      "w100h": 6.244,
+      "hours": 5.239,
+      "w50h": 2.005,
+      "w100h": 5.239,
       "hero": "skyflick",
       "heroLv": 30,
       "heroLvAt": {
@@ -409,8 +409,8 @@
         "20": 14,
         "30": 21,
         "40": 25,
-        "50": 26,
-        "60": 28,
+        "50": 27,
+        "60": 29,
         "70": 30,
         "80": 30,
         "90": 30,
@@ -418,58 +418,58 @@
       },
       "decades": [
         0.185,
-        0.697,
-        0.667,
-        0.497,
-        0.198,
-        0.235,
-        0.286,
-        1.538,
-        0.822,
-        1.119
+        0.617,
+        0.518,
+        0.495,
+        0.191,
+        0.227,
+        0.275,
+        1.04,
+        0.694,
+        0.997
       ],
-      "worth50": 6.482736601985291e+22,
+      "worth50": 6.637722414448907e+22,
       "towers50": 104,
-      "losses": 36,
-      "attempts": 136,
-      "farms": 108,
-      "worstWaveLosses": 7,
-      "fingerprint": "3e36c44",
+      "losses": 27,
+      "attempts": 127,
+      "farms": 81,
+      "worstWaveLosses": 6,
+      "fingerprint": "b941fd3a",
       "offline": [
         {
           "wave": 20,
           "farm": 17,
-          "offline": 473809026235022440000,
-          "activePerMin": 3426464093690125300,
-          "minutes": 138.2792912108863
+          "offline": 485654251890898000000,
+          "activePerMin": 3797286869752707000,
+          "minutes": 127.8950652265378
         },
         {
           "wave": 40,
           "farm": 39,
-          "offline": 2.2186984981445604e+22,
-          "activePerMin": 279699333531541640000,
-          "minutes": 79.32441132879418
+          "offline": 2.3390360858320293e+22,
+          "activePerMin": 291294420962287850000,
+          "minutes": 80.29800495680796
         },
         {
           "wave": 60,
           "farm": 59,
-          "offline": 1.127298182120104e+24,
-          "activePerMin": 1.5451332974601965e+22,
-          "minutes": 72.95798905978491
+          "offline": 1.1985626048218514e+24,
+          "activePerMin": 1.5644693331435984e+22,
+          "minutes": 76.61144769220213
         },
         {
           "wave": 80,
-          "farm": 68,
-          "offline": 1.2117407801478004e+25,
-          "activePerMin": 7.277135042563979e+23,
-          "minutes": 16.651343874482553
+          "farm": 73,
+          "offline": 1.6060756143197753e+25,
+          "activePerMin": 6.872628181516307e+23,
+          "minutes": 23.369162013438462
         },
         {
           "wave": 100,
           "farm": 98,
-          "offline": 1.571122692666217e+27,
-          "activePerMin": 3.1040069425186045e+25,
-          "minutes": 50.615952920240616
+          "offline": 1.8794620312788656e+27,
+          "activePerMin": 3.217288072215317e+25,
+          "minutes": 58.41758614996297
         }
       ],
       "wave1Hp": 314.69830258286413,

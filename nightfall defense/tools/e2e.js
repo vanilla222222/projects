@@ -1258,7 +1258,7 @@ async function fastForward(page, maxSeconds) {
     await page.waitForTimeout(500);
     const end2 = await page.evaluate(() => ({ open: !document.getElementById('chalEndModal').hidden, body: document.getElementById('chalEndBody').textContent, reward: (document.getElementById('chalReward') || {}).textContent || '', chal: !!__nd.S.chal, d: __nd.S.daily, moon: __nd.S.moon, ach: !!__nd.S.ach.ch_d1, bonus: __nd.S.bonus.start }));
     ok(end2.open && /Victory/.test(end2.body) && /15 Moonstones/.test(end2.reward) && !end2.chal, 'victory screen with reward ' + JSON.stringify(end2));
-    ok(end2.d.won === 1 && end2.d.wins === 1 && end2.d.streak === 1 && end2.moon === moon0 + 15 && end2.ach && end2.bonus >= 0.05, 'daily reward, streak and achievement ' + JSON.stringify(end2));
+    ok(end2.d.won === 1 && end2.d.wins === 1 && end2.d.streak === 1 && end2.moon === moon0 + 15 && end2.ach && end2.bonus >= 0.02, 'daily reward, streak and achievement ' + JSON.stringify(end2));
     ok(await page.evaluate(BOARD) === before, 'main board untouched after a win');
     await shot(page, 'chal-won-1280');
     await page.keyboard.press('Escape');
@@ -1334,16 +1334,16 @@ async function fastForward(page, maxSeconds) {
     await page.evaluate(() => { const S = __nd.S; S.totalKills = 250000; NDCore.checkAch(S); });
     await page.waitForTimeout(400);
     const t1 = await page.evaluate(() => { const S = __nd.S, C = NDCore, t = S.towers[0]; return { cls: document.getElementById('achToast').className, txt: document.getElementById('achToast').textContent, dmg: C.stats(t).dmg, rate: C.stats(t).rate, bonus: S.bonus, ach: Object.keys(S.ach).sort().join(), state: document.getElementById('achState').textContent, pulse: document.getElementById('achBtn').classList.contains('pulse'), queue: __nd.chalUi.toasts.length }; });
-    ok(/show/.test(t1.cls) && /Achievement unlocked/.test(t1.txt) && /First Thousand/.test(t1.txt) && /\+1% pony damage/.test(t1.txt) && t1.queue === 2, 'toast shows the first unlock and queues the rest ' + JSON.stringify(t1));
+    ok(/show/.test(t1.cls) && /Achievement unlocked/.test(t1.txt) && /First Thousand/.test(t1.txt) && /\+0\.25% pony damage/.test(t1.txt) && t1.queue === 2, 'toast shows the first unlock and queues the rest ' + JSON.stringify(t1));
     ok(t1.ach === 'c_k1,c_k2,c_k3' && t1.state === '3' && t1.pulse, 'achievements recorded ' + JSON.stringify(t1));
-    ok(Math.abs(t1.bonus.dmg - 0.03) < 1e-9 && Math.abs(t1.dmg / pre.dmg - 1.03) < 1e-6 && Math.abs(t1.rate / pre.rate - 1.01) < 1e-6, 'bonus applies to pony stats ' + JSON.stringify(t1));
+    ok(Math.abs(t1.bonus.dmg - 0.0075) < 1e-9 && Math.abs(t1.dmg / pre.dmg - 1.0075) < 1e-6 && Math.abs(t1.rate / pre.rate - 1.0025) < 1e-6, 'bonus applies to pony stats ' + JSON.stringify(t1));
     await shot(page, 'ach-toast-1280');
     await page.locator('#cv').hover();
     await page.keyboard.press('a');
     await page.waitForTimeout(200);
     const m = await page.evaluate(() => ({ open: !document.getElementById('achModal').hidden, count: document.getElementById('achCount').textContent, rows: document.querySelectorAll('#achList .arow').length, done: document.querySelectorAll('#achList .arow.done').length, secret: document.querySelectorAll('#achList .arow.secret').length, secretName: (document.querySelector('#achList .arow.secret .an') || {}).textContent, bonus: document.getElementById('achBonus').textContent, tabs: document.querySelectorAll('#achTabs [data-acat]').length, bar: document.querySelector('#achList .arow[data-ach="c_b1"] .abar').getAttribute('aria-valuenow'), w10: document.querySelector('#achList .arow[data-ach="p_w10"] .av').textContent }));
     ok(m.open && m.count === '3 / ' + m.rows && m.rows >= 50 && m.done === 3 && m.secret >= 4 && m.secretName === '???' && m.tabs === 9, 'achievements screen ' + JSON.stringify(m));
-    ok(/\+3% pony damage/.test(m.bonus) && m.bar === '0' && /0 \/ 10/.test(m.w10), 'bonus total and progress ' + JSON.stringify(m));
+    ok(/\+0\.75% pony damage/.test(m.bonus) && /\+0\.25% attack speed/.test(m.bonus) && m.bar === '0' && /0 \/ 10/.test(m.w10), 'bonus total and progress ' + JSON.stringify(m));
     await page.click('#achTabs [data-acat="combat"]');
     await page.waitForTimeout(100);
     const tab = await page.evaluate(() => ({ rows: [...document.querySelectorAll('#achList .arow')].every(r => /^c_/.test(r.dataset.ach)), n: document.querySelectorAll('#achList .arow').length, on: document.querySelector('#achTabs .on').dataset.acat }));
@@ -1356,7 +1356,7 @@ async function fastForward(page, maxSeconds) {
     await page.reload();
     await page.waitForTimeout(500);
     const back = await page.evaluate(() => ({ ach: Object.keys(__nd.S.ach).length, dmg: __nd.S.bonus.dmg, tw: NDCore.stats(__nd.S.towers[0]).dmg }));
-    ok(back.ach === 3 && Math.abs(back.dmg - 0.03) < 1e-9 && Math.abs(back.tw - t1.dmg) < 1e-6, 'achievements and bonus survive reload ' + JSON.stringify(back));
+    ok(back.ach === 3 && Math.abs(back.dmg - 0.0075) < 1e-9 && Math.abs(back.tw - t1.dmg) < 1e-6, 'achievements and bonus survive reload ' + JSON.stringify(back));
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });

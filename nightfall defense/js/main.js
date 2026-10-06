@@ -1880,7 +1880,7 @@
   function buildAch() {
     const P = prof(), list = C.achList(S), done = list.filter(a => a.done).length;
     $('achCount').textContent = done + ' / ' + list.length;
-    const bt = C.BONUS_KEYS.filter(k => P.bonus && P.bonus[k] > 0).map(k => '+' + Math.round(P.bonus[k] * 100) + '% ' + C.BONUS_NAMES[k]);
+    const bt = C.BONUS_KEYS.filter(k => P.bonus && P.bonus[k] > 0).map(k => '+' + C.pctText(P.bonus[k]) + ' ' + C.BONUS_NAMES[k]);
     $('achBonus').textContent = 'Every achievement gives a small permanent bonus that works on every map and in challenges. ' + (bt.length ? 'Current total: ' + bt.join(', ') + '.' : 'No bonuses yet.');
     const tabs = [{ id: 'all', name: 'All' }].concat(C.ACH_CATS);
     $('achTabs').innerHTML = tabs.map(t => {
