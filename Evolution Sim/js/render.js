@@ -482,7 +482,10 @@ const RAMPS = {
 	disasters: [[0, '#26282a'], [0.2, '#8a521c'], [0.21, '#34302c'], [0.3, '#4a4a40'], [0.5, '#5f9a44'], [0.54, '#5e4a30'], [0.7, '#9a7a48'], [0.74, '#b8301c'], [0.88, '#f07a22'], [1, '#ffe066']],
 };
 
-const LIVE_MODES = { nutrients: 1, litter: 1, bugs: 1, disease: 1, humidity: 1, territory: 1, rain: 1, water: 1, disasters: 1 };
+const LIVE_MODES = { nutrients: 1, litter: 1, bugs: 1, disease: 1, humidity: 1, territory: 1, rain: 1, water: 1, disasters: 1, under: 1 };
+const UNDER_RGB = [[0, 0, 0], [92, 74, 58], [128, 98, 70], [52, 96, 128], [214, 150, 60]];
+const UNDER_DIM = 0.32;
+const UNDER_SURF_ALPHA = 0.3;
 const BUG_DOT = 0.1;
 const BUG_DOT_PX = 4.5;
 const BUG_HL_SCALE = 1.6;
@@ -939,6 +942,8 @@ class WorldRenderer {
 		const fresh = mode === 'water' && Wx ? Wx.fresh : null;
 		const dimW = mode === 'rain' || mode === 'water' || mode === 'disasters';
 		const A = mode === 'territory' ? this.eco.animals : null;
+		const Cu = mode === 'under' && this.eco.caves ? this.eco.caves : null;
+		if (Cu) this.lastSoilUpdate = performance.now();
 		let terrOwner = null;
 		if (A) {
 			this._refreshSpeciesLookup();
@@ -1153,6 +1158,32 @@ class WorldRenderer {
 						r += (cr - r) * k;
 						g += (cg - g) * k;
 						b += (cb - b) * k;
+					}
+				}
+				if (Cu) {
+					const u = Cu.under ? Cu.under[i] : 0;
+					const m = (r + g + b) / 3;
+					if (u) {
+						const c = UNDER_RGB[u];
+						r = c[0];
+						g = c[1];
+						b = c[2];
+						const o = Cu.occ ? Cu.occ[i] : 0;
+						if (o) {
+							const k = Math.min(1, o / 6);
+							r += (240 - r) * k * 0.7;
+							g += (200 - g) * k * 0.7;
+							b += (90 - b) * k * 0.7;
+						}
+					} else {
+						r = g = b = m * UNDER_DIM;
+						const bw = Cu.burrow ? Cu.burrow[i] : 0;
+						if (bw) {
+							const k = Math.min(1, bw / 40);
+							r += (170 - r) * k;
+							g += (120 - g) * k;
+							b += (70 - b) * k;
+						}
 					}
 				}
 			}
@@ -1883,9 +1914,12 @@ class WorldRenderer {
 		const ef = A.ef;
 		const E = this.eco.eggs;
 		this._ensureCapacity(n + A.count * 7 + (E ? E.count : 0) + 1);
+		const ugA = A.ug;
+		const umode = this.mode === 'under';
 		if (zoom >= SHADOW_ZOOM) {
 			const shadowIcon = ICON_INDEX.shadow;
 			for (let i = 0; i < A.count; i++) {
+				if (ugA && ugA[i]) continue;
 				const x = A.px[i] + (A.x[i] - A.px[i]) * alpha;
 				const y = A.py[i] + (A.y[i] - A.py[i]) * alpha;
 				if (x < x0 || y < y0 || x > x1 || y > y1) continue;
@@ -1929,6 +1963,8 @@ class WorldRenderer {
 			const i = k < cnt ? k : k - cnt;
 			const air = dom[i] === 3;
 			if (air !== k >= cnt) continue;
+			const uu = ugA ? ugA[i] : 0;
+			if (uu && !umode) continue;
 			const x = A.px[i] + (A.x[i] - A.px[i]) * alpha;
 			const y = A.py[i] + (A.y[i] - A.py[i]) * alpha;
 			if (x < x0 || y < y0 || x > x1 || y > y1) continue;
@@ -1938,7 +1974,7 @@ class WorldRenderer {
 			const th = wmode && dom[i] !== 1 && wat[i] < THIRSTY ? (wat[i] <= 0 ? DRY_TINT : THIRST_TINT) : null;
 			const zz = dormA ? dormA[i] : 0;
 			const zs = !zz && slpA ? slpA[i] : 0;
-			const a = ((hl !== null && id !== hl) || (hs && sick !== hs) || (dmode && !sick) || (wmode && !th) ? 0.35 : 1) * (ef && ef[i] < 1 ? ELDER_ALPHA : 1) * (zz ? DORM_ALPHA : zs ? SLEEP_ALPHA : 1) * (lvlA && dom[i] === 1 ? LVL_ALPHA[lvlA[i]] || 1 : 1);
+			const a = ((hl !== null && id !== hl) || (hs && sick !== hs) || (dmode && !sick) || (wmode && !th) ? 0.35 : 1) * (ef && ef[i] < 1 ? ELDER_ALPHA : 1) * (zz ? DORM_ALPHA : zs ? SLEEP_ALPHA : 1) * (lvlA && dom[i] === 1 ? LVL_ALPHA[lvlA[i]] || 1 : 1) * (umode && !uu ? UNDER_SURF_ALPHA : 1);
 			const sv = show && !sick ? show[i] : 0;
 			const bright = sv > SHOW_BASE;
 			const lv = lvA ? lvA[i] : 0;

@@ -1105,6 +1105,8 @@ const ANIMAL_TRAITS = [
 	['Activity', G_ACT, (v) => actWord(v)],
 	['Lung capacity', G_LUNG, (v) => pct(v)],
 	['Climbing', G_CLIMB, (v) => pct(v)],
+	['Eyes', G_EYES, (v) => pct(v)],
+	['Pigment', G_PIGM, (v) => pct(v)],
 ];
 
 const SAL_WORDS = ['fresh', 'brackish', 'salt'];

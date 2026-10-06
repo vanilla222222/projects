@@ -37,16 +37,20 @@ const CAVE_BITE = 1.4;
 const CAVE_DETR_E = 2.6;
 const CAVE_ROOT_E = 3.2;
 const CAVE_GUANO_E = 3;
-const CAVE_CARN_DETR = 0.35;
-const CAVE_CATCH = 0.22;
+const CAVE_CARN_DETR = 0.6;
+const CAVE_CATCH = 0.35;
 const CAVE_MEAT = 0.8;
 const CAVE_CROWD = 14;
 const CAVE_MOVE_EVERY = 9;
 const CAVE_HUNT_TRIES = 4;
-const BAT_RANGE = 8;
-const BAT_TRIES = 3;
-const BAT_BITE = 1.6;
-const BAT_BUG_E = 1.1;
+const BAT_RANGE = 24;
+const BAT_FEEDS = 3;
+const BAT_TRIES = 8;
+const BAT_BITE = 3;
+const BAT_DETR = 4;
+const BAT_BUG_E = 1.6;
+const BAT_TORPOR = 0.4;
+const BAT_FRUIT_W = 0.5;
 const BAT_GUANO = 0.012;
 const BURROW_SIZE = 0.36;
 const BURROW_NEST = 0.45;
@@ -567,7 +571,7 @@ const ANIMAL_ARCHETYPES = [
 	{ domain: 'air', cls: CLS_BIRD, mtn: 1, n: 10, g: [0.72, 0.5, 0.85, 0.75, 0.35, 0.6, 0.35, 0.6, 0.05, 0.3, 0.85, 0.2, 0.3, 0.4, 0.5, 0.35, 0.1, 0.3, 0.3] },
 	{ domain: 'air', cls: CLS_BIRD, mtn: 1, n: 10, g: [0.5, 0.72, 0.85, 0.9, 0.32, 0.55, 0.45, 0.3, 0.05, 0.15, 0.1, 0.4, 0.05, 0.4, 0.4, 0.55, 0.1, 0.4, 0.3] },
 	{ domain: 'amph', cls: CLS_AMPH, mtn: 1, n: 16, g: [0.14, 0.45, 0.45, 0.8, 0.3, 0.55, 0.6, 0.4, 0.1, 0.15, 0.1, 0.3, 0.1, 0.6, 0.3, 0.35, 0.3, 0.3, 0.3] },
-	{ domain: 'air', cls: CLS_MAMM, cave: 1, n: 40, g: [0.1, 0.6, 0.8, 0.5, 0.42, 0.6, 0.35, 0.4, 0.05, 0.2, 0.1, 0.1, 0.7, 0.3, 0.4, 0.3, 0.1, 0.2, 0.3] },
+	{ domain: 'air', cls: CLS_MAMM, cave: 1, n: 12, g: [0.1, 0.6, 0.8, 0.5, 0.42, 0.6, 0.35, 0.4, 0.05, 0.2, 0.1, 0.1, 0.7, 0.3, 0.4, 0.3, 0.1, 0.2, 0.3] },
 	{ domain: 'water', cls: CLS_FISH, cave: 1, n: 40, g: [0.06, 0.3, 0.6, 0.45, 0.4, 0.6, 0.55, 0.4, 0.05, 0.2, 0.6, 0.1, 0.3, 0.3, 0.3, 0.1, 0.05, 0.1, 0.2] },
 	{ domain: 'amph', cls: CLS_AMPH, cave: 1, n: 24, g: [0.12, 0.25, 0.7, 0.8, 0.38, 0.6, 0.35, 0.4, 0.05, 0.2, 0.4, 0.2, 0.1, 0.7, 0.3, 0.3, 0.05, 0.1, 0.2] },
 	{ domain: 'land', cls: CLS_INVT, cave: 1, n: 60, g: [0.03, 0.5, 0.6, 0.4, 0.4, 0.6, 0.8, 0.4, 0.2, 0.2, 0.7, 0.05, 0.5, 0.6, 0.3, 0.05, 0.05, 0.1, 0.2] },
@@ -2397,17 +2401,46 @@ class AnimalPool {
 					const mx = mouth % W;
 					const my = (mouth - mx) / W;
 					const H = this.world.height;
-					for (let t = 0; t < BAT_TRIES; t++) {
-						let x = mx + Math.round((rng.next() * 2 - 1) * BAT_RANGE);
-						let y = my + Math.round((rng.next() * 2 - 1) * BAT_RANGE);
-						x = x < 0 ? 0 : x >= W ? W - 1 : x;
-						y = y < 0 ? 0 : y >= H ? H - 1 : y;
-						gain += this._eat(i, this.bugs.eat(y * W + x, this.bite[i] * gf * BAT_BITE * acu) * BUG_ENERGY * BAT_BUG_E, FOOD_BUG, sk);
+					const bt = this.bugs.total;
+					const PL = this.plants;
+					for (let f = 0; f < BAT_FEEDS; f++) {
+						let best = -1;
+						let bv = 0;
+						for (let t = 0; t < BAT_TRIES; t++) {
+							let x = mx + Math.round((rng.next() * 2 - 1) * BAT_RANGE);
+							let y = my + Math.round((rng.next() * 2 - 1) * BAT_RANGE);
+							x = x < 0 ? 0 : x >= W ? W - 1 : x;
+							y = y < 0 ? 0 : y >= H ? H - 1 : y;
+							const j = y * W + x;
+							const v = bt[j] + BAT_FRUIT_W * PL.fruitAt(j, true);
+							if (v > bv) {
+								bv = v;
+								best = j;
+							}
+						}
+						if (best < 0) continue;
+						const bb = this.bite[i] * gf * BAT_BITE * acu;
+						const got = this.bugs.eat(best, bb);
+						gain += this._eat(i, got * BIRD_BUG_ENERGY * BAT_BUG_E, FOOD_BUG, sk);
+						if (got < bb * 0.5 && PL.fruitAt(best, true) > 0) {
+							const fe = PL.eatFruit(best, bb - got, true);
+							if (fe > 0) {
+								PL.fruitBonus(best, fe);
+								gain += this._eat(i, fe * FRUIT_ENERGY * (0.6 + PL.fruitSweet) * this.plantEff[i], FOOD_FRUIT, sk);
+							}
+						}
+					}
+				}
+				if (hungry && gain < cost * 2) {
+					const dt = Math.min(Cv.detr[c], this.bite[i] * gf * BAT_DETR);
+					if (dt > 0) {
+						Cv.detr[c] -= dt;
+						gain += this._eat(i, dt * CAVE_DETR_E, FOOD_BUG, sk);
 					}
 				}
 			} else {
 				this.slp[i] = 1;
-				cost *= SLEEP_META;
+				cost *= SLEEP_META * BAT_TORPOR;
 				const gv = BAT_GUANO * this.mass[i];
 				const g = Cv.guano[c] + gv;
 				Cv.guano[c] = g < CV_GUANO_MAX ? g : CV_GUANO_MAX;
@@ -2441,7 +2474,7 @@ class AnimalPool {
 				const mi = this.mass[i] * gf;
 				for (let t = 0; t < CAVE_HUNT_TRIES && b > a; t++) {
 					const p = Cv.citems[a + ((rng.next() * (b - a)) | 0)];
-					if (p === i || p >= this.count || !this.alive[p] || this.ug[p] !== 1 || this.sp[p] === this.sp[i]) continue;
+					if (p === i || p >= this.count || !this.alive[p] || this.ug[p] !== 1 || this.sp[p] === this.sp[i] || this.domain[p] === 3) continue;
 					const mp = this.mass[p] * this.gf[p];
 					if (mp >= mi) continue;
 					if ((dom === 1) !== (this.domain[p] === 1) && dom !== 2 && this.domain[p] !== 2) continue;
