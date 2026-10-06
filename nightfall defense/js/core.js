@@ -4,7 +4,7 @@
   const WORLD = { L: 1400, W: 800, towerR: 20, minGap: 44 };
   const MAX_WAVE = 100;
   const LIVES = 10;
-  const SAVE_VER = 4;
+  const SAVE_VER = 5;
   const SPAWN_GUARD = 15;
   const UNLOCK_AT = 50;
   const BASE_LEN = 1480;
@@ -49,7 +49,7 @@
       id: 'crystal', name: 'Crystal Pony', cost: 110, range: 130, dmg: 7, rate: 0.8,
       body: '#9fe6ff', mane: '#d68bff', accent: '#7fe8ff',
       role: 'Gem support',
-      ability: 'Heartglow: ponies within 130 deal 4% more damage and attack 2% faster. Fires crystal shards at ground DNBs and lights up dark caves. Cannot see flyers or harm magical DNBs.',
+      ability: 'Heartglow: ponies within 130 deal 4% more damage and attack 2% faster. Its glow lights dark caves and reveals stealthy DNBs within 70. Fires crystal shards at ground DNBs. Cannot see flyers or harm magical DNBs.',
     },
   };
   const RACE_IDS = ['earth', 'unicorn', 'pegasus', 'bat', 'crystal'];
@@ -59,9 +59,9 @@
   const PATHS = {
     earth: [
       { id: 'stonehoof', name: 'Stonehoof', blurb: 'Harder stomps that rattle DNBs senseless.',
-        node: '+20% damage. From node 5, stomps may stun.',
+        node: '+20% damage, stomps ignore 10% of armor. From node 5, stomps may stun. Counters Ironhides.',
         sig: 'Earthshatter', sigDesc: 'Every 4th stomp deals 5x damage and stuns everything hit for 1s.',
-        apply(lv, s) { s.dmg *= 1 + 0.2 * lv; if (lv >= 5) { s.stunCh = Math.max(s.stunCh, 0.15); s.stunDur = Math.max(s.stunDur, 0.4); } if (lv >= 10) s.sigs.push('earthshatter'); } },
+        apply(lv, s) { s.dmg *= 1 + 0.2 * lv; s.pierce = Math.min(1, s.pierce + 0.1 * lv); if (lv >= 5) { s.stunCh = Math.max(s.stunCh, 0.15); s.stunDur = Math.max(s.stunDur, 0.4); } if (lv >= 10) s.sigs.push('earthshatter'); } },
       { id: 'leyhooves', name: 'Ley Hooves', blurb: 'Hooves tuned to the ley lines. Lets an earth pony hurt magical DNBs.',
         node: 'Node 1 unlocks damage to magical DNBs. +10% damage, +12% vs magical.',
         sig: 'Leyline Rupture', sigDesc: 'Stomps strip magic from DNBs for 3s so any pony can hit them, and deal double damage to magical foes.',
@@ -81,21 +81,21 @@
     ],
     unicorn: [
       { id: 'arcanist', name: 'Arcanist', blurb: 'Pure study of the destructive arts.',
-        node: '+20% damage.',
+        node: '+20% damage, bolts ignore 10% of armor. Counters Ironhides.',
         sig: 'Starfall', sigDesc: 'Every 6s a falling star strikes the toughest DNB in range for 12x damage in a wide blast that hits anything.',
-        apply(lv, s) { s.dmg *= 1 + 0.2 * lv; if (lv >= 10) s.sigs.push('starfall'); } },
+        apply(lv, s) { s.dmg *= 1 + 0.2 * lv; s.pierce = Math.min(1, s.pierce + 0.1 * lv); if (lv >= 10) s.sigs.push('starfall'); } },
       { id: 'skyward', name: 'Skyward Sight', blurb: 'A far-seeing spell that tracks DNBs in the air.',
-        node: 'Node 1 lets this unicorn target flyers. +6% range, +12% vs flyers.',
+        node: 'Node 1 lets this unicorn target flyers. From node 3 it detects stealthy DNBs. +6% range, +12% vs flyers.',
         sig: 'Aurora Lance', sigDesc: 'Bolts deal 3x damage to flyers and arc to 2 more flyers.',
-        apply(lv, s) { if (lv >= 1) s.canFly = true; s.range *= 1 + 0.06 * lv; s.flyMul *= 1 + 0.12 * lv; if (lv >= 10) { s.flyMul *= 3; s.sigs.push('aurora'); } } },
+        apply(lv, s) { if (lv >= 1) s.canFly = true; if (lv >= 3) s.detects = true; s.range *= 1 + 0.06 * lv; s.flyMul *= 1 + 0.12 * lv; if (lv >= 10) { s.flyMul *= 3; s.sigs.push('aurora'); } } },
       { id: 'chrono', name: 'Chronomancy', blurb: 'Bends the moments around each bolt.',
         node: 'Bolts slow by +4% for 1.5s, +5% attack speed.',
         sig: 'Time Stop', sigDesc: 'Every 10s freezes every DNB in range for 1.5s (bosses 0.5s).',
         apply(lv, s) { s.slow = Math.max(s.slow, 0.04 * lv); s.slowDur = Math.max(s.slowDur, 1.5); s.rate *= 1 + 0.05 * lv; if (lv >= 10) s.sigs.push('timestop'); } },
       { id: 'prismatic', name: 'Prismatic', blurb: 'Bolts that shatter into light on impact.',
-        node: 'Bolts splash (radius grows), +6% damage.',
+        node: 'Bolts splash (radius grows), +6% damage, +15% vs swarms. Counters Gnats.',
         sig: 'Prism Burst', sigDesc: 'Each bolt also splits into 4 shards that seek nearby DNBs for half damage.',
-        apply(lv, s) { if (lv > 0) s.splash = Math.max(s.splash, 24 + 6 * lv); s.dmg *= 1 + 0.06 * lv; if (lv >= 10) s.sigs.push('prismburst'); } },
+        apply(lv, s) { if (lv > 0) s.splash = Math.max(s.splash, 24 + 6 * lv); s.dmg *= 1 + 0.06 * lv; s.swarmMul *= 1 + 0.15 * lv; if (lv >= 10) s.sigs.push('prismburst'); } },
       { id: 'hexweaver', name: 'Hexweaver', blurb: 'Curses that make DNBs brittle for the whole herd.',
         node: 'Hits hex the target: it takes +4% damage from every source for 4s. +3% damage.',
         sig: 'Doomhex', sigDesc: 'Hexed DNBs burst on death, dealing 25% of their max HP to DNBs nearby.',
@@ -119,9 +119,9 @@
         sig: 'Raptor Dive', sigDesc: 'Crits deal 5x to flyers, and non-boss flyers below 20% HP are executed.',
         apply(lv, s) { s.flyMul *= 1 + 0.15 * lv; s.crit += 0.02 * lv; if (lv >= 10) s.sigs.push('raptordive'); } },
       { id: 'volley', name: 'Feather Volley', blurb: 'Why throw one feather when you can throw five?',
-        node: '+1 extra target at nodes 3, 6 and 9. +6% damage.',
+        node: '+1 extra target at nodes 3, 6 and 9. +6% damage, +10% vs swarms.',
         sig: 'Feather Storm', sigDesc: 'Every attack fires at every valid DNB in range.',
-        apply(lv, s) { s.multi += (lv >= 3) + (lv >= 6) + (lv >= 9); s.dmg *= 1 + 0.06 * lv; if (lv >= 10) s.sigs.push('featherstorm'); } },
+        apply(lv, s) { s.multi += (lv >= 3) + (lv >= 6) + (lv >= 9); s.dmg *= 1 + 0.06 * lv; s.swarmMul *= 1 + 0.1 * lv; if (lv >= 10) s.sigs.push('featherstorm'); } },
     ],
     bat: [
       { id: 'nightstalker', name: 'Nightstalker', blurb: 'Hunts whatever runs fastest.',
@@ -159,13 +159,13 @@
         sig: 'Dispel Prism', sigDesc: 'Shards strip magic from DNBs for 4s so any pony can hit them, and deal triple damage to magical foes.',
         apply(lv, s) { if (lv >= 1) s.canMagic = true; s.dmg *= 1 + 0.08 * lv; s.magicMul *= 1 + 0.12 * lv; if (lv >= 10) { s.magicMul *= 3; s.sigs.push('dispelprism'); } } },
       { id: 'lumen', name: 'Lumen', blurb: 'A heart of light that pushes back the dark and sharpens every eye.',
-        node: '+14 light radius, ponies in the aura gain +0.6% range. +4% damage.',
+        node: '+14 light radius, +8 reveal radius, ponies in the aura gain +0.6% range. +4% damage.',
         sig: 'Dawnstone', sigDesc: 'The light fills the whole aura, ponies in it gain another +3% range, and they all detect stealthy DNBs.',
-        apply(lv, s) { s.lightR += 14 * lv; s.auraRange += 0.006 * lv; s.dmg *= 1 + 0.04 * lv; if (lv >= 10) { s.auraRange += 0.03; s.detects = true; s.sigs.push('dawnstone'); } } },
+        apply(lv, s) { s.lightR += 14 * lv; s.revealR += 8 * lv; s.auraRange += 0.006 * lv; s.dmg *= 1 + 0.04 * lv; if (lv >= 10) { s.auraRange += 0.03; s.detects = true; s.sigs.push('dawnstone'); } } },
       { id: 'geode', name: 'Geode Burst', blurb: 'Shards that burst into glittering fragments.',
-        node: 'Shards splash (radius grows), +8% damage.',
+        node: 'Shards splash (radius grows), +8% damage, +15% vs swarms. Counters Gnats.',
         sig: 'Crystal Cataclysm', sigDesc: 'Every 8s a giant crystal erupts under the toughest DNB in range: 15x damage to everything nearby and a 1s encase (bosses 0.3s).',
-        apply(lv, s) { if (lv > 0) s.splash = Math.max(s.splash, 22 + 6 * lv); s.dmg *= 1 + 0.08 * lv; if (lv >= 10) s.sigs.push('cataclysm'); } },
+        apply(lv, s) { if (lv > 0) s.splash = Math.max(s.splash, 22 + 6 * lv); s.dmg *= 1 + 0.08 * lv; s.swarmMul *= 1 + 0.15 * lv; if (lv >= 10) s.sigs.push('cataclysm'); } },
     ],
   };
 
@@ -175,113 +175,156 @@
     tanky: { id: 'tanky', name: 'DNB Brute', short: 'Brute', trait: 'Slow, with 3.4x HP.', hp: 3.4, speed: 38, r: 18, cash: 2.5, color: '#6b4c31', dark: '#36261a' },
     flying: { id: 'flying', name: 'DNB Duskwing', short: 'Duskwing', trait: 'Flies. Only pegasi and sky-sighted unicorns can hit it.', hp: 0.8, speed: 78, r: 12, cash: 1.3, flying: true, color: '#7d5c48', dark: '#3f2c22' },
     magical: { id: 'magical', name: 'DNB Hexling', short: 'Hexling', trait: 'Magical. Only unicorns and ley-hoofed earth ponies can hurt it.', hp: 1.3, speed: 56, r: 13, cash: 1.5, magical: true, color: '#86606a', dark: '#46303a' },
+    swarm: { id: 'swarm', name: 'DNB Gnat', short: 'Gnat', trait: 'Tiny and fast, and always arrives in a swarm of 5.', hp: 0.2, speed: 128, r: 7, cash: 0.22, swarm: true, color: '#9a7a52', dark: '#4e3a22' },
+    healer: { id: 'healer', name: 'DNB Mender', short: 'Mender', trait: 'Every 2.5s it heals DNBs within 110 for 8% of their max HP.', hp: 1.1, speed: 54, r: 13, cash: 1.6, heal: { every: 2.5, r: 110, pct: 0.08 }, color: '#7a8a5a', dark: '#3a4428' },
+    splitter: { id: 'splitter', name: 'DNB Splitter', short: 'Splitter', trait: 'Splits into 3 quick Splitlings when slain. They pick up right where it fell.', hp: 1.3, speed: 52, r: 15, cash: 1.1, split: { n: 3, type: 'mini' }, color: '#8a6a7a', dark: '#44323c' },
+    mini: { id: 'mini', name: 'DNB Splitling', short: 'Splitling', trait: 'A shard of a Splitter. Small, quick and frail.', hp: 0.32, speed: 88, r: 8, cash: 0.25, child: true, color: '#9a7a8a', dark: '#4c3a44' },
+    stealth: { id: 'stealth', name: 'DNB Lurker', short: 'Lurker', trait: 'Stealthy: only ponies that detect can target it, unless something reveals it.', hp: 0.9, speed: 70, r: 12, cash: 1.4, stealth: true, color: '#6a6a7e', dark: '#30303e' },
+    burrower: { id: 'burrower', name: 'DNB Tunneler', short: 'Tunneler', trait: 'Dives underground on stretches of the road and cannot be hit while buried.', hp: 1.5, speed: 60, r: 14, cash: 1.4, burrow: { cycle: 460, under: 190 }, color: '#7a5a3a', dark: '#3c2a1a' },
+    shield: { id: 'shield', name: 'DNB Bulwark', short: 'Bulwark', trait: 'Projects a bubble over DNBs within 100 that soaks up damage equal to 40% of their max HP.', hp: 1.6, speed: 48, r: 15, cash: 1.8, aegis: { r: 100, pct: 0.4 }, color: '#5a6a7e', dark: '#2a323e' },
+    armored: { id: 'armored', name: 'DNB Ironhide', short: 'Ironhide', trait: 'Armored: every hit loses a flat chunk of damage, so small hits barely scratch it.', hp: 2.2, speed: 44, r: 16, cash: 2.1, plate: 0.05, color: '#6a645a', dark: '#34302a' },
     boss: { id: 'boss', name: 'Boss', short: 'Boss', trait: 'A wave boss. Leaking it costs 5 lives.', hp: 26, speed: 36, r: 26, cash: 20, color: '#5e3f28', dark: '#2c1c12' },
+  };
+  const ENEMY_IDS = ['basic', 'fast', 'tanky', 'flying', 'magical', 'swarm', 'healer', 'splitter', 'mini', 'stealth', 'burrower', 'shield', 'armored'];
+  const ELITE = { hp: 2.5, cash: 3, speed: 1.12, r: 1.2 };
+
+  const MECH = {
+    plain: { tag: 'Plain', weak: 'Nothing special. Any pony will do.', counters: ['Any pony'] },
+    fast: { tag: 'Fast', weak: 'Low HP. Slows and bat ponies punish it.', counters: ['Bat Pony (Nightstalker)', 'Unicorn (Chronomancy)', 'Earth Pony (Mudslide)'] },
+    tanky: { tag: 'Tough', weak: 'Slow, so every pony gets many hits in.', counters: ['Unicorn (Hexweaver)', 'Earth Pony (Stonehoof)'] },
+    flying: { tag: 'Flies', weak: 'Ground ponies cannot reach it.', counters: ['Pegasus', 'Bat Pony', 'Unicorn (Skyward Sight)'] },
+    magical: { tag: 'Magical', weak: 'Only magic-touched ponies can hurt it.', counters: ['Unicorn', 'Earth Pony (Ley Hooves)', 'Crystal Pony (Spellshard)'] },
+    swarm: { tag: 'Swarm', weak: 'Tiny HP. Splash and multi-target attacks shred whole swarms.', counters: ['Unicorn (Prismatic)', 'Crystal Pony (Geode Burst)', 'Earth Pony stomps', 'Pegasus (Feather Volley)'] },
+    healer: { tag: 'Heals', weak: 'Frail itself. Kill it first or out-damage the pulse.', counters: ['Pegasus (Skyhunter crits)', 'Unicorn (Arcanist)', 'Bat Pony (Crimson Fang)'] },
+    split: { tag: 'Splits', weak: 'The pieces are frail and keep its place on the road. Splash cleans them up.', counters: ['Unicorn (Prismatic)', 'Crystal Pony (Geode Burst)', 'Earth Pony stomps'] },
+    stealth: { tag: 'Stealth', weak: 'Cannot be targeted until detected or revealed.', counters: ['Bat Pony (Echolocation)', 'Unicorn (Skyward Sight 3+)', 'Crystal Pony glow', 'Glowing cave crystals'] },
+    burrow: { tag: 'Burrows', weak: 'Exposed while above ground. Place ponies where it surfaces.', counters: ['Bat Pony (Deep Echo)', 'Earth Pony (Herd Call stampede)', 'Crystal Pony (Crystal Wall)'] },
+    aegis: { tag: 'Shields', weak: 'The bubble pops under steady fire, and dies with the Bulwark.', counters: ['Pegasus (Swiftfeather)', 'Bat Pony (Colony)', 'Unicorn (Hexweaver)'] },
+    plate: { tag: 'Armored', weak: 'Big hits matter. Armor piercing ignores it.', counters: ['Earth Pony (Stonehoof)', 'Unicorn (Arcanist)', 'Crits from Crimson Fang or Skyhunter'] },
+    regen: { tag: 'Regrows', weak: 'Burst it down before it recovers.', counters: ['Unicorn (Arcanist)', 'Bat Pony (Crimson Fang)'] },
+    sprint: { tag: 'Sprints', weak: 'Slows and stuns blunt the charge.', counters: ['Unicorn (Chronomancy)', 'Earth Pony (Mudslide)', 'Bat Pony (Night Terror)'] },
+    blink: { tag: 'Blinks', weak: 'Long range ponies get more time on it.', counters: ['Unicorn', 'Pegasus (Stormwing)'] },
+    shell: { tag: 'Shell', weak: 'Save your burst for when the shell drops.', counters: ['Unicorn (Hexweaver)', 'Earth Pony (Stonehoof)'] },
+    haste: { tag: 'Hastes', weak: 'Kill the escort, or slow the whole pack.', counters: ['Crystal Pony (Crystal Wall)', 'Unicorn (Chronomancy)'] },
+    brood: { tag: 'Broods', weak: 'Splash handles the spawn.', counters: ['Unicorn (Prismatic)', 'Earth Pony stomps', 'Crystal Pony (Geode Burst)'] },
+    phase: { tag: 'Shifts form', weak: 'Bring both flyer hunters and magic.', counters: ['Unicorn (Skyward Sight)', 'Crystal Pony (Spellshard)'] },
+    twin: { tag: 'Twins', weak: 'Two bodies, each with less HP.', counters: ['Cover every road'] },
+    elite: { tag: 'Elite', weak: '2.5x HP and an extra trick. Focus fire with Strongest targeting.', counters: ['Unicorn (Arcanist)', 'Earth Pony (Stonehoof)'] },
   };
 
   const BOSSES = [
     { id: 'mudmaw', name: 'Mudmaw', trick: 'burrow', hpMul: 1, desc: 'Burrows underground every few seconds and cannot be hit while buried.', color: '#7a5634', dark: '#3a2616' },
-    { id: 'mother-mire', name: 'Mother Mire', trick: 'brood', hpMul: 0.9, desc: 'Spits out a brood of Shamblers each time she loses a quarter of her HP.', color: '#6e5a3a', dark: '#352a1a' },
-    { id: 'skyrend', name: 'Skyrend', trick: 'flying', hpMul: 0.55, desc: 'A winged brute. Only pegasi and sky-sighted unicorns can hit it.', color: '#6b4d3c', dark: '#33231a' },
-    { id: 'hexhulk', name: 'The Hexhulk', trick: 'magical', hpMul: 0.55, desc: 'Wrapped in dark magic. Only unicorns and ley-hoofed earth ponies can hurt it.', color: '#6e4a5c', dark: '#35222c' },
-    { id: 'gloamrunner', name: 'Gloamrunner', trick: 'sprint', hpMul: 1, desc: 'Breaks into a triple-speed sprint every 6 seconds.', color: '#8a6040', dark: '#432c1a' },
-    { id: 'bramble-king', name: 'Bramble King', trick: 'regen', hpMul: 0.5, desc: 'Regrows 1.5% HP per second and heals DNBs around him.', color: '#5c5a34', dark: '#2c2a16' },
-    { id: 'duskwraith', name: 'Duskwraith', trick: 'phase', hpMul: 0.6, desc: 'Flickers between flying and magical forms every 4 seconds.', color: '#5a4660', dark: '#2a2030' },
-    { id: 'colossus', name: 'Stonehide Colossus', trick: 'armor', hpMul: 0.8, desc: 'A stone shell blocks 60% of damage until it drops below half HP.', color: '#6a6258', dark: '#34302a' },
-    { id: 'twin-shade', name: 'Twin Shade', trick: 'split', hpMul: 0.17, desc: 'Splits into two smaller shades when slain.', color: '#4e3a30', dark: '#241a14' },
-    { id: 'nightmother', name: 'The Nightmother', trick: 'mother', hpMul: 0.16, desc: 'Sprints and summons, then takes to the air, then turns magical and regrows.', color: '#3e2a3a', dark: '#1c121a' },
+    { id: 'mother-mire', name: 'Mother Mire', hpMul: 0.9, desc: 'Spits out a swarm of 6 Gnats each time she loses a quarter of her HP.', color: '#6e5a3a', dark: '#352a1a',
+      tricks: { brood: { type: 'swarm', n: 6, at: [0.75, 0.5, 0.25] } }, look: { horns: 'ears', eyes: '#ffcf6a', size: 1.05 } },
+    { id: 'skyrend', name: 'Skyrend', trick: 'flying', hpMul: 0.55, desc: 'A winged brute. Only pegasi, bat ponies and sky-sighted unicorns can hit it.', color: '#6b4d3c', dark: '#33231a' },
+    { id: 'hexhulk', name: 'The Hexhulk', hpMul: 0.5, desc: 'Wrapped in dark magic and iron plates. Only magic-touched ponies can hurt it, and small hits glance off.', color: '#6e4a5c', dark: '#35222c',
+      tricks: { magic: true, plate: 0.12 }, look: { horns: 'curl', aura: '#c08bff', eyes: '#f0c8ff', size: 1.1 } },
+    { id: 'gloamrunner', name: 'Gloamrunner', hpMul: 0.9, desc: 'Breaks into a triple-speed sprint every 6s, and fades from sight for 2s every 7s.', color: '#8a6040', dark: '#432c1a',
+      tricks: { sprint: { every: 6, dur: 1.5, mul: 3 }, cloak: { every: 7, dur: 2 } }, look: { horns: 'ears', eyes: '#ffe066' } },
+    { id: 'bramble-king', name: 'Bramble King', hpMul: 0.5, desc: 'Regrows 1% HP per second, and every 3s a green pulse heals DNBs within 150 for 10% of their HP.', color: '#5c5a34', dark: '#2c2a16',
+      tricks: { regen: { rate: 0.01, aura: 0 }, heal: { every: 3, r: 150, pct: 0.1 } }, look: { horns: 'antler', spikes: true, aura: '#9fe36a', eyes: '#d8ff8a' } },
+    { id: 'duskwraith', name: 'Duskwraith', hpMul: 0.55, desc: 'Flickers between flying and magical forms every 4s, and vanishes for 2s every 6s.', color: '#5a4660', dark: '#2a2030',
+      tricks: { phase: { every: 4 }, cloak: { every: 6, dur: 2 } }, look: { horns: 'none', aura: '#b48bff', eyes: '#e0c8ff' } },
+    { id: 'colossus', name: 'Stonehide Colossus', hpMul: 0.7, desc: 'Thick stone plates shrug off small hits, and its shell blocks 40% of damage until it drops below half HP.', color: '#6a6258', dark: '#34302a',
+      tricks: { plate: 0.18, armor: { cut: 0.4, until: 0.5 } }, look: { horns: 'spike', spikes: true, eyes: '#ffb04a', size: 1.2 } },
+    { id: 'twin-shade', name: 'Twin Shade', hpMul: 0.17, desc: 'Shields DNBs within 130 with a bubble worth 35% of their HP, and splits into two shades when slain.', color: '#4e3a30', dark: '#241a14',
+      tricks: { aegis: { r: 130, pct: 0.35 }, split: { n: 2, frac: 0.25, name: 'Shade' } }, look: { horns: 'curl', aura: '#8ab0ff', eyes: '#c8d8ff' } },
+    { id: 'nightmother', name: 'The Nightmother', hpMul: 0.13, desc: 'Sprints and summons Gnats, then takes to the air and cloaks, then turns magical, regrows and shields her brood.', color: '#3e2a3a', dark: '#1c121a',
+      tricks: { stages: [{ above: 0.66, sprint: { every: 7, dur: 1.2, mul: 3 }, summon: { type: 'swarm', every: 6, n: 4 } }, { above: 0.33, fly: true, cloak: { every: 7, dur: 1.6 } }, { above: 0, magic: true, regen: { rate: 0.012, aura: 120 }, aegis: { r: 140, pct: 0.3 } }] },
+      look: { horns: 'curl', spikes: true, aura: '#c06bff', eyes: '#ff6a8a', size: 1.25 } },
   ];
 
   const MAP_BOSSES = {
     woods: [
-      { id: 'thornback', name: 'Thornback Boar', hpMul: 0.85, desc: 'Charges in bursts of 2.6x speed every 5s. Its thorny hide blocks 40% of damage until it drops below 70% HP.', color: '#6a5232', dark: '#33261a',
-        tricks: { sprint: { every: 5, dur: 1.6, mul: 2.6 }, armor: { cut: 0.4, until: 0.7 } }, look: { horns: 'tusk', spikes: true, eyes: '#ffb04a' } },
-      { id: 'hollow-stag', name: 'Hollow Stag', hpMul: 0.95, desc: 'Fades into the trees every 4.5s and cannot be hit while hidden.', color: '#5e6650', dark: '#2c3226',
-        tricks: { burrow: { every: 4.5, dur: 1.4 } }, look: { horns: 'antler', eyes: '#d8f0a0' } },
-      { id: 'mossmother', name: 'Mossmother', hpMul: 0.8, desc: 'Sheds a pack of 5 Skitters every time she loses a fifth of her HP.', color: '#4f6a3a', dark: '#26341c',
-        tricks: { brood: { type: 'fast', n: 5, at: [0.8, 0.6, 0.4, 0.2] } }, look: { horns: 'ears', aura: '#7fd66a', eyes: '#c8ff8a' } },
-      { id: 'owlbear-shade', name: 'Owlbear Shade', hpMul: 0.55, desc: 'A winged beast that swoops at 2x speed every 6s. Only pegasi and sky-sighted unicorns can hit it.', color: '#6a5a4a', dark: '#342a22',
+      { id: 'thornback', name: 'Thornback Boar', hpMul: 0.8, desc: 'Charges in bursts of 2.6x speed every 5s. Its thorny hide is armored, so small hits barely scratch it.', color: '#6a5232', dark: '#33261a',
+        tricks: { sprint: { every: 5, dur: 1.6, mul: 2.6 }, plate: 0.1 }, look: { horns: 'tusk', spikes: true, eyes: '#ffb04a' } },
+      { id: 'hollow-stag', name: 'Hollow Stag', hpMul: 0.9, desc: 'Fades into the trees for 1.6s every 4.5s. Only detecting ponies can hit it while it is hidden.', color: '#5e6650', dark: '#2c3226',
+        tricks: { cloak: { every: 4.5, dur: 1.6 } }, look: { horns: 'antler', eyes: '#d8f0a0' } },
+      { id: 'mossmother', name: 'Mossmother', hpMul: 0.8, desc: 'Sheds a swarm of 6 Gnats every time she loses a fifth of her HP.', color: '#4f6a3a', dark: '#26341c',
+        tricks: { brood: { type: 'swarm', n: 6, at: [0.8, 0.6, 0.4, 0.2] } }, look: { horns: 'ears', aura: '#7fd66a', eyes: '#c8ff8a' } },
+      { id: 'owlbear-shade', name: 'Owlbear Shade', hpMul: 0.55, desc: 'A winged beast that swoops at 2x speed every 6s. Only flyer hunters can hit it.', color: '#6a5a4a', dark: '#342a22',
         tricks: { fly: true, sprint: { every: 6, dur: 1.4, mul: 2 } }, look: { horns: 'ears', eyes: '#ffe066' } },
-      { id: 'willow-wisp', name: 'Willow Wisp', hpMul: 0.5, desc: 'A drifting magical light that blinks 110 paces ahead every 6s.', color: '#6a7a86', dark: '#2e3640',
-        tricks: { magic: true, blink: { every: 6, dist: 110 } }, look: { horns: 'none', aura: '#9fe8ff', eyes: '#e8ffff', size: 0.9 } },
+      { id: 'willow-wisp', name: 'Willow Wisp', hpMul: 0.48, desc: 'A drifting magical light that blinks 110 paces ahead every 6s and winks out of sight for 2s every 5s.', color: '#6a7a86', dark: '#2e3640',
+        tricks: { magic: true, blink: { every: 6, dist: 110 }, cloak: { every: 5, dur: 2 } }, look: { horns: 'none', aura: '#9fe8ff', eyes: '#e8ffff', size: 0.9 } },
       { id: 'rootcrawler', name: 'Rootcrawler', hpMul: 0.7, desc: 'Burrows for 2s every 4s and regrows 1% HP per second.', color: '#5c4a30', dark: '#2a2014',
-        tricks: { burrow: { every: 4, dur: 2 }, regen: { rate: 0.01 } }, look: { horns: 'spike', spikes: true, eyes: '#ff9a5a' } },
-      { id: 'fungal-titan', name: 'Fungal Titan', hpMul: 0.5, desc: 'Regrows 1.2% HP per second, heals nearby DNBs, and bursts into Shamblers at half HP.', color: '#7a5a6a', dark: '#3a2a34',
-        tricks: { regen: { rate: 0.012, aura: 140 }, brood: { type: 'basic', n: 6, at: [0.5] } }, look: { horns: 'curl', aura: '#d68bff', eyes: '#ffd0f0', size: 1.15 } },
-      { id: 'barkskin-warden', name: 'Barkskin Warden', hpMul: 0.75, desc: 'Every 6s it hardens its bark for 3s, blocking 70% of damage.', color: '#6b5436', dark: '#33281a',
-        tricks: { shell: { every: 6, dur: 3, cut: 0.7 } }, look: { horns: 'antler', spikes: true, eyes: '#ffcf6a', size: 1.1 } },
-      { id: 'twin-dryads', name: 'Twin Dryads', hpMul: 0.32, desc: 'Two dryads walk together. Each one quickens the DNBs around her by 50%.', color: '#5a7a4a', dark: '#2a3a22',
-        tricks: { twin: true, haste: { r: 140, mul: 1.5 } }, look: { horns: 'ears', aura: '#9fe39a', eyes: '#f0ffc8', size: 0.9 } },
-      { id: 'elder-blight', name: 'The Elder Blight', hpMul: 0.17, desc: 'Armored and spawning Skitters, then airborne and hastening its kin, then magical and regrowing.', color: '#3a3a26', dark: '#1a1a10',
-        tricks: { brood: { type: 'fast', n: 5, at: [0.85, 0.7] }, stages: [{ above: 0.66, armor: { cut: 0.5, until: 0 } }, { above: 0.33, fly: true, haste: { r: 160, mul: 1.5 } }, { above: 0, magic: true, regen: { rate: 0.015, aura: 120 } }] },
+        tricks: { burrow: { every: 4, dur: 2 }, regen: { rate: 0.01, aura: 0 } }, look: { horns: 'spike', spikes: true, eyes: '#ff9a5a' } },
+      { id: 'fungal-titan', name: 'Fungal Titan', hpMul: 0.5, desc: 'Every 3s a spore pulse heals DNBs within 150 for 12% of their HP. Bursts into 4 Splitters at half HP.', color: '#7a5a6a', dark: '#3a2a34',
+        tricks: { heal: { every: 3, r: 150, pct: 0.12 }, brood: { type: 'splitter', n: 4, at: [0.5] } }, look: { horns: 'curl', aura: '#d68bff', eyes: '#ffd0f0', size: 1.15 } },
+      { id: 'barkskin-warden', name: 'Barkskin Warden', hpMul: 0.7, desc: 'Every 6s it hardens its bark for 3s, blocking 70% of damage, and shields DNBs within 130 for 35% of their HP.', color: '#6b5436', dark: '#33281a',
+        tricks: { shell: { every: 6, dur: 3, cut: 0.7 }, aegis: { r: 130, pct: 0.35 } }, look: { horns: 'antler', spikes: true, eyes: '#ffcf6a', size: 1.1 } },
+      { id: 'twin-dryads', name: 'Twin Dryads', hpMul: 0.3, desc: 'Two dryads walk together. Each quickens DNBs within 140 by 40% and heals them for 8% every 3s.', color: '#5a7a4a', dark: '#2a3a22',
+        tricks: { twin: true, haste: { r: 140, mul: 1.4 }, heal: { every: 3, r: 140, pct: 0.08 } }, look: { horns: 'ears', aura: '#9fe39a', eyes: '#f0ffc8', size: 0.9 } },
+      { id: 'elder-blight', name: 'The Elder Blight', hpMul: 0.15, desc: 'Plated and spawning Gnats, then airborne and hastening its kin, then magical, regrowing and healing.', color: '#3a3a26', dark: '#1a1a10',
+        tricks: { brood: { type: 'swarm', n: 6, at: [0.85, 0.7] }, stages: [{ above: 0.66, plate: 0.12 }, { above: 0.33, fly: true, haste: { r: 160, mul: 1.4 } }, { above: 0, magic: true, regen: { rate: 0.012, aura: 0 }, heal: { every: 3, r: 150, pct: 0.1 } }] },
         look: { horns: 'antler', spikes: true, aura: '#8aff6a', eyes: '#c8ff3a', size: 1.2 } },
     ],
     caverns: [
       { id: 'geode-grub', name: 'Geode Grub', hpMul: 0.95, desc: 'Tunnels through the rock for 1.8s every 5s.', color: '#6a5a6e', dark: '#342a36',
         tricks: { burrow: { every: 5, dur: 1.8 } }, look: { horns: 'none', spikes: true, eyes: '#c8a8ff' } },
-      { id: 'shardling-queen', name: 'Shardling Queen', hpMul: 0.8, desc: 'Sheds 4 Hexlings each time she loses a quarter of her HP.', color: '#7a5a86', dark: '#3a2a40',
-        tricks: { brood: { type: 'magical', n: 4, at: [0.75, 0.5, 0.25] } }, look: { horns: 'spike', aura: '#c08bff', eyes: '#f0c8ff' } },
-      { id: 'quartz-golem', name: 'Quartz Golem', hpMul: 0.7, desc: 'Crystal plating blocks 65% of damage until it drops below half HP.', color: '#8a8a96', dark: '#44444c',
-        tricks: { armor: { cut: 0.65, until: 0.5 } }, look: { horns: 'spike', spikes: true, eyes: '#a8f0ff', size: 1.15 } },
-      { id: 'glimmer-moth', name: 'Glimmer Moth', hpMul: 0.55, desc: 'Flies, and blinks 120 paces ahead every 5s.', color: '#8a7a5a', dark: '#44382a',
-        tricks: { fly: true, blink: { every: 5, dist: 120 } }, look: { horns: 'curl', aura: '#ffe9a8', eyes: '#fff2c8', size: 0.9 } },
+      { id: 'shardling-queen', name: 'Shardling Queen', hpMul: 0.8, desc: 'Sheds 3 Lurkers each time she loses a quarter of her HP. Bring detection.', color: '#7a5a86', dark: '#3a2a40',
+        tricks: { brood: { type: 'stealth', n: 3, at: [0.75, 0.5, 0.25] } }, look: { horns: 'spike', aura: '#c08bff', eyes: '#f0c8ff' } },
+      { id: 'quartz-golem', name: 'Quartz Golem', hpMul: 0.7, desc: 'Crystal plates shrug off small hits, and it shields DNBs within 120 for 35% of their HP.', color: '#8a8a96', dark: '#44444c',
+        tricks: { plate: 0.12, aegis: { r: 120, pct: 0.35 } }, look: { horns: 'spike', spikes: true, eyes: '#a8f0ff', size: 1.15 } },
+      { id: 'glimmer-moth', name: 'Glimmer Moth', hpMul: 0.52, desc: 'Flies, blinks 120 paces ahead every 5s, and dims to nothing for 1.8s every 6s.', color: '#8a7a5a', dark: '#44382a',
+        tricks: { fly: true, blink: { every: 5, dist: 120 }, cloak: { every: 6, dur: 1.8 } }, look: { horns: 'curl', aura: '#ffe9a8', eyes: '#fff2c8', size: 0.9 } },
       { id: 'echo-bat-lord', name: 'Echo Bat Lord', hpMul: 0.5, desc: 'Flies, and screeches out 4 Duskwings each time it loses a quarter of its HP.', color: '#5a4a5e', dark: '#2a2030',
         tricks: { fly: true, brood: { type: 'flying', n: 4, at: [0.75, 0.5, 0.25] } }, look: { horns: 'ears', eyes: '#ff6a8a' } },
-      { id: 'amethyst-hex', name: 'Amethyst Hex', hpMul: 0.45, desc: 'Magical. Regrows 1.2% HP per second and heals nearby DNBs.', color: '#7a4a8a', dark: '#3a2244',
-        tricks: { magic: true, regen: { rate: 0.012, aura: 120 } }, look: { horns: 'curl', aura: '#c08bff', eyes: '#e8b0ff' } },
-      { id: 'prism-wyrm', name: 'Prism Wyrm', hpMul: 0.55, desc: 'Flickers between flying and magical forms every 3.5s and lunges at 2.4x speed every 7s.', color: '#5a6a8a', dark: '#2a3244',
+      { id: 'amethyst-hex', name: 'Amethyst Hex', hpMul: 0.45, desc: 'Magical. Regrows 1% HP per second and pulses every 3s to heal DNBs within 140 for 10%.', color: '#7a4a8a', dark: '#3a2244',
+        tricks: { magic: true, regen: { rate: 0.01, aura: 0 }, heal: { every: 3, r: 140, pct: 0.1 } }, look: { horns: 'curl', aura: '#c08bff', eyes: '#e8b0ff' } },
+      { id: 'prism-wyrm', name: 'Prism Wyrm', hpMul: 0.52, desc: 'Flickers between flying and magical forms every 3.5s and lunges at 2.4x speed every 7s.', color: '#5a6a8a', dark: '#2a3244',
         tricks: { phase: { every: 3.5 }, sprint: { every: 7, dur: 1.2, mul: 2.4 } }, look: { horns: 'spike', aura: '#9fd0ff', eyes: '#c8f0ff', size: 1.1 } },
-      { id: 'deepvein-twins', name: 'Deepvein Twins', hpMul: 0.35, desc: 'One twin takes each tunnel. Both burrow for 1.5s every 5s.', color: '#6a4a3a', dark: '#34241a',
+      { id: 'deepvein-twins', name: 'Deepvein Twins', hpMul: 0.33, desc: 'One twin takes each tunnel. Both burrow for 1.5s every 5s.', color: '#6a4a3a', dark: '#34241a',
         tricks: { twin: true, burrow: { every: 5, dur: 1.5 } }, look: { horns: 'tusk', spikes: true, eyes: '#ffa86a' } },
-      { id: 'obsidian-colossus', name: 'Obsidian Colossus', hpMul: 0.22, desc: 'Every 5s its obsidian shell blocks 75% of damage for 2.5s. Shatters into 3 shards when slain.', color: '#3a3440', dark: '#1a161e',
-        tricks: { shell: { every: 5, dur: 2.5, cut: 0.75 }, split: { n: 3, frac: 0.2, name: 'Obsidian Shard' } }, look: { horns: 'spike', spikes: true, eyes: '#ff5a3a', size: 1.25 } },
-      { id: 'crystal-heart', name: 'The Crystal Heart', hpMul: 0.15, desc: 'Magical and shelled, then flickering between forms, then airborne, regrowing and hastening every DNB near it.', color: '#8a5aa0', dark: '#40244e',
-        tricks: { stages: [{ above: 0.66, magic: true, shell: { every: 5, dur: 2.5, cut: 0.6 } }, { above: 0.33, phase: { every: 3 } }, { above: 0, fly: true, regen: { rate: 0.012, aura: 140 }, haste: { r: 170, mul: 1.6 } }] },
+      { id: 'obsidian-colossus', name: 'Obsidian Colossus', hpMul: 0.2, desc: 'Plated in obsidian, and every 6s its shell blocks 60% of damage for 2.5s. Shatters into 3 shards when slain.', color: '#3a3440', dark: '#1a161e',
+        tricks: { plate: 0.1, shell: { every: 6, dur: 2.5, cut: 0.6 }, split: { n: 3, frac: 0.2, name: 'Obsidian Shard' } }, look: { horns: 'spike', spikes: true, eyes: '#ff5a3a', size: 1.25 } },
+      { id: 'crystal-heart', name: 'The Crystal Heart', hpMul: 0.14, desc: 'Magical behind a crystal bubble, then shifting forms and cloaking, then airborne, regrowing and hastening every DNB near it.', color: '#8a5aa0', dark: '#40244e',
+        tricks: { stages: [{ above: 0.66, magic: true, bubble: { every: 8, pct: 0.06 } }, { above: 0.33, phase: { every: 3 }, cloak: { every: 7, dur: 1.6 } }, { above: 0, fly: true, regen: { rate: 0.012, aura: 140 }, haste: { r: 170, mul: 1.5 } }] },
         look: { horns: 'spike', spikes: true, aura: '#f08bff', eyes: '#ffe0ff', size: 1.2 } },
     ],
     cliffs: [
       { id: 'gale-harpy', name: 'Gale Harpy', hpMul: 0.55, desc: 'Flies and rides the wind: gusts never push her back, and she surges at 2x speed during them.', color: '#6a6a7a', dark: '#32323c',
         tricks: { fly: true, windrider: true }, look: { horns: 'ears', eyes: '#ffe066' } },
-      { id: 'cliff-crusher', name: 'Cliff Crusher', hpMul: 0.7, desc: 'A rock shell blocks 60% of damage above half HP, and it charges at 2.4x speed every 6s.', color: '#6a6256', dark: '#34302a',
-        tricks: { armor: { cut: 0.6, until: 0.5 }, sprint: { every: 6, dur: 1.4, mul: 2.4 } }, look: { horns: 'tusk', spikes: true, eyes: '#ffb04a', size: 1.15 } },
+      { id: 'cliff-crusher', name: 'Cliff Crusher', hpMul: 0.7, desc: 'Rock plates shrug off small hits, and it charges at 2.4x speed every 6s.', color: '#6a6256', dark: '#34302a',
+        tricks: { plate: 0.12, sprint: { every: 6, dur: 1.4, mul: 2.4 } }, look: { horns: 'tusk', spikes: true, eyes: '#ffb04a', size: 1.15 } },
       { id: 'thunder-ram', name: 'Thunder Ram', hpMul: 0.9, desc: 'Charges at 3.5x speed for 1.2s every 4s.', color: '#7a6a4a', dark: '#3a3222',
         tricks: { sprint: { every: 4, dur: 1.2, mul: 3.5 } }, look: { horns: 'curl', eyes: '#a8e0ff' } },
-      { id: 'squall-brood', name: 'Squall Brood', hpMul: 0.5, desc: 'Flies, and releases 5 Duskwings each time it loses a quarter of its HP.', color: '#5a6a7a', dark: '#2a323c',
-        tricks: { fly: true, brood: { type: 'flying', n: 5, at: [0.75, 0.5, 0.25] } }, look: { horns: 'ears', aura: '#9fd0ff', eyes: '#c8f0ff' } },
-      { id: 'rain-wraith', name: 'Rain Wraith', hpMul: 0.5, desc: 'Magical. Regrows 1.5% HP per second and heals the DNBs around it.', color: '#4a5a6e', dark: '#222a36',
-        tricks: { magic: true, regen: { rate: 0.015, aura: 130 } }, look: { horns: 'none', aura: '#7fb8ff', eyes: '#d0e8ff' } },
-      { id: 'rockslide', name: 'Rockslide', hpMul: 0.22, desc: 'Plated in stone above 60% HP, and breaks into 4 boulders when slain.', color: '#7a6e5e', dark: '#3a342c',
-        tricks: { armor: { cut: 0.5, until: 0.6 }, split: { n: 4, frac: 0.17, name: 'Boulder' } }, look: { horns: 'spike', spikes: true, eyes: '#ffcf6a', size: 1.2 } },
-      { id: 'stormcaller', name: 'Stormcaller', hpMul: 0.6, desc: 'Quickens every DNB within 180 by 60%, and wraps itself in a storm shell for 2s every 6s.', color: '#5a5a7a', dark: '#2a2a3c',
-        tricks: { haste: { r: 180, mul: 1.6 }, shell: { every: 6, dur: 2, cut: 0.7 } }, look: { horns: 'curl', aura: '#bfe8ff', eyes: '#ffffff' } },
+      { id: 'squall-brood', name: 'Squall Brood', hpMul: 0.5, desc: 'Flies, and releases a swarm of 6 Gnats each time it loses a quarter of its HP.', color: '#5a6a7a', dark: '#2a323c',
+        tricks: { fly: true, brood: { type: 'swarm', n: 6, at: [0.75, 0.5, 0.25] } }, look: { horns: 'ears', aura: '#9fd0ff', eyes: '#c8f0ff' } },
+      { id: 'rain-wraith', name: 'Rain Wraith', hpMul: 0.48, desc: 'Magical. Heals DNBs within 140 for 10% every 3s, and hides in the rain for 2s every 6s.', color: '#4a5a6e', dark: '#222a36',
+        tricks: { magic: true, heal: { every: 3, r: 140, pct: 0.1 }, cloak: { every: 6, dur: 2 } }, look: { horns: 'none', aura: '#7fb8ff', eyes: '#d0e8ff' } },
+      { id: 'rockslide', name: 'Rockslide', hpMul: 0.2, desc: 'Plated in stone, and breaks into 4 boulders when slain.', color: '#7a6e5e', dark: '#3a342c',
+        tricks: { plate: 0.1, split: { n: 4, frac: 0.17, name: 'Boulder' } }, look: { horns: 'spike', spikes: true, eyes: '#ffcf6a', size: 1.2 } },
+      { id: 'stormcaller', name: 'Stormcaller', hpMul: 0.55, desc: 'Quickens every DNB within 180 by 50%, and wraps those within 140 in storm bubbles worth 35% of their HP.', color: '#5a5a7a', dark: '#2a2a3c',
+        tricks: { haste: { r: 180, mul: 1.5 }, aegis: { r: 140, pct: 0.35 } }, look: { horns: 'curl', aura: '#bfe8ff', eyes: '#ffffff' } },
       { id: 'lightning-drake', name: 'Lightning Drake', hpMul: 0.45, desc: 'Flies, rides the wind, and blinks 130 paces ahead every 5s.', color: '#4a5a8a', dark: '#222a44',
         tricks: { fly: true, windrider: true, blink: { every: 5, dist: 130 } }, look: { horns: 'spike', aura: '#e6f4ff', eyes: '#fff27a', size: 1.1 } },
-      { id: 'tempest-twins', name: 'Tempest Twins', hpMul: 0.3, desc: 'A pair that flickers between flying and magical forms every 4s.', color: '#5a6a86', dark: '#2a3240',
-        tricks: { twin: true, phase: { every: 4 } }, look: { horns: 'ears', aura: '#9fd0ff', eyes: '#e8f4ff' } },
-      { id: 'eye-of-storm', name: 'The Eye of the Storm', hpMul: 0.15, desc: 'Charging behind a shell, then airborne and riding the wind, then magical, regrowing and hastening.', color: '#3a4a6a', dark: '#1a2234',
-        tricks: { windrider: true, stages: [{ above: 0.66, shell: { every: 5, dur: 2.5, cut: 0.6 }, sprint: { every: 6, dur: 1.4, mul: 2.5 } }, { above: 0.33, fly: true, brood: { type: 'flying', n: 5, at: [0.6, 0.45] } }, { above: 0, magic: true, regen: { rate: 0.015, aura: 140 }, haste: { r: 180, mul: 1.6 } }] },
+      { id: 'tempest-twins', name: 'Tempest Twins', hpMul: 0.28, desc: 'A pair that flickers between flying and magical forms every 4s, each re-forming a storm bubble every 8s.', color: '#5a6a86', dark: '#2a3240',
+        tricks: { twin: true, phase: { every: 4 }, bubble: { every: 8, pct: 0.05 } }, look: { horns: 'ears', aura: '#9fd0ff', eyes: '#e8f4ff' } },
+      { id: 'eye-of-storm', name: 'The Eye of the Storm', hpMul: 0.14, desc: 'Charging behind a storm bubble, then airborne and calling Gnats, then magical, healing and hastening.', color: '#3a4a6a', dark: '#1a2234',
+        tricks: { windrider: true, stages: [{ above: 0.66, bubble: { every: 8, pct: 0.05 }, sprint: { every: 6, dur: 1.4, mul: 2.5 } }, { above: 0.33, fly: true, summon: { type: 'swarm', every: 6, n: 4 } }, { above: 0, magic: true, heal: { every: 3, r: 150, pct: 0.1 }, haste: { r: 180, mul: 1.5 } }] },
         look: { horns: 'curl', spikes: true, aura: '#bfe8ff', eyes: '#ffffff', size: 1.25 } },
     ],
     castle: [
       { id: 'gargoyle', name: 'Gargoyle Sentinel', hpMul: 0.5, desc: 'Flies, and turns to stone for 2.5s every 5s, blocking 80% of damage.', color: '#5e5a62', dark: '#2c2a30',
         tricks: { fly: true, shell: { every: 5, dur: 2.5, cut: 0.8 } }, look: { horns: 'curl', spikes: true, eyes: '#ff6a5a' } },
-      { id: 'iron-knight', name: 'Iron Knight', hpMul: 0.65, desc: 'Plate armor blocks 70% of damage until it drops below 40% HP.', color: '#6a6e78', dark: '#34363c',
-        tricks: { armor: { cut: 0.7, until: 0.4 } }, look: { horns: 'spike', eyes: '#ff8a5a', size: 1.1 } },
-      { id: 'hound-pack', name: 'Shadow Hound Pack', hpMul: 0.28, desc: 'Lunges at 2.5x speed every 5s and splits into 3 hounds when slain.', color: '#3e3434', dark: '#1c1616',
-        tricks: { sprint: { every: 5, dur: 1.2, mul: 2.5 }, split: { n: 3, frac: 0.3, name: 'Shadow Hound' } }, look: { horns: 'ears', eyes: '#ff3a3a' } },
-      { id: 'banshee', name: 'Banshee', hpMul: 0.5, desc: 'Flickers between flying and magical forms every 3s, and her wail quickens DNBs within 150 by 50%.', color: '#6a6a7e', dark: '#32323e',
-        tricks: { phase: { every: 3 }, haste: { r: 150, mul: 1.5 } }, look: { horns: 'none', aura: '#d0d8ff', eyes: '#e8f0ff' } },
-      { id: 'plague-abbot', name: 'Plague Abbot', hpMul: 0.42, desc: 'Magical. Regrows 1% HP per second, heals nearby DNBs, and calls 4 Hexlings at each third of his HP.', color: '#5a6a4a', dark: '#2a3222',
-        tricks: { magic: true, regen: { rate: 0.01, aura: 130 }, brood: { type: 'magical', n: 4, at: [0.66, 0.33] } }, look: { horns: 'curl', aura: '#a8e06a', eyes: '#d8ff8a' } },
-      { id: 'siege-engine', name: 'Dread Siege Engine', hpMul: 0.55, desc: 'Armored above 60% HP, and unloads 3 Brutes at each quarter of its HP.', color: '#5a4a3a', dark: '#2a221a',
-        tricks: { armor: { cut: 0.5, until: 0.6 }, brood: { type: 'tanky', n: 3, at: [0.75, 0.5, 0.25] } }, look: { horns: 'tusk', spikes: true, eyes: '#ffb04a', size: 1.25 } },
-      { id: 'phantom-duelist', name: 'Phantom Duelist', hpMul: 0.6, desc: 'Steps out of reality for 1.4s every 4.5s, and blinks 100 paces ahead every 6s.', color: '#5a4a6a', dark: '#2a2234',
-        tricks: { burrow: { every: 4.5, dur: 1.4 }, blink: { every: 6, dist: 100 } }, look: { horns: 'spike', aura: '#b48bff', eyes: '#e0c8ff' } },
-      { id: 'gate-wardens', name: 'Twin Gate Wardens', hpMul: 0.35, desc: 'One warden at each gate. Each hardens for 2.5s every 5s, blocking 70% of damage.', color: '#6a5a4a', dark: '#342a22',
-        tricks: { twin: true, shell: { every: 5, dur: 2.5, cut: 0.7 } }, look: { horns: 'antler', spikes: true, eyes: '#ffd27a', size: 1.1 } },
-      { id: 'lich-regent', name: 'The Lich Regent', hpMul: 0.12, desc: 'Magical. Regrows 1.2% HP per second, calls Hexlings at each third of his HP, and splits into 2 liches when slain.', color: '#4a3e5a', dark: '#221c2c',
-        tricks: { magic: true, regen: { rate: 0.012, aura: 140 }, brood: { type: 'magical', n: 5, at: [0.66, 0.33] }, split: { n: 2, frac: 0.25, name: 'Lesser Lich' } }, look: { horns: 'spike', aura: '#a08bff', eyes: '#8affd8', size: 1.15 } },
-      { id: 'shadow-queen', name: 'The Shadow Queen', hpMul: 0.14, desc: 'Shelled and sprinting, then airborne with Duskwings, then magical, regrowing and hastening. Splits into 2 shades when slain.', color: '#2e2234', dark: '#140e18',
-        tricks: { split: { n: 2, frac: 0.2, name: 'Queen\'s Shade' }, stages: [{ above: 0.66, shell: { every: 5, dur: 2.5, cut: 0.65 }, sprint: { every: 6, dur: 1.4, mul: 2.5 } }, { above: 0.33, fly: true, brood: { type: 'flying', n: 5, at: [0.6, 0.45] } }, { above: 0, magic: true, regen: { rate: 0.015, aura: 150 }, haste: { r: 180, mul: 1.6 } }] },
+      { id: 'iron-knight', name: 'Iron Knight', hpMul: 0.6, desc: 'Full plate armor: every hit loses a large flat chunk. Bring big hitters or armor piercing.', color: '#6a6e78', dark: '#34363c',
+        tricks: { plate: 0.2 }, look: { horns: 'spike', eyes: '#ff8a5a', size: 1.1 } },
+      { id: 'hound-pack', name: 'Shadow Hound Pack', hpMul: 0.26, desc: 'Lunges at 2.5x speed every 5s, melts into shadow for 1.5s every 6s, and splits into 3 hounds when slain.', color: '#3e3434', dark: '#1c1616',
+        tricks: { sprint: { every: 5, dur: 1.2, mul: 2.5 }, cloak: { every: 6, dur: 1.5 }, split: { n: 3, frac: 0.28, name: 'Shadow Hound' } }, look: { horns: 'ears', eyes: '#ff3a3a' } },
+      { id: 'banshee', name: 'Banshee', hpMul: 0.48, desc: 'Flickers between flying and magical forms every 3s, quickens DNBs within 150 by 40%, and fades out for 1.5s every 6s.', color: '#6a6a7e', dark: '#32323e',
+        tricks: { phase: { every: 3 }, haste: { r: 150, mul: 1.4 }, cloak: { every: 6, dur: 1.5 } }, look: { horns: 'none', aura: '#d0d8ff', eyes: '#e8f0ff' } },
+      { id: 'plague-abbot', name: 'Plague Abbot', hpMul: 0.4, desc: 'Magical. Heals DNBs within 150 for 10% every 3s, and calls 2 Menders at each third of his HP.', color: '#5a6a4a', dark: '#2a3222',
+        tricks: { magic: true, heal: { every: 3, r: 150, pct: 0.1 }, brood: { type: 'healer', n: 2, at: [0.66, 0.33] } }, look: { horns: 'curl', aura: '#a8e06a', eyes: '#d8ff8a' } },
+      { id: 'siege-engine', name: 'Dread Siege Engine', hpMul: 0.5, desc: 'Plated in iron, and unloads 2 Ironhides at each quarter of its HP.', color: '#5a4a3a', dark: '#2a221a',
+        tricks: { plate: 0.14, brood: { type: 'armored', n: 2, at: [0.75, 0.5, 0.25] } }, look: { horns: 'tusk', spikes: true, eyes: '#ffb04a', size: 1.25 } },
+      { id: 'phantom-duelist', name: 'Phantom Duelist', hpMul: 0.55, desc: 'Steps out of sight for 1.6s every 4.5s, and blinks 100 paces ahead every 6s.', color: '#5a4a6a', dark: '#2a2234',
+        tricks: { cloak: { every: 4.5, dur: 1.6 }, blink: { every: 6, dist: 100 } }, look: { horns: 'spike', aura: '#b48bff', eyes: '#e0c8ff' } },
+      { id: 'gate-wardens', name: 'Twin Gate Wardens', hpMul: 0.33, desc: 'One warden at each gate. Each hardens for 2.5s every 5s, and shields DNBs within 130 for 35% of their HP.', color: '#6a5a4a', dark: '#342a22',
+        tricks: { twin: true, shell: { every: 5, dur: 2.5, cut: 0.6 }, aegis: { r: 130, pct: 0.35 } }, look: { horns: 'antler', spikes: true, eyes: '#ffd27a', size: 1.1 } },
+      { id: 'lich-regent', name: 'The Lich Regent', hpMul: 0.1, desc: 'Magical. Heals DNBs within 150 for 8% every 3s, calls 3 Lurkers at each third of his HP, and splits into 2 liches when slain.', color: '#4a3e5a', dark: '#221c2c',
+        tricks: { magic: true, heal: { every: 3, r: 150, pct: 0.08 }, brood: { type: 'stealth', n: 3, at: [0.66, 0.33] }, split: { n: 2, frac: 0.22, name: 'Lesser Lich' } }, look: { horns: 'spike', aura: '#a08bff', eyes: '#8affd8', size: 1.15 } },
+      { id: 'shadow-queen', name: 'The Shadow Queen', hpMul: 0.13, desc: 'Plated and sprinting, then airborne and cloaking, then magical, regrowing and shielding. Splits into 2 shades when slain.', color: '#2e2234', dark: '#140e18',
+        tricks: { split: { n: 2, frac: 0.2, name: 'Queen\'s Shade' }, stages: [{ above: 0.66, plate: 0.12, sprint: { every: 6, dur: 1.4, mul: 2.5 } }, { above: 0.33, fly: true, cloak: { every: 7, dur: 1.6 } }, { above: 0, magic: true, regen: { rate: 0.012, aura: 150 }, aegis: { r: 160, pct: 0.3 } }] },
         look: { horns: 'curl', spikes: true, aura: '#c06bff', eyes: '#ff4a8a', size: 1.3 } },
     ],
   };
@@ -306,14 +349,22 @@
   const WAVEGEN = {
     count: { base: 8, per: 0.45, bossMul: 0.6 },
     gap: { base: 1.05, per: 0.007, min: 0.38, jitter: 0.4 },
-    spacing: { tanky: 1.4, fast: 0.6 },
+    spacing: { tanky: 1.4, fast: 0.6, swarm: 1.4, armored: 1.3, shield: 1.2 },
     types: [
       { id: 'basic', from: 1, w: 10, theme: 0 },
       { id: 'fast', from: 3, w: 4, theme: 10 },
       { id: 'tanky', from: 5, w: 3, theme: 6 },
       { id: 'flying', from: 6, w: 3, theme: 8 },
       { id: 'magical', from: 8, w: 3, theme: 8 },
+      { id: 'swarm', from: 999, w: 2.2, theme: 7 },
+      { id: 'healer', from: 999, w: 1.4, theme: 5 },
+      { id: 'splitter', from: 999, w: 2, theme: 7 },
+      { id: 'stealth', from: 999, w: 1.8, theme: 7 },
+      { id: 'burrower', from: 999, w: 1.8, theme: 7 },
+      { id: 'shield', from: 999, w: 1.2, theme: 5 },
+      { id: 'armored', from: 999, w: 1.8, theme: 7 },
     ],
+    elite: { from: 60, base: 0.02, per: 0.0025, max: 0.11, combo: 75 },
     themes: [
       { id: 'boss', mod: 10, rem: 0 },
       { id: 'flying', at: [6], mod: 9, rem: 0 },
@@ -330,8 +381,20 @@
     if (o.gap) Object.assign(g.gap, o.gap);
     if (o.types) for (const ty of g.types) if (o.types[ty.id]) Object.assign(ty, o.types[ty.id]);
     if (o.themes) g.themes = o.themes;
+    if (o.elite) Object.assign(g.elite, o.elite);
+    if (o.intro) {
+      for (const ty of g.types) if (o.intro[ty.id]) ty.from = o.intro[ty.id];
+      const intro = Object.keys(o.intro).map(id => ({ id, at: [o.intro[id]], intro: true }));
+      g.themes = [g.themes[0]].concat(intro, COMBOS, g.themes.slice(1));
+    }
     return g;
   }
+  const COMBOS = [
+    { id: 'ironwall', name: 'Iron wall', mod: 13, rem: 3, min: 40, boost: { armored: 6, shield: 5 } },
+    { id: 'ghosts', name: 'Ghost march', mod: 13, rem: 9, min: 45, boost: { stealth: 6, healer: 4 } },
+    { id: 'hive', name: 'Hive tide', mod: 17, rem: 5, min: 50, boost: { swarm: 6, splitter: 6 } },
+    { id: 'sappers', name: 'Sappers', mod: 17, rem: 12, min: 55, boost: { burrower: 6, armored: 4, healer: 3 } },
+  ];
 
   function spiralArm(cx, cy, sx, sy, r0, r1, a0, span, lead, steps) {
     const pts = [lead];
@@ -384,7 +447,7 @@
       blocks: [],
       hpMul: 1, cashMul: 1, startCash: 0,
       bosses: ['mudmaw', 'mother-mire', 'skyrend', 'hexhulk', 'gloamrunner', 'bramble-king', 'duskwraith', 'colossus', 'twin-shade', 'nightmother'],
-      waves: WAVEGEN,
+      waves: waveVariant({ intro: { swarm: 12, healer: 15, splitter: 18, armored: 22, burrower: 26, shield: 32, stealth: 36 } }),
       palette: {
         ground: ['#1d2a2c', '#141c22', '#0a0b13'], grass: ['rgba(90,140,110,.22)', 'rgba(60,100,90,.25)'],
         flowers: ['#c9a0dc', '#a0c4ff', '#ffe1a8'], rock: 'rgba(70,72,90,.55)',
@@ -402,7 +465,7 @@
       blocks: scatter({ seed: 4242, n: 38, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 17, rmax: 27, routes: [WOODS_ROUTE], half: 36, pad: 6, gap: 10, kind: 'tree' }),
       hpShift: 16, hpMul: 1, cashMul: 7583.7, startCash: 1.958e7, priceMul: 1900, hpCurve: [[1, 1.14], [50, 1.12], [80, 1.09], [95, 1.05], [100, 1.03]],
       bosses: MAP_BOSSES.woods.map(b => b.id),
-      waves: waveVariant({ count: { base: 9 }, types: { fast: { from: 2, w: 7, theme: 10 }, tanky: { w: 2 } } }),
+      waves: waveVariant({ count: { base: 9 }, types: { fast: { from: 2, w: 7, theme: 10 }, tanky: { w: 2 } }, intro: { swarm: 6, healer: 11, stealth: 16, splitter: 21, burrower: 25, armored: 31, shield: 35 } }),
       palette: {
         ground: ['#1a2a1c', '#111c14', '#080d0a'], grass: ['rgba(100,160,90,.26)', 'rgba(60,120,70,.28)'],
         flowers: ['#e8f0a0', '#c8ffb0', '#ffd0e0'], rock: 'rgba(60,70,60,.6)',
@@ -423,7 +486,7 @@
         keep: CRYSTALS.map(c => ({ x: c.x, y: c.y, r: 16, kind: 'crystal' })) }),
       hpShift: 14, hpMul: 1, cashMul: 5.75e7, startCash: 1.372e11, priceMul: 1.44e7, hpCurve: [[1, 1.14], [50, 1.12], [80, 1.085], [90, 1.05], [100, 1.04]],
       bosses: MAP_BOSSES.caverns.map(b => b.id),
-      waves: waveVariant({ types: { magical: { from: 5, w: 6, theme: 10 }, flying: { w: 2 } } }),
+      waves: waveVariant({ types: { magical: { from: 5, w: 6, theme: 10 }, flying: { w: 2 }, burrower: { w: 2.4 }, stealth: { w: 2.2 } }, intro: { burrower: 5, stealth: 11, healer: 15, shield: 21, splitter: 25, armored: 31, swarm: 35 } }),
       palette: {
         ground: ['#1a1830', '#100e20', '#06050c'], grass: ['rgba(120,100,180,.14)', 'rgba(80,70,140,.16)'],
         flowers: ['#a8f0ff', '#d0a8ff', '#ffc8f0'], rock: 'rgba(60,56,84,.7)',
@@ -442,7 +505,7 @@
       blocks: scatter({ seed: 9191, n: 16, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 16, rmax: 30, routes: [CLIFF_ROUTE], half: 34, pad: 8, gap: 24, kind: 'boulder' }),
       hpShift: 17, hpMul: 1, cashMul: 4.36e11, startCash: 1.075e15, priceMul: 1.09e11, hpCurve: [[1, 1.145], [40, 1.125], [60, 1.1], [75, 1.08], [90, 1.05], [100, 1.04]],
       bosses: MAP_BOSSES.cliffs.map(b => b.id),
-      waves: waveVariant({ types: { flying: { from: 3, w: 6, theme: 10 } }, themes: [{ id: 'boss', mod: 10, rem: 0 }, { id: 'flying', at: [3], mod: 6, rem: 0 }, { id: 'magical', at: [8], mod: 11, rem: 6 }, { id: 'fast', mod: 7, rem: 0 }, { id: 'tanky', mod: 8, rem: 4 }] }),
+      waves: waveVariant({ types: { flying: { from: 3, w: 6, theme: 10 } }, themes: [{ id: 'boss', mod: 10, rem: 0 }, { id: 'flying', at: [3], mod: 6, rem: 0 }, { id: 'magical', at: [8], mod: 11, rem: 6 }, { id: 'fast', mod: 7, rem: 0 }, { id: 'tanky', mod: 8, rem: 4 }], intro: { swarm: 4, splitter: 11, shield: 15, armored: 21, healer: 25, stealth: 31, burrower: 35 } }),
       palette: {
         ground: ['#24282e', '#181c22', '#0b0d12'], grass: ['rgba(140,150,130,.18)', 'rgba(100,110,100,.2)'],
         flowers: ['#d0d8e0', '#a8c0e0', '#fff0c0'], rock: 'rgba(80,84,92,.7)',
@@ -461,7 +524,7 @@
         keep: [{ x: 700, y: 400, r: 46, kind: 'keep' }] }),
       hpShift: 15, hpMul: 1, cashMul: 3.31e15, startCash: 7.925e18, priceMul: 8.3e14, gateFrom: 4, hpCurve: [[1, 1.14], [50, 1.12], [70, 1.088], [84, 1.055], [100, 1.035]],
       bosses: MAP_BOSSES.castle.map(b => b.id),
-      waves: waveVariant({ count: { base: 11, per: 0.55 }, types: { basic: { w: 8 }, fast: { from: 2, w: 5 }, tanky: { from: 3, w: 4 }, flying: { from: 4, w: 4 }, magical: { from: 5, w: 4 } } }),
+      waves: waveVariant({ count: { base: 11, per: 0.55 }, types: { basic: { w: 8 }, fast: { from: 2, w: 5 }, tanky: { from: 3, w: 4 }, flying: { from: 4, w: 4 }, magical: { from: 5, w: 4 }, armored: { w: 2.2 }, shield: { w: 1.5 } }, elite: { from: 50 }, intro: { armored: 4, shield: 8, healer: 12, stealth: 16, splitter: 21, burrower: 24, swarm: 28 } }),
       palette: {
         ground: ['#221a26', '#16101a', '#08060a'], grass: ['rgba(120,90,130,.14)', 'rgba(90,70,100,.16)'],
         flowers: ['#ff8a9a', '#c8a0ff', '#ffd0a0'], rock: 'rgba(64,58,70,.75)',
@@ -586,10 +649,20 @@
     return BOSS_BY_ID[list[Math.min(list.length - 1, n / every - 1)]] || null;
   }
 
-  function themeFor(n, gen) {
+  function themeRule(n, gen) {
     gen = gen || WAVEGEN;
-    for (const r of gen.themes) if ((r.at && r.at.indexOf(n) >= 0) || (r.mod && n % r.mod === r.rem)) return r.id;
-    return '';
+    for (const r of gen.themes) {
+      if (r.min && n < r.min) continue;
+      if ((r.at && r.at.indexOf(n) >= 0) || (r.mod && n % r.mod === r.rem)) return r;
+    }
+    return null;
+  }
+  function themeFor(n, gen) { const r = themeRule(n, gen); return r ? r.id : ''; }
+  function themeName(rule) {
+    if (!rule || rule.id === 'boss') return '';
+    if (rule.name) return rule.name;
+    const d = ENEMIES[rule.id];
+    return d ? (rule.intro ? 'New: ' + d.short : d.short + ' swarm') : '';
   }
 
   const specCache = {};
@@ -602,25 +675,34 @@
     const boss = bossFor(n, map);
     let count = gen.count.base + Math.floor(n * gen.count.per);
     if (boss) count = Math.round(count * gen.count.bossMul);
-    const theme = themeFor(n, gen);
+    const rule = themeRule(n, gen);
+    const theme = rule ? rule.id : '';
+    const boost = (rule && rule.boost) || {};
     const pool = [];
     let total = 0;
     for (const ty of gen.types) {
-      const w = n >= ty.from ? ty.w + (theme === ty.id ? ty.theme : 0) : 0;
+      const w = n >= ty.from ? ty.w + (theme === ty.id ? ty.theme : 0) + (boost[ty.id] || 0) : 0;
       pool.push([ty.id, w]); total += w;
     }
     const gap = Math.max(gen.gap.min, gen.gap.base - n * gen.gap.per);
+    const el = gen.elite || WAVEGEN.elite;
+    const eliteCh = n >= el.from ? Math.min(el.max, el.base + (n - el.from) * el.per) : 0;
     const list = [];
     let t = 0;
     for (let i = 0; i < count; i++) {
       let r = rng() * total, type = pool[0][0];
       for (const [k, w] of pool) { r -= w; if (r <= 0) { type = k; break; } }
-      list.push({ t, type });
+      if (type === 'swarm') for (let j = 0; j < 5; j++) list.push({ t: t + j * 0.14, type, g: i });
+      else {
+        const it = { t, type, g: i };
+        if (eliteCh && type !== 'basic' && rng() < eliteCh) it.elite = true;
+        list.push(it);
+      }
       t += gap * (gen.spacing[type] || 1) * (1 - gen.gap.jitter / 2 + rng() * gen.gap.jitter);
     }
     const nR = map.route.length;
     const oneGate = nR > 1 && map.gateFrom && n < map.gateFrom;
-    if (nR > 1) list.forEach((e, i) => { e.route = oneGate ? 0 : i % nR; });
+    if (nR > 1) list.forEach(e => { e.route = oneGate ? 0 : e.g % nR; });
     if (boss) {
       const b = { t: t + gen.bossLead, type: 'boss' };
       if (nR > 1) b.route = oneGate ? 0 : (n / gen.bossEvery) % nR;
@@ -628,8 +710,8 @@
       if (boss.tricks && boss.tricks.twin) list.push({ t: b.t + (nR > 1 ? 0 : 1.6), type: 'boss', route: nR > 1 ? (b.route + 1) % nR : 0, twin: true });
     }
     const counts = {};
-    for (const e of list) counts[e.type] = (counts[e.type] || 0) + 1;
-    const spec = { n, list, boss, counts, theme, map: map.id, duration: list.length ? list[list.length - 1].t : 0 };
+    for (const e of list) { counts[e.type] = (counts[e.type] || 0) + 1; if (e.elite) counts.elite = (counts.elite || 0) + 1; }
+    const spec = { n, list, boss, counts, theme, themeName: themeName(rule), map: map.id, duration: list.length ? list[list.length - 1].t : 0 };
     specCache[key] = spec;
     return spec;
   }
@@ -656,6 +738,7 @@
       stats: { played: 0, dmg: 0, bossKills: 0, earned: 0 },
       settings: Object.assign({}, DEFAULT_SETTINGS),
       sfx: { hit: 0, crit: 0, kill: 0, leak: 0 },
+      codex: { e: {}, b: {} },
     };
     Object.assign(S, newBoard(map));
     return S;
@@ -802,11 +885,12 @@
       knock: 0, multi: 1, crit: 0, critMul: 2.5, hex: 0, cash: 1,
       auraR: crystal ? 130 : 0, auraDmg: crystal ? 0.04 : 0, auraRate: crystal ? 0.02 : 0, auraRange: 0,
       detects: false, detectR: 0, seesBurrow: false, wall: 0, wallR: 0, lightR: crystal ? 110 : 0, sigs: [],
+      pierce: 0, swarmMul: 1, revealR: crystal ? 70 : 0,
     };
     PATHS[t.race].forEach((p, i) => { if (t.paths[i] > 0) p.apply(t.paths[i], s); });
     s.slow = Math.min(0.6, s.slow);
     s.wall = Math.min(0.5, s.wall);
-    if (s.sigs.indexOf('dawnstone') >= 0) { s.lightR = Math.max(s.lightR, s.auraR); s.detectR = Math.max(s.detectR, s.auraR); }
+    if (s.sigs.indexOf('dawnstone') >= 0) { s.lightR = Math.max(s.lightR, s.auraR); s.detectR = Math.max(s.detectR, s.auraR); s.revealR = Math.max(s.revealR, s.auraR); }
     const bf = t.buff || {};
     if (bf.detect) s.detects = true;
     if (bf.range) s.range *= 1 + bf.range;
@@ -852,6 +936,9 @@
     if (s1.wall > s0.wall) lines.push('Wall slow ' + pct(s1.wall) + ', radius ' + Math.round(s1.wallR));
     if (s1.lightR > s0.lightR) lines.push('Light radius ' + Math.round(s1.lightR));
     if (s1.critMul > s0.critMul) lines.push('Crits deal ' + s1.critMul + 'x');
+    if (s1.pierce > s0.pierce) lines.push('Ignores ' + pct(s1.pierce) + ' of armor');
+    if (s1.swarmMul > s0.swarmMul) rel(s0.swarmMul, s1.swarmMul, 'vs swarms');
+    if (s1.revealR > s0.revealR) lines.push('Reveals stealth within ' + Math.round(s1.revealR));
     const p = PATHS[t.race][i];
     if (k === 10) lines.push('Signature: ' + p.sig);
     return { name: p.name, k, cost: nodeCost(t.race, k - 1, t.pm), lines, sig: k === 10 ? p.sigDesc : '' };
@@ -939,7 +1026,10 @@
       boss: type === 'boss', cash: def.cash, color: def.color, dark: def.dark, alive: true,
       slow: 0, slowT: 0, stunT: 0, hexAmp: 0, hexT: 0, doom: false, dispelT: 0, burrowT: 0, trickT: 0, sprintT: 0,
       quag: false, wallSlow: 0, revealT: 0, echoAmp: 0, stealth: !!def.stealth, hit: 0, leak: 1, phase: 0, seed: (run.eid * 977) % 1000, dn: 0, dnT: 0, dnCrit: false,
+      dnDim: false, sh: 0, shMax: 0, shT: 0, ownSh: false, plateBase: hpFor(n, run.map), plate: 0, swarm: !!def.swarm, timers: {}, seen: true,
     };
+    e.plate = def.plate ? def.plate * e.plateBase : 0;
+    if (def.heal) e.timers.heal = def.heal.every * e.seed / 1000;
     if (e.boss) {
       const b = run.spec.boss || BOSSES[0];
       e.bossDef = b; e.trick = b.trick; e.name = b.name; e.color = b.color; e.dark = b.dark; e.leak = 5;
@@ -952,6 +1042,11 @@
       if (b.tricks) setupTricks(e, b);
     }
     if (opts) Object.assign(e, opts);
+    if (e.elite) applyElite(e, n);
+    if (S.codex) {
+      const box = e.boss ? S.codex.b : S.codex.e, key = e.boss ? e.bossDef.id : type;
+      if (!box[key]) { box[key] = 1; emit(S, 'codex', { kind: e.boss ? 'b' : 'e', id: key, name: e.boss ? e.bossDef.name : def.name }); }
+    }
     const rng = mulberry(n * 131 + e.id * 31);
     e.off = (rng() - 0.5) * (e.boss ? 10 : 34);
     placeOnRoute(run, e);
@@ -959,6 +1054,16 @@
     if (e.boss && !e.splitDone) { run.bossIds.push(e.id); if (!e.quiet) emit(S, 'boss', { name: e.name, n }); }
     return e;
   }
+
+  function applyElite(e, n) {
+    e.hpMax *= ELITE.hp; e.hp = e.hpMax; e.cash *= ELITE.cash; e.speed *= ELITE.speed; e.r *= ELITE.r; e.leak = 2;
+    if (n < WAVEGEN.elite.combo) return;
+    const k = e.seed % 3;
+    if (k === 0) { e.eliteMod = 'plate'; e.plate = Math.max(e.plate, 0.04 * e.plateBase); }
+    else if (k === 1) { e.eliteMod = 'bubble'; e.ownSh = true; e.sh = e.shMax = e.hpMax * 0.3; }
+    else { e.eliteMod = 'cloak'; e.stealth = true; }
+  }
+  function armorFor(type, n, map) { const d = ENEMIES[type]; return d && d.plate ? d.plate * hpFor(n, map) : 0; }
 
   function setupTricks(e, b) {
     const tk = b.tricks;
@@ -1041,8 +1146,8 @@
   }
 
   function flushNum(S, e) {
-    if (e.dn > 0 && S.settings.dmgNums) fx(S, { k: 'num', x: e.x, y: e.y - e.r, s: fmt(e.dn), crit: e.dnCrit, big: e.boss, life: e.dnCrit ? 0.95 : 0.75, seed: e.id });
-    e.dn = 0; e.dnCrit = false; e.dnT = 0;
+    if (e.dn > 0 && S.settings.dmgNums) fx(S, { k: 'num', x: e.x, y: e.y - e.r, s: fmt(e.dn), crit: e.dnCrit, dim: e.dnDim && !e.dnCrit, big: e.boss, life: e.dnCrit ? 0.95 : 0.75, seed: e.id });
+    e.dn = 0; e.dnCrit = false; e.dnDim = false; e.dnT = 0;
   }
 
   function damage(S, run, e, amt, t, crit) {
@@ -1050,14 +1155,24 @@
     let m = 1 + (e.hexT > 0 ? e.hexAmp : 0) + (e.quag ? 0.15 : 0) + (e.revealT > 0 && e.echoAmp ? e.echoAmp : 0);
     if (e.armor && e.hp > e.hpMax * 0.5) m *= 0.4;
     if (e.cut) m *= 1 - e.cut;
-    const dealt = amt * m;
+    let dealt = amt * m, dim = false, ab = 0;
+    if (e.plate > 0) {
+      const pl = e.plate * (1 - (t ? stats(t).pierce : 0));
+      if (pl > 0) { dealt = Math.max(dealt * 0.1, dealt - pl); dim = true; }
+    }
+    if (e.sh > 0) {
+      ab = Math.min(e.sh, dealt);
+      e.sh -= ab; dealt -= ab; e.shHit = 0.15;
+      if (e.sh <= 0) { e.sh = 0; fx(S, { k: 'shieldpop', x: e.x, y: e.y, r: e.r + 9, life: 0.4 }); snd(S, 'shield'); }
+    }
     const real = Math.min(e.hp, dealt);
     S.stats.dmg += real;
     if (t) { t.dmg += real; t.wDmg += real; }
     e.hp -= dealt;
     e.hit = 0.12;
     S.sfx.hit++;
-    if (S.fxOn) { if (e.dn === 0) e.dnT = 0.16; e.dn += real; if (crit) e.dnCrit = true; }
+    if (S.fxOn) { if (e.dn === 0) e.dnT = 0.16; e.dn += real + ab; if (crit) e.dnCrit = true; if (dim || ab > 0) e.dnDim = true; }
+    if (dealt <= 0) return;
     if (e.hp <= 0) { kill(S, run, e, t); return; }
     if (e.thresholds && (e.trick === 'brood' || e.trick === 'mother')) {
       while (e.thresholds.length && e.hp < e.hpMax * e.thresholds[0]) {
@@ -1108,12 +1223,22 @@
       }
       fx(S, { k: 'ring', x: e.x, y: e.y, r: 70, c: '#6b5a8a', life: 0.6 });
     }
+    const def = ENEMIES[e.type];
+    if (def.split && !e.boss) {
+      const P = run.route[e.path] || run.route[0];
+      for (let i = 0; i < def.split.n; i++) {
+        const c = spawnEnemy(S, run, def.split.type, Math.min(P.len - 1, Math.max(SPAWN_GUARD + 1, e.d + 6 - i * 12)), { path: e.path });
+        if (e.elite) { c.hpMax *= 2; c.hp = c.hpMax; }
+      }
+      fx(S, { k: 'ring', x: e.x, y: e.y, r: 34, c: '#d8a8c8', life: 0.4 });
+      snd(S, 'split');
+    }
     if (e.boss && e.tk && e.tk.split && !e.splitDone) {
       const sp = e.tk.split;
       for (let i = 0; i < sp.n; i++) {
         const c = spawnEnemy(S, run, 'boss', Math.max(20, e.d - 20 - i * 24), { path: e.path, splitDone: true, quiet: true });
         c.hpMax = c.hp = e.hpMax * sp.frac; c.r = e.r * 0.75; c.leak = 2; c.name = sp.name;
-        c.tk = { fly: e.flying, magic: e.magical }; c.eff = null; c.stage = -1; c.broodQ = []; c.cut = 0; c.timers = {};
+        c.tk = { fly: e.flying, magic: e.magical }; c.eff = null; c.stage = -1; c.broodQ = []; c.cut = 0; c.timers = {}; c.plate = 0; c.sh = 0; c.shMax = 0; c.ownSh = false; c.stealth = false;
         c.flying = e.flying; c.magical = e.magical;
       }
       fx(S, { k: 'ring', x: e.x, y: e.y, r: 70, c: (e.bossDef.look && e.bossDef.look.aura) || e.color, life: 0.6 });
@@ -1123,6 +1248,7 @@
   function hitEnemy(S, run, t, s, e, base, force) {
     if (!e.alive) return;
     let d = base;
+    if (e.swarm) d *= s.swarmMul;
     if (isFly(e)) d *= s.flyMul;
     if (isMagic(e) || (e.magical && (s.has.leyrupture || s.has.dispelprism))) d *= s.magicMul;
     const fast = s.fastMul !== 1 && isFast(e);
@@ -1327,7 +1453,11 @@
     if (e.dispelT > 0) e.dispelT -= dt;
     if (e.revealT > 0) { e.revealT -= dt; if (e.revealT <= 0) e.echoAmp = 0; }
     if (e.slowT > 0) { e.slowT -= dt; if (e.slowT <= 0) e.slow = 0; }
+    if (e.shHit > 0) e.shHit -= dt;
+    if (e.healed > 0) e.healed -= dt;
+    if (e.shT > 0) { e.shT -= dt; if (e.shT <= 0 && !e.ownSh) { e.sh = 0; e.shMax = 0; } }
     if (e.boss) bossTrick(S, run, e, dt);
+    else mobTrick(S, run, e, dt);
     if (e.stunImm > 0) e.stunT = 0;
     let sp = e.speed * (1 - e.slow) * (e.quag ? 0.5 : 1) * (1 - (e.wallSlow || 0)) * (e.sprintT > 0 ? (e.sprintMul || 3) : 1);
     if (e.hasteT > 0) { e.hasteT -= dt; sp *= e.hasteMul || 1; }
@@ -1369,6 +1499,43 @@
     }
   }
 
+  function healPulse(S, run, src, R, p) {
+    const R2 = R * R;
+    let any = false;
+    for (const o of run.enemies) {
+      if (o === src || !o.alive || o.hp >= o.hpMax || dist2(o, src) > R2) continue;
+      o.hp = Math.min(o.hpMax, o.hp + o.hpMax * p * (o.boss ? 0.25 : 1)); o.healed = 0.5; any = true;
+    }
+    fx(S, { k: 'heal', x: src.x, y: src.y, r: R, life: 0.7 });
+    if (any) snd(S, 'heal');
+  }
+  function aegisAura(run, src, R, p) {
+    const R2 = R * R;
+    for (const o of run.enemies) {
+      if (o === src || !o.alive || o.ownSh || dist2(o, src) > R2) continue;
+      const cap = o.hpMax * (o.boss ? Math.min(p, 0.05) : p);
+      if (!(o.shT > 0)) { o.shMax = cap; o.sh = cap; }
+      else if (cap > o.shMax) o.shMax = cap;
+      o.shT = 0.25;
+      o.shSrc = src.id;
+    }
+  }
+  function shieldRegen(run, dt) {
+    for (const o of run.enemies) if (o.alive && o.shT > 0 && !o.ownSh && o.sh < o.shMax) o.sh = Math.min(o.shMax, o.sh + o.shMax * 0.12 * dt);
+  }
+  function mobTrick(S, run, e, dt) {
+    const def = ENEMIES[e.type];
+    if (def.heal && tick(e, 'heal', def.heal.every, dt)) healPulse(S, run, e, def.heal.r, def.heal.pct);
+    if (def.aegis) aegisAura(run, e, def.aegis.r, def.aegis.pct);
+    if (def.burrow) {
+      const P = run.route[e.path] || run.route[0];
+      const c = def.burrow.cycle, u = def.burrow.under;
+      const under = e.d > 110 && e.d < P.len - 90 && ((e.d + e.seed * 0.4) % c) > c - u;
+      if (under !== (e.burrowT > 0)) { fx(S, { k: 'dust', x: e.x, y: e.y, r: e.r + 10, seed: e.id, life: 0.55 }); if (under) snd(S, 'burrow'); }
+      e.burrowT = under ? 1 : 0;
+    }
+  }
+
   function tick(e, key, every, dt) {
     const T = e.timers;
     T[key] = (T[key] || 0) + dt;
@@ -1394,6 +1561,23 @@
       if (e.shellT > 0) { e.shellT -= dt; cut = Math.max(cut, t.shell.cut); }
     } else e.shellT = 0;
     e.cut = cut;
+    e.plate = t.plate ? t.plate * e.plateBase : 0;
+    if (t.cloak) {
+      if (tick(e, 'cloak', t.cloak.every, dt)) { e.cloakT = t.cloak.dur; fx(S, { k: 'puff', x: e.x, y: e.y, r: 30, c: '#8a8aa8', life: 0.45 }); }
+      if (e.cloakT > 0) e.cloakT -= dt;
+      e.stealth = e.cloakT > 0;
+    } else e.stealth = false;
+    if (t.heal && tick(e, 'heal', t.heal.every, dt)) healPulse(S, run, e, t.heal.r, t.heal.pct);
+    if (t.aegis) aegisAura(run, e, t.aegis.r, t.aegis.pct);
+    if (t.bubble && tick(e, 'bubble', t.bubble.every, dt)) { e.ownSh = true; e.sh = e.shMax = e.hpMax * t.bubble.pct; fx(S, { k: 'ring', x: e.x, y: e.y, r: e.r + 14, c: '#9fd0ff', life: 0.4 }); snd(S, 'shield'); }
+    if (t.summon && tick(e, 'summon', t.summon.every, dt)) {
+      const sd = ENEMIES[t.summon.type];
+      for (let i = 0; i < t.summon.n; i++) {
+        const m2 = spawnEnemy(S, run, t.summon.type, Math.max(SPAWN_GUARD + 1, e.d - 14 - i * 8), { path: e.path });
+        m2.hpMax = m2.hp = hpFor(run.n, run.map) * sd.hp * 1.2;
+      }
+      fx(S, { k: 'ring', x: e.x, y: e.y, r: 50, c: aura, life: 0.45 });
+    }
     if (t.phase && tick(e, 'phase', t.phase.every, dt)) { e.flying = !e.flying; e.magical = !e.flying; fx(S, { k: 'ring', x: e.x, y: e.y, r: 40, c: e.magical ? '#c08bff' : '#9fd0ff', life: 0.4 }); }
     if (t.haste) {
       const R2 = t.haste.r * t.haste.r;
@@ -1437,6 +1621,23 @@
     }
   }
 
+  function revealStep(S, run) {
+    const cr = run.map.crystals;
+    let rev = null, det = null;
+    for (const e of run.enemies) {
+      if (!e.alive || !e.stealth) { e.seen = true; continue; }
+      if (!rev) {
+        rev = []; det = [];
+        for (const t of S.towers) { const s = stats(t); if (s.revealR > 0) rev.push([t.x, t.y, s.revealR]); if (s.detects) det.push([t, s.range]); }
+        if (cr) for (const c of cr) rev.push([c.x, c.y, c.r * 0.6]);
+      }
+      for (const [x, y, R] of rev) if ((e.x - x) ** 2 + (e.y - y) ** 2 <= R * R) { e.revealT = Math.max(e.revealT, 0.15); break; }
+      let seen = e.revealT > 0;
+      if (!seen) for (const [t, R] of det) if (inRange(t, e, R)) { seen = true; break; }
+      e.seen = seen;
+    }
+  }
+
   function bossStatus(run) {
     if (!run) return null;
     let hp = 0, max = 0, name = '', def = null, count = 0;
@@ -1460,7 +1661,7 @@
     run.t += dt;
     if (S.records) S.records.time += dt;
     if (!run.queue.length && !run.enrage && run.t > run.enrageAt) { run.enrage = true; emit(S, 'enrage', {}); }
-    while (run.queue.length && run.queue[0].t <= run.t) { const it = run.queue.shift(); spawnEnemy(S, run, it.type, undefined, it.route != null ? { path: it.route, quiet: !!it.twin } : undefined); }
+    while (run.queue.length && run.queue[0].t <= run.t) { const it = run.queue.shift(); const o = it.route != null ? { path: it.route, quiet: !!it.twin } : {}; if (it.elite) o.elite = true; spawnEnemy(S, run, it.type, undefined, o); }
     if (run.map.wind) windStep(S, run, dt);
 
     for (const e of run.enemies) { e.quag = false; e.wallSlow = 0; }
@@ -1475,6 +1676,8 @@
     }
 
     for (const e of run.enemies) if (e.alive) enemyUpdate(S, run, e, dt);
+    shieldRegen(run, dt);
+    revealStep(S, run);
 
     for (const t of S.towers) {
       const s = stats(t);
@@ -1530,7 +1733,7 @@
     }
     return JSON.stringify({
       ver: SAVE_VER, map: S.map, seed: S.seed, nextId: S.nextId, totalKills: S.totalKills,
-      stats: S.stats, settings: S.settings, boards,
+      stats: S.stats, settings: S.settings, boards, codex: S.codex,
     });
   }
 
@@ -1563,7 +1766,76 @@
       o.ver = 4;
       return o;
     },
+    4(o) {
+      const cx = { e: {}, b: {} };
+      const boards = o.boards && typeof o.boards === 'object' ? o.boards : {};
+      for (const id of MAP_IDS) {
+        const b = boards[id];
+        if (!b || typeof b !== 'object') continue;
+        const top = Math.max(0, Math.min(MAX_WAVE, b.cleared | 0));
+        for (let n = 1; n <= top; n++) {
+          const sp = waveSpec(n, MAPS[id]);
+          for (const k in sp.counts) if (ENEMIES[k] && k !== 'boss') cx.e[k] = 1;
+          if (sp.boss) cx.b[sp.boss.id] = 1;
+        }
+        if (b.records && b.records.bosses) for (const k in b.records.bosses) if (BOSS_BY_ID[k]) cx.b[k] = 1;
+      }
+      if (cx.e.splitter) cx.e.mini = 1;
+      o.codex = cx;
+      o.ver = 5;
+      return o;
+    },
   };
+  function cleanCodex(c) {
+    const out = { e: {}, b: {} };
+    if (!c || typeof c !== 'object') return out;
+    if (c.e && typeof c.e === 'object') for (const k in c.e) if (ENEMIES[k] && k !== 'boss' && c.e[k]) out.e[k] = 1;
+    if (c.b && typeof c.b === 'object') for (const k in c.b) if (BOSS_BY_ID[k] && c.b[k]) out.b[k] = 1;
+    return out;
+  }
+  const TRICK_MECH = { fly: 'flying', magic: 'magical', heal: 'healer', aegis: 'aegis', bubble: 'aegis', cloak: 'stealth', plate: 'plate', armor: 'shell', shell: 'shell', burrow: 'burrow', sprint: 'sprint', windrider: 'sprint', regen: 'regen', blink: 'blink', haste: 'haste', brood: 'brood', summon: 'brood', phase: 'phase', twin: 'twin', split: 'split' };
+  const OLD_MECH = { burrow: 'burrow', brood: 'brood', flying: 'flying', magical: 'magical', sprint: 'sprint', regen: 'regen', phase: 'phase', armor: 'shell', split: 'split', mother: 'brood' };
+  function mechOf(kind, id) {
+    const out = [];
+    const add = (k) => { if (k && out.indexOf(k) < 0) out.push(k); };
+    if (kind === 'b') {
+      const b = BOSS_BY_ID[id];
+      if (!b) return out;
+      if (b.tricks) {
+        const scan = (o) => { for (const k in o) if (k !== 'stages' && o[k]) add(TRICK_MECH[k]); };
+        scan(b.tricks);
+        if (b.tricks.stages) for (const st of b.tricks.stages) scan(st);
+      } else add(OLD_MECH[b.trick]);
+      if (b.trick === 'mother') { add('sprint'); add('flying'); add('magical'); add('regen'); }
+      return out;
+    }
+    const d = ENEMIES[id];
+    if (!d) return out;
+    if (d.flying) add('flying');
+    if (d.magical) add('magical');
+    if (d.swarm) add('swarm');
+    if (d.heal) add('healer');
+    if (d.split || d.child) add('split');
+    if (d.stealth) add('stealth');
+    if (d.burrow) add('burrow');
+    if (d.aegis) add('aegis');
+    if (d.plate) add('plate');
+    if (d.speed >= 90 && !d.swarm) add('fast');
+    if (d.hp >= 3) add('tanky');
+    if (!out.length) add('plain');
+    return out;
+  }
+  function codexList() {
+    const e = ENEMY_IDS.map(id => ({ kind: 'e', id, def: ENEMIES[id], mech: mechOf('e', id) }));
+    const b = [];
+    for (const id of MAP_IDS) for (const bid of MAPS[id].bosses) b.push({ kind: 'b', id: bid, map: id, def: BOSS_BY_ID[bid], mech: mechOf('b', bid), wave: (MAPS[id].bosses.indexOf(bid) + 1) * MAPS[id].waves.bossEvery });
+    return { e, b };
+  }
+  function firstSeen(type, mapId) {
+    const map = getMap(mapId);
+    for (const ty of map.waves.types) if (ty.id === type) return ty.from <= MAX_WAVE ? ty.from : 0;
+    return 0;
+  }
   function saveVersion(o) { return o.ver | 0 || (o.v === 1 ? 1 : 0); }
   function migrate(o) {
     if (!o || typeof o !== 'object') return null;
@@ -1627,6 +1899,7 @@
     const st = o.stats || {};
     S.stats = { played: st.played | 0, dmg: +st.dmg || 0, bossKills: st.bossKills | 0, earned: +st.earned || 0 };
     S.settings = cleanSettings(o.settings);
+    S.codex = cleanCodex(o.codex);
     setNumFormat(S.settings.numFmt);
     const src = o.boards && typeof o.boards === 'object' ? o.boards : {};
     const boards = {};
@@ -1680,6 +1953,7 @@
     lightFor, lightSources, stackBuff, priceOf, spawnEnemy,
     serialize, deserialize, migrate, cleanSettings, fmt, setNumFormat, pct, mulberry, hashSeed,
     MAP_BOSSES, UNLOCK_AT, lightAt, crossings, placeBlockReason, switchMap, mapUnlocked, mapCleared, boardOf, newBoard, mapStartCash, activeTricks,
+    ENEMY_IDS, ELITE, MECH, COMBOS, armorFor, mechOf, codexList, cleanCodex, firstSeen, themeRule, damage, kill,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.NDCore = API;
