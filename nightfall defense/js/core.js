@@ -11,7 +11,7 @@
   const BASE_LEN = 1480;
 
   const TUNE = {
-    hp0: 14, hpAll: 1,
+    hp0: 14, hpAll: 1.25,
     hpCurve: [[1, 1.25], [10, 1.21], [20, 1.2], [30, 1.185], [35, 1.16], [45, 1.17], [50, 1.15], [55, 1.105], [60, 1.105], [75, 1.083], [82, 1.054], [90, 1.056], [100, 1.045]],
     cash0: 2.2, cashGrowth: 1.2,
     clear0: 45, clearGrowth: 1.2,
@@ -557,7 +557,7 @@
       half: 34,
       wind: { every: 14, dur: 3.2, warn: 2.2, push: 120, side: 70, bossMul: 0.4 },
       blocks: scatter({ seed: 9191, n: 16, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 16, rmax: 30, routes: [CLIFF_ROUTE], half: 34, pad: 8, gap: 24, kind: 'boulder' }),
-      hpShift: 17, hpMul: 1, cashMul: 4.36e11, startCash: 1.075e15, priceMul: 1.09e11, hpCurve: [[1, 1.145], [40, 1.125], [60, 1.095], [75, 1.072], [90, 1.042], [100, 1.035]],
+      hpShift: 17, hpMul: 0.92, cashMul: 4.36e11, startCash: 1.075e15, priceMul: 1.09e11, hpCurve: [[1, 1.145], [40, 1.125], [60, 1.095], [75, 1.072], [90, 1.042], [100, 1.035]],
       bosses: MAP_BOSSES.cliffs.map(b => b.id),
       waves: waveVariant({ types: { flying: { from: 3, w: 6, theme: 10 } }, themes: [{ id: 'boss', mod: 10, rem: 0 }, { id: 'flying', at: [3], mod: 6, rem: 0 }, { id: 'magical', at: [8], mod: 11, rem: 6 }, { id: 'fast', mod: 7, rem: 0 }, { id: 'tanky', mod: 8, rem: 4 }], intro: { swarm: 4, splitter: 11, shield: 15, armored: 21, healer: 25, stealth: 31, burrower: 35 } }),
       palette: {
@@ -576,7 +576,7 @@
       half: 30,
       blocks: scatter({ seed: 5150, n: 8, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 14, rmax: 18, routes: [CASTLE_A, CASTLE_B], half: 30, pad: 6, gap: 60, kind: 'pillar',
         keep: [{ x: 700, y: 400, r: 46, kind: 'keep' }] }),
-      hpShift: 15, hpMul: 1, cashMul: 3.31e15, startCash: 7.925e18, priceMul: 8.3e14, gateFrom: 4, hpCurve: [[1, 1.14], [50, 1.12], [70, 1.086], [84, 1.05], [100, 1.035]],
+      hpShift: 15, hpMul: 0.92, cashMul: 3.31e15, startCash: 7.925e18, priceMul: 8.3e14, gateFrom: 4, hpCurve: [[1, 1.14], [50, 1.12], [70, 1.086], [84, 1.05], [100, 1.035]],
       bosses: MAP_BOSSES.castle.map(b => b.id),
       waves: waveVariant({ count: { base: 11, per: 0.55 }, types: { basic: { w: 8 }, fast: { from: 2, w: 5 }, tanky: { from: 3, w: 4 }, flying: { from: 4, w: 4 }, magical: { from: 5, w: 4 }, armored: { w: 1.6 }, shield: { w: 1.1 } }, elite: { from: 55 }, intro: { armored: 4, shield: 8, healer: 12, stealth: 16, splitter: 21, burrower: 24, swarm: 28 } }),
       palette: {
@@ -1785,7 +1785,7 @@
     return { name, def, hp, max, count, frac: max ? hp / max : 0, lead };
   }
 
-  const HERO_TUNE = { hit: 0.06, grow: 1.045, xp0: 20, xpGrow: 1.16, maxLv: 30, ranks: [5, 10, 20, 30], roarR: 260, roarStun: 1.6, roarEvery: 9, think: 0.25, pickR: 30 };
+  const HERO_TUNE = { hit: 0.01, grow: 1.02, xp0: 20, xpGrow: 1.16, maxLv: 30, ranks: [5, 10, 20, 30], roarR: 260, roarStun: 1.6, roarEvery: 9, think: 0.25, pickR: 30 };
   function hm(R) { return 1 + 0.25 * (R - 1); }
   function hNear(run, x, y, R, f) {
     const out = [];
