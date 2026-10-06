@@ -53,6 +53,18 @@
           <button id="codexBtn" class="mapbtn codexbtn" type="button" aria-haspopup="dialog" data-tip="Every DNB and boss you have met (C)">Codex</button>
           <button id="researchBtn" class="mapbtn codexbtn resbtn" type="button" aria-haspopup="dialog" data-tip="Spend Moonstones on permanent research (R)">Research</button>
         </div>
+        <div class="maprow metarow">
+          <button id="chalBtn" class="mapbtn codexbtn chalbtn" type="button" aria-haspopup="dialog" data-tip="Daily and permanent challenge runs on sandboxed boards (G)">Challenges</button>
+          <button id="achBtn" class="mapbtn codexbtn" type="button" aria-haspopup="dialog" data-tip="Achievements and their permanent bonuses (A)">Achievements <span id="achState" class="rstate">0</span></button>
+          <button id="statsBtn" class="mapbtn codexbtn" type="button" aria-haspopup="dialog" data-tip="Lifetime stats and map records (T)">Stats</button>
+        </div>
+        <div id="chalCard" class="chalcard" hidden>
+          <div class="cchead"><span id="chalName" class="ccname">Challenge</span><span id="chalDiff" class="ccdiff"></span></div>
+          <div id="chalMods" class="ccmods"></div>
+          <div class="ccrow"><span id="chalProg">Wave 0/20</span><span id="chalLives">Lives 20/20</span><span id="chalTime">0s</span></div>
+          <div class="bbar"><i id="chalBar"></i></div>
+          <button id="chalQuit" class="ghost danger" type="button">Quit challenge</button>
+        </div>
         <div class="waverow">
           <button id="wPrev" class="sq" type="button" aria-label="Previous wave">&#8249;</button>
           <div class="wsel"><div id="wLabel" class="wl">Wave 1</div><div id="wSub" class="ws">New wave</div></div>
@@ -114,6 +126,7 @@
       <li><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><kbd>5</kbd> pick Earth, Unicorn, Pegasus, Bat, Crystal</li>
       <li><kbd>Space</kbd> start wave, or pause during one</li>
       <li><kbd>P</kbd> pause &middot; <kbd>F</kbd> cycle speed &middot; <kbd>M</kbd> mute &middot; <kbd>C</kbd> codex &middot; <kbd>R</kbd> research</li>
+      <li><kbd>G</kbd> challenges &middot; <kbd>A</kbd> achievements &middot; <kbd>T</kbd> stats</li>
       <li><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> hero abilities &middot; <kbd>H</kbd> select hero, then click the field to move it</li>
       <li><kbd>U</kbd> open upgrades for the pony under the cursor</li>
       <li><kbd>B</kbd> upgrade max affordable &middot; <kbd>S</kbd> sell (press twice)</li>
@@ -194,6 +207,37 @@
     <div id="plansList" class="plist"></div>
   </div>
 </div>
+<div id="chalModal" class="modal" hidden>
+  <div class="dialog wide chal" role="dialog" aria-modal="true" aria-labelledby="chalTitle">
+    <div class="dhead"><h2 id="chalTitle">Challenges</h2><button id="chalClose" class="ghost x" type="button">Close</button></div>
+    <p class="hint">Challenge runs are played on a fresh sandbox board with their own cash and lives. Your maps, ponies and waves are never touched. Research, achievements and your hero come along. Lives carry over from wave to wave, and a run ends when you win, lose every life or quit.</p>
+    <div id="dailyCard" class="dailycard"></div>
+    <h3>Permanent challenges</h3>
+    <div id="chalList" class="challist"></div>
+  </div>
+</div>
+<div id="chalEndModal" class="modal" hidden>
+  <div class="dialog chalend" role="dialog" aria-modal="true" aria-labelledby="chalEndTitle">
+    <div class="dhead"><h2 id="chalEndTitle">Challenge over</h2></div>
+    <div id="chalEndBody" class="chalendbody"></div>
+    <div class="dactions"><button id="chalEndAgain" class="ghost" type="button">Try again</button><button id="chalEndOk" class="primary" type="button">Back to your maps</button></div>
+  </div>
+</div>
+<div id="achModal" class="modal" hidden>
+  <div class="dialog wide achs" role="dialog" aria-modal="true" aria-labelledby="achTitle">
+    <div class="dhead"><h2 id="achTitle">Achievements</h2><span id="achCount" class="resmoon"></span><button id="achClose" class="ghost x" type="button">Close</button></div>
+    <p id="achBonus" class="hint"></p>
+    <div id="achTabs" class="rtabs" role="tablist" aria-label="Achievement category"></div>
+    <div id="achList" class="achlist"></div>
+  </div>
+</div>
+<div id="statsModal" class="modal" hidden>
+  <div class="dialog wide stats" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
+    <div class="dhead"><h2 id="statsTitle">Stats</h2><button id="statsClose" class="ghost x" type="button">Close</button></div>
+    <div id="statsBody" class="statsbody"></div>
+  </div>
+</div>
+<div id="achToast" class="achtoast" role="status" aria-live="polite"></div>
 <div id="starBurst" class="starburst" aria-hidden="true"></div>
 <div id="tip" class="tip" role="tooltip" hidden></div>
 <script src="js/core.js"></script>

@@ -965,7 +965,7 @@
     nohero: { name: 'No hero', desc: 'Heroes stay home.', w: 0.5 },
     bosses5: { name: 'Boss tide', desc: 'A boss every 5 waves.', w: 1.5 },
     stealth: { name: 'Shadow march', desc: 'Half of all DNBs are cloaked.', w: 1.5 },
-    armored: { name: 'Armored horde', desc: 'Every DNB wears plate.', w: 1 },
+    armored: { name: 'Armored horde', desc: 'Every DNB wears plate.', w: 1.5 },
     onelife: { name: 'One life', desc: 'A single leak ends the run.', w: 2, perm: true },
     limit: { name: 'Small herd', desc: 'Only a few ponies allowed.', w: 2 },
     rich: { name: 'Golden start', desc: 'Triple starting cash, but kills pay nothing.', w: 1 },
@@ -974,9 +974,9 @@
   };
   const CHAL_IDS = Object.keys(CHAL_MODS);
   const DAILY_MODS = CHAL_IDS.filter(id => !CHAL_MODS[id].perm);
-  const CHAL_CLASH = [['unicorns', 'flyers'], ['grounded', 'flyers'], ['unicorns', 'grounded'], ['onelife', 'glass'], ['onelife', 'double'], ['onelife', 'bosses5'], ['onelife', 'short']];
+  const CHAL_CLASH = [['unicorns', 'flyers'], ['grounded', 'flyers'], ['unicorns', 'grounded'], ['onelife', 'glass'], ['onelife', 'double'], ['onelife', 'bosses5'], ['onelife', 'short'], ['armored', 'tough'], ['armored', 'short']];
   const CHAL_LIVES = 20;
-  const CHAL_ECO = { start: 3, kill: 2, clear: 2, hp: 0.4, boss: 0.6, soft: 0.15 };
+  const CHAL_ECO = { start: 3, kill: 2, clear: 2, hp: 0.4, boss: 0.55, soft: 0.15 };
   const DAILY_WEIGHT = 3.5;
   const DAILY_BANDS = { moonlit: [1, 11, 21, 31], woods: [1, 11, 21], caverns: [1, 11, 21], cliffs: [1, 11], castle: [1, 11] };
   function chalClash(a, b) { return CHAL_CLASH.some(c => (c[0] === a && c[1] === b) || (c[0] === b && c[1] === a)); }
