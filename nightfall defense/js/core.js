@@ -176,13 +176,13 @@
     flying: { id: 'flying', name: 'DNB Duskwing', short: 'Duskwing', trait: 'Flies. Only pegasi and sky-sighted unicorns can hit it.', hp: 0.8, speed: 78, r: 12, cash: 1.3, flying: true, color: '#7d5c48', dark: '#3f2c22' },
     magical: { id: 'magical', name: 'DNB Hexling', short: 'Hexling', trait: 'Magical. Only unicorns and ley-hoofed earth ponies can hurt it.', hp: 1.3, speed: 56, r: 13, cash: 1.5, magical: true, color: '#86606a', dark: '#46303a' },
     swarm: { id: 'swarm', name: 'DNB Gnat', short: 'Gnat', trait: 'Tiny and fast, and always arrives in a swarm of 5.', hp: 0.2, speed: 128, r: 7, cash: 0.22, swarm: true, color: '#9a7a52', dark: '#4e3a22' },
-    healer: { id: 'healer', name: 'DNB Mender', short: 'Mender', trait: 'Every 2.5s it heals DNBs within 110 for 6% of their max HP.', hp: 1.1, speed: 54, r: 13, cash: 1.6, heal: { every: 2.5, r: 110, pct: 0.06 }, color: '#7a8a5a', dark: '#3a4428' },
-    splitter: { id: 'splitter', name: 'DNB Splitter', short: 'Splitter', trait: 'Splits into 3 quick Splitlings when slain. They pick up right where it fell.', hp: 1.3, speed: 52, r: 15, cash: 1.1, split: { n: 3, type: 'mini' }, color: '#8a6a7a', dark: '#44323c' },
-    mini: { id: 'mini', name: 'DNB Splitling', short: 'Splitling', trait: 'A shard of a Splitter. Small, quick and frail.', hp: 0.32, speed: 88, r: 8, cash: 0.25, child: true, color: '#9a7a8a', dark: '#4c3a44' },
-    stealth: { id: 'stealth', name: 'DNB Lurker', short: 'Lurker', trait: 'Stealthy: only ponies that detect can target it, unless something reveals it.', hp: 0.9, speed: 70, r: 12, cash: 1.4, stealth: true, color: '#6a6a7e', dark: '#30303e' },
-    burrower: { id: 'burrower', name: 'DNB Tunneler', short: 'Tunneler', trait: 'Dives underground on stretches of the road and cannot be hit while buried.', hp: 1.5, speed: 60, r: 14, cash: 1.4, burrow: { cycle: 460, under: 190 }, color: '#7a5a3a', dark: '#3c2a1a' },
-    shield: { id: 'shield', name: 'DNB Bulwark', short: 'Bulwark', trait: 'Projects a bubble over DNBs within 100 that soaks up damage equal to 30% of their max HP.', hp: 1.6, speed: 48, r: 15, cash: 1.8, aegis: { r: 100, pct: 0.3 }, color: '#5a6a7e', dark: '#2a323e' },
-    armored: { id: 'armored', name: 'DNB Ironhide', short: 'Ironhide', trait: 'Armored: every hit loses a flat chunk of damage, so small hits barely scratch it.', hp: 2.2, speed: 44, r: 16, cash: 2.1, plate: 0.03, color: '#6a645a', dark: '#34302a' },
+    healer: { id: 'healer', name: 'DNB Mender', short: 'Mender', trait: 'Every 2.5s it heals DNBs within 110 for 6% of their max HP.', hp: 0.9, speed: 54, r: 13, cash: 1.6, heal: { every: 2.5, r: 110, pct: 0.06 }, color: '#7a8a5a', dark: '#3a4428' },
+    splitter: { id: 'splitter', name: 'DNB Splitter', short: 'Splitter', trait: 'Splits into 3 quick Splitlings when slain. They pick up right where it fell.', hp: 1.1, speed: 52, r: 15, cash: 1.1, split: { n: 3, type: 'mini' }, color: '#8a6a7a', dark: '#44323c' },
+    mini: { id: 'mini', name: 'DNB Splitling', short: 'Splitling', trait: 'A shard of a Splitter. Small, quick and frail.', hp: 0.25, speed: 88, r: 8, cash: 0.25, child: true, color: '#9a7a8a', dark: '#4c3a44' },
+    stealth: { id: 'stealth', name: 'DNB Lurker', short: 'Lurker', trait: 'Stealthy: only ponies that detect can target it, unless something reveals it.', hp: 0.8, speed: 70, r: 12, cash: 1.4, stealth: true, color: '#6a6a7e', dark: '#30303e' },
+    burrower: { id: 'burrower', name: 'DNB Tunneler', short: 'Tunneler', trait: 'Dives underground on stretches of the road and cannot be hit while buried.', hp: 1.2, speed: 60, r: 14, cash: 1.4, burrow: { cycle: 460, under: 190 }, color: '#7a5a3a', dark: '#3c2a1a' },
+    shield: { id: 'shield', name: 'DNB Bulwark', short: 'Bulwark', trait: 'Projects a bubble over DNBs within 100 that soaks up damage equal to 25% of their max HP.', hp: 1.3, speed: 48, r: 15, cash: 1.8, aegis: { r: 100, pct: 0.25 }, color: '#5a6a7e', dark: '#2a323e' },
+    armored: { id: 'armored', name: 'DNB Ironhide', short: 'Ironhide', trait: 'Armored: every hit loses a flat chunk of damage, so small hits barely scratch it.', hp: 1.8, speed: 44, r: 16, cash: 2.1, plate: 0.03, color: '#6a645a', dark: '#34302a' },
     boss: { id: 'boss', name: 'Boss', short: 'Boss', trait: 'A wave boss. Leaking it costs 5 lives.', hp: 26, speed: 36, r: 26, cash: 20, color: '#5e3f28', dark: '#2c1c12' },
   };
   const ENEMY_IDS = ['basic', 'fast', 'tanky', 'flying', 'magical', 'swarm', 'healer', 'splitter', 'mini', 'stealth', 'burrower', 'shield', 'armored'];
@@ -390,8 +390,8 @@
     return g;
   }
   const COMBOS = [
-    { id: 'ironwall', name: 'Iron wall', mod: 13, rem: 3, min: 40, boost: { armored: 3, shield: 2 } },
-    { id: 'ghosts', name: 'Ghost march', mod: 13, rem: 9, min: 45, boost: { stealth: 3, healer: 2 } },
+    { id: 'ironwall', name: 'Iron wall', mod: 13, rem: 3, min: 40, boost: { armored: 2, shield: 1.5 } },
+    { id: 'ghosts', name: 'Ghost march', mod: 13, rem: 9, min: 45, boost: { stealth: 2.5, healer: 1.5 } },
     { id: 'hive', name: 'Hive tide', mod: 17, rem: 5, min: 50, boost: { swarm: 3, splitter: 3 } },
     { id: 'sappers', name: 'Sappers', mod: 17, rem: 12, min: 55, boost: { burrower: 3, armored: 2, healer: 1 } },
   ];
@@ -1521,7 +1521,7 @@
     }
   }
   function shieldRegen(run, dt) {
-    for (const o of run.enemies) if (o.alive && o.shT > 0 && !o.ownSh && o.sh < o.shMax) o.sh = Math.min(o.shMax, o.sh + o.shMax * 0.12 * dt);
+    for (const o of run.enemies) if (o.alive && o.shT > 0 && !o.ownSh && o.sh < o.shMax) o.sh = Math.min(o.shMax, o.sh + o.shMax * 0.04 * dt);
   }
   function mobTrick(S, run, e, dt) {
     const def = ENEMIES[e.type];
