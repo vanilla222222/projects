@@ -426,7 +426,7 @@
     if (crit) fx(S, { k: 'spark', x: e.x, y: e.y, c: '#fff2a8', life: 0.3 });
     if (!e.alive) return;
     if (s.slow > 0) { e.slow = Math.max(e.slow, e.boss ? s.slow * 0.5 : s.slow); e.slowT = Math.max(e.slowT, s.slowDur); }
-    if (s.stunCh > 0 && Math.random() < s.stunCh) e.stunT = Math.max(e.stunT, e.boss ? s.stunDur * 0.3 : s.stunDur);
+    if (s.stunCh > 0 && Math.random() < s.stunCh) stunE(e, e.boss ? s.stunDur * 0.3 : s.stunDur);
     if (s.hex > 0) { e.hexAmp = Math.max(e.hexAmp, s.hex); e.hexT = 4; if (s.has.doomhex) e.doom = true; }
     if (s.knock > 0) e.d = Math.max(WORLD.startD + 16, e.d - s.knock * (e.boss ? 0.15 : 1));
     if (s.has.raptordive && isFly(e) && !e.boss && e.hp < e.hpMax * 0.2) kill(S, run, e, t);
@@ -441,7 +441,7 @@
       for (const e of targets) {
         if (s.has.leyrupture && e.magical) e.dispelT = 3;
         hitEnemy(S, run, t, s, e, d);
-        if (stun && e.alive) e.stunT = Math.max(e.stunT, e.boss ? 0.3 : stun);
+        if (stun && e.alive) stunE(e, e.boss ? 0.3 : stun);
       }
       t.anim = 0.25;
       fx(S, { k: 'stomp', x: t.x, y: t.y, r: s.range, c: stun ? '#ffd27a' : (s.has.leyrupture ? '#b48bff' : '#c9a36b'), life: 0.35 });
@@ -514,7 +514,7 @@
     }
     if (s.has.timestop && targets.length && every(10)) {
       fx(S, { k: 'ring', x: t.x, y: t.y, r: s.range, c: '#9fe3ff', life: 0.6 });
-      for (const o of run.enemies) if (o.alive && inRange(t, o, s.range)) o.stunT = Math.max(o.stunT, o.boss ? 0.5 : 1.5);
+      for (const o of run.enemies) if (o.alive && inRange(t, o, s.range)) stunE(o, o.boss ? 0.5 : 1.5);
     }
     if (s.has.thunderhead && targets.length && every(5)) {
       const list = targets.slice().sort((a, b) => b.hp - a.hp).slice(0, 8);
@@ -522,7 +522,7 @@
     }
     if (s.has.cyclone && targets.length && every(9)) {
       fx(S, { k: 'swirl', x: t.x, y: t.y, r: s.range, c: '#bdf5ee', life: 0.7 });
-      for (const o of run.enemies) if (o.alive && !o.boss && inRange(t, o, s.range)) { o.d = Math.max(WORLD.startD + 16, o.d - 150); o.stunT = Math.max(o.stunT, 0.6); }
+      for (const o of run.enemies) if (o.alive && !o.boss && inRange(t, o, s.range)) { o.d = Math.max(WORLD.startD + 16, o.d - 150); stunE(o, 0.6); }
     }
     if (s.has.rainboom && targets.length && every(15)) {
       t.boomT = 4;
@@ -539,6 +539,8 @@
       else t.sigT = 12;
     }
   }
+
+  function stunE(e, dur) { if (e.stunT > 0 || e.stunImm > 0) return; e.stunT = dur; }
 
   function enemyUpdate(S, run, e, dt) {
     if (e.hit > 0) e.hit -= dt;
