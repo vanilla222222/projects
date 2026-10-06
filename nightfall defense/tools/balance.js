@@ -14,7 +14,7 @@ const PLAN = { earth: [0, 1], unicorn: [0, 1], pegasus: [2, 4], bat: [0, 3], cry
 const SHARE = { earth: 0.3, unicorn: 0.3, pegasus: 0.15, bat: 0.15, crystal: 0.1 };
 const BOT_RACES = (process.env.BOT_RACES || C.RACE_IDS.join(',')).split(',').filter(r => C.RACES[r]);
 
-if (!process.env.MAP) { runAll(); return; }
+if (!process.env.MAP) { if (process.env.PRESTIGE) runPrestige(); else runAll(); return; }
 
 const MAP = C.getMap(process.env.MAP);
 if (process.env.MAPTUNE) Object.assign(MAP, JSON.parse(process.env.MAPTUNE));
@@ -200,9 +200,8 @@ function play(S, n) {
 
 function netWorth(S) { return S.cash + S.towers.reduce((a, t) => a + t.spent, 0); }
 
-function main() {
-  const S = C.newState(MAP.id);
-  S.fxOn = false;
+function climb(S) {
+  for (const k in LEAKS) delete LEAKS[k];
   let time = 0, attempts = 0, farms = 0, losses = 0;
   const marks = {};
   const lossAt = {};
@@ -245,14 +244,108 @@ function main() {
   console.log(`wave 50 at ${marks[50] ? (marks[50] / 3600).toFixed(2) + 'h' : 'not reached'} (target ~2h), wave 100 at ${marks[100] ? (marks[100] / 3600).toFixed(2) + 'h' : 'not reached'} (target ~6h)`);
   if (worth50 != null) console.log(`net worth at wave 50: ${C.fmt(worth50)} (${worth50.toExponential(3)}) with ${towers50} towers`);
   const res = {
-    map: MAP.id, name: MAP.name, hpShift: MAP.hpShift || 0, hpMul: MAP.hpMul, cashMul: MAP.cashMul, startCash: C.mapStartCash(MAP),
+    map: MAP.id, name: MAP.name, hpShift: MAP.hpShift || 0, hpMul: MAP.hpMul, cashMul: MAP.cashMul, startCash: C.mapStartCash(MAP, S), star: C.starOf(S),
     races: BOT_RACES.join(','), owned: Object.fromEntries(C.RACE_IDS.map(r => [r, C.owned(S, r)])),
     reached: S.cleared, hours: +(time / 3600).toFixed(3),
     w50h: marks[50] ? +(marks[50] / 3600).toFixed(3) : null, w100h: marks[100] ? +(marks[100] / 3600).toFixed(3) : null,
     decades: segs.map(v => +v.toFixed(3)), worth50, towers50, losses, attempts, farms, worstWaveLosses: worst, fingerprint: fp,
     wave1Hp: C.hpFor(1, MAP), wave50Hp: C.hpFor(50, MAP), wave1Cash: C.killCash(1, MAP), wave50Cash: C.killCash(50, MAP),
   };
+  return res;
+}
+
+const PRIORITY = {
+  pony_dmg: 3, pony_rate: 2.5, pony_earth: 2, pony_unicorn: 2, pony_pegasus: 1.6, pony_bat: 1.6, pony_crystal: 1.6, pony_cheap: 1.2, pony_range: 1.4,
+  eco_kill: 2, eco_start: 1.5, eco_first: 1.6, eco_boss: 1.2, eco_interest: 1.3, eco_sell: 0.6, eco_master: 1.5,
+  abil_power: 1.6, abil_cd: 1.4, abil_crit: 1.3, abil_aura: 1.3, abil_stun: 1, abil_first: 1, abil_master: 1.4,
+  util_lives: 1.5, util_skip: 2, util_leak: 1.2, util_moon: 1.3, util_star: 1.1, util_auto: 0.4, util_master: 1.2,
+};
+function buyResearch(S) {
+  const bought = [];
+  for (let guard = 0; guard < 200; guard++) {
+    let best = null, bv = Infinity;
+    for (const r of C.RESEARCH) {
+      if (C.researchState(S, r.id) !== 'afford') continue;
+      const v = C.researchCost(r.id, C.rl(S, r.id)) / (PRIORITY[r.id] || 1);
+      if (v < bv) { bv = v; best = r.id; }
+    }
+    if (!best) break;
+    C.buyResearch(S, best);
+    bought.push(best);
+  }
+  return bought;
+}
+
+function prestige() {
+  const S = C.newState(MAP.id);
+  S.fxOn = false;
+  if (process.env.RESEARCH) Object.assign(S.research, C.cleanResearch(JSON.parse(process.env.RESEARCH)));
+  S.moon = Number(process.env.MOON) || 0;
+  const target = Number(process.env.STARS) || (MAP.id === 'moonlit' ? C.MAX_STARS : 1);
+  const runs = [];
+  const t0 = Date.now();
+  if (process.env.RESEARCH) {
+    S.cleared = C.MAX_WAVE;
+    runs.push({ star: 0, skipped: true });
+  } else {
+    console.log('== ' + MAP.id + ' 0 stars');
+    const r = climb(S);
+    runs.push({ star: 0, hours: r.hours, w50h: r.w50h, w100h: r.w100h, losses: r.losses, worst: r.worstWaveLosses, reached: r.reached });
+  }
+  while (C.starOf(S) < target && S.cleared >= C.MAX_WAVE) {
+    const up = C.starUp(S);
+    const bought = buyResearch(S);
+    console.log(`== ${MAP.id} star up to ${up.star}: +${up.gain} Moonstones, skip ${up.skip}, bought ${bought.join(',') || 'nothing'}, ${S.moon} left, lives ${C.livesFor(S)}`);
+    const r = climb(S);
+    runs.push({ star: up.star, hours: r.hours, w50h: r.w50h, w100h: r.w100h, losses: r.losses, worst: r.worstWaveLosses, reached: r.reached, gain: up.gain, skip: up.skip, bought, moonAfter: S.moon, moonTotal: S.moonTotal });
+  }
+  console.error(`${((Date.now() - t0) / 1000).toFixed(0)}s real prestige`);
+  console.log('runs: ' + runs.map(r => r.star + '* ' + (r.skipped ? 'skipped' : (r.reached < 100 ? 'stuck at ' + r.reached : r.hours + 'h'))).join('  '));
+  const res = { map: MAP.id, runs, research: S.research, moon: S.moon, moonTotal: S.moonTotal };
   console.log('RESULT ' + JSON.stringify(res));
+}
+
+function main() {
+  if (process.env.PRESTIGE) { prestige(); return; }
+  const S = C.newState(MAP.id);
+  S.fxOn = false;
+  console.log('RESULT ' + JSON.stringify(climb(S)));
+}
+
+function child(id, extra) {
+  const { spawn } = require('child_process');
+  return new Promise(done => {
+    const c = spawn(process.execPath, [__filename], { env: Object.assign({}, process.env, { MAP: id }, extra) });
+    let out = '';
+    c.stdout.on('data', d => { out += d; });
+    c.stderr.on('data', d => { out += d; });
+    c.on('close', () => {
+      const line = out.split('\n').find(l => l.startsWith('RESULT '));
+      console.log(out.split('\n').filter(l => l && !l.startsWith('RESULT ')).join('\n'));
+      done(line ? JSON.parse(line.slice(7)) : { map: id, error: true });
+    });
+  });
+}
+async function runPrestige() {
+  const t0 = Date.now();
+  const base = JSON.parse(fs.readFileSync(path.join(__dirname, 'balance-results.json'), 'utf8')).results;
+  const first = await child('moonlit', {});
+  const others = C.MAP_IDS.filter(id => id !== 'moonlit');
+  const rest = await Promise.all(others.map(id => child(id, { RESEARCH: JSON.stringify(first.research || {}), MOON: String(first.moon || 0), STARS: '1' })));
+  const all = [first].concat(rest);
+  console.log('\nmap        star  w50     w100    losses  worst  vs 0-star');
+  for (const r of all) {
+    const b = base.find(x => x.map === r.map);
+    for (const run of r.runs || []) {
+      if (run.skipped) continue;
+      const ratio = b && run.w100h ? (run.w100h / b.w100h).toFixed(2) : '-';
+      console.log(`${r.map.padEnd(10)} ${String(run.star).padEnd(5)} ${String(run.w50h).padEnd(7)} ${String(run.w100h).padEnd(7)} ${String(run.losses).padEnd(7)} ${String(run.worst).padEnd(6)} ${ratio}`);
+    }
+  }
+  const file = path.join(__dirname, 'prestige-results.json');
+  fs.writeFileSync(file, JSON.stringify({ generated: new Date().toISOString().slice(0, 10), dt: DT, star: C.STAR, baseline: base.map(b => ({ map: b.map, w50h: b.w50h, w100h: b.w100h })), results: all }, null, 2) + '\n');
+  console.log('wrote ' + path.relative(process.cwd(), file));
+  console.error(`${((Date.now() - t0) / 1000).toFixed(0)}s real total`);
 }
 
 function runAll() {
