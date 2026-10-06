@@ -675,7 +675,7 @@ async function fastForward(page, maxSeconds) {
       S.run = null; S.cleared = 0; S.sel = 1; S.towers.length = 0; S.cash = C.mapStartCash(C.MAPS.moonlit, S);
       return r;
     });
-    ok(Math.abs(run.hp - 1.3) < 1e-9 && run.cash > 1.2 && run.lives === 10 && run.plate > 0, '1 star scales HP, rewards and plates bosses ' + JSON.stringify(run));
+    ok(Math.abs(run.hp - 1.19) < 1e-9 && run.cash > 1.2 && run.lives === 10 && run.plate > 0, '1 star scales HP, rewards and plates bosses ' + JSON.stringify(run));
     await page.evaluate(() => __nd.openMaps());
     await page.waitForTimeout(250);
     const card = await page.evaluate(() => { const c = document.querySelector('.mapcard[data-map="moonlit"]'); return { lit: c.querySelectorAll('.mstars b').length, cls: c.className, mods: c.querySelector('.smods') ? c.querySelector('.smods').textContent : '' }; });

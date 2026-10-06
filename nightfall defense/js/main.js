@@ -653,7 +653,7 @@
   function pctOf(m) { return Math.round((m - 1) * 100); }
   function starTip(st) {
     if (!st) return 'No stars yet. Clear wave ' + C.MAX_WAVE + ' to star up this map.';
-    const lines = [st + '★: DNBs +' + pctOf(C.starHpMul(st)) + '% HP, +' + pctOf(C.starSpeedMul(st)) + '% speed. Rewards +' + pctOf(C.starCashMul(st)) + '% cash.'];
+    const lines = [st + '★: DNBs +' + pctOf(C.starHpMul(st, S)) + '% HP, +' + pctOf(C.starSpeedMul(st)) + '% speed. Rewards +' + pctOf(C.starCashMul(st)) + '% cash.'];
     for (const m of C.starMods(st)) lines.push(m.star + '★ ' + m.name + ': ' + m.desc);
     return lines.join('\n');
   }
@@ -680,7 +680,7 @@
     h += '<h3>You gain</h3><ul class="gains">'
       + '<li><span class="gain">+' + gain + ' Moonstones</span> for permanent research</li>'
       + '<li>Rewards +' + pctOf(C.starCashMul(next)) + '% cash (was +' + pctOf(C.starCashMul(cur)) + '%)</li>'
-      + '<li>DNBs +' + pctOf(C.starHpMul(next)) + '% HP, +' + pctOf(C.starSpeedMul(next)) + '% speed</li>'
+      + '<li>DNBs +' + pctOf(C.starHpMul(next, S)) + '% HP, +' + pctOf(C.starSpeedMul(next)) + '% speed, counting ' + C.researchLevels(S) + ' research levels at ' + Math.round(C.STAR.res * 1000) / 10 + '% each</li>'
       + (mod ? '<li>New modifier: <b>' + esc(mod.name) + '</b>. ' + esc(mod.desc) + '</li>' : '')
       + '<li>Boss waves you clear for the first time drop Moonstones</li>'
       + (skip ? '<li>Head Start skips waves 1 to ' + skip + ', bonuses paid</li>' : '')
@@ -746,6 +746,7 @@
   }
   function buildResearch(flash) {
     $('resMoon').textContent = C.fmt(S.moon || 0) + ' Moonstones';
+    $('resPress').textContent = Math.round(C.STAR.res * 1000) / 10 + '%';
     const box = $('resTree');
     let h = '';
     for (const br of C.BRANCHES) {

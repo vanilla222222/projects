@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const C = require('../js/core.js');
 if (process.env.TUNE) Object.assign(C.TUNE, JSON.parse(process.env.TUNE));
+if (process.env.STARTUNE) Object.assign(C.STAR, JSON.parse(process.env.STARTUNE));
 
 const DT = 1 / 20;
 const OVERHEAD = 3;

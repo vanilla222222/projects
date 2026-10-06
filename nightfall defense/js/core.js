@@ -21,11 +21,11 @@
     startCash: 160,
   };
 
-  const STAR = { hp: 0.3, speed: 0.03, cash: 0.25, moon: 20, mapMoon: 0.5, bossPlate: 0.06, swift: 0.75, regen: 0.006, lives: 7, eliteFrom: 20, eliteAdd: 0.1 };
+  const STAR = { hp: [0, 0.19, 0.21, 0.22, 0.23, 0.23], res: 0.019, speed: 0.03, cash: 0.25, moon: 20, mapMoon: 0.5, bossPlate: 0.06, swift: 0.75, regen: 0.003, lives: 7, eliteFrom: 20, eliteAdd: 0.1 };
   const STAR_MODS = [
     { id: 'plated', star: 1, name: 'Armored bosses', short: 'Plated', desc: 'Bosses wear iron plates: every hit loses a flat chunk of damage.' },
     { id: 'swift', star: 2, name: 'Faster spawns', short: 'Swift', desc: 'DNBs march in 25% closer together.' },
-    { id: 'regen', star: 3, name: 'Enemy regen', short: 'Regen', desc: 'DNBs regrow 0.6% of their HP each second, bosses half that.' },
+    { id: 'regen', star: 3, name: 'Enemy regen', short: 'Regen', desc: 'DNBs regrow 0.3% of their HP each second, bosses half that.' },
     { id: 'fragile', star: 4, name: 'Fewer lives', short: '7 lives', desc: 'Every wave starts with 7 lives instead of 10.' },
     { id: 'elite', star: 5, name: 'Elites common', short: 'Elites', desc: 'Elite DNBs appear from wave 20 and 10% more often.' },
   ];
@@ -695,7 +695,8 @@
   function rsl(rs, id) { return (rs && rs[id]) | 0; }
   function starOf(S, id) { return (S && S.stars && S.stars[id || S.map]) | 0; }
   function starMods(star) { return STAR_MODS.filter(m => m.star <= star); }
-  function starHpMul(star) { return 1 + STAR.hp * star; }
+  function researchLevels(S) { let n = 0; if (S && S.research) for (const k in S.research) n += S.research[k] | 0; return n; }
+  function starHpMul(star, S) { star = Math.max(0, Math.min(MAX_STARS, star | 0)); return star ? (1 + STAR.hp[star]) * (1 + STAR.res * researchLevels(S)) : 1; }
   function starSpeedMul(star) { return 1 + STAR.speed * star; }
   function starCashMul(star) { return 1 + STAR.cash * star; }
   function cashResearchMul(S) { return rl(S, 'eco_master') ? 1.15 : 1; }
@@ -1102,7 +1103,7 @@
     const lives = livesFor(S, star);
     S.run = {
       n, spec, map, route: map.route, queue, t: 0, lives, livesMax: lives, enemies: [], proj: [], earned: 0, kills: 0, eid: 1,
-      star, hpMul: starHpMul(star), spdMul: starSpeedMul(star), cashMul: killMul(S, star), clearMul: clearMul(S, star), regen: star >= 3 ? STAR.regen : 0,
+      star, hpMul: starHpMul(star, S), spdMul: starSpeedMul(star), cashMul: killMul(S, star), clearMul: clearMul(S, star), regen: star >= 3 ? STAR.regen : 0,
       bossCash: 1 + 0.25 * rl(S, 'eco_boss'), leakCut: rl(S, 'util_leak'),
       fresh: n > S.cleared, over: null, rng: mulberry(hashSeed(S.seed, n, S.stats.played)), bossIds: [],
       enrageAt: (queue.length ? queue[queue.length - 1].t : 0) + 75 * Math.max(1, map.maxLen / BASE_LEN), windT: 0, gust: 0, gustWarn: 0, gustKind: '', gustDir: 1, gustOn: false,
@@ -2177,7 +2178,7 @@
     serialize, deserialize, migrate, cleanSettings, fmt, setNumFormat, pct, mulberry, hashSeed,
     MAP_BOSSES, UNLOCK_AT, lightAt, crossings, placeBlockReason, switchMap, mapUnlocked, mapCleared, boardOf, newBoard, mapStartCash, activeTricks,
     ENEMY_IDS, ELITE, MECH, COMBOS, armorFor, mechOf, codexList, cleanCodex, firstSeen, themeRule, damage, kill,
-    MAX_STARS, STAR, STAR_MODS, BRANCHES, RESEARCH, RESEARCH_BY_ID, rl, starOf, starMods, starHpMul, starSpeedMul, starCashMul,
+    MAX_STARS, STAR, STAR_MODS, BRANCHES, RESEARCH, RESEARCH_BY_ID, rl, starOf, starMods, starHpMul, researchLevels, starSpeedMul, starCashMul,
     killMul, clearMul, moonMul, livesFor, canStarUp, starUpGain, starUp, skipFor, presetOf, placePreset,
     researchCost, researchTotal, researchState, buyResearch, grantMoon, cleanStars, cleanResearch, cleanPresets,
   };
