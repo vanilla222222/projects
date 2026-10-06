@@ -313,7 +313,7 @@ class GodTools {
 		let base = null;
 		let best = Infinity;
 		for (const arch of ANIMAL_ARCHETYPES) {
-			if (arch.cls !== cls) continue;
+			if (arch.cls !== cls || arch.cave) continue;
 			const dist = (arch.domain === domain ? 0 : 10) + ((arch.nic | 0) === nic ? 0 : 5) + Math.abs(arch.g[G_DIET] - diet) + Math.abs(arch.g[G_SCAV] - scav);
 			if (dist < best) {
 				best = dist;
@@ -1045,6 +1045,7 @@ class GodTools {
 		const lost = this._rewalk(eco);
 		if (eco.coast) eco.coast.restoreDerived(eco.world);
 		if (eco.mtn) eco.mtn.restoreDerived(eco.world);
+		if (eco.caves) eco.caves.restoreDerived(eco.world);
 		const D = eco.disasters;
 		if (D) {
 			let land = 0;

@@ -517,7 +517,7 @@ class DisasterLayer {
 		if (A) {
 			const W = this.world.width;
 			for (let a = 0; a < A.count; a++) {
-				if (!A.alive[a] || A.domain[a] === 1 || (A.domain[a] === 3 && A.fly[a] === 1)) continue;
+				if (!A.alive[a] || A.domain[a] === 1 || (A.ug && A.ug[a]) || (A.domain[a] === 3 && A.fly[a] === 1)) continue;
 				const t = (A.y[a] | 0) * W + (A.x[a] | 0);
 				if (!hit[t]) continue;
 				if (rng.next() >= AV_KILL * (1 - AV_CLIMB * A.genome[a * AG + G_CLIMB])) continue;

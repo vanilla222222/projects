@@ -23,6 +23,7 @@ const EvoSave = (() => {
 		add('RiverLayer', typeof RiverLayer === 'function' && RiverLayer);
 		add('CoastLayer', typeof CoastLayer === 'function' && CoastLayer);
 		add('MountainLayer', typeof MountainLayer === 'function' && MountainLayer);
+		add('CaveLayer', typeof CaveLayer === 'function' && CaveLayer);
 		return t;
 	};
 
@@ -34,6 +35,7 @@ const EvoSave = (() => {
 		RiverLayer: ['dn', 'up', 'fdx', 'fdy', 'flow', 'flood', 'still'],
 		CoastLayer: ['tidal', 'isle', 'shore', 'coastal', 'seaward', 'beachNear', 'reefs'],
 		MountainLayer: ['slope', 'sick', 'lift', 'cave', 'high', 'down', 'steep'],
+		CaveLayer: ['nc', 'nCaves', 'mouths', 'ctile', 'ccave', 'cpar', 'cpool', 'cdepth', 'chamberAt', 'under', 'lstart', 'links', 'firstPool', 'near', 'occ', 'cpop', 'cstart', 'citems'],
 	};
 	const SHUFFLE_MIN = 4096;
 
@@ -305,6 +307,9 @@ const EvoSave = (() => {
 		if (!eco.mtn && typeof MountainLayer === 'function' && eco.world.gen >= 8) eco.mtn = new MountainLayer(eco.world, new FastRng(eco.seed + 1515));
 		if (!eco.mtn) eco.mtn = null;
 		if (eco.animals) eco.animals.mtn = eco.mtn;
+		if (!eco.caves && typeof CaveLayer === 'function' && eco.world.gen >= 9) eco.caves = new CaveLayer(eco.world, new FastRng(eco.seed + 1616));
+		if (!eco.caves) eco.caves = null;
+		if (eco.animals) eco.animals.caves = eco.caves;
 	}
 
 	function upgradeAnimals(eco) {
