@@ -5,7 +5,9 @@ if (process.env.TUNE) Object.assign(C.TUNE, JSON.parse(process.env.TUNE));
 const DT = 1 / 20;
 const OVERHEAD = 3;
 const FARM_PER_LOSS = 3;
-const LIMIT_H = 16;
+const LIMIT_H = Number(process.env.LIMIT_H) || 16;
+const DIAG = Number(process.env.DIAG) || 0;
+let diagDone = false;
 const PLAN = { earth: [0, 1], unicorn: [0, 1], pegasus: [2, 4] };
 const SHARE = { earth: 0.4, unicorn: 0.35, pegasus: 0.25 };
 
@@ -80,7 +82,12 @@ function play(S, n) {
   C.startWave(S, n);
   let t = 0;
   S.events.length = 0;
-  while (S.run && t < 600) { C.step(S, DT); t += DT; }
+  const diag = DIAG === n && !diagDone;
+  while (S.run && t < 600) {
+    C.step(S, DT); t += DT;
+    if (diag) for (const e of S.events) if (!e.at) e.at = t.toFixed(1) + 's enemies ' + (S.run ? S.run.enemies.map(q => q.type + (q.name ? '[' + q.name + ']' : '') + ':' + Math.round(100 * q.hp / q.hpMax) + '%@' + Math.round(q.d) + ' sp' + q.speed + ' sl' + q.slow.toFixed(2) + ' st' + q.stunT.toFixed(2) + ' im' + (q.stunImm||0).toFixed(2) + ' bu' + q.burrowT).join(',') : '-');
+  }
+  if (diag) { diagDone = true; console.log('diag wave ' + n + ': ' + S.events.map(e => e.type + (e.boss ? '(boss)' : '') + ' ' + e.at).join(' | ')); }
   const ev = S.events.find(e => e.type === 'won' || e.type === 'lost');
   S.events.length = 0;
   return { won: ev && ev.type === 'won', t: t + OVERHEAD };
