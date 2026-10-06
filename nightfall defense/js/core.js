@@ -4,7 +4,7 @@
   const WORLD = { L: 1400, W: 800, towerR: 20, minGap: 44 };
   const MAX_WAVE = 100;
   const LIVES = 10;
-  const SAVE_VER = 9;
+  const SAVE_VER = 10;
   const MAX_STARS = 5;
   const SPAWN_GUARD = 15;
   const UNLOCK_AT = 50;
@@ -800,7 +800,7 @@
   const BONUS_KEYS = ['dmg', 'rate', 'range', 'cash', 'clear', 'start', 'xp'];
   const BONUS_NAMES = { dmg: 'pony damage', rate: 'attack speed', range: 'range', cash: 'kill cash', clear: 'wave clear cash', start: 'starting cash', xp: 'hero XP' };
   function newBonus() { const b = {}; for (const k of BONUS_KEYS) b[k] = 0; return b; }
-  function newStats() { return { played: 0, dmg: 0, bossKills: 0, earned: 0, killsBy: {}, eliteKills: 0, raceDmg: {}, heroDmg: {}, moonEarned: 0, playActive: 0, playOffline: 0, waves: 0, starUps: 0, upgrades: 0, sold: 0, mapKills: {} }; }
+  function newStats() { return { played: 0, dmg: 0, bossKills: 0, earned: 0, killsBy: {}, eliteKills: 0, raceDmg: {}, heroDmg: {}, moonEarned: 0, playActive: 0, playOffline: 0, waves: 0, starUps: 0, upgrades: 0, sold: 0, mapKills: {}, raceKills: {}, heroKills: {} }; }
   function newDaily() { return { day: 0, best: 0, won: 0, runs: 0, wins: 0, streak: 0, lastWin: 0, bestStreak: 0 }; }
   const TOKENS = { lantern: 'Lantern', crown: 'Boss Crown', gild: 'Gilded Hooves', nightfall: 'Nightfall Banner' };
   function numMap(o, ok, int) {
@@ -817,6 +817,8 @@
     s.raceDmg = numMap(st.raceDmg, k => !!RACES[k]);
     s.heroDmg = numMap(st.heroDmg, k => !!HEROES[k]);
     s.mapKills = numMap(st.mapKills, k => !!MAPS[k], true);
+    s.raceKills = numMap(st.raceKills, k => !!RACES[k], true);
+    s.heroKills = numMap(st.heroKills, k => !!HEROES[k], true);
     return s;
   }
   function cleanFlags(o, allowed) { const out = {}; if (o && typeof o === 'object') for (const k in o) if (allowed[k] && o[k]) out[k] = 1; return out; }
@@ -1078,7 +1080,7 @@
       run.enrageAt += map.waves.bossLead + 10;
     }
   }
-  const CHAL_SHARED = ['stats', 'settings', 'codex', 'research', 'heroUnlocks', 'ach', 'feats', 'bonus', 'daily', 'chalDone', 'chalBest', 'tokens'];
+  const CHAL_SHARED = ['stats', 'settings', 'codex', 'research', 'heroUnlocks', 'ach', 'feats', 'bonus', 'daily', 'chalDone', 'chalBest', 'tokens', 'cos'];
   function chalStartCash(X, def, map) {
     let c = Math.round((mapStartCash(map, X) + skipCash(X, map, def.from - 1, 0) * 0.85) * CHAL_ECO.start);
     if (def.mods.indexOf('rich') >= 0) c *= 3;
@@ -1196,6 +1198,239 @@
   function newBoard(map, S) { return { cash: mapStartCash(map, S), cleared: 0, sel: 1, auto: false, towers: [], records: newRecords(), hero: null, farm: newFarm(), build: null }; }
   const BOARD_KEYS = ['cash', 'cleared', 'sel', 'auto', 'towers', 'records', 'hero', 'farm', 'build'];
 
+  const COS_SLOTS = ['coat', 'mane', 'acc', 'aura'];
+  const COS_KINDS = { coat: 'Coat', mane: 'Mane', acc: 'Accessory', aura: 'Aura', fx: 'Effect theme', decor: 'Map decor' };
+  const COSMETICS = [
+    { id: 'coat_moonsilver', slot: 'coat', name: 'Moonsilver', body: '#c8cbe0', un: { k: 'ach', id: 'p_w10' } },
+    { id: 'coat_sunset', slot: 'coat', name: 'Sunset', body: '#f0a060', un: { k: 'stars', n: 1 } },
+    { id: 'coat_mint', slot: 'coat', name: 'Mint Cream', body: '#bfeedd', un: { k: 'ach', id: 'e_1' } },
+    { id: 'coat_storm', slot: 'coat', name: 'Stormcloud', body: '#8a93a8', spots: '#c4cad8', un: { k: 'ach', id: 'c_b1' } },
+    { id: 'coat_rosegold', slot: 'coat', name: 'Rose Gold', body: '#e8b4a0', un: { k: 'moon', cost: 4 } },
+    { id: 'coat_pearl', slot: 'coat', name: 'Pearl', body: '#f6f2ff', spots: '#e2d8ff', un: { k: 'moon', cost: 6 } },
+    { id: 'coat_midnight', slot: 'coat', name: 'Midnight', body: '#3a3f6a', spots: '#cfd6ff', un: { k: 'chal', id: 'lightless' } },
+    { id: 'coat_ember', slot: 'coat', name: 'Ember', body: '#c0503a', un: { k: 'chal', id: 'rush' } },
+    { id: 'coat_gilded', slot: 'coat', name: 'Gilded', body: '#e3c15b', un: { k: 'token', id: 'gild' } },
+    { id: 'coat_dapple', slot: 'coat', name: 'Dapple Grey', body: '#a8a4b0', spots: '#d8d4e0', un: { k: 'ach', id: 'c_k2' } },
+    { id: 'mane_lilac', slot: 'mane', name: 'Lilac', mane: '#c08bff', un: { k: 'free' } },
+    { id: 'mane_flame', slot: 'mane', name: 'Wildfire', mane: '#ff6a3a', streak: '#ffd24a', un: { k: 'ach', id: 'c_k1' } },
+    { id: 'mane_ocean', slot: 'mane', name: 'Tidewater', mane: '#2f8fd8', streak: '#9fe6ff', un: { k: 'ach', id: 'p_w25' } },
+    { id: 'mane_snow', slot: 'mane', name: 'Snowdrift', mane: '#f2f6ff', streak: '#bcd6ff', un: { k: 'moon', cost: 3 } },
+    { id: 'mane_gold', slot: 'mane', name: 'Sunspun', mane: '#ffd24a', streak: '#fff2a8', un: { k: 'daily', n: 3 } },
+    { id: 'mane_moss', slot: 'mane', name: 'Mossy', mane: '#5a9a4a', streak: '#bfe39a', un: { k: 'chal', id: 'rest' } },
+    { id: 'mane_void', slot: 'mane', name: 'Void', mane: '#1a1428', streak: '#b48bff', un: { k: 'chal', id: 'nightfall' } },
+    { id: 'mane_prism', slot: 'mane', name: 'Prism', mane: '#ff6b6b', rainbow: true, un: { k: 'ach', id: 'r_herd' } },
+    { id: 'acc_scarf', slot: 'acc', name: 'Cozy Scarf', acc: 'scarf', col: '#e35b6a', un: { k: 'free' } },
+    { id: 'acc_bow', slot: 'acc', name: 'Ribbon Bow', acc: 'bow', col: '#ff8fc8', un: { k: 'ach', id: 'p_w1' } },
+    { id: 'acc_flowers', slot: 'acc', name: 'Flower Crown', acc: 'flowers', col: '#ffd6f6', un: { k: 'ach', id: 'p_map2' } },
+    { id: 'acc_tophat', slot: 'acc', name: 'Top Hat', acc: 'tophat', col: '#24202e', un: { k: 'ach', id: 'e_2' } },
+    { id: 'acc_glasses', slot: 'acc', name: 'Round Glasses', acc: 'glasses', col: '#2a2236', un: { k: 'ach', id: 's_res' } },
+    { id: 'acc_shades', slot: 'acc', name: 'Star Shades', acc: 'shades', col: '#ff6bd0', un: { k: 'moon', cost: 5 } },
+    { id: 'acc_party', slot: 'acc', name: 'Party Hat', acc: 'party', col: '#4fd1c5', un: { k: 'daily', n: 1 } },
+    { id: 'acc_witch', slot: 'acc', name: 'Witch Hat', acc: 'witch', col: '#4a2f7a', un: { k: 'chal', id: 'horn' } },
+    { id: 'acc_bandana', slot: 'acc', name: 'Bandana', acc: 'bandana', col: '#3a7bd5', un: { k: 'chal', id: 'stampede' } },
+    { id: 'acc_laurel', slot: 'acc', name: 'Laurel', acc: 'laurel', col: '#7fd66a', un: { k: 'stars', n: 3 } },
+    { id: 'acc_lantern', slot: 'acc', name: 'Lantern Charm', acc: 'lantern', col: '#ffcf6a', un: { k: 'token', id: 'lantern' } },
+    { id: 'acc_crown', slot: 'acc', name: 'Boss Crown', acc: 'crown', col: '#e3c15b', un: { k: 'token', id: 'crown' } },
+    { id: 'aura_hearts', slot: 'aura', name: 'Hearts', aura: 'hearts', col: '#ff7aa8', un: { k: 'ach', id: 'h_10' } },
+    { id: 'aura_sparkle', slot: 'aura', name: 'Sparkles', aura: 'sparkle', col: '#fff2a8', un: { k: 'ach', id: 'p_w50' } },
+    { id: 'aura_embers', slot: 'aura', name: 'Embers', aura: 'embers', col: '#ff8a3a', un: { k: 'ach', id: 'c_b2' } },
+    { id: 'aura_snow', slot: 'aura', name: 'Snowfall', aura: 'snow', col: '#e6f4ff', un: { k: 'moon', cost: 6 } },
+    { id: 'aura_fireflies', slot: 'aura', name: 'Fireflies', aura: 'fireflies', col: '#d8ff6a', un: { k: 'ach', id: 'x_owl' } },
+    { id: 'aura_wisps', slot: 'aura', name: 'Shadow Wisps', aura: 'wisps', col: '#9a7cff', un: { k: 'chal', id: 'glass' } },
+    { id: 'aura_halo', slot: 'aura', name: 'Halo', aura: 'halo', col: '#ffe9a8', un: { k: 'stars', n: 5 } },
+    { id: 'aura_rainbow', slot: 'aura', name: 'Rainbow Trail', aura: 'rainbow', col: '#ff6b6b', un: { k: 'ach', id: 'p_w100' } },
+    { id: 'fx_classic', slot: 'fx', name: 'Classic', fx: 'classic', desc: 'Each race fires in its own colours.', un: { k: 'free' } },
+    { id: 'fx_starlight', slot: 'fx', name: 'Starlight', fx: 'starlight', desc: 'Twinkling stars and golden sparkle bursts.', un: { k: 'ach', id: 's_1' } },
+    { id: 'fx_ember', slot: 'fx', name: 'Ember', fx: 'ember', desc: 'Flickering embers that scatter rising sparks.', un: { k: 'ach', id: 'c_b1' } },
+    { id: 'fx_frost', slot: 'fx', name: 'Frost', fx: 'frost', desc: 'Ice crystals that shatter into snowflakes.', un: { k: 'chal', id: 'iron' } },
+    { id: 'fx_candy', slot: 'fx', name: 'Candy', fx: 'candy', desc: 'Striped sweets that pop into confetti.', un: { k: 'moon', cost: 8 } },
+    { id: 'fx_shadow', slot: 'fx', name: 'Shadow', fx: 'shadow', desc: 'Dark orbs with violet glow and smoky wisps.', un: { k: 'token', id: 'nightfall' } },
+    { id: 'decor_autumn', slot: 'decor', name: 'Autumn', decor: 'autumn', desc: 'Russet grass, falling leaves and pumpkins by the road.', un: { k: 'ach', id: 'p_w10' } },
+    { id: 'decor_winter', slot: 'decor', name: 'Winter', decor: 'winter', desc: 'Fresh snow, frosted trees and icy roads.', un: { k: 'ach', id: 'p_w50' } },
+    { id: 'decor_spring', slot: 'decor', name: 'Spring Bloom', decor: 'spring', desc: 'Lush grass, blossom trees and wildflowers everywhere.', un: { k: 'ach', id: 'p_map2' } },
+    { id: 'decor_festival', slot: 'decor', name: 'Festival Lanterns', decor: 'festival', desc: 'Paper lanterns strung along the road and confetti in the grass.', un: { k: 'moon', cost: 10 } },
+  ];
+  const COS_BY_ID = {};
+  for (const c of COSMETICS) COS_BY_ID[c.id] = c;
+  const FX_THEMES = ['classic', 'starlight', 'ember', 'frost', 'candy', 'shadow'];
+  const SEASONS = ['autumn', 'winter', 'spring', 'festival'];
+  const TITLES = [
+    { id: 'legend', name: 'Legend', kills: 25000, lv: 40 },
+    { id: 'champion', name: 'Champion', kills: 2500, lv: 24 },
+    { id: 'veteran', name: 'Veteran', kills: 250, lv: 12 },
+  ];
+  const PONY_NAMES = ['Apple Bloom', 'Bramble', 'Clover', 'Dewdrop', 'Ember Dash', 'Fern', 'Gale', 'Honeycomb', 'Indigo', 'Juniper', 'Kestrel', 'Lark', 'Maple', 'Nettle', 'Opal', 'Pebble', 'Quartz', 'Rosehip', 'Sable', 'Thistle', 'Umber', 'Velvet', 'Willow', 'Yarrow', 'Zephyr', 'Moonpetal', 'Starling', 'Cobble', 'Duskbell', 'Glimmer', 'Hazel', 'Ironbark', 'Marigold', 'Nimbus', 'Pinecone', 'Sundew', 'Tumble', 'Wisteria'];
+  function newCos() { return { bought: {}, seen: {}, skin: {}, fx: 'classic', fxRace: {}, decor: {}, names: true }; }
+  function cleanCos(o) {
+    const out = newCos();
+    if (!o || typeof o !== 'object') return out;
+    if (o.bought && typeof o.bought === 'object') for (const k in o.bought) if (COS_BY_ID[k] && COS_BY_ID[k].un.k === 'moon' && o.bought[k]) out.bought[k] = 1;
+    if (o.seen && typeof o.seen === 'object') for (const k in o.seen) if (COS_BY_ID[k] && o.seen[k]) out.seen[k] = 1;
+    if (o.skin && typeof o.skin === 'object') for (const r of RACE_IDS) {
+      const s = o.skin[r];
+      if (!s || typeof s !== 'object') continue;
+      const v = {};
+      for (const sl of COS_SLOTS) if (COS_BY_ID[s[sl]] && COS_BY_ID[s[sl]].slot === sl) v[sl] = s[sl];
+      if (Object.keys(v).length) out.skin[r] = v;
+    }
+    if (FX_THEMES.indexOf(o.fx) >= 0) out.fx = o.fx;
+    if (o.fxRace && typeof o.fxRace === 'object') for (const r of RACE_IDS) if (FX_THEMES.indexOf(o.fxRace[r]) >= 0) out.fxRace[r] = o.fxRace[r];
+    if (o.decor && typeof o.decor === 'object') for (const id of MAP_IDS) { const v = o.decor[id]; if (v === 'none' || SEASONS.indexOf(v) >= 0) out.decor[id] = v; }
+    out.names = o.names !== false;
+    return out;
+  }
+  function cosOf(S) { const P = profileOf(S); if (P && !P.cos) P.cos = newCos(); return P ? P.cos : newCos(); }
+  function totalStars(P) { let n = 0; for (const id of MAP_IDS) n += starOf(P, id); return n; }
+  function cosUnlocked(S, it) {
+    const P = profileOf(S);
+    if (typeof it === 'string') it = COS_BY_ID[it];
+    if (!P || !it) return false;
+    const u = it.un;
+    if (u.k === 'free') return true;
+    if (u.k === 'ach') return !!(P.ach && P.ach[u.id]);
+    if (u.k === 'chal') return !!(P.chalDone && P.chalDone[u.id]);
+    if (u.k === 'token') return !!(P.tokens && P.tokens[u.id]);
+    if (u.k === 'stars') return totalStars(P) >= u.n;
+    if (u.k === 'daily') return ((P.daily && P.daily.wins) | 0) >= u.n;
+    if (u.k === 'moon') return !!(P.cos && P.cos.bought[it.id]);
+    return false;
+  }
+  function cosHow(it) {
+    const u = it.un;
+    if (u.k === 'free') return 'Free';
+    if (u.k === 'ach') return 'Achievement: ' + (ACH_BY_ID[u.id] ? ACH_BY_ID[u.id].name : u.id);
+    if (u.k === 'chal') return 'Complete the ' + (CHAL_BY_ID[u.id] ? CHAL_BY_ID[u.id].name : u.id) + ' challenge';
+    if (u.k === 'token') { const c = CHALLENGES.find(x => x.reward && x.reward.token === u.id); return 'Earn the ' + TOKENS[u.id] + (c ? ' (' + c.name + ' challenge)' : ''); }
+    if (u.k === 'stars') return 'Earn ' + u.n + ' star' + (u.n > 1 ? 's' : '') + ' across your maps';
+    if (u.k === 'daily') return 'Win ' + u.n + ' daily challenge' + (u.n > 1 ? 's' : '');
+    if (u.k === 'moon') return u.cost + ' Moonstones';
+    return '';
+  }
+  function cosList(S, slot) {
+    return COSMETICS.filter(c => !slot || c.slot === slot).map(c => ({ def: c, owned: cosUnlocked(S, c), how: cosHow(c), cost: c.un.k === 'moon' ? c.un.cost : 0, isNew: false }));
+  }
+  function cosNew(S) {
+    const cos = cosOf(S), out = [];
+    for (const c of COSMETICS) if (c.un.k !== 'free' && !cos.seen[c.id] && cosUnlocked(S, c)) out.push(c.id);
+    return out;
+  }
+  function markCosSeen(S, ids) { const cos = cosOf(S); for (const id of ids || COSMETICS.map(c => c.id)) if (COS_BY_ID[id] && cosUnlocked(S, id)) cos.seen[id] = 1; }
+  function buyCos(S, id) {
+    const P = profileOf(S), it = COS_BY_ID[id];
+    if (!P || !it || it.un.k !== 'moon' || cosUnlocked(S, it)) return false;
+    if ((P.moon | 0) < it.un.cost) return false;
+    P.moon -= it.un.cost;
+    cosOf(S).bought[id] = 1;
+    cosOf(S).seen[id] = 1;
+    return true;
+  }
+  function setSkin(S, race, slot, id) {
+    if (!RACES[race] || COS_SLOTS.indexOf(slot) < 0) return false;
+    const cos = cosOf(S);
+    if (id) { const it = COS_BY_ID[id]; if (!it || it.slot !== slot || !cosUnlocked(S, it)) return false; }
+    const s = Object.assign({}, cos.skin[race] || {});
+    if (id) s[slot] = id; else delete s[slot];
+    if (Object.keys(s).length) cos.skin[race] = s; else delete cos.skin[race];
+    return true;
+  }
+  function lookOf(S, race) {
+    const cos = cosOf(S), s = cos.skin[race] || {}, out = {};
+    for (const sl of COS_SLOTS) if (s[sl] && cosUnlocked(S, s[sl])) out[sl] = COS_BY_ID[s[sl]];
+    return out;
+  }
+  function setFxTheme(S, theme, race) {
+    if (theme && FX_THEMES.indexOf(theme) < 0) return false;
+    if (theme && !cosUnlocked(S, 'fx_' + theme)) return false;
+    const cos = cosOf(S);
+    if (race) { if (!RACES[race]) return false; if (theme) cos.fxRace[race] = theme; else delete cos.fxRace[race]; }
+    else cos.fx = theme || 'classic';
+    return true;
+  }
+  function fxThemeOf(S, race) {
+    const cos = cosOf(S);
+    const r = race && cos.fxRace[race];
+    if (r && cosUnlocked(S, 'fx_' + r)) return r;
+    return cosUnlocked(S, 'fx_' + cos.fx) ? cos.fx : 'classic';
+  }
+  function seasonFor(d) {
+    const m = d.getMonth(), day = d.getDate();
+    if ((m === 11 && day >= 18) || (m === 0 && day <= 6)) return 'festival';
+    if (m === 11 || m <= 1) return 'winter';
+    if (m <= 4) return 'spring';
+    if (m <= 7) return 'festival';
+    return 'autumn';
+  }
+  function setDecor(S, mapId, v) {
+    if (!MAPS[mapId]) return false;
+    if (v !== 'auto' && v !== 'none' && (SEASONS.indexOf(v) < 0 || !cosUnlocked(S, 'decor_' + v))) return false;
+    const cos = cosOf(S);
+    if (v === 'auto') delete cos.decor[mapId]; else cos.decor[mapId] = v;
+    return true;
+  }
+  function decorPick(S, mapId) { return cosOf(S).decor[mapId] || 'auto'; }
+  function decorOf(S, mapId, date) {
+    const v = decorPick(S, mapId);
+    if (v === 'none') return '';
+    const s = v === 'auto' ? seasonFor(date || new Date()) : v;
+    return cosUnlocked(S, 'decor_' + s) ? s : '';
+  }
+  function ponyLevel(t) { let n = (t.infD | 0) + (t.infR | 0); for (const v of t.paths || []) n += v | 0; return n; }
+  function titleOf(t) {
+    if (!t) return null;
+    const lv = ponyLevel(t), k = t.kills | 0;
+    for (const T of TITLES) if (k >= T.kills || lv >= T.lv) return T;
+    return null;
+  }
+  function titleNext(t) {
+    const cur = titleOf(t), i = cur ? TITLES.indexOf(cur) : TITLES.length;
+    return i > 0 ? TITLES[i - 1] : null;
+  }
+  function ponyName(t) { return t && t.name ? t.name : ''; }
+  function renameTower(S, id, name) {
+    const t = S.towers.find(q => q.id === id);
+    if (!t) return false;
+    const n = cleanName(name).slice(0, 18);
+    if (n) t.name = n; else delete t.name;
+    return true;
+  }
+  function suggestName(S, t) {
+    const used = {};
+    for (const q of S.towers) if (q.name) used[q.name] = 1;
+    const rng = mulberry(((t ? t.id : 1) * 2654435761 + (S.towers.length * 97)) >>> 0);
+    for (let i = 0; i < 12; i++) { const n = PONY_NAMES[Math.floor(rng() * PONY_NAMES.length)]; if (!used[n]) return n; }
+    return PONY_NAMES[Math.floor(rng() * PONY_NAMES.length)];
+  }
+  const LORE = {
+    e: {
+      basic: 'The first DNBs anyone remembers. They wander out of the dusk in loose lines, slow and stubborn, and never stop walking until something stops them.',
+      fast: 'Skitters are what happens when a Shambler forgets to be patient. Thin legs, no armour and a habit of slipping between ponies who blink.',
+      tanky: 'A Brute is mostly hide. Scholars argue whether they are old Shamblers that never fell or simply big ones; either way, they take a long time to stop.',
+      flying: 'Duskwings ride the evening thermals over the road. Ground ponies can only watch them pass, which the Duskwings seem to enjoy.',
+      magical: 'Hexlings hum with stolen moonlight. Ordinary hooves pass through the glow, so only spellcraft can unravel them.',
+      swarm: 'A Gnat alone is a nuisance. Five of them together are a cloud that slips past single shots and nibbles at the edge of every herd.',
+      healer: 'Menders walk in the middle of a column and pulse with sickly green light, knitting their kin back together. Herd tacticians always mark them first.',
+      splitter: 'Splitters are brittle, but not in a good way. Crack one and three smaller pieces scramble off from exactly where it broke.',
+      mini: 'Splitlings are fragments of a Splitter, still remembering the road ahead. They are quick and frail and want only to reach the gate.',
+      stealth: 'Lurkers fold the shadows around themselves. Nopony can aim at what they cannot see, so bat ears and crystal light are the only cure.',
+      burrower: 'Tunnelers dive under soft stretches of road and surface further on, shaking off dirt and whatever was aimed at them.',
+      shield: 'A Bulwark carries a dome of pale light over its neighbours. Pop the dome or drop the Bulwark and the column is bare again.',
+      armored: 'Ironhides wear plates scavenged from fallen castles. Small hits ring off harmlessly, so heavy hooves and sharp crits do the real work.',
+    },
+    p: {
+      earth: 'Earth ponies are the backbone of every herd: patient, strong and rooted to the land. Their stomps shake the road, and the ground itself seems to answer them.',
+      unicorn: 'Unicorns read the night sky like a book and turn it into bolts of arcane force. They are the only ponies born able to hurt magical DNBs.',
+      pegasus: 'Pegasi keep watch from the clouds, quick and sharp-eyed. Whatever flies over the road has to get past them first.',
+      bat: 'Bat ponies hunt by ear, darting from the dark on leathery wings. Fast DNBs and hidden ones are their favourite prey.',
+      crystal: 'Crystal ponies glow with a steady inner light that steadies the herd around them. They buff, reveal and, with enough training, wall off the road.',
+    },
+    h: {
+      nova: 'A scholar who chased one too many falling stars and caught it. Nova reads the battlefield like a star chart and lights the way for every pony near her.',
+      ironmane: 'Ironmane has stood at more gates than anypony can count. He never retreats, and the ponies who fight beside him never quite feel tired.',
+      skyflick: 'Skyflick was the youngest flier ever to win the Cloudrace, and she has not slowed down since. Her gusts scatter whole columns of DNBs.',
+      duskfang: 'Duskfang speaks rarely and hunts often. Under the blood moon, his wings are the last sound a straggling DNB hears.',
+    },
+  };
+
   function newState(mapId) {
     const map = getMap(mapId);
     const S = {
@@ -1205,10 +1440,10 @@
       stats: newStats(),
       settings: Object.assign({}, DEFAULT_SETTINGS),
       sfx: { hit: 0, crit: 0, kill: 0, leak: 0 },
-      codex: { e: {}, b: {} },
+      codex: { e: {}, b: {}, p: {} },
       stars: {}, moon: 0, moonTotal: 0, research: {}, presets: {}, heroUnlocks: { nova: 1 },
       slots: {}, rules: newRules(), lastSeen: 0,
-      ach: {}, feats: {}, bonus: newBonus(), daily: newDaily(), chalDone: {}, chalBest: {}, rp: 0, tokens: {}, chal: null, cm: null,
+      ach: {}, feats: {}, bonus: newBonus(), daily: newDaily(), chalDone: {}, chalBest: {}, rp: 0, tokens: {}, cos: newCos(), chal: null, cm: null,
     };
     Object.assign(S, newBoard(map, S));
     return S;
@@ -1287,6 +1522,7 @@
     S.towers.push(t);
     S.buffsDirty = true;
     if (S.towers.length >= 25) feat(S, 'r_army');
+    if (S.codex) { if (!S.codex.p) S.codex.p = {}; if (!S.codex.p[race]) { S.codex.p[race] = 1; emit(S, 'codex', { kind: 'p', id: race, name: RACES[race].name }); } }
     return t;
   }
 
@@ -1753,7 +1989,7 @@
     if (!S.chal && st.mapKills) st.mapKills[run.map.id] = (st.mapKills[run.map.id] || 0) + 1;
     if (e.boss && !e.splitDone) { const R = run.route[e.path] || run.route[0]; if (R && e.d > R.len - 90) feat(S, 'x_gate'); }
     S.sfx.kill++;
-    if (t) { t.kills++; t.wKills++; }
+    if (t) { t.kills++; t.wKills++; const kb = t.isHero ? st.heroKills : st.raceKills, kk = t.isHero ? t.id : t.race; if (kb && kk) kb[kk] = (kb[kk] || 0) + 1; }
     heroXp(S, run, e, t);
     fx(S, { k: 'puff', x: e.x, y: e.y, r: e.r, c: e.color, life: 0.45 });
     fx(S, { k: 'burst', x: e.x, y: e.y, r: e.r, c: e.color, c2: e.dark, seed: e.id * 7 + run.n, life: e.boss ? 0.9 : 0.5, big: e.boss });
@@ -1829,7 +2065,7 @@
         if (stun && e.alive) stunE(e, e.boss ? 0.3 : stun);
       }
       t.anim = 0.25;
-      fx(S, { k: 'stomp', x: t.x, y: t.y, r: s.range, c: stun ? '#ffd27a' : (s.has.leyrupture ? '#b48bff' : '#c9a36b'), life: 0.35 });
+      fx(S, { k: 'stomp', x: t.x, y: t.y, r: s.range, c: stun ? '#ffd27a' : (s.has.leyrupture ? '#b48bff' : '#c9a36b'), life: 0.35, rc: t.race });
       return;
     }
     const first = pick(targets, t.mode, t);
@@ -1862,23 +2098,23 @@
       const d = p.dmg;
       hitEnemy(S, run, t, s, e, d);
       if (s.splash > 0) {
-        fx(S, { k: 'ring', x: p.x, y: p.y, r: s.splash, c: '#d6b8ff', life: 0.3 });
+        fx(S, { k: 'ring', x: p.x, y: p.y, r: s.splash, c: '#d6b8ff', life: 0.3, rc: t.race });
         for (const o of run.enemies) if (o !== e && canHit(s, o) && dist2(o, p) <= s.splash * s.splash) hitEnemy(S, run, t, s, o, d * 0.6);
       }
       if (s.has.prismburst) {
         const near = run.enemies.filter(o => o !== e && canHit(s, o) && dist2(o, p) <= 110 * 110).sort((a, b) => dist2(a, p) - dist2(b, p)).slice(0, 4);
-        for (const o of near) { fx(S, { k: 'zap', x1: p.x, y1: p.y, x2: o.x, y2: o.y, c: '#ffc8f4', life: 0.2 }); hitEnemy(S, run, t, s, o, d * 0.5); }
+        for (const o of near) { fx(S, { k: 'zap', x1: p.x, y1: p.y, x2: o.x, y2: o.y, c: '#ffc8f4', life: 0.2, rc: t.race }); hitEnemy(S, run, t, s, o, d * 0.5); }
       }
       if (s.has.aurora && e.flying) {
         const fl = run.enemies.filter(o => o !== e && o.alive && o.flying && canHit(s, o) && dist2(o, p) <= 160 * 160).slice(0, 2);
-        for (const o of fl) { fx(S, { k: 'zap', x1: p.x, y1: p.y, x2: o.x, y2: o.y, c: '#7dffcf', life: 0.25 }); hitEnemy(S, run, t, s, o, d); }
+        for (const o of fl) { fx(S, { k: 'zap', x1: p.x, y1: p.y, x2: o.x, y2: o.y, c: '#7dffcf', life: 0.25, rc: t.race }); hitEnemy(S, run, t, s, o, d); }
       }
     } else if (t.race === 'crystal') {
       const d = p.dmg;
       if (s.has.dispelprism && e.magical) e.dispelT = Math.max(e.dispelT, 4);
       hitEnemy(S, run, t, s, e, d);
       if (s.splash > 0) {
-        fx(S, { k: 'shards', x: p.x, y: p.y, r: s.splash, c: '#9fe6ff', seed: e.id, life: 0.35 });
+        fx(S, { k: 'shards', x: p.x, y: p.y, r: s.splash, c: '#9fe6ff', seed: e.id, life: 0.35, rc: t.race });
         for (const o of run.enemies) {
           if (o === e || dist2(o, p) > s.splash * s.splash) continue;
           if (s.has.dispelprism && o.magical && o.alive) o.dispelT = Math.max(o.dispelT, 4);
@@ -1887,7 +2123,7 @@
       }
     } else if (t.race === 'bat') {
       hitEnemy(S, run, t, s, e, p.dmg, p.crit);
-      if (p.crit || p.kind === 'swarm') fx(S, { k: 'bite', x: e.x, y: e.y, c: p.crit ? '#ff3a5c' : '#c9b8ff', life: 0.25 });
+      if (p.crit || p.kind === 'swarm') fx(S, { k: 'bite', x: e.x, y: e.y, c: p.crit ? '#ff3a5c' : '#c9b8ff', life: 0.25, rc: t.race });
     } else {
       hitEnemy(S, run, t, s, e, p.dmg);
       if (s.chain > 0) {
@@ -1898,7 +2134,7 @@
           for (const o of run.enemies) { if (hit.has(o) || !canHit(s, o)) continue; const dd = dist2(o, from); if (dd < bd) { bd = dd; best = o; } }
           if (!best) break;
           hit.add(best);
-          fx(S, { k: 'zap', x1: from.x, y1: from.y, x2: best.x, y2: best.y, c: '#bfe8ff', life: 0.18 });
+          fx(S, { k: 'zap', x1: from.x, y1: from.y, x2: best.x, y2: best.y, c: '#bfe8ff', life: 0.18, rc: t.race });
           hitEnemy(S, run, t, s, best, p.dmg * 0.6);
           from = { x: best.x, y: best.y };
         }
@@ -3299,7 +3535,7 @@
     return out;
   }
 
-  function serTower(t) { return { id: t.id, race: t.race, x: t.x, y: t.y, spent: t.spent, paths: t.paths, infD: t.infD, infR: t.infR, mode: t.mode, kills: t.kills, dmg: t.dmg }; }
+  function serTower(t) { return { id: t.id, race: t.race, x: t.x, y: t.y, spent: t.spent, paths: t.paths, infD: t.infD, infR: t.infR, mode: t.mode, kills: t.kills, dmg: t.dmg, name: t.name || undefined }; }
   function serialize(S) {
     const boards = {};
     for (const id of MAP_IDS) {
@@ -3312,7 +3548,7 @@
       stats: S.stats, settings: S.settings, boards, codex: S.codex,
       stars: S.stars, moon: S.moon, moonTotal: S.moonTotal, research: S.research, presets: S.presets, heroUnlocks: S.heroUnlocks,
       slots: S.slots, rules: S.rules, lastSeen: S.lastSeen || 0,
-      ach: S.ach, feats: S.feats, daily: S.daily, chalDone: S.chalDone, chalBest: S.chalBest, rp: S.rp || 0, tokens: S.tokens,
+      ach: S.ach, feats: S.feats, daily: S.daily, chalDone: S.chalDone, chalBest: S.chalBest, rp: S.rp || 0, tokens: S.tokens, cos: S.cos,
     });
   }
 
@@ -3414,10 +3650,23 @@
       o.ver = 9;
       return o;
     },
+    9(o) {
+      o.cos = newCos();
+      const c = o.codex && typeof o.codex === 'object' ? o.codex : (o.codex = { e: {}, b: {} });
+      const pc = {};
+      const bd = o.boards && typeof o.boards === 'object' ? o.boards : {};
+      for (const id in bd) { const b = bd[id]; if (b && Array.isArray(b.towers)) for (const t of b.towers) if (t && RACES[t.race]) pc[t.race] = 1; }
+      const rd = o.stats && o.stats.raceDmg;
+      if (rd && typeof rd === 'object') for (const k in rd) if (RACES[k] && rd[k] > 0) pc[k] = 1;
+      c.p = pc;
+      o.ver = 10;
+      return o;
+    },
   };
   function cleanCodex(c) {
-    const out = { e: {}, b: {} };
+    const out = { e: {}, b: {}, p: {} };
     if (!c || typeof c !== 'object') return out;
+    if (c.p && typeof c.p === 'object') for (const k in c.p) if (RACES[k] && c.p[k]) out.p[k] = 1;
     if (c.e && typeof c.e === 'object') for (const k in c.e) if (ENEMIES[k] && k !== 'boss' && c.e[k]) out.e[k] = 1;
     if (c.b && typeof c.b === 'object') for (const k in c.b) if (BOSS_BY_ID[k] && c.b[k]) out.b[k] = 1;
     return out;
@@ -3516,6 +3765,7 @@
       t.id = r.id | 0; t.spent = +r.spent || 0; t.paths = (r.paths || [0, 0, 0, 0, 0]).slice(0, 5).map(v => Math.max(0, Math.min(10, v | 0)));
       while (t.paths.length < 5) t.paths.push(0);
       t.infD = r.infD | 0; t.infR = r.infR | 0; t.mode = r.mode || 'first'; t.kills = r.kills | 0; t.dmg = +r.dmg || 0;
+      if (typeof r.name === 'string') { const nm = cleanName(r.name).slice(0, 18); if (nm) t.name = nm; }
       t.face = faceRoad(map, t.x, t.y); t.light = lightAt(map, t.x, t.y); t.pm = priceOf(map);
       b.towers.push(t);
     }
@@ -3547,6 +3797,7 @@
     S.chalBest = cleanChalBest(o.chalBest);
     S.rp = Math.max(0, Math.floor(+o.rp || 0));
     S.tokens = cleanFlags(o.tokens, TOKENS);
+    S.cos = cleanCos(o.cos);
     recalcBonus(S);
     setNumFormat(S.settings.numFmt);
     const src = o.boards && typeof o.boards === 'object' ? o.boards : {};
@@ -3622,6 +3873,8 @@
     BONUS_KEYS, BONUS_NAMES, newBonus, newStats, cleanStats, TOKENS, profileOf, feat, ACH, ACH_BY_ID, ACH_CATS, bonusText, pctText, recalcBonus, checkAch, achList, bestCleared,
     CHAL_ECO, CHAL_MODS, CHAL_IDS, DAILY_MODS, CHAL_CLASH, CHALLENGES, CHAL_BY_ID, DAILY_BANDS, chalClash, chalWeight, chalHpMul, dayIndex, dayLabel, dailyDef, dailyMoon, dailyStreak, modText, modDesc, rewardText,
     chalRaces, chalHas, chalBlock, startChallenge, quitChallenge, chalFinish, chalScore, chalInfo, chalStartCash, tickPlay, statsSummary, newDaily,
+    COS_SLOTS, COS_KINDS, COSMETICS, COS_BY_ID, FX_THEMES, SEASONS, TITLES, PONY_NAMES, LORE, newCos, cleanCos, cosOf, totalStars, cosUnlocked, cosHow, cosList, cosNew, markCosSeen, buyCos,
+    setSkin, lookOf, setFxTheme, fxThemeOf, seasonFor, setDecor, decorPick, decorOf, ponyLevel, titleOf, titleNext, ponyName, renameTower, suggestName,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.NDCore = API;
