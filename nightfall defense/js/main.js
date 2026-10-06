@@ -191,6 +191,7 @@
     if (k === 'Shift') { ui.showAll = true; return; }
     if (!$('setModal').hidden) { if (k === 'Escape') closeSettings(); return; }
     if (!$('mapModal').hidden) { if (k === 'Escape') closeMaps(); return; }
+    if (!$('codexModal').hidden) { if (k === 'Escape') closeCodex(); return; }
     const t = selTower();
     if (k === 'Escape') { if (ui.placing) setPlacing(null); else { ui.selId = 0; ui.infoKey = ''; } }
     else if (/^[1-9]$/.test(k) && C.RACE_IDS[+k - 1]) setPlacing(C.RACE_IDS[+k - 1]);
@@ -198,6 +199,7 @@
     else if (k === 'p') togglePause();
     else if (k === 'f') cycleSpeed();
     else if (k === 'm') setSound(!S.settings.sound);
+    else if (k === 'c') openCodex();
     else if (k === 'u') {
       const h = ui.hoverId && S.towers.find(q => q.id === ui.hoverId);
       if (h) { ui.selId = h.id; ui.placing = null; updateHint(); ui.infoKey = ''; refreshInfo(); }
@@ -279,24 +281,33 @@
   }
   $('resetBtn').addEventListener('click', resetAll);
 
-  const TYPE_ORDER = ['basic', 'fast', 'tanky', 'flying', 'magical', 'boss'];
-  const TYPE_COL = { basic: '#a07a52', fast: '#e3c15b', tanky: '#8a6a4a', flying: '#7fc8ff', magical: '#c08bff', boss: '#e35b6a' };
-  function previewHtml(spec, compact) {
+  const TYPE_ORDER = ['basic', 'fast', 'tanky', 'flying', 'magical', 'swarm', 'healer', 'splitter', 'stealth', 'burrower', 'shield', 'armored', 'boss'];
+  const TYPE_COL = {
+    basic: '#a07a52', fast: '#e3c15b', tanky: '#8a6a4a', flying: '#7fc8ff', magical: '#c08bff', boss: '#e35b6a',
+    swarm: '#d8c08a', healer: '#9fe08a', splitter: '#e0a8c8', mini: '#e0a8c8', stealth: '#b8c0e0', burrower: '#c09060', shield: '#8fc0ff', armored: '#c8c0b0',
+  };
+  function mechTip(kind, id) {
+    return C.mechOf(kind, id).map(k => { const M = C.MECH[k]; return M ? M.tag + ': ' + M.weak + ' Counters: ' + M.counters.join(', ') + '.' : ''; }).filter(Boolean).join('\n');
+  }
+  function previewHtml(spec, compact, n, map) {
     let h = '<div class="mix">';
     for (const k of TYPE_ORDER) {
       const c = spec.counts[k];
       if (!c) continue;
       const d = C.ENEMIES[k];
       const name = k === 'boss' && spec.boss ? spec.boss.name : d.short;
-      const tip = (k === 'boss' && spec.boss ? spec.boss.name + '\n' + spec.boss.desc : d.name + '\n' + d.trait);
+      let tip = (k === 'boss' && spec.boss ? spec.boss.name + '\n' + spec.boss.desc : d.name + '\n' + d.trait);
+      if (d.plate && n) tip += '\nArmor ' + C.fmt(C.armorFor(k, n, map)) + ' per hit';
+      if (k !== 'boss') tip += '\n' + mechTip('e', k);
       h += '<span class="mx" data-tip="' + esc(tip) + '"><canvas data-dnb="' + k + '" width="48" height="48"></canvas><b>' + c + '</b>' + (compact ? '' : '<span>' + esc(name) + '</span>') + '</span>';
     }
+    if (spec.counts.elite) h += '<span class="mx elite" data-tip="' + esc('Elite DNBs\n' + C.MECH.elite.weak + (n >= C.WAVEGEN.elite.combo ? ' From wave ' + C.WAVEGEN.elite.combo + ' each elite also carries armor, a bubble or stealth.' : '')) + '"><i class="star">&#9733;</i><b>' + spec.counts.elite + '</b>' + (compact ? '' : '<span>Elite</span>') + '</span>';
     h += '</div>';
     if (!compact) {
       h += '<div class="tl" aria-hidden="true">';
       const dur = Math.max(1, spec.duration);
-      for (const e of spec.list) h += '<i style="left:' + (100 * e.t / dur).toFixed(1) + '%;background:' + TYPE_COL[e.type] + (e.type === 'boss' ? ';width:6px;height:12px;top:-2px' : '') + '"></i>';
-      h += '</div><div class="tlk"><span>0s</span><span>' + (spec.theme && spec.theme !== 'boss' ? esc(C.ENEMIES[spec.theme].short) + ' swarm' : 'Mixed wave') + '</span><span>' + Math.round(spec.duration) + 's</span></div>';
+      for (const e of spec.list) h += '<i style="left:' + (100 * e.t / dur).toFixed(1) + '%;background:' + (TYPE_COL[e.type] || '#a07a52') + (e.type === 'boss' ? ';width:6px;height:12px;top:-2px' : e.elite ? ';box-shadow:0 0 0 1px #ffd66e' : '') + '"></i>';
+      h += '</div><div class="tlk"><span>0s</span><span>' + (spec.themeName ? esc(spec.themeName) : 'Mixed wave') + '</span><span>' + Math.round(spec.duration) + 's</span></div>';
     }
     return h;
   }
@@ -313,7 +324,12 @@
     const bMag = bt === 'magical' || bt === 'phase' || bt === 'mother' || !!tk.magic || !!tk.phase;
     if ((spec.counts.flying || bFly) && !fly) out.push('No pony can hit flyers yet. Add a Pegasus or a Bat Pony.');
     if ((spec.counts.magical || bMag) && !mag) out.push('No pony can harm magical DNBs yet. Add a Unicorn, or a Crystal Pony on the Spellshard path.');
-    if (spec.counts.stealth && !S.towers.some(t => C.stats(t).detects)) out.push('Stealthy DNBs ahead. Only ponies that detect them can aim: a Bat Pony on Echolocation, or a Crystal Pony with Dawnstone.');
+    const tkB = spec.boss && spec.boss.tricks ? spec.boss.tricks : {};
+    const hasCloak = spec.counts.stealth || tkB.cloak || (tkB.stages && tkB.stages.some(s => s.cloak));
+    const sts = S.towers.map(t => C.stats(t));
+    if (hasCloak && !sts.some(s => s.detects || s.revealR > 0)) out.push('Stealthy DNBs ahead. Only ponies that detect them can aim: a Bat Pony on Echolocation, a Unicorn on Skyward Sight 3+, or a Crystal Pony whose glow reveals them.');
+    if ((spec.counts.armored || tkB.plate) && !sts.some(s => s.pierce > 0)) out.push('Armored DNBs ahead. Small hits barely scratch them. Stonehoof earth ponies and Arcanist unicorns pierce armor.');
+    if ((spec.counts.swarm || 0) >= 15 && !sts.some(s => s.splash > 0 || s.swarmMul > 1)) out.push('Big swarms ahead. Splash and multi-shot ponies (Prismatic, Geode Burst, Feather Volley) clear them fast.');
     const map = C.mapOf(S);
     if (map.wind && spec.counts.flying) out.push('Wind gusts on this map push flyers back or sideways.');
     return out;
@@ -336,14 +352,17 @@
     $('wTop').disabled = !!S.run || S.sel >= top;
     const map = C.mapOf(S);
     const spec = C.waveSpec(n, map);
-    let html = previewHtml(spec, false);
-    if (spec.boss) html += '<div class="bosscard"><canvas data-dnb="boss" width="64" height="64"></canvas><div><div class="bn">' + esc(spec.boss.name) + '</div><div class="bd">' + esc(spec.boss.desc) + '</div></div></div>';
+    let html = previewHtml(spec, false, n, map);
+    if (spec.boss) {
+      const tags = C.mechOf('b', spec.boss.id).map(k => C.MECH[k] ? '<span class="tag" data-tip="' + esc(C.MECH[k].weak + ' Counters: ' + C.MECH[k].counters.join(', ') + '.') + '">' + esc(C.MECH[k].tag) + '</span>' : '').join('');
+      html += '<div class="bosscard"><canvas data-dnb="boss" width="64" height="64"></canvas><div><div class="bn">' + esc(spec.boss.name) + '</div><div class="bd">' + esc(spec.boss.desc) + '</div><div class="tags">' + tags + '</div></div></div>';
+    }
     for (const w of warnings(spec)) html += '<div class="warn">' + esc(w) + '</div>';
     if (fresh) html += '<div>First clear bonus: <b style="color:var(--gold)">+' + C.fmt(C.clearBonus(n, map)) + '</b></div>';
     if (S.run) {
       html += '<div>In progress: <b>' + left + '</b> DNBs left</div>';
       const nx = S.run.n + 1;
-      if (nx <= C.MAX_WAVE && S.run.fresh) html += '<div class="upnext"><span>Up next: wave ' + nx + '</span>' + previewHtml(C.waveSpec(nx, map), true) + '</div>';
+      if (nx <= C.MAX_WAVE && S.run.fresh) html += '<div class="upnext"><span>Up next: wave ' + nx + '</span>' + previewHtml(C.waveSpec(nx, map), true, nx, map) + '</div>';
     }
     const box = $('wInfo');
     box.innerHTML = html;
@@ -617,6 +636,124 @@
     if (card) chooseMap(card.dataset.map);
   });
 
+  const codexUi = { tab: 'e', pick: null, toastT: 0 };
+  function codexEntries() { const L = C.codexList(); return codexUi.tab === 'b' ? L.b : L.e; }
+  function codexKnown(it) { const box = it.kind === 'b' ? S.codex.b : S.codex.e; return !!box[it.id]; }
+  function codexArt(c, it, known, now) {
+    R.dnbIcon(c, it.kind === 'b' ? 'boss' : it.id, it.kind === 'b' ? it.def : null, now || 0);
+    if (known) return;
+    const g = c.getContext('2d');
+    g.save(); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#2a2640'; g.fillRect(0, 0, c.width, c.height); g.restore();
+  }
+  function codexWhere(it) {
+    if (it.kind === 'b') return C.MAPS[it.map].name + ', wave ' + it.wave;
+    const out = [];
+    for (const id of C.MAP_IDS) {
+      const w = it.id === 'mini' ? C.firstSeen('splitter', id) : C.firstSeen(it.id, id);
+      if (w) out.push(C.MAPS[id].name + ' ' + w);
+    }
+    return out.join(' · ');
+  }
+  function codexDetail(it) {
+    const box = $('codexDetail');
+    if (!it) { box.innerHTML = '<p class="hint">Pick an entry to read about it.</p>'; return; }
+    const known = codexKnown(it), d = it.def;
+    let h = '<div class="cdtop"><canvas id="codexBig" width="160" height="160"></canvas><div><h3>' + (known ? esc(d.name) : '???') + '</h3>';
+    h += '<div class="cdsub">' + (it.kind === 'b' ? 'Boss · ' : 'DNB · ') + esc(codexWhere(it)) + '</div></div></div>';
+    if (!known) {
+      h += '<p class="hint">Not seen yet. Meet it in a wave to unlock this entry.</p>';
+      box.innerHTML = h;
+      codexArt($('codexBig'), it, false, 0);
+      return;
+    }
+    const E = C.ENEMIES[it.kind === 'b' ? 'boss' : it.id];
+    const map = C.mapOf(S), n = Math.max(1, S.sel);
+    const stats = [];
+    if (it.kind === 'b') {
+      stats.push(['HP', 'x' + (E.hp * (d.hpMul || 1)).toFixed(1) + ' of a Shambler, +1% per wave']);
+      stats.push(['Leak cost', (d.tricks && d.tricks.twin ? 3 : 5) + ' lives']);
+      if (d.tricks && d.tricks.plate) stats.push(['Armor', Math.round(d.tricks.plate * 100) + '% of a Shambler\'s HP per hit']);
+    } else {
+      stats.push(['HP', 'x' + E.hp + ' of a Shambler']);
+      stats.push(['Speed', String(E.speed)]);
+      stats.push(['Bounty', 'x' + E.cash]);
+      if (E.plate) stats.push(['Armor', C.fmt(C.armorFor(it.id, n, map)) + ' per hit at wave ' + n]);
+      if (E.swarm) stats.push(['Group', '5 at a time']);
+    }
+    h += '<p class="cddesc">' + esc(it.kind === 'b' ? d.desc : E.trait) + '</p><dl class="cdstats">' + stats.map(s => '<dt>' + esc(s[0]) + '</dt><dd>' + esc(s[1]) + '</dd>').join('') + '</dl>';
+    for (const k of it.mech) {
+      const M = C.MECH[k];
+      if (!M) continue;
+      h += '<div class="cdmech"><span class="tag">' + esc(M.tag) + '</span><div><div>' + esc(M.weak) + '</div><div class="cdc">Counter ponies: ' + esc(M.counters.join(', ')) + '</div></div></div>';
+    }
+    box.innerHTML = h;
+    codexArt($('codexBig'), it, true, 0);
+  }
+  function buildCodex() {
+    const list = codexEntries();
+    const all = C.codexList();
+    const ce = all.e.filter(codexKnown).length, cb = all.b.filter(codexKnown).length;
+    $('codexCount').textContent = ce + ' / ' + all.e.length + ' DNBs · ' + cb + ' / ' + all.b.length + ' bosses';
+    for (const b of document.querySelectorAll('#codexTabs [data-tab]')) { const on = b.dataset.tab === codexUi.tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
+    const grid = $('codexGrid');
+    grid.innerHTML = '';
+    let lastMap = '';
+    for (const it of list) {
+      if (it.kind === 'b' && it.map !== lastMap) {
+        lastMap = it.map;
+        const hd = document.createElement('div');
+        hd.className = 'cxmap'; hd.textContent = C.MAPS[it.map].name;
+        grid.appendChild(hd);
+      }
+      const known = codexKnown(it);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'cx' + (known ? '' : ' locked') + (codexUi.pick === it.kind + it.id ? ' on' : '');
+      b.dataset.cx = it.kind + ':' + it.id;
+      const c = document.createElement('canvas');
+      c.width = 72; c.height = 72;
+      const nm = document.createElement('span');
+      nm.textContent = known ? (it.kind === 'b' ? it.def.name : it.def.short) : '???';
+      b.append(c, nm);
+      grid.appendChild(b);
+      codexArt(c, it, known, 0);
+    }
+    const cur = list.find(it => codexUi.pick === it.kind + it.id) || null;
+    codexDetail(cur);
+  }
+  function openCodex(tab) {
+    lastFocus = document.activeElement;
+    if (tab) codexUi.tab = tab;
+    $('codexBtn').classList.remove('pulse');
+    buildCodex();
+    $('codexModal').hidden = false;
+    $('codexClose').focus();
+  }
+  function closeCodex() {
+    if ($('codexModal').hidden) return;
+    $('codexModal').hidden = true;
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function codexToast(e) {
+    const el = $('codexToast');
+    el.textContent = 'Codex: ' + e.name + (e.kind === 'b' ? ' (boss)' : '') + ' added';
+    el.className = 'codextoast show';
+    $('codexBtn').classList.add('pulse');
+    A.play('codex');
+    clearTimeout(codexUi.toastT);
+    codexUi.toastT = setTimeout(() => { el.className = 'codextoast'; }, 2800);
+    if (!$('codexModal').hidden) buildCodex();
+  }
+  $('codexBtn').addEventListener('click', () => openCodex());
+  $('codexClose').addEventListener('click', closeCodex);
+  $('codexModal').addEventListener('click', ev => {
+    if (ev.target === $('codexModal')) { closeCodex(); return; }
+    const tb = ev.target.closest('[data-tab]');
+    if (tb) { codexUi.tab = tb.dataset.tab; codexUi.pick = null; buildCodex(); return; }
+    const cx = ev.target.closest('[data-cx]');
+    if (cx) { const [k, id] = cx.dataset.cx.split(':'); codexUi.pick = k + id; buildCodex(); const d = $('codexDetail'); if (d.scrollIntoView && window.innerWidth < 700) d.scrollIntoView({ block: 'nearest' }); }
+  });
+
   const tip = $('tip');
   function showTip(el, sticky) {
     const text = el.dataset.tip;
@@ -681,6 +818,7 @@
       } else if (e.type === 'enrage') {
         banner('The stragglers are enraged and immune to control', 'bad');
       } else if (e.type === 'gust') { A.play('wind'); continue; }
+      else if (e.type === 'codex') { codexToast(e); continue; }
       else if (e.type === 'map') resize();
       else if (e.type === 'leak') continue;
       ui.waveKey = ''; ui.infoKey = '';
@@ -730,5 +868,5 @@
   window.addEventListener('pagehide', writeSave);
   $('saveNote').textContent = 'Progress saves automatically in this browser.';
   requestAnimationFrame(frame);
-  window.__nd = { get S() { return S; }, ui, save: writeSave, audio: A, setSpeed, togglePause, refresh: dirty, openMaps, closeMaps, chooseMap };
+  window.__nd = { get S() { return S; }, ui, save: writeSave, audio: A, setSpeed, togglePause, refresh: dirty, openMaps, closeMaps, chooseMap, openCodex, closeCodex };
 })();

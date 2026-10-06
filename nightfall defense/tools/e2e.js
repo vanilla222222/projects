@@ -330,7 +330,7 @@ async function fastForward(page, maxSeconds) {
     await page.waitForTimeout(400);
     const s2 = await page.evaluate(() => ({ s: __nd.S.settings, ver: JSON.parse(localStorage.getItem('nightfall-defense-save-v1')).ver, radio: document.querySelector('input[name="numFmt"][value="sci"]').checked }));
     ok(!s2.s.shake && !s2.s.dmgNums && s2.s.numFmt === 'sci' && !s2.s.sound && s2.radio, 'settings survived reload ' + JSON.stringify(s2));
-    ok(s2.ver === 4, 'save has ver 4, got ' + s2.ver);
+    ok(s2.ver === 5, 'save has ver 5, got ' + s2.ver);
     await page.click('#setBtn');
     await page.click('#setReset');
     await page.keyboard.press('Escape');
@@ -356,7 +356,7 @@ async function fastForward(page, maxSeconds) {
     ok(m.cash === 777 && m.cleared === 12 && m.n === 2 && m.p === '2,0,0,1,0' && m.mode === 'strong' && m.dmg === 0 && m.map === 'moonlit' && m.set === 1, 'migrated ' + JSON.stringify(m));
     await page.evaluate(() => __nd.save());
     const ver = await page.evaluate(() => { const o = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return o.ver + ':' + ('v' in o); });
-    ok(ver === '4:false', 'resaved as ver 4, got ' + ver);
+    ok(ver === '5:false', 'resaved as ver 5, got ' + ver);
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
@@ -377,7 +377,7 @@ async function fastForward(page, maxSeconds) {
     ok(m.woods && !m.caverns, 'wave 57 on map 1 unlocks map 2 only');
     await page.evaluate(() => __nd.save());
     const o = await page.evaluate(() => JSON.parse(localStorage.getItem('nightfall-defense-save-v1')));
-    ok(o.ver === 4 && o.boards && o.boards.moonlit && o.boards.moonlit.cleared === 57 && o.boards.moonlit.towers.length === 1 && !('towers' in o), 'ver 4 layout ' + JSON.stringify(Object.keys(o)));
+    ok(o.ver === 5 && o.codex && o.boards && o.boards.moonlit && o.boards.moonlit.cleared === 57 && o.boards.moonlit.towers.length === 1 && !('towers' in o), 'ver 5 layout ' + JSON.stringify(Object.keys(o)));
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
@@ -503,6 +503,122 @@ async function fastForward(page, maxSeconds) {
     ok(out.caverns.dark > 0 && out.caverns.lit > 0 && out.moonlit.dark === 0, 'crystal light splits caverns ponies ' + JSON.stringify(out.caverns));
     ok(out.cliffs.bridges >= 1 && out.cliffs.warn > 0 && out.cliffs.gust > 0, 'cliffs bridge and gusts ' + JSON.stringify(out.cliffs));
     ok(await page.evaluate(() => NDCore.MAP_IDS.every(id => NDCore.mapUnlocked(__nd.S, id))), 'all maps unlocked in a chain');
+    ok(!errors.length, 'console errors: ' + errors.join(' | '));
+    await page.close();
+  });
+
+  await test('new DNBs: lurker untargetable without detection, splitter splits on its path, shields and plate', async () => {
+    const { page, errors } = await openGame(browser, { width: 1280, height: 800 });
+    const r = await page.evaluate(() => {
+      const C = NDCore, S = __nd.S;
+      localStorage.clear();
+      S.towers = []; S.cash = 1e9; S.cleared = 40;
+      C.startWave(S, 30);
+      S.run.queue = []; S.run.lives = 1e9;
+      const lurk = C.spawnEnemy(S, S.run, 'stealth', 300);
+      lurk.hp = lurk.hpMax = 1e9; lurk.speed = 0;
+      const tw = (race, paths) => C.computeStats({ race, paths, infD: 0, infR: 0, buff: { dmg: 0, rate: 0, range: 0 } });
+      const out = { hidden: C.isHidden(lurk), earth: C.canHit(tw('earth', [0, 0, 0, 0, 0]), lurk), echo: C.canHit(tw('bat', [0, 2, 0, 0, 0]), lurk) };
+      let earth = null;
+      for (let rr = 40; rr <= 90 && !earth; rr += 10) for (let a = 0; a < 6.28 && !earth; a += 0.3) { const x = lurk.x + Math.cos(a) * rr, y = lurk.y + Math.sin(a) * rr; if (C.canPlace(S, x, y)) earth = C.placeTower(S, 'earth', x, y); }
+      out.placed = !!earth;
+      for (let i = 0; i < 90; i++) C.step(S, 1 / 30);
+      out.dealtHidden = lurk.hpMax - lurk.hp;
+      lurk.revealT = 2;
+      for (let i = 0; i < 45; i++) C.step(S, 1 / 30);
+      out.dealtRevealed = lurk.hpMax - lurk.hp;
+      S.run.enemies = []; S.towers = [];
+      const sp = C.spawnEnemy(S, S.run, 'splitter', 260);
+      const d0 = sp.d, p0 = sp.path;
+      C.kill(S, S.run, sp, null);
+      const minis = S.run.enemies.filter(e => e.alive && e.type === 'mini');
+      out.minis = minis.length;
+      out.sameSpot = minis.every(m => m.path === p0 && Math.abs(m.d - d0) < 40);
+      const sh = C.spawnEnemy(S, S.run, 'shield', 400);
+      const bud = C.spawnEnemy(S, S.run, 'basic', 410);
+      for (let i = 0; i < 30; i++) C.step(S, 1 / 30);
+      out.bubble = bud.sh > 0;
+      const ar = C.spawnEnemy(S, S.run, 'armored', 500);
+      const h0 = ar.hp; C.damage(S, S.run, ar, ar.plate * 0.5, null);
+      out.plate = ar.plate > 0 && (h0 - ar.hp) < ar.plate * 0.5;
+      out.codex = ['stealth', 'splitter', 'mini', 'shield', 'armored'].every(k => S.codex.e[k]);
+      S.run.enemies = []; S.run = null;
+      return out;
+    });
+    ok(r.hidden && !r.earth && r.echo, 'lurker detection rules ' + JSON.stringify(r));
+    ok(r.placed && r.dealtHidden === 0 && r.dealtRevealed > 0, 'earth pony cannot hit an unseen lurker but can once revealed ' + JSON.stringify(r));
+    ok(r.minis >= 2 && r.minis <= 3 && r.sameSpot, 'splitter leaves 2-3 pieces where it fell ' + JSON.stringify(r));
+    ok(r.bubble && r.plate && r.codex, 'shield bubble, armor plate and codex unlocks ' + JSON.stringify(r));
+    ok(!errors.length, 'console errors: ' + errors.join(' | '));
+    await page.close();
+  });
+
+  for (const vp of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
+    await test('codex unlocks on first sight and opens at ' + vp.width, async () => {
+      const { page, errors } = await openGame(browser, vp);
+      await page.evaluate(() => { localStorage.clear(); });
+      await page.reload();
+      await page.waitForTimeout(400);
+      const before = await page.evaluate(() => ({ e: Object.keys(__nd.S.codex.e).length, healer: !!__nd.S.codex.e.healer }));
+      await page.evaluate(() => {
+        const C = NDCore, S = __nd.S;
+        S.cleared = 20;
+        C.startWave(S, 20);
+        S.run.queue = []; S.run.lives = 1e9;
+        C.spawnEnemy(S, S.run, 'healer', 200);
+      });
+      await page.waitForTimeout(500);
+      const toast = await page.evaluate(() => ({ cls: document.getElementById('codexToast').className, txt: document.getElementById('codexToast').textContent, pulse: document.getElementById('codexBtn').classList.contains('pulse'), healer: !!__nd.S.codex.e.healer }));
+      ok(!before.healer && toast.healer && /show/.test(toast.cls) && /Healer|Mender/i.test(toast.txt) && toast.pulse, 'codex unlock toast ' + JSON.stringify(toast));
+      const saved = await page.evaluate(() => { __nd.save && __nd.save(); const o = JSON.parse(localStorage.getItem('nightfall-defense-save-v1') || '{}'); return { ver: o.ver, healer: !!(o.codex && o.codex.e && o.codex.e.healer) }; });
+      await page.evaluate(() => { const S = __nd.S; if (S.run) { S.run.enemies = []; S.run.queue = []; } });
+      await page.locator('#codexBtn').scrollIntoViewIfNeeded();
+      await page.click('#codexBtn');
+      await page.waitForTimeout(300);
+      const m = await page.evaluate(() => {
+        const box = document.querySelector('#codexModal .modal, #codexModal > *');
+        const r = box ? box.getBoundingClientRect() : { left: 0, right: 0 };
+        return {
+          open: !document.getElementById('codexModal').hidden,
+          cells: document.querySelectorAll('#codexGrid .cx').length,
+          locked: document.querySelectorAll('#codexGrid .cx.locked').length,
+          known: document.querySelectorAll('#codexGrid .cx:not(.locked)').length,
+          count: document.getElementById('codexCount').textContent,
+          fits: r.left >= -1 && r.right <= innerWidth + 1,
+          scrollX: document.documentElement.scrollWidth <= innerWidth + 1,
+        };
+      });
+      ok(m.open && m.cells >= 13 && m.known >= 1 && m.locked >= 1 && m.fits && m.scrollX, 'codex modal ' + JSON.stringify(m));
+      await page.click('#codexGrid .cx[data-cx="e:healer"]');
+      await page.waitForTimeout(200);
+      const det = await page.evaluate(() => ({ txt: document.getElementById('codexDetail').textContent, art: !!document.querySelector('#codexDetail canvas') }));
+      ok(/Healer|Mender/i.test(det.txt) && /weak|counter/i.test(det.txt) && det.art, 'codex detail shows art, weakness and counters ' + det.txt.slice(0, 160));
+      await page.click('#codexTabs [data-tab="b"]');
+      await page.waitForTimeout(200);
+      const bosses = await page.evaluate(() => ({ cells: document.querySelectorAll('#codexGrid .cx').length, locked: document.querySelectorAll('#codexGrid .cx.locked').length }));
+      ok(bosses.cells === 50 && bosses.locked >= 49, 'boss tab lists all 50 bosses ' + JSON.stringify(bosses));
+      await shot(page, 'codex-' + vp.width);
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(150);
+      ok(await page.evaluate(() => document.getElementById('codexModal').hidden), 'escape closes the codex');
+      ok(saved.ver === 5 && saved.healer, 'codex persists in the save ' + JSON.stringify(saved));
+      ok(!errors.length, 'console errors: ' + errors.join(' | '));
+      await page.close();
+    });
+  }
+
+  await test('wave preview lists the new DNB types', async () => {
+    const { page, errors } = await openGame(browser, { width: 1280, height: 800 });
+    const pv = await page.evaluate(() => {
+      const S = __nd.S, C = NDCore, map = C.mapOf(S);
+      let n = 0;
+      for (let k = 30; k <= 49 && !n; k++) { const sp = C.waveSpec(k, map); if (!sp.boss && ['healer', 'stealth', 'shield', 'armored', 'burrower', 'splitter', 'swarm'].filter(t => sp.counts[t]).length >= 3) n = k; }
+      S.cleared = Math.max(S.cleared, n - 1); S.sel = n; __nd.refresh();
+      return n;
+    });
+    await page.waitForTimeout(300);
+    const types = await page.evaluate(() => [...document.querySelectorAll('#wInfo .mx canvas[data-dnb]')].map(c => c.dataset.dnb));
+    ok(pv > 0 && types.filter(t => ['healer', 'stealth', 'shield', 'armored', 'burrower', 'splitter', 'swarm'].includes(t)).length >= 3, 'preview of wave ' + pv + ' shows new types ' + types.join());
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });

@@ -34,11 +34,13 @@
       </div>
       <div id="banner" class="banner"></div>
       <div id="placeHint" class="placehint"></div>
+      <div id="codexToast" class="codextoast" role="status" aria-live="polite"></div>
     </div>
     <aside id="side">
       <section class="card wavebox">
         <div class="maprow">
           <button id="mapBtn" class="mapbtn on" type="button" aria-haspopup="dialog"><span id="mapName">Map 1 &middot; Moonlit Road</span><span class="mapgo">Maps</span></button>
+          <button id="codexBtn" class="mapbtn codexbtn" type="button" aria-haspopup="dialog" data-tip="Every DNB and boss you have met (C)">Codex</button>
         </div>
         <div class="waverow">
           <button id="wPrev" class="sq" type="button" aria-label="Previous wave">&#8249;</button>
@@ -82,7 +84,7 @@
     <ul class="keys">
       <li><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><kbd>5</kbd> pick Earth, Unicorn, Pegasus, Bat, Crystal</li>
       <li><kbd>Space</kbd> start wave, or pause during one</li>
-      <li><kbd>P</kbd> pause &middot; <kbd>F</kbd> cycle speed &middot; <kbd>M</kbd> mute</li>
+      <li><kbd>P</kbd> pause &middot; <kbd>F</kbd> cycle speed &middot; <kbd>M</kbd> mute &middot; <kbd>C</kbd> codex</li>
       <li><kbd>U</kbd> open upgrades for the pony under the cursor</li>
       <li><kbd>B</kbd> upgrade max affordable &middot; <kbd>S</kbd> sell (press twice)</li>
       <li>Hold <kbd>Shift</kbd> to show every range &middot; <kbd>Esc</kbd> cancel</li>
@@ -95,6 +97,13 @@
     <div class="dhead"><h2 id="mapTitle">Choose a map</h2><button id="mapClose" class="ghost x" type="button">Close</button></div>
     <p class="hint">Each map keeps its own ponies, cash and wave progress. Clear wave 50 on a map to unlock the next one.</p>
     <div id="mapList" class="maplist"></div>
+  </div>
+</div>
+<div id="codexModal" class="modal" hidden>
+  <div class="dialog wide codex" role="dialog" aria-modal="true" aria-labelledby="codexTitle">
+    <div class="dhead"><h2 id="codexTitle">Codex</h2><button id="codexClose" class="ghost x" type="button">Close</button></div>
+    <div class="cxbar"><div id="codexTabs" class="cxtabs" role="tablist"><button type="button" role="tab" data-tab="e">DNBs</button><button type="button" role="tab" data-tab="b">Bosses</button></div><span id="codexCount" class="hint"></span></div>
+    <div class="cxbody"><div id="codexGrid" class="cxgrid"></div><div id="codexDetail" class="cxdetail"></div></div>
   </div>
 </div>
 <div id="tip" class="tip" role="tooltip" hidden></div>
