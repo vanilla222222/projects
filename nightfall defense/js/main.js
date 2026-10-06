@@ -139,10 +139,10 @@
 
   function setSpeed(v) {
     if (C.SPEEDS.indexOf(v) < 0) return;
-    S.settings.speed = v; ui.paused = false; ui.speedKey = '';
+    S.settings.speed = v; ui.paused = false; ui.speedKey = ''; refreshSpeed();
     writeSave();
   }
-  function togglePause() { ui.paused = !ui.paused; ui.speedKey = ''; }
+  function togglePause() { ui.paused = !ui.paused; ui.speedKey = ''; refreshSpeed(); }
   function cycleSpeed() {
     const i = C.SPEEDS.indexOf(S.settings.speed);
     setSpeed(C.SPEEDS[(i + 1) % C.SPEEDS.length]);
@@ -525,7 +525,12 @@
     S.settings.numFmt = C.setNumFormat(ev.target.value);
     syncSettings(); dirty(); writeSave();
   });
-  $('setReset').addEventListener('click', resetAll);
+  $('setReset').addEventListener('click', () => {
+    S.settings = C.cleanSettings(null);
+    C.setNumFormat(S.settings.numFmt);
+    A.set(S.settings.sound, S.settings.vol);
+    syncSettings(); dirty(); writeSave();
+  });
 
   const tip = $('tip');
   function showTip(el, sticky) {
