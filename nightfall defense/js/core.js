@@ -176,17 +176,17 @@
     flying: { id: 'flying', name: 'DNB Duskwing', short: 'Duskwing', trait: 'Flies. Only pegasi and sky-sighted unicorns can hit it.', hp: 0.8, speed: 78, r: 12, cash: 1.3, flying: true, color: '#7d5c48', dark: '#3f2c22' },
     magical: { id: 'magical', name: 'DNB Hexling', short: 'Hexling', trait: 'Magical. Only unicorns and ley-hoofed earth ponies can hurt it.', hp: 1.3, speed: 56, r: 13, cash: 1.5, magical: true, color: '#86606a', dark: '#46303a' },
     swarm: { id: 'swarm', name: 'DNB Gnat', short: 'Gnat', trait: 'Tiny and fast, and always arrives in a swarm of 5.', hp: 0.2, speed: 128, r: 7, cash: 0.22, swarm: true, color: '#9a7a52', dark: '#4e3a22' },
-    healer: { id: 'healer', name: 'DNB Mender', short: 'Mender', trait: 'Every 2.5s it heals DNBs within 110 for 8% of their max HP.', hp: 1.1, speed: 54, r: 13, cash: 1.6, heal: { every: 2.5, r: 110, pct: 0.08 }, color: '#7a8a5a', dark: '#3a4428' },
+    healer: { id: 'healer', name: 'DNB Mender', short: 'Mender', trait: 'Every 2.5s it heals DNBs within 110 for 6% of their max HP.', hp: 1.1, speed: 54, r: 13, cash: 1.6, heal: { every: 2.5, r: 110, pct: 0.06 }, color: '#7a8a5a', dark: '#3a4428' },
     splitter: { id: 'splitter', name: 'DNB Splitter', short: 'Splitter', trait: 'Splits into 3 quick Splitlings when slain. They pick up right where it fell.', hp: 1.3, speed: 52, r: 15, cash: 1.1, split: { n: 3, type: 'mini' }, color: '#8a6a7a', dark: '#44323c' },
     mini: { id: 'mini', name: 'DNB Splitling', short: 'Splitling', trait: 'A shard of a Splitter. Small, quick and frail.', hp: 0.32, speed: 88, r: 8, cash: 0.25, child: true, color: '#9a7a8a', dark: '#4c3a44' },
     stealth: { id: 'stealth', name: 'DNB Lurker', short: 'Lurker', trait: 'Stealthy: only ponies that detect can target it, unless something reveals it.', hp: 0.9, speed: 70, r: 12, cash: 1.4, stealth: true, color: '#6a6a7e', dark: '#30303e' },
     burrower: { id: 'burrower', name: 'DNB Tunneler', short: 'Tunneler', trait: 'Dives underground on stretches of the road and cannot be hit while buried.', hp: 1.5, speed: 60, r: 14, cash: 1.4, burrow: { cycle: 460, under: 190 }, color: '#7a5a3a', dark: '#3c2a1a' },
-    shield: { id: 'shield', name: 'DNB Bulwark', short: 'Bulwark', trait: 'Projects a bubble over DNBs within 100 that soaks up damage equal to 40% of their max HP.', hp: 1.6, speed: 48, r: 15, cash: 1.8, aegis: { r: 100, pct: 0.4 }, color: '#5a6a7e', dark: '#2a323e' },
-    armored: { id: 'armored', name: 'DNB Ironhide', short: 'Ironhide', trait: 'Armored: every hit loses a flat chunk of damage, so small hits barely scratch it.', hp: 2.2, speed: 44, r: 16, cash: 2.1, plate: 0.05, color: '#6a645a', dark: '#34302a' },
+    shield: { id: 'shield', name: 'DNB Bulwark', short: 'Bulwark', trait: 'Projects a bubble over DNBs within 100 that soaks up damage equal to 30% of their max HP.', hp: 1.6, speed: 48, r: 15, cash: 1.8, aegis: { r: 100, pct: 0.3 }, color: '#5a6a7e', dark: '#2a323e' },
+    armored: { id: 'armored', name: 'DNB Ironhide', short: 'Ironhide', trait: 'Armored: every hit loses a flat chunk of damage, so small hits barely scratch it.', hp: 2.2, speed: 44, r: 16, cash: 2.1, plate: 0.03, color: '#6a645a', dark: '#34302a' },
     boss: { id: 'boss', name: 'Boss', short: 'Boss', trait: 'A wave boss. Leaking it costs 5 lives.', hp: 26, speed: 36, r: 26, cash: 20, color: '#5e3f28', dark: '#2c1c12' },
   };
   const ENEMY_IDS = ['basic', 'fast', 'tanky', 'flying', 'magical', 'swarm', 'healer', 'splitter', 'mini', 'stealth', 'burrower', 'shield', 'armored'];
-  const ELITE = { hp: 2.5, cash: 3, speed: 1.12, r: 1.2 };
+  const ELITE = { hp: 2.2, cash: 3, speed: 1.12, r: 1.2 };
 
   const MECH = {
     plain: { tag: 'Plain', weak: 'Nothing special. Any pony will do.', counters: ['Any pony'] },
@@ -209,7 +209,7 @@
     brood: { tag: 'Broods', weak: 'Splash handles the spawn.', counters: ['Unicorn (Prismatic)', 'Earth Pony stomps', 'Crystal Pony (Geode Burst)'] },
     phase: { tag: 'Shifts form', weak: 'Bring both flyer hunters and magic.', counters: ['Unicorn (Skyward Sight)', 'Crystal Pony (Spellshard)'] },
     twin: { tag: 'Twins', weak: 'Two bodies, each with less HP.', counters: ['Cover every road'] },
-    elite: { tag: 'Elite', weak: '2.5x HP and an extra trick. Focus fire with Strongest targeting.', counters: ['Unicorn (Arcanist)', 'Earth Pony (Stonehoof)'] },
+    elite: { tag: 'Elite', weak: '2.2x HP, faster, and late on an extra trick. Focus fire with Strongest targeting.', counters: ['Unicorn (Arcanist)', 'Earth Pony (Stonehoof)'] },
   };
 
   const BOSSES = [
@@ -356,15 +356,15 @@
       { id: 'tanky', from: 5, w: 3, theme: 6 },
       { id: 'flying', from: 6, w: 3, theme: 8 },
       { id: 'magical', from: 8, w: 3, theme: 8 },
-      { id: 'swarm', from: 999, w: 2.2, theme: 7 },
-      { id: 'healer', from: 999, w: 1.4, theme: 5 },
-      { id: 'splitter', from: 999, w: 2, theme: 7 },
-      { id: 'stealth', from: 999, w: 1.8, theme: 7 },
-      { id: 'burrower', from: 999, w: 1.8, theme: 7 },
-      { id: 'shield', from: 999, w: 1.2, theme: 5 },
-      { id: 'armored', from: 999, w: 1.8, theme: 7 },
+      { id: 'swarm', from: 999, w: 1.6, theme: 7 },
+      { id: 'healer', from: 999, w: 1, theme: 5 },
+      { id: 'splitter', from: 999, w: 1.4, theme: 7 },
+      { id: 'stealth', from: 999, w: 1.2, theme: 7 },
+      { id: 'burrower', from: 999, w: 1.3, theme: 7 },
+      { id: 'shield', from: 999, w: 0.9, theme: 5 },
+      { id: 'armored', from: 999, w: 1.3, theme: 7 },
     ],
-    elite: { from: 60, base: 0.02, per: 0.0025, max: 0.11, combo: 75 },
+    elite: { from: 60, base: 0.02, per: 0.002, max: 0.09, combo: 80 },
     themes: [
       { id: 'boss', mod: 10, rem: 0 },
       { id: 'flying', at: [6], mod: 9, rem: 0 },
@@ -390,10 +390,10 @@
     return g;
   }
   const COMBOS = [
-    { id: 'ironwall', name: 'Iron wall', mod: 13, rem: 3, min: 40, boost: { armored: 6, shield: 5 } },
-    { id: 'ghosts', name: 'Ghost march', mod: 13, rem: 9, min: 45, boost: { stealth: 6, healer: 4 } },
-    { id: 'hive', name: 'Hive tide', mod: 17, rem: 5, min: 50, boost: { swarm: 6, splitter: 6 } },
-    { id: 'sappers', name: 'Sappers', mod: 17, rem: 12, min: 55, boost: { burrower: 6, armored: 4, healer: 3 } },
+    { id: 'ironwall', name: 'Iron wall', mod: 13, rem: 3, min: 40, boost: { armored: 3, shield: 2 } },
+    { id: 'ghosts', name: 'Ghost march', mod: 13, rem: 9, min: 45, boost: { stealth: 3, healer: 2 } },
+    { id: 'hive', name: 'Hive tide', mod: 17, rem: 5, min: 50, boost: { swarm: 3, splitter: 3 } },
+    { id: 'sappers', name: 'Sappers', mod: 17, rem: 12, min: 55, boost: { burrower: 3, armored: 2, healer: 1 } },
   ];
 
   function spiralArm(cx, cy, sx, sy, r0, r1, a0, span, lead, steps) {
@@ -486,7 +486,7 @@
         keep: CRYSTALS.map(c => ({ x: c.x, y: c.y, r: 16, kind: 'crystal' })) }),
       hpShift: 14, hpMul: 1, cashMul: 5.75e7, startCash: 1.372e11, priceMul: 1.44e7, hpCurve: [[1, 1.14], [50, 1.12], [80, 1.085], [90, 1.05], [100, 1.04]],
       bosses: MAP_BOSSES.caverns.map(b => b.id),
-      waves: waveVariant({ types: { magical: { from: 5, w: 6, theme: 10 }, flying: { w: 2 }, burrower: { w: 2.4 }, stealth: { w: 2.2 } }, intro: { burrower: 5, stealth: 11, healer: 15, shield: 21, splitter: 25, armored: 31, swarm: 35 } }),
+      waves: waveVariant({ types: { magical: { from: 5, w: 6, theme: 10 }, flying: { w: 2 }, burrower: { w: 1.7 }, stealth: { w: 1.5 } }, intro: { burrower: 5, stealth: 11, healer: 15, shield: 21, splitter: 25, armored: 31, swarm: 35 } }),
       palette: {
         ground: ['#1a1830', '#100e20', '#06050c'], grass: ['rgba(120,100,180,.14)', 'rgba(80,70,140,.16)'],
         flowers: ['#a8f0ff', '#d0a8ff', '#ffc8f0'], rock: 'rgba(60,56,84,.7)',
@@ -524,7 +524,7 @@
         keep: [{ x: 700, y: 400, r: 46, kind: 'keep' }] }),
       hpShift: 15, hpMul: 1, cashMul: 3.31e15, startCash: 7.925e18, priceMul: 8.3e14, gateFrom: 4, hpCurve: [[1, 1.14], [50, 1.12], [70, 1.088], [84, 1.055], [100, 1.035]],
       bosses: MAP_BOSSES.castle.map(b => b.id),
-      waves: waveVariant({ count: { base: 11, per: 0.55 }, types: { basic: { w: 8 }, fast: { from: 2, w: 5 }, tanky: { from: 3, w: 4 }, flying: { from: 4, w: 4 }, magical: { from: 5, w: 4 }, armored: { w: 2.2 }, shield: { w: 1.5 } }, elite: { from: 50 }, intro: { armored: 4, shield: 8, healer: 12, stealth: 16, splitter: 21, burrower: 24, swarm: 28 } }),
+      waves: waveVariant({ count: { base: 11, per: 0.55 }, types: { basic: { w: 8 }, fast: { from: 2, w: 5 }, tanky: { from: 3, w: 4 }, flying: { from: 4, w: 4 }, magical: { from: 5, w: 4 }, armored: { w: 1.6 }, shield: { w: 1.1 } }, elite: { from: 55 }, intro: { armored: 4, shield: 8, healer: 12, stealth: 16, splitter: 21, burrower: 24, swarm: 28 } }),
       palette: {
         ground: ['#221a26', '#16101a', '#08060a'], grass: ['rgba(120,90,130,.14)', 'rgba(90,70,100,.16)'],
         flowers: ['#ff8a9a', '#c8a0ff', '#ffd0a0'], rock: 'rgba(64,58,70,.75)',
@@ -1059,8 +1059,8 @@
     e.hpMax *= ELITE.hp; e.hp = e.hpMax; e.cash *= ELITE.cash; e.speed *= ELITE.speed; e.r *= ELITE.r; e.leak = 2;
     if (n < WAVEGEN.elite.combo) return;
     const k = e.seed % 3;
-    if (k === 0) { e.eliteMod = 'plate'; e.plate = Math.max(e.plate, 0.04 * e.plateBase); }
-    else if (k === 1) { e.eliteMod = 'bubble'; e.ownSh = true; e.sh = e.shMax = e.hpMax * 0.3; }
+    if (k === 0) { e.eliteMod = 'plate'; e.plate = Math.max(e.plate, 0.03 * e.plateBase); }
+    else if (k === 1) { e.eliteMod = 'bubble'; e.ownSh = true; e.sh = e.shMax = e.hpMax * 0.25; }
     else { e.eliteMod = 'cloak'; e.stealth = true; }
   }
   function armorFor(type, n, map) { const d = ENEMIES[type]; return d && d.plate ? d.plate * hpFor(n, map) : 0; }
@@ -1158,7 +1158,7 @@
     let dealt = amt * m, dim = false, ab = 0;
     if (e.plate > 0) {
       const pl = e.plate * (1 - (t ? stats(t).pierce : 0));
-      if (pl > 0) { dealt = Math.max(dealt * 0.1, dealt - pl); dim = true; }
+      if (pl > 0) { dealt = Math.max(dealt * 0.2, dealt - pl); dim = true; }
     }
     if (e.sh > 0) {
       ab = Math.min(e.sh, dealt);
@@ -1474,7 +1474,7 @@
       S.sfx.leak++;
       const end = P.pts[P.pts.length - 1];
       fx(S, { k: 'leak', x: Math.min(WORLD.L, end[0]), y: end[1], life: 0.6 });
-      emit(S, 'leak', { boss: e.boss, lives: run.lives });
+      emit(S, 'leak', { boss: e.boss, lives: run.lives, dnb: e.type, elite: e.elite ? e.eliteMod || 'elite' : '' });
     }
   }
 

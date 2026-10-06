@@ -301,7 +301,7 @@
       if (k !== 'boss') tip += '\n' + mechTip('e', k);
       h += '<span class="mx" data-tip="' + esc(tip) + '"><canvas data-dnb="' + k + '" width="48" height="48"></canvas><b>' + c + '</b>' + (compact ? '' : '<span>' + esc(name) + '</span>') + '</span>';
     }
-    if (spec.counts.elite) h += '<span class="mx elite" data-tip="' + esc('Elite DNBs\n' + C.MECH.elite.weak + (n >= 75 ? ' From wave 75 each elite also carries armor, a bubble or stealth.' : '')) + '"><i class="star">&#9733;</i><b>' + spec.counts.elite + '</b>' + (compact ? '' : '<span>Elite</span>') + '</span>';
+    if (spec.counts.elite) h += '<span class="mx elite" data-tip="' + esc('Elite DNBs\n' + C.MECH.elite.weak + (n >= C.WAVEGEN.elite.combo ? ' From wave ' + C.WAVEGEN.elite.combo + ' each elite also carries armor, a bubble or stealth.' : '')) + '"><i class="star">&#9733;</i><b>' + spec.counts.elite + '</b>' + (compact ? '' : '<span>Elite</span>') + '</span>';
     h += '</div>';
     if (!compact) {
       h += '<div class="tl" aria-hidden="true">';

@@ -111,7 +111,7 @@ function needs(S, n) {
   const out = { detect: 0, pierce: 0, swarm: 0 };
   for (let k = n; k <= Math.min(C.MAX_WAVE, n + 3); k++) {
     const sp = C.waveSpec(k, MAP), tk = (sp.boss && sp.boss.tricks) || {};
-    if (sp.counts.stealth || tk.cloak || (tk.stages && tk.stages.some(st => st.cloak)) || (k >= 75 && sp.counts.elite)) out.detect = 1;
+    if (sp.counts.stealth || tk.cloak || (tk.stages && tk.stages.some(st => st.cloak)) || (k >= C.WAVEGEN.elite.combo && sp.counts.elite)) out.detect = 1;
     if (sp.counts.armored || tk.plate || (tk.stages && tk.stages.some(st => st.plate))) out.pierce = 1;
     if ((sp.counts.swarm || 0) + (sp.counts.splitter || 0) * 3 >= 10) out.swarm = 1;
   }
@@ -181,6 +181,7 @@ function buy(S, o) {
   return false;
 }
 
+const LEAKS = {};
 function play(S, n) {
   C.startWave(S, n);
   let t = 0;
@@ -192,6 +193,7 @@ function play(S, n) {
   }
   if (diag) { diagDone = true; console.log('diag wave ' + n + ': ' + S.events.map(e => e.type + (e.boss ? '(boss)' : '') + ' ' + e.at).join(' | ')); }
   const ev = S.events.find(e => e.type === 'won' || e.type === 'lost');
+  if (ev && ev.type === 'lost') for (const e of S.events) if (e.type === 'leak') { const k = (e.boss ? 'boss' : e.dnb) + (e.elite ? '*' + e.elite : ''); LEAKS[k] = (LEAKS[k] || 0) + 1; }
   S.events.length = 0;
   return { won: ev && ev.type === 'won', t: t + OVERHEAD };
 }
@@ -236,6 +238,7 @@ function main() {
   for (const ch of JSON.stringify([marks, lossAt, S.cash, S.towers.map(t => [t.race, t.paths, t.infD, t.infR])])) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
   const fp = h.toString(16);
   console.log('fingerprint ' + fp);
+  console.log('leaks on lost waves: ' + Object.entries(LEAKS).sort((x, y) => y[1] - x[1]).map(([k, v]) => k + 'x' + v).join(' '));
   console.log('losses by wave: ' + Object.entries(lossAt).map(([k, v]) => k + 'x' + v).join(' '));
   console.log(`reached wave ${S.cleared} in ${(time / 3600).toFixed(2)}h of game time (${attempts} attempts, ${losses} losses, ${farms} farm runs)`);
   console.error(`${((Date.now() - t0) / 1000).toFixed(0)}s real`);
