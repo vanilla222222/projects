@@ -126,8 +126,8 @@
     { name: 'Bramble King', trick: 'regen', hpMul: 0.85, desc: 'Regrows 1.5% HP per second and heals DNBs around him.', color: '#5c5a34', dark: '#2c2a16' },
     { name: 'Duskwraith', trick: 'phase', hpMul: 0.6, desc: 'Flickers between flying and magical forms every 4 seconds.', color: '#5a4660', dark: '#2a2030' },
     { name: 'Stonehide Colossus', trick: 'armor', hpMul: 0.8, desc: 'A stone shell blocks 60% of damage until it drops below half HP.', color: '#6a6258', dark: '#34302a' },
-    { name: 'Twin Shade', trick: 'split', hpMul: 0.65, desc: 'Splits into two smaller shades when slain.', color: '#4e3a30', dark: '#241a14' },
-    { name: 'The Nightmother', trick: 'mother', hpMul: 0.8, desc: 'Sprints and summons, then takes to the air, then turns magical and regrows.', color: '#3e2a3a', dark: '#1c121a' },
+    { name: 'Twin Shade', trick: 'split', hpMul: 0.3, desc: 'Splits into two smaller shades when slain.', color: '#4e3a30', dark: '#241a14' },
+    { name: 'The Nightmother', trick: 'mother', hpMul: 0.35, desc: 'Sprints and summons, then takes to the air, then turns magical and regrows.', color: '#3e2a3a', dark: '#1c121a' },
   ];
 
   function mulberry(seed) {
@@ -409,7 +409,7 @@
     if (e.boss && e.trick === 'split' && !e.splitDone) {
       for (const s of [-1, 1]) {
         const c = spawnEnemy(S, run, 'boss', Math.max(WORLD.startD + 20, e.d - 160 + s * 18));
-        c.hpMax = c.hp = e.hpMax * 0.3; c.splitDone = true; c.r = e.r * 0.75; c.leak = 3; c.speed = 46; c.name = 'Shade';
+        c.hpMax = c.hp = e.hpMax * 0.25; c.splitDone = true; c.r = e.r * 0.75; c.leak = 3; c.speed = 46; c.name = 'Shade';
       }
       fx(S, { k: 'ring', x: e.x, y: e.y, r: 70, c: '#6b5a8a', life: 0.6 });
     }
