@@ -5,11 +5,14 @@ const C = require('../js/core.js');
 if (process.env.TUNE) Object.assign(C.TUNE, JSON.parse(process.env.TUNE));
 if (process.env.STARTUNE) Object.assign(C.STAR, JSON.parse(process.env.STARTUNE));
 if (process.env.HEROTUNE) Object.assign(C.HERO_TUNE, JSON.parse(process.env.HEROTUNE));
+if (process.env.OFFTUNE) Object.assign(C.OFFLINE, JSON.parse(process.env.OFFTUNE));
 
 const DT = 1 / 20;
 const OVERHEAD = 3;
 const FARM_PER_LOSS = 3;
 const LIMIT_H = Number(process.env.LIMIT_H) || 16;
+const OFFLINE_AT = [20, 40, 60, 80, 100];
+const ACTIVE_WINDOW = 1800;
 const DIAG = Number(process.env.DIAG) || 0;
 let diagDone = false;
 const PLAN = { earth: [0, 1], unicorn: [0, 1], pegasus: [2, 4], bat: [0, 3], crystal: [0, 3] };
@@ -240,7 +243,16 @@ function play(S, n) {
   const ev = S.events.find(e => e.type === 'won' || e.type === 'lost');
   if (ev && ev.type === 'lost') for (const e of S.events) if (e.type === 'leak') { const k = (e.boss ? 'boss' : e.dnb) + (e.elite ? '*' + e.elite : ''); LEAKS[k] = (LEAKS[k] || 0) + 1; }
   S.events.length = 0;
-  return { won: ev && ev.type === 'won', t: t + OVERHEAD };
+  const gain = ev ? (ev.earned || 0) + (ev.bonus || 0) + (ev.interest || 0) : 0;
+  return { won: ev && ev.type === 'won', t: t + OVERHEAD, gain };
+}
+
+function offlineCheck(S, wave, activePerSec) {
+  const now = 1e12;
+  const g = C.offlineGain(S, now, now - 8 * 3600 * 1000);
+  const m = g && g.maps.find(x => x.id === S.map);
+  const cash = m ? m.cash : 0;
+  return { wave, farm: m ? m.wave : 0, offline: cash, activePerMin: activePerSec * 60, minutes: activePerSec > 0 ? cash / (activePerSec * 60) : 0 };
 }
 
 function netWorth(S) { return S.cash + S.towers.reduce((a, t) => a + t.spent, 0); }
@@ -251,6 +263,9 @@ function climb(S) {
   const marks = {};
   const lossAt = {};
   let worth50 = null, towers50 = null;
+  let gained = 0;
+  const gainAt = { 0: 0 }, offline = [], hist = [[0, 0]];
+  const windowRate = () => { let i = hist.length - 1; while (i > 0 && time - hist[i][0] < ACTIVE_WINDOW) i--; return (gained - hist[i][1]) / Math.max(1, time - hist[i][0]); };
   const t0 = Date.now();
   while (S.cleared < C.MAX_WAVE && time < LIMIT_H * 3600) {
     const n = S.cleared + 1;
@@ -259,10 +274,14 @@ function climb(S) {
     attempts++;
     const r = play(S, n);
     time += r.t;
+    gained += r.gain;
+    hist.push([time, gained]);
     if (r.won) {
       if (S.cleared === 50) { worth50 = netWorth(S); towers50 = S.towers.length; }
       if (S.cleared % 10 === 0) {
         marks[S.cleared] = time;
+        gainAt[S.cleared] = gained;
+        if (OFFLINE_AT.indexOf(S.cleared) >= 0) offline.push(offlineCheck(S, S.cleared, windowRate()));
         if (S.hero) HLV[S.cleared] = C.heroProg(S.hero).lv;
         const peak = Math.max(...S.towers.map(t => t.paths.reduce((a, b) => a + b, 0)));
         console.log(`wave ${String(S.cleared).padStart(3)}  ${(time / 3600).toFixed(2)}h  cash ${C.fmt(S.cash).padStart(8)}  towers ${S.towers.length}  hero ${S.hero ? S.hero.id + ' lv' + C.heroProg(S.hero).lv : '-'}  maxNodes ${peak}  infD ${Math.max(...S.towers.map(t => t.infD))}  losses ${losses}  farms ${farms}`);
@@ -271,7 +290,7 @@ function climb(S) {
     }
     losses++;
     lossAt[n] = (lossAt[n] || 0) + 1;
-    for (let i = 0; i < FARM_PER_LOSS && S.cleared > 0; i++) { shop(S, n); time += play(S, S.cleared).t; farms++; }
+    for (let i = 0; i < FARM_PER_LOSS && S.cleared > 0; i++) { shop(S, n); const fr = play(S, S.cleared); time += fr.t; gained += fr.gain; hist.push([time, gained]); farms++; }
   }
   const segs = [];
   for (let w = 10; w <= C.MAX_WAVE; w += 10) if (marks[w] != null) segs.push((marks[w] - (marks[w - 10] || 0)) / 3600);
@@ -289,6 +308,7 @@ function climb(S) {
   console.log(`reached wave ${S.cleared} in ${(time / 3600).toFixed(2)}h of game time (${attempts} attempts, ${losses} losses, ${farms} farm runs)`);
   console.error(`${((Date.now() - t0) / 1000).toFixed(0)}s real`);
   console.log(`wave 50 at ${marks[50] ? (marks[50] / 3600).toFixed(2) + 'h' : 'not reached'} (target ~2h), wave 100 at ${marks[100] ? (marks[100] / 3600).toFixed(2) + 'h' : 'not reached'} (target ~6h)`);
+  for (const o of offline) console.log(`offline 8h at wave ${o.wave}: farms w${o.farm}, ${C.fmt(o.offline)} vs active ${C.fmt(o.activePerMin)}/min = ${o.minutes.toFixed(0)} min of active play`);
   if (worth50 != null) console.log(`net worth at wave 50: ${C.fmt(worth50)} (${worth50.toExponential(3)}) with ${towers50} towers`);
   const res = {
     map: MAP.id, name: MAP.name, hpShift: MAP.hpShift || 0, hpMul: MAP.hpMul, cashMul: MAP.cashMul, startCash: C.mapStartCash(MAP, S), star: C.starOf(S),
@@ -296,7 +316,7 @@ function climb(S) {
     reached: S.cleared, hours: +(time / 3600).toFixed(3),
     w50h: marks[50] ? +(marks[50] / 3600).toFixed(3) : null, w100h: marks[100] ? +(marks[100] / 3600).toFixed(3) : null,
     hero: S.hero ? S.hero.id : null, heroLv: S.hero ? C.heroProg(S.hero).lv : 0, heroLvAt: Object.assign({}, HLV),
-    decades: segs.map(v => +v.toFixed(3)), worth50, towers50, losses, attempts, farms, worstWaveLosses: worst, fingerprint: fp,
+    decades: segs.map(v => +v.toFixed(3)), worth50, towers50, losses, attempts, farms, worstWaveLosses: worst, fingerprint: fp, offline,
     wave1Hp: C.hpFor(1, MAP), wave50Hp: C.hpFor(50, MAP), wave1Cash: C.killCash(1, MAP), wave50Cash: C.killCash(50, MAP),
   };
   return res;
@@ -442,6 +462,9 @@ function runAll() {
     const rows = C.MAP_IDS.filter(id => results[id]).map(id => results[id]);
     console.log('\nmap        w50     w100    reached  hpMul      cashMul    startCash  worth50');
     for (const r of rows) console.log(`${r.map.padEnd(10)} ${String(r.w50h).padEnd(7)} ${String(r.w100h).padEnd(7)} ${String(r.reached).padEnd(8)} ${Number(r.hpMul).toExponential(2).padEnd(10)} ${Number(r.cashMul).toExponential(2).padEnd(10)} ${Number(r.startCash).toExponential(2).padEnd(10)} ${r.worth50 != null ? r.worth50.toExponential(2) : '-'}`);
+    console.log('\noffline 8h check (minutes of active income at the same point)');
+    console.log('map        ' + OFFLINE_AT.map(w => ('w' + w).padEnd(8)).join(''));
+    for (const r of rows) console.log(r.map.padEnd(10) + ' ' + OFFLINE_AT.map(w => { const o = (r.offline || []).find(x => x.wave === w); return (o ? o.minutes.toFixed(0) + 'm' : '-').padEnd(8); }).join(''));
     for (let i = 1; i < rows.length; i++) {
       const a = rows[i - 1], b = rows[i];
       if (a.wave50Hp && b.wave1Hp) console.log(`${b.map} wave 1 vs ${a.map} wave 50: hp x${(b.wave1Hp / a.wave50Hp).toFixed(2)}, kill cash x${(b.wave1Cash / a.wave50Cash).toFixed(2)}, start cash vs worth50 x${a.worth50 ? (b.startCash / a.worth50).toFixed(2) : '-'}`);

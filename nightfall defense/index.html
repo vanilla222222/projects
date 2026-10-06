@@ -21,6 +21,8 @@
       <div class="chip dim" title="Highest wave cleared"><span class="k">Best</span><span id="hBest">0</span></div>
       <div id="hStarChip" class="chip star" data-tip="No stars on this map yet"><span class="k">Stars</span><span id="hStars">0</span></div>
       <div class="chip moon" data-tip="Moonstones: spend them on permanent research"><span class="k">Moon</span><span id="hMoon">0</span></div>
+      <button id="hFarmChip" class="chip farm" type="button" hidden data-tip="Auto-farm is looping a wave. Tap to open the farm settings."><span class="k">Farm</span><span id="hFarm">-</span></button>
+      <button id="hBuildChip" class="chip plan" type="button" hidden data-tip="A saved plan is being rebuilt as cash comes in. Tap for details."><span class="k">Plan</span><span id="hBuild">0%</span></button>
       <button id="muteBtn" class="icobtn" type="button" aria-label="Mute sound" aria-pressed="false" data-tip="Sound on or off (M)">&#9834;</button>
       <button id="setBtn" class="icobtn" type="button" aria-label="Settings" aria-haspopup="dialog" data-tip="Settings">&#9881;</button>
     </div>
@@ -64,6 +66,20 @@
         <button id="startBtn" class="primary" type="button">Start Wave 1</button>
         <label class="auto"><input type="checkbox" id="autoBox"><span class="sw"></span><span>Auto-continue</span></label>
         <p id="autoHint" class="hint"></p>
+        <div class="farmrow">
+          <label class="auto"><input type="checkbox" id="farmBox"><span class="sw"></span><span>Auto-farm</span></label>
+          <select id="farmPick" class="farmpick" aria-label="Wave to farm"></select>
+        </div>
+        <p id="farmHint" class="hint"></p>
+        <div id="buildBox" class="buildbox" hidden>
+          <div class="bbhead"><span id="buildName">Plan</span><span id="buildPct">0%</span></div>
+          <div class="bbar" role="progressbar" aria-label="Plan rebuild progress" aria-valuemin="0" aria-valuemax="100"><i id="buildBar"></i></div>
+          <div class="bbfoot"><span id="buildNext" class="hint"></span><button id="buildCancel" class="ghost" type="button">Stop</button></div>
+        </div>
+        <div class="idlerow">
+          <button id="rulesBtn" class="mapbtn codexbtn" type="button" aria-haspopup="dialog" data-tip="Automatic upgrade rules for each race or pony">Rules <span id="rulesState" class="rstate">off</span></button>
+          <button id="plansBtn" class="mapbtn codexbtn" type="button" aria-haspopup="dialog" data-tip="Save and restore board layouts">Plans <span id="plansState" class="rstate">0</span></button>
+        </div>
       </section>
       <section class="card build">
         <h2>Ponies</h2>
@@ -139,6 +155,43 @@
     <div class="dhead"><h2 id="heroTitle">Heroes</h2><span id="heroMoon" class="resmoon"></span><button id="heroClose" class="ghost x" type="button">Close</button></div>
     <p class="hint">One hero per map. Heroes cannot fall, level up from kills on this map and keep their choice when you star up. You can change hero between waves.</p>
     <div id="heroList" class="herolist"></div>
+  </div>
+</div>
+<div id="awayModal" class="modal" hidden>
+  <div class="dialog away" role="dialog" aria-modal="true" aria-labelledby="awayTitle">
+    <div class="dhead"><h2 id="awayTitle">Welcome back</h2></div>
+    <div id="awayBody" class="awaybody"></div>
+    <div class="dactions"><button id="awayClaim" class="primary" type="button">Claim</button></div>
+  </div>
+</div>
+<div id="rulesModal" class="modal" hidden>
+  <div class="dialog wide rules" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+    <div class="dhead"><h2 id="rulesTitle">Upgrade rules</h2><button id="rulesClose" class="ghost x" type="button">Close</button></div>
+    <label class="opt"><span>Rules on</span><input type="checkbox" id="rulesOn"><span class="sw"></span></label>
+    <div class="rgrid">
+      <label class="rsel"><span>Run</span><select id="rulesTick"><option value="end">At wave end</option><option value="sec">Every second</option><option value="both">Wave end and every second</option></select></label>
+      <label class="rsel"><span>Cash reserve</span><select id="rulesReserve"></select></label>
+    </div>
+    <div id="rulesTabs" class="rtabs" role="tablist" aria-label="Rule scope"></div>
+    <div id="rulesScope" class="rscope"></div>
+    <ol id="rulesList" class="rlist"></ol>
+    <div class="radd">
+      <h3>Add a rule</h3>
+      <div class="raddrow">
+        <select id="ruleKind" aria-label="Rule type"><option value="dmg">Buy Damage</option><option value="rate">Buy Rate</option><option value="path">Follow a path</option><option value="cheap">Buy the cheapest upgrade</option></select>
+        <span id="ruleArgs" class="rargs"></span>
+        <button id="ruleAdd" class="primary" type="button">Add rule</button>
+      </div>
+    </div>
+    <p class="hint">Rules are checked top to bottom for every pony. Each one buys when it is affordable after the reserve, then the next check starts again from the top. A pony with its own rules ignores its race rules.</p>
+  </div>
+</div>
+<div id="plansModal" class="modal" hidden>
+  <div class="dialog wide plans" role="dialog" aria-modal="true" aria-labelledby="plansTitle">
+    <div class="dhead"><h2 id="plansTitle">Board plans</h2><button id="plansClose" class="ghost x" type="button">Close</button></div>
+    <p class="hint">A plan stores every pony on this map with its race, spot, paths, training levels and target mode, plus the hero spot. Restoring buys what you can afford in order and queues the rest as cash comes in.</p>
+    <div id="plansBuild"></div>
+    <div id="plansList" class="plist"></div>
   </div>
 </div>
 <div id="starBurst" class="starburst" aria-hidden="true"></div>

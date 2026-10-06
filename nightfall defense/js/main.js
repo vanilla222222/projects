@@ -15,7 +15,9 @@
       return C.deserialize(raw);
     } catch (err) { return null; }
   }
+  let seenReady = false;
   function writeSave() {
+    if (seenReady && !ui.away) C.touchSeen(S, Date.now());
     try { localStorage.setItem(SAVE_KEY, C.serialize(S)); return true; } catch (err) { return false; }
   }
   function clearSave() {
@@ -29,6 +31,7 @@
     placing: null, ghost: null, ghostTouch: false, selId: 0, hoverId: 0, sellArm: 0, autoNext: 0,
     infoKey: '', waveKey: '', buildKey: '', ledgerKey: '', speedKey: '', showAll: false, paused: false, sel: null, tipEl: null,
     heroSel: false, heroKey: '', heroBarKey: '', heroListKey: '',
+    away: null, farmNext: 0, farmKey: '', rulesKey: '', plansKey: '',
   };
 
   const cv = $('cv');
@@ -49,7 +52,7 @@
   resize();
 
   function selTower() { return S.towers.find(t => t.id === ui.selId) || null; }
-  function dirty() { ui.infoKey = ui.waveKey = ui.buildKey = ui.ledgerKey = ui.speedKey = ''; }
+  function dirty() { ui.infoKey = ui.waveKey = ui.buildKey = ui.ledgerKey = ui.speedKey = ui.farmKey = ui.rulesKey = ''; }
 
   let bannerT = 0;
   function banner(text, cls) {
@@ -221,6 +224,9 @@
     if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
     const k = ev.key.length === 1 ? ev.key.toLowerCase() : ev.key;
     if (k === 'Shift') { ui.showAll = true; return; }
+    if (!$('awayModal').hidden) { if (k === 'Escape' || k === 'Enter') { ev.preventDefault(); claimAway(); } return; }
+    if (!$('rulesModal').hidden) { if (k === 'Escape') closeRules(); return; }
+    if (!$('plansModal').hidden) { if (k === 'Escape') closePlans(); return; }
     if (!$('setModal').hidden) { if (k === 'Escape') closeSettings(); return; }
     if (!$('mapModal').hidden) { if (k === 'Escape') closeMaps(); return; }
     if (!$('codexModal').hidden) { if (k === 'Escape') closeCodex(); return; }
@@ -296,14 +302,19 @@
 
   function startSelected() {
     if (S.run) return;
-    ui.autoNext = 0;
+    ui.autoNext = 0; ui.farmNext = 0;
     C.startWave(S, S.sel);
   }
   $('startBtn').addEventListener('click', startSelected);
   $('wPrev').addEventListener('click', () => { if (!S.run && S.sel > 1) { S.sel--; ui.waveKey = ''; } });
   $('wNext').addEventListener('click', () => { if (!S.run && S.sel < C.topWave(S)) { S.sel++; ui.waveKey = ''; } });
   $('wTop').addEventListener('click', () => { if (!S.run) { S.sel = C.topWave(S); ui.waveKey = ''; } });
-  $('autoBox').addEventListener('change', ev => { S.auto = ev.target.checked; ui.waveKey = ''; if (!S.auto) ui.autoNext = 0; writeSave(); });
+  $('autoBox').addEventListener('change', ev => {
+    S.auto = ev.target.checked; ui.waveKey = '';
+    if (!S.auto) ui.autoNext = 0;
+    else if (farmOn()) { C.setFarm(S, false); ui.farmNext = 0; ui.farmKey = ''; banner('Auto-farm off: Auto-continue climbs instead', ''); }
+    writeSave();
+  });
   function resetAll() {
     if (!window.confirm('Reset all progress on every map? Every pony, upgrade, wave and coin will be lost.')) return;
     const keep = S.settings;
@@ -311,7 +322,7 @@
     S = C.newState();
     S.settings = keep;
     R.bgKey = ''; resize();
-    ui.selId = 0; ui.placing = null; ui.autoNext = 0; ui.paused = false;
+    ui.selId = 0; ui.placing = null; ui.autoNext = 0; ui.farmNext = 0; ui.paused = false;
     dirty();
     closeSettings();
     banner('Progress reset', 'bad');
@@ -378,13 +389,16 @@
     const n = S.run ? S.run.n : S.sel;
     const left = S.run ? S.run.enemies.length + S.run.queue.length : 0;
     const star = C.starOf(S);
-    const key = [n, S.cleared, !!S.run, S.auto, S.run ? S.run.lives : 0, left, ui.autoNext > 0, S.towers.length, C.fmt(1e6), star, S.map, C.rl(S, 'util_auto'), C.rl(S, 'eco_first') + C.rl(S, 'eco_master')].join();
+    const slotKey = C.slotsOf(S).map(q => q ? q.name + q.at : '').join();
+    const key = [n, S.cleared, !!S.run, S.auto, S.run ? S.run.lives : 0, left, ui.autoNext > 0, S.towers.length, C.fmt(1e6), star, S.map, C.rl(S, 'util_auto'), C.rl(S, 'eco_first') + C.rl(S, 'eco_master'), slotKey, !!S.build, ui.farmNext > 0].join();
     if (key === ui.waveKey) return;
     ui.waveKey = key;
     $('starMods').innerHTML = starPills(star, false);
     $('starBtn').hidden = !C.canStarUp(S);
     $('starBtn').textContent = 'Star up to ' + (star + 1) + '★';
-    $('presetBtn').hidden = !(C.rl(S, 'util_auto') && !S.run && !S.towers.length && C.presetOf(S).length);
+    const ls = latestSlot(), pb = $('presetBtn');
+    pb.hidden = !(!S.run && !S.towers.length && !S.build && (ls >= 0 || (C.rl(S, 'util_auto') && C.presetOf(S).length)));
+    if (!pb.hidden) pb.textContent = ls >= 0 ? 'Restore plan: ' + C.slotsOf(S)[ls].name : 'Rebuild saved layout';
     const fresh = n > S.cleared;
     $('wLabel').textContent = 'Wave ' + n + (n === C.MAX_WAVE ? ' (final)' : '');
     const sub = $('wSub');
@@ -454,7 +468,7 @@
     const paths = C.PATHS[t.race];
     const aff = paths.map((p, i) => S.cash >= C.nextNodeCost(t, i) ? 1 : 0).join('') + (S.cash >= C.infNext(t, 'dmg') ? 1 : 0) + (S.cash >= C.infNext(t, 'rate') ? 1 : 0);
     const pv = C.maxAffordablePreview(S, t);
-    const key = [t.id, t.paths.join(''), t.infD, t.infR, t.mode, aff, pv.count, ui.sellArm > performance.now(), (t.buff && t.buff.dmg + ',' + t.buff.rate + ',' + t.buff.range + ',' + t.buff.detect) || '', C.fmt(1e6)].join('|');
+    const key = [t.id, t.paths.join(''), t.infD, t.infR, t.mode, aff, S.rules.on, (S.rules.pony[t.id] || S.rules.race[t.race] || []).length, !!S.rules.pony[t.id], pv.count, ui.sellArm > performance.now(), (t.buff && t.buff.dmg + ',' + t.buff.rate + ',' + t.buff.range + ',' + t.buff.detect) || '', C.fmt(1e6)].join('|');
     if (key === ui.infoKey) { refreshPonyStats(t); return; }
     ui.infoKey = key;
     hideTip();
@@ -500,6 +514,8 @@
     const refund = C.sellValue(t);
     const armed = ui.sellArm > performance.now();
     h += '<div class="sellrow"><button class="sell' + (armed ? ' confirm' : '') + '" type="button" data-act="sell">' + (armed ? 'Tap again to sell for ' : 'Sell for ') + C.fmt(refund) + '</button></div>';
+    const own = S.rules.pony[t.id], rc = (own || S.rules.race[t.race] || []).length;
+    h += '<button class="rulesbtn" type="button" data-act="rules">Upgrade rules &middot; ' + (own ? own.length + ' own' : rc ? rc + ' from ' + esc(r.name) : 'none') + (S.rules.on ? '' : ' (off)') + '</button>';
     h += '<p class="hint">Selling refunds ' + C.pct(C.TUNE.sellRate) + ' of the ' + C.fmt(t.spent) + ' spent on this pony. Hotkeys: B buy max, S sell, U focus.</p>';
     box.innerHTML = h;
     refreshPonyStats(t);
@@ -513,6 +529,7 @@
     const t = selTower();
     if (!t) return;
     const act = b.dataset.act, v = b.dataset.v;
+    if (act === 'rules') { openRules('pony', t.id); return; }
     if (act === 'close') { ui.selId = 0; }
     else if (act === 'mode') { t.mode = v; A.play('click'); }
     else if (act === 'node') { if (C.buyNode(S, t, +v)) { t.anim = 0.4; A.play('upgrade'); writeSave(); } }
@@ -668,7 +685,8 @@
     if (!C.mapUnlocked(S, id)) { A.play('deny'); banner('Clear wave ' + C.UNLOCK_AT + ' on the previous map to unlock this one', 'bad'); return; }
     if (S.run) { A.play('deny'); banner('Finish or lose the current wave before switching maps', 'bad'); return; }
     if (!C.switchMap(S, id)) return;
-    ui.selId = 0; ui.placing = null; ui.ghost = null; ui.autoNext = 0; ui.paused = false;
+    ui.selId = 0; ui.placing = null; ui.ghost = null; ui.autoNext = 0; ui.farmNext = 0; ui.paused = false;
+    if (farmOn() && !S.run) { S.sel = C.farmTarget(S); ui.farmNext = performance.now() + 1600; }
     updateHint();
     R.bgKey = ''; resize();
     dirty();
@@ -743,8 +761,10 @@
     const r = C.starUp(S);
     $('starModal').hidden = true;
     if (!r) { A.play('deny'); return null; }
-    ui.selId = 0; ui.placing = null; ui.ghost = null; ui.autoNext = 0; ui.paused = false; S.auto = false;
+    ui.selId = 0; ui.placing = null; ui.ghost = null; ui.autoNext = 0; ui.farmNext = 0; ui.paused = false; S.auto = false;
     updateHint(); dirty();
+    const ls = latestSlot();
+    if (ls >= 0) setTimeout(() => { if (!S.towers.length && !S.build && !S.run) banner('Tap "Restore plan: ' + C.slotsOf(S)[ls].name + '" to rebuild your board', 'good'); }, 2800);
     writeSave();
     return r;
   }
@@ -764,6 +784,8 @@
   $('starConfirm').addEventListener('click', confirmStar);
   $('starModal').addEventListener('click', ev => { if (ev.target === $('starModal')) closeStar(); });
   $('presetBtn').addEventListener('click', () => {
+    const ls = latestSlot();
+    if (ls >= 0) { doLoadPlan(ls); return; }
     const n = C.placePreset(S);
     if (!n) { A.play('deny'); banner('Not enough cash to rebuild the saved layout yet', 'bad'); return; }
     A.play('place');
@@ -1139,6 +1161,433 @@
   document.addEventListener('focusin', ev => { const el = ev.target.closest && ev.target.closest('[data-tip]'); if (el) showTip(el, false); });
   window.addEventListener('scroll', hideTip, true);
 
+  function fmtAway(sec) {
+    sec = Math.max(0, Math.floor(sec));
+    const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+    if (h) return h + 'h ' + (m < 10 ? '0' : '') + m + 'm';
+    if (m) return m + 'm ' + (s < 10 ? '0' : '') + s + 's';
+    return s + 's';
+  }
+  function anyModalOpen() {
+    for (const id of ['setModal', 'mapModal', 'codexModal', 'starModal', 'researchModal', 'heroModal', 'awayModal', 'rulesModal', 'plansModal']) if (!$(id).hidden) return true;
+    return false;
+  }
+  function awayHtml(g) {
+    let h = '<p>You were away for <b>' + fmtAway(g.away) + '</b>.' + (g.capped ? ' Earnings stop after <b>' + fmtAway(g.cap) + '</b>, so ' + fmtAway(g.secs) + ' counted.' : '') + '</p>';
+    h += '<p class="hint">Each map earns from the best wave its board can safely farm. The map you were playing earns in full, the others at ' + Math.round(C.OFFLINE.side * 100) + '%.</p>';
+    h += '<ul class="awaylist" id="awayList">';
+    for (const m of g.maps) h += '<li class="' + (m.active ? 'on' : '') + '"><span class="an">' + esc(m.name) + '</span><span class="aw">wave ' + m.wave + ' &middot; ' + C.fmt(m.rate * 60) + '/min</span><span class="ac">+' + C.fmt(m.cash) + '</span></li>';
+    h += '</ul><div class="awaytot"><span>Total</span><b id="awayTotal">+' + C.fmt(g.total) + '</b></div>';
+    const r = C.rl(S, 'eco_offline'), c = C.rl(S, 'util_offline');
+    h += '<p class="hint">' + (r ? 'Night Shift adds +' + Math.round(C.OFFLINE.boost * r * 100) + '% to these earnings. ' : 'Night Shift research raises these earnings. ') + (c ? 'Long Watch extends the limit to ' + fmtAway(C.offlineCap(S)) + '.' : 'Long Watch research extends the 8h limit.') + '</p>';
+    return h;
+  }
+  function openAway(g) {
+    ui.away = g;
+    lastFocus = document.activeElement;
+    $('awayBody').innerHTML = awayHtml(g);
+    $('awayClaim').textContent = 'Claim ' + C.fmt(g.total);
+    $('awayModal').hidden = false;
+    $('awayClaim').focus();
+  }
+  function claimAway() {
+    const g = ui.away;
+    if (!g) { $('awayModal').hidden = true; return 0; }
+    ui.away = null;
+    const got = C.applyOffline(S, g);
+    $('awayModal').hidden = true;
+    A.play('win');
+    banner('Claimed ' + C.fmt(got) + ' earned while away', 'good');
+    dirty(); writeSave();
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+    if (S.build) C.buildStep(S);
+    return got;
+  }
+  $('awayClaim').addEventListener('click', claimAway);
+  function catchUp(now, quiet) {
+    if (ui.away) return null;
+    if (S.lastSeen > now) { if (!quiet) banner('The clock went back. Offline earnings resume once it passes your last visit.', 'bad'); return null; }
+    const g = C.offlineGain(S, now);
+    if (!g) { C.touchSeen(S, now); return null; }
+    if (g.away < 10 || g.total <= 0) { C.touchSeen(S, now); return g; }
+    if (g.away < C.OFFLINE.min) {
+      C.applyOffline(S, g);
+      banner('+' + C.fmt(g.total) + ' cash while the tab was hidden', 'good');
+      dirty(); writeSave();
+      return g;
+    }
+    openAway(g);
+    return g;
+  }
+
+  function farmOn() { return !!(S.farm && S.farm.on); }
+  function farmLabel() { return 'w' + C.farmTarget(S) + (S.farm && S.farm.fails ? ' !' : ''); }
+  function setFarming(on, pick) {
+    C.setFarm(S, on, pick);
+    ui.autoNext = 0;
+    if (on && !S.run) { S.sel = C.farmTarget(S); ui.farmNext = performance.now() + 900; }
+    if (!on) ui.farmNext = 0;
+    ui.waveKey = ''; ui.farmKey = '';
+    writeSave();
+  }
+  function farmPickOptions() {
+    const top = C.topWave(S), sel = $('farmPick');
+    const k = top + '|' + S.map + '|' + (S.farm ? S.farm.safe : 0) + '|' + S.cleared;
+    if (sel.dataset.k !== k) {
+      sel.dataset.k = k;
+      const safe = S.farm && S.farm.safe ? S.farm.safe : S.cleared;
+      let h = '<option value="0">Best safe wave (' + Math.max(1, Math.min(top, safe)) + ')</option>';
+      for (let n = Math.max(1, S.cleared); n >= 1; n--) h += '<option value="' + n + '">Wave ' + n + '</option>';
+      sel.innerHTML = h;
+    }
+    const v = String(S.farm ? S.farm.pick : 0);
+    if (sel.value !== v) sel.value = sel.querySelector('option[value="' + v + '"]') ? v : '0';
+  }
+  function refreshFarm() {
+    const f = S.farm || {};
+    const key = [S.map, !!f.on, f.pick, f.safe, f.fails, f.runs, S.cleared, !!S.run, ui.farmNext > 0, S.sel].join();
+    if (key === ui.farmKey) return;
+    ui.farmKey = key;
+    farmPickOptions();
+    $('farmBox').checked = !!f.on;
+    $('farmPick').disabled = S.cleared < 1;
+    $('farmBox').disabled = S.cleared < 1 && !f.on;
+    const n = C.farmTarget(S);
+    $('farmHint').textContent = S.cleared < 1 ? 'Clear a wave to unlock auto-farm.'
+      : !f.on ? 'Auto-farm loops ' + (f.pick ? 'wave ' + f.pick : 'your best wave cleared without losing a life (wave ' + n + ')') + ' and starts each run by itself. Two losses in a row stop it and drop back one wave.'
+        : 'Farming wave ' + n + (f.runs ? ' · ' + f.runs + ' run' + (f.runs > 1 ? 's' : '') + ' done' : '') + (f.fails ? ' · last run lost, retrying once' : '') + '.';
+    const chip = $('hFarmChip');
+    chip.hidden = !f.on;
+    if (f.on) { $('hFarm').textContent = farmLabel(); chip.classList.toggle('warn', !!f.fails); }
+  }
+  $('farmBox').addEventListener('change', ev => {
+    if (ev.target.checked && S.cleared < 1) { ev.target.checked = false; A.play('deny'); return; }
+    setFarming(ev.target.checked);
+    banner(ev.target.checked ? 'Auto-farm on: looping wave ' + C.farmTarget(S) : 'Auto-farm off', ev.target.checked ? 'good' : '');
+  });
+  $('farmPick').addEventListener('change', ev => {
+    const v = +ev.target.value || 0;
+    C.setFarm(S, farmOn(), v);
+    if (!S.run) S.sel = C.farmTarget(S);
+    ui.waveKey = ''; ui.farmKey = '';
+    writeSave();
+  });
+  $('hFarmChip').addEventListener('click', () => { const b = $('farmBox'); b.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); b.focus(); });
+
+  const rulesUi = { scope: 'race', key: C.RACE_IDS[0], kind: 'dmg' };
+  function rulesList() {
+    if (rulesUi.scope === 'pony') {
+      const t = S.towers.find(q => q.id === rulesUi.key);
+      if (!t) { rulesUi.scope = 'race'; rulesUi.key = C.RACE_IDS[0]; return rulesList(); }
+      const own = S.rules.pony[t.id];
+      return { t, race: t.race, own: !!own, list: own || S.rules.race[t.race] || [] };
+    }
+    return { t: null, race: rulesUi.key, own: true, list: S.rules.race[rulesUi.key] || [] };
+  }
+  function commitRules(list) {
+    const cur = rulesList();
+    if (rulesUi.scope === 'pony') C.setRules(S, 'pony', cur.t.id, list);
+    else C.setRules(S, 'race', rulesUi.key, list);
+    buildRules(); ui.infoKey = ''; writeSave();
+  }
+  function ruleArgsHtml(race) {
+    const k = rulesUi.kind;
+    if (k === 'dmg' || k === 'rate') {
+      let o = '<option value="0">no limit</option>';
+      for (const n of [5, 10, 15, 20, 25, 30, 40, 50]) o += '<option value="' + n + '">up to Lv ' + n + '</option>';
+      return '<select id="ruleTo" aria-label="Level limit">' + o + '</select>';
+    }
+    if (k === 'path') {
+      const P = C.PATHS[race];
+      const ps = (id, none) => '<select id="' + id + '" aria-label="' + (none ? 'Then path' : 'First path') + '">' + (none ? '<option value="-1">then nothing</option>' : '') + P.map((p, i) => '<option value="' + i + '">' + (none ? 'then ' : '') + esc(p.name) + '</option>').join('') + '</select>';
+      const ns = (id, lbl) => { let o = ''; for (let n = 1; n <= 10; n++) o += '<option value="' + n + '"' + (n === (id === 'ruleAn' ? 5 : 10) ? ' selected' : '') + '>to ' + n + '</option>'; return '<select id="' + id + '" aria-label="' + lbl + '">' + o + '</select>'; };
+      return ps('ruleA', false) + ns('ruleAn', 'First path node') + ps('ruleB', true) + ns('ruleBn', 'Then path node');
+    }
+    return '';
+  }
+  function buildRules() {
+    const R = S.rules;
+    $('rulesOn').checked = !!R.on;
+    $('rulesTick').value = R.tick;
+    const rs = $('rulesReserve');
+    if (!rs.options.length) rs.innerHTML = C.RESERVES.map(v => '<option value="' + v + '">' + (v ? 'Keep ' + v + '% of cash' : 'No reserve') + '</option>').join('');
+    rs.value = String(C.RESERVES.indexOf(R.reserve) >= 0 ? R.reserve : 0);
+    const cur = rulesList();
+    let tabs = '';
+    for (const id of C.RACE_IDS) {
+      const on = rulesUi.scope === 'race' && rulesUi.key === id, n = (R.race[id] || []).length;
+      tabs += '<button type="button" role="tab" aria-selected="' + on + '" class="' + (on ? 'on' : '') + '" data-scope="race" data-key="' + id + '" style="--rc:' + C.RACES[id].accent + '">' + esc(C.RACES[id].name) + (n ? ' <b>' + n + '</b>' : '') + '</button>';
+    }
+    const st = rulesUi.scope === 'pony' ? cur.t : selTower();
+    if (st) {
+      const on = rulesUi.scope === 'pony';
+      tabs += '<button type="button" role="tab" aria-selected="' + on + '" class="pony' + (on ? ' on' : '') + '" data-scope="pony" data-key="' + st.id + '">' + esc(C.RACES[st.race].name) + ' #' + st.id + (R.pony[st.id] ? ' <b>own</b>' : '') + '</button>';
+    }
+    $('rulesTabs').innerHTML = tabs;
+    let sc = '';
+    if (rulesUi.scope === 'pony') {
+      sc = cur.own ? '<span>Pony #' + cur.t.id + ' uses its own rules.</span><button type="button" class="ghost" data-rscope="race">Use ' + esc(C.RACES[cur.race].name) + ' rules again</button>'
+        : '<span>Pony #' + cur.t.id + ' follows the ' + esc(C.RACES[cur.race].name) + ' rules below.</span><button type="button" class="ghost" data-rscope="own">Give it its own rules</button>';
+    } else {
+      const cnt = S.towers.filter(t => t.race === rulesUi.key && !R.pony[t.id]).length;
+      sc = '<span>Applies to ' + cnt + ' ' + esc(C.RACES[rulesUi.key].name) + (cnt === 1 ? ' pony' : ' ponies') + ' on this map without their own rules.</span>';
+    }
+    $('rulesScope').innerHTML = sc;
+    const ro = rulesUi.scope === 'pony' && !cur.own;
+    let li = '';
+    cur.list.forEach((r, i) => {
+      li += '<li data-i="' + i + '"><span class="rn">' + (i + 1) + '</span><span class="rt">' + esc(C.ruleText(r, cur.race)) + '</span>' + (ro ? '' :
+        '<span class="rbtns"><button type="button" class="sq small" data-mv="-1" aria-label="Move rule up"' + (i ? '' : ' disabled') + '>&#9650;</button><button type="button" class="sq small" data-mv="1" aria-label="Move rule down"' + (i < cur.list.length - 1 ? '' : ' disabled') + '>&#9660;</button><button type="button" class="sq small del" data-del aria-label="Delete rule">&#10005;</button></span>') + '</li>';
+    });
+    if (!cur.list.length) li = '<li class="empty">No rules yet. Add one below, for example Buy Damage when affordable.</li>';
+    $('rulesList').innerHTML = li;
+    $('ruleKind').value = rulesUi.kind;
+    $('ruleArgs').innerHTML = ruleArgsHtml(cur.race);
+    const full = cur.list.length >= C.RULE_MAX;
+    $('ruleAdd').disabled = ro || full;
+    $('ruleKind').disabled = ro;
+    $('ruleAdd').textContent = full ? 'Rule list full (' + C.RULE_MAX + ')' : 'Add rule';
+    ui.rulesKey = '';
+  }
+  function readRule() {
+    const k = rulesUi.kind, v = id => $(id) ? +$(id).value : 0;
+    if (k === 'dmg' || k === 'rate') return { k, to: v('ruleTo') };
+    if (k === 'path') return { k, a: v('ruleA'), an: v('ruleAn'), b: v('ruleB'), bn: v('ruleBn') };
+    return { k: 'cheap' };
+  }
+  function addRule(r) {
+    const cur = rulesList();
+    if (rulesUi.scope === 'pony' && !cur.own) return false;
+    if (cur.list.length >= C.RULE_MAX) return false;
+    commitRules(cur.list.concat([r || readRule()]));
+    A.play('click');
+    return true;
+  }
+  function openRules(scope, key) {
+    lastFocus = document.activeElement;
+    if (scope === 'pony' && S.towers.some(t => t.id === key)) { rulesUi.scope = 'pony'; rulesUi.key = key; }
+    else if (scope === 'race' && C.RACES[key]) { rulesUi.scope = 'race'; rulesUi.key = key; }
+    buildRules();
+    $('rulesModal').hidden = false;
+    $('rulesClose').focus();
+  }
+  function closeRules() {
+    if ($('rulesModal').hidden) return;
+    $('rulesModal').hidden = true;
+    hideTip();
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  $('rulesBtn').addEventListener('click', () => openRules());
+  $('rulesClose').addEventListener('click', closeRules);
+  $('rulesOn').addEventListener('change', ev => {
+    S.rules.on = ev.target.checked;
+    ui.rulesKey = '';
+    if (S.rules.on) { const r = C.runRules(S, 'end'); if (r.count) banner('Rules bought ' + r.count + ' upgrade' + (r.count > 1 ? 's' : '') + ' for ' + C.fmt(r.spent), 'good'); }
+    dirty(); writeSave();
+  });
+  $('rulesTick').addEventListener('change', ev => { S.rules.tick = ev.target.value; writeSave(); });
+  $('rulesReserve').addEventListener('change', ev => { S.rules.reserve = +ev.target.value || 0; writeSave(); });
+  $('ruleKind').addEventListener('change', ev => { rulesUi.kind = ev.target.value; $('ruleArgs').innerHTML = ruleArgsHtml(rulesList().race); });
+  $('ruleAdd').addEventListener('click', () => addRule());
+  $('rulesModal').addEventListener('click', ev => {
+    if (ev.target === $('rulesModal')) { closeRules(); return; }
+    const tb = ev.target.closest('[data-scope]');
+    if (tb) { rulesUi.scope = tb.dataset.scope; rulesUi.key = tb.dataset.scope === 'pony' ? +tb.dataset.key : tb.dataset.key; buildRules(); return; }
+    const rs = ev.target.closest('[data-rscope]');
+    if (rs) {
+      const cur = rulesList();
+      if (rs.dataset.rscope === 'own') C.setRules(S, 'pony', cur.t.id, (S.rules.race[cur.race] || []).slice());
+      else C.setRules(S, 'pony', cur.t.id, null);
+      buildRules(); ui.infoKey = ''; writeSave();
+      return;
+    }
+    const li = ev.target.closest('li[data-i]');
+    if (!li) return;
+    const i = +li.dataset.i, cur = rulesList(), list = cur.list.slice();
+    const mv = ev.target.closest('[data-mv]');
+    if (mv && !mv.disabled) {
+      const j = i + (+mv.dataset.mv);
+      if (j < 0 || j >= list.length) return;
+      [list[i], list[j]] = [list[j], list[i]];
+      commitRules(list);
+      const btn = $('rulesList').querySelector('li[data-i="' + j + '"] [data-mv="' + mv.dataset.mv + '"]');
+      if (btn && !btn.disabled) btn.focus();
+      return;
+    }
+    if (ev.target.closest('[data-del]')) { list.splice(i, 1); commitRules(list); }
+  });
+  function refreshRulesBtn() {
+    const R = S.rules;
+    let n = 0;
+    for (const id in R.race) n += R.race[id].length;
+    for (const id in R.pony) n += R.pony[id].length;
+    const slots = C.slotsOf(S).filter(Boolean).length;
+    const k = R.on + '|' + n + '|' + slots + '|' + C.slotCount(S);
+    if (k === ui.rulesKey) return;
+    ui.rulesKey = k;
+    const rs = $('rulesState');
+    rs.textContent = R.on ? 'on · ' + n : (n ? 'off · ' + n : 'off');
+    rs.classList.toggle('on', !!R.on);
+    $('plansState').textContent = slots + '/' + C.slotCount(S);
+  }
+
+  const plansUi = { arm: '', armT: 0 };
+  function slotWhen(at) {
+    if (!at) return '';
+    const d = new Date(at);
+    return isNaN(d) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+  function buildPlans() {
+    const list = C.slotsOf(S), n = C.slotCount(S);
+    const armed = plansUi.armT > performance.now() ? plansUi.arm : '';
+    let h = '';
+    for (let i = 0; i < C.SLOT_MAX; i++) {
+      const sl = list[i];
+      if (i >= n) { h += '<article class="pslot locked"><div class="psh"><span class="psn">Slot ' + (i + 1) + '</span><span class="hint">Locked</span></div><p class="hint">Research Muster Plans to open ' + C.SLOT_BONUS + ' more slots.</p></article>'; continue; }
+      if (!sl) {
+        h += '<article class="pslot empty" data-slot="' + i + '"><div class="psh"><span class="psn">Slot ' + (i + 1) + '</span><span class="hint">Empty</span></div>'
+          + '<div class="psrow"><input type="text" maxlength="24" class="psname" data-name="' + i + '" placeholder="Plan ' + (i + 1) + '" aria-label="Name for slot ' + (i + 1) + '">'
+          + '<button type="button" class="primary pssave" data-save="' + i + '"' + (S.towers.length ? '' : ' disabled') + '>Save board</button></div></article>';
+        continue;
+      }
+      const races = {};
+      for (const t of sl.towers) races[t.race] = (races[t.race] || 0) + 1;
+      const mix = C.RACE_IDS.filter(r => races[r]).map(r => '<span class="pmix" style="--rc:' + C.RACES[r].accent + '">' + races[r] + ' ' + esc(C.RACES[r].name) + '</span>').join('');
+      const ow = armed === 'save' + i, del = armed === 'del' + i, building = S.build && S.build.slot === i;
+      h += '<article class="pslot' + (building ? ' on' : '') + '" data-slot="' + i + '"><div class="psh"><input type="text" maxlength="24" class="psname" data-name="' + i + '" value="' + esc(sl.name) + '" aria-label="Rename slot ' + (i + 1) + '"><span class="psc">' + C.fmt(sl.cost) + '</span></div>'
+        + '<div class="pmixes">' + mix + '</div>'
+        + '<div class="hint">' + sl.towers.length + (sl.towers.length === 1 ? ' pony' : ' ponies') + (sl.hero ? ' · hero ' + esc(C.HEROES[sl.hero.id].name) : '') + ' · saved at best wave ' + sl.cleared + (sl.at ? ' · ' + slotWhen(sl.at) : '') + '</div>'
+        + '<div class="psrow"><button type="button" class="primary psload" data-load="' + i + '">' + (building ? 'Rebuilding...' : 'Restore') + '</button>'
+        + '<button type="button" class="ghost' + (ow ? ' armed' : '') + '" data-save="' + i + '"' + (S.towers.length ? '' : ' disabled') + '>' + (ow ? 'Tap to overwrite' : 'Save over') + '</button>'
+        + '<button type="button" class="ghost danger' + (del ? ' armed' : '') + '" data-del="' + i + '">' + (del ? 'Tap to delete' : 'Delete') + '</button></div></article>';
+    }
+    $('plansList').innerHTML = h;
+    $('plansBuild').innerHTML = buildBoxHtml();
+    ui.plansKey = plansKey();
+  }
+  function plansKey() { const p = C.buildProgress(S); return C.slotsOf(S).map(s => s ? s.name + s.at : '-').join() + '|' + C.slotCount(S) + '|' + S.towers.length + '|' + (p ? p.done + '/' + p.total : '') + '|' + (plansUi.armT > performance.now() ? plansUi.arm : ''); }
+  function buildBoxHtml() {
+    const p = C.buildProgress(S);
+    if (!p) return '';
+    return '<div class="buildbox"><div class="bbhead"><span>Rebuilding ' + esc(p.name) + '</span><span>' + Math.round(p.pct * 100) + '%</span></div><div class="bbar"><i style="width:' + (p.pct * 100).toFixed(1) + '%"></i></div>'
+      + '<div class="bbfoot"><span class="hint">' + p.placed + ' / ' + p.towers + ' ponies placed' + (p.skipped ? ', ' + p.skipped + ' blocked' : '') + (p.next ? ' · next ' + C.fmt(p.next) : '') + '</span><button type="button" class="ghost" data-cancel>Stop</button></div></div>';
+  }
+  function openPlans() {
+    lastFocus = document.activeElement;
+    buildPlans();
+    $('plansModal').hidden = false;
+    $('plansClose').focus();
+  }
+  function closePlans() {
+    if ($('plansModal').hidden) return;
+    $('plansModal').hidden = true;
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function planName(i) { const el = $('plansList').querySelector('[data-name="' + i + '"]'); return el ? el.value : ''; }
+  function doSavePlan(i, name, force) {
+    const exists = !!C.slotsOf(S)[i];
+    if (exists && !force && !(plansUi.arm === 'save' + i && plansUi.armT > performance.now())) { plansUi.arm = 'save' + i; plansUi.armT = performance.now() + 2500; buildPlans(); return null; }
+    plansUi.arm = '';
+    const sl = C.savePreset(S, i, name, Date.now());
+    if (!sl) { A.play('deny'); banner('Place some ponies before saving a plan', 'bad'); return null; }
+    A.play('research');
+    banner('Saved plan "' + sl.name + '" with ' + sl.towers.length + ' ponies', 'good');
+    ui.rulesKey = ''; ui.waveKey = '';
+    writeSave();
+    if (!$('plansModal').hidden) buildPlans();
+    return sl;
+  }
+  function doLoadPlan(i) {
+    const B = C.loadPreset(S, i);
+    if (!B && !C.slotsOf(S)[i]) { A.play('deny'); return null; }
+    A.play('place');
+    const p = C.buildProgress(S);
+    banner(p ? 'Restoring "' + p.name + '": ' + Math.round(p.pct * 100) + '% done, the rest buys itself as cash comes in' : 'Plan restored', 'good');
+    dirty(); writeSave();
+    if (!$('plansModal').hidden) buildPlans();
+    return p || true;
+  }
+  function doDeletePlan(i) {
+    if (!(plansUi.arm === 'del' + i && plansUi.armT > performance.now())) { plansUi.arm = 'del' + i; plansUi.armT = performance.now() + 2500; buildPlans(); return false; }
+    plansUi.arm = '';
+    C.deletePreset(S, i);
+    ui.rulesKey = ''; ui.waveKey = '';
+    writeSave(); buildPlans();
+    return true;
+  }
+  function stopBuild() {
+    if (!C.cancelBuild(S)) return;
+    banner('Plan rebuild stopped', '');
+    dirty(); writeSave();
+    if (!$('plansModal').hidden) buildPlans();
+  }
+  $('plansBtn').addEventListener('click', openPlans);
+  $('plansClose').addEventListener('click', closePlans);
+  $('buildCancel').addEventListener('click', stopBuild);
+  $('hBuildChip').addEventListener('click', openPlans);
+  $('plansModal').addEventListener('click', ev => {
+    if (ev.target === $('plansModal')) { closePlans(); return; }
+    const b = ev.target.closest('button');
+    if (!b || b.disabled) return;
+    if (b.hasAttribute('data-cancel')) { stopBuild(); return; }
+    if (b.dataset.save != null) { doSavePlan(+b.dataset.save, planName(+b.dataset.save)); return; }
+    if (b.dataset.load != null) { doLoadPlan(+b.dataset.load); return; }
+    if (b.dataset.del != null) doDeletePlan(+b.dataset.del);
+  });
+  $('plansModal').addEventListener('change', ev => {
+    const el = ev.target.closest('[data-name]');
+    if (!el) return;
+    const i = +el.dataset.name;
+    if (C.slotsOf(S)[i] && C.renamePreset(S, i, el.value)) { writeSave(); el.value = C.slotsOf(S)[i].name; }
+  });
+  $('plansModal').addEventListener('keydown', ev => {
+    const el = ev.target.closest && ev.target.closest('[data-name]');
+    if (el && ev.key === 'Enter') { ev.preventDefault(); const i = +el.dataset.name; if (!C.slotsOf(S)[i]) doSavePlan(i, el.value); else el.blur(); }
+  });
+  function latestSlot() {
+    let best = -1, at = -1;
+    C.slotsOf(S).forEach((s, i) => { if (s && i < C.slotCount(S) && s.at >= at) { at = s.at; best = i; } });
+    return best;
+  }
+  function refreshBuildBox() {
+    const p = C.buildProgress(S);
+    const box = $('buildBox'), chip = $('hBuildChip');
+    box.hidden = !p; chip.hidden = !p;
+    if (p) {
+      const pct = Math.round(p.pct * 100) + '%';
+      $('buildName').textContent = 'Rebuilding ' + p.name;
+      $('buildPct').textContent = pct;
+      $('buildBar').style.width = (p.pct * 100).toFixed(1) + '%';
+      box.querySelector('.bbar').setAttribute('aria-valuenow', Math.round(p.pct * 100));
+      $('buildNext').textContent = p.placed + '/' + p.towers + ' placed' + (p.next ? ' · next ' + C.fmt(p.next) : '');
+      $('hBuild').textContent = pct;
+    }
+    if (!$('plansModal').hidden && plansKey() !== ui.plansKey) buildPlans();
+  }
+
+  let idleT = 0;
+  function idleTick(now) {
+    if (ui.paused || ui.away || now - idleT < 1000) return;
+    idleT = now;
+    let changed = false;
+    if (S.build) { if (C.buildStep(S)) changed = true; }
+    if (S.rules.on) { const r = C.runRules(S, 'sec'); if (r.count) changed = true; }
+    if (changed) { ui.infoKey = ''; ui.buildKey = ''; }
+  }
+  function waveEndIdle(e) {
+    const fr = C.farmResult(S, e);
+    if (fr && !fr.stop) {
+      ui.autoNext = 0;
+      S.sel = fr.next;
+      ui.farmNext = performance.now() + (fr.retry ? 2200 : 1600);
+      if (fr.retry) banner('Wave ' + e.n + ' lost. Auto-farm retries once.', 'bad');
+    }
+    if (S.build) C.buildStep(S);
+    const r = C.runRules(S, 'end');
+    if (r.count) setTimeout(() => banner('Rules bought ' + r.count + ' upgrade' + (r.count > 1 ? 's' : '') + ' for ' + C.fmt(r.spent), 'good'), 1400);
+    ui.farmKey = '';
+  }
+
   function handleEvents() {
     if (!S.events.length) return;
     const evs = S.events.splice(0);
@@ -1165,12 +1614,14 @@
           if (e.n === C.MAX_WAVE) setTimeout(() => banner('All 100 waves held. ' + C.mapOf(S).name + ' is safe!' + (C.canStarUp(S) ? ' Star up for Moonstones.' : ''), 'good'), 2700);
         }
         if (S.auto && !(e.fresh && e.n === C.MAX_WAVE)) ui.autoNext = performance.now() + 1600;
+        waveEndIdle(e);
         writeSave();
       } else if (e.type === 'lost') {
         A.play('lose');
         banner('Wave ' + e.n + ' lost. Ponies and cash kept, try again', 'bad');
         ui.autoNext = 0;
         if (S.auto) { S.auto = false; }
+        waveEndIdle(e);
         writeSave();
       } else if (e.type === 'enrage') {
         banner('The stragglers are enraged and immune to control', 'bad');
@@ -1190,6 +1641,9 @@
       else if (e.type === 'heroPick') { ui.heroKey = ''; ui.heroBarKey = ''; continue; }
       else if (e.type === 'herocast') { ui.heroBarKey = ''; continue; }
       else if (e.type === 'leak') continue;
+      else if (e.type === 'farmStop') { ui.farmNext = 0; setTimeout(() => banner('Auto-farm stopped: wave ' + e.n + ' lost twice, dropped back to wave ' + e.drop, 'bad'), 1500); }
+      else if (e.type === 'buildDone') { A.play('upgrade'); banner('Plan "' + e.name + '" fully rebuilt', 'good'); writeSave(); }
+      else if (e.type === 'rules' || e.type === 'buildBuy' || e.type === 'offline' || e.type === 'farm' || e.type === 'buildStart' || e.type === 'slotSaved') { ui.farmKey = ''; ui.rulesKey = ''; ui.infoKey = ''; ui.buildKey = ''; continue; }
       ui.waveKey = ''; ui.infoKey = '';
     }
   }
@@ -1232,12 +1686,21 @@
       ui.autoNext = 0;
       if (S.auto) C.startWave(S, S.sel);
     }
+    if (!ui.paused && ui.farmNext && now >= ui.farmNext && !S.run) {
+      if (anyModalOpen()) ui.farmNext = now + 500;
+      else {
+        ui.farmNext = 0;
+        if (farmOn()) { S.sel = C.farmTarget(S); C.startWave(S, S.sel); }
+      }
+    }
+    idleTick(now);
     ui.sel = selTower();
     R.drawScene(ctx, S, ui, now, real, cw, ch, dpr);
     board.classList.toggle('bossfight', R.bossBar);
     if (now - uiT > 120) {
       uiT = now;
       refreshHud(); refreshBuild(); refreshWave(); refreshInfo(); refreshSpeed(); drawIcons(now); refreshHeroCard();
+      refreshFarm(); refreshRulesBtn(); refreshBuildBox();
       if (!$('heroModal').hidden) drawHeroIcons(now);
     }
     refreshHeroBar(now);
@@ -1245,7 +1708,15 @@
     if (now - saveT > 10000) { saveT = now; writeSave(); }
     requestAnimationFrame(frame);
   }
-  document.addEventListener('visibilitychange', () => { if (document.hidden) writeSave(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { writeSave(); return; }
+    last = performance.now(); acc = 0;
+    catchUp(Date.now());
+  });
+  seenReady = true;
+  catchUp(Date.now(), true);
+  if (!ui.away) writeSave();
+  if (farmOn() && !S.run) { S.sel = C.farmTarget(S); ui.farmNext = performance.now() + 2500; }
   window.addEventListener('pagehide', writeSave);
   $('saveNote').textContent = 'Progress saves automatically in this browser.';
   requestAnimationFrame(frame);
@@ -1253,6 +1724,9 @@
     openStar, closeStar, confirmStar, openResearch, closeResearch, buyResearch: tryResearch,
     forceClear(n) { if (S.run) return false; S.cleared = Math.max(S.cleared, Math.min(C.MAX_WAVE, n)); S.sel = C.topWave(S); dirty(); return true; },
     grantMoon(n) { C.grantMoon(S, n); dirty(); return S.moon; },
+    claimAway, catchUp, simAway(ms) { S.lastSeen = Math.max(1, Date.now() - ms); return catchUp(Date.now()); },
+    setFarming, openRules, closeRules, addRule, openPlans, closePlans, savePlan(i, name) { return doSavePlan(i, name, true); }, loadPlan: doLoadPlan, stopBuild,
+    idleTick(now) { idleT = 0; idleTick(now || performance.now()); }, runRules(why) { const r = C.runRules(S, why || 'end'); dirty(); return r; },
     openHeroes, closeHeroes, pickHero: doPickHero, unlockHero: doUnlockHero, castHero: doCast, selectHero,
     moveHero(x, y) { return C.moveHero(S, x, y); }, heroInfo() { return C.heroInfo(S); }, heroXp(n) { const r = C.addHeroXp(S, n); handleEvents(); return r; },
     heroScreen() { if (!S.hero || !S.hero.id) return null; const r = cv.getBoundingClientRect(), p = V.toScreen(S.hero.x, S.hero.y - 8); return [r.left + p[0], r.top + p[1]]; },
