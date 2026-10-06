@@ -2386,7 +2386,7 @@
     }
     return n;
   }
-  const OFFLINE = { cap: 8 * 3600, capStep: 2 * 3600, eff: 0.35, boost: 0.2, side: 0.25, min: 60, overhead: 6, walk: 0.5, waveDrop: 1.2, decay: 0.85, minT: 60, floor: 0.85 };
+  const OFFLINE = { cap: 8 * 3600, capStep: 2 * 3600, eff: 0.2, boost: 0.2, side: 0.25, min: 60, overhead: 6, walk: 0.5, waveDrop: 1.2, decay: 0.85, minT: 60, floor: 0.85 };
   const SLOT_BASE = 3, SLOT_BONUS = 2, SLOT_MAX = 5;
   const RULE_KINDS = ['dmg', 'rate', 'path', 'cheap'];
   const RULE_TICKS = ['end', 'sec', 'both'];

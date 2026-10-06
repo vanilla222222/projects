@@ -5,12 +5,14 @@ const C = require('../js/core.js');
 if (process.env.TUNE) Object.assign(C.TUNE, JSON.parse(process.env.TUNE));
 if (process.env.STARTUNE) Object.assign(C.STAR, JSON.parse(process.env.STARTUNE));
 if (process.env.HEROTUNE) Object.assign(C.HERO_TUNE, JSON.parse(process.env.HEROTUNE));
+if (process.env.OFFTUNE) Object.assign(C.OFFLINE, JSON.parse(process.env.OFFTUNE));
 
 const DT = 1 / 20;
 const OVERHEAD = 3;
 const FARM_PER_LOSS = 3;
 const LIMIT_H = Number(process.env.LIMIT_H) || 16;
 const OFFLINE_AT = [20, 40, 60, 80, 100];
+const ACTIVE_WINDOW = 1800;
 const DIAG = Number(process.env.DIAG) || 0;
 let diagDone = false;
 const PLAN = { earth: [0, 1], unicorn: [0, 1], pegasus: [2, 4], bat: [0, 3], crystal: [0, 3] };
@@ -262,7 +264,8 @@ function climb(S) {
   const lossAt = {};
   let worth50 = null, towers50 = null;
   let gained = 0;
-  const gainAt = { 0: 0 }, offline = [];
+  const gainAt = { 0: 0 }, offline = [], hist = [[0, 0]];
+  const windowRate = () => { let i = hist.length - 1; while (i > 0 && time - hist[i][0] < ACTIVE_WINDOW) i--; return (gained - hist[i][1]) / Math.max(1, time - hist[i][0]); };
   const t0 = Date.now();
   while (S.cleared < C.MAX_WAVE && time < LIMIT_H * 3600) {
     const n = S.cleared + 1;
@@ -272,12 +275,13 @@ function climb(S) {
     const r = play(S, n);
     time += r.t;
     gained += r.gain;
+    hist.push([time, gained]);
     if (r.won) {
       if (S.cleared === 50) { worth50 = netWorth(S); towers50 = S.towers.length; }
       if (S.cleared % 10 === 0) {
         marks[S.cleared] = time;
         gainAt[S.cleared] = gained;
-        if (OFFLINE_AT.indexOf(S.cleared) >= 0) offline.push(offlineCheck(S, S.cleared, (gained - gainAt[S.cleared - 10]) / Math.max(1, time - (marks[S.cleared - 10] || 0))));
+        if (OFFLINE_AT.indexOf(S.cleared) >= 0) offline.push(offlineCheck(S, S.cleared, windowRate()));
         if (S.hero) HLV[S.cleared] = C.heroProg(S.hero).lv;
         const peak = Math.max(...S.towers.map(t => t.paths.reduce((a, b) => a + b, 0)));
         console.log(`wave ${String(S.cleared).padStart(3)}  ${(time / 3600).toFixed(2)}h  cash ${C.fmt(S.cash).padStart(8)}  towers ${S.towers.length}  hero ${S.hero ? S.hero.id + ' lv' + C.heroProg(S.hero).lv : '-'}  maxNodes ${peak}  infD ${Math.max(...S.towers.map(t => t.infD))}  losses ${losses}  farms ${farms}`);
@@ -286,7 +290,7 @@ function climb(S) {
     }
     losses++;
     lossAt[n] = (lossAt[n] || 0) + 1;
-    for (let i = 0; i < FARM_PER_LOSS && S.cleared > 0; i++) { shop(S, n); const fr = play(S, S.cleared); time += fr.t; gained += fr.gain; farms++; }
+    for (let i = 0; i < FARM_PER_LOSS && S.cleared > 0; i++) { shop(S, n); const fr = play(S, S.cleared); time += fr.t; gained += fr.gain; hist.push([time, gained]); farms++; }
   }
   const segs = [];
   for (let w = 10; w <= C.MAX_WAVE; w += 10) if (marks[w] != null) segs.push((marks[w] - (marks[w - 10] || 0)) / 3600);
