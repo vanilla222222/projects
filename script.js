@@ -7,6 +7,7 @@ const PROJECTS = [
     { folder: "mule run", name: "Mule Run", tag: "Game", description: "One stubborn mule. One endless canyon. Zero shortcuts.", icon: "run", accent: "#c4782a" },
     { folder: "pony roguelike", name: "Nightfall Charge", tag: "Game", description: "A bat pony's stand against the night. A roguelike.", icon: "moon", accent: "#a0679e" },
     { folder: "tier list", name: "Tier List Maker", tag: "Tool", description: "Rank anything from S to F. Drag text and images into tiers, then save it as a picture.", icon: "tiers", accent: "#c25b5b" },
+    { folder: "nightfall defense", name: "Nightfall Defense", tag: "Game", description: "Ponies hold the moonlit road against a hundred waves of DNBs. An incremental tower defense.", icon: "shield", accent: "#5b7fc2" },
 ];
 
 const ICONS = {
@@ -15,6 +16,7 @@ const ICONS = {
     globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/>',
     run: '<path d="M3 17h4l3-4 3 3 4-6 4 3"/><path d="M3 21h18"/><circle cx="17" cy="5" r="2"/>',
     tiers: '<rect x="3" y="4" width="4" height="4" rx="1"/><rect x="3" y="10" width="4" height="4" rx="1"/><rect x="3" y="16" width="4" height="4" rx="1"/><path d="M10 6h11M10 12h7M10 18h4"/>',
+    shield: '<path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.9 7.5-9.5V6z"/><path d="M15 9.5a3.2 3.2 0 1 1-3.4 4.4 2.6 2.6 0 0 0 3.4-4.4z"/>',
     moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/><path d="M17 3v3M15.5 4.5h3"/>',
 };
 
