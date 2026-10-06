@@ -11,7 +11,7 @@
   const BASE_LEN = 1480;
 
   const TUNE = {
-    hp0: 14,
+    hp0: 14, hpAll: 1,
     hpCurve: [[1, 1.25], [10, 1.21], [20, 1.2], [30, 1.185], [35, 1.16], [45, 1.17], [50, 1.15], [55, 1.105], [60, 1.105], [75, 1.083], [82, 1.054], [90, 1.056], [100, 1.045]],
     cash0: 2.2, cashGrowth: 1.2,
     clear0: 45, clearGrowth: 1.2,
@@ -688,9 +688,9 @@
     return c[n - 1];
   }
   function hpFor(n, map) {
-    if (!map) return hpBase(n);
-    if (map.hpCurve) return hpMap(n, map);
-    return hpBase(n + (map.hpShift || 0)) * map.hpMul;
+    if (!map) return hpBase(n) * TUNE.hpAll;
+    if (map.hpCurve) return hpMap(n, map) * TUNE.hpAll;
+    return hpBase(n + (map.hpShift || 0)) * map.hpMul * TUNE.hpAll;
   }
   function priceOf(map) { return (map && map.priceMul) || 1; }
   function rl(S, id) { return (S && S.research && S.research[id]) | 0; }
@@ -1785,7 +1785,7 @@
     return { name, def, hp, max, count, frac: max ? hp / max : 0, lead };
   }
 
-  const HERO_TUNE = { hit: 0.5, grow: 1.045, xp0: 20, xpGrow: 1.16, maxLv: 30, ranks: [5, 10, 20, 30], roarR: 260, roarStun: 1.6, roarEvery: 9, think: 0.25, pickR: 30 };
+  const HERO_TUNE = { hit: 0.06, grow: 1.045, xp0: 20, xpGrow: 1.16, maxLv: 30, ranks: [5, 10, 20, 30], roarR: 260, roarStun: 1.6, roarEvery: 9, think: 0.25, pickR: 30 };
   function hm(R) { return 1 + 0.25 * (R - 1); }
   function hNear(run, x, y, R, f) {
     const out = [];
@@ -1809,7 +1809,7 @@
       body: '#b89ae6', mane: '#2c2f6e', cape: '#5b3fa8', accent: '#ffd6f6', crown: 'tiara', horn: true,
       range: 175, rate: 0.85, pow: 1, splash: 48, speed: 150, canFly: true, canMagic: true, attack: 'bolt', proj: { sp: 620, c: '#e6c8ff' },
       blurb: 'Bolts of starlight that splash and hit every kind of DNB.',
-      aura: { kind: 'dmg', r: 150, base: 0.08, per: 0.004, name: 'Scholar\'s Glow', text: v => 'Ponies in the glow deal +' + pct(v) + ' damage' },
+      aura: { kind: 'dmg', r: 150, base: 0.05, per: 0.003, name: 'Scholar\'s Glow', text: v => 'Ponies in the glow deal +' + pct(v) + ' damage' },
       unlock: { free: true, moon: 0, text: 'Free' },
       abil: [
         { id: 'starburst', name: 'Starburst', cd: 12, icon: 'burst', text: R => 'Blast the thickest knot of DNBs for ' + (6 * hm(R)).toFixed(1) + 'x hit power and dispel magical DNBs there.',
@@ -1826,10 +1826,10 @@
             h.face = Math.atan2(y - h.y, x - h.x);
             return true;
           } },
-        { id: 'reveal', name: 'Revealing Light', cd: 18, icon: 'eye', text: R => 'Reveal every DNB within ' + (R >= 5 ? 'the whole map' : (240 + 20 * R)) + ' for ' + (5 + R) + 's. Revealed DNBs take +' + pct(0.12 + 0.03 * R) + ' damage.',
-          want: (S, run, h, s) => { const l = hNear(run, h.x, h.y, s.rank >= 5 ? 9999 : 240 + 20 * s.rank); return l.some(e => e.stealth && !(e.revealT > 0.5)) || l.length >= 6 || l.some(e => e.boss); },
+        { id: 'reveal', name: 'Revealing Light', cd: 18, icon: 'eye', text: R => 'Reveal every DNB within ' + (220 + 30 * R) + ' for ' + (5 + R) + 's. Revealed DNBs take +' + pct(0.12 + 0.03 * R) + ' damage.',
+          want: (S, run, h, s) => { const l = hNear(run, h.x, h.y, 220 + 30 * s.rank); return l.some(e => e.stealth && !(e.revealT > 0.5)) || l.length >= 6 || l.some(e => e.boss); },
           cast: (S, run, h, s, P, R) => {
-            const r = R >= 5 ? 9999 : 240 + 20 * R;
+            const r = 220 + 30 * R;
             const l = hNear(run, h.x, h.y, r);
             if (!l.length) return false;
             for (const e of l) { e.revealT = Math.max(e.revealT, 5 + R); e.echoAmp = Math.max(e.echoAmp || 0, 0.12 + 0.03 * R); }
@@ -1852,7 +1852,7 @@
       body: '#c8875a', mane: '#f2e3b0', cape: '#8a2f2a', accent: '#e3c15b', crown: 'helm',
       range: 90, rate: 0.8, pow: 1.1, speed: 115, canFly: false, canMagic: true, attack: 'stomp', stunCut: 0.5,
       blurb: 'Stomps every ground DNB in reach. Cannot reach flyers. Boss roars stun him for half as long.',
-      aura: { kind: 'slow', r: 130, base: 0.1, per: 0.004, name: 'Stone Presence', text: v => 'DNBs near Ironmane move ' + pct(v) + ' slower (bosses half)' },
+      aura: { kind: 'slow', r: 130, base: 0.08, per: 0.003, name: 'Stone Presence', text: v => 'DNBs near Ironmane move ' + pct(v) + ' slower (bosses half)' },
       unlock: { moon: 15, map: 'moonlit', wave: 25, text: 'Clear wave 25 on Moonlit Road' },
       abil: [
         { id: 'breaker', name: 'Shield Breaker', cd: 10, icon: 'shield', text: R => 'Smash the toughest DNB nearby for ' + (8 * hm(R)).toFixed(1) + 'x hit power through any plate, and pop every shield within 70.',
@@ -1894,7 +1894,7 @@
       body: '#8fd0f5', mane: '#ff7a59', cape: '#ffd24a', accent: '#ffffff', crown: 'goggles', wings: true,
       range: 155, rate: 2.2, pow: 0.42, speed: 270, canFly: true, canMagic: false, flyMul: 2, attack: 'dart', proj: { sp: 980, c: '#bfe8ff' },
       blurb: 'Rapid wind darts, double damage to flyers. Cannot harm magical DNBs. Moves faster than any hero.',
-      aura: { kind: 'rate', r: 150, base: 0.08, per: 0.004, name: 'Tailwind', text: v => 'Ponies in the tailwind attack ' + pct(v) + ' faster' },
+      aura: { kind: 'rate', r: 150, base: 0.05, per: 0.003, name: 'Tailwind', text: v => 'Ponies in the tailwind attack ' + pct(v) + ' faster' },
       unlock: { moon: 25, map: 'woods', wave: 50, text: 'Clear wave 50 on Whispering Woods' },
       abil: [
         { id: 'cyclone', name: 'Cyclone Nova', cd: 11, icon: 'swirl', text: R => 'Spin a cyclone of radius 160: ' + (3 * hm(R)).toFixed(1) + 'x hit power, triple against swarms, and knocks DNBs back.',
@@ -1948,7 +1948,7 @@
       body: '#4e4566', mane: '#c23a5a', cape: '#1c1426', accent: '#ff5c7a', crown: 'hood', batWings: true,
       range: 145, rate: 0.6, pow: 2.2, crit: 0.2, critMul: 3, speed: 195, canFly: true, canMagic: true, detects: true, fastMul: 1.5, attack: 'fang', proj: { sp: 1100, c: '#ff5c7a' },
       blurb: 'Heavy strikes on the strongest DNB in reach, with big crits. Sees stealthed DNBs.',
-      aura: { kind: 'crit', r: 140, base: 0.04, per: 0.002, name: 'Night Eyes', text: v => 'Ponies nearby see stealthed DNBs and gain +' + pct(v) + ' crit chance' },
+      aura: { kind: 'crit', r: 140, base: 0.03, per: 0.0015, name: 'Night Eyes', text: v => 'Ponies nearby see stealthed DNBs and gain +' + pct(v) + ' crit chance' },
       unlock: { moon: 40, star: 1, text: 'Earn a first star on any map' },
       abil: [
         { id: 'assassinate', name: 'Assassinate', cd: 10, icon: 'dagger', text: R => 'Strike the strongest DNB in reach for ' + (10 * hm(R)).toFixed(1) + 'x hit power. Non-boss DNBs left under 30% HP are finished off.',
@@ -2067,7 +2067,7 @@
     h.ty = Math.max(24, Math.min(WORLD.W - 16, y));
     return true;
   }
-  function heroPow(S, run, h) { return hpFor(run.n, run.map) * HERO_TUNE.hit * stats(h).pow; }
+  function heroPow(S, run, h) { return hpFor(run.n, run.map) / TUNE.hpAll * HERO_TUNE.hit * stats(h).pow; }
   function castHero(S, i) {
     const h = S.hero, run = S.run;
     if (!h || !h.id) return 'none';
@@ -2098,7 +2098,14 @@
     if (!h || !h.id) return;
     const p = heroProg(h);
     if (p.lv >= HERO_TUNE.maxLv) return;
-    p.xp += (e.boss ? 20 : e.elite ? 3 : 1) * (1 + 0.04 * run.n) * (t === h ? 2 : 1) * (1 + 0.25 * rl(S, 'util_hero'));
+    addHeroXp(S, (e.boss ? 20 : e.elite ? 3 : 1) * (1 + 0.04 * run.n) * (t === h ? 2 : 1) * (1 + 0.25 * rl(S, 'util_hero')));
+  }
+  function addHeroXp(S, amt) {
+    const h = S.hero;
+    if (!h || !h.id) return 0;
+    const p = heroProg(h);
+    if (p.lv >= HERO_TUNE.maxLv) return p.lv;
+    p.xp += Math.max(0, +amt || 0);
     while (p.lv < HERO_TUNE.maxLv && p.xp >= xpNeed(p.lv)) {
       p.xp -= xpNeed(p.lv);
       p.lv++;
@@ -2111,6 +2118,7 @@
       snd(S, 'levelup');
     }
     if (p.lv >= HERO_TUNE.maxLv) p.xp = 0;
+    return p.lv;
   }
   function heroMove(S, dt) {
     const h = S.hero;
@@ -2672,7 +2680,7 @@
     killMul, clearMul, moonMul, livesFor, canStarUp, starUpGain, starUp, skipFor, presetOf, placePreset,
     researchCost, researchTotal, researchState, buyResearch, grantMoon, cleanStars, cleanResearch, cleanPresets,
     HEROES, HERO_IDS, HERO_TUNE, xpNeed, rankFor, heroProg, heroStats, heroHome, heroAt, heroMilestone, heroUnlocked, syncHeroUnlocks, unlockHero,
-    pickHero, moveHero, heroPow, castHero, heroAuto, heroInfo, cleanHero, serHero, cleanUnlocks,
+    pickHero, moveHero, heroPow, addHeroXp, castHero, heroAuto, heroInfo, cleanHero, serHero, cleanUnlocks,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.NDCore = API;

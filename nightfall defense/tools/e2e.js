@@ -330,7 +330,7 @@ async function fastForward(page, maxSeconds) {
     await page.waitForTimeout(400);
     const s2 = await page.evaluate(() => ({ s: __nd.S.settings, ver: JSON.parse(localStorage.getItem('nightfall-defense-save-v1')).ver, radio: document.querySelector('input[name="numFmt"][value="sci"]').checked }));
     ok(!s2.s.shake && !s2.s.dmgNums && s2.s.numFmt === 'sci' && !s2.s.sound && s2.radio, 'settings survived reload ' + JSON.stringify(s2));
-    ok(s2.ver === 6, 'save has ver 6, got ' + s2.ver);
+    ok(s2.ver === 7, 'save has ver 7, got ' + s2.ver);
     await page.click('#setBtn');
     await page.click('#setReset');
     await page.keyboard.press('Escape');
@@ -356,7 +356,7 @@ async function fastForward(page, maxSeconds) {
     ok(m.cash === 777 && m.cleared === 12 && m.n === 2 && m.p === '2,0,0,1,0' && m.mode === 'strong' && m.dmg === 0 && m.map === 'moonlit' && m.set === 1, 'migrated ' + JSON.stringify(m));
     await page.evaluate(() => __nd.save());
     const ver = await page.evaluate(() => { const o = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return o.ver + ':' + ('v' in o); });
-    ok(ver === '6:false', 'resaved as ver 6, got ' + ver);
+    ok(ver === '7:false', 'resaved as ver 7, got ' + ver);
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
@@ -377,7 +377,7 @@ async function fastForward(page, maxSeconds) {
     ok(m.woods && !m.caverns, 'wave 57 on map 1 unlocks map 2 only');
     await page.evaluate(() => __nd.save());
     const o = await page.evaluate(() => JSON.parse(localStorage.getItem('nightfall-defense-save-v1')));
-    ok(o.ver === 6 && o.codex && o.boards && o.boards.moonlit && o.boards.moonlit.cleared === 57 && o.boards.moonlit.towers.length === 1 && !('towers' in o), 'ver 6 layout ' + JSON.stringify(Object.keys(o)));
+    ok(o.ver === 7 && o.codex && o.boards && o.boards.moonlit && o.boards.moonlit.cleared === 57 && o.boards.moonlit.towers.length === 1 && !('towers' in o), 'ver 7 layout ' + JSON.stringify(Object.keys(o)));
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
@@ -601,7 +601,7 @@ async function fastForward(page, maxSeconds) {
       await page.keyboard.press('Escape');
       await page.waitForTimeout(150);
       ok(await page.evaluate(() => document.getElementById('codexModal').hidden), 'escape closes the codex');
-      ok(saved.ver === 6 && saved.healer, 'codex persists in the save ' + JSON.stringify(saved));
+      ok(saved.ver === 7 && saved.healer, 'codex persists in the save ' + JSON.stringify(saved));
       ok(!errors.length, 'console errors: ' + errors.join(' | '));
       await page.close();
     });
@@ -684,7 +684,7 @@ async function fastForward(page, maxSeconds) {
     await page.evaluate(() => __nd.closeMaps());
     await page.evaluate(() => __nd.save());
     const saved = await page.evaluate(() => { const o = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return { ver: o.ver, star: o.stars.moonlit, moon: o.moon, preset: (o.presets.moonlit || []).length }; });
-    ok(saved.ver === 6 && saved.star === 1 && saved.moon === 20 && saved.preset === 2, 'stars, Moonstones and preset saved ' + JSON.stringify(saved));
+    ok(saved.ver === 7 && saved.star === 1 && saved.moon === 20 && saved.preset === 2, 'stars, Moonstones and preset saved ' + JSON.stringify(saved));
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
@@ -707,7 +707,7 @@ async function fastForward(page, maxSeconds) {
       lines: document.querySelectorAll('#resTree line').length, locked: document.querySelector('[data-res="pony_cheap"]').className, afford: document.querySelector('[data-res="pony_dmg"]').className,
       tip: document.querySelector('[data-res="pony_dmg"]').dataset.tip, moon: document.getElementById('resMoon').textContent,
     }));
-    ok(tree.open && tree.nodes === 30 && tree.branches === 4 && tree.lines >= 26, 'tree drawn ' + JSON.stringify(tree));
+    ok(tree.open && tree.nodes === 32 && tree.branches === 4 && tree.lines >= 26, 'tree drawn ' + JSON.stringify(tree));
     ok(/locked/.test(tree.locked) && /afford/.test(tree.afford) && /\+10% damage/.test(tree.tip) && /30/.test(tree.moon), 'node states and tooltip ' + JSON.stringify(tree));
     await page.click('[data-res="pony_cheap"]', { force: true });
     await page.click('[data-res="pony_dmg"]');
@@ -756,7 +756,7 @@ async function fastForward(page, maxSeconds) {
     await page.close();
   });
 
-  await test('v5 save migrates to v6 with no stars, no Moonstones and empty research', async () => {
+  await test('v5 save migrates to v7 with no stars, no Moonstones and empty research', async () => {
     const C = require(path.join(__dirname, '..', 'js', 'core.js'));
     const o = JSON.parse(C.serialize(C.newState()));
     o.ver = 5;
@@ -772,7 +772,180 @@ async function fastForward(page, maxSeconds) {
     ok(m.cleared === 64 && m.cash === 31337 && m.stars === '{}' && m.moon === 0 && m.research === '{}' && m.hMoon === '0' && m.hStars === '0' && m.btn && m.lives === '10/10', 'v5 migrated ' + JSON.stringify(m));
     await page.evaluate(() => __nd.save());
     const s = await page.evaluate(() => { const x = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return { ver: x.ver, stars: typeof x.stars, research: typeof x.research, moon: x.moon }; });
-    ok(s.ver === 6 && s.stars === 'object' && s.research === 'object' && s.moon === 0, 'resaved as v6 ' + JSON.stringify(s));
+    ok(s.ver === 7 && s.stars === 'object' && s.research === 'object' && s.moon === 0, 'resaved as v7 ' + JSON.stringify(s));
+    ok(!errors.length, 'console errors: ' + errors.join(' | '));
+    await page.close();
+  });
+
+  await test('hero: pick, click to move, Q/W/E casts, level-up, unlock, star-up level reset at 1280', async () => {
+    const { page, errors } = await openGame(browser, { width: 1280, height: 800 });
+    const pre = await page.evaluate(() => ({
+      bar: !document.getElementById('heroBar').hidden, none: document.getElementById('heroBar').classList.contains('none'),
+      btn: !!document.querySelector('#heroCard [data-heroes]'), hero: __nd.S.hero, unlocks: JSON.stringify(__nd.S.heroUnlocks),
+    }));
+    ok(pre.bar && pre.none && pre.btn && !pre.hero && pre.unlocks === '{"nova":1}', 'no hero yet, picker prompt shown ' + JSON.stringify(pre));
+    await page.click('#heroCard [data-heroes]');
+    await page.waitForTimeout(250);
+    const list = await page.evaluate(() => ({
+      open: !document.getElementById('heroModal').hidden, cards: document.querySelectorAll('#heroList .hcard').length,
+      pick: !!document.querySelector('[data-pick="nova"]'), buy: [...document.querySelectorAll('[data-buy]')].map(b => b.dataset.buy + ':' + b.disabled).join(),
+      names: document.getElementById('heroList').textContent, icon: (() => { const c = document.querySelector('canvas[data-hicon="nova"]'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n; })(),
+    }));
+    ok(list.open && list.cards === 4 && list.pick && list.buy === 'ironmane:true,skyflick:true,duskfang:true', 'hero picker lists 4 heroes ' + JSON.stringify(list));
+    ok(/Nova Quill/.test(list.names) && /Ironmane/.test(list.names) && /Skyflick/.test(list.names) && /Duskfang/.test(list.names) && list.icon > 200, 'hero names and portraits ' + list.icon);
+    await shot(page, 'hero-picker-1280');
+    await page.click('[data-pick="nova"]');
+    await page.waitForTimeout(300);
+    const picked = await page.evaluate(() => ({ modal: document.getElementById('heroModal').hidden, id: __nd.S.hero && __nd.S.hero.id, lv: __nd.heroInfo().lv, card: document.getElementById('heroCard').textContent, none: document.getElementById('heroBar').classList.contains('none'), abs: [...document.querySelectorAll('#heroBar .hab')].filter(b => !b.hidden).length }));
+    ok(picked.modal && picked.id === 'nova' && picked.lv === 1 && /Nova Quill/.test(picked.card) && /Level 1/.test(picked.card) && !picked.none && picked.abs === 3, 'nova picked ' + JSON.stringify(picked));
+    const hs = await page.evaluate(() => __nd.heroScreen());
+    await page.mouse.click(hs[0], hs[1]);
+    await page.waitForTimeout(150);
+    ok(await page.evaluate(() => __nd.ui.heroSel === true && /move/.test(document.getElementById('placeHint').textContent)), 'clicking the hero selects it');
+    const tgt = await page.evaluate(() => { const h = __nd.S.hero; const x = Math.min(NDCore.WORLD.L - 80, h.x + 160), y = h.y + 10; return { x, y, c: __nd.worldToClient(x, y), d0: Math.hypot(h.x - x, h.y - y) }; });
+    await page.mouse.click(tgt.c[0], tgt.c[1]);
+    await page.waitForTimeout(1200);
+    const mv = await page.evaluate(t => { const h = __nd.S.hero; return { tx: h.tx, ty: h.ty, d: Math.hypot(h.x - t.x, h.y - t.y), sel: __nd.ui.heroSel, towers: __nd.S.towers.length }; }, tgt);
+    ok(Math.abs(mv.tx - tgt.x) < 4 && Math.abs(mv.ty - tgt.y) < 4 && mv.d < tgt.d0 - 60 && mv.towers === 0, 'click moves the hero ' + JSON.stringify({ mv, tgt }));
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('h');
+    await page.waitForTimeout(100);
+    const hk = await page.evaluate(() => __nd.ui.heroSel);
+    await page.keyboard.press('Escape');
+    ok(hk === true && await page.evaluate(() => __nd.ui.heroSel === false), 'H selects the hero and Esc clears it');
+    await page.keyboard.press('q');
+    await page.waitForTimeout(100);
+    ok(/during a wave/.test(await page.evaluate(() => document.getElementById('banner').textContent)), 'casting between waves explains itself');
+    const ready = await page.evaluate(() => {
+      const S = __nd.S, C = NDCore;
+      __nd.togglePause();
+      C.startWave(S, S.sel);
+      let k = 0;
+      while (S.run && k < 3000 && S.run.enemies.filter(e => e.alive && e.d > 60).length < 5) { C.step(S, 1 / 30); k++; }
+      const L = S.run.enemies.filter(e => e.alive && e.d > 60);
+      const e = L[Math.floor(L.length / 2)];
+      S.hero.x = S.hero.tx = e.x; S.hero.y = S.hero.ty = e.y;
+      return { n: L.length, run: !!S.run };
+    });
+    ok(ready.run && ready.n >= 5, 'wave running with DNBs near the hero ' + JSON.stringify(ready));
+    for (const key of ['q', 'w', 'e']) { await page.keyboard.press(key); await page.waitForTimeout(60); }
+    const cast = await page.evaluate(() => ({ ab: __nd.S.hero.ab.map(v => +v.toFixed(1)), casts: __nd.S.hero.casts, bar: [...document.querySelectorAll('#heroBar .hab')].map(b => b.classList.contains('cooling')).join(), cd: document.querySelector('#heroBar .hab').style.getPropertyValue('--cd') }));
+    ok(cast.ab.every(v => v > 1) && cast.casts === 3, 'Q/W/E cast all three abilities ' + JSON.stringify(cast));
+    await page.evaluate(() => { __nd.togglePause(); });
+    await page.waitForTimeout(250);
+    const cool = await page.evaluate(() => ({ bar: [...document.querySelectorAll('#heroBar .hab')].map(b => b.classList.contains('cooling')).join(), cd: document.querySelector('#heroBar .hab').style.getPropertyValue('--cd'), txt: document.querySelector('#heroBar .hab .hcd').textContent }));
+    ok(cool.bar === 'true,true,true' && parseFloat(cool.cd) > 10 && +cool.txt > 0, 'cooldown sweep shows on the hero bar ' + JSON.stringify(cool));
+    await shot(page, 'hero-cast-1280');
+    const lvl = await page.evaluate(() => {
+      const r = __nd.heroXp(5000);
+      const S = __nd.S;
+      return { lv: r, fx: S.fx.some(f => f.k === 'levelup'), sfx: true, banner: document.getElementById('banner').textContent, rank: __nd.heroInfo().rank };
+    });
+    ok(lvl.lv >= 5 && lvl.fx && lvl.rank >= 2 && /reached level/.test(lvl.banner), 'XP levels the hero up with effects ' + JSON.stringify(lvl));
+    await page.waitForTimeout(300);
+    ok(new RegExp('Level ' + lvl.lv + ' / 30').test(await page.evaluate(() => document.querySelector('#heroCard .hclv').textContent)), 'hero card shows the new level');
+    await page.evaluate(() => { const S = __nd.S; let k = 0; while (S.run && k < 40000) { NDCore.step(S, 1 / 30); k++; } });
+    await page.evaluate(() => __nd.grantMoon(15));
+    await page.waitForTimeout(200);
+    await page.click('#heroCard .hcrow [data-heroes]');
+    await page.waitForTimeout(250);
+    ok(await page.evaluate(() => !document.querySelector('[data-buy="ironmane"]').disabled), 'Moonstones make Ironmane affordable');
+    await page.click('[data-buy="ironmane"]');
+    await page.waitForTimeout(250);
+    const un = await page.evaluate(() => ({ moon: __nd.S.moon, own: NDCore.heroUnlocked(__nd.S, 'ironmane'), pick: !!document.querySelector('[data-pick="ironmane"]'), banner: document.getElementById('banner').textContent }));
+    ok(un.moon === 0 && un.own && un.pick && /Ironmane is unlocked/.test(un.banner), 'unlock with Moonstones ' + JSON.stringify(un));
+    await page.click('[data-pick="ironmane"]');
+    await page.waitForTimeout(250);
+    const iron = await page.evaluate(() => ({ id: __nd.S.hero.id, lv: __nd.heroInfo().lv, novaLv: __nd.S.hero.prog.nova.lv }));
+    ok(iron.id === 'ironmane' && iron.lv === 1 && iron.novaLv === lvl.lv, 'switching hero keeps per-hero levels ' + JSON.stringify(iron));
+    await page.evaluate(() => { __nd.pickHero('nova'); __nd.heroXp(20000); __nd.forceClear(100); });
+    await page.waitForTimeout(300);
+    const lvBefore = await page.evaluate(() => __nd.heroInfo().lv);
+    await page.evaluate(() => document.getElementById('starBtn').scrollIntoView({ block: 'end' }));
+    await page.click('#starBtn');
+    await page.waitForTimeout(250);
+    await page.click('#starConfirm');
+    await page.waitForTimeout(600);
+    const st = await page.evaluate(() => ({ star: NDCore.starOf(__nd.S), id: __nd.S.hero && __nd.S.hero.id, lv: __nd.heroInfo().lv, iron: NDCore.heroUnlocked(__nd.S, 'ironmane'), dusk: NDCore.heroUnlocked(__nd.S, 'duskfang'), card: document.querySelector('#heroCard .hclv').textContent }));
+    ok(lvBefore > 5 && st.star === 1 && st.id === 'nova' && st.lv === 1 && st.iron && st.dusk && /Level 1 /.test(st.card), 'star up resets hero level, keeps choice and unlocks ' + JSON.stringify({ lvBefore, st }));
+    await page.evaluate(() => __nd.save());
+    const sv = await page.evaluate(() => { const o = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return { ver: o.ver, hero: o.boards.moonlit.hero && o.boards.moonlit.hero.id, un: o.heroUnlocks }; });
+    ok(sv.ver === 7 && sv.hero === 'nova' && sv.un.ironmane && sv.un.duskfang, 'hero saved ' + JSON.stringify(sv));
+    await page.reload();
+    await page.waitForTimeout(500);
+    const rl = await page.evaluate(() => ({ id: __nd.S.hero && __nd.S.hero.id, card: document.getElementById('heroCard').textContent }));
+    ok(rl.id === 'nova' && /Nova Quill/.test(rl.card), 'hero survives reload ' + JSON.stringify(rl));
+    ok(!errors.length, 'console errors: ' + errors.join(' | '));
+    await page.close();
+  });
+
+  await test('hero UI at 390px: tap to select and move, touch ability buttons, picker fits', async () => {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    const errors = [];
+    watch(page, errors);
+    await page.goto(GAME);
+    await page.waitForTimeout(400);
+    await page.tap('#heroFace');
+    await page.waitForTimeout(250);
+    const md = await page.evaluate(() => { const d = document.querySelector('#heroModal .dialog').getBoundingClientRect(); let bad = 0; for (const c of document.querySelectorAll('#heroList .hcard')) { const r = c.getBoundingClientRect(); if (r.left < d.left - 1 || r.right > d.right + 1) bad++; } return { open: !document.getElementById('heroModal').hidden, sw: document.documentElement.scrollWidth, dl: d.left, dr: d.right, bad }; });
+    ok(md.open && md.sw <= 390 && md.dl >= 0 && md.dr <= 390 && !md.bad, 'hero picker fits 390px ' + JSON.stringify(md));
+    await shot(page, 'hero-picker-390');
+    await page.tap('[data-pick="nova"]');
+    await page.waitForTimeout(300);
+    const lay = await page.evaluate(() => {
+      const b = document.getElementById('board').getBoundingClientRect(), bar = document.getElementById('heroBar').getBoundingClientRect();
+      const btns = [...document.querySelectorAll('#heroBar .hab, #heroFace')].map(e => e.getBoundingClientRect());
+      const card = document.getElementById('heroCard').getBoundingClientRect();
+      return { id: __nd.S.hero && __nd.S.hero.id, inBoard: bar.left >= b.left && bar.right <= b.right && bar.bottom <= b.bottom && bar.top >= b.top, small: btns.filter(r => r.width < 38 || r.height < 38).length, n: btns.length, sw: document.documentElement.scrollWidth, cardW: card.right <= 390 && card.left >= 0 };
+    });
+    ok(lay.id === 'nova' && lay.inBoard && lay.n === 4 && !lay.small && lay.sw <= 390 && lay.cardW, 'hero bar fits the board at 390px ' + JSON.stringify(lay));
+    const hs = await page.evaluate(() => __nd.heroScreen());
+    await page.touchscreen.tap(hs[0], hs[1]);
+    await page.waitForTimeout(150);
+    ok(await page.evaluate(() => __nd.ui.heroSel), 'tapping the hero selects it');
+    const tgt = await page.evaluate(() => { const h = __nd.S.hero; const x = Math.max(80, h.x - 200), y = h.y; return { x, y, c: __nd.worldToClient(x, y) }; });
+    await page.touchscreen.tap(tgt.c[0], tgt.c[1]);
+    await page.waitForTimeout(200);
+    const mv = await page.evaluate(() => ({ tx: __nd.S.hero.tx, ty: __nd.S.hero.ty, placing: __nd.ui.placing, towers: __nd.S.towers.length }));
+    ok(Math.abs(mv.tx - tgt.x) < 6 && Math.abs(mv.ty - tgt.y) < 6 && !mv.placing && mv.towers === 0, 'tap moves the selected hero ' + JSON.stringify({ mv, tgt }));
+    await page.tap('.race[data-race="earth"]');
+    await page.waitForTimeout(100);
+    ok(await page.evaluate(() => __nd.ui.placing === 'earth' && !__nd.ui.heroSel), 'placing a pony clears hero move mode');
+    await page.tap('.race[data-race="earth"]');
+    await page.evaluate(() => {
+      const S = __nd.S, C = NDCore;
+      __nd.togglePause();
+      C.startWave(S, S.sel);
+      let k = 0;
+      while (S.run && k < 3000 && S.run.enemies.filter(e => e.alive && e.d > 60).length < 3) { C.step(S, 1 / 30); k++; }
+      const e = S.run.enemies.filter(q => q.alive && q.d > 60)[0];
+      S.hero.x = S.hero.tx = e.x; S.hero.y = S.hero.ty = e.y;
+    });
+    await page.tap('#heroBar .hab[data-ab="0"]');
+    await page.waitForTimeout(100);
+    ok(await page.evaluate(() => __nd.S.hero.ab[0] > 1), 'touch button casts the first ability');
+    await page.evaluate(() => __nd.togglePause());
+    await page.waitForTimeout(300);
+    await shot(page, 'hero-390');
+    ok(!errors.length, 'console errors: ' + errors.join(' | '));
+    await page.close();
+  });
+
+  await test('v6 save migrates to v7 with no hero and only the free hero unlocked', async () => {
+    const C = require(path.join(__dirname, '..', 'js', 'core.js'));
+    const o = JSON.parse(C.serialize(C.newState()));
+    o.ver = 6;
+    delete o.heroUnlocks;
+    for (const id in o.boards) delete o.boards[id].hero;
+    o.boards.moonlit.cleared = 33; o.boards.moonlit.sel = 34; o.moon = 7;
+    const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    const errors = [];
+    await page.addInitScript(s => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('nightfall-defense-save-v1', s); } }, JSON.stringify(o));
+    watch(page, errors);
+    await page.goto(GAME);
+    await page.waitForTimeout(500);
+    const m = await page.evaluate(() => { const S = __nd.S; __nd.save(); const x = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return { cleared: S.cleared, moon: S.moon, hero: S.hero, un: JSON.stringify(S.heroUnlocks), ver: x.ver, prompt: !!document.querySelector('#heroCard [data-heroes]') }; });
+    ok(m.cleared === 33 && m.moon === 7 && !m.hero && m.un === '{"nova":1,"ironmane":1}' && m.ver === 7 && m.prompt, 'v6 migrated ' + JSON.stringify(m));
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });

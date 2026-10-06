@@ -85,7 +85,7 @@ function setupHero(S) {
   if (!HERO) return;
   S.heroUnlocks[HERO] = 1;
   if (!S.hero || S.hero.id !== HERO) C.pickHero(S, HERO);
-  S.hero.auto = true;
+  S.hero.auto = process.env.HEROAUTO !== '0';
   heroTowers = -1;
 }
 function placeHero(S) {
