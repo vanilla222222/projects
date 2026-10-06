@@ -330,7 +330,7 @@ async function fastForward(page, maxSeconds) {
     await page.waitForTimeout(400);
     const s2 = await page.evaluate(() => ({ s: __nd.S.settings, ver: JSON.parse(localStorage.getItem('nightfall-defense-save-v1')).ver, radio: document.querySelector('input[name="numFmt"][value="sci"]').checked }));
     ok(!s2.s.shake && !s2.s.dmgNums && s2.s.numFmt === 'sci' && !s2.s.sound && s2.radio, 'settings survived reload ' + JSON.stringify(s2));
-    ok(s2.ver === 8, 'save has ver 8, got ' + s2.ver);
+    ok(s2.ver === 9, 'save has ver 9, got ' + s2.ver);
     await page.click('#setBtn');
     await page.click('#setReset');
     await page.keyboard.press('Escape');
@@ -356,7 +356,7 @@ async function fastForward(page, maxSeconds) {
     ok(m.cash === 777 && m.cleared === 12 && m.n === 2 && m.p === '2,0,0,1,0' && m.mode === 'strong' && m.dmg === 0 && m.map === 'moonlit' && m.set === 1, 'migrated ' + JSON.stringify(m));
     await page.evaluate(() => __nd.save());
     const ver = await page.evaluate(() => { const o = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return o.ver + ':' + ('v' in o); });
-    ok(ver === '8:false', 'resaved as ver 8, got ' + ver);
+    ok(ver === '9:false', 'resaved as ver 9, got ' + ver);
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
@@ -377,7 +377,7 @@ async function fastForward(page, maxSeconds) {
     ok(m.woods && !m.caverns, 'wave 57 on map 1 unlocks map 2 only');
     await page.evaluate(() => __nd.save());
     const o = await page.evaluate(() => JSON.parse(localStorage.getItem('nightfall-defense-save-v1')));
-    ok(o.ver === 8 && o.codex && o.boards && o.boards.moonlit && o.boards.moonlit.cleared === 57 && o.boards.moonlit.towers.length === 1 && !('towers' in o), 'ver 8 layout ' + JSON.stringify(Object.keys(o)));
+    ok(o.ver === 9 && o.codex && o.boards && o.boards.moonlit && o.boards.moonlit.cleared === 57 && o.boards.moonlit.towers.length === 1 && !('towers' in o), 'ver 9 layout ' + JSON.stringify(Object.keys(o)));
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
@@ -601,7 +601,7 @@ async function fastForward(page, maxSeconds) {
       await page.keyboard.press('Escape');
       await page.waitForTimeout(150);
       ok(await page.evaluate(() => document.getElementById('codexModal').hidden), 'escape closes the codex');
-      ok(saved.ver === 8 && saved.healer, 'codex persists in the save ' + JSON.stringify(saved));
+      ok(saved.ver === 9 && saved.healer, 'codex persists in the save ' + JSON.stringify(saved));
       ok(!errors.length, 'console errors: ' + errors.join(' | '));
       await page.close();
     });
@@ -684,7 +684,7 @@ async function fastForward(page, maxSeconds) {
     await page.evaluate(() => __nd.closeMaps());
     await page.evaluate(() => __nd.save());
     const saved = await page.evaluate(() => { const o = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return { ver: o.ver, star: o.stars.moonlit, moon: o.moon, preset: (o.presets.moonlit || []).length }; });
-    ok(saved.ver === 8 && saved.star === 1 && saved.moon === 20 && saved.preset === 2, 'stars, Moonstones and preset saved ' + JSON.stringify(saved));
+    ok(saved.ver === 9 && saved.star === 1 && saved.moon === 20 && saved.preset === 2, 'stars, Moonstones and preset saved ' + JSON.stringify(saved));
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
@@ -756,7 +756,7 @@ async function fastForward(page, maxSeconds) {
     await page.close();
   });
 
-  await test('v5 save migrates to v8 with no stars, no Moonstones and empty research', async () => {
+  await test('v5 save migrates to v9 with no stars, no Moonstones and empty research', async () => {
     const C = require(path.join(__dirname, '..', 'js', 'core.js'));
     const o = JSON.parse(C.serialize(C.newState()));
     o.ver = 5;
@@ -772,7 +772,7 @@ async function fastForward(page, maxSeconds) {
     ok(m.cleared === 64 && m.cash === 31337 && m.stars === '{}' && m.moon === 0 && m.research === '{}' && m.hMoon === '0' && m.hStars === '0' && m.btn && m.lives === '10/10', 'v5 migrated ' + JSON.stringify(m));
     await page.evaluate(() => __nd.save());
     const s = await page.evaluate(() => { const x = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return { ver: x.ver, stars: typeof x.stars, research: typeof x.research, moon: x.moon }; });
-    ok(s.ver === 8 && s.stars === 'object' && s.research === 'object' && s.moon === 0, 'resaved as v8 ' + JSON.stringify(s));
+    ok(s.ver === 9 && s.stars === 'object' && s.research === 'object' && s.moon === 0, 'resaved as v9 ' + JSON.stringify(s));
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
@@ -870,7 +870,7 @@ async function fastForward(page, maxSeconds) {
     ok(lvBefore > 5 && st.star === 1 && st.id === 'nova' && st.lv === 1 && st.iron && st.dusk && /Level 1 /.test(st.card), 'star up resets hero level, keeps choice and unlocks ' + JSON.stringify({ lvBefore, st }));
     await page.evaluate(() => __nd.save());
     const sv = await page.evaluate(() => { const o = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return { ver: o.ver, hero: o.boards.moonlit.hero && o.boards.moonlit.hero.id, un: o.heroUnlocks }; });
-    ok(sv.ver === 8 && sv.hero === 'nova' && sv.un.ironmane && sv.un.duskfang, 'hero saved ' + JSON.stringify(sv));
+    ok(sv.ver === 9 && sv.hero === 'nova' && sv.un.ironmane && sv.un.duskfang, 'hero saved ' + JSON.stringify(sv));
     await page.reload();
     await page.waitForTimeout(500);
     const rl = await page.evaluate(() => ({ id: __nd.S.hero && __nd.S.hero.id, card: document.getElementById('heroCard').textContent }));
@@ -931,7 +931,7 @@ async function fastForward(page, maxSeconds) {
     await page.close();
   });
 
-  await test('v6 save migrates to v8 with no hero and only the free hero unlocked', async () => {
+  await test('v6 save migrates to v9 with no hero and only the free hero unlocked', async () => {
     const C = require(path.join(__dirname, '..', 'js', 'core.js'));
     const o = JSON.parse(C.serialize(C.newState()));
     o.ver = 6;
@@ -945,7 +945,7 @@ async function fastForward(page, maxSeconds) {
     await page.goto(GAME);
     await page.waitForTimeout(500);
     const m = await page.evaluate(() => { const S = __nd.S; __nd.save(); const x = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return { cleared: S.cleared, moon: S.moon, hero: S.hero, un: JSON.stringify(S.heroUnlocks), ver: x.ver, prompt: !!document.querySelector('#heroCard [data-heroes]') }; });
-    ok(m.cleared === 33 && m.moon === 7 && !m.hero && m.un === '{"nova":1,"ironmane":1}' && m.ver === 8 && m.prompt, 'v6 migrated ' + JSON.stringify(m));
+    ok(m.cleared === 33 && m.moon === 7 && !m.hero && m.un === '{"nova":1,"ironmane":1}' && m.ver === 9 && m.prompt, 'v6 migrated ' + JSON.stringify(m));
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
@@ -1175,12 +1175,12 @@ async function fastForward(page, maxSeconds) {
     ok(wb.closed && wb.sw <= 390 && !wb.bad, 'wave card controls fit 390px ' + JSON.stringify(wb));
     await page.evaluate(() => __nd.save());
     const sv = await page.evaluate(() => { const o = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return { ver: o.ver, slots: (o.slots.moonlit || []).filter(Boolean).length, seen: o.lastSeen > 0, rules: typeof o.rules }; });
-    ok(sv.ver === 8 && sv.slots === 1 && sv.seen && sv.rules === 'object', 'v8 save holds slots, rules and the last visit ' + JSON.stringify(sv));
+    ok(sv.ver === 9 && sv.slots === 1 && sv.seen && sv.rules === 'object', 'v9 save holds slots, rules and the last visit ' + JSON.stringify(sv));
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
 
-  await test('v7 save migrates to v8 with idle defaults', async () => {
+  await test('v7 save migrates to v9 with idle defaults', async () => {
     const C = require(path.join(__dirname, '..', 'js', 'core.js'));
     const o = JSON.parse(C.serialize(C.newState()));
     o.ver = 7;
@@ -1194,7 +1194,244 @@ async function fastForward(page, maxSeconds) {
     await page.goto(GAME);
     await page.waitForTimeout(500);
     const m = await page.evaluate(() => { const S = __nd.S; __nd.save(); const x = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return { cleared: S.cleared, farm: !!S.farm && !S.farm.on, rules: !S.rules.on, slots: NDCore.slotsOf(S).length, ver: x.ver, seen: x.lastSeen > 0, modal: document.getElementById('awayModal').hidden }; });
-    ok(m.cleared === 12 && m.farm && m.rules && m.slots === 0 && m.ver === 8 && m.seen && m.modal, 'v7 migrated ' + JSON.stringify(m));
+    ok(m.cleared === 12 && m.farm && m.rules && m.slots === 0 && m.ver === 9 && m.seen && m.modal, 'v7 migrated ' + JSON.stringify(m));
+    ok(!errors.length, 'console errors: ' + errors.join(' | '));
+    await page.close();
+  });
+
+  const WIN_CHAL = () => {
+    const X = __nd.S, C = NDCore;
+    const races = C.chalRaces(X), map = C.getMap(X.map), cap = X.chal.def.cap || 30, h = map.half + 26;
+    let k = 0;
+    for (const off of [h, -h, h + 40, -h - 40, h + 80, -h - 80]) for (const r of map.route) for (const sg of r.segs) for (let d = 20; d < sg.l && X.towers.length < cap; d += 50) {
+      const x = sg.x1 + sg.tx * d - sg.ty * off, y = sg.y1 + sg.ty * d + sg.tx * off;
+      X.cash = 1e80;
+      if (C.canPlace(X, x, y) && C.placeTower(X, races[k % races.length], x, y)) k++;
+    }
+    for (const t of X.towers) { X.cash = 1e80; for (let g = 0; g < 40; g++) for (let i = 0; i < 5; i++) C.buyNode(X, t, i); X.cash = 1e80; C.buyMaxAffordable(X, t); }
+    for (let g = 0; g < 80 && !X.chal.over; g++) {
+      if (!C.startWave(X, X.cleared + 1)) break;
+      let t = 0;
+      while (X.run && t < 900) { C.step(X, 1 / 30); t += 1 / 30; }
+    }
+    return { over: X.chal.over, towers: X.towers.length, waves: X.chal.waves, total: X.chal.to - X.chal.from + 1 };
+  };
+  const BOARD = () => { const P = __nd.prof(); return JSON.stringify({ map: P.map, cash: P.cash, cleared: P.cleared, sel: P.sel, towers: P.towers.map(t => t.race + t.x + ',' + t.y + ':' + t.paths.join('')), lives: NDCore.livesFor(P), records: P.records, boards: Object.keys(P.boards).map(id => id + P.boards[id].cleared + ':' + P.boards[id].towers.length), presets: P.presets, slots: P.slots, stars: P.stars }); };
+
+  await test('daily challenge: list, start, lose, retry and win on a sandbox; main board untouched; reward, streak and save', async () => {
+    const { page, errors } = await openGame(browser, { width: 1280, height: 800 });
+    await page.evaluate(() => { const S = __nd.S, C = NDCore; S.cash = 5000; C.placeTower(S, 'earth', 600, 330); C.placeTower(S, 'unicorn', 700, 470); __nd.forceClear(14); __nd.save(); });
+    await page.waitForTimeout(200);
+    const before = await page.evaluate(BOARD);
+    const moon0 = await page.evaluate(() => __nd.S.moon);
+    await page.click('#chalBtn');
+    await page.waitForTimeout(200);
+    const list = await page.evaluate(() => ({ open: !document.getElementById('chalModal').hidden, cards: document.querySelectorAll('#chalList .ccard').length, daily: document.getElementById('dailyCard').textContent, mods: document.querySelectorAll('#dailyCard .dmods > div').length, rules: document.querySelectorAll('#chalList .ccard[data-id="horn"] .crules li').length, rew: document.querySelector('#chalList .ccard[data-id="horn"] .crew').textContent, state: document.querySelector('#chalList .ccard[data-id="horn"] .cstate').textContent }));
+    ok(list.open && list.cards === 12 && /Daily challenge/.test(list.daily) && list.mods >= 2 && list.mods <= 3, 'challenge list ' + JSON.stringify(list));
+    ok(list.rules >= 2 && /15 Moonstones/.test(list.rew) && /Not yet won/.test(list.state), 'permanent card shows rules, reward and state ' + JSON.stringify(list));
+    await page.click('#dailyCard [data-chal="daily"]');
+    await page.waitForTimeout(300);
+    const inn = await page.evaluate(() => ({ kind: __nd.S.chal && __nd.S.chal.kind, sandbox: __nd.S !== __nd.prof(), cls: document.body.classList.contains('inchal'), card: !document.getElementById('chalCard').hidden, modal: document.getElementById('chalModal').hidden, cash: __nd.S.cash, towers: __nd.S.towers.length, runs: __nd.prof().daily.runs, mapName: document.getElementById('mapName') ? document.getElementById('mapName').textContent : '' }));
+    ok(inn.kind === 'daily' && inn.sandbox && inn.cls && inn.card && inn.modal && inn.towers === 0 && inn.cash > 0 && inn.runs === 1, 'daily started on a sandbox ' + JSON.stringify(inn));
+    ok(await page.evaluate(BOARD) === before, 'main board untouched after start');
+    ok(await page.evaluate(() => { __nd.openMaps(); return document.getElementById('mapModal') ? document.getElementById('mapModal').hidden : true; }), 'map select refused during a challenge');
+    const lost = await page.evaluate(() => {
+      const X = __nd.S, C = NDCore;
+      X.hero = null; X.chal.lives = 1;
+      C.startWave(X, X.cleared + 1);
+      let t = 0;
+      while (X.run && t < 600) { C.step(X, 1 / 30); t += 1 / 30; }
+      return X.chal.over;
+    });
+    ok(lost === 'lost', 'challenge lost ' + lost);
+    await page.waitForTimeout(500);
+    const end1 = await page.evaluate(() => ({ open: !document.getElementById('chalEndModal').hidden, body: document.getElementById('chalEndBody').textContent, again: !document.getElementById('chalEndAgain').hidden, chal: !!__nd.S.chal, cls: document.body.classList.contains('inchal'), won: __nd.S.daily.won, best: __nd.S.daily.best }));
+    ok(end1.open && /Defeated/.test(end1.body) && end1.again && !end1.chal && !end1.cls && !end1.won && end1.best > 0, 'defeat screen and back on the main board ' + JSON.stringify(end1));
+    ok(await page.evaluate(BOARD) === before, 'main board untouched after a loss');
+    ok(await page.evaluate(() => __nd.S.moon) === moon0, 'no Moonstones for a loss');
+    await shot(page, 'chal-lost-1280');
+    await page.click('#chalEndAgain');
+    await page.waitForTimeout(300);
+    ok(await page.evaluate(() => !!__nd.S.chal && __nd.S.chal.kind === 'daily' && __nd.prof().daily.runs === 2), 'try again starts a fresh daily');
+    const win = await page.evaluate(WIN_CHAL);
+    ok(win.over === 'won' && win.waves === win.total, 'daily won ' + JSON.stringify(win));
+    await page.waitForTimeout(500);
+    const end2 = await page.evaluate(() => ({ open: !document.getElementById('chalEndModal').hidden, body: document.getElementById('chalEndBody').textContent, reward: (document.getElementById('chalReward') || {}).textContent || '', chal: !!__nd.S.chal, d: __nd.S.daily, moon: __nd.S.moon, ach: !!__nd.S.ach.ch_d1, bonus: __nd.S.bonus.start }));
+    ok(end2.open && /Victory/.test(end2.body) && /15 Moonstones/.test(end2.reward) && !end2.chal, 'victory screen with reward ' + JSON.stringify(end2));
+    ok(end2.d.won === 1 && end2.d.wins === 1 && end2.d.streak === 1 && end2.moon === moon0 + 15 && end2.ach && end2.bonus >= 0.05, 'daily reward, streak and achievement ' + JSON.stringify(end2));
+    ok(await page.evaluate(BOARD) === before, 'main board untouched after a win');
+    await shot(page, 'chal-won-1280');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(150);
+    await page.keyboard.press('g');
+    await page.waitForTimeout(200);
+    const card = await page.evaluate(() => ({ open: !document.getElementById('chalModal').hidden, txt: document.getElementById('dailyCard').textContent, streak: document.getElementById('dailyStreak').textContent, cls: document.getElementById('dailyCard').className }));
+    ok(card.open && /claimed/.test(card.txt) && /Play again for score/.test(card.txt) && card.streak === '1' && /won/.test(card.cls), 'daily card shows the claim and streak ' + JSON.stringify(card));
+    await page.keyboard.press('Escape');
+    await page.evaluate(() => __nd.save());
+    const sv = await page.evaluate(() => { const o = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); const b = o.boards[o.map]; return { ver: o.ver, chal: 'chal' in o, cleared: b.cleared, towers: b.towers.length, won: o.daily.won, streak: o.daily.streak, moon: o.moon, ach: !!o.ach.ch_d1 }; });
+    ok(sv.ver === 9 && !sv.chal && sv.cleared === 14 && sv.towers === 2 && sv.won === 1 && sv.streak === 1 && sv.moon === moon0 + 15 && sv.ach, 'save holds the main board and the daily ' + JSON.stringify(sv));
+    ok(!errors.length, 'console errors: ' + errors.join(' | '));
+    await page.close();
+  });
+
+  await test('permanent challenge: rules enforced, reward paid once, quit with X leaves the board alone', async () => {
+    const { page, errors } = await openGame(browser, { width: 1280, height: 800 });
+    await page.evaluate(() => { const S = __nd.S, C = NDCore; S.cash = 3000; C.placeTower(S, 'pegasus', 600, 330); __nd.save(); });
+    const before = await page.evaluate(BOARD);
+    await page.evaluate(() => __nd.startChal('horn'));
+    await page.waitForTimeout(300);
+    const rules = await page.evaluate(() => {
+      const X = __nd.S, C = NDCore;
+      X.cash = 1e6;
+      const bad = C.placeTower(X, 'earth', 600, 330);
+      const good = C.placeTower(X, 'unicorn', 600, 330);
+      return { bad: !!bad, good: !!good, block: C.chalBlock(X, 'pegasus'), hidden: [...document.querySelectorAll('.race')].filter(b => !b.hidden).map(b => b.dataset.race).join(), name: document.getElementById('chalName').textContent, mods: document.getElementById('chalMods').textContent };
+    });
+    ok(!rules.bad && rules.good && rules.block === 'race' && rules.hidden === 'unicorn' && rules.name === 'Horn and Hoof' && /Unicorns only/.test(rules.mods), 'unicorns only enforced ' + JSON.stringify(rules));
+    await page.evaluate(() => { const X = __nd.S; X.towers.length = 0; });
+    const win = await page.evaluate(WIN_CHAL);
+    ok(win.over === 'won', 'horn won ' + JSON.stringify(win));
+    await page.waitForTimeout(500);
+    const r = await page.evaluate(() => ({ reward: (document.getElementById('chalReward') || {}).textContent || '', again: document.getElementById('chalEndAgain').hidden, moon: __nd.S.moon, done: !!__nd.S.chalDone.horn, ach: !!__nd.S.ach.ch_p1, best: __nd.S.chalBest.horn }));
+    ok(/15 Moonstones/.test(r.reward) && r.again && r.moon === 15 && r.done && r.ach && r.best > 20000, 'reward paid ' + JSON.stringify(r));
+    ok(await page.evaluate(BOARD) === before, 'main board untouched after the challenge');
+    await page.click('#chalEndOk');
+    await page.waitForTimeout(150);
+    await page.evaluate(() => __nd.openChal());
+    await page.waitForTimeout(150);
+    const st = await page.evaluate(() => ({ cls: document.querySelector('.ccard[data-id="horn"]').className, txt: document.querySelector('.ccard[data-id="horn"] .cstate').textContent, btn: document.querySelector('.ccard[data-id="horn"] [data-chal]').textContent }));
+    ok(/done/.test(st.cls) && /Completed/.test(st.txt) && /Play again/.test(st.btn), 'card shows completed ' + JSON.stringify(st));
+    await page.click('.ccard[data-id="horn"] [data-chal]');
+    await page.waitForTimeout(300);
+    await page.evaluate(WIN_CHAL);
+    await page.waitForTimeout(500);
+    const r2 = await page.evaluate(() => ({ reward: !!document.getElementById('chalReward'), body: document.getElementById('chalEndBody').textContent, moon: __nd.S.moon }));
+    ok(!r2.reward && /already claimed/.test(r2.body) && r2.moon === 15, 'reward paid only once ' + JSON.stringify(r2));
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(150);
+    await page.evaluate(() => __nd.startChal('nosell'));
+    await page.waitForTimeout(300);
+    const ns = await page.evaluate(() => { const X = __nd.S, C = NDCore; X.cash = 1e6; const t = C.placeTower(X, 'earth', 600, 330); const sold = C.sellTower(X, t); for (let x = 60; x < 1400; x += 70) for (let y = 60; y < 800; y += 70) C.placeTower(X, 'earth', x, y); return { sold, n: X.towers.length, block: C.chalBlock(X, 'earth') }; });
+    ok(ns.sold === 0 && ns.n === 8 && ns.block === 'cap', 'no selling and the herd cap hold ' + JSON.stringify(ns));
+    await page.locator('#cv').hover();
+    await page.keyboard.press('x');
+    await page.waitForTimeout(150);
+    ok(await page.evaluate(() => !!__nd.S.chal && /again/.test(document.getElementById('chalQuit').textContent)), 'first X arms the quit');
+    await page.keyboard.press('x');
+    await page.waitForTimeout(400);
+    const q = await page.evaluate(() => ({ chal: !!__nd.S.chal, body: document.getElementById('chalEndBody').textContent, done: !!__nd.S.chalDone.nosell, rp: __nd.S.rp | 0 }));
+    ok(!q.chal && /abandoned/.test(q.body) && !q.done && q.rp === 0, 'quit ends the run without reward ' + JSON.stringify(q));
+    ok(await page.evaluate(BOARD) === before, 'main board untouched after a quit');
+    ok(!errors.length, 'console errors: ' + errors.join(' | '));
+    await page.close();
+  });
+
+  await test('achievement toast with sound, bonus applies to ponies, achievements screen with tabs and progress', async () => {
+    const { page, errors } = await openGame(browser, { width: 1280, height: 800 });
+    const pre = await page.evaluate(() => { const S = __nd.S, C = NDCore; __nd.chalUi.owlT = 1e15; delete S.ach.x_owl; delete S.feats.x_owl; C.recalcBonus(S); S.cash = 5000; const t = C.placeTower(S, 'earth', 600, 330); return { dmg: C.stats(t).dmg, rate: C.stats(t).rate, bonus: S.bonus.dmg, n: Object.keys(S.ach).length }; });
+    ok(pre.n === 0 && pre.bonus === 0, 'fresh profile has no achievements ' + JSON.stringify(pre));
+    await page.evaluate(() => { const S = __nd.S; S.totalKills = 250000; NDCore.checkAch(S); });
+    await page.waitForTimeout(400);
+    const t1 = await page.evaluate(() => { const S = __nd.S, C = NDCore, t = S.towers[0]; return { cls: document.getElementById('achToast').className, txt: document.getElementById('achToast').textContent, dmg: C.stats(t).dmg, rate: C.stats(t).rate, bonus: S.bonus, ach: Object.keys(S.ach).sort().join(), state: document.getElementById('achState').textContent, pulse: document.getElementById('achBtn').classList.contains('pulse'), queue: __nd.chalUi.toasts.length }; });
+    ok(/show/.test(t1.cls) && /Achievement unlocked/.test(t1.txt) && /First Thousand/.test(t1.txt) && /\+1% pony damage/.test(t1.txt) && t1.queue === 2, 'toast shows the first unlock and queues the rest ' + JSON.stringify(t1));
+    ok(t1.ach === 'c_k1,c_k2,c_k3' && t1.state === '3' && t1.pulse, 'achievements recorded ' + JSON.stringify(t1));
+    ok(Math.abs(t1.bonus.dmg - 0.03) < 1e-9 && Math.abs(t1.dmg / pre.dmg - 1.03) < 1e-6 && Math.abs(t1.rate / pre.rate - 1.01) < 1e-6, 'bonus applies to pony stats ' + JSON.stringify(t1));
+    await shot(page, 'ach-toast-1280');
+    await page.locator('#cv').hover();
+    await page.keyboard.press('a');
+    await page.waitForTimeout(200);
+    const m = await page.evaluate(() => ({ open: !document.getElementById('achModal').hidden, count: document.getElementById('achCount').textContent, rows: document.querySelectorAll('#achList .arow').length, done: document.querySelectorAll('#achList .arow.done').length, secret: document.querySelectorAll('#achList .arow.secret').length, secretName: (document.querySelector('#achList .arow.secret .an') || {}).textContent, bonus: document.getElementById('achBonus').textContent, tabs: document.querySelectorAll('#achTabs [data-acat]').length, bar: document.querySelector('#achList .arow[data-ach="c_b1"] .abar').getAttribute('aria-valuenow'), w10: document.querySelector('#achList .arow[data-ach="p_w10"] .av').textContent }));
+    ok(m.open && m.count === '3 / ' + m.rows && m.rows >= 50 && m.done === 3 && m.secret >= 4 && m.secretName === '???' && m.tabs === 9, 'achievements screen ' + JSON.stringify(m));
+    ok(/\+3% pony damage/.test(m.bonus) && m.bar === '0' && /0 \/ 10/.test(m.w10), 'bonus total and progress ' + JSON.stringify(m));
+    await page.click('#achTabs [data-acat="combat"]');
+    await page.waitForTimeout(100);
+    const tab = await page.evaluate(() => ({ rows: [...document.querySelectorAll('#achList .arow')].every(r => /^c_/.test(r.dataset.ach)), n: document.querySelectorAll('#achList .arow').length, on: document.querySelector('#achTabs .on').dataset.acat }));
+    ok(tab.rows && tab.n >= 6 && tab.on === 'combat', 'category tab filters ' + JSON.stringify(tab));
+    await shot(page, 'ach-1280');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(100);
+    ok(await page.evaluate(() => document.getElementById('achModal').hidden), 'Esc closes achievements');
+    await page.evaluate(() => { __nd.save(); });
+    await page.reload();
+    await page.waitForTimeout(500);
+    const back = await page.evaluate(() => ({ ach: Object.keys(__nd.S.ach).length, dmg: __nd.S.bonus.dmg, tw: NDCore.stats(__nd.S.towers[0]).dmg }));
+    ok(back.ach === 3 && Math.abs(back.dmg - 0.03) < 1e-9 && Math.abs(back.tw - t1.dmg) < 1e-6, 'achievements and bonus survive reload ' + JSON.stringify(back));
+    ok(!errors.length, 'console errors: ' + errors.join(' | '));
+    await page.close();
+  });
+
+  await test('stats page at 390px: kills by type, playtime, favourites, map records; slice 8 screens fit', async () => {
+    const { page, errors } = await openGame(browser, { width: 390, height: 844 });
+    await page.evaluate(() => { const S = __nd.S, C = NDCore; S.cash = 5000; C.placeTower(S, 'earth', 600, 330); C.placeTower(S, 'unicorn', 700, 470); C.startWave(S, 1); });
+    await fastForward(page, 300);
+    await page.evaluate(() => { const S = __nd.S; S.stats.playOffline = 3600; });
+    await page.waitForTimeout(300);
+    const fit = () => page.evaluate(() => {
+      const vw = window.innerWidth, out = { scroll: document.documentElement.scrollWidth <= vw, bad: [] };
+      for (const m of document.querySelectorAll('.modal:not([hidden]) .dialog')) { const r = m.getBoundingClientRect(); if (r.left < -1 || r.right > vw + 1) out.bad.push(m.parentElement.id + ' ' + Math.round(r.left) + '-' + Math.round(r.right)); }
+      return out;
+    });
+    ok(await page.evaluate(() => { const r = document.getElementById('statsBtn').getBoundingClientRect(); return r.width > 30 && r.right <= window.innerWidth; }), 'stats button visible at 390px');
+    await page.click('#statsBtn');
+    await page.waitForTimeout(200);
+    const s = await page.evaluate(() => ({ open: !document.getElementById('statsModal').hidden, kills: document.getElementById('stKills').textContent, waves: document.getElementById('stWaves').textContent, cash: document.getElementById('stCash').textContent, pony: document.getElementById('stFavPony').textContent, off: document.getElementById('stOffline').textContent, act: document.getElementById('stActive').textContent, bars: document.querySelectorAll('#stKillsBy .kbar').length, maps: document.querySelectorAll('#stMaps tbody tr').length, moonlit: document.querySelector('#stMaps tbody tr').textContent, bosses: document.getElementById('stBosses').textContent }));
+    ok(s.open && +s.kills > 0 && s.waves === '1' && s.cash !== '0' && /pony|unicorn/i.test(s.pony) && s.off === '1h 00m' && s.bars >= 1 && s.maps === 5 && /Moonlit/.test(s.moonlit) && s.bosses === '0', 'stats page ' + JSON.stringify(s));
+    const f1 = await fit();
+    ok(f1.scroll && !f1.bad.length, 'stats fits 390px ' + JSON.stringify(f1));
+    await shot(page, 'stats-390');
+    await page.click('#statsClose');
+    await page.click('#achBtn');
+    await page.waitForTimeout(200);
+    const f2 = await fit();
+    ok(f2.scroll && !f2.bad.length && await page.evaluate(() => document.querySelectorAll('#achList .arow').length >= 50), 'achievements fit 390px ' + JSON.stringify(f2));
+    await shot(page, 'ach-390');
+    await page.click('#achClose');
+    await page.click('#chalBtn');
+    await page.waitForTimeout(200);
+    const f3 = await fit();
+    ok(f3.scroll && !f3.bad.length, 'challenges fit 390px ' + JSON.stringify(f3));
+    await shot(page, 'chal-390');
+    await page.click('#dailyCard [data-chal="daily"]');
+    await page.waitForTimeout(300);
+    const c = await page.evaluate(() => { const r = document.getElementById('chalCard').getBoundingClientRect(); return { chal: !!__nd.S.chal, w: r.width, right: r.right, vw: window.innerWidth, scroll: document.documentElement.scrollWidth <= window.innerWidth }; });
+    ok(c.chal && c.w > 100 && c.right <= c.vw + 1 && c.scroll, 'challenge card fits 390px ' + JSON.stringify(c));
+    await shot(page, 'chal-run-390');
+    await page.click('#chalQuit');
+    await page.click('#chalQuit');
+    await page.waitForTimeout(400);
+    const f4 = await fit();
+    ok(await page.evaluate(() => !__nd.S.chal && !document.getElementById('chalEndModal').hidden) && f4.scroll && !f4.bad.length, 'challenge end fits 390px ' + JSON.stringify(f4));
+    await page.click('#chalEndOk');
+    await page.evaluate(() => { const S = __nd.S; S.stats.bossKills = 0; S.totalKills = 999; S.towers.length = 0; NDCore.checkAch(S); S.totalKills = 1000; NDCore.checkAch(S); });
+    await page.waitForFunction(() => /show/.test(document.getElementById('achToast').className), null, { timeout: 6000 });
+    const tst = await page.evaluate(() => { const r = document.getElementById('achToast').getBoundingClientRect(); return { show: /show/.test(document.getElementById('achToast').className), l: r.left, r: r.right, vw: window.innerWidth }; });
+    ok(tst.show && tst.l >= 0 && tst.r <= tst.vw, 'toast fits 390px ' + JSON.stringify(tst));
+    ok(!errors.length, 'console errors: ' + errors.join(' | '));
+    await page.close();
+  });
+
+  await test('v8 save migrates to v9 with achievements unlocked from past progress', async () => {
+    const C = require(path.join(__dirname, '..', 'js', 'core.js'));
+    const o = JSON.parse(C.serialize(C.newState()));
+    o.ver = 8;
+    for (const k of ['ach', 'feats', 'bonus', 'daily', 'chalDone', 'chalBest', 'rp', 'tokens']) delete o[k];
+    o.stats = { played: 70, bossKills: 6, waves: 0 };
+    o.boards.moonlit.cleared = 60; o.boards.moonlit.sel = 61; o.totalKills = 1500; o.moon = 5; o.moonTotal = 25;
+    o.stars = { moonlit: 1 };
+    o.heroUnlocks = { nova: 1, ironmane: 1 };
+    o.boards.moonlit.records = Object.assign(o.boards.moonlit.records || {}, { wins: 64, att: 70 });
+    const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    const errors = [];
+    await page.addInitScript(s => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('nightfall-defense-save-v1', s); } }, JSON.stringify(o));
+    watch(page, errors);
+    await page.goto(GAME);
+    await page.waitForTimeout(500);
+    const m = await page.evaluate(() => { const S = __nd.S; __nd.save(); const x = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return { ver: x.ver, cleared: S.cleared, moon: S.moon, ach: Object.keys(S.ach).sort().join(), bonus: S.bonus, banner: document.getElementById('banner').textContent, pulse: document.getElementById('achBtn').classList.contains('pulse'), toast: /show/.test(document.getElementById('achToast').className), state: document.getElementById('achState').textContent, daily: x.daily && x.daily.wins, st: S.stats.starUps, moonEarned: S.stats.moonEarned }; });
+    const want = ['p_w1', 'p_w10', 'p_w25', 'p_w50', 'c_k1', 'c_b1', 'h_iron', 's_1'];
+    ok(m.ver === 9 && m.cleared === 60 && m.moon === 5 && want.every(id => m.ach.split(',').indexOf(id) >= 0) && m.daily === 0, 'v8 migrated with retro unlocks ' + JSON.stringify(m));
+    ok(/achievements? unlocked from your past progress/.test(m.banner) && m.pulse && !m.toast && +m.state >= want.length, 'retro unlocks announced quietly ' + JSON.stringify(m));
+    ok(m.bonus.dmg > 0 && m.st === 1 && m.moonEarned === 25, 'bonus and stats rebuilt ' + JSON.stringify(m));
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });

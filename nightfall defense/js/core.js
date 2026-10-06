@@ -978,7 +978,7 @@
   const CHAL_LIVES = 20;
   const CHAL_ECO = { start: 3, kill: 2, clear: 2, hp: 0.4, boss: 0.55, soft: 0.15 };
   const DAILY_WEIGHT = 3.5;
-  const DAILY_BANDS = { moonlit: [1, 11, 21, 31], woods: [1, 11, 21], caverns: [1, 11, 21], cliffs: [1, 11], castle: [1, 11] };
+  const DAILY_BANDS = { moonlit: [1, 11, 21], woods: [1, 11, 21], caverns: [1, 11, 21], cliffs: [1], castle: [1, 11] };
   function chalClash(a, b) { return CHAL_CLASH.some(c => (c[0] === a && c[1] === b) || (c[0] === b && c[1] === a)); }
   function chalLives(mods, lives) { return mods.indexOf('onelife') >= 0 ? 1 : mods.indexOf('glass') >= 0 ? 10 : lives || CHAL_LIVES; }
   function chalWeight(mods) { let w = 0; for (const m of mods) w += CHAL_MODS[m] ? CHAL_MODS[m].w : 0; return w; }
