@@ -97,6 +97,8 @@ class Ecosystem {
 		this.eggs = typeof EggPool === 'function' ? new EggPool(world, this.animals, this.registry) : null;
 		this.animals.eggs = this.eggs;
 		this.plants.refreshSpeciesMeans();
+		this.coast = typeof CoastLayer === 'function' ? new CoastLayer(world, new FastRng(seed + 1414)) : null;
+		this.animals.coast = this.coast;
 		const cfg = world.cfg || worldCfgParams(null);
 		if (!cfg.div && cfg.animalK === 1) for (const a of ANIMAL_ARCHETYPES) this._introduce(a, 'founder');
 		else this._introduceFounders(cfg);
@@ -186,6 +188,7 @@ class Ecosystem {
 			const i = (y | 0) * W + (x | 0);
 			if (wd && wd[i] > 2) continue;
 			if (domain === 3 && !(A.walk[i] & 1)) continue;
+			if (arch.coast && this.coast && attempt < 3000 && !this.coast.coastal[i]) continue;
 			if (domain === 1 && attempt < 3000 && aquaMisfit(arch.g[G_DEPTH], arch.g[G_SALT], this.plants.depth[i], this.plants.sal[i]) > (arch.g[G_DEPTH] >= LVL_FLOOR ? AQ_PLACE_DEEP : AQ_PLACE)) continue;
 			const clim = gaussFit(this.world.temperature[i], arch.g[G_TEMP], 0.08 + 0.3 * arch.g[G_TOL]);
 			const food = arch.g[G_DIET] < 0.6 ? this.plants.edible(i) : 0.3;
@@ -234,6 +237,7 @@ class Ecosystem {
 		if (this.bugs) this.bugs.step(this.tick);
 		this.animals.step(this.tick);
 		if (this.rivers) this.rivers.step(this.tick, this);
+		if (this.coast) this.coast.step(this.tick, this);
 		if (this.eggs) this.eggs.step(Wx);
 		if (D) D.step(this.tick);
 
@@ -755,6 +759,16 @@ class Ecosystem {
 					const a = ANIMAL_ARCHETYPES[k];
 					const cat = animalCategory(a.g, a.domain, a.cls, a.nic | 0);
 					if (!seen.has(cat)) tryIntro(a, `${ANIMAL_CATEGORY_LABEL[cat].toLowerCase()} came back up the river`);
+				}
+			}
+			if (this.coast) {
+				if (!this.rivers) for (let i = 0; i < A.count; i++) if (A.alive[i] && A.domain[i] !== 1) seen.add(this.registry.get(A.sp[i]).category);
+				for (const k of COAST_ARCH) {
+					const a = ANIMAL_ARCHETYPES[k];
+					const cat = animalCategory(a.g, a.domain, a.cls, a.nic | 0);
+					if (seen.has(cat)) continue;
+					this.coast.rescues++;
+					tryIntro(a, `${ANIMAL_CATEGORY_LABEL[cat].toLowerCase()} returned to the coast`);
 				}
 			}
 		}

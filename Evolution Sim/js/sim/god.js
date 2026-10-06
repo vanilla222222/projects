@@ -110,7 +110,7 @@ class GodTools {
 		} else if (b === BIOME_ID.OCEAN || b === BIOME_ID.FROZEN_OCEAN || b === BIOME_ID.COLD_SEEP) {
 			world.isOcean[i] = 1;
 			alt[i] = Math.max(BIOME_THRESHOLDS.deepOceanLevel + 0.01, Math.min(alt[i], GOD_OCEAN_TOP));
-		} else if (b === BIOME_ID.CORAL_REEF) {
+		} else if (b === BIOME_ID.CORAL_REEF || b === BIOME_ID.ROCKY_SHORE || b === BIOME_ID.LAGOON || b === BIOME_ID.KELP_COAST) {
 			world.isOcean[i] = 1;
 			alt[i] = Math.max(GOD_REEF_LO, Math.min(alt[i], GOD_REEF_HI));
 		} else if (b === BIOME_ID.LAKE || b === BIOME_ID.OXBOW) {
@@ -1043,6 +1043,7 @@ class GodTools {
 			}
 		}
 		const lost = this._rewalk(eco);
+		if (eco.coast) eco.coast.restoreDerived(eco.world);
 		const D = eco.disasters;
 		if (D) {
 			let land = 0;
@@ -1111,12 +1112,12 @@ class GodTools {
 		for (let i = 0; i < n; i++) {
 			const b = world.biome[i];
 			let w;
-			if (b === BIOME_ID.RIVER || b === BIOME_ID.POND || b === BIOME_ID.RAPIDS || b === BIOME_ID.BEAVER_POND) w = 3;
+			if (b === BIOME_ID.RIVER || b === BIOME_ID.POND || b === BIOME_ID.RAPIDS || b === BIOME_ID.BEAVER_POND || b === BIOME_ID.ROCKY_SHORE) w = 3;
 			else if (WATER_BIOME_SET.has(b)) w = 2;
-			else w = b === BIOME_ID.GLACIER ? 0 : b === BIOME_ID.BEACH || b === BIOME_ID.CLIFF ? 17 : 1;
+			else w = b === BIOME_ID.GLACIER ? 0 : b === BIOME_ID.BEACH || b === BIOME_ID.CLIFF || b === BIOME_ID.SEA_CLIFF || b === BIOME_ID.ATOLL ? 17 : 1;
 			w |= 8;
-			if (b === BIOME_ID.HILLS || b === BIOME_ID.BADLANDS || b === BIOME_ID.MOUNTAINS || b === BIOME_ID.CLIFF || b === BIOME_ID.VOLCANIC || b === BIOME_ID.ALPINE_MEADOW) w |= 32;
-			if (b === BIOME_ID.SALT_FLAT || b === BIOME_ID.MANGROVE) w |= 64;
+			if (b === BIOME_ID.HILLS || b === BIOME_ID.BADLANDS || b === BIOME_ID.MOUNTAINS || b === BIOME_ID.CLIFF || b === BIOME_ID.VOLCANIC || b === BIOME_ID.ALPINE_MEADOW || b === BIOME_ID.SEA_CLIFF) w |= 32;
+			if (b === BIOME_ID.SALT_FLAT || b === BIOME_ID.MANGROVE || b === BIOME_ID.SALT_MARSH) w |= 64;
 			if (b === BIOME_ID.TUNDRA_BOG || b === BIOME_ID.BOG || b === BIOME_ID.CORAL_REEF) w |= 128;
 			walk[i] = w;
 			A.zone[i] = BIOME_ZONE[b];

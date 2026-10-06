@@ -21,6 +21,7 @@ const EvoSave = (() => {
 		add('DisasterLayer', typeof DisasterLayer === 'function' && DisasterLayer);
 		add('GodTools', typeof GodTools === 'function' && GodTools);
 		add('RiverLayer', typeof RiverLayer === 'function' && RiverLayer);
+		add('CoastLayer', typeof CoastLayer === 'function' && CoastLayer);
 		return t;
 	};
 
@@ -30,6 +31,7 @@ const EvoSave = (() => {
 		WeatherLayer: ['_evapK', '_queue'],
 		BugLayer: ['app', 'mob', 'rate'],
 		RiverLayer: ['dn', 'up', 'fdx', 'fdy', 'flow', 'flood', 'still'],
+		CoastLayer: ['tidal', 'isle', 'shore', 'coastal', 'seaward', 'beachNear', 'reefs'],
 	};
 	const SHUFFLE_MIN = 4096;
 
@@ -296,6 +298,8 @@ const EvoSave = (() => {
 		if (typeof padAnimalGenes === 'function') upgradeAnimals(eco);
 		if (!eco.rivers && typeof RiverLayer === 'function') eco.rivers = new RiverLayer(eco.world, new FastRng(eco.seed + 1212));
 		if (eco.animals && eco.rivers) eco.animals.rivers = eco.rivers;
+		if (!eco.coast && typeof CoastLayer === 'function') eco.coast = new CoastLayer(eco.world, new FastRng(eco.seed + 1414));
+		if (eco.animals && eco.coast) eco.animals.coast = eco.coast;
 	}
 
 	function upgradeAnimals(eco) {
