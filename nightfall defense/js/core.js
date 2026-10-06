@@ -4,7 +4,7 @@
   const WORLD = { L: 1400, W: 800, towerR: 20, minGap: 44 };
   const MAX_WAVE = 100;
   const LIVES = 10;
-  const SAVE_VER = 7;
+  const SAVE_VER = 8;
   const MAX_STARS = 5;
   const SPAWN_GUARD = 15;
   const UNLOCK_AT = 50;
@@ -44,6 +44,7 @@
     { id: 'eco_sell', br: 'eco', name: 'Fair Trade', max: 2, base: 10, pos: [1, 2], req: ['eco_kill'], per: '+5% sell refund', total: lv => 'Sell refund ' + (70 + 5 * lv) + '%' },
     { id: 'eco_boss', br: 'eco', name: 'Boss Bounty', max: 3, base: 10, pos: [2, 2], req: ['eco_first'], per: '+25% cash from boss kills', total: lv => '+' + 25 * lv + '% boss cash' },
     { id: 'eco_master', br: 'eco', name: 'Golden Age', max: 1, base: 90, pos: [1, 3], req: ['eco_interest', 'eco_boss'], per: '+15% to all cash', total: () => '+15% all cash' },
+    { id: 'eco_offline', br: 'eco', name: 'Night Shift', max: 5, base: 8, pos: [0, 3], req: ['eco_interest'], per: '+20% offline and background earnings', total: lv => '+' + 20 * lv + '% offline earnings' },
     { id: 'pony_dmg', br: 'pony', name: 'Drill Yard', max: 5, base: 4, pos: [1, 0], req: [], per: '+10% damage for every pony', total: lv => '+' + 10 * lv + '% damage' },
     { id: 'pony_cheap', br: 'pony', name: 'Recruiting Fair', max: 2, base: 6, pos: [0, 1], req: ['pony_dmg'], per: 'The first pony of each race costs 25% less', total: lv => 'First copy -' + 25 * lv + '%' },
     { id: 'pony_rate', br: 'pony', name: 'Quick Hooves', max: 4, base: 6, pos: [1, 1], req: ['pony_dmg'], per: '+5% attack speed for every pony', total: lv => '+' + 5 * lv + '% attack speed' },
@@ -65,10 +66,11 @@
     { id: 'util_skip', br: 'util', name: 'Head Start', max: 3, base: 6, pos: [0, 1], req: ['util_lives'], per: 'After a star-up, skip 3 more opening waves (bonuses paid)', total: lv => 'Skip ' + 3 * lv + ' waves after star-up' },
     { id: 'util_leak', br: 'util', name: 'Boss Wardens', max: 2, base: 6, pos: [1, 1], req: ['util_lives'], per: 'Leaked bosses cost 1 life less (min 1)', total: lv => 'Boss leaks -' + lv + ' lives' },
     { id: 'util_moon', br: 'util', name: 'Moon Lens', max: 5, base: 6, pos: [2, 1], req: ['util_lives'], per: '+10% Moonstones from every source', total: lv => '+' + 10 * lv + '% Moonstones' },
-    { id: 'util_auto', br: 'util', name: 'Muster Plans', max: 1, base: 30, pos: [0, 2], req: ['util_skip'], per: 'Save your layout on star-up and rebuild it with one click', total: () => 'Layout presets unlocked' },
+    { id: 'util_auto', br: 'util', name: 'Muster Plans', max: 1, base: 30, pos: [0, 2], req: ['util_skip'], per: 'Save your layout on star-up and rebuild it with one click, plus 2 more plan slots', total: () => 'Star-up layout and 5 plan slots' },
     { id: 'util_star', br: 'util', name: 'Star Hunter', max: 3, base: 10, pos: [2, 2], req: ['util_moon'], per: '+1 Moonstone per first-clear boss wave', total: lv => '+' + lv + ' per boss wave' },
     { id: 'util_hero', br: 'util', name: 'Hero Academy', max: 3, base: 8, pos: [1, 2], req: ['util_leak'], per: '+25% hero XP from every kill', total: lv => '+' + 25 * lv + '% hero XP' },
     { id: 'util_master', br: 'util', name: 'Moonlit Crown', max: 1, base: 90, pos: [1, 3], req: ['util_auto', 'util_star'], per: '+2 lives and +20% Moonstones', total: () => '+2 lives, +20% Moonstones' },
+    { id: 'util_offline', br: 'util', name: 'Long Watch', max: 4, base: 8, pos: [2, 3], req: ['util_star'], per: 'Offline earnings cap +2h', total: lv => 'Offline cap ' + (8 + 2 * lv) + 'h' },
   ];
   const RESEARCH_BY_ID = {};
   for (const r of RESEARCH) RESEARCH_BY_ID[r.id] = r;
@@ -796,8 +798,9 @@
 
   function newRecords() { return { time: 0, att: 0, wins: 0, bosses: {}, firsts: {} }; }
   function mapStartCash(map, S) { return Math.round((map.startCash || TUNE.startCash) * (1 + 0.5 * rl(S, 'eco_start'))); }
-  function newBoard(map, S) { return { cash: mapStartCash(map, S), cleared: 0, sel: 1, auto: false, towers: [], records: newRecords(), hero: null }; }
-  const BOARD_KEYS = ['cash', 'cleared', 'sel', 'auto', 'towers', 'records', 'hero'];
+  function newFarm() { return { on: false, pick: 0, fails: 0, safe: 0, val: 0, runs: 0 }; }
+  function newBoard(map, S) { return { cash: mapStartCash(map, S), cleared: 0, sel: 1, auto: false, towers: [], records: newRecords(), hero: null, farm: newFarm(), build: null }; }
+  const BOARD_KEYS = ['cash', 'cleared', 'sel', 'auto', 'towers', 'records', 'hero', 'farm', 'build'];
 
   function newState(mapId) {
     const map = getMap(mapId);
@@ -810,6 +813,7 @@
       sfx: { hit: 0, crit: 0, kill: 0, leak: 0 },
       codex: { e: {}, b: {} },
       stars: {}, moon: 0, moonTotal: 0, research: {}, presets: {}, heroUnlocks: { nova: 1 },
+      slots: {}, rules: newRules(), lastSeen: 0,
     };
     Object.assign(S, newBoard(map, S));
     return S;
@@ -2319,6 +2323,10 @@
       const iv = rl(S, 'eco_interest');
       if (iv) { interest = Math.min(Math.max(0, S.cash) * 0.01 * iv, clearBonus(run.n, run.map) * 0.5 * iv); S.cash += interest; }
       if (S.records) S.records.wins++;
+      if (S.farm && run.lives >= run.livesMax) {
+        const val = boardValue(S.towers);
+        if (run.n > S.farm.safe || (run.n === S.farm.safe && (!S.farm.val || val < S.farm.val))) { S.farm.safe = run.n; S.farm.val = val; }
+      }
       if (bonus) syncHeroUnlocks(S);
       emit(S, 'won', { n: run.n, bonus, earned: run.earned, fresh: bonus > 0, lives: run.lives, moon, interest });
       S.run = null;
@@ -2376,6 +2384,417 @@
     }
     return n;
   }
+  const OFFLINE = { cap: 8 * 3600, capStep: 2 * 3600, eff: 0.35, boost: 0.2, side: 0.25, min: 60, overhead: 6, walk: 0.5, waveDrop: 1.2 };
+  const SLOT_BASE = 3, SLOT_BONUS = 2, SLOT_MAX = 5;
+  const RULE_KINDS = ['dmg', 'rate', 'path', 'cheap'];
+  const RULE_TICKS = ['end', 'sec', 'both'];
+  const RESERVES = [0, 10, 20, 30, 50];
+  const RULE_MAX = 8;
+
+  function boardValue(towers) { let v = 0; for (const t of towers || []) v += +t.spent || 0; return v; }
+  function farmTarget(S) {
+    const f = S.farm || newFarm();
+    const n = f.pick > 0 ? f.pick : (f.safe > 0 ? f.safe : S.cleared);
+    return Math.max(1, Math.min(topWave(S), n));
+  }
+  function setFarm(S, on, pick) {
+    if (!S.farm) S.farm = newFarm();
+    const f = S.farm;
+    if (pick != null) f.pick = Math.max(0, Math.min(MAX_WAVE, pick | 0));
+    f.on = !!on;
+    f.fails = 0;
+    if (f.on) S.auto = false;
+    emit(S, 'farm', { on: f.on, wave: farmTarget(S) });
+    return f;
+  }
+  function farmResult(S, ev) {
+    const f = S.farm;
+    if (!f || !f.on || !ev) return null;
+    if (ev.type === 'won') { f.fails = 0; f.runs++; return { next: farmTarget(S) }; }
+    if (ev.type !== 'lost') return null;
+    f.fails++;
+    if (f.fails < 2) return { next: farmTarget(S), retry: true };
+    const drop = Math.max(1, (ev.n | 0) - 1);
+    f.on = false;
+    f.fails = 0;
+    if (f.pick > 0) f.pick = drop;
+    f.safe = Math.min(f.safe > 0 ? f.safe : drop, drop);
+    S.sel = Math.min(drop, topWave(S));
+    emit(S, 'farmStop', { n: ev.n, drop });
+    return { stop: true, drop };
+  }
+  function safeWave(S, b) {
+    if (!b || !b.towers || !b.towers.length || !b.cleared) return 0;
+    const f = b.farm || newFarm();
+    let n = f.safe > 0 ? Math.min(f.safe, b.cleared) : Math.floor(b.cleared * 0.9);
+    const val = boardValue(b.towers);
+    if (f.val > 0 && val < f.val) n -= Math.ceil(Math.log(f.val / Math.max(1, val)) / Math.log(OFFLINE.waveDrop));
+    return Math.max(0, Math.min(MAX_WAVE, n));
+  }
+  function farmCash(S, n, map, star) {
+    const spec = waveSpec(n, map);
+    const boss = 1 + 0.25 * rl(S, 'eco_boss');
+    let c = 0;
+    for (const e of spec.list) {
+      const d = ENEMIES[e.type];
+      if (!d) continue;
+      c += d.cash * (e.elite ? ELITE.cash : 1) * (e.type === 'boss' ? boss : 1);
+      if (d.split && ENEMIES[d.split.type]) c += d.split.n * ENEMIES[d.split.type].cash;
+    }
+    return c * killCash(n, map) * killMul(S, star);
+  }
+  function farmTime(n, map, star) {
+    const spec = waveSpec(n, map);
+    const spawn = spec.duration * (star >= 2 ? STAR.swift : 1);
+    const walk = map.maxLen / (ENEMIES.basic.speed * starSpeedMul(star)) * OFFLINE.walk;
+    return spawn + walk + OFFLINE.overhead;
+  }
+  function offlineMul(S) { return 1 + OFFLINE.boost * rl(S, 'eco_offline'); }
+  function offlineCap(S) { return OFFLINE.cap + OFFLINE.capStep * rl(S, 'util_offline'); }
+  function farmRate(S, id) {
+    id = id || S.map;
+    const b = boardOf(S, id), map = MAPS[id];
+    if (!b || !map) return { wave: 0, rate: 0, cash: 0, time: 0 };
+    const n = safeWave(S, b);
+    if (n < 1) return { wave: 0, rate: 0, cash: 0, time: 0 };
+    const star = starOf(S, id);
+    const cash = farmCash(S, n, map, star), time = farmTime(n, map, star);
+    return { wave: n, cash, time, rate: cash / time * OFFLINE.eff * offlineMul(S) };
+  }
+  function touchSeen(S, now) {
+    if (isFinite(now) && now > (S.lastSeen || 0)) S.lastSeen = Math.floor(now);
+    return S.lastSeen;
+  }
+  function offlineGain(S, now, from) {
+    if (from == null) from = S.lastSeen;
+    if (!(from > 0) || !isFinite(now) || now <= from) return null;
+    const away = (now - from) / 1000;
+    const cap = offlineCap(S), secs = Math.min(away, cap);
+    const maps = [];
+    let total = 0;
+    for (const id of MAP_IDS) {
+      const fr = farmRate(S, id);
+      if (!fr.rate) continue;
+      const share = id === S.map ? 1 : OFFLINE.side;
+      const cash = Math.floor(fr.rate * share * secs);
+      if (cash <= 0) continue;
+      maps.push({ id, name: MAPS[id].name, wave: fr.wave, rate: fr.rate * share, cash, active: id === S.map });
+      total += cash;
+    }
+    return { away, secs, cap, capped: away > cap, maps, total, from, now };
+  }
+  function applyOffline(S, g) {
+    if (!g) return 0;
+    for (const m of g.maps) {
+      if (m.id === S.map) S.cash += m.cash;
+      else if (S.boards[m.id]) S.boards[m.id].cash += m.cash;
+    }
+    S.stats.earned += g.total;
+    touchSeen(S, g.now);
+    emit(S, 'offline', { total: g.total, secs: g.secs });
+    return g.total;
+  }
+
+  function newRules() { return { on: false, tick: 'both', reserve: 0, race: {}, pony: {} }; }
+  function cleanRule(r) {
+    if (!r || typeof r !== 'object' || RULE_KINDS.indexOf(r.k) < 0) return null;
+    if (r.k === 'dmg' || r.k === 'rate') return { k: r.k, to: Math.max(0, Math.min(99, r.to | 0)) };
+    if (r.k === 'cheap') return { k: 'cheap' };
+    const a = Math.max(0, Math.min(4, r.a | 0)), an = Math.max(1, Math.min(10, r.an | 0 || 10));
+    let b = r.b == null ? -1 : r.b | 0;
+    if (b < 0 || b > 4 || b === a) b = -1;
+    const bn = b < 0 ? 0 : Math.max(1, Math.min(10, r.bn | 0 || 10));
+    return { k: 'path', a, an, b, bn };
+  }
+  function cleanRuleList(l) { return Array.isArray(l) ? l.map(cleanRule).filter(Boolean).slice(0, RULE_MAX) : []; }
+  function cleanRules(o) {
+    const out = newRules();
+    if (!o || typeof o !== 'object') return out;
+    out.on = !!o.on;
+    if (RULE_TICKS.indexOf(o.tick) >= 0) out.tick = o.tick;
+    out.reserve = Math.max(0, Math.min(90, Math.round(+o.reserve || 0)));
+    if (o.race && typeof o.race === 'object') for (const r of RACE_IDS) { const l = cleanRuleList(o.race[r]); if (l.length) out.race[r] = l; }
+    if (o.pony && typeof o.pony === 'object') for (const k in o.pony) { const id = k | 0; if (id > 0 && Array.isArray(o.pony[k])) out.pony[id] = cleanRuleList(o.pony[k]); }
+    return out;
+  }
+  function rulesFor(S, t) {
+    const R = S.rules;
+    if (!R || !t) return [];
+    if (R.pony && R.pony[t.id]) return R.pony[t.id];
+    return (R.race && R.race[t.race]) || [];
+  }
+  function setRules(S, scope, key, list) {
+    if (!S.rules) S.rules = newRules();
+    const R = S.rules;
+    if (scope === 'race' && RACES[key]) { const l = cleanRuleList(list); if (l.length) R.race[key] = l; else delete R.race[key]; return true; }
+    if (scope === 'pony') {
+      const id = key | 0;
+      if (!id) return false;
+      if (list == null) delete R.pony[id]; else R.pony[id] = cleanRuleList(list);
+      return true;
+    }
+    return false;
+  }
+  function ruleText(r, race) {
+    if (!r) return '';
+    if (r.k === 'dmg') return 'Buy Damage' + (r.to ? ' to Lv ' + r.to : '') + ' when affordable';
+    if (r.k === 'rate') return 'Buy Rate' + (r.to ? ' to Lv ' + r.to : '') + ' when affordable';
+    if (r.k === 'cheap') return 'Buy the cheapest upgrade';
+    const P = PATHS[race] || [];
+    const nm = i => (P[i] && P[i].name) || 'Path ' + (i + 1);
+    let s = 'Follow ' + nm(r.a) + ' to node ' + r.an;
+    if (r.b >= 0) s += ', then ' + nm(r.b) + ' to node ' + r.bn;
+    return s;
+  }
+  function ruleAction(t, r) {
+    if (!r || !t) return null;
+    if (r.k === 'dmg' || r.k === 'rate') {
+      const lv = r.k === 'dmg' ? t.infD : t.infR;
+      if (r.to && lv >= r.to) return null;
+      return { kind: 'inf', which: r.k, cost: infNext(t, r.k) };
+    }
+    if (r.k === 'cheap') return upgradeOptions(t)[0] || null;
+    if (r.k === 'path') {
+      for (const [i, n] of [[r.a, r.an], [r.b, r.bn]]) {
+        if (i < 0 || i > 4 || !n || t.paths[i] >= n) continue;
+        const st = pathState(t, i);
+        if (st === 'locked' || st === 'maxed') return null;
+        return { kind: 'node', i, cost: nextNodeCost(t, i) };
+      }
+    }
+    return null;
+  }
+  function runRules(S, why) {
+    const R = S.rules;
+    const res = { count: 0, spent: 0 };
+    if (!R || !R.on || !S.towers.length) return res;
+    if (why === 'end' && R.tick === 'sec') return res;
+    if (why === 'sec' && R.tick === 'end') return res;
+    const keep = Math.max(0, S.cash) * (R.reserve || 0) / 100;
+    for (let guard = 0; guard < 400; guard++) {
+      let best = null;
+      for (const t of S.towers) {
+        const list = rulesFor(S, t);
+        for (let p = 0; p < list.length; p++) {
+          const a = ruleAction(t, list[p]);
+          if (!a || !isFinite(a.cost) || S.cash - a.cost < keep) continue;
+          if (!best || p < best.p || (p === best.p && a.cost < best.a.cost)) best = { t, a, p };
+          break;
+        }
+      }
+      if (!best) break;
+      const ok = best.a.kind === 'node' ? buyNode(S, best.t, best.a.i) : buyInf(S, best.t, best.a.which);
+      if (!ok) break;
+      best.t.anim = 0.3;
+      res.count++;
+      res.spent += best.a.cost;
+    }
+    if (res.count) emit(S, 'rules', { count: res.count, spent: res.spent, why: why || '' });
+    return res;
+  }
+
+  function slotCount(S) { return SLOT_BASE + (rl(S, 'util_auto') ? SLOT_BONUS : 0); }
+  function slotsOf(S, id) {
+    id = id || S.map;
+    if (!S.slots) S.slots = {};
+    if (!S.slots[id]) S.slots[id] = [];
+    return S.slots[id];
+  }
+  function cleanName(s) { return String(s == null ? '' : s).replace(/[<>&"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 24); }
+  function snapTower(t) { return { race: t.race, x: Math.round(t.x), y: Math.round(t.y), paths: t.paths.slice(0, 5), infD: t.infD | 0, infR: t.infR | 0, mode: t.mode || 'first' }; }
+  function planCost(items, pm) {
+    const cnt = {};
+    let c = 0;
+    for (const it of items) {
+      const k = cnt[it.race] || 0;
+      cnt[it.race] = k + 1;
+      c += towerCost(it.race, k, pm);
+      for (let p = 0; p < 5; p++) for (let l = 0; l < it.paths[p]; l++) c += nodeCost(it.race, l, pm);
+      for (let l = 0; l < it.infD; l++) c += Math.round(infCost(it.race, l) * pm);
+      for (let l = 0; l < it.infR; l++) c += Math.round(infCost(it.race, l) * pm);
+    }
+    return c;
+  }
+  function savePreset(S, i, name, now) {
+    i = i | 0;
+    if (i < 0 || i >= slotCount(S) || !S.towers.length) return null;
+    const list = slotsOf(S);
+    const h = S.hero && S.hero.id ? { id: S.hero.id, x: Math.round(S.hero.tx != null ? S.hero.tx : S.hero.x), y: Math.round(S.hero.ty != null ? S.hero.ty : S.hero.y) } : null;
+    const towers = S.towers.map(snapTower);
+    const slot = { name: cleanName(name) || 'Plan ' + (i + 1), towers, hero: h, at: Math.floor(+now || 0), cleared: S.cleared, cost: planCost(towers, priceOf(mapOf(S))) };
+    while (list.length <= i) list.push(null);
+    list[i] = slot;
+    emit(S, 'slotSaved', { i, name: slot.name });
+    return slot;
+  }
+  function deletePreset(S, i) {
+    const list = slotsOf(S);
+    if (!list[i]) return false;
+    list[i] = null;
+    while (list.length && !list[list.length - 1]) list.pop();
+    return true;
+  }
+  function renamePreset(S, i, name) {
+    const sl = slotsOf(S)[i], nm = cleanName(name);
+    if (!sl || !nm) return false;
+    sl.name = nm;
+    return true;
+  }
+  function loadPreset(S, i) {
+    const sl = slotsOf(S)[i];
+    if (!sl || i >= slotCount(S)) return null;
+    S.build = {
+      slot: i, name: sl.name,
+      items: sl.towers.map(it => ({ race: it.race, x: it.x, y: it.y, paths: it.paths.slice(), infD: it.infD, infR: it.infR, mode: it.mode })),
+      ids: sl.towers.map(() => 0), skip: sl.towers.map(() => 0),
+      hero: sl.hero ? { id: sl.hero.id, x: sl.hero.x, y: sl.hero.y } : null, heroDone: !sl.hero,
+    };
+    emit(S, 'buildStart', { name: sl.name, i });
+    buildStep(S);
+    return S.build;
+  }
+  function cancelBuild(S) { if (!S.build) return false; S.build = null; return true; }
+  function buildTowers(S) { const m = {}; for (const t of S.towers) m[t.id] = t; return m; }
+  function buildPending(S) {
+    const B = S.build, out = [];
+    if (!B) return out;
+    const by = buildTowers(S);
+    B.items.forEach((it, i) => {
+      if (B.skip[i]) return;
+      const t = B.ids[i] ? by[B.ids[i]] : null;
+      if (!t) { out.push({ kind: 'place', i, cost: nextTowerCost(S, it.race) }); return; }
+      for (let p = 0; p < 5; p++) {
+        if (t.paths[p] >= it.paths[p]) continue;
+        const st = pathState(t, p);
+        if (st === 'locked' || st === 'maxed') continue;
+        out.push({ kind: 'node', i, t, p, cost: nextNodeCost(t, p) });
+      }
+      if (t.infD < it.infD) out.push({ kind: 'inf', i, t, which: 'dmg', cost: infNext(t, 'dmg') });
+      if (t.infR < it.infR) out.push({ kind: 'inf', i, t, which: 'rate', cost: infNext(t, 'rate') });
+    });
+    return out.sort((a, b) => a.cost - b.cost || a.i - b.i);
+  }
+  function buildAdopt(S) {
+    const B = S.build, by = buildTowers(S), used = {};
+    for (const id of B.ids) if (id && by[id]) used[id] = 1;
+    B.items.forEach((it, i) => {
+      if (B.skip[i] || (B.ids[i] && by[B.ids[i]])) return;
+      B.ids[i] = 0;
+      for (const t of S.towers) {
+        if (used[t.id] || t.race !== it.race || (t.x - it.x) ** 2 + (t.y - it.y) ** 2 > 100) continue;
+        B.ids[i] = t.id;
+        used[t.id] = 1;
+        break;
+      }
+      if (!B.ids[i] && !canPlace(S, it.x, it.y)) B.skip[i] = 1;
+    });
+  }
+  function buildStep(S, limit) {
+    const B = S.build;
+    if (!B) return 0;
+    if (!B.heroDone && !S.run) {
+      const h = B.hero;
+      if (h && heroUnlocked(S, h.id)) {
+        if (!S.hero || S.hero.id !== h.id) pickHero(S, h.id);
+        moveHero(S, h.x, h.y);
+      }
+      B.heroDone = true;
+    }
+    buildAdopt(S);
+    let n = 0;
+    for (let g = 0; g < (limit || 400); g++) {
+      const a = buildPending(S)[0];
+      if (!a || a.cost > S.cash) break;
+      let ok = false;
+      if (a.kind === 'place') {
+        const it = B.items[a.i];
+        if (!canPlace(S, it.x, it.y)) { B.skip[a.i] = 1; continue; }
+        const t = placeTower(S, it.race, it.x, it.y);
+        if (t) { t.mode = it.mode || 'first'; B.ids[a.i] = t.id; ok = true; }
+      } else if (a.kind === 'node') ok = buyNode(S, a.t, a.p);
+      else ok = buyInf(S, a.t, a.which);
+      if (!ok) break;
+      n++;
+    }
+    if (n) emit(S, 'buildBuy', { count: n });
+    if (!buildPending(S).length) {
+      const name = B.name;
+      S.build = null;
+      emit(S, 'buildDone', { name });
+    }
+    return n;
+  }
+  function buildProgress(S) {
+    const B = S.build;
+    if (!B) return null;
+    const by = buildTowers(S);
+    let total = 0, done = 0, placed = 0, skipped = 0;
+    const sum = a => a.reduce((x, y) => x + y, 0);
+    B.items.forEach((it, i) => {
+      const steps = 1 + sum(it.paths) + it.infD + it.infR;
+      total += steps;
+      if (B.skip[i]) { done += steps; skipped++; return; }
+      const t = B.ids[i] ? by[B.ids[i]] : null;
+      if (!t) return;
+      placed++;
+      let d = 1 + Math.min(t.infD, it.infD) + Math.min(t.infR, it.infR);
+      for (let p = 0; p < 5; p++) d += Math.min(t.paths[p], it.paths[p]);
+      done += d;
+    });
+    const next = buildPending(S)[0];
+    return { name: B.name, slot: B.slot, done, total, left: total - done, pct: total ? done / total : 1, placed, skipped, towers: B.items.length, next: next ? next.cost : 0, nextKind: next ? next.kind : '' };
+  }
+  function cleanFarm(src, cleared) {
+    const f = newFarm();
+    if (!src || typeof src !== 'object') { f.safe = cleared; return f; }
+    f.on = !!src.on;
+    f.pick = Math.max(0, Math.min(MAX_WAVE, src.pick | 0));
+    f.fails = Math.max(0, Math.min(1, src.fails | 0));
+    f.safe = Math.max(0, Math.min(cleared, src.safe | 0));
+    f.val = Math.max(0, +src.val || 0);
+    f.runs = Math.max(0, src.runs | 0);
+    return f;
+  }
+  function cleanItem(it) {
+    if (!it || !RACES[it.race] || !isFinite(it.x) || !isFinite(it.y)) return null;
+    const paths = (Array.isArray(it.paths) ? it.paths : []).slice(0, 5).map(v => Math.max(0, Math.min(10, v | 0)));
+    while (paths.length < 5) paths.push(0);
+    let n = 0;
+    for (let p = 0; p < 5; p++) { if (paths[p] > 0) n++; if (n > 2) paths[p] = 0; }
+    return { race: it.race, x: Math.round(+it.x), y: Math.round(+it.y), paths, infD: Math.max(0, Math.min(99, it.infD | 0)), infR: Math.max(0, Math.min(99, it.infR | 0)), mode: typeof it.mode === 'string' ? it.mode.slice(0, 12) : 'first' };
+  }
+  function cleanSlotHero(h) { return h && HEROES[h.id] && isFinite(h.x) && isFinite(h.y) ? { id: h.id, x: Math.round(+h.x), y: Math.round(+h.y) } : null; }
+  function cleanSlot(sl) {
+    if (!sl || typeof sl !== 'object' || !Array.isArray(sl.towers)) return null;
+    const towers = sl.towers.map(cleanItem).filter(Boolean).slice(0, 400);
+    if (!towers.length) return null;
+    return { name: cleanName(sl.name) || 'Plan', towers, hero: cleanSlotHero(sl.hero), at: Math.max(0, Math.floor(+sl.at || 0)), cleared: Math.max(0, Math.min(MAX_WAVE, sl.cleared | 0)), cost: Math.max(0, +sl.cost || 0) };
+  }
+  function cleanSlots(o) {
+    const out = {};
+    if (!o || typeof o !== 'object') return out;
+    for (const id of MAP_IDS) {
+      if (!Array.isArray(o[id])) continue;
+      const l = o[id].slice(0, SLOT_MAX).map(cleanSlot);
+      while (l.length && !l[l.length - 1]) l.pop();
+      if (l.length) out[id] = l;
+    }
+    return out;
+  }
+  function cleanBuild(src) {
+    if (!src || typeof src !== 'object' || !Array.isArray(src.items)) return null;
+    const items = [], ids = [], skip = [];
+    src.items.forEach((it, i) => {
+      const c = cleanItem(it);
+      if (!c) return;
+      items.push(c);
+      ids.push(Math.max(0, (src.ids || [])[i] | 0));
+      skip.push((src.skip || [])[i] ? 1 : 0);
+    });
+    if (!items.length) return null;
+    return { slot: Math.max(0, Math.min(SLOT_MAX - 1, src.slot | 0)), name: cleanName(src.name) || 'Plan', items, ids, skip, hero: cleanSlotHero(src.hero), heroDone: !!src.heroDone };
+  }
+
   function researchCost(id, lv) {
     const r = RESEARCH_BY_ID[id];
     if (!r || lv >= r.max) return Infinity;
@@ -2427,12 +2846,13 @@
     for (const id of MAP_IDS) {
       const b = boardOf(S, id);
       if (!b) continue;
-      boards[id] = { cash: b.cash, cleared: b.cleared, sel: b.sel, auto: b.auto, towers: b.towers.map(serTower), records: b.records, hero: serHero(b.hero) };
+      boards[id] = { cash: b.cash, cleared: b.cleared, sel: b.sel, auto: b.auto, towers: b.towers.map(serTower), records: b.records, hero: serHero(b.hero), farm: b.farm, build: b.build };
     }
     return JSON.stringify({
       ver: SAVE_VER, map: S.map, seed: S.seed, nextId: S.nextId, totalKills: S.totalKills,
       stats: S.stats, settings: S.settings, boards, codex: S.codex,
       stars: S.stars, moon: S.moon, moonTotal: S.moonTotal, research: S.research, presets: S.presets, heroUnlocks: S.heroUnlocks,
+      slots: S.slots, rules: S.rules, lastSeen: S.lastSeen || 0,
     });
   }
 
@@ -2498,6 +2918,23 @@
       const boards = o.boards && typeof o.boards === 'object' ? o.boards : {};
       for (const id in boards) if (boards[id] && typeof boards[id] === 'object') boards[id].hero = null;
       o.ver = 7;
+      return o;
+    },
+    7(o) {
+      o.lastSeen = 0;
+      o.slots = {};
+      o.rules = newRules();
+      const boards = o.boards && typeof o.boards === 'object' ? o.boards : {};
+      for (const id in boards) {
+        const b = boards[id];
+        if (!b || typeof b !== 'object') continue;
+        const f = newFarm();
+        f.safe = Math.max(0, Math.min(MAX_WAVE, b.cleared | 0));
+        f.val = boardValue(Array.isArray(b.towers) ? b.towers : []);
+        b.farm = f;
+        b.build = null;
+      }
+      o.ver = 8;
       return o;
     },
   };
@@ -2594,6 +3031,8 @@
     b.auto = !!src.auto;
     b.records = cleanRecords(src.records);
     b.hero = cleanHero(src.hero);
+    b.farm = cleanFarm(src.farm, b.cleared);
+    b.build = cleanBuild(src.build);
     for (const r of src.towers || []) {
       if (!r || !RACES[r.race] || !isFinite(r.x) || !isFinite(r.y)) continue;
       const t = makeTower(S, r.race, +r.x, +r.y);
@@ -2622,6 +3061,9 @@
     S.research = cleanResearch(o.research);
     S.presets = cleanPresets(o.presets);
     S.heroUnlocks = cleanUnlocks(o.heroUnlocks);
+    S.slots = cleanSlots(o.slots);
+    S.rules = cleanRules(o.rules);
+    S.lastSeen = Math.max(0, Math.floor(+o.lastSeen || 0));
     setNumFormat(S.settings.numFmt);
     const src = o.boards && typeof o.boards === 'object' ? o.boards : {};
     const boards = {};
@@ -2640,6 +3082,10 @@
     delete boards[cur];
     for (const k of BOARD_KEYS) S[k] = b[k];
     S.nextId = Math.max(S.nextId, maxId + 1, 1);
+    const live = {};
+    for (const t of S.towers) live[t.id] = 1;
+    for (const id in S.boards) for (const t of S.boards[id].towers) live[t.id] = 1;
+    for (const k in S.rules.pony) if (!live[k]) delete S.rules.pony[k];
     syncHeroUnlocks(S, true);
     for (const id of MAP_IDS) { const hb = id === S.map ? S : S.boards[id]; if (hb && hb.hero && !heroUnlocked(S, hb.hero.id)) hb.hero.id = 'nova'; }
     prepTowers(S);
@@ -2683,6 +3129,11 @@
     researchCost, researchTotal, researchState, buyResearch, grantMoon, cleanStars, cleanResearch, cleanPresets,
     HEROES, HERO_IDS, HERO_TUNE, xpNeed, rankFor, heroProg, heroStats, heroHome, heroAt, heroMilestone, heroUnlocked, syncHeroUnlocks, unlockHero,
     pickHero, moveHero, heroPow, addHeroXp, castHero, heroAuto, heroInfo, cleanHero, serHero, cleanUnlocks,
+    OFFLINE, SLOT_BASE, SLOT_BONUS, SLOT_MAX, RULE_KINDS, RULE_TICKS, RESERVES, RULE_MAX,
+    newFarm, boardValue, farmTarget, setFarm, farmResult, safeWave, farmCash, farmTime, farmRate, offlineMul, offlineCap, touchSeen, offlineGain, applyOffline,
+    newRules, cleanRule, cleanRules, rulesFor, setRules, ruleText, ruleAction, runRules,
+    slotCount, slotsOf, cleanName, savePreset, deletePreset, renamePreset, loadPreset, cancelBuild, buildPending, buildStep, buildProgress, planCost,
+    cleanFarm, cleanSlots, cleanBuild,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.NDCore = API;
