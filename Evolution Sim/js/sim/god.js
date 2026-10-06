@@ -1044,6 +1044,7 @@ class GodTools {
 		}
 		const lost = this._rewalk(eco);
 		if (eco.coast) eco.coast.restoreDerived(eco.world);
+		if (eco.mtn) eco.mtn.restoreDerived(eco.world);
 		const D = eco.disasters;
 		if (D) {
 			let land = 0;
@@ -1114,9 +1115,9 @@ class GodTools {
 			let w;
 			if (b === BIOME_ID.RIVER || b === BIOME_ID.POND || b === BIOME_ID.RAPIDS || b === BIOME_ID.BEAVER_POND || b === BIOME_ID.ROCKY_SHORE) w = 3;
 			else if (WATER_BIOME_SET.has(b)) w = 2;
-			else w = b === BIOME_ID.GLACIER ? 0 : b === BIOME_ID.BEACH || b === BIOME_ID.CLIFF || b === BIOME_ID.SEA_CLIFF || b === BIOME_ID.ATOLL ? 17 : 1;
+			else w = b === BIOME_ID.GLACIER ? 0 : b === BIOME_ID.BEACH || b === BIOME_ID.CLIFF || b === BIOME_ID.SEA_CLIFF || b === BIOME_ID.ATOLL || b === BIOME_ID.CAVE_MOUTH ? 17 : 1;
 			w |= 8;
-			if (b === BIOME_ID.HILLS || b === BIOME_ID.BADLANDS || b === BIOME_ID.MOUNTAINS || b === BIOME_ID.CLIFF || b === BIOME_ID.VOLCANIC || b === BIOME_ID.ALPINE_MEADOW || b === BIOME_ID.SEA_CLIFF) w |= 32;
+			if (b === BIOME_ID.HILLS || b === BIOME_ID.BADLANDS || b === BIOME_ID.MOUNTAINS || b === BIOME_ID.CLIFF || b === BIOME_ID.VOLCANIC || b === BIOME_ID.ALPINE_MEADOW || b === BIOME_ID.SEA_CLIFF || MTN_RUGGED.has(b)) w |= 32;
 			if (b === BIOME_ID.SALT_FLAT || b === BIOME_ID.MANGROVE || b === BIOME_ID.SALT_MARSH) w |= 64;
 			if (b === BIOME_ID.TUNDRA_BOG || b === BIOME_ID.BOG || b === BIOME_ID.CORAL_REEF) w |= 128;
 			walk[i] = w;

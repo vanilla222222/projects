@@ -1103,6 +1103,8 @@ const ANIMAL_TRAITS = [
 	['Preferred depth', G_DEPTH, (v) => depthWord(v)],
 	['Salinity', G_SALT, (v) => salWord(v)],
 	['Activity', G_ACT, (v) => actWord(v)],
+	['Lung capacity', G_LUNG, (v) => pct(v)],
+	['Climbing', G_CLIMB, (v) => pct(v)],
 ];
 
 const SAL_WORDS = ['fresh', 'brackish', 'salt'];
