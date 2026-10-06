@@ -24,6 +24,11 @@
     chorus: { gap: 0.8, gain: 0.09, voices: [{ type: 'sine', f: 1047, dur: 0.5 }, { type: 'sine', f: 1319, dur: 0.5, at: 0.05 }, { type: 'sine', f: 1568, dur: 0.6, at: 0.1 }] },
     quake: { gap: 0.4, gain: 0.1, voices: [{ type: 'triangle', f: 140, f2: 60, dur: 0.3 }, { type: 'sine', f: 2093, dur: 0.12, at: 0.02 }], noise: 0.2 },
     cataclysm: { gap: 0.8, gain: 0.13, voices: [{ type: 'sawtooth', f: 90, f2: 40, dur: 0.6 }, { type: 'sine', f: 2637, f2: 1760, dur: 0.4, at: 0.05 }], noise: 0.4 },
+    heal: { gap: 0.5, gain: 0.05, voices: [{ type: 'sine', f: 660, f2: 990, dur: 0.18 }, { type: 'sine', f: 880, f2: 1320, dur: 0.2, at: 0.06 }] },
+    shield: { gap: 0.25, gain: 0.07, voices: [{ type: 'triangle', f: 1400, f2: 500, dur: 0.16 }], noise: 0.08 },
+    split: { gap: 0.2, gain: 0.07, voices: [{ type: 'square', f: 300, f2: 600, dur: 0.06 }, { type: 'square', f: 450, f2: 900, dur: 0.06, at: 0.05 }] },
+    burrow: { gap: 0.5, gain: 0.06, voices: [{ type: 'triangle', f: 110, f2: 70, dur: 0.22 }], noise: 0.25 },
+    codex: { gap: 0.5, gain: 0.07, voices: [{ type: 'sine', f: 784, dur: 0.1 }, { type: 'triangle', f: 1175, dur: 0.2, at: 0.08 }] },
     deny: { gap: 0.15, gain: 0.08, voices: [{ type: 'square', f: 160, dur: 0.08 }, { type: 'square', f: 120, dur: 0.1, at: 0.09 }] },
   };
   const MAX_VOICES = 24;
