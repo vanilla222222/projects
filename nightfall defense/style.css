@@ -361,6 +361,11 @@ button:disabled { cursor: not-allowed; }
   .race .rc { margin-left: 0; }
   .race .rr { display: none; }
   .race kbd { top: 3px; left: 3px; }
+  .buildlist { gap: 4px; }
+  .race { min-width: 0; }
+  .race > div { min-width: 0; max-width: 100%; }
+  .race .rn { font-size: 12px; line-height: 1.15; overflow-wrap: anywhere; }
+  .race .rc { font-size: 12px; white-space: nowrap; }
   .icobtn { width: 28px; height: 28px; font-size: 13px; }
   .speedbar { top: 6px; left: 6px; }
   .speedbar button { min-width: 30px; height: 26px; padding: 0 6px; }
@@ -369,4 +374,12 @@ button:disabled { cursor: not-allowed; }
   .tip { max-width: 220px; }
   .maplist { grid-template-columns: 1fr; }
   .dialog.wide { padding: 12px; }
+}
+
+@media (max-width: 480px) {
+  .race { padding: 5px 2px; }
+  .race canvas { width: 34px; height: 34px; }
+  .race .rn { font-size: 11px; }
+  .race .rc { font-size: 11px; }
+  .race kbd { top: 2px; left: 2px; font-size: 9px; }
 }

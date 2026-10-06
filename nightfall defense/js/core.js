@@ -37,7 +37,7 @@
       id: 'pegasus', name: 'Pegasus', cost: 70, range: 150, dmg: 5, rate: 2.0,
       body: '#a9cdea', mane: '#4fd1c5', accent: '#4fd1c5',
       role: 'Sky skirmisher',
-      ability: 'Skyward Eye: rapid feather darts. The only base pony that can see and hit flying DNBs. Cannot harm magical DNBs.',
+      ability: 'Skyward Eye: rapid feather darts that see and hit flying DNBs from long range. Cannot harm magical DNBs.',
     },
     bat: {
       id: 'bat', name: 'Bat Pony', cost: 80, range: 145, dmg: 6, rate: 1.5,
@@ -927,6 +927,7 @@
 
   function emit(S, type, data) { S.events.push(Object.assign({ type }, data || {})); }
   function fx(S, o) { if (S.fxOn && S.fx.length < 700) { o.t = 0; S.fx.push(o); } }
+  function snd(S, k) { if (S.sfx) S.sfx[k] = (S.sfx[k] || 0) + 1; }
 
   function spawnEnemy(S, run, type, d, opts) {
     const n = run.n;
@@ -1170,6 +1171,8 @@
     for (const e of list) {
       run.proj.push({ x: t.x, y: t.y - 10, e, t, dmg, sp: PROJ_SPEED[t.race] || 820, kind: t.race, life: 3, a: 0, crit: blood });
     }
+    if (list.length && t.race === 'bat') snd(S, 'chirp');
+    else if (list.length && t.race === 'crystal') snd(S, 'chime');
   }
 
   function projHit(S, run, p) {
@@ -1267,7 +1270,7 @@
     }
     if (on('deepecho') && every(5)) {
       const R = s.range * 2;
-      fx(S, { k: 'sonar', x: t.x, y: t.y, r: R, c: '#ff8fb0', life: 0.8 });
+      fx(S, { k: 'sonar', x: t.x, y: t.y, r: R, c: '#ff8fb0', life: 0.8 }); snd(S, 'sonar');
       for (const o of run.enemies) if (o.alive && dist2(o, t) <= R * R) { o.revealT = 4; o.echoAmp = Math.max(o.echoAmp || 0, 0.2); }
     }
     if (on('swarmnight') && targets.length && every(7)) {
@@ -1276,20 +1279,20 @@
         const a = i / 8 * Math.PI * 2;
         run.proj.push({ x: t.x + Math.cos(a) * 16, y: t.y - 10 + Math.sin(a) * 12, e, t, dmg: dmg * 3, sp: 520, kind: 'swarm', life: 3, a });
       }
-      fx(S, { k: 'ring', x: t.x, y: t.y, r: 34, c: '#c9b8ff', life: 0.4 });
+      fx(S, { k: 'ring', x: t.x, y: t.y, r: 34, c: '#c9b8ff', life: 0.4 }); snd(S, 'swarm');
     }
     if (on('bloodmoon') && targets.length && every(14)) {
       t.bloodT = 5;
-      fx(S, { k: 'bloodmoon', x: t.x, y: t.y, r: s.range, life: 1 });
+      fx(S, { k: 'bloodmoon', x: t.x, y: t.y, r: s.range, life: 1 }); snd(S, 'bloodmoon');
     }
     if (on('dreadscreech') && targets.length && every(9)) {
-      fx(S, { k: 'screech', x: t.x, y: t.y, r: s.range, c: '#ff5a7a', life: 0.6 });
+      fx(S, { k: 'screech', x: t.x, y: t.y, r: s.range, c: '#ff5a7a', life: 0.6 }); snd(S, 'screech');
       for (const o of run.enemies) if (o.alive && inRange(t, o, s.range) && canHit(s, o)) { stunE(o, o.boss ? 0.3 : 1); o.hexAmp = Math.max(o.hexAmp, 0.25); o.hexT = Math.max(o.hexT, 4); }
     }
     if (on('chorus') && every(10)) {
       let any = false;
       for (const o of S.towers) if (o !== t && dist2(o, t) <= s.auraR * s.auraR) { o.surgeT = 4; any = true; }
-      if (any) fx(S, { k: 'chorus', x: t.x, y: t.y, r: s.auraR, life: 0.9 });
+      if (any) { fx(S, { k: 'chorus', x: t.x, y: t.y, r: s.auraR, life: 0.9 }); snd(S, 'chorus'); }
     }
     if (on('fortress') && every(3)) {
       const W = t.wallPt || (t.wallPt = nearestOnMap(run.map, t.x, t.y));
@@ -1301,12 +1304,12 @@
         hitEnemy(S, run, t, s, o, dmg * 6);
         if (o.alive) stunE(o, o.boss ? 0.2 : 0.6);
       }
-      if (any) fx(S, { k: 'wallpulse', x: W.x, y: W.y, r: s.wallR, life: 0.5 });
+      if (any) { fx(S, { k: 'wallpulse', x: W.x, y: W.y, r: s.wallR, life: 0.5 }); snd(S, 'quake'); }
     }
     if (on('cataclysm') && targets.length && every(8)) {
       let best = targets[0]; for (const e of targets) if (e.hp > best.hp) best = e;
       const R = 80;
-      fx(S, { k: 'cataclysm', x: best.x, y: best.y, r: R, seed: best.id, life: 0.8 });
+      fx(S, { k: 'cataclysm', x: best.x, y: best.y, r: R, seed: best.id, life: 0.8 }); snd(S, 'cataclysm');
       for (const o of run.enemies) {
         if (!o.alive || dist2(o, best) > R * R || !canHit(s, o)) continue;
         damage(S, run, o, dmg * 15, t);
