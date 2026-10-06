@@ -11,7 +11,7 @@
 
   const TUNE = {
     hp0: 14,
-    hpCurve: [[1, 1.25], [10, 1.21], [20, 1.2], [30, 1.185], [35, 1.16], [45, 1.17], [50, 1.15], [55, 1.09], [60, 1.085], [80, 1.072], [100, 1.058]],
+    hpCurve: [[1, 1.25], [10, 1.21], [20, 1.2], [30, 1.185], [35, 1.16], [45, 1.17], [50, 1.15], [55, 1.105], [60, 1.1], [80, 1.085], [100, 1.05]],
     cash0: 2.2, cashGrowth: 1.2,
     clear0: 45, clearGrowth: 1.2,
     towerGrowth: 1.5, sellRate: 0.7,
@@ -40,7 +40,7 @@
       ability: 'Skyward Eye: rapid feather darts that see and hit flying DNBs from long range. Cannot harm magical DNBs.',
     },
     bat: {
-      id: 'bat', name: 'Bat Pony', cost: 80, range: 145, dmg: 6, rate: 1.5,
+      id: 'bat', name: 'Bat Pony', cost: 80, range: 145, dmg: 7, rate: 1.6,
       body: '#5b5470', mane: '#2b2238', accent: '#ff5a7a',
       role: 'Night hunter',
       ability: 'Echo Fang: quick sonic bites that see flyers and deal 50% more damage to fast or sprinting DNBs. Cannot harm magical DNBs.',
@@ -49,7 +49,7 @@
       id: 'crystal', name: 'Crystal Pony', cost: 110, range: 130, dmg: 7, rate: 0.8,
       body: '#9fe6ff', mane: '#d68bff', accent: '#7fe8ff',
       role: 'Gem support',
-      ability: 'Heartglow: ponies within 140 deal 8% more damage and attack 6% faster. Fires crystal shards at ground DNBs and lights up dark caves. Cannot see flyers or harm magical DNBs.',
+      ability: 'Heartglow: ponies within 130 deal 4% more damage and attack 2% faster. Fires crystal shards at ground DNBs and lights up dark caves. Cannot see flyers or harm magical DNBs.',
     },
   };
   const RACE_IDS = ['earth', 'unicorn', 'pegasus', 'bat', 'crystal'];
@@ -147,9 +147,9 @@
     ],
     crystal: [
       { id: 'resonance', name: 'Resonance', blurb: 'A gem song that lifts every pony nearby.',
-        node: 'Aura +4% damage, +3% attack speed, +6 radius.',
-        sig: 'Harmonic Chorus', sigDesc: 'Every 10s a harmonic surge gives every pony in the aura +60% attack speed for 4s.',
-        apply(lv, s) { s.auraDmg += 0.04 * lv; s.auraRate += 0.03 * lv; s.auraR += 6 * lv; if (lv >= 10) s.sigs.push('chorus'); } },
+        node: 'Aura +0.8% damage, +0.5% attack speed, +4 radius.',
+        sig: 'Harmonic Chorus', sigDesc: 'Every 10s a harmonic surge gives every pony in the aura +25% attack speed for 3s.',
+        apply(lv, s) { s.auraDmg += 0.008 * lv; s.auraRate += 0.005 * lv; s.auraR += 4 * lv; if (lv >= 10) s.sigs.push('chorus'); } },
       { id: 'wall', name: 'Crystal Wall', blurb: 'Grows a crystal wall across the nearest road to bog DNBs down.',
         node: 'Ground DNBs inside the wall move 5% slower per node (bosses half). +4 wall radius.',
         sig: 'Prism Fortress', sigDesc: 'Every 3s the wall pulses: 6x damage to every ground DNB inside it and a 0.6s stun (bosses 0.2s).',
@@ -159,9 +159,9 @@
         sig: 'Dispel Prism', sigDesc: 'Shards strip magic from DNBs for 4s so any pony can hit them, and deal triple damage to magical foes.',
         apply(lv, s) { if (lv >= 1) s.canMagic = true; s.dmg *= 1 + 0.08 * lv; s.magicMul *= 1 + 0.12 * lv; if (lv >= 10) { s.magicMul *= 3; s.sigs.push('dispelprism'); } } },
       { id: 'lumen', name: 'Lumen', blurb: 'A heart of light that pushes back the dark and sharpens every eye.',
-        node: '+14 light radius, ponies in the aura gain +2% range. +4% damage.',
-        sig: 'Dawnstone', sigDesc: 'The light fills the whole aura, ponies in it gain another +20% range, and they all detect stealthy DNBs.',
-        apply(lv, s) { s.lightR += 14 * lv; s.auraRange += 0.02 * lv; s.dmg *= 1 + 0.04 * lv; if (lv >= 10) { s.auraRange += 0.2; s.detects = true; s.sigs.push('dawnstone'); } } },
+        node: '+14 light radius, ponies in the aura gain +0.6% range. +4% damage.',
+        sig: 'Dawnstone', sigDesc: 'The light fills the whole aura, ponies in it gain another +3% range, and they all detect stealthy DNBs.',
+        apply(lv, s) { s.lightR += 14 * lv; s.auraRange += 0.006 * lv; s.dmg *= 1 + 0.04 * lv; if (lv >= 10) { s.auraRange += 0.03; s.detects = true; s.sigs.push('dawnstone'); } } },
       { id: 'geode', name: 'Geode Burst', blurb: 'Shards that burst into glittering fragments.',
         node: 'Shards splash (radius grows), +8% damage.',
         sig: 'Crystal Cataclysm', sigDesc: 'Every 8s a giant crystal erupts under the toughest DNB in range: 15x damage to everything nearby and a 1s encase (bosses 0.3s).',
@@ -278,7 +278,7 @@
         tricks: { burrow: { every: 4.5, dur: 1.4 }, blink: { every: 6, dist: 100 } }, look: { horns: 'spike', aura: '#b48bff', eyes: '#e0c8ff' } },
       { id: 'gate-wardens', name: 'Twin Gate Wardens', hpMul: 0.35, desc: 'One warden at each gate. Each hardens for 2.5s every 5s, blocking 70% of damage.', color: '#6a5a4a', dark: '#342a22',
         tricks: { twin: true, shell: { every: 5, dur: 2.5, cut: 0.7 } }, look: { horns: 'antler', spikes: true, eyes: '#ffd27a', size: 1.1 } },
-      { id: 'lich-regent', name: 'The Lich Regent', hpMul: 0.2, desc: 'Magical. Regrows 1.2% HP per second, calls Hexlings at each third of his HP, and splits into 2 liches when slain.', color: '#4a3e5a', dark: '#221c2c',
+      { id: 'lich-regent', name: 'The Lich Regent', hpMul: 0.12, desc: 'Magical. Regrows 1.2% HP per second, calls Hexlings at each third of his HP, and splits into 2 liches when slain.', color: '#4a3e5a', dark: '#221c2c',
         tricks: { magic: true, regen: { rate: 0.012, aura: 140 }, brood: { type: 'magical', n: 5, at: [0.66, 0.33] }, split: { n: 2, frac: 0.25, name: 'Lesser Lich' } }, look: { horns: 'spike', aura: '#a08bff', eyes: '#8affd8', size: 1.15 } },
       { id: 'shadow-queen', name: 'The Shadow Queen', hpMul: 0.14, desc: 'Shelled and sprinting, then airborne with Duskwings, then magical, regrowing and hastening. Splits into 2 shades when slain.', color: '#2e2234', dark: '#140e18',
         tricks: { split: { n: 2, frac: 0.2, name: 'Queen\'s Shade' }, stages: [{ above: 0.66, shell: { every: 5, dur: 2.5, cut: 0.65 }, sprint: { every: 6, dur: 1.4, mul: 2.5 } }, { above: 0.33, fly: true, brood: { type: 'flying', n: 5, at: [0.6, 0.45] } }, { above: 0, magic: true, regen: { rate: 0.015, aura: 150 }, haste: { r: 180, mul: 1.6 } }] },
@@ -400,7 +400,7 @@
       routes: [WOODS_ROUTE],
       half: 36,
       blocks: scatter({ seed: 4242, n: 38, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 17, rmax: 27, routes: [WOODS_ROUTE], half: 36, pad: 6, gap: 10, kind: 'tree' }),
-      hpShift: 49, hpMul: 0.7, cashMul: 7583.7, startCash: 1.958e7, priceMul: 1900, hpCurve: [[1, 1.07], [50, 1.05], [100, 1.045]],
+      hpShift: 16, hpMul: 1, cashMul: 7583.7, startCash: 1.958e7, priceMul: 1900, hpCurve: [[1, 1.14], [50, 1.12], [80, 1.09], [95, 1.05], [100, 1.03]],
       bosses: MAP_BOSSES.woods.map(b => b.id),
       waves: waveVariant({ count: { base: 9 }, types: { fast: { from: 2, w: 7, theme: 10 }, tanky: { w: 2 } } }),
       palette: {
@@ -421,7 +421,7 @@
       crystals: CRYSTALS,
       blocks: scatter({ seed: 777, n: 14, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 12, rmax: 20, routes: [CAVE_A, CAVE_B], half: 34, pad: 8, gap: 30, kind: 'stalagmite',
         keep: CRYSTALS.map(c => ({ x: c.x, y: c.y, r: 16, kind: 'crystal' })) }),
-      hpShift: 98, hpMul: 0.125, cashMul: 5.75e7, startCash: 1.372e11, priceMul: 1.44e7, hpCurve: [[1, 1.07], [50, 1.05], [100, 1.045]],
+      hpShift: 14, hpMul: 1, cashMul: 5.75e7, startCash: 1.372e11, priceMul: 1.44e7, hpCurve: [[1, 1.14], [50, 1.12], [80, 1.085], [90, 1.05], [100, 1.04]],
       bosses: MAP_BOSSES.caverns.map(b => b.id),
       waves: waveVariant({ types: { magical: { from: 5, w: 6, theme: 10 }, flying: { w: 2 } } }),
       palette: {
@@ -440,7 +440,7 @@
       half: 34,
       wind: { every: 14, dur: 3.2, warn: 2.2, push: 120, side: 70, bossMul: 0.4 },
       blocks: scatter({ seed: 9191, n: 16, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 16, rmax: 30, routes: [CLIFF_ROUTE], half: 34, pad: 8, gap: 24, kind: 'boulder' }),
-      hpShift: 147, hpMul: 0.07, cashMul: 4.36e11, startCash: 1.075e15, priceMul: 1.09e11, hpCurve: [[1, 1.07], [50, 1.05], [100, 1.045]],
+      hpShift: 17, hpMul: 1, cashMul: 4.36e11, startCash: 1.075e15, priceMul: 1.09e11, hpCurve: [[1, 1.145], [40, 1.125], [60, 1.1], [75, 1.08], [90, 1.05], [100, 1.04]],
       bosses: MAP_BOSSES.cliffs.map(b => b.id),
       waves: waveVariant({ types: { flying: { from: 3, w: 6, theme: 10 } }, themes: [{ id: 'boss', mod: 10, rem: 0 }, { id: 'flying', at: [3], mod: 6, rem: 0 }, { id: 'magical', at: [8], mod: 11, rem: 6 }, { id: 'fast', mod: 7, rem: 0 }, { id: 'tanky', mod: 8, rem: 4 }] }),
       palette: {
@@ -459,7 +459,7 @@
       half: 30,
       blocks: scatter({ seed: 5150, n: 8, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 14, rmax: 18, routes: [CASTLE_A, CASTLE_B], half: 30, pad: 6, gap: 60, kind: 'pillar',
         keep: [{ x: 700, y: 400, r: 46, kind: 'keep' }] }),
-      hpShift: 196, hpMul: 0.01, cashMul: 3.31e15, startCash: 7.925e18, priceMul: 8.3e14, gateFrom: 4, hpCurve: [[1, 1.07], [50, 1.05], [100, 1.045]],
+      hpShift: 15, hpMul: 1, cashMul: 3.31e15, startCash: 7.925e18, priceMul: 8.3e14, gateFrom: 4, hpCurve: [[1, 1.14], [50, 1.12], [70, 1.088], [84, 1.055], [100, 1.035]],
       bosses: MAP_BOSSES.castle.map(b => b.id),
       waves: waveVariant({ count: { base: 11, per: 0.55 }, types: { basic: { w: 8 }, fast: { from: 2, w: 5 }, tanky: { from: 3, w: 4 }, flying: { from: 4, w: 4 }, magical: { from: 5, w: 4 } } }),
       palette: {
@@ -757,7 +757,7 @@
     S.cash -= c; t.spent += c; t.paths[i]++; t._s = null; S.buffsDirty = true;
     return true;
   }
-  function infNext(t, which) { return infCost(t.race, which === 'dmg' ? t.infD : t.infR); }
+  function infNext(t, which) { return Math.round(infCost(t.race, which === 'dmg' ? t.infD : t.infR) * (t.pm || 1)); }
   function buyInf(S, t, which) {
     const c = infNext(t, which);
     if (S.cash < c) return false;
@@ -800,7 +800,7 @@
       canFly: t.race === 'pegasus' || t.race === 'bat', canMagic: t.race === 'unicorn',
       flyMul: 1, magicMul: 1, fastMul: t.race === 'bat' ? 1.5 : 1, splash: 0, chain: 0, slow: 0, slowDur: 0, stunCh: 0, stunDur: 0,
       knock: 0, multi: 1, crit: 0, critMul: 2.5, hex: 0, cash: 1,
-      auraR: crystal ? 140 : 0, auraDmg: crystal ? 0.08 : 0, auraRate: crystal ? 0.06 : 0, auraRange: 0,
+      auraR: crystal ? 130 : 0, auraDmg: crystal ? 0.04 : 0, auraRate: crystal ? 0.02 : 0, auraRange: 0,
       detects: false, detectR: 0, seesBurrow: false, wall: 0, wallR: 0, lightR: crystal ? 110 : 0, sigs: [],
     };
     PATHS[t.race].forEach((p, i) => { if (t.paths[i] > 0) p.apply(t.paths[i], s); });
@@ -861,7 +861,7 @@
     if (!list.length) return 0;
     list.sort((a, b) => b - a);
     let sum = 0, w = 1;
-    for (const v of list) { sum += v * w; w *= 0.5; }
+    for (const v of list) { sum += v * w; w *= 0.3; }
     return sum;
   }
   function lightSources(S) {
@@ -903,7 +903,7 @@
   }
 
   function effDmg(t) { return stats(t).dmg * (1 + ((t.buff && t.buff.dmg) || 0)); }
-  function effRate(t) { return stats(t).rate * (1 + ((t.buff && t.buff.rate) || 0)) * (t.boomT > 0 ? 3 : 1) * (t.surgeT > 0 ? 1.6 : 1); }
+  function effRate(t) { return stats(t).rate * (1 + ((t.buff && t.buff.rate) || 0)) * (t.boomT > 0 ? 3 : 1) * (t.surgeT > 0 ? 1.25 : 1); }
 
   function topWave(S) { return Math.min(MAX_WAVE, S.cleared + 1); }
 
@@ -1291,7 +1291,7 @@
     }
     if (on('chorus') && every(10)) {
       let any = false;
-      for (const o of S.towers) if (o !== t && dist2(o, t) <= s.auraR * s.auraR) { o.surgeT = 4; any = true; }
+      for (const o of S.towers) if (o !== t && dist2(o, t) <= s.auraR * s.auraR) { o.surgeT = 3; any = true; }
       if (any) { fx(S, { k: 'chorus', x: t.x, y: t.y, r: s.auraR, life: 0.9 }); snd(S, 'chorus'); }
     }
     if (on('fortress') && every(3)) {
