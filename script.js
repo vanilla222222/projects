@@ -7,7 +7,7 @@ const PROJECTS = [
     { folder: "mule run", name: "Mule Run", tag: "Game", description: "One stubborn mule. One endless canyon. Zero shortcuts.", icon: "run", accent: "#c4782a" },
     { folder: "pony roguelike", name: "Nightfall Charge", tag: "Game", description: "A bat pony's stand against the night. A roguelike.", icon: "moon", accent: "#a0679e" },
     { folder: "tier list", name: "Tier List Maker", tag: "Tool", description: "Rank anything from S to F. Drag text and images into tiers, then save it as a picture.", icon: "tiers", accent: "#c25b5b" },
-    { folder: "nightfall defense", name: "Nightfall Defense", tag: "Game", description: "Ponies hold the moonlit road against a hundred waves of DNBs. An incremental tower defense.", icon: "shield", accent: "#5b7fc2" },
+    { folder: "nightfall defense", name: "Nightfall Defense (in progress)", tag: "Game", description: "Ponies hold the moonlit road against a hundred waves of DNBs. An incremental tower defense.", icon: "shield", accent: "#5b7fc2" },
 ];
 
 const ICONS = {
