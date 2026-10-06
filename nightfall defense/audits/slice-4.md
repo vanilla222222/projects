@@ -16,8 +16,8 @@
 
 ### Elites and combos
 - **Elites from wave 60** (castle from 55): 2.2x HP, 1.12x speed, 3x cash, and a leak costs 2 lives. They have a gold glow and a star.
-  - Chance: 2%, plus 0.2% per wave, capped at 9%.
-  - From wave 80, each elite also carries one extra trait: plate, its own bubble, or a cloak.
+  - Chance: 2%, plus 0.15% per wave, capped at 7%.
+  - From wave 80, each elite also carries one extra trait: light plate, its own bubble worth 15% of its HP, or a cloak.
 - **Combo waves:**
 
   | combo | first wave | rule | mix |

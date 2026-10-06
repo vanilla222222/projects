@@ -11,7 +11,7 @@
 
   const TUNE = {
     hp0: 14,
-    hpCurve: [[1, 1.25], [10, 1.21], [20, 1.2], [30, 1.185], [35, 1.16], [45, 1.17], [50, 1.15], [55, 1.105], [60, 1.1], [80, 1.085], [100, 1.05]],
+    hpCurve: [[1, 1.25], [10, 1.21], [20, 1.2], [30, 1.185], [35, 1.16], [45, 1.17], [50, 1.15], [55, 1.105], [60, 1.105], [75, 1.083], [82, 1.054], [90, 1.056], [100, 1.045]],
     cash0: 2.2, cashGrowth: 1.2,
     clear0: 45, clearGrowth: 1.2,
     towerGrowth: 1.5, sellRate: 0.7,
@@ -229,7 +229,7 @@
       tricks: { plate: 0.18, armor: { cut: 0.4, until: 0.5 } }, look: { horns: 'spike', spikes: true, eyes: '#ffb04a', size: 1.2 } },
     { id: 'twin-shade', name: 'Twin Shade', hpMul: 0.17, desc: 'Shields DNBs within 130 with a bubble worth 35% of their HP, and splits into two shades when slain.', color: '#4e3a30', dark: '#241a14',
       tricks: { aegis: { r: 130, pct: 0.35 }, split: { n: 2, frac: 0.25, name: 'Shade' } }, look: { horns: 'curl', aura: '#8ab0ff', eyes: '#c8d8ff' } },
-    { id: 'nightmother', name: 'The Nightmother', hpMul: 0.13, desc: 'Sprints and summons Gnats, then takes to the air and cloaks, then turns magical, regrows and shields her brood.', color: '#3e2a3a', dark: '#1c121a',
+    { id: 'nightmother', name: 'The Nightmother', hpMul: 0.11, desc: 'Sprints and summons Gnats, then takes to the air and cloaks, then turns magical, regrows and shields her brood.', color: '#3e2a3a', dark: '#1c121a',
       tricks: { stages: [{ above: 0.66, sprint: { every: 7, dur: 1.2, mul: 3 }, summon: { type: 'swarm', every: 6, n: 4 } }, { above: 0.33, fly: true, cloak: { every: 7, dur: 1.6 } }, { above: 0, magic: true, regen: { rate: 0.012, aura: 120 }, aegis: { r: 140, pct: 0.3 } }] },
       look: { horns: 'curl', spikes: true, aura: '#c06bff', eyes: '#ff6a8a', size: 1.25 } },
   ];
@@ -364,7 +364,7 @@
       { id: 'shield', from: 999, w: 0.9, theme: 5 },
       { id: 'armored', from: 999, w: 1.3, theme: 7 },
     ],
-    elite: { from: 60, base: 0.02, per: 0.002, max: 0.09, combo: 80 },
+    elite: { from: 60, base: 0.02, per: 0.0015, max: 0.07, combo: 80 },
     themes: [
       { id: 'boss', mod: 10, rem: 0 },
       { id: 'flying', at: [6], mod: 9, rem: 0 },
@@ -447,7 +447,7 @@
       blocks: [],
       hpMul: 1, cashMul: 1, startCash: 0,
       bosses: ['mudmaw', 'mother-mire', 'skyrend', 'hexhulk', 'gloamrunner', 'bramble-king', 'duskwraith', 'colossus', 'twin-shade', 'nightmother'],
-      waves: waveVariant({ intro: { swarm: 12, healer: 15, splitter: 18, armored: 22, burrower: 26, shield: 32, stealth: 36 } }),
+      waves: waveVariant({ elite: { per: 0.001, max: 0.05 }, intro: { swarm: 12, healer: 15, splitter: 18, armored: 22, burrower: 26, shield: 32, stealth: 36 } }),
       palette: {
         ground: ['#1d2a2c', '#141c22', '#0a0b13'], grass: ['rgba(90,140,110,.22)', 'rgba(60,100,90,.25)'],
         flowers: ['#c9a0dc', '#a0c4ff', '#ffe1a8'], rock: 'rgba(70,72,90,.55)',
@@ -463,7 +463,7 @@
       routes: [WOODS_ROUTE],
       half: 36,
       blocks: scatter({ seed: 4242, n: 38, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 17, rmax: 27, routes: [WOODS_ROUTE], half: 36, pad: 6, gap: 10, kind: 'tree' }),
-      hpShift: 16, hpMul: 1, cashMul: 7583.7, startCash: 1.958e7, priceMul: 1900, hpCurve: [[1, 1.14], [50, 1.12], [80, 1.09], [95, 1.05], [100, 1.03]],
+      hpShift: 16, hpMul: 1, cashMul: 7583.7, startCash: 1.958e7, priceMul: 1900, hpCurve: [[1, 1.135], [50, 1.115], [65, 1.095], [80, 1.075], [95, 1.045], [100, 1.03]],
       bosses: MAP_BOSSES.woods.map(b => b.id),
       waves: waveVariant({ count: { base: 9 }, types: { fast: { from: 2, w: 7, theme: 10 }, tanky: { w: 2 } }, intro: { swarm: 6, healer: 11, stealth: 16, splitter: 21, burrower: 25, armored: 31, shield: 35 } }),
       palette: {
@@ -484,7 +484,7 @@
       crystals: CRYSTALS,
       blocks: scatter({ seed: 777, n: 14, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 12, rmax: 20, routes: [CAVE_A, CAVE_B], half: 34, pad: 8, gap: 30, kind: 'stalagmite',
         keep: CRYSTALS.map(c => ({ x: c.x, y: c.y, r: 16, kind: 'crystal' })) }),
-      hpShift: 14, hpMul: 1, cashMul: 5.75e7, startCash: 1.372e11, priceMul: 1.44e7, hpCurve: [[1, 1.14], [50, 1.12], [80, 1.085], [90, 1.05], [100, 1.04]],
+      hpShift: 14, hpMul: 1, cashMul: 5.75e7, startCash: 1.372e11, priceMul: 1.44e7, hpCurve: [[1, 1.135], [50, 1.115], [65, 1.1], [80, 1.08], [90, 1.05], [100, 1.04]],
       bosses: MAP_BOSSES.caverns.map(b => b.id),
       waves: waveVariant({ types: { magical: { from: 5, w: 6, theme: 10 }, flying: { w: 2 }, burrower: { w: 1.7 }, stealth: { w: 1.5 } }, intro: { burrower: 5, stealth: 11, healer: 15, shield: 21, splitter: 25, armored: 31, swarm: 35 } }),
       palette: {
@@ -503,7 +503,7 @@
       half: 34,
       wind: { every: 14, dur: 3.2, warn: 2.2, push: 120, side: 70, bossMul: 0.4 },
       blocks: scatter({ seed: 9191, n: 16, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 16, rmax: 30, routes: [CLIFF_ROUTE], half: 34, pad: 8, gap: 24, kind: 'boulder' }),
-      hpShift: 17, hpMul: 1, cashMul: 4.36e11, startCash: 1.075e15, priceMul: 1.09e11, hpCurve: [[1, 1.145], [40, 1.125], [60, 1.1], [75, 1.08], [90, 1.05], [100, 1.04]],
+      hpShift: 17, hpMul: 1, cashMul: 4.36e11, startCash: 1.075e15, priceMul: 1.09e11, hpCurve: [[1, 1.145], [40, 1.125], [60, 1.095], [75, 1.072], [90, 1.042], [100, 1.035]],
       bosses: MAP_BOSSES.cliffs.map(b => b.id),
       waves: waveVariant({ types: { flying: { from: 3, w: 6, theme: 10 } }, themes: [{ id: 'boss', mod: 10, rem: 0 }, { id: 'flying', at: [3], mod: 6, rem: 0 }, { id: 'magical', at: [8], mod: 11, rem: 6 }, { id: 'fast', mod: 7, rem: 0 }, { id: 'tanky', mod: 8, rem: 4 }], intro: { swarm: 4, splitter: 11, shield: 15, armored: 21, healer: 25, stealth: 31, burrower: 35 } }),
       palette: {
@@ -522,7 +522,7 @@
       half: 30,
       blocks: scatter({ seed: 5150, n: 8, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 14, rmax: 18, routes: [CASTLE_A, CASTLE_B], half: 30, pad: 6, gap: 60, kind: 'pillar',
         keep: [{ x: 700, y: 400, r: 46, kind: 'keep' }] }),
-      hpShift: 15, hpMul: 1, cashMul: 3.31e15, startCash: 7.925e18, priceMul: 8.3e14, gateFrom: 4, hpCurve: [[1, 1.14], [50, 1.12], [70, 1.088], [84, 1.055], [100, 1.035]],
+      hpShift: 15, hpMul: 1, cashMul: 3.31e15, startCash: 7.925e18, priceMul: 8.3e14, gateFrom: 4, hpCurve: [[1, 1.14], [50, 1.12], [70, 1.086], [84, 1.05], [100, 1.035]],
       bosses: MAP_BOSSES.castle.map(b => b.id),
       waves: waveVariant({ count: { base: 11, per: 0.55 }, types: { basic: { w: 8 }, fast: { from: 2, w: 5 }, tanky: { from: 3, w: 4 }, flying: { from: 4, w: 4 }, magical: { from: 5, w: 4 }, armored: { w: 1.6 }, shield: { w: 1.1 } }, elite: { from: 55 }, intro: { armored: 4, shield: 8, healer: 12, stealth: 16, splitter: 21, burrower: 24, swarm: 28 } }),
       palette: {
@@ -1059,8 +1059,8 @@
     e.hpMax *= ELITE.hp; e.hp = e.hpMax; e.cash *= ELITE.cash; e.speed *= ELITE.speed; e.r *= ELITE.r; e.leak = 2;
     if (n < WAVEGEN.elite.combo) return;
     const k = e.seed % 3;
-    if (k === 0) { e.eliteMod = 'plate'; e.plate = Math.max(e.plate, 0.03 * e.plateBase); }
-    else if (k === 1) { e.eliteMod = 'bubble'; e.ownSh = true; e.sh = e.shMax = e.hpMax * 0.25; }
+    if (k === 0) { e.eliteMod = 'plate'; e.plate = Math.max(e.plate, 0.02 * e.plateBase); }
+    else if (k === 1) { e.eliteMod = 'bubble'; e.ownSh = true; e.sh = e.shMax = e.hpMax * 0.15; }
     else { e.eliteMod = 'cloak'; e.stealth = true; }
   }
   function armorFor(type, n, map) { const d = ENEMIES[type]; return d && d.plate ? d.plate * hpFor(n, map) : 0; }
