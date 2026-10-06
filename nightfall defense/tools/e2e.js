@@ -344,12 +344,11 @@ async function fastForward(page, maxSeconds) {
   await test('old v1 save loads and migrates', async () => {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     const errors = [];
-    await page.goto(BASE + 'index.html');
-    await page.evaluate(() => localStorage.setItem('nightfall-defense-save-v1', JSON.stringify({
+    await page.addInitScript(s => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('nightfall-defense-save-v1', s); } }, JSON.stringify({
       v: 1, cash: 777, cleared: 12, sel: 13, auto: false, nextId: 3, totalKills: 456,
       towers: [{ id: 1, race: 'earth', x: 600, y: 330, spent: 90, paths: [2, 0, 0, 1, 0], infD: 1, infR: 0, mode: 'strong', kills: 50 },
         { id: 2, race: 'pegasus', x: 800, y: 470, spent: 140, paths: [0, 0, 3, 0, 0], infD: 0, infR: 2, mode: 'first', kills: 70 }],
-    })));
+    }));
     watch(page, errors);
     await page.goto(GAME);
     await page.waitForTimeout(500);
@@ -365,12 +364,11 @@ async function fastForward(page, maxSeconds) {
   await test('old v2 save moves onto the Moonlit Road board', async () => {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     const errors = [];
-    await page.goto(BASE + 'index.html');
-    await page.evaluate(() => localStorage.setItem('nightfall-defense-save-v1', JSON.stringify({
+    await page.addInitScript(s => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('nightfall-defense-save-v1', s); } }, JSON.stringify({
       ver: 2, map: 'moonlit', seed: 99, cash: 4321, cleared: 57, sel: 58, auto: true, nextId: 5, totalKills: 900,
       stats: { played: 70, dmg: 1e6, bossKills: 5, earned: 5e5 }, settings: { speed: 2, sound: false, vol: 0.4, shake: true, dmgNums: true, numFmt: 'short' },
       towers: [{ id: 4, race: 'unicorn', x: 700, y: 300, spent: 900, paths: [3, 0, 2, 0, 0], infD: 2, infR: 1, mode: 'last', kills: 40, dmg: 5000 }],
-    })));
+    }));
     watch(page, errors);
     await page.goto(GAME);
     await page.waitForTimeout(500);
@@ -428,6 +426,7 @@ async function fastForward(page, maxSeconds) {
     ok(await page.locator('#mapList .mapcard.locked').count() === 3, 'three maps still locked');
     await page.click('#mapList .mapcard[data-map="woods"]');
     await page.waitForTimeout(300);
+    await page.waitForFunction(() => /Whispering/.test(document.getElementById('mapName').textContent), null, { timeout: 5000 }).catch(() => {});
     const w = await page.evaluate(() => ({ map: __nd.S.map, n: __nd.S.towers.length, cleared: __nd.S.cleared, cash: __nd.S.cash, start: NDCore.mapStartCash(NDCore.MAPS.woods), modal: document.getElementById('mapModal').hidden, name: document.getElementById('mapName').textContent }));
     ok(w.map === 'woods' && w.n === 0 && w.cleared === 0 && w.cash === w.start && w.modal && /Whispering Woods/.test(w.name), 'fresh woods board ' + JSON.stringify(w));
     const tree = await page.evaluate(() => { const b = NDCore.MAPS.woods.blocks[0]; return [b.x, b.y]; });
