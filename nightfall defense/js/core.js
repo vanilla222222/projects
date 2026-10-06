@@ -1355,6 +1355,7 @@
     }
   }
 
+  const KNOCK_CD = 0.2;
   function hitEnemy(S, run, t, s, e, base, force) {
     if (!e.alive) return;
     let d = base;
@@ -1371,7 +1372,7 @@
     if (s.slow > 0) { e.slow = Math.max(e.slow, e.boss ? s.slow * 0.5 : s.slow); e.slowT = Math.max(e.slowT, s.slowDur); }
     if (s.stunCh > 0 && run.rng() < s.stunCh) stunE(e, e.boss ? s.stunDur * 0.3 : s.stunDur);
     if (s.hex > 0) { e.hexAmp = Math.max(e.hexAmp, s.hex); e.hexT = 4; if (s.has.doomhex) e.doom = true; }
-    if (s.knock > 0) e.d = Math.max(16, e.d - s.knock * (e.boss ? 0.15 : 1));
+    if (s.knock > 0 && !(run.t - (e.knockAt ?? -1) < KNOCK_CD)) { e.knockAt = run.t; e.d = Math.max(16, e.d - s.knock * (e.boss ? 0.15 : 1)); }
     if (fast && s.has.nightfeast) { e.slow = Math.max(e.slow, e.boss ? 0.15 : 0.3); e.slowT = Math.max(e.slowT, 2); }
     if (s.has.raptordive && isFly(e) && !e.boss && e.hp < e.hpMax * 0.2) kill(S, run, e, t);
   }
@@ -1490,7 +1491,7 @@
     }
     if (on('cyclone') && targets.length && every(9)) {
       fx(S, { k: 'swirl', x: t.x, y: t.y, r: s.range, c: '#bdf5ee', life: 0.7 });
-      for (const o of run.enemies) if (o.alive && !o.boss && inRange(t, o, s.range)) { o.d = Math.max(16, o.d - 150); stunE(o, 0.6); }
+      for (const o of run.enemies) if (o.alive && !o.boss && inRange(t, o, s.range)) { if (!(run.t - (o.knockAt ?? -1) < KNOCK_CD)) { o.knockAt = run.t; o.d = Math.max(16, o.d - 150); } stunE(o, 0.6); }
     }
     if (on('rainboom') && targets.length && every(15)) {
       t.boomT = 4;
