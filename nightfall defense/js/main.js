@@ -215,6 +215,7 @@
     sb.disabled = !!S.run;
     sb.textContent = S.run ? 'Wave ' + S.run.n + ' running' : (ui.autoNext > 0 ? 'Auto-starting Wave ' + S.sel + '...' : (fresh ? 'Start Wave ' : 'Replay Wave ') + S.sel);
     $('autoBox').checked = !!S.auto;
+    $('map2').innerHTML = S.cleared >= 50 ? 'Map 2 &middot; unlocked, still being charted' : 'Map 2 &middot; unlocks at wave 50';
     $('autoHint').textContent = !S.auto
       ? 'Auto is off: a wave only starts when you press Start.'
       : (S.sel > S.cleared
