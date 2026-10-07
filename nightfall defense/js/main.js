@@ -1398,7 +1398,7 @@
     ui.waveKey = ''; ui.farmKey = '';
     writeSave();
   });
-  $('hFarmChip').addEventListener('click', () => { const b = $('farmBox'); b.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); b.focus(); });
+  $('hFarmChip').addEventListener('click', () => { const b = $('farmBox'); b.closest('.farmrow').scrollIntoView({ block: 'center', behavior: 'smooth' }); b.focus({ preventScroll: true }); });
 
   const rulesUi = { scope: 'race', key: C.RACE_IDS[0], kind: 'dmg' };
   function rulesList() {
@@ -2342,6 +2342,11 @@
   if (!ui.away) writeSave();
   if (farmOn() && !S.run) { S.sel = C.farmTarget(S); ui.farmNext = performance.now() + 2500; }
   window.addEventListener('pagehide', writeSave);
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  const pinView = () => { if ((window.scrollY || window.scrollX) && getComputedStyle(document.body).overflowY === 'hidden') window.scrollTo(0, 0); };
+  window.addEventListener('scroll', pinView, { passive: true });
+  window.addEventListener('resize', pinView);
+  pinView();
   $('saveNote').textContent = 'Progress saves automatically in this browser.';
   requestAnimationFrame(frame);
   window.__nd = { get S() { return S; }, ui, save: writeSave, audio: A, setSpeed, togglePause, refresh: dirty, openMaps, closeMaps, chooseMap, openCodex, closeCodex,
