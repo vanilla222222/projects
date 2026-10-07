@@ -18,7 +18,7 @@
     { id: 'mult', label: o => `+1 ${o.name} multiplier`, cost: 10, growth: 1.35 },
     { id: 'base', label: o => `+1 base ${o.name}`, cost: 25, growth: 1.45 },
     { id: 'exp', label: o => `+0.01 ${o.name} exponent`, cost: 100, growth: 1.75 },
-    { id: 'unique', label: o => UNIQUES[o.id] ? UNIQUES[o.id].label : 'Coming soon', cost: 100, growth: 1, max: 1 },
+    { id: 'unique', label: o => UNIQUES[o.id] ? UNIQUES[o.id].label : 'Coming soon', cost: 10000, growth: 1, max: 1 },
   ];
 
   const UNIQUES = {
@@ -26,7 +26,7 @@
     stone: { label: 'Unlock Autominer' },
   };
 
-  const MASTERY = { cost: 100, growth: 10 };
+  const MASTERY = { cost: 100000, growth: 10 };
   const AUTO = {
     bulk: { cost: 10, growth: 4, max: 99 },
     speed: { cost: 5, growth: 4.5, factor: 0.8, min: 0.1 },
