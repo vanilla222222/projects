@@ -23,6 +23,7 @@ const CHAL = process.env.CHAL ? (process.env.CHAL.charAt(0) === '{' ? JSON.parse
 const CMODS = {};
 if (CHAL) for (const m of CHAL.mods) CMODS[m] = true;
 const ACH_MODE = process.env.ACH || '';
+const COS = process.env.COS === '1';
 const ACH_PRIOR = ['p_w1', 'p_w10', 'p_w25', 'p_w50', 'p_w75', 'p_w100', 'p_map2', 'c_k1', 'c_k2', 'c_b1', 'c_b2', 'c_el', 'c_flaw', 'c_clutch', 'e_1', 'e_2', 'e_3', 'e_up', 'e_off', 'h_field', 'h_10', 'r_herd', 'r_army', 'p_codex', 'ch_d1', 'ch_p1'];
 
 if (!process.env.MAP && CHAL) process.env.MAP = CHAL.map;
@@ -296,6 +297,7 @@ function climb(S) {
   while (S.cleared < C.MAX_WAVE && time < LIMIT_H * 3600) {
     const n = S.cleared + 1;
     shop(S, n);
+    cosTick(S);
     placeHero(S);
     attempts++;
     const r = play(S, n);
@@ -445,12 +447,32 @@ function playChallenge() {
   console.log('RESULT ' + JSON.stringify(res));
 }
 
+function cosSeed(S) {
+  const moon = S.moon;
+  const items = C.COSMETICS.filter(c => c.un.k === 'moon');
+  S.moon += items.reduce((a, c) => a + c.un.cost, 0);
+  for (const c of items) C.buyCos(S, c.id);
+  S.moon = moon;
+  const owned = C.COSMETICS.filter(c => C.cosUnlocked(S, c));
+  C.RACE_IDS.forEach((r, i) => { for (const sl of C.COS_SLOTS) { const l = owned.filter(c => c.slot === sl); if (l.length) C.setSkin(S, r, sl, l[i % l.length].id); } });
+  C.setFxTheme(S, 'candy');
+  for (const r of C.RACE_IDS) if (r !== 'earth') C.setFxTheme(S, 'candy', r);
+  for (const id of C.MAP_IDS) C.setDecor(S, id, 'festival');
+  C.cosOf(S).names = true;
+}
+function cosTick(S) {
+  if (!COS) return;
+  for (const t of S.towers) if (!t.name) C.renameTower(S, t.id, C.suggestName(S, t));
+  for (const t of S.towers) { C.titleOf(t); C.titleNext(t); }
+  C.lookOf(S, 'earth'); C.fxThemeOf(S, 'bat'); C.decorOf(S, S.map);
+}
 function main() {
   if (CHAL) { playChallenge(); return; }
   if (process.env.PRESTIGE) { prestige(); return; }
   const S = C.newState(MAP.id);
   S.fxOn = false;
   achSeed(S);
+  if (COS) cosSeed(S);
   console.log('RESULT ' + JSON.stringify(climb(S)));
 }
 
