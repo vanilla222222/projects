@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vanilla Incremental</title>
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 <header class="top">
@@ -68,6 +68,25 @@
       <div class="alloclist" id="allocList"></div>
     </div>
   </section>
+  <section class="tab" data-tab="smelt" hidden>
+    <div class="masterybox">
+      <h2>Smeltery</h2>
+      <div class="allochead"><span><b id="ingots">0</b> Copper Ingots</span><span class="hint" id="smeltInfo"></span></div>
+      <p class="hint">Click a slot to start or stop smelting. Each cycle takes copper when it starts. Ingots and ingot upgrades are kept on rebirth.</p>
+      <div class="slots" id="slots"></div>
+    </div>
+    <div class="masterybox">
+      <h2>Ingot upgrades</h2>
+      <div class="ingotups" id="ingotUps"></div>
+    </div>
+  </section>
+  <section class="tab" data-tab="ach" hidden>
+    <div class="masterybox">
+      <h2>Achievements</h2>
+      <p class="hint" id="achSum"></p>
+      <div class="achlist" id="achList"></div>
+    </div>
+  </section>
   <section class="tab" data-tab="stats" hidden>
     <div class="masterybox">
       <h2>Stats</h2>
@@ -79,6 +98,7 @@
     </div>
   </section>
 </main>
+<div class="toast" id="toast" hidden></div>
 <div class="modal" id="offline" hidden>
   <div class="modalbox">
     <h2>Welcome back</h2>
@@ -87,6 +107,6 @@
     <button type="button" class="rbbtn" id="offOk"><b>Collect</b></button>
   </div>
 </div>
-<script src="game.js?v=8"></script>
+<script src="game.js?v=9"></script>
 </body>
 </html>
