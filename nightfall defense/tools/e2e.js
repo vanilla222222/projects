@@ -1676,6 +1676,8 @@ async function fastForward(page, maxSeconds) {
       ok(a.open && a.maps === 5 && a.stars === 5 && a.rows.join() === '142,131,118' && a.top === 1 && a.herd === 8 && /Wave,Time,Date,Hero,Herd/.test(a.cols), 'leaderboard table ' + JSON.stringify(a));
       const f0 = await fitCheck(page);
       ok(f0.scroll && !f0.bad.length, 'leaderboard fits ' + JSON.stringify(f0));
+      const dh = await page.evaluate(() => { const d = document.querySelector('#lbModal .dialog'), t = document.querySelector('#lbModal table'); return { d: d.getBoundingClientRect().height, t: t ? t.getBoundingClientRect().height : 0 }; });
+      ok(dh.d > 200 && dh.t > 80, 'leaderboard dialog shows its table ' + JSON.stringify(dh));
       await shot(page, 'leaderboard-' + vp.width);
       ok(await page.evaluate(() => document.querySelector('#lbStars .on').dataset.lbstar) === '2', 'opens on the current star');
       await page.click('#lbStars [data-lbstar="1"]');
