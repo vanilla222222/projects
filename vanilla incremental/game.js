@@ -58,6 +58,7 @@
     { name: '7x7', r: 3, sq: 1 },
   ];
   const PICK = { cost: 50000, growth: 10 };
+  const BUYS = [1, 5, 10, 100, 'max'];
 
   const TABS = [
     { id: 'mines', name: 'Mines' },
@@ -70,7 +71,7 @@
   const $ = id => document.getElementById(id);
 
   function fresh() {
-    const S = { tab: 'mines', layer: 1, grid: null, ores: {}, auto: { bulk: 0, speed: 0, off: 0 }, pick: 0, vein: 0, seen: Date.now(), rb: { count: 0, points: 0, alloc: {} }, stats: { time: 0, clicks: 0, tiles: 0, layers: 0, best: 0, chest: 0, tnt: 0, vein: 0, offline: 0 } };
+    const S = { tab: 'mines', layer: 1, grid: null, ores: {}, auto: { bulk: 0, speed: 0, off: 0 }, pick: 0, buy: 1, vein: 0, seen: Date.now(), rb: { count: 0, points: 0, alloc: {} }, stats: { time: 0, clicks: 0, tiles: 0, layers: 0, best: 0, chest: 0, tnt: 0, vein: 0, offline: 0 } };
     for (const o of ORES) S.ores[o.id] = { amt: 0, total: 0, run: 0, found: 0, mult: 0, base: 0, exp: 0, unique: 0, mastery: 0 };
     S.grid = newGrid();
     return S;
@@ -111,6 +112,7 @@
       }
       if (d.auto) for (const k of ['bulk', 'speed', 'off']) if (typeof d.auto[k] === 'number' && isFinite(d.auto[k])) S.auto[k] = d.auto[k];
       if (Array.isArray(d.grid) && d.grid.length === SIZE * SIZE && d.grid.every(c => c && S.ores[c.ore])) S.grid = d.grid.map(c => SPECIALS[c.sp] ? { ore: c.ore, dug: c.dug ? 1 : 0, sp: c.sp } : { ore: c.ore, dug: c.dug ? 1 : 0 });
+      if (BUYS.includes(d.buy)) S.buy = d.buy;
       for (const k of ['pick', 'seen']) if (typeof d[k] === 'number' && isFinite(d[k])) S[k] = d[k];
       if (d.stats) for (const k of Object.keys(S.stats)) if (typeof d.stats[k] === 'number' && isFinite(d.stats[k])) S.stats[k] = d.stats[k];
       if (typeof d.vein === 'number' && isFinite(d.vein)) S.vein = Math.max(0, d.vein);
@@ -150,14 +152,32 @@
   const hasAuto = () => S.ores.stone.unique > 0;
   const autoBulk = () => 1 + S.auto.bulk;
   const autoInterval = () => Math.max(AUTO.speed.min, Math.pow(AUTO.speed.factor, S.auto.speed));
-  const autoCost = k => Math.ceil(AUTO[k].cost * Math.pow(AUTO[k].growth, S.auto[k]));
-  const autoMaxed = k => k === 'bulk' ? S.auto.bulk >= AUTO.bulk.max : autoInterval() <= AUTO.speed.min;
+  const autoCostAt = (k, l) => Math.ceil(AUTO[k].cost * Math.pow(AUTO[k].growth, l));
+  const autoCap = k => k === 'bulk' ? AUTO.bulk.max : Math.ceil(Math.log(AUTO.speed.min) / Math.log(AUTO.speed.factor));
+  const autoMaxed = k => S.auto[k] >= autoCap(k);
+  const masteryCost = l => Math.ceil(MASTERY.cost * Math.pow(MASTERY.growth, l));
+
+  function plan(costAt, lvl, have, cap = Infinity) {
+    const max = S.buy === 'max';
+    const want = max ? Infinity : S.buy;
+    let n = 0, total = 0;
+    while (n < want && lvl + n < cap && n < 10000) {
+      const c = costAt(lvl + n);
+      if (max && total + c > have) break;
+      total += c;
+      n++;
+    }
+    if (max && !n && lvl < cap) return { n: 1, total: costAt(lvl), can: false };
+    return { n, total, can: n > 0 && total <= have };
+  }
+
+  const xN = n => n > 1 ? ` ×${n}` : '';
 
   const hasOffline = () => S.ores.gold.unique > 0;
   const offEff = () => OFFLINE.base + OFFLINE.step * S.auto.off;
-  const offCost = () => Math.ceil(OFFLINE.cost * Math.pow(OFFLINE.growth, S.auto.off));
+  const offCostAt = l => Math.ceil(OFFLINE.cost * Math.pow(OFFLINE.growth, l));
   const pickTier = () => S.ores.silver.unique > 0 ? 1 + S.pick : 0;
-  const pickCost = () => Math.ceil(PICK.cost * Math.pow(PICK.growth, S.pick));
+  const pickCostAt = l => Math.ceil(PICK.cost * Math.pow(PICK.growth, l));
   const inPick = (p, dx, dy) => p.sq ? Math.max(Math.abs(dx), Math.abs(dy)) <= p.r : Math.abs(dx) + Math.abs(dy) <= p.r;
 
   function cost(u, lvl, oreId) {
@@ -168,48 +188,59 @@
   const isSoon = (oreId, u) => u.id === 'unique' && !UNIQUES[oreId];
   const isMaxed = (st, u) => u.max && st[u.id] >= u.max;
 
+  function upgPlan(oreId, u) {
+    const st = S.ores[oreId];
+    if (u.max) {
+      const c = cost(u, st[u.id], oreId);
+      return { n: isMaxed(st, u) ? 0 : 1, total: c, can: !isMaxed(st, u) && st.amt >= c };
+    }
+    return plan(l => cost(u, l, oreId), st[u.id], st.amt);
+  }
+  const mastPlan = oreId => plan(masteryCost, S.ores[oreId].mastery, S.ores[oreId].amt);
+  const autoPlan = k => plan(l => autoCostAt(k, l), S.auto[k], S.ores.obsidian.amt, autoCap(k));
+  const offPlan = () => plan(offCostAt, S.auto.off, S.ores.gold.amt, OFFLINE.max);
+  const pickPlan = () => plan(pickCostAt, S.pick, S.ores.silver.amt, PICKS.length - 2);
+
   function buy(oreId, u) {
     if (isSoon(oreId, u)) return;
     const st = S.ores[oreId];
-    if (isMaxed(st, u)) return;
-    const c = cost(u, st[u.id], oreId);
-    if (st.amt < c) return;
-    st.amt -= c;
-    st[u.id]++;
+    const pl = upgPlan(oreId, u);
+    if (!pl.can) return;
+    st.amt -= pl.total;
+    st[u.id] += pl.n;
     if (u.id === 'unique') { SPECIAL_ON = S.ores.obsidian.unique > 0; buildTabs(); renderAll(); return; }
     renderAll(true);
   }
 
   function buyMastery(oreId) {
-    const st = S.ores[oreId];
-    const c = Math.ceil(MASTERY.cost * Math.pow(MASTERY.growth, st.mastery));
-    if (st.amt < c) return;
-    st.amt -= c;
-    st.mastery++;
+    const pl = mastPlan(oreId);
+    if (!pl.can) return;
+    S.ores[oreId].amt -= pl.total;
+    S.ores[oreId].mastery += pl.n;
     renderAll(true);
   }
 
   function buyAuto(k) {
-    const c = autoCost(k);
-    if (autoMaxed(k) || S.ores.obsidian.amt < c) return;
-    S.ores.obsidian.amt -= c;
-    S.auto[k]++;
+    const pl = autoPlan(k);
+    if (!pl.can) return;
+    S.ores.obsidian.amt -= pl.total;
+    S.auto[k] += pl.n;
     renderAll(true);
   }
 
   function buyOffline() {
-    const c = offCost();
-    if (S.auto.off >= OFFLINE.max || S.ores.gold.amt < c) return;
-    S.ores.gold.amt -= c;
-    S.auto.off++;
+    const pl = offPlan();
+    if (!pl.can) return;
+    S.ores.gold.amt -= pl.total;
+    S.auto.off += pl.n;
     renderAll(true);
   }
 
   function buyPick() {
-    const c = pickCost();
-    if (!pickTier() || pickTier() >= PICKS.length - 1 || S.ores.silver.amt < c) return;
-    S.ores.silver.amt -= c;
-    S.pick++;
+    const pl = pickPlan();
+    if (!pickTier() || !pl.can) return;
+    S.ores.silver.amt -= pl.total;
+    S.pick += pl.n;
     renderAll(true);
   }
 
@@ -486,12 +517,12 @@
       UPGRADES.forEach((u, i) => {
         const b = el.btns[i];
         const lvl = st[u.id];
-        const c = cost(u, lvl, o.id);
+        const pl = upgPlan(o.id, u);
         const soon = isSoon(o.id, u);
         const maxed = isMaxed(st, u);
-        b.querySelector('span').textContent = u.label(o) + (soon || u.max || !lvl ? '' : ` (${lvl})`);
-        b.querySelector('small').textContent = maxed ? 'Unlocked' : `${fmt(c)} ${o.name}`;
-        const can = !soon && !maxed && found && st.amt >= c;
+        b.querySelector('span').textContent = u.label(o) + (soon || u.max ? '' : xN(pl.n)) + (soon || u.max || !lvl ? '' : ` (${lvl})`);
+        b.querySelector('small').textContent = maxed ? 'Unlocked' : `${fmt(pl.total)} ${o.name}`;
+        const can = !soon && found && pl.can;
         b.disabled = !can;
         b.classList.toggle('done', maxed);
         b.classList.toggle('can', can);
@@ -542,12 +573,12 @@
     for (const o of ORES) {
       const st = S.ores[o.id];
       const b = masteryEls[o.id];
-      const c = Math.ceil(MASTERY.cost * Math.pow(MASTERY.growth, st.mastery));
+      const pl = mastPlan(o.id);
       b.hidden = !st.found;
-      b.querySelector('.mlvl').textContent = `×${fmt(oreMastery(o.id))} → ×${fmt(oreMastery(o.id) * 2)}`;
-      b.querySelector('small').textContent = `${fmt(c)} ${o.name}`;
-      b.disabled = st.amt < c;
-      b.classList.toggle('can', st.amt >= c);
+      b.querySelector('.mlvl').textContent = `×${fmt(oreMastery(o.id))} → ×${fmt(oreMastery(o.id) * Math.pow(2, pl.n))}`;
+      b.querySelector('small').textContent = `${fmt(pl.total)} ${o.name}`;
+      b.disabled = !pl.can;
+      b.classList.toggle('can', pl.can);
     }
   }
 
@@ -559,9 +590,10 @@
     for (const k of ['bulk', 'speed']) {
       const b = $(k === 'bulk' ? 'autoBulk' : 'autoSpeed');
       const maxed = autoMaxed(k);
-      const c = autoCost(k);
-      b.querySelector('small').textContent = maxed ? 'Maxed' : `${fmt(c)} Obsidian`;
-      const can = !maxed && S.ores.obsidian.amt >= c;
+      const pl = autoPlan(k);
+      b.querySelector('span').textContent = (k === 'bulk' ? 'Bulk: +1 tile per dig' : 'Speed: dig 20% faster') + xN(pl.n);
+      b.querySelector('small').textContent = maxed ? 'Maxed' : `${fmt(pl.total)} Obsidian`;
+      const can = pl.can;
       b.disabled = !can;
       b.classList.toggle('can', can);
     }
@@ -570,9 +602,10 @@
     $('autoRate').textContent += hasOffline() ? ` · offline ${Math.round(offEff() * 100)}%` : '';
     if (hasOffline()) {
       const maxed = S.auto.off >= OFFLINE.max;
-      const c = offCost();
-      ob.querySelector('small').textContent = maxed ? 'Maxed' : `${fmt(c)} Gold`;
-      const can = !maxed && S.ores.gold.amt >= c;
+      const pl = offPlan();
+      ob.querySelector('span').textContent = 'Offline: +15% speed while away' + xN(pl.n);
+      ob.querySelector('small').textContent = maxed ? 'Maxed' : `${fmt(pl.total)} Gold`;
+      const can = pl.can;
       ob.disabled = !can;
       ob.classList.toggle('can', can);
     }
@@ -592,10 +625,11 @@
     $('pickName').textContent = `${p.name} · ${countPick(p)} tiles per click`;
     const b = $('pickUp');
     const maxed = t >= PICKS.length - 1;
-    const c = pickCost();
-    b.querySelector('span').textContent = maxed ? 'Best pickaxe' : `Upgrade to ${PICKS[t + 1].name} (${countPick(PICKS[t + 1])} tiles)`;
-    b.querySelector('small').textContent = maxed ? 'Maxed' : `${fmt(c)} Silver`;
-    const can = !maxed && S.ores.silver.amt >= c;
+    const pl = pickPlan();
+    const to = PICKS[Math.min(PICKS.length - 1, t + Math.max(1, pl.n))];
+    b.querySelector('span').textContent = maxed ? 'Best pickaxe' : `Upgrade to ${to.name} (${countPick(to)} tiles)`;
+    b.querySelector('small').textContent = maxed ? 'Maxed' : `${fmt(pl.total)} Silver`;
+    const can = pl.can;
     b.disabled = !can;
     b.classList.toggle('can', can);
   }
@@ -695,7 +729,24 @@
     }
   }
 
+  function buildBuy() {
+    const box = $('buyAmt');
+    for (const v of BUYS) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = v === 'max' ? 'Max' : `${v}x`;
+      b.dataset.v = v;
+      b.addEventListener('click', () => { S.buy = v; renderAll(true); });
+      box.appendChild(b);
+    }
+  }
+
+  function renderBuy() {
+    for (const b of $('buyAmt').children) b.classList.toggle('on', String(S.buy) === b.dataset.v);
+  }
+
   function renderAll(skipGrid) {
+    renderBuy();
     renderWallet();
     renderUpgrades();
     renderMastery();
@@ -731,6 +782,7 @@
   buildUpgrades();
   buildMastery();
   buildRebirth();
+  buildBuy();
   renderGrid();
   renderAll();
   showOffline(away);

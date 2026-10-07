@@ -110,3 +110,7 @@ main { padding: 16px; }
 .modalbox h2 { margin: 0; }
 .offrow { display: flex; align-items: center; gap: 8px; }
 .offrow b { margin-left: auto; }
+.buyamt { display: flex; align-items: center; gap: 4px; }
+.buyamt small { opacity: .7; margin-right: 2px; }
+.buyamt button { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; }
+.buyamt button.on { background: var(--accent); color: #221a08; border-color: var(--accent); }
