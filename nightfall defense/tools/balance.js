@@ -447,6 +447,31 @@ function playChallenge() {
   console.log('RESULT ' + JSON.stringify(res));
 }
 
+function playEndless() {
+  const P = C.newState(MAP.id);
+  P.fxOn = false;
+  achSeed(P);
+  P.stars[MAP.id] = Math.max(1, Number(process.env.ENDLESS) || 1);
+  if (process.env.RESEARCH) Object.assign(P.research, C.cleanResearch(JSON.parse(process.env.RESEARCH)));
+  C.recalcBonus(P);
+  if (HERO) { P.heroUnlocks[HERO] = 1; C.pickHero(P, HERO); }
+  const X = C.startEndless(P, MAP.id, 1e12);
+  X.fxOn = false;
+  heroTowers = -1;
+  let time = 0;
+  const cap = Number(process.env.ENDLESS_CAP) || 200;
+  while (!X.chal.over && X.cleared < cap) {
+    const n = X.cleared + 1;
+    shop(X, n);
+    placeHero(X);
+    const r = play(X, n);
+    time += r.t;
+    if (!X.chal.over && !r.won && !X.run) break;
+    if (n % 10 === 0) console.log('w' + n + ' lives ' + X.chal.lives + ' t ' + (time / 3600).toFixed(2) + 'h towers ' + X.towers.length + ' muts ' + C.endlessMutList(X.chal.order, n + 1).map(m => m.id + m.rank).join(','));
+  }
+  const out = X.chal.over ? X.chal.result : C.quitChallenge(X);
+  console.log('RESULT ' + JSON.stringify({ map: MAP.id, star: P.stars[MAP.id], wave: out.wave, rank: out.rank, moon: out.moon, hours: +(time / 3600).toFixed(2), best: P.endless.best, top: P.endless.top }));
+}
 function cosSeed(S) {
   const moon = S.moon;
   const items = C.COSMETICS.filter(c => c.un.k === 'moon');
@@ -467,6 +492,7 @@ function cosTick(S) {
   C.lookOf(S, 'earth'); C.fxThemeOf(S, 'bat'); C.decorOf(S, S.map);
 }
 function main() {
+  if (process.env.ENDLESS) { playEndless(); return; }
   if (CHAL) { playChallenge(); return; }
   if (process.env.PRESTIGE) { prestige(); return; }
   const S = C.newState(MAP.id);

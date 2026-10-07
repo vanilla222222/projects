@@ -4,7 +4,7 @@
   const WORLD = { L: 1400, W: 800, towerR: 20, minGap: 44 };
   const MAX_WAVE = 100;
   const LIVES = 10;
-  const SAVE_VER = 10;
+  const SAVE_VER = 11;
   const MAX_STARS = 5;
   const SPAWN_GUARD = 15;
   const UNLOCK_AT = 50;
@@ -719,6 +719,7 @@
     const every = map.waves.bossEvery;
     if (n % every !== 0) return null;
     const list = map.bosses;
+    if (n > MAX_WAVE) { const k = Math.min(5, list.length); return BOSS_BY_ID[list[list.length - k + (n / every) % k]] || null; }
     return BOSS_BY_ID[list[Math.min(list.length - 1, n / every - 1)]] || null;
   }
 
@@ -793,7 +794,8 @@
   function nodeCost(race, k, pm) { return Math.round(RACES[race].cost * TUNE.nodeBase * Math.pow(TUNE.nodeGrowth, k) * (pm || 1)); }
   function infCost(race, lv) { return Math.round(RACES[race].cost * TUNE.infBase * Math.pow(TUNE.infGrowth, lv)); }
 
-  const DEFAULT_SETTINGS = { sound: true, vol: 0.6, shake: true, dmgNums: true, numFmt: 'short', speed: 1 };
+  const DEFAULT_SETTINGS = { sound: true, vol: 0.6, shake: true, dmgNums: true, numFmt: 'short', speed: 1, lowFx: false, cb: false, font: false, ui: 1, tut: 0 };
+  const UI_SCALES = [0.85, 1, 1.15, 1.3];
   const NUM_FORMATS = ['short', 'sci', 'full'];
   const SPEEDS = [1, 2, 4];
 
@@ -1090,6 +1092,8 @@
     if (!P || P.chal || P.run) return null;
     if (typeof def === 'string') def = def === 'daily' ? dailyDef(dayIndex(now || Date.now())) : CHAL_BY_ID[def];
     if (!def || !MAPS[def.map]) return null;
+    const endless = def.kind === 'endless';
+    if (endless && !endlessUnlocked(P, def.map)) return null;
     const map = getMap(def.map);
     const X = newState(map.id);
     for (const k of CHAL_SHARED) X[k] = P[k];
@@ -1099,11 +1103,13 @@
     for (const m of def.mods) mods[m] = true;
     X.cm = (mods.short || mods.glass) ? { range: mods.short ? 0.75 : 1, dmg: mods.glass ? 1.5 : 1 } : null;
     X.stars = {}; X.moon = 0; X.moonTotal = 0; X.presets = {}; X.slots = {}; X.boards = {}; X.lastSeen = 0;
+    if (endless) { X.stars[map.id] = def.star | 0; X.seed = hashSeed(P.seed, map.order * 7 + (def.star | 0), (endlessOf(P).runs | 0) + 1); }
     Object.assign(X, newBoard(map, X));
-    X.cash = chalStartCash(X, def, map);
+    X.cash = endless ? endlessStartCash(X, map, def.star | 0) : chalStartCash(X, def, map);
     X.cleared = def.from - 1; X.sel = def.from;
     const lives = def.lives || chalLives(def.mods);
     X.chal = { id: def.id, kind: def.kind, def, mods, parent: P, from: def.from, to: def.to, lives, livesMax: lives, t: 0, waves: 0, over: null, day: def.day || 0, result: null };
+    if (endless) { X.chal.order = endlessOrder(X.seed); X.chal.date = +now || 0; X.chal.moon = 0; endlessOf(P).runs++; }
     if (!mods.nohero && P.hero && P.hero.id) {
       const p = heroHome(map);
       X.hero = { id: P.hero.id, x: p.x, y: p.y, auto: !!P.hero.auto, prog: JSON.parse(JSON.stringify(P.hero.prog || {})) };
@@ -1134,7 +1140,8 @@
     const P = c.parent, def = c.def, won = result === 'won';
     const score = chalScore(c.waves, c.lives, c.t, won);
     const out = { id: def.id, kind: def.kind, name: def.name, result, waves: c.waves, total: def.to - def.from + 1, lives: won ? c.lives : 0, t: Math.round(c.t), score, reward: [], best: false, first: false, streak: 0 };
-    if (def.kind === 'daily') {
+    if (def.kind === 'endless') Object.assign(out, endlessRecord(X), { total: 0 });
+    else if (def.kind === 'daily') {
       const d = rollDaily(P, def.day);
       if (def.day === d.day) {
         if (score > d.best) { d.best = score; out.best = true; }
@@ -1172,6 +1179,120 @@
       daily: { def: dd, day, label: dayLabel(day), best: today ? d.best : 0, won: today && !!d.won, runs: today ? d.runs : 0, streak: dailyStreak(P, day), bestStreak: d.bestStreak, wins: d.wins, moon: dailyMoon(dailyStreak(P, day) + 1) },
       perm: CHALLENGES.map(c => ({ def: c, done: !!P.chalDone[c.id], best: P.chalBest[c.id] | 0, reward: rewardText(c.reward) })),
     };
+  }
+  const ENDLESS_FROM = MAX_WAVE + 1;
+  const ENDLESS = { start: 0.7, hp: 0.55, kill: 1.2, clear: 1.2, lives: 20, every: 10, moon: 2, top: 10 };
+  const ENDLESS_MUTS = {
+    regen: { name: 'Regrowth', desc: 'DNBs regrow 1% of their health each second.' },
+    haste: { name: 'Haste', desc: 'DNBs move 15% faster.' },
+    shielded: { name: 'Shielded', desc: 'Every DNB carries a bubble worth 20% of its health.' },
+    splitting: { name: 'Splitting', desc: 'Slain DNBs break into two Splitlings.' },
+    airplate: { name: 'Armoured fliers', desc: 'Flying DNBs wear heavy plate.' },
+    fog: { name: 'Fog', desc: 'A third of all DNBs are hidden in fog.' },
+    elite: { name: 'Elite surge', desc: '20% more DNBs arrive as elites.' },
+    pairs: { name: 'Boss pairs', desc: 'Every boss brings a twin.' },
+    teeming: { name: 'Teeming', desc: '25% more DNBs in every wave.' },
+    thick: { name: 'Thick hides', desc: 'DNBs have 25% more health.' },
+    lean: { name: 'Lean times', desc: 'Kills pay 25% less.' },
+    ironboss: { name: 'Iron bosses', desc: 'Bosses have 50% more health and wear plate.' },
+  };
+  const ENDLESS_MUT_IDS = Object.keys(ENDLESS_MUTS);
+  function newEndless() { return { best: {}, top: {}, runs: 0 }; }
+  function endlessOf(P) { return P.endless || (P.endless = newEndless()); }
+  function endlessKey(id, star) { return id + ':' + (star | 0); }
+  function endlessUnlocked(P, id) { return !!MAPS[id] && starOf(P, id) >= 1; }
+  function endlessDef(P, id) {
+    const map = MAPS[id];
+    if (!map) return null;
+    const star = starOf(P, id);
+    return { id: 'endless', kind: 'endless', name: 'Endless: ' + map.name, map: id, star, from: ENDLESS_FROM, to: Infinity, mods: [], lives: ENDLESS.lives, reward: null, diff: 0 };
+  }
+  function startEndless(P, id, now) { const def = endlessDef(P, id); return def ? startChallenge(P, def, now) : null; }
+  function endlessStartCash(X, map, star) { return Math.round(mapStartCash(map, X) + skipCash(X, map, MAX_WAVE, star) * ENDLESS.start); }
+  function endlessOrder(seed) {
+    const ids = ENDLESS_MUT_IDS.slice(), r = mulberry(seed ^ 0x51ab);
+    for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); const t = ids[i]; ids[i] = ids[j]; ids[j] = t; }
+    return ids;
+  }
+  function endlessMuts(order, n) {
+    const k = Math.max(0, Math.floor((n - MAX_WAVE) / ENDLESS.every)), out = {};
+    for (let i = 0; i < k; i++) { const id = order[i % order.length]; out[id] = (out[id] | 0) + 1; }
+    return out;
+  }
+  function endlessMutList(order, n) { const m = endlessMuts(order, n); return order.filter(id => m[id]).map(id => ({ id, rank: m[id], name: ENDLESS_MUTS[id].name, desc: ENDLESS_MUTS[id].desc })); }
+  function endlessRun(S, run, ch) {
+    run.cashMul *= ENDLESS.kill; run.clearMul *= ENDLESS.clear; run.hpMul *= ENDLESS.hp;
+    const m = endlessMuts(ch.order, run.n);
+    run.mut = m;
+    if (m.regen) run.regen += 0.01 * m.regen;
+    if (m.haste) run.spdMul *= 1 + 0.15 * m.haste;
+    if (m.thick) run.hpMul *= Math.pow(1.25, m.thick);
+    if (m.lean) run.cashMul *= Math.pow(0.75, m.lean);
+    if (!m.teeming && !m.elite && !m.pairs) return;
+    const r = mulberry(hashSeed(S.seed, run.n, 55));
+    let q = run.queue.map(it => Object.assign({}, it));
+    if (m.teeming) {
+      const add = [];
+      for (const it of q) if (it.type !== 'boss' && r() < 0.25 * m.teeming) add.push(Object.assign({}, it, { t: it.t + 0.35 }));
+      q = q.concat(add).sort((a, b) => a.t - b.t);
+    }
+    if (m.elite) for (const it of q) if (!it.elite && it.type !== 'basic' && it.type !== 'boss' && r() < 0.2 * m.elite) it.elite = true;
+    if (m.pairs && run.spec.boss) {
+      const b = q.filter(it => it.type === 'boss' && !it.twin)[0];
+      if (b) { run.xboss = run.spec.boss; q.push(Object.assign({}, b, { t: b.t + 1.6, xb: true, twin: true })); q.sort((a, c) => a.t - c.t); run.enrageAt += 10; }
+    }
+    run.queue = q;
+  }
+  function endlessEnemy(run, e) {
+    const m = run.mut;
+    if (m.shielded && !e.boss) { e.ownSh = true; e.shMax = Math.max(e.shMax, e.hpMax * 0.2 * m.shielded); e.sh = e.shMax; }
+    if (m.airplate && e.flying) e.plate = Math.max(e.plate, 0.05 * m.airplate * e.plateBase);
+    if (m.fog && !e.boss && e.id % 3 === 0) e.stealth = true;
+    if (m.ironboss && e.boss && !e.splitDone) { e.hpMax *= Math.pow(1.5, m.ironboss); e.hp = e.hpMax; e.plate = Math.max(e.plate, 0.05 * e.plateBase); }
+  }
+  function endlessCleared(X, n) {
+    const c = X.chal, P = c.parent, E = endlessOf(P), key = endlessKey(c.def.map, c.def.star);
+    if (n <= (E.best[key] | 0)) return;
+    E.best[key] = n;
+    if (n % ENDLESS.every) return;
+    const g = grantMoon(P, ENDLESS.moon + (c.def.star | 0));
+    c.moon += g;
+    emit(X, 'endlessMilestone', { n, moon: g, muts: endlessMutList(c.order, n + 1).length });
+  }
+  function herdOf(towers) { const h = {}; for (const t of towers || []) h[t.race] = (h[t.race] | 0) + 1; return h; }
+  function endlessRecord(X) {
+    const c = X.chal, P = c.parent, E = endlessOf(P), key = endlessKey(c.def.map, c.def.star);
+    const w = X.cleared, out = { wave: w, star: c.def.star | 0, map: c.def.map, rank: 0, best: false, moon: c.moon | 0, muts: endlessMutList(c.order, w + 1) };
+    if (w < ENDLESS_FROM) return out;
+    const entry = { w, t: Math.round(c.t), d: c.date || 0, h: (X.hero && X.hero.id) || '', herd: herdOf(X.towers), m: out.muts.length };
+    const list = (E.top[key] || []).concat(entry).sort((a, b) => b.w - a.w || a.t - b.t || a.d - b.d).slice(0, ENDLESS.top);
+    E.top[key] = list;
+    out.rank = list.indexOf(entry) + 1;
+    out.best = out.rank === 1;
+    out.entry = entry;
+    return out;
+  }
+  function endlessInfo(P) {
+    const E = endlessOf(P);
+    return MAP_IDS.map(id => {
+      const star = starOf(P, id), best = {}, top = {};
+      for (let s = 0; s <= MAX_STARS; s++) { const k = endlessKey(id, s); if (E.best[k]) best[s] = E.best[k]; if (E.top[k] && E.top[k].length) top[s] = E.top[k]; }
+      return { id, name: MAPS[id].name, open: endlessUnlocked(P, id), star, best, top, cur: E.best[endlessKey(id, star)] | 0 };
+    });
+  }
+  function cleanEndless(o) {
+    const E = newEndless();
+    if (!o || typeof o !== 'object') return E;
+    const okKey = k => { const m = /^([a-z]+):(\d)$/.exec(k); return !!m && !!MAPS[m[1]] && +m[2] <= MAX_STARS; };
+    E.best = numMap(o.best, okKey, true);
+    E.runs = Math.max(0, o.runs | 0);
+    if (o.top && typeof o.top === 'object') for (const k in o.top) {
+      if (!okKey(k) || !Array.isArray(o.top[k])) continue;
+      const list = o.top[k].filter(x => x && typeof x === 'object' && (x.w | 0) >= ENDLESS_FROM).map(x => ({ w: x.w | 0, t: Math.max(0, x.t | 0), d: Math.max(0, +x.d || 0), h: HEROES[x.h] ? x.h : '', herd: numMap(x.herd, r => !!RACES[r], true), m: Math.max(0, x.m | 0) }));
+      list.sort((a, b) => b.w - a.w || a.t - b.t || a.d - b.d);
+      if (list.length) E.top[k] = list.slice(0, ENDLESS.top);
+    }
+    return E;
   }
   function tickPlay(S, dt) { const P = profileOf(S); if (P && P.stats && dt > 0 && dt < 5) P.stats.playActive += dt; }
   function statsSummary(S) {
@@ -1443,7 +1564,7 @@
       codex: { e: {}, b: {}, p: {} },
       stars: {}, moon: 0, moonTotal: 0, research: {}, presets: {}, heroUnlocks: { nova: 1 },
       slots: {}, rules: newRules(), lastSeen: 0,
-      ach: {}, feats: {}, bonus: newBonus(), daily: newDaily(), chalDone: {}, chalBest: {}, rp: 0, tokens: {}, cos: newCos(), chal: null, cm: null,
+      ach: {}, feats: {}, bonus: newBonus(), daily: newDaily(), chalDone: {}, chalBest: {}, rp: 0, tokens: {}, cos: newCos(), endless: newEndless(), chal: null, cm: null,
     };
     Object.assign(S, newBoard(map, S));
     return S;
@@ -1736,7 +1857,7 @@
   function effDmg(t) { return stats(t).dmg * (1 + ((t.buff && t.buff.dmg) || 0)); }
   function effRate(t) { return stats(t).rate * (1 + ((t.buff && t.buff.rate) || 0)) * (t.boomT > 0 ? 3 : 1) * (t.surgeT > 0 ? 1.25 : 1); }
 
-  function topWave(S) { return Math.min(MAX_WAVE, S.cleared + 1); }
+  function topWave(S) { return S.chal && S.chal.kind === 'endless' ? S.cleared + 1 : Math.min(MAX_WAVE, S.cleared + 1); }
 
   function startWave(S, n) {
     if (S.run) return false;
@@ -1766,7 +1887,7 @@
       fresh: n > S.cleared, over: null, rng: mulberry(hashSeed(S.seed, n, S.stats.played)), bossIds: [],
       enrageAt: (queue.length ? queue[queue.length - 1].t : 0) + 75 * Math.max(1, map.maxLen / BASE_LEN), windT: 0, gust: 0, gustWarn: 0, gustKind: '', gustDir: 1, gustOn: false,
     };
-    if (ch) chalRun(S, S.run, ch);
+    if (ch) (ch.kind === 'endless' ? endlessRun : chalRun)(S, S.run, ch);
     const ready = rl(S, 'abil_first') > 0;
     for (const t of S.towers) {
       t.cd = 0; t.sigT = 0; t.sigTs = {}; t.boomT = 0; t.bloodT = 0; t.surgeT = 0; t.stomp = 0; t.wDmg = 0; t.wKills = 0;
@@ -1820,6 +1941,7 @@
     if (run.cm && !e.boss) chalEnemy(run.cm, e);
     if (run.spdMul) e.speed *= run.spdMul;
     if (e.elite) applyElite(e, n);
+    if (run.mut) endlessEnemy(run, e);
     if (S.codex) {
       const box = e.boss ? S.codex.b : S.codex.e, key = e.boss ? e.bossDef.id : type;
       if (!box[key]) { box[key] = 1; emit(S, 'codex', { kind: e.boss ? 'b' : 'e', id: key, name: e.boss ? e.bossDef.name : def.name }); }
@@ -2009,6 +2131,10 @@
       fx(S, { k: 'ring', x: e.x, y: e.y, r: 70, c: '#6b5a8a', life: 0.6 });
     }
     const def = ENEMIES[e.type];
+    if (run.mut && run.mut.splitting && !e.boss && !def.split && e.type !== 'mini' && !e.mSplit) {
+      const P = run.route[e.path] || run.route[0];
+      for (let i = 0; i < 2; i++) spawnEnemy(S, run, 'mini', Math.min(P.len - 1, Math.max(SPAWN_GUARD + 1, e.d + 4 - i * 10)), { path: e.path, mSplit: true });
+    }
     if (def.split && !e.boss) {
       const P = run.route[e.path] || run.route[0];
       for (let i = 0; i < def.split.n; i++) {
@@ -2999,7 +3125,7 @@
       if (bossWave && S.settings && S.settings.speed >= 4) feat(S, 'x_fast');
       emit(S, 'won', { n: run.n, bonus, earned: run.earned, fresh: bonus > 0, lives: run.lives, moon, interest });
       S.run = null;
-      if (S.chal) { const c = S.chal; c.lives = run.lives; c.t += run.t; c.waves++; if (run.n >= c.to) chalFinish(S, 'won'); }
+      if (S.chal) { const c = S.chal; c.lives = run.lives; c.t += run.t; c.waves++; if (c.kind === 'endless') endlessCleared(S, run.n); else if (run.n >= c.to) chalFinish(S, 'won'); }
       checkAch(S);
     }
   }
@@ -3548,7 +3674,7 @@
       stats: S.stats, settings: S.settings, boards, codex: S.codex,
       stars: S.stars, moon: S.moon, moonTotal: S.moonTotal, research: S.research, presets: S.presets, heroUnlocks: S.heroUnlocks,
       slots: S.slots, rules: S.rules, lastSeen: S.lastSeen || 0,
-      ach: S.ach, feats: S.feats, daily: S.daily, chalDone: S.chalDone, chalBest: S.chalBest, rp: S.rp || 0, tokens: S.tokens, cos: S.cos,
+      ach: S.ach, feats: S.feats, daily: S.daily, chalDone: S.chalDone, chalBest: S.chalBest, rp: S.rp || 0, tokens: S.tokens, cos: S.cos, endless: S.endless,
     });
   }
 
@@ -3662,6 +3788,13 @@
       o.ver = 10;
       return o;
     },
+    10(o) {
+      o.endless = newEndless();
+      const st = o.settings && typeof o.settings === 'object' ? o.settings : (o.settings = Object.assign({}, DEFAULT_SETTINGS));
+      st.tut = 1;
+      o.ver = 11;
+      return o;
+    },
   };
   function cleanCodex(c) {
     const out = { e: {}, b: {}, p: {} };
@@ -3730,7 +3863,9 @@
   function cleanSettings(src) {
     const out = Object.assign({}, DEFAULT_SETTINGS);
     if (!src || typeof src !== 'object') return out;
-    for (const k of ['sound', 'shake', 'dmgNums']) if (k in src) out[k] = !!src[k];
+    for (const k of ['sound', 'shake', 'dmgNums', 'lowFx', 'cb', 'font']) if (k in src) out[k] = !!src[k];
+    if (UI_SCALES.indexOf(+src.ui) >= 0) out.ui = +src.ui;
+    out.tut = src.tut ? 1 : 0;
     if (isFinite(src.vol)) out.vol = Math.max(0, Math.min(1, +src.vol));
     if (NUM_FORMATS.indexOf(src.numFmt) >= 0) out.numFmt = src.numFmt;
     if (SPEEDS.indexOf(src.speed) >= 0) out.speed = src.speed;
@@ -3772,6 +3907,146 @@
     return b;
   }
 
+  const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  const CODE_TAG = 'NDS';
+  function utf8(str) {
+    const out = [];
+    for (let i = 0; i < str.length; i++) {
+      let c = str.charCodeAt(i);
+      if (c >= 0xd800 && c < 0xdc00 && i + 1 < str.length) { const d = str.charCodeAt(i + 1); if (d >= 0xdc00 && d < 0xe000) { c = 0x10000 + ((c - 0xd800) << 10) + (d - 0xdc00); i++; } }
+      if (c < 0x80) out.push(c);
+      else if (c < 0x800) out.push(0xc0 | (c >> 6), 0x80 | (c & 63));
+      else if (c < 0x10000) out.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+      else out.push(0xf0 | (c >> 18), 0x80 | ((c >> 12) & 63), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+    }
+    return out;
+  }
+  function unutf8(b) {
+    let s = '';
+    for (let i = 0; i < b.length;) {
+      const c = b[i++];
+      let u;
+      if (c < 0x80) u = c;
+      else if (c < 0xe0) u = ((c & 31) << 6) | (b[i++] & 63);
+      else if (c < 0xf0) { u = ((c & 15) << 12) | ((b[i] & 63) << 6) | (b[i + 1] & 63); i += 2; }
+      else { u = ((c & 7) << 18) | ((b[i] & 63) << 12) | ((b[i + 1] & 63) << 6) | (b[i + 2] & 63); i += 3; }
+      s += String.fromCodePoint(u);
+    }
+    return s;
+  }
+  function lzwPack(bytes) {
+    const dict = new Map();
+    let next = 256, width = 9, cur = -1, acc = 0, bits = 0;
+    const out = [];
+    const put = code => { acc |= code << bits; bits += width; while (bits >= 8) { out.push(acc & 255); acc >>>= 8; bits -= 8; } };
+    for (const b of bytes) {
+      if (cur < 0) { cur = b; continue; }
+      const key = cur * 256 + b;
+      const hit = dict.get(key);
+      if (hit !== undefined) { cur = hit; continue; }
+      put(cur);
+      if (next < 65536) { dict.set(key, next++); if (next > (1 << width) && width < 16) width++; }
+      cur = b;
+    }
+    if (cur >= 0) put(cur);
+    if (bits > 0) out.push(acc & 255);
+    return out;
+  }
+  function lzwUnpack(bytes, total) {
+    const dict = [];
+    for (let i = 0; i < 256; i++) dict.push([i]);
+    let width = 9, acc = 0, bits = 0, pos = 0, prev = null;
+    const out = [];
+    const get = () => { while (bits < width) { if (pos >= bytes.length) return -1; acc |= bytes[pos++] << bits; bits += 8; } const c = acc & ((1 << width) - 1); acc >>>= width; bits -= width; return c; };
+    while (out.length < total) {
+      const code = get();
+      if (code < 0) return null;
+      let e;
+      if (code < dict.length) e = dict[code];
+      else if (code === dict.length && prev) e = prev.concat(prev[0]);
+      else return null;
+      for (const b of e) out.push(b);
+      if (prev && dict.length < 65536) { dict.push(prev.concat(e[0])); }
+      if (dict.length + 1 > (1 << width) && width < 16) width++;
+      prev = e;
+    }
+    return out;
+  }
+  function toB64(bytes) {
+    let s = '';
+    for (let i = 0; i < bytes.length; i += 3) {
+      const n = (bytes[i] << 16) | ((bytes[i + 1] | 0) << 8) | (bytes[i + 2] | 0);
+      s += B64[(n >> 18) & 63] + B64[(n >> 12) & 63] + (i + 1 < bytes.length ? B64[(n >> 6) & 63] : '') + (i + 2 < bytes.length ? B64[n & 63] : '');
+    }
+    return s;
+  }
+  function fromB64(s) {
+    const out = [];
+    let acc = 0, bits = 0;
+    for (const ch of s) {
+      const v = B64.indexOf(ch);
+      if (v < 0) return null;
+      acc = (acc << 6) | v; bits += 6;
+      if (bits >= 8) { bits -= 8; out.push((acc >> bits) & 255); }
+    }
+    return out;
+  }
+  function checksum(str) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+    return (h >>> 0).toString(36).padStart(7, '0');
+  }
+  function exportCode(S) {
+    const P = profileOf(S);
+    const json = serialize(P);
+    const raw = utf8(json);
+    const body = toB64(lzwPack(raw));
+    const head = CODE_TAG + SAVE_VER + '.' + raw.length.toString(36) + '.';
+    return head + body + '.' + checksum(head + body);
+  }
+  function codePreview(o) {
+    const S = deserialize(JSON.stringify(o));
+    if (!S) return null;
+    const maps = MAP_IDS.map(id => { const b = boardOf(S, id); return { id, name: MAPS[id].name, cleared: b ? b.cleared : 0, stars: starOf(S, id), open: mapUnlocked(S, id) }; }).filter(m => m.open);
+    return {
+      ver: o.ver | 0, from: saveVersion(o), maps, stars: totalStars(S), moon: S.moon, kills: S.totalKills, ach: Object.keys(S.ach).length, achTotal: ACH.length,
+      heroes: HERO_IDS.filter(id => S.heroUnlocks[id]).map(id => HEROES[id].name), research: researchLevels(S), play: Math.round(S.stats.playActive + S.stats.playOffline),
+      endless: Object.keys(S.endless.best).length ? Math.max.apply(null, Object.values(S.endless.best)) : 0,
+    };
+  }
+  function parseCode(code) {
+    const txt = String(code || '').replace(/\s+/g, '');
+    if (!txt) return { ok: false, err: 'Paste a save code first.' };
+    let json = null;
+    if (txt.charAt(0) === '{') json = txt;
+    else {
+      const m = /^NDS(\d+)\.([0-9a-z]+)\.([A-Za-z0-9_-]+)\.([0-9a-z]+)$/.exec(txt);
+      if (!m) return { ok: false, err: 'That does not look like a Nightfall Defense save code.' };
+      const head = CODE_TAG + m[1] + '.' + m[2] + '.';
+      if (checksum(head + m[3]) !== m[4]) return { ok: false, err: 'The code is damaged: its checksum does not match. Copy it again in full.' };
+      if ((+m[1] | 0) > SAVE_VER) return { ok: false, err: 'This code comes from a newer version of the game.' };
+      const bytes = fromB64(m[3]);
+      const raw = bytes && lzwUnpack(bytes, parseInt(m[2], 36));
+      if (!raw) return { ok: false, err: 'The code could not be unpacked.' };
+      json = unutf8(raw);
+    }
+    let o;
+    try { o = JSON.parse(json); } catch (e) { return { ok: false, err: 'The code holds no readable save.' }; }
+    const ver = o && typeof o === 'object' ? saveVersion(o) : 0;
+    if (!ver) return { ok: false, err: 'The code holds no readable save.' };
+    if (ver > SAVE_VER) return { ok: false, err: 'This code comes from a newer version of the game.' };
+    let pv = null;
+    try { pv = codePreview(JSON.parse(json)); } catch (e) { pv = null; }
+    if (!pv) return { ok: false, err: 'The save inside the code could not be read.' };
+    pv.from = ver;
+    return { ok: true, json, preview: pv };
+  }
+  function importCode(code) {
+    const r = parseCode(code);
+    if (!r.ok) return null;
+    const S = deserialize(r.json);
+    return S ? serialize(S) : null;
+  }
   function deserialize(str) {
     const o = migrate(JSON.parse(str));
     if (!o) return null;
@@ -3798,6 +4073,7 @@
     S.rp = Math.max(0, Math.floor(+o.rp || 0));
     S.tokens = cleanFlags(o.tokens, TOKENS);
     S.cos = cleanCos(o.cos);
+    S.endless = cleanEndless(o.endless);
     recalcBonus(S);
     setNumFormat(S.settings.numFmt);
     const src = o.boards && typeof o.boards === 'object' ? o.boards : {};
@@ -3857,7 +4133,7 @@
     upgradeOptions, buyMaxAffordable, maxAffordablePreview, nodeInfo, topWave, bossStatus,
     stats, computeStats, effDmg, effRate, refreshBuffs, startWave, step, canHit, isMagic, isFly, isFast, isHidden,
     lightFor, lightSources, stackBuff, priceOf, spawnEnemy,
-    serialize, deserialize, migrate, cleanSettings, fmt, setNumFormat, pct, mulberry, hashSeed,
+    serialize, deserialize, migrate, cleanSettings, UI_SCALES, exportCode, parseCode, importCode, checksum, lzwPack, lzwUnpack, utf8, unutf8, fmt, setNumFormat, pct, mulberry, hashSeed,
     MAP_BOSSES, UNLOCK_AT, lightAt, crossings, placeBlockReason, switchMap, mapUnlocked, mapCleared, boardOf, newBoard, mapStartCash, activeTricks,
     ENEMY_IDS, ELITE, MECH, COMBOS, armorFor, mechOf, codexList, cleanCodex, firstSeen, themeRule, damage, kill,
     MAX_STARS, STAR, STAR_MODS, BRANCHES, RESEARCH, RESEARCH_BY_ID, rl, starOf, starMods, starHpMul, researchLevels, starSpeedMul, starCashMul,
@@ -3875,6 +4151,7 @@
     chalRaces, chalHas, chalBlock, startChallenge, quitChallenge, chalFinish, chalScore, chalInfo, chalStartCash, tickPlay, statsSummary, newDaily,
     COS_SLOTS, COS_KINDS, COSMETICS, COS_BY_ID, FX_THEMES, SEASONS, TITLES, PONY_NAMES, LORE, newCos, cleanCos, cosOf, totalStars, cosUnlocked, cosHow, cosList, cosNew, markCosSeen, buyCos,
     setSkin, lookOf, setFxTheme, fxThemeOf, seasonFor, setDecor, decorPick, decorOf, ponyLevel, titleOf, titleNext, ponyName, renameTower, suggestName,
+    ENDLESS, ENDLESS_FROM, ENDLESS_MUTS, ENDLESS_MUT_IDS, newEndless, endlessOf, endlessKey, endlessUnlocked, endlessDef, startEndless, endlessMuts, endlessMutList, endlessInfo, cleanEndless, herdOf,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.NDCore = API;
