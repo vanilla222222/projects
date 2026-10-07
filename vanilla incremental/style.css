@@ -164,3 +164,14 @@ section[data-tab="forest"] { --c: #4f8a5b; flex-wrap: nowrap; }
 .tree .burn:hover { border-color: #e0663a; color: #e0663a; }
 .tree .burn[hidden] { visibility: hidden; display: block; }
 .tree .chop.grow:disabled { opacity: .8; }
+section[data-tab="mill"] { --c: #b08850; flex-wrap: nowrap; }
+#plankWrap { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; flex: 1 1 0; min-width: 0; align-items: start; }
+#plankWrap .masterybox { width: auto; }
+#plankWrap .allochead { flex-wrap: wrap; }
+@media (max-width: 1500px) { #plankWrap { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 1100px) { #plankWrap { grid-template-columns: 1fr; } }
+@media (max-width: 800px) { section[data-tab="mill"] { flex-wrap: wrap; } #plankWrap { flex-basis: 100%; } }
+#saws .slot.on { border-color: var(--sc); }
+#saws .slot.on .bar div { background: var(--sc); }
+.wcat { background: var(--panel2); border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 3px 12px; font-weight: 700; }
+.wcat[hidden] { display: none; }

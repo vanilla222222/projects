@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vanilla Incremental</title>
-<link rel="stylesheet" href="style.css?v=19">
+<link rel="stylesheet" href="style.css?v=20">
 </head>
 <body>
 <header class="top">
@@ -88,7 +88,7 @@
     <div class="smeltcol">
     <div class="masterybox">
       <h2>Forest</h2>
-      <p class="hint">Click a tree to chop it. Felled trees give logs and regrow as a random new tree. Burn a tree that is too tough to clear it for no logs. Logs and forest upgrades are kept on rebirth.</p>
+      <p class="hint">Click a tree to chop it. Felled trees give logs and regrow as a random new tree. Burn a tree to clear it for Charcoal instead of logs: tougher trees give more Charcoal. Logs and forest upgrades are kept on rebirth.</p>
       <p class="hint" id="forestInfo"></p>
       <div class="slots trees" id="trees"></div>
     </div>
@@ -98,6 +98,18 @@
     </div>
     </div>
     <div class="upgrades" id="woodCards"></div>
+  </section>
+  <section class="tab" data-tab="mill" hidden>
+    <div class="smeltcol">
+    <div class="masterybox">
+      <h2>Sawmill</h2>
+      <p class="hint">Click a saw to choose which logs it cuts. Each cut takes 10 logs and some Charcoal when it starts. Burn trees in the Forest to get Charcoal. Planks and plank upgrades are kept on rebirth.</p>
+      <p class="hint" id="millInfo"></p>
+      <div class="slots" id="saws"></div>
+      <div class="recipepick" id="sawPick" hidden></div>
+    </div>
+    </div>
+    <div id="plankWrap"></div>
   </section>
   <section class="tab" data-tab="ach" hidden>
     <div class="masterybox">
@@ -126,6 +138,6 @@
     <button type="button" class="rbbtn" id="offOk"><b>Collect</b></button>
   </div>
 </div>
-<script src="game.js?v=19"></script>
+<script src="game.js?v=20"></script>
 </body>
 </html>
