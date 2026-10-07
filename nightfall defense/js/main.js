@@ -2367,7 +2367,7 @@
     else {
       h = '<div class="mwrap"><table class="mtable lbtable" id="lbTable"><thead><tr><th>#</th><th>Wave</th><th>Time</th><th>Date</th><th>Hero</th><th>Herd</th><th>Mutators</th></tr></thead><tbody>';
       rows.forEach((r, i) => {
-        h += '<tr class="' + (i === 0 ? 'top' : '') + '"><td>' + (i + 1) + '</td><td><b>' + r.w + '</b></td><td>' + fmtTime(r.t) + '</td><td>' + (r.d ? esc(new Date(r.d).toLocaleDateString()) : '-') + '</td><td>' + (r.h && C.HEROES[r.h] ? esc(C.HEROES[r.h].name) : 'None') + '</td><td class="herds">' + herdHtml(r.herd || {}) + '</td><td>' + r.m + '</td></tr>';
+        h += '<tr class="' + (i === 0 ? 'lbtop' : '') + '"><td>' + (i + 1) + '</td><td><b>' + r.w + '</b></td><td>' + fmtTime(r.t) + '</td><td>' + (r.d ? esc(new Date(r.d).toLocaleDateString()) : '-') + '</td><td>' + (r.h && C.HEROES[r.h] ? esc(C.HEROES[r.h].name) : 'None') + '</td><td class="herds">' + herdHtml(r.herd || {}) + '</td><td>' + r.m + '</td></tr>';
       });
       h += '</tbody></table></div>';
     }
@@ -2534,7 +2534,7 @@
     if (!card || !tut.el) return;
     const r = tut.el.getBoundingClientRect(), h = card.offsetHeight + 24, vh = window.innerHeight;
     const top = r.bottom > vh - h && r.top > h;
-    if (card.classList.contains('top') !== top) card.classList.toggle('top', top);
+    if (card.classList.contains('attop') !== top) card.classList.toggle('attop', top);
   }
   function startTut() {
     if (S.chal) { A.play('deny'); banner('Finish the challenge before replaying the tutorial', 'bad'); return false; }

@@ -1672,7 +1672,7 @@ async function fastForward(page, maxSeconds) {
       });
       await page.click('#lbBtn');
       await page.waitForTimeout(250);
-      const a = await page.evaluate(() => ({ open: !document.getElementById('lbModal').hidden, maps: document.querySelectorAll('#lbMaps button').length, stars: document.querySelectorAll('#lbStars button').length, rows: Array.from(document.querySelectorAll('#lbTable tbody tr')).map(r => r.cells[1].textContent), top: document.querySelectorAll('#lbTable tr.top').length, herd: document.querySelectorAll('#lbTable .herd').length, cols: Array.from(document.querySelectorAll('#lbTable th')).map(t => t.textContent).join(',') }));
+      const a = await page.evaluate(() => ({ open: !document.getElementById('lbModal').hidden, maps: document.querySelectorAll('#lbMaps button').length, stars: document.querySelectorAll('#lbStars button').length, rows: Array.from(document.querySelectorAll('#lbTable tbody tr')).map(r => r.cells[1].textContent), top: document.querySelectorAll('#lbTable tr.lbtop').length, herd: document.querySelectorAll('#lbTable .herd').length, cols: Array.from(document.querySelectorAll('#lbTable th')).map(t => t.textContent).join(',') }));
       ok(a.open && a.maps === 5 && a.stars === 5 && a.rows.join() === '142,131,118' && a.top === 1 && a.herd === 8 && /Wave,Time,Date,Hero,Herd/.test(a.cols), 'leaderboard table ' + JSON.stringify(a));
       const f0 = await fitCheck(page);
       ok(f0.scroll && !f0.bad.length, 'leaderboard fits ' + JSON.stringify(f0));

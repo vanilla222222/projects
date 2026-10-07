@@ -889,7 +889,7 @@ button:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visi
 .mapcard .mend { font-size: 11px; font-weight: 700; color: var(--accent2); }
 .dialog.lbdlg { max-width: 820px; }
 .lbstars { margin-top: 0; }
-.lbtable tr.top td { color: var(--gold); }
+.lbtable tr.lbtop td { color: var(--gold); }
 .lbtable td.herds { white-space: normal; }
 .herd { display: inline-block; margin: 1px 0 1px 3px; padding: 0 5px; border-radius: 999px; border: 1px solid var(--rc); font-size: 11px; font-weight: 700; color: var(--ink); }
 .lbempty { padding: 18px 0; text-align: center; }
@@ -913,7 +913,7 @@ button:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visi
 .tuthead { display: flex; align-items: center; gap: 8px; }
 .tutstep { flex: 1; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--accent2); }
 .tuthead .ghost { padding: 4px 8px; font-size: 12px; }
-.tutcard.top { top: 16px; bottom: auto; }
+.tutcard.attop { top: 16px; bottom: auto; }
 .tutcard p { margin: 6px 0 0; font-size: 13px; }
 .tutcard .dactions { margin-top: 8px; }
 .tutcard .primary[hidden] { display: none; }
@@ -930,6 +930,6 @@ body.lowfx *, body.lowfx *::before, body.lowfx *::after { animation-duration: 0s
   .setbtns { grid-template-columns: 1fr; }
   .endlist { grid-template-columns: 1fr; }
   .tutcard { bottom: 10px; }
-  .tutcard.top { top: 10px; bottom: auto; }
+  .tutcard.attop { top: 10px; bottom: auto; }
 }
 @media (prefers-reduced-motion: reduce) { .tutfocus { animation: none; } }
