@@ -2526,6 +2526,15 @@
     nb.hidden = !s.next && !s.last;
     nb.textContent = s.last ? 'Got it' : 'Next';
     tut.base = tutBase();
+    if (tut.el && tut.el.scrollIntoView) { const r = tut.el.getBoundingClientRect(); if (r.bottom < 0 || r.top > window.innerHeight) tut.el.scrollIntoView({ block: 'center' }); }
+    tutPlace();
+  }
+  function tutPlace() {
+    const card = document.querySelector('.tutcard');
+    if (!card || !tut.el) return;
+    const r = tut.el.getBoundingClientRect(), h = card.offsetHeight + 24, vh = window.innerHeight;
+    const top = r.bottom > vh - h && r.top > h;
+    if (card.classList.contains('top') !== top) card.classList.toggle('top', top);
   }
   function startTut() {
     if (S.chal) { A.play('deny'); banner('Finish the challenge before replaying the tutorial', 'bad'); return false; }
@@ -2555,6 +2564,7 @@
     const hide = !!S.chal || anyModalOpen();
     if ($('tut').hidden !== hide) $('tut').hidden = hide;
     if (hide) return;
+    tutPlace();
     const s = TUT[tut.step];
     if (s.done && s.done(tut.base)) tutAdvance();
   }
