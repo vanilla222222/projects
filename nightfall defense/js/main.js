@@ -228,7 +228,7 @@
   }
 
   window.addEventListener('keydown', ev => {
-    if (ev.target && /INPUT|TEXTAREA|SELECT/.test(ev.target.tagName)) return;
+    if (ev.target && /INPUT|TEXTAREA|SELECT/.test(ev.target.tagName) && !(ev.key === 'Escape' && (ev.target.tagName === 'SELECT' || ev.target.type === 'checkbox'))) return;
     if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
     const k = ev.key.length === 1 ? ev.key.toLowerCase() : ev.key;
     if (k === 'Shift') { ui.showAll = true; return; }
@@ -2101,6 +2101,7 @@
   function buildWardrobe() {
     for (const b of document.querySelectorAll('#wardTabs [data-wtab]')) { const on = b.dataset.wtab === wardUi.tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
     const all = C.COSMETICS, owned = all.filter(c => C.cosUnlocked(S, c)).length;
+    wardUi.key = (prof().moon | 0) + ':' + owned;
     $('wardMoon').textContent = C.fmt(prof().moon | 0) + ' Moonstones · ' + owned + ' / ' + all.length + ' cosmetics';
     const body = $('wardBody');
     const keep = body.scrollTop;
@@ -2133,6 +2134,7 @@
     R.cos.names = C.cosOf(S).names;
     const season = C.decorOf(S, S.map);
     if (season !== R.cos.season) { R.cos.season = season; R.buildBg(cw, ch, dpr, C.mapOf(S)); }
+    if (!$('wardrobeModal').hidden && wardUi.key !== (prof().moon | 0) + ':' + C.COSMETICS.filter(c => C.cosUnlocked(S, c)).length) buildWardrobe();
   }
   function cosChanged() { syncCos(); writeSave(); buildWardrobe(); ui.infoKey = ''; }
   function openWardrobe(race, tab) {
