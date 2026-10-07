@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vanilla Incremental</title>
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 <header class="top">
@@ -41,7 +41,26 @@
       <div class="mastlist" id="masteryList"></div>
     </div>
   </section>
+  <section class="tab" data-tab="rebirth" hidden>
+    <div class="masterybox">
+      <h2>Rebirth</h2>
+      <p class="hint">Every ore you dig this run is worth points: Dirt 1, Stone 2, Copper 3 … Obsidian 8. Rebirth resets your ores, upgrades, mastery and autominer levels. Unlocks stay.</p>
+      <div class="rbstats">
+        <div><small>Points this run</small><b id="rbPoints">0</b></div>
+        <div><small>Needed</small><b id="rbNeed">0</b></div>
+        <div><small>Rebirths</small><b id="rbCount">0</b></div>
+      </div>
+      <button type="button" class="rbbtn" id="rebirthBtn"><b>Rebirth</b><span id="rbGain"></span></button>
+      <p class="hint" id="rbNext"></p>
+    </div>
+    <div class="masterybox">
+      <h2>Ore points</h2>
+      <p class="hint">Spend ore points to make an ore more common. Move them around freely, any time. New layers use the new weights. Shift-click moves 10.</p>
+      <div class="allochead"><span><b id="rbFree">0</b> free of <b id="rbTotal">0</b></span><button type="button" class="upg" id="allocReset">Refund all</button></div>
+      <div class="alloclist" id="allocList"></div>
+    </div>
+  </section>
 </main>
-<script src="game.js?v=3"></script>
+<script src="game.js?v=4"></script>
 </body>
 </html>

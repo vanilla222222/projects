@@ -69,6 +69,24 @@ main { padding: 16px; }
 .mast:disabled { opacity: .55; cursor: default; }
 .mast small { color: var(--dim); }
 .mlvl { font-variant-numeric: tabular-nums; }
+.rbstats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
+.rbstats div { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; display: flex; flex-direction: column; }
+.rbstats small { color: var(--dim); font-size: 11px; }
+.rbbtn { width: 100%; display: flex; justify-content: space-between; align-items: center; background: var(--accent); color: #221a08; border: 0; border-radius: 8px; padding: 10px 14px; font-size: 15px; }
+.rbbtn:disabled { background: var(--panel2); color: var(--dim); cursor: default; }
+.allochead { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; }
+.allochead .upg { width: auto; margin: 0; }
+.alloclist { display: grid; gap: 6px; }
+.alloc { display: grid; grid-template-columns: 16px 1fr 28px 34px 28px; grid-template-areas: "d n m c p" ". w w w w"; align-items: center; gap: 4px 8px; background: var(--panel2); border: 1px solid var(--line); border-left: 3px solid var(--c); border-radius: 8px; padding: 6px 10px; }
+.alloc .dot { grid-area: d; }
+.aname { grid-area: n; }
+.aname small { color: var(--dim); font-size: 11px; }
+.alloc .step:first-of-type { grid-area: m; }
+.alloc .step:last-of-type { grid-area: p; }
+.acount { grid-area: c; text-align: center; font-variant-numeric: tabular-nums; }
+.aw { grid-area: w; color: var(--dim); font-size: 12px; }
+.step { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; height: 28px; font-weight: 700; }
+.step:disabled { opacity: .35; cursor: default; }
 @media (max-width: 600px) {
   main { padding: 10px; }
   .top { gap: 8px; }

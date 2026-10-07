@@ -3,16 +3,20 @@
   const SIZE = 10;
 
   const ORES = [
-    { id: 'dirt', name: 'Dirt', color: '#8a6142', weight: 400 },
-    { id: 'stone', name: 'Stone', color: '#8e8c94', weight: 250 },
-    { id: 'copper', name: 'Copper', color: '#d27a3e', weight: 130 },
-    { id: 'iron', name: 'Iron', color: '#b8a59a', weight: 90 },
-    { id: 'gold', name: 'Gold', color: '#f0c43c', weight: 55 },
-    { id: 'silver', name: 'Silver', color: '#d8e2ee', weight: 42 },
-    { id: 'diamond', name: 'Diamond', color: '#6fe3f0', weight: 23 },
-    { id: 'obsidian', name: 'Obsidian', color: '#7a4fc0', weight: 10 },
+    { id: 'dirt', name: 'Dirt', color: '#8a6142', weight: 40 },
+    { id: 'stone', name: 'Stone', color: '#8e8c94', weight: 25 },
+    { id: 'copper', name: 'Copper', color: '#d27a3e', weight: 13 },
+    { id: 'iron', name: 'Iron', color: '#b8a59a', weight: 9 },
+    { id: 'gold', name: 'Gold', color: '#f0c43c', weight: 5.5 },
+    { id: 'silver', name: 'Silver', color: '#d8e2ee', weight: 4.2 },
+    { id: 'diamond', name: 'Diamond', color: '#6fe3f0', weight: 2.3 },
+    { id: 'obsidian', name: 'Obsidian', color: '#7a4fc0', weight: 1 },
   ];
-  const TOTAL_WEIGHT = ORES.reduce((s, o) => s + o.weight, 0);
+  ORES.forEach((o, i) => { o.points = i + 1; o.perPoint = i >= 6 ? 0.25 : i >= 4 ? 0.5 : 1; });
+  let ALLOC = {};
+  const oreWeight = o => o.weight + (ALLOC[o.id] || 0) * o.perPoint;
+  const totalWeight = () => ORES.reduce((s, o) => s + oreWeight(o), 0);
+  const REBIRTH = { min: 1e8 };
 
   const UPGRADES = [
     { id: 'mult', label: o => `+1 ${o.name} multiplier`, cost: 10, growth: 1.35 },
@@ -24,6 +28,7 @@
   const UNIQUES = {
     dirt: { label: 'Unlock Mastery' },
     stone: { label: 'Unlock Autominer' },
+    copper: { label: 'Unlock Rebirth', cost: 100000 },
   };
 
   const MASTERY = { cost: 100000, growth: 10 };
@@ -35,21 +40,22 @@
   const TABS = [
     { id: 'mines', name: 'Mines' },
     { id: 'mastery', name: 'Mastery', unlock: () => S.ores.dirt.unique > 0 },
+    { id: 'rebirth', name: 'Rebirth', unlock: () => S.ores.copper.unique > 0 },
     { id: 'soon', name: 'Coming soon', locked: true },
   ];
 
   const $ = id => document.getElementById(id);
 
   function fresh() {
-    const S = { tab: 'mines', layer: 1, grid: null, ores: {}, auto: { bulk: 0, speed: 0 } };
-    for (const o of ORES) S.ores[o.id] = { amt: 0, total: 0, found: 0, mult: 0, base: 0, exp: 0, unique: 0, mastery: 0 };
+    const S = { tab: 'mines', layer: 1, grid: null, ores: {}, auto: { bulk: 0, speed: 0 }, rb: { count: 0, points: 0, alloc: {} } };
+    for (const o of ORES) S.ores[o.id] = { amt: 0, total: 0, run: 0, found: 0, mult: 0, base: 0, exp: 0, unique: 0, mastery: 0 };
     S.grid = newGrid();
     return S;
   }
 
   function rollOre() {
-    let r = Math.random() * TOTAL_WEIGHT;
-    for (const o of ORES) { r -= o.weight; if (r < 0) return o.id; }
+    let r = Math.random() * totalWeight();
+    for (const o of ORES) { r -= oreWeight(o); if (r < 0) return o.id; }
     return ORES[0].id;
   }
 
@@ -67,6 +73,12 @@
       const d = JSON.parse(raw);
       if (typeof d.layer === 'number') S.layer = d.layer;
       if (typeof d.tab === 'string' && TABS.some(t => t.id === d.tab && !t.locked)) S.tab = d.tab;
+      if (d.rb) {
+        for (const k of ['count', 'points']) if (typeof d.rb[k] === 'number' && isFinite(d.rb[k])) S.rb[k] = d.rb[k];
+        if (d.rb.alloc) for (const o of ORES) if (typeof d.rb.alloc[o.id] === 'number' && d.rb.alloc[o.id] > 0) S.rb.alloc[o.id] = Math.floor(d.rb.alloc[o.id]);
+        let used = 0;
+        for (const o of ORES) { const a = Math.min(S.rb.alloc[o.id] || 0, S.rb.points - used); S.rb.alloc[o.id] = a; used += a; }
+      }
       if (d.auto) for (const k of ['bulk', 'speed']) if (typeof d.auto[k] === 'number' && isFinite(d.auto[k])) S.auto[k] = d.auto[k];
       if (Array.isArray(d.grid) && d.grid.length === SIZE * SIZE && d.grid.every(c => c && S.ores[c.ore])) S.grid = d.grid.map(c => ({ ore: c.ore, dug: c.dug ? 1 : 0 }));
       for (const o of ORES) {
@@ -79,6 +91,7 @@
   }
 
   let S = load();
+  ALLOC = S.rb.alloc;
 
   function save() {
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {}
@@ -104,7 +117,10 @@
   const autoCost = k => Math.ceil(AUTO[k].cost * Math.pow(AUTO[k].growth, S.auto[k]));
   const autoMaxed = k => k === 'bulk' ? S.auto.bulk >= AUTO.bulk.max : autoInterval() <= AUTO.speed.min;
 
-  function cost(u, lvl) { return Math.ceil(u.cost * Math.pow(u.growth, lvl)); }
+  function cost(u, lvl, oreId) {
+    const c = u.id === 'unique' && UNIQUES[oreId] && UNIQUES[oreId].cost || u.cost;
+    return Math.ceil(c * Math.pow(u.growth, lvl));
+  }
 
   const isSoon = (oreId, u) => u.id === 'unique' && !UNIQUES[oreId];
   const isMaxed = (st, u) => u.max && st[u.id] >= u.max;
@@ -113,7 +129,7 @@
     if (isSoon(oreId, u)) return;
     const st = S.ores[oreId];
     if (isMaxed(st, u)) return;
-    const c = cost(u, st[u.id]);
+    const c = cost(u, st[u.id], oreId);
     if (st.amt < c) return;
     st.amt -= c;
     st[u.id]++;
@@ -146,6 +162,7 @@
     const g = oreGain(cell.ore);
     st.amt += g;
     st.total += g;
+    st.run += g;
     if (!st.found++) buildTabs();
     return g;
   }
@@ -277,7 +294,7 @@
       const card = document.createElement('div');
       card.className = 'ore';
       card.style.setProperty('--c', o.color);
-      card.innerHTML = `<div class="orehead"><span class="dot" style="background:${o.color}"></span><h3>${o.name}</h3><span>${(o.weight / TOTAL_WEIGHT * 100).toFixed(1)}%</span></div><div class="stats"></div>`;
+      card.innerHTML = `<div class="orehead"><span class="dot" style="background:${o.color}"></span><h3>${o.name}</h3><span class="chance"></span></div><div class="stats"></div>`;
       const btns = UPGRADES.map(u => {
         const b = document.createElement('button');
         b.type = 'button';
@@ -288,7 +305,7 @@
         return b;
       });
       box.appendChild(card);
-      cardEls[o.id] = { card, stats: card.querySelector('.stats'), btns };
+      cardEls[o.id] = { card, stats: card.querySelector('.stats'), chance: card.querySelector('.chance'), btns };
     }
   }
 
@@ -298,13 +315,14 @@
       const el = cardEls[o.id];
       const found = st.found > 0;
       el.card.classList.toggle('locked', !found);
+      el.chance.textContent = (oreWeight(o) / totalWeight() * 100).toFixed(1) + '%';
       el.stats.innerHTML = found
         ? `Per tile: <b>${fmt(oreGain(o.id))}</b> = (<b>${fmt(oreBase(o.id))}</b> × <b>${fmt(oreMult(o.id))}</b>)^<b>${oreExp(o.id).toFixed(2)}</b>${st.mastery ? ` × <b>${fmt(oreMastery(o.id))}</b>` : ''}`
         : 'Not discovered yet';
       UPGRADES.forEach((u, i) => {
         const b = el.btns[i];
         const lvl = st[u.id];
-        const c = cost(u, lvl);
+        const c = cost(u, lvl, o.id);
         const soon = isSoon(o.id, u);
         const maxed = isMaxed(st, u);
         b.querySelector('span').textContent = u.label(o) + (soon || u.max || !lvl ? '' : ` (${lvl})`);
@@ -329,7 +347,7 @@
       b.textContent = t.name;
       b.dataset.tab = t.id;
       b.disabled = !!t.locked;
-      b.addEventListener('click', () => { S.tab = t.id; renderTabs(); renderMastery(); });
+      b.addEventListener('click', () => { S.tab = t.id; renderTabs(); renderMastery(); renderRebirth(); });
       nav.appendChild(b);
     }
   }
@@ -385,11 +403,82 @@
     }
   }
 
+  const runPoints = () => ORES.reduce((s, o) => s + S.ores[o.id].run * o.points, 0);
+  const rebirthGain = p => p >= REBIRTH.min ? Math.floor(Math.log10(p / REBIRTH.min)) + 1 : 0;
+  const allocUsed = () => ORES.reduce((s, o) => s + (S.rb.alloc[o.id] || 0), 0);
+
+  function doRebirth() {
+    const gain = rebirthGain(runPoints());
+    if (!gain || !confirm(`Rebirth for ${gain} ore point${gain > 1 ? 's' : ''}? Your ores, upgrades, mastery and autominer levels reset.`)) return;
+    S.rb.count++;
+    S.rb.points += gain;
+    for (const o of ORES) Object.assign(S.ores[o.id], { amt: 0, run: 0, mult: 0, base: 0, exp: 0, mastery: 0 });
+    S.auto = { bulk: 0, speed: 0 };
+    clearTimeout(layerTimer);
+    layerTimer = 0;
+    S.layer = 1;
+    S.grid = newGrid();
+    renderGrid();
+    save();
+    renderAll(true);
+  }
+
+  function shiftAlloc(oreId, d) {
+    const cur = S.rb.alloc[oreId] || 0;
+    const n = Math.max(0, Math.min(cur + d, cur + S.rb.points - allocUsed()));
+    if (n === cur) return;
+    S.rb.alloc[oreId] = n;
+    renderAll(true);
+  }
+
+  const allocEls = {};
+  function buildRebirth() {
+    $('rebirthBtn').addEventListener('click', doRebirth);
+    $('allocReset').addEventListener('click', () => { for (const o of ORES) S.rb.alloc[o.id] = 0; renderAll(true); });
+    const box = $('allocList');
+    for (const o of ORES) {
+      const row = document.createElement('div');
+      row.className = 'alloc';
+      row.style.setProperty('--c', o.color);
+      row.innerHTML = `<span class="dot" style="background:${o.color}"></span><span class="aname">${o.name} <small>${o.points} pt · +${o.perPoint} weight per point</small></span><button type="button" class="step">−</button><b class="acount"></b><button type="button" class="step">+</button><span class="aw"></span>`;
+      const [minus, plus] = row.querySelectorAll('.step');
+      minus.addEventListener('click', e => shiftAlloc(o.id, e.shiftKey ? -10 : -1));
+      plus.addEventListener('click', e => shiftAlloc(o.id, e.shiftKey ? 10 : 1));
+      box.appendChild(row);
+      allocEls[o.id] = { row, minus, plus, count: row.querySelector('.acount'), w: row.querySelector('.aw') };
+    }
+  }
+
+  function renderRebirth() {
+    if (S.tab !== 'rebirth') return;
+    const p = runPoints();
+    const gain = rebirthGain(p);
+    $('rbPoints').textContent = fmt(p);
+    $('rbNeed').textContent = fmt(REBIRTH.min);
+    $('rbCount').textContent = S.rb.count;
+    $('rbGain').textContent = gain ? `+${gain} ore point${gain > 1 ? 's' : ''}` : `Need ${fmt(REBIRTH.min)} points`;
+    $('rbNext').textContent = gain ? `Next point at ${fmt(REBIRTH.min * Math.pow(10, gain))}` : '';
+    $('rebirthBtn').disabled = !gain;
+    const free = S.rb.points - allocUsed();
+    $('rbFree').textContent = free;
+    $('rbTotal').textContent = S.rb.points;
+    const tw = totalWeight();
+    for (const o of ORES) {
+      const el = allocEls[o.id];
+      const a = S.rb.alloc[o.id] || 0;
+      el.count.textContent = a;
+      el.minus.disabled = !a;
+      el.plus.disabled = !free;
+      el.w.textContent = `${+oreWeight(o).toFixed(2)} weight · ${(oreWeight(o) / tw * 100).toFixed(1)}%`;
+    }
+  }
+
   function renderAll(skipGrid) {
     renderWallet();
     renderUpgrades();
     renderMastery();
     renderAuto();
+    renderRebirth();
     updateMineHead();
     if (!skipGrid) renderTabs();
   }
@@ -398,6 +487,7 @@
   $('resetBtn').addEventListener('click', () => {
     if (!confirm('Erase all progress?')) return;
     S = fresh();
+    ALLOC = S.rb.alloc;
     save();
     buildTabs();
     renderGrid();
@@ -410,6 +500,7 @@
   buildWallet();
   buildUpgrades();
   buildMastery();
+  buildRebirth();
   renderGrid();
   renderAll();
   requestAnimationFrame(tick);
