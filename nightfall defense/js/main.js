@@ -17,6 +17,7 @@
   }
   let seenReady = false;
   function writeSave() {
+    if (ui.noSave) return false;
     if (seenReady && !ui.away) C.touchSeen(prof(), Date.now());
     try { localStorage.setItem(SAVE_KEY, C.serialize(prof())); return true; } catch (err) { return false; }
   }
@@ -234,6 +235,9 @@
     if (k === 'Shift') { ui.showAll = true; return; }
     if (!$('awayModal').hidden) { if (k === 'Escape' || k === 'Enter') { ev.preventDefault(); claimAway(); } return; }
     if (!$('chalEndModal').hidden) { if (k === 'Escape' || k === 'Enter') { ev.preventDefault(); closeChalEnd(false); } return; }
+    if (!$('creditsModal').hidden) { if (k === 'Escape') closeCredits(); return; }
+    if (!$('codeModal').hidden) { if (k === 'Escape') closeCode(); return; }
+    if (!$('lbModal').hidden) { if (k === 'Escape' || k === 'l') closeLb(); return; }
     if (!$('chalModal').hidden) { if (k === 'Escape' || k === 'g') closeChal(); return; }
     if (!$('achModal').hidden) { if (k === 'Escape' || k === 'a') closeAch(); return; }
     if (!$('statsModal').hidden) { if (k === 'Escape' || k === 't') closeStats(); return; }
@@ -262,6 +266,7 @@
     else if (k === 'a') openAch();
     else if (k === 't') openStats();
     else if (k === 'k') openWardrobe();
+    else if (k === 'l') openLb();
     else if (k === 'u') {
       const h = ui.hoverId && S.towers.find(q => q.id === ui.hoverId);
       if (h) { ui.selId = h.id; ui.placing = null; updateHint(); ui.infoKey = ''; refreshInfo(); }
@@ -426,7 +431,7 @@
     const ch = S.chal;
     $('wLabel').textContent = 'Wave ' + n + (n === C.MAX_WAVE ? ' (final)' : '');
     const sub = $('wSub');
-    sub.textContent = ch ? (ch.over ? 'Challenge over' : 'Challenge wave ' + (n - ch.from + 1) + ' of ' + (ch.to - ch.from + 1)) : fresh ? 'New wave: first clear pays a bonus' : 'Replay: kill cash only';
+    sub.textContent = ch ? (ch.over ? (ch.kind === 'endless' ? 'Endless run over' : 'Challenge over') : ch.kind === 'endless' ? 'Endless: next mutator at wave ' + nextMutAt(n) : 'Challenge wave ' + (n - ch.from + 1) + ' of ' + (ch.to - ch.from + 1)) : fresh ? 'New wave: first clear pays a bonus' : 'Replay: kill cash only';
     sub.className = 'ws' + (fresh ? ' new' : '');
     $('wPrev').disabled = !!S.run || S.sel <= 1;
     $('wNext').disabled = !!S.run || S.sel >= top;
@@ -453,7 +458,7 @@
     sb.disabled = !!S.run || !!(ch && ch.over);
     sb.textContent = S.run ? 'Wave ' + S.run.n + ' running' : ch ? (ch.over ? 'Challenge over' : (ui.autoNext > 0 ? 'Auto-starting Wave ' + S.sel + '...' : 'Start Wave ' + S.sel)) : (ui.autoNext > 0 ? 'Auto-starting Wave ' + S.sel + '...' : (fresh ? 'Start Wave ' : 'Replay Wave ') + S.sel);
     $('autoBox').checked = !!S.auto;
-    const nm = ch ? 'Challenge · ' + map.name : 'Map ' + map.order + ' · ' + map.name;
+    const nm = ch ? (ch.kind === 'endless' ? 'Endless ' + (ch.def.star | 0) + '★ · ' : 'Challenge · ') + map.name : 'Map ' + map.order + ' · ' + map.name;
     if ($('mapName').textContent !== nm) $('mapName').textContent = nm;
     $('autoHint').textContent = ch ? (S.auto ? 'Auto is on: each cleared challenge wave starts the next one by itself.' : 'Auto is off: press Start for each challenge wave. Waves can not be replayed in a challenge.') : !S.auto
       ? 'Auto is off: a wave only starts when you press Start.'
@@ -643,6 +648,10 @@
     $('optVol').value = Math.round(st.vol * 100);
     $('optShake').checked = st.shake;
     $('optNums').checked = st.dmgNums;
+    $('optLowFx').checked = !!st.lowFx;
+    $('optCb').checked = !!st.cb;
+    $('optFont').checked = !!st.font;
+    $('optUi').value = String(st.ui || 1);
     for (const r of document.querySelectorAll('input[name="numFmt"]')) r.checked = r.value === st.numFmt;
     $('fmtDemo').textContent = [1234, 5.67e6, 8.9e12].map(C.fmt).join('  ·  ');
     ui.speedKey = '';
@@ -673,7 +682,10 @@
     syncSettings(); dirty(); writeSave();
   });
   $('setReset').addEventListener('click', () => {
+    const tut = S.settings.tut;
     S.settings = C.cleanSettings(null);
+    S.settings.tut = tut;
+    applyLook();
     C.setNumFormat(S.settings.numFmt);
     A.set(S.settings.sound, S.settings.vol);
     syncSettings(); dirty(); writeSave();
@@ -694,7 +706,7 @@
     if (cur) lock = '<span class="ml ok">Playing now</span>';
     else if (open) lock = '<span class="ml ok">' + (best ? 'Continue' : 'Unlocked, start fresh') + '</span>';
     else lock = '<span class="ml">Locked: clear wave ' + C.UNLOCK_AT + ' on ' + esc(prev.name) + ' (best ' + C.mapCleared(S, prev.id) + ')</span>';
-    const st = C.starOf(S, id);
+    const st = C.starOf(S, id), eb = C.endlessOf(prof()).best[C.endlessKey(id, st)] | 0;
     if (st) { b.classList.add('starred'); b.style.setProperty('--sg', st); }
     let stars = '';
     for (let i = 1; i <= C.MAX_STARS; i++) stars += i <= st ? '<b>★</b>' : '☆';
@@ -703,6 +715,7 @@
       + '<div class="mstars" aria-label="' + st + ' of ' + C.MAX_STARS + ' stars" data-tip="' + esc(starTip(st)) + '">' + stars + '</div>'
       + (st ? '<div class="smods">' + starPills(st, true) + '</div>' : '')
       + '<div class="mbar"><i style="width:' + best + '%"></i></div>'
+      + (eb ? '<div class="mend">Endless best at ' + st + '★: wave ' + eb + '</div>' : '')
       + '<div class="mf">' + esc(m.feature) + '</div><div class="md">' + esc(m.blurb) + '</div>' + lock;
     b.append(c, info);
     R.drawMapPreview(c, m, C.decorOf(S, m.id));
@@ -1292,8 +1305,9 @@
     if (m) return m + 'm ' + (s < 10 ? '0' : '') + s + 's';
     return s + 's';
   }
+  const MODAL_IDS = ['setModal', 'mapModal', 'codexModal', 'starModal', 'researchModal', 'heroModal', 'awayModal', 'rulesModal', 'plansModal', 'chalModal', 'chalEndModal', 'achModal', 'statsModal', 'wardrobeModal', 'lbModal', 'codeModal', 'creditsModal'];
   function anyModalOpen() {
-    for (const id of ['setModal', 'mapModal', 'codexModal', 'starModal', 'researchModal', 'heroModal', 'awayModal', 'rulesModal', 'plansModal', 'chalModal', 'chalEndModal', 'achModal', 'statsModal', 'wardrobeModal']) if (!$(id).hidden) return true;
+    for (const id of MODAL_IDS) if (!$(id).hidden) return true;
     return false;
   }
   function awayHtml(g) {
@@ -1726,13 +1740,14 @@
     for (const e of evs) {
       if (e.type === 'chalStart') { ui.waveKey = ''; continue; }
       if (e.type === 'chalEnd') { ended = e; continue; }
+      if (e.type === 'endlessMilestone') { endlessMilestone(e); continue; }
       if (e.type === 'ach') { achToast(e); continue; }
       if (e.type === 'achRetro') { banner(e.n + ' achievement' + (e.n > 1 ? 's' : '') + ' unlocked from your past progress', 'good'); $('achBtn').classList.add('pulse'); continue; }
       if (S.chal && (e.type === 'won' || e.type === 'lost')) {
         const c = S.chal, total = c.to - c.from + 1;
         if (e.type === 'won') {
           A.play('win');
-          if (!c.over) banner('Wave ' + (e.n - c.from + 1) + ' of ' + total + ' held! +' + C.fmt(e.bonus + e.earned) + ' cash', 'good');
+          if (!c.over) banner((c.kind === 'endless' ? 'Endless wave ' + e.n + ' held!' : 'Wave ' + (e.n - c.from + 1) + ' of ' + total + ' held!') + ' +' + C.fmt(e.bonus + e.earned) + ' cash', 'good');
           if (S.auto && !c.over) ui.autoNext = performance.now() + 1600;
           S.sel = Math.min(c.to, S.cleared + 1);
           C.runRules(S, 'end');
@@ -1830,6 +1845,7 @@
       + '<div class="dstats"><span>Today\'s best <b id="dailyBest">' + (d.best ? C.fmt(d.best) : '-') + '</b></span><span>Runs <b>' + d.runs + '</b></span><span>Streak <b id="dailyStreak">' + d.streak + '</b></span><span>Best streak <b>' + d.bestStreak + '</b></span><span>Reward <b>' + (d.won ? 'claimed' : d.moon + ' Moonstones') + '</b></span></div>'
       + '<p class="hint" style="grid-column:1/-1;margin:0">Score: 1,000 per wave held. A win adds 5,000, 100 per life left and a bonus for speed. The Moonstones are paid once per day, more for a longer streak. A new daily starts at midnight UTC.</p>'
       + '<button class="primary" type="button" data-chal="daily">' + (d.won ? 'Play again for score' : d.runs ? 'Try again' : 'Start the daily') + '</button>';
+    buildEndless();
     const list = $('chalList');
     list.innerHTML = '';
     for (const it of info.perm) {
@@ -1898,6 +1914,7 @@
     writeSave();
   }
   function chalEndHtml(e) {
+    if (e.kind === 'endless') return endlessEndHtml(e);
     const word = e.result === 'won' ? 'Victory' : e.result === 'lost' ? 'Defeated' : 'Run abandoned';
     let h = '<div class="cres ' + e.result + '">' + word + '</div><p>' + esc(e.name) + '</p>';
     h += '<div class="cgrid"><div>Waves held<b>' + e.waves + '/' + e.total + '</b></div><div>Lives left<b>' + e.lives + '</b></div><div>Time<b>' + fmtTime(e.t) + '</b></div><div>Score<b id="chalScore">' + C.fmt(e.score) + '</b></div></div>';
@@ -1910,9 +1927,9 @@
   }
   function showChalEnd(e) {
     chalUi.last = e;
-    $('chalEndTitle').textContent = e.kind === 'daily' ? 'Daily challenge' : 'Challenge';
+    $('chalEndTitle').textContent = e.kind === 'daily' ? 'Daily challenge' : e.kind === 'endless' ? 'Endless run' : 'Challenge';
     $('chalEndBody').innerHTML = chalEndHtml(e);
-    $('chalEndAgain').hidden = e.kind !== 'daily' && e.result === 'won';
+    $('chalEndAgain').hidden = e.kind !== 'daily' && e.kind !== 'endless' && e.result === 'won';
     $('chalEndModal').hidden = false;
     $('chalEndOk').focus();
   }
@@ -1920,38 +1937,52 @@
     if ($('chalEndModal').hidden) return;
     $('chalEndModal').hidden = true;
     const e = chalUi.last;
-    if (again && e) startChal(e.kind === 'daily' ? 'daily' : e.id);
+    if (again && e) { if (e.kind === 'endless') startEndlessRun(e.map, false); else startChal(e.kind === 'daily' ? 'daily' : e.id); }
   }
   function refreshChalCard() {
     const card = $('chalCard'), c = S.chal;
     if (!c) { if (!card.hidden) card.hidden = true; return; }
     card.hidden = false;
-    const total = c.to - c.from + 1, lives = S.run ? Math.max(0, S.run.lives) : c.lives;
+    const endless = c.kind === 'endless', total = c.to - c.from + 1, lives = S.run ? Math.max(0, S.run.lives) : c.lives;
     const t = c.t + (S.run ? S.run.t : 0), armed = chalUi.quitArm > performance.now();
-    const key = c.id + '|' + c.waves + '|' + lives + '|' + Math.floor(t) + '|' + armed + '|' + !!c.over;
+    const key = c.id + '|' + c.waves + '|' + lives + '|' + Math.floor(t) + '|' + armed + '|' + !!c.over + '|' + (S.run ? S.run.n : S.sel);
     if (key === chalUi.cardKey) return;
     chalUi.cardKey = key;
     $('chalName').textContent = c.def.name;
-    $('chalDiff').textContent = diffStars(c.def.diff);
-    const mh = modsHtml(c.def);
+    $('chalDiff').textContent = endless ? (c.def.star | 0) + '★' : diffStars(c.def.diff);
+    const mh = endless ? endlessMutsHtml(c, S.run ? S.run.n : S.sel) : modsHtml(c.def);
     if ($('chalMods').innerHTML !== mh) $('chalMods').innerHTML = mh;
-    $('chalProg').textContent = 'Wave ' + c.waves + '/' + total;
+    if (endless) {
+      const best = (C.endlessOf(c.parent).best[C.endlessKey(c.def.map, c.def.star)] | 0);
+      $('chalProg').textContent = 'Wave ' + S.cleared + (best ? ' · best ' + best : '');
+      $('chalBar').style.width = Math.round(((S.cleared - C.MAX_WAVE) % C.ENDLESS.every) / C.ENDLESS.every * 100) + '%';
+    } else {
+      $('chalProg').textContent = 'Wave ' + c.waves + '/' + total;
+      $('chalBar').style.width = Math.round(c.waves / total * 100) + '%';
+    }
     $('chalLives').textContent = 'Lives ' + lives + '/' + c.livesMax;
     $('chalTime').textContent = fmtTime(t);
-    $('chalBar').style.width = Math.round(c.waves / total * 100) + '%';
     const q = $('chalQuit');
-    q.textContent = armed ? 'Tap again to quit' : 'Quit challenge';
+    q.textContent = armed ? 'Tap again to quit' : endless ? 'End endless run' : 'Quit challenge';
     q.classList.toggle('armed', armed);
   }
   $('chalBtn').addEventListener('click', openChal);
   $('chalClose').addEventListener('click', closeChal);
   $('chalModal').addEventListener('click', ev => {
     if (ev.target === $('chalModal')) { closeChal(); return; }
+    const eb = ev.target.closest('[data-endless]');
+    if (eb) { startEndlessRun(eb.dataset.endless, eb.dataset.layout === '1'); return; }
+    const lb = ev.target.closest('[data-lbgo]');
+    if (lb) { closeChal(); openLb(lb.dataset.lbgo); return; }
     const b = ev.target.closest('[data-chal]');
     if (b) startChal(b.dataset.chal);
   });
   $('chalQuit').addEventListener('click', () => quitChal(false));
   $('chalEndOk').addEventListener('click', () => closeChalEnd(false));
+  $('chalEndBody').addEventListener('click', ev => {
+    const lb = ev.target.closest('[data-lbgo]');
+    if (lb) { closeChalEnd(false); openLb(lb.dataset.lbgo); }
+  });
   $('chalEndAgain').addEventListener('click', () => closeChalEnd(true));
 
   function achToast(e) {
@@ -2259,6 +2290,302 @@
   $('statsBtn').addEventListener('click', openStats);
   $('statsClose').addEventListener('click', closeStats);
   $('statsModal').addEventListener('click', ev => { if (ev.target === $('statsModal')) closeStats(); });
+  function nextMutAt(n) { return C.MAX_WAVE + C.ENDLESS.every * (Math.max(0, Math.floor((n - C.MAX_WAVE) / C.ENDLESS.every)) + 1); }
+  function mutPills(list) { return list.length ? list.map(m => '<span class="mod" data-tip="' + esc(m.desc) + '">' + esc(m.name) + (m.rank > 1 ? ' ×' + m.rank : '') + '</span>').join('') : '<span class="mod">No mutators yet</span>'; }
+  function endlessMutsHtml(c, n) { return mutPills(C.endlessMutList(c.order, n)); }
+  function buildEndless() {
+    const P = prof(), box = $('endlessList');
+    box.innerHTML = '';
+    for (const it of C.endlessInfo(P)) {
+      const el = document.createElement('div');
+      el.className = 'ecard' + (it.open ? '' : ' locked');
+      el.dataset.map = it.id;
+      const src = it.id === P.map ? P.towers : (P.boards[it.id] && P.boards[it.id].towers) || [];
+      const bests = [];
+      for (let s = 1; s <= C.MAX_STARS; s++) if (it.best[s]) bests.push(s + '★ wave ' + it.best[s]);
+      let h = '<div class="ct"><span>' + esc(it.name) + '</span><span class="cdiff">' + (it.open ? it.star + '★' : 'Locked') + '</span></div>';
+      if (!it.open) h += '<div class="cw">Earn the first star on ' + esc(it.name) + ' to open endless.</div>';
+      else {
+        h += '<div class="cw">Best at ' + it.star + '★: <b>' + (it.cur ? 'wave ' + it.cur : 'none yet') + '</b></div>';
+        if (bests.length > 1) h += '<div class="cw">' + esc(bests.join(' · ')) + '</div>';
+        h += '<div class="ebtns"><button class="primary" type="button" data-endless="' + it.id + '">Start fresh</button>'
+          + (src.length ? '<button class="ghost" type="button" data-endless="' + it.id + '" data-layout="1" data-tip="Copy your ' + src.length + ' ponies from this map into the run, paid from its starting cash">Use my layout</button>' : '')
+          + '<button class="ghost" type="button" data-lbgo="' + it.id + ':' + it.star + '">Leaderboard</button></div>';
+      }
+      el.innerHTML = h;
+      box.appendChild(el);
+    }
+  }
+  function startEndlessRun(id, layout) {
+    const P = prof();
+    if (inChal()) return null;
+    if (P.run) { A.play('deny'); banner('Finish the current wave before starting an endless run', 'bad'); return null; }
+    const X = C.startEndless(P, id, Date.now(), !!layout);
+    if (!X) { A.play('deny'); banner('Earn the first star on this map to open endless', 'bad'); return null; }
+    writeSave();
+    closeChal();
+    enterBoard(X);
+    A.play('unlocked');
+    banner('Endless ' + X.chal.def.star + '★ from wave ' + C.ENDLESS_FROM + ': ' + C.fmt(X.cash) + ' cash, ' + X.chal.lives + ' lives', 'good');
+    return X;
+  }
+  function endlessMilestone(e) {
+    A.play('unlocked');
+    const nx = S.chal ? C.endlessMutList(S.chal.order, e.n + 1).slice(-1)[0] : null;
+    banner('Wave ' + e.n + ' milestone! +' + e.moon + ' Moonstones' + (nx ? ' · New mutator: ' + nx.name : ''), 'good');
+    $('researchBtn').classList.add('pulse');
+    chalUi.cardKey = '';
+  }
+  function endlessEndHtml(e) {
+    const word = e.result === 'lost' ? 'Overrun' : 'Run ended';
+    let h = '<div class="cres ' + e.result + '">' + word + '</div><p>' + esc(e.name) + ' at ' + e.star + '★</p>';
+    h += '<div class="cgrid"><div>Wave reached<b id="endWave">' + e.wave + '</b></div><div>Rank<b id="endRank">' + (e.rank ? '#' + e.rank : '-') + '</b></div><div>Time<b>' + fmtTime(e.t) + '</b></div><div>Moonstones<b>+' + (e.moon | 0) + '</b></div></div>';
+    if (e.best) h += '<div class="creward">New best on this map at ' + e.star + '★!</div>';
+    else if (!e.rank) h += '<p class="hint">Clear wave ' + C.ENDLESS_FROM + ' to put a run on the leaderboard.</p>';
+    if (e.muts && e.muts.length) h += '<h3>Mutators faced</h3><div class="ccmods">' + mutPills(e.muts) + '</div>';
+    h += '<p class="hint">Your maps are exactly as you left them.</p><div class="dactions"><button class="ghost" type="button" data-lbgo="' + e.map + ':' + e.star + '">View leaderboard</button></div>';
+    return h;
+  }
+
+  const lbUi = { map: '', star: 0 };
+  function herdHtml(herd) {
+    let h = '';
+    for (const r of C.RACE_IDS) if (herd[r]) h += '<span class="herd" style="--rc:' + C.RACES[r].mane + '" title="' + esc(C.RACES[r].name) + '">' + esc(C.RACES[r].name.charAt(0)) + herd[r] + '</span>';
+    return h || '-';
+  }
+  function buildLb() {
+    const info = C.endlessInfo(prof());
+    let it = info.find(x => x.id === lbUi.map);
+    if (!it) { it = info.find(x => x.cur) || info.find(x => x.open) || info[0]; lbUi.map = it.id; lbUi.star = Math.max(1, it.star); }
+    $('lbMaps').innerHTML = info.map(x => '<button type="button" role="tab" data-lbmap="' + x.id + '" aria-selected="' + (x.id === lbUi.map) + '" class="' + (x.id === lbUi.map ? 'on' : '') + '">' + esc(x.name) + '</button>').join('');
+    let sh = '';
+    for (let s = 1; s <= C.MAX_STARS; s++) { const n = (it.top[s] || []).length; sh += '<button type="button" role="tab" data-lbstar="' + s + '" aria-selected="' + (s === lbUi.star) + '" class="' + (s === lbUi.star ? 'on' : '') + '">' + s + '★' + (n ? ' (' + n + ')' : '') + '</button>'; }
+    $('lbStars').innerHTML = sh;
+    const rows = it.top[lbUi.star] || [];
+    let h;
+    if (!rows.length) h = '<p class="hint lbempty">No endless runs yet on ' + esc(it.name) + ' at ' + lbUi.star + '★.' + (it.open ? '' : ' Endless opens after this map\'s first star.') + '</p>';
+    else {
+      h = '<div class="mwrap"><table class="mtable lbtable" id="lbTable"><thead><tr><th>#</th><th>Wave</th><th>Time</th><th>Date</th><th>Hero</th><th>Herd</th><th>Mutators</th></tr></thead><tbody>';
+      rows.forEach((r, i) => {
+        h += '<tr class="' + (i === 0 ? 'top' : '') + '"><td>' + (i + 1) + '</td><td><b>' + r.w + '</b></td><td>' + fmtTime(r.t) + '</td><td>' + (r.d ? esc(new Date(r.d).toLocaleDateString()) : '-') + '</td><td>' + (r.h && C.HEROES[r.h] ? esc(C.HEROES[r.h].name) : 'None') + '</td><td class="herds">' + herdHtml(r.herd || {}) + '</td><td>' + r.m + '</td></tr>';
+      });
+      h += '</tbody></table></div>';
+    }
+    $('lbBody').innerHTML = h;
+  }
+  function openLb(go) {
+    if (!$('lbModal').hidden) { if (go) { const p = String(go).split(':'); lbUi.map = p[0]; lbUi.star = Math.max(1, +p[1] || 1); buildLb(); } return; }
+    lastFocus = document.activeElement;
+    if (go) { const p = String(go).split(':'); lbUi.map = p[0]; lbUi.star = Math.max(1, +p[1] || 1); }
+    buildLb();
+    $('lbModal').hidden = false;
+    $('lbClose').focus();
+  }
+  function closeLb() {
+    if ($('lbModal').hidden) return;
+    $('lbModal').hidden = true;
+    if (lastFocus && lastFocus.focus && document.contains(lastFocus)) lastFocus.focus();
+  }
+  $('lbBtn').addEventListener('click', () => openLb());
+  $('lbClose').addEventListener('click', closeLb);
+  $('lbModal').addEventListener('click', ev => {
+    if (ev.target === $('lbModal')) { closeLb(); return; }
+    const m = ev.target.closest('[data-lbmap]');
+    if (m) { const it = C.endlessInfo(prof()).find(x => x.id === m.dataset.lbmap); lbUi.map = it.id; lbUi.star = Math.max(1, it.star); buildLb(); A.play('click'); const b = $('lbMaps').querySelector('.on'); if (b) b.focus(); return; }
+    const s = ev.target.closest('[data-lbstar]');
+    if (s) { lbUi.star = +s.dataset.lbstar; buildLb(); A.play('click'); const b = $('lbStars').querySelector('.on'); if (b) b.focus(); }
+  });
+  $('endlessBtn').addEventListener('click', () => {
+    if (!openChal()) return;
+    const hd = $('endlessHead');
+    if (hd.scrollIntoView) hd.scrollIntoView({ block: 'start' });
+    const b = $('endlessList').querySelector('button');
+    if (b) b.focus({ preventScroll: true });
+  });
+
+  const codeUi = { arm: 0, code: '' };
+  function openCode() {
+    closeSettings();
+    lastFocus = $('setBtn');
+    writeSave();
+    $('codeOut').value = C.exportCode(prof());
+    $('codeIn').value = '';
+    $('codePreview').innerHTML = '';
+    $('codeCopied').textContent = '';
+    codeUi.arm = 0; codeUi.code = '';
+    syncImport();
+    $('codeModal').hidden = false;
+    $('codeCopy').focus();
+  }
+  function closeCode() {
+    if ($('codeModal').hidden) return;
+    $('codeModal').hidden = true;
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function syncImport() {
+    const b = $('codeImport');
+    b.disabled = !codeUi.code;
+    b.textContent = codeUi.arm ? 'Tap again to replace your save' : 'Replace my save';
+    b.classList.toggle('armed', !!codeUi.arm);
+  }
+  function copyFallback() {
+    const t = $('codeOut');
+    t.focus(); t.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+    $('codeCopied').textContent = ok ? 'Copied.' : 'Selected. Press Ctrl+C or long-press to copy.';
+  }
+  function copyCode() {
+    const v = $('codeOut').value;
+    if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) navigator.clipboard.writeText(v).then(() => { $('codeCopied').textContent = 'Copied to the clipboard.'; }, copyFallback);
+    else copyFallback();
+    A.play('click');
+  }
+  function previewHtml2(p) {
+    let h = '<div class="cpok">Valid save code' + (p.from < C.SAVE_VER ? ' from an older version (v' + p.from + '), it will be updated' : '') + '.</div><div class="cgrid">';
+    h += '<div>Stars<b>' + p.stars + '</b></div><div>Moonstones<b>' + C.fmt(p.moon) + '</b></div><div>DNBs defeated<b>' + C.fmt(p.kills) + '</b></div><div>Achievements<b>' + p.ach + ' / ' + p.achTotal + '</b></div>';
+    h += '<div>Research levels<b>' + p.research + '</b></div><div>Playtime<b>' + fmtTime(p.play) + '</b></div><div>Heroes<b>' + (p.heroes.length ? esc(p.heroes.join(', ')) : 'None') + '</b></div><div>Endless best<b>' + (p.endless ? 'wave ' + p.endless : '-') + '</b></div></div>';
+    h += '<ul class="cpmaps">' + p.maps.map(m => '<li><span>' + esc(m.name) + '</span><span>wave ' + m.cleared + (m.stars ? ' · ' + m.stars + '★' : '') + '</span></li>').join('') + '</ul>';
+    return h;
+  }
+  function checkCode() {
+    const r = C.parseCode($('codeIn').value);
+    codeUi.arm = 0;
+    if (!r.ok) { codeUi.code = ''; $('codePreview').innerHTML = '<div class="cperr">' + esc(r.err) + '</div>'; A.play('deny'); }
+    else { codeUi.code = $('codeIn').value; $('codePreview').innerHTML = previewHtml2(r.preview); A.play('click'); }
+    syncImport();
+    return r.ok;
+  }
+  function doImport() {
+    if (!codeUi.code) return false;
+    if (!codeUi.arm) { codeUi.arm = 1; syncImport(); return false; }
+    const s = C.importCode(codeUi.code);
+    if (!s) { codeUi.code = ''; codeUi.arm = 0; $('codePreview').innerHTML = '<div class="cperr">The save could not be imported.</div>'; syncImport(); return false; }
+    try { localStorage.setItem(SAVE_KEY, s); } catch (err) { $('codePreview').innerHTML = '<div class="cperr">This browser would not store the save.</div>'; return false; }
+    ui.noSave = true;
+    location.reload();
+    return true;
+  }
+  $('codeBtn').addEventListener('click', openCode);
+  $('codeClose').addEventListener('click', closeCode);
+  $('codeModal').addEventListener('click', ev => { if (ev.target === $('codeModal')) closeCode(); });
+  $('codeCopy').addEventListener('click', copyCode);
+  $('codeCheck').addEventListener('click', checkCode);
+  $('codeImport').addEventListener('click', doImport);
+  $('codeIn').addEventListener('input', () => { if (codeUi.code) { codeUi.code = ''; codeUi.arm = 0; $('codePreview').innerHTML = ''; syncImport(); } });
+
+  function openCredits() {
+    closeSettings();
+    lastFocus = $('setBtn');
+    $('creditsModal').hidden = false;
+    $('creditsClose').focus();
+  }
+  function closeCredits() {
+    if ($('creditsModal').hidden) return;
+    $('creditsModal').hidden = true;
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  $('creditsBtn').addEventListener('click', openCredits);
+  $('creditsClose').addEventListener('click', closeCredits);
+  $('creditsModal').addEventListener('click', ev => { if (ev.target === $('creditsModal')) closeCredits(); });
+
+  function applyLook() {
+    const st = S.settings, b = document.body;
+    b.classList.toggle('cb', !!st.cb);
+    b.classList.toggle('rfont', !!st.font);
+    b.classList.toggle('lowfx', !!st.lowFx);
+    document.documentElement.style.setProperty('--uis', String(st.ui || 1));
+    R.bgKey = '';
+    resize();
+  }
+  function setLook(k, v) { S.settings[k] = v; applyLook(); dirty(); writeSave(); }
+  $('optLowFx').addEventListener('change', ev => { setLook('lowFx', ev.target.checked); if (ev.target.checked) S.fx.length = 0; });
+  $('optCb').addEventListener('change', ev => setLook('cb', ev.target.checked));
+  $('optFont').addEventListener('change', ev => setLook('font', ev.target.checked));
+  $('optUi').addEventListener('change', ev => { if (C.UI_SCALES.indexOf(+ev.target.value) >= 0) setLook('ui', +ev.target.value); });
+
+  const TUT = [
+    { at: 'buildList', text: 'Pick a pony from the list (or press 1 to 5), then tap a spot beside the road to place it. Ponies attack DNBs walking past.', done: b => S.towers.length > b.towers },
+    { at: 'startBtn', text: 'Press Start Wave (or Space) to send the DNBs down the road. Each one that gets through costs a life.', done: () => !!S.run },
+    { at: 'speedBar', text: 'Use 2x and 4x at the top of the field (or F) to speed up a wave. P pauses at any time.', done: b => (S.settings.speed || 1) !== b.speed, next: true },
+    { at: 'info', text: 'Tap one of your ponies, then buy an upgrade on its card. Each pony has upgrade paths that change how it fights.', done: b => tutLevels() > b.lv, next: true },
+    { at: 'researchBtn', text: 'Hold all 100 waves to star up a map: DNBs grow tougher, you earn Moonstones for permanent research, and endless mode opens. Good luck!', last: true },
+  ];
+  const tut = { on: false, step: 0, base: null, el: null };
+  function tutLevels() { let n = 0; for (const t of S.towers) for (const v of t.paths || []) n += v | 0; return n; }
+  function tutBase() { return { towers: S.towers.length, speed: S.settings.speed || 1, lv: tutLevels() }; }
+  function tutShow() {
+    const s = TUT[tut.step];
+    if (tut.el) tut.el.classList.remove('tutfocus');
+    tut.el = $(s.at);
+    if (tut.el) tut.el.classList.add('tutfocus');
+    $('tutStep').textContent = 'Tutorial ' + (tut.step + 1) + ' of ' + TUT.length;
+    $('tutText').textContent = s.text;
+    const nb = $('tutNext');
+    nb.hidden = !s.next && !s.last;
+    nb.textContent = s.last ? 'Got it' : 'Next';
+    tut.base = tutBase();
+  }
+  function startTut() {
+    if (S.chal) { A.play('deny'); banner('Finish the challenge before replaying the tutorial', 'bad'); return false; }
+    tut.on = true; tut.step = 0;
+    S.settings.tut = 0;
+    $('tut').hidden = false;
+    tutShow();
+    return true;
+  }
+  function endTut() {
+    tut.on = false;
+    if (tut.el) tut.el.classList.remove('tutfocus');
+    tut.el = null;
+    $('tut').hidden = true;
+    S.settings.tut = 1;
+    writeSave();
+  }
+  function tutAdvance() {
+    if (!tut.on) return;
+    if (tut.step >= TUT.length - 1) { endTut(); A.play('unlocked'); return; }
+    tut.step++;
+    A.play('click');
+    tutShow();
+  }
+  function tutTick() {
+    if (!tut.on) return;
+    const hide = !!S.chal || anyModalOpen();
+    if ($('tut').hidden !== hide) $('tut').hidden = hide;
+    if (hide) return;
+    const s = TUT[tut.step];
+    if (s.done && s.done(tut.base)) tutAdvance();
+  }
+  $('tutSkip').addEventListener('click', () => { endTut(); A.play('click'); });
+  $('tutNext').addEventListener('click', tutAdvance);
+  $('tutBtn').addEventListener('click', () => { closeSettings(); startTut(); });
+
+  function topModal() { const v = document.querySelectorAll('.modal:not([hidden])'); return v.length ? v[v.length - 1] : null; }
+  function focusables(root) { return Array.from(root.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')).filter(el => !el.closest('[hidden]') && (el.offsetParent !== null || el.type === 'checkbox')); }
+  document.addEventListener('keydown', ev => {
+    const m = topModal();
+    if (!m) return;
+    const a = document.activeElement;
+    if (ev.key === 'Tab') {
+      const f = focusables(m);
+      if (!f.length) return;
+      const i = f.indexOf(a);
+      if (ev.shiftKey && i <= 0) { ev.preventDefault(); f[f.length - 1].focus(); }
+      else if (!ev.shiftKey && (i < 0 || i === f.length - 1)) { ev.preventDefault(); f[0].focus(); }
+      return;
+    }
+    if (ev.key === 'Escape' && m.id === 'codeModal' && a && a.tagName === 'TEXTAREA') { ev.preventDefault(); closeCode(); return; }
+    if (/^Arrow(Left|Right|Up|Down)$/.test(ev.key) && a && a.tagName === 'BUTTON' && m.contains(a)) {
+      const f = focusables(m).filter(el => el.tagName === 'BUTTON');
+      const i = f.indexOf(a);
+      if (i < 0) return;
+      const d = ev.key === 'ArrowRight' || ev.key === 'ArrowDown' ? 1 : -1;
+      ev.preventDefault();
+      f[(i + d + f.length) % f.length].focus();
+    }
+  }, true);
+
   function owlCheck(now) {
     if (now - chalUi.owlT < 60000) return;
     chalUi.owlT = now;
@@ -2284,7 +2611,7 @@
       sc.classList.toggle('on', st > 0);
     }
     $('hWave').textContent = S.run ? S.run.n : S.sel;
-    $('hBest').textContent = ch ? ch.waves + '/' + (ch.to - ch.from + 1) : S.cleared;
+    $('hBest').textContent = ch ? (ch.kind === 'endless' ? String(S.cleared) : ch.waves + '/' + (ch.to - ch.from + 1)) : S.cleared;
   }
 
   buildList();
@@ -2323,7 +2650,7 @@
     if (now - uiT > 120) {
       uiT = now;
       refreshHud(); refreshBuild(); refreshWave(); refreshInfo(); refreshSpeed(); drawIcons(now); refreshHeroCard();
-      refreshFarm(); refreshRulesBtn(); refreshBuildBox(); refreshChalCard(); owlCheck(now); syncCos();
+      refreshFarm(); refreshRulesBtn(); refreshBuildBox(); refreshChalCard(); owlCheck(now); syncCos(); tutTick();
       if (!$('heroModal').hidden) drawHeroIcons(now);
     }
     refreshHeroBar(now);
@@ -2337,11 +2664,16 @@
     catchUp(Date.now());
   });
   syncCos();
+  applyLook();
   seenReady = true;
   catchUp(Date.now(), true);
   if (!ui.away) writeSave();
   if (farmOn() && !S.run) { S.sel = C.farmTarget(S); ui.farmNext = performance.now() + 2500; }
-  window.addEventListener('pagehide', writeSave);
+  if (!S.settings.tut && !window.__ndNoTut) { if (!S.chal && !S.cleared && !S.towers.length && !C.totalStars(prof())) startTut(); else S.settings.tut = 1; }
+  window.addEventListener('pagehide', () => {
+    if (S.chal && S.chal.kind === 'endless' && !S.chal.over) { const P = S.chal.parent; C.quitChallenge(S); S.events.length = 0; S = P; }
+    writeSave();
+  });
   $('saveNote').textContent = 'Progress saves automatically in this browser.';
   requestAnimationFrame(frame);
   window.__nd = { get S() { return S; }, ui, save: writeSave, audio: A, setSpeed, togglePause, refresh: dirty, openMaps, closeMaps, chooseMap, openCodex, closeCodex,
@@ -2357,5 +2689,6 @@
     worldToClient(x, y) { const r = cv.getBoundingClientRect(), p = V.toScreen(x, y); return [r.left + p[0], r.top + p[1]]; },
     openChal, closeChal, startChal, quitChal(force) { return quitChal(force !== false); }, closeChalEnd, openAch, closeAch, openStats, closeStats,
     achList() { return C.achList(S); }, prof, openWardrobe, closeWardrobe, syncCos, get wardUi() { return wardUi; },
+    openLb, closeLb, openCode, closeCode, checkCode, doImport, openCredits, closeCredits, startTut, endTut, get tut() { return tut; }, startEndless: startEndlessRun, applyLook,
     renameTower(id, name) { const r = C.renameTower(S, id, name); ui.infoKey = ''; writeSave(); return r; }, get chalUi() { return chalUi; } };
 })();
