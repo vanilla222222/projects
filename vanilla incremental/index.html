@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vanilla Incremental</title>
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 <header class="top">
@@ -22,9 +22,11 @@
       <div class="minehead">
         <span>Layer <b id="layer">1</b></span>
         <span><b id="left">100</b> tiles left</span>
+        <span id="vein" class="veintag" hidden>✨ Vein ×2: <b id="veinLeft">0</b> digs</span>
       </div>
       <div class="grid" id="grid"></div>
       <p class="hint">Click a tile to dig it up. Clear all 100 to reach the next layer.</p>
+      <p class="hint" id="spHint" hidden>Special tiles: 🎁 Chest gives 10× every ore you've found · 🧨 TNT digs the 3x3 around it · ✨ Vein doubles your next 5 digs.</p>
       <div class="auto" id="auto" hidden>
         <div class="autohead"><b>Autominer</b><span id="autoRate"></span></div>
         <div class="bar"><div id="autoBar"></div></div>
@@ -61,6 +63,6 @@
     </div>
   </section>
 </main>
-<script src="game.js?v=4"></script>
+<script src="game.js?v=5"></script>
 </body>
 </html>

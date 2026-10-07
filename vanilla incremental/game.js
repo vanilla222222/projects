@@ -29,7 +29,15 @@
     dirt: { label: 'Unlock Mastery' },
     stone: { label: 'Unlock Autominer' },
     copper: { label: 'Unlock Rebirth', cost: 100000 },
+    obsidian: { label: 'Unlock Special Tiles', cost: 10 },
   };
+
+  const SPECIALS = {
+    chest: { name: 'Chest', icon: '🎁', chance: 0.01, color: '#f0c43c', tiles: 10 },
+    tnt: { name: 'TNT', icon: '🧨', chance: 0.02, color: '#ff6b4a' },
+    vein: { name: 'Vein', icon: '✨', chance: 0.015, color: '#9fe8ff', digs: 5 },
+  };
+  let SPECIAL_ON = false;
 
   const MASTERY = { cost: 100000, growth: 10 };
   const AUTO = {
@@ -47,7 +55,7 @@
   const $ = id => document.getElementById(id);
 
   function fresh() {
-    const S = { tab: 'mines', layer: 1, grid: null, ores: {}, auto: { bulk: 0, speed: 0 }, rb: { count: 0, points: 0, alloc: {} } };
+    const S = { tab: 'mines', layer: 1, grid: null, ores: {}, auto: { bulk: 0, speed: 0 }, vein: 0, rb: { count: 0, points: 0, alloc: {} } };
     for (const o of ORES) S.ores[o.id] = { amt: 0, total: 0, run: 0, found: 0, mult: 0, base: 0, exp: 0, unique: 0, mastery: 0 };
     S.grid = newGrid();
     return S;
@@ -61,7 +69,14 @@
 
   function newGrid() {
     const g = [];
-    for (let i = 0; i < SIZE * SIZE; i++) g.push({ ore: rollOre(), dug: 0 });
+    for (let i = 0; i < SIZE * SIZE; i++) {
+      const c = { ore: rollOre(), dug: 0 };
+      if (SPECIAL_ON) {
+        let r = Math.random();
+        for (const k in SPECIALS) { r -= SPECIALS[k].chance; if (r < 0) { c.sp = k; break; } }
+      }
+      g.push(c);
+    }
     return g;
   }
 
@@ -80,7 +95,8 @@
         for (const o of ORES) { const a = Math.min(S.rb.alloc[o.id] || 0, S.rb.points - used); S.rb.alloc[o.id] = a; used += a; }
       }
       if (d.auto) for (const k of ['bulk', 'speed']) if (typeof d.auto[k] === 'number' && isFinite(d.auto[k])) S.auto[k] = d.auto[k];
-      if (Array.isArray(d.grid) && d.grid.length === SIZE * SIZE && d.grid.every(c => c && S.ores[c.ore])) S.grid = d.grid.map(c => ({ ore: c.ore, dug: c.dug ? 1 : 0 }));
+      if (Array.isArray(d.grid) && d.grid.length === SIZE * SIZE && d.grid.every(c => c && S.ores[c.ore])) S.grid = d.grid.map(c => SPECIALS[c.sp] ? { ore: c.ore, dug: c.dug ? 1 : 0, sp: c.sp } : { ore: c.ore, dug: c.dug ? 1 : 0 });
+      if (typeof d.vein === 'number' && isFinite(d.vein)) S.vein = Math.max(0, d.vein);
       for (const o of ORES) {
         const src = d.ores && d.ores[o.id];
         if (!src) continue;
@@ -92,6 +108,7 @@
 
   let S = load();
   ALLOC = S.rb.alloc;
+  SPECIAL_ON = S.ores.obsidian.unique > 0;
 
   function save() {
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {}
@@ -133,7 +150,7 @@
     if (st.amt < c) return;
     st.amt -= c;
     st[u.id]++;
-    if (u.id === 'unique') { buildTabs(); renderAll(); return; }
+    if (u.id === 'unique') { SPECIAL_ON = S.ores.obsidian.unique > 0; buildTabs(); renderAll(); return; }
     renderAll(true);
   }
 
@@ -156,10 +173,18 @@
 
   let layerTimer = 0;
 
+  function give(oreId, g) {
+    const st = S.ores[oreId];
+    st.amt += g;
+    st.total += g;
+    st.run += g;
+  }
+
   function collect(cell) {
     cell.dug = 1;
     const st = S.ores[cell.ore];
-    const g = oreGain(cell.ore);
+    let g = oreGain(cell.ore);
+    if (S.vein > 0) { g *= 2; S.vein--; }
     st.amt += g;
     st.total += g;
     st.run += g;
@@ -175,13 +200,40 @@
     renderGrid();
   }
 
+  function digAt(i, list, events) {
+    const cell = S.grid[i];
+    if (cell.dug) return 0;
+    const g = collect(cell);
+    list.push(i);
+    if (!cell.sp) return g;
+    const sp = cell.sp;
+    if (sp === 'chest') {
+      for (const o of ORES) if (S.ores[o.id].found) give(o.id, oreGain(o.id) * SPECIALS.chest.tiles);
+    } else if (sp === 'vein') {
+      S.vein += SPECIALS.vein.digs;
+    }
+    if (events) events.push({ i, sp });
+    if (sp === 'tnt') {
+      const x = i % SIZE, y = Math.floor(i / SIZE);
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const nx = x + dx, ny = y + dy;
+        if ((dx || dy) && nx >= 0 && ny >= 0 && nx < SIZE && ny < SIZE) digAt(ny * SIZE + nx, list, events);
+      }
+    }
+    return g;
+  }
+
   function dig(i, el) {
     const cell = S.grid[i];
     if (cell.dug || layerTimer) return;
-    const g = collect(cell);
+    const list = [];
+    const events = [];
+    const g = digAt(i, list, events);
     const o = ORES.find(x => x.id === cell.ore);
-    paintTile(el, cell);
+    const tiles = $('grid').querySelectorAll('.tile');
+    for (const j of list) paintTile(tiles[j], S.grid[j]);
     floatText(el, `+${fmt(g)} ${o.name}`, o.color);
+    for (const e of events) floatText(tiles[e.i], `${SPECIALS[e.sp].icon} ${SPECIALS[e.sp].name}!`, SPECIALS[e.sp].color, 1);
     if (S.grid.every(c => c.dug)) layerTimer = setTimeout(nextLayer, 450);
     renderAll(true);
   }
@@ -202,8 +254,9 @@
         continue;
       }
       const i = open[Math.floor(Math.random() * open.length)];
-      collect(S.grid[i]);
-      painted.push(i);
+      const before = painted.length;
+      digAt(i, painted);
+      k += painted.length - before - 1;
     }
     if (newLayer) { renderGrid(); return; }
     const tiles = $('grid').querySelectorAll('.tile');
@@ -227,9 +280,9 @@
     requestAnimationFrame(tick);
   }
 
-  function floatText(el, text, color) {
+  function floatText(el, text, color, big) {
     const f = document.createElement('div');
-    f.className = 'float';
+    f.className = big ? 'float big' : 'float';
     f.textContent = text;
     f.style.color = color;
     f.style.left = (el.offsetLeft + el.offsetWidth / 2) + 'px';
@@ -241,6 +294,8 @@
   function paintTile(el, cell) {
     if (!cell.dug) return;
     const o = ORES.find(x => x.id === cell.ore);
+    el.classList.remove('sp', 'sp-chest', 'sp-tnt', 'sp-vein');
+    el.removeAttribute('data-icon');
     el.classList.add('dug');
     el.style.setProperty('--c', o.color);
     el.title = o.name;
@@ -256,6 +311,13 @@
       b.className = 'tile';
       b.setAttribute('aria-label', 'Dig tile');
       b.addEventListener('click', () => dig(i, b));
+      if (cell.sp && !cell.dug) {
+        const sp = SPECIALS[cell.sp];
+        b.classList.add('sp', 'sp-' + cell.sp);
+        b.dataset.icon = sp.icon;
+        b.style.setProperty('--g', sp.color);
+        b.title = sp.name;
+      }
       paintTile(b, cell);
       grid.appendChild(b);
     });
@@ -265,6 +327,9 @@
   function updateMineHead() {
     $('layer').textContent = S.layer;
     $('left').textContent = S.grid.filter(c => !c.dug).length;
+    $('vein').hidden = !S.vein;
+    $('veinLeft').textContent = S.vein;
+    $('spHint').hidden = !SPECIAL_ON;
   }
 
   const walletEls = {};
@@ -488,6 +553,7 @@
     if (!confirm('Erase all progress?')) return;
     S = fresh();
     ALLOC = S.rb.alloc;
+    SPECIAL_ON = false;
     save();
     buildTabs();
     renderGrid();
