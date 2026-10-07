@@ -781,7 +781,7 @@
     h += '<h3>You gain</h3><ul class="gains">'
       + '<li><span class="gain">+' + gain + ' Moonstones</span> for permanent research</li>'
       + '<li>Rewards +' + pctOf(C.starCashMul(next)) + '% cash (was +' + pctOf(C.starCashMul(cur)) + '%)</li>'
-      + '<li>DNBs +' + pctOf(C.starHpMul(next, S)) + '% HP, +' + pctOf(C.starSpeedMul(next)) + '% speed, counting ' + C.researchLevels(S) + ' research levels at ' + Math.round(C.STAR.res * 1000) / 10 + '% each</li>'
+      + '<li>DNBs +' + pctOf(C.starHpMul(next, S)) + '% HP, +' + pctOf(C.starSpeedMul(next)) + '% speed, counting ' + C.combatLevels(S) + ' pony and ability research levels at ' + Math.round(C.STAR.res * 1000) / 10 + '% each</li>'
       + (mod ? '<li>New modifier: <b>' + esc(mod.name) + '</b>. ' + esc(mod.desc) + '</li>' : '')
       + '<li>Boss waves you clear for the first time drop Moonstones</li>'
       + (skip ? '<li>Head Start skips waves 1 to ' + skip + ', bonuses paid</li>' : '')

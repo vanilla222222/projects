@@ -11,7 +11,7 @@
   const BASE_LEN = 1480;
 
   const TUNE = {
-    hp0: 14, hpAll: 1.25,
+    hp0: 14, hpAll: 1.25, noHero: 0.85,
     hpCurve: [[1, 1.25], [10, 1.21], [20, 1.2], [30, 1.185], [35, 1.16], [45, 1.17], [50, 1.15], [55, 1.105], [60, 1.105], [75, 1.083], [82, 1.054], [90, 1.056], [100, 1.045]],
     cash0: 2.2, cashGrowth: 1.2,
     clear0: 45, clearGrowth: 1.2,
@@ -21,12 +21,12 @@
     startCash: 160,
   };
 
-  const STAR = { hp: [0, 0.19, 0.21, 0.22, 0.23, 0.23], res: 0.019, speed: 0.03, cash: 0.25, moon: 20, mapMoon: 0.5, bossPlate: 0.06, swift: 0.75, regen: 0.003, lives: 7, eliteFrom: 20, eliteAdd: 0.1 };
+  const STAR = { hp: [0, 0.19, 0.21, 0.22, 0.23, 0.23], res: 0.019, speed: 0.03, cash: 0.25, moon: 20, mapMoon: 0.5, bossPlate: 0.06, swift: 0.75, regen: 0.003, lives: 0.7, eliteFrom: 20, eliteAdd: 0.1 };
   const STAR_MODS = [
     { id: 'plated', star: 1, name: 'Armored bosses', short: 'Plated', desc: 'Bosses wear iron plates: every hit loses a flat chunk of damage.' },
     { id: 'swift', star: 2, name: 'Faster spawns', short: 'Swift', desc: 'DNBs march in 25% closer together.' },
     { id: 'regen', star: 3, name: 'Enemy regen', short: 'Regen', desc: 'DNBs regrow 0.3% of their HP each second, bosses half that.' },
-    { id: 'fragile', star: 4, name: 'Fewer lives', short: '7 lives', desc: 'Every wave starts with 7 lives instead of 10.' },
+    { id: 'fragile', star: 4, name: 'Fewer lives', short: '-30% lives', desc: 'Every wave starts with 30% fewer lives, Sturdy Gate included.' },
     { id: 'elite', star: 5, name: 'Elites common', short: 'Elites', desc: 'Elite DNBs appear from wave 20 and 10% more often.' },
   ];
 
@@ -540,7 +540,7 @@
       crystals: CRYSTALS,
       blocks: scatter({ seed: 777, n: 14, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 12, rmax: 20, routes: [CAVE_A, CAVE_B], half: 34, pad: 8, gap: 30, kind: 'stalagmite',
         keep: CRYSTALS.map(c => ({ x: c.x, y: c.y, r: 16, kind: 'crystal' })) }),
-      hpShift: 14, hpMul: 1, cashMul: 5.75e7, startCash: 1.372e11, priceMul: 1.44e7, hpCurve: [[1, 1.135], [50, 1.115], [65, 1.1], [80, 1.08], [90, 1.05], [100, 1.04]],
+      offEarly: [[40, 0.5], [70, 1]], hpShift: 14, hpMul: 1, cashMul: 5.75e7, startCash: 1.372e11, priceMul: 1.44e7, hpCurve: [[1, 1.135], [50, 1.115], [65, 1.1], [80, 1.08], [90, 1.05], [100, 1.04]],
       bosses: MAP_BOSSES.caverns.map(b => b.id),
       waves: waveVariant({ types: { magical: { from: 5, w: 6, theme: 10 }, flying: { w: 2 }, burrower: { w: 1.7 }, stealth: { w: 1.5 } }, intro: { burrower: 5, stealth: 11, healer: 15, shield: 21, splitter: 25, armored: 31, swarm: 35 } }),
       palette: {
@@ -578,7 +578,7 @@
       half: 30,
       blocks: scatter({ seed: 5150, n: 8, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 14, rmax: 18, routes: [CASTLE_A, CASTLE_B], half: 30, pad: 6, gap: 60, kind: 'pillar',
         keep: [{ x: 700, y: 400, r: 46, kind: 'keep' }] }),
-      hpShift: 15, hpMul: 0.92, cashMul: 3.31e15, startCash: 7.925e18, priceMul: 8.3e14, gateFrom: 4, hpCurve: [[1, 1.14], [50, 1.12], [70, 1.086], [84, 1.05], [100, 1.035]],
+      offEarly: [[25, 0.5], [70, 1]], hpShift: 15, hpMul: 0.92, cashMul: 3.31e15, startCash: 7.925e18, priceMul: 8.3e14, gateFrom: 4, hpCurve: [[1, 1.14], [50, 1.12], [70, 1.086], [84, 1.05], [100, 1.035]],
       bosses: MAP_BOSSES.castle.map(b => b.id),
       waves: waveVariant({ count: { base: 11, per: 0.55 }, types: { basic: { w: 8 }, fast: { from: 2, w: 5 }, tanky: { from: 3, w: 4 }, flying: { from: 4, w: 4 }, magical: { from: 5, w: 4 }, armored: { w: 1.6 }, shield: { w: 1.1 } }, elite: { from: 55 }, intro: { armored: 4, shield: 8, healer: 12, stealth: 16, splitter: 21, burrower: 24, swarm: 28 } }),
       palette: {
@@ -700,7 +700,8 @@
   function starOf(S, id) { return (S && S.stars && S.stars[id || S.map]) | 0; }
   function starMods(star) { return STAR_MODS.filter(m => m.star <= star); }
   function researchLevels(S) { let n = 0; if (S && S.research) for (const k in S.research) n += S.research[k] | 0; return n; }
-  function starHpMul(star, S) { star = Math.max(0, Math.min(MAX_STARS, star | 0)); return star ? (1 + STAR.hp[star]) * (1 + STAR.res * researchLevels(S)) : 1; }
+  function combatLevels(S) { let n = 0; if (S && S.research) for (const k in S.research) { const r = RESEARCH_BY_ID[k]; if (r && (r.br === 'pony' || r.br === 'abil')) n += S.research[k] | 0; } return n; }
+  function starHpMul(star, S) { star = Math.max(0, Math.min(MAX_STARS, star | 0)); return star ? (1 + STAR.hp[star]) * (1 + STAR.res * combatLevels(S)) : 1; }
   function starSpeedMul(star) { return 1 + STAR.speed * star; }
   function starCashMul(star) { return 1 + STAR.cash * star; }
   function cashResearchMul(S) { return rl(S, 'eco_master') ? 1.15 : 1; }
@@ -710,7 +711,8 @@
   function moonMul(S) { return 1 + 0.1 * rl(S, 'util_moon') + (rl(S, 'util_master') ? 0.2 : 0); }
   function livesFor(S, star) {
     if (star == null) star = starOf(S);
-    return (star >= 4 ? STAR.lives : LIVES) + rl(S, 'util_lives') + 2 * rl(S, 'util_master');
+    const base = LIVES + rl(S, 'util_lives') + 2 * rl(S, 'util_master');
+    return star >= 4 ? Math.max(1, Math.round(base * STAR.lives)) : base;
   }
   function killCash(n, map) { return TUNE.cash0 * Math.pow(TUNE.cashGrowth, n - 1) * (map ? map.cashMul : 1); }
   function clearBonus(n, map) { return Math.round(TUNE.clear0 * (1 + 0.1 * n) * Math.pow(TUNE.clearGrowth, n - 1) * (n % 10 === 0 ? 2.5 : 1) * (map ? map.cashMul : 1)); }
@@ -1893,7 +1895,7 @@
     const lives = ch ? ch.lives : livesFor(S, star);
     S.run = {
       n, spec, map, route: map.route, queue, t: 0, lives, livesMax: ch ? ch.livesMax : lives, lives0: lives, enemies: [], proj: [], earned: 0, kills: 0, eid: 1,
-      star, hpMul: starHpMul(star, S), spdMul: starSpeedMul(star), cashMul: killMul(S, star), clearMul: clearMul(S, star), regen: star >= 3 ? STAR.regen : 0,
+      star, hpMul: starHpMul(star, S) * (ch || (S.hero && S.hero.id) ? 1 : TUNE.noHero), spdMul: starSpeedMul(star), cashMul: killMul(S, star), clearMul: clearMul(S, star), regen: star >= 3 ? STAR.regen : 0,
       bossCash: 1 + 0.25 * rl(S, 'eco_boss'), leakCut: rl(S, 'util_leak'),
       fresh: n > S.cleared, over: null, rng: mulberry(hashSeed(S.seed, n, S.stats.played)), bossIds: [],
       enrageAt: (queue.length ? queue[queue.length - 1].t : 0) + 75 * Math.max(1, map.maxLen / BASE_LEN), windT: 0, gust: 0, gustWarn: 0, gustKind: '', gustDir: 1, gustOn: false,
@@ -3281,7 +3283,7 @@
     const cash = farmCash(S, n, map, star), time = f.secs > 0 && n === f.safe ? f.secs + OFFLINE.overhead : farmTime(n, map, star);
     const inc = incomeRate(f), raw = cash / time;
     const base = inc > 0 ? Math.min(raw, inc) : raw;
-    return { wave: n, cash, time, raw, inc, rate: base * OFFLINE.eff * offlineMul(S) };
+    return { wave: n, cash, time, raw, inc, rate: base * OFFLINE.eff * offlineMul(S) * (map.offEarly ? growthAt(map.offEarly, n) : 1) };
   }
   function touchSeen(S, now) {
     if (isFinite(now) && now > (S.lastSeen || 0)) S.lastSeen = Math.floor(now);
@@ -4147,7 +4149,7 @@
     serialize, deserialize, migrate, cleanSettings, UI_SCALES, exportCode, parseCode, importCode, checksum, lzwPack, lzwUnpack, utf8, unutf8, fmt, setNumFormat, pct, mulberry, hashSeed,
     MAP_BOSSES, UNLOCK_AT, lightAt, crossings, placeBlockReason, switchMap, mapUnlocked, mapCleared, boardOf, newBoard, mapStartCash, activeTricks,
     ENEMY_IDS, ELITE, MECH, COMBOS, armorFor, mechOf, codexList, cleanCodex, firstSeen, themeRule, damage, kill,
-    MAX_STARS, STAR, STAR_MODS, BRANCHES, RESEARCH, RESEARCH_BY_ID, rl, starOf, starMods, starHpMul, researchLevels, starSpeedMul, starCashMul,
+    MAX_STARS, STAR, STAR_MODS, BRANCHES, RESEARCH, RESEARCH_BY_ID, rl, starOf, starMods, starHpMul, researchLevels, combatLevels, starSpeedMul, starCashMul,
     killMul, clearMul, moonMul, livesFor, canStarUp, starUpGain, starUp, skipFor, presetOf, placePreset,
     researchCost, researchTotal, researchState, buyResearch, grantMoon, cleanStars, cleanResearch, cleanPresets,
     HEROES, HERO_IDS, HERO_TUNE, xpNeed, rankFor, heroProg, heroStats, heroHome, heroAt, heroMilestone, heroUnlocked, syncHeroUnlocks, unlockHero,
