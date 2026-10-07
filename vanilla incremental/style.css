@@ -127,6 +127,10 @@ main { padding: 16px; }
 .slot.zinc .bar div { background: #8fb3c9; }
 .slot.brass { border-color: #d9b44a; }
 .slot.brass .bar div { background: #d9b44a; }
+.smeltcol { display: flex; flex-direction: column; gap: 16px; width: min(100%, 640px); }
+.smeltcol .masterybox { width: auto; }
+.slot.gold { border-color: #f0c43c; }
+.slot.gold .bar div { background: #f0c43c; }
 .slot.sel { outline: 2px solid var(--accent); }
 .recipepick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
 .recipepick small { opacity: .7; margin-right: 4px; }

@@ -88,10 +88,25 @@
       { id: 'mult', label: '+1 Brass Ingot multiplier', cost: 50, growth: 2.5 },
       { id: 'speed', label: 'Brass Ingots smelt 20% faster', cost: 50, growth: 3, max: 10 },
       { id: 'rb10', label: '×10 rebirth points', cost: 100, growth: 1, max: 1 },
-      { id: 'soon', label: 'Coming soon', soon: true, max: 1 },
+      { id: 'smup', label: 'Unlock new smelting upgrades', cost: 250, growth: 1, max: 1 },
+      { id: 'auto1', label: 'Autobuy Dirt, Stone & Copper upgrades', cost: 500, growth: 1, max: 1, auto: ['dirt', 'stone', 'copper'] },
+    ] },
+    { id: 'gold', name: 'Gold', in: { gold: 1000 }, ups: [
+      { id: 'omult', label: '+2 Gold multiplier', cost: 10, growth: 2 },
+      { id: 'base', label: '+1 base Gold Ingot per smelt', cost: 25, growth: 2.5 },
+      { id: 'mult', label: '+1 Gold Ingot multiplier', cost: 50, growth: 2.5 },
+      { id: 'speed', label: 'Gold Ingots smelt 20% faster', cost: 50, growth: 3, max: 10 },
+      { id: 'auto2', label: 'Autobuy Iron, Zinc & Gold upgrades', cost: 100, growth: 1, max: 1, auto: ['iron', 'zinc', 'gold'] },
     ] },
   ];
   const RECIPE = Object.fromEntries(RECIPES.map(x => [x.id, x]));
+  const SMELT_UPS = [
+    { id: 'speed', label: '2× smelter speed', ore: 'obsidian', cost: 1e8 },
+    { id: 'out', label: '2× smelter output', ore: 'dirt', cost: 1e11 },
+    { id: 'slot3', label: 'Unlock smelter slot 3', ore: 'gold', cost: 1e9 },
+    { id: 'slot4', label: 'Unlock smelter slot 4', ore: 'gold', cost: 1e10, req: 'slot3' },
+    { id: 'gold', label: 'Unlock Gold Ingot', ore: 'gold', cost: 1e11 },
+  ];
   const ACH_BONUS = 0.02;
   const ACHS = [];
   const ach = (id, name, desc, test) => ACHS.push({ id, name, desc, test });
@@ -120,9 +135,10 @@
   const $ = id => document.getElementById(id);
 
   function fresh() {
-    const S = { tab: 'mines', layer: 1, grid: null, ores: {}, auto: { bulk: 0, speed: 0, off: 0 }, pick: 0, buy: 1, vein: 0, seen: Date.now(), rb: { count: 0, points: 0, alloc: {} }, smelt: { ingots: {}, total: {}, slots: [], up: {} }, ach: {}, stats: { time: 0, clicks: 0, tiles: 0, layers: 0, best: 0, chest: 0, tnt: 0, vein: 0, offline: 0 } };
+    const S = { tab: 'mines', layer: 1, grid: null, ores: {}, auto: { bulk: 0, speed: 0, off: 0 }, pick: 0, buy: 1, vein: 0, seen: Date.now(), rb: { count: 0, points: 0, alloc: {} }, smelt: { ingots: {}, total: {}, slots: [], up: {}, extra: {}, abOff: {} }, ach: {}, stats: { time: 0, clicks: 0, tiles: 0, layers: 0, best: 0, chest: 0, tnt: 0, vein: 0, offline: 0 } };
     for (const o of ORES) S.ores[o.id] = { amt: 0, total: 0, run: 0, found: 0, mult: 0, base: 0, exp: 0, unique: 0, mastery: 0 };
     for (const x of RECIPES) { S.smelt.ingots[x.id] = 0; S.smelt.total[x.id] = 0; S.smelt.up[x.id] = Object.fromEntries(x.ups.map(u => [u.id, 0])); }
+    for (const u of SMELT_UPS) S.smelt.extra[u.id] = 0;
     for (let i = 0; i < SMELT.slots; i++) S.smelt.slots.push({ rec: '', busy: 0, t: 0 });
     S.grid = newGrid();
     return S;
@@ -172,6 +188,8 @@
         }
         const up = d.smelt.up;
         if (up && num(up.cmult)) up.copper = { omult: up.cmult, base: up.base, mult: up.mult, speed: up.speed, zinc: up.zinc };
+        if (d.smelt.extra) for (const u of SMELT_UPS) if (d.smelt.extra[u.id]) S.smelt.extra[u.id] = 1;
+        if (d.smelt.abOff) for (const k of Object.keys(d.smelt.abOff)) if (d.smelt.abOff[k]) S.smelt.abOff[k] = 1;
         if (up) for (const x of RECIPES) if (up[x.id]) for (const k of Object.keys(S.smelt.up[x.id])) if (num(up[x.id][k])) S.smelt.up[x.id][k] = up[x.id][k];
         if (Array.isArray(d.smelt.slots)) d.smelt.slots.slice(0, SMELT.slots).forEach((x, i) => { if (x && typeof x === 'object') S.smelt.slots[i] = { rec: RECIPE[x.rec] ? x.rec : x.on ? 'copper' : '', busy: x.busy ? 1 : 0, t: num(x.t) ? x.t : 0 }; });
       }
@@ -215,10 +233,12 @@
   const achCount = () => ACHS.filter(a => S.ach[a.id]).length;
   const achMult = () => 1 + ACH_BONUS * achCount();
   const oreGain = id => Math.pow(oreBase(id) * oreMult(id), oreExp(id)) * oreMastery(id) * achMult();
-  const smeltTime = r => Math.max(SMELT.min, SMELT.time * Math.pow(SMELT.speed, S.smelt.up[r].speed));
-  const smeltYield = r => (1 + S.smelt.up[r].base) * (1 + S.smelt.up[r].mult);
-  const slotCount = () => 1 + (S.ores.zinc.unique > 0 ? 1 : 0);
-  const recOpen = r => r === 'copper' || (r === 'zinc' ? ZINC_ON : S.smelt.up.zinc.brass > 0);
+  const smeltTime = r => Math.max(SMELT.min, SMELT.time * Math.pow(SMELT.speed, S.smelt.up[r].speed)) / (S.smelt.extra.speed ? 2 : 1);
+  const smeltYield = r => (1 + S.smelt.up[r].base) * (1 + S.smelt.up[r].mult) * (S.smelt.extra.out ? 2 : 1);
+  const slotCount = () => 1 + (S.ores.zinc.unique > 0 ? 1 : 0) + S.smelt.extra.slot3 + S.smelt.extra.slot4;
+  const REC_OPEN = { copper: () => true, zinc: () => ZINC_ON, brass: () => S.smelt.up.zinc.brass > 0, gold: () => S.smelt.extra.gold > 0 };
+  const recOpen = r => REC_OPEN[r]();
+  const extraOpen = () => S.smelt.up.brass.smup > 0;
   const recIn = r => Object.entries(RECIPE[r].in).map(([k, v]) => `${fmt(v)} ${RECIPE[k].name}`).join(' + ');
   const hasAuto = () => S.ores.stone.unique > 0;
   const autoBulk = () => 1 + S.auto.bulk;
@@ -278,7 +298,39 @@
   }
   const ingotCost = (r, u, pl) => u.soon ? '' : u.pay ? Object.entries(u.pay).map(([k, v]) => `${fmt(v)} ${RECIPE[k].name}`).join(' + ') + ' Ingots' : `${fmt(pl.total)} ${RECIPE[r].name} Ingots`;
 
+  function buyExtra(u) {
+    const o = S.ores[u.ore];
+    if (S.smelt.extra[u.id] || (u.req && !S.smelt.extra[u.req]) || o.amt < u.cost) return;
+    o.amt -= u.cost;
+    S.smelt.extra[u.id] = 1;
+    renderAll();
+  }
+
+  function autoBuy() {
+    let any = 0;
+    for (const x of RECIPES) for (const u of x.ups) {
+      if (!u.auto || !S.smelt.up[x.id][u.id] || S.smelt.abOff[u.id]) continue;
+      for (const id of u.auto) {
+        const st = S.ores[id];
+        for (const g of UPGRADES) {
+          if (g.max) continue;
+          let n = 0;
+          while (n < 1000) {
+            const c = cost(g, st[g.id], id);
+            if (st.amt < c) break;
+            st.amt -= c;
+            st[g.id]++;
+            n++;
+          }
+          any += n;
+        }
+      }
+    }
+    return any;
+  }
+
   function buyIngot(r, u) {
+    if (u.auto && S.smelt.up[r][u.id]) { S.smelt.abOff[u.id] = S.smelt.abOff[u.id] ? 0 : 1; renderSmelt(); return; }
     const pl = ingotPlan(r, u);
     if (!pl.can) return;
     if (u.pay) for (const [k, v] of Object.entries(u.pay)) S.smelt.ingots[k] -= v;
@@ -512,7 +564,7 @@
       if (smeltStep(dt)) renderAll(true);
       if (S.tab === 'smelt') renderSmeltBars();
     }
-    if (Math.floor(S.stats.time) !== Math.floor(S.stats.time - dt)) checkAch();
+    if (Math.floor(S.stats.time) !== Math.floor(S.stats.time - dt)) { checkAch(); if (autoBuy()) renderAll(true); }
     if (hasAuto()) {
       autoAcc += dt;
       const iv = autoInterval();
@@ -815,6 +867,15 @@
       });
       pk.appendChild(b);
     }
+    const eb = $('smeltUps');
+    for (const u of SMELT_UPS) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'upg';
+      b.innerHTML = '<span></span><small></small>';
+      b.addEventListener('click', () => buyExtra(u));
+      eb.appendChild(b);
+    }
     const iw = $('ingotWrap');
     for (const x of RECIPES) {
       const g = document.createElement('div');
@@ -855,6 +916,7 @@
       b.classList.toggle('on', open && !!sl.rec);
       b.classList.toggle('zinc', open && sl.rec === 'zinc');
       b.classList.toggle('brass', open && sl.rec === 'brass');
+      b.classList.toggle('gold', open && sl.rec === 'gold');
       b.classList.toggle('sel', PICKING === i);
       b.querySelector('.sname').textContent = !open ? 'Locked' : sl.rec ? `${RECIPE[sl.rec].name} Ingot` : 'Empty';
       b.querySelector('small').textContent = open ? slotStatus(sl) : '🔒';
@@ -868,6 +930,17 @@
         b.classList.toggle('on', S.smelt.slots[PICKING].rec === b.dataset.rec);
       });
     }
+    $('smeltExtra').hidden = !extraOpen();
+    [...$('smeltUps').children].forEach((b, i) => {
+      const u = SMELT_UPS[i];
+      const got = S.smelt.extra[u.id];
+      const can = !got && (!u.req || S.smelt.extra[u.req]) && S.ores[u.ore].amt >= u.cost;
+      b.querySelector('span').textContent = u.label;
+      b.querySelector('small').textContent = got ? 'Unlocked' : u.req && !S.smelt.extra[u.req] ? 'Needs slot 3' : `${fmt(u.cost)} ${RECIPE[u.ore] ? RECIPE[u.ore].name : ORES.find(o => o.id === u.ore).name}`;
+      b.disabled = !can;
+      b.classList.toggle('can', can);
+      b.classList.toggle('done', !!got);
+    });
     [...$('ingotWrap').children].forEach(g => {
       const r = g.dataset.rec;
       const x = RECIPE[r];
@@ -882,10 +955,11 @@
         const maxed = u.max && lvl >= u.max;
         const pl = ingotPlan(r, u);
         b.querySelector('span').textContent = u.label + (u.max === 1 ? '' : xN(pl.n) + (lvl ? ` (${lvl})` : ''));
-        b.querySelector('small').textContent = maxed ? (u.max === 1 ? 'Unlocked' : 'Maxed') : ingotCost(r, u, pl);
-        b.disabled = !pl.can;
-        b.classList.toggle('can', pl.can);
-        b.classList.toggle('done', !!maxed);
+        const tog = u.auto && maxed;
+        b.querySelector('small').textContent = tog ? (S.smelt.abOff[u.id] ? 'OFF · click to turn on' : 'ON · click to turn off') : maxed ? (u.max === 1 ? 'Unlocked' : 'Maxed') : ingotCost(r, u, pl);
+        b.disabled = !pl.can && !tog;
+        b.classList.toggle('can', pl.can || (tog && !S.smelt.abOff[u.id]));
+        b.classList.toggle('done', !!maxed && !tog);
       });
     });
     renderSmeltBars();
@@ -913,6 +987,7 @@
       ['Copper Ingots made', fmt(S.smelt.total.copper)],
       ['Zinc Ingots made', fmt(S.smelt.total.zinc)],
       ['Brass Ingots made', fmt(S.smelt.total.brass)],
+      ['Gold Ingots made', fmt(S.smelt.total.gold)],
       ['Achievements', `${achCount()} / ${ACHS.length}`],
       ['🎁 Chests', fmt(st.chest)],
       ['🧨 TNT', fmt(st.tnt)],
