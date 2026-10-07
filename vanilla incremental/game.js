@@ -123,9 +123,11 @@
     return n.toFixed(n < 10 ? 2 : n < 100 ? 1 : 0) + units[i];
   }
 
-  const oreBase = id => 1 + S.ores[id].base;
-  const oreMult = id => 1 + S.ores[id].mult;
-  const oreExp = id => 1 + S.ores[id].exp * 0.01;
+  const ALLOC_BONUS = { base: 0.25, mult: 0.25, exp: 0.0025 };
+  const allocOf = id => S.rb.alloc[id] || 0;
+  const oreBase = id => 1 + S.ores[id].base + allocOf(id) * ALLOC_BONUS.base;
+  const oreMult = id => 1 + S.ores[id].mult + allocOf(id) * ALLOC_BONUS.mult;
+  const oreExp = id => 1 + S.ores[id].exp * 0.01 + allocOf(id) * ALLOC_BONUS.exp;
   const oreMastery = id => Math.pow(2, S.ores[id].mastery);
   const oreGain = id => Math.pow(oreBase(id) * oreMult(id), oreExp(id)) * oreMastery(id);
   const hasAuto = () => S.ores.stone.unique > 0;
@@ -382,7 +384,7 @@
       el.card.classList.toggle('locked', !found);
       el.chance.textContent = (oreWeight(o) / totalWeight() * 100).toFixed(1) + '%';
       el.stats.innerHTML = found
-        ? `Per tile: <b>${fmt(oreGain(o.id))}</b> = (<b>${fmt(oreBase(o.id))}</b> × <b>${fmt(oreMult(o.id))}</b>)^<b>${oreExp(o.id).toFixed(2)}</b>${st.mastery ? ` × <b>${fmt(oreMastery(o.id))}</b>` : ''}`
+        ? `Per tile: <b>${fmt(oreGain(o.id))}</b> = (<b>${fmt(oreBase(o.id))}</b> × <b>${fmt(oreMult(o.id))}</b>)^<b>${+oreExp(o.id).toFixed(4)}</b>${st.mastery ? ` × <b>${fmt(oreMastery(o.id))}</b>` : ''}`
         : 'Not discovered yet';
       UPGRADES.forEach((u, i) => {
         const b = el.btns[i];
@@ -505,7 +507,7 @@
       const row = document.createElement('div');
       row.className = 'alloc';
       row.style.setProperty('--c', o.color);
-      row.innerHTML = `<span class="dot" style="background:${o.color}"></span><span class="aname">${o.name} <small>${o.points} pt · +${o.perPoint} weight per point</small></span><button type="button" class="step">−</button><b class="acount"></b><button type="button" class="step">+</button><span class="aw"></span>`;
+      row.innerHTML = `<span class="dot" style="background:${o.color}"></span><span class="aname">${o.name} <small>${o.points} pt · +${o.perPoint} weight, +0.25 base, +0.25 mult, +0.0025 exp per point</small></span><button type="button" class="step">−</button><b class="acount"></b><button type="button" class="step">+</button><span class="aw"></span>`;
       const [minus, plus] = row.querySelectorAll('.step');
       minus.addEventListener('click', e => shiftAlloc(o.id, e.shiftKey ? -10 : -1));
       plus.addEventListener('click', e => shiftAlloc(o.id, e.shiftKey ? 10 : 1));
