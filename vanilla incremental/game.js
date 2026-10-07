@@ -121,6 +121,26 @@
   ach('zinc', 'New metal', 'Add Zinc to the mines', () => S.smelt.up.copper.zinc > 0);
   ach('pick', 'Master pickaxe', 'Get the best pickaxe', () => S.pick >= PICKS.length - 2 && S.ores.silver.unique > 0);
   ach('offline', 'Never sleeps', 'Max out offline speed', () => S.auto.off >= OFFLINE.max);
+  ORES.forEach(o => [[1e9, 'billionaire'], [1e12, 'trillionaire'], [1e15, 'quadrillionaire'], [1e18, 'quintillionaire']].forEach(([n, t]) => ach(`ore${o.id}${n}`, `${o.name} ${t}`, `Earn ${fmt(n)} ${o.name} in total`, () => S.ores[o.id].total >= n)));
+  ORES.forEach(o => [[1, 'apprentice'], [5, 'master']].forEach(([n, t]) => ach(`mast${o.id}${n}`, `${o.name} ${t}`, `Reach ${o.name} Mastery ${n}`, () => S.ores[o.id].mastery >= n)));
+  ORES.forEach(o => ach(`mult${o.id}`, `${o.name} amplified`, `Buy 100 ${o.name} multiplier upgrades`, () => S.ores[o.id].mult >= 100));
+  RECIPES.forEach(x => [[100, 'Smelter'], [1e3, 'Foundry'], [1e4, 'Forge'], [1e5, 'Ironworks']].forEach(([n, t]) => {
+    if (x.id === 'copper' && n <= 1e3) return;
+    ach(`ingot${x.id}${n}`, `${x.name} ${t}`, `Make ${fmt(n)} ${x.name} Ingots`, () => S.smelt.total[x.id] >= n);
+  }));
+  ach('tiles1e7', 'Planet hollower', 'Dig 10M tiles', () => S.stats.tiles >= 1e7);
+  ach('layers1e4', 'Core sample', 'Clear 10K layers', () => S.stats.layers >= 1e4);
+  [[1e5, 'Carpal tunnel'], [1e6, 'Unstoppable finger']].forEach(([n, name]) => ach('clicks' + n, name, `Click ${fmt(n)} times`, () => S.stats.clicks >= n));
+  [['chest', 1000, 'Dragon hoard'], ['tnt', 2500, 'Crater maker'], ['vein', 1000, 'Vein whisperer']].forEach(([k, n, name]) => ach(k + n, name, `Find ${fmt(n)} ${SPECIALS[k].name}${k === 'tnt' ? '' : 's'}`, () => S.stats[k] >= n));
+  [[50, 'Reincarnated'], [100, 'Phoenix']].forEach(([n, name]) => ach('rb' + n, name, `Rebirth ${n} times`, () => S.rb.count >= n));
+  ach('rbp100', 'Point collector', 'Have 100 rebirth points', () => S.rb.points >= 100);
+  [[3600, 'Hour in the hole', '1 hour'], [36000, 'Long shift', '10 hours'], [360000, 'Lifer', '100 hours']].forEach(([n, name, d]) => ach('time' + n, name, `Play for ${d}`, () => S.stats.time >= n));
+  SMELT_UPS.forEach(u => ach('sx' + u.id, u.label, `Buy the smelting upgrade "${u.label}"`, () => S.smelt.extra[u.id] > 0));
+  ach('brass', 'Alloy', 'Unlock Brass Ingot smelting', () => S.smelt.up.zinc.brass > 0);
+  ach('auto1', 'Hands off', 'Unlock the Brass autobuyer', () => S.smelt.up.brass.auto1 > 0);
+  ach('auto2', 'Full automation', 'Unlock the Gold autobuyer', () => S.smelt.up.gold.auto2 > 0);
+  ach('fourslots', 'Assembly line', 'Have 4 smelters running at once', () => S.smelt.slots.slice(0, slotCount()).filter(s => s.busy).length >= 4);
+  ach('ach100', 'Completionist', 'Earn 100 achievements', () => achCount() >= 100);
 
   const TABS = [
     { id: 'mines', name: 'Mines' },
