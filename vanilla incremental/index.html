@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vanilla Incremental</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <h1>Vanilla Incremental</h1>
+  <nav class="tabs" id="tabs"></nav>
+  <div class="menu">
+    <button id="saveBtn" type="button">Save</button>
+    <button id="resetBtn" type="button" class="danger">Reset</button>
+  </div>
+</header>
+<div class="wallet" id="wallet"></div>
+<main>
+  <section class="tab" data-tab="mines">
+    <div class="mine">
+      <div class="minehead">
+        <span>Layer <b id="layer">1</b></span>
+        <span><b id="left">100</b> tiles left</span>
+      </div>
+      <div class="grid" id="grid"></div>
+      <p class="hint">Click a tile to dig it up. Clear all 100 to reach the next layer.</p>
+    </div>
+    <div class="upgrades" id="upgrades"></div>
+  </section>
+</main>
+<script src="game.js"></script>
+</body>
+</html>
