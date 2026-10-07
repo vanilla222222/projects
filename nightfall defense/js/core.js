@@ -11,8 +11,8 @@
   const BASE_LEN = 1480;
 
   const TUNE = {
-    hp0: 14, hpAll: 1.25, noHero: 0.85,
-    hpCurve: [[1, 1.25], [10, 1.21], [20, 1.2], [30, 1.185], [35, 1.16], [45, 1.17], [50, 1.15], [55, 1.105], [60, 1.105], [75, 1.083], [82, 1.054], [90, 1.056], [100, 1.045]],
+    hp0: 14, hpAll: 1.25, noHero: 0.74,
+    hpCurve: [[1, 1.25], [10, 1.21], [20, 1.2], [30, 1.19], [35, 1.165], [45, 1.165], [50, 1.145], [55, 1.11], [60, 1.11], [75, 1.088], [82, 1.052], [90, 1.05], [100, 1.045]],
     cash0: 2.2, cashGrowth: 1.2,
     clear0: 45, clearGrowth: 1.2,
     towerGrowth: 1.5, sellRate: 0.7,
@@ -21,7 +21,7 @@
     startCash: 160,
   };
 
-  const STAR = { hp: [0, 0.19, 0.21, 0.22, 0.23, 0.23], res: 0.019, speed: 0.03, cash: 0.25, moon: 20, mapMoon: 0.5, bossPlate: 0.06, swift: 0.75, regen: 0.003, lives: 0.7, eliteFrom: 20, eliteAdd: 0.1 };
+  const STAR = { hp: [0, 0.24, 0.28, 0.38, 0.42, 0.5], res: 0.019, speed: 0.03, cash: 0.25, moon: 20, mapMoon: 0.5, bossPlate: 0.06, swift: 0.75, regen: 0.003, lives: 0.7, eliteFrom: 20, eliteAdd: 0.1 };
   const STAR_MODS = [
     { id: 'plated', star: 1, name: 'Armored bosses', short: 'Plated', desc: 'Bosses wear iron plates: every hit loses a flat chunk of damage.' },
     { id: 'swift', star: 2, name: 'Faster spawns', short: 'Swift', desc: 'DNBs march in 25% closer together.' },
@@ -519,7 +519,7 @@
       routes: [WOODS_ROUTE],
       half: 36,
       blocks: scatter({ seed: 4242, n: 38, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 17, rmax: 27, routes: [WOODS_ROUTE], half: 36, pad: 6, gap: 10, kind: 'tree' }),
-      hpShift: 16, hpMul: 1, cashMul: 7583.7, startCash: 1.958e7, priceMul: 1900, hpCurve: [[1, 1.135], [50, 1.115], [65, 1.095], [80, 1.075], [95, 1.045], [100, 1.03]],
+      hpShift: 16, hpMul: 1, cashMul: 7583.7, startCash: 1.958e7, priceMul: 1900, hpCurve: [[1, 1.135], [20, 1.118], [40, 1.105], [50, 1.14], [65, 1.11], [80, 1.086], [95, 1.056], [100, 1.041]],
       bosses: MAP_BOSSES.woods.map(b => b.id),
       waves: waveVariant({ count: { base: 9 }, types: { fast: { from: 2, w: 7, theme: 10 }, tanky: { w: 2 } }, intro: { swarm: 6, healer: 11, stealth: 16, splitter: 21, burrower: 25, armored: 31, shield: 35 } }),
       palette: {
@@ -540,7 +540,7 @@
       crystals: CRYSTALS,
       blocks: scatter({ seed: 777, n: 14, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 12, rmax: 20, routes: [CAVE_A, CAVE_B], half: 34, pad: 8, gap: 30, kind: 'stalagmite',
         keep: CRYSTALS.map(c => ({ x: c.x, y: c.y, r: 16, kind: 'crystal' })) }),
-      offEarly: [[40, 0.5], [70, 1]], hpShift: 14, hpMul: 1, cashMul: 5.75e7, startCash: 1.372e11, priceMul: 1.44e7, hpCurve: [[1, 1.135], [50, 1.115], [65, 1.1], [80, 1.08], [90, 1.05], [100, 1.04]],
+      offEarly: [[40, 0.5], [70, 1]], hpShift: 14, hpMul: 1, cashMul: 5.75e7, startCash: 1.372e11, priceMul: 1.44e7, hpCurve: [[1, 1.135], [20, 1.13], [40, 1.112], [50, 1.12], [65, 1.105], [80, 1.085], [90, 1.055], [100, 1.042]],
       bosses: MAP_BOSSES.caverns.map(b => b.id),
       waves: waveVariant({ types: { magical: { from: 5, w: 6, theme: 10 }, flying: { w: 2 }, burrower: { w: 1.7 }, stealth: { w: 1.5 } }, intro: { burrower: 5, stealth: 11, healer: 15, shield: 21, splitter: 25, armored: 31, swarm: 35 } }),
       palette: {
@@ -559,7 +559,7 @@
       half: 34,
       wind: { every: 14, dur: 3.2, warn: 2.2, push: 120, side: 70, bossMul: 0.4 },
       blocks: scatter({ seed: 9191, n: 16, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 16, rmax: 30, routes: [CLIFF_ROUTE], half: 34, pad: 8, gap: 24, kind: 'boulder' }),
-      hpShift: 17, hpMul: 0.92, cashMul: 4.36e11, startCash: 1.075e15, priceMul: 1.09e11, hpCurve: [[1, 1.145], [40, 1.125], [60, 1.095], [75, 1.072], [90, 1.042], [100, 1.035]],
+      hpShift: 17, hpMul: 0.92, cashMul: 4.36e11, startCash: 1.075e15, priceMul: 1.09e11, hpCurve: [[1, 1.145], [40, 1.123], [60, 1.098], [75, 1.075], [90, 1.045], [100, 1.037]],
       bosses: MAP_BOSSES.cliffs.map(b => b.id),
       waves: waveVariant({ types: { flying: { from: 3, w: 6, theme: 10 } }, themes: [{ id: 'boss', mod: 10, rem: 0 }, { id: 'flying', at: [3], mod: 6, rem: 0 }, { id: 'magical', at: [8], mod: 11, rem: 6 }, { id: 'fast', mod: 7, rem: 0 }, { id: 'tanky', mod: 8, rem: 4 }], intro: { swarm: 4, splitter: 11, shield: 15, armored: 21, healer: 25, stealth: 31, burrower: 35 } }),
       palette: {
@@ -578,7 +578,7 @@
       half: 30,
       blocks: scatter({ seed: 5150, n: 8, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 14, rmax: 18, routes: [CASTLE_A, CASTLE_B], half: 30, pad: 6, gap: 60, kind: 'pillar',
         keep: [{ x: 700, y: 400, r: 46, kind: 'keep' }] }),
-      offEarly: [[25, 0.5], [70, 1]], hpShift: 15, hpMul: 0.92, cashMul: 3.31e15, startCash: 7.925e18, priceMul: 8.3e14, gateFrom: 4, hpCurve: [[1, 1.14], [50, 1.12], [70, 1.086], [84, 1.05], [100, 1.035]],
+      offEarly: [[25, 0.5], [70, 1]], hpShift: 15, hpMul: 0.92, cashMul: 3.31e15, startCash: 7.925e18, priceMul: 8.3e14, gateFrom: 4, hpCurve: [[1, 1.14], [40, 1.125], [50, 1.124], [70, 1.092], [84, 1.056], [100, 1.04]],
       bosses: MAP_BOSSES.castle.map(b => b.id),
       waves: waveVariant({ count: { base: 11, per: 0.55 }, types: { basic: { w: 8 }, fast: { from: 2, w: 5 }, tanky: { from: 3, w: 4 }, flying: { from: 4, w: 4 }, magical: { from: 5, w: 4 }, armored: { w: 1.6 }, shield: { w: 1.1 } }, elite: { from: 55 }, intro: { armored: 4, shield: 8, healer: 12, stealth: 16, splitter: 21, burrower: 24, swarm: 28 } }),
       palette: {

@@ -79,7 +79,7 @@ function coverSlots() {
   return lists;
 }
 
-const HERO_FOR = { moonlit: 'nova', woods: 'ironmane', caverns: 'nova', cliffs: 'skyflick', castle: 'skyflick' };
+const HERO_FOR = { moonlit: 'nova', woods: 'ironmane', caverns: 'nova', cliffs: 'skyflick', castle: 'duskfang' };
 const HERO = (process.env.HERO === '0' || CMODS.nohero) ? '' : (C.HEROES[process.env.HERO] ? process.env.HERO : HERO_FOR[MAP.id]);
 let heroCov = null, heroTowers = -1;
 function heroCover() {
