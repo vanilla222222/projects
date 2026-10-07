@@ -314,12 +314,13 @@
       if (!u.auto || !S.smelt.up[x.id][u.id] || S.smelt.abOff[u.id]) continue;
       for (const id of u.auto) {
         const st = S.ores[id];
+        const keep = extraOpen() ? Math.max(0, ...SMELT_UPS.filter(e => e.ore === id && !S.smelt.extra[e.id] && (!e.req || S.smelt.extra[e.req]) && st.amt >= e.cost).map(e => e.cost)) : 0;
         for (const g of UPGRADES) {
           if (g.max) continue;
           let n = 0;
           while (n < 1000) {
             const c = cost(g, st[g.id], id);
-            if (st.amt < c) break;
+            if (st.amt - c < keep) break;
             st.amt -= c;
             st[g.id]++;
             n++;
