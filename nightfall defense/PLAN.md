@@ -132,3 +132,31 @@ There are ten slices, built in order. Each one is large, and each is merged and 
 - **Save management:** export and import save codes.
 - **Performance:** object pooling, efficient handling of many enemies, and a check that 4x speed holds 60 fps with 300 enemies.
 - **Final polish:** a full balance pass across maps 1–5 at stars 0–5, a tutorial on first launch, a credits page, and an accessibility check covering a colourblind-safe palette option and readable font sizes.
+
+## Big update complete
+
+All ten slices are built. Each has its audit in `audits/slice-N.md`. The save is now `ver: 11`, and saves from v1 onward load and migrate.
+
+1. **Balance, feel and polish:** seeded wave randomness, data-driven maps and waves, a piecewise HP curve, 1x/2x/4x speed and pause, damage numbers, hit and death effects, boss shake and health bar, wave previews, a synthesised sound set, and hotkeys with buy-max.
+2. **Map system and maps 2–5:** maps as data with forks, blocks, darkness, bridges and wind. Whispering Woods, Crystal Caverns, Stormy Cliffs and Castle of Shadows each have their own board, bosses and map select previews.
+3. **Bat and crystal ponies:** two new races with upgrade paths, hotkeys 4 and 5, a crystal aura and bat detection, plus an economy and price redesign.
+4. **New enemy types:** seven new DNBs (lurker, splitter, shields, plate and more), elites and combos, a boss rework to 50 bosses, and the codex.
+5. **Prestige:** map stars after wave 100, per-star difficulty, Moonstones and a research tree.
+6. **Hero ponies:** four heroes with three abilities each, movement, levels and ranks, unlocks and star-up resets.
+7. **Offline and idle:** offline cash with a welcome-back summary, auto-farm, upgrade rules and plan slots.
+8. **Challenges and achievements:** a challenge sandbox with 15 modifiers, a daily challenge with streaks, 12 permanent challenges, 61 achievements and a stats page.
+9. **Codex and cosmetics:** pony and hero codex pages, a wardrobe with skins, effect themes and seasonal map decor, and pony names with titles.
+10. **Endless and final polish:**
+    - Endless mode after a map's first star: waves past 100, 12 stacking mutators, milestone Moonstones, and a best wave per map and star.
+    - A local top-10 leaderboard.
+    - Save export and import codes with a checksum, a preview and migration.
+    - Enemy, projectile and particle pooling, cached static layers and low effects.
+    - A five-step skippable tutorial and a credits page.
+    - Accessibility: a colourblind palette with shape cues, a readable font, UI scale and keyboard navigation.
+
+Final state:
+- `tools/e2e.js` passes 44 / 44 at 1280 and 390 with no console errors.
+- The bot reaches wave 100 at 0★ in 5.3–6.6 hours across all five maps.
+- The sim runs 300 DNBs at 4x in about 1.5 ms per frame.
+- 60 fps in a browser was not shown: the test container renders in software and reached 7–9 fps.
+- Open issues are listed in `audits/slice-10.md`.

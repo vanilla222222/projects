@@ -19,7 +19,7 @@
     return g;
   }
 
-  const Cos = { looks: {}, fx: {}, names: true, season: '' };
+  const Cos = { looks: {}, fx: {}, names: true, season: '', cb: false, lowFx: false };
   const SPR = new Map();
   function sprite(key, w, h, draw) {
     let c = SPR.get(key);
@@ -314,16 +314,20 @@
   const IMP = [];
   const projSeen = [];
   let impN = 1;
+  const seenG = [], seenX = [], seenY = [], seenK = [];
   function trackImpacts(S, now) {
     const cur = S.run ? S.run.proj : null;
     if (cur) for (const p of cur) p._seen = now;
-    for (const p of projSeen) {
-      if (p._seen === now || p.kind === 'hero') continue;
-      const th = themeOf(p.kind);
-      if (th !== 'classic' && IMP.length < 140) IMP.push({ x: p.x, y: p.y, th, t0: now, seed: (impN++ * 7919) % 9973, big: p.kind === 'unicorn' || p.kind === 'crystal' });
+    for (let i = 0; i < projSeen.length; i++) {
+      const p = projSeen[i], same = p.g === seenG[i];
+      if (same && p._seen === now) continue;
+      const kind = same ? p.kind : seenK[i];
+      if (kind === 'hero') continue;
+      const th = themeOf(kind);
+      if (th !== 'classic' && IMP.length < 140) IMP.push({ x: same ? p.x : seenX[i], y: same ? p.y : seenY[i], th, t0: now, seed: (impN++ * 7919) % 9973, big: kind === 'unicorn' || kind === 'crystal' });
     }
     projSeen.length = 0;
-    if (cur) for (const p of cur) projSeen.push(p);
+    if (cur) for (let i = 0; i < cur.length; i++) { const p = cur[i]; projSeen.push(p); seenG[i] = p.g; seenX[i] = p.x; seenY[i] = p.y; seenK[i] = p.kind; }
   }
   function drawImpacts(ctx, now, sc) {
     let w = 0;
@@ -1071,14 +1075,92 @@
     }
     ctx.restore();
     if (e.burrowT > 0 || ghost) return;
-    if (!e.noBar && (e.hp < e.hpMax || e.boss)) {
-      const bw = e.boss ? r * 2.6 : r * 1.8, bh = e.boss ? 5 : 3.5;
-      const bx = x - bw / 2, by = y - r * 1.55 - (e.boss ? 6 : 0);
-      ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+    drawBar(ctx, e, x, y, r, magic, fl);
+  }
+  function drawBar(ctx, e, x, y, r, magic, fl) {
+    if (Cos.cb && !e.noBar) drawCue(ctx, e, x, y, r, magic, fl);
+    if (e.noBar || !(e.hp < e.hpMax || e.boss)) return;
+    const bw = e.boss ? r * 2.6 : r * 1.8, bh = e.boss ? 5 : (Cos.cb ? 4.5 : 3.5);
+    const bx = x - bw / 2, by = y - r * 1.55 - (e.boss ? 6 : 0);
+    const f = Math.max(0, e.hp / e.hpMax);
+    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+    if (Cos.cb) {
+      ctx.fillStyle = e.boss ? '#f08c2e' : f > 0.5 ? '#4ea8ff' : f > 0.25 ? '#ffd84d' : '#f08c2e';
+      ctx.fillRect(bx, by, bw * f, bh);
+      ctx.fillStyle = 'rgba(0,0,0,.75)';
+      for (let i = 1; i < 4; i++) ctx.fillRect(bx + bw * i / 4 - 0.5, by, 1, bh);
+      if (f <= 0.25) { ctx.fillStyle = '#fff'; ctx.fillRect(bx - 3, by, 2, bh); }
+    } else {
       ctx.fillStyle = e.boss ? '#e35b6a' : (magic ? '#c08bff' : (fl ? '#7fc8ff' : '#7fd66a'));
-      ctx.fillRect(bx, by, bw * Math.max(0, e.hp / e.hpMax), bh);
-      if (e.sh > 0 && e.shMax > 0) { ctx.fillStyle = '#9fd2ff'; ctx.fillRect(bx, by - 2.5, bw * Math.min(1, e.sh / e.shMax), 2); }
+      ctx.fillRect(bx, by, bw * f, bh);
     }
+    if (e.sh > 0 && e.shMax > 0) { ctx.fillStyle = Cos.cb ? '#ffffff' : '#9fd2ff'; ctx.fillRect(bx, by - 2.5, bw * Math.min(1, e.sh / e.shMax), 2); }
+  }
+  function drawCue(ctx, e, x, y, r, magic, fl) {
+    const k = e.boss ? 'boss' : fl ? 'fly' : magic ? 'magic' : (e.armor || e.plate > 0) ? 'armor' : e.swarm ? 'swarm' : e.stealth ? 'stealth' : '';
+    if (!k) return;
+    const s = Math.max(3.5, Math.min(7, r * 0.42)), cx = x + r * 0.95, cy = y - r * 1.05;
+    ctx.save();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#000000'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    if (k === 'boss') { for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? s * 0.45 : s; ctx.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); } ctx.closePath(); }
+    else if (k === 'fly') { ctx.moveTo(cx, cy - s); ctx.lineTo(cx + s, cy + s * 0.8); ctx.lineTo(cx - s, cy + s * 0.8); ctx.closePath(); }
+    else if (k === 'magic') { ctx.moveTo(cx, cy - s); ctx.lineTo(cx + s, cy); ctx.lineTo(cx, cy + s); ctx.lineTo(cx - s, cy); ctx.closePath(); }
+    else if (k === 'armor') ctx.rect(cx - s * 0.8, cy - s * 0.8, s * 1.6, s * 1.6);
+    else if (k === 'swarm') { ctx.arc(cx - s * 0.45, cy, s * 0.42, 0, Math.PI * 2); ctx.moveTo(cx + s * 0.87, cy); ctx.arc(cx + s * 0.45, cy, s * 0.42, 0, Math.PI * 2); }
+    else { ctx.arc(cx, cy, s * 0.8, 0, Math.PI * 2); ctx.moveTo(cx + s * 0.35, cy); ctx.arc(cx, cy, s * 0.35, 0, Math.PI * 2, true); }
+    ctx.stroke(); ctx.fill();
+    ctx.restore();
+  }
+
+  const SPRC = { e: new Map(), p: new Map() };
+  function sprCanvas(w, h) { const c = document.createElement('canvas'); c.width = Math.max(1, Math.ceil(w)); c.height = Math.max(1, Math.ceil(h)); return c; }
+  function drawDNBFast(ctx, e, x, y, r, now, dpr) {
+    if (e.burrowT > 0 || e.stealth || e.noBar) { drawDNB(ctx, e, x, y, r, now); return; }
+    const look = e.bossDef && e.bossDef.look;
+    const rr = Math.round(r * 2) / 2;
+    const key = e.type + '|' + e.color + '|' + e.dark + '|' + (e.flying ? 1 : 0) + (C.isMagic(e) ? 1 : 0) + (e.boss ? 1 : 0) + (e.elite ? 1 : 0) + (e.armor && e.hp > e.hpMax * 0.5 ? 1 : 0) + (e.splitDone ? 1 : 0) + '|' + (e.bossDef ? e.bossDef.id : '') + '|' + rr + '|' + dpr;
+    let c = SPRC.e.get(key);
+    const big = rr * (look && look.size && !e.splitDone ? look.size : 1), half = big * 2.6;
+    if (!c) {
+      if (SPRC.e.size > 260) SPRC.e.clear();
+      c = sprCanvas(half * 2 * dpr, half * 2 * dpr);
+      const g = c.getContext('2d');
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const ghost = { type: e.type, color: e.color, dark: e.dark, flying: e.flying, magical: e.magical, boss: e.boss, elite: e.elite, armor: e.armor, splitDone: e.splitDone, bossDef: e.bossDef, swarm: e.swarm, plate: e.plate, hp: e.hp, hpMax: e.hpMax, hit: 0, seed: 0, burrowT: 0, stealth: false, seen: true, noBar: true, timers: {}, sh: 0, shMax: 0, stunT: 0, slow: 0, hexT: 0, dispelT: 0, cut: 0, revealT: 0, wallSlow: 0 };
+      drawDNB(g, ghost, half, half, rr, 0);
+      SPRC.e.set(key, c);
+    }
+    ctx.drawImage(c, x - half, y - half, half * 2, half * 2);
+    if (e.hit > 0) { ctx.save(); ctx.globalAlpha = 0.45; ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.ellipse(x, y - r * 0.3, r * 0.62, r * 1.05, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+    if (e.slow > 0 || e.quag || e.wallSlow > 0) { ctx.strokeStyle = 'rgba(120,200,255,.7)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y + r * 0.2, r * 1.05, 0.2, Math.PI - 0.2); ctx.stroke(); }
+    if (e.hexT > 0 || e.stunT > 0) { ctx.strokeStyle = e.stunT > 0 ? 'rgba(255,229,138,.85)' : 'rgba(214,107,255,.8)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, r + 4, 0, Math.PI * 2); ctx.stroke(); }
+    if (e.sh > 0 && e.shMax > 0) { ctx.strokeStyle = 'rgba(200,232,255,.85)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y - r * 0.2, r * 1.3, 0, Math.PI * 2 * Math.min(1, e.sh / e.shMax)); ctx.stroke(); }
+    drawBar(ctx, e, x, y, look && look.size && !e.splitDone ? r * look.size : r, C.isMagic(e), e.flying);
+  }
+  function drawPonyFast(ctx, sx, sy, size, o, race, dpr) {
+    const steps = 24, ai = ((Math.round(o.angle / (Math.PI * 2) * steps) % steps) + steps) % steps;
+    const key = race + '|' + (o.lookKey || '') + '|' + ai + '|' + Math.round(size * 2) / 2 + '|' + dpr;
+    let c = SPRC.p.get(key);
+    const half = size * 1.9;
+    if (!c) {
+      if (SPRC.p.size > 400) SPRC.p.clear();
+      c = sprCanvas(half * 2 * dpr, half * 2 * dpr);
+      const g = c.getContext('2d');
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawPony(g, half, half, size, Object.assign({}, o, { angle: ai / steps * Math.PI * 2, now: 0, hop: 0, seed: 0 }));
+      SPRC.p.set(key, c);
+    }
+    const hop = o.hop ? -o.hop * size * 0.25 : 0;
+    ctx.drawImage(c, sx - half, sy - half + hop, half * 2, half * 2);
+  }
+  function lookKey(race) { const L = Cos.looks[race]; return L ? JSON.stringify(L) : ''; }
+  const NOSHADOW = { get() { return 0; }, set() {}, configurable: true };
+  function setLow(ctx, on) {
+    const has = Object.prototype.hasOwnProperty.call(ctx, 'shadowBlur');
+    if (on && !has) { ctx.shadowBlur = 0; Object.defineProperty(ctx, 'shadowBlur', NOSHADOW); }
+    else if (!on && has) delete ctx.shadowBlur;
   }
 
   function drawMound(ctx, x, y, r, now, ph) {
@@ -1760,6 +1842,21 @@
         }
       }
     }
+    if (Cos.cb && !mini) {
+      g.fillStyle = 'rgba(255,255,255,.55)'; g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = 1;
+      const cs = Math.max(3, map.half * sc * 0.45);
+      for (const R of map.route) {
+        for (let d = 40; d < R.len - 20; d += 70) {
+          C.routePos(R, d, tmpPos);
+          const [sx, sy] = View.toScreen(tmpPos.x, tmpPos.y);
+          const [ex, ey] = View.toScreen(tmpPos.x + tmpPos.tx * 10, tmpPos.y + tmpPos.ty * 10);
+          const a = Math.atan2(ey - sy, ex - sx), ca = Math.cos(a), sa = Math.sin(a);
+          const pt = (u, v) => [sx + ca * u - sa * v, sy + sa * u + ca * v];
+          const q = [pt(cs, 0), pt(-cs * 0.4, cs * 0.9), pt(-cs * 0.05, 0), pt(-cs * 0.4, -cs * 0.9)];
+          g.beginPath(); g.moveTo(q[0][0], q[0][1]); for (let i = 1; i < 4; i++) g.lineTo(q[i][0], q[i][1]); g.closePath(); g.fill(); g.stroke();
+        }
+      }
+    }
     drawBridges(g, map, P, sc);
     const starts = new Set();
     for (const R of map.route) {
@@ -1943,7 +2040,7 @@
       g.clearRect(0, 0, c.width, c.height);
       drawPony(g, c.width / 2, c.height * 0.58, c.width * 0.62, Object.assign(heroOpts(id), { angle: Math.PI / 2, now: now || 0 }));
     },
-    bg: null, bgKey: '', shakeT: 0, shakeAmp: 0, bossBar: false,
+    bg: null, bgKey: '', shakeT: 0, shakeAmp: 0, bossBar: false, frameMs: 16.7, autoLow: false, low: false, lastNow: 0,
     cos: Cos,
     baseOpts(race, t) {
       const R = C.RACES[race];
@@ -2026,7 +2123,7 @@
     },
     buildBg(cw, ch, dpr, map) {
       map = map || C.getMap('moonlit');
-      const key = cw + 'x' + ch + 'x' + dpr + (View.portrait ? 'p' : 'l') + map.id + Cos.season;
+      const key = cw + 'x' + ch + 'x' + dpr + (View.portrait ? 'p' : 'l') + map.id + Cos.season + (Cos.cb ? 'c' : '');
       if (this.bgKey === key) return;
       this.bgKey = key;
       const mk = () => { const c = document.createElement('canvas'); c.width = Math.round(cw * dpr); c.height = Math.round(ch * dpr); const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); return [c, g]; };
@@ -2050,6 +2147,14 @@
     },
     drawScene(ctx, S, ui, now, dt, cw, ch, dpr) {
       const W = C.WORLD, sc = View.sc;
+      if (this.lastNow) this.frameMs = this.frameMs * 0.92 + Math.min(100, now - this.lastNow) * 0.08;
+      this.lastNow = now;
+      const nE = S.run ? S.run.enemies.length : 0;
+      if (!this.autoLow && this.frameMs > 24 && nE >= 80) this.autoLow = true;
+      else if (this.autoLow && nE < 40) this.autoLow = false;
+      const low = Cos.lowFx || this.autoLow;
+      this.low = low;
+      setLow(ctx, low);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.fillStyle = '#0b0a13'; ctx.fillRect(0, 0, cw, ch);
       let shook = false;
@@ -2074,6 +2179,7 @@
         for (const t of S.towers) { const [tx, ty] = View.toScreen(t.x, t.y); circle(ctx, tx, ty, W.minGap * sc); ctx.stroke(); }
       }
       drawCrystalWorks(ctx, S, sel, now);
+      const lk = {};
       const list = S.towers.slice().sort((a, b) => View.toScreen(a.x, a.y)[1] - View.toScreen(b.x, b.y)[1]);
       for (const t of list) {
         const [sx, sy] = View.toScreen(t.x, t.y);
@@ -2081,23 +2187,32 @@
         if (t === sel) { ctx.strokeStyle = '#4fd1c5'; ctx.lineWidth = 2; circle(ctx, sx, sy, W.towerR * sc * 1.25); ctx.stroke(); }
         if (t.id === ui.hoverId && t !== sel) { ctx.strokeStyle = 'rgba(79,209,197,.45)'; ctx.lineWidth = 1.5; circle(ctx, sx, sy, W.towerR * sc * 1.25); ctx.stroke(); }
         if (ring >= 10) { ctx.strokeStyle = ring >= 20 ? 'rgba(227,193,91,.7)' : 'rgba(169,139,255,.5)'; ctx.lineWidth = 1.5; circle(ctx, sx, sy + W.towerR * sc * 0.45, W.towerR * sc * 0.9); ctx.stroke(); }
-        drawPony(ctx, sx, sy, W.towerR * 2.3 * sc, Object.assign(this.ponyOpts(t.race, t), { angle: View.angle(t.face), now, hop: t.anim > 0 ? Math.min(1, t.anim * 4) : 0 }));
+        const po = Object.assign(this.ponyOpts(t.race, t), { angle: View.angle(t.face), now, hop: t.anim > 0 ? Math.min(1, t.anim * 4) : 0 });
+        if (low) { po.lookKey = lk[t.race] || (lk[t.race] = lookKey(t.race) || '-'); drawPonyFast(ctx, sx, sy, W.towerR * 2.3 * sc, po, t.race, dpr); }
+        else drawPony(ctx, sx, sy, W.towerR * 2.3 * sc, po);
       }
       if (Cos.names) for (const t of list) { const [sx, sy] = View.toScreen(t.x, t.y); drawLabel(ctx, t, sx, sy, W.towerR * 2.3 * sc, sc); }
       drawHero(ctx, S, ui, now);
       if (S.run) {
         const es = S.run.enemies.slice().sort((a, b) => a.y - b.y);
         const m = S.run.map;
+        const de = low ? (e, sx, sy) => drawDNBFast(ctx, e, sx, sy, e.r * sc, now, dpr) : (e, sx, sy) => drawDNB(ctx, e, sx, sy, e.r * sc, now);
         if (this.bridgeImg && m.bridges) {
-          for (const e of es) if (underBridge(m, e)) { const [sx, sy] = View.toScreen(e.x, e.y); drawDNB(ctx, e, sx, sy, e.r * sc, now); }
+          for (const e of es) if (underBridge(m, e)) { const [sx, sy] = View.toScreen(e.x, e.y); de(e, sx, sy); }
           ctx.drawImage(this.bridgeImg, 0, 0, cw, ch);
-          for (const e of es) if (!underBridge(m, e)) { const [sx, sy] = View.toScreen(e.x, e.y); drawDNB(ctx, e, sx, sy, e.r * sc, now); }
-        } else for (const e of es) { const [sx, sy] = View.toScreen(e.x, e.y); drawDNB(ctx, e, sx, sy, e.r * sc, now); }
+          for (const e of es) if (!underBridge(m, e)) { const [sx, sy] = View.toScreen(e.x, e.y); de(e, sx, sy); }
+        } else for (const e of es) { const [sx, sy] = View.toScreen(e.x, e.y); de(e, sx, sy); }
         for (const p of S.run.proj) drawProj(ctx, p, sc);
       }
-      for (const f of S.fx) drawFx(ctx, S, f);
-      trackImpacts(S, now);
-      if (IMP.length) drawImpacts(ctx, now, sc);
+      if (Cos.lowFx) {
+        for (let i = Math.max(0, S.fx.length - 60); i < S.fx.length; i++) drawFx(ctx, S, S.fx[i]);
+        IMP.length = 0; projSeen.length = 0;
+      } else {
+        const F = S.fx, from = low ? Math.max(0, F.length - 160) : 0;
+        for (let i = from; i < F.length; i++) drawFx(ctx, S, F[i]);
+        trackImpacts(S, now);
+        if (IMP.length) drawImpacts(ctx, now, sc);
+      }
       if (ui.placing && ui.ghost) {
         const [sx, sy] = View.toScreen(ui.ghost.x, ui.ghost.y);
         ctx.save(); ctx.globalAlpha = 0.6;

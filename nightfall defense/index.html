@@ -58,6 +58,8 @@
           <button id="achBtn" class="mapbtn codexbtn" type="button" aria-haspopup="dialog" data-tip="Achievements and their permanent bonuses (A)">Achievements <span id="achState" class="rstate">0</span></button>
           <button id="statsBtn" class="mapbtn codexbtn" type="button" aria-haspopup="dialog" data-tip="Lifetime stats and map records (T)">Stats</button>
           <button id="wardrobeBtn" class="mapbtn codexbtn wardbtn" type="button" aria-haspopup="dialog" data-tip="Pony skins, effect themes and seasonal map decor (K)">Wardrobe</button>
+          <button id="endlessBtn" class="mapbtn codexbtn" type="button" aria-haspopup="dialog" data-tip="Endless runs past wave 100 on any starred map (G)">Endless</button>
+          <button id="lbBtn" class="mapbtn codexbtn" type="button" aria-haspopup="dialog" data-tip="Your best endless runs per map and star (L)">Leaderboard</button>
         </div>
         <div id="chalCard" class="chalcard" hidden>
           <div class="cchead"><span id="chalName" class="ccname">Challenge</span><span id="chalDiff" class="ccdiff"></span></div>
@@ -115,6 +117,10 @@
     <label class="opt"><span>Volume</span><input type="range" id="optVol" min="0" max="100" step="1"></label>
     <label class="opt"><span>Screen shake on boss arrival</span><input type="checkbox" id="optShake"><span class="sw"></span></label>
     <label class="opt"><span>Damage numbers</span><input type="checkbox" id="optNums"><span class="sw"></span></label>
+    <label class="opt"><span>Low effects<small>Fewer particles, no glow. Smoother on slow devices.</small></span><input type="checkbox" id="optLowFx"><span class="sw"></span></label>
+    <label class="opt"><span>Colourblind mode<small>Blue and orange instead of green and red, with shapes on DNBs, health bars and the road.</small></span><input type="checkbox" id="optCb"><span class="sw"></span></label>
+    <label class="opt"><span>Readable font<small>A larger, plainer typeface with more spacing.</small></span><input type="checkbox" id="optFont"><span class="sw"></span></label>
+    <label class="opt"><span>Interface size</span><select id="optUi"><option value="0.85">Small</option><option value="1">Normal</option><option value="1.15">Large</option><option value="1.3">Extra large</option></select></label>
     <fieldset class="opt fmt">
       <legend>Number format</legend>
       <label><input type="radio" name="numFmt" value="short"> Short (1.2M)</label>
@@ -131,9 +137,15 @@
       <li><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> hero abilities &middot; <kbd>H</kbd> select hero, then click the field to move it</li>
       <li><kbd>U</kbd> open upgrades for the pony under the cursor, where you can also name it</li>
       <li><kbd>B</kbd> upgrade max affordable &middot; <kbd>S</kbd> sell (press twice)</li>
+      <li><kbd>L</kbd> leaderboard &middot; <kbd>Tab</kbd> and arrow keys move between buttons in any window</li>
       <li>Hold <kbd>Shift</kbd> to show every range &middot; <kbd>Esc</kbd> cancel</li>
     </ul>
-    <button id="setReset" class="ghost" type="button">Restore default settings</button>
+    <div class="setbtns">
+      <button id="codeBtn" class="ghost" type="button">Save code: export or import</button>
+      <button id="tutBtn" class="ghost" type="button">Replay the tutorial</button>
+      <button id="creditsBtn" class="ghost" type="button">Credits</button>
+      <button id="setReset" class="ghost" type="button">Restore default settings</button>
+    </div>
   </div>
 </div>
 <div id="mapModal" class="modal" hidden>
@@ -160,7 +172,7 @@
 <div id="researchModal" class="modal" hidden>
   <div class="dialog wide research" role="dialog" aria-modal="true" aria-labelledby="researchTitle">
     <div class="dhead"><h2 id="researchTitle">Research</h2><span id="resMoon" class="resmoon"></span><button id="researchClose" class="ghost x" type="button">Close</button></div>
-    <p class="hint">Research is permanent and works on every map. Earn Moonstones by starring up maps and by clearing boss waves on starred maps for the first time. On starred maps each research level also makes DNBs <span id="resPress"></span> tougher.</p>
+    <p class="hint">Research is permanent and works on every map. Earn Moonstones by starring up maps and by clearing boss waves on starred maps for the first time. On starred maps each Pony or Ability research level also makes DNBs <span id="resPress"></span> tougher. Economy and Utility research never does.</p>
     <div id="resTree" class="restree"></div>
   </div>
 </div>
@@ -213,6 +225,9 @@
     <div class="dhead"><h2 id="chalTitle">Challenges</h2><button id="chalClose" class="ghost x" type="button">Close</button></div>
     <p class="hint">Challenge runs are played on a fresh sandbox board with their own cash and lives. Your maps, ponies and waves are never touched. Research, achievements and your hero come along. Lives carry over from wave to wave, and a run ends when you win, lose every life or quit.</p>
     <div id="dailyCard" class="dailycard"></div>
+    <h3 id="endlessHead">Endless</h3>
+    <p class="hint">Earn a map's first star to open its endless run. Waves keep coming past 100 on a sandbox board, and every 10 waves adds a mutator and pays a few Moonstones. Your best wave is kept for each map and star.</p>
+    <div id="endlessList" class="endlist"></div>
     <h3>Permanent challenges</h3>
     <div id="chalList" class="challist"></div>
   </div>
@@ -244,6 +259,54 @@
   <div class="dialog wide stats" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
     <div class="dhead"><h2 id="statsTitle">Stats</h2><button id="statsClose" class="ghost x" type="button">Close</button></div>
     <div id="statsBody" class="statsbody"></div>
+  </div>
+</div>
+<div id="lbModal" class="modal" hidden>
+  <div class="dialog wide lbdlg" role="dialog" aria-modal="true" aria-labelledby="lbTitle">
+    <div class="dhead"><h2 id="lbTitle">Leaderboard</h2><button id="lbClose" class="ghost x" type="button">Close</button></div>
+    <p class="hint">Your ten best endless runs on each map and star level, kept in this browser.</p>
+    <div id="lbMaps" class="rtabs" role="tablist" aria-label="Map"></div>
+    <div id="lbStars" class="rtabs lbstars" role="tablist" aria-label="Stars"></div>
+    <div id="lbBody" class="lbbody"></div>
+  </div>
+</div>
+<div id="codeModal" class="modal" hidden>
+  <div class="dialog code" role="dialog" aria-modal="true" aria-labelledby="codeTitle">
+    <div class="dhead"><h2 id="codeTitle">Save code</h2><button id="codeClose" class="ghost x" type="button">Close</button></div>
+    <h3>Export</h3>
+    <p class="hint">Copy this code to move your progress to another browser or keep a backup.</p>
+    <textarea id="codeOut" class="codebox" rows="4" readonly aria-label="Your save code"></textarea>
+    <div class="dactions"><span id="codeCopied" class="hint" role="status" aria-live="polite"></span><button id="codeCopy" class="primary" type="button">Copy code</button></div>
+    <h3>Import</h3>
+    <p class="hint">Paste a code, check it, then confirm. Importing replaces everything saved in this browser.</p>
+    <textarea id="codeIn" class="codebox" rows="4" aria-label="Paste a save code" placeholder="NDS11..."></textarea>
+    <div id="codePreview" class="codeprev" role="status" aria-live="polite"></div>
+    <div class="dactions"><button id="codeCheck" class="ghost" type="button">Check code</button><button id="codeImport" class="primary danger" type="button" disabled>Replace my save</button></div>
+  </div>
+</div>
+<div id="creditsModal" class="modal" hidden>
+  <div class="dialog credits" role="dialog" aria-modal="true" aria-labelledby="creditsTitle">
+    <div class="dhead"><h2 id="creditsTitle">Credits</h2><button id="creditsClose" class="ghost x" type="button">Close</button></div>
+    <p><b>Nightfall Defense</b>: an incremental tower defense about ponies holding the night roads.</p>
+    <h3>Made with</h3>
+    <ul class="credlist">
+      <li>Plain JavaScript, HTML and CSS. No libraries, no build step.</li>
+      <li>Every pony, DNB, boss and map is drawn in code on a canvas.</li>
+      <li>All sound is synthesised live with the Web Audio API.</li>
+    </ul>
+    <h3>Thanks</h3>
+    <ul class="credlist">
+      <li>Everyone who played the early waves and asked for one more.</li>
+      <li>The tower defense games that came before, for the long nights.</li>
+    </ul>
+    <p class="hint">Your progress lives only in this browser. Use a save code from Settings to back it up.</p>
+  </div>
+</div>
+<div id="tut" class="tut" hidden>
+  <div class="tutcard" role="dialog" aria-labelledby="tutText" aria-live="polite">
+    <div class="tuthead"><span id="tutStep" class="tutstep"></span><button id="tutSkip" class="ghost" type="button">Skip tutorial</button></div>
+    <p id="tutText"></p>
+    <div class="dactions"><button id="tutNext" class="primary" type="button" hidden>Next</button></div>
   </div>
 </div>
 <div id="achToast" class="achtoast" role="status" aria-live="polite"></div>

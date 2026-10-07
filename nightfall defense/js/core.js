@@ -4,15 +4,15 @@
   const WORLD = { L: 1400, W: 800, towerR: 20, minGap: 44 };
   const MAX_WAVE = 100;
   const LIVES = 10;
-  const SAVE_VER = 10;
+  const SAVE_VER = 11;
   const MAX_STARS = 5;
   const SPAWN_GUARD = 15;
   const UNLOCK_AT = 50;
   const BASE_LEN = 1480;
 
   const TUNE = {
-    hp0: 14, hpAll: 1.25,
-    hpCurve: [[1, 1.25], [10, 1.21], [20, 1.2], [30, 1.185], [35, 1.16], [45, 1.17], [50, 1.15], [55, 1.105], [60, 1.105], [75, 1.083], [82, 1.054], [90, 1.056], [100, 1.045]],
+    hp0: 14, hpAll: 1.25, noHero: 0.74,
+    hpCurve: [[1, 1.25], [10, 1.21], [20, 1.2], [30, 1.19], [35, 1.165], [45, 1.165], [50, 1.145], [55, 1.11], [60, 1.11], [75, 1.088], [82, 1.052], [90, 1.05], [100, 1.045]],
     cash0: 2.2, cashGrowth: 1.2,
     clear0: 45, clearGrowth: 1.2,
     towerGrowth: 1.5, sellRate: 0.7,
@@ -21,12 +21,12 @@
     startCash: 160,
   };
 
-  const STAR = { hp: [0, 0.19, 0.21, 0.22, 0.23, 0.23], res: 0.019, speed: 0.03, cash: 0.25, moon: 20, mapMoon: 0.5, bossPlate: 0.06, swift: 0.75, regen: 0.003, lives: 7, eliteFrom: 20, eliteAdd: 0.1 };
+  const STAR = { hp: [0, 0.24, 0.28, 0.38, 0.42, 0.5], res: 0.019, speed: 0.03, cash: 0.25, moon: 20, mapMoon: 0.5, bossPlate: 0.06, swift: 0.75, regen: 0.003, lives: 0.7, eliteFrom: 20, eliteAdd: 0.1 };
   const STAR_MODS = [
     { id: 'plated', star: 1, name: 'Armored bosses', short: 'Plated', desc: 'Bosses wear iron plates: every hit loses a flat chunk of damage.' },
     { id: 'swift', star: 2, name: 'Faster spawns', short: 'Swift', desc: 'DNBs march in 25% closer together.' },
     { id: 'regen', star: 3, name: 'Enemy regen', short: 'Regen', desc: 'DNBs regrow 0.3% of their HP each second, bosses half that.' },
-    { id: 'fragile', star: 4, name: 'Fewer lives', short: '7 lives', desc: 'Every wave starts with 7 lives instead of 10.' },
+    { id: 'fragile', star: 4, name: 'Fewer lives', short: '-30% lives', desc: 'Every wave starts with 30% fewer lives, Sturdy Gate included.' },
     { id: 'elite', star: 5, name: 'Elites common', short: 'Elites', desc: 'Elite DNBs appear from wave 20 and 10% more often.' },
   ];
 
@@ -519,7 +519,7 @@
       routes: [WOODS_ROUTE],
       half: 36,
       blocks: scatter({ seed: 4242, n: 38, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 17, rmax: 27, routes: [WOODS_ROUTE], half: 36, pad: 6, gap: 10, kind: 'tree' }),
-      hpShift: 16, hpMul: 1, cashMul: 7583.7, startCash: 1.958e7, priceMul: 1900, hpCurve: [[1, 1.135], [50, 1.115], [65, 1.095], [80, 1.075], [95, 1.045], [100, 1.03]],
+      hpShift: 16, hpMul: 1, cashMul: 7583.7, startCash: 1.958e7, priceMul: 1900, hpCurve: [[1, 1.135], [20, 1.118], [40, 1.105], [50, 1.14], [65, 1.11], [80, 1.086], [95, 1.056], [100, 1.041]],
       bosses: MAP_BOSSES.woods.map(b => b.id),
       waves: waveVariant({ count: { base: 9 }, types: { fast: { from: 2, w: 7, theme: 10 }, tanky: { w: 2 } }, intro: { swarm: 6, healer: 11, stealth: 16, splitter: 21, burrower: 25, armored: 31, shield: 35 } }),
       palette: {
@@ -540,7 +540,7 @@
       crystals: CRYSTALS,
       blocks: scatter({ seed: 777, n: 14, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 12, rmax: 20, routes: [CAVE_A, CAVE_B], half: 34, pad: 8, gap: 30, kind: 'stalagmite',
         keep: CRYSTALS.map(c => ({ x: c.x, y: c.y, r: 16, kind: 'crystal' })) }),
-      hpShift: 14, hpMul: 1, cashMul: 5.75e7, startCash: 1.372e11, priceMul: 1.44e7, hpCurve: [[1, 1.135], [50, 1.115], [65, 1.1], [80, 1.08], [90, 1.05], [100, 1.04]],
+      offEarly: [[40, 0.5], [70, 1]], hpShift: 14, hpMul: 1, cashMul: 5.75e7, startCash: 1.372e11, priceMul: 1.44e7, hpCurve: [[1, 1.135], [20, 1.13], [40, 1.112], [50, 1.12], [65, 1.105], [80, 1.085], [90, 1.055], [100, 1.042]],
       bosses: MAP_BOSSES.caverns.map(b => b.id),
       waves: waveVariant({ types: { magical: { from: 5, w: 6, theme: 10 }, flying: { w: 2 }, burrower: { w: 1.7 }, stealth: { w: 1.5 } }, intro: { burrower: 5, stealth: 11, healer: 15, shield: 21, splitter: 25, armored: 31, swarm: 35 } }),
       palette: {
@@ -559,7 +559,7 @@
       half: 34,
       wind: { every: 14, dur: 3.2, warn: 2.2, push: 120, side: 70, bossMul: 0.4 },
       blocks: scatter({ seed: 9191, n: 16, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 16, rmax: 30, routes: [CLIFF_ROUTE], half: 34, pad: 8, gap: 24, kind: 'boulder' }),
-      hpShift: 17, hpMul: 0.92, cashMul: 4.36e11, startCash: 1.075e15, priceMul: 1.09e11, hpCurve: [[1, 1.145], [40, 1.125], [60, 1.095], [75, 1.072], [90, 1.042], [100, 1.035]],
+      hpShift: 17, hpMul: 0.92, cashMul: 4.36e11, startCash: 1.075e15, priceMul: 1.09e11, hpCurve: [[1, 1.145], [40, 1.123], [60, 1.098], [75, 1.075], [90, 1.045], [100, 1.037]],
       bosses: MAP_BOSSES.cliffs.map(b => b.id),
       waves: waveVariant({ types: { flying: { from: 3, w: 6, theme: 10 } }, themes: [{ id: 'boss', mod: 10, rem: 0 }, { id: 'flying', at: [3], mod: 6, rem: 0 }, { id: 'magical', at: [8], mod: 11, rem: 6 }, { id: 'fast', mod: 7, rem: 0 }, { id: 'tanky', mod: 8, rem: 4 }], intro: { swarm: 4, splitter: 11, shield: 15, armored: 21, healer: 25, stealth: 31, burrower: 35 } }),
       palette: {
@@ -578,7 +578,7 @@
       half: 30,
       blocks: scatter({ seed: 5150, n: 8, x0: 20, x1: 1380, y0: 20, y1: 780, rmin: 14, rmax: 18, routes: [CASTLE_A, CASTLE_B], half: 30, pad: 6, gap: 60, kind: 'pillar',
         keep: [{ x: 700, y: 400, r: 46, kind: 'keep' }] }),
-      hpShift: 15, hpMul: 0.92, cashMul: 3.31e15, startCash: 7.925e18, priceMul: 8.3e14, gateFrom: 4, hpCurve: [[1, 1.14], [50, 1.12], [70, 1.086], [84, 1.05], [100, 1.035]],
+      offEarly: [[25, 0.5], [70, 1]], hpShift: 15, hpMul: 0.92, cashMul: 3.31e15, startCash: 7.925e18, priceMul: 8.3e14, gateFrom: 4, hpCurve: [[1, 1.14], [40, 1.125], [50, 1.124], [70, 1.092], [84, 1.056], [100, 1.04]],
       bosses: MAP_BOSSES.castle.map(b => b.id),
       waves: waveVariant({ count: { base: 11, per: 0.55 }, types: { basic: { w: 8 }, fast: { from: 2, w: 5 }, tanky: { from: 3, w: 4 }, flying: { from: 4, w: 4 }, magical: { from: 5, w: 4 }, armored: { w: 1.6 }, shield: { w: 1.1 } }, elite: { from: 55 }, intro: { armored: 4, shield: 8, healer: 12, stealth: 16, splitter: 21, burrower: 24, swarm: 28 } }),
       palette: {
@@ -700,7 +700,8 @@
   function starOf(S, id) { return (S && S.stars && S.stars[id || S.map]) | 0; }
   function starMods(star) { return STAR_MODS.filter(m => m.star <= star); }
   function researchLevels(S) { let n = 0; if (S && S.research) for (const k in S.research) n += S.research[k] | 0; return n; }
-  function starHpMul(star, S) { star = Math.max(0, Math.min(MAX_STARS, star | 0)); return star ? (1 + STAR.hp[star]) * (1 + STAR.res * researchLevels(S)) : 1; }
+  function combatLevels(S) { let n = 0; if (S && S.research) for (const k in S.research) { const r = RESEARCH_BY_ID[k]; if (r && (r.br === 'pony' || r.br === 'abil')) n += S.research[k] | 0; } return n; }
+  function starHpMul(star, S) { star = Math.max(0, Math.min(MAX_STARS, star | 0)); return star ? (1 + STAR.hp[star]) * (1 + STAR.res * combatLevels(S)) : 1; }
   function starSpeedMul(star) { return 1 + STAR.speed * star; }
   function starCashMul(star) { return 1 + STAR.cash * star; }
   function cashResearchMul(S) { return rl(S, 'eco_master') ? 1.15 : 1; }
@@ -710,7 +711,8 @@
   function moonMul(S) { return 1 + 0.1 * rl(S, 'util_moon') + (rl(S, 'util_master') ? 0.2 : 0); }
   function livesFor(S, star) {
     if (star == null) star = starOf(S);
-    return (star >= 4 ? STAR.lives : LIVES) + rl(S, 'util_lives') + 2 * rl(S, 'util_master');
+    const base = LIVES + rl(S, 'util_lives') + 2 * rl(S, 'util_master');
+    return star >= 4 ? Math.max(1, Math.round(base * STAR.lives)) : base;
   }
   function killCash(n, map) { return TUNE.cash0 * Math.pow(TUNE.cashGrowth, n - 1) * (map ? map.cashMul : 1); }
   function clearBonus(n, map) { return Math.round(TUNE.clear0 * (1 + 0.1 * n) * Math.pow(TUNE.clearGrowth, n - 1) * (n % 10 === 0 ? 2.5 : 1) * (map ? map.cashMul : 1)); }
@@ -719,6 +721,7 @@
     const every = map.waves.bossEvery;
     if (n % every !== 0) return null;
     const list = map.bosses;
+    if (n > MAX_WAVE) { const k = Math.min(5, list.length); return BOSS_BY_ID[list[list.length - k + (n / every) % k]] || null; }
     return BOSS_BY_ID[list[Math.min(list.length - 1, n / every - 1)]] || null;
   }
 
@@ -793,7 +796,8 @@
   function nodeCost(race, k, pm) { return Math.round(RACES[race].cost * TUNE.nodeBase * Math.pow(TUNE.nodeGrowth, k) * (pm || 1)); }
   function infCost(race, lv) { return Math.round(RACES[race].cost * TUNE.infBase * Math.pow(TUNE.infGrowth, lv)); }
 
-  const DEFAULT_SETTINGS = { sound: true, vol: 0.6, shake: true, dmgNums: true, numFmt: 'short', speed: 1 };
+  const DEFAULT_SETTINGS = { sound: true, vol: 0.6, shake: true, dmgNums: true, numFmt: 'short', speed: 1, lowFx: false, cb: false, font: false, ui: 1, tut: 0 };
+  const UI_SCALES = [0.85, 1, 1.15, 1.3];
   const NUM_FORMATS = ['short', 'sci', 'full'];
   const SPEEDS = [1, 2, 4];
 
@@ -1090,6 +1094,8 @@
     if (!P || P.chal || P.run) return null;
     if (typeof def === 'string') def = def === 'daily' ? dailyDef(dayIndex(now || Date.now())) : CHAL_BY_ID[def];
     if (!def || !MAPS[def.map]) return null;
+    const endless = def.kind === 'endless';
+    if (endless && !endlessUnlocked(P, def.map)) return null;
     const map = getMap(def.map);
     const X = newState(map.id);
     for (const k of CHAL_SHARED) X[k] = P[k];
@@ -1099,11 +1105,23 @@
     for (const m of def.mods) mods[m] = true;
     X.cm = (mods.short || mods.glass) ? { range: mods.short ? 0.75 : 1, dmg: mods.glass ? 1.5 : 1 } : null;
     X.stars = {}; X.moon = 0; X.moonTotal = 0; X.presets = {}; X.slots = {}; X.boards = {}; X.lastSeen = 0;
+    if (endless) { X.stars[map.id] = def.star | 0; X.seed = hashSeed(P.seed, map.order * 7 + (def.star | 0), (endlessOf(P).runs | 0) + 1); }
     Object.assign(X, newBoard(map, X));
-    X.cash = chalStartCash(X, def, map);
+    X.cash = endless ? endlessStartCash(X, map, def.star | 0) : chalStartCash(X, def, map);
+    if (endless && def.layout) {
+      const src = boardsOf(P).find(b => b.id === map.id);
+      if (src && src.towers.length) {
+        X.towers = loadBoard(X, map, { towers: src.towers.map(serTower) }).towers;
+        let spent = 0, mx = 0;
+        for (const t of X.towers) { spent += t.spent; t.kills = 0; t.dmg = 0; mx = Math.max(mx, t.id); }
+        X.nextId = mx + 1;
+        X.cash = Math.max(Math.round(X.cash * ENDLESS.keep), Math.round(X.cash - spent));
+      }
+    }
     X.cleared = def.from - 1; X.sel = def.from;
     const lives = def.lives || chalLives(def.mods);
     X.chal = { id: def.id, kind: def.kind, def, mods, parent: P, from: def.from, to: def.to, lives, livesMax: lives, t: 0, waves: 0, over: null, day: def.day || 0, result: null };
+    if (endless) { X.chal.order = endlessOrder(X.seed); X.chal.date = +now || 0; X.chal.moon = 0; endlessOf(P).runs++; }
     if (!mods.nohero && P.hero && P.hero.id) {
       const p = heroHome(map);
       X.hero = { id: P.hero.id, x: p.x, y: p.y, auto: !!P.hero.auto, prog: JSON.parse(JSON.stringify(P.hero.prog || {})) };
@@ -1134,7 +1152,8 @@
     const P = c.parent, def = c.def, won = result === 'won';
     const score = chalScore(c.waves, c.lives, c.t, won);
     const out = { id: def.id, kind: def.kind, name: def.name, result, waves: c.waves, total: def.to - def.from + 1, lives: won ? c.lives : 0, t: Math.round(c.t), score, reward: [], best: false, first: false, streak: 0 };
-    if (def.kind === 'daily') {
+    if (def.kind === 'endless') Object.assign(out, endlessRecord(X), { total: 0 });
+    else if (def.kind === 'daily') {
       const d = rollDaily(P, def.day);
       if (def.day === d.day) {
         if (score > d.best) { d.best = score; out.best = true; }
@@ -1172,6 +1191,121 @@
       daily: { def: dd, day, label: dayLabel(day), best: today ? d.best : 0, won: today && !!d.won, runs: today ? d.runs : 0, streak: dailyStreak(P, day), bestStreak: d.bestStreak, wins: d.wins, moon: dailyMoon(dailyStreak(P, day) + 1) },
       perm: CHALLENGES.map(c => ({ def: c, done: !!P.chalDone[c.id], best: P.chalBest[c.id] | 0, reward: rewardText(c.reward) })),
     };
+  }
+  const ENDLESS_FROM = MAX_WAVE + 1;
+  const ENDLESS = { start: 0.7, hp: 0.4, kill: 1.2, clear: 1.2, lives: 20, every: 10, moon: 2, top: 10, keep: 0.1, grow: 1.03, boss: 0.6 };
+  const ENDLESS_MUTS = {
+    regen: { name: 'Regrowth', desc: 'DNBs regrow 1% of their health each second.' },
+    haste: { name: 'Haste', desc: 'DNBs move 15% faster.' },
+    shielded: { name: 'Shielded', desc: 'Every DNB carries a bubble worth 20% of its health.' },
+    splitting: { name: 'Splitting', desc: 'Slain DNBs break into two Splitlings.' },
+    airplate: { name: 'Armoured fliers', desc: 'Flying DNBs wear heavy plate.' },
+    fog: { name: 'Fog', desc: 'A third of all DNBs are hidden in fog.' },
+    elite: { name: 'Elite surge', desc: '20% more DNBs arrive as elites.' },
+    pairs: { name: 'Boss pairs', desc: 'Every boss brings a twin.' },
+    teeming: { name: 'Teeming', desc: '25% more DNBs in every wave.' },
+    thick: { name: 'Thick hides', desc: 'DNBs have 25% more health.' },
+    lean: { name: 'Lean times', desc: 'Kills pay 25% less.' },
+    ironboss: { name: 'Iron bosses', desc: 'Bosses have 50% more health and wear plate.' },
+  };
+  const ENDLESS_MUT_IDS = Object.keys(ENDLESS_MUTS);
+  function newEndless() { return { best: {}, top: {}, runs: 0 }; }
+  function endlessOf(P) { return P.endless || (P.endless = newEndless()); }
+  function endlessKey(id, star) { return id + ':' + (star | 0); }
+  function endlessUnlocked(P, id) { return !!MAPS[id] && starOf(P, id) >= 1; }
+  function endlessDef(P, id) {
+    const map = MAPS[id];
+    if (!map) return null;
+    const star = starOf(P, id);
+    return { id: 'endless', kind: 'endless', name: 'Endless: ' + map.name, map: id, star, from: ENDLESS_FROM, to: Infinity, mods: [], lives: ENDLESS.lives, reward: null, diff: 0 };
+  }
+  function startEndless(P, id, now, layout) { const def = endlessDef(P, id); if (def && layout) def.layout = true; return def ? startChallenge(P, def, now) : null; }
+  function endlessStartCash(X, map, star) { return Math.round(mapStartCash(map, X) + skipCash(X, map, MAX_WAVE, star) * ENDLESS.start); }
+  function endlessOrder(seed) {
+    const ids = ENDLESS_MUT_IDS.slice(), r = mulberry(seed ^ 0x51ab);
+    for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); const t = ids[i]; ids[i] = ids[j]; ids[j] = t; }
+    return ids;
+  }
+  function endlessMuts(order, n) {
+    const k = Math.max(0, Math.floor((n - MAX_WAVE) / ENDLESS.every)), out = {};
+    for (let i = 0; i < k; i++) { const id = order[i % order.length]; out[id] = (out[id] | 0) + 1; }
+    return out;
+  }
+  function endlessMutList(order, n) { const m = endlessMuts(order, n); return order.filter(id => m[id]).map(id => ({ id, rank: m[id], name: ENDLESS_MUTS[id].name, desc: ENDLESS_MUTS[id].desc })); }
+  function endlessRun(S, run, ch) {
+    const mp = mapOf(S), k = Math.max(0, run.n - MAX_WAVE);
+    run.cashMul *= ENDLESS.kill; run.clearMul *= ENDLESS.clear; run.hpMul *= ENDLESS.hp * Math.pow(ENDLESS.grow, k) * hpFor(MAX_WAVE, mp) / hpFor(run.n, mp);
+    const m = endlessMuts(ch.order, run.n);
+    run.mut = m;
+    if (m.regen) run.regen += 0.01 * m.regen;
+    if (m.haste) run.spdMul *= 1 + 0.15 * m.haste;
+    if (m.thick) run.hpMul *= Math.pow(1.25, m.thick);
+    if (m.lean) run.cashMul *= Math.pow(0.75, m.lean);
+    if (!m.teeming && !m.elite && !m.pairs) return;
+    const r = mulberry(hashSeed(S.seed, run.n, 55));
+    let q = run.queue.map(it => Object.assign({}, it));
+    if (m.teeming) {
+      const add = [];
+      for (const it of q) if (it.type !== 'boss' && r() < 0.25 * m.teeming) add.push(Object.assign({}, it, { t: it.t + 0.35 }));
+      q = q.concat(add).sort((a, b) => a.t - b.t);
+    }
+    if (m.elite) for (const it of q) if (!it.elite && it.type !== 'basic' && it.type !== 'boss' && r() < 0.2 * m.elite) it.elite = true;
+    if (m.pairs && run.spec.boss) {
+      const b = q.filter(it => it.type === 'boss' && !it.twin)[0];
+      if (b) { run.xboss = run.spec.boss; q.push(Object.assign({}, b, { t: b.t + 1.6, xb: true, twin: true })); q.sort((a, c) => a.t - c.t); run.enrageAt += 10; }
+    }
+    run.queue = q;
+  }
+  function endlessEnemy(run, e) {
+    const m = run.mut;
+    if (m.shielded && !e.boss) { e.ownSh = true; e.shMax = Math.max(e.shMax, e.hpMax * 0.2 * m.shielded); e.sh = e.shMax; }
+    if (m.airplate && e.flying) e.plate = Math.max(e.plate, 0.05 * m.airplate * e.plateBase);
+    if (m.fog && !e.boss && e.id % 3 === 0) e.stealth = true;
+    if (e.boss && !e.splitDone) { e.hpMax *= ENDLESS.boss * Math.pow(1.5, m.ironboss | 0); e.hp = e.hpMax; if (m.ironboss) e.plate = Math.max(e.plate, 0.05 * e.plateBase); }
+  }
+  function endlessCleared(X, n) {
+    const c = X.chal, P = c.parent, E = endlessOf(P), key = endlessKey(c.def.map, c.def.star);
+    if (n <= (E.best[key] | 0)) return;
+    E.best[key] = n;
+    if (n % ENDLESS.every) return;
+    const g = grantMoon(P, ENDLESS.moon + (c.def.star | 0));
+    c.moon += g;
+    emit(X, 'endlessMilestone', { n, moon: g, muts: endlessMutList(c.order, n + 1).length });
+  }
+  function herdOf(towers) { const h = {}; for (const t of towers || []) h[t.race] = (h[t.race] | 0) + 1; return h; }
+  function endlessRecord(X) {
+    const c = X.chal, P = c.parent, E = endlessOf(P), key = endlessKey(c.def.map, c.def.star);
+    const w = X.cleared, out = { wave: w, star: c.def.star | 0, map: c.def.map, rank: 0, best: false, moon: c.moon | 0, muts: endlessMutList(c.order, w + 1) };
+    if (w < ENDLESS_FROM) return out;
+    const entry = { w, t: Math.round(c.t), d: c.date || 0, h: (X.hero && X.hero.id) || '', herd: herdOf(X.towers), m: out.muts.length };
+    const list = (E.top[key] || []).concat(entry).sort((a, b) => b.w - a.w || a.t - b.t || a.d - b.d).slice(0, ENDLESS.top);
+    E.top[key] = list;
+    out.rank = list.indexOf(entry) + 1;
+    out.best = out.rank === 1;
+    out.entry = entry;
+    return out;
+  }
+  function endlessInfo(P) {
+    const E = endlessOf(P);
+    return MAP_IDS.map(id => {
+      const star = starOf(P, id), best = {}, top = {};
+      for (let s = 0; s <= MAX_STARS; s++) { const k = endlessKey(id, s); if (E.best[k]) best[s] = E.best[k]; if (E.top[k] && E.top[k].length) top[s] = E.top[k]; }
+      return { id, name: MAPS[id].name, open: endlessUnlocked(P, id), star, best, top, cur: E.best[endlessKey(id, star)] | 0 };
+    });
+  }
+  function cleanEndless(o) {
+    const E = newEndless();
+    if (!o || typeof o !== 'object') return E;
+    const okKey = k => { const m = /^([a-z]+):(\d)$/.exec(k); return !!m && !!MAPS[m[1]] && +m[2] <= MAX_STARS; };
+    E.best = numMap(o.best, okKey, true);
+    E.runs = Math.max(0, o.runs | 0);
+    if (o.top && typeof o.top === 'object') for (const k in o.top) {
+      if (!okKey(k) || !Array.isArray(o.top[k])) continue;
+      const list = o.top[k].filter(x => x && typeof x === 'object' && (x.w | 0) >= ENDLESS_FROM).map(x => ({ w: x.w | 0, t: Math.max(0, x.t | 0), d: Math.max(0, +x.d || 0), h: HEROES[x.h] ? x.h : '', herd: numMap(x.herd, r => !!RACES[r], true), m: Math.max(0, x.m | 0) }));
+      list.sort((a, b) => b.w - a.w || a.t - b.t || a.d - b.d);
+      if (list.length) E.top[k] = list.slice(0, ENDLESS.top);
+    }
+    return E;
   }
   function tickPlay(S, dt) { const P = profileOf(S); if (P && P.stats && dt > 0 && dt < 5) P.stats.playActive += dt; }
   function statsSummary(S) {
@@ -1443,7 +1577,7 @@
       codex: { e: {}, b: {}, p: {} },
       stars: {}, moon: 0, moonTotal: 0, research: {}, presets: {}, heroUnlocks: { nova: 1 },
       slots: {}, rules: newRules(), lastSeen: 0,
-      ach: {}, feats: {}, bonus: newBonus(), daily: newDaily(), chalDone: {}, chalBest: {}, rp: 0, tokens: {}, cos: newCos(), chal: null, cm: null,
+      ach: {}, feats: {}, bonus: newBonus(), daily: newDaily(), chalDone: {}, chalBest: {}, rp: 0, tokens: {}, cos: newCos(), endless: newEndless(), chal: null, cm: null,
     };
     Object.assign(S, newBoard(map, S));
     return S;
@@ -1736,10 +1870,11 @@
   function effDmg(t) { return stats(t).dmg * (1 + ((t.buff && t.buff.dmg) || 0)); }
   function effRate(t) { return stats(t).rate * (1 + ((t.buff && t.buff.rate) || 0)) * (t.boomT > 0 ? 3 : 1) * (t.surgeT > 0 ? 1.25 : 1); }
 
-  function topWave(S) { return Math.min(MAX_WAVE, S.cleared + 1); }
+  function topWave(S) { return S.chal && S.chal.kind === 'endless' ? S.cleared + 1 : Math.min(MAX_WAVE, S.cleared + 1); }
 
   function startWave(S, n) {
     if (S.run) return false;
+    recycleEnemies();
     const ch = S.chal;
     if (ch) { if (ch.over) return false; n = S.cleared + 1; if (n > ch.to) return false; }
     n = Math.max(1, Math.min(n || S.sel, topWave(S)));
@@ -1761,12 +1896,12 @@
     const lives = ch ? ch.lives : livesFor(S, star);
     S.run = {
       n, spec, map, route: map.route, queue, t: 0, lives, livesMax: ch ? ch.livesMax : lives, lives0: lives, enemies: [], proj: [], earned: 0, kills: 0, eid: 1,
-      star, hpMul: starHpMul(star, S), spdMul: starSpeedMul(star), cashMul: killMul(S, star), clearMul: clearMul(S, star), regen: star >= 3 ? STAR.regen : 0,
+      star, hpMul: starHpMul(star, S) * (ch || (S.hero && S.hero.id) ? 1 : TUNE.noHero), spdMul: starSpeedMul(star), cashMul: killMul(S, star), clearMul: clearMul(S, star), regen: star >= 3 ? STAR.regen : 0,
       bossCash: 1 + 0.25 * rl(S, 'eco_boss'), leakCut: rl(S, 'util_leak'),
       fresh: n > S.cleared, over: null, rng: mulberry(hashSeed(S.seed, n, S.stats.played)), bossIds: [],
       enrageAt: (queue.length ? queue[queue.length - 1].t : 0) + 75 * Math.max(1, map.maxLen / BASE_LEN), windT: 0, gust: 0, gustWarn: 0, gustKind: '', gustDir: 1, gustOn: false,
     };
-    if (ch) chalRun(S, S.run, ch);
+    if (ch) (ch.kind === 'endless' ? endlessRun : chalRun)(S, S.run, ch);
     const ready = rl(S, 'abil_first') > 0;
     for (const t of S.towers) {
       t.cd = 0; t.sigT = 0; t.sigTs = {}; t.boomT = 0; t.bloodT = 0; t.surgeT = 0; t.stomp = 0; t.wDmg = 0; t.wKills = 0;
@@ -1785,7 +1920,41 @@
 
   function emit(S, type, data) { S.events.push(Object.assign({ type }, data || {})); }
   function fx(S, o) { if (S.fxOn && S.fx.length < 700) { o.t = 0; S.fx.push(o); } }
+  const FXF = [];
+  function fx1(S, k, x, y, r, c, life, rc, seed, c2, big, sv, crit, dim) {
+    if (!S.fxOn || S.fx.length >= 700) return;
+    let f = FXF.pop();
+    if (f) POOL.fReused++; else { POOL.fMade++; f = { k: '', x: 0, y: 0, r: 0, c: undefined, life: 0, t: 0, _th: undefined, pf: 1, rc: undefined, seed: undefined, c2: undefined, big: undefined, s: undefined, crit: undefined, dim: undefined }; }
+    f.k = k; f.x = x; f.y = y; f.r = r; f.c = c; f.life = life; f.t = 0; f._th = undefined;
+    f.rc = rc; f.seed = seed; f.c2 = c2; f.big = big; f.s = sv; f.crit = crit; f.dim = dim;
+    S.fx.push(f);
+  }
   function snd(S, k) { if (S.sfx) S.sfx[k] = (S.sfx[k] || 0) + 1; }
+
+  const POOL = { eFree: [], eDead: [], pFree: [], made: 0, reused: 0, pMade: 0, pReused: 0, fMade: 0, fReused: 0 };
+  function recycleEnemies() {
+    const P = POOL;
+    for (const e of P.eDead) { if (P.eFree.length >= 800) break; for (const k in e) e[k] = undefined; P.eFree.push(e); }
+    P.eDead.length = 0;
+  }
+  function newEnemy(f) {
+    const e = POOL.eFree.pop();
+    if (!e) { POOL.made++; return f; }
+    POOL.reused++;
+    for (const k in f) e[k] = f[k];
+    return e;
+  }
+  function newProj(o) {
+    const p = POOL.pFree.pop();
+    if (!p) { POOL.pMade++; o.g = 0; return o; }
+    POOL.pReused++;
+    const g = (p.g || 0) + 1;
+    for (const k in p) p[k] = undefined;
+    for (const k in o) p[k] = o[k];
+    p.g = g;
+    return p;
+  }
+  function freeProj(p) { if (POOL.pFree.length < 600) POOL.pFree.push(p); }
 
   function runHp(run) { return hpFor(run.n, run.map) * (run.hpMul || 1); }
   function spawnEnemy(S, run, type, d, opts) {
@@ -1793,14 +1962,14 @@
     const def = ENEMIES[type];
     const base = runHp(run);
     const hpMax = base * def.hp;
-    const e = {
+    const e = newEnemy({
       id: run.eid++, type, path: 0, d: d === undefined ? 0 : d, off: 0, x: 0, y: 0, tx: 1, ty: 0,
       hpMax, hp: hpMax, speed: def.speed, r: def.r, flying: !!def.flying, magical: !!def.magical,
       boss: type === 'boss', cash: def.cash, color: def.color, dark: def.dark, alive: true,
       slow: 0, slowT: 0, stunT: 0, hexAmp: 0, hexT: 0, doom: false, dispelT: 0, burrowT: 0, trickT: 0, sprintT: 0,
       quag: false, wallSlow: 0, revealT: 0, echoAmp: 0, stealth: !!def.stealth, hit: 0, leak: 1, phase: 0, seed: (run.eid * 977) % 1000, dn: 0, dnT: 0, dnCrit: false,
       dnDim: false, sh: 0, shMax: 0, shT: 0, ownSh: false, plateBase: base, plate: 0, swarm: !!def.swarm, timers: {}, seen: true,
-    };
+    });
     e.plate = def.plate ? def.plate * e.plateBase : 0;
     if (def.heal) e.timers.heal = def.heal.every * e.seed / 1000;
     if (e.boss) {
@@ -1820,6 +1989,7 @@
     if (run.cm && !e.boss) chalEnemy(run.cm, e);
     if (run.spdMul) e.speed *= run.spdMul;
     if (e.elite) applyElite(e, n);
+    if (run.mut) endlessEnemy(run, e);
     if (S.codex) {
       const box = e.boss ? S.codex.b : S.codex.e, key = e.boss ? e.bossDef.id : type;
       if (!box[key]) { box[key] = 1; emit(S, 'codex', { kind: e.boss ? 'b' : 'e', id: key, name: e.boss ? e.bossDef.name : def.name }); }
@@ -1923,7 +2093,7 @@
   }
 
   function flushNum(S, e) {
-    if (e.dn > 0 && S.settings.dmgNums) fx(S, { k: 'num', x: e.x, y: e.y - e.r, s: fmt(e.dn), crit: e.dnCrit, dim: e.dnDim && !e.dnCrit, big: e.boss, life: e.dnCrit ? 0.95 : 0.75, seed: e.id });
+    if (e.dn > 0 && S.settings.dmgNums) fx1(S, 'num', e.x, e.y - e.r, undefined, undefined, e.dnCrit ? 0.95 : 0.75, undefined, e.id, undefined, e.boss, fmt(e.dn), e.dnCrit, e.dnDim && !e.dnCrit);
     e.dn = 0; e.dnCrit = false; e.dnDim = false; e.dnT = 0;
   }
 
@@ -1941,7 +2111,7 @@
     if (e.sh > 0) {
       ab = Math.min(e.sh, dealt);
       e.sh -= ab; dealt -= ab; e.shHit = 0.15;
-      if (e.sh <= 0) { e.sh = 0; fx(S, { k: 'shieldpop', x: e.x, y: e.y, r: e.r + 9, life: 0.4 }); snd(S, 'shield'); }
+      if (e.sh <= 0) { e.sh = 0; fx1(S, 'shieldpop', e.x, e.y, e.r + 9, undefined, 0.4); snd(S, 'shield'); }
     }
     const real = Math.min(e.hp, dealt);
     S.stats.dmg += real;
@@ -1959,7 +2129,7 @@
           const m2 = spawnEnemy(S, run, 'basic', Math.max(20, e.d - 12 - i * 14));
           m2.hpMax = m2.hp = runHp(run) * 1.2;
         }
-        fx(S, { k: 'ring', x: e.x, y: e.y, r: 60, c: '#a07a52', life: 0.5 });
+        fx1(S, 'ring', e.x, e.y, 60, '#a07a52', 0.5);
       }
     }
     if (e.broodQ && e.broodQ.length) {
@@ -1970,7 +2140,7 @@
           const m2 = spawnEnemy(S, run, br.type, Math.max(20, e.d - 10 - i * 12), { path: e.path });
           m2.hpMax = m2.hp = runHp(run) * def.hp * 1.2;
         }
-        fx(S, { k: 'ring', x: e.x, y: e.y, r: 60, c: e.bossDef.look && e.bossDef.look.aura || '#a07a52', life: 0.5 });
+        fx1(S, 'ring', e.x, e.y, 60, e.bossDef.look && e.bossDef.look.aura || '#a07a52', 0.5);
       }
     }
   }
@@ -1991,14 +2161,14 @@
     S.sfx.kill++;
     if (t) { t.kills++; t.wKills++; const kb = t.isHero ? st.heroKills : st.raceKills, kk = t.isHero ? t.id : t.race; if (kb && kk) kb[kk] = (kb[kk] || 0) + 1; }
     heroXp(S, run, e, t);
-    fx(S, { k: 'puff', x: e.x, y: e.y, r: e.r, c: e.color, life: 0.45 });
-    fx(S, { k: 'burst', x: e.x, y: e.y, r: e.r, c: e.color, c2: e.dark, seed: e.id * 7 + run.n, life: e.boss ? 0.9 : 0.5, big: e.boss });
-    if (e.boss || mult > 1.5) fx(S, { k: 'text', x: e.x, y: e.y - 20, s: '+' + fmt(gain), c: '#e3c15b', life: 1.1 });
+    fx1(S, 'puff', e.x, e.y, e.r, e.color, 0.45);
+    fx1(S, 'burst', e.x, e.y, e.r, e.color, e.boss ? 0.9 : 0.5, undefined, e.id * 7 + run.n, e.dark, e.boss);
+    if (e.boss || mult > 1.5) fx1(S, 'text', e.x, e.y - 20, undefined, '#e3c15b', 1.1, undefined, undefined, undefined, undefined, '+' + fmt(gain));
     if (e.boss) { S.stats.bossKills++; emit(S, 'bossDown', { name: e.name, split: !!e.splitDone }); }
     if (e.boss && !e.splitDone && e.bossDef.tricks && S.records) S.records.bosses[e.bossDef.id] = (S.records.bosses[e.bossDef.id] || 0) + 1;
     if (e.doom) {
       const R = 90, dmgAmt = e.hpMax * 0.25;
-      fx(S, { k: 'ring', x: e.x, y: e.y, r: R, c: '#c06bff', life: 0.45 });
+      fx1(S, 'ring', e.x, e.y, R, '#c06bff', 0.45);
       for (const o of run.enemies) if (o !== e && o.alive && dist2(o, e) <= R * R) damage(S, run, o, dmgAmt, t);
     }
     if (e.boss && e.trick === 'split' && !e.splitDone) {
@@ -2006,16 +2176,20 @@
         const c = spawnEnemy(S, run, 'boss', Math.max(20, e.d - 160 + s * 18), { path: e.path });
         c.hpMax = c.hp = e.hpMax * 0.25; c.splitDone = true; c.r = e.r * 0.75; c.leak = 3; c.speed = 46; c.name = 'Shade';
       }
-      fx(S, { k: 'ring', x: e.x, y: e.y, r: 70, c: '#6b5a8a', life: 0.6 });
+      fx1(S, 'ring', e.x, e.y, 70, '#6b5a8a', 0.6);
     }
     const def = ENEMIES[e.type];
+    if (run.mut && run.mut.splitting && !e.boss && !def.split && e.type !== 'mini' && !e.mSplit) {
+      const P = run.route[e.path] || run.route[0];
+      for (let i = 0; i < 2; i++) spawnEnemy(S, run, 'mini', Math.min(P.len - 1, Math.max(SPAWN_GUARD + 1, e.d + 4 - i * 10)), { path: e.path, mSplit: true });
+    }
     if (def.split && !e.boss) {
       const P = run.route[e.path] || run.route[0];
       for (let i = 0; i < def.split.n; i++) {
         const c = spawnEnemy(S, run, def.split.type, Math.min(P.len - 1, Math.max(SPAWN_GUARD + 1, e.d + 6 - i * 12)), { path: e.path });
         if (e.elite) { c.hpMax *= 2; c.hp = c.hpMax; }
       }
-      fx(S, { k: 'ring', x: e.x, y: e.y, r: 34, c: '#d8a8c8', life: 0.4 });
+      fx1(S, 'ring', e.x, e.y, 34, '#d8a8c8', 0.4);
       snd(S, 'split');
     }
     if (e.boss && e.tk && e.tk.split && !e.splitDone) {
@@ -2026,7 +2200,7 @@
         c.tk = { fly: e.flying, magic: e.magical }; c.eff = null; c.stage = -1; c.broodQ = []; c.cut = 0; c.timers = {}; c.plate = 0; c.sh = 0; c.shMax = 0; c.ownSh = false; c.stealth = false;
         c.flying = e.flying; c.magical = e.magical;
       }
-      fx(S, { k: 'ring', x: e.x, y: e.y, r: 70, c: (e.bossDef.look && e.bossDef.look.aura) || e.color, life: 0.6 });
+      fx1(S, 'ring', e.x, e.y, 70, (e.bossDef.look && e.bossDef.look.aura) || e.color, 0.6);
     }
   }
 
@@ -2043,7 +2217,7 @@
     let crit = false;
     if (force || (s.crit > 0 && run.rng() < s.crit)) { crit = true; d *= (s.has.raptordive && isFly(e)) ? 5 : s.critMul; S.sfx.crit++; }
     damage(S, run, e, d, t, crit);
-    if (crit) fx(S, { k: 'spark', x: e.x, y: e.y, c: '#fff2a8', life: 0.3 });
+    if (crit) fx1(S, 'spark', e.x, e.y, undefined, '#fff2a8', 0.3);
     if (!e.alive) return;
     if (s.slow > 0) { e.slow = Math.max(e.slow, e.boss ? s.slow * 0.5 : s.slow); e.slowT = Math.max(e.slowT, s.slowDur); }
     if (s.stunCh > 0 && run.rng() < s.stunCh) stunE(e, e.boss ? s.stunDur * 0.3 : s.stunDur);
@@ -2065,7 +2239,7 @@
         if (stun && e.alive) stunE(e, e.boss ? 0.3 : stun);
       }
       t.anim = 0.25;
-      fx(S, { k: 'stomp', x: t.x, y: t.y, r: s.range, c: stun ? '#ffd27a' : (s.has.leyrupture ? '#b48bff' : '#c9a36b'), life: 0.35, rc: t.race });
+      fx1(S, 'stomp', t.x, t.y, s.range, stun ? '#ffd27a' : (s.has.leyrupture ? '#b48bff' : '#c9a36b'), 0.35, t.race);
       return;
     }
     const first = pick(targets, t.mode, t);
@@ -2082,7 +2256,7 @@
       }
     }
     for (const e of list) {
-      run.proj.push({ x: t.x, y: t.y - 10, e, t, dmg, sp: PROJ_SPEED[t.race] || 820, kind: t.race, life: 3, a: 0, crit: blood });
+      run.proj.push(newProj({ x: t.x, y: t.y - 10, e, t, dmg, sp: PROJ_SPEED[t.race] || 820, kind: t.race, life: 3, a: 0, crit: blood }));
     }
     if (list.length && t.race === 'bat') snd(S, 'chirp');
     else if (list.length && t.race === 'crystal') snd(S, 'chime');
@@ -2098,7 +2272,7 @@
       const d = p.dmg;
       hitEnemy(S, run, t, s, e, d);
       if (s.splash > 0) {
-        fx(S, { k: 'ring', x: p.x, y: p.y, r: s.splash, c: '#d6b8ff', life: 0.3, rc: t.race });
+        fx1(S, 'ring', p.x, p.y, s.splash, '#d6b8ff', 0.3, t.race);
         for (const o of run.enemies) if (o !== e && canHit(s, o) && dist2(o, p) <= s.splash * s.splash) hitEnemy(S, run, t, s, o, d * 0.6);
       }
       if (s.has.prismburst) {
@@ -2114,7 +2288,7 @@
       if (s.has.dispelprism && e.magical) e.dispelT = Math.max(e.dispelT, 4);
       hitEnemy(S, run, t, s, e, d);
       if (s.splash > 0) {
-        fx(S, { k: 'shards', x: p.x, y: p.y, r: s.splash, c: '#9fe6ff', seed: e.id, life: 0.35, rc: t.race });
+        fx1(S, 'shards', p.x, p.y, s.splash, '#9fe6ff', 0.35, t.race, e.id);
         for (const o of run.enemies) {
           if (o === e || dist2(o, p) > s.splash * s.splash) continue;
           if (s.has.dispelprism && o.magical && o.alive) o.dispelT = Math.max(o.dispelT, 4);
@@ -2123,7 +2297,7 @@
       }
     } else if (t.race === 'bat') {
       hitEnemy(S, run, t, s, e, p.dmg, p.crit);
-      if (p.crit || p.kind === 'swarm') fx(S, { k: 'bite', x: e.x, y: e.y, c: p.crit ? '#ff3a5c' : '#c9b8ff', life: 0.25, rc: t.race });
+      if (p.crit || p.kind === 'swarm') fx1(S, 'bite', e.x, e.y, undefined, p.crit ? '#ff3a5c' : '#c9b8ff', 0.25, t.race);
     } else {
       hitEnemy(S, run, t, s, e, p.dmg);
       if (s.chain > 0) {
@@ -2156,24 +2330,24 @@
     if (on('starfall') && targets.length && every(6)) {
       let best = targets[0]; for (const e of targets) if (e.hp > best.hp) best = e;
       const R = 75;
-      fx(S, { k: 'star', x: best.x, y: best.y, r: R, c: '#ffe9a8', life: 0.6 });
+      fx1(S, 'star', best.x, best.y, R, '#ffe9a8', 0.6);
       for (const o of run.enemies) if (o.alive && o.burrowT <= 0 && dist2(o, best) <= R * R) damage(S, run, o, dmg * 12, t);
     }
     if (on('timestop') && targets.length && every(10)) {
-      fx(S, { k: 'ring', x: t.x, y: t.y, r: s.range, c: '#9fe3ff', life: 0.6 });
+      fx1(S, 'ring', t.x, t.y, s.range, '#9fe3ff', 0.6);
       for (const o of run.enemies) if (o.alive && inRange(t, o, s.range)) stunE(o, o.boss ? 0.5 : 1.5);
     }
     if (on('thunderhead') && targets.length && every(5)) {
       const list = targets.slice().sort((a, b) => b.hp - a.hp).slice(0, 8);
-      for (const o of list) { fx(S, { k: 'bolt', x: o.x, y: o.y, c: '#e6f4ff', life: 0.3 }); hitEnemy(S, run, t, s, o, dmg * 5); }
+      for (const o of list) { fx1(S, 'bolt', o.x, o.y, undefined, '#e6f4ff', 0.3); hitEnemy(S, run, t, s, o, dmg * 5); }
     }
     if (on('cyclone') && targets.length && every(9)) {
-      fx(S, { k: 'swirl', x: t.x, y: t.y, r: s.range, c: '#bdf5ee', life: 0.7 });
+      fx1(S, 'swirl', t.x, t.y, s.range, '#bdf5ee', 0.7);
       for (const o of run.enemies) if (o.alive && !o.boss && inRange(t, o, s.range)) { knockBack(run, o, 150); stunE(o, 0.6); }
     }
     if (on('rainboom') && targets.length && every(15)) {
       t.boomT = 4;
-      fx(S, { k: 'rainbow', x: t.x, y: t.y, r: s.range, life: 0.9 });
+      fx1(S, 'rainbow', t.x, t.y, s.range, undefined, 0.9);
     }
     if (on('stampede') && every(12)) {
       let any = false;
@@ -2182,34 +2356,34 @@
         if (isMagic(o) && !s.canMagic) continue;
         any = true; hitEnemy(S, run, t, s, o, dmg * 6);
       }
-      if (any) fx(S, { k: 'stampede', x: 0, y: 0, life: 0.9 });
+      if (any) fx1(S, 'stampede', 0, 0, undefined, undefined, 0.9);
       else T.stampede = 12;
     }
     if (on('deepecho') && every(5)) {
       const R = s.range * 2;
-      fx(S, { k: 'sonar', x: t.x, y: t.y, r: R, c: '#ff8fb0', life: 0.8 }); snd(S, 'sonar');
+      fx1(S, 'sonar', t.x, t.y, R, '#ff8fb0', 0.8); snd(S, 'sonar');
       for (const o of run.enemies) if (o.alive && dist2(o, t) <= R * R) { o.revealT = 4; o.echoAmp = Math.max(o.echoAmp || 0, 0.2); }
     }
     if (on('swarmnight') && targets.length && every(7)) {
       for (let i = 0; i < 8; i++) {
         const e = targets[i % targets.length];
         const a = i / 8 * Math.PI * 2;
-        run.proj.push({ x: t.x + Math.cos(a) * 16, y: t.y - 10 + Math.sin(a) * 12, e, t, dmg: dmg * 3, sp: 520, kind: 'swarm', life: 3, a });
+        run.proj.push(newProj({ x: t.x + Math.cos(a) * 16, y: t.y - 10 + Math.sin(a) * 12, e, t, dmg: dmg * 3, sp: 520, kind: 'swarm', life: 3, a }));
       }
-      fx(S, { k: 'ring', x: t.x, y: t.y, r: 34, c: '#c9b8ff', life: 0.4 }); snd(S, 'swarm');
+      fx1(S, 'ring', t.x, t.y, 34, '#c9b8ff', 0.4); snd(S, 'swarm');
     }
     if (on('bloodmoon') && targets.length && every(14)) {
       t.bloodT = 5;
-      fx(S, { k: 'bloodmoon', x: t.x, y: t.y, r: s.range, life: 1 }); snd(S, 'bloodmoon');
+      fx1(S, 'bloodmoon', t.x, t.y, s.range, undefined, 1); snd(S, 'bloodmoon');
     }
     if (on('dreadscreech') && targets.length && every(9)) {
-      fx(S, { k: 'screech', x: t.x, y: t.y, r: s.range, c: '#ff5a7a', life: 0.6 }); snd(S, 'screech');
+      fx1(S, 'screech', t.x, t.y, s.range, '#ff5a7a', 0.6); snd(S, 'screech');
       for (const o of run.enemies) if (o.alive && inRange(t, o, s.range) && canHit(s, o)) { stunE(o, o.boss ? 0.3 : 1); o.hexAmp = Math.max(o.hexAmp, 0.25); o.hexT = Math.max(o.hexT, 4); }
     }
     if (on('chorus') && every(10)) {
       let any = false;
       for (const o of S.towers) if (o !== t && dist2(o, t) <= s.auraR * s.auraR) { o.surgeT = 3; any = true; }
-      if (any) { fx(S, { k: 'chorus', x: t.x, y: t.y, r: s.auraR, life: 0.9 }); snd(S, 'chorus'); }
+      if (any) { fx1(S, 'chorus', t.x, t.y, s.auraR, undefined, 0.9); snd(S, 'chorus'); }
     }
     if (on('fortress') && every(3)) {
       const W = t.wallPt || (t.wallPt = nearestOnMap(run.map, t.x, t.y));
@@ -2221,12 +2395,12 @@
         hitEnemy(S, run, t, s, o, dmg * 6);
         if (o.alive) stunE(o, o.boss ? 0.2 : 0.6);
       }
-      if (any) { fx(S, { k: 'wallpulse', x: W.x, y: W.y, r: s.wallR, life: 0.5 }); snd(S, 'quake'); }
+      if (any) { fx1(S, 'wallpulse', W.x, W.y, s.wallR, undefined, 0.5); snd(S, 'quake'); }
     }
     if (on('cataclysm') && targets.length && every(8)) {
       let best = targets[0]; for (const e of targets) if (e.hp > best.hp) best = e;
       const R = 80;
-      fx(S, { k: 'cataclysm', x: best.x, y: best.y, r: R, seed: best.id, life: 0.8 }); snd(S, 'cataclysm');
+      fx1(S, 'cataclysm', best.x, best.y, R, undefined, 0.8, undefined, best.id); snd(S, 'cataclysm');
       for (const o of run.enemies) {
         if (!o.alive || dist2(o, best) > R * R || !canHit(s, o)) continue;
         damage(S, run, o, dmg * 15, t);
@@ -2266,7 +2440,7 @@
       run.lives -= e.boss ? Math.max(1, e.leak - (run.leakCut || 0)) : e.leak;
       S.sfx.leak++;
       const end = P.pts[P.pts.length - 1];
-      fx(S, { k: 'leak', x: Math.min(WORLD.L, end[0]), y: end[1], life: 0.6 });
+      fx1(S, 'leak', Math.min(WORLD.L, end[0]), end[1], undefined, undefined, 0.6);
       emit(S, 'leak', { boss: e.boss, lives: run.lives, dnb: e.type, elite: e.elite ? e.eliteMod || 'elite' : '' });
     }
   }
@@ -2277,13 +2451,13 @@
     if (e.sprintT > 0) e.sprintT -= dt;
     if (e.tk) { tkTrick(S, run, e, dt); return; }
     const tr = e.trick;
-    if (tr === 'burrow' && e.trickT >= 5) { e.trickT = 0; e.burrowT = 1.6; fx(S, { k: 'puff', x: e.x, y: e.y, r: 30, c: '#5a4030', life: 0.5 }); }
+    if (tr === 'burrow' && e.trickT >= 5) { e.trickT = 0; e.burrowT = 1.6; fx1(S, 'puff', e.x, e.y, 30, '#5a4030', 0.5); }
     if (tr === 'sprint' && e.trickT >= 6) { e.trickT = 0; e.sprintT = 1.5; }
     if (tr === 'regen' || (tr === 'mother' && e.hp < e.hpMax * 0.33)) {
       e.hp = Math.min(e.hpMax, e.hp + e.hpMax * 0.015 * dt);
       for (const o of run.enemies) if (o !== e && o.alive && !o.boss && dist2(o, e) < 120 * 120) o.hp = Math.min(o.hpMax, o.hp + o.hpMax * 0.03 * dt);
     }
-    if (tr === 'phase' && e.trickT >= 4) { e.trickT = 0; e.flying = !e.flying; e.magical = !e.flying; fx(S, { k: 'ring', x: e.x, y: e.y, r: 40, c: e.magical ? '#c08bff' : '#9fd0ff', life: 0.4 }); }
+    if (tr === 'phase' && e.trickT >= 4) { e.trickT = 0; e.flying = !e.flying; e.magical = !e.flying; fx1(S, 'ring', e.x, e.y, 40, e.magical ? '#c08bff' : '#9fd0ff', 0.4); }
     if (tr === 'mother') {
       const f = e.hp / e.hpMax;
       if (f > 0.66) { if (e.trickT >= 7) { e.trickT = 0; e.sprintT = 1.2; } e.flying = false; e.magical = false; }
@@ -2299,7 +2473,7 @@
       if (o === src || !o.alive || o.hp >= o.hpMax || dist2(o, src) > R2) continue;
       o.hp = Math.min(o.hpMax, o.hp + o.hpMax * p * (o.boss ? 0.25 : 1)); o.healed = 0.5; any = true;
     }
-    fx(S, { k: 'heal', x: src.x, y: src.y, r: R, life: 0.7 });
+    fx1(S, 'heal', src.x, src.y, R, undefined, 0.7);
     if (any) snd(S, 'heal');
   }
   function aegisAura(run, src, R, p) {
@@ -2319,12 +2493,12 @@
   function mobTrick(S, run, e, dt) {
     const def = ENEMIES[e.type];
     if (def.heal && tick(e, 'heal', def.heal.every, dt)) healPulse(S, run, e, def.heal.r, def.heal.pct);
-    if (def.aegis) aegisAura(run, e, def.aegis.r, def.aegis.pct);
+    if (def.aegis && tick(e, 'aegis', 0.1, dt)) aegisAura(run, e, def.aegis.r, def.aegis.pct);
     if (def.burrow) {
       const P = run.route[e.path] || run.route[0];
       const c = def.burrow.cycle, u = def.burrow.under;
       const under = e.d > 110 && e.d < P.len - 90 && ((e.d + e.seed * 0.4) % c) > c - u;
-      if (under !== (e.burrowT > 0)) { fx(S, { k: 'dust', x: e.x, y: e.y, r: e.r + 10, seed: e.id, life: 0.55 }); if (under) snd(S, 'burrow'); }
+      if (under !== (e.burrowT > 0)) { fx1(S, 'dust', e.x, e.y, e.r + 10, undefined, 0.55, undefined, e.id); if (under) snd(S, 'burrow'); }
       e.burrowT = under ? 1 : 0;
     }
   }
@@ -2339,7 +2513,7 @@
   function tkTrick(S, run, e, dt) {
     const t = applyStage(e);
     const aura = (e.bossDef.look && e.bossDef.look.aura) || e.color;
-    if (t.burrow && tick(e, 'burrow', t.burrow.every, dt)) { e.burrowT = t.burrow.dur; fx(S, { k: 'puff', x: e.x, y: e.y, r: 30, c: e.dark, life: 0.5 }); }
+    if (t.burrow && tick(e, 'burrow', t.burrow.every, dt)) { e.burrowT = t.burrow.dur; fx1(S, 'puff', e.x, e.y, 30, e.dark, 0.5); }
     if (t.sprint && tick(e, 'sprint', t.sprint.every, dt)) { e.sprintT = t.sprint.dur; e.sprintMul = t.sprint.mul; }
     if (t.windrider && run.gustOn) { e.sprintT = Math.max(e.sprintT, 0.1); e.sprintMul = 2; }
     if (t.regen) {
@@ -2350,28 +2524,28 @@
     let cut = 0;
     if (t.armor && e.hp > e.hpMax * t.armor.until) cut = t.armor.cut;
     if (t.shell) {
-      if (tick(e, 'shell', t.shell.every, dt)) { e.shellT = t.shell.dur; fx(S, { k: 'ring', x: e.x, y: e.y, r: 36, c: '#d8d0c0', life: 0.4 }); }
+      if (tick(e, 'shell', t.shell.every, dt)) { e.shellT = t.shell.dur; fx1(S, 'ring', e.x, e.y, 36, '#d8d0c0', 0.4); }
       if (e.shellT > 0) { e.shellT -= dt; cut = Math.max(cut, t.shell.cut); }
     } else e.shellT = 0;
     e.cut = cut;
     e.plate = t.plate ? t.plate * e.plateBase : 0;
     if (t.cloak) {
-      if (tick(e, 'cloak', t.cloak.every, dt)) { e.cloakT = t.cloak.dur; fx(S, { k: 'puff', x: e.x, y: e.y, r: 30, c: '#8a8aa8', life: 0.45 }); }
+      if (tick(e, 'cloak', t.cloak.every, dt)) { e.cloakT = t.cloak.dur; fx1(S, 'puff', e.x, e.y, 30, '#8a8aa8', 0.45); }
       if (e.cloakT > 0) e.cloakT -= dt;
       e.stealth = e.cloakT > 0;
     } else e.stealth = false;
     if (t.heal && tick(e, 'heal', t.heal.every, dt)) healPulse(S, run, e, t.heal.r, t.heal.pct);
     if (t.aegis) aegisAura(run, e, t.aegis.r, t.aegis.pct);
-    if (t.bubble && tick(e, 'bubble', t.bubble.every, dt)) { e.ownSh = true; e.sh = e.shMax = e.hpMax * t.bubble.pct; fx(S, { k: 'ring', x: e.x, y: e.y, r: e.r + 14, c: '#9fd0ff', life: 0.4 }); snd(S, 'shield'); }
+    if (t.bubble && tick(e, 'bubble', t.bubble.every, dt)) { e.ownSh = true; e.sh = e.shMax = e.hpMax * t.bubble.pct; fx1(S, 'ring', e.x, e.y, e.r + 14, '#9fd0ff', 0.4); snd(S, 'shield'); }
     if (t.summon && tick(e, 'summon', t.summon.every, dt)) {
       const sd = ENEMIES[t.summon.type];
       for (let i = 0; i < t.summon.n; i++) {
         const m2 = spawnEnemy(S, run, t.summon.type, Math.max(SPAWN_GUARD + 1, e.d - 14 - i * 8), { path: e.path });
         m2.hpMax = m2.hp = runHp(run) * sd.hp * 1.2;
       }
-      fx(S, { k: 'ring', x: e.x, y: e.y, r: 50, c: aura, life: 0.45 });
+      fx1(S, 'ring', e.x, e.y, 50, aura, 0.45);
     }
-    if (t.phase && tick(e, 'phase', t.phase.every, dt)) { e.flying = !e.flying; e.magical = !e.flying; fx(S, { k: 'ring', x: e.x, y: e.y, r: 40, c: e.magical ? '#c08bff' : '#9fd0ff', life: 0.4 }); }
+    if (t.phase && tick(e, 'phase', t.phase.every, dt)) { e.flying = !e.flying; e.magical = !e.flying; fx1(S, 'ring', e.x, e.y, 40, e.magical ? '#c08bff' : '#9fd0ff', 0.4); }
     if (t.haste) {
       const R2 = t.haste.r * t.haste.r;
       for (const o of run.enemies) if (o !== e && o.alive && !o.boss && dist2(o, e) < R2) { o.hasteT = 0.3; o.hasteMul = t.haste.mul; }
@@ -2379,10 +2553,10 @@
     if (t.blink && tick(e, 'blink', t.blink.every, dt)) {
       const P = run.route[e.path] || run.route[0];
       if (e.d < P.len - 60) {
-        fx(S, { k: 'puff', x: e.x, y: e.y, r: 26, c: aura, life: 0.4 });
+        fx1(S, 'puff', e.x, e.y, 26, aura, 0.4);
         e.d = Math.min(P.len - 60, e.d + t.blink.dist);
         placeOnRoute(run, e);
-        fx(S, { k: 'ring', x: e.x, y: e.y, r: 34, c: aura, life: 0.4 });
+        fx1(S, 'ring', e.x, e.y, 34, aura, 0.4);
       }
     }
   }
@@ -2481,7 +2655,7 @@
               if (e.magical) e.dispelT = Math.max(e.dispelT, 4);
               if (canHit(s.ab, e)) hitEnemy(S, run, h, s.ab, e, 6 * P * hm(R));
             }
-            fx(S, { k: 'nova', x, y, r, c: '#e6c8ff', c2: '#7a5cff', life: 0.55 });
+            fx1(S, 'nova', x, y, r, '#e6c8ff', 0.55, undefined, undefined, '#7a5cff');
             h.face = Math.atan2(y - h.y, x - h.x);
             return true;
           } },
@@ -2492,7 +2666,7 @@
             const l = hNear(run, h.x, h.y, r);
             if (!l.length) return false;
             for (const e of l) { e.revealT = Math.max(e.revealT, 5 + R); e.echoAmp = Math.max(e.echoAmp || 0, 0.12 + 0.03 * R); }
-            fx(S, { k: 'sonar', x: h.x, y: h.y, r: Math.min(r, 700), c: '#fff2c8', life: 0.8 });
+            fx1(S, 'sonar', h.x, h.y, Math.min(r, 700), '#fff2c8', 0.8);
             return true;
           } },
         { id: 'prison', name: 'Arcane Prison', cd: 26, icon: 'cage', text: R => 'Freeze DNBs within 150 for ' + (1.5 + 0.25 * R).toFixed(2) + 's (bosses ' + (0.5 + 0.1 * R).toFixed(1) + 's) and deal ' + (2 * hm(R)).toFixed(1) + 'x hit power.',
@@ -2501,7 +2675,7 @@
             const l = hNear(run, h.x, h.y, 150, e => canHit(s.ab, e));
             if (!l.length) return false;
             for (const e of l) { stunE(e, e.boss ? 0.5 + 0.1 * R : 1.5 + 0.25 * R); hitEnemy(S, run, h, s.ab, e, 2 * P * hm(R)); }
-            fx(S, { k: 'ring', x: h.x, y: h.y, r: 150, c: '#b48bff', life: 0.6 });
+            fx1(S, 'ring', h.x, h.y, 150, '#b48bff', 0.6);
             return true;
           } },
       ],
@@ -2521,9 +2695,9 @@
             if (!l.length) return false;
             let tg = null, bv = -1;
             for (const e of l) { const v = e.hp * (e.sh > 0 ? 3 : 1) * (e.plate > 0 || e.starPlate ? 2 : 1) * (e.boss ? 4 : 1); if (v > bv) { bv = v; tg = e; } }
-            for (const e of hNear(run, tg.x, tg.y, 70)) if (e.sh > 0) { e.sh = 0; if (e.ownSh) e.shMax = 0; fx(S, { k: 'shieldpop', x: e.x, y: e.y, r: e.r + 9, life: 0.4 }); snd(S, 'shield'); }
+            for (const e of hNear(run, tg.x, tg.y, 70)) if (e.sh > 0) { e.sh = 0; if (e.ownSh) e.shMax = 0; fx1(S, 'shieldpop', e.x, e.y, e.r + 9, undefined, 0.4); snd(S, 'shield'); }
             hitEnemy(S, run, h, s.abP, tg, 8 * P * hm(R));
-            fx(S, { k: 'stomp', x: tg.x, y: tg.y, r: 70, c: '#ffd27a', life: 0.4 });
+            fx1(S, 'stomp', tg.x, tg.y, 70, '#ffd27a', 0.4);
             h.face = Math.atan2(tg.y - h.y, tg.x - h.x);
             return true;
           } },
@@ -2533,7 +2707,7 @@
             const l = hNear(run, h.x, h.y, 140, e => !(e.burrowT > 0));
             if (!l.length) return false;
             for (const e of l) stunE(e, e.boss ? 0.4 + 0.08 * R : 1.2 + 0.2 * R);
-            fx(S, { k: 'ring', x: h.x, y: h.y, r: 140, c: '#ffb04a', life: 0.5 });
+            fx1(S, 'ring', h.x, h.y, 140, '#ffb04a', 0.5);
             return true;
           } },
         { id: 'quake', name: 'Earthquake', cd: 24, icon: 'quake', text: R => 'Shake the ground within 130 for ' + (4 + 0.5 * R) + 's: ' + (1.2 * hm(R)).toFixed(1) + 'x hit power every half second, 40% slow, and burrowed DNBs are dragged up where any pony can hit them.',
@@ -2543,7 +2717,7 @@
             if (!l.length) return false;
             const life = 4 + 0.5 * R;
             run.zones.push({ x: h.x, y: h.y, r: 130, life, t: 0, tick: 0, mul: 1.2 * hm(R) });
-            fx(S, { k: 'quake', x: h.x, y: h.y, r: 130, life });
+            fx1(S, 'quake', h.x, h.y, 130, undefined, life);
             return true;
           } },
       ],
@@ -2565,7 +2739,7 @@
               hitEnemy(S, run, h, s.ab, e, 3 * P * hm(R) * (e.swarm ? 3 : 1));
               if (e.alive && !e.boss) knockBack(run, e, e.swarm ? 80 : 40);
             }
-            fx(S, { k: 'swirl', x: h.x, y: h.y, r: 160, c: '#bfe8ff', life: 0.6 });
+            fx1(S, 'swirl', h.x, h.y, 160, '#bfe8ff', 0.6);
             return true;
           } },
         { id: 'lightning', name: 'Lightning Strike', cd: 9, icon: 'bolt', text: R => 'Lightning leaps between ' + (4 + R) + ' DNBs for ' + (4 * hm(R)).toFixed(1) + 'x hit power each, double on flyers.',
@@ -2597,7 +2771,7 @@
               else { e.slow = Math.max(e.slow, e.boss ? 0.15 : 0.3); e.slowT = Math.max(e.slowT, 3 + 0.5 * R); }
               if (canHit(s.ab, e)) hitEnemy(S, run, h, s.ab, e, P * hm(R));
             }
-            fx(S, { k: 'wallpulse', x: h.x, y: h.y, r: 220, c: '#d8f4ff', life: 0.6 });
+            fx1(S, 'wallpulse', h.x, h.y, 220, '#d8f4ff', 0.6);
             return true;
           } },
       ],
@@ -2617,7 +2791,7 @@
             if (!tg) return false;
             hitEnemy(S, run, h, s.ab, tg, 10 * P * hm(R));
             if (tg.alive && !tg.boss && tg.hp < tg.hpMax * 0.3) kill(S, run, tg, h);
-            fx(S, { k: 'bite', x: tg.x, y: tg.y, c: '#ff3a5c', life: 0.35 });
+            fx1(S, 'bite', tg.x, tg.y, undefined, '#ff3a5c', 0.35);
             h.face = Math.atan2(tg.y - h.y, tg.x - h.x);
             return true;
           } },
@@ -2626,14 +2800,14 @@
           cast: (S, run, h, s, P, R) => {
             const l = hNear(run, h.x, h.y, s.range * 1.5).sort((a, b) => (b.boss - a.boss) || (b.hp - a.hp)).slice(0, 2 + R);
             if (!l.length) return false;
-            for (const e of l) { e.hexAmp = Math.max(e.hexAmp, 0.25 + 0.03 * R); e.hexT = Math.max(e.hexT, 6); e.revealT = Math.max(e.revealT, 6); fx(S, { k: 'spark', x: e.x, y: e.y - e.r, c: '#ff5c7a', life: 0.5 }); }
+            for (const e of l) { e.hexAmp = Math.max(e.hexAmp, 0.25 + 0.03 * R); e.hexT = Math.max(e.hexT, 6); e.revealT = Math.max(e.revealT, 6); fx1(S, 'spark', e.x, e.y - e.r, undefined, '#ff5c7a', 0.5); }
             return true;
           } },
         { id: 'frenzy', name: 'Blood Frenzy', cd: 22, icon: 'moon', text: R => 'For ' + (5 + 0.5 * R) + 's Duskfang attacks 2.5x as fast with +25% crit chance.',
           want: (S, run, h, s) => { const l = hNear(run, h.x, h.y, s.range, e => canHit(s, e)); return l.length >= 3 || l.some(e => e.boss); },
           cast: (S, run, h, s, P, R) => {
             h.frenzyT = 5 + 0.5 * R;
-            fx(S, { k: 'bloodmoon', x: h.x, y: h.y, r: 60, life: 0.8 });
+            fx1(S, 'bloodmoon', h.x, h.y, 60, undefined, 0.8);
             return true;
           } },
       ],
@@ -2835,7 +3009,7 @@
     }
     for (const e of run.enemies) {
       if (!canRoar(e) || !e.alive || !tick(e, 'roar', HERO_TUNE.roarEvery, dt)) continue;
-      fx(S, { k: 'roar', x: e.x, y: e.y, r: HERO_TUNE.roarR, life: 0.7 });
+      fx1(S, 'roar', e.x, e.y, HERO_TUNE.roarR, undefined, 0.7);
       snd(S, 'roar');
       if (dist2(e, h) <= HERO_TUNE.roarR * HERO_TUNE.roarR && !(h.stunT > 0)) {
         h.stunT = HERO_TUNE.roarStun * (d.stunCut || 1);
@@ -2858,12 +3032,12 @@
     h.anim = 0.22;
     if (d.attack === 'stomp') {
       for (const e of targets) hitEnemy(S, run, h, hs, e, P);
-      fx(S, { k: 'stomp', x: h.x, y: h.y, r: s.range, c: '#e0a86a', life: 0.35 });
+      fx1(S, 'stomp', h.x, h.y, s.range, '#e0a86a', 0.35);
       return;
     }
     const e = d.attack === 'fang' ? hStrong(targets) : pick(targets, 'first', h);
     h.face = Math.atan2(e.y - h.y, e.x - h.x);
-    run.proj.push({ x: h.x, y: h.y - 22, e, t: h, dmg: P, sp: d.proj.sp, kind: 'hero', c: d.proj.c, hk: h.id, life: 3, a: 0, fz });
+    run.proj.push(newProj({ x: h.x, y: h.y - 22, e, t: h, dmg: P, sp: d.proj.sp, kind: 'hero', c: d.proj.c, hk: h.id, life: 3, a: 0, fz }));
   }
   function heroProjHit(S, run, p) {
     const h = p.t, e = p.e;
@@ -2871,7 +3045,7 @@
     const s = stats(h), hs = p.fz ? s.fz : s;
     hitEnemy(S, run, h, hs, e, p.dmg);
     if (s.splash > 0) {
-      fx(S, { k: 'ring', x: p.x, y: p.y, r: s.splash, c: p.c, life: 0.3 });
+      fx1(S, 'ring', p.x, p.y, s.splash, p.c, 0.3);
       for (const o of run.enemies) if (o !== e && canHit(s, o) && dist2(o, p) <= s.splash * s.splash) hitEnemy(S, run, h, s, o, p.dmg * 0.5);
     }
   }
@@ -2909,9 +3083,10 @@
     return out;
   }
 
+  function dropProj(L, i) { const last = L.length - 1; if (i !== last) L[i] = L[last]; L.length = last; }
   function step(S, dt) {
     S.time += dt;
-    for (let i = S.fx.length - 1; i >= 0; i--) { const f = S.fx[i]; f.t += dt; if (f.t >= f.life) S.fx.splice(i, 1); }
+    { const F = S.fx; let w = 0; for (let i = 0; i < F.length; i++) { const f = F[i]; f.t += dt; if (f.t < f.life) F[w++] = f; else if (f.pf && FXF.length < 900) FXF.push(f); } F.length = w; }
     for (const t of S.towers) { if (t.anim > 0) t.anim -= dt; if (t.surgeT > 0) t.surgeT -= dt; }
     heroMove(S, dt);
     if (S.buffsDirty) refreshBuffs(S);
@@ -2957,13 +3132,13 @@
       const p = run.proj[i];
       p.life -= dt;
       const e = p.e;
-      if (!e.alive || p.life <= 0 || (e.burrowT > 0 && !stats(p.t).seesBurrow && !(e.unearthT > 0))) { run.proj.splice(i, 1); continue; }
+      if (!e.alive || p.life <= 0 || (e.burrowT > 0 && !stats(p.t).seesBurrow && !(e.unearthT > 0))) { dropProj(run.proj, i); freeProj(p); continue; }
       const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy), mv = p.sp * dt;
-      if (d <= mv + e.r * 0.5) { p.x = e.x; p.y = e.y; run.proj.splice(i, 1); projHit(S, run, p); }
+      if (d <= mv + e.r * 0.5) { p.x = e.x; p.y = e.y; dropProj(run.proj, i); projHit(S, run, p); freeProj(p); }
       else { p.x += dx / d * mv; p.y += dy / d * mv; p.a = Math.atan2(dy, dx); }
     }
 
-    run.enemies = run.enemies.filter(e => e.alive);
+    { const E = run.enemies; let w = 0; for (let i = 0; i < E.length; i++) { const e = E[i]; if (e.alive) E[w++] = e; else if (POOL.eDead.length < 800) POOL.eDead.push(e); } E.length = w; }
 
     if (run.lives <= 0) {
       run.over = 'lost';
@@ -2999,7 +3174,7 @@
       if (bossWave && S.settings && S.settings.speed >= 4) feat(S, 'x_fast');
       emit(S, 'won', { n: run.n, bonus, earned: run.earned, fresh: bonus > 0, lives: run.lives, moon, interest });
       S.run = null;
-      if (S.chal) { const c = S.chal; c.lives = run.lives; c.t += run.t; c.waves++; if (run.n >= c.to) chalFinish(S, 'won'); }
+      if (S.chal) { const c = S.chal; c.lives = run.lives; c.t += run.t; c.waves++; if (c.kind === 'endless') endlessCleared(S, run.n); else if (run.n >= c.to) chalFinish(S, 'won'); }
       checkAch(S);
     }
   }
@@ -3144,7 +3319,7 @@
     const cash = farmCash(S, n, map, star), time = f.secs > 0 && n === f.safe ? f.secs + OFFLINE.overhead : farmTime(n, map, star);
     const inc = incomeRate(f), raw = cash / time;
     const base = inc > 0 ? Math.min(raw, inc) : raw;
-    return { wave: n, cash, time, raw, inc, rate: base * OFFLINE.eff * offlineMul(S) };
+    return { wave: n, cash, time, raw, inc, rate: base * OFFLINE.eff * offlineMul(S) * (map.offEarly ? growthAt(map.offEarly, n) : 1) };
   }
   function touchSeen(S, now) {
     if (isFinite(now) && now > (S.lastSeen || 0)) S.lastSeen = Math.floor(now);
@@ -3548,7 +3723,7 @@
       stats: S.stats, settings: S.settings, boards, codex: S.codex,
       stars: S.stars, moon: S.moon, moonTotal: S.moonTotal, research: S.research, presets: S.presets, heroUnlocks: S.heroUnlocks,
       slots: S.slots, rules: S.rules, lastSeen: S.lastSeen || 0,
-      ach: S.ach, feats: S.feats, daily: S.daily, chalDone: S.chalDone, chalBest: S.chalBest, rp: S.rp || 0, tokens: S.tokens, cos: S.cos,
+      ach: S.ach, feats: S.feats, daily: S.daily, chalDone: S.chalDone, chalBest: S.chalBest, rp: S.rp || 0, tokens: S.tokens, cos: S.cos, endless: S.endless,
     });
   }
 
@@ -3662,6 +3837,13 @@
       o.ver = 10;
       return o;
     },
+    10(o) {
+      o.endless = newEndless();
+      const st = o.settings && typeof o.settings === 'object' ? o.settings : (o.settings = Object.assign({}, DEFAULT_SETTINGS));
+      st.tut = 1;
+      o.ver = 11;
+      return o;
+    },
   };
   function cleanCodex(c) {
     const out = { e: {}, b: {}, p: {} };
@@ -3730,7 +3912,9 @@
   function cleanSettings(src) {
     const out = Object.assign({}, DEFAULT_SETTINGS);
     if (!src || typeof src !== 'object') return out;
-    for (const k of ['sound', 'shake', 'dmgNums']) if (k in src) out[k] = !!src[k];
+    for (const k of ['sound', 'shake', 'dmgNums', 'lowFx', 'cb', 'font']) if (k in src) out[k] = !!src[k];
+    if (UI_SCALES.indexOf(+src.ui) >= 0) out.ui = +src.ui;
+    out.tut = src.tut ? 1 : 0;
     if (isFinite(src.vol)) out.vol = Math.max(0, Math.min(1, +src.vol));
     if (NUM_FORMATS.indexOf(src.numFmt) >= 0) out.numFmt = src.numFmt;
     if (SPEEDS.indexOf(src.speed) >= 0) out.speed = src.speed;
@@ -3772,6 +3956,146 @@
     return b;
   }
 
+  const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  const CODE_TAG = 'NDS';
+  function utf8(str) {
+    const out = [];
+    for (let i = 0; i < str.length; i++) {
+      let c = str.charCodeAt(i);
+      if (c >= 0xd800 && c < 0xdc00 && i + 1 < str.length) { const d = str.charCodeAt(i + 1); if (d >= 0xdc00 && d < 0xe000) { c = 0x10000 + ((c - 0xd800) << 10) + (d - 0xdc00); i++; } }
+      if (c < 0x80) out.push(c);
+      else if (c < 0x800) out.push(0xc0 | (c >> 6), 0x80 | (c & 63));
+      else if (c < 0x10000) out.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+      else out.push(0xf0 | (c >> 18), 0x80 | ((c >> 12) & 63), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+    }
+    return out;
+  }
+  function unutf8(b) {
+    let s = '';
+    for (let i = 0; i < b.length;) {
+      const c = b[i++];
+      let u;
+      if (c < 0x80) u = c;
+      else if (c < 0xe0) u = ((c & 31) << 6) | (b[i++] & 63);
+      else if (c < 0xf0) { u = ((c & 15) << 12) | ((b[i] & 63) << 6) | (b[i + 1] & 63); i += 2; }
+      else { u = ((c & 7) << 18) | ((b[i] & 63) << 12) | ((b[i + 1] & 63) << 6) | (b[i + 2] & 63); i += 3; }
+      s += String.fromCodePoint(u);
+    }
+    return s;
+  }
+  function lzwPack(bytes) {
+    const dict = new Map();
+    let next = 256, width = 9, cur = -1, acc = 0, bits = 0;
+    const out = [];
+    const put = code => { acc |= code << bits; bits += width; while (bits >= 8) { out.push(acc & 255); acc >>>= 8; bits -= 8; } };
+    for (const b of bytes) {
+      if (cur < 0) { cur = b; continue; }
+      const key = cur * 256 + b;
+      const hit = dict.get(key);
+      if (hit !== undefined) { cur = hit; continue; }
+      put(cur);
+      if (next < 65536) { dict.set(key, next++); if (next > (1 << width) && width < 16) width++; }
+      cur = b;
+    }
+    if (cur >= 0) put(cur);
+    if (bits > 0) out.push(acc & 255);
+    return out;
+  }
+  function lzwUnpack(bytes, total) {
+    const dict = [];
+    for (let i = 0; i < 256; i++) dict.push([i]);
+    let width = 9, acc = 0, bits = 0, pos = 0, prev = null;
+    const out = [];
+    const get = () => { while (bits < width) { if (pos >= bytes.length) return -1; acc |= bytes[pos++] << bits; bits += 8; } const c = acc & ((1 << width) - 1); acc >>>= width; bits -= width; return c; };
+    while (out.length < total) {
+      const code = get();
+      if (code < 0) return null;
+      let e;
+      if (code < dict.length) e = dict[code];
+      else if (code === dict.length && prev) e = prev.concat(prev[0]);
+      else return null;
+      for (const b of e) out.push(b);
+      if (prev && dict.length < 65536) { dict.push(prev.concat(e[0])); }
+      if (dict.length + 1 > (1 << width) && width < 16) width++;
+      prev = e;
+    }
+    return out;
+  }
+  function toB64(bytes) {
+    let s = '';
+    for (let i = 0; i < bytes.length; i += 3) {
+      const n = (bytes[i] << 16) | ((bytes[i + 1] | 0) << 8) | (bytes[i + 2] | 0);
+      s += B64[(n >> 18) & 63] + B64[(n >> 12) & 63] + (i + 1 < bytes.length ? B64[(n >> 6) & 63] : '') + (i + 2 < bytes.length ? B64[n & 63] : '');
+    }
+    return s;
+  }
+  function fromB64(s) {
+    const out = [];
+    let acc = 0, bits = 0;
+    for (const ch of s) {
+      const v = B64.indexOf(ch);
+      if (v < 0) return null;
+      acc = (acc << 6) | v; bits += 6;
+      if (bits >= 8) { bits -= 8; out.push((acc >> bits) & 255); }
+    }
+    return out;
+  }
+  function checksum(str) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+    return (h >>> 0).toString(36).padStart(7, '0');
+  }
+  function exportCode(S) {
+    const P = profileOf(S);
+    const json = serialize(P);
+    const raw = utf8(json);
+    const body = toB64(lzwPack(raw));
+    const head = CODE_TAG + SAVE_VER + '.' + raw.length.toString(36) + '.';
+    return head + body + '.' + checksum(head + body);
+  }
+  function codePreview(o) {
+    const S = deserialize(JSON.stringify(o));
+    if (!S) return null;
+    const maps = MAP_IDS.map(id => { const b = boardOf(S, id); return { id, name: MAPS[id].name, cleared: b ? b.cleared : 0, stars: starOf(S, id), open: mapUnlocked(S, id) }; }).filter(m => m.open);
+    return {
+      ver: o.ver | 0, from: saveVersion(o), maps, stars: totalStars(S), moon: S.moon, kills: S.totalKills, ach: Object.keys(S.ach).length, achTotal: ACH.length,
+      heroes: HERO_IDS.filter(id => S.heroUnlocks[id]).map(id => HEROES[id].name), research: researchLevels(S), play: Math.round(S.stats.playActive + S.stats.playOffline),
+      endless: Object.keys(S.endless.best).length ? Math.max.apply(null, Object.values(S.endless.best)) : 0,
+    };
+  }
+  function parseCode(code) {
+    const txt = String(code || '').replace(/\s+/g, '');
+    if (!txt) return { ok: false, err: 'Paste a save code first.' };
+    let json = null;
+    if (txt.charAt(0) === '{') json = txt;
+    else {
+      const m = /^NDS(\d+)\.([0-9a-z]+)\.([A-Za-z0-9_-]+)\.([0-9a-z]+)$/.exec(txt);
+      if (!m) return { ok: false, err: 'That does not look like a Nightfall Defense save code.' };
+      const head = CODE_TAG + m[1] + '.' + m[2] + '.';
+      if (checksum(head + m[3]) !== m[4]) return { ok: false, err: 'The code is damaged: its checksum does not match. Copy it again in full.' };
+      if ((+m[1] | 0) > SAVE_VER) return { ok: false, err: 'This code comes from a newer version of the game.' };
+      const bytes = fromB64(m[3]);
+      const raw = bytes && lzwUnpack(bytes, parseInt(m[2], 36));
+      if (!raw) return { ok: false, err: 'The code could not be unpacked.' };
+      json = unutf8(raw);
+    }
+    let o;
+    try { o = JSON.parse(json); } catch (e) { return { ok: false, err: 'The code holds no readable save.' }; }
+    const ver = o && typeof o === 'object' ? saveVersion(o) : 0;
+    if (!ver) return { ok: false, err: 'The code holds no readable save.' };
+    if (ver > SAVE_VER) return { ok: false, err: 'This code comes from a newer version of the game.' };
+    let pv = null;
+    try { pv = codePreview(JSON.parse(json)); } catch (e) { pv = null; }
+    if (!pv) return { ok: false, err: 'The save inside the code could not be read.' };
+    pv.from = ver;
+    return { ok: true, json, preview: pv };
+  }
+  function importCode(code) {
+    const r = parseCode(code);
+    if (!r.ok) return null;
+    const S = deserialize(r.json);
+    return S ? serialize(S) : null;
+  }
   function deserialize(str) {
     const o = migrate(JSON.parse(str));
     if (!o) return null;
@@ -3798,6 +4122,7 @@
     S.rp = Math.max(0, Math.floor(+o.rp || 0));
     S.tokens = cleanFlags(o.tokens, TOKENS);
     S.cos = cleanCos(o.cos);
+    S.endless = cleanEndless(o.endless);
     recalcBonus(S);
     setNumFormat(S.settings.numFmt);
     const src = o.boards && typeof o.boards === 'object' ? o.boards : {};
@@ -3851,16 +4176,16 @@
 
   const API = {
     WORLD, MAX_WAVE, LIVES, SAVE_VER, TUNE, RACES, RACE_IDS, PATHS, ENEMIES, BOSSES, BOSS_BY_ID, MAPS, MAP_IDS, WAVEGEN,
-    DEFAULT_SETTINGS, NUM_FORMATS, SPEEDS,
+    DEFAULT_SETTINGS, NUM_FORMATS, SPEEDS, POOL,
     hpFor, killCash, clearBonus, waveSpec, bossFor, themeFor, towerCost, nodeCost, infCost, getMap, mapOf, routePos, nearestOnMap, faceRoad,
     newState, owned, nextTowerCost, canPlace, placeTower, sellTower, sellValue, chosenPaths, pathState, nextNodeCost, buyNode, infNext, buyInf,
     upgradeOptions, buyMaxAffordable, maxAffordablePreview, nodeInfo, topWave, bossStatus,
     stats, computeStats, effDmg, effRate, refreshBuffs, startWave, step, canHit, isMagic, isFly, isFast, isHidden,
     lightFor, lightSources, stackBuff, priceOf, spawnEnemy,
-    serialize, deserialize, migrate, cleanSettings, fmt, setNumFormat, pct, mulberry, hashSeed,
+    serialize, deserialize, migrate, cleanSettings, UI_SCALES, exportCode, parseCode, importCode, checksum, lzwPack, lzwUnpack, utf8, unutf8, fmt, setNumFormat, pct, mulberry, hashSeed,
     MAP_BOSSES, UNLOCK_AT, lightAt, crossings, placeBlockReason, switchMap, mapUnlocked, mapCleared, boardOf, newBoard, mapStartCash, activeTricks,
     ENEMY_IDS, ELITE, MECH, COMBOS, armorFor, mechOf, codexList, cleanCodex, firstSeen, themeRule, damage, kill,
-    MAX_STARS, STAR, STAR_MODS, BRANCHES, RESEARCH, RESEARCH_BY_ID, rl, starOf, starMods, starHpMul, researchLevels, starSpeedMul, starCashMul,
+    MAX_STARS, STAR, STAR_MODS, BRANCHES, RESEARCH, RESEARCH_BY_ID, rl, starOf, starMods, starHpMul, researchLevels, combatLevels, starSpeedMul, starCashMul,
     killMul, clearMul, moonMul, livesFor, canStarUp, starUpGain, starUp, skipFor, presetOf, placePreset,
     researchCost, researchTotal, researchState, buyResearch, grantMoon, cleanStars, cleanResearch, cleanPresets,
     HEROES, HERO_IDS, HERO_TUNE, xpNeed, rankFor, heroProg, heroStats, heroHome, heroAt, heroMilestone, heroUnlocked, syncHeroUnlocks, unlockHero,
@@ -3875,6 +4200,7 @@
     chalRaces, chalHas, chalBlock, startChallenge, quitChallenge, chalFinish, chalScore, chalInfo, chalStartCash, tickPlay, statsSummary, newDaily,
     COS_SLOTS, COS_KINDS, COSMETICS, COS_BY_ID, FX_THEMES, SEASONS, TITLES, PONY_NAMES, LORE, newCos, cleanCos, cosOf, totalStars, cosUnlocked, cosHow, cosList, cosNew, markCosSeen, buyCos,
     setSkin, lookOf, setFxTheme, fxThemeOf, seasonFor, setDecor, decorPick, decorOf, ponyLevel, titleOf, titleNext, ponyName, renameTower, suggestName,
+    ENDLESS, ENDLESS_FROM, ENDLESS_MUTS, ENDLESS_MUT_IDS, newEndless, endlessOf, endlessKey, endlessUnlocked, endlessDef, startEndless, endlessMuts, endlessMutList, endlessInfo, cleanEndless, herdOf,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.NDCore = API;

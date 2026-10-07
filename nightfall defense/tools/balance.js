@@ -7,6 +7,7 @@ if (process.env.STARTUNE) Object.assign(C.STAR, JSON.parse(process.env.STARTUNE)
 if (process.env.HEROTUNE) Object.assign(C.HERO_TUNE, JSON.parse(process.env.HEROTUNE));
 if (process.env.CHALTUNE) Object.assign(C.CHAL_ECO, JSON.parse(process.env.CHALTUNE));
 if (process.env.OFFTUNE) Object.assign(C.OFFLINE, JSON.parse(process.env.OFFTUNE));
+if (process.env.ENDTUNE) Object.assign(C.ENDLESS, JSON.parse(process.env.ENDTUNE));
 
 const DT = 1 / 20;
 const OVERHEAD = 3;
@@ -27,10 +28,11 @@ const COS = process.env.COS === '1';
 const ACH_PRIOR = ['p_w1', 'p_w10', 'p_w25', 'p_w50', 'p_w75', 'p_w100', 'p_map2', 'c_k1', 'c_k2', 'c_b1', 'c_b2', 'c_el', 'c_flaw', 'c_clutch', 'e_1', 'e_2', 'e_3', 'e_up', 'e_off', 'h_field', 'h_10', 'r_herd', 'r_army', 'p_codex', 'ch_d1', 'ch_p1'];
 
 if (!process.env.MAP && CHAL) process.env.MAP = CHAL.map;
-if (!process.env.MAP) { if (process.env.PRESTIGE) runPrestige(); else runAll(); return; }
+if (!process.env.MAP) { if (process.env.SWEEP) setImmediate(() => sweep().then(rows => { rows.sort((a, b) => C.MAPS[a.map].order - C.MAPS[b.map].order || a.star - b.star); for (const r of rows) console.log(r.map.padEnd(9) + ' ' + r.star + ' w50 ' + r.w50h + ' w100 ' + r.w100h + ' L' + r.losses + ' reached ' + r.reached + ' lives ' + r.lives + ' rs ' + r.rs + (r.hero ? ' hero ' + r.hero : '') + ' dec ' + (r.decades || []).map(v => v.toFixed(2)).join(',') + ' off ' + (r.offline || []).map(o => o.wave + ':' + Math.round(o.minutes)).join(' ')); })); else if (process.env.PRESTIGE) runPrestige(); else runAll(); return; }
 
 const MAP = C.getMap(process.env.MAP);
 if (process.env.MAPTUNE) Object.assign(MAP, JSON.parse(process.env.MAPTUNE));
+if (process.env.MAPTUNES) Object.assign(MAP, JSON.parse(process.env.MAPTUNES)[MAP.id] || {});
 
 function legacySlots() {
   const W = C.WORLD, out = [];
@@ -77,7 +79,7 @@ function coverSlots() {
   return lists;
 }
 
-const HERO_FOR = { moonlit: 'nova', woods: 'ironmane', caverns: 'nova', cliffs: 'skyflick', castle: 'skyflick' };
+const HERO_FOR = { moonlit: 'nova', woods: 'ironmane', caverns: 'nova', cliffs: 'skyflick', castle: 'duskfang' };
 const HERO = (process.env.HERO === '0' || CMODS.nohero) ? '' : (C.HEROES[process.env.HERO] ? process.env.HERO : HERO_FOR[MAP.id]);
 let heroCov = null, heroTowers = -1;
 function heroCover() {
@@ -197,7 +199,12 @@ function chalAllowed(S) {
   if (CMODS.flyers) list = list.filter(r => r !== 'earth');
   return list;
 }
-function planFor(S, race) { return S.chal && CMODS.stealth && race === 'bat' ? [0, 1] : PLAN[race]; }
+const PLAN_ALT = process.env.PLAN_ALT ? JSON.parse(process.env.PLAN_ALT) : { crystal: [[0, 3], [1, 4], [0, 2]] };
+function planFor(S, race, t) {
+  if (S.chal && CMODS.stealth && race === 'bat') return [0, 1];
+  const alt = PLAN_ALT[race];
+  return alt && t && !S.chal ? alt[t.id % alt.length] : PLAN[race];
+}
 function options(S, n) {
   const opts = [];
   const total = S.towers.length || 1;
@@ -217,7 +224,7 @@ function options(S, n) {
     opts.push({ cost, weight, kind: 'tower', race: r });
   }
   for (const t of S.towers) {
-    for (const i of planFor(S, t.race)) {
+    for (const i of planFor(S, t.race, t)) {
       if (t.paths[i] >= 10) continue;
       const c = C.nextNodeCost(t, i);
       if (!isFinite(c)) continue;
@@ -415,6 +422,71 @@ function prestige() {
   console.log('RESULT ' + JSON.stringify(res));
 }
 
+function fastStars(S, upto) {
+  while (C.starOf(S) < upto) {
+    S.cleared = C.MAX_WAVE;
+    const up = C.starUp(S);
+    if (!up) break;
+    if (up.star > 0) C.grantMoon(S, 10 * (1 + C.rl(S, 'util_star')) * C.moonMul(S));
+    buyResearch(S);
+  }
+}
+function oneStar() {
+  const star = Number(process.env.ONESTAR) || 0;
+  const S = C.newState(MAP.id);
+  S.fxOn = false;
+  achSeed(S);
+  if (MAP.id !== 'moonlit' && star > 0) {
+    const M = C.newState('moonlit');
+    M.fxOn = false;
+    achSeed(M);
+    fastStars(M, C.MAX_STARS);
+    Object.assign(S.research, M.research);
+    S.moon = M.moon;
+    S.stars.moonlit = C.MAX_STARS;
+    for (const id of C.MAP_IDS) if (C.MAPS[id].order < MAP.order) S.stars[id] = Math.max(S.stars[id] | 0, 1);
+    C.recalcBonus(S);
+  }
+  if (star > 0) {
+    fastStars(S, star - 1);
+    S.cleared = C.MAX_WAVE;
+    C.starUp(S);
+    buyResearch(S);
+  }
+  const r = climb(S);
+  const rs = C.researchLevels ? C.researchLevels(S) : 0;
+  console.log('RESULT ' + JSON.stringify({ map: MAP.id, star, w50h: r.w50h, w100h: r.w100h, hours: r.hours, losses: r.losses, worst: r.worstWaveLosses, reached: r.reached, lives: C.livesFor(S), rs, decades: r.decades, offline: r.offline }));
+}
+function sweep() {
+  const { spawn } = require('child_process');
+  const jobs = process.env.SWEEP.split(',').map(s => s.split(':'));
+  const par = Number(process.env.PAR) || 4;
+  const out = [];
+  let next = 0, live = 0;
+  return new Promise(done => {
+    const launch = () => {
+      while (live < par && next < jobs.length) {
+        const [id, st, hero] = jobs[next++];
+        live++;
+        const c = spawn(process.execPath, [__filename], { env: Object.assign({}, process.env, Object.assign({ MAP: id, ONESTAR: st, SWEEP: '' }, hero ? { HERO: hero } : {})) });
+        let buf = '';
+        c.stdout.on('data', d => { buf += d; });
+        c.on('close', () => {
+          live--;
+          const line = buf.split('\n').find(l => l.startsWith('RESULT '));
+          const r = line ? JSON.parse(line.slice(7)) : { map: id, star: +st, error: true };
+          if (hero) r.hero = hero;
+          out.push(r);
+          console.log('ROW ' + JSON.stringify(r));
+          if (process.env.SWEEP_OUT) fs.appendFileSync(process.env.SWEEP_OUT, JSON.stringify(r) + '\n');
+          if (live === 0 && next >= jobs.length) done(out); else launch();
+        });
+      }
+    };
+    launch();
+  });
+}
+
 function achSeed(S) {
   if (ACH_MODE === '0') { S.ach = null; return; }
   if (!ACH_MODE) return;
@@ -447,6 +519,35 @@ function playChallenge() {
   console.log('RESULT ' + JSON.stringify(res));
 }
 
+function playEndless() {
+  const P = C.newState(MAP.id);
+  P.fxOn = false;
+  achSeed(P);
+  const want = Math.max(1, Number(process.env.ENDLESS) || 1);
+  if (process.env.RESEARCH) { Object.assign(P.research, C.cleanResearch(JSON.parse(process.env.RESEARCH))); P.stars[MAP.id] = want; }
+  else while (C.starOf(P) < want) { P.cleared = C.MAX_WAVE; const up = C.starUp(P); if (up.star > 0) C.grantMoon(P, 10 * (1 + C.rl(P, 'util_star')) * C.moonMul(P)); buyResearch(P); }
+  C.recalcBonus(P);
+  if (HERO) { P.heroUnlocks[HERO] = 1; C.pickHero(P, HERO); }
+  const X = C.startEndless(P, MAP.id, 1e12);
+  X.fxOn = false;
+  heroTowers = -1;
+  let time = 0;
+  for (let k = 0; k < 40; k++) { const c0 = X.cash; shop(X, 101); if (X.cash === c0) break; }
+  if (process.env.DBG) console.log('setup', Math.round(X.cash), X.towers.length, X.towers.reduce((a, t) => a + t.spent, 0));
+  const cap = Number(process.env.ENDLESS_CAP) || 200;
+  while (!X.chal.over && X.cleared < cap) {
+    const n = X.cleared + 1;
+    shop(X, n);
+    placeHero(X);
+    const r = play(X, n);
+    time += r.t;
+    if (process.env.DBG) console.log('dbg', n, JSON.stringify({ won: r.won, t: r.t, cash: Math.round(X.cash), towers: X.towers.length, lives: X.chal.lives, over: X.chal.over, run: !!X.run, leaks: LEAKS }));
+    if (!X.chal.over && !r.won && !X.run) break;
+    if (n % 10 === 0) console.log('w' + n + ' lives ' + X.chal.lives + ' t ' + (time / 3600).toFixed(2) + 'h towers ' + X.towers.length + ' muts ' + C.endlessMutList(X.chal.order, n + 1).map(m => m.id + m.rank).join(','));
+  }
+  const out = X.chal.over ? X.chal.result : C.quitChallenge(X);
+  console.log('RESULT ' + JSON.stringify({ map: MAP.id, star: P.stars[MAP.id], wave: out.wave, rank: out.rank, moon: out.moon, hours: +(time / 3600).toFixed(2), best: P.endless.best, top: P.endless.top }));
+}
 function cosSeed(S) {
   const moon = S.moon;
   const items = C.COSMETICS.filter(c => c.un.k === 'moon');
@@ -467,6 +568,8 @@ function cosTick(S) {
   C.lookOf(S, 'earth'); C.fxThemeOf(S, 'bat'); C.decorOf(S, S.map);
 }
 function main() {
+  if (process.env.ONESTAR) { oneStar(); return; }
+  if (process.env.ENDLESS) { playEndless(); return; }
   if (CHAL) { playChallenge(); return; }
   if (process.env.PRESTIGE) { prestige(); return; }
   const S = C.newState(MAP.id);
