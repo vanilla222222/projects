@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vanilla Incremental</title>
-<link rel="stylesheet" href="style.css?v=18">
+<link rel="stylesheet" href="style.css?v=19">
 </head>
 <body>
 <header class="top">
@@ -84,6 +84,21 @@
     </div>
     <div id="ingotWrap"></div>
   </section>
+  <section class="tab" data-tab="forest" hidden>
+    <div class="smeltcol">
+    <div class="masterybox">
+      <h2>Forest</h2>
+      <p class="hint">Click a tree to chop it. Felled trees give logs and regrow as a random new tree. Burn a tree that is too tough to clear it for no logs. Logs and forest upgrades are kept on rebirth.</p>
+      <p class="hint" id="forestInfo"></p>
+      <div class="slots trees" id="trees"></div>
+    </div>
+    <div class="masterybox">
+      <h2>Forest upgrades</h2>
+      <div class="ingotups" id="forestUps"></div>
+    </div>
+    </div>
+    <div class="upgrades" id="woodCards"></div>
+  </section>
   <section class="tab" data-tab="ach" hidden>
     <div class="masterybox">
       <h2>Achievements</h2>
@@ -111,6 +126,6 @@
     <button type="button" class="rbbtn" id="offOk"><b>Collect</b></button>
   </div>
 </div>
-<script src="game.js?v=18"></script>
+<script src="game.js?v=19"></script>
 </body>
 </html>

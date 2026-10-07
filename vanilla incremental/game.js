@@ -107,6 +107,7 @@
       { id: 'mult', label: '+1 Silicon multiplier', cost: 50, growth: 2.5 },
       { id: 'speed', label: 'Silicon smelts 20% faster', cost: 50, growth: 3, max: 10 },
       { id: 'auto3', label: 'Autobuy Silver, Diamond & Obsidian upgrades', cost: 100, growth: 1, max: 1, auto: ['silver', 'diamond', 'obsidian'] },
+      { id: 'forest', label: 'Unlock the Forest', cost: 1e5, growth: 1, max: 1 },
     ] },
   ];
   const RECIPE = Object.fromEntries(RECIPES.map(x => [x.id, x]));
@@ -159,18 +160,41 @@
     { id: 'rebirth', name: 'Rebirth', unlock: () => S.ores.copper.unique > 0 },
     { id: 'smelt', name: 'Smeltery', unlock: () => S.ores.iron.unique > 0 },
     { id: 'ach', name: 'Achievements', unlock: () => S.ores.diamond.unique > 0 },
+    { id: 'forest', name: 'Forest', unlock: () => S.smelt.up.silicon.forest > 0 },
     { id: 'stats', name: 'Stats' },
     { id: 'soon', name: 'Coming soon', locked: true },
+  ];
+
+  const WOODS = [
+    { id: 'oak', name: 'Oak', color: '#b08850', hp: 5, weight: 40 },
+    { id: 'birch', name: 'Birch', color: '#e8e2d0', hp: 20, weight: 25 },
+    { id: 'spruce', name: 'Spruce', color: '#4f8a5b', hp: 100, weight: 15 },
+    { id: 'fir', name: 'Fir', color: '#2f6e4a', hp: 1000, weight: 10 },
+    { id: 'redwood', name: 'Redwood', color: '#b24a32', hp: 1e4, weight: 6 },
+    { id: 'icewood', name: 'Icewood', color: '#9fe0ff', hp: 1e5, weight: 4 },
+  ];
+  const WOOD = Object.fromEntries(WOODS.map(w => [w.id, w]));
+  const FOREST = { slots: 10, regrow: 10, regrowF: 0.8 };
+  const ladder = (ids, ns) => ids.flatMap(id => ns.map(n => [id, n]));
+  const FUPS = [
+    { id: 'dmg', label: '×2 chop damage', steps: ladder(WOODS.map(w => w.id), [1, 25, 100]) },
+    { id: 'regrow', label: 'Trees regrow 20% faster', steps: ladder(['oak', 'birch', 'spruce', 'fir', 'redwood'], [5, 50]) },
+    { id: 'auto', label: 'Autochop slot 1 every second', steps: [['oak', 25]] },
+    { id: 'autoN', label: 'Extend autochop to another slot', steps: [['birch', 10], ['birch', 50], ['spruce', 10], ['spruce', 50], ['fir', 10], ['fir', 50], ['redwood', 10], ['redwood', 50], ['icewood', 10]], req: 'auto' },
+    { id: 'slots', label: 'Unlock another slot', steps: [['oak', 10], ['oak', 50], ['birch', 10], ['birch', 50], ['spruce', 10], ['spruce', 50], ['fir', 10], ['fir', 50], ['redwood', 10]] },
   ];
 
   const $ = id => document.getElementById(id);
 
   function fresh() {
-    const S = { tab: 'mines', layer: 1, grid: null, ores: {}, auto: { bulk: 0, speed: 0, off: 0 }, pick: 0, buy: 1, vein: 0, seen: Date.now(), rb: { count: 0, points: 0, alloc: {} }, smelt: { ingots: {}, total: {}, slots: [], up: {}, extra: {}, abOff: {} }, ach: {}, stats: { time: 0, clicks: 0, tiles: 0, layers: 0, best: 0, chest: 0, tnt: 0, vein: 0, offline: 0 } };
+    const S = { tab: 'mines', layer: 1, grid: null, ores: {}, auto: { bulk: 0, speed: 0, off: 0 }, pick: 0, buy: 1, vein: 0, seen: Date.now(), rb: { count: 0, points: 0, alloc: {} }, smelt: { ingots: {}, total: {}, slots: [], up: {}, extra: {}, abOff: {} }, ach: {}, stats: { time: 0, clicks: 0, tiles: 0, layers: 0, best: 0, chest: 0, tnt: 0, vein: 0, offline: 0, trees: 0, burned: 0 } };
     for (const o of ORES) S.ores[o.id] = { amt: 0, total: 0, run: 0, found: 0, mult: 0, base: 0, exp: 0, unique: 0, mastery: 0 };
     for (const x of RECIPES) { S.smelt.ingots[x.id] = 0; S.smelt.total[x.id] = 0; S.smelt.up[x.id] = Object.fromEntries(x.ups.map(u => [u.id, 0])); }
     for (const u of SMELT_UPS) S.smelt.extra[u.id] = 0;
     for (let i = 0; i < SMELT.slots; i++) S.smelt.slots.push({ rec: '', busy: 0, t: 0 });
+    S.forest = { wood: {}, slots: [], up: Object.fromEntries(FUPS.map(u => [u.id, 0])), acc: 0 };
+    for (const w of WOODS) S.forest.wood[w.id] = { amt: 0, total: 0, found: 0, mult: 0, base: 0, exp: 0, unique: 0 };
+    for (let i = 0; i < FOREST.slots; i++) S.forest.slots.push({ w: '', hp: 0, t: 999 });
     S.grid = newGrid();
     return S;
   }
@@ -223,6 +247,14 @@
         if (d.smelt.abOff) for (const k of Object.keys(d.smelt.abOff)) if (d.smelt.abOff[k]) S.smelt.abOff[k] = 1;
         if (up) for (const x of RECIPES) if (up[x.id]) for (const k of Object.keys(S.smelt.up[x.id])) if (num(up[x.id][k])) S.smelt.up[x.id][k] = up[x.id][k];
         if (Array.isArray(d.smelt.slots)) d.smelt.slots.slice(0, SMELT.slots).forEach((x, i) => { if (x && typeof x === 'object') S.smelt.slots[i] = { rec: RECIPE[x.rec] ? x.rec : x.on ? 'copper' : '', busy: x.busy ? 1 : 0, t: num(x.t) ? x.t : 0 }; });
+      }
+      if (d.forest && typeof d.forest === 'object') {
+        const num = v => typeof v === 'number' && isFinite(v);
+        const f = d.forest;
+        if (f.wood) for (const w of WOODS) if (f.wood[w.id]) for (const k of Object.keys(S.forest.wood[w.id])) if (num(f.wood[w.id][k])) S.forest.wood[w.id][k] = f.wood[w.id][k];
+        if (f.up) for (const u of FUPS) if (num(f.up[u.id])) S.forest.up[u.id] = Math.min(u.steps.length, Math.max(0, Math.floor(f.up[u.id])));
+        if (Array.isArray(f.slots)) f.slots.slice(0, FOREST.slots).forEach((x, i) => { if (x && typeof x === 'object') S.forest.slots[i] = { w: WOOD[x.w] ? x.w : '', hp: num(x.hp) ? x.hp : 0, t: num(x.t) ? x.t : 999 }; });
+        if (num(f.acc)) S.forest.acc = Math.min(1, Math.max(0, f.acc));
       }
       if (d.ach && typeof d.ach === 'object') for (const k in d.ach) if (d.ach[k]) S.ach[k] = 1;
       for (const k of ['pick', 'seen']) if (typeof d[k] === 'number' && isFinite(d[k])) S[k] = d[k];
@@ -375,7 +407,102 @@
     else S.smelt.ingots[r] -= pl.total;
     S.smelt.up[r][u.id] += pl.n;
     if (u.id === 'zinc') { ZINC_ON = true; buildTabs(); renderAll(); return; }
+    if (u.id === 'forest') { buildTabs(); renderAll(); return; }
     renderAll(true);
+  }
+
+  const forestOn = () => S.smelt.up.silicon.forest > 0;
+  const treeSlots = () => 1 + S.forest.up.slots;
+  const chopDmg = () => Math.pow(2, S.forest.up.dmg);
+  const regrowTime = () => FOREST.regrow * Math.pow(FOREST.regrowF, S.forest.up.regrow);
+  const autoSlots = () => S.forest.up.auto ? 1 + S.forest.up.autoN : 0;
+  const woodGain = id => { const st = S.forest.wood[id]; return Math.pow((1 + st.base) * (1 + st.mult), 1 + st.exp * 0.01); };
+
+  function rollWood() {
+    let r = Math.random() * WOODS.reduce((s, w) => s + w.weight, 0);
+    for (const w of WOODS) { r -= w.weight; if (r < 0) return w.id; }
+    return WOODS[0].id;
+  }
+
+  function chop(i, dmg) {
+    const sl = S.forest.slots[i];
+    if (!sl.w || i >= treeSlots()) return 0;
+    sl.hp -= dmg;
+    if (sl.hp > 0) return 0;
+    const st = S.forest.wood[sl.w];
+    const g = woodGain(sl.w);
+    st.amt += g;
+    st.total += g;
+    S.stats.trees++;
+    sl.w = '';
+    sl.t = 0;
+    return 1;
+  }
+
+  function burn(i) {
+    const sl = S.forest.slots[i];
+    if (!sl.w || i >= treeSlots()) return;
+    sl.w = '';
+    sl.t = 0;
+    S.stats.burned++;
+    renderForest();
+  }
+
+  function forestStep(dt) {
+    let ch = 0;
+    const n = treeSlots();
+    const T = regrowTime();
+    for (let i = 0; i < n; i++) {
+      const sl = S.forest.slots[i];
+      if (sl.w) continue;
+      sl.t += dt;
+      if (sl.t >= T) {
+        sl.w = WOODS.some(w => S.forest.wood[w.id].found) ? rollWood() : 'oak';
+        sl.hp = WOOD[sl.w].hp;
+        sl.t = 0;
+        S.forest.wood[sl.w].found++;
+        ch = 1;
+      }
+    }
+    const a = Math.min(autoSlots(), n);
+    if (a) {
+      S.forest.acc += dt;
+      while (S.forest.acc >= 1) {
+        S.forest.acc -= 1;
+        for (let i = 0; i < a; i++) if (S.forest.slots[i].w) { chop(i, chopDmg()); ch = 1; }
+      }
+    } else S.forest.acc = 0;
+    return ch;
+  }
+
+  function fupPlan(u) {
+    const lvl = S.forest.up[u.id];
+    const st = u.steps[lvl];
+    if (!st) return { done: 1, can: false };
+    return { w: st[0], n: st[1], can: (!u.req || S.forest.up[u.req] > 0) && S.forest.wood[st[0]].amt >= st[1] };
+  }
+
+  function buyFup(u) {
+    const pl = fupPlan(u);
+    if (!pl.can) return;
+    S.forest.wood[pl.w].amt -= pl.n;
+    S.forest.up[u.id]++;
+    renderForest();
+  }
+
+  function woodPlan(id, u) {
+    const st = S.forest.wood[id];
+    if (u.max) return { n: 1, total: u.cost, can: false };
+    return plan(l => cost(u, l, id), st[u.id], st.amt);
+  }
+
+  function buyWood(id, u) {
+    if (u.max) return;
+    const pl = woodPlan(id, u);
+    if (!pl.can) return;
+    S.forest.wood[id].amt -= pl.total;
+    S.forest.wood[id][u.id] += pl.n;
+    renderForest();
   }
 
   function smeltStep(dt) {
@@ -602,6 +729,10 @@
       if (smeltStep(dt)) renderAll(true);
       if (S.tab === 'smelt') renderSmeltBars();
     }
+    if (forestOn()) {
+      if (forestStep(dt)) renderForest();
+      if (S.tab === 'forest') renderForestBars();
+    }
     if (Math.floor(S.stats.time) !== Math.floor(S.stats.time - dt)) { checkAch(); if (autoBuy()) renderAll(true); }
     if (hasAuto()) {
       autoAcc += dt;
@@ -787,7 +918,7 @@
       b.textContent = t.name;
       b.dataset.tab = t.id;
       b.disabled = !!t.locked;
-      b.addEventListener('click', () => { S.tab = t.id; renderTabs(); renderMastery(); renderRebirth(); renderStats(); renderSmelt(); renderAch(); });
+      b.addEventListener('click', () => { S.tab = t.id; renderTabs(); renderMastery(); renderRebirth(); renderStats(); renderSmelt(); renderAch(); renderForest(); });
       nav.appendChild(b);
     }
   }
@@ -1032,6 +1163,8 @@
       ['Brass Ingots made', fmt(S.smelt.total.brass)],
       ['Gold Ingots made', fmt(S.smelt.total.gold)],
       ['Silicon made', fmt(S.smelt.total.silicon)],
+      ['Trees chopped', fmt(st.trees)],
+      ['Trees burned', fmt(st.burned)],
       ['Achievements', `${achCount()} / ${ACHS.length}`],
       ['🎁 Chests', fmt(st.chest)],
       ['🧨 TNT', fmt(st.tnt)],
@@ -1130,6 +1263,121 @@
     }
   }
 
+  function buildForest() {
+    const box = $('trees');
+    for (let i = 0; i < FOREST.slots; i++) {
+      const d = document.createElement('div');
+      d.className = 'tree';
+      d.innerHTML = '<button type="button" class="slot chop"><span class="sname"></span><small></small><div class="bar"><div></div></div></button><button type="button" class="burn" title="Burn this tree for no logs">🔥 Burn</button>';
+      d.querySelector('.chop').addEventListener('click', () => {
+        const w = S.forest.slots[i].w;
+        if (!w) return;
+        S.stats.clicks++;
+        if (chop(i, chopDmg())) {
+          const f = document.createElement('div');
+          f.className = 'float';
+          f.textContent = `+${fmt(woodGain(w))} ${WOOD[w].name}`;
+          f.style.color = WOOD[w].color;
+          f.style.left = '50%';
+          f.style.top = '0';
+          d.appendChild(f);
+          setTimeout(() => f.remove(), 900);
+        }
+        renderForest();
+      });
+      d.querySelector('.burn').addEventListener('click', () => burn(i));
+      box.appendChild(d);
+    }
+    const fu = $('forestUps');
+    for (const u of FUPS) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'upg';
+      b.innerHTML = '<span></span><small></small>';
+      b.addEventListener('click', () => buyFup(u));
+      fu.appendChild(b);
+    }
+    const wb = $('woodCards');
+    for (const w of WOODS) {
+      const card = document.createElement('div');
+      card.className = 'ore';
+      card.style.setProperty('--c', w.color);
+      card.dataset.wood = w.id;
+      card.innerHTML = `<div class="orehead"><span class="dot" style="background:${w.color}"></span><h3>${w.name}</h3><span class="chance"></span></div><div class="stats"></div>`;
+      for (const u of UPGRADES) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'upg';
+        b.innerHTML = '<span></span><small></small>';
+        b.addEventListener('click', () => buyWood(w.id, u));
+        card.appendChild(b);
+      }
+      wb.appendChild(card);
+    }
+  }
+
+  function renderForestBars() {
+    const T = regrowTime();
+    [...$('trees').children].forEach((d, i) => {
+      if (i >= treeSlots()) return;
+      const sl = S.forest.slots[i];
+      d.querySelector('.bar div').style.width = (sl.w ? Math.max(0, sl.hp / WOOD[sl.w].hp) : Math.min(1, sl.t / T)) * 100 + '%';
+      d.querySelector('small').textContent = sl.w ? `${fmt(Math.max(0, sl.hp))} / ${fmt(WOOD[sl.w].hp)} HP` : `Growing… ${Math.max(0, T - sl.t).toFixed(1)}s`;
+    });
+  }
+
+  function renderForest() {
+    if (S.tab !== 'forest') return;
+    const n = treeSlots();
+    const a = Math.min(autoSlots(), n);
+    $('forestInfo').textContent = `${fmt(chopDmg())} damage per chop · trees regrow in ${regrowTime().toFixed(1)}s` + (a ? ` · autochop on ${a} slot${a > 1 ? 's' : ''}` : '');
+    [...$('trees').children].forEach((d, i) => {
+      const sl = S.forest.slots[i];
+      const open = i < n;
+      const c = open && sl.w ? WOOD[sl.w].color : '';
+      const b = d.querySelector('.chop');
+      b.disabled = !open || !sl.w;
+      b.classList.toggle('on', !!c);
+      b.classList.toggle('grow', open && !sl.w);
+      b.classList.toggle('autoc', open && i < a);
+      d.style.setProperty('--c', c || 'var(--line)');
+      d.querySelector('.sname').textContent = !open ? 'Locked' : sl.w ? WOOD[sl.w].name + (i < a ? ' ⚙️' : '') : 'Sapling';
+      if (!open) d.querySelector('small').textContent = '🔒';
+      d.querySelector('.bar div').style.width = '0%';
+      d.querySelector('.burn').hidden = !open || !sl.w;
+    });
+    renderForestBars();
+    [...$('forestUps').children].forEach((b, i) => {
+      const u = FUPS[i];
+      const lvl = S.forest.up[u.id];
+      const pl = fupPlan(u);
+      b.querySelector('span').textContent = u.label + (u.steps.length > 1 && lvl ? ` (${lvl}/${u.steps.length})` : '');
+      b.querySelector('small').textContent = pl.done ? (u.steps.length > 1 ? 'Maxed' : 'Unlocked') : u.req && !S.forest.up[u.req] ? 'Needs autochop' : `${fmt(pl.n)} ${WOOD[pl.w].name}`;
+      b.disabled = !pl.can;
+      b.classList.toggle('can', !!pl.can);
+      b.classList.toggle('done', !!pl.done);
+    });
+    [...$('woodCards').children].forEach(card => {
+      const w = WOOD[card.dataset.wood];
+      const st = S.forest.wood[w.id];
+      const found = st.found > 0;
+      card.classList.toggle('locked', !found);
+      card.querySelector('.chance').textContent = `${fmt(st.amt)} logs`;
+      card.querySelector('.stats').innerHTML = found ? `${fmt(w.hp)} HP · per tree: <b>${fmt(woodGain(w.id))}</b> = (<b>${fmt(1 + st.base)}</b> × <b>${fmt(1 + st.mult)}</b>)^<b>${+(1 + st.exp * 0.01).toFixed(4)}</b>` : 'Not grown yet';
+      [...card.querySelectorAll('.upg')].forEach((b, i) => {
+        const u = UPGRADES[i];
+        const soon = !!u.max;
+        const lvl = st[u.id];
+        const pl = woodPlan(w.id, u);
+        b.querySelector('span').textContent = soon ? 'Coming soon' : u.label(w) + xN(pl.n) + (lvl ? ` (${lvl})` : '');
+        b.querySelector('small').textContent = soon ? '' : `${fmt(pl.total)} ${w.name}`;
+        const can = !soon && found && pl.can;
+        b.disabled = !can;
+        b.classList.toggle('can', !!can);
+      });
+    });
+  }
+
   function renderBuy() {
     for (const b of $('buyAmt').children) b.classList.toggle('on', String(S.buy) === b.dataset.v);
   }
@@ -1145,6 +1393,7 @@
     renderStats();
     renderSmelt();
     renderAch();
+    renderForest();
     updateMineHead();
     if (!skipGrid) renderTabs();
   }
@@ -1177,6 +1426,7 @@
   buildRebirth();
   buildBuy();
   buildSmelt();
+  buildForest();
   renderGrid();
   renderAll();
   showOffline(away);

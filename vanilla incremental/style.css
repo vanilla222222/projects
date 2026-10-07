@@ -152,3 +152,15 @@ section[data-tab="smelt"] { --c: var(--accent); flex-wrap: nowrap; }
 .toast[hidden] { display: none; }
 .slot.silicon { border-color: #f3dbe8; }
 .slot.silicon .bar div { background: #f3dbe8; }
+section[data-tab="forest"] { --c: #4f8a5b; flex-wrap: nowrap; }
+@media (max-width: 800px) { section[data-tab="forest"] { flex-wrap: wrap; } }
+.tree { position: relative; display: flex; flex-direction: column; gap: 4px; }
+.tree .chop { border-color: var(--c); }
+.tree .chop.on .bar div { background: var(--c); }
+.tree .chop.grow .bar div { background: #4f8a5b; opacity: .6; }
+.tree .chop.autoc { box-shadow: inset 0 0 0 1px var(--c); }
+.tree .chop:disabled { cursor: default; }
+.tree .burn { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; font-size: 11px; padding: 2px 6px; color: var(--dim); }
+.tree .burn:hover { border-color: #e0663a; color: #e0663a; }
+.tree .burn[hidden] { visibility: hidden; display: block; }
+.tree .chop.grow:disabled { opacity: .8; }
