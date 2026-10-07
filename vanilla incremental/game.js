@@ -7,17 +7,19 @@
     { id: 'stone', name: 'Stone', color: '#8e8c94', weight: 25 },
     { id: 'copper', name: 'Copper', color: '#d27a3e', weight: 13 },
     { id: 'iron', name: 'Iron', color: '#b8a59a', weight: 9 },
-    { id: 'zinc', name: 'Zinc', color: '#8fb3c9', weight: 7, lock: 1 },
+    { id: 'zinc', name: 'Zinc', color: '#8fb3c9', weight: 7, lock: 'zinc' },
     { id: 'gold', name: 'Gold', color: '#f0c43c', weight: 5.5 },
     { id: 'silver', name: 'Silver', color: '#d8e2ee', weight: 4.2 },
     { id: 'diamond', name: 'Diamond', color: '#6fe3f0', weight: 2.3 },
     { id: 'obsidian', name: 'Obsidian', color: '#7a4fc0', weight: 1 },
+    { id: 'quartz', name: 'Quartz', color: '#f3dbe8', weight: 0.5, lock: 'quartz' },
   ];
-  const POINTS = { dirt: 1, stone: 2, copper: 3, iron: 4, zinc: 4, gold: 5, silver: 6, diamond: 7, obsidian: 8 };
+  const POINTS = { dirt: 1, stone: 2, copper: 3, iron: 4, zinc: 4, gold: 5, silver: 6, diamond: 7, obsidian: 8, quartz: 9 };
   ORES.forEach(o => { o.points = POINTS[o.id]; o.perPoint = o.points >= 7 ? 0.25 : o.points >= 5 ? 0.5 : 1; });
   let ALLOC = {};
   let ZINC_ON = false;
-  const oreOpen = o => !o.lock || ZINC_ON;
+  let QUARTZ_ON = false;
+  const oreOpen = o => !o.lock || (o.lock === 'zinc' ? ZINC_ON : QUARTZ_ON);
   const oreWeight = o => oreOpen(o) ? o.weight + (ALLOC[o.id] || 0) * o.perPoint : 0;
   const totalWeight = () => ORES.reduce((s, o) => s + oreWeight(o), 0);
   const REBIRTH = { min: 1e8 };
@@ -97,6 +99,14 @@
       { id: 'mult', label: '+1 Gold Ingot multiplier', cost: 50, growth: 2.5 },
       { id: 'speed', label: 'Gold Ingots smelt 20% faster', cost: 50, growth: 3, max: 10 },
       { id: 'auto2', label: 'Autobuy Iron, Zinc & Gold upgrades', cost: 100, growth: 1, max: 1, auto: ['iron', 'zinc', 'gold'] },
+      { id: 'smup2', label: 'Unlock more smelting upgrades', cost: 10000, growth: 1, max: 1 },
+    ] },
+    { id: 'silicon', name: 'Silicon', in: { quartz: 1000 }, ups: [
+      { id: 'omult', label: '+2 Quartz multiplier', cost: 10, growth: 2 },
+      { id: 'base', label: '+1 base Silicon per smelt', cost: 25, growth: 2.5 },
+      { id: 'mult', label: '+1 Silicon multiplier', cost: 50, growth: 2.5 },
+      { id: 'speed', label: 'Silicon smelts 20% faster', cost: 50, growth: 3, max: 10 },
+      { id: 'auto3', label: 'Autobuy Silver, Diamond & Obsidian upgrades', cost: 100, growth: 1, max: 1, auto: ['silver', 'diamond', 'obsidian'] },
     ] },
   ];
   const RECIPE = Object.fromEntries(RECIPES.map(x => [x.id, x]));
@@ -106,6 +116,7 @@
     { id: 'slot3', label: 'Unlock smelter slot 3', ore: 'gold', cost: 1e9 },
     { id: 'slot4', label: 'Unlock smelter slot 4', ore: 'gold', cost: 1e10, req: 'slot3' },
     { id: 'gold', label: 'Unlock Gold Ingot', ore: 'gold', cost: 1e11 },
+    { id: 'quartz', label: 'Add Quartz to the mines', ore: 'obsidian', cost: 1e10, tier: 2 },
   ];
   const ACH_BONUS = 0.02;
   const ACHS = [];
@@ -230,6 +241,7 @@
   ALLOC = S.rb.alloc;
   SPECIAL_ON = S.ores.obsidian.unique > 0;
   ZINC_ON = S.smelt.up.copper.zinc > 0;
+  QUARTZ_ON = S.smelt.extra.quartz > 0;
 
   function save() {
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {}
@@ -247,7 +259,7 @@
   const ALLOC_BONUS = { base: 0.25, mult: 0.25, exp: 0.0025 };
   const allocOf = id => S.rb.alloc[id] || 0;
   const oreBase = id => 1 + S.ores[id].base + allocOf(id) * ALLOC_BONUS.base;
-  const oreMult = id => 1 + S.ores[id].mult + allocOf(id) * ALLOC_BONUS.mult + (S.smelt.up[id] ? 2 * S.smelt.up[id].omult : 0);
+  const oreMult = id => 1 + S.ores[id].mult + allocOf(id) * ALLOC_BONUS.mult + (S.smelt.up[id] ? 2 * S.smelt.up[id].omult : 0) + (id === 'quartz' ? 2 * S.smelt.up.silicon.omult : 0);
   const oreExp = id => 1 + S.ores[id].exp * 0.01 + allocOf(id) * ALLOC_BONUS.exp;
   const oreMastery = id => Math.pow(2, S.ores[id].mastery);
   const achCount = () => ACHS.filter(a => S.ach[a.id]).length;
@@ -256,10 +268,12 @@
   const smeltTime = r => Math.max(SMELT.min, SMELT.time * Math.pow(SMELT.speed, S.smelt.up[r].speed)) / (S.smelt.extra.speed ? 2 : 1);
   const smeltYield = r => (1 + S.smelt.up[r].base) * (1 + S.smelt.up[r].mult) * (S.smelt.extra.out ? 2 : 1);
   const slotCount = () => 1 + (S.ores.zinc.unique > 0 ? 1 : 0) + S.smelt.extra.slot3 + S.smelt.extra.slot4;
-  const REC_OPEN = { copper: () => true, zinc: () => ZINC_ON, brass: () => S.smelt.up.zinc.brass > 0, gold: () => S.smelt.extra.gold > 0 };
+  const REC_OPEN = { copper: () => true, zinc: () => ZINC_ON, brass: () => S.smelt.up.zinc.brass > 0, gold: () => S.smelt.extra.gold > 0, silicon: () => QUARTZ_ON };
   const recOpen = r => REC_OPEN[r]();
   const extraOpen = () => S.smelt.up.brass.smup > 0;
-  const recIn = r => Object.entries(RECIPE[r].in).map(([k, v]) => `${fmt(v)} ${RECIPE[k].name}`).join(' + ');
+  const extraVis = u => !u.tier || S.smelt.up.gold.smup2 > 0;
+  const inName = k => (ORES.find(o => o.id === k) || RECIPE[k]).name;
+  const recIn = r => Object.entries(RECIPE[r].in).map(([k, v]) => `${fmt(v)} ${inName(k)}`).join(' + ');
   const hasAuto = () => S.ores.stone.unique > 0;
   const autoBulk = () => 1 + S.auto.bulk;
   const autoInterval = () => Math.max(AUTO.speed.min, Math.pow(AUTO.speed.factor, S.auto.speed));
@@ -320,9 +334,10 @@
 
   function buyExtra(u) {
     const o = S.ores[u.ore];
-    if (S.smelt.extra[u.id] || (u.req && !S.smelt.extra[u.req]) || o.amt < u.cost) return;
+    if (S.smelt.extra[u.id] || !extraVis(u) || (u.req && !S.smelt.extra[u.req]) || o.amt < u.cost) return;
     o.amt -= u.cost;
     S.smelt.extra[u.id] = 1;
+    if (u.id === 'quartz') { QUARTZ_ON = true; buildTabs(); renderAll(); return; }
     renderAll();
   }
 
@@ -334,7 +349,7 @@
       if (!u.auto || !S.smelt.up[x.id][u.id] || S.smelt.abOff[u.id]) continue;
       for (const id of u.auto) {
         const st = S.ores[id];
-        const keep = extraOpen() ? Math.max(0, ...SMELT_UPS.filter(e => e.ore === id && !S.smelt.extra[e.id] && (!e.req || S.smelt.extra[e.req]) && st.amt >= e.cost).map(e => e.cost)) : 0;
+        const keep = extraOpen() ? Math.max(0, ...SMELT_UPS.filter(e => e.ore === id && !S.smelt.extra[e.id] && extraVis(e) && (!e.req || S.smelt.extra[e.req]) && st.amt >= e.cost).map(e => e.cost)) : 0;
         for (const g of UPGRADES) {
           if (g.max) continue;
           let n = 0;
@@ -921,7 +936,7 @@
     }
   }
 
-  const slotStatus = sl => !sl.rec ? 'Click to choose' : sl.busy ? 'Smelting…' : `Needs ${Object.keys(RECIPE[sl.rec].in).map(k => RECIPE[k].name).join(' + ')}`;
+  const slotStatus = sl => !sl.rec ? 'Click to choose' : sl.busy ? 'Smelting…' : `Needs ${Object.keys(RECIPE[sl.rec].in).map(inName).join(' + ')}`;
 
   function renderSmeltBars() {
     [...$('slots').children].forEach((b, i) => {
@@ -943,6 +958,7 @@
       b.classList.toggle('zinc', open && sl.rec === 'zinc');
       b.classList.toggle('brass', open && sl.rec === 'brass');
       b.classList.toggle('gold', open && sl.rec === 'gold');
+      b.classList.toggle('silicon', open && sl.rec === 'silicon');
       b.classList.toggle('sel', PICKING === i);
       b.querySelector('.sname').textContent = !open ? 'Locked' : sl.rec ? `${RECIPE[sl.rec].name} Ingot` : 'Empty';
       b.querySelector('small').textContent = open ? slotStatus(sl) : '🔒';
@@ -960,9 +976,10 @@
     [...$('smeltUps').children].forEach((b, i) => {
       const u = SMELT_UPS[i];
       const got = S.smelt.extra[u.id];
-      const can = !got && (!u.req || S.smelt.extra[u.req]) && S.ores[u.ore].amt >= u.cost;
+      b.hidden = !extraVis(u);
+      const can = !got && extraVis(u) && (!u.req || S.smelt.extra[u.req]) && S.ores[u.ore].amt >= u.cost;
       b.querySelector('span').textContent = u.label;
-      b.querySelector('small').textContent = got ? 'Unlocked' : u.req && !S.smelt.extra[u.req] ? 'Needs slot 3' : `${fmt(u.cost)} ${RECIPE[u.ore] ? RECIPE[u.ore].name : ORES.find(o => o.id === u.ore).name}`;
+      b.querySelector('small').textContent = got ? 'Unlocked' : u.req && !S.smelt.extra[u.req] ? 'Needs slot 3' : `${fmt(u.cost)} ${inName(u.ore)}`;
       b.disabled = !can;
       b.classList.toggle('can', can);
       b.classList.toggle('done', !!got);
@@ -1014,6 +1031,7 @@
       ['Zinc Ingots made', fmt(S.smelt.total.zinc)],
       ['Brass Ingots made', fmt(S.smelt.total.brass)],
       ['Gold Ingots made', fmt(S.smelt.total.gold)],
+      ['Silicon made', fmt(S.smelt.total.silicon)],
       ['Achievements', `${achCount()} / ${ACHS.length}`],
       ['🎁 Chests', fmt(st.chest)],
       ['🧨 TNT', fmt(st.tnt)],
@@ -1138,6 +1156,7 @@
     ALLOC = S.rb.alloc;
     SPECIAL_ON = false;
     ZINC_ON = false;
+    QUARTZ_ON = false;
     save();
     buildTabs();
     renderGrid();

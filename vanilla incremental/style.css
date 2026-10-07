@@ -150,3 +150,5 @@ section[data-tab="smelt"] { --c: var(--accent); flex-wrap: nowrap; }
 .ach small { opacity: .75; }
 .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #221d2a; border: 1px solid var(--accent); border-radius: 10px; padding: 10px 16px; font-weight: 700; z-index: 60; box-shadow: 0 6px 24px rgba(0,0,0,.5); }
 .toast[hidden] { display: none; }
+.slot.silicon { border-color: #f3dbe8; }
+.slot.silicon .bar div { background: #f3dbe8; }
