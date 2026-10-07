@@ -36,6 +36,7 @@
     gold: { label: 'Unlock Offline Mining' },
     silver: { label: 'Unlock Pickaxe' },
     iron: { label: 'Unlock Smeltery' },
+    zinc: { label: 'Unlock Smeltery 2' },
     diamond: { label: 'Unlock Achievements' },
     obsidian: { label: 'Unlock Special Tiles', cost: 10 },
   };
@@ -46,6 +47,7 @@
     vein: { name: 'Vein', icon: '✨', chance: 0.015, color: '#9fe8ff', digs: 5 },
   };
   let SPECIAL_ON = false;
+  let PICKING = -1;
 
   const MASTERY = { cost: 100000, growth: 10 };
   const AUTO = {
@@ -66,13 +68,22 @@
   const PICK = { cost: 50000, growth: 10 };
   const BUYS = [1, 5, 10, 100, 'max'];
   const SMELT = { slots: 10, input: 1000, time: 10, speed: 0.8, min: 1 };
-  const INGOT_UPS = [
-    { id: 'cmult', label: '+2 Copper multiplier', cost: 10, growth: 2 },
-    { id: 'base', label: '+1 base Copper Ingot per smelt', cost: 25, growth: 2.5 },
-    { id: 'mult', label: '+1 Copper Ingot multiplier', cost: 50, growth: 2.5 },
-    { id: 'speed', label: 'Copper Ingots smelt 20% faster', cost: 50, growth: 3, max: 10 },
-    { id: 'zinc', label: 'Add Zinc to the mines', cost: 100, growth: 1, max: 1 },
+  const RECIPES = [
+    { id: 'copper', name: 'Copper', ups: [
+      { id: 'omult', label: '+2 Copper multiplier', cost: 10, growth: 2 },
+      { id: 'base', label: '+1 base Copper Ingot per smelt', cost: 25, growth: 2.5 },
+      { id: 'mult', label: '+1 Copper Ingot multiplier', cost: 50, growth: 2.5 },
+      { id: 'speed', label: 'Copper Ingots smelt 20% faster', cost: 50, growth: 3, max: 10 },
+      { id: 'zinc', label: 'Add Zinc to the mines', cost: 100, growth: 1, max: 1 },
+    ] },
+    { id: 'zinc', name: 'Zinc', ups: [
+      { id: 'omult', label: '+2 Zinc multiplier', cost: 10, growth: 2 },
+      { id: 'base', label: '+1 base Zinc Ingot per smelt', cost: 25, growth: 2.5 },
+      { id: 'mult', label: '+1 Zinc Ingot multiplier', cost: 50, growth: 2.5 },
+      { id: 'speed', label: 'Zinc Ingots smelt 20% faster', cost: 50, growth: 3, max: 10 },
+    ] },
   ];
+  const RECIPE = Object.fromEntries(RECIPES.map(x => [x.id, x]));
   const ACH_BONUS = 0.02;
   const ACHS = [];
   const ach = (id, name, desc, test) => ACHS.push({ id, name, desc, test });
@@ -82,9 +93,9 @@
   [['chest', 10, 'Treasure hunter'], ['chest', 100, 'Hoarder'], ['tnt', 25, 'Boom'], ['tnt', 250, 'Demolition'], ['vein', 10, 'Lucky strike'], ['vein', 100, 'Motherlode']].forEach(([k, n, name]) => ach(k + n, name, `Find ${n} ${SPECIALS[k].name}${n > 1 ? (k === 'chest' ? 's' : k === 'vein' ? 's' : '') : ''}`, () => S.stats[k] >= n));
   [[1, 'Born again'], [5, 'Cycle'], [25, 'Eternal']].forEach(([n, name]) => ach('rb' + n, name, `Rebirth ${n} time${n > 1 ? 's' : ''}`, () => S.rb.count >= n));
   ORES.forEach(o => ach('ore' + o.id, `${o.name} millionaire`, `Earn 1M ${o.name} in total`, () => S.ores[o.id].total >= 1e6));
-  ach('ingot100', 'Smelter', 'Make 100 Copper Ingots', () => S.smelt.total >= 100);
-  ach('ingot1000', 'Foundry', 'Make 1,000 Copper Ingots', () => S.smelt.total >= 1000);
-  ach('zinc', 'New metal', 'Add Zinc to the mines', () => S.smelt.up.zinc > 0);
+  ach('ingot100', 'Smelter', 'Make 100 Copper Ingots', () => S.smelt.total.copper >= 100);
+  ach('ingot1000', 'Foundry', 'Make 1,000 Copper Ingots', () => S.smelt.total.copper >= 1000);
+  ach('zinc', 'New metal', 'Add Zinc to the mines', () => S.smelt.up.copper.zinc > 0);
   ach('pick', 'Master pickaxe', 'Get the best pickaxe', () => S.pick >= PICKS.length - 2 && S.ores.silver.unique > 0);
   ach('offline', 'Never sleeps', 'Max out offline speed', () => S.auto.off >= OFFLINE.max);
 
@@ -101,8 +112,10 @@
   const $ = id => document.getElementById(id);
 
   function fresh() {
-    const S = { tab: 'mines', layer: 1, grid: null, ores: {}, auto: { bulk: 0, speed: 0, off: 0 }, pick: 0, buy: 1, vein: 0, seen: Date.now(), rb: { count: 0, points: 0, alloc: {} }, smelt: { ingots: 0, total: 0, slots: [{ on: 0, busy: 0, t: 0 }], up: { cmult: 0, base: 0, mult: 0, speed: 0, zinc: 0 } }, ach: {}, stats: { time: 0, clicks: 0, tiles: 0, layers: 0, best: 0, chest: 0, tnt: 0, vein: 0, offline: 0 } };
+    const S = { tab: 'mines', layer: 1, grid: null, ores: {}, auto: { bulk: 0, speed: 0, off: 0 }, pick: 0, buy: 1, vein: 0, seen: Date.now(), rb: { count: 0, points: 0, alloc: {} }, smelt: { ingots: {}, total: {}, slots: [], up: {} }, ach: {}, stats: { time: 0, clicks: 0, tiles: 0, layers: 0, best: 0, chest: 0, tnt: 0, vein: 0, offline: 0 } };
     for (const o of ORES) S.ores[o.id] = { amt: 0, total: 0, run: 0, found: 0, mult: 0, base: 0, exp: 0, unique: 0, mastery: 0 };
+    for (const x of RECIPES) { S.smelt.ingots[x.id] = 0; S.smelt.total[x.id] = 0; S.smelt.up[x.id] = Object.fromEntries(x.ups.map(u => [u.id, 0])); }
+    for (let i = 0; i < SMELT.slots; i++) S.smelt.slots.push({ rec: '', busy: 0, t: 0 });
     S.grid = newGrid();
     return S;
   }
@@ -144,9 +157,15 @@
       if (Array.isArray(d.grid) && d.grid.length === SIZE * SIZE && d.grid.every(c => c && S.ores[c.ore])) S.grid = d.grid.map(c => SPECIALS[c.sp] ? { ore: c.ore, dug: c.dug ? 1 : 0, sp: c.sp } : { ore: c.ore, dug: c.dug ? 1 : 0 });
       if (BUYS.includes(d.buy)) S.buy = d.buy;
       if (d.smelt) {
-        for (const k of ['ingots', 'total']) if (typeof d.smelt[k] === 'number' && isFinite(d.smelt[k])) S.smelt[k] = d.smelt[k];
-        if (d.smelt.up) for (const k of Object.keys(S.smelt.up)) if (typeof d.smelt.up[k] === 'number' && isFinite(d.smelt.up[k])) S.smelt.up[k] = d.smelt.up[k];
-        if (Array.isArray(d.smelt.slots)) d.smelt.slots.slice(0, SMELT.slots).forEach((x, i) => { if (x && typeof x === 'object') S.smelt.slots[i] = { on: x.on ? 1 : 0, busy: x.busy ? 1 : 0, t: typeof x.t === 'number' && isFinite(x.t) ? x.t : 0 }; });
+        const num = v => typeof v === 'number' && isFinite(v);
+        for (const k of ['ingots', 'total']) {
+          if (num(d.smelt[k])) S.smelt[k].copper = d.smelt[k];
+          else if (d.smelt[k]) for (const x of RECIPES) if (num(d.smelt[k][x.id])) S.smelt[k][x.id] = d.smelt[k][x.id];
+        }
+        const up = d.smelt.up;
+        if (up && num(up.cmult)) up.copper = { omult: up.cmult, base: up.base, mult: up.mult, speed: up.speed, zinc: up.zinc };
+        if (up) for (const x of RECIPES) if (up[x.id]) for (const k of Object.keys(S.smelt.up[x.id])) if (num(up[x.id][k])) S.smelt.up[x.id][k] = up[x.id][k];
+        if (Array.isArray(d.smelt.slots)) d.smelt.slots.slice(0, SMELT.slots).forEach((x, i) => { if (x && typeof x === 'object') S.smelt.slots[i] = { rec: RECIPE[x.rec] ? x.rec : x.on ? 'copper' : '', busy: x.busy ? 1 : 0, t: num(x.t) ? x.t : 0 }; });
       }
       if (d.ach && typeof d.ach === 'object') for (const k in d.ach) if (d.ach[k]) S.ach[k] = 1;
       for (const k of ['pick', 'seen']) if (typeof d[k] === 'number' && isFinite(d[k])) S[k] = d[k];
@@ -164,7 +183,7 @@
   let S = load();
   ALLOC = S.rb.alloc;
   SPECIAL_ON = S.ores.obsidian.unique > 0;
-  ZINC_ON = S.smelt.up.zinc > 0;
+  ZINC_ON = S.smelt.up.copper.zinc > 0;
 
   function save() {
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {}
@@ -182,14 +201,16 @@
   const ALLOC_BONUS = { base: 0.25, mult: 0.25, exp: 0.0025 };
   const allocOf = id => S.rb.alloc[id] || 0;
   const oreBase = id => 1 + S.ores[id].base + allocOf(id) * ALLOC_BONUS.base;
-  const oreMult = id => 1 + S.ores[id].mult + allocOf(id) * ALLOC_BONUS.mult + (id === 'copper' ? 2 * S.smelt.up.cmult : 0);
+  const oreMult = id => 1 + S.ores[id].mult + allocOf(id) * ALLOC_BONUS.mult + (S.smelt.up[id] ? 2 * S.smelt.up[id].omult : 0);
   const oreExp = id => 1 + S.ores[id].exp * 0.01 + allocOf(id) * ALLOC_BONUS.exp;
   const oreMastery = id => Math.pow(2, S.ores[id].mastery);
   const achCount = () => ACHS.filter(a => S.ach[a.id]).length;
   const achMult = () => 1 + ACH_BONUS * achCount();
   const oreGain = id => Math.pow(oreBase(id) * oreMult(id), oreExp(id)) * oreMastery(id) * achMult();
-  const smeltTime = () => Math.max(SMELT.min, SMELT.time * Math.pow(SMELT.speed, S.smelt.up.speed));
-  const smeltYield = () => (1 + S.smelt.up.base) * (1 + S.smelt.up.mult);
+  const smeltTime = r => Math.max(SMELT.min, SMELT.time * Math.pow(SMELT.speed, S.smelt.up[r].speed));
+  const smeltYield = r => (1 + S.smelt.up[r].base) * (1 + S.smelt.up[r].mult);
+  const slotCount = () => 1 + (S.ores.zinc.unique > 0 ? 1 : 0);
+  const recOpen = r => r === 'copper' || ZINC_ON;
   const hasAuto = () => S.ores.stone.unique > 0;
   const autoBulk = () => 1 + S.auto.bulk;
   const autoInterval = () => Math.max(AUTO.speed.min, Math.pow(AUTO.speed.factor, S.auto.speed));
@@ -240,41 +261,54 @@
   const mastPlan = oreId => plan(masteryCost, S.ores[oreId].mastery, S.ores[oreId].amt);
   const autoPlan = k => plan(l => autoCostAt(k, l), S.auto[k], S.ores.obsidian.amt, autoCap(k));
   const offPlan = () => plan(offCostAt, S.auto.off, S.ores.gold.amt, OFFLINE.max);
-  const ingotPlan = u => plan(l => Math.ceil(u.cost * Math.pow(u.growth, l)), S.smelt.up[u.id], S.smelt.ingots, u.max || Infinity);
+  const ingotPlan = (r, u) => plan(l => Math.ceil(u.cost * Math.pow(u.growth, l)), S.smelt.up[r][u.id], S.smelt.ingots[r], u.max || Infinity);
 
-  function buyIngot(u) {
-    const pl = ingotPlan(u);
+  function buyIngot(r, u) {
+    const pl = ingotPlan(r, u);
     if (!pl.can) return;
-    S.smelt.ingots -= pl.total;
-    S.smelt.up[u.id] += pl.n;
+    S.smelt.ingots[r] -= pl.total;
+    S.smelt.up[r][u.id] += pl.n;
     if (u.id === 'zinc') { ZINC_ON = true; buildTabs(); renderAll(); return; }
     renderAll(true);
   }
 
   function smeltStep(dt) {
-    const T = smeltTime();
     let done = 0;
-    for (const sl of S.smelt.slots) {
+    S.smelt.slots.slice(0, slotCount()).forEach(sl => {
+      const r = sl.rec;
+      if (!r) return;
+      const T = smeltTime(r);
       let left = dt;
+      let n = 0;
       while (left > 0) {
         if (!sl.busy) {
-          if (!sl.on || S.ores.copper.amt < SMELT.input) break;
-          S.ores.copper.amt -= SMELT.input;
+          if (S.ores[r].amt < SMELT.input) break;
+          S.ores[r].amt -= SMELT.input;
           sl.busy = 1;
           sl.t = 0;
         }
         const step = Math.min(left, T - sl.t);
         sl.t += step;
         left -= step;
-        if (sl.t >= T) { sl.busy = 0; sl.t = 0; done++; }
+        if (sl.t >= T) { sl.busy = 0; sl.t = 0; n++; }
       }
-    }
-    if (done) {
-      const g = done * smeltYield();
-      S.smelt.ingots += g;
-      S.smelt.total += g;
-    }
+      if (n) {
+        const g = n * smeltYield(r);
+        S.smelt.ingots[r] += g;
+        S.smelt.total[r] += g;
+        done += n;
+      }
+    });
     return done;
+  }
+
+  function setRecipe(i, r) {
+    const sl = S.smelt.slots[i];
+    if (sl.rec === r) return;
+    if (sl.busy && sl.rec) S.ores[sl.rec].amt += SMELT.input;
+    sl.rec = r;
+    sl.busy = 0;
+    sl.t = 0;
   }
 
   function checkAch() {
@@ -302,7 +336,7 @@
     if (!pl.can) return;
     st.amt -= pl.total;
     st[u.id] += pl.n;
-    if (u.id === 'unique') { SPECIAL_ON = S.ores.obsidian.unique > 0; buildTabs(); renderAll(); return; }
+    if (u.id === 'unique') { PICKING = -1; SPECIAL_ON = S.ores.obsidian.unique > 0; buildTabs(); renderAll(); return; }
     renderAll(true);
   }
 
@@ -743,54 +777,98 @@
       b.className = 'slot';
       b.innerHTML = '<span class="sname"></span><small></small><div class="bar"><div></div></div>';
       b.addEventListener('click', () => {
-        const sl = S.smelt.slots[i];
-        if (!sl) return;
-        sl.on = sl.on ? 0 : 1;
+        if (i >= slotCount()) return;
+        PICKING = PICKING === i ? -1 : i;
         renderSmelt();
       });
       box.appendChild(b);
     }
-    const ub = $('ingotUps');
-    for (const u of INGOT_UPS) {
+    const pk = $('recipePick');
+    pk.innerHTML = '<small class="pl"></small>';
+    for (const r of ['', ...RECIPES.map(x => x.id)]) {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'upg';
-      b.innerHTML = '<span></span><small></small>';
-      b.addEventListener('click', () => buyIngot(u));
-      ub.appendChild(b);
+      b.dataset.rec = r;
+      b.textContent = r ? `${RECIPE[r].name} Ingot` : 'Nothing';
+      b.addEventListener('click', () => {
+        if (PICKING < 0) return;
+        setRecipe(PICKING, r);
+        PICKING = -1;
+        renderSmelt();
+      });
+      pk.appendChild(b);
+    }
+    const iw = $('ingotWrap');
+    for (const x of RECIPES) {
+      const g = document.createElement('div');
+      g.className = 'masterybox';
+      g.dataset.rec = x.id;
+      g.innerHTML = `<h2>${x.name} Ingot upgrades</h2><div class="allochead"><span><b class="icount">0</b> ${x.name} Ingots</span><span class="hint iinfo"></span></div><div class="ingotups"></div>`;
+      const ub = g.querySelector('.ingotups');
+      for (const u of x.ups) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'upg';
+        b.innerHTML = '<span></span><small></small>';
+        b.addEventListener('click', () => buyIngot(x.id, u));
+        ub.appendChild(b);
+      }
+      iw.appendChild(g);
     }
   }
 
+  const slotStatus = sl => !sl.rec ? 'Click to choose' : sl.busy ? 'Smelting…' : `Needs ${RECIPE[sl.rec].name}`;
+
   function renderSmeltBars() {
-    const T = smeltTime();
     [...$('slots').children].forEach((b, i) => {
       const sl = S.smelt.slots[i];
-      b.querySelector('.bar div').style.width = sl && sl.busy ? Math.min(100, sl.t / T * 100) + '%' : '0%';
-      if (sl && sl.on) b.querySelector('small').textContent = sl.busy ? 'Smelting…' : 'Needs Copper';
+      if (i >= slotCount()) return;
+      b.querySelector('.bar div').style.width = sl.busy ? Math.min(100, sl.t / smeltTime(sl.rec) * 100) + '%' : '0%';
+      b.querySelector('small').textContent = slotStatus(sl);
     });
   }
 
   function renderSmelt() {
     if (S.tab !== 'smelt') return;
-    $('ingots').textContent = fmt(S.smelt.ingots);
-    $('smeltInfo').textContent = `${fmt(SMELT.input)} Copper → ${fmt(smeltYield())} Copper Ingot${smeltYield() > 1 ? 's' : ''} every ${smeltTime().toFixed(1)}s`;
+    const n = slotCount();
     [...$('slots').children].forEach((b, i) => {
       const sl = S.smelt.slots[i];
-      b.disabled = !sl;
-      b.classList.toggle('on', !!(sl && sl.on));
-      b.querySelector('.sname').textContent = sl ? (sl.on ? 'Copper Ingot' : 'Empty') : 'Locked';
-      b.querySelector('small').textContent = sl ? (sl.on ? (sl.busy ? 'Smelting…' : 'Needs Copper') : 'Click to smelt') : '🔒';
+      const open = i < n;
+      b.disabled = !open;
+      b.classList.toggle('on', open && !!sl.rec);
+      b.classList.toggle('zinc', open && sl.rec === 'zinc');
+      b.classList.toggle('sel', PICKING === i);
+      b.querySelector('.sname').textContent = !open ? 'Locked' : sl.rec ? `${RECIPE[sl.rec].name} Ingot` : 'Empty';
+      b.querySelector('small').textContent = open ? slotStatus(sl) : '🔒';
     });
-    [...$('ingotUps').children].forEach((b, i) => {
-      const u = INGOT_UPS[i];
-      const lvl = S.smelt.up[u.id];
-      const maxed = u.max && lvl >= u.max;
-      const pl = ingotPlan(u);
-      b.querySelector('span').textContent = u.label + (u.max === 1 ? '' : xN(pl.n) + (lvl ? ` (${lvl})` : ''));
-      b.querySelector('small').textContent = maxed ? (u.max === 1 ? 'Unlocked' : 'Maxed') : `${fmt(pl.total)} Copper Ingots`;
-      b.disabled = !pl.can;
-      b.classList.toggle('can', pl.can);
-      b.classList.toggle('done', !!maxed);
+    const pk = $('recipePick');
+    pk.hidden = PICKING < 0 || PICKING >= n;
+    if (!pk.hidden) {
+      pk.querySelector('.pl').textContent = `Smeltery ${PICKING + 1} smelts:`;
+      [...pk.querySelectorAll('button')].forEach(b => {
+        b.hidden = !!b.dataset.rec && !recOpen(b.dataset.rec);
+        b.classList.toggle('on', S.smelt.slots[PICKING].rec === b.dataset.rec);
+      });
+    }
+    [...$('ingotWrap').children].forEach(g => {
+      const r = g.dataset.rec;
+      const x = RECIPE[r];
+      g.hidden = !recOpen(r);
+      if (g.hidden) return;
+      g.querySelector('.icount').textContent = fmt(S.smelt.ingots[r]);
+      const y = smeltYield(r);
+      g.querySelector('.iinfo').textContent = `${fmt(SMELT.input)} ${x.name} → ${fmt(y)} ${x.name} Ingot${y > 1 ? 's' : ''} every ${smeltTime(r).toFixed(1)}s`;
+      [...g.querySelector('.ingotups').children].forEach((b, i) => {
+        const u = x.ups[i];
+        const lvl = S.smelt.up[r][u.id];
+        const maxed = u.max && lvl >= u.max;
+        const pl = ingotPlan(r, u);
+        b.querySelector('span').textContent = u.label + (u.max === 1 ? '' : xN(pl.n) + (lvl ? ` (${lvl})` : ''));
+        b.querySelector('small').textContent = maxed ? (u.max === 1 ? 'Unlocked' : 'Maxed') : `${fmt(pl.total)} ${x.name} Ingots`;
+        b.disabled = !pl.can;
+        b.classList.toggle('can', pl.can);
+        b.classList.toggle('done', !!maxed);
+      });
     });
     renderSmeltBars();
   }
@@ -814,7 +892,8 @@
       ['Best single tile', fmt(st.best)],
       ['Rebirths', fmt(S.rb.count)],
       ['Ore points', fmt(S.rb.points)],
-      ['Copper Ingots made', fmt(S.smelt.total)],
+      ['Copper Ingots made', fmt(S.smelt.total.copper)],
+      ['Zinc Ingots made', fmt(S.smelt.total.zinc)],
       ['Achievements', `${achCount()} / ${ACHS.length}`],
       ['🎁 Chests', fmt(st.chest)],
       ['🧨 TNT', fmt(st.tnt)],
