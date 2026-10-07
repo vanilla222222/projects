@@ -1316,8 +1316,9 @@ async function fastForward(page, maxSeconds) {
     ok(ns.sold === 0 && ns.n === 8 && ns.block === 'cap', 'no selling and the herd cap hold ' + JSON.stringify(ns));
     await page.locator('#cv').hover();
     await page.keyboard.press('x');
-    await page.waitForTimeout(150);
-    ok(await page.evaluate(() => !!__nd.S.chal && /again/.test(document.getElementById('chalQuit').textContent)), 'first X arms the quit');
+    await page.waitForFunction(() => !!__nd.S.chal && /again/.test(document.getElementById('chalQuit').textContent), null, { timeout: 3000 }).catch(() => {});
+    const arm = await page.evaluate(() => ({ chal: !!__nd.S.chal, txt: document.getElementById('chalQuit').textContent, arm: __nd.chalUi.quitArm > 0, ae: (document.activeElement || {}).id || (document.activeElement || {}).tagName, modals: [...document.querySelectorAll('.modal:not([hidden])')].map(m => m.id).join() }));
+    ok(arm.chal && /again/.test(arm.txt), 'first X arms the quit ' + JSON.stringify(arm));
     await page.keyboard.press('x');
     await page.waitForTimeout(400);
     const q = await page.evaluate(() => ({ chal: !!__nd.S.chal, body: document.getElementById('chalEndBody').textContent, done: !!__nd.S.chalDone.nosell, rp: __nd.S.rp | 0 }));

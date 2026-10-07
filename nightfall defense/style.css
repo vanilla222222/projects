@@ -814,7 +814,8 @@ body.inchal #mapBtn { border-color: var(--gold); }
 .wname { font-weight: 800; color: var(--ink); }
 .wtry { min-height: 16px; font-size: 11px; color: var(--accent2); }
 .wacts { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
-.wacts button { font-size: 11px; padding: 4px 8px; }
+.wacts button, .iname button { font-size: 11px; padding: 4px 8px; border-radius: var(--radius-sm); background: var(--panel2); border: 1px solid var(--border); color: var(--ink); }
+.wacts button:hover, .iname button:hover { border-color: var(--accent2); color: var(--accent2); }
 .wtoggle { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); cursor: pointer; }
 .wtoggle input { accent-color: var(--accent2); }
 .wslots { display: grid; gap: 10px; min-width: 0; }
@@ -853,7 +854,7 @@ body.inchal #mapBtn { border-color: var(--gold); }
 .iname { display: flex; gap: 4px; margin: 0 0 4px; }
 .iname input { flex: 1; min-width: 0; background: var(--panel2); color: var(--ink); border: 1px solid var(--border-soft); border-radius: var(--radius-sm); padding: 4px 7px; font: inherit; font-size: 12px; }
 .iname input:focus { outline: none; border-color: var(--accent); }
-.iname button { font-size: 11px; padding: 3px 8px; }
+.iname button { padding: 3px 8px; flex: 0 0 auto; }
 .ititle { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
 .ititle b { color: var(--gold); }
 .ptitleb { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; padding: 1px 6px; border-radius: 999px; border: 1px solid currentColor; }
@@ -867,3 +868,4 @@ body.inchal #mapBtn { border-color: var(--gold); }
   .witems { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
   .cdtop canvas#codexBig { width: 96px; height: 96px; }
 }
+.metarow { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
