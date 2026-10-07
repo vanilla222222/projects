@@ -55,6 +55,7 @@ main { padding: 16px; }
 .upg:disabled { opacity: .5; cursor: default; }
 .upg small { color: var(--dim); white-space: nowrap; }
 .upg.done { opacity: .6; }
+.upg.ab, .upg.ab:disabled { opacity: .75; border-color: var(--line); }
 .auto { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; --c: #7a4fc0; }
 .auto[hidden] { display: none; }
 .autohead { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }

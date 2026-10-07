@@ -306,6 +306,8 @@
     renderAll();
   }
 
+  const autoOn = id => RECIPES.some(x => x.ups.some(u => u.auto && u.auto.includes(id) && S.smelt.up[x.id][u.id] && !S.smelt.abOff[u.id]));
+
   function autoBuy() {
     let any = 0;
     for (const x of RECIPES) for (const u of x.ups) {
@@ -727,9 +729,12 @@
         b.querySelector('span').textContent = u.label(o) + (soon || u.max ? '' : xN(pl.n)) + (soon || u.max || !lvl ? '' : ` (${lvl})`);
         b.querySelector('small').textContent = maxed ? 'Unlocked' : `${fmt(pl.total)} ${o.name}`;
         const can = !soon && found && pl.can;
+        const ab = !u.max && autoOn(o.id);
         b.disabled = !can;
-        b.classList.toggle('done', maxed);
-        b.classList.toggle('can', can);
+        b.classList.toggle('done', !!maxed);
+        b.classList.toggle('can', can && !ab);
+        b.classList.toggle('ab', ab);
+        if (ab) b.querySelector('small').textContent = `Auto · ${fmt(pl.total)} ${o.name}`;
       });
     }
   }
