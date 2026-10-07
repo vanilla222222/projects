@@ -241,7 +241,8 @@
     if (!$('plansModal').hidden) { if (k === 'Escape') closePlans(); return; }
     if (!$('setModal').hidden) { if (k === 'Escape') closeSettings(); return; }
     if (!$('mapModal').hidden) { if (k === 'Escape') closeMaps(); return; }
-    if (!$('codexModal').hidden) { if (k === 'Escape') closeCodex(); return; }
+    if (!$('codexModal').hidden) { if (k === 'Escape' || k === 'c') closeCodex(); return; }
+    if (!$('wardrobeModal').hidden) { if (k === 'Escape' || k === 'k') closeWardrobe(); return; }
     if (!$('starModal').hidden) { if (k === 'Escape') closeStar(); return; }
     if (!$('researchModal').hidden) { if (k === 'Escape' || k === 'r') closeResearch(); return; }
     if (!$('heroModal').hidden) { if (k === 'Escape' || k === 'h') closeHeroes(); return; }
@@ -260,6 +261,7 @@
     else if (k === 'g') openChal();
     else if (k === 'a') openAch();
     else if (k === 't') openStats();
+    else if (k === 'k') openWardrobe();
     else if (k === 'u') {
       const h = ui.hoverId && S.towers.find(q => q.id === ui.hoverId);
       if (h) { ui.selId = h.id; ui.placing = null; updateHint(); ui.infoKey = ''; refreshInfo(); }
@@ -490,14 +492,20 @@
     const paths = C.PATHS[t.race];
     const aff = paths.map((p, i) => S.cash >= C.nextNodeCost(t, i) ? 1 : 0).join('') + (S.cash >= C.infNext(t, 'dmg') ? 1 : 0) + (S.cash >= C.infNext(t, 'rate') ? 1 : 0);
     const pv = C.maxAffordablePreview(S, t);
-    const key = [t.id, t.paths.join(''), t.infD, t.infR, t.mode, aff, S.rules.on, (S.rules.pony[t.id] || S.rules.race[t.race] || []).length, !!S.rules.pony[t.id], pv.count, ui.sellArm > performance.now(), (t.buff && t.buff.dmg + ',' + t.buff.rate + ',' + t.buff.range + ',' + t.buff.detect) || '', C.fmt(1e6)].join('|');
+    const ttl = C.titleOf(t);
+    const key = [t.id, t.name || '', ttl ? ttl.id : '', t.paths.join(''), t.infD, t.infR, t.mode, aff, S.rules.on, (S.rules.pony[t.id] || S.rules.race[t.race] || []).length, !!S.rules.pony[t.id], pv.count, ui.sellArm > performance.now(), (t.buff && t.buff.dmg + ',' + t.buff.rate + ',' + t.buff.range + ',' + t.buff.detect) || '', C.fmt(1e6)].join('|');
     if (key === ui.infoKey) { refreshPonyStats(t); return; }
+    const ae = document.activeElement;
+    if (ae && ae.id === 'ponyName' && box.contains(ae) && ui.infoKey.split('|')[0] === String(t.id)) { refreshPonyStats(t); return; }
     ui.infoKey = key;
     hideTip();
     const r = C.RACES[t.race];
     const s = C.stats(t);
     const dmg = C.effDmg(t), rate = C.effRate(t);
-    let h = '<div class="ihead"><span class="nm" style="color:' + r.accent + '">' + r.name + '</span><span class="pstate">#' + t.id + '</span><button class="ghost x" data-act="close" type="button">Close</button></div>';
+    let h = '<div class="ihead"><span class="nm" style="color:' + r.accent + '">' + (t.name ? esc(t.name) : r.name) + '</span>' + (ttl ? '<span class="ptitleb ' + ttl.id + '">' + ttl.name + '</span>' : '') + '<span class="pstate">' + (t.name ? esc(r.name) + ' ' : '') + '#' + t.id + '</span><button class="ghost x" data-act="close" type="button">Close</button></div>';
+    const nx = C.titleNext(t), lv = C.ponyLevel(t);
+    h += '<div class="iname"><input id="ponyName" type="text" maxlength="18" autocomplete="off" spellcheck="false" placeholder="Name this pony" aria-label="Pony name" value="' + esc(t.name || '') + '"><button type="button" data-act="randname" data-tip="Pick a random pony name">Random</button>' + (t.name ? '<button type="button" data-act="clearname">Clear</button>' : '') + '</div>';
+    h += '<div class="ititle">' + (nx ? 'Next title <b>' + nx.name + '</b> at ' + C.fmt(nx.kills) + ' kills or level ' + nx.lv + ' &middot; now ' + C.fmt(t.kills | 0) + ' kills, level ' + lv : 'Highest title earned &middot; ' + C.fmt(t.kills | 0) + ' kills, level ' + lv) + '</div>';
     h += '<div class="statgrid">' + stat('Damage', C.fmt(dmg)) + stat('Rate', (Math.round(rate * 100) / 100) + '/s') + stat('Range', Math.round(s.range)) + stat('DPS', C.fmt(dmg * rate * (s.multi || 1))) + '</div>';
     h += '<div class="statgrid" id="pStats">' + stat('Dealt', '', 'psDealt') + stat('Kills', '', 'psKills') + stat('Wave', '', 'psWave') + stat('Share', '', 'psShare') + '</div>';
     h += '<div class="tags"><span class="tag ' + (s.canFly ? 'yes' : '') + '">' + (s.canFly ? 'Hits flyers' : 'No flyers') + '</span><span class="tag mag ' + (s.canMagic ? 'yes' : '') + '">' + (s.canMagic ? 'Hurts magical' : 'No magical') + '</span>';
@@ -558,14 +566,29 @@
     else if (act === 'inf') { if (C.buyInf(S, t, v)) { t.anim = 0.4; A.play('upgrade'); writeSave(); } }
     else if (act === 'max') { doBuyMax(t); }
     else if (act === 'sell') { doSell(t); return; }
+    else if (act === 'randname') { C.renameTower(S, t.id, C.suggestName(S, t)); A.play('equip'); writeSave(); }
+    else if (act === 'clearname') { C.renameTower(S, t.id, ''); A.play('click'); writeSave(); }
     ui.infoKey = ''; ui.buildKey = '';
+  });
+  function commitName(el) {
+    const t = selTower();
+    if (!t || (t.name || '') === el.value.trim()) return;
+    C.renameTower(S, t.id, el.value);
+    writeSave();
+    ui.infoKey = ''; ui.ledgerKey = '';
+  }
+  $('info').addEventListener('change', ev => { if (ev.target.id === 'ponyName') commitName(ev.target); });
+  $('info').addEventListener('keydown', ev => {
+    if (ev.target.id !== 'ponyName') return;
+    if (ev.key === 'Enter') { ev.preventDefault(); commitName(ev.target); ev.target.blur(); }
+    else if (ev.key === 'Escape') { ev.preventDefault(); ev.target.value = (selTower() || {}).name || ''; ev.target.blur(); }
   });
 
   function refreshLedger() {
     const box = $('ledger');
     const tot = totalDealt();
     const list = S.towers.slice().sort((a, b) => b.dmg - a.dmg).slice(0, 5);
-    const key = list.map(t => t.id + ':' + C.fmt(t.dmg) + ':' + t.kills).join() + ui.selId + '|' + C.fmt(S.stats.dmg) + S.stats.bossKills + S.stats.played;
+    const key = list.map(t => t.id + ':' + C.fmt(t.dmg) + ':' + t.kills + ':' + (t.name || '')).join() + ui.selId + '|' + C.fmt(S.stats.dmg) + S.stats.bossKills + S.stats.played;
     if (key === ui.ledgerKey) return;
     ui.ledgerKey = key;
     let h = '<h2>Herd ledger</h2>';
@@ -575,7 +598,7 @@
       for (const t of list) {
         const r = C.RACES[t.race];
         const f = tot > 0 ? t.dmg / tot : 0;
-        h += '<button type="button" class="lrow' + (t.id === ui.selId ? ' on' : '') + '" data-id="' + t.id + '"><span class="ln" style="color:' + r.accent + '">' + r.name + ' #' + t.id + '</span><span class="lv">' + C.fmt(t.dmg) + ' &middot; ' + t.kills + ' kills</span><span class="lb"><i style="width:' + (100 * f).toFixed(1) + '%;background:' + r.accent + '"></i></span></button>';
+        h += '<button type="button" class="lrow' + (t.id === ui.selId ? ' on' : '') + '" data-id="' + t.id + '"><span class="ln" style="color:' + r.accent + '">' + (t.name ? esc(t.name) : r.name + ' #' + t.id) + '</span><span class="lv">' + C.fmt(t.dmg) + ' &middot; ' + t.kills + ' kills</span><span class="lb"><i style="width:' + (100 * f).toFixed(1) + '%;background:' + r.accent + '"></i></span></button>';
       }
       h += '</div>';
     }
@@ -682,7 +705,7 @@
       + '<div class="mbar"><i style="width:' + best + '%"></i></div>'
       + '<div class="mf">' + esc(m.feature) + '</div><div class="md">' + esc(m.blurb) + '</div>' + lock;
     b.append(c, info);
-    R.drawMapPreview(c, m);
+    R.drawMapPreview(c, m, C.decorOf(S, m.id));
     return b;
   }
   function buildMaps() {
@@ -1042,17 +1065,47 @@
     if (!$('heroModal').hidden && heroListKey() !== ui.heroListKey) buildHeroList();
   }
 
-  const codexUi = { tab: 'e', pick: null, toastT: 0 };
-  function codexEntries() { const L = C.codexList(); return codexUi.tab === 'b' ? L.b : L.e; }
-  function codexKnown(it) { const box = it.kind === 'b' ? S.codex.b : S.codex.e; return !!box[it.id]; }
+  const codexUi = { tab: 'e', pick: null, toastT: 0, raf: 0 };
+  const CX_KIND = { e: 'DNB', b: 'Boss', p: 'Pony', h: 'Hero' };
+  function codexAll() {
+    const L = C.codexList();
+    L.p = C.RACE_IDS.map(id => ({ kind: 'p', id, def: C.RACES[id], mech: [] }));
+    L.h = C.HERO_IDS.map(id => ({ kind: 'h', id, def: C.HEROES[id], mech: [] }));
+    return L;
+  }
+  function codexEntries() { return codexAll()[codexUi.tab] || []; }
+  function codexBox() { const P = prof(); return (P && P.codex) || S.codex; }
+  function codexKnown(it) {
+    if (it.kind === 'h') return C.heroUnlocked(prof(), it.id);
+    const box = codexBox()[it.kind];
+    return !!(box && box[it.id]);
+  }
   function codexArt(c, it, known, now) {
-    R.dnbIcon(c, it.kind === 'b' ? 'boss' : it.id, it.kind === 'b' ? it.def : null, now || 0);
+    if (it.kind === 'p') { R.ponyPreview(c, it.id, now || 0, known ? undefined : null, { sil: !known, scale: 0.52, spin: known && c.width > 100, hop: known && c.width > 100 }); return; }
+    if (it.kind === 'h') R.heroIcon(c, it.id, now || 0);
+    else R.dnbIcon(c, it.kind === 'b' ? 'boss' : it.id, it.kind === 'b' ? it.def : null, now || 0);
     if (known) return;
     const g = c.getContext('2d');
     g.save(); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#2a2640'; g.fillRect(0, 0, c.width, c.height); g.restore();
   }
+  function bossKills(id) {
+    const P = prof();
+    let n = 0;
+    for (const m of C.MAP_IDS) { const b = C.boardOf(P, m); if (b && b.records && b.records.bosses) n += b.records.bosses[id] | 0; }
+    if (S !== P && S.records && S.records.bosses) n += S.records.bosses[id] | 0;
+    return n;
+  }
+  function codexKills(it) {
+    const st = prof().stats || {};
+    if (it.kind === 'b') return bossKills(it.id);
+    if (it.kind === 'p') return (st.raceKills || {})[it.id] | 0;
+    if (it.kind === 'h') return (st.heroKills || {})[it.id] | 0;
+    return (st.killsBy || {})[it.id] | 0;
+  }
   function codexWhere(it) {
     if (it.kind === 'b') return C.MAPS[it.map].name + ', wave ' + it.wave;
+    if (it.kind === 'p') return it.def.role + ' · ' + C.fmt(it.def.cost) + ' cash';
+    if (it.kind === 'h') return it.def.role + ' · ' + it.def.title;
     const out = [];
     for (const id of C.MAP_IDS) {
       const w = it.id === 'mini' ? C.firstSeen('splitter', id) : C.firstSeen(it.id, id);
@@ -1060,46 +1113,85 @@
     }
     return out.join(' · ');
   }
+  function lockedHint(it) {
+    if (it.kind === 'p') return 'Not placed yet. Place this pony on any map to unlock its entry.';
+    if (it.kind === 'h') return 'Not recruited yet. Unlock: ' + (it.def.unlock.text || (it.def.unlock.moon + ' Moonstones')) + '.';
+    return 'Not seen yet. Meet it in a wave to unlock this entry.';
+  }
+  function dl(stats) { return '<dl class="cdstats">' + stats.map(s => '<dt>' + esc(s[0]) + '</dt><dd>' + esc(s[1]) + '</dd>').join('') + '</dl>'; }
   function codexDetail(it) {
     const box = $('codexDetail');
     if (!it) { box.innerHTML = '<p class="hint">Pick an entry to read about it.</p>'; return; }
     const known = codexKnown(it), d = it.def;
-    let h = '<div class="cdtop"><canvas id="codexBig" width="160" height="160"></canvas><div><h3>' + (known ? esc(d.name) : '???') + '</h3>';
-    h += '<div class="cdsub">' + (it.kind === 'b' ? 'Boss · ' : 'DNB · ') + esc(codexWhere(it)) + '</div></div></div>';
+    let h = '<div class="cdtop"><canvas id="codexBig" width="192" height="192"></canvas><div><h3>' + (known ? esc(d.name) : '???') + '</h3>';
+    h += '<div class="cdsub">' + CX_KIND[it.kind] + ' · ' + esc(codexWhere(it)) + '</div>';
+    if (known) h += '<div class="cdkills"><b>' + C.fmt(codexKills(it)) + '</b> ' + (it.kind === 'p' || it.kind === 'h' ? 'DNBs defeated' : 'defeated') + '</div>';
+    h += '</div></div>';
     if (!known) {
-      h += '<p class="hint">Not seen yet. Meet it in a wave to unlock this entry.</p>';
+      h += '<p class="hint">' + esc(lockedHint(it)) + '</p>';
       box.innerHTML = h;
-      codexArt($('codexBig'), it, false, 0);
+      codexArt($('codexBig'), it, false, performance.now());
       return;
     }
-    const E = C.ENEMIES[it.kind === 'b' ? 'boss' : it.id];
-    const map = C.mapOf(S), n = Math.max(1, S.sel);
-    const stats = [];
-    if (it.kind === 'b') {
-      stats.push(['HP', 'x' + (E.hp * (d.hpMul || 1)).toFixed(1) + ' of a Shambler, +1% per wave']);
-      stats.push(['Leak cost', (d.tricks && d.tricks.twin ? 3 : 5) + ' lives']);
-      if (d.tricks && d.tricks.plate) stats.push(['Armor', Math.round(d.tricks.plate * 100) + '% of a Shambler\'s HP per hit']);
+    const lore = it.kind === 'b' ? '' : (C.LORE[it.kind] || {})[it.id];
+    if (lore) h += '<p class="cdlore">' + esc(lore) + '</p>';
+    if (it.kind === 'p') {
+      h += dl([['Cost', C.fmt(d.cost)], ['Damage', String(d.dmg)], ['Rate', d.rate + '/s'], ['Range', String(d.range)], ['Damage dealt', C.fmt((prof().stats.raceDmg || {})[it.id] || 0)]]);
+      h += '<p class="cddesc">' + esc(d.ability) + '</p>';
+      const weak = [];
+      if (/Cannot see flyers|Cannot reach flyers/.test(d.ability)) weak.push(['Flyers', 'Cannot target Duskwings or flying bosses without help.']);
+      if (/Cannot harm magical|harm magical DNBs\./.test(d.ability) && it.id !== 'unicorn') weak.push(['Magical', 'Hexlings shrug off its attacks unless a path or aura dispels them.']);
+      if (it.id === 'unicorn') weak.push(['Swarms', 'Slow bolts struggle with Gnat clouds and fast Skitters.']);
+      if (it.id === 'pegasus' || it.id === 'bat') weak.push(['Armor', 'Light hits ring off Ironhide plates.']);
+      if (it.id === 'crystal') weak.push(['Damage', 'Low raw damage; it shines when surrounded by other ponies.']);
+      for (const w of weak) h += '<div class="cdmech"><span class="tag warn">' + esc(w[0]) + '</span><div>' + esc(w[1]) + '</div></div>';
+      h += '<div class="ptitle"><span>Upgrade paths</span><span>' + C.PATHS[it.id].length + '</span></div><div class="cdpaths">';
+      for (const p of C.PATHS[it.id]) h += '<div class="cdpath"><b>' + esc(p.name) + '</b> ' + esc(p.blurb) + '<div class="cdc">Node 10: ' + esc(p.sig) + '</div></div>';
+      h += '</div><button type="button" class="codexbtn" data-wardrobe="' + it.id + '">Open wardrobe</button>';
+    } else if (it.kind === 'h') {
+      const a = d.aura;
+      h += dl([['Race', C.RACES[d.race] ? C.RACES[d.race].name : d.race], ['Range', String(d.range)], ['Rate', d.rate + '/s'], ['Hits flyers', d.canFly ? 'Yes' : 'No'], ['Hurts magical', d.canMagic ? 'Yes' : 'No'], ['Damage dealt', C.fmt((prof().stats.heroDmg || {})[it.id] || 0)]]);
+      h += '<p class="cddesc">' + esc(d.blurb) + '</p>';
+      if (a) h += '<div class="cdmech"><span class="tag">Aura</span><div><div>' + esc(a.name) + '</div><div class="cdc">' + esc(a.text(a.base)) + ' within ' + a.r + '</div></div></div>';
+      for (const ab of d.abil) h += '<div class="cdmech"><span class="tag">' + ab.cd + 's</span><div><div>' + esc(ab.name) + '</div><div class="cdc">' + esc(ab.text(1)) + '</div></div></div>';
     } else {
-      stats.push(['HP', 'x' + E.hp + ' of a Shambler']);
-      stats.push(['Speed', String(E.speed)]);
-      stats.push(['Bounty', 'x' + E.cash]);
-      if (E.plate) stats.push(['Armor', C.fmt(C.armorFor(it.id, n, map)) + ' per hit at wave ' + n]);
-      if (E.swarm) stats.push(['Group', '5 at a time']);
-    }
-    h += '<p class="cddesc">' + esc(it.kind === 'b' ? d.desc : E.trait) + '</p><dl class="cdstats">' + stats.map(s => '<dt>' + esc(s[0]) + '</dt><dd>' + esc(s[1]) + '</dd>').join('') + '</dl>';
-    for (const k of it.mech) {
-      const M = C.MECH[k];
-      if (!M) continue;
-      h += '<div class="cdmech"><span class="tag">' + esc(M.tag) + '</span><div><div>' + esc(M.weak) + '</div><div class="cdc">Counter ponies: ' + esc(M.counters.join(', ')) + '</div></div></div>';
+      const E = C.ENEMIES[it.kind === 'b' ? 'boss' : it.id];
+      const map = C.mapOf(S), n = Math.max(1, S.sel);
+      const stats = [];
+      if (it.kind === 'b') {
+        stats.push(['HP', 'x' + (E.hp * (d.hpMul || 1)).toFixed(1) + ' of a Shambler, +1% per wave']);
+        stats.push(['Leak cost', (d.tricks && d.tricks.twin ? 3 : 5) + ' lives']);
+        if (d.tricks && d.tricks.plate) stats.push(['Armor', Math.round(d.tricks.plate * 100) + '% of a Shambler\'s HP per hit']);
+      } else {
+        stats.push(['HP', 'x' + E.hp + ' of a Shambler']);
+        stats.push(['Speed', String(E.speed)]);
+        stats.push(['Bounty', 'x' + E.cash]);
+        if (E.plate) stats.push(['Armor', C.fmt(C.armorFor(it.id, n, map)) + ' per hit at wave ' + n]);
+        if (E.swarm) stats.push(['Group', '5 at a time']);
+      }
+      h += '<p class="cddesc">' + esc(it.kind === 'b' ? d.desc : E.trait) + '</p>' + dl(stats);
+      for (const k of it.mech) {
+        const M = C.MECH[k];
+        if (!M) continue;
+        h += '<div class="cdmech"><span class="tag">' + esc(M.tag) + '</span><div><div>' + esc(M.weak) + '</div><div class="cdc">Counter ponies: ' + esc(M.counters.join(', ')) + '</div></div></div>';
+      }
     }
     box.innerHTML = h;
-    codexArt($('codexBig'), it, true, 0);
+    codexArt($('codexBig'), it, true, performance.now());
+  }
+  function codexCurrent() { return codexEntries().find(it => codexUi.pick === it.kind + it.id) || null; }
+  function codexAnim(now) {
+    codexUi.raf = 0;
+    if ($('codexModal').hidden) return;
+    const c = $('codexBig'), it = codexCurrent();
+    if (c && it && codexKnown(it)) codexArt(c, it, true, now);
+    codexUi.raf = requestAnimationFrame(codexAnim);
   }
   function buildCodex() {
     const list = codexEntries();
-    const all = C.codexList();
-    const ce = all.e.filter(codexKnown).length, cb = all.b.filter(codexKnown).length;
-    $('codexCount').textContent = ce + ' / ' + all.e.length + ' DNBs · ' + cb + ' / ' + all.b.length + ' bosses';
+    const all = codexAll();
+    const cnt = k => all[k].filter(codexKnown).length + ' / ' + all[k].length;
+    $('codexCount').textContent = cnt('e') + ' DNBs · ' + cnt('b') + ' bosses · ' + cnt('p') + ' ponies · ' + cnt('h') + ' heroes';
     for (const b of document.querySelectorAll('#codexTabs [data-tab]')) { const on = b.dataset.tab === codexUi.tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
     const grid = $('codexGrid');
     grid.innerHTML = '';
@@ -1119,30 +1211,32 @@
       const c = document.createElement('canvas');
       c.width = 72; c.height = 72;
       const nm = document.createElement('span');
-      nm.textContent = known ? (it.kind === 'b' ? it.def.name : it.def.short) : '???';
+      nm.textContent = known ? (it.kind === 'e' ? it.def.short : it.kind === 'p' ? it.def.name.replace(' Pony', '') : it.def.name) : '???';
       b.append(c, nm);
+      if (known) { const k = codexKills(it); if (k) { const kb = document.createElement('i'); kb.className = 'cxk'; kb.textContent = C.fmt(k); b.appendChild(kb); } }
       grid.appendChild(b);
       codexArt(c, it, known, 0);
     }
-    const cur = list.find(it => codexUi.pick === it.kind + it.id) || null;
-    codexDetail(cur);
+    codexDetail(codexCurrent());
   }
-  function openCodex(tab) {
+  function openCodex(tab, pick) {
     lastFocus = document.activeElement;
-    if (tab) codexUi.tab = tab;
+    if (tab) { codexUi.tab = tab; codexUi.pick = pick ? tab + pick : codexUi.pick; }
     $('codexBtn').classList.remove('pulse');
     buildCodex();
     $('codexModal').hidden = false;
     $('codexClose').focus();
+    if (!codexUi.raf) codexUi.raf = requestAnimationFrame(codexAnim);
   }
   function closeCodex() {
     if ($('codexModal').hidden) return;
     $('codexModal').hidden = true;
+    if (codexUi.raf) { cancelAnimationFrame(codexUi.raf); codexUi.raf = 0; }
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
   function codexToast(e) {
     const el = $('codexToast');
-    el.textContent = 'Codex: ' + e.name + (e.kind === 'b' ? ' (boss)' : '') + ' added';
+    el.textContent = 'Codex: ' + e.name + (e.kind === 'b' ? ' (boss)' : e.kind === 'p' ? ' (pony)' : '') + ' added';
     el.className = 'codextoast show';
     $('codexBtn').classList.add('pulse');
     A.play('codex');
@@ -1154,6 +1248,8 @@
   $('codexClose').addEventListener('click', closeCodex);
   $('codexModal').addEventListener('click', ev => {
     if (ev.target === $('codexModal')) { closeCodex(); return; }
+    const wb = ev.target.closest('[data-wardrobe]');
+    if (wb) { const r = wb.dataset.wardrobe; closeCodex(); openWardrobe(r); return; }
     const tb = ev.target.closest('[data-tab]');
     if (tb) { codexUi.tab = tb.dataset.tab; codexUi.pick = null; buildCodex(); return; }
     const cx = ev.target.closest('[data-cx]');
@@ -1197,7 +1293,7 @@
     return s + 's';
   }
   function anyModalOpen() {
-    for (const id of ['setModal', 'mapModal', 'codexModal', 'starModal', 'researchModal', 'heroModal', 'awayModal', 'rulesModal', 'plansModal', 'chalModal', 'chalEndModal', 'achModal', 'statsModal']) if (!$(id).hidden) return true;
+    for (const id of ['setModal', 'mapModal', 'codexModal', 'starModal', 'researchModal', 'heroModal', 'awayModal', 'rulesModal', 'plansModal', 'chalModal', 'chalEndModal', 'achModal', 'statsModal', 'wardrobeModal']) if (!$(id).hidden) return true;
     return false;
   }
   function awayHtml(g) {
@@ -1919,6 +2015,209 @@
     if (b) { chalUi.achTab = b.dataset.acat; buildAch(); }
   });
 
+  const wardUi = { tab: 'skin', race: 'earth', raf: 0, tryOn: null, key: '' };
+  const SEASON_NAMES = { autumn: 'Autumn', winter: 'Winter', spring: 'Spring Bloom', festival: 'Festival Lanterns' };
+  function cosSwatch(it) {
+    if (it.slot === 'coat') return it.spots ? 'radial-gradient(circle at 30% 35%,' + it.spots + ' 0 18%,transparent 20%),radial-gradient(circle at 70% 65%,' + it.spots + ' 0 14%,transparent 16%),' + it.body : it.body;
+    if (it.slot === 'mane') return it.rainbow ? 'linear-gradient(135deg,#ff6b6b,#ffd24a,#7fd66a,#4fd1c5,#8b5cf6)' : it.streak ? 'linear-gradient(135deg,' + it.mane + ' 0 55%,' + it.streak + ' 55% 70%,' + it.mane + ' 70%)' : it.mane;
+    if (it.slot === 'aura' && it.aura === 'rainbow') return 'conic-gradient(#ff6b6b,#ffd24a,#7fd66a,#4fd1c5,#8b5cf6,#ff6b6b)';
+    return it.col || '#888';
+  }
+  function wardLook() {
+    const base = C.lookOf(S, wardUi.race);
+    if (!wardUi.tryOn) return base;
+    const L = Object.assign({}, base);
+    if (wardUi.tryOn.id) L[wardUi.tryOn.slot] = C.COS_BY_ID[wardUi.tryOn.id]; else delete L[wardUi.tryOn.slot];
+    return L;
+  }
+  function wardSkinHtml() {
+    const race = wardUi.race, cur = (C.cosOf(S).skin[race]) || {}, fresh = C.cosNew(S);
+    let h = '<div class="rtabs wraces" role="tablist">';
+    for (const r of C.RACE_IDS) h += '<button type="button" role="tab" data-wrace="' + r + '" class="' + (r === race ? 'on' : '') + '" aria-selected="' + (r === race) + '">' + esc(C.RACES[r].name.replace(' Pony', '')) + '</button>';
+    h += '</div><div class="wlayout"><div class="wstage"><canvas id="wardPreview" width="240" height="240"></canvas><div class="wname" id="wardName">' + esc(C.RACES[race].name) + '</div><div class="wtry" id="wardTry"></div>';
+    h += '<div class="wacts"><button type="button" data-wact="reset">Reset look</button><button type="button" data-wact="all">Copy to all races</button><button type="button" data-wact="random">Random owned</button></div>';
+    h += '<label class="wtoggle"><input type="checkbox" id="wardNames"' + (C.cosOf(S).names ? ' checked' : '') + '> Show pony names on the board</label></div><div class="wslots">';
+    for (const slot of C.COS_SLOTS) {
+      const items = C.cosList(S, slot);
+      const own = items.filter(x => x.owned).length;
+      h += '<section class="wslot"><div class="ptitle"><span>' + C.COS_KINDS[slot] + '</span><span>' + own + ' / ' + items.length + ' owned</span></div><div class="witems">';
+      h += '<button type="button" class="witem' + (!cur[slot] ? ' on' : '') + '" data-wslot="' + slot + '" data-wid=""><span class="wsw none"></span><span class="wn">None</span><span class="ws">Default</span></button>';
+      for (const x of items) {
+        const it = x.def, on = cur[slot] === it.id && x.owned;
+        let state;
+        if (on) state = 'Equipped';
+        else if (x.owned) state = 'Owned';
+        else if (x.cost) state = x.cost + ' Moonstones';
+        else state = 'Locked';
+        h += '<button type="button" class="witem' + (on ? ' on' : '') + (x.owned ? '' : ' locked') + '" data-wslot="' + slot + '" data-wid="' + it.id + '" data-tip="' + esc(it.name + '\n' + (x.owned ? 'Unlocked' : x.how)) + '">';
+        h += '<span class="wsw' + (slot === 'aura' ? ' ring' : '') + '" style="background:' + cosSwatch(it) + '"></span><span class="wn">' + esc(it.name) + '</span><span class="ws">' + esc(state) + '</span>';
+        if (fresh.indexOf(it.id) >= 0) h += '<i class="wnew">New</i>';
+        h += '</button>';
+        if (!x.owned && x.cost) h += '<button type="button" class="wbuy" data-wbuy="' + it.id + '"' + ((prof().moon | 0) < x.cost ? ' disabled' : '') + '>Buy ' + esc(it.name) + ' &middot; ' + x.cost + '</button>';
+      }
+      h += '</div></section>';
+    }
+    return h + '</div></div>';
+  }
+  function wardFxHtml() {
+    const cos = C.cosOf(S), themes = C.COSMETICS.filter(c => c.slot === 'fx');
+    let h = '<p class="hint">Effect themes restyle projectiles and impacts. They never change damage, range or timing.</p><div class="wfx">';
+    for (const it of themes) {
+      const own = C.cosUnlocked(S, it), on = cos.fx === it.fx;
+      h += '<button type="button" class="wfxc' + (on ? ' on' : '') + (own ? '' : ' locked') + '" data-wfx="' + it.fx + '"><canvas width="160" height="70" data-fxprev="' + it.fx + '"></canvas><span class="wn">' + esc(it.name) + '</span><span class="ws">' + esc(own ? (on ? 'Active' : it.desc) : C.cosHow(it)) + '</span></button>';
+      if (!own && it.un.k === 'moon') h += '<button type="button" class="wbuy" data-wbuy="' + it.id + '"' + ((prof().moon | 0) < it.un.cost ? ' disabled' : '') + '>Buy ' + esc(it.name) + ' &middot; ' + it.un.cost + '</button>';
+    }
+    h += '</div><div class="ptitle"><span>Per-race overrides</span><span>Optional</span></div><div class="wover">';
+    for (const r of C.RACE_IDS) {
+      h += '<label class="wrow"><span>' + esc(C.RACES[r].name) + '</span><select data-wfxrace="' + r + '"><option value="">Use global (' + esc(cos.fx) + ')</option>';
+      for (const it of themes) h += '<option value="' + it.fx + '"' + (cos.fxRace[r] === it.fx ? ' selected' : '') + (C.cosUnlocked(S, it) ? '' : ' disabled') + '>' + esc(it.name) + (C.cosUnlocked(S, it) ? '' : ' (locked)') + '</option>';
+      h += '</select></label>';
+    }
+    return h + '</div>';
+  }
+  function wardDecorHtml() {
+    const auto = C.seasonFor(new Date());
+    let h = '<p class="hint">Seasonal decor repaints a map\'s scenery. Auto follows the calendar; right now that is ' + esc(SEASON_NAMES[auto]) + (C.cosUnlocked(S, 'decor_' + auto) ? '' : ' (not unlocked yet)') + '.</p><div class="wseasons">';
+    for (const s of C.SEASONS) {
+      const it = C.COS_BY_ID['decor_' + s], own = C.cosUnlocked(S, it);
+      h += '<div class="wseason' + (own ? '' : ' locked') + '"><b>' + esc(it.name) + '</b><span>' + esc(own ? it.desc : C.cosHow(it)) + '</span>';
+      if (!own && it.un.k === 'moon') h += '<button type="button" class="wbuy" data-wbuy="' + it.id + '"' + ((prof().moon | 0) < it.un.cost ? ' disabled' : '') + '>Buy &middot; ' + it.un.cost + '</button>';
+      h += '</div>';
+    }
+    h += '</div><div class="wmaps">';
+    for (const id of C.MAP_IDS) {
+      const m = C.MAPS[id], open = C.mapUnlocked(prof(), id), pick = C.decorPick(S, id);
+      h += '<div class="wmap' + (open ? '' : ' locked') + '"><canvas width="200" height="112" data-mapprev="' + id + '"></canvas><div><b>' + esc(m.name) + '</b>';
+      if (!open) h += '<span class="ws">Unlock the map first</span>';
+      else {
+        h += '<select data-wdecor="' + id + '" aria-label="Decor for ' + esc(m.name) + '"><option value="auto"' + (pick === 'auto' ? ' selected' : '') + '>Auto (calendar)</option><option value="none"' + (pick === 'none' ? ' selected' : '') + '>None</option>';
+        for (const s of C.SEASONS) { const own = C.cosUnlocked(S, 'decor_' + s); h += '<option value="' + s + '"' + (pick === s ? ' selected' : '') + (own ? '' : ' disabled') + '>' + esc(SEASON_NAMES[s]) + (own ? '' : ' (locked)') + '</option>'; }
+        h += '</select>';
+      }
+      h += '</div></div>';
+    }
+    return h + '</div>';
+  }
+  function buildWardrobe() {
+    for (const b of document.querySelectorAll('#wardTabs [data-wtab]')) { const on = b.dataset.wtab === wardUi.tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
+    const all = C.COSMETICS, owned = all.filter(c => C.cosUnlocked(S, c)).length;
+    $('wardMoon').textContent = C.fmt(prof().moon | 0) + ' Moonstones · ' + owned + ' / ' + all.length + ' cosmetics';
+    const body = $('wardBody');
+    const keep = body.scrollTop;
+    body.innerHTML = wardUi.tab === 'fx' ? wardFxHtml() : wardUi.tab === 'decor' ? wardDecorHtml() : wardSkinHtml();
+    body.scrollTop = keep;
+    if (wardUi.tab === 'decor') for (const c of body.querySelectorAll('[data-mapprev]')) { const id = c.dataset.mapprev; R.drawMapPreview(c, C.MAPS[id], C.decorOf(S, id)); }
+    wardDraw(performance.now());
+    const fresh = C.cosNew(S);
+    $('wardrobeBtn').classList.toggle('pulse', fresh.length > 0);
+  }
+  function wardDraw(now) {
+    const body = $('wardBody');
+    if (wardUi.tab === 'skin') {
+      const c = $('wardPreview');
+      if (c) R.ponyPreview(c, wardUi.race, now, wardLook(), { scale: 0.5, spin: true, hop: true });
+      const tr = $('wardTry');
+      if (tr) { const it = wardUi.tryOn && wardUi.tryOn.id && C.COS_BY_ID[wardUi.tryOn.id]; tr.textContent = it ? 'Previewing ' + it.name + (C.cosUnlocked(S, it) ? '' : ' (locked)') : ''; }
+    } else if (wardUi.tab === 'fx') {
+      for (const c of body.querySelectorAll('[data-fxprev]')) R.fxPreview(c, c.dataset.fxprev, now);
+    }
+  }
+  function wardAnim(now) {
+    wardUi.raf = 0;
+    if ($('wardrobeModal').hidden) return;
+    wardDraw(now);
+    wardUi.raf = requestAnimationFrame(wardAnim);
+  }
+  function syncCos() {
+    for (const r of C.RACE_IDS) { R.cos.looks[r] = C.lookOf(S, r); R.cos.fx[r] = C.fxThemeOf(S, r); }
+    R.cos.names = C.cosOf(S).names;
+    const season = C.decorOf(S, S.map);
+    if (season !== R.cos.season) { R.cos.season = season; R.buildBg(cw, ch, dpr, C.mapOf(S)); }
+  }
+  function cosChanged() { syncCos(); writeSave(); buildWardrobe(); ui.infoKey = ''; }
+  function openWardrobe(race, tab) {
+    lastFocus = document.activeElement;
+    if (race && C.RACES[race]) { wardUi.race = race; wardUi.tab = 'skin'; }
+    if (tab) wardUi.tab = tab;
+    wardUi.tryOn = null;
+    buildWardrobe();
+    $('wardrobeModal').hidden = false;
+    $('wardrobeClose').focus();
+    if (!wardUi.raf) wardUi.raf = requestAnimationFrame(wardAnim);
+  }
+  function closeWardrobe() {
+    if ($('wardrobeModal').hidden) return;
+    C.markCosSeen(S);
+    $('wardrobeBtn').classList.remove('pulse');
+    $('wardrobeModal').hidden = true;
+    if (wardUi.raf) { cancelAnimationFrame(wardUi.raf); wardUi.raf = 0; }
+    writeSave();
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function wardBuy(id) {
+    const it = C.COS_BY_ID[id];
+    if (!it || !C.buyCos(S, id)) { A.play('deny'); return false; }
+    A.play('unlocked');
+    if (C.COS_SLOTS.indexOf(it.slot) >= 0) C.setSkin(S, wardUi.race, it.slot, id);
+    else if (it.slot === 'fx') C.setFxTheme(S, it.fx);
+    banner(it.name + ' unlocked', 'good');
+    cosChanged();
+    return true;
+  }
+  function wardRandom() {
+    for (const slot of C.COS_SLOTS) {
+      const own = C.cosList(S, slot).filter(x => x.owned);
+      const pick = own.length && Math.random() < 0.85 ? own[Math.floor(Math.random() * own.length)].def.id : '';
+      C.setSkin(S, wardUi.race, slot, pick);
+    }
+  }
+  $('wardrobeBtn').addEventListener('click', () => openWardrobe());
+  $('wardrobeClose').addEventListener('click', closeWardrobe);
+  $('wardrobeModal').addEventListener('click', ev => {
+    if (ev.target === $('wardrobeModal')) { closeWardrobe(); return; }
+    const tb = ev.target.closest('[data-wtab]');
+    if (tb) { wardUi.tab = tb.dataset.wtab; wardUi.tryOn = null; $('wardBody').scrollTop = 0; buildWardrobe(); return; }
+    const rb = ev.target.closest('[data-wrace]');
+    if (rb) { wardUi.race = rb.dataset.wrace; wardUi.tryOn = null; A.play('click'); buildWardrobe(); return; }
+    const bb = ev.target.closest('[data-wbuy]');
+    if (bb) { wardBuy(bb.dataset.wbuy); return; }
+    const ab = ev.target.closest('[data-wact]');
+    if (ab) {
+      const a = ab.dataset.wact;
+      if (a === 'reset') for (const sl of C.COS_SLOTS) C.setSkin(S, wardUi.race, sl, '');
+      else if (a === 'all') { const src = C.cosOf(S).skin[wardUi.race] || {}; for (const r of C.RACE_IDS) for (const sl of C.COS_SLOTS) C.setSkin(S, r, sl, src[sl] || ''); banner('Look copied to every race', 'good'); }
+      else if (a === 'random') wardRandom();
+      A.play('equip'); cosChanged(); return;
+    }
+    const it = ev.target.closest('[data-wslot]');
+    if (it) {
+      const slot = it.dataset.wslot, id = it.dataset.wid;
+      if (!id || C.cosUnlocked(S, id)) {
+        const cur = (C.cosOf(S).skin[wardUi.race] || {})[slot];
+        C.setSkin(S, wardUi.race, slot, cur === id ? '' : id);
+        wardUi.tryOn = null; A.play('equip'); cosChanged();
+      } else { wardUi.tryOn = { slot, id }; A.play('click'); }
+      return;
+    }
+    const fx = ev.target.closest('[data-wfx]');
+    if (fx) { if (C.setFxTheme(S, fx.dataset.wfx)) { A.play('equip'); cosChanged(); } else A.play('deny'); }
+  });
+  $('wardrobeModal').addEventListener('pointerover', ev => {
+    const it = ev.target.closest('[data-wslot]');
+    if (!it || wardUi.tab !== 'skin') return;
+    wardUi.tryOn = { slot: it.dataset.wslot, id: it.dataset.wid };
+  });
+  $('wardrobeModal').addEventListener('pointerout', ev => {
+    const it = ev.target.closest('[data-wslot]');
+    if (it && !it.contains(ev.relatedTarget)) wardUi.tryOn = null;
+  });
+  $('wardrobeModal').addEventListener('change', ev => {
+    const el = ev.target;
+    if (el.id === 'wardNames') { C.cosOf(S).names = el.checked; cosChanged(); return; }
+    if (el.dataset.wfxrace) { C.setFxTheme(S, el.value || null, el.dataset.wfxrace); cosChanged(); return; }
+    if (el.dataset.wdecor) { if (C.setDecor(S, el.dataset.wdecor, el.value)) cosChanged(); }
+  });
+
   function statsHtml() {
     const s = C.statsSummary(S);
     const box = (k, v, id) => '<div>' + k + '<b' + (id ? ' id="' + id + '"' : '') + '>' + v + '</b></div>';
@@ -2022,7 +2321,7 @@
     if (now - uiT > 120) {
       uiT = now;
       refreshHud(); refreshBuild(); refreshWave(); refreshInfo(); refreshSpeed(); drawIcons(now); refreshHeroCard();
-      refreshFarm(); refreshRulesBtn(); refreshBuildBox(); refreshChalCard(); owlCheck(now);
+      refreshFarm(); refreshRulesBtn(); refreshBuildBox(); refreshChalCard(); owlCheck(now); syncCos();
       if (!$('heroModal').hidden) drawHeroIcons(now);
     }
     refreshHeroBar(now);
@@ -2035,6 +2334,7 @@
     last = performance.now(); acc = 0;
     catchUp(Date.now());
   });
+  syncCos();
   seenReady = true;
   catchUp(Date.now(), true);
   if (!ui.away) writeSave();
@@ -2054,5 +2354,6 @@
     heroScreen() { if (!S.hero || !S.hero.id) return null; const r = cv.getBoundingClientRect(), p = V.toScreen(S.hero.x, S.hero.y - 8); return [r.left + p[0], r.top + p[1]]; },
     worldToClient(x, y) { const r = cv.getBoundingClientRect(), p = V.toScreen(x, y); return [r.left + p[0], r.top + p[1]]; },
     openChal, closeChal, startChal, quitChal(force) { return quitChal(force !== false); }, closeChalEnd, openAch, closeAch, openStats, closeStats,
-    achList() { return C.achList(S); }, prof, get chalUi() { return chalUi; } };
+    achList() { return C.achList(S); }, prof, openWardrobe, closeWardrobe, syncCos, get wardUi() { return wardUi; },
+    renameTower(id, name) { const r = C.renameTower(S, id, name); ui.infoKey = ''; writeSave(); return r; }, get chalUi() { return chalUi; } };
 })();
