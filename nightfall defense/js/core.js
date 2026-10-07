@@ -1920,9 +1920,18 @@
 
   function emit(S, type, data) { S.events.push(Object.assign({ type }, data || {})); }
   function fx(S, o) { if (S.fxOn && S.fx.length < 700) { o.t = 0; S.fx.push(o); } }
+  const FXF = [];
+  function fx1(S, k, x, y, r, c, life, rc, seed, c2, big, sv, crit, dim) {
+    if (!S.fxOn || S.fx.length >= 700) return;
+    let f = FXF.pop();
+    if (f) POOL.fReused++; else { POOL.fMade++; f = { k: '', x: 0, y: 0, r: 0, c: undefined, life: 0, t: 0, _th: undefined, pf: 1, rc: undefined, seed: undefined, c2: undefined, big: undefined, s: undefined, crit: undefined, dim: undefined }; }
+    f.k = k; f.x = x; f.y = y; f.r = r; f.c = c; f.life = life; f.t = 0; f._th = undefined;
+    f.rc = rc; f.seed = seed; f.c2 = c2; f.big = big; f.s = sv; f.crit = crit; f.dim = dim;
+    S.fx.push(f);
+  }
   function snd(S, k) { if (S.sfx) S.sfx[k] = (S.sfx[k] || 0) + 1; }
 
-  const POOL = { eFree: [], eDead: [], pFree: [], made: 0, reused: 0, pMade: 0, pReused: 0 };
+  const POOL = { eFree: [], eDead: [], pFree: [], made: 0, reused: 0, pMade: 0, pReused: 0, fMade: 0, fReused: 0 };
   function recycleEnemies() {
     const P = POOL;
     for (const e of P.eDead) { if (P.eFree.length >= 800) break; for (const k in e) e[k] = undefined; P.eFree.push(e); }
@@ -2084,7 +2093,7 @@
   }
 
   function flushNum(S, e) {
-    if (e.dn > 0 && S.settings.dmgNums) fx(S, { k: 'num', x: e.x, y: e.y - e.r, s: fmt(e.dn), crit: e.dnCrit, dim: e.dnDim && !e.dnCrit, big: e.boss, life: e.dnCrit ? 0.95 : 0.75, seed: e.id });
+    if (e.dn > 0 && S.settings.dmgNums) fx1(S, 'num', e.x, e.y - e.r, undefined, undefined, e.dnCrit ? 0.95 : 0.75, undefined, e.id, undefined, e.boss, fmt(e.dn), e.dnCrit, e.dnDim && !e.dnCrit);
     e.dn = 0; e.dnCrit = false; e.dnDim = false; e.dnT = 0;
   }
 
@@ -2102,7 +2111,7 @@
     if (e.sh > 0) {
       ab = Math.min(e.sh, dealt);
       e.sh -= ab; dealt -= ab; e.shHit = 0.15;
-      if (e.sh <= 0) { e.sh = 0; fx(S, { k: 'shieldpop', x: e.x, y: e.y, r: e.r + 9, life: 0.4 }); snd(S, 'shield'); }
+      if (e.sh <= 0) { e.sh = 0; fx1(S, 'shieldpop', e.x, e.y, e.r + 9, undefined, 0.4); snd(S, 'shield'); }
     }
     const real = Math.min(e.hp, dealt);
     S.stats.dmg += real;
@@ -2120,7 +2129,7 @@
           const m2 = spawnEnemy(S, run, 'basic', Math.max(20, e.d - 12 - i * 14));
           m2.hpMax = m2.hp = runHp(run) * 1.2;
         }
-        fx(S, { k: 'ring', x: e.x, y: e.y, r: 60, c: '#a07a52', life: 0.5 });
+        fx1(S, 'ring', e.x, e.y, 60, '#a07a52', 0.5);
       }
     }
     if (e.broodQ && e.broodQ.length) {
@@ -2131,7 +2140,7 @@
           const m2 = spawnEnemy(S, run, br.type, Math.max(20, e.d - 10 - i * 12), { path: e.path });
           m2.hpMax = m2.hp = runHp(run) * def.hp * 1.2;
         }
-        fx(S, { k: 'ring', x: e.x, y: e.y, r: 60, c: e.bossDef.look && e.bossDef.look.aura || '#a07a52', life: 0.5 });
+        fx1(S, 'ring', e.x, e.y, 60, e.bossDef.look && e.bossDef.look.aura || '#a07a52', 0.5);
       }
     }
   }
@@ -2152,14 +2161,14 @@
     S.sfx.kill++;
     if (t) { t.kills++; t.wKills++; const kb = t.isHero ? st.heroKills : st.raceKills, kk = t.isHero ? t.id : t.race; if (kb && kk) kb[kk] = (kb[kk] || 0) + 1; }
     heroXp(S, run, e, t);
-    fx(S, { k: 'puff', x: e.x, y: e.y, r: e.r, c: e.color, life: 0.45 });
-    fx(S, { k: 'burst', x: e.x, y: e.y, r: e.r, c: e.color, c2: e.dark, seed: e.id * 7 + run.n, life: e.boss ? 0.9 : 0.5, big: e.boss });
-    if (e.boss || mult > 1.5) fx(S, { k: 'text', x: e.x, y: e.y - 20, s: '+' + fmt(gain), c: '#e3c15b', life: 1.1 });
+    fx1(S, 'puff', e.x, e.y, e.r, e.color, 0.45);
+    fx1(S, 'burst', e.x, e.y, e.r, e.color, e.boss ? 0.9 : 0.5, undefined, e.id * 7 + run.n, e.dark, e.boss);
+    if (e.boss || mult > 1.5) fx1(S, 'text', e.x, e.y - 20, undefined, '#e3c15b', 1.1, undefined, undefined, undefined, undefined, '+' + fmt(gain));
     if (e.boss) { S.stats.bossKills++; emit(S, 'bossDown', { name: e.name, split: !!e.splitDone }); }
     if (e.boss && !e.splitDone && e.bossDef.tricks && S.records) S.records.bosses[e.bossDef.id] = (S.records.bosses[e.bossDef.id] || 0) + 1;
     if (e.doom) {
       const R = 90, dmgAmt = e.hpMax * 0.25;
-      fx(S, { k: 'ring', x: e.x, y: e.y, r: R, c: '#c06bff', life: 0.45 });
+      fx1(S, 'ring', e.x, e.y, R, '#c06bff', 0.45);
       for (const o of run.enemies) if (o !== e && o.alive && dist2(o, e) <= R * R) damage(S, run, o, dmgAmt, t);
     }
     if (e.boss && e.trick === 'split' && !e.splitDone) {
@@ -2167,7 +2176,7 @@
         const c = spawnEnemy(S, run, 'boss', Math.max(20, e.d - 160 + s * 18), { path: e.path });
         c.hpMax = c.hp = e.hpMax * 0.25; c.splitDone = true; c.r = e.r * 0.75; c.leak = 3; c.speed = 46; c.name = 'Shade';
       }
-      fx(S, { k: 'ring', x: e.x, y: e.y, r: 70, c: '#6b5a8a', life: 0.6 });
+      fx1(S, 'ring', e.x, e.y, 70, '#6b5a8a', 0.6);
     }
     const def = ENEMIES[e.type];
     if (run.mut && run.mut.splitting && !e.boss && !def.split && e.type !== 'mini' && !e.mSplit) {
@@ -2180,7 +2189,7 @@
         const c = spawnEnemy(S, run, def.split.type, Math.min(P.len - 1, Math.max(SPAWN_GUARD + 1, e.d + 6 - i * 12)), { path: e.path });
         if (e.elite) { c.hpMax *= 2; c.hp = c.hpMax; }
       }
-      fx(S, { k: 'ring', x: e.x, y: e.y, r: 34, c: '#d8a8c8', life: 0.4 });
+      fx1(S, 'ring', e.x, e.y, 34, '#d8a8c8', 0.4);
       snd(S, 'split');
     }
     if (e.boss && e.tk && e.tk.split && !e.splitDone) {
@@ -2191,7 +2200,7 @@
         c.tk = { fly: e.flying, magic: e.magical }; c.eff = null; c.stage = -1; c.broodQ = []; c.cut = 0; c.timers = {}; c.plate = 0; c.sh = 0; c.shMax = 0; c.ownSh = false; c.stealth = false;
         c.flying = e.flying; c.magical = e.magical;
       }
-      fx(S, { k: 'ring', x: e.x, y: e.y, r: 70, c: (e.bossDef.look && e.bossDef.look.aura) || e.color, life: 0.6 });
+      fx1(S, 'ring', e.x, e.y, 70, (e.bossDef.look && e.bossDef.look.aura) || e.color, 0.6);
     }
   }
 
@@ -2208,7 +2217,7 @@
     let crit = false;
     if (force || (s.crit > 0 && run.rng() < s.crit)) { crit = true; d *= (s.has.raptordive && isFly(e)) ? 5 : s.critMul; S.sfx.crit++; }
     damage(S, run, e, d, t, crit);
-    if (crit) fx(S, { k: 'spark', x: e.x, y: e.y, c: '#fff2a8', life: 0.3 });
+    if (crit) fx1(S, 'spark', e.x, e.y, undefined, '#fff2a8', 0.3);
     if (!e.alive) return;
     if (s.slow > 0) { e.slow = Math.max(e.slow, e.boss ? s.slow * 0.5 : s.slow); e.slowT = Math.max(e.slowT, s.slowDur); }
     if (s.stunCh > 0 && run.rng() < s.stunCh) stunE(e, e.boss ? s.stunDur * 0.3 : s.stunDur);
@@ -2230,7 +2239,7 @@
         if (stun && e.alive) stunE(e, e.boss ? 0.3 : stun);
       }
       t.anim = 0.25;
-      fx(S, { k: 'stomp', x: t.x, y: t.y, r: s.range, c: stun ? '#ffd27a' : (s.has.leyrupture ? '#b48bff' : '#c9a36b'), life: 0.35, rc: t.race });
+      fx1(S, 'stomp', t.x, t.y, s.range, stun ? '#ffd27a' : (s.has.leyrupture ? '#b48bff' : '#c9a36b'), 0.35, t.race);
       return;
     }
     const first = pick(targets, t.mode, t);
@@ -2263,7 +2272,7 @@
       const d = p.dmg;
       hitEnemy(S, run, t, s, e, d);
       if (s.splash > 0) {
-        fx(S, { k: 'ring', x: p.x, y: p.y, r: s.splash, c: '#d6b8ff', life: 0.3, rc: t.race });
+        fx1(S, 'ring', p.x, p.y, s.splash, '#d6b8ff', 0.3, t.race);
         for (const o of run.enemies) if (o !== e && canHit(s, o) && dist2(o, p) <= s.splash * s.splash) hitEnemy(S, run, t, s, o, d * 0.6);
       }
       if (s.has.prismburst) {
@@ -2279,7 +2288,7 @@
       if (s.has.dispelprism && e.magical) e.dispelT = Math.max(e.dispelT, 4);
       hitEnemy(S, run, t, s, e, d);
       if (s.splash > 0) {
-        fx(S, { k: 'shards', x: p.x, y: p.y, r: s.splash, c: '#9fe6ff', seed: e.id, life: 0.35, rc: t.race });
+        fx1(S, 'shards', p.x, p.y, s.splash, '#9fe6ff', 0.35, t.race, e.id);
         for (const o of run.enemies) {
           if (o === e || dist2(o, p) > s.splash * s.splash) continue;
           if (s.has.dispelprism && o.magical && o.alive) o.dispelT = Math.max(o.dispelT, 4);
@@ -2288,7 +2297,7 @@
       }
     } else if (t.race === 'bat') {
       hitEnemy(S, run, t, s, e, p.dmg, p.crit);
-      if (p.crit || p.kind === 'swarm') fx(S, { k: 'bite', x: e.x, y: e.y, c: p.crit ? '#ff3a5c' : '#c9b8ff', life: 0.25, rc: t.race });
+      if (p.crit || p.kind === 'swarm') fx1(S, 'bite', e.x, e.y, undefined, p.crit ? '#ff3a5c' : '#c9b8ff', 0.25, t.race);
     } else {
       hitEnemy(S, run, t, s, e, p.dmg);
       if (s.chain > 0) {
@@ -2321,24 +2330,24 @@
     if (on('starfall') && targets.length && every(6)) {
       let best = targets[0]; for (const e of targets) if (e.hp > best.hp) best = e;
       const R = 75;
-      fx(S, { k: 'star', x: best.x, y: best.y, r: R, c: '#ffe9a8', life: 0.6 });
+      fx1(S, 'star', best.x, best.y, R, '#ffe9a8', 0.6);
       for (const o of run.enemies) if (o.alive && o.burrowT <= 0 && dist2(o, best) <= R * R) damage(S, run, o, dmg * 12, t);
     }
     if (on('timestop') && targets.length && every(10)) {
-      fx(S, { k: 'ring', x: t.x, y: t.y, r: s.range, c: '#9fe3ff', life: 0.6 });
+      fx1(S, 'ring', t.x, t.y, s.range, '#9fe3ff', 0.6);
       for (const o of run.enemies) if (o.alive && inRange(t, o, s.range)) stunE(o, o.boss ? 0.5 : 1.5);
     }
     if (on('thunderhead') && targets.length && every(5)) {
       const list = targets.slice().sort((a, b) => b.hp - a.hp).slice(0, 8);
-      for (const o of list) { fx(S, { k: 'bolt', x: o.x, y: o.y, c: '#e6f4ff', life: 0.3 }); hitEnemy(S, run, t, s, o, dmg * 5); }
+      for (const o of list) { fx1(S, 'bolt', o.x, o.y, undefined, '#e6f4ff', 0.3); hitEnemy(S, run, t, s, o, dmg * 5); }
     }
     if (on('cyclone') && targets.length && every(9)) {
-      fx(S, { k: 'swirl', x: t.x, y: t.y, r: s.range, c: '#bdf5ee', life: 0.7 });
+      fx1(S, 'swirl', t.x, t.y, s.range, '#bdf5ee', 0.7);
       for (const o of run.enemies) if (o.alive && !o.boss && inRange(t, o, s.range)) { knockBack(run, o, 150); stunE(o, 0.6); }
     }
     if (on('rainboom') && targets.length && every(15)) {
       t.boomT = 4;
-      fx(S, { k: 'rainbow', x: t.x, y: t.y, r: s.range, life: 0.9 });
+      fx1(S, 'rainbow', t.x, t.y, s.range, undefined, 0.9);
     }
     if (on('stampede') && every(12)) {
       let any = false;
@@ -2347,12 +2356,12 @@
         if (isMagic(o) && !s.canMagic) continue;
         any = true; hitEnemy(S, run, t, s, o, dmg * 6);
       }
-      if (any) fx(S, { k: 'stampede', x: 0, y: 0, life: 0.9 });
+      if (any) fx1(S, 'stampede', 0, 0, undefined, undefined, 0.9);
       else T.stampede = 12;
     }
     if (on('deepecho') && every(5)) {
       const R = s.range * 2;
-      fx(S, { k: 'sonar', x: t.x, y: t.y, r: R, c: '#ff8fb0', life: 0.8 }); snd(S, 'sonar');
+      fx1(S, 'sonar', t.x, t.y, R, '#ff8fb0', 0.8); snd(S, 'sonar');
       for (const o of run.enemies) if (o.alive && dist2(o, t) <= R * R) { o.revealT = 4; o.echoAmp = Math.max(o.echoAmp || 0, 0.2); }
     }
     if (on('swarmnight') && targets.length && every(7)) {
@@ -2361,20 +2370,20 @@
         const a = i / 8 * Math.PI * 2;
         run.proj.push(newProj({ x: t.x + Math.cos(a) * 16, y: t.y - 10 + Math.sin(a) * 12, e, t, dmg: dmg * 3, sp: 520, kind: 'swarm', life: 3, a }));
       }
-      fx(S, { k: 'ring', x: t.x, y: t.y, r: 34, c: '#c9b8ff', life: 0.4 }); snd(S, 'swarm');
+      fx1(S, 'ring', t.x, t.y, 34, '#c9b8ff', 0.4); snd(S, 'swarm');
     }
     if (on('bloodmoon') && targets.length && every(14)) {
       t.bloodT = 5;
-      fx(S, { k: 'bloodmoon', x: t.x, y: t.y, r: s.range, life: 1 }); snd(S, 'bloodmoon');
+      fx1(S, 'bloodmoon', t.x, t.y, s.range, undefined, 1); snd(S, 'bloodmoon');
     }
     if (on('dreadscreech') && targets.length && every(9)) {
-      fx(S, { k: 'screech', x: t.x, y: t.y, r: s.range, c: '#ff5a7a', life: 0.6 }); snd(S, 'screech');
+      fx1(S, 'screech', t.x, t.y, s.range, '#ff5a7a', 0.6); snd(S, 'screech');
       for (const o of run.enemies) if (o.alive && inRange(t, o, s.range) && canHit(s, o)) { stunE(o, o.boss ? 0.3 : 1); o.hexAmp = Math.max(o.hexAmp, 0.25); o.hexT = Math.max(o.hexT, 4); }
     }
     if (on('chorus') && every(10)) {
       let any = false;
       for (const o of S.towers) if (o !== t && dist2(o, t) <= s.auraR * s.auraR) { o.surgeT = 3; any = true; }
-      if (any) { fx(S, { k: 'chorus', x: t.x, y: t.y, r: s.auraR, life: 0.9 }); snd(S, 'chorus'); }
+      if (any) { fx1(S, 'chorus', t.x, t.y, s.auraR, undefined, 0.9); snd(S, 'chorus'); }
     }
     if (on('fortress') && every(3)) {
       const W = t.wallPt || (t.wallPt = nearestOnMap(run.map, t.x, t.y));
@@ -2386,12 +2395,12 @@
         hitEnemy(S, run, t, s, o, dmg * 6);
         if (o.alive) stunE(o, o.boss ? 0.2 : 0.6);
       }
-      if (any) { fx(S, { k: 'wallpulse', x: W.x, y: W.y, r: s.wallR, life: 0.5 }); snd(S, 'quake'); }
+      if (any) { fx1(S, 'wallpulse', W.x, W.y, s.wallR, undefined, 0.5); snd(S, 'quake'); }
     }
     if (on('cataclysm') && targets.length && every(8)) {
       let best = targets[0]; for (const e of targets) if (e.hp > best.hp) best = e;
       const R = 80;
-      fx(S, { k: 'cataclysm', x: best.x, y: best.y, r: R, seed: best.id, life: 0.8 }); snd(S, 'cataclysm');
+      fx1(S, 'cataclysm', best.x, best.y, R, undefined, 0.8, undefined, best.id); snd(S, 'cataclysm');
       for (const o of run.enemies) {
         if (!o.alive || dist2(o, best) > R * R || !canHit(s, o)) continue;
         damage(S, run, o, dmg * 15, t);
@@ -2431,7 +2440,7 @@
       run.lives -= e.boss ? Math.max(1, e.leak - (run.leakCut || 0)) : e.leak;
       S.sfx.leak++;
       const end = P.pts[P.pts.length - 1];
-      fx(S, { k: 'leak', x: Math.min(WORLD.L, end[0]), y: end[1], life: 0.6 });
+      fx1(S, 'leak', Math.min(WORLD.L, end[0]), end[1], undefined, undefined, 0.6);
       emit(S, 'leak', { boss: e.boss, lives: run.lives, dnb: e.type, elite: e.elite ? e.eliteMod || 'elite' : '' });
     }
   }
@@ -2442,13 +2451,13 @@
     if (e.sprintT > 0) e.sprintT -= dt;
     if (e.tk) { tkTrick(S, run, e, dt); return; }
     const tr = e.trick;
-    if (tr === 'burrow' && e.trickT >= 5) { e.trickT = 0; e.burrowT = 1.6; fx(S, { k: 'puff', x: e.x, y: e.y, r: 30, c: '#5a4030', life: 0.5 }); }
+    if (tr === 'burrow' && e.trickT >= 5) { e.trickT = 0; e.burrowT = 1.6; fx1(S, 'puff', e.x, e.y, 30, '#5a4030', 0.5); }
     if (tr === 'sprint' && e.trickT >= 6) { e.trickT = 0; e.sprintT = 1.5; }
     if (tr === 'regen' || (tr === 'mother' && e.hp < e.hpMax * 0.33)) {
       e.hp = Math.min(e.hpMax, e.hp + e.hpMax * 0.015 * dt);
       for (const o of run.enemies) if (o !== e && o.alive && !o.boss && dist2(o, e) < 120 * 120) o.hp = Math.min(o.hpMax, o.hp + o.hpMax * 0.03 * dt);
     }
-    if (tr === 'phase' && e.trickT >= 4) { e.trickT = 0; e.flying = !e.flying; e.magical = !e.flying; fx(S, { k: 'ring', x: e.x, y: e.y, r: 40, c: e.magical ? '#c08bff' : '#9fd0ff', life: 0.4 }); }
+    if (tr === 'phase' && e.trickT >= 4) { e.trickT = 0; e.flying = !e.flying; e.magical = !e.flying; fx1(S, 'ring', e.x, e.y, 40, e.magical ? '#c08bff' : '#9fd0ff', 0.4); }
     if (tr === 'mother') {
       const f = e.hp / e.hpMax;
       if (f > 0.66) { if (e.trickT >= 7) { e.trickT = 0; e.sprintT = 1.2; } e.flying = false; e.magical = false; }
@@ -2464,7 +2473,7 @@
       if (o === src || !o.alive || o.hp >= o.hpMax || dist2(o, src) > R2) continue;
       o.hp = Math.min(o.hpMax, o.hp + o.hpMax * p * (o.boss ? 0.25 : 1)); o.healed = 0.5; any = true;
     }
-    fx(S, { k: 'heal', x: src.x, y: src.y, r: R, life: 0.7 });
+    fx1(S, 'heal', src.x, src.y, R, undefined, 0.7);
     if (any) snd(S, 'heal');
   }
   function aegisAura(run, src, R, p) {
@@ -2489,7 +2498,7 @@
       const P = run.route[e.path] || run.route[0];
       const c = def.burrow.cycle, u = def.burrow.under;
       const under = e.d > 110 && e.d < P.len - 90 && ((e.d + e.seed * 0.4) % c) > c - u;
-      if (under !== (e.burrowT > 0)) { fx(S, { k: 'dust', x: e.x, y: e.y, r: e.r + 10, seed: e.id, life: 0.55 }); if (under) snd(S, 'burrow'); }
+      if (under !== (e.burrowT > 0)) { fx1(S, 'dust', e.x, e.y, e.r + 10, undefined, 0.55, undefined, e.id); if (under) snd(S, 'burrow'); }
       e.burrowT = under ? 1 : 0;
     }
   }
@@ -2504,7 +2513,7 @@
   function tkTrick(S, run, e, dt) {
     const t = applyStage(e);
     const aura = (e.bossDef.look && e.bossDef.look.aura) || e.color;
-    if (t.burrow && tick(e, 'burrow', t.burrow.every, dt)) { e.burrowT = t.burrow.dur; fx(S, { k: 'puff', x: e.x, y: e.y, r: 30, c: e.dark, life: 0.5 }); }
+    if (t.burrow && tick(e, 'burrow', t.burrow.every, dt)) { e.burrowT = t.burrow.dur; fx1(S, 'puff', e.x, e.y, 30, e.dark, 0.5); }
     if (t.sprint && tick(e, 'sprint', t.sprint.every, dt)) { e.sprintT = t.sprint.dur; e.sprintMul = t.sprint.mul; }
     if (t.windrider && run.gustOn) { e.sprintT = Math.max(e.sprintT, 0.1); e.sprintMul = 2; }
     if (t.regen) {
@@ -2515,28 +2524,28 @@
     let cut = 0;
     if (t.armor && e.hp > e.hpMax * t.armor.until) cut = t.armor.cut;
     if (t.shell) {
-      if (tick(e, 'shell', t.shell.every, dt)) { e.shellT = t.shell.dur; fx(S, { k: 'ring', x: e.x, y: e.y, r: 36, c: '#d8d0c0', life: 0.4 }); }
+      if (tick(e, 'shell', t.shell.every, dt)) { e.shellT = t.shell.dur; fx1(S, 'ring', e.x, e.y, 36, '#d8d0c0', 0.4); }
       if (e.shellT > 0) { e.shellT -= dt; cut = Math.max(cut, t.shell.cut); }
     } else e.shellT = 0;
     e.cut = cut;
     e.plate = t.plate ? t.plate * e.plateBase : 0;
     if (t.cloak) {
-      if (tick(e, 'cloak', t.cloak.every, dt)) { e.cloakT = t.cloak.dur; fx(S, { k: 'puff', x: e.x, y: e.y, r: 30, c: '#8a8aa8', life: 0.45 }); }
+      if (tick(e, 'cloak', t.cloak.every, dt)) { e.cloakT = t.cloak.dur; fx1(S, 'puff', e.x, e.y, 30, '#8a8aa8', 0.45); }
       if (e.cloakT > 0) e.cloakT -= dt;
       e.stealth = e.cloakT > 0;
     } else e.stealth = false;
     if (t.heal && tick(e, 'heal', t.heal.every, dt)) healPulse(S, run, e, t.heal.r, t.heal.pct);
     if (t.aegis) aegisAura(run, e, t.aegis.r, t.aegis.pct);
-    if (t.bubble && tick(e, 'bubble', t.bubble.every, dt)) { e.ownSh = true; e.sh = e.shMax = e.hpMax * t.bubble.pct; fx(S, { k: 'ring', x: e.x, y: e.y, r: e.r + 14, c: '#9fd0ff', life: 0.4 }); snd(S, 'shield'); }
+    if (t.bubble && tick(e, 'bubble', t.bubble.every, dt)) { e.ownSh = true; e.sh = e.shMax = e.hpMax * t.bubble.pct; fx1(S, 'ring', e.x, e.y, e.r + 14, '#9fd0ff', 0.4); snd(S, 'shield'); }
     if (t.summon && tick(e, 'summon', t.summon.every, dt)) {
       const sd = ENEMIES[t.summon.type];
       for (let i = 0; i < t.summon.n; i++) {
         const m2 = spawnEnemy(S, run, t.summon.type, Math.max(SPAWN_GUARD + 1, e.d - 14 - i * 8), { path: e.path });
         m2.hpMax = m2.hp = runHp(run) * sd.hp * 1.2;
       }
-      fx(S, { k: 'ring', x: e.x, y: e.y, r: 50, c: aura, life: 0.45 });
+      fx1(S, 'ring', e.x, e.y, 50, aura, 0.45);
     }
-    if (t.phase && tick(e, 'phase', t.phase.every, dt)) { e.flying = !e.flying; e.magical = !e.flying; fx(S, { k: 'ring', x: e.x, y: e.y, r: 40, c: e.magical ? '#c08bff' : '#9fd0ff', life: 0.4 }); }
+    if (t.phase && tick(e, 'phase', t.phase.every, dt)) { e.flying = !e.flying; e.magical = !e.flying; fx1(S, 'ring', e.x, e.y, 40, e.magical ? '#c08bff' : '#9fd0ff', 0.4); }
     if (t.haste) {
       const R2 = t.haste.r * t.haste.r;
       for (const o of run.enemies) if (o !== e && o.alive && !o.boss && dist2(o, e) < R2) { o.hasteT = 0.3; o.hasteMul = t.haste.mul; }
@@ -2544,10 +2553,10 @@
     if (t.blink && tick(e, 'blink', t.blink.every, dt)) {
       const P = run.route[e.path] || run.route[0];
       if (e.d < P.len - 60) {
-        fx(S, { k: 'puff', x: e.x, y: e.y, r: 26, c: aura, life: 0.4 });
+        fx1(S, 'puff', e.x, e.y, 26, aura, 0.4);
         e.d = Math.min(P.len - 60, e.d + t.blink.dist);
         placeOnRoute(run, e);
-        fx(S, { k: 'ring', x: e.x, y: e.y, r: 34, c: aura, life: 0.4 });
+        fx1(S, 'ring', e.x, e.y, 34, aura, 0.4);
       }
     }
   }
@@ -2646,7 +2655,7 @@
               if (e.magical) e.dispelT = Math.max(e.dispelT, 4);
               if (canHit(s.ab, e)) hitEnemy(S, run, h, s.ab, e, 6 * P * hm(R));
             }
-            fx(S, { k: 'nova', x, y, r, c: '#e6c8ff', c2: '#7a5cff', life: 0.55 });
+            fx1(S, 'nova', x, y, r, '#e6c8ff', 0.55, undefined, undefined, '#7a5cff');
             h.face = Math.atan2(y - h.y, x - h.x);
             return true;
           } },
@@ -2657,7 +2666,7 @@
             const l = hNear(run, h.x, h.y, r);
             if (!l.length) return false;
             for (const e of l) { e.revealT = Math.max(e.revealT, 5 + R); e.echoAmp = Math.max(e.echoAmp || 0, 0.12 + 0.03 * R); }
-            fx(S, { k: 'sonar', x: h.x, y: h.y, r: Math.min(r, 700), c: '#fff2c8', life: 0.8 });
+            fx1(S, 'sonar', h.x, h.y, Math.min(r, 700), '#fff2c8', 0.8);
             return true;
           } },
         { id: 'prison', name: 'Arcane Prison', cd: 26, icon: 'cage', text: R => 'Freeze DNBs within 150 for ' + (1.5 + 0.25 * R).toFixed(2) + 's (bosses ' + (0.5 + 0.1 * R).toFixed(1) + 's) and deal ' + (2 * hm(R)).toFixed(1) + 'x hit power.',
@@ -2666,7 +2675,7 @@
             const l = hNear(run, h.x, h.y, 150, e => canHit(s.ab, e));
             if (!l.length) return false;
             for (const e of l) { stunE(e, e.boss ? 0.5 + 0.1 * R : 1.5 + 0.25 * R); hitEnemy(S, run, h, s.ab, e, 2 * P * hm(R)); }
-            fx(S, { k: 'ring', x: h.x, y: h.y, r: 150, c: '#b48bff', life: 0.6 });
+            fx1(S, 'ring', h.x, h.y, 150, '#b48bff', 0.6);
             return true;
           } },
       ],
@@ -2686,9 +2695,9 @@
             if (!l.length) return false;
             let tg = null, bv = -1;
             for (const e of l) { const v = e.hp * (e.sh > 0 ? 3 : 1) * (e.plate > 0 || e.starPlate ? 2 : 1) * (e.boss ? 4 : 1); if (v > bv) { bv = v; tg = e; } }
-            for (const e of hNear(run, tg.x, tg.y, 70)) if (e.sh > 0) { e.sh = 0; if (e.ownSh) e.shMax = 0; fx(S, { k: 'shieldpop', x: e.x, y: e.y, r: e.r + 9, life: 0.4 }); snd(S, 'shield'); }
+            for (const e of hNear(run, tg.x, tg.y, 70)) if (e.sh > 0) { e.sh = 0; if (e.ownSh) e.shMax = 0; fx1(S, 'shieldpop', e.x, e.y, e.r + 9, undefined, 0.4); snd(S, 'shield'); }
             hitEnemy(S, run, h, s.abP, tg, 8 * P * hm(R));
-            fx(S, { k: 'stomp', x: tg.x, y: tg.y, r: 70, c: '#ffd27a', life: 0.4 });
+            fx1(S, 'stomp', tg.x, tg.y, 70, '#ffd27a', 0.4);
             h.face = Math.atan2(tg.y - h.y, tg.x - h.x);
             return true;
           } },
@@ -2698,7 +2707,7 @@
             const l = hNear(run, h.x, h.y, 140, e => !(e.burrowT > 0));
             if (!l.length) return false;
             for (const e of l) stunE(e, e.boss ? 0.4 + 0.08 * R : 1.2 + 0.2 * R);
-            fx(S, { k: 'ring', x: h.x, y: h.y, r: 140, c: '#ffb04a', life: 0.5 });
+            fx1(S, 'ring', h.x, h.y, 140, '#ffb04a', 0.5);
             return true;
           } },
         { id: 'quake', name: 'Earthquake', cd: 24, icon: 'quake', text: R => 'Shake the ground within 130 for ' + (4 + 0.5 * R) + 's: ' + (1.2 * hm(R)).toFixed(1) + 'x hit power every half second, 40% slow, and burrowed DNBs are dragged up where any pony can hit them.',
@@ -2708,7 +2717,7 @@
             if (!l.length) return false;
             const life = 4 + 0.5 * R;
             run.zones.push({ x: h.x, y: h.y, r: 130, life, t: 0, tick: 0, mul: 1.2 * hm(R) });
-            fx(S, { k: 'quake', x: h.x, y: h.y, r: 130, life });
+            fx1(S, 'quake', h.x, h.y, 130, undefined, life);
             return true;
           } },
       ],
@@ -2730,7 +2739,7 @@
               hitEnemy(S, run, h, s.ab, e, 3 * P * hm(R) * (e.swarm ? 3 : 1));
               if (e.alive && !e.boss) knockBack(run, e, e.swarm ? 80 : 40);
             }
-            fx(S, { k: 'swirl', x: h.x, y: h.y, r: 160, c: '#bfe8ff', life: 0.6 });
+            fx1(S, 'swirl', h.x, h.y, 160, '#bfe8ff', 0.6);
             return true;
           } },
         { id: 'lightning', name: 'Lightning Strike', cd: 9, icon: 'bolt', text: R => 'Lightning leaps between ' + (4 + R) + ' DNBs for ' + (4 * hm(R)).toFixed(1) + 'x hit power each, double on flyers.',
@@ -2762,7 +2771,7 @@
               else { e.slow = Math.max(e.slow, e.boss ? 0.15 : 0.3); e.slowT = Math.max(e.slowT, 3 + 0.5 * R); }
               if (canHit(s.ab, e)) hitEnemy(S, run, h, s.ab, e, P * hm(R));
             }
-            fx(S, { k: 'wallpulse', x: h.x, y: h.y, r: 220, c: '#d8f4ff', life: 0.6 });
+            fx1(S, 'wallpulse', h.x, h.y, 220, '#d8f4ff', 0.6);
             return true;
           } },
       ],
@@ -2782,7 +2791,7 @@
             if (!tg) return false;
             hitEnemy(S, run, h, s.ab, tg, 10 * P * hm(R));
             if (tg.alive && !tg.boss && tg.hp < tg.hpMax * 0.3) kill(S, run, tg, h);
-            fx(S, { k: 'bite', x: tg.x, y: tg.y, c: '#ff3a5c', life: 0.35 });
+            fx1(S, 'bite', tg.x, tg.y, undefined, '#ff3a5c', 0.35);
             h.face = Math.atan2(tg.y - h.y, tg.x - h.x);
             return true;
           } },
@@ -2791,14 +2800,14 @@
           cast: (S, run, h, s, P, R) => {
             const l = hNear(run, h.x, h.y, s.range * 1.5).sort((a, b) => (b.boss - a.boss) || (b.hp - a.hp)).slice(0, 2 + R);
             if (!l.length) return false;
-            for (const e of l) { e.hexAmp = Math.max(e.hexAmp, 0.25 + 0.03 * R); e.hexT = Math.max(e.hexT, 6); e.revealT = Math.max(e.revealT, 6); fx(S, { k: 'spark', x: e.x, y: e.y - e.r, c: '#ff5c7a', life: 0.5 }); }
+            for (const e of l) { e.hexAmp = Math.max(e.hexAmp, 0.25 + 0.03 * R); e.hexT = Math.max(e.hexT, 6); e.revealT = Math.max(e.revealT, 6); fx1(S, 'spark', e.x, e.y - e.r, undefined, '#ff5c7a', 0.5); }
             return true;
           } },
         { id: 'frenzy', name: 'Blood Frenzy', cd: 22, icon: 'moon', text: R => 'For ' + (5 + 0.5 * R) + 's Duskfang attacks 2.5x as fast with +25% crit chance.',
           want: (S, run, h, s) => { const l = hNear(run, h.x, h.y, s.range, e => canHit(s, e)); return l.length >= 3 || l.some(e => e.boss); },
           cast: (S, run, h, s, P, R) => {
             h.frenzyT = 5 + 0.5 * R;
-            fx(S, { k: 'bloodmoon', x: h.x, y: h.y, r: 60, life: 0.8 });
+            fx1(S, 'bloodmoon', h.x, h.y, 60, undefined, 0.8);
             return true;
           } },
       ],
@@ -3000,7 +3009,7 @@
     }
     for (const e of run.enemies) {
       if (!canRoar(e) || !e.alive || !tick(e, 'roar', HERO_TUNE.roarEvery, dt)) continue;
-      fx(S, { k: 'roar', x: e.x, y: e.y, r: HERO_TUNE.roarR, life: 0.7 });
+      fx1(S, 'roar', e.x, e.y, HERO_TUNE.roarR, undefined, 0.7);
       snd(S, 'roar');
       if (dist2(e, h) <= HERO_TUNE.roarR * HERO_TUNE.roarR && !(h.stunT > 0)) {
         h.stunT = HERO_TUNE.roarStun * (d.stunCut || 1);
@@ -3023,7 +3032,7 @@
     h.anim = 0.22;
     if (d.attack === 'stomp') {
       for (const e of targets) hitEnemy(S, run, h, hs, e, P);
-      fx(S, { k: 'stomp', x: h.x, y: h.y, r: s.range, c: '#e0a86a', life: 0.35 });
+      fx1(S, 'stomp', h.x, h.y, s.range, '#e0a86a', 0.35);
       return;
     }
     const e = d.attack === 'fang' ? hStrong(targets) : pick(targets, 'first', h);
@@ -3036,7 +3045,7 @@
     const s = stats(h), hs = p.fz ? s.fz : s;
     hitEnemy(S, run, h, hs, e, p.dmg);
     if (s.splash > 0) {
-      fx(S, { k: 'ring', x: p.x, y: p.y, r: s.splash, c: p.c, life: 0.3 });
+      fx1(S, 'ring', p.x, p.y, s.splash, p.c, 0.3);
       for (const o of run.enemies) if (o !== e && canHit(s, o) && dist2(o, p) <= s.splash * s.splash) hitEnemy(S, run, h, s, o, p.dmg * 0.5);
     }
   }
@@ -3077,7 +3086,7 @@
   function dropProj(L, i) { const last = L.length - 1; if (i !== last) L[i] = L[last]; L.length = last; }
   function step(S, dt) {
     S.time += dt;
-    { const F = S.fx; let w = 0; for (let i = 0; i < F.length; i++) { const f = F[i]; f.t += dt; if (f.t < f.life) F[w++] = f; } F.length = w; }
+    { const F = S.fx; let w = 0; for (let i = 0; i < F.length; i++) { const f = F[i]; f.t += dt; if (f.t < f.life) F[w++] = f; else if (f.pf && FXF.length < 900) FXF.push(f); } F.length = w; }
     for (const t of S.towers) { if (t.anim > 0) t.anim -= dt; if (t.surgeT > 0) t.surgeT -= dt; }
     heroMove(S, dt);
     if (S.buffsDirty) refreshBuffs(S);

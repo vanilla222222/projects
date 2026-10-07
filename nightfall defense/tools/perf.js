@@ -45,7 +45,7 @@ function measure() {
   }
   times.sort((a, b) => a - b);
   const avg = times.reduce((a, b) => a + b, 0) / times.length;
-  return { towers: S.towers.length, alive0, minAlive, maxAlive, frames: times.length, avg, p50: times[times.length >> 1], p95: times[Math.floor(times.length * 0.95)], max: times[times.length - 1], pool: C.POOL ? { made: C.POOL.made, reused: C.POOL.reused, pMade: C.POOL.pMade, pReused: C.POOL.pReused } : null };
+  return { towers: S.towers.length, alive0, minAlive, maxAlive, frames: times.length, avg, p50: times[times.length >> 1], p95: times[Math.floor(times.length * 0.95)], max: times[times.length - 1], pool: C.POOL ? { made: C.POOL.made, reused: C.POOL.reused, pMade: C.POOL.pMade, pReused: C.POOL.pReused, fMade: C.POOL.fMade, fReused: C.POOL.fReused } : null };
 }
 
 measure();
@@ -53,4 +53,4 @@ const r = measure();
 const f = v => v.toFixed(3);
 console.log('sim ' + MAP + ' ' + N + ' enemies at ' + SPEED + 'x, ' + r.towers + ' towers, alive ' + r.minAlive + '-' + r.maxAlive);
 console.log('ms per frame: avg ' + f(r.avg) + ' p50 ' + f(r.p50) + ' p95 ' + f(r.p95) + ' max ' + f(r.max) + ' (budget 16.7)');
-if (r.pool) console.log('pool: enemies made ' + r.pool.made + ' reused ' + r.pool.reused + ', projectiles made ' + r.pool.pMade + ' reused ' + r.pool.pReused);
+if (r.pool) console.log('pool: enemies made ' + r.pool.made + ' reused ' + r.pool.reused + ', projectiles made ' + r.pool.pMade + ' reused ' + r.pool.pReused + ', particles made ' + r.pool.fMade + ' reused ' + r.pool.fReused);
