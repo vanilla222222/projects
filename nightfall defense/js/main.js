@@ -2495,6 +2495,7 @@
     b.classList.toggle('rfont', !!st.font);
     b.classList.toggle('lowfx', !!st.lowFx);
     document.documentElement.style.setProperty('--uis', String(st.ui || 1));
+    R.cos.cb = !!st.cb; R.cos.lowFx = !!st.lowFx;
     R.bgKey = '';
     resize();
   }

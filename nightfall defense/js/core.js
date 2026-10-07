@@ -1874,6 +1874,7 @@
 
   function startWave(S, n) {
     if (S.run) return false;
+    recycleEnemies();
     const ch = S.chal;
     if (ch) { if (ch.over) return false; n = S.cleared + 1; if (n > ch.to) return false; }
     n = Math.max(1, Math.min(n || S.sel, topWave(S)));
@@ -1921,20 +1922,45 @@
   function fx(S, o) { if (S.fxOn && S.fx.length < 700) { o.t = 0; S.fx.push(o); } }
   function snd(S, k) { if (S.sfx) S.sfx[k] = (S.sfx[k] || 0) + 1; }
 
+  const POOL = { eFree: [], eDead: [], pFree: [], made: 0, reused: 0, pMade: 0, pReused: 0 };
+  function recycleEnemies() {
+    const P = POOL;
+    for (const e of P.eDead) { if (P.eFree.length >= 800) break; for (const k in e) e[k] = undefined; P.eFree.push(e); }
+    P.eDead.length = 0;
+  }
+  function newEnemy(f) {
+    const e = POOL.eFree.pop();
+    if (!e) { POOL.made++; return f; }
+    POOL.reused++;
+    for (const k in f) e[k] = f[k];
+    return e;
+  }
+  function newProj(o) {
+    const p = POOL.pFree.pop();
+    if (!p) { POOL.pMade++; o.g = 0; return o; }
+    POOL.pReused++;
+    const g = (p.g || 0) + 1;
+    for (const k in p) p[k] = undefined;
+    for (const k in o) p[k] = o[k];
+    p.g = g;
+    return p;
+  }
+  function freeProj(p) { if (POOL.pFree.length < 600) POOL.pFree.push(p); }
+
   function runHp(run) { return hpFor(run.n, run.map) * (run.hpMul || 1); }
   function spawnEnemy(S, run, type, d, opts) {
     const n = run.n;
     const def = ENEMIES[type];
     const base = runHp(run);
     const hpMax = base * def.hp;
-    const e = {
+    const e = newEnemy({
       id: run.eid++, type, path: 0, d: d === undefined ? 0 : d, off: 0, x: 0, y: 0, tx: 1, ty: 0,
       hpMax, hp: hpMax, speed: def.speed, r: def.r, flying: !!def.flying, magical: !!def.magical,
       boss: type === 'boss', cash: def.cash, color: def.color, dark: def.dark, alive: true,
       slow: 0, slowT: 0, stunT: 0, hexAmp: 0, hexT: 0, doom: false, dispelT: 0, burrowT: 0, trickT: 0, sprintT: 0,
       quag: false, wallSlow: 0, revealT: 0, echoAmp: 0, stealth: !!def.stealth, hit: 0, leak: 1, phase: 0, seed: (run.eid * 977) % 1000, dn: 0, dnT: 0, dnCrit: false,
       dnDim: false, sh: 0, shMax: 0, shT: 0, ownSh: false, plateBase: base, plate: 0, swarm: !!def.swarm, timers: {}, seen: true,
-    };
+    });
     e.plate = def.plate ? def.plate * e.plateBase : 0;
     if (def.heal) e.timers.heal = def.heal.every * e.seed / 1000;
     if (e.boss) {
@@ -2221,7 +2247,7 @@
       }
     }
     for (const e of list) {
-      run.proj.push({ x: t.x, y: t.y - 10, e, t, dmg, sp: PROJ_SPEED[t.race] || 820, kind: t.race, life: 3, a: 0, crit: blood });
+      run.proj.push(newProj({ x: t.x, y: t.y - 10, e, t, dmg, sp: PROJ_SPEED[t.race] || 820, kind: t.race, life: 3, a: 0, crit: blood }));
     }
     if (list.length && t.race === 'bat') snd(S, 'chirp');
     else if (list.length && t.race === 'crystal') snd(S, 'chime');
@@ -2333,7 +2359,7 @@
       for (let i = 0; i < 8; i++) {
         const e = targets[i % targets.length];
         const a = i / 8 * Math.PI * 2;
-        run.proj.push({ x: t.x + Math.cos(a) * 16, y: t.y - 10 + Math.sin(a) * 12, e, t, dmg: dmg * 3, sp: 520, kind: 'swarm', life: 3, a });
+        run.proj.push(newProj({ x: t.x + Math.cos(a) * 16, y: t.y - 10 + Math.sin(a) * 12, e, t, dmg: dmg * 3, sp: 520, kind: 'swarm', life: 3, a }));
       }
       fx(S, { k: 'ring', x: t.x, y: t.y, r: 34, c: '#c9b8ff', life: 0.4 }); snd(S, 'swarm');
     }
@@ -2458,7 +2484,7 @@
   function mobTrick(S, run, e, dt) {
     const def = ENEMIES[e.type];
     if (def.heal && tick(e, 'heal', def.heal.every, dt)) healPulse(S, run, e, def.heal.r, def.heal.pct);
-    if (def.aegis) aegisAura(run, e, def.aegis.r, def.aegis.pct);
+    if (def.aegis && tick(e, 'aegis', 0.1, dt)) aegisAura(run, e, def.aegis.r, def.aegis.pct);
     if (def.burrow) {
       const P = run.route[e.path] || run.route[0];
       const c = def.burrow.cycle, u = def.burrow.under;
@@ -3002,7 +3028,7 @@
     }
     const e = d.attack === 'fang' ? hStrong(targets) : pick(targets, 'first', h);
     h.face = Math.atan2(e.y - h.y, e.x - h.x);
-    run.proj.push({ x: h.x, y: h.y - 22, e, t: h, dmg: P, sp: d.proj.sp, kind: 'hero', c: d.proj.c, hk: h.id, life: 3, a: 0, fz });
+    run.proj.push(newProj({ x: h.x, y: h.y - 22, e, t: h, dmg: P, sp: d.proj.sp, kind: 'hero', c: d.proj.c, hk: h.id, life: 3, a: 0, fz }));
   }
   function heroProjHit(S, run, p) {
     const h = p.t, e = p.e;
@@ -3048,9 +3074,10 @@
     return out;
   }
 
+  function dropProj(L, i) { const last = L.length - 1; if (i !== last) L[i] = L[last]; L.length = last; }
   function step(S, dt) {
     S.time += dt;
-    for (let i = S.fx.length - 1; i >= 0; i--) { const f = S.fx[i]; f.t += dt; if (f.t >= f.life) S.fx.splice(i, 1); }
+    { const F = S.fx; let w = 0; for (let i = 0; i < F.length; i++) { const f = F[i]; f.t += dt; if (f.t < f.life) F[w++] = f; } F.length = w; }
     for (const t of S.towers) { if (t.anim > 0) t.anim -= dt; if (t.surgeT > 0) t.surgeT -= dt; }
     heroMove(S, dt);
     if (S.buffsDirty) refreshBuffs(S);
@@ -3096,13 +3123,13 @@
       const p = run.proj[i];
       p.life -= dt;
       const e = p.e;
-      if (!e.alive || p.life <= 0 || (e.burrowT > 0 && !stats(p.t).seesBurrow && !(e.unearthT > 0))) { run.proj.splice(i, 1); continue; }
+      if (!e.alive || p.life <= 0 || (e.burrowT > 0 && !stats(p.t).seesBurrow && !(e.unearthT > 0))) { dropProj(run.proj, i); freeProj(p); continue; }
       const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy), mv = p.sp * dt;
-      if (d <= mv + e.r * 0.5) { p.x = e.x; p.y = e.y; run.proj.splice(i, 1); projHit(S, run, p); }
+      if (d <= mv + e.r * 0.5) { p.x = e.x; p.y = e.y; dropProj(run.proj, i); projHit(S, run, p); freeProj(p); }
       else { p.x += dx / d * mv; p.y += dy / d * mv; p.a = Math.atan2(dy, dx); }
     }
 
-    run.enemies = run.enemies.filter(e => e.alive);
+    { const E = run.enemies; let w = 0; for (let i = 0; i < E.length; i++) { const e = E[i]; if (e.alive) E[w++] = e; else if (POOL.eDead.length < 800) POOL.eDead.push(e); } E.length = w; }
 
     if (run.lives <= 0) {
       run.over = 'lost';
@@ -4140,7 +4167,7 @@
 
   const API = {
     WORLD, MAX_WAVE, LIVES, SAVE_VER, TUNE, RACES, RACE_IDS, PATHS, ENEMIES, BOSSES, BOSS_BY_ID, MAPS, MAP_IDS, WAVEGEN,
-    DEFAULT_SETTINGS, NUM_FORMATS, SPEEDS,
+    DEFAULT_SETTINGS, NUM_FORMATS, SPEEDS, POOL,
     hpFor, killCash, clearBonus, waveSpec, bossFor, themeFor, towerCost, nodeCost, infCost, getMap, mapOf, routePos, nearestOnMap, faceRoad,
     newState, owned, nextTowerCost, canPlace, placeTower, sellTower, sellValue, chosenPaths, pathState, nextNodeCost, buyNode, infNext, buyInf,
     upgradeOptions, buyMaxAffordable, maxAffordablePreview, nodeInfo, topWave, bossStatus,
