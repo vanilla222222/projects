@@ -2,7 +2,7 @@
 const path = require('path');
 const { execSync } = require('child_process');
 const { chromium } = require(path.join(execSync('npm root -g').toString().trim(), 'playwright'));
-const BASE = process.env.BASE || 'http://localhost:8804/';
+const BASE = process.env.BASE || 'http://localhost:8810/';
 const SHOTS = process.env.SHOTS || '';
 const GAME = BASE + 'nightfall%20defense/index.html';
 
@@ -330,7 +330,7 @@ async function fastForward(page, maxSeconds) {
     await page.waitForTimeout(400);
     const s2 = await page.evaluate(() => ({ s: __nd.S.settings, ver: JSON.parse(localStorage.getItem('nightfall-defense-save-v1')).ver, radio: document.querySelector('input[name="numFmt"][value="sci"]').checked }));
     ok(!s2.s.shake && !s2.s.dmgNums && s2.s.numFmt === 'sci' && !s2.s.sound && s2.radio, 'settings survived reload ' + JSON.stringify(s2));
-    ok(s2.ver === 9, 'save has ver 9, got ' + s2.ver);
+    ok(s2.ver === 10, 'save has ver 10, got ' + s2.ver);
     await page.click('#setBtn');
     await page.click('#setReset');
     await page.keyboard.press('Escape');
@@ -356,7 +356,7 @@ async function fastForward(page, maxSeconds) {
     ok(m.cash === 777 && m.cleared === 12 && m.n === 2 && m.p === '2,0,0,1,0' && m.mode === 'strong' && m.dmg === 0 && m.map === 'moonlit' && m.set === 1, 'migrated ' + JSON.stringify(m));
     await page.evaluate(() => __nd.save());
     const ver = await page.evaluate(() => { const o = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return o.ver + ':' + ('v' in o); });
-    ok(ver === '9:false', 'resaved as ver 9, got ' + ver);
+    ok(ver === '10:false', 'resaved as ver 10, got ' + ver);
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
@@ -377,7 +377,7 @@ async function fastForward(page, maxSeconds) {
     ok(m.woods && !m.caverns, 'wave 57 on map 1 unlocks map 2 only');
     await page.evaluate(() => __nd.save());
     const o = await page.evaluate(() => JSON.parse(localStorage.getItem('nightfall-defense-save-v1')));
-    ok(o.ver === 9 && o.codex && o.boards && o.boards.moonlit && o.boards.moonlit.cleared === 57 && o.boards.moonlit.towers.length === 1 && !('towers' in o), 'ver 9 layout ' + JSON.stringify(Object.keys(o)));
+    ok(o.ver === 10 && o.codex && o.boards && o.boards.moonlit && o.boards.moonlit.cleared === 57 && o.boards.moonlit.towers.length === 1 && !('towers' in o), 'ver 10 layout ' + JSON.stringify(Object.keys(o)));
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
@@ -601,7 +601,7 @@ async function fastForward(page, maxSeconds) {
       await page.keyboard.press('Escape');
       await page.waitForTimeout(150);
       ok(await page.evaluate(() => document.getElementById('codexModal').hidden), 'escape closes the codex');
-      ok(saved.ver === 9 && saved.healer, 'codex persists in the save ' + JSON.stringify(saved));
+      ok(saved.ver === 10 && saved.healer, 'codex persists in the save ' + JSON.stringify(saved));
       ok(!errors.length, 'console errors: ' + errors.join(' | '));
       await page.close();
     });
@@ -684,7 +684,7 @@ async function fastForward(page, maxSeconds) {
     await page.evaluate(() => __nd.closeMaps());
     await page.evaluate(() => __nd.save());
     const saved = await page.evaluate(() => { const o = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return { ver: o.ver, star: o.stars.moonlit, moon: o.moon, preset: (o.presets.moonlit || []).length }; });
-    ok(saved.ver === 9 && saved.star === 1 && saved.moon === 20 && saved.preset === 2, 'stars, Moonstones and preset saved ' + JSON.stringify(saved));
+    ok(saved.ver === 10 && saved.star === 1 && saved.moon === 20 && saved.preset === 2, 'stars, Moonstones and preset saved ' + JSON.stringify(saved));
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
@@ -756,7 +756,7 @@ async function fastForward(page, maxSeconds) {
     await page.close();
   });
 
-  await test('v5 save migrates to v9 with no stars, no Moonstones and empty research', async () => {
+  await test('v5 save migrates to v10 with no stars, no Moonstones and empty research', async () => {
     const C = require(path.join(__dirname, '..', 'js', 'core.js'));
     const o = JSON.parse(C.serialize(C.newState()));
     o.ver = 5;
@@ -772,7 +772,7 @@ async function fastForward(page, maxSeconds) {
     ok(m.cleared === 64 && m.cash === 31337 && m.stars === '{}' && m.moon === 0 && m.research === '{}' && m.hMoon === '0' && m.hStars === '0' && m.btn && m.lives === '10/10', 'v5 migrated ' + JSON.stringify(m));
     await page.evaluate(() => __nd.save());
     const s = await page.evaluate(() => { const x = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return { ver: x.ver, stars: typeof x.stars, research: typeof x.research, moon: x.moon }; });
-    ok(s.ver === 9 && s.stars === 'object' && s.research === 'object' && s.moon === 0, 'resaved as v9 ' + JSON.stringify(s));
+    ok(s.ver === 10 && s.stars === 'object' && s.research === 'object' && s.moon === 0, 'resaved as v10 ' + JSON.stringify(s));
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
@@ -870,7 +870,7 @@ async function fastForward(page, maxSeconds) {
     ok(lvBefore > 5 && st.star === 1 && st.id === 'nova' && st.lv === 1 && st.iron && st.dusk && /Level 1 /.test(st.card), 'star up resets hero level, keeps choice and unlocks ' + JSON.stringify({ lvBefore, st }));
     await page.evaluate(() => __nd.save());
     const sv = await page.evaluate(() => { const o = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return { ver: o.ver, hero: o.boards.moonlit.hero && o.boards.moonlit.hero.id, un: o.heroUnlocks }; });
-    ok(sv.ver === 9 && sv.hero === 'nova' && sv.un.ironmane && sv.un.duskfang, 'hero saved ' + JSON.stringify(sv));
+    ok(sv.ver === 10 && sv.hero === 'nova' && sv.un.ironmane && sv.un.duskfang, 'hero saved ' + JSON.stringify(sv));
     await page.reload();
     await page.waitForTimeout(500);
     const rl = await page.evaluate(() => ({ id: __nd.S.hero && __nd.S.hero.id, card: document.getElementById('heroCard').textContent }));
@@ -931,7 +931,7 @@ async function fastForward(page, maxSeconds) {
     await page.close();
   });
 
-  await test('v6 save migrates to v9 with no hero and only the free hero unlocked', async () => {
+  await test('v6 save migrates to v10 with no hero and only the free hero unlocked', async () => {
     const C = require(path.join(__dirname, '..', 'js', 'core.js'));
     const o = JSON.parse(C.serialize(C.newState()));
     o.ver = 6;
@@ -945,7 +945,7 @@ async function fastForward(page, maxSeconds) {
     await page.goto(GAME);
     await page.waitForTimeout(500);
     const m = await page.evaluate(() => { const S = __nd.S; __nd.save(); const x = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return { cleared: S.cleared, moon: S.moon, hero: S.hero, un: JSON.stringify(S.heroUnlocks), ver: x.ver, prompt: !!document.querySelector('#heroCard [data-heroes]') }; });
-    ok(m.cleared === 33 && m.moon === 7 && !m.hero && m.un === '{"nova":1,"ironmane":1}' && m.ver === 9 && m.prompt, 'v6 migrated ' + JSON.stringify(m));
+    ok(m.cleared === 33 && m.moon === 7 && !m.hero && m.un === '{"nova":1,"ironmane":1}' && m.ver === 10 && m.prompt, 'v6 migrated ' + JSON.stringify(m));
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
@@ -1175,12 +1175,12 @@ async function fastForward(page, maxSeconds) {
     ok(wb.closed && wb.sw <= 390 && !wb.bad, 'wave card controls fit 390px ' + JSON.stringify(wb));
     await page.evaluate(() => __nd.save());
     const sv = await page.evaluate(() => { const o = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return { ver: o.ver, slots: (o.slots.moonlit || []).filter(Boolean).length, seen: o.lastSeen > 0, rules: typeof o.rules }; });
-    ok(sv.ver === 9 && sv.slots === 1 && sv.seen && sv.rules === 'object', 'v9 save holds slots, rules and the last visit ' + JSON.stringify(sv));
+    ok(sv.ver === 10 && sv.slots === 1 && sv.seen && sv.rules === 'object', 'v10 save holds slots, rules and the last visit ' + JSON.stringify(sv));
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
 
-  await test('v7 save migrates to v9 with idle defaults', async () => {
+  await test('v7 save migrates to v10 with idle defaults', async () => {
     const C = require(path.join(__dirname, '..', 'js', 'core.js'));
     const o = JSON.parse(C.serialize(C.newState()));
     o.ver = 7;
@@ -1194,7 +1194,7 @@ async function fastForward(page, maxSeconds) {
     await page.goto(GAME);
     await page.waitForTimeout(500);
     const m = await page.evaluate(() => { const S = __nd.S; __nd.save(); const x = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return { cleared: S.cleared, farm: !!S.farm && !S.farm.on, rules: !S.rules.on, slots: NDCore.slotsOf(S).length, ver: x.ver, seen: x.lastSeen > 0, modal: document.getElementById('awayModal').hidden }; });
-    ok(m.cleared === 12 && m.farm && m.rules && m.slots === 0 && m.ver === 9 && m.seen && m.modal, 'v7 migrated ' + JSON.stringify(m));
+    ok(m.cleared === 12 && m.farm && m.rules && m.slots === 0 && m.ver === 10 && m.seen && m.modal, 'v7 migrated ' + JSON.stringify(m));
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
@@ -1270,7 +1270,7 @@ async function fastForward(page, maxSeconds) {
     await page.keyboard.press('Escape');
     await page.evaluate(() => __nd.save());
     const sv = await page.evaluate(() => { const o = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); const b = o.boards[o.map]; return { ver: o.ver, chal: 'chal' in o, cleared: b.cleared, towers: b.towers.length, won: o.daily.won, streak: o.daily.streak, moon: o.moon, ach: !!o.ach.ch_d1 }; });
-    ok(sv.ver === 9 && !sv.chal && sv.cleared === 14 && sv.towers === 2 && sv.won === 1 && sv.streak === 1 && sv.moon === moon0 + 15 && sv.ach, 'save holds the main board and the daily ' + JSON.stringify(sv));
+    ok(sv.ver === 10 && !sv.chal && sv.cleared === 14 && sv.towers === 2 && sv.won === 1 && sv.streak === 1 && sv.moon === moon0 + 15 && sv.ach, 'save holds the main board and the daily ' + JSON.stringify(sv));
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
@@ -1411,7 +1411,7 @@ async function fastForward(page, maxSeconds) {
     await page.close();
   });
 
-  await test('v8 save migrates to v9 with achievements unlocked from past progress', async () => {
+  await test('v8 save migrates to v10 with achievements unlocked from past progress', async () => {
     const C = require(path.join(__dirname, '..', 'js', 'core.js'));
     const o = JSON.parse(C.serialize(C.newState()));
     o.ver = 8;
@@ -1429,9 +1429,138 @@ async function fastForward(page, maxSeconds) {
     await page.waitForTimeout(500);
     const m = await page.evaluate(() => { const S = __nd.S; __nd.save(); const x = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return { ver: x.ver, cleared: S.cleared, moon: S.moon, ach: Object.keys(S.ach).sort().join(), bonus: S.bonus, banner: document.getElementById('banner').textContent, pulse: document.getElementById('achBtn').classList.contains('pulse'), toast: /show/.test(document.getElementById('achToast').className), state: document.getElementById('achState').textContent, daily: x.daily && x.daily.wins, st: S.stats.starUps, moonEarned: S.stats.moonEarned }; });
     const want = ['p_w1', 'p_w10', 'p_w25', 'p_w50', 'c_k1', 'c_b1', 'h_iron', 's_1'];
-    ok(m.ver === 9 && m.cleared === 60 && m.moon === 5 && want.every(id => m.ach.split(',').indexOf(id) >= 0) && m.daily === 0, 'v8 migrated with retro unlocks ' + JSON.stringify(m));
+    ok(m.ver === 10 && m.cleared === 60 && m.moon === 5 && want.every(id => m.ach.split(',').indexOf(id) >= 0) && m.daily === 0, 'v8 migrated with retro unlocks ' + JSON.stringify(m));
     ok(/achievements? unlocked from your past progress/.test(m.banner) && m.pulse && !m.toast && +m.state >= want.length, 'retro unlocks announced quietly ' + JSON.stringify(m));
     ok(m.bonus.dmg > 0 && m.st === 1 && m.moonEarned === 25, 'bonus and stats rebuilt ' + JSON.stringify(m));
+    ok(!errors.length, 'console errors: ' + errors.join(' | '));
+    await page.close();
+  });
+
+  for (const vp of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
+    await test('slice 9 at ' + vp.width + 'px: pony and hero codex, wardrobe skins, fx themes, decor, names and titles', async () => {
+      const { page, errors } = await openGame(browser, vp);
+      await page.evaluate(() => { localStorage.clear(); __nd.S.cash = 50000; });
+      const fit = () => page.evaluate(() => {
+        const vw = window.innerWidth, out = { scroll: document.documentElement.scrollWidth <= vw, bad: [] };
+        for (const m of document.querySelectorAll('.modal:not([hidden]) .dialog')) { const r = m.getBoundingClientRect(); if (r.left < -1 || r.right > vw + 1) out.bad.push(m.parentElement.id + ' ' + Math.round(r.left) + '-' + Math.round(r.right)); }
+        return out;
+      });
+      await page.evaluate(() => __nd.openCodex('p'));
+      await page.waitForTimeout(200);
+      const p0 = await page.evaluate(() => ({ cells: document.querySelectorAll('#codexGrid .cx').length, locked: document.querySelectorAll('#codexGrid .cx.locked').length, earth: !!document.querySelector('#codexGrid .cx[data-cx="p:earth"]') }));
+      ok(p0.cells === 5 && p0.earth && p0.locked === 5, 'ponies tab lists five silhouettes on a fresh save ' + JSON.stringify(p0));
+      await page.evaluate(() => __nd.closeCodex());
+      const tid = await page.evaluate(() => { const t = NDCore.placeTower(__nd.S, 'earth', 600, 330); return t && t.id; });
+      ok(tid, 'pony placed');
+      await page.waitForTimeout(200);
+      await page.evaluate(() => __nd.openCodex('p', 'earth'));
+      await page.waitForTimeout(250);
+      const p1 = await page.evaluate(() => ({ seen: !!__nd.S.codex.p.earth, locked: document.querySelectorAll('#codexGrid .cx.locked').length, lore: (document.querySelector('#codexDetail .cdlore') || {}).textContent || '', kills: !!document.querySelector('#codexDetail .cdkills'), paths: document.querySelectorAll('#codexDetail .cdpath').length, ward: !!document.querySelector('#codexDetail [data-wardrobe]') }));
+      ok(p1.seen && p1.locked === 4 && p1.lore.length > 20 && p1.kills && p1.paths >= 3 && p1.ward, 'placing a pony unlocks its codex page ' + JSON.stringify(p1));
+      await page.click('#codexTabs [data-tab="h"]');
+      await page.waitForTimeout(200);
+      const h = await page.evaluate(() => ({ cells: document.querySelectorAll('#codexGrid .cx').length, count: document.getElementById('codexCount').textContent }));
+      ok(h.cells === 4 && /heroes/.test(h.count) && /ponies/.test(h.count), 'heroes tab lists four entries ' + JSON.stringify(h));
+      const f0 = await fit();
+      ok(f0.scroll && !f0.bad.length, 'codex fits ' + JSON.stringify(f0));
+      await shot(page, 'codex-heroes-' + vp.width);
+      await page.click('#codexTabs [data-tab="p"]');
+      await page.waitForTimeout(150);
+      await page.click('#codexGrid .cx[data-cx="p:earth"]');
+      await page.waitForTimeout(150);
+      await page.click('#codexDetail [data-wardrobe]');
+      await page.waitForTimeout(250);
+      const w0 = await page.evaluate(() => ({ codex: !document.getElementById('codexModal').hidden, open: !document.getElementById('wardrobeModal').hidden, race: __nd.wardUi.race, items: document.querySelectorAll('#wardBody .witem').length, prev: !!document.getElementById('wardPreview') }));
+      ok(!w0.codex && w0.open && w0.race === 'earth' && w0.items >= 20 && w0.prev, 'codex opens the wardrobe on the right race ' + JSON.stringify(w0));
+      await page.click('#wardBody .witem[data-wslot="mane"][data-wid="mane_lilac"]');
+      await page.click('#wardBody .witem[data-wslot="acc"][data-wid="acc_scarf"]');
+      await page.waitForTimeout(150);
+      const w1 = await page.evaluate(() => ({ mane: (NDRender.cos.looks.earth.mane || {}).id, acc: (NDRender.cos.looks.earth.acc || {}).id, other: Object.keys(NDRender.cos.looks.unicorn || {}).length, on: document.querySelectorAll('#wardBody .witem.on[data-wid="mane_lilac"]').length, saved: JSON.parse(localStorage.getItem('nightfall-defense-save-v1')).ver }));
+      ok(w1.mane === 'mane_lilac' && w1.acc === 'acc_scarf' && w1.other === 0 && w1.on === 1 && w1.saved === 10, 'free skins equip per race ' + JSON.stringify(w1));
+      const lockedBuy = await page.evaluate(() => { const b = document.querySelector('#wardBody [data-wbuy="coat_pearl"]'); return b ? b.disabled : null; });
+      ok(lockedBuy === true, 'moon item cannot be bought without Moonstones ' + lockedBuy);
+      await page.evaluate(() => __nd.grantMoon(20));
+      await page.waitForTimeout(200);
+      await page.click('#wardBody [data-wbuy="coat_pearl"]');
+      await page.waitForTimeout(150);
+      const w2 = await page.evaluate(() => ({ moon: __nd.S.moon, bought: !!NDCore.cosOf(__nd.S).bought.coat_pearl, coat: (NDRender.cos.looks.earth.coat || {}).id, label: document.getElementById('wardMoon').textContent }));
+      ok(w2.moon === 14 && w2.bought && w2.coat === 'coat_pearl' && /14/.test(w2.label), 'moon purchase equips the coat ' + JSON.stringify(w2));
+      const f1 = await fit();
+      ok(f1.scroll && !f1.bad.length, 'wardrobe fits ' + JSON.stringify(f1));
+      await shot(page, 'wardrobe-' + vp.width);
+      await page.click('#wardTabs [data-wtab="fx"]');
+      await page.waitForTimeout(150);
+      const fxCards = await page.evaluate(() => document.querySelectorAll('#wardBody .wfxc').length);
+      ok(fxCards === 6, 'six fx themes listed ' + fxCards);
+      await page.click('#wardBody [data-wbuy="fx_candy"]');
+      await page.waitForTimeout(150);
+      await page.selectOption('#wardBody select[data-wfxrace="pegasus"]', 'classic');
+      await page.waitForTimeout(150);
+      const fx = await page.evaluate(() => ({ g: NDCore.cosOf(__nd.S).fx, earth: NDRender.cos.fx.earth, peg: NDRender.cos.fx.pegasus, moon: __nd.S.moon }));
+      ok(fx.g === 'candy' && fx.earth === 'candy' && fx.peg === 'classic' && fx.moon === 6, 'global theme with a per-race override ' + JSON.stringify(fx));
+      await shot(page, 'wardrobe-fx-' + vp.width);
+      await page.evaluate(() => { __nd.S.ach.p_w50 = 1; });
+      await page.click('#wardTabs [data-wtab="decor"]');
+      await page.waitForTimeout(200);
+      const maps = await page.evaluate(() => ({ rows: document.querySelectorAll('#wardBody .wmap').length, sel: document.querySelectorAll('#wardBody select[data-wdecor]').length }));
+      ok(maps.rows >= 5 && maps.sel >= 1, 'decor tab lists maps ' + JSON.stringify(maps));
+      await page.selectOption('#wardBody select[data-wdecor="moonlit"]', 'winter');
+      await page.waitForTimeout(200);
+      const d = await page.evaluate(() => ({ pick: NDCore.cosOf(__nd.S).decor.moonlit, season: NDRender.cos.season, now: NDCore.decorOf(__nd.S, 'moonlit') }));
+      ok(d.pick === 'winter' && d.season === 'winter' && d.now === 'winter', 'decor override applies to the board ' + JSON.stringify(d));
+      const f2 = await fit();
+      ok(f2.scroll && !f2.bad.length, 'decor tab fits ' + JSON.stringify(f2));
+      await shot(page, 'wardrobe-decor-' + vp.width);
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(150);
+      ok(await page.evaluate(() => document.getElementById('wardrobeModal').hidden), 'Esc closes the wardrobe');
+      await page.evaluate(id => { __nd.ui.selId = id; __nd.ui.infoKey = ''; }, tid);
+      await page.waitForTimeout(300);
+      ok(await page.locator('#ponyName').count() === 1, 'name field in the inspect panel');
+      await page.fill('#ponyName', 'Sir Hoofington');
+      await page.press('#ponyName', 'Enter');
+      await page.waitForTimeout(300);
+      const n1 = await page.evaluate(id => ({ name: __nd.S.towers.find(t => t.id === id).name, head: document.getElementById('info').textContent, saved: JSON.parse(localStorage.getItem('nightfall-defense-save-v1')) }), tid);
+      ok(n1.name === 'Sir Hoofington' && /Sir Hoofington/.test(n1.head), 'rename via the input ' + JSON.stringify({ name: n1.name }));
+      await page.click('#info [data-act="randname"]');
+      await page.waitForTimeout(300);
+      const n2 = await page.evaluate(id => __nd.S.towers.find(t => t.id === id).name, tid);
+      ok(n2 && n2 !== 'Sir Hoofington' && n2.length <= 18, 'random name ' + n2);
+      await page.evaluate(id => { const t = __nd.S.towers.find(x => x.id === id); t.kills = 300; __nd.ui.infoKey = ''; }, tid);
+      await page.waitForTimeout(300);
+      const tt = await page.evaluate(() => ({ badge: (document.querySelector('#info .ptitleb.veteran') || {}).textContent || '', next: (document.querySelector('#info .ititle') || {}).textContent || '' }));
+      ok(/Veteran/i.test(tt.badge) && /Champion/.test(tt.next), 'title badge and next-title progress ' + JSON.stringify(tt));
+      const f3 = await fit();
+      ok(f3.scroll, 'page fits with the inspect panel ' + JSON.stringify(f3));
+      await shot(page, 'inspect-name-' + vp.width);
+      await page.reload();
+      await page.waitForTimeout(500);
+      const back = await page.evaluate(() => ({ name: __nd.S.towers[0] && __nd.S.towers[0].name, mane: (NDRender.cos.looks.earth.mane || {}).id, fx: NDRender.cos.fx.pegasus, season: NDRender.cos.season }));
+      ok(back.name === n2 && back.mane === 'mane_lilac' && back.fx === 'classic' && back.season === 'winter', 'cosmetics and names survive reload ' + JSON.stringify(back));
+      ok(!errors.length, 'console errors: ' + errors.join(' | '));
+      await page.close();
+    });
+  }
+
+  await test('v9 save migrates to v10 with cosmetics defaults and pony codex from the board', async () => {
+    const C = require(path.join(__dirname, '..', 'js', 'core.js'));
+    const S0 = C.newState();
+    S0.cash = 5000;
+    C.placeTower(S0, 'unicorn', 300, 600);
+    const o = JSON.parse(C.serialize(S0));
+    o.ver = 9;
+    delete o.cos;
+    if (o.codex) delete o.codex.p;
+    for (const id in o.boards) for (const t of o.boards[id].towers || []) delete t.name;
+    const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    const errors = [];
+    await page.addInitScript(s => { if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('nightfall-defense-save-v1', s); } }, JSON.stringify(o));
+    watch(page, errors);
+    await page.goto(GAME);
+    await page.waitForTimeout(500);
+    const m = await page.evaluate(() => { const S = __nd.S; __nd.save(); const x = JSON.parse(localStorage.getItem('nightfall-defense-save-v1')); return { ver: x.ver, towers: S.towers.length, fx: NDCore.cosOf(S).fx, names: NDCore.cosOf(S).names, looks: Object.keys(NDRender.cos.looks.unicorn || {}).length, cos: !!x.cos, uni: !!(S.codex && S.codex.p && S.codex.p.unicorn) }; });
+    ok(m.ver === 10 && m.towers === 1 && m.fx === 'classic' && m.names === true && m.looks === 0 && m.cos, 'v9 migrated ' + JSON.stringify(m));
+    ok(m.uni, 'pony codex seeded from placed ponies ' + JSON.stringify(m));
     ok(!errors.length, 'console errors: ' + errors.join(' | '));
     await page.close();
   });
