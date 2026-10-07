@@ -125,6 +125,8 @@ main { padding: 16px; }
 .ingotups { display: grid; gap: 6px; }
 .slot.zinc { border-color: #8fb3c9; }
 .slot.zinc .bar div { background: #8fb3c9; }
+.slot.brass { border-color: #d9b44a; }
+.slot.brass .bar div { background: #d9b44a; }
 .slot.sel { outline: 2px solid var(--accent); }
 .recipepick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
 .recipepick small { opacity: .7; margin-right: 4px; }

@@ -69,18 +69,26 @@
   const BUYS = [1, 5, 10, 100, 'max'];
   const SMELT = { slots: 10, input: 1000, time: 10, speed: 0.8, min: 1 };
   const RECIPES = [
-    { id: 'copper', name: 'Copper', ups: [
+    { id: 'copper', name: 'Copper', in: { copper: 1000 }, ups: [
       { id: 'omult', label: '+2 Copper multiplier', cost: 10, growth: 2 },
       { id: 'base', label: '+1 base Copper Ingot per smelt', cost: 25, growth: 2.5 },
       { id: 'mult', label: '+1 Copper Ingot multiplier', cost: 50, growth: 2.5 },
       { id: 'speed', label: 'Copper Ingots smelt 20% faster', cost: 50, growth: 3, max: 10 },
       { id: 'zinc', label: 'Add Zinc to the mines', cost: 100, growth: 1, max: 1 },
     ] },
-    { id: 'zinc', name: 'Zinc', ups: [
+    { id: 'zinc', name: 'Zinc', in: { zinc: 1000 }, ups: [
       { id: 'omult', label: '+2 Zinc multiplier', cost: 10, growth: 2 },
       { id: 'base', label: '+1 base Zinc Ingot per smelt', cost: 25, growth: 2.5 },
       { id: 'mult', label: '+1 Zinc Ingot multiplier', cost: 50, growth: 2.5 },
       { id: 'speed', label: 'Zinc Ingots smelt 20% faster', cost: 50, growth: 3, max: 10 },
+      { id: 'brass', label: 'Unlock Brass Ingot smelting', pay: { copper: 10, zinc: 10 }, max: 1 },
+    ] },
+    { id: 'brass', name: 'Brass', in: { copper: 1000, zinc: 1000 }, ups: [
+      { id: 'base', label: '+1 base Brass Ingot per smelt', cost: 25, growth: 2.5 },
+      { id: 'mult', label: '+1 Brass Ingot multiplier', cost: 50, growth: 2.5 },
+      { id: 'speed', label: 'Brass Ingots smelt 20% faster', cost: 50, growth: 3, max: 10 },
+      { id: 'rb10', label: '×10 rebirth points', cost: 100, growth: 1, max: 1 },
+      { id: 'soon', label: 'Coming soon', soon: true, max: 1 },
     ] },
   ];
   const RECIPE = Object.fromEntries(RECIPES.map(x => [x.id, x]));
@@ -210,7 +218,8 @@
   const smeltTime = r => Math.max(SMELT.min, SMELT.time * Math.pow(SMELT.speed, S.smelt.up[r].speed));
   const smeltYield = r => (1 + S.smelt.up[r].base) * (1 + S.smelt.up[r].mult);
   const slotCount = () => 1 + (S.ores.zinc.unique > 0 ? 1 : 0);
-  const recOpen = r => r === 'copper' || ZINC_ON;
+  const recOpen = r => r === 'copper' || (r === 'zinc' ? ZINC_ON : S.smelt.up.zinc.brass > 0);
+  const recIn = r => Object.entries(RECIPE[r].in).map(([k, v]) => `${fmt(v)} ${RECIPE[k].name}`).join(' + ');
   const hasAuto = () => S.ores.stone.unique > 0;
   const autoBulk = () => 1 + S.auto.bulk;
   const autoInterval = () => Math.max(AUTO.speed.min, Math.pow(AUTO.speed.factor, S.auto.speed));
@@ -261,12 +270,19 @@
   const mastPlan = oreId => plan(masteryCost, S.ores[oreId].mastery, S.ores[oreId].amt);
   const autoPlan = k => plan(l => autoCostAt(k, l), S.auto[k], S.ores.obsidian.amt, autoCap(k));
   const offPlan = () => plan(offCostAt, S.auto.off, S.ores.gold.amt, OFFLINE.max);
-  const ingotPlan = (r, u) => plan(l => Math.ceil(u.cost * Math.pow(u.growth, l)), S.smelt.up[r][u.id], S.smelt.ingots[r], u.max || Infinity);
+  function ingotPlan(r, u) {
+    const lvl = S.smelt.up[r][u.id];
+    if (u.soon) return { n: 1, total: 0, can: false };
+    if (u.pay) return { n: 1, total: 0, can: lvl < u.max && Object.entries(u.pay).every(([k, v]) => S.smelt.ingots[k] >= v) };
+    return plan(l => Math.ceil(u.cost * Math.pow(u.growth, l)), lvl, S.smelt.ingots[r], u.max || Infinity);
+  }
+  const ingotCost = (r, u, pl) => u.soon ? '' : u.pay ? Object.entries(u.pay).map(([k, v]) => `${fmt(v)} ${RECIPE[k].name}`).join(' + ') + ' Ingots' : `${fmt(pl.total)} ${RECIPE[r].name} Ingots`;
 
   function buyIngot(r, u) {
     const pl = ingotPlan(r, u);
     if (!pl.can) return;
-    S.smelt.ingots[r] -= pl.total;
+    if (u.pay) for (const [k, v] of Object.entries(u.pay)) S.smelt.ingots[k] -= v;
+    else S.smelt.ingots[r] -= pl.total;
     S.smelt.up[r][u.id] += pl.n;
     if (u.id === 'zinc') { ZINC_ON = true; buildTabs(); renderAll(); return; }
     renderAll(true);
@@ -282,8 +298,9 @@
       let n = 0;
       while (left > 0) {
         if (!sl.busy) {
-          if (S.ores[r].amt < SMELT.input) break;
-          S.ores[r].amt -= SMELT.input;
+          const need = Object.entries(RECIPE[r].in);
+          if (need.some(([k, v]) => S.ores[k].amt < v)) break;
+          for (const [k, v] of need) S.ores[k].amt -= v;
           sl.busy = 1;
           sl.t = 0;
         }
@@ -305,7 +322,7 @@
   function setRecipe(i, r) {
     const sl = S.smelt.slots[i];
     if (sl.rec === r) return;
-    if (sl.busy && sl.rec) S.ores[sl.rec].amt += SMELT.input;
+    if (sl.busy && sl.rec) for (const [k, v] of Object.entries(RECIPE[sl.rec].in)) S.ores[k].amt += v;
     sl.rec = r;
     sl.busy = 0;
     sl.t = 0;
@@ -817,7 +834,7 @@
     }
   }
 
-  const slotStatus = sl => !sl.rec ? 'Click to choose' : sl.busy ? 'Smelting…' : `Needs ${RECIPE[sl.rec].name}`;
+  const slotStatus = sl => !sl.rec ? 'Click to choose' : sl.busy ? 'Smelting…' : `Needs ${Object.keys(RECIPE[sl.rec].in).map(k => RECIPE[k].name).join(' + ')}`;
 
   function renderSmeltBars() {
     [...$('slots').children].forEach((b, i) => {
@@ -837,6 +854,7 @@
       b.disabled = !open;
       b.classList.toggle('on', open && !!sl.rec);
       b.classList.toggle('zinc', open && sl.rec === 'zinc');
+      b.classList.toggle('brass', open && sl.rec === 'brass');
       b.classList.toggle('sel', PICKING === i);
       b.querySelector('.sname').textContent = !open ? 'Locked' : sl.rec ? `${RECIPE[sl.rec].name} Ingot` : 'Empty';
       b.querySelector('small').textContent = open ? slotStatus(sl) : '🔒';
@@ -857,14 +875,14 @@
       if (g.hidden) return;
       g.querySelector('.icount').textContent = fmt(S.smelt.ingots[r]);
       const y = smeltYield(r);
-      g.querySelector('.iinfo').textContent = `${fmt(SMELT.input)} ${x.name} → ${fmt(y)} ${x.name} Ingot${y > 1 ? 's' : ''} every ${smeltTime(r).toFixed(1)}s`;
+      g.querySelector('.iinfo').textContent = `${recIn(r)} → ${fmt(y)} ${x.name} Ingot${y > 1 ? 's' : ''} every ${smeltTime(r).toFixed(1)}s`;
       [...g.querySelector('.ingotups').children].forEach((b, i) => {
         const u = x.ups[i];
         const lvl = S.smelt.up[r][u.id];
         const maxed = u.max && lvl >= u.max;
         const pl = ingotPlan(r, u);
         b.querySelector('span').textContent = u.label + (u.max === 1 ? '' : xN(pl.n) + (lvl ? ` (${lvl})` : ''));
-        b.querySelector('small').textContent = maxed ? (u.max === 1 ? 'Unlocked' : 'Maxed') : `${fmt(pl.total)} ${x.name} Ingots`;
+        b.querySelector('small').textContent = maxed ? (u.max === 1 ? 'Unlocked' : 'Maxed') : ingotCost(r, u, pl);
         b.disabled = !pl.can;
         b.classList.toggle('can', pl.can);
         b.classList.toggle('done', !!maxed);
@@ -894,6 +912,7 @@
       ['Ore points', fmt(S.rb.points)],
       ['Copper Ingots made', fmt(S.smelt.total.copper)],
       ['Zinc Ingots made', fmt(S.smelt.total.zinc)],
+      ['Brass Ingots made', fmt(S.smelt.total.brass)],
       ['Achievements', `${achCount()} / ${ACHS.length}`],
       ['🎁 Chests', fmt(st.chest)],
       ['🧨 TNT', fmt(st.tnt)],
@@ -907,7 +926,9 @@
   }
 
   const runPoints = () => ORES.reduce((s, o) => s + S.ores[o.id].run * o.points, 0);
-  const rebirthGain = p => p >= REBIRTH.min ? Math.floor(Math.log10(p / REBIRTH.min)) + 1 : 0;
+  const rbSteps = p => p >= REBIRTH.min ? Math.floor(Math.log10(p / REBIRTH.min)) + 1 : 0;
+  const rbMult = () => S.smelt.up.brass.rb10 > 0 ? 10 : 1;
+  const rebirthGain = p => rbSteps(p) * rbMult();
   const allocUsed = () => ORES.reduce((s, o) => s + (S.rb.alloc[o.id] || 0), 0);
 
   function doRebirth() {
@@ -961,7 +982,7 @@
     $('rbNeed').textContent = fmt(REBIRTH.min);
     $('rbCount').textContent = S.rb.count;
     $('rbGain').textContent = gain ? `+${gain} ore point${gain > 1 ? 's' : ''}` : `Need ${fmt(REBIRTH.min)} points`;
-    $('rbNext').textContent = gain ? `Next point at ${fmt(REBIRTH.min * Math.pow(10, gain))}` : '';
+    $('rbNext').textContent = gain ? `Next +${rbMult()} at ${fmt(REBIRTH.min * Math.pow(10, rbSteps(p)))}` : '';
     $('rebirthBtn').disabled = !gain;
     const free = S.rb.points - allocUsed();
     $('rbFree').textContent = free;
