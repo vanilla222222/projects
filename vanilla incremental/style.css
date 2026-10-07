@@ -96,3 +96,17 @@ main { padding: 16px; }
 @keyframes glow { from { filter: brightness(1); } to { filter: brightness(1.35); } }
 .float.big { font-size: 16px; z-index: 3; }
 .veintag { color: #9fe8ff; }
+.statgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.stat { background: rgba(255,255,255,.04); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+.stat small { opacity: .7; }
+.stat b { font-size: 18px; }
+.stable { width: 100%; border-collapse: collapse; font-size: 14px; }
+.stable th, .stable td { text-align: left; padding: 6px 4px; border-bottom: 1px solid rgba(255,255,255,.07); }
+.stable th { opacity: .7; font-weight: 600; }
+.stable .dot { display: inline-block; vertical-align: middle; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 50; padding: 16px; }
+.modal[hidden] { display: none; }
+.modalbox { background: #221d2a; border-radius: 12px; padding: 20px; width: min(360px, 100%); display: flex; flex-direction: column; gap: 10px; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
+.modalbox h2 { margin: 0; }
+.offrow { display: flex; align-items: center; gap: 8px; }
+.offrow b { margin-left: auto; }

@@ -29,6 +29,8 @@
     dirt: { label: 'Unlock Mastery' },
     stone: { label: 'Unlock Autominer' },
     copper: { label: 'Unlock Rebirth', cost: 100000 },
+    gold: { label: 'Unlock Offline Mining' },
+    silver: { label: 'Unlock Pickaxe' },
     obsidian: { label: 'Unlock Special Tiles', cost: 10 },
   };
 
@@ -45,17 +47,30 @@
     speed: { cost: 5, growth: 4.5, factor: 0.8, min: 0.1 },
   };
 
+  const OFFLINE = { base: 0.25, step: 0.15, max: 5, cost: 25000, growth: 4, cap: 86400, min: 30 };
+  const PICKS = [
+    { name: 'Single tile', r: 0, sq: 0 },
+    { name: 'Plus', r: 1, sq: 0 },
+    { name: '3x3', r: 1, sq: 1 },
+    { name: 'Diamond', r: 2, sq: 0 },
+    { name: '5x5', r: 2, sq: 1 },
+    { name: 'Star', r: 3, sq: 0 },
+    { name: '7x7', r: 3, sq: 1 },
+  ];
+  const PICK = { cost: 50000, growth: 10 };
+
   const TABS = [
     { id: 'mines', name: 'Mines' },
     { id: 'mastery', name: 'Mastery', unlock: () => S.ores.dirt.unique > 0 },
     { id: 'rebirth', name: 'Rebirth', unlock: () => S.ores.copper.unique > 0 },
+    { id: 'stats', name: 'Stats' },
     { id: 'soon', name: 'Coming soon', locked: true },
   ];
 
   const $ = id => document.getElementById(id);
 
   function fresh() {
-    const S = { tab: 'mines', layer: 1, grid: null, ores: {}, auto: { bulk: 0, speed: 0 }, vein: 0, rb: { count: 0, points: 0, alloc: {} } };
+    const S = { tab: 'mines', layer: 1, grid: null, ores: {}, auto: { bulk: 0, speed: 0, off: 0 }, pick: 0, vein: 0, seen: Date.now(), rb: { count: 0, points: 0, alloc: {} }, stats: { time: 0, clicks: 0, tiles: 0, layers: 0, best: 0, chest: 0, tnt: 0, vein: 0, offline: 0 } };
     for (const o of ORES) S.ores[o.id] = { amt: 0, total: 0, run: 0, found: 0, mult: 0, base: 0, exp: 0, unique: 0, mastery: 0 };
     S.grid = newGrid();
     return S;
@@ -94,8 +109,10 @@
         let used = 0;
         for (const o of ORES) { const a = Math.min(S.rb.alloc[o.id] || 0, S.rb.points - used); S.rb.alloc[o.id] = a; used += a; }
       }
-      if (d.auto) for (const k of ['bulk', 'speed']) if (typeof d.auto[k] === 'number' && isFinite(d.auto[k])) S.auto[k] = d.auto[k];
+      if (d.auto) for (const k of ['bulk', 'speed', 'off']) if (typeof d.auto[k] === 'number' && isFinite(d.auto[k])) S.auto[k] = d.auto[k];
       if (Array.isArray(d.grid) && d.grid.length === SIZE * SIZE && d.grid.every(c => c && S.ores[c.ore])) S.grid = d.grid.map(c => SPECIALS[c.sp] ? { ore: c.ore, dug: c.dug ? 1 : 0, sp: c.sp } : { ore: c.ore, dug: c.dug ? 1 : 0 });
+      for (const k of ['pick', 'seen']) if (typeof d[k] === 'number' && isFinite(d[k])) S[k] = d[k];
+      if (d.stats) for (const k of Object.keys(S.stats)) if (typeof d.stats[k] === 'number' && isFinite(d.stats[k])) S.stats[k] = d.stats[k];
       if (typeof d.vein === 'number' && isFinite(d.vein)) S.vein = Math.max(0, d.vein);
       for (const o of ORES) {
         const src = d.ores && d.ores[o.id];
@@ -136,6 +153,13 @@
   const autoCost = k => Math.ceil(AUTO[k].cost * Math.pow(AUTO[k].growth, S.auto[k]));
   const autoMaxed = k => k === 'bulk' ? S.auto.bulk >= AUTO.bulk.max : autoInterval() <= AUTO.speed.min;
 
+  const hasOffline = () => S.ores.gold.unique > 0;
+  const offEff = () => OFFLINE.base + OFFLINE.step * S.auto.off;
+  const offCost = () => Math.ceil(OFFLINE.cost * Math.pow(OFFLINE.growth, S.auto.off));
+  const pickTier = () => S.ores.silver.unique > 0 ? 1 + S.pick : 0;
+  const pickCost = () => Math.ceil(PICK.cost * Math.pow(PICK.growth, S.pick));
+  const inPick = (p, dx, dy) => p.sq ? Math.max(Math.abs(dx), Math.abs(dy)) <= p.r : Math.abs(dx) + Math.abs(dy) <= p.r;
+
   function cost(u, lvl, oreId) {
     const c = u.id === 'unique' && UNIQUES[oreId] && UNIQUES[oreId].cost || u.cost;
     return Math.ceil(c * Math.pow(u.growth, lvl));
@@ -173,6 +197,22 @@
     renderAll(true);
   }
 
+  function buyOffline() {
+    const c = offCost();
+    if (S.auto.off >= OFFLINE.max || S.ores.gold.amt < c) return;
+    S.ores.gold.amt -= c;
+    S.auto.off++;
+    renderAll(true);
+  }
+
+  function buyPick() {
+    const c = pickCost();
+    if (!pickTier() || pickTier() >= PICKS.length - 1 || S.ores.silver.amt < c) return;
+    S.ores.silver.amt -= c;
+    S.pick++;
+    renderAll(true);
+  }
+
   let layerTimer = 0;
 
   function give(oreId, g) {
@@ -187,6 +227,8 @@
     const st = S.ores[cell.ore];
     let g = oreGain(cell.ore);
     if (S.vein > 0) { g *= 2; S.vein--; }
+    S.stats.tiles++;
+    if (g > S.stats.best) S.stats.best = g;
     st.amt += g;
     st.total += g;
     st.run += g;
@@ -198,6 +240,7 @@
     clearTimeout(layerTimer);
     layerTimer = 0;
     S.layer++;
+    S.stats.layers++;
     S.grid = newGrid();
     renderGrid();
   }
@@ -209,6 +252,7 @@
     list.push(i);
     if (!cell.sp) return g;
     const sp = cell.sp;
+    S.stats[sp]++;
     if (sp === 'chest') {
       for (const o of ORES) if (S.ores[o.id].found) give(o.id, oreGain(o.id) * SPECIALS.chest.tiles);
     } else if (sp === 'vein') {
@@ -230,7 +274,14 @@
     if (cell.dug || layerTimer) return;
     const list = [];
     const events = [];
+    S.stats.clicks++;
     const g = digAt(i, list, events);
+    const p = PICKS[pickTier()];
+    const x = i % SIZE, y = Math.floor(i / SIZE);
+    for (let dy = -p.r; dy <= p.r; dy++) for (let dx = -p.r; dx <= p.r; dx++) {
+      const nx = x + dx, ny = y + dy;
+      if ((dx || dy) && inPick(p, dx, dy) && nx >= 0 && ny >= 0 && nx < SIZE && ny < SIZE) digAt(ny * SIZE + nx, list, events);
+    }
     const o = ORES.find(x => x.id === cell.ore);
     const tiles = $('grid').querySelectorAll('.tile');
     for (const j of list) paintTile(tiles[j], S.grid[j]);
@@ -250,6 +301,7 @@
         clearTimeout(layerTimer);
         layerTimer = 0;
         S.layer++;
+        S.stats.layers++;
         S.grid = newGrid();
         newLayer = true;
         k--;
@@ -271,6 +323,15 @@
   function tick(now) {
     const dt = Math.min(1, (now - last) / 1000);
     last = now;
+    const wall = Date.now();
+    const gap = (wall - S.seen) / 1000;
+    S.seen = wall;
+    if (gap >= OFFLINE.min) {
+      const r = offlineGain(gap);
+      if (r) { showOffline(r); buildTabs(); renderGrid(); renderAll(); }
+    }
+    S.stats.time += dt;
+    if (S.tab === 'stats' && Math.floor(S.stats.time) !== Math.floor(S.stats.time - dt)) renderStats();
     if (hasAuto()) {
       autoAcc += dt;
       const iv = autoInterval();
@@ -280,6 +341,42 @@
       $('autoBar').style.width = Math.min(100, autoAcc / iv * 100) + '%';
     }
     requestAnimationFrame(tick);
+  }
+
+  function offlineGain(sec) {
+    if (!hasOffline() || !hasAuto() || sec < OFFLINE.min) return null;
+    sec = Math.min(sec, OFFLINE.cap);
+    const digs = Math.floor(sec / autoInterval() * autoBulk() * offEff());
+    if (!digs) return null;
+    const tw = totalWeight();
+    const got = [];
+    for (const o of ORES) {
+      const n = digs * oreWeight(o) / tw;
+      if (n < 1 && !S.ores[o.id].found) continue;
+      const g = n * oreGain(o.id);
+      give(o.id, g);
+      S.ores[o.id].found += Math.floor(n);
+      got.push([o, g]);
+    }
+    const layers = Math.floor(digs / (SIZE * SIZE));
+    S.layer += layers;
+    S.stats.layers += layers;
+    S.stats.tiles += digs;
+    S.stats.offline += sec;
+    return { sec, digs, got };
+  }
+
+  function dur(sec) {
+    sec = Math.floor(sec);
+    const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+    return h ? `${h}h ${m}m` : m ? `${m}m ${s}s` : `${s}s`;
+  }
+
+  function showOffline(r) {
+    if (!r) return;
+    $('offTime').textContent = `You were away for ${dur(r.sec)}. Your autominer dug ${fmt(r.digs)} tiles at ${Math.round(offEff() * 100)}% speed.`;
+    $('offList').innerHTML = r.got.map(([o, g]) => `<div class="offrow"><span class="dot" style="background:${o.color}"></span><span>${o.name}</span><b>+${fmt(g)}</b></div>`).join('');
+    $('offline').hidden = false;
   }
 
   function floatText(el, text, color, big) {
@@ -414,7 +511,7 @@
       b.textContent = t.name;
       b.dataset.tab = t.id;
       b.disabled = !!t.locked;
-      b.addEventListener('click', () => { S.tab = t.id; renderTabs(); renderMastery(); renderRebirth(); });
+      b.addEventListener('click', () => { S.tab = t.id; renderTabs(); renderMastery(); renderRebirth(); renderStats(); });
       nav.appendChild(b);
     }
   }
@@ -468,6 +565,63 @@
       b.disabled = !can;
       b.classList.toggle('can', can);
     }
+    const ob = $('autoOff');
+    ob.hidden = !hasOffline();
+    $('autoRate').textContent += hasOffline() ? ` · offline ${Math.round(offEff() * 100)}%` : '';
+    if (hasOffline()) {
+      const maxed = S.auto.off >= OFFLINE.max;
+      const c = offCost();
+      ob.querySelector('small').textContent = maxed ? 'Maxed' : `${fmt(c)} Gold`;
+      const can = !maxed && S.ores.gold.amt >= c;
+      ob.disabled = !can;
+      ob.classList.toggle('can', can);
+    }
+  }
+
+  function countPick(p) {
+    let n = 0;
+    for (let dy = -p.r; dy <= p.r; dy++) for (let dx = -p.r; dx <= p.r; dx++) if (inPick(p, dx, dy)) n++;
+    return n;
+  }
+
+  function renderPick() {
+    const t = pickTier();
+    $('pick').hidden = !t;
+    if (!t) return;
+    const p = PICKS[t];
+    $('pickName').textContent = `${p.name} · ${countPick(p)} tiles per click`;
+    const b = $('pickUp');
+    const maxed = t >= PICKS.length - 1;
+    const c = pickCost();
+    b.querySelector('span').textContent = maxed ? 'Best pickaxe' : `Upgrade to ${PICKS[t + 1].name} (${countPick(PICKS[t + 1])} tiles)`;
+    b.querySelector('small').textContent = maxed ? 'Maxed' : `${fmt(c)} Silver`;
+    const can = !maxed && S.ores.silver.amt >= c;
+    b.disabled = !can;
+    b.classList.toggle('can', can);
+  }
+
+  function renderStats() {
+    if (S.tab !== 'stats') return;
+    const st = S.stats;
+    const rows = [
+      ['Time played', dur(st.time)],
+      ['Time offline', dur(st.offline)],
+      ['Clicks', fmt(st.clicks)],
+      ['Tiles dug', fmt(st.tiles)],
+      ['Layers cleared', fmt(st.layers)],
+      ['Current layer', fmt(S.layer)],
+      ['Best single tile', fmt(st.best)],
+      ['Rebirths', fmt(S.rb.count)],
+      ['Ore points', fmt(S.rb.points)],
+      ['🎁 Chests', fmt(st.chest)],
+      ['🧨 TNT', fmt(st.tnt)],
+      ['✨ Veins', fmt(st.vein)],
+    ];
+    $('statGrid').innerHTML = rows.map(([k, v]) => `<div class="stat"><small>${k}</small><b>${v}</b></div>`).join('');
+    $('oreStats').innerHTML = `<table class="stable"><tr><th>Ore</th><th>Tiles</th><th>Earned</th><th>Per tile</th></tr>` + ORES.filter(o => S.ores[o.id].found).map(o => {
+      const os = S.ores[o.id];
+      return `<tr><td><span class="dot" style="background:${o.color}"></span> ${o.name}</td><td>${fmt(os.found)}</td><td>${fmt(os.total)}</td><td>${fmt(oreGain(o.id))}</td></tr>`;
+    }).join('') + '</table>';
   }
 
   const runPoints = () => ORES.reduce((s, o) => s + S.ores[o.id].run * o.points, 0);
@@ -480,7 +634,8 @@
     S.rb.count++;
     S.rb.points += gain;
     for (const o of ORES) Object.assign(S.ores[o.id], { amt: 0, run: 0, mult: 0, base: 0, exp: 0, mastery: 0 });
-    S.auto = { bulk: 0, speed: 0 };
+    S.auto = { bulk: 0, speed: 0, off: 0 };
+    S.pick = 0;
     clearTimeout(layerTimer);
     layerTimer = 0;
     S.layer = 1;
@@ -546,6 +701,8 @@
     renderMastery();
     renderAuto();
     renderRebirth();
+    renderPick();
+    renderStats();
     updateMineHead();
     if (!skipGrid) renderTabs();
   }
@@ -564,6 +721,11 @@
 
   $('autoBulk').addEventListener('click', () => buyAuto('bulk'));
   $('autoSpeed').addEventListener('click', () => buyAuto('speed'));
+  $('autoOff').addEventListener('click', buyOffline);
+  $('pickUp').addEventListener('click', buyPick);
+  $('offOk').addEventListener('click', () => { $('offline').hidden = true; });
+  const away = offlineGain((Date.now() - S.seen) / 1000);
+  S.seen = Date.now();
   buildTabs();
   buildWallet();
   buildUpgrades();
@@ -571,6 +733,7 @@
   buildRebirth();
   renderGrid();
   renderAll();
+  showOffline(away);
   requestAnimationFrame(tick);
   setInterval(save, 5000);
   window.addEventListener('pagehide', save);
