@@ -7,6 +7,7 @@ if (process.env.STARTUNE) Object.assign(C.STAR, JSON.parse(process.env.STARTUNE)
 if (process.env.HEROTUNE) Object.assign(C.HERO_TUNE, JSON.parse(process.env.HEROTUNE));
 if (process.env.CHALTUNE) Object.assign(C.CHAL_ECO, JSON.parse(process.env.CHALTUNE));
 if (process.env.OFFTUNE) Object.assign(C.OFFLINE, JSON.parse(process.env.OFFTUNE));
+if (process.env.ENDTUNE) Object.assign(C.ENDLESS, JSON.parse(process.env.ENDTUNE));
 
 const DT = 1 / 20;
 const OVERHEAD = 3;
@@ -451,14 +452,17 @@ function playEndless() {
   const P = C.newState(MAP.id);
   P.fxOn = false;
   achSeed(P);
-  P.stars[MAP.id] = Math.max(1, Number(process.env.ENDLESS) || 1);
-  if (process.env.RESEARCH) Object.assign(P.research, C.cleanResearch(JSON.parse(process.env.RESEARCH)));
+  const want = Math.max(1, Number(process.env.ENDLESS) || 1);
+  if (process.env.RESEARCH) { Object.assign(P.research, C.cleanResearch(JSON.parse(process.env.RESEARCH))); P.stars[MAP.id] = want; }
+  else while (C.starOf(P) < want) { P.cleared = C.MAX_WAVE; const up = C.starUp(P); if (up.star > 0) C.grantMoon(P, 10 * (1 + C.rl(P, 'util_star')) * C.moonMul(P)); buyResearch(P); }
   C.recalcBonus(P);
   if (HERO) { P.heroUnlocks[HERO] = 1; C.pickHero(P, HERO); }
   const X = C.startEndless(P, MAP.id, 1e12);
   X.fxOn = false;
   heroTowers = -1;
   let time = 0;
+  for (let k = 0; k < 40; k++) { const c0 = X.cash; shop(X, 101); if (X.cash === c0) break; }
+  if (process.env.DBG) console.log('setup', Math.round(X.cash), X.towers.length, X.towers.reduce((a, t) => a + t.spent, 0));
   const cap = Number(process.env.ENDLESS_CAP) || 200;
   while (!X.chal.over && X.cleared < cap) {
     const n = X.cleared + 1;
@@ -466,6 +470,7 @@ function playEndless() {
     placeHero(X);
     const r = play(X, n);
     time += r.t;
+    if (process.env.DBG) console.log('dbg', n, JSON.stringify({ won: r.won, t: r.t, cash: Math.round(X.cash), towers: X.towers.length, lives: X.chal.lives, over: X.chal.over, run: !!X.run, leaks: LEAKS }));
     if (!X.chal.over && !r.won && !X.run) break;
     if (n % 10 === 0) console.log('w' + n + ' lives ' + X.chal.lives + ' t ' + (time / 3600).toFixed(2) + 'h towers ' + X.towers.length + ' muts ' + C.endlessMutList(X.chal.order, n + 1).map(m => m.id + m.rank).join(','));
   }

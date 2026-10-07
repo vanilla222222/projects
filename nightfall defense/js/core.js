@@ -1106,6 +1106,16 @@
     if (endless) { X.stars[map.id] = def.star | 0; X.seed = hashSeed(P.seed, map.order * 7 + (def.star | 0), (endlessOf(P).runs | 0) + 1); }
     Object.assign(X, newBoard(map, X));
     X.cash = endless ? endlessStartCash(X, map, def.star | 0) : chalStartCash(X, def, map);
+    if (endless && def.layout) {
+      const src = boardsOf(P).find(b => b.id === map.id);
+      if (src && src.towers.length) {
+        X.towers = loadBoard(X, map, { towers: src.towers.map(serTower) }).towers;
+        let spent = 0, mx = 0;
+        for (const t of X.towers) { spent += t.spent; t.kills = 0; t.dmg = 0; mx = Math.max(mx, t.id); }
+        X.nextId = mx + 1;
+        X.cash = Math.max(Math.round(X.cash * ENDLESS.keep), Math.round(X.cash - spent));
+      }
+    }
     X.cleared = def.from - 1; X.sel = def.from;
     const lives = def.lives || chalLives(def.mods);
     X.chal = { id: def.id, kind: def.kind, def, mods, parent: P, from: def.from, to: def.to, lives, livesMax: lives, t: 0, waves: 0, over: null, day: def.day || 0, result: null };
@@ -1181,7 +1191,7 @@
     };
   }
   const ENDLESS_FROM = MAX_WAVE + 1;
-  const ENDLESS = { start: 0.7, hp: 0.55, kill: 1.2, clear: 1.2, lives: 20, every: 10, moon: 2, top: 10 };
+  const ENDLESS = { start: 0.7, hp: 0.4, kill: 1.2, clear: 1.2, lives: 20, every: 10, moon: 2, top: 10, keep: 0.1, grow: 1.03, boss: 0.6 };
   const ENDLESS_MUTS = {
     regen: { name: 'Regrowth', desc: 'DNBs regrow 1% of their health each second.' },
     haste: { name: 'Haste', desc: 'DNBs move 15% faster.' },
@@ -1207,7 +1217,7 @@
     const star = starOf(P, id);
     return { id: 'endless', kind: 'endless', name: 'Endless: ' + map.name, map: id, star, from: ENDLESS_FROM, to: Infinity, mods: [], lives: ENDLESS.lives, reward: null, diff: 0 };
   }
-  function startEndless(P, id, now) { const def = endlessDef(P, id); return def ? startChallenge(P, def, now) : null; }
+  function startEndless(P, id, now, layout) { const def = endlessDef(P, id); if (def && layout) def.layout = true; return def ? startChallenge(P, def, now) : null; }
   function endlessStartCash(X, map, star) { return Math.round(mapStartCash(map, X) + skipCash(X, map, MAX_WAVE, star) * ENDLESS.start); }
   function endlessOrder(seed) {
     const ids = ENDLESS_MUT_IDS.slice(), r = mulberry(seed ^ 0x51ab);
@@ -1221,7 +1231,8 @@
   }
   function endlessMutList(order, n) { const m = endlessMuts(order, n); return order.filter(id => m[id]).map(id => ({ id, rank: m[id], name: ENDLESS_MUTS[id].name, desc: ENDLESS_MUTS[id].desc })); }
   function endlessRun(S, run, ch) {
-    run.cashMul *= ENDLESS.kill; run.clearMul *= ENDLESS.clear; run.hpMul *= ENDLESS.hp;
+    const mp = mapOf(S), k = Math.max(0, run.n - MAX_WAVE);
+    run.cashMul *= ENDLESS.kill; run.clearMul *= ENDLESS.clear; run.hpMul *= ENDLESS.hp * Math.pow(ENDLESS.grow, k) * hpFor(MAX_WAVE, mp) / hpFor(run.n, mp);
     const m = endlessMuts(ch.order, run.n);
     run.mut = m;
     if (m.regen) run.regen += 0.01 * m.regen;
@@ -1248,7 +1259,7 @@
     if (m.shielded && !e.boss) { e.ownSh = true; e.shMax = Math.max(e.shMax, e.hpMax * 0.2 * m.shielded); e.sh = e.shMax; }
     if (m.airplate && e.flying) e.plate = Math.max(e.plate, 0.05 * m.airplate * e.plateBase);
     if (m.fog && !e.boss && e.id % 3 === 0) e.stealth = true;
-    if (m.ironboss && e.boss && !e.splitDone) { e.hpMax *= Math.pow(1.5, m.ironboss); e.hp = e.hpMax; e.plate = Math.max(e.plate, 0.05 * e.plateBase); }
+    if (e.boss && !e.splitDone) { e.hpMax *= ENDLESS.boss * Math.pow(1.5, m.ironboss | 0); e.hp = e.hpMax; if (m.ironboss) e.plate = Math.max(e.plate, 0.05 * e.plateBase); }
   }
   function endlessCleared(X, n) {
     const c = X.chal, P = c.parent, E = endlessOf(P), key = endlessKey(c.def.map, c.def.star);
