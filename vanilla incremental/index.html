@@ -25,8 +25,21 @@
       </div>
       <div class="grid" id="grid"></div>
       <p class="hint">Click a tile to dig it up. Clear all 100 to reach the next layer.</p>
+      <div class="auto" id="auto" hidden>
+        <div class="autohead"><b>Autominer</b><span id="autoRate"></span></div>
+        <div class="bar"><div id="autoBar"></div></div>
+        <button type="button" class="upg" id="autoBulk"><span>Bulk: +1 tile per dig</span><small></small></button>
+        <button type="button" class="upg" id="autoSpeed"><span>Speed: dig 20% faster</span><small></small></button>
+      </div>
     </div>
     <div class="upgrades" id="upgrades"></div>
+  </section>
+  <section class="tab" data-tab="mastery" hidden>
+    <div class="masterybox">
+      <h2>Mastery</h2>
+      <p class="hint">Each level doubles everything you get from that ore. Every level costs 10× the last.</p>
+      <div class="mastlist" id="masteryList"></div>
+    </div>
   </section>
 </main>
 <script src="game.js"></script>
