@@ -961,10 +961,10 @@
         const maxed = u.max && lvl >= u.max;
         const pl = ingotPlan(r, u);
         b.querySelector('span').textContent = u.label + (u.max === 1 ? '' : xN(pl.n) + (lvl ? ` (${lvl})` : ''));
-        const tog = u.auto && maxed;
+        const tog = !!(u.auto && maxed);
         b.querySelector('small').textContent = tog ? (S.smelt.abOff[u.id] ? 'OFF · click to turn on' : 'ON · click to turn off') : maxed ? (u.max === 1 ? 'Unlocked' : 'Maxed') : ingotCost(r, u, pl);
         b.disabled = !pl.can && !tog;
-        b.classList.toggle('can', pl.can || (tog && !S.smelt.abOff[u.id]));
+        b.classList.toggle('can', !!(pl.can || (tog && !S.smelt.abOff[u.id])));
         b.classList.toggle('done', !!maxed && !tog);
       });
     });
