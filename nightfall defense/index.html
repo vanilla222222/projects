@@ -50,13 +50,14 @@
       <section class="card wavebox">
         <div class="maprow">
           <button id="mapBtn" class="mapbtn on" type="button" aria-haspopup="dialog"><span id="mapName">Map 1 &middot; Moonlit Road</span><span class="mapgo">Maps</span></button>
-          <button id="codexBtn" class="mapbtn codexbtn" type="button" aria-haspopup="dialog" data-tip="Every DNB and boss you have met (C)">Codex</button>
+          <button id="codexBtn" class="mapbtn codexbtn" type="button" aria-haspopup="dialog" data-tip="Every DNB, boss, pony and hero you have met (C)">Codex</button>
           <button id="researchBtn" class="mapbtn codexbtn resbtn" type="button" aria-haspopup="dialog" data-tip="Spend Moonstones on permanent research (R)">Research</button>
         </div>
         <div class="maprow metarow">
           <button id="chalBtn" class="mapbtn codexbtn chalbtn" type="button" aria-haspopup="dialog" data-tip="Daily and permanent challenge runs on sandboxed boards (G)">Challenges</button>
           <button id="achBtn" class="mapbtn codexbtn" type="button" aria-haspopup="dialog" data-tip="Achievements and their permanent bonuses (A)">Achievements <span id="achState" class="rstate">0</span></button>
           <button id="statsBtn" class="mapbtn codexbtn" type="button" aria-haspopup="dialog" data-tip="Lifetime stats and map records (T)">Stats</button>
+          <button id="wardrobeBtn" class="mapbtn codexbtn wardbtn" type="button" aria-haspopup="dialog" data-tip="Pony skins, effect themes and seasonal map decor (K)">Wardrobe</button>
         </div>
         <div id="chalCard" class="chalcard" hidden>
           <div class="cchead"><span id="chalName" class="ccname">Challenge</span><span id="chalDiff" class="ccdiff"></span></div>
@@ -126,9 +127,9 @@
       <li><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><kbd>5</kbd> pick Earth, Unicorn, Pegasus, Bat, Crystal</li>
       <li><kbd>Space</kbd> start wave, or pause during one</li>
       <li><kbd>P</kbd> pause &middot; <kbd>F</kbd> cycle speed &middot; <kbd>M</kbd> mute &middot; <kbd>C</kbd> codex &middot; <kbd>R</kbd> research</li>
-      <li><kbd>G</kbd> challenges &middot; <kbd>A</kbd> achievements &middot; <kbd>T</kbd> stats</li>
+      <li><kbd>G</kbd> challenges &middot; <kbd>A</kbd> achievements &middot; <kbd>T</kbd> stats &middot; <kbd>K</kbd> wardrobe</li>
       <li><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> hero abilities &middot; <kbd>H</kbd> select hero, then click the field to move it</li>
-      <li><kbd>U</kbd> open upgrades for the pony under the cursor</li>
+      <li><kbd>U</kbd> open upgrades for the pony under the cursor, where you can also name it</li>
       <li><kbd>B</kbd> upgrade max affordable &middot; <kbd>S</kbd> sell (press twice)</li>
       <li>Hold <kbd>Shift</kbd> to show every range &middot; <kbd>Esc</kbd> cancel</li>
     </ul>
@@ -145,7 +146,7 @@
 <div id="codexModal" class="modal" hidden>
   <div class="dialog wide codex" role="dialog" aria-modal="true" aria-labelledby="codexTitle">
     <div class="dhead"><h2 id="codexTitle">Codex</h2><button id="codexClose" class="ghost x" type="button">Close</button></div>
-    <div class="cxbar"><div id="codexTabs" class="cxtabs" role="tablist"><button type="button" role="tab" data-tab="e">DNBs</button><button type="button" role="tab" data-tab="b">Bosses</button></div><span id="codexCount" class="hint"></span></div>
+    <div class="cxbar"><div id="codexTabs" class="cxtabs" role="tablist"><button type="button" role="tab" data-tab="e">DNBs</button><button type="button" role="tab" data-tab="b">Bosses</button><button type="button" role="tab" data-tab="p">Ponies</button><button type="button" role="tab" data-tab="h">Heroes</button></div><span id="codexCount" class="hint"></span></div>
     <div class="cxbody"><div id="codexGrid" class="cxgrid"></div><div id="codexDetail" class="cxdetail"></div></div>
   </div>
 </div>
@@ -229,6 +230,14 @@
     <p id="achBonus" class="hint"></p>
     <div id="achTabs" class="rtabs" role="tablist" aria-label="Achievement category"></div>
     <div id="achList" class="achlist"></div>
+  </div>
+</div>
+<div id="wardrobeModal" class="modal" hidden>
+  <div class="dialog wide wardrobe" role="dialog" aria-modal="true" aria-labelledby="wardTitle">
+    <div class="dhead"><h2 id="wardTitle">Wardrobe</h2><span id="wardMoon" class="resmoon"></span><button id="wardrobeClose" class="ghost x" type="button">Close</button></div>
+    <div id="wardTabs" class="rtabs" role="tablist"><button type="button" role="tab" data-wtab="skin">Pony skins</button><button type="button" role="tab" data-wtab="fx">Effect themes</button><button type="button" role="tab" data-wtab="decor">Map decor</button></div>
+    <p class="hint">Purely cosmetic: nothing here changes how ponies fight.</p>
+    <div id="wardBody" class="wardbody"></div>
   </div>
 </div>
 <div id="statsModal" class="modal" hidden>
