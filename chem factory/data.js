@@ -93,6 +93,12 @@ const ITEMS = {
   shell: { n: 'HE Shell', c: '#b08a40', f: 'A forged steel shell filled with cast TNT, in a brass case with a black powder charge' },
   carbon: { n: 'Activated Carbon', c: '#2a2a2e', f: 'Coke etched by steam at 900°C into a sponge of pores. One gram holds about 1000 m² of internal surface' },
   phos_cyl: { n: 'Phosgene Cylinder', c: '#d8d8c0', f: 'Liquid COCl₂ at about 2 bar. Colourless, smells of mown hay, and its damage shows only hours later' },
+  phosphate_rock: { n: 'Phosphate Rock', c: '#8a7a5a', f: 'Fluorapatite Ca₅(PO₄)₃F laid down in old sea floors, about 30% P₂O₅, with quartz and a little uranium' },
+  crushed_phos: { n: 'Crushed Phosphate', c: '#a8987a', f: 'Phosphate rock broken to gravel size' },
+  phosphorus: { n: 'White Phosphorus', c: '#f0ecd0', f: 'P₄, a waxy yellow-white solid that catches fire by itself in air above 30°C, so it is cast and shipped under water' },
+  wp_shell: { n: 'WP Shell', c: '#e8e4d8', f: 'A steel shell packed with white phosphorus around a small burster. It scatters burning wedges at 800°C that stick, smoulder and reignite' },
+  fluorspar: { n: 'Fluorspar', c: '#b8a8d8', f: 'Calcium fluoride CaF₂, the mineral that gave fluorescence its name' },
+  cryolite: { n: 'Cryolite', c: '#e8eef0', f: 'Sodium hexafluoroaluminate Na₃AlF₆. Molten, it dissolves alumina like water dissolves salt' },
 };
 
 const FLUIDS = {
@@ -116,6 +122,9 @@ const FLUIDS = {
   nh4cl: { n: 'Ammonium Chloride Liquor', c: '#c8d8c8', f: 'NH₄Cl solution from the Solvay tower. Chloride attacks plain steel', cp: 3.5, t: 30, corr: 0.4, ck: 'cl' },
   co: { n: 'Producer Gas', c: '#9a8a7a', f: 'Carbon monoxide made by passing CO₂ or steam over white-hot coke. Odourless and deadly, it burns with a blue flame', gas: true, cp: 1.04, t: 400 },
   phosgene: { n: 'Phosgene', c: '#d8d8c0', f: 'COCl₂, a heavy gas 3.4 times denser than air. Moisture splits it into HCl, which eats steel', gas: true, cp: 0.6, t: 60, corr: 0.6, ck: 'cl' },
+  sif4: { n: 'Silicon Tetrafluoride', c: '#c8c0d8', f: 'SiF₄ fume from heating fluorapatite with silica. Moist air turns it to fluorosilicic acid that etches glass and scorches leaves for miles', gas: true, cp: 0.75, t: 120, corr: 0.8, ck: 'hf' },
+  h2sif6: { n: 'Fluorosilicic Acid', c: '#b8c8d0', f: 'H₂SiF₆ solution from scrubbing SiF₄ with water. Eats glass and titanium; lead and rubber hold it', cp: 3.3, t: 40, corr: 0.6, ck: 'hf' },
+  hf: { n: 'Hydrofluoric Acid', c: '#d0e0d8', f: 'HF about 70%. Dissolves glass, titanium and skin, and seeps through to the bone. Lead resists it', cp: 2.5, t: 25, corr: 1.2, ck: 'hf' },
 };
 
 const ORES = [
@@ -130,6 +139,7 @@ const ORES = [
   { item: 'bauxite', c: '#c0702a', s: '#f0b060' },
   { item: 'mineral_sand', c: '#4a4036', s: '#e0c050' },
   { item: 'caliche', c: '#b0a080', s: '#f4ecd0' },
+  { item: 'phosphate_rock', c: '#6a5c44', s: '#c8b890' },
 ];
 
 const BUILD = {
@@ -138,9 +148,9 @@ const BUILD = {
   chest: { n: 'Chest', kind: 'chest', w: 1, h: 1, cat: 'Logistics', c: '#8a6a3a', ab: 'CH', cost: { casting: 4 }, d: 'Stores 400 items and feeds neighbouring machines and outgoing belts.' },
   pipe: { n: 'Cast Iron Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#6a7a8a', cost: { casting: 1 }, makes: 2, d: 'DN50, rated 16 bar. Cheap and brittle: it cracks at once when overpressured or hit by a sudden temperature change.', P: { mat: 'Grey cast iron', dn: 50, v: 100, g: 200, q: 120, bar: 16, tmax: 400, duct: 0, shock: 45, cw: 60, ua: 0.3, res: '' } },
   steel_pipe: { n: 'Steel Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#9aa8b6', cost: { plate: 1 }, makes: 1, d: 'DN100, rated 40 bar. Four times the flow of DN50. Ductile: it bulges before it bursts. Handles caustic, but dilute acid and wet chlorine eat it.', P: { mat: 'Carbon steel', dn: 100, v: 250, g: 800, q: 400, bar: 40, tmax: 550, duct: 2, cw: 90, ua: 0.4, res: 'alk' } },
-  lead_pipe: { n: 'Lead-Lined Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#7a7f9a', cost: { lead_sheet: 1, casting: 1 }, makes: 2, d: 'DN50, rated only 6 bar. The lead lining shrugs off sulfuric acid and chlorides but softens above 250°C, and caustic soda dissolves it.', P: { mat: 'Steel with lead lining', dn: 50, v: 100, g: 200, q: 120, bar: 6, tmax: 250, duct: 4, cw: 30, ua: 0.3, res: 'acid cl', lined: true } },
-  ti_pipe: { n: 'Titanium Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#a8b0c0', cost: { titanium: 1 }, makes: 1, d: 'DN100, rated 35 bar. Its oxide skin makes it immune to chlorine, brine, caustic and nitric acid, but hot sulfuric acid strips it.', P: { mat: 'Titanium grade 2', dn: 100, v: 250, g: 800, q: 400, bar: 35, tmax: 450, duct: 3, cw: 50, ua: 0.3, res: 'cl alk nit' } },
-  glass_pipe: { n: 'Glass-Lined Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#7ab8b8', cost: { glass: 1, casting: 1 }, makes: 2, d: 'DN50, rated 10 bar. A fused glass enamel inside steel resists every acid and chloride. But a sudden temperature change cracks the glass, and caustic soda slowly dissolves it.', P: { mat: 'Steel with glass enamel', dn: 50, v: 100, g: 200, q: 120, bar: 10, tmax: 230, duct: 0, shock: 35, cw: 40, ua: 0.3, res: 'acid cl nit', lined: true } },
+  lead_pipe: { n: 'Lead-Lined Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#7a7f9a', cost: { lead_sheet: 1, casting: 1 }, makes: 2, d: 'DN50, rated only 6 bar. The lead lining shrugs off sulfuric acid and chlorides but softens above 250°C, and caustic soda dissolves it. Lead also holds fluorides that destroy glass.', P: { mat: 'Steel with lead lining', dn: 50, v: 100, g: 200, q: 120, bar: 6, tmax: 250, duct: 4, cw: 30, ua: 0.3, res: 'acid cl hf', lined: 'lead' } },
+  ti_pipe: { n: 'Titanium Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#a8b0c0', cost: { titanium: 1 }, makes: 1, d: 'DN100, rated 35 bar. Its oxide skin makes it immune to chlorine, brine, caustic and nitric acid, but hot sulfuric acid strips it and fluorides dissolve it three times faster than steel.', P: { mat: 'Titanium grade 2', dn: 100, v: 250, g: 800, q: 400, bar: 35, tmax: 450, duct: 3, cw: 50, ua: 0.3, res: 'cl alk nit', weak: 'hf' } },
+  glass_pipe: { n: 'Glass-Lined Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#7ab8b8', cost: { glass: 1, casting: 1 }, makes: 2, d: 'DN50, rated 10 bar. A fused glass enamel inside steel resists every acid and chloride. But a sudden temperature change cracks the glass, and caustic soda slowly dissolves it. Fluorides etch through glass three times faster than steel.', P: { mat: 'Steel with glass enamel', dn: 50, v: 100, g: 200, q: 120, bar: 10, tmax: 230, duct: 0, shock: 35, cw: 40, ua: 0.3, res: 'acid cl nit', weak: 'hf', lined: 'glass' } },
   booster: { n: 'Booster Pump', kind: 'booster', w: 1, h: 1, cat: 'Logistics', c: '#4a7ab0', ab: 'BP', kw: 30, cost: { casting: 2, motor: 1 }, d: 'Takes fluid from the pipe behind it and pushes it forward up to the outlet pressure you set. Fluid cannot flow back through it.' },
   miner: { n: 'Miner', kind: 'miner', w: 2, h: 2, cat: 'Mining', c: '#7a6a4a', ab: 'MI', kw: 90, cost: { casting: 5, plate: 3, motor: 2 }, d: 'Digs the ore under it, one every 2s.' },
   pump: { n: 'Offshore Pump', kind: 'pump', w: 1, h: 1, cat: 'Mining', c: '#3a6aa0', ab: 'PU', cost: { casting: 3, motor: 1 }, d: 'Place on water. Pumps 60 water/s.' },
@@ -282,6 +292,14 @@ const RECIPES = [
   { id: 'activate', n: 'Activated Carbon', b: 'producer', t: 5, i: { coke: 3 }, fi: { steam: 20 }, o: { carbon: 1 }, fo: { co: 10 }, eq: 'C + H₂O → CO + H₂ (partial)', note: 'Steam burns away part of the carbon from the inside, opening a maze of pores. The same carbon went into gas mask canisters in 1915.' },
   { id: 'phosgene', n: 'Phosgene', b: 'phos_rx', t: 4, lock: 1, i: { carbon: 1 }, fi: { co: 40, cl2: 40 }, fo: { phosgene: 40 }, eq: 'CO + Cl₂ → COCl₂ (activated carbon)', note: 'The carbon is a catalyst, but it slowly fouls and is replaced. Still made by the million tonnes today to make polycarbonate and polyurethane.' },
   { id: 'fill_phos', n: 'Fill Phosgene', b: 'filler', t: 2, lock: 1, i: { cylinder: 1 }, fi: { phosgene: 40 }, o: { phos_cyl: 1 }, note: 'Phosgene caused most of the gas deaths of the First World War. It was mixed with chlorine as White Star so the cloud could be seen and drift heavily.' },
+  { id: 'crush_phos', b: 'crusher', t: 1.5, i: { phosphate_rock: 1 }, o: { crushed_phos: 1 } },
+  { id: 'phosphorus', n: 'White Phosphorus', b: 'arc', t: 4, i: { crushed_phos: 2, sand: 1, coke: 1 }, o: { phosphorus: 1, slag: 2 }, fo: { co: 20, sif4: 10 }, eq: '2Ca₃(PO₄)₂ + 6SiO₂ + 10C → P₄ + 6CaSiO₃ + 10CO', note: 'The Readman electric furnace process, 1888. At 1500°C silica drives the phosphorus out as vapour, which is condensed under water. The fluorine in the apatite leaves as SiF₄ fume.' },
+  { id: 'defluor', n: 'Fluoride Scrubbing', b: 'scrubber', t: 3, fi: { sif4: 20, water: 10 }, fo: { h2sif6: 15 }, ch: { sand: 0.3 }, eq: '3SiF₄ + 2H₂O → 2H₂SiF₆ + SiO₂', note: 'Water spray turns the fume into acid and gelatinous silica. Phosphate works that skipped this killed cattle and orchards downwind with fluorosis.' },
+  { id: 'neut_fluor', n: 'Fluorspar from Fluorosilicic Acid', b: 'leach', t: 3, i: { crushed_lime: 3 }, fi: { h2sif6: 20 }, o: { fluorspar: 2 }, ch: { sand: 0.3 }, fo: { co2: 10 }, bleed: ['co2'], eq: 'H₂SiF₆ + 3CaCO₃ → 3CaF₂ + SiO₂ + 3CO₂ + H₂O', note: 'Limestone locks the fluorine up as insoluble calcium fluoride.' },
+  { id: 'hf', n: 'Hydrofluoric Acid', b: 'retort', t: 3, i: { fluorspar: 1 }, fi: { acid: 10 }, o: { gypsum: 1 }, fo: { hf: 10 }, eq: 'CaF₂ + H₂SO₄ → 2HF + CaSO₄', note: 'Fluorspar roasted with strong sulfuric acid in a rotating kiln. Run it in lead-lined pipe: it dissolves glass and titanium.' },
+  { id: 'cryolite', n: 'Synthetic Cryolite', b: 'leach', t: 3, i: { al_hydroxide: 1 }, fi: { hf: 20, naoh: 10 }, o: { cryolite: 1 }, eq: 'Al(OH)₃ + 6HF + 3NaOH → Na₃AlF₆ + 6H₂O', note: 'Natural cryolite came from a single mine at Ivigtut in Greenland, worked out by 1987. Every smelter since runs on synthetic bath.' },
+  { id: 'aluminium_bath', n: 'Aluminium (fresh bath)', b: 'pot', t: 6, i: { alumina: 4, anode: 2, cryolite: 1 }, o: { aluminium: 5 }, fo: { co2: 20 }, eq: '2Al₂O₃ + 3C → 4Al + 3CO₂ (Na₃AlF₆)', note: 'Pots lose fluoride to fume and to the lining. Topping the bath up keeps it near 950°C and raises the current efficiency.' },
+  { id: 'wp_shell', n: 'WP Shell', b: 'workshop', t: 3, lock: 1, i: { plate: 1, brass: 1, phosphorus: 1, black_powder: 1 }, o: { wp_shell: 2 }, note: 'The phosphorus is poured in molten under water and sealed before it can touch air.' },
   { id: 'cartridge', b: 'workshop', t: 2, i: { brass: 1, lead: 1, black_powder: 1 }, o: { cartridge: 2 } },
 ];
 
