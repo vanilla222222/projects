@@ -30,7 +30,7 @@ const sum = o => { let s = 0; for (const k in o) s += o[k]; return s; };
 const isGas = f => FLUIDS[f] && FLUIDS[f].gas && f !== 'steam';
 const spills = (r, f) => isGas(f) || !!(r.bleed && r.bleed.includes(f));
 const PC = 8, PW = W / PC, RAIN = 30;
-const POL_W = { so2: 1, cl2: 3, co2: 0.02, h2: 0, steam: 0, water: 0, acid: 0.5, naoh: 0.3, liquor: 0.3, ticl4: 1, brine: 0.05, nh3: 0.5, hno3: 0.8, tar: 0.4, coalgas: 0.3, toluene: 0.3, nh4cl: 0.1, co: 0.1, phosgene: 1, sif4: 2, h2sif6: 0.5, hf: 1 };
+const POL_W = { so2: 1, cl2: 3, co2: 0.02, h2: 0, steam: 0, water: 0, acid: 0.5, naoh: 0.3, liquor: 0.3, ticl4: 1, brine: 0.05, nh3: 0.5, hno3: 0.8, tar: 0.4, coalgas: 0.3, toluene: 0.3, nh4cl: 0.1, co: 0.1, phosgene: 1, sif4: 2, h2sif6: 0.5, hf: 1, h2s: 2, diesel: 0.3, bfw: 0 };
 const polAt = (x, y) => S.pol[Math.floor(y / PC) * PW + Math.floor(x / PC)] || 0;
 
 function mulberry32(a) {
@@ -983,9 +983,10 @@ function machineFluidIn(e, r) {
       const room = cap - (e.fi[f] || 0);
       if (room <= 0.001) break;
       const o = at(p.x, p.y);
-      if (o && isNode(o) && o.fl === f && o.amt > 0) {
+      if (o && isNode(o) && (o.fl === f || (f === 'water' && o.fl === 'bfw')) && o.amt > 0) {
         const g = Math.min(room, o.amt);
         o.amt -= g; e.fi[f] = (e.fi[f] || 0) + g;
+        if (o.fl === 'bfw') e.soft = (e.soft || 0) + g;
       }
     }
   }
@@ -993,10 +994,13 @@ function machineFluidIn(e, r) {
 
 function fluidToMachine(o, f, a) {
   const r = RECIPE[o.recipe];
+  const soft = f === 'bfw' && r && r.fi && r.fi.water;
+  if (soft) f = 'water';
   if (!r || !r.fi || !r.fi[f]) return 0;
   const g = Math.min(fiCap(r, f) - (o.fi[f] || 0), a);
   if (g <= 0) return 0;
   o.fi[f] = (o.fi[f] || 0) + g;
+  if (soft) o.soft = (o.soft || 0) + g;
   return g;
 }
 
@@ -1027,17 +1031,26 @@ function pumpTick(e) {
 
 function tryStart(e, r) {
   if (r.well && !wellTiles(e).length) return 'empty';
+  if (e.desc > 0) return 'clean';
+  if (e.type === 'boiler' && e.scale >= 1) return 'scale';
   if (r.i) for (const k in r.i) if ((e.inv[k] || 0) < r.i[k]) return 'input';
   if (r.fi) for (const f in r.fi) if ((e.fi[f] || 0) < r.fi[f] - 1e-6) return 'input';
   if (r.o) for (const k in r.o) if ((e.out[k] || 0) + r.o[k] > outCap(r, k)) return 'output';
   if (r.ch) for (const k in r.ch) if ((e.out[k] || 0) + 1 > outCap(r, k)) return 'output';
   if (r.fo) for (const f in r.fo) if (!spills(r, f) && (e.fo[f] || 0) + r.fo[f] > foCap(r, f)) return 'output';
   if (r.i) for (const k in r.i) { e.inv[k] -= r.i[k]; if (!e.inv[k]) delete e.inv[k]; }
+  if (r.fi && r.fi.water) {
+    const sf = Math.min(1, (e.soft || 0) / Math.max(e.fi.water, 1e-6));
+    e.soft = Math.max(0, (e.soft || 0) - sf * r.fi.water);
+    if (e.type === 'boiler') e.scale = Math.min(1, (e.scale || 0) + (1 - sf) * SCALE_RATE * r.fi.water / 60);
+  }
   if (r.fi) for (const f in r.fi) e.fi[f] -= r.fi[f];
   e.cy = true;
   return null;
 }
 
+const SCALE_RATE = 0.0025;
+const scaleMul = e => e.type === 'boiler' ? 1 - 0.6 * (e.scale || 0) : 1;
 function finish(e, r) {
   e.cy = false; e.prog = 0;
   catWear(e, r);
@@ -1048,6 +1061,7 @@ function finish(e, r) {
     e.fo[f] = (e.fo[f] || 0) + r.fo[f];
     const cap = foCap(r, f);
     if (spills(r, f) && e.fo[f] > cap) { vent(e, f, e.fo[f] - cap); e.fo[f] = cap; }
+    if (BUILD[e.type].gen) { vent(e, f, e.fo[f]); e.fo[f] = 0; }
   }
 }
 
@@ -1117,24 +1131,29 @@ function tick() {
     if (r.cat) catSwap(e, r);
     if (!e.cy) e.st = tryStart(e, r) || 'work';
     if (e.cy && BUILD[e.type].kw) demand += BUILD[e.type].kw;
+    if (e.desc > 0) e.desc = Math.max(0, e.desc - DT);
+    if (e.desc === 0) { e.desc = undefined; e.scale = 0; }
   }
   for (const e of l.miner) {
     e.cy = sum(e.out) < 5 && minerOre(e);
     e.st = e.cy ? 'work' : minerOre(e) ? 'output' : 'empty';
     if (e.cy) demand += BUILD.miner.kw;
   }
-  let cap = 0;
+  let cap = 0, gcap = 0;
+  for (const e of l.machine) if (e.cy && BUILD[e.type].gen) gcap += BUILD[e.type].gen;
   for (const g of l.engine) { g.eff = g.amt > 0.01 && g.tf >= 99.9 ? 0.2 + 0.8 * Math.max(0, Math.min(1, (g.tf - 100) / 50)) : 0; g.cap = Math.min(1, g.amt) * 900 * g.eff; cap += g.cap; }
-  const gen = Math.min(demand, cap), sat = demand > 0 ? gen / demand : 1;
+  cap += gcap;
+  const gen = Math.min(demand, cap), sat = demand > 0 ? gen / demand : 1, load = cap > 0 ? gen / cap : 0;
   for (const g of l.engine) { g.kw = cap > 0 ? gen / cap * g.cap : 0; g.amt = Math.max(0, g.amt - (g.eff > 0 ? g.kw / 900 / g.eff : 0)); }
   S.power = { gen, demand, cap, sat };
   for (const e of l.booster) e.sat = sat;
   for (const e of l.machine) {
     if (!e.cy) continue;
-    const r = RECIPE[e.recipe], kw = BUILD[e.type].kw;
-    const sp = kw ? sat : 1;
+    const r = RECIPE[e.recipe], kw = BUILD[e.type].kw, gn = BUILD[e.type].gen;
+    const sp = kw ? sat : gn ? load : 1;
     if (kw && sat < 0.05) e.st = 'power';
-    e.prog += DT * sp * catMul(e, r) / r.t;
+    if (gn) { e.kw = gn * load; e.st = load < 0.01 ? 'idle' : 'work'; }
+    e.prog += DT * sp * catMul(e, r) * scaleMul(e) / r.t;
     if (e.prog >= 1) finish(e, r);
   }
   for (const e of l.miner) {
@@ -1257,8 +1276,8 @@ function shade(hex, f) {
   return `rgb(${r},${g},${b})`;
 }
 
-const ST_COL = { work: '#5fd06a', input: '#e0b84a', output: '#e07a3a', power: '#e04a4a', none: '#8a8f99', empty: '#8a8f99' };
-const ST_TXT = { work: 'Working', input: 'Waiting for inputs', output: 'Output full', power: 'No power', none: 'No recipe set', empty: 'Depleted' };
+const ST_COL = { idle: '#8ac8e0', scale: '#e04a4a', clean: '#e0b84a', work: '#5fd06a', input: '#e0b84a', output: '#e07a3a', power: '#e04a4a', none: '#8a8f99', empty: '#8a8f99' };
+const ST_TXT = { idle: 'Idle, no load', scale: 'Tubes choked with scale', clean: 'Descaling', work: 'Working', input: 'Waiting for inputs', output: 'Output full', power: 'No power', none: 'No recipe set', empty: 'Depleted' };
 
 function render() {
   const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight, z = cam.z;
@@ -1874,7 +1893,7 @@ function drawBuilding(e, ox, oy, z) {
       ctx.fillStyle = '#7fe08a';
       ctx.fillRect(x + p * 3, y + h - p * 3 - z * 0.12, (w - p * 6) * Math.min(1, e.prog), z * 0.12);
     }
-    const st = e.cy && e.st !== 'power' ? 'work' : e.st;
+    const st = e.cy && e.st !== 'power' && e.st !== 'idle' ? 'work' : e.st;
     ctx.fillStyle = ST_COL[st] || '#888';
     ctx.beginPath();
     ctx.arc(x + w - p * 3 - z * 0.12, y + p * 3 + z * 0.12, Math.max(2, z * 0.11), 0, 7);
@@ -1908,12 +1927,13 @@ function tileInfo0(x, y) {
   if (e) {
     const B = BUILD[e.type];
     let s = `<b>${B.n}</b>`;
-    if (kind(e) === 'machine') s += `<br>${e.recipe ? RECIPE[e.recipe].n : 'No recipe'} · ${ST_TXT[e.cy && e.st !== 'power' ? 'work' : e.st] || ''}`;
+    if (kind(e) === 'machine') s += `<br>${e.recipe ? RECIPE[e.recipe].n : 'No recipe'} · ${ST_TXT[e.cy && e.st !== 'power' && e.st !== 'idle' ? 'work' : e.st] || ''}`;
     if (kind(e) === 'pipe') s += `<br>${e.fl && e.amt > 0.01 ? nm(e.fl) + ' · ' + pres(e).toFixed(1) + ' bar · ' + Math.round(e.tf) + '°C' : 'Empty' + (e.fl ? ' (' + nm(e.fl) + ')' : '')}<br><span class="dim">${NP(e).mat}, DN${NP(e).dn}, rated ${NP(e).bar} bar</span>`;
     if (e.type === 'engine') s += `<br>${Math.round(e.kw)} kW · steam ${pres(e).toFixed(1)} bar · ${Math.round(e.tf)}°C`;
     if (e.type === 'booster') s += `<br>Outlet ${e.head} bar · ${Math.round(e.fr)}/s`;
     if (e.type === 'belt' && e.items.length) s += `<br>${e.items.map(i => nm(i.i)).join(', ')}`;
     if (e.type === 'chest') s += `<br>${sum(e.store)}/400 items`;
+    if (e.type === 'boiler' && e.scale > 0.01) s += `<br>Scale ${Math.round(e.scale * 100)}%`;
     if (e.type === 'depot') s += `<br>${(S.orders || []).map(a => nm(ORDERS[a.i].item) + ' ' + a.got + '/' + ORDERS[a.i].n).join('<br>') || 'No open orders'}`;
     if (e.type === 'stack') s += `<br>${stackUsers(e).length} machines venting through it`;
     if (kind(e) === 'hive') s += `<br>Food ${Math.round(e.food)}/50 · ${e.sw} swarms sent`;
@@ -1988,6 +2008,7 @@ function openPanel(e) {
     h += `<label class="row">Filter <select data-act="filter"><option value="">None (all forward)</option>${Object.keys(ITEMS).map(k => `<option value="${k}" ${e.filter === k ? 'selected' : ''}>${ITEMS[k].n}</option>`).join('')}</select></label>`;
   }
   h += '<div id="pdyn"></div><div class="pbtns">';
+  if (e.type === 'boiler') h += '<button data-act="descale">Descale (20 s outage)</button>';
   if (kind(e) === 'machine') h += '<button data-act="insert">Insert from inventory</button><button data-act="take">Take outputs</button>';
   if (e.type === 'miner') h += '<button data-act="take">Take ore</button>';
   if (e.type === 'depot') h += '<button data-act="deliver">Deliver from inventory</button>';
@@ -2043,10 +2064,11 @@ function renderPanelDyn() {
     if (!r) h += '<p class="dim">Pick a recipe, or feed it an item and it will choose one.</p>';
     else {
       h += recipeHtml(r);
-      const st = e.cy && e.st !== 'power' ? 'work' : e.st;
-      h += `<div class="status"><i style="background:${ST_COL[st]}"></i>${e.type === 'boiler' && st === 'output' ? 'Steam full, waiting for demand' : ST_TXT[st] || ''}${BUILD[e.type].kw ? ` · ${BUILD[e.type].kw} kW` : ' · fuel-fired'}</div>`;
+      const st = e.cy && e.st !== 'power' && e.st !== 'idle' ? 'work' : e.st;
+      h += `<div class="status"><i style="background:${ST_COL[st]}"></i>${e.type === 'boiler' && st === 'output' ? 'Steam full, waiting for demand' : ST_TXT[st] || ''}${BUILD[e.type].kw ? ` · ${BUILD[e.type].kw} kW` : BUILD[e.type].gen ? ` · ${Math.round(e.cy ? e.kw || 0 : 0)} / ${BUILD[e.type].gen} kW out` : ' · fuel-fired'}</div>`;
       h += `<div class="prog">${bar(e.cy ? e.prog : 0, 1, '#7fe08a')}</div>`;
       if (r.cat) h += catHtml(e, r);
+      if (e.type === 'boiler') h += `<div class="sec">Tube scale</div><div class="gauge"><span>Scale</span>${bar(e.scale || 0, 1, '#d8c8a0')}<b>${Math.round((e.scale || 0) * 100)}%</b></div><p class="dim">${e.desc > 0 ? `Descaling, back in ${Math.ceil(e.desc)} s.` : (e.soft || 0) > 1 ? 'Fed softened water: no new scale.' : 'Hard water bakes chalk onto the tubes, and steam output falls as the scale thickens. Feed softened water, or shut down and descale.'} Steam rate ${Math.round(scaleMul(e) * 100)}%.</p>`;
       if (r.well) { const l = wellTiles(e), left = l.reduce((a, q) => a + oreAmt[q], 0); h += `<div class="sec">Reservoir</div><div class="spec">${l.length} of ${BUILD[e.type].w * BUILD[e.type].h} tiles on oil · ${fmt(left * r.fo.crude)} crude left</div>`; }
       h += '<div class="sec">Input buffer</div><div class="slots">';
       if (r.i) for (const q in r.i) h += `<div class="slot">${chip(q, Math.floor(e.inv[q] || 0) + '/' + inCap(r, q))}</div>`;
@@ -2163,6 +2185,10 @@ function panelAct(act, el) {
       if (n > 0) { S.inv[r.cat] -= n; if (!S.inv[r.cat]) delete S.inv[r.cat]; moved += n; }
     }
     toast(moved ? `Inserted ${moved} items` : r.i || r.cat ? 'You have none of the inputs' : 'This recipe only uses fluids', !moved);
+  } else if (act === 'descale') {
+    if (!(e.scale > 0.01)) return toast('The tubes are clean', true);
+    if (e.desc > 0) return toast('Already descaling', true);
+    e.desc = 20; toast('Boiler shut down for an acid wash');
   } else if (act === 'deliver') {
     let n = 0;
     for (const a of S.orders.slice()) { const k = ORDERS[a.i].item, m = deliver(k, S.inv[k] || 0); if (m) { S.inv[k] -= m; if (!S.inv[k]) delete S.inv[k]; n += m; } }
@@ -2330,6 +2356,7 @@ const CHAINS = [
   { n: 'Coal tar and TNT', l: [['coal', 'Coke oven (by-products)', 'coke', '+', 'tar', '+', 'coalgas'], ['tar', 'Distillation column + steam', 'toluene', '+', 'pitch'], ['coke', 'Coke oven + pitch', 'anode'], ['toluene', 'Nitrator + hno3 + acid', 'tnt'], ['tnt', 'Workshop + plate + brass + black_powder', 'shell', 'Field howitzer', 'Hive']], d: 'A by-product coke oven keeps what a beehive oven burns off: tar and a hydrogen-rich gas that fires boilers. Distilled tar gives toluene for TNT and pitch that binds anodes. TNT needs mixed nitric and sulfuric acid: nitric acid dissolves lead, so pipe it in titanium or glass-lined pipe. The nitrator and the shell drawings are in the old works.' },
   { n: 'Phosgene', l: [['coke', 'Gas producer + co2', 'co'], ['coke', 'Gas producer + steam', 'carbon'], ['co', '+', 'cl2', 'Phosgene reactor + carbon', 'phosgene'], ['phosgene', 'Cylinder filler + cylinder', 'phos_cyl', 'Livens projector', 'Gas cloud']], d: 'Blow flue-gas CO₂ through white-hot coke and it comes out as carbon monoxide. Steam the coke instead and it turns into activated carbon, the catalyst on which CO and chlorine join into phosgene. Any phosgene the reactor cannot pass on leaks out as a cloud over your own works. Crawlers that survive a gas breed a tolerance to it, so rotate chlorine, ammonia, phosgene and explosives. The reactor drawings are in the old works.' },
   { n: 'Oil and plastics', l: [['crude', 'Crude distillation unit + steam', 'fuel_gas', '+', 'naphtha', '+', 'gas_oil', '+', 'bitumen'], ['naphtha', 'Tube furnace + steam (cracking)', 'ethylene', 'Pressure reactor', 'polyethylene'], ['ethylene', 'Pressure reactor + chlorine', 'edc', 'Tube furnace', 'vcm', '+', 'hcl'], ['hcl', 'Chlorinator + ethylene (oxychlorination)', 'edc'], ['vcm', 'Pressure reactor + water', 'pvc'], ['fuel_gas', 'Tube furnace + steam (reforming)', 'h2'], ['bitumen', 'Coke oven', 'pet_coke', 'Coke oven + pitch', 'anode']], d: 'Pumpjacks stand on oil seeps far from the start. The distillation unit splits crude by boiling point. Naphtha cracks to ethylene, the building block for polyethylene and PVC. Fuel gas fires the furnaces, raises steam, or reforms into hydrogen for ammonia. PVC and HDPE pipe resist acid and chlorine, but melt at 60°C.' },
+  { n: 'Sulfur and clean fuel', l: [['gas_oil', 'Pressure reactor + h2', 'diesel', '+', 'h2s'], ['h2s', 'Claus unit + water', 'sulfur', '+', 'steam'], ['sulfur', 'Roaster', 'so2', 'Acid plant', 'acid'], ['diesel', 'Diesel generator', 'Power'], ['water', 'Leach tank + quicklime', 'bfw', '+', 'crushed_lime'], ['bfw', 'Boiler', 'steam']], d: 'Crude oil carries sulfur. Hydrotreating pulls it out as hydrogen sulfide and leaves clean diesel. The Claus unit burns a third of the H₂S and reacts the rest over alumina to sulfur, raising steam as it goes. Burning that sulfur gives strong, clean SO₂ for acid, which is where most of the world\'s sulfuric acid comes from today. Hard water scales boilers; lime softening drops the calcium out as chalk.' },
   { n: 'Fertilisers', l: [['sylvinite', 'Crusher', 'crushed_sylv', 'Flotation cell + brine', 'potash', '+', 'salt'], ['crushed_phos', 'Leach tank + acid + water', 'h3po4', '+', 'gypsum', '+', 'sif4'], ['crushed_phos', 'Granulator drum + acid', 'ssp'], ['crushed_phos', 'Granulator drum + h3po4', 'tsp'], ['nh3', 'Granulator drum + h3po4', 'dap'], ['nh3', 'Pressure reactor + co2', 'urea'], ['dap', 'Granulator drum + potash + urea', 'npk', 'Rail depot', 'Orders']], d: 'Plants need nitrogen, phosphorus and potassium, and a harvest carries them off the field. Lawes patented superphosphate in 1842 by pouring sulfuric acid on bones and rock. The wet process makes phosphoric acid, leaving mountains of phosphogypsum. Potash is mined as sylvinite, a mix of KCl and rock salt, and parted by flotation in brine. Haber ammonia ends up mostly as urea and DAP. Farmers pay well for all of it at the rail depot.' },
   { n: 'Vanadium and catalysts', l: [['v_pig', 'Converter', 'steel', '+', 'v_slag'], ['v_slag', 'Roaster + soda_ash', 'na_vanadate', 'Leach tank + nh4cl + water', 'amv'], ['amv', 'Lime kiln', 'v2o5', 'Workshop + sand', 'v_cat', 'Acid plant', 'acid'], ['spent_v_cat', 'Leach tank + naoh', 'na_vanadate'], ['iron_conc', 'Arc furnace + alumina + crushed_lime', 'fe_cat', 'Ammonia converter', 'nh3'], ['v2o5', 'Converter + steel + aluminium', 'v_steel', 'Armour wall', 'Defence']], d: 'Rudolf Knietsch at BASF worked out the Contact process on platinum in the 1890s; vanadium pentoxide replaced the easily poisoned platinum in the 1920s and still makes nearly all the world\'s sulfuric acid. A catalyst is not used up by the reaction, but dust, heat and poisons slowly kill it, so beds are screened and recharged. Mittasch\'s fused iron for Haber-Bosch came out of 20,000 trials and has barely changed since.' },
   { n: 'Phosphorus and fluorine', l: [['phosphate_rock', 'Crusher', 'crushed_phos'], ['crushed_phos', 'Arc furnace + sand + coke', 'phosphorus', '+', 'slag', '+', 'sif4'], ['sif4', 'Gas scrubber + water', 'h2sif6', 'Leach tank + crushed_lime', 'fluorspar'], ['fluorspar', 'Retort + acid', 'hf', 'Leach tank + al_hydroxide + naoh', 'cryolite'], ['cryolite', 'Reduction pot + alumina + anode', 'aluminium'], ['phosphorus', 'Workshop + brass + plate + powder', 'wp_shell', 'Field howitzer', 'Fire']], d: 'Phosphate rock sits in a few far-off beds. Most of the world\'s phosphate becomes fertiliser, but an electric furnace boils the element itself out of it as white phosphorus, which burns on contact with air. The fluorine in the apatite comes off as SiF₄ fume; scrub it, fix it with lime as fluorspar, and turn that into hydrofluoric acid and synthetic cryolite to top up your aluminium pots. Fluorides eat glass-lined and titanium pipe, so run them in lead.' },
@@ -2372,6 +2399,10 @@ const HELP = `<div class="help">
 <p>Mine <b>phosphate rock</b> and smelt it in the <b>Electric arc furnace</b> with sand and coke to get white phosphorus. The furnace also gives off CO and SiF₄. Vented SiF₄ is a heavy pollutant, so scrub it to fluorosilicic acid and turn that into fluorspar with crushed limestone. Fluorspar in a retort with sulfuric acid makes hydrofluoric acid, and HF with aluminium hydroxide and caustic makes cryolite, which lets reduction pots run faster. Fluorides dissolve glass-lined and titanium pipe three times faster than steel; lead-lined pipe resists them. <b>WP shells</b> from the old works' books set the ground burning for 14 seconds. The fire ignores gas tolerance but also burns your own buildings.</p>
 <h3>Oil and plastics</h3>
 <p>Dark, glistening <b>oil seeps</b> lie far from the start. A <b>Pumpjack</b> placed on one lifts crude oil and slowly drains the tiles under it. The <b>Crude distillation unit</b> needs a little steam and splits crude into fuel gas, naphtha, gas oil and bitumen. The <b>Tube furnace</b> burns fuel gas to crack naphtha into ethylene, reform fuel gas into hydrogen, or crack EDC into vinyl chloride. Ethylene polymerises to polyethylene in the <b>Pressure reactor</b>, or takes on chlorine to make EDC. Feed the HCl from EDC cracking back into a chlorinator with more ethylene. Plastic pipe shrugs off acid and chlorine but softens at 60°C.</p>
+<h3>Boiler water</h3>
+<p>Raw water is hard. Every boiler batch on it bakes a little chalk onto the tubes, steam output falls as the <b>scale</b> builds, and a fully choked boiler stops. Shut it down to <b>Descale</b> from its panel (a 20 second outage), or feed it <b>softened water</b>: run water through a leach tank with quicklime and the hardness settles out as crushed limestone you can send back to the kiln. Any machine that takes water also takes softened water.</p>
+<h3>Sulfur and diesel</h3>
+<p>The <b>Pressure reactor</b> hydrotreats gas oil with hydrogen into <b>diesel</b>, giving off hydrogen sulfide. Vented H₂S is a bad pollutant; a <b>Claus unit</b> with a little water turns it into sulfur and steam. Burn sulfur in a roaster for clean SO₂ to feed an acid plant. The <b>Diesel generator</b> gives up to 600 kW and burns fuel only for the power actually drawn. It runs on raw gas oil too, but then sends SO₂ up the exhaust.</p>
 <h3>Fertilisers</h3>
 <p>Pink-and-red <b>sylvinite</b> beds hold potash. Crush it and float it in a <b>Flotation cell</b> fed with brine: the KCl floats, the rock salt sinks. Sulfuric acid on crushed phosphate in the <b>Granulator drum</b> gives single superphosphate. In a leach tank it gives <b>phosphoric acid</b> plus gypsum, which makes triple superphosphate, or DAP with ammonia. The <b>Pressure reactor</b> turns ammonia and CO₂ into urea. DAP, potash and urea granulate together into NPK.</p>
 <h3>Rail depot and orders</h3>

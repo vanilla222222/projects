@@ -154,6 +154,9 @@ const FLUIDS = {
   edc: { n: 'Ethylene Dichloride', c: '#d0d8a8', f: 'C₂H₄Cl₂, a heavy oily liquid. Traces of HCl in it eat steel', cp: 1.3, t: 50, corr: 0.3, ck: 'cl' },
   vcm: { n: 'Vinyl Chloride', c: '#c8e0c0', f: 'C₂H₃Cl gas, kept liquid under pressure. A carcinogen: plants run it in sealed loops', gas: true, cp: 0.9, t: 40 },
   hcl: { n: 'Hydrogen Chloride', c: '#b8d8a0', f: 'HCl gas. With any moisture it becomes hydrochloric acid, which dissolves steel and titanium', gas: true, cp: 0.8, t: 60, corr: 0.9, ck: 'cl' },
+  h2s: { n: 'Hydrogen Sulfide', c: '#c8c070', f: 'H₂S, the rotten-egg gas stripped out of sour oil. Deadens the sense of smell at dangerous levels', gas: true, cp: 1.0, t: 50 },
+  diesel: { n: 'Diesel', c: '#d8b848', f: 'Hydrotreated gas oil with the sulfur taken out. Burns clean in compression-ignition engines', cp: 2.0, t: 40 },
+  bfw: { n: 'Softened Water', c: '#8ac8f0', f: 'Water with its calcium hardness precipitated out. Boilers fed with it stay free of scale', cp: 4.18, t: 15 },
   h3po4: { n: 'Phosphoric Acid', c: '#c8b878', f: 'Green-black wet-process H₃PO₄, about 30% P₂O₅, full of fluoride and iron. Attacks steel; lead and rubber hold it', cp: 2.6, t: 75, corr: 0.6, ck: 'acid' },
 };
 
@@ -235,6 +238,8 @@ const BUILD = {
   cracker: { n: 'Tube Furnace', kind: 'machine', w: 3, h: 3, cat: 'Chemistry', c: '#a8583a', ab: 'TF', kw: 30, cost: { brick: 16, steel: 6, motor: 1 }, d: 'Alloy tubes hung in a gas-fired firebox. Steam crackers, steam reformers and EDC crackers are all this furnace with a different feed and catalyst.' },
   reactor: { n: 'Pressure Reactor', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#6a8a9a', ab: 'PX', kw: 60, cost: { plate: 10, glass: 2, motor: 2 }, d: 'A stirred, jacketed pressure vessel. Polymerises ethylene and vinyl chloride, and chlorinates ethylene to EDC.' },
   granulator: { n: 'Granulator Drum', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#8a9a5a', ab: 'GR', kw: 50, cost: { plate: 8, brick: 4, motor: 2 }, d: 'A slowly turning, gently sloped drum. Acid and ammonia sprayed onto a rolling bed of powder react and build up layer by layer into hard, round granules.' },
+  claus: { n: 'Claus Unit', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#b8a040', ab: 'CU', kw: 20, cost: { brick: 10, plate: 6, steel_pipe: 4 }, d: 'A burner and a train of alumina catalyst beds that turn hydrogen sulfide into liquid sulfur. The reaction heat raises steam in a waste-heat boiler.' },
+  diesel_gen: { n: 'Diesel Generator', kind: 'machine', w: 2, h: 2, cat: 'Power', c: '#5a6a5a', ab: 'DG', gen: 600, cost: { steel: 8, casting: 6, motor: 4, wire: 10 }, d: 'A compression-ignition engine on an alternator. Up to 600 kW, and it only burns fuel for the power drawn. Raw gas oil works but sends its sulfur up the exhaust as SO₂.' },
   depot: { n: 'Rail Depot', kind: 'chest', w: 3, h: 3, cat: 'Logistics', c: '#5a6a7a', ab: 'RD', cost: { plate: 10, casting: 10, brick: 10 }, d: 'A goods siding where customers\' wagons are loaded. Belts, chests and machines touching it fill the open orders. Every finished order pays in parts, and every third brings a lab notebook from the buyer.' },
   phos_rx: { n: 'Phosgene Reactor', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#8a8a6a', ab: 'PH', kw: 30, lock: 'phosgene', cost: { plate: 8, glass: 4, motor: 1 }, d: 'Water-jacketed tubes packed with activated carbon. Carbon monoxide and chlorine combine on the carbon surface at about 200°C.' },
 };
@@ -369,6 +374,12 @@ const RECIPES = [
   { id: 'dap', n: 'Diammonium Phosphate', b: 'granulator', t: 3, fi: { nh3: 20, h3po4: 20 }, o: { dap: 2 }, eq: '2NH₃ + H₃PO₄ → (NH₄)₂HPO₄', note: 'Ammonia is sparged into the rolling bed through a pipe below the surface; the heat of neutralisation dries the granules.' },
   { id: 'urea', b: 'reactor', t: 3, fi: { nh3: 20, co2: 10 }, o: { urea: 2 }, eq: '2NH₃ + CO₂ → NH₂COONH₄ → CO(NH₂)₂ + H₂O', note: 'Bosch-Meiser process, 1922: about 150 bar and 190°C. The CO₂ usually comes from the same plant\'s steam reformer.' },
   { id: 'npk', n: 'NPK Compound', b: 'granulator', t: 3, i: { dap: 1, potash: 1, urea: 1 }, o: { npk: 3 } },
+  { id: 'hydrotreat', n: 'Hydrotreating', b: 'reactor', t: 3, fi: { gas_oil: 20, h2: 6 }, fo: { diesel: 18, h2s: 4 }, bleed: ['h2s'], eq: 'R-SH + H₂ → R-H + H₂S (CoMo catalyst, 350°C)', note: 'Hydrogen strips sulfur out of the oil as H₂S. Vented H₂S is toxic and stinks, so send it to a Claus unit.' },
+  { id: 'claus', n: 'Claus Sulfur', b: 'claus', t: 2, fi: { h2s: 20, water: 15 }, o: { sulfur: 2 }, fo: { steam: 15, so2: 1 }, bleed: ['so2'], eq: 'H₂S + 1.5O₂ → SO₂ + H₂O ; 2H₂S + SO₂ → 3S + 2H₂O', note: 'Carl Friedrich Claus, 1883. A third of the H₂S burns to SO₂, which then reacts with the rest over alumina. About 97% of the sulfur comes out; the tail gas carries the rest.' },
+  { id: 'burn_sulfur', n: 'Sulfur Burning', b: 'roaster', t: 2, i: { sulfur: 1 }, fo: { so2: 30 }, eq: 'S + O₂ → SO₂', note: 'Most acid plants today burn molten sulfur recovered from oil and gas, not ore. The gas is clean and strong.' },
+  { id: 'soften', n: 'Lime Softening', b: 'leach', t: 2, i: { quicklime: 1 }, fi: { water: 120 }, fo: { bfw: 120 }, o: { crushed_lime: 2 }, eq: 'Ca(HCO₃)₂ + Ca(OH)₂ → 2CaCO₃↓ + 2H₂O', note: 'Thomas Clark\'s process, 1841. Slaked lime turns dissolved calcium bicarbonate into chalk that settles out, so it never bakes onto boiler tubes.' },
+  { id: 'diesel_power', n: 'Power (diesel)', b: 'diesel_gen', t: 2, fi: { diesel: 10 }, fo: { co2: 6 }, bleed: ['co2'], eq: 'C₁₂H₂₆ + 18.5O₂ → 12CO₂ + 13H₂O' },
+  { id: 'gasoil_power', n: 'Power (raw gas oil)', b: 'diesel_gen', t: 2, fi: { gas_oil: 10 }, fo: { co2: 6, so2: 3 }, bleed: ['co2', 'so2'], eq: 'Fuel S + O₂ → SO₂', note: 'Untreated gas oil holds about 1% sulfur, which leaves the exhaust as SO₂ and brings acid rain.' },
   { id: 'wp_shell', n: 'WP Shell', b: 'workshop', t: 3, lock: 1, i: { plate: 1, brass: 1, phosphorus: 1, black_powder: 1 }, o: { wp_shell: 2 }, note: 'The phosphorus is poured in molten under water and sealed before it can touch air.' },
   { id: 'cartridge', b: 'workshop', t: 2, i: { brass: 1, lead: 1, black_powder: 1 }, o: { cartridge: 2 } },
 ];
