@@ -4,7 +4,7 @@ const W = 160, H = 160, DT = 1 / 30, TP = 8;
 const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
 const KEY = 'chemfactory-save-v1';
 const GAP = 0.25, BELT_V = 2 * DT, MINER_T = 2, PUMP_RATE = 60 * DT;
-const PARTS = ['casting', 'plate', 'wire', 'motor', 'brick', 'lead_sheet', 'brass', 'cartridge'];
+const PARTS = ['casting', 'plate', 'wire', 'motor', 'brick', 'lead_sheet', 'brass', 'cartridge', 'cylinder'];
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 const tcv = document.createElement('canvas');
 tcv.width = W * TP; tcv.height = H * TP;
@@ -30,7 +30,7 @@ const sum = o => { let s = 0; for (const k in o) s += o[k]; return s; };
 const isGas = f => FLUIDS[f] && FLUIDS[f].gas && f !== 'steam';
 const spills = (r, f) => isGas(f) || !!(r.bleed && r.bleed.includes(f));
 const PC = 8, PW = W / PC, RAIN = 30;
-const POL_W = { so2: 1, cl2: 3, co2: 0.02, h2: 0, steam: 0, water: 0, acid: 0.5, naoh: 0.3, liquor: 0.3, ticl4: 1, brine: 0.05 };
+const POL_W = { so2: 1, cl2: 3, co2: 0.02, h2: 0, steam: 0, water: 0, acid: 0.5, naoh: 0.3, liquor: 0.3, ticl4: 1, brine: 0.05, nh3: 0.5, hno3: 0.8 };
 const polAt = (x, y) => S.pol[Math.floor(y / PC) * PW + Math.floor(x / PC)] || 0;
 
 function mulberry32(a) {
@@ -138,7 +138,7 @@ const isNode = e => { const k = kind(e); return k === 'pipe' || k === 'engine'; 
 const NP = e => e.type === 'engine' ? ENGINE_P : BUILD[e.type].P;
 const pres = e => 10 * e.amt / NP(e).v;
 const nodeOk = (e, f) => e.type === 'engine' ? f === 'steam' : (!e.fl || e.fl === f);
-const RES_N = { acid: 'acid', cl: 'chlorides', alk: 'caustic' };
+const RES_N = { acid: 'acid', cl: 'chlorides', alk: 'caustic', nit: 'nitric acid' };
 const resName = r => r.split(' ').map(k => RES_N[k]).join(', ');
 const resists = (P, f) => !f || !FLUIDS[f].ck || (P.res || '').split(' ').includes(FLUIDS[f].ck);
 const srcT = f => FLUIDS[f].t != null ? FLUIDS[f].t : AMB;
@@ -173,6 +173,8 @@ function makeEnt(type, x, y, dir) {
     case 'miner': e.out = {}; e.prog = 0; e.k = 0; break;
     case 'turret': Object.assign(e, { ammo: 0, rd: 0, cd: 0, ang: -Math.PI / 2, sh: -1, kills: 0 }); break;
     case 'hive': Object.assign(e, { food: 0, sw: 0, dc: 0 }); break;
+    case 'projector': Object.assign(e, { pay: {}, pw: 0, cd: 0, ang: -Math.PI / 2, sh: -9, shots: 0 }); break;
+    case 'ruin': e.done = 0; break;
   }
   if (BUILD[type].hp) e.hp = BUILD[type].hp;
   return e;
@@ -234,7 +236,7 @@ function removeEnt(e) {
 
 function lists() {
   if (L) return L;
-  L = { belt: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [], wall: [], turret: [], hive: [] };
+  L = { belt: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [], wall: [], turret: [], hive: [], projector: [], ruin: [] };
   for (const e of ents.values()) {
     const k = kind(e);
     if (k === 'pipe') L.node.push(e);
@@ -278,6 +280,12 @@ function acceptItem(o, k) {
     o.ammo++;
     return true;
   }
+  if (kd === 'projector') {
+    if (k === 'black_powder') { if (o.pw >= POW_CAP) return false; o.pw++; return true; }
+    if (!PAYLOADS.includes(k) || sum(o.pay) >= PROJ_CAP) return false;
+    o.pay[k] = (o.pay[k] || 0) + 1;
+    return true;
+  }
   if (kd === 'sorter') {
     if (o.buf) return false;
     o.buf = k;
@@ -286,7 +294,7 @@ function acceptItem(o, k) {
   if (kd === 'machine') {
     let r = RECIPE[o.recipe];
     if (!r) {
-      r = RECIPES.find(q => q.b === o.type && q.i && q.i[k]);
+      r = RECIPES.find(q => q.b === o.type && q.i && q.i[k] && avail(q));
       if (!r) return false;
       setRecipe(o, r.id);
     }
@@ -494,7 +502,7 @@ function burst(e, why) {
 const TUR_CAP = 20, TUR_R = 10, BUG_V = 1.6, MAX_BUGS = 80, MAX_HIVES = 30, BUG_LIFE = 150;
 const maxHp = e => BUILD[e.type].hp || 60 * BUILD[e.type].w * BUILD[e.type].h;
 const ctr = e => ({ x: e.x + BUILD[e.type].w / 2, y: e.y + BUILD[e.type].h / 2 });
-function wreck(e) {
+function wreck(e, why) {
   if (!ents.has(e.id)) return;
   const B = BUILD[e.type], c = ctr(e);
   if (e.fl && e.amt > 0.01) { S.spill[e.fl] = (S.spill[e.fl] || 0) + e.amt; emit(e, e.fl, e.amt); }
@@ -502,13 +510,25 @@ function wreck(e) {
   unlink(e);
   if (sel === e.id) closePanel();
   fx.push({ x: c.x, y: c.y, t: 0, c: kind(e) === 'hive' ? '#a0c040' : '#8a7a6a' });
-  if (kind(e) === 'hive') { S.hk = (S.hk || 0) + 1; toast('Crawler hive destroyed'); }
+  if (kind(e) === 'hive') {
+    S.hk = (S.hk || 0) + 1;
+    toast('Crawler hive destroyed');
+    if (Math.random() < 0.25) { const r = unlockRandom(); if (r) toast(`A lab notebook in the wreckage: ${r.n} (${BUILD[r.b].n})`); }
+  }
+  else if (why === 'gas') { S.lost = (S.lost || 0) + 1; toast(`${B.n} at ${e.x},${e.y} was corroded through by chlorine`, true); }
   else { S.lost = (S.lost || 0) + 1; eatToast(B.n, e); }
 }
-function hurt(e, d) {
+function hurt(e, d, why) {
   if (e.hp == null) e.hp = maxHp(e);
   e.hp -= d;
-  if (e.hp <= 0) wreck(e);
+  if (e.hp <= 0) wreck(e, why);
+}
+const avail = r => !r.lock || !!(S.unl && S.unl[r.id]);
+const buildOk = t => !BUILD[t].lock || !!(S.unl && S.unl[BUILD[t].lock]);
+function unlock(id) { S.unl[id] = 1; return RECIPE[id]; }
+function unlockRandom() {
+  const l = RECIPES.filter(r => r.lock && !S.unl[r.id]);
+  return l.length ? unlock(l[Math.floor(Math.random() * l.length)].id) : null;
 }
 function hiveSpot(x, y) {
   if (x < 1 || y < 1 || x > W - 3 || y > H - 3) return false;
@@ -516,7 +536,7 @@ function hiveSpot(x, y) {
   return true;
 }
 function farFromBase(x, y, r) {
-  for (const e of ents.values()) if (kind(e) !== 'hive' && Math.abs(e.x - x) < r && Math.abs(e.y - y) < r) return false;
+  for (const e of ents.values()) if (kind(e) !== 'hive' && kind(e) !== 'ruin' && Math.abs(e.x - x) < r && Math.abs(e.y - y) < r) return false;
   return true;
 }
 function addHive(x, y) {
@@ -539,6 +559,128 @@ function spawnHives() {
   }
   S.hv = 1;
 }
+function ruinSpot(x, y) {
+  if (x < 2 || y < 2 || x > W - 5 || y > H - 5) return false;
+  for (let j = -1; j < 4; j++) for (let i = -1; i < 4; i++) { const k = (y + j) * W + x + i; if (occ[k] || terrain[k] === 1) return false; }
+  return true;
+}
+function spawnRuins() {
+  const rng = mulberry32(S.seed + 4242), rs = [];
+  for (let k = 0; k < 600 && rs.length < 4; k++) {
+    const a = rng() * Math.PI * 2, d = 58 + rng() * 16;
+    const x = Math.round(W / 2 + Math.cos(a) * d), y = Math.round(H / 2 + Math.sin(a) * d);
+    if (!ruinSpot(x, y) || !farFromBase(x, y, 20) || rs.some(o => Math.hypot(o.x - x, o.y - y) < 30)) continue;
+    const e = makeEnt('ruin', x, y, 0);
+    addEnt(e);
+    rs.push(e);
+    let g = 0;
+    for (let q = 0; q < 60 && g < 3; q++) {
+      const b = rng() * Math.PI * 2, r = 5 + rng() * 3;
+      const hx = Math.round(x + 1 + Math.cos(b) * r - 1), hy = Math.round(y + 1 + Math.sin(b) * r - 1);
+      if (!hiveSpot(hx, hy)) continue;
+      addHive(hx, hy);
+      g++;
+    }
+  }
+  S.rv = 1;
+}
+function guards(e) {
+  const c = ctr(e);
+  return lists().hive.filter(h => { const q = ctr(h); return Math.hypot(q.x - c.x, q.y - c.y) < 16; });
+}
+function searchRuin(e) {
+  if (e.done) return toast('Already searched. Nothing left but rust.', true);
+  const g = guards(e).length;
+  if (g) return toast(`${g} hive${g > 1 ? 's' : ''} within 16 tiles still guard these works. Clear them first.`, true);
+  e.done = 1;
+  S.rs = (S.rs || 0) + 1;
+  const loot = { pt_gauze: 2, motor: 3, plate: 12, cylinder: 4 };
+  for (const k in loot) give(k, loot[k]);
+  const r = !S.unl.haber ? unlock('haber') : unlockRandom();
+  toast(`Salvaged 2 platinum gauze, 3 motors, 12 plates, 4 cylinders`);
+  if (r) toast(`The lab books describe ${r.n} (${BUILD[r.b].n}). Recipe unlocked.`);
+  renderHotbar();
+}
+const PROJ_R = 28, PROJ_CAP = 6, POW_CAP = 20, PAYLOADS = ['nh3_cyl', 'cl2_cyl', 'he_drum'];
+const GAS = { cl2: { v: 0.45, tau: 36, tox: 1, rgb: '190,214,70' }, nh3: { v: 1.4, tau: 16, tox: 4, rgb: '214,228,244' } };
+function projectorTick(e) {
+  e.cd -= DT;
+  if (e.cd > 0) return;
+  e.cd = 1;
+  const k = PAYLOADS.find(q => e.pay[q] > 0);
+  e.tgt = 0;
+  if (!k) return;
+  const c = ctr(e);
+  let h = null, bd = PROJ_R * PROJ_R;
+  for (const o of lists().hive) { const q = ctr(o), d = (q.x - c.x) ** 2 + (q.y - c.y) ** 2; if (d < bd && d > 25) { bd = d; h = o; } }
+  if (!h) return;
+  e.tgt = h.id;
+  if (!(e.pw > 0)) return;
+  const q = ctr(h), a = Math.random() * Math.PI * 2, sc = Math.random() * 1.2;
+  const tx = q.x + Math.cos(a) * sc, ty = q.y + Math.sin(a) * sc, dist = Math.hypot(tx - c.x, ty - c.y);
+  if (!--e.pay[k]) delete e.pay[k];
+  e.pw--;
+  e.shots++;
+  e.ang = Math.atan2(ty - c.y, tx - c.x);
+  e.sh = S.t;
+  e.cd = 4;
+  S.shells.push({ sx: c.x, sy: c.y, tx, ty, t: 0, T: Math.max(1.5, dist / 12), k, pid: e.id });
+}
+function land(s) {
+  if (s.k === 'he_drum') {
+    for (let n = 0; n < 3; n++) fx.push({ x: s.tx + (Math.random() - 0.5), y: s.ty + (Math.random() - 0.5), t: n * 0.1, c: n ? '#5a5048' : '#ffb347' });
+    S.booms.push({ x: s.tx, y: s.ty, t: 0 });
+    for (const h of lists().hive.slice()) { const q = ctr(h), d = Math.hypot(q.x - s.tx, q.y - s.ty); if (d < 3) { h.lh = S.t; hurt(h, 350 * (1 - d / 4)); } }
+    for (const b of S.bugs) if (Math.hypot(b.x - s.tx, b.y - s.ty) < 3.5) b.hp -= 80;
+  } else {
+    S.clouds.push({ x: s.tx, y: s.ty, g: s.k === 'nh3_cyl' ? 'nh3' : 'cl2', m: 40, r: 1.2, s: Math.random() * 100 });
+    fx.push({ x: s.tx, y: s.ty, t: 0.4, c: s.k === 'nh3_cyl' ? '#d6e4f4' : '#bed646' });
+  }
+  let h = null, bd = 64;
+  for (const o of lists().hive) { const q = ctr(o), d = (q.x - s.tx) ** 2 + (q.y - s.ty) ** 2; if (d < bd) { bd = d; h = o; } }
+  if (h && h.dc <= 0 && ents.has(s.pid)) { spawnBugs(h, 2 + Math.floor(S.evo * 3), s.pid); h.dc = 10; }
+}
+function shellStep() {
+  for (let i = S.shells.length - 1; i >= 0; i--) {
+    const s = S.shells[i];
+    s.t += DT;
+    if (s.t >= s.T) { S.shells.splice(i, 1); land(s); }
+  }
+  for (let i = S.booms.length - 1; i >= 0; i--) if ((S.booms[i].t += DT) > 0.8) S.booms.splice(i, 1);
+}
+function windStep() {
+  const w = S.wind;
+  w.a += (Math.random() - 0.5) * 0.25;
+  w.v = Math.max(0.05, Math.min(0.7, w.v + (Math.random() - 0.5) * 0.08));
+}
+function cloudStep(dt) {
+  const wx = Math.cos(S.wind.a) * S.wind.v, wy = Math.sin(S.wind.a) * S.wind.v, hs = lists().hive;
+  for (let i = S.clouds.length - 1; i >= 0; i--) {
+    const c = S.clouds[i], G = GAS[c.g];
+    c.x += wx * G.v * dt; c.y += wy * G.v * dt;
+    c.r = Math.sqrt(c.r * c.r + 0.8 * dt);
+    c.m *= Math.exp(-dt / G.tau);
+    if (c.m < 1.5 || c.x < -6 || c.y < -6 || c.x > W + 6 || c.y > H + 6) { S.clouds.splice(i, 1); continue; }
+    const k = c.m / (Math.PI * c.r * c.r), R2 = c.r * c.r;
+    for (const b of S.bugs) if ((b.x - c.x) ** 2 + (b.y - c.y) ** 2 < R2) b.hp -= 20 * k * G.tox * dt;
+    for (const h of hs) {
+      if (!ents.has(h.id)) continue;
+      const q = ctr(h);
+      if ((q.x - c.x) ** 2 + (q.y - c.y) ** 2 < R2 + 1) { h.lh = S.t; hurt(h, 5 * k * G.tox * dt); }
+    }
+    if (c.g !== 'cl2' || k < 0.15) continue;
+    const seen = new Set(), r = Math.ceil(c.r);
+    for (let y = Math.max(0, Math.floor(c.y) - r); y <= Math.min(H - 1, Math.floor(c.y) + r); y++)
+      for (let x = Math.max(0, Math.floor(c.x) - r); x <= Math.min(W - 1, Math.floor(c.x) + r); x++) {
+        const id = occ[y * W + x];
+        if (!id || seen.has(id) || (x + 0.5 - c.x) ** 2 + (y + 0.5 - c.y) ** 2 > R2) continue;
+        seen.add(id);
+        const e = ents.get(id), kd = e && kind(e);
+        if (!e || kd === 'hive' || kd === 'ruin' || kd === 'wall') continue;
+        hurt(e, 1.5 * k * dt, 'gas');
+      }
+  }
+}
 function smell(x, y) {
   const cx = Math.floor(x / PC), cy = Math.floor(y / PC), r = [];
   for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
@@ -551,7 +693,7 @@ function nearestEnt(x, y, r, pick) {
   let best = null, bd = r * r;
   for (const e of ents.values()) {
     const k = kind(e);
-    if (k === 'hive' || k === 'belt' || (pick && !pick(e))) continue;
+    if (k === 'hive' || k === 'belt' || k === 'ruin' || (pick && !pick(e))) continue;
     const c = ctr(e), d = (c.x - x) ** 2 + (c.y - y) ** 2;
     if (d < bd) { bd = d; best = e; }
   }
@@ -617,6 +759,7 @@ function bugStep() {
       const X = Math.floor(nx), Y = Math.floor(ny);
       if (X < 0 || Y < 0 || X >= W || Y >= H || terrain[Y * W + X] === 1) return 'water';
       const o = at(X, Y);
+      if (o && kind(o) === 'ruin') return 'water';
       if (o && kind(o) !== 'belt' && kind(o) !== 'hive' && !(Math.floor(b.x) === X && Math.floor(b.y) === Y)) return o;
       b.x = nx; b.y = ny;
       return null;
@@ -765,7 +908,10 @@ function tick() {
   const l = lists();
   S.t += DT;
   S.tk = (S.tk || 0) + 1;
-  if (S.tk % 30 === 0) { polStep(); hiveStep(); }
+  if (S.tk % 30 === 0) { polStep(); hiveStep(); windStep(); }
+  if (S.tk % 3 === 0) cloudStep(DT * 3);
+  shellStep();
+  for (const e of l.projector) projectorTick(e);
   for (const e of l.stack) e.puff = (e.puff || 0) * 0.985;
   for (const b of l.belt) beltTick(b);
   for (const s of l.sorter) sorterTick(s);
@@ -832,10 +978,10 @@ function serialize() {
   const es = [];
   for (const e of ents.values()) {
     const o = Object.assign({}, e);
-    delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty;
+    delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, help: S.help, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), shells: S.shells, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, help: S.help, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -849,8 +995,9 @@ function initWorld(seed) {
 function newGame(seed) {
   seed = seed == null ? Math.floor(Math.random() * 1e9) : seed;
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
-  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: [], evo: 0, lost: 0, kills: 0, hk: 0 };
+  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: [], evo: 0, lost: 0, kills: 0, hk: 0, unl: {}, clouds: [], shells: [], booms: [], wind: { a: Math.random() * 7, v: 0.3 } };
   initWorld(seed);
+  spawnRuins();
   spawnHives();
   cam = { x: W / 2, y: H / 2, z: 32 };
   tool = null; sel = null;
@@ -862,7 +1009,7 @@ function load() {
   try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) { d = null; }
   if (!d || d.v !== 1) return false;
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
-  S = { seed: d.seed, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv };
+  S = { seed: d.seed, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, unl: d.unl || {}, clouds: d.clouds || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 } };
   initWorld(d.seed);
   for (const k in S.dep) { const i = +k; oreAmt[i] = S.dep[k]; if (oreAmt[i] <= 0) { oreAmt[i] = 0; oreType[i] = 0; } }
   for (const o of d.ents || []) {
@@ -871,6 +1018,7 @@ function load() {
     addEnt(e);
     S.nextId = Math.max(S.nextId, e.id + 1);
   }
+  if (!S.rv) spawnRuins();
   if (!S.hv) spawnHives();
   if (d.cam) cam = d.cam;
   drawTerrain();
@@ -971,6 +1119,7 @@ function render() {
     ctx.fillRect(X + 2, Y, (B.w * z - 4) * e.hp / maxHp(e), z * 0.12);
   }
   if (overlay !== 3) drawSmog(ox, oy, z);
+  drawGas(ox, oy, z);
   if (overlay) drawOverlay(vis, ox, oy, z);
   for (let i = fx.length - 1; i >= 0; i--) {
     const f = fx[i];
@@ -1263,6 +1412,102 @@ function drawWall(e, x, y, z) {
     ctx.stroke();
   }
 }
+function drawProjector(e, x, y, w, h, z) {
+  const B = BUILD[e.type];
+  ctx.fillStyle = '#4a4034';
+  ctx.fillRect(x + z * 0.08, y + z * 0.08, w - z * 0.16, h - z * 0.16);
+  ctx.fillStyle = '#5e5244';
+  ctx.fillRect(x + z * 0.18, y + z * 0.18, w - z * 0.36, h - z * 0.36);
+  const dx = Math.cos(e.ang) * z * 0.12, dy = Math.sin(e.ang) * z * 0.12;
+  for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) {
+    const cx = x + w * (0.27 + i * 0.23), cy = y + h * (0.27 + j * 0.23);
+    ctx.fillStyle = shade(B.c, 0.8);
+    ctx.beginPath(); ctx.arc(cx, cy, z * 0.17, 0, 7); ctx.fill();
+    ctx.fillStyle = '#141210';
+    ctx.beginPath(); ctx.arc(cx + dx, cy + dy, z * 0.11, 0, 7); ctx.fill();
+  }
+  const ks = PAYLOADS.filter(q => e.pay[q] > 0);
+  let n = 0;
+  for (const q of ks) for (let m = 0; m < e.pay[q] && n < PROJ_CAP; m++, n++) {
+    ctx.fillStyle = q === 'he_drum' ? '#c05030' : q === 'cl2_cyl' ? '#b8d040' : '#d8e4f4';
+    ctx.fillRect(x + z * 0.2 + n * z * 0.26, y + h - z * 0.3, z * 0.2, z * 0.14);
+  }
+  const f = Math.min(1, e.pw / POW_CAP);
+  ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x + w - z * 0.27, y + z * 0.2, z * 0.1, h - z * 0.55);
+  ctx.fillStyle = f > 0 ? '#606060' : '#e04a4a';
+  ctx.fillRect(x + w - z * 0.27, y + z * 0.2 + (h - z * 0.55) * (1 - f), z * 0.1, (h - z * 0.55) * f || Math.max(1, z * 0.04));
+  const age = S.t - e.sh;
+  if (age < 1.2) {
+    ctx.globalAlpha = Math.max(0, 0.7 - age * 0.6);
+    ctx.fillStyle = '#d8d0c0';
+    for (let k = 0; k < 6; k++) { ctx.beginPath(); ctx.arc(x + w / 2 + Math.cos(e.ang) * z * age * (0.6 + k * 0.2) + (hash(k, e.id, 5) - 0.5) * z, y + h / 2 + Math.sin(e.ang) * z * age * (0.6 + k * 0.2) + (hash(e.id, k, 5) - 0.5) * z - age * z * 0.6, z * (0.2 + age * 0.4), 0, 7); ctx.fill(); }
+    ctx.globalAlpha = 1;
+    if (age < 0.08) { ctx.fillStyle = '#ffe08a'; ctx.beginPath(); ctx.arc(x + w / 2 + dx * 3, y + h / 2 + dy * 3, z * 0.3, 0, 7); ctx.fill(); }
+  }
+}
+function drawRuin(e, x, y, w, h, z) {
+  ctx.fillStyle = '#3e3a36';
+  ctx.fillRect(x + z * 0.1, y + z * 0.1, w - z * 0.2, h - z * 0.2);
+  for (let k = 0; k < 9; k++) {
+    ctx.fillStyle = k % 2 ? '#4a4540' : '#35322e';
+    ctx.fillRect(x + (k % 3) * z + z * 0.15, y + Math.floor(k / 3) * z + z * 0.15, z * 0.7 * (0.6 + 0.4 * hash(k, e.id, 2)), z * 0.7 * (0.6 + 0.4 * hash(e.id, k, 2)));
+  }
+  ctx.fillStyle = '#7a5a48';
+  ctx.fillRect(x + z * 0.1, y + z * 0.1, w * 0.7, z * 0.25);
+  ctx.fillRect(x + z * 0.1, y + z * 0.1, z * 0.25, h * 0.55);
+  ctx.fillRect(x + w - z * 0.35, y + h * 0.5, z * 0.25, h * 0.5 - z * 0.1);
+  ctx.fillStyle = '#5a4234';
+  ctx.fillRect(x + w * 0.7 + z * 0.1, y + z * 0.1, z * 0.3, z * 0.25);
+  ctx.fillStyle = '#8a5a3a';
+  ctx.beginPath(); ctx.arc(x + w * 0.66, y + h * 0.38, z * 0.55, 0, 7); ctx.fill();
+  ctx.fillStyle = '#6a4228';
+  ctx.beginPath(); ctx.arc(x + w * 0.66, y + h * 0.38, z * 0.4, 0, 7); ctx.fill();
+  ctx.fillStyle = '#9a6a42';
+  ctx.fillRect(x + w * 0.3, y + h * 0.62, z * 0.6, z * 0.5);
+  ctx.strokeStyle = '#2a2420'; ctx.lineWidth = Math.max(1, z * 0.04);
+  ctx.beginPath(); ctx.moveTo(x + w * 0.2, y + h * 0.9); ctx.lineTo(x + w * 0.45, y + h * 0.55); ctx.lineTo(x + w * 0.4, y + h * 0.3); ctx.stroke();
+  if (!e.done) {
+    const t = performance.now() / 1000, a = 0.5 + 0.5 * Math.sin(t * 3 + e.id);
+    ctx.globalAlpha = 0.4 + 0.6 * a;
+    ctx.fillStyle = '#ffe68a';
+    const gx = x + w * 0.45, gy = y + h * 0.72, r = z * (0.12 + 0.1 * a);
+    ctx.beginPath(); ctx.moveTo(gx, gy - r * 2); ctx.lineTo(gx + r * 0.5, gy); ctx.lineTo(gx, gy + r * 2); ctx.lineTo(gx - r * 0.5, gy); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(gx - r * 2, gy); ctx.lineTo(gx, gy + r * 0.5); ctx.lineTo(gx + r * 2, gy); ctx.lineTo(gx, gy - r * 0.5); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+function drawGas(ox, oy, z) {
+  for (const c of S.clouds) {
+    const G = GAS[c.g], k = c.m / (Math.PI * c.r * c.r), a = Math.min(0.75, 0.15 + k * 1.2);
+    if (a < 0.02) continue;
+    const t = performance.now() / 1000;
+    for (let n = 0; n < 5; n++) {
+      const px = ox + (c.x + Math.cos(n * 1.26 + t * 0.2 + c.s) * c.r * 0.35) * z, py = oy + (c.y + Math.sin(n * 1.26 + t * 0.2 + c.s) * c.r * 0.35) * z, R = c.r * z * (n ? 0.75 : 1);
+      const g = ctx.createRadialGradient(px, py, 0, px, py, R);
+      g.addColorStop(0, `rgba(${G.rgb},${a * (n ? 0.5 : 0.8)})`);
+      g.addColorStop(1, `rgba(${G.rgb},0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(px, py, R, 0, 7); ctx.fill();
+    }
+  }
+  for (const s of S.shells) {
+    const f = Math.min(1, s.t / s.T), X = s.sx + (s.tx - s.sx) * f, Y = s.sy + (s.ty - s.sy) * f, hgt = Math.sin(Math.PI * f) * s.T * 3;
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath(); ctx.ellipse(ox + X * z, oy + Y * z, z * 0.2, z * 0.1, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = s.k === 'he_drum' ? '#c05030' : s.k === 'cl2_cyl' ? '#b8d040' : '#d8e4f4';
+    ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(ox + X * z, oy + (Y - hgt) * z, z * 0.16, 0, 7); ctx.fill(); ctx.stroke();
+  }
+  for (const b of S.booms) {
+    const f = b.t / 0.8;
+    ctx.globalAlpha = Math.max(0, 1 - f);
+    ctx.fillStyle = '#fff2c0';
+    if (f < 0.25) { ctx.beginPath(); ctx.arc(ox + b.x * z, oy + b.y * z, z * (0.8 + f * 6), 0, 7); ctx.fill(); }
+    ctx.strokeStyle = '#ffb347'; ctx.lineWidth = Math.max(2, z * 0.12);
+    ctx.beginPath(); ctx.arc(ox + b.x * z, oy + b.y * z, z * (0.5 + f * 4), 0, 7); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+}
 function drawTurret(e, x, y, w, h, z) {
   const B = BUILD[e.type], cx = x + w / 2, cy = y + h / 2;
   ctx.fillStyle = shade(B.c, 0.5);
@@ -1290,6 +1535,8 @@ function drawBuilding(e, ox, oy, z) {
   if (B.kind === 'hive') return drawHive(e, x, y, w, h, z);
   if (B.kind === 'wall') return drawWall(e, x, y, z);
   if (B.kind === 'turret') return drawTurret(e, x, y, w, h, z);
+  if (B.kind === 'projector') return drawProjector(e, x, y, w, h, z);
+  if (B.kind === 'ruin') return drawRuin(e, x, y, w, h, z);
   ctx.fillStyle = shade(B.c, 0.55);
   ctx.fillRect(x + p, y + p, w - 2 * p, h - 2 * p);
   ctx.fillStyle = B.c;
@@ -1422,6 +1669,8 @@ function tileInfo0(x, y) {
     if (e.type === 'chest') s += `<br>${sum(e.store)}/400 items`;
     if (e.type === 'stack') s += `<br>${stackUsers(e).length} machines venting through it`;
     if (kind(e) === 'hive') s += `<br>Food ${Math.round(e.food)}/50 · ${e.sw} swarms sent`;
+    if (e.type === 'projector') s += `<br>${sum(e.pay)} rounds loaded · ${e.pw} powder · ${e.shots} fired`;
+    if (e.type === 'ruin') s += `<br>${e.done ? 'Searched' : guards(e).length ? guards(e).length + ' hives on guard' : 'Unguarded: click to search'}`;
     if (e.type === 'turret') s += `<br>${e.ammo} cartridges + ${e.rd} rounds · ${e.kills} kills`;
     if (e.hp != null && e.hp < maxHp(e)) s += `<br><span class="bad">Integrity ${Math.round(e.hp)}/${maxHp(e)}</span>`;
     return s;
@@ -1450,6 +1699,7 @@ function ventHtml() {
   return `<span class="lbl">Vented</span><b class="${t > 0 ? 'warn' : ''}">${fmt(t)}</b>` + (parts ? `<span class="dim"> · ${parts}</span>` : '') +
     (sp >= 1 || S.fails ? ` <span class="lbl">Spilled</span><b class="bad">${fmt(sp)}</b><span class="dim"> · ${S.fails || 0} pipe failures</span>` : '') +
     (S.bugs.length || S.evo > 0.001 || S.lost ? ` <span class="lbl">Crawlers</span><b class="${S.bugs.length ? 'bad' : ''}">${S.bugs.length}</b><span class="dim"> · evolution ${Math.round(S.evo * 100)}% · ${lists().hive.length} hives${S.lost ? ' · ' + S.lost + ' buildings lost' : ''}</span>` : '') +
+    (S.clouds.length || lists().projector.length ? ` <span class="lbl">Wind</span><b><span class="wind" style="display:inline-block;transform:rotate(${S.wind.a}rad)">→</span> ${(S.wind.v * 10).toFixed(1)}</b><span class="dim"> m/s${S.clouds.length ? ' · ' + S.clouds.length + ' gas clouds' : ''}</span>` : '') +
     (pk >= 1 ? ` <span class="lbl">Smog</span><b class="${pk > RAIN ? 'bad' : pk > RAIN * 0.6 ? 'warn' : ''}">${Math.round(pk)}</b><span class="dim"> peak${pk > RAIN ? ', acid rain' : ''}</span>` : '');
 }
 
@@ -1482,7 +1732,7 @@ function openPanel(e) {
   const B = BUILD[e.type];
   let h = `<div class="ph"><span class="sw big" style="background:${B.c}">${B.ab || ''}</span><div class="pt"><b>${B.n}</b><small>${B.d}</small></div><button class="x" data-act="close" title="Close">×</button></div>`;
   if (kind(e) === 'machine') {
-    h += `<label class="row">Recipe <select data-act="recipe"><option value="">Choose a recipe</option>${RECIPES.filter(r => r.b === e.type).map(r => `<option value="${r.id}" ${e.recipe === r.id ? 'selected' : ''}>${r.n}</option>`).join('')}</select></label>`;
+    h += `<label class="row">Recipe <select data-act="recipe"><option value="">Choose a recipe</option>${RECIPES.filter(r => r.b === e.type && (avail(r) || e.recipe === r.id)).map(r => `<option value="${r.id}" ${e.recipe === r.id ? 'selected' : ''}>${r.n}</option>`).join('')}</select></label>`;
   }
   if (e.type === 'sorter') {
     h += `<label class="row">Filter <select data-act="filter"><option value="">None (all forward)</option>${Object.keys(ITEMS).map(k => `<option value="${k}" ${e.filter === k ? 'selected' : ''}>${ITEMS[k].n}</option>`).join('')}</select></label>`;
@@ -1495,7 +1745,9 @@ function openPanel(e) {
   if (kind(e) === 'pipe') h += '<button data-act="flush">Flush network</button>';
   if (e.type === 'belt' || e.type === 'sorter' || e.type === 'booster') h += '<button data-act="rotate">Rotate (R)</button>';
   if (e.type === 'turret') h += '<button data-act="load">Load cartridges</button>';
-  if (kind(e) !== 'hive') h += '<button class="danger" data-act="remove">Pick up</button>';
+  if (e.type === 'projector') h += '<button data-act="pload">Load from inventory</button>';
+  if (e.type === 'ruin') h += `<button data-act="search" ${e.done ? 'disabled' : ''}>Search the works</button>`;
+  if (kind(e) !== 'hive' && kind(e) !== 'ruin') h += '<button class="danger" data-act="remove">Pick up</button>';
   h += '</div>';
   panel.innerHTML = h;
   panel.hidden = false;
@@ -1584,6 +1836,18 @@ function renderPanelDyn() {
     h += `<div class="status"><i style="background:${e.ammo || e.rd ? (S.t - e.sh < 0.5 ? ST_COL.work : ST_COL.none) : ST_COL.input}"></i>${!e.ammo && !e.rd ? 'Out of ammunition' : S.t - e.sh < 0.5 ? 'Firing' : 'Watching'} · range ${TUR_R} tiles · ${e.kills} kills</div>`;
     h += `<div class="gauge"><span>Cartridges</span>${bar(e.ammo, TUR_CAP, '#c8a040')}<b>${e.ammo} / ${TUR_CAP} + ${e.rd} rounds</b></div>`;
     h += '<p class="dim">Ten rounds per cartridge, four shots a second, 10 damage each. Chests and belts touching it top it up.</p>';
+  } else if (k === 'projector') {
+    const tg = e.tgt && ents.get(e.tgt), ld = PAYLOADS.some(q => e.pay[q] > 0);
+    const st = !ld ? 'No rounds loaded' : !tg ? `No hive within ${PROJ_R} tiles` : !(e.pw > 0) ? 'No blasting powder' : S.t - e.sh < 4.5 ? 'Firing' : 'Laying on target';
+    h += `<div class="status"><i style="background:${st === 'Firing' || st === 'Laying on target' ? ST_COL.work : ST_COL.input}"></i>${st} · ${e.shots} rounds fired</div>`;
+    h += '<div class="sec">Rounds</div><div class="slots">' + (PAYLOADS.filter(q => e.pay[q] > 0).map(q => `<div class="slot">${chip(q, e.pay[q])}</div>`).join('') || '<span class="dim">Empty</span>') + `</div>`;
+    h += `<div class="gauge"><span>Powder</span>${bar(e.pw, POW_CAP, '#808080')}<b>${e.pw} / ${POW_CAP}</b></div>`;
+    h += `<div class="spec">Wind ${(S.wind.v * 10).toFixed(1)} m/s toward ${Math.round((S.wind.a * 180 / Math.PI % 360 + 360) % 360)}°</div>`;
+    h += '<p class="dim">Holds 6 rounds and 20 charges of black powder; chests and belts touching it top it up. Chlorine is 2.5 times heavier than air: the cloud hugs the ground, creeps with the wind and lingers, and if it drifts back over your works it corrodes them. Ammonia is lighter than air and much nastier to crawlers, whose sulfur-loving gut bacteria cannot stand alkali, but it rises and thins out fast. High explosive drums smash hives directly. Every round stirs up defenders who come for the projector.</p>';
+  } else if (k === 'ruin') {
+    const g = guards(e).length;
+    h += `<div class="status"><i style="background:${e.done ? ST_COL.none : g ? ST_COL.input : ST_COL.work}"></i>${e.done ? 'Searched' : g ? g + ' hive' + (g > 1 ? 's' : '') + ' within 16 tiles' : 'Unguarded'}</div>`;
+    h += `<p class="dim">${e.done ? 'Only rust and broken glass are left.' : g ? 'Crawlers have nested around the old works. Clear every hive within 16 tiles, then search it for salvage and the lab books.' : 'Nothing stops you now. The stores may still hold platinum catalyst gauze, motors and cylinders, and the lab books will teach you a lost process.'}</p>`;
   } else if (k === 'pump') {
     h += `<div class="status"><i style="background:${e.on ? ST_COL.work : ST_COL.output}"></i>${e.on ? 'Pumping' : 'Nothing to pump into'}</div>`;
   } else if (k === 'belt') {
@@ -1640,7 +1904,18 @@ function panelAct(act, el) {
     if (n > 0) { S.inv.cartridge -= n; if (!S.inv.cartridge) delete S.inv.cartridge; e.ammo += n; }
     toast(n ? `Loaded ${n} cartridges` : e.ammo >= TUR_CAP ? 'Turret is full' : 'You have no cartridges', !n);
   }
-  else if (act === 'remove') { if (kind(e) === 'hive') return; removeEnt(e); renderHotbar(); return; }
+  else if (act === 'pload') {
+    let n = 0;
+    const p = Math.min(S.inv.black_powder || 0, POW_CAP - e.pw);
+    if (p > 0) { S.inv.black_powder -= p; if (!S.inv.black_powder) delete S.inv.black_powder; e.pw += p; }
+    for (const q of PAYLOADS) {
+      const m = Math.min(S.inv[q] || 0, PROJ_CAP - sum(e.pay));
+      if (m > 0) { S.inv[q] -= m; if (!S.inv[q]) delete S.inv[q]; e.pay[q] = (e.pay[q] || 0) + m; n += m; }
+    }
+    toast(n || p ? `Loaded ${n} rounds and ${p} powder` : 'You have no gas cylinders, HE drums or black powder to load', !(n || p));
+  }
+  else if (act === 'search') { searchRuin(e); openPanel(e); return; }
+  else if (act === 'remove') { if (kind(e) === 'hive' || kind(e) === 'ruin') return; removeEnt(e); renderHotbar(); return; }
   renderPanelDyn();
   renderHotbar();
 }
@@ -1677,8 +1952,8 @@ function renderModal() {
       for (const t in BUILD) {
         const B = BUILD[t];
         if (B.cat !== c) continue;
-        const ok = canAfford(B.cost, 1), ok5 = canAfford(B.cost, 5);
-        h += `<div class="crow"><span class="sw" style="background:${B.c}">${B.ab || ''}</span><div class="cinfo"><b>${B.n}</b> <span class="dim">have ${S.inv[t] || 0}${B.makes ? ' · makes ' + B.makes : ''}</span><div class="cost">${costHtml(B.cost, 1)}</div></div><button data-craft="${t}" data-n="1" ${ok ? '' : 'disabled'}>Craft</button><button data-craft="${t}" data-n="5" ${ok5 ? '' : 'disabled'}>×5</button></div>`;
+        const lk = !buildOk(t), ok = !lk && canAfford(B.cost, 1), ok5 = !lk && canAfford(B.cost, 5);
+        h += `<div class="crow"><span class="sw" style="background:${B.c}">${B.ab || ''}</span><div class="cinfo"><b>${B.n}</b> <span class="dim">have ${S.inv[t] || 0}${B.makes ? ' · makes ' + B.makes : ''}</span><div class="cost">${lk ? '<span class="bad">Locked: search abandoned works</span>' : costHtml(B.cost, 1)}</div></div><button data-craft="${t}" data-n="1" ${ok ? '' : 'disabled'}>Craft</button><button data-craft="${t}" data-n="5" ${ok5 ? '' : 'disabled'}>×5</button></div>`;
       }
       h += '</div>';
     }
@@ -1706,7 +1981,7 @@ function renderModal() {
       if (!rs.length) continue;
       const B = BUILD[t];
       h += `<h3><span class="sw" style="background:${B.c}">${B.ab}</span> ${B.n}${B.kw ? ` <span class="dim">${B.kw} kW</span>` : ' <span class="dim">fuel-fired</span>'}</h3>`;
-      for (const r of rs) h += `<div class="erec"><b>${r.n}</b>${recipeHtml(r)}</div>`;
+      for (const r of rs) h += `<div class="erec ${avail(r) ? '' : 'locked'}"><b>${r.n}</b>${avail(r) ? '' : ' <span class="bad">Locked: search abandoned works or hive wreckage</span>'}${recipeHtml(r)}</div>`;
     }
   } else if (modalTab === 'mats') {
     h += '<h3>Ores</h3><div class="mats">';
@@ -1750,6 +2025,8 @@ const CHAINS = [
   { n: 'Clean air', l: [['so2', 'Gas scrubber + water + crushed limestone', 'gypsum'], ['cl2', 'Gas scrubber + caustic soda', 'bleach'], ['Roaster', 'Chimney stack', 'Smog spread thin']], d: 'Vented SO₂ and chlorine become smog, and smog over ' + RAIN + ' brings acid rain. An acid plant turns SO₂ into something useful; when it cannot keep up, a limestone scrubber locks the sulfur into gypsum. A stack only dilutes: the same sulfur still falls somewhere.' },
   { n: 'Cement', l: [['crushed_lime', 'Lime kiln + sand + coal', 'clinker'], ['clinker', 'Ball mill + gypsum', 'cement'], ['slag', 'Ball mill + clinker + gypsum', 'cement'], ['cement', 'Workshop + sand', 'concrete']], d: 'Portland cement needs gypsum from the scrubber, and blast furnace slag can replace half the clinker. Concrete blocks build walls.' },
   { n: 'Ammunition', l: [['caliche', 'Crusher', 'crushed_caliche', 'Leach tank + steam + water', 'sodium_nitrate', '+', 'salt'], ['pyrite_conc', 'Lime kiln + coal', 'sulfur', '+', 'pyrite_cinder'], ['sodium_nitrate', 'Ball mill + sulfur + coal', 'black_powder'], ['black_powder', 'Workshop + brass + lead', 'cartridge']], d: 'Crawlers smell SO₂ and come for whatever vents it. Turrets hold them off with lead shot. The powder is nitrate, sulfur and carbon: the nitrate supplies the oxygen, so it burns sealed in a brass case. Brick and concrete walls slow them down while the guns work.' },
+  { n: 'Gas warfare', l: [['plate', 'Workshop', 'cylinder'], ['cl2', 'Cylinder filler + cylinder', 'cl2_cyl'], ['cl2_cyl', '+', 'black_powder', 'Livens projector', 'Gas cloud']], d: 'A Livens projector is a battery of buried tubes that throws a cylinder 1.5 km and bursts it on target. Chlorine is heavy and slow: watch the wind arrow in the top bar, because a cloud that drifts back eats your own works. Clear the hives guarding an abandoned works, then search it for salvage and lost processes.' },
+  { n: 'Nitrogen', l: [['h2', 'Ammonia converter (Haber-Bosch)', 'nh3'], ['nh3', 'Ostwald burner + water', 'hno3'], ['sodium_nitrate', 'Retort + acid', 'hno3'], ['nh3', 'Leach tank + hno3', 'amm_nitrate', 'Ball mill + aluminium + coal', 'ammonal'], ['ammonal', 'Workshop + cylinder + black_powder', 'he_drum'], ['so2', 'Gas scrubber + nh3 + water', 'amm_sulfate']], d: 'Fritz Haber fixed nitrogen from air over an iron catalyst at 200 bar in 1909; Carl Bosch scaled it up. Ammonia burned over platinum gauze gives nitric acid, and the two together make ammonium nitrate, the base of fertiliser and of ammonal. The converter and the burner\'s platinum gauze only turn up in the ruins of the old works. Before Haber, nitric acid came from Chilean nitrate and sulfuric acid in a retort.' },
   { n: 'By-products', l: [['ground_copper', 'Flotation', 'copper_conc', '+', 'pyrite_conc'], ['pyrite_conc', 'Roaster', 'pyrite_cinder', 'Blast furnace', 'pig_iron'], ['anode_slime', 'Roaster', 'dore', 'Leach tank + acid', 'silver']], d: 'Nothing is waste. Pyrite gives SO₂ for acid and its cinder is iron ore. Anode slime from copper refining yields selenium, silver and gold.' },
 ];
 
@@ -1778,12 +2055,15 @@ const HELP = `<div class="help">
 <p>Pipes have real pressure, flow and temperature. Cast iron is cheap but brittle and bursts above 16 bar. Steel pipe carries four times the flow and bulges before it bursts. Acid, brine and chlorine eat both, so carry them in lead-lined or titanium pipe, and caustic in steel. Booster pumps push fluid further. See <b>Pipes</b> in the encyclopedia.</p>
 <h3>Smog and acid rain</h3>
 <p>Gas a machine cannot pass on is vented. SO₂ and chlorine hang over the area as brown smog, drift to neighbouring areas and slowly wash out. Where smog passes ${RAIN}, acid rain falls and eats every pipe except lead-lined ones. Capture SO₂ in an acid plant or a gas scrubber, absorb chlorine with caustic, or touch the venting machine to a chimney stack to spread its fumes thin. CO₂ counts for little smog but is tallied in the top bar.</p>
+<h3>Gas, wind and the old works</h3>
+<p>Fill steel cylinders with chlorine or ammonia in a <b>Cylinder filler</b> and load them, with black powder, into a <b>Livens projector</b>. It lobs them at the nearest hive within 28 tiles. The gas cloud drifts with the wind shown in the top bar, spreads and thins out. Chlorine is heavy and lingers, and it corrodes any building it settles on, yours included. Ammonia is lighter than air and harsher on crawlers but disperses fast. Abandoned chemical works lie far out in the wilds, guarded by hives. Clear the hives within 16 tiles and search the works for platinum gauze, motors, cylinders and a lost process such as Haber-Bosch ammonia. Hive wreckage sometimes holds a lab notebook too.</p>
 <h3>Crawlers</h3>
-<p>Crawler hives sit in the wilds. The crawlers' gut bacteria live on sulfur, so hives breathe in the smog that drifts to them and send swarms at whatever vented last. They chew through anything in their path except belts, and every fifth swarm founds a new hive closer to the smog. The cleaner you run, the hungrier they stay. Gun turrets need lead shot cartridges, made from Chilean nitrate, sulfur and coal. Brick and concrete walls buy the guns time.</p>
+<p>Crawler hives sit in the wilds. The crawlers' gut bacteria live on sulfur, so hives breathe in the smog that drifts to them and send swarms at whatever vented last. They chew through anything in their path except belts, and every eighth swarm founds a new hive closer to the smog. The cleaner you run, the hungrier they stay. Gun turrets need lead shot cartridges, made from Chilean nitrate, sulfur and coal. Brick and concrete walls buy the guns time.</p>
 </div>`;
 
 function doCraft(t, n) {
   const B = BUILD[t];
+  if (!buildOk(t)) return toast('Locked. The design is in the lab books of an abandoned works.', true);
   if (!canAfford(B.cost, n)) return toast('Not enough materials', true);
   pay(B.cost, n);
   give(t, (B.makes || 1) * n);
@@ -1835,6 +2115,7 @@ cv.addEventListener('mousedown', ev => {
     mouse.r = true;
     const e = at(mouse.tx, mouse.ty);
     if (e && kind(e) === 'hive') toast('Hives cannot be picked up. Shoot or gas them.', true);
+    else if (e && kind(e) === 'ruin') toast('The old works are too far gone to move. Click to search them.', true);
     else if (e) { removeEnt(e); renderHotbar(); }
     else if (tool) { tool = null; renderHotbar(); }
     return;

@@ -75,6 +75,14 @@ const ITEMS = {
   sulfur: { n: 'Sulfur', c: '#f0d830', f: 'Elemental S, yellow and brittle. Burns with a blue flame to SO₂' },
   black_powder: { n: 'Blasting Powder', c: '#3a3836', f: 'Sodium nitrate, sulfur and charcoal, about 72/13/15. Burns fast and makes hot gas' },
   cartridge: { n: 'Lead Shot Cartridge', c: '#c8a040', f: 'Brass case, a charge of powder and a lead slug. Ten rounds per box' },
+  cylinder: { n: 'Steel Cylinder', c: '#7a8a7a', f: 'Seamless steel gas bottle, tested to 250 bar' },
+  cl2_cyl: { n: 'Chlorine Cylinder', c: '#b8d84a', f: 'Liquid Cl₂ under its own vapour pressure, about 7 bar. Released, it boils into a cloud 2.5 times heavier than air that creeps along the ground' },
+  nh3_cyl: { n: 'Ammonia Cylinder', c: '#a8c8e8', f: 'Liquid NH₃ at about 9 bar. A base: it neutralises the sulfuric acid in crawler blood. Lighter than air, so the cloud rises and blows away fast' },
+  amm_nitrate: { n: 'Ammonium Nitrate', c: '#f4f4ec', f: 'NH₄NO₃ prills. Fertiliser, and an oxidiser that detonates when confined with fuel' },
+  ammonal: { n: 'Ammonal', c: '#c8c8c0', f: 'Ammonium nitrate with aluminium powder and charcoal. The aluminium burns to Al₂O₃ and makes the blast far hotter' },
+  he_drum: { n: 'Ammonal Drum', c: '#8a5a3a', f: 'A steel drum packed with ammonal and a black powder burster' },
+  amm_sulfate: { n: 'Ammonium Sulfate', c: '#ece8f0', f: '(NH₄)₂SO₄ crystals, a nitrogen fertiliser made by scrubbing SO₂ with ammonia' },
+  pt_gauze: { n: 'Platinum Gauze', c: '#d8dce4', f: 'Woven Pt-Rh wire, 90/10. Catalyses ammonia burning to NO at 900°C. Nobody here can make it, so it comes from the old works' },
   concrete: { n: 'Concrete Block', c: '#bcbab4', f: 'Cement, sand and water. Calcium silicate hydrate binds the grains' },
 };
 
@@ -90,6 +98,8 @@ const FLUIDS = {
   cl2: { n: 'Chlorine', c: '#b8d84a', f: 'Cl₂, a heavy yellow-green poison. Wet chlorine attacks most metals', gas: true, cp: 0.48, t: 80, corr: 0.8, ck: 'cl' },
   h2: { n: 'Hydrogen', c: '#e8f0ff', f: 'H₂, the lightest gas. Burns to water', gas: true, cp: 14.3, t: 80 },
   liquor: { n: 'Aluminate Liquor', c: '#c88a6a', f: 'Sodium aluminate NaAl(OH)₄ in hot caustic, about 145°C', cp: 3.4, t: 145, corr: 0.6, ck: 'alk' },
+  nh3: { n: 'Ammonia', c: '#a8c8e8', f: 'NH₃, a pungent alkaline gas. Fine in steel, but it eats copper and brass', gas: true, cp: 2.1, t: 40, corr: 0.1, ck: 'alk' },
+  hno3: { n: 'Nitric Acid', c: '#e8d070', f: 'HNO₃ about 60%, yellow from dissolved NO₂. It dissolves lead outright, so it needs titanium or a passive metal', cp: 2.7, t: 40, corr: 1, ck: 'nit' },
   ticl4: { n: 'Titanium Tetrachloride', c: '#e8e0c8', f: 'TiCl₄, a fuming liquid that hydrolyses to HCl in moist air', cp: 0.77, t: 60, corr: 0.2, ck: 'cl' },
 };
 
@@ -114,7 +124,7 @@ const BUILD = {
   pipe: { n: 'Cast Iron Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#6a7a8a', cost: { casting: 1 }, makes: 2, d: 'DN50, rated 16 bar. Cheap and brittle: it cracks at once when overpressured or hit by a sudden temperature change.', P: { mat: 'Grey cast iron', dn: 50, v: 100, g: 200, q: 120, bar: 16, tmax: 400, duct: 0, shock: 45, cw: 60, ua: 0.3, res: '' } },
   steel_pipe: { n: 'Steel Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#9aa8b6', cost: { plate: 1 }, makes: 1, d: 'DN100, rated 40 bar. Four times the flow of DN50. Ductile: it bulges before it bursts. Handles caustic, but dilute acid and wet chlorine eat it.', P: { mat: 'Carbon steel', dn: 100, v: 250, g: 800, q: 400, bar: 40, tmax: 550, duct: 2, cw: 90, ua: 0.4, res: 'alk' } },
   lead_pipe: { n: 'Lead-Lined Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#7a7f9a', cost: { lead_sheet: 1, casting: 1 }, makes: 2, d: 'DN50, rated only 6 bar. The lead lining shrugs off sulfuric acid and chlorides but softens above 250°C, and caustic soda dissolves it.', P: { mat: 'Steel with lead lining', dn: 50, v: 100, g: 200, q: 120, bar: 6, tmax: 250, duct: 4, cw: 30, ua: 0.3, res: 'acid cl', lined: true } },
-  ti_pipe: { n: 'Titanium Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#a8b0c0', cost: { titanium: 1 }, makes: 1, d: 'DN100, rated 35 bar. Its oxide skin makes it immune to chlorine, brine and caustic, but hot sulfuric acid strips it.', P: { mat: 'Titanium grade 2', dn: 100, v: 250, g: 800, q: 400, bar: 35, tmax: 450, duct: 3, cw: 50, ua: 0.3, res: 'cl alk' } },
+  ti_pipe: { n: 'Titanium Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#a8b0c0', cost: { titanium: 1 }, makes: 1, d: 'DN100, rated 35 bar. Its oxide skin makes it immune to chlorine, brine, caustic and nitric acid, but hot sulfuric acid strips it.', P: { mat: 'Titanium grade 2', dn: 100, v: 250, g: 800, q: 400, bar: 35, tmax: 450, duct: 3, cw: 50, ua: 0.3, res: 'cl alk nit' } },
   booster: { n: 'Booster Pump', kind: 'booster', w: 1, h: 1, cat: 'Logistics', c: '#4a7ab0', ab: 'BP', kw: 30, cost: { casting: 2, motor: 1 }, d: 'Takes fluid from the pipe behind it and pushes it forward up to the outlet pressure you set. Fluid cannot flow back through it.' },
   miner: { n: 'Miner', kind: 'miner', w: 2, h: 2, cat: 'Mining', c: '#7a6a4a', ab: 'MI', kw: 90, cost: { casting: 5, plate: 3, motor: 2 }, d: 'Digs the ore under it, one every 2s.' },
   pump: { n: 'Offshore Pump', kind: 'pump', w: 1, h: 1, cat: 'Mining', c: '#3a6aa0', ab: 'PU', cost: { casting: 3, motor: 1 }, d: 'Place on water. Pumps 60 water/s.' },
@@ -147,6 +157,11 @@ const BUILD = {
   concrete_wall: { n: 'Concrete Wall', kind: 'wall', w: 1, h: 1, cat: 'Defence', c: '#a8a8a2', cost: { concrete: 2 }, makes: 2, hp: 1200, d: 'Three times tougher than brick. Their acid etches concrete only slowly.' },
   turret: { n: 'Gun Turret', kind: 'turret', w: 2, h: 2, cat: 'Defence', c: '#5a6a5a', ab: 'GT', cost: { plate: 6, casting: 6, motor: 1 }, hp: 500, d: 'Fires lead shot at crawlers within 10 tiles. Load cartridges by hand, from a chest or off a belt.' },
   hive: { n: 'Crawler Hive', kind: 'hive', w: 2, h: 2, c: '#6a4a5a', hp: 1000, d: 'A mound of chewed rock and mucus. Sulfur-oxidising bacteria in the crawlers\' guts live on SO₂ and the creatures follow the smog to its source.' },
+  haber: { n: 'Ammonia Converter', kind: 'machine', w: 3, h: 3, cat: 'Chemistry', c: '#5a8aa8', ab: 'HB', kw: 250, lock: 'haber', cost: { plate: 14, motor: 3 }, d: 'Haber-Bosch loop: nitrogen from the air and hydrogen are squeezed to 200 bar over an iron catalyst at 450°C. Compressors take most of the power.' },
+  ostwald: { n: 'Ostwald Burner', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#b0a060', ab: 'OB', cost: { plate: 6, pt_gauze: 1, brick: 4 }, d: 'Ammonia and air flash through red-hot platinum gauze. The reaction keeps the gauze glowing, so it needs no fuel.' },
+  filler: { n: 'Cylinder Filler', kind: 'machine', w: 2, h: 2, cat: 'Defence', c: '#6a8a6a', ab: 'CF', kw: 20, cost: { plate: 4, casting: 2, motor: 1 }, d: 'Compresses and liquefies gas into steel cylinders.' },
+  projector: { n: 'Livens Projector', kind: 'projector', w: 2, h: 2, cat: 'Defence', c: '#5a5a4a', ab: 'LP', hp: 400, cost: { plate: 8, casting: 4 }, d: 'A battery of buried mortar tubes that lob gas cylinders or explosive drums at hives up to 28 tiles away. Each shot burns one blasting powder charge.' },
+  ruin: { n: 'Abandoned Works', kind: 'ruin', w: 3, h: 3, c: '#6a6058', ab: 'AW', d: 'A chemical works from before the crawlers came. The roof is in, but the stores and the lab books may have survived.' },
   retort: { n: 'Hunter Retort', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#8a8a9a', ab: 'HR', kw: 80, cost: { plate: 10, brick: 6 }, d: 'Sealed steel pot where molten sodium strips chlorine from TiCl₄.' },
 };
 
@@ -218,6 +233,16 @@ const RECIPES = [
   { id: 'saltpetre', n: 'Sodium Nitrate', b: 'leach', t: 3, i: { crushed_caliche: 2 }, fi: { steam: 10, water: 10 }, o: { sodium_nitrate: 1, salt: 1 }, eq: 'NaNO₃ dissolves far more in hot water than NaCl', note: 'Shanks process, used in the Atacama from 1876. Hot leach liquor dissolves the nitrate; on cooling the nitrate crystallises out while most of the salt stays behind.' },
   { id: 'pyrite_sulfur', n: 'Sulfur from Pyrite', b: 'kiln', t: 4, i: { pyrite_conc: 2, coal: 1 }, o: { sulfur: 1, pyrite_cinder: 1 }, fo: { so2: 10 }, eq: 'FeS₂ → FeS + S ; 4FeS + 7O₂ → 2Fe₂O₃ + 4SO₂', note: 'Heating pyrite without much air drives off one sulfur atom as vapour, which condenses yellow. The rest burns off as SO₂.' },
   { id: 'black_powder', b: 'mill', t: 3, i: { sodium_nitrate: 3, sulfur: 1, coal: 1 }, o: { black_powder: 5 }, eq: '2NaNO₃ + S + 3C → Na₂SO₄ + N₂ + 3CO₂ (roughly)', note: 'DuPont \'B\' blasting powder swapped expensive potassium saltpetre for Chilean sodium nitrate. It soaks up damp, so it was used where that did not matter.' },
+  { id: 'cylinder', b: 'workshop', t: 2, i: { plate: 2 }, o: { cylinder: 1 }, note: 'Pierced and drawn from a steel billet, then hydraulically tested.' },
+  { id: 'fill_cl2', n: 'Fill Chlorine', b: 'filler', t: 2, i: { cylinder: 1 }, fi: { cl2: 40 }, o: { cl2_cyl: 1 }, note: 'Chlorine liquefies at 7 bar at room temperature. At Ypres in April 1915, 5,730 such cylinders were opened at once.' },
+  { id: 'fill_nh3', n: 'Fill Ammonia', b: 'filler', t: 2, i: { cylinder: 1 }, fi: { nh3: 40 }, o: { nh3_cyl: 1 }, note: 'Ammonia liquefies at about 9 bar. Refrigeration plants have stored it this way since the 1870s.' },
+  { id: 'haber', n: 'Ammonia', b: 'haber', t: 3, lock: 1, fi: { h2: 30 }, fo: { nh3: 20 }, eq: 'N₂ + 3H₂ ⇌ 2NH₃', note: 'Haber-Bosch process, 1913. Only about 15% converts per pass, so the gas loops through the catalyst again and again. It now feeds half the people on Earth through fertiliser.' },
+  { id: 'ostwald', n: 'Nitric Acid', b: 'ostwald', t: 3, lock: 1, fi: { nh3: 10, water: 10 }, fo: { hno3: 10 }, eq: '4NH₃ + 5O₂ → 4NO + 6H₂O (Pt) ; 2NO + O₂ → 2NO₂ ; 3NO₂ + H₂O → 2HNO₃ + NO', note: 'Ostwald process. The gauze slowly loses platinum to the gas stream.' },
+  { id: 'nitric_retort', n: 'Nitric Acid (saltpetre)', b: 'retort', t: 4, i: { sodium_nitrate: 2 }, fi: { acid: 10 }, fo: { hno3: 6 }, eq: 'NaNO₃ + H₂SO₄ → NaHSO₄ + HNO₃', note: 'Glauber\'s route, used for 250 years: distil saltpetre with sulfuric acid. Slow and costly next to burning ammonia.' },
+  { id: 'amm_nitrate', b: 'leach', t: 2, lock: 1, fi: { nh3: 10, hno3: 10 }, o: { amm_nitrate: 2 }, eq: 'NH₃ + HNO₃ → NH₄NO₃', note: 'The neutralisation boils off water by its own heat. The melt is sprayed down a tower and freezes into prills.' },
+  { id: 'ammonal', b: 'mill', t: 3, lock: 1, i: { amm_nitrate: 4, aluminium: 1, coal: 1 }, o: { ammonal: 4 }, eq: '3NH₄NO₃ + 2Al → 3N₂ + 6H₂O + Al₂O₃', note: 'Aluminium burns with the oxygen the nitrate gives up. It was the British army\'s mining explosive under the Messines ridge in 1917.' },
+  { id: 'he_drum', n: 'Ammonal Drum', b: 'workshop', t: 3, lock: 1, i: { cylinder: 1, ammonal: 4, black_powder: 1 }, o: { he_drum: 1 } },
+  { id: 'nh3_scrub', n: 'Ammonia Scrubbing', b: 'scrubber', t: 2, lock: 1, fi: { so2: 20, nh3: 10, water: 10 }, o: { amm_sulfate: 2 }, eq: 'SO₂ + 2NH₃ + H₂O + ½O₂ → (NH₄)₂SO₄', note: 'Walther process. Unlike limestone it gives off no CO₂, and the product sells as fertiliser.' },
   { id: 'cartridge', b: 'workshop', t: 2, i: { brass: 1, lead: 1, black_powder: 1 }, o: { cartridge: 2 } },
 ];
 
@@ -231,7 +256,7 @@ for (const r of RECIPES) {
 const START_INV = {
   belt: 80, pipe: 40, steel_pipe: 10, lead_pipe: 10, booster: 1, chest: 8, sorter: 4, miner: 8, pump: 1, boiler: 2, engine: 2,
   crusher: 3, mill: 2, magsep: 1, flotation: 2, coke_oven: 2, kiln: 1, blast: 1, converter: 1, workshop: 2,
-  casting: 20, brick: 10, stack: 1, turret: 2, cartridge: 40, brick_wall: 20,
+  casting: 20, brick: 10, stack: 1, turret: 2, cartridge: 40, brick_wall: 20, projector: 1, filler: 1,
 };
 
 const CATS = ['Logistics', 'Mining', 'Power', 'Processing', 'Smelting', 'Chemistry', 'Defence'];

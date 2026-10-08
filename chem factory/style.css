@@ -256,3 +256,4 @@ h3 .sw { width: 24px; height: 24px; font-size: 9px; }
 .ptab th { color: var(--dim); font-weight: 600; font-size: 11px; }
 .plist li { margin: 6px 0; line-height: 1.45; }
 @media (max-width: 640px) { .ptab { font-size: 11px; } .ptab th, .ptab td { padding: 4px 3px; } }
+.erec.locked { opacity: 0.55; }
