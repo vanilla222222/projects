@@ -84,6 +84,13 @@ const ITEMS = {
   amm_sulfate: { n: 'Ammonium Sulfate', c: '#ece8f0', f: '(NH₄)₂SO₄ crystals, a nitrogen fertiliser made by scrubbing SO₂ with ammonia' },
   pt_gauze: { n: 'Platinum Gauze', c: '#d8dce4', f: 'Woven Pt-Rh wire, 90/10. Catalyses ammonia burning to NO at 900°C. Nobody here can make it, so it comes from the old works' },
   concrete: { n: 'Concrete Block', c: '#bcbab4', f: 'Cement, sand and water. Calcium silicate hydrate binds the grains' },
+  pitch: { n: 'Coal Tar Pitch', c: '#1c1a1e', f: 'The black residue left in the still. Binds carbon anodes and electrodes' },
+  nahco3: { n: 'Sodium Bicarbonate', c: '#f4f2ea', f: 'NaHCO₃ crystals filtered from the Solvay tower' },
+  soda_ash: { n: 'Soda Ash', c: '#ecebe2', f: 'Sodium carbonate Na₂CO₃, the alkali behind glass, soap and paper' },
+  cacl2: { n: 'Calcium Chloride', c: '#d8dcd0', f: 'CaCl₂, the waste of the Solvay process. Melts road ice, otherwise dumped' },
+  glass: { n: 'Glass', c: '#a8d8d8', f: 'Soda-lime glass: about 73% SiO₂, 14% Na₂O, 9% CaO. Shrugs off acids, but hot caustic slowly dissolves it' },
+  tnt: { n: 'TNT', c: '#e8d070', f: '2,4,6-Trinitrotoluene C₇H₅N₃O₆. Pale yellow flakes that melt at 80°C and can be poured into shells. Hard to set off by accident' },
+  shell: { n: 'HE Shell', c: '#b08a40', f: 'A forged steel shell filled with cast TNT, in a brass case with a black powder charge' },
 };
 
 const FLUIDS = {
@@ -101,6 +108,10 @@ const FLUIDS = {
   nh3: { n: 'Ammonia', c: '#a8c8e8', f: 'NH₃, a pungent alkaline gas. Fine in steel, but it eats copper and brass', gas: true, cp: 2.1, t: 40, corr: 0.1, ck: 'alk' },
   hno3: { n: 'Nitric Acid', c: '#e8d070', f: 'HNO₃ about 60%, yellow from dissolved NO₂. It dissolves lead outright, so it needs titanium or a passive metal', cp: 2.7, t: 40, corr: 1, ck: 'nit' },
   ticl4: { n: 'Titanium Tetrachloride', c: '#e8e0c8', f: 'TiCl₄, a fuming liquid that hydrolyses to HCl in moist air', cp: 0.77, t: 60, corr: 0.2, ck: 'cl' },
+  tar: { n: 'Coal Tar', c: '#3a2e26', f: 'Black, sticky condensate from coke oven gas. Holds benzene, toluene, phenol, naphthalene and pitch', cp: 1.6, t: 80 },
+  coalgas: { n: 'Coke Oven Gas', c: '#b0a8a0', f: 'About 55% hydrogen and 25% methane, plus CO. The town gas that lit Victorian streets', gas: true, cp: 2.4, t: 60 },
+  toluene: { n: 'Toluene', c: '#e0d8b8', f: 'C₆H₅CH₃, a clear solvent boiling at 111°C. The light oil cut of coal tar', cp: 1.7, t: 30 },
+  nh4cl: { n: 'Ammonium Chloride Liquor', c: '#c8d8c8', f: 'NH₄Cl solution from the Solvay tower. Chloride attacks plain steel', cp: 3.5, t: 30, corr: 0.4, ck: 'cl' },
 };
 
 const ORES = [
@@ -125,6 +136,7 @@ const BUILD = {
   steel_pipe: { n: 'Steel Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#9aa8b6', cost: { plate: 1 }, makes: 1, d: 'DN100, rated 40 bar. Four times the flow of DN50. Ductile: it bulges before it bursts. Handles caustic, but dilute acid and wet chlorine eat it.', P: { mat: 'Carbon steel', dn: 100, v: 250, g: 800, q: 400, bar: 40, tmax: 550, duct: 2, cw: 90, ua: 0.4, res: 'alk' } },
   lead_pipe: { n: 'Lead-Lined Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#7a7f9a', cost: { lead_sheet: 1, casting: 1 }, makes: 2, d: 'DN50, rated only 6 bar. The lead lining shrugs off sulfuric acid and chlorides but softens above 250°C, and caustic soda dissolves it.', P: { mat: 'Steel with lead lining', dn: 50, v: 100, g: 200, q: 120, bar: 6, tmax: 250, duct: 4, cw: 30, ua: 0.3, res: 'acid cl', lined: true } },
   ti_pipe: { n: 'Titanium Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#a8b0c0', cost: { titanium: 1 }, makes: 1, d: 'DN100, rated 35 bar. Its oxide skin makes it immune to chlorine, brine, caustic and nitric acid, but hot sulfuric acid strips it.', P: { mat: 'Titanium grade 2', dn: 100, v: 250, g: 800, q: 400, bar: 35, tmax: 450, duct: 3, cw: 50, ua: 0.3, res: 'cl alk nit' } },
+  glass_pipe: { n: 'Glass-Lined Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#7ab8b8', cost: { glass: 1, casting: 1 }, makes: 2, d: 'DN50, rated 10 bar. A fused glass enamel inside steel resists every acid and chloride. But a sudden temperature change cracks the glass, and caustic soda slowly dissolves it.', P: { mat: 'Steel with glass enamel', dn: 50, v: 100, g: 200, q: 120, bar: 10, tmax: 230, duct: 0, shock: 35, cw: 40, ua: 0.3, res: 'acid cl nit', lined: true } },
   booster: { n: 'Booster Pump', kind: 'booster', w: 1, h: 1, cat: 'Logistics', c: '#4a7ab0', ab: 'BP', kw: 30, cost: { casting: 2, motor: 1 }, d: 'Takes fluid from the pipe behind it and pushes it forward up to the outlet pressure you set. Fluid cannot flow back through it.' },
   miner: { n: 'Miner', kind: 'miner', w: 2, h: 2, cat: 'Mining', c: '#7a6a4a', ab: 'MI', kw: 90, cost: { casting: 5, plate: 3, motor: 2 }, d: 'Digs the ore under it, one every 2s.' },
   pump: { n: 'Offshore Pump', kind: 'pump', w: 1, h: 1, cat: 'Mining', c: '#3a6aa0', ab: 'PU', cost: { casting: 3, motor: 1 }, d: 'Place on water. Pumps 60 water/s.' },
@@ -163,6 +175,11 @@ const BUILD = {
   projector: { n: 'Livens Projector', kind: 'projector', w: 2, h: 2, cat: 'Defence', c: '#5a5a4a', ab: 'LP', hp: 400, cost: { plate: 8, casting: 4 }, d: 'A battery of buried mortar tubes that lob gas cylinders or explosive drums at hives up to 28 tiles away. Each shot burns one blasting powder charge.' },
   ruin: { n: 'Abandoned Works', kind: 'ruin', w: 3, h: 3, c: '#6a6058', ab: 'AW', d: 'A chemical works from before the crawlers came. The roof is in, but the stores and the lab books may have survived.' },
   retort: { n: 'Hunter Retort', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#8a8a9a', ab: 'HR', kw: 80, cost: { plate: 10, brick: 6 }, d: 'Sealed steel pot where molten sodium strips chlorine from TiCl₄.' },
+  still: { n: 'Distillation Column', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#8a7a5a', ab: 'DC', kw: 40, cost: { plate: 8, brick: 4 }, d: 'A tall column of bubble-cap trays. Steam heats the bottom and each tray holds a liquid that boils a little cooler than the one below.' },
+  solvay: { n: 'Solvay Tower', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#7a9ab0', ab: 'SV', kw: 60, cost: { plate: 10, casting: 6, motor: 1 }, d: 'Ammoniated brine trickles down past perforated plates while carbon dioxide bubbles up. Sodium bicarbonate is the least soluble salt in the mix, so it falls out.' },
+  glass_tank: { n: 'Glass Tank Furnace', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#a87a5a', ab: 'GF', kw: 40, cost: { brick: 16, plate: 4 }, d: 'A pool of molten glass at 1500°C. Batch goes in one end and clear glass is drawn off the other.' },
+  nitrator: { n: 'Nitrator', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#a89a5a', ab: 'NI', kw: 60, lock: 'tnt', cost: { plate: 8, glass: 4, motor: 1 }, d: 'Stirred, water-cooled cast iron pot. Mixed nitric and sulfuric acid add one nitro group at a time; let it run hot and the batch can fume off or detonate.' },
+  howitzer: { n: 'Field Howitzer', kind: 'gun', w: 2, h: 2, cat: 'Defence', c: '#5a6248', ab: 'HW', hp: 600, lock: 'shell', cost: { plate: 12, casting: 8, motor: 2 }, d: 'A 4.5-inch howitzer that lobs high-explosive shells at hives up to 44 tiles away. Feed it shells by hand, from a chest or off a belt.' },
 };
 
 const RECIPES = [
@@ -243,6 +260,17 @@ const RECIPES = [
   { id: 'ammonal', b: 'mill', t: 3, lock: 1, i: { amm_nitrate: 4, aluminium: 1, coal: 1 }, o: { ammonal: 4 }, eq: '3NH₄NO₃ + 2Al → 3N₂ + 6H₂O + Al₂O₃', note: 'Aluminium burns with the oxygen the nitrate gives up. It was the British army\'s mining explosive under the Messines ridge in 1917.' },
   { id: 'he_drum', n: 'Ammonal Drum', b: 'workshop', t: 3, lock: 1, i: { cylinder: 1, ammonal: 4, black_powder: 1 }, o: { he_drum: 1 } },
   { id: 'nh3_scrub', n: 'Ammonia Scrubbing', b: 'scrubber', t: 2, lock: 1, fi: { so2: 20, nh3: 10, water: 10 }, o: { amm_sulfate: 2 }, eq: 'SO₂ + 2NH₃ + H₂O + ½O₂ → (NH₄)₂SO₄', note: 'Walther process. Unlike limestone it gives off no CO₂, and the product sells as fertiliser.' },
+  { id: 'coke_byp', n: 'Coke + By-products', b: 'coke_oven', t: 6, i: { coal: 2 }, o: { coke: 1 }, fo: { tar: 10, coalgas: 20 }, eq: 'Coal → C + tar + H₂ + CH₄ + CO', note: 'Koppers by-product oven. Instead of burning off the volatiles, the gas is cooled, the tar condenses out and the gas is piped away. Without a tar pipe the oven stops; unpiped gas is flared.' },
+  { id: 'steam_gas', n: 'Steam (coke oven gas)', b: 'boiler', t: 2, fi: { coalgas: 30, water: 60 }, fo: { steam: 60 }, eq: '2H₂ + O₂ → 2H₂O ; CH₄ + 2O₂ → CO₂ + 2H₂O', note: 'Steelworks burned their own oven gas under the boilers.' },
+  { id: 'tar_dist', n: 'Tar Distillation', b: 'still', t: 5, fi: { tar: 20, steam: 10 }, fo: { toluene: 6 }, o: { pitch: 1 }, eq: 'Coal tar → light oil (benzene, toluene) + carbolic oil + creosote + pitch', note: 'About a third of the tar boils off; the black pitch stays behind.' },
+  { id: 'anode_pitch', n: 'Carbon Anode (pitch)', b: 'coke_oven', t: 4, i: { coke: 2, pitch: 1 }, o: { anode: 3 }, eq: 'Coke + pitch → baked carbon', note: 'Pitch soaks into the coke grains and turns to carbon when baked, so far more of the coke ends up as anode.' },
+  { id: 'solvay', n: 'Solvay Process', b: 'solvay', t: 3, fi: { brine: 20, nh3: 10, co2: 20 }, o: { nahco3: 2 }, fo: { nh4cl: 20 }, eq: 'NaCl + NH₃ + CO₂ + H₂O → NaHCO₃↓ + NH₄Cl', note: 'Ernest Solvay, 1861. It replaced the filthy Leblanc process, whose hydrochloric acid fumes killed fields downwind. The ammonia is too costly to lose, so it is boiled back out of the liquor.' },
+  { id: 'nh3_still', n: 'Ammonia Recovery', b: 'still', t: 3, i: { quicklime: 1 }, fi: { nh4cl: 20, steam: 10 }, fo: { nh3: 9 }, o: { cacl2: 1 }, eq: '2NH₄Cl + CaO → 2NH₃ + CaCl₂ + H₂O', note: 'Lime liberates the ammonia, which steam strips out for the tower. About 10% is lost each turn.' },
+  { id: 'soda_ash', n: 'Soda Ash', b: 'kiln', t: 3, i: { nahco3: 2 }, o: { soda_ash: 1 }, fo: { co2: 10 }, eq: '2NaHCO₃ → Na₂CO₃ + CO₂ + H₂O', note: 'Half the carbon dioxide comes back out and goes round to the tower again.' },
+  { id: 'causticise', n: 'Caustic Soda (lime-soda)', b: 'leach', t: 3, i: { soda_ash: 1, quicklime: 1 }, fi: { water: 20 }, fo: { naoh: 20 }, o: { crushed_lime: 1 }, eq: 'Na₂CO₃ + CaO + H₂O → 2NaOH + CaCO₃↓', note: 'How caustic soda was made before chlor-alkali cells. No power and no chlorine, and the chalk mud goes back to the kiln.' },
+  { id: 'glass', b: 'glass_tank', t: 4, i: { sand: 3, soda_ash: 1, crushed_lime: 1 }, o: { glass: 3 }, fo: { co2: 10 }, eq: 'Na₂CO₃ + CaCO₃ + 6SiO₂ → Na₂O·CaO·6SiO₂ + 2CO₂', note: 'Soda lowers the melting point of silica from 1700°C to about 1000°C; lime makes the glass stop dissolving in water.' },
+  { id: 'tnt', n: 'TNT', b: 'nitrator', t: 4, lock: 1, fi: { toluene: 10, hno3: 15, acid: 10 }, o: { tnt: 2 }, eq: 'C₇H₈ + 3HNO₃ → C₇H₅N₃O₆ + 3H₂O (H₂SO₄)', note: 'Sulfuric acid soaks up the water and makes the nitronium ion NO₂⁺ that does the work. Three stages, each hotter and with stronger acid.' },
+  { id: 'shell', n: 'HE Shell', b: 'workshop', t: 3, lock: 1, i: { plate: 1, brass: 1, tnt: 1, black_powder: 1 }, o: { shell: 2 }, note: 'TNT melts at 80°C, so it is simply poured into the shell body like wax.' },
   { id: 'cartridge', b: 'workshop', t: 2, i: { brass: 1, lead: 1, black_powder: 1 }, o: { cartridge: 2 } },
 ];
 

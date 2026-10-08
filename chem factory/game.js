@@ -30,7 +30,7 @@ const sum = o => { let s = 0; for (const k in o) s += o[k]; return s; };
 const isGas = f => FLUIDS[f] && FLUIDS[f].gas && f !== 'steam';
 const spills = (r, f) => isGas(f) || !!(r.bleed && r.bleed.includes(f));
 const PC = 8, PW = W / PC, RAIN = 30;
-const POL_W = { so2: 1, cl2: 3, co2: 0.02, h2: 0, steam: 0, water: 0, acid: 0.5, naoh: 0.3, liquor: 0.3, ticl4: 1, brine: 0.05, nh3: 0.5, hno3: 0.8 };
+const POL_W = { so2: 1, cl2: 3, co2: 0.02, h2: 0, steam: 0, water: 0, acid: 0.5, naoh: 0.3, liquor: 0.3, ticl4: 1, brine: 0.05, nh3: 0.5, hno3: 0.8, tar: 0.4, coalgas: 0.3, toluene: 0.3, nh4cl: 0.1 };
 const polAt = (x, y) => S.pol[Math.floor(y / PC) * PW + Math.floor(x / PC)] || 0;
 
 function mulberry32(a) {
@@ -174,6 +174,7 @@ function makeEnt(type, x, y, dir) {
     case 'turret': Object.assign(e, { ammo: 0, rd: 0, cd: 0, ang: -Math.PI / 2, sh: -1, kills: 0 }); break;
     case 'hive': Object.assign(e, { food: 0, sw: 0, dc: 0 }); break;
     case 'projector': Object.assign(e, { pay: {}, pw: 0, cd: 0, ang: -Math.PI / 2, sh: -9, shots: 0 }); break;
+    case 'gun': Object.assign(e, { ammo: 0, cd: 0, ang: -Math.PI / 2, sh: -9, shots: 0 }); break;
     case 'ruin': e.done = 0; break;
   }
   if (BUILD[type].hp) e.hp = BUILD[type].hp;
@@ -236,7 +237,7 @@ function removeEnt(e) {
 
 function lists() {
   if (L) return L;
-  L = { belt: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [], wall: [], turret: [], hive: [], projector: [], ruin: [] };
+  L = { belt: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [], wall: [], turret: [], hive: [], projector: [], gun: [], ruin: [] };
   for (const e of ents.values()) {
     const k = kind(e);
     if (k === 'pipe') L.node.push(e);
@@ -284,6 +285,11 @@ function acceptItem(o, k) {
     if (k === 'black_powder') { if (o.pw >= POW_CAP) return false; o.pw++; return true; }
     if (!PAYLOADS.includes(k) || sum(o.pay) >= PROJ_CAP) return false;
     o.pay[k] = (o.pay[k] || 0) + 1;
+    return true;
+  }
+  if (kd === 'gun') {
+    if (k !== 'shell' || o.ammo >= GUN_CAP) return false;
+    o.ammo++;
     return true;
   }
   if (kd === 'sorter') {
@@ -526,6 +532,13 @@ function hurt(e, d, why) {
 const avail = r => !r.lock || !!(S.unl && S.unl[r.id]);
 const buildOk = t => !BUILD[t].lock || !!(S.unl && S.unl[BUILD[t].lock]);
 function unlock(id) { S.unl[id] = 1; return RECIPE[id]; }
+const BOOKS = [['haber', 'ostwald', 'amm_nitrate'], ['ammonal', 'he_drum', 'nh3_scrub'], ['tnt', 'shell']];
+function labBook() {
+  const left = BOOKS.map(b => b.filter(id => !S.unl[id])).filter(b => b.length);
+  if (!left.length) { const r = unlockRandom(); return r ? [r] : null; }
+  const b = left[0][0] === 'haber' ? left[0] : left[Math.floor(Math.random() * left.length)];
+  return b.map(unlock);
+}
 function unlockRandom() {
   const l = RECIPES.filter(r => r.lock && !S.unl[r.id]);
   return l.length ? unlock(l[Math.floor(Math.random() * l.length)].id) : null;
@@ -596,10 +609,31 @@ function searchRuin(e) {
   S.rs = (S.rs || 0) + 1;
   const loot = { pt_gauze: 2, motor: 3, plate: 12, cylinder: 4 };
   for (const k in loot) give(k, loot[k]);
-  const r = !S.unl.haber ? unlock('haber') : unlockRandom();
+  const r = labBook();
   toast(`Salvaged 2 platinum gauze, 3 motors, 12 plates, 4 cylinders`);
-  if (r) toast(`The lab books describe ${r.n} (${BUILD[r.b].n}). Recipe unlocked.`);
+  if (r) toast(`The lab books describe ${r.map(q => q.n).join(', ')}. Recipes unlocked.`);
   renderHotbar();
+}
+const GUN_R = 44, GUN_MIN = 8, GUN_CAP = 12;
+function gunTick(e) {
+  e.cd -= DT;
+  if (e.cd > 0) return;
+  e.cd = 1;
+  e.tgt = 0;
+  const c = ctr(e);
+  let h = null, bd = GUN_R * GUN_R;
+  for (const o of lists().hive) { const q = ctr(o), d = (q.x - c.x) ** 2 + (q.y - c.y) ** 2; if (d < bd && d > GUN_MIN * GUN_MIN) { bd = d; h = o; } }
+  if (!h) return;
+  e.tgt = h.id;
+  if (!(e.ammo > 0)) return;
+  const q = ctr(h), a = Math.random() * Math.PI * 2, sc = Math.random() * Math.sqrt(bd) * 0.03;
+  const tx = q.x + Math.cos(a) * sc, ty = q.y + Math.sin(a) * sc, dist = Math.hypot(tx - c.x, ty - c.y);
+  e.ammo--;
+  e.shots++;
+  e.ang = Math.atan2(ty - c.y, tx - c.x);
+  e.sh = S.t;
+  e.cd = 5;
+  S.shells.push({ sx: c.x, sy: c.y, tx, ty, t: 0, T: Math.max(1.2, dist / 18), k: 'shell', pid: e.id });
 }
 const PROJ_R = 28, PROJ_CAP = 6, POW_CAP = 20, PAYLOADS = ['nh3_cyl', 'cl2_cyl', 'he_drum'];
 const GAS = { cl2: { v: 0.45, tau: 36, tox: 1, rgb: '190,214,70' }, nh3: { v: 1.4, tau: 16, tox: 4, rgb: '214,228,244' } };
@@ -627,7 +661,12 @@ function projectorTick(e) {
   S.shells.push({ sx: c.x, sy: c.y, tx, ty, t: 0, T: Math.max(1.5, dist / 12), k, pid: e.id });
 }
 function land(s) {
-  if (s.k === 'he_drum') {
+  if (s.k === 'shell') {
+    fx.push({ x: s.tx, y: s.ty, t: 0, c: '#ffd070' }, { x: s.tx + 0.4, y: s.ty - 0.3, t: 0.1, c: '#4a4440' });
+    S.booms.push({ x: s.tx, y: s.ty, t: 0 });
+    for (const h of lists().hive.slice()) { const q = ctr(h), d = Math.hypot(q.x - s.tx, q.y - s.ty); if (d < 2.5) { h.lh = S.t; hurt(h, 220 * (1 - d / 3.5)); } }
+    for (const b of S.bugs) if (Math.hypot(b.x - s.tx, b.y - s.ty) < 3) b.hp -= 100;
+  } else if (s.k === 'he_drum') {
     for (let n = 0; n < 3; n++) fx.push({ x: s.tx + (Math.random() - 0.5), y: s.ty + (Math.random() - 0.5), t: n * 0.1, c: n ? '#5a5048' : '#ffb347' });
     S.booms.push({ x: s.tx, y: s.ty, t: 0 });
     for (const h of lists().hive.slice()) { const q = ctr(h), d = Math.hypot(q.x - s.tx, q.y - s.ty); if (d < 3) { h.lh = S.t; hurt(h, 350 * (1 - d / 4)); } }
@@ -912,6 +951,7 @@ function tick() {
   if (S.tk % 3 === 0) cloudStep(DT * 3);
   shellStep();
   for (const e of l.projector) projectorTick(e);
+  for (const e of l.gun) gunTick(e);
   for (const e of l.stack) e.puff = (e.puff || 0) * 0.985;
   for (const b of l.belt) beltTick(b);
   for (const s of l.sorter) sorterTick(s);
@@ -1494,9 +1534,9 @@ function drawGas(ox, oy, z) {
     const f = Math.min(1, s.t / s.T), X = s.sx + (s.tx - s.sx) * f, Y = s.sy + (s.ty - s.sy) * f, hgt = Math.sin(Math.PI * f) * s.T * 3;
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.beginPath(); ctx.ellipse(ox + X * z, oy + Y * z, z * 0.2, z * 0.1, 0, 0, 7); ctx.fill();
-    ctx.fillStyle = s.k === 'he_drum' ? '#c05030' : s.k === 'cl2_cyl' ? '#b8d040' : '#d8e4f4';
+    ctx.fillStyle = s.k === 'shell' ? '#3a3a30' : s.k === 'he_drum' ? '#c05030' : s.k === 'cl2_cyl' ? '#b8d040' : '#d8e4f4';
     ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.arc(ox + X * z, oy + (Y - hgt) * z, z * 0.16, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(ox + X * z, oy + (Y - hgt) * z, z * (s.k === 'shell' ? 0.1 : 0.16), 0, 7); ctx.fill(); ctx.stroke();
   }
   for (const b of S.booms) {
     const f = b.t / 0.8;
@@ -1530,12 +1570,47 @@ function drawTurret(e, x, y, w, h, z) {
   ctx.fillRect(x + z * 0.15, y + z * 0.15 + (h - z * 0.3) * (1 - f), z * 0.12, (h - z * 0.3) * f || Math.max(1, z * 0.04));
 }
 
+function drawGun(e, x, y, w, h, z) {
+  const B = BUILD[e.type], cx = x + w / 2, cy = y + h / 2, age = S.t - e.sh;
+  ctx.fillStyle = '#4a4436';
+  ctx.beginPath(); ctx.ellipse(cx, cy, w * 0.48, h * 0.48, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#6a604c';
+  for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2; ctx.beginPath(); ctx.arc(cx + Math.cos(a) * w * 0.42, cy + Math.sin(a) * h * 0.42, z * 0.12, 0, 7); ctx.fill(); }
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(e.ang);
+  const rc = age < 0.3 ? z * 0.25 * (1 - age / 0.3) : 0;
+  ctx.fillStyle = shade(B.c, 0.6);
+  ctx.fillRect(-z * 0.9, -z * 0.1, z * 0.8, z * 0.07); ctx.fillRect(-z * 0.9, z * 0.03, z * 0.8, z * 0.07);
+  ctx.fillStyle = '#2a2a24';
+  ctx.beginPath(); ctx.arc(-z * 0.55, -z * 0.42, z * 0.2, 0, 7); ctx.arc(-z * 0.55, z * 0.42, z * 0.2, 0, 7); ctx.fill();
+  ctx.fillStyle = B.c;
+  ctx.fillRect(-z * 0.4, -z * 0.38, z * 0.6, z * 0.76);
+  ctx.fillStyle = '#2e3026';
+  ctx.fillRect(z * 0.05 - rc, -z * 0.11, z * 1.0, z * 0.22);
+  ctx.fillStyle = '#1a1a16';
+  ctx.fillRect(z * 0.95 - rc, -z * 0.13, z * 0.12, z * 0.26);
+  ctx.fillStyle = shade(B.c, 1.3);
+  ctx.fillRect(-z * 0.3, -z * 0.3, z * 0.25, z * 0.12);
+  if (age < 0.07) { ctx.fillStyle = '#ffe08a'; ctx.beginPath(); ctx.arc(z * 1.25, 0, z * 0.32, 0, 7); ctx.fill(); }
+  ctx.restore();
+  if (age < 1.5) {
+    ctx.globalAlpha = Math.max(0, 0.6 - age * 0.4);
+    ctx.fillStyle = '#d0c8b8';
+    for (let k = 0; k < 5; k++) { const d = z * (1.1 + age * (1 + k * 0.4)); ctx.beginPath(); ctx.arc(cx + Math.cos(e.ang) * d + (hash(k, e.id, 7) - 0.5) * z * 0.6, cy + Math.sin(e.ang) * d - age * z * 0.5, z * (0.25 + age * 0.35), 0, 7); ctx.fill(); }
+    ctx.globalAlpha = 1;
+  }
+  for (let n = 0; n < Math.min(e.ammo, GUN_CAP); n++) {
+    ctx.fillStyle = '#b08a40'; ctx.fillRect(x + z * 0.14 + (n % 6) * z * 0.12, y + h - z * (n < 6 ? 0.3 : 0.5), z * 0.08, z * 0.16);
+    ctx.fillStyle = '#3a3a30'; ctx.fillRect(x + z * 0.14 + (n % 6) * z * 0.12, y + h - z * (n < 6 ? 0.36 : 0.56), z * 0.08, z * 0.07);
+  }
+}
+
 function drawBuilding(e, ox, oy, z) {
   const B = BUILD[e.type], x = ox + e.x * z, y = oy + e.y * z, w = B.w * z, h = B.h * z, p = Math.max(1, z * 0.06);
   if (B.kind === 'hive') return drawHive(e, x, y, w, h, z);
   if (B.kind === 'wall') return drawWall(e, x, y, z);
   if (B.kind === 'turret') return drawTurret(e, x, y, w, h, z);
   if (B.kind === 'projector') return drawProjector(e, x, y, w, h, z);
+  if (B.kind === 'gun') return drawGun(e, x, y, w, h, z);
   if (B.kind === 'ruin') return drawRuin(e, x, y, w, h, z);
   ctx.fillStyle = shade(B.c, 0.55);
   ctx.fillRect(x + p, y + p, w - 2 * p, h - 2 * p);
@@ -1670,6 +1745,7 @@ function tileInfo0(x, y) {
     if (e.type === 'stack') s += `<br>${stackUsers(e).length} machines venting through it`;
     if (kind(e) === 'hive') s += `<br>Food ${Math.round(e.food)}/50 · ${e.sw} swarms sent`;
     if (e.type === 'projector') s += `<br>${sum(e.pay)} rounds loaded · ${e.pw} powder · ${e.shots} fired`;
+    if (e.type === 'howitzer') s += `<br>${e.ammo} shells · ${e.shots} fired`;
     if (e.type === 'ruin') s += `<br>${e.done ? 'Searched' : guards(e).length ? guards(e).length + ' hives on guard' : 'Unguarded: click to search'}`;
     if (e.type === 'turret') s += `<br>${e.ammo} cartridges + ${e.rd} rounds · ${e.kills} kills`;
     if (e.hp != null && e.hp < maxHp(e)) s += `<br><span class="bad">Integrity ${Math.round(e.hp)}/${maxHp(e)}</span>`;
@@ -1746,6 +1822,7 @@ function openPanel(e) {
   if (e.type === 'belt' || e.type === 'sorter' || e.type === 'booster') h += '<button data-act="rotate">Rotate (R)</button>';
   if (e.type === 'turret') h += '<button data-act="load">Load cartridges</button>';
   if (e.type === 'projector') h += '<button data-act="pload">Load from inventory</button>';
+  if (e.type === 'howitzer') h += '<button data-act="gload">Load shells</button>';
   if (e.type === 'ruin') h += `<button data-act="search" ${e.done ? 'disabled' : ''}>Search the works</button>`;
   if (kind(e) !== 'hive' && kind(e) !== 'ruin') h += '<button class="danger" data-act="remove">Pick up</button>';
   h += '</div>';
@@ -1844,6 +1921,12 @@ function renderPanelDyn() {
     h += `<div class="gauge"><span>Powder</span>${bar(e.pw, POW_CAP, '#808080')}<b>${e.pw} / ${POW_CAP}</b></div>`;
     h += `<div class="spec">Wind ${(S.wind.v * 10).toFixed(1)} m/s toward ${Math.round((S.wind.a * 180 / Math.PI % 360 + 360) % 360)}°</div>`;
     h += '<p class="dim">Holds 6 rounds and 20 charges of black powder; chests and belts touching it top it up. Chlorine is 2.5 times heavier than air: the cloud hugs the ground, creeps with the wind and lingers, and if it drifts back over your works it corrodes them. Ammonia is lighter than air and much nastier to crawlers, whose sulfur-loving gut bacteria cannot stand alkali, but it rises and thins out fast. High explosive drums smash hives directly. Every round stirs up defenders who come for the projector.</p>';
+  } else if (k === 'gun') {
+    const tg = e.tgt && ents.get(e.tgt);
+    const st = !e.ammo ? 'No shells' : !tg ? `No hive between ${GUN_MIN} and ${GUN_R} tiles` : S.t - e.sh < 5.5 ? 'Firing' : 'Laying on target';
+    h += `<div class="status"><i style="background:${st === 'Firing' || st === 'Laying on target' ? ST_COL.work : ST_COL.input}"></i>${st} · ${e.shots} shells fired</div>`;
+    h += `<div class="gauge"><span>Shells</span>${bar(e.ammo, GUN_CAP, '#b08a40')}<b>${e.ammo} / ${GUN_CAP}</b></div>`;
+    h += '<p class="dim">One round every 5 seconds. A TNT shell bursts with about four times the energy of the same weight of black powder and wrecks a hive in five hits, but it cannot fire at anything closer than 8 tiles. Each shell stirs up defenders, so guard the gun with turrets.</p>';
   } else if (k === 'ruin') {
     const g = guards(e).length;
     h += `<div class="status"><i style="background:${e.done ? ST_COL.none : g ? ST_COL.input : ST_COL.work}"></i>${e.done ? 'Searched' : g ? g + ' hive' + (g > 1 ? 's' : '') + ' within 16 tiles' : 'Unguarded'}</div>`;
@@ -1913,6 +1996,11 @@ function panelAct(act, el) {
       if (m > 0) { S.inv[q] -= m; if (!S.inv[q]) delete S.inv[q]; e.pay[q] = (e.pay[q] || 0) + m; n += m; }
     }
     toast(n || p ? `Loaded ${n} rounds and ${p} powder` : 'You have no gas cylinders, HE drums or black powder to load', !(n || p));
+  }
+  else if (act === 'gload') {
+    const n = Math.min(S.inv.shell || 0, GUN_CAP - e.ammo);
+    if (n > 0) { S.inv.shell -= n; if (!S.inv.shell) delete S.inv.shell; e.ammo += n; }
+    toast(n ? `Loaded ${n} shells` : e.ammo >= GUN_CAP ? 'Howitzer is full' : 'You have no shells', !n);
   }
   else if (act === 'search') { searchRuin(e); openPanel(e); return; }
   else if (act === 'remove') { if (kind(e) === 'hive' || kind(e) === 'ruin') return; removeEnt(e); renderHotbar(); return; }
@@ -2027,6 +2115,8 @@ const CHAINS = [
   { n: 'Ammunition', l: [['caliche', 'Crusher', 'crushed_caliche', 'Leach tank + steam + water', 'sodium_nitrate', '+', 'salt'], ['pyrite_conc', 'Lime kiln + coal', 'sulfur', '+', 'pyrite_cinder'], ['sodium_nitrate', 'Ball mill + sulfur + coal', 'black_powder'], ['black_powder', 'Workshop + brass + lead', 'cartridge']], d: 'Crawlers smell SO₂ and come for whatever vents it. Turrets hold them off with lead shot. The powder is nitrate, sulfur and carbon: the nitrate supplies the oxygen, so it burns sealed in a brass case. Brick and concrete walls slow them down while the guns work.' },
   { n: 'Gas warfare', l: [['plate', 'Workshop', 'cylinder'], ['cl2', 'Cylinder filler + cylinder', 'cl2_cyl'], ['cl2_cyl', '+', 'black_powder', 'Livens projector', 'Gas cloud']], d: 'A Livens projector is a battery of buried tubes that throws a cylinder 1.5 km and bursts it on target. Chlorine is heavy and slow: watch the wind arrow in the top bar, because a cloud that drifts back eats your own works. Clear the hives guarding an abandoned works, then search it for salvage and lost processes.' },
   { n: 'Nitrogen', l: [['h2', 'Ammonia converter (Haber-Bosch)', 'nh3'], ['nh3', 'Ostwald burner + water', 'hno3'], ['sodium_nitrate', 'Retort + acid', 'hno3'], ['nh3', 'Leach tank + hno3', 'amm_nitrate', 'Ball mill + aluminium + coal', 'ammonal'], ['ammonal', 'Workshop + cylinder + black_powder', 'he_drum'], ['so2', 'Gas scrubber + nh3 + water', 'amm_sulfate']], d: 'Fritz Haber fixed nitrogen from air over an iron catalyst at 200 bar in 1909; Carl Bosch scaled it up. Ammonia burned over platinum gauze gives nitric acid, and the two together make ammonium nitrate, the base of fertiliser and of ammonal. The converter and the burner\'s platinum gauze only turn up in the ruins of the old works. Before Haber, nitric acid came from Chilean nitrate and sulfuric acid in a retort.' },
+  { n: 'Coal tar and TNT', l: [['coal', 'Coke oven (by-products)', 'coke', '+', 'tar', '+', 'coalgas'], ['tar', 'Distillation column + steam', 'toluene', '+', 'pitch'], ['coke', 'Coke oven + pitch', 'anode'], ['toluene', 'Nitrator + hno3 + acid', 'tnt'], ['tnt', 'Workshop + plate + brass + black_powder', 'shell', 'Field howitzer', 'Hive']], d: 'A by-product coke oven keeps what a beehive oven burns off: tar and a hydrogen-rich gas that fires boilers. Distilled tar gives toluene for TNT and pitch that binds anodes. TNT needs mixed nitric and sulfuric acid: nitric acid dissolves lead, so pipe it in titanium or glass-lined pipe. The nitrator and the shell drawings are in the old works.' },
+  { n: 'Soda and glass', l: [['brine', 'Solvay tower + nh3 + co2', 'nahco3', '+', 'nh4cl'], ['nh4cl', 'Distillation column + quicklime + steam', 'nh3', '+', 'cacl2'], ['nahco3', 'Lime kiln', 'soda_ash', '+', 'co2'], ['sand', 'Glass tank + soda_ash + crushed_lime', 'glass'], ['soda_ash', 'Leach tank + quicklime + water', 'naoh']], d: 'The Solvay process makes soda ash from salt and limestone, with ammonia going round and round as a carrier. The lime kiln supplies both the CO₂ and the quicklime that frees the ammonia again. Soda ash makes glass for glass-lined pipe, and lime turns it into caustic soda without any electricity.' },
   { n: 'By-products', l: [['ground_copper', 'Flotation', 'copper_conc', '+', 'pyrite_conc'], ['pyrite_conc', 'Roaster', 'pyrite_cinder', 'Blast furnace', 'pig_iron'], ['anode_slime', 'Roaster', 'dore', 'Leach tank + acid', 'silver']], d: 'Nothing is waste. Pyrite gives SO₂ for acid and its cinder is iron ore. Anode slime from copper refining yields selenium, silver and gold.' },
 ];
 
@@ -2057,6 +2147,8 @@ const HELP = `<div class="help">
 <p>Gas a machine cannot pass on is vented. SO₂ and chlorine hang over the area as brown smog, drift to neighbouring areas and slowly wash out. Where smog passes ${RAIN}, acid rain falls and eats every pipe except lead-lined ones. Capture SO₂ in an acid plant or a gas scrubber, absorb chlorine with caustic, or touch the venting machine to a chimney stack to spread its fumes thin. CO₂ counts for little smog but is tallied in the top bar.</p>
 <h3>Gas, wind and the old works</h3>
 <p>Fill steel cylinders with chlorine or ammonia in a <b>Cylinder filler</b> and load them, with black powder, into a <b>Livens projector</b>. It lobs them at the nearest hive within 28 tiles. The gas cloud drifts with the wind shown in the top bar, spreads and thins out. Chlorine is heavy and lingers, and it corrodes any building it settles on, yours included. Ammonia is lighter than air and harsher on crawlers but disperses fast. Abandoned chemical works lie far out in the wilds, guarded by hives. Clear the hives within 16 tiles and search the works for platinum gauze, motors, cylinders and a lost process such as Haber-Bosch ammonia. Hive wreckage sometimes holds a lab notebook too.</p>
+<h3>Coal tar, soda and glass</h3>
+<p>Set a coke oven to <b>Coke + by-products</b> and pipe away its tar; the oven gas burns in a boiler. A <b>Distillation column</b> splits tar into toluene and pitch, and also boils the ammonia back out of Solvay liquor. The <b>Solvay tower</b> needs brine, ammonia and CO₂ from a lime kiln, and its soda ash melts with sand and limestone into glass. Glass-lined pipe holds any acid but cracks on a sudden temperature change. With the lost drawings, a <b>Nitrator</b> turns toluene into TNT for the shells of a <b>Field howitzer</b>, which shells hives up to 44 tiles away.</p>
 <h3>Crawlers</h3>
 <p>Crawler hives sit in the wilds. The crawlers' gut bacteria live on sulfur, so hives breathe in the smog that drifts to them and send swarms at whatever vented last. They chew through anything in their path except belts, and every eighth swarm founds a new hive closer to the smog. The cleaner you run, the hungrier they stay. Gun turrets need lead shot cartridges, made from Chilean nitrate, sulfur and coal. Brick and concrete walls buy the guns time.</p>
 </div>`;
@@ -2247,7 +2339,7 @@ requestAnimationFrame(frame);
 
 window.game = {
   get S() { return S; }, get ents() { return ents; }, get patches() { return patches; }, get cam() { return cam; },
-  place: (t, x, y, d) => place(t, x, y, d, true), at, setRecipe, removeEnt, save, load, newGame,
+  place: (t, x, y, d) => place(t, x, y, d, true), at, buildOk, setRecipe, removeEnt, save, load, newGame,
   step(n) { for (let i = 0; i < n; i++) tick(); render(); $('#power').innerHTML = powerHtml(); $('#vent').innerHTML = ventHtml(); renderPanelDyn(); renderHotbar(); },
   terrain: () => terrain, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
   select(e) { openPanel(e); }, openModal, closeModal, refresh: renderHotbar,
