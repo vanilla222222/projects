@@ -95,6 +95,11 @@ function genMap(seed) {
     const dist = Math.hypot(x - cx, y - cy);
     patch(t, x, y, 3 + rng() * 4, (1200 + rng() * 2000) * (0.8 + dist / 80), seed, false);
   }
+  const r2 = mulberry32(seed + 99);
+  for (let t = 7; t < ORES.length; t++) for (let k = 0; k < 3; k++) {
+    const a = r2() * Math.PI * 2, dist = 36 + r2() * 30;
+    patch(t, cx + Math.cos(a) * dist, cy + Math.sin(a) * dist, 3 + r2() * 3, 1500 + r2() * 1500, seed, false);
+  }
 }
 
 const PAL = [['#3d5a2e', '#41602f', '#3a562b'], ['#1d4a73', '#20507b', '#1b466d'], ['#5a5135', '#5e5538', '#565033']];
@@ -127,6 +132,9 @@ const isNode = e => { const k = kind(e); return k === 'pipe' || k === 'engine'; 
 const NP = e => e.type === 'engine' ? ENGINE_P : BUILD[e.type].P;
 const pres = e => 10 * e.amt / NP(e).v;
 const nodeOk = (e, f) => e.type === 'engine' ? f === 'steam' : (!e.fl || e.fl === f);
+const RES_N = { acid: 'acid', cl: 'chlorides', alk: 'caustic' };
+const resName = r => r.split(' ').map(k => RES_N[k]).join(', ');
+const resists = (P, f) => !f || !FLUIDS[f].ck || (P.res || '').split(' ').includes(FLUIDS[f].ck);
 const srcT = f => FLUIDS[f].t != null ? FLUIDS[f].t : AMB;
 function nodeGive(e, f, a, head, T) {
   if (!nodeOk(e, f)) return 0;
@@ -414,9 +422,9 @@ function nodeHeat(e, fails) {
     if (!P.duct) fails.push([e, `burst at ${p.toFixed(1)} bar (rated ${P.bar})`]);
     else { e.strain += (p / P.bar - 1) * DT; if (e.strain > P.duct) fails.push([e, `ruptured after bulging at ${p.toFixed(1)} bar (rated ${P.bar})`]); }
   }
-  if (e.tw > P.tmax) fails.push([e, P.acid ? `lead lining melted at ${Math.round(e.tw)}°C` : `failed at ${Math.round(e.tw)}°C`]);
-  const corr = e.fl && e.amt > 0.5 && FLUIDS[e.fl].corr;
-  if (corr && !P.acid) { e.wear += corr * DT / 90; if (e.wear >= 1) fails.push([e, `corroded through by ${nm(e.fl)}`]); }
+  if (e.tw > P.tmax) fails.push([e, P.lined ? `lead lining melted at ${Math.round(e.tw)}°C` : `failed at ${Math.round(e.tw)}°C`]);
+  const corr = e.fl && e.amt > 0.5 && !resists(P, e.fl) && FLUIDS[e.fl].corr;
+  if (corr) { e.wear += corr * DT / 90; if (e.wear >= 1) fails.push([e, `corroded through by ${nm(e.fl)}`]); }
 }
 
 const fx = [];
@@ -621,7 +629,7 @@ function initWorld(seed) {
 
 function newGame(seed) {
   seed = seed == null ? Math.floor(Math.random() * 1e9) : seed;
-  closePanel(); fx.length = 0;
+  closePanel(); fx.length = 0; $('#toast').innerHTML = '';
   S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 } };
   initWorld(seed);
   cam = { x: W / 2, y: H / 2, z: 32 };
@@ -633,7 +641,7 @@ function load() {
   let d;
   try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) { d = null; }
   if (!d || d.v !== 1) return false;
-  closePanel(); fx.length = 0;
+  closePanel(); fx.length = 0; $('#toast').innerHTML = '';
   S = { seed: d.seed, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 } };
   initWorld(d.seed);
   for (const k in S.dep) { const i = +k; oreAmt[i] = S.dep[k]; if (oreAmt[i] <= 0) { oreAmt[i] = 0; oreType[i] = 0; } }
@@ -775,7 +783,7 @@ function drawPipe(e, ox, oy, z) {
   const bw = t * (0.7 + Math.min(0.35, (e.strain || 0) / P.duct * 0.35 || 0));
   ctx.fillRect(cx - bw, cy - bw, bw * 2, bw * 2);
   if (e.strain > 0.01) { ctx.strokeStyle = '#ff4a3a'; ctx.lineWidth = Math.max(1, z * 0.06); ctx.strokeRect(cx - bw, cy - bw, bw * 2, bw * 2); }
-  if (P.acid && z >= 12) { ctx.fillStyle = '#c8cce0'; ctx.fillRect(cx - bw, cy - bw, bw * 2, Math.max(1, z * 0.04)); }
+  if (P.lined && z >= 12) { ctx.fillStyle = '#c8cce0'; ctx.fillRect(cx - bw, cy - bw, bw * 2, Math.max(1, z * 0.04)); }
   if (e.fl && e.amt > 0.5) {
     ctx.fillStyle = col(e.fl);
     const f = Math.min(1, e.amt / P.v), s = t * 1.1 * Math.sqrt(f);
@@ -1106,7 +1114,7 @@ function renderPanelDyn() {
     h += `<div class="sec">Contents ${sum(e.store)}/400</div><div class="slots">` + (Object.keys(e.store).map(q => `<div class="slot">${chip(q, e.store[q])}</div>`).join('') || '<span class="dim">Empty</span>') + '</div>';
   } else if (k === 'pipe') {
     const P = NP(e), p = pres(e);
-    h += `<div class="spec">${P.mat} · DN${P.dn} · rated ${P.bar} bar · max ${P.tmax}°C · ${P.duct ? 'ductile' : 'brittle'}${P.acid ? ' · acid-proof' : ''}</div>`;
+    h += `<div class="spec">${P.mat} · DN${P.dn} · rated ${P.bar} bar · max ${P.tmax}°C · ${P.duct ? 'ductile' : 'brittle'}${P.res ? ' · resists ' + resName(P.res) : ''}</div>`;
     h += `<div class="slots"><div class="slot">${e.fl ? chip(e.fl, Math.round(e.amt) + '/' + P.v, 'fl') + bar(e.amt, P.v, col(e.fl)) : '<span class="dim">Empty, no fluid assigned</span>'}</div></div>`;
     h += `<div class="gauge"><span>Pressure</span>${bar(p, P.bar, p > P.bar ? '#e04a4a' : p > P.bar * 0.8 ? '#e0b84a' : '#5fd06a')}<b>${p.toFixed(1)} / ${P.bar} bar</b></div>`;
     h += `<div class="gauge"><span>Flow</span>${bar(e.fr, P.q, '#6ab0e0')}<b>${Math.round(e.fr)} / ${P.q} per s</b></div>`;
@@ -1114,7 +1122,7 @@ function renderPanelDyn() {
     h += `<div class="gauge"><span>Wall</span>${bar(e.tw, P.tmax, heat(e.tw, 0, 400))}<b>${Math.round(e.tw)} / ${P.tmax}°C</b></div>`;
     if (P.shock) h += `<div class="gauge"><span>Thermal stress</span>${bar(e.ss || 0, P.shock, '#e07a3a')}<b>${Math.round(e.ss || 0)} / ${P.shock}</b></div>`;
     if (P.duct) h += `<div class="gauge"><span>Bulging</span>${bar(e.strain, P.duct, '#e04a4a')}<b>${Math.round(e.strain / P.duct * 100)}%</b></div>`;
-    if (!P.acid) h += `<div class="gauge"><span>Corrosion</span>${bar(e.wear, 1, '#9a4a1a')}<b>${Math.round(e.wear * 100)}%</b></div>`;
+    if (e.wear > 0 || !resists(P, e.fl)) h += `<div class="gauge"><span>Corrosion</span>${bar(e.wear, 1, '#9a4a1a')}<b>${Math.round(e.wear * 100)}%</b></div>`;
     h += '<p class="dim">A pipe keeps the first fluid that enters it. Flush to change it. Pressure is set by pumps and machines and drops along long lines.</p>';
   } else if (k === 'booster') {
     h += `<div class="status"><i style="background:${e.on ? ST_COL.work : ST_COL.input}"></i>${e.on ? 'Pumping' : 'Nothing to pump'} · ${BUILD.booster.kw} kW</div>`;
@@ -1232,7 +1240,7 @@ function renderModal() {
   } else if (modalTab === 'chains') {
     for (const c of CHAINS) {
       h += `<div class="chain"><h3>${c.n}</h3>`;
-      for (const line of c.l) h += `<div class="cl">${line.map(s => typeof s === 'string' ? (ITEMS[s] || FLUIDS[s] ? chip(s) : `<span class="via">${s}</span>`) : `<span class="via">${s[0]}</span>`).join('<span class="arr">→</span>')}</div>`;
+      for (const line of c.l) h += `<div class="cl">${line.map(s => typeof s === 'string' ? (ITEMS[s] || FLUIDS[s] ? chip(s) : `<span class="via">${s}</span>`) : `<span class="via">${s[0]}</span>`).join('<span class="arr">→</span>').split('<span class="arr">→</span><span class="via">+</span><span class="arr">→</span>').join('<span class="arr">+</span>')}</div>`;
       h += `<p class="note">${c.d}</p></div>`;
     }
   } else if (modalTab === 'recipes') {
@@ -1247,23 +1255,23 @@ function renderModal() {
     h += '<h3>Ores</h3><div class="mats">';
     for (let t = 1; t < ORES.length; t++) { const k = ORES[t].item; h += `<div class="mat">${chip(k)}<span>${ITEMS[k].f}</span></div>`; }
     h += '</div><h3>Fluids</h3><div class="mats">';
-    for (const f in FLUIDS) h += `<div class="mat">${chip(f, null, 'fl')}<span>${FLUIDS[f].f}${isGas(f) ? ' · gas, vents if it has nowhere to go' : ''}</span></div>`;
+    for (const f in FLUIDS) h += `<div class="mat">${chip(f, null, 'fl')}<span>${FLUIDS[f].f}${isGas(f) ? ' · gas, vents if it has nowhere to go' : ''}${FLUIDS[f].ck ? ' · <b>corrosive</b>, safe in ' + Object.keys(BUILD).filter(t => BUILD[t].P && resists(BUILD[t].P, f)).map(t => BUILD[t].n).join(', ') : ''}</span></div>`;
     h += '</div><h3>Materials</h3><div class="mats">';
     for (const k in ITEMS) if (!ORES.some(o => o && o.item === k)) h += `<div class="mat">${chip(k)}<span>${ITEMS[k].f}</span></div>`;
     h += '</div>';
   } else if (modalTab === 'pipes') {
     h += '<p class="dim">Every pipe holds a volume of fluid. Pressure is how full it is: a full pipe is at 10 bar. Fluid flows from high to low pressure, and a long line loses pressure along the way. Offshore pumps push to 8 bar, machines to 5 bar and boilers to 7 bar. Booster pumps push higher.</p>';
-    h += '<table class="ptab"><tr><th>Pipe</th><th>Size</th><th>Rating</th><th>Max flow</th><th>Max temp</th><th>Failure</th><th>Acid</th></tr>';
+    h += '<table class="ptab"><tr><th>Pipe</th><th>Size</th><th>Rating</th><th>Max flow</th><th>Max temp</th><th>Failure</th><th>Resists</th></tr>';
     for (const t in BUILD) {
       const P = BUILD[t].P;
       if (!P) continue;
-      h += `<tr><td>${chip(t)}<br><span class="dim">${P.mat}</span></td><td>DN${P.dn}</td><td>${P.bar} bar</td><td>${P.q}/s</td><td>${P.tmax}°C</td><td>${P.duct ? 'Bulges, then ruptures' : 'Cracks at once; thermal shock'}</td><td>${P.acid ? 'Resists' : 'Corrodes'}</td></tr>`;
+      h += `<tr><td>${chip(t)}<br><span class="dim">${P.mat}</span></td><td>DN${P.dn}</td><td>${P.bar} bar</td><td>${P.q}/s</td><td>${P.tmax}°C</td><td>${P.duct ? 'Bulges, then ruptures' : 'Cracks at once; thermal shock'}</td><td>${P.res ? resName(P.res) : 'Nothing'}</td></tr>`;
     }
     h += '</table><h3>How pipes fail</h3><ul class="plist">';
     h += '<li><b>Overpressure.</b> Brittle grey cast iron fractures the moment it passes its rating. Ductile steel yields and bulges first, and only ruptures if it stays overpressured. A bulge never goes back. Lead-lined pipe is rated 6 bar, so feed it from machines (5 bar), never straight from an 8 bar offshore pump.</li>';
     h += '<li><b>Thermal shock.</b> Cast iron cannot stretch. A cold fluid hitting a hot wall shrinks the inner surface and puts it in tension, and cast iron is weak in tension, so it cracks. Hot fluid into a cold pipe squeezes the surface instead, which cast iron tolerates about three times better. Cold water into a hot steam line is the classic way to crack it.</li>';
     h += '<li><b>Heat.</b> Every pipe has a top temperature. Lead softens far below steel.</li>';
-    h += '<li><b>Corrosion.</b> Dilute sulfuric acid eats iron and steel (Fe + H₂SO₄ → FeSO₄ + H₂). Lead forms an insoluble PbSO₄ skin and stops corroding, which is why acid plants were lined with lead.</li>';
+    h += '<li><b>Corrosion.</b> Dilute sulfuric acid eats iron and steel (Fe + H₂SO₄ → FeSO₄ + H₂). Lead forms an insoluble PbSO₄ skin and stops corroding, which is why acid plants were lined with lead. But caustic soda dissolves lead as plumbite, so caustic and aluminate liquor go in steel. Brine and wet chlorine pit iron and steel; titanium\'s TiO₂ film shrugs them off, though hot sulfuric acid strips it. Match the pipe to the fluid: hover a fluid in the Materials tab to see what attacks what.</li>';
     h += '<li><b>Heat loss.</b> Pipes lose heat to the air. Steam cools along a long line and condenses below 100°C, so engines far from boilers make less power.</li>';
     h += '</ul><p class="dim">A failed pipe is destroyed and its contents spill. Press V for pressure and temperature overlays.</p>';
   } else if (modalTab === 'help') {
@@ -1279,6 +1287,10 @@ const CHAINS = [
   { n: 'Lead and zinc', l: [['pbzn_ore', 'Crusher', 'crushed_pbzn', 'Ball mill + water', 'ground_pbzn', 'Flotation (lead)', 'galena_conc'], ['galena_conc', 'Roaster', 'lead_oxide', 'Blast furnace + coke', 'lead'], ['zinc_rougher', 'Flotation (zinc)', 'sphalerite_conc', 'Roaster', 'zinc_calcine'], ['zinc_calcine', 'Leach tank + acid', 'znso4', 'Electrolysis', 'zinc']], d: 'Galena and sphalerite grow together. Lead floats first while the zinc mineral is held down, then the leftover zinc rougher is floated again. Zinc electrowinning returns the sulfuric acid to the leach tank.' },
   { n: 'Fuel and flux', l: [['coal', 'Coke oven', 'coke'], ['limestone', 'Crusher', 'crushed_lime'], ['limestone', 'Lime kiln + coal', 'quicklime'], ['sand', 'Workshop + quicklime', 'brick']], d: 'Coke is the fuel and reducing agent of the blast furnace. Crushed limestone is the flux that turns quartz into slag. Quicklime and sand make refractory bricks for furnaces.' },
   { n: 'Sulfuric acid', l: [['so2', 'Acid plant + water', 'acid']], d: 'Every roaster and the copper converter give off SO₂. Pipe it to an acid plant instead of venting it. The acid feeds copper refining and zinc leaching.' },
+  { n: 'Salt and chlorine', l: [['rock_salt', 'Crusher', 'salt', 'Leach tank + water', 'brine'], ['brine', 'Electrolysis (chlor-alkali)', 'cl2', '+', 'naoh', '+', 'h2'], ['salt', 'Electrolysis (Downs cell)', 'sodium', '+', 'cl2'], ['h2', 'Boiler + water', 'steam']], d: 'Splitting brine gives three products at once: chlorine, caustic soda and hydrogen. Chlorine and brine pit steel, so use lead-lined or titanium pipe; caustic eats lead, so use steel. Burn the spare hydrogen in a boiler.' },
+  { n: 'Aluminium', l: [['bauxite', 'Crusher', 'crushed_bauxite', 'Digester + naoh + steam', 'liquor', 'Precipitator', 'al_hydroxide'], ['al_hydroxide', 'Lime kiln + coal', 'alumina', 'Reduction pot + anode', 'aluminium'], ['coke', 'Coke oven', 'anode']], d: 'The Bayer process dissolves alumina in hot caustic, leaving iron oxides behind as red mud, then precipitates it again and returns the caustic. The Hall-Héroult pot needs 600 kW: aluminium is "solid electricity". Gallium turns up in the liquor now and then.' },
+  { n: 'Mineral sands and titanium', l: [['mineral_sand', 'Gravity spiral + water', 'heavy_conc', 'Magnetic separator', 'ilmenite'], ['nonmag', 'Electrostatic separator', 'rutile', '+', 'zircon'], ['ilmenite', 'Arc furnace + coke', 'ti_slag', '+', 'pig_iron'], ['rutile', 'Chlorinator + coke + cl2', 'ticl4', 'Hunter retort + sodium', 'titanium']], d: 'Black beach sand holds titanium and zirconium minerals. Gravity, magnetism and static charge split them. Titanium dioxide is too stable to reduce with carbon, so it goes through chlorine: TiCl₄ meets molten sodium, and the salt that results goes back to the Downs cell. Titanium makes pipe that laughs at chlorine.' },
+  { n: 'By-products', l: [['ground_copper', 'Flotation', 'copper_conc', '+', 'pyrite_conc'], ['pyrite_conc', 'Roaster', 'pyrite_cinder', 'Blast furnace', 'pig_iron'], ['anode_slime', 'Roaster', 'dore', 'Leach tank + acid', 'silver']], d: 'Nothing is waste. Pyrite gives SO₂ for acid and its cinder is iron ore. Anode slime from copper refining yields selenium, silver and gold.' },
 ];
 
 const HELP = `<div class="help">
@@ -1303,7 +1315,7 @@ const HELP = `<div class="help">
 <li>Follow the <b>Ore chains</b> in the encyclopedia: crush, grind, separate, then smelt.</li>
 </ol>
 <h3>Pipes</h3>
-<p>Pipes have real pressure, flow and temperature. Cast iron is cheap but brittle and bursts above 16 bar. Steel pipe carries four times the flow and bulges before it bursts. Acid eats both, so carry acid in lead-lined pipe. Booster pumps push fluid further. See <b>Pipes</b> in the encyclopedia.</p>
+<p>Pipes have real pressure, flow and temperature. Cast iron is cheap but brittle and bursts above 16 bar. Steel pipe carries four times the flow and bulges before it bursts. Acid, brine and chlorine eat both, so carry them in lead-lined or titanium pipe, and caustic in steel. Booster pumps push fluid further. See <b>Pipes</b> in the encyclopedia.</p>
 <p class="dim">Gases like CO₂ and SO₂ are vented into the air when nothing collects them. The top bar counts it.</p>
 </div>`;
 

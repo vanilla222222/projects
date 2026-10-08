@@ -39,6 +39,32 @@ const ITEMS = {
   brick: { n: 'Refractory Brick', c: '#c98a5a', f: 'Silica brick bonded with lime, survives 1700°C' },
   lead_sheet: { n: 'Lead Sheet', c: '#7b8094', f: 'Pb sheet, resists sulfuric acid' },
   brass: { n: 'Brass', c: '#d6b04a', f: 'Cu-Zn alloy, about 65/35' },
+  rock_salt: { n: 'Rock Salt', c: '#d9c9c4', f: 'Halite NaCl with a little gypsum and clay' },
+  bauxite: { n: 'Bauxite', c: '#b5653a', f: 'Gibbsite Al(OH)₃ with hematite Fe₂O₃ and kaolinite clay' },
+  mineral_sand: { n: 'Mineral Sand', c: '#3a3530', f: 'Beach sand rich in ilmenite FeTiO₃, rutile TiO₂, zircon ZrSiO₄ and monazite' },
+  salt: { n: 'Salt', c: '#f2eee8', f: 'Sodium chloride NaCl' },
+  sodium: { n: 'Sodium', c: '#c8c8b8', f: 'Na metal, soft and violently reactive with water. Stored under oil' },
+  crushed_bauxite: { n: 'Crushed Bauxite', c: '#c4764a', f: 'Bauxite ground fine for digestion' },
+  red_mud: { n: 'Red Mud', c: '#9a3a22', f: 'Caustic residue of Fe₂O₃, TiO₂ and sodium aluminosilicate' },
+  al_hydroxide: { n: 'Aluminium Hydroxide', c: '#f0f0f4', f: 'Gibbsite Al(OH)₃ crystals precipitated from the liquor' },
+  alumina: { n: 'Alumina', c: '#fafafa', f: 'Aluminium oxide Al₂O₃, a white powder' },
+  anode: { n: 'Carbon Anode', c: '#38363c', f: 'Baked block of petroleum coke and pitch, burned away in the pot' },
+  aluminium: { n: 'Aluminium', c: '#c8d0dc', f: 'Al 99.7%, light and corrosion resistant' },
+  gallium: { n: 'Gallium', c: '#a8b8c8', f: 'Ga metal, melts in your hand at 30°C. Recovered from Bayer liquor' },
+  heavy_conc: { n: 'Heavy Mineral Concentrate', c: '#2a2622', f: 'The dense grains of mineral sand: ilmenite, rutile, zircon, monazite' },
+  ilmenite: { n: 'Ilmenite', c: '#1e1c1c', f: 'FeTiO₃, weakly magnetic' },
+  nonmag: { n: 'Non-Magnetic Heavies', c: '#8a6a4a', f: 'Rutile, zircon and monazite left after magnetic separation' },
+  rutile: { n: 'Rutile', c: '#7a2a1a', f: 'Titanium dioxide TiO₂, conducts weakly when hot' },
+  zircon: { n: 'Zircon', c: '#e8dcc0', f: 'ZrSiO₄, melts at 2550°C. Prized refractory' },
+  monazite: { n: 'Monazite', c: '#c8a040', f: '(Ce,La,Nd,Th)PO₄, rare earth phosphate, slightly radioactive from thorium' },
+  ti_slag: { n: 'Titania Slag', c: '#3a3036', f: 'About 85% TiO₂, the iron smelted out of ilmenite' },
+  titanium: { n: 'Titanium Sponge', c: '#9aa0aa', f: 'Porous Ti metal from the Hunter process' },
+  pyrite_conc: { n: 'Pyrite Concentrate', c: '#c8b048', f: "Fool's gold FeS₂, floated off the copper ore" },
+  pyrite_cinder: { n: 'Pyrite Cinder', c: '#8a3a2a', f: 'Fe₂O₃ left after roasting pyrite, a usable iron ore' },
+  dore: { n: 'Doré Bead', c: '#d8c890', f: 'Silver-gold alloy melted out of anode slime' },
+  silver: { n: 'Silver', c: '#e0e4ea', f: 'Ag 99.9%' },
+  gold: { n: 'Gold', c: '#f0c040', f: 'Au 99.99%' },
+  selenium: { n: 'Selenium', c: '#6a2a2a', f: 'Se, red-grey. Used in glass and solar cells' },
 };
 
 const FLUIDS = {
@@ -46,8 +72,14 @@ const FLUIDS = {
   steam: { n: 'Steam', c: '#d8dde4', f: 'Saturated H₂O vapour, 165°C at 7 bar', gas: true, cp: 2.0, t: 165 },
   co2: { n: 'Carbon Dioxide', c: '#8a8f99', f: 'CO₂ flue gas, leaves the furnace at about 250°C', gas: true, cp: 0.85, t: 250 },
   so2: { n: 'Sulfur Dioxide', c: '#d8c84a', f: 'SO₂, choking and toxic, leaves the roaster at about 350°C', gas: true, cp: 0.64, t: 350 },
-  acid: { n: 'Sulfuric Acid', c: '#e0a03a', f: 'H₂SO₄ diluted for leaching, about 70°C. Dilute acid dissolves iron', cp: 1.4, t: 70, corr: 1 },
-  znso4: { n: 'Zinc Sulfate Solution', c: '#9ad0c0', f: 'ZnSO₄ in slightly acidic water, about 50°C', cp: 3.6, t: 50, corr: 0.3 },
+  acid: { n: 'Sulfuric Acid', c: '#e0a03a', f: 'H₂SO₄ diluted for leaching, about 70°C. Dilute acid dissolves iron', cp: 1.4, t: 70, corr: 1, ck: 'acid' },
+  znso4: { n: 'Zinc Sulfate Solution', c: '#9ad0c0', f: 'ZnSO₄ in slightly acidic water, about 50°C', cp: 3.6, t: 50, corr: 0.3, ck: 'acid' },
+  brine: { n: 'Brine', c: '#8ab8d8', f: 'Saturated NaCl in water, slowly rusts plain iron', cp: 3.3, t: 15, corr: 0.15, ck: 'cl' },
+  naoh: { n: 'Caustic Soda', c: '#d0d8f0', f: 'NaOH solution, about 30%. Dissolves lead and aluminium', cp: 3.5, t: 60, corr: 0.6, ck: 'alk' },
+  cl2: { n: 'Chlorine', c: '#b8d84a', f: 'Cl₂, a heavy yellow-green poison. Wet chlorine attacks most metals', gas: true, cp: 0.48, t: 80, corr: 0.8, ck: 'cl' },
+  h2: { n: 'Hydrogen', c: '#e8f0ff', f: 'H₂, the lightest gas. Burns to water', gas: true, cp: 14.3, t: 80 },
+  liquor: { n: 'Aluminate Liquor', c: '#c88a6a', f: 'Sodium aluminate NaAl(OH)₄ in hot caustic, about 145°C', cp: 3.4, t: 145, corr: 0.6, ck: 'alk' },
+  ticl4: { n: 'Titanium Tetrachloride', c: '#e8e0c8', f: 'TiCl₄, a fuming liquid that hydrolyses to HCl in moist air', cp: 0.77, t: 60, corr: 0.2, ck: 'cl' },
 };
 
 const ORES = [
@@ -58,15 +90,19 @@ const ORES = [
   { item: 'coal', c: '#242226', s: '#4a4850' },
   { item: 'limestone', c: '#b8b29d', s: '#eae4d0' },
   { item: 'sand', c: '#c7b273', s: '#f0e0a8' },
+  { item: 'rock_salt', c: '#b88a9c', s: '#f6dce6' },
+  { item: 'bauxite', c: '#c0702a', s: '#f0b060' },
+  { item: 'mineral_sand', c: '#4a4036', s: '#e0c050' },
 ];
 
 const BUILD = {
   belt: { n: 'Belt', kind: 'belt', w: 1, h: 1, cat: 'Logistics', c: '#c9a23a', cost: { casting: 1 }, makes: 2, d: 'Moves items 2 tiles/s. Drag to lay a line.' },
   sorter: { n: 'Sorter', kind: 'sorter', w: 1, h: 1, cat: 'Logistics', c: '#d07a3a', ab: 'SO', cost: { casting: 2, wire: 2, brass: 1 }, d: 'Sends the filtered item forward and everything else to the right.' },
   chest: { n: 'Chest', kind: 'chest', w: 1, h: 1, cat: 'Logistics', c: '#8a6a3a', ab: 'CH', cost: { casting: 4 }, d: 'Stores 400 items and feeds neighbouring machines and outgoing belts.' },
-  pipe: { n: 'Cast Iron Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#6a7a8a', cost: { casting: 1 }, makes: 2, d: 'DN50, rated 16 bar. Cheap and brittle: it cracks at once when overpressured or hit by a sudden temperature change.', P: { mat: 'Grey cast iron', dn: 50, v: 100, g: 200, q: 120, bar: 16, tmax: 400, duct: 0, shock: 45, cw: 60, ua: 0.3 } },
-  steel_pipe: { n: 'Steel Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#9aa8b6', cost: { plate: 1 }, makes: 1, d: 'DN100, rated 40 bar. Four times the flow of DN50. Ductile: it bulges before it bursts. Dilute acid eats it.', P: { mat: 'Carbon steel', dn: 100, v: 250, g: 800, q: 400, bar: 40, tmax: 550, duct: 2, cw: 90, ua: 0.4 } },
-  lead_pipe: { n: 'Lead-Lined Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#7a7f9a', cost: { lead_sheet: 1, casting: 1 }, makes: 2, d: 'DN50, rated only 6 bar. The lead lining shrugs off sulfuric acid but softens above 250°C.', P: { mat: 'Steel with lead lining', dn: 50, v: 100, g: 200, q: 120, bar: 6, tmax: 250, duct: 4, cw: 30, ua: 0.3, acid: true } },
+  pipe: { n: 'Cast Iron Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#6a7a8a', cost: { casting: 1 }, makes: 2, d: 'DN50, rated 16 bar. Cheap and brittle: it cracks at once when overpressured or hit by a sudden temperature change.', P: { mat: 'Grey cast iron', dn: 50, v: 100, g: 200, q: 120, bar: 16, tmax: 400, duct: 0, shock: 45, cw: 60, ua: 0.3, res: '' } },
+  steel_pipe: { n: 'Steel Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#9aa8b6', cost: { plate: 1 }, makes: 1, d: 'DN100, rated 40 bar. Four times the flow of DN50. Ductile: it bulges before it bursts. Handles caustic, but dilute acid and wet chlorine eat it.', P: { mat: 'Carbon steel', dn: 100, v: 250, g: 800, q: 400, bar: 40, tmax: 550, duct: 2, cw: 90, ua: 0.4, res: 'alk' } },
+  lead_pipe: { n: 'Lead-Lined Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#7a7f9a', cost: { lead_sheet: 1, casting: 1 }, makes: 2, d: 'DN50, rated only 6 bar. The lead lining shrugs off sulfuric acid and chlorides but softens above 250°C, and caustic soda dissolves it.', P: { mat: 'Steel with lead lining', dn: 50, v: 100, g: 200, q: 120, bar: 6, tmax: 250, duct: 4, cw: 30, ua: 0.3, res: 'acid cl', lined: true } },
+  ti_pipe: { n: 'Titanium Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#a8b0c0', cost: { titanium: 1 }, makes: 1, d: 'DN100, rated 35 bar. Its oxide skin makes it immune to chlorine, brine and caustic, but hot sulfuric acid strips it.', P: { mat: 'Titanium grade 2', dn: 100, v: 250, g: 800, q: 400, bar: 35, tmax: 450, duct: 3, cw: 50, ua: 0.3, res: 'cl alk' } },
   booster: { n: 'Booster Pump', kind: 'booster', w: 1, h: 1, cat: 'Logistics', c: '#4a7ab0', ab: 'BP', kw: 30, cost: { casting: 2, motor: 1 }, d: 'Takes fluid from the pipe behind it and pushes it forward up to the outlet pressure you set. Fluid cannot flow back through it.' },
   miner: { n: 'Miner', kind: 'miner', w: 2, h: 2, cat: 'Mining', c: '#7a6a4a', ab: 'MI', kw: 90, cost: { casting: 5, plate: 3, motor: 2 }, d: 'Digs the ore under it, one every 2s.' },
   pump: { n: 'Offshore Pump', kind: 'pump', w: 1, h: 1, cat: 'Mining', c: '#3a6aa0', ab: 'PU', cost: { casting: 3, motor: 1 }, d: 'Place on water. Pumps 60 water/s.' },
@@ -84,8 +120,16 @@ const BUILD = {
   smelter: { n: 'Flash Smelter', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#9a4a3a', ab: 'FS', kw: 50, cost: { brick: 20, plate: 8 }, d: 'Melts copper calcine with silica flux into matte.' },
   acid_plant: { n: 'Acid Plant', kind: 'machine', w: 3, h: 3, cat: 'Chemistry', c: '#b08a3a', ab: 'AP', kw: 50, cost: { lead_sheet: 10, plate: 6, motor: 2 }, d: 'Turns SO₂ into sulfuric acid.' },
   leach: { n: 'Leach Tank', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#5a9a8a', ab: 'LT', kw: 40, cost: { lead_sheet: 6, plate: 2 }, d: 'Dissolves metal oxides in acid.' },
-  electro: { n: 'Electrolysis Cell', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#4a6ab0', ab: 'EC', kw: 300, cost: { lead_sheet: 6, wire: 10 }, d: 'Uses current to plate pure metal onto cathodes.' },
+  electro: { n: 'Electrolysis Cell', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#4a6ab0', ab: 'EC', kw: 300, cost: { lead_sheet: 6, wire: 10 }, d: 'Drives reactions with electric current: plates pure metal onto cathodes, splits brine, or splits molten salt.' },
   workshop: { n: 'Workshop', kind: 'machine', w: 2, h: 2, cat: 'Processing', c: '#6a5a7a', ab: 'WS', kw: 75, cost: { casting: 6, motor: 2 }, d: 'Makes parts from metals.' },
+  digester: { n: 'Digester', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#a8604a', ab: 'DG', kw: 60, cost: { plate: 10, motor: 1 }, d: 'Pressure vessel that dissolves alumina out of bauxite with hot caustic soda.' },
+  precipitator: { n: 'Precipitator', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#b0b8c8', ab: 'PR', kw: 30, cost: { plate: 8, motor: 1 }, d: 'Cools the liquor and seeds it so aluminium hydroxide crystallises out.' },
+  pot: { n: 'Reduction Pot', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#5a6a7a', ab: 'HH', kw: 600, cost: { brick: 12, plate: 6, wire: 20 }, d: 'Hall-Héroult cell: alumina dissolved in molten cryolite is split by a huge current.' },
+  spiral: { n: 'Gravity Spiral', kind: 'machine', w: 2, h: 2, cat: 'Processing', c: '#8a8a7a', ab: 'GS', kw: 20, cost: { plate: 4, casting: 2 }, d: 'Slurry runs down a helix; heavy grains hug the inside, light quartz is flung out.' },
+  esep: { n: 'Electrostatic Separator', kind: 'machine', w: 2, h: 2, cat: 'Processing', c: '#6a6aa0', ab: 'ES', kw: 60, cost: { plate: 4, wire: 10, motor: 1 }, d: 'Charged rolls throw conducting grains (rutile) away from insulators (zircon).' },
+  arc: { n: 'Electric Arc Furnace', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#6a4a6a', ab: 'EA', kw: 500, cost: { brick: 15, plate: 6, wire: 15 }, d: 'Graphite electrodes strike an arc that melts anything.' },
+  chlorinator: { n: 'Chlorinator', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#9ab04a', ab: 'CL', kw: 40, cost: { brick: 10, plate: 6 }, d: 'Fluidised bed where chlorine and coke turn titanium oxide into volatile TiCl₄.' },
+  retort: { n: 'Hunter Retort', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#8a8a9a', ab: 'HR', kw: 80, cost: { plate: 10, brick: 6 }, d: 'Sealed steel pot where molten sodium strips chlorine from TiCl₄.' },
 };
 
 const RECIPES = [
@@ -97,7 +141,7 @@ const RECIPES = [
   { id: 'grind_copper', b: 'mill', t: 2, i: { crushed_copper: 1 }, fi: { water: 10 }, o: { ground_copper: 1 } },
   { id: 'grind_pbzn', b: 'mill', t: 2, i: { crushed_pbzn: 1 }, fi: { water: 10 }, o: { ground_pbzn: 1 } },
   { id: 'mag_iron', b: 'magsep', t: 2, i: { ground_iron: 2 }, o: { iron_conc: 1, tailings: 1 }, note: 'Magnetite is strongly magnetic; hematite needs a high-intensity field. Quartz is not magnetic.' },
-  { id: 'float_copper', b: 'flotation', t: 3, i: { ground_copper: 3 }, fi: { water: 20 }, o: { copper_conc: 1, tailings: 2 }, note: 'Xanthate collectors coat chalcopyrite so it sticks to air bubbles. Real porphyry ore is under 1% Cu, so most of it ends as tailings.' },
+  { id: 'float_copper', b: 'flotation', t: 3, i: { ground_copper: 3 }, fi: { water: 20 }, o: { copper_conc: 1, pyrite_conc: 1, tailings: 1 }, note: 'Xanthate collectors coat chalcopyrite so it sticks to air bubbles. Lime raises the pH so pyrite floats later, in its own froth.' },
   { id: 'float_lead', b: 'flotation', t: 3, i: { ground_pbzn: 3 }, fi: { water: 20 }, o: { galena_conc: 1, zinc_rougher: 2 }, note: 'Sphalerite is held down (depressed) so only galena floats first.' },
   { id: 'float_zinc', b: 'flotation', t: 3, i: { zinc_rougher: 2 }, fi: { water: 15 }, o: { sphalerite_conc: 1, tailings: 1 }, note: 'Copper sulfate activates the sphalerite surface so it floats in the second stage.' },
   { id: 'coke', b: 'coke_oven', t: 6, i: { coal: 2 }, o: { coke: 1 }, eq: 'Coal → C + volatiles', note: 'Heated to about 1000°C without air, coal loses tar and gas and leaves strong, porous coke.' },
@@ -114,8 +158,8 @@ const RECIPES = [
   { id: 'leach_zinc', b: 'leach', t: 3, i: { zinc_calcine: 1 }, fi: { acid: 20 }, fo: { znso4: 20 }, eq: 'ZnO + H₂SO₄ → ZnSO₄ + H₂O' },
   { id: 'refine_copper', b: 'electro', t: 4, i: { blister_copper: 1 }, fi: { acid: 5 }, o: { copper_cathode: 1 }, ch: { anode_slime: 0.15 }, eq: 'Cu (anode) → Cu²⁺ → Cu (cathode)', note: 'Impure anodes dissolve and pure copper plates onto the cathode. Gold and silver fall to the bottom as anode slime.' },
   { id: 'winning_zinc', b: 'electro', t: 4, fi: { znso4: 20 }, o: { zinc: 1 }, fo: { acid: 15 }, bleed: ['acid'], eq: '2ZnSO₄ + 2H₂O → 2Zn + 2H₂SO₄ + O₂', note: 'Electrowinning gives the acid back, so it loops to the leach tank. Spent acid that has nowhere to go is bled off.' },
-  { id: 'steam_coal', b: 'boiler', t: 2, i: { coal: 1 }, fi: { water: 60 }, fo: { steam: 60 }, eq: 'C + O₂ → CO₂ (heat boils water)' },
-  { id: 'steam_coke', b: 'boiler', t: 3, i: { coke: 1 }, fi: { water: 90 }, fo: { steam: 90 } },
+  { id: 'steam_coal', n: 'Steam (coal)', b: 'boiler', t: 2, i: { coal: 1 }, fi: { water: 60 }, fo: { steam: 60 }, eq: 'C + O₂ → CO₂ (heat boils water)' },
+  { id: 'steam_coke', n: 'Steam (coke)', b: 'boiler', t: 3, i: { coke: 1 }, fi: { water: 90 }, fo: { steam: 90 } },
   { id: 'casting', b: 'workshop', t: 1, i: { pig_iron: 1 }, o: { casting: 1 } },
   { id: 'plate', b: 'workshop', t: 1, i: { steel: 1 }, o: { plate: 1 } },
   { id: 'wire', b: 'workshop', t: 0.5, i: { copper_cathode: 1 }, o: { wire: 2 } },
@@ -123,13 +167,36 @@ const RECIPES = [
   { id: 'brick', b: 'workshop', t: 2, i: { sand: 2, quicklime: 1 }, o: { brick: 1 } },
   { id: 'lead_sheet', b: 'workshop', t: 1, i: { lead: 1 }, o: { lead_sheet: 1 } },
   { id: 'brass', b: 'workshop', t: 2, i: { copper_cathode: 2, zinc: 1 }, o: { brass: 3 } },
+  { id: 'crush_salt', b: 'crusher', t: 1, i: { rock_salt: 1 }, o: { salt: 1 } },
+  { id: 'brine', b: 'leach', t: 2, i: { salt: 2 }, fi: { water: 20 }, fo: { brine: 20 }, eq: 'NaCl(s) → Na⁺ + Cl⁻ (aq)' },
+  { id: 'chloralkali', n: 'Chlor-alkali', b: 'electro', t: 3, fi: { brine: 20 }, fo: { cl2: 10, naoh: 10, h2: 10 }, bleed: ['h2'], eq: '2NaCl + 2H₂O → Cl₂ + H₂ + 2NaOH', note: 'Chlor-alkali process. A membrane keeps the chlorine at the anode apart from the caustic at the cathode. Hydrogen with nowhere to go is vented.' },
+  { id: 'downs', n: 'Sodium (Downs cell)', b: 'electro', t: 4, i: { salt: 2 }, o: { sodium: 2 }, fo: { cl2: 10 }, eq: '2NaCl (molten) → 2Na + Cl₂', note: 'Downs cell: molten salt at 600°C. Sodium floats up at the cathode, chlorine bubbles off the graphite anode.' },
+  { id: 'steam_h2', n: 'Steam (hydrogen)', b: 'boiler', t: 2, fi: { h2: 30, water: 60 }, fo: { steam: 60 }, eq: '2H₂ + O₂ → 2H₂O (heat boils water)', note: 'Burning by-product hydrogen beats venting it.' },
+  { id: 'crush_bauxite', b: 'crusher', t: 1.5, i: { bauxite: 1 }, o: { crushed_bauxite: 1 } },
+  { id: 'digest', n: 'Aluminate Liquor', b: 'digester', t: 3, i: { crushed_bauxite: 2 }, fi: { naoh: 20, steam: 10 }, fo: { liquor: 20 }, o: { red_mud: 1 }, eq: 'Al(OH)₃ + NaOH → NaAl(OH)₄', note: 'Bayer process. Iron and titanium oxides do not dissolve and settle as red mud.' },
+  { id: 'precipitate', b: 'precipitator', t: 3, fi: { liquor: 20 }, o: { al_hydroxide: 1 }, ch: { gallium: 0.05 }, fo: { naoh: 15 }, bleed: ['naoh'], eq: 'NaAl(OH)₄ → Al(OH)₃ + NaOH', note: 'Cooling the liquor reverses the digestion. The caustic returns to the digester; gallium trails aluminium and is recovered from the liquor.' },
+  { id: 'calcine', b: 'kiln', t: 3, i: { al_hydroxide: 2, coal: 1 }, o: { alumina: 1 }, fo: { co2: 15 }, eq: '2Al(OH)₃ → Al₂O₃ + 3H₂O', note: 'Calcination at 1100°C drives off the water.' },
+  { id: 'anode', b: 'coke_oven', t: 4, i: { coke: 2 }, o: { anode: 1 }, note: 'Coke is bound with pitch, pressed and baked into blocks.' },
+  { id: 'aluminium', b: 'pot', t: 4, i: { alumina: 2, anode: 1 }, o: { aluminium: 2 }, fo: { co2: 10 }, eq: '2Al₂O₃ + 3C → 4Al + 3CO₂', note: 'Hall-Héroult process at 960°C. Alumina dissolves in molten cryolite Na₃AlF₆; the carbon anode burns away as CO₂. Real smelters use about 14 kWh per kg.' },
+  { id: 'spiral', b: 'spiral', t: 2, i: { mineral_sand: 3 }, fi: { water: 15 }, o: { heavy_conc: 1, sand: 2 }, note: 'Heavy minerals (density 4-5) sink to the inside of the spiral; quartz (2.65) washes to the outside.' },
+  { id: 'mag_heavy', b: 'magsep', t: 2, i: { heavy_conc: 2 }, o: { ilmenite: 1, nonmag: 1 }, note: 'Ilmenite holds iron, so a strong magnet lifts it away.' },
+  { id: 'esep', b: 'esep', t: 2, i: { nonmag: 2 }, o: { rutile: 1, zircon: 1 }, ch: { monazite: 0.2 }, note: 'Rutile is a semiconductor and loses its charge on the earthed roll, so it flies off. Zircon and monazite are insulators and stick.' },
+  { id: 'ti_slag', b: 'arc', t: 4, i: { ilmenite: 2, coke: 1 }, o: { ti_slag: 1, pig_iron: 1 }, fo: { co2: 10 }, eq: 'FeTiO₃ + C → Fe + TiO₂ + CO', note: 'Smelting removes the iron as pig iron and concentrates titanium in the slag.' },
+  { id: 'chlorinate', n: 'TiCl₄ from Rutile', b: 'chlorinator', t: 3, i: { rutile: 1, coke: 1 }, fi: { cl2: 20 }, fo: { ticl4: 10, co2: 5 }, bleed: ['co2'], eq: 'TiO₂ + 2Cl₂ + C → TiCl₄ + CO₂', note: 'At 1000°C titanium leaves as a gas and is condensed. Most other oxides stay behind.' },
+  { id: 'chlorinate_slag', n: 'TiCl₄ from Slag', b: 'chlorinator', t: 3, i: { ti_slag: 1, coke: 1 }, fi: { cl2: 20 }, fo: { ticl4: 8, co2: 5 }, bleed: ['co2'], eq: 'TiO₂ + 2Cl₂ + C → TiCl₄ + CO₂', note: 'Slag has more impurities, so less TiCl₄ per batch.' },
+  { id: 'hunter', b: 'retort', t: 5, i: { sodium: 4 }, fi: { ticl4: 10 }, o: { titanium: 1, salt: 4 }, eq: 'TiCl₄ + 4Na → Ti + 4NaCl', note: 'Hunter process. The salt goes back to the Downs cell, so the sodium and chlorine loop closes.' },
+  { id: 'zircon_brick', n: 'Zircon Brick', b: 'workshop', t: 2, i: { zircon: 1 }, o: { brick: 2 }, note: 'Zircon bricks outlast silica in the hottest furnaces.' },
+  { id: 'roast_pyrite', b: 'roaster', t: 3, i: { pyrite_conc: 1 }, o: { pyrite_cinder: 1 }, fo: { so2: 25 }, eq: '4FeS₂ + 11O₂ → 2Fe₂O₃ + 8SO₂', note: 'Pyrite was the main source of sulfuric acid for a century.' },
+  { id: 'pig_cinder', n: 'Pig Iron from Cinder', b: 'blast', t: 4, i: { pyrite_cinder: 2, coke: 1, crushed_lime: 1 }, o: { pig_iron: 2, slag: 1 }, fo: { co2: 30 }, eq: 'Fe₂O₃ + 3CO → 2Fe + 3CO₂' },
+  { id: 'roast_slime', b: 'roaster', t: 4, i: { anode_slime: 2 }, o: { dore: 1 }, ch: { selenium: 0.5 }, fo: { so2: 5 }, eq: 'Se + O₂ → SeO₂ (volatilised and scrubbed)', note: 'Roasting drives off selenium; the rest is melted into a silver-gold doré.' },
+  { id: 'affination', b: 'leach', t: 4, i: { dore: 2 }, fi: { acid: 10 }, o: { silver: 1 }, ch: { gold: 0.4 }, fo: { so2: 5 }, eq: '2Ag + 2H₂SO₄ → Ag₂SO₄ + SO₂ + 2H₂O', note: 'Hot concentrated acid dissolves the silver (then recovered on copper) and leaves the gold untouched.' },
 ];
 
 const RECIPE = {};
 for (const r of RECIPES) {
   RECIPE[r.id] = r;
   const first = Object.keys(r.o || r.fo)[0];
-  r.n = (ITEMS[first] || FLUIDS[first]).n;
+  r.n = r.n || (ITEMS[first] || FLUIDS[first]).n;
 }
 
 const START_INV = {

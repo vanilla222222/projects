@@ -89,7 +89,10 @@ h3 { margin: 14px 0 6px; font-size: 13px; color: var(--acc); display: flex; alig
   background: var(--bg2);
   border-top: 1px solid var(--line);
   overflow-x: auto;
+  flex-wrap: wrap;
+  row-gap: 4px;
 }
+@media (max-width: 640px) { #hotbar { flex-wrap: nowrap; } }
 .grp { flex: none; }
 .gl { font-size: 10px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 3px 2px; }
 .gb { display: flex; gap: 4px; }
