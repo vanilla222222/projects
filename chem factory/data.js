@@ -69,6 +69,12 @@ const ITEMS = {
   bleach: { n: 'Bleach', c: '#d8e8a0', f: 'Sodium hypochlorite NaOCl solution in drums, a strong oxidiser' },
   clinker: { n: 'Cement Clinker', c: '#6a6660', f: 'Nodules of calcium silicates Ca₃SiO₅ and Ca₂SiO₄ fused at 1450°C' },
   cement: { n: 'Portland Cement', c: '#a8a8a4', f: 'Clinker ground with a little gypsum, which stops it setting in seconds' },
+  caliche: { n: 'Caliche', c: '#d8c8a8', f: 'Chilean desert crust: sodium nitrate NaNO₃ with salt, gypsum and a little iodate, cemented into rock' },
+  sodium_nitrate: { n: 'Sodium Nitrate', c: '#f0ecdc', f: 'Chile saltpetre NaNO₃, an oxidiser. Half the world\'s explosives and fertiliser came from it before 1913' },
+  crushed_caliche: { n: 'Crushed Caliche', c: '#e0d4b8', f: 'Caliche broken small for leaching' },
+  sulfur: { n: 'Sulfur', c: '#f0d830', f: 'Elemental S, yellow and brittle. Burns with a blue flame to SO₂' },
+  black_powder: { n: 'Blasting Powder', c: '#3a3836', f: 'Sodium nitrate, sulfur and charcoal, about 72/13/15. Burns fast and makes hot gas' },
+  cartridge: { n: 'Lead Shot Cartridge', c: '#c8a040', f: 'Brass case, a charge of powder and a lead slug. Ten rounds per box' },
   concrete: { n: 'Concrete Block', c: '#bcbab4', f: 'Cement, sand and water. Calcium silicate hydrate binds the grains' },
 };
 
@@ -98,6 +104,7 @@ const ORES = [
   { item: 'rock_salt', c: '#b88a9c', s: '#f6dce6' },
   { item: 'bauxite', c: '#c0702a', s: '#f0b060' },
   { item: 'mineral_sand', c: '#4a4036', s: '#e0c050' },
+  { item: 'caliche', c: '#b0a080', s: '#f4ecd0' },
 ];
 
 const BUILD = {
@@ -136,6 +143,10 @@ const BUILD = {
   chlorinator: { n: 'Chlorinator', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#9ab04a', ab: 'CL', kw: 40, cost: { brick: 10, plate: 6 }, d: 'Fluidised bed where chlorine and coke turn titanium oxide into volatile TiCl₄.' },
   scrubber: { n: 'Gas Scrubber', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#7a9a9a', ab: 'SC', kw: 40, cost: { plate: 6, lead_sheet: 2, motor: 1 }, d: 'Sprays flue gas with a slurry or solution that soaks up the acid gas.' },
   stack: { n: 'Chimney Stack', kind: 'stack', w: 1, h: 1, cat: 'Chemistry', c: '#8a7a70', ab: 'ST', cost: { brick: 12 }, d: 'Machines touching it vent high up. Their fumes spread over a wide area instead of smothering the ground nearby.' },
+  brick_wall: { n: 'Brick Wall', kind: 'wall', w: 1, h: 1, cat: 'Defence', c: '#a8603a', cost: { brick: 2 }, makes: 2, hp: 400, d: 'Fired brick in lime mortar. Crawlers have to chew through it.' },
+  concrete_wall: { n: 'Concrete Wall', kind: 'wall', w: 1, h: 1, cat: 'Defence', c: '#a8a8a2', cost: { concrete: 2 }, makes: 2, hp: 1200, d: 'Three times tougher than brick. Their acid etches concrete only slowly.' },
+  turret: { n: 'Gun Turret', kind: 'turret', w: 2, h: 2, cat: 'Defence', c: '#5a6a5a', ab: 'GT', cost: { plate: 6, casting: 6, motor: 1 }, hp: 500, d: 'Fires lead shot at crawlers within 10 tiles. Load cartridges by hand, from a chest or off a belt.' },
+  hive: { n: 'Crawler Hive', kind: 'hive', w: 2, h: 2, c: '#6a4a5a', hp: 1000, d: 'A mound of chewed rock and mucus. Sulfur-oxidising bacteria in the crawlers\' guts live on SO₂ and the creatures follow the smog to its source.' },
   retort: { n: 'Hunter Retort', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#8a8a9a', ab: 'HR', kw: 80, cost: { plate: 10, brick: 6 }, d: 'Sealed steel pot where molten sodium strips chlorine from TiCl₄.' },
 };
 
@@ -203,6 +214,11 @@ const RECIPES = [
   { id: 'cement', b: 'mill', t: 2, i: { clinker: 2, gypsum: 1 }, o: { cement: 3 }, note: 'About 5% gypsum controls the reaction of tricalcium aluminate so the cement stays workable.' },
   { id: 'slag_cement', n: 'Slag Cement', b: 'mill', t: 2, i: { clinker: 1, slag: 2, gypsum: 1 }, o: { cement: 3 }, note: 'Ground blast furnace slag is a latent cement. Blending it in halves the clinker, and so the CO₂.' },
   { id: 'concrete', b: 'workshop', t: 2, i: { cement: 1, sand: 3 }, o: { concrete: 2 }, eq: 'Ca₃SiO₅ + H₂O → C-S-H gel + Ca(OH)₂', note: 'Water is mixed in and the blocks are cured for a few days.' },
+  { id: 'crush_caliche', b: 'crusher', t: 1, i: { caliche: 1 }, o: { crushed_caliche: 1 } },
+  { id: 'saltpetre', n: 'Sodium Nitrate', b: 'leach', t: 3, i: { crushed_caliche: 2 }, fi: { steam: 10, water: 10 }, o: { sodium_nitrate: 1, salt: 1 }, eq: 'NaNO₃ dissolves far more in hot water than NaCl', note: 'Shanks process, used in the Atacama from 1876. Hot leach liquor dissolves the nitrate; on cooling the nitrate crystallises out while most of the salt stays behind.' },
+  { id: 'pyrite_sulfur', n: 'Sulfur from Pyrite', b: 'kiln', t: 4, i: { pyrite_conc: 2, coal: 1 }, o: { sulfur: 1, pyrite_cinder: 1 }, fo: { so2: 10 }, eq: 'FeS₂ → FeS + S ; 4FeS + 7O₂ → 2Fe₂O₃ + 4SO₂', note: 'Heating pyrite without much air drives off one sulfur atom as vapour, which condenses yellow. The rest burns off as SO₂.' },
+  { id: 'black_powder', b: 'mill', t: 3, i: { sodium_nitrate: 3, sulfur: 1, coal: 1 }, o: { black_powder: 5 }, eq: '2NaNO₃ + S + 3C → Na₂SO₄ + N₂ + 3CO₂ (roughly)', note: 'DuPont \'B\' blasting powder swapped expensive potassium saltpetre for Chilean sodium nitrate. It soaks up damp, so it was used where that did not matter.' },
+  { id: 'cartridge', b: 'workshop', t: 2, i: { brass: 1, lead: 1, black_powder: 1 }, o: { cartridge: 2 } },
 ];
 
 const RECIPE = {};
@@ -215,7 +231,7 @@ for (const r of RECIPES) {
 const START_INV = {
   belt: 80, pipe: 40, steel_pipe: 10, lead_pipe: 10, booster: 1, chest: 8, sorter: 4, miner: 8, pump: 1, boiler: 2, engine: 2,
   crusher: 3, mill: 2, magsep: 1, flotation: 2, coke_oven: 2, kiln: 1, blast: 1, converter: 1, workshop: 2,
-  casting: 20, brick: 10, stack: 1,
+  casting: 20, brick: 10, stack: 1, turret: 2, cartridge: 40, brick_wall: 20,
 };
 
-const CATS = ['Logistics', 'Mining', 'Power', 'Processing', 'Smelting', 'Chemistry'];
+const CATS = ['Logistics', 'Mining', 'Power', 'Processing', 'Smelting', 'Chemistry', 'Defence'];

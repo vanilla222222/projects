@@ -4,7 +4,7 @@ const W = 160, H = 160, DT = 1 / 30, TP = 8;
 const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
 const KEY = 'chemfactory-save-v1';
 const GAP = 0.25, BELT_V = 2 * DT, MINER_T = 2, PUMP_RATE = 60 * DT;
-const PARTS = ['casting', 'plate', 'wire', 'motor', 'brick', 'lead_sheet', 'brass'];
+const PARTS = ['casting', 'plate', 'wire', 'motor', 'brick', 'lead_sheet', 'brass', 'cartridge'];
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 const tcv = document.createElement('canvas');
 tcv.width = W * TP; tcv.height = H * TP;
@@ -171,7 +171,10 @@ function makeEnt(type, x, y, dir) {
     case 'engine': Object.assign(e, { fl: 'steam', amt: 0, kw: 0, tf: AMB, tw: AMB }); break;
     case 'booster': e.head = 10; e.fr = 0; e.sat = 1; break;
     case 'miner': e.out = {}; e.prog = 0; e.k = 0; break;
+    case 'turret': Object.assign(e, { ammo: 0, rd: 0, cd: 0, ang: -Math.PI / 2, sh: -1, kills: 0 }); break;
+    case 'hive': Object.assign(e, { food: 0, sw: 0, dc: 0 }); break;
   }
+  if (BUILD[type].hp) e.hp = BUILD[type].hp;
   return e;
 }
 
@@ -231,7 +234,7 @@ function removeEnt(e) {
 
 function lists() {
   if (L) return L;
-  L = { belt: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [] };
+  L = { belt: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [], wall: [], turret: [], hive: [] };
   for (const e of ents.values()) {
     const k = kind(e);
     if (k === 'pipe') L.node.push(e);
@@ -268,6 +271,11 @@ function acceptItem(o, k) {
   if (kd === 'chest') {
     if (sum(o.store) >= 400) return false;
     o.store[k] = (o.store[k] || 0) + 1;
+    return true;
+  }
+  if (kd === 'turret') {
+    if (k !== 'cartridge' || o.ammo >= TUR_CAP) return false;
+    o.ammo++;
     return true;
   }
   if (kd === 'sorter') {
@@ -454,7 +462,7 @@ function emit(e, f, a) {
   }
   if (st) st.puff = Math.min(3, (st.puff || 0) + w / 20);
 }
-function vent(e, f, a) { S.vent[f] = (S.vent[f] || 0) + a; emit(e, f, a); }
+function vent(e, f, a) { S.vent[f] = (S.vent[f] || 0) + a; e.pt = S.t; emit(e, f, a); }
 
 function polStep() {
   const p = S.pol, n = new Array(PW * PW).fill(0), D = 0.05, K = 0.996;
@@ -481,6 +489,167 @@ function burst(e, why) {
   fx.push({ x: e.x + 0.5, y: e.y + 0.5, t: 0, c: e.fl ? col(e.fl) : '#ccc' });
   S.fails = (S.fails || 0) + 1;
   return `${BUILD[e.type].n} at ${e.x},${e.y} ${why}`;
+}
+
+const TUR_CAP = 20, TUR_R = 10, BUG_V = 1.6, MAX_BUGS = 80, MAX_HIVES = 30, BUG_LIFE = 150;
+const maxHp = e => BUILD[e.type].hp || 60 * BUILD[e.type].w * BUILD[e.type].h;
+const ctr = e => ({ x: e.x + BUILD[e.type].w / 2, y: e.y + BUILD[e.type].h / 2 });
+function wreck(e) {
+  if (!ents.has(e.id)) return;
+  const B = BUILD[e.type], c = ctr(e);
+  if (e.fl && e.amt > 0.01) { S.spill[e.fl] = (S.spill[e.fl] || 0) + e.amt; emit(e, e.fl, e.amt); }
+  if (e.fo) for (const f in e.fo) if (e.fo[f] > 0.01) { S.spill[f] = (S.spill[f] || 0) + e.fo[f]; emit(e, f, e.fo[f]); }
+  unlink(e);
+  if (sel === e.id) closePanel();
+  fx.push({ x: c.x, y: c.y, t: 0, c: kind(e) === 'hive' ? '#a0c040' : '#8a7a6a' });
+  if (kind(e) === 'hive') { S.hk = (S.hk || 0) + 1; toast('Crawler hive destroyed'); }
+  else { S.lost = (S.lost || 0) + 1; eatToast(B.n, e); }
+}
+function hurt(e, d) {
+  if (e.hp == null) e.hp = maxHp(e);
+  e.hp -= d;
+  if (e.hp <= 0) wreck(e);
+}
+function hiveSpot(x, y) {
+  if (x < 1 || y < 1 || x > W - 3 || y > H - 3) return false;
+  for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) { const k = (y + j) * W + x + i; if (occ[k] || terrain[k] === 1) return false; }
+  return true;
+}
+function farFromBase(x, y, r) {
+  for (const e of ents.values()) if (kind(e) !== 'hive' && Math.abs(e.x - x) < r && Math.abs(e.y - y) < r) return false;
+  return true;
+}
+function addHive(x, y) {
+  const h = makeEnt('hive', x, y, 0);
+  addEnt(h);
+  return h;
+}
+function spawnHives() {
+  const rng = mulberry32(S.seed + 777);
+  let n = 0;
+  for (let k = 0; k < 400 && n < 10; k++) {
+    const a = rng() * Math.PI * 2, d = 48 + rng() * 30;
+    const x = Math.round(W / 2 + Math.cos(a) * d), y = Math.round(H / 2 + Math.sin(a) * d);
+    if (!hiveSpot(x, y) || !farFromBase(x, y, 14)) continue;
+    let near = false;
+    for (const e of lists().hive) if (Math.hypot(e.x - x, e.y - y) < 18) near = true;
+    if (near) continue;
+    addHive(x, y);
+    n++;
+  }
+  S.hv = 1;
+}
+function smell(x, y) {
+  const cx = Math.floor(x / PC), cy = Math.floor(y / PC), r = [];
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    const X = cx + dx, Y = cy + dy;
+    if (X >= 0 && Y >= 0 && X < PW && Y < PW) r.push(Y * PW + X);
+  }
+  return r;
+}
+function nearestEnt(x, y, r, pick) {
+  let best = null, bd = r * r;
+  for (const e of ents.values()) {
+    const k = kind(e);
+    if (k === 'hive' || k === 'belt' || (pick && !pick(e))) continue;
+    const c = ctr(e), d = (c.x - x) ** 2 + (c.y - y) ** 2;
+    if (d < bd) { bd = d; best = e; }
+  }
+  return best;
+}
+function spawnBugs(h, n, tid) {
+  const c = ctr(h), mhp = 30 * (1 + 2 * S.evo);
+  for (let i = 0; i < n && S.bugs.length < MAX_BUGS; i++) {
+    const a = Math.random() * Math.PI * 2;
+    S.bugs.push({ x: c.x + Math.cos(a) * 1.4, y: c.y + Math.sin(a) * 1.4, hp: mhp, mhp, tid, hx: c.x, hy: c.y, a, cd: 0, ph: Math.random() * 7, bt: S.t });
+  }
+}
+function launch(h) {
+  const c = ctr(h);
+  const t = nearestEnt(c.x, c.y, 90, e => e.pt != null && S.t - e.pt < 30) || nearestEnt(c.x, c.y, 90, e => kind(e) === 'machine');
+  if (!t) return;
+  h.food -= 50;
+  h.sw++;
+  spawnBugs(h, Math.min(10, 3 + Math.floor(S.evo * 8)), t.id);
+  if (h.sw % 8 === 0 && lists().hive.length < MAX_HIVES) expand(h);
+}
+function expand(h) {
+  let best = null, bp = -1;
+  for (let k = 0; k < 12; k++) {
+    const a = Math.random() * Math.PI * 2, d = 6 + Math.random() * 8;
+    const x = Math.round(h.x + Math.cos(a) * d), y = Math.round(h.y + Math.sin(a) * d);
+    if (!hiveSpot(x, y) || !farFromBase(x, y, 12)) continue;
+    const p = polAt(x, y);
+    if (p > bp) { bp = p; best = { x, y }; }
+  }
+  if (best) addHive(best.x, best.y);
+}
+function hiveStep() {
+  for (const h of lists().hive) {
+    let got = 0;
+    for (const i of smell(h.x, h.y)) {
+      const a = Math.min(S.pol[i] * 0.05, 0.4);
+      S.pol[i] -= a; got += a;
+    }
+    h.food = Math.min(100, h.food + got);
+    S.evo = Math.min(1, S.evo + got / 30000);
+    if (!(S.t - (h.lh || -99) < 15)) h.hp = Math.min(maxHp(h), h.hp + 2);
+    h.dc = Math.max(0, h.dc - 1);
+    if (h.food >= 50) launch(h);
+  }
+}
+function bugStep() {
+  const sp = BUG_V * DT, dmg = 6 * (1 + S.evo) * DT;
+  for (let i = S.bugs.length - 1; i >= 0; i--) {
+    const b = S.bugs[i];
+    if (b.hp <= 0) { S.bugs.splice(i, 1); S.kills = (S.kills || 0) + 1; fx.push({ x: b.x, y: b.y, t: 0.5, c: '#a0c040' }); continue; }
+    let t = b.tid > 0 ? ents.get(b.tid) : null;
+    if (!t && b.tid > 0) { t = nearestEnt(b.x, b.y, 25); b.tid = t ? t.id : -1; }
+    let tx = b.hx, ty = b.hy;
+    if (t) { const c = ctr(t); tx = c.x; ty = c.y; }
+    const dx = tx - b.x, dy = ty - b.y, d = Math.hypot(dx, dy);
+    if ((!t && d < 1) || S.t - (b.bt ?? S.t) > BUG_LIFE) { S.bugs.splice(i, 1); continue; }
+    if (d < 1e-3) continue;
+    b.a = Math.atan2(dy, dx);
+    const wob = Math.sin(S.t * 5 + b.ph) * 0.35;
+    const ux = dx / d - dy / d * wob, uy = dy / d + dx / d * wob;
+    const tryMove = (nx, ny) => {
+      const X = Math.floor(nx), Y = Math.floor(ny);
+      if (X < 0 || Y < 0 || X >= W || Y >= H || terrain[Y * W + X] === 1) return 'water';
+      const o = at(X, Y);
+      if (o && kind(o) !== 'belt' && kind(o) !== 'hive' && !(Math.floor(b.x) === X && Math.floor(b.y) === Y)) return o;
+      b.x = nx; b.y = ny;
+      return null;
+    };
+    let r = tryMove(b.x + ux * sp, b.y + uy * sp);
+    if (r === 'water') r = tryMove(b.x + Math.sign(ux) * sp, b.y) && tryMove(b.x, b.y + Math.sign(uy) * sp) && tryMove(b.x - uy * sp, b.y + ux * sp);
+    b.chew = r && r !== 'water' ? r.id : 0;
+    if (b.chew) hurt(r, dmg);
+  }
+}
+function turretTick(e) {
+  e.cd -= DT;
+  if (e.cd > 0) return;
+  if (!e.rd) { if (e.ammo > 0) { e.ammo--; e.rd = 10; } else return; }
+  const c = ctr(e), R2 = TUR_R * TUR_R;
+  let best = null, bd = R2;
+  for (const b of S.bugs) { const d = (b.x - c.x) ** 2 + (b.y - c.y) ** 2; if (b.hp > 0 && d < bd) { bd = d; best = b; } }
+  let tx, ty;
+  if (best) { best.hp -= 10; tx = best.x; ty = best.y; if (best.hp <= 0) e.kills++; }
+  else {
+    let h = null;
+    for (const o of lists().hive) { const q = ctr(o), d = (q.x - c.x) ** 2 + (q.y - c.y) ** 2; if (d < bd) { bd = d; h = o; } }
+    if (!h) return;
+    const q = ctr(h);
+    tx = q.x; ty = q.y;
+    if (h.dc <= 0) { spawnBugs(h, 2 + Math.floor(S.evo * 3), e.id); h.dc = 10; }
+    h.lh = S.t;
+    hurt(h, 10);
+  }
+  e.rd--;
+  e.cd = 0.25;
+  e.ang = Math.atan2(ty - c.y, tx - c.x);
+  e.sh = S.t; e.tx = tx; e.ty = ty;
 }
 
 function boosterTick(e) {
@@ -596,12 +765,14 @@ function tick() {
   const l = lists();
   S.t += DT;
   S.tk = (S.tk || 0) + 1;
-  if (S.tk % 30 === 0) polStep();
+  if (S.tk % 30 === 0) { polStep(); hiveStep(); }
   for (const e of l.stack) e.puff = (e.puff || 0) * 0.985;
   for (const b of l.belt) beltTick(b);
   for (const s of l.sorter) sorterTick(s);
   for (const p of l.pump) pumpTick(p);
   for (const e of l.booster) boosterTick(e);
+  bugStep();
+  for (const e of l.turret) turretTick(e);
   fluidStep(l.pairs);
   const fails = [];
   for (const e of l.node) nodeHeat(e, fails);
@@ -661,10 +832,10 @@ function serialize() {
   const es = [];
   for (const e of ents.values()) {
     const o = Object.assign({}, e);
-    delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff;
+    delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, help: S.help, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, help: S.help, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -678,8 +849,9 @@ function initWorld(seed) {
 function newGame(seed) {
   seed = seed == null ? Math.floor(Math.random() * 1e9) : seed;
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
-  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 } };
+  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: [], evo: 0, lost: 0, kills: 0, hk: 0 };
   initWorld(seed);
+  spawnHives();
   cam = { x: W / 2, y: H / 2, z: 32 };
   tool = null; sel = null;
   drawTerrain();
@@ -690,7 +862,7 @@ function load() {
   try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) { d = null; }
   if (!d || d.v !== 1) return false;
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
-  S = { seed: d.seed, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 } };
+  S = { seed: d.seed, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv };
   initWorld(d.seed);
   for (const k in S.dep) { const i = +k; oreAmt[i] = S.dep[k]; if (oreAmt[i] <= 0) { oreAmt[i] = 0; oreType[i] = 0; } }
   for (const o of d.ents || []) {
@@ -699,11 +871,22 @@ function load() {
     addEnt(e);
     S.nextId = Math.max(S.nextId, e.id + 1);
   }
+  if (!S.hv) spawnHives();
   if (d.cam) cam = d.cam;
   drawTerrain();
   return true;
 }
 
+let eatEl = null, eatN = 0;
+function eatToast(n, e) {
+  if (eatEl && eatEl.isConnected && !eatEl.classList.contains('out')) {
+    eatN++;
+    eatEl.textContent = `${eatN} buildings eaten by crawlers near ${e.x},${e.y}`;
+    return;
+  }
+  eatN = 1;
+  eatEl = toast(`${n} at ${e.x},${e.y} was eaten by crawlers`, true);
+}
 function toast(msg, bad) {
   const t = document.createElement('div');
   t.className = 'toast' + (bad ? ' bad' : '');
@@ -713,6 +896,7 @@ function toast(msg, bad) {
   while (box.children.length > 4) box.firstChild.remove();
   setTimeout(() => t.classList.add('out'), 2200);
   setTimeout(() => t.remove(), 2700);
+  return t;
 }
 
 function resize() {
@@ -774,6 +958,18 @@ function render() {
   for (const e of vis) if (e.type === 'belt') drawBelt(e, ox, oy, z);
   for (const e of vis) if (e.type === 'belt') drawBeltItems(e, ox, oy, z);
   for (const e of vis) if (kind(e) !== 'pipe' && e.type !== 'belt') drawBuilding(e, ox, oy, z);
+  drawBugs(ox, oy, z, x0, y0, x1, y1);
+  for (const e of vis) if (e.type === 'turret' && S.t - e.sh < 0.07) {
+    const c = ctr(e);
+    ctx.strokeStyle = 'rgba(255,230,140,0.9)'; ctx.lineWidth = Math.max(1, z * 0.05);
+    ctx.beginPath(); ctx.moveTo(ox + (c.x + Math.cos(e.ang) * 0.9) * z, oy + (c.y + Math.sin(e.ang) * 0.9) * z); ctx.lineTo(ox + e.tx * z, oy + e.ty * z); ctx.stroke();
+  }
+  for (const e of vis) if (e.hp != null && e.hp < maxHp(e) && kind(e) !== 'wall') {
+    const B = BUILD[e.type], X = ox + e.x * z, Y = oy + (e.y + B.h) * z - z * 0.16;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(X + 2, Y, B.w * z - 4, z * 0.12);
+    ctx.fillStyle = e.hp / maxHp(e) > 0.5 ? '#7fe08a' : e.hp / maxHp(e) > 0.25 ? '#e0b84a' : '#e04a4a';
+    ctx.fillRect(X + 2, Y, (B.w * z - 4) * e.hp / maxHp(e), z * 0.12);
+  }
   if (overlay !== 3) drawSmog(ox, oy, z);
   if (overlay) drawOverlay(vis, ox, oy, z);
   for (let i = fx.length - 1; i >= 0; i--) {
@@ -981,8 +1177,119 @@ function arrow(cx, cy, d, s, c) {
   ctx.restore();
 }
 
+function drawBugs(ox, oy, z, x0, y0, x1, y1) {
+  const now = performance.now() / 1000;
+  for (const b of S.bugs) {
+    if (b.x < x0 - 1 || b.y < y0 - 1 || b.x > x1 + 1 || b.y > y1 + 1) continue;
+    const s = z * (0.22 + 0.08 * Math.min(1, b.mhp / 90)), X = ox + b.x * z, Y = oy + b.y * z;
+    ctx.save();
+    ctx.translate(X, Y); ctx.rotate(b.a);
+    const g = Math.sin(now * (b.chew ? 30 : 18) + b.ph);
+    ctx.strokeStyle = '#1a1214'; ctx.lineWidth = Math.max(1, s * 0.16);
+    ctx.beginPath();
+    for (let k = -1; k <= 1; k++) for (const sd of [-1, 1]) {
+      const sw = (k % 2 === 0 ? g : -g) * sd * 0.35;
+      ctx.moveTo(s * 0.3 * k, sd * s * 0.3);
+      ctx.lineTo(s * (0.3 * k + sw), sd * s * 0.95);
+    }
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath(); ctx.ellipse(s * 0.1, s * 0.15, s * 0.95, s * 0.5, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#4a3038';
+    ctx.beginPath(); ctx.ellipse(-s * 0.35, 0, s * 0.6, s * 0.45, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#5e3c46';
+    ctx.beginPath(); ctx.ellipse(s * 0.3, 0, s * 0.42, s * 0.36, 0, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#d8c84a'; ctx.lineWidth = Math.max(1, s * 0.1);
+    ctx.beginPath(); ctx.moveTo(-s * 0.5, -s * 0.38); ctx.lineTo(-s * 0.5, s * 0.38); ctx.moveTo(-s * 0.2, -s * 0.42); ctx.lineTo(-s * 0.2, s * 0.42); ctx.stroke();
+    ctx.strokeStyle = '#2a1a1e'; ctx.lineWidth = Math.max(1, s * 0.12);
+    const m = b.chew ? 0.25 + 0.2 * g : 0.25;
+    ctx.beginPath(); ctx.moveTo(s * 0.65, -s * 0.15); ctx.lineTo(s * 1.05, -s * m); ctx.moveTo(s * 0.65, s * 0.15); ctx.lineTo(s * 1.05, s * m); ctx.stroke();
+    ctx.restore();
+    if (b.hp < b.mhp && z >= 12) {
+      ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(X - s, Y - s * 1.4, s * 2, Math.max(2, z * 0.06));
+      ctx.fillStyle = '#e04a4a'; ctx.fillRect(X - s, Y - s * 1.4, s * 2 * Math.max(0, b.hp / b.mhp), Math.max(2, z * 0.06));
+    }
+  }
+}
+function drawHive(e, x, y, w, h, z) {
+  const now = performance.now() / 1000, pu = 1 + 0.04 * Math.sin(now * 2 + e.id), cx = x + w / 2, cy = y + h / 2;
+  ctx.fillStyle = 'rgba(40,20,30,0.45)';
+  ctx.beginPath(); ctx.ellipse(cx, cy + h * 0.08, w * 0.62, h * 0.5, 0, 0, 7); ctx.fill();
+  const g = ctx.createRadialGradient(cx - w * 0.12, cy - h * 0.15, w * 0.05, cx, cy, w * 0.55 * pu);
+  g.addColorStop(0, '#9a6a7a'); g.addColorStop(0.6, '#6a4252'); g.addColorStop(1, '#3a2230');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  for (let k = 0; k <= 16; k++) {
+    const a = k / 16 * Math.PI * 2, r = w * 0.5 * pu * (0.85 + 0.15 * hash(k, e.id, 5));
+    k ? ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.9) : ctx.moveTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.9);
+  }
+  ctx.fill();
+  ctx.fillStyle = '#1a0c12';
+  for (let k = 0; k < 5; k++) {
+    const a = hash(k, e.id, 9) * 7, r = w * (0.1 + 0.25 * hash(e.id, k, 4));
+    ctx.beginPath(); ctx.ellipse(cx + Math.cos(a) * r, cy + Math.sin(a) * r, w * 0.07, h * 0.05, a, 0, 7); ctx.fill();
+  }
+  const f = Math.min(1, e.food / 50);
+  if (f > 0.05) {
+    ctx.fillStyle = `rgba(216,200,74,${0.25 + 0.5 * f * (0.6 + 0.4 * Math.sin(now * 4 + e.id))})`;
+    ctx.beginPath(); ctx.arc(cx, cy, w * 0.12, 0, 7); ctx.fill();
+  }
+}
+function drawWall(e, x, y, z) {
+  const B = BUILD[e.type], con = e.type === 'concrete_wall';
+  ctx.fillStyle = shade(B.c, 0.5);
+  ctx.fillRect(x, y, z, z);
+  ctx.fillStyle = B.c;
+  ctx.fillRect(x + z * 0.06, y + z * 0.04, z * 0.88, z * 0.84);
+  ctx.strokeStyle = shade(B.c, 0.7); ctx.lineWidth = Math.max(1, z * 0.04);
+  ctx.beginPath();
+  if (con) { ctx.moveTo(x + z * 0.5, y + z * 0.04); ctx.lineTo(x + z * 0.5, y + z * 0.88); ctx.moveTo(x + z * 0.06, y + z * 0.46); ctx.lineTo(x + z * 0.94, y + z * 0.46); }
+  else for (let r = 0; r < 4; r++) {
+    const yy = y + z * (0.04 + r * 0.21);
+    ctx.moveTo(x + z * 0.06, yy); ctx.lineTo(x + z * 0.94, yy);
+    const o = r % 2 ? 0.25 : 0.5;
+    ctx.moveTo(x + z * o, yy); ctx.lineTo(x + z * o, yy + z * 0.21);
+    if (o === 0.25) { ctx.moveTo(x + z * 0.75, yy); ctx.lineTo(x + z * 0.75, yy + z * 0.21); }
+  }
+  ctx.stroke();
+  const d = 1 - e.hp / maxHp(e);
+  if (d > 0.05) {
+    ctx.strokeStyle = 'rgba(20,10,10,0.8)'; ctx.lineWidth = Math.max(1, z * 0.05);
+    ctx.beginPath();
+    for (let k = 0; k < Math.ceil(d * 4); k++) {
+      const a = hash(k, e.id, 2), b2 = hash(e.id, k, 3);
+      ctx.moveTo(x + z * a, y + z * 0.1); ctx.lineTo(x + z * (a + b2 - 0.5) * 0.8, y + z * 0.5); ctx.lineTo(x + z * b2, y + z * 0.85);
+    }
+    ctx.stroke();
+  }
+}
+function drawTurret(e, x, y, w, h, z) {
+  const B = BUILD[e.type], cx = x + w / 2, cy = y + h / 2;
+  ctx.fillStyle = shade(B.c, 0.5);
+  ctx.fillRect(x + z * 0.1, y + z * 0.1, w - z * 0.2, h - z * 0.2);
+  ctx.fillStyle = shade(B.c, 0.8);
+  ctx.beginPath(); ctx.arc(cx, cy, w * 0.38, 0, 7); ctx.fill();
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(e.ang);
+  const rc = S.t - e.sh < 0.08 ? z * 0.08 : 0;
+  ctx.fillStyle = '#2a2e2a';
+  ctx.fillRect(z * 0.1 - rc, -z * 0.09, z * 0.85, z * 0.18);
+  ctx.fillStyle = B.c;
+  ctx.beginPath(); ctx.arc(0, 0, w * 0.24, 0, 7); ctx.fill();
+  ctx.fillStyle = shade(B.c, 1.3);
+  ctx.fillRect(-w * 0.12, -w * 0.12, w * 0.12, w * 0.08);
+  if (S.t - e.sh < 0.05) { ctx.fillStyle = '#ffe08a'; ctx.beginPath(); ctx.arc(z * 0.98, 0, z * 0.14, 0, 7); ctx.fill(); }
+  ctx.restore();
+  const f = Math.min(1, e.ammo / TUR_CAP);
+  ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x + z * 0.15, y + z * 0.15, z * 0.12, h - z * 0.3);
+  ctx.fillStyle = f > 0 ? '#c8a040' : '#e04a4a';
+  ctx.fillRect(x + z * 0.15, y + z * 0.15 + (h - z * 0.3) * (1 - f), z * 0.12, (h - z * 0.3) * f || Math.max(1, z * 0.04));
+}
+
 function drawBuilding(e, ox, oy, z) {
   const B = BUILD[e.type], x = ox + e.x * z, y = oy + e.y * z, w = B.w * z, h = B.h * z, p = Math.max(1, z * 0.06);
+  if (B.kind === 'hive') return drawHive(e, x, y, w, h, z);
+  if (B.kind === 'wall') return drawWall(e, x, y, z);
+  if (B.kind === 'turret') return drawTurret(e, x, y, w, h, z);
   ctx.fillStyle = shade(B.c, 0.55);
   ctx.fillRect(x + p, y + p, w - 2 * p, h - 2 * p);
   ctx.fillStyle = B.c;
@@ -1114,6 +1421,9 @@ function tileInfo0(x, y) {
     if (e.type === 'belt' && e.items.length) s += `<br>${e.items.map(i => nm(i.i)).join(', ')}`;
     if (e.type === 'chest') s += `<br>${sum(e.store)}/400 items`;
     if (e.type === 'stack') s += `<br>${stackUsers(e).length} machines venting through it`;
+    if (kind(e) === 'hive') s += `<br>Food ${Math.round(e.food)}/50 · ${e.sw} swarms sent`;
+    if (e.type === 'turret') s += `<br>${e.ammo} cartridges + ${e.rd} rounds · ${e.kills} kills`;
+    if (e.hp != null && e.hp < maxHp(e)) s += `<br><span class="bad">Integrity ${Math.round(e.hp)}/${maxHp(e)}</span>`;
     return s;
   }
   const i = y * W + x;
@@ -1139,6 +1449,7 @@ function ventHtml() {
   const sp = sum(S.spill || {});
   return `<span class="lbl">Vented</span><b class="${t > 0 ? 'warn' : ''}">${fmt(t)}</b>` + (parts ? `<span class="dim"> · ${parts}</span>` : '') +
     (sp >= 1 || S.fails ? ` <span class="lbl">Spilled</span><b class="bad">${fmt(sp)}</b><span class="dim"> · ${S.fails || 0} pipe failures</span>` : '') +
+    (S.bugs.length || S.evo > 0.001 || S.lost ? ` <span class="lbl">Crawlers</span><b class="${S.bugs.length ? 'bad' : ''}">${S.bugs.length}</b><span class="dim"> · evolution ${Math.round(S.evo * 100)}% · ${lists().hive.length} hives${S.lost ? ' · ' + S.lost + ' buildings lost' : ''}</span>` : '') +
     (pk >= 1 ? ` <span class="lbl">Smog</span><b class="${pk > RAIN ? 'bad' : pk > RAIN * 0.6 ? 'warn' : ''}">${Math.round(pk)}</b><span class="dim"> peak${pk > RAIN ? ', acid rain' : ''}</span>` : '');
 }
 
@@ -1183,7 +1494,9 @@ function openPanel(e) {
   if (e.type === 'booster') h += `<label class="row">Outlet pressure <select data-act="head">${HEADS.concat(e.head).filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b).map(v => `<option value="${v}" ${e.head === v ? 'selected' : ''}>${v} bar</option>`).join('')}</select></label>`;
   if (kind(e) === 'pipe') h += '<button data-act="flush">Flush network</button>';
   if (e.type === 'belt' || e.type === 'sorter' || e.type === 'booster') h += '<button data-act="rotate">Rotate (R)</button>';
-  h += '<button class="danger" data-act="remove">Pick up</button></div>';
+  if (e.type === 'turret') h += '<button data-act="load">Load cartridges</button>';
+  if (kind(e) !== 'hive') h += '<button class="danger" data-act="remove">Pick up</button>';
+  h += '</div>';
   panel.innerHTML = h;
   panel.hidden = false;
   renderPanelDyn();
@@ -1262,6 +1575,15 @@ function renderPanelDyn() {
     h += `<div class="status"><i style="background:${(e.puff || 0) > 0.03 ? ST_COL.work : ST_COL.none}"></i>${u.length} machine${u.length === 1 ? '' : 's'} venting through it</div>`;
     h += `<div class="gauge"><span>Smog here</span>${bar(polAt(e.x, e.y), RAIN * 2, polAt(e.x, e.y) > RAIN ? '#e04a4a' : '#b0a060')}<b>${Math.round(polAt(e.x, e.y))}</b></div>`;
     h += '<p class="dim">Gas vented by touching machines leaves 100 m up and spreads over 40×40 tiles instead of one 8×8 area. That keeps the ground below acid rain, but the same amount of pollution still comes down somewhere. Tall stacks fixed British smog in the 1960s and sent acid rain to Scandinavia instead.</p>';
+  } else if (k === 'hive') {
+    h += `<div class="gauge"><span>Integrity</span>${bar(e.hp, maxHp(e), '#a04a6a')}<b>${Math.round(e.hp)} / ${maxHp(e)}</b></div>`;
+    h += `<div class="gauge"><span>Food</span>${bar(e.food, 50, '#d8c84a')}<b>${Math.round(e.food)} / 50</b></div>`;
+    h += `<div class="spec">Smog around it ${Math.round(polAt(e.x + 1, e.y + 1))} · ${e.sw} swarms sent · crawler evolution ${Math.round(S.evo * 100)}%</div>`;
+    h += '<p class="dim">The hive breathes in smog from the 24×24 tiles around it. Each 50 food sends a swarm at whatever vented most recently. Every eighth swarm founds a new hive, as close to the smog as it can. Guns or poison gas are the only ways to clear one, and they defend themselves.</p>';
+  } else if (k === 'turret') {
+    h += `<div class="status"><i style="background:${e.ammo || e.rd ? (S.t - e.sh < 0.5 ? ST_COL.work : ST_COL.none) : ST_COL.input}"></i>${!e.ammo && !e.rd ? 'Out of ammunition' : S.t - e.sh < 0.5 ? 'Firing' : 'Watching'} · range ${TUR_R} tiles · ${e.kills} kills</div>`;
+    h += `<div class="gauge"><span>Cartridges</span>${bar(e.ammo, TUR_CAP, '#c8a040')}<b>${e.ammo} / ${TUR_CAP} + ${e.rd} rounds</b></div>`;
+    h += '<p class="dim">Ten rounds per cartridge, four shots a second, 10 damage each. Chests and belts touching it top it up.</p>';
   } else if (k === 'pump') {
     h += `<div class="status"><i style="background:${e.on ? ST_COL.work : ST_COL.output}"></i>${e.on ? 'Pumping' : 'Nothing to pump into'}</div>`;
   } else if (k === 'belt') {
@@ -1269,6 +1591,7 @@ function renderPanelDyn() {
   } else if (k === 'sorter') {
     h += `<div class="slots"><div class="slot">${e.buf ? chip(e.buf) : '<span class="dim">Empty</span>'}</div></div><p class="dim">Filtered item goes straight on. Everything else turns right.</p>`;
   }
+  if (k !== 'hive' && e.hp != null && e.hp < maxHp(e)) h += `<div class="gauge"><span>Integrity</span>${bar(e.hp, maxHp(e), '#e04a4a')}<b>${Math.round(e.hp)} / ${maxHp(e)}</b></div><p class="dim">Pick it up and put it back to rebuild it.</p>`;
   box.innerHTML = h;
 }
 
@@ -1312,7 +1635,12 @@ function panelAct(act, el) {
     }
     toast(`Flushed ${seen.size} pipes`);
   } else if (act === 'rotate') { e.dir = (e.dir + 1) % 4; }
-  else if (act === 'remove') { removeEnt(e); renderHotbar(); return; }
+  else if (act === 'load') {
+    const n = Math.min(S.inv.cartridge || 0, TUR_CAP - e.ammo);
+    if (n > 0) { S.inv.cartridge -= n; if (!S.inv.cartridge) delete S.inv.cartridge; e.ammo += n; }
+    toast(n ? `Loaded ${n} cartridges` : e.ammo >= TUR_CAP ? 'Turret is full' : 'You have no cartridges', !n);
+  }
+  else if (act === 'remove') { if (kind(e) === 'hive') return; removeEnt(e); renderHotbar(); return; }
   renderPanelDyn();
   renderHotbar();
 }
@@ -1421,6 +1749,7 @@ const CHAINS = [
   { n: 'Mineral sands and titanium', l: [['mineral_sand', 'Gravity spiral + water', 'heavy_conc', 'Magnetic separator', 'ilmenite'], ['nonmag', 'Electrostatic separator', 'rutile', '+', 'zircon'], ['ilmenite', 'Arc furnace + coke', 'ti_slag', '+', 'pig_iron'], ['rutile', 'Chlorinator + coke + cl2', 'ticl4', 'Hunter retort + sodium', 'titanium']], d: 'Black beach sand holds titanium and zirconium minerals. Gravity, magnetism and static charge split them. Titanium dioxide is too stable to reduce with carbon, so it goes through chlorine: TiCl₄ meets molten sodium, and the salt that results goes back to the Downs cell. Titanium makes pipe that laughs at chlorine.' },
   { n: 'Clean air', l: [['so2', 'Gas scrubber + water + crushed limestone', 'gypsum'], ['cl2', 'Gas scrubber + caustic soda', 'bleach'], ['Roaster', 'Chimney stack', 'Smog spread thin']], d: 'Vented SO₂ and chlorine become smog, and smog over ' + RAIN + ' brings acid rain. An acid plant turns SO₂ into something useful; when it cannot keep up, a limestone scrubber locks the sulfur into gypsum. A stack only dilutes: the same sulfur still falls somewhere.' },
   { n: 'Cement', l: [['crushed_lime', 'Lime kiln + sand + coal', 'clinker'], ['clinker', 'Ball mill + gypsum', 'cement'], ['slag', 'Ball mill + clinker + gypsum', 'cement'], ['cement', 'Workshop + sand', 'concrete']], d: 'Portland cement needs gypsum from the scrubber, and blast furnace slag can replace half the clinker. Concrete blocks build walls.' },
+  { n: 'Ammunition', l: [['caliche', 'Crusher', 'crushed_caliche', 'Leach tank + steam + water', 'sodium_nitrate', '+', 'salt'], ['pyrite_conc', 'Lime kiln + coal', 'sulfur', '+', 'pyrite_cinder'], ['sodium_nitrate', 'Ball mill + sulfur + coal', 'black_powder'], ['black_powder', 'Workshop + brass + lead', 'cartridge']], d: 'Crawlers smell SO₂ and come for whatever vents it. Turrets hold them off with lead shot. The powder is nitrate, sulfur and carbon: the nitrate supplies the oxygen, so it burns sealed in a brass case. Brick and concrete walls slow them down while the guns work.' },
   { n: 'By-products', l: [['ground_copper', 'Flotation', 'copper_conc', '+', 'pyrite_conc'], ['pyrite_conc', 'Roaster', 'pyrite_cinder', 'Blast furnace', 'pig_iron'], ['anode_slime', 'Roaster', 'dore', 'Leach tank + acid', 'silver']], d: 'Nothing is waste. Pyrite gives SO₂ for acid and its cinder is iron ore. Anode slime from copper refining yields selenium, silver and gold.' },
 ];
 
@@ -1449,6 +1778,8 @@ const HELP = `<div class="help">
 <p>Pipes have real pressure, flow and temperature. Cast iron is cheap but brittle and bursts above 16 bar. Steel pipe carries four times the flow and bulges before it bursts. Acid, brine and chlorine eat both, so carry them in lead-lined or titanium pipe, and caustic in steel. Booster pumps push fluid further. See <b>Pipes</b> in the encyclopedia.</p>
 <h3>Smog and acid rain</h3>
 <p>Gas a machine cannot pass on is vented. SO₂ and chlorine hang over the area as brown smog, drift to neighbouring areas and slowly wash out. Where smog passes ${RAIN}, acid rain falls and eats every pipe except lead-lined ones. Capture SO₂ in an acid plant or a gas scrubber, absorb chlorine with caustic, or touch the venting machine to a chimney stack to spread its fumes thin. CO₂ counts for little smog but is tallied in the top bar.</p>
+<h3>Crawlers</h3>
+<p>Crawler hives sit in the wilds. The crawlers' gut bacteria live on sulfur, so hives breathe in the smog that drifts to them and send swarms at whatever vented last. They chew through anything in their path except belts, and every fifth swarm founds a new hive closer to the smog. The cleaner you run, the hungrier they stay. Gun turrets need lead shot cartridges, made from Chilean nitrate, sulfur and coal. Brick and concrete walls buy the guns time.</p>
 </div>`;
 
 function doCraft(t, n) {
@@ -1503,7 +1834,8 @@ cv.addEventListener('mousedown', ev => {
   if (ev.button === 2) {
     mouse.r = true;
     const e = at(mouse.tx, mouse.ty);
-    if (e) { removeEnt(e); renderHotbar(); }
+    if (e && kind(e) === 'hive') toast('Hives cannot be picked up. Shoot or gas them.', true);
+    else if (e) { removeEnt(e); renderHotbar(); }
     else if (tool) { tool = null; renderHotbar(); }
     return;
   }
@@ -1512,7 +1844,7 @@ cv.addEventListener('mousedown', ev => {
   if (tool) {
     const r = placeAt(mouse.fx, mouse.fy);
     if (typeof r === 'string') { toast(r, true); return; }
-    if (BUILD[r.type].kind === 'belt' || BUILD[r.type].kind === 'pipe') drag = { x: r.x, y: r.y, last: r.id };
+    if (['belt', 'pipe', 'wall'].includes(BUILD[r.type].kind)) drag = { x: r.x, y: r.y, last: r.id };
     return;
   }
   const e = at(mouse.tx, mouse.ty);
