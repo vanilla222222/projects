@@ -262,3 +262,16 @@ h3 .sw { width: 24px; height: 24px; font-size: 9px; }
 .plist li { margin: 6px 0; line-height: 1.45; }
 @media (max-width: 640px) { .ptab { font-size: 11px; } .ptab th, .ptab td { padding: 4px 3px; } }
 .erec.locked { opacity: 0.55; }
+.wgen { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(0, 400px); gap: 18px; align-items: start; }
+.wopts { display: flex; flex-direction: column; gap: 10px; }
+.wopts label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--dim); }
+.wopts .row { display: flex; gap: 6px; }
+.wopts input, .wopts select { flex: 1; min-width: 0; background: var(--bg3); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font: 13px var(--mono); }
+.wopts button.big { padding: 9px 12px; font-weight: 600; margin-top: 4px; }
+.wprev canvas, .wmap canvas { width: 100%; aspect-ratio: 1; image-rendering: pixelated; border-radius: 8px; border: 1px solid var(--line); display: block; background: #0d1014; }
+.wleg { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 8px 0; font-size: 12px; color: var(--dim); }
+.wleg span { display: inline-flex; align-items: center; gap: 5px; }
+.wleg i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+.wmap { display: grid; grid-template-columns: minmax(0, 560px) minmax(160px, 1fr); gap: 16px; align-items: start; }
+.wmap canvas { cursor: crosshair; image-rendering: auto; }
+@media (max-width: 640px) { .wgen, .wmap { grid-template-columns: 1fr; } }

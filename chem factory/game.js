@@ -1,21 +1,21 @@
 'use strict';
 (() => {
-const W = 160, H = 160, DT = 1 / 30, TP = 8;
+const DT = 1 / 30, TP = 8;
+let W = 160, H = 160, PW = 20;
 const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
 const KEY = 'chemfactory-save-v1';
 const GAP = 0.25, BELT_V = 2 * DT, MINER_T = 2, PUMP_RATE = 60 * DT;
 const PARTS = ['casting', 'plate', 'wire', 'motor', 'brick', 'lead_sheet', 'brass', 'cartridge', 'cylinder'];
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 const tcv = document.createElement('canvas');
-tcv.width = W * TP; tcv.height = H * TP;
 const tctx = tcv.getContext('2d');
 const pcv = document.createElement('canvas');
-pcv.width = pcv.height = 20;
-const pctx = pcv.getContext('2d'), pimg = pctx.createImageData(20, 20);
+const pctx = pcv.getContext('2d');
+let pimg = null;
 const $ = s => document.querySelector(s);
 const panel = $('#panel'), tip = $('#tip'), modal = $('#modal'), hotbar = $('#hotbar');
 
-let S, terrain, oreType, oreAmt, occ, ents, patches, L = null;
+let S, terrain, oreType, oreAmt, elev, occ, ents, patches, L = null;
 let cam = { x: W / 2, y: H / 2, z: 32 };
 let tool = null, toolDir = 1, sel = null, mining = null, drag = null;
 const mouse = { x: 0, y: 0, tx: -1, ty: -1, fx: 0, fy: 0, l: false, r: false, m: false, in: false };
@@ -29,7 +29,7 @@ const chip = (k, n, cls) => `<span class="chip ${cls || ''}"><i style="backgroun
 const sum = o => { let s = 0; for (const k in o) s += o[k]; return s; };
 const isGas = f => FLUIDS[f] && FLUIDS[f].gas && f !== 'steam';
 const spills = (r, f) => isGas(f) || !!(r.bleed && r.bleed.includes(f));
-const PC = 8, PW = W / PC, RAIN = 30;
+const PC = 8, RAIN = 30;
 const POL_W = { so2: 1, cl2: 3, co2: 0.02, h2: 0, steam: 0, water: 0, acid: 0.5, naoh: 0.3, liquor: 0.3, ticl4: 1, brine: 0.05, nh3: 0.5, hno3: 0.8, tar: 0.4, coalgas: 0.3, toluene: 0.3, nh4cl: 0.1, co: 0.1, phosgene: 1, sif4: 2, h2sif6: 0.5, hf: 1, h2s: 2, diesel: 0.3, bfw: 0 };
 const polAt = (x, y) => S.pol[Math.floor(y / PC) * PW + Math.floor(x / PC)] || 0;
 
@@ -65,7 +65,7 @@ function patch(t, px, py, r, rich, seed, force) {
     const d = Math.hypot(x - px, y - py), n = vnoise(x / 2.5, y / 2.5, seed + t * 131);
     if (d > r * (0.65 + 0.6 * n)) continue;
     const i = y * W + x;
-    if (terrain[i] === 1) { if (!force) continue; terrain[i] = 0; }
+    if (terrain[i] === 1 || terrain[i] === 4) { if (!force) continue; terrain[i] = 0; }
     oreType[i] = t;
     oreAmt[i] = Math.max(60, Math.round(rich * (1.15 - d / (r * 1.5)) * (0.7 + 0.6 * n)) + 60);
     n0++;
@@ -73,8 +73,8 @@ function patch(t, px, py, r, rich, seed, force) {
   if (n0) patches.push({ t, x: Math.round(px), y: Math.round(py) });
 }
 
-function genMap(seed) {
-  terrain = new Uint8Array(W * H); oreType = new Uint8Array(W * H); oreAmt = new Int32Array(W * H); patches = [];
+function genLegacy(seed) {
+  terrain = new Uint8Array(W * H); oreType = new Uint8Array(W * H); oreAmt = new Int32Array(W * H); patches = []; elev = null;
   const cx = W / 2, cy = H / 2;
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = y * W + x, d = Math.hypot(x - cx, y - cy), n = fbm(x / 24, y / 24, seed);
@@ -108,11 +108,143 @@ function genMap(seed) {
   }
 }
 
-const PAL = [['#3d5a2e', '#41602f', '#3a562b'], ['#1d4a73', '#20507b', '#1b466d'], ['#5a5135', '#5e5538', '#565033']];
+const GEN_DEF = { size: 256, water: 1, ore: 1, hives: 2 };
+const TER_N = ['Grassland', 'Water', 'Dry scrub', 'Desert sand', 'Bare rock', 'Marsh', 'Forest', 'Tundra'];
+const sstep = (a, b, v) => { const t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
+const ORE_BASE = [0, 11, 10, 7, 9, 6, 6, 3, 3, 3, 3, 3, 3, 3];
+function oreSuit(t, i, temp, moist) {
+  const b = terrain[i], m = elev[i], tp = temp[i], ms = moist[i];
+  if (b === 1 || b === 4) return 0;
+  switch (t) {
+    case 1: return m > 0.6 ? 2 : 1;
+    case 2: return m > 0.58 ? 2.5 : 0.4;
+    case 3: return m > 0.6 ? 2.5 : 0.2;
+    case 4: return b === 5 ? 3 : b === 6 ? 2 : b === 0 ? 0.6 : 0.2;
+    case 5: return b === 0 ? 2 : b === 2 ? 1.5 : b === 6 ? 0.8 : 0.3;
+    case 6: return b === 3 ? 3 : 0.4;
+    case 7: return b === 3 ? 3 : b === 2 ? 1 : 0.1;
+    case 8: return tp > 0.6 && ms > 0.5 ? 3.5 : tp > 0.55 ? 0.6 : 0.05;
+    case 9: return b === 3 && m < 0.42 ? 4 : 0;
+    case 10: return b === 3 && tp > 0.66 ? 3.5 : 0.05;
+    case 11: return b === 0 || b === 2 ? 1.2 : b === 3 ? 1 : 0.2;
+    case 12: return b === 3 || b === 5 ? 1.8 : 0.5;
+    case 13: return b === 3 || b === 2 ? 1.5 : b === 7 ? 1 : 0.3;
+  }
+  return 1;
+}
+function genWorld(seed, g) {
+  const N = W * H, cx = W / 2, cy = H / 2, rng = mulberry32(seed);
+  terrain = new Uint8Array(N); oreType = new Uint8Array(N); oreAmt = new Int32Array(N); patches = []; elev = new Float32Array(N);
+  const temp = new Float32Array(N), moist = new Float32Array(N), low = new Float32Array(N);
+  const sea = 0.36 + 0.05 * (g.water - 1);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x, d = Math.hypot(x - cx, y - cy), k = sstep(16, 44, d);
+    const lo = fbm(x / 46, y / 46, seed), edge = Math.max(Math.abs(x - cx), Math.abs(y - cy)) / (W / 2), fall = Math.max(0, edge - 0.82) * 1.6;
+    let e = lo * 0.72 + fbm(x / 13, y / 13, seed + 5) * 0.28;
+    const ridge = 1 - Math.abs(2 * fbm(x / 30, y / 30, seed + 9) - 1);
+    e += Math.max(0, ridge - 0.86) * 2.6 * sstep(0.44, 0.56, e);
+    e -= fall;
+    e = 0.52 + (e - 0.52) * k;
+    low[i] = 0.52 + (lo - fall - 0.52) * k;
+    elev[i] = e;
+    const lat = y / H;
+    temp[i] = 0.5 + ((0.18 + 0.64 * lat + (fbm(x / 60, y / 60, seed + 21) - 0.5) * 0.5 - Math.max(0, e - 0.6) * 0.7) - 0.5) * (0.35 + 0.65 * k);
+    moist[i] = 0.5 + (fbm(x / 38, y / 38, seed + 33) - 0.5) * 1.5 * (0.4 + 0.6 * k);
+  }
+  for (let i = 0; i < N; i++) {
+    const e = elev[i], t = temp[i], m = moist[i];
+    terrain[i] = e < sea ? 1 : e > 0.72 ? 4 : t < 0.24 ? 7 : t > 0.64 && m < 0.48 ? 3 : m > 0.6 && e < sea + 0.07 ? 5 : m > 0.55 ? 6 : m < 0.4 ? 2 : 0;
+  }
+  const A = N / 25600, nr = Math.round((2 + 3 * A) * (0.4 + 0.6 * g.water)), seen = new Uint8Array(N);
+  for (let r = 0; r < nr; r++) {
+    let x = 0, y = 0, ok = false;
+    for (let q = 0; q < 200 && !ok; q++) {
+      x = Math.floor(4 + rng() * (W - 8)); y = Math.floor(4 + rng() * (H - 8));
+      const i = y * W + x;
+      ok = low[i] > 0.56 && elev[i] < 0.72 && Math.hypot(x - cx, y - cy) > 30 && !seen[i];
+    }
+    if (!ok) continue;
+    const path = [];
+    for (let s = 0; s < 600; s++) {
+      const i = y * W + x;
+      if (terrain[i] === 1 && path.length) break;
+      if (Math.hypot(x - cx, y - cy) < 15 || seen[i]) break;
+      seen[i] = 1; path.push(i);
+      let bx = -1, by = -1, be = low[i] + 0.003;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue;
+        const X = x + dx, Y = y + dy;
+        if (X < 1 || Y < 1 || X >= W - 1 || Y >= H - 1) continue;
+        const v = low[Y * W + X] + (hash(X, Y, seed + r) - 0.5) * 0.006 + (dx && dy ? 0.001 : 0);
+        if (v < be && !seen[Y * W + X]) { be = v; bx = X; by = Y; }
+      }
+      if (bx < 0) {
+        if (path.length > 12) for (let j = -3; j <= 3; j++) for (let i2 = -3; i2 <= 3; i2++) if (i2 * i2 + j * j <= 7 + hash(x + i2, y + j, seed) * 4) { const X = x + i2, Y = y + j; if (X > 0 && Y > 0 && X < W - 1 && Y < H - 1 && Math.hypot(X - cx, Y - cy) > 15) { terrain[Y * W + X] = 1; elev[Y * W + X] = sea - 0.01; } }
+        break;
+      }
+      x = bx; y = by;
+    }
+    if (path.length < 10) continue;
+    path.forEach((i, s) => {
+      const w = s > path.length * 0.45 ? 1 : 0, px = i % W, py = (i - px) / W;
+      for (let j = 0; j <= w; j++) for (let i2 = 0; i2 <= w; i2++) { const k = (py + j) * W + px + i2; terrain[k] = 1; elev[k] = Math.min(elev[k], sea - 0.01); }
+    });
+  }
+  const shore = new Uint8Array(N);
+  for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) {
+    const i = y * W + x;
+    if (terrain[i] === 1 || terrain[i] === 4 || terrain[i] === 7) continue;
+    let w = 0;
+    for (let j = -2; j <= 2 && !w; j++) for (let q = -2; q <= 2; q++) if (terrain[i + j * W + q] === 1 && elev[i + j * W + q] < sea - 0.02) { w = 1; break; }
+    if (w && elev[i] < sea + 0.03) shore[i] = 1;
+  }
+  for (let i = 0; i < N; i++) if (shore[i]) terrain[i] = 3;
+  const base = rng() * Math.PI * 2, slot = Math.PI * 2 / 7;
+  const lx = cx + Math.cos(base) * 11, ly = cy + Math.sin(base) * 11;
+  for (let y = Math.floor(ly - 5); y <= ly + 5; y++) for (let x = Math.floor(lx - 5); x <= lx + 5; x++) {
+    const dx = (x - lx) / 4.2, dy = (y - ly) / 3.4;
+    if (dx * dx + dy * dy <= 1 + (hash(x, y, seed) - 0.5) * 0.4) { terrain[y * W + x] = 1; elev[y * W + x] = sea - 0.03; }
+  }
+  const near = [[4, 11, 4, 900], [1, 15, 5, 1500], [5, 15, 4, 1000], [2, 18, 5, 1300], [6, 20, 4, 1000], [3, 26, 5, 1200]];
+  near.forEach(([t, dist, r, rich], k) => {
+    const a = base + (k + 1) * slot + (rng() - 0.5) * 0.3;
+    patch(t, cx + Math.cos(a) * dist, cy + Math.sin(a) * dist, r, rich, seed, true);
+  });
+  const oc = [0.75, 1, 1.25][g.ore], or = [0.6, 1, 1.6][g.ore];
+  for (let t = 1; t < ORES.length; t++) {
+    const n = Math.max(2, Math.round((ORE_BASE[t] || 3) * A * oc)), dmin = t < 7 ? 30 : 36;
+    for (let k = 0; k < n; k++) for (let q = 0; q < 120; q++) {
+      const x = 6 + rng() * (W - 12), y = 6 + rng() * (H - 12), d = Math.hypot(x - cx, y - cy);
+      if (d < dmin) continue;
+      if (rng() * 4 >= oreSuit(t, Math.floor(y) * W + Math.floor(x), temp, moist)) continue;
+      patch(t, x, y, 3 + rng() * (t < 7 ? 4 : 3), (1200 + rng() * 2000) * (0.8 + d / 80) * or, seed, false);
+      break;
+    }
+  }
+}
+function setSize(w) {
+  W = H = w; PW = W / PC;
+  tcv.width = W * TP; tcv.height = H * TP;
+  pcv.width = pcv.height = PW;
+  pimg = pctx.createImageData(PW, PW);
+}
+function genMap(seed, g) {
+  setSize(g && !g.legacy ? g.size : 160);
+  if (g && !g.legacy) genWorld(seed, g); else genLegacy(seed);
+}
+
+const PAL = [['#3d5a2e', '#41602f', '#3a562b'], ['#1d4a73', '#20507b', '#1b466d'], ['#5a5135', '#5e5538', '#565033'], ['#b39f68', '#b8a46c', '#ad9962'], ['#5d5a54', '#635f59', '#57544e'], ['#34472f', '#31432b', '#394c33'], ['#2b4824', '#2e4d26', '#284421'], ['#c3ccd0', '#c9d1d5', '#bdc6ca']];
 function drawTile(x, y) {
   const i = y * W + x, h = hash(x, y, 7);
-  tctx.fillStyle = PAL[terrain[i]][Math.floor(h * 3)];
+  const b = terrain[i];
+  tctx.fillStyle = PAL[b][Math.floor(h * 3)];
+  if (b === 1 && elev) { const dp = Math.max(0, Math.min(1, (0.36 - elev[i]) * 9)); tctx.fillStyle = mix('#2a6491', '#123457', dp); }
   tctx.fillRect(x * TP, y * TP, TP, TP);
+  if (b === 4) { tctx.fillStyle = '#46433e'; for (let k = 0; k < 3; k++) tctx.fillRect(x * TP + Math.floor(hash(x, y, k + 31) * 6), y * TP + Math.floor(hash(x, y, k + 41) * 6), 3, 2); tctx.fillStyle = '#7a766e'; tctx.fillRect(x * TP + Math.floor(h * 6), y * TP + 1, 2, 1); }
+  else if (b === 6) { for (let k = 0; k < 2; k++) { const px = x * TP + 1 + Math.floor(hash(x, y, k + 51) * 5), py = y * TP + 1 + Math.floor(hash(x, y, k + 61) * 5); tctx.fillStyle = '#1c3518'; tctx.fillRect(px, py, 3, 3); tctx.fillStyle = '#3d6332'; tctx.fillRect(px, py, 2, 1); } }
+  else if (b === 5) { tctx.fillStyle = '#4a6a6a'; if (h < 0.5) tctx.fillRect(x * TP + Math.floor(h * 10), y * TP + 3, 3, 1); tctx.fillStyle = '#5a6b3a'; tctx.fillRect(x * TP + Math.floor(hash(x, y, 71) * 7), y * TP + Math.floor(hash(x, y, 72) * 5), 1, 3); }
+  else if (b === 3 && h > 0.6) { tctx.fillStyle = '#c8b57c'; tctx.fillRect(x * TP + Math.floor(hash(x, y, 81) * 6), y * TP + Math.floor(hash(x, y, 82) * 7), 2, 1); }
+  else if (b === 7 && h > 0.7) { tctx.fillStyle = '#e8eef0'; tctx.fillRect(x * TP + Math.floor(hash(x, y, 91) * 6), y * TP + Math.floor(hash(x, y, 92) * 7), 2, 1); }
   const t = oreType[i];
   if (t) {
     const O = ORES[t];
@@ -200,6 +332,7 @@ function canPlace(type, x, y) {
     if (occ[k]) return 'Something is in the way';
     if (type === 'pump') { if (terrain[k] !== 1) return 'Offshore pumps must go on water'; }
     else if (terrain[k] === 1) return 'Cannot build on water';
+    else if (terrain[k] === 4) return 'Bare rock: too steep to build on';
     if (oreType[k] && !ORES[oreType[k]].fluid) ore = true;
     if (oreType[k] && ORES[oreType[k]].fluid) oil = true;
   }
@@ -634,7 +767,7 @@ function unlockRandom() {
 }
 function hiveSpot(x, y) {
   if (x < 1 || y < 1 || x > W - 3 || y > H - 3) return false;
-  for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) { const k = (y + j) * W + x + i; if (occ[k] || terrain[k] === 1) return false; }
+  for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) { const k = (y + j) * W + x + i; if (occ[k] || terrain[k] === 1 || terrain[k] === 4) return false; }
   return true;
 }
 function farFromBase(x, y, r) {
@@ -647,10 +780,11 @@ function addHive(x, y) {
   return h;
 }
 function spawnHives() {
-  const rng = mulberry32(S.seed + 777);
+  const rng = mulberry32(S.seed + 777), g = S.gen, big = g && !g.legacy;
+  const max = big ? Math.round(10 * W * H / 25600 * [0, 0.5, 1, 1.6][g.hives]) : 10;
   let n = 0;
-  for (let k = 0; k < 400 && n < 10; k++) {
-    const a = rng() * Math.PI * 2, d = 48 + rng() * 30;
+  for (let k = 0; k < 400 * Math.max(1, max / 10) && n < max; k++) {
+    const a = rng() * Math.PI * 2, d = 48 + rng() * (big ? W * 0.68 - 48 : 30);
     const x = Math.round(W / 2 + Math.cos(a) * d), y = Math.round(H / 2 + Math.sin(a) * d);
     if (!hiveSpot(x, y) || !farFromBase(x, y, 14)) continue;
     let near = false;
@@ -663,20 +797,21 @@ function spawnHives() {
 }
 function ruinSpot(x, y) {
   if (x < 2 || y < 2 || x > W - 5 || y > H - 5) return false;
-  for (let j = -1; j < 4; j++) for (let i = -1; i < 4; i++) { const k = (y + j) * W + x + i; if (occ[k] || terrain[k] === 1) return false; }
+  for (let j = -1; j < 4; j++) for (let i = -1; i < 4; i++) { const k = (y + j) * W + x + i; if (occ[k] || terrain[k] === 1 || terrain[k] === 4) return false; }
   return true;
 }
 function spawnRuins() {
-  const rng = mulberry32(S.seed + 4242), rs = [];
-  for (let k = 0; k < 600 && rs.length < 4; k++) {
-    const a = rng() * Math.PI * 2, d = 58 + rng() * 16;
+  const rng = mulberry32(S.seed + 4242), rs = [], g = S.gen, big = g && !g.legacy;
+  const max = big ? Math.round(4 * W * H / 25600) : 4;
+  for (let k = 0; k < 600 * Math.max(1, max / 4) && rs.length < max; k++) {
+    const a = rng() * Math.PI * 2, d = 58 + rng() * (big ? W * 0.66 - 58 : 16);
     const x = Math.round(W / 2 + Math.cos(a) * d), y = Math.round(H / 2 + Math.sin(a) * d);
     if (!ruinSpot(x, y) || !farFromBase(x, y, 20) || rs.some(o => Math.hypot(o.x - x, o.y - y) < 30)) continue;
     const e = makeEnt('ruin', x, y, 0);
     addEnt(e);
     rs.push(e);
     let g = 0;
-    for (let q = 0; q < 60 && g < 3; q++) {
+    for (let q = 0; q < 60 && g < (big && !S.gen.hives ? 0 : 3); q++) {
       const b = rng() * Math.PI * 2, r = 5 + rng() * 3;
       const hx = Math.round(x + 1 + Math.cos(b) * r - 1), hy = Math.round(y + 1 + Math.sin(b) * r - 1);
       if (!hiveSpot(hx, hy)) continue;
@@ -924,7 +1059,7 @@ function bugStep() {
     const ux = dx / d - dy / d * wob, uy = dy / d + dx / d * wob;
     const tryMove = (nx, ny) => {
       const X = Math.floor(nx), Y = Math.floor(ny);
-      if (X < 0 || Y < 0 || X >= W || Y >= H || terrain[Y * W + X] === 1) return 'water';
+      if (X < 0 || Y < 0 || X >= W || Y >= H || terrain[Y * W + X] === 1 || terrain[Y * W + X] === 4) return 'water';
       const o = at(X, Y);
       if (o && kind(o) === 'ruin') return 'water';
       if (o && kind(o) !== 'belt' && kind(o) !== 'hive' && !(Math.floor(b.x) === X && Math.floor(b.y) === Y)) return o;
@@ -1186,22 +1321,24 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, help: S.help, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, help: S.help, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
-function initWorld(seed) {
-  genMap(seed);
+function initWorld(seed, g) {
+  genMap(seed, g);
   occ = new Int32Array(W * H);
   ents = new Map();
   L = null;
 }
 
-function newGame(seed) {
+function newGame(seed, opts) {
   seed = seed == null ? Math.floor(Math.random() * 1e9) : seed;
+  const gen = opts && opts.legacy ? { legacy: 1 } : Object.assign({}, GEN_DEF, opts || {});
+  setSize(gen.legacy ? 160 : gen.size);
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
-  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: [], evo: 0, lost: 0, kills: 0, hk: 0, res: {}, unl: {}, clouds: [], fires: [], shells: [], booms: [], wind: { a: Math.random() * 7, v: 0.3 }, orders: [], odone: 0 };
-  initWorld(seed);
+  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: [], evo: 0, lost: 0, kills: 0, hk: 0, res: {}, unl: {}, clouds: [], fires: [], shells: [], booms: [], wind: { a: Math.random() * 7, v: 0.3 }, orders: [], odone: 0, gen };
+  initWorld(seed, gen);
   spawnRuins();
   spawnHives();
   cam = { x: W / 2, y: H / 2, z: 32 };
@@ -1214,8 +1351,10 @@ function load() {
   try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) { d = null; }
   if (!d || d.v !== 1) return false;
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
-  S = { seed: d.seed, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast };
-  initWorld(d.seed);
+  const gen = d.gen || { legacy: 1 };
+  setSize(gen.legacy ? 160 : gen.size);
+  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast };
+  initWorld(d.seed, gen);
   for (const k in S.dep) { const i = +k; oreAmt[i] = S.dep[k]; if (oreAmt[i] <= 0) { oreAmt[i] = 0; oreType[i] = 0; } }
   for (const o of d.ents || []) {
     if (!BUILD[o.type]) continue;
@@ -1947,7 +2086,7 @@ function tileInfo0(x, y) {
   const i = y * W + x;
   if (oily(i)) return `<b>Oil seep</b><br>${fmt(oreAmt[i])} left · <span class="dim">Crude oil seeps up through the soil here. Drill it with a pumpjack</span>`;
   if (oreType[i]) return `<b>${nm(ORES[oreType[i]].item)}</b><br>${fmt(oreAmt[i])} left · <span class="dim">${ITEMS[ORES[oreType[i]].item].f}</span><br><span class="dim">Click and hold to mine by hand</span>`;
-  return terrain[i] === 1 ? '<b>Water</b>' : '';
+  return x >= 0 && y >= 0 && x < W && y < H && terrain[i] ? `<b>${TER_N[terrain[i]]}</b>` : '';
 }
 
 function powerHtml() {
@@ -2253,7 +2392,7 @@ function costHtml(cost, n) { return Object.keys(cost).map(k => chip(k, cost[k] *
 let modalHtml = '';
 function openModal(kind, tab) {
   modalKind = kind;
-  modalTab = tab || (kind === 'craft' ? 'build' : kind === 'ency' ? 'chains' : 'help');
+  modalTab = tab || (kind === 'craft' ? 'build' : kind === 'ency' ? 'chains' : kind === 'world' ? 'world' : kind === 'map' ? 'map' : 'help');
   modal.hidden = false;
   renderModal();
 }
@@ -2263,7 +2402,74 @@ const TABS = {
   craft: [['build', 'Buildings'], ['parts', 'Parts'], ['inv', 'Inventory']],
   ency: [['chains', 'Ore chains'], ['recipes', 'Recipes'], ['mats', 'Materials'], ['pipes', 'Pipes']],
   help: [['help', 'How to play']],
+  world: [['world', 'New world']],
+  map: [['map', 'World map']],
 };
+let wcfg = null;
+const parseSeed = v => { v = String(v).trim(); if (/^\d+$/.test(v)) return +v % 2147483647; let h = 7; for (const c of v) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0; return h % 2147483647; };
+const sel3 = (id, cur, opts) => `<select id="${id}">${opts.map(([v, n]) => `<option value="${v}" ${String(v) === String(cur) ? 'selected' : ''}>${n}</option>`).join('')}</select>`;
+const TER_LEG = [0, 6, 5, 2, 3, 7, 4, 1];
+function legendHtml() { return '<div class="wleg">' + TER_LEG.map(t => `<span><i style="background:${t === 1 ? '#20507b' : PAL[t][0]}"></i>${TER_N[t]}</span>`).join('') + '</div>'; }
+function worldHtml() {
+  if (!wcfg) wcfg = { seed: String(Math.floor(Math.random() * 1e9)), size: 256, water: 1, ore: 1, hives: 2 };
+  return `<div class="wgen"><div class="wopts"><p class="dim">Every world is generated from its seed. The same seed and settings always give the same map: continents, rivers, mountain ranges, and ore fields that follow the geology. Hot dry south, cold north.</p>
+<label>Seed <span class="row"><input id="wseed" value="${wcfg.seed}" spellcheck="false"><button data-world="dice">Random</button></span></label>
+<label>Size ${sel3('wsize', wcfg.size, [[160, 'Small · 160×160'], [256, 'Normal · 256×256'], [384, 'Large · 384×384']])}</label>
+<label>Water ${sel3('wwater', wcfg.water, [[0, 'Dry · few lakes and rivers'], [1, 'Normal'], [2, 'Wet · big lakes, many rivers']])}</label>
+<label>Ore fields ${sel3('wore', wcfg.ore, [[0, 'Poor · fewer, leaner deposits'], [1, 'Normal'], [2, 'Rich · more, fatter deposits']])}</label>
+<label>Crawlers ${sel3('whives', wcfg.hives, [[0, 'None · peaceful'], [1, 'Few'], [2, 'Normal'], [3, 'Many']])}</label>
+<div class="dim">Ores by geology: copper and lead-zinc in the hills, coal under swamps and forests, salt, caliche and potash in deserts, bauxite in hot wet laterite, mineral sands on beaches, oil in sedimentary basins.</div>
+<button data-world="go" class="danger big">Generate and start</button><div class="dim">Your current factory will be lost.</div></div>
+<div class="wprev"><canvas id="wprev"></canvas>${legendHtml()}</div></div>`;
+}
+function wgen() { return { size: +wcfg.size, water: +wcfg.water, ore: +wcfg.ore, hives: +wcfg.hives }; }
+function paintTiles(c, n) {
+  const x2 = c.getContext('2d'), im = x2.createImageData(n, n), d = im.data, rgb = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+  const pal = PAL.map(p => rgb(p[0])), oc = ORES.map(o => o ? rgb(o.c) : null), sh = rgb('#2a6491'), dp = rgb('#123457');
+  for (let i = 0; i < n * n; i++) {
+    const t = terrain[i];
+    let c3 = oreType[i] ? oc[oreType[i]] : pal[t];
+    if (t === 1 && elev) { const f = Math.max(0, Math.min(1, (0.36 - elev[i]) * 9)); c3 = [0, 1, 2].map(k => sh[k] + (dp[k] - sh[k]) * f); }
+    d[i * 4] = c3[0]; d[i * 4 + 1] = c3[1]; d[i * 4 + 2] = c3[2]; d[i * 4 + 3] = 255;
+  }
+  x2.putImageData(im, 0, 0);
+}
+function drawPreview() {
+  const c = document.getElementById('wprev');
+  if (!c) return;
+  const keep = [W, terrain, oreType, oreAmt, elev, patches], g = wgen();
+  W = H = g.size;
+  genWorld(parseSeed(wcfg.seed), g);
+  c.width = c.height = W;
+  paintTiles(c, W);
+  const x2 = c.getContext('2d');
+  x2.fillStyle = '#fff'; x2.fillRect(W / 2 - 3, W / 2 - 0.5, 6, 1); x2.fillRect(W / 2 - 0.5, W / 2 - 3, 1, 6);
+  [W, terrain, oreType, oreAmt, elev, patches] = keep; H = W;
+}
+function startWorld() {
+  const g = wgen();
+  newGame(parseSeed(wcfg.seed), g);
+  wcfg = null;
+  closeModal(); renderHotbar(); save();
+  toast('New world generated');
+}
+function mapHtml() { return `<div class="wmap"><canvas id="wmap" width="720" height="720"></canvas><div class="wside">${legendHtml()}<div class="wleg"><span><i style="background:#e04040"></i>Crawler hive</span><span><i style="background:#c080ff"></i>Abandoned works</span><span><i style="background:#ffe080"></i>Your buildings</span></div><p class="dim">Seed ${S.seed}${S.gen && !S.gen.legacy ? '' : ' · classic map'} · ${W}×${H}<br>Click anywhere to move the camera there.</p></div></div>`; }
+function drawMapView() {
+  const c = document.getElementById('wmap');
+  if (!c) return;
+  const x2 = c.getContext('2d'), n = c.width, s = n / W;
+  x2.imageSmoothingEnabled = true;
+  x2.drawImage(tcv, 0, 0, W * TP, H * TP, 0, 0, n, n);
+  for (const e of ents.values()) {
+    const k = kind(e), B = BUILD[e.type];
+    x2.fillStyle = k === 'hive' ? '#e04040' : k === 'ruin' ? '#c080ff' : '#ffe080';
+    const r = k === 'hive' || k === 'ruin' ? Math.max(4, B.w * s) : Math.max(1.5, B.w * s);
+    x2.fillRect(e.x * s, e.y * s, r, Math.max(k === 'hive' || k === 'ruin' ? 4 : 1.5, B.h * s));
+  }
+  const vw = cv.clientWidth / cam.z, vh = cv.clientHeight / cam.z;
+  x2.strokeStyle = '#fff'; x2.lineWidth = 1.5;
+  x2.strokeRect((cam.x - vw / 2) * s, (cam.y - vh / 2) * s, vw * s, vh * s);
+}
 
 function renderModal() {
   if (!modalKind) return;
@@ -2334,8 +2540,13 @@ function renderModal() {
     h += '</ul><p class="dim">A failed pipe is destroyed and its contents spill. Press V for pressure, temperature and smog overlays. Smog above ' + RAIN + ' brings acid rain, which corrodes every pipe but lead-lined ones.</p>';
   } else if (modalTab === 'help') {
     h += HELP;
+  } else if (modalTab === 'world') {
+    h += worldHtml();
+  } else if (modalTab === 'map') {
+    h += mapHtml();
   }
-  if (modalHtml !== h) { body.innerHTML = h; modalHtml = h; body.scrollTop = st; }
+  if (modalHtml !== h) { body.innerHTML = h; modalHtml = h; body.scrollTop = st; if (modalTab === 'world') drawPreview(); }
+  if (modalTab === 'map') drawMapView();
 }
 
 const CHAINS = [
@@ -2399,6 +2610,8 @@ const HELP = `<div class="help">
 <p>Mine <b>phosphate rock</b> and smelt it in the <b>Electric arc furnace</b> with sand and coke to get white phosphorus. The furnace also gives off CO and SiF₄. Vented SiF₄ is a heavy pollutant, so scrub it to fluorosilicic acid and turn that into fluorspar with crushed limestone. Fluorspar in a retort with sulfuric acid makes hydrofluoric acid, and HF with aluminium hydroxide and caustic makes cryolite, which lets reduction pots run faster. Fluorides dissolve glass-lined and titanium pipe three times faster than steel; lead-lined pipe resists them. <b>WP shells</b> from the old works' books set the ground burning for 14 seconds. The fire ignores gas tolerance but also burns your own buildings.</p>
 <h3>Oil and plastics</h3>
 <p>Dark, glistening <b>oil seeps</b> lie far from the start. A <b>Pumpjack</b> placed on one lifts crude oil and slowly drains the tiles under it. The <b>Crude distillation unit</b> needs a little steam and splits crude into fuel gas, naphtha, gas oil and bitumen. The <b>Tube furnace</b> burns fuel gas to crack naphtha into ethylene, reform fuel gas into hydrogen, or crack EDC into vinyl chloride. Ethylene polymerises to polyethylene in the <b>Pressure reactor</b>, or takes on chlorine to make EDC. Feed the HCl from EDC cracking back into a chlorinator with more ethylene. Plastic pipe shrugs off acid and chlorine but softens at 60°C.</p>
+<h3>The world</h3>
+<p>Every world is generated from a seed. Press <b>New world</b> to pick a seed, size, water, ore richness and crawler density, with a live preview. Your start is always temperate with a lake and the six basic ores nearby. Further out, the land follows its climate: cold <b>tundra</b> to the north, hot <b>deserts</b> to the south, <b>forests</b> and <b>marshes</b> where it is wet, rivers running down from the hills to the sea. <b>Bare rock</b> ridges are too steep to build on and block crawlers. Ores follow geology, so prospect by biome: copper and lead-zinc in the hills, coal under swamps and forests, salt, caliche and potash in deserts, bauxite in hot wet laterite, mineral sands on beaches. Press <b>M</b> for the world map.</p>
 <h3>Boiler water</h3>
 <p>Raw water is hard. Every boiler batch on it bakes a little chalk onto the tubes, steam output falls as the <b>scale</b> builds, and a fully choked boiler stops. Shut it down to <b>Descale</b> from its panel (a 20 second outage), or feed it <b>softened water</b>: run water through a leach tank with quicklime and the hardness settles out as crushed limestone you can send back to the kiln. Any machine that takes water also takes softened water.</p>
 <h3>Sulfur and diesel</h3>
@@ -2529,6 +2742,7 @@ window.addEventListener('keydown', ev => {
   keys[k] = true;
   if (k === 'e') { modalKind === 'craft' ? closeModal() : openModal('craft'); }
   else if (k === 'h') { modalKind === 'ency' ? closeModal() : openModal('ency'); }
+  else if (k === 'm') { modalKind === 'map' ? closeModal() : openModal('map'); }
   else if (k === 'escape' || k === 'q') { if (modalKind) closeModal(); else if (tool) { tool = null; renderHotbar(); } else closePanel(); }
   else if (k === 'r') {
     if (tool) toolDir = (toolDir + 1) % 4;
@@ -2551,14 +2765,28 @@ modal.addEventListener('click', ev => {
   if (c) return doCraft(c.dataset.craft, +c.dataset.n);
   const p = ev.target.closest('[data-part]');
   if (p) return doPart(p.dataset.part, +p.dataset.n);
+  const wb = ev.target.closest('[data-world]');
+  if (wb && wb.dataset.world === 'dice') { wcfg.seed = String(Math.floor(Math.random() * 1e9)); $('#wseed').value = wcfg.seed; return drawPreview(); }
+  if (wb && wb.dataset.world === 'go') return startWorld();
+  if (ev.target.id === 'wmap') {
+    const r = ev.target.getBoundingClientRect();
+    cam.x = (ev.clientX - r.left) / r.width * W; cam.y = (ev.clientY - r.top) / r.height * H;
+    return closeModal();
+  }
   if (ev.target.closest('[data-ui="close"]')) closeModal();
+});
+modal.addEventListener('change', ev => {
+  const m = { wseed: 'seed', wsize: 'size', wwater: 'water', wore: 'ore', whives: 'hives' }[ev.target.id];
+  if (!m || !wcfg) return;
+  wcfg[m] = ev.target.value;
+  drawPreview();
 });
 document.getElementById('top').addEventListener('click', ev => {
   const b = ev.target.closest('[data-ui]');
   if (!b) return;
   const u = b.dataset.ui;
-  if (u === 'craft' || u === 'ency' || u === 'help') openModal(u);
-  else if (u === 'reset' && confirm('Start a new map? Your factory will be lost.')) { newGame(); renderHotbar(); closePanel(); save(); }
+  if (u === 'craft' || u === 'ency' || u === 'help' || u === 'map') openModal(u);
+  else if (u === 'reset') openModal('world');
 });
 
 let last = performance.now(), acc = 0, uiT = 0;
@@ -2598,12 +2826,12 @@ if (!S.help) { S.help = true; openModal('help'); }
 requestAnimationFrame(frame);
 
 window.game = {
-  get S() { return S; }, get ents() { return ents; }, get patches() { return patches; }, get cam() { return cam; },
+  get S() { return S; }, get W() { return W; }, get ents() { return ents; }, get patches() { return patches; }, get cam() { return cam; },
   place: (t, x, y, d) => place(t, x, y, d, true), at, buildOk, setRecipe, removeEnt, save, load, newGame,
   step(n) { for (let i = 0; i < n; i++) tick(); render(); $('#power').innerHTML = powerHtml(); $('#vent').innerHTML = ventHtml(); renderPanelDyn(); renderHotbar(); },
   terrain: () => terrain, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
   select(e) { openPanel(e); }, openModal, closeModal, refresh: renderHotbar,
   setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; },
-  setOverlay(v) { overlay = v; },
+  setOverlay(v) { overlay = v; }, elev: () => elev, drawPreview, startWorld, get wcfg() { return wcfg; },
 };
 })();
