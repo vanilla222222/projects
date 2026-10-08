@@ -17,7 +17,7 @@ let cam = { x: W / 2, y: H / 2, z: 32 };
 let tool = null, toolDir = 1, sel = null, mining = null, drag = null;
 const mouse = { x: 0, y: 0, tx: -1, ty: -1, fx: 0, fy: 0, l: false, r: false, m: false, in: false };
 const keys = {};
-let modalTab = null, modalKind = null;
+let modalTab = null, modalKind = null, overlay = 0;
 
 const nm = k => (ITEMS[k] || FLUIDS[k] || BUILD[k] || { n: k }).n;
 const col = k => (ITEMS[k] || FLUIDS[k] || BUILD[k] || { c: '#888' }).c;
@@ -121,13 +121,19 @@ function at(x, y) {
   return id ? ents.get(id) : null;
 }
 const kind = e => BUILD[e.type].kind;
-const isNode = e => e.type === 'pipe' || e.type === 'engine';
-const nodeCap = e => e.type === 'engine' ? 60 : 100;
+const ENGINE_P = { mat: 'Steam chest', v: 60, g: 400, q: 200, bar: 1e9, tmax: 1e9, duct: 1, cw: 80, ua: 0.1 };
+const AMB = 15, KX = 3, HEADS = [3, 5, 8, 12, 20, 30, 45];
+const isNode = e => { const k = kind(e); return k === 'pipe' || k === 'engine'; };
+const NP = e => e.type === 'engine' ? ENGINE_P : BUILD[e.type].P;
+const pres = e => 10 * e.amt / NP(e).v;
 const nodeOk = (e, f) => e.type === 'engine' ? f === 'steam' : (!e.fl || e.fl === f);
-function nodeGive(e, f, a) {
-  const g = Math.min(nodeCap(e) - e.amt, a);
+const srcT = f => FLUIDS[f].t != null ? FLUIDS[f].t : AMB;
+function nodeGive(e, f, a, head, T) {
+  if (!nodeOk(e, f)) return 0;
+  const g = Math.min(a, head * NP(e).v / 10 - e.amt);
   if (g <= 0) return 0;
-  e.fl = f; e.amt += g;
+  e.tf = e.amt > 0.001 && e.fl === f ? (e.tf * e.amt + (T == null ? srcT(f) : T) * g) / (e.amt + g) : (T == null ? srcT(f) : T);
+  e.fl = f; e.amt += g; e.mv = (e.mv || 0) + g;
   return g;
 }
 
@@ -147,8 +153,9 @@ function makeEnt(type, x, y, dir) {
     case 'machine': Object.assign(e, { recipe: null, inv: {}, out: {}, fi: {}, fo: {}, cy: false, prog: 0 }); break;
     case 'chest': e.store = {}; break;
     case 'sorter': e.buf = null; e.filter = null; break;
-    case 'pipe': e.fl = null; e.amt = 0; break;
-    case 'engine': e.fl = 'steam'; e.amt = 0; e.kw = 0; break;
+    case 'pipe': Object.assign(e, { fl: null, amt: 0, tf: AMB, tw: AMB, fr: 0, strain: 0, wear: 0 }); break;
+    case 'engine': Object.assign(e, { fl: 'steam', amt: 0, kw: 0, tf: AMB, tw: AMB }); break;
+    case 'booster': e.head = 10; e.fr = 0; e.sat = 1; break;
     case 'miner': e.out = {}; e.prog = 0; e.k = 0; break;
   }
   return e;
@@ -192,11 +199,14 @@ function place(type, x, y, dir, free) {
 
 function give(k, n) { if (n > 0) S.inv[k] = (S.inv[k] || 0) + n; }
 
-function removeEnt(e) {
+function unlink(e) {
   const B = BUILD[e.type];
   for (let j = 0; j < B.h; j++) for (let i = 0; i < B.w; i++) occ[(e.y + j) * W + e.x + i] = 0;
   ents.delete(e.id);
   L = null;
+}
+function removeEnt(e) {
+  unlink(e);
   give(e.type, 1);
   if (e.items) for (const it of e.items) give(it.i, 1);
   for (const o of [e.inv, e.out, e.store]) if (o) for (const k in o) give(k, o[k]);
@@ -207,12 +217,20 @@ function removeEnt(e) {
 
 function lists() {
   if (L) return L;
-  L = { belt: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [] };
+  L = { belt: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [] };
   for (const e of ents.values()) {
     const k = kind(e);
     if (k === 'pipe') L.node.push(e);
     else if (k === 'engine') { L.node.push(e); L.engine.push(e); }
     else L[k].push(e);
+  }
+  L.pairs = [];
+  const seen = new Set();
+  for (const a of L.node) for (const p of a.per) {
+    const b = at(p.x, p.y);
+    if (!b || b.id <= a.id || !isNode(b) || seen.has(a.id * 1e6 + b.id)) continue;
+    seen.add(a.id * 1e6 + b.id);
+    L.pairs.push([a, b]);
   }
   return L;
 }
@@ -347,14 +365,82 @@ function sorterTick(e) {
   if (ok) e.buf = null;
 }
 
-function flowPair(a, b) {
-  const ca = nodeCap(a), cb = nodeCap(b), ra = a.amt / ca, rb = b.amt / cb;
-  const src = ra > rb ? a : b, dst = src === a ? b : a;
-  const f = src.fl;
-  if (!f || src.amt < 0.001 || !nodeOk(dst, f)) return;
-  const m = Math.min(Math.abs(ra - rb) * Math.min(ca, cb) * 0.45, src.amt);
-  src.amt -= m; dst.fl = f; dst.amt += m;
-  if (src.amt < 0.001) src.amt = 0;
+const SUB = 4;
+function fluidStep(pairs) {
+  const dt = DT / SUB, ms = new Float64Array(pairs.length);
+  for (let n = 0; n < SUB; n++) {
+    for (let i = 0; i < pairs.length; i++) {
+      const [a, b] = pairs[i], A = NP(a), B = NP(b), pa = 10 * a.amt / A.v, pb = 10 * b.amt / B.v;
+      const fwd = pa >= pb, src = fwd ? a : b, dst = fwd ? b : a, Ps = fwd ? A : B, Pd = fwd ? B : A;
+      ms[i] = 0;
+      if (!src.fl || src.amt < 0.001 || !nodeOk(dst, src.fl)) continue;
+      const eq = (src.amt * Pd.v - dst.amt * Ps.v) / (Ps.v + Pd.v);
+      const m = Math.min(2 / (1 / A.g + 1 / B.g) * Math.abs(pa - pb) * dt, Math.min(A.q, B.q) * dt, 0.45 * eq);
+      ms[i] = fwd ? m : -m;
+    }
+    for (let i = 0; i < pairs.length; i++) {
+      if (!ms[i]) continue;
+      const fwd = ms[i] > 0, src = fwd ? pairs[i][0] : pairs[i][1], dst = fwd ? pairs[i][1] : pairs[i][0], f = src.fl;
+      if (!f || !nodeOk(dst, f)) continue;
+      const m = Math.min(Math.abs(ms[i]), src.amt);
+      if (m <= 1e-7) continue;
+      dst.tf = dst.amt > 0.001 && dst.fl === f ? (dst.tf * dst.amt + src.tf * m) / (dst.amt + m) : src.tf;
+      src.amt -= m; dst.fl = f; dst.amt += m;
+      src.mv = (src.mv || 0) + m; dst.mv = (dst.mv || 0) + m;
+      if (src.amt < 1e-6) src.amt = 0;
+    }
+  }
+}
+
+function nodeHeat(e, fails) {
+  const P = NP(e), Cw = P.cw;
+  if (e.amt > 0.001 && e.fl) {
+    const cp = FLUIDS[e.fl].cp || 2, Cf = e.amt * cp;
+    e.ss = (e.tf < e.tw ? 1 : 0.3) * Math.abs(e.tf - e.tw) * Cf / (Cf + Cw);
+    if (P.shock && e.ss > P.shock) fails.push([e, 'cracked from thermal shock']);
+    const q = (e.tf - e.tw) * Math.min(1, KX * DT) * Cf * Cw / (Cf + Cw);
+    e.tf -= q / Cf; e.tw += q / Cw;
+    if (e.fl === 'steam' && e.tf < 100) {
+      const c = Math.min(e.amt, (100 - e.tf) * Cf / 2260);
+      e.amt -= c; e.tf = 100; e.cond = (e.cond || 0) + c;
+    }
+  } else { e.ss = 0; e.tf = e.tw; }
+  e.tw -= P.ua * (e.tw - AMB) * DT / Cw;
+  e.fr = (e.fr || 0) * 0.95 + ((e.mv || 0) / 2 / DT) * 0.05;
+  e.mv = 0;
+  if (e.type === 'engine') return;
+  const p = pres(e);
+  if (p > P.bar) {
+    if (!P.duct) fails.push([e, `burst at ${p.toFixed(1)} bar (rated ${P.bar})`]);
+    else { e.strain += (p / P.bar - 1) * DT; if (e.strain > P.duct) fails.push([e, `ruptured after bulging at ${p.toFixed(1)} bar (rated ${P.bar})`]); }
+  }
+  if (e.tw > P.tmax) fails.push([e, P.acid ? `lead lining melted at ${Math.round(e.tw)}°C` : `failed at ${Math.round(e.tw)}°C`]);
+  const corr = e.fl && e.amt > 0.5 && FLUIDS[e.fl].corr;
+  if (corr && !P.acid) { e.wear += corr * DT / 90; if (e.wear >= 1) fails.push([e, `corroded through by ${nm(e.fl)}`]); }
+}
+
+const fx = [];
+function burst(e, why) {
+  if (!ents.has(e.id)) return;
+  if (e.fl && e.amt > 0.01) S.spill[e.fl] = (S.spill[e.fl] || 0) + e.amt;
+  unlink(e);
+  if (sel === e.id) closePanel();
+  fx.push({ x: e.x + 0.5, y: e.y + 0.5, t: 0, c: e.fl ? col(e.fl) : '#ccc' });
+  S.fails = (S.fails || 0) + 1;
+  return `${BUILD[e.type].n} at ${e.x},${e.y} ${why}`;
+}
+
+function boosterTick(e) {
+  const b = (e.dir + 2) % 4, src = at(e.x + DX[b], e.y + DY[b]), dst = at(e.x + DX[e.dir], e.y + DY[e.dir]);
+  let g = 0;
+  if (src && dst && isNode(src) && src.fl && src.amt > 0.001) {
+    const a = Math.min(200 * DT * e.sat, src.amt);
+    if (isNode(dst)) g = nodeGive(dst, src.fl, a, e.head, src.tf);
+    else if (kind(dst) === 'machine') g = fluidToMachine(dst, src.fl, a);
+    src.amt -= g;
+  }
+  e.on = g > 1e-4;
+  e.fr = (e.fr || 0) * 0.95 + (g / DT) * 0.05;
 }
 
 function machineFluidIn(e, r) {
@@ -388,7 +474,7 @@ function machineFluidOut(e) {
     for (const p of e.per) {
       const o = at(p.x, p.y);
       if (!o || o === e) continue;
-      if (isNode(o)) { if (nodeOk(o, f)) e.fo[f] -= nodeGive(o, f, e.fo[f]); }
+      if (isNode(o)) e.fo[f] -= nodeGive(o, f, e.fo[f], e.type === 'boiler' ? 7 : 5);
       else if (kind(o) === 'machine') e.fo[f] -= fluidToMachine(o, f, e.fo[f]);
       if (e.fo[f] <= 0.001) { e.fo[f] = 0; break; }
     }
@@ -400,7 +486,7 @@ function pumpTick(e) {
   for (const p of e.per) {
     const o = at(p.x, p.y);
     if (!o) continue;
-    if (isNode(o)) { if (nodeOk(o, 'water')) left -= nodeGive(o, 'water', left); }
+    if (isNode(o)) left -= nodeGive(o, 'water', left, 8, AMB);
     else if (kind(o) === 'machine') left -= fluidToMachine(o, 'water', left);
     if (left <= 0) break;
   }
@@ -459,11 +545,14 @@ function tick() {
   for (const b of l.belt) beltTick(b);
   for (const s of l.sorter) sorterTick(s);
   for (const p of l.pump) pumpTick(p);
-  for (const a of l.node) for (const p of a.per) {
-    const b = at(p.x, p.y);
-    if (b && b.id > a.id && isNode(b)) flowPair(a, b);
-  }
+  for (const e of l.booster) boosterTick(e);
+  fluidStep(l.pairs);
+  const fails = [];
+  for (const e of l.node) nodeHeat(e, fails);
+  const msgs = fails.map(([e, why]) => burst(e, why)).filter(Boolean);
+  if (msgs.length) toast(msgs[0] + (msgs.length > 1 ? ` (+${msgs.length - 1} more)` : ''), true);
   let demand = 0;
+  for (const e of l.booster) if (e.on) demand += BUILD.booster.kw;
   for (const e of l.machine) {
     const r = RECIPE[e.recipe];
     if (!r) { e.st = 'none'; continue; }
@@ -477,10 +566,11 @@ function tick() {
     if (e.cy) demand += BUILD.miner.kw;
   }
   let cap = 0;
-  for (const g of l.engine) { g.cap = Math.min(1, g.amt) * 900; cap += g.cap; }
+  for (const g of l.engine) { g.eff = g.amt > 0.01 && g.tf >= 99.9 ? 0.2 + 0.8 * Math.max(0, Math.min(1, (g.tf - 100) / 50)) : 0; g.cap = Math.min(1, g.amt) * 900 * g.eff; cap += g.cap; }
   const gen = Math.min(demand, cap), sat = demand > 0 ? gen / demand : 1;
-  for (const g of l.engine) { g.kw = cap > 0 ? gen / cap * g.cap : 0; g.amt = Math.max(0, g.amt - g.kw / 900); }
+  for (const g of l.engine) { g.kw = cap > 0 ? gen / cap * g.cap : 0; g.amt = Math.max(0, g.amt - (g.eff > 0 ? g.kw / 900 / g.eff : 0)); }
   S.power = { gen, demand, cap, sat };
+  for (const e of l.booster) e.sat = sat;
   for (const e of l.machine) {
     if (!e.cy) continue;
     const r = RECIPE[e.recipe], kw = BUILD[e.type].kw;
@@ -515,10 +605,10 @@ function serialize() {
   const es = [];
   for (const e of ents.values()) {
     const o = Object.assign({}, e);
-    delete o.per; delete o.st; delete o.cap; delete o.on;
+    delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, inv: S.inv, dep: S.dep, vent: S.vent, made: S.made, t: S.t, nextId: S.nextId, cam, help: S.help, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, t: S.t, nextId: S.nextId, cam, help: S.help, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -531,7 +621,8 @@ function initWorld(seed) {
 
 function newGame(seed) {
   seed = seed == null ? Math.floor(Math.random() * 1e9) : seed;
-  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, made: {}, t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 } };
+  closePanel(); fx.length = 0;
+  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 } };
   initWorld(seed);
   cam = { x: W / 2, y: H / 2, z: 32 };
   tool = null; sel = null;
@@ -542,7 +633,8 @@ function load() {
   let d;
   try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) { d = null; }
   if (!d || d.v !== 1) return false;
-  S = { seed: d.seed, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, made: d.made || {}, t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 } };
+  closePanel(); fx.length = 0;
+  S = { seed: d.seed, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 } };
   initWorld(d.seed);
   for (const k in S.dep) { const i = +k; oreAmt[i] = S.dep[k]; if (oreAmt[i] <= 0) { oreAmt[i] = 0; oreType[i] = 0; } }
   for (const o of d.ents || []) {
@@ -560,7 +652,9 @@ function toast(msg, bad) {
   const t = document.createElement('div');
   t.className = 'toast' + (bad ? ' bad' : '');
   t.textContent = msg;
-  $('#toast').appendChild(t);
+  const box = $('#toast');
+  box.appendChild(t);
+  while (box.children.length > 4) box.firstChild.remove();
   setTimeout(() => t.classList.add('out'), 2200);
   setTimeout(() => t.remove(), 2700);
 }
@@ -620,10 +714,25 @@ function render() {
     if (e.x + B.w < x0 || e.y + B.h < y0 || e.x > x1 || e.y > y1) continue;
     vis.push(e);
   }
-  for (const e of vis) if (e.type === 'pipe') drawPipe(e, ox, oy, z);
+  for (const e of vis) if (kind(e) === 'pipe') drawPipe(e, ox, oy, z);
   for (const e of vis) if (e.type === 'belt') drawBelt(e, ox, oy, z);
   for (const e of vis) if (e.type === 'belt') drawBeltItems(e, ox, oy, z);
-  for (const e of vis) if (e.type !== 'pipe' && e.type !== 'belt') drawBuilding(e, ox, oy, z);
+  for (const e of vis) if (kind(e) !== 'pipe' && e.type !== 'belt') drawBuilding(e, ox, oy, z);
+  if (overlay) drawOverlay(vis, ox, oy, z);
+  for (let i = fx.length - 1; i >= 0; i--) {
+    const f = fx[i];
+    f.t += 1 / 60;
+    if (f.t > 1.2) { fx.splice(i, 1); continue; }
+    ctx.globalAlpha = Math.max(0, 1 - f.t / 1.2);
+    ctx.fillStyle = f.c;
+    for (let k = 0; k < 10; k++) {
+      const a = k * 0.628 + f.t, r = z * (0.3 + f.t * 1.6) * (0.6 + 0.4 * hash(k, i, 3));
+      ctx.beginPath(); ctx.arc(ox + f.x * z + Math.cos(a) * r, oy + f.y * z + Math.sin(a) * r, z * 0.12 * (1.2 - f.t), 0, 7); ctx.fill();
+    }
+    ctx.strokeStyle = '#ffb347'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(ox + f.x * z, oy + f.y * z, z * (0.2 + f.t * 1.2), 0, 7); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
   const se = sel && ents.get(sel);
   if (se) {
     const B = BUILD[se.type];
@@ -651,22 +760,67 @@ function pipeLinks(e, d) {
   const o = at(e.x + DX[d], e.y + DY[d]);
   if (!o) return false;
   const k = kind(o);
+  if (k === 'booster') return o.dir % 2 === d % 2;
   return k === 'pipe' || k === 'engine' || k === 'pump' || k === 'machine';
 }
 
 function drawPipe(e, ox, oy, z) {
-  const cx = ox + (e.x + 0.5) * z, cy = oy + (e.y + 0.5) * z, t = z * 0.36;
-  ctx.fillStyle = '#4a5560';
+  const P = NP(e), cx = ox + (e.x + 0.5) * z, cy = oy + (e.y + 0.5) * z, t = z * (P.dn >= 100 ? 0.5 : 0.34);
+  const rust = Math.min(1, e.wear || 0);
+  ctx.fillStyle = rust > 0.05 ? mix(BUILD[e.type].c, '#9a4a1a', rust) : shade(BUILD[e.type].c, 0.8);
   for (let d = 0; d < 4; d++) if (pipeLinks(e, d)) {
     if (DX[d]) ctx.fillRect(DX[d] > 0 ? cx : cx - z / 2, cy - t / 2, z / 2, t);
     else ctx.fillRect(cx - t / 2, DY[d] > 0 ? cy : cy - z / 2, t, z / 2);
   }
-  ctx.fillRect(cx - t * 0.7, cy - t * 0.7, t * 1.4, t * 1.4);
+  const bw = t * (0.7 + Math.min(0.35, (e.strain || 0) / P.duct * 0.35 || 0));
+  ctx.fillRect(cx - bw, cy - bw, bw * 2, bw * 2);
+  if (e.strain > 0.01) { ctx.strokeStyle = '#ff4a3a'; ctx.lineWidth = Math.max(1, z * 0.06); ctx.strokeRect(cx - bw, cy - bw, bw * 2, bw * 2); }
+  if (P.acid && z >= 12) { ctx.fillStyle = '#c8cce0'; ctx.fillRect(cx - bw, cy - bw, bw * 2, Math.max(1, z * 0.04)); }
   if (e.fl && e.amt > 0.5) {
     ctx.fillStyle = col(e.fl);
-    const f = Math.min(1, e.amt / 100), s = t * 1.1 * Math.sqrt(f);
+    const f = Math.min(1, e.amt / P.v), s = t * 1.1 * Math.sqrt(f);
     ctx.fillRect(cx - s / 2, cy - s / 2, s, s);
   }
+}
+
+function mix(a, b, f) {
+  const x = parseInt(a.slice(1), 16), y = parseInt(b.slice(1), 16);
+  const c = sh => Math.round(((x >> sh) & 255) * (1 - f) + ((y >> sh) & 255) * f);
+  return `rgb(${c(16)},${c(8)},${c(0)})`;
+}
+
+function heat(v, lo, hi) {
+  const f = Math.max(0, Math.min(1, (v - lo) / (hi - lo)));
+  const h = 240 - f * 240;
+  return `hsl(${h},85%,55%)`;
+}
+
+function drawOverlay(vis, ox, oy, z) {
+  ctx.font = `bold ${Math.max(8, Math.floor(z * 0.26))}px system-ui,sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const e of vis) {
+    if (!isNode(e)) continue;
+    const B = BUILD[e.type], P = NP(e);
+    let c, v, txt;
+    if (overlay === 1) { v = pres(e); c = v > P.bar ? '#ff2a2a' : heat(v / Math.min(P.bar, 30), 0, 1); txt = v.toFixed(v < 10 ? 1 : 0); }
+    else { v = e.amt > 0.001 ? e.tf : e.tw; c = heat(v, 0, 400); txt = Math.round(v); }
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = c;
+    ctx.fillRect(ox + e.x * z, oy + e.y * z, B.w * z, B.h * z);
+    ctx.globalAlpha = 1;
+    if (z >= 22) { ctx.fillStyle = '#000'; ctx.fillText(txt, ox + (e.x + B.w / 2) * z, oy + (e.y + B.h / 2) * z); }
+  }
+  const w = cv.clientWidth;
+  const lbl = overlay === 1 ? ['Pressure (share of rating)', '0', 'rated', 'red = over rating'] : ['Fluid temperature °C', '0', '400', ''];
+  ctx.fillStyle = 'rgba(10,12,16,0.85)'; ctx.fillRect(w - 230, 10, 220, 52);
+  const g = ctx.createLinearGradient(w - 220, 0, w - 20, 0);
+  for (let i = 0; i <= 4; i++) g.addColorStop(i / 4, heat(i / 4, 0, 1));
+  ctx.fillStyle = g; ctx.fillRect(w - 220, 34, 200, 10);
+  ctx.fillStyle = '#ddd'; ctx.font = '12px system-ui,sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText(lbl[0] + '  (V)', w - 220, 22);
+  ctx.font = '10px system-ui,sans-serif';
+  ctx.fillText(lbl[1], w - 220, 54); ctx.textAlign = 'right'; ctx.fillText(lbl[2], w - 20, 54);
+  ctx.textAlign = 'center'; ctx.fillStyle = '#ff6a5a'; ctx.fillText(lbl[3], w - 120, 54);
 }
 
 function drawBelt(e, ox, oy, z) {
@@ -735,6 +889,14 @@ function drawBuilding(e, ox, oy, z) {
     arrow(x + w / 2, y + h / 2, e.dir, z * 0.28, '#1a1a1a');
     if (e.filter) { ctx.fillStyle = col(e.filter); ctx.fillRect(x + p * 3, y + p * 3, z * 0.22, z * 0.22); }
     if (e.buf && z >= 14) { ctx.fillStyle = col(e.buf); ctx.beginPath(); ctx.arc(x + w - z * 0.25, y + h - z * 0.25, z * 0.12, 0, 7); ctx.fill(); }
+    return;
+  }
+  if (e.type === 'booster') {
+    ctx.fillStyle = shade(B.c, 0.6);
+    if (DX[e.dir]) ctx.fillRect(x, y + h * 0.33, w, h * 0.34); else ctx.fillRect(x + w * 0.33, y, w * 0.34, h);
+    ctx.fillStyle = '#cfe4ff';
+    ctx.beginPath(); ctx.arc(x + w / 2, y + h / 2, z * 0.25, 0, 7); ctx.fill();
+    arrow(x + w / 2, y + h / 2, e.dir, z * 0.2, e.on ? '#1a4a8a' : '#556');
     return;
   }
   if (e.type === 'pump') {
@@ -813,7 +975,7 @@ function drawGhost(ox, oy, z) {
   ctx.strokeStyle = err ? '#ff5a5a' : '#7fff8a';
   ctx.lineWidth = 2;
   ctx.strokeRect(ox + o.x * z + 1, oy + o.y * z + 1, B.w * z - 2, B.h * z - 2);
-  if (tool === 'belt' || tool === 'sorter') arrow(ox + (o.x + 0.5) * z, oy + (o.y + 0.5) * z, toolDir, z * 0.28, '#fff');
+  if (tool === 'belt' || tool === 'sorter' || tool === 'booster') arrow(ox + (o.x + 0.5) * z, oy + (o.y + 0.5) * z, toolDir, z * 0.28, '#fff');
 }
 
 function tileInfo(x, y) {
@@ -823,8 +985,9 @@ function tileInfo(x, y) {
     const B = BUILD[e.type];
     let s = `<b>${B.n}</b>`;
     if (kind(e) === 'machine') s += `<br>${e.recipe ? RECIPE[e.recipe].n : 'No recipe'} · ${ST_TXT[e.cy && e.st !== 'power' ? 'work' : e.st] || ''}`;
-    if (e.type === 'pipe') s += `<br>${e.fl ? nm(e.fl) + ' ' + Math.round(e.amt) + '/100' : 'Empty'}`;
-    if (e.type === 'engine') s += `<br>${Math.round(e.kw)} kW · steam ${Math.round(e.amt)}/60`;
+    if (kind(e) === 'pipe') s += `<br>${e.fl && e.amt > 0.01 ? nm(e.fl) + ' · ' + pres(e).toFixed(1) + ' bar · ' + Math.round(e.tf) + '°C' : 'Empty' + (e.fl ? ' (' + nm(e.fl) + ')' : '')}<br><span class="dim">${NP(e).mat}, DN${NP(e).dn}, rated ${NP(e).bar} bar</span>`;
+    if (e.type === 'engine') s += `<br>${Math.round(e.kw)} kW · steam ${pres(e).toFixed(1)} bar · ${Math.round(e.tf)}°C`;
+    if (e.type === 'booster') s += `<br>Outlet ${e.head} bar · ${Math.round(e.fr)}/s`;
     if (e.type === 'belt' && e.items.length) s += `<br>${e.items.map(i => nm(i.i)).join(', ')}`;
     if (e.type === 'chest') s += `<br>${sum(e.store)}/400 items`;
     return s;
@@ -843,7 +1006,9 @@ function powerHtml() {
 function ventHtml() {
   const t = sum(S.vent);
   const parts = Object.keys(S.vent).filter(f => S.vent[f] >= 1).map(f => `${nm(f)} ${fmt(S.vent[f])}`).join(', ');
-  return `<span class="lbl">Vented</span><b class="${t > 0 ? 'warn' : ''}">${fmt(t)}</b>` + (parts ? `<span class="dim"> · ${parts}</span>` : '');
+  const sp = sum(S.spill || {});
+  return `<span class="lbl">Vented</span><b class="${t > 0 ? 'warn' : ''}">${fmt(t)}</b>` + (parts ? `<span class="dim"> · ${parts}</span>` : '') +
+    (sp >= 1 || S.fails ? ` <span class="lbl">Spilled</span><b class="bad">${fmt(sp)}</b><span class="dim"> · ${S.fails || 0} pipe failures</span>` : '');
 }
 
 function renderHotbar() {
@@ -854,7 +1019,7 @@ function renderHotbar() {
       const B = BUILD[t];
       if (B.cat !== c) continue;
       const n = S.inv[t] || 0;
-      h += `<button class="hb ${tool === t ? 'on' : ''} ${n ? '' : 'zero'}" data-tool="${t}" title="${B.n}: ${B.d}"><span class="sw" style="background:${B.c}">${B.ab || ''}${t === 'belt' ? '»' : t === 'pipe' ? '═' : ''}</span><span class="cnt">${n}</span></button>`;
+      h += `<button class="hb ${tool === t ? 'on' : ''} ${n ? '' : 'zero'}" data-tool="${t}" title="${B.n}: ${B.d}"><span class="sw" style="background:${B.c}">${B.ab || ''}${t === 'belt' ? '»' : B.kind === 'pipe' ? (B.P.dn >= 100 ? '█' : '═') : ''}</span><span class="cnt">${n}</span></button>`;
     }
     h += '</div></div>';
   }
@@ -884,8 +1049,9 @@ function openPanel(e) {
   if (kind(e) === 'machine') h += '<button data-act="insert">Insert from inventory</button><button data-act="take">Take outputs</button>';
   if (e.type === 'miner') h += '<button data-act="take">Take ore</button>';
   if (e.type === 'chest') h += '<button data-act="takeall">Take all</button><button data-act="store">Store raw materials</button>';
-  if (e.type === 'pipe') h += '<button data-act="flush">Flush network</button>';
-  if (e.type === 'belt' || e.type === 'sorter') h += '<button data-act="rotate">Rotate (R)</button>';
+  if (e.type === 'booster') h += `<label class="row">Outlet pressure <select data-act="head">${HEADS.concat(e.head).filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b).map(v => `<option value="${v}" ${e.head === v ? 'selected' : ''}>${v} bar</option>`).join('')}</select></label>`;
+  if (kind(e) === 'pipe') h += '<button data-act="flush">Flush network</button>';
+  if (e.type === 'belt' || e.type === 'sorter' || e.type === 'booster') h += '<button data-act="rotate">Rotate (R)</button>';
   h += '<button class="danger" data-act="remove">Pick up</button></div>';
   panel.innerHTML = h;
   panel.hidden = false;
@@ -939,11 +1105,26 @@ function renderPanelDyn() {
   } else if (k === 'chest') {
     h += `<div class="sec">Contents ${sum(e.store)}/400</div><div class="slots">` + (Object.keys(e.store).map(q => `<div class="slot">${chip(q, e.store[q])}</div>`).join('') || '<span class="dim">Empty</span>') + '</div>';
   } else if (k === 'pipe') {
-    h += `<div class="slots"><div class="slot">${e.fl ? chip(e.fl, Math.round(e.amt) + '/100', 'fl') + bar(e.amt, 100, col(e.fl)) : '<span class="dim">Empty, no fluid assigned</span>'}</div></div>`;
-    h += '<p class="dim">A pipe keeps the first fluid that enters it. Flush to change it.</p>';
+    const P = NP(e), p = pres(e);
+    h += `<div class="spec">${P.mat} · DN${P.dn} · rated ${P.bar} bar · max ${P.tmax}°C · ${P.duct ? 'ductile' : 'brittle'}${P.acid ? ' · acid-proof' : ''}</div>`;
+    h += `<div class="slots"><div class="slot">${e.fl ? chip(e.fl, Math.round(e.amt) + '/' + P.v, 'fl') + bar(e.amt, P.v, col(e.fl)) : '<span class="dim">Empty, no fluid assigned</span>'}</div></div>`;
+    h += `<div class="gauge"><span>Pressure</span>${bar(p, P.bar, p > P.bar ? '#e04a4a' : p > P.bar * 0.8 ? '#e0b84a' : '#5fd06a')}<b>${p.toFixed(1)} / ${P.bar} bar</b></div>`;
+    h += `<div class="gauge"><span>Flow</span>${bar(e.fr, P.q, '#6ab0e0')}<b>${Math.round(e.fr)} / ${P.q} per s</b></div>`;
+    h += `<div class="gauge"><span>Fluid</span>${bar(e.tf, P.tmax, heat(e.tf, 0, 400))}<b>${Math.round(e.tf)}°C</b></div>`;
+    h += `<div class="gauge"><span>Wall</span>${bar(e.tw, P.tmax, heat(e.tw, 0, 400))}<b>${Math.round(e.tw)} / ${P.tmax}°C</b></div>`;
+    if (P.shock) h += `<div class="gauge"><span>Thermal stress</span>${bar(e.ss || 0, P.shock, '#e07a3a')}<b>${Math.round(e.ss || 0)} / ${P.shock}</b></div>`;
+    if (P.duct) h += `<div class="gauge"><span>Bulging</span>${bar(e.strain, P.duct, '#e04a4a')}<b>${Math.round(e.strain / P.duct * 100)}%</b></div>`;
+    if (!P.acid) h += `<div class="gauge"><span>Corrosion</span>${bar(e.wear, 1, '#9a4a1a')}<b>${Math.round(e.wear * 100)}%</b></div>`;
+    h += '<p class="dim">A pipe keeps the first fluid that enters it. Flush to change it. Pressure is set by pumps and machines and drops along long lines.</p>';
+  } else if (k === 'booster') {
+    h += `<div class="status"><i style="background:${e.on ? ST_COL.work : ST_COL.input}"></i>${e.on ? 'Pumping' : 'Nothing to pump'} · ${BUILD.booster.kw} kW</div>`;
+    h += `<div class="gauge"><span>Flow</span>${bar(e.fr, 200, '#6ab0e0')}<b>${Math.round(e.fr)} / 200 per s</b></div>`;
+    h += '<p class="dim">The arrow points to the outlet. It pushes the outlet up to the set pressure. Above a pipe\'s rating, cast iron bursts and steel bulges.</p>';
   } else if (k === 'engine') {
     h += `<div class="status"><i style="background:${e.kw > 1 ? ST_COL.work : ST_COL.input}"></i>${Math.round(e.kw)} / 900 kW</div>${bar(e.kw, 900, '#e0c84a')}`;
     h += `<div class="slots"><div class="slot">${chip('steam', Math.round(e.amt) + '/60', 'fl')}${bar(e.amt, 60, col('steam'))}</div></div>`;
+    h += `<div class="gauge"><span>Steam</span>${bar(e.tf, 165, heat(e.tf, 0, 400))}<b>${Math.round(e.tf)}°C · ${Math.round((e.eff || 0) * 100)}% output</b></div>`;
+    h += '<p class="dim">Steam below 150°C gives less power, and below 100°C it condenses. Keep steam lines short.</p>';
   } else if (k === 'pump') {
     h += `<div class="status"><i style="background:${e.on ? ST_COL.work : ST_COL.output}"></i>${e.on ? 'Pumping' : 'Nothing to pump into'}</div>`;
   } else if (k === 'belt') {
@@ -960,6 +1141,7 @@ function panelAct(act, el) {
   if (!e) return;
   if (act === 'recipe') { setRecipe(e, el.value); renderPanelDyn(); }
   else if (act === 'filter') { e.filter = el.value || null; }
+  else if (act === 'head') { e.head = +el.value; }
   else if (act === 'insert') {
     const r = RECIPE[e.recipe];
     if (!r) return toast('Set a recipe first', true);
@@ -989,7 +1171,7 @@ function panelAct(act, el) {
     while (q.length) {
       const c = q.pop();
       c.fl = null; c.amt = 0;
-      for (const p of c.per) { const o = at(p.x, p.y); if (o && o.type === 'pipe' && !seen.has(o.id)) { seen.add(o.id); q.push(o); } }
+      for (const p of c.per) { const o = at(p.x, p.y); if (o && kind(o) === 'pipe' && !seen.has(o.id)) { seen.add(o.id); q.push(o); } }
     }
     toast(`Flushed ${seen.size} pipes`);
   } else if (act === 'rotate') { e.dir = (e.dir + 1) % 4; }
@@ -1013,7 +1195,7 @@ function closeModal() { modal.hidden = true; modalKind = null; }
 
 const TABS = {
   craft: [['build', 'Buildings'], ['parts', 'Parts'], ['inv', 'Inventory']],
-  ency: [['chains', 'Ore chains'], ['recipes', 'Recipes'], ['mats', 'Materials']],
+  ency: [['chains', 'Ore chains'], ['recipes', 'Recipes'], ['mats', 'Materials'], ['pipes', 'Pipes']],
   help: [['help', 'How to play']],
 };
 
@@ -1069,6 +1251,21 @@ function renderModal() {
     h += '</div><h3>Materials</h3><div class="mats">';
     for (const k in ITEMS) if (!ORES.some(o => o && o.item === k)) h += `<div class="mat">${chip(k)}<span>${ITEMS[k].f}</span></div>`;
     h += '</div>';
+  } else if (modalTab === 'pipes') {
+    h += '<p class="dim">Every pipe holds a volume of fluid. Pressure is how full it is: a full pipe is at 10 bar. Fluid flows from high to low pressure, and a long line loses pressure along the way. Offshore pumps push to 8 bar, machines to 5 bar and boilers to 7 bar. Booster pumps push higher.</p>';
+    h += '<table class="ptab"><tr><th>Pipe</th><th>Size</th><th>Rating</th><th>Max flow</th><th>Max temp</th><th>Failure</th><th>Acid</th></tr>';
+    for (const t in BUILD) {
+      const P = BUILD[t].P;
+      if (!P) continue;
+      h += `<tr><td>${chip(t)}<br><span class="dim">${P.mat}</span></td><td>DN${P.dn}</td><td>${P.bar} bar</td><td>${P.q}/s</td><td>${P.tmax}°C</td><td>${P.duct ? 'Bulges, then ruptures' : 'Cracks at once; thermal shock'}</td><td>${P.acid ? 'Resists' : 'Corrodes'}</td></tr>`;
+    }
+    h += '</table><h3>How pipes fail</h3><ul class="plist">';
+    h += '<li><b>Overpressure.</b> Brittle grey cast iron fractures the moment it passes its rating. Ductile steel yields and bulges first, and only ruptures if it stays overpressured. A bulge never goes back. Lead-lined pipe is rated 6 bar, so feed it from machines (5 bar), never straight from an 8 bar offshore pump.</li>';
+    h += '<li><b>Thermal shock.</b> Cast iron cannot stretch. A cold fluid hitting a hot wall shrinks the inner surface and puts it in tension, and cast iron is weak in tension, so it cracks. Hot fluid into a cold pipe squeezes the surface instead, which cast iron tolerates about three times better. Cold water into a hot steam line is the classic way to crack it.</li>';
+    h += '<li><b>Heat.</b> Every pipe has a top temperature. Lead softens far below steel.</li>';
+    h += '<li><b>Corrosion.</b> Dilute sulfuric acid eats iron and steel (Fe + H₂SO₄ → FeSO₄ + H₂). Lead forms an insoluble PbSO₄ skin and stops corroding, which is why acid plants were lined with lead.</li>';
+    h += '<li><b>Heat loss.</b> Pipes lose heat to the air. Steam cools along a long line and condenses below 100°C, so engines far from boilers make less power.</li>';
+    h += '</ul><p class="dim">A failed pipe is destroyed and its contents spill. Press V for pressure and temperature overlays.</p>';
   } else if (modalTab === 'help') {
     h += HELP;
   }
@@ -1094,7 +1291,7 @@ const HELP = `<div class="help">
 <li><b>Click</b> a building to inspect it, set its recipe, insert items or take outputs.</li>
 <li><b>Click and hold</b> on ore to mine it by hand.</li>
 <li><b>WASD</b> or arrows move the camera. <b>Mouse wheel</b> zooms. Middle drag pans.</li>
-<li><b>E</b> opens crafting. <b>H</b> opens the encyclopedia.</li>
+<li><b>E</b> opens crafting. <b>H</b> opens the encyclopedia. <b>V</b> cycles the pressure and temperature overlays.</li>
 </ul>
 <h3>Getting started</h3>
 <ol>
@@ -1105,6 +1302,8 @@ const HELP = `<div class="help">
 <li>A chest that holds a machine's inputs feeds that machine and does not take its outputs.</li>
 <li>Follow the <b>Ore chains</b> in the encyclopedia: crush, grind, separate, then smelt.</li>
 </ol>
+<h3>Pipes</h3>
+<p>Pipes have real pressure, flow and temperature. Cast iron is cheap but brittle and bursts above 16 bar. Steel pipe carries four times the flow and bulges before it bursts. Acid eats both, so carry acid in lead-lined pipe. Booster pumps push fluid further. See <b>Pipes</b> in the encyclopedia.</p>
 <p class="dim">Gases like CO₂ and SO₂ are vented into the air when nothing collects them. The top bar counts it.</p>
 </div>`;
 
@@ -1195,7 +1394,7 @@ cv.addEventListener('mousemove', ev => {
   updateMouse(ev);
   mouse.in = true;
   if (mouse.m) { cam.x -= (ev.clientX - mouse.px) / cam.z; cam.y -= (ev.clientY - mouse.py) / cam.z; mouse.px = ev.clientX; mouse.py = ev.clientY; }
-  if (mouse.r && (ptx !== mouse.tx || pty !== mouse.ty)) { const e = at(mouse.tx, mouse.ty); if (e && (e.type === 'belt' || e.type === 'pipe')) { removeEnt(e); renderHotbar(); } }
+  if (mouse.r && (ptx !== mouse.tx || pty !== mouse.ty)) { const e = at(mouse.tx, mouse.ty); if (e && (e.type === 'belt' || kind(e) === 'pipe')) { removeEnt(e); renderHotbar(); } }
   if (drag && mouse.l && tool && (drag.x !== mouse.tx || drag.y !== mouse.ty)) dragTo(mouse.tx, mouse.ty);
   const info = tool ? '' : tileInfo(mouse.tx, mouse.ty);
   if (info) {
@@ -1224,8 +1423,9 @@ window.addEventListener('keydown', ev => {
   else if (k === 'escape' || k === 'q') { if (modalKind) closeModal(); else if (tool) { tool = null; renderHotbar(); } else closePanel(); }
   else if (k === 'r') {
     if (tool) toolDir = (toolDir + 1) % 4;
-    else { const e = at(mouse.tx, mouse.ty); if (e && (e.type === 'belt' || e.type === 'sorter')) e.dir = (e.dir + 1) % 4; }
+    else { const e = at(mouse.tx, mouse.ty); if (e && (e.type === 'belt' || e.type === 'sorter' || e.type === 'booster')) e.dir = (e.dir + 1) % 4; }
   }
+  else if (k === 'v') { overlay = (overlay + 1) % 3; toast(['Overlay off', 'Pressure overlay', 'Temperature overlay'][overlay]); }
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) ev.preventDefault();
 });
 window.addEventListener('keyup', ev => { keys[ev.key.toLowerCase()] = false; });

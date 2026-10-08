@@ -243,3 +243,13 @@ h3 .sw { width: 24px; height: 24px; font-size: 9px; }
   #panel { width: calc(100% - 20px); }
   #vent, #top .brand { display: none; }
 }
+.spec { font: 11px var(--mono); color: var(--dim); margin: 6px 0; }
+.gauge { display: grid; grid-template-columns: 92px 1fr auto; gap: 8px; align-items: center; margin: 5px 0; font-size: 12px; }
+.gauge span { color: var(--dim); }
+.gauge .bar { margin-top: 0; }
+.gauge b { font: 11px var(--mono); white-space: nowrap; }
+.ptab { width: 100%; border-collapse: collapse; font-size: 12px; margin: 8px 0; }
+.ptab th, .ptab td { text-align: left; padding: 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.ptab th { color: var(--dim); font-weight: 600; font-size: 11px; }
+.plist li { margin: 6px 0; line-height: 1.45; }
+@media (max-width: 640px) { .ptab { font-size: 11px; } .ptab th, .ptab td { padding: 4px 3px; } }

@@ -42,12 +42,12 @@ const ITEMS = {
 };
 
 const FLUIDS = {
-  water: { n: 'Water', c: '#3a7fd0', f: 'H₂O' },
-  steam: { n: 'Steam', c: '#d8dde4', f: 'H₂O gas at about 165°C', gas: true },
-  co2: { n: 'Carbon Dioxide', c: '#8a8f99', f: 'CO₂', gas: true },
-  so2: { n: 'Sulfur Dioxide', c: '#d8c84a', f: 'SO₂, choking and toxic', gas: true },
-  acid: { n: 'Sulfuric Acid', c: '#e0a03a', f: 'H₂SO₄' },
-  znso4: { n: 'Zinc Sulfate Solution', c: '#9ad0c0', f: 'ZnSO₄ dissolved in water' },
+  water: { n: 'Water', c: '#3a7fd0', f: 'H₂O', cp: 4.18, t: 15 },
+  steam: { n: 'Steam', c: '#d8dde4', f: 'Saturated H₂O vapour, 165°C at 7 bar', gas: true, cp: 2.0, t: 165 },
+  co2: { n: 'Carbon Dioxide', c: '#8a8f99', f: 'CO₂ flue gas, leaves the furnace at about 250°C', gas: true, cp: 0.85, t: 250 },
+  so2: { n: 'Sulfur Dioxide', c: '#d8c84a', f: 'SO₂, choking and toxic, leaves the roaster at about 350°C', gas: true, cp: 0.64, t: 350 },
+  acid: { n: 'Sulfuric Acid', c: '#e0a03a', f: 'H₂SO₄ diluted for leaching, about 70°C. Dilute acid dissolves iron', cp: 1.4, t: 70, corr: 1 },
+  znso4: { n: 'Zinc Sulfate Solution', c: '#9ad0c0', f: 'ZnSO₄ in slightly acidic water, about 50°C', cp: 3.6, t: 50, corr: 0.3 },
 };
 
 const ORES = [
@@ -64,7 +64,10 @@ const BUILD = {
   belt: { n: 'Belt', kind: 'belt', w: 1, h: 1, cat: 'Logistics', c: '#c9a23a', cost: { casting: 1 }, makes: 2, d: 'Moves items 2 tiles/s. Drag to lay a line.' },
   sorter: { n: 'Sorter', kind: 'sorter', w: 1, h: 1, cat: 'Logistics', c: '#d07a3a', ab: 'SO', cost: { casting: 2, wire: 2, brass: 1 }, d: 'Sends the filtered item forward and everything else to the right.' },
   chest: { n: 'Chest', kind: 'chest', w: 1, h: 1, cat: 'Logistics', c: '#8a6a3a', ab: 'CH', cost: { casting: 4 }, d: 'Stores 400 items and feeds neighbouring machines and outgoing belts.' },
-  pipe: { n: 'Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#6a7a8a', cost: { casting: 1 }, makes: 2, d: 'Cast iron pipe. Carries one fluid at a time.' },
+  pipe: { n: 'Cast Iron Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#6a7a8a', cost: { casting: 1 }, makes: 2, d: 'DN50, rated 16 bar. Cheap and brittle: it cracks at once when overpressured or hit by a sudden temperature change.', P: { mat: 'Grey cast iron', dn: 50, v: 100, g: 200, q: 120, bar: 16, tmax: 400, duct: 0, shock: 45, cw: 60, ua: 0.3 } },
+  steel_pipe: { n: 'Steel Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#9aa8b6', cost: { plate: 1 }, makes: 1, d: 'DN100, rated 40 bar. Four times the flow of DN50. Ductile: it bulges before it bursts. Dilute acid eats it.', P: { mat: 'Carbon steel', dn: 100, v: 250, g: 800, q: 400, bar: 40, tmax: 550, duct: 2, cw: 90, ua: 0.4 } },
+  lead_pipe: { n: 'Lead-Lined Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#7a7f9a', cost: { lead_sheet: 1, casting: 1 }, makes: 2, d: 'DN50, rated only 6 bar. The lead lining shrugs off sulfuric acid but softens above 250°C.', P: { mat: 'Steel with lead lining', dn: 50, v: 100, g: 200, q: 120, bar: 6, tmax: 250, duct: 4, cw: 30, ua: 0.3, acid: true } },
+  booster: { n: 'Booster Pump', kind: 'booster', w: 1, h: 1, cat: 'Logistics', c: '#4a7ab0', ab: 'BP', kw: 30, cost: { casting: 2, motor: 1 }, d: 'Takes fluid from the pipe behind it and pushes it forward up to the outlet pressure you set. Fluid cannot flow back through it.' },
   miner: { n: 'Miner', kind: 'miner', w: 2, h: 2, cat: 'Mining', c: '#7a6a4a', ab: 'MI', kw: 90, cost: { casting: 5, plate: 3, motor: 2 }, d: 'Digs the ore under it, one every 2s.' },
   pump: { n: 'Offshore Pump', kind: 'pump', w: 1, h: 1, cat: 'Mining', c: '#3a6aa0', ab: 'PU', cost: { casting: 3, motor: 1 }, d: 'Place on water. Pumps 60 water/s.' },
   boiler: { n: 'Boiler', kind: 'machine', w: 2, h: 2, cat: 'Power', c: '#9a5a3a', ab: 'BO', cost: { brick: 5, casting: 4 }, d: 'Burns fuel to turn water into steam.' },
@@ -130,7 +133,7 @@ for (const r of RECIPES) {
 }
 
 const START_INV = {
-  belt: 80, pipe: 40, chest: 8, sorter: 4, miner: 8, pump: 1, boiler: 2, engine: 2,
+  belt: 80, pipe: 40, steel_pipe: 10, lead_pipe: 10, booster: 1, chest: 8, sorter: 4, miner: 8, pump: 1, boiler: 2, engine: 2,
   crusher: 3, mill: 2, magsep: 1, flotation: 2, coke_oven: 2, kiln: 1, blast: 1, converter: 1, workshop: 2,
   casting: 20, brick: 10,
 };
