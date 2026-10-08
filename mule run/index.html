@@ -2,74 +2,116 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mule Run — a stubborn little endless runner</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🫏</text></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#2b1a12">
+<title>Mule Run</title>
+<meta name="description" content="One stubborn mule. One endless canyon. Zero shortcuts. A tiny endless runner.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%23ff8a2b%22/><path d=%22M20 50 L22 30 Q20 14 28 10 L30 22 Q36 12 40 10 L38 24 Q46 28 46 38 Q46 50 34 50 Z%22 fill=%22%232b1a12%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="app" id="app">
+    <canvas id="game" aria-label="Mule Run game"></canvas>
 
-  <main class="game-shell">
-    <header class="game-header">
-      <h1><span class="mule-emoji">🫏</span> Mule Run</h1>
-      <p class="tagline">One stubborn mule. One endless canyon. Zero shortcuts.</p>
-    </header>
-
-    <div class="stage" id="stage">
-      <canvas id="game-canvas"></canvas>
-
-      <div class="hud">
-        <div class="hud-score">
-          <span class="hud-label">SCORE</span>
-          <span id="score">0</span>
-        </div>
-        <div class="hud-stage" id="hud-stage" title="Grows over real time — even while you're away">
-          <span class="hud-label">MULE</span>
-          <span id="growth-stage">Foal</span>
-        </div>
-        <div class="hud-best">
-          <span class="hud-label">BEST</span>
-          <span id="best-score">0</span>
-        </div>
+    <div class="hud" id="hud">
+      <div class="hud-left">
+        <div class="score" id="score">0</div>
+        <div class="best">BEST <span id="best">0</span></div>
       </div>
-
-      <div id="smash-bar" class="smash-bar hidden">
-        <span class="smash-label">🔪 SMASH MODE</span>
-        <div class="smash-track"><div id="smash-bar-fill" class="smash-bar-fill"></div></div>
-      </div>
-
-      <button id="mute-btn" class="icon-btn" title="Mute sound" aria-label="Toggle sound">🔊</button>
-
-      <div id="start-screen" class="overlay">
-        <div class="overlay-card">
-          <div class="big-mule">🫏</div>
-          <h2>Ready the mule?</h2>
-          <p>Press <kbd>Space</kbd> / <kbd>↑</kbd> or tap the trail to jump.<br>
-             Dodge cacti, rocks, LARPers &amp; swooping rocket monkeys. Snag carrots for points,
-             and grab the radioactive machete to smash through anything.</p>
-          <p id="welcome-back-msg" class="welcome-back hidden"></p>
-          <button id="start-btn" class="primary-btn">Hee-Haw, Let's Go!</button>
+      <div class="powerups" id="powerups"></div>
+      <div class="hud-right">
+        <div class="carrots" id="carrot-box">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3c1 2 1 3 0 4M18 5c-1 1-2 2-3 2M12 4c1 1 2 2 3 3" stroke="#4caf50" stroke-width="2.4" stroke-linecap="round" fill="none"/><path d="M15 8 Q11 6 9 9 L3 20 Q3 21 4 21 L15 13 Q18 10 15 8Z" fill="#ff8a2b" stroke="#2b1a12" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          <span id="carrots">0</span>
+          <span class="combo" id="combo"></span>
         </div>
-      </div>
-
-      <div id="game-over-screen" class="overlay hidden">
-        <div class="overlay-card">
-          <div class="big-mule">😵</div>
-          <h2>The mule dug in its heels.</h2>
-          <p>Score: <strong id="final-score">0</strong></p>
-          <p id="new-best-msg" class="new-best hidden">🏆 New best distance!</p>
-          <button id="restart-btn" class="primary-btn">Try Again</button>
-        </div>
+        <button id="pause-btn" class="icon-btn" aria-label="Pause" title="Pause (P)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg>
+        </button>
+        <button id="mute-btn" class="icon-btn" aria-label="Toggle sound" title="Sound (M)">
+          <svg class="on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <svg class="off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
       </div>
     </div>
 
-    <p class="hint">Space / ↑ / Tap = Jump &nbsp;•&nbsp; Your mule keeps growing even while you're away &nbsp;•&nbsp; 🎧 DNB while you run</p>
-    <footer class="game-footer">Built with HTML, CSS &amp; vanilla JS — no assets, no libraries, just a mule.</footer>
-  </main>
+    <section id="title-screen" class="overlay show" aria-label="Title screen">
+      <div class="panel title-panel">
+        <a class="back-link" href="../">&larr; All projects</a>
+        <h1 class="logo"><span class="logo-a">Mule</span><span class="logo-b">Run</span></h1>
+        <p class="tagline">One stubborn mule. One endless canyon. Zero shortcuts.</p>
+
+        <div class="skin-picker">
+          <button class="arrow-btn" id="skin-prev" aria-label="Previous mule">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="skin-card">
+            <canvas id="skin-canvas" width="180" height="120"></canvas>
+            <div class="skin-name" id="skin-name">Dusty</div>
+            <div class="skin-req" id="skin-req">Ready to run</div>
+          </div>
+          <button class="arrow-btn" id="skin-next" aria-label="Next mule">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+
+        <button id="play-btn" class="btn primary">Hee-haw, let's go!</button>
+
+        <div class="meta-row">
+          <div><span class="meta-label">Best</span><span id="title-best">0</span></div>
+          <div><span class="meta-label">Carrots</span><span id="title-carrots">0</span></div>
+          <div title="Your mule grows in real time, even while you're away"><span class="meta-label">Mule</span><span id="title-growth">Foal</span></div>
+        </div>
+        <p id="welcome" class="welcome hidden"></p>
+
+        <div class="controls">
+          <div class="ctl-keys"><kbd>Space</kbd> jump &middot; hold for higher &middot; <kbd>&darr;</kbd> slam &middot; <kbd>P</kbd> pause</div>
+          <div class="ctl-touch">Tap to jump &middot; hold for higher &middot; swipe down to slam</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pause-screen" class="overlay" aria-label="Paused">
+      <div class="panel small-panel">
+        <h2>Paused</h2>
+        <p class="sub">The mule is having a snack.</p>
+        <button id="resume-btn" class="btn primary">Resume</button>
+        <button id="quit-btn" class="btn ghost">Back to menu</button>
+      </div>
+    </section>
+
+    <section id="over-screen" class="overlay" aria-label="Game over">
+      <div class="panel over-panel">
+        <h2 id="over-title">The mule dug in its heels.</h2>
+        <div class="final">
+          <div class="final-score" id="over-score">0</div>
+          <div class="new-best hidden" id="new-best">New best!</div>
+          <div class="final-best">Best <span id="over-best">0</span></div>
+        </div>
+        <div class="stats">
+          <div><span id="stat-dist">0 m</span><small>distance</small></div>
+          <div><span id="stat-carrots">0</span><small>carrots</small></div>
+          <div><span id="stat-near">0</span><small>close calls</small></div>
+          <div><span id="stat-bosses">0</span><small>bosses</small></div>
+        </div>
+        <div id="unlock-note" class="unlock-note hidden"></div>
+        <div class="next-goal" id="next-goal"></div>
+        <button id="retry-btn" class="btn primary">Run again</button>
+        <button id="menu-btn" class="btn ghost">Menu</button>
+        <div class="retry-hint"><span class="k">or press <kbd>Space</kbd> / click outside</span><span class="t">or tap outside the card</span></div>
+      </div>
+    </section>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </div>
 
   <script src="js/config.js"></script>
   <script src="js/audio.js"></script>
-  <script src="js/entities.js"></script>
+  <script src="js/art.js"></script>
+  <script src="js/world.js"></script>
   <script src="js/game.js"></script>
 </body>
 </html>

@@ -1,142 +1,101 @@
-// Shared constants for Mule Run.
-// Logical game coordinates are fixed and the canvas is scaled to fit —
-// this keeps physics predictable no matter the screen size.
 const CONFIG = {
-  WIDTH: 900,
-  HEIGHT: 300,
-  GROUND_Y: 240,
+  VIEW_H: 420,
+  MIN_VIEW_W: 620,
+  MAX_VIEW_W: 1180,
+  STEP: 1 / 120,
 
-  GRAVITY: 0.62,
-  JUMP_VELOCITY: -12.5,
+  GRAVITY: 3000,
+  GRAVITY_HOLD: 1500,
+  HOLD_TIME: 0.28,
+  JUMP_V: 780,
+  DOUBLE_JUMP_V: 700,
+  FAST_FALL_V: 1500,
+  COYOTE: 0.09,
+  BUFFER: 0.13,
 
-  START_SPEED: 5.2,
-  MAX_SPEED: 13,
-  SPEED_RAMP: 0.0012, // added to speed every frame while playing
+  START_SPEED: 370,
+  MAX_SPEED: 880,
+  SPEED_K: 34000,
 
-  MULE_X: 90,
-  MULE_SIZE: 46,
+  SCORE_DIVISOR: 10,
+  CARROT_SCORE: 10,
+  GOLD_CARROT_SCORE: 100,
+  NEAR_MISS_SCORE: 25,
+  SMASH_SCORE: 30,
+  COMBO_WINDOW: 1.4,
+  COMBO_MAX: 5,
 
-  MIN_SPAWN_GAP: 46,   // frames, at max difficulty
-  MAX_SPAWN_GAP: 95,   // frames, at min difficulty
+  DAY_CYCLE: 52000,
 
-  COIN_SCORE: 10,
-  DISTANCE_SCORE_DIVISOR: 8, // higher = score climbs slower with distance
+  POWERUPS: {
+    machete: { label: "Machete", duration: 7, color: "#8cff50" },
+    magnet: { label: "Magnet", duration: 9, color: "#ff5d5d" },
+    feather: { label: "Double Jump", duration: 12, color: "#7fd4ff" },
+    shield: { label: "Shield", duration: 0, color: "#ffd34d" },
+  },
 
-  STORAGE_KEY: "muleRunHighScore",
+  POWERUP_GAP_MIN: 9000,
+  POWERUP_GAP_MAX: 15000,
+  POWERUP_FIRST: 5000,
 
-  OBSTACLE_TYPES: [
-    { emoji: "🌵", width: 34, height: 46, groundOnly: true },
-    { emoji: "🌵", width: 44, height: 58, groundOnly: true },
-    { emoji: "🪨", width: 34, height: 30, groundOnly: true },
-    { emoji: "🦂", width: 30, height: 24, groundOnly: true },
-    { custom: "soyjak", width: 30, height: 52, groundOnly: true }, // hype fan blocking the trail
-    { custom: "larper", width: 36, height: 54, groundOnly: true }, // foam-sword warrior blocking the trail
+  OBSTACLES: {
+    cactusS: { w: 26, h: 44 },
+    cactusL: { w: 32, h: 64 },
+    cactusDuo: { w: 64, h: 52 },
+    rock: { w: 46, h: 30 },
+    scorpion: { w: 40, h: 30, extra: 60 },
+    tumbleweed: { w: 34, h: 34, extra: 150 },
+    larper: { w: 30, h: 62 },
+    fan: { w: 30, h: 56 },
+    buzzard: { w: 50, h: 22, extra: 90 },
+    monkey: { w: 44, h: 30, extra: 260 },
+  },
+
+  BOSS: {
+    FIRST_SCORE: 1000,
+    GAP: 1800,
+    GAP_GROWTH: 400,
+    WARNING: 1.8,
+    ATTACKS: 6,
+    ATTACKS_PER_TIER: 2,
+    INTERVAL: 1.35,
+    INTERVAL_MIN: 0.75,
+    INTERVAL_DECAY: 0.12,
+    TELEGRAPH: 0.5,
+    PROJECTILE_MULT: 1.3,
+    BONUS: 500,
+  },
+
+  BOSSES: [
+    { id: "bear", name: "Giant Nestle Bear", w: 96, h: 116, body: "#6b4226", belly: "#a8703e", accent: "#c62828", attack: "choc" },
+    { id: "nyx", name: "Lilac Nyx", w: 96, h: 96, body: "#b47fe5", mane: "#4b2d73", wing: "#5b3a8a", attack: "bolt" },
+    { id: "king", name: "The King of Ukraine", w: 76, h: 116, robe: "#2d5fd6", trim: "#ffd34d", attack: "flower" },
+    { id: "hugeponer", name: "Hugeponer", w: 100, h: 120, shirt: ["#c8102e", "#ffffff", "#012169"], skin: "#e8b48c", attack: "pint" },
   ],
 
-  COLLECTIBLE_EMOJI: "🥕",
+  SKINS: [
+    { id: "dusty", name: "Dusty", coat: "#9b6a43", dark: "#6e4528", muzzle: "#d9b48c", mane: "#3d2617", blanket: "#d6453a", trim: "#ffd34d", req: null },
+    { id: "ash", name: "Ash", coat: "#8f8b87", dark: "#635f5c", muzzle: "#d8d2c8", mane: "#3a3634", blanket: "#2a9d8f", trim: "#e9f5db", req: { type: "carrots", n: 100, text: "Collect 100 carrots total" } },
+    { id: "pinto", name: "Pinto", coat: "#efe6d8", dark: "#b9a993", muzzle: "#f7efe4", mane: "#5a3a22", blanket: "#3a6ea5", trim: "#f4d35e", patches: "#8a5a35", req: { type: "best", n: 1500, text: "Score 1,500 in one run" } },
+    { id: "prospector", name: "Prospector", coat: "#7a5233", dark: "#523520", muzzle: "#c9a27a", mane: "#2a1a10", blanket: "#5c7a3a", trim: "#c9a227", hat: true, req: { type: "runs", n: 10, text: "Play 10 runs" } },
+    { id: "midnight", name: "Midnight", coat: "#3b3142", dark: "#241d2a", muzzle: "#6b5a78", mane: "#120d16", blanket: "#7b4fd6", trim: "#9ef0ff", glowEyes: true, req: { type: "bosses", n: 1, text: "Defeat a boss" } },
+    { id: "golden", name: "Golden", coat: "#e8b83a", dark: "#b8861c", muzzle: "#fbe3a0", mane: "#8a5a10", blanket: "#ffffff", trim: "#e8b83a", sparkle: true, crown: true, req: { type: "best", n: 5000, text: "Score 5,000 in one run" } },
+  ],
 
-  // Airborne hazard: monkeys riding rockets, swooping through the sky on
-  // a sine-wave flight path. Rarer than ground obstacles, and their dips
-  // force a well-timed jump rather than an instinctive one.
-  ROCKET_MONKEY: {
-    SIZE: 34,
-    SPEED_MULTIPLIER: 1.55, // flies faster than the world scroll speed
-    BASE_Y: 150,            // center of the flight band
-    BASE_Y_JITTER: 25,
-    AMPLITUDE: 72,          // how far above/below BASE_Y it swoops
-    FREQUENCY: 0.055,       // radians added to phase per frame
-    SPAWN_MIN_GAP: 320,     // frames, at max difficulty
-    SPAWN_MAX_GAP: 620,     // frames, at min difficulty
-    FIRST_SPAWN_DELAY: 260, // grace period before the first one appears
-  },
-
-  // Rare power-up: a glowing green machete. Grants "smash mode" — obstacles
-  // and rocket monkeys get sliced for bonus points instead of ending the run.
-  MACHETE: {
-    SIZE: 32,
-    DURATION_FRAMES: 360,   // ~6s of smash mode at 60fps
-    SPAWN_MIN_GAP: 1400,    // frames, at max difficulty
-    SPAWN_MAX_GAP: 2600,    // frames, at min difficulty
-    FIRST_SPAWN_DELAY: 700,
-    KILL_SCORE: 25,
-  },
-
-  // Persistent idle growth. The mule ages in real wall-clock time whether
-  // the tab is open or closed — the elapsed gap since your last visit is
-  // read back from localStorage on load, so it keeps growing offline.
   GROWTH: {
     STORAGE_KEY: "muleGrowthState",
-    MAX_OFFLINE_SECONDS: 60 * 60 * 24 * 7, // cap a single absence at 7 days
-    WELCOME_BACK_THRESHOLD_SECONDS: 60,     // only show the banner past 1 min away
+    MAX_OFFLINE_SECONDS: 60 * 60 * 24 * 7,
+    WELCOME_BACK_SECONDS: 60,
     STAGES: [
-      { seconds: 0, label: "Foal", scale: 0.72 },
-      { seconds: 10 * 60, label: "Young Mule", scale: 0.86 },
+      { seconds: 0, label: "Foal", scale: 0.86 },
+      { seconds: 10 * 60, label: "Young Mule", scale: 0.93 },
       { seconds: 2 * 60 * 60, label: "Adult Mule", scale: 1.0 },
-      { seconds: 12 * 60 * 60, label: "Elder Mule", scale: 1.14 },
-      { seconds: 3 * 24 * 60 * 60, label: "Legendary Mule", scale: 1.3 },
+      { seconds: 12 * 60 * 60, label: "Elder Mule", scale: 1.05 },
+      { seconds: 3 * 24 * 60 * 60, label: "Legendary Mule", scale: 1.1 },
     ],
   },
 
-  MUSIC_BPM: 174, // classic drum & bass tempo
-
-  // Boss fights: a fictional, purely-for-fun roster (no real people depicted —
-  // "The King of Ukraine" and "Hugeponer" are original made-up characters,
-  // and the bear is just a big candy-colored bear, no branding traced).
-  // They cycle in order; each full lap through the roster raises the tier.
-  BOSSES: [
-    {
-      id: "bear",
-      name: "Giant Nestle Bear",
-      width: 92, height: 112,
-      bodyColor: "#6b4226",
-      bellyColor: "#a8703e",
-      accentColor: "#c62828",
-      attackEmoji: "🍫",
-    },
-    {
-      id: "nyx",
-      name: "Lilac Nyx",
-      width: 88, height: 92,
-      bodyColor: "#b47fe5",
-      maneColor: "#4b2d73",
-      wingColor: "rgba(75, 45, 115, 0.75)",
-      attackEmoji: null, // custom glowing shadow-bolt, drawn procedurally
-    },
-    {
-      id: "ukraine",
-      name: "The King of Ukraine",
-      width: 72, height: 112,
-      robeColor: "#2d5fd6",
-      trimColor: "#ffd34d",
-      attackEmoji: "🌻",
-    },
-    {
-      id: "hugeponer",
-      name: "Hugeponer",
-      width: 96, height: 120,
-      shirtColors: ["#c8102e", "#ffffff", "#012169"],
-      skinColor: "#e8b48c",
-      attackEmoji: "🍺",
-    },
-  ],
-
-  BOSS: {
-    FIRST_TRIGGER_SCORE: 400,
-    SCORE_INCREMENT: 1200,        // score gap until the next boss, per cycle
-    SCORE_INCREMENT_GROWTH: 300,  // extra gap added per full lap through the roster
-    WARNING_FRAMES: 110,          // "BOSS INCOMING" banner duration
-    SLIDE_IN_SPEED: 10,           // screen-space px/frame while entering
-    HOLD_MARGIN: 40,              // gap kept from the right edge while dueling
-    BASE_ATTACKS_TO_SURVIVE: 6,
-    ATTACKS_PER_TIER: 2,
-    BASE_ATTACK_INTERVAL: 85,     // frames between attacks, tier 0
-    ATTACK_INTERVAL_MIN: 40,
-    ATTACK_INTERVAL_DECAY_PER_TIER: 6,
-    TELEGRAPH_FRAMES: 34,         // wind-up warning flash before each attack fires
-    ENTRY_GRACE_FRAMES: 60,       // breathing room after the boss slides in
-    PROJECTILE_SPEED_MULT: 1.35,
-    PROJECTILE_SIZE: 30,
-    VICTORY_FRAMES: 110,
-    BONUS_SCORE: 500,
-  },
+  SAVE_KEY: "muleRun.save.v2",
+  LEGACY_BEST_KEY: "muleRunHighScore",
+  MUSIC_BPM: 174,
 };
