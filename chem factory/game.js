@@ -233,6 +233,7 @@ function removeEnt(e) {
   for (const o of [e.inv, e.out, e.store]) if (o) for (const k in o) give(k, o[k]);
   if (e.buf) give(e.buf, 1);
   if (e.cy && e.recipe && RECIPE[e.recipe].i) for (const k in RECIPE[e.recipe].i) give(k, RECIPE[e.recipe].i[k]);
+  if (e.catK) catDrop(e);
   if (sel === e.id) closePanel();
 }
 
@@ -261,8 +262,41 @@ function outCap(r, k) { return Math.max(10, ((r.o && r.o[k]) || 1) * 2); }
 function fiCap(r, f) { return Math.max(r.fi[f] * 2, 40); }
 function foCap(r, f) { return Math.max(r.fo[f] * 2, 100); }
 
+const CAT_CAP = 4, SPENT = { v_cat: 'spent_v_cat' };
+function catEff(e) { return Math.min(1, (e.ca || 0) * 3); }
+function catMul(e, r) { return r.cat && e.catK === r.cat && e.ca > 0 ? 1 + r.boost * catEff(e) : 1; }
+function catSwap(e, r) {
+  if (!r.cat || e.catK !== r.cat || e.ca > 0 || !(e.catN > 0)) return;
+  e.catN--; e.ca = 1;
+}
+function catWear(e, r) {
+  if (!r.cat || e.catK !== r.cat || !(e.ca > 0)) return;
+  e.ca -= 1 / r.life;
+  if (e.ca > 1e-9) return;
+  e.ca = 0;
+  const sp = SPENT[r.cat];
+  if (sp) e.out[sp] = (e.out[sp] || 0) + 1;
+  catSwap(e, r);
+}
+function catDrop(e) {
+  if (e.catK && e.catN > 0) give(e.catK, e.catN);
+  if (e.catK && e.ca > 0.5) give(e.catK, 1);
+  else if (e.catK && e.ca > 0 && SPENT[e.catK]) give(SPENT[e.catK], 1);
+  e.catK = null; e.catN = 0; e.ca = 0;
+}
+function catAdd(e, r, n) {
+  if (e.catK !== r.cat) catDrop(e);
+  e.catK = r.cat;
+  const m = Math.min(n, CAT_CAP - (e.catN || 0) - (e.ca > 0 ? 1 : 0));
+  if (m <= 0) return 0;
+  e.catN = (e.catN || 0) + m;
+  catSwap(e, r);
+  return m;
+}
+
 function setRecipe(e, id) {
   if (e.recipe === id) return;
+  if (e.catK && (!id || RECIPE[id].cat !== e.catK)) catDrop(e);
   if (e.cy && e.recipe && RECIPE[e.recipe].i) for (const k in RECIPE[e.recipe].i) give(k, RECIPE[e.recipe].i[k]);
   for (const k in e.inv) give(k, e.inv[k]);
   e.inv = {}; e.fi = {}; e.cy = false; e.prog = 0;
@@ -301,10 +335,11 @@ function acceptItem(o, k) {
   if (kd === 'machine') {
     let r = RECIPE[o.recipe];
     if (!r) {
-      r = RECIPES.find(q => q.b === o.type && q.i && q.i[k] && avail(q));
+      r = RECIPES.find(q => q.b === o.type && (q.i && q.i[k] || q.cat === k) && avail(q));
       if (!r) return false;
       setRecipe(o, r.id);
     }
+    if (r.cat === k) return catAdd(o, r, 1) > 0;
     if (!r.i || !r.i[k] || (o.inv[k] || 0) >= inCap(r, k)) return false;
     o.inv[k] = (o.inv[k] || 0) + 1;
     return true;
@@ -962,6 +997,7 @@ function tryStart(e, r) {
 
 function finish(e, r) {
   e.cy = false; e.prog = 0;
+  catWear(e, r);
   if (r.o) for (const k in r.o) { e.out[k] = (e.out[k] || 0) + r.o[k]; S.made[k] = (S.made[k] || 0) + r.o[k]; }
   if (r.ch) for (const k in r.ch) if (Math.random() < r.ch[k]) { e.out[k] = (e.out[k] || 0) + 1; S.made[k] = (S.made[k] || 0) + 1; }
   if (r.fo) for (const f in r.fo) {
@@ -1021,6 +1057,7 @@ function tick() {
     const r = RECIPE[e.recipe];
     if (!r) { e.st = 'none'; continue; }
     machineFluidIn(e, r);
+    if (r.cat) catSwap(e, r);
     if (!e.cy) e.st = tryStart(e, r) || 'work';
     if (e.cy && BUILD[e.type].kw) demand += BUILD[e.type].kw;
   }
@@ -1040,7 +1077,7 @@ function tick() {
     const r = RECIPE[e.recipe], kw = BUILD[e.type].kw;
     const sp = kw ? sat : 1;
     if (kw && sat < 0.05) e.st = 'power';
-    e.prog += DT * sp / r.t;
+    e.prog += DT * sp * catMul(e, r) / r.t;
     if (e.prog >= 1) finish(e, r);
   }
   for (const e of l.miner) {
@@ -1908,7 +1945,19 @@ function recipeHtml(r) {
   if (r.ch) for (const k in r.ch) outs.push(chip(k, Math.round(r.ch[k] * 100) + '%'));
   if (r.fo) for (const f in r.fo) outs.push(chip(f, r.fo[f], 'fl'));
   return `<div class="rec">${ins.join('')}<span class="arr">→ ${r.t}s →</span>${outs.join('')}</div>` +
+    (r.cat ? `<div class="note">Catalyst ${chip(r.cat)} up to ${1 + r.boost}× speed, a charge lasts about ${r.life} batches</div>` : '') +
     (r.eq ? `<div class="eq">${r.eq}</div>` : '') + (r.note ? `<div class="note">${r.note}</div>` : '');
+}
+
+function catHtml(e, r) {
+  const on = e.catK === r.cat && e.ca > 0, sp = on ? e.catN || 0 : 0;
+  let h = `<div class="sec">Catalyst bed</div><div class="slots"><div class="slot">${chip(r.cat, (on ? 1 : 0) + sp + '/' + CAT_CAP)}</div></div>`;
+  if (on) {
+    h += `<div class="gauge"><span>Charge life</span>${bar(e.ca, 1, e.ca > 0.34 ? '#7fe08a' : '#e0b84a')}<b>${Math.round(e.ca * 100)}%</b></div>`;
+    h += `<div class="gauge"><span>Activity</span>${bar(catEff(e), 1, '#c88a30')}<b>${catMul(e, r).toFixed(2)}× speed</b></div>`;
+    if (catEff(e) < 1) h += `<p class="bad">The bed is fading. ${sp ? 'A spare charge drops in when it is spent.' : 'Load fresh catalyst.'}</p>`;
+  } else h += `<p class="dim">No catalyst, so it runs at the uncatalysed rate. Load ${ITEMS[r.cat].n} for up to ${1 + r.boost}× speed. Chests and belts feed it too.</p>`;
+  return h;
 }
 
 function bar(v, max, c) {
@@ -1928,6 +1977,7 @@ function renderPanelDyn() {
       const st = e.cy && e.st !== 'power' ? 'work' : e.st;
       h += `<div class="status"><i style="background:${ST_COL[st]}"></i>${e.type === 'boiler' && st === 'output' ? 'Steam full, waiting for demand' : ST_TXT[st] || ''}${BUILD[e.type].kw ? ` · ${BUILD[e.type].kw} kW` : ' · fuel-fired'}</div>`;
       h += `<div class="prog">${bar(e.cy ? e.prog : 0, 1, '#7fe08a')}</div>`;
+      if (r.cat) h += catHtml(e, r);
       h += '<div class="sec">Input buffer</div><div class="slots">';
       if (r.i) for (const q in r.i) h += `<div class="slot">${chip(q, Math.floor(e.inv[q] || 0) + '/' + inCap(r, q))}</div>`;
       if (r.fi) for (const f in r.fi) h += `<div class="slot">${chip(f, Math.round(e.fi[f] || 0) + '/' + fiCap(r, f), 'fl')}${bar(e.fi[f] || 0, fiCap(r, f), col(f))}</div>`;
@@ -2029,7 +2079,11 @@ function panelAct(act, el) {
       const n = Math.min(S.inv[k] || 0, inCap(r, k) - (e.inv[k] || 0));
       if (n > 0) { S.inv[k] -= n; if (!S.inv[k]) delete S.inv[k]; e.inv[k] = (e.inv[k] || 0) + n; moved += n; }
     }
-    toast(moved ? `Inserted ${moved} items` : r.i ? 'You have none of the inputs' : 'This recipe only uses fluids', !moved);
+    if (r.cat && S.inv[r.cat] > 0) {
+      const n = catAdd(e, r, S.inv[r.cat]);
+      if (n > 0) { S.inv[r.cat] -= n; if (!S.inv[r.cat]) delete S.inv[r.cat]; moved += n; }
+    }
+    toast(moved ? `Inserted ${moved} items` : r.i || r.cat ? 'You have none of the inputs' : 'This recipe only uses fluids', !moved);
   } else if (act === 'take' || act === 'takeall') {
     const src = e.out || e.store;
     let n = 0;
@@ -2183,7 +2237,7 @@ const CHAINS = [
   { n: 'Sulfuric acid', l: [['so2', 'Acid plant + water', 'acid']], d: 'Every roaster and the copper converter give off SO₂. Pipe it to an acid plant instead of venting it. The acid feeds copper refining and zinc leaching.' },
   { n: 'Salt and chlorine', l: [['rock_salt', 'Crusher', 'salt', 'Leach tank + water', 'brine'], ['brine', 'Electrolysis (chlor-alkali)', 'cl2', '+', 'naoh', '+', 'h2'], ['salt', 'Electrolysis (Downs cell)', 'sodium', '+', 'cl2'], ['h2', 'Boiler + water', 'steam']], d: 'Splitting brine gives three products at once: chlorine, caustic soda and hydrogen. Chlorine and brine pit steel, so use lead-lined or titanium pipe; caustic eats lead, so use steel. Burn the spare hydrogen in a boiler.' },
   { n: 'Aluminium', l: [['bauxite', 'Crusher', 'crushed_bauxite', 'Digester + naoh + steam', 'liquor', 'Precipitator', 'al_hydroxide'], ['al_hydroxide', 'Lime kiln + coal', 'alumina', 'Reduction pot + anode', 'aluminium'], ['coke', 'Coke oven', 'anode']], d: 'The Bayer process dissolves alumina in hot caustic, leaving iron oxides behind as red mud, then precipitates it again and returns the caustic. The Hall-Héroult pot needs 600 kW: aluminium is "solid electricity". Gallium turns up in the liquor now and then.' },
-  { n: 'Mineral sands and titanium', l: [['mineral_sand', 'Gravity spiral + water', 'heavy_conc', 'Magnetic separator', 'ilmenite'], ['nonmag', 'Electrostatic separator', 'rutile', '+', 'zircon'], ['ilmenite', 'Arc furnace + coke', 'ti_slag', '+', 'pig_iron'], ['rutile', 'Chlorinator + coke + cl2', 'ticl4', 'Hunter retort + sodium', 'titanium']], d: 'Black beach sand holds titanium and zirconium minerals. Gravity, magnetism and static charge split them. Titanium dioxide is too stable to reduce with carbon, so it goes through chlorine: TiCl₄ meets molten sodium, and the salt that results goes back to the Downs cell. Titanium makes pipe that laughs at chlorine.' },
+  { n: 'Mineral sands and titanium', l: [['mineral_sand', 'Gravity spiral + water', 'heavy_conc', 'Magnetic separator', 'ilmenite'], ['nonmag', 'Electrostatic separator', 'rutile', '+', 'zircon'], ['ilmenite', 'Arc furnace + coke', 'ti_slag', '+', 'v_pig'], ['rutile', 'Chlorinator + coke + cl2', 'ticl4', 'Hunter retort + sodium', 'titanium']], d: 'Black beach sand holds titanium and zirconium minerals. Gravity, magnetism and static charge split them. Titanium dioxide is too stable to reduce with carbon, so it goes through chlorine: TiCl₄ meets molten sodium, and the salt that results goes back to the Downs cell. Titanium makes pipe that laughs at chlorine.' },
   { n: 'Clean air', l: [['so2', 'Gas scrubber + water + crushed limestone', 'gypsum'], ['cl2', 'Gas scrubber + caustic soda', 'bleach'], ['Roaster', 'Chimney stack', 'Smog spread thin']], d: 'Vented SO₂ and chlorine become smog, and smog over ' + RAIN + ' brings acid rain. An acid plant turns SO₂ into something useful; when it cannot keep up, a limestone scrubber locks the sulfur into gypsum. A stack only dilutes: the same sulfur still falls somewhere.' },
   { n: 'Cement', l: [['crushed_lime', 'Lime kiln + sand + coal', 'clinker'], ['clinker', 'Ball mill + gypsum', 'cement'], ['slag', 'Ball mill + clinker + gypsum', 'cement'], ['cement', 'Workshop + sand', 'concrete']], d: 'Portland cement needs gypsum from the scrubber, and blast furnace slag can replace half the clinker. Concrete blocks build walls.' },
   { n: 'Ammunition', l: [['caliche', 'Crusher', 'crushed_caliche', 'Leach tank + steam + water', 'sodium_nitrate', '+', 'salt'], ['pyrite_conc', 'Lime kiln + coal', 'sulfur', '+', 'pyrite_cinder'], ['sodium_nitrate', 'Ball mill + sulfur + coal', 'black_powder'], ['black_powder', 'Workshop + brass + lead', 'cartridge']], d: 'Crawlers smell SO₂ and come for whatever vents it. Turrets hold them off with lead shot. The powder is nitrate, sulfur and carbon: the nitrate supplies the oxygen, so it burns sealed in a brass case. Brick and concrete walls slow them down while the guns work.' },
@@ -2191,6 +2245,7 @@ const CHAINS = [
   { n: 'Nitrogen', l: [['h2', 'Ammonia converter (Haber-Bosch)', 'nh3'], ['nh3', 'Ostwald burner + water', 'hno3'], ['sodium_nitrate', 'Retort + acid', 'hno3'], ['nh3', 'Leach tank + hno3', 'amm_nitrate', 'Ball mill + aluminium + coal', 'ammonal'], ['ammonal', 'Workshop + cylinder + black_powder', 'he_drum'], ['so2', 'Gas scrubber + nh3 + water', 'amm_sulfate']], d: 'Fritz Haber fixed nitrogen from air over an iron catalyst at 200 bar in 1909; Carl Bosch scaled it up. Ammonia burned over platinum gauze gives nitric acid, and the two together make ammonium nitrate, the base of fertiliser and of ammonal. The converter and the burner\'s platinum gauze only turn up in the ruins of the old works. Before Haber, nitric acid came from Chilean nitrate and sulfuric acid in a retort.' },
   { n: 'Coal tar and TNT', l: [['coal', 'Coke oven (by-products)', 'coke', '+', 'tar', '+', 'coalgas'], ['tar', 'Distillation column + steam', 'toluene', '+', 'pitch'], ['coke', 'Coke oven + pitch', 'anode'], ['toluene', 'Nitrator + hno3 + acid', 'tnt'], ['tnt', 'Workshop + plate + brass + black_powder', 'shell', 'Field howitzer', 'Hive']], d: 'A by-product coke oven keeps what a beehive oven burns off: tar and a hydrogen-rich gas that fires boilers. Distilled tar gives toluene for TNT and pitch that binds anodes. TNT needs mixed nitric and sulfuric acid: nitric acid dissolves lead, so pipe it in titanium or glass-lined pipe. The nitrator and the shell drawings are in the old works.' },
   { n: 'Phosgene', l: [['coke', 'Gas producer + co2', 'co'], ['coke', 'Gas producer + steam', 'carbon'], ['co', '+', 'cl2', 'Phosgene reactor + carbon', 'phosgene'], ['phosgene', 'Cylinder filler + cylinder', 'phos_cyl', 'Livens projector', 'Gas cloud']], d: 'Blow flue-gas CO₂ through white-hot coke and it comes out as carbon monoxide. Steam the coke instead and it turns into activated carbon, the catalyst on which CO and chlorine join into phosgene. Any phosgene the reactor cannot pass on leaks out as a cloud over your own works. Crawlers that survive a gas breed a tolerance to it, so rotate chlorine, ammonia, phosgene and explosives. The reactor drawings are in the old works.' },
+  { n: 'Vanadium and catalysts', l: [['v_pig', 'Converter', 'steel', '+', 'v_slag'], ['v_slag', 'Roaster + soda_ash', 'na_vanadate', 'Leach tank + nh4cl + water', 'amv'], ['amv', 'Lime kiln', 'v2o5', 'Workshop + sand', 'v_cat', 'Acid plant', 'acid'], ['spent_v_cat', 'Leach tank + naoh', 'na_vanadate'], ['iron_conc', 'Arc furnace + alumina + crushed_lime', 'fe_cat', 'Ammonia converter', 'nh3'], ['v2o5', 'Converter + steel + aluminium', 'v_steel', 'Armour wall', 'Defence']], d: 'Rudolf Knietsch at BASF worked out the Contact process on platinum in the 1890s; vanadium pentoxide replaced the easily poisoned platinum in the 1920s and still makes nearly all the world\'s sulfuric acid. A catalyst is not used up by the reaction, but dust, heat and poisons slowly kill it, so beds are screened and recharged. Mittasch\'s fused iron for Haber-Bosch came out of 20,000 trials and has barely changed since.' },
   { n: 'Phosphorus and fluorine', l: [['phosphate_rock', 'Crusher', 'crushed_phos'], ['crushed_phos', 'Arc furnace + sand + coke', 'phosphorus', '+', 'slag', '+', 'sif4'], ['sif4', 'Gas scrubber + water', 'h2sif6', 'Leach tank + crushed_lime', 'fluorspar'], ['fluorspar', 'Retort + acid', 'hf', 'Leach tank + al_hydroxide + naoh', 'cryolite'], ['cryolite', 'Reduction pot + alumina + anode', 'aluminium'], ['phosphorus', 'Workshop + brass + plate + powder', 'wp_shell', 'Field howitzer', 'Fire']], d: 'Phosphate rock sits in a few far-off beds. Most of the world\'s phosphate becomes fertiliser, but an electric furnace boils the element itself out of it as white phosphorus, which burns on contact with air. The fluorine in the apatite comes off as SiF₄ fume; scrub it, fix it with lime as fluorspar, and turn that into hydrofluoric acid and synthetic cryolite to top up your aluminium pots. Fluorides eat glass-lined and titanium pipe, so run them in lead.' },
   { n: 'Soda and glass', l: [['brine', 'Solvay tower + nh3 + co2', 'nahco3', '+', 'nh4cl'], ['nh4cl', 'Distillation column + quicklime + steam', 'nh3', '+', 'cacl2'], ['nahco3', 'Lime kiln', 'soda_ash', '+', 'co2'], ['sand', 'Glass tank + soda_ash + crushed_lime', 'glass'], ['soda_ash', 'Leach tank + quicklime + water', 'naoh']], d: 'The Solvay process makes soda ash from salt and limestone, with ammonia going round and round as a carrier. The lime kiln supplies both the CO₂ and the quicklime that frees the ammonia again. Soda ash makes glass for glass-lined pipe, and lime turns it into caustic soda without any electricity.' },
   { n: 'By-products', l: [['ground_copper', 'Flotation', 'copper_conc', '+', 'pyrite_conc'], ['pyrite_conc', 'Roaster', 'pyrite_cinder', 'Blast furnace', 'pig_iron'], ['anode_slime', 'Roaster', 'dore', 'Leach tank + acid', 'silver']], d: 'Nothing is waste. Pyrite gives SO₂ for acid and its cinder is iron ore. Anode slime from copper refining yields selenium, silver and gold.' },
@@ -2229,6 +2284,8 @@ const HELP = `<div class="help">
 <p>A <b>Gas producer</b> turns coke and CO₂ into carbon monoxide, or coke and steam into water gas or activated carbon. A <b>Phosgene reactor</b> joins CO and chlorine over the carbon. Phosgene is about six times as deadly as chlorine and drifts low and slow. If its output pipe backs up, the reactor leaks and the cloud settles on your own buildings. Each gas you fire breeds tolerance in the crawlers, up to 80%, which fades over several minutes. The hive and projector panels show it.</p>
 <h3>Phosphorus and fluorine</h3>
 <p>Mine <b>phosphate rock</b> and smelt it in the <b>Electric arc furnace</b> with sand and coke to get white phosphorus. The furnace also gives off CO and SiF₄. Vented SiF₄ is a heavy pollutant, so scrub it to fluorosilicic acid and turn that into fluorspar with crushed limestone. Fluorspar in a retort with sulfuric acid makes hydrofluoric acid, and HF with aluminium hydroxide and caustic makes cryolite, which lets reduction pots run faster. Fluorides dissolve glass-lined and titanium pipe three times faster than steel; lead-lined pipe resists them. <b>WP shells</b> from the old works' books set the ground burning for 14 seconds. The fire ignores gas tolerance but also burns your own buildings.</p>
+<h3>Catalysts and vanadium</h3>
+<p>The <b>Acid plant</b> and the <b>Ammonia converter</b> have a catalyst bed. Empty, the acid plant runs as a slow lead chamber; loaded with <b>V₂O₅ catalyst rings</b> it becomes a Contact plant at up to 2.5× speed. Fused iron catalyst doubles a Haber converter. Each charge lasts a few hundred batches and loses activity in its last third, and the bed holds four charges. Vanadium comes from the iron in ilmenite: blow that pig iron in a converter to skim off vanadium slag, salt-roast it with soda ash, leach with Solvay ammonium chloride and calcine. Spent rings leach back with caustic. V₂O₅ reduced with aluminium into steel gives <b>vanadium steel</b> for armour walls.</p>
 <h3>Crawlers</h3>
 <p>Crawler hives sit in the wilds. The crawlers' gut bacteria live on sulfur, so hives breathe in the smog that drifts to them and send swarms at whatever vented last. They chew through anything in their path except belts, and every eighth swarm founds a new hive closer to the smog. The cleaner you run, the hungrier they stay. Gun turrets need lead shot cartridges, made from Chilean nitrate, sulfur and coal. Brick and concrete walls buy the guns time.</p>
 </div>`;
