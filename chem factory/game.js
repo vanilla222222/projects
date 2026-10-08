@@ -9,6 +9,9 @@ const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 const tcv = document.createElement('canvas');
 tcv.width = W * TP; tcv.height = H * TP;
 const tctx = tcv.getContext('2d');
+const pcv = document.createElement('canvas');
+pcv.width = pcv.height = 20;
+const pctx = pcv.getContext('2d'), pimg = pctx.createImageData(20, 20);
 const $ = s => document.querySelector(s);
 const panel = $('#panel'), tip = $('#tip'), modal = $('#modal'), hotbar = $('#hotbar');
 
@@ -26,6 +29,9 @@ const chip = (k, n, cls) => `<span class="chip ${cls || ''}"><i style="backgroun
 const sum = o => { let s = 0; for (const k in o) s += o[k]; return s; };
 const isGas = f => FLUIDS[f] && FLUIDS[f].gas && f !== 'steam';
 const spills = (r, f) => isGas(f) || !!(r.bleed && r.bleed.includes(f));
+const PC = 8, PW = W / PC, RAIN = 30;
+const POL_W = { so2: 1, cl2: 3, co2: 0.02, h2: 0, steam: 0, water: 0, acid: 0.5, naoh: 0.3, liquor: 0.3, ticl4: 1, brine: 0.05 };
+const polAt = (x, y) => S.pol[Math.floor(y / PC) * PW + Math.floor(x / PC)] || 0;
 
 function mulberry32(a) {
   return () => {
@@ -225,7 +231,7 @@ function removeEnt(e) {
 
 function lists() {
   if (L) return L;
-  L = { belt: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [] };
+  L = { belt: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [] };
   for (const e of ents.values()) {
     const k = kind(e);
     if (k === 'pipe') L.node.push(e);
@@ -424,13 +430,52 @@ function nodeHeat(e, fails) {
   }
   if (e.tw > P.tmax) fails.push([e, P.lined ? `lead lining melted at ${Math.round(e.tw)}°C` : `failed at ${Math.round(e.tw)}°C`]);
   const corr = e.fl && e.amt > 0.5 && !resists(P, e.fl) && FLUIDS[e.fl].corr;
-  if (corr) { e.wear += corr * DT / 90; if (e.wear >= 1) fails.push([e, `corroded through by ${nm(e.fl)}`]); }
+  if (corr) e.wear += corr * DT / 90;
+  const rain = acidRain(e, P);
+  if (rain) e.wear += rain * DT / 900;
+  if (e.wear >= 1) fails.push([e, corr ? `corroded through by ${nm(e.fl)}` : 'eaten through by acid rain']);
+}
+
+function acidRain(e, P) {
+  const p = polAt(e.x, e.y);
+  return p > RAIN && !(P.res || '').split(' ').includes('acid') ? Math.min(3, (p - RAIN) / RAIN) : 0;
+}
+
+function emit(e, f, a) {
+  const w = (POL_W[f] != null ? POL_W[f] : 0.1) * a;
+  if (!(w > 0)) return;
+  let st = null;
+  if (e.per) for (const p of e.per) { const o = at(p.x, p.y); if (o && o.type === 'stack') { st = o; break; } }
+  const src = st || e, r = st ? 2 : 0, n = (2 * r + 1) * (2 * r + 1);
+  const cx = Math.floor(src.x / PC), cy = Math.floor(src.y / PC);
+  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    const x = Math.max(0, Math.min(PW - 1, cx + dx)), y = Math.max(0, Math.min(PW - 1, cy + dy));
+    S.pol[y * PW + x] += w / n;
+  }
+  if (st) st.puff = Math.min(3, (st.puff || 0) + w / 20);
+}
+function vent(e, f, a) { S.vent[f] = (S.vent[f] || 0) + a; emit(e, f, a); }
+
+function polStep() {
+  const p = S.pol, n = new Array(PW * PW).fill(0), D = 0.05, K = 0.996;
+  for (let y = 0; y < PW; y++) for (let x = 0; x < PW; x++) {
+    const i = y * PW + x, v = p[i];
+    if (!v) continue;
+    let out = 0;
+    if (x > 0) { n[i - 1] += v * D; out += D; }
+    if (x < PW - 1) { n[i + 1] += v * D; out += D; }
+    if (y > 0) { n[i - PW] += v * D; out += D; }
+    if (y < PW - 1) { n[i + PW] += v * D; out += D; }
+    n[i] += v * (1 - out);
+  }
+  for (let i = 0; i < n.length; i++) n[i] = n[i] * K < 0.01 ? 0 : n[i] * K;
+  S.pol = n;
 }
 
 const fx = [];
 function burst(e, why) {
   if (!ents.has(e.id)) return;
-  if (e.fl && e.amt > 0.01) S.spill[e.fl] = (S.spill[e.fl] || 0) + e.amt;
+  if (e.fl && e.amt > 0.01) { S.spill[e.fl] = (S.spill[e.fl] || 0) + e.amt; emit(e, e.fl, e.amt); }
   unlink(e);
   if (sel === e.id) closePanel();
   fx.push({ x: e.x + 0.5, y: e.y + 0.5, t: 0, c: e.fl ? col(e.fl) : '#ccc' });
@@ -520,7 +565,7 @@ function finish(e, r) {
   if (r.fo) for (const f in r.fo) {
     e.fo[f] = (e.fo[f] || 0) + r.fo[f];
     const cap = foCap(r, f);
-    if (spills(r, f) && e.fo[f] > cap) { S.vent[f] = (S.vent[f] || 0) + e.fo[f] - cap; e.fo[f] = cap; }
+    if (spills(r, f) && e.fo[f] > cap) { vent(e, f, e.fo[f] - cap); e.fo[f] = cap; }
   }
 }
 
@@ -550,6 +595,9 @@ function depleteTile(i) {
 function tick() {
   const l = lists();
   S.t += DT;
+  S.tk = (S.tk || 0) + 1;
+  if (S.tk % 30 === 0) polStep();
+  for (const e of l.stack) e.puff = (e.puff || 0) * 0.985;
   for (const b of l.belt) beltTick(b);
   for (const s of l.sorter) sorterTick(s);
   for (const p of l.pump) pumpTick(p);
@@ -613,10 +661,10 @@ function serialize() {
   const es = [];
   for (const e of ents.values()) {
     const o = Object.assign({}, e);
-    delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff;
+    delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, t: S.t, nextId: S.nextId, cam, help: S.help, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, help: S.help, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -630,7 +678,7 @@ function initWorld(seed) {
 function newGame(seed) {
   seed = seed == null ? Math.floor(Math.random() * 1e9) : seed;
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
-  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 } };
+  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 } };
   initWorld(seed);
   cam = { x: W / 2, y: H / 2, z: 32 };
   tool = null; sel = null;
@@ -642,7 +690,7 @@ function load() {
   try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) { d = null; }
   if (!d || d.v !== 1) return false;
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
-  S = { seed: d.seed, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 } };
+  S = { seed: d.seed, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 } };
   initWorld(d.seed);
   for (const k in S.dep) { const i = +k; oreAmt[i] = S.dep[k]; if (oreAmt[i] <= 0) { oreAmt[i] = 0; oreType[i] = 0; } }
   for (const o of d.ents || []) {
@@ -726,6 +774,7 @@ function render() {
   for (const e of vis) if (e.type === 'belt') drawBelt(e, ox, oy, z);
   for (const e of vis) if (e.type === 'belt') drawBeltItems(e, ox, oy, z);
   for (const e of vis) if (kind(e) !== 'pipe' && e.type !== 'belt') drawBuilding(e, ox, oy, z);
+  if (overlay !== 3) drawSmog(ox, oy, z);
   if (overlay) drawOverlay(vis, ox, oy, z);
   for (let i = fx.length - 1; i >= 0; i--) {
     const f = fx[i];
@@ -803,10 +852,57 @@ function heat(v, lo, hi) {
   return `hsl(${h},85%,55%)`;
 }
 
+function drawSmog(ox, oy, z) {
+  let any = false;
+  for (let i = 0; i < PW * PW; i++) {
+    const v = S.pol[i], a = v < 2 ? 0 : Math.min(0.6, v / 90);
+    pimg.data[i * 4] = 150; pimg.data[i * 4 + 1] = 128 - Math.min(40, v / 4); pimg.data[i * 4 + 2] = 60;
+    pimg.data[i * 4 + 3] = Math.round(a * 255);
+    if (a) any = true;
+  }
+  if (!any) return;
+  pctx.putImageData(pimg, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(pcv, 0, 0, PW, PW, ox, oy, W * z, H * z);
+  ctx.imageSmoothingEnabled = false;
+  const s = PC * z, t = performance.now() / 1000;
+  ctx.lineWidth = Math.max(1, z / 16);
+  for (let i = 0; i < PW * PW; i++) {
+    const v = S.pol[i];
+    if (v <= RAIN) continue;
+    const cx = ox + (i % PW) * s, cy = oy + Math.floor(i / PW) * s;
+    if (cx > cv.width || cy > cv.height || cx + s < 0 || cy + s < 0) continue;
+    const n = Math.min(40, Math.round((v - RAIN) / RAIN * 14) + 6), L = z * 0.5;
+    ctx.strokeStyle = `rgba(190,200,120,${Math.min(0.7, 0.3 + (v - RAIN) / RAIN * 0.2)})`;
+    ctx.beginPath();
+    for (let k = 0; k < n; k++) {
+      const hx = hash(i, k, 7), hy = hash(k, i, 11);
+      const x = cx + hx * s, y = cy + ((hy + t * 0.8) % 1) * s;
+      ctx.moveTo(x, y); ctx.lineTo(x - L * 0.25, y + L);
+    }
+    ctx.stroke();
+  }
+}
+
 function drawOverlay(vis, ox, oy, z) {
   ctx.font = `bold ${Math.max(8, Math.floor(z * 0.26))}px system-ui,sans-serif`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if (overlay === 3) {
+    const s = PC * z;
+    ctx.font = `bold ${Math.max(9, Math.min(18, Math.floor(s * 0.2)))}px system-ui,sans-serif`;
+    for (let cy = 0; cy < PW; cy++) for (let cx = 0; cx < PW; cx++) {
+      const v = S.pol[cy * PW + cx], x = ox + cx * s, y = oy + cy * s;
+      if (x > cv.clientWidth || y > cv.clientHeight || x + s < 0 || y + s < 0) continue;
+      ctx.globalAlpha = v < 1 ? 0.12 : 0.5;
+      ctx.fillStyle = v > RAIN ? mix('#e04a2a', '#ff1a1a', Math.min(1, (v - RAIN) / RAIN)) : heat(v, 0, RAIN);
+      ctx.fillRect(x, y, s, s);
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, s, s);
+      if (s >= 36 && v >= 1) { ctx.fillStyle = '#000'; ctx.fillText(Math.round(v), x + s / 2, y + s / 2); }
+    }
+  }
   for (const e of vis) {
+    if (overlay === 3) break;
     if (!isNode(e)) continue;
     const B = BUILD[e.type], P = NP(e);
     let c, v, txt;
@@ -819,7 +915,7 @@ function drawOverlay(vis, ox, oy, z) {
     if (z >= 22) { ctx.fillStyle = '#000'; ctx.fillText(txt, ox + (e.x + B.w / 2) * z, oy + (e.y + B.h / 2) * z); }
   }
   const w = cv.clientWidth;
-  const lbl = overlay === 1 ? ['Pressure (share of rating)', '0', 'rated', 'red = over rating'] : ['Fluid temperature °C', '0', '400', ''];
+  const lbl = overlay === 1 ? ['Pressure (share of rating)', '0', 'rated', 'red = over rating'] : overlay === 2 ? ['Fluid temperature °C', '0', '400', ''] : ['Smog per 8×8 area', '0', String(RAIN), 'red = acid rain'];
   ctx.fillStyle = 'rgba(10,12,16,0.85)'; ctx.fillRect(w - 230, 10, 220, 52);
   const g = ctx.createLinearGradient(w - 220, 0, w - 20, 0);
   for (let i = 0; i <= 4; i++) g.addColorStop(i / 4, heat(i / 4, 0, 1));
@@ -914,6 +1010,21 @@ function drawBuilding(e, ox, oy, z) {
     ctx.fill();
     return;
   }
+  if (e.type === 'stack') {
+    const cx = x + w / 2, cy = y + h / 2;
+    ctx.fillStyle = shade(B.c, 0.7); ctx.beginPath(); ctx.arc(cx, cy, z * 0.4, 0, 7); ctx.fill();
+    ctx.fillStyle = '#1a1614'; ctx.beginPath(); ctx.arc(cx, cy, z * 0.24, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#c8b8a8'; ctx.lineWidth = Math.max(1, z * 0.05); ctx.beginPath(); ctx.arc(cx, cy, z * 0.33, 0, 7); ctx.stroke();
+    const pf = Math.min(1, e.puff || 0);
+    if (pf > 0.03) for (let k = 0; k < 6; k++) {
+      const t = (S.t * 0.6 + k / 6) % 1;
+      ctx.globalAlpha = pf * 0.55 * (1 - t);
+      ctx.fillStyle = '#9a9488';
+      ctx.beginPath(); ctx.arc(cx + t * z * 1.6, cy - t * z * 2.2, z * (0.2 + t * 0.5), 0, 7); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    return;
+  }
   if (e.type === 'chest') {
     ctx.fillStyle = shade(B.c, 0.6);
     ctx.fillRect(x + p * 2, y + h * 0.42, w - 4 * p, Math.max(1, p * 1.5));
@@ -988,6 +1099,10 @@ function drawGhost(ox, oy, z) {
 
 function tileInfo(x, y) {
   if (x < 0 || y < 0 || x >= W || y >= H) return '';
+  const s = tileInfo0(x, y), p = polAt(x, y);
+  return p < 1 ? s : s + `${s ? '<br>' : ''}<span class="${p > RAIN ? 'bad' : 'dim'}">Smog ${Math.round(p)}${p > RAIN ? ', acid rain' : ''}</span>`;
+}
+function tileInfo0(x, y) {
   const e = at(x, y);
   if (e) {
     const B = BUILD[e.type];
@@ -998,6 +1113,7 @@ function tileInfo(x, y) {
     if (e.type === 'booster') s += `<br>Outlet ${e.head} bar · ${Math.round(e.fr)}/s`;
     if (e.type === 'belt' && e.items.length) s += `<br>${e.items.map(i => nm(i.i)).join(', ')}`;
     if (e.type === 'chest') s += `<br>${sum(e.store)}/400 items`;
+    if (e.type === 'stack') s += `<br>${stackUsers(e).length} machines venting through it`;
     return s;
   }
   const i = y * W + x;
@@ -1011,12 +1127,19 @@ function powerHtml() {
   const cls = p.demand === 0 ? '' : pct >= 99 ? 'ok' : pct > 40 ? 'warn' : 'bad';
   return `<span class="lbl">Power</span><b class="${cls}">${fmt(p.gen)}</b> / ${fmt(p.demand)} kW <span class="dim">(cap ${fmt(p.cap)})</span> <span class="${cls}">${p.demand ? pct + '%' : 'idle'}</span>`;
 }
+function stackUsers(st) {
+  const u = [];
+  for (const p of st.per) { const o = at(p.x, p.y); if (o && kind(o) === 'machine' && !u.includes(o)) u.push(o); }
+  return u;
+}
 function ventHtml() {
+  const pk = Math.max(0, ...S.pol);
   const t = sum(S.vent);
   const parts = Object.keys(S.vent).filter(f => S.vent[f] >= 1).map(f => `${nm(f)} ${fmt(S.vent[f])}`).join(', ');
   const sp = sum(S.spill || {});
   return `<span class="lbl">Vented</span><b class="${t > 0 ? 'warn' : ''}">${fmt(t)}</b>` + (parts ? `<span class="dim"> · ${parts}</span>` : '') +
-    (sp >= 1 || S.fails ? ` <span class="lbl">Spilled</span><b class="bad">${fmt(sp)}</b><span class="dim"> · ${S.fails || 0} pipe failures</span>` : '');
+    (sp >= 1 || S.fails ? ` <span class="lbl">Spilled</span><b class="bad">${fmt(sp)}</b><span class="dim"> · ${S.fails || 0} pipe failures</span>` : '') +
+    (pk >= 1 ? ` <span class="lbl">Smog</span><b class="${pk > RAIN ? 'bad' : pk > RAIN * 0.6 ? 'warn' : ''}">${Math.round(pk)}</b><span class="dim"> peak${pk > RAIN ? ', acid rain' : ''}</span>` : '');
 }
 
 function renderHotbar() {
@@ -1123,6 +1246,7 @@ function renderPanelDyn() {
     if (P.shock) h += `<div class="gauge"><span>Thermal stress</span>${bar(e.ss || 0, P.shock, '#e07a3a')}<b>${Math.round(e.ss || 0)} / ${P.shock}</b></div>`;
     if (P.duct) h += `<div class="gauge"><span>Bulging</span>${bar(e.strain, P.duct, '#e04a4a')}<b>${Math.round(e.strain / P.duct * 100)}%</b></div>`;
     if (e.wear > 0 || !resists(P, e.fl)) h += `<div class="gauge"><span>Corrosion</span>${bar(e.wear, 1, '#9a4a1a')}<b>${Math.round(e.wear * 100)}%</b></div>`;
+    if (acidRain(e, P)) h += `<p class="bad">Acid rain (smog ${Math.round(polAt(e.x, e.y))}) is eating this pipe. Only lead-lined pipe shrugs it off. Cut the SO₂ and chlorine upwind.</p>`;
     h += '<p class="dim">A pipe keeps the first fluid that enters it. Flush to change it. Pressure is set by pumps and machines and drops along long lines.</p>';
   } else if (k === 'booster') {
     h += `<div class="status"><i style="background:${e.on ? ST_COL.work : ST_COL.input}"></i>${e.on ? 'Pumping' : 'Nothing to pump'} · ${BUILD.booster.kw} kW</div>`;
@@ -1133,6 +1257,11 @@ function renderPanelDyn() {
     h += `<div class="slots"><div class="slot">${chip('steam', Math.round(e.amt) + '/60', 'fl')}${bar(e.amt, 60, col('steam'))}</div></div>`;
     h += `<div class="gauge"><span>Steam</span>${bar(e.tf, 165, heat(e.tf, 0, 400))}<b>${Math.round(e.tf)}°C · ${Math.round((e.eff || 0) * 100)}% output</b></div>`;
     h += '<p class="dim">Steam below 150°C gives less power, and below 100°C it condenses. Keep steam lines short.</p>';
+  } else if (k === 'stack') {
+    const u = stackUsers(e);
+    h += `<div class="status"><i style="background:${(e.puff || 0) > 0.03 ? ST_COL.work : ST_COL.none}"></i>${u.length} machine${u.length === 1 ? '' : 's'} venting through it</div>`;
+    h += `<div class="gauge"><span>Smog here</span>${bar(polAt(e.x, e.y), RAIN * 2, polAt(e.x, e.y) > RAIN ? '#e04a4a' : '#b0a060')}<b>${Math.round(polAt(e.x, e.y))}</b></div>`;
+    h += '<p class="dim">Gas vented by touching machines leaves 100 m up and spreads over 40×40 tiles instead of one 8×8 area. That keeps the ground below acid rain, but the same amount of pollution still comes down somewhere. Tall stacks fixed British smog in the 1960s and sent acid rain to Scandinavia instead.</p>';
   } else if (k === 'pump') {
     h += `<div class="status"><i style="background:${e.on ? ST_COL.work : ST_COL.output}"></i>${e.on ? 'Pumping' : 'Nothing to pump into'}</div>`;
   } else if (k === 'belt') {
@@ -1273,7 +1402,7 @@ function renderModal() {
     h += '<li><b>Heat.</b> Every pipe has a top temperature. Lead softens far below steel.</li>';
     h += '<li><b>Corrosion.</b> Dilute sulfuric acid eats iron and steel (Fe + H₂SO₄ → FeSO₄ + H₂). Lead forms an insoluble PbSO₄ skin and stops corroding, which is why acid plants were lined with lead. But caustic soda dissolves lead as plumbite, so caustic and aluminate liquor go in steel. Brine and wet chlorine pit iron and steel; titanium\'s TiO₂ film shrugs them off, though hot sulfuric acid strips it. Match the pipe to the fluid: hover a fluid in the Materials tab to see what attacks what.</li>';
     h += '<li><b>Heat loss.</b> Pipes lose heat to the air. Steam cools along a long line and condenses below 100°C, so engines far from boilers make less power.</li>';
-    h += '</ul><p class="dim">A failed pipe is destroyed and its contents spill. Press V for pressure and temperature overlays.</p>';
+    h += '</ul><p class="dim">A failed pipe is destroyed and its contents spill. Press V for pressure, temperature and smog overlays. Smog above ' + RAIN + ' brings acid rain, which corrodes every pipe but lead-lined ones.</p>';
   } else if (modalTab === 'help') {
     h += HELP;
   }
@@ -1290,6 +1419,8 @@ const CHAINS = [
   { n: 'Salt and chlorine', l: [['rock_salt', 'Crusher', 'salt', 'Leach tank + water', 'brine'], ['brine', 'Electrolysis (chlor-alkali)', 'cl2', '+', 'naoh', '+', 'h2'], ['salt', 'Electrolysis (Downs cell)', 'sodium', '+', 'cl2'], ['h2', 'Boiler + water', 'steam']], d: 'Splitting brine gives three products at once: chlorine, caustic soda and hydrogen. Chlorine and brine pit steel, so use lead-lined or titanium pipe; caustic eats lead, so use steel. Burn the spare hydrogen in a boiler.' },
   { n: 'Aluminium', l: [['bauxite', 'Crusher', 'crushed_bauxite', 'Digester + naoh + steam', 'liquor', 'Precipitator', 'al_hydroxide'], ['al_hydroxide', 'Lime kiln + coal', 'alumina', 'Reduction pot + anode', 'aluminium'], ['coke', 'Coke oven', 'anode']], d: 'The Bayer process dissolves alumina in hot caustic, leaving iron oxides behind as red mud, then precipitates it again and returns the caustic. The Hall-Héroult pot needs 600 kW: aluminium is "solid electricity". Gallium turns up in the liquor now and then.' },
   { n: 'Mineral sands and titanium', l: [['mineral_sand', 'Gravity spiral + water', 'heavy_conc', 'Magnetic separator', 'ilmenite'], ['nonmag', 'Electrostatic separator', 'rutile', '+', 'zircon'], ['ilmenite', 'Arc furnace + coke', 'ti_slag', '+', 'pig_iron'], ['rutile', 'Chlorinator + coke + cl2', 'ticl4', 'Hunter retort + sodium', 'titanium']], d: 'Black beach sand holds titanium and zirconium minerals. Gravity, magnetism and static charge split them. Titanium dioxide is too stable to reduce with carbon, so it goes through chlorine: TiCl₄ meets molten sodium, and the salt that results goes back to the Downs cell. Titanium makes pipe that laughs at chlorine.' },
+  { n: 'Clean air', l: [['so2', 'Gas scrubber + water + crushed limestone', 'gypsum'], ['cl2', 'Gas scrubber + caustic soda', 'bleach'], ['Roaster', 'Chimney stack', 'Smog spread thin']], d: 'Vented SO₂ and chlorine become smog, and smog over ' + RAIN + ' brings acid rain. An acid plant turns SO₂ into something useful; when it cannot keep up, a limestone scrubber locks the sulfur into gypsum. A stack only dilutes: the same sulfur still falls somewhere.' },
+  { n: 'Cement', l: [['crushed_lime', 'Lime kiln + sand + coal', 'clinker'], ['clinker', 'Ball mill + gypsum', 'cement'], ['slag', 'Ball mill + clinker + gypsum', 'cement'], ['cement', 'Workshop + sand', 'concrete']], d: 'Portland cement needs gypsum from the scrubber, and blast furnace slag can replace half the clinker. Concrete blocks build walls.' },
   { n: 'By-products', l: [['ground_copper', 'Flotation', 'copper_conc', '+', 'pyrite_conc'], ['pyrite_conc', 'Roaster', 'pyrite_cinder', 'Blast furnace', 'pig_iron'], ['anode_slime', 'Roaster', 'dore', 'Leach tank + acid', 'silver']], d: 'Nothing is waste. Pyrite gives SO₂ for acid and its cinder is iron ore. Anode slime from copper refining yields selenium, silver and gold.' },
 ];
 
@@ -1303,7 +1434,7 @@ const HELP = `<div class="help">
 <li><b>Click</b> a building to inspect it, set its recipe, insert items or take outputs.</li>
 <li><b>Click and hold</b> on ore to mine it by hand.</li>
 <li><b>WASD</b> or arrows move the camera. <b>Mouse wheel</b> zooms. Middle drag pans.</li>
-<li><b>E</b> opens crafting. <b>H</b> opens the encyclopedia. <b>V</b> cycles the pressure and temperature overlays.</li>
+<li><b>E</b> opens crafting. <b>H</b> opens the encyclopedia. <b>V</b> cycles the pressure, temperature and smog overlays.</li>
 </ul>
 <h3>Getting started</h3>
 <ol>
@@ -1316,7 +1447,8 @@ const HELP = `<div class="help">
 </ol>
 <h3>Pipes</h3>
 <p>Pipes have real pressure, flow and temperature. Cast iron is cheap but brittle and bursts above 16 bar. Steel pipe carries four times the flow and bulges before it bursts. Acid, brine and chlorine eat both, so carry them in lead-lined or titanium pipe, and caustic in steel. Booster pumps push fluid further. See <b>Pipes</b> in the encyclopedia.</p>
-<p class="dim">Gases like CO₂ and SO₂ are vented into the air when nothing collects them. The top bar counts it.</p>
+<h3>Smog and acid rain</h3>
+<p>Gas a machine cannot pass on is vented. SO₂ and chlorine hang over the area as brown smog, drift to neighbouring areas and slowly wash out. Where smog passes ${RAIN}, acid rain falls and eats every pipe except lead-lined ones. Capture SO₂ in an acid plant or a gas scrubber, absorb chlorine with caustic, or touch the venting machine to a chimney stack to spread its fumes thin. CO₂ counts for little smog but is tallied in the top bar.</p>
 </div>`;
 
 function doCraft(t, n) {
@@ -1437,7 +1569,7 @@ window.addEventListener('keydown', ev => {
     if (tool) toolDir = (toolDir + 1) % 4;
     else { const e = at(mouse.tx, mouse.ty); if (e && (e.type === 'belt' || e.type === 'sorter' || e.type === 'booster')) e.dir = (e.dir + 1) % 4; }
   }
-  else if (k === 'v') { overlay = (overlay + 1) % 3; toast(['Overlay off', 'Pressure overlay', 'Temperature overlay'][overlay]); }
+  else if (k === 'v') { overlay = (overlay + 1) % 4; toast(['Overlay off', 'Pressure overlay', 'Temperature overlay', 'Smog overlay'][overlay]); }
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) ev.preventDefault();
 });
 window.addEventListener('keyup', ev => { keys[ev.key.toLowerCase()] = false; });
@@ -1507,5 +1639,6 @@ window.game = {
   terrain: () => terrain, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
   select(e) { openPanel(e); }, openModal, closeModal, refresh: renderHotbar,
   setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; },
+  setOverlay(v) { overlay = v; },
 };
 })();

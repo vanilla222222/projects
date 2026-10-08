@@ -65,6 +65,11 @@ const ITEMS = {
   silver: { n: 'Silver', c: '#e0e4ea', f: 'Ag 99.9%' },
   gold: { n: 'Gold', c: '#f0c040', f: 'Au 99.99%' },
   selenium: { n: 'Selenium', c: '#6a2a2a', f: 'Se, red-grey. Used in glass and solar cells' },
+  gypsum: { n: 'Gypsum', c: '#ece6da', f: 'Calcium sulfate dihydrate CaSO₄·2H₂O, the solid end of flue gas scrubbing' },
+  bleach: { n: 'Bleach', c: '#d8e8a0', f: 'Sodium hypochlorite NaOCl solution in drums, a strong oxidiser' },
+  clinker: { n: 'Cement Clinker', c: '#6a6660', f: 'Nodules of calcium silicates Ca₃SiO₅ and Ca₂SiO₄ fused at 1450°C' },
+  cement: { n: 'Portland Cement', c: '#a8a8a4', f: 'Clinker ground with a little gypsum, which stops it setting in seconds' },
+  concrete: { n: 'Concrete Block', c: '#bcbab4', f: 'Cement, sand and water. Calcium silicate hydrate binds the grains' },
 };
 
 const FLUIDS = {
@@ -129,6 +134,8 @@ const BUILD = {
   esep: { n: 'Electrostatic Separator', kind: 'machine', w: 2, h: 2, cat: 'Processing', c: '#6a6aa0', ab: 'ES', kw: 60, cost: { plate: 4, wire: 10, motor: 1 }, d: 'Charged rolls throw conducting grains (rutile) away from insulators (zircon).' },
   arc: { n: 'Electric Arc Furnace', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#6a4a6a', ab: 'EA', kw: 500, cost: { brick: 15, plate: 6, wire: 15 }, d: 'Graphite electrodes strike an arc that melts anything.' },
   chlorinator: { n: 'Chlorinator', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#9ab04a', ab: 'CL', kw: 40, cost: { brick: 10, plate: 6 }, d: 'Fluidised bed where chlorine and coke turn titanium oxide into volatile TiCl₄.' },
+  scrubber: { n: 'Gas Scrubber', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#7a9a9a', ab: 'SC', kw: 40, cost: { plate: 6, lead_sheet: 2, motor: 1 }, d: 'Sprays flue gas with a slurry or solution that soaks up the acid gas.' },
+  stack: { n: 'Chimney Stack', kind: 'stack', w: 1, h: 1, cat: 'Chemistry', c: '#8a7a70', ab: 'ST', cost: { brick: 12 }, d: 'Machines touching it vent high up. Their fumes spread over a wide area instead of smothering the ground nearby.' },
   retort: { n: 'Hunter Retort', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#8a8a9a', ab: 'HR', kw: 80, cost: { plate: 10, brick: 6 }, d: 'Sealed steel pot where molten sodium strips chlorine from TiCl₄.' },
 };
 
@@ -190,6 +197,12 @@ const RECIPES = [
   { id: 'pig_cinder', n: 'Pig Iron from Cinder', b: 'blast', t: 4, i: { pyrite_cinder: 2, coke: 1, crushed_lime: 1 }, o: { pig_iron: 2, slag: 1 }, fo: { co2: 30 }, eq: 'Fe₂O₃ + 3CO → 2Fe + 3CO₂' },
   { id: 'roast_slime', b: 'roaster', t: 4, i: { anode_slime: 2 }, o: { dore: 1 }, ch: { selenium: 0.5 }, fo: { so2: 5 }, eq: 'Se + O₂ → SeO₂ (volatilised and scrubbed)', note: 'Roasting drives off selenium; the rest is melted into a silver-gold doré.' },
   { id: 'affination', b: 'leach', t: 4, i: { dore: 2 }, fi: { acid: 10 }, o: { silver: 1 }, ch: { gold: 0.4 }, fo: { so2: 5 }, eq: '2Ag + 2H₂SO₄ → Ag₂SO₄ + SO₂ + 2H₂O', note: 'Hot concentrated acid dissolves the silver (then recovered on copper) and leaves the gold untouched.' },
+  { id: 'fgd', n: 'Flue Gas Desulfurisation', b: 'scrubber', t: 3, i: { crushed_lime: 1 }, fi: { so2: 20, water: 10 }, o: { gypsum: 1 }, fo: { co2: 5 }, bleed: ['co2'], eq: '2SO₂ + 2CaCO₃ + O₂ + 4H₂O → 2CaSO₄·2H₂O + 2CO₂', note: 'Wet limestone scrubbing. Air blown into the slurry oxidises sulfite to gypsum, which sells as plasterboard and cement.' },
+  { id: 'bleach', b: 'scrubber', t: 2, fi: { cl2: 20, naoh: 20 }, o: { bleach: 1 }, eq: 'Cl₂ + 2NaOH → NaOCl + NaCl + H₂O', note: 'Caustic soaks up chlorine. Every chlor-alkali plant has one of these as an emergency absorber.' },
+  { id: 'clinker', b: 'kiln', t: 5, i: { crushed_lime: 3, sand: 1, coal: 1 }, o: { clinker: 2 }, fo: { co2: 30 }, eq: '3CaCO₃ + SiO₂ → Ca₃SiO₅ + 3CO₂', note: 'Cement kilns are among the largest CO₂ sources on Earth: the limestone itself gives off CO₂, before any fuel is burned.' },
+  { id: 'cement', b: 'mill', t: 2, i: { clinker: 2, gypsum: 1 }, o: { cement: 3 }, note: 'About 5% gypsum controls the reaction of tricalcium aluminate so the cement stays workable.' },
+  { id: 'slag_cement', n: 'Slag Cement', b: 'mill', t: 2, i: { clinker: 1, slag: 2, gypsum: 1 }, o: { cement: 3 }, note: 'Ground blast furnace slag is a latent cement. Blending it in halves the clinker, and so the CO₂.' },
+  { id: 'concrete', b: 'workshop', t: 2, i: { cement: 1, sand: 3 }, o: { concrete: 2 }, eq: 'Ca₃SiO₅ + H₂O → C-S-H gel + Ca(OH)₂', note: 'Water is mixed in and the blocks are cured for a few days.' },
 ];
 
 const RECIPE = {};
@@ -202,7 +215,7 @@ for (const r of RECIPES) {
 const START_INV = {
   belt: 80, pipe: 40, steel_pipe: 10, lead_pipe: 10, booster: 1, chest: 8, sorter: 4, miner: 8, pump: 1, boiler: 2, engine: 2,
   crusher: 3, mill: 2, magsep: 1, flotation: 2, coke_oven: 2, kiln: 1, blast: 1, converter: 1, workshop: 2,
-  casting: 20, brick: 10,
+  casting: 20, brick: 10, stack: 1,
 };
 
 const CATS = ['Logistics', 'Mining', 'Power', 'Processing', 'Smelting', 'Chemistry'];
