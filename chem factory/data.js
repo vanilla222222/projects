@@ -111,6 +111,14 @@ const ITEMS = {
   pet_coke: { n: 'Petroleum Coke', c: '#2a2a30', f: 'Nearly pure carbon baked out of bitumen in a delayed coker. Low in ash, so it makes the best carbon anodes' },
   polyethylene: { n: 'Polyethylene Pellets', c: '#eef0ea', f: '(C₂H₄)ₙ, long chains of ethylene. Discovered by accident at ICI in 1933 when a trace of oxygen set off a high-pressure run' },
   pvc: { n: 'PVC Resin', c: '#e0e4dc', f: 'Polyvinyl chloride (C₂H₃Cl)ₙ, a white powder. More than half of it is chlorine from salt, so it needs less oil than other plastics' },
+  sylvinite: { n: 'Sylvinite', c: '#c87a6a', f: 'Red-flecked evaporite: potash KCl and halite NaCl laid down as an ancient sea dried out. Iron oxide in the sylvite turns it pink' },
+  crushed_sylv: { n: 'Crushed Sylvinite', c: '#d89a8a', f: 'Sylvinite broken fine enough that the KCl and NaCl crystals come apart' },
+  potash: { n: 'Potash', c: '#e8b0a0', f: 'Muriate of potash, about 95% KCl. Plants need potassium to open and close the pores in their leaves' },
+  ssp: { n: 'Single Superphosphate', c: '#c8c0a8', f: 'Ca(H₂PO₄)₂ mixed with gypsum, about 20% P₂O₅. John Lawes patented it in 1842 and it began the fertiliser industry' },
+  tsp: { n: 'Triple Superphosphate', c: '#a8a088', f: 'Ca(H₂PO₄)₂ with no gypsum, about 46% P₂O₅. Phosphoric acid in place of sulfuric acid leaves no dead weight to ship' },
+  dap: { n: 'Diammonium Phosphate', c: '#8a8070', f: '(NH₄)₂HPO₄ granules, 18-46-0. The most traded fertiliser in the world' },
+  urea: { n: 'Urea', c: '#f4f4f0', f: 'CO(NH₂)₂ prills, 46% nitrogen. Friedrich Wöhler made it from inorganic salts in 1828, ending the idea that only life could make organic compounds' },
+  npk: { n: 'NPK Compound', c: '#b0c890', f: 'Granules that carry nitrogen, phosphorus and potassium together, here 15-15-15, so a farmer spreads one bag instead of three' },
   cryolite: { n: 'Cryolite', c: '#e8eef0', f: 'Sodium hexafluoroaluminate Na₃AlF₆. Molten, it dissolves alumina like water dissolves salt' },
 };
 
@@ -146,6 +154,7 @@ const FLUIDS = {
   edc: { n: 'Ethylene Dichloride', c: '#d0d8a8', f: 'C₂H₄Cl₂, a heavy oily liquid. Traces of HCl in it eat steel', cp: 1.3, t: 50, corr: 0.3, ck: 'cl' },
   vcm: { n: 'Vinyl Chloride', c: '#c8e0c0', f: 'C₂H₃Cl gas, kept liquid under pressure. A carcinogen: plants run it in sealed loops', gas: true, cp: 0.9, t: 40 },
   hcl: { n: 'Hydrogen Chloride', c: '#b8d8a0', f: 'HCl gas. With any moisture it becomes hydrochloric acid, which dissolves steel and titanium', gas: true, cp: 0.8, t: 60, corr: 0.9, ck: 'cl' },
+  h3po4: { n: 'Phosphoric Acid', c: '#c8b878', f: 'Green-black wet-process H₃PO₄, about 30% P₂O₅, full of fluoride and iron. Attacks steel; lead and rubber hold it', cp: 2.6, t: 75, corr: 0.6, ck: 'acid' },
 };
 
 const ORES = [
@@ -162,6 +171,7 @@ const ORES = [
   { item: 'caliche', c: '#b0a080', s: '#f4ecd0' },
   { item: 'phosphate_rock', c: '#6a5c44', s: '#c8b890' },
   { item: 'crude', c: '#17130f', s: '#5a4a78', fluid: true },
+  { item: 'sylvinite', c: '#9a5a50', s: '#f0c0b0' },
 ];
 
 const BUILD = {
@@ -224,6 +234,8 @@ const BUILD = {
   cdu: { n: 'Crude Distillation Unit', kind: 'machine', w: 3, h: 3, cat: 'Chemistry', c: '#7a6a4a', ab: 'CD', kw: 60, cost: { plate: 16, brick: 8, motor: 2 }, d: 'A furnace heats crude to 370°C and flashes it into a 40-tray column. Light cuts rise to the top, heavy ones drain off lower down, and bitumen is left at the bottom.' },
   cracker: { n: 'Tube Furnace', kind: 'machine', w: 3, h: 3, cat: 'Chemistry', c: '#a8583a', ab: 'TF', kw: 30, cost: { brick: 16, steel: 6, motor: 1 }, d: 'Alloy tubes hung in a gas-fired firebox. Steam crackers, steam reformers and EDC crackers are all this furnace with a different feed and catalyst.' },
   reactor: { n: 'Pressure Reactor', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#6a8a9a', ab: 'PX', kw: 60, cost: { plate: 10, glass: 2, motor: 2 }, d: 'A stirred, jacketed pressure vessel. Polymerises ethylene and vinyl chloride, and chlorinates ethylene to EDC.' },
+  granulator: { n: 'Granulator Drum', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#8a9a5a', ab: 'GR', kw: 50, cost: { plate: 8, brick: 4, motor: 2 }, d: 'A slowly turning, gently sloped drum. Acid and ammonia sprayed onto a rolling bed of powder react and build up layer by layer into hard, round granules.' },
+  depot: { n: 'Rail Depot', kind: 'chest', w: 3, h: 3, cat: 'Logistics', c: '#5a6a7a', ab: 'RD', cost: { plate: 10, casting: 10, brick: 10 }, d: 'A goods siding where customers\' wagons are loaded. Belts, chests and machines touching it fill the open orders. Every finished order pays in parts, and every third brings a lab notebook from the buyer.' },
   phos_rx: { n: 'Phosgene Reactor', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#8a8a6a', ab: 'PH', kw: 30, lock: 'phosgene', cost: { plate: 8, glass: 4, motor: 1 }, d: 'Water-jacketed tubes packed with activated carbon. Carbon monoxide and chlorine combine on the carbon surface at about 200°C.' },
 };
 
@@ -349,6 +361,14 @@ const RECIPES = [
   { id: 'anode_pet', n: 'Carbon Anode (pet coke)', b: 'coke_oven', t: 4, i: { pet_coke: 2, pitch: 1 }, o: { anode: 3 }, note: 'Calcined petroleum coke bound with coal tar pitch is what real smelters use: it is low in ash and metals that would spoil the aluminium.' },
   { id: 'steam_fuelgas', n: 'Steam (fuel gas)', b: 'boiler', t: 2, fi: { fuel_gas: 20, water: 60 }, fo: { steam: 60 }, eq: 'CH₄ + 2O₂ → CO₂ + 2H₂O' },
   { id: 'steam_oil', n: 'Steam (gas oil)', b: 'boiler', t: 3, fi: { gas_oil: 10, water: 90 }, fo: { steam: 90 }, eq: '2C₁₆H₃₄ + 49O₂ → 32CO₂ + 34H₂O', note: 'Oil firing replaced coal in ships and power stations from the 1910s: no stokers, no ash.' },
+  { id: 'crush_sylv', b: 'crusher', t: 1, i: { sylvinite: 1 }, o: { crushed_sylv: 1 } },
+  { id: 'potash', b: 'flotation', t: 3, i: { crushed_sylv: 2 }, fi: { brine: 10 }, o: { potash: 1, salt: 1 }, eq: 'KCl floats on amine collector; NaCl sinks', note: 'The cell runs in saturated brine, not water, or the salts would just dissolve. Amine collectors coat only the sylvite crystals.' },
+  { id: 'wet_phos', n: 'Phosphoric Acid', b: 'leach', t: 4, i: { crushed_phos: 2 }, fi: { acid: 30, water: 10 }, fo: { h3po4: 20, sif4: 4 }, o: { gypsum: 2 }, bleed: ['sif4'], eq: 'Ca₅(PO₄)₃F + 5H₂SO₄ → 3H₃PO₄ + 5CaSO₄ + HF', note: 'Wet process. Every tonne of P₂O₅ leaves about five tonnes of phosphogypsum, and the fluoride comes off as SiF₄ that should go to a scrubber.' },
+  { id: 'ssp', n: 'Single Superphosphate', b: 'granulator', t: 3, i: { crushed_phos: 2 }, fi: { acid: 20 }, o: { ssp: 3 }, fo: { sif4: 2 }, bleed: ['sif4'], eq: 'Ca₅(PO₄)₃F + 3.5H₂SO₄ → 1.5Ca(H₂PO₄)₂ + 3.5CaSO₄ + HF', note: 'Acid turns insoluble rock phosphate into a salt that dissolves in soil water so roots can take it up.' },
+  { id: 'tsp', n: 'Triple Superphosphate', b: 'granulator', t: 3, i: { crushed_phos: 1 }, fi: { h3po4: 20 }, o: { tsp: 2 }, eq: 'Ca₅(PO₄)₃F + 7H₃PO₄ → 5Ca(H₂PO₄)₂ + HF' },
+  { id: 'dap', n: 'Diammonium Phosphate', b: 'granulator', t: 3, fi: { nh3: 20, h3po4: 20 }, o: { dap: 2 }, eq: '2NH₃ + H₃PO₄ → (NH₄)₂HPO₄', note: 'Ammonia is sparged into the rolling bed through a pipe below the surface; the heat of neutralisation dries the granules.' },
+  { id: 'urea', b: 'reactor', t: 3, fi: { nh3: 20, co2: 10 }, o: { urea: 2 }, eq: '2NH₃ + CO₂ → NH₂COONH₄ → CO(NH₂)₂ + H₂O', note: 'Bosch-Meiser process, 1922: about 150 bar and 190°C. The CO₂ usually comes from the same plant\'s steam reformer.' },
+  { id: 'npk', n: 'NPK Compound', b: 'granulator', t: 3, i: { dap: 1, potash: 1, urea: 1 }, o: { npk: 3 } },
   { id: 'wp_shell', n: 'WP Shell', b: 'workshop', t: 3, lock: 1, i: { plate: 1, brass: 1, phosphorus: 1, black_powder: 1 }, o: { wp_shell: 2 }, note: 'The phosphorus is poured in molten under water and sealed before it can touch air.' },
   { id: 'cartridge', b: 'workshop', t: 2, i: { brass: 1, lead: 1, black_powder: 1 }, o: { cartridge: 2 } },
 ];
@@ -365,5 +385,29 @@ const START_INV = {
   crusher: 3, mill: 2, magsep: 1, flotation: 2, coke_oven: 2, kiln: 1, blast: 1, converter: 1, workshop: 2,
   casting: 20, brick: 10, stack: 1, turret: 2, cartridge: 40, brick_wall: 20, projector: 1, filler: 1,
 };
+
+const ORDERS = [
+  { c: 'Farmers\' cooperative', item: 'ssp', n: 60, tier: 1, rw: { motor: 4, plate: 20 }, d: 'Superphosphate for the spring sowing.' },
+  { c: 'Town gasworks', item: 'coke', n: 100, tier: 1, rw: { brick: 40, casting: 20 }, d: 'Coke for the retort house and the gas holders.' },
+  { c: 'Railway company', item: 'steel', n: 80, tier: 1, rw: { miner: 2, belt: 60 }, d: 'Steel for rails and boiler plate.' },
+  { c: 'Builders\' merchant', item: 'cement', n: 60, tier: 1, rw: { casting: 40, chest: 4 }, d: 'Portland cement for the new bridge.' },
+  { c: 'Electrical contractor', item: 'wire', n: 120, tier: 1, rw: { motor: 4, steel_pipe: 10 }, d: 'Copper wire for the tramway.' },
+  { c: 'Paper mill', item: 'quicklime', n: 60, tier: 1, rw: { plate: 30 }, d: 'Lime to recausticise their pulping liquor.' },
+  { c: 'Water board', item: 'bleach', n: 40, tier: 2, rw: { glass_pipe: 10, booster: 2 }, d: 'Bleaching powder to chlorinate the town water. Typhoid deaths fell by 90% wherever it was used.' },
+  { c: 'Glassworks', item: 'soda_ash', n: 60, tier: 2, rw: { workshop: 1, motor: 4 }, d: 'Soda ash for bottle glass.' },
+  { c: 'Quarry', item: 'black_powder', n: 60, tier: 2, rw: { crusher: 2, mill: 1 }, d: 'Blasting powder for the face.' },
+  { c: 'Market gardens', item: 'amm_sulfate', n: 50, tier: 2, rw: { leach: 1, lead_pipe: 10 }, d: 'Sulfate of ammonia for the glasshouses.' },
+  { c: 'Aircraft works', item: 'aluminium', n: 60, tier: 2, rw: { wire: 60, motor: 6 }, d: 'Aluminium sheet for airframes.' },
+  { c: 'Photographic works', item: 'silver', n: 10, tier: 2, rw: { glass: 20, plate: 30 }, d: 'Silver for silver nitrate plates.' },
+  { c: 'Grain belt farms', item: 'dap', n: 80, tier: 3, rw: { granulator: 1, motor: 6 }, d: 'DAP for the wheat belt.' },
+  { c: 'Rice growers', item: 'urea', n: 80, tier: 3, rw: { reactor: 1, steel_pipe: 20 }, d: 'Urea for the paddies. It is the cheapest nitrogen to ship.' },
+  { c: 'Fruit orchards', item: 'potash', n: 60, tier: 3, rw: { flotation: 1, belt: 60 }, d: 'Potash for the apple orchards. Fruit draws potassium out of the soil fast.' },
+  { c: 'Agricultural merchant', item: 'npk', n: 90, tier: 3, rw: { v_cat: 4, fe_cat: 4 }, d: 'Compound NPK for small farms.' },
+  { c: 'Sugar estate', item: 'tsp', n: 60, tier: 3, rw: { ti_pipe: 10 }, d: 'Triple superphosphate for the cane fields.' },
+  { c: 'Cable maker', item: 'pvc', n: 50, tier: 3, rw: { pvc_pipe: 20, motor: 4 }, d: 'PVC for cable sheathing.' },
+  { c: 'Packaging firm', item: 'polyethylene', n: 50, tier: 3, rw: { pe_pipe: 20, wire: 40 }, d: 'Polyethylene for film and bottles.' },
+  { c: 'Shipyard', item: 'v_steel', n: 40, tier: 3, rw: { armour_wall: 10, steel: 40 }, d: 'Vanadium steel for propeller shafts.' },
+  { c: 'Chemical plant', item: 'titanium', n: 30, tier: 3, rw: { ti_pipe: 20 }, d: 'Titanium for heat exchangers handling wet chlorine.' },
+];
 
 const CATS = ['Logistics', 'Mining', 'Power', 'Processing', 'Smelting', 'Chemistry', 'Defence'];

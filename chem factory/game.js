@@ -308,6 +308,7 @@ function setRecipe(e, id) {
 
 function acceptItem(o, k) {
   const kd = kind(o);
+  if (o.type === 'depot') return deliver(k, 1) > 0;
   if (kd === 'chest') {
     if (sum(o.store) >= 400) return false;
     o.store[k] = (o.store[k] || 0) + 1;
@@ -365,6 +366,7 @@ function giveTo(from, o, d, k, mode) {
     if (mode === 'chest' && o.dir !== d) return false;
     return beltInsert(o, k, o.dir === d ? 0 : 0.5);
   }
+  if (o.type === 'depot') return acceptItem(o, k);
   if (kd === 'chest' && mode === 'chest') return false;
   if (kd === 'chest' && (feeds(o, from) || wantsNear(from, k))) return false;
   if (kd === 'sorter' && o.dir !== d) return false;
@@ -587,6 +589,44 @@ function labBook() {
   if (!left.length) { const r = unlockRandom(); return r ? [r] : null; }
   const b = left[0][0] === 'haber' ? left[0] : left[Math.floor(Math.random() * left.length)];
   return b.map(unlock);
+}
+function orderReach(k) {
+  if (ORES.some(o => o && o.item === k)) return true;
+  return RECIPES.some(r => r.o && r.o[k] && avail(r) && buildOk(r.b));
+}
+function fillOrders() {
+  if (!S.orders) S.orders = [];
+  const tier = 1 + Math.floor((S.odone || 0) / 3);
+  while (S.orders.length < 3) {
+    const l = ORDERS.map((o, i) => i).filter(i => ORDERS[i].tier <= tier && !S.orders.some(a => a.i === i) && i !== S.olast && orderReach(ORDERS[i].item));
+    if (!l.length) break;
+    const pick = l.filter(i => ORDERS[i].tier === Math.min(tier, 3));
+    const from = pick.length && Math.random() < 0.6 ? pick : l;
+    S.orders.push({ i: from[Math.floor(Math.random() * from.length)], got: 0 });
+  }
+}
+function deliver(k, n) {
+  if (!S.orders) return 0;
+  const a = S.orders.find(a => ORDERS[a.i].item === k && a.got < ORDERS[a.i].n);
+  if (!a) return 0;
+  const m = Math.min(n, ORDERS[a.i].n - a.got);
+  a.got += m;
+  if (a.got >= ORDERS[a.i].n) completeOrder(a);
+  return m;
+}
+function completeOrder(a) {
+  const O = ORDERS[a.i];
+  for (const k in O.rw) give(k, O.rw[k]);
+  S.orders.splice(S.orders.indexOf(a), 1);
+  S.olast = a.i;
+  S.odone = (S.odone || 0) + 1;
+  toast(`${O.c} paid: ${Object.keys(O.rw).map(k => O.rw[k] + ' ' + nm(k)).join(', ')}`);
+  if (S.odone % 3 === 0) {
+    const l = ['haber', 'ostwald', 'nh3_scrub'].filter(id => !S.unl[id]);
+    if (l.length) toast(`The buyer sent a lab notebook: ${unlock(l[0] === 'haber' ? 'haber' : l[Math.floor(Math.random() * l.length)]).n} unlocked`);
+    else { for (const k in O.rw) give(k, O.rw[k]); toast(`${O.c} paid a repeat-custom bonus: the reward again`); }
+  }
+  fillOrders();
 }
 function unlockRandom() {
   const l = RECIPES.filter(r => r.lock && !S.unl[r.id]);
@@ -1105,7 +1145,8 @@ function tick() {
   }
   for (const e of l.machine) { machineFluidOut(e); pushItems(e, e.out, 'machine'); }
   for (const e of l.miner) pushItems(e, e.out, 'machine');
-  for (const e of l.chest) pushItems(e, e.store, 'chest');
+  for (const e of l.chest) if (e.type === 'chest') pushItems(e, e.store, 'chest');
+  if (l.chest.some(e => e.type === 'depot') && (S.orders || []).length < 3 && Math.floor(S.t * 30) % 30 === 0) fillOrders();
   if (mining) {
     const i = mining.y * W + mining.x;
     if (!mouse.l || tool || !solid(i) || occ[i] || mouse.tx !== mining.x || mouse.ty !== mining.y) mining = null;
@@ -1126,7 +1167,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, help: S.help, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, help: S.help, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -1140,7 +1181,7 @@ function initWorld(seed) {
 function newGame(seed) {
   seed = seed == null ? Math.floor(Math.random() * 1e9) : seed;
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
-  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: [], evo: 0, lost: 0, kills: 0, hk: 0, res: {}, unl: {}, clouds: [], fires: [], shells: [], booms: [], wind: { a: Math.random() * 7, v: 0.3 } };
+  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: [], evo: 0, lost: 0, kills: 0, hk: 0, res: {}, unl: {}, clouds: [], fires: [], shells: [], booms: [], wind: { a: Math.random() * 7, v: 0.3 }, orders: [], odone: 0 };
   initWorld(seed);
   spawnRuins();
   spawnHives();
@@ -1154,7 +1195,7 @@ function load() {
   try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) { d = null; }
   if (!d || d.v !== 1) return false;
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
-  S = { seed: d.seed, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 } };
+  S = { seed: d.seed, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast };
   initWorld(d.seed);
   for (const k in S.dep) { const i = +k; oreAmt[i] = S.dep[k]; if (oreAmt[i] <= 0) { oreAmt[i] = 0; oreType[i] = 0; } }
   for (const o of d.ents || []) {
@@ -1777,6 +1818,14 @@ function drawBuilding(e, ox, oy, z) {
     ctx.globalAlpha = 1;
     return;
   }
+  if (e.type === 'depot') {
+    ctx.strokeStyle = 'rgba(30,30,30,0.8)'; ctx.lineWidth = Math.max(1, p);
+    for (const f of [0.3, 0.7]) { ctx.beginPath(); ctx.moveTo(x + p * 2, y + h * f); ctx.lineTo(x + w - p * 2, y + h * f); ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(120,90,60,0.9)';
+    for (let k = 1; k < 9; k++) { const tx = x + w * k / 9; ctx.beginPath(); ctx.moveTo(tx, y + h * 0.24); ctx.lineTo(tx, y + h * 0.76); ctx.stroke(); }
+    if (z >= 14 && S.orders) S.orders.forEach((a, k) => { const O = ORDERS[a.i]; ctx.fillStyle = '#222'; ctx.fillRect(x + p * 3, y + h * (0.82 + k * 0.05), w - p * 6, h * 0.035); ctx.fillStyle = '#7fe08a'; ctx.fillRect(x + p * 3, y + h * (0.82 + k * 0.05), (w - p * 6) * a.got / O.n, h * 0.035); });
+    return;
+  }
   if (e.type === 'chest') {
     ctx.fillStyle = shade(B.c, 0.6);
     ctx.fillRect(x + p * 2, y + h * 0.42, w - 4 * p, Math.max(1, p * 1.5));
@@ -1865,6 +1914,7 @@ function tileInfo0(x, y) {
     if (e.type === 'booster') s += `<br>Outlet ${e.head} bar · ${Math.round(e.fr)}/s`;
     if (e.type === 'belt' && e.items.length) s += `<br>${e.items.map(i => nm(i.i)).join(', ')}`;
     if (e.type === 'chest') s += `<br>${sum(e.store)}/400 items`;
+    if (e.type === 'depot') s += `<br>${(S.orders || []).map(a => nm(ORDERS[a.i].item) + ' ' + a.got + '/' + ORDERS[a.i].n).join('<br>') || 'No open orders'}`;
     if (e.type === 'stack') s += `<br>${stackUsers(e).length} machines venting through it`;
     if (kind(e) === 'hive') s += `<br>Food ${Math.round(e.food)}/50 · ${e.sw} swarms sent`;
     if (e.type === 'projector') s += `<br>${sum(e.pay)} rounds loaded · ${e.pw} powder · ${e.shots} fired`;
@@ -1940,6 +1990,7 @@ function openPanel(e) {
   h += '<div id="pdyn"></div><div class="pbtns">';
   if (kind(e) === 'machine') h += '<button data-act="insert">Insert from inventory</button><button data-act="take">Take outputs</button>';
   if (e.type === 'miner') h += '<button data-act="take">Take ore</button>';
+  if (e.type === 'depot') h += '<button data-act="deliver">Deliver from inventory</button>';
   if (e.type === 'chest') h += '<button data-act="takeall">Take all</button><button data-act="store">Store raw materials</button>';
   if (e.type === 'booster') h += `<label class="row">Outlet pressure <select data-act="head">${HEADS.concat(e.head).filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b).map(v => `<option value="${v}" ${e.head === v ? 'selected' : ''}>${v} bar</option>`).join('')}</select></label>`;
   if (kind(e) === 'pipe') h += '<button data-act="flush">Flush network</button>';
@@ -2013,6 +2064,15 @@ function renderPanelDyn() {
     h += '<div class="sec">Ore underneath</div><div class="slots">' + (Object.keys(ores).map(q => `<div class="slot">${chip(q, fmt(ores[q]))}</div>`).join('') || '<span class="dim">None</span>') + '</div>';
     h += '<div class="sec">Output</div><div class="slots">' + (Object.keys(e.out).map(q => `<div class="slot">${chip(q, e.out[q])}</div>`).join('') || '<span class="dim">Empty</span>') + '</div>';
     h += '<p class="dim">Outputs onto any touching belt that does not point into it, or into chests and machines.</p>';
+  } else if (e.type === 'depot') {
+    fillOrders();
+    h += `<div class="sec">Open orders · ${S.odone || 0} filled · next notebook in ${3 - (S.odone || 0) % 3}</div>`;
+    for (const a of S.orders) {
+      const O = ORDERS[a.i];
+      h += `<div class="order"><div class="row"><b>${O.c}</b><small class="dim">tier ${O.tier}</small></div><div class="slot">${chip(O.item, a.got + '/' + O.n)}${bar(a.got, O.n, '#7fe08a')}</div><small>${O.d}</small><div class="rw">Pays ${Object.keys(O.rw).map(q => chip(q, O.rw[q])).join(' ')}</div></div>`;
+    }
+    if (!S.orders.length) h += '<p class="dim">No customer wants anything you can make yet. Build up your chains.</p>';
+    h += '<p class="dim">Belts, chests and machines touching the depot load ordered goods straight onto the wagons. Anything else is refused.</p>';
   } else if (k === 'chest') {
     h += `<div class="sec">Contents ${sum(e.store)}/400</div><div class="slots">` + (Object.keys(e.store).map(q => `<div class="slot">${chip(q, e.store[q])}</div>`).join('') || '<span class="dim">Empty</span>') + '</div>';
   } else if (k === 'pipe') {
@@ -2103,6 +2163,11 @@ function panelAct(act, el) {
       if (n > 0) { S.inv[r.cat] -= n; if (!S.inv[r.cat]) delete S.inv[r.cat]; moved += n; }
     }
     toast(moved ? `Inserted ${moved} items` : r.i || r.cat ? 'You have none of the inputs' : 'This recipe only uses fluids', !moved);
+  } else if (act === 'deliver') {
+    let n = 0;
+    for (const a of S.orders.slice()) { const k = ORDERS[a.i].item, m = deliver(k, S.inv[k] || 0); if (m) { S.inv[k] -= m; if (!S.inv[k]) delete S.inv[k]; n += m; } }
+    toast(n ? `Loaded ${n} items onto the wagons` : 'You carry nothing the customers want', !n);
+    renderPanelDyn();
   } else if (act === 'take' || act === 'takeall') {
     const src = e.out || e.store;
     let n = 0;
@@ -2265,6 +2330,7 @@ const CHAINS = [
   { n: 'Coal tar and TNT', l: [['coal', 'Coke oven (by-products)', 'coke', '+', 'tar', '+', 'coalgas'], ['tar', 'Distillation column + steam', 'toluene', '+', 'pitch'], ['coke', 'Coke oven + pitch', 'anode'], ['toluene', 'Nitrator + hno3 + acid', 'tnt'], ['tnt', 'Workshop + plate + brass + black_powder', 'shell', 'Field howitzer', 'Hive']], d: 'A by-product coke oven keeps what a beehive oven burns off: tar and a hydrogen-rich gas that fires boilers. Distilled tar gives toluene for TNT and pitch that binds anodes. TNT needs mixed nitric and sulfuric acid: nitric acid dissolves lead, so pipe it in titanium or glass-lined pipe. The nitrator and the shell drawings are in the old works.' },
   { n: 'Phosgene', l: [['coke', 'Gas producer + co2', 'co'], ['coke', 'Gas producer + steam', 'carbon'], ['co', '+', 'cl2', 'Phosgene reactor + carbon', 'phosgene'], ['phosgene', 'Cylinder filler + cylinder', 'phos_cyl', 'Livens projector', 'Gas cloud']], d: 'Blow flue-gas CO₂ through white-hot coke and it comes out as carbon monoxide. Steam the coke instead and it turns into activated carbon, the catalyst on which CO and chlorine join into phosgene. Any phosgene the reactor cannot pass on leaks out as a cloud over your own works. Crawlers that survive a gas breed a tolerance to it, so rotate chlorine, ammonia, phosgene and explosives. The reactor drawings are in the old works.' },
   { n: 'Oil and plastics', l: [['crude', 'Crude distillation unit + steam', 'fuel_gas', '+', 'naphtha', '+', 'gas_oil', '+', 'bitumen'], ['naphtha', 'Tube furnace + steam (cracking)', 'ethylene', 'Pressure reactor', 'polyethylene'], ['ethylene', 'Pressure reactor + chlorine', 'edc', 'Tube furnace', 'vcm', '+', 'hcl'], ['hcl', 'Chlorinator + ethylene (oxychlorination)', 'edc'], ['vcm', 'Pressure reactor + water', 'pvc'], ['fuel_gas', 'Tube furnace + steam (reforming)', 'h2'], ['bitumen', 'Coke oven', 'pet_coke', 'Coke oven + pitch', 'anode']], d: 'Pumpjacks stand on oil seeps far from the start. The distillation unit splits crude by boiling point. Naphtha cracks to ethylene, the building block for polyethylene and PVC. Fuel gas fires the furnaces, raises steam, or reforms into hydrogen for ammonia. PVC and HDPE pipe resist acid and chlorine, but melt at 60°C.' },
+  { n: 'Fertilisers', l: [['sylvinite', 'Crusher', 'crushed_sylv', 'Flotation cell + brine', 'potash', '+', 'salt'], ['crushed_phos', 'Leach tank + acid + water', 'h3po4', '+', 'gypsum', '+', 'sif4'], ['crushed_phos', 'Granulator drum + acid', 'ssp'], ['crushed_phos', 'Granulator drum + h3po4', 'tsp'], ['nh3', 'Granulator drum + h3po4', 'dap'], ['nh3', 'Pressure reactor + co2', 'urea'], ['dap', 'Granulator drum + potash + urea', 'npk', 'Rail depot', 'Orders']], d: 'Plants need nitrogen, phosphorus and potassium, and a harvest carries them off the field. Lawes patented superphosphate in 1842 by pouring sulfuric acid on bones and rock. The wet process makes phosphoric acid, leaving mountains of phosphogypsum. Potash is mined as sylvinite, a mix of KCl and rock salt, and parted by flotation in brine. Haber ammonia ends up mostly as urea and DAP. Farmers pay well for all of it at the rail depot.' },
   { n: 'Vanadium and catalysts', l: [['v_pig', 'Converter', 'steel', '+', 'v_slag'], ['v_slag', 'Roaster + soda_ash', 'na_vanadate', 'Leach tank + nh4cl + water', 'amv'], ['amv', 'Lime kiln', 'v2o5', 'Workshop + sand', 'v_cat', 'Acid plant', 'acid'], ['spent_v_cat', 'Leach tank + naoh', 'na_vanadate'], ['iron_conc', 'Arc furnace + alumina + crushed_lime', 'fe_cat', 'Ammonia converter', 'nh3'], ['v2o5', 'Converter + steel + aluminium', 'v_steel', 'Armour wall', 'Defence']], d: 'Rudolf Knietsch at BASF worked out the Contact process on platinum in the 1890s; vanadium pentoxide replaced the easily poisoned platinum in the 1920s and still makes nearly all the world\'s sulfuric acid. A catalyst is not used up by the reaction, but dust, heat and poisons slowly kill it, so beds are screened and recharged. Mittasch\'s fused iron for Haber-Bosch came out of 20,000 trials and has barely changed since.' },
   { n: 'Phosphorus and fluorine', l: [['phosphate_rock', 'Crusher', 'crushed_phos'], ['crushed_phos', 'Arc furnace + sand + coke', 'phosphorus', '+', 'slag', '+', 'sif4'], ['sif4', 'Gas scrubber + water', 'h2sif6', 'Leach tank + crushed_lime', 'fluorspar'], ['fluorspar', 'Retort + acid', 'hf', 'Leach tank + al_hydroxide + naoh', 'cryolite'], ['cryolite', 'Reduction pot + alumina + anode', 'aluminium'], ['phosphorus', 'Workshop + brass + plate + powder', 'wp_shell', 'Field howitzer', 'Fire']], d: 'Phosphate rock sits in a few far-off beds. Most of the world\'s phosphate becomes fertiliser, but an electric furnace boils the element itself out of it as white phosphorus, which burns on contact with air. The fluorine in the apatite comes off as SiF₄ fume; scrub it, fix it with lime as fluorspar, and turn that into hydrofluoric acid and synthetic cryolite to top up your aluminium pots. Fluorides eat glass-lined and titanium pipe, so run them in lead.' },
   { n: 'Soda and glass', l: [['brine', 'Solvay tower + nh3 + co2', 'nahco3', '+', 'nh4cl'], ['nh4cl', 'Distillation column + quicklime + steam', 'nh3', '+', 'cacl2'], ['nahco3', 'Lime kiln', 'soda_ash', '+', 'co2'], ['sand', 'Glass tank + soda_ash + crushed_lime', 'glass'], ['soda_ash', 'Leach tank + quicklime + water', 'naoh']], d: 'The Solvay process makes soda ash from salt and limestone, with ammonia going round and round as a carrier. The lime kiln supplies both the CO₂ and the quicklime that frees the ammonia again. Soda ash makes glass for glass-lined pipe, and lime turns it into caustic soda without any electricity.' },
@@ -2306,6 +2372,10 @@ const HELP = `<div class="help">
 <p>Mine <b>phosphate rock</b> and smelt it in the <b>Electric arc furnace</b> with sand and coke to get white phosphorus. The furnace also gives off CO and SiF₄. Vented SiF₄ is a heavy pollutant, so scrub it to fluorosilicic acid and turn that into fluorspar with crushed limestone. Fluorspar in a retort with sulfuric acid makes hydrofluoric acid, and HF with aluminium hydroxide and caustic makes cryolite, which lets reduction pots run faster. Fluorides dissolve glass-lined and titanium pipe three times faster than steel; lead-lined pipe resists them. <b>WP shells</b> from the old works' books set the ground burning for 14 seconds. The fire ignores gas tolerance but also burns your own buildings.</p>
 <h3>Oil and plastics</h3>
 <p>Dark, glistening <b>oil seeps</b> lie far from the start. A <b>Pumpjack</b> placed on one lifts crude oil and slowly drains the tiles under it. The <b>Crude distillation unit</b> needs a little steam and splits crude into fuel gas, naphtha, gas oil and bitumen. The <b>Tube furnace</b> burns fuel gas to crack naphtha into ethylene, reform fuel gas into hydrogen, or crack EDC into vinyl chloride. Ethylene polymerises to polyethylene in the <b>Pressure reactor</b>, or takes on chlorine to make EDC. Feed the HCl from EDC cracking back into a chlorinator with more ethylene. Plastic pipe shrugs off acid and chlorine but softens at 60°C.</p>
+<h3>Fertilisers</h3>
+<p>Pink-and-red <b>sylvinite</b> beds hold potash. Crush it and float it in a <b>Flotation cell</b> fed with brine: the KCl floats, the rock salt sinks. Sulfuric acid on crushed phosphate in the <b>Granulator drum</b> gives single superphosphate. In a leach tank it gives <b>phosphoric acid</b> plus gypsum, which makes triple superphosphate, or DAP with ammonia. The <b>Pressure reactor</b> turns ammonia and CO₂ into urea. DAP, potash and urea granulate together into NPK.</p>
+<h3>Rail depot and orders</h3>
+<p>Build a <b>Rail depot</b> and customers post up to three orders, each for something your factory can already make. Feed the goods in from touching belts, chests or machines, or load them by hand from the depot panel. Each filled order pays in parts and buildings. Every third order also brings a lab notebook from the buyer's own works (Haber ammonia first, then Ostwald nitric acid and the ammonia scrubber), or a repeat-custom bonus once you know them all, and bigger, better-paying customers turn up as you fill more.</p>
 <h3>Catalysts and vanadium</h3>
 <p>The <b>Acid plant</b> and the <b>Ammonia converter</b> have a catalyst bed. Empty, the acid plant runs as a slow lead chamber; loaded with <b>V₂O₅ catalyst rings</b> it becomes a Contact plant at up to 2.5× speed. Fused iron catalyst doubles a Haber converter. Each charge lasts a few hundred batches and loses activity in its last third, and the bed holds four charges. Vanadium comes from the iron in ilmenite: blow that pig iron in a converter to skim off vanadium slag, salt-roast it with soda ash, leach with Solvay ammonium chloride and calcine. Spent rings leach back with caustic. V₂O₅ reduced with aluminium into steel gives <b>vanadium steel</b> for armour walls.</p>
 <h3>Crawlers</h3>
