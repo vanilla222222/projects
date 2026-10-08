@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chem Factory</title>
+<link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+<header id="top">
+  <a class="back" href="../index.html" title="Back to projects">‹</a>
+  <span class="brand">Chem Factory</span>
+  <span id="power"></span>
+  <span id="vent"></span>
+  <span class="sp"></span>
+  <button data-ui="craft" title="Craft (E)">Craft <kbd>E</kbd></button>
+  <button data-ui="ency" title="Encyclopedia (H)">Encyclopedia <kbd>H</kbd></button>
+  <button data-ui="help">Help</button>
+  <button data-ui="reset" class="danger">New map</button>
+</header>
+<main id="stage">
+  <canvas id="cv"></canvas>
+  <aside id="panel" hidden></aside>
+  <div id="tip" hidden></div>
+  <div id="toast"></div>
+</main>
+<nav id="hotbar"></nav>
+<div id="modal" hidden>
+  <div class="mwin">
+    <div class="mhead"><div class="tabs"></div><button class="x" data-ui="close" title="Close">×</button></div>
+    <div class="mbody"></div>
+  </div>
+</div>
+<script src="data.js?v=1"></script>
+<script src="game.js?v=1"></script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+const ITEMS = {
+  iron_ore: { n: 'Banded Iron Ore', c: '#9c4a3a', f: 'Hematite Fe₂O₃ + magnetite Fe₃O₄ in quartz SiO₂ bands, about 35% Fe' },
+  copper_ore: { n: 'Porphyry Copper Ore', c: '#4f9a7c', f: 'Chalcopyrite CuFeS₂ and pyrite FeS₂ scattered through quartz' },
+  pbzn_ore: { n: 'Lead-Zinc Ore', c: '#7d7f99', f: 'Galena PbS and sphalerite ZnS with pyrite' },
+  coal: { n: 'Coal', c: '#2b2a2e', f: 'Bituminous coal, mostly carbon C with volatiles' },
+  limestone: { n: 'Limestone', c: '#d8d2bd', f: 'Calcite CaCO₃' },
+  sand: { n: 'Quartz Sand', c: '#e3cf8f', f: 'Silica SiO₂' },
+  crushed_iron: { n: 'Crushed Iron Ore', c: '#a95c4a', f: 'Iron ore broken to gravel size' },
+  crushed_copper: { n: 'Crushed Copper Ore', c: '#5fa88a', f: 'Copper ore broken to gravel size' },
+  crushed_pbzn: { n: 'Crushed Lead-Zinc Ore', c: '#8b8da6', f: 'Lead-zinc ore broken to gravel size' },
+  crushed_lime: { n: 'Crushed Limestone', c: '#e6e0cc', f: 'CaCO₃ gravel, used as a flux' },
+  ground_iron: { n: 'Ground Iron Ore', c: '#b86b58', f: 'Fine powder: hematite, magnetite and quartz grains are now separate' },
+  ground_copper: { n: 'Ground Copper Ore', c: '#70b597', f: 'Fine powder: chalcopyrite grains freed from quartz' },
+  ground_pbzn: { n: 'Ground Lead-Zinc Ore', c: '#9a9cb4', f: 'Fine powder: galena and sphalerite grains freed' },
+  iron_conc: { n: 'Iron Concentrate', c: '#5b2f2a', f: 'Magnetite and hematite, about 65% Fe' },
+  copper_conc: { n: 'Copper Concentrate', c: '#b38a2e', f: 'Chalcopyrite CuFeS₂, about 28% Cu' },
+  galena_conc: { n: 'Galena Concentrate', c: '#5f6277', f: 'Galena PbS, about 70% Pb' },
+  zinc_rougher: { n: 'Zinc Rougher', c: '#a4a07a', f: 'What is left after lead flotation: sphalerite and quartz' },
+  sphalerite_conc: { n: 'Sphalerite Concentrate', c: '#c2a54a', f: 'Sphalerite ZnS, about 52% Zn' },
+  tailings: { n: 'Tailings', c: '#b9ae93', f: 'Ground quartz waste left after separation' },
+  coke: { n: 'Coke', c: '#4a4650', f: 'Nearly pure carbon C, coal with the volatiles baked out' },
+  quicklime: { n: 'Quicklime', c: '#f4f1e8', f: 'Calcium oxide CaO' },
+  slag: { n: 'Slag', c: '#5c5a52', f: 'Glassy silicates such as CaSiO₃ and Fe₂SiO₄ (fayalite)' },
+  pig_iron: { n: 'Pig Iron', c: '#7b7f86', f: 'Fe with about 4% C, brittle' },
+  steel: { n: 'Steel', c: '#a9b3bf', f: 'Fe with under 1% C, strong and ductile' },
+  copper_calcine: { n: 'Copper Calcine', c: '#7a4a2a', f: 'Roasted concentrate: Cu₂S and FeO' },
+  copper_matte: { n: 'Copper Matte', c: '#5a3a2a', f: 'Molten Cu₂S·FeS, about 60% Cu' },
+  blister_copper: { n: 'Blister Copper', c: '#c46a3a', f: 'Cu about 98.5%, full of SO₂ bubbles' },
+  copper_cathode: { n: 'Copper Cathode', c: '#e07a4a', f: 'Cu 99.99%' },
+  anode_slime: { n: 'Anode Slime', c: '#4a4a3a', f: 'Sludge from copper refining with Au, Ag, Se and Te' },
+  lead_oxide: { n: 'Lead Oxide Sinter', c: '#c9b26a', f: 'Lead(II) oxide PbO' },
+  lead: { n: 'Lead Bullion', c: '#6a6f80', f: 'Pb, soft and very dense' },
+  zinc_calcine: { n: 'Zinc Calcine', c: '#e8e2d0', f: 'Zinc oxide ZnO' },
+  zinc: { n: 'Zinc Cathode', c: '#b8c2c8', f: 'Zn 99.99%' },
+  casting: { n: 'Iron Casting', c: '#6d7178', f: 'Cast pig iron parts: gears, frames, pipe' },
+  plate: { n: 'Steel Plate', c: '#c3ccd6', f: 'Rolled steel sheet' },
+  wire: { n: 'Copper Wire', c: '#e8955f', f: 'Drawn Cu wire' },
+  motor: { n: 'Electric Motor', c: '#5a7fa8', f: 'Copper windings on a steel frame' },
+  brick: { n: 'Refractory Brick', c: '#c98a5a', f: 'Silica brick bonded with lime, survives 1700°C' },
+  lead_sheet: { n: 'Lead Sheet', c: '#7b8094', f: 'Pb sheet, resists sulfuric acid' },
+  brass: { n: 'Brass', c: '#d6b04a', f: 'Cu-Zn alloy, about 65/35' },
+};
+
+const FLUIDS = {
+  water: { n: 'Water', c: '#3a7fd0', f: 'H₂O' },
+  steam: { n: 'Steam', c: '#d8dde4', f: 'H₂O gas at about 165°C', gas: true },
+  co2: { n: 'Carbon Dioxide', c: '#8a8f99', f: 'CO₂', gas: true },
+  so2: { n: 'Sulfur Dioxide', c: '#d8c84a', f: 'SO₂, choking and toxic', gas: true },
+  acid: { n: 'Sulfuric Acid', c: '#e0a03a', f: 'H₂SO₄' },
+  znso4: { n: 'Zinc Sulfate Solution', c: '#9ad0c0', f: 'ZnSO₄ dissolved in water' },
+};
+
+const ORES = [
+  null,
+  { item: 'iron_ore', c: '#8a4a3c', s: '#c06a50' },
+  { item: 'copper_ore', c: '#3f7a64', s: '#7fd0a8' },
+  { item: 'pbzn_ore', c: '#5f6177', s: '#b0b4d0' },
+  { item: 'coal', c: '#242226', s: '#4a4850' },
+  { item: 'limestone', c: '#b8b29d', s: '#eae4d0' },
+  { item: 'sand', c: '#c7b273', s: '#f0e0a8' },
+];
+
+const BUILD = {
+  belt: { n: 'Belt', kind: 'belt', w: 1, h: 1, cat: 'Logistics', c: '#c9a23a', cost: { casting: 1 }, makes: 2, d: 'Moves items 2 tiles/s. Drag to lay a line.' },
+  sorter: { n: 'Sorter', kind: 'sorter', w: 1, h: 1, cat: 'Logistics', c: '#d07a3a', ab: 'SO', cost: { casting: 2, wire: 2, brass: 1 }, d: 'Sends the filtered item forward and everything else to the right.' },
+  chest: { n: 'Chest', kind: 'chest', w: 1, h: 1, cat: 'Logistics', c: '#8a6a3a', ab: 'CH', cost: { casting: 4 }, d: 'Stores 400 items and feeds neighbouring machines and outgoing belts.' },
+  pipe: { n: 'Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#6a7a8a', cost: { casting: 1 }, makes: 2, d: 'Cast iron pipe. Carries one fluid at a time.' },
+  miner: { n: 'Miner', kind: 'miner', w: 2, h: 2, cat: 'Mining', c: '#7a6a4a', ab: 'MI', kw: 90, cost: { casting: 5, plate: 3, motor: 2 }, d: 'Digs the ore under it, one every 2s.' },
+  pump: { n: 'Offshore Pump', kind: 'pump', w: 1, h: 1, cat: 'Mining', c: '#3a6aa0', ab: 'PU', cost: { casting: 3, motor: 1 }, d: 'Place on water. Pumps 60 water/s.' },
+  boiler: { n: 'Boiler', kind: 'machine', w: 2, h: 2, cat: 'Power', c: '#9a5a3a', ab: 'BO', cost: { brick: 5, casting: 4 }, d: 'Burns fuel to turn water into steam.' },
+  engine: { n: 'Steam Engine', kind: 'engine', w: 2, h: 2, cat: 'Power', c: '#6a7a6a', ab: 'SE', cost: { casting: 6, plate: 4, motor: 2 }, d: 'Makes up to 900 kW from 30 steam/s.' },
+  crusher: { n: 'Jaw Crusher', kind: 'machine', w: 2, h: 2, cat: 'Processing', c: '#7a7a6a', ab: 'CR', kw: 60, cost: { casting: 6, motor: 2 }, d: 'Breaks rock into gravel.' },
+  mill: { n: 'Ball Mill', kind: 'machine', w: 2, h: 2, cat: 'Processing', c: '#6a7a8a', ab: 'BM', kw: 120, cost: { plate: 8, motor: 2 }, d: 'Grinds gravel with water and steel balls until the mineral grains come free.' },
+  magsep: { n: 'Magnetic Separator', kind: 'machine', w: 2, h: 2, cat: 'Processing', c: '#5a5a8a', ab: 'MS', kw: 60, cost: { plate: 4, wire: 6, motor: 1 }, d: 'Pulls magnetic iron minerals out of the quartz.' },
+  flotation: { n: 'Flotation Cell', kind: 'machine', w: 2, h: 2, cat: 'Processing', c: '#4a8a8a', ab: 'FL', kw: 80, cost: { plate: 6, motor: 1 }, d: 'Bubbles carry water-repelling sulfide grains to the froth while quartz sinks.' },
+  coke_oven: { n: 'Coke Oven', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#5a4a4a', ab: 'CO', cost: { brick: 10 }, d: 'Bakes coal without air into coke.' },
+  kiln: { n: 'Lime Kiln', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#b0a080', ab: 'LK', cost: { brick: 8, plate: 2 }, d: 'Burns limestone into quicklime.' },
+  roaster: { n: 'Roaster', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#a06a3a', ab: 'RO', kw: 30, cost: { brick: 8, plate: 4 }, d: 'Burns sulfur out of sulfide concentrates. Gives off SO₂.' },
+  blast: { n: 'Blast Furnace', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#7a3a2a', ab: 'BF', cost: { brick: 20, casting: 10 }, d: 'Reduces oxides with coke.' },
+  converter: { n: 'Converter', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#8a5a4a', ab: 'CV', cost: { brick: 12, plate: 6 }, d: 'Blows air through molten metal to burn out impurities.' },
+  smelter: { n: 'Flash Smelter', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#9a4a3a', ab: 'FS', kw: 50, cost: { brick: 20, plate: 8 }, d: 'Melts copper calcine with silica flux into matte.' },
+  acid_plant: { n: 'Acid Plant', kind: 'machine', w: 3, h: 3, cat: 'Chemistry', c: '#b08a3a', ab: 'AP', kw: 50, cost: { lead_sheet: 10, plate: 6, motor: 2 }, d: 'Turns SO₂ into sulfuric acid.' },
+  leach: { n: 'Leach Tank', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#5a9a8a', ab: 'LT', kw: 40, cost: { lead_sheet: 6, plate: 2 }, d: 'Dissolves metal oxides in acid.' },
+  electro: { n: 'Electrolysis Cell', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#4a6ab0', ab: 'EC', kw: 300, cost: { lead_sheet: 6, wire: 10 }, d: 'Uses current to plate pure metal onto cathodes.' },
+  workshop: { n: 'Workshop', kind: 'machine', w: 2, h: 2, cat: 'Processing', c: '#6a5a7a', ab: 'WS', kw: 75, cost: { casting: 6, motor: 2 }, d: 'Makes parts from metals.' },
+};
+
+const RECIPES = [
+  { id: 'crush_iron', b: 'crusher', t: 1.5, i: { iron_ore: 1 }, o: { crushed_iron: 1 } },
+  { id: 'crush_copper', b: 'crusher', t: 1.5, i: { copper_ore: 1 }, o: { crushed_copper: 1 } },
+  { id: 'crush_pbzn', b: 'crusher', t: 1.5, i: { pbzn_ore: 1 }, o: { crushed_pbzn: 1 } },
+  { id: 'crush_lime', b: 'crusher', t: 1, i: { limestone: 1 }, o: { crushed_lime: 1 } },
+  { id: 'grind_iron', b: 'mill', t: 2, i: { crushed_iron: 1 }, fi: { water: 10 }, o: { ground_iron: 1 }, note: 'Grinding frees each mineral grain so it can be separated.' },
+  { id: 'grind_copper', b: 'mill', t: 2, i: { crushed_copper: 1 }, fi: { water: 10 }, o: { ground_copper: 1 } },
+  { id: 'grind_pbzn', b: 'mill', t: 2, i: { crushed_pbzn: 1 }, fi: { water: 10 }, o: { ground_pbzn: 1 } },
+  { id: 'mag_iron', b: 'magsep', t: 2, i: { ground_iron: 2 }, o: { iron_conc: 1, tailings: 1 }, note: 'Magnetite is strongly magnetic; hematite needs a high-intensity field. Quartz is not magnetic.' },
+  { id: 'float_copper', b: 'flotation', t: 3, i: { ground_copper: 3 }, fi: { water: 20 }, o: { copper_conc: 1, tailings: 2 }, note: 'Xanthate collectors coat chalcopyrite so it sticks to air bubbles. Real porphyry ore is under 1% Cu, so most of it ends as tailings.' },
+  { id: 'float_lead', b: 'flotation', t: 3, i: { ground_pbzn: 3 }, fi: { water: 20 }, o: { galena_conc: 1, zinc_rougher: 2 }, note: 'Sphalerite is held down (depressed) so only galena floats first.' },
+  { id: 'float_zinc', b: 'flotation', t: 3, i: { zinc_rougher: 2 }, fi: { water: 15 }, o: { sphalerite_conc: 1, tailings: 1 }, note: 'Copper sulfate activates the sphalerite surface so it floats in the second stage.' },
+  { id: 'coke', b: 'coke_oven', t: 6, i: { coal: 2 }, o: { coke: 1 }, eq: 'Coal → C + volatiles', note: 'Heated to about 1000°C without air, coal loses tar and gas and leaves strong, porous coke.' },
+  { id: 'lime', b: 'kiln', t: 4, i: { limestone: 2, coal: 1 }, o: { quicklime: 2 }, fo: { co2: 20 }, eq: 'CaCO₃ → CaO + CO₂', note: 'Calcination at about 900°C. The coal is fuel.' },
+  { id: 'roast_copper', b: 'roaster', t: 3, i: { copper_conc: 1 }, o: { copper_calcine: 1 }, fo: { so2: 20 }, eq: '2CuFeS₂ + 4O₂ → Cu₂S + 2FeO + 3SO₂', note: 'Burning sulfide releases its own heat, so no fuel is needed.' },
+  { id: 'roast_galena', b: 'roaster', t: 3, i: { galena_conc: 1 }, o: { lead_oxide: 1 }, fo: { so2: 15 }, eq: '2PbS + 3O₂ → 2PbO + 2SO₂' },
+  { id: 'roast_zinc', b: 'roaster', t: 3, i: { sphalerite_conc: 1 }, o: { zinc_calcine: 1 }, fo: { so2: 15 }, eq: '2ZnS + 3O₂ → 2ZnO + 2SO₂' },
+  { id: 'pig_iron', b: 'blast', t: 4, i: { iron_conc: 2, coke: 1, crushed_lime: 1 }, o: { pig_iron: 2, slag: 1 }, fo: { co2: 30 }, eq: 'Fe₂O₃ + 3CO → 2Fe + 3CO₂ ; CaCO₃ + SiO₂ → CaSiO₃ + CO₂', note: 'Coke burns to CO, which strips oxygen from the ore. Limestone flux turns leftover quartz into runny slag.' },
+  { id: 'lead_bullion', b: 'blast', t: 4, i: { lead_oxide: 2, coke: 1 }, o: { lead: 2 }, fo: { co2: 15 }, eq: 'PbO + CO → Pb + CO₂' },
+  { id: 'steel', b: 'converter', t: 4, i: { pig_iron: 3 }, o: { steel: 2, slag: 1 }, fo: { co2: 15 }, eq: 'C + O₂ → CO₂ (Bessemer process)', note: 'Air blown through molten pig iron burns the carbon out. The reaction is hot enough to keep the iron molten by itself.' },
+  { id: 'blister', b: 'converter', t: 4, i: { copper_matte: 2 }, o: { blister_copper: 1 }, fo: { so2: 25 }, eq: 'Cu₂S + O₂ → 2Cu + SO₂' },
+  { id: 'matte', b: 'smelter', t: 4, i: { copper_calcine: 2, sand: 1 }, o: { copper_matte: 1, slag: 1 }, eq: '2FeO + SiO₂ → Fe₂SiO₄ (slag)', note: 'Silica flux pulls the iron into a fayalite slag that floats on the heavier copper matte.' },
+  { id: 'acid', b: 'acid_plant', t: 2, fi: { so2: 30, water: 10 }, fo: { acid: 20 }, eq: '2SO₂ + O₂ → 2SO₃ (V₂O₅) ; SO₃ + H₂O → H₂SO₄', note: 'The Contact process. Lead lining resists the acid.' },
+  { id: 'leach_zinc', b: 'leach', t: 3, i: { zinc_calcine: 1 }, fi: { acid: 20 }, fo: { znso4: 20 }, eq: 'ZnO + H₂SO₄ → ZnSO₄ + H₂O' },
+  { id: 'refine_copper', b: 'electro', t: 4, i: { blister_copper: 1 }, fi: { acid: 5 }, o: { copper_cathode: 1 }, ch: { anode_slime: 0.15 }, eq: 'Cu (anode) → Cu²⁺ → Cu (cathode)', note: 'Impure anodes dissolve and pure copper plates onto the cathode. Gold and silver fall to the bottom as anode slime.' },
+  { id: 'winning_zinc', b: 'electro', t: 4, fi: { znso4: 20 }, o: { zinc: 1 }, fo: { acid: 15 }, bleed: ['acid'], eq: '2ZnSO₄ + 2H₂O → 2Zn + 2H₂SO₄ + O₂', note: 'Electrowinning gives the acid back, so it loops to the leach tank. Spent acid that has nowhere to go is bled off.' },
+  { id: 'steam_coal', b: 'boiler', t: 2, i: { coal: 1 }, fi: { water: 60 }, fo: { steam: 60 }, eq: 'C + O₂ → CO₂ (heat boils water)' },
+  { id: 'steam_coke', b: 'boiler', t: 3, i: { coke: 1 }, fi: { water: 90 }, fo: { steam: 90 } },
+  { id: 'casting', b: 'workshop', t: 1, i: { pig_iron: 1 }, o: { casting: 1 } },
+  { id: 'plate', b: 'workshop', t: 1, i: { steel: 1 }, o: { plate: 1 } },
+  { id: 'wire', b: 'workshop', t: 0.5, i: { copper_cathode: 1 }, o: { wire: 2 } },
+  { id: 'motor', b: 'workshop', t: 3, i: { casting: 1, plate: 1, wire: 3 }, o: { motor: 1 } },
+  { id: 'brick', b: 'workshop', t: 2, i: { sand: 2, quicklime: 1 }, o: { brick: 1 } },
+  { id: 'lead_sheet', b: 'workshop', t: 1, i: { lead: 1 }, o: { lead_sheet: 1 } },
+  { id: 'brass', b: 'workshop', t: 2, i: { copper_cathode: 2, zinc: 1 }, o: { brass: 3 } },
+];
+
+const RECIPE = {};
+for (const r of RECIPES) {
+  RECIPE[r.id] = r;
+  const first = Object.keys(r.o || r.fo)[0];
+  r.n = (ITEMS[first] || FLUIDS[first]).n;
+}
+
+const START_INV = {
+  belt: 80, pipe: 40, chest: 8, sorter: 4, miner: 8, pump: 1, boiler: 2, engine: 2,
+  crusher: 3, mill: 2, magsep: 1, flotation: 2, coke_oven: 2, kiln: 1, blast: 1, converter: 1, workshop: 2,
+  casting: 20, brick: 10,
+};
+
+const CATS = ['Logistics', 'Mining', 'Power', 'Processing', 'Smelting', 'Chemistry'];
