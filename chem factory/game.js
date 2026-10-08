@@ -194,15 +194,17 @@ function addEnt(e) {
 function canPlace(type, x, y) {
   const B = BUILD[type];
   if (x < 0 || y < 0 || x + B.w > W || y + B.h > H) return 'Out of bounds';
-  let ore = false;
+  let ore = false, oil = false;
   for (let j = 0; j < B.h; j++) for (let i = 0; i < B.w; i++) {
     const k = (y + j) * W + x + i;
     if (occ[k]) return 'Something is in the way';
     if (type === 'pump') { if (terrain[k] !== 1) return 'Offshore pumps must go on water'; }
     else if (terrain[k] === 1) return 'Cannot build on water';
-    if (oreType[k]) ore = true;
+    if (oreType[k] && !ORES[oreType[k]].fluid) ore = true;
+    if (oreType[k] && ORES[oreType[k]].fluid) oil = true;
   }
   if (type === 'miner' && !ore) return 'A miner needs ore under it';
+  if (B.well && !oil) return 'A pumpjack must stand on an oil seep';
   return null;
 }
 
@@ -486,7 +488,7 @@ function nodeHeat(e, fails) {
     if (!P.duct) fails.push([e, `burst at ${p.toFixed(1)} bar (rated ${P.bar})`]);
     else { e.strain += (p / P.bar - 1) * DT; if (e.strain > P.duct) fails.push([e, `ruptured after bulging at ${p.toFixed(1)} bar (rated ${P.bar})`]); }
   }
-  if (e.tw > P.tmax) fails.push([e, P.lined === 'glass' ? `glass lining spalled at ${Math.round(e.tw)}°C` : P.lined ? `lead lining melted at ${Math.round(e.tw)}°C` : `failed at ${Math.round(e.tw)}°C`]);
+  if (e.tw > P.tmax) fails.push([e, P.lined === 'glass' ? `glass lining spalled at ${Math.round(e.tw)}°C` : P.lined ? `lead lining melted at ${Math.round(e.tw)}°C` : P.plastic ? `softened and split at ${Math.round(e.tw)}°C` : `failed at ${Math.round(e.tw)}°C`]);
   const corr = e.fl && e.amt > 0.5 && !resists(P, e.fl) && FLUIDS[e.fl].corr;
   if (corr) e.wear += corr * (weakTo(P, e.fl) ? 3 : 1) * DT / 90;
   const rain = acidRain(e, P);
@@ -984,6 +986,7 @@ function pumpTick(e) {
 }
 
 function tryStart(e, r) {
+  if (r.well && !wellTiles(e).length) return 'empty';
   if (r.i) for (const k in r.i) if ((e.inv[k] || 0) < r.i[k]) return 'input';
   if (r.fi) for (const f in r.fi) if ((e.fi[f] || 0) < r.fi[f] - 1e-6) return 'input';
   if (r.o) for (const k in r.o) if ((e.out[k] || 0) + r.o[k] > outCap(r, k)) return 'output';
@@ -998,6 +1001,7 @@ function tryStart(e, r) {
 function finish(e, r) {
   e.cy = false; e.prog = 0;
   catWear(e, r);
+  if (r.well) wellDraw(e);
   if (r.o) for (const k in r.o) { e.out[k] = (e.out[k] || 0) + r.o[k]; S.made[k] = (S.made[k] || 0) + r.o[k]; }
   if (r.ch) for (const k in r.ch) if (Math.random() < r.ch[k]) { e.out[k] = (e.out[k] || 0) + 1; S.made[k] = (S.made[k] || 0) + 1; }
   if (r.fo) for (const f in r.fo) {
@@ -1007,14 +1011,27 @@ function finish(e, r) {
   }
 }
 
+const solid = i => oreType[i] && !ORES[oreType[i]].fluid;
+const oily = i => oreType[i] && ORES[oreType[i]].fluid;
 function minerOre(e) {
-  for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) if (oreType[(e.y + j) * W + e.x + i]) return true;
+  for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) if (solid((e.y + j) * W + e.x + i)) return true;
   return false;
+}
+function wellTiles(e) {
+  const B = BUILD[e.type], l = [];
+  for (let j = 0; j < B.h; j++) for (let i = 0; i < B.w; i++) { const q = (e.y + j) * W + e.x + i; if (oily(q)) l.push(q); }
+  return l;
+}
+function wellDraw(e) {
+  const l = wellTiles(e);
+  if (!l.length) return;
+  e.k = ((e.k || 0) + 1) % l.length;
+  depleteTile(l[e.k]);
 }
 function minerDig(e) {
   for (let t = 0; t < 4; t++) {
     const q = (e.k + t) % 4, i = (e.y + (q >> 1)) * W + e.x + (q & 1);
-    if (!oreType[i]) continue;
+    if (!solid(i)) continue;
     const item = ORES[oreType[i]].item;
     depleteTile(i);
     e.out[item] = (e.out[item] || 0) + 1;
@@ -1091,7 +1108,7 @@ function tick() {
   for (const e of l.chest) pushItems(e, e.store, 'chest');
   if (mining) {
     const i = mining.y * W + mining.x;
-    if (!mouse.l || tool || !oreType[i] || occ[i] || mouse.tx !== mining.x || mouse.ty !== mining.y) mining = null;
+    if (!mouse.l || tool || !solid(i) || occ[i] || mouse.tx !== mining.x || mouse.ty !== mining.y) mining = null;
     else if ((mining.p += DT / 0.5) >= 1) {
       mining.p = 0;
       const item = ORES[oreType[i]].item;
@@ -1200,7 +1217,7 @@ function shade(hex, f) {
 }
 
 const ST_COL = { work: '#5fd06a', input: '#e0b84a', output: '#e07a3a', power: '#e04a4a', none: '#8a8f99', empty: '#8a8f99' };
-const ST_TXT = { work: 'Working', input: 'Waiting for inputs', output: 'Output full', power: 'No power', none: 'No recipe set', empty: 'Ore depleted' };
+const ST_TXT = { work: 'Working', input: 'Waiting for inputs', output: 'Output full', power: 'No power', none: 'No recipe set', empty: 'Depleted' };
 
 function render() {
   const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight, z = cam.z;
@@ -1858,6 +1875,7 @@ function tileInfo0(x, y) {
     return s;
   }
   const i = y * W + x;
+  if (oily(i)) return `<b>Oil seep</b><br>${fmt(oreAmt[i])} left · <span class="dim">Crude oil seeps up through the soil here. Drill it with a pumpjack</span>`;
   if (oreType[i]) return `<b>${nm(ORES[oreType[i]].item)}</b><br>${fmt(oreAmt[i])} left · <span class="dim">${ITEMS[ORES[oreType[i]].item].f}</span><br><span class="dim">Click and hold to mine by hand</span>`;
   return terrain[i] === 1 ? '<b>Water</b>' : '';
 }
@@ -1978,6 +1996,7 @@ function renderPanelDyn() {
       h += `<div class="status"><i style="background:${ST_COL[st]}"></i>${e.type === 'boiler' && st === 'output' ? 'Steam full, waiting for demand' : ST_TXT[st] || ''}${BUILD[e.type].kw ? ` · ${BUILD[e.type].kw} kW` : ' · fuel-fired'}</div>`;
       h += `<div class="prog">${bar(e.cy ? e.prog : 0, 1, '#7fe08a')}</div>`;
       if (r.cat) h += catHtml(e, r);
+      if (r.well) { const l = wellTiles(e), left = l.reduce((a, q) => a + oreAmt[q], 0); h += `<div class="sec">Reservoir</div><div class="spec">${l.length} of ${BUILD[e.type].w * BUILD[e.type].h} tiles on oil · ${fmt(left * r.fo.crude)} crude left</div>`; }
       h += '<div class="sec">Input buffer</div><div class="slots">';
       if (r.i) for (const q in r.i) h += `<div class="slot">${chip(q, Math.floor(e.inv[q] || 0) + '/' + inCap(r, q))}</div>`;
       if (r.fi) for (const f in r.fi) h += `<div class="slot">${chip(f, Math.round(e.fi[f] || 0) + '/' + fiCap(r, f), 'fl')}${bar(e.fi[f] || 0, fiCap(r, f), col(f))}</div>`;
@@ -1989,7 +2008,7 @@ function renderPanelDyn() {
     }
   } else if (k === 'miner') {
     const ores = {};
-    for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) { const q = (e.y + j) * W + e.x + i; if (oreType[q]) ores[ORES[oreType[q]].item] = (ores[ORES[oreType[q]].item] || 0) + oreAmt[q]; }
+    for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) { const q = (e.y + j) * W + e.x + i; if (solid(q)) ores[ORES[oreType[q]].item] = (ores[ORES[oreType[q]].item] || 0) + oreAmt[q]; }
     h += `<div class="status"><i style="background:${ST_COL[e.st] || '#888'}"></i>${ST_TXT[e.st] || ''} · 90 kW</div><div class="prog">${bar(e.prog, 1, '#7fe08a')}</div>`;
     h += '<div class="sec">Ore underneath</div><div class="slots">' + (Object.keys(ores).map(q => `<div class="slot">${chip(q, fmt(ores[q]))}</div>`).join('') || '<span class="dim">None</span>') + '</div>';
     h += '<div class="sec">Output</div><div class="slots">' + (Object.keys(e.out).map(q => `<div class="slot">${chip(q, e.out[q])}</div>`).join('') || '<span class="dim">Empty</span>') + '</div>';
@@ -2201,7 +2220,7 @@ function renderModal() {
     }
   } else if (modalTab === 'mats') {
     h += '<h3>Ores</h3><div class="mats">';
-    for (let t = 1; t < ORES.length; t++) { const k = ORES[t].item; h += `<div class="mat">${chip(k)}<span>${ITEMS[k].f}</span></div>`; }
+    for (let t = 1; t < ORES.length; t++) { const k = ORES[t].item; h += ORES[t].fluid ? `<div class="mat">${chip(k, null, 'fl')}<span>Oil seeps: ${FLUIDS[k].f}. Drill with a pumpjack</span></div>` : `<div class="mat">${chip(k)}<span>${ITEMS[k].f}</span></div>`; }
     h += '</div><h3>Fluids</h3><div class="mats">';
     for (const f in FLUIDS) h += `<div class="mat">${chip(f, null, 'fl')}<span>${FLUIDS[f].f}${isGas(f) ? ' · gas, vents if it has nowhere to go' : ''}${FLUIDS[f].ck ? ' · <b>corrosive</b>, safe in ' + Object.keys(BUILD).filter(t => BUILD[t].P && resists(BUILD[t].P, f)).map(t => BUILD[t].n).join(', ') : ''}</span></div>`;
     h += '</div><h3>Materials</h3><div class="mats">';
@@ -2213,7 +2232,7 @@ function renderModal() {
     for (const t in BUILD) {
       const P = BUILD[t].P;
       if (!P) continue;
-      h += `<tr><td>${chip(t)}<br><span class="dim">${P.mat}</span></td><td>DN${P.dn}</td><td>${P.bar} bar</td><td>${P.q}/s</td><td>${P.tmax}°C</td><td>${P.duct ? 'Bulges, then ruptures' : 'Cracks at once; thermal shock'}</td><td>${P.res ? resName(P.res) : 'Nothing'}${P.weak ? '<br><span class="bad">weak to ' + resName(P.weak) + '</span>' : ''}</td></tr>`;
+      h += `<tr><td>${chip(t)}<br><span class="dim">${P.mat}</span></td><td>DN${P.dn}</td><td>${P.bar} bar</td><td>${P.q}/s</td><td>${P.tmax}°C</td><td>${P.duct ? 'Bulges, then ruptures' : P.shock ? 'Cracks at once; thermal shock' : 'Shatters at once'}${P.plastic ? '; softens when hot' : ''}</td><td>${P.res ? resName(P.res) : 'Nothing'}${P.weak ? '<br><span class="bad">weak to ' + resName(P.weak) + '</span>' : ''}</td></tr>`;
     }
     h += '</table><h3>How pipes fail</h3><ul class="plist">';
     h += '<li><b>Overpressure.</b> Brittle grey cast iron fractures the moment it passes its rating. Ductile steel yields and bulges first, and only ruptures if it stays overpressured. A bulge never goes back. Lead-lined pipe is rated 6 bar, so feed it from machines (5 bar), never straight from an 8 bar offshore pump.</li>';
@@ -2245,6 +2264,7 @@ const CHAINS = [
   { n: 'Nitrogen', l: [['h2', 'Ammonia converter (Haber-Bosch)', 'nh3'], ['nh3', 'Ostwald burner + water', 'hno3'], ['sodium_nitrate', 'Retort + acid', 'hno3'], ['nh3', 'Leach tank + hno3', 'amm_nitrate', 'Ball mill + aluminium + coal', 'ammonal'], ['ammonal', 'Workshop + cylinder + black_powder', 'he_drum'], ['so2', 'Gas scrubber + nh3 + water', 'amm_sulfate']], d: 'Fritz Haber fixed nitrogen from air over an iron catalyst at 200 bar in 1909; Carl Bosch scaled it up. Ammonia burned over platinum gauze gives nitric acid, and the two together make ammonium nitrate, the base of fertiliser and of ammonal. The converter and the burner\'s platinum gauze only turn up in the ruins of the old works. Before Haber, nitric acid came from Chilean nitrate and sulfuric acid in a retort.' },
   { n: 'Coal tar and TNT', l: [['coal', 'Coke oven (by-products)', 'coke', '+', 'tar', '+', 'coalgas'], ['tar', 'Distillation column + steam', 'toluene', '+', 'pitch'], ['coke', 'Coke oven + pitch', 'anode'], ['toluene', 'Nitrator + hno3 + acid', 'tnt'], ['tnt', 'Workshop + plate + brass + black_powder', 'shell', 'Field howitzer', 'Hive']], d: 'A by-product coke oven keeps what a beehive oven burns off: tar and a hydrogen-rich gas that fires boilers. Distilled tar gives toluene for TNT and pitch that binds anodes. TNT needs mixed nitric and sulfuric acid: nitric acid dissolves lead, so pipe it in titanium or glass-lined pipe. The nitrator and the shell drawings are in the old works.' },
   { n: 'Phosgene', l: [['coke', 'Gas producer + co2', 'co'], ['coke', 'Gas producer + steam', 'carbon'], ['co', '+', 'cl2', 'Phosgene reactor + carbon', 'phosgene'], ['phosgene', 'Cylinder filler + cylinder', 'phos_cyl', 'Livens projector', 'Gas cloud']], d: 'Blow flue-gas CO₂ through white-hot coke and it comes out as carbon monoxide. Steam the coke instead and it turns into activated carbon, the catalyst on which CO and chlorine join into phosgene. Any phosgene the reactor cannot pass on leaks out as a cloud over your own works. Crawlers that survive a gas breed a tolerance to it, so rotate chlorine, ammonia, phosgene and explosives. The reactor drawings are in the old works.' },
+  { n: 'Oil and plastics', l: [['crude', 'Crude distillation unit + steam', 'fuel_gas', '+', 'naphtha', '+', 'gas_oil', '+', 'bitumen'], ['naphtha', 'Tube furnace + steam (cracking)', 'ethylene', 'Pressure reactor', 'polyethylene'], ['ethylene', 'Pressure reactor + chlorine', 'edc', 'Tube furnace', 'vcm', '+', 'hcl'], ['hcl', 'Chlorinator + ethylene (oxychlorination)', 'edc'], ['vcm', 'Pressure reactor + water', 'pvc'], ['fuel_gas', 'Tube furnace + steam (reforming)', 'h2'], ['bitumen', 'Coke oven', 'pet_coke', 'Coke oven + pitch', 'anode']], d: 'Pumpjacks stand on oil seeps far from the start. The distillation unit splits crude by boiling point. Naphtha cracks to ethylene, the building block for polyethylene and PVC. Fuel gas fires the furnaces, raises steam, or reforms into hydrogen for ammonia. PVC and HDPE pipe resist acid and chlorine, but melt at 60°C.' },
   { n: 'Vanadium and catalysts', l: [['v_pig', 'Converter', 'steel', '+', 'v_slag'], ['v_slag', 'Roaster + soda_ash', 'na_vanadate', 'Leach tank + nh4cl + water', 'amv'], ['amv', 'Lime kiln', 'v2o5', 'Workshop + sand', 'v_cat', 'Acid plant', 'acid'], ['spent_v_cat', 'Leach tank + naoh', 'na_vanadate'], ['iron_conc', 'Arc furnace + alumina + crushed_lime', 'fe_cat', 'Ammonia converter', 'nh3'], ['v2o5', 'Converter + steel + aluminium', 'v_steel', 'Armour wall', 'Defence']], d: 'Rudolf Knietsch at BASF worked out the Contact process on platinum in the 1890s; vanadium pentoxide replaced the easily poisoned platinum in the 1920s and still makes nearly all the world\'s sulfuric acid. A catalyst is not used up by the reaction, but dust, heat and poisons slowly kill it, so beds are screened and recharged. Mittasch\'s fused iron for Haber-Bosch came out of 20,000 trials and has barely changed since.' },
   { n: 'Phosphorus and fluorine', l: [['phosphate_rock', 'Crusher', 'crushed_phos'], ['crushed_phos', 'Arc furnace + sand + coke', 'phosphorus', '+', 'slag', '+', 'sif4'], ['sif4', 'Gas scrubber + water', 'h2sif6', 'Leach tank + crushed_lime', 'fluorspar'], ['fluorspar', 'Retort + acid', 'hf', 'Leach tank + al_hydroxide + naoh', 'cryolite'], ['cryolite', 'Reduction pot + alumina + anode', 'aluminium'], ['phosphorus', 'Workshop + brass + plate + powder', 'wp_shell', 'Field howitzer', 'Fire']], d: 'Phosphate rock sits in a few far-off beds. Most of the world\'s phosphate becomes fertiliser, but an electric furnace boils the element itself out of it as white phosphorus, which burns on contact with air. The fluorine in the apatite comes off as SiF₄ fume; scrub it, fix it with lime as fluorspar, and turn that into hydrofluoric acid and synthetic cryolite to top up your aluminium pots. Fluorides eat glass-lined and titanium pipe, so run them in lead.' },
   { n: 'Soda and glass', l: [['brine', 'Solvay tower + nh3 + co2', 'nahco3', '+', 'nh4cl'], ['nh4cl', 'Distillation column + quicklime + steam', 'nh3', '+', 'cacl2'], ['nahco3', 'Lime kiln', 'soda_ash', '+', 'co2'], ['sand', 'Glass tank + soda_ash + crushed_lime', 'glass'], ['soda_ash', 'Leach tank + quicklime + water', 'naoh']], d: 'The Solvay process makes soda ash from salt and limestone, with ammonia going round and round as a carrier. The lime kiln supplies both the CO₂ and the quicklime that frees the ammonia again. Soda ash makes glass for glass-lined pipe, and lime turns it into caustic soda without any electricity.' },
@@ -2284,6 +2304,8 @@ const HELP = `<div class="help">
 <p>A <b>Gas producer</b> turns coke and CO₂ into carbon monoxide, or coke and steam into water gas or activated carbon. A <b>Phosgene reactor</b> joins CO and chlorine over the carbon. Phosgene is about six times as deadly as chlorine and drifts low and slow. If its output pipe backs up, the reactor leaks and the cloud settles on your own buildings. Each gas you fire breeds tolerance in the crawlers, up to 80%, which fades over several minutes. The hive and projector panels show it.</p>
 <h3>Phosphorus and fluorine</h3>
 <p>Mine <b>phosphate rock</b> and smelt it in the <b>Electric arc furnace</b> with sand and coke to get white phosphorus. The furnace also gives off CO and SiF₄. Vented SiF₄ is a heavy pollutant, so scrub it to fluorosilicic acid and turn that into fluorspar with crushed limestone. Fluorspar in a retort with sulfuric acid makes hydrofluoric acid, and HF with aluminium hydroxide and caustic makes cryolite, which lets reduction pots run faster. Fluorides dissolve glass-lined and titanium pipe three times faster than steel; lead-lined pipe resists them. <b>WP shells</b> from the old works' books set the ground burning for 14 seconds. The fire ignores gas tolerance but also burns your own buildings.</p>
+<h3>Oil and plastics</h3>
+<p>Dark, glistening <b>oil seeps</b> lie far from the start. A <b>Pumpjack</b> placed on one lifts crude oil and slowly drains the tiles under it. The <b>Crude distillation unit</b> needs a little steam and splits crude into fuel gas, naphtha, gas oil and bitumen. The <b>Tube furnace</b> burns fuel gas to crack naphtha into ethylene, reform fuel gas into hydrogen, or crack EDC into vinyl chloride. Ethylene polymerises to polyethylene in the <b>Pressure reactor</b>, or takes on chlorine to make EDC. Feed the HCl from EDC cracking back into a chlorinator with more ethylene. Plastic pipe shrugs off acid and chlorine but softens at 60°C.</p>
 <h3>Catalysts and vanadium</h3>
 <p>The <b>Acid plant</b> and the <b>Ammonia converter</b> have a catalyst bed. Empty, the acid plant runs as a slow lead chamber; loaded with <b>V₂O₅ catalyst rings</b> it becomes a Contact plant at up to 2.5× speed. Fused iron catalyst doubles a Haber converter. Each charge lasts a few hundred batches and loses activity in its last third, and the bed holds four charges. Vanadium comes from the iron in ilmenite: blow that pig iron in a converter to skim off vanadium slag, salt-roast it with soda ash, leach with Solvay ammonium chloride and calcine. Spent rings leach back with caustic. V₂O₅ reduced with aluminium into steel gives <b>vanadium steel</b> for armour walls.</p>
 <h3>Crawlers</h3>
@@ -2361,7 +2383,7 @@ cv.addEventListener('mousedown', ev => {
   if (e) { openPanel(e); return; }
   closePanel();
   const i = mouse.ty * W + mouse.tx;
-  if (mouse.tx >= 0 && mouse.ty >= 0 && mouse.tx < W && mouse.ty < H && oreType[i]) mining = { x: mouse.tx, y: mouse.ty, p: 0 };
+  if (mouse.tx >= 0 && mouse.ty >= 0 && mouse.tx < W && mouse.ty < H && solid(i)) mining = { x: mouse.tx, y: mouse.ty, p: 0 };
 });
 window.addEventListener('mouseup', ev => {
   if (ev.button === 0) { mouse.l = false; drag = null; }

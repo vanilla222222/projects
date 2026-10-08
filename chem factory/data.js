@@ -107,6 +107,10 @@ const ITEMS = {
   spent_v_cat: { n: 'Spent V₂O₅ Catalyst', c: '#6a5a3a', f: 'Catalyst rings clogged with dust and sintered by heat. The vanadium is still there and can be leached back out' },
   fe_cat: { n: 'Fused Iron Catalyst', c: '#4a4c54', f: 'Magnetite melted with alumina and lime, then crushed. Alois Mittasch tried 20,000 recipes in 1909-1912 to find it, and it is still used' },
   v_steel: { n: 'Vanadium Steel', c: '#8a96a8', f: 'Steel with 0.2% vanadium. Fine vanadium carbides pin the grains, so it is far stronger and tougher. Ford built the Model T from it' },
+  bitumen: { n: 'Bitumen', c: '#141210', f: 'The heaviest residue at the bottom of the crude column. Too thick to boil, it paves roads and roofs, or is coked' },
+  pet_coke: { n: 'Petroleum Coke', c: '#2a2a30', f: 'Nearly pure carbon baked out of bitumen in a delayed coker. Low in ash, so it makes the best carbon anodes' },
+  polyethylene: { n: 'Polyethylene Pellets', c: '#eef0ea', f: '(C₂H₄)ₙ, long chains of ethylene. Discovered by accident at ICI in 1933 when a trace of oxygen set off a high-pressure run' },
+  pvc: { n: 'PVC Resin', c: '#e0e4dc', f: 'Polyvinyl chloride (C₂H₃Cl)ₙ, a white powder. More than half of it is chlorine from salt, so it needs less oil than other plastics' },
   cryolite: { n: 'Cryolite', c: '#e8eef0', f: 'Sodium hexafluoroaluminate Na₃AlF₆. Molten, it dissolves alumina like water dissolves salt' },
 };
 
@@ -134,6 +138,14 @@ const FLUIDS = {
   sif4: { n: 'Silicon Tetrafluoride', c: '#c8c0d8', f: 'SiF₄ fume from heating fluorapatite with silica. Moist air turns it to fluorosilicic acid that etches glass and scorches leaves for miles', gas: true, cp: 0.75, t: 120, corr: 0.8, ck: 'hf' },
   h2sif6: { n: 'Fluorosilicic Acid', c: '#b8c8d0', f: 'H₂SiF₆ solution from scrubbing SiF₄ with water. Eats glass and titanium; lead and rubber hold it', cp: 3.3, t: 40, corr: 0.6, ck: 'hf' },
   hf: { n: 'Hydrofluoric Acid', c: '#d0e0d8', f: 'HF about 70%. Dissolves glass, titanium and skin, and seeps through to the bone. Lead resists it', cp: 2.5, t: 25, corr: 1.2, ck: 'hf' },
+  crude: { n: 'Crude Oil', c: '#2a2218', f: 'A brown-black mix of thousands of hydrocarbons, from methane gas to tar. It comes up warm from the rock', cp: 2.0, t: 45 },
+  fuel_gas: { n: 'Refinery Fuel Gas', c: '#c8c0b0', f: 'Mostly methane with ethane and propane. Refineries burn their own gas in furnaces and boilers', gas: true, cp: 2.2, t: 40 },
+  naphtha: { n: 'Naphtha', c: '#e8d8a0', f: 'Light liquid hydrocarbons boiling at 30-180°C, C₅ to C₁₀. Feed for steam crackers and petrol', cp: 2.1, t: 40 },
+  gas_oil: { n: 'Gas Oil', c: '#a87a30', f: 'Middle distillate boiling at 250-350°C. Diesel and heating oil', cp: 2.0, t: 60 },
+  ethylene: { n: 'Ethylene', c: '#d8e8f0', f: 'C₂H₄, the most-made organic chemical on Earth. Its double bond opens easily, so it links into chains', gas: true, cp: 1.5, t: 40 },
+  edc: { n: 'Ethylene Dichloride', c: '#d0d8a8', f: 'C₂H₄Cl₂, a heavy oily liquid. Traces of HCl in it eat steel', cp: 1.3, t: 50, corr: 0.3, ck: 'cl' },
+  vcm: { n: 'Vinyl Chloride', c: '#c8e0c0', f: 'C₂H₃Cl gas, kept liquid under pressure. A carcinogen: plants run it in sealed loops', gas: true, cp: 0.9, t: 40 },
+  hcl: { n: 'Hydrogen Chloride', c: '#b8d8a0', f: 'HCl gas. With any moisture it becomes hydrochloric acid, which dissolves steel and titanium', gas: true, cp: 0.8, t: 60, corr: 0.9, ck: 'cl' },
 };
 
 const ORES = [
@@ -149,6 +161,7 @@ const ORES = [
   { item: 'mineral_sand', c: '#4a4036', s: '#e0c050' },
   { item: 'caliche', c: '#b0a080', s: '#f4ecd0' },
   { item: 'phosphate_rock', c: '#6a5c44', s: '#c8b890' },
+  { item: 'crude', c: '#17130f', s: '#5a4a78', fluid: true },
 ];
 
 const BUILD = {
@@ -191,6 +204,8 @@ const BUILD = {
   brick_wall: { n: 'Brick Wall', kind: 'wall', w: 1, h: 1, cat: 'Defence', c: '#a8603a', cost: { brick: 2 }, makes: 2, hp: 400, d: 'Fired brick in lime mortar. Crawlers have to chew through it.' },
   concrete_wall: { n: 'Concrete Wall', kind: 'wall', w: 1, h: 1, cat: 'Defence', c: '#a8a8a2', cost: { concrete: 2 }, makes: 2, hp: 1200, d: 'Three times tougher than brick. Their acid etches concrete only slowly.' },
   armour_wall: { n: 'Armour Wall', kind: 'wall', w: 1, h: 1, cat: 'Defence', c: '#6a7888', cost: { v_steel: 2 }, makes: 2, hp: 3000, d: 'Vanadium steel plate on a concrete footing. It takes crawlers two and a half times longer to chew through than concrete.' },
+  pvc_pipe: { n: 'PVC Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#d8dcd4', cost: { pvc: 1 }, makes: 2, d: 'DN50, rated 16 bar. Immune to acid, chlorine, brine and caustic, but rigid PVC softens at 60°C and shatters when overpressured. Keep steam and hot liquor out of it.', P: { mat: 'Rigid PVC', dn: 50, v: 100, g: 200, q: 120, bar: 16, tmax: 60, duct: 0, cw: 25, ua: 0.15, res: 'acid cl alk', plastic: 1 } },
+  pe_pipe: { n: 'HDPE Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#2a2a2a', cost: { polyethylene: 2 }, makes: 2, d: 'DN100, rated only 8 bar. Black polyethylene that stretches a long way before it splits, and nothing but hot nitric acid touches it, fluorides included. It sags above 60°C.', P: { mat: 'High-density polyethylene', dn: 100, v: 250, g: 800, q: 400, bar: 8, tmax: 60, duct: 5, cw: 25, ua: 0.15, res: 'acid cl alk hf', plastic: 1 } },
   turret: { n: 'Gun Turret', kind: 'turret', w: 2, h: 2, cat: 'Defence', c: '#5a6a5a', ab: 'GT', cost: { plate: 6, casting: 6, motor: 1 }, hp: 500, d: 'Fires lead shot at crawlers within 10 tiles. Load cartridges by hand, from a chest or off a belt.' },
   hive: { n: 'Crawler Hive', kind: 'hive', w: 2, h: 2, c: '#6a4a5a', hp: 1000, d: 'A mound of chewed rock and mucus. Sulfur-oxidising bacteria in the crawlers\' guts live on SO₂ and the creatures follow the smog to its source.' },
   haber: { n: 'Ammonia Converter', kind: 'machine', w: 3, h: 3, cat: 'Chemistry', c: '#5a8aa8', ab: 'HB', kw: 250, lock: 'haber', cost: { plate: 14, motor: 3 }, d: 'Haber-Bosch loop: nitrogen from the air and hydrogen are squeezed to 200 bar over an iron catalyst at 450°C. Compressors take most of the power.' },
@@ -205,6 +220,10 @@ const BUILD = {
   nitrator: { n: 'Nitrator', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#a89a5a', ab: 'NI', kw: 60, lock: 'tnt', cost: { plate: 8, glass: 4, motor: 1 }, d: 'Stirred, water-cooled cast iron pot. Mixed nitric and sulfuric acid add one nitro group at a time; let it run hot and the batch can fume off or detonate.' },
   howitzer: { n: 'Field Howitzer', kind: 'gun', w: 2, h: 2, cat: 'Defence', c: '#5a6248', ab: 'HW', hp: 600, lock: 'shell', cost: { plate: 12, casting: 8, motor: 2 }, d: 'A 4.5-inch howitzer that lobs high-explosive shells at hives up to 44 tiles away. Feed it shells by hand, from a chest or off a belt.' },
   producer: { n: 'Gas Producer', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#6a5a4a', ab: 'GP', cost: { brick: 10, plate: 4 }, d: 'A brick-lined shaft of glowing coke. Gas blown up through the bed leaves as carbon monoxide.' },
+  pumpjack: { n: 'Pumpjack', kind: 'machine', w: 2, h: 2, cat: 'Mining', c: '#6a5a3a', ab: 'PJ', kw: 40, well: true, cost: { plate: 8, casting: 6, motor: 2 }, d: 'A nodding beam pump on top of a drilled well. It lifts crude from the rock below an oil seep, and the field slowly runs dry.' },
+  cdu: { n: 'Crude Distillation Unit', kind: 'machine', w: 3, h: 3, cat: 'Chemistry', c: '#7a6a4a', ab: 'CD', kw: 60, cost: { plate: 16, brick: 8, motor: 2 }, d: 'A furnace heats crude to 370°C and flashes it into a 40-tray column. Light cuts rise to the top, heavy ones drain off lower down, and bitumen is left at the bottom.' },
+  cracker: { n: 'Tube Furnace', kind: 'machine', w: 3, h: 3, cat: 'Chemistry', c: '#a8583a', ab: 'TF', kw: 30, cost: { brick: 16, steel: 6, motor: 1 }, d: 'Alloy tubes hung in a gas-fired firebox. Steam crackers, steam reformers and EDC crackers are all this furnace with a different feed and catalyst.' },
+  reactor: { n: 'Pressure Reactor', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#6a8a9a', ab: 'PX', kw: 60, cost: { plate: 10, glass: 2, motor: 2 }, d: 'A stirred, jacketed pressure vessel. Polymerises ethylene and vinyl chloride, and chlorinates ethylene to EDC.' },
   phos_rx: { n: 'Phosgene Reactor', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#8a8a6a', ab: 'PH', kw: 30, lock: 'phosgene', cost: { plate: 8, glass: 4, motor: 1 }, d: 'Water-jacketed tubes packed with activated carbon. Carbon monoxide and chlorine combine on the carbon surface at about 200°C.' },
 };
 
@@ -317,6 +336,19 @@ const RECIPES = [
   { id: 'cat_recycle', n: 'Catalyst Recycling', b: 'leach', t: 3, i: { spent_v_cat: 2 }, fi: { naoh: 10 }, o: { na_vanadate: 1, sand: 2 }, eq: 'V₂O₅ + 2NaOH → 2NaVO₃ + H₂O', note: 'Caustic leaches the vanadium out of spent rings. Most of the world\'s spent catalyst goes back this way.' },
   { id: 'fe_cat', n: 'Fused Iron Catalyst', b: 'arc', t: 4, i: { iron_conc: 3, alumina: 1, crushed_lime: 1 }, o: { fe_cat: 2 }, eq: 'Fe₃O₄ + Al₂O₃ + CaO, melted at 1600°C', note: 'Alumina stops the iron crystals sintering together; lime and potash speed the reaction. The magnetite is reduced to porous α-iron by the gas once it is in the converter.' },
   { id: 'v_steel', n: 'Vanadium Steel', b: 'converter', t: 4, i: { steel: 4, v2o5: 1, aluminium: 1 }, o: { v_steel: 4, slag: 1 }, eq: '3V₂O₅ + 10Al → 6V + 5Al₂O₃', note: 'Aluminium strips the oxygen from V₂O₅ in a fierce thermite reaction, and the vanadium dissolves into the steel.' },
+  { id: 'crude', n: 'Crude Oil', b: 'pumpjack', t: 1, well: 1, fo: { crude: 10 }, note: 'Edwin Drake drilled the first commercial oil well in Pennsylvania in 1859, 21 m deep. The well draws down the reservoir under it.' },
+  { id: 'distil', n: 'Atmospheric Distillation', b: 'cdu', t: 4, fi: { crude: 40, steam: 10 }, fo: { fuel_gas: 8, naphtha: 12, gas_oil: 12 }, o: { bitumen: 1 }, bleed: ['fuel_gas'], eq: 'Crude → gas + naphtha + gas oil + residue', note: 'Every cut is a mixture, split only by boiling range. Stripping steam lowers the partial pressure so heavy oil boils off without cracking.' },
+  { id: 'steam_crack', n: 'Steam Cracking', b: 'cracker', t: 3, fi: { naphtha: 20, steam: 10, fuel_gas: 4 }, fo: { ethylene: 12, fuel_gas: 8 }, ch: { pet_coke: 0.1 }, bleed: ['fuel_gas'], eq: 'C₆H₁₄ → 2C₂H₄ + C₂H₆ (850°C, 0.3 s)', note: 'Steam dilutes the hydrocarbon so the chains break into small olefins instead of carbon. The gas is quenched in milliseconds. Coke still builds up in the tubes and has to be burned out.' },
+  { id: 'smr', n: 'Steam Reforming', b: 'cracker', t: 3, fi: { fuel_gas: 20, steam: 20 }, fo: { h2: 40, co2: 10 }, bleed: ['co2'], eq: 'CH₄ + 2H₂O → CO₂ + 4H₂ (nickel catalyst)', note: 'Methane and steam over nickel at 850°C, then a shift reactor turns the CO to more hydrogen. Today most ammonia plants are fed this way instead of from coke.' },
+  { id: 'edc_crack', n: 'EDC Cracking', b: 'cracker', t: 3, fi: { edc: 20, fuel_gas: 4 }, fo: { vcm: 20, hcl: 20 }, eq: 'C₂H₄Cl₂ → C₂H₃Cl + HCl (500°C)', note: 'Every tonne of vinyl chloride gives off HCl. Send it to the chlorinator so none is wasted.' },
+  { id: 'edc', n: 'EDC (direct chlorination)', b: 'reactor', t: 3, fi: { ethylene: 20, cl2: 20 }, fo: { edc: 20 }, eq: 'C₂H₄ + Cl₂ → C₂H₄Cl₂ (FeCl₃)', note: 'Chlorine adds straight across the double bond in liquid EDC with a little ferric chloride.' },
+  { id: 'oxychlor', n: 'EDC (oxychlorination)', b: 'chlorinator', t: 3, fi: { ethylene: 10, hcl: 20 }, fo: { edc: 10 }, eq: '2C₂H₄ + 4HCl + O₂ → 2C₂H₄Cl₂ + 2H₂O (CuCl₂)', note: 'A fluidised bed of copper chloride on alumina recycles the HCl from the cracker with air. Direct chlorination plus oxychlorination is the balanced process: chlorine and ethylene in, only PVC and water out.' },
+  { id: 'polyethylene', b: 'reactor', t: 3, fi: { ethylene: 30 }, o: { polyethylene: 2 }, eq: 'n C₂H₄ → (C₂H₄)ₙ', note: 'Ziegler-Natta titanium catalysts made it at low pressure from 1953, giving dense, stiff HDPE.' },
+  { id: 'pvc', b: 'reactor', t: 3, fi: { vcm: 30, water: 20 }, o: { pvc: 2 }, eq: 'n C₂H₃Cl → (C₂H₃Cl)ₙ', note: 'Suspension polymerisation: droplets of liquid vinyl chloride stirred in water each polymerise into a grain of resin.' },
+  { id: 'pet_coke', n: 'Petroleum Coke', b: 'coke_oven', t: 4, i: { bitumen: 2 }, o: { pet_coke: 1 }, fo: { fuel_gas: 10 }, bleed: ['fuel_gas'], note: 'A delayed coker holds hot residue in a drum until it cracks to gas, naphtha and solid coke, which is cut out with water jets.' },
+  { id: 'anode_pet', n: 'Carbon Anode (pet coke)', b: 'coke_oven', t: 4, i: { pet_coke: 2, pitch: 1 }, o: { anode: 3 }, note: 'Calcined petroleum coke bound with coal tar pitch is what real smelters use: it is low in ash and metals that would spoil the aluminium.' },
+  { id: 'steam_fuelgas', n: 'Steam (fuel gas)', b: 'boiler', t: 2, fi: { fuel_gas: 20, water: 60 }, fo: { steam: 60 }, eq: 'CH₄ + 2O₂ → CO₂ + 2H₂O' },
+  { id: 'steam_oil', n: 'Steam (gas oil)', b: 'boiler', t: 3, fi: { gas_oil: 10, water: 90 }, fo: { steam: 90 }, eq: '2C₁₆H₃₄ + 49O₂ → 32CO₂ + 34H₂O', note: 'Oil firing replaced coal in ships and power stations from the 1910s: no stokers, no ash.' },
   { id: 'wp_shell', n: 'WP Shell', b: 'workshop', t: 3, lock: 1, i: { plate: 1, brass: 1, phosphorus: 1, black_powder: 1 }, o: { wp_shell: 2 }, note: 'The phosphorus is poured in molten under water and sealed before it can touch air.' },
   { id: 'cartridge', b: 'workshop', t: 2, i: { brass: 1, lead: 1, black_powder: 1 }, o: { cartridge: 2 } },
 ];
