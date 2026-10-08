@@ -531,7 +531,7 @@ function initWorld(seed) {
 
 function newGame(seed) {
   seed = seed == null ? Math.floor(Math.random() * 1e9) : seed;
-  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, made: {}, t: 0, nextId: 1, help: false, power: { gen: 0, demand: 0, cap: 0, sat: 1 } };
+  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, made: {}, t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 } };
   initWorld(seed);
   cam = { x: W / 2, y: H / 2, z: 32 };
   tool = null; sel = null;
@@ -1002,6 +1002,7 @@ function canAfford(cost, n) { for (const k in cost) if ((S.inv[k] || 0) < cost[k
 function pay(cost, n) { for (const k in cost) { S.inv[k] -= cost[k] * n; if (!S.inv[k]) delete S.inv[k]; } }
 function costHtml(cost, n) { return Object.keys(cost).map(k => chip(k, cost[k] * n, (S.inv[k] || 0) >= cost[k] * n ? 'have' : 'need')).join(''); }
 
+let modalHtml = '';
 function openModal(kind, tab) {
   modalKind = kind;
   modalTab = tab || (kind === 'craft' ? 'build' : kind === 'ency' ? 'chains' : 'help');
@@ -1018,7 +1019,9 @@ const TABS = {
 
 function renderModal() {
   if (!modalKind) return;
-  modal.querySelector('.tabs').innerHTML = TABS[modalKind].map(([id, n]) => `<button class="tab ${modalTab === id ? 'on' : ''}" data-tab="${id}">${n}</button>`).join('');
+  const th = TABS[modalKind].map(([id, n]) => `<button class="tab ${modalTab === id ? 'on' : ''}" data-tab="${id}">${n}</button>`).join('');
+  const tabs = modal.querySelector('.tabs');
+  if (tabs.innerHTML !== th) tabs.innerHTML = th;
   const body = modal.querySelector('.mbody'), st = body.scrollTop;
   let h = '';
   if (modalTab === 'build') {
@@ -1069,8 +1072,7 @@ function renderModal() {
   } else if (modalTab === 'help') {
     h += HELP;
   }
-  body.innerHTML = h;
-  body.scrollTop = st;
+  if (modalHtml !== h) { body.innerHTML = h; modalHtml = h; body.scrollTop = st; }
 }
 
 const CHAINS = [

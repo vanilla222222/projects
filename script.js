@@ -9,6 +9,7 @@ const PROJECTS = [
     { folder: "tier list", name: "Tier List Maker", tag: "Tool", description: "Rank anything from S to F. Drag text and images into tiers, then save it as a picture.", icon: "tiers", accent: "#c25b5b" },
     { folder: "nightfall defense", name: "Nightfall Defense", tag: "Game", description: "Ponies hold the moonlit road against a hundred waves of DNBs. An incremental tower defense.", icon: "shield", accent: "#5b7fc2" },
     { folder: "vanilla incremental", name: "Vanilla Incremental", tag: "Game", description: "Dig a 10x10 mine for dirt, ores and gems, then spend each one on its own upgrades.", icon: "pick", accent: "#c9a24f" },
+    { folder: "chem factory", name: "Chem Factory", tag: "Game", description: "Mine real ores and refine them with real chemistry. A factory game.", icon: "flask", accent: "#c08a3a" },
 ];
 
 const ICONS = {
@@ -19,6 +20,7 @@ const ICONS = {
     tiers: '<rect x="3" y="4" width="4" height="4" rx="1"/><rect x="3" y="10" width="4" height="4" rx="1"/><rect x="3" y="16" width="4" height="4" rx="1"/><path d="M10 6h11M10 12h7M10 18h4"/>',
     shield: '<path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.9 7.5-9.5V6z"/><path d="M15 9.5a3.2 3.2 0 1 1-3.4 4.4 2.6 2.6 0 0 0 3.4-4.4z"/>',
     pick: '<path d="M4 9c4-4.5 11-4.5 16 0"/><path d="M12 6.5 7 20"/>',
+    flask: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M7.5 15h9"/>',
     moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/><path d="M17 3v3M15.5 4.5h3"/>',
 };
 
