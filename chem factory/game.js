@@ -30,7 +30,7 @@ const sum = o => { let s = 0; for (const k in o) s += o[k]; return s; };
 const isGas = f => FLUIDS[f] && FLUIDS[f].gas && f !== 'steam';
 const spills = (r, f) => isGas(f) || !!(r.bleed && r.bleed.includes(f));
 const PC = 8, PW = W / PC, RAIN = 30;
-const POL_W = { so2: 1, cl2: 3, co2: 0.02, h2: 0, steam: 0, water: 0, acid: 0.5, naoh: 0.3, liquor: 0.3, ticl4: 1, brine: 0.05, nh3: 0.5, hno3: 0.8, tar: 0.4, coalgas: 0.3, toluene: 0.3, nh4cl: 0.1 };
+const POL_W = { so2: 1, cl2: 3, co2: 0.02, h2: 0, steam: 0, water: 0, acid: 0.5, naoh: 0.3, liquor: 0.3, ticl4: 1, brine: 0.05, nh3: 0.5, hno3: 0.8, tar: 0.4, coalgas: 0.3, toluene: 0.3, nh4cl: 0.1, co: 0.1, phosgene: 1 };
 const polAt = (x, y) => S.pol[Math.floor(y / PC) * PW + Math.floor(x / PC)] || 0;
 
 function mulberry32(a) {
@@ -476,7 +476,17 @@ function emit(e, f, a) {
   }
   if (st) st.puff = Math.min(3, (st.puff || 0) + w / 20);
 }
-function vent(e, f, a) { S.vent[f] = (S.vent[f] || 0) + a; e.pt = S.t; emit(e, f, a); }
+function vent(e, f, a) {
+  S.vent[f] = (S.vent[f] || 0) + a; e.pt = S.t; emit(e, f, a);
+  if (f !== 'phosgene') return;
+  e.leak = (e.leak || 0) + a;
+  if (e.leak < 20) return;
+  const c = ctr(e);
+  S.clouds.push({ x: c.x, y: c.y, g: 'phos', m: e.leak, r: 1, s: Math.random() * 100, own: 1 });
+  if (!(S.lk > S.t - 20)) toast(`Phosgene is leaking from the ${BUILD[e.type].n} at ${e.x},${e.y}. Pipe it away or it drifts over your works.`, true);
+  S.lk = S.t;
+  e.leak = 0;
+}
 
 function polStep() {
   const p = S.pol, n = new Array(PW * PW).fill(0), D = 0.05, K = 0.996;
@@ -532,7 +542,7 @@ function hurt(e, d, why) {
 const avail = r => !r.lock || !!(S.unl && S.unl[r.id]);
 const buildOk = t => !BUILD[t].lock || !!(S.unl && S.unl[BUILD[t].lock]);
 function unlock(id) { S.unl[id] = 1; return RECIPE[id]; }
-const BOOKS = [['haber', 'ostwald', 'amm_nitrate'], ['ammonal', 'he_drum', 'nh3_scrub'], ['tnt', 'shell']];
+const BOOKS = [['haber', 'ostwald', 'amm_nitrate'], ['ammonal', 'he_drum', 'nh3_scrub'], ['tnt', 'shell'], ['phosgene', 'fill_phos']];
 function labBook() {
   const left = BOOKS.map(b => b.filter(id => !S.unl[id])).filter(b => b.length);
   if (!left.length) { const r = unlockRandom(); return r ? [r] : null; }
@@ -597,6 +607,11 @@ function spawnRuins() {
   }
   S.rv = 1;
 }
+function resHtml() {
+  const gs = Object.keys(GAS).filter(g => resist(g) > 0.005);
+  if (!gs.length) return '';
+  return '<div class="sec">Crawler gas tolerance</div>' + gs.map(g => `<div class="gauge"><span>${GAS[g].n}</span>${bar(resist(g), 1, '#c07a4a')}<b>${Math.round(resist(g) * 100)}%</b></div>`).join('');
+}
 function guards(e) {
   const c = ctr(e);
   return lists().hive.filter(h => { const q = ctr(h); return Math.hypot(q.x - c.x, q.y - c.y) < 16; });
@@ -635,8 +650,10 @@ function gunTick(e) {
   e.cd = 5;
   S.shells.push({ sx: c.x, sy: c.y, tx, ty, t: 0, T: Math.max(1.2, dist / 18), k: 'shell', pid: e.id });
 }
-const PROJ_R = 28, PROJ_CAP = 6, POW_CAP = 20, PAYLOADS = ['nh3_cyl', 'cl2_cyl', 'he_drum'];
-const GAS = { cl2: { v: 0.45, tau: 36, tox: 1, rgb: '190,214,70' }, nh3: { v: 1.4, tau: 16, tox: 4, rgb: '214,228,244' } };
+const PROJ_R = 28, PROJ_CAP = 6, POW_CAP = 20, PAYLOADS = ['phos_cyl', 'nh3_cyl', 'cl2_cyl', 'he_drum'], CYL_GAS = { cl2_cyl: 'cl2', nh3_cyl: 'nh3', phos_cyl: 'phos' };
+const GAS = { cl2: { n: 'Chlorine', v: 0.45, tau: 36, tox: 1, cor: 1.5, rgb: '190,214,70' }, nh3: { n: 'Ammonia', v: 1.4, tau: 16, tox: 4, rgb: '214,228,244' }, phos: { n: 'Phosgene', v: 0.35, tau: 40, tox: 6, cor: 0.6, vis: 0.7, rgb: '226,224,196' } };
+const RES_MAX = 0.8, RES_STEP = 0.06;
+const resist = g => (S.res && S.res[g]) || 0;
 function projectorTick(e) {
   e.cd -= DT;
   if (e.cd > 0) return;
@@ -672,8 +689,11 @@ function land(s) {
     for (const h of lists().hive.slice()) { const q = ctr(h), d = Math.hypot(q.x - s.tx, q.y - s.ty); if (d < 3) { h.lh = S.t; hurt(h, 350 * (1 - d / 4)); } }
     for (const b of S.bugs) if (Math.hypot(b.x - s.tx, b.y - s.ty) < 3.5) b.hp -= 80;
   } else {
-    S.clouds.push({ x: s.tx, y: s.ty, g: s.k === 'nh3_cyl' ? 'nh3' : 'cl2', m: 40, r: 1.2, s: Math.random() * 100 });
-    fx.push({ x: s.tx, y: s.ty, t: 0.4, c: s.k === 'nh3_cyl' ? '#d6e4f4' : '#bed646' });
+    const g = CYL_GAS[s.k];
+    S.clouds.push({ x: s.tx, y: s.ty, g, m: 40, r: 1.2, s: Math.random() * 100 });
+    fx.push({ x: s.tx, y: s.ty, t: 0.4, c: `rgb(${GAS[g].rgb})` });
+    S.res = S.res || {};
+    S.res[g] = Math.min(RES_MAX, resist(g) + RES_STEP * (1 - resist(g) / RES_MAX));
   }
   let h = null, bd = 64;
   for (const o of lists().hive) { const q = ctr(o), d = (q.x - s.tx) ** 2 + (q.y - s.ty) ** 2; if (d < bd) { bd = d; h = o; } }
@@ -691,6 +711,7 @@ function windStep() {
   const w = S.wind;
   w.a += (Math.random() - 0.5) * 0.25;
   w.v = Math.max(0.05, Math.min(0.7, w.v + (Math.random() - 0.5) * 0.08));
+  if (S.res) for (const g in S.res) S.res[g] *= 0.998;
 }
 function cloudStep(dt) {
   const wx = Math.cos(S.wind.a) * S.wind.v, wy = Math.sin(S.wind.a) * S.wind.v, hs = lists().hive;
@@ -700,14 +721,14 @@ function cloudStep(dt) {
     c.r = Math.sqrt(c.r * c.r + 0.8 * dt);
     c.m *= Math.exp(-dt / G.tau);
     if (c.m < 1.5 || c.x < -6 || c.y < -6 || c.x > W + 6 || c.y > H + 6) { S.clouds.splice(i, 1); continue; }
-    const k = c.m / (Math.PI * c.r * c.r), R2 = c.r * c.r;
-    for (const b of S.bugs) if ((b.x - c.x) ** 2 + (b.y - c.y) ** 2 < R2) b.hp -= 20 * k * G.tox * dt;
+    const k = c.m / (Math.PI * c.r * c.r), R2 = c.r * c.r, tx = G.tox * (1 - resist(c.g));
+    for (const b of S.bugs) if ((b.x - c.x) ** 2 + (b.y - c.y) ** 2 < R2) b.hp -= 20 * k * tx * dt;
     for (const h of hs) {
       if (!ents.has(h.id)) continue;
       const q = ctr(h);
-      if ((q.x - c.x) ** 2 + (q.y - c.y) ** 2 < R2 + 1) { h.lh = S.t; hurt(h, 5 * k * G.tox * dt); }
+      if ((q.x - c.x) ** 2 + (q.y - c.y) ** 2 < R2 + 1) { h.lh = S.t; hurt(h, 5 * k * tx * dt); }
     }
-    if (c.g !== 'cl2' || k < 0.15) continue;
+    if (!G.cor || k < 0.15) continue;
     const seen = new Set(), r = Math.ceil(c.r);
     for (let y = Math.max(0, Math.floor(c.y) - r); y <= Math.min(H - 1, Math.floor(c.y) + r); y++)
       for (let x = Math.max(0, Math.floor(c.x) - r); x <= Math.min(W - 1, Math.floor(c.x) + r); x++) {
@@ -716,7 +737,7 @@ function cloudStep(dt) {
         seen.add(id);
         const e = ents.get(id), kd = e && kind(e);
         if (!e || kd === 'hive' || kd === 'ruin' || kd === 'wall') continue;
-        hurt(e, 1.5 * k * dt, 'gas');
+        hurt(e, G.cor * k * dt, 'gas');
       }
   }
 }
@@ -1021,7 +1042,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), shells: S.shells, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, help: S.help, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), shells: S.shells, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, help: S.help, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -1035,7 +1056,7 @@ function initWorld(seed) {
 function newGame(seed) {
   seed = seed == null ? Math.floor(Math.random() * 1e9) : seed;
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
-  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: [], evo: 0, lost: 0, kills: 0, hk: 0, unl: {}, clouds: [], shells: [], booms: [], wind: { a: Math.random() * 7, v: 0.3 } };
+  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: [], evo: 0, lost: 0, kills: 0, hk: 0, res: {}, unl: {}, clouds: [], shells: [], booms: [], wind: { a: Math.random() * 7, v: 0.3 } };
   initWorld(seed);
   spawnRuins();
   spawnHives();
@@ -1049,7 +1070,7 @@ function load() {
   try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) { d = null; }
   if (!d || d.v !== 1) return false;
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
-  S = { seed: d.seed, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, unl: d.unl || {}, clouds: d.clouds || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 } };
+  S = { seed: d.seed, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 } };
   initWorld(d.seed);
   for (const k in S.dep) { const i = +k; oreAmt[i] = S.dep[k]; if (oreAmt[i] <= 0) { oreAmt[i] = 0; oreType[i] = 0; } }
   for (const o of d.ents || []) {
@@ -1469,7 +1490,7 @@ function drawProjector(e, x, y, w, h, z) {
   const ks = PAYLOADS.filter(q => e.pay[q] > 0);
   let n = 0;
   for (const q of ks) for (let m = 0; m < e.pay[q] && n < PROJ_CAP; m++, n++) {
-    ctx.fillStyle = q === 'he_drum' ? '#c05030' : q === 'cl2_cyl' ? '#b8d040' : '#d8e4f4';
+    ctx.fillStyle = q === 'he_drum' ? '#c05030' : q === 'cl2_cyl' ? '#b8d040' : q === 'phos_cyl' ? '#d8d8c0' : '#d8e4f4';
     ctx.fillRect(x + z * 0.2 + n * z * 0.26, y + h - z * 0.3, z * 0.2, z * 0.14);
   }
   const f = Math.min(1, e.pw / POW_CAP);
@@ -1518,7 +1539,7 @@ function drawRuin(e, x, y, w, h, z) {
 }
 function drawGas(ox, oy, z) {
   for (const c of S.clouds) {
-    const G = GAS[c.g], k = c.m / (Math.PI * c.r * c.r), a = Math.min(0.75, 0.15 + k * 1.2);
+    const G = GAS[c.g], k = c.m / (Math.PI * c.r * c.r), a = Math.min(0.75, 0.15 + k * 1.2) * (G.vis || 1);
     if (a < 0.02) continue;
     const t = performance.now() / 1000;
     for (let n = 0; n < 5; n++) {
@@ -1534,7 +1555,7 @@ function drawGas(ox, oy, z) {
     const f = Math.min(1, s.t / s.T), X = s.sx + (s.tx - s.sx) * f, Y = s.sy + (s.ty - s.sy) * f, hgt = Math.sin(Math.PI * f) * s.T * 3;
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.beginPath(); ctx.ellipse(ox + X * z, oy + Y * z, z * 0.2, z * 0.1, 0, 0, 7); ctx.fill();
-    ctx.fillStyle = s.k === 'shell' ? '#3a3a30' : s.k === 'he_drum' ? '#c05030' : s.k === 'cl2_cyl' ? '#b8d040' : '#d8e4f4';
+    ctx.fillStyle = s.k === 'shell' ? '#3a3a30' : s.k === 'he_drum' ? '#c05030' : s.k === 'cl2_cyl' ? '#b8d040' : s.k === 'phos_cyl' ? '#d8d8c0' : '#d8e4f4';
     ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(ox + X * z, oy + (Y - hgt) * z, z * (s.k === 'shell' ? 0.1 : 0.16), 0, 7); ctx.fill(); ctx.stroke();
   }
@@ -1908,6 +1929,7 @@ function renderPanelDyn() {
     h += `<div class="gauge"><span>Integrity</span>${bar(e.hp, maxHp(e), '#a04a6a')}<b>${Math.round(e.hp)} / ${maxHp(e)}</b></div>`;
     h += `<div class="gauge"><span>Food</span>${bar(e.food, 50, '#d8c84a')}<b>${Math.round(e.food)} / 50</b></div>`;
     h += `<div class="spec">Smog around it ${Math.round(polAt(e.x + 1, e.y + 1))} · ${e.sw} swarms sent · crawler evolution ${Math.round(S.evo * 100)}%</div>`;
+    h += resHtml();
     h += '<p class="dim">The hive breathes in smog from the 24×24 tiles around it. Each 50 food sends a swarm at whatever vented most recently. Every eighth swarm founds a new hive, as close to the smog as it can. Guns or poison gas are the only ways to clear one, and they defend themselves.</p>';
   } else if (k === 'turret') {
     h += `<div class="status"><i style="background:${e.ammo || e.rd ? (S.t - e.sh < 0.5 ? ST_COL.work : ST_COL.none) : ST_COL.input}"></i>${!e.ammo && !e.rd ? 'Out of ammunition' : S.t - e.sh < 0.5 ? 'Firing' : 'Watching'} · range ${TUR_R} tiles · ${e.kills} kills</div>`;
@@ -1920,7 +1942,8 @@ function renderPanelDyn() {
     h += '<div class="sec">Rounds</div><div class="slots">' + (PAYLOADS.filter(q => e.pay[q] > 0).map(q => `<div class="slot">${chip(q, e.pay[q])}</div>`).join('') || '<span class="dim">Empty</span>') + `</div>`;
     h += `<div class="gauge"><span>Powder</span>${bar(e.pw, POW_CAP, '#808080')}<b>${e.pw} / ${POW_CAP}</b></div>`;
     h += `<div class="spec">Wind ${(S.wind.v * 10).toFixed(1)} m/s toward ${Math.round((S.wind.a * 180 / Math.PI % 360 + 360) % 360)}°</div>`;
-    h += '<p class="dim">Holds 6 rounds and 20 charges of black powder; chests and belts touching it top it up. Chlorine is 2.5 times heavier than air: the cloud hugs the ground, creeps with the wind and lingers, and if it drifts back over your works it corrodes them. Ammonia is lighter than air and much nastier to crawlers, whose sulfur-loving gut bacteria cannot stand alkali, but it rises and thins out fast. High explosive drums smash hives directly. Every round stirs up defenders who come for the projector.</p>';
+    h += resHtml();
+    h += '<p class="dim">Holds 6 rounds and 20 charges of black powder; chests and belts touching it top it up. Chlorine is 2.5 times heavier than air: the cloud hugs the ground, creeps with the wind and lingers, and if it drifts back over your works it corrodes them. Ammonia is lighter than air and much nastier to crawlers, whose sulfur-loving gut bacteria cannot stand alkali, but it rises and thins out fast. Phosgene is about six times deadlier than chlorine, heavier still and almost invisible. High explosive drums smash hives directly. Every round stirs up defenders who come for the projector, and the crawlers that survive a gas breed a tolerance to it, so switch gases. The tolerance fades over several minutes once you stop.</p>';
   } else if (k === 'gun') {
     const tg = e.tgt && ents.get(e.tgt);
     const st = !e.ammo ? 'No shells' : !tg ? `No hive between ${GUN_MIN} and ${GUN_R} tiles` : S.t - e.sh < 5.5 ? 'Firing' : 'Laying on target';
@@ -2116,6 +2139,7 @@ const CHAINS = [
   { n: 'Gas warfare', l: [['plate', 'Workshop', 'cylinder'], ['cl2', 'Cylinder filler + cylinder', 'cl2_cyl'], ['cl2_cyl', '+', 'black_powder', 'Livens projector', 'Gas cloud']], d: 'A Livens projector is a battery of buried tubes that throws a cylinder 1.5 km and bursts it on target. Chlorine is heavy and slow: watch the wind arrow in the top bar, because a cloud that drifts back eats your own works. Clear the hives guarding an abandoned works, then search it for salvage and lost processes.' },
   { n: 'Nitrogen', l: [['h2', 'Ammonia converter (Haber-Bosch)', 'nh3'], ['nh3', 'Ostwald burner + water', 'hno3'], ['sodium_nitrate', 'Retort + acid', 'hno3'], ['nh3', 'Leach tank + hno3', 'amm_nitrate', 'Ball mill + aluminium + coal', 'ammonal'], ['ammonal', 'Workshop + cylinder + black_powder', 'he_drum'], ['so2', 'Gas scrubber + nh3 + water', 'amm_sulfate']], d: 'Fritz Haber fixed nitrogen from air over an iron catalyst at 200 bar in 1909; Carl Bosch scaled it up. Ammonia burned over platinum gauze gives nitric acid, and the two together make ammonium nitrate, the base of fertiliser and of ammonal. The converter and the burner\'s platinum gauze only turn up in the ruins of the old works. Before Haber, nitric acid came from Chilean nitrate and sulfuric acid in a retort.' },
   { n: 'Coal tar and TNT', l: [['coal', 'Coke oven (by-products)', 'coke', '+', 'tar', '+', 'coalgas'], ['tar', 'Distillation column + steam', 'toluene', '+', 'pitch'], ['coke', 'Coke oven + pitch', 'anode'], ['toluene', 'Nitrator + hno3 + acid', 'tnt'], ['tnt', 'Workshop + plate + brass + black_powder', 'shell', 'Field howitzer', 'Hive']], d: 'A by-product coke oven keeps what a beehive oven burns off: tar and a hydrogen-rich gas that fires boilers. Distilled tar gives toluene for TNT and pitch that binds anodes. TNT needs mixed nitric and sulfuric acid: nitric acid dissolves lead, so pipe it in titanium or glass-lined pipe. The nitrator and the shell drawings are in the old works.' },
+  { n: 'Phosgene', l: [['coke', 'Gas producer + co2', 'co'], ['coke', 'Gas producer + steam', 'carbon'], ['co', '+', 'cl2', 'Phosgene reactor + carbon', 'phosgene'], ['phosgene', 'Cylinder filler + cylinder', 'phos_cyl', 'Livens projector', 'Gas cloud']], d: 'Blow flue-gas CO₂ through white-hot coke and it comes out as carbon monoxide. Steam the coke instead and it turns into activated carbon, the catalyst on which CO and chlorine join into phosgene. Any phosgene the reactor cannot pass on leaks out as a cloud over your own works. Crawlers that survive a gas breed a tolerance to it, so rotate chlorine, ammonia, phosgene and explosives. The reactor drawings are in the old works.' },
   { n: 'Soda and glass', l: [['brine', 'Solvay tower + nh3 + co2', 'nahco3', '+', 'nh4cl'], ['nh4cl', 'Distillation column + quicklime + steam', 'nh3', '+', 'cacl2'], ['nahco3', 'Lime kiln', 'soda_ash', '+', 'co2'], ['sand', 'Glass tank + soda_ash + crushed_lime', 'glass'], ['soda_ash', 'Leach tank + quicklime + water', 'naoh']], d: 'The Solvay process makes soda ash from salt and limestone, with ammonia going round and round as a carrier. The lime kiln supplies both the CO₂ and the quicklime that frees the ammonia again. Soda ash makes glass for glass-lined pipe, and lime turns it into caustic soda without any electricity.' },
   { n: 'By-products', l: [['ground_copper', 'Flotation', 'copper_conc', '+', 'pyrite_conc'], ['pyrite_conc', 'Roaster', 'pyrite_cinder', 'Blast furnace', 'pig_iron'], ['anode_slime', 'Roaster', 'dore', 'Leach tank + acid', 'silver']], d: 'Nothing is waste. Pyrite gives SO₂ for acid and its cinder is iron ore. Anode slime from copper refining yields selenium, silver and gold.' },
 ];
@@ -2149,6 +2173,8 @@ const HELP = `<div class="help">
 <p>Fill steel cylinders with chlorine or ammonia in a <b>Cylinder filler</b> and load them, with black powder, into a <b>Livens projector</b>. It lobs them at the nearest hive within 28 tiles. The gas cloud drifts with the wind shown in the top bar, spreads and thins out. Chlorine is heavy and lingers, and it corrodes any building it settles on, yours included. Ammonia is lighter than air and harsher on crawlers but disperses fast. Abandoned chemical works lie far out in the wilds, guarded by hives. Clear the hives within 16 tiles and search the works for platinum gauze, motors, cylinders and a lost process such as Haber-Bosch ammonia. Hive wreckage sometimes holds a lab notebook too.</p>
 <h3>Coal tar, soda and glass</h3>
 <p>Set a coke oven to <b>Coke + by-products</b> and pipe away its tar; the oven gas burns in a boiler. A <b>Distillation column</b> splits tar into toluene and pitch, and also boils the ammonia back out of Solvay liquor. The <b>Solvay tower</b> needs brine, ammonia and CO₂ from a lime kiln, and its soda ash melts with sand and limestone into glass. Glass-lined pipe holds any acid but cracks on a sudden temperature change. With the lost drawings, a <b>Nitrator</b> turns toluene into TNT for the shells of a <b>Field howitzer</b>, which shells hives up to 44 tiles away.</p>
+<h3>Phosgene and tolerance</h3>
+<p>A <b>Gas producer</b> turns coke and CO₂ into carbon monoxide, or coke and steam into water gas or activated carbon. A <b>Phosgene reactor</b> joins CO and chlorine over the carbon. Phosgene is about six times as deadly as chlorine and drifts low and slow. If its output pipe backs up, the reactor leaks and the cloud settles on your own buildings. Each gas you fire breeds tolerance in the crawlers, up to 80%, which fades over several minutes. The hive and projector panels show it.</p>
 <h3>Crawlers</h3>
 <p>Crawler hives sit in the wilds. The crawlers' gut bacteria live on sulfur, so hives breathe in the smog that drifts to them and send swarms at whatever vented last. They chew through anything in their path except belts, and every eighth swarm founds a new hive closer to the smog. The cleaner you run, the hungrier they stay. Gun turrets need lead shot cartridges, made from Chilean nitrate, sulfur and coal. Brick and concrete walls buy the guns time.</p>
 </div>`;

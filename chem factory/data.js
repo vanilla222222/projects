@@ -91,6 +91,8 @@ const ITEMS = {
   glass: { n: 'Glass', c: '#a8d8d8', f: 'Soda-lime glass: about 73% SiO₂, 14% Na₂O, 9% CaO. Shrugs off acids, but hot caustic slowly dissolves it' },
   tnt: { n: 'TNT', c: '#e8d070', f: '2,4,6-Trinitrotoluene C₇H₅N₃O₆. Pale yellow flakes that melt at 80°C and can be poured into shells. Hard to set off by accident' },
   shell: { n: 'HE Shell', c: '#b08a40', f: 'A forged steel shell filled with cast TNT, in a brass case with a black powder charge' },
+  carbon: { n: 'Activated Carbon', c: '#2a2a2e', f: 'Coke etched by steam at 900°C into a sponge of pores. One gram holds about 1000 m² of internal surface' },
+  phos_cyl: { n: 'Phosgene Cylinder', c: '#d8d8c0', f: 'Liquid COCl₂ at about 2 bar. Colourless, smells of mown hay, and its damage shows only hours later' },
 };
 
 const FLUIDS = {
@@ -112,6 +114,8 @@ const FLUIDS = {
   coalgas: { n: 'Coke Oven Gas', c: '#b0a8a0', f: 'About 55% hydrogen and 25% methane, plus CO. The town gas that lit Victorian streets', gas: true, cp: 2.4, t: 60 },
   toluene: { n: 'Toluene', c: '#e0d8b8', f: 'C₆H₅CH₃, a clear solvent boiling at 111°C. The light oil cut of coal tar', cp: 1.7, t: 30 },
   nh4cl: { n: 'Ammonium Chloride Liquor', c: '#c8d8c8', f: 'NH₄Cl solution from the Solvay tower. Chloride attacks plain steel', cp: 3.5, t: 30, corr: 0.4, ck: 'cl' },
+  co: { n: 'Producer Gas', c: '#9a8a7a', f: 'Carbon monoxide made by passing CO₂ or steam over white-hot coke. Odourless and deadly, it burns with a blue flame', gas: true, cp: 1.04, t: 400 },
+  phosgene: { n: 'Phosgene', c: '#d8d8c0', f: 'COCl₂, a heavy gas 3.4 times denser than air. Moisture splits it into HCl, which eats steel', gas: true, cp: 0.6, t: 60, corr: 0.6, ck: 'cl' },
 };
 
 const ORES = [
@@ -180,6 +184,8 @@ const BUILD = {
   glass_tank: { n: 'Glass Tank Furnace', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#a87a5a', ab: 'GF', kw: 40, cost: { brick: 16, plate: 4 }, d: 'A pool of molten glass at 1500°C. Batch goes in one end and clear glass is drawn off the other.' },
   nitrator: { n: 'Nitrator', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#a89a5a', ab: 'NI', kw: 60, lock: 'tnt', cost: { plate: 8, glass: 4, motor: 1 }, d: 'Stirred, water-cooled cast iron pot. Mixed nitric and sulfuric acid add one nitro group at a time; let it run hot and the batch can fume off or detonate.' },
   howitzer: { n: 'Field Howitzer', kind: 'gun', w: 2, h: 2, cat: 'Defence', c: '#5a6248', ab: 'HW', hp: 600, lock: 'shell', cost: { plate: 12, casting: 8, motor: 2 }, d: 'A 4.5-inch howitzer that lobs high-explosive shells at hives up to 44 tiles away. Feed it shells by hand, from a chest or off a belt.' },
+  producer: { n: 'Gas Producer', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#6a5a4a', ab: 'GP', cost: { brick: 10, plate: 4 }, d: 'A brick-lined shaft of glowing coke. Gas blown up through the bed leaves as carbon monoxide.' },
+  phos_rx: { n: 'Phosgene Reactor', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#8a8a6a', ab: 'PH', kw: 30, lock: 'phosgene', cost: { plate: 8, glass: 4, motor: 1 }, d: 'Water-jacketed tubes packed with activated carbon. Carbon monoxide and chlorine combine on the carbon surface at about 200°C.' },
 };
 
 const RECIPES = [
@@ -271,6 +277,11 @@ const RECIPES = [
   { id: 'glass', b: 'glass_tank', t: 4, i: { sand: 3, soda_ash: 1, crushed_lime: 1 }, o: { glass: 3 }, fo: { co2: 10 }, eq: 'Na₂CO₃ + CaCO₃ + 6SiO₂ → Na₂O·CaO·6SiO₂ + 2CO₂', note: 'Soda lowers the melting point of silica from 1700°C to about 1000°C; lime makes the glass stop dissolving in water.' },
   { id: 'tnt', n: 'TNT', b: 'nitrator', t: 4, lock: 1, fi: { toluene: 10, hno3: 15, acid: 10 }, o: { tnt: 2 }, eq: 'C₇H₈ + 3HNO₃ → C₇H₅N₃O₆ + 3H₂O (H₂SO₄)', note: 'Sulfuric acid soaks up the water and makes the nitronium ion NO₂⁺ that does the work. Three stages, each hotter and with stronger acid.' },
   { id: 'shell', n: 'HE Shell', b: 'workshop', t: 3, lock: 1, i: { plate: 1, brass: 1, tnt: 1, black_powder: 1 }, o: { shell: 2 }, note: 'TNT melts at 80°C, so it is simply poured into the shell body like wax.' },
+  { id: 'boudouard', n: 'Producer Gas (CO₂)', b: 'producer', t: 3, i: { coke: 1 }, fi: { co2: 20 }, fo: { co: 40 }, eq: 'C + CO₂ → 2CO', note: 'The Boudouard reaction only runs above about 900°C, where the equilibrium swings almost entirely to CO. It turns waste flue gas back into fuel.' },
+  { id: 'water_gas', n: 'Water Gas', b: 'producer', t: 3, i: { coke: 1 }, fi: { steam: 20 }, fo: { co: 20, h2: 20 }, eq: 'C + H₂O → CO + H₂', note: 'Blow steam through white-hot coke and it splits into CO and hydrogen. The reaction cools the bed, so real producers alternated steam runs with air blows.' },
+  { id: 'activate', n: 'Activated Carbon', b: 'producer', t: 5, i: { coke: 3 }, fi: { steam: 20 }, o: { carbon: 1 }, fo: { co: 10 }, eq: 'C + H₂O → CO + H₂ (partial)', note: 'Steam burns away part of the carbon from the inside, opening a maze of pores. The same carbon went into gas mask canisters in 1915.' },
+  { id: 'phosgene', n: 'Phosgene', b: 'phos_rx', t: 4, lock: 1, i: { carbon: 1 }, fi: { co: 40, cl2: 40 }, fo: { phosgene: 40 }, eq: 'CO + Cl₂ → COCl₂ (activated carbon)', note: 'The carbon is a catalyst, but it slowly fouls and is replaced. Still made by the million tonnes today to make polycarbonate and polyurethane.' },
+  { id: 'fill_phos', n: 'Fill Phosgene', b: 'filler', t: 2, lock: 1, i: { cylinder: 1 }, fi: { phosgene: 40 }, o: { phos_cyl: 1 }, note: 'Phosgene caused most of the gas deaths of the First World War. It was mixed with chlorine as White Star so the cloud could be seen and drift heavily.' },
   { id: 'cartridge', b: 'workshop', t: 2, i: { brass: 1, lead: 1, black_powder: 1 }, o: { cartridge: 2 } },
 ];
 
