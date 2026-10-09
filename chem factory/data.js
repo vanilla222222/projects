@@ -119,6 +119,15 @@ const ITEMS = {
   dap: { n: 'Diammonium Phosphate', c: '#8a8070', f: '(NH₄)₂HPO₄ granules, 18-46-0. The most traded fertiliser in the world' },
   urea: { n: 'Urea', c: '#f4f4f0', f: 'CO(NH₂)₂ prills, 46% nitrogen. Friedrich Wöhler made it from inorganic salts in 1828, ending the idea that only life could make organic compounds' },
   npk: { n: 'NPK Compound', c: '#b0c890', f: 'Granules that carry nitrogen, phosphorus and potassium together, here 15-15-15, so a farmer spreads one bag instead of three' },
+  wood: { n: 'Pulpwood', c: '#8a6a44', f: 'Softwood logs: about 45% cellulose, 28% lignin glue, 25% hemicellulose, and half their weight in water' },
+  wood_chips: { n: 'Wood Chips', c: '#c8a46a', f: 'Thumb-sized slices cut across the grain so cooking liquor can soak in from both ends' },
+  pulp: { n: 'Kraft Pulp', c: '#a8885a', f: 'Brown cellulose fibres with most of the lignin cooked out. Strong: kraft is German for strength' },
+  bleached_pulp: { n: 'Bleached Pulp', c: '#f0ece0', f: 'Cellulose fibres with the last brown lignin oxidised away by chlorine bleach' },
+  kraft_paper: { n: 'Kraft Paper', c: '#b08a58', f: 'Tough unbleached brown paper for sacks, wrapping and corrugated board' },
+  paper: { n: 'White Paper', c: '#f8f6f0', f: 'Bleached printing paper: a felted mat of cellulose fibres held together by hydrogen bonds' },
+  smelt: { n: 'Smelt', c: '#4a3a3a', f: 'Molten Na₂CO₃ and Na₂S that pours red-hot from the floor of a recovery boiler' },
+  lime_mud: { n: 'Lime Mud', c: '#d8d4c4', f: 'Wet precipitated CaCO₃ left after causticising, ready to be burnt back to lime' },
+  salt_cake: { n: 'Salt Cake', c: '#e8e4d0', f: 'Sodium sulfate Na₂SO₄, the classic sodium and sulfur make-up for kraft liquor' },
   cryolite: { n: 'Cryolite', c: '#e8eef0', f: 'Sodium hexafluoroaluminate Na₃AlF₆. Molten, it dissolves alumina like water dissolves salt' },
 };
 
@@ -158,6 +167,9 @@ const FLUIDS = {
   diesel: { n: 'Diesel', c: '#d8b848', f: 'Hydrotreated gas oil with the sulfur taken out. Burns clean in compression-ignition engines', cp: 2.0, t: 40 },
   bfw: { n: 'Softened Water', c: '#8ac8f0', f: 'Water with its calcium hardness precipitated out. Boilers fed with it stay free of scale', cp: 4.18, t: 15 },
   h3po4: { n: 'Phosphoric Acid', c: '#c8b878', f: 'Green-black wet-process H₃PO₄, about 30% P₂O₅, full of fluoride and iron. Attacks steel; lead and rubber hold it', cp: 2.6, t: 75, corr: 0.6, ck: 'acid' },
+  wl: { n: 'White Liquor', c: '#e0e4d8', f: 'NaOH and Na₂S in water, about 80°C. The sulfide speeds up delignification and protects the cellulose', cp: 3.6, t: 80, corr: 0.6, ck: 'alk' },
+  bl: { n: 'Black Liquor', c: '#2a2218', f: 'Dissolved lignin and spent sodium salts, about 90°C. Concentrated, it burns like heavy oil', cp: 3.2, t: 90, corr: 0.3, ck: 'alk' },
+  gl: { n: 'Green Liquor', c: '#6a8a6a', f: 'Smelt dissolved in water: Na₂CO₃ and Na₂S, tinted green by traces of iron', cp: 3.6, t: 85, corr: 0.4, ck: 'alk' },
 };
 
 const ORES = [
@@ -239,9 +251,12 @@ const BUILD = {
   reactor: { n: 'Pressure Reactor', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#6a8a9a', ab: 'PX', kw: 60, cost: { plate: 10, glass: 2, motor: 2 }, d: 'A stirred, jacketed pressure vessel. Polymerises ethylene and vinyl chloride, and chlorinates ethylene to EDC.' },
   granulator: { n: 'Granulator Drum', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#8a9a5a', ab: 'GR', kw: 50, cost: { plate: 8, brick: 4, motor: 2 }, d: 'A slowly turning, gently sloped drum. Acid and ammonia sprayed onto a rolling bed of powder react and build up layer by layer into hard, round granules.' },
   claus: { n: 'Claus Unit', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#b8a040', ab: 'CU', kw: 20, cost: { brick: 10, plate: 6, steel_pipe: 4 }, d: 'A burner and a train of alumina catalyst beds that turn hydrogen sulfide into liquid sulfur. The reaction heat raises steam in a waste-heat boiler.' },
-  diesel_gen: { n: 'Diesel Generator', kind: 'machine', w: 2, h: 2, cat: 'Power', c: '#5a6a5a', ab: 'DG', gen: 600, cost: { steel: 8, casting: 6, motor: 4, wire: 10 }, d: 'A compression-ignition engine on an alternator. Up to 600 kW, and it only burns fuel for the power drawn. Raw gas oil works but sends its sulfur up the exhaust as SO₂.' },
+  diesel_gen: { n: 'Diesel Generator', kind: 'machine', w: 2, h: 2, cat: 'Power', c: '#5a6a5a', ab: 'DI', gen: 600, cost: { steel: 8, casting: 6, motor: 4, wire: 10 }, d: 'A compression-ignition engine on an alternator. Up to 600 kW, and it only burns fuel for the power drawn. Raw gas oil works but sends its sulfur up the exhaust as SO₂.' },
   depot: { n: 'Rail Depot', kind: 'chest', w: 3, h: 3, cat: 'Logistics', c: '#5a6a7a', ab: 'RD', cost: { plate: 10, casting: 10, brick: 10 }, d: 'A goods siding where customers\' wagons are loaded. Belts, chests and machines touching it fill the open orders. Every finished order pays in parts, and every third brings a lab notebook from the buyer.' },
   phos_rx: { n: 'Phosgene Reactor', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#8a8a6a', ab: 'PH', kw: 30, lock: 'phosgene', cost: { plate: 8, glass: 4, motor: 1 }, d: 'Water-jacketed tubes packed with activated carbon. Carbon monoxide and chlorine combine on the carbon surface at about 200°C.' },
+  harvester: { n: 'Timber Harvester', kind: 'machine', w: 2, h: 2, cat: 'Mining', c: '#6a7a3a', ab: 'TH', kw: 40, forest: true, cost: { plate: 6, casting: 4, motor: 2 }, d: 'A tracked feller-buncher that fells, delimbs and cuts trees within 4 tiles. It works faster the more forest it can reach. The stand is replanted behind it, so the forest never runs out.' },
+  recovery: { n: 'Recovery Boiler', kind: 'machine', w: 3, h: 3, cat: 'Power', c: '#5a4a3a', ab: 'RB', cost: { brick: 20, steel: 8, steel_pipe: 6 }, d: 'Burns concentrated black liquor. The lignin is the fuel and raises steam, while the sodium salts melt and run out the floor as smelt. It is the heart of a kraft mill: it makes its power and recycles its chemicals.' },
+  paper_machine: { n: 'Paper Machine', kind: 'machine', w: 3, h: 3, cat: 'Processing', c: '#8a8a7a', ab: 'PM', kw: 150, cost: { plate: 12, casting: 8, motor: 4 }, d: 'A Fourdrinier: dilute pulp sprays onto a moving wire mesh, the water drains, presses squeeze the sheet and steam-heated cylinders dry it.' },
 };
 
 const RECIPES = [
@@ -381,6 +396,20 @@ const RECIPES = [
   { id: 'diesel_power', n: 'Power (diesel)', b: 'diesel_gen', t: 2, fi: { diesel: 10 }, fo: { co2: 6 }, bleed: ['co2'], eq: 'C₁₂H₂₆ + 18.5O₂ → 12CO₂ + 13H₂O' },
   { id: 'gasoil_power', n: 'Power (raw gas oil)', b: 'diesel_gen', t: 2, fi: { gas_oil: 10 }, fo: { co2: 6, so2: 3 }, bleed: ['co2', 'so2'], eq: 'Fuel S + O₂ → SO₂', note: 'Untreated gas oil holds about 1% sulfur, which leaves the exhaust as SO₂ and brings acid rain.' },
   { id: 'wp_shell', n: 'WP Shell', b: 'workshop', t: 3, lock: 1, i: { plate: 1, brass: 1, phosphorus: 1, black_powder: 1 }, o: { wp_shell: 2 }, note: 'The phosphorus is poured in molten under water and sealed before it can touch air.' },
+  { id: 'fell', n: 'Pulpwood', b: 'harvester', t: 3, o: { wood: 2 }, note: 'Rate depends on how much forest is within reach.' },
+  { id: 'chip', b: 'crusher', t: 1, i: { wood: 1 }, o: { wood_chips: 2 }, note: 'A disc chipper: knives on a spinning steel disc slice logs at an angle.' },
+  { id: 'steam_wood', n: 'Steam (wood)', b: 'boiler', t: 2, i: { wood: 2 }, fi: { water: 50 }, fo: { steam: 50 }, eq: '(C₆H₁₀O₅)ₙ + 6nO₂ → 6nCO₂ + 5nH₂O', note: 'Green wood is half water, so it gives less heat than coal.' },
+  { id: 'kraft_cook', n: 'Kraft Cook', b: 'digester', t: 4, i: { wood_chips: 4 }, fi: { wl: 20, steam: 10 }, o: { pulp: 2 }, fo: { bl: 30 }, eq: 'Lignin + OH⁻ + HS⁻ → soluble lignin fragments', note: 'Carl Dahl, 1879. Chips cook at 170°C for two hours. Hydrosulfide cleaves the ether links that bind lignin, so the fibres fall apart unharmed.' },
+  { id: 'soda_cook', n: 'Soda Cook', b: 'digester', t: 4, i: { wood_chips: 4 }, fi: { naoh: 20, steam: 10 }, o: { pulp: 1 }, fo: { bl: 30 }, eq: 'Lignin + OH⁻ → soluble lignin fragments', note: 'The older soda process of 1851. Caustic alone is slower and harsher, so half the fibre is lost. Use it to start up a new mill before the liquor loop is running.' },
+  { id: 'recover', n: 'Liquor Recovery', b: 'recovery', t: 3, fi: { bl: 30, water: 60 }, fo: { steam: 60, so2: 1 }, o: { smelt: 2 }, bleed: ['so2'], eq: 'Na-organics + O₂ → Na₂CO₃ + CO₂ + H₂O (steam)', note: 'Tomlinson recovery boiler, 1934. Black liquor is evaporated to 70% solids and sprayed into the furnace. About a tenth of the sodium is lost each round.' },
+  { id: 'recover_cake', n: 'Recovery + Salt Cake', b: 'recovery', t: 3, i: { salt_cake: 1 }, fi: { bl: 30, water: 60 }, fo: { steam: 60, so2: 1 }, o: { smelt: 3 }, bleed: ['so2'], eq: 'Na₂SO₄ + 2C → Na₂S + 2CO₂', note: 'Salt cake mixed into the liquor is reduced to sulfide in the char bed at the bottom of the furnace. This tops up the sodium and sulfur the loop loses.' },
+  { id: 'dissolve_smelt', n: 'Green Liquor', b: 'leach', t: 2, i: { smelt: 2 }, fi: { water: 20 }, fo: { gl: 20 }, eq: 'Na₂CO₃ + Na₂S → dissolved in water', note: 'Smelt drops into the dissolving tank with a roar of steam.' },
+  { id: 'causticise', n: 'White Liquor', b: 'leach', t: 2, i: { quicklime: 1 }, fi: { gl: 20 }, fo: { wl: 18 }, o: { lime_mud: 1 }, eq: 'CaO + H₂O + Na₂CO₃ → 2NaOH + CaCO₃↓', note: 'Slaked lime swaps its hydroxide for the carbonate. The chalky lime mud settles out and goes back to the kiln.' },
+  { id: 'reburn', n: 'Lime Reburning', b: 'kiln', t: 4, i: { lime_mud: 2, coal: 1 }, o: { quicklime: 2 }, fo: { co2: 20 }, eq: 'CaCO₃ → CaO + CO₂', note: 'A kraft mill burns the same lime over and over.' },
+  { id: 'salt_cake', n: 'Salt Cake (Mannheim)', b: 'roaster', t: 4, i: { salt: 2 }, fi: { acid: 10 }, o: { salt_cake: 1 }, fo: { hcl: 20 }, eq: '2NaCl + H₂SO₄ → Na₂SO₄ + 2HCl', note: 'Salt and sulfuric acid heated in a muffle furnace. This was the first step of the Leblanc soda process, and its HCl fumes led to the first air pollution laws, the Alkali Act of 1863.' },
+  { id: 'bleach_pulp', n: 'Bleached Pulp', b: 'leach', t: 3, i: { pulp: 2, bleach: 1 }, fi: { water: 20 }, o: { bleached_pulp: 2 }, eq: 'Lignin + OCl⁻ → oxidised, soluble fragments', note: 'Hypochlorite bleaching, as used since the 1800s. Modern mills use chlorine dioxide and oxygen instead.' },
+  { id: 'kraft_paper', b: 'paper_machine', t: 3, i: { pulp: 2 }, fi: { steam: 10, water: 20 }, o: { kraft_paper: 2 }, note: 'Unbleached fibre makes the strongest paper. Steam heats the drying cylinders.' },
+  { id: 'paper', b: 'paper_machine', t: 3, i: { bleached_pulp: 2 }, fi: { steam: 10, water: 20 }, o: { paper: 2 }, note: 'White paper for printing and writing.' },
   { id: 'cartridge', b: 'workshop', t: 2, i: { brass: 1, lead: 1, black_powder: 1 }, o: { cartridge: 2 } },
 ];
 
@@ -410,6 +439,8 @@ const ORDERS = [
   { c: 'Market gardens', item: 'amm_sulfate', n: 50, tier: 2, rw: { leach: 1, lead_pipe: 10 }, d: 'Sulfate of ammonia for the glasshouses.' },
   { c: 'Aircraft works', item: 'aluminium', n: 60, tier: 2, rw: { wire: 60, motor: 6 }, d: 'Aluminium sheet for airframes.' },
   { c: 'Photographic works', item: 'silver', n: 10, tier: 2, rw: { glass: 20, plate: 30 }, d: 'Silver for silver nitrate plates.' },
+  { c: 'Newspaper press', item: 'paper', n: 80, tier: 2, rw: { paper_machine: 1, motor: 4 }, d: 'Newsprint for the morning edition.' },
+  { c: 'Sack maker', item: 'kraft_paper', n: 80, tier: 2, rw: { harvester: 2, steel: 20 }, d: 'Multiwall kraft sacks for cement and fertiliser.' },
   { c: 'Grain belt farms', item: 'dap', n: 80, tier: 3, rw: { granulator: 1, motor: 6 }, d: 'DAP for the wheat belt.' },
   { c: 'Rice growers', item: 'urea', n: 80, tier: 3, rw: { reactor: 1, steel_pipe: 20 }, d: 'Urea for the paddies. It is the cheapest nitrogen to ship.' },
   { c: 'Fruit orchards', item: 'potash', n: 60, tier: 3, rw: { flotation: 1, belt: 60 }, d: 'Potash for the apple orchards. Fruit draws potassium out of the soil fast.' },

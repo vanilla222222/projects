@@ -338,6 +338,7 @@ function canPlace(type, x, y) {
   }
   if (type === 'miner' && !ore) return 'A miner needs ore under it';
   if (B.well && !oil) return 'A pumpjack must stand on an oil seep';
+  if (B.forest && !forestN(x, y, B.w, B.h)) return 'A timber harvester needs forest within 4 tiles';
   return null;
 }
 
@@ -1164,8 +1165,17 @@ function pumpTick(e) {
   e.on = left < PUMP_RATE;
 }
 
+const FOREST_R = 4, FOREST_FULL = 50;
+function forestN(x, y, w, h) {
+  let n = 0;
+  for (let j = y - FOREST_R; j < y + h + FOREST_R; j++) for (let i = x - FOREST_R; i < x + w + FOREST_R; i++) if (i >= 0 && j >= 0 && i < W && j < H && terrain[j * W + i] === 6) n++;
+  return n;
+}
+function forestOf(e) { if (e.fc == null) e.fc = forestN(e.x, e.y, BUILD[e.type].w, BUILD[e.type].h); return e.fc; }
+const forestMul = e => BUILD[e.type].forest ? Math.min(1, forestOf(e) / FOREST_FULL) : 1;
 function tryStart(e, r) {
   if (r.well && !wellTiles(e).length) return 'empty';
+  if (BUILD[e.type].forest && !forestOf(e)) return 'forest';
   if (e.desc > 0) return 'clean';
   if (e.type === 'boiler' && e.scale >= 1) return 'scale';
   if (r.i) for (const k in r.i) if ((e.inv[k] || 0) < r.i[k]) return 'input';
@@ -1288,7 +1298,7 @@ function tick() {
     const sp = kw ? sat : gn ? load : 1;
     if (kw && sat < 0.05) e.st = 'power';
     if (gn) { e.kw = gn * load; e.st = load < 0.01 ? 'idle' : 'work'; }
-    e.prog += DT * sp * catMul(e, r) * scaleMul(e) / r.t;
+    e.prog += DT * sp * catMul(e, r) * scaleMul(e) * forestMul(e) / r.t;
     if (e.prog >= 1) finish(e, r);
   }
   for (const e of l.miner) {
@@ -1415,8 +1425,8 @@ function shade(hex, f) {
   return `rgb(${r},${g},${b})`;
 }
 
-const ST_COL = { idle: '#8ac8e0', scale: '#e04a4a', clean: '#e0b84a', work: '#5fd06a', input: '#e0b84a', output: '#e07a3a', power: '#e04a4a', none: '#8a8f99', empty: '#8a8f99' };
-const ST_TXT = { idle: 'Idle, no load', scale: 'Tubes choked with scale', clean: 'Descaling', work: 'Working', input: 'Waiting for inputs', output: 'Output full', power: 'No power', none: 'No recipe set', empty: 'Depleted' };
+const ST_COL = { idle: '#8ac8e0', scale: '#e04a4a', clean: '#e0b84a', work: '#5fd06a', input: '#e0b84a', output: '#e07a3a', power: '#e04a4a', none: '#8a8f99', empty: '#8a8f99', forest: '#8a8f99' };
+const ST_TXT = { idle: 'Idle, no load', scale: 'Tubes choked with scale', clean: 'Descaling', work: 'Working', input: 'Waiting for inputs', output: 'Output full', power: 'No power', none: 'No recipe set', empty: 'Depleted', forest: 'No forest in reach' };
 
 function render() {
   const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight, z = cam.z;
@@ -2208,6 +2218,7 @@ function renderPanelDyn() {
       h += `<div class="prog">${bar(e.cy ? e.prog : 0, 1, '#7fe08a')}</div>`;
       if (r.cat) h += catHtml(e, r);
       if (e.type === 'boiler') h += `<div class="sec">Tube scale</div><div class="gauge"><span>Scale</span>${bar(e.scale || 0, 1, '#d8c8a0')}<b>${Math.round((e.scale || 0) * 100)}%</b></div><p class="dim">${e.desc > 0 ? `Descaling, back in ${Math.ceil(e.desc)} s.` : (e.soft || 0) > 1 ? 'Fed softened water: no new scale.' : 'Hard water bakes chalk onto the tubes, and steam output falls as the scale thickens. Feed softened water, or shut down and descale.'} Steam rate ${Math.round(scaleMul(e) * 100)}%.</p>`;
+      if (BUILD[e.type].forest) h += `<div class="sec">Forest</div><div class="gauge"><span>Stand</span>${bar(forestOf(e), FOREST_FULL, '#4a8a3a')}<b>${Math.round(forestMul(e) * 100)}%</b></div><p class="dim">${forestOf(e)} forest tiles within ${FOREST_R} tiles. It runs at full speed with ${FOREST_FULL} or more.</p>`;
       if (r.well) { const l = wellTiles(e), left = l.reduce((a, q) => a + oreAmt[q], 0); h += `<div class="sec">Reservoir</div><div class="spec">${l.length} of ${BUILD[e.type].w * BUILD[e.type].h} tiles on oil · ${fmt(left * r.fo.crude)} crude left</div>`; }
       h += '<div class="sec">Input buffer</div><div class="slots">';
       if (r.i) for (const q in r.i) h += `<div class="slot">${chip(q, Math.floor(e.inv[q] || 0) + '/' + inCap(r, q))}</div>`;
@@ -2504,7 +2515,7 @@ function renderModal() {
   } else if (modalTab === 'chains') {
     for (const c of CHAINS) {
       h += `<div class="chain"><h3>${c.n}</h3>`;
-      for (const line of c.l) h += `<div class="cl">${line.map(s => typeof s === 'string' ? (ITEMS[s] || FLUIDS[s] ? chip(s) : `<span class="via">${s}</span>`) : `<span class="via">${s[0]}</span>`).join('<span class="arr">→</span>').split('<span class="arr">→</span><span class="via">+</span><span class="arr">→</span>').join('<span class="arr">+</span>')}</div>`;
+      for (const line of c.l) h += `<div class="cl">${line.map(s => typeof s === 'string' ? (ITEMS[s] || FLUIDS[s] ? chip(s) : `<span class="via">${viaTxt(s)}</span>`) : `<span class="via">${viaTxt(s[0])}</span>`).join('<span class="arr">→</span>').split('<span class="arr">→</span><span class="via">+</span><span class="arr">→</span>').join('<span class="arr">+</span>')}</div>`;
       h += `<p class="note">${c.d}</p></div>`;
     }
   } else if (modalTab === 'recipes') {
@@ -2549,6 +2560,7 @@ function renderModal() {
   if (modalTab === 'map') drawMapView();
 }
 
+const viaTxt = t => t.replace(/\b[a-z][a-z0-9_]*\b/g, w => { const d = ITEMS[w] || FLUIDS[w]; return d ? d.n.toLowerCase() : w; });
 const CHAINS = [
   { n: 'Power', l: [['Offshore pump', 'water', 'Boiler + coal', 'steam', 'Steam engine']], d: 'Pumps go on water. Pipe the water into a boiler, give it coal by hand or belt, and let the steam reach an engine (touching or by pipe). One engine gives 900 kW from 30 steam/s. Furnaces and ovens burn fuel and need no power.' },
   { n: 'Iron', l: [['iron_ore', 'Crusher', 'crushed_iron', 'Ball mill + water', 'ground_iron', 'Magnetic separator', 'iron_conc'], ['iron_conc', 'Blast furnace + coke + crushed limestone', 'pig_iron', 'Converter', 'steel']], d: 'Banded iron ore is only about a third iron. Crushing and grinding free the iron mineral grains from the quartz, the magnet pulls them out, and the blast furnace strips the oxygen with carbon monoxide from burning coke.' },
@@ -2572,6 +2584,7 @@ const CHAINS = [
   { n: 'Vanadium and catalysts', l: [['v_pig', 'Converter', 'steel', '+', 'v_slag'], ['v_slag', 'Roaster + soda_ash', 'na_vanadate', 'Leach tank + nh4cl + water', 'amv'], ['amv', 'Lime kiln', 'v2o5', 'Workshop + sand', 'v_cat', 'Acid plant', 'acid'], ['spent_v_cat', 'Leach tank + naoh', 'na_vanadate'], ['iron_conc', 'Arc furnace + alumina + crushed_lime', 'fe_cat', 'Ammonia converter', 'nh3'], ['v2o5', 'Converter + steel + aluminium', 'v_steel', 'Armour wall', 'Defence']], d: 'Rudolf Knietsch at BASF worked out the Contact process on platinum in the 1890s; vanadium pentoxide replaced the easily poisoned platinum in the 1920s and still makes nearly all the world\'s sulfuric acid. A catalyst is not used up by the reaction, but dust, heat and poisons slowly kill it, so beds are screened and recharged. Mittasch\'s fused iron for Haber-Bosch came out of 20,000 trials and has barely changed since.' },
   { n: 'Phosphorus and fluorine', l: [['phosphate_rock', 'Crusher', 'crushed_phos'], ['crushed_phos', 'Arc furnace + sand + coke', 'phosphorus', '+', 'slag', '+', 'sif4'], ['sif4', 'Gas scrubber + water', 'h2sif6', 'Leach tank + crushed_lime', 'fluorspar'], ['fluorspar', 'Retort + acid', 'hf', 'Leach tank + al_hydroxide + naoh', 'cryolite'], ['cryolite', 'Reduction pot + alumina + anode', 'aluminium'], ['phosphorus', 'Workshop + brass + plate + powder', 'wp_shell', 'Field howitzer', 'Fire']], d: 'Phosphate rock sits in a few far-off beds. Most of the world\'s phosphate becomes fertiliser, but an electric furnace boils the element itself out of it as white phosphorus, which burns on contact with air. The fluorine in the apatite comes off as SiF₄ fume; scrub it, fix it with lime as fluorspar, and turn that into hydrofluoric acid and synthetic cryolite to top up your aluminium pots. Fluorides eat glass-lined and titanium pipe, so run them in lead.' },
   { n: 'Soda and glass', l: [['brine', 'Solvay tower + nh3 + co2', 'nahco3', '+', 'nh4cl'], ['nh4cl', 'Distillation column + quicklime + steam', 'nh3', '+', 'cacl2'], ['nahco3', 'Lime kiln', 'soda_ash', '+', 'co2'], ['sand', 'Glass tank + soda_ash + crushed_lime', 'glass'], ['soda_ash', 'Leach tank + quicklime + water', 'naoh']], d: 'The Solvay process makes soda ash from salt and limestone, with ammonia going round and round as a carrier. The lime kiln supplies both the CO₂ and the quicklime that frees the ammonia again. Soda ash makes glass for glass-lined pipe, and lime turns it into caustic soda without any electricity.' },
+  { n: 'Pulp and paper', l: [['Timber harvester in forest', 'wood', 'Crusher', 'wood_chips'], ['wood_chips', 'Digester + wl + steam', 'pulp', '+', 'bl'], ['bl', 'Recovery boiler + water', 'smelt', '+', 'steam'], ['smelt', 'Leach tank + water', 'gl', 'Leach tank + quicklime', 'wl', '+', 'lime_mud'], ['lime_mud', 'Lime kiln + coal', 'quicklime'], ['salt', 'Roaster + acid', 'salt_cake', '+', 'hcl'], ['pulp', 'Leach tank + bleach + water', 'bleached_pulp', 'Paper machine + steam', 'paper']], d: 'The kraft process turns forest into paper and recycles almost all of its chemicals. White liquor cooks the lignin out of wood chips, leaving strong cellulose fibre. The spent black liquor is burnt in a recovery boiler: the lignin raises steam, and the sodium salts run out as smelt. Dissolved and treated with lime, the smelt becomes white liquor again, and the lime mud goes back to the kiln. Each loop loses about a tenth of the sodium; top it up with salt cake, or with caustic soda through a soda cook.' },
   { n: 'By-products', l: [['ground_copper', 'Flotation', 'copper_conc', '+', 'pyrite_conc'], ['pyrite_conc', 'Roaster', 'pyrite_cinder', 'Blast furnace', 'pig_iron'], ['anode_slime', 'Roaster', 'dore', 'Leach tank + acid', 'silver']], d: 'Nothing is waste. Pyrite gives SO₂ for acid and its cinder is iron ore. Anode slime from copper refining yields selenium, silver and gold.' },
 ];
 
@@ -2612,6 +2625,8 @@ const HELP = `<div class="help">
 <p>Dark, glistening <b>oil seeps</b> lie far from the start. A <b>Pumpjack</b> placed on one lifts crude oil and slowly drains the tiles under it. The <b>Crude distillation unit</b> needs a little steam and splits crude into fuel gas, naphtha, gas oil and bitumen. The <b>Tube furnace</b> burns fuel gas to crack naphtha into ethylene, reform fuel gas into hydrogen, or crack EDC into vinyl chloride. Ethylene polymerises to polyethylene in the <b>Pressure reactor</b>, or takes on chlorine to make EDC. Feed the HCl from EDC cracking back into a chlorinator with more ethylene. Plastic pipe shrugs off acid and chlorine but softens at 60°C.</p>
 <h3>The world</h3>
 <p>Every world is generated from a seed. Press <b>New world</b> to pick a seed, size, water, ore richness and crawler density, with a live preview. Your start is always temperate with a lake and the six basic ores nearby. Further out, the land follows its climate: cold <b>tundra</b> to the north, hot <b>deserts</b> to the south, <b>forests</b> and <b>marshes</b> where it is wet, rivers running down from the hills to the sea. <b>Bare rock</b> ridges are too steep to build on and block crawlers. Ores follow geology, so prospect by biome: copper and lead-zinc in the hills, coal under swamps and forests, salt, caliche and potash in deserts, bauxite in hot wet laterite, mineral sands on beaches. Press <b>M</b> for the world map.</p>
+<h3>Pulp and paper</h3>
+<p>Forests are now a resource. A <b>Timber harvester</b> placed in or beside forest cuts pulpwood forever, faster the more forest is within 4 tiles. Chip the logs in a crusher, then cook the chips in a <b>Digester</b> with white liquor and steam. The <b>Recovery boiler</b> burns the black liquor for steam and gives smelt, which a leach tank dissolves to green liquor and then causticises with quicklime back to white liquor. Burn the lime mud back to quicklime in a kiln. To start a mill, or to top up what the loop loses, run a <b>soda cook</b> on caustic soda, or feed the recovery boiler <b>salt cake</b> made from salt and acid in a roaster. A <b>Paper machine</b> turns pulp into kraft paper, or bleached pulp into white paper, for customers at the rail depot.</p>
 <h3>Boiler water</h3>
 <p>Raw water is hard. Every boiler batch on it bakes a little chalk onto the tubes, steam output falls as the <b>scale</b> builds, and a fully choked boiler stops. Shut it down to <b>Descale</b> from its panel (a 20 second outage), or feed it <b>softened water</b>: run water through a leach tank with quicklime and the hardness settles out as crushed limestone you can send back to the kiln. Any machine that takes water also takes softened water.</p>
 <h3>Sulfur and diesel</h3>
