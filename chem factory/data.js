@@ -1371,9 +1371,8 @@ for (const r of RECIPES) {
 }
 
 const START_INV = {
-  belt: 80, pipe: 40, steel_pipe: 10, lead_pipe: 10, booster: 1, chest: 8, sorter: 4, miner: 8, pump: 1, boiler: 2, engine: 2,
-  crusher: 3, mill: 2, magsep: 1, flotation: 2, coke_oven: 2, kiln: 1, blast: 1, converter: 1, workshop: 2,
-  casting: 20, brick: 10, stack: 1, turret: 2, cartridge: 40, brick_wall: 20, projector: 1, filler: 1,
+  belt: 40, pipe: 20, chest: 2, miner: 3, pump: 1, boiler: 1, engine: 1,
+  crusher: 1, mill: 1, coke_oven: 1, kiln: 1, blast: 1, converter: 1, workshop: 1, casting: 10, brick: 10, cartridge: 20,
 };
 
 const ORDERS = [
