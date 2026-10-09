@@ -18,6 +18,8 @@ const panel = $('#panel'), tip = $('#tip'), modal = $('#modal'), hotbar = $('#ho
 let S, terrain, oreType, oreAmt, elev, occ, ents, patches, L = null;
 let cam = { x: W / 2, y: H / 2, z: 32 };
 let tool = null, toolDir = 1, sel = null, mining = null, drag = null;
+let camFree = false, noAmmoT = 0;
+const PL_V = 6, PL_R = 0.28, REACH = 10, MINE_REACH = 3.5, PL_HP = 250, PL_GUN = 15;
 const mouse = { x: 0, y: 0, tx: -1, ty: -1, fx: 0, fy: 0, l: false, r: false, m: false, in: false };
 const keys = {};
 let modalTab = null, modalKind = null, overlay = 0;
@@ -1098,7 +1100,7 @@ function hiveStep() {
   }
 }
 function bugStep() {
-  const sp = BUG_V * DT, dmg = 6 * (1 + S.evo) * DT;
+  const sp = BUG_V * DT, dmg = 6 * (1 + S.evo) * DT, P = S.pl;
   for (let i = S.bugs.length - 1; i >= 0; i--) {
     const b = S.bugs[i];
     if (b.hp <= 0) { S.bugs.splice(i, 1); S.kills = (S.kills || 0) + 1; fx.push({ x: b.x, y: b.y, t: 0.5, c: '#a0c040' }); continue; }
@@ -1106,8 +1108,11 @@ function bugStep() {
     if (!t && b.tid > 0) { t = nearestEnt(b.x, b.y, 25); b.tid = t ? t.id : -1; }
     let tx = b.hx, ty = b.hy;
     if (t) { const c = ctr(t); tx = c.x; ty = c.y; }
+    const pd = P.dead > 0 ? 1e9 : Math.hypot(P.x - b.x, P.y - b.y), chase = pd < (b.tid === -2 ? 40 : 7);
+    if (b.tid === -2 && P.dead > 0) b.tid = -1;
+    if (chase) { tx = P.x; ty = P.y; if (pd < 0.7) { b.a = Math.atan2(P.y - b.y, P.x - b.x); b.chew = 0; plHurt(dmg * 2); continue; } }
     const dx = tx - b.x, dy = ty - b.y, d = Math.hypot(dx, dy);
-    if ((!t && d < 1) || S.t - (b.bt ?? S.t) > BUG_LIFE) { S.bugs.splice(i, 1); continue; }
+    if ((!t && !chase && d < 1) || S.t - (b.bt ?? S.t) > BUG_LIFE) { S.bugs.splice(i, 1); continue; }
     if (d < 1e-3) continue;
     b.a = Math.atan2(dy, dx);
     const wob = Math.sin(S.t * 5 + b.ph) * 0.35;
@@ -1393,9 +1398,10 @@ function tick() {
   for (const e of l.miner) pushItems(e, e.out, 'machine');
   for (const e of l.chest) if (e.type === 'chest') pushItems(e, e.store, 'chest');
   if (l.chest.some(e => e.type === 'depot') && (S.orders || []).length < 3 && Math.floor(S.t * 30) % 30 === 0) fillOrders();
+  plTick();
   if (mining) {
     const i = mining.y * W + mining.x;
-    if (!mouse.l || tool || !solid(i) || occ[i] || mouse.tx !== mining.x || mouse.ty !== mining.y) mining = null;
+    if (!mouse.l || tool || !solid(i) || occ[i] || mouse.tx !== mining.x || mouse.ty !== mining.y || !inReach(mining.x + 0.5, mining.y + 0.5, MINE_REACH)) mining = null;
     else if ((mining.p += DT / 0.5) >= 1) {
       mining.p = 0;
       const item = ORES[oreType[i]].item;
@@ -1406,6 +1412,104 @@ function tick() {
   }
 }
 
+function walkable(x, y) {
+  if (x < 0 || y < 0 || x >= W || y >= H) return false;
+  const t = terrain[y * W + x];
+  if (t === 1 || t === 4) return false;
+  const o = at(x, y);
+  return !o || o.type === 'belt' || kind(o) === 'pipe';
+}
+function spawnPt() {
+  const cx = Math.floor(W / 2), cy = Math.floor(H / 2);
+  for (let r = 0; r < W / 2; r++) for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) {
+    if (Math.max(Math.abs(i), Math.abs(j)) !== r) continue;
+    if (walkable(cx + i, cy + j) && walkable(cx + i + 1, cy + j) && walkable(cx + i, cy + j + 1)) return { x: cx + i + 0.5, y: cy + j + 0.5 };
+  }
+  return { x: cx + 0.5, y: cy + 0.5 };
+}
+function newPl() { return Object.assign(spawnPt(), { f: Math.PI / 2, wk: 0, hp: PL_HP, rd: 0 }); }
+function plFree(x, y) {
+  return walkable(Math.floor(x - PL_R), Math.floor(y - PL_R)) && walkable(Math.floor(x + PL_R), Math.floor(y - PL_R)) && walkable(Math.floor(x - PL_R), Math.floor(y + PL_R)) && walkable(Math.floor(x + PL_R), Math.floor(y + PL_R));
+}
+const TSPD = { 5: 0.8, 6: 0.6, 7: 0.85 };
+function plMove(dt, mx, my) {
+  const P = S.pl;
+  P.mv = false;
+  if (P.dead > 0) return false;
+  let left = dt;
+  while (left > 1e-6) {
+    const h = Math.min(0.04, left); left -= h;
+    const tx = Math.floor(P.x), ty = Math.floor(P.y);
+    let vx = 0, vy = 0;
+    if (mx || my) {
+      const l = Math.hypot(mx, my), v = PL_V * (TSPD[terrain[ty * W + tx]] || 1);
+      vx = mx / l * v; vy = my / l * v;
+      if (S.t - (P.sh || -9) > 0.4) P.f = Math.atan2(my, mx);
+      P.wk += h * v * 2.4; P.mv = true;
+    }
+    const o = at(tx, ty);
+    if (o && o.type === 'belt') { vx += DX[o.dir] * 2; vy += DY[o.dir] * 2; }
+    if (!vx && !vy) break;
+    const nx = P.x + vx * h, ny = P.y + vy * h;
+    if (!plFree(P.x, P.y) || plFree(nx, ny)) { P.x = nx; P.y = ny; }
+    else if (plFree(nx, P.y)) P.x = nx;
+    else if (plFree(P.x, ny)) P.y = ny;
+    P.x = Math.max(PL_R, Math.min(W - PL_R, P.x)); P.y = Math.max(PL_R, Math.min(H - PL_R, P.y));
+  }
+  return P.mv;
+}
+function inReach(x, y, r) { const P = S.pl; return !(P.dead > 0) && Math.hypot(x - P.x, y - P.y) <= r; }
+function entReach(e, r) {
+  const B = BUILD[e.type], P = S.pl;
+  const cx = Math.max(e.x, Math.min(e.x + B.w, P.x)), cy = Math.max(e.y, Math.min(e.y + B.h, P.y));
+  return inReach(cx, cy, r);
+}
+function plHurt(d) {
+  const P = S.pl;
+  if (P.dead > 0) return;
+  P.hp -= d; P.lh = S.t;
+  if (P.hp <= 0) {
+    P.hp = 0; P.dead = 6; mining = null;
+    fx.push({ x: P.x, y: P.y, t: 0, c: '#d07a2a' });
+    toast('The crawlers got you. You will wake up back at the landing site.', true);
+  }
+}
+function plShoot() {
+  const P = S.pl;
+  if (P.dead > 0 || P.cd > 0) return;
+  let best = null, bd = PL_GUN * PL_GUN, tx, ty;
+  for (const b of S.bugs) { const d = (b.x - P.x) ** 2 + (b.y - P.y) ** 2; if (b.hp > 0 && d < bd) { bd = d; best = b; } }
+  let h = null;
+  if (!best) for (const o of lists().hive) { const q = ctr(o), d = (q.x - P.x) ** 2 + (q.y - P.y) ** 2; if (d < bd) { bd = d; h = o; } }
+  if (!best && !h) return;
+  if (!P.rd) {
+    if (S.inv.cartridge > 0) { S.inv.cartridge--; P.rd = 10; }
+    else { if (S.t - noAmmoT > 3) { noAmmoT = S.t; toast('Out of cartridges. Craft lead shot cartridges in a workshop.', true); } return; }
+  }
+  if (best) { best.hp -= 12; tx = best.x; ty = best.y; if (best.hp <= 0) S.pk = (S.pk || 0) + 1; }
+  else {
+    const q = ctr(h);
+    tx = q.x; ty = q.y;
+    if (h.dc <= 0) { spawnBugs(h, 2 + Math.floor(S.evo * 3), -2); h.dc = 10; }
+    h.lh = S.t;
+    hurt(h, 12);
+  }
+  P.rd--; P.cd = 0.2;
+  P.f = Math.atan2(ty - P.y, tx - P.x);
+  P.sh = S.t; P.tx = tx; P.ty = ty;
+}
+function plTick() {
+  const P = S.pl;
+  if (P.dead > 0) {
+    P.dead -= DT;
+    if (P.dead <= 0) { P.dead = 0; Object.assign(P, spawnPt()); P.hp = PL_HP; P.lh = S.t; camFree = false; toast('You wake up back at the landing site.'); }
+    return;
+  }
+  P.cd = Math.max(0, (P.cd || 0) - DT);
+  if (S.t - (P.lh ?? -99) > 8) P.hp = Math.min(PL_HP, P.hp + 8 * DT);
+  if (keys[' ']) plShoot();
+}
+
 function serialize() {
   const es = [];
   for (const e of ents.values()) {
@@ -1413,7 +1517,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, help: S.help, qb: S.qb, cq: S.cq, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, dead: S.pl.dead || 0 }, pk: S.pk || 0, help: S.help, qb: S.qb, cq: S.cq, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -1433,7 +1537,8 @@ function newGame(seed, opts) {
   initWorld(seed, gen);
   spawnRuins();
   spawnHives();
-  cam = { x: W / 2, y: H / 2, z: 32 };
+  S.pl = newPl();
+  cam = { x: S.pl.x, y: S.pl.y, z: 32 }; camFree = false;
   tool = null; sel = null;
   drawTerrain();
 }
@@ -1445,7 +1550,7 @@ function load() {
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
   const gen = d.gen || { legacy: 1 };
   setSize(gen.legacy ? 160 : gen.size);
-  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [] };
+  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0 };
   initWorld(d.seed, gen);
   for (const k in S.dep) { const i = +k; oreAmt[i] = S.dep[k]; if (oreAmt[i] <= 0) { oreAmt[i] = 0; oreType[i] = 0; } }
   for (const o of d.ents || []) {
@@ -1456,7 +1561,9 @@ function load() {
   }
   if (!S.rv) spawnRuins();
   if (!S.hv) spawnHives();
+  S.pl = d.pl ? Object.assign({ wk: 0, f: Math.PI / 2, hp: PL_HP, rd: 0 }, d.pl) : newPl();
   if (d.cam) cam = d.cam;
+  camFree = false;
   drawTerrain();
   return true;
 }
@@ -1610,6 +1717,7 @@ function render() {
   for (const e of vis) if (e.type === 'belt') drawBeltItems(e, ox, oy, z);
   for (const e of vis) if (kind(e) !== 'pipe' && e.type !== 'belt') drawBuilding(e, ox, oy, z);
   drawSmoke(vis, ox, oy, z);
+  drawPlayer(ox, oy, z);
   drawBugs(ox, oy, z, x0, y0, x1, y1);
   for (const e of vis) if (e.type === 'turret' && S.t - e.sh < 0.07) {
     const c = ctr(e);
@@ -1660,7 +1768,17 @@ function render() {
     ctx.arc(cx, cy, z * 0.35, -Math.PI / 2, -Math.PI / 2 + mining.p * Math.PI * 2);
     ctx.stroke();
   }
-  if (tool && mouse.in) drawGhost(ox, oy, z);
+  if (S.pl.dead > 0) {
+    ctx.fillStyle = 'rgba(40,0,0,0.35)'; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#ffd0c0'; ctx.font = 'bold 22px system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Respawning in ' + Math.ceil(S.pl.dead) + '…', w / 2, h / 2 - 40);
+    ctx.textAlign = 'left';
+  }
+  if (tool && mouse.in) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.32)'; ctx.lineWidth = 1.5; ctx.setLineDash([6, 6]);
+    ctx.beginPath(); ctx.arc(ox + S.pl.x * z, oy + S.pl.y * z, REACH * z, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+    drawGhost(ox, oy, z);
+  }
   else if (mouse.in && mouse.tx >= 0 && mouse.tx < W && mouse.ty >= 0 && mouse.ty < H) {
     ctx.strokeStyle = 'rgba(255,255,255,0.5)';
     ctx.lineWidth = 1;
@@ -1836,6 +1954,45 @@ function arrow(cx, cy, d, s, c) {
   ctx.restore();
 }
 
+function drawPlayer(ox, oy, z) {
+  const P = S.pl;
+  if (P.dead > 0) return;
+  const X = ox + P.x * z, Y = oy + P.y * z, s = z * 0.95, wk = P.mv ? Math.sin(P.wk) : 0;
+  const fx = Math.cos(P.f), fy = Math.sin(P.f), side = Math.abs(fx) > 0.6, up = !side && fy < 0;
+  ctx.fillStyle = 'rgba(0,0,0,0.32)';
+  ctx.beginPath(); ctx.ellipse(X + s * 0.1, Y + s * 0.42, s * 0.3, s * 0.12, 0, 0, 7); ctx.fill();
+  const leg = (dx, ph) => { ctx.fillStyle = '#2b3038'; ctx.fillRect(X + dx - s * 0.06, Y + s * 0.08, s * 0.12, s * 0.3 + ph * s * 0.06); ctx.fillStyle = '#16181c'; ctx.fillRect(X + dx - s * 0.07, Y + s * 0.34 + ph * s * 0.06, s * 0.14, s * 0.07); };
+  if (side) { leg(fx * wk * s * 0.1, 0); leg(-fx * wk * s * 0.1, 0); } else { leg(-s * 0.09, wk); leg(s * 0.09, -wk); }
+  const pack = () => { ctx.fillStyle = '#5a5e52'; ctx.fillRect(X - s * 0.17 - (side ? fx * s * 0.12 : 0), Y - s * 0.2, s * 0.34, s * 0.3); ctx.fillStyle = '#7a7e70'; ctx.fillRect(X - s * 0.14 - (side ? fx * s * 0.12 : 0), Y - s * 0.17, s * 0.28, s * 0.06); };
+  if (!up) pack();
+  const tg = ctx.createLinearGradient(X - s * 0.2, 0, X + s * 0.2, 0);
+  tg.addColorStop(0, '#9a4e1c'); tg.addColorStop(0.45, '#e08a38'); tg.addColorStop(1, '#a8561e');
+  ctx.fillStyle = tg;
+  ctx.beginPath(); ctx.roundRect(X - s * 0.19, Y - s * 0.24, s * 0.38, s * 0.36, s * 0.08); ctx.fill();
+  ctx.fillStyle = '#d8c040'; ctx.fillRect(X - s * 0.19, Y - s * 0.02, s * 0.38, s * 0.04);
+  if (up) pack();
+  const arm = (dx, ph) => { ctx.fillStyle = '#c4702c'; ctx.fillRect(X + dx - s * 0.05, Y - s * 0.2 + ph * s * 0.05, s * 0.1, s * 0.26); ctx.fillStyle = '#3a3a3a'; ctx.fillRect(X + dx - s * 0.05, Y + s * 0.04 + ph * s * 0.05, s * 0.1, s * 0.06); };
+  if (side) arm(-fx * s * 0.02, -wk); else { arm(-s * 0.24, -wk); arm(s * 0.24, wk); }
+  const hx = X + (side ? fx * s * 0.03 : 0), hy = Y - s * 0.36;
+  ctx.fillStyle = up ? '#4a3a2a' : '#e2b08a';
+  ctx.beginPath(); ctx.arc(hx, hy, s * 0.14, 0, 7); ctx.fill();
+  ctx.fillStyle = '#e8c838';
+  ctx.beginPath(); ctx.arc(hx, hy - s * 0.03, s * 0.15, Math.PI, 0); ctx.fill();
+  ctx.fillRect(hx - s * 0.17, hy - s * 0.04, s * 0.34, s * 0.035);
+  if (!up && z >= 14) { ctx.fillStyle = '#222'; const ex = side ? fx * s * 0.06 : 0; ctx.fillRect(hx + ex - s * 0.06, hy + s * 0.01, s * 0.03, s * 0.03); if (!side) ctx.fillRect(hx + s * 0.03, hy + s * 0.01, s * 0.03, s * 0.03); }
+  if (S.t - (P.sh || -9) < 0.25) {
+    const gx = X + fx * s * 0.25, gy = Y - s * 0.05 + fy * s * 0.25;
+    ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = Math.max(2, s * 0.07);
+    ctx.beginPath(); ctx.moveTo(X, Y - s * 0.05); ctx.lineTo(gx, gy); ctx.stroke();
+    if (S.t - P.sh < 0.1) { ctx.strokeStyle = 'rgba(255,230,140,0.9)'; ctx.lineWidth = Math.max(1, z * 0.04); ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(ox + P.tx * z, oy + P.ty * z); ctx.stroke(); }
+  }
+  if (P.hp < PL_HP) {
+    const bw = s * 0.7, by = hy - s * 0.32;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(X - bw / 2, by, bw, Math.max(3, s * 0.07));
+    ctx.fillStyle = P.hp / PL_HP > 0.5 ? '#7fe08a' : P.hp / PL_HP > 0.25 ? '#e0b84a' : '#e04a4a';
+    ctx.fillRect(X - bw / 2, by, bw * P.hp / PL_HP, Math.max(3, s * 0.07));
+  }
+}
 function drawBugs(ox, oy, z, x0, y0, x1, y1) {
   const now = performance.now() / 1000;
   for (const b of S.bugs) {
@@ -2278,7 +2435,7 @@ function machDetail(e, B, x, y, w, h, z) {
 }
 function drawGhost(ox, oy, z) {
   const B = BUILD[tool], o = toolOrigin(tool, mouse.fx, mouse.fy);
-  const err = canPlace(tool, o.x, o.y);
+  const err = canPlace(tool, o.x, o.y) || plBlock(tool, o.x, o.y);
   ctx.globalAlpha = 0.5;
   ctx.fillStyle = B.c;
   ctx.fillRect(ox + o.x * z, oy + o.y * z, B.w * z, B.h * z);
@@ -2368,7 +2525,7 @@ function qbSet(i, t) { S.qb = S.qb.map(x => x === t ? null : x); S.qb[i] = t; re
 let hbSig = '';
 function renderHotbar() {
   if (!S.qb || S.qb.length !== 20) S.qb = defaultQB();
-  let h = '<div class="hand">' + (tool ? `${ico(tool, 1)}<div><b>${nm(tool)}</b><small>${fmt(S.inv[tool] || 0)} in inventory · R rotate · Q clear</small></div>` : '<div><b>Empty hand</b><small>1–0 quickbar · Shift for row 2 · Q picks the building under the cursor</small></div>') + '</div><div class="qb">';
+  let h = '<div class="hand">' + (tool ? `${ico(tool, 1)}<div><b>${nm(tool)}</b><small>${fmt(S.inv[tool] || 0)} in inventory · R rotate · Q clear</small></div>` : '<div><b>Empty hand</b><small>WASD walk · Space shoot · 1–0 quickbar · Shift for row 2 · Q picks the building under the cursor</small></div>') + '</div><div class="qb">';
   for (let r = 0; r < 2; r++) {
     h += '<div class="qrow">';
     for (let j = 0; j < 10; j++) {
@@ -2730,7 +2887,7 @@ function startWorld() {
   closeModal(); renderHotbar(); save();
   toast('New world generated');
 }
-function mapHtml() { return `<div class="wmap"><canvas id="wmap" width="720" height="720"></canvas><div class="wside">${legendHtml()}<div class="wleg"><span><i style="background:#e04040"></i>Crawler hive</span><span><i style="background:#c080ff"></i>Abandoned works</span><span><i style="background:#ffe080"></i>Your buildings</span></div><p class="dim">Seed ${S.seed}${S.gen && !S.gen.legacy ? '' : ' · classic map'} · ${W}×${H}<br>Click anywhere to move the camera there.</p></div></div>`; }
+function mapHtml() { return `<div class="wmap"><canvas id="wmap" width="720" height="720"></canvas><div class="wside">${legendHtml()}<div class="wleg"><span><i style="background:#e04040"></i>Crawler hive</span><span><i style="background:#c080ff"></i>Abandoned works</span><span><i style="background:#ffe080"></i>Your buildings</span><span><i style="background:#4ae0ff"></i>You</span></div><p class="dim">Seed ${S.seed}${S.gen && !S.gen.legacy ? '' : ' · classic map'} · ${W}×${H}<br>Click anywhere to move the camera there.</p></div></div>`; }
 function drawMapView() {
   const c = document.getElementById('wmap');
   if (!c) return;
@@ -2744,6 +2901,8 @@ function drawMapView() {
     x2.fillRect(e.x * s, e.y * s, r, Math.max(k === 'hive' || k === 'ruin' ? 4 : 1.5, B.h * s));
   }
   const vw = cv.clientWidth / cam.z, vh = cv.clientHeight / cam.z;
+  x2.fillStyle = '#4ae0ff'; x2.strokeStyle = '#000'; x2.lineWidth = 1.5;
+  x2.beginPath(); x2.arc(S.pl.x * s, S.pl.y * s, 4, 0, 7); x2.fill(); x2.stroke();
   x2.strokeStyle = '#fff'; x2.lineWidth = 1.5;
   x2.strokeRect((cam.x - vw / 2) * s, (cam.y - vh / 2) * s, vw * s, vh * s);
 }
@@ -2898,7 +3057,9 @@ const HELP = `<div class="help">
 <li><b>Right click</b> picks a building up again, with its contents.</li>
 <li><b>Click</b> a building to inspect it, set its recipe, insert items or take outputs.</li>
 <li><b>Click and hold</b> on ore to mine it by hand.</li>
-<li><b>WASD</b> or arrows move the camera. <b>Mouse wheel</b> zooms. Middle drag pans.</li>
+<li><b>WASD</b> or arrows walk your engineer. Forest, marsh and snow slow you down and belts carry you along. <b>Mouse wheel</b> zooms. Middle drag or a click on the map looks around, and walking snaps the view back.</li>
+<li>You can build and pick up within 10 tiles and mine ore by hand within 3.5 tiles. Buildings can be inspected from anywhere.</li>
+<li><b>Space</b> fires your pistol at the nearest crawler or hive within 15 tiles, using lead shot cartridges from your inventory. Crawlers attack you if you get close. If they kill you, you wake up back at the landing site with your inventory.</li>
 <li><b>E</b> opens crafting. <b>H</b> opens the encyclopedia. <b>V</b> cycles the pressure, temperature and smog overlays.</li>
 </ul>
 <h3>Getting started</h3>
@@ -3204,8 +3365,17 @@ function renderCraft(body) {
   $('#crecs').innerHTML = rows || '<div class="dim" style="grid-column:1/-1">No recipe matches.</div>';
 }
 
+function plBlock(t, x, y) {
+  const B = BUILD[t], P = S.pl;
+  if (!inReach(x + B.w / 2, y + B.h / 2, REACH)) return 'Out of reach. Walk closer.';
+  if (B.kind === 'belt' || B.kind === 'pipe') return null;
+  if (P.x + PL_R > x && P.x - PL_R < x + B.w && P.y + PL_R > y && P.y - PL_R < y + B.h) return 'You are standing there';
+  return null;
+}
 function placeAt(fx, fy) {
   const o = toolOrigin(tool, fx, fy);
+  const pb = plBlock(tool, o.x, o.y);
+  if (pb) return pb;
   const r = place(tool, o.x, o.y, toolDir);
   if (typeof r === 'string') return r;
   if (!(S.inv[tool] > 0)) tool = null;
@@ -3225,6 +3395,7 @@ function dragTo(tx, ty) {
     }
     drag.x += DX[d]; drag.y += DY[d];
     if (!tool) break;
+    if (plBlock(tool, drag.x, drag.y)) continue;
     const r = place(tool, drag.x, drag.y, toolDir);
     drag.last = typeof r === 'string' ? null : r.id;
     if (!(S.inv[tool] > 0)) { tool = null; break; }
@@ -3235,12 +3406,13 @@ function dragTo(tx, ty) {
 cv.addEventListener('contextmenu', ev => ev.preventDefault());
 cv.addEventListener('mousedown', ev => {
   updateMouse(ev);
-  if (ev.button === 1) { mouse.m = true; mouse.px = ev.clientX; mouse.py = ev.clientY; ev.preventDefault(); return; }
+  if (ev.button === 1) { mouse.m = true; camFree = true; mouse.px = ev.clientX; mouse.py = ev.clientY; ev.preventDefault(); return; }
   if (ev.button === 2) {
     mouse.r = true;
     const e = at(mouse.tx, mouse.ty);
     if (e && kind(e) === 'hive') toast('Hives cannot be picked up. Shoot or gas them.', true);
     else if (e && kind(e) === 'ruin') toast('The old works are too far gone to move. Click to search them.', true);
+    else if (e && !entReach(e, REACH)) toast('Out of reach. Walk closer.', true);
     else if (e) { removeEnt(e); renderHotbar(); }
     else if (tool) { tool = null; renderHotbar(); }
     return;
@@ -3257,7 +3429,10 @@ cv.addEventListener('mousedown', ev => {
   if (e) { openPanel(e); return; }
   closePanel();
   const i = mouse.ty * W + mouse.tx;
-  if (mouse.tx >= 0 && mouse.ty >= 0 && mouse.tx < W && mouse.ty < H && solid(i)) mining = { x: mouse.tx, y: mouse.ty, p: 0 };
+  if (mouse.tx >= 0 && mouse.ty >= 0 && mouse.tx < W && mouse.ty < H && solid(i)) {
+    if (inReach(mouse.tx + 0.5, mouse.ty + 0.5, MINE_REACH)) mining = { x: mouse.tx, y: mouse.ty, p: 0 };
+    else toast('Too far to mine by hand. Walk up to the ore.', true);
+  }
 });
 window.addEventListener('mouseup', ev => {
   if (ev.button === 0) { mouse.l = false; drag = null; }
@@ -3276,7 +3451,7 @@ cv.addEventListener('mousemove', ev => {
   updateMouse(ev);
   mouse.in = true;
   if (mouse.m) { cam.x -= (ev.clientX - mouse.px) / cam.z; cam.y -= (ev.clientY - mouse.py) / cam.z; mouse.px = ev.clientX; mouse.py = ev.clientY; }
-  if (mouse.r && (ptx !== mouse.tx || pty !== mouse.ty)) { const e = at(mouse.tx, mouse.ty); if (e && (e.type === 'belt' || kind(e) === 'pipe')) { removeEnt(e); renderHotbar(); } }
+  if (mouse.r && (ptx !== mouse.tx || pty !== mouse.ty)) { const e = at(mouse.tx, mouse.ty); if (e && (e.type === 'belt' || kind(e) === 'pipe') && entReach(e, REACH)) { removeEnt(e); renderHotbar(); } }
   if (drag && mouse.l && tool && (drag.x !== mouse.tx || drag.y !== mouse.ty)) dragTo(mouse.tx, mouse.ty);
   const info = tool ? '' : tileInfo(mouse.tx, mouse.ty);
   if (info) {
@@ -3323,7 +3498,7 @@ window.addEventListener('keydown', ev => {
     else { const e = at(mouse.tx, mouse.ty); if (e && (e.type === 'belt' || e.type === 'sorter' || e.type === 'booster')) e.dir = (e.dir + 1) % 4; }
   }
   else if (k === 'v') { overlay = (overlay + 1) % 4; toast(['Overlay off', 'Pressure overlay', 'Temperature overlay', 'Smog overlay'][overlay]); }
-  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) ev.preventDefault();
+  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) ev.preventDefault();
 });
 window.addEventListener('keyup', ev => { keys[ev.key.toLowerCase()] = false; });
 window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; mouse.l = mouse.r = mouse.m = false; });
@@ -3357,7 +3532,7 @@ modal.addEventListener('click', ev => {
   if (wb && wb.dataset.world === 'go') return startWorld();
   if (ev.target.id === 'wmap') {
     const r = ev.target.getBoundingClientRect();
-    cam.x = (ev.clientX - r.left) / r.width * W; cam.y = (ev.clientY - r.top) / r.height * H;
+    cam.x = (ev.clientX - r.left) / r.width * W; cam.y = (ev.clientY - r.top) / r.height * H; camFree = true;
     return closeModal();
   }
   if (ev.target.closest('[data-ui="close"]')) closeModal();
@@ -3393,11 +3568,9 @@ let last = performance.now(), acc = 0, uiT = 0;
 function frame(now) {
   const dt = Math.min(0.25, (now - last) / 1000);
   last = now;
-  const sp = 18 / cam.z * dt * 60;
-  if (keys.w || keys.arrowup) cam.y -= sp * 0.5;
-  if (keys.s || keys.arrowdown) cam.y += sp * 0.5;
-  if (keys.a || keys.arrowleft) cam.x -= sp * 0.5;
-  if (keys.d || keys.arrowright) cam.x += sp * 0.5;
+  const mx = modalKind ? 0 : (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0), my = modalKind ? 0 : (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0);
+  if (plMove(dt, mx, my)) camFree = false;
+  if (!camFree) { const k = Math.min(1, dt * 10); cam.x += (S.pl.x - cam.x) * k; cam.y += (S.pl.y - cam.y) * k; }
   cam.x = Math.max(0, Math.min(W, cam.x)); cam.y = Math.max(0, Math.min(H, cam.y));
   acc += dt;
   let n = 0;
@@ -3432,7 +3605,8 @@ window.game = {
   step(n) { for (let i = 0; i < n; i++) tick(); render(); $('#power').innerHTML = powerHtml(); $('#vent').innerHTML = ventHtml(); renderPanelDyn(); renderHotbar(); renderQueue(); },
   terrain: () => terrain, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
   select(e) { e ? openPanel(e) : closePanel(); }, openModal, closeModal, refresh: renderHotbar,
-  setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; },
+  setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; camFree = true; },
+  get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; },
   setOverlay(v) { overlay = v; }, elev: () => elev, drawPreview, startWorld, get wcfg() { return wcfg; },
 };
 })();
