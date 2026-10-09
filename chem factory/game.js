@@ -7,8 +7,9 @@ const KEY = 'chemfactory-save-v1';
 const GAP = 0.25, BELT_V = 2 * DT, MINER_T = 2, PUMP_RATE = 60 * DT;
 const PARTS = ['casting', 'plate', 'wire', 'motor', 'brick', 'lead_sheet', 'brass', 'cartridge', 'cylinder', 'wheel', 'chassis', 'diesel_engine', 'gearbox', 'windscreen', 'rail_bar', 'sleeper', 'traction_motor', 'bogie', 'hull_section', 'propeller', 'zinc_anode'];
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
-const tcv = document.createElement('canvas');
-const tctx = tcv.getContext('2d');
+let tctx = null;
+const CK = 32, RG = 128, tch = new Map(), ovc = document.createElement('canvas'), ovx = ovc.getContext('2d');
+let rgd = null;
 const pcv = document.createElement('canvas');
 const pctx = pcv.getContext('2d');
 let pimg = null;
@@ -69,10 +70,11 @@ function fbm(x, y, s) {
   return t / 0.9375;
 }
 
-function patch(t, px, py, r, rich, seed, force) {
+function patch(t, px, py, r, rich, seed, force, clip) {
   let n0 = 0;
   for (let y = Math.floor(py - r * 1.4); y <= py + r * 1.4; y++) for (let x = Math.floor(px - r * 1.4); x <= px + r * 1.4; x++) {
     if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) continue;
+    if (clip && (x < clip[0] || y < clip[1] || x >= clip[2] || y >= clip[3])) continue;
     const d = Math.hypot(x - px, y - py), n = vnoise(x / 2.5, y / 2.5, seed + t * 131);
     if (d > r * (0.65 + 0.6 * n)) continue;
     const i = y * W + x;
@@ -81,7 +83,7 @@ function patch(t, px, py, r, rich, seed, force) {
     oreAmt[i] = Math.max(60, Math.round(rich * (1.15 - d / (r * 1.5)) * (0.7 + 0.6 * n)) + 60);
     n0++;
   }
-  if (n0) patches.push({ t, x: Math.round(px), y: Math.round(py) });
+  if (n0 && (!clip || (px >= clip[0] && py >= clip[1] && px < clip[2] && py < clip[3]))) patches.push({ t, x: Math.round(px), y: Math.round(py) });
 }
 
 function genLegacy(seed) {
@@ -119,7 +121,7 @@ function genLegacy(seed) {
   }
 }
 
-const GEN_DEF = { size: 256, water: 1, ore: 1, hives: 2 };
+const GEN_DEF = { size: 256, water: 1, ore: 1, hives: 2, inf: 0 };
 const TER_N = ['Grassland', 'Water', 'Dry scrub', 'Desert sand', 'Bare rock', 'Marsh', 'Forest', 'Tundra'];
 const sstep = (a, b, v) => { const t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
 const ORE_BASE = [0, 11, 10, 7, 9, 6, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3];
@@ -245,21 +247,211 @@ function genWorld(seed, g) {
 }
 function setSize(w) {
   W = H = w; PW = W / PC;
-  tcv.width = W * TP; tcv.height = H * TP;
+  ovc.width = W; ovc.height = H; tch.clear();
   pcv.width = pcv.height = PW;
   pimg = pctx.createImageData(PW, PW);
 }
 function genMap(seed, g) {
   setSize(g && !g.legacy ? g.size : 160);
-  if (g && !g.legacy) genWorld(seed, g); else genLegacy(seed);
+  rgd = null;
+  if (isEndless(g)) { terrain = new Uint8Array(W * H).fill(4); oreType = new Uint8Array(W * H); oreAmt = new Int32Array(W * H); elev = new Float32Array(W * H).fill(0.8); patches = []; rgd = new Uint8Array((W / RG) * (H / RG)); }
+  else if (g && !g.legacy) genWorld(seed, g); else genLegacy(seed);
+}
+const isEndless = g => !!(g && !g.legacy && g.size >= 1024);
+function rgDone(x, y) { return !rgd || rgd[Math.floor(y / RG) * (W / RG) + Math.floor(x / RG)] === 1; }
+function genRegion(seed, g, rx, ry) {
+  const M = 3, X0 = rx * RG, Y0 = ry * RG, w = RG + 2 * M, N = w * w, cx = W / 2, cy = H / 2;
+  const rng = mulberry32((seed + Math.imul(rx + 7, 73856093) + Math.imul(ry + 3, 19349663)) >>> 0);
+  const E = new Float32Array(N), Tm = new Float32Array(N), Mo = new Float32Array(N), Lo = new Float32Array(N), Tr = new Uint8Array(N);
+  const sea = 0.36 + 0.05 * (g.water - 1);
+  for (let j = 0; j < w; j++) for (let i = 0; i < w; i++) {
+    const x = X0 - M + i, y = Y0 - M + j, l = j * w + i, d = Math.hypot(x - cx, y - cy), k = sstep(16, 44, d);
+    const lo = fbm(x / 46, y / 46, seed) + (fbm(x / 170, y / 170, seed + 13) - 0.5) * 0.55, edge = Math.max(Math.abs(x - cx), Math.abs(y - cy)) / (W / 2), fall = Math.max(0, edge - 0.94) * 8;
+    let e = lo * 0.72 + fbm(x / 13, y / 13, seed + 5) * 0.28;
+    const ridge = 1 - Math.abs(2 * fbm(x / 30, y / 30, seed + 9) - 1);
+    e += Math.max(0, ridge - 0.86) * 2.6 * sstep(0.44, 0.56, e);
+    e -= fall;
+    e = 0.52 + (e - 0.52) * k;
+    Lo[l] = 0.52 + (lo - fall - 0.52) * k;
+    E[l] = e;
+    const lat = 0.5 + 0.5 * Math.sin((y - cy) / 170);
+    const t = Tm[l] = 0.5 + ((0.18 + 0.64 * lat + (fbm(x / 60, y / 60, seed + 21) - 0.5) * 0.5 - Math.max(0, e - 0.6) * 0.7) - 0.5) * (0.35 + 0.65 * k);
+    const m = Mo[l] = 0.5 + (fbm(x / 38, y / 38, seed + 33) - 0.5) * 1.5 * (0.4 + 0.6 * k);
+    Tr[l] = e < sea ? 1 : e > 0.72 ? 4 : t < 0.24 ? 7 : t > 0.64 && m < 0.48 ? 3 : m > 0.6 && e < sea + 0.07 ? 5 : m > 0.55 ? 6 : m < 0.4 ? 2 : 0;
+  }
+  const inner = (i, j) => i > M && j > M && i < M + RG - 1 && j < M + RG - 1;
+  const seen = new Uint8Array(N), nr = Math.round((1.2 + rng() * 2.4) * (0.4 + 0.6 * g.water));
+  for (let r = 0; r < nr; r++) {
+    let i = 0, j = 0, ok = false;
+    for (let q = 0; q < 120 && !ok; q++) {
+      i = M + 6 + Math.floor(rng() * (RG - 12)); j = M + 6 + Math.floor(rng() * (RG - 12));
+      const l = j * w + i;
+      ok = Lo[l] > 0.56 && E[l] < 0.72 && Math.hypot(X0 - M + i - cx, Y0 - M + j - cy) > 30 && !seen[l];
+    }
+    if (!ok) continue;
+    const path = [];
+    for (let s = 0; s < 500; s++) {
+      const l = j * w + i, gx = X0 - M + i, gy = Y0 - M + j;
+      if (Tr[l] === 1 && path.length) break;
+      if (Math.hypot(gx - cx, gy - cy) < 15 || seen[l]) break;
+      seen[l] = 1; path.push(l);
+      let bi = -1, bj = -1, be = Lo[l] + 0.003;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue;
+        const I = i + dx, J = j + dy;
+        const v = Lo[J * w + I] + (hash(gx + dx, gy + dy, seed + r + rx * 31 + ry * 57) - 0.5) * 0.006 + (dx && dy ? 0.001 : 0);
+        if (v < be && !seen[J * w + I]) { be = v; bi = I; bj = J; }
+      }
+      if (bi < 0 || !inner(bi, bj)) {
+        if (path.length > 12) for (let b = -3; b <= 3; b++) for (let a = -3; a <= 3; a++) if (a * a + b * b <= 7 + hash(gx + a, gy + b, seed) * 4) { const I = i + a, J = j + b; if (inner(I, J) && Math.hypot(X0 - M + I - cx, Y0 - M + J - cy) > 15) { Tr[J * w + I] = 1; E[J * w + I] = sea - 0.01; } }
+        break;
+      }
+      i = bi; j = bj;
+    }
+    if (path.length < 10) continue;
+    path.forEach((l, s) => {
+      const wd = s > path.length * 0.45 ? 1 : 0, pi = l % w, pj = (l - pi) / w;
+      for (let b = 0; b <= wd; b++) for (let a = 0; a <= wd; a++) { if (!inner(pi + a, pj + b) && (a || b)) continue; const k = (pj + b) * w + pi + a; Tr[k] = 1; E[k] = Math.min(E[k], sea - 0.01); }
+    });
+  }
+  const shore = [];
+  for (let j = M; j < M + RG; j++) for (let i = M; i < M + RG; i++) {
+    const l = j * w + i, b = Tr[l];
+    if (b === 1 || b === 4 || b === 7) continue;
+    let wt = 0;
+    for (let q = -2; q <= 2 && !wt; q++) for (let p = -2; p <= 2; p++) { const k = l + q * w + p; if (Tr[k] === 1 && E[k] < sea - 0.02) { wt = 1; break; } }
+    if (wt && E[l] < sea + 0.03) shore.push(l);
+  }
+  for (const l of shore) Tr[l] = 3;
+  for (let j = M; j < M + RG; j++) for (let i = M; i < M + RG; i++) {
+    const l = j * w + i, gi = (Y0 + j - M) * W + X0 + i - M;
+    terrain[gi] = Tr[l]; elev[gi] = E[l]; oreType[gi] = 0; oreAmt[gi] = 0;
+  }
+  const clip = [X0, Y0, X0 + RG, Y0 + RG];
+  if (X0 < cx + 48 && X0 + RG > cx - 48 && Y0 < cy + 48 && Y0 + RG > cy - 48) {
+    const r0 = mulberry32(seed + 99), base = r0() * Math.PI * 2, slot = Math.PI * 2 / 7;
+    const lx = cx + Math.cos(base) * 11, ly = cy + Math.sin(base) * 11;
+    for (let y = Math.floor(ly - 5); y <= ly + 5; y++) for (let x = Math.floor(lx - 5); x <= lx + 5; x++) {
+      if (x < X0 || y < Y0 || x >= X0 + RG || y >= Y0 + RG) continue;
+      const dx = (x - lx) / 4.2, dy = (y - ly) / 3.4;
+      if (dx * dx + dy * dy <= 1 + (hash(x, y, seed) - 0.5) * 0.4) { terrain[y * W + x] = 1; elev[y * W + x] = sea - 0.03; }
+    }
+    [[4, 11, 4, 900], [1, 15, 5, 1500], [5, 15, 4, 1000], [2, 18, 5, 1300], [6, 20, 4, 1000], [3, 26, 5, 1200]].forEach(([t, dist, r, rich], k) => {
+      const a = base + (k + 1) * slot + (r0() - 0.5) * 0.3;
+      patch(t, cx + Math.cos(a) * dist, cy + Math.sin(a) * dist, r, rich, seed, true, clip);
+    });
+  }
+  const oc = [0.75, 1, 1.25][g.ore] * 0.4 * (g.inf ? 0.7 : 1), or = [0.6, 1, 1.6][g.ore], A = RG * RG / 25600;
+  for (let t = 1; t < ORES.length; t++) {
+    const nf = (ORE_BASE[t] || 3) * A * oc, n = Math.floor(nf) + (rng() < nf % 1 ? 1 : 0), dmin = t < 7 ? 30 : 36;
+    for (let k = 0; k < n; k++) for (let q = 0; q < 60; q++) {
+      const x = X0 + 10 + rng() * (RG - 20), y = Y0 + 10 + rng() * (RG - 20), d = Math.hypot(x - cx, y - cy);
+      if (d < dmin) continue;
+      const gi = Math.floor(y) * W + Math.floor(x), li = (Math.floor(y) - Y0 + M) * w + Math.floor(x) - X0 + M, tt = { [gi]: Tm[li] }, mm = { [gi]: Mo[li] };
+      if (rng() * 4 >= oreSuit(t, gi, tt, mm)) continue;
+      patch(t, x, y, 3 + rng() * (t < 7 ? 4 : 3), (1200 + rng() * 2000) * (0.8 + Math.min(d, 640) / 80) * or, seed, false, clip);
+      break;
+    }
+  }
+}
+function growRegion(rx, ry, spawn) {
+  const nR = W / RG, r = ry * nR + rx;
+  if (!rgd || rx < 0 || ry < 0 || rx >= nR || ry >= nR || rgd[r]) return;
+  rgd[r] = 1;
+  genRegion(S.seed, S.gen, rx, ry);
+  const X0 = rx * RG, Y0 = ry * RG;
+  for (const k in S.dep) { const i = +k, x = i % W, y = (i - x) / W; if (x >= X0 && y >= Y0 && x < X0 + RG && y < Y0 + RG) { oreAmt[i] = S.dep[k]; if (oreAmt[i] <= 0) { oreAmt[i] = 0; oreType[i] = 0; } } }
+  paintOv(X0, Y0, RG, RG);
+  for (const k of [...tch.keys()]) { const cx = k % 4096, cy = (k - cx) / 4096; if ((cx + 1) * CK >= X0 - 1 && cx * CK <= X0 + RG && (cy + 1) * CK >= Y0 - 1 && cy * CK <= Y0 + RG) tch.delete(k); }
+  if (spawn) spawnRegion(rx, ry);
+}
+function spawnRegion(rx, ry) {
+  const g = S.gen, rng = mulberry32((S.seed + 777 + Math.imul(rx, 977) + Math.imul(ry, 31337)) >>> 0), X0 = rx * RG, Y0 = ry * RG, cx = W / 2, cy = H / 2;
+  const pick = m => [Math.floor(X0 + m + rng() * (RG - 2 * m)), Math.floor(Y0 + m + rng() * (RG - 2 * m))];
+  const dc = Math.hypot(X0 + RG / 2 - cx, Y0 + RG / 2 - cy);
+  if (rng() < 0.65) for (let k = 0; k < 80; k++) {
+    const [x, y] = pick(6);
+    if (Math.hypot(x - cx, y - cy) < 58 || !ruinSpot(x, y) || !farFromBase(x, y, 20) || lists().ruin.some(o => Math.hypot(o.x - x, o.y - y) < 30)) continue;
+    addEnt(makeEnt('ruin', x, y, 0));
+    let n = 0;
+    for (let q = 0; q < 60 && n < (g.hives ? 3 : 0); q++) {
+      const b = rng() * Math.PI * 2, rr = 5 + rng() * 3, hx = Math.round(x + Math.cos(b) * rr), hy = Math.round(y + Math.sin(b) * rr);
+      if (!hiveSpot(hx, hy)) continue;
+      addHive(hx, hy); n++;
+    }
+    break;
+  }
+  const nh = Math.round(10 * RG * RG / 25600 * [0, 0.5, 1, 1.6][g.hives] * Math.min(2, 0.6 + dc / 600));
+  for (let k = 0, n = 0; k < 60 * Math.max(1, nh) && n < nh; k++) {
+    const [x, y] = pick(3);
+    if (Math.hypot(x - cx, y - cy) < 48 || !hiveSpot(x, y) || !farFromBase(x, y, 14) || lists().hive.some(e => Math.hypot(e.x - x, e.y - y) < 18)) continue;
+    addHive(x, y); n++;
+  }
+}
+function growNear(x, y, rad, max) {
+  if (!rgd) return 0;
+  const nR = W / RG, out = [];
+  for (let ry = Math.max(0, Math.floor((y - rad) / RG)); ry <= Math.min(nR - 1, Math.floor((y + rad) / RG)); ry++) for (let rx = Math.max(0, Math.floor((x - rad) / RG)); rx <= Math.min(nR - 1, Math.floor((x + rad) / RG)); rx++) {
+    if (rgd[ry * nR + rx]) continue;
+    const X0 = rx * RG, Y0 = ry * RG, dx = Math.max(X0 - x, 0, x - X0 - RG), dy = Math.max(Y0 - y, 0, y - Y0 - RG);
+    if (Math.hypot(dx, dy) <= rad) out.push([Math.hypot(dx, dy), rx, ry]);
+  }
+  out.sort((a, b) => a[0] - b[0]);
+  let n = 0;
+  for (const [, rx, ry] of out) { if (n >= max) break; growRegion(rx, ry, true); n++; }
+  return n;
+}
+function ovCol(i) {
+  const t = terrain[i];
+  if (oreType[i] && ORGB) return ORGB[oreType[i]][0];
+  if (t === 1 && elev) { const f = Math.max(0, Math.min(1, (0.36 - elev[i]) * 9)); return [42 + (18 - 42) * f, 100 + (52 - 100) * f, 145 + (87 - 145) * f]; }
+  return PRGB[t][0];
+}
+function paintOv(x0, y0, w, h) {
+  if (!ORGB) prepCorners();
+  const im = ovx.createImageData(w, h), d = im.data;
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    const c = ovCol((y0 + j) * W + x0 + i), o = (j * w + i) * 4;
+    d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+  }
+  ovx.putImageData(im, x0, y0);
+}
+function ovPix(x, y) { if (!rgDone(x, y)) return; const c = ovCol(y * W + x); ovx.fillStyle = `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`; ovx.fillRect(x, y, 1, 1); }
+function bakeChunk(cx, cy) {
+  const c = document.createElement('canvas'), n = CK * TP;
+  c.width = c.height = n;
+  const x2 = c.getContext('2d'), img = x2.createImageData(n, n);
+  prepCorners();
+  for (let y = 0; y < CK; y++) for (let x = 0; x < CK; x++) if (cx * CK + x < W && cy * CK + y < H) tileBase(cx * CK + x, cy * CK + y, img.data, n, x * TP, y * TP);
+  x2.putImageData(img, 0, 0);
+  x2.setTransform(1, 0, 0, 1, -cx * n, -cy * n);
+  tctx = x2;
+  for (let y = 0; y < CK; y++) for (let x = 0; x < CK; x++) if (cx * CK + x < W && cy * CK + y < H) tileDeco(cx * CK + x, cy * CK + y);
+  x2.setTransform(1, 0, 0, 1, 0, 0);
+  return c;
+}
+function chunkCv(cx, cy, make) {
+  const k = cy * 4096 + cx;
+  let c = tch.get(k);
+  if (c) { tch.delete(k); tch.set(k, c); return c; }
+  if (!make) return null;
+  c = bakeChunk(cx, cy);
+  tch.set(k, c);
+  if (tch.size > 360) tch.delete(tch.keys().next().value);
+  return c;
+}
+function mapWin() {
+  if (!rgd) return { x0: 0, y0: 0, sz: W };
+  const sz = 512, c = v => Math.max(0, Math.min(W - sz, Math.round(v - sz / 2)));
+  return { x0: c(cam.x), y0: c(cam.y), sz };
 }
 
 const PAL = [['#3d5a2e', '#41602f', '#3a562b'], ['#1d4a73', '#20507b', '#1b466d'], ['#5a5135', '#5e5538', '#565033'], ['#b39f68', '#b8a46c', '#ad9962'], ['#5d5a54', '#635f59', '#57544e'], ['#34472f', '#31432b', '#394c33'], ['#2b4824', '#2e4d26', '#284421'], ['#c3ccd0', '#c9d1d5', '#bdc6ca']];
 const PRGB = PAL.map(r => r.map(h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]));
 const SAND = [184, 166, 112], FOAM = [190, 222, 236];
-let tcorn = null, tpx = null, ORGB = null;
+let tpx = null, ORGB = null;
 function hexRgb(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
-function tcornAt(x, y) { return tcorn[y * (W + 1) + x]; }
+function tcornAt(x, y) { return vnoise(x / 5, y / 5, 401) * 0.6 + vnoise(x / 1.7, y / 1.7, 402) * 0.4; }
 function tileBase(x, y, D, stride, bx, by) {
   const i = y * W + x, b = terrain[i];
   let base = PRGB[b][0];
@@ -304,22 +496,27 @@ function tileDeco(x, y) {
 }
 function prepCorners() {
   if (!ORGB) ORGB = ORES.map(O => O && O.c ? [hexRgb(O.c), hexRgb(O.s || O.c)] : null);
-  tcorn = new Float32Array((W + 1) * (H + 1));
-  for (let y = 0; y <= H; y++) for (let x = 0; x <= W; x++) tcorn[y * (W + 1) + x] = vnoise(x / 5, y / 5, 401) * 0.6 + vnoise(x / 1.7, y / 1.7, 402) * 0.4;
 }
 function drawTile(x, y) {
-  if (!tcorn || tcorn.length !== (W + 1) * (H + 1)) prepCorners();
-  if (!tpx) tpx = tctx.createImageData(TP, TP);
+  if (!ORGB) prepCorners();
+  ovPix(x, y);
+  const cx = Math.floor(x / CK), cy = Math.floor(y / CK), c = tch.get(cy * 4096 + cx), n = CK * TP;
+  if (!c) return;
+  const x2 = c.getContext('2d');
+  if (!tpx) tpx = x2.createImageData(TP, TP);
   tileBase(x, y, tpx.data, TP, 0, 0);
-  tctx.putImageData(tpx, x * TP, y * TP);
+  x2.putImageData(tpx, x * TP - cx * n, y * TP - cy * n);
+  x2.setTransform(1, 0, 0, 1, -cx * n, -cy * n);
+  tctx = x2;
   tileDeco(x, y);
+  x2.setTransform(1, 0, 0, 1, 0, 0);
 }
 function drawTerrain() {
   prepCorners();
-  const img = tctx.createImageData(W * TP, H * TP), D = img.data, st = W * TP;
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) tileBase(x, y, D, st, x * TP, y * TP);
-  tctx.putImageData(img, 0, 0);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) tileDeco(x, y);
+  tch.clear();
+  if (rgd) return;
+  paintOv(0, 0, W, H);
+  for (let cy = 0; cy < H / CK; cy++) for (let cx = 0; cx < W / CK; cx++) chunkCv(cx, cy, true);
 }
 
 function at(x, y) {
@@ -1325,6 +1522,7 @@ function minerDig(e) {
   }
 }
 function depleteTile(i) {
+  if (S.gen && S.gen.inf) return;
   oreAmt[i]--;
   if (oreAmt[i] <= 0) { oreAmt[i] = 0; oreType[i] = 0; }
   S.dep[i] = oreAmt[i];
@@ -1336,6 +1534,7 @@ function tick() {
   S.t += DT;
   S.tk = (S.tk || 0) + 1;
   if (S.tk % 30 === 0) { polStep(); hiveStep(); windStep(); }
+  if (rgd && S.tk % 15 === 0) { growNear(S.pl.x, S.pl.y, 200, 1); if (camFree) growNear(cam.x, cam.y, 120, 1); }
   if (S.tk % 3 === 0) { cloudStep(DT * 3); fireStep(DT * 3); }
   shellStep();
   if (S.cq && S.cq.length) cqStep(DT);
@@ -2138,7 +2337,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, help: S.help, qb: S.qb, cq: S.cq, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -2156,8 +2355,8 @@ function newGame(seed, opts) {
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
   S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: [], evo: 0, lost: 0, kills: 0, hk: 0, res: {}, unl: {}, clouds: [], fires: [], shells: [], booms: [], wind: { a: Math.random() * 7, v: 0.3 }, orders: [], odone: 0, gen, cq: [] };
   initWorld(seed, gen);
-  spawnRuins();
-  spawnHives();
+  if (rgd) { growNear(W / 2, H / 2, 100, 99); S.hv = S.rv = 1; }
+  else { spawnRuins(); spawnHives(); }
   S.cars = []; S.trains = [];
   S.pl = newPl();
   cam = { x: S.pl.x, y: S.pl.y, z: 32 }; camFree = false;
@@ -2174,6 +2373,7 @@ function load() {
   setSize(gen.legacy ? 160 : gen.size);
   S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0 };
   initWorld(d.seed, gen);
+  if (rgd && d.rg) for (let r = 0; r < rgd.length; r++) if (d.rg[r] === '1') growRegion(r % (W / RG), Math.floor(r / (W / RG)), false);
   for (const k in S.dep) { const i = +k; oreAmt[i] = S.dep[k]; if (oreAmt[i] <= 0) { oreAmt[i] = 0; oreType[i] = 0; } }
   for (const o of d.ents || []) {
     if (!BUILD[o.type]) continue;
@@ -2184,6 +2384,7 @@ function load() {
   if (!S.rv) spawnRuins();
   if (!S.hv) spawnHives();
   S.cars = d.cars || []; S.trains = d.trains || [];
+  if (rgd) growNear(d.pl ? d.pl.x : W / 2, d.pl ? d.pl.y : H / 2, 100, 99);
   S.pl = d.pl ? Object.assign({ wk: 0, f: Math.PI / 2, hp: PL_HP, rd: 0 }, d.pl) : newPl();
   if (d.cam) cam = d.cam;
   camFree = false;
@@ -2309,7 +2510,15 @@ function render() {
   const x1 = Math.min(W, Math.ceil((w - ox) / z)), y1 = Math.min(H, Math.ceil((h - oy) / z));
   if (x1 <= x0 || y1 <= y0) return;
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(tcv, x0 * TP, y0 * TP, (x1 - x0) * TP, (y1 - y0) * TP, ox + x0 * z, oy + y0 * z, (x1 - x0) * z, (y1 - y0) * z);
+  const t0 = performance.now();
+  let grew = 0;
+  for (let cy = Math.floor(y0 / CK); cy <= Math.floor((y1 - 1) / CK); cy++) for (let cx = Math.floor(x0 / CK); cx <= Math.floor((x1 - 1) / CK); cx++) {
+    if (!rgDone(cx * CK, cy * CK)) { if (!grew) { grew = 1; growRegion(Math.floor(cx * CK / RG), Math.floor(cy * CK / RG), true); } continue; }
+    const c = chunkCv(cx, cy, performance.now() - t0 < 14);
+    if (!c) continue;
+    const dx = Math.floor(ox + cx * CK * z), dy = Math.floor(oy + cy * CK * z);
+    ctx.drawImage(c, dx, dy, Math.floor(ox + (cx + 1) * CK * z) - dx, Math.floor(oy + (cy + 1) * CK * z) - dy);
+  }
   if (z >= 20) {
     ctx.strokeStyle = 'rgba(0,0,0,0.07)';
     ctx.lineWidth = 1;
@@ -3446,8 +3655,9 @@ function tileInfo0(x, y) {
     return s;
   }
   const i = y * W + x;
-  if (oily(i)) return `<b>Oil seep</b><br>${fmt(oreAmt[i])} left · <span class="dim">Crude oil seeps up through the soil here. Drill it with a pumpjack</span>`;
-  if (oreType[i]) return `<b>${nm(ORES[oreType[i]].item)}</b><br>${fmt(oreAmt[i])} left · <span class="dim">${ITEMS[ORES[oreType[i]].item].f}</span><br><span class="dim">Click and hold to mine by hand</span>`;
+  if (!rgDone(x, y)) return '<b>Unexplored</b><br><span class="dim">Walk closer to see what is out here</span>';
+  if (oily(i)) return `<b>Oil seep</b><br>${S.gen && S.gen.inf ? 'Endless' : fmt(oreAmt[i]) + ' left'} · <span class="dim">Crude oil seeps up through the soil here. Drill it with a pumpjack</span>`;
+  if (oreType[i]) return `<b>${nm(ORES[oreType[i]].item)}</b><br>${S.gen && S.gen.inf ? 'Endless' : fmt(oreAmt[i]) + ' left'} · <span class="dim">${ITEMS[ORES[oreType[i]].item].f}</span><br><span class="dim">Click and hold to mine by hand</span>`;
   return x >= 0 && y >= 0 && x < W && y < H && terrain[i] ? `<b>${TER_N[terrain[i]]}</b>` : '';
 }
 
@@ -3941,18 +4151,20 @@ const sel3 = (id, cur, opts) => `<select id="${id}">${opts.map(([v, n]) => `<opt
 const TER_LEG = [0, 6, 5, 2, 3, 7, 4, 1];
 function legendHtml() { return '<div class="wleg">' + TER_LEG.map(t => `<span><i style="background:${t === 1 ? '#20507b' : PAL[t][0]}"></i>${TER_N[t]}</span>`).join('') + '</div>'; }
 function worldHtml() {
-  if (!wcfg) wcfg = { seed: String(Math.floor(Math.random() * 1e9)), size: 256, water: 1, ore: 1, hives: 2 };
+  if (!wcfg) wcfg = { seed: String(Math.floor(Math.random() * 1e9)), size: 256, water: 1, ore: 1, hives: 2, inf: 0 };
   return `<div class="wgen"><div class="wopts"><p class="dim">Every world is generated from its seed. The same seed and settings always give the same map: continents, rivers, mountain ranges, and ore fields that follow the geology. Hot dry south, cold north.</p>
 <label>Seed <span class="row"><input id="wseed" value="${wcfg.seed}" spellcheck="false"><button data-world="dice">Random</button></span></label>
-<label>Size ${sel3('wsize', wcfg.size, [[160, 'Small · 160×160'], [256, 'Normal · 256×256'], [384, 'Large · 384×384']])}</label>
+<label>Size ${sel3('wsize', wcfg.size, [[160, 'Small · 160×160'], [256, 'Normal · 256×256'], [384, 'Large · 384×384'], [512, 'Huge · 512×512'], [2048, 'Endless · land is made as you explore']])}</label>
 <label>Water ${sel3('wwater', wcfg.water, [[0, 'Dry · few lakes and rivers'], [1, 'Normal'], [2, 'Wet · big lakes, many rivers']])}</label>
 <label>Ore fields ${sel3('wore', wcfg.ore, [[0, 'Poor · fewer, leaner deposits'], [1, 'Normal'], [2, 'Rich · more, fatter deposits']])}</label>
 <label>Crawlers ${sel3('whives', wcfg.hives, [[0, 'None · peaceful'], [1, 'Few'], [2, 'Normal'], [3, 'Many']])}</label>
+<label>Ore depletion ${sel3('winf', wcfg.inf, [[0, 'Finite · deposits run out'], [1, 'Endless · deposits never run out']])}</label>
+<div class="dim">On an endless world, ore fields are sparser than usual but grow richer the farther you travel from the start. Endless ore keeps every deposit at its first amount forever.</div>
 <div class="dim">Ores by geology: copper and lead-zinc in the hills, coal under swamps and forests, salt, caliche and potash in deserts, bauxite in hot wet laterite, mineral sands on beaches, oil in sedimentary basins.</div>
 <button data-world="go" class="danger big">Generate and start</button><div class="dim">Your current factory will be lost.</div></div>
 <div class="wprev"><canvas id="wprev"></canvas>${legendHtml()}</div></div>`;
 }
-function wgen() { return { size: +wcfg.size, water: +wcfg.water, ore: +wcfg.ore, hives: +wcfg.hives }; }
+function wgen() { return { size: +wcfg.size, water: +wcfg.water, ore: +wcfg.ore, hives: +wcfg.hives, inf: +wcfg.inf || 0 }; }
 function paintTiles(c, n) {
   const x2 = c.getContext('2d'), im = x2.createImageData(n, n), d = im.data, rgb = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
   const pal = PAL.map(p => rgb(p[0])), oc = ORES.map(o => o ? rgb(o.c) : null), sh = rgb('#2a6491'), dp = rgb('#123457');
@@ -3969,7 +4181,14 @@ function drawPreview() {
   if (!c) return;
   const keep = [W, terrain, oreType, oreAmt, elev, patches], g = wgen();
   W = H = g.size;
-  genWorld(parseSeed(wcfg.seed), g);
+  if (isEndless(g)) {
+    terrain = new Uint8Array(W * H).fill(4); oreType = new Uint8Array(W * H); oreAmt = new Int32Array(W * H); elev = new Float32Array(W * H).fill(0.8); patches = [];
+    const sd = parseSeed(wcfg.seed), a = W / 2 / RG - 2;
+    for (let ry = a; ry < a + 4; ry++) for (let rx = a; rx < a + 4; rx++) genRegion(sd, g, rx, ry);
+    const o = a * RG, n = 4 * RG, T = new Uint8Array(n * n), O = new Uint8Array(n * n), E = new Float32Array(n * n);
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) { const k = (o + y) * W + o + x; T[y * n + x] = terrain[k]; O[y * n + x] = oreType[k]; E[y * n + x] = elev[k]; }
+    terrain = T; oreType = O; elev = E; W = H = n;
+  } else genWorld(parseSeed(wcfg.seed), g);
   c.width = c.height = W;
   paintTiles(c, W);
   const x2 = c.getContext('2d');
@@ -3983,13 +4202,16 @@ function startWorld() {
   closeModal(); renderHotbar(); save();
   toast('New world generated');
 }
-function mapHtml() { return `<div class="wmap"><canvas id="wmap" width="720" height="720"></canvas><div class="wside">${legendHtml()}<div class="wleg"><span><i style="background:#e04040"></i>Crawler hive</span><span><i style="background:#c080ff"></i>Abandoned works</span><span><i style="background:#ffe080"></i>Your buildings</span><span><i style="background:#4ae0ff"></i>You</span></div><p class="dim">Seed ${S.seed}${S.gen && !S.gen.legacy ? '' : ' · classic map'} · ${W}×${H}<br>Click anywhere to move the camera there.</p></div></div>`; }
+function mapHtml() { return `<div class="wmap"><canvas id="wmap" width="720" height="720"></canvas><div class="wside">${legendHtml()}<div class="wleg"><span><i style="background:#e04040"></i>Crawler hive</span><span><i style="background:#c080ff"></i>Abandoned works</span><span><i style="background:#ffe080"></i>Your buildings</span><span><i style="background:#4ae0ff"></i>You</span></div><p class="dim">Seed ${S.seed}${S.gen && !S.gen.legacy ? '' : ' · classic map'}${rgd ? ' · endless world. The map shows the 512×512 tiles around the camera, and land you have not been near yet stays dark' : ' · ' + W + '×' + H}${S.gen && S.gen.inf ? ' · endless ore' : ''}<br>Click anywhere to move the camera there.</p></div></div>`; }
 function drawMapView() {
   const c = document.getElementById('wmap');
   if (!c) return;
-  const x2 = c.getContext('2d'), n = c.width, s = n / W;
-  x2.imageSmoothingEnabled = true;
-  x2.drawImage(tcv, 0, 0, W * TP, H * TP, 0, 0, n, n);
+  const x2 = c.getContext('2d'), n = c.width, mw = mapWin(), s = n / mw.sz;
+  x2.setTransform(1, 0, 0, 1, 0, 0);
+  x2.fillStyle = '#000'; x2.fillRect(0, 0, n, n);
+  x2.imageSmoothingEnabled = false;
+  x2.drawImage(ovc, mw.x0, mw.y0, mw.sz, mw.sz, 0, 0, n, n);
+  x2.setTransform(1, 0, 0, 1, -mw.x0 * s, -mw.y0 * s);
   for (const e of ents.values()) {
     const k = kind(e), B = BUILD[e.type];
     x2.fillStyle = k === 'hive' ? '#e04040' : k === 'ruin' ? '#c080ff' : k === 'road' ? '#8a8a8a' : k === 'rail' ? '#b09070' : '#ffe080';
@@ -4003,6 +4225,7 @@ function drawMapView() {
   x2.beginPath(); x2.arc(S.pl.x * s, S.pl.y * s, 4, 0, 7); x2.fill(); x2.stroke();
   x2.strokeStyle = '#fff'; x2.lineWidth = 1.5;
   x2.strokeRect((cam.x - vw / 2) * s, (cam.y - vh / 2) * s, vw * s, vh * s);
+  x2.setTransform(1, 0, 0, 1, 0, 0);
 }
 
 function renderModal() {
@@ -4645,7 +4868,8 @@ modal.addEventListener('click', ev => {
   if (wb && wb.dataset.world === 'go') return startWorld();
   if (ev.target.id === 'wmap') {
     const r = ev.target.getBoundingClientRect();
-    cam.x = (ev.clientX - r.left) / r.width * W; cam.y = (ev.clientY - r.top) / r.height * H; camFree = true;
+    const mw = mapWin();
+    cam.x = mw.x0 + (ev.clientX - r.left) / r.width * mw.sz; cam.y = mw.y0 + (ev.clientY - r.top) / r.height * mw.sz; camFree = true;
     return closeModal();
   }
   if (ev.target.closest('[data-ui="close"]')) closeModal();
@@ -4664,7 +4888,7 @@ modal.addEventListener('input', ev => {
 });
 modal.addEventListener('dragstart', ev => { const pk = ev.target.closest('[data-pick]'); if (pk) ev.dataTransfer.setData('text/plain', pk.dataset.pick); });
 modal.addEventListener('change', ev => {
-  const m = { wseed: 'seed', wsize: 'size', wwater: 'water', wore: 'ore', whives: 'hives' }[ev.target.id];
+  const m = { wseed: 'seed', wsize: 'size', wwater: 'water', wore: 'ore', whives: 'hives', winf: 'inf' }[ev.target.id];
   if (!m || !wcfg) return;
   wcfg[m] = ev.target.value;
   drawPreview();
@@ -4720,6 +4944,7 @@ window.game = {
   select(e) { e ? openPanel(e) : closePanel(); }, openModal, closeModal, refresh: renderHotbar,
   setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; camFree = true; },
   get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get trains() { return S.trains; }, placeTrain, trainAt, openTrain, openPanel, pickTrain, trainGeo, reverseTrain, railBusy, get puffs() { return puffs; }, get H() { return H; }, get wakes() { return wakes; }, floats, boatRoute, boatPilot, carStep, carHit,
+  rgd: () => rgd, tileInfo0, growNear, genRegion, tch: () => tch, ovc, mapWin, depleteTile,
   setOverlay(v) { overlay = v; }, elev: () => elev, drawPreview, startWorld, get wcfg() { return wcfg; },
 };
 })();
