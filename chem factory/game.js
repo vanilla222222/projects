@@ -111,7 +111,7 @@ function genLegacy(seed) {
 const GEN_DEF = { size: 256, water: 1, ore: 1, hives: 2 };
 const TER_N = ['Grassland', 'Water', 'Dry scrub', 'Desert sand', 'Bare rock', 'Marsh', 'Forest', 'Tundra'];
 const sstep = (a, b, v) => { const t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
-const ORE_BASE = [0, 11, 10, 7, 9, 6, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3];
+const ORE_BASE = [0, 11, 10, 7, 9, 6, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3];
 function oreSuit(t, i, temp, moist) {
   const b = terrain[i], m = elev[i], tp = temp[i], ms = moist[i];
   if (b === 1 || b === 4) return 0;
@@ -131,6 +131,7 @@ function oreSuit(t, i, temp, moist) {
     case 13: return b === 3 || b === 2 ? 1.5 : b === 7 ? 1 : 0.3;
     case 14: return m > 0.6 ? 2.5 : b === 7 ? 1 : 0.3;
     case 15: return tp > 0.6 && ms > 0.45 ? 3 : tp > 0.5 ? 0.6 : 0.1;
+    case 16: return b === 7 ? 2.5 : m > 0.55 ? 1.5 : 0.3;
   }
   return 1;
 }
@@ -1306,9 +1307,9 @@ function tick() {
   let spare = Math.max(0, cap - demand), chg = 0;
   for (const b of bats) {
     const B = BUILD[b.type], d = bout > 0 ? dis * b.dmax / bout : 0;
-    const c = Math.max(0, Math.min(B.rate, (B.store - b.ch) / DT / 0.85, spare));
+    const ef = B.eff || 0.85, c = Math.max(0, Math.min(B.rate, (B.store - b.ch) / DT / ef, spare));
     spare -= c; chg += c;
-    b.ch = Math.max(0, Math.min(B.store, b.ch - d * DT + c * DT * 0.85));
+    b.ch = Math.max(0, Math.min(B.store, b.ch - d * DT + c * DT * ef));
     b.kw = d - c;
     b.st = d > 0.01 ? 'work' : c > 0.01 ? 'charge' : b.ch >= B.store - 1e-6 ? 'full' : 'idle';
     bch += b.ch; bmax += B.store;
@@ -2270,8 +2271,8 @@ function renderPanelDyn() {
   if (k === 'machine' && BUILD[e.type].store) {
     const B = BUILD[e.type], ch = e.ch || 0, kw = e.kw || 0;
     h += `<div class="status"><i style="background:${ST_COL[e.st] || '#888'}"></i>${ST_TXT[e.st] || 'Idle, no load'}${kw > 0.5 ? ` · giving ${Math.round(kw)} kW` : kw < -0.5 ? ` · taking ${Math.round(-kw)} kW` : ''}</div>`;
-    h += `<div class="sec">Charge</div><div class="gauge"><span>Stored</span>${bar(ch, B.store, '#8ad0a0')}<b>${Math.round(ch / B.store * 100)}%</b></div><p class="dim">${(ch / 3600).toFixed(1)} of ${(B.store / 3600).toFixed(0)} kWh. Up to ${B.rate} kW in or out. It charges only from capacity nothing else is using, and discharges when generators fall short.</p>`;
-    h += recipeHtml(RECIPE.store);
+    h += `<div class="sec">Charge</div><div class="gauge"><span>Stored</span>${bar(ch, B.store, '#8ad0a0')}<b>${Math.round(ch / B.store * 100)}%</b></div><p class="dim">${(ch / 3600).toFixed(1)} of ${(B.store / 3600).toFixed(0)} kWh. Up to ${B.rate} kW in or out, ${Math.round((B.eff || 0.85) * 100)}% round trip. It charges only from capacity nothing else is using, and discharges when generators fall short.</p>`;
+    h += recipeHtml(RECIPE[e.recipe] || RECIPES.find(r => r.b === e.type) || RECIPE.store);
   } else if (k === 'machine') {
     const r = RECIPE[e.recipe];
     if (!r) h += '<p class="dim">Pick a recipe, or feed it an item and it will choose one.</p>';
@@ -2666,6 +2667,7 @@ const CHAINS = [
   { n: 'Green hydrogen', l: [['bfw', 'PEM electrolyser', 'h2', '+', 'o2'], ['h2', 'Fuel cell + o2', 'Electricity'], ['h2', 'Cylinder filler + cylinder', 'h2_cyl']], d: 'Spare power splits pure water into hydrogen and oxygen. A fuel cell burns them back to water to make electricity when the wind drops. It loses more power than a battery but can store as much as you have tanks for.' },
   { n: 'Stainless steel', l: [['chromite', 'Arc furnace + coke + sand', 'ferrochrome', '+', 'slag'], ['laterite', 'Lime kiln + coal', 'ni_calcine', 'Arc furnace + coke', 'ferronickel'], ['steel', 'Converter + ferrochrome + ferronickel + quicklime + o2 + n2', 'stainless', 'Craft menu', 'Stainless steel pipe']], d: 'Chromite comes from mountains and nickel laterite from wet tropical soils. Both are smelted to ferroalloys in the arc furnace. In the converter, oxygen diluted with nitrogen burns carbon out of the melt without taking the chromium too. Stainless makes pipe that holds 100 bar and 800°C, but chlorides pit it.' },
   { n: 'Fluoropolymers', l: [['ch3cl', 'Chlorinator + cl2', 'chcl3', '+', 'hcl'], ['chcl3', 'Pressure reactor + hf', 'r22', '+', 'hcl'], ['r22', 'Tube furnace', 'tfe', '+', 'hcl'], ['tfe', 'Pressure reactor + water', 'ptfe', 'Craft menu', 'PTFE-lined pipe']], d: 'Chloroform from chloromethane and chlorine is fluorinated with hydrofluoric acid to R-22. Cracking R-22 gives TFE gas, which polymerises in water to PTFE. Every step gives off hydrogen chloride, which goes back to make chloromethane. PTFE lines pipe that resists every fluid in the game.' },
+  { n: 'Lithium batteries', l: [['spodumene', 'Lime kiln + coal', 'beta_spod', 'Leach tank + acid + water', 'li2so4'], ['li2so4', 'Leach tank + soda_ash', 'li2co3'], ['li2co3', 'Pressure reactor + iron_conc + carbon_black + h3po4', 'lfp'], ['coke', 'Arc furnace + pitch', 'graphite'], ['li2co3', 'Pressure reactor + phosphorus + hf + cl2', 'lipf6', 'Pressure reactor + dmc', 'li_elyte'], ['lfp', 'Battery plant + graphite + aluminium + copper + polypropylene + electrolyte', 'li_cell', 'Li-ion bank', 'Electricity']], d: 'Spodumene from cold highland pegmatites is roasted until it crumbles, leached with sulfuric acid, and the lithium precipitated with soda ash. Lithium iron phosphate on aluminium foil, graphite on copper foil, and LiPF₆ in dimethyl carbonate make a cell that stores three times what lead-acid does and gives back 95%.' },
   { n: 'By-products', l: [['ground_copper', 'Flotation', 'copper_conc', '+', 'pyrite_conc'], ['pyrite_conc', 'Roaster', 'pyrite_cinder', 'Blast furnace', 'pig_iron'], ['anode_slime', 'Roaster', 'dore', 'Leach tank + acid', 'silver']], d: 'Nothing is waste. Pyrite gives SO₂ for acid and its cinder is iron ore. Anode slime from copper refining yields selenium, silver and gold.' },
 ];
 
@@ -2738,6 +2740,8 @@ const HELP = `<div class="help">
 <p>Two new ores: black <b>chromite</b> in the mountains and red <b>nickel laterite</b> in hot, wet lowlands. Chromite and coke make <b>ferrochrome</b> in the arc furnace. Laterite is calcined in a lime kiln, then smelted to <b>ferronickel</b>. A <b>converter</b> fed with steel, both ferroalloys, quicklime, oxygen and nitrogen makes <b>stainless steel</b>. <b>Stainless pipe</b> is rated 100 bar and 800°C, so it suits steam and caustic. Keep brine, chlorine and hydrochloric acid out of it, because chlorides corrode it three times faster than plain steel.</p>
 <h3>Fluoropolymers</h3>
 <p>Chlorinate <b>chloromethane</b> to <b>chloroform</b>, then react it with <b>hydrofluoric acid</b> to make R-22. The tube furnace cracks R-22 to <b>TFE</b>, and the pressure reactor polymerises that in water to <b>PTFE</b>. Each step makes HCl, which you can feed back to the chloromethane reactor. <b>PTFE-lined pipe</b> resists every acid, chlorides, caustic, bromine and fluorides, but it is rated only 16 bar and 260°C. Venting R-22 counts heavily towards smog.</p>
+<h3>Lithium batteries</h3>
+<p><b>Spodumene</b> is a new ore found in tundra and highlands. Roast it in a lime kiln, leach it with sulfuric acid, and precipitate <b>lithium carbonate</b> with soda ash. The pressure reactor makes <b>LFP cathode</b> from lithium carbonate, iron concentrate, carbon black and phosphoric acid. It also makes <b>LiPF₆</b>, which dissolves in dimethyl carbonate to give the electrolyte. The arc furnace bakes coke and pitch into <b>graphite</b>. The battery plant assembles <b>Li-ion cells</b>, and twelve cells make a <b>Li-ion battery bank</b>: 30 kWh, 600 kW and 95% round trip, against 10 kWh, 250 kW and 85% for lead-acid. The electrolyte turns to HF with any moisture, so pipe it like hydrofluoric acid.</p>
 <h3>Boiler water</h3>
 <p>Raw water is hard. Every boiler batch on it bakes a little chalk onto the tubes, steam output falls as the <b>scale</b> builds, and a fully choked boiler stops. Shut it down to <b>Descale</b> from its panel (a 20 second outage), or feed it <b>softened water</b>: run water through a leach tank with quicklime and the hardness settles out as crushed limestone you can send back to the kiln. Any machine that takes water also takes softened water.</p>
 <h3>Sulfur and diesel</h3>
