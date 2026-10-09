@@ -350,3 +350,9 @@ h3 .sw { width: 24px; height: 24px; font-size: 9px; }
 .cslot { position: relative; width: 40px; height: 40px; padding: 0; display: grid; place-items: center; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 5px; cursor: pointer; }
 .cslot:hover { border-color: rgba(255,200,120,0.5); background: rgba(255,200,120,0.08); }
 .cslot .cnt { position: absolute; right: 2px; bottom: 1px; font-size: 10px; font-weight: 700; text-shadow: 0 1px 2px #000; }
+.sched { display: flex; flex-direction: column; gap: 4px; margin: 4px 0 8px; }
+.srow { display: flex; align-items: center; gap: 8px; padding: 3px 6px; border-radius: 4px; background: rgba(255,255,255,0.04); }
+.srow.on { background: rgba(127,224,138,0.14); }
+.srow span { flex: 1; }
+.srow em { color: #9aa0a8; font-size: 12px; }
+.srow button { padding: 0 6px; }

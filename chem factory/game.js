@@ -5,7 +5,7 @@ let W = 160, H = 160, PW = 20;
 const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
 const KEY = 'chemfactory-save-v1';
 const GAP = 0.25, BELT_V = 2 * DT, MINER_T = 2, PUMP_RATE = 60 * DT;
-const PARTS = ['casting', 'plate', 'wire', 'motor', 'brick', 'lead_sheet', 'brass', 'cartridge', 'cylinder', 'wheel', 'chassis', 'diesel_engine', 'gearbox', 'windscreen'];
+const PARTS = ['casting', 'plate', 'wire', 'motor', 'brick', 'lead_sheet', 'brass', 'cartridge', 'cylinder', 'wheel', 'chassis', 'diesel_engine', 'gearbox', 'windscreen', 'rail_bar', 'sleeper', 'traction_motor', 'bogie'];
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 const tcv = document.createElement('canvas');
 const tctx = tcv.getContext('2d');
@@ -18,12 +18,13 @@ const panel = $('#panel'), tip = $('#tip'), modal = $('#modal'), hotbar = $('#ho
 let S, terrain, oreType, oreAmt, elev, occ, ents, patches, L = null;
 let cam = { x: W / 2, y: H / 2, z: 32 };
 let tool = null, toolDir = 1, sel = null, mining = null, drag = null;
-let camFree = false, noAmmoT = 0, noFuelT = 0, selCar = null, puffs = [];
+let camFree = false, noAmmoT = 0, noFuelT = 0, selCar = null, selTrain = null, puffs = [];
 const VEH = {
   car: { vmax: 22, acc: 9, turn: 2.6, hl: 0.95, hw: 0.48, hp: 450, burn: 2.4, slots: 20, c: ['#6a1814', '#c8382e', '#4a100c'] },
   truck: { vmax: 16, acc: 5, turn: 1.9, hl: 1.35, hw: 0.6, hp: 1350, burn: 3.6, slots: 60, c: ['#8a6010', '#e0a828', '#5a4008'] },
 };
 const CAN_MJ = 720, FUEL_CAP = 5;
+const TRAIN = { loco: { m: 1.5 }, wagon: { m: 0.5, slots: 40 } }, T_CL = 2, T_VMAX = 28, T_BRAKE = 5, T_FUEL = 10, T_BURN = 8;
 const VSPD = { 0: 0.6, 2: 0.55, 3: 0.45, 5: 0.3, 6: 0.35, 7: 0.5 };
 const PL_V = 6, PL_R = 0.28, REACH = 10, MINE_REACH = 3.5, PL_HP = 250, PL_GUN = 15;
 const mouse = { x: 0, y: 0, tx: -1, ty: -1, fx: 0, fy: 0, l: false, r: false, m: false, in: false };
@@ -370,6 +371,7 @@ function makeEnt(type, x, y, dir) {
     case 'projector': Object.assign(e, { pay: {}, pw: 0, cd: 0, ang: -Math.PI / 2, sh: -9, shots: 0 }); break;
     case 'gun': Object.assign(e, { ammo: 0, wp: 0, cd: 0, ang: -Math.PI / 2, sh: -9, shots: 0 }); break;
     case 'ruin': e.done = 0; break;
+    case 'stop': { e.mode = 'load'; const used = new Set([...ents.values()].filter(o => o.type === 'train_stop').map(o => o.nm)); let i = 1; while (used.has('Stop ' + i)) i++; e.nm = 'Stop ' + i; break; }
   }
   if (BUILD[type].hp) e.hp = BUILD[type].hp;
   return e;
@@ -437,7 +439,7 @@ function removeEnt(e) {
 
 function lists() {
   if (L) return L;
-  L = { belt: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [], wall: [], turret: [], hive: [], projector: [], gun: [], ruin: [], road: [] };
+  L = { belt: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [], wall: [], turret: [], hive: [], projector: [], gun: [], ruin: [], road: [], rail: [], stop: [] };
   for (const e of ents.values()) {
     const k = kind(e);
     if (k === 'pipe') L.node.push(e);
@@ -1058,7 +1060,7 @@ function nearestEnt(x, y, r, pick) {
   let best = null, bd = r * r;
   for (const e of ents.values()) {
     const k = kind(e);
-    if (k === 'hive' || k === 'belt' || k === 'road' || k === 'ruin' || (pick && !pick(e))) continue;
+    if (k === 'hive' || k === 'belt' || k === 'road' || k === 'rail' || k === 'ruin' || (pick && !pick(e))) continue;
     const c = ctr(e), d = (c.x - x) ** 2 + (c.y - y) ** 2;
     if (d < bd) { bd = d; best = e; }
   }
@@ -1128,7 +1130,7 @@ function bugStep() {
       if (X < 0 || Y < 0 || X >= W || Y >= H || terrain[Y * W + X] === 1 || terrain[Y * W + X] === 4) return 'water';
       const o = at(X, Y);
       if (o && kind(o) === 'ruin') return 'water';
-      if (o && kind(o) !== 'belt' && kind(o) !== 'road' && kind(o) !== 'hive' && !(Math.floor(b.x) === X && Math.floor(b.y) === Y)) return o;
+      if (o && kind(o) !== 'belt' && kind(o) !== 'road' && kind(o) !== 'rail' && kind(o) !== 'hive' && !(Math.floor(b.x) === X && Math.floor(b.y) === Y)) return o;
       b.x = nx; b.y = ny;
       return null;
     };
@@ -1405,6 +1407,7 @@ function tick() {
   for (const e of l.chest) if (e.type === 'chest') pushItems(e, e.store, 'chest');
   if (l.chest.some(e => e.type === 'depot') && (S.orders || []).length < 3 && Math.floor(S.t * 30) % 30 === 0) fillOrders();
   carTick();
+  trainTick();
   plTick();
   if (mining) {
     const i = mining.y * W + mining.x;
@@ -1424,7 +1427,7 @@ function walkable(x, y) {
   const t = terrain[y * W + x];
   if (t === 1 || t === 4) return false;
   const o = at(x, y);
-  return !o || o.type === 'belt' || kind(o) === 'pipe' || kind(o) === 'road';
+  return !o || o.type === 'belt' || kind(o) === 'pipe' || kind(o) === 'road' || kind(o) === 'rail';
 }
 function spawnPt() {
   const cx = Math.floor(W / 2), cy = Math.floor(H / 2);
@@ -1436,7 +1439,7 @@ function spawnPt() {
 }
 function newPl() { return Object.assign(spawnPt(), { f: Math.PI / 2, wk: 0, hp: PL_HP, rd: 0 }); }
 function plFree(x, y) {
-  return !S.cars.some(v => v.id !== S.pl.car && inCar(v, x, y, PL_R)) && walkable(Math.floor(x - PL_R), Math.floor(y - PL_R)) && walkable(Math.floor(x + PL_R), Math.floor(y - PL_R)) && walkable(Math.floor(x - PL_R), Math.floor(y + PL_R)) && walkable(Math.floor(x + PL_R), Math.floor(y + PL_R));
+  return !S.cars.some(v => v.id !== S.pl.car && inCar(v, x, y, PL_R)) && !S.trains.some(t => t.id !== S.pl.car && t.g && t.g.some(g => inTcar(g, x, y, PL_R))) && walkable(Math.floor(x - PL_R), Math.floor(y - PL_R)) && walkable(Math.floor(x + PL_R), Math.floor(y - PL_R)) && walkable(Math.floor(x - PL_R), Math.floor(y + PL_R)) && walkable(Math.floor(x + PL_R), Math.floor(y + PL_R));
 }
 const TSPD = { 5: 0.8, 6: 0.6, 7: 0.85 };
 function plMove(dt, mx, my) {
@@ -1449,7 +1452,7 @@ function plMove(dt, mx, my) {
     const tx = Math.floor(P.x), ty = Math.floor(P.y), o = at(tx, ty);
     let vx = 0, vy = 0;
     if (mx || my) {
-      const l = Math.hypot(mx, my), v = PL_V * (o && kind(o) === 'road' ? 1.15 : TSPD[terrain[ty * W + tx]] || 1);
+      const l = Math.hypot(mx, my), v = PL_V * (o && (kind(o) === 'road' || kind(o) === 'rail') ? 1.1 : TSPD[terrain[ty * W + tx]] || 1);
       vx = mx / l * v; vy = my / l * v;
       if (S.t - (P.sh || -9) > 0.4) P.f = Math.atan2(my, mx);
       P.wk += h * v * 2.4; P.mv = true;
@@ -1473,6 +1476,7 @@ function entReach(e, r) {
 function plHurt(d) {
   const P = S.pl;
   if (P.dead > 0) return;
+  if (P.car && trainOf(P.car)) return;
   const cv0 = P.car && carOf(P.car);
   if (cv0) { cv0.hp -= d; cv0.lh = S.t; if (cv0.hp <= 0) carWreck(cv0); return; }
   P.hp -= d; P.lh = S.t;
@@ -1531,6 +1535,7 @@ function carHit(v, x, y, a) {
     if (!walkable(X, Y)) return { x: X, y: Y };
   }
   for (const o of S.cars) if (o !== v && Math.hypot(o.x - x, o.y - y) < VEH[o.type].hl + V.hw + 0.1 && (inCar(o, x, y, V.hw) || inCar(v, o.x, o.y, VEH[o.type].hw))) return { car: o };
+  for (const t of S.trains) for (const g of t.g || []) if (Math.hypot(g.x - x, g.y - y) < 2.4 && (inTcar(g, x, y, V.hw) || [[1, 1], [1, -1], [-1, 1], [-1, -1]].some(([l, w]) => inTcar(g, x + c * V.hl * l - s * V.hw * w, y + s * V.hl * l + c * V.hw * w, 0)))) return { train: t };
   const P = S.pl;
   if (P.car !== v.id && !(P.dead > 0)) {
     const dx = P.x - x, dy = P.y - y;
@@ -1579,7 +1584,7 @@ function carStep(v, thr, steer) {
       v.hp -= dmg; v.lh = S.t;
       if (hit.car) { hit.car.hp -= dmg; hit.car.lh = S.t; if (hit.car.hp <= 0) carWreck(hit.car); }
       else if (hit.pl) plHurt(dmg);
-      else { const e = at(hit.x, hit.y); if (e && kind(e) !== 'ruin') hurt(e, dmg, 'rammed by a vehicle'); }
+      else if (!hit.train) { const e = at(hit.x, hit.y); if (e && kind(e) !== 'ruin') hurt(e, dmg, 'rammed by a vehicle'); }
       fx.push({ x: nx + Math.cos(v.a) * V.hl, y: ny + Math.sin(v.a) * V.hl, t: 0.3, c: '#d0d0d0' });
     }
     v.v = -v.v * 0.25;
@@ -1595,7 +1600,7 @@ function carStep(v, thr, steer) {
 }
 function carTick() {
   const P = S.pl, dv = P.car && carOf(P.car);
-  if (P.car && !dv) P.car = null;
+  if (P.car && !dv && !trainOf(P.car)) P.car = null;
   for (const v of S.cars.slice()) {
     let thr = 0, steer = 0;
     if (v === dv && !modalKind) {
@@ -1613,6 +1618,20 @@ function carTick() {
 function carToggle() {
   const P = S.pl;
   if (P.dead > 0) return;
+  const tr = P.car && trainOf(P.car);
+  if (tr) {
+    if (!tr.g) trainGeo(tr);
+    let i = tr.cars.findIndex(c => c.type === 'loco'); if (i < 0) i = 0;
+    const g = tr.g[i], c = Math.cos(g.a), s = Math.sin(g.a);
+    for (const [l, w] of [[0, -1], [0, 1], [-0.6, -1], [0.6, 1], [0.6, -1], [-0.6, 1]]) {
+      const ox = l * 0.92, oy = w * (0.42 + PL_R + 0.1), x = g.x + c * ox - s * oy, y = g.y + s * ox + c * oy;
+      P.car = null;
+      if (plFree(x, y)) { P.x = x; P.y = y; P.f = g.a - Math.PI / 2; return true; }
+      P.car = tr.id;
+    }
+    toast('No room to get out here.', true);
+    return false;
+  }
   const v = P.car && carOf(P.car);
   if (v) {
     const V = VEH[v.type], c = Math.cos(v.a), s = Math.sin(v.a);
@@ -1627,6 +1646,7 @@ function carToggle() {
   }
   let best = null, bd = 3;
   for (const o of S.cars) { const d = Math.hypot(o.x - P.x, o.y - P.y) - VEH[o.type].hw; if (d < bd) { bd = d; best = o; } }
+  for (const t of S.trains) { if (!t.g) trainGeo(t); t.g.forEach((g, i) => { if (t.cars[i].type !== 'loco') return; const d = Math.hypot(g.x - P.x, g.y - P.y) - 0.42; if (d < bd) { bd = d; best = t; } }); }
   if (!best) { toast('No vehicle nearby. Walk up to one and press F.', true); return false; }
   P.car = best.id; mining = null; camFree = false;
   if (!(best.e > 0) && !best.fc && !(S.inv.jerrycan > 0)) toast('The tank is empty. Fill jerrycans with diesel at a cylinder filler.', true);
@@ -1656,6 +1676,321 @@ function pickCar(v) {
   renderHotbar();
 }
 
+const trainOf = id => S.trains.find(t => t.id === id);
+const isRail = (x, y) => { const o = at(x, y); return !!o && kind(o) === 'rail'; };
+const dirOf = (a, b) => b[0] > a[0] ? 1 : b[0] < a[0] ? 3 : b[1] > a[1] ? 2 : 0;
+const tLen = t => t.cars.length * T_CL;
+function trackPt(t, s) {
+  const p = t.p, n = p.length, i = Math.max(0, Math.min(n - 1, Math.round(s))), u = s - i + 0.5, c = p[i];
+  const din = i > 0 ? dirOf(p[i - 1], c) : n > 1 ? dirOf(c, p[1]) : 1;
+  const dout = i < n - 1 ? dirOf(c, p[i + 1]) : din;
+  const cx = c[0] + 0.5, cy = c[1] + 0.5;
+  if (din === dout || dout === (din + 2) % 4) return [cx - DX[din] * 0.5 + DX[din] * u, cy - DY[din] * 0.5 + DY[din] * u];
+  const ax = cx + (DX[dout] - DX[din]) * 0.5, ay = cy + (DY[dout] - DY[din]) * 0.5;
+  const a0 = Math.atan2(-DY[dout], -DX[dout]), a1 = Math.atan2(DY[din], DX[din]);
+  let da = a1 - a0;
+  while (da > Math.PI) da -= Math.PI * 2;
+  while (da < -Math.PI) da += Math.PI * 2;
+  const a = a0 + da * Math.max(0, Math.min(1, u));
+  return [ax + Math.cos(a) * 0.5, ay + Math.sin(a) * 0.5];
+}
+function trainGeo(t) {
+  t.g = t.cars.map((c, i) => {
+    const m = t.L - T_CL * (i + 0.5), f = trackPt(t, m + 0.8), b = trackPt(t, m - 0.8);
+    return { x: (f[0] + b[0]) / 2, y: (f[1] + b[1]) / 2, a: Math.atan2(f[1] - b[1], f[0] - b[0]) };
+  });
+  return t.g;
+}
+function inTcar(g, x, y, pad) {
+  const dx = x - g.x, dy = y - g.y, c = Math.cos(g.a), s = Math.sin(g.a);
+  return Math.abs(dx * c + dy * s) < 0.92 + pad && Math.abs(dy * c - dx * s) < 0.42 + pad;
+}
+function trainAt(x, y) {
+  for (const t of S.trains) { if (!t.g) trainGeo(t); for (let i = 0; i < t.g.length; i++) if (inTcar(t.g[i], x, y, 0.05)) return t; }
+  return null;
+}
+function trainOcc(t) {
+  t.occ = new Set();
+  for (let i = Math.max(0, Math.round(t.L - tLen(t))); i < t.p.length; i++) t.occ.add(t.p[i][1] * W + t.p[i][0]);
+}
+const tileTaken = (t, x, y) => S.trains.some(o => o !== t && o.occ && o.occ.has(y * W + x));
+const railBusy = e => S.trains.some(t => t.occ && t.occ.has(e.y * W + e.x));
+function nextTile(t) {
+  const p = t.p, n = p.length, a = p[n - 1], d = dirOf(p[n - 2], a);
+  const opts = [d, (d + 3) % 4, (d + 1) % 4].map(dd => [a[0] + DX[dd], a[1] + DY[dd], dd]).filter(q => isRail(q[0], q[1]));
+  let q = null;
+  if (t.route && t.route.length) {
+    const r = t.route[0];
+    q = opts.find(o => o[0] === r[0] && o[1] === r[1]);
+    if (!q) { t.route = null; return null; }
+    if (tileTaken(t, q[0], q[1])) return null;
+    t.route.shift();
+    return [q[0], q[1]];
+  }
+  if (!opts.length) return null;
+  if (t.turn) q = opts.find(o => o[2] === (d + (t.turn > 0 ? 1 : 3)) % 4);
+  q = q || opts[0];
+  if (tileTaken(t, q[0], q[1])) return null;
+  return [q[0], q[1]];
+}
+function advance(t, d) {
+  let moved = 0;
+  while (d - moved > 1e-6) {
+    while (t.L + 1.2 > t.p.length - 1) { const q = nextTile(t); if (!q) break; t.p.push(q); }
+    const st = Math.min(d - moved, t.p.length - 0.6 - t.L, 0.5);
+    if (st <= 1e-6) break;
+    t.L += st; moved += st;
+  }
+  return moved;
+}
+function reverseTrain(t) {
+  const n = t.p.length;
+  t.p.reverse(); t.cars.reverse();
+  t.L = n - 1 - (t.L - tLen(t));
+  t.route = null; t.v = 0;
+  trainGeo(t); trainOcc(t);
+}
+function trimTrain(t) {
+  while (t.L - tLen(t) > 1.5 && t.p.length > 2) { t.p.shift(); t.L--; }
+}
+function railPath(t, goal) {
+  const p = t.p, n = p.length, a = p[n - 1], d0 = dirOf(p[n - 2], a);
+  const k0 = (a[1] * W + a[0]) * 4 + d0, par = new Map([[k0, -1]]), q = [k0];
+  for (let h = 0; h < q.length && q.length < 60000; h++) {
+    const k = q[h], d = k & 3, ti = k >> 2, x = ti % W, y = (ti - x) / W;
+    for (const dd of [d, (d + 3) % 4, (d + 1) % 4]) {
+      const nx = x + DX[dd], ny = y + DY[dd];
+      if (!isRail(nx, ny)) continue;
+      const nk = (ny * W + nx) * 4 + dd;
+      if (par.has(nk)) continue;
+      par.set(nk, k);
+      if (goal.has(ny * W + nx)) {
+        const out = [];
+        for (let c = nk; c !== k0; c = par.get(c)) { const ci = c >> 2; out.push([ci % W, (ci - ci % W) / W]); }
+        return out.reverse();
+      }
+      q.push(nk);
+    }
+  }
+  return null;
+}
+function stopGoal(e) {
+  const s = new Set();
+  for (let d = 0; d < 4; d++) if (isRail(e.x + DX[d], e.y + DY[d])) s.add((e.y + DY[d]) * W + e.x + DX[d]);
+  return s;
+}
+function autoDrive(t) {
+  const r = { thr: 0, brake: 1, lim: Infinity };
+  t.sch = (t.sch || []).filter(id => { const e = ents.get(id); return e && e.type === 'train_stop'; });
+  if (!t.sch.length) { t.st = 'No stops in the schedule'; return r; }
+  if (!t.cars.some(c => c.type === 'loco')) { t.st = 'No locomotive'; return r; }
+  t.si = (t.si || 0) % t.sch.length;
+  const stp = ents.get(t.sch[t.si]);
+  if (t.state === 'wait') { stopWork(t, stp); return r; }
+  const goal = stopGoal(stp), p = t.p, n = p.length;
+  if (!goal.size) { t.st = stp.nm + ' has no track beside it'; return r; }
+  let gi = -1;
+  for (let i = n - 1; i >= 0; i--) if (goal.has(p[i][1] * W + p[i][0])) { gi = i; break; }
+  if (gi >= 0 && gi <= t.L + 0.05 && gi >= t.L - tLen(t)) {
+    t.v = 0; t.state = 'wait'; t.wt = 0; t.idle = 0; t.tk = 0; t.route = null;
+    t.st = 'At ' + stp.nm;
+    return r;
+  }
+  let dist;
+  if (gi > t.L) dist = gi - t.L;
+  else {
+    if (!t.route || !t.route.length) {
+      if (S.t - (t.rp ?? -9) > 1.5) { t.rp = S.t; t.route = railPath(t, goal); }
+      if (!t.route || !t.route.length) {
+        t.route = null; t.st = 'No path to ' + stp.nm;
+        if (t.v < 0.05 && S.t - (t.rvT ?? -9) > 5) { t.rvT = S.t; reverseTrain(t); t.rp = -9; }
+        return r;
+      }
+    }
+    dist = n - 1 + t.route.length - t.L;
+    for (let k = 0; k < t.route.length; k++) if (tileTaken(t, t.route[k][0], t.route[k][1])) { dist = Math.min(dist, n + k - 1 + 0.4 - t.L); break; }
+  }
+  dist = Math.max(0, dist);
+  t.st = dist < 1.5 && gi < 0 && t.v < 0.1 ? 'Waiting for the line ahead' : 'Heading to ' + stp.nm;
+  if (!(t.e > 0) && !t.fc) t.st = 'Out of fuel';
+  const vt = Math.min(T_VMAX, Math.sqrt(2 * 0.8 * T_BRAKE * dist));
+  r.thr = t.v < vt - 0.3 ? 1 : 0; r.brake = t.v > vt + 0.3 ? 1 : 0; r.lim = dist;
+  return r;
+}
+function stopWork(t, stp) {
+  t.wt = (t.wt || 0) + DT; t.tk = (t.tk || 0) + DT;
+  t.st = 'At ' + stp.nm + (stp.mode === 'unload' ? ', unloading' : ', loading');
+  if (t.tk >= 0.25) {
+    t.tk = 0;
+    let moved = 0;
+    if (!t.g) trainGeo(t);
+    t.cars.forEach((c, i) => {
+      const g = t.g[i], cs = Math.cos(g.a), sn = Math.sin(g.a);
+      for (const e of lists().chest) {
+        if (e.type !== 'chest' || !e.store) continue;
+        const dx = e.x + 0.5 - g.x, dy = e.y + 0.5 - g.y;
+        if (Math.abs(dx * cs + dy * sn) >= 1.5 || Math.abs(dy * cs - dx * sn) >= 1.6) continue;
+        if (c.type === 'loco') {
+          const m = Math.min(e.store.jerrycan || 0, T_FUEL - (t.fc || 0));
+          if (m > 0) { e.store.jerrycan -= m; if (!e.store.jerrycan) delete e.store.jerrycan; t.fc = (t.fc || 0) + m; moved += m; }
+          continue;
+        }
+        let left = 10;
+        if (stp.mode === 'unload') {
+          for (const k of Object.keys(c.tr)) {
+            const m = Math.min(left, c.tr[k], 400 - sum(e.store));
+            if (m <= 0) continue;
+            c.tr[k] -= m; if (!c.tr[k]) delete c.tr[k];
+            e.store[k] = (e.store[k] || 0) + m; left -= m; moved += m;
+          }
+        } else {
+          for (const k of Object.keys(e.store)) {
+            if (k === 'jerrycan' || !(e.store[k] > 0)) continue;
+            const cur = c.tr[k] || 0, room = (TRAIN.wagon.slots - carSlots(c)) * stk(k) + (cur % stk(k) ? stk(k) - cur % stk(k) : 0);
+            const m = Math.min(left, e.store[k], room);
+            if (m <= 0) continue;
+            e.store[k] -= m; if (!e.store[k]) delete e.store[k];
+            c.tr[k] = cur + m; left -= m; moved += m;
+          }
+        }
+      }
+    });
+    if (moved) t.idle = 0; else t.idle = (t.idle || 0) + 0.25;
+  }
+  if (t.wt > 2 && t.idle >= 2) { t.state = 'go'; t.si = (t.si + 1) % t.sch.length; t.route = null; t.rp = -9; }
+}
+function trainCollide(t) {
+  const P = S.pl, rid = P.car === t.id;
+  for (const g of t.g) {
+    if (t.v > 1) for (const b of S.bugs) if (b.hp > 0 && inTcar(g, b.x, b.y, 0.25)) { b.hp -= t.v * 10; if (b.hp <= 0) S.pk = (S.pk || 0) + 1; }
+    for (const v of S.cars.slice()) {
+      if (Math.hypot(v.x - g.x, v.y - g.y) > 2.6) continue;
+      const V = VEH[v.type], c = Math.cos(v.a), s = Math.sin(v.a);
+      let hit = inTcar(g, v.x, v.y, V.hw);
+      if (!hit) for (const [l, w] of [[1, 1], [1, -1], [-1, 1], [-1, -1], [0, 1], [0, -1]]) if (inTcar(g, v.x + c * V.hl * l - s * V.hw * w, v.y + s * V.hl * l + c * V.hw * w, 0)) { hit = true; break; }
+      if (!hit) continue;
+      if (t.v > 3) {
+        v.hp -= t.v * 15; v.lh = S.t; t.v *= 0.85;
+        fx.push({ x: v.x, y: v.y, t: 0.3, c: '#d0d0d0' });
+        if (v.hp <= 0) carWreck(v);
+      } else return true;
+    }
+    if (!rid && !P.car && !(P.dead > 0) && inTcar(g, P.x, P.y, PL_R)) {
+      if (t.v > 1 && S.t - (t.ph ?? -9) > 0.6) { t.ph = S.t; plHurt(t.v * 5); }
+      const c = Math.cos(g.a), s = Math.sin(g.a), lon = (P.x - g.x) * c + (P.y - g.y) * s, lat = (P.y - g.y) * c - (P.x - g.x) * s;
+      const sg = lat < 0 ? -1 : 1, off = 0.42 + PL_R + 0.06;
+      let ok = false;
+      for (const k of [sg, -sg]) {
+        const nx = g.x + c * lon - s * off * k, ny = g.y + s * lon + c * off * k;
+        if (plFree(nx, ny)) { P.x = nx; P.y = ny; ok = true; break; }
+      }
+      if (!ok) return true;
+    }
+  }
+  return false;
+}
+function trainFuel(t, rid) { return t.fc > 0 ? refuel(t, true) : rid ? refuel(t) : false; }
+function trainStep(t) {
+  const P = S.pl, rid = P.car === t.id && !(P.dead > 0);
+  let thr = 0, brake = 0, lim = Infinity;
+  if (t.auto) { const r = autoDrive(t); thr = r.thr; brake = r.brake; lim = r.lim; }
+  else if (rid) {
+    t.st = 'Manual';
+    if (!modalKind) {
+      const w = keys.w || keys.arrowup, s = keys.s || keys.arrowdown;
+      t.turn = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0);
+      if (w) thr = 1;
+      if (s) { if (t.v > 0.05) brake = 1; else if (!t.rl) { reverseTrain(t); t.rl = 1; } }
+      else t.rl = 0;
+    }
+  } else { brake = 1; t.st = 'Parked'; }
+  const nl = t.cars.filter(c => c.type === 'loco').length;
+  let mass = 0;
+  for (const c of t.cars) mass += TRAIN[c.type].m + (c.type === 'wagon' ? carSlots(c) / TRAIN.wagon.slots : 0);
+  if (thr && nl) {
+    if (!(t.e > 0)) trainFuel(t, rid);
+    if (t.e > 0) { t.v += 6 * nl / mass * DT; t.e = Math.max(0, t.e - T_BURN * nl * DT); if (Math.random() < 0.4 * nl) { const g = t.g[t.cars.findIndex(c => c.type === 'loco')]; if (g) puffs.push({ x: g.x, y: g.y, t: S.t }); } }
+  }
+  if (brake) t.v = Math.max(0, t.v - T_BRAKE * DT);
+  t.v = Math.max(0, Math.min(T_VMAX, t.v - t.v * 0.02 * DT - (thr ? 0 : 0.1 * DT)));
+  if (t.v > 0) {
+    const want = Math.min(t.v * DT, lim), L0 = t.L, got = advance(t, want);
+    if (got < want - 1e-6) t.v = 0;
+    trainGeo(t);
+    if (trainCollide(t)) { t.L = L0; t.v = 0; trainGeo(t); }
+    trimTrain(t);
+    trainOcc(t);
+  }
+}
+function trainTick() {
+  const P = S.pl;
+  for (const t of S.trains) { if (!t.g) trainGeo(t); trainOcc(t); }
+  for (const t of S.trains) trainStep(t);
+  const t = P.car && trainOf(P.car);
+  if (t) { let i = t.cars.findIndex(c => c.type === 'loco'); if (i < 0) i = 0; const g = t.g[i]; P.x = g.x; P.y = g.y; P.f = g.a; }
+}
+function placeTrain(type, fx, fy, dir) {
+  if (!(S.inv[type] > 0)) return 'You have no ' + nm(type);
+  if (!inReach(fx, fy, REACH)) return 'Out of reach. Walk closer.';
+  const X = Math.floor(fx), Y = Math.floor(fy);
+  if (!isRail(X, Y)) return 'Rolling stock goes on rails. Lay track first.';
+  const car = { type, tr: {} };
+  for (const t of S.trains) {
+    if (!t.g) trainGeo(t);
+    const h = trackPt(t, t.L), b = trackPt(t, t.L - tLen(t)), dh = Math.hypot(h[0] - fx, h[1] - fy), db = Math.hypot(b[0] - fx, b[1] - fy);
+    if (Math.min(dh, db) >= 1.6) continue;
+    if (t.v > 0.05) return 'Stop the train before coupling';
+    const hd = dh < db;
+    if (hd) reverseTrain(t);
+    t.cars.push(car);
+    let ok = true;
+    while (t.L - tLen(t) < 0) {
+      const a = t.p[0], d = dirOf(t.p[1], a);
+      const q = [d, (d + 3) % 4, (d + 1) % 4].map(dd => [a[0] + DX[dd], a[1] + DY[dd]]).find(o => isRail(o[0], o[1]) && !tileTaken(t, o[0], o[1]));
+      if (!q) { ok = false; break; }
+      t.p.unshift(q); t.L++;
+    }
+    if (!ok) { t.cars.pop(); if (hd) reverseTrain(t); trainGeo(t); return 'Not enough track behind the train'; }
+    if (hd) reverseTrain(t);
+    trainGeo(t); trainOcc(t);
+    S.inv[type]--;
+    return t;
+  }
+  if (tileTaken(null, X, Y)) return 'Another train is in the way';
+  let walk = null;
+  for (const d0 of [(dir + 2) % 4, dir, (dir + 1) % 4, (dir + 3) % 4]) {
+    const w = [[X, Y]];
+    let d = d0, ok = true;
+    for (let k = 0; k < T_CL; k++) {
+      const a = w[w.length - 1];
+      const q = (k === 0 ? [d] : [d, (d + 3) % 4, (d + 1) % 4]).map(dd => [a[0] + DX[dd], a[1] + DY[dd], dd]).find(o => isRail(o[0], o[1]) && !tileTaken(null, o[0], o[1]));
+      if (!q) { ok = false; break; }
+      w.push([q[0], q[1]]); d = q[2];
+    }
+    if (ok) { walk = w; break; }
+  }
+  if (!walk) return 'Not enough track here. Each car needs ' + T_CL + ' tiles.';
+  const t = { id: S.nextId++, cars: [car], p: walk.reverse(), L: T_CL, v: 0, auto: false, sch: [], si: 0, state: 'go', route: null, e: 0, fc: 0, st: 'Parked', turn: 0 };
+  trainGeo(t);
+  if (S.cars.some(v => t.g.some(g => inTcar(g, v.x, v.y, VEH[v.type].hw)))) return 'Something is in the way';
+  S.inv[type]--;
+  S.trains.push(t); trainOcc(t);
+  return t;
+}
+function pickTrain(t) {
+  const P = S.pl;
+  if (P.car === t.id) return toast('Get out first (F).', true);
+  if (!t.g) trainGeo(t);
+  if (!t.g.some(g => inReach(g.x, g.y, REACH))) return toast('Out of reach. Walk closer.', true);
+  let cg = false;
+  for (const c of t.cars) { give(c.type, 1); qbAdd(c.type); for (const k in c.tr) { give(k, c.tr[k]); cg = true; } }
+  give('jerrycan', t.fc || 0);
+  S.trains = S.trains.filter(o => o !== t);
+  if (selTrain === t.id) closePanel();
+  toast('Picked up the train' + (cg ? ' and its cargo.' : '.'));
+  renderHotbar();
+}
+
 function serialize() {
   const es = [];
   for (const e of ents.values()) {
@@ -1663,7 +1998,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, dead: S.pl.dead || 0, car: S.pl.car || null }, cars: S.cars.map(v => Object.assign({}, v, { x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, help: S.help, qb: S.qb, cq: S.cq, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, help: S.help, qb: S.qb, cq: S.cq, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -1683,7 +2018,7 @@ function newGame(seed, opts) {
   initWorld(seed, gen);
   spawnRuins();
   spawnHives();
-  S.cars = [];
+  S.cars = []; S.trains = [];
   S.pl = newPl();
   cam = { x: S.pl.x, y: S.pl.y, z: 32 }; camFree = false;
   tool = null; sel = null;
@@ -1708,7 +2043,7 @@ function load() {
   }
   if (!S.rv) spawnRuins();
   if (!S.hv) spawnHives();
-  S.cars = d.cars || [];
+  S.cars = d.cars || []; S.trains = d.trains || [];
   S.pl = d.pl ? Object.assign({ wk: 0, f: Math.PI / 2, hp: PL_HP, rd: 0 }, d.pl) : newPl();
   if (d.cam) cam = d.cam;
   camFree = false;
@@ -1856,17 +2191,19 @@ function render() {
   ctx.fillStyle = 'rgba(0,0,0,0.3)';
   for (const e of vis) {
     const k = kind(e);
-    if (k === 'pipe' || e.type === 'belt' || k === 'hive' || k === 'ruin' || k === 'road') continue;
+    if (k === 'pipe' || e.type === 'belt' || k === 'hive' || k === 'ruin' || k === 'road' || k === 'rail' || k === 'stop') continue;
     const B = BUILD[e.type];
     ctx.fillRect(ox + e.x * z + z * 0.18, oy + e.y * z + z * 0.24, B.w * z - z * 0.12, B.h * z - z * 0.12);
   }
   for (const e of vis) if (kind(e) === 'road') drawRoad(e, ox, oy, z);
+  for (const e of vis) if (kind(e) === 'rail') drawRail(e, ox, oy, z);
   for (const e of vis) if (kind(e) === 'pipe') drawPipe(e, ox, oy, z);
   for (const e of vis) if (e.type === 'belt') drawBelt(e, ox, oy, z);
   for (const e of vis) if (e.type === 'belt') drawBeltItems(e, ox, oy, z);
-  for (const e of vis) if (kind(e) !== 'pipe' && e.type !== 'belt' && kind(e) !== 'road') drawBuilding(e, ox, oy, z);
+  for (const e of vis) if (kind(e) !== 'pipe' && e.type !== 'belt' && kind(e) !== 'road' && kind(e) !== 'rail') drawBuilding(e, ox, oy, z);
   drawSmoke(vis, ox, oy, z);
   for (const v of S.cars) if (v.x > x0 - 3 && v.x < x1 + 3 && v.y > y0 - 3 && v.y < y1 + 3) drawCar(v, ox + v.x * z, oy + v.y * z, z);
+  for (const t of S.trains) drawTrain(t, ox, oy, z);
   drawPuffs(ox, oy, z);
   if (!S.pl.car) drawPlayer(ox, oy, z);
   drawBugs(ox, oy, z, x0, y0, x1, y1);
@@ -1924,6 +2261,20 @@ function render() {
     ctx.fillStyle = '#ffd0c0'; ctx.font = 'bold 22px system-ui, sans-serif'; ctx.textAlign = 'center';
     ctx.fillText('Respawning in ' + Math.ceil(S.pl.dead) + '…', w / 2, h / 2 - 40);
     ctx.textAlign = 'left';
+  }
+  const dtr = S.pl.car && trainOf(S.pl.car);
+  if (dtr) {
+    const bx = 14, by = h - 98;
+    ctx.fillStyle = 'rgba(14,16,20,0.84)'; ctx.beginPath(); ctx.roundRect(bx, by, 300, 84, 8); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = '#e8e4d8'; ctx.font = 'bold 13px system-ui, sans-serif'; ctx.fillText('Diesel Locomotive', bx + 12, by + 22);
+    ctx.textAlign = 'right'; ctx.font = 'bold 24px ui-monospace, monospace'; ctx.fillText(Math.round(dtr.v * 3.6), bx + 256, by + 28);
+    ctx.font = '11px system-ui, sans-serif'; ctx.fillStyle = '#9aa0a8'; ctx.fillText('km/h', bx + 288, by + 28); ctx.textAlign = 'left';
+    ctx.fillText('Fuel', bx + 12, by + 48); ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(bx + 50, by + 40, 120, 9);
+    ctx.fillStyle = '#d8b848'; ctx.fillRect(bx + 50, by + 40, 120 * Math.min(1, (dtr.e || 0) / CAN_MJ), 9);
+    ctx.fillStyle = '#9aa0a8'; ctx.fillText(dtr.fc ? '+' + dtr.fc + ' can' + (dtr.fc > 1 ? 's' : '') : (S.inv.jerrycan || 0) + ' in pack', bx + 178, by + 48);
+    ctx.fillText(dtr.auto ? dtr.st || '' : 'Next junction: ' + (dtr.turn > 0 ? 'right' : dtr.turn < 0 ? 'left' : 'straight on'), bx + 12, by + 64);
+    ctx.fillStyle = '#6a7078'; ctx.font = '10px system-ui, sans-serif'; ctx.fillText(dtr.auto ? 'Running on its schedule · F get out' : 'W throttle · S brake, then reverse · hold A/D at junctions · F get out', bx + 12, by + 78);
   }
   const dv = S.pl.car && carOf(S.pl.car);
   if (dv) {
@@ -2488,9 +2839,125 @@ function drawGun(e, x, y, w, h, z) {
   }
 }
 
+function drawRail(e, ox, oy, z) {
+  const X = ox + e.x * z, Y = oy + e.y * z, cx = X + z / 2, cy = Y + z / 2;
+  const cn = [0, 1, 2, 3].filter(d => isRail(e.x + DX[d], e.y + DY[d]));
+  const pr = [];
+  if (cn.length >= 2) { for (let i = 0; i < cn.length; i++) for (let j = i + 1; j < cn.length; j++) pr.push([cn[i], cn[j]]); }
+  else { const d = cn.length ? cn[0] : (e.dir || 0); pr.push([d, (d + 2) % 4]); }
+  const path = (a, b, off) => {
+    ctx.beginPath();
+    if (b === (a + 2) % 4) {
+      const nx = -DY[a] * off * z, ny = DX[a] * off * z;
+      ctx.moveTo(cx + DX[a] * z / 2 + nx, cy + DY[a] * z / 2 + ny); ctx.lineTo(cx + DX[b] * z / 2 + nx, cy + DY[b] * z / 2 + ny);
+    } else {
+      const ax = cx + (DX[a] + DX[b]) * z / 2, ay = cy + (DY[a] + DY[b]) * z / 2;
+      const a1 = Math.atan2(-DY[b], -DX[b]), a2 = Math.atan2(-DY[a], -DX[a]);
+      let da = a2 - a1; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2;
+      ctx.arc(ax, ay, (0.5 + off) * z, a1, a1 + da, da < 0);
+    }
+  };
+  ctx.lineCap = 'butt';
+  ctx.strokeStyle = '#6e665c'; ctx.lineWidth = z * 0.8;
+  for (const [a, b] of pr) { path(a, b, 0); ctx.stroke(); }
+  if (z < 6) { ctx.strokeStyle = '#a8a8ac'; ctx.lineWidth = Math.max(1, z * 0.2); for (const [a, b] of pr) { path(a, b, 0); ctx.stroke(); } return; }
+  const hsh = ((e.x * 73856093) ^ (e.y * 19349663)) >>> 0;
+  ctx.fillStyle = 'rgba(0,0,0,0.12)';
+  for (let i = 0; i < 5; i++) { const r = (hsh >> (i * 5)) & 31; ctx.fillRect(X + (0.15 + (r & 7) / 10) * z, Y + (0.15 + (r >> 3) / 6) * z, z * 0.06, z * 0.06); }
+  ctx.fillStyle = '#9a968c';
+  for (const [a, b] of pr) {
+    if (b === (a + 2) % 4) {
+      for (const f of [0.125, 0.375, 0.625, 0.875]) {
+        const px = cx + DX[a] * z / 2 + (DX[b] - DX[a]) * z * f, py = cy + DY[a] * z / 2 + (DY[b] - DY[a]) * z * f;
+        ctx.save(); ctx.translate(px, py); ctx.rotate(Math.atan2(DY[a], DX[a])); ctx.fillRect(-z * 0.05, -z * 0.31, z * 0.1, z * 0.62); ctx.restore();
+      }
+    } else {
+      const ax = cx + (DX[a] + DX[b]) * z / 2, ay = cy + (DY[a] + DY[b]) * z / 2, a1 = Math.atan2(-DY[b], -DX[b]);
+      let da = Math.atan2(-DY[a], -DX[a]) - a1; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2;
+      for (const f of [1 / 6, 0.5, 5 / 6]) {
+        const an = a1 + da * f;
+        ctx.save(); ctx.translate(ax + Math.cos(an) * z / 2, ay + Math.sin(an) * z / 2); ctx.rotate(an); ctx.fillRect(-z * 0.31, -z * 0.05, z * 0.62, z * 0.1); ctx.restore();
+      }
+    }
+  }
+  for (const [w, c] of [[0.11, '#3a3634'], [0.06, '#b8b8bc']]) {
+    ctx.strokeStyle = c; ctx.lineWidth = Math.max(1, z * w);
+    for (const [a, b] of pr) for (const off of [-0.2, 0.2]) { path(a, b, off); ctx.stroke(); }
+  }
+}
+function drawStop(e, x, y, z) {
+  const cx = x + z / 2;
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(cx + z * 0.08, y + z * 0.86, z * 0.22, z * 0.08, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#4a4e54'; ctx.fillRect(cx - z * 0.04, y + z * 0.3, z * 0.08, z * 0.58);
+  ctx.fillStyle = '#2a2e34'; ctx.fillRect(cx - z * 0.12, y + z * 0.82, z * 0.24, z * 0.08);
+  ctx.fillStyle = e.mode === 'unload' ? '#2a5aa0' : '#2a8a4a'; ctx.beginPath(); ctx.roundRect(x + z * 0.12, y + z * 0.08, z * 0.76, z * 0.32, z * 0.05); ctx.fill();
+  ctx.strokeStyle = '#e8e4d8'; ctx.lineWidth = Math.max(1, z * 0.025); ctx.stroke();
+  if (z > 12) { ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.round(z * 0.2)}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.fillText(e.mode === 'unload' ? 'UNLOAD' : 'LOAD', cx, y + z * 0.31); ctx.textAlign = 'left'; }
+  if (z > 18) {
+    ctx.font = `bold ${Math.round(Math.min(14, z * 0.26))}px system-ui, sans-serif`; ctx.textAlign = 'center';
+    const tw = ctx.measureText(e.nm || '').width;
+    ctx.fillStyle = 'rgba(14,16,20,0.75)'; ctx.fillRect(cx - tw / 2 - 4, y - z * 0.3, tw + 8, Math.min(18, z * 0.34));
+    ctx.fillStyle = '#ffe080'; ctx.fillText(e.nm || '', cx, y - z * 0.3 + Math.min(14, z * 0.26)); ctx.textAlign = 'left';
+  }
+}
+function drawTrain(t, ox, oy, z, al) {
+  if (!t.g) trainGeo(t);
+  const L = 0.92 * z, R = 0.42 * z;
+  ctx.save();
+  if (al != null) ctx.globalAlpha = al;
+  for (let i = 0; i + 1 < t.g.length; i++) {
+    const a = t.g[i], b = t.g[i + 1];
+    ctx.strokeStyle = '#1a1a1c'; ctx.lineWidth = Math.max(2, z * 0.12);
+    ctx.beginPath(); ctx.moveTo(ox + (a.x - Math.cos(a.a) * 0.9) * z, oy + (a.y - Math.sin(a.a) * 0.9) * z); ctx.lineTo(ox + (b.x + Math.cos(b.a) * 0.9) * z, oy + (b.y + Math.sin(b.a) * 0.9) * z); ctx.stroke();
+  }
+  t.cars.forEach((c, i) => {
+    const g = t.g[i];
+    ctx.save(); ctx.translate(ox + g.x * z, oy + g.y * z); ctx.rotate(g.a);
+    if (i === 0 && t.v > 1) {
+      const gr = ctx.createLinearGradient(L, 0, L + z * 5, 0);
+      gr.addColorStop(0, 'rgba(255,244,200,0.2)'); gr.addColorStop(1, 'rgba(255,244,200,0)');
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(L, -R * 0.6); ctx.lineTo(L + z * 5, -R * 3); ctx.lineTo(L + z * 5, R * 3); ctx.lineTo(L, R * 0.6); ctx.fill();
+    }
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.roundRect(-L + z * 0.08, -R + z * 0.14, L * 2, R * 2, z * 0.08); ctx.fill();
+    ctx.fillStyle = '#18181a';
+    for (const bx of [-0.58, 0.58]) ctx.fillRect(bx * L - z * 0.22, -R - z * 0.04, z * 0.44, R * 2 + z * 0.08);
+    if (c.type === 'loco') {
+      const gr = ctx.createLinearGradient(0, -R, 0, R);
+      gr.addColorStop(0, '#f0c840'); gr.addColorStop(0.45, '#e0b020'); gr.addColorStop(1, '#8a6a10');
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.roundRect(-L, -R, L * 2, R * 2, z * 0.1); ctx.fill();
+      ctx.fillStyle = '#b02a1e'; ctx.fillRect(-L, -R, L * 2, R * 0.16); ctx.fillRect(-L, R * 0.84, L * 2, R * 0.16);
+      ctx.fillStyle = '#5a5e64'; ctx.fillRect(-L * 0.56, -R * 0.62, L * 1.12, R * 1.24);
+      ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = Math.max(1, z * 0.02);
+      for (let k = 1; k < 7; k++) { const x = -L * 0.56 + L * 1.12 * k / 7; ctx.beginPath(); ctx.moveTo(x, -R * 0.62); ctx.lineTo(x, R * 0.62); ctx.stroke(); }
+      ctx.fillStyle = '#2a2c30'; for (const fx2 of [-0.3, 0.12]) { ctx.beginPath(); ctx.arc(fx2 * L, 0, R * 0.34, 0, 7); ctx.fill(); }
+      for (const sd of [-1, 1]) {
+        ctx.fillStyle = '#1c2630'; ctx.beginPath(); ctx.roundRect(sd > 0 ? L * 0.6 : -L * 0.94, -R * 0.78, L * 0.34, R * 1.56, z * 0.04); ctx.fill();
+        ctx.fillStyle = 'rgba(160,210,235,0.55)'; ctx.fillRect(sd > 0 ? L * 0.84 : -L * 0.92, -R * 0.66, L * 0.07, R * 1.32);
+        ctx.fillStyle = sd > 0 ? '#fff4c0' : '#c42020'; ctx.fillRect(sd > 0 ? L - z * 0.05 : -L + z * 0.01, -R * 0.12, z * 0.04, R * 0.24);
+      }
+    } else {
+      ctx.fillStyle = '#6a4a34'; ctx.beginPath(); ctx.roundRect(-L, -R, L * 2, R * 2, z * 0.05); ctx.fill();
+      ctx.fillStyle = '#3a2a1e'; ctx.fillRect(-L * 0.92, -R * 0.78, L * 1.84, R * 1.56);
+      const used = carSlots(c), f = Math.min(1, used / TRAIN.wagon.slots);
+      if (used) {
+        let top = null; for (const k in c.tr) if (!top || c.tr[k] > c.tr[top]) top = k;
+        const col = (ITEMS[top] && ITEMS[top].c) || '#a08060';
+        ctx.fillStyle = col; ctx.globalAlpha = (al ?? 1) * (0.55 + 0.45 * f);
+        ctx.beginPath(); ctx.ellipse(0, 0, L * 0.9 * Math.sqrt(0.3 + 0.7 * f), R * 0.76, 0, 0, 7); ctx.fill();
+        ctx.globalAlpha = al ?? 1;
+        ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.beginPath(); ctx.ellipse(-L * 0.15, -R * 0.2, L * 0.4 * Math.sqrt(0.3 + 0.7 * f), R * 0.25, 0, 0, 7); ctx.fill();
+      }
+      ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = Math.max(1, z * 0.02);
+      for (const k of [-0.33, 0.33]) { ctx.beginPath(); ctx.moveTo(k * L, -R); ctx.lineTo(k * L, -R * 0.78); ctx.moveTo(k * L, R); ctx.lineTo(k * L, R * 0.78); ctx.stroke(); }
+    }
+    ctx.restore();
+  });
+  ctx.restore();
+}
 function drawBuilding(e, ox, oy, z) {
   const B = BUILD[e.type], x = ox + e.x * z, y = oy + e.y * z, w = B.w * z, h = B.h * z, p = Math.max(1, z * 0.06);
   if (B.kind === 'hive') return drawHive(e, x, y, w, h, z);
+  if (B.kind === 'stop') return drawStop(e, x, y, z);
   if (B.kind === 'wall') return drawWall(e, x, y, z);
   if (B.kind === 'turret') return drawTurret(e, x, y, w, h, z);
   if (B.kind === 'projector') return drawProjector(e, x, y, w, h, z);
@@ -2683,6 +3150,15 @@ function drawGhost(ox, oy, z) {
     ctx.restore();
     return;
   }
+  if (B.kind === 'train') {
+    const X = Math.floor(mouse.fx), Y = Math.floor(mouse.fy), ok = isRail(X, Y) && inReach(mouse.fx, mouse.fy, REACH);
+    const ns = isRail(X, Y - 1) || isRail(X, Y + 1), ew = isRail(X - 1, Y) || isRail(X + 1, Y);
+    ctx.save(); ctx.translate(ox + (X + 0.5) * z, oy + (Y + 0.5) * z); ctx.rotate(ns && !ew ? Math.PI / 2 : ew && !ns ? 0 : Math.atan2(DY[toolDir], DX[toolDir]));
+    ctx.globalAlpha = 0.55; ctx.fillStyle = B.c; ctx.fillRect(-0.92 * z, -0.42 * z, 1.84 * z, 0.84 * z); ctx.globalAlpha = 1;
+    ctx.strokeStyle = ok ? '#7fff8a' : '#ff5a5a'; ctx.lineWidth = 2; ctx.strokeRect(-0.92 * z, -0.42 * z, 1.84 * z, 0.84 * z);
+    ctx.restore();
+    return;
+  }
   const err = canPlace(tool, o.x, o.y) || plBlock(tool, o.x, o.y);
   ctx.globalAlpha = 0.5;
   ctx.fillStyle = B.c;
@@ -2758,7 +3234,7 @@ for (const r of RECIPES) {
   for (const k in r.i || {}) (USED[k] = USED[k] || new Set()).add(r.n || nm(r.id));
 }
 for (const t in BUILD) for (const k in BUILD[t].cost || {}) (USED[k] = USED[k] || new Set()).add(BUILD[t].n);
-const stk = k => BUILD[k] ? (BUILD[k].kind === 'belt' || BUILD[k].kind === 'pipe' || BUILD[k].kind === 'road' ? 100 : BUILD[k].kind === 'vehicle' ? 1 : 50) : 100;
+const stk = k => BUILD[k] ? (BUILD[k].kind === 'belt' || BUILD[k].kind === 'pipe' || BUILD[k].kind === 'road' || BUILD[k].kind === 'rail' ? 100 : BUILD[k].kind === 'vehicle' || BUILD[k].kind === 'train' ? 1 : 50) : 100;
 const lum = h => { if (!h || h[0] !== '#') return 128; if (h.length === 4) h = '#' + h[1] + h[1] + h[2] + h[2] + h[3] + h[3]; const v = parseInt(h.slice(1, 7), 16); return ((v >> 16) * 299 + ((v >> 8) & 255) * 587 + (v & 255) * 114) / 1000; };
 function abbr(k) {
   const B = BUILD[k];
@@ -2793,9 +3269,59 @@ function selectTool(t) {
   renderHotbar();
 }
 
-function closePanel() { sel = null; selCar = null; panel.hidden = true; panel.innerHTML = ''; }
+function openTrain(t) {
+  sel = null; selCar = null; selTrain = t.id;
+  const B = BUILD.loco, stops = [...ents.values()].filter(e => e.type === 'train_stop');
+  const nl = t.cars.filter(c => c.type === 'loco').length, nw = t.cars.length - nl;
+  panel.innerHTML = `<div class="ph"><span class="sw big" style="background:${B.c}">${B.ab}</span><div class="pt"><b>Train · ${nl} locomotive${nl === 1 ? '' : 's'}, ${nw} wagon${nw === 1 ? '' : 's'}</b><small>Diesel-electric. The engine turns a generator and the traction motors drive the axles. Click a stop below to add it to the schedule.</small></div><button class="x" data-act="close" title="Close">×</button></div><div id="pdyn"></div><div class="sec">Schedule</div><div class="sched">${(t.sch || []).map((id, i) => { const e = ents.get(id); return e ? `<div class="srow${t.auto && i === t.si ? ' on' : ''}"><span>${i + 1}. ${e.nm}</span><em>${e.mode === 'unload' ? 'unload' : 'load'}</em><button data-act="tdel" data-i="${i}" title="Remove">×</button></div>` : ''; }).join('') || '<span class="dim">No stops yet.</span>'}</div><label class="row">Add stop <select data-act="tadd"><option value="">Choose a stop</option>${stops.map(e => `<option value="${e.id}">${e.nm} (${e.mode === 'unload' ? 'unload' : 'load'})</option>`).join('')}</select></label><div class="pbtns"><button data-act="tauto">${t.auto ? 'Switch to manual' : 'Run automatically'}</button><button data-act="tfuel">Add jerrycans</button><button data-act="tdrive">${S.pl.car === t.id ? 'Get out (F)' : 'Get in (F)'}</button><button data-act="ttake">Take all cargo</button><button class="danger" data-act="tpick">Pick up</button></div>`;
+  panel.hidden = false;
+  renderPanelDyn();
+}
+function trainDyn(t) {
+  const col = t.auto ? (/Heading|At /.test(t.st) ? '#7fe08a' : '#e0b84a') : '#9aa0a8';
+  let h = `<div class="status"><i style="background:${col}"></i>${t.auto ? t.st || 'Starting' : S.pl.car === t.id ? 'Manual, you are driving' : 'Manual, parked'} · ${Math.round(t.v * 3.6)} km/h</div>`;
+  h += `<div class="gauge"><span>Tank</span>${bar(t.e || 0, CAN_MJ, '#d8b848')}<b>${Math.round(t.e || 0)} MJ</b></div>`;
+  h += `<div class="sec">Fuel slot</div><div class="cgrid"><button class="cslot" data-act="tfuel" title="Add jerrycans from your pack">${ico('jerrycan')}<span class="cnt">${t.fc || 0}/${T_FUEL}</span></button></div><p class="dim">Locomotives take jerrycans from chests beside them at any stop.</p>`;
+  t.cars.forEach((c, i) => {
+    if (c.type !== 'wagon') return;
+    h += `<div class="sec">Wagon ${t.cars.slice(0, i + 1).filter(q => q.type === 'wagon').length} · ${carSlots(c)} / ${TRAIN.wagon.slots} slots</div><div class="cgrid">`;
+    const ks = Object.keys(c.tr).sort();
+    h += ks.length ? ks.map(k => `<button class="cslot" data-act="ttk" data-w="${i}" data-k="${k}" title="Take ${nm(k)}">${ico(k)}<span class="cnt">${fmt(c.tr[k])}</span></button>`).join('') : '<span class="dim">Empty</span>';
+    h += '</div>';
+  });
+  return h;
+}
+function trainAct(act, el) {
+  const t = trainOf(selTrain);
+  if (!t) return closePanel();
+  if (act === 'tadd') { const id = +el.value; if (id) { t.sch.push(id); if (t.sch.length === 1) t.si = 0; } return openTrain(t); }
+  if (act === 'tdel') { const i = +el.dataset.i; t.sch.splice(i, 1); if (t.si >= i && t.si > 0) t.si--; t.route = null; return openTrain(t); }
+  if (act === 'tauto') {
+    t.auto = !t.auto; t.state = 'go'; t.route = null; t.rp = -9;
+    if (t.auto && !t.sch.length) toast('Add stops to the schedule first.', true);
+    return openTrain(t);
+  }
+  if (act === 'tdrive') {
+    if (S.pl.car !== t.id && !(t.g || trainGeo(t)).some(g => Math.hypot(g.x - S.pl.x, g.y - S.pl.y) < 3.5)) return toast('Walk up to it first.', true);
+    carToggle(); return openTrain(t);
+  }
+  if (act === 'tpick') return pickTrain(t);
+  if (!(t.g || trainGeo(t)).some(g => inReach(g.x, g.y, REACH))) return toast('Out of reach. Walk closer.', true);
+  if (act === 'tfuel') {
+    const n = Math.min(T_FUEL - (t.fc || 0), S.inv.jerrycan || 0);
+    if (n <= 0) return toast(t.fc >= T_FUEL ? 'The fuel slot is full.' : 'You have no jerrycans. Fill them with diesel at a cylinder filler.', true);
+    S.inv.jerrycan -= n; t.fc = (t.fc || 0) + n; toast('Loaded ' + n + ' jerrycan' + (n > 1 ? 's' : ''));
+  } else if (act === 'ttk') { const c = t.cars[+el.dataset.w], k = el.dataset.k; if (c) { give(k, c.tr[k] || 0); delete c.tr[k]; } }
+  else if (act === 'ttake') { for (const c of t.cars) { for (const q in c.tr) give(q, c.tr[q]); c.tr = {}; } }
+  renderHotbar(); renderPanelDyn();
+}
+function stopDyn(e) {
+  const n = S.trains.filter(t => t.auto && t.sch && t.sch[t.si] === e.id).length;
+  return `<div class="status"><i style="background:${e.mode === 'unload' ? '#4a8ae0' : '#7fe08a'}"></i>${e.nm} · ${n ? n + ' train' + (n > 1 ? 's' : '') + ' heading here' : 'no trains heading here'}</div><p class="dim">A train stops with its front car on the track beside this sign. Each wagon then ${e.mode === 'unload' ? 'empties into' : 'fills from'} chests within a tile of its side, 10 items every quarter second, and leaves once nothing has moved for 2 seconds. Locomotives also take jerrycans from chests beside them.</p>`;
+}
+function closePanel() { sel = null; selCar = null; selTrain = null; panel.hidden = true; panel.innerHTML = ''; }
 function openCar(v) {
-  sel = null; selCar = v.id;
+  sel = null; selCar = v.id; selTrain = null;
   const B = BUILD[v.type];
   panel.innerHTML = `<div class="ph"><span class="sw big" style="background:${B.c}">${B.ab}</span><div class="pt"><b>${B.n}</b><small>${B.d}</small></div><button class="x" data-act="close" title="Close">×</button></div><div id="pdyn"></div><div class="pbtns"><button data-act="cfuel">Add jerrycans</button><button data-act="cdrive">${S.pl.car === v.id ? 'Get out (F)' : 'Get in (F)'}</button><button data-act="ctake">Take all cargo</button><button data-act="cstore">Load raw materials</button><button class="danger" data-act="cpick">Pick up</button></div>`;
   panel.hidden = false;
@@ -2842,7 +3368,7 @@ function carAct(act, el) {
 }
 
 function openPanel(e) {
-  sel = e.id;
+  sel = e.id; selCar = null; selTrain = null;
   const B = BUILD[e.type];
   let h = `<div class="ph"><span class="sw big" style="background:${B.c}">${B.ab || ''}</span><div class="pt"><b>${B.n}</b><small>${B.d}</small></div><button class="x" data-act="close" title="Close">×</button></div>`;
   if (kind(e) === 'machine' && !B.store) {
@@ -2851,6 +3377,7 @@ function openPanel(e) {
   if (e.type === 'sorter') {
     h += `<label class="row">Filter <select data-act="filter"><option value="">None (all forward)</option>${Object.keys(ITEMS).map(k => `<option value="${k}" ${e.filter === k ? 'selected' : ''}>${ITEMS[k].n}</option>`).join('')}</select></label>`;
   }
+  if (e.type === 'train_stop') h += `<label class="row">Mode <select data-act="smode"><option value="load" ${e.mode !== 'unload' ? 'selected' : ''}>Load wagons</option><option value="unload" ${e.mode === 'unload' ? 'selected' : ''}>Unload wagons</option></select></label>`;
   h += '<div id="pdyn"></div><div class="pbtns">';
   if (e.type === 'boiler') h += '<button data-act="descale">Descale (20 s outage)</button>';
   if (kind(e) === 'machine' && !B.store) h += '<button data-act="insert">Insert from inventory</button><button data-act="take">Take outputs</button>';
@@ -2912,10 +3439,12 @@ function bar(v, max, c) {
 
 function renderPanelDyn() {
   if (selCar) { const v = carOf(selCar), box = document.getElementById('pdyn'); if (!v) return closePanel(); if (box) box.innerHTML = carDyn(v); return; }
+  if (selTrain) { const t = trainOf(selTrain), box = document.getElementById('pdyn'); if (!t) return closePanel(); if (box) box.innerHTML = trainDyn(t); return; }
   const e = sel && ents.get(sel), box = document.getElementById('pdyn');
   if (!e || !box) return;
   let h = '';
   const k = kind(e);
+  if (k === 'stop') { box.innerHTML = stopDyn(e); return; }
   if (k === 'machine' && BUILD[e.type].store) {
     const B = BUILD[e.type], ch = e.ch || 0, kw = e.kw || 0;
     h += `<div class="status"><i style="background:${ST_COL[e.st] || '#888'}"></i>${ST_TXT[e.st] || 'Idle, no load'}${kw > 0.5 ? ` · giving ${Math.round(kw)} kW` : kw < -0.5 ? ` · taking ${Math.round(-kw)} kW` : ''}</div>`;
@@ -3035,7 +3564,9 @@ function panelAct(act, el) {
   const e = sel && ents.get(sel);
   if (act === 'close') return closePanel();
   if (selCar) return carAct(act, el);
+  if (selTrain) return trainAct(act, el);
   if (!e) return;
+  if (act === 'smode') { e.mode = el.value === 'unload' ? 'unload' : 'load'; return renderPanelDyn(); }
   if (act === 'recipe') { setRecipe(e, el.value); renderPanelDyn(); }
   else if (act === 'filter') { e.filter = el.value || null; }
   else if (act === 'head') { e.head = +el.value; }
@@ -3192,12 +3723,13 @@ function drawMapView() {
   x2.drawImage(tcv, 0, 0, W * TP, H * TP, 0, 0, n, n);
   for (const e of ents.values()) {
     const k = kind(e), B = BUILD[e.type];
-    x2.fillStyle = k === 'hive' ? '#e04040' : k === 'ruin' ? '#c080ff' : k === 'road' ? '#8a8a8a' : '#ffe080';
+    x2.fillStyle = k === 'hive' ? '#e04040' : k === 'ruin' ? '#c080ff' : k === 'road' ? '#8a8a8a' : k === 'rail' ? '#b09070' : '#ffe080';
     const r = k === 'hive' || k === 'ruin' ? Math.max(4, B.w * s) : Math.max(1.5, B.w * s);
     x2.fillRect(e.x * s, e.y * s, r, Math.max(k === 'hive' || k === 'ruin' ? 4 : 1.5, B.h * s));
   }
   const vw = cv.clientWidth / cam.z, vh = cv.clientHeight / cam.z;
   x2.fillStyle = '#fff'; for (const v of S.cars) x2.fillRect(v.x * s - 2.5, v.y * s - 2.5, 5, 5);
+  x2.fillStyle = '#e0b020'; for (const t of S.trains) { if (!t.g) trainGeo(t); for (const g of t.g) x2.fillRect(g.x * s - 2.5, g.y * s - 2.5, 5, 5); }
   x2.fillStyle = '#4ae0ff'; x2.strokeStyle = '#000'; x2.lineWidth = 1.5;
   x2.beginPath(); x2.arc(S.pl.x * s, S.pl.y * s, 4, 0, 7); x2.fill(); x2.stroke();
   x2.strokeStyle = '#fff'; x2.lineWidth = 1.5;
@@ -3357,6 +3889,7 @@ const HELP = `<div class="help">
 <li><b>WASD</b> or arrows walk your engineer. Forest, marsh and snow slow you down and belts carry you along. <b>Mouse wheel</b> zooms. Middle drag or a click on the map looks around, and walking snaps the view back.</li>
 <li>You can build and pick up within 10 tiles and mine ore by hand within 3.5 tiles. Buildings can be inspected from anywhere.</li>
 <li><b>Space</b> fires your pistol at the nearest crawler or hive within 15 tiles, using lead shot cartridges from your inventory. Crawlers attack you if you get close. If they kill you, you wake up back at the landing site with your inventory.</li>
+<li><b>F</b> gets in or out of a car or a locomotive. Drag to lay <b>railway track</b>, put a locomotive on it and place wagons at either end to couple them. Click a train to give it a schedule of train stops.</li>
 <li><b>E</b> opens crafting. <b>H</b> opens the encyclopedia. <b>V</b> cycles the pressure, temperature and smog overlays.</li>
 </ul>
 <h3>Getting started</h3>
@@ -3665,12 +4198,13 @@ function renderCraft(body) {
 function plBlock(t, x, y) {
   const B = BUILD[t], P = S.pl;
   if (!inReach(x + B.w / 2, y + B.h / 2, REACH)) return 'Out of reach. Walk closer.';
-  if (B.kind === 'belt' || B.kind === 'pipe' || B.kind === 'road') return null;
+  if (B.kind === 'belt' || B.kind === 'pipe' || B.kind === 'road' || B.kind === 'rail') return null;
   if (P.x + PL_R > x && P.x - PL_R < x + B.w && P.y + PL_R > y && P.y - PL_R < y + B.h) return 'You are standing there';
   return null;
 }
 function placeAt(fx, fy) {
   if (BUILD[tool].kind === 'vehicle') { const r = placeCar(tool, fx, fy, toolDir); if (typeof r !== 'string') { if (!(S.inv[tool] > 0)) tool = null; renderHotbar(); } return r; }
+  if (BUILD[tool].kind === 'train') { const r = placeTrain(tool, fx, fy, toolDir); if (typeof r !== 'string') { if (!(S.inv[tool] > 0)) tool = null; renderHotbar(); } return r; }
   const o = toolOrigin(tool, fx, fy);
   const pb = plBlock(tool, o.x, o.y);
   if (pb) return pb;
@@ -3709,10 +4243,13 @@ cv.addEventListener('mousedown', ev => {
     mouse.r = true;
     const vc = carAt(mouse.fx, mouse.fy);
     if (vc) return pickCar(vc);
+    const tc = trainAt(mouse.fx, mouse.fy);
+    if (tc) return pickTrain(tc);
     const e = at(mouse.tx, mouse.ty);
     if (e && kind(e) === 'hive') toast('Hives cannot be picked up. Shoot or gas them.', true);
     else if (e && kind(e) === 'ruin') toast('The old works are too far gone to move. Click to search them.', true);
     else if (e && !entReach(e, REACH)) toast('Out of reach. Walk closer.', true);
+    else if (e && kind(e) === 'rail' && railBusy(e)) toast('A train is standing on this track.', true);
     else if (e) { removeEnt(e); renderHotbar(); }
     else if (tool) { tool = null; renderHotbar(); }
     return;
@@ -3722,13 +4259,15 @@ cv.addEventListener('mousedown', ev => {
   if (tool) {
     const r = placeAt(mouse.fx, mouse.fy);
     if (typeof r === 'string') { toast(r, true); return; }
-    if (['belt', 'pipe', 'wall', 'road'].includes(BUILD[r.type].kind)) drag = { x: r.x, y: r.y, last: r.id };
+    if (BUILD[r.type] && ['belt', 'pipe', 'wall', 'road', 'rail'].includes(BUILD[r.type].kind)) drag = { x: r.x, y: r.y, last: r.id };
     return;
   }
   const vc = carAt(mouse.fx, mouse.fy);
   if (vc) { openCar(vc); return; }
+  const tc = trainAt(mouse.fx, mouse.fy);
+  if (tc) { openTrain(tc); return; }
   const e = at(mouse.tx, mouse.ty);
-  if (e && kind(e) !== 'road') { openPanel(e); return; }
+  if (e && kind(e) !== 'road' && kind(e) !== 'rail') { openPanel(e); return; }
   closePanel();
   if (S.pl.car) return toast('Get out of the vehicle to mine (F).', true);
   const i = mouse.ty * W + mouse.tx;
@@ -3754,7 +4293,7 @@ cv.addEventListener('mousemove', ev => {
   updateMouse(ev);
   mouse.in = true;
   if (mouse.m) { cam.x -= (ev.clientX - mouse.px) / cam.z; cam.y -= (ev.clientY - mouse.py) / cam.z; mouse.px = ev.clientX; mouse.py = ev.clientY; }
-  if (mouse.r && (ptx !== mouse.tx || pty !== mouse.ty)) { const e = at(mouse.tx, mouse.ty); if (e && (e.type === 'belt' || kind(e) === 'pipe' || kind(e) === 'road') && entReach(e, REACH)) { removeEnt(e); renderHotbar(); } }
+  if (mouse.r && (ptx !== mouse.tx || pty !== mouse.ty)) { const e = at(mouse.tx, mouse.ty); if (e && (e.type === 'belt' || kind(e) === 'pipe' || kind(e) === 'road' || (kind(e) === 'rail' && !railBusy(e))) && entReach(e, REACH)) { removeEnt(e); renderHotbar(); } }
   if (drag && mouse.l && tool && (drag.x !== mouse.tx || drag.y !== mouse.ty)) dragTo(mouse.tx, mouse.ty);
   const info = tool ? '' : tileInfo(mouse.tx, mouse.ty);
   if (info) {
@@ -3910,7 +4449,7 @@ window.game = {
   terrain: () => terrain, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
   select(e) { e ? openPanel(e) : closePanel(); }, openModal, closeModal, refresh: renderHotbar,
   setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; camFree = true; },
-  get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get puffs() { return puffs; },
+  get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get trains() { return S.trains; }, placeTrain, trainAt, openTrain, openPanel, pickTrain, trainGeo, reverseTrain, railBusy, get puffs() { return puffs; },
   setOverlay(v) { overlay = v; }, elev: () => elev, drawPreview, startWorld, get wcfg() { return wcfg; },
 };
 })();
