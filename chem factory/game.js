@@ -30,7 +30,7 @@ const sum = o => { let s = 0; for (const k in o) s += o[k]; return s; };
 const isGas = f => FLUIDS[f] && FLUIDS[f].gas && f !== 'steam';
 const spills = (r, f) => isGas(f) || !!(r.bleed && r.bleed.includes(f));
 const PC = 8, RAIN = 30;
-const POL_W = { uo2so4: 0.5, f2: 3, uf6: 3, leu: 3, xylene: 0.5, eo: 1.5, meg: 0.2, chcl3: 0.6, r22: 0.8, tfe: 0.4, so2: 1, cl2: 3, co2: 0.02, h2: 0, steam: 0, water: 0, acid: 0.5, naoh: 0.3, liquor: 0.3, ticl4: 1, brine: 0.05, nh3: 0.5, hno3: 0.8, tar: 0.4, coalgas: 0.3, toluene: 0.3, nh4cl: 0.1, co: 0.1, phosgene: 1, sif4: 2, h2sif6: 0.5, hf: 1, h2s: 2, diesel: 0.3, bfw: 0, o2: 0, n2: 0, sihcl3: 1, vam: 0.4, dmc: 0.2, dpc: 0.4, ech: 1, propylene: 0.2, cumene: 0.4, phenol: 1, acetone: 0.3, acetic: 0.4, ac2o: 0.6, cyclohexane: 0.3, ka_oil: 0.3, n2o: 4, hmda: 0.5, olefins: 0.2, lab: 0.3, las: 0.8, methanol: 0.3, hcho: 1, ch3cl: 0.5, dmdcs: 1, bittern: 0.05, br2: 2, butadiene: 0.3, benzene: 0.5, styrene: 0.3 };
+const POL_W = { fecl3: 0.4, etch: 0.6, uo2so4: 0.5, f2: 3, uf6: 3, leu: 3, xylene: 0.5, eo: 1.5, meg: 0.2, chcl3: 0.6, r22: 0.8, tfe: 0.4, so2: 1, cl2: 3, co2: 0.02, h2: 0, steam: 0, water: 0, acid: 0.5, naoh: 0.3, liquor: 0.3, ticl4: 1, brine: 0.05, nh3: 0.5, hno3: 0.8, tar: 0.4, coalgas: 0.3, toluene: 0.3, nh4cl: 0.1, co: 0.1, phosgene: 1, sif4: 2, h2sif6: 0.5, hf: 1, h2s: 2, diesel: 0.3, bfw: 0, o2: 0, n2: 0, sihcl3: 1, vam: 0.4, dmc: 0.2, dpc: 0.4, ech: 1, propylene: 0.2, cumene: 0.4, phenol: 1, acetone: 0.3, acetic: 0.4, ac2o: 0.6, cyclohexane: 0.3, ka_oil: 0.3, n2o: 4, hmda: 0.5, olefins: 0.2, lab: 0.3, las: 0.8, methanol: 0.3, hcho: 1, ch3cl: 0.5, dmdcs: 1, bittern: 0.05, br2: 2, butadiene: 0.3, benzene: 0.5, styrene: 0.3 };
 const polAt = (x, y) => S.pol[Math.floor(y / PC) * PW + Math.floor(x / PC)] || 0;
 
 function mulberry32(a) {
@@ -111,7 +111,7 @@ function genLegacy(seed) {
 const GEN_DEF = { size: 256, water: 1, ore: 1, hives: 2 };
 const TER_N = ['Grassland', 'Water', 'Dry scrub', 'Desert sand', 'Bare rock', 'Marsh', 'Forest', 'Tundra'];
 const sstep = (a, b, v) => { const t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
-const ORE_BASE = [0, 11, 10, 7, 9, 6, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3];
+const ORE_BASE = [0, 11, 10, 7, 9, 6, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3];
 function oreSuit(t, i, temp, moist) {
   const b = terrain[i], m = elev[i], tp = temp[i], ms = moist[i];
   if (b === 1 || b === 4) return 0;
@@ -133,6 +133,7 @@ function oreSuit(t, i, temp, moist) {
     case 15: return tp > 0.6 && ms > 0.45 ? 3 : tp > 0.5 ? 0.6 : 0.1;
     case 16: return b === 7 ? 2.5 : m > 0.55 ? 1.5 : 0.3;
     case 17: return m > 0.55 && (b === 7 || b === 2) ? 3 : b === 3 ? 1 : 0.2;
+    case 18: return b === 5 ? 3 : b === 0 && ms > 0.55 ? 2 : b === 6 ? 0.8 : 0.2;
   }
   return 1;
 }
@@ -2678,6 +2679,7 @@ const CHAINS = [
   { n: 'Lithium batteries', l: [['spodumene', 'Lime kiln + coal', 'beta_spod', 'Leach tank + acid + water', 'li2so4'], ['li2so4', 'Leach tank + soda_ash', 'li2co3'], ['li2co3', 'Pressure reactor + iron_conc + carbon_black + h3po4', 'lfp'], ['coke', 'Arc furnace + pitch', 'graphite'], ['li2co3', 'Pressure reactor + phosphorus + hf + cl2', 'lipf6', 'Pressure reactor + dmc', 'li_elyte'], ['lfp', 'Battery plant + graphite + aluminium + copper + polypropylene + electrolyte', 'li_cell', 'Li-ion bank', 'Electricity']], d: 'Spodumene from cold highland pegmatites is roasted until it crumbles, leached with sulfuric acid, and the lithium precipitated with soda ash. Lithium iron phosphate on aluminium foil, graphite on copper foil, and LiPF₆ in dimethyl carbonate make a cell that stores three times what lead-acid does and gives back 95%.' },
   { n: 'Polyester', l: [['naphtha', 'Catalytic reformer', 'xylene', '+', 'h2'], ['xylene', 'Pressure reactor + o2 + acetic', 'pta'], ['ethylene', 'Pressure reactor + o2 + silver catalyst', 'eo'], ['eo', 'Pressure reactor + water', 'meg'], ['pta', 'Pressure reactor + meg', 'pet'], ['pet', 'Melt spinner', 'polyester'], ['pet', 'Blow moulder', 'pet_bottle']], d: 'Reforming naphtha over platinum gives p-xylene and a lot of hydrogen. Oxidise the xylene to terephthalic acid, turn ethylene into glycol through ethylene oxide, and the two condense into PET. Spin it into yarn or stretch-blow it into bottles.' },
   { n: 'Nuclear fuel', l: [['uraninite', 'Leach tank + acid + o2', 'uo2so4'], ['uo2so4', 'Precipitator + nh3', 'yellowcake'], ['yellowcake', 'Pressure reactor + h2 + hf', 'uf4'], ['hf', 'Electrolysis cell', 'f2', '+', 'h2'], ['uf4', 'Pressure reactor + f2', 'uf6'], ['uf6', 'Gas centrifuge hall', 'leu', '+', 'du_cyl'], ['du_cyl', 'Lime kiln + steam + h2', 'du_oxide', '+', 'hf'], ['leu', 'Lime kiln + steam + h2', 'uo2', '+', 'hf'], ['zircon', 'Chlorinator + coke + cl2', 'zrcl4', 'Hunter retort + magnesium', 'zirconium'], ['uo2', 'Workshop + zirconium + stainless', 'fuel_asm'], ['fuel_asm', 'Pressurised water reactor + bfw', 'steam', '+', 'spent_fuel'], ['spent_fuel', 'Workshop + concrete + steel', 'dry_cask']], d: 'Uranium is leached, dropped out as yellowcake, turned to UF₆ gas with hydrogen fluoride and fluorine, and spun in centrifuges until it holds 4% U-235. Pellets go into Zircaloy tubes, because zirconium lets neutrons through. One reactor makes as much steam as eight coal boilers, and the hydrogen fluoride comes back at every step.' },
+  { n: 'Tin and electronics', l: [['cassiterite', 'Gravity spiral + water', 'tin_conc', 'Arc furnace + coke', 'tin'], ['tin', 'Tinning line + plate + acid', 'tinplate', 'Workshop', 'food_can'], ['copper_cathode', 'Electrolysis cell + acid', 'copper_foil'], ['glass_fibre', 'PCB line + epoxy + copper_foil + br2', 'laminate'], ['laminate', 'PCB line + fecl3', 'pcb', '+', 'etch'], ['etch', 'Electrolysis cell', 'fecl3', '+', 'copper_cathode'], ['pcb', 'PCB line + solder + wafer', 'board']], d: 'Cassiterite collects in marsh and river gravels. Gravity spirals concentrate it and the arc furnace reduces it with coke. Tin plated onto steel makes cans, and tin with a little copper makes solder. Glass cloth, brominated epoxy and copper foil press into laminate, ferric chloride etches the circuit, and the spent etchant is electrolysed back to ferric chloride and copper.' },
   { n: 'By-products', l: [['ground_copper', 'Flotation', 'copper_conc', '+', 'pyrite_conc'], ['pyrite_conc', 'Roaster', 'pyrite_cinder', 'Blast furnace', 'pig_iron'], ['anode_slime', 'Roaster', 'dore', 'Leach tank + acid', 'silver']], d: 'Nothing is waste. Pyrite gives SO₂ for acid and its cinder is iron ore. Anode slime from copper refining yields selenium, silver and gold.' },
 ];
 
@@ -2757,6 +2759,8 @@ const HELP = `<div class="help">
 <h3>Nuclear power</h3>
 <p><b>Uraninite</b> is a new ore in highland tundra and dry scrub. Leach it with sulfuric acid and oxygen, and precipitate <b>yellowcake</b> with ammonia. Hydrogen and hydrofluoric acid make green salt, and <b>fluorine</b> from an electrolysis cell turns it into <b>UF₆</b>. The <b>gas centrifuge hall</b> enriches it to reactor grade and leaves depleted cylinders, which the lime kiln turns back into oxide and hydrofluoric acid. The kiln also makes <b>UO₂ pellets</b> from enriched UF₆. Zircon goes through the chlorinator and the retort to become <b>Zircaloy</b>. The workshop puts pellets, Zircaloy and stainless steel together into a <b>fuel assembly</b>.</p>
 <p>The <b>pressurised water reactor</b> needs softened water and fuel in its core. It makes 120 steam a second, enough for four steam engines. Each assembly lasts about ten minutes and comes out as spent fuel. Pack spent fuel into <b>dry casks</b> with concrete and steel.</p>
+<h3>Tin and electronics</h3>
+<p><b>Cassiterite</b> is a new ore found in marshes and wet grassland. Wash it on a <b>gravity spiral</b> and reduce the concentrate with coke in the <b>arc furnace</b> to get <b>tin</b>. The <b>tinning line</b> plates tin onto steel plate for <b>food cans</b>. The workshop alloys tin with copper into lead-free <b>solder</b>. For circuit boards, plate <b>copper foil</b> in an electrolysis cell and make <b>ferric chloride</b> from iron and chlorine. The <b>PCB line</b> presses glass fibre, epoxy, foil and a little bromine into laminate, etches it with ferric chloride, and solders chips cut from silicon wafers onto it to make <b>control boards</b>. Send the spent etchant back to an electrolysis cell to recover copper and regenerate the ferric chloride.</p>
 <h3>Boiler water</h3>
 <p>Raw water is hard. Every boiler batch on it bakes a little chalk onto the tubes, steam output falls as the <b>scale</b> builds, and a fully choked boiler stops. Shut it down to <b>Descale</b> from its panel (a 20 second outage), or feed it <b>softened water</b>: run water through a leach tank with quicklime and the hardness settles out as crushed limestone you can send back to the kiln. Any machine that takes water also takes softened water.</p>
 <h3>Sulfur and diesel</h3>
@@ -2975,7 +2979,7 @@ window.game = {
   place: (t, x, y, d) => place(t, x, y, d, true), at, buildOk, setRecipe, removeEnt, save, load, newGame,
   step(n) { for (let i = 0; i < n; i++) tick(); render(); $('#power').innerHTML = powerHtml(); $('#vent').innerHTML = ventHtml(); renderPanelDyn(); renderHotbar(); },
   terrain: () => terrain, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
-  select(e) { openPanel(e); }, openModal, closeModal, refresh: renderHotbar,
+  select(e) { e ? openPanel(e) : closePanel(); }, openModal, closeModal, refresh: renderHotbar,
   setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; },
   setOverlay(v) { overlay = v; }, elev: () => elev, drawPreview, startWorld, get wcfg() { return wcfg; },
 };
