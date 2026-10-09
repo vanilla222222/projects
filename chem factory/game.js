@@ -957,7 +957,11 @@ function burst(e, why) {
 }
 
 const TUR_CAP = 20, TUR_R = 10, BUG_V = 1.6, MAX_BUGS = 80, MAX_HIVES = 30, BUG_LIFE = 150;
-const maxHp = e => BUILD[e.type].hp || 60 * BUILD[e.type].w * BUILD[e.type].h;
+const HIVE_T = [null, { n: 'Crawler Nest', hp: 600, sw: 0.6, gd: 2, gr: 500, sh: 6, su: 8 }, { n: 'Crawler Hive', hp: 1200, sw: 1, gd: 4, gr: 1500, sh: 12, su: 16 }, { n: 'Brood Mound', hp: 2400, sw: 1.5, gd: 6, sh: 24, su: 30 }];
+const BUGK = [{ n: 'Crawler', hp: 1, v: 1, dm: 1 }, { n: 'Spitter', hp: 0.7, v: 0.85, dm: 0.8, rng: 4 }, { n: 'Brute', hp: 4, v: 0.6, dm: 3 }];
+const htier = e => HIVE_T[e.tier || 2];
+let spits = [];
+const maxHp = e => BUILD[e.type].kind === 'hive' ? htier(e).hp : BUILD[e.type].hp || 60 * BUILD[e.type].w * BUILD[e.type].h;
 const ctr = e => ({ x: e.x + BUILD[e.type].w / 2, y: e.y + BUILD[e.type].h / 2 });
 function wreck(e, why) {
   if (!ents.has(e.id)) return;
@@ -969,7 +973,9 @@ function wreck(e, why) {
   fx.push({ x: c.x, y: c.y, t: 0, c: kind(e) === 'hive' ? '#a0c040' : '#8a7a6a' });
   if (kind(e) === 'hive') {
     S.hk = (S.hk || 0) + 1;
-    toast('Crawler hive destroyed');
+    const T = htier(e);
+    give('crawler_shell', T.sh); give('sulfur', T.su);
+    toast(`${T.n} destroyed: ${T.sh} crawler shell and ${T.su} sulfur salvaged from the wreck`);
     if (Math.random() < 0.25) { const r = unlockRandom(); if (r) toast(`A lab notebook in the wreckage: ${r.n} (${BUILD[r.b].n})`); }
   }
   else if (why === 'gas') { S.lost = (S.lost || 0) + 1; toast(`${B.n} at ${e.x},${e.y} was corroded through by drifting gas`, true); }
@@ -1042,8 +1048,13 @@ function farFromBase(x, y, r) {
   for (const e of ents.values()) if (kind(e) !== 'hive' && kind(e) !== 'ruin' && Math.abs(e.x - x) < r && Math.abs(e.y - y) < r) return false;
   return true;
 }
-function addHive(x, y) {
+function hiveTier(x, y) {
+  const d = Math.hypot(x - W / 2, y - H / 2), u = hash(x, y, 31);
+  return d < 110 ? (u < 0.7 ? 1 : 2) : d < 260 ? (u < 0.25 ? 1 : u < 0.85 ? 2 : 3) : (u < 0.45 ? 2 : 3);
+}
+function addHive(x, y, t) {
   const h = makeEnt('hive', x, y, 0);
+  h.tier = t || hiveTier(x, y); h.gr = 0; h.hp = maxHp(h);
   addEnt(h);
   return h;
 }
@@ -1269,11 +1280,20 @@ function nearestEnt(x, y, r, pick) {
   }
   return best;
 }
+function bugKind(h) {
+  const u = Math.random(), t = h.tier || 2;
+  if (S.evo > 0.45 && t >= 2 && u < 0.08 + 0.3 * (S.evo - 0.45)) return 2;
+  if (S.evo > 0.2 && u < 0.15 + 0.35 * S.evo) return 1;
+  return 0;
+}
 function spawnBugs(h, n, tid) {
-  const c = ctr(h), mhp = 30 * (1 + 2 * S.evo);
+  const c = ctr(h);
   for (let i = 0; i < n && S.bugs.length < MAX_BUGS; i++) {
-    const a = Math.random() * Math.PI * 2;
-    S.bugs.push({ x: c.x + Math.cos(a) * 1.4, y: c.y + Math.sin(a) * 1.4, hp: mhp, mhp, tid, hx: c.x, hy: c.y, a, cd: 0, ph: Math.random() * 7, bt: S.t });
+    const a = Math.random() * Math.PI * 2, k = bugKind(h), mhp = Math.round(30 * (1 + 2 * S.evo) * BUGK[k].hp);
+    const b = { x: c.x + Math.cos(a) * 1.4, y: c.y + Math.sin(a) * 1.4, hp: mhp, mhp, tid, hx: c.x, hy: c.y, a, cd: 0, ph: Math.random() * 7, bt: S.t };
+    if (k) b.k = k;
+    if (tid === -3) b.hid = h.id;
+    S.bugs.push(b);
   }
 }
 function launch(h) {
@@ -1282,7 +1302,7 @@ function launch(h) {
   if (!t) return;
   h.food -= 50;
   h.sw++;
-  spawnBugs(h, Math.min(10, 3 + Math.floor(S.evo * 8)), t.id);
+  spawnBugs(h, Math.round(Math.min(10, 3 + Math.floor(S.evo * 8)) * htier(h).sw), t.id);
   if (h.sw % 8 === 0 && lists().hive.length < MAX_HIVES) expand(h);
 }
 function expand(h) {
@@ -1294,7 +1314,7 @@ function expand(h) {
     const p = polAt(x, y);
     if (p > bp) { bp = p; best = { x, y }; }
   }
-  if (best) addHive(best.x, best.y);
+  if (best) addHive(best.x, best.y, 1);
 }
 function hiveStep() {
   for (const h of lists().hive) {
@@ -1305,9 +1325,32 @@ function hiveStep() {
     }
     h.food = Math.min(100, h.food + got);
     S.evo = Math.min(1, S.evo + got / 30000);
+    h.gr = (h.gr || 0) + got;
+    const T = htier(h);
+    if (T.gr && h.gr >= T.gr) { const m0 = maxHp(h); h.tier = (h.tier || 2) + 1; h.gr = 0; h.hp = (h.hp ?? m0) + maxHp(h) - m0; }
+    guardStep(h);
     if (!(S.t - (h.lh || -99) < 15)) h.hp = Math.min(maxHp(h), h.hp + 2);
     h.dc = Math.max(0, h.dc - 1);
     if (h.food >= 50) launch(h);
+  }
+}
+function guardStep(h) {
+  const P = S.pl, c = ctr(h), pd = Math.hypot(P.x - c.x, P.y - c.y);
+  let n = 0;
+  if (pd > 70) { for (let i = S.bugs.length - 1; i >= 0; i--) if (S.bugs[i].hid === h.id) S.bugs.splice(i, 1); return; }
+  for (const b of S.bugs) if (b.hid === h.id) n++;
+  if (pd < 40 && !(P.dead > 0) && n < htier(h).gd && !(h.gt > S.t)) { spawnBugs(h, 1, -3); h.gt = S.t + 5; }
+}
+function spitStep() {
+  const P = S.pl;
+  for (let i = spits.length - 1; i >= 0; i--) {
+    const s = spits[i], dx = s.tx - s.x, dy = s.ty - s.y, d = Math.hypot(dx, dy), st = 7 * DT;
+    s.t = (s.t || 0) + DT;
+    if (d > st && s.t < 3) { s.x += dx / d * st; s.y += dy / d * st; continue; }
+    spits.splice(i, 1);
+    fx.push({ x: s.tx, y: s.ty, t: 0.35, c: '#9ad040' });
+    if (s.p === -1) { if (Math.hypot(P.x - s.tx, P.y - s.ty) < 0.8) plHurt(s.d); }
+    else { const e = ents.get(s.p); if (e) hurt(e, s.d); }
   }
 }
 function bugStep() {
@@ -1317,13 +1360,32 @@ function bugStep() {
     if (b.hp <= 0) { S.bugs.splice(i, 1); S.kills = (S.kills || 0) + 1; fx.push({ x: b.x, y: b.y, t: 0.5, c: '#a0c040' }); continue; }
     let t = b.tid > 0 ? ents.get(b.tid) : null;
     if (!t && b.tid > 0) { t = nearestEnt(b.x, b.y, 25); b.tid = t ? t.id : -1; }
-    let tx = b.hx, ty = b.hy;
+    let tx = b.hx, ty = b.hy, cr = b.tid === -2 ? 40 : 7;
     if (t) { const c = ctr(t); tx = c.x; ty = c.y; }
-    const pd = P.dead > 0 ? 1e9 : Math.hypot(P.x - b.x, P.y - b.y), chase = pd < (b.tid === -2 ? 40 : 7);
+    const K = BUGK[b.k || 0];
+    if (b.tid === -3) {
+      const h = ents.get(b.hid);
+      if (!h) { b.tid = -2; b.hid = 0; b.bt = S.t; cr = 40; }
+      else {
+        b.bt = S.t;
+        tx = b.hx + Math.cos(S.t * 0.4 + b.ph) * 2.8; ty = b.hy + Math.sin(S.t * 0.4 + b.ph) * 2.8;
+        const ang = S.t - (h.lh || -99) < 6;
+        cr = Math.hypot(P.x - b.hx, P.y - b.hy) < (ang ? 34 : 16) ? (ang ? 34 : 10) : 0;
+      }
+    }
+    const pd = P.dead > 0 ? 1e9 : Math.hypot(P.x - b.x, P.y - b.y), chase = pd < cr;
     if (b.tid === -2 && P.dead > 0) b.tid = -1;
-    if (chase) { tx = P.x; ty = P.y; if (pd < 0.7) { b.a = Math.atan2(P.y - b.y, P.x - b.x); b.chew = 0; plHurt(dmg * 2); continue; } }
+    if (chase) { tx = P.x; ty = P.y; if (pd < 0.7 && !K.rng) { b.a = Math.atan2(P.y - b.y, P.x - b.x); b.chew = 0; plHurt(dmg * 2 * K.dm); continue; } }
+    if (K.rng && (chase || t)) {
+      const sd = Math.hypot(tx - b.x, ty - b.y);
+      if (sd < K.rng + (chase ? 0 : 0.6)) {
+        b.a = Math.atan2(ty - b.y, tx - b.x); b.chew = 0; b.cd = (b.cd || 0) - DT;
+        if (b.cd <= 0) { b.cd = 1.6; spits.push({ x: b.x, y: b.y, tx, ty, p: chase ? -1 : t.id, d: 12 * (1 + S.evo) }); }
+        continue;
+      }
+    }
     const dx = tx - b.x, dy = ty - b.y, d = Math.hypot(dx, dy);
-    if ((!t && !chase && d < 1) || S.t - (b.bt ?? S.t) > BUG_LIFE) { S.bugs.splice(i, 1); continue; }
+    if ((!t && !chase && d < 1 && b.tid !== -3) || S.t - (b.bt ?? S.t) > BUG_LIFE) { S.bugs.splice(i, 1); continue; }
     if (d < 1e-3) continue;
     b.a = Math.atan2(dy, dx);
     const wob = Math.sin(S.t * 5 + b.ph) * 0.35;
@@ -1337,11 +1399,13 @@ function bugStep() {
       b.x = nx; b.y = ny;
       return null;
     };
-    let r = tryMove(b.x + ux * sp, b.y + uy * sp);
-    if (r === 'water') r = tryMove(b.x + Math.sign(ux) * sp, b.y) && tryMove(b.x, b.y + Math.sign(uy) * sp) && tryMove(b.x - uy * sp, b.y + ux * sp);
+    const v = sp * K.v;
+    let r = tryMove(b.x + ux * v, b.y + uy * v);
+    if (r === 'water') r = tryMove(b.x + Math.sign(ux) * v, b.y) && tryMove(b.x, b.y + Math.sign(uy) * v) && tryMove(b.x - uy * v, b.y + ux * v);
     b.chew = r && r !== 'water' ? r.id : 0;
-    if (b.chew) hurt(r, dmg);
+    if (b.chew) hurt(r, dmg * K.dm);
   }
+  spitStep();
 }
 function turretTick(e) {
   e.cd -= DT;
@@ -2337,7 +2401,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -3042,7 +3106,7 @@ function drawBugs(ox, oy, z, x0, y0, x1, y1) {
   const now = performance.now() / 1000;
   for (const b of S.bugs) {
     if (b.x < x0 - 1 || b.y < y0 - 1 || b.x > x1 + 1 || b.y > y1 + 1) continue;
-    const s = z * (0.22 + 0.08 * Math.min(1, b.mhp / 90)), X = ox + b.x * z, Y = oy + b.y * z;
+    const bk = b.k || 0, s = z * (0.22 + 0.08 * Math.min(1, b.mhp / (90 * BUGK[bk].hp))) * (bk === 2 ? 1.6 : 1), X = ox + b.x * z, Y = oy + b.y * z;
     ctx.save();
     ctx.translate(X, Y); ctx.rotate(b.a);
     const g = Math.sin(now * (b.chew ? 30 : 18) + b.ph);
@@ -3056,11 +3120,13 @@ function drawBugs(ox, oy, z, x0, y0, x1, y1) {
     ctx.stroke();
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.beginPath(); ctx.ellipse(s * 0.1, s * 0.15, s * 0.95, s * 0.5, 0, 0, 7); ctx.fill();
-    ctx.fillStyle = '#4a3038';
+    ctx.fillStyle = ['#4a3038', '#3e4a2a', '#2e2224'][bk];
     ctx.beginPath(); ctx.ellipse(-s * 0.35, 0, s * 0.6, s * 0.45, 0, 0, 7); ctx.fill();
-    ctx.fillStyle = '#5e3c46';
+    if (bk === 1) { ctx.fillStyle = `rgba(160,220,70,${0.6 + 0.3 * Math.sin(now * 3 + b.ph)})`; ctx.beginPath(); ctx.ellipse(-s * 0.45, 0, s * 0.36, s * 0.28, 0, 0, 7); ctx.fill(); }
+    ctx.fillStyle = ['#5e3c46', '#52603a', '#4a3436'][bk];
     ctx.beginPath(); ctx.ellipse(s * 0.3, 0, s * 0.42, s * 0.36, 0, 0, 7); ctx.fill();
-    ctx.strokeStyle = '#d8c84a'; ctx.lineWidth = Math.max(1, s * 0.1);
+    if (bk === 2) { ctx.fillStyle = '#6a4a40'; for (const q of [-0.1, 0.25]) { ctx.beginPath(); ctx.ellipse(s * q, 0, s * 0.12, s * 0.42, 0, 0, 7); ctx.fill(); } }
+    ctx.strokeStyle = ['#d8c84a', '#b8e050', '#c05030'][bk]; ctx.lineWidth = Math.max(1, s * 0.1);
     ctx.beginPath(); ctx.moveTo(-s * 0.5, -s * 0.38); ctx.lineTo(-s * 0.5, s * 0.38); ctx.moveTo(-s * 0.2, -s * 0.42); ctx.lineTo(-s * 0.2, s * 0.42); ctx.stroke();
     ctx.strokeStyle = '#2a1a1e'; ctx.lineWidth = Math.max(1, s * 0.12);
     const m = b.chew ? 0.25 + 0.2 * g : 0.25;
@@ -3071,11 +3137,22 @@ function drawBugs(ox, oy, z, x0, y0, x1, y1) {
       ctx.fillStyle = '#e04a4a'; ctx.fillRect(X - s, Y - s * 1.4, s * 2 * Math.max(0, b.hp / b.mhp), Math.max(2, z * 0.06));
     }
   }
+  for (const p of spits) {
+    if (p.x < x0 - 1 || p.y < y0 - 1 || p.x > x1 + 1 || p.y > y1 + 1) continue;
+    const X = ox + p.x * z, Y = oy + p.y * z;
+    ctx.fillStyle = 'rgba(150,210,60,0.35)'; ctx.beginPath(); ctx.arc(X, Y, z * 0.2, 0, 7); ctx.fill();
+    ctx.fillStyle = '#b8f060'; ctx.beginPath(); ctx.arc(X, Y, z * 0.1, 0, 7); ctx.fill();
+  }
 }
-function drawHive(e, x, y, w, h, z) {
-  const now = performance.now() / 1000, pu = 1 + 0.04 * Math.sin(now * 2 + e.id), cx = x + w / 2, cy = y + h / 2;
+function drawHive(e, x, y, w0, h0, z) {
+  const T = e.tier || 2, sc = [0, 0.72, 1, 1.25][T], w = w0 * sc, h = h0 * sc;
+  const now = performance.now() / 1000, pu = 1 + 0.04 * Math.sin(now * 2 + e.id), cx = x + w0 / 2, cy = y + h0 / 2;
   ctx.fillStyle = 'rgba(40,20,30,0.45)';
   ctx.beginPath(); ctx.ellipse(cx, cy + h * 0.08, w * 0.62, h * 0.5, 0, 0, 7); ctx.fill();
+  if (T === 3) {
+    ctx.fillStyle = 'rgba(90,60,40,0.35)';
+    ctx.beginPath(); ctx.ellipse(cx, cy, w * 0.8, h * 0.7, 0, 0, 7); ctx.fill();
+  }
   const g = ctx.createRadialGradient(cx - w * 0.12, cy - h * 0.15, w * 0.05, cx, cy, w * 0.55 * pu);
   g.addColorStop(0, '#9a6a7a'); g.addColorStop(0.6, '#6a4252'); g.addColorStop(1, '#3a2230');
   ctx.fillStyle = g;
@@ -3085,8 +3162,13 @@ function drawHive(e, x, y, w, h, z) {
     k ? ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.9) : ctx.moveTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.9);
   }
   ctx.fill();
+  if (T === 3) for (let k = 0; k < 6; k++) {
+    const a = k / 6 * Math.PI * 2 + hash(e.id, k, 2), r = w * 0.42, bx = cx + Math.cos(a) * r, by = cy + Math.sin(a) * r * 0.9;
+    ctx.fillStyle = '#4a2a38';
+    ctx.beginPath(); ctx.moveTo(bx - w * 0.07, by + h * 0.04); ctx.lineTo(bx + w * 0.07, by + h * 0.04); ctx.lineTo(bx + Math.cos(a) * w * 0.05, by - h * 0.2); ctx.closePath(); ctx.fill();
+  }
   ctx.fillStyle = '#1a0c12';
-  for (let k = 0; k < 5; k++) {
+  for (let k = 0; k < [0, 3, 5, 8][T]; k++) {
     const a = hash(k, e.id, 9) * 7, r = w * (0.1 + 0.25 * hash(e.id, k, 4));
     ctx.beginPath(); ctx.ellipse(cx + Math.cos(a) * r, cy + Math.sin(a) * r, w * 0.07, h * 0.05, a, 0, 7); ctx.fill();
   }
@@ -3646,7 +3728,7 @@ function tileInfo0(x, y) {
     if (e.type === 'boiler' && e.scale > 0.01) s += `<br>Scale ${Math.round(e.scale * 100)}%`;
     if (e.type === 'depot') s += `<br>${(S.orders || []).map(a => nm(ORDERS[a.i].item) + ' ' + a.got + '/' + ORDERS[a.i].n).join('<br>') || 'No open orders'}`;
     if (e.type === 'stack') s += `<br>${stackUsers(e).length} machines venting through it`;
-    if (kind(e) === 'hive') s += `<br>Food ${Math.round(e.food)}/50 · ${e.sw} swarms sent`;
+    if (kind(e) === 'hive') s += `<br>${htier(e).n} · food ${Math.round(e.food)}/50 · ${e.sw} swarms sent`;
     if (e.type === 'projector') s += `<br>${sum(e.pay)} rounds loaded · ${e.pw} powder · ${e.shots} fired`;
     if (e.type === 'howitzer') s += `<br>${e.ammo} HE${e.wp ? ' + ' + e.wp + ' WP' : ''} shells · ${e.shots} fired`;
     if (e.type === 'ruin') s += `<br>${e.done ? 'Searched' : guards(e).length ? guards(e).length + ' hives on guard' : 'Unguarded: click to search'}`;
@@ -4001,9 +4083,12 @@ function renderPanelDyn() {
   } else if (k === 'hive') {
     h += `<div class="gauge"><span>Integrity</span>${bar(e.hp, maxHp(e), '#a04a6a')}<b>${Math.round(e.hp)} / ${maxHp(e)}</b></div>`;
     h += `<div class="gauge"><span>Food</span>${bar(e.food, 50, '#d8c84a')}<b>${Math.round(e.food)} / 50</b></div>`;
+    const T = htier(e), gd = S.bugs.filter(b => b.hid === e.id).length;
+    h += `<div class="status"><i style="background:${['', '#b0a060', '#c07a4a', '#e04a4a'][e.tier || 2]}"></i>${T.n} · ${gd} of ${T.gd} guards out · swarms ${T.sw}× normal size</div>`;
+    if (T.gr) h += `<div class="gauge"><span>Growth</span>${bar(e.gr || 0, T.gr, '#a04a6a')}<b>${Math.round(e.gr || 0)} / ${T.gr}</b></div>`;
     h += `<div class="spec">Smog around it ${Math.round(polAt(e.x + 1, e.y + 1))} · ${e.sw} swarms sent · crawler evolution ${Math.round(S.evo * 100)}%</div>`;
     h += resHtml();
-    h += '<p class="dim">The hive breathes in smog from the 24×24 tiles around it. Each 50 food sends a swarm at whatever vented most recently. Every eighth swarm founds a new hive, as close to the smog as it can. Guns or poison gas are the only ways to clear one, and they defend themselves.</p>';
+    h += '<p class="dim">The hive breathes in smog from the 24×24 tiles around it. Each 50 food sends a swarm at whatever vented most recently. Every eighth swarm founds a new hive, as close to the smog as it can. Guns or poison gas are the only ways to clear one, and they defend themselves. Smog it eats also makes it grow: a nest becomes a hive, then a brood mound with more guards and bigger swarms. Guards circle the mound and go for anyone who comes close. Once evolution passes 20% some crawlers hatch as spitters that lob acid from 4 tiles away, and past 45% big armoured brutes appear. The wreck gives up crawler shell, a source of chitin, and the sulfur granules the crawlers hoard in their guts.</p>';
   } else if (k === 'turret') {
     h += `<div class="status"><i style="background:${e.ammo || e.rd ? (S.t - e.sh < 0.5 ? ST_COL.work : ST_COL.none) : ST_COL.input}"></i>${!e.ammo && !e.rd ? 'Out of ammunition' : S.t - e.sh < 0.5 ? 'Firing' : 'Watching'} · range ${TUR_R} tiles · ${e.kills} kills</div>`;
     h += `<div class="gauge"><span>Cartridges</span>${bar(e.ammo, TUR_CAP, '#c8a040')}<b>${e.ammo} / ${TUR_CAP} + ${e.rd} rounds</b></div>`;
@@ -4538,7 +4623,7 @@ const HELP = `<div class="help">
 <h3>Catalysts and vanadium</h3>
 <p>The <b>Acid plant</b> and the <b>Ammonia converter</b> have a catalyst bed. Empty, the acid plant runs as a slow lead chamber; loaded with <b>V₂O₅ catalyst rings</b> it becomes a Contact plant at up to 2.5× speed. Fused iron catalyst doubles a Haber converter. Each charge lasts a few hundred batches and loses activity in its last third, and the bed holds four charges. Vanadium comes from the iron in ilmenite: blow that pig iron in a converter to skim off vanadium slag, salt-roast it with soda ash, leach with Solvay ammonium chloride and calcine. Spent rings leach back with caustic. V₂O₅ reduced with aluminium into steel gives <b>vanadium steel</b> for armour walls.</p>
 <h3>Crawlers</h3>
-<p>Crawler hives sit in the wilds. The crawlers' gut bacteria live on sulfur, so hives breathe in the smog that drifts to them and send swarms at whatever vented last. They chew through anything in their path except belts, and every eighth swarm founds a new hive closer to the smog. The cleaner you run, the hungrier they stay. Gun turrets need lead shot cartridges, made from Chilean nitrate, sulfur and coal. Brick and concrete walls buy the guns time.</p>
+<p>Crawler hives sit in the wilds. The crawlers' gut bacteria live on sulfur, so hives breathe in the smog that drifts to them and send swarms at whatever vented last. They chew through anything in their path except belts, and every eighth swarm founds a new nest closer to the smog. Nests that keep eating grow into hives and then brood mounds, which keep more guards and send bigger swarms. As crawlers evolve they hatch acid-spitting and armoured brute forms. Wrecked hives give crawler shell: dissolve the chalk out with hydrochloric acid to get chitin, then boil it in caustic soda for chitosan, which wineries and waterworks buy as a fining agent and flocculant. The cleaner you run, the hungrier they stay. Gun turrets need lead shot cartridges, made from Chilean nitrate, sulfur and coal. Brick and concrete walls buy the guns time.</p>
 </div>`;
 
 let cGrp = 'Logistics', cSig = '', iQ = '', cQ = '';
@@ -4944,7 +5029,7 @@ window.game = {
   select(e) { e ? openPanel(e) : closePanel(); }, openModal, closeModal, refresh: renderHotbar,
   setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; camFree = true; },
   get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get trains() { return S.trains; }, placeTrain, trainAt, openTrain, openPanel, pickTrain, trainGeo, reverseTrain, railBusy, get puffs() { return puffs; }, get H() { return H; }, get wakes() { return wakes; }, floats, boatRoute, boatPilot, carStep, carHit,
-  rgd: () => rgd, tileInfo0, growNear, genRegion, tch: () => tch, ovc, mapWin, depleteTile,
+  htier, spits: () => spits, hiveTier, guardStep, addHive, bugKind, maxHp, hurt, rgd: () => rgd, tileInfo0, growNear, genRegion, tch: () => tch, ovc, mapWin, depleteTile,
   setOverlay(v) { overlay = v; }, elev: () => elev, drawPreview, startWorld, get wcfg() { return wcfg; },
 };
 })();
