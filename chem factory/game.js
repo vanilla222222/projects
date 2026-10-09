@@ -244,29 +244,72 @@ function genMap(seed, g) {
 }
 
 const PAL = [['#3d5a2e', '#41602f', '#3a562b'], ['#1d4a73', '#20507b', '#1b466d'], ['#5a5135', '#5e5538', '#565033'], ['#b39f68', '#b8a46c', '#ad9962'], ['#5d5a54', '#635f59', '#57544e'], ['#34472f', '#31432b', '#394c33'], ['#2b4824', '#2e4d26', '#284421'], ['#c3ccd0', '#c9d1d5', '#bdc6ca']];
-function drawTile(x, y) {
+const PRGB = PAL.map(r => r.map(h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]));
+const SAND = [184, 166, 112], FOAM = [190, 222, 236];
+let tcorn = null, tpx = null, ORGB = null;
+function hexRgb(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
+function tcornAt(x, y) { return tcorn[y * (W + 1) + x]; }
+function tileBase(x, y, D, stride, bx, by) {
+  const i = y * W + x, b = terrain[i];
+  let base = PRGB[b][0];
+  if (b === 1 && elev) { const dp = Math.max(0, Math.min(1, (0.36 - elev[i]) * 9)); base = [42 + (18 - 42) * dp, 100 + (52 - 100) * dp, 145 + (87 - 145) * dp]; }
+  const n00 = tcornAt(x, y), n10 = tcornAt(x + 1, y), n01 = tcornAt(x, y + 1), n11 = tcornAt(x + 1, y + 1);
+  const ot = oreType[i], onb = ot ? [0, 1, 2, 3].map(d => { const X = x + DX[d], Y = y + DY[d]; return X >= 0 && Y >= 0 && X < W && Y < H && oreType[Y * W + X] === ot; }) : null;
+  const nb = [0, 1, 2, 3].map(d => { const X = x + DX[d], Y = y + DY[d]; return X < 0 || Y < 0 || X >= W || Y >= H ? b : terrain[Y * W + X]; });
+  for (let py = 0; py < TP; py++) for (let px = 0; px < TP; px++) {
+    const u = (px + 0.5) / TP, v = (py + 0.5) / TP;
+    let f = (n00 * (1 - u) + n10 * u) * (1 - v) + (n01 * (1 - u) + n11 * u) * v;
+    const hh = hash(x * TP + px, y * TP + py, 5);
+    f = 0.86 + f * 0.26 + (hh - 0.5) * 0.07;
+    let c = base, m = 0, mc = null;
+    for (let d = 0; d < 4; d++) {
+      const o = nb[d];
+      if (o === b) continue;
+      const dist = d === 0 ? py : d === 1 ? TP - 1 - px : d === 2 ? TP - 1 - py : px;
+      if (b === 1) { if (dist < 2) { const k = dist ? 0.25 : 0.5; if (k > m) { m = k; mc = FOAM; } } continue; }
+      if (o === 1) { if (dist < 3) { const k = [0.75, 0.5, 0.22][dist]; if (k > m) { m = k; mc = dist ? SAND : [120, 108, 74]; } } continue; }
+      if (dist < 3 && hash(x * TP + px, y * TP + py, 9 + d) < 0.5 * (1 - dist / 3.2)) { c = PRGB[o][0]; }
+    }
+    let r = c[0] * f, g = c[1] * f, bl = c[2] * f;
+    if (ot) {
+      let dn = oreAmt[i] < 150 ? 0.4 : 0.9;
+      for (let d = 0; d < 4; d++) if (!onb[d]) { const dist = d === 0 ? py : d === 1 ? TP - 1 - px : d === 2 ? TP - 1 - py : px; if (dist < 2) dn -= 0.3 / (dist + 1); }
+      const h2 = hash(x * TP + px, y * TP + py, 13);
+      if (h2 < dn) { const oc = hash(x * TP + px, y * TP + py, 17) < 0.16 ? ORGB[ot][1] : ORGB[ot][0], k = 0.82 + h2 * 0.3; r = oc[0] * k; g = oc[1] * k; bl = oc[2] * k; }
+    }
+    if (mc) { r += (mc[0] - r) * m; g += (mc[1] - g) * m; bl += (mc[2] - bl) * m; }
+    const o4 = ((by + py) * stride + bx + px) * 4;
+    D[o4] = r; D[o4 + 1] = g; D[o4 + 2] = bl; D[o4 + 3] = 255;
+  }
+}
+function tileDeco(x, y) {
   const i = y * W + x, h = hash(x, y, 7);
   const b = terrain[i];
-  tctx.fillStyle = PAL[b][Math.floor(h * 3)];
-  if (b === 1 && elev) { const dp = Math.max(0, Math.min(1, (0.36 - elev[i]) * 9)); tctx.fillStyle = mix('#2a6491', '#123457', dp); }
-  tctx.fillRect(x * TP, y * TP, TP, TP);
   if (b === 4) { tctx.fillStyle = '#46433e'; for (let k = 0; k < 3; k++) tctx.fillRect(x * TP + Math.floor(hash(x, y, k + 31) * 6), y * TP + Math.floor(hash(x, y, k + 41) * 6), 3, 2); tctx.fillStyle = '#7a766e'; tctx.fillRect(x * TP + Math.floor(h * 6), y * TP + 1, 2, 1); }
   else if (b === 6) { for (let k = 0; k < 2; k++) { const px = x * TP + 1 + Math.floor(hash(x, y, k + 51) * 5), py = y * TP + 1 + Math.floor(hash(x, y, k + 61) * 5); tctx.fillStyle = '#1c3518'; tctx.fillRect(px, py, 3, 3); tctx.fillStyle = '#3d6332'; tctx.fillRect(px, py, 2, 1); } }
   else if (b === 5) { tctx.fillStyle = '#4a6a6a'; if (h < 0.5) tctx.fillRect(x * TP + Math.floor(h * 10), y * TP + 3, 3, 1); tctx.fillStyle = '#5a6b3a'; tctx.fillRect(x * TP + Math.floor(hash(x, y, 71) * 7), y * TP + Math.floor(hash(x, y, 72) * 5), 1, 3); }
   else if (b === 3 && h > 0.6) { tctx.fillStyle = '#c8b57c'; tctx.fillRect(x * TP + Math.floor(hash(x, y, 81) * 6), y * TP + Math.floor(hash(x, y, 82) * 7), 2, 1); }
   else if (b === 7 && h > 0.7) { tctx.fillStyle = '#e8eef0'; tctx.fillRect(x * TP + Math.floor(hash(x, y, 91) * 6), y * TP + Math.floor(hash(x, y, 92) * 7), 2, 1); }
-  const t = oreType[i];
-  if (t) {
-    const O = ORES[t];
-    tctx.globalAlpha = oreAmt[i] < 150 ? 0.55 : 1;
-    tctx.fillStyle = O.c;
-    tctx.fillRect(x * TP, y * TP, TP, TP);
-    tctx.fillStyle = O.s;
-    for (let k = 0; k < 4; k++) tctx.fillRect(x * TP + Math.floor(hash(x, y, k * 3 + 11) * 6), y * TP + Math.floor(hash(x, y, k * 3 + 12) * 6), 2, 2);
-    tctx.globalAlpha = 1;
-  }
 }
-function drawTerrain() { for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) drawTile(x, y); }
+function prepCorners() {
+  if (!ORGB) ORGB = ORES.map(O => O && O.c ? [hexRgb(O.c), hexRgb(O.s || O.c)] : null);
+  tcorn = new Float32Array((W + 1) * (H + 1));
+  for (let y = 0; y <= H; y++) for (let x = 0; x <= W; x++) tcorn[y * (W + 1) + x] = vnoise(x / 5, y / 5, 401) * 0.6 + vnoise(x / 1.7, y / 1.7, 402) * 0.4;
+}
+function drawTile(x, y) {
+  if (!tcorn || tcorn.length !== (W + 1) * (H + 1)) prepCorners();
+  if (!tpx) tpx = tctx.createImageData(TP, TP);
+  tileBase(x, y, tpx.data, TP, 0, 0);
+  tctx.putImageData(tpx, x * TP, y * TP);
+  tileDeco(x, y);
+}
+function drawTerrain() {
+  prepCorners();
+  const img = tctx.createImageData(W * TP, H * TP), D = img.data, st = W * TP;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) tileBase(x, y, D, st, x * TP, y * TP);
+  tctx.putImageData(img, 0, 0);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) tileDeco(x, y);
+}
 
 function at(x, y) {
   if (x < 0 || y < 0 || x >= W || y >= H) return null;
@@ -1467,6 +1510,65 @@ function shade(hex, f) {
 const ST_COL = { idle: '#8ac8e0', scale: '#e04a4a', clean: '#e0b84a', work: '#5fd06a', input: '#e0b84a', output: '#e07a3a', power: '#e04a4a', charge: '#8ad0a0', full: '#5fd06a', none: '#8a8f99', empty: '#8a8f99', forest: '#8a8f99', fuel: '#e0b84a', elem: '#e0b84a' };
 const ST_TXT = { idle: 'Idle, no load', scale: 'Tubes choked with scale', clean: 'Descaling', work: 'Working', input: 'Waiting for inputs', output: 'Output full', power: 'No power', charge: 'Charging', full: 'Fully charged', none: 'No recipe set', empty: 'Depleted', forest: 'No forest in reach', fuel: 'No fuel loaded', elem: 'No elements loaded' };
 
+let vig = null;
+const TREE = { 0: ['#2f5a26', '#477a35'], 5: ['#3a5a30', '#567a40'], 6: ['#22461d', '#3a6a2c'], 7: ['#30503e', '#f4f8fa'] };
+function drawNature(ox, oy, z, x0, y0, x1, y1) {
+  if (z < 6) return;
+  const now = performance.now() / 1000, sh = [], cn = [], hl = [];
+  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+    const i = y * W + x, b = terrain[i];
+    if (b === 1) {
+      if (z < 10) continue;
+      const hh = hash(x, y, 23);
+      if (hh > 0.35) continue;
+      const a = Math.pow(Math.max(0, Math.sin(now * 0.9 + hh * 40)), 3) * 0.4;
+      if (a < 0.02) continue;
+      ctx.fillStyle = `rgba(225,242,255,${a.toFixed(3)})`;
+      ctx.fillRect(ox + (x + hash(x, y, 24) * 0.6 + Math.sin(now * 0.5 + hh * 9) * 0.08) * z, oy + (y + 0.15 + hash(x, y, 25) * 0.7) * z, z * 0.34, Math.max(1, z * 0.045));
+      continue;
+    }
+    const tc = TREE[b];
+    if (!tc || oreType[i] || occ[i]) continue;
+    const hh = hash(x, y, 27);
+    if (b !== 6 && hh > (b === 5 ? 0.12 : b === 7 ? 0.025 : 0.05)) continue;
+    const n = b === 6 && hh < 0.45 ? 2 : 1;
+    for (let k = 0; k < n; k++) {
+      const cx = ox + (x + 0.22 + hash(x, y, 30 + k) * 0.56) * z, cy = oy + (y + 0.22 + hash(x, y, 40 + k) * 0.56) * z, r = (0.24 + hash(x, y, 50 + k) * 0.16) * z;
+      sh.push(cx + r * 0.45, cy + r * 0.55, r); cn.push(cx, cy, r, tc); hl.push(cx - r * 0.28, cy - r * 0.3, r * 0.5, tc);
+    }
+  }
+  ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath();
+  for (let i = 0; i < sh.length; i += 3) { ctx.moveTo(sh[i] + sh[i + 2], sh[i + 1]); ctx.ellipse(sh[i], sh[i + 1], sh[i + 2], sh[i + 2] * 0.75, 0, 0, 7); }
+  ctx.fill();
+  for (const tc of Object.values(TREE)) {
+    let any = false;
+    ctx.fillStyle = tc[0]; ctx.beginPath();
+    for (let i = 0; i < cn.length; i += 4) if (cn[i + 3] === tc) { any = true; ctx.moveTo(cn[i] + cn[i + 2], cn[i + 1]); ctx.arc(cn[i], cn[i + 1], cn[i + 2], 0, 7); }
+    if (!any) continue;
+    ctx.fill();
+    ctx.fillStyle = tc[1]; ctx.globalAlpha = 0.55; ctx.beginPath();
+    for (let i = 0; i < hl.length; i += 4) if (hl[i + 3] === tc) { ctx.moveTo(hl[i] + hl[i + 2], hl[i + 1]); ctx.arc(hl[i], hl[i + 1], hl[i + 2], 0, 7); }
+    ctx.fill(); ctx.globalAlpha = 1;
+  }
+}
+function drawSmoke(vis, ox, oy, z) {
+  if (z < 8) return;
+  const now = performance.now() / 1000;
+  for (const e of vis) {
+    if (kind(e) !== 'machine' || !e.cy || !e.recipe || e.st === 'power' || e.st === 'idle') continue;
+    const r = RECIPE[e.recipe], B = BUILD[e.type];
+    const gas = Object.keys(r.fo || {}).find(f => isGas(f) || f === 'steam');
+    if (!gas && B.cat !== 'Smelting') continue;
+    const wh = gas === 'steam' || gas === 'h2o_vap', bx = ox + (e.x + B.w * 0.78) * z, by = oy + (e.y + 0.3) * z;
+    for (let k = 0; k < 4; k++) {
+      const t = (now * 0.45 + k / 4 + e.id * 0.137) % 1;
+      ctx.globalAlpha = 0.38 * (1 - t) * Math.min(1, t * 6);
+      ctx.fillStyle = wh ? '#eef2f4' : '#9a948a';
+      ctx.beginPath(); ctx.arc(bx + t * z * 0.7 + Math.sin(now * 1.3 + k * 2 + e.id) * z * 0.08, by - t * z * 1.5, z * (0.12 + t * 0.4), 0, 7); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+}
 function render() {
   const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight, z = cam.z;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1479,7 +1581,7 @@ function render() {
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(tcv, x0 * TP, y0 * TP, (x1 - x0) * TP, (y1 - y0) * TP, ox + x0 * z, oy + y0 * z, (x1 - x0) * z, (y1 - y0) * z);
   if (z >= 20) {
-    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+    ctx.strokeStyle = 'rgba(0,0,0,0.07)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let x = x0; x <= x1; x++) { ctx.moveTo(ox + x * z + 0.5, oy + y0 * z); ctx.lineTo(ox + x * z + 0.5, oy + y1 * z); }
@@ -1495,10 +1597,19 @@ function render() {
     if (e.x + B.w < x0 || e.y + B.h < y0 || e.x > x1 || e.y > y1) continue;
     vis.push(e);
   }
+  drawNature(ox, oy, z, x0, y0, x1, y1);
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  for (const e of vis) {
+    const k = kind(e);
+    if (k === 'pipe' || e.type === 'belt' || k === 'hive' || k === 'ruin') continue;
+    const B = BUILD[e.type];
+    ctx.fillRect(ox + e.x * z + z * 0.18, oy + e.y * z + z * 0.24, B.w * z - z * 0.12, B.h * z - z * 0.12);
+  }
   for (const e of vis) if (kind(e) === 'pipe') drawPipe(e, ox, oy, z);
   for (const e of vis) if (e.type === 'belt') drawBelt(e, ox, oy, z);
   for (const e of vis) if (e.type === 'belt') drawBeltItems(e, ox, oy, z);
   for (const e of vis) if (kind(e) !== 'pipe' && e.type !== 'belt') drawBuilding(e, ox, oy, z);
+  drawSmoke(vis, ox, oy, z);
   drawBugs(ox, oy, z, x0, y0, x1, y1);
   for (const e of vis) if (e.type === 'turret' && S.t - e.sh < 0.07) {
     const c = ctr(e);
@@ -1528,6 +1639,12 @@ function render() {
     ctx.beginPath(); ctx.arc(ox + f.x * z, oy + f.y * z, z * (0.2 + f.t * 1.2), 0, 7); ctx.stroke();
     ctx.globalAlpha = 1;
   }
+  if (!vig || vig.w !== w || vig.h !== h) {
+    const g = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.38, w / 2, h / 2, Math.hypot(w, h) * 0.62);
+    g.addColorStop(0, 'rgba(10,8,4,0)'); g.addColorStop(1, 'rgba(10,8,4,0.45)');
+    vig = { w, h, g };
+  }
+  ctx.fillStyle = vig.g; ctx.fillRect(0, 0, w, h);
   const se = sel && ents.get(sel);
   if (se) {
     const B = BUILD[se.type];
@@ -1983,12 +2100,23 @@ function drawBuilding(e, ox, oy, z) {
   if (B.kind === 'projector') return drawProjector(e, x, y, w, h, z);
   if (B.kind === 'gun') return drawGun(e, x, y, w, h, z);
   if (B.kind === 'ruin') return drawRuin(e, x, y, w, h, z);
-  ctx.fillStyle = shade(B.c, 0.55);
+  ctx.fillStyle = shade(B.c, 0.42);
   ctx.fillRect(x + p, y + p, w - 2 * p, h - 2 * p);
-  ctx.fillStyle = B.c;
+  const gr = ctx.createLinearGradient(x, y, x + w * 0.3, y + h);
+  gr.addColorStop(0, shade(B.c, 1.2)); gr.addColorStop(0.55, B.c); gr.addColorStop(1, shade(B.c, 0.74));
+  ctx.fillStyle = gr;
   ctx.fillRect(x + p * 2, y + p * 2, w - 4 * p, h - 4 * p);
-  ctx.fillStyle = shade(B.c, 1.25);
-  ctx.fillRect(x + p * 2, y + p * 2, w - 4 * p, Math.max(1, p));
+  const ln = Math.max(1, p * 0.7);
+  ctx.fillStyle = shade(B.c, 1.45);
+  ctx.fillRect(x + p * 2, y + p * 2, w - 4 * p, ln); ctx.fillRect(x + p * 2, y + p * 2, ln, h - 4 * p);
+  ctx.fillStyle = shade(B.c, 0.55);
+  ctx.fillRect(x + p * 2, y + h - p * 2 - ln, w - 4 * p, ln); ctx.fillRect(x + w - p * 2 - ln, y + p * 2, ln, h - 4 * p);
+  if (z >= 18 && B.w * B.h > 1) {
+    ctx.fillStyle = shade(B.c, 0.5);
+    const bs = Math.max(2, z * 0.07), m = p * 2 + z * 0.08;
+    for (const [bx, by] of [[x + m, y + m], [x + w - m - bs, y + m], [x + m, y + h - m - bs], [x + w - m - bs, y + h - m - bs]]) ctx.fillRect(bx, by, bs, bs);
+  }
+  if (z >= 14 && (B.kind === 'machine' || B.kind === 'miner') && B.w >= 2 && B.h >= 2) machDetail(e, B, x, y, w, h, z);
   if (e.type === 'sorter') {
     arrow(x + w / 2, y + h / 2, e.dir, z * 0.28, '#1a1a1a');
     if (e.filter) { ctx.fillStyle = col(e.filter); ctx.fillRect(x + p * 3, y + p * 3, z * 0.22, z * 0.22); }
@@ -2116,6 +2244,12 @@ function drawBuilding(e, ox, oy, z) {
       ctx.fillRect(x + p * 3, y + h - p * 3 - z * 0.12, (w - p * 6) * Math.min(1, e.prog), z * 0.12);
     }
     const st = e.cy && e.st !== 'power' && e.st !== 'idle' ? 'work' : e.st;
+    if (z >= 10) {
+      ctx.globalAlpha = st === 'work' ? 0.28 + 0.12 * Math.sin(performance.now() / 300 + e.id) : 0.2;
+      ctx.fillStyle = ST_COL[st] || '#888';
+      ctx.beginPath(); ctx.arc(x + w - p * 3 - z * 0.12, y + p * 3 + z * 0.12, Math.max(4, z * 0.26), 0, 7); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
     ctx.fillStyle = ST_COL[st] || '#888';
     ctx.beginPath();
     ctx.arc(x + w - p * 3 - z * 0.12, y + p * 3 + z * 0.12, Math.max(2, z * 0.11), 0, 7);
@@ -2126,6 +2260,22 @@ function drawBuilding(e, ox, oy, z) {
   }
 }
 
+function machDetail(e, B, x, y, w, h, z) {
+  const on = e.cy && e.st !== 'power' && e.st !== 'idle';
+  ctx.fillStyle = shade(B.c, 0.5);
+  const gx = x + z * 0.22, gy = y + h - z * 0.62, gw = Math.min(w * 0.3, z * 0.8);
+  for (let k = 0; k < 4; k++) ctx.fillRect(gx, gy + k * z * 0.1, gw, Math.max(1, z * 0.04));
+  const fx2 = x + w - z * 0.48, fy = y + h - z * 0.56, R = z * 0.26;
+  ctx.fillStyle = '#1e2124'; ctx.beginPath(); ctx.arc(fx2, fy, R, 0, 7); ctx.fill();
+  ctx.strokeStyle = shade(B.c, 0.6); ctx.lineWidth = Math.max(1, z * 0.04); ctx.stroke();
+  const a0 = on ? performance.now() / 1000 * 9 + e.id : e.id;
+  ctx.fillStyle = on ? '#8a9096' : '#5a5f64';
+  for (let k = 0; k < 3; k++) {
+    const a = a0 + k * 2.094;
+    ctx.beginPath(); ctx.moveTo(fx2, fy); ctx.arc(fx2, fy, R * 0.82, a, a + 0.75); ctx.closePath(); ctx.fill();
+  }
+  ctx.fillStyle = '#2c3034'; ctx.beginPath(); ctx.arc(fx2, fy, R * 0.22, 0, 7); ctx.fill();
+}
 function drawGhost(ox, oy, z) {
   const B = BUILD[tool], o = toolOrigin(tool, mouse.fx, mouse.fy);
   const err = canPlace(tool, o.x, o.y);
