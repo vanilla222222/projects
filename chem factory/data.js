@@ -58,7 +58,7 @@ const ITEMS = {
   zircon: { n: 'Zircon', c: '#e8dcc0', f: 'ZrSiO₄, melts at 2550°C. Prized refractory' },
   monazite: { n: 'Monazite', c: '#c8a040', f: '(Ce,La,Nd,Th)PO₄, rare earth phosphate, slightly radioactive from thorium' },
   ti_slag: { n: 'Titania Slag', c: '#3a3036', f: 'About 85% TiO₂, the iron smelted out of ilmenite' },
-  titanium: { n: 'Titanium Sponge', c: '#9aa0aa', f: 'Porous Ti metal from the Hunter process' },
+  titanium: { n: 'Titanium Sponge', c: '#9aa0aa', f: 'Porous Ti metal from the Hunter or Kroll process' },
   pyrite_conc: { n: 'Pyrite Concentrate', c: '#c8b048', f: "Fool's gold FeS₂, floated off the copper ore" },
   pyrite_cinder: { n: 'Pyrite Cinder', c: '#8a3a2a', f: 'Fe₂O₃ left after roasting pyrite, a usable iron ore' },
   dore: { n: 'Doré Bead', c: '#d8c890', f: 'Silver-gold alloy melted out of anode slime' },
@@ -128,6 +128,12 @@ const ITEMS = {
   smelt: { n: 'Smelt', c: '#4a3a3a', f: 'Molten Na₂CO₃ and Na₂S that pours red-hot from the floor of a recovery boiler' },
   lime_mud: { n: 'Lime Mud', c: '#d8d4c4', f: 'Wet precipitated CaCO₃ left after causticising, ready to be burnt back to lime' },
   salt_cake: { n: 'Salt Cake', c: '#e8e4d0', f: 'Sodium sulfate Na₂SO₄, the classic sodium and sulfur make-up for kraft liquor' },
+  mgoh2: { n: 'Magnesium Hydroxide', c: '#eceae4', f: 'Mg(OH)₂, a fluffy white precipitate. Milk of magnesia' },
+  mgcl2: { n: 'Magnesium Chloride', c: '#d8e0e4', f: 'Anhydrous MgCl₂ flakes, dried so they melt without turning to oxide' },
+  magnesium: { n: 'Magnesium', c: '#c8ccd0', f: 'Mg metal, two thirds the density of aluminium. A strong reducing agent' },
+  nabr: { n: 'Sodium Bromide', c: '#f0ece0', f: 'NaBr crystals. Dissolved, it makes a clear brine half again as dense as water' },
+  agno3: { n: 'Silver Nitrate', c: '#e8e8f0', f: 'AgNO₃, colourless crystals that stain skin black in sunlight. Lunar caustic' },
+  photo_paper: { n: 'Photographic Paper', c: '#f4f0e8', f: 'Paper coated with a gelatin emulsion of silver bromide crystals. Light leaves a hidden image that developer turns black' },
   cryolite: { n: 'Cryolite', c: '#e8eef0', f: 'Sodium hexafluoroaluminate Na₃AlF₆. Molten, it dissolves alumina like water dissolves salt' },
 };
 
@@ -170,6 +176,8 @@ const FLUIDS = {
   wl: { n: 'White Liquor', c: '#e0e4d8', f: 'NaOH and Na₂S in water, about 80°C. The sulfide speeds up delignification and protects the cellulose', cp: 3.6, t: 80, corr: 0.6, ck: 'alk' },
   bl: { n: 'Black Liquor', c: '#2a2218', f: 'Dissolved lignin and spent sodium salts, about 90°C. Concentrated, it burns like heavy oil', cp: 3.2, t: 90, corr: 0.3, ck: 'alk' },
   gl: { n: 'Green Liquor', c: '#6a8a6a', f: 'Smelt dissolved in water: Na₂CO₃ and Na₂S, tinted green by traces of iron', cp: 3.6, t: 85, corr: 0.4, ck: 'alk' },
+  br2: { n: 'Bromine', c: '#8a2a1a', f: 'Br₂, a dense red-brown liquid that boils at 59°C and fumes choking vapour. It attacks steel and most rubbers', cp: 0.47, t: 30, corr: 0.9, ck: 'cl' },
+  bittern: { n: 'Bittern', c: '#7aa898', f: 'The bitter brine left after salt crystallises out: MgCl₂, MgSO₄ and KCl, ten times as rich in magnesium as seawater', cp: 3.0, t: 25, corr: 0.25, ck: 'cl' },
 };
 
 const ORES = [
@@ -257,6 +265,7 @@ const BUILD = {
   harvester: { n: 'Timber Harvester', kind: 'machine', w: 2, h: 2, cat: 'Mining', c: '#6a7a3a', ab: 'TH', kw: 40, forest: true, cost: { plate: 6, casting: 4, motor: 2 }, d: 'A tracked feller-buncher that fells, delimbs and cuts trees within 4 tiles. It works faster the more forest it can reach. The stand is replanted behind it, so the forest never runs out.' },
   recovery: { n: 'Recovery Boiler', kind: 'machine', w: 3, h: 3, cat: 'Power', c: '#5a4a3a', ab: 'RB', cost: { brick: 20, steel: 8, steel_pipe: 6 }, d: 'Burns concentrated black liquor. The lignin is the fuel and raises steam, while the sodium salts melt and run out the floor as smelt. It is the heart of a kraft mill: it makes its power and recycles its chemicals.' },
   paper_machine: { n: 'Paper Machine', kind: 'machine', w: 3, h: 3, cat: 'Processing', c: '#8a8a7a', ab: 'PM', kw: 150, cost: { plate: 12, casting: 8, motor: 4 }, d: 'A Fourdrinier: dilute pulp sprays onto a moving wire mesh, the water drains, presses squeeze the sheet and steam-heated cylinders dry it.' },
+  pond: { n: 'Evaporation Pond', kind: 'machine', w: 4, h: 4, cat: 'Mining', c: '#c8d8d8', ab: 'EP', sun: true, cost: { brick: 6, casting: 4 }, d: 'A shallow clay-lined pan where sun and wind evaporate water from a salt lake. Free to run, but slow, and it needs a hot, dry climate: full speed on desert sand, much slower on grass, almost nothing on tundra or marsh.' },
 };
 
 const RECIPES = [
@@ -410,6 +419,15 @@ const RECIPES = [
   { id: 'bleach_pulp', n: 'Bleached Pulp', b: 'leach', t: 3, i: { pulp: 2, bleach: 1 }, fi: { water: 20 }, o: { bleached_pulp: 2 }, eq: 'Lignin + OCl⁻ → oxidised, soluble fragments', note: 'Hypochlorite bleaching, as used since the 1800s. Modern mills use chlorine dioxide and oxygen instead.' },
   { id: 'kraft_paper', b: 'paper_machine', t: 3, i: { pulp: 2 }, fi: { steam: 10, water: 20 }, o: { kraft_paper: 2 }, note: 'Unbleached fibre makes the strongest paper. Steam heats the drying cylinders.' },
   { id: 'paper', b: 'paper_machine', t: 3, i: { bleached_pulp: 2 }, fi: { steam: 10, water: 20 }, o: { paper: 2 }, note: 'White paper for printing and writing.' },
+  { id: 'solar_salt', n: 'Solar Salt', b: 'pond', t: 6, fi: { water: 40 }, o: { salt: 2 }, fo: { bittern: 6 }, eq: 'NaCl crystallises as water evaporates', note: 'Inland lakes in dry country are salty. The brine moves through a chain of pans; salt crystallises first, then the bitter, magnesium-rich mother liquor is drawn off. Rate depends on the climate.' },
+  { id: 'mg_hydroxide', n: 'Magnesium Hydroxide', b: 'leach', t: 2, i: { quicklime: 1 }, fi: { bittern: 20 }, o: { mgoh2: 1, cacl2: 1 }, eq: 'MgCl₂ + Ca(OH)₂ → Mg(OH)₂↓ + CaCl₂', note: 'Dow Chemical, Freeport, 1941. Lime from burnt oyster shells precipitated magnesium out of the Gulf of Mexico.' },
+  { id: 'mg_chloride', n: 'Magnesium Chloride', b: 'leach', t: 2, i: { mgoh2: 1 }, fi: { hcl: 20 }, o: { mgcl2: 1 }, eq: 'Mg(OH)₂ + 2HCl → MgCl₂ + 2H₂O', note: 'The hydroxide dissolves in hydrochloric acid and the solution is dried to flakes.' },
+  { id: 'mg_electro', n: 'Magnesium (Dow cell)', b: 'electro', t: 4, i: { mgcl2: 2 }, o: { magnesium: 1 }, fo: { cl2: 10 }, eq: 'MgCl₂ (molten) → Mg + Cl₂', note: 'Molten chloride at 700°C. Liquid magnesium floats to the top of the cell and is ladled off.' },
+  { id: 'bromine', n: 'Bromine (steaming-out)', b: 'still', t: 3, fi: { bittern: 30, cl2: 5, steam: 10 }, fo: { br2: 8 }, eq: '2Br⁻ + Cl₂ → Br₂ + 2Cl⁻', note: 'Kubierschky, 1909. Chlorine displaces bromine from the acidified bittern and live steam strips it up the tower. The vapour condenses to a red liquid that sinks under the water. The Dead Sea gives about a third of the world\'s bromine this way.' },
+  { id: 'nabr', n: 'Sodium Bromide', b: 'scrubber', t: 2, fi: { br2: 10, naoh: 20 }, o: { nabr: 1 }, eq: '3Br₂ + 6NaOH → 5NaBr + NaBrO₃ + 3H₂O', note: 'Caustic absorbs the bromine. The small amount of bromate is reduced back with a little iron and the solution is evaporated to crystals.' },
+  { id: 'agno3', n: 'Silver Nitrate', b: 'leach', t: 3, i: { silver: 1 }, fi: { hno3: 10 }, o: { agno3: 1 }, eq: '3Ag + 4HNO₃ → 3AgNO₃ + NO + 2H₂O', note: 'Silver dissolves readily in nitric acid. The solution is evaporated and the crystals kept in the dark.' },
+  { id: 'photo_paper', n: 'Photographic Paper', b: 'paper_machine', t: 4, i: { paper: 2, agno3: 1, nabr: 1 }, o: { photo_paper: 2 }, eq: 'AgNO₃ + NaBr → AgBr↓ + NaNO₃', note: 'Silver nitrate run slowly into warm bromide and gelatin precipitates tiny light-sensitive silver bromide crystals. The ripened emulsion is coated onto white paper in the dark.' },
+  { id: 'kroll', n: 'Titanium (Kroll)', b: 'retort', t: 4, i: { magnesium: 2 }, fi: { ticl4: 10 }, o: { titanium: 1, mgcl2: 2 }, eq: 'TiCl₄ + 2Mg → Ti + 2MgCl₂', note: 'William Kroll, 1940. Magnesium replaced sodium and nearly all titanium is made this way today. The MgCl₂ goes back to the electrolysis cell, so the magnesium and chlorine both loop.' },
   { id: 'cartridge', b: 'workshop', t: 2, i: { brass: 1, lead: 1, black_powder: 1 }, o: { cartridge: 2 } },
 ];
 
@@ -441,6 +459,10 @@ const ORDERS = [
   { c: 'Photographic works', item: 'silver', n: 10, tier: 2, rw: { glass: 20, plate: 30 }, d: 'Silver for silver nitrate plates.' },
   { c: 'Newspaper press', item: 'paper', n: 80, tier: 2, rw: { paper_machine: 1, motor: 4 }, d: 'Newsprint for the morning edition.' },
   { c: 'Sack maker', item: 'kraft_paper', n: 80, tier: 2, rw: { harvester: 2, steel: 20 }, d: 'Multiwall kraft sacks for cement and fertiliser.' },
+  { c: 'Highway authority', item: 'cacl2', n: 80, tier: 2, rw: { pond: 2, brick: 30 }, d: 'Calcium chloride to keep the mountain passes free of ice. It works down to -30°C, far colder than salt.' },
+  { c: 'Iron foundry', item: 'magnesium', n: 30, tier: 3, rw: { arc: 1, wire: 40 }, d: 'Magnesium to make ductile iron. A pinch of it turns the graphite flakes in cast iron into spheres, so the casting bends instead of snapping.' },
+  { c: 'Oilfield services', item: 'nabr', n: 50, tier: 2, rw: { still: 1, glass_pipe: 10 }, d: 'Sodium bromide for completion brine. It is dense enough to hold down the well pressure, yet it carries no solids to clog the rock.' },
+  { c: 'Portrait studio', item: 'photo_paper', n: 40, tier: 3, rw: { glass_tank: 1, steel: 30 }, d: 'Bromide paper for enlargements. A print can be exposed in seconds under an enlarger lamp.' },
   { c: 'Grain belt farms', item: 'dap', n: 80, tier: 3, rw: { granulator: 1, motor: 6 }, d: 'DAP for the wheat belt.' },
   { c: 'Rice growers', item: 'urea', n: 80, tier: 3, rw: { reactor: 1, steel_pipe: 20 }, d: 'Urea for the paddies. It is the cheapest nitrogen to ship.' },
   { c: 'Fruit orchards', item: 'potash', n: 60, tier: 3, rw: { flotation: 1, belt: 60 }, d: 'Potash for the apple orchards. Fruit draws potassium out of the soil fast.' },
