@@ -24,6 +24,7 @@ const VEH = {
   car: { vmax: 22, acc: 9, turn: 2.6, hl: 0.95, hw: 0.48, hp: 450, burn: 2.4, slots: 20, c: ['#6a1814', '#c8382e', '#4a100c'] },
   truck: { vmax: 16, acc: 5, turn: 1.9, hl: 1.35, hw: 0.6, hp: 1350, burn: 3.6, slots: 60, c: ['#8a6010', '#e0a828', '#5a4008'] },
   launch: { sea: true, vmax: 18, acc: 6, turn: 1.6, hl: 1.0, hw: 0.45, hp: 600, burn: 2.6, slots: 30, c: ['#d8d4c8', '#f0ece0', '#a8a49a'] },
+  skiff: { sea: true, oar: true, vmax: 5.5, acc: 2.4, turn: 1.5, hl: 0.72, hw: 0.32, hp: 220, burn: 0, slots: 12, c: ['#6a4a2c', '#9a7048', '#4a3220'] },
   barge: { sea: true, vmax: 10, acc: 2.6, turn: 0.9, hl: 1.8, hw: 0.75, hp: 1800, burn: 4, slots: 100, c: ['#3a4a5a', '#5a6a7a', '#2a3440'] },
 };
 const CAN_MJ = 720, FUEL_CAP = 5;
@@ -259,6 +260,11 @@ function genMap(seed, g) {
 }
 const isEndless = g => !!(g && !g.legacy && g.size >= 1024);
 function rgDone(x, y) { return !rgd || rgd[Math.floor(y / RG) * (W / RG) + Math.floor(x / RG)] === 1; }
+function contAt(x, y, seed, g, d) {
+  const wx = x + (fbm(x / 230, y / 230, seed + 81) - 0.5) * 260, wy = y + (fbm(x / 230, y / 230, seed + 83) - 0.5) * 260;
+  const c = Math.max(fbm(wx / 400, wy / 400, seed + 71), 0.62 * (1 - sstep(100, 240, d)));
+  return Math.max(-0.45, Math.min(0.1, (c - 0.54 - 0.025 * g.water) * 3.2));
+}
 function genRegion(seed, g, rx, ry) {
   const M = 3, X0 = rx * RG, Y0 = ry * RG, w = RG + 2 * M, N = w * w, cx = W / 2, cy = H / 2;
   const rng = mulberry32((seed + Math.imul(rx + 7, 73856093) + Math.imul(ry + 3, 19349663)) >>> 0);
@@ -266,7 +272,7 @@ function genRegion(seed, g, rx, ry) {
   const sea = 0.36 + 0.05 * (g.water - 1);
   for (let j = 0; j < w; j++) for (let i = 0; i < w; i++) {
     const x = X0 - M + i, y = Y0 - M + j, l = j * w + i, d = Math.hypot(x - cx, y - cy), k = sstep(16, 44, d);
-    const lo = fbm(x / 46, y / 46, seed) + (fbm(x / 170, y / 170, seed + 13) - 0.5) * 0.55, edge = Math.max(Math.abs(x - cx), Math.abs(y - cy)) / (W / 2), fall = Math.max(0, edge - 0.94) * 8;
+    const cs = contAt(x, y, seed, g, d), lo = fbm(x / 46, y / 46, seed) + (fbm(x / 170, y / 170, seed + 13) - 0.5) * 0.3 + cs, edge = Math.max(Math.abs(x - cx), Math.abs(y - cy)) / (W / 2), fall = Math.max(0, edge - 0.94) * 8;
     let e = lo * 0.72 + fbm(x / 13, y / 13, seed + 5) * 0.28;
     const ridge = 1 - Math.abs(2 * fbm(x / 30, y / 30, seed + 9) - 1);
     e += Math.max(0, ridge - 0.86) * 2.6 * sstep(0.44, 0.56, e);
@@ -1557,6 +1563,7 @@ function finish(e, r) {
 }
 
 const solid = i => oreType[i] && !ORES[oreType[i]].fluid;
+const choppable = i => !oreType[i] && terrain[i] === 6;
 const oily = i => oreType[i] && ORES[oreType[i]].fluid;
 function minerOre(e) {
   for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) if (solid((e.y + j) * W + e.x + i)) return true;
@@ -1680,11 +1687,11 @@ function tick() {
   plTick();
   if (mining) {
     const i = mining.y * W + mining.x;
-    if (!mouse.l || tool || !solid(i) || occ[i] || mouse.tx !== mining.x || mouse.ty !== mining.y || !inReach(mining.x + 0.5, mining.y + 0.5, MINE_REACH)) mining = null;
-    else if ((mining.p += DT / 0.5) >= 1) {
+    if (!mouse.l || tool || !(solid(i) || choppable(i)) || occ[i] || mouse.tx !== mining.x || mouse.ty !== mining.y || !inReach(mining.x + 0.5, mining.y + 0.5, MINE_REACH)) mining = null;
+    else if ((mining.p += DT / (oreType[i] ? 0.5 : 1.2)) >= 1) {
       mining.p = 0;
-      const item = ORES[oreType[i]].item;
-      depleteTile(i);
+      const item = oreType[i] ? ORES[oreType[i]].item : 'wood';
+      if (oreType[i]) depleteTile(i);
       give(item, 1);
       S.made[item] = (S.made[item] || 0) + 1;
     }
@@ -1830,8 +1837,8 @@ function carWreck(v) {
 function carStep(v, thr, steer) {
   const V = VEH[v.type], X = Math.floor(v.x), Y = Math.floor(v.y), o = at(X, Y);
   const cap = V.sea ? V.vmax * (1 - 0.4 * (v.foul || 0)) : V.vmax * (o && kind(o) === 'road' ? 1 : VSPD[terrain[Y * W + X]] ?? 0.6);
-  if (thr && !(v.e > 0)) { if (v.auto && S.pl.car !== v.id) { if (v.fc > 0) { v.fc--; v.e = (v.e || 0) + CAN_MJ; } } else refuel(v); }
-  const fuel = v.e > 0, same = thr && Math.sign(thr) === Math.sign(v.v || thr);
+  if (thr && !V.oar && !(v.e > 0)) { if (v.auto && S.pl.car !== v.id) { if (v.fc > 0) { v.fc--; v.e = (v.e || 0) + CAN_MJ; } } else refuel(v); }
+  const fuel = V.oar || v.e > 0, same = thr && Math.sign(thr) === Math.sign(v.v || thr);
   if (thr && !same) v.v += thr * V.acc * 1.8 * DT;
   else if (thr && fuel) { v.v += thr * V.acc * (thr < 0 ? 0.5 : 1) * DT; v.e = Math.max(0, v.e - V.burn * DT); }
   else { const d = Math.min(Math.abs(v.v), (V.sea ? 1.2 : 3) * DT); v.v -= Math.sign(v.v) * d; }
@@ -1882,9 +1889,9 @@ function carTick() {
       steer = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0);
     }
     const V = VEH[v.type];
-    if (V.sea && v.auto && v !== dv) [thr, steer] = boatPilot(v);
+    if (V.sea && !V.oar && v.auto && v !== dv) [thr, steer] = boatPilot(v);
     else if (v !== dv && v.v) v.v -= Math.sign(v.v) * Math.min(Math.abs(v.v), (V.sea ? 2 : 9) * DT);
-    if (V.sea) { if (v.af > 0) v.af -= DT; else v.foul = Math.min(1, (v.foul || 0) + DT / 1800); }
+    if (V.sea && !V.oar) { if (v.af > 0) v.af -= DT; else v.foul = Math.min(1, (v.foul || 0) + DT / 1800); }
     carStep(v, thr, steer);
     if (S.t - (v.lh ?? -99) > 10 && v.hp < VEH[v.type].hp) v.hp = Math.min(VEH[v.type].hp, v.hp + 2 * DT);
   }
@@ -1974,14 +1981,17 @@ function boatRoute(v, e) {
   const goal = new Set(boatGoal(e));
   if (!goal.size) return null;
   const sx = Math.floor(v.x), sy = Math.floor(v.y), s = sy * W + sx;
-  const dist = new Map([[s, 0]]), prev = new Map(), hp = [[0, s]];
+  const gx = e.x + 0.5, gy = e.y + 0.5, gr = e.type === 'buoy' ? 0 : 2.3, hu = k => { const x = k % W, y = (k - x) / W; return Math.max(0, Math.hypot(x + 0.5 - gx, y + 0.5 - gy) - gr - 0.8); };
+  const dist = new Map([[s, 0]]), prev = new Map(), hp = [[hu(s), s]], done = new Set();
   const cc = new Map(), clear = (x, y) => { const k = y * W + x; let d = cc.get(k); if (d !== undefined) return d; d = 3; for (let r = 1; r <= 3 && d === 3; r++) for (let j = -r; j <= r && d === 3; j++) for (let i = -r; i <= r; i++) if ((Math.abs(i) === r || Math.abs(j) === r) && !floats(x + i, y + j)) { d = r - 1; break; } cc.set(k, d); return d; };
   const push = it => { hp.push(it); let i = hp.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (hp[p][0] <= hp[i][0]) break; [hp[p], hp[i]] = [hp[i], hp[p]]; i = p; } };
   const pop = () => { const top = hp[0], last = hp.pop(); if (hp.length) { hp[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < hp.length && hp[l][0] < hp[m][0]) m = l; if (r < hp.length && hp[r][0] < hp[m][0]) m = r; if (m === i) break; [hp[m], hp[i]] = [hp[i], hp[m]]; i = m; } } return top; };
   let end = -1, n = 0;
-  while (hp.length && n++ < 80000) {
-    const [d, k] = pop();
-    if (d > dist.get(k)) continue;
+  while (hp.length && n++ < 400000) {
+    const k = pop()[1];
+    if (done.has(k)) continue;
+    done.add(k);
+    const d = dist.get(k);
     if (goal.has(k)) { end = k; break; }
     const x = k % W, y = (k - x) / W;
     for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) {
@@ -1990,7 +2000,7 @@ function boatRoute(v, e) {
       if (!floats(nx, ny)) continue;
       if (i && j && !(floats(x + i, y) && floats(x, y + j))) continue;
       const nk = ny * W + nx, nd = d + (i && j ? 1.414 : 1) * (1 + [6, 2.5, 0.8, 0][clear(nx, ny)]);
-      if (nd < (dist.get(nk) ?? 1e9)) { dist.set(nk, nd); prev.set(nk, k); push([nd, nk]); }
+      if (nd < (dist.get(nk) ?? 1e9)) { dist.set(nk, nd); prev.set(nk, k); push([nd + hu(nk), nk]); }
     }
   }
   if (end < 0) return null;
@@ -2700,9 +2710,10 @@ function render() {
     ctx.textAlign = 'right'; ctx.font = 'bold 24px ui-monospace, monospace'; ctx.fillText(sp, bx + 196, by + 28);
     ctx.font = '11px system-ui, sans-serif'; ctx.fillStyle = '#9aa0a8'; ctx.fillText('km/h', bx + 228, by + 28); ctx.textAlign = 'left';
     const gauge = (y, lab, f, col, txt) => { ctx.fillStyle = '#9aa0a8'; ctx.font = '11px system-ui, sans-serif'; ctx.fillText(lab, bx + 12, y + 8); ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(bx + 50, y, 120, 9); ctx.fillStyle = col; ctx.fillRect(bx + 50, y, 120 * Math.max(0, Math.min(1, f)), 9); ctx.fillStyle = '#c8c4b8'; ctx.fillText(txt, bx + 178, y + 8); };
-    gauge(by + 40, 'Fuel', (dv.e || 0) / CAN_MJ, '#d8b848', dv.fc ? '+' + dv.fc + ' can' + (dv.fc > 1 ? 's' : '') : (S.inv.jerrycan || 0) + ' in pack');
+    if (V.oar) gauge(by + 40, 'Hold', carSlots(dv) / V.slots, '#b08a5a', carSlots(dv) + ' / ' + V.slots);
+    else gauge(by + 40, 'Fuel', (dv.e || 0) / CAN_MJ, '#d8b848', dv.fc ? '+' + dv.fc + ' can' + (dv.fc > 1 ? 's' : '') : (S.inv.jerrycan || 0) + ' in pack');
     gauge(by + 56, 'Body', dv.hp / V.hp, dv.hp / V.hp > 0.5 ? '#7fe08a' : dv.hp / V.hp > 0.25 ? '#e0b84a' : '#e04a4a', Math.round(dv.hp / V.hp * 100) + '%');
-    ctx.fillStyle = '#6a7078'; ctx.font = '10px system-ui, sans-serif'; ctx.fillText(V.sea ? (dv.foul > 0.3 ? 'Hull fouled: ' + Math.round(dv.foul * 40) + '% slower · repaint with antifouling' : 'W/S throttle and astern · A/D rudder · F get off at a shore') : 'W/S throttle and brake · A/D steer · F get out', bx + 12, by + 78);
+    ctx.fillStyle = '#6a7078'; ctx.font = '10px system-ui, sans-serif'; ctx.fillText(V.oar ? 'W/S row ahead and astern · A/D turn · F get off at a shore' : V.sea ? (dv.foul > 0.3 ? 'Hull fouled: ' + Math.round(dv.foul * 40) + '% slower · repaint with antifouling' : 'W/S throttle and astern · A/D rudder · F get off at a shore') : 'W/S throttle and brake · A/D steer · F get out', bx + 12, by + 78);
   }
   if (tool && mouse.in) {
     ctx.strokeStyle = 'rgba(255,255,255,0.32)'; ctx.lineWidth = 1.5; ctx.setLineDash([6, 6]);
@@ -2997,6 +3008,23 @@ function drawBoat(v, X, Y, z, al) {
   if (al != null) ctx.globalAlpha = al;
   const bob = Math.sin(performance.now() / 600 + v.id) * z * 0.02;
   ctx.translate(0, bob);
+  if (V.oar) {
+    const row = S.pl.car === v.id && Math.abs(v.v) > 0.3, ph = row ? Math.sin(S.t * 5) : 0;
+    ctx.fillStyle = 'rgba(10,30,50,0.35)'; ctx.beginPath(); ctx.ellipse(z * 0.05, z * 0.08, L * 1.02, R * 1.15, 0, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#c8a878'; ctx.lineWidth = Math.max(1, z * 0.045); ctx.lineCap = 'round';
+    for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(-L * 0.05, s * R * 0.7); ctx.lineTo(-L * 0.05 - ph * L * 0.45, s * R * 2.3); ctx.stroke(); ctx.fillStyle = '#b08a58'; ctx.beginPath(); ctx.ellipse(-L * 0.05 - ph * L * 0.45, s * R * 2.3, z * 0.05, z * 0.1, 0, 0, 7); ctx.fill(); }
+    const sk = () => { ctx.beginPath(); ctx.moveTo(-L * 0.85, -R * 0.75); ctx.quadraticCurveTo(L * 0.3, -R * 1.15, L, 0); ctx.quadraticCurveTo(L * 0.3, R * 1.15, -L * 0.85, R * 0.75); ctx.quadraticCurveTo(-L * 1.02, 0, -L * 0.85, -R * 0.75); ctx.closePath(); };
+    const g2 = ctx.createLinearGradient(0, -R, 0, R); g2.addColorStop(0, c[0]); g2.addColorStop(0.5, c[1]); g2.addColorStop(1, c[2]);
+    ctx.fillStyle = g2; sk(); ctx.fill(); ctx.strokeStyle = '#3a2614'; ctx.lineWidth = Math.max(1, z * 0.03); ctx.stroke();
+    ctx.save(); sk(); ctx.clip(); ctx.strokeStyle = 'rgba(40,24,10,0.35)'; ctx.lineWidth = Math.max(1, z * 0.012);
+    for (let k = 1; k < 4; k++) { ctx.beginPath(); ctx.ellipse(0, 0, L * (1 - k * 0.12), R * (1 - k * 0.2), 0, 0, 7); ctx.stroke(); }
+    ctx.fillStyle = '#5a3e24'; ctx.beginPath(); ctx.ellipse(0, 0, L * 0.62, R * 0.55, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#b08a58'; for (const x of [-0.5, -0.05, 0.42]) ctx.fillRect(L * x - z * 0.04, -R * 0.62, z * 0.08, R * 1.24);
+    ctx.restore();
+    if (carSlots(v)) { ctx.fillStyle = '#a07840'; ctx.fillRect(L * 0.1, -R * 0.3, L * 0.25, R * 0.6); }
+    ctx.restore();
+    return;
+  }
   ctx.fillStyle = 'rgba(10,30,50,0.35)'; ctx.beginPath(); ctx.ellipse(z * 0.06, z * 0.1, L * 1.02, R * 1.1, 0, 0, 7); ctx.fill();
   const hull = () => {
     ctx.beginPath();
@@ -3863,6 +3891,11 @@ function closePanel() { sel = null; selCar = null; selTrain = null; panel.hidden
 function openCar(v) {
   sel = null; selCar = v.id; selTrain = null;
   const B = BUILD[v.type];
+  if (VEH[v.type].oar) {
+    panel.innerHTML = `<div class="ph"><span class="sw big" style="background:${B.c}">${B.ab}</span><div class="pt"><b>${B.n}</b><small>${B.d}</small></div><button class="x" data-act="close" title="Close">×</button></div><div id="pdyn"></div><div class="pbtns"><button data-act="cdrive">${S.pl.car === v.id ? 'Get off (F)' : 'Get aboard (F)'}</button><button data-act="ctake">Take all cargo</button><button data-act="cstore">Load raw materials</button><button class="danger" data-act="cpick">Pick up</button></div>`;
+    panel.hidden = false;
+    return renderPanelDyn();
+  }
   if (VEH[v.type].sea) {
     const marks = [...ents.values()].filter(e => e.type === 'dock' || e.type === 'buoy');
     const lab = e => e.type === 'buoy' ? 'pass' : e.mode === 'unload' ? 'unload' : 'load';
@@ -3876,10 +3909,10 @@ function openCar(v) {
 }
 function carDyn(v) {
   const V = VEH[v.type], used = carSlots(v);
-  let h = V.sea ? `<div class="status"><i style="background:${v.auto ? (/Heading|At /.test(v.st) ? '#7fe08a' : '#e0b84a') : '#9aa0a8'}"></i>${v.auto ? v.st || 'Starting' : S.pl.car === v.id ? 'Manual, you are at the helm' : 'Manual, drifting'} · ${(Math.abs(v.v) * 1.944).toFixed(1)} knots</div><div class="gauge"><span>Fouling</span>${bar(v.foul || 0, 1, (v.foul || 0) > 0.5 ? '#e0b84a' : '#6ab07a')}<b>${Math.round((v.foul || 0) * 40)}% slower</b></div><p class="dim">${v.af > 0 ? 'Antifouling active for ' + Math.ceil(v.af / 60) + ' more minutes.' : 'The antifouling has worn off. Weed and barnacles are growing on the hull.'} Repainting uses one tin of antifouling paint.</p>` : '';
+  let h = V.oar ? `<div class="status"><i style="background:${S.pl.car === v.id ? '#7fe08a' : '#9aa0a8'}"></i>${S.pl.car === v.id ? 'You are at the oars' : 'Drifting'} · ${(Math.abs(v.v) * 1.944).toFixed(1)} knots</div><p class="dim">Rowed by hand, so it needs no fuel and cannot run a schedule. Wood does not foul like a steel hull does.</p>` : V.sea ? `<div class="status"><i style="background:${v.auto ? (/Heading|At /.test(v.st) ? '#7fe08a' : '#e0b84a') : '#9aa0a8'}"></i>${v.auto ? v.st || 'Starting' : S.pl.car === v.id ? 'Manual, you are at the helm' : 'Manual, drifting'} · ${(Math.abs(v.v) * 1.944).toFixed(1)} knots</div><div class="gauge"><span>Fouling</span>${bar(v.foul || 0, 1, (v.foul || 0) > 0.5 ? '#e0b84a' : '#6ab07a')}<b>${Math.round((v.foul || 0) * 40)}% slower</b></div><p class="dim">${v.af > 0 ? 'Antifouling active for ' + Math.ceil(v.af / 60) + ' more minutes.' : 'The antifouling has worn off. Weed and barnacles are growing on the hull.'} Repainting uses one tin of antifouling paint.</p>` : '';
   h += `<div class="gauge"><span>Body</span>${bar(v.hp, V.hp, v.hp / V.hp > 0.5 ? '#7fe08a' : '#e0b84a')}<b>${Math.round(v.hp)} / ${V.hp}</b></div>`;
-  h += `<div class="gauge"><span>Tank</span>${bar(v.e || 0, CAN_MJ, '#d8b848')}<b>${Math.round(v.e || 0)} MJ</b></div>`;
-  h += `<div class="sec">Fuel slot</div><div class="cgrid"><button class="cslot" data-act="cfuel" title="Add jerrycans from your pack">${ico('jerrycan')}<span class="cnt">${v.fc || 0}/${FUEL_CAP}</span></button></div><p class="dim">${Math.round(Math.abs(v.v) * 3.6)} km/h. A jerrycan lasts about ${Math.round(CAN_MJ / V.burn / 60)} minutes at full throttle; spare cans in your pack are poured in when the tank runs dry.</p>`;
+  if (!V.oar) h += `<div class="gauge"><span>Tank</span>${bar(v.e || 0, CAN_MJ, '#d8b848')}<b>${Math.round(v.e || 0)} MJ</b></div>`;
+  if (!V.oar) h += `<div class="sec">Fuel slot</div><div class="cgrid"><button class="cslot" data-act="cfuel" title="Add jerrycans from your pack">${ico('jerrycan')}<span class="cnt">${v.fc || 0}/${FUEL_CAP}</span></button></div><p class="dim">${Math.round(Math.abs(v.v) * 3.6)} km/h. A jerrycan lasts about ${Math.round(CAN_MJ / V.burn / 60)} minutes at full throttle; spare cans in your pack are poured in when the tank runs dry.</p>`;
   h += `<div class="sec">Cargo · ${used} / ${V.slots} slots</div><div class="cgrid">`;
   const ks = Object.keys(v.tr).sort();
   h += ks.length ? ks.map(k => `<button class="cslot" data-act="ctk" data-k="${k}" title="Take ${nm(k)}">${ico(k)}<span class="cnt">${fmt(v.tr[k])}</span></button>`).join('') : '<span class="dim">Empty. Click items below to load them.</span>';
@@ -4237,7 +4270,7 @@ const TER_LEG = [0, 6, 5, 2, 3, 7, 4, 1];
 function legendHtml() { return '<div class="wleg">' + TER_LEG.map(t => `<span><i style="background:${t === 1 ? '#20507b' : PAL[t][0]}"></i>${TER_N[t]}</span>`).join('') + '</div>'; }
 function worldHtml() {
   if (!wcfg) wcfg = { seed: String(Math.floor(Math.random() * 1e9)), size: 256, water: 1, ore: 1, hives: 2, inf: 0 };
-  return `<div class="wgen"><div class="wopts"><p class="dim">Every world is generated from its seed. The same seed and settings always give the same map: continents, rivers, mountain ranges, and ore fields that follow the geology. Hot dry south, cold north.</p>
+  return `<div class="wgen"><div class="wopts"><p class="dim">Every world is generated from its seed. The same seed and settings always give the same map: continents, rivers, mountain ranges, and ore fields that follow the geology. Hot dry south, cold north. Endless worlds are continents and islands with open sea between them, so you will need boats.</p>
 <label>Seed <span class="row"><input id="wseed" value="${wcfg.seed}" spellcheck="false"><button data-world="dice">Random</button></span></label>
 <label>Size ${sel3('wsize', wcfg.size, [[160, 'Small · 160×160'], [256, 'Normal · 256×256'], [384, 'Large · 384×384'], [512, 'Huge · 512×512'], [2048, 'Endless · land is made as you explore']])}</label>
 <label>Water ${sel3('wwater', wcfg.water, [[0, 'Dry · few lakes and rivers'], [1, 'Normal'], [2, 'Wet · big lakes, many rivers']])}</label>
@@ -4849,7 +4882,7 @@ cv.addEventListener('mousedown', ev => {
   closePanel();
   if (S.pl.car) return toast('Get out of the vehicle to mine (F).', true);
   const i = mouse.ty * W + mouse.tx;
-  if (mouse.tx >= 0 && mouse.ty >= 0 && mouse.tx < W && mouse.ty < H && solid(i)) {
+  if (mouse.tx >= 0 && mouse.ty >= 0 && mouse.tx < W && mouse.ty < H && (solid(i) || choppable(i))) {
     if (inReach(mouse.tx + 0.5, mouse.ty + 0.5, MINE_REACH)) mining = { x: mouse.tx, y: mouse.ty, p: 0 };
     else toast('Too far to mine by hand. Walk up to the ore.', true);
   }
