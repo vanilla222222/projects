@@ -1,6 +1,6 @@
 'use strict';
 (() => {
-const DT = 1 / 30, TP = 8;
+const DT = 1 / 30, TP = 16;
 let W = 160, H = 160, PW = 20;
 const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
 const KEY = 'chemfactory-save-v1';
@@ -8,7 +8,7 @@ const GAP = 0.25, BELT_V = 2 * DT, MINER_T = 2, PUMP_RATE = 60 * DT;
 const PARTS = ['casting', 'plate', 'wire', 'motor', 'brick', 'lead_sheet', 'brass', 'cartridge', 'cylinder', 'wheel', 'chassis', 'diesel_engine', 'gearbox', 'windscreen', 'rail_bar', 'sleeper', 'traction_motor', 'bogie', 'hull_section', 'propeller', 'zinc_anode'];
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 let tctx = null;
-const CK = 32, RG = 128, tch = new Map(), ovc = document.createElement('canvas'), ovx = ovc.getContext('2d');
+const CK = 16, RG = 128, tch = new Map(), ovc = document.createElement('canvas'), ovx = ovc.getContext('2d');
 let rgd = null;
 const pcv = document.createElement('canvas');
 const pctx = pcv.getContext('2d');
@@ -410,7 +410,7 @@ function growNear(x, y, rad, max) {
 function ovCol(i) {
   const t = terrain[i];
   if (oreType[i] && ORGB) return ORGB[oreType[i]][0];
-  if (t === 1 && elev) { const f = Math.max(0, Math.min(1, (0.36 - elev[i]) * 9)); return [42 + (18 - 42) * f, 100 + (52 - 100) * f, 145 + (87 - 145) * f]; }
+  if (t === 1) return wcol(elev ? seaLv() - elev[i] : 0.05);
   return PRGB[t][0];
 }
 function paintOv(x0, y0, w, h) {
@@ -446,6 +446,16 @@ function chunkCv(cx, cy, make) {
   if (tch.size > 360) tch.delete(tch.keys().next().value);
   return c;
 }
+function chunkMip(c, n) {
+  const k = 'm' + n;
+  if (c[k]) return c[k];
+  const m = document.createElement('canvas');
+  m.width = m.height = n;
+  const x = m.getContext('2d');
+  x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'medium';
+  x.drawImage(n === 64 ? chunkMip(c, 128) : c, 0, 0, n, n);
+  return c[k] = m;
+}
 function mapWin() {
   if (!rgd) return { x0: 0, y0: 0, sz: W };
   const sz = 512, c = v => Math.max(0, Math.min(W - sz, Math.round(v - sz / 2)));
@@ -458,47 +468,146 @@ const SAND = [184, 166, 112], FOAM = [190, 222, 236];
 let tpx = null, ORGB = null;
 function hexRgb(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
 function tcornAt(x, y) { return vnoise(x / 5, y / 5, 401) * 0.6 + vnoise(x / 1.7, y / 1.7, 402) * 0.4; }
+const WRAMP = [[0, [74, 148, 162]], [0.02, [46, 110, 148]], [0.07, [29, 80, 124]], [0.16, [18, 52, 90]], [0.3, [10, 29, 58]]];
+function wcol(d) {
+  if (d <= 0) return WRAMP[0][1];
+  for (let k = 1; k < WRAMP.length; k++) if (d < WRAMP[k][0]) { const [d0, c0] = WRAMP[k - 1], [d1, c1] = WRAMP[k], t = (d - d0) / (d1 - d0); return [c0[0] + (c1[0] - c0[0]) * t, c0[1] + (c1[1] - c0[1]) * t, c0[2] + (c1[2] - c0[2]) * t]; }
+  return WRAMP[WRAMP.length - 1][1];
+}
+const seaLv = () => 0.36 + 0.05 * (((S.gen && S.gen.water) ?? 1) - 1);
+function wdep(x, y, sl) {
+  if (x < 0 || y < 0 || x >= W || y >= H) return 0.02;
+  const i = y * W + x;
+  return terrain[i] === 1 ? (elev ? sl - elev[i] : 0.05) : -0.015;
+}
+const cdep = (x, y, sl) => (wdep(x - 1, y - 1, sl) + wdep(x, y - 1, sl) + wdep(x - 1, y, sl) + wdep(x, y, sl)) / 4;
+let CE_D = 0, CE_ID = 0, TR = 0, TG = 0, TB = 0;
+function cellE(gx, gy, sz, s) {
+  const cx = Math.floor(gx / sz), cy = Math.floor(gy / sz);
+  let d1 = 1e9, d2 = 1e9;
+  for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) {
+    const X = cx + i, Y = cy + j, px = (X + 0.15 + hash(X, Y, s) * 0.7) * sz, py = (Y + 0.15 + hash(X, Y, s + 1) * 0.7) * sz, d = (gx + 0.5 - px) ** 2 + (gy + 0.5 - py) ** 2;
+    if (d < d1) { d2 = d1; d1 = d; CE_ID = hash(X, Y, s + 2); } else if (d < d2) d2 = d;
+  }
+  CE_D = Math.sqrt(d2) - Math.sqrt(d1);
+}
+function bioCol(t, gx, gy) {
+  const c = PRGB[t][0], h = hash(gx, gy, 5);
+  let f = 1, r = c[0], g = c[1], b = c[2];
+  if (t === 0) {
+    f += (hash(gx, gy >> 1, 6) - 0.5) * 0.16 + (vnoise(gx / 5, gy / 5, 7) - 0.5) * 0.14;
+    const y = vnoise(gx / 48, gy / 48, 8) - 0.5; r += y * 26; g += y * 8;
+  } else if (t === 2) {
+    cellE(gx, gy, 7, 11); f += (CE_ID - 0.5) * 0.1 + (h - 0.5) * 0.08; if (CE_D < 0.8) f *= 0.8;
+    if (hash(gx >> 1, gy >> 1, 12) < 0.035) { r = 100; g = 96; b = 62; }
+  } else if (t === 3) {
+    f += Math.sin(gx * 0.42 + gy * 0.16 + vnoise(gx / 14, gy / 14, 13) * 8) * 0.045 + (h - 0.5) * 0.08;
+  } else if (t === 4) {
+    cellE(gx, gy, 8, 15); f += (CE_ID - 0.5) * 0.16 + (h - 0.5) * 0.06; if (CE_D < 1) f *= 0.7; else if (CE_D < 2) f *= 1.06;
+  } else if (t === 5) {
+    const p = vnoise(gx / 7, gy / 7, 17);
+    if (p > 0.68) { const k = Math.min(1, (p - 0.68) * 10); r += (40 - r) * k; g += (66 - g) * k; b += (70 - b) * k; f += (h - 0.5) * 0.04; }
+    else f += (hash(gx, gy >> 1, 18) - 0.5) * 0.18;
+  } else if (t === 6) {
+    f += (vnoise(gx / 4, gy / 4, 19) - 0.5) * 0.24 + (h - 0.5) * 0.1;
+    if (h < 0.05) { r = 72; g = 60; b = 36; }
+  } else if (t === 7) {
+    const s = vnoise(gx / 11, gy / 11, 21); r -= s * 22; g -= s * 13; b -= s * 3; f += (h - 0.5) * 0.04;
+    if (h > 0.993) { r = g = b = 252; f = 1; }
+  }
+  TR = r * f; TG = g * f; TB = b * f;
+}
+const DIAG = [[1, -1, 1, 0], [1, 1, 1, 1], [-1, 1, 0, 1], [-1, -1, 0, 0]];
 function tileBase(x, y, D, stride, bx, by) {
-  const i = y * W + x, b = terrain[i];
-  let base = PRGB[b][0];
-  if (b === 1 && elev) { const dp = Math.max(0, Math.min(1, (0.36 - elev[i]) * 9)); base = [42 + (18 - 42) * dp, 100 + (52 - 100) * dp, 145 + (87 - 145) * dp]; }
+  const i = y * W + x, b = terrain[i], ot = oreType[i], sl = seaLv();
   const n00 = tcornAt(x, y), n10 = tcornAt(x + 1, y), n01 = tcornAt(x, y + 1), n11 = tcornAt(x + 1, y + 1);
-  const ot = oreType[i], onb = ot ? [0, 1, 2, 3].map(d => { const X = x + DX[d], Y = y + DY[d]; return X >= 0 && Y >= 0 && X < W && Y < H && oreType[Y * W + X] === ot; }) : null;
-  const nb = [0, 1, 2, 3].map(d => { const X = x + DX[d], Y = y + DY[d]; return X < 0 || Y < 0 || X >= W || Y >= H ? b : terrain[Y * W + X]; });
+  const T = (X, Y) => X < 0 || Y < 0 || X >= W || Y >= H ? b : terrain[Y * W + X];
+  const nb = [0, 1, 2, 3].map(d => T(x + DX[d], y + DY[d]));
+  const isW = b === 1, dg = DIAG.filter(([dx, dy]) => (T(x + dx, y + dy) === 1) !== isW && (T(x + dx, y) === 1) === isW && (T(x, y + dy) === 1) === isW);
+  let d00 = 0, d10 = 0, d01 = 0, d11 = 0;
+  if (isW) { d00 = cdep(x, y, sl); d10 = cdep(x + 1, y, sl); d01 = cdep(x, y + 1, sl); d11 = cdep(x + 1, y + 1, sl); }
+  const rich = ot ? (oreAmt[i] < 150 ? 0.4 : 0.82) : 0, oc0 = ot && ORGB[ot];
   for (let py = 0; py < TP; py++) for (let px = 0; px < TP; px++) {
-    const u = (px + 0.5) / TP, v = (py + 0.5) / TP;
-    let f = (n00 * (1 - u) + n10 * u) * (1 - v) + (n01 * (1 - u) + n11 * u) * v;
-    const hh = hash(x * TP + px, y * TP + py, 5);
-    f = 0.86 + f * 0.26 + (hh - 0.5) * 0.07;
-    let c = base, m = 0, mc = null;
+    const u = (px + 0.5) / TP, v = (py + 0.5) / TP, gx = x * TP + px, gy = y * TP + py;
+    const f = 0.9 + ((n00 * (1 - u) + n10 * u) * (1 - v) + (n01 * (1 - u) + n11 * u) * v) * 0.2;
+    let edge = 99;
     for (let d = 0; d < 4; d++) {
-      const o = nb[d];
-      if (o === b) continue;
+      if ((nb[d] === 1) === isW) continue;
       const dist = d === 0 ? py : d === 1 ? TP - 1 - px : d === 2 ? TP - 1 - py : px;
-      if (b === 1) { if (dist < 2) { const k = dist ? 0.25 : 0.5; if (k > m) { m = k; mc = FOAM; } } continue; }
-      if (o === 1) { if (dist < 3) { const k = [0.75, 0.5, 0.22][dist]; if (k > m) { m = k; mc = dist ? SAND : [120, 108, 74]; } } continue; }
-      if (dist < 3 && hash(x * TP + px, y * TP + py, 9 + d) < 0.5 * (1 - dist / 3.2)) { c = PRGB[o][0]; }
+      if (dist < edge) edge = dist;
     }
-    let r = c[0] * f, g = c[1] * f, bl = c[2] * f;
+    for (const q of dg) { const dd = Math.hypot(px + 0.5 - q[2] * TP, py + 0.5 - q[3] * TP) - 0.5; if (dd < edge) edge = dd; }
+    let r, g, bl;
+    if (isW) {
+      const c = wcol((d00 * (1 - u) + d10 * u) * (1 - v) + (d01 * (1 - u) + d11 * u) * v);
+      const k = f + Math.sin(gx * 0.55 + gy * 0.22 + vnoise(gx / 10, gy / 10, 25) * 9) * 0.03;
+      r = c[0] * k; g = c[1] * k; bl = c[2] * k;
+      if (edge < 3.5) { const m = Math.max(0, (1 - edge / 3.5) * (0.35 + 0.65 * vnoise(gx / 3, gy / 3, 26))) * 0.75; r += (FOAM[0] - r) * m; g += (FOAM[1] - g) * m; bl += (FOAM[2] - bl) * m; }
+    } else {
+      let t = b;
+      for (let d = 0; d < 4; d++) {
+        const o = nb[d];
+        if (o === b || o === 1) continue;
+        const dist = d === 0 ? py : d === 1 ? TP - 1 - px : d === 2 ? TP - 1 - py : px;
+        if (dist < 6 && vnoise(gx / 3.2, gy / 3.2, 30 + o) < (1 - dist / 6) * 0.5) t = o;
+      }
+      bioCol(t, gx, gy);
+      r = TR * f; g = TG * f; bl = TB * f;
+      if (edge < 7 && b !== 4) {
+        const bw = 2.5 + vnoise(gx / 4, gy / 4, 27) * 3.5;
+        if (edge < bw) { const s = edge < 1 ? [112, 100, 70] : edge < 2.2 ? [148, 132, 90] : SAND, k = 0.95 + hash(gx, gy, 28) * 0.1; r = s[0] * k; g = s[1] * k; bl = s[2] * k; }
+        else if (edge < bw + 1.2) { r = (r + SAND[0]) / 2; g = (g + SAND[1]) / 2; bl = (bl + SAND[2]) / 2; }
+      } else if (edge < 2 && b === 4) { r *= 0.72; g *= 0.72; bl *= 0.74; }
+    }
     if (ot) {
-      let dn = oreAmt[i] < 150 ? 0.4 : 0.9;
-      for (let d = 0; d < 4; d++) if (!onb[d]) { const dist = d === 0 ? py : d === 1 ? TP - 1 - px : d === 2 ? TP - 1 - py : px; if (dist < 2) dn -= 0.3 / (dist + 1); }
-      const h2 = hash(x * TP + px, y * TP + py, 13);
-      if (h2 < dn) { const oc = hash(x * TP + px, y * TP + py, 17) < 0.16 ? ORGB[ot][1] : ORGB[ot][0], k = 0.82 + h2 * 0.3; r = oc[0] * k; g = oc[1] * k; bl = oc[2] * k; }
+      r *= 0.9; g *= 0.9; bl *= 0.9;
+      const cx = gx >> 2, cy = gy >> 2;
+      let hit = 0;
+      for (let j = -1; j <= 1 && hit < 2; j++) for (let ii = -1; ii <= 1; ii++) {
+        const X = cx + ii, Y = cy + j;
+        if ((X >> 2) !== x || (Y >> 2) !== y || hash(X, Y, ot * 7 + 3) > rich) continue;
+        const sx = X * 4 + 1.4 + hash(X, Y, 91) * 1.2, sy = Y * 4 + 1.4 + hash(X, Y, 92) * 1.2, rr = 1.25 + hash(X, Y, 93) * 0.65;
+        const dx = gx + 0.5 - sx, dy = gy + 0.5 - sy, q = (dx * dx + dy * dy) / (rr * rr);
+        if (q < 1) {
+          const oc = hash(X, Y, 95) < 0.2 ? oc0[1] : oc0[0], sh = Math.max(0.7, Math.min(1.25, 1.05 - 0.3 * (dx + dy) / rr)) * (q > 0.72 ? 0.8 : 1);
+          r = oc[0] * sh; g = oc[1] * sh; bl = oc[2] * sh; hit = 2; break;
+        }
+        if (!hit && (dx - 0.9) ** 2 + (dy - 0.9) ** 2 < rr * rr) hit = 1;
+      }
+      if (hit === 1) { r *= 0.7; g *= 0.7; bl *= 0.7; }
     }
-    if (mc) { r += (mc[0] - r) * m; g += (mc[1] - g) * m; bl += (mc[2] - bl) * m; }
     const o4 = ((by + py) * stride + bx + px) * 4;
     D[o4] = r; D[o4 + 1] = g; D[o4 + 2] = bl; D[o4 + 3] = 255;
   }
 }
+const FLOW = ['#e8d84a', '#eceaf4', '#c86ad8', '#e07a5a', '#7ab0e8'];
 function tileDeco(x, y) {
-  const i = y * W + x, h = hash(x, y, 7);
-  const b = terrain[i];
-  if (b === 4) { tctx.fillStyle = '#46433e'; for (let k = 0; k < 3; k++) tctx.fillRect(x * TP + Math.floor(hash(x, y, k + 31) * 6), y * TP + Math.floor(hash(x, y, k + 41) * 6), 3, 2); tctx.fillStyle = '#7a766e'; tctx.fillRect(x * TP + Math.floor(h * 6), y * TP + 1, 2, 1); }
-  else if (b === 6) { for (let k = 0; k < 2; k++) { const px = x * TP + 1 + Math.floor(hash(x, y, k + 51) * 5), py = y * TP + 1 + Math.floor(hash(x, y, k + 61) * 5); tctx.fillStyle = '#1c3518'; tctx.fillRect(px, py, 3, 3); tctx.fillStyle = '#3d6332'; tctx.fillRect(px, py, 2, 1); } }
-  else if (b === 5) { tctx.fillStyle = '#4a6a6a'; if (h < 0.5) tctx.fillRect(x * TP + Math.floor(h * 10), y * TP + 3, 3, 1); tctx.fillStyle = '#5a6b3a'; tctx.fillRect(x * TP + Math.floor(hash(x, y, 71) * 7), y * TP + Math.floor(hash(x, y, 72) * 5), 1, 3); }
-  else if (b === 3 && h > 0.6) { tctx.fillStyle = '#c8b57c'; tctx.fillRect(x * TP + Math.floor(hash(x, y, 81) * 6), y * TP + Math.floor(hash(x, y, 82) * 7), 2, 1); }
-  else if (b === 7 && h > 0.7) { tctx.fillStyle = '#e8eef0'; tctx.fillRect(x * TP + Math.floor(hash(x, y, 91) * 6), y * TP + Math.floor(hash(x, y, 92) * 7), 2, 1); }
+  const i = y * W + x, h = hash(x, y, 7), b = terrain[i], X = x * TP, Y = y * TP, c = tctx;
+  if (oreType[i]) return;
+  const rx = k => X + 2 + Math.floor(hash(x, y, k) * (TP - 5)), ry = k => Y + 2 + Math.floor(hash(x, y, k + 1) * (TP - 5));
+  if (b === 4) {
+    if (h > 0.42) return;
+    for (let k = 0; k < (h < 0.12 ? 2 : 1); k++) {
+      const px = rx(31 + k * 2) + 1, py = ry(31 + k * 2) + 1, s = 1.5 + hash(x, y, 40 + k) * 2.2, e = 0.6 + hash(x, y, 42 + k) * 0.3;
+      c.fillStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.ellipse(px + 0.8, py + 1, s, s * e, 0, 0, 7); c.fill();
+      c.fillStyle = '#76716a'; c.beginPath(); c.ellipse(px, py, s, s * e, 0, 0, 7); c.fill();
+      c.fillStyle = 'rgba(255,255,255,0.18)'; c.beginPath(); c.ellipse(px - s * 0.3, py - s * e * 0.35, s * 0.5, s * e * 0.4, 0, 0, 7); c.fill();
+    }
+  } else if (b === 0 && h < 0.16) {
+    for (let k = 0; k < 3; k++) { c.fillStyle = FLOW[Math.floor(hash(x, y, 50) * FLOW.length)]; c.fillRect(rx(51 + k * 2), ry(51 + k * 2), 1, 1); }
+  } else if (b === 0 && h > 0.8) {
+    c.fillStyle = '#4e7a3a'; const px = rx(57), py = ry(57); c.fillRect(px, py, 1, 3); c.fillRect(px + 2, py + 1, 1, 2); c.fillRect(px - 1, py + 1, 1, 2);
+  } else if (b === 5 && h < 0.55) {
+    for (let k = 0; k < 4; k++) { const px = rx(61 + k * 2), py = ry(61 + k * 2); c.fillStyle = '#5e7034'; c.fillRect(px, py, 1, 5); c.fillStyle = '#7a5a30'; c.fillRect(px, py, 1, 2); }
+  } else if (b === 3 && h > 0.72) {
+    c.fillStyle = h > 0.9 ? '#e8dcc0' : '#8a7a58'; c.fillRect(rx(71), ry(71), 2, 1);
+  } else if (b === 7 && h > 0.86) {
+    const px = rx(81), py = ry(81); c.fillStyle = '#6e7478'; c.fillRect(px, py, 3, 2); c.fillStyle = '#f4f8fa'; c.fillRect(px, py, 3, 1);
+  } else if (b === 2 && h < 0.3) {
+    const px = rx(91), py = ry(91); c.fillStyle = '#4a4a28'; c.fillRect(px, py + 1, 4, 2); c.fillStyle = '#6e6a38'; c.fillRect(px + 1, py, 2, 2); c.fillRect(px, py + 1, 1, 1);
+  } else if (b === 6 && h < 0.25) {
+    const px = rx(95), py = ry(95); c.fillStyle = '#5a4428'; c.fillRect(px, py, 4, 1);
+  }
 }
 function prepCorners() {
   if (!ORGB) ORGB = ORES.map(O => O && O.c ? [hexRgb(O.c), hexRgb(O.s || O.c)] : null);
@@ -522,7 +631,10 @@ function drawTerrain() {
   tch.clear();
   if (rgd) return;
   paintOv(0, 0, W, H);
-  for (let cy = 0; cy < H / CK; cy++) for (let cx = 0; cx < W / CK; cx++) chunkCv(cx, cy, true);
+  const px = S.pl ? S.pl.x / CK : W / CK / 2, py = S.pl ? S.pl.y / CK : H / CK / 2, L = [];
+  for (let cy = 0; cy < H / CK; cy++) for (let cx = 0; cx < W / CK; cx++) L.push([Math.hypot(cx + 0.5 - px, cy + 0.5 - py), cx, cy]);
+  L.sort((a, b) => a[0] - b[0]);
+  for (const [, cx, cy] of L.slice(0, 300).reverse()) chunkCv(cx, cy, true);
 }
 
 function at(x, y) {
@@ -2539,7 +2651,11 @@ function drawNature(ox, oy, z, x0, y0, x1, y1) {
     const n = b === 6 && hh < 0.45 ? 2 : 1;
     for (let k = 0; k < n; k++) {
       const cx = ox + (x + 0.22 + hash(x, y, 30 + k) * 0.56) * z, cy = oy + (y + 0.22 + hash(x, y, 40 + k) * 0.56) * z, r = (0.24 + hash(x, y, 50 + k) * 0.16) * z;
-      sh.push(cx + r * 0.45, cy + r * 0.55, r); cn.push(cx, cy, r, tc); hl.push(cx - r * 0.28, cy - r * 0.3, r * 0.5, tc);
+      sh.push(cx + r * 0.45, cy + r * 0.55, r * 1.1);
+      if (z < 12) { cn.push(cx, cy, r, tc); hl.push(cx - r * 0.3, cy - r * 0.32, r * 0.48, tc); continue; }
+      const la = hash(x, y, 60 + k) * 6.28;
+      cn.push(cx, cy, r, tc, cx + Math.cos(la) * r * 0.55, cy + Math.sin(la) * r * 0.55, r * 0.7, tc, cx + Math.cos(la + 2.4) * r * 0.5, cy + Math.sin(la + 2.4) * r * 0.5, r * 0.62, tc);
+      hl.push(cx - r * 0.3, cy - r * 0.32, r * 0.48, tc, cx + Math.cos(la) * r * 0.45 - r * 0.15, cy + Math.sin(la) * r * 0.45 - r * 0.18, r * 0.3, tc);
     }
   }
   ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath();
@@ -2589,9 +2705,9 @@ function render() {
   for (let cy = Math.floor(y0 / CK); cy <= Math.floor((y1 - 1) / CK); cy++) for (let cx = Math.floor(x0 / CK); cx <= Math.floor((x1 - 1) / CK); cx++) {
     if (!rgDone(cx * CK, cy * CK)) { if (!grew) { grew = 1; growRegion(Math.floor(cx * CK / RG), Math.floor(cy * CK / RG), true); } continue; }
     const c = chunkCv(cx, cy, performance.now() - t0 < 14);
-    if (!c) continue;
-    const dx = Math.floor(ox + cx * CK * z), dy = Math.floor(oy + cy * CK * z);
-    ctx.drawImage(c, dx, dy, Math.floor(ox + (cx + 1) * CK * z) - dx, Math.floor(oy + (cy + 1) * CK * z) - dy);
+    const dx = Math.floor(ox + cx * CK * z), dy = Math.floor(oy + cy * CK * z), dw = Math.floor(ox + (cx + 1) * CK * z) - dx, dh = Math.floor(oy + (cy + 1) * CK * z) - dy;
+    if (c) ctx.drawImage(z < 12 ? chunkMip(c, z < 7 ? 64 : 128) : c, dx, dy, dw, dh);
+    else ctx.drawImage(ovc, cx * CK, cy * CK, Math.min(CK, W - cx * CK), Math.min(CK, H - cy * CK), dx, dy, dw, dh);
   }
   if (z >= 20) {
     ctx.strokeStyle = 'rgba(0,0,0,0.07)';
