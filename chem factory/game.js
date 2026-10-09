@@ -30,7 +30,7 @@ const sum = o => { let s = 0; for (const k in o) s += o[k]; return s; };
 const isGas = f => FLUIDS[f] && FLUIDS[f].gas && f !== 'steam';
 const spills = (r, f) => isGas(f) || !!(r.bleed && r.bleed.includes(f));
 const PC = 8, RAIN = 30;
-const POL_W = { biogas: 0.8, methane: 1, ni_leach: 0.6, niso4: 0.8, acn: 1.2, acrylamide: 1.0, mma: 0.4, fatty_alc: 0.2, oxylene: 0.5, two_eh: 0.4, nitrobenzene: 1.2, aniline: 1.2, mcaa: 1.0, turpentine: 0.6, linalool: 0.3, ethyl_acetate: 0.6, veg_oil: 0.3, glycerol: 0.1, sicl4: 0.8, ibb: 0.3, ethanol: 0.1, recl3: 0.3, ndcl3: 0.3, fecl3: 0.4, etch: 0.6, uo2so4: 0.5, f2: 3, uf6: 3, leu: 3, xylene: 0.5, eo: 1.5, meg: 0.2, chcl3: 0.6, r22: 0.8, tfe: 0.4, so2: 1, cl2: 3, co2: 0.02, h2: 0, steam: 0, water: 0, acid: 0.5, naoh: 0.3, liquor: 0.3, ticl4: 1, brine: 0.05, nh3: 0.5, hno3: 0.8, tar: 0.4, coalgas: 0.3, toluene: 0.3, nh4cl: 0.1, co: 0.1, phosgene: 1, sif4: 2, h2sif6: 0.5, hf: 1, h2s: 2, diesel: 0.3, bfw: 0, o2: 0, n2: 0, sihcl3: 1, vam: 0.4, dmc: 0.2, dpc: 0.4, ech: 1, propylene: 0.2, cumene: 0.4, phenol: 1, acetone: 0.3, acetic: 0.4, ac2o: 0.6, cyclohexane: 0.3, ka_oil: 0.3, n2o: 4, hmda: 0.5, olefins: 0.2, lab: 0.3, las: 0.8, methanol: 0.3, hcho: 1, ch3cl: 0.5, dmdcs: 1, bittern: 0.05, br2: 2, butadiene: 0.3, benzene: 0.5, styrene: 0.3 };
+const POL_W = { na2wo4: 0.3, biogas: 0.8, methane: 1, ni_leach: 0.6, niso4: 0.8, acn: 1.2, acrylamide: 1.0, mma: 0.4, fatty_alc: 0.2, oxylene: 0.5, two_eh: 0.4, nitrobenzene: 1.2, aniline: 1.2, mcaa: 1.0, turpentine: 0.6, linalool: 0.3, ethyl_acetate: 0.6, veg_oil: 0.3, glycerol: 0.1, sicl4: 0.8, ibb: 0.3, ethanol: 0.1, recl3: 0.3, ndcl3: 0.3, fecl3: 0.4, etch: 0.6, uo2so4: 0.5, f2: 3, uf6: 3, leu: 3, xylene: 0.5, eo: 1.5, meg: 0.2, chcl3: 0.6, r22: 0.8, tfe: 0.4, so2: 1, cl2: 3, co2: 0.02, h2: 0, steam: 0, water: 0, acid: 0.5, naoh: 0.3, liquor: 0.3, ticl4: 1, brine: 0.05, nh3: 0.5, hno3: 0.8, tar: 0.4, coalgas: 0.3, toluene: 0.3, nh4cl: 0.1, co: 0.1, phosgene: 1, sif4: 2, h2sif6: 0.5, hf: 1, h2s: 2, diesel: 0.3, bfw: 0, o2: 0, n2: 0, sihcl3: 1, vam: 0.4, dmc: 0.2, dpc: 0.4, ech: 1, propylene: 0.2, cumene: 0.4, phenol: 1, acetone: 0.3, acetic: 0.4, ac2o: 0.6, cyclohexane: 0.3, ka_oil: 0.3, n2o: 4, hmda: 0.5, olefins: 0.2, lab: 0.3, las: 0.8, methanol: 0.3, hcho: 1, ch3cl: 0.5, dmdcs: 1, bittern: 0.05, br2: 2, butadiene: 0.3, benzene: 0.5, styrene: 0.3 };
 const polAt = (x, y) => S.pol[Math.floor(y / PC) * PW + Math.floor(x / PC)] || 0;
 
 function mulberry32(a) {
@@ -111,7 +111,7 @@ function genLegacy(seed) {
 const GEN_DEF = { size: 256, water: 1, ore: 1, hives: 2 };
 const TER_N = ['Grassland', 'Water', 'Dry scrub', 'Desert sand', 'Bare rock', 'Marsh', 'Forest', 'Tundra'];
 const sstep = (a, b, v) => { const t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
-const ORE_BASE = [0, 11, 10, 7, 9, 6, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3];
+const ORE_BASE = [0, 11, 10, 7, 9, 6, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3];
 function oreSuit(t, i, temp, moist) {
   const b = terrain[i], m = elev[i], tp = temp[i], ms = moist[i];
   if (b === 1 || b === 4) return 0;
@@ -136,6 +136,7 @@ function oreSuit(t, i, temp, moist) {
     case 18: return b === 5 ? 3 : b === 0 && ms > 0.55 ? 2 : b === 6 ? 0.8 : 0.2;
     case 19: return b === 2 && m < 0.5 ? 3 : b === 3 ? 1.2 : 0.05;
     case 20: return (b === 0 || b === 6) && m > 0.45 && ms > 0.45 ? 3 : b === 0 ? 1 : 0.2;
+    case 21: return m > 0.6 ? 3 : b === 7 ? 1 : b === 2 ? 0.6 : 0.1;
   }
   return 1;
 }
@@ -2717,6 +2718,7 @@ const CHAINS = [
   { n: 'Coffee', l: [['coffee_beans', 'Supercritical CO₂ extractor + co2 + water', 'decaf_beans', '+', 'caffeine'], ['coffee_beans', 'Drum roaster + fuel_gas', 'roast_coffee'], ['decaf_beans', 'Drum roaster + fuel_gas', 'roast_coffee'], ['roast_coffee', 'Spray tower + water', 'instant_coffee']], d: 'Farms grow green coffee. Supercritical carbon dioxide pulls the caffeine out without a solvent, and the caffeine sells on its own. Roast either kind of bean in a gas-fired drum, then brew and spray-dry it into instant coffee.' },
   { n: 'Cream, butter and ice cream', l: [['milk', 'Cream separator', 'cream', '+', 'skim_milk'], ['cream', 'Butter churn', 'butter', '+', 'skim_milk'], ['cream', 'Ice cream freezer + skim_milk + sugar + flavouring', 'ice_cream'], ['skim_milk', 'Spray tower', 'milk_powder']], d: 'A centrifuge splits milk into cream and skimmed milk. Churn cream into butter, or freeze cream, skimmed milk, sugar and vanilla flavouring into ice cream. Spare skimmed milk dries into powder.' },
   { n: 'Chocolate', l: [['cocoa_beans', 'Drum roaster + fuel_gas', 'cocoa_nibs'], ['cocoa_nibs', 'Cocoa press', 'cocoa_butter', '+', 'cocoa_powder'], ['cocoa_nibs', 'Conche + cocoa_butter + sugar + milk_powder', 'chocolate']], d: 'Roast fermented cocoa beans and crack them into nibs. Pressing splits nibs into cocoa butter and cocoa powder. Knead nibs with extra cocoa butter, sugar and milk powder in a conche for chocolate.' },
+  { n: 'Tungsten and hard metal', l: [['wolframite', 'Gravity spiral + water', 'w_conc', '+', 'sand'], ['w_conc', 'HPAL autoclave + naoh', 'na2wo4'], ['na2wo4', 'Solvent extraction + acid + nh3', 'apt'], ['apt', 'Lime kiln', 'wo3', '+', 'nh3'], ['wo3', 'Pusher furnace + h2', 'w_powder'], ['w_powder', 'Pusher furnace + Carbon Black + h2', 'wc'], ['coso4', 'Electrowinning + water', 'cobalt'], ['wc', 'Sinter-HIP furnace + Cobalt Powder', 'carbide_insert'], ['carbide_insert', 'Workshop + Steel Plate', 'drill_bit'], ['w_powder', 'Bar rolling mill', 'w_wire']], d: 'Wolframite from the hills is concentrated by density, digested in caustic and turned into ammonium paratungstate. Calcine it to yellow oxide, reduce it with hydrogen to metal powder and carburise that into tungsten carbide. Sintered with cobalt it becomes the hard metal of cutting tools and rock drills.' },
   { n: 'By-products', l: [['ground_copper', 'Flotation', 'copper_conc', '+', 'pyrite_conc'], ['pyrite_conc', 'Roaster', 'pyrite_cinder', 'Blast furnace', 'pig_iron'], ['anode_slime', 'Roaster', 'dore', 'Leach tank + acid', 'silver']], d: 'Nothing is waste. Pyrite gives SO₂ for acid and its cinder is iron ore. Anode slime from copper refining yields selenium, silver and gold.' },
 ];
 
@@ -2846,6 +2848,8 @@ const HELP = `<div class="help">
 <p>The <b>cream separator</b> spins milk into a little <b>cream</b> and a lot of <b>skimmed milk</b>. The <b>butter churn</b> turns cream into <b>butter</b> and gives back buttermilk as skimmed milk. The <b>ice cream freezer</b> takes cream, skimmed milk, sugar and vanilla <b>flavouring</b>. Skimmed milk left over can be spray-dried into milk powder.</p>
 <h3>Chocolate</h3>
 <p>Farms grow <b>cocoa beans</b>. The drum roaster turns them into <b>cocoa nibs</b>. The <b>cocoa press</b> squeezes nibs into <b>cocoa butter</b> and <b>cocoa powder</b>. The <b>conche</b> makes <b>milk chocolate</b> from nibs, cocoa butter, sugar and milk powder, or dark chocolate with more nibs and no milk.</p>
+<h3>Tungsten and hard metal</h3>
+<p><b>Wolframite</b> is found in hills and tundra, far from the start. Wash it on a <b>gravity spiral</b> into concentrate, then digest it with caustic soda in the <b>HPAL autoclave</b> to get <b>sodium tungstate liquor</b>. The solvent extraction plant with a little acid and ammonia crystallises <b>ammonium paratungstate</b>, which the lime kiln calcines to yellow <b>tungsten trioxide</b> and gives some ammonia back. The new <b>pusher furnace</b> reduces the oxide with hydrogen to <b>tungsten powder</b>, and carburises powder and carbon black into <b>tungsten carbide</b>. Electrowin <b>cobalt powder</b> from cobalt sulfate, and the <b>sinter-HIP furnace</b> bonds carbide and cobalt into <b>carbide inserts</b>. The workshop sets them into <b>rock drill bits</b>, and the bar rolling mill swages tungsten powder into <b>tungsten wire</b>.</p>
 <h3>Boiler water</h3>
 <p>Raw water is hard. Every boiler batch on it bakes a little chalk onto the tubes, steam output falls as the <b>scale</b> builds, and a fully choked boiler stops. Shut it down to <b>Descale</b> from its panel (a 20 second outage), or feed it <b>softened water</b>: run water through a leach tank with quicklime and the hardness settles out as crushed limestone you can send back to the kiln. Any machine that takes water also takes softened water.</p>
 <h3>Sulfur and diesel</h3>
