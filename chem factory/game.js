@@ -404,7 +404,7 @@ function outCap(r, k) { return Math.max(10, ((r.o && r.o[k]) || 1) * 2); }
 function fiCap(r, f) { return Math.max(r.fi[f] * 2, 40); }
 function foCap(r, f) { return Math.max(r.fo[f] * 2, 100); }
 
-const CAT_CAP = 4, SPENT = { v_cat: 'spent_v_cat', fuel_asm: 'spent_fuel' };
+const CAT_CAP = 4, SPENT = { v_cat: 'spent_v_cat', fuel_asm: 'spent_fuel', carbon: 'spent_carbon', ro_membrane: 'spent_membrane' };
 function catEff(e) { return Math.min(1, (e.ca || 0) * 3); }
 function catMul(e, r) { return r.cat && e.catK === r.cat && e.ca > 0 ? 1 + r.boost * catEff(e) : 1; }
 function catSwap(e, r) {
@@ -1192,7 +1192,7 @@ function tryStart(e, r) {
   if (BUILD[e.type].forest && !forestOf(e)) return 'forest';
   if (e.desc > 0) return 'clean';
   if (e.type === 'boiler' && e.scale >= 1) return 'scale';
-  if (r.catReq && !(e.catK === r.cat && e.ca > 0)) return 'fuel';
+  if (r.catReq && !(e.catK === r.cat && e.ca > 0)) return r.wear ? 'elem' : 'fuel';
   if (r.i) for (const k in r.i) if ((e.inv[k] || 0) < r.i[k]) return 'input';
   if (r.fi) for (const f in r.fi) if ((e.fi[f] || 0) < r.fi[f] - 1e-6) return 'input';
   if (r.o) for (const k in r.o) if ((e.out[k] || 0) + r.o[k] > outCap(r, k)) return 'output';
@@ -1455,8 +1455,8 @@ function shade(hex, f) {
   return `rgb(${r},${g},${b})`;
 }
 
-const ST_COL = { idle: '#8ac8e0', scale: '#e04a4a', clean: '#e0b84a', work: '#5fd06a', input: '#e0b84a', output: '#e07a3a', power: '#e04a4a', charge: '#8ad0a0', full: '#5fd06a', none: '#8a8f99', empty: '#8a8f99', forest: '#8a8f99', fuel: '#e0b84a' };
-const ST_TXT = { idle: 'Idle, no load', scale: 'Tubes choked with scale', clean: 'Descaling', work: 'Working', input: 'Waiting for inputs', output: 'Output full', power: 'No power', charge: 'Charging', full: 'Fully charged', none: 'No recipe set', empty: 'Depleted', forest: 'No forest in reach', fuel: 'No fuel loaded' };
+const ST_COL = { idle: '#8ac8e0', scale: '#e04a4a', clean: '#e0b84a', work: '#5fd06a', input: '#e0b84a', output: '#e07a3a', power: '#e04a4a', charge: '#8ad0a0', full: '#5fd06a', none: '#8a8f99', empty: '#8a8f99', forest: '#8a8f99', fuel: '#e0b84a', elem: '#e0b84a' };
+const ST_TXT = { idle: 'Idle, no load', scale: 'Tubes choked with scale', clean: 'Descaling', work: 'Working', input: 'Waiting for inputs', output: 'Output full', power: 'No power', charge: 'Charging', full: 'Fully charged', none: 'No recipe set', empty: 'Depleted', forest: 'No forest in reach', fuel: 'No fuel loaded', elem: 'No elements loaded' };
 
 function render() {
   const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight, z = cam.z;
@@ -2248,13 +2248,19 @@ function recipeHtml(r) {
   if (r.ch) for (const k in r.ch) outs.push(chip(k, Math.round(r.ch[k] * 100) + '%'));
   if (r.fo) for (const f in r.fo) outs.push(chip(f, r.fo[f], 'fl'));
   return `<div class="rec">${ins.join('')}<span class="arr">→ ${r.t}s →</span>${outs.join('')}</div>` +
-    (r.catReq ? `<div class="note">Burns ${chip(r.cat)}, one lasts about ${r.life} cycles</div>` : r.cat ? `<div class="note">Catalyst ${chip(r.cat)} up to ${1 + r.boost}× speed, a charge lasts about ${r.life} batches</div>` : '') +
+    (r.catReq && r.wear ? `<div class="note">Needs ${chip(r.cat)}, one lasts about ${r.life} cycles</div>` : r.catReq ? `<div class="note">Burns ${chip(r.cat)}, one lasts about ${r.life} cycles</div>` : r.cat ? `<div class="note">Catalyst ${chip(r.cat)} up to ${1 + r.boost}× speed, a charge lasts about ${r.life} batches</div>` : '') +
     (r.eq ? `<div class="eq">${r.eq}</div>` : '') + (r.note ? `<div class="note">${r.note}</div>` : '');
 }
 
 function catHtml(e, r) {
   const on = e.catK === r.cat && e.ca > 0, sp = on ? e.catN || 0 : 0;
   if (r.catReq) {
+    if (r.wear) {
+      let f = `<div class="sec">Elements</div><div class="slots"><div class="slot">${chip(r.cat, (on ? 1 : 0) + sp + '/' + CAT_CAP)}</div></div>`;
+      if (on) f += `<div class="gauge"><span>${r.wear}</span>${bar(1 - e.ca, 1, '#a09060')}<b>${Math.round((1 - e.ca) * 100)}%</b></div><p class="dim">${sp ? sp + ' spare loaded, the next one goes in when this one is worn out.' : 'No spare loaded. Add another before this one is worn out.'} Worn ones come out as ${ITEMS[SPENT[r.cat]].n}.</p>`;
+      else f += `<p class="bad">It cannot run without ${ITEMS[r.cat].n}. Chests and belts feed it too.</p>`;
+      return f;
+    }
     let f = `<div class="sec">Core</div><div class="slots"><div class="slot">${chip(r.cat, (on ? 1 : 0) + sp + '/' + CAT_CAP)}</div></div>`;
     if (on) f += `<div class="gauge"><span>Burnup</span>${bar(1 - e.ca, 1, '#c88a30')}<b>${Math.round((1 - e.ca) * 100)}%</b></div><p class="dim">${sp ? sp + ' spare in the pool, the next one goes in when this one is spent.' : 'No spare assembly. Load another before this one is spent.'} Spent assemblies come out as ${ITEMS[SPENT[r.cat]].n}.</p>`;
     else f += `<p class="bad">No fuel. Load ${ITEMS[r.cat].n} to start it. Chests and belts feed it too.</p>`;
@@ -2682,6 +2688,7 @@ const CHAINS = [
   { n: 'Nuclear fuel', l: [['uraninite', 'Leach tank + acid + o2', 'uo2so4'], ['uo2so4', 'Precipitator + nh3', 'yellowcake'], ['yellowcake', 'Pressure reactor + h2 + hf', 'uf4'], ['hf', 'Electrolysis cell', 'f2', '+', 'h2'], ['uf4', 'Pressure reactor + f2', 'uf6'], ['uf6', 'Gas centrifuge hall', 'leu', '+', 'du_cyl'], ['du_cyl', 'Lime kiln + steam + h2', 'du_oxide', '+', 'hf'], ['leu', 'Lime kiln + steam + h2', 'uo2', '+', 'hf'], ['zircon', 'Chlorinator + coke + cl2', 'zrcl4', 'Hunter retort + magnesium', 'zirconium'], ['uo2', 'Workshop + zirconium + stainless', 'fuel_asm'], ['fuel_asm', 'Pressurised water reactor + bfw', 'steam', '+', 'spent_fuel'], ['spent_fuel', 'Workshop + concrete + steel', 'dry_cask']], d: 'Uranium is leached, dropped out as yellowcake, turned to UF₆ gas with hydrogen fluoride and fluorine, and spun in centrifuges until it holds 4% U-235. Pellets go into Zircaloy tubes, because zirconium lets neutrons through. One reactor makes as much steam as eight coal boilers, and the hydrogen fluoride comes back at every step.' },
   { n: 'Tin and electronics', l: [['cassiterite', 'Gravity spiral + water', 'tin_conc', 'Arc furnace + coke', 'tin'], ['tin', 'Tinning line + plate + acid', 'tinplate', 'Workshop', 'food_can'], ['copper_cathode', 'Electrolysis cell + acid', 'copper_foil'], ['glass_fibre', 'PCB line + epoxy + copper_foil + br2', 'laminate'], ['laminate', 'PCB line + fecl3', 'pcb', '+', 'etch'], ['etch', 'Electrolysis cell', 'fecl3', '+', 'copper_cathode'], ['pcb', 'PCB line + solder + wafer', 'board']], d: 'Cassiterite collects in marsh and river gravels. Gravity spirals concentrate it and the arc furnace reduces it with coke. Tin plated onto steel makes cans, and tin with a little copper makes solder. Glass cloth, brominated epoxy and copper foil press into laminate, ferric chloride etches the circuit, and the spent etchant is electrolysed back to ferric chloride and copper.' },
   { n: 'Rare earth magnets', l: [['monazite', 'Digester + naoh', 're_oh', 'Leach tank + hcl + water', 'recl3', '+', 'th_cake'], ['recl3', 'Solvent extraction + diesel', 'ndcl3', '+', 'ce_oxide'], ['ndcl3', 'Precipitator + soda_ash', 'ndpr_oxide', 'Electrolysis cell + anode + hf', 'nd_metal'], ['borax', 'Arc furnace + pig_iron + coke', 'ferroboron'], ['nd_metal', 'Arc furnace + ferroboron + steel', 'ndfeb'], ['ndfeb', 'Workshop + wire + plate', 'pm_motor'], ['th_cake', 'Workshop + concrete + plate', 'waste_drum']], d: 'Monazite from the mineral sand separator is cracked with caustic soda and dissolved in hydrochloric acid, leaving thorium behind. Hundreds of solvent extraction stages split off neodymium and praseodymium, with cerium as a by-product. Reduced to metal and alloyed with iron and boron from desert borax, they make the strongest magnets there are, for direct-drive wind turbines and compact motors.' },
+  { n: 'Water treatment', l: [['al_hydroxide', 'Pressure reactor + acid', 'alum'], ['water', 'Water treatment works + alum + cl2 + carbon bed', 'potable'], ['spent_carbon', 'Kiln + steam', 'carbon'], ['nylon', 'Workshop + polyester + glass_fibre', 'ro_membrane'], ['water', 'Reverse osmosis + membranes', 'potable'], ['potable', 'Blow moulder + pet', 'water_bottle'], ['bleach', 'Blow moulder + polyethylene', 'bleach_jug']], d: 'Alum makes dirt clump into flocs that settle and filter out, and a little chlorine disinfects what is left. An activated carbon bed doubles the rate but fills up and has to be reactivated in a kiln. Reverse osmosis needs only power and membranes, which slowly foul and need replacing.' },
   { n: 'By-products', l: [['ground_copper', 'Flotation', 'copper_conc', '+', 'pyrite_conc'], ['pyrite_conc', 'Roaster', 'pyrite_cinder', 'Blast furnace', 'pig_iron'], ['anode_slime', 'Roaster', 'dore', 'Leach tank + acid', 'silver']], d: 'Nothing is waste. Pyrite gives SO₂ for acid and its cinder is iron ore. Anode slime from copper refining yields selenium, silver and gold.' },
 ];
 
@@ -2765,6 +2772,8 @@ const HELP = `<div class="help">
 <p><b>Cassiterite</b> is a new ore found in marshes and wet grassland. Wash it on a <b>gravity spiral</b> and reduce the concentrate with coke in the <b>arc furnace</b> to get <b>tin</b>. The <b>tinning line</b> plates tin onto steel plate for <b>food cans</b>. The workshop alloys tin with copper into lead-free <b>solder</b>. For circuit boards, plate <b>copper foil</b> in an electrolysis cell and make <b>ferric chloride</b> from iron and chlorine. The <b>PCB line</b> presses glass fibre, epoxy, foil and a little bromine into laminate, etches it with ferric chloride, and solders chips cut from silicon wafers onto it to make <b>control boards</b>. Send the spent etchant back to an electrolysis cell to recover copper and regenerate the ferric chloride.</p>
 <h3>Rare earths</h3>
 <p>Monazite comes off the electrostatic separator in the mineral sand chain. Crack it with caustic soda in the <b>Bayer digester</b>, then leach with hydrochloric acid. The rare earths dissolve and <b>thorium residue</b> stays behind. Drum the residue with concrete before it fills the tank. The <b>solvent extraction plant</b> separates <b>NdPr</b> from cerium and loses a little diesel each pass. Precipitate NdPr oxide with soda ash, reduce it in an electrolysis cell with carbon anodes, and alloy it in the arc furnace with steel and <b>ferroboron</b>. Ferroboron comes from <b>borax</b>, a new ore on dry scrub and desert flats. <b>NdFeB magnets</b> build the <b>direct-drive wind turbine</b>, which gives three times the output of the small one, and permanent-magnet motors.</p>
+<h3>Water treatment</h3>
+<p>Dissolve aluminium hydroxide in sulfuric acid to make <b>alum</b>. The <b>water treatment works</b> takes raw water, alum and a little chlorine and gives <b>drinking water</b>. Load <b>activated carbon</b> into it to double its speed. The carbon slowly fills up and comes out as spent carbon, which a kiln with steam turns back into fresh carbon. The <b>reverse osmosis plant</b> needs no chemicals, only <b>membrane elements</b> (nylon, polyester and glass fibre, made in the workshop). It will not start without one, and each element fouls after a few hundred cycles. The <b>blow moulder</b> fills PET bottles with drinking water and HDPE jugs with bleach.</p>
 <h3>Boiler water</h3>
 <p>Raw water is hard. Every boiler batch on it bakes a little chalk onto the tubes, steam output falls as the <b>scale</b> builds, and a fully choked boiler stops. Shut it down to <b>Descale</b> from its panel (a 20 second outage), or feed it <b>softened water</b>: run water through a leach tank with quicklime and the hardness settles out as crushed limestone you can send back to the kiln. Any machine that takes water also takes softened water.</p>
 <h3>Sulfur and diesel</h3>
