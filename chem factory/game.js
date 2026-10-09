@@ -1717,6 +1717,7 @@ function tick() {
   S.t += DT;
   S.tk = (S.tk || 0) + 1;
   if (S.tk % 30 === 0) { polStep(); hiveStep(); windStep(); }
+  if (S.tk % 30 === 15) achCheck();
   if (rgd && S.tk % 15 === 0) { growNear(S.pl.x, S.pl.y, 200, 1); if (camFree) growNear(cam.x, cam.y, 120, 1); }
   if (S.tk % 3 === 0) { cloudStep(DT * 3); fireStep(DT * 3); }
   shellStep();
@@ -2523,7 +2524,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, ach: S.ach || {}, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -2557,7 +2558,7 @@ function load() {
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
   const gen = d.gen || { legacy: 1 };
   setSize(gen.legacy ? 160 : gen.size);
-  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0 };
+  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0, ach: d.ach || {} };
   initWorld(d.seed, gen);
   if (rgd && d.rg) for (let r = 0; r < rgd.length; r++) if (d.rg[r] === '1') growRegion(r % (W / RG), Math.floor(r / (W / RG)), false);
   for (const k in S.dep) { const i = +k; oreAmt[i] = S.dep[k]; if (oreAmt[i] <= 0) { oreAmt[i] = 0; oreType[i] = 0; } }
@@ -2588,6 +2589,75 @@ function eatToast(n, e) {
   eatN = 1;
   eatEl = toast(`${n} at ${e.x},${e.y} was eaten by crawlers`, true);
 }
+const mk = k => (S.made && S.made[k]) || 0;
+const ACH_G = { ind: 'Metallurgy', chem: 'Chemistry', life: 'Food and medicine', nrg: 'Energy and electronics', log: 'Logistics', eco: 'Trade and scale', def: 'Defence and safety' };
+const ACH = [
+  ['plate', 'ind', 'Iron Age', 'Cast your first iron plate.', () => mk('plate') >= 1],
+  ['steel', 'ind', "Bessemer's Heir", 'Make 50 steel by blowing oxygen through pig iron.', () => mk('steel') >= 50],
+  ['cathode', 'ind', 'Four Nines', 'Electrorefine a copper cathode, 99.99% pure.', () => mk('copper_cathode') >= 1],
+  ['alu', 'ind', 'Hall–Héroult', 'Smelt aluminium from alumina dissolved in cryolite.', () => mk('aluminium') >= 1],
+  ['ti', 'ind', 'Kroll Process', 'Reduce titanium tetrachloride to titanium metal.', () => mk('titanium') >= 1],
+  ['gold', 'ind', 'Anode Slime', 'Recover gold from copper refinery slimes.', () => mk('gold') >= 1],
+  ['stainless', 'ind', 'Chromium Shield', 'Make stainless steel.', () => mk('stainless') >= 1],
+  ['nh3', 'chem', 'Bread from Air', 'Fix nitrogen from the air: ammonia, ammonium sulphate or urea.', () => mk('nh3_cyl') + mk('amm_sulfate') + mk('urea') >= 1],
+  ['npk', 'chem', 'Green Revolution', 'Make 100 bags of NPK fertiliser.', () => mk('npk') >= 100],
+  ['pe', 'chem', 'Plastic Age', 'Polymerise ethylene into polyethylene.', () => mk('polyethylene') >= 1],
+  ['nylon', 'chem', 'Nylon 6,6', 'Spin nylon from adipic acid and hexamethylenediamine.', () => mk('nylon') >= 1],
+  ['glass', 'chem', 'Sand to Glass', 'Melt sand, soda ash and lime into glass.', () => mk('glass') + mk('flat_glass') >= 1],
+  ['soap', 'chem', 'Saponification', 'Boil fat with caustic soda into soap.', () => mk('soap') >= 1],
+  ['aspirin', 'life', 'Willow Bark', 'Pack aspirin made from salicylic acid.', () => mk('aspirin_pack') >= 1],
+  ['penicillin', 'life', "Fleming's Mould", 'Fill a vial of penicillin.', () => mk('penicillin_vial') >= 1],
+  ['bread', 'life', 'Daily Bread', 'Bake bread from flour and yeast.', () => mk('bread') >= 1],
+  ['choc', 'life', 'Conched', 'Make chocolate.', () => mk('chocolate') >= 1],
+  ['water', 'life', 'Safe to Drink', 'Bottle drinking water.', () => mk('water_bottle') >= 1],
+  ['solar', 'nrg', 'Photovoltaic', 'Make a silicon solar cell.', () => mk('solar_cell') >= 1],
+  ['led', 'nrg', 'Blue Light', 'Assemble an LED lamp from gallium nitride chips.', () => mk('led_lamp') >= 1],
+  ['li', 'nrg', 'Rocking Chair', 'Build a lithium-ion cell.', () => mk('li_cell') + mk('nca_cell') >= 1],
+  ['pcb', 'nrg', 'Etched', 'Make a printed circuit board.', () => mk('pcb') >= 1],
+  ['fuel', 'nrg', 'Fission Fuel', 'Assemble a low-enriched uranium fuel assembly.', () => mk('fuel_asm') >= 1],
+  ['pwr', 'nrg', 'Pressurised', 'Build a pressurised water reactor.', c => (c.pwr || 0) >= 1],
+  ['belts', 'log', 'Conveyor Mind', 'Have 200 belts laid.', c => (c.belt || 0) >= 200],
+  ['car', 'log', 'Road Trip', 'Put a car or truck on the ground.', () => S.cars.some(v => v.type === 'car' || v.type === 'truck')],
+  ['boat', 'log', 'Sea Legs', 'Float a boat.', () => S.cars.some(v => VEH[v.type] && VEH[v.type].sea)],
+  ['train', 'log', 'Timetable', 'Run a train on an automatic schedule.', () => S.trains.some(t => t.auto && t.sch && t.sch.length >= 2)],
+  ['explore', 'log', 'Cartographer', 'Explore 40 regions of an endless world.', () => !!rgd && Array.from(rgd).filter(v => v === 1).length >= 40],
+  ['order1', 'eco', 'First Customer', 'Fill an order at a depot.', () => (S.odone || 0) >= 1],
+  ['order25', 'eco', 'Trusted Supplier', 'Fill 25 orders.', () => (S.odone || 0) >= 25],
+  ['mega', 'eco', 'Megafactory', 'Make 50,000 items in one world.', () => Object.values(S.made || {}).reduce((a, b) => a + b, 0) >= 50000],
+  ['notes', 'eco', 'Archivist', 'Learn 10 locked recipes from notebooks and wreckage.', () => Object.keys(S.unl || {}).length >= 10],
+  ['kills', 'def', 'Pest Control', 'Kill 50 crawlers.', () => (S.kills || 0) + (S.pk || 0) >= 50],
+  ['hive', 'def', 'Nest Breaker', 'Destroy a crawler hive.', () => (S.hk || 0) >= 1],
+  ['clean', 'def', 'Clean Record', 'Run for an hour of game time without a single pipe or vessel failure.', () => S.t >= 3600 && !S.fails],
+];
+const achGlob = () => { try { return JSON.parse(localStorage.getItem('cfAch') || '{}') || {}; } catch (e) { return {}; } };
+function achCheck() {
+  S.ach = S.ach || {};
+  const c = {};
+  for (const e of ents.values()) c[e.type] = (c[e.type] || 0) + 1;
+  for (const [id, , n, d, f] of ACH) {
+    if (S.ach[id] || !f(c)) continue;
+    S.ach[id] = Math.max(1, Math.round(S.t));
+    const G = achGlob(); G[id] = 1;
+    try { localStorage.setItem('cfAch', JSON.stringify(G)); } catch (e) {}
+    const t = toast('Achievement · ' + n + ' — ' + d);
+    t.classList.add('ach');
+  }
+}
+function achHtml() {
+  const G = achGlob(), got = ACH.filter(a => S.ach && S.ach[a[0]]).length;
+  let h = `<p class="dim">${got} of ${ACH.length} earned in this world · ${ACH.filter(a => G[a[0]]).length} across all your worlds. Press J to open this page.</p><div class="achbar"><i style="width:${(got / ACH.length * 100).toFixed(1)}%"></i></div>`;
+  for (const g in ACH_G) {
+    h += `<h3>${ACH_G[g]}</h3><div class="achs">`;
+    for (const [id, gg, n, d] of ACH) {
+      if (gg !== g) continue;
+      const t = S.ach && S.ach[id];
+      h += `<div class="achc ${t ? 'on' : G[id] ? 'old' : ''}"><b>${t ? '★' : G[id] ? '☆' : '·'}</b><div><span>${n}</span><p>${d}</p><em>${t ? 'Earned at ' + fmtT(t) : G[id] ? 'Earned in another world' : 'Not yet'}</em></div></div>`;
+    }
+    h += '</div>';
+  }
+  return h;
+}
+const fmtT = t => { const m = Math.floor(t / 60), hh = Math.floor(m / 60); return hh ? hh + ' h ' + (m % 60) + ' min' : m + ' min ' + (t % 60) + ' s'; };
 function toast(msg, bad) {
   const t = document.createElement('div');
   t.className = 'toast' + (bad ? ' bad' : '');
@@ -2595,8 +2665,8 @@ function toast(msg, bad) {
   const box = $('#toast');
   box.appendChild(t);
   while (box.children.length > 4) box.firstChild.remove();
-  setTimeout(() => t.classList.add('out'), 2200);
-  setTimeout(() => t.remove(), 2700);
+  setTimeout(() => t.classList.add('out'), /^Achievement/.test(msg) ? 5200 : 2200);
+  setTimeout(() => t.remove(), /^Achievement/.test(msg) ? 5700 : 2700);
   return t;
 }
 
@@ -4364,7 +4434,7 @@ function costHtml(cost, n) { return Object.keys(cost).map(k => chip(k, cost[k] *
 let modalHtml = '';
 function openModal(kind, tab) {
   modalKind = kind;
-  modalTab = tab || (kind === 'craft' ? 'craft' : kind === 'ency' ? 'chains' : kind === 'world' ? 'world' : kind === 'map' ? 'map' : 'help');
+  modalTab = tab || (kind === 'craft' ? 'craft' : kind === 'ency' ? 'chains' : kind === 'world' ? 'world' : kind === 'map' ? 'map' : kind === 'ach' ? 'ach' : 'help');
   modal.hidden = false;
   modal.querySelector('.mwin').classList.toggle('wide', kind === 'craft');
   cSig = '';
@@ -4378,6 +4448,7 @@ const TABS = {
   help: [['help', 'How to play']],
   world: [['world', 'New world']],
   map: [['map', 'World map']],
+  ach: [['ach', 'Achievements']],
 };
 let wcfg = null;
 const parseSeed = v => { v = String(v).trim(); if (/^\d+$/.test(v)) return +v % 2147483647; let h = 7; for (const c of v) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0; return h % 2147483647; };
@@ -4514,6 +4585,7 @@ function renderModal() {
   } else if (modalTab === 'map') {
     h += mapHtml();
   }
+  if (modalTab === 'ach') h = achHtml();
   if (modalHtml !== h) { body.innerHTML = h; modalHtml = h; body.scrollTop = st; if (modalTab === 'world') drawPreview(); }
   if (modalTab === 'map') drawMapView();
 }
@@ -5053,6 +5125,7 @@ window.addEventListener('keydown', ev => {
   if (k === 'e' || k === 'i') { modalKind === 'craft' ? closeModal() : openModal('craft'); }
   else if (k === 'h') { modalKind === 'ency' ? closeModal() : openModal('ency'); }
   else if (k === 'm') { modalKind === 'map' ? closeModal() : openModal('map'); }
+  else if (k === 'j') { modalKind === 'ach' ? closeModal() : openModal('ach'); }
   else if (k === 'escape') { if (modalKind) closeModal(); else if (tool) { tool = null; renderHotbar(); } else closePanel(); }
   else if (k === 'q') {
     if (modalKind) closeModal();
@@ -5131,7 +5204,7 @@ document.getElementById('top').addEventListener('click', ev => {
   const b = ev.target.closest('[data-ui]');
   if (!b) return;
   const u = b.dataset.ui;
-  if (u === 'craft' || u === 'ency' || u === 'help' || u === 'map') openModal(u);
+  if (u === 'craft' || u === 'ency' || u === 'help' || u === 'map' || u === 'ach') openModal(u);
   else if (u === 'reset') openModal('world');
 });
 
@@ -5174,7 +5247,7 @@ window.game = {
   get S() { return S; }, get W() { return W; }, get ents() { return ents; }, get patches() { return patches; }, get cam() { return cam; },
   place: (t, x, y, d) => place(t, x, y, d, true), at, buildOk, canPlace, setRecipe, removeEnt, save, load, newGame,
   step(n) { for (let i = 0; i < n; i++) tick(); render(); $('#power').innerHTML = powerHtml(); $('#vent').innerHTML = ventHtml(); renderPanelDyn(); renderHotbar(); renderQueue(); },
-  terrain: () => terrain, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
+  terrain: () => terrain, ACH, achCheck, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
   select(e) { e ? openPanel(e) : closePanel(); }, openModal, closeModal, refresh: renderHotbar,
   setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; camFree = true; },
   get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get trains() { return S.trains; }, placeTrain, trainAt, openTrain, openPanel, pickTrain, trainGeo, reverseTrain, railBusy, get puffs() { return puffs; }, get H() { return H; }, get wakes() { return wakes; }, floats, boatRoute, boatPilot, carStep, carHit,
