@@ -30,7 +30,7 @@ const sum = o => { let s = 0; for (const k in o) s += o[k]; return s; };
 const isGas = f => FLUIDS[f] && FLUIDS[f].gas && f !== 'steam';
 const spills = (r, f) => isGas(f) || !!(r.bleed && r.bleed.includes(f));
 const PC = 8, RAIN = 30;
-const POL_W = { xylene: 0.5, eo: 1.5, meg: 0.2, chcl3: 0.6, r22: 0.8, tfe: 0.4, so2: 1, cl2: 3, co2: 0.02, h2: 0, steam: 0, water: 0, acid: 0.5, naoh: 0.3, liquor: 0.3, ticl4: 1, brine: 0.05, nh3: 0.5, hno3: 0.8, tar: 0.4, coalgas: 0.3, toluene: 0.3, nh4cl: 0.1, co: 0.1, phosgene: 1, sif4: 2, h2sif6: 0.5, hf: 1, h2s: 2, diesel: 0.3, bfw: 0, o2: 0, n2: 0, sihcl3: 1, vam: 0.4, dmc: 0.2, dpc: 0.4, ech: 1, propylene: 0.2, cumene: 0.4, phenol: 1, acetone: 0.3, acetic: 0.4, ac2o: 0.6, cyclohexane: 0.3, ka_oil: 0.3, n2o: 4, hmda: 0.5, olefins: 0.2, lab: 0.3, las: 0.8, methanol: 0.3, hcho: 1, ch3cl: 0.5, dmdcs: 1, bittern: 0.05, br2: 2, butadiene: 0.3, benzene: 0.5, styrene: 0.3 };
+const POL_W = { uo2so4: 0.5, f2: 3, uf6: 3, leu: 3, xylene: 0.5, eo: 1.5, meg: 0.2, chcl3: 0.6, r22: 0.8, tfe: 0.4, so2: 1, cl2: 3, co2: 0.02, h2: 0, steam: 0, water: 0, acid: 0.5, naoh: 0.3, liquor: 0.3, ticl4: 1, brine: 0.05, nh3: 0.5, hno3: 0.8, tar: 0.4, coalgas: 0.3, toluene: 0.3, nh4cl: 0.1, co: 0.1, phosgene: 1, sif4: 2, h2sif6: 0.5, hf: 1, h2s: 2, diesel: 0.3, bfw: 0, o2: 0, n2: 0, sihcl3: 1, vam: 0.4, dmc: 0.2, dpc: 0.4, ech: 1, propylene: 0.2, cumene: 0.4, phenol: 1, acetone: 0.3, acetic: 0.4, ac2o: 0.6, cyclohexane: 0.3, ka_oil: 0.3, n2o: 4, hmda: 0.5, olefins: 0.2, lab: 0.3, las: 0.8, methanol: 0.3, hcho: 1, ch3cl: 0.5, dmdcs: 1, bittern: 0.05, br2: 2, butadiene: 0.3, benzene: 0.5, styrene: 0.3 };
 const polAt = (x, y) => S.pol[Math.floor(y / PC) * PW + Math.floor(x / PC)] || 0;
 
 function mulberry32(a) {
@@ -111,7 +111,7 @@ function genLegacy(seed) {
 const GEN_DEF = { size: 256, water: 1, ore: 1, hives: 2 };
 const TER_N = ['Grassland', 'Water', 'Dry scrub', 'Desert sand', 'Bare rock', 'Marsh', 'Forest', 'Tundra'];
 const sstep = (a, b, v) => { const t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
-const ORE_BASE = [0, 11, 10, 7, 9, 6, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3];
+const ORE_BASE = [0, 11, 10, 7, 9, 6, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3];
 function oreSuit(t, i, temp, moist) {
   const b = terrain[i], m = elev[i], tp = temp[i], ms = moist[i];
   if (b === 1 || b === 4) return 0;
@@ -132,6 +132,7 @@ function oreSuit(t, i, temp, moist) {
     case 14: return m > 0.6 ? 2.5 : b === 7 ? 1 : 0.3;
     case 15: return tp > 0.6 && ms > 0.45 ? 3 : tp > 0.5 ? 0.6 : 0.1;
     case 16: return b === 7 ? 2.5 : m > 0.55 ? 1.5 : 0.3;
+    case 17: return m > 0.55 && (b === 7 || b === 2) ? 3 : b === 3 ? 1 : 0.2;
   }
   return 1;
 }
@@ -401,7 +402,7 @@ function outCap(r, k) { return Math.max(10, ((r.o && r.o[k]) || 1) * 2); }
 function fiCap(r, f) { return Math.max(r.fi[f] * 2, 40); }
 function foCap(r, f) { return Math.max(r.fo[f] * 2, 100); }
 
-const CAT_CAP = 4, SPENT = { v_cat: 'spent_v_cat' };
+const CAT_CAP = 4, SPENT = { v_cat: 'spent_v_cat', fuel_asm: 'spent_fuel' };
 function catEff(e) { return Math.min(1, (e.ca || 0) * 3); }
 function catMul(e, r) { return r.cat && e.catK === r.cat && e.ca > 0 ? 1 + r.boost * catEff(e) : 1; }
 function catSwap(e, r) {
@@ -1189,6 +1190,7 @@ function tryStart(e, r) {
   if (BUILD[e.type].forest && !forestOf(e)) return 'forest';
   if (e.desc > 0) return 'clean';
   if (e.type === 'boiler' && e.scale >= 1) return 'scale';
+  if (r.catReq && !(e.catK === r.cat && e.ca > 0)) return 'fuel';
   if (r.i) for (const k in r.i) if ((e.inv[k] || 0) < r.i[k]) return 'input';
   if (r.fi) for (const f in r.fi) if ((e.fi[f] || 0) < r.fi[f] - 1e-6) return 'input';
   if (r.o) for (const k in r.o) if ((e.out[k] || 0) + r.o[k] > outCap(r, k)) return 'output';
@@ -1451,8 +1453,8 @@ function shade(hex, f) {
   return `rgb(${r},${g},${b})`;
 }
 
-const ST_COL = { idle: '#8ac8e0', scale: '#e04a4a', clean: '#e0b84a', work: '#5fd06a', input: '#e0b84a', output: '#e07a3a', power: '#e04a4a', charge: '#8ad0a0', full: '#5fd06a', none: '#8a8f99', empty: '#8a8f99', forest: '#8a8f99' };
-const ST_TXT = { idle: 'Idle, no load', scale: 'Tubes choked with scale', clean: 'Descaling', work: 'Working', input: 'Waiting for inputs', output: 'Output full', power: 'No power', charge: 'Charging', full: 'Fully charged', none: 'No recipe set', empty: 'Depleted', forest: 'No forest in reach' };
+const ST_COL = { idle: '#8ac8e0', scale: '#e04a4a', clean: '#e0b84a', work: '#5fd06a', input: '#e0b84a', output: '#e07a3a', power: '#e04a4a', charge: '#8ad0a0', full: '#5fd06a', none: '#8a8f99', empty: '#8a8f99', forest: '#8a8f99', fuel: '#e0b84a' };
+const ST_TXT = { idle: 'Idle, no load', scale: 'Tubes choked with scale', clean: 'Descaling', work: 'Working', input: 'Waiting for inputs', output: 'Output full', power: 'No power', charge: 'Charging', full: 'Fully charged', none: 'No recipe set', empty: 'Depleted', forest: 'No forest in reach', fuel: 'No fuel loaded' };
 
 function render() {
   const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight, z = cam.z;
@@ -2244,12 +2246,18 @@ function recipeHtml(r) {
   if (r.ch) for (const k in r.ch) outs.push(chip(k, Math.round(r.ch[k] * 100) + '%'));
   if (r.fo) for (const f in r.fo) outs.push(chip(f, r.fo[f], 'fl'));
   return `<div class="rec">${ins.join('')}<span class="arr">→ ${r.t}s →</span>${outs.join('')}</div>` +
-    (r.cat ? `<div class="note">Catalyst ${chip(r.cat)} up to ${1 + r.boost}× speed, a charge lasts about ${r.life} batches</div>` : '') +
+    (r.catReq ? `<div class="note">Burns ${chip(r.cat)}, one lasts about ${r.life} cycles</div>` : r.cat ? `<div class="note">Catalyst ${chip(r.cat)} up to ${1 + r.boost}× speed, a charge lasts about ${r.life} batches</div>` : '') +
     (r.eq ? `<div class="eq">${r.eq}</div>` : '') + (r.note ? `<div class="note">${r.note}</div>` : '');
 }
 
 function catHtml(e, r) {
   const on = e.catK === r.cat && e.ca > 0, sp = on ? e.catN || 0 : 0;
+  if (r.catReq) {
+    let f = `<div class="sec">Core</div><div class="slots"><div class="slot">${chip(r.cat, (on ? 1 : 0) + sp + '/' + CAT_CAP)}</div></div>`;
+    if (on) f += `<div class="gauge"><span>Burnup</span>${bar(1 - e.ca, 1, '#c88a30')}<b>${Math.round((1 - e.ca) * 100)}%</b></div><p class="dim">${sp ? sp + ' spare in the pool, the next one goes in when this one is spent.' : 'No spare assembly. Load another before this one is spent.'} Spent assemblies come out as ${ITEMS[SPENT[r.cat]].n}.</p>`;
+    else f += `<p class="bad">No fuel. Load ${ITEMS[r.cat].n} to start it. Chests and belts feed it too.</p>`;
+    return f;
+  }
   let h = `<div class="sec">Catalyst bed</div><div class="slots"><div class="slot">${chip(r.cat, (on ? 1 : 0) + sp + '/' + CAT_CAP)}</div></div>`;
   if (on) {
     h += `<div class="gauge"><span>Charge life</span>${bar(e.ca, 1, e.ca > 0.34 ? '#7fe08a' : '#e0b84a')}<b>${Math.round(e.ca * 100)}%</b></div>`;
@@ -2669,6 +2677,7 @@ const CHAINS = [
   { n: 'Fluoropolymers', l: [['ch3cl', 'Chlorinator + cl2', 'chcl3', '+', 'hcl'], ['chcl3', 'Pressure reactor + hf', 'r22', '+', 'hcl'], ['r22', 'Tube furnace', 'tfe', '+', 'hcl'], ['tfe', 'Pressure reactor + water', 'ptfe', 'Craft menu', 'PTFE-lined pipe']], d: 'Chloroform from chloromethane and chlorine is fluorinated with hydrofluoric acid to R-22. Cracking R-22 gives TFE gas, which polymerises in water to PTFE. Every step gives off hydrogen chloride, which goes back to make chloromethane. PTFE lines pipe that resists every fluid in the game.' },
   { n: 'Lithium batteries', l: [['spodumene', 'Lime kiln + coal', 'beta_spod', 'Leach tank + acid + water', 'li2so4'], ['li2so4', 'Leach tank + soda_ash', 'li2co3'], ['li2co3', 'Pressure reactor + iron_conc + carbon_black + h3po4', 'lfp'], ['coke', 'Arc furnace + pitch', 'graphite'], ['li2co3', 'Pressure reactor + phosphorus + hf + cl2', 'lipf6', 'Pressure reactor + dmc', 'li_elyte'], ['lfp', 'Battery plant + graphite + aluminium + copper + polypropylene + electrolyte', 'li_cell', 'Li-ion bank', 'Electricity']], d: 'Spodumene from cold highland pegmatites is roasted until it crumbles, leached with sulfuric acid, and the lithium precipitated with soda ash. Lithium iron phosphate on aluminium foil, graphite on copper foil, and LiPF₆ in dimethyl carbonate make a cell that stores three times what lead-acid does and gives back 95%.' },
   { n: 'Polyester', l: [['naphtha', 'Catalytic reformer', 'xylene', '+', 'h2'], ['xylene', 'Pressure reactor + o2 + acetic', 'pta'], ['ethylene', 'Pressure reactor + o2 + silver catalyst', 'eo'], ['eo', 'Pressure reactor + water', 'meg'], ['pta', 'Pressure reactor + meg', 'pet'], ['pet', 'Melt spinner', 'polyester'], ['pet', 'Blow moulder', 'pet_bottle']], d: 'Reforming naphtha over platinum gives p-xylene and a lot of hydrogen. Oxidise the xylene to terephthalic acid, turn ethylene into glycol through ethylene oxide, and the two condense into PET. Spin it into yarn or stretch-blow it into bottles.' },
+  { n: 'Nuclear fuel', l: [['uraninite', 'Leach tank + acid + o2', 'uo2so4'], ['uo2so4', 'Precipitator + nh3', 'yellowcake'], ['yellowcake', 'Pressure reactor + h2 + hf', 'uf4'], ['hf', 'Electrolysis cell', 'f2', '+', 'h2'], ['uf4', 'Pressure reactor + f2', 'uf6'], ['uf6', 'Gas centrifuge hall', 'leu', '+', 'du_cyl'], ['du_cyl', 'Lime kiln + steam + h2', 'du_oxide', '+', 'hf'], ['leu', 'Lime kiln + steam + h2', 'uo2', '+', 'hf'], ['zircon', 'Chlorinator + coke + cl2', 'zrcl4', 'Hunter retort + magnesium', 'zirconium'], ['uo2', 'Workshop + zirconium + stainless', 'fuel_asm'], ['fuel_asm', 'Pressurised water reactor + bfw', 'steam', '+', 'spent_fuel'], ['spent_fuel', 'Workshop + concrete + steel', 'dry_cask']], d: 'Uranium is leached, dropped out as yellowcake, turned to UF₆ gas with hydrogen fluoride and fluorine, and spun in centrifuges until it holds 4% U-235. Pellets go into Zircaloy tubes, because zirconium lets neutrons through. One reactor makes as much steam as eight coal boilers, and the hydrogen fluoride comes back at every step.' },
   { n: 'By-products', l: [['ground_copper', 'Flotation', 'copper_conc', '+', 'pyrite_conc'], ['pyrite_conc', 'Roaster', 'pyrite_cinder', 'Blast furnace', 'pig_iron'], ['anode_slime', 'Roaster', 'dore', 'Leach tank + acid', 'silver']], d: 'Nothing is waste. Pyrite gives SO₂ for acid and its cinder is iron ore. Anode slime from copper refining yields selenium, silver and gold.' },
 ];
 
@@ -2745,6 +2754,9 @@ const HELP = `<div class="help">
 <p><b>Spodumene</b> is a new ore found in tundra and highlands. Roast it in a lime kiln, leach it with sulfuric acid, and precipitate <b>lithium carbonate</b> with soda ash. The pressure reactor makes <b>LFP cathode</b> from lithium carbonate, iron concentrate, carbon black and phosphoric acid. It also makes <b>LiPF₆</b>, which dissolves in dimethyl carbonate to give the electrolyte. The arc furnace bakes coke and pitch into <b>graphite</b>. The battery plant assembles <b>Li-ion cells</b>, and twelve cells make a <b>Li-ion battery bank</b>: 30 kWh, 600 kW and 95% round trip, against 10 kWh, 250 kW and 85% for lead-acid. The electrolyte turns to HF with any moisture, so pipe it like hydrofluoric acid.</p>
 <h3>Polyester</h3>
 <p>The <b>catalytic reformer</b> turns naphtha into <b>p-xylene</b>, some benzene and plenty of <b>hydrogen</b>. Oxidise p-xylene with oxygen in a pressure reactor, with a little acetic acid lost as solvent, to get <b>terephthalic acid</b>. Ethylene and oxygen make <b>ethylene oxide</b>, which runs 2.5× faster on a <b>silver catalyst</b> bed (silver on alumina, made in the workshop). Ethylene oxide and water give <b>ethylene glycol</b>. Terephthalic acid and glycol condense into <b>PET</b>, which the melt spinner turns into yarn and the <b>blow moulder</b> into bottles. Ethylene oxide is toxic, so venting it raises smog fast.</p>
+<h3>Nuclear power</h3>
+<p><b>Uraninite</b> is a new ore in highland tundra and dry scrub. Leach it with sulfuric acid and oxygen, and precipitate <b>yellowcake</b> with ammonia. Hydrogen and hydrofluoric acid make green salt, and <b>fluorine</b> from an electrolysis cell turns it into <b>UF₆</b>. The <b>gas centrifuge hall</b> enriches it to reactor grade and leaves depleted cylinders, which the lime kiln turns back into oxide and hydrofluoric acid. The kiln also makes <b>UO₂ pellets</b> from enriched UF₆. Zircon goes through the chlorinator and the retort to become <b>Zircaloy</b>. The workshop puts pellets, Zircaloy and stainless steel together into a <b>fuel assembly</b>.</p>
+<p>The <b>pressurised water reactor</b> needs softened water and fuel in its core. It makes 120 steam a second, enough for four steam engines. Each assembly lasts about ten minutes and comes out as spent fuel. Pack spent fuel into <b>dry casks</b> with concrete and steel.</p>
 <h3>Boiler water</h3>
 <p>Raw water is hard. Every boiler batch on it bakes a little chalk onto the tubes, steam output falls as the <b>scale</b> builds, and a fully choked boiler stops. Shut it down to <b>Descale</b> from its panel (a 20 second outage), or feed it <b>softened water</b>: run water through a leach tank with quicklime and the hardness settles out as crushed limestone you can send back to the kiln. Any machine that takes water also takes softened water.</p>
 <h3>Sulfur and diesel</h3>
