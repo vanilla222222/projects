@@ -5,7 +5,7 @@ let W = 160, H = 160, PW = 20;
 const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
 const KEY = 'chemfactory-save-v1';
 const GAP = 0.25, BELT_V = 2 * DT, MINER_T = 2, PUMP_RATE = 60 * DT;
-const PARTS = ['casting', 'plate', 'wire', 'motor', 'brick', 'lead_sheet', 'brass', 'cartridge', 'cylinder', 'wheel', 'chassis', 'diesel_engine', 'gearbox', 'windscreen', 'rail_bar', 'sleeper', 'traction_motor', 'bogie'];
+const PARTS = ['casting', 'plate', 'wire', 'motor', 'brick', 'lead_sheet', 'brass', 'cartridge', 'cylinder', 'wheel', 'chassis', 'diesel_engine', 'gearbox', 'windscreen', 'rail_bar', 'sleeper', 'traction_motor', 'bogie', 'hull_section', 'propeller', 'zinc_anode'];
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 const tcv = document.createElement('canvas');
 const tctx = tcv.getContext('2d');
@@ -18,10 +18,12 @@ const panel = $('#panel'), tip = $('#tip'), modal = $('#modal'), hotbar = $('#ho
 let S, terrain, oreType, oreAmt, elev, occ, ents, patches, L = null;
 let cam = { x: W / 2, y: H / 2, z: 32 };
 let tool = null, toolDir = 1, sel = null, mining = null, drag = null;
-let camFree = false, noAmmoT = 0, noFuelT = 0, selCar = null, selTrain = null, puffs = [];
+let camFree = false, noAmmoT = 0, noFuelT = 0, selCar = null, selTrain = null, puffs = [], wakes = [];
 const VEH = {
   car: { vmax: 22, acc: 9, turn: 2.6, hl: 0.95, hw: 0.48, hp: 450, burn: 2.4, slots: 20, c: ['#6a1814', '#c8382e', '#4a100c'] },
   truck: { vmax: 16, acc: 5, turn: 1.9, hl: 1.35, hw: 0.6, hp: 1350, burn: 3.6, slots: 60, c: ['#8a6010', '#e0a828', '#5a4008'] },
+  launch: { sea: true, vmax: 18, acc: 6, turn: 1.6, hl: 1.0, hw: 0.45, hp: 600, burn: 2.6, slots: 30, c: ['#d8d4c8', '#f0ece0', '#a8a49a'] },
+  barge: { sea: true, vmax: 10, acc: 2.6, turn: 0.9, hl: 1.8, hw: 0.75, hp: 1800, burn: 4, slots: 100, c: ['#3a4a5a', '#5a6a7a', '#2a3440'] },
 };
 const CAN_MJ = 720, FUEL_CAP = 5;
 const TRAIN = { loco: { m: 1.5 }, wagon: { m: 0.5, slots: 40 } }, T_CL = 2, T_VMAX = 28, T_BRAKE = 5, T_FUEL = 10, T_BURN = 8;
@@ -371,6 +373,8 @@ function makeEnt(type, x, y, dir) {
     case 'projector': Object.assign(e, { pay: {}, pw: 0, cd: 0, ang: -Math.PI / 2, sh: -9, shots: 0 }); break;
     case 'gun': Object.assign(e, { ammo: 0, wp: 0, cd: 0, ang: -Math.PI / 2, sh: -9, shots: 0 }); break;
     case 'ruin': e.done = 0; break;
+    case 'dock': { e.mode = 'load'; const used = new Set([...ents.values()].filter(o => o.type === 'dock').map(o => o.nm)); let i = 1; while (used.has('Dock ' + i)) i++; e.nm = 'Dock ' + i; break; }
+    case 'buoy': { const used = new Set([...ents.values()].filter(o => o.type === 'buoy').map(o => o.nm)); let i = 1; while (used.has('Buoy ' + i)) i++; e.nm = 'Buoy ' + i; break; }
     case 'stop': { e.mode = 'load'; const used = new Set([...ents.values()].filter(o => o.type === 'train_stop').map(o => o.nm)); let i = 1; while (used.has('Stop ' + i)) i++; e.nm = 'Stop ' + i; break; }
   }
   if (BUILD[type].hp) e.hp = BUILD[type].hp;
@@ -394,11 +398,13 @@ function canPlace(type, x, y) {
     const k = (y + j) * W + x + i;
     if (occ[k]) return 'Something is in the way';
     if (type === 'pump') { if (terrain[k] !== 1) return 'Offshore pumps must go on water'; }
+    else if (type === 'buoy') { if (terrain[k] !== 1) return 'Buoys float: put them on water'; }
     else if (terrain[k] === 1) return 'Cannot build on water';
     else if (terrain[k] === 4) return 'Bare rock: too steep to build on';
     if (oreType[k] && !ORES[oreType[k]].fluid) ore = true;
     if (oreType[k] && ORES[oreType[k]].fluid) oil = true;
   }
+  if (type === 'dock' && ![[0, -1], [1, 0], [0, 1], [-1, 0]].some(([i, j]) => x + i >= 0 && y + j >= 0 && x + i < W && y + j < H && terrain[(y + j) * W + x + i] === 1)) return 'A dock must stand on the shore, right next to water';
   if (type === 'miner' && !ore) return 'A miner needs ore under it';
   if (B.well && !oil) return 'A pumpjack must stand on an oil seep';
   if (B.soil && soilAt(x, y, B.w, B.h) < 0.1) return 'Nothing grows here. Farms need grassland, scrub or marsh';
@@ -439,7 +445,7 @@ function removeEnt(e) {
 
 function lists() {
   if (L) return L;
-  L = { belt: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [], wall: [], turret: [], hive: [], projector: [], gun: [], ruin: [], road: [], rail: [], stop: [] };
+  L = { belt: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [], wall: [], turret: [], hive: [], projector: [], gun: [], ruin: [], road: [], rail: [], stop: [], dock: [], buoy: [] };
   for (const e of ents.values()) {
     const k = kind(e);
     if (k === 'pipe') L.node.push(e);
@@ -1532,7 +1538,7 @@ function carHit(v, x, y, a) {
   const V = VEH[v.type], c = Math.cos(a), s = Math.sin(a);
   for (const [l, w] of [[1, 1], [1, -1], [-1, 1], [-1, -1], [0, 1], [0, -1], [1, 0], [-1, 0], [0.5, 1], [-0.5, 1], [0.5, -1], [-0.5, -1]]) {
     const X = Math.floor(x + c * V.hl * l - s * V.hw * w), Y = Math.floor(y + s * V.hl * l + c * V.hw * w);
-    if (!walkable(X, Y)) return { x: X, y: Y };
+    if (!(V.sea ? floats(X, Y) : walkable(X, Y))) return { x: X, y: Y };
   }
   for (const o of S.cars) if (o !== v && Math.hypot(o.x - x, o.y - y) < VEH[o.type].hl + V.hw + 0.1 && (inCar(o, x, y, V.hw) || inCar(v, o.x, o.y, VEH[o.type].hw))) return { car: o };
   for (const t of S.trains) for (const g of t.g || []) if (Math.hypot(g.x - x, g.y - y) < 2.4 && (inTcar(g, x, y, V.hw) || [[1, 1], [1, -1], [-1, 1], [-1, -1]].some(([l, w]) => inTcar(g, x + c * V.hl * l - s * V.hw * w, y + s * V.hl * l + c * V.hw * w, 0)))) return { train: t };
@@ -1560,12 +1566,12 @@ function carWreck(v) {
 }
 function carStep(v, thr, steer) {
   const V = VEH[v.type], X = Math.floor(v.x), Y = Math.floor(v.y), o = at(X, Y);
-  const cap = V.vmax * (o && kind(o) === 'road' ? 1 : VSPD[terrain[Y * W + X]] ?? 0.6);
-  if (thr && !(v.e > 0)) refuel(v);
+  const cap = V.sea ? V.vmax * (1 - 0.4 * (v.foul || 0)) : V.vmax * (o && kind(o) === 'road' ? 1 : VSPD[terrain[Y * W + X]] ?? 0.6);
+  if (thr && !(v.e > 0)) { if (v.auto && S.pl.car !== v.id) { if (v.fc > 0) { v.fc--; v.e = (v.e || 0) + CAN_MJ; } } else refuel(v); }
   const fuel = v.e > 0, same = thr && Math.sign(thr) === Math.sign(v.v || thr);
   if (thr && !same) v.v += thr * V.acc * 1.8 * DT;
   else if (thr && fuel) { v.v += thr * V.acc * (thr < 0 ? 0.5 : 1) * DT; v.e = Math.max(0, v.e - V.burn * DT); }
-  else { const d = Math.min(Math.abs(v.v), 3 * DT); v.v -= Math.sign(v.v) * d; }
+  else { const d = Math.min(Math.abs(v.v), (V.sea ? 1.2 : 3) * DT); v.v -= Math.sign(v.v) * d; }
   if (fuel && !thr) v.e = Math.max(0, v.e - V.burn * 0.08 * DT);
   v.v -= v.v * 0.15 * DT;
   if (v.v > cap) v.v = Math.max(cap, v.v - 14 * DT);
@@ -1587,7 +1593,11 @@ function carStep(v, thr, steer) {
       else if (!hit.train) { const e = at(hit.x, hit.y); if (e && kind(e) !== 'ruin') hurt(e, dmg, 'rammed by a vehicle'); }
       fx.push({ x: nx + Math.cos(v.a) * V.hl, y: ny + Math.sin(v.a) * V.hl, t: 0.3, c: '#d0d0d0' });
     }
-    v.v = -v.v * 0.25;
+    if (V.sea && hit.x != null) {
+      const dx = v.x - hit.x - 0.5, dy = v.y - hit.y - 0.5, d = Math.hypot(dx, dy) || 1, px = v.x + dx / d * 0.05, py = v.y + dy / d * 0.05;
+      if (!carHit(v, px, py, v.a)) { v.x = px; v.y = py; }
+    }
+    v.v = -v.v * (V.sea ? 0.1 : 0.25);
     break;
   }
   const sp = Math.abs(v.v);
@@ -1595,7 +1605,8 @@ function carStep(v, thr, steer) {
     b.hp -= sp * 6; v.hp -= 1; v.lh = S.t; v.v *= 0.97;
     if (b.hp <= 0) S.pk = (S.pk || 0) + 1;
   }
-  if (thr && fuel && Math.random() < 0.35) puffs.push({ x: v.x - Math.cos(v.a) * V.hl, y: v.y - Math.sin(v.a) * V.hl, t: S.t });
+  if (V.sea) { if (Math.abs(v.v) > 1.5 && Math.random() < 0.25) wakes.push({ x: v.x - Math.cos(v.a) * V.hl, y: v.y - Math.sin(v.a) * V.hl, t: S.t, s: Math.min(1, Math.abs(v.v) / V.vmax) }); }
+  else if (thr && fuel && Math.random() < 0.35) puffs.push({ x: v.x - Math.cos(v.a) * V.hl, y: v.y - Math.sin(v.a) * V.hl, t: S.t });
   if (v.hp <= 0) carWreck(v);
 }
 function carTick() {
@@ -1607,13 +1618,17 @@ function carTick() {
       thr = (keys.w || keys.arrowup ? 1 : 0) - (keys.s || keys.arrowdown ? 1 : 0);
       steer = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0);
     }
-    if (v !== dv && v.v) v.v -= Math.sign(v.v) * Math.min(Math.abs(v.v), 9 * DT);
+    const V = VEH[v.type];
+    if (V.sea && v.auto && v !== dv) [thr, steer] = boatPilot(v);
+    else if (v !== dv && v.v) v.v -= Math.sign(v.v) * Math.min(Math.abs(v.v), (V.sea ? 2 : 9) * DT);
+    if (V.sea) { if (v.af > 0) v.af -= DT; else v.foul = Math.min(1, (v.foul || 0) + DT / 1800); }
     carStep(v, thr, steer);
     if (S.t - (v.lh ?? -99) > 10 && v.hp < VEH[v.type].hp) v.hp = Math.min(VEH[v.type].hp, v.hp + 2 * DT);
   }
   const d2 = P.car && carOf(P.car);
   if (d2) { P.x = d2.x; P.y = d2.y; P.f = d2.a; }
   if (puffs.length > 80) puffs.splice(0, puffs.length - 80);
+  if (wakes.length > 160) wakes.splice(0, wakes.length - 160);
 }
 function carToggle() {
   const P = S.pl;
@@ -1635,13 +1650,13 @@ function carToggle() {
   const v = P.car && carOf(P.car);
   if (v) {
     const V = VEH[v.type], c = Math.cos(v.a), s = Math.sin(v.a);
-    for (const [l, w] of [[0, -1], [0, 1], [-1, 0], [1, 0], [0.6, -1], [-0.6, 1]]) {
-      const ox = l * (V.hl + 0.45), oy = w * (V.hw + 0.45), x = v.x + c * ox - s * oy, y = v.y + s * ox + c * oy;
+    for (const g of V.sea ? [0.45, 1, 1.6, 2.2] : [0.45]) for (const [l, w] of [[0, -1], [0, 1], [-1, 0], [1, 0], [0.6, -1], [-0.6, 1], [-0.6, -1], [0.6, 1]]) {
+      const ox = l * (V.hl + g), oy = w * (V.hw + g), x = v.x + c * ox - s * oy, y = v.y + s * ox + c * oy;
       P.car = null;
-      if (plFree(x, y)) { P.x = x; P.y = y; P.f = v.a - Math.PI / 2; return true; }
+      if (plFree(x, y)) { P.x = x; P.y = y; P.f = v.a - Math.PI / 2; if (V.sea) v.v = 0; return true; }
       P.car = v.id;
     }
-    toast('No room to get out here.', true);
+    toast(V.sea ? 'Bring the boat alongside the shore to get off.' : 'No room to get out here.', true);
     return false;
   }
   let best = null, bd = 3;
@@ -1655,10 +1670,11 @@ function carToggle() {
 function placeCar(t, fx, fy, dir) {
   const P = S.pl, V = VEH[t];
   if (!(S.inv[t] > 0)) return 'You have no ' + nm(t);
-  if (!inReach(fx, fy, REACH)) return 'Out of reach. Walk closer.';
+  if (!inReach(fx, fy, REACH + (V.sea ? 2 : 0))) return 'Out of reach. Walk closer.';
   const v = { id: S.nextId++, type: t, x: fx, y: fy, a: Math.atan2(DY[dir], DX[dir]), v: 0, hp: V.hp, e: 0, fc: 0, tr: {} };
+  if (V.sea) Object.assign(v, { foul: 0, af: 3600, sch: [], si: 0, auto: false });
   const h = carHit(v, fx, fy, v.a);
-  if (h) return h.pl ? 'You are standing there' : 'Something is in the way';
+  if (h) return h.pl ? 'You are standing there' : V.sea && h.x != null ? 'Boats go in the water, clear of the shore' : 'Something is in the way';
   S.inv[t]--;
   S.cars.push(v);
   return v;
@@ -1666,7 +1682,7 @@ function placeCar(t, fx, fy, dir) {
 function pickCar(v) {
   const P = S.pl;
   if (P.car === v.id) return toast('Get out first (F).', true);
-  if (!inReach(v.x, v.y, REACH)) return toast('Out of reach. Walk closer.', true);
+  if (!inReach(v.x, v.y, REACH + (VEH[v.type].sea ? 2 : 0))) return toast('Out of reach. Walk closer.', true);
   give(v.type, 1); qbAdd(v.type);
   for (const k in v.tr) give(k, v.tr[k]);
   give('jerrycan', v.fc || 0);
@@ -1676,6 +1692,130 @@ function pickCar(v) {
   renderHotbar();
 }
 
+function floats(x, y) {
+  if (x < 0 || y < 0 || x >= W || y >= H || terrain[y * W + x] !== 1) return false;
+  const o = at(x, y);
+  return !o || kind(o) === 'buoy';
+}
+const boatMark = id => { const e = ents.get(id); return e && (e.type === 'dock' || e.type === 'buoy') ? e : null; };
+function boatGoal(e) {
+  const out = [];
+  if (e.type === 'buoy') { out.push(e.y * W + e.x); return out; }
+  for (let j = -2; j <= 2; j++) for (let i = -2; i <= 2; i++) {
+    const x = e.x + i, y = e.y + j;
+    if (Math.hypot(i, j) <= 2.3 && floats(x, y)) out.push(y * W + x);
+  }
+  return out;
+}
+function boatRoute(v, e) {
+  const goal = new Set(boatGoal(e));
+  if (!goal.size) return null;
+  const sx = Math.floor(v.x), sy = Math.floor(v.y), s = sy * W + sx;
+  const dist = new Map([[s, 0]]), prev = new Map(), hp = [[0, s]];
+  const cc = new Map(), clear = (x, y) => { const k = y * W + x; let d = cc.get(k); if (d !== undefined) return d; d = 3; for (let r = 1; r <= 3 && d === 3; r++) for (let j = -r; j <= r && d === 3; j++) for (let i = -r; i <= r; i++) if ((Math.abs(i) === r || Math.abs(j) === r) && !floats(x + i, y + j)) { d = r - 1; break; } cc.set(k, d); return d; };
+  const push = it => { hp.push(it); let i = hp.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (hp[p][0] <= hp[i][0]) break; [hp[p], hp[i]] = [hp[i], hp[p]]; i = p; } };
+  const pop = () => { const top = hp[0], last = hp.pop(); if (hp.length) { hp[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < hp.length && hp[l][0] < hp[m][0]) m = l; if (r < hp.length && hp[r][0] < hp[m][0]) m = r; if (m === i) break; [hp[m], hp[i]] = [hp[i], hp[m]]; i = m; } } return top; };
+  let end = -1, n = 0;
+  while (hp.length && n++ < 80000) {
+    const [d, k] = pop();
+    if (d > dist.get(k)) continue;
+    if (goal.has(k)) { end = k; break; }
+    const x = k % W, y = (k - x) / W;
+    for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) {
+      if (!i && !j) continue;
+      const nx = x + i, ny = y + j;
+      if (!floats(nx, ny)) continue;
+      if (i && j && !(floats(x + i, y) && floats(x, y + j))) continue;
+      const nk = ny * W + nx, nd = d + (i && j ? 1.414 : 1) * (1 + [6, 2.5, 0.8, 0][clear(nx, ny)]);
+      if (nd < (dist.get(nk) ?? 1e9)) { dist.set(nk, nd); prev.set(nk, k); push([nd, nk]); }
+    }
+  }
+  if (end < 0) return null;
+  const p = [];
+  for (let k = end; k !== undefined && k !== s; k = prev.get(k)) p.push([k % W + 0.5, Math.floor(k / W) + 0.5]);
+  p.reverse();
+  return p;
+}
+function boatWork(v, e) {
+  const V = VEH[v.type];
+  v.wt = (v.wt || 0) + DT; v.tk = (v.tk || 0) + DT;
+  v.st = 'At ' + e.nm + (e.mode === 'unload' ? ', unloading' : ', loading');
+  if (v.tk < 0.25) return;
+  v.tk = 0;
+  let moved = 0;
+  for (const c of lists().chest) {
+    if (c.type !== 'chest' || !c.store || Math.max(Math.abs(c.x - e.x), Math.abs(c.y - e.y)) > 1) continue;
+    const f = Math.min(c.store.jerrycan || 0, FUEL_CAP - (v.fc || 0));
+    if (f > 0) { c.store.jerrycan -= f; if (!c.store.jerrycan) delete c.store.jerrycan; v.fc = (v.fc || 0) + f; moved += f; }
+    let left = 20;
+    if (e.mode === 'unload') {
+      for (const k of Object.keys(v.tr)) {
+        const m = Math.min(left, v.tr[k], 400 - sum(c.store));
+        if (m <= 0) continue;
+        v.tr[k] -= m; if (!v.tr[k]) delete v.tr[k];
+        c.store[k] = (c.store[k] || 0) + m; left -= m; moved += m;
+      }
+    } else {
+      for (const k of Object.keys(c.store)) {
+        if (k === 'jerrycan' || !(c.store[k] > 0)) continue;
+        const cur = v.tr[k] || 0, room = (V.slots - carSlots(v)) * stk(k) + (cur % stk(k) ? stk(k) - cur % stk(k) : 0);
+        const m = Math.min(left, c.store[k], room);
+        if (m <= 0) continue;
+        c.store[k] -= m; if (!c.store[k]) delete c.store[k];
+        v.tr[k] = cur + m; left -= m; moved += m;
+      }
+    }
+  }
+  if (moved) v.idle = 0; else v.idle = (v.idle || 0) + 0.25;
+}
+function boatPilot(v) {
+  const V = VEH[v.type];
+  v.sch = (v.sch || []).filter(id => boatMark(id));
+  if (!v.sch.length) { v.st = 'No schedule'; return [v.v > 0.2 ? -0.5 : v.v < -0.2 ? 0.5 : 0, 0]; }
+  if (!(v.si < v.sch.length)) v.si = 0;
+  const e = boatMark(v.sch[v.si]);
+  const dd = Math.hypot(e.x + 0.5 - v.x, e.y + 0.5 - v.y);
+  if (v.state === 'wait') {
+    boatWork(v, e);
+    if (v.wt > 2 && v.idle >= 2) { v.state = 'go'; v.si = (v.si + 1) % v.sch.length; v.route = null; }
+    return [v.v > 0.2 ? -0.6 : v.v < -0.2 ? 0.6 : 0, 0];
+  }
+  const near = e.type === 'buoy' ? dd < 1.4 : dd < V.hl + 1.8;
+  if (near) {
+    if (e.type === 'buoy') { v.si = (v.si + 1) % v.sch.length; v.route = null; return [0, 0]; }
+    if (Math.abs(v.v) < 1.2) { v.state = 'wait'; v.wt = 0; v.tk = 0; v.idle = 0; v.route = null; return [0, 0]; }
+  }
+  if (!(v.e > 0) && !(v.fc > 0) && S.pl.car !== v.id) { v.st = 'Out of fuel'; return [0, 0]; }
+  if (v.rev > 0) { v.rev -= DT; v.st = 'Backing off'; return [-1, v.rs || 1]; }
+  if (!v.route || (v.rt = (v.rt || 0) - DT) < -20) {
+    v.route = boatRoute(v, e); v.rp = 0; v.rt = 0;
+    if (!v.route) { v.st = 'No water route to ' + e.nm; v.route = null; v.rt = -15; return [0, 0]; }
+  }
+  const R = v.route;
+  let bj = v.rp, bd = 1e9;
+  for (let j = v.rp; j < Math.min(R.length, v.rp + 10); j++) { const d = Math.hypot(R[j][0] - v.x, R[j][1] - v.y); if (d < bd) { bd = d; bj = j; } }
+  v.rp = bj;
+  if (bd > 4) { v.route = null; return [0, 0]; }
+  const look = R[Math.min(R.length - 1, v.rp + (V.hl > 1.4 ? 3 : 2))] || [e.x + 0.5, e.y + 0.5];
+  let da = Math.atan2(look[1] - v.y, look[0] - v.x) - v.a;
+  while (da > Math.PI) da -= Math.PI * 2;
+  while (da < -Math.PI) da += Math.PI * 2;
+  const left = (R.length - v.rp) + 0.5;
+  const vd = Math.min(V.vmax, 1.4 + left * 1.1, Math.abs(da) > 0.9 ? 2.5 : V.vmax);
+  const thr = v.v < vd ? 1 : v.v > vd + 1 ? -0.4 : 0;
+  v.st = 'Heading to ' + e.nm;
+  v.stk = (v.stk || 0) + DT;
+  if (v.stk > 3) {
+    if (Math.hypot(v.x - (v.sx ?? 1e9), v.y - (v.sy ?? 1e9)) < 0.8) { v.rev = 1.5; v.rs = da > 0 ? -1 : 1; v.route = null; }
+    v.stk = 0; v.sx = v.x; v.sy = v.y;
+  }
+  return [thr, Math.max(-1, Math.min(1, da * 2.5))];
+}
+function dockDyn(e) {
+  const n = S.cars.filter(v => v.auto && v.sch && v.sch[v.si] === e.id).length;
+  if (e.type === 'buoy') return `<div class="status"><i style="background:#e05a4a"></i>${e.nm} · ${n ? n + ' boat' + (n > 1 ? 's' : '') + ' heading here' : 'no boats heading here'}</div><p class="dim">A waypoint. Boats pass within a tile or so of it and carry on to the next entry on their route.</p>`;
+  return `<div class="status"><i style="background:${e.mode === 'unload' ? '#4a8ae0' : '#7fe08a'}"></i>${e.nm} · ${n ? n + ' boat' + (n > 1 ? 's' : '') + ' heading here' : 'no boats heading here'}</div><p class="dim">Boats come alongside and ${e.mode === 'unload' ? 'empty their hold into' : 'fill their hold from'} chests touching the dock, 20 items every quarter second, and cast off once nothing has moved for 2 seconds. They also take jerrycans from those chests.</p>`;
+}
 const trainOf = id => S.trains.find(t => t.id === id);
 const isRail = (x, y) => { const o = at(x, y); return !!o && kind(o) === 'rail'; };
 const dirOf = (a, b) => b[0] > a[0] ? 1 : b[0] < a[0] ? 3 : b[1] > a[1] ? 2 : 0;
@@ -1998,7 +2138,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, help: S.help, qb: S.qb, cq: S.cq, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, help: S.help, qb: S.qb, cq: S.cq, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -2191,7 +2331,7 @@ function render() {
   ctx.fillStyle = 'rgba(0,0,0,0.3)';
   for (const e of vis) {
     const k = kind(e);
-    if (k === 'pipe' || e.type === 'belt' || k === 'hive' || k === 'ruin' || k === 'road' || k === 'rail' || k === 'stop') continue;
+    if (k === 'pipe' || e.type === 'belt' || k === 'hive' || k === 'ruin' || k === 'road' || k === 'rail' || k === 'stop' || k === 'buoy') continue;
     const B = BUILD[e.type];
     ctx.fillRect(ox + e.x * z + z * 0.18, oy + e.y * z + z * 0.24, B.w * z - z * 0.12, B.h * z - z * 0.12);
   }
@@ -2202,6 +2342,8 @@ function render() {
   for (const e of vis) if (e.type === 'belt') drawBeltItems(e, ox, oy, z);
   for (const e of vis) if (kind(e) !== 'pipe' && e.type !== 'belt' && kind(e) !== 'road' && kind(e) !== 'rail') drawBuilding(e, ox, oy, z);
   drawSmoke(vis, ox, oy, z);
+  drawWakes(ox, oy, z);
+  { const sv = selCar && carOf(selCar); if (sv && VEH[sv.type].sea && sv.auto && sv.route) drawBoatRoute(sv, ox, oy, z); }
   for (const v of S.cars) if (v.x > x0 - 3 && v.x < x1 + 3 && v.y > y0 - 3 && v.y < y1 + 3) drawCar(v, ox + v.x * z, oy + v.y * z, z);
   for (const t of S.trains) drawTrain(t, ox, oy, z);
   drawPuffs(ox, oy, z);
@@ -2287,7 +2429,7 @@ function render() {
     const gauge = (y, lab, f, col, txt) => { ctx.fillStyle = '#9aa0a8'; ctx.font = '11px system-ui, sans-serif'; ctx.fillText(lab, bx + 12, y + 8); ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(bx + 50, y, 120, 9); ctx.fillStyle = col; ctx.fillRect(bx + 50, y, 120 * Math.max(0, Math.min(1, f)), 9); ctx.fillStyle = '#c8c4b8'; ctx.fillText(txt, bx + 178, y + 8); };
     gauge(by + 40, 'Fuel', (dv.e || 0) / CAN_MJ, '#d8b848', dv.fc ? '+' + dv.fc + ' can' + (dv.fc > 1 ? 's' : '') : (S.inv.jerrycan || 0) + ' in pack');
     gauge(by + 56, 'Body', dv.hp / V.hp, dv.hp / V.hp > 0.5 ? '#7fe08a' : dv.hp / V.hp > 0.25 ? '#e0b84a' : '#e04a4a', Math.round(dv.hp / V.hp * 100) + '%');
-    ctx.fillStyle = '#6a7078'; ctx.font = '10px system-ui, sans-serif'; ctx.fillText('W/S throttle and brake · A/D steer · F get out', bx + 12, by + 78);
+    ctx.fillStyle = '#6a7078'; ctx.font = '10px system-ui, sans-serif'; ctx.fillText(V.sea ? (dv.foul > 0.3 ? 'Hull fouled: ' + Math.round(dv.foul * 40) + '% slower · repaint with antifouling' : 'W/S throttle and astern · A/D rudder · F get off at a shore') : 'W/S throttle and brake · A/D steer · F get out', bx + 12, by + 78);
   }
   if (tool && mouse.in) {
     ctx.strokeStyle = 'rgba(255,255,255,0.32)'; ctx.lineWidth = 1.5; ctx.setLineDash([6, 6]);
@@ -2532,6 +2674,7 @@ function drawRoad(e, ox, oy, z) {
 }
 function drawCar(v, X, Y, z, al) {
   const V = VEH[v.type], L = V.hl * z, R = V.hw * z, tr = v.type === 'truck', c = V.c;
+  if (V.sea) return drawBoat(v, X, Y, z, al);
   ctx.save(); ctx.translate(X, Y); ctx.rotate(v.a);
   if (al != null) ctx.globalAlpha = al;
   const drv = S.pl.car === v.id;
@@ -2574,6 +2717,109 @@ function drawCar(v, X, Y, z, al) {
     ctx.fillStyle = v.hp / V0 > 0.5 ? '#7fe08a' : v.hp / V0 > 0.25 ? '#e0b84a' : '#e04a4a';
     ctx.fillRect(X - bw / 2, by, bw * v.hp / V0, Math.max(3, z * 0.07));
   }
+}
+function drawBoat(v, X, Y, z, al) {
+  const V = VEH[v.type], L = V.hl * z, R = V.hw * z, c = V.c, bg = v.type === 'barge';
+  ctx.save(); ctx.translate(X, Y); ctx.rotate(v.a);
+  if (al != null) ctx.globalAlpha = al;
+  const bob = Math.sin(performance.now() / 600 + v.id) * z * 0.02;
+  ctx.translate(0, bob);
+  ctx.fillStyle = 'rgba(10,30,50,0.35)'; ctx.beginPath(); ctx.ellipse(z * 0.06, z * 0.1, L * 1.02, R * 1.1, 0, 0, 7); ctx.fill();
+  const hull = () => {
+    ctx.beginPath();
+    if (bg) { ctx.moveTo(-L, -R); ctx.lineTo(L * 0.78, -R); ctx.quadraticCurveTo(L, -R, L, -R * 0.4); ctx.lineTo(L, R * 0.4); ctx.quadraticCurveTo(L, R, L * 0.78, R); ctx.lineTo(-L, R); ctx.closePath(); }
+    else { ctx.moveTo(-L, -R * 0.82); ctx.lineTo(L * 0.25, -R); ctx.quadraticCurveTo(L * 0.85, -R * 0.8, L, 0); ctx.quadraticCurveTo(L * 0.85, R * 0.8, L * 0.25, R); ctx.lineTo(-L, R * 0.82); ctx.closePath(); }
+  };
+  const fo = Math.min(1, v.foul || 0);
+  ctx.fillStyle = fo > 0.3 ? `rgba(70,110,60,${0.25 + 0.4 * fo})` : 'rgba(140,40,30,0.55)';
+  ctx.save(); ctx.scale(1.04, 1.12); hull(); ctx.fill(); ctx.restore();
+  const g = ctx.createLinearGradient(0, -R, 0, R);
+  g.addColorStop(0, c[0]); g.addColorStop(0.5, c[1]); g.addColorStop(1, c[2]);
+  ctx.fillStyle = g; hull(); ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.45)'; ctx.lineWidth = Math.max(1, z * 0.03); ctx.stroke();
+  if (bg) {
+    ctx.fillStyle = '#2a2c30'; ctx.fillRect(-L * 0.5, -R * 0.74, L * 1.25, R * 1.48);
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = Math.max(1, z * 0.02);
+    for (let i = 1; i < 5; i++) { const x = -L * 0.5 + L * 1.25 * i / 5; ctx.beginPath(); ctx.moveTo(x, -R * 0.74); ctx.lineTo(x, R * 0.74); ctx.stroke(); }
+    const used = carSlots(v), n = Math.min(10, Math.ceil(used / (V.slots / 10)));
+    let top = null; for (const k in v.tr) if (!top || v.tr[k] > v.tr[top]) top = k;
+    const cc = (top && ITEMS[top] && ITEMS[top].c) || '#a07840';
+    for (let i = 0; i < n; i++) { const cx = -L * 0.46 + (i % 5) * L * 0.245, cy = (i < 5 ? -1 : 1) * R * 0.36; ctx.fillStyle = cc; ctx.fillRect(cx, cy - R * 0.3, L * 0.22, R * 0.6); ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.strokeRect(cx, cy - R * 0.3, L * 0.22, R * 0.6); }
+    ctx.fillStyle = '#e8e4d8'; ctx.beginPath(); ctx.roundRect(-L * 0.92, -R * 0.62, L * 0.36, R * 1.24, z * 0.05); ctx.fill();
+    ctx.fillStyle = '#1c2630'; ctx.fillRect(-L * 0.62, -R * 0.5, L * 0.05, R);
+    ctx.fillStyle = '#2a2a2c'; ctx.beginPath(); ctx.arc(-L * 0.8, 0, R * 0.16, 0, 7); ctx.fill();
+  } else {
+    ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.beginPath(); ctx.moveTo(L * 0.3, -R * 0.55); ctx.quadraticCurveTo(L * 0.8, -R * 0.4, L * 0.88, 0); ctx.quadraticCurveTo(L * 0.8, R * 0.4, L * 0.3, R * 0.55); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#8a6a48'; ctx.fillRect(-L * 0.78, -R * 0.62, L * 0.72, R * 1.24);
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = Math.max(1, z * 0.015);
+    for (let i = 1; i < 4; i++) { const y = -R * 0.62 + R * 1.24 * i / 4; ctx.beginPath(); ctx.moveTo(-L * 0.78, y); ctx.lineTo(-L * 0.06, y); ctx.stroke(); }
+    if (carSlots(v)) { ctx.fillStyle = '#a07840'; ctx.fillRect(-L * 0.7, -R * 0.4, L * 0.3, R * 0.8); }
+    ctx.fillStyle = '#1c2630'; ctx.beginPath(); ctx.roundRect(-L * 0.05, -R * 0.62, L * 0.36, R * 1.24, z * 0.06); ctx.fill();
+    ctx.fillStyle = 'rgba(160,210,235,0.6)'; ctx.fillRect(L * 0.2, -R * 0.52, L * 0.08, R * 1.04);
+    ctx.fillStyle = '#2a2a2c'; ctx.fillRect(-L - z * 0.12, -R * 0.2, z * 0.18, R * 0.4);
+  }
+  ctx.fillStyle = '#e02020'; ctx.beginPath(); ctx.arc(L * (bg ? 0.9 : 0.55), -R * 0.86, Math.max(1.2, z * 0.04), 0, 7); ctx.fill();
+  ctx.fillStyle = '#20d040'; ctx.beginPath(); ctx.arc(L * (bg ? 0.9 : 0.55), R * 0.86, Math.max(1.2, z * 0.04), 0, 7); ctx.fill();
+  ctx.restore();
+  if (v.hp < V.hp && al == null) {
+    const bw = z * 1.2, by = Y - (V.hl + 0.3) * z;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(X - bw / 2, by, bw, Math.max(3, z * 0.07));
+    ctx.fillStyle = v.hp / V.hp > 0.5 ? '#7fe08a' : v.hp / V.hp > 0.25 ? '#e0b84a' : '#e04a4a';
+    ctx.fillRect(X - bw / 2, by, bw * v.hp / V.hp, Math.max(3, z * 0.07));
+  }
+}
+function drawWakes(ox, oy, z) {
+  for (const p of wakes) {
+    const a = S.t - p.t;
+    if (a > 2.5 || a < 0) continue;
+    ctx.strokeStyle = `rgba(230,245,255,${0.4 * (1 - a / 2.5)})`; ctx.lineWidth = Math.max(1, z * 0.05);
+    ctx.beginPath(); ctx.arc(ox + p.x * z, oy + p.y * z, z * (0.15 + a * 0.35), 0, 7); ctx.stroke();
+  }
+}
+function drawBoatRoute(v, ox, oy, z) {
+  const R = v.route;
+  if (!R || !R.length) return;
+  ctx.strokeStyle = 'rgba(120,220,255,0.75)'; ctx.lineWidth = Math.max(1.5, z * 0.06); ctx.setLineDash([z * 0.25, z * 0.2]);
+  ctx.beginPath(); ctx.moveTo(ox + v.x * z, oy + v.y * z);
+  for (let i = v.rp || 0; i < R.length; i++) ctx.lineTo(ox + R[i][0] * z, oy + R[i][1] * z);
+  ctx.stroke(); ctx.setLineDash([]);
+  const q = R[R.length - 1];
+  ctx.fillStyle = 'rgba(120,220,255,0.9)'; ctx.beginPath(); ctx.arc(ox + q[0] * z, oy + q[1] * z, Math.max(2, z * 0.12), 0, 7); ctx.fill();
+}
+function drawLabel(e, cx, y, z) {
+  if (z <= 18) return;
+  ctx.font = `bold ${Math.round(Math.min(14, z * 0.26))}px system-ui, sans-serif`; ctx.textAlign = 'center';
+  const tw = ctx.measureText(e.nm || '').width;
+  ctx.fillStyle = 'rgba(14,16,20,0.75)'; ctx.fillRect(cx - tw / 2 - 4, y - z * 0.3, tw + 8, Math.min(18, z * 0.34));
+  ctx.fillStyle = '#9ce0ff'; ctx.fillText(e.nm || '', cx, y - z * 0.3 + Math.min(14, z * 0.26)); ctx.textAlign = 'left';
+}
+function drawDock(e, x, y, z) {
+  const wd = [0, 1, 2, 3].find(d => { const X = e.x + DX[d], Y = e.y + DY[d]; return X >= 0 && Y >= 0 && X < W && Y < H && terrain[Y * W + X] === 1; }) ?? 1;
+  const cx = x + z / 2, cy = y + z / 2;
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(Math.atan2(DY[wd], DX[wd]));
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(-z * 0.42, -z * 0.36, z * 1.3, z * 0.8);
+  ctx.fillStyle = '#5a4430'; for (const py of [-0.34, 0.34]) for (const px of [0.3, 0.8]) { ctx.beginPath(); ctx.arc(px * z, py * z, z * 0.06, 0, 7); ctx.fill(); }
+  for (let i = 0; i < 7; i++) { ctx.fillStyle = i % 2 ? '#9a7a54' : '#8a6a46'; ctx.fillRect(-z * 0.46 + i * z * 0.19, -z * 0.4, z * 0.17, z * 0.8); }
+  ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = Math.max(1, z * 0.02); ctx.strokeRect(-z * 0.46, -z * 0.4, z * 1.33, z * 0.8);
+  ctx.fillStyle = '#2a2c30'; for (const py of [-0.3, 0.3]) { ctx.beginPath(); ctx.arc(z * 0.72, py * z, z * 0.07, 0, 7); ctx.fill(); }
+  ctx.fillStyle = '#e8c040'; ctx.fillRect(z * 0.83, -z * 0.4, z * 0.04, z * 0.8);
+  ctx.restore();
+  ctx.fillStyle = e.mode === 'unload' ? '#2a5aa0' : '#2a8a4a'; ctx.beginPath(); ctx.roundRect(x + z * 0.18, y + z * 0.3, z * 0.64, z * 0.26, z * 0.05); ctx.fill();
+  if (z > 12) { ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.round(z * 0.17)}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.fillText(e.mode === 'unload' ? 'UNLOAD' : 'LOAD', cx, y + z * 0.49); ctx.textAlign = 'left'; }
+  drawLabel(e, cx, y, z);
+}
+function drawBuoy(e, x, y, z) {
+  const cx = x + z / 2, cy = y + z / 2, t = performance.now() / 1000, bob = Math.sin(t * 1.7 + e.id) * z * 0.03;
+  ctx.strokeStyle = 'rgba(230,245,255,0.35)'; ctx.lineWidth = Math.max(1, z * 0.03);
+  ctx.beginPath(); ctx.arc(cx, cy, z * (0.3 + 0.08 * Math.sin(t * 2 + e.id)), 0, 7); ctx.stroke();
+  ctx.fillStyle = 'rgba(0,20,40,0.35)'; ctx.beginPath(); ctx.ellipse(cx + z * 0.05, cy + z * 0.08, z * 0.2, z * 0.12, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#d83020'; ctx.beginPath(); ctx.arc(cx, cy + bob, z * 0.2, 0, 7); ctx.fill();
+  ctx.fillStyle = '#f0f0e8'; ctx.fillRect(cx - z * 0.2, cy + bob - z * 0.04, z * 0.4, z * 0.08);
+  ctx.fillStyle = '#2a2a2c'; ctx.fillRect(cx - z * 0.03, cy + bob - z * 0.34, z * 0.06, z * 0.2);
+  const on = (t + e.id * 0.37) % 2 < 0.35;
+  ctx.fillStyle = on ? '#fff060' : '#6a6030'; ctx.beginPath(); ctx.arc(cx, cy + bob - z * 0.36, z * 0.07, 0, 7); ctx.fill();
+  if (on) { ctx.fillStyle = 'rgba(255,240,96,0.25)'; ctx.beginPath(); ctx.arc(cx, cy + bob - z * 0.36, z * 0.3, 0, 7); ctx.fill(); }
+  drawLabel(e, cx, y, z);
 }
 function drawPuffs(ox, oy, z) {
   for (const p of puffs) {
@@ -2958,6 +3204,8 @@ function drawBuilding(e, ox, oy, z) {
   const B = BUILD[e.type], x = ox + e.x * z, y = oy + e.y * z, w = B.w * z, h = B.h * z, p = Math.max(1, z * 0.06);
   if (B.kind === 'hive') return drawHive(e, x, y, w, h, z);
   if (B.kind === 'stop') return drawStop(e, x, y, z);
+  if (B.kind === 'dock') return drawDock(e, x, y, z);
+  if (B.kind === 'buoy') return drawBuoy(e, x, y, z);
   if (B.kind === 'wall') return drawWall(e, x, y, z);
   if (B.kind === 'turret') return drawTurret(e, x, y, w, h, z);
   if (B.kind === 'projector') return drawProjector(e, x, y, w, h, z);
@@ -3323,13 +3571,21 @@ function closePanel() { sel = null; selCar = null; selTrain = null; panel.hidden
 function openCar(v) {
   sel = null; selCar = v.id; selTrain = null;
   const B = BUILD[v.type];
+  if (VEH[v.type].sea) {
+    const marks = [...ents.values()].filter(e => e.type === 'dock' || e.type === 'buoy');
+    const lab = e => e.type === 'buoy' ? 'pass' : e.mode === 'unload' ? 'unload' : 'load';
+    panel.innerHTML = `<div class="ph"><span class="sw big" style="background:${B.c}">${B.ab}</span><div class="pt"><b>${B.n}</b><small>${B.d}</small></div><button class="x" data-act="close" title="Close">×</button></div><div id="pdyn"></div><div class="sec">Route</div><div class="sched">${(v.sch || []).map((id, i) => { const e = ents.get(id); return e ? `<div class="srow${v.auto && i === v.si ? ' on' : ''}"><span>${i + 1}. ${e.nm}</span><em>${lab(e)}</em><button data-act="bdel" data-i="${i}" title="Remove">×</button></div>` : ''; }).join('') || '<span class="dim">No docks or buoys yet.</span>'}</div><label class="row">Add <select data-act="badd"><option value="">Choose a dock or buoy</option>${marks.map(e => `<option value="${e.id}">${e.nm} (${lab(e)})</option>`).join('')}</select></label><div class="pbtns"><button data-act="bauto">${v.auto ? 'Switch to manual' : 'Run automatically'}</button><button data-act="cfuel">Add jerrycans</button><button data-act="bpaint">Repaint hull</button><button data-act="cdrive">${S.pl.car === v.id ? 'Get off (F)' : 'Get aboard (F)'}</button><button data-act="ctake">Take all cargo</button><button data-act="cstore">Load raw materials</button><button class="danger" data-act="cpick">Pick up</button></div>`;
+    panel.hidden = false;
+    return renderPanelDyn();
+  }
   panel.innerHTML = `<div class="ph"><span class="sw big" style="background:${B.c}">${B.ab}</span><div class="pt"><b>${B.n}</b><small>${B.d}</small></div><button class="x" data-act="close" title="Close">×</button></div><div id="pdyn"></div><div class="pbtns"><button data-act="cfuel">Add jerrycans</button><button data-act="cdrive">${S.pl.car === v.id ? 'Get out (F)' : 'Get in (F)'}</button><button data-act="ctake">Take all cargo</button><button data-act="cstore">Load raw materials</button><button class="danger" data-act="cpick">Pick up</button></div>`;
   panel.hidden = false;
   renderPanelDyn();
 }
 function carDyn(v) {
   const V = VEH[v.type], used = carSlots(v);
-  let h = `<div class="gauge"><span>Body</span>${bar(v.hp, V.hp, v.hp / V.hp > 0.5 ? '#7fe08a' : '#e0b84a')}<b>${Math.round(v.hp)} / ${V.hp}</b></div>`;
+  let h = V.sea ? `<div class="status"><i style="background:${v.auto ? (/Heading|At /.test(v.st) ? '#7fe08a' : '#e0b84a') : '#9aa0a8'}"></i>${v.auto ? v.st || 'Starting' : S.pl.car === v.id ? 'Manual, you are at the helm' : 'Manual, drifting'} · ${(Math.abs(v.v) * 1.944).toFixed(1)} knots</div><div class="gauge"><span>Fouling</span>${bar(v.foul || 0, 1, (v.foul || 0) > 0.5 ? '#e0b84a' : '#6ab07a')}<b>${Math.round((v.foul || 0) * 40)}% slower</b></div><p class="dim">${v.af > 0 ? 'Antifouling active for ' + Math.ceil(v.af / 60) + ' more minutes.' : 'The antifouling has worn off. Weed and barnacles are growing on the hull.'} Repainting uses one tin of antifouling paint.</p>` : '';
+  h += `<div class="gauge"><span>Body</span>${bar(v.hp, V.hp, v.hp / V.hp > 0.5 ? '#7fe08a' : '#e0b84a')}<b>${Math.round(v.hp)} / ${V.hp}</b></div>`;
   h += `<div class="gauge"><span>Tank</span>${bar(v.e || 0, CAN_MJ, '#d8b848')}<b>${Math.round(v.e || 0)} MJ</b></div>`;
   h += `<div class="sec">Fuel slot</div><div class="cgrid"><button class="cslot" data-act="cfuel" title="Add jerrycans from your pack">${ico('jerrycan')}<span class="cnt">${v.fc || 0}/${FUEL_CAP}</span></button></div><p class="dim">${Math.round(Math.abs(v.v) * 3.6)} km/h. A jerrycan lasts about ${Math.round(CAN_MJ / V.burn / 60)} minutes at full throttle; spare cans in your pack are poured in when the tank runs dry.</p>`;
   h += `<div class="sec">Cargo · ${used} / ${V.slots} slots</div><div class="cgrid">`;
@@ -3353,6 +3609,13 @@ function carAct(act, el) {
   const v = carOf(selCar);
   if (!v) return closePanel();
   const k = el.dataset.k;
+  if (act === 'badd') { const id = +el.value; if (id) { v.sch = v.sch || []; v.sch.push(id); if (v.sch.length === 1) v.si = 0; } return openCar(v); }
+  if (act === 'bdel') { const i = +el.dataset.i; v.sch.splice(i, 1); if (v.si >= i && v.si > 0) v.si--; v.route = null; return openCar(v); }
+  if (act === 'bauto') {
+    v.auto = !v.auto; v.state = 'go'; v.route = null; v.st = '';
+    if (v.auto && !(v.sch || []).length) toast('Add docks or buoys to the route first.', true);
+    return openCar(v);
+  }
   if (act === 'cfuel') {
     const n = Math.min(FUEL_CAP - (v.fc || 0), S.inv.jerrycan || 0);
     if (n <= 0) return toast(v.fc >= FUEL_CAP ? 'The fuel slot is full.' : 'You have no jerrycans. Fill them with diesel at a cylinder filler.', true);
@@ -3360,6 +3623,10 @@ function carAct(act, el) {
   } else if (act === 'cdrive') { if (S.pl.car !== v.id && Math.hypot(v.x - S.pl.x, v.y - S.pl.y) > 3 + VEH[v.type].hw) return toast('Walk up to it first.', true); carToggle(); return openCar(v); }
   else if (act === 'cpick') return pickCar(v);
   else if (!inReach(v.x, v.y, REACH)) return toast('Out of reach. Walk closer.', true);
+  else if (act === 'bpaint') {
+    if (!(S.inv.antifouling > 0)) return toast('You need a tin of antifouling paint. Disperse cuprous oxide and rosin in xylene.', true);
+    S.inv.antifouling--; v.foul = 0; v.af = 3600; toast('Hull scraped and repainted. Clean for an hour.');
+  }
   else if (act === 'ctk') { give(k, v.tr[k] || 0); delete v.tr[k]; }
   else if (act === 'cpt') { if (!carPut(v, k, S.inv[k] || 0)) toast('The cargo bed is full.', true); }
   else if (act === 'ctake') { for (const q in v.tr) give(q, v.tr[q]); v.tr = {}; }
@@ -3377,6 +3644,7 @@ function openPanel(e) {
   if (e.type === 'sorter') {
     h += `<label class="row">Filter <select data-act="filter"><option value="">None (all forward)</option>${Object.keys(ITEMS).map(k => `<option value="${k}" ${e.filter === k ? 'selected' : ''}>${ITEMS[k].n}</option>`).join('')}</select></label>`;
   }
+  if (e.type === 'dock') h += `<label class="row">Mode <select data-act="smode"><option value="load" ${e.mode !== 'unload' ? 'selected' : ''}>Load boats</option><option value="unload" ${e.mode === 'unload' ? 'selected' : ''}>Unload boats</option></select></label>`;
   if (e.type === 'train_stop') h += `<label class="row">Mode <select data-act="smode"><option value="load" ${e.mode !== 'unload' ? 'selected' : ''}>Load wagons</option><option value="unload" ${e.mode === 'unload' ? 'selected' : ''}>Unload wagons</option></select></label>`;
   h += '<div id="pdyn"></div><div class="pbtns">';
   if (e.type === 'boiler') h += '<button data-act="descale">Descale (20 s outage)</button>';
@@ -3445,6 +3713,7 @@ function renderPanelDyn() {
   let h = '';
   const k = kind(e);
   if (k === 'stop') { box.innerHTML = stopDyn(e); return; }
+  if (k === 'dock' || k === 'buoy') { box.innerHTML = dockDyn(e); return; }
   if (k === 'machine' && BUILD[e.type].store) {
     const B = BUILD[e.type], ch = e.ch || 0, kw = e.kw || 0;
     h += `<div class="status"><i style="background:${ST_COL[e.st] || '#888'}"></i>${ST_TXT[e.st] || 'Idle, no load'}${kw > 0.5 ? ` · giving ${Math.round(kw)} kW` : kw < -0.5 ? ` · taking ${Math.round(-kw)} kW` : ''}</div>`;
@@ -3728,7 +3997,7 @@ function drawMapView() {
     x2.fillRect(e.x * s, e.y * s, r, Math.max(k === 'hive' || k === 'ruin' ? 4 : 1.5, B.h * s));
   }
   const vw = cv.clientWidth / cam.z, vh = cv.clientHeight / cam.z;
-  x2.fillStyle = '#fff'; for (const v of S.cars) x2.fillRect(v.x * s - 2.5, v.y * s - 2.5, 5, 5);
+  for (const v of S.cars) { x2.fillStyle = VEH[v.type].sea ? '#7fe0ff' : '#fff'; x2.fillRect(v.x * s - 2.5, v.y * s - 2.5, 5, 5); }
   x2.fillStyle = '#e0b020'; for (const t of S.trains) { if (!t.g) trainGeo(t); for (const g of t.g) x2.fillRect(g.x * s - 2.5, g.y * s - 2.5, 5, 5); }
   x2.fillStyle = '#4ae0ff'; x2.strokeStyle = '#000'; x2.lineWidth = 1.5;
   x2.beginPath(); x2.arc(S.pl.x * s, S.pl.y * s, 4, 0, 7); x2.fill(); x2.stroke();
@@ -3890,6 +4159,7 @@ const HELP = `<div class="help">
 <li>You can build and pick up within 10 tiles and mine ore by hand within 3.5 tiles. Buildings can be inspected from anywhere.</li>
 <li><b>Space</b> fires your pistol at the nearest crawler or hive within 15 tiles, using lead shot cartridges from your inventory. Crawlers attack you if you get close. If they kill you, you wake up back at the landing site with your inventory.</li>
 <li><b>F</b> gets in or out of a car or a locomotive. Drag to lay <b>railway track</b>, put a locomotive on it and place wagons at either end to couple them. Click a train to give it a schedule of train stops.</li>
+<li><b>Boats</b> are launched on water. Build <b>docks</b> on the shore with chests beside them and <b>buoys</b> as waypoints, then give a boat a route and it plots its own course through open water. Hulls foul over time and slow down; repaint them with antifouling.</li>
 <li><b>E</b> opens crafting. <b>H</b> opens the encyclopedia. <b>V</b> cycles the pressure, temperature and smog overlays.</li>
 </ul>
 <h3>Getting started</h3>
@@ -4449,7 +4719,7 @@ window.game = {
   terrain: () => terrain, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
   select(e) { e ? openPanel(e) : closePanel(); }, openModal, closeModal, refresh: renderHotbar,
   setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; camFree = true; },
-  get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get trains() { return S.trains; }, placeTrain, trainAt, openTrain, openPanel, pickTrain, trainGeo, reverseTrain, railBusy, get puffs() { return puffs; },
+  get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get trains() { return S.trains; }, placeTrain, trainAt, openTrain, openPanel, pickTrain, trainGeo, reverseTrain, railBusy, get puffs() { return puffs; }, get H() { return H; }, get wakes() { return wakes; }, floats, boatRoute, boatPilot, carStep, carHit,
   setOverlay(v) { overlay = v; }, elev: () => elev, drawPreview, startWorld, get wcfg() { return wcfg; },
 };
 })();
