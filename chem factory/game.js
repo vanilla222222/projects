@@ -1278,6 +1278,7 @@ function tick() {
   let demand = 0;
   for (const e of l.booster) if (e.on) demand += BUILD.booster.kw;
   for (const e of l.machine) {
+    if (BUILD[e.type].store) { e.cy = false; continue; }
     const r = RECIPE[e.recipe];
     if (!r) { e.st = 'none'; continue; }
     machineFluidIn(e, r);
@@ -1296,9 +1297,23 @@ function tick() {
   for (const e of l.machine) if (e.cy && BUILD[e.type].gen) gcap += BUILD[e.type].gen * sunMul(e);
   for (const g of l.engine) { g.eff = g.amt > 0.01 && g.tf >= 99.9 ? 0.2 + 0.8 * Math.max(0, Math.min(1, (g.tf - 100) / 50)) : 0; g.cap = Math.min(1, g.amt) * 900 * g.eff; cap += g.cap; }
   cap += gcap;
-  const gen = Math.min(demand, cap), sat = demand > 0 ? gen / demand : 1, load = cap > 0 ? gen / cap : 0;
-  for (const g of l.engine) { g.kw = cap > 0 ? gen / cap * g.cap : 0; g.amt = Math.max(0, g.amt - (g.eff > 0 ? g.kw / 900 / g.eff : 0)); }
-  S.power = { gen, demand, cap, sat };
+  const bats = l.machine.filter(e => BUILD[e.type].store);
+  let bout = 0, bch = 0, bmax = 0;
+  for (const b of bats) { b.ch = b.ch || 0; b.dmax = Math.min(BUILD[b.type].rate, b.ch / DT); bout += b.dmax; }
+  const dis = Math.min(Math.max(0, demand - cap), bout);
+  let spare = Math.max(0, cap - demand), chg = 0;
+  for (const b of bats) {
+    const B = BUILD[b.type], d = bout > 0 ? dis * b.dmax / bout : 0;
+    const c = Math.max(0, Math.min(B.rate, (B.store - b.ch) / DT / 0.85, spare));
+    spare -= c; chg += c;
+    b.ch = Math.max(0, Math.min(B.store, b.ch - d * DT + c * DT * 0.85));
+    b.kw = d - c;
+    b.st = d > 0.01 ? 'work' : c > 0.01 ? 'charge' : b.ch >= B.store - 1e-6 ? 'full' : 'idle';
+    bch += b.ch; bmax += B.store;
+  }
+  const gen = Math.min(demand, cap + dis), sat = demand > 0 ? gen / demand : 1, load = cap > 0 ? Math.min(1, (Math.min(demand, cap) + chg) / cap) : 0;
+  for (const g of l.engine) { g.kw = load * g.cap; g.amt = Math.max(0, g.amt - (g.eff > 0 ? g.kw / 900 / g.eff : 0)); }
+  S.power = { gen, demand, cap, sat, bat: bch, bmax, bkw: dis - chg };
   for (const e of l.booster) e.sat = sat;
   for (const e of l.machine) {
     if (!e.cy) continue;
@@ -1433,8 +1448,8 @@ function shade(hex, f) {
   return `rgb(${r},${g},${b})`;
 }
 
-const ST_COL = { idle: '#8ac8e0', scale: '#e04a4a', clean: '#e0b84a', work: '#5fd06a', input: '#e0b84a', output: '#e07a3a', power: '#e04a4a', none: '#8a8f99', empty: '#8a8f99', forest: '#8a8f99' };
-const ST_TXT = { idle: 'Idle, no load', scale: 'Tubes choked with scale', clean: 'Descaling', work: 'Working', input: 'Waiting for inputs', output: 'Output full', power: 'No power', none: 'No recipe set', empty: 'Depleted', forest: 'No forest in reach' };
+const ST_COL = { idle: '#8ac8e0', scale: '#e04a4a', clean: '#e0b84a', work: '#5fd06a', input: '#e0b84a', output: '#e07a3a', power: '#e04a4a', charge: '#8ad0a0', full: '#5fd06a', none: '#8a8f99', empty: '#8a8f99', forest: '#8a8f99' };
+const ST_TXT = { idle: 'Idle, no load', scale: 'Tubes choked with scale', clean: 'Descaling', work: 'Working', input: 'Waiting for inputs', output: 'Output full', power: 'No power', charge: 'Charging', full: 'Fully charged', none: 'No recipe set', empty: 'Depleted', forest: 'No forest in reach' };
 
 function render() {
   const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight, z = cam.z;
@@ -2037,6 +2052,13 @@ function drawBuilding(e, ox, oy, z) {
       ctx.fillRect(x + p * 3 + i * cw + 1, y + p * 3 + j * chh + 1, cw - 2, (chh - 2) * 0.35);
     }
   }
+  if (BUILD[e.type].store && z >= 6) {
+    const f = (e.ch || 0) / BUILD[e.type].store, bw = w * 0.5, bh = h * 0.5, bx = x + (w - bw) / 2, by = y + (h - bh) / 2;
+    ctx.fillStyle = '#1a1e24'; ctx.fillRect(bx, by, bw, bh);
+    ctx.fillRect(bx + bw * 0.35, by - bh * 0.1, bw * 0.3, bh * 0.1);
+    ctx.fillStyle = f > 0.5 ? '#5fd06a' : f > 0.2 ? '#e0b84a' : '#e04a4a';
+    ctx.fillRect(bx + 2, by + 2 + (bh - 4) * (1 - f), bw - 4, (bh - 4) * f);
+  }
   if (e.type === 'wind_turbine' && z >= 6) {
     const cx = x + w / 2, cy = y + h / 2, R = Math.min(w, h) * 0.46, a0 = S.t * 0.25 * windCurve() + e.id;
     ctx.fillStyle = '#8a9098';
@@ -2138,7 +2160,7 @@ function powerHtml() {
   const p = S.power;
   const pct = Math.round(p.sat * 100);
   const cls = p.demand === 0 ? '' : pct >= 99 ? 'ok' : pct > 40 ? 'warn' : 'bad';
-  return `<span class="lbl">Power</span><b class="${cls}">${fmt(p.gen)}</b> / ${fmt(p.demand)} kW <span class="dim">(cap ${fmt(p.cap)})</span> <span class="${cls}">${p.demand ? pct + '%' : 'idle'}</span>`;
+  return `<span class="lbl">Power</span><b class="${cls}">${fmt(p.gen)}</b> / ${fmt(p.demand)} kW <span class="dim">(cap ${fmt(p.cap)})</span> <span class="${cls}">${p.demand ? pct + '%' : 'idle'}</span>` + (p.bmax ? ` <span class="lbl">Battery</span><b>${Math.round(p.bat / p.bmax * 100)}%</b><span class="dim"> ${p.bkw > 0.5 ? '▼ ' + fmt(p.bkw) + ' kW' : p.bkw < -0.5 ? '▲ ' + fmt(-p.bkw) + ' kW' : ''}</span>` : '');
 }
 function stackUsers(st) {
   const u = [];
@@ -2185,7 +2207,7 @@ function openPanel(e) {
   sel = e.id;
   const B = BUILD[e.type];
   let h = `<div class="ph"><span class="sw big" style="background:${B.c}">${B.ab || ''}</span><div class="pt"><b>${B.n}</b><small>${B.d}</small></div><button class="x" data-act="close" title="Close">×</button></div>`;
-  if (kind(e) === 'machine') {
+  if (kind(e) === 'machine' && !B.store) {
     h += `<label class="row">Recipe <select data-act="recipe"><option value="">Choose a recipe</option>${RECIPES.filter(r => r.b === e.type && (avail(r) || e.recipe === r.id)).map(r => `<option value="${r.id}" ${e.recipe === r.id ? 'selected' : ''}>${r.n}</option>`).join('')}</select></label>`;
   }
   if (e.type === 'sorter') {
@@ -2193,7 +2215,7 @@ function openPanel(e) {
   }
   h += '<div id="pdyn"></div><div class="pbtns">';
   if (e.type === 'boiler') h += '<button data-act="descale">Descale (20 s outage)</button>';
-  if (kind(e) === 'machine') h += '<button data-act="insert">Insert from inventory</button><button data-act="take">Take outputs</button>';
+  if (kind(e) === 'machine' && !B.store) h += '<button data-act="insert">Insert from inventory</button><button data-act="take">Take outputs</button>';
   if (e.type === 'miner') h += '<button data-act="take">Take ore</button>';
   if (e.type === 'depot') h += '<button data-act="deliver">Deliver from inventory</button>';
   if (e.type === 'chest') h += '<button data-act="takeall">Take all</button><button data-act="store">Store raw materials</button>';
@@ -2243,7 +2265,12 @@ function renderPanelDyn() {
   if (!e || !box) return;
   let h = '';
   const k = kind(e);
-  if (k === 'machine') {
+  if (k === 'machine' && BUILD[e.type].store) {
+    const B = BUILD[e.type], ch = e.ch || 0, kw = e.kw || 0;
+    h += `<div class="status"><i style="background:${ST_COL[e.st] || '#888'}"></i>${ST_TXT[e.st] || 'Idle, no load'}${kw > 0.5 ? ` · giving ${Math.round(kw)} kW` : kw < -0.5 ? ` · taking ${Math.round(-kw)} kW` : ''}</div>`;
+    h += `<div class="sec">Charge</div><div class="gauge"><span>Stored</span>${bar(ch, B.store, '#8ad0a0')}<b>${Math.round(ch / B.store * 100)}%</b></div><p class="dim">${(ch / 3600).toFixed(1)} of ${(B.store / 3600).toFixed(0)} kWh. Up to ${B.rate} kW in or out. It charges only from capacity nothing else is using, and discharges when generators fall short.</p>`;
+    h += recipeHtml(RECIPE.store);
+  } else if (k === 'machine') {
     const r = RECIPE[e.recipe];
     if (!r) h += '<p class="dim">Pick a recipe, or feed it an item and it will choose one.</p>';
     else {
@@ -2632,6 +2659,7 @@ const CHAINS = [
   { n: 'Nylon', l: [['benzene', 'Pressure reactor + h2', 'cyclohexane'], ['cyclohexane', 'Pressure reactor + o2', 'ka_oil'], ['ka_oil', 'Pressure reactor + hno3', 'adipic_acid', '+', 'n2o'], ['n2o', 'Scrubber', 'n2'], ['adipic_acid', 'Pressure reactor + nh3 + h2', 'hmda'], ['hmda', 'Precipitator + adipic_acid + water', 'nylon_salt'], ['nylon_salt', 'Pressure reactor', 'nylon'], ['nylon', 'Melt spinner', 'nylon_fibre']], d: 'Two six-carbon molecules, both made from benzene, one with acid ends and one with amine ends. Pair them exactly and heat them, and they link into chains thousands of units long. The nitric acid step gives off nitrous oxide, a strong greenhouse gas, so run it through a scrubber.' },
   { n: 'Aspirin', l: [['naphtha', 'Tube furnace + steam', 'propylene'], ['benzene', 'Pressure reactor + propylene', 'cumene'], ['cumene', 'Pressure reactor + o2 + acid', 'phenol', '+', 'acetone'], ['methanol', 'Pressure reactor + co', 'acetic'], ['acetic', 'Tube furnace', 'ac2o'], ['phenol', 'Pressure reactor + naoh + co2 + acid', 'salicylic'], ['salicylic', 'Precipitator + ac2o', 'aspirin', '+', 'acetic'], ['aspirin', 'Tablet line + pvc + aluminium', 'aspirin_pack']], d: 'Willow bark has been chewed for pain since the Sumerians. Its salicylic acid is now made from phenol and CO₂, and acetic anhydride caps it into aspirin. The acetic acid comes from methanol and carbon monoxide and goes round in a loop.' },
   { n: 'Polycarbonate, epoxy and wind', l: [['methanol', 'Pressure reactor + co + o2', 'dmc'], ['dmc', 'Pressure reactor + phenol', 'dpc', '+', 'methanol'], ['phenol', 'Pressure reactor + acetone + acid', 'bpa'], ['bpa', 'Pressure reactor + dpc', 'polycarbonate', '+', 'phenol'], ['propylene', 'Pressure reactor + cl2 + naoh', 'ech'], ['bpa', 'Pressure reactor + ech + naoh', 'epoxy'], ['sand', 'Glass tank + limestone + alumina', 'glass_fibre'], ['glass_fibre', 'Blade mould + epoxy', 'blade']], d: 'Acetone from the phenol plant joins two phenols into bisphenol A. Carbonate made from methanol links it into polycarbonate, and epichlorohydrin caps it into epoxy. Epoxy and glass fibre make wind turbine blades.' },
+  { n: 'Polypropylene and batteries', l: [['propylene', 'Pressure reactor + ticl4', 'polypropylene'], ['lead', 'Battery plant + lead_oxide + polypropylene + acid', 'battery']], d: 'A Ziegler-Natta catalyst turns propylene into polypropylene for battery cases. Lead, lead oxide and sulfuric acid make the cells. A bank of them stores spare wind and solar power for when the wind drops.' },
   { n: 'By-products', l: [['ground_copper', 'Flotation', 'copper_conc', '+', 'pyrite_conc'], ['pyrite_conc', 'Roaster', 'pyrite_cinder', 'Blast furnace', 'pig_iron'], ['anode_slime', 'Roaster', 'dore', 'Leach tank + acid', 'silver']], d: 'Nothing is waste. Pyrite gives SO₂ for acid and its cinder is iron ore. Anode slime from copper refining yields selenium, silver and gold.' },
 ];
 
@@ -2694,6 +2722,8 @@ const HELP = `<div class="help">
 <p>The tube furnace can crack naphtha for <b>propylene</b>. A pressure reactor joins it to benzene as <b>cumene</b>, and another oxidises cumene and splits it into <b>phenol</b> and <b>acetone</b>. Phenol, caustic soda and CO₂ make <b>salicylic acid</b>. Separately, methanol and carbon monoxide make <b>acetic acid</b>, which the tube furnace turns into <b>acetic anhydride</b>. The precipitator combines the two into aspirin and gives back acetic acid. The <b>Tablet line</b> presses it and packs it in PVC and aluminium blisters.</p>
 <h3>Polycarbonate, epoxy and wind</h3>
 <p>Phenol and acetone make <b>bisphenol A</b>. Methanol, CO and oxygen make <b>dimethyl carbonate</b>, which swaps its methyls for phenol as <b>diphenyl carbonate</b>; melted with BPA it gives <b>polycarbonate</b> and returns the phenol. Propylene, chlorine and caustic make <b>epichlorohydrin</b>, which turns BPA into <b>epoxy</b>. The glass tank draws <b>E-glass fibre</b>, and the <b>Blade mould</b> infuses it with epoxy into rotor blades for the <b>Wind turbine</b>. A turbine gives up to 400 kW. Its output follows the live wind speed cubed and how open the ground is: open steppe or tundra is best, forest worst.</p>
+<h3>Polypropylene and batteries</h3>
+<p>The pressure reactor turns <b>propylene</b> into <b>polypropylene</b>, using a little titanium tetrachloride as the Ziegler-Natta catalyst. The <b>Battery plant</b> makes <b>lead-acid batteries</b> from lead, lead oxide, polypropylene and sulfuric acid. A <b>Battery bank</b> holds 10 kWh. It charges only from generating capacity nothing else is using, at up to 250 kW, and gets 85% of it back. When demand is more than your generators can give, it discharges at up to 250 kW. The power bar shows total charge, with ▲ while charging and ▼ while discharging. Banks smooth out wind and solar and keep the plant running through a lull.</p>
 <h3>Boiler water</h3>
 <p>Raw water is hard. Every boiler batch on it bakes a little chalk onto the tubes, steam output falls as the <b>scale</b> builds, and a fully choked boiler stops. Shut it down to <b>Descale</b> from its panel (a 20 second outage), or feed it <b>softened water</b>: run water through a leach tank with quicklime and the hardness settles out as crushed limestone you can send back to the kiln. Any machine that takes water also takes softened water.</p>
 <h3>Sulfur and diesel</h3>
