@@ -30,7 +30,7 @@ const sum = o => { let s = 0; for (const k in o) s += o[k]; return s; };
 const isGas = f => FLUIDS[f] && FLUIDS[f].gas && f !== 'steam';
 const spills = (r, f) => isGas(f) || !!(r.bleed && r.bleed.includes(f));
 const PC = 8, RAIN = 30;
-const POL_W = { so2: 1, cl2: 3, co2: 0.02, h2: 0, steam: 0, water: 0, acid: 0.5, naoh: 0.3, liquor: 0.3, ticl4: 1, brine: 0.05, nh3: 0.5, hno3: 0.8, tar: 0.4, coalgas: 0.3, toluene: 0.3, nh4cl: 0.1, co: 0.1, phosgene: 1, sif4: 2, h2sif6: 0.5, hf: 1, h2s: 2, diesel: 0.3, bfw: 0, o2: 0, n2: 0, sihcl3: 1, propylene: 0.2, cumene: 0.4, phenol: 1, acetone: 0.3, acetic: 0.4, ac2o: 0.6, cyclohexane: 0.3, ka_oil: 0.3, n2o: 4, hmda: 0.5, olefins: 0.2, lab: 0.3, las: 0.8, methanol: 0.3, hcho: 1, ch3cl: 0.5, dmdcs: 1, bittern: 0.05, br2: 2, butadiene: 0.3, benzene: 0.5, styrene: 0.3 };
+const POL_W = { so2: 1, cl2: 3, co2: 0.02, h2: 0, steam: 0, water: 0, acid: 0.5, naoh: 0.3, liquor: 0.3, ticl4: 1, brine: 0.05, nh3: 0.5, hno3: 0.8, tar: 0.4, coalgas: 0.3, toluene: 0.3, nh4cl: 0.1, co: 0.1, phosgene: 1, sif4: 2, h2sif6: 0.5, hf: 1, h2s: 2, diesel: 0.3, bfw: 0, o2: 0, n2: 0, sihcl3: 1, dmc: 0.2, dpc: 0.4, ech: 1, propylene: 0.2, cumene: 0.4, phenol: 1, acetone: 0.3, acetic: 0.4, ac2o: 0.6, cyclohexane: 0.3, ka_oil: 0.3, n2o: 4, hmda: 0.5, olefins: 0.2, lab: 0.3, las: 0.8, methanol: 0.3, hcho: 1, ch3cl: 0.5, dmdcs: 1, bittern: 0.05, br2: 2, butadiene: 0.3, benzene: 0.5, styrene: 0.3 };
 const polAt = (x, y) => S.pol[Math.floor(y / PC) * PW + Math.floor(x / PC)] || 0;
 
 function mulberry32(a) {
@@ -1176,7 +1176,11 @@ const forestMul = e => BUILD[e.type].forest ? Math.min(1, forestOf(e) / FOREST_F
 const SUN = [0.4, 0, 0.7, 1, 0, 0.15, 0.3, 0.1];
 function sunAt(x, y, w, h) { let a = 0; for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) a += SUN[terrain[(y + j) * W + x + i]] || 0; return a / (w * h); }
 function sunOf(e) { if (e.su == null) e.su = sunAt(e.x, e.y, BUILD[e.type].w, BUILD[e.type].h); return e.su; }
-const sunMul = e => BUILD[e.type].sun ? sunOf(e) : 1;
+const WINDX = [0.8, 1, 1, 0.8, 1, 0.8, 0.45, 1];
+function exposureAt(x, y, w, h) { let a = 0; for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) a += WINDX[terrain[(y + j) * W + x + i]] || 0; return a / (w * h); }
+function exposureOf(e) { if (e.wx == null) e.wx = exposureAt(e.x, e.y, BUILD[e.type].w, BUILD[e.type].h); return e.wx; }
+const windCurve = () => S.wind.v < 0.1 ? 0 : Math.min(1, Math.pow(S.wind.v / 0.5, 3));
+const sunMul = e => BUILD[e.type].sun ? sunOf(e) : BUILD[e.type].wind ? exposureOf(e) * windCurve() : 1;
 function tryStart(e, r) {
   if (r.well && !wellTiles(e).length) return 'empty';
   if (BUILD[e.type].forest && !forestOf(e)) return 'forest';
@@ -2033,7 +2037,23 @@ function drawBuilding(e, ox, oy, z) {
       ctx.fillRect(x + p * 3 + i * cw + 1, y + p * 3 + j * chh + 1, cw - 2, (chh - 2) * 0.35);
     }
   }
-  if (z >= 14 && B.ab && e.type !== 'engine' && e.type !== 'solar') {
+  if (e.type === 'wind_turbine' && z >= 6) {
+    const cx = x + w / 2, cy = y + h / 2, R = Math.min(w, h) * 0.46, a0 = S.t * 0.25 * windCurve() + e.id;
+    ctx.fillStyle = '#8a9098';
+    ctx.beginPath(); ctx.arc(cx, cy, Math.max(2, R * 0.16), 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#f4f6f8'; ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 1;
+    for (let k = 0; k < 3; k++) {
+      const a = a0 + k * Math.PI * 2 / 3, ca = Math.cos(a), sa = Math.sin(a), bw = R * 0.09;
+      ctx.beginPath();
+      ctx.moveTo(cx - sa * bw, cy + ca * bw);
+      ctx.lineTo(cx + ca * R, cy + sa * R);
+      ctx.lineTo(cx + sa * bw, cy - ca * bw);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+    ctx.fillStyle = '#c0c6cc';
+    ctx.beginPath(); ctx.arc(cx, cy, Math.max(1.5, R * 0.08), 0, Math.PI * 2); ctx.fill();
+  }
+  if (z >= 14 && B.ab && e.type !== 'engine' && e.type !== 'solar' && e.type !== 'wind_turbine') {
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
     ctx.font = `bold ${Math.floor(Math.min(w, h) * 0.26)}px system-ui,sans-serif`;
     ctx.textAlign = 'center';
@@ -2234,6 +2254,7 @@ function renderPanelDyn() {
       if (r.cat) h += catHtml(e, r);
       if (e.type === 'boiler') h += `<div class="sec">Tube scale</div><div class="gauge"><span>Scale</span>${bar(e.scale || 0, 1, '#d8c8a0')}<b>${Math.round((e.scale || 0) * 100)}%</b></div><p class="dim">${e.desc > 0 ? `Descaling, back in ${Math.ceil(e.desc)} s.` : (e.soft || 0) > 1 ? 'Fed softened water: no new scale.' : 'Hard water bakes chalk onto the tubes, and steam output falls as the scale thickens. Feed softened water, or shut down and descale.'} Steam rate ${Math.round(scaleMul(e) * 100)}%.</p>`;
       if (BUILD[e.type].sun) h += `<div class="sec">Climate</div><div class="gauge"><span>Sun</span>${bar(sunOf(e), 1, '#e0c050')}<b>${Math.round(sunOf(e) * 100)}%</b></div><p class="dim">${e.type === 'solar' ? 'Sunlight reaching the panels. Arrays give most on desert sand and least in forest, marsh and tundra.' : 'Evaporation rate here. Ponds run fastest on desert sand and slowest on tundra and marsh.'}</p>`;
+      if (BUILD[e.type].wind) h += `<div class="sec">Climate</div><div class="gauge"><span>Exposure</span>${bar(exposureOf(e), 1, '#80b0d0')}<b>${Math.round(exposureOf(e) * 100)}%</b></div><div class="gauge"><span>Wind</span>${bar(windCurve(), 1, '#a0c8e0')}<b>${(S.wind.v * 10).toFixed(1)} m/s</b></div><p class="dim">Output follows the wind speed cubed, times how open the ground is. Steppe and tundra are best; trees slow the wind.</p>`;
       if (BUILD[e.type].forest) h += `<div class="sec">Forest</div><div class="gauge"><span>Stand</span>${bar(forestOf(e), FOREST_FULL, '#4a8a3a')}<b>${Math.round(forestMul(e) * 100)}%</b></div><p class="dim">${forestOf(e)} forest tiles within ${FOREST_R} tiles. It runs at full speed with ${FOREST_FULL} or more.</p>`;
       if (r.well) { const l = wellTiles(e), left = l.reduce((a, q) => a + oreAmt[q], 0); h += `<div class="sec">Reservoir</div><div class="spec">${l.length} of ${BUILD[e.type].w * BUILD[e.type].h} tiles on oil · ${fmt(left * r.fo.crude)} crude left</div>`; }
       h += '<div class="sec">Input buffer</div><div class="slots">';
@@ -2610,6 +2631,7 @@ const CHAINS = [
   { n: 'Detergents', l: [['ethylene', 'Pressure reactor', 'olefins'], ['benzene', 'Pressure reactor + olefins + hf', 'lab'], ['lab', 'Pressure reactor + acid', 'las'], ['h3po4', 'Kiln + soda_ash', 'stpp'], ['sand', 'Glass tank + soda_ash', 'water_glass'], ['las', 'Spray tower + naoh + stpp + water_glass', 'detergent']], d: 'Soap curdles in hard water; a synthetic surfactant does not. Ethylene is strung into long chains, hung on benzene and sulfonated. Neutralised with caustic and mixed with phosphate to soften the water and silicate to protect the machine, it is spray-dried into washing powder.' },
   { n: 'Nylon', l: [['benzene', 'Pressure reactor + h2', 'cyclohexane'], ['cyclohexane', 'Pressure reactor + o2', 'ka_oil'], ['ka_oil', 'Pressure reactor + hno3', 'adipic_acid', '+', 'n2o'], ['n2o', 'Scrubber', 'n2'], ['adipic_acid', 'Pressure reactor + nh3 + h2', 'hmda'], ['hmda', 'Precipitator + adipic_acid + water', 'nylon_salt'], ['nylon_salt', 'Pressure reactor', 'nylon'], ['nylon', 'Melt spinner', 'nylon_fibre']], d: 'Two six-carbon molecules, both made from benzene, one with acid ends and one with amine ends. Pair them exactly and heat them, and they link into chains thousands of units long. The nitric acid step gives off nitrous oxide, a strong greenhouse gas, so run it through a scrubber.' },
   { n: 'Aspirin', l: [['naphtha', 'Tube furnace + steam', 'propylene'], ['benzene', 'Pressure reactor + propylene', 'cumene'], ['cumene', 'Pressure reactor + o2 + acid', 'phenol', '+', 'acetone'], ['methanol', 'Pressure reactor + co', 'acetic'], ['acetic', 'Tube furnace', 'ac2o'], ['phenol', 'Pressure reactor + naoh + co2 + acid', 'salicylic'], ['salicylic', 'Precipitator + ac2o', 'aspirin', '+', 'acetic'], ['aspirin', 'Tablet line + pvc + aluminium', 'aspirin_pack']], d: 'Willow bark has been chewed for pain since the Sumerians. Its salicylic acid is now made from phenol and CO₂, and acetic anhydride caps it into aspirin. The acetic acid comes from methanol and carbon monoxide and goes round in a loop.' },
+  { n: 'Polycarbonate, epoxy and wind', l: [['methanol', 'Pressure reactor + co + o2', 'dmc'], ['dmc', 'Pressure reactor + phenol', 'dpc', '+', 'methanol'], ['phenol', 'Pressure reactor + acetone + acid', 'bpa'], ['bpa', 'Pressure reactor + dpc', 'polycarbonate', '+', 'phenol'], ['propylene', 'Pressure reactor + cl2 + naoh', 'ech'], ['bpa', 'Pressure reactor + ech + naoh', 'epoxy'], ['sand', 'Glass tank + limestone + alumina', 'glass_fibre'], ['glass_fibre', 'Blade mould + epoxy', 'blade']], d: 'Acetone from the phenol plant joins two phenols into bisphenol A. Carbonate made from methanol links it into polycarbonate, and epichlorohydrin caps it into epoxy. Epoxy and glass fibre make wind turbine blades.' },
   { n: 'By-products', l: [['ground_copper', 'Flotation', 'copper_conc', '+', 'pyrite_conc'], ['pyrite_conc', 'Roaster', 'pyrite_cinder', 'Blast furnace', 'pig_iron'], ['anode_slime', 'Roaster', 'dore', 'Leach tank + acid', 'silver']], d: 'Nothing is waste. Pyrite gives SO₂ for acid and its cinder is iron ore. Anode slime from copper refining yields selenium, silver and gold.' },
 ];
 
@@ -2670,6 +2692,8 @@ const HELP = `<div class="help">
 <p>Hydrogenate benzene to <b>cyclohexane</b>, oxidise it with oxygen to <b>KA oil</b>, and open the ring with nitric acid to get <b>adipic acid</b>. That step vents <b>nitrous oxide</b>, which pollutes heavily; a <b>Scrubber</b> set to N₂O abatement turns it into nitrogen. Half the adipic acid goes with ammonia and hydrogen to <b>hexamethylenediamine</b>; the precipitator pairs it with the other half as <b>nylon salt</b>. The pressure reactor polymerises the salt, and the <b>Melt spinner</b> draws the chips into yarn.</p>
 <h3>Aspirin</h3>
 <p>The tube furnace can crack naphtha for <b>propylene</b>. A pressure reactor joins it to benzene as <b>cumene</b>, and another oxidises cumene and splits it into <b>phenol</b> and <b>acetone</b>. Phenol, caustic soda and CO₂ make <b>salicylic acid</b>. Separately, methanol and carbon monoxide make <b>acetic acid</b>, which the tube furnace turns into <b>acetic anhydride</b>. The precipitator combines the two into aspirin and gives back acetic acid. The <b>Tablet line</b> presses it and packs it in PVC and aluminium blisters.</p>
+<h3>Polycarbonate, epoxy and wind</h3>
+<p>Phenol and acetone make <b>bisphenol A</b>. Methanol, CO and oxygen make <b>dimethyl carbonate</b>, which swaps its methyls for phenol as <b>diphenyl carbonate</b>; melted with BPA it gives <b>polycarbonate</b> and returns the phenol. Propylene, chlorine and caustic make <b>epichlorohydrin</b>, which turns BPA into <b>epoxy</b>. The glass tank draws <b>E-glass fibre</b>, and the <b>Blade mould</b> infuses it with epoxy into rotor blades for the <b>Wind turbine</b>. A turbine gives up to 400 kW. Its output follows the live wind speed cubed and how open the ground is: open steppe or tundra is best, forest worst.</p>
 <h3>Boiler water</h3>
 <p>Raw water is hard. Every boiler batch on it bakes a little chalk onto the tubes, steam output falls as the <b>scale</b> builds, and a fully choked boiler stops. Shut it down to <b>Descale</b> from its panel (a 20 second outage), or feed it <b>softened water</b>: run water through a leach tank with quicklime and the hardness settles out as crushed limestone you can send back to the kiln. Any machine that takes water also takes softened water.</p>
 <h3>Sulfur and diesel</h3>
