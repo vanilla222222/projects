@@ -111,7 +111,7 @@ function genLegacy(seed) {
 const GEN_DEF = { size: 256, water: 1, ore: 1, hives: 2 };
 const TER_N = ['Grassland', 'Water', 'Dry scrub', 'Desert sand', 'Bare rock', 'Marsh', 'Forest', 'Tundra'];
 const sstep = (a, b, v) => { const t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
-const ORE_BASE = [0, 11, 10, 7, 9, 6, 6, 3, 3, 3, 3, 3, 3, 3];
+const ORE_BASE = [0, 11, 10, 7, 9, 6, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3];
 function oreSuit(t, i, temp, moist) {
   const b = terrain[i], m = elev[i], tp = temp[i], ms = moist[i];
   if (b === 1 || b === 4) return 0;
@@ -129,6 +129,8 @@ function oreSuit(t, i, temp, moist) {
     case 11: return b === 0 || b === 2 ? 1.2 : b === 3 ? 1 : 0.2;
     case 12: return b === 3 || b === 5 ? 1.8 : 0.5;
     case 13: return b === 3 || b === 2 ? 1.5 : b === 7 ? 1 : 0.3;
+    case 14: return m > 0.6 ? 2.5 : b === 7 ? 1 : 0.3;
+    case 15: return tp > 0.6 && ms > 0.45 ? 3 : tp > 0.5 ? 0.6 : 0.1;
   }
   return 1;
 }
@@ -2662,6 +2664,7 @@ const CHAINS = [
   { n: 'Polypropylene and batteries', l: [['propylene', 'Pressure reactor + ticl4', 'polypropylene'], ['lead', 'Battery plant + lead_oxide + polypropylene + acid', 'battery']], d: 'A Ziegler-Natta catalyst turns propylene into polypropylene for battery cases. Lead, lead oxide and sulfuric acid make the cells. A bank of them stores spare wind and solar power for when the wind drops.' },
   { n: 'Titanium white and paint', l: [['ticl4', 'Pressure reactor + o2', 'tio2', '+', 'cl2'], ['ethylene', 'Pressure reactor + acetic + o2', 'vam'], ['vam', 'Pressure reactor + water', 'pva_em'], ['tio2', 'Paint disperser + limestone + plate + pva_em', 'paint']], d: 'Titanium tetrachloride burned in oxygen gives the whitest pigment there is and hands its chlorine back. Ethylene and acetic acid make vinyl acetate, which is polymerised in water into the binder for emulsion paint.' },
   { n: 'Green hydrogen', l: [['bfw', 'PEM electrolyser', 'h2', '+', 'o2'], ['h2', 'Fuel cell + o2', 'Electricity'], ['h2', 'Cylinder filler + cylinder', 'h2_cyl']], d: 'Spare power splits pure water into hydrogen and oxygen. A fuel cell burns them back to water to make electricity when the wind drops. It loses more power than a battery but can store as much as you have tanks for.' },
+  { n: 'Stainless steel', l: [['chromite', 'Arc furnace + coke + sand', 'ferrochrome', '+', 'slag'], ['laterite', 'Lime kiln + coal', 'ni_calcine', 'Arc furnace + coke', 'ferronickel'], ['steel', 'Converter + ferrochrome + ferronickel + quicklime + o2 + n2', 'stainless', 'Craft menu', 'Stainless steel pipe']], d: 'Chromite comes from mountains and nickel laterite from wet tropical soils. Both are smelted to ferroalloys in the arc furnace. In the converter, oxygen diluted with nitrogen burns carbon out of the melt without taking the chromium too. Stainless makes pipe that holds 100 bar and 800°C, but chlorides pit it.' },
   { n: 'By-products', l: [['ground_copper', 'Flotation', 'copper_conc', '+', 'pyrite_conc'], ['pyrite_conc', 'Roaster', 'pyrite_cinder', 'Blast furnace', 'pig_iron'], ['anode_slime', 'Roaster', 'dore', 'Leach tank + acid', 'silver']], d: 'Nothing is waste. Pyrite gives SO₂ for acid and its cinder is iron ore. Anode slime from copper refining yields selenium, silver and gold.' },
 ];
 
@@ -2730,6 +2733,8 @@ const HELP = `<div class="help">
 <p>Burn <b>titanium tetrachloride</b> with oxygen to get <b>titanium white</b>. The chlorine comes back out, so pipe it to the chlorinator. <b>Vinyl acetate</b> is made from ethylene, acetic acid and oxygen, then polymerised with water into <b>PVA emulsion</b>. The <b>Paint disperser</b> mixes pigment, limestone filler and binder and fills the paint into steel tins.</p>
 <h3>Green hydrogen</h3>
 <p>The <b>PEM electrolyser</b> splits <b>softened water</b> into hydrogen and oxygen, using 300 kW. A <b>Fuel cell</b> turns hydrogen and oxygen back into up to 120 kW. Like other generators it only uses gas when there is demand, so tanks of hydrogen work as long-term storage: about 40% comes back, compared with 85% for batteries, but a tank holds far more than a battery bank. Electrolysers and fuel cells both need platinum, which only comes from the old works.</p>
+<h3>Stainless steel</h3>
+<p>Two new ores: black <b>chromite</b> in the mountains and red <b>nickel laterite</b> in hot, wet lowlands. Chromite and coke make <b>ferrochrome</b> in the arc furnace. Laterite is calcined in a lime kiln, then smelted to <b>ferronickel</b>. A <b>converter</b> fed with steel, both ferroalloys, quicklime, oxygen and nitrogen makes <b>stainless steel</b>. <b>Stainless pipe</b> is rated 100 bar and 800°C, so it suits steam and caustic. Keep brine, chlorine and hydrochloric acid out of it, because chlorides corrode it three times faster than plain steel.</p>
 <h3>Boiler water</h3>
 <p>Raw water is hard. Every boiler batch on it bakes a little chalk onto the tubes, steam output falls as the <b>scale</b> builds, and a fully choked boiler stops. Shut it down to <b>Descale</b> from its panel (a 20 second outage), or feed it <b>softened water</b>: run water through a leach tank with quicklime and the hardness settles out as crushed limestone you can send back to the kiln. Any machine that takes water also takes softened water.</p>
 <h3>Sulfur and diesel</h3>
