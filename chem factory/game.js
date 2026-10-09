@@ -1351,6 +1351,7 @@ function dgFlow() {
 function dgHurt(d) {
   const P = S.pl;
   if (P.dead > 0 || !S.dg) return;
+  d = armSoak(d);
   P.hp -= d; P.lh = S.t;
   if (P.hp <= 0) {
     fx.push({ x: P.x, y: P.y, t: 0, c: '#d07a2a' });
@@ -1397,20 +1398,10 @@ function dgClick(fx, fy) {
 function dgShoot() {
   const P = S.pl, D = S.dg;
   if (P.cd > 0) return;
-  let best = null, bd = PL_GUN * PL_GUN;
-  for (const b of D.bugs) { const d = (b.x - D.px) ** 2 + (b.y - D.py) ** 2; if (b.hp > 0 && d < bd && dgSee(D.px, D.py, b.x, b.y)) { bd = d; best = b; } }
-  const Q = D.q;
-  if (Q.hp > 0) { const d = (Q.x - D.px) ** 2 + (Q.y - D.py) ** 2; if (d < bd && dgSee(D.px, D.py, Q.x, Q.y)) best = Q; }
-  if (!best) return;
-  if (!P.rd) {
-    if (S.inv.cartridge > 0) { S.inv.cartridge--; P.rd = 10; }
-    else { if (S.t - noAmmoT > 3) { noAmmoT = S.t; toast('Out of cartridges. Climb out and craft more in a workshop.', true); } return; }
-  }
-  best.hp -= 12; best.aw = 1;
-  if (best === Q) Q.aw = 1; else if (best.hp <= 0) S.pk = (S.pk || 0) + 1;
-  P.rd--; P.cd = 0.2;
-  P.f = Math.atan2(best.y - D.py, best.x - D.px);
-  P.sh = S.t; P.tx = best.x; P.ty = best.y;
+  const Q = D.q, list = Q.hp > 0 ? D.bugs.concat([Q]) : D.bugs;
+  const r = wpnShot(D.px, D.py, list, null, b => dgSee(D.px, D.py, b.x, b.y), 1, b => b.k === 2 || b === Q);
+  if (!r) return;
+  for (const b of r.hits) { b.aw = 1; if (b !== Q && b.hp <= 0) S.pk = (S.pk || 0) + 1; }
 }
 function dgMove(dt, mx, my) {
   const P = S.pl, D = S.dg;
@@ -1657,6 +1648,7 @@ function drawDungeon(w, h) {
     for (let k = 0; k < 8; k++) { const a = k * 0.785 + f.t, r = z * (0.3 + f.t * 1.4); ctx.beginPath(); ctx.arc(ox + f.x * z + Math.cos(a) * r, oy + f.y * z + Math.sin(a) * r, z * 0.1 * (1.2 - f.t), 0, 7); ctx.fill(); }
     ctx.globalAlpha = 1;
   }
+  drawNades(ox, oy, z, true);
   const px = P.x, py = P.y;
   P.x = D.px; P.y = D.py;
   drawPlayer(ox, oy, z);
@@ -1700,7 +1692,7 @@ function drawDungeon(w, h) {
   ctx.fillStyle = '#e8dcc8'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
   ctx.fillText(`Crawler burrow · ${alive} crawler${alive === 1 ? '' : 's'} · ${left} cache${left === 1 ? '' : 's'} unopened · ${Q.hp > 0 ? 'queen alive' : 'queen dead'}`, w / 2, 26);
   ctx.font = '11px sans-serif'; ctx.fillStyle = '#a89880';
-  ctx.fillText(Math.hypot(D.px - G.ex - 0.5, D.py - G.ey - 0.5) < 2 ? 'Press F to climb the rope back to the surface' : `Space shoots · click rock to dig, veins glint · F opens a cache you stand by · ${(S.inv.cartridge || 0) * 10 + (P.rd || 0)} rounds`, w / 2, 41);
+  ctx.fillText(Math.hypot(D.px - G.ex - 0.5, D.py - G.ey - 0.5) < 2 ? 'Press F to climb the rope back to the surface' : `Space shoots · G throws a charge · click rock to dig, veins glint · F opens a cache you stand by · ${wpnRounds(wpnCur())} rounds`, w / 2, 41);
   if (Q.aw && Q.hp > 0) {
     ctx.fillStyle = '#2a1a24'; ctx.fillRect(w / 2 - 200, 50, 400, 10);
     ctx.fillStyle = '#c070e0'; ctx.fillRect(w / 2 - 200, 50, 400 * Q.hp / Q.mhp, 10);
@@ -1718,6 +1710,187 @@ function drawDungeon(w, h) {
   G.caches.forEach((c, i) => { if (D.seen[c.y * N + c.x] && !D.oc.includes(i)) { ctx.fillStyle = '#c8a040'; ctx.fillRect(mx0 + c.x * mm, my0 + c.y * mm, mm, mm); } });
   ctx.fillStyle = '#7fe0ff'; ctx.fillRect(mx0 + D.px * mm - 2, my0 + D.py * mm - 2, 4, 4);
   if (P.dead > 0) { ctx.fillStyle = 'rgba(40,0,0,0.5)'; ctx.fillRect(0, 0, w, h); }
+}
+const WPN = {
+  rifle: { n: 'Rifle', am: 'cartridge', rk: 'rd', per: 10, dm: 12, hv: 12, cd: 0.2, r: PL_GUN },
+  ap: { n: 'Rifle, AP rounds', am: 'ap_cartridge', rk: 'ra', per: 10, dm: 24, hv: 26, cd: 0.25, r: PL_GUN, arm: 2 },
+  shotgun: { n: 'Pump Shotgun', am: 'shotshell', rk: 'rs', per: 8, dm: 18, hv: 24, cd: 0.7, r: 8, cone: 0.42, pel: 6, need: 'shotgun' },
+};
+const WORDER = ['rifle', 'ap', 'shotgun'];
+const ARMOR = {
+  ceramic_vest: { a: 0.6, d: 2400 },
+  steel_vest: { a: 0.42, d: 1000 },
+  shell_vest: { a: 0.25, d: 450 },
+};
+const NADE = {
+  ammonal_charge: { r: 3.2, dm: 130, hv: 160, c: '#c8c8c0' },
+  powder_charge: { r: 2.2, dm: 55, hv: 60, c: '#4a4844' },
+};
+const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest'];
+const nades = [];
+const takeInv = k => { S.inv[k]--; if (!(S.inv[k] > 0)) delete S.inv[k]; };
+function wpnHas(m) {
+  const W = WPN[m], P = S.pl;
+  if (W.need && !(S.inv[W.need] > 0)) return false;
+  return m === 'rifle' || (P[W.rk] || 0) > 0 || S.inv[W.am] > 0;
+}
+function wpnCur() { const P = S.pl; if (!WPN[P.wm] || !wpnHas(P.wm)) P.wm = 'rifle'; return P.wm; }
+const wpnRounds = m => (S.pl[WPN[m].rk] || 0) + (S.inv[WPN[m].am] || 0) * WPN[m].per;
+function wpnCycle() {
+  const P = S.pl, c = wpnCur(), i = WORDER.indexOf(c);
+  for (let k = 1; k < WORDER.length; k++) {
+    const m = WORDER[(i + k) % WORDER.length];
+    if (wpnHas(m)) { P.wm = m; toast(`${WPN[m].n} · ${wpnRounds(m)} rounds`); return m; }
+  }
+  toast('Nothing else to switch to. Craft AP rounds, or a shotgun and shotshells.', true);
+  return c;
+}
+function wpnLoad(m, under) {
+  const W = WPN[m], P = S.pl;
+  if (P[W.rk] > 0) return true;
+  if (S.inv[W.am] > 0) { takeInv(W.am); P[W.rk] = W.per; return true; }
+  if (m !== 'rifle') { P.wm = 'rifle'; toast(`Out of ${nm(W.am).toLowerCase()}. Back to lead shot.`, true); return false; }
+  if (S.t - noAmmoT > 3) { noAmmoT = S.t; toast(under ? 'Out of cartridges. Climb out and craft more in a workshop.' : 'Out of cartridges. Craft lead shot cartridges in a workshop.', true); }
+  return false;
+}
+function wpnShot(ox, oy, list, hives, see, under, arm) {
+  const P = S.pl, m = wpnCur(), W = WPN[m];
+  let best = null, bd = W.r * W.r, h = null;
+  for (const b of list) { const d = (b.x - ox) ** 2 + (b.y - oy) ** 2; if (b.hp > 0 && d < bd && (!see || see(b))) { bd = d; best = b; } }
+  if (!best && hives) for (const o of hives) { const q = ctr(o), d = (q.x - ox) ** 2 + (q.y - oy) ** 2; if (d < bd) { bd = d; h = o; } }
+  if (!best && !h) return null;
+  if (!wpnLoad(m, under)) return null;
+  const q = best || ctr(h), tx = q.x, ty = q.y, hits = [];
+  if (best) {
+    if (W.pel) {
+      const a0 = Math.atan2(ty - oy, tx - ox), c = [];
+      for (const b of list) {
+        if (!(b.hp > 0)) continue;
+        const dx = b.x - ox, dy = b.y - oy, d = Math.hypot(dx, dy);
+        if (d > W.r) continue;
+        let da = Math.abs(Math.atan2(dy, dx) - a0);
+        if (da > Math.PI) da = Math.PI * 2 - da;
+        if ((b === best || da < W.cone) && (!see || see(b))) c.push([d, b]);
+      }
+      c.sort((u, v) => u[0] - v[0]);
+      for (const [d, b] of c.slice(0, W.pel)) { b.hp -= W.dm * (1 - 0.5 * d / W.r) * (arm(b) ? W.arm || 1 : 1); hits.push(b); }
+    } else { best.hp -= W.dm * (arm(best) ? W.arm || 1 : 1); hits.push(best); }
+  }
+  P[W.rk]--; P.cd = W.cd;
+  P.f = Math.atan2(ty - oy, tx - ox);
+  P.sh = S.t; P.tx = tx; P.ty = ty; P.sw = m;
+  if (W.pel && hits.filter(b => b.hp <= 0).length >= 3) P.sg3 = 1;
+  return { hits, h, W };
+}
+function armWorn() { for (const k in ARMOR) if (S.inv[k] > 0) return k; return null; }
+function armSoak(d) {
+  const k = armWorn(), P = S.pl;
+  if (!k) return d;
+  if (P.ak !== k) { P.ak = k; P.aw = 0; }
+  const A = ARMOR[k], s = d * A.a;
+  P.aw = (P.aw || 0) + s;
+  if (P.aw >= A.d) { P.aw = 0; takeInv(k); toast(`Your ${nm(k)} is worn out.`, true); }
+  return d - s;
+}
+const nadeKind = () => S.inv.ammonal_charge > 0 ? 'ammonal_charge' : S.inv.powder_charge > 0 ? 'powder_charge' : null;
+function nadeThrow(tx, ty) {
+  const P = S.pl;
+  if (P.dead > 0 || (P.car && !S.dg) || (P.nc || 0) > S.t) return false;
+  const k = nadeKind();
+  if (!k) { toast('No charges to throw. Pack powder or ammonal charges in a workshop.', true); return false; }
+  const ox = S.dg ? S.dg.px : P.x, oy = S.dg ? S.dg.py : P.y;
+  let dx = tx - ox, dy = ty - oy, d = Math.hypot(dx, dy);
+  if (d > 11) { dx *= 11 / d; dy *= 11 / d; d = 11; }
+  if (S.dg) {
+    let s = 0;
+    while (s < d && !dgSolid(Math.floor(ox + dx * (s + 0.25) / d), Math.floor(oy + dy * (s + 0.25) / d))) s += 0.25;
+    if (s < d) { dx *= s / d; dy *= s / d; d = s; }
+  }
+  takeInv(k);
+  nades.push({ k, x: ox, y: oy, tx: ox + dx, ty: oy + dy, t: 0, T: 0.35 + d * 0.06, dg: !!S.dg, b: -1 });
+  P.nc = S.t + 0.8;
+  if (d > 0.1) P.f = Math.atan2(dy, dx);
+  return true;
+}
+function nadeBoom(n) {
+  const N = NADE[n.k];
+  let kills = 0;
+  const hit = b => {
+    const d = Math.hypot(b.x - n.tx, b.y - n.ty);
+    if (!(b.hp > 0) || d > N.r) return;
+    b.hp -= N.dm * (1 - 0.6 * d / N.r); b.aw = 1;
+    if (b.hp <= 0) kills++;
+  };
+  if (n.dg) {
+    const D = S.dg;
+    for (const b of D.bugs) if (dgSee(n.tx, n.ty, b.x, b.y)) hit(b);
+    if (D.q.hp > 0 && dgSee(n.tx, n.ty, D.q.x, D.q.y)) { const k0 = kills; hit(D.q); kills = k0; }
+    dfx.push({ x: n.tx, y: n.ty, t: 0, c: '#ffb347' });
+  } else {
+    for (const b of S.bugs) hit(b);
+    for (const h of lists().hive) {
+      const q = ctr(h), d = Math.hypot(q.x - n.tx, q.y - n.ty);
+      if (d > N.r + 1) continue;
+      h.lh = S.t;
+      if (h.dc <= 0) { spawnBugs(h, 2 + Math.floor(S.evo * 3), -2); h.dc = 10; }
+      hurt(h, N.hv * (1 - 0.5 * Math.max(0, d - 1) / N.r));
+    }
+    fx.push({ x: n.tx, y: n.ty, t: 0, c: '#ffb347' });
+  }
+  S.pk = (S.pk || 0) + kills;
+  if (kills >= 5) S.pl.boom = 1;
+}
+function nadeTick() {
+  for (let i = nades.length - 1; i >= 0; i--) {
+    const n = nades[i];
+    if (n.b >= 0) { n.b += DT; if (n.b > 0.5) nades.splice(i, 1); continue; }
+    n.t += DT;
+    if (n.t >= n.T) { if (n.dg === !!S.dg) nadeBoom(n); n.b = 0; }
+  }
+}
+function drawNades(ox, oy, z, dg) {
+  for (const n of nades) {
+    if (n.dg !== dg) continue;
+    if (n.b < 0) {
+      const f = Math.min(1, n.t / n.T), x = ox + (n.x + (n.tx - n.x) * f) * z, y = oy + (n.y + (n.ty - n.y) * f) * z, hg = Math.sin(f * Math.PI) * Math.min(2.2, n.T * 2.4) * z;
+      ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(x, y, z * 0.16, z * 0.08, 0, 0, 7); ctx.fill();
+      ctx.save(); ctx.translate(x, y - hg); ctx.rotate(n.t * 14);
+      ctx.fillStyle = NADE[n.k].c; ctx.fillRect(-z * 0.13, -z * 0.09, z * 0.26, z * 0.18);
+      ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.strokeRect(-z * 0.13, -z * 0.09, z * 0.26, z * 0.18);
+      ctx.fillStyle = Math.random() < 0.5 ? '#ffd24a' : '#ff7a2a'; ctx.beginPath(); ctx.arc(z * 0.17, -z * 0.1, z * 0.05, 0, 7); ctx.fill();
+      ctx.restore();
+    } else {
+      const N = NADE[n.k], f = n.b / 0.5, X = ox + n.tx * z, Y = oy + n.ty * z, R = z * N.r * (0.4 + 0.6 * f);
+      const g = ctx.createRadialGradient(X, Y, 0, X, Y, R);
+      g.addColorStop(0, `rgba(255,250,225,${1 - f})`); g.addColorStop(0.35, `rgba(255,170,60,${0.85 * (1 - f)})`); g.addColorStop(0.75, `rgba(140,90,50,${0.5 * (1 - f)})`); g.addColorStop(1, 'rgba(60,50,40,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(X, Y, R, 0, 7); ctx.fill();
+      ctx.strokeStyle = `rgba(255,220,160,${0.8 * (1 - f)})`; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(X, Y, z * N.r * f, 0, 7); ctx.stroke();
+    }
+  }
+}
+function drawWpnHud(w, h) {
+  const P = S.pl;
+  if (P.dead > 0 || (P.car && !S.dg)) return;
+  const m = wpnCur(), W = WPN[m], ak = armWorn(), nk = nadeKind(), bx = 14, by = h - 70, bw = 236;
+  ctx.fillStyle = 'rgba(14,16,20,0.8)'; ctx.beginPath(); ctx.roundRect(bx, by, bw, 58, 8); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.textAlign = 'left'; ctx.fillStyle = '#e8e4d8'; ctx.font = 'bold 12px system-ui, sans-serif';
+  ctx.fillText(W.n, bx + 10, by + 17);
+  ctx.textAlign = 'right'; ctx.font = 'bold 13px ui-monospace, monospace'; ctx.fillStyle = wpnRounds(m) ? '#ffd27a' : '#e05a4a';
+  ctx.fillText(wpnRounds(m) + ' rds', bx + bw - 10, by + 17);
+  ctx.textAlign = 'left'; ctx.font = '11px system-ui, sans-serif'; ctx.fillStyle = '#9aa0a8';
+  if (ak) {
+    const A = ARMOR[ak], f = Math.max(0, 1 - (P.ak === ak ? P.aw || 0 : 0) / A.d);
+    ctx.fillText(nm(ak) + (S.inv[ak] > 1 ? ' ×' + S.inv[ak] : ''), bx + 10, by + 33);
+    ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(bx + 168, by + 26, 58, 8);
+    ctx.fillStyle = f > 0.5 ? '#7fb0e0' : f > 0.25 ? '#e0b84a' : '#e04a4a'; ctx.fillRect(bx + 168, by + 26, 58 * f, 8);
+  } else ctx.fillText('No armour', bx + 10, by + 33);
+  ctx.fillStyle = '#9aa0a8';
+  ctx.fillText(nk ? `${nm(nk)} ×${S.inv[nk]}` : 'No charges', bx + 10, by + 48);
+  ctx.textAlign = 'right'; ctx.fillStyle = '#6a7078'; ctx.font = '10px system-ui, sans-serif';
+  ctx.fillText('X switch · G throw', bx + bw - 10, by + 48);
+  ctx.textAlign = 'left';
 }
 function resHtml() {
   const gs = Object.keys(GAS).filter(g => resist(g) > 0.005);
@@ -2299,6 +2472,7 @@ function tick() {
   carTick();
   trainTick();
   if (S.dg) dgTick();
+  nadeTick();
   plTick();
   if (mining && !S.dg) {
     const i = mining.y * W + mining.x;
@@ -2370,6 +2544,7 @@ function plHurt(d) {
   if (P.car && trainOf(P.car)) return;
   const cv0 = P.car && carOf(P.car);
   if (cv0) { cv0.hp -= d; cv0.lh = S.t; if (cv0.hp <= 0) carWreck(cv0); return; }
+  d = armSoak(d);
   P.hp -= d; P.lh = S.t;
   if (P.hp <= 0) {
     P.hp = 0; P.dead = 6; mining = null;
@@ -2380,26 +2555,15 @@ function plHurt(d) {
 function plShoot() {
   const P = S.pl;
   if (P.dead > 0 || P.cd > 0) return;
-  let best = null, bd = PL_GUN * PL_GUN, tx, ty;
-  for (const b of S.bugs) { const d = (b.x - P.x) ** 2 + (b.y - P.y) ** 2; if (b.hp > 0 && d < bd) { bd = d; best = b; } }
-  let h = null;
-  if (!best) for (const o of lists().hive) { const q = ctr(o), d = (q.x - P.x) ** 2 + (q.y - P.y) ** 2; if (d < bd) { bd = d; h = o; } }
-  if (!best && !h) return;
-  if (!P.rd) {
-    if (S.inv.cartridge > 0) { S.inv.cartridge--; P.rd = 10; }
-    else { if (S.t - noAmmoT > 3) { noAmmoT = S.t; toast('Out of cartridges. Craft lead shot cartridges in a workshop.', true); } return; }
-  }
-  if (best) { best.hp -= 12; tx = best.x; ty = best.y; if (best.hp <= 0) S.pk = (S.pk || 0) + 1; }
-  else {
-    const q = ctr(h);
-    tx = q.x; ty = q.y;
+  const r = wpnShot(P.x, P.y, S.bugs, lists().hive, null, 0, b => b.k === 2);
+  if (!r) return;
+  for (const b of r.hits) if (b.hp <= 0) S.pk = (S.pk || 0) + 1;
+  if (r.h) {
+    const h = r.h;
     if (h.dc <= 0) { spawnBugs(h, 2 + Math.floor(S.evo * 3), -2); h.dc = 10; }
     h.lh = S.t;
-    hurt(h, 12);
+    hurt(h, r.W.hv);
   }
-  P.rd--; P.cd = 0.2;
-  P.f = Math.atan2(ty - P.y, tx - P.x);
-  P.sh = S.t; P.tx = tx; P.ty = ty;
 }
 function plTick() {
   const P = S.pl;
@@ -3027,7 +3191,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, ach: S.ach || {}, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, ra: S.pl.ra || 0, rs: S.pl.rs || 0, aw: S.pl.aw || 0, ak: S.pl.ak, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, ach: S.ach || {}, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -3045,7 +3209,7 @@ function newGame(seed, opts) {
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
   S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: [], evo: 0, lost: 0, kills: 0, hk: 0, res: {}, unl: {}, clouds: [], fires: [], shells: [], booms: [], wind: { a: Math.random() * 7, v: 0.3 }, orders: [], odone: 0, gen, cq: [] };
   initWorld(seed, gen);
-  dgc = null; dgMine = null; dfx.length = 0;
+  dgc = null; dgMine = null; dfx.length = 0; nades.length = 0;
   if (rgd) { growNear(W / 2, H / 2, 100, 99); S.hv = S.rv = S.bv = 1; }
   else { spawnRuins(); spawnHives(); spawnBurrows(); }
   S.cars = []; S.trains = [];
@@ -3063,7 +3227,7 @@ function load() {
   const gen = d.gen || { legacy: 1 };
   setSize(gen.legacy ? 160 : gen.size);
   S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0, ach: d.ach || {}, dg: d.dg || null, dgn: d.dgn || 0, dgc: d.dgc || 0, qk: d.qk || 0, bv: d.bv };
-  dgc = null; dgMine = null; dfx.length = 0;
+  dgc = null; dgMine = null; dfx.length = 0; nades.length = 0;
   initWorld(d.seed, gen);
   if (rgd && d.rg) for (let r = 0; r < rgd.length; r++) if (d.rg[r] === '1') growRegion(r % (W / RG), Math.floor(r / (W / RG)), false);
   for (const k in S.dep) { const i = +k; oreAmt[i] = S.dep[k]; if (oreAmt[i] <= 0) { oreAmt[i] = 0; oreType[i] = 0; } }
@@ -3137,6 +3301,9 @@ const ACH = [
   ['delve', 'def', 'Delver', 'Climb down into a crawler burrow.', () => (S.dgn || 0) >= 1],
   ['cache', 'def', 'Lost Survey', 'Open 5 survey caches underground.', () => (S.dgc || 0) >= 5],
   ['queen', 'def', 'Regicide', 'Kill a burrow queen.', () => (S.qk || 0) >= 1],
+  ['boom', 'def', 'Quarry Blast', 'Kill 5 crawlers with a single thrown charge.', () => !!S.pl.boom],
+  ['twelve', 'def', 'Twelve Bore', 'Kill 3 crawlers with one shotgun blast.', () => !!S.pl.sg3],
+  ['armour', 'def', 'Plate Carrier', 'Make a ceramic plate carrier from silicon carbide and UHMWPE fibre.', () => (S.inv.ceramic_vest || 0) > 0],
   ['clean', 'def', 'Clean Record', 'Run for an hour of game time without a single pipe or vessel failure.', () => S.t >= 3600 && !S.fails],
 ];
 const achGlob = () => { try { return JSON.parse(localStorage.getItem('cfAch') || '{}') || {}; } catch (e) { return {}; } };
@@ -3275,7 +3442,7 @@ function render() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.fillStyle = '#0d1014';
   ctx.fillRect(0, 0, w, h);
-  if (S.dg) return drawDungeon(w, h);
+  if (S.dg) { drawDungeon(w, h); return drawWpnHud(w, h); }
   const ox = w / 2 - cam.x * z, oy = h / 2 - cam.y * z;
   const x0 = Math.max(0, Math.floor(-ox / z)), y0 = Math.max(0, Math.floor(-oy / z));
   const x1 = Math.min(W, Math.ceil((w - ox) / z)), y1 = Math.min(H, Math.ceil((h - oy) / z));
@@ -3343,6 +3510,7 @@ function render() {
   if (overlay !== 3) drawSmog(ox, oy, z);
   drawGas(ox, oy, z);
   if (overlay) drawOverlay(vis, ox, oy, z);
+  drawNades(ox, oy, z, false);
   for (let i = fx.length - 1; i >= 0; i--) {
     const f = fx[i];
     f.t += 1 / 60;
@@ -3412,6 +3580,7 @@ function render() {
     gauge(by + 56, 'Body', dv.hp / V.hp, dv.hp / V.hp > 0.5 ? '#7fe08a' : dv.hp / V.hp > 0.25 ? '#e0b84a' : '#e04a4a', Math.round(dv.hp / V.hp * 100) + '%');
     ctx.fillStyle = '#6a7078'; ctx.font = '10px system-ui, sans-serif'; ctx.fillText(V.oar ? 'W/S row ahead and astern · A/D turn · F get off at a shore' : V.sea ? (dv.foul > 0.3 ? 'Hull fouled: ' + Math.round(dv.foul * 40) + '% slower · repaint with antifouling' : 'W/S throttle and astern · A/D rudder · F get off at a shore') : 'W/S throttle and brake · A/D steer · F get out', bx + 12, by + 78);
   }
+  if (!dv && !dtr) drawWpnHud(w, h);
   if (tool && mouse.in) {
     ctx.strokeStyle = 'rgba(255,255,255,0.32)'; ctx.lineWidth = 1.5; ctx.setLineDash([6, 6]);
     ctx.beginPath(); ctx.arc(ox + S.pl.x * z, oy + S.pl.y * z, REACH * z, 0, 7); ctx.stroke(); ctx.setLineDash([]);
@@ -3622,7 +3791,7 @@ function drawPlayer(ox, oy, z) {
     const gx = X + fx * s * 0.25, gy = Y - s * 0.05 + fy * s * 0.25;
     ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = Math.max(2, s * 0.07);
     ctx.beginPath(); ctx.moveTo(X, Y - s * 0.05); ctx.lineTo(gx, gy); ctx.stroke();
-    if (S.t - P.sh < 0.1) { ctx.strokeStyle = 'rgba(255,230,140,0.9)'; ctx.lineWidth = Math.max(1, z * 0.04); ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(ox + P.tx * z, oy + P.ty * z); ctx.stroke(); }
+    if (S.t - P.sh < 0.1) { ctx.strokeStyle = 'rgba(255,230,140,0.9)'; ctx.lineWidth = Math.max(1, z * 0.04); ctx.beginPath(); if (P.sw === 'shotgun') { const a = Math.atan2(P.ty * z + oy - gy, P.tx * z + ox - gx), L = Math.hypot(P.ty * z + oy - gy, P.tx * z + ox - gx); for (let k = -2.5; k <= 2.5; k++) { ctx.moveTo(gx, gy); ctx.lineTo(gx + Math.cos(a + k * 0.07) * L, gy + Math.sin(a + k * 0.07) * L); } } else { ctx.moveTo(gx, gy); ctx.lineTo(ox + P.tx * z, oy + P.ty * z); } ctx.stroke(); }
   }
   if (P.hp < PL_HP) {
     const bw = s * 0.7, by = hy - s * 0.32;
@@ -4901,7 +5070,7 @@ function panelAct(act, el) {
   } else if (act === 'store') {
     let n = 0;
     for (const k in S.inv) {
-      if (!ITEMS[k] || PARTS.includes(k)) continue;
+      if (!ITEMS[k] || PARTS.includes(k) || CMB.includes(k)) continue;
       const m = Math.min(S.inv[k], 400 - sum(e.store));
       if (m <= 0) break;
       e.store[k] = (e.store[k] || 0) + m; S.inv[k] -= m; if (!S.inv[k]) delete S.inv[k]; n += m;
@@ -5210,7 +5379,7 @@ const HELP = `<div class="help">
 <li><b>Click and hold</b> on ore to mine it by hand.</li>
 <li><b>WASD</b> or arrows walk your engineer. Forest, marsh and snow slow you down and belts carry you along. <b>Mouse wheel</b> zooms. Middle drag or a click on the map looks around, and walking snaps the view back.</li>
 <li>You can build and pick up within 10 tiles and mine ore by hand within 3.5 tiles. Buildings can be inspected from anywhere.</li>
-<li><b>Space</b> fires your pistol at the nearest crawler or hive within 15 tiles, using lead shot cartridges from your inventory. Crawlers attack you if you get close. If they kill you, you wake up back at the landing site with your inventory.</li>
+<li><b>Space</b> fires at the nearest crawler or hive within 15 tiles, using cartridges from your inventory. <b>X</b> switches between lead shot, armour-piercing rounds and a shotgun. <b>G</b> throws a blasting charge at the mouse. Vests in your pack soak up part of every bite until they wear out. Crawlers attack you if you get close. If they kill you, you wake up back at the landing site with your inventory.</li>
 <li><b>F</b> gets in or out of a car or a locomotive. Drag to lay <b>railway track</b>, put a locomotive on it and place wagons at either end to couple them. Click a train to give it a schedule of train stops.</li>
 <li><b>Boats</b> are launched on water. Build <b>docks</b> on the shore with chests beside them and <b>buoys</b> as waypoints, then give a boat a route and it plots its own course through open water. Hulls foul over time and slow down; repaint them with antifouling.</li>
 <li><b>E</b> opens crafting. <b>H</b> opens the encyclopedia. <b>V</b> cycles the pressure, temperature and smog overlays.</li>
@@ -5379,13 +5548,16 @@ const HELP = `<div class="help">
 <p>Build a <b>Rail depot</b> and customers post up to three orders, each for something your factory can already make. Feed the goods in from touching belts, chests or machines, or load them by hand from the depot panel. Each filled order pays in parts and buildings. Every third order also brings a lab notebook from the buyer's own works (Haber ammonia first, then Ostwald nitric acid and the ammonia scrubber), or a repeat-custom bonus once you know them all, and bigger, better-paying customers turn up as you fill more.</p>
 <h3>Catalysts and vanadium</h3>
 <p>The <b>Acid plant</b> and the <b>Ammonia converter</b> have a catalyst bed. Empty, the acid plant runs as a slow lead chamber; loaded with <b>V₂O₅ catalyst rings</b> it becomes a Contact plant at up to 2.5× speed. Fused iron catalyst doubles a Haber converter. Each charge lasts a few hundred batches and loses activity in its last third, and the bed holds four charges. Vanadium comes from the iron in ilmenite: blow that pig iron in a converter to skim off vanadium slag, salt-roast it with soda ash, leach with Solvay ammonium chloride and calcine. Spent rings leach back with caustic. V₂O₅ reduced with aluminium into steel gives <b>vanadium steel</b> for armour walls.</p>
+<h3>Arms and armour</h3>
+<p>A workshop loads <b>AP cartridges</b> with a tungsten carbide core in a copper jacket. They do double damage, and four times as much to armoured brutes and burrow queens. A <b>pump shotgun</b> fires <b>shotshells</b> of lead shot in a polyethylene hull: the cone hits up to six crawlers at short range. Press <b>X</b> to switch. <b>Powder charges</b> and <b>ammonal charges</b> are quarry blasting tins: press <b>G</b> to throw one at the mouse. Underground the blast only reaches what it can see.</p>
+<p>Any vest in your pack takes part of every bite. A <b>shell vest</b> is crawler shell laced on steel. A <b>steel plate vest</b> sews plate into woven nylon. The <b>ceramic plate carrier</b> is the best: silicon carbide tiles, sintered with a little carbon, backed with <b>UHMWPE fibre</b>. That fibre starts with a <b>Ziegler catalyst</b> made from TiCl₄ on magnesium chloride with triethylaluminium. Run cold with only ethylene, it grows chains of millions of carbons. The powder is dissolved in hot base oil, spun as a gel and drawn out a hundred times, which makes it fifteen times stronger than steel for its weight.</p>
 <h3>Crawlers</h3>
 <p>Crawler hives sit in the wilds. The crawlers' gut bacteria live on sulfur, so hives breathe in the smog that drifts to them and send swarms at whatever vented last. They chew through anything in their path except belts, and every eighth swarm founds a new nest closer to the smog. Nests that keep eating grow into hives and then brood mounds, which keep more guards and send bigger swarms. As crawlers evolve they hatch acid-spitting and armoured brute forms. Wrecked hives give crawler shell: dissolve the chalk out with hydrochloric acid to get chitin, then boil it in caustic soda for chitosan, which wineries and waterworks buy as a fining agent and flocculant. The cleaner you run, the hungrier they stay. Gun turrets need lead shot cartridges, made from Chilean nitrate, sulfur and coal. Brick and concrete walls buy the guns time.</p>
 </div>`;
 
 let cGrp = 'Logistics', cSig = '', iQ = '', cQ = '';
 const kindOf = k => { const B = BUILD[k]; return B ? B.kind + (B.kind === 'machine' ? B.w + 'x' + B.h : '') : 'part'; };
-const CGROUPS = [...CATS.map(c => ({ id: c, n: c, ks: Object.keys(BUILD).filter(t => BUILD[t].cat === c && BUILD[t].cost) })), { id: 'Parts', n: 'Intermediates', ks: PARTS.slice() }];
+const CGROUPS = [...CATS.map(c => ({ id: c, n: c, ks: Object.keys(BUILD).filter(t => BUILD[t].cat === c && BUILD[t].cost) })), { id: 'Parts', n: 'Intermediates', ks: PARTS.slice() }, { id: 'Combat', n: 'Combat', ks: CMB.slice() }];
 for (const g of CGROUPS) { const o = [...new Set(g.ks.map(kindOf))]; g.ks.sort((a, b) => o.indexOf(kindOf(a)) - o.indexOf(kindOf(b))); }
 const craftCost = k => BUILD[k] ? BUILD[k].cost : RECIPE[k].i;
 const craftMakes = k => BUILD[k] ? BUILD[k].makes || 1 : RECIPE[k].o[k];
@@ -5394,7 +5566,7 @@ function planCraft(cost, n, inv, steps, d) {
   for (const k in cost) {
     const need = cost[k] * n, have = inv[k] || 0;
     if (have >= need) { inv[k] = have - need; continue; }
-    if (!PARTS.includes(k) || d > 4) return false;
+    if (!PARTS.includes(k) && !CMB.includes(k) || d > 4) return false;
     const r = RECIPE[k], runs = Math.ceil((need - have) / r.o[k]);
     inv[k] = 0;
     if (!planCraft(r.i, runs, inv, steps, d + 1)) return false;
@@ -5678,6 +5850,8 @@ window.addEventListener('keydown', ev => {
     else { const e = at(mouse.tx, mouse.ty); if (e && (e.type === 'belt' || e.type === 'sorter' || e.type === 'booster')) e.dir = (e.dir + 1) % 4; }
   }
   else if ((k === 'f' || k === 'enter') && !modalKind) S.dg ? dgUse() : carToggle();
+  else if (k === 'x' && !modalKind) wpnCycle();
+  else if (k === 'g' && !modalKind) { const p = S.dg ? dgPos(mouse.x, mouse.y) : screenToTile(mouse.x, mouse.y); nadeThrow(p.fx, p.fy); }
   else if (k === 'v') { overlay = (overlay + 1) % 4; toast(['Overlay off', 'Pressure overlay', 'Temperature overlay', 'Smog overlay'][overlay]); }
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) ev.preventDefault();
 });
@@ -5785,7 +5959,7 @@ window.game = {
   get S() { return S; }, get W() { return W; }, get ents() { return ents; }, get patches() { return patches; }, get cam() { return cam; },
   place: (t, x, y, d) => place(t, x, y, d, true), at, buildOk, canPlace, setRecipe, removeEnt, save, load, newGame,
   step(n) { for (let i = 0; i < n; i++) tick(); render(); $('#power').innerHTML = powerHtml(); $('#vent').innerHTML = ventHtml(); renderPanelDyn(); renderHotbar(); renderQueue(); },
-  terrain: () => terrain, ACH, achCheck, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
+  terrain: () => terrain, ACH, achCheck, wpnCycle, wpnCur, wpnRounds, nadeThrow, armSoak, armWorn, nades, plShoot, plHurt, dgHurt, enqueue, maxCraft, WPN, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
   select(e) { e ? openPanel(e) : closePanel(); }, openModal, closeModal, refresh: renderHotbar,
   setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; camFree = true; },
   get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get trains() { return S.trains; }, placeTrain, trainAt, openTrain, openPanel, pickTrain, trainGeo, reverseTrain, railBusy, get puffs() { return puffs; }, get H() { return H; }, get wakes() { return wakes; }, floats, boatRoute, boatPilot, carStep, carHit,
