@@ -5,7 +5,7 @@ let W = 160, H = 160, PW = 20;
 const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
 const KEY = 'chemfactory-save-v1';
 const GAP = 0.25, BELT_V = 2 * DT, MINER_T = 2, PUMP_RATE = 60 * DT;
-const PARTS = ['casting', 'plate', 'wire', 'motor', 'brick', 'lead_sheet', 'brass', 'cartridge', 'cylinder'];
+const PARTS = ['casting', 'plate', 'wire', 'motor', 'brick', 'lead_sheet', 'brass', 'cartridge', 'cylinder', 'wheel', 'chassis', 'diesel_engine', 'gearbox', 'windscreen'];
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 const tcv = document.createElement('canvas');
 const tctx = tcv.getContext('2d');
@@ -18,7 +18,13 @@ const panel = $('#panel'), tip = $('#tip'), modal = $('#modal'), hotbar = $('#ho
 let S, terrain, oreType, oreAmt, elev, occ, ents, patches, L = null;
 let cam = { x: W / 2, y: H / 2, z: 32 };
 let tool = null, toolDir = 1, sel = null, mining = null, drag = null;
-let camFree = false, noAmmoT = 0;
+let camFree = false, noAmmoT = 0, noFuelT = 0, selCar = null, puffs = [];
+const VEH = {
+  car: { vmax: 22, acc: 9, turn: 2.6, hl: 0.95, hw: 0.48, hp: 450, burn: 2.4, slots: 20, c: ['#6a1814', '#c8382e', '#4a100c'] },
+  truck: { vmax: 16, acc: 5, turn: 1.9, hl: 1.35, hw: 0.6, hp: 1350, burn: 3.6, slots: 60, c: ['#8a6010', '#e0a828', '#5a4008'] },
+};
+const CAN_MJ = 720, FUEL_CAP = 5;
+const VSPD = { 0: 0.6, 2: 0.55, 3: 0.45, 5: 0.3, 6: 0.35, 7: 0.5 };
 const PL_V = 6, PL_R = 0.28, REACH = 10, MINE_REACH = 3.5, PL_HP = 250, PL_GUN = 15;
 const mouse = { x: 0, y: 0, tx: -1, ty: -1, fx: 0, fy: 0, l: false, r: false, m: false, in: false };
 const keys = {};
@@ -431,7 +437,7 @@ function removeEnt(e) {
 
 function lists() {
   if (L) return L;
-  L = { belt: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [], wall: [], turret: [], hive: [], projector: [], gun: [], ruin: [] };
+  L = { belt: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [], wall: [], turret: [], hive: [], projector: [], gun: [], ruin: [], road: [] };
   for (const e of ents.values()) {
     const k = kind(e);
     if (k === 'pipe') L.node.push(e);
@@ -1052,7 +1058,7 @@ function nearestEnt(x, y, r, pick) {
   let best = null, bd = r * r;
   for (const e of ents.values()) {
     const k = kind(e);
-    if (k === 'hive' || k === 'belt' || k === 'ruin' || (pick && !pick(e))) continue;
+    if (k === 'hive' || k === 'belt' || k === 'road' || k === 'ruin' || (pick && !pick(e))) continue;
     const c = ctr(e), d = (c.x - x) ** 2 + (c.y - y) ** 2;
     if (d < bd) { bd = d; best = e; }
   }
@@ -1122,7 +1128,7 @@ function bugStep() {
       if (X < 0 || Y < 0 || X >= W || Y >= H || terrain[Y * W + X] === 1 || terrain[Y * W + X] === 4) return 'water';
       const o = at(X, Y);
       if (o && kind(o) === 'ruin') return 'water';
-      if (o && kind(o) !== 'belt' && kind(o) !== 'hive' && !(Math.floor(b.x) === X && Math.floor(b.y) === Y)) return o;
+      if (o && kind(o) !== 'belt' && kind(o) !== 'road' && kind(o) !== 'hive' && !(Math.floor(b.x) === X && Math.floor(b.y) === Y)) return o;
       b.x = nx; b.y = ny;
       return null;
     };
@@ -1398,6 +1404,7 @@ function tick() {
   for (const e of l.miner) pushItems(e, e.out, 'machine');
   for (const e of l.chest) if (e.type === 'chest') pushItems(e, e.store, 'chest');
   if (l.chest.some(e => e.type === 'depot') && (S.orders || []).length < 3 && Math.floor(S.t * 30) % 30 === 0) fillOrders();
+  carTick();
   plTick();
   if (mining) {
     const i = mining.y * W + mining.x;
@@ -1417,7 +1424,7 @@ function walkable(x, y) {
   const t = terrain[y * W + x];
   if (t === 1 || t === 4) return false;
   const o = at(x, y);
-  return !o || o.type === 'belt' || kind(o) === 'pipe';
+  return !o || o.type === 'belt' || kind(o) === 'pipe' || kind(o) === 'road';
 }
 function spawnPt() {
   const cx = Math.floor(W / 2), cy = Math.floor(H / 2);
@@ -1429,25 +1436,24 @@ function spawnPt() {
 }
 function newPl() { return Object.assign(spawnPt(), { f: Math.PI / 2, wk: 0, hp: PL_HP, rd: 0 }); }
 function plFree(x, y) {
-  return walkable(Math.floor(x - PL_R), Math.floor(y - PL_R)) && walkable(Math.floor(x + PL_R), Math.floor(y - PL_R)) && walkable(Math.floor(x - PL_R), Math.floor(y + PL_R)) && walkable(Math.floor(x + PL_R), Math.floor(y + PL_R));
+  return !S.cars.some(v => v.id !== S.pl.car && inCar(v, x, y, PL_R)) && walkable(Math.floor(x - PL_R), Math.floor(y - PL_R)) && walkable(Math.floor(x + PL_R), Math.floor(y - PL_R)) && walkable(Math.floor(x - PL_R), Math.floor(y + PL_R)) && walkable(Math.floor(x + PL_R), Math.floor(y + PL_R));
 }
 const TSPD = { 5: 0.8, 6: 0.6, 7: 0.85 };
 function plMove(dt, mx, my) {
   const P = S.pl;
   P.mv = false;
-  if (P.dead > 0) return false;
+  if (P.dead > 0 || P.car) return false;
   let left = dt;
   while (left > 1e-6) {
     const h = Math.min(0.04, left); left -= h;
-    const tx = Math.floor(P.x), ty = Math.floor(P.y);
+    const tx = Math.floor(P.x), ty = Math.floor(P.y), o = at(tx, ty);
     let vx = 0, vy = 0;
     if (mx || my) {
-      const l = Math.hypot(mx, my), v = PL_V * (TSPD[terrain[ty * W + tx]] || 1);
+      const l = Math.hypot(mx, my), v = PL_V * (o && kind(o) === 'road' ? 1.15 : TSPD[terrain[ty * W + tx]] || 1);
       vx = mx / l * v; vy = my / l * v;
       if (S.t - (P.sh || -9) > 0.4) P.f = Math.atan2(my, mx);
       P.wk += h * v * 2.4; P.mv = true;
     }
-    const o = at(tx, ty);
     if (o && o.type === 'belt') { vx += DX[o.dir] * 2; vy += DY[o.dir] * 2; }
     if (!vx && !vy) break;
     const nx = P.x + vx * h, ny = P.y + vy * h;
@@ -1467,6 +1473,8 @@ function entReach(e, r) {
 function plHurt(d) {
   const P = S.pl;
   if (P.dead > 0) return;
+  const cv0 = P.car && carOf(P.car);
+  if (cv0) { cv0.hp -= d; cv0.lh = S.t; if (cv0.hp <= 0) carWreck(cv0); return; }
   P.hp -= d; P.lh = S.t;
   if (P.hp <= 0) {
     P.hp = 0; P.dead = 6; mining = null;
@@ -1510,6 +1518,144 @@ function plTick() {
   if (keys[' ']) plShoot();
 }
 
+const carOf = id => S.cars.find(v => v.id === id);
+function inCar(v, x, y, pad) {
+  const V = VEH[v.type], dx = x - v.x, dy = y - v.y, c = Math.cos(v.a), s = Math.sin(v.a);
+  return Math.abs(dx * c + dy * s) < V.hl + pad && Math.abs(dy * c - dx * s) < V.hw + pad;
+}
+const carAt = (x, y) => S.cars.find(v => inCar(v, x, y, 0.05));
+function carHit(v, x, y, a) {
+  const V = VEH[v.type], c = Math.cos(a), s = Math.sin(a);
+  for (const [l, w] of [[1, 1], [1, -1], [-1, 1], [-1, -1], [0, 1], [0, -1], [1, 0], [-1, 0], [0.5, 1], [-0.5, 1], [0.5, -1], [-0.5, -1]]) {
+    const X = Math.floor(x + c * V.hl * l - s * V.hw * w), Y = Math.floor(y + s * V.hl * l + c * V.hw * w);
+    if (!walkable(X, Y)) return { x: X, y: Y };
+  }
+  for (const o of S.cars) if (o !== v && Math.hypot(o.x - x, o.y - y) < VEH[o.type].hl + V.hw + 0.1 && (inCar(o, x, y, V.hw) || inCar(v, o.x, o.y, VEH[o.type].hw))) return { car: o };
+  const P = S.pl;
+  if (P.car !== v.id && !(P.dead > 0)) {
+    const dx = P.x - x, dy = P.y - y;
+    if (Math.abs(dx * c + dy * s) < V.hl + PL_R && Math.abs(dy * c - dx * s) < V.hw + PL_R) return { pl: 1 };
+  }
+  return null;
+}
+function carSlots(v) { let n = 0; for (const k in v.tr) n += Math.ceil(v.tr[k] / stk(k)); return n; }
+function refuel(v, quiet) {
+  if (v.fc > 0) { v.fc--; v.e = (v.e || 0) + CAN_MJ; return true; }
+  if (S.inv.jerrycan > 0) { S.inv.jerrycan--; v.e = (v.e || 0) + CAN_MJ; if (!quiet) toast('You pour a jerrycan of diesel into the tank.'); renderHotbar(); return true; }
+  if (!quiet && S.t - noFuelT > 3) { noFuelT = S.t; toast('Out of fuel. Fill jerrycans with diesel at a cylinder filler.', true); }
+  return false;
+}
+function carWreck(v) {
+  const P = S.pl;
+  for (let i = 0; i < 4; i++) fx.push({ x: v.x + (Math.random() - 0.5), y: v.y + (Math.random() - 0.5), t: 0, c: '#e08a2a' });
+  S.cars = S.cars.filter(o => o !== v);
+  if (selCar === v.id) closePanel();
+  if (P.car === v.id) { P.car = null; P.hp = Math.max(1, P.hp - 60); P.lh = S.t; }
+  toast('The ' + nm(v.type).toLowerCase() + ' is wrecked. Its cargo is lost.', true);
+}
+function carStep(v, thr, steer) {
+  const V = VEH[v.type], X = Math.floor(v.x), Y = Math.floor(v.y), o = at(X, Y);
+  const cap = V.vmax * (o && kind(o) === 'road' ? 1 : VSPD[terrain[Y * W + X]] ?? 0.6);
+  if (thr && !(v.e > 0)) refuel(v);
+  const fuel = v.e > 0, same = thr && Math.sign(thr) === Math.sign(v.v || thr);
+  if (thr && !same) v.v += thr * V.acc * 1.8 * DT;
+  else if (thr && fuel) { v.v += thr * V.acc * (thr < 0 ? 0.5 : 1) * DT; v.e = Math.max(0, v.e - V.burn * DT); }
+  else { const d = Math.min(Math.abs(v.v), 3 * DT); v.v -= Math.sign(v.v) * d; }
+  if (fuel && !thr) v.e = Math.max(0, v.e - V.burn * 0.08 * DT);
+  v.v -= v.v * 0.15 * DT;
+  if (v.v > cap) v.v = Math.max(cap, v.v - 14 * DT);
+  if (v.v < -cap * 0.35) v.v = Math.min(-cap * 0.35, v.v + 14 * DT);
+  if (steer && Math.abs(v.v) > 0.05) {
+    const na = v.a + steer * V.turn * DT * Math.min(1, Math.abs(v.v) / 4) * Math.sign(v.v);
+    if (!carHit(v, v.x, v.y, na)) v.a = na;
+  }
+  v.a = (v.a + Math.PI * 3) % (Math.PI * 2) - Math.PI;
+  for (let k = 0; k < 2 && Math.abs(v.v) > 1e-3; k++) {
+    const nx = v.x + Math.cos(v.a) * v.v * DT / 2, ny = v.y + Math.sin(v.a) * v.v * DT / 2, hit = carHit(v, nx, ny, v.a);
+    if (!hit) { v.x = nx; v.y = ny; continue; }
+    const sp = Math.abs(v.v);
+    if (sp > 4) {
+      const dmg = (sp - 4) * 8;
+      v.hp -= dmg; v.lh = S.t;
+      if (hit.car) { hit.car.hp -= dmg; hit.car.lh = S.t; if (hit.car.hp <= 0) carWreck(hit.car); }
+      else if (hit.pl) plHurt(dmg);
+      else { const e = at(hit.x, hit.y); if (e && kind(e) !== 'ruin') hurt(e, dmg, 'rammed by a vehicle'); }
+      fx.push({ x: nx + Math.cos(v.a) * V.hl, y: ny + Math.sin(v.a) * V.hl, t: 0.3, c: '#d0d0d0' });
+    }
+    v.v = -v.v * 0.25;
+    break;
+  }
+  const sp = Math.abs(v.v);
+  if (sp > 2) for (const b of S.bugs) if (b.hp > 0 && inCar(v, b.x, b.y, 0.25)) {
+    b.hp -= sp * 6; v.hp -= 1; v.lh = S.t; v.v *= 0.97;
+    if (b.hp <= 0) S.pk = (S.pk || 0) + 1;
+  }
+  if (thr && fuel && Math.random() < 0.35) puffs.push({ x: v.x - Math.cos(v.a) * V.hl, y: v.y - Math.sin(v.a) * V.hl, t: S.t });
+  if (v.hp <= 0) carWreck(v);
+}
+function carTick() {
+  const P = S.pl, dv = P.car && carOf(P.car);
+  if (P.car && !dv) P.car = null;
+  for (const v of S.cars.slice()) {
+    let thr = 0, steer = 0;
+    if (v === dv && !modalKind) {
+      thr = (keys.w || keys.arrowup ? 1 : 0) - (keys.s || keys.arrowdown ? 1 : 0);
+      steer = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0);
+    }
+    if (v !== dv && v.v) v.v -= Math.sign(v.v) * Math.min(Math.abs(v.v), 9 * DT);
+    carStep(v, thr, steer);
+    if (S.t - (v.lh ?? -99) > 10 && v.hp < VEH[v.type].hp) v.hp = Math.min(VEH[v.type].hp, v.hp + 2 * DT);
+  }
+  const d2 = P.car && carOf(P.car);
+  if (d2) { P.x = d2.x; P.y = d2.y; P.f = d2.a; }
+  if (puffs.length > 80) puffs.splice(0, puffs.length - 80);
+}
+function carToggle() {
+  const P = S.pl;
+  if (P.dead > 0) return;
+  const v = P.car && carOf(P.car);
+  if (v) {
+    const V = VEH[v.type], c = Math.cos(v.a), s = Math.sin(v.a);
+    for (const [l, w] of [[0, -1], [0, 1], [-1, 0], [1, 0], [0.6, -1], [-0.6, 1]]) {
+      const ox = l * (V.hl + 0.45), oy = w * (V.hw + 0.45), x = v.x + c * ox - s * oy, y = v.y + s * ox + c * oy;
+      P.car = null;
+      if (plFree(x, y)) { P.x = x; P.y = y; P.f = v.a - Math.PI / 2; return true; }
+      P.car = v.id;
+    }
+    toast('No room to get out here.', true);
+    return false;
+  }
+  let best = null, bd = 3;
+  for (const o of S.cars) { const d = Math.hypot(o.x - P.x, o.y - P.y) - VEH[o.type].hw; if (d < bd) { bd = d; best = o; } }
+  if (!best) { toast('No vehicle nearby. Walk up to one and press F.', true); return false; }
+  P.car = best.id; mining = null; camFree = false;
+  if (!(best.e > 0) && !best.fc && !(S.inv.jerrycan > 0)) toast('The tank is empty. Fill jerrycans with diesel at a cylinder filler.', true);
+  return true;
+}
+function placeCar(t, fx, fy, dir) {
+  const P = S.pl, V = VEH[t];
+  if (!(S.inv[t] > 0)) return 'You have no ' + nm(t);
+  if (!inReach(fx, fy, REACH)) return 'Out of reach. Walk closer.';
+  const v = { id: S.nextId++, type: t, x: fx, y: fy, a: Math.atan2(DY[dir], DX[dir]), v: 0, hp: V.hp, e: 0, fc: 0, tr: {} };
+  const h = carHit(v, fx, fy, v.a);
+  if (h) return h.pl ? 'You are standing there' : 'Something is in the way';
+  S.inv[t]--;
+  S.cars.push(v);
+  return v;
+}
+function pickCar(v) {
+  const P = S.pl;
+  if (P.car === v.id) return toast('Get out first (F).', true);
+  if (!inReach(v.x, v.y, REACH)) return toast('Out of reach. Walk closer.', true);
+  give(v.type, 1); qbAdd(v.type);
+  for (const k in v.tr) give(k, v.tr[k]);
+  give('jerrycan', v.fc || 0);
+  S.cars = S.cars.filter(o => o !== v);
+  if (selCar === v.id) closePanel();
+  toast('Picked up the ' + nm(v.type).toLowerCase() + (Object.keys(v.tr).length ? ' and its cargo.' : '.'));
+  renderHotbar();
+}
+
 function serialize() {
   const es = [];
   for (const e of ents.values()) {
@@ -1517,7 +1663,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, dead: S.pl.dead || 0 }, pk: S.pk || 0, help: S.help, qb: S.qb, cq: S.cq, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, dead: S.pl.dead || 0, car: S.pl.car || null }, cars: S.cars.map(v => Object.assign({}, v, { x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, help: S.help, qb: S.qb, cq: S.cq, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -1537,6 +1683,7 @@ function newGame(seed, opts) {
   initWorld(seed, gen);
   spawnRuins();
   spawnHives();
+  S.cars = [];
   S.pl = newPl();
   cam = { x: S.pl.x, y: S.pl.y, z: 32 }; camFree = false;
   tool = null; sel = null;
@@ -1561,6 +1708,7 @@ function load() {
   }
   if (!S.rv) spawnRuins();
   if (!S.hv) spawnHives();
+  S.cars = d.cars || [];
   S.pl = d.pl ? Object.assign({ wk: 0, f: Math.PI / 2, hp: PL_HP, rd: 0 }, d.pl) : newPl();
   if (d.cam) cam = d.cam;
   camFree = false;
@@ -1708,16 +1856,19 @@ function render() {
   ctx.fillStyle = 'rgba(0,0,0,0.3)';
   for (const e of vis) {
     const k = kind(e);
-    if (k === 'pipe' || e.type === 'belt' || k === 'hive' || k === 'ruin') continue;
+    if (k === 'pipe' || e.type === 'belt' || k === 'hive' || k === 'ruin' || k === 'road') continue;
     const B = BUILD[e.type];
     ctx.fillRect(ox + e.x * z + z * 0.18, oy + e.y * z + z * 0.24, B.w * z - z * 0.12, B.h * z - z * 0.12);
   }
+  for (const e of vis) if (kind(e) === 'road') drawRoad(e, ox, oy, z);
   for (const e of vis) if (kind(e) === 'pipe') drawPipe(e, ox, oy, z);
   for (const e of vis) if (e.type === 'belt') drawBelt(e, ox, oy, z);
   for (const e of vis) if (e.type === 'belt') drawBeltItems(e, ox, oy, z);
-  for (const e of vis) if (kind(e) !== 'pipe' && e.type !== 'belt') drawBuilding(e, ox, oy, z);
+  for (const e of vis) if (kind(e) !== 'pipe' && e.type !== 'belt' && kind(e) !== 'road') drawBuilding(e, ox, oy, z);
   drawSmoke(vis, ox, oy, z);
-  drawPlayer(ox, oy, z);
+  for (const v of S.cars) if (v.x > x0 - 3 && v.x < x1 + 3 && v.y > y0 - 3 && v.y < y1 + 3) drawCar(v, ox + v.x * z, oy + v.y * z, z);
+  drawPuffs(ox, oy, z);
+  if (!S.pl.car) drawPlayer(ox, oy, z);
   drawBugs(ox, oy, z, x0, y0, x1, y1);
   for (const e of vis) if (e.type === 'turret' && S.t - e.sh < 0.07) {
     const c = ctr(e);
@@ -1773,6 +1924,19 @@ function render() {
     ctx.fillStyle = '#ffd0c0'; ctx.font = 'bold 22px system-ui, sans-serif'; ctx.textAlign = 'center';
     ctx.fillText('Respawning in ' + Math.ceil(S.pl.dead) + '…', w / 2, h / 2 - 40);
     ctx.textAlign = 'left';
+  }
+  const dv = S.pl.car && carOf(S.pl.car);
+  if (dv) {
+    const bx = 14, by = h - 98, sp = Math.round(Math.abs(dv.v) * 3.6), V = VEH[dv.type];
+    ctx.fillStyle = 'rgba(14,16,20,0.84)'; ctx.beginPath(); ctx.roundRect(bx, by, 240, 84, 8); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = '#e8e4d8'; ctx.font = 'bold 13px system-ui, sans-serif'; ctx.fillText(nm(dv.type), bx + 12, by + 22);
+    ctx.textAlign = 'right'; ctx.font = 'bold 24px ui-monospace, monospace'; ctx.fillText(sp, bx + 196, by + 28);
+    ctx.font = '11px system-ui, sans-serif'; ctx.fillStyle = '#9aa0a8'; ctx.fillText('km/h', bx + 228, by + 28); ctx.textAlign = 'left';
+    const gauge = (y, lab, f, col, txt) => { ctx.fillStyle = '#9aa0a8'; ctx.font = '11px system-ui, sans-serif'; ctx.fillText(lab, bx + 12, y + 8); ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(bx + 50, y, 120, 9); ctx.fillStyle = col; ctx.fillRect(bx + 50, y, 120 * Math.max(0, Math.min(1, f)), 9); ctx.fillStyle = '#c8c4b8'; ctx.fillText(txt, bx + 178, y + 8); };
+    gauge(by + 40, 'Fuel', (dv.e || 0) / CAN_MJ, '#d8b848', dv.fc ? '+' + dv.fc + ' can' + (dv.fc > 1 ? 's' : '') : (S.inv.jerrycan || 0) + ' in pack');
+    gauge(by + 56, 'Body', dv.hp / V.hp, dv.hp / V.hp > 0.5 ? '#7fe08a' : dv.hp / V.hp > 0.25 ? '#e0b84a' : '#e04a4a', Math.round(dv.hp / V.hp * 100) + '%');
+    ctx.fillStyle = '#6a7078'; ctx.font = '10px system-ui, sans-serif'; ctx.fillText('W/S throttle and brake · A/D steer · F get out', bx + 12, by + 78);
   }
   if (tool && mouse.in) {
     ctx.strokeStyle = 'rgba(255,255,255,0.32)'; ctx.lineWidth = 1.5; ctx.setLineDash([6, 6]);
@@ -1991,6 +2155,81 @@ function drawPlayer(ox, oy, z) {
     ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(X - bw / 2, by, bw, Math.max(3, s * 0.07));
     ctx.fillStyle = P.hp / PL_HP > 0.5 ? '#7fe08a' : P.hp / PL_HP > 0.25 ? '#e0b84a' : '#e04a4a';
     ctx.fillRect(X - bw / 2, by, bw * P.hp / PL_HP, Math.max(3, s * 0.07));
+  }
+}
+function drawRoad(e, ox, oy, z) {
+  const X = ox + e.x * z, Y = oy + e.y * z, cc = e.type === 'conc_road';
+  const nb = d => { const o = at(e.x + DX[d], e.y + DY[d]); return o && kind(o) === 'road'; };
+  ctx.fillStyle = cc ? '#9c9a92' : '#2c2d31';
+  ctx.fillRect(X, Y, z + 0.5, z + 0.5);
+  const hsh = ((e.x * 73856093) ^ (e.y * 19349663)) >>> 0;
+  ctx.fillStyle = cc ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)';
+  for (let i = 0; i < 4; i++) { const r = (hsh >> (i * 6)) & 63; ctx.fillRect(X + (r & 7) / 8 * z, Y + (r >> 3) / 8 * z, z * 0.08, z * 0.08); }
+  const edge = cc ? 'rgba(60,58,52,0.55)' : 'rgba(150,150,140,0.35)';
+  ctx.fillStyle = edge;
+  const t = Math.max(1, z * 0.05);
+  if (!nb(0)) ctx.fillRect(X, Y, z, t);
+  if (!nb(2)) ctx.fillRect(X, Y + z - t, z, t);
+  if (!nb(3)) ctx.fillRect(X, Y, t, z);
+  if (!nb(1)) ctx.fillRect(X + z - t, Y, t, z);
+  if (cc) { ctx.fillStyle = 'rgba(40,38,34,0.35)'; if (e.x % 3 === 0) ctx.fillRect(X, Y, Math.max(1, z * 0.02), z); if (e.y % 3 === 0) ctx.fillRect(X, Y, z, Math.max(1, z * 0.02)); return; }
+  if (z < 10) return;
+  ctx.fillStyle = 'rgba(232,220,150,0.75)';
+  const h = nb(1) && nb(3), v = nb(0) && nb(2);
+  if (h && !v && e.x % 2 === 0) ctx.fillRect(X + z * 0.1, Y + z * 0.47, z * 0.8, z * 0.06);
+  if (v && !h && e.y % 2 === 0) ctx.fillRect(X + z * 0.47, Y + z * 0.1, z * 0.06, z * 0.8);
+}
+function drawCar(v, X, Y, z, al) {
+  const V = VEH[v.type], L = V.hl * z, R = V.hw * z, tr = v.type === 'truck', c = V.c;
+  ctx.save(); ctx.translate(X, Y); ctx.rotate(v.a);
+  if (al != null) ctx.globalAlpha = al;
+  const drv = S.pl.car === v.id;
+  if (drv && v.v > 1) {
+    const g = ctx.createLinearGradient(L, 0, L + z * 4, 0);
+    g.addColorStop(0, 'rgba(255,244,200,0.16)'); g.addColorStop(1, 'rgba(255,244,200,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(L, -R * 0.8); ctx.lineTo(L + z * 4, -R * 2.6); ctx.lineTo(L + z * 4, R * 2.6); ctx.lineTo(L, R * 0.8); ctx.fill();
+  }
+  ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.roundRect(-L + z * 0.08, -R + z * 0.16, L * 2, R * 2, z * 0.2); ctx.fill();
+  ctx.fillStyle = '#121214';
+  for (const ax of tr ? [0.66, -0.38, -0.7] : [0.6, -0.6]) for (const sy of [-1, 1]) { ctx.beginPath(); ctx.roundRect(ax * L - z * 0.19, sy * R - z * 0.1, z * 0.38, z * 0.2, z * 0.05); ctx.fill(); }
+  const g = ctx.createLinearGradient(0, -R, 0, R);
+  g.addColorStop(0, c[0]); g.addColorStop(0.45, c[1]); g.addColorStop(1, c[2]);
+  ctx.fillStyle = g; ctx.beginPath(); ctx.roundRect(-L, -R, L * 2, R * 2, z * (tr ? 0.12 : 0.24)); ctx.fill();
+  if (tr) {
+    ctx.fillStyle = '#3e3428'; ctx.fillRect(-L + z * 0.08, -R + z * 0.08, L * 1.18, R * 2 - z * 0.16);
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = Math.max(1, z * 0.025);
+    for (let i = 1; i < 6; i++) { const x = -L + z * 0.08 + L * 1.18 * i / 6; ctx.beginPath(); ctx.moveTo(x, -R + z * 0.08); ctx.lineTo(x, R - z * 0.08); ctx.stroke(); }
+    const n = Math.min(6, Math.ceil(carSlots(v) / 10));
+    for (let i = 0; i < n; i++) { const cx = -L + z * 0.2 + (i % 3) * L * 0.36, cy = (i < 3 ? -1 : 1) * R * 0.45; ctx.fillStyle = '#a07840'; ctx.fillRect(cx, cy - R * 0.36, L * 0.3, R * 0.72); ctx.strokeStyle = '#6a4e28'; ctx.strokeRect(cx, cy - R * 0.36, L * 0.3, R * 0.72); }
+    ctx.fillStyle = '#1c2630'; ctx.beginPath(); ctx.roundRect(L * 0.3, -R * 0.82, L * 0.5, R * 1.64, z * 0.08); ctx.fill();
+    ctx.fillStyle = c[1]; ctx.beginPath(); ctx.roundRect(L * 0.32, -R * 0.74, L * 0.3, R * 1.48, z * 0.06); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(L * 0.34, -R * 0.7, L * 0.26, R * 0.3);
+    ctx.fillStyle = 'rgba(160,210,235,0.55)'; ctx.beginPath(); ctx.moveTo(L * 0.64, -R * 0.72); ctx.lineTo(L * 0.78, -R * 0.78); ctx.lineTo(L * 0.78, R * 0.78); ctx.lineTo(L * 0.64, R * 0.72); ctx.fill();
+  } else {
+    ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(L * 0.5, -R * 0.08, L * 0.42, R * 0.16);
+    ctx.fillStyle = '#1c2630'; ctx.beginPath(); ctx.roundRect(-L * 0.58, -R * 0.8, L * 1.06, R * 1.6, z * 0.14); ctx.fill();
+    ctx.fillStyle = c[1]; ctx.beginPath(); ctx.roundRect(-L * 0.4, -R * 0.7, L * 0.64, R * 1.4, z * 0.12); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.16)'; ctx.fillRect(-L * 0.34, -R * 0.62, L * 0.52, R * 0.26);
+    ctx.fillStyle = 'rgba(160,210,235,0.55)'; ctx.beginPath(); ctx.moveTo(L * 0.27, -R * 0.68); ctx.lineTo(L * 0.46, -R * 0.76); ctx.lineTo(L * 0.46, R * 0.76); ctx.lineTo(L * 0.27, R * 0.68); ctx.fill();
+    ctx.fillStyle = 'rgba(160,210,235,0.4)'; ctx.fillRect(-L * 0.56, -R * 0.62, L * 0.13, R * 1.24);
+  }
+  ctx.fillStyle = '#fff4c0'; ctx.fillRect(L - z * 0.07, -R * 0.8, z * 0.06, R * 0.36); ctx.fillRect(L - z * 0.07, R * 0.44, z * 0.06, R * 0.36);
+  ctx.fillStyle = drv && v.v < -0.2 ? '#ffffff' : '#c42020'; ctx.fillRect(-L + z * 0.01, -R * 0.78, z * 0.05, R * 0.3); ctx.fillRect(-L + z * 0.01, R * 0.48, z * 0.05, R * 0.3);
+  ctx.restore();
+  const V0 = V.hp;
+  if (v.hp < V0 && al == null) {
+    const bw = z * 1.2, by = Y - (V.hl + 0.3) * z;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(X - bw / 2, by, bw, Math.max(3, z * 0.07));
+    ctx.fillStyle = v.hp / V0 > 0.5 ? '#7fe08a' : v.hp / V0 > 0.25 ? '#e0b84a' : '#e04a4a';
+    ctx.fillRect(X - bw / 2, by, bw * v.hp / V0, Math.max(3, z * 0.07));
+  }
+}
+function drawPuffs(ox, oy, z) {
+  for (const p of puffs) {
+    const a = S.t - p.t;
+    if (a > 1.2 || a < 0) continue;
+    ctx.fillStyle = `rgba(90,90,96,${0.35 * (1 - a / 1.2)})`;
+    ctx.beginPath(); ctx.arc(ox + (p.x + a * 0.3) * z, oy + (p.y - a * 0.5) * z, z * (0.12 + a * 0.3), 0, 7); ctx.fill();
   }
 }
 function drawBugs(ox, oy, z, x0, y0, x1, y1) {
@@ -2435,6 +2674,15 @@ function machDetail(e, B, x, y, w, h, z) {
 }
 function drawGhost(ox, oy, z) {
   const B = BUILD[tool], o = toolOrigin(tool, mouse.fx, mouse.fy);
+  if (B.kind === 'vehicle') {
+    const v = { id: -1, type: tool, x: mouse.fx, y: mouse.fy, a: Math.atan2(DY[toolDir], DX[toolDir]), v: 0, hp: 1, tr: {} }, V = VEH[tool];
+    const bad = carHit(v, v.x, v.y, v.a) || !inReach(v.x, v.y, REACH);
+    drawCar(v, ox + v.x * z, oy + v.y * z, z, 0.6);
+    ctx.save(); ctx.translate(ox + v.x * z, oy + v.y * z); ctx.rotate(v.a);
+    ctx.strokeStyle = bad ? '#ff5a5a' : '#7fff8a'; ctx.lineWidth = 2; ctx.strokeRect(-V.hl * z, -V.hw * z, V.hl * z * 2, V.hw * z * 2);
+    ctx.restore();
+    return;
+  }
   const err = canPlace(tool, o.x, o.y) || plBlock(tool, o.x, o.y);
   ctx.globalAlpha = 0.5;
   ctx.fillStyle = B.c;
@@ -2510,7 +2758,7 @@ for (const r of RECIPES) {
   for (const k in r.i || {}) (USED[k] = USED[k] || new Set()).add(r.n || nm(r.id));
 }
 for (const t in BUILD) for (const k in BUILD[t].cost || {}) (USED[k] = USED[k] || new Set()).add(BUILD[t].n);
-const stk = k => BUILD[k] ? (BUILD[k].kind === 'belt' || BUILD[k].kind === 'pipe' ? 100 : 50) : 100;
+const stk = k => BUILD[k] ? (BUILD[k].kind === 'belt' || BUILD[k].kind === 'pipe' || BUILD[k].kind === 'road' ? 100 : BUILD[k].kind === 'vehicle' ? 1 : 50) : 100;
 const lum = h => { if (!h || h[0] !== '#') return 128; if (h.length === 4) h = '#' + h[1] + h[1] + h[2] + h[2] + h[3] + h[3]; const v = parseInt(h.slice(1, 7), 16); return ((v >> 16) * 299 + ((v >> 8) & 255) * 587 + (v & 255) * 114) / 1000; };
 function abbr(k) {
   const B = BUILD[k];
@@ -2545,7 +2793,53 @@ function selectTool(t) {
   renderHotbar();
 }
 
-function closePanel() { sel = null; panel.hidden = true; panel.innerHTML = ''; }
+function closePanel() { sel = null; selCar = null; panel.hidden = true; panel.innerHTML = ''; }
+function openCar(v) {
+  sel = null; selCar = v.id;
+  const B = BUILD[v.type];
+  panel.innerHTML = `<div class="ph"><span class="sw big" style="background:${B.c}">${B.ab}</span><div class="pt"><b>${B.n}</b><small>${B.d}</small></div><button class="x" data-act="close" title="Close">×</button></div><div id="pdyn"></div><div class="pbtns"><button data-act="cfuel">Add jerrycans</button><button data-act="cdrive">${S.pl.car === v.id ? 'Get out (F)' : 'Get in (F)'}</button><button data-act="ctake">Take all cargo</button><button data-act="cstore">Load raw materials</button><button class="danger" data-act="cpick">Pick up</button></div>`;
+  panel.hidden = false;
+  renderPanelDyn();
+}
+function carDyn(v) {
+  const V = VEH[v.type], used = carSlots(v);
+  let h = `<div class="gauge"><span>Body</span>${bar(v.hp, V.hp, v.hp / V.hp > 0.5 ? '#7fe08a' : '#e0b84a')}<b>${Math.round(v.hp)} / ${V.hp}</b></div>`;
+  h += `<div class="gauge"><span>Tank</span>${bar(v.e || 0, CAN_MJ, '#d8b848')}<b>${Math.round(v.e || 0)} MJ</b></div>`;
+  h += `<div class="sec">Fuel slot</div><div class="cgrid"><button class="cslot" data-act="cfuel" title="Add jerrycans from your pack">${ico('jerrycan')}<span class="cnt">${v.fc || 0}/${FUEL_CAP}</span></button></div><p class="dim">${Math.round(Math.abs(v.v) * 3.6)} km/h. A jerrycan lasts about ${Math.round(CAN_MJ / V.burn / 60)} minutes at full throttle; spare cans in your pack are poured in when the tank runs dry.</p>`;
+  h += `<div class="sec">Cargo · ${used} / ${V.slots} slots</div><div class="cgrid">`;
+  const ks = Object.keys(v.tr).sort();
+  h += ks.length ? ks.map(k => `<button class="cslot" data-act="ctk" data-k="${k}" title="Take ${nm(k)}">${ico(k)}<span class="cnt">${fmt(v.tr[k])}</span></button>`).join('') : '<span class="dim">Empty. Click items below to load them.</span>';
+  h += `</div><div class="sec">Your inventory · click to load</div><div class="cgrid">`;
+  const inv = Object.keys(S.inv).filter(k => S.inv[k] > 0 && !BUILD[k]).sort();
+  h += inv.slice(0, 40).map(k => `<button class="cslot" data-act="cpt" data-k="${k}" title="Load ${nm(k)}">${ico(k)}<span class="cnt">${fmt(S.inv[k])}</span></button>`).join('') || '<span class="dim">Nothing to load.</span>';
+  return h + '</div>';
+}
+function carPut(v, k, n) {
+  const V = VEH[v.type], have = S.inv[k] || 0, cur = v.tr[k] || 0;
+  const room = (V.slots - carSlots(v)) * stk(k) + (cur % stk(k) ? stk(k) - cur % stk(k) : 0);
+  const m = Math.min(have, n, room);
+  if (m <= 0) return 0;
+  S.inv[k] = have - m; if (!S.inv[k]) delete S.inv[k];
+  v.tr[k] = cur + m;
+  return m;
+}
+function carAct(act, el) {
+  const v = carOf(selCar);
+  if (!v) return closePanel();
+  const k = el.dataset.k;
+  if (act === 'cfuel') {
+    const n = Math.min(FUEL_CAP - (v.fc || 0), S.inv.jerrycan || 0);
+    if (n <= 0) return toast(v.fc >= FUEL_CAP ? 'The fuel slot is full.' : 'You have no jerrycans. Fill them with diesel at a cylinder filler.', true);
+    S.inv.jerrycan -= n; v.fc = (v.fc || 0) + n; toast('Loaded ' + n + ' jerrycan' + (n > 1 ? 's' : ''));
+  } else if (act === 'cdrive') { if (S.pl.car !== v.id && Math.hypot(v.x - S.pl.x, v.y - S.pl.y) > 3 + VEH[v.type].hw) return toast('Walk up to it first.', true); carToggle(); return openCar(v); }
+  else if (act === 'cpick') return pickCar(v);
+  else if (!inReach(v.x, v.y, REACH)) return toast('Out of reach. Walk closer.', true);
+  else if (act === 'ctk') { give(k, v.tr[k] || 0); delete v.tr[k]; }
+  else if (act === 'cpt') { if (!carPut(v, k, S.inv[k] || 0)) toast('The cargo bed is full.', true); }
+  else if (act === 'ctake') { for (const q in v.tr) give(q, v.tr[q]); v.tr = {}; }
+  else if (act === 'cstore') { let n = 0; for (const q of Object.keys(S.inv)) if (ORES.some(o => o && o.item === q)) n += carPut(v, q, S.inv[q]); toast(n ? 'Loaded ' + n + ' raw materials' : 'No raw materials to load', !n); }
+  renderHotbar(); renderPanelDyn();
+}
 
 function openPanel(e) {
   sel = e.id;
@@ -2617,6 +2911,7 @@ function bar(v, max, c) {
 }
 
 function renderPanelDyn() {
+  if (selCar) { const v = carOf(selCar), box = document.getElementById('pdyn'); if (!v) return closePanel(); if (box) box.innerHTML = carDyn(v); return; }
   const e = sel && ents.get(sel), box = document.getElementById('pdyn');
   if (!e || !box) return;
   let h = '';
@@ -2739,6 +3034,7 @@ function renderPanelDyn() {
 function panelAct(act, el) {
   const e = sel && ents.get(sel);
   if (act === 'close') return closePanel();
+  if (selCar) return carAct(act, el);
   if (!e) return;
   if (act === 'recipe') { setRecipe(e, el.value); renderPanelDyn(); }
   else if (act === 'filter') { e.filter = el.value || null; }
@@ -2896,11 +3192,12 @@ function drawMapView() {
   x2.drawImage(tcv, 0, 0, W * TP, H * TP, 0, 0, n, n);
   for (const e of ents.values()) {
     const k = kind(e), B = BUILD[e.type];
-    x2.fillStyle = k === 'hive' ? '#e04040' : k === 'ruin' ? '#c080ff' : '#ffe080';
+    x2.fillStyle = k === 'hive' ? '#e04040' : k === 'ruin' ? '#c080ff' : k === 'road' ? '#8a8a8a' : '#ffe080';
     const r = k === 'hive' || k === 'ruin' ? Math.max(4, B.w * s) : Math.max(1.5, B.w * s);
     x2.fillRect(e.x * s, e.y * s, r, Math.max(k === 'hive' || k === 'ruin' ? 4 : 1.5, B.h * s));
   }
   const vw = cv.clientWidth / cam.z, vh = cv.clientHeight / cam.z;
+  x2.fillStyle = '#fff'; for (const v of S.cars) x2.fillRect(v.x * s - 2.5, v.y * s - 2.5, 5, 5);
   x2.fillStyle = '#4ae0ff'; x2.strokeStyle = '#000'; x2.lineWidth = 1.5;
   x2.beginPath(); x2.arc(S.pl.x * s, S.pl.y * s, 4, 0, 7); x2.fill(); x2.stroke();
   x2.strokeStyle = '#fff'; x2.lineWidth = 1.5;
@@ -3368,11 +3665,12 @@ function renderCraft(body) {
 function plBlock(t, x, y) {
   const B = BUILD[t], P = S.pl;
   if (!inReach(x + B.w / 2, y + B.h / 2, REACH)) return 'Out of reach. Walk closer.';
-  if (B.kind === 'belt' || B.kind === 'pipe') return null;
+  if (B.kind === 'belt' || B.kind === 'pipe' || B.kind === 'road') return null;
   if (P.x + PL_R > x && P.x - PL_R < x + B.w && P.y + PL_R > y && P.y - PL_R < y + B.h) return 'You are standing there';
   return null;
 }
 function placeAt(fx, fy) {
+  if (BUILD[tool].kind === 'vehicle') { const r = placeCar(tool, fx, fy, toolDir); if (typeof r !== 'string') { if (!(S.inv[tool] > 0)) tool = null; renderHotbar(); } return r; }
   const o = toolOrigin(tool, fx, fy);
   const pb = plBlock(tool, o.x, o.y);
   if (pb) return pb;
@@ -3409,6 +3707,8 @@ cv.addEventListener('mousedown', ev => {
   if (ev.button === 1) { mouse.m = true; camFree = true; mouse.px = ev.clientX; mouse.py = ev.clientY; ev.preventDefault(); return; }
   if (ev.button === 2) {
     mouse.r = true;
+    const vc = carAt(mouse.fx, mouse.fy);
+    if (vc) return pickCar(vc);
     const e = at(mouse.tx, mouse.ty);
     if (e && kind(e) === 'hive') toast('Hives cannot be picked up. Shoot or gas them.', true);
     else if (e && kind(e) === 'ruin') toast('The old works are too far gone to move. Click to search them.', true);
@@ -3422,12 +3722,15 @@ cv.addEventListener('mousedown', ev => {
   if (tool) {
     const r = placeAt(mouse.fx, mouse.fy);
     if (typeof r === 'string') { toast(r, true); return; }
-    if (['belt', 'pipe', 'wall'].includes(BUILD[r.type].kind)) drag = { x: r.x, y: r.y, last: r.id };
+    if (['belt', 'pipe', 'wall', 'road'].includes(BUILD[r.type].kind)) drag = { x: r.x, y: r.y, last: r.id };
     return;
   }
+  const vc = carAt(mouse.fx, mouse.fy);
+  if (vc) { openCar(vc); return; }
   const e = at(mouse.tx, mouse.ty);
-  if (e) { openPanel(e); return; }
+  if (e && kind(e) !== 'road') { openPanel(e); return; }
   closePanel();
+  if (S.pl.car) return toast('Get out of the vehicle to mine (F).', true);
   const i = mouse.ty * W + mouse.tx;
   if (mouse.tx >= 0 && mouse.ty >= 0 && mouse.tx < W && mouse.ty < H && solid(i)) {
     if (inReach(mouse.tx + 0.5, mouse.ty + 0.5, MINE_REACH)) mining = { x: mouse.tx, y: mouse.ty, p: 0 };
@@ -3451,7 +3754,7 @@ cv.addEventListener('mousemove', ev => {
   updateMouse(ev);
   mouse.in = true;
   if (mouse.m) { cam.x -= (ev.clientX - mouse.px) / cam.z; cam.y -= (ev.clientY - mouse.py) / cam.z; mouse.px = ev.clientX; mouse.py = ev.clientY; }
-  if (mouse.r && (ptx !== mouse.tx || pty !== mouse.ty)) { const e = at(mouse.tx, mouse.ty); if (e && (e.type === 'belt' || kind(e) === 'pipe') && entReach(e, REACH)) { removeEnt(e); renderHotbar(); } }
+  if (mouse.r && (ptx !== mouse.tx || pty !== mouse.ty)) { const e = at(mouse.tx, mouse.ty); if (e && (e.type === 'belt' || kind(e) === 'pipe' || kind(e) === 'road') && entReach(e, REACH)) { removeEnt(e); renderHotbar(); } }
   if (drag && mouse.l && tool && (drag.x !== mouse.tx || drag.y !== mouse.ty)) dragTo(mouse.tx, mouse.ty);
   const info = tool ? '' : tileInfo(mouse.tx, mouse.ty);
   if (info) {
@@ -3497,6 +3800,7 @@ window.addEventListener('keydown', ev => {
     if (tool) toolDir = (toolDir + 1) % 4;
     else { const e = at(mouse.tx, mouse.ty); if (e && (e.type === 'belt' || e.type === 'sorter' || e.type === 'booster')) e.dir = (e.dir + 1) % 4; }
   }
+  else if ((k === 'f' || k === 'enter') && !modalKind) carToggle();
   else if (k === 'v') { overlay = (overlay + 1) % 4; toast(['Overlay off', 'Pressure overlay', 'Temperature overlay', 'Smog overlay'][overlay]); }
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) ev.preventDefault();
 });
@@ -3569,7 +3873,7 @@ function frame(now) {
   const dt = Math.min(0.25, (now - last) / 1000);
   last = now;
   const mx = modalKind ? 0 : (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0), my = modalKind ? 0 : (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0);
-  if (plMove(dt, mx, my)) camFree = false;
+  if (plMove(dt, mx, my) || (S.pl.car && (mx || my))) camFree = false;
   if (!camFree) { const k = Math.min(1, dt * 10); cam.x += (S.pl.x - cam.x) * k; cam.y += (S.pl.y - cam.y) * k; }
   cam.x = Math.max(0, Math.min(W, cam.x)); cam.y = Math.max(0, Math.min(H, cam.y));
   acc += dt;
@@ -3606,7 +3910,7 @@ window.game = {
   terrain: () => terrain, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
   select(e) { e ? openPanel(e) : closePanel(); }, openModal, closeModal, refresh: renderHotbar,
   setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; camFree = true; },
-  get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; },
+  get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get puffs() { return puffs; },
   setOverlay(v) { overlay = v; }, elev: () => elev, drawPreview, startWorld, get wcfg() { return wcfg; },
 };
 })();
