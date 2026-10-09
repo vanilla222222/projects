@@ -1276,6 +1276,7 @@ function tick() {
   if (S.tk % 30 === 0) { polStep(); hiveStep(); windStep(); }
   if (S.tk % 3 === 0) { cloudStep(DT * 3); fireStep(DT * 3); }
   shellStep();
+  if (S.cq && S.cq.length) cqStep(DT);
   for (const e of l.projector) projectorTick(e);
   for (const e of l.gun) gunTick(e);
   for (const e of l.stack) e.puff = (e.puff || 0) * 0.985;
@@ -1369,7 +1370,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, help: S.help, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, help: S.help, qb: S.qb, cq: S.cq, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -1385,7 +1386,7 @@ function newGame(seed, opts) {
   const gen = opts && opts.legacy ? { legacy: 1 } : Object.assign({}, GEN_DEF, opts || {});
   setSize(gen.legacy ? 160 : gen.size);
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
-  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: [], evo: 0, lost: 0, kills: 0, hk: 0, res: {}, unl: {}, clouds: [], fires: [], shells: [], booms: [], wind: { a: Math.random() * 7, v: 0.3 }, orders: [], odone: 0, gen };
+  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: [], evo: 0, lost: 0, kills: 0, hk: 0, res: {}, unl: {}, clouds: [], fires: [], shells: [], booms: [], wind: { a: Math.random() * 7, v: 0.3 }, orders: [], odone: 0, gen, cq: [] };
   initWorld(seed, gen);
   spawnRuins();
   spawnHives();
@@ -1401,7 +1402,7 @@ function load() {
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
   const gen = d.gen || { legacy: 1 };
   setSize(gen.legacy ? 160 : gen.size);
-  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast };
+  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [] };
   initWorld(d.seed, gen);
   for (const k in S.dep) { const i = +k; oreAmt[i] = S.dep[k]; if (oreAmt[i] <= 0) { oreAmt[i] = 0; oreType[i] = 0; } }
   for (const o of d.ents || []) {
@@ -2194,19 +2195,40 @@ function ventHtml() {
     (pk >= 1 ? ` <span class="lbl">Smog</span><b class="${pk > RAIN ? 'bad' : pk > RAIN * 0.6 ? 'warn' : ''}">${Math.round(pk)}</b><span class="dim"> peak${pk > RAIN ? ', acid rain' : ''}</span>` : '');
 }
 
+const ORD = {};
+{ let i = 0; for (const c of CATS) for (const t in BUILD) if (BUILD[t].cat === c) ORD[t] = i++; for (const k of PARTS) ORD[k] = i++; for (const k in ITEMS) if (!(k in ORD)) ORD[k] = i++; }
+const MADE = {}, USED = {};
+for (const r of RECIPES) {
+  for (const k in r.o || {}) (MADE[k] = MADE[k] || new Set()).add(BUILD[r.b] ? BUILD[r.b].n : r.b);
+  for (const k in r.i || {}) (USED[k] = USED[k] || new Set()).add(r.n || nm(r.id));
+}
+for (const t in BUILD) for (const k in BUILD[t].cost || {}) (USED[k] = USED[k] || new Set()).add(BUILD[t].n);
+const stk = k => BUILD[k] ? (BUILD[k].kind === 'belt' || BUILD[k].kind === 'pipe' ? 100 : 50) : 100;
+const lum = h => { if (!h || h[0] !== '#') return 128; if (h.length === 4) h = '#' + h[1] + h[1] + h[2] + h[2] + h[3] + h[3]; const v = parseInt(h.slice(1, 7), 16); return ((v >> 16) * 299 + ((v >> 8) & 255) * 587 + (v & 255) * 114) / 1000; };
+function abbr(k) {
+  const B = BUILD[k];
+  if (B) return (B.ab || '') + (k === 'belt' ? '»' : B.kind === 'pipe' ? (B.P.dn >= 100 ? '█' : '═') : '');
+  const w = nm(k).replace(/[^A-Za-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean);
+  return w.length === 1 ? w[0].slice(0, 2) : w.slice(0, 2).map(x => x[0].toUpperCase()).join('');
+}
+function ico(k, big) { const c = col(k) || '#888'; return `<span class="ic ${BUILD[k] ? 'icb' : 'ici'}${big ? ' big' : ''}" style="--c:${c};color:${lum(c) > 140 ? '#151515' : '#f4f1ea'}">${abbr(k)}</span>`; }
+function defaultQB() { const q = new Array(20).fill(null); let i = 0; for (const t of Object.keys(S.inv).filter(t => BUILD[t] && S.inv[t] > 0).sort((a, b) => ORD[a] - ORD[b])) if (i < 20) q[i++] = t; return q; }
+function qbAdd(t) { if (!S.qb || S.qb.length !== 20) S.qb = defaultQB(); if (!BUILD[t] || S.qb.includes(t)) return; const i = S.qb.indexOf(null); if (i >= 0) S.qb[i] = t; }
+function qbSet(i, t) { S.qb = S.qb.map(x => x === t ? null : x); S.qb[i] = t; renderHotbar(); }
+let hbSig = '';
 function renderHotbar() {
-  let h = '';
-  for (const c of CATS) {
-    h += `<div class="grp"><div class="gl">${c}</div><div class="gb">`;
-    for (const t in BUILD) {
-      const B = BUILD[t];
-      if (B.cat !== c) continue;
-      const n = S.inv[t] || 0;
-      h += `<button class="hb ${tool === t ? 'on' : ''} ${n ? '' : 'zero'}" data-tool="${t}" title="${B.n}: ${B.d}"><span class="sw" style="background:${B.c}">${B.ab || ''}${t === 'belt' ? '»' : B.kind === 'pipe' ? (B.P.dn >= 100 ? '█' : '═') : ''}</span><span class="cnt">${n}</span></button>`;
+  if (!S.qb || S.qb.length !== 20) S.qb = defaultQB();
+  let h = '<div class="hand">' + (tool ? `${ico(tool, 1)}<div><b>${nm(tool)}</b><small>${fmt(S.inv[tool] || 0)} in inventory · R rotate · Q clear</small></div>` : '<div><b>Empty hand</b><small>1–0 quickbar · Shift for row 2 · Q picks the building under the cursor</small></div>') + '</div><div class="qb">';
+  for (let r = 0; r < 2; r++) {
+    h += '<div class="qrow">';
+    for (let j = 0; j < 10; j++) {
+      const i = r * 10 + j, t = S.qb[i], n = t ? S.inv[t] || 0 : 0;
+      h += `<button class="qs${t ? '' : ' empty'}${t && tool === t ? ' on' : ''}${t && !n ? ' zero' : ''}" data-q="${i}"${t ? ` data-tool="${t}" data-k="${t}" data-m="i"` : ''}><span class="qk">${r ? '⇧' : ''}${(j + 1) % 10}</span>${t ? ico(t) + `<span class="cnt">${fmt(n)}</span>` : ''}</button>`;
     }
-    h += '</div></div>';
+    h += '</div>';
   }
-  hotbar.innerHTML = h;
+  h += '</div><button class="invbtn" data-ui="craft">Inventory <kbd>E</kbd></button>';
+  if (h !== hbSig) { hbSig = h; hotbar.innerHTML = h; }
 }
 
 function selectTool(t) {
@@ -2495,14 +2517,16 @@ function costHtml(cost, n) { return Object.keys(cost).map(k => chip(k, cost[k] *
 let modalHtml = '';
 function openModal(kind, tab) {
   modalKind = kind;
-  modalTab = tab || (kind === 'craft' ? 'build' : kind === 'ency' ? 'chains' : kind === 'world' ? 'world' : kind === 'map' ? 'map' : 'help');
+  modalTab = tab || (kind === 'craft' ? 'craft' : kind === 'ency' ? 'chains' : kind === 'world' ? 'world' : kind === 'map' ? 'map' : 'help');
   modal.hidden = false;
+  modal.querySelector('.mwin').classList.toggle('wide', kind === 'craft');
+  cSig = '';
   renderModal();
 }
-function closeModal() { modal.hidden = true; modalKind = null; }
+function closeModal() { modal.hidden = true; modalKind = null; ftip.hidden = true; ftipK = ''; }
 
 const TABS = {
-  craft: [['build', 'Buildings'], ['parts', 'Parts'], ['inv', 'Inventory']],
+  craft: [['craft', 'Inventory and crafting']],
   ency: [['chains', 'Ore chains'], ['recipes', 'Recipes'], ['mats', 'Materials'], ['pipes', 'Pipes']],
   help: [['help', 'How to play']],
   world: [['world', 'New world']],
@@ -2580,31 +2604,9 @@ function renderModal() {
   const tabs = modal.querySelector('.tabs');
   if (tabs.innerHTML !== th) tabs.innerHTML = th;
   const body = modal.querySelector('.mbody'), st = body.scrollTop;
+  if (modalKind === 'craft') return renderCraft(body);
   let h = '';
-  if (modalTab === 'build') {
-    for (const c of CATS) {
-      h += `<h3>${c}</h3><div class="crows">`;
-      for (const t in BUILD) {
-        const B = BUILD[t];
-        if (B.cat !== c) continue;
-        const lk = !buildOk(t), ok = !lk && canAfford(B.cost, 1), ok5 = !lk && canAfford(B.cost, 5);
-        h += `<div class="crow"><span class="sw" style="background:${B.c}">${B.ab || ''}</span><div class="cinfo"><b>${B.n}</b> <span class="dim">have ${S.inv[t] || 0}${B.makes ? ' · makes ' + B.makes : ''}</span><div class="cost">${lk ? '<span class="bad">Locked: search abandoned works</span>' : costHtml(B.cost, 1)}</div></div><button data-craft="${t}" data-n="1" ${ok ? '' : 'disabled'}>Craft</button><button data-craft="${t}" data-n="5" ${ok5 ? '' : 'disabled'}>×5</button></div>`;
-      }
-      h += '</div>';
-    }
-  } else if (modalTab === 'parts') {
-    h += '<p class="dim">Hand-crafting parts is instant. A Workshop does the same automatically.</p><div class="crows">';
-    for (const id of PARTS) {
-      const r = RECIPE[id], ok = canAfford(r.i, 1), ok10 = canAfford(r.i, 10);
-      h += `<div class="crow"><span class="sw" style="background:${col(id)}"></span><div class="cinfo"><b>${nm(id)}</b> <span class="dim">have ${S.inv[id] || 0} · makes ${r.o[id]}</span><div class="cost">${costHtml(r.i, 1)}</div></div><button data-part="${id}" data-n="1" ${ok ? '' : 'disabled'}>Craft</button><button data-part="${id}" data-n="10" ${ok10 ? '' : 'disabled'}>×10</button></div>`;
-    }
-    h += '</div>';
-  } else if (modalTab === 'inv') {
-    const ks = Object.keys(S.inv).filter(k => S.inv[k] > 0 && ITEMS[k]);
-    h += '<h3>Materials</h3><div class="invgrid">' + (ks.map(k => `<div class="ig" title="${ITEMS[k].f}">${chip(k, fmt(S.inv[k]))}</div>`).join('') || '<span class="dim">Nothing yet. Click ore on the map to mine it by hand.</span>') + '</div>';
-    const bs = Object.keys(S.inv).filter(k => S.inv[k] > 0 && BUILD[k]);
-    h += '<h3>Buildings</h3><div class="invgrid">' + bs.map(k => `<div class="ig">${chip(k, S.inv[k])}</div>`).join('') + '</div>';
-  } else if (modalTab === 'chains') {
+  if (modalTab === 'chains') {
     for (const c of CHAINS) {
       h += `<div class="chain"><h3>${c.n}</h3>`;
       for (const line of c.l) h += `<div class="cl">${line.map(s => typeof s === 'string' ? (ITEMS[s] || FLUIDS[s] ? chip(s) : `<span class="via">${viaTxt(s)}</span>`) : `<span class="via">${viaTxt(s[0])}</span>`).join('<span class="arr">→</span>').split('<span class="arr">→</span><span class="via">+</span><span class="arr">→</span>').join('<span class="arr">+</span>')}</div>`;
@@ -2905,22 +2907,151 @@ const HELP = `<div class="help">
 <p>Crawler hives sit in the wilds. The crawlers' gut bacteria live on sulfur, so hives breathe in the smog that drifts to them and send swarms at whatever vented last. They chew through anything in their path except belts, and every eighth swarm founds a new hive closer to the smog. The cleaner you run, the hungrier they stay. Gun turrets need lead shot cartridges, made from Chilean nitrate, sulfur and coal. Brick and concrete walls buy the guns time.</p>
 </div>`;
 
-function doCraft(t, n) {
-  const B = BUILD[t];
-  if (!buildOk(t)) return toast('Locked. The design is in the lab books of an abandoned works.', true);
-  if (!canAfford(B.cost, n)) return toast('Not enough materials', true);
-  pay(B.cost, n);
-  give(t, (B.makes || 1) * n);
-  toast(`Crafted ${(B.makes || 1) * n} ${B.n}`);
-  renderModal(); renderHotbar();
+let cGrp = 'Logistics', cSig = '', iQ = '', cQ = '';
+const kindOf = k => { const B = BUILD[k]; return B ? B.kind + (B.kind === 'machine' ? B.w + 'x' + B.h : '') : 'part'; };
+const CGROUPS = [...CATS.map(c => ({ id: c, n: c, ks: Object.keys(BUILD).filter(t => BUILD[t].cat === c && BUILD[t].cost) })), { id: 'Parts', n: 'Intermediates', ks: PARTS.slice() }];
+for (const g of CGROUPS) { const o = [...new Set(g.ks.map(kindOf))]; g.ks.sort((a, b) => o.indexOf(kindOf(a)) - o.indexOf(kindOf(b))); }
+const craftCost = k => BUILD[k] ? BUILD[k].cost : RECIPE[k].i;
+const craftMakes = k => BUILD[k] ? BUILD[k].makes || 1 : RECIPE[k].o[k];
+function craftTime(k) { if (BUILD[k]) { let s = 0; for (const q in BUILD[k].cost) s += BUILD[k].cost[q]; return Math.min(4, 0.5 + 0.04 * s); } return Math.max(0.3, (RECIPE[k].t || 1) * 0.5); }
+function planCraft(cost, n, inv, steps, d) {
+  for (const k in cost) {
+    const need = cost[k] * n, have = inv[k] || 0;
+    if (have >= need) { inv[k] = have - need; continue; }
+    if (!PARTS.includes(k) || d > 4) return false;
+    const r = RECIPE[k], runs = Math.ceil((need - have) / r.o[k]);
+    inv[k] = 0;
+    if (!planCraft(r.i, runs, inv, steps, d + 1)) return false;
+    steps.push({ k, runs });
+    inv[k] = (inv[k] || 0) + runs * r.o[k] - (need - have);
+  }
+  return true;
 }
-function doPart(id, n) {
-  const r = RECIPE[id];
-  if (!canAfford(r.i, n)) return toast('Not enough materials', true);
-  pay(r.i, n);
-  give(id, r.o[id] * n);
-  toast(`Crafted ${r.o[id] * n} ${nm(id)}`);
-  renderModal(); renderHotbar();
+function maxCraft(k) {
+  if (BUILD[k] && !buildOk(k)) return 0;
+  const cost = craftCost(k), ok = n => planCraft(cost, n, Object.assign({}, S.inv), [], 0);
+  if (!ok(1)) return 0;
+  let lo = 1, hi = 2;
+  while (hi <= 4096 && ok(hi)) { lo = hi; hi *= 2; }
+  if (hi > 4096) return lo;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (ok(m)) lo = m; else hi = m; }
+  return lo;
+}
+function enqueue(k, n) {
+  if (BUILD[k] && !buildOk(k)) return toast('Locked. The design is in the lab books of an abandoned works.', true);
+  const inv = Object.assign({}, S.inv), steps = [];
+  if (!(n > 0) || !planCraft(craftCost(k), n, inv, steps, 0)) return toast('Not enough materials', true);
+  const ref = {};
+  for (const q of new Set([...Object.keys(S.inv), ...Object.keys(inv)])) {
+    const d = (S.inv[q] || 0) - (inv[q] || 0);
+    if (d) ref[q] = d;
+    if (inv[q] > 0) S.inv[q] = inv[q]; else delete S.inv[q];
+  }
+  if (!S.cq) S.cq = [];
+  const g = S.cq.reduce((m, e) => Math.max(m, e.g), 0) + 1;
+  for (const st of steps) S.cq.push({ k: st.k, n: st.runs * RECIPE[st.k].o[st.k], t: craftTime(st.k) * st.runs, el: 0, g, sub: 1 });
+  S.cq.push({ k, n: n * craftMakes(k), t: craftTime(k) * n, el: 0, g, ref });
+  cSig = ''; renderQueue(); renderModal(); renderHotbar();
+}
+function doCraft(t, n) { enqueue(t, n); }
+function doPart(id, n) { enqueue(id, n); }
+function cqStep(dt) {
+  const e = S.cq[0];
+  e.el += dt;
+  if (e.el < e.t) return;
+  S.cq.shift();
+  if (!e.sub) { give(e.k, e.n); qbAdd(e.k); cSig = ''; renderHotbar(); }
+}
+function cqCancel(i) {
+  const e = S.cq[i];
+  if (!e) return;
+  const f = S.cq.find(x => x.g === e.g && x.ref);
+  S.cq = S.cq.filter(x => x.g !== e.g);
+  if (f) for (const q in f.ref) { const v = (S.inv[q] || 0) + f.ref[q]; if (v > 0) S.inv[q] = v; else delete S.inv[q]; }
+  cSig = ''; toast('Crafting cancelled, ingredients returned'); renderQueue(); renderHotbar();
+}
+const cqEl = document.createElement('div'); cqEl.id = 'cq'; $('#stage').appendChild(cqEl);
+let cqSig = '';
+function renderQueue() {
+  const q = S.cq || [], key = q.slice(0, 18).map(e => e.k + ':' + e.n + (e.sub ? 's' : '') + e.g).join() + '|' + q.length;
+  if (key !== cqSig) {
+    cqSig = key;
+    cqEl.innerHTML = q.slice(0, 18).map((e, i) => `<button class="cqs${e.sub ? ' sub' : ''}" data-cq="${i}" data-k="${e.k}" data-m="q">${ico(e.k)}<span class="cnt">${e.n}</span>${i === 0 ? '<i class="cqb"></i>' : ''}</button>`).join('') + (q.length > 18 ? `<span class="more">+${q.length - 18}</span>` : '');
+  }
+  if (ftipEl && !ftipEl.isConnected && !ftip.hidden) { ftip.hidden = true; ftipK = ''; ftipEl = null; }
+  const b = cqEl.querySelector('.cqb');
+  if (b && q[0]) b.style.width = Math.min(100, q[0].el / q[0].t * 100) + '%';
+}
+cqEl.addEventListener('click', ev => { const b = ev.target.closest('[data-cq]'); if (b) cqCancel(+b.dataset.cq); });
+const ftip = document.createElement('div'); ftip.id = 'ftip'; ftip.hidden = true; document.body.appendChild(ftip);
+let ftipK = '', ftipEl = null;
+function tipHtml(k, m) {
+  const B = BUILD[k];
+  let h = `<div class="fth">${ico(k)}<b>${nm(k)}</b>${m === 'r' ? '<span>Recipe</span>' : m === 'q' ? '<span>Crafting</span>' : ''}</div><div class="ftb">`;
+  if (m === 'r') {
+    if (B && !buildOk(k)) h += '<p class="bad">Locked. The design is in the lab books of an abandoned works.</p>';
+    const c = craftCost(k);
+    h += '<div class="ftl">Ingredients</div>' + Object.keys(c).map(q => { const hv = S.inv[q] || 0; return `<div class="fti${hv >= c[q] ? '' : PARTS.includes(q) ? ' sub' : ' no'}">${ico(q)}<span>${c[q]} × ${nm(q)}</span><em>${fmt(hv)}</em></div>`; }).join('');
+    if (Object.keys(c).some(q => (S.inv[q] || 0) < c[q] && PARTS.includes(q))) h += '<p class="warn">Missing parts in yellow are hand-crafted first, automatically.</p>';
+    h += `<div class="ftl">Crafting time <b>${craftTime(k).toFixed(1)} s</b> · makes <b>${craftMakes(k)}</b></div>`;
+    if (B && B.kw) h += `<div class="ftl">Power <b>${B.kw} kW</b></div>`;
+    if (B) h += `<p>${B.d}</p>`;
+    h += `<div class="ftk">Click: craft 1 · Right-click: craft 5 · Shift-click: craft all (${maxCraft(k)})</div>`;
+  } else if (m === 'q') h += '<p>Click to cancel this craft. The ingredients go back into your inventory.</p>';
+  else {
+    h += `<div class="ftl">In inventory <b>${fmt(S.inv[k] || 0)}</b></div><p>${B ? B.d : ITEMS[k] ? ITEMS[k].f || '' : ''}</p>`;
+    if (MADE[k]) h += `<div class="ftl">Made in</div><p class="dim">${[...MADE[k]].slice(0, 6).join(', ')}</p>`;
+    if (USED[k]) h += `<div class="ftl">Used in</div><p class="dim">${[...USED[k]].slice(0, 8).join(', ')}${USED[k].size > 8 ? ' and ' + (USED[k].size - 8) + ' more' : ''}</p>`;
+    if (B) h += '<div class="ftk">Click: take into hand · Drag onto a quickbar slot · Right-click a quickbar slot to clear it</div>';
+  }
+  return h + '</div>';
+}
+document.addEventListener('mousemove', ev => {
+  const el = ev.target.closest && ev.target.closest('[data-k]');
+  if (!el) { if (!ftip.hidden) { ftip.hidden = true; ftipK = ''; } return; }
+  const key = el.dataset.k + el.dataset.m;
+  ftipEl = el;
+  if (key !== ftipK) { ftipK = key; ftip.innerHTML = tipHtml(el.dataset.k, el.dataset.m); ftip.hidden = false; }
+  const r = ftip.getBoundingClientRect();
+  let x = ev.clientX + 18, y = ev.clientY + 18;
+  if (x + r.width > innerWidth - 8) x = ev.clientX - r.width - 14;
+  if (y + r.height > innerHeight - 8) y = Math.max(8, innerHeight - r.height - 8);
+  ftip.style.left = x + 'px'; ftip.style.top = y + 'px';
+});
+document.addEventListener('click', () => { ftipK = ''; }, true);
+function renderCraft(body) {
+  if (!body.querySelector('#cview')) {
+    modalHtml = '';
+    body.innerHTML = `<div id="cview"><section class="cpane"><div class="ctop"><b>Character</b><input id="isearch" placeholder="Search inventory" spellcheck="false"></div><div id="islots"></div><div id="iinfo" class="dim"></div></section><section class="cpane"><div class="ctop"><b>Crafting</b><input id="csearch" placeholder="Search recipes" spellcheck="false"></div><div id="cgroups"></div><div id="crecs"></div><div class="dim">Click a recipe to queue it. Parts you lack are hand-crafted first. The queue runs at the bottom left of the screen; click an entry there to cancel it.</div></section></div>`;
+    $('#isearch').value = iQ; $('#csearch').value = cQ;
+    cSig = '';
+  }
+  const sig = cGrp + '|' + iQ + '|' + cQ + '|' + Object.entries(S.inv).join(';') + '|' + Object.keys(S.unl || {}).length + '|' + Object.keys(S.res || {}).length;
+  if (sig === cSig) return;
+  cSig = sig;
+  const iq = iQ.toLowerCase(), cq = cQ.toLowerCase();
+  const ks = Object.keys(S.inv).filter(k => S.inv[k] >= 1 && (ITEMS[k] || BUILD[k]) && (!iq || nm(k).toLowerCase().includes(iq))).sort((a, b) => (ORD[a] ?? 1e9) - (ORD[b] ?? 1e9));
+  let h = '', used = 0;
+  for (const k of ks) {
+    let n = Math.floor(S.inv[k]);
+    const sz = stk(k);
+    while (n > 0) { const c = Math.min(sz, n); n -= c; used++; if (used <= 400) h += `<div class="slot" data-k="${k}" data-m="i"${BUILD[k] ? ` data-pick="${k}" draggable="true"` : ''}>${ico(k)}<span class="cnt">${fmt(c)}</span></div>`; }
+  }
+  for (let i = used; i < Math.max(80, Math.ceil(Math.min(used, 400) / 10) * 10); i++) h += '<div class="slot e"></div>';
+  $('#islots').innerHTML = h;
+  $('#iinfo').textContent = `${used} slots used · ${ks.length} kinds of item${used > 400 ? ' · first 400 slots shown' : ''}`;
+  $('#cgroups').innerHTML = CGROUPS.map(g => { const any = cq && g.ks.some(k => nm(k).toLowerCase().includes(cq)); return `<button class="cg${g.id === cGrp && !cq ? ' on' : ''}${cq && !any ? ' dimg' : ''}" data-grp="${g.id}">${ico(g.id === 'Parts' ? 'motor' : g.ks[0], 1)}<span>${g.n}</span></button>`; }).join('');
+  const g = CGROUPS.find(x => x.id === cGrp) || CGROUPS[0];
+  const list = cq ? CGROUPS.flatMap(x => x.ks).filter(k => nm(k).toLowerCase().includes(cq)) : g.ks;
+  let rows = '', prev = null;
+  for (const k of list) {
+    const B = BUILD[k], sub = kindOf(k);
+    if (!cq && prev !== null && sub !== prev) rows += '<div class="rbrk"></div>';
+    prev = sub;
+    const lk = B && !buildOk(k), mx = lk ? 0 : maxCraft(k);
+    rows += `<button class="rs ${lk ? 'lk' : mx ? 'ok' : 'no'}" ${B ? `data-craft="${k}"` : `data-part="${k}"`} data-n="1" data-k="${k}" data-m="r">${ico(k)}${mx ? `<span class="cnt">${mx > 999 ? '999+' : mx}</span>` : ''}${lk ? '<span class="lock">🔒</span>' : ''}</button>`;
+  }
+  $('#crecs').innerHTML = rows || '<div class="dim" style="grid-column:1/-1">No recipe matches.</div>';
 }
 
 function placeAt(fx, fy) {
@@ -3016,13 +3147,27 @@ cv.addEventListener('wheel', ev => {
 }, { passive: false });
 
 window.addEventListener('keydown', ev => {
-  if (ev.target.tagName === 'SELECT' || ev.target.tagName === 'INPUT') return;
+  if (ev.target.tagName === 'SELECT' || ev.target.tagName === 'INPUT') { if (ev.key === 'Escape') ev.target.blur(); return; }
+  if (/^Digit\d$/.test(ev.code) && !modalKind) {
+    const d = +ev.code[5], i = (d + 9) % 10 + (ev.shiftKey ? 10 : 0);
+    renderHotbar();
+    if (S.qb[i]) selectTool(S.qb[i]); else if (tool) { tool = null; renderHotbar(); }
+    return;
+  }
   const k = ev.key.toLowerCase();
   keys[k] = true;
-  if (k === 'e') { modalKind === 'craft' ? closeModal() : openModal('craft'); }
+  if (k === 'e' || k === 'i') { modalKind === 'craft' ? closeModal() : openModal('craft'); }
   else if (k === 'h') { modalKind === 'ency' ? closeModal() : openModal('ency'); }
   else if (k === 'm') { modalKind === 'map' ? closeModal() : openModal('map'); }
-  else if (k === 'escape' || k === 'q') { if (modalKind) closeModal(); else if (tool) { tool = null; renderHotbar(); } else closePanel(); }
+  else if (k === 'escape') { if (modalKind) closeModal(); else if (tool) { tool = null; renderHotbar(); } else closePanel(); }
+  else if (k === 'q') {
+    if (modalKind) closeModal();
+    else {
+      const e = at(mouse.tx, mouse.ty);
+      if (e && BUILD[e.type].cost && tool !== e.type) { if (S.inv[e.type] > 0) { tool = e.type; toolDir = e.dir || 0; closePanel(); qbAdd(e.type); renderHotbar(); } else toast('You have no ' + nm(e.type) + '. Craft one with E.', true); }
+      else if (tool) { tool = null; renderHotbar(); } else closePanel();
+    }
+  }
   else if (k === 'r') {
     if (tool) toolDir = (toolDir + 1) % 4;
     else { const e = at(mouse.tx, mouse.ty); if (e && (e.type === 'belt' || e.type === 'sorter' || e.type === 'booster')) e.dir = (e.dir + 1) % 4; }
@@ -3033,7 +3178,16 @@ window.addEventListener('keydown', ev => {
 window.addEventListener('keyup', ev => { keys[ev.key.toLowerCase()] = false; });
 window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; mouse.l = mouse.r = mouse.m = false; });
 
-hotbar.addEventListener('click', ev => { const b = ev.target.closest('[data-tool]'); if (b) selectTool(b.dataset.tool); });
+hotbar.addEventListener('click', ev => {
+  if (ev.target.closest('[data-ui]')) return openModal('craft');
+  const b = ev.target.closest('[data-q]');
+  if (!b) return;
+  const i = +b.dataset.q, t = S.qb[i];
+  if (t) selectTool(t); else if (tool && BUILD[tool]) qbSet(i, tool);
+});
+hotbar.addEventListener('contextmenu', ev => { const b = ev.target.closest('[data-q]'); if (!b) return; ev.preventDefault(); S.qb[+b.dataset.q] = null; renderHotbar(); });
+hotbar.addEventListener('dragover', ev => { if (ev.target.closest('[data-q]')) ev.preventDefault(); });
+hotbar.addEventListener('drop', ev => { const b = ev.target.closest('[data-q]'), t = ev.dataTransfer.getData('text/plain'); if (!b || !BUILD[t]) return; ev.preventDefault(); qbSet(+b.dataset.q, t); });
 panel.addEventListener('click', ev => { const b = ev.target.closest('button[data-act]'); if (b) panelAct(b.dataset.act, b); });
 panel.addEventListener('change', ev => { const s = ev.target.closest('select[data-act]'); if (s) panelAct(s.dataset.act, s); });
 modal.addEventListener('click', ev => {
@@ -3041,9 +3195,13 @@ modal.addEventListener('click', ev => {
   const t = ev.target.closest('[data-tab]');
   if (t) { modalTab = t.dataset.tab; modal.querySelector('.mbody').scrollTop = 0; return renderModal(); }
   const c = ev.target.closest('[data-craft]');
-  if (c) return doCraft(c.dataset.craft, +c.dataset.n);
+  if (c) return doCraft(c.dataset.craft, ev.shiftKey ? maxCraft(c.dataset.craft) : +c.dataset.n);
   const p = ev.target.closest('[data-part]');
-  if (p) return doPart(p.dataset.part, +p.dataset.n);
+  if (p) return doPart(p.dataset.part, ev.shiftKey ? maxCraft(p.dataset.part) : +p.dataset.n);
+  const gb = ev.target.closest('[data-grp]');
+  if (gb) { cGrp = gb.dataset.grp; cQ = ''; const cs = $('#csearch'); if (cs) cs.value = ''; cSig = ''; return renderModal(); }
+  const pk = ev.target.closest('[data-pick]');
+  if (pk) { const t = pk.dataset.pick; qbAdd(t); closeModal(); if (tool !== t) selectTool(t); return; }
   const wb = ev.target.closest('[data-world]');
   if (wb && wb.dataset.world === 'dice') { wcfg.seed = String(Math.floor(Math.random() * 1e9)); $('#wseed').value = wcfg.seed; return drawPreview(); }
   if (wb && wb.dataset.world === 'go') return startWorld();
@@ -3054,6 +3212,19 @@ modal.addEventListener('click', ev => {
   }
   if (ev.target.closest('[data-ui="close"]')) closeModal();
 });
+modal.addEventListener('contextmenu', ev => {
+  const c = ev.target.closest('[data-craft],[data-part]');
+  if (!c) return;
+  ev.preventDefault();
+  enqueue(c.dataset.craft || c.dataset.part, 5);
+});
+modal.addEventListener('input', ev => {
+  if (ev.target.id === 'isearch') iQ = ev.target.value;
+  else if (ev.target.id === 'csearch') cQ = ev.target.value;
+  else return;
+  cSig = ''; renderModal();
+});
+modal.addEventListener('dragstart', ev => { const pk = ev.target.closest('[data-pick]'); if (pk) ev.dataTransfer.setData('text/plain', pk.dataset.pick); });
 modal.addEventListener('change', ev => {
   const m = { wseed: 'seed', wsize: 'size', wwater: 'water', wore: 'ore', whives: 'hives' }[ev.target.id];
   if (!m || !wcfg) return;
@@ -3083,6 +3254,7 @@ function frame(now) {
   while (acc >= DT && n < 10) { tick(); acc -= DT; n++; }
   if (n >= 10) acc = 0;
   render();
+  renderQueue();
   uiT += dt;
   if (uiT > 0.2) {
     uiT = 0;
@@ -3107,7 +3279,7 @@ requestAnimationFrame(frame);
 window.game = {
   get S() { return S; }, get W() { return W; }, get ents() { return ents; }, get patches() { return patches; }, get cam() { return cam; },
   place: (t, x, y, d) => place(t, x, y, d, true), at, buildOk, canPlace, setRecipe, removeEnt, save, load, newGame,
-  step(n) { for (let i = 0; i < n; i++) tick(); render(); $('#power').innerHTML = powerHtml(); $('#vent').innerHTML = ventHtml(); renderPanelDyn(); renderHotbar(); },
+  step(n) { for (let i = 0; i < n; i++) tick(); render(); $('#power').innerHTML = powerHtml(); $('#vent').innerHTML = ventHtml(); renderPanelDyn(); renderHotbar(); renderQueue(); },
   terrain: () => terrain, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
   select(e) { e ? openPanel(e) : closePanel(); }, openModal, closeModal, refresh: renderHotbar,
   setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; },
