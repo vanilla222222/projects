@@ -137,6 +137,10 @@ const ITEMS = {
   sbr: { n: 'Synthetic Rubber', c: '#3a3634', f: 'Styrene-butadiene rubber crumb, baled. Three quarters butadiene for bounce, one quarter styrene for toughness' },
   carbon_black: { n: 'Carbon Black', c: '#1a1a1c', f: 'Soot of 20-50 nm carbon spheres. Stirred into rubber, it makes a tread wear five times longer' },
   tyre: { n: 'Tyre', c: '#2a2a2c', f: 'Vulcanised rubber with carbon black, a steel bead wire and cord plies' },
+  si_metal: { n: 'Metallurgical Silicon', c: '#8a8e98', f: 'Si about 98.5%, grey and metallic-looking, with iron, aluminium and calcium left in' },
+  polysilicon: { n: 'Polysilicon', c: '#6a7488', f: 'Si 99.9999999%, nine nines. Rods grown in a Siemens reactor and broken into chunks' },
+  wafer: { n: 'Silicon Wafer', c: '#5a6478', f: 'A 0.2 mm slice of single-crystal silicon, lightly doped with boron' },
+  solar_cell: { n: 'Solar Cell', c: '#2a3a6a', f: 'A p-n junction: a phosphorus-doped skin on a boron-doped wafer, with silver fingers printed on top to collect the current' },
   o2_cyl: { n: 'Oxygen Cylinder', c: '#4a7ab8', f: 'A black-shouldered steel cylinder of medical oxygen at 137 bar' },
   cryolite: { n: 'Cryolite', c: '#e8eef0', f: 'Sodium hexafluoroaluminate Na₃AlF₆. Molten, it dissolves alumina like water dissolves salt' },
 };
@@ -183,6 +187,7 @@ const FLUIDS = {
   butadiene: { n: 'Butadiene', c: '#d8d0e0', f: 'CH₂=CH-CH=CH₂, a gas with two double bonds. Extracted from the C₄ cut of a steam cracker', gas: true, cp: 1.5, t: 40 },
   benzene: { n: 'Benzene', c: '#e8e4d0', f: 'C₆H₆, the parent aromatic ring. A clear, sweet-smelling liquid that boils at 80°C', cp: 1.7, t: 30 },
   styrene: { n: 'Styrene', c: '#e0dcc8', f: 'C₆H₅CH=CH₂, an oily liquid that slowly polymerises by itself unless kept cool and inhibited', cp: 1.7, t: 25 },
+  sihcl3: { n: 'Trichlorosilane', c: '#d8e0c8', f: 'SiHCl₃, a clear liquid that boils at 32°C. Moist air turns it to HCl fume and silica, so it eats steel like hydrochloric acid', cp: 1.0, t: 30, corr: 0.7, ck: 'cl' },
   o2: { n: 'Oxygen', c: '#a8c8f0', f: 'O₂ at 99.5% from the air separation column. It makes everything burn hotter and faster, so keep oil and grease away from it', gas: true, cp: 0.92, t: 20 },
   n2: { n: 'Nitrogen', c: '#c0c8d8', f: 'N₂, four fifths of the air. Inert, and the feed for ammonia synthesis', gas: true, cp: 1.04, t: 20 },
   br2: { n: 'Bromine', c: '#8a2a1a', f: 'Br₂, a dense red-brown liquid that boils at 59°C and fumes choking vapour. It attacks steel and most rubbers', cp: 0.47, t: 30, corr: 0.9, ck: 'br' },
@@ -276,6 +281,10 @@ const BUILD = {
   paper_machine: { n: 'Paper Machine', kind: 'machine', w: 3, h: 3, cat: 'Processing', c: '#8a8a7a', ab: 'PM', kw: 150, cost: { plate: 12, casting: 8, motor: 4 }, d: 'A Fourdrinier: dilute pulp sprays onto a moving wire mesh, the water drains, presses squeeze the sheet and steam-heated cylinders dry it.' },
   press: { n: 'Tyre Curing Press', kind: 'machine', w: 2, h: 2, cat: 'Processing', c: '#4a4448', ab: 'TC', kw: 50, cost: { plate: 8, casting: 4, motor: 1 }, d: 'A clamshell steel mould heated by steam. A bladder inflates inside the green tyre and presses it into the tread pattern while sulfur crosslinks the rubber.' },
   rubber_pipe: { n: 'Rubber-Lined Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#4a4a52', cost: { sbr: 1, plate: 1 }, makes: 2, d: 'DN100 steel pipe, rated 25 bar, with a vulcanised rubber lining. Handles hydrochloric acid, brine, caustic and fluorides, but the lining blisters above 90°C, and nitric acid and bromine destroy it.', P: { mat: 'Steel with rubber lining', dn: 100, v: 250, g: 800, q: 400, bar: 25, tmax: 90, duct: 2, cw: 70, ua: 0.2, res: 'acid cl alk hf', weak: 'nit br', lined: 'rubber' } },
+  siemens: { n: 'Siemens Reactor', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#7a8a9a', ab: 'SR', kw: 350, cost: { steel: 8, glass: 2, wire: 20 }, d: 'A steel bell jar over thin silicon rods heated electrically to 1100°C. Trichlorosilane and hydrogen flow past, and ultra-pure silicon grows on the rods a fraction of a millimetre an hour.' },
+  puller: { n: 'Crystal Puller', kind: 'machine', w: 2, h: 2, cat: 'Processing', c: '#5a6a8a', ab: 'CZ', kw: 120, cost: { steel: 4, brick: 4, motor: 2, wire: 10 }, d: 'Czochralski furnace. A seed crystal dipped into molten silicon in a quartz crucible is slowly drawn up and turned, growing one perfect crystal that is then sawn into wafers.' },
+  cell_line: { n: 'Cell Line', kind: 'machine', w: 2, h: 2, cat: 'Processing', c: '#3a4a7a', ab: 'CE', kw: 80, cost: { plate: 6, glass: 4, motor: 2 }, d: 'Etches the wafers, diffuses phosphorus into the top surface at 850°C to make the junction, and screen-prints silver paste for the contacts.' },
+  solar: { n: 'Solar Array', kind: 'machine', w: 2, h: 2, cat: 'Power', c: '#2a3a6a', ab: 'PV', gen: 150, sun: 1, cost: { solar_cell: 4, glass: 2, aluminium: 2, wire: 4 }, d: 'Silicon panels in an aluminium frame behind glass. Up to 150 kW in full desert sun with no fuel and no smoke, but far less under grey northern skies.' },
   asu: { n: 'Air Separation Unit', kind: 'machine', w: 3, h: 3, cat: 'Chemistry', c: '#7a98b8', ab: 'AS', kw: 400, cost: { plate: 12, steel: 6, motor: 4, glass: 4 }, d: 'Linde double column. Air is compressed, dried and cooled until it liquefies at -194°C, then distilled: nitrogen boils off the top, oxygen collects at the bottom. Needs only electricity, but a lot of it.' },
   pond: { n: 'Evaporation Pond', kind: 'machine', w: 4, h: 4, cat: 'Mining', c: '#c8d8d8', ab: 'EP', sun: true, cost: { brick: 6, casting: 4 }, d: 'A shallow clay-lined pan where sun and wind evaporate water from a salt lake. Free to run, but slow, and it needs a hot, dry climate: full speed on desert sand, much slower on grass, almost nothing on tundra or marsh.' },
 };
@@ -395,6 +404,13 @@ const RECIPES = [
   { id: 'crude', n: 'Crude Oil', b: 'pumpjack', t: 1, well: 1, fo: { crude: 10 }, note: 'Edwin Drake drilled the first commercial oil well in Pennsylvania in 1859, 21 m deep. The well draws down the reservoir under it.' },
   { id: 'distil', n: 'Atmospheric Distillation', b: 'cdu', t: 4, fi: { crude: 40, steam: 10 }, fo: { fuel_gas: 8, naphtha: 12, gas_oil: 12 }, o: { bitumen: 1 }, bleed: ['fuel_gas'], eq: 'Crude → gas + naphtha + gas oil + residue', note: 'Every cut is a mixture, split only by boiling range. Stripping steam lowers the partial pressure so heavy oil boils off without cracking.' },
   { id: 'steam_crack', n: 'Steam Cracking', b: 'cracker', t: 3, fi: { naphtha: 20, steam: 10, fuel_gas: 4 }, fo: { ethylene: 12, fuel_gas: 8 }, ch: { pet_coke: 0.1 }, bleed: ['fuel_gas'], eq: 'C₆H₁₄ → 2C₂H₄ + C₂H₆ (850°C, 0.3 s)', note: 'Steam dilutes the hydrocarbon so the chains break into small olefins instead of carbon. The gas is quenched in milliseconds. Coke still builds up in the tubes and has to be burned out.' },
+  { id: 'mg_si', n: 'Metallurgical Silicon', b: 'arc', t: 4, i: { sand: 2, coke: 2 }, o: { si_metal: 1 }, fo: { co2: 20 }, bleed: ['co2'], eq: 'SiO₂ + 2C → Si + 2CO', note: 'Quartz and coke in a submerged-arc furnace at 1900°C. The CO burns to CO₂ at the open top of the furnace. Most of this silicon goes into aluminium alloys and silicones; a little is refined for electronics.' },
+  { id: 'tcs', n: 'Trichlorosilane', b: 'chlorinator', t: 2, i: { si_metal: 1 }, fi: { hcl: 30 }, fo: { sihcl3: 20, h2: 10 }, eq: 'Si + 3HCl → SiHCl₃ + H₂', note: 'Ground silicon in a fluidised bed of HCl at 300°C. The trichlorosilane is then distilled until the boron and phosphorus left in it are down to parts per billion.' },
+  { id: 'hcl_synth', n: 'Hydrogen Chloride (burner)', b: 'chlorinator', t: 2, fi: { h2: 10, cl2: 10 }, fo: { hcl: 20 }, eq: 'H₂ + Cl₂ → 2HCl', note: 'Chlorine burns quietly in hydrogen with a pale flame. Chlor-alkali works make both gases, so this is how they make pure hydrochloric acid.' },
+  { id: 'siemens', n: 'Polysilicon (Siemens)', b: 'siemens', t: 6, fi: { sihcl3: 20, h2: 10 }, o: { polysilicon: 1 }, fo: { hcl: 24 }, eq: 'SiHCl₃ + H₂ → Si + 3HCl', note: 'Siemens, 1950s. Deposition is slow and the reactor uses huge amounts of power. The HCl that comes off goes back to the trichlorosilane bed, short what leaves as silicon tetrachloride.' },
+  { id: 'cz', n: 'Wafers (Czochralski)', b: 'puller', t: 6, i: { polysilicon: 1 }, o: { wafer: 4 }, eq: 'Si (poly) → Si (single crystal)', note: 'Jan Czochralski found the method in 1916 by dipping his pen into molten tin instead of the inkwell. A pinch of boron in the melt makes the crystal p-type.' },
+  { id: 'solar_cell', n: 'Solar Cells', b: 'cell_line', t: 4, i: { wafer: 4, phosphorus: 1, silver: 1 }, o: { solar_cell: 4 }, eq: 'POCl₃ diffusion → n⁺ layer on p-type Si', note: 'Bell Labs, 1954: Chapin, Fuller and Pearson made the first practical silicon cell, about 6% efficient. Light knocks electrons across the junction and they flow out through the silver fingers.' },
+  { id: 'sunlight', n: 'Sunlight', b: 'solar', t: 1, eq: 'hν → e⁻ + h⁺', note: 'Output follows the climate: full on desert sand, about 70% on dry steppe, 40% on grassland and very little in the forest, marsh or tundra.' },
   { id: 'air_sep', n: 'Air Separation', b: 'asu', t: 3, fo: { o2: 20, n2: 60 }, bleed: ['n2'], eq: 'Air (78% N₂, 21% O₂, 1% Ar) → liquid air → N₂ + O₂', note: 'Carl von Linde, 1902. Gas cools as it expands through a valve, and the cooled gas chills the incoming air until it liquefies. Spare nitrogen is simply let go.' },
   { id: 'smr', n: 'Steam Reforming', b: 'cracker', t: 3, fi: { fuel_gas: 20, steam: 20 }, fo: { h2: 40, co2: 10 }, bleed: ['co2'], eq: 'CH₄ + 2H₂O → CO₂ + 4H₂ (nickel catalyst)', note: 'Methane and steam over nickel at 850°C, then a shift reactor turns the CO to more hydrogen. Today most ammonia plants are fed this way instead of from coke.' },
   { id: 'edc_crack', n: 'EDC Cracking', b: 'cracker', t: 3, fi: { edc: 20, fuel_gas: 4 }, fo: { vcm: 20, hcl: 20 }, eq: 'C₂H₄Cl₂ → C₂H₃Cl + HCl (500°C)', note: 'Every tonne of vinyl chloride gives off HCl. Send it to the chlorinator so none is wasted.' },
@@ -456,7 +472,7 @@ const RECIPES = [
 const RECIPE = {};
 for (const r of RECIPES) {
   RECIPE[r.id] = r;
-  const first = Object.keys(r.o || r.fo)[0];
+  const first = Object.keys(r.o || r.fo || {})[0];
   r.n = r.n || (ITEMS[first] || FLUIDS[first]).n;
 }
 
@@ -486,6 +502,8 @@ const ORDERS = [
   { c: 'Oilfield services', item: 'nabr', n: 50, tier: 2, rw: { still: 1, glass_pipe: 10 }, d: 'Sodium bromide for completion brine. It is dense enough to hold down the well pressure, yet it carries no solids to clog the rock.' },
   { c: 'Portrait studio', item: 'photo_paper', n: 40, tier: 3, rw: { glass_tank: 1, steel: 30 }, d: 'Bromide paper for enlargements. A print can be exposed in seconds under an enlarger lamp.' },
   { c: 'Motor works', item: 'tyre', n: 40, tier: 3, rw: { rubber_pipe: 20, press: 1 }, d: 'Tyres for the new lorries. A truck rolls on six of them.' },
+  { c: 'Rectifier works', item: 'wafer', n: 40, tier: 3, rw: { puller: 1, wire: 40 }, d: 'Silicon wafers for power rectifiers and transistors.' },
+  { c: 'Lighthouse board', item: 'solar_cell', n: 24, tier: 3, rw: { solar: 3 }, d: 'Solar cells to run remote lighthouses and buoys without keepers.' },
   { c: 'County hospital', item: 'o2_cyl', n: 30, tier: 2, rw: { asu: 1, cylinder: 10 }, d: 'Medical oxygen for the wards and the operating theatre.' },
   { c: 'Grain belt farms', item: 'dap', n: 80, tier: 3, rw: { granulator: 1, motor: 6 }, d: 'DAP for the wheat belt.' },
   { c: 'Rice growers', item: 'urea', n: 80, tier: 3, rw: { reactor: 1, steel_pipe: 20 }, d: 'Urea for the paddies. It is the cheapest nitrogen to ship.' },

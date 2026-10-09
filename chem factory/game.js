@@ -30,7 +30,7 @@ const sum = o => { let s = 0; for (const k in o) s += o[k]; return s; };
 const isGas = f => FLUIDS[f] && FLUIDS[f].gas && f !== 'steam';
 const spills = (r, f) => isGas(f) || !!(r.bleed && r.bleed.includes(f));
 const PC = 8, RAIN = 30;
-const POL_W = { so2: 1, cl2: 3, co2: 0.02, h2: 0, steam: 0, water: 0, acid: 0.5, naoh: 0.3, liquor: 0.3, ticl4: 1, brine: 0.05, nh3: 0.5, hno3: 0.8, tar: 0.4, coalgas: 0.3, toluene: 0.3, nh4cl: 0.1, co: 0.1, phosgene: 1, sif4: 2, h2sif6: 0.5, hf: 1, h2s: 2, diesel: 0.3, bfw: 0, o2: 0, n2: 0, bittern: 0.05, br2: 2, butadiene: 0.3, benzene: 0.5, styrene: 0.3 };
+const POL_W = { so2: 1, cl2: 3, co2: 0.02, h2: 0, steam: 0, water: 0, acid: 0.5, naoh: 0.3, liquor: 0.3, ticl4: 1, brine: 0.05, nh3: 0.5, hno3: 0.8, tar: 0.4, coalgas: 0.3, toluene: 0.3, nh4cl: 0.1, co: 0.1, phosgene: 1, sif4: 2, h2sif6: 0.5, hf: 1, h2s: 2, diesel: 0.3, bfw: 0, o2: 0, n2: 0, sihcl3: 1, bittern: 0.05, br2: 2, butadiene: 0.3, benzene: 0.5, styrene: 0.3 };
 const polAt = (x, y) => S.pol[Math.floor(y / PC) * PW + Math.floor(x / PC)] || 0;
 
 function mulberry32(a) {
@@ -1289,7 +1289,7 @@ function tick() {
     if (e.cy) demand += BUILD.miner.kw;
   }
   let cap = 0, gcap = 0;
-  for (const e of l.machine) if (e.cy && BUILD[e.type].gen) gcap += BUILD[e.type].gen;
+  for (const e of l.machine) if (e.cy && BUILD[e.type].gen) gcap += BUILD[e.type].gen * sunMul(e);
   for (const g of l.engine) { g.eff = g.amt > 0.01 && g.tf >= 99.9 ? 0.2 + 0.8 * Math.max(0, Math.min(1, (g.tf - 100) / 50)) : 0; g.cap = Math.min(1, g.amt) * 900 * g.eff; cap += g.cap; }
   cap += gcap;
   const gen = Math.min(demand, cap), sat = demand > 0 ? gen / demand : 1, load = cap > 0 ? gen / cap : 0;
@@ -1301,7 +1301,7 @@ function tick() {
     const r = RECIPE[e.recipe], kw = BUILD[e.type].kw, gn = BUILD[e.type].gen;
     const sp = kw ? sat : gn ? load : 1;
     if (kw && sat < 0.05) e.st = 'power';
-    if (gn) { e.kw = gn * load; e.st = load < 0.01 ? 'idle' : 'work'; }
+    if (gn) { e.kw = gn * sunMul(e) * load; e.st = load < 0.01 ? 'idle' : 'work'; }
     e.prog += DT * sp * catMul(e, r) * scaleMul(e) * forestMul(e) * sunMul(e) / r.t;
     if (e.prog >= 1) finish(e, r);
   }
@@ -2024,7 +2024,16 @@ function drawBuilding(e, ox, oy, z) {
     ctx.fillStyle = FLUIDS.steam.c;
     ctx.fillRect(x + p * 3, y + h - p * 3 - z * 0.12, (w - p * 6) * f, z * 0.12);
   }
-  if (z >= 14 && B.ab && e.type !== 'engine') {
+  if (e.type === 'solar' && z >= 8) {
+    const cw = (w - p * 6) / 4, chh = (h - p * 6) / 3;
+    for (let j = 0; j < 3; j++) for (let i = 0; i < 4; i++) {
+      ctx.fillStyle = '#1a2a5a';
+      ctx.fillRect(x + p * 3 + i * cw + 1, y + p * 3 + j * chh + 1, cw - 2, chh - 2);
+      ctx.fillStyle = 'rgba(160,190,255,0.18)';
+      ctx.fillRect(x + p * 3 + i * cw + 1, y + p * 3 + j * chh + 1, cw - 2, (chh - 2) * 0.35);
+    }
+  }
+  if (z >= 14 && B.ab && e.type !== 'engine' && e.type !== 'solar') {
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
     ctx.font = `bold ${Math.floor(Math.min(w, h) * 0.26)}px system-ui,sans-serif`;
     ctx.textAlign = 'center';
@@ -2032,12 +2041,14 @@ function drawBuilding(e, ox, oy, z) {
     ctx.fillText(B.ab, x + w / 2, y + h / 2);
   }
   if (kind(e) === 'machine' && e.recipe) {
-    const r = RECIPE[e.recipe], k = Object.keys(r.o || r.fo)[0];
+    const r = RECIPE[e.recipe], k = Object.keys(r.o || r.fo || {})[0];
     const s = Math.max(4, z * 0.32);
-    ctx.fillStyle = '#111';
-    ctx.fillRect(x + p * 3 - 1, y + p * 3 - 1, s + 2, s + 2);
-    ctx.fillStyle = col(k);
-    ctx.fillRect(x + p * 3, y + p * 3, s, s);
+    if (k) {
+      ctx.fillStyle = '#111';
+      ctx.fillRect(x + p * 3 - 1, y + p * 3 - 1, s + 2, s + 2);
+      ctx.fillStyle = col(k);
+      ctx.fillRect(x + p * 3, y + p * 3, s, s);
+    }
   }
   if ((kind(e) === 'machine' || kind(e) === 'miner') && e.st) {
     if (e.cy) {
@@ -2222,7 +2233,7 @@ function renderPanelDyn() {
       h += `<div class="prog">${bar(e.cy ? e.prog : 0, 1, '#7fe08a')}</div>`;
       if (r.cat) h += catHtml(e, r);
       if (e.type === 'boiler') h += `<div class="sec">Tube scale</div><div class="gauge"><span>Scale</span>${bar(e.scale || 0, 1, '#d8c8a0')}<b>${Math.round((e.scale || 0) * 100)}%</b></div><p class="dim">${e.desc > 0 ? `Descaling, back in ${Math.ceil(e.desc)} s.` : (e.soft || 0) > 1 ? 'Fed softened water: no new scale.' : 'Hard water bakes chalk onto the tubes, and steam output falls as the scale thickens. Feed softened water, or shut down and descale.'} Steam rate ${Math.round(scaleMul(e) * 100)}%.</p>`;
-      if (BUILD[e.type].sun) h += `<div class="sec">Climate</div><div class="gauge"><span>Sun</span>${bar(sunOf(e), 1, '#e0c050')}<b>${Math.round(sunOf(e) * 100)}%</b></div><p class="dim">Evaporation rate here. Ponds run fastest on desert sand and slowest on tundra and marsh.</p>`;
+      if (BUILD[e.type].sun) h += `<div class="sec">Climate</div><div class="gauge"><span>Sun</span>${bar(sunOf(e), 1, '#e0c050')}<b>${Math.round(sunOf(e) * 100)}%</b></div><p class="dim">${e.type === 'solar' ? 'Sunlight reaching the panels. Arrays give most on desert sand and least in forest, marsh and tundra.' : 'Evaporation rate here. Ponds run fastest on desert sand and slowest on tundra and marsh.'}</p>`;
       if (BUILD[e.type].forest) h += `<div class="sec">Forest</div><div class="gauge"><span>Stand</span>${bar(forestOf(e), FOREST_FULL, '#4a8a3a')}<b>${Math.round(forestMul(e) * 100)}%</b></div><p class="dim">${forestOf(e)} forest tiles within ${FOREST_R} tiles. It runs at full speed with ${FOREST_FULL} or more.</p>`;
       if (r.well) { const l = wellTiles(e), left = l.reduce((a, q) => a + oreAmt[q], 0); h += `<div class="sec">Reservoir</div><div class="spec">${l.length} of ${BUILD[e.type].w * BUILD[e.type].h} tiles on oil · ${fmt(left * r.fo.crude)} crude left</div>`; }
       h += '<div class="sec">Input buffer</div><div class="slots">';
@@ -2594,6 +2605,7 @@ const CHAINS = [
   { n: 'Bromine and photography', l: [['bittern', 'Distillation column + cl2 + steam', 'br2'], ['br2', 'Gas scrubber + naoh', 'nabr'], ['silver', 'Leach tank + hno3', 'agno3'], ['paper', 'Paper machine + agno3 + nabr', 'photo_paper']], d: 'Bittern holds bromide as well as magnesium. Chlorine is the stronger oxidiser, so it pushes bromine out of the brine, and steam carries it away as a red vapour. Bromine went into the first photographic emulsions in the 1870s: silver bromide is far more sensitive to light than the chloride, and bromide paper let a print be enlarged from a small negative in seconds.' },
   { n: 'Rubber and tyres', l: [['naphtha', 'Tube furnace + steam (C4 cut)', 'ethylene', '+', 'butadiene'], ['toluene', 'Tube furnace + h2', 'benzene'], ['benzene', 'Pressure reactor + ethylene + steam', 'styrene', '+', 'h2'], ['butadiene', 'Pressure reactor + styrene + water', 'sbr'], ['gas_oil', 'Tube furnace + fuel_gas', 'carbon_black', '+', 'co'], ['sbr', 'Tyre curing press + carbon_black + sulfur + steel + steam', 'tyre']], d: 'Synthetic rubber was a crash programme: when the plantations of Malaya fell in 1942, America built a whole industry to copolymerise butadiene with styrene. Carbon black from starved oil flames makes it tough, and sulfur from the Claus unit crosslinks it in a steam-heated press. Rubber also lines steel pipe, which then carries hydrochloric acid and brine at full steel pressure, as long as it stays below 90°C.' },
   { n: 'Air separation', l: [['Air separation unit (power only)', 'o2', '+', 'n2'], ['pig_iron', 'Converter + o2 + quicklime', 'steel', '+', 'slag'], ['n2', 'Ammonia converter + h2', 'nh3'], ['o2', 'Cylinder filler + cylinder', 'o2_cyl']], d: 'Linde liquefied air in 1895 and was distilling it into oxygen and nitrogen by 1902. Cheap tonnage oxygen changed steelmaking: an oxygen converter gives three tonnes of steel where a Bessemer gave two, ten times faster, with no nitrogen to make the steel brittle. The nitrogen goes to the ammonia loop.' },
+  { n: 'Silicon and solar', l: [['sand', 'Arc furnace + coke', 'si_metal'], ['si_metal', 'Chlorinator + hcl', 'sihcl3', '+', 'h2'], ['sihcl3', 'Siemens reactor + h2', 'polysilicon', '+', 'hcl'], ['polysilicon', 'Crystal puller', 'wafer'], ['wafer', 'Cell line + phosphorus + silver', 'solar_cell']], d: 'Sand becomes the purest material people make. Arc-furnace silicon is turned into a liquid that can be distilled, then grown back into silicon nine nines pure, drawn into one flawless crystal and sliced. The cells go into solar arrays that make power from nothing but daylight, best in the desert.' },
   { n: 'By-products', l: [['ground_copper', 'Flotation', 'copper_conc', '+', 'pyrite_conc'], ['pyrite_conc', 'Roaster', 'pyrite_cinder', 'Blast furnace', 'pig_iron'], ['anode_slime', 'Roaster', 'dore', 'Leach tank + acid', 'silver']], d: 'Nothing is waste. Pyrite gives SO₂ for acid and its cinder is iron ore. Anode slime from copper refining yields selenium, silver and gold.' },
 ];
 
@@ -2644,6 +2656,8 @@ const HELP = `<div class="help">
 <p>Set a tube furnace to <b>Steam cracking (C₄ cut)</b> for butadiene as well as ethylene. Toluene and hydrogen in another furnace give benzene, which a pressure reactor turns into styrene with ethylene and steam. Polymerise the two together for <b>synthetic rubber</b>. A tube furnace burning gas oil short of air makes carbon black. The <b>Tyre curing press</b> vulcanises rubber, black, sulfur and steel into tyres with steam. Rubber also makes <b>rubber-lined pipe</b>: full-bore steel at 25 bar that resists acid, chlorides, caustic and fluorides, but keep it below 90°C and away from nitric acid and bromine.</p>
 <h3>Air separation</h3>
 <p>The <b>Air separation unit</b> needs only power (400 kW), and makes oxygen and nitrogen from thin air. Set a converter to <b>Steel (basic oxygen)</b> and feed it oxygen and quicklime: it turns 3 pig iron into 3 steel, twice as fast as the Bessemer blow. Nitrogen fed into the ammonia converter gives more ammonia from the same hydrogen. Fill cylinders with oxygen for the hospital. Spare nitrogen vents harmlessly.</p>
+<h3>Silicon and solar</h3>
+<p>Quartz sand and coke in the <b>Arc furnace</b> give metallurgical silicon. A chlorinator turns it with HCl into <b>trichlorosilane</b> and hydrogen; pipe both to a <b>Siemens reactor</b>, which grows polysilicon and hands most of the HCl back. Make up the rest by burning chlorine in hydrogen. The <b>Crystal puller</b> grows wafers, and the <b>Cell line</b> dopes them with phosphorus and prints silver contacts. A <b>Solar array</b> needs no fuel, and gives its full 150 kW on desert sand but only a fraction in forest or tundra, so site your arrays where ponds do best.</p>
 <h3>Boiler water</h3>
 <p>Raw water is hard. Every boiler batch on it bakes a little chalk onto the tubes, steam output falls as the <b>scale</b> builds, and a fully choked boiler stops. Shut it down to <b>Descale</b> from its panel (a 20 second outage), or feed it <b>softened water</b>: run water through a leach tank with quicklime and the hardness settles out as crushed limestone you can send back to the kiln. Any machine that takes water also takes softened water.</p>
 <h3>Sulfur and diesel</h3>
