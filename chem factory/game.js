@@ -393,6 +393,7 @@ function spawnRegion(rx, ry) {
     if (Math.hypot(x - cx, y - cy) < 48 || !hiveSpot(x, y) || !farFromBase(x, y, 14) || lists().hive.some(e => Math.hypot(e.x - x, e.y - y) < 18)) continue;
     addHive(x, y); n++;
   }
+  burrowRegion(rx, ry);
 }
 function growNear(x, y, rad, max) {
   if (!rgd) return 0;
@@ -1218,6 +1219,506 @@ function spawnRuins() {
   }
   S.rv = 1;
 }
+const DGN = 60, DG_VEIN = ['sulfur', 'sulfur', 'pbzn_ore', 'copper_ore', 'cassiterite', 'wolframite', 'pgm_ore'];
+let dfx = [], dgc = null, dgMine = null, dgcam = { x: 0, y: 0, z: 36 }, dgDark = null;
+function dgGen(seed) {
+  const r = mulberry32(seed >>> 0), N = DGN, g = new Uint8Array(N * N);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) g[y * N + x] = x < 1 || y < 1 || x >= N - 1 || y >= N - 1 || r() < 0.46 ? 1 : 0;
+  const nb = (x, y) => { let n = 0; for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) if ((i || j) && (x + i < 0 || y + j < 0 || x + i >= N || y + j >= N || g[(y + j) * N + x + i])) n++; return n; };
+  for (let it = 0; it < 5; it++) {
+    const o = new Uint8Array(N * N);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const n = nb(x, y); o[y * N + x] = x < 1 || y < 1 || x >= N - 1 || y >= N - 1 ? 1 : n >= 5 ? 1 : n <= 3 ? 0 : g[y * N + x]; }
+    g.set(o);
+  }
+  const dig = (x, y, rr) => { for (let j = -rr; j <= rr; j++) for (let i = -rr; i <= rr; i++) { const X = x + i, Y = y + j; if (X > 1 && Y > 1 && X < N - 2 && Y < N - 2 && i * i + j * j <= rr * rr + 1) g[Y * N + X] = 0; } };
+  const ex = 5, ey = Math.floor(N / 2);
+  let wx = ex, wy = ey;
+  const gx = N - 7, gy = 6 + Math.floor(r() * (N - 12));
+  for (let k = 0; k < 900 && (Math.abs(wx - gx) > 1 || Math.abs(wy - gy) > 1); k++) {
+    if (r() < 0.62) { wx += Math.sign(gx - wx); wy += r() < 0.5 ? Math.sign(gy - wy) : 0; }
+    else { wx += Math.floor(r() * 3) - 1; wy += Math.floor(r() * 3) - 1; }
+    wx = Math.max(3, Math.min(N - 4, wx)); wy = Math.max(3, Math.min(N - 4, wy));
+    dig(wx, wy, r() < 0.3 ? 2 : 1);
+  }
+  dig(ex, ey, 2); dig(gx, gy, 3);
+  const bfs = (sx, sy) => {
+    const d = new Int16Array(N * N).fill(-1), q = [sy * N + sx];
+    d[q[0]] = 0;
+    for (let h = 0; h < q.length; h++) {
+      const k = q[h], x = k % N, y = (k - x) / N;
+      for (const [i, j] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = (y + j) * N + x + i; if (!g[n] && d[n] < 0) { d[n] = d[k] + 1; q.push(n); } }
+    }
+    return d;
+  };
+  let d = bfs(ex, ey);
+  for (let k = 0; k < N * N; k++) if (d[k] < 0) g[k] = 1;
+  let qk = 0;
+  for (let k = 0; k < N * N; k++) if (d[k] > d[qk]) qk = k;
+  const qx = qk % N, qy = (qk - qx) / N;
+  dig(qx, qy, 3);
+  d = bfs(ex, ey);
+  for (let k = 0; k < N * N; k++) if (d[k] < 0) g[k] = 1;
+  const md = d[qy * N + qx], caches = [];
+  for (const f of [0.28, 0.45, 0.6, 0.75, 0.88]) {
+    let best = -1, bs = -1;
+    for (let k = 0; k < N * N; k++) {
+      if (g[k] || d[k] < 4) continue;
+      const x = k % N, y = (k - x) / N;
+      if (Math.hypot(x - qx, y - qy) < 5 || caches.some(c => Math.hypot(c.x - x, c.y - y) < 7)) continue;
+      const sc = -Math.abs(d[k] - f * md) + nb(x, y) * 1.5 + r() * 2;
+      if (sc > bs) { bs = sc; best = k; }
+    }
+    if (best >= 0) caches.push({ x: best % N, y: Math.floor(best / N) });
+  }
+  const vein = new Map();
+  for (let y = 1; y < N - 1; y++) for (let x = 1; x < N - 1; x++) {
+    const k = y * N + x;
+    if (!g[k] || !(!g[k - 1] || !g[k + 1] || !g[k - N] || !g[k + N])) continue;
+    if (hash(x, y, seed & 0xffff) < 0.075) vein.set(k, DG_VEIN[Math.floor(hash(y, x, seed & 0xfff) * DG_VEIN.length)]);
+  }
+  return { seed, N, g, d, ex, ey, qx, qy, md, caches, vein };
+}
+const dgGrid = () => (dgc && dgc.seed === S.dg.seed ? dgc : (dgc = dgGen(S.dg.seed)));
+function dgSolid(x, y) {
+  const G = dgGrid(), X = Math.floor(x), Y = Math.floor(y);
+  if (X < 0 || Y < 0 || X >= G.N || Y >= G.N) return true;
+  const k = Y * G.N + X;
+  return !!G.g[k] && !(S.dg.mv && S.dg.mv[k]);
+}
+function dgFree(x, y, r) { return !dgSolid(x - r, y - r) && !dgSolid(x + r, y - r) && !dgSolid(x - r, y + r) && !dgSolid(x + r, y + r); }
+function dgSee(ax, ay, bx, by) {
+  const n = Math.ceil(Math.hypot(bx - ax, by - ay) * 3);
+  for (let i = 1; i < n; i++) if (dgSolid(ax + (bx - ax) * i / n, ay + (by - ay) * i / n)) return false;
+  return true;
+}
+const burrowTier = e => hiveTier(e.x, e.y);
+function dgEnter(e) {
+  const P = S.pl;
+  if (e.done) return toast('The burrow has fallen in. Nothing lives down there now.', true);
+  if (P.dead > 0 || P.car) return toast('Get out of the vehicle first.', true);
+  if (!entReach(e, 3)) return toast('Walk up to the burrow mouth first.', true);
+  const seed = (S.seed * 131 + e.x * 7919 + e.y * 104729) >>> 0;
+  S.dg = { bid: e.id, seed, rx: P.x, ry: P.y, px: 0, py: 0, bugs: [], sp: [], t: 0 };
+  dgc = null;
+  const G = dgGrid(), T = burrowTier(e), ev = 1 + 2 * S.evo;
+  S.dg.px = G.ex + 0.5; S.dg.py = G.ey + 0.5;
+  S.dg.mv = Object.assign({}, e.mv || {});
+  S.dg.oc = (e.oc || []).slice();
+  const qh = Math.round(700 * T * (1 + S.evo));
+  S.dg.q = { x: G.qx + 0.5, y: G.qy + 0.5, hp: e.qhp != null ? Math.min(e.qhp, qh) : qh, mhp: qh, cd: 2, sp: 4, aw: 0, a: Math.PI };
+  const rng = mulberry32(seed + 5), n = 10 + 5 * T;
+  for (let k = 0, tries = 0; k < n && tries < 4000; tries++) {
+    const x = 1 + Math.floor(rng() * (G.N - 2)), y = 1 + Math.floor(rng() * (G.N - 2)), i = y * G.N + x;
+    if (G.g[i] || G.d[i] < 12) continue;
+    const u = rng(), kk = T >= 2 && u < 0.12 + 0.05 * T ? 2 : u < 0.4 ? 1 : 0, mhp = Math.round(30 * ev * BUGK[kk].hp);
+    const b = { x: x + 0.5, y: y + 0.5, hp: mhp, mhp, a: rng() * 7, ph: rng() * 7, aw: 0, cd: 0 };
+    if (kk) b.k = kk;
+    S.dg.bugs.push(b); k++;
+  }
+  P.x = e.x + 1; P.y = e.y + 1;
+  mining = null; dgMine = null; tool = null; camFree = false;
+  closePanel(); renderHotbar();
+  S.dgn = (S.dgn || 0) + 1;
+  toast(`You climb down into a tier ${T} crawler burrow. Clear it, loot the old supply caches and find the queen. Press F at the rope to climb out.`);
+}
+function dgExit(dead) {
+  const D = S.dg, P = S.pl, e = ents.get(D.bid);
+  if (e) { e.mv = D.mv; e.oc = D.oc; e.qhp = D.q.hp > 0 ? D.q.hp : undefined; if (D.q.hp <= 0) e.done = 1; }
+  S.dg = null; dgMine = null;
+  if (e) {
+    const c = ctr(e);
+    let spot = null;
+    for (let r = 1.6; r < 6 && !spot; r += 0.5) for (let a = 0; a < 16 && !spot; a++) { const x = c.x + Math.cos(a / 16 * Math.PI * 2 + Math.PI / 2) * r, y = c.y + Math.sin(a / 16 * Math.PI * 2 + Math.PI / 2) * r; if (plFree(x, y)) spot = { x, y }; }
+    Object.assign(P, spot || { x: D.rx, y: D.ry });
+  } else { P.x = D.rx; P.y = D.ry; }
+  if (dead) { P.dead = 6; P.hp = 0; }
+  camFree = false;
+}
+function dgFlow() {
+  const G = dgGrid(), D = S.dg, N = G.N, f = new Int16Array(N * N).fill(-1), sx = Math.floor(D.px), sy = Math.floor(D.py), q = [sy * N + sx];
+  f[q[0]] = 0;
+  for (let h = 0; h < q.length; h++) {
+    const k = q[h], x = k % N, y = (k - x) / N;
+    if (f[k] > 30) continue;
+    for (const [i, j] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+      const X = x + i, Y = y + j, n = Y * N + X;
+      if (f[n] >= 0 || dgSolid(X, Y) || (i && j && (dgSolid(x + i, y) || dgSolid(x, y + j)))) continue;
+      f[n] = f[k] + 1; q.push(n);
+    }
+  }
+  D.ff = f;
+}
+function dgHurt(d) {
+  const P = S.pl;
+  if (P.dead > 0 || !S.dg) return;
+  P.hp -= d; P.lh = S.t;
+  if (P.hp <= 0) {
+    fx.push({ x: P.x, y: P.y, t: 0, c: '#d07a2a' });
+    dgExit(true);
+    toast('The crawlers got you underground. A rescue party hauls you out and you wake up back at the landing site.', true);
+  }
+}
+function dgLoot(c, i) {
+  const D = S.dg, rng = mulberry32(D.seed + i * 977), got = {};
+  const add = (k, n) => { if (n > 0) { give(k, n); got[k] = (got[k] || 0) + n; } };
+  add('sulfur', 6 + Math.floor(rng() * 10));
+  add('crawler_shell', 2 + Math.floor(rng() * 4));
+  add('cartridge', 2 + Math.floor(rng() * 3));
+  const R = [['pt_gauze', 1], ['motor', 2], ['jerrycan', 3], ['gold', 2], ['silver', 4], ['black_powder', 4], ['plate', 15], ['cylinder', 3]].filter(([k]) => ITEMS[k] || BUILD[k]);
+  const [k, n] = R[Math.floor(rng() * R.length)];
+  add(k, n);
+  D.oc.push(i);
+  S.dgc = (S.dgc || 0) + 1;
+  toast('Old supply cache: ' + Object.keys(got).map(k => got[k] + ' ' + nm(k)).join(', '));
+  if (rng() < 0.4) { const r = unlockRandom(); if (r) toast(`A waterlogged lab notebook in the cache: ${r.n} (${BUILD[r.b].n}) unlocked`); }
+  renderHotbar();
+}
+function dgUse() {
+  const D = S.dg, G = dgGrid();
+  if (Math.hypot(D.px - G.ex - 0.5, D.py - G.ey - 0.5) < 2) return dgExit(false);
+  const i = G.caches.findIndex((c, k) => !D.oc.includes(k) && Math.hypot(c.x + 0.5 - D.px, c.y + 0.5 - D.py) < 1.8);
+  if (i >= 0) return dgLoot(G.caches[i], i);
+  toast('Walk back to the rope under the shaft to climb out, or stand next to a supply cache to open it.', true);
+}
+function dgClick(fx, fy) {
+  const D = S.dg, G = dgGrid(), X = Math.floor(fx), Y = Math.floor(fy);
+  if (Math.hypot(G.ex + 0.5 - fx, G.ey + 0.5 - fy) < 1.2) { if (Math.hypot(D.px - G.ex - 0.5, D.py - G.ey - 0.5) < 2.5) return dgExit(false); return toast('Walk up to the rope first.', true); }
+  const ci = G.caches.findIndex(c => c.x === X && c.y === Y);
+  if (ci >= 0) {
+    if (D.oc.includes(ci)) return toast('Already emptied.', true);
+    if (Math.hypot(X + 0.5 - D.px, Y + 0.5 - D.py) > 2.2) return toast('Walk up to the cache first.', true);
+    return dgLoot(G.caches[ci], ci);
+  }
+  if (dgSolid(fx, fy) && X > 0 && Y > 0 && X < G.N - 1 && Y < G.N - 1) {
+    if (Math.hypot(X + 0.5 - D.px, Y + 0.5 - D.py) > MINE_REACH) return toast('Too far to dig. Walk up to the rock.', true);
+    dgMine = { k: Y * G.N + X, p: 0 };
+  }
+}
+function dgShoot() {
+  const P = S.pl, D = S.dg;
+  if (P.cd > 0) return;
+  let best = null, bd = PL_GUN * PL_GUN;
+  for (const b of D.bugs) { const d = (b.x - D.px) ** 2 + (b.y - D.py) ** 2; if (b.hp > 0 && d < bd && dgSee(D.px, D.py, b.x, b.y)) { bd = d; best = b; } }
+  const Q = D.q;
+  if (Q.hp > 0) { const d = (Q.x - D.px) ** 2 + (Q.y - D.py) ** 2; if (d < bd && dgSee(D.px, D.py, Q.x, Q.y)) best = Q; }
+  if (!best) return;
+  if (!P.rd) {
+    if (S.inv.cartridge > 0) { S.inv.cartridge--; P.rd = 10; }
+    else { if (S.t - noAmmoT > 3) { noAmmoT = S.t; toast('Out of cartridges. Climb out and craft more in a workshop.', true); } return; }
+  }
+  best.hp -= 12; best.aw = 1;
+  if (best === Q) Q.aw = 1; else if (best.hp <= 0) S.pk = (S.pk || 0) + 1;
+  P.rd--; P.cd = 0.2;
+  P.f = Math.atan2(best.y - D.py, best.x - D.px);
+  P.sh = S.t; P.tx = best.x; P.ty = best.y;
+}
+function dgMove(dt, mx, my) {
+  const P = S.pl, D = S.dg;
+  P.mv = false;
+  if (P.dead > 0 || !(mx || my)) return false;
+  const l = Math.hypot(mx, my), v = PL_V * 0.9;
+  let left = dt;
+  while (left > 1e-6) {
+    const h = Math.min(0.04, left); left -= h;
+    const nx = D.px + mx / l * v * h, ny = D.py + my / l * v * h;
+    if (dgFree(nx, ny, PL_R)) { D.px = nx; D.py = ny; }
+    else if (dgFree(nx, D.py, PL_R)) D.px = nx;
+    else if (dgFree(D.px, ny, PL_R)) D.py = ny;
+  }
+  if (S.t - (P.sh || -9) > 0.4) P.f = Math.atan2(my, mx);
+  P.wk += dt * v * 2.4; P.mv = true;
+  return true;
+}
+function dgSpawnAt(x, y, k) {
+  const ev = 1 + 2 * S.evo, mhp = Math.round(30 * ev * BUGK[k].hp), a = Math.random() * 7;
+  const b = { x: x + Math.cos(a) * 1.2, y: y + Math.sin(a) * 1.2, hp: mhp, mhp, a, ph: Math.random() * 7, aw: 1, cd: 0 };
+  if (!dgFree(b.x, b.y, 0.2)) { b.x = x; b.y = y; }
+  if (k) b.k = k;
+  S.dg.bugs.push(b);
+}
+function dgTick() {
+  const D = S.dg, P = S.pl, G = dgGrid(), N = G.N;
+  D.t += DT;
+  P.cd = Math.max(0, (P.cd || 0) - DT);
+  if (S.t - (P.lh ?? -99) > 8) P.hp = Math.min(PL_HP, P.hp + 8 * DT);
+  if (keys[' ']) dgShoot();
+  if (!D.ff || S.tk % 10 === 0) dgFlow();
+  if (dgMine) {
+    const X = dgMine.k % N, Y = Math.floor(dgMine.k / N);
+    if (!mouse.l || !dgSolid(X, Y) || Math.hypot(X + 0.5 - D.px, Y + 0.5 - D.py) > MINE_REACH) dgMine = null;
+    else if ((dgMine.p += DT / (G.vein.has(dgMine.k) ? 1.4 : 2.2)) >= 1) {
+      D.mv[dgMine.k] = 1;
+      const it = G.vein.get(dgMine.k);
+      if (it) { const n = it === 'sulfur' ? 6 : 4; give(it, n); S.made[it] = (S.made[it] || 0) + n; toast(`Dug out ${n} ${nm(it)} from the vein`); }
+      else give('limestone', 1);
+      dgMine = null; D.ff = null;
+    }
+  }
+  const sp = BUG_V * DT * 1.15, dmg = 6 * (1 + S.evo) * DT, ff = D.ff, pd0 = P.dead > 0;
+  for (let i = D.bugs.length - 1; i >= 0; i--) {
+    const b = D.bugs[i];
+    if (b.hp <= 0) { D.bugs.splice(i, 1); S.kills = (S.kills || 0) + 1; dfx.push({ x: b.x, y: b.y, t: 0.5, c: '#a0c040' }); continue; }
+    const K = BUGK[b.k || 0], pd = Math.hypot(D.px - b.x, D.py - b.y), bi = Math.floor(b.y) * N + Math.floor(b.x), fd = ff ? ff[bi] : -1;
+    if (!b.aw && (pd < 6 || (fd >= 0 && fd < 9 && dgSee(b.x, b.y, D.px, D.py)))) b.aw = 1;
+    if (!b.aw || pd0) { b.a += Math.sin(D.t + b.ph) * 0.02; continue; }
+    if (pd < 0.7 && !K.rng) { b.a = Math.atan2(D.py - b.y, D.px - b.x); b.chew = 1; dgHurt(dmg * 2 * K.dm); if (!S.dg) return; continue; }
+    b.chew = 0;
+    if (K.rng && pd < K.rng && dgSee(b.x, b.y, D.px, D.py)) {
+      b.a = Math.atan2(D.py - b.y, D.px - b.x); b.cd = (b.cd || 0) - DT;
+      if (b.cd <= 0) { b.cd = 1.6; D.sp.push({ x: b.x, y: b.y, tx: D.px, ty: D.py, d: 12 * (1 + S.evo) }); }
+      continue;
+    }
+    let tx = D.px, ty = D.py;
+    if (!(pd < 1.5 && dgSee(b.x, b.y, D.px, D.py)) && fd > 0) {
+      const x = Math.floor(b.x), y = Math.floor(b.y);
+      let bv = fd;
+      for (const [ii, jj] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) { const v = ff[(y + jj) * N + x + ii]; if (v >= 0 && v < bv && !(ii && jj && (dgSolid(x + ii, y) || dgSolid(x, y + jj)))) { bv = v; tx = x + ii + 0.5; ty = y + jj + 0.5; } }
+    }
+    const dx = tx - b.x, dy = ty - b.y, d = Math.hypot(dx, dy);
+    if (d < 1e-3) continue;
+    b.a = Math.atan2(dy, dx);
+    const v = sp * K.v, nx = b.x + dx / d * v, ny = b.y + dy / d * v;
+    if (dgFree(nx, ny, 0.18)) { b.x = nx; b.y = ny; } else if (dgFree(nx, b.y, 0.18)) b.x = nx; else if (dgFree(b.x, ny, 0.18)) b.y = ny;
+  }
+  const Q = D.q;
+  if (Q.hp > 0) {
+    const pd = Math.hypot(D.px - Q.x, D.py - Q.y);
+    if (!Q.aw && pd < 9 && dgSee(Q.x, Q.y, D.px, D.py)) { Q.aw = 1; toast('The burrow queen stirs. She is calling her brood.', true); }
+    if (Q.aw && !pd0) {
+      Q.a = Math.atan2(D.py - Q.y, D.px - Q.x);
+      Q.sp -= DT; Q.cd -= DT;
+      if (Q.sp <= 0 && D.bugs.length < 40) { Q.sp = 7; for (let k = 0; k < 3; k++) dgSpawnAt(Q.x, Q.y, k === 2 && S.evo > 0.3 ? 2 : k === 1 ? 1 : 0); }
+      if (Q.cd <= 0 && pd < 11 && dgSee(Q.x, Q.y, D.px, D.py)) { Q.cd = 2.2; for (const o of [-0.25, 0, 0.25]) { const a = Q.a + o; D.sp.push({ x: Q.x, y: Q.y, tx: Q.x + Math.cos(a) * pd, ty: Q.y + Math.sin(a) * pd, d: 22 * (1 + S.evo), q: 1 }); } }
+      if (pd < 1.6) dgHurt(dmg * 5);
+      if (!S.dg) return;
+    }
+  } else if (!Q.dead) {
+    Q.dead = 1;
+    S.qk = (S.qk || 0) + 1;
+    give('queen_carapace', 1); give('crawler_shell', 12); give('sulfur', 30); give('gold', 3);
+    dfx.push({ x: Q.x, y: Q.y, t: 0, c: '#c080ff' });
+    toast('The burrow queen is dead: queen carapace, 12 crawler shell, 30 sulfur and 3 gold. Without her the tunnels will fall in once you climb out.');
+    const r = unlockRandom(); if (r) toast(`Her chamber holds the bones of an old survey team and their notebook: ${r.n} (${BUILD[r.b].n}) unlocked`);
+    renderHotbar();
+  }
+  for (let i = D.sp.length - 1; i >= 0; i--) {
+    const s = D.sp[i], dx = s.tx - s.x, dy = s.ty - s.y, d = Math.hypot(dx, dy), st = 7 * DT;
+    s.t = (s.t || 0) + DT;
+    if (d > st && s.t < 3 && !dgSolid(s.x + dx / d * st, s.y + dy / d * st)) { s.x += dx / d * st; s.y += dy / d * st; if (s.q && Math.hypot(D.px - s.x, D.py - s.y) < 0.5) { D.sp.splice(i, 1); dgHurt(s.d); if (!S.dg) return; } continue; }
+    D.sp.splice(i, 1);
+    dfx.push({ x: s.x, y: s.y, t: 0.35, c: '#9ad040' });
+    if (Math.hypot(D.px - s.x, D.py - s.y) < 0.8) { dgHurt(s.d); if (!S.dg) return; }
+  }
+}
+function dgPos(sx, sy) {
+  const w = cv.clientWidth, h = cv.clientHeight;
+  return { fx: (sx - w / 2) / dgcam.z + dgcam.x, fy: (sy - h / 2) / dgcam.z + dgcam.y };
+}
+function burrowAt(rng, x, y) {
+  if (!ruinSpot(x, y) || !farFromBase(x, y, 20) || lists().ruin.some(o => Math.hypot(o.x - x, o.y - y) < 24)) return false;
+  addEnt(makeEnt('burrow', x, y, 0));
+  for (let q = 0, n = 0; q < 40 && n < 2; q++) {
+    const b = rng() * Math.PI * 2, r = 4 + rng() * 3, hx = Math.round(x + Math.cos(b) * r), hy = Math.round(y + Math.sin(b) * r);
+    if (hiveSpot(hx, hy)) { addHive(hx, hy); n++; }
+  }
+  return true;
+}
+function burrowRegion(rx, ry) {
+  if (!S.gen || !S.gen.hives) return;
+  const rng = mulberry32((S.seed + 9191 + Math.imul(rx, 977) + Math.imul(ry, 31337)) >>> 0), X0 = rx * RG, Y0 = ry * RG;
+  if (rng() > 0.3) return;
+  for (let k = 0; k < 60; k++) {
+    const x = Math.floor(X0 + 6 + rng() * (RG - 12)), y = Math.floor(Y0 + 6 + rng() * (RG - 12));
+    if (Math.hypot(x - W / 2, y - H / 2) < 70) continue;
+    if (burrowAt(rng, x, y)) break;
+  }
+}
+function spawnBurrows() {
+  const g = S.gen, big = g && !g.legacy;
+  S.bv = 1;
+  if (big && !g.hives) return;
+  const rng = mulberry32(S.seed + 9191), max = big ? Math.max(2, Math.round(1.4 * W * H / 25600)) : 2;
+  for (let k = 0, n = 0; k < 800 && n < max; k++) {
+    const a = rng() * Math.PI * 2, d = big ? 70 + rng() * (W * 0.6 - 70) : 56 + rng() * 16;
+    if (burrowAt(rng, Math.round(W / 2 + Math.cos(a) * d), Math.round(H / 2 + Math.sin(a) * d))) n++;
+  }
+}
+function drawBurrow(e, x, y, w, h, z) {
+  const cx = x + w / 2, cy = y + h / 2, now = performance.now() / 1000;
+  ctx.fillStyle = 'rgba(60,40,30,0.35)';
+  ctx.beginPath(); ctx.ellipse(cx, cy + h * 0.05, w * 0.62, h * 0.5, 0, 0, 7); ctx.fill();
+  for (let k = 0; k < 14; k++) {
+    const a = k / 14 * Math.PI * 2 + hash(k, e.id, 4), r = w * (0.36 + 0.14 * hash(e.id, k, 6));
+    ctx.fillStyle = k % 3 ? '#6a5240' : '#7e6450';
+    ctx.beginPath(); ctx.arc(cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.8, z * (0.16 + 0.12 * hash(k, e.id, 9)), 0, 7); ctx.fill();
+  }
+  const g = ctx.createRadialGradient(cx, cy, w * 0.04, cx, cy, w * 0.36);
+  g.addColorStop(0, e.done ? '#3a3028' : '#020101'); g.addColorStop(0.7, e.done ? '#4a3e34' : '#1a110c'); g.addColorStop(1, '#4a3a2c');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.ellipse(cx, cy, w * 0.34, h * 0.28, 0, 0, 7); ctx.fill();
+  if (e.done) {
+    ctx.fillStyle = '#5e4c3c';
+    for (let k = 0; k < 6; k++) { ctx.beginPath(); ctx.arc(cx + (hash(k, e.id, 1) - 0.5) * w * 0.4, cy + (hash(e.id, k, 1) - 0.5) * h * 0.3, z * 0.18, 0, 7); ctx.fill(); }
+    return;
+  }
+  ctx.strokeStyle = '#a08060'; ctx.lineWidth = Math.max(1, z * 0.05);
+  ctx.beginPath(); ctx.moveTo(cx - w * 0.36, cy - h * 0.34); ctx.lineTo(cx - w * 0.06, cy); ctx.moveTo(cx - w * 0.22, cy - h * 0.38); ctx.lineTo(cx - w * 0.36, cy - h * 0.34); ctx.stroke();
+  if (z >= 10) {
+    ctx.fillStyle = `rgba(160,192,64,${0.25 + 0.15 * Math.sin(now * 2 + e.id)})`;
+    for (let k = 0; k < 3; k++) { const a = now * 0.7 + k * 2.1; ctx.beginPath(); ctx.arc(cx + Math.cos(a) * w * 0.14, cy + Math.sin(a) * h * 0.1, z * 0.05, 0, 7); ctx.fill(); }
+  }
+}
+function drawDungeon(w, h) {
+  const D = S.dg, G = dgGrid(), N = G.N, P = S.pl, z = Math.max(22, Math.min(64, cam.z)), now = performance.now() / 1000;
+  dgcam.x += (D.px - dgcam.x) * 0.25; dgcam.y += (D.py - dgcam.y) * 0.25; dgcam.z = z;
+  if (Math.hypot(dgcam.x - D.px, dgcam.y - D.py) > 6) { dgcam.x = D.px; dgcam.y = D.py; }
+  const ox = Math.round(w / 2 - dgcam.x * z), oy = Math.round(h / 2 - dgcam.y * z);
+  ctx.fillStyle = '#050403'; ctx.fillRect(0, 0, w, h);
+  const x0 = Math.max(0, Math.floor(-ox / z)), y0 = Math.max(0, Math.floor(-oy / z)), x1 = Math.min(N, Math.ceil((w - ox) / z)), y1 = Math.min(N, Math.ceil((h - oy) / z));
+  const solid = (x, y) => dgSolid(x, y);
+  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+    const X = ox + x * z, Y = oy + y * z, k = y * N + x;
+    if (solid(x, y)) continue;
+    const qd = Math.hypot(x - G.qx, y - G.qy), u = hash(x, y, 71);
+    ctx.fillStyle = qd < 6 ? `rgb(${58 + u * 10},${40 + u * 8},${50 + u * 10})` : `rgb(${52 + u * 12},${44 + u * 10},${36 + u * 8})`;
+    ctx.fillRect(X, Y, z + 1, z + 1);
+    if (z >= 16) for (let q = 0; q < 3; q++) { const a = hash(x, y, q + 3), b = hash(y, x, q + 9); ctx.fillStyle = q === 1 ? 'rgba(0,0,0,0.18)' : 'rgba(255,240,220,0.06)'; ctx.fillRect(X + a * z * 0.85, Y + b * z * 0.85, z * 0.12, z * 0.08); }
+    if (D.mv[k]) { ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.fillRect(X + z * 0.1, Y + z * 0.1, z * 0.8, z * 0.8); }
+    if (qd < 5 && hash(x, y, 13) < 0.35) { ctx.fillStyle = 'rgba(200,190,170,0.5)'; ctx.fillRect(X + z * 0.3, Y + z * 0.45, z * 0.4, z * 0.07); ctx.beginPath(); ctx.arc(X + z * 0.3, Y + z * 0.48, z * 0.06, 0, 7); ctx.arc(X + z * 0.7, Y + z * 0.48, z * 0.06, 0, 7); ctx.fill(); }
+  }
+  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+    if (!solid(x, y)) continue;
+    const X = ox + x * z, Y = oy + y * z, k = y * N + x, u = hash(x, y, 33), open = !solid(x, y + 1);
+    let bare = true;
+    for (let j = -1; j <= 1 && bare; j++) for (let i = -1; i <= 1; i++) if (!solid(x + i, y + j)) { bare = false; break; }
+    if (bare) { ctx.fillStyle = '#0d0a08'; ctx.fillRect(X, Y, z + 1, z + 1); continue; }
+    ctx.fillStyle = `rgb(${34 + u * 10},${28 + u * 8},${24 + u * 6})`;
+    ctx.fillRect(X, Y, z + 1, z + 1);
+    ctx.fillStyle = `rgb(${62 + u * 14},${52 + u * 12},${42 + u * 10})`;
+    ctx.fillRect(X, Y, z + 1, z * 0.62);
+    if (!solid(x, y - 1)) { ctx.fillStyle = 'rgba(255,235,200,0.12)'; ctx.fillRect(X, Y, z + 1, z * 0.12); }
+    if (!solid(x - 1, y)) { ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(X, Y, z * 0.08, z); }
+    if (!solid(x + 1, y)) { ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(X + z * 0.92, Y, z * 0.08, z); }
+    if (open) { ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(X, Y + z, z + 1, z * 0.22); }
+    if (z >= 14) for (let q = 0; q < 2; q++) { ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.fillRect(X + hash(x, y, q + 40) * z * 0.7, Y + hash(y, x, q + 44) * z * 0.45, z * 0.24, z * 0.05); }
+    const vn = G.vein.get(k);
+    if (vn) {
+      const c = vn === 'sulfur' ? '#e8d040' : ITEMS[vn] ? ITEMS[vn].c : '#c0a080';
+      for (let q = 0; q < 5; q++) { ctx.fillStyle = q % 2 ? c : shade(c, 0.7); ctx.beginPath(); ctx.arc(X + (0.18 + 0.64 * hash(x, y, q + 50)) * z, Y + (0.12 + 0.42 * hash(y, x, q + 55)) * z, z * (0.06 + 0.05 * hash(q, k, 2)), 0, 7); ctx.fill(); }
+      if (Math.sin(now * 3 + k) > 0.92) { ctx.fillStyle = 'rgba(255,255,230,0.8)'; ctx.fillRect(X + hash(x, y, 60) * z * 0.7, Y + z * 0.2, z * 0.06, z * 0.06); }
+    }
+  }
+  const ex = ox + (G.ex + 0.5) * z, ey = oy + (G.ey + 0.5) * z;
+  ctx.strokeStyle = '#a07a4a'; ctx.lineWidth = Math.max(2, z * 0.08);
+  ctx.beginPath(); ctx.moveTo(ex - z * 0.15, ey - z * 1.2); ctx.lineTo(ex - z * 0.15, ey + z * 0.3); ctx.moveTo(ex + z * 0.15, ey - z * 1.2); ctx.lineTo(ex + z * 0.15, ey + z * 0.3); ctx.stroke();
+  ctx.lineWidth = Math.max(1, z * 0.05);
+  for (let k = 0; k < 5; k++) { const yy = ey - z * 1.1 + k * z * 0.32; ctx.beginPath(); ctx.moveTo(ex - z * 0.15, yy); ctx.lineTo(ex + z * 0.15, yy); ctx.stroke(); }
+  G.caches.forEach((c, i) => {
+    const X = ox + c.x * z, Y = oy + c.y * z, op = D.oc.includes(i);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(X + z * 0.12, Y + z * 0.72, z * 0.82, z * 0.14);
+    ctx.fillStyle = '#6a4a2a'; ctx.fillRect(X + z * 0.12, Y + z * 0.3, z * 0.76, z * 0.48);
+    ctx.fillStyle = '#4a3218'; for (let q = 0; q < 3; q++) ctx.fillRect(X + z * 0.12, Y + z * (0.36 + q * 0.14), z * 0.76, z * 0.03);
+    ctx.fillStyle = '#8a8a80'; ctx.fillRect(X + z * 0.22, Y + z * 0.3, z * 0.06, z * 0.48); ctx.fillRect(X + z * 0.72, Y + z * 0.3, z * 0.06, z * 0.48);
+    if (op) { ctx.fillStyle = '#5a3e22'; ctx.save(); ctx.translate(X + z * 0.12, Y + z * 0.3); ctx.rotate(-0.5); ctx.fillRect(0, -z * 0.12, z * 0.76, z * 0.12); ctx.restore(); ctx.fillStyle = '#1a120a'; ctx.fillRect(X + z * 0.16, Y + z * 0.32, z * 0.68, z * 0.1); }
+    else {
+      ctx.fillStyle = '#7a5834'; ctx.fillRect(X + z * 0.08, Y + z * 0.2, z * 0.84, z * 0.14);
+      ctx.fillStyle = '#c8a040'; ctx.fillRect(X + z * 0.46, Y + z * 0.3, z * 0.08, z * 0.1);
+      if (z >= 18) { ctx.fillStyle = '#e8e0c8'; ctx.font = `bold ${Math.round(z * 0.16)}px sans-serif`; ctx.textAlign = 'center'; ctx.fillText('SURVEY', X + z * 0.5, Y + z * 0.62); ctx.textAlign = 'left'; }
+    }
+  });
+  const Q = D.q;
+  const sb = S.bugs;
+  S.bugs = D.bugs;
+  drawBugs(ox, oy, z, x0 - 2, y0 - 2, x1 + 2, y1 + 2);
+  if (Q.hp > 0 || Q.dead) {
+    const qz = z * 2.8, qox = ox + Q.x * (z - qz), qoy = oy + Q.y * (z - qz), pu = 1 + 0.05 * Math.sin(now * 2.5);
+    const QX = ox + Q.x * z, QY = oy + Q.y * z;
+    if (Q.hp > 0) {
+      ctx.fillStyle = 'rgba(200,170,190,0.55)';
+      ctx.beginPath(); ctx.ellipse(QX - Math.cos(Q.a) * z * 1.1, QY - Math.sin(Q.a) * z * 1.1, z * 0.9 * pu, z * 0.65 * pu, Q.a, 0, 7); ctx.fill();
+      ctx.strokeStyle = 'rgba(120,80,100,0.6)'; ctx.lineWidth = Math.max(1, z * 0.04);
+      for (let k = 0; k < 4; k++) { ctx.beginPath(); ctx.ellipse(QX - Math.cos(Q.a) * z * 1.1, QY - Math.sin(Q.a) * z * 1.1, z * (0.25 + k * 0.17) * pu, z * (0.18 + k * 0.12) * pu, Q.a, 0, 7); ctx.stroke(); }
+      S.bugs = [{ x: Q.x, y: Q.y, a: Q.a, ph: 0, hp: Q.hp, mhp: 90 * BUGK[2].hp, k: 2, chew: Q.aw ? 1 : 0 }];
+      drawBugs(qox, qoy, qz, -1e9, -1e9, 1e9, 1e9);
+      ctx.fillStyle = `rgba(200,120,255,${0.25 + 0.2 * Math.sin(now * 4)})`;
+      ctx.beginPath(); ctx.arc(QX + Math.cos(Q.a) * z * 0.5, QY + Math.sin(Q.a) * z * 0.5, z * 0.16, 0, 7); ctx.fill();
+    } else {
+      ctx.fillStyle = 'rgba(40,30,30,0.7)';
+      ctx.beginPath(); ctx.ellipse(QX, QY, z * 1.1, z * 0.6, Q.a, 0, 7); ctx.fill();
+    }
+  }
+  S.bugs = sb;
+  for (const s of D.sp) { ctx.fillStyle = s.q ? '#d080ff' : '#9ad040'; ctx.beginPath(); ctx.arc(ox + s.x * z, oy + s.y * z, z * (s.q ? 0.14 : 0.1), 0, 7); ctx.fill(); }
+  for (let i = dfx.length - 1; i >= 0; i--) {
+    const f = dfx[i];
+    f.t += 1 / 60;
+    if (f.t > 1.2) { dfx.splice(i, 1); continue; }
+    ctx.globalAlpha = Math.max(0, 1 - f.t / 1.2); ctx.fillStyle = f.c;
+    for (let k = 0; k < 8; k++) { const a = k * 0.785 + f.t, r = z * (0.3 + f.t * 1.4); ctx.beginPath(); ctx.arc(ox + f.x * z + Math.cos(a) * r, oy + f.y * z + Math.sin(a) * r, z * 0.1 * (1.2 - f.t), 0, 7); ctx.fill(); }
+    ctx.globalAlpha = 1;
+  }
+  const px = P.x, py = P.y;
+  P.x = D.px; P.y = D.py;
+  drawPlayer(ox, oy, z);
+  P.x = px; P.y = py;
+  if (dgMine) {
+    const X = ox + (dgMine.k % N + 0.5) * z, Y = oy + (Math.floor(dgMine.k / N) + 0.5) * z;
+    ctx.strokeStyle = '#ffd27a'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(X, Y, z * 0.4, -Math.PI / 2, -Math.PI / 2 + dgMine.p * Math.PI * 2); ctx.stroke();
+  }
+  if (!dgDark) dgDark = document.createElement('canvas');
+  const dpr = window.devicePixelRatio || 1;
+  if (dgDark.width !== cv.width || dgDark.height !== cv.height) { dgDark.width = cv.width; dgDark.height = cv.height; }
+  const dc = dgDark.getContext('2d');
+  dc.setTransform(dpr, 0, 0, dpr, 0, 0);
+  dc.globalCompositeOperation = 'source-over';
+  dc.clearRect(0, 0, w, h);
+  dc.fillStyle = 'rgba(2,1,0,0.94)'; dc.fillRect(0, 0, w, h);
+  dc.globalCompositeOperation = 'destination-out';
+  const lamp = (X, Y, r, a) => { const g = dc.createRadialGradient(X, Y, 0, X, Y, r); g.addColorStop(0, `rgba(0,0,0,${a})`); g.addColorStop(0.55, `rgba(0,0,0,${a * 0.75})`); g.addColorStop(1, 'rgba(0,0,0,0)'); dc.fillStyle = g; dc.beginPath(); dc.arc(X, Y, r, 0, 7); dc.fill(); };
+  const PX = ox + D.px * z, PY = oy + D.py * z, fl = 1 + 0.03 * Math.sin(now * 13);
+  lamp(PX, PY, z * 7.5 * fl, 1);
+  const fa = P.f;
+  dc.save(); dc.translate(PX, PY); dc.rotate(fa);
+  const cg = dc.createRadialGradient(0, 0, z, 0, 0, z * 11);
+  cg.addColorStop(0, 'rgba(0,0,0,0.85)'); cg.addColorStop(1, 'rgba(0,0,0,0)');
+  dc.fillStyle = cg; dc.beginPath(); dc.moveTo(0, 0); dc.arc(0, 0, z * 11, -0.42, 0.42); dc.closePath(); dc.fill();
+  dc.restore();
+  lamp(ex, ey, z * 4, 0.9);
+  if (Q.hp > 0 && Q.aw) lamp(ox + Q.x * z, oy + Q.y * z, z * 3, 0.5);
+  for (const s of D.sp) lamp(ox + s.x * z, oy + s.y * z, z * 0.8, 0.6);
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(dgDark, 0, 0); ctx.restore();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.globalCompositeOperation = 'lighter';
+  const sh = ctx.createRadialGradient(ex, ey - z, z * 0.2, ex, ey, z * 3);
+  sh.addColorStop(0, 'rgba(255,240,200,0.22)'); sh.addColorStop(1, 'rgba(255,240,200,0)');
+  ctx.fillStyle = sh; ctx.beginPath(); ctx.arc(ex, ey, z * 3, 0, 7); ctx.fill();
+  ctx.globalCompositeOperation = 'source-over';
+  const alive = D.bugs.length, left = G.caches.length - D.oc.length;
+  ctx.fillStyle = 'rgba(12,10,8,0.82)'; ctx.fillRect(w / 2 - 230, 10, 460, Q.aw && Q.hp > 0 ? 58 : 38);
+  ctx.strokeStyle = '#5a4a3a'; ctx.strokeRect(w / 2 - 229.5, 10.5, 459, Q.aw && Q.hp > 0 ? 57 : 37);
+  ctx.fillStyle = '#e8dcc8'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(`Crawler burrow · ${alive} crawler${alive === 1 ? '' : 's'} · ${left} cache${left === 1 ? '' : 's'} unopened · ${Q.hp > 0 ? 'queen alive' : 'queen dead'}`, w / 2, 26);
+  ctx.font = '11px sans-serif'; ctx.fillStyle = '#a89880';
+  ctx.fillText(Math.hypot(D.px - G.ex - 0.5, D.py - G.ey - 0.5) < 2 ? 'Press F to climb the rope back to the surface' : `Space shoots · click rock to dig, veins glint · F opens a cache you stand by · ${(S.inv.cartridge || 0) * 10 + (P.rd || 0)} rounds`, w / 2, 41);
+  if (Q.aw && Q.hp > 0) {
+    ctx.fillStyle = '#2a1a24'; ctx.fillRect(w / 2 - 200, 50, 400, 10);
+    ctx.fillStyle = '#c070e0'; ctx.fillRect(w / 2 - 200, 50, 400 * Q.hp / Q.mhp, 10);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 9px sans-serif'; ctx.fillText('BURROW QUEEN', w / 2, 58.5);
+  }
+  ctx.textAlign = 'left';
+  const mm = 3, mx0 = w - N * mm - 14, my0 = 14;
+  ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(mx0 - 4, my0 - 4, N * mm + 8, N * mm + 8);
+  D.seen = D.seen || {};
+  const pr = 7, pxi = Math.floor(D.px), pyi = Math.floor(D.py);
+  for (let j = -pr; j <= pr; j++) for (let i = -pr; i <= pr; i++) if (i * i + j * j <= pr * pr) D.seen[(pyi + j) * N + pxi + i] = 1;
+  ctx.fillStyle = '#6a5a48';
+  for (const k in D.seen) { const kk = +k, x = kk % N, y = Math.floor(kk / N); if (x >= 0 && y >= 0 && x < N && y < N && !solid(x, y)) ctx.fillRect(mx0 + x * mm, my0 + y * mm, mm, mm); }
+  ctx.fillStyle = '#ffe080'; ctx.fillRect(mx0 + G.ex * mm - 1, my0 + G.ey * mm - 1, mm + 2, mm + 2);
+  G.caches.forEach((c, i) => { if (D.seen[c.y * N + c.x] && !D.oc.includes(i)) { ctx.fillStyle = '#c8a040'; ctx.fillRect(mx0 + c.x * mm, my0 + c.y * mm, mm, mm); } });
+  ctx.fillStyle = '#7fe0ff'; ctx.fillRect(mx0 + D.px * mm - 2, my0 + D.py * mm - 2, 4, 4);
+  if (P.dead > 0) { ctx.fillStyle = 'rgba(40,0,0,0.5)'; ctx.fillRect(0, 0, w, h); }
+}
 function resHtml() {
   const gs = Object.keys(GAS).filter(g => resist(g) > 0.005);
   if (!gs.length) return '';
@@ -1457,7 +1958,7 @@ function guardStep(h) {
   let n = 0;
   if (pd > 70) { for (let i = S.bugs.length - 1; i >= 0; i--) if (S.bugs[i].hid === h.id) S.bugs.splice(i, 1); return; }
   for (const b of S.bugs) if (b.hid === h.id) n++;
-  if (pd < 40 && !(P.dead > 0) && n < htier(h).gd && !(h.gt > S.t)) { spawnBugs(h, 1, -3); h.gt = S.t + 5; }
+  if (pd < 40 && !(P.dead > 0) && !S.dg && n < htier(h).gd && !(h.gt > S.t)) { spawnBugs(h, 1, -3); h.gt = S.t + 5; }
 }
 function spitStep() {
   const P = S.pl;
@@ -1491,7 +1992,7 @@ function bugStep() {
         cr = Math.hypot(P.x - b.hx, P.y - b.hy) < (ang ? 34 : 16) ? (ang ? 34 : 10) : 0;
       }
     }
-    const pd = P.dead > 0 ? 1e9 : Math.hypot(P.x - b.x, P.y - b.y), chase = pd < cr;
+    const pd = P.dead > 0 || S.dg ? 1e9 : Math.hypot(P.x - b.x, P.y - b.y), chase = pd < cr;
     if (b.tid === -2 && P.dead > 0) b.tid = -1;
     if (chase) { tx = P.x; ty = P.y; if (pd < 0.7 && !K.rng) { b.a = Math.atan2(P.y - b.y, P.x - b.x); b.chew = 0; plHurt(dmg * 2 * K.dm); continue; } }
     if (K.rng && (chase || t)) {
@@ -1797,8 +2298,9 @@ function tick() {
   if (l.chest.some(e => e.type === 'depot') && (S.orders || []).length < 3 && Math.floor(S.t * 30) % 30 === 0) fillOrders();
   carTick();
   trainTick();
+  if (S.dg) dgTick();
   plTick();
-  if (mining) {
+  if (mining && !S.dg) {
     const i = mining.y * W + mining.x;
     if (!mouse.l || tool || !(solid(i) || choppable(i)) || occ[i] || mouse.tx !== mining.x || mouse.ty !== mining.y || !inReach(mining.x + 0.5, mining.y + 0.5, MINE_REACH)) mining = null;
     else if ((mining.p += DT / (oreType[i] ? 0.5 : 1.2)) >= 1) {
@@ -1864,7 +2366,7 @@ function entReach(e, r) {
 }
 function plHurt(d) {
   const P = S.pl;
-  if (P.dead > 0) return;
+  if (P.dead > 0 || S.dg) return;
   if (P.car && trainOf(P.car)) return;
   const cv0 = P.car && carOf(P.car);
   if (cv0) { cv0.hp -= d; cv0.lh = S.t; if (cv0.hp <= 0) carWreck(cv0); return; }
@@ -1901,6 +2403,7 @@ function plShoot() {
 }
 function plTick() {
   const P = S.pl;
+  if (S.dg) return;
   if (P.dead > 0) {
     P.dead -= DT;
     if (P.dead <= 0) { P.dead = 0; Object.assign(P, spawnPt()); P.hp = PL_HP; P.lh = S.t; camFree = false; toast('You wake up back at the landing site.'); }
@@ -2524,7 +3027,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, ach: S.ach || {}, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, ach: S.ach || {}, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -2542,8 +3045,9 @@ function newGame(seed, opts) {
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
   S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: [], evo: 0, lost: 0, kills: 0, hk: 0, res: {}, unl: {}, clouds: [], fires: [], shells: [], booms: [], wind: { a: Math.random() * 7, v: 0.3 }, orders: [], odone: 0, gen, cq: [] };
   initWorld(seed, gen);
-  if (rgd) { growNear(W / 2, H / 2, 100, 99); S.hv = S.rv = 1; }
-  else { spawnRuins(); spawnHives(); }
+  dgc = null; dgMine = null; dfx.length = 0;
+  if (rgd) { growNear(W / 2, H / 2, 100, 99); S.hv = S.rv = S.bv = 1; }
+  else { spawnRuins(); spawnHives(); spawnBurrows(); }
   S.cars = []; S.trains = [];
   S.pl = newPl();
   cam = { x: S.pl.x, y: S.pl.y, z: 32 }; camFree = false;
@@ -2558,7 +3062,8 @@ function load() {
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
   const gen = d.gen || { legacy: 1 };
   setSize(gen.legacy ? 160 : gen.size);
-  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0, ach: d.ach || {} };
+  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0, ach: d.ach || {}, dg: d.dg || null, dgn: d.dgn || 0, dgc: d.dgc || 0, qk: d.qk || 0, bv: d.bv };
+  dgc = null; dgMine = null; dfx.length = 0;
   initWorld(d.seed, gen);
   if (rgd && d.rg) for (let r = 0; r < rgd.length; r++) if (d.rg[r] === '1') growRegion(r % (W / RG), Math.floor(r / (W / RG)), false);
   for (const k in S.dep) { const i = +k; oreAmt[i] = S.dep[k]; if (oreAmt[i] <= 0) { oreAmt[i] = 0; oreType[i] = 0; } }
@@ -2570,6 +3075,8 @@ function load() {
   }
   if (!S.rv) spawnRuins();
   if (!S.hv) spawnHives();
+  if (!S.bv) spawnBurrows();
+  if (S.dg && !ents.get(S.dg.bid)) S.dg = null;
   S.cars = d.cars || []; S.trains = d.trains || [];
   if (rgd) growNear(d.pl ? d.pl.x : W / 2, d.pl ? d.pl.y : H / 2, 100, 99);
   S.pl = d.pl ? Object.assign({ wk: 0, f: Math.PI / 2, hp: PL_HP, rd: 0 }, d.pl) : newPl();
@@ -2627,6 +3134,9 @@ const ACH = [
   ['notes', 'eco', 'Archivist', 'Learn 10 locked recipes from notebooks and wreckage.', () => Object.keys(S.unl || {}).length >= 10],
   ['kills', 'def', 'Pest Control', 'Kill 50 crawlers.', () => (S.kills || 0) + (S.pk || 0) >= 50],
   ['hive', 'def', 'Nest Breaker', 'Destroy a crawler hive.', () => (S.hk || 0) >= 1],
+  ['delve', 'def', 'Delver', 'Climb down into a crawler burrow.', () => (S.dgn || 0) >= 1],
+  ['cache', 'def', 'Lost Survey', 'Open 5 survey caches underground.', () => (S.dgc || 0) >= 5],
+  ['queen', 'def', 'Regicide', 'Kill a burrow queen.', () => (S.qk || 0) >= 1],
   ['clean', 'def', 'Clean Record', 'Run for an hour of game time without a single pipe or vessel failure.', () => S.t >= 3600 && !S.fails],
 ];
 const achGlob = () => { try { return JSON.parse(localStorage.getItem('cfAch') || '{}') || {}; } catch (e) { return {}; } };
@@ -2765,6 +3275,7 @@ function render() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.fillStyle = '#0d1014';
   ctx.fillRect(0, 0, w, h);
+  if (S.dg) return drawDungeon(w, h);
   const ox = w / 2 - cam.x * z, oy = h / 2 - cam.y * z;
   const x0 = Math.max(0, Math.floor(-ox / z)), y0 = Math.max(0, Math.floor(-oy / z));
   const x1 = Math.min(W, Math.ceil((w - ox) / z)), y1 = Math.min(H, Math.ceil((h - oy) / z));
@@ -3715,7 +4226,7 @@ function drawBuilding(e, ox, oy, z) {
   if (B.kind === 'turret') return drawTurret(e, x, y, w, h, z);
   if (B.kind === 'projector') return drawProjector(e, x, y, w, h, z);
   if (B.kind === 'gun') return drawGun(e, x, y, w, h, z);
-  if (B.kind === 'ruin') return drawRuin(e, x, y, w, h, z);
+  if (B.kind === 'ruin') return e.type === 'burrow' ? drawBurrow(e, x, y, w, h, z) : drawRuin(e, x, y, w, h, z);
   ctx.fillStyle = shade(B.c, 0.42);
   ctx.fillRect(x + p, y + p, w - 2 * p, h - 2 * p);
   const gr = ctx.createLinearGradient(x, y, x + w * 0.3, y + h);
@@ -3945,6 +4456,7 @@ function tileInfo0(x, y) {
     if (kind(e) === 'hive') s += `<br>${htier(e).n} · food ${Math.round(e.food)}/50 · ${e.sw} swarms sent`;
     if (e.type === 'projector') s += `<br>${sum(e.pay)} rounds loaded · ${e.pw} powder · ${e.shots} fired`;
     if (e.type === 'howitzer') s += `<br>${e.ammo} HE${e.wp ? ' + ' + e.wp + ' WP' : ''} shells · ${e.shots} fired`;
+    if (e.type === 'burrow') s += `<br>${e.done ? 'Collapsed' : 'Tier ' + burrowTier(e) + (e.qhp != null ? ' · queen wounded' : '') + ' · click to climb down'}`;
     if (e.type === 'ruin') s += `<br>${e.done ? 'Searched' : guards(e).length ? guards(e).length + ' hives on guard' : 'Unguarded: click to search'}`;
     if (e.type === 'turret') s += `<br>${e.ammo} cartridges + ${e.rd} rounds · ${e.kills} kills`;
     if (e.hp != null && e.hp < maxHp(e)) s += `<br><span class="bad">Integrity ${Math.round(e.hp)}/${maxHp(e)}</span>`;
@@ -4169,6 +4681,7 @@ function openPanel(e) {
   if (e.type === 'turret') h += '<button data-act="load">Load cartridges</button>';
   if (e.type === 'projector') h += '<button data-act="pload">Load from inventory</button>';
   if (e.type === 'howitzer') h += '<button data-act="gload">Load shells</button>';
+  if (e.type === 'burrow') h += `<button data-act="delve" ${e.done ? 'disabled' : ''}>Climb down the rope</button>`;
   if (e.type === 'ruin') h += `<button data-act="search" ${e.done ? 'disabled' : ''}>Search the works</button>`;
   if (kind(e) !== 'hive' && kind(e) !== 'ruin') h += '<button class="danger" data-act="remove">Pick up</button>';
   h += '</div>';
@@ -4328,6 +4841,10 @@ function renderPanelDyn() {
     h += `<div class="gauge"><span>HE shells</span>${bar(e.ammo, GUN_CAP, '#b08a40')}<b>${e.ammo} / ${GUN_CAP}</b></div>`;
     if (e.wp || S.unl.wp_shell) h += `<div class="gauge"><span>WP shells</span>${bar(e.wp || 0, GUN_CAP, '#e8e4d8')}<b>${e.wp || 0}</b></div>`;
     h += '<p class="dim">One round every 5 seconds. A TNT shell bursts with about four times the energy of the same weight of black powder and wrecks a hive in five hits, but it cannot fire at anything closer than 8 tiles. White phosphorus shells go first when loaded: they set the ground burning for 14 seconds, which no tolerance helps against, and hide the target in thick white smoke. Each shell stirs up defenders, so guard the gun with turrets.</p>';
+  } else if (e.type === 'burrow') {
+    const T = burrowTier(e), oc = (e.oc || []).length;
+    h += `<div class="status"><i style="background:${e.done ? ST_COL.none : ST_COL.input}"></i>${e.done ? 'Collapsed' : 'Tier ' + T + ' burrow · queen ' + (e.qhp != null ? 'wounded' : 'unhurt') + ' · ' + oc + ' of 5 caches opened'}</div>`;
+    h += `<p class="dim">${e.done ? 'With the queen dead the tunnels have fallen in.' : 'Climb down with plenty of cartridges. It is dark below: your lamp shows a few tiles, crawlers wake when they see or hear you, and the queen at the far end keeps laying more until she dies. Dig rock with the mouse, glinting veins give sulfur and ore. Killing the queen drops her carapace and collapses the burrow when you climb out.'}</p>`;
   } else if (k === 'ruin') {
     const g = guards(e).length;
     h += `<div class="status"><i style="background:${e.done ? ST_COL.none : g ? ST_COL.input : ST_COL.work}"></i>${e.done ? 'Searched' : g ? g + ' hive' + (g > 1 ? 's' : '') + ' within 16 tiles' : 'Unguarded'}</div>`;
@@ -4422,6 +4939,7 @@ function panelAct(act, el) {
     toast(n || m ? `Loaded ${n} HE${m ? ' and ' + m + ' WP' : ''} shells` : e.ammo + (e.wp || 0) >= GUN_CAP ? 'Howitzer is full' : 'You have no shells', !(n || m));
   }
   else if (act === 'search') { searchRuin(e); openPanel(e); return; }
+  else if (act === 'delve') { dgEnter(e); return; }
   else if (act === 'remove') { if (kind(e) === 'hive' || kind(e) === 'ruin') return; removeEnt(e); renderHotbar(); return; }
   renderPanelDyn();
   renderHotbar();
@@ -4507,7 +5025,7 @@ function startWorld() {
   closeModal(); renderHotbar(); save();
   toast('New world generated');
 }
-function mapHtml() { return `<div class="wmap"><canvas id="wmap" width="720" height="720"></canvas><div class="wside">${legendHtml()}<div class="wleg"><span><i style="background:#e04040"></i>Crawler hive</span><span><i style="background:#c080ff"></i>Abandoned works</span><span><i style="background:#ffe080"></i>Your buildings</span><span><i style="background:#4ae0ff"></i>You</span></div><p class="dim">Seed ${S.seed}${S.gen && !S.gen.legacy ? '' : ' · classic map'}${rgd ? ' · endless world. The map shows the 512×512 tiles around the camera, and land you have not been near yet stays dark' : ' · ' + W + '×' + H}${S.gen && S.gen.inf ? ' · endless ore' : ''}<br>Click anywhere to move the camera there.</p></div></div>`; }
+function mapHtml() { return `<div class="wmap"><canvas id="wmap" width="720" height="720"></canvas><div class="wside">${legendHtml()}<div class="wleg"><span><i style="background:#e04040"></i>Crawler hive</span><span><i style="background:#c080ff"></i>Abandoned works</span><span><i style="background:#e0a040"></i>Crawler burrow</span><span><i style="background:#ffe080"></i>Your buildings</span><span><i style="background:#4ae0ff"></i>You</span></div><p class="dim">Seed ${S.seed}${S.gen && !S.gen.legacy ? '' : ' · classic map'}${rgd ? ' · endless world. The map shows the 512×512 tiles around the camera, and land you have not been near yet stays dark' : ' · ' + W + '×' + H}${S.gen && S.gen.inf ? ' · endless ore' : ''}<br>Click anywhere to move the camera there.</p></div></div>`; }
 function drawMapView() {
   const c = document.getElementById('wmap');
   if (!c) return;
@@ -4519,7 +5037,7 @@ function drawMapView() {
   x2.setTransform(1, 0, 0, 1, -mw.x0 * s, -mw.y0 * s);
   for (const e of ents.values()) {
     const k = kind(e), B = BUILD[e.type];
-    x2.fillStyle = k === 'hive' ? '#e04040' : k === 'ruin' ? '#c080ff' : k === 'road' ? '#8a8a8a' : k === 'rail' ? '#b09070' : '#ffe080';
+    x2.fillStyle = k === 'hive' ? '#e04040' : e.type === 'burrow' ? (e.done ? '#6a5a4a' : '#e0a040') : k === 'ruin' ? '#c080ff' : k === 'road' ? '#8a8a8a' : k === 'rail' ? '#b09070' : '#ffe080';
     const r = k === 'hive' || k === 'ruin' ? Math.max(4, B.w * s) : Math.max(1.5, B.w * s);
     x2.fillRect(e.x * s, e.y * s, r, Math.max(k === 'hive' || k === 'ruin' ? 4 : 1.5, B.h * s));
   }
@@ -5058,13 +5576,14 @@ cv.addEventListener('mousedown', ev => {
   if (ev.button === 1) { mouse.m = true; camFree = true; mouse.px = ev.clientX; mouse.py = ev.clientY; ev.preventDefault(); return; }
   if (ev.button === 2) {
     mouse.r = true;
+    if (S.dg) return;
     const vc = carAt(mouse.fx, mouse.fy);
     if (vc) return pickCar(vc);
     const tc = trainAt(mouse.fx, mouse.fy);
     if (tc) return pickTrain(tc);
     const e = at(mouse.tx, mouse.ty);
     if (e && kind(e) === 'hive') toast('Hives cannot be picked up. Shoot or gas them.', true);
-    else if (e && kind(e) === 'ruin') toast('The old works are too far gone to move. Click to search them.', true);
+    else if (e && kind(e) === 'ruin') toast(e.type === 'burrow' ? 'A burrow cannot be moved. Click it to climb down.' : 'The old works are too far gone to move. Click to search them.', true);
     else if (e && !entReach(e, REACH)) toast('Out of reach. Walk closer.', true);
     else if (e && kind(e) === 'rail' && railBusy(e)) toast('A train is standing on this track.', true);
     else if (e) { removeEnt(e); renderHotbar(); }
@@ -5073,6 +5592,7 @@ cv.addEventListener('mousedown', ev => {
   }
   if (ev.button !== 0) return;
   mouse.l = true;
+  if (S.dg) { if (tool) { tool = null; renderHotbar(); } const p = dgPos(mouse.x, mouse.y); dgClick(p.fx, p.fy); return; }
   if (tool) {
     const r = placeAt(mouse.fx, mouse.fy);
     if (typeof r === 'string') { toast(r, true); return; }
@@ -5112,7 +5632,7 @@ cv.addEventListener('mousemove', ev => {
   if (mouse.m) { cam.x -= (ev.clientX - mouse.px) / cam.z; cam.y -= (ev.clientY - mouse.py) / cam.z; mouse.px = ev.clientX; mouse.py = ev.clientY; }
   if (mouse.r && (ptx !== mouse.tx || pty !== mouse.ty)) { const e = at(mouse.tx, mouse.ty); if (e && (e.type === 'belt' || kind(e) === 'pipe' || kind(e) === 'road' || (kind(e) === 'rail' && !railBusy(e))) && entReach(e, REACH)) { removeEnt(e); renderHotbar(); } }
   if (drag && mouse.l && tool && (drag.x !== mouse.tx || drag.y !== mouse.ty)) dragTo(mouse.tx, mouse.ty);
-  const info = tool ? '' : tileInfo(mouse.tx, mouse.ty);
+  const info = tool || S.dg ? '' : tileInfo(mouse.tx, mouse.ty);
   if (info) {
     tip.innerHTML = info; tip.hidden = false;
     const tw = tip.offsetWidth, th = tip.offsetHeight;
@@ -5157,7 +5677,7 @@ window.addEventListener('keydown', ev => {
     if (tool) toolDir = (toolDir + 1) % 4;
     else { const e = at(mouse.tx, mouse.ty); if (e && (e.type === 'belt' || e.type === 'sorter' || e.type === 'booster')) e.dir = (e.dir + 1) % 4; }
   }
-  else if ((k === 'f' || k === 'enter') && !modalKind) carToggle();
+  else if ((k === 'f' || k === 'enter') && !modalKind) S.dg ? dgUse() : carToggle();
   else if (k === 'v') { overlay = (overlay + 1) % 4; toast(['Overlay off', 'Pressure overlay', 'Temperature overlay', 'Smog overlay'][overlay]); }
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) ev.preventDefault();
 });
@@ -5231,7 +5751,7 @@ function frame(now) {
   const dt = Math.min(0.25, (now - last) / 1000);
   last = now;
   const mx = modalKind ? 0 : (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0), my = modalKind ? 0 : (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0);
-  if (plMove(dt, mx, my) || (S.pl.car && (mx || my))) camFree = false;
+  if ((S.dg ? dgMove(dt, mx, my) : plMove(dt, mx, my)) || (S.pl.car && (mx || my))) camFree = false;
   if (!camFree) { const k = Math.min(1, dt * 10); cam.x += (S.pl.x - cam.x) * k; cam.y += (S.pl.y - cam.y) * k; }
   cam.x = Math.max(0, Math.min(W, cam.x)); cam.y = Math.max(0, Math.min(H, cam.y));
   acc += dt;
@@ -5270,6 +5790,7 @@ window.game = {
   setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; camFree = true; },
   get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get trains() { return S.trains; }, placeTrain, trainAt, openTrain, openPanel, pickTrain, trainGeo, reverseTrain, railBusy, get puffs() { return puffs; }, get H() { return H; }, get wakes() { return wakes; }, floats, boatRoute, boatPilot, carStep, carHit,
   htier, spits: () => spits, hiveTier, guardStep, addHive, bugKind, maxHp, hurt, rgd: () => rgd, tileInfo0, growNear, genRegion, tch: () => tch, ovc, mapWin, depleteTile,
+  dgEnter, dgExit, dgTick, dgShoot, dgMove, dgUse, dgClick, dgGrid, dgGen, dgSolid, dgSee, dgPos, spawnBurrows, get dfx() { return dfx; },
   setOverlay(v) { overlay = v; }, elev: () => elev, drawPreview, startWorld, get wcfg() { return wcfg; },
 };
 })();
