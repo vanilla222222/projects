@@ -25,6 +25,7 @@ const VEH = {
   truck: { vmax: 16, acc: 5, turn: 1.9, hl: 1.35, hw: 0.6, hp: 1350, burn: 3.6, slots: 60, c: ['#8a6010', '#e0a828', '#5a4008'] },
   launch: { sea: true, vmax: 18, acc: 6, turn: 1.6, hl: 1.0, hw: 0.45, hp: 600, burn: 2.6, slots: 30, c: ['#d8d4c8', '#f0ece0', '#a8a49a'] },
   skiff: { sea: true, oar: true, vmax: 5.5, acc: 2.4, turn: 1.5, hl: 0.72, hw: 0.32, hp: 220, burn: 0, slots: 12, c: ['#6a4a2c', '#9a7048', '#4a3220'] },
+  trawler: { sea: true, net: true, vmax: 12, acc: 3.5, turn: 1.2, hl: 1.25, hw: 0.52, hp: 1100, burn: 3.2, slots: 60, c: ['#1e3a5a', '#2c5a8a', '#14283e'] },
   barge: { sea: true, vmax: 10, acc: 2.6, turn: 0.9, hl: 1.8, hw: 0.75, hp: 1800, burn: 4, slots: 100, c: ['#3a4a5a', '#5a6a7a', '#2a3440'] },
 };
 const CAN_MJ = 720, FUEL_CAP = 5;
@@ -2616,7 +2617,7 @@ function carWreck(v) {
 }
 function carStep(v, thr, steer) {
   const V = VEH[v.type], X = Math.floor(v.x), Y = Math.floor(v.y), o = at(X, Y);
-  const cap = V.sea ? V.vmax * (1 - 0.4 * (v.foul || 0)) : V.vmax * (o && kind(o) === 'road' ? 1 : VSPD[terrain[Y * W + X]] ?? 0.6);
+  const cap = V.sea ? Math.min(v.net ? 6 : 99, V.vmax * (1 - 0.4 * (v.foul || 0))) : V.vmax * (o && kind(o) === 'road' ? 1 : VSPD[terrain[Y * W + X]] ?? 0.6);
   if (thr && !V.oar && !(v.e > 0)) { if (v.auto && S.pl.car !== v.id) { if (v.fc > 0) { v.fc--; v.e = (v.e || 0) + CAN_MJ; } } else refuel(v); }
   const fuel = V.oar || v.e > 0, same = thr && Math.sign(thr) === Math.sign(v.v || thr);
   if (thr && !same) v.v += thr * V.acc * 1.8 * DT;
@@ -2659,6 +2660,50 @@ function carStep(v, thr, steer) {
   else if (thr && fuel && Math.random() < 0.35) puffs.push({ x: v.x - Math.cos(v.a) * V.hl, y: v.y - Math.sin(v.a) * V.hl, t: S.t });
   if (v.hp <= 0) carWreck(v);
 }
+const FCH = 16;
+function fground(x, y) {
+  const cx = Math.floor(x / FCH), cy = Math.floor(y / FCH);
+  return { k: cy * 8192 + cx, rich: 0.5 + hash(cx, cy, (S.seed | 0) + 911) };
+}
+const fstock = key => { const s = S.fs && S.fs[key]; return s == null ? 1 : s; };
+function fishTick(v) {
+  const V = VEH[v.type], sp = Math.abs(v.v);
+  if (sp < 0.8) { v.ct = 'gear dragging, too slow'; return; }
+  const d = wdep(Math.floor(v.x), Math.floor(v.y), seaLv()), kel = d > 0.004 && d < 0.05, deep = d >= 0.07;
+  if (!kel && !deep) { v.ck = ''; v.ct = 'between grounds'; return; }
+  const g = fground(v.x, v.y), key = (kel ? 'k' : 'f') + g.k, it = kel ? 'kelp' : 'fish';
+  let st = fstock(key);
+  v.ck = it;
+  v.cf = (v.cf || 0) + (kel ? 0.9 : 0.6) * g.rich * st * Math.min(1, sp / 4) * DT;
+  v.ct = (kel ? 'cutting kelp' : 'trawling') + ', stock ' + Math.round(st * 100) + '%';
+  S.fs = S.fs || {};
+  while (v.cf >= 1) {
+    v.cf -= 1;
+    const cur = v.tr[it] || 0, room = (V.slots - carSlots(v)) * stk(it) + (cur % stk(it) ? stk(it) - cur % stk(it) : 0);
+    if (room <= 0) { v.cf = 0; v.ct = 'hold full'; return; }
+    v.tr[it] = cur + 1;
+    st = Math.max(0, st - (kel ? 0.004 : 0.006)); S.fs[key] = st;
+    S.made[it] = (S.made[it] || 0) + 1;
+    if (!kel) { S.fk = (S.fk || 0) + 1; if (st < 0.25) S.fcr = 1; }
+  }
+}
+function fishRegrow(dt) {
+  if (!S.fs) return;
+  for (const key in S.fs) {
+    const s = S.fs[key], r = key[0] === 'k' ? 0.006 : 0.003, n = s + r * Math.max(s, 0.03) * (1 - s) * dt;
+    if (n >= 0.999) delete S.fs[key]; else S.fs[key] = n;
+  }
+}
+function netToggle(v) {
+  if (!VEH[v.type].net) return false;
+  v.net = v.net ? 0 : 1;
+  toast(v.net ? 'Gear shot away. Keep under 12 knots while it is down.' : 'Gear hauled aboard.');
+  return true;
+}
+function fishInfo(v) {
+  const g = fground(v.x, v.y), f = fstock('f' + g.k), k = fstock('k' + g.k), lab = s => s < 0.1 ? 'collapsed' : s < 0.3 ? 'overfished' : s < 0.7 ? 'fished' : 'healthy';
+  return `<div class="sec">Fishing ground here · ${g.rich > 1.1 ? 'rich' : g.rich > 0.8 ? 'fair' : 'poor'}</div><div class="gauge"><span>Fish</span>${bar(f, 1, f < 0.3 ? '#e0804a' : '#6ab0d0')}<b>${Math.round(f * 100)}% ${lab(f)}</b></div><div class="gauge"><span>Kelp</span>${bar(k, 1, k < 0.3 ? '#e0804a' : '#7aa040')}<b>${Math.round(k * 100)}%</b></div><p class="dim">Gear ${v.net ? 'down, ' + (v.ct || 'trawling') : 'stowed'}. Fish live in deep water and kelp in the shallows. A stock breeds back fastest at half strength; fished below a tenth it takes hours to recover.</p>`;
+}
 function carTick() {
   const P = S.pl, dv = P.car && carOf(P.car);
   if (P.car && !dv && !trainOf(P.car)) P.car = null;
@@ -2669,12 +2714,15 @@ function carTick() {
       steer = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0);
     }
     const V = VEH[v.type];
+    if (V.net && v.auto && v !== dv) { const e = boatMark((v.sch || [])[v.si || 0]); v.net = e && e.type === 'buoy' && v.state !== 'wait' ? 1 : 0; }
     if (V.sea && !V.oar && v.auto && v !== dv) [thr, steer] = boatPilot(v);
     else if (v !== dv && v.v) v.v -= Math.sign(v.v) * Math.min(Math.abs(v.v), (V.sea ? 2 : 9) * DT);
     if (V.sea && !V.oar) { if (v.af > 0) v.af -= DT; else v.foul = Math.min(1, (v.foul || 0) + DT / 1800); }
     carStep(v, thr, steer);
+    if (V.net && v.net) fishTick(v);
     if (S.t - (v.lh ?? -99) > 10 && v.hp < VEH[v.type].hp) v.hp = Math.min(VEH[v.type].hp, v.hp + 2 * DT);
   }
+  S.frt = (S.frt || 0) + DT; if (S.frt >= 1) { fishRegrow(S.frt); S.frt = 0; }
   const d2 = P.car && carOf(P.car);
   if (d2) { P.x = d2.x; P.y = d2.y; P.f = d2.a; }
   if (puffs.length > 80) puffs.splice(0, puffs.length - 80);
@@ -3191,7 +3239,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, ra: S.pl.ra || 0, rs: S.pl.rs || 0, aw: S.pl.aw || 0, ak: S.pl.ak, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, ach: S.ach || {}, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, ra: S.pl.ra || 0, rs: S.pl.rs || 0, aw: S.pl.aw || 0, ak: S.pl.ak, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, fcr: S.fcr, ach: S.ach || {}, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -3207,7 +3255,7 @@ function newGame(seed, opts) {
   const gen = opts && opts.legacy ? { legacy: 1 } : Object.assign({}, GEN_DEF, opts || {});
   setSize(gen.legacy ? 160 : gen.size);
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
-  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: [], evo: 0, lost: 0, kills: 0, hk: 0, res: {}, unl: {}, clouds: [], fires: [], shells: [], booms: [], wind: { a: Math.random() * 7, v: 0.3 }, orders: [], odone: 0, gen, cq: [] };
+  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: [], evo: 0, lost: 0, kills: 0, hk: 0, res: {}, unl: {}, clouds: [], fires: [], shells: [], booms: [], wind: { a: Math.random() * 7, v: 0.3 }, orders: [], odone: 0, gen, cq: [], fs: {}, fk: 0 };
   initWorld(seed, gen);
   dgc = null; dgMine = null; dfx.length = 0; nades.length = 0;
   if (rgd) { growNear(W / 2, H / 2, 100, 99); S.hv = S.rv = S.bv = 1; }
@@ -3226,7 +3274,7 @@ function load() {
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
   const gen = d.gen || { legacy: 1 };
   setSize(gen.legacy ? 160 : gen.size);
-  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0, ach: d.ach || {}, dg: d.dg || null, dgn: d.dgn || 0, dgc: d.dgc || 0, qk: d.qk || 0, bv: d.bv };
+  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0, fs: d.fs || {}, fk: d.fk || 0, fcr: d.fcr, ach: d.ach || {}, dg: d.dg || null, dgn: d.dgn || 0, dgc: d.dgc || 0, qk: d.qk || 0, bv: d.bv };
   dgc = null; dgMine = null; dfx.length = 0; nades.length = 0;
   initWorld(d.seed, gen);
   if (rgd && d.rg) for (let r = 0; r < rgd.length; r++) if (d.rg[r] === '1') growRegion(r % (W / RG), Math.floor(r / (W / RG)), false);
@@ -3278,6 +3326,10 @@ const ACH = [
   ['film', 'chem', 'Silver Halide', 'Coat a box of X-ray film.', () => mk('xray_film') >= 1],
   ['match', 'chem', 'Strike on the Box', 'Make safety matches with a red phosphorus striker.', () => mk('matches') >= 1],
   ['vitc', 'life', 'Reichstein', 'Pack vitamin C made through sorbose.', () => mk('vitc_pack') >= 1],
+  ['catch', 'eco', 'Full Nets', 'Land 200 fish with a trawler.', () => (S.fk || 0) >= 200],
+  ['msy', 'eco', 'Sustainable Yield', 'Land 1000 fish without ever fishing a ground below a quarter of its stock.', () => (S.fk || 0) >= 1000 && !S.fcr],
+  ['softgel', 'life', 'Cod Liver Oil, Refined', 'Fill fish oil softgels.', () => mk('softgel') >= 1],
+  ['kelp', 'chem', 'Courtois', 'Extract iodine from burnt seaweed.', () => mk('kelp_ash') >= 1 && mk('iodine') >= 1],
   ['soap', 'chem', 'Saponification', 'Boil fat with caustic soda into soap.', () => mk('soap') >= 1],
   ['aspirin', 'life', 'Willow Bark', 'Pack aspirin made from salicylic acid.', () => mk('aspirin_pack') >= 1],
   ['penicillin', 'life', "Fleming's Mould", 'Fill a vial of penicillin.', () => mk('penicillin_vial') >= 1],
@@ -3493,6 +3545,7 @@ function render() {
   for (const e of vis) if (kind(e) !== 'pipe' && e.type !== 'belt' && kind(e) !== 'road' && kind(e) !== 'rail') drawBuilding(e, ox, oy, z);
   drawSmoke(vis, ox, oy, z);
   drawWakes(ox, oy, z);
+  if (z >= 10) drawShoals(ox, oy, z, x0, y0, x1, y1);
   { const sv = selCar && carOf(selCar); if (sv && VEH[sv.type].sea && sv.auto && sv.route) drawBoatRoute(sv, ox, oy, z); }
   for (const v of S.cars) if (v.x > x0 - 3 && v.x < x1 + 3 && v.y > y0 - 3 && v.y < y1 + 3) drawCar(v, ox + v.x * z, oy + v.y * z, z);
   for (const t of S.trains) drawTrain(t, ox, oy, z);
@@ -3581,7 +3634,7 @@ function render() {
     if (V.oar) gauge(by + 40, 'Hold', carSlots(dv) / V.slots, '#b08a5a', carSlots(dv) + ' / ' + V.slots);
     else gauge(by + 40, 'Fuel', (dv.e || 0) / CAN_MJ, '#d8b848', dv.fc ? '+' + dv.fc + ' can' + (dv.fc > 1 ? 's' : '') : (S.inv.jerrycan || 0) + ' in pack');
     gauge(by + 56, 'Body', dv.hp / V.hp, dv.hp / V.hp > 0.5 ? '#7fe08a' : dv.hp / V.hp > 0.25 ? '#e0b84a' : '#e04a4a', Math.round(dv.hp / V.hp * 100) + '%');
-    ctx.fillStyle = '#6a7078'; ctx.font = '10px system-ui, sans-serif'; ctx.fillText(V.oar ? 'W/S row ahead and astern · A/D turn · F get off at a shore' : V.sea ? (dv.foul > 0.3 ? 'Hull fouled: ' + Math.round(dv.foul * 40) + '% slower · repaint with antifouling' : 'W/S throttle and astern · A/D rudder · F get off at a shore') : 'W/S throttle and brake · A/D steer · F get out', bx + 12, by + 78);
+    ctx.fillStyle = '#6a7078'; ctx.font = '10px system-ui, sans-serif'; ctx.fillText(V.net ? (dv.net ? 'Gear down · ' + (dv.ct || 'trawling') + ' · N haul' : 'W/S throttle · A/D rudder · N shoot the gear') : V.oar ? 'W/S row ahead and astern · A/D turn · F get off at a shore' : V.sea ? (dv.foul > 0.3 ? 'Hull fouled: ' + Math.round(dv.foul * 40) + '% slower · repaint with antifouling' : 'W/S throttle and astern · A/D rudder · F get off at a shore') : 'W/S throttle and brake · A/D steer · F get out', bx + 12, by + 78);
   }
   if (!dv && !dtr) drawWpnHud(w, h);
   if (tool && mouse.in) {
@@ -3895,6 +3948,17 @@ function drawBoat(v, X, Y, z, al) {
     return;
   }
   ctx.fillStyle = 'rgba(10,30,50,0.35)'; ctx.beginPath(); ctx.ellipse(z * 0.06, z * 0.1, L * 1.02, R * 1.1, 0, 0, 7); ctx.fill();
+  if (V.net && v.net) {
+    const nx = -L - z * 2.4, sw = Math.sin(performance.now() / 700 + v.id) * z * 0.15, kel = v.ck === 'kelp';
+    ctx.strokeStyle = 'rgba(30,30,30,0.7)'; ctx.lineWidth = Math.max(1, z * 0.025);
+    for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(-L * 0.88, s * R * 0.8); ctx.lineTo(nx + z * 0.9, s * R * 1.7 + sw); ctx.stroke(); }
+    ctx.fillStyle = kel ? 'rgba(110,140,60,0.35)' : 'rgba(200,220,215,0.22)'; ctx.strokeStyle = kel ? 'rgba(140,170,80,0.7)' : 'rgba(225,238,235,0.6)';
+    ctx.beginPath(); ctx.moveTo(nx + z * 0.85, -R * 1.6 + sw); ctx.quadraticCurveTo(nx, -R * 0.7 + sw, nx - z * 0.7, sw); ctx.quadraticCurveTo(nx, R * 0.7 + sw, nx + z * 0.85, R * 1.6 + sw); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.lineWidth = Math.max(0.5, z * 0.01);
+    for (let i = 1; i < 4; i++) { const x = nx + z * 0.85 - i * z * 0.38, w = R * 1.6 * (1 - i * 0.24); ctx.beginPath(); ctx.moveTo(x, -w + sw); ctx.lineTo(x, w + sw); ctx.stroke(); }
+    ctx.fillStyle = '#c84a2a'; for (const s of [-1, 1]) ctx.fillRect(nx + z * 0.8, s * R * 1.7 + sw - z * 0.05, z * 0.22, z * 0.1);
+    ctx.fillStyle = '#f0c020'; for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.arc(nx + z * 0.85 - Math.abs(i) * z * 0.05, i * R * 0.7 + sw, Math.max(1, z * 0.04), 0, 7); ctx.fill(); }
+  }
   const hull = () => {
     ctx.beginPath();
     if (bg) { ctx.moveTo(-L, -R); ctx.lineTo(L * 0.78, -R); ctx.quadraticCurveTo(L, -R, L, -R * 0.4); ctx.lineTo(L, R * 0.4); ctx.quadraticCurveTo(L, R, L * 0.78, R); ctx.lineTo(-L, R); ctx.closePath(); }
@@ -3918,6 +3982,22 @@ function drawBoat(v, X, Y, z, al) {
     ctx.fillStyle = '#e8e4d8'; ctx.beginPath(); ctx.roundRect(-L * 0.92, -R * 0.62, L * 0.36, R * 1.24, z * 0.05); ctx.fill();
     ctx.fillStyle = '#1c2630'; ctx.fillRect(-L * 0.62, -R * 0.5, L * 0.05, R);
     ctx.fillStyle = '#2a2a2c'; ctx.beginPath(); ctx.arc(-L * 0.8, 0, R * 0.16, 0, 7); ctx.fill();
+  } else if (V.net) {
+    ctx.fillStyle = '#c84030'; ctx.beginPath(); ctx.moveTo(L * 0.55, -R * 0.7); ctx.quadraticCurveTo(L * 0.92, -R * 0.4, L * 0.96, 0); ctx.quadraticCurveTo(L * 0.92, R * 0.4, L * 0.55, R * 0.7); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#6a6e6a'; ctx.fillRect(-L * 0.92, -R * 0.66, L * 0.95, R * 1.32);
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = Math.max(1, z * 0.012);
+    for (let i = 1; i < 5; i++) { const x = -L * 0.92 + L * 0.95 * i / 5; ctx.beginPath(); ctx.moveTo(x, -R * 0.66); ctx.lineTo(x, R * 0.66); ctx.stroke(); }
+    ctx.fillStyle = carSlots(v) ? (v.tr.kelp > (v.tr.fish || 0) ? '#5a6a2a' : '#a8c0cc') : '#3a3c3a'; ctx.fillRect(-L * 0.42, -R * 0.32, L * 0.32, R * 0.64);
+    ctx.fillStyle = v.net ? '#2a3a32' : '#4a9a78'; ctx.beginPath(); ctx.ellipse(-L * 0.68, 0, L * 0.1, R * 0.55, 0, 0, 7); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.stroke();
+    ctx.fillStyle = '#f0ece0'; ctx.beginPath(); ctx.roundRect(L * 0.05, -R * 0.6, L * 0.44, R * 1.2, z * 0.05); ctx.fill();
+    ctx.fillStyle = 'rgba(150,200,230,0.75)'; ctx.fillRect(L * 0.4, -R * 0.5, L * 0.06, R);
+    ctx.fillStyle = '#c84030'; ctx.fillRect(L * 0.1, -R * 0.6, L * 0.08, R * 1.2);
+    ctx.fillStyle = '#d8d4c8'; ctx.beginPath(); ctx.arc(L * 0.24, 0, R * 0.14, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#e0a020'; ctx.lineWidth = Math.max(1.5, z * 0.07); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-L * 0.9, -R * 0.95); ctx.lineTo(-L * 0.9, R * 0.95); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-L * 0.9, -R * 0.95); ctx.lineTo(-L * 0.7, -R * 0.75); ctx.moveTo(-L * 0.9, R * 0.95); ctx.lineTo(-L * 0.7, R * 0.75); ctx.stroke();
+    if (!v.net) { ctx.fillStyle = '#c84a2a'; for (const s of [-1, 1]) ctx.fillRect(-L * 0.86, s * R * 0.98 - z * 0.04, L * 0.28, z * 0.08); }
   } else {
     ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.beginPath(); ctx.moveTo(L * 0.3, -R * 0.55); ctx.quadraticCurveTo(L * 0.8, -R * 0.4, L * 0.88, 0); ctx.quadraticCurveTo(L * 0.8, R * 0.4, L * 0.3, R * 0.55); ctx.closePath(); ctx.fill();
     ctx.fillStyle = '#8a6a48'; ctx.fillRect(-L * 0.78, -R * 0.62, L * 0.72, R * 1.24);
@@ -3936,6 +4016,30 @@ function drawBoat(v, X, Y, z, al) {
     ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(X - bw / 2, by, bw, Math.max(3, z * 0.07));
     ctx.fillStyle = v.hp / V.hp > 0.5 ? '#7fe08a' : v.hp / V.hp > 0.25 ? '#e0b84a' : '#e04a4a';
     ctx.fillRect(X - bw / 2, by, bw * v.hp / V.hp, Math.max(3, z * 0.07));
+  }
+}
+function drawShoals(ox, oy, z, x0, y0, x1, y1) {
+  const sl = seaLv(), tm = performance.now() / 1000;
+  for (let cy = Math.floor(y0 / FCH); cy <= Math.floor(y1 / FCH); cy++) for (let cx = Math.floor(x0 / FCH); cx <= Math.floor(x1 / FCH); cx++) {
+    const k = cy * 8192 + cx, rich = 0.5 + hash(cx, cy, (S.seed | 0) + 911), fs = fstock('f' + k), ks = fstock('k' + k);
+    const nf = Math.round(3 * rich * fs), nk = Math.round(18 * ks);
+    for (let i = 0; i < nk; i++) {
+      const x = Math.floor(cx * FCH + hash(cx * 31 + i, cy, 77) * FCH), y = Math.floor(cy * FCH + hash(cx, cy * 31 + i, 78) * FCH), d = wdep(x, y, sl);
+      if (!(d > 0.004 && d < 0.05)) continue;
+      const X = ox + (x + 0.5) * z, Y = oy + (y + 0.5) * z;
+      ctx.fillStyle = `rgba(30,60,25,${0.12 + 0.18 * ks})`; ctx.beginPath(); ctx.ellipse(X, Y, z * 0.55, z * 0.45, hash(x, y, 3) * 3, 0, 7); ctx.fill();
+      ctx.lineCap = 'round';
+      for (let j = 0; j < 5; j++) { const a = j * 1.26 + hash(x, y, j) * 0.9, sw = Math.sin(tm * 0.8 + x + j) * 0.18, L = z * (0.45 + 0.25 * hash(y, x, j)), mx = X + Math.cos(a + sw) * L * 0.55, my = Y + Math.sin(a + sw) * L * 0.55, ex = X + Math.cos(a) * L, ey = Y + Math.sin(a) * L; ctx.strokeStyle = `rgba(95,120,40,${0.45 + 0.4 * ks})`; ctx.lineWidth = Math.max(1, z * 0.07); ctx.beginPath(); ctx.moveTo(X, Y); ctx.quadraticCurveTo(mx, my, ex, ey); ctx.stroke(); ctx.fillStyle = `rgba(150,140,50,${0.4 + 0.4 * ks})`; ctx.beginPath(); ctx.ellipse(ex, ey, z * 0.11, z * 0.05, a, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(mx, my, Math.max(1, z * 0.04), 0, 7); ctx.fill(); }
+    }
+    for (let i = 0; i < nf; i++) {
+      const bx = cx * FCH + (hash(cx * 17 + i, cy, 91) * 0.7 + 0.15) * FCH, by = cy * FCH + (hash(cx, cy * 17 + i, 92) * 0.7 + 0.15) * FCH;
+      const x = bx + Math.cos(tm * 0.15 + i * 2 + cx) * 2.5, y = by + Math.sin(tm * 0.11 + i * 3 + cy) * 2;
+      if (wdep(Math.floor(x), Math.floor(y), sl) < 0.07) continue;
+      const X = ox + x * z, Y = oy + y * z, hd = Math.atan2(Math.cos(tm * 0.11 + i * 3 + cy) * 0.22, -Math.sin(tm * 0.15 + i * 2 + cx) * 0.375);
+      ctx.fillStyle = 'rgba(20,40,60,0.28)';
+      for (let j = 0; j < 9; j++) { const fx = X + (hash(i, j, 5) - 0.5) * z * 1.6, fy = Y + (hash(j, i, 6) - 0.5) * z * 1.1; ctx.beginPath(); ctx.ellipse(fx, fy, z * 0.12, z * 0.04, hd, 0, 7); ctx.fill(); }
+      ctx.fillStyle = 'rgba(230,245,255,0.22)'; ctx.beginPath(); ctx.ellipse(X, Y, z * 0.5, z * 0.32, hd, 0, 7); ctx.fill();
+    }
   }
 }
 function drawWakes(ox, oy, z) {
@@ -4769,7 +4873,7 @@ function openCar(v) {
   if (VEH[v.type].sea) {
     const marks = [...ents.values()].filter(e => e.type === 'dock' || e.type === 'buoy');
     const lab = e => e.type === 'buoy' ? 'pass' : e.mode === 'unload' ? 'unload' : 'load';
-    panel.innerHTML = `<div class="ph"><span class="sw big" style="background:${B.c}">${B.ab}</span><div class="pt"><b>${B.n}</b><small>${B.d}</small></div><button class="x" data-act="close" title="Close">×</button></div><div id="pdyn"></div><div class="sec">Route</div><div class="sched">${(v.sch || []).map((id, i) => { const e = ents.get(id); return e ? `<div class="srow${v.auto && i === v.si ? ' on' : ''}"><span>${i + 1}. ${e.nm}</span><em>${lab(e)}</em><button data-act="bdel" data-i="${i}" title="Remove">×</button></div>` : ''; }).join('') || '<span class="dim">No docks or buoys yet.</span>'}</div><label class="row">Add <select data-act="badd"><option value="">Choose a dock or buoy</option>${marks.map(e => `<option value="${e.id}">${e.nm} (${lab(e)})</option>`).join('')}</select></label><div class="pbtns"><button data-act="bauto">${v.auto ? 'Switch to manual' : 'Run automatically'}</button><button data-act="cfuel">Add jerrycans</button><button data-act="bpaint">Repaint hull</button><button data-act="cdrive">${S.pl.car === v.id ? 'Get off (F)' : 'Get aboard (F)'}</button><button data-act="ctake">Take all cargo</button><button data-act="cstore">Load raw materials</button><button class="danger" data-act="cpick">Pick up</button></div>`;
+    panel.innerHTML = `<div class="ph"><span class="sw big" style="background:${B.c}">${B.ab}</span><div class="pt"><b>${B.n}</b><small>${B.d}</small></div><button class="x" data-act="close" title="Close">×</button></div><div id="pdyn"></div><div class="sec">Route</div><div class="sched">${(v.sch || []).map((id, i) => { const e = ents.get(id); return e ? `<div class="srow${v.auto && i === v.si ? ' on' : ''}"><span>${i + 1}. ${e.nm}</span><em>${lab(e)}</em><button data-act="bdel" data-i="${i}" title="Remove">×</button></div>` : ''; }).join('') || '<span class="dim">No docks or buoys yet.</span>'}</div><label class="row">Add <select data-act="badd"><option value="">Choose a dock or buoy</option>${marks.map(e => `<option value="${e.id}">${e.nm} (${lab(e)})</option>`).join('')}</select></label><div class="pbtns">${VEH[v.type].net ? `<button data-act="bnet">${v.net ? 'Haul gear (N)' : 'Shoot gear (N)'}</button>` : ''}<button data-act="bauto">${v.auto ? 'Switch to manual' : 'Run automatically'}</button><button data-act="cfuel">Add jerrycans</button><button data-act="bpaint">Repaint hull</button><button data-act="cdrive">${S.pl.car === v.id ? 'Get off (F)' : 'Get aboard (F)'}</button><button data-act="ctake">Take all cargo</button><button data-act="cstore">Load raw materials</button><button class="danger" data-act="cpick">Pick up</button></div>`;
     panel.hidden = false;
     return renderPanelDyn();
   }
@@ -4781,6 +4885,7 @@ function carDyn(v) {
   const V = VEH[v.type], used = carSlots(v);
   let h = V.oar ? `<div class="status"><i style="background:${S.pl.car === v.id ? '#7fe08a' : '#9aa0a8'}"></i>${S.pl.car === v.id ? 'You are at the oars' : 'Drifting'} · ${(Math.abs(v.v) * 1.944).toFixed(1)} knots</div><p class="dim">Rowed by hand, so it needs no fuel and cannot run a schedule. Wood does not foul like a steel hull does.</p>` : V.sea ? `<div class="status"><i style="background:${v.auto ? (/Heading|At /.test(v.st) ? '#7fe08a' : '#e0b84a') : '#9aa0a8'}"></i>${v.auto ? v.st || 'Starting' : S.pl.car === v.id ? 'Manual, you are at the helm' : 'Manual, drifting'} · ${(Math.abs(v.v) * 1.944).toFixed(1)} knots</div><div class="gauge"><span>Fouling</span>${bar(v.foul || 0, 1, (v.foul || 0) > 0.5 ? '#e0b84a' : '#6ab07a')}<b>${Math.round((v.foul || 0) * 40)}% slower</b></div><p class="dim">${v.af > 0 ? 'Antifouling active for ' + Math.ceil(v.af / 60) + ' more minutes.' : 'The antifouling has worn off. Weed and barnacles are growing on the hull.'} Repainting uses one tin of antifouling paint.</p>` : '';
   h += `<div class="gauge"><span>Body</span>${bar(v.hp, V.hp, v.hp / V.hp > 0.5 ? '#7fe08a' : '#e0b84a')}<b>${Math.round(v.hp)} / ${V.hp}</b></div>`;
+  if (V.net) h += fishInfo(v);
   if (!V.oar) h += `<div class="gauge"><span>Tank</span>${bar(v.e || 0, CAN_MJ, '#d8b848')}<b>${Math.round(v.e || 0)} MJ</b></div>`;
   if (!V.oar) h += `<div class="sec">Fuel slot</div><div class="cgrid"><button class="cslot" data-act="cfuel" title="Add jerrycans from your pack">${ico('jerrycan')}<span class="cnt">${v.fc || 0}/${FUEL_CAP}</span></button></div><p class="dim">${Math.round(Math.abs(v.v) * 3.6)} km/h. A jerrycan lasts about ${Math.round(CAN_MJ / V.burn / 60)} minutes at full throttle; spare cans in your pack are poured in when the tank runs dry.</p>`;
   h += `<div class="sec">Cargo · ${used} / ${V.slots} slots</div><div class="cgrid">`;
@@ -4806,6 +4911,7 @@ function carAct(act, el) {
   const k = el.dataset.k;
   if (act === 'badd') { const id = +el.value; if (id) { v.sch = v.sch || []; v.sch.push(id); if (v.sch.length === 1) v.si = 0; } return openCar(v); }
   if (act === 'bdel') { const i = +el.dataset.i; v.sch.splice(i, 1); if (v.si >= i && v.si > 0) v.si--; v.route = null; return openCar(v); }
+  if (act === 'bnet') { netToggle(v); return openCar(v); }
   if (act === 'bauto') {
     v.auto = !v.auto; v.state = 'go'; v.route = null; v.st = '';
     if (v.auto && !(v.sch || []).length) toast('Add docks or buoys to the route first.', true);
@@ -5371,6 +5477,8 @@ const CHAINS = [
   { n: 'Film and fixer', l: [['pelt', 'Pressure reactor + water + steam', 'gelatin'], ['agno3', 'Pressure reactor + nabr + gelatin + water', 'agbr_emulsion'], ['pet', 'Polariser line', 'film_base'], ['film_base', 'Emulsion coating line + agbr_emulsion', 'xray_film'], ['soda_ash', 'Pressure reactor + sulfur + so2 + water', 'hypo']], d: 'Gelatin is the medium that made photography practical. It lets silver bromide crystals grow and ripen, then sets so the emulsion can be washed and coated. Exposed crystals carry a few silver atoms that developer uses as a seed to turn the whole grain black. Hypo dissolves the rest.' },
   { n: 'Vitamin C', l: [['sorbitol', 'Fermenter + o2 + water', 'sorbose'], ['sorbose', 'Pressure reactor + acetone + o2 + hcl', 'ascorbic', '+', 'acetone'], ['ascorbic', 'Tablet line + starch + polypropylene', 'vitc_pack']], d: 'The Reichstein process, 1933: glucose to sorbitol with hydrogen, sorbitol to sorbose with bacteria, then acetone protection, oxidation and acid lactonisation. Most of the acetone comes back out, so pipe it to the reactor again.' },
   { n: 'Safety matches', l: [['potash', 'Electrolysis cell + water', 'kclo3', '+', 'h2'], ['phosphorus', 'Pressure reactor', 'red_p'], ['wood', 'Workshop + kclo3 + sulfur + gelatin + red_p + carton', 'matches']], d: 'A match head is a tiny fuel and oxidiser mix: chlorate gives oxygen, sulfur burns, gelatin glues it, and powdered glass adds friction. Red phosphorus on the box catches from the heat of rubbing and lights the head.' },
+  { n: 'Sea harvest', l: [['trawl_net', 'Stern trawler in deep water', 'fish'], ['fish', 'Fishmeal plant + steam', 'fishmeal', '+', 'fish_oil'], ['fishmeal', 'Granulator + flour + fish_oil', 'aquafeed'], ['fish_oil', 'Pressure reactor + ethanol + naoh', 'fish_ee', '+', 'glycerol'], ['fish_ee', 'Short-path still', 'omega3', '+', 'diesel'], ['omega3', 'Tablet line + gelatin + glycerol', 'softgel'], ['fish', 'Canning line + food_can + salt + veg_oil', 'canned_fish']], d: 'Shoot the trawl over deep water and land the catch at a dock. Most of the world\'s wild catch of small oily fish is cooked, pressed and dried into meal and oil. The oil can be hardened to margarine with hydrogen, or turned into ethyl esters and distilled for omega-3 capsules. Every ground breeds back fastest at half strength, so fish a circuit of grounds instead of one.' },
+  { n: 'Seaweed', l: [['trawler', 'Cutter bar in the shallows', 'kelp'], ['kelp', 'Leach tank + soda_ash + cacl2 + hcl', 'alginate'], ['alginate', 'Compounding room + gypsum + silica', 'impression'], ['alginate', 'Viscose spinning bath + cacl2', 'dressing'], ['kelp', 'Lime kiln', 'kelp_ash'], ['kelp_ash', 'Iodine plant + water + cl2', 'iodine', '+', 'potash']], d: 'Kelp beds grow in shallow water near the coast and regrow quickly. Alginate from the weed gels the moment it meets calcium, which makes dental impressions and wound dressings. Burnt to ash it gave Europe its first iodine.' },
   { n: 'By-products', l: [['ground_copper', 'Flotation', 'copper_conc', '+', 'pyrite_conc'], ['pyrite_conc', 'Roaster', 'pyrite_cinder', 'Blast furnace', 'pig_iron'], ['anode_slime', 'Roaster', 'dore', 'Leach tank + acid', 'silver']], d: 'Nothing is waste. Pyrite gives SO₂ for acid and its cinder is iron ore. Anode slime from copper refining yields selenium, silver and gold.' },
 ];
 
@@ -5546,6 +5654,8 @@ const HELP = `<div class="help">
 <p>Put a <b>V₂O₅ catalyst</b> in a pressure reactor with benzene and oxygen to make <b>maleic anhydride</b>; the catalyst wears out like it does for phthalic anhydride. Maleic and phthalic anhydride, propylene glycol and styrene make <b>polyester resin</b>. The <b>GRP moulding shop</b> lays the resin into glass fibre to make <b>boat hulls</b>, <b>water tanks</b> and <b>rooflights</b>. Hulls and tanks also need a little cobalt sulfate as accelerator.</p>
 <h3>Film, vitamins and matches</h3>
 <p>Cook limed pelt in hot water and steam to extract <b>gelatin</b>. Silver nitrate and sodium bromide run into gelatin make <b>silver bromide emulsion</b>. The polariser line can stretch PET into <b>polyester film base</b>, and the <b>emulsion coating line</b> coats both together into <b>X-ray film</b>. Sulfur, soda ash and SO₂ make <b>hypo</b> fixer. For vitamin C, ferment sorbitol into <b>L-sorbose</b>, then convert it with acetone, oxygen and HCl to <b>ascorbic acid</b>; most of the acetone comes back. An electrolysis cell turns potash brine into <b>potassium chlorate</b> and hydrogen, and heating white phosphorus without air gives safe <b>red phosphorus</b> for the striker of <b>safety matches</b>.</p>
+<h3>Fishing and seaweed</h3>
+<p>Weave a <b>trawl net</b> from monofilament, lead and polyethylene, and build a <b>stern trawler</b>. Drive it to sea and press <b>N</b> to shoot the gear. Over deep water (dark blue) it catches <b>fish</b>; dragged through the shallows it cuts <b>kelp</b>. The net slows you to about 12 knots. Shoals show as dark flickers under the water and kelp beds as olive fronds near the coast. Each 16×16 patch of sea has its own stock, shown in the boat panel. It breeds back fastest at half strength, and fished below a tenth it takes hours to recover. On a schedule the gear goes down on legs heading to a buoy and comes up for docks, so a ring of buoys over the grounds and a dock with chests makes an automatic fishery. Fish go to the <b>fishmeal plant</b> for meal and <b>fish oil</b>, or to the canning line. Kelp makes <b>sodium alginate</b>, and kelp ash makes <b>iodine</b> and potash.</p>
 <h3>Boiler water</h3>
 <p>Raw water is hard. Every boiler batch on it bakes a little chalk onto the tubes, steam output falls as the <b>scale</b> builds, and a fully choked boiler stops. Shut it down to <b>Descale</b> from its panel (a 20 second outage), or feed it <b>softened water</b>: run water through a leach tank with quicklime and the hardness settles out as crushed limestone you can send back to the kiln. Any machine that takes water also takes softened water.</p>
 <h3>Sulfur and diesel</h3>
@@ -5859,6 +5969,7 @@ window.addEventListener('keydown', ev => {
   }
   else if ((k === 'f' || k === 'enter') && !modalKind) S.dg ? dgUse() : carToggle();
   else if (k === 'x' && !modalKind) wpnCycle();
+  else if (k === 'n' && !modalKind) { const dv = S.pl.car && carOf(S.pl.car); if (dv && VEH[dv.type].net) { netToggle(dv); if (selCar === dv.id) openCar(dv); } }
   else if (k === 'g' && !modalKind) { const p = S.dg ? dgPos(mouse.x, mouse.y) : screenToTile(mouse.x, mouse.y); nadeThrow(p.fx, p.fy); }
   else if (k === 'v') { overlay = (overlay + 1) % 4; toast(['Overlay off', 'Pressure overlay', 'Temperature overlay', 'Smog overlay'][overlay]); }
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) ev.preventDefault();
@@ -5970,7 +6081,7 @@ window.game = {
   terrain: () => terrain, ACH, achCheck, wpnCycle, wpnCur, wpnRounds, nadeThrow, armSoak, armWorn, nades, plShoot, plHurt, dgHurt, enqueue, maxCraft, WPN, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
   select(e) { e ? openPanel(e) : closePanel(); }, openModal, closeModal, refresh: renderHotbar,
   setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; camFree = true; },
-  get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get trains() { return S.trains; }, placeTrain, trainAt, openTrain, openPanel, pickTrain, trainGeo, reverseTrain, railBusy, get puffs() { return puffs; }, get H() { return H; }, get wakes() { return wakes; }, floats, boatRoute, boatPilot, carStep, carHit,
+  get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get trains() { return S.trains; }, placeTrain, trainAt, openTrain, openPanel, pickTrain, trainGeo, reverseTrain, railBusy, get puffs() { return puffs; }, get H() { return H; }, get wakes() { return wakes; }, floats, boatRoute, boatPilot, carStep, carHit, fishTick, fishRegrow, fground, fstock, netToggle, wdep, seaLv,
   htier, spits: () => spits, hiveTier, guardStep, addHive, bugKind, maxHp, hurt, rgd: () => rgd, tileInfo0, growNear, genRegion, tch: () => tch, ovc, mapWin, depleteTile,
   dgEnter, dgExit, dgTick, dgShoot, dgMove, dgUse, dgClick, dgGrid, dgGen, dgSolid, dgSee, dgPos, spawnBurrows, get dfx() { return dfx; },
   setOverlay(v) { overlay = v; }, elev: () => elev, drawPreview, startWorld, get wcfg() { return wcfg; },
