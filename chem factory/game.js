@@ -23,6 +23,7 @@ let camFree = false, noAmmoT = 0, noFuelT = 0, selCar = null, selTrain = null, p
 const VEH = {
   car: { vmax: 22, acc: 9, turn: 2.6, hl: 0.95, hw: 0.48, hp: 450, burn: 2.4, slots: 20, c: ['#6a1814', '#c8382e', '#4a100c'] },
   truck: { vmax: 16, acc: 5, turn: 1.9, hl: 1.35, hw: 0.6, hp: 1350, burn: 3.6, slots: 60, c: ['#8a6010', '#e0a828', '#5a4008'] },
+  etruck: { el: 1, cap: 900, vmax: 18, acc: 7.5, turn: 1.9, hl: 1.35, hw: 0.6, hp: 1350, burn: 1.3, slots: 60, c: ['#1e4a6a', '#3a8ac8', '#14324a'] },
   launch: { sea: true, vmax: 18, acc: 6, turn: 1.6, hl: 1.0, hw: 0.45, hp: 600, burn: 2.6, slots: 30, c: ['#d8d4c8', '#f0ece0', '#a8a49a'] },
   skiff: { sea: true, oar: true, vmax: 5.5, acc: 2.4, turn: 1.5, hl: 0.72, hw: 0.32, hp: 220, burn: 0, slots: 12, c: ['#6a4a2c', '#9a7048', '#4a3220'] },
   trawler: { sea: true, net: true, vmax: 12, acc: 3.5, turn: 1.2, hl: 1.25, hw: 0.52, hp: 1100, burn: 3.2, slots: 60, c: ['#1e3a5a', '#2c5a8a', '#14283e'] },
@@ -4059,6 +4060,17 @@ function refuel(v, quiet) {
   if (!quiet && S.t - noFuelT > 3) { noFuelT = S.t; toast('Out of fuel. Fill jerrycans with diesel at a cylinder filler.', true); }
   return false;
 }
+function carCharge(v) {
+  const V = VEH[v.type];
+  if (Math.abs(v.v) > 0.2 || v.e >= V.cap) return;
+  for (const e of lists().machine) {
+    const B = BUILD[e.type];
+    if (!B.tc || !(e.ch > 0) || Math.hypot(e.x + B.w / 2 - v.x, e.y + B.h / 2 - v.y) > 3) continue;
+    const m = Math.min(B.rate * DT, e.ch, (V.cap - (v.e || 0)) * 1000);
+    e.ch -= m; v.e = (v.e || 0) + m / 1000;
+    if (v.e >= V.cap) return;
+  }
+}
 function carWreck(v) {
   const P = S.pl;
   for (let i = 0; i < 4; i++) fx.push({ x: v.x + (Math.random() - 0.5), y: v.y + (Math.random() - 0.5), t: 0, c: '#e08a2a' });
@@ -4070,12 +4082,13 @@ function carWreck(v) {
 function carStep(v, thr, steer) {
   const V = VEH[v.type], X = Math.floor(v.x), Y = Math.floor(v.y), o = at(X, Y);
   const cap = V.sea ? Math.min(v.net ? 6 : 99, V.vmax * (1 - 0.4 * (v.foul || 0))) : V.vmax * (o && kind(o) === 'road' ? 1 : VSPD[terrain[Y * W + X]] ?? 0.6);
-  if (thr && !V.oar && !(v.e > 0)) { if (v.auto && S.pl.car !== v.id) { if (v.fc > 0) { v.fc--; v.e = (v.e || 0) + CAN_MJ; } } else refuel(v); }
+  if (thr && V.el && !(v.e > 0) && S.pl.car === v.id && S.t - noFuelT > 3) { noFuelT = S.t; toast('Batteries flat. Push it within three tiles of a megawatt charger.', true); }
+  if (thr && !V.oar && !V.el && !(v.e > 0)) { if (v.auto && S.pl.car !== v.id) { if (v.fc > 0) { v.fc--; v.e = (v.e || 0) + CAN_MJ; } } else refuel(v); }
   const fuel = V.oar || v.e > 0, same = thr && Math.sign(thr) === Math.sign(v.v || thr);
-  if (thr && !same) v.v += thr * V.acc * 1.8 * DT;
+  if (thr && !same) { v.v += thr * V.acc * 1.8 * DT; if (V.el && Math.abs(v.v) > 1) v.e = Math.min(V.cap, (v.e || 0) + V.burn * 0.45 * DT); }
   else if (thr && fuel) { v.v += thr * V.acc * (thr < 0 ? 0.5 : 1) * DT; v.e = Math.max(0, v.e - V.burn * DT); }
   else { const d = Math.min(Math.abs(v.v), (V.sea ? 1.2 : 3) * DT); v.v -= Math.sign(v.v) * d; }
-  if (fuel && !thr) v.e = Math.max(0, v.e - V.burn * 0.08 * DT);
+  if (fuel && !thr && !V.el) v.e = Math.max(0, v.e - V.burn * 0.08 * DT);
   v.v -= v.v * 0.15 * DT;
   if (v.v > cap) v.v = Math.max(cap, v.v - 14 * DT);
   if (v.v < -cap * 0.35) v.v = Math.min(-cap * 0.35, v.v + 14 * DT);
@@ -4109,7 +4122,7 @@ function carStep(v, thr, steer) {
     if (b.hp <= 0) S.pk = (S.pk || 0) + 1;
   }
   if (V.sea) { if (Math.abs(v.v) > 1.5 && Math.random() < 0.25) wakes.push({ x: v.x - Math.cos(v.a) * V.hl, y: v.y - Math.sin(v.a) * V.hl, t: S.t, s: Math.min(1, Math.abs(v.v) / V.vmax) }); }
-  else if (thr && fuel && Math.random() < 0.35) puffs.push({ x: v.x - Math.cos(v.a) * V.hl, y: v.y - Math.sin(v.a) * V.hl, t: S.t });
+  else if (thr && fuel && !V.el && Math.random() < 0.35) puffs.push({ x: v.x - Math.cos(v.a) * V.hl, y: v.y - Math.sin(v.a) * V.hl, t: S.t });
   if (v.hp <= 0) carWreck(v);
 }
 const FCH = 16;
@@ -4171,6 +4184,7 @@ function carTick() {
     else if (v !== dv && v.v) v.v -= Math.sign(v.v) * Math.min(Math.abs(v.v), (V.sea ? 2 : 9) * DT);
     if (V.sea && !V.oar) { if (v.af > 0) v.af -= DT; else v.foul = Math.min(1, (v.foul || 0) + DT / 1800); }
     carStep(v, thr, steer);
+    if (V.el) carCharge(v);
     if (V.net && v.net) fishTick(v);
     if (S.t - (v.lh ?? -99) > 10 && v.hp < VEH[v.type].hp) v.hp = Math.min(VEH[v.type].hp, v.hp + 2 * DT);
   }
@@ -4214,14 +4228,15 @@ function carToggle() {
   for (const t of S.trains) { if (!t.g) trainGeo(t); t.g.forEach((g, i) => { if (!isLoco(t.cars[i])) return; const d = Math.hypot(g.x - P.x, g.y - P.y) - 0.42; if (d < bd) { bd = d; best = t; } }); }
   if (!best) { toast('No vehicle nearby. Walk up to one and press F.', true); return false; }
   P.car = best.id; mining = null; camFree = false;
-  if (!(best.e > 0) && !best.fc && !(S.inv.jerrycan > 0)) toast('The tank is empty. Fill jerrycans with diesel at a cylinder filler.', true);
+  if (VEH[best.type] && VEH[best.type].el) { if (!(best.e > 0)) toast('The batteries are flat. Push it within three tiles of a megawatt charger.', true); }
+  else if (!(best.e > 0) && !best.fc && !(S.inv.jerrycan > 0)) toast('The tank is empty. Fill jerrycans with diesel at a cylinder filler.', true);
   return true;
 }
 function placeCar(t, fx, fy, dir) {
   const P = S.pl, V = VEH[t];
   if (!(S.inv[t] > 0)) return 'You have no ' + nm(t);
   if (!inReach(fx, fy, REACH + (V.sea ? 2 : 0))) return 'Out of reach. Walk closer.';
-  const v = { id: S.nextId++, type: t, x: fx, y: fy, a: Math.atan2(DY[dir], DX[dir]), v: 0, hp: V.hp, e: 0, fc: 0, tr: {} };
+  const v = { id: S.nextId++, type: t, x: fx, y: fy, a: Math.atan2(DY[dir], DX[dir]), v: 0, hp: V.hp, e: V.el ? V.cap / 2 : 0, fc: 0, tr: {} };
   if (V.sea) Object.assign(v, { foul: 0, af: 3600, sch: [], si: 0, auto: false });
   const h = carHit(v, fx, fy, v.a);
   if (h) return h.pl ? 'You are standing there' : V.sea && h.x != null ? 'Boats go in the water, clear of the shore' : 'Something is in the way';
@@ -4876,7 +4891,7 @@ const ACH = [
   ['fuel', 'nrg', 'Fission Fuel', 'Assemble a low-enriched uranium fuel assembly.', () => mk('fuel_asm') >= 1],
   ['pwr', 'nrg', 'Pressurised', 'Build a pressurised water reactor.', c => (c.pwr || 0) >= 1],
   ['belts', 'log', 'Conveyor Mind', 'Have 200 belts laid.', c => (c.belt || 0) >= 200],
-  ['car', 'log', 'Road Trip', 'Put a car or truck on the ground.', () => S.cars.some(v => v.type === 'car' || v.type === 'truck')],
+  ['car', 'log', 'Road Trip', 'Put a car or truck on the ground.', () => S.cars.some(v => v.type === 'car' || v.type === 'truck' || v.type === 'etruck')],
   ['boat', 'log', 'Sea Legs', 'Float a boat.', () => S.cars.some(v => VEH[v.type] && VEH[v.type].sea)],
   ['train', 'log', 'Timetable', 'Run a train on an automatic schedule.', () => S.trains.some(t => t.auto && t.sch && t.sch.length >= 2)],
   ['explore', 'log', 'Cartographer', 'Explore 40 regions of an endless world.', () => !!rgd && Array.from(rgd).filter(v => v === 1).length >= 40],
@@ -5167,7 +5182,7 @@ function render() {
     ctx.fillStyle = '#e8e4d8'; ctx.font = 'bold 13px system-ui, sans-serif'; const dsl = dtr.cars.some(q => q.type === 'loco'), nel = dtr.cars.filter(q => q.type === 'eloco').length; ctx.fillText(nm(dsl ? 'loco' : 'eloco'), bx + 12, by + 22);
     ctx.textAlign = 'right'; ctx.font = 'bold 24px ui-monospace, monospace'; ctx.fillText(Math.round(dtr.v * 3.6), bx + 256, by + 28);
     ctx.font = '11px system-ui, sans-serif'; ctx.fillStyle = '#9aa0a8'; ctx.fillText('km/h', bx + 288, by + 28); ctx.textAlign = 'left';
-    ctx.fillText(dsl ? 'Fuel' : 'Battery', bx + 12, by + 48); ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(bx + 60, by + 40, 110, 9);
+    ctx.fillText(dsl ? 'Fuel' : 'Pack', bx + 12, by + 48); ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(bx + 60, by + 40, 110, 9);
     ctx.fillStyle = dsl ? '#d8b848' : '#5aa0e0'; ctx.fillRect(bx + 60, by + 40, 110 * Math.min(1, dsl ? (dtr.e || 0) / CAN_MJ : (dtr.bc || 0) / (T_EBAT * nel)), 9);
     ctx.fillStyle = '#9aa0a8'; ctx.fillText(!dsl ? Math.round((dtr.bc || 0) / 3600) + ' kWh' : dtr.fc ? '+' + dtr.fc + ' can' + (dtr.fc > 1 ? 's' : '') : (S.inv.jerrycan || 0) + ' in pack', bx + 178, by + 48);
     ctx.fillText(dtr.auto ? dtr.st || '' : 'Next junction: ' + (dtr.turn > 0 ? 'right' : dtr.turn < 0 ? 'left' : 'straight on'), bx + 12, by + 64);
@@ -5183,9 +5198,10 @@ function render() {
     ctx.font = '11px system-ui, sans-serif'; ctx.fillStyle = '#9aa0a8'; ctx.fillText('km/h', bx + 228, by + 28); ctx.textAlign = 'left';
     const gauge = (y, lab, f, col, txt) => { ctx.fillStyle = '#9aa0a8'; ctx.font = '11px system-ui, sans-serif'; ctx.fillText(lab, bx + 12, y + 8); ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(bx + 50, y, 120, 9); ctx.fillStyle = col; ctx.fillRect(bx + 50, y, 120 * Math.max(0, Math.min(1, f)), 9); ctx.fillStyle = '#c8c4b8'; ctx.fillText(txt, bx + 178, y + 8); };
     if (V.oar) gauge(by + 40, 'Hold', carSlots(dv) / V.slots, '#b08a5a', carSlots(dv) + ' / ' + V.slots);
+    else if (V.el) gauge(by + 40, 'Pack', (dv.e || 0) / V.cap, '#5ab0e8', Math.round((dv.e || 0) / 3.6) + ' kWh');
     else gauge(by + 40, 'Fuel', (dv.e || 0) / CAN_MJ, '#d8b848', dv.fc ? '+' + dv.fc + ' can' + (dv.fc > 1 ? 's' : '') : (S.inv.jerrycan || 0) + ' in pack');
     gauge(by + 56, 'Body', dv.hp / V.hp, dv.hp / V.hp > 0.5 ? '#7fe08a' : dv.hp / V.hp > 0.25 ? '#e0b84a' : '#e04a4a', Math.round(dv.hp / V.hp * 100) + '%');
-    ctx.fillStyle = '#6a7078'; ctx.font = '10px system-ui, sans-serif'; ctx.fillText(V.net ? (dv.net ? 'Gear down · ' + (dv.ct || 'trawling') + ' · N haul' : 'W/S throttle · A/D rudder · N shoot the gear') : V.oar ? 'W/S row ahead and astern · A/D turn · F get off at a shore' : V.sea ? (dv.foul > 0.3 ? 'Hull fouled: ' + Math.round(dv.foul * 40) + '% slower · repaint with antifouling' : 'W/S throttle and astern · A/D rudder · F get off at a shore') : 'W/S throttle and brake · A/D steer · F get out', bx + 12, by + 78);
+    ctx.fillStyle = '#6a7078'; ctx.font = '10px system-ui, sans-serif'; ctx.fillText(V.net ? (dv.net ? 'Gear down · ' + (dv.ct || 'trawling') + ' · N haul' : 'W/S throttle · A/D rudder · N shoot the gear') : V.oar ? 'W/S row ahead and astern · A/D turn · F get off at a shore' : V.sea ? (dv.foul > 0.3 ? 'Hull fouled: ' + Math.round(dv.foul * 40) + '% slower · repaint with antifouling' : 'W/S throttle and astern · A/D rudder · F get off at a shore') : V.el ? 'W/S throttle and regenerative brake · A/D steer · F get out' : 'W/S throttle and brake · A/D steer · F get out', bx + 12, by + 78);
   }
   if (!dv && !dtr) drawWpnHud(w, h);
   if (tool && mouse.in) {
@@ -5588,7 +5604,7 @@ function drawRoad(e, ox, oy, z) {
   if (v && !h && e.y % 2 === 0) ctx.fillRect(X + z * 0.47, Y + z * 0.1, z * 0.06, z * 0.8);
 }
 function drawCar(v, X, Y, z, al) {
-  const V = VEH[v.type], L = V.hl * z, R = V.hw * z, tr = v.type === 'truck', c = V.c;
+  const V = VEH[v.type], L = V.hl * z, R = V.hw * z, tr = v.type === 'truck' || v.type === 'etruck', c = V.c;
   if (V.sea) return drawBoat(v, X, Y, z, al);
   ctx.save(); ctx.translate(X, Y); ctx.rotate(v.a);
   if (al != null) ctx.globalAlpha = al;
@@ -7780,7 +7796,7 @@ function openCar(v) {
     panel.hidden = false;
     return renderPanelDyn();
   }
-  panel.innerHTML = `<div class="ph"><span class="sw big" style="background:${B.c}">${B.ab}</span><div class="pt"><b>${B.n}</b><small>${B.d}</small></div><button class="x" data-act="close" title="Close">×</button></div><div id="pdyn"></div><div class="pbtns"><button data-act="cfuel">Add jerrycans</button><button data-act="cdrive">${S.pl.car === v.id ? 'Get out (F)' : 'Get in (F)'}</button><button data-act="ctake">Take all cargo</button><button data-act="cstore">Load raw materials</button><button class="danger" data-act="cpick">Pick up</button></div>`;
+  panel.innerHTML = `<div class="ph"><span class="sw big" style="background:${B.c}">${B.ab}</span><div class="pt"><b>${B.n}</b><small>${B.d}</small></div><button class="x" data-act="close" title="Close">×</button></div><div id="pdyn"></div><div class="pbtns">${VEH[v.type].el ? '' : '<button data-act="cfuel">Add jerrycans</button>'}<button data-act="cdrive">${S.pl.car === v.id ? 'Get out (F)' : 'Get in (F)'}</button><button data-act="ctake">Take all cargo</button><button data-act="cstore">Load raw materials</button><button class="danger" data-act="cpick">Pick up</button></div>`;
   panel.hidden = false;
   renderPanelDyn();
 }
@@ -7789,8 +7805,9 @@ function carDyn(v) {
   let h = V.oar ? `<div class="status"><i style="background:${S.pl.car === v.id ? '#7fe08a' : '#9aa0a8'}"></i>${S.pl.car === v.id ? 'You are at the oars' : 'Drifting'} · ${(Math.abs(v.v) * 1.944).toFixed(1)} knots</div><p class="dim">Rowed by hand, so it needs no fuel and cannot run a schedule. Wood does not foul like a steel hull does.</p>` : V.sea ? `<div class="status"><i style="background:${v.auto ? (/Heading|At /.test(v.st) ? '#7fe08a' : '#e0b84a') : '#9aa0a8'}"></i>${v.auto ? v.st || 'Starting' : S.pl.car === v.id ? 'Manual, you are at the helm' : 'Manual, drifting'} · ${(Math.abs(v.v) * 1.944).toFixed(1)} knots</div><div class="gauge"><span>Fouling</span>${bar(v.foul || 0, 1, (v.foul || 0) > 0.5 ? '#e0b84a' : '#6ab07a')}<b>${Math.round((v.foul || 0) * 40)}% slower</b></div><p class="dim">${v.af > 0 ? 'Antifouling active for ' + Math.ceil(v.af / 60) + ' more minutes.' : 'The antifouling has worn off. Weed and barnacles are growing on the hull.'} Repainting uses one tin of antifouling paint.</p>` : '';
   h += `<div class="gauge"><span>Body</span>${bar(v.hp, V.hp, v.hp / V.hp > 0.5 ? '#7fe08a' : '#e0b84a')}<b>${Math.round(v.hp)} / ${V.hp}</b></div>`;
   if (V.net) h += fishInfo(v);
-  if (!V.oar) h += `<div class="gauge"><span>Tank</span>${bar(v.e || 0, CAN_MJ, '#d8b848')}<b>${Math.round(v.e || 0)} MJ</b></div>`;
-  if (!V.oar) h += `<div class="sec">Fuel slot</div><div class="cgrid"><button class="cslot" data-act="cfuel" title="Add jerrycans from your pack">${ico('jerrycan')}<span class="cnt">${v.fc || 0}/${FUEL_CAP}</span></button></div><p class="dim">${Math.round(Math.abs(v.v) * 3.6)} km/h. A jerrycan lasts about ${Math.round(CAN_MJ / V.burn / 60)} minutes at full throttle; spare cans in your pack are poured in when the tank runs dry.</p>`;
+  if (V.el) h += `<div class="gauge"><span>Battery</span>${bar(v.e || 0, V.cap, '#5ab0e8')}<b>${Math.round((v.e || 0) / 3.6)} / ${Math.round(V.cap / 3.6)} kWh</b></div><p class="dim">${Math.round(Math.abs(v.v) * 3.6)} km/h. About ${Math.round(V.cap / V.burn / 60)} minutes at full throttle, and braking puts some back. Park within three tiles of a megawatt charger or rail charger to recharge.</p>`;
+  else if (!V.oar) h += `<div class="gauge"><span>Tank</span>${bar(v.e || 0, CAN_MJ, '#d8b848')}<b>${Math.round(v.e || 0)} MJ</b></div>`;
+  if (!V.oar && !V.el) h += `<div class="sec">Fuel slot</div><div class="cgrid"><button class="cslot" data-act="cfuel" title="Add jerrycans from your pack">${ico('jerrycan')}<span class="cnt">${v.fc || 0}/${FUEL_CAP}</span></button></div><p class="dim">${Math.round(Math.abs(v.v) * 3.6)} km/h. A jerrycan lasts about ${Math.round(CAN_MJ / V.burn / 60)} minutes at full throttle; spare cans in your pack are poured in when the tank runs dry.</p>`;
   h += `<div class="sec">Cargo · ${used} / ${V.slots} slots</div><div class="cgrid">`;
   const ks = Object.keys(v.tr).sort();
   h += ks.length ? ks.map(k => `<button class="cslot" data-act="ctk" data-k="${k}" title="Take ${nm(k)}">${ico(k)}<span class="cnt">${fmt(v.tr[k])}</span></button>`).join('') : '<span class="dim">Empty. Click items below to load them.</span>';
@@ -8539,6 +8556,7 @@ const CHAINS = [
   { n: 'Copper wire rod', l: [['copper_cathode', 'Continuous rod mill', 'cu_rod', 'Wire drawing machine', 'wire']], d: 'Cathodes melted and cast straight into rod, then drawn through dies, give twice the wire a workshop gets from hand-cutting cathode.' },
   { n: 'Grid batteries', l: [['aluminium', 'Foil rolling mill', 'al_foil', 'Electrode coater + LFP, NMP', 'lfp_sheet'], ['polypropylene', 'Cast film line, stretched, ceramic coat', 'separator'], ['lfp_sheet', 'Cell assembly line + graphite sheet, can, electrolyte', 'green_cell', 'Formation rack', 'li_cell'], ['li_cell', 'Cell assembly line + 16 in series, BMS', 'battery_module', 'Inverters + transformer', 'Battery container']], d: 'Rolled foil, coated electrodes and a stretched separator are stacked into cans in a dry room, filled and given a slow first charge. Formed cells go into modules, and eight modules fill a container that stores twenty times what a rack bank does.' },
   { n: 'Electric locomotive', l: [['battery_module', 'Cell assembly line + BMS, glycol', 'traction_pack'], ['traction_pack', '+ SiC inverters, traction motors, bogies', 'Battery-electric locomotive'], ['battery_module', '+ inverters, power transformer', 'Rail charger']], d: 'Grid battery modules repackaged for rail. Two traction packs and SiC inverters replace the diesel engine; a wayside charger with its own buffer battery refills the locomotive at stops, and braking puts charge back on the way.' },
+  { n: 'Electric haul truck', l: [['chromoly', 'Forge press', 'gear_blank', 'Machine shop + base_oil', 'gear_cut'], ['gear_cut', 'Carburising furnace + methane, n2, base_oil', 'gear_hard', '+', 'co2'], ['gear_hard', 'Machine shop + bearing', 'planetary'], ['pm_motor', '+ sic_inverter, planetary, casting', 'e_axle'], ['e_axle', '+ traction_pack, chassis, wheel', 'Electric haul truck'], ['wire', 'Workshop + silicone, meg', 'charge_cable', '+ sic_inverter, battery_module', 'Megawatt charger']], d: 'Forged gears are hobbed soft, then carburised so a hard skin forms over a tough core, and ground into planetary sets. Two drive axles and three traction packs turn the haul truck electric; a fast charger with a buffer battery refills it.' },
   { n: 'Rare earth magnets', l: [['monazite', 'Digester + naoh', 're_oh', 'Leach tank + hcl + water', 'recl3', '+', 'th_cake'], ['recl3', 'Solvent extraction + diesel', 'ndcl3', '+', 'ce_oxide'], ['ndcl3', 'Precipitator + soda_ash', 'ndpr_oxide', 'Electrolysis cell + anode + hf', 'nd_metal'], ['borax', 'Arc furnace + pig_iron + coke', 'ferroboron'], ['nd_metal', 'Vacuum induction furnace + ferroboron + steel + argon', 'ndfeb_strip', 'HD vessel + h2', 'hd_powder', 'Jet mill + n2', 'ndfeb_fine'], ['ndfeb_fine', 'Field press + n2', 'ndfeb_green', 'Sinter-HIP furnace + argon', 'ndfeb_block', 'Multi-wire saw + diamond_grit + water', 'ndfeb_bare'], ['ndfeb_bare', 'Plating line + copper_cathode + niso4', 'ndfeb_plated', 'Pulse magnetiser', 'ndfeb', 'Workshop + wire + plate', 'pm_motor'], ['ndfeb_swarf', 'Leach tank + hcl + water', 'ndcl3'], ['th_cake', 'Workshop + concrete + plate', 'waste_drum']], d: 'Monazite from the mineral sand separator is cracked with caustic soda and dissolved in hydrochloric acid, leaving thorium behind. Hundreds of solvent extraction stages split off neodymium and praseodymium, with cerium as a by-product. Reduced to metal and alloyed with iron and boron from desert borax, they make the strongest magnets there are, for direct-drive wind turbines and compact motors.' },
   { n: 'Water treatment', l: [['al_hydroxide', 'Pressure reactor + acid', 'alum'], ['water', 'Water treatment works + alum + cl2 + carbon bed', 'potable'], ['spent_carbon', 'Kiln + steam', 'carbon'], ['nylon', 'Workshop + polyester + glass_fibre', 'ro_membrane'], ['water', 'Reverse osmosis + membranes', 'potable'], ['potable', 'Blow moulder + pet', 'water_bottle'], ['bleach', 'Blow moulder + polyethylene', 'bleach_jug']], d: 'Alum makes dirt clump into flocs that settle and filter out, and a little chlorine disinfects what is left. An activated carbon bed doubles the rate but fills up and has to be reactivated in a kiln. Reverse osmosis needs only power and membranes, which slowly foul and need replacing.' },
   { n: 'Farming and fermentation', l: [['npk', 'Farm + water', 'sugar_beet'], ['npk', 'Farm + water', 'maize'], ['sugar_beet', 'Sugar factory + quicklime + co2 + water', 'sugar', '+', 'molasses'], ['molasses', 'Fermenter + water', 'ethanol', '+', 'co2'], ['maize', 'Fermenter + water', 'ethanol', '+', 'ddgs'], ['ethanol', 'Pressure reactor', 'ethylene'], ['molasses', 'Fermenter + o2 + quicklime + acid', 'citric', '+', 'gypsum'], ['ethanol', 'Blow moulder + polyethylene', 'sanitiser']], d: 'Fertiliser and water grow sugar beet and maize. The sugar factory cleans beet juice with lime and carbon dioxide, so it soaks up CO₂ from your kilns. Yeast turns molasses and maize into ethanol, which hot alumina dehydrates to ethylene for green plastics. A mould turns molasses into citric acid.' },
