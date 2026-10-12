@@ -999,7 +999,7 @@ function pasteSet(e) {
   const k = kind(e);
   if (k === 'machine' && !BUILD[e.type].lab && clip.recipe !== undefined) {
     const r = clip.recipe && RECIPE[clip.recipe];
-    if (r && r.b !== e.type) return toast(BUILD[e.type].n + ' cannot run ' + (r.n || nm(rMain(r))), true);
+    if (r && !runs(e.type, r)) return toast(BUILD[e.type].n + ' cannot run ' + (r.n || nm(rMain(r))), true);
     if (r && !avail(r)) return toast('That recipe is not available yet', true);
     setRecipe(e, clip.recipe || null);
   } else if (e.type === 'sorter') e.filter = clip.filter || null;
@@ -1085,7 +1085,7 @@ function acceptItem(o, k) {
   if (kd === 'machine') {
     let r = RECIPE[o.recipe];
     if (!r) {
-      r = RECIPES.find(q => q.b === o.type && (q.i && q.i[k] || q.cat === k) && avail(q));
+      r = RECIPES.find(q => runs(o.type, q) && (q.i && q.i[k] || q.cat === k) && avail(q));
       if (!r) return false;
       setRecipe(o, r.id);
     }
@@ -1232,7 +1232,7 @@ function wants(o, k) {
   if (kd === 'projector') return k === 'black_powder' ? POW_CAP - o.pw : PAYLOADS.includes(k) ? PROJ_CAP - sum(o.pay) : 0;
   if (kd === 'sorter') return o.buf ? 0 : 1;
   if (kd === 'machine') {
-    const r = RECIPE[o.recipe] || RECIPES.find(q => q.b === o.type && (q.i && q.i[k] || q.cat === k) && avail(q));
+    const r = RECIPE[o.recipe] || RECIPES.find(q => runs(o.type, q) && (q.i && q.i[k] || q.cat === k) && avail(q));
     if (!r) return 0;
     if (r.cat === k) return CAT_CAP - (o.catK === k ? (o.catN || 0) + (o.ca > 0 ? 1 : 0) : 0);
     return r.i && r.i[k] ? inCap(r, k) - (o.inv[k] || 0) : 0;
@@ -1466,6 +1466,7 @@ function hurt(e, d, why) {
   e.hp -= d;
   if (e.hp <= 0) wreck(e, why);
 }
+const runs = (t, r) => r.b === t || (BUILD[t] && BUILD[t].as === r.b);
 const avail = r => (!r.lock || !!(S.unl && S.unl[r.id])) && !(r.o && Object.keys(r.o).some(k => !BUILD[k] && TECH[k] && !techOk(k)));
 const XPK = ['sci_ag', 'sci_bio', 'sci_en', 'sci_met', 'sci_mil'];
 let TKX = null;
@@ -3907,7 +3908,7 @@ function tick() {
     if (kw && n.sat < 0.05) e.st = n === nop ? 'nopole' : 'power';
     else if (kw && (e.st === 'power' || e.st === 'nopole')) e.st = 'work';
     if (gn) { e.kw = gn * sunMul(e) * n.load; e.st = n === nop ? 'nopole' : n.load < 0.01 ? 'idle' : 'work'; }
-    e.prog += DT * sp * catMul(e, r) * scaleMul(e) * forestMul(e) * sunMul(e) / (r.id === 'study' ? (TECH[e.rt] ? TECH[e.rt].ut : 5) / (BUILD[e.type].ls || 1) : r.t);
+    e.prog += DT * sp * (BUILD[e.type].ms || 1) * catMul(e, r) * scaleMul(e) * forestMul(e) * sunMul(e) / (r.id === 'study' ? (TECH[e.rt] ? TECH[e.rt].ut : 5) / (BUILD[e.type].ls || 1) : r.t);
     if (e.prog >= 1) finish(e, r);
   }
   for (const e of l.miner) {
@@ -7861,7 +7862,7 @@ function openPanel(e) {
   let h = `<div class="ph"><span class="sw big" style="background:${B.c}">${B.ab || ''}</span><div class="pt"><b>${B.n}</b><small>${B.d}</small></div><button class="x" data-act="close" title="Close">×</button></div>`;
   if (B.lab) { const t = curTech(); h += `<div class="row">Researching <b>${t ? BUILD[t].n : 'nothing'}</b>${B.ls ? ` at ×${B.ls} speed` : ''} <button data-act="tech">Research (T)</button></div>`; }
   if (kind(e) === 'machine' && !B.store && !B.lab) {
-    const rl = RECIPES.filter(r => r.b === e.type && (avail(r) || e.recipe === r.id));
+    const rl = RECIPES.filter(r => runs(e.type, r) && (avail(r) || e.recipe === r.id));
     h += `<div class="sec">Recipe <small class="dim">${e.recipe ? 'Shift+right-click copies it, Shift+click pastes' : 'pick one'}</small></div><div class="rpick">${rl.map(r => `<button class="rs ok rp${e.recipe === r.id ? ' on' : ''}" data-act="rpick" data-r="${r.id}" data-k="${r.id}" data-m="x">${ico(rMain(r))}</button>`).join('')}${e.recipe ? '<button class="rs no rpx" data-act="rpick" data-r="" title="Clear recipe">×</button>' : ''}</div>`;
   }
   if (e.type === 'sorter') {
@@ -7962,7 +7963,7 @@ function renderPanelDyn() {
     const B = BUILD[e.type], ch = e.ch || 0, kw = e.kw || 0;
     h += `<div class="status"><i style="background:${ST_COL[e.st] || '#888'}"></i>${ST_TXT[e.st] || 'Idle, no load'}${kw > 0.5 ? ` · giving ${Math.round(kw)} kW` : kw < -0.5 ? ` · taking ${Math.round(-kw)} kW` : ''}</div>`;
     h += `<div class="sec">Charge</div><div class="gauge"><span>Stored</span>${bar(ch, B.store, '#8ad0a0')}<b>${Math.round(ch / B.store * 100)}%</b></div><p class="dim">${(ch / 3600).toFixed(1)} of ${(B.store / 3600).toFixed(0)} kWh. Up to ${B.rate} kW in or out, ${Math.round((B.eff || 0.85) * 100)}% round trip. It charges only from capacity nothing else is using, and discharges when generators fall short.</p>`;
-    h += recipeHtml(RECIPE[e.recipe] || RECIPES.find(r => r.b === e.type) || RECIPE.store);
+    h += recipeHtml(RECIPE[e.recipe] || RECIPES.find(r => runs(e.type, r)) || RECIPE.store);
   } else if (k === 'machine') {
     const r = RECIPE[e.recipe];
     if (!r) h += '<p class="dim">Pick a recipe, or feed it an item and it will choose one.</p>';
@@ -8559,6 +8560,7 @@ const CHAINS = [
   { n: 'Electric haul truck', l: [['chromoly', 'Forge press', 'gear_blank', 'Machine shop + base_oil', 'gear_cut'], ['gear_cut', 'Carburising furnace + methane, n2, base_oil', 'gear_hard', '+', 'co2'], ['gear_hard', 'Machine shop + bearing', 'planetary'], ['pm_motor', '+ sic_inverter, planetary, casting', 'e_axle'], ['e_axle', '+ traction_pack, chassis, wheel', 'Electric haul truck'], ['wire', 'Workshop + silicone, meg', 'charge_cable', '+ sic_inverter, battery_module', 'Megawatt charger']], d: 'Forged gears are hobbed soft, then carburised so a hard skin forms over a tough core, and ground into planetary sets. Two drive axles and three traction packs turn the haul truck electric; a fast charger with a buffer battery refills it.' },
   { n: 'Bucket-wheel excavator', l: [['mn_steel', 'Workshop + water', 'bucket_tooth', 'Heavy vessel shop + plate', 'bwe_bucket'], ['chromoly', 'Forge press + fuel_gas', 'slew_blank', 'Machine shop + bearing', 'slew_ring'], ['sbr', 'Calender + hc_wire, carbon_black, sulfur', 'cord_belt'], ['hc_wire', 'Planetary strander + base_oil', 'wire_rope'], ['bwe_bucket', '+ slew_ring, cord_belt, wire_rope, planetary', 'Bucket-wheel excavator']], d: 'Self-sharpening manganese steel teeth, ring-rolled slewing bearings, steel-cord belting and wire-rope stays come together in the biggest digging machine there is. It mines five times faster than a plain miner.' },
   { n: 'Analytical laboratory', l: [['molybdenum', 'Pusher furnace + h2', 'mo_bar', 'Machine shop + alumina', 'quad_rods', 'Electronics line + w_wire, board', 'quadrupole'], ['al7075', 'Machine shop + hybrid_bearing, pm_motor', 'turbopump'], ['litharge', 'Pusher furnace + glass, h2', 'e_mult'], ['preform', 'Fibre draw tower + silicone', 'gc_column'], ['quadrupole', '+ turbopump, e_mult, gc_column, helium', 'gcms'], ['sc_wire', 'Magnet hall + lhe', 'nmr_magnet', '+ rf_coil, cryocooler', 'nmr'], ['gcms', '+ nmr, fume_hood', 'Analytical Laboratory']], d: 'A mass spectrometer built from molybdenum rods, a turbopump and a lead-glass electron multiplier, and a 400 MHz NMR on a persistent superconducting magnet. Together they make a laboratory that researches three times faster.' },
+  { n: 'Industrial robot', l: [['chromoly', 'Machine shop + base_oil', 'flexspline', '+ casting, bearing', 'strain_wave'], ['ndfeb', 'Electronics line + board', 'encoder'], ['pm_motor', 'Workshop + strain_wave, encoder, bearing', 'robot_joint'], ['aluminium', 'Induction furnace + sand', 'arm_casting'], ['sic_mosfet', 'Electronics line + board, film_cap', 'servo_drive'], ['robot_joint', '+ arm_casting, servo_drive, microchip', 'robot_arm', '+ board, steel, glass', 'Robotic Assembly Cell']], d: 'Strain wave gears, absolute encoders and servo drives make six-axis robots. Two of them in a fenced cell run any Workshop recipe three times as fast.' },
   { n: 'Rare earth magnets', l: [['monazite', 'Digester + naoh', 're_oh', 'Leach tank + hcl + water', 'recl3', '+', 'th_cake'], ['recl3', 'Solvent extraction + diesel', 'ndcl3', '+', 'ce_oxide'], ['ndcl3', 'Precipitator + soda_ash', 'ndpr_oxide', 'Electrolysis cell + anode + hf', 'nd_metal'], ['borax', 'Arc furnace + pig_iron + coke', 'ferroboron'], ['nd_metal', 'Vacuum induction furnace + ferroboron + steel + argon', 'ndfeb_strip', 'HD vessel + h2', 'hd_powder', 'Jet mill + n2', 'ndfeb_fine'], ['ndfeb_fine', 'Field press + n2', 'ndfeb_green', 'Sinter-HIP furnace + argon', 'ndfeb_block', 'Multi-wire saw + diamond_grit + water', 'ndfeb_bare'], ['ndfeb_bare', 'Plating line + copper_cathode + niso4', 'ndfeb_plated', 'Pulse magnetiser', 'ndfeb', 'Workshop + wire + plate', 'pm_motor'], ['ndfeb_swarf', 'Leach tank + hcl + water', 'ndcl3'], ['th_cake', 'Workshop + concrete + plate', 'waste_drum']], d: 'Monazite from the mineral sand separator is cracked with caustic soda and dissolved in hydrochloric acid, leaving thorium behind. Hundreds of solvent extraction stages split off neodymium and praseodymium, with cerium as a by-product. Reduced to metal and alloyed with iron and boron from desert borax, they make the strongest magnets there are, for direct-drive wind turbines and compact motors.' },
   { n: 'Water treatment', l: [['al_hydroxide', 'Pressure reactor + acid', 'alum'], ['water', 'Water treatment works + alum + cl2 + carbon bed', 'potable'], ['spent_carbon', 'Kiln + steam', 'carbon'], ['nylon', 'Workshop + polyester + glass_fibre', 'ro_membrane'], ['water', 'Reverse osmosis + membranes', 'potable'], ['potable', 'Blow moulder + pet', 'water_bottle'], ['bleach', 'Blow moulder + polyethylene', 'bleach_jug']], d: 'Alum makes dirt clump into flocs that settle and filter out, and a little chlorine disinfects what is left. An activated carbon bed doubles the rate but fills up and has to be reactivated in a kiln. Reverse osmosis needs only power and membranes, which slowly foul and need replacing.' },
   { n: 'Farming and fermentation', l: [['npk', 'Farm + water', 'sugar_beet'], ['npk', 'Farm + water', 'maize'], ['sugar_beet', 'Sugar factory + quicklime + co2 + water', 'sugar', '+', 'molasses'], ['molasses', 'Fermenter + water', 'ethanol', '+', 'co2'], ['maize', 'Fermenter + water', 'ethanol', '+', 'ddgs'], ['ethanol', 'Pressure reactor', 'ethylene'], ['molasses', 'Fermenter + o2 + quicklime + acid', 'citric', '+', 'gypsum'], ['ethanol', 'Blow moulder + polyethylene', 'sanitiser']], d: 'Fertiliser and water grow sugar beet and maize. The sugar factory cleans beet juice with lime and carbon dioxide, so it soaks up CO₂ from your kilns. Yeast turns molasses and maize into ethanol, which hot alumina dehydrates to ethylene for green plastics. A mould turns molasses into citric acid.' },
