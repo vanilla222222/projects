@@ -805,7 +805,12 @@ const ORES = [
 ];
 
 const BUILD = {
-  belt: { n: 'Belt', kind: 'belt', w: 1, h: 1, cat: 'Logistics', c: '#c9a23a', cost: { casting: 1 }, makes: 2, d: 'Moves items 2 tiles/s. Drag to lay a line.' },
+  belt: { n: 'Belt', kind: 'belt', w: 1, h: 1, cat: 'Logistics', c: '#c9a23a', v: 2, cost: { casting: 1 }, makes: 2, d: 'Moves items 2 tiles/s on two lanes. Drag to lay a line. A belt that runs into the side of another loads onto its near lane; one that is the only feed of a belt turns it into a curve.' },
+  fast_belt: { n: 'Fast Belt', kind: 'belt', w: 1, h: 1, cat: 'Logistics', c: '#d0443a', v: 4, cost: { belt: 1, steel: 1, sbr: 1 }, makes: 1, d: 'Moves items 4 tiles/s. A rubber belt with steel cords running over idler rollers on sealed ball bearings.' },
+  express_belt: { n: 'Express Belt', kind: 'belt', w: 1, h: 1, cat: 'Logistics', c: '#3a8ad8', v: 6, cost: { fast_belt: 1, nylon_fibre: 1, grease: 1 }, makes: 1, d: 'Moves items 6 tiles/s. A nylon-carcass belt, greased rollers and a stronger drive pulley.' },
+  ubelt: { n: 'Underground Belt', kind: 'ubelt', w: 1, h: 1, cat: 'Logistics', c: '#c9a23a', ab: 'UB', v: 2, ug: 5, cost: { belt: 5, casting: 5 }, makes: 2, d: 'Place one as the entrance, then a second facing the same way and up to 5 tiles further on: it becomes the exit. Items travel under up to 4 tiles of whatever lies between.' },
+  fast_ubelt: { n: 'Fast Underground Belt', kind: 'ubelt', w: 1, h: 1, cat: 'Logistics', c: '#d0443a', ab: 'UB', v: 4, ug: 7, cost: { fast_belt: 5, steel: 5 }, makes: 2, d: 'A fast belt tunnel: the exit can sit up to 7 tiles from the entrance, passing under 6.' },
+  express_ubelt: { n: 'Express Underground Belt', kind: 'ubelt', w: 1, h: 1, cat: 'Logistics', c: '#3a8ad8', ab: 'UB', v: 6, ug: 9, cost: { express_belt: 5, stainless: 5 }, makes: 2, d: 'An express belt tunnel: the exit can sit up to 9 tiles from the entrance, passing under 8.' },
   sorter: { n: 'Sorter', kind: 'sorter', w: 1, h: 1, cat: 'Logistics', c: '#d07a3a', ab: 'SO', cost: { casting: 2, wire: 2, brass: 1 }, d: 'Sends the filtered item forward and everything else to the right.' },
   chest: { n: 'Chest', kind: 'chest', w: 1, h: 1, cat: 'Logistics', c: '#8a6a3a', ab: 'CH', cost: { casting: 4 }, d: 'Stores 400 items and feeds neighbouring machines and outgoing belts.' },
   pipe: { n: 'Cast Iron Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#6a7a8a', cost: { casting: 1 }, makes: 2, d: 'DN50, rated 16 bar. Cheap and brittle: it cracks at once when overpressured or hit by a sudden temperature change.', P: { mat: 'Grey cast iron', dn: 50, v: 100, g: 200, q: 120, bar: 16, tmax: 400, duct: 0, shock: 45, cw: 60, ua: 0.3, res: '' } },
@@ -814,6 +819,8 @@ const BUILD = {
   lead_pipe: { n: 'Lead-Lined Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#7a7f9a', cost: { lead_sheet: 1, casting: 1 }, makes: 2, d: 'DN50, rated only 6 bar. The lead lining shrugs off sulfuric acid and chlorides but softens above 250°C, and caustic soda dissolves it. Lead also holds fluorides that destroy glass.', P: { mat: 'Steel with lead lining', dn: 50, v: 100, g: 200, q: 120, bar: 6, tmax: 250, duct: 4, cw: 30, ua: 0.3, res: 'acid cl hf br', lined: 'lead' } },
   ti_pipe: { n: 'Titanium Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#a8b0c0', cost: { titanium: 1 }, makes: 1, d: 'DN100, rated 35 bar. Its oxide skin makes it immune to chlorine, brine, caustic and nitric acid, but hot sulfuric acid strips it and fluorides dissolve it three times faster than steel.', P: { mat: 'Titanium grade 2', dn: 100, v: 250, g: 800, q: 400, bar: 35, tmax: 450, duct: 3, cw: 50, ua: 0.3, res: 'cl alk nit', weak: 'hf' } },
   glass_pipe: { n: 'Glass-Lined Pipe', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#7ab8b8', cost: { glass: 1, casting: 1 }, makes: 2, d: 'DN50, rated 10 bar. A fused glass enamel inside steel resists every acid and chloride. But a sudden temperature change cracks the glass, and caustic soda slowly dissolves it. Fluorides etch through glass three times faster than steel.', P: { mat: 'Steel with glass enamel', dn: 50, v: 100, g: 200, q: 120, bar: 10, tmax: 230, duct: 0, shock: 35, cw: 40, ua: 0.3, res: 'acid cl nit br', weak: 'hf', lined: 'glass' } },
+  upipe: { n: 'Cast Iron Pipe-to-Ground', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#6a7a8a', ab: 'PG', ug: 10, cost: { pipe: 10, casting: 5 }, makes: 2, d: 'Place one, then a second facing the same way up to 10 tiles further on and it turns to face back: they join under the ground. Each end connects only on its open face. Same DN50 cast iron, rated 16 bar.', P: { mat: 'Grey cast iron', dn: 50, v: 100, g: 200, q: 120, bar: 16, tmax: 400, duct: 0, shock: 45, cw: 60, ua: 0.3, res: '' } },
+  steel_upipe: { n: 'Steel Pipe-to-Ground', kind: 'pipe', w: 1, h: 1, cat: 'Logistics', c: '#9aa8b6', ab: 'PG', ug: 10, cost: { steel_pipe: 10, plate: 5 }, makes: 2, d: 'DN100 steel run under up to 9 tiles of ground, rated 40 bar. Each end connects only on its open face.', P: { mat: 'Carbon steel', dn: 100, v: 250, g: 800, q: 400, bar: 40, tmax: 550, duct: 2, cw: 90, ua: 0.4, res: 'alk' } },
   booster: { n: 'Booster Pump', kind: 'booster', w: 1, h: 1, cat: 'Logistics', c: '#4a7ab0', ab: 'BP', kw: 30, cost: { casting: 2, motor: 1 }, d: 'Takes fluid from the pipe behind it and pushes it forward up to the outlet pressure you set. Fluid cannot flow back through it.' },
   miner: { n: 'Miner', kind: 'miner', w: 2, h: 2, cat: 'Mining', c: '#7a6a4a', ab: 'MI', kw: 90, cost: { casting: 5, plate: 3, motor: 2 }, d: 'Digs the ore under it, one every 2s.' },
   pump: { n: 'Offshore Pump', kind: 'pump', w: 1, h: 1, cat: 'Mining', c: '#3a6aa0', ab: 'PU', cost: { casting: 3, motor: 1 }, d: 'Place on water. Pumps 60 water/s.' },
@@ -1788,7 +1795,7 @@ for (const r of RECIPES) {
 }
 
 const START_INV = {
-  belt: 80, pipe: 30, chest: 4, miner: 8, pump: 2, boiler: 2, engine: 2,
+  belt: 80, ubelt: 6, pipe: 30, upipe: 4, chest: 4, miner: 8, pump: 2, boiler: 2, engine: 2,
   crusher: 3, mill: 2, magsep: 1, coke_oven: 1, kiln: 1, blast: 1, converter: 2, workshop: 2,
   flotation: 1, roaster: 1, smelter: 1, electro: 1, acid_plant: 1, lead_pipe: 10, casting: 10, brick: 10, cartridge: 20,
 };

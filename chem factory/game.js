@@ -680,6 +680,33 @@ const kind = e => BUILD[e.type].kind;
 const ENGINE_P = { mat: 'Steam chest', v: 60, g: 400, q: 200, bar: 1e9, tmax: 1e9, duct: 1, cw: 80, ua: 0.1 };
 const AMB = 15, KX = 3, HEADS = [3, 5, 8, 12, 20, 30, 45];
 const isNode = e => { const k = kind(e); return k === 'pipe' || k === 'engine'; };
+const belty = e => { const k = kind(e); return k === 'belt' || k === 'ubelt'; };
+const ugFace = o => !BUILD[o.type].ug || BUILD[o.type].kind !== 'pipe' ? null : (o.dir + 2) % 4;
+function ugOk(o, e) {
+  const f = ugFace(o);
+  return f == null || at(o.x + DX[f], o.y + DY[f]) === e;
+}
+function ugPair(e) {
+  const B = BUILD[e.type];
+  if (!B.ug) return null;
+  if (B.kind === 'pipe') {
+    for (let n = 1; n <= B.ug; n++) { const o = at(e.x + DX[e.dir] * n, e.y + DY[e.dir] * n); if (o && o.type === e.type) return o.dir === (e.dir + 2) % 4 ? { o, n } : null; }
+    return null;
+  }
+  const d = e.mode === 'out' ? (e.dir + 2) % 4 : e.dir;
+  for (let n = 1; n <= B.ug; n++) { const o = at(e.x + DX[d] * n, e.y + DY[d] * n); if (o && o.type === e.type && o.dir === e.dir) return o.mode !== e.mode ? { o, n } : null; }
+  return null;
+}
+function ugAuto(e) {
+  const B = BUILD[e.type], b = (e.dir + 2) % 4;
+  for (let n = 1; n <= B.ug; n++) {
+    const o = at(e.x + DX[b] * n, e.y + DY[b] * n);
+    if (!o || o.type !== e.type) continue;
+    if (B.kind === 'pipe') { if (o.dir === e.dir && !ugPair(o)) e.dir = b; }
+    else if (o.dir === e.dir && o.mode === 'in' && !ugPair(o)) e.mode = 'out';
+    return;
+  }
+}
 const NP = e => e.type === 'engine' ? ENGINE_P : BUILD[e.type].P;
 const pres = e => 10 * e.amt / NP(e).v;
 const nodeOk = (e, f) => e.type === 'engine' ? f === 'steam' : (!e.fl || e.fl === f);
@@ -710,6 +737,7 @@ function makeEnt(type, x, y, dir) {
   const e = { id: S.nextId++, type, x, y, dir: dir || 0 };
   switch (BUILD[type].kind) {
     case 'belt': e.items = []; break;
+    case 'ubelt': e.items = []; e.mode = 'in'; break;
     case 'machine': Object.assign(e, { recipe: null, inv: {}, out: {}, fi: {}, fo: {}, cy: false, prog: 0 }); break;
     case 'chest': e.store = {}; break;
     case 'sorter': e.buf = null; e.filter = null; break;
@@ -774,6 +802,7 @@ function place(type, x, y, dir, free) {
     S.inv[type]--;
   }
   const e = makeEnt(type, x, y, dir);
+  if (BUILD[type].ug) ugAuto(e);
   addEnt(e);
   return e;
 }
@@ -799,7 +828,7 @@ function removeEnt(e) {
 
 function lists() {
   if (L) return L;
-  L = { belt: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [], wall: [], turret: [], hive: [], projector: [], gun: [], ruin: [], road: [], rail: [], stop: [], dock: [], buoy: [] };
+  L = { belt: [], ubelt: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [], wall: [], turret: [], hive: [], projector: [], gun: [], ruin: [], road: [], rail: [], stop: [], dock: [], buoy: [] };
   for (const e of ents.values()) {
     const k = kind(e);
     if (k === 'pipe') L.node.push(e);
@@ -808,11 +837,22 @@ function lists() {
   }
   L.pairs = [];
   const seen = new Set();
-  for (const a of L.node) for (const p of a.per) {
-    const b = at(p.x, p.y);
-    if (!b || b.id <= a.id || !isNode(b) || seen.has(a.id * 1e6 + b.id)) continue;
-    seen.add(a.id * 1e6 + b.id);
-    L.pairs.push([a, b]);
+  for (const a of L.node) {
+    for (const p of a.per) {
+      const b = at(p.x, p.y);
+      if (!b || b.id <= a.id || !isNode(b) || seen.has(a.id * 1e6 + b.id) || !ugOk(a, b) || !ugOk(b, a)) continue;
+      seen.add(a.id * 1e6 + b.id);
+      L.pairs.push([a, b]);
+    }
+    const u = BUILD[a.type].ug && ugPair(a);
+    if (u && u.o.id > a.id) L.pairs.push([a, u.o]);
+  }
+  const fd = (b, s) => { const o = at(b.x + DX[s], b.y + DY[s]); return !!o && o.dir === (s + 2) % 4 && (kind(o) === 'belt' || (kind(o) === 'ubelt' && o.mode === 'out')); };
+  for (const b of L.belt) {
+    b.cv = 0;
+    if (fd(b, (b.dir + 2) % 4)) continue;
+    const l = fd(b, (b.dir + 3) % 4), r = fd(b, (b.dir + 1) % 4);
+    if (l !== r) b.cv = (l ? (b.dir + 3) % 4 : (b.dir + 1) % 4) + 1;
   }
   return L;
 }
@@ -908,21 +948,37 @@ function acceptItem(o, k) {
   return false;
 }
 
-function beltInsert(b, k, p) {
+let BT = 0;
+function beltInsert(b, k, p, l) {
+  l = l || 0;
   const its = b.items;
-  for (const it of its) if (Math.abs(it.p - p) < GAP - 1e-6) return false;
+  for (const it of its) if ((it.l || 0) === l && Math.abs(it.p - p) < GAP - 1e-6) return false;
   let j = 0;
   while (j < its.length && its[j].p > p) j++;
-  its.splice(j, 0, { i: k, p });
+  its.splice(j, 0, { i: k, p, l, m: BT });
   return true;
+}
+
+function beltIn(o, k, d, l, r) {
+  if (kind(o) === 'ubelt' && o.mode !== 'in') return false;
+  if (o.dir === (d + 2) % 4) return false;
+  if (o.dir === d || (o.cv && o.cv - 1 === (d + 2) % 4)) return beltInsert(o, k, Math.min(r || 0, 0.2), l);
+  return beltInsert(o, k, kind(o) === 'ubelt' ? 0 : 0.5, d === (o.dir + 1) % 4 ? 0 : 1);
+}
+
+function beltPut(from, o, k, d) {
+  if (kind(o) === 'ubelt' && o.mode !== 'in') return false;
+  if (o.dir === (d + 2) % 4) return false;
+  if (o.dir === d) { const l = from.ln = (from.ln || 0) ^ 1; return beltInsert(o, k, 0, l) || beltInsert(o, k, 0, l ^ 1); }
+  const n = d === (o.dir + 1) % 4 ? 0 : 1, p = kind(o) === 'ubelt' ? 0 : 0.5;
+  return beltInsert(o, k, p, n ^ 1) || beltInsert(o, k, p, n);
 }
 
 function giveTo(from, o, d, k, mode) {
   const kd = kind(o);
-  if (kd === 'belt') {
-    if (o.dir === (d + 2) % 4) return false;
+  if (kd === 'belt' || kd === 'ubelt') {
     if (mode === 'chest' && o.dir !== d) return false;
-    return beltInsert(o, k, o.dir === d ? 0 : 0.5);
+    return beltPut(from, o, k, d);
   }
   if (o.type === 'depot') return acceptItem(o, k);
   if (kd === 'chest' && mode === 'chest') return false;
@@ -967,25 +1023,47 @@ function pushItems(e, src, mode) {
   }
 }
 
-function beltTick(b) {
-  const its = b.items;
+function laneTick(b, len, nx, ny, d) {
+  const its = b.items, V = (BUILD[b.type].v || 2) * DT, hd = [null, null];
   for (let j = 0; j < its.length; j++) {
-    const it = its[j];
-    let np = it.p + BELT_V;
-    if (j === 0) {
-      if (np >= 1) {
-        const o = at(b.x + DX[b.dir], b.y + DY[b.dir]);
-        let ok = false;
-        if (o) {
-          if (kind(o) === 'belt') ok = o.dir !== (b.dir + 2) % 4 && beltInsert(o, it.i, o.dir === b.dir ? 0 : 0.5);
-          else ok = acceptItem(o, it.i);
+    const it = its[j], l = it.l ? 1 : 0, h = hd[l];
+    let np = it.m === BT ? it.p : it.p + V;
+    if (!h) {
+      if (np >= len - 1e-9) {
+        if (nx != null) {
+          const o = at(nx, ny);
+          if (o && (belty(o) ? beltIn(o, it.i, d, l, np - len) : acceptItem(o, it.i))) { its.splice(j, 1); j--; continue; }
         }
-        if (ok) { its.shift(); j--; continue; }
-        np = 1;
+        np = len;
       }
-    } else np = Math.min(np, its[j - 1].p - GAP);
+    } else np = Math.min(np, h.p - GAP);
     if (np > it.p) it.p = np;
+    hd[l] = it;
   }
+}
+
+function beltTick(b) {
+  if (b.items.length) laneTick(b, 1, b.x + DX[b.dir], b.y + DY[b.dir], b.dir);
+}
+
+function ubTick(e) {
+  if (e.mode !== 'in' || !e.items.length) return;
+  const u = ugPair(e);
+  if (u) laneTick(e, u.n + 1, u.o.x + DX[e.dir], u.o.y + DY[e.dir], e.dir);
+  else laneTick(e, 0.5, null);
+}
+
+function rotEnt(e) {
+  const B = BUILD[e.type];
+  if (B.kind === 'ubelt') {
+    const u = ugPair(e);
+    const its = [].concat(...(u ? [e, u.o] : [e]).map(o => o.items || []));
+    for (const o of u ? [e, u.o] : [e]) { o.mode = o.mode === 'in' ? 'out' : 'in'; o.dir = (o.dir + 2) % 4; o.items = []; }
+    const a = u && u.o.mode === 'in' ? u.o : e;
+    if (a.mode === 'in') { const n = u ? u.n + 1 : 0.5; a.items = its.map(it => ({ ...it, p: Math.max(0, n - it.p), l: it.l ? 0 : 1 })).sort((x, y) => y.p - x.p); }
+    else for (const it of its) S.inv[it.i] = (S.inv[it.i] || 0) + 1;
+  } else e.dir = (e.dir + (B.ug ? 2 : 1)) % 4;
+  L = null;
 }
 
 function sorterTick(e) {
@@ -994,7 +1072,7 @@ function sorterTick(e) {
   const o = at(e.x + DX[d], e.y + DY[d]);
   if (!o) return;
   let ok;
-  if (kind(o) === 'belt') ok = o.dir !== (d + 2) % 4 && beltInsert(o, e.buf, o.dir === d ? 0 : 0.5);
+  if (belty(o)) ok = beltPut(e, o, e.buf, d);
   else ok = acceptItem(o, e.buf);
   if (ok) e.buf = null;
 }
@@ -2692,7 +2770,7 @@ function turretTick(e) {
 function boosterTick(e) {
   const b = (e.dir + 2) % 4, src = at(e.x + DX[b], e.y + DY[b]), dst = at(e.x + DX[e.dir], e.y + DY[e.dir]);
   let g = 0;
-  if (src && dst && isNode(src) && src.fl && src.amt > 0.001) {
+  if (src && dst && isNode(src) && src.fl && src.amt > 0.001 && ugOk(src, e) && (!isNode(dst) || ugOk(dst, e))) {
     const a = Math.min(200 * DT * e.sat, src.amt);
     if (isNode(dst)) g = nodeGive(dst, src.fl, a, e.head, src.tf);
     else if (kind(dst) === 'machine') g = fluidToMachine(dst, src.fl, a);
@@ -2710,7 +2788,7 @@ function machineFluidIn(e, r) {
       const room = cap - (e.fi[f] || 0);
       if (room <= 0.001) break;
       const o = at(p.x, p.y);
-      if (o && isNode(o) && (o.fl === f || (f === 'water' && o.fl === 'bfw')) && o.amt > 0) {
+      if (o && isNode(o) && (o.fl === f || (f === 'water' && o.fl === 'bfw')) && o.amt > 0 && ugOk(o, e)) {
         const g = Math.min(room, o.amt);
         o.amt -= g; e.fi[f] = (e.fi[f] || 0) + g;
         if (o.fl === 'bfw') e.soft = (e.soft || 0) + g;
@@ -2737,7 +2815,7 @@ function machineFluidOut(e) {
     for (const p of e.per) {
       const o = at(p.x, p.y);
       if (!o || o === e) continue;
-      if (isNode(o)) e.fo[f] -= nodeGive(o, f, e.fo[f], e.type === 'boiler' ? 7 : 5);
+      if (isNode(o)) { if (ugOk(o, e)) e.fo[f] -= nodeGive(o, f, e.fo[f], e.type === 'boiler' ? 7 : 5); }
       else if (kind(o) === 'machine') e.fo[f] -= fluidToMachine(o, f, e.fo[f]);
       if (e.fo[f] <= 0.001) { e.fo[f] = 0; break; }
     }
@@ -2749,7 +2827,7 @@ function pumpTick(e) {
   for (const p of e.per) {
     const o = at(p.x, p.y);
     if (!o) continue;
-    if (isNode(o)) left -= nodeGive(o, 'water', left, 8, AMB);
+    if (isNode(o)) { if (ugOk(o, e)) left -= nodeGive(o, 'water', left, 8, AMB); }
     else if (kind(o) === 'machine') left -= fluidToMachine(o, 'water', left);
     if (left <= 0) break;
   }
@@ -2865,7 +2943,8 @@ function tick() {
   for (const e of l.projector) projectorTick(e);
   for (const e of l.gun) gunTick(e);
   for (const e of l.stack) e.puff = (e.puff || 0) * 0.985;
-  for (const b of l.belt) beltTick(b);
+  BT++; for (const b of l.belt) beltTick(b);
+  for (const b of l.ubelt) ubTick(b);
   for (const s of l.sorter) sorterTick(s);
   for (const p of l.pump) pumpTick(p);
   for (const e of l.booster) boosterTick(e);
@@ -2958,7 +3037,7 @@ function walkable(x, y) {
   const t = terrain[y * W + x];
   if (t === 1 || t === 4) return false;
   const o = at(x, y);
-  return !o || o.type === 'belt' || kind(o) === 'pipe' || kind(o) === 'road' || kind(o) === 'rail';
+  return !o || kind(o) === 'belt' || kind(o) === 'pipe' || kind(o) === 'road' || kind(o) === 'rail';
 }
 function spawnPt() {
   const cx = Math.floor(W / 2), cy = Math.floor(H / 2);
@@ -2988,7 +3067,7 @@ function plMove(dt, mx, my) {
       if (S.t - (P.sh || -9) > 0.4) P.f = Math.atan2(my, mx);
       P.wk += h * v * 2.4; P.mv = true;
     }
-    if (o && o.type === 'belt') { vx += DX[o.dir] * 2; vy += DY[o.dir] * 2; }
+    if (o && kind(o) === 'belt') { vx += DX[o.dir] * BUILD[o.type].v; vy += DY[o.dir] * BUILD[o.type].v; }
     if (!vx && !vy) break;
     const nx = P.x + vx * h, ny = P.y + vy * h;
     if (!plFree(P.x, P.y) || plFree(nx, ny)) { P.x = nx; P.y = ny; }
@@ -4004,16 +4083,18 @@ function render() {
   ctx.fillStyle = 'rgba(0,0,0,0.3)';
   for (const e of vis) {
     const k = kind(e);
-    if (k === 'pipe' || e.type === 'belt' || k === 'hive' || k === 'ruin' || k === 'road' || k === 'rail' || k === 'stop' || k === 'buoy' || e.type === 'wind_offshore') continue;
+    if (k === 'pipe' || k === 'belt' || k === 'ubelt' || k === 'hive' || k === 'ruin' || k === 'road' || k === 'rail' || k === 'stop' || k === 'buoy' || e.type === 'wind_offshore') continue;
     const B = BUILD[e.type];
     ctx.fillRect(ox + e.x * z + z * 0.18, oy + e.y * z + z * 0.24, B.w * z - z * 0.12, B.h * z - z * 0.12);
   }
   for (const e of vis) if (kind(e) === 'road') drawRoad(e, ox, oy, z);
   for (const e of vis) if (kind(e) === 'rail') drawRail(e, ox, oy, z);
   for (const e of vis) if (kind(e) === 'pipe') drawPipe(e, ox, oy, z);
-  for (const e of vis) if (e.type === 'belt') drawBelt(e, ox, oy, z);
-  for (const e of vis) if (e.type === 'belt') drawBeltItems(e, ox, oy, z);
-  for (const e of vis) if (kind(e) !== 'pipe' && e.type !== 'belt' && kind(e) !== 'road' && kind(e) !== 'rail') drawBuilding(e, ox, oy, z);
+  for (const e of vis) if (kind(e) === 'belt') drawBelt(e, ox, oy, z);
+  for (const e of vis) if (kind(e) === 'ubelt') drawUBelt(e, ox, oy, z);
+  for (const e of vis) if (belty(e)) drawBeltItems(e, ox, oy, z);
+  for (const e of vis) if (kind(e) === 'ubelt') drawUHood(e, ox, oy, z);
+  for (const e of vis) if (kind(e) !== 'pipe' && !belty(e) && kind(e) !== 'road' && kind(e) !== 'rail') drawBuilding(e, ox, oy, z);
   drawSmoke(vis, ox, oy, z);
   drawWakes(ox, oy, z);
   if (z >= 10) drawShoals(ox, oy, z, x0, y0, x1, y1);
@@ -4121,10 +4202,13 @@ function render() {
 }
 
 function pipeLinks(e, d) {
+  const f = ugFace(e);
+  if (f != null && f !== d) return false;
   const o = at(e.x + DX[d], e.y + DY[d]);
   if (!o) return false;
   const k = kind(o);
   if (k === 'booster') return o.dir % 2 === d % 2;
+  if (k === 'pipe' && !ugOk(o, e)) return false;
   return k === 'pipe' || k === 'engine' || k === 'pump' || k === 'machine';
 }
 
@@ -4138,6 +4222,17 @@ function drawPipe(e, ox, oy, z) {
     else ctx.fillRect(cx - t / 2, DY[d] > 0 ? cy : cy - z / 2, t, z / 2);
   }
   const bw = t * (0.7 + Math.min(0.35, (e.strain || 0) / P.duct * 0.35 || 0));
+  if (BUILD[e.type].ug) {
+    const f = ugFace(e), r = z * 0.36, hx = cx + DX[e.dir] * z * 0.08, hy = cy + DY[e.dir] * z * 0.08;
+    ctx.fillStyle = shade(BUILD[e.type].c, 0.55); ctx.beginPath(); ctx.arc(hx, hy, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = shade(BUILD[e.type].c, 0.95); ctx.beginPath(); ctx.arc(hx, hy, r * 0.78, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#15171a'; ctx.beginPath(); ctx.arc(hx + DX[e.dir] * r * 0.25, hy + DY[e.dir] * r * 0.25, r * 0.42, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = shade(BUILD[e.type].c, 0.7);
+    if (DX[f]) ctx.fillRect(cx + DX[f] * z * 0.3 - z * 0.04, cy - t * 0.75, z * 0.08, t * 1.5); else ctx.fillRect(cx - t * 0.75, cy + DY[f] * z * 0.3 - z * 0.04, t * 1.5, z * 0.08);
+    if (e.fl && e.amt > 0.5) { ctx.fillStyle = col(e.fl); const s = r * 0.5 * Math.sqrt(Math.min(1, e.amt / P.v)); ctx.beginPath(); ctx.arc(hx - DX[e.dir] * r * 0.35, hy - DY[e.dir] * r * 0.35, s, 0, Math.PI * 2); ctx.fill(); }
+    ctx.globalAlpha = 1;
+    return;
+  }
   ctx.fillRect(cx - bw, cy - bw, bw * 2, bw * 2);
   if (e.strain > 0.01) { ctx.strokeStyle = '#ff4a3a'; ctx.lineWidth = Math.max(1, z * 0.06); ctx.strokeRect(cx - bw, cy - bw, bw * 2, bw * 2); }
   if (P.lined && z >= 12) { ctx.fillStyle = '#c8cce0'; ctx.fillRect(cx - bw, cy - bw, bw * 2, Math.max(1, z * 0.04)); }
@@ -4236,44 +4331,139 @@ function drawOverlay(vis, ox, oy, z) {
   ctx.textAlign = 'center'; ctx.fillStyle = '#ff6a5a'; ctx.fillText(lbl[3], w - 120, 54);
 }
 
-function drawBelt(e, ox, oy, z) {
-  const x = ox + e.x * z, y = oy + e.y * z;
-  ctx.fillStyle = '#2b2b2b';
-  ctx.fillRect(x + 1, y + 1, z - 2, z - 2);
-  ctx.fillStyle = '#3a3a3a';
-  if (DX[e.dir]) { ctx.fillRect(x + 1, y + 1, z - 2, z * 0.12); ctx.fillRect(x + 1, y + z * 0.88 - 1, z - 2, z * 0.12); }
-  else { ctx.fillRect(x + 1, y + 1, z * 0.12, z - 2); ctx.fillRect(x + z * 0.88 - 1, y + 1, z * 0.12, z - 2); }
+const LANE = 0.22;
+function beltArc(e) {
+  const s = e.cv - 1, d = e.dir;
+  return { cx: e.x + 0.5 + (DX[s] + DX[d]) * 0.5, cy: e.y + 0.5 + (DY[s] + DY[d]) * 0.5, a0: Math.atan2(-DY[d], -DX[d]), a1: Math.atan2(-DY[s], -DX[s]), right: d === ((s + 2) % 4 + 1) % 4 };
+}
+function angLerp(a0, a1, f) {
+  let da = a1 - a0;
+  while (da > Math.PI) da -= 2 * Math.PI;
+  while (da < -Math.PI) da += 2 * Math.PI;
+  return a0 + da * f;
+}
+function beltPos(e, p, l) {
+  if (kind(e) === 'belt' && e.cv) {
+    const A = beltArc(e), inner = A.right ? l === 1 : l === 0, r = 0.5 + (inner ? -LANE : LANE), a = angLerp(A.a0, A.a1, Math.max(0, Math.min(1, p)));
+    return { x: A.cx + Math.cos(a) * r, y: A.cy + Math.sin(a) * r };
+  }
+  const R = (e.dir + 1) % 4, o = l ? LANE : -LANE;
+  return { x: e.x + 0.5 + DX[e.dir] * (p - 0.5) + DX[R] * o, y: e.y + 0.5 + DY[e.dir] * (p - 0.5) + DY[R] * o };
+}
+
+function beltDeck(B, z, off, y0, y1) {
+  const h = (y1 - y0) * z;
+  ctx.fillStyle = shade(B.c, 0.42); ctx.fillRect(-z / 2, y0 * z, z, h);
+  ctx.fillStyle = '#34363a'; ctx.fillRect(-z * 0.4, y0 * z, z * 0.8, h);
+  ctx.fillStyle = shade(B.c, 0.9); ctx.fillRect(-z / 2, y0 * z, z * 0.08, h); ctx.fillRect(z * 0.42, y0 * z, z * 0.08, h);
   if (z < 10) return;
-  const off = (S.t * 2) % 1;
+  ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(-z / 2 + z * 0.08, y0 * z, z * 0.03, h); ctx.fillRect(z * 0.39, y0 * z, z * 0.03, h);
+  ctx.fillStyle = '#26272a';
+  for (let k = -1; k < 6; k++) { const yy = 0.5 - (k + off) * 0.2; if (yy < y0 - 0.06 || yy > y1) continue; ctx.fillRect(-z * 0.4, Math.max(y0, yy) * z, z * 0.8, Math.max(1, z * 0.05)); }
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  for (let k = -1; k < 6; k++) { const yy = 0.5 - (k + off) * 0.2 + 0.05; if (yy < y0 || yy > y1) continue; ctx.fillRect(-z * 0.4, yy * z, z * 0.8, Math.max(1, z * 0.025)); }
+  if (z >= 16) {
+    ctx.strokeStyle = shade(B.c, 0.75); ctx.globalAlpha = 0.5; ctx.lineWidth = Math.max(1, z * 0.04);
+    const yy = (y0 + y1) / 2 * z;
+    ctx.beginPath(); ctx.moveTo(-z * 0.1, yy + z * 0.05); ctx.lineTo(0, yy - z * 0.05); ctx.lineTo(z * 0.1, yy + z * 0.05); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawBelt(e, ox, oy, z) {
+  const B = BUILD[e.type], x = ox + e.x * z, y = oy + e.y * z, off = (S.t * (B.v || 2) * 5) % 1;
+  if (e.cv) {
+    const A = beltArc(e), cx = ox + A.cx * z, cy = oy + A.cy * z, ccw = !A.right;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x, y, z, z); ctx.clip();
+    ctx.beginPath(); ctx.arc(cx, cy, z * 0.9, A.a0, A.a1, ccw); ctx.arc(cx, cy, z * 0.1, A.a1, A.a0, !ccw); ctx.closePath();
+    ctx.fillStyle = '#34363a'; ctx.fill();
+    ctx.lineWidth = z * 0.08; ctx.strokeStyle = shade(B.c, 0.9);
+    ctx.beginPath(); ctx.arc(cx, cy, z * 0.96, A.a0, A.a1, ccw); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, z * 0.04 + 0.5, A.a0, A.a1, ccw); ctx.stroke();
+    if (z >= 10) {
+      ctx.strokeStyle = '#26272a'; ctx.lineWidth = Math.max(1, z * 0.05);
+      for (let k = 0; k < 5; k++) {
+        const a = angLerp(A.a0, A.a1, ((k + off) / 4) % 1.25);
+        if ((k + off) / 4 > 1) continue;
+        ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * z * 0.1, cy + Math.sin(a) * z * 0.1); ctx.lineTo(cx + Math.cos(a) * z * 0.9, cy + Math.sin(a) * z * 0.9); ctx.stroke();
+      }
+    }
+    ctx.restore();
+    return;
+  }
   ctx.save();
-  ctx.beginPath();
-  ctx.rect(x + 1, y + 1, z - 2, z - 2);
-  ctx.clip();
   ctx.translate(x + z / 2, y + z / 2);
   ctx.rotate(e.dir * Math.PI / 2);
-  ctx.strokeStyle = BUILD.belt.c;
-  ctx.lineWidth = Math.max(1, z * 0.07);
-  for (let k = -1; k < 2; k++) {
-    const yy = z / 2 - (k + off) * z / 2 - z / 4;
-    ctx.beginPath();
-    ctx.moveTo(-z * 0.22, yy + z * 0.12);
-    ctx.lineTo(0, yy - z * 0.06);
-    ctx.lineTo(z * 0.22, yy + z * 0.12);
-    ctx.stroke();
+  beltDeck(B, z, off, -0.5, 0.5);
+  ctx.restore();
+}
+
+function drawUBelt(e, ox, oy, z) {
+  const B = BUILD[e.type], x = ox + e.x * z, y = oy + e.y * z, off = (S.t * (B.v || 2) * 5) % 1;
+  ctx.save();
+  ctx.translate(x + z / 2, y + z / 2);
+  ctx.rotate(e.dir * Math.PI / 2);
+  if (e.mode === 'in') beltDeck(B, z, off, 0, 0.5); else beltDeck(B, z, off, -0.5, 0);
+  ctx.restore();
+}
+
+function drawUHood(e, ox, oy, z) {
+  const B = BUILD[e.type], x = ox + e.x * z, y = oy + e.y * z, inn = e.mode === 'in', ok = !!ugPair(e);
+  ctx.save();
+  ctx.translate(x + z / 2, y + z / 2);
+  ctx.rotate(e.dir * Math.PI / 2);
+  if (!inn) ctx.scale(1, -1);
+  const y0 = -0.5 * z, y1 = 0.08 * z;
+  ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(-z * 0.46, y0 + z * 0.06, z * 0.96, y1 - y0);
+  ctx.fillStyle = shade(B.c, 0.5); ctx.fillRect(-z * 0.5, y0, z, y1 - y0);
+  ctx.fillStyle = shade(B.c, 0.85); ctx.fillRect(-z * 0.5, y0, z * 0.1, y1 - y0); ctx.fillRect(z * 0.4, y0, z * 0.1, y1 - y0);
+  ctx.fillStyle = shade(B.c, 1.05); ctx.fillRect(-z * 0.4, y0, z * 0.8, z * 0.12);
+  ctx.fillStyle = '#121315'; ctx.fillRect(-z * 0.36, y1 - z * 0.14, z * 0.72, z * 0.14);
+  if (z >= 12) {
+    ctx.fillStyle = ok ? shade(B.c, 1.2) : '#e05a4a';
+    ctx.beginPath(); ctx.moveTo(0, y0 + z * 0.16); ctx.lineTo(z * 0.16, y0 + z * 0.34); ctx.lineTo(-z * 0.16, y0 + z * 0.34); ctx.closePath();
+    if (!inn) { ctx.save(); ctx.translate(0, y0 + z * 0.25); ctx.scale(1, -1); ctx.translate(0, -(y0 + z * 0.25)); ctx.fill(); ctx.restore(); } else ctx.fill();
   }
   ctx.restore();
 }
 
 function drawBeltItems(e, ox, oy, z) {
-  const cx = ox + (e.x + 0.5) * z, cy = oy + (e.y + 0.5) * z, r = Math.max(1.5, z * 0.15);
+  const r = Math.max(1.5, z * 0.12);
+  let len = 1, ex = null;
+  if (kind(e) === 'ubelt') { if (e.mode !== 'in') return; const u = ugPair(e); if (u) { len = u.n + 1; ex = u.o; } }
   for (const it of e.items) {
-    const px = cx + DX[e.dir] * (it.p - 0.5) * z, py = cy + DY[e.dir] * (it.p - 0.5) * z;
+    let q;
+    if (kind(e) === 'ubelt') {
+      if (it.p <= 0.5) q = beltPos(e, it.p, it.l || 0);
+      else if (ex && it.p >= len - 0.5) q = beltPos(ex, it.p - len + 1, it.l || 0);
+      else continue;
+    } else q = beltPos(e, it.p, it.l || 0);
+    const px = ox + q.x * z, py = oy + q.y * z;
+    if (z >= 14) { ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.arc(px + r * 0.25, py + r * 0.35, r, 0, Math.PI * 2); ctx.fill(); }
     ctx.fillStyle = col(it.i);
     ctx.beginPath();
     ctx.arc(px, py, r, 0, Math.PI * 2);
     ctx.fill();
-    if (z >= 14) { ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.lineWidth = 1; ctx.stroke(); }
+    if (z >= 14) {
+      ctx.strokeStyle = 'rgba(0,0,0,0.65)'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.beginPath(); ctx.arc(px - r * 0.3, py - r * 0.3, r * 0.35, 0, Math.PI * 2); ctx.fill();
+    }
   }
+}
+
+function drawUgLinks(ox, oy, z, fam) {
+  ctx.save();
+  ctx.setLineDash([z * 0.18, z * 0.12]); ctx.lineWidth = Math.max(1, z * 0.06);
+  for (const e of ents.values()) {
+    const B = BUILD[e.type];
+    if (!B.ug || B.kind !== fam || (fam === 'ubelt' && e.mode !== 'in')) continue;
+    const u = ugPair(e);
+    if (!u || (fam === 'pipe' && u.o.id < e.id)) continue;
+    ctx.strokeStyle = fam === 'pipe' ? 'rgba(140,200,255,0.75)' : 'rgba(255,220,120,0.8)';
+    ctx.beginPath(); ctx.moveTo(ox + (e.x + 0.5) * z, oy + (e.y + 0.5) * z); ctx.lineTo(ox + (u.o.x + 0.5) * z, oy + (u.o.y + 0.5) * z); ctx.stroke();
+  }
+  ctx.restore();
 }
 
 function arrow(cx, cy, d, s, c) {
@@ -5240,7 +5430,20 @@ function drawGhost(ox, oy, z) {
   ctx.strokeStyle = err ? '#ff5a5a' : '#7fff8a';
   ctx.lineWidth = 2;
   ctx.strokeRect(ox + o.x * z + 1, oy + o.y * z + 1, B.w * z - 2, B.h * z - 2);
-  if (tool === 'belt' || tool === 'sorter' || tool === 'booster') arrow(ox + (o.x + 0.5) * z, oy + (o.y + 0.5) * z, toolDir, z * 0.28, '#fff');
+  if (B.kind === 'belt' || B.kind === 'ubelt' || B.ug || tool === 'sorter' || tool === 'booster') arrow(ox + (o.x + 0.5) * z, oy + (o.y + 0.5) * z, toolDir, z * 0.28, '#fff');
+  if (B.ug) {
+    drawUgLinks(ox, oy, z, B.kind);
+    const g = { type: tool, x: o.x, y: o.y, dir: toolDir, mode: 'in' };
+    const b = (toolDir + 2) % 4;
+    let src = null;
+    for (let n = 1; n <= B.ug; n++) { const q = at(o.x + DX[b] * n, o.y + DY[b] * n); if (q && q.type === tool) { if (B.kind === 'pipe' ? q.dir === toolDir && !ugPair(q) : q.dir === toolDir && q.mode === 'in' && !ugPair(q)) src = q; break; } }
+    ctx.save(); ctx.globalAlpha = 0.18; ctx.fillStyle = src ? '#7fff8a' : '#ffffff';
+    for (let n = 1; n <= B.ug; n++) { const tx = o.x + DX[toolDir] * n, ty = o.y + DY[toolDir] * n; if (!src) ctx.fillRect(ox + tx * z + 2, oy + ty * z + 2, z - 4, z - 4); }
+    ctx.restore();
+    if (src) { ctx.save(); ctx.setLineDash([z * 0.18, z * 0.12]); ctx.strokeStyle = '#7fff8a'; ctx.lineWidth = Math.max(1, z * 0.07); ctx.beginPath(); ctx.moveTo(ox + (src.x + 0.5) * z, oy + (src.y + 0.5) * z); ctx.lineTo(ox + (o.x + 0.5) * z, oy + (o.y + 0.5) * z); ctx.stroke(); ctx.restore(); }
+    ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.max(9, Math.floor(z * 0.26))}px system-ui,sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText(src ? (B.kind === 'pipe' ? 'joins' : 'exit') : (B.kind === 'pipe' ? 'start' : 'entrance'), ox + (o.x + 0.5) * z, oy + o.y * z - 2);
+  }
 }
 
 function tileInfo(x, y) {
@@ -5257,7 +5460,8 @@ function tileInfo0(x, y) {
     if (kind(e) === 'pipe') s += `<br>${e.fl && e.amt > 0.01 ? nm(e.fl) + ' · ' + pres(e).toFixed(1) + ' bar · ' + Math.round(e.tf) + '°C' : 'Empty' + (e.fl ? ' (' + nm(e.fl) + ')' : '')}<br><span class="dim">${NP(e).mat}, DN${NP(e).dn}, rated ${NP(e).bar} bar</span>`;
     if (e.type === 'engine') s += `<br>${Math.round(e.kw)} kW · steam ${pres(e).toFixed(1)} bar · ${Math.round(e.tf)}°C`;
     if (e.type === 'booster') s += `<br>Outlet ${e.head} bar · ${Math.round(e.fr)}/s`;
-    if (e.type === 'belt' && e.items.length) s += `<br>${e.items.map(i => nm(i.i)).join(', ')}`;
+    if (belty(e) && e.items.length) s += `<br>${e.items.map(i => nm(i.i)).join(', ')}`;
+    if (BUILD[e.type].ug) s += `<br><span class="dim">${kind(e) === 'ubelt' ? (e.mode === 'in' ? 'Entrance' : 'Exit') : 'Pipe-to-ground'} · ${ugPair(e) ? 'joined ' + ugPair(e).n + ' tiles' : 'not joined'}</span>`;
     if (e.type === 'chest') s += `<br>${sum(e.store)}/400 items`;
     if (e.type === 'boiler' && e.scale > 0.01) s += `<br>Scale ${Math.round(e.scale * 100)}%`;
     if (e.type === 'depot') s += `<br>${(S.orders || []).map(a => nm(ORDERS[a.i].item) + ' ' + a.got + '/' + ORDERS[a.i].n).join('<br>') || 'No open orders'}`;
@@ -5315,7 +5519,7 @@ const stk = k => BUILD[k] ? (BUILD[k].kind === 'belt' || BUILD[k].kind === 'pipe
 const lum = h => { if (!h || h[0] !== '#') return 128; if (h.length === 4) h = '#' + h[1] + h[1] + h[2] + h[2] + h[3] + h[3]; const v = parseInt(h.slice(1, 7), 16); return ((v >> 16) * 299 + ((v >> 8) & 255) * 587 + (v & 255) * 114) / 1000; };
 function abbr(k) {
   const B = BUILD[k];
-  if (B) return (B.ab || '') + (k === 'belt' ? '»' : B.kind === 'pipe' ? (B.P.dn >= 100 ? '█' : '═') : '');
+  if (B) return (B.ab || '') + (B.kind === 'belt' ? '»' : B.kind === 'ubelt' ? '⇣' : B.kind === 'pipe' ? (B.P.dn >= 100 ? '█' : '═') : '');
   const w = nm(k).replace(/[^A-Za-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean);
   return w.length === 1 ? w[0].slice(0, 2) : w.slice(0, 2).map(x => x[0].toUpperCase()).join('');
 }
@@ -5490,7 +5694,7 @@ function openPanel(e) {
   if (e.type === 'chest') h += '<button data-act="takeall">Take all</button><button data-act="store">Store raw materials</button>';
   if (e.type === 'booster') h += `<label class="row">Outlet pressure <select data-act="head">${HEADS.concat(e.head).filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b).map(v => `<option value="${v}" ${e.head === v ? 'selected' : ''}>${v} bar</option>`).join('')}</select></label>`;
   if (kind(e) === 'pipe') h += '<button data-act="flush">Flush network</button>';
-  if (e.type === 'belt' || e.type === 'sorter' || e.type === 'booster') h += '<button data-act="rotate">Rotate (R)</button>';
+  if (belty(e) || B.ug || e.type === 'sorter' || e.type === 'booster') h += '<button data-act="rotate">Rotate (R)</button>';
   if (e.type === 'turret') h += '<button data-act="load">Load cartridges</button>';
   if (e.type === 'projector') h += '<button data-act="pload">Load from inventory</button>';
   if (e.type === 'howitzer') h += '<button data-act="gload">Load shells</button>';
@@ -5669,8 +5873,11 @@ function renderPanelDyn() {
     h += `<p class="dim">${e.done ? 'Only rust and broken glass are left.' : g ? 'Crawlers have nested around the old works. Clear every hive within 16 tiles, then search it for salvage and the lab books.' : 'Nothing stops you now. The stores may still hold platinum catalyst gauze, motors and cylinders, and the lab books will teach you a lost process.'}</p>`;
   } else if (k === 'pump') {
     h += `<div class="status"><i style="background:${e.on ? ST_COL.work : ST_COL.output}"></i>${e.on ? 'Pumping' : 'Nothing to pump into'}</div>`;
-  } else if (k === 'belt') {
-    h += '<div class="slots">' + (e.items.map(q => `<div class="slot">${chip(q.i)}</div>`).join('') || '<span class="dim">Empty</span>') + '</div>';
+  } else if (k === 'belt' || k === 'ubelt') {
+    if (k === 'ubelt') { const u = ugPair(e); h += `<div class="status"><i style="background:${u ? ST_COL.work : ST_COL.input}"></i>${e.mode === 'in' ? 'Entrance' : 'Exit'} · ${u ? 'joined to the ' + (e.mode === 'in' ? 'exit' : 'entrance') + ' ' + u.n + ' tiles away' : 'not joined: place a matching ' + (e.mode === 'in' ? 'exit' : 'entrance') + ' within ' + (B.ug - 1) + ' tiles'}</div>`; }
+    const its = k === 'ubelt' && e.mode !== 'in' ? ((ugPair(e) || {}).o || { items: [] }).items : e.items;
+    const ln = l => its.filter(q => (q.l || 0) === l).map(q => `<div class="slot">${chip(q.i)}</div>`).join('') || '<span class="dim">Empty</span>';
+    h += `<p class="dim">Speed ${BUILD[e.type].v} tiles/s</p><p class="dim">Left lane</p><div class="slots">${ln(0)}</div><p class="dim">Right lane</p><div class="slots">${ln(1)}</div>`;
   } else if (k === 'sorter') {
     h += `<div class="slots"><div class="slot">${e.buf ? chip(e.buf) : '<span class="dim">Empty</span>'}</div></div><p class="dim">Filtered item goes straight on. Everything else turns right.</p>`;
   }
@@ -5733,7 +5940,7 @@ function panelAct(act, el) {
       for (const p of c.per) { const o = at(p.x, p.y); if (o && kind(o) === 'pipe' && !seen.has(o.id)) { seen.add(o.id); q.push(o); } }
     }
     toast(`Flushed ${seen.size} pipes`);
-  } else if (act === 'rotate') { e.dir = (e.dir + 1) % 4; }
+  } else if (act === 'rotate') { rotEnt(e); }
   else if (act === 'load') {
     const n = Math.min(S.inv.cartridge || 0, TUR_CAP - e.ammo);
     if (n > 0) { S.inv.cartridge -= n; if (!S.inv.cartridge) delete S.inv.cartridge; e.ammo += n; }
@@ -6051,6 +6258,8 @@ const HELP = `<div class="help">
 <li>A chest that holds a machine's inputs feeds that machine and does not take its outputs.</li>
 <li>Follow the <b>Ore chains</b> in the encyclopedia: crush, grind, separate, then smelt.</li>
 </ol>
+<h3>Belts</h3>
+<p>Every belt has two lanes. Machines and chests put items on the far lane first, and a belt that runs into the side of another loads onto its near lane, so two lines can share one belt. When a belt is the only feed of the belt in front, that belt bends into a curve and both lanes follow it round. <b>Fast</b> belts run at 4 tiles/s and <b>Express</b> belts at 6. An <b>Underground belt</b> is placed as an entrance, then a second one further on in the same direction becomes the exit; items pass under anything in between. <b>Pipe-to-ground</b> works the same way for fluids, up to 9 tiles, and connects only on its open face.</p>
 <h3>Pipes</h3>
 <p>Pipes have real pressure, flow and temperature. Cast iron is cheap but brittle and bursts above 16 bar. Steel pipe carries four times the flow and bulges before it bursts. Acid, brine and chlorine eat both, so carry them in lead-lined or titanium pipe, and caustic in steel. Booster pumps push fluid further. See <b>Pipes</b> in the encyclopedia.</p>
 <h3>Smog and acid rain</h3>
@@ -6377,7 +6586,7 @@ function renderCraft(body) {
 function plBlock(t, x, y) {
   const B = BUILD[t], P = S.pl;
   if (!inReach(x + B.w / 2, y + B.h / 2, REACH)) return 'Out of reach. Walk closer.';
-  if (B.kind === 'belt' || B.kind === 'pipe' || B.kind === 'road' || B.kind === 'rail') return null;
+  if (B.kind === 'belt' || (B.kind === 'pipe' && !B.ug) || B.kind === 'road' || B.kind === 'rail') return null;
   if (P.x + PL_R > x && P.x - PL_R < x + B.w && P.y + PL_R > y && P.y - PL_R < y + B.h) return 'You are standing there';
   return null;
 }
@@ -6399,10 +6608,10 @@ function dragTo(tx, ty) {
     const dx = tx - drag.x, dy = ty - drag.y;
     let d;
     if (Math.abs(dx) >= Math.abs(dy)) d = dx > 0 ? 1 : 3; else d = dy > 0 ? 2 : 0;
-    if (tool === 'belt') {
+    if (BUILD[tool].kind === 'belt') {
       toolDir = d;
       const prev = drag.last && ents.get(drag.last);
-      if (prev && prev.type === 'belt') prev.dir = d;
+      if (prev && kind(prev) === 'belt' && prev.dir !== d) { prev.dir = d; L = null; }
     }
     drag.x += DX[d]; drag.y += DY[d];
     if (!tool) break;
@@ -6440,7 +6649,7 @@ cv.addEventListener('mousedown', ev => {
   if (tool) {
     const r = placeAt(mouse.fx, mouse.fy);
     if (typeof r === 'string') { toast(r, true); return; }
-    if (BUILD[r.type] && ['belt', 'pipe', 'wall', 'road', 'rail'].includes(BUILD[r.type].kind)) drag = { x: r.x, y: r.y, last: r.id };
+    if (BUILD[r.type] && !BUILD[r.type].ug && ['belt', 'pipe', 'wall', 'road', 'rail'].includes(BUILD[r.type].kind)) drag = { x: r.x, y: r.y, last: r.id };
     return;
   }
   const vc = carAt(mouse.fx, mouse.fy);
@@ -6474,7 +6683,7 @@ cv.addEventListener('mousemove', ev => {
   updateMouse(ev);
   mouse.in = true;
   if (mouse.m) { cam.x -= (ev.clientX - mouse.px) / cam.z; cam.y -= (ev.clientY - mouse.py) / cam.z; mouse.px = ev.clientX; mouse.py = ev.clientY; }
-  if (mouse.r && (ptx !== mouse.tx || pty !== mouse.ty)) { const e = at(mouse.tx, mouse.ty); if (e && (e.type === 'belt' || kind(e) === 'pipe' || kind(e) === 'road' || (kind(e) === 'rail' && !railBusy(e))) && entReach(e, REACH)) { removeEnt(e); renderHotbar(); } }
+  if (mouse.r && (ptx !== mouse.tx || pty !== mouse.ty)) { const e = at(mouse.tx, mouse.ty); if (e && (belty(e) || kind(e) === 'pipe' || kind(e) === 'road' || (kind(e) === 'rail' && !railBusy(e))) && entReach(e, REACH)) { removeEnt(e); renderHotbar(); } }
   if (drag && mouse.l && tool && (drag.x !== mouse.tx || drag.y !== mouse.ty)) dragTo(mouse.tx, mouse.ty);
   const info = tool || S.dg ? '' : tileInfo(mouse.tx, mouse.ty);
   if (info) {
@@ -6519,7 +6728,7 @@ window.addEventListener('keydown', ev => {
   }
   else if (k === 'r') {
     if (tool) toolDir = (toolDir + 1) % 4;
-    else { const e = at(mouse.tx, mouse.ty); if (e && (e.type === 'belt' || e.type === 'sorter' || e.type === 'booster')) e.dir = (e.dir + 1) % 4; }
+    else { const e = at(mouse.tx, mouse.ty); if (e && (belty(e) || BUILD[e.type].ug || e.type === 'sorter' || e.type === 'booster')) rotEnt(e); }
   }
   else if ((k === 'f' || k === 'enter') && !modalKind) S.dg ? dgUse() : carToggle();
   else if (k === 'x' && !modalKind) wpnCycle();
@@ -6638,6 +6847,7 @@ window.game = {
   get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get trains() { return S.trains; }, placeTrain, trainAt, openTrain, openPanel, pickTrain, trainGeo, reverseTrain, railBusy, get puffs() { return puffs; }, get H() { return H; }, get wakes() { return wakes; }, floats, boatRoute, boatPilot, carStep, carHit, fishTick, fishRegrow, seaOil, seaPatch, oily, sunMul, get oreAmt() { return oreAmt; }, fground, fstock, netToggle, wdep, seaLv,
   htier, spits: () => spits, hiveTier, guardStep, addHive, bugKind, maxHp, hurt, rgd: () => rgd, tileInfo0, growNear, genRegion, tch: () => tch, ovc, mapWin, depleteTile,
   dgEnter, dgExit, dgTick, dgShoot, dgMove, dgUse, dgClick, dgGrid, dgGen, dgSolid, dgSee, dgPos, spawnBurrows, mineGen, dgKind, dgCaches, spawnMines, dgDoor, get dfx() { return dfx; },
+  rotEnt, ugPair, lists: () => lists(),
   setOverlay(v) { overlay = v; }, elev: () => elev, drawPreview, startWorld, get wcfg() { return wcfg; },
 };
 })();
