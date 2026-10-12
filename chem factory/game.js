@@ -2968,6 +2968,7 @@ const EQ = {
   dmfc: { w: 2, h: 2, fc: 100 },
   exo_legs: { w: 2, h: 4, use: 150 },
   trauma_plate: { w: 2, h: 2, a: 0.12 },
+  b4c_plate: { w: 2, h: 2, a: 0.15 },
   stf_pad: { w: 2, h: 2, a: 0.08 },
   sentry_arm: { w: 2, h: 2 },
   drill_arm: { w: 2, h: 2, use: 300 },
@@ -2977,7 +2978,7 @@ const NADE = {
   ammonal_charge: { r: 3.2, dm: 130, hv: 160, c: '#c8c8c0' },
   powder_charge: { r: 2.2, dm: 55, hv: 60, c: '#4a4844' },
 };
-const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug'];
+const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug'];
 const nades = [];
 const takeInv = k => { S.inv[k]--; if (!(S.inv[k] > 0)) delete S.inv[k]; };
 function wpnHas(m) {
@@ -3042,7 +3043,7 @@ const eqOn = () => (S.pl.arm?.en || 0) > 1;
 function armRed() {
   const k = armWorn();
   if (!k) return 0;
-  return Math.min(0.85, ARMOR[k].a + eqN('trauma_plate') * EQ.trauma_plate.a + eqN('stf_pad') * EQ.stf_pad.a);
+  return Math.min(0.85, ARMOR[k].a + S.pl.arm.g.reduce((s, m) => s + (EQ[m.k]?.a || 0), 0));
 }
 function armSoak(d) { return d * (1 - armRed()); }
 const eqSpd = () => eqOn() ? 1 + 0.3 * Math.min(2, eqN('exo_legs')) : 1;
