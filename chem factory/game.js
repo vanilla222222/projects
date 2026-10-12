@@ -2962,6 +2962,7 @@ const ARMOR = {
   exoframe3: { a: 0.5, g: 12 },
   exoframe2: { a: 0.45, g: 10 },
   exoframe: { a: 0.35, g: 7 },
+  blast_suit: { a: 0.68, s: 0.75 },
   laminate_carrier: { a: 0.4, g: 6 },
   carrier: { a: 0.3, g: 5 },
   ceramic_vest: { a: 0.6 },
@@ -2972,6 +2973,8 @@ const ARMOR = {
 const EQ = {
   pv_film: { w: 1, h: 1, gen: 20 },
   tandem_film: { w: 1, h: 1, gen: 32 },
+  ss_batt: { w: 1, h: 2, cap: 900000 },
+  med_injector: { w: 1, h: 1 },
   batt_pack: { w: 1, h: 2, cap: 360000 },
   dmfc: { w: 2, h: 2, fc: 100 },
   exo_legs: { w: 2, h: 4, use: 150 },
@@ -2992,7 +2995,7 @@ const NADE = {
   ammonal_charge: { r: 3.2, dm: 130, hv: 160, c: '#c8c8c0' },
   powder_charge: { r: 2.2, dm: 55, hv: 60, c: '#4a4844' },
 };
-const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'crossbow', 'xbow_bolt', 'amr', 'wha_round', 'exoframe3', 'coil_turret', 'knee_gen', 'thermal_sight', 'thermal_cam', 'ultrasound_probe', 'surge_arrester', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug', 'arc_caster', 'spark_gap', 'laminate_carrier', 'sofc_pack', 'supercap', 'slug_shell', 'rotary_gun', 'discharge_ring', 'tandem_film'];
+const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'crossbow', 'xbow_bolt', 'amr', 'wha_round', 'exoframe3', 'coil_turret', 'knee_gen', 'thermal_sight', 'thermal_cam', 'ultrasound_probe', 'surge_arrester', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug', 'arc_caster', 'spark_gap', 'laminate_carrier', 'sofc_pack', 'supercap', 'slug_shell', 'rotary_gun', 'discharge_ring', 'tandem_film', 'hemostat', 'med_injector', 'blast_suit', 'ss_batt'];
 const nades = [];
 const takeInv = k => { S.inv[k]--; if (!(S.inv[k] > 0)) delete S.inv[k]; };
 function wpnHas(m) {
@@ -3063,7 +3066,7 @@ function wpnShot(ox, oy, list, hives, see, under, arm) {
 }
 function armWorn() { const A = S.pl.arm; return A && ARMOR[A.k] ? A.k : null; }
 const eqN = k => { const A = S.pl.arm; return A ? A.g.filter(m => m.k === k).length : 0; };
-function eqCap() { const A = S.pl.arm; return A && ARMOR[A.k].g ? 5000 + eqN('batt_pack') * EQ.batt_pack.cap + eqN('supercap') * EQ.supercap.cap : 0; }
+function eqCap() { const A = S.pl.arm; return A && ARMOR[A.k].g ? 5000 + eqN('batt_pack') * EQ.batt_pack.cap + eqN('supercap') * EQ.supercap.cap + eqN('ss_batt') * EQ.ss_batt.cap : 0; }
 const eqOn = () => (S.pl.arm?.en || 0) > 1;
 function armRed() {
   const k = armWorn();
@@ -3071,7 +3074,7 @@ function armRed() {
   return Math.min(0.85, ARMOR[k].a + S.pl.arm.g.reduce((s, m) => s + (EQ[m.k]?.a || 0), 0));
 }
 function armSoak(d) { return d * (1 - armRed()); }
-const eqSpd = () => eqOn() ? 1 + 0.3 * Math.min(2, eqN('exo_legs')) : 1;
+const eqSpd = () => (ARMOR[armWorn()]?.s || 1) * (eqOn() ? 1 + 0.3 * Math.min(2, eqN('exo_legs')) : 1);
 const eqMine = () => eqOn() ? 1 + eqN('drill_arm') : 1;
 function eqFits(A, k, x, y, skip) {
   const n = ARMOR[A.k].g, E = EQ[k];
@@ -3124,6 +3127,7 @@ function eqTick() {
   use += Math.min(1, eqN('thermal_sight')) * EQ.thermal_sight.use;
   A.en = Math.max(0, Math.min(cap, (A.en || 0) + (gen - use) * DT));
   if (S.dg || P.dead > 0 || P.car) return;
+  if (eqN('med_injector') && !(P.dead > 0) && P.hp > 0 && P.hp < PL_HP / 3 && S.t >= (P.mcd || 0) && S.inv.hemostat > 0) { takeInv('hemostat'); P.hp = Math.min(PL_HP, P.hp + 80); P.mcd = S.t + 15; toast('Trauma injector fired: +80 health'); }
   P.dcd = (P.dcd || 0) - DT;
   if (eqN('discharge_ring') && P.dcd <= 0 && A.en >= 8000) {
     const nb = S.bugs.filter(b => b.hp > 0 && (b.x - P.x) ** 2 + (b.y - P.y) ** 2 < 6.25);
@@ -8918,7 +8922,7 @@ function renderEquip(body) {
   if (body.querySelector('#eview') && sig === eSig) return eqDyn();
   eSig = sig;
   if (eSel && !(S.inv[eSel] > 0)) eSel = null;
-  const st = k => { const E = EQ[k]; return E.gen ? `+${E.gen} W` : E.cap ? `${E.cap / 1000} kJ` : E.fc ? `+${E.fc} W on ${k === 'sofc_pack' ? 'methane' : 'methanol'}` : E.a ? `+${E.a * 100}% armour` : k === 'coil_turret' ? '2.5 kJ a shot' : k === 'discharge_ring' ? '8 kJ a pulse' : k === 'thermal_sight' ? '+25% gun range, −20 W' : E.use ? `−${E.use} W` : k === 'aero_liner' ? 'halves heat and cold' : '250 J a shot'; };
+  const st = k => { const E = EQ[k]; return E.gen ? `+${E.gen} W` : E.cap ? `${E.cap / 1000} kJ` : E.fc ? `+${E.fc} W on ${k === 'sofc_pack' ? 'methane' : 'methanol'}` : E.a ? `+${E.a * 100}% armour` : k === 'coil_turret' ? '2.5 kJ a shot' : k === 'discharge_ring' ? '8 kJ a pulse' : k === 'med_injector' ? `+80 health (${S.inv.hemostat || 0} hemostats)` : k === 'thermal_sight' ? '+25% gun range, −20 W' : E.use ? `−${E.use} W` : k === 'aero_liner' ? 'halves heat and cold' : '250 J a shot'; };
   let h = '<div id="eview"><section class="cpane"><div class="ctop"><b>Worn armour</b></div>';
   h += A ? `<div class="eworn">${ico(A.k)}<div><b>${nm(A.k)}</b><div class="dim">${n ? n + '×' + n + ' grid' : 'No equipment grid'}</div></div><button class="rs ok ebtn" data-eqoff="1">Take off</button></div>` : '<div class="dim">Nothing worn. Click an armour below to put it on.</div>';
   const ar = Object.keys(ARMOR).filter(k => S.inv[k] > 0);
