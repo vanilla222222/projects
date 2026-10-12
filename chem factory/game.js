@@ -2971,6 +2971,7 @@ const ARMOR = {
 };
 const EQ = {
   pv_film: { w: 1, h: 1, gen: 20 },
+  tandem_film: { w: 1, h: 1, gen: 32 },
   batt_pack: { w: 1, h: 2, cap: 360000 },
   dmfc: { w: 2, h: 2, fc: 100 },
   exo_legs: { w: 2, h: 4, use: 150 },
@@ -2991,7 +2992,7 @@ const NADE = {
   ammonal_charge: { r: 3.2, dm: 130, hv: 160, c: '#c8c8c0' },
   powder_charge: { r: 2.2, dm: 55, hv: 60, c: '#4a4844' },
 };
-const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'crossbow', 'xbow_bolt', 'amr', 'wha_round', 'exoframe3', 'coil_turret', 'knee_gen', 'thermal_sight', 'thermal_cam', 'ultrasound_probe', 'surge_arrester', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug', 'arc_caster', 'spark_gap', 'laminate_carrier', 'sofc_pack', 'supercap', 'slug_shell', 'rotary_gun', 'discharge_ring'];
+const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'crossbow', 'xbow_bolt', 'amr', 'wha_round', 'exoframe3', 'coil_turret', 'knee_gen', 'thermal_sight', 'thermal_cam', 'ultrasound_probe', 'surge_arrester', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug', 'arc_caster', 'spark_gap', 'laminate_carrier', 'sofc_pack', 'supercap', 'slug_shell', 'rotary_gun', 'discharge_ring', 'tandem_film'];
 const nades = [];
 const takeInv = k => { S.inv[k]--; if (!(S.inv[k] > 0)) delete S.inv[k]; };
 function wpnHas(m) {
@@ -3107,7 +3108,7 @@ function eqTick() {
   const P = S.pl, A = P.arm;
   if (!A || !ARMOR[A.k] || !ARMOR[A.k].g) return;
   const cap = eqCap();
-  let gen = (S.dg ? 0 : eqN('pv_film') * EQ.pv_film.gen) + (P.mv && !P.car ? Math.min(2, eqN('knee_gen')) * EQ.knee_gen.gen : 0), use = 0;
+  let gen = (S.dg ? 0 : eqN('pv_film') * EQ.pv_film.gen + eqN('tandem_film') * EQ.tandem_film.gen) + (P.mv && !P.car ? Math.min(2, eqN('knee_gen')) * EQ.knee_gen.gen : 0), use = 0;
   const fcs = eqN('dmfc');
   if (fcs && A.en < cap * 0.9) {
     if (!(P.fc > 0) && S.inv.meoh_cart > 0) { takeInv('meoh_cart'); P.fc = 450000; }
@@ -8944,7 +8945,7 @@ function eqDyn() {
   let h = `<div class="sec">Effects</div><div class="gauge"><span>Armour</span>${bar(armRed(), 1, '#7fb0e0')}<b>${Math.round(armRed() * 100)}%</b></div>`;
   if (cap) {
     h += `<div class="gauge"><span>Energy</span>${bar(A.en || 0, cap, '#e0d04a')}<b>${Math.round((A.en || 0) / 1000)} kJ</b></div>`;
-    const gen = eqN('pv_film') * EQ.pv_film.gen, fc = eqN('dmfc') * EQ.dmfc.fc, so = eqN('sofc_pack') * EQ.sofc_pack.fc;
+    const gen = eqN('pv_film') * EQ.pv_film.gen + eqN('tandem_film') * EQ.tandem_film.gen, fc = eqN('dmfc') * EQ.dmfc.fc, so = eqN('sofc_pack') * EQ.sofc_pack.fc;
     h += `<div class="dim">Solar ${gen} W${fc ? ` · fuel cell ${fc} W (${S.inv.meoh_cart || 0} cartridges)` : ''}${so ? ` · SOFC ${so} W (${S.inv.cng_cart || 0} methane)` : ''} · walk ×${eqSpd().toFixed(1)} · mine ×${eqMine()}${eqN('sentry_arm') ? ` · sentry ${S.inv.cartridge || 0} cartridges` : ''}</div>`;
   }
   if (el.innerHTML !== h) el.innerHTML = h;
