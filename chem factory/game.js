@@ -1436,7 +1436,7 @@ function burst(e, why) {
 
 const TUR_CAP = 20, TUR_R = 10, BUG_V = 1.6, MAX_BUGS = 80, MAX_HIVES = 30, BUG_LIFE = 150;
 const HIVE_T = [null, { n: 'Crawler Nest', hp: 600, sw: 0.6, gd: 2, gr: 500, sh: 6, su: 8 }, { n: 'Crawler Hive', hp: 1200, sw: 1, gd: 4, gr: 1500, sh: 12, su: 16 }, { n: 'Brood Mound', hp: 2400, sw: 1.5, gd: 6, sh: 24, su: 30 }];
-const BUGK = [{ n: 'Crawler', hp: 1, v: 1, dm: 1 }, { n: 'Spitter', hp: 0.7, v: 0.85, dm: 0.8, rng: 4 }, { n: 'Brute', hp: 4, v: 0.6, dm: 3 }];
+const BUGK = [{ n: 'Crawler', hp: 1, v: 1, dm: 1 }, { n: 'Spitter', hp: 0.7, v: 0.85, dm: 0.8, rng: 4 }, { n: 'Brute', hp: 4, v: 0.6, dm: 3 }, { n: 'Plated Crawler', hp: 2, v: 1.05, dm: 1.6 }, { n: 'Behemoth', hp: 9, v: 0.5, dm: 5 }];
 const htier = e => HIVE_T[e.tier || 2];
 let spits = [];
 const maxHp = e => BUILD[e.type].kind === 'hive' ? htier(e).hp : BUILD[e.type].hp || 60 * BUILD[e.type].w * BUILD[e.type].h;
@@ -1933,7 +1933,7 @@ function dgEnter(e) {
   for (let k = 0, tries = 0; k < n && tries < 4000; tries++) {
     const x = 1 + Math.floor(rng() * (G.N - 2)), y = 1 + Math.floor(rng() * (G.N - 2)), i = y * G.N + x;
     if (G.g[i] || G.d[i] < 12 || (G.rm && G.rm[i] === G.boss) || G.pool.has(i)) continue;
-    const u = rng(), kk = T >= 2 && u < 0.12 + 0.05 * T + (ty === 'deep' ? 0.06 : 0) ? 2 : u < 0.4 ? 1 : 0, mhp = Math.round(30 * ev * BUGK[kk].hp);
+    const u = rng(), gt = gearT(), k0 = T >= 2 && u < 0.12 + 0.05 * T + (ty === 'deep' ? 0.06 : 0) ? 2 : u < 0.4 ? 1 : 0, kk = k0 === 2 && gt > 0.55 && Math.random() < gt - 0.4 ? 4 : k0 === 0 && gt > 0.25 && Math.random() < 0.6 * gt ? 3 : k0, mhp = Math.round(30 * ev * (1 + 1.2 * gt) * BUGK[kk].hp);
     const b = { x: x + 0.5, y: y + 0.5, hp: mhp, mhp, a: rng() * 7, ph: rng() * 7, aw: 0, cd: 0 };
     if (kk) b.k = kk;
     D.bugs.push(b); k++;
@@ -2099,7 +2099,7 @@ function dgShoot() {
   const P = S.pl, D = S.dg;
   if (P.cd > 0) return;
   const Q = D.q, list = Q.hp > 0 && !Q.sub ? D.bugs.concat([Q]) : D.bugs, see = b => dgSee(D.px, D.py, b.x, b.y);
-  let r = wpnShot(D.px, D.py, list, null, see, 1, b => b.k === 2 || b === Q);
+  let r = wpnShot(D.px, D.py, list, null, see, 1, b => b.k >= 2 || b === Q);
   if (!r && D.eggs && D.eggs.length) r = wpnShot(D.px, D.py, D.eggs, null, see, 1, () => false);
   if (!r) return;
   for (const b of r.hits) { b.aw = 1; if (b !== Q && !b.egg && b.hp <= 0) S.pk = (S.pk || 0) + 1; }
@@ -2144,7 +2144,7 @@ function dgMove(dt, mx, my) {
   return true;
 }
 function dgSpawnAt(x, y, k) {
-  const ev = 1 + 2 * S.evo, mhp = Math.round(30 * ev * BUGK[k].hp), a = Math.random() * 7;
+  const ev = 1 + 2 * S.evo, mhp = Math.round(30 * ev * (1 + 1.2 * gearT()) * BUGK[k].hp), a = Math.random() * 7;
   const b = { x: x + Math.cos(a) * 1.2, y: y + Math.sin(a) * 1.2, hp: mhp, mhp, a, ph: Math.random() * 7, aw: 1, cd: 0 };
   if (!dgFree(b.x, b.y, 0.2)) { b.x = x; b.y = y; }
   if (k) b.k = k;
@@ -2240,7 +2240,7 @@ function dgTick() {
       dgMine = null; D.ff = null;
     }
   }
-  const sp = BUG_V * DT * 1.15, dmg = 6 * (1 + S.evo) * DT, ff = D.ff, pd0 = P.dead > 0;
+  const sp = BUG_V * DT * 1.15, dmg = 6 * (1 + S.evo) * (1 + gearT()) * DT, ff = D.ff, pd0 = P.dead > 0;
   const pk = Math.floor(D.py) * N + Math.floor(D.px);
   if (!pd0 && G.pool.has(pk)) {
     if (D.ty === 'lava') { if (!D.pt) { D.pt = 1; toast('Lava! Basalt melt at over 1000°C sets your boots and clothes smouldering. Get out of it now.', true); } dgHurt(30 * DT, 1); }
@@ -2287,7 +2287,7 @@ function dgTick() {
     b.chew = 0;
     if (K.rng && pd < K.rng && dgSee(b.x, b.y, D.px, D.py)) {
       b.a = Math.atan2(D.py - b.y, D.px - b.x); b.cd = (b.cd || 0) - DT;
-      if (b.cd <= 0) { b.cd = 1.6; D.sp.push({ x: b.x, y: b.y, tx: D.px, ty: D.py, d: 12 * (1 + S.evo) }); }
+      if (b.cd <= 0) { b.cd = 1.6; D.sp.push({ x: b.x, y: b.y, tx: D.px, ty: D.py, d: 12 * (1 + S.evo) * (1 + gearT()) }); }
       continue;
     }
     dgStep(D, ff, N, b, sp * K.v, 0.18);
@@ -3443,8 +3443,24 @@ function nearestEnt(x, y, r, pick) {
   }
   return best;
 }
+let gearC = 0, gearCt = -9;
+function gearT() {
+  if (Math.abs(S.t - gearCt) < 2) return gearC;
+  gearCt = S.t;
+  let best = 0;
+  for (const m in WPN) {
+    const W = WPN[m];
+    if (m !== 'rifle' && !wpnHas(m)) continue;
+    best = Math.max(best, W.dm * (W.pel || 1) * (W.ch ? 2 : 1) * (W.arm ? 1.2 : 1) / W.cd);
+  }
+  const w = Math.max(0, Math.min(1, Math.log2(best / 60) / 4));
+  gearC = 0.55 * w + 0.45 * Math.min(1, armRed() / 0.75);
+  return gearC;
+}
 function bugKind(h) {
-  const u = Math.random(), t = h.tier || 2;
+  const u = Math.random(), t = h.tier || 2, gt = gearT();
+  if (gt > 0.55 && t >= 2 && u < 0.05 + 0.2 * (gt - 0.55)) return 4;
+  if (gt > 0.25 && u < 0.1 + 0.35 * (gt - 0.25)) return 3;
   if (S.evo > 0.45 && t >= 2 && u < 0.08 + 0.3 * (S.evo - 0.45)) return 2;
   if (S.evo > 0.2 && u < 0.15 + 0.35 * S.evo) return 1;
   return 0;
@@ -3452,7 +3468,7 @@ function bugKind(h) {
 function spawnBugs(h, n, tid) {
   const c = ctr(h);
   for (let i = 0; i < n && S.bugs.length < MAX_BUGS; i++) {
-    const a = Math.random() * Math.PI * 2, k = bugKind(h), mhp = Math.round(30 * (1 + 2 * S.evo) * BUGK[k].hp);
+    const a = Math.random() * Math.PI * 2, k = bugKind(h), mhp = Math.round(30 * (1 + 2 * S.evo) * (1 + 1.2 * gearT()) * BUGK[k].hp);
     const b = { x: c.x + Math.cos(a) * 1.4, y: c.y + Math.sin(a) * 1.4, hp: mhp, mhp, tid, hx: c.x, hy: c.y, a, cd: 0, ph: Math.random() * 7, bt: S.t };
     if (k) b.k = k;
     if (tid === -3) b.hid = h.id;
@@ -3517,7 +3533,7 @@ function spitStep() {
   }
 }
 function bugStep() {
-  const sp = BUG_V * DT, dmg = 6 * (1 + S.evo) * DT, P = S.pl;
+  const sp = BUG_V * DT, dmg = 6 * (1 + S.evo) * DT, P = S.pl, gm = 1 + gearT();
   for (let i = S.bugs.length - 1; i >= 0; i--) {
     const b = S.bugs[i];
     if (b.hp <= 0) { S.bugs.splice(i, 1); S.kills = (S.kills || 0) + 1; fx.push({ x: b.x, y: b.y, t: 0.5, c: '#a0c040' }); continue; }
@@ -3538,12 +3554,12 @@ function bugStep() {
     }
     const pd = P.dead > 0 || S.dg ? 1e9 : Math.hypot(P.x - b.x, P.y - b.y), chase = pd < cr;
     if (b.tid === -2 && P.dead > 0) b.tid = -1;
-    if (chase) { tx = P.x; ty = P.y; if (pd < 0.7 && !K.rng) { b.a = Math.atan2(P.y - b.y, P.x - b.x); b.chew = 0; plHurt(dmg * 2 * K.dm); continue; } }
+    if (chase) { tx = P.x; ty = P.y; if (pd < 0.7 && !K.rng) { b.a = Math.atan2(P.y - b.y, P.x - b.x); b.chew = 0; plHurt(dmg * 2 * K.dm * gm); continue; } }
     if (K.rng && (chase || t)) {
       const sd = Math.hypot(tx - b.x, ty - b.y);
       if (sd < K.rng + (chase ? 0 : 0.6)) {
         b.a = Math.atan2(ty - b.y, tx - b.x); b.chew = 0; b.cd = (b.cd || 0) - DT;
-        if (b.cd <= 0) { b.cd = 1.6; spits.push({ x: b.x, y: b.y, tx, ty, p: chase ? -1 : t.id, d: 12 * (1 + S.evo) }); }
+        if (b.cd <= 0) { b.cd = 1.6; spits.push({ x: b.x, y: b.y, tx, ty, p: chase ? -1 : t.id, d: 12 * (1 + S.evo) * (chase ? gm : 1) }); }
         continue;
       }
     }
@@ -3954,7 +3970,7 @@ function plHurt(d) {
 function plShoot() {
   const P = S.pl;
   if (P.dead > 0 || P.cd > 0) return;
-  const r = wpnShot(P.x, P.y, S.bugs, lists().hive, null, 0, b => b.k === 2);
+  const r = wpnShot(P.x, P.y, S.bugs, lists().hive, null, 0, b => b.k >= 2);
   if (!r) return;
   for (const b of r.hits) if (b.hp <= 0) S.pk = (S.pk || 0) + 1;
   if (r.h) {
@@ -5737,7 +5753,7 @@ function drawBugs(ox, oy, z, x0, y0, x1, y1) {
   const now = performance.now() / 1000;
   for (const b of S.bugs) {
     if (b.x < x0 - 1 || b.y < y0 - 1 || b.x > x1 + 1 || b.y > y1 + 1) continue;
-    const bk = b.k || 0, s = z * (0.22 + 0.08 * Math.min(1, b.mhp / (90 * BUGK[bk].hp))) * (bk === 2 ? 1.6 : 1), X = ox + b.x * z, Y = oy + b.y * z;
+    const bk = b.k || 0, s = z * (0.22 + 0.08 * Math.min(1, b.mhp / (90 * BUGK[bk].hp))) * (bk === 4 ? 2.3 : bk === 2 ? 1.6 : bk === 3 ? 1.15 : 1), X = ox + b.x * z, Y = oy + b.y * z;
     ctx.save();
     ctx.translate(X, Y); ctx.rotate(b.a);
     const g = Math.sin(now * (b.chew ? 30 : 18) + b.ph);
@@ -5751,13 +5767,13 @@ function drawBugs(ox, oy, z, x0, y0, x1, y1) {
     ctx.stroke();
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.beginPath(); ctx.ellipse(s * 0.1, s * 0.15, s * 0.95, s * 0.5, 0, 0, 7); ctx.fill();
-    ctx.fillStyle = ['#4a3038', '#3e4a2a', '#2e2224'][bk];
+    ctx.fillStyle = ['#4a3038', '#3e4a2a', '#2e2224', '#3a4048', '#22222a'][bk];
     ctx.beginPath(); ctx.ellipse(-s * 0.35, 0, s * 0.6, s * 0.45, 0, 0, 7); ctx.fill();
     if (bk === 1) { ctx.fillStyle = `rgba(160,220,70,${0.6 + 0.3 * Math.sin(now * 3 + b.ph)})`; ctx.beginPath(); ctx.ellipse(-s * 0.45, 0, s * 0.36, s * 0.28, 0, 0, 7); ctx.fill(); }
-    ctx.fillStyle = ['#5e3c46', '#52603a', '#4a3436'][bk];
+    ctx.fillStyle = ['#5e3c46', '#52603a', '#4a3436', '#58626e', '#3a3a46'][bk];
     ctx.beginPath(); ctx.ellipse(s * 0.3, 0, s * 0.42, s * 0.36, 0, 0, 7); ctx.fill();
-    if (bk === 2) { ctx.fillStyle = '#6a4a40'; for (const q of [-0.1, 0.25]) { ctx.beginPath(); ctx.ellipse(s * q, 0, s * 0.12, s * 0.42, 0, 0, 7); ctx.fill(); } }
-    ctx.strokeStyle = ['#d8c84a', '#b8e050', '#c05030'][bk]; ctx.lineWidth = Math.max(1, s * 0.1);
+    if (bk >= 2) { ctx.fillStyle = ['#6a4a40', '#8a96a4', '#5a5a68'][bk - 2]; for (const q of [-0.1, 0.25]) { ctx.beginPath(); ctx.ellipse(s * q, 0, s * 0.12, s * 0.42, 0, 0, 7); ctx.fill(); } }
+    ctx.strokeStyle = ['#d8c84a', '#b8e050', '#c05030', '#a8c0d8', '#e04020'][bk]; ctx.lineWidth = Math.max(1, s * 0.1);
     ctx.beginPath(); ctx.moveTo(-s * 0.5, -s * 0.38); ctx.lineTo(-s * 0.5, s * 0.38); ctx.moveTo(-s * 0.2, -s * 0.42); ctx.lineTo(-s * 0.2, s * 0.42); ctx.stroke();
     ctx.strokeStyle = '#2a1a1e'; ctx.lineWidth = Math.max(1, s * 0.12);
     const m = b.chew ? 0.25 + 0.2 * g : 0.25;
@@ -7568,7 +7584,7 @@ function ventHtml() {
   const sp = sum(S.spill || {});
   return `<span class="lbl">Vented</span><b class="${t > 0 ? 'warn' : ''}">${fmt(t)}</b>` + (parts ? `<span class="dim"> · ${parts}</span>` : '') +
     (sp >= 1 || S.fails ? ` <span class="lbl">Spilled</span><b class="bad">${fmt(sp)}</b><span class="dim"> · ${S.fails || 0} pipe failures</span>` : '') +
-    (S.bugs.length || S.evo > 0.001 || S.lost ? ` <span class="lbl">Crawlers</span><b class="${S.bugs.length ? 'bad' : ''}">${S.bugs.length}</b><span class="dim"> · evolution ${Math.round(S.evo * 100)}% · ${lists().hive.length} hives${S.lost ? ' · ' + S.lost + ' buildings lost' : ''}</span>` : '') +
+    (S.bugs.length || S.evo > 0.001 || S.lost ? ` <span class="lbl">Crawlers</span><b class="${S.bugs.length ? 'bad' : ''}">${S.bugs.length}</b><span class="dim"> · evolution ${Math.round(S.evo * 100)}% · gear threat ${Math.round(gearT() * 100)}% · ${lists().hive.length} hives${S.lost ? ' · ' + S.lost + ' buildings lost' : ''}</span>` : '') +
     (S.clouds.length || lists().projector.length ? ` <span class="lbl">Wind</span><b><span class="wind" style="display:inline-block;transform:rotate(${S.wind.a}rad)">→</span> ${(S.wind.v * 10).toFixed(1)}</b><span class="dim"> m/s${S.clouds.length ? ' · ' + S.clouds.length + ' gas clouds' : ''}</span>` : '') +
     (pk >= 1 ? ` <span class="lbl">Smog</span><b class="${pk > RAIN ? 'bad' : pk > RAIN * 0.6 ? 'warn' : ''}">${Math.round(pk)}</b><span class="dim"> peak${pk > RAIN ? ', acid rain' : ''}</span>` : '');
 }
@@ -9292,7 +9308,7 @@ window.game = { tech: { TECH, TECHL, queueTech, curTech, techOk },
   select(e) { e ? openPanel(e) : closePanel(); }, openModal, closeModal, refresh: renderHotbar,
   setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; camFree = true; },
   get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get trains() { return S.trains; }, placeTrain, trainAt, openTrain, openPanel, pickTrain, trainGeo, reverseTrain, railBusy, get puffs() { return puffs; }, get H() { return H; }, get wakes() { return wakes; }, floats, boatRoute, boatPilot, carStep, carHit, fishTick, fishRegrow, seaOil, seaPatch, oily, sunMul, get oreAmt() { return oreAmt; }, fground, fstock, netToggle, wdep, seaLv,
-  htier, spits: () => spits, hiveTier, guardStep, addHive, bugKind, maxHp, hurt, rgd: () => rgd, tileInfo0, growNear, genRegion, tch: () => tch, ovc, mapWin, depleteTile,
+  htier, spits: () => spits, gearT, gearReset() { gearCt = -99; }, spawnBugs, hiveTier, guardStep, addHive, bugKind, maxHp, hurt, rgd: () => rgd, tileInfo0, growNear, genRegion, tch: () => tch, ovc, mapWin, depleteTile,
   dgEnter, dgExit, dgTick, dgShoot, dgMove, dgUse, dgClick, dgGrid, dgGen, dgSolid, dgSee, dgPos, spawnBurrows, mineGen, dgKind, dgCaches, spawnMines, dgDoor, spawnXdg, dgValve, broodTick, xdgAt, biome, terNear, get dfx() { return dfx; },
   rotEnt, ugPair, lists: () => lists(), wireToggle, autoWire, wired, setTool(t) { tool = t; },
   tx: { bIcon, IP, iArch, mArch, icoClass, icoCv, mLay, mulberry32 }, setOverlay(v) { overlay = v; }, elev: () => elev, drawPreview, startWorld, get wcfg() { return wcfg; },
