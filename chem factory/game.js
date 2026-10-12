@@ -771,6 +771,16 @@ function addEnt(e) {
   L = null;
 }
 
+function openSea(k0) {
+  const seen = new Set([k0]), q = [k0];
+  for (let h = 0; h < q.length; h++) {
+    if (seen.size >= 4000) return true;
+    const k = q[h], x = k % W, y = (k - x) / W;
+    if (x <= 0 || y <= 0 || x >= W - 1 || y >= H - 1) return true;
+    for (const n of [k - 1, k + 1, k - W, k + W]) if (!seen.has(n) && terrain[n] === 1) { seen.add(n); q.push(n); }
+  }
+  return false;
+}
 function canPlace(type, x, y) {
   const B = BUILD[type];
   if (x < 0 || y < 0 || x + B.w > W || y + B.h > H) return 'Out of bounds';
@@ -782,8 +792,8 @@ function canPlace(type, x, y) {
     else if (type === 'buoy') { if (terrain[k] !== 1) return 'Buoys float: put them on water'; }
     else if (B.sea) {
       if (terrain[k] === 4) return 'Bare rock: too steep to build on';
-      if (terrain[k] !== 1) { if (B.sea !== 3) return B.sea === 2 ? 'An oil platform stands on the seabed: build it out at sea' : 'An offshore turbine stands in the sea: build it on water'; }
-      else if (B.sea !== 3) { const d = elev ? seaLv() - elev[k] : 0.05; if (B.sea === 2 && d < 0.07) return 'Too shallow: a jacket platform needs deep water (dark blue)'; if (B.sea === 1 && d >= 0.07) return 'Too deep for a monopile: keep to the light blue shelf'; }
+      if (terrain[k] !== 1) { if (B.sea !== 3) return B.sea === 2 ? 'An oil platform stands on the seabed: build it out at sea' : B.tide ? 'A tidal turbine stands on the seabed: build it in the sea' : 'An offshore turbine stands in the sea: build it on water'; }
+      else if (B.sea !== 3) { const d = elev ? seaLv() - elev[k] : 0.05; if (B.sea === 2 && d < 0.07) return 'Too shallow: a jacket platform needs deep water (dark blue)'; if (B.sea === 1 && d >= 0.07) return 'Too deep for a monopile: keep to the light blue shelf'; if (B.tide && !openSea(k)) return 'Lakes have no tide: build tidal turbines in the open sea'; }
     }
     else if (terrain[k] === 1) return 'Cannot build on water';
     else if (terrain[k] === 4) return 'Bare rock: too steep to build on';
@@ -3018,7 +3028,8 @@ const windCurve = (m = 1) => S.wind.v * m < 0.1 ? 0 : Math.min(1, Math.pow(S.win
 const SOIL = [1, 0, 0.4, 0.05, 0, 0.35, 0.1, 0.1];
 function soilAt(x, y, w, h) { let a = 0; for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) a += SOIL[terrain[(y + j) * W + x + i]] || 0; return a / (w * h); }
 function soilOf(e) { if (e.sl == null) e.sl = soilAt(e.x, e.y, BUILD[e.type].w, BUILD[e.type].h); return e.sl; }
-const sunMul = e => BUILD[e.type].soil ? soilOf(e) : BUILD[e.type].sun ? sunOf(e) : BUILD[e.type].wind ? exposureOf(e) * windCurve(BUILD[e.type].sea ? 1.25 : 1) : 1;
+const TIDE_T = 300, tideOf = () => Math.abs(Math.sin(S.t * Math.PI / TIDE_T)) ** 3;
+const sunMul = e => BUILD[e.type].tide ? tideOf() : BUILD[e.type].soil ? soilOf(e) : BUILD[e.type].sun ? sunOf(e) : BUILD[e.type].wind ? exposureOf(e) * windCurve(BUILD[e.type].sea ? 1.25 : 1) : 1;
 function tryStart(e, r) {
   if (r.well && !wellTiles(e).length) return 'empty';
   if (BUILD[e.type].forest && !forestOf(e)) return 'forest';
@@ -3048,13 +3059,14 @@ function finish(e, r) {
   catWear(e, r);
   if (r.well) wellDraw(e);
   if (r.sea) S.osh = (S.osh || 0) + 1;
+  if (r.id === 'hrsg_steam') S.hrsg = (S.hrsg || 0) + 1;
   if (r.o) for (const k in r.o) { e.out[k] = (e.out[k] || 0) + r.o[k]; S.made[k] = (S.made[k] || 0) + r.o[k]; }
   if (r.ch) for (const k in r.ch) if (Math.random() < r.ch[k]) { e.out[k] = (e.out[k] || 0) + 1; S.made[k] = (S.made[k] || 0) + 1; }
   if (r.fo) for (const f in r.fo) {
     e.fo[f] = (e.fo[f] || 0) + r.fo[f];
     const cap = foCap(r, f);
     if (spills(r, f) && e.fo[f] > cap) { vent(e, f, e.fo[f] - cap); e.fo[f] = cap; }
-    if (BUILD[e.type].gen) { vent(e, f, e.fo[f]); e.fo[f] = 0; }
+    if (BUILD[e.type].gen && !BUILD[e.type].ex) { vent(e, f, e.fo[f]); e.fo[f] = 0; }
   }
 }
 
@@ -3963,7 +3975,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt; delete o.pn; delete o.pg; delete o.psat;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, ra: S.pl.ra || 0, rs: S.pl.rs || 0, aw: S.pl.aw || 0, ak: S.pl.ak, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, osh: S.osh || 0, fcr: S.fcr, ach: S.ach || {}, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, iv: S.iv, mdn: S.mdn, tyk: S.tyk, egk: S.egk, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, ra: S.pl.ra || 0, rs: S.pl.rs || 0, aw: S.pl.aw || 0, ak: S.pl.ak, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, osh: S.osh || 0, hrsg: S.hrsg || 0, fcr: S.fcr, ach: S.ach || {}, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, iv: S.iv, mdn: S.mdn, tyk: S.tyk, egk: S.egk, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -3999,7 +4011,7 @@ function load() {
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
   const gen = d.gen || { legacy: 1 };
   setSize(gen.legacy ? 160 : gen.size);
-  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0, fs: d.fs || {}, fk: d.fk || 0, osh: d.osh || 0, fcr: d.fcr, ach: d.ach || {}, dg: d.dg || null, dgn: d.dgn || 0, dgc: d.dgc || 0, qk: d.qk || 0, bv: d.bv, iv: d.iv, mdn: d.mdn || 0, tyk: d.tyk || 0, egk: d.egk || 0 };
+  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0, fs: d.fs || {}, fk: d.fk || 0, osh: d.osh || 0, hrsg: d.hrsg || 0, fcr: d.fcr, ach: d.ach || {}, dg: d.dg || null, dgn: d.dgn || 0, dgc: d.dgc || 0, qk: d.qk || 0, bv: d.bv, iv: d.iv, mdn: d.mdn || 0, tyk: d.tyk || 0, egk: d.egk || 0 };
   dgc = null; dgMine = null; dfx.length = 0; nades.length = 0;
   initWorld(d.seed, gen);
   if (rgd && d.rg) for (let r = 0; r < rgd.length; r++) if (d.rg[r] === '1') growRegion(r % (W / RG), Math.floor(r / (W / RG)), false);
@@ -4056,6 +4068,8 @@ const ACH = [
   ['msy', 'eco', 'Sustainable Yield', 'Land 1000 fish without ever fishing a ground below a quarter of its stock.', () => (S.fk || 0) >= 1000 && !S.fcr],
   ['softgel', 'life', 'Cod Liver Oil, Refined', 'Fill fish oil softgels.', () => mk('softgel') >= 1],
   ['rig', 'nrg', 'Out of Sight of Land', 'Lift crude from an offshore platform for ten minutes.', () => (S.osh || 0) >= 600],
+  ['ccgt', 'nrg', 'Combined Cycle', 'Raise steam from gas turbine exhaust in a heat recovery steam generator.', () => (S.hrsg || 0) >= 1],
+  ['tidal', 'nrg', 'Slack Water', 'Run four tidal stream turbines.', () => { let n = 0; for (const e of ents.values()) if (e.type === 'tidal') n++; return n >= 4; }],
   ['owind', 'nrg', 'Horns Rev', 'Run five offshore wind turbines.', () => { let n = 0; for (const e of ents.values()) if (e.type === 'wind_offshore') n++; return n >= 5; }],
   ['kelp', 'chem', 'Courtois', 'Extract iodine from burnt seaweed.', () => mk('kelp_ash') >= 1 && mk('iodine') >= 1],
   ['soap', 'chem', 'Saponification', 'Boil fat with caustic soda into soap.', () => mk('soap') >= 1],
@@ -5444,6 +5458,22 @@ function drawOWT(e, x, y, w, h, z) {
   ctx.fillStyle = '#c0c6cc'; ctx.beginPath(); ctx.arc(cx, cy, Math.max(1.5, R * 0.07), 0, 7); ctx.fill();
   if (z >= 12) { ctx.fillStyle = e.id % 2 ? '#e04a3a' : '#ff6a5a'; ctx.globalAlpha = 0.5 + 0.5 * Math.sin(performance.now() / 400); ctx.beginPath(); ctx.arc(cx, cy, Math.max(1, z * 0.05), 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
 }
+function drawTidal(e, x, y, w, h, z) {
+  const cx = x + w / 2, cy = y + h / 2, tv = tideOf(), dir = (S.t % (2 * TIDE_T)) < TIDE_T ? 1 : -1, now = performance.now() / 1000;
+  ctx.fillStyle = 'rgba(10,30,50,0.35)'; ctx.beginPath(); ctx.ellipse(cx, cy, w * 0.42, h * 0.3, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle = 'rgba(230,245,255,' + (0.15 + 0.5 * tv) + ')'; ctx.lineWidth = Math.max(1, z * 0.05);
+  for (let k = 0; k < 4; k++) {
+    const yy = y + h * (0.2 + k * 0.2), ph = ((now * (0.3 + tv) + k * 0.37 + e.id * 0.1) % 1), xx = dir > 0 ? x + w * ph : x + w * (1 - ph);
+    ctx.beginPath(); ctx.moveTo(xx, yy); ctx.lineTo(xx - dir * w * 0.22 * (0.3 + tv), yy); ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(40,50,60,0.75)'; ctx.fillRect(cx - w * 0.32, cy - z * 0.12, w * 0.64, z * 0.24);
+  ctx.fillStyle = '#c8ccd0'; ctx.fillRect(cx - z * 0.14, cy - h * 0.38, z * 0.28, h * 0.76);
+  ctx.save(); ctx.translate(cx, cy); ctx.scale(1, Math.abs(Math.cos(e.r0 = (e.r0 || 0) + 0.02 * tv * dir)) * 0.8 + 0.2);
+  ctx.fillStyle = 'rgba(20,30,40,0.8)'; ctx.fillRect(-z * 0.08, -h * 0.42, z * 0.16, h * 0.84); ctx.restore();
+  ctx.fillStyle = '#e8c020'; ctx.beginPath(); ctx.arc(cx, cy, z * 0.22, 0, 7); ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.45)'; ctx.lineWidth = Math.max(1, z * 0.04); ctx.stroke();
+  ctx.fillStyle = '#3a3e44'; ctx.beginPath(); ctx.arc(cx, cy, z * 0.1, 0, 7); ctx.fill();
+}
 function drawPole(e, x, y, z) {
   const t = e.type, p = Math.max(1, z * 0.05);
   if (t === 'wood_pole' || t === 'steel_pole') {
@@ -5549,6 +5579,7 @@ function drawBuilding(e, ox, oy, z) {
   if (B.kind === 'ruin') return e.type === 'burrow' ? drawBurrow(e, x, y, w, h, z) : e.type === 'infested' ? drawInfested(e, x, y, w, h, z) : drawRuin(e, x, y, w, h, z);
   if (e.type === 'oil_platform') return drawRig(e, x, y, w, h, z);
   if (e.type === 'wind_offshore') return drawOWT(e, x, y, w, h, z);
+  if (e.type === 'tidal') return drawTidal(e, x, y, w, h, z);
   ctx.fillStyle = shade(B.c, 0.42);
   ctx.fillRect(x + p, y + p, w - 2 * p, h - 2 * p);
   const gr = ctx.createLinearGradient(x, y, x + w * 0.3, y + h);
@@ -6121,6 +6152,7 @@ function renderPanelDyn() {
       if (BUILD[e.type].soil) h += `<div class="sec">Climate</div><div class="gauge"><span>Soil</span>${bar(soilOf(e), 1, '#8ab040')}<b>${Math.round(soilOf(e) * 100)}%</b></div><p class="dim">How well crops grow on this ground. Grassland is best, scrub and marsh give less, and forest, tundra and desert hardly anything.</p>`;
       if (BUILD[e.type].sun) h += `<div class="sec">Climate</div><div class="gauge"><span>Sun</span>${bar(sunOf(e), 1, '#e0c050')}<b>${Math.round(sunOf(e) * 100)}%</b></div><p class="dim">${e.type === 'solar' ? 'Sunlight reaching the panels. Arrays give most on desert sand and least in forest, marsh and tundra.' : 'Evaporation rate here. Ponds run fastest on desert sand and slowest on tundra and marsh.'}</p>`;
       if (BUILD[e.type].wind) h += `<div class="sec">Climate</div><div class="gauge"><span>Exposure</span>${bar(exposureOf(e), 1, '#80b0d0')}<b>${Math.round(exposureOf(e) * 100)}%</b></div><div class="gauge"><span>Wind</span>${bar(windCurve(), 1, '#a0c8e0')}<b>${(S.wind.v * 10).toFixed(1)} m/s</b></div><p class="dim">Output follows the wind speed cubed, times how open the ground is. Steppe and tundra are best; trees slow the wind.</p>`;
+      if (BUILD[e.type].tide) { const ph = (S.t % (2 * TIDE_T)) < TIDE_T; h += `<div class="sec">Tide</div><div class="gauge"><span>Current</span>${bar(tideOf(), 1, '#60a0c8')}<b>${Math.round(tideOf() * 100)}%</b></div><p class="dim">${ph ? 'Flood tide' : 'Ebb tide'}, turning in ${Math.ceil(TIDE_T - S.t % TIDE_T)} s. Power follows the current speed cubed, so it peaks at mid-tide and drops to nothing at slack water. Batteries carry the grid through the turn.</p>`; }
       if (BUILD[e.type].forest) h += `<div class="sec">Forest</div><div class="gauge"><span>Stand</span>${bar(forestOf(e), FOREST_FULL, '#4a8a3a')}<b>${Math.round(forestMul(e) * 100)}%</b></div><p class="dim">${forestOf(e)} forest tiles within ${FOREST_R} tiles. It runs at full speed with ${FOREST_FULL} or more.</p>`;
       if (r.well) { const l = wellTiles(e), left = l.reduce((a, q) => a + oreAmt[q], 0); h += `<div class="sec">Reservoir</div><div class="spec">${l.length} of ${BUILD[e.type].w * BUILD[e.type].h} tiles on oil · ${fmt(left * Object.values(r.fo)[0])} ${FLUIDS[Object.keys(r.fo)[0]].n.toLowerCase()} left</div>`; }
       h += '<div class="sec">Input buffer</div><div class="slots">';
@@ -6585,6 +6617,7 @@ const CHAINS = [
   { n: 'Vitamin C', l: [['sorbitol', 'Fermenter + o2 + water', 'sorbose'], ['sorbose', 'Pressure reactor + acetone + o2 + hcl', 'ascorbic', '+', 'acetone'], ['ascorbic', 'Tablet line + starch + polypropylene', 'vitc_pack']], d: 'The Reichstein process, 1933: glucose to sorbitol with hydrogen, sorbitol to sorbose with bacteria, then acetone protection, oxidation and acid lactonisation. Most of the acetone comes back out, so pipe it to the reactor again.' },
   { n: 'Safety matches', l: [['potash', 'Electrolysis cell + water', 'kclo3', '+', 'h2'], ['phosphorus', 'Pressure reactor', 'red_p'], ['wood', 'Workshop + kclo3 + sulfur + gelatin + red_p + carton', 'matches']], d: 'A match head is a tiny fuel and oxidiser mix: chlorate gives oxygen, sulfur burns, gelatin glues it, and powdered glass adds friction. Red phosphorus on the box catches from the heat of rubbing and lights the head.' },
   { n: 'Sea harvest', l: [['trawl_net', 'Stern trawler in deep water', 'fish'], ['fish', 'Fishmeal plant + steam', 'fishmeal', '+', 'fish_oil'], ['fishmeal', 'Granulator + flour + fish_oil', 'aquafeed'], ['fish_oil', 'Pressure reactor + ethanol + naoh', 'fish_ee', '+', 'glycerol'], ['fish_ee', 'Short-path still', 'omega3', '+', 'diesel'], ['omega3', 'Tablet line + gelatin + glycerol', 'softgel'], ['fish', 'Canning line + food_can + salt + veg_oil', 'canned_fish']], d: 'Shoot the trawl over deep water and land the catch at a dock. Most of the world\'s wild catch of small oily fish is cooked, pressed and dried into meal and oil. The oil can be hardened to margarine with hydrogen, or turned into ethyl esters and distilled for omega-3 capsules. Every ground breeds back fastest at half strength, so fish a circuit of grounds instead of one.' },
+  { n: 'Power stations', l: [['methane', 'Gas turbine', 'Power', '+', 'gt_exhaust'], ['gt_exhaust', 'Heat recovery steam generator + water', 'steam', 'Steam engine', 'Power'], ['tidal', 'Gravity base on the shallow shelf', 'Power at mid-tide']], d: 'A gas turbine burns natural gas, fuel gas or biogas and turns about 38% of it into power. Pipe its exhaust into a heat recovery steam generator and the steam drives steam engines for half as much again: a combined cycle. Tidal stream turbines stand on the shallow shelf and peak at mid-tide, with nothing at slack water.' },
   { n: 'Offshore', l: [['oil_platform', 'Jacket over a sea oil field', 'crude', '+', 'methane'], ['crude', 'Subsea pipeline to shore', 'Distillation column'], ['wind_offshore', 'Monopile on the shallow shelf', '2 MW in a fresh breeze']], d: 'Oil fields lie under the sea as well as the land. A rainbow sheen on deep water marks seepage from one. Build a jacket platform over it and lay a subsea pipeline back to shore; boats sail straight over the line. The platform burns its own gas, so it needs no power. In the shallows, monopile wind turbines catch stronger, steadier wind than any on land.' },
   { n: 'Seaweed', l: [['trawler', 'Cutter bar in the shallows', 'kelp'], ['kelp', 'Leach tank + soda_ash + cacl2 + hcl', 'alginate'], ['alginate', 'Compounding room + gypsum + silica', 'impression'], ['alginate', 'Viscose spinning bath + cacl2', 'dressing'], ['kelp', 'Lime kiln', 'kelp_ash'], ['kelp_ash', 'Iodine plant + water + cl2', 'iodine', '+', 'potash']], d: 'Kelp beds grow in shallow water near the coast and regrow quickly. Alginate from the weed gels the moment it meets calcium, which makes dental impressions and wound dressings. Burnt to ash it gave Europe its first iodine.' },
   { n: 'Smartphones', l: [['barite', 'Gravity spiral + water', 'barite_conc', 'Kiln + coke', 'black_ash', 'Leach tank + steam', 'bas_liq', 'Precipitator + co2', 'baco3', 'Tunnel kiln + tio2', 'batio3'], ['propylene', 'Pressure reactor + co + h2 + rhodium', 'butanal', 'Pressure reactor + pva', 'pvb'], ['nickel', 'Pressure reactor + co', 'ni_powder'], ['batio3', 'MLCC line + pvb + ni_powder', 'green_stack', 'Sinter-HIP + copper + tin + h2', 'mlcc'], ['tantalum', 'Sinter-HIP', 'ta_anode', 'Electroplating line + h3po4', 'ta_ox', 'Electroplating line + pyrrole + fecl3', 'ta_pp', 'Chip assembly line', 'ta_cap'], ['wood', 'Digester + acid + steam', 'furfural', 'Pressure reactor + palladium', 'furan', 'Pressure reactor + nh3 + alumina', 'pyrrole'], ['coso4', 'Precipitator + soda ash', 'coco3', 'Roaster', 'co3o4', 'Tunnel kiln + li2co3', 'lco'], ['acetylene', 'Pressure reactor + hf', 'hfc152a', 'Chlorinator + cl2', 'r142b', 'Tube furnace', 'vdf', 'Pressure reactor', 'pvdf'], ['bdo', 'Pressure reactor', 'gbl', 'Pressure reactor + methylamine', 'nmp'], ['lco', 'Electrode coater + pvdf + nmp', 'cathode_sheet', 'Battery plant + anode_sheet + li_elyte', 'pouch_cell'], ['sodium_nitrate', 'Precipitator + potash', 'kno3'], ['sand', 'Fusion draw tower + alumina + soda ash', 'as_glass', 'Ion exchange furnace + kno3', 'cover_glass', 'Sputter line + ITO target', 'touch_glass'], ['pcb', 'Electronics assembly line + microchip + mlcc + ta_cap', 'mainboard', 'Electronics assembly line + lcd_module + touch_glass + pouch_cell + camera', 'smartphone']], d: 'A phone gathers almost every chain in the game. Barium titanate from barite fills the MLCCs, tantalum from coltan makes the bulk capacitors with a polypyrrole cathode from wood, cobalt and lithium make the cathode, fluorochemistry gives the PVDF binder, and the cover glass is toughened in molten saltpetre made from Chile nitrate and potash.' },
@@ -6633,6 +6666,7 @@ const HELP = `<div class="help">
 </ol>
 <h3>Electricity</h3>
 <p>Poles carry power. A pole powers every electric machine that touches its <b>supply area</b>, shown in blue while you hold a pole or click one, and strings wire on its own to the nearest pole of each grid within reach. Poles joined by wire form a <b>grid</b>. Each grid balances its own engines, generators, batteries and machines, so a brown-out on one leaves the others running; the HUD counts grids and machines left without a pole, and those blink a red bolt. Shift-click a second pole while one is selected to string or cut a wire by hand. A pole holds 5 wires. <b>Wooden poles</b> (creosoted pine) reach 8 tiles and supply 5×5. <b>Steel distribution poles</b> reach 10 and supply 7×7. <b>Lattice pylons</b> carry high-voltage ACSR line 30 tiles but supply only their own footprint. <b>Substations</b> step that voltage down and supply 18×18. Worlds generated with <b>Power lines: Wireless</b>, and saves from before poles existed, keep one shared grid with no poles needed.</p>
+<p>A <b>gas turbine</b> burns gas only as fast as its grid draws power, and vents 600°C exhaust. Pipe that exhaust with water into a <b>heat recovery steam generator</b> to raise steam for steam engines: two turbines' exhaust runs about three engines. <b>Tidal stream turbines</b> go on the light blue shelf. Click one to see the tide: the current turns every five minutes, so pair them with batteries.</p>
 <h3>Belts</h3>
 <p>Every belt has two lanes. Machines and chests put items on the far lane first, and a belt that runs into the side of another loads onto its near lane, so two lines can share one belt. When a belt is the only feed of the belt in front, that belt bends into a curve and both lanes follow it round. Every tier is 2 tiles/s faster: <b>Fast</b> 4, <b>Express</b> 6, <b>Turbo</b> 8, <b>Hyper</b> 10, <b>Titanium</b> 12, <b>Carbon</b> 14, <b>Linear</b> 16, <b>Maglev</b> 18 and <b>Superconducting</b> 20, and each tier of underground belt reaches 2 tiles further. An <b>Underground belt</b> is placed as an entrance, then a second one further on in the same direction becomes the exit; items pass under anything in between. <b>Pipe-to-ground</b> works the same way for fluids, up to 9 tiles, and connects only on its open face.</p>
 <h3>Splitters and inserters</h3>
