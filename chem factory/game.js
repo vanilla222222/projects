@@ -2950,15 +2950,28 @@ const WPN = {
 };
 const WORDER = ['rifle', 'ap', 'shotgun'];
 const ARMOR = {
-  ceramic_vest: { a: 0.6, d: 2400 },
-  steel_vest: { a: 0.42, d: 1000 },
-  shell_vest: { a: 0.25, d: 450 },
+  exoframe2: { a: 0.45, g: 10 },
+  exoframe: { a: 0.35, g: 7 },
+  carrier: { a: 0.3, g: 5 },
+  ceramic_vest: { a: 0.6 },
+  steel_vest: { a: 0.42 },
+  shell_vest: { a: 0.25 },
+};
+const EQ = {
+  pv_film: { w: 1, h: 1, gen: 20 },
+  batt_pack: { w: 1, h: 2, cap: 360000 },
+  dmfc: { w: 2, h: 2, fc: 100 },
+  exo_legs: { w: 2, h: 4, use: 150 },
+  trauma_plate: { w: 2, h: 2, a: 0.12 },
+  stf_pad: { w: 2, h: 2, a: 0.08 },
+  sentry_arm: { w: 2, h: 2 },
+  drill_arm: { w: 2, h: 2, use: 300 },
 };
 const NADE = {
   ammonal_charge: { r: 3.2, dm: 130, hv: 160, c: '#c8c8c0' },
   powder_charge: { r: 2.2, dm: 55, hv: 60, c: '#4a4844' },
 };
-const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest'];
+const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm'];
 const nades = [];
 const takeInv = k => { S.inv[k]--; if (!(S.inv[k] > 0)) delete S.inv[k]; };
 function wpnHas(m) {
@@ -3014,15 +3027,73 @@ function wpnShot(ox, oy, list, hives, see, under, arm) {
   if (W.pel && hits.filter(b => b.hp <= 0).length >= 3) P.sg3 = 1;
   return { hits, h, W };
 }
-function armWorn() { for (const k in ARMOR) if (S.inv[k] > 0) return k; return null; }
-function armSoak(d) {
-  const k = armWorn(), P = S.pl;
-  if (!k) return d;
-  if (P.ak !== k) { P.ak = k; P.aw = 0; }
-  const A = ARMOR[k], s = d * A.a;
-  P.aw = (P.aw || 0) + s;
-  if (P.aw >= A.d) { P.aw = 0; takeInv(k); toast(`Your ${nm(k)} is worn out.`, true); }
-  return d - s;
+function armWorn() { const A = S.pl.arm; return A && ARMOR[A.k] ? A.k : null; }
+const eqN = k => { const A = S.pl.arm; return A ? A.g.filter(m => m.k === k).length : 0; };
+function eqCap() { const A = S.pl.arm; return A && ARMOR[A.k].g ? 5000 + eqN('batt_pack') * EQ.batt_pack.cap : 0; }
+const eqOn = () => (S.pl.arm?.en || 0) > 1;
+function armRed() {
+  const k = armWorn();
+  if (!k) return 0;
+  return Math.min(0.85, ARMOR[k].a + eqN('trauma_plate') * EQ.trauma_plate.a + eqN('stf_pad') * EQ.stf_pad.a);
+}
+function armSoak(d) { return d * (1 - armRed()); }
+const eqSpd = () => eqOn() ? 1 + 0.3 * Math.min(2, eqN('exo_legs')) : 1;
+const eqMine = () => eqOn() ? 1 + eqN('drill_arm') : 1;
+function eqFits(A, k, x, y, skip) {
+  const n = ARMOR[A.k].g, E = EQ[k];
+  if (!n || x < 0 || y < 0 || x + E.w > n || y + E.h > n) return false;
+  return !A.g.some((m, i) => i !== skip && x < m.x + EQ[m.k].w && m.x < x + E.w && y < m.y + EQ[m.k].h && m.y < y + E.h);
+}
+function eqPut(k, x, y) {
+  const A = S.pl.arm;
+  if (!A || !ARMOR[A.k].g) { toast('Wear armour with an equipment grid first', true); return false; }
+  if (!(S.inv[k] > 0)) { toast('You have no ' + nm(k), true); return false; }
+  if (!eqFits(A, k, x, y)) { toast('It does not fit there', true); return false; }
+  takeInv(k); A.g.push({ k, x, y });
+  return true;
+}
+function eqTake(i) {
+  const A = S.pl.arm;
+  if (!A || !A.g[i]) return;
+  give(A.g[i].k, 1); A.g.splice(i, 1);
+  A.en = Math.min(A.en || 0, eqCap());
+}
+function armWear(k) {
+  const P = S.pl;
+  if (!(S.inv[k] > 0) || !ARMOR[k]) return;
+  armOff();
+  takeInv(k); P.arm = { k, g: [], en: 0 };
+}
+function armOff() {
+  const A = S.pl.arm;
+  if (!A) return;
+  for (const m of A.g) give(m.k, 1);
+  give(A.k, 1); S.pl.arm = null;
+}
+function eqTick() {
+  const P = S.pl, A = P.arm;
+  if (!A || !ARMOR[A.k] || !ARMOR[A.k].g) return;
+  const cap = eqCap();
+  let gen = S.dg ? 0 : eqN('pv_film') * EQ.pv_film.gen, use = 0;
+  const fcs = eqN('dmfc');
+  if (fcs && A.en < cap * 0.9) {
+    if (!(P.fc > 0) && S.inv.meoh_cart > 0) { takeInv('meoh_cart'); P.fc = 450000; }
+    if (P.fc > 0) { const f = fcs * EQ.dmfc.fc; gen += f; P.fc -= f * DT; }
+  }
+  if (P.mv && !P.car) use += Math.min(2, eqN('exo_legs')) * EQ.exo_legs.use;
+  if (mining && !S.dg) use += eqN('drill_arm') * EQ.drill_arm.use;
+  A.en = Math.max(0, Math.min(cap, (A.en || 0) + (gen - use) * DT));
+  const sn = eqN('sentry_arm');
+  P.scd = (P.scd || 0) - DT;
+  if (!sn || S.dg || P.dead > 0 || P.car || P.scd > 0 || A.en < 250) return;
+  let best = null, bd = 81;
+  for (const b of S.bugs) { const q = (b.x - P.x) ** 2 + (b.y - P.y) ** 2; if (b.hp > 0 && q < bd) { bd = q; best = b; } }
+  if (!best) return;
+  if (!(P.sr > 0)) { if (!(S.inv.cartridge > 0)) return; takeInv('cartridge'); P.sr = 10; }
+  P.sr--; A.en -= 250; P.scd = 0.6 / sn;
+  best.hp -= 12;
+  if (best.hp <= 0) S.pk = (S.pk || 0) + 1;
+  P.st = S.t; P.stx = best.x; P.sty = best.y;
 }
 const nadeKind = () => S.inv.ammonal_charge > 0 ? 'ammonal_charge' : S.inv.powder_charge > 0 ? 'powder_charge' : null;
 function nadeThrow(tx, ty) {
@@ -3114,11 +3185,14 @@ function drawWpnHud(w, h) {
   ctx.fillText(wpnRounds(m) + ' rds', bx + bw - 10, by + 17);
   ctx.textAlign = 'left'; ctx.font = '11px system-ui, sans-serif'; ctx.fillStyle = '#9aa0a8';
   if (ak) {
-    const A = ARMOR[ak], f = Math.max(0, 1 - (P.ak === ak ? P.aw || 0 : 0) / A.d);
-    ctx.fillText(nm(ak) + (S.inv[ak] > 1 ? ' ×' + S.inv[ak] : ''), bx + 10, by + 33);
-    ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(bx + 168, by + 26, 58, 8);
-    ctx.fillStyle = f > 0.5 ? '#7fb0e0' : f > 0.25 ? '#e0b84a' : '#e04a4a'; ctx.fillRect(bx + 168, by + 26, 58 * f, 8);
-  } else ctx.fillText('No armour', bx + 10, by + 33);
+    ctx.fillText(`${nm(ak)} · ${Math.round(armRed() * 100)}%`, bx + 10, by + 33);
+    const cap = eqCap();
+    if (cap) {
+      const f = Math.min(1, (P.arm.en || 0) / cap);
+      ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(bx + 168, by + 26, 58, 8);
+      ctx.fillStyle = f > 0.25 ? '#e0d04a' : '#e04a4a'; ctx.fillRect(bx + 168, by + 26, 58 * f, 8);
+    }
+  } else ctx.fillText('No armour · P to wear', bx + 10, by + 33);
   ctx.fillStyle = '#9aa0a8';
   ctx.fillText(nk ? `${nm(nk)} ×${S.inv[nk]}` : 'No charges', bx + 10, by + 48);
   ctx.textAlign = 'right'; ctx.fillStyle = '#6a7078'; ctx.font = '10px system-ui, sans-serif';
@@ -3733,11 +3807,12 @@ function tick() {
   trainTick();
   if (S.dg) dgTick();
   nadeTick();
+  eqTick();
   plTick();
   if (mining && !S.dg) {
     const i = mining.y * W + mining.x;
     if (!mouse.l || tool || !(solid(i) || choppable(i)) || occ[i] || mouse.tx !== mining.x || mouse.ty !== mining.y || !inReach(mining.x + 0.5, mining.y + 0.5, MINE_REACH)) mining = null;
-    else if ((mining.p += DT / (oreType[i] ? 0.5 : 1.2)) >= 1) {
+    else if ((mining.p += DT * eqMine() / (oreType[i] ? 0.5 : 1.2)) >= 1) {
       mining.p = 0;
       const item = oreType[i] ? ORES[oreType[i]].item : 'wood';
       if (oreType[i]) depleteTile(i);
@@ -3777,7 +3852,7 @@ function plMove(dt, mx, my) {
     const tx = Math.floor(P.x), ty = Math.floor(P.y), o = at(tx, ty);
     let vx = 0, vy = 0;
     if (mx || my) {
-      const l = Math.hypot(mx, my), v = PL_V * (o && (kind(o) === 'road' || kind(o) === 'rail') ? 1.1 : TSPD[terrain[ty * W + tx]] || 1);
+      const l = Math.hypot(mx, my), v = PL_V * eqSpd() * (o && (kind(o) === 'road' || kind(o) === 'rail') ? 1.1 : TSPD[terrain[ty * W + tx]] || 1);
       vx = mx / l * v; vy = my / l * v;
       if (S.t - (P.sh || -9) > 0.4) P.f = Math.atan2(my, mx);
       P.wk += h * v * 2.4; P.mv = true;
@@ -4498,7 +4573,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt; delete o.pn; delete o.pg; delete o.psat;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, tech: S.tech, rq: S.rq, rp: S.rp, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, ra: S.pl.ra || 0, rs: S.pl.rs || 0, aw: S.pl.aw || 0, ak: S.pl.ak, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, osh: S.osh || 0, hrsg: S.hrsg || 0, geo: S.geo || 0, dle: S.dle || 0, nrt: S.nrt || 0, fcr: S.fcr, ach: S.ach || {}, rk: S.rk || 0, trk: S.trk || undefined, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, iv: S.iv, mdn: S.mdn, tyk: S.tyk, egk: S.egk, lvn: S.lvn, lvk: S.lvk, icn: S.icn, ick: S.ick, vlv: S.vlv, wkk: S.wkk, wkn: S.wkn, dgk: S.dgk, xv: S.xv, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, tech: S.tech, rq: S.rq, rp: S.rp, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, ra: S.pl.ra || 0, rs: S.pl.rs || 0, arm: S.pl.arm || null, fc: S.pl.fc || 0, sr: S.pl.sr || 0, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, osh: S.osh || 0, hrsg: S.hrsg || 0, geo: S.geo || 0, dle: S.dle || 0, nrt: S.nrt || 0, fcr: S.fcr, ach: S.ach || {}, rk: S.rk || 0, trk: S.trk || undefined, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, iv: S.iv, mdn: S.mdn, tyk: S.tyk, egk: S.egk, lvn: S.lvn, lvk: S.lvk, icn: S.icn, ick: S.ick, vlv: S.vlv, wkk: S.wkk, wkn: S.wkn, dgk: S.dgk, xv: S.xv, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -4556,6 +4631,8 @@ function load() {
   S.cars = d.cars || []; S.trains = d.trains || [];
   if (rgd) growNear(d.pl ? d.pl.x : W / 2, d.pl ? d.pl.y : H / 2, 100, 99);
   S.pl = d.pl ? Object.assign({ wk: 0, f: Math.PI / 2, hp: PL_HP, rd: 0 }, d.pl) : newPl();
+  if (S.pl.arm === undefined) { S.pl.arm = null; const k = Object.keys(ARMOR).filter(k => S.inv[k] > 0).sort((a, b) => ARMOR[b].a - ARMOR[a].a)[0]; if (k) armWear(k); }
+  delete S.pl.aw; delete S.pl.ak;
   if (d.cam) cam = d.cam;
   camFree = false;
   drawTerrain();
@@ -4681,7 +4758,7 @@ const ACH = [
   ['eggs', 'def', 'Egg Smasher', 'Destroy 15 crawler egg clutches underground.', () => (S.egk || 0) >= 15],
   ['boom', 'def', 'Quarry Blast', 'Kill 5 crawlers with a single thrown charge.', () => !!S.pl.boom],
   ['twelve', 'def', 'Twelve Bore', 'Kill 3 crawlers with one shotgun blast.', () => !!S.pl.sg3],
-  ['armour', 'def', 'Plate Carrier', 'Make a ceramic plate carrier from silicon carbide and UHMWPE fibre.', () => (S.inv.ceramic_vest || 0) > 0],
+  ['armour', 'def', 'Plate Carrier', 'Make a ceramic plate carrier from silicon carbide and UHMWPE fibre.', () => (S.inv.ceramic_vest || 0) > 0 || S.pl.arm?.k === 'ceramic_vest'],
   ['clean', 'def', 'Clean Record', 'Run for an hour of game time without a single pipe or vessel failure.', () => S.t >= 3600 && !S.fails],
 ];
 const achGlob = () => { try { return JSON.parse(localStorage.getItem('cfAch') || '{}') || {}; } catch (e) { return {}; } };
@@ -5330,6 +5407,7 @@ function drawPlayer(ox, oy, z) {
   ctx.beginPath(); ctx.arc(hx, hy - s * 0.03, s * 0.15, Math.PI, 0); ctx.fill();
   ctx.fillRect(hx - s * 0.17, hy - s * 0.04, s * 0.34, s * 0.035);
   if (!up && z >= 14) { ctx.fillStyle = '#222'; const ex = side ? fx * s * 0.06 : 0; ctx.fillRect(hx + ex - s * 0.06, hy + s * 0.01, s * 0.03, s * 0.03); if (!side) ctx.fillRect(hx + s * 0.03, hy + s * 0.01, s * 0.03, s * 0.03); }
+  if (S.t - (P.st || -9) < 0.08) { ctx.strokeStyle = 'rgba(160,230,255,0.9)'; ctx.lineWidth = Math.max(1, z * 0.03); ctx.beginPath(); ctx.moveTo(X, Y - s * 0.45); ctx.lineTo(ox + P.stx * z, oy + P.sty * z); ctx.stroke(); }
   if (S.t - (P.sh || -9) < 0.25) {
     const gx = X + fx * s * 0.25, gy = Y - s * 0.05 + fy * s * 0.25;
     ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = Math.max(2, s * 0.07);
@@ -7949,7 +8027,7 @@ function openModal(kind, tab) {
 function closeModal() { modal.hidden = true; modalKind = null; ftip.hidden = true; ftipK = ''; }
 
 const TABS = {
-  craft: [['craft', 'Inventory and crafting']],
+  craft: [['craft', 'Inventory and crafting'], ['equip', 'Armour']],
   ency: [['chains', 'Ore chains'], ['recipes', 'Recipes'], ['mats', 'Materials'], ['pipes', 'Pipes']],
   help: [['help', 'How to play']],
   world: [['world', 'New world']],
@@ -8053,7 +8131,7 @@ function renderModal() {
   const tabs = modal.querySelector('.tabs');
   if (tabs.innerHTML !== th) tabs.innerHTML = th;
   const body = modal.querySelector('.mbody'), st = body.scrollTop;
-  if (modalKind === 'craft') return renderCraft(body);
+  if (modalKind === 'craft') return modalTab === 'equip' ? renderEquip(body) : renderCraft(body);
   if (modalKind === 'tech') return renderTech(body);
   let h = '';
   if (modalTab === 'chains') {
@@ -8367,6 +8445,7 @@ const HELP = `<div class="help">
 <ul>
 <li><b>T</b> opens research. Build a <b>research lab</b>, feed it science kits, and queue technologies to unlock new machines. Starting machines need no research.</li>
 <li><b>Left click</b> a building in the bar at the bottom, then click the map to place it. Drag to lay belts and pipes.</li>
+<li><b>P</b> opens your armour. Wear a plate carrier or an exoframe and fit modules into its grid: solar film, batteries, a methanol fuel cell, exoskeleton legs, trauma plates, a shoulder sentry or a drill arm.</li>
 <li><b>R</b> rotates. <b>Q</b> or <b>Esc</b> puts the tool away.</li>
 <li><b>Right click</b> picks a building up again, with its contents.</li>
 <li><b>Click</b> a building to inspect it, set its recipe, insert items or take outputs.</li>
@@ -8776,6 +8855,45 @@ document.addEventListener('mousemove', ev => {
   ftip.style.left = x + 'px'; ftip.style.top = y + 'px';
 });
 document.addEventListener('click', () => { ftipK = ''; }, true);
+let eSel = null, eSig = '';
+function renderEquip(body) {
+  const P = S.pl, A = P.arm, n = A && ARMOR[A.k].g;
+  const sig = JSON.stringify([A && A.k, A && A.g, eSel, Object.keys(ARMOR).concat(Object.keys(EQ)).map(k => S.inv[k] || 0)]);
+  if (body.querySelector('#eview') && sig === eSig) return eqDyn();
+  eSig = sig;
+  if (eSel && !(S.inv[eSel] > 0)) eSel = null;
+  const st = k => { const E = EQ[k]; return E.gen ? `+${E.gen} W` : E.cap ? `${E.cap / 1000} kJ` : E.fc ? `+${E.fc} W on methanol` : E.a ? `+${E.a * 100}% armour` : E.use ? `−${E.use} W` : '250 J a shot'; };
+  let h = '<div id="eview"><section class="cpane"><div class="ctop"><b>Worn armour</b></div>';
+  h += A ? `<div class="eworn">${ico(A.k)}<div><b>${nm(A.k)}</b><div class="dim">${n ? n + '×' + n + ' grid' : 'No equipment grid'}</div></div><button class="rs ok ebtn" data-eqoff="1">Take off</button></div>` : '<div class="dim">Nothing worn. Click an armour below to put it on.</div>';
+  const ar = Object.keys(ARMOR).filter(k => S.inv[k] > 0);
+  h += '<div class="sec">Armour in your pack</div><div class="elist">' + (ar.length ? ar.map(k => `<button class="rs ok" data-eqa="${k}" data-k="${k}" data-m="i">${ico(k)}<span class="cnt">${S.inv[k]}</span></button>`).join('') : '<span class="dim">None. Craft some under Combat.</span>') + '</div>';
+  h += '<div class="sec">Modules in your pack</div><div class="elist">';
+  const ms = Object.keys(EQ).filter(k => S.inv[k] > 0);
+  h += ms.length ? ms.map(k => `<button class="rs ok${eSel === k ? ' on' : ''}" data-eqm="${k}" data-k="${k}" data-m="i">${ico(k)}<span class="cnt">${S.inv[k]}</span></button>`).join('') : '<span class="dim">None. Craft modules under Combat.</span>';
+  h += '</div><div id="estat"></div></section><section class="cpane"><div class="ctop"><b>Equipment grid</b></div>';
+  if (n) {
+    const cs = Math.min(40, Math.floor(400 / n));
+    h += `<div class="egrid" style="width:${cs * n}px;height:${cs * n}px;background-size:${cs}px ${cs}px">`;
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) h += `<div class="ecell" data-ex="${x}" data-ey="${y}" style="left:${x * cs}px;top:${y * cs}px;width:${cs}px;height:${cs}px"></div>`;
+    A.g.forEach((m, i) => { const E = EQ[m.k]; h += `<div class="emod" data-eqr="${i}" data-k="${m.k}" data-m="i" style="left:${m.x * cs}px;top:${m.y * cs}px;width:${E.w * cs}px;height:${E.h * cs}px;background:${ITEMS[m.k].c}">${ico(m.k)}</div>`; });
+    h += '</div><div class="dim">' + (eSel ? `Click a cell to fit the ${nm(eSel)} (${EQ[eSel].w}×${EQ[eSel].h}, ${st(eSel)}) with its top left corner there.` : 'Pick a module on the left, then click the grid. Click or right click a fitted module to take it out.') + '</div>';
+  } else h += '<div class="dim">This armour has no grid. Wear a Modular Plate Carrier or an Exoframe to fit modules.</div>';
+  h += '</section></div>';
+  body.innerHTML = h;
+  eqDyn();
+}
+function eqDyn() {
+  const el = $('#estat');
+  if (!el) return;
+  const P = S.pl, A = P.arm, cap = eqCap();
+  let h = `<div class="sec">Effects</div><div class="gauge"><span>Armour</span>${bar(armRed(), 1, '#7fb0e0')}<b>${Math.round(armRed() * 100)}%</b></div>`;
+  if (cap) {
+    h += `<div class="gauge"><span>Energy</span>${bar(A.en || 0, cap, '#e0d04a')}<b>${Math.round((A.en || 0) / 1000)} kJ</b></div>`;
+    const gen = eqN('pv_film') * EQ.pv_film.gen, fc = eqN('dmfc') * EQ.dmfc.fc;
+    h += `<div class="dim">Solar ${gen} W${fc ? ` · fuel cell ${fc} W (${S.inv.meoh_cart || 0} cartridges)` : ''} · walk ×${eqSpd().toFixed(1)} · mine ×${eqMine()}${eqN('sentry_arm') ? ` · sentry ${S.inv.cartridge || 0} cartridges` : ''}</div>`;
+  }
+  if (el.innerHTML !== h) el.innerHTML = h;
+}
 function renderCraft(body) {
   if (!body.querySelector('#cview')) {
     modalHtml = '';
@@ -8956,6 +9074,7 @@ window.addEventListener('keydown', ev => {
   if ((modalKind === 'craft' || modalKind === 'tech') && (k === '/' || ((ev.ctrlKey || ev.metaKey) && k === 'f'))) { ev.preventDefault(); const s = $(modalKind === 'craft' ? '#csearch' : '#tsearch'); if (s) s.focus(); return; }
   keys[k] = true;
   if (k === 'e' || k === 'i') { modalKind === 'craft' ? closeModal() : openModal('craft'); }
+  else if (k === 'p') { modalKind === 'craft' && modalTab === 'equip' ? closeModal() : openModal('craft', 'equip'); }
   else if (k === 'h') { modalKind === 'ency' ? closeModal() : openModal('ency'); }
   else if (k === 'm') { modalKind === 'map' ? closeModal() : openModal('map'); }
   else if (k === 'j') { modalKind === 'ach' ? closeModal() : openModal('ach'); }
@@ -9013,6 +9132,15 @@ modal.addEventListener('click', ev => {
   if (p) return doPart(p.dataset.part, ev.shiftKey ? maxCraft(p.dataset.part) : +p.dataset.n);
   const gb = ev.target.closest('[data-grp]');
   if (gb) { cGrp = gb.dataset.grp; cQ = ''; const cs = $('#csearch'); if (cs) cs.value = ''; cSig = ''; return renderModal(); }
+  const eqa = ev.target.closest('[data-eqa]');
+  if (eqa) { armWear(eqa.dataset.eqa); return renderModal(); }
+  if (ev.target.closest('[data-eqoff]')) { armOff(); return renderModal(); }
+  const eqm = ev.target.closest('[data-eqm]');
+  if (eqm) { eSel = eSel === eqm.dataset.eqm ? null : eqm.dataset.eqm; return renderModal(); }
+  const eqr = ev.target.closest('[data-eqr]');
+  if (eqr) { eqTake(+eqr.dataset.eqr); return renderModal(); }
+  const ec = ev.target.closest('[data-ex]');
+  if (ec) { if (eSel && eqPut(eSel, +ec.dataset.ex, +ec.dataset.ey) && !(S.inv[eSel] > 0)) eSel = null; return renderModal(); }
   const pk = ev.target.closest('[data-pick]');
   if (pk) { const t = pk.dataset.pick; qbAdd(t); closeModal(); if (tool !== t) selectTool(t); return; }
   const wb = ev.target.closest('[data-world]');
@@ -9027,6 +9155,8 @@ modal.addEventListener('click', ev => {
   if (ev.target.closest('[data-ui="close"]')) closeModal();
 });
 modal.addEventListener('contextmenu', ev => {
+  const er = ev.target.closest('[data-eqr]');
+  if (er) { ev.preventDefault(); eqTake(+er.dataset.eqr); return renderModal(); }
   const c = ev.target.closest('[data-craft],[data-part]');
   if (!c) return;
   ev.preventDefault();
@@ -9093,7 +9223,7 @@ window.game = { tech: { TECH, TECHL, queueTech, curTech, techOk },
   get S() { return S; }, get W() { return W; }, get ents() { return ents; }, get patches() { return patches; }, get cam() { return cam; },
   place: (t, x, y, d) => place(t, x, y, d, true), at, buildOk, canPlace, setRecipe, removeEnt, save, load, newGame,
   step(n) { for (let i = 0; i < n; i++) tick(); render(); $('#power').innerHTML = powerHtml(); $('#vent').innerHTML = ventHtml(); renderPanelDyn(); renderHotbar(); renderQueue(); },
-  terrain: () => terrain, ACH, achCheck, ACH_CH, RANKS, achScore, rankOf, wpnCycle, wpnCur, wpnRounds, nadeThrow, armSoak, armWorn, nades, plShoot, plHurt, dgHurt, enqueue, maxCraft, WPN, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
+  terrain: () => terrain, ACH, achCheck, ACH_CH, RANKS, achScore, rankOf, wpnCycle, wpnCur, wpnRounds, nadeThrow, armSoak, armWorn, armWear, armOff, eqPut, eqTake, eqCap, armRed, EQ, ARMOR, nades, plShoot, plHurt, dgHurt, enqueue, maxCraft, WPN, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
   select(e) { e ? openPanel(e) : closePanel(); }, openModal, closeModal, refresh: renderHotbar,
   setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; camFree = true; },
   get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get trains() { return S.trains; }, placeTrain, trainAt, openTrain, openPanel, pickTrain, trainGeo, reverseTrain, railBusy, get puffs() { return puffs; }, get H() { return H; }, get wakes() { return wakes; }, floats, boatRoute, boatPilot, carStep, carHit, fishTick, fishRegrow, seaOil, seaPatch, oily, sunMul, get oreAmt() { return oreAmt; }, fground, fstock, netToggle, wdep, seaLv,
