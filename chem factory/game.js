@@ -2973,12 +2973,13 @@ const EQ = {
   sentry_arm: { w: 2, h: 2 },
   drill_arm: { w: 2, h: 2, use: 300 },
   aero_liner: { w: 2, h: 2 },
+  thermal_sight: { w: 1, h: 1, use: 20 },
 };
 const NADE = {
   ammonal_charge: { r: 3.2, dm: 130, hv: 160, c: '#c8c8c0' },
   powder_charge: { r: 2.2, dm: 55, hv: 60, c: '#4a4844' },
 };
-const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug'];
+const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'thermal_sight', 'thermal_cam', 'ultrasound_probe', 'surge_arrester', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug'];
 const nades = [];
 const takeInv = k => { S.inv[k]--; if (!(S.inv[k] > 0)) delete S.inv[k]; };
 function wpnHas(m) {
@@ -3007,7 +3008,8 @@ function wpnLoad(m, under) {
 }
 function wpnShot(ox, oy, list, hives, see, under, arm) {
   const P = S.pl, m = wpnCur(), W = WPN[m];
-  let best = null, bd = W.r * W.r, h = null;
+  const R = W.r * (eqN('thermal_sight') && eqOn() ? 1.25 : 1);
+  let best = null, bd = R * R, h = null;
   for (const b of list) { const d = (b.x - ox) ** 2 + (b.y - oy) ** 2; if (b.hp > 0 && d < bd && (!see || see(b))) { bd = d; best = b; } }
   if (!best && hives) for (const o of hives) { const q = ctr(o), d = (q.x - ox) ** 2 + (q.y - oy) ** 2; if (d < bd) { bd = d; h = o; } }
   if (!best && !h) return null;
@@ -3020,13 +3022,13 @@ function wpnShot(ox, oy, list, hives, see, under, arm) {
       for (const b of list) {
         if (!(b.hp > 0)) continue;
         const dx = b.x - ox, dy = b.y - oy, d = Math.hypot(dx, dy);
-        if (d > W.r) continue;
+        if (d > R) continue;
         let da = Math.abs(Math.atan2(dy, dx) - a0);
         if (da > Math.PI) da = Math.PI * 2 - da;
         if ((b === best || da < W.cone) && (!see || see(b))) c.push([d, b]);
       }
       c.sort((u, v) => u[0] - v[0]);
-      for (const [d, b] of c.slice(0, W.pel)) { b.hp -= W.dm * (1 - 0.5 * d / W.r) * (arm(b) ? W.arm || 1 : 1); hits.push(b); }
+      for (const [d, b] of c.slice(0, W.pel)) { b.hp -= W.dm * (1 - 0.5 * d / R) * (arm(b) ? W.arm || 1 : 1); hits.push(b); }
     } else { best.hp -= W.dm * (arm(best) ? W.arm || 1 : 1); hits.push(best); }
   }
   P[W.rk]--; P.cd = W.cd;
@@ -3091,6 +3093,7 @@ function eqTick() {
   }
   if (P.mv && !P.car) use += Math.min(2, eqN('exo_legs')) * EQ.exo_legs.use;
   if (mining && !S.dg) use += eqN('drill_arm') * EQ.drill_arm.use;
+  use += Math.min(1, eqN('thermal_sight')) * EQ.thermal_sight.use;
   A.en = Math.max(0, Math.min(cap, (A.en || 0) + (gen - use) * DT));
   const sn = eqN('sentry_arm');
   P.scd = (P.scd || 0) - DT;
@@ -8871,7 +8874,7 @@ function renderEquip(body) {
   if (body.querySelector('#eview') && sig === eSig) return eqDyn();
   eSig = sig;
   if (eSel && !(S.inv[eSel] > 0)) eSel = null;
-  const st = k => { const E = EQ[k]; return E.gen ? `+${E.gen} W` : E.cap ? `${E.cap / 1000} kJ` : E.fc ? `+${E.fc} W on methanol` : E.a ? `+${E.a * 100}% armour` : E.use ? `−${E.use} W` : k === 'aero_liner' ? 'halves heat and cold' : '250 J a shot'; };
+  const st = k => { const E = EQ[k]; return E.gen ? `+${E.gen} W` : E.cap ? `${E.cap / 1000} kJ` : E.fc ? `+${E.fc} W on methanol` : E.a ? `+${E.a * 100}% armour` : k === 'thermal_sight' ? '+25% gun range, −20 W' : E.use ? `−${E.use} W` : k === 'aero_liner' ? 'halves heat and cold' : '250 J a shot'; };
   let h = '<div id="eview"><section class="cpane"><div class="ctop"><b>Worn armour</b></div>';
   h += A ? `<div class="eworn">${ico(A.k)}<div><b>${nm(A.k)}</b><div class="dim">${n ? n + '×' + n + ' grid' : 'No equipment grid'}</div></div><button class="rs ok ebtn" data-eqoff="1">Take off</button></div>` : '<div class="dim">Nothing worn. Click an armour below to put it on.</div>';
   const ar = Object.keys(ARMOR).filter(k => S.inv[k] > 0);
