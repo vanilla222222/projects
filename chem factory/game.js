@@ -5,7 +5,7 @@ let W = 160, H = 160, PW = 20;
 const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
 const KEY = 'chemfactory-save-v1';
 const GAP = 0.25, BELT_V = 2 * DT, MINER_T = 2, PUMP_RATE = 60 * DT;
-const PARTS = ['casting', 'plate', 'wire', 'motor', 'brick', 'lead_sheet', 'brass', 'cartridge', 'cylinder', 'wheel', 'chassis', 'diesel_engine', 'gearbox', 'windscreen', 'rail_bar', 'sleeper', 'traction_motor', 'bogie', 'hull_section', 'propeller', 'zinc_anode', 'sci1', 'sci2', 'sci3', 'sci4', 'sci5'];
+const PARTS = ['casting', 'plate', 'wire', 'motor', 'brick', 'lead_sheet', 'brass', 'cartridge', 'cylinder', 'wheel', 'chassis', 'diesel_engine', 'gearbox', 'windscreen', 'rail_bar', 'sleeper', 'traction_motor', 'bogie', 'hull_section', 'propeller', 'zinc_anode', 'sci1', 'sci2', 'sci3', 'sci4', 'sci5', 'sci_ag', 'sci_bio', 'sci_en', 'sci_met', 'sci_mil'];
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 let tctx = null;
 const CK = 16, RG = 128, tch = new Map(), ovc = document.createElement('canvas'), ovx = ovc.getContext('2d');
@@ -1465,7 +1465,9 @@ function hurt(e, d, why) {
   e.hp -= d;
   if (e.hp <= 0) wreck(e, why);
 }
-const avail = r => !r.lock || !!(S.unl && S.unl[r.id]);
+const avail = r => (!r.lock || !!(S.unl && S.unl[r.id])) && !(r.o && Object.keys(r.o).some(k => !BUILD[k] && TECH[k] && !techOk(k)));
+const XPK = ['sci_ag', 'sci_bio', 'sci_en', 'sci_met', 'sci_mil'];
+let TKX = null;
 const TECH = {}, TECHL = [], PACKN = [0, 8, 20, 40, 60, 100], PACKT = [0, 5, 10, 15, 20, 30];
 (() => {
   const start = new Set(Object.keys(START_INV));
@@ -1505,19 +1507,35 @@ const TECH = {}, TECHL = [], PACKN = [0, 8, 20, 40, 60, 100], PACKT = [0, 5, 10,
     const lv = Math.min(5, L[t]);
     TECH[t] = { id: t, lv, req: [...req], n: PACKN[lv] + 2 * Math.min(10, req.size), ut: PACKT[lv] };
   }
+  const RX = [['sci_mil', (t, B) => B.cat === 'Defence'], ['sci_ag', (t, B) => /farm|ranch|sheep_station|estate|apiary|grove|forest|field|paddy|sugarbush|shade|nopal|orchard|glasshouse|greenhouse|plantation|layer_house|broiler|pond|harvest|kerb|hatch|barn|silo|fertil|thresh|winnow|seed|nursery|aquacult|grow_room|ripening|rearing|honey|egg_|compost|fishmeal|curing_shed|withering|tea_|olive_mill|rice_mill|cane_mill|sugar_mill|juice|peel|cream_sep|churn|abattoir|granulator/.test(t)],
+    ['sci_bio', (t, B) => /ferment|brew|pharma|enzyme|yeast|vaccine|culture|steril|malt|wine|cheese|spawn|koji|agar_plant|carrageen|refold|lnp|ultrafilter|ulc_|uv_tunnel|gel_cryst|sake|pickle|homogen|membrane_sep|starch_plant|tofu|ad_plant/.test(t)],
+    ['sci_en', (t, B) => B.cat === 'Power' || /^pwr$|^centrifuge$|turbine|_gen|battery|solar|wind|fuel_cell|boiler|substation|pylon|cell_line|module_line|stack_line|electrode_coater|tidal/.test(t)],
+    ['sci_met', (t, B) => B.cat === 'Smelting' || /forg|strip_mill|bar_mill|tube_mill|caster|anneal|extrud|draw_tower|furnace|foundry|sinter|plating|sputter|ebpvd|magnet|vac_coater|ion_bath|plate_press|hpht|engine_hall|frame_shop|component_works|smith|weld/.test(t)]];
+  const pn = {};
+  for (const x of XPK) pn[x] = need[x];
+  const xadd = (t, T, x, lt) => {
+    if (!(pn[x] < lt)) return;
+    T.x = x;
+    const rs = new Set(T.req);
+    for (const b of deps(x)) if (b !== t && L[b] < lt && TECH[b]) rs.add(b);
+    T.req = [...rs];
+  };
+  for (const t in TECH) { const f = RX.find(([, fn]) => fn(t, BUILD[t])); if (f) xadd(t, TECH[t], f[0], L[t]); }
+  TKX = { need, deps, L, xadd };
   for (const t in TECH) {
     const T = TECH[t];
     T.dir = T.req.filter(p => !T.req.some(q => q !== p && TECH[q] && TECH[q].req.includes(p)));
     TECHL.push(t);
   }
   TECHL.sort((a, b) => TECH[a].lv - TECH[b].lv || BUILD[a].n.localeCompare(BUILD[b].n));
-  RECIPE.study = { id: 'study', n: 'Research', b: 'rlab', t: 1, i: { sci1: 1, sci2: 1, sci3: 1, sci4: 1, sci5: 1 }, o: {} };
+  RECIPE.study = { id: 'study', n: 'Research', b: 'rlab', t: 1, i: { sci1: 1, sci2: 1, sci3: 1, sci4: 1, sci5: 1, sci_ag: 1, sci_bio: 1, sci_en: 1, sci_met: 1, sci_mil: 1 }, o: {} };
 })();
 const techOk = t => !TECH[t] || !!(S.tech && S.tech[t]);
 const techAvail = t => TECH[t].req.every(techOk);
 const buildOk = t => techOk(t) && (!BUILD[t].lock || !!(S.unl && S.unl[BUILD[t].lock]));
-const lockMsg = t => !techOk(t) ? `Needs research: ${BUILD[t].n}. Press T to open research.` : 'Locked. The design is in the lab books of an abandoned works.';
-const packs = t => Array.from({ length: TECH[t].lv }, (_, i) => 'sci' + (i + 1));
+const gate = k => BUILD[k] ? buildOk(k) : techOk(k);
+const lockMsg = t => !techOk(t) ? `Needs research: ${nm(t)}. Press T to open research.` : 'Locked. The design is in the lab books of an abandoned works.';
+const packs = t => [...Array.from({ length: TECH[t].lv }, (_, i) => 'sci' + (i + 1)), ...(TECH[t].x ? [TECH[t].x] : [])];
 function curTech() {
   if (!S.rq) S.rq = [];
   while (S.rq.length && (!TECH[S.rq[0]] || S.tech[S.rq[0]])) S.rq.shift();
@@ -1551,7 +1569,7 @@ function labDone(e) {
   if (S.rp[t] >= TECH[t].n) {
     S.tech[t] = 1; delete S.rp[t];
     curTech();
-    toast(`Research complete: ${BUILD[t].n}. You can now craft it.`);
+    toast(`Research complete: ${nm(t)}. You can now craft it.`);
     cSig = '';
     if (modalKind === 'tech') renderModal();
   }
@@ -3002,6 +3020,22 @@ const NADE = {
   powder_charge: { r: 2.2, dm: 55, hv: 60, c: '#4a4844' },
 };
 const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'crossbow', 'xbow_bolt', 'amr', 'wha_round', 'exoframe3', 'coil_turret', 'knee_gen', 'thermal_sight', 'thermal_cam', 'ultrasound_probe', 'surge_arrester', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug', 'arc_caster', 'spark_gap', 'laminate_carrier', 'sofc_pack', 'supercap', 'slug_shell', 'rotary_gun', 'discharge_ring', 'tandem_film', 'hemostat', 'med_injector', 'blast_suit', 'ss_batt', 'flechette_shell', 'wcore_round', 'heavy_carrier', 'arm_brace', 'auto_shotgun', 'exoframe4'];
+(() => {
+  const { need, deps, L, xadd } = TKX;
+  const its = new Set([...Object.values(WPN).map(w => w.need).filter(Boolean), ...Object.keys(ARMOR), ...Object.keys(EQ)].filter(k => !START_INV[k] && RECIPE[k] && need[k] < 1e9));
+  const sub = (k, s, d) => { const r = RECIPE[k]; if (!r || d > 5) return; for (const q in r.i) { if (its.has(q)) s.add(q); else if (PARTS.includes(q) || CMB.includes(q)) sub(q, s, d + 1); } };
+  for (const k of its) {
+    const lt = need[k] + 1, lv = Math.max(1, Math.min(5, lt)), req = new Set();
+    for (const b of deps(k)) if (TECH[b] && L[b] < lt) req.add(b);
+    sub(k, req, 0); req.delete(k);
+    const T = TECH[k] = { id: k, lv, req: [...req], n: PACKN[lv] + 2 * Math.min(10, req.size), ut: PACKT[lv], it: 1 };
+    const E = EQ[k];
+    xadd(k, T, E && (E.gen || E.cap || E.fc) ? 'sci_en' : k === 'med_injector' || k === 'hemostat' ? 'sci_bio' : 'sci_mil', lt);
+    TECHL.push(k);
+  }
+  for (const k of its) { const T = TECH[k]; T.dir = T.req.filter(p => !T.req.some(q => q !== p && TECH[q] && TECH[q].req.includes(p))); }
+  TECHL.sort((a, b) => TECH[a].lv - TECH[b].lv || nm(a).localeCompare(nm(b)));
+})();
 const nades = [];
 const takeInv = k => { S.inv[k]--; if (!(S.inv[k] > 0)) delete S.inv[k]; };
 function wpnHas(m) {
@@ -4655,7 +4689,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt; delete o.pn; delete o.pg; delete o.psat;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, tech: S.tech, rq: S.rq, rp: S.rp, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, rb: S.pl.rb || 0, rm: S.pl.rm || 0, rc: S.pl.rc || 0, rx: S.pl.rx || 0, ra: S.pl.ra || 0, ra: S.pl.ra || 0, rs: S.pl.rs || 0, arm: S.pl.arm || null, fc: S.pl.fc || 0, fc2: S.pl.fc2 || 0, rw: S.pl.rw || 0, rq: S.pl.rq || 0, rs2: S.pl.rs2 || 0, rb2: S.pl.rb2 || 0, rm2: S.pl.rm2 || 0, rf: S.pl.rf || 0, ra2: S.pl.ra2 || 0, sr: S.pl.sr || 0, sr2: S.pl.sr2 || 0, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, osh: S.osh || 0, hrsg: S.hrsg || 0, geo: S.geo || 0, dle: S.dle || 0, nrt: S.nrt || 0, fcr: S.fcr, ach: S.ach || {}, rk: S.rk || 0, trk: S.trk || undefined, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, iv: S.iv, mdn: S.mdn, tyk: S.tyk, egk: S.egk, lvn: S.lvn, lvk: S.lvk, icn: S.icn, ick: S.ick, vlv: S.vlv, wkk: S.wkk, wkn: S.wkn, dgk: S.dgk, xv: S.xv, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, tech: S.tech, tv: 1, rq: S.rq, rp: S.rp, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, rb: S.pl.rb || 0, rm: S.pl.rm || 0, rc: S.pl.rc || 0, rx: S.pl.rx || 0, ra: S.pl.ra || 0, ra: S.pl.ra || 0, rs: S.pl.rs || 0, arm: S.pl.arm || null, fc: S.pl.fc || 0, fc2: S.pl.fc2 || 0, rw: S.pl.rw || 0, rq: S.pl.rq || 0, rs2: S.pl.rs2 || 0, rb2: S.pl.rb2 || 0, rm2: S.pl.rm2 || 0, rf: S.pl.rf || 0, ra2: S.pl.ra2 || 0, sr: S.pl.sr || 0, sr2: S.pl.sr2 || 0, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, osh: S.osh || 0, hrsg: S.hrsg || 0, geo: S.geo || 0, dle: S.dle || 0, nrt: S.nrt || 0, fcr: S.fcr, ach: S.ach || {}, rk: S.rk || 0, trk: S.trk || undefined, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, iv: S.iv, mdn: S.mdn, tyk: S.tyk, egk: S.egk, lvn: S.lvn, lvk: S.lvk, icn: S.icn, ick: S.ick, vlv: S.vlv, wkk: S.wkk, wkn: S.wkn, dgk: S.dgk, xv: S.xv, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -4704,6 +4738,8 @@ function load() {
     S.nextId = Math.max(S.nextId, e.id + 1);
   }
   if (!d.tech) { for (const e of ents.values()) if (TECH[e.type]) S.tech[e.type] = 1; for (const k in S.inv) if (TECH[k]) S.tech[k] = 1; }
+  if (!d.tv) { const A = S.pl && S.pl.arm; for (const k in TECH) if (TECH[k].it && ((S.inv[k] || 0) > 0 || (A && (A.k === k || A.g.some(m => m.k === k))) || (S.pl && WPN[S.pl.wm] && WPN[S.pl.wm].need === k))) S.tech[k] = 1; }
+  S.tv = 1;
   if (!S.rv) spawnRuins();
   if (!S.hv) spawnHives();
   if (!S.bv) spawnBurrows();
@@ -8615,18 +8651,18 @@ const achFrac = (a, c) => { if (!a[5]) return 0; const [x, y] = a[5](c); return 
 let achF = 'all';
 const achShow = (a, c) => achF === 'all' || (achF === 'on' ? achDone(a[0]) : !achDone(a[0]) && (achF === 'off' || achFrac(a, c) >= 0.5));
 const achQ = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-let tF = 'avail', tQ = '';
+let tF = 'avail', tQ = '', tX = '';
 function techCard(t) {
-  const T = TECH[t], B = BUILD[t], done = techOk(t), av = techAvail(t), qi = (S.rq || []).indexOf(t), p = (S.rp && S.rp[t]) || 0;
+  const T = TECH[t], done = techOk(t), av = techAvail(t), qi = (S.rq || []).indexOf(t), p = (S.rp && S.rp[t]) || 0;
   const miss = done ? [] : T.dir.filter(x => !techOk(x));
-  return `<button class="tc ${done ? 'done' : av ? 'av' : 'lkd'}${qi >= 0 ? ' q' : ''}" data-tech="${t}" data-k="${t}" data-m="t">${ico(t, 1)}<span class="tn">${B.n}</span><span class="tp">${packs(t).map(x => ico(x)).join('')}<em>× ${T.n} · ${T.ut}s</em></span>${miss.length ? `<span class="tr">Needs ${miss.map(x => BUILD[x].n).join(', ')}</span>` : ''}${qi >= 0 ? `<span class="tqn">${qi + 1}</span>` : ''}${p && !done ? `<i class="tb" style="width:${p / T.n * 100}%"></i>` : ''}</button>`;
+  return `<button class="tc ${done ? 'done' : av ? 'av' : 'lkd'}${qi >= 0 ? ' q' : ''}" data-tech="${t}" data-k="${t}" data-m="t">${ico(t, 1)}<span class="tn">${nm(t)}</span><span class="tp">${packs(t).map(x => ico(x)).join('')}<em>× ${T.n} · ${T.ut}s</em></span>${miss.length ? `<span class="tr">Needs ${miss.map(nm).join(', ')}</span>` : ''}${qi >= 0 ? `<span class="tqn">${qi + 1}</span>` : ''}${p && !done ? `<i class="tb" style="width:${p / T.n * 100}%"></i>` : ''}</button>`;
 }
 function techHtml() {
   const cur = curTech(), q = tQ.toLowerCase();
   let h = '<div class="tq"><b>Queue</b>';
-  h += (S.rq || []).length ? S.rq.map((t, i) => `<button class="tqi${i ? '' : ' on'}" data-tech="${t}" data-k="${t}" data-m="t">${ico(t)}<span>${BUILD[t].n}</span>${i ? '' : `<i class="tb" style="width:${((S.rp && S.rp[t]) || 0) / TECH[t].n * 100}%"></i>`}</button>`).join('') : '<span class="dim">Empty. Click a technology below to research it. Its missing prerequisites are queued first.</span>';
-  h += `</div><div class="tfil">${[['avail', 'Available'], ['all', 'All'], ['done', 'Researched']].map(([id, n]) => `<button class="tab ${tF === id ? 'on' : ''}" data-tf="${id}">${n}</button>`).join('')}<span class="dim">${Object.keys(S.tech).filter(t => TECH[t]).length} / ${TECHL.length} researched</span></div>`;
-  const l = TECHL.filter(t => (q ? BUILD[t].n.toLowerCase().includes(q) : tF === 'all' || (tF === 'done' ? techOk(t) : !techOk(t) && techAvail(t))));
+  h += (S.rq || []).length ? S.rq.map((t, i) => `<button class="tqi${i ? '' : ' on'}" data-tech="${t}" data-k="${t}" data-m="t">${ico(t)}<span>${nm(t)}</span>${i ? '' : `<i class="tb" style="width:${((S.rp && S.rp[t]) || 0) / TECH[t].n * 100}%"></i>`}</button>`).join('') : '<span class="dim">Empty. Click a technology below to research it. Its missing prerequisites are queued first.</span>';
+  h += `</div><div class="tfil">${[['avail', 'Available'], ['all', 'All'], ['done', 'Researched']].map(([id, n]) => `<button class="tab ${tF === id ? 'on' : ''}" data-tf="${id}">${n}</button>`).join('')}<span class="txs">${['', ...XPK].map(x => `<button class="tab ${tX === x ? 'on' : ''}" data-tx="${x}" data-k="${x}" data-m="${x ? 'i' : ''}">${x ? ico(x) : 'Any kit'}</button>`).join('')}</span><span class="dim">${Object.keys(S.tech).filter(t => TECH[t]).length} / ${TECHL.length} researched</span></div>`;
+  const l = TECHL.filter(t => (!tX || TECH[t].x === tX) && (q ? nm(t).toLowerCase().includes(q) : tF === 'all' || (tF === 'done' ? techOk(t) : !techOk(t) && techAvail(t))));
   for (let lv = 1; lv <= 5; lv++) {
     const ll = l.filter(t => TECH[t].lv === lv);
     if (ll.length) h += `<h3>${ico('sci' + lv)} Tier ${lv}: ${nm('sci' + lv)}</h3><div class="tgrid">${ll.map(techCard).join('')}</div>`;
@@ -8680,7 +8716,7 @@ const HELP = `<div class="help">
 <p>Build a factory that turns real ore into metal using real chemistry.</p>
 <h3>Controls</h3>
 <ul>
-<li><b>T</b> opens research. Build a <b>research lab</b>, feed it science kits, and queue technologies to unlock new machines. Starting machines need no research.</li>
+<li><b>T</b> opens research. Build a <b>research lab</b>, feed it science kits, and queue technologies to unlock new machines, guns, armour and equipment. Farm, biology, power, metallurgy and defence technologies also take their own field kit. Starting machines need no research.</li>
 <li><b>Left click</b> a building in the bar at the bottom, then click the map to place it. Drag to lay belts and pipes.</li>
 <li><b>P</b> opens your armour. Wear a plate carrier or an exoframe and fit modules into its grid: solar film, batteries, a methanol fuel cell, exoskeleton legs, trauma plates, a shoulder sentry or a drill arm.</li>
 <li><b>R</b> rotates. <b>Q</b> or <b>Esc</b> puts the tool away.</li>
@@ -8981,7 +9017,7 @@ const HELP = `<div class="help">
 
 let cGrp = 'Logistics', cSig = '', iQ = '', cQ = '';
 const kindOf = k => { const B = BUILD[k]; return B ? B.kind + (B.kind === 'machine' ? B.w + 'x' + B.h : '') : 'part'; };
-const CGROUPS = [...CATS.map(c => ({ id: c, n: c, ks: Object.keys(BUILD).filter(t => BUILD[t].cat === c && BUILD[t].cost) })), { id: 'Parts', n: 'Intermediates', ks: PARTS.filter(k => !/^sci\d$/.test(k)) }, { id: 'Science', n: 'Science', ks: ['rlab', 'sci1', 'sci2', 'sci3', 'sci4', 'sci5'] }, { id: 'Combat', n: 'Combat', ks: CMB.slice() }];
+const CGROUPS = [...CATS.map(c => ({ id: c, n: c, ks: Object.keys(BUILD).filter(t => BUILD[t].cat === c && BUILD[t].cost) })), { id: 'Parts', n: 'Intermediates', ks: PARTS.filter(k => !/^sci/.test(k)) }, { id: 'Science', n: 'Science', ks: ['rlab', 'sci1', 'sci2', 'sci3', 'sci4', 'sci5', ...XPK] }, { id: 'Combat', n: 'Combat', ks: CMB.slice() }];
 for (const g of CGROUPS) { const o = [...new Set(g.ks.map(kindOf))]; g.ks.sort((a, b) => o.indexOf(kindOf(a)) - o.indexOf(kindOf(b))); }
 const craftCost = k => BUILD[k] ? BUILD[k].cost : RECIPE[k].i;
 const craftMakes = k => BUILD[k] ? BUILD[k].makes || 1 : RECIPE[k].o[k];
@@ -8990,7 +9026,7 @@ function planCraft(cost, n, inv, steps, d) {
   for (const k in cost) {
     const need = cost[k] * n, have = inv[k] || 0;
     if (have >= need) { inv[k] = have - need; continue; }
-    if (!PARTS.includes(k) && !CMB.includes(k) || d > 4) return false;
+    if (!PARTS.includes(k) && !CMB.includes(k) || d > 4 || !techOk(k)) return false;
     const r = RECIPE[k], runs = Math.ceil((need - have) / r.o[k]);
     inv[k] = 0;
     if (!planCraft(r.i, runs, inv, steps, d + 1)) return false;
@@ -9000,7 +9036,7 @@ function planCraft(cost, n, inv, steps, d) {
   return true;
 }
 function maxCraft(k) {
-  if (BUILD[k] && !buildOk(k)) return 0;
+  if (!gate(k)) return 0;
   const cost = craftCost(k), ok = n => planCraft(cost, n, Object.assign({}, S.inv), [], 0);
   if (!ok(1)) return 0;
   let lo = 1, hi = 2;
@@ -9010,7 +9046,7 @@ function maxCraft(k) {
   return lo;
 }
 function enqueue(k, n) {
-  if (BUILD[k] && !buildOk(k)) return toast(lockMsg(k), true);
+  if (!gate(k)) return toast(lockMsg(k), true);
   const inv = Object.assign({}, S.inv), steps = [];
   if (!(n > 0) || !planCraft(craftCost(k), n, inv, steps, 0)) return toast('Not enough materials', true);
   const ref = {};
@@ -9062,7 +9098,7 @@ function tipHtml(k, m) {
   const B = BUILD[k];
   let h = `<div class="fth">${ico(k)}<b>${nm(k)}</b>${m === 'r' ? '<span>Recipe</span>' : m === 'q' ? '<span>Crafting</span>' : ''}</div><div class="ftb">`;
   if (m === 'r') {
-    if (B && !buildOk(k)) h += `<p class="bad">${lockMsg(k)}</p>`;
+    if (!gate(k)) h += `<p class="bad">${lockMsg(k)}</p>`;
     const c = craftCost(k);
     h += '<div class="ftl">Ingredients</div>' + Object.keys(c).map(q => { const hv = S.inv[q] || 0; return `<div class="fti${hv >= c[q] ? '' : PARTS.includes(q) ? ' sub' : ' no'}">${ico(q)}<span>${c[q]} × ${nm(q)}</span><em>${fmt(hv)}</em></div>`; }).join('');
     if (Object.keys(c).some(q => (S.inv[q] || 0) < c[q] && PARTS.includes(q))) h += '<p class="warn">Missing parts in yellow are hand-crafted first, automatically.</p>';
@@ -9160,7 +9196,7 @@ function renderCraft(body) {
     const B = BUILD[k], sub = kindOf(k);
     if (!cq && prev !== null && sub !== prev) rows += '<div class="rbrk"></div>';
     prev = sub;
-    const lk = B && !buildOk(k), mx = lk ? 0 : maxCraft(k);
+    const lk = !gate(k), mx = lk ? 0 : maxCraft(k);
     rows += `<button class="rs ${lk ? 'lk' : mx ? 'ok' : 'no'}" ${B ? `data-craft="${k}"` : `data-part="${k}"`} data-n="1" data-k="${k}" data-m="r">${ico(k)}${mx ? `<span class="cnt">${mx > 999 ? '999+' : mx}</span>` : ''}${lk ? '<span class="lock">🔒</span>' : ''}</button>`;
   }
   $('#crecs').innerHTML = rows || '<div class="dim" style="grid-column:1/-1">No recipe matches.</div>';
@@ -9370,6 +9406,8 @@ modal.addEventListener('click', ev => {
   if (tc) { const t = tc.dataset.tech; if (techOk(t)) return; if ((S.rq || []).includes(t) && tc.classList.contains('tqi')) S.rq = S.rq.filter(x => x !== t); else queueTech(t, ev.shiftKey); return renderModal(); }
   const tfb = ev.target.closest('[data-tf]');
   if (tfb) { tF = tfb.dataset.tf; return renderModal(); }
+  const txb = ev.target.closest('[data-tx]');
+  if (txb) { tX = txb.dataset.tx; return renderModal(); }
   const af = ev.target.closest('[data-achf]');
   if (af) { achF = af.dataset.achf; return renderModal(); }
   const at = ev.target.closest('[data-acht]');
@@ -9575,6 +9613,96 @@ const CMBI = (() => {
     if (inner) inner();
   };
   const T = {};
+  const flask = (g, x, y, c) => { poly(g, [x - 3, y - 14, x + 3, y - 14, x + 3, y - 6, x + 10, y + 6, x - 10, y + 6, x - 3, y - 6]); g.fillStyle = 'rgba(220,235,245,0.55)'; g.fill(); ink(g, 1); poly(g, [x - 6.5, y - 1, x + 6.5, y - 1, x + 10, y + 6, x - 10, y + 6]); g.fillStyle = c; g.fill(); };
+  T.sci1 = g => {
+    dshad(g, 32, 56, 24, 4);
+    poly(g, [14, 18, 40, 18, 36, 50, 18, 50]); g.fillStyle = lgr(g, 14, 0, 40, 0, '#e8c8a0', '#c89870', '#8a6040'); g.fill(); ink(g, 1.2);
+    g.fillStyle = '#c8503a'; g.fillRect(16, 26, 22, 4);
+    ell(g, 27, 18, 13, 3); g.fillStyle = '#5a3a28'; g.fill(); ink(g, 1);
+    ell(g, 46, 48, 12, 5); g.fillStyle = lgr(g, 0, 43, 0, 53, '#f0ece4', '#b8b0a0'); g.fill(); ink(g, 1);
+    ell(g, 46, 46, 8, 2.6); g.fillStyle = '#d8d0c0'; g.fill();
+    g.beginPath(); g.arc(46, 45.5, 2.4, 0, 7); g.fillStyle = lgr(g, 44, 43, 48, 48, '#fff4c0', '#e8c040', '#a07820'); g.fill();
+  };
+  T.sci2 = g => {
+    dshad(g, 32, 57, 22, 3);
+    g.fillStyle = '#8a7040'; g.fillRect(12, 54, 40, 3); g.fillRect(14, 6, 3, 48); g.fillRect(14, 12, 12, 3);
+    rrect(g, 27, 4, 6, 30, 2); g.fillStyle = 'rgba(220,235,245,0.6)'; g.fill(); ink(g, 1);
+    g.fillStyle = '#4aa860'; g.fillRect(28, 14, 4, 19);
+    g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 0.8; for (let y = 8; y < 33; y += 4) { g.beginPath(); g.moveTo(27, y); g.lineTo(30, y); g.stroke(); }
+    g.fillStyle = met(g, 25, 34, 35, 34, '#c8a040'); g.fillRect(25, 34, 10, 3); g.fillRect(29, 37, 2, 4);
+    flask(g, 30, 48, 'rgba(232,140,180,0.85)');
+  };
+  T.sci3 = g => {
+    dshad(g, 32, 58, 12, 3);
+    rrect(g, 25, 10, 14, 42, 2); g.fillStyle = 'rgba(220,235,245,0.6)'; g.fill(); ink(g, 1);
+    g.fillStyle = '#f2f0e8'; g.fillRect(26, 14, 12, 34);
+    [['#e8c040', 18], ['#4a7ad8', 26], ['#c84a6a', 36], ['#4aa860', 42]].forEach(([c, y]) => { g.fillStyle = c; g.fillRect(26, y, 12, 4); });
+    box(g, 22, 6, 20, 6, '#b8c0c8', 2); box(g, 22, 50, 20, 6, '#b8c0c8', 2);
+    g.fillStyle = '#e8e8f0'; g.fillRect(30, 1, 4, 6); g.fillRect(30, 56, 4, 6);
+  };
+  T.sci4 = g => {
+    dshad(g, 32, 56, 26, 4);
+    box(g, 6, 22, 52, 30, '#4a4e5a', 3);
+    rrect(g, 12, 30, 40, 8, 1); g.fillStyle = (() => { const q = g.createLinearGradient(12, 0, 52, 0); ['#6a2aa8', '#2a4ae8', '#2ab8e8', '#3ac850', '#e8e030', '#e88a20', '#d82a2a'].forEach((c, i) => q.addColorStop(i / 6, c)); return q; })(); g.fill(); ink(g, 1);
+    g.fillStyle = '#111'; for (const x of [22, 31, 44]) g.fillRect(x, 30, 1.6, 8);
+    rrect(g, 26, 8, 10, 18, 1); g.fillStyle = 'rgba(220,235,245,0.6)'; g.fill(); ink(g, 1); g.fillStyle = 'rgba(160,80,200,0.75)'; g.fillRect(27, 15, 8, 10);
+    g.strokeStyle = '#e8a040'; g.lineWidth = 2; g.beginPath(); g.moveTo(8, 46); g.bezierCurveTo(-2, 40, 4, 12, 24, 14); g.stroke();
+    g.fillStyle = '#a050c8'; g.fillRect(44, 42, 8, 5);
+  };
+  T.sci5 = g => {
+    dshad(g, 32, 56, 22, 4);
+    box(g, 10, 12, 44, 40, '#2a5a3a', 3);
+    g.fillStyle = '#d8b040'; for (let i = 0; i < 6; i++) { g.fillRect(13 + i * 7, 45, 4, 5); }
+    g.strokeStyle = '#9ad0f0'; g.lineWidth = 2; g.beginPath(); g.moveTo(16, 18); for (let i = 0; i < 4; i++) { const x = 16 + i * 8; g.lineTo(x, 38); g.lineTo(x + 4, 38); g.lineTo(x + 4, 18); g.lineTo(x + 8, 18); } g.stroke();
+    g.beginPath(); g.arc(48, 20, 4, 0, 7); g.fillStyle = '#3a6af0'; g.fill(); g.beginPath(); g.arc(47, 19, 1.6, 0, 7); g.fillStyle = '#c8e0ff'; g.fill();
+    g.fillStyle = '#e8c040'; g.fillRect(40, 30, 10, 8);
+  };
+  T.sci_ag = g => {
+    dshad(g, 32, 57, 24, 3);
+    rrect(g, 10, 8, 14, 46, 6); g.fillStyle = 'rgba(220,235,245,0.55)'; g.fill(); ink(g, 1);
+    g.save(); rrect(g, 10, 8, 14, 46, 6); g.clip();
+    [['#4aa860', 18, 10], ['#7a5a3a', 28, 8], ['#a07a50', 36, 8], ['#c8a878', 44, 12]].forEach(([c, y, h]) => { g.fillStyle = c; g.fillRect(10, y, 14, h); }); g.restore();
+    g.fillStyle = '#e8e0c8'; g.fillRect(9, 6, 16, 4);
+    box(g, 30, 12, 26, 40, '#f4f0e4', 2);
+    ['#d84a3a', '#e8903a', '#e8d040', '#8ac040', '#3a9a6a', '#3a6ab8'].forEach((c, i) => { g.fillStyle = c; g.fillRect(34, 15 + i * 6, 8, 4); });
+    g.fillStyle = '#7a5a3a'; g.fillRect(45, 15, 7, 3); g.fillStyle = '#4aa860'; g.fillRect(45, 21, 7, 3);
+  };
+  T.sci_mil = g => {
+    dshad(g, 32, 56, 26, 4);
+    poly(g, [8, 26, 40, 26, 40, 52, 8, 52]); g.fillStyle = 'rgba(232,196,120,0.88)'; g.fill(); ink(g, 1.2);
+    poly(g, [8, 26, 20, 16, 52, 16, 40, 26]); g.fillStyle = 'rgba(244,220,160,0.92)'; g.fill(); ink(g, 1);
+    poly(g, [40, 26, 52, 16, 52, 42, 40, 52]); g.fillStyle = 'rgba(200,160,90,0.9)'; g.fill(); ink(g, 1);
+    g.beginPath(); g.moveTo(10, 39); g.lineTo(20, 36); g.quadraticCurveTo(28, 33, 34, 39); g.quadraticCurveTo(28, 45, 20, 42); g.closePath(); g.fillStyle = 'rgba(120,60,30,0.45)'; g.fill();
+    g.strokeStyle = 'rgba(90,40,20,0.7)'; g.lineWidth = 1; for (const a of [-0.6, -0.2, 0.2, 0.6]) { g.beginPath(); g.moveTo(26, 39); g.lineTo(26 + Math.cos(a) * 9, 39 + Math.sin(a) * 9); g.stroke(); }
+    g.beginPath(); g.ellipse(36, 39, 3.5, 2, 0, 0, 7); g.fillStyle = '#b07a30'; g.fill(); ink(g, 0.8);
+  };
+  T.sci_en = g => {
+    dshad(g, 32, 58, 18, 3);
+    rrect(g, 18, 18, 28, 38, 4); g.fillStyle = lgr(g, 18, 0, 46, 0, '#c8d0d8', '#8a949e', '#4a525a'); g.fill(); ink(g, 1.2);
+    rrect(g, 15, 12, 34, 9, 2); g.fillStyle = lgr(g, 15, 0, 49, 0, '#d8dee4', '#7a848e', '#4a525a'); g.fill(); ink(g, 1);
+    g.strokeStyle = 'rgba(0,0,0,0.35)'; g.lineWidth = 0.8; for (let x = 18; x < 48; x += 3) { g.beginPath(); g.moveTo(x, 12); g.lineTo(x, 21); g.stroke(); }
+    g.fillStyle = '#c8a040'; g.fillRect(29, 4, 6, 9); g.fillRect(26, 6, 12, 3);
+    g.fillStyle = '#3a3e44'; g.fillRect(21, 7, 3, 6); g.fillRect(40, 7, 3, 6);
+    g.strokeStyle = '#e88a30'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(22, 7); g.quadraticCurveTo(14, 0, 6, 8); g.moveTo(41, 7); g.quadraticCurveTo(50, 0, 58, 8); g.stroke();
+    g.fillStyle = '#e8c040'; g.fillRect(22, 34, 20, 6);
+  };
+  T.sci_met = g => {
+    dshad(g, 32, 56, 26, 4);
+    g.fillStyle = lgr(g, 0, 30, 0, 52, '#8a949e', '#4a525a'); g.fillRect(8, 30, 48, 16);
+    ell(g, 32, 46, 24, 7); g.fill(); ink(g, 1.2);
+    g.fillStyle = '#4a525a'; g.fillRect(8, 30, 1.4, 16); g.fillRect(54.6, 30, 1.4, 16);
+    ell(g, 32, 30, 24, 7); g.fillStyle = lgr(g, 8, 23, 56, 37, '#eef2f6', '#b8c0c8', '#8a949e'); g.fill(); ink(g, 1.2);
+    for (const [x, y] of [[20, 30], [30, 27], [40, 31], [27, 33]]) { ell(g, x, y, 2.6, 1.2); g.fillStyle = '#4a525a'; g.fill(); }
+    g.fillStyle = '#d8a040'; g.fillRect(30, 40, 14, 3);
+    g.beginPath(); g.arc(46, 14, 8, 0, 7); g.fillStyle = (() => { const q = g.createRadialGradient(43, 11, 1, 46, 14, 9); q.addColorStop(0, '#d0d0d8'); q.addColorStop(1, '#3a3a42'); return q; })(); g.fill(); ink(g, 1);
+  };
+  T.sci_bio = g => {
+    dshad(g, 32, 56, 26, 4);
+    ell(g, 32, 34, 26, 18); g.fillStyle = 'rgba(220,235,245,0.55)'; g.fill(); ink(g, 1.2);
+    ell(g, 32, 34, 22, 15); g.fillStyle = '#e8d8a0'; g.fill();
+    for (const [x, y, r, c] of [[22, 30, 3, '#f4f4e8'], [36, 26, 2.4, '#e8a040'], [40, 38, 3.4, '#f4f4e8'], [28, 40, 2, '#c84a6a'], [44, 30, 1.8, '#f4f4e8'], [18, 38, 1.6, '#e8a040'], [32, 34, 2.2, '#f4f4e8']]) { ell(g, x, y, r, r * 0.7); g.fillStyle = c; g.fill(); ink(g, 0.6); }
+    ell(g, 32, 31, 26, 18); g.strokeStyle = 'rgba(255,255,255,0.6)'; g.lineWidth = 1.2; g.stroke();
+  };
   T.rifle = g => gun(g, { L: 30, stock: 'wood', mag: 'box', guard: 12, wc: '#8a5a30' });
   T.shotgun = g => gun(g, { L: 30, stock: 'wood', tube: 1, pump: 1, wc: '#7a4a28', bw: 3.6 });
   T.auto_shotgun = g => gun(g, { L: 28, stock: 'black', mag: 'drum', bw: 3.8, guard: 14 });

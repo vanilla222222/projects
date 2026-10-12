@@ -485,3 +485,5 @@ h3 .sw { width: 24px; height: 24px; font-size: 9px; }
 .estat span:nth-child(odd) { color: var(--dim); }
 .eitem h3 { margin: 14px 0 6px; }
 .erec .rb { display: inline-flex; gap: 6px; align-items: center; }
+.txs{display:inline-flex;gap:2px;margin:0 8px;vertical-align:middle}
+.txs .tab{padding:2px 6px}
