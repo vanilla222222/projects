@@ -747,6 +747,7 @@ function makeEnt(type, x, y, dir) {
     case 'pipe': Object.assign(e, { fl: null, amt: 0, tf: AMB, tw: AMB, fr: 0, strain: 0, wear: 0 }); break;
     case 'engine': Object.assign(e, { fl: 'steam', amt: 0, kw: 0, tf: AMB, tw: AMB }); break;
     case 'booster': e.head = 10; e.fr = 0; e.sat = 1; break;
+    case 'pole': e.w = []; break;
     case 'miner': e.out = {}; e.prog = 0; e.k = 0; break;
     case 'turret': Object.assign(e, { ammo: 0, rd: 0, cd: 0, ang: -Math.PI / 2, sh: -1, kills: 0 }); break;
     case 'hive': Object.assign(e, { food: 0, sw: 0, dc: 0 }); break;
@@ -807,6 +808,7 @@ function place(type, x, y, dir, free) {
   const e = makeEnt(type, x, y, dir);
   if (BUILD[type].ug) ugAuto(e);
   addEnt(e);
+  if (BUILD[type].kind === 'pole') autoWire(e);
   return e;
 }
 
@@ -815,6 +817,7 @@ function give(k, n) { if (n > 0) S.inv[k] = (S.inv[k] || 0) + n; }
 function unlink(e) {
   const B = BUILD[e.type];
   for (let j = 0; j < B.h; j++) for (let i = 0; i < B.w; i++) occ[(e.y + j) * W + e.x + i] = 0;
+  if (e.w) for (const id of e.w) { const o = ents.get(id); if (o && o.w) o.w = o.w.filter(i => i !== e.id); }
   ents.delete(e.id);
   L = null;
 }
@@ -832,7 +835,7 @@ function removeEnt(e) {
 
 function lists() {
   if (L) return L;
-  L = { belt: [], ubelt: [], splitter: [], inserter: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [], wall: [], turret: [], hive: [], projector: [], gun: [], ruin: [], road: [], rail: [], stop: [], dock: [], buoy: [] };
+  L = { belt: [], ubelt: [], splitter: [], inserter: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [], wall: [], turret: [], hive: [], projector: [], gun: [], ruin: [], road: [], rail: [], stop: [], dock: [], buoy: [], pole: [] };
   for (const e of ents.values()) {
     const k = kind(e);
     if (k === 'pipe') L.node.push(e);
@@ -868,7 +871,61 @@ function lists() {
     for (let o = a; same(o); o = at(o.x + DX[R], o.y + DY[R])) g.push(o);
     for (const o of g) L.sg.set(o.id, g);
   }
+  netCalc(L);
   return L;
+}
+
+const WMAX = 5, PWK = ['machine', 'miner', 'inserter', 'booster', 'engine'];
+const wired = () => !!(S.gen && S.gen.wire);
+function pwUser(e) { const k = kind(e), B = BUILD[e.type]; return k === 'miner' || k === 'booster' || k === 'engine' || (k === 'inserter' && !!B.kw) || (k === 'machine' && !!(B.kw || B.gen || B.store)); }
+function supRect(p) { const B = BUILD[p.type], s = B.sup; return [p.x - s, p.y - s, p.x + B.w - 1 + s, p.y + B.h - 1 + s]; }
+function netNew(id) { return { id, demand: 0, cap: 0, gen: 0, sat: 1, load: 0, bat: 0, bmax: 0, bkw: 0, poles: 0, use: 0 }; }
+function netCalc(L) {
+  L.nets = []; L.nc = 0;
+  if (!wired()) {
+    const n = netNew(0); L.nets.push(n);
+    for (const p of L.pole) { p.pg = p.pn = 0; n.poles++; }
+    for (const k of PWK) for (const e of L[k]) if (pwUser(e)) { e.pn = 0; n.use++; }
+    return;
+  }
+  const par = new Map();
+  const f = id => { let r = id; while (par.get(r) !== r) r = par.get(r); while (par.get(id) !== r) { const nx = par.get(id); par.set(id, r); id = nx; } return r; };
+  for (const p of L.pole) par.set(p.id, p.id);
+  for (const p of L.pole) for (const id of p.w) if (par.has(id)) { const a = f(p.id), b = f(id); if (a !== b) par.set(Math.max(a, b), Math.min(a, b)); }
+  const gi = new Map(), bk = new Map();
+  for (const p of L.pole) {
+    const r = f(p.id);
+    if (!gi.has(r)) { gi.set(r, L.nets.length); L.nets.push(netNew(L.nets.length)); }
+    p.pg = p.pn = gi.get(r); L.nets[p.pg].poles++;
+    const s = supRect(p);
+    for (let by = s[1] >> 4; by <= s[3] >> 4; by++) for (let bx = s[0] >> 4; bx <= s[2] >> 4; bx++) { const key = by * 1e5 + bx; if (!bk.has(key)) bk.set(key, []); bk.get(key).push([s[0], s[1], s[2], s[3], p.pg]); }
+  }
+  for (const k of PWK) for (const e of L[k]) {
+    if (!pwUser(e)) continue;
+    const B = BUILD[e.type], ex = e.x + B.w - 1, ey = e.y + B.h - 1;
+    let g = -1;
+    for (let by = e.y >> 4; by <= ey >> 4; by++) for (let bx = e.x >> 4; bx <= ex >> 4; bx++) { const a = bk.get(by * 1e5 + bx); if (a) for (const r of a) if (e.x <= r[2] && ex >= r[0] && e.y <= r[3] && ey >= r[1] && (g < 0 || r[4] < g)) g = r[4]; }
+    e.pn = g;
+    if (g < 0) L.nc++; else L.nets[g].use++;
+  }
+}
+function wireOk(a, b) { const p = ctr(a), q = ctr(b); return Math.hypot(p.x - q.x, p.y - q.y) <= Math.min(BUILD[a.type].reach, BUILD[b.type].reach) + 1e-6; }
+function wireCands(p) {
+  const c = ctr(p), d = o => { const q = ctr(o); return Math.hypot(q.x - c.x, q.y - c.y); };
+  const out = lists().pole.filter(o => o !== p && !p.w.includes(o.id) && o.w.length < WMAX && wireOk(p, o)).sort((a, b) => d(a) - d(b));
+  const seen = new Set([p.pg]), res = [];
+  for (const o of out) { if (seen.has(o.pg)) continue; seen.add(o.pg); res.push(o); }
+  return res.slice(0, Math.max(0, WMAX - p.w.length));
+}
+function wlink(a, b) { a.w.push(b.id); b.w.push(a.id); L = null; }
+function wcut(a, b) { a.w = a.w.filter(i => i !== b.id); b.w = b.w.filter(i => i !== a.id); L = null; }
+function autoWire(p) { const cs = wireCands(p); for (const o of cs) wlink(p, o); return cs.length; }
+function wireToggle(a, b) {
+  if (a.w.includes(b.id)) { wcut(a, b); return ['Wire cut', false]; }
+  if (!wireOk(a, b)) return [`Too far: wire between these reaches ${Math.min(BUILD[a.type].reach, BUILD[b.type].reach)} tiles`, true];
+  if (a.w.length >= WMAX || b.w.length >= WMAX) return [`A pole takes at most ${WMAX} wires`, true];
+  wlink(a, b);
+  return ['Wire strung', false];
 }
 
 function inCap(r, k) { return Math.max(r.i[k] * 2, 4); }
@@ -3056,7 +3113,7 @@ function tick() {
   for (const b of l.ubelt) ubTick(b);
   for (const s of l.splitter) splitTick(s);
   for (const s of l.sorter) sorterTick(s);
-  { const isp = S.power ? S.power.sat : 1; for (const e of l.inserter) insTick(e, BUILD[e.type].kw ? isp : 1); }
+  for (const e of l.inserter) insTick(e, BUILD[e.type].kw ? (e.psat ?? 1) : 1);
   for (const p of l.pump) pumpTick(p);
   for (const e of l.booster) boosterTick(e);
   bugStep();
@@ -3066,9 +3123,12 @@ function tick() {
   for (const e of l.node) nodeHeat(e, fails);
   const msgs = fails.map(([e, why]) => burst(e, why)).filter(Boolean);
   if (msgs.length) toast(msgs[0] + (msgs.length > 1 ? ` (+${msgs.length - 1} more)` : ''), true);
-  let demand = 0;
-  for (const e of l.booster) if (e.on) demand += BUILD.booster.kw;
-  for (const e of l.inserter) if (e.mv) demand += BUILD[e.type].kw || 0;
+  const nets = l.nets, nop = netNew(-1);
+  nop.sat = 0;
+  const net = e => e.pn >= 0 && nets[e.pn] || nop;
+  for (const n of nets) Object.assign(n, { demand: 0, cap: 0, bout: 0, bch: 0, bmax: 0, chg: 0, dis: 0, spare: 0 });
+  for (const e of l.booster) if (e.on) net(e).demand += BUILD.booster.kw;
+  for (const e of l.inserter) if (e.mv) net(e).demand += BUILD[e.type].kw || 0;
   for (const e of l.machine) {
     if (BUILD[e.type].store) { e.cy = false; continue; }
     const r = RECIPE[e.recipe];
@@ -3076,50 +3136,58 @@ function tick() {
     machineFluidIn(e, r);
     if (r.cat) catSwap(e, r);
     if (!e.cy) e.st = tryStart(e, r) || 'work';
-    if (e.cy && BUILD[e.type].kw) demand += BUILD[e.type].kw;
+    if (e.cy && BUILD[e.type].kw) net(e).demand += BUILD[e.type].kw;
     if (e.desc > 0) e.desc = Math.max(0, e.desc - DT);
     if (e.desc === 0) { e.desc = undefined; e.scale = 0; }
   }
   for (const e of l.miner) {
     e.cy = sum(e.out) < 5 && minerOre(e);
     e.st = e.cy ? 'work' : minerOre(e) ? 'output' : 'empty';
-    if (e.cy) demand += BUILD.miner.kw;
+    if (e.cy) net(e).demand += BUILD.miner.kw;
   }
-  let cap = 0, gcap = 0;
-  for (const e of l.machine) if (e.cy && BUILD[e.type].gen) gcap += BUILD[e.type].gen * sunMul(e);
-  for (const g of l.engine) { g.eff = g.amt > 0.01 && g.tf >= 99.9 ? 0.2 + 0.8 * Math.max(0, Math.min(1, (g.tf - 100) / 50)) : 0; g.cap = Math.min(1, g.amt) * 900 * g.eff; cap += g.cap; }
-  cap += gcap;
+  for (const e of l.machine) if (e.cy && BUILD[e.type].gen) net(e).cap += BUILD[e.type].gen * sunMul(e);
+  for (const g of l.engine) { g.eff = g.amt > 0.01 && g.tf >= 99.9 ? 0.2 + 0.8 * Math.max(0, Math.min(1, (g.tf - 100) / 50)) : 0; g.cap = g.pn >= 0 ? Math.min(1, g.amt) * 900 * g.eff : 0; net(g).cap += g.cap; }
   const bats = l.machine.filter(e => BUILD[e.type].store);
-  let bout = 0, bch = 0, bmax = 0;
-  for (const b of bats) { b.ch = b.ch || 0; b.dmax = Math.min(BUILD[b.type].rate, b.ch / DT); bout += b.dmax; }
-  const dis = Math.min(Math.max(0, demand - cap), bout);
-  let spare = Math.max(0, cap - demand), chg = 0;
+  for (const b of bats) { b.ch = b.ch || 0; b.dmax = b.pn >= 0 ? Math.min(BUILD[b.type].rate, b.ch / DT) : 0; net(b).bout += b.dmax; }
+  for (const n of nets) { n.dis = Math.min(Math.max(0, n.demand - n.cap), n.bout); n.spare = Math.max(0, n.cap - n.demand); }
   for (const b of bats) {
-    const B = BUILD[b.type], d = bout > 0 ? dis * b.dmax / bout : 0;
-    const ef = B.eff || 0.85, c = Math.max(0, Math.min(B.rate, (B.store - b.ch) / DT / ef, spare));
-    spare -= c; chg += c;
+    const B = BUILD[b.type], n = net(b);
+    if (n === nop) { b.kw = 0; b.st = 'nopole'; continue; }
+    const d = n.bout > 0 ? n.dis * b.dmax / n.bout : 0;
+    const ef = B.eff || 0.85, c = Math.max(0, Math.min(B.rate, (B.store - b.ch) / DT / ef, n.spare));
+    n.spare -= c; n.chg += c;
     b.ch = Math.max(0, Math.min(B.store, b.ch - d * DT + c * DT * ef));
     b.kw = d - c;
     b.st = d > 0.01 ? 'work' : c > 0.01 ? 'charge' : b.ch >= B.store - 1e-6 ? 'full' : 'idle';
-    bch += b.ch; bmax += B.store;
+    n.bch += b.ch; n.bmax += B.store;
   }
-  const gen = Math.min(demand, cap + dis), sat = demand > 0 ? gen / demand : 1, load = cap > 0 ? Math.min(1, (Math.min(demand, cap) + chg) / cap) : 0;
-  for (const g of l.engine) { g.kw = load * g.cap; g.amt = Math.max(0, g.amt - (g.eff > 0 ? g.kw / 900 / g.eff : 0)); }
-  S.power = { gen, demand, cap, sat, bat: bch, bmax, bkw: dis - chg };
-  for (const e of l.booster) e.sat = sat;
+  let pg = 0, pd = 0, pc = 0, pb = 0, pm = 0, pk = 0;
+  for (const n of nets) {
+    n.gen = Math.min(n.demand, n.cap + n.dis); n.sat = n.demand > 0 ? n.gen / n.demand : 1;
+    n.load = n.cap > 0 ? Math.min(1, (Math.min(n.demand, n.cap) + n.chg) / n.cap) : 0;
+    n.bat = n.bch; n.bkw = n.dis - n.chg;
+    pg += n.gen; pd += n.demand; pc += n.cap; pb += n.bch; pm += n.bmax; pk += n.bkw;
+  }
+  for (const g of l.engine) { g.kw = net(g).load * g.cap; g.amt = Math.max(0, g.amt - (g.eff > 0 ? g.kw / 900 / g.eff : 0)); }
+  S.power = { gen: pg, demand: pd, cap: pc, sat: pd > 0 ? pg / pd : 1, bat: pb, bmax: pm, bkw: pk, nets: nets.length, nc: l.nc || 0 };
+  for (const e of l.booster) e.sat = net(e).sat;
+  for (const e of l.inserter) e.psat = net(e).sat;
   for (const e of l.machine) {
     if (!e.cy) continue;
-    const r = RECIPE[e.recipe], kw = BUILD[e.type].kw, gn = BUILD[e.type].gen;
-    const sp = kw ? sat : gn ? load : 1;
-    if (kw && sat < 0.05) e.st = 'power';
-    if (gn) { e.kw = gn * sunMul(e) * load; e.st = load < 0.01 ? 'idle' : 'work'; }
+    const r = RECIPE[e.recipe], kw = BUILD[e.type].kw, gn = BUILD[e.type].gen, n = net(e);
+    const sp = kw ? n.sat : gn ? n.load : 1;
+    if (kw && n.sat < 0.05) e.st = n === nop ? 'nopole' : 'power';
+    else if (kw && (e.st === 'power' || e.st === 'nopole')) e.st = 'work';
+    if (gn) { e.kw = gn * sunMul(e) * n.load; e.st = n === nop ? 'nopole' : n.load < 0.01 ? 'idle' : 'work'; }
     e.prog += DT * sp * catMul(e, r) * scaleMul(e) * forestMul(e) * sunMul(e) / r.t;
     if (e.prog >= 1) finish(e, r);
   }
   for (const e of l.miner) {
     if (!e.cy) continue;
-    if (sat < 0.05) e.st = 'power';
-    e.prog += DT * sat / MINER_T;
+    const n = net(e);
+    if (n.sat < 0.05) e.st = n === nop ? 'nopole' : 'power';
+    else if (e.st === 'power' || e.st === 'nopole') e.st = 'work';
+    e.prog += DT * n.sat / MINER_T;
     if (e.prog >= 1) { e.prog -= 1; minerDig(e); }
   }
   for (const e of l.machine) { machineFluidOut(e); pushItems(e, e.out, 'machine'); }
@@ -3892,7 +3960,7 @@ function serialize() {
   const es = [];
   for (const e of ents.values()) {
     const o = Object.assign({}, e);
-    delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt;
+    delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt; delete o.pn; delete o.pg; delete o.psat;
     es.push(o);
   }
   return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, ra: S.pl.ra || 0, rs: S.pl.rs || 0, aw: S.pl.aw || 0, ak: S.pl.ak, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, osh: S.osh || 0, fcr: S.fcr, ach: S.ach || {}, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, iv: S.iv, mdn: S.mdn, tyk: S.tyk, egk: S.egk, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
@@ -3912,6 +3980,7 @@ function newGame(seed, opts) {
   setSize(gen.legacy ? 160 : gen.size);
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
   S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: [], evo: 0, lost: 0, kills: 0, hk: 0, res: {}, unl: {}, clouds: [], fires: [], shells: [], booms: [], wind: { a: Math.random() * 7, v: 0.3 }, orders: [], odone: 0, gen, cq: [], fs: {}, fk: 0 };
+  if (gen.wire) S.inv.wood_pole = 20;
   initWorld(seed, gen);
   dgc = null; dgMine = null; dfx.length = 0; nades.length = 0;
   if (rgd) { growNear(W / 2, H / 2, 100, 99); S.hv = S.rv = S.bv = S.iv = 1; }
@@ -4088,8 +4157,8 @@ function shade(hex, f) {
   return `rgb(${r},${g},${b})`;
 }
 
-const ST_COL = { idle: '#8ac8e0', scale: '#e04a4a', clean: '#e0b84a', work: '#5fd06a', input: '#e0b84a', output: '#e07a3a', power: '#e04a4a', charge: '#8ad0a0', full: '#5fd06a', none: '#8a8f99', empty: '#8a8f99', forest: '#8a8f99', fuel: '#e0b84a', elem: '#e0b84a' };
-const ST_TXT = { idle: 'Idle, no load', scale: 'Tubes choked with scale', clean: 'Descaling', work: 'Working', input: 'Waiting for inputs', output: 'Output full', power: 'No power', charge: 'Charging', full: 'Fully charged', none: 'No recipe set', empty: 'Depleted', forest: 'No forest in reach', fuel: 'No fuel loaded', elem: 'No elements loaded' };
+const ST_COL = { idle: '#8ac8e0', scale: '#e04a4a', clean: '#e0b84a', work: '#5fd06a', input: '#e0b84a', output: '#e07a3a', power: '#e04a4a', nopole: '#e04a4a', charge: '#8ad0a0', full: '#5fd06a', none: '#8a8f99', empty: '#8a8f99', forest: '#8a8f99', fuel: '#e0b84a', elem: '#e0b84a' };
+const ST_TXT = { idle: 'Idle, no load', scale: 'Tubes choked with scale', clean: 'Descaling', work: 'Working', input: 'Waiting for inputs', output: 'Output full', power: 'No power', nopole: 'Not connected to a power pole', charge: 'Charging', full: 'Fully charged', none: 'No recipe set', empty: 'Depleted', forest: 'No forest in reach', fuel: 'No fuel loaded', elem: 'No elements loaded' };
 
 let vig = null;
 const TREE = { 0: ['#2f5a26', '#477a35'], 5: ['#3a5a30', '#567a40'], 6: ['#22461d', '#3a6a2c'], 7: ['#30503e', '#f4f8fa'] };
@@ -4140,7 +4209,7 @@ function drawSmoke(vis, ox, oy, z) {
   if (z < 8) return;
   const now = performance.now() / 1000;
   for (const e of vis) {
-    if (kind(e) !== 'machine' || !e.cy || !e.recipe || e.st === 'power' || e.st === 'idle') continue;
+    if (kind(e) !== 'machine' || !e.cy || !e.recipe || e.st === 'power' || e.st === 'nopole' || e.st === 'idle') continue;
     const r = RECIPE[e.recipe], B = BUILD[e.type];
     const gas = Object.keys(r.fo || {}).find(f => isGas(f) || f === 'steam');
     if (!gas && B.cat !== 'Smelting') continue;
@@ -4195,7 +4264,7 @@ function render() {
   ctx.fillStyle = 'rgba(0,0,0,0.3)';
   for (const e of vis) {
     const k = kind(e);
-    if (k === 'pipe' || k === 'belt' || k === 'ubelt' || k === 'splitter' || k === 'inserter' || k === 'hive' || k === 'ruin' || k === 'road' || k === 'rail' || k === 'stop' || k === 'buoy' || e.type === 'wind_offshore') continue;
+    if (k === 'pipe' || k === 'belt' || k === 'ubelt' || k === 'splitter' || k === 'inserter' || k === 'hive' || k === 'ruin' || k === 'road' || k === 'rail' || k === 'stop' || k === 'buoy' || k === 'pole' || e.type === 'wind_offshore') continue;
     const B = BUILD[e.type];
     ctx.fillRect(ox + e.x * z + z * 0.18, oy + e.y * z + z * 0.24, B.w * z - z * 0.12, B.h * z - z * 0.12);
   }
@@ -4209,6 +4278,9 @@ function render() {
   for (const e of vis) if (kind(e) === 'splitter') drawSplit(e, ox, oy, z);
   for (const e of vis) if (kind(e) !== 'pipe' && !belty(e) && kind(e) !== 'road' && kind(e) !== 'rail' && kind(e) !== 'inserter') drawBuilding(e, ox, oy, z);
   for (const e of vis) if (kind(e) === 'inserter') drawIns(e, ox, oy, z);
+  { const sp = sel && ents.get(sel), tk = tool && BUILD[tool] && BUILD[tool].kind;
+    if (tk === 'pole' || (sp && kind(sp) === 'pole') || (wired() && tool && BUILD[tool] && pwUser({ type: tool }))) drawSupply(ox, oy, z, x0, y0, x1, y1, sp && kind(sp) === 'pole' ? sp.pg : -9); }
+  drawWires(ox, oy, z, x0, y0, x1, y1);
   drawSmoke(vis, ox, oy, z);
   drawWakes(ox, oy, z);
   if (z >= 10) drawShoals(ox, oy, z, x0, y0, x1, y1);
@@ -4218,6 +4290,7 @@ function render() {
   drawPuffs(ox, oy, z);
   if (!S.pl.car) drawPlayer(ox, oy, z);
   drawBugs(ox, oy, z, x0, y0, x1, y1);
+  if (wired()) drawNoPw(vis, ox, oy, z);
   for (const e of vis) if (e.type === 'turret' && S.t - e.sh < 0.07) {
     const c = ctr(e);
     ctx.strokeStyle = 'rgba(255,230,140,0.9)'; ctx.lineWidth = Math.max(1, z * 0.05);
@@ -5371,9 +5444,101 @@ function drawOWT(e, x, y, w, h, z) {
   ctx.fillStyle = '#c0c6cc'; ctx.beginPath(); ctx.arc(cx, cy, Math.max(1.5, R * 0.07), 0, 7); ctx.fill();
   if (z >= 12) { ctx.fillStyle = e.id % 2 ? '#e04a3a' : '#ff6a5a'; ctx.globalAlpha = 0.5 + 0.5 * Math.sin(performance.now() / 400); ctx.beginPath(); ctx.arc(cx, cy, Math.max(1, z * 0.05), 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
 }
+function drawPole(e, x, y, z) {
+  const t = e.type, p = Math.max(1, z * 0.05);
+  if (t === 'wood_pole' || t === 'steel_pole') {
+    const wd = t === 'wood_pole', cx = x + z / 2, cy = y + z / 2;
+    ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(cx + z * 0.16, cy + z * 0.2, z * 0.18, z * 0.12, 0.5, 0, 7); ctx.fill();
+    ctx.fillStyle = wd ? '#6a4a2a' : '#8a9098'; ctx.beginPath(); ctx.arc(cx, cy, z * (wd ? 0.15 : 0.12), 0, 7); ctx.fill();
+    ctx.strokeStyle = wd ? '#3a2814' : '#4a5058'; ctx.lineWidth = p; ctx.stroke();
+    if (wd) { ctx.strokeStyle = 'rgba(40,24,10,0.6)'; ctx.beginPath(); ctx.arc(cx, cy, z * 0.08, 0, 7); ctx.stroke(); }
+    ctx.fillStyle = wd ? '#5a3c20' : '#6a7078'; ctx.fillRect(cx - z * 0.42, cy - z * 0.055, z * 0.84, z * 0.11);
+    ctx.strokeStyle = 'rgba(0,0,0,0.45)'; ctx.lineWidth = Math.max(1, z * 0.03); ctx.strokeRect(cx - z * 0.42, cy - z * 0.055, z * 0.84, z * 0.11);
+    if (!wd) { ctx.fillStyle = '#5a646a'; ctx.fillRect(cx - z * 0.1, cy + z * 0.1, z * 0.2, z * 0.22); ctx.fillStyle = '#7a848a'; ctx.fillRect(cx - z * 0.1, cy + z * 0.1, z * 0.2, z * 0.05); }
+    ctx.fillStyle = wd ? '#e4ded0' : '#a86a40';
+    for (const k of [-0.34, 0, 0.34]) { ctx.beginPath(); ctx.arc(cx + k * z, cy - (k ? 0 : z * 0.17), z * 0.065, 0, 7); ctx.fill(); }
+    return;
+  }
+  if (t === 'pylon') {
+    const s = z * 2, cx = x + z, cy = y + z;
+    ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(x + z * 0.5, y + z * 0.6, s * 0.8, s * 0.75);
+    ctx.strokeStyle = '#8a9298'; ctx.lineWidth = Math.max(1, z * 0.07);
+    ctx.strokeRect(x + z * 0.22, y + z * 0.22, s - z * 0.44, s - z * 0.44);
+    ctx.lineWidth = Math.max(1, z * 0.04); ctx.beginPath();
+    ctx.moveTo(x + z * 0.22, y + z * 0.22); ctx.lineTo(x + s - z * 0.22, y + s - z * 0.22); ctx.moveTo(x + s - z * 0.22, y + z * 0.22); ctx.lineTo(x + z * 0.22, y + s - z * 0.22);
+    ctx.moveTo(cx, y + z * 0.22); ctx.lineTo(x + s - z * 0.22, cy); ctx.lineTo(cx, y + s - z * 0.22); ctx.lineTo(x + z * 0.22, cy); ctx.closePath(); ctx.stroke();
+    ctx.fillStyle = '#b0b8be'; ctx.fillRect(cx - z * 0.22, cy - z * 0.22, z * 0.44, z * 0.44);
+    ctx.fillStyle = '#9aa2a8'; ctx.fillRect(x - z * 0.15, cy - z * 0.09, s + z * 0.3, z * 0.18);
+    ctx.strokeStyle = '#5a6268'; ctx.lineWidth = Math.max(1, z * 0.03); ctx.strokeRect(x - z * 0.15, cy - z * 0.09, s + z * 0.3, z * 0.18);
+    ctx.fillStyle = '#a86a40';
+    for (const k of [-0.95, 0.95]) for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.arc(cx + k * z, cy + z * (0.16 + i * 0.1), z * 0.06, 0, 7); ctx.fill(); }
+    return;
+  }
+  const s = z * 2;
+  ctx.fillStyle = '#a8a6a0'; ctx.fillRect(x + z * 0.06, y + z * 0.06, s - z * 0.12, s - z * 0.12);
+  ctx.strokeStyle = '#6a6862'; ctx.lineWidth = p; ctx.setLineDash([z * 0.12, z * 0.08]); ctx.strokeRect(x + z * 0.1, y + z * 0.1, s - z * 0.2, s - z * 0.2); ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x + z * 0.5, y + z * 0.58, z * 1.2, z * 1.1);
+  ctx.fillStyle = '#5a6e5a'; ctx.fillRect(x + z * 0.38, y + z * 0.45, z * 1.24, z * 1.1);
+  ctx.strokeStyle = '#3a4a3a'; ctx.lineWidth = Math.max(1, z * 0.025);
+  for (let i = 1; i < 8; i++) { ctx.beginPath(); ctx.moveTo(x + z * (0.38 + i * 0.155), y + z * 0.45); ctx.lineTo(x + z * (0.38 + i * 0.155), y + z * 1.55); ctx.stroke(); }
+  ctx.fillStyle = '#6e846e'; ctx.fillRect(x + z * 0.6, y + z * 0.62, z * 0.8, z * 0.7);
+  ctx.fillStyle = '#a86a40';
+  for (const k of [0.72, 1, 1.28]) { ctx.beginPath(); ctx.arc(x + k * z, y + z * 0.75, z * 0.08, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(x + k * z, y + z * 1.2, z * 0.06, 0, 7); ctx.fill(); }
+  ctx.fillStyle = '#e0c84a'; ctx.beginPath(); ctx.moveTo(x + z * 1.62, y + z * 1.62); ctx.lineTo(x + z * 1.82, y + z * 1.62); ctx.lineTo(x + z * 1.72, y + z * 1.45); ctx.closePath(); ctx.fill();
+}
+function drawWires(ox, oy, z, x0, y0, x1, y1) {
+  const ps = lists().pole;
+  if (!ps.length) return;
+  ctx.save(); ctx.lineCap = 'round';
+  const segs = [];
+  for (const p of ps) for (const id of p.w) {
+    if (id <= p.id) continue;
+    const q = ents.get(id);
+    if (!q) continue;
+    const a = ctr(p), b = ctr(q);
+    if (Math.max(a.x, b.x) < x0 - 1 || Math.min(a.x, b.x) > x1 + 1 || Math.max(a.y, b.y) < y0 - 1 || Math.min(a.y, b.y) > y1 + 1) continue;
+    segs.push([a, b, p.type === 'pylon' && q.type === 'pylon']);
+  }
+  for (const pass of [0, 1]) for (const [a, b, hv] of segs) {
+    const L2 = Math.hypot(b.x - a.x, b.y - a.y), sg = Math.min(1.6, 0.05 * L2 + 0.15), sh = pass ? 0 : 0.9;
+    const off = hv ? [-0.95, 0.95] : [0];
+    for (const k of off) {
+      const ax = ox + (a.x + k + sh * 0.5) * z, ay = oy + (a.y + sh * 0.6) * z, bx = ox + (b.x + k + sh * 0.5) * z, by = oy + (b.y + sh * 0.6) * z;
+      ctx.strokeStyle = pass ? hv ? 'rgba(190,198,206,0.95)' : 'rgba(200,122,58,0.95)' : 'rgba(0,0,0,0.22)';
+      ctx.lineWidth = Math.max(1, z * (hv ? 0.05 : 0.035));
+      ctx.beginPath(); ctx.moveTo(ax, ay); ctx.quadraticCurveTo((ax + bx) / 2, (ay + by) / 2 + sg * z * (pass ? 1 : 0.4), bx, by); ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+function drawSupply(ox, oy, z, x0, y0, x1, y1, hi) {
+  ctx.save();
+  for (const p of lists().pole) {
+    const r = supRect(p);
+    if (r[2] < x0 - 1 || r[0] > x1 || r[3] < y0 - 1 || r[1] > y1) continue;
+    const on = p.pg === hi;
+    ctx.fillStyle = on ? 'rgba(90,170,255,0.16)' : 'rgba(90,150,255,0.08)';
+    ctx.fillRect(ox + r[0] * z, oy + r[1] * z, (r[2] - r[0] + 1) * z, (r[3] - r[1] + 1) * z);
+    ctx.strokeStyle = on ? 'rgba(130,190,255,0.7)' : 'rgba(110,170,255,0.35)'; ctx.lineWidth = 1;
+    ctx.strokeRect(ox + r[0] * z + 0.5, oy + r[1] * z + 0.5, (r[2] - r[0] + 1) * z - 1, (r[3] - r[1] + 1) * z - 1);
+  }
+  ctx.restore();
+}
+function drawNoPw(vis, ox, oy, z) {
+  if (Math.floor(performance.now() / 600) % 2) return;
+  for (const e of vis) {
+    if (!(e.pn < 0) || !pwUser(e)) continue;
+    const c = ctr(e), X = ox + c.x * z, Y = oy + c.y * z, r = Math.max(6, z * 0.32);
+    ctx.fillStyle = 'rgba(30,10,10,0.8)'; ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#e04a4a'; ctx.lineWidth = Math.max(1.5, r * 0.15); ctx.stroke();
+    ctx.fillStyle = '#ffd34a'; ctx.beginPath();
+    ctx.moveTo(X + r * 0.15, Y - r * 0.7); ctx.lineTo(X - r * 0.4, Y + r * 0.1); ctx.lineTo(X - r * 0.02, Y + r * 0.1); ctx.lineTo(X - r * 0.15, Y + r * 0.7); ctx.lineTo(X + r * 0.4, Y - r * 0.1); ctx.lineTo(X + r * 0.02, Y - r * 0.1); ctx.closePath(); ctx.fill();
+  }
+}
 function drawBuilding(e, ox, oy, z) {
   const B = BUILD[e.type], x = ox + e.x * z, y = oy + e.y * z, w = B.w * z, h = B.h * z, p = Math.max(1, z * 0.06);
   if (B.kind === 'hive') return drawHive(e, x, y, w, h, z);
+  if (B.kind === 'pole') return drawPole(e, x, y, z);
   if (B.kind === 'stop') return drawStop(e, x, y, z);
   if (B.kind === 'dock') return drawDock(e, x, y, z);
   if (B.kind === 'buoy') return drawBuoy(e, x, y, z);
@@ -5527,7 +5692,7 @@ function drawBuilding(e, ox, oy, z) {
       ctx.fillStyle = '#7fe08a';
       ctx.fillRect(x + p * 3, y + h - p * 3 - z * 0.12, (w - p * 6) * Math.min(1, e.prog), z * 0.12);
     }
-    const st = e.cy && e.st !== 'power' && e.st !== 'idle' ? 'work' : e.st;
+    const st = e.cy && e.st !== 'power' && e.st !== 'nopole' && e.st !== 'idle' ? 'work' : e.st;
     if (z >= 10) {
       ctx.globalAlpha = st === 'work' ? 0.28 + 0.12 * Math.sin(performance.now() / 300 + e.id) : 0.2;
       ctx.fillStyle = ST_COL[st] || '#888';
@@ -5545,7 +5710,7 @@ function drawBuilding(e, ox, oy, z) {
 }
 
 function machDetail(e, B, x, y, w, h, z) {
-  const on = e.cy && e.st !== 'power' && e.st !== 'idle';
+  const on = e.cy && e.st !== 'power' && e.st !== 'nopole' && e.st !== 'idle';
   ctx.fillStyle = shade(B.c, 0.5);
   const gx = x + z * 0.22, gy = y + h - z * 0.62, gw = Math.min(w * 0.3, z * 0.8);
   for (let k = 0; k < 4; k++) ctx.fillRect(gx, gy + k * z * 0.1, gw, Math.max(1, z * 0.04));
@@ -5588,6 +5753,12 @@ function drawGhost(ox, oy, z) {
   ctx.strokeStyle = err ? '#ff5a5a' : '#7fff8a';
   ctx.lineWidth = 2;
   ctx.strokeRect(ox + o.x * z + 1, oy + o.y * z + 1, B.w * z - 2, B.h * z - 2);
+  if (B.kind === 'pole') {
+    const g = { id: -1, type: tool, x: o.x, y: o.y, w: [], pg: -2 }, r = supRect(g), c = ctr(g);
+    ctx.fillStyle = 'rgba(120,255,140,0.12)'; ctx.fillRect(ox + r[0] * z, oy + r[1] * z, (r[2] - r[0] + 1) * z, (r[3] - r[1] + 1) * z);
+    ctx.strokeStyle = 'rgba(120,255,140,0.6)'; ctx.lineWidth = 1; ctx.strokeRect(ox + r[0] * z + 0.5, oy + r[1] * z + 0.5, (r[2] - r[0] + 1) * z - 1, (r[3] - r[1] + 1) * z - 1);
+    if (!err) { ctx.strokeStyle = '#e09a5a'; ctx.lineWidth = 2; ctx.setLineDash([5, 4]); for (const q of wireCands(g)) { const d = ctr(q); ctx.beginPath(); ctx.moveTo(ox + c.x * z, oy + c.y * z); ctx.lineTo(ox + d.x * z, oy + d.y * z); ctx.stroke(); } ctx.setLineDash([]); }
+  }
   if (B.kind === 'belt' || B.kind === 'ubelt' || B.kind === 'splitter' || B.kind === 'inserter' || B.ug || tool === 'sorter' || tool === 'booster') arrow(ox + (o.x + 0.5) * z, oy + (o.y + 0.5) * z, toolDir, z * 0.28, '#fff');
   if (B.ug) {
     drawUgLinks(ox, oy, z, B.kind);
@@ -5614,7 +5785,7 @@ function tileInfo0(x, y) {
   if (e) {
     const B = BUILD[e.type];
     let s = `<b>${B.n}</b>`;
-    if (kind(e) === 'machine') s += `<br>${e.recipe ? RECIPE[e.recipe].n : 'No recipe'} · ${ST_TXT[e.cy && e.st !== 'power' && e.st !== 'idle' ? 'work' : e.st] || ''}`;
+    if (kind(e) === 'machine') s += `<br>${e.recipe ? RECIPE[e.recipe].n : 'No recipe'} · ${ST_TXT[e.cy && e.st !== 'power' && e.st !== 'nopole' && e.st !== 'idle' ? 'work' : e.st] || ''}`;
     if (kind(e) === 'pipe') s += `<br>${e.fl && e.amt > 0.01 ? nm(e.fl) + ' · ' + pres(e).toFixed(1) + ' bar · ' + Math.round(e.tf) + '°C' : 'Empty' + (e.fl ? ' (' + nm(e.fl) + ')' : '')}<br><span class="dim">${NP(e).mat}, DN${NP(e).dn}, rated ${NP(e).bar} bar</span>`;
     if (e.type === 'engine') s += `<br>${Math.round(e.kw)} kW · steam ${pres(e).toFixed(1)} bar · ${Math.round(e.tf)}°C`;
     if (e.type === 'booster') s += `<br>Outlet ${e.head} bar · ${Math.round(e.fr)}/s`;
@@ -5647,7 +5818,7 @@ function powerHtml() {
   const p = S.power;
   const pct = Math.round(p.sat * 100);
   const cls = p.demand === 0 ? '' : pct >= 99 ? 'ok' : pct > 40 ? 'warn' : 'bad';
-  return `<span class="lbl">Power</span><b class="${cls}">${fmt(p.gen)}</b> / ${fmt(p.demand)} kW <span class="dim">(cap ${fmt(p.cap)})</span> <span class="${cls}">${p.demand ? pct + '%' : 'idle'}</span>` + (p.bmax ? ` <span class="lbl">Battery</span><b>${Math.round(p.bat / p.bmax * 100)}%</b><span class="dim"> ${p.bkw > 0.5 ? '▼ ' + fmt(p.bkw) + ' kW' : p.bkw < -0.5 ? '▲ ' + fmt(-p.bkw) + ' kW' : ''}</span>` : '');
+  return (wired() ? `<span class="dim">${p.nets || 0} grid${p.nets === 1 ? '' : 's'}</span> ` + (p.nc ? `<span class="bad">⚡ ${p.nc} unpowered</span> ` : '') : '') + `<span class="lbl">Power</span><b class="${cls}">${fmt(p.gen)}</b> / ${fmt(p.demand)} kW <span class="dim">(cap ${fmt(p.cap)})</span> <span class="${cls}">${p.demand ? pct + '%' : 'idle'}</span>` + (p.bmax ? ` <span class="lbl">Battery</span><b>${Math.round(p.bat / p.bmax * 100)}%</b><span class="dim"> ${p.bkw > 0.5 ? '▼ ' + fmt(p.bkw) + ' kW' : p.bkw < -0.5 ? '▲ ' + fmt(-p.bkw) + ' kW' : ''}</span>` : '');
 }
 function stackUsers(st) {
   const u = [];
@@ -5860,6 +6031,7 @@ function openPanel(e) {
   if (e.type === 'burrow') h += `<button data-act="delve" ${e.done ? 'disabled' : ''}>Climb down the rope</button>`;
   if (e.type === 'infested') h += `<button data-act="delve" ${e.done ? 'disabled' : ''}>Ride the cage down</button>`;
   if (e.type === 'ruin') h += `<button data-act="search" ${e.done ? 'disabled' : ''}>Search the works</button>`;
+  if (kind(e) === 'pole') h += '<button data-act="wauto">Connect to nearby grids</button><button data-act="wcut">Cut all wires</button>';
   if (kind(e) !== 'hive' && kind(e) !== 'ruin') h += '<button class="danger" data-act="remove">Pick up</button>';
   h += '</div>';
   panel.innerHTML = h;
@@ -5906,6 +6078,21 @@ function bar(v, max, c) {
   return `<span class="bar"><i style="width:${Math.min(100, v / max * 100)}%;background:${c}"></i></span>`;
 }
 
+function poleDyn(e) {
+  const B = BUILD[e.type], l = lists(), n = l.nets[e.pn];
+  let h = '';
+  if (!wired()) h += '<p class="note">This world was made with power lines off: every machine shares one grid, so poles only carry wire for show. Pick <b>Power lines: Required</b> when you generate a world to run separate grids.</p>';
+  if (n) {
+    const pct = Math.round(n.sat * 100), cls = n.demand === 0 ? '' : pct >= 99 ? 'ok' : pct > 40 ? 'warn' : 'bad';
+    h += `<div class="status"><i style="background:${n.cap > 0 ? n.sat >= 0.99 ? ST_COL.work : ST_COL.input : ST_COL.power}"></i>${wired() ? `Grid ${n.id + 1} of ${l.nets.length}` : 'Shared grid'} · ${n.poles} pole${n.poles === 1 ? '' : 's'} · ${n.use} machine${n.use === 1 ? '' : 's'}</div>`;
+    h += `<div class="gauge"><span>Supply</span>${bar(n.gen, Math.max(1, n.demand), '#e0c84a')}<b class="${cls}">${fmt(n.gen)} / ${fmt(n.demand)} kW</b></div>`;
+    h += `<div class="gauge"><span>Load</span>${bar(n.load, 1, '#6ab0e0')}<b>${Math.round(n.load * 100)}% of ${fmt(n.cap)} kW</b></div>`;
+    if (n.bmax) h += `<div class="gauge"><span>Battery</span>${bar(n.bat, n.bmax, '#8ad0a0')}<b>${Math.round(n.bat / n.bmax * 100)}%</b></div>`;
+    if (wired() && n.demand > 0 && n.cap === 0 && !n.bat) h += '<p class="bad">Nothing on this grid generates power. Wire it to a pole that touches an engine or generator.</p>';
+  }
+  h += `<p class="dim">${e.w.length} / ${WMAX} wires · supplies machines touching its ${2 * B.sup + B.w}×${2 * B.sup + B.h} area · wire reaches ${B.reach} tiles. Shift-click another pole while this one is selected to string or cut a wire.</p>`;
+  return h;
+}
 function renderPanelDyn() {
   if (selCar) { const v = carOf(selCar), box = document.getElementById('pdyn'); if (!v) return closePanel(); if (box) box.innerHTML = carDyn(v); return; }
   if (selTrain) { const t = trainOf(selTrain), box = document.getElementById('pdyn'); if (!t) return closePanel(); if (box) box.innerHTML = trainDyn(t); return; }
@@ -5915,6 +6102,7 @@ function renderPanelDyn() {
   const k = kind(e);
   if (k === 'stop') { box.innerHTML = stopDyn(e); return; }
   if (k === 'dock' || k === 'buoy') { box.innerHTML = dockDyn(e); return; }
+  if (k === 'pole') { box.innerHTML = poleDyn(e); return; }
   if (k === 'machine' && BUILD[e.type].store) {
     const B = BUILD[e.type], ch = e.ch || 0, kw = e.kw || 0;
     h += `<div class="status"><i style="background:${ST_COL[e.st] || '#888'}"></i>${ST_TXT[e.st] || 'Idle, no load'}${kw > 0.5 ? ` · giving ${Math.round(kw)} kW` : kw < -0.5 ? ` · taking ${Math.round(-kw)} kW` : ''}</div>`;
@@ -5925,7 +6113,7 @@ function renderPanelDyn() {
     if (!r) h += '<p class="dim">Pick a recipe, or feed it an item and it will choose one.</p>';
     else {
       h += recipeHtml(r);
-      const st = e.cy && e.st !== 'power' && e.st !== 'idle' ? 'work' : e.st;
+      const st = e.cy && e.st !== 'power' && e.st !== 'nopole' && e.st !== 'idle' ? 'work' : e.st;
       h += `<div class="status"><i style="background:${ST_COL[st]}"></i>${e.type === 'boiler' && st === 'output' ? 'Steam full, waiting for demand' : ST_TXT[st] || ''}${BUILD[e.type].kw ? ` · ${BUILD[e.type].kw} kW` : BUILD[e.type].gen ? ` · ${Math.round(e.cy ? e.kw || 0 : 0)} / ${BUILD[e.type].gen} kW out` : ' · fuel-fired'}</div>`;
       h += `<div class="prog">${bar(e.cy ? e.prog : 0, 1, '#7fe08a')}</div>`;
       if (r.cat) h += catHtml(e, r);
@@ -5980,6 +6168,7 @@ function renderPanelDyn() {
     h += `<div class="gauge"><span>Flow</span>${bar(e.fr, 200, '#6ab0e0')}<b>${Math.round(e.fr)} / 200 per s</b></div>`;
     h += '<p class="dim">The arrow points to the outlet. It pushes the outlet up to the set pressure. Above a pipe\'s rating, cast iron bursts and steel bulges.</p>';
   } else if (k === 'engine') {
+    if (wired() && e.pn < 0) h += '<p class="bad">Not connected to a power pole, so its power goes nowhere. Put a pole so its blue supply area touches the engine.</p>';
     h += `<div class="status"><i style="background:${e.kw > 1 ? ST_COL.work : ST_COL.input}"></i>${Math.round(e.kw)} / 900 kW</div>${bar(e.kw, 900, '#e0c84a')}`;
     h += `<div class="slots"><div class="slot">${chip('steam', Math.round(e.amt) + '/60', 'fl')}${bar(e.amt, 60, col('steam'))}</div></div>`;
     h += `<div class="gauge"><span>Steam</span>${bar(e.tf, 165, heat(e.tf, 0, 400))}<b>${Math.round(e.tf)}°C · ${Math.round((e.eff || 0) * 100)}% output</b></div>`;
@@ -6104,6 +6293,12 @@ function panelAct(act, el) {
       for (const p of c.per) { const o = at(p.x, p.y); if (o && kind(o) === 'pipe' && !seen.has(o.id)) { seen.add(o.id); q.push(o); } }
     }
     toast(`Flushed ${seen.size} pipes`);
+  } else if (act === 'wauto') {
+    const n = autoWire(e);
+    toast(n ? `Strung ${n} wire${n > 1 ? 's' : ''}` : 'No other grid within reach', !n); renderPanelDyn();
+  } else if (act === 'wcut') {
+    for (const id of e.w.slice()) { const o = ents.get(id); if (o) wcut(e, o); }
+    e.w = []; L = null; toast('Wires cut'); renderPanelDyn();
   } else if (act === 'rotate') { rotEnt(e); }
   else if (act === 'load') {
     const n = Math.min(S.inv.cartridge || 0, TUR_CAP - e.ammo);
@@ -6163,7 +6358,7 @@ const sel3 = (id, cur, opts) => `<select id="${id}">${opts.map(([v, n]) => `<opt
 const TER_LEG = [0, 6, 5, 2, 3, 7, 4, 1];
 function legendHtml() { return '<div class="wleg">' + TER_LEG.map(t => `<span><i style="background:${t === 1 ? '#20507b' : PAL[t][0]}"></i>${TER_N[t]}</span>`).join('') + '</div>'; }
 function worldHtml() {
-  if (!wcfg) wcfg = { seed: String(Math.floor(Math.random() * 1e9)), size: 256, water: 1, ore: 1, hives: 2, inf: 0 };
+  if (!wcfg) wcfg = { seed: String(Math.floor(Math.random() * 1e9)), size: 256, water: 1, ore: 1, hives: 2, inf: 0, wire: 1 };
   return `<div class="wgen"><div class="wopts"><p class="dim">Every world is generated from its seed. The same seed and settings always give the same map: continents, rivers, mountain ranges, and ore fields that follow the geology. Hot dry south, cold north. Endless worlds are continents and islands with open sea between them, so you will need boats.</p>
 <label>Seed <span class="row"><input id="wseed" value="${wcfg.seed}" spellcheck="false"><button data-world="dice">Random</button></span></label>
 <label>Size ${sel3('wsize', wcfg.size, [[160, 'Small · 160×160'], [256, 'Normal · 256×256'], [384, 'Large · 384×384'], [512, 'Huge · 512×512'], [2048, 'Endless · land is made as you explore']])}</label>
@@ -6171,12 +6366,13 @@ function worldHtml() {
 <label>Ore fields ${sel3('wore', wcfg.ore, [[0, 'Poor · fewer, leaner deposits'], [1, 'Normal'], [2, 'Rich · more, fatter deposits']])}</label>
 <label>Crawlers ${sel3('whives', wcfg.hives, [[0, 'None · peaceful'], [1, 'Few'], [2, 'Normal'], [3, 'Many']])}</label>
 <label>Ore depletion ${sel3('winf', wcfg.inf, [[0, 'Finite · deposits run out'], [1, 'Endless · deposits never run out']])}</label>
+<label>Power lines ${sel3('wwire', wcfg.wire, [[1, 'Required · poles carry power to machines'], [0, 'Wireless · every machine shares one grid']])}</label>
 <div class="dim">On an endless world, ore fields are sparser than usual but grow richer the farther you travel from the start. Endless ore keeps every deposit at its first amount forever.</div>
 <div class="dim">Ores by geology: copper and lead-zinc in the hills, coal under swamps and forests, salt, caliche and potash in deserts, bauxite in hot wet laterite, mineral sands on beaches, oil in sedimentary basins.</div>
 <button data-world="go" class="danger big">Generate and start</button><div class="dim">Your current factory will be lost.</div></div>
 <div class="wprev"><canvas id="wprev"></canvas>${legendHtml()}</div></div>`;
 }
-function wgen() { return { size: +wcfg.size, water: +wcfg.water, ore: +wcfg.ore, hives: +wcfg.hives, inf: +wcfg.inf || 0 }; }
+function wgen() { return { size: +wcfg.size, water: +wcfg.water, ore: +wcfg.ore, hives: +wcfg.hives, inf: +wcfg.inf || 0, wire: +wcfg.wire || 0 }; }
 function paintTiles(c, n) {
   const x2 = c.getContext('2d'), im = x2.createImageData(n, n), d = im.data, rgb = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
   const pal = PAL.map(p => rgb(p[0])), oc = ORES.map(o => o ? rgb(o.c) : null), sh = rgb('#2a6491'), dp = rgb('#123457');
@@ -6429,12 +6625,14 @@ const HELP = `<div class="help">
 <h3>Getting started</h3>
 <ol>
 <li>Put an <b>Offshore pump</b> on the lake, run <b>pipe</b> to a <b>Boiler</b>, and put a <b>Steam engine</b> next to the boiler.</li>
-<li>Mine some coal by hand and insert it into the boiler. Engines power every electric machine on the map.</li>
+<li>Mine some coal by hand and insert it into the boiler. Then plant <b>Wooden poles</b> from the engine out to your machines: a machine runs only when it touches a pole's blue supply area and that pole is wired back to the engine.</li>
 <li>Place <b>Miners</b> on ore. They drop ore onto any belt that touches them and does not point into them.</li>
 <li>Belts that point into a machine feed it. Machines hand their outputs to touching machines and belts first, and only put an output into a touching chest when no touching machine uses it.</li>
 <li>A chest that holds a machine's inputs feeds that machine and does not take its outputs.</li>
 <li>Follow the <b>Ore chains</b> in the encyclopedia: crush, grind, separate, then smelt.</li>
 </ol>
+<h3>Electricity</h3>
+<p>Poles carry power. A pole powers every electric machine that touches its <b>supply area</b>, shown in blue while you hold a pole or click one, and strings wire on its own to the nearest pole of each grid within reach. Poles joined by wire form a <b>grid</b>. Each grid balances its own engines, generators, batteries and machines, so a brown-out on one leaves the others running; the HUD counts grids and machines left without a pole, and those blink a red bolt. Shift-click a second pole while one is selected to string or cut a wire by hand. A pole holds 5 wires. <b>Wooden poles</b> (creosoted pine) reach 8 tiles and supply 5×5. <b>Steel distribution poles</b> reach 10 and supply 7×7. <b>Lattice pylons</b> carry high-voltage ACSR line 30 tiles but supply only their own footprint. <b>Substations</b> step that voltage down and supply 18×18. Worlds generated with <b>Power lines: Wireless</b>, and saves from before poles existed, keep one shared grid with no poles needed.</p>
 <h3>Belts</h3>
 <p>Every belt has two lanes. Machines and chests put items on the far lane first, and a belt that runs into the side of another loads onto its near lane, so two lines can share one belt. When a belt is the only feed of the belt in front, that belt bends into a curve and both lanes follow it round. Every tier is 2 tiles/s faster: <b>Fast</b> 4, <b>Express</b> 6, <b>Turbo</b> 8, <b>Hyper</b> 10, <b>Titanium</b> 12, <b>Carbon</b> 14, <b>Linear</b> 16, <b>Maglev</b> 18 and <b>Superconducting</b> 20, and each tier of underground belt reaches 2 tiles further. An <b>Underground belt</b> is placed as an entrance, then a second one further on in the same direction becomes the exit; items pass under anything in between. <b>Pipe-to-ground</b> works the same way for fluids, up to 9 tiles, and connects only on its open face.</p>
 <h3>Splitters and inserters</h3>
@@ -6871,6 +7069,7 @@ cv.addEventListener('mousedown', ev => {
   const tc = trainAt(mouse.fx, mouse.fy);
   if (tc) { openTrain(tc); return; }
   const e = at(mouse.tx, mouse.ty);
+  if (e && ev.shiftKey && kind(e) === 'pole') { const s = sel && ents.get(sel); if (s && s !== e && kind(s) === 'pole') { const [m, bad] = wireToggle(s, e); toast(m, bad); renderPanelDyn(); return; } }
   if (e && kind(e) !== 'road' && kind(e) !== 'rail') { openPanel(e); return; }
   closePanel();
   if (S.pl.car) return toast('Get out of the vehicle to mine (F).', true);
@@ -7003,7 +7202,7 @@ modal.addEventListener('input', ev => {
 });
 modal.addEventListener('dragstart', ev => { const pk = ev.target.closest('[data-pick]'); if (pk) ev.dataTransfer.setData('text/plain', pk.dataset.pick); });
 modal.addEventListener('change', ev => {
-  const m = { wseed: 'seed', wsize: 'size', wwater: 'water', wore: 'ore', whives: 'hives', winf: 'inf' }[ev.target.id];
+  const m = { wseed: 'seed', wsize: 'size', wwater: 'water', wore: 'ore', whives: 'hives', winf: 'inf', wwire: 'wire' }[ev.target.id];
   if (!m || !wcfg) return;
   wcfg[m] = ev.target.value;
   drawPreview();
@@ -7045,7 +7244,7 @@ new ResizeObserver(resize).observe(cv);
 window.addEventListener('beforeunload', save);
 setInterval(save, 10000);
 
-if (!load()) newGame();
+if (!load()) newGame(undefined, { wire: 1 });
 resize();
 renderHotbar();
 if (!S.help) { S.help = true; openModal('help'); }
@@ -7061,7 +7260,7 @@ window.game = {
   get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get trains() { return S.trains; }, placeTrain, trainAt, openTrain, openPanel, pickTrain, trainGeo, reverseTrain, railBusy, get puffs() { return puffs; }, get H() { return H; }, get wakes() { return wakes; }, floats, boatRoute, boatPilot, carStep, carHit, fishTick, fishRegrow, seaOil, seaPatch, oily, sunMul, get oreAmt() { return oreAmt; }, fground, fstock, netToggle, wdep, seaLv,
   htier, spits: () => spits, hiveTier, guardStep, addHive, bugKind, maxHp, hurt, rgd: () => rgd, tileInfo0, growNear, genRegion, tch: () => tch, ovc, mapWin, depleteTile,
   dgEnter, dgExit, dgTick, dgShoot, dgMove, dgUse, dgClick, dgGrid, dgGen, dgSolid, dgSee, dgPos, spawnBurrows, mineGen, dgKind, dgCaches, spawnMines, dgDoor, get dfx() { return dfx; },
-  rotEnt, ugPair, lists: () => lists(),
+  rotEnt, ugPair, lists: () => lists(), wireToggle, autoWire, wired, setTool(t) { tool = t; },
   setOverlay(v) { overlay = v; }, elev: () => elev, drawPreview, startWorld, get wcfg() { return wcfg; },
 };
 })();
