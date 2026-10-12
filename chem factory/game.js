@@ -29,7 +29,7 @@ const VEH = {
   barge: { sea: true, vmax: 10, acc: 2.6, turn: 0.9, hl: 1.8, hw: 0.75, hp: 1800, burn: 4, slots: 100, c: ['#3a4a5a', '#5a6a7a', '#2a3440'] },
 };
 const CAN_MJ = 720, FUEL_CAP = 5;
-const TRAIN = { loco: { m: 1.5 }, wagon: { m: 0.5, slots: 40 } }, T_CL = 2, T_VMAX = 28, T_BRAKE = 5, T_FUEL = 10, T_BURN = 8;
+const TRAIN = { loco: { m: 1.5, loco: 1 }, eloco: { m: 1.8, loco: 1 }, wagon: { m: 0.5, slots: 40 } }, isLoco = c => !!TRAIN[c.type].loco, T_EV = 40, T_EBAT = 180000, T_EKW = 900, T_CL = 2, T_VMAX = 28, T_BRAKE = 5, T_FUEL = 10, T_BURN = 8;
 const VSPD = { 0: 0.6, 2: 0.55, 3: 0.45, 5: 0.3, 6: 0.35, 7: 0.5 };
 const PL_V = 6, PL_R = 0.28, REACH = 10, MINE_REACH = 3.5, PL_HP = 250, PL_GUN = 15;
 const mouse = { x: 0, y: 0, tx: -1, ty: -1, fx: 0, fy: 0, l: false, r: false, m: false, in: false };
@@ -3875,7 +3875,7 @@ function tick() {
   for (const e of l.machine) if (e.cy && BUILD[e.type].gen) net(e).cap += BUILD[e.type].gen * sunMul(e);
   for (const g of l.engine) { g.eff = g.amt > 0.01 && g.tf >= 99.9 ? 0.2 + 0.8 * Math.max(0, Math.min(1, (g.tf - 100) / 50)) : 0; g.cap = g.pn >= 0 ? Math.min(1, g.amt) * 900 * g.eff : 0; net(g).cap += g.cap; }
   const bats = l.machine.filter(e => BUILD[e.type].store);
-  for (const b of bats) { b.ch = b.ch || 0; b.dmax = b.pn >= 0 ? Math.min(BUILD[b.type].rate, b.ch / DT) : 0; net(b).bout += b.dmax; }
+  for (const b of bats) { b.ch = b.ch || 0; b.dmax = b.pn >= 0 && !BUILD[b.type].tc ? Math.min(BUILD[b.type].rate, b.ch / DT) : 0; net(b).bout += b.dmax; }
   for (const n of nets) { n.dis = Math.min(Math.max(0, n.demand - n.cap), n.bout); n.spare = Math.max(0, n.cap - n.demand); }
   for (const b of bats) {
     const B = BUILD[b.type], n = net(b);
@@ -4186,7 +4186,7 @@ function carToggle() {
   const tr = P.car && trainOf(P.car);
   if (tr) {
     if (!tr.g) trainGeo(tr);
-    let i = tr.cars.findIndex(c => c.type === 'loco'); if (i < 0) i = 0;
+    let i = tr.cars.findIndex(isLoco); if (i < 0) i = 0;
     const g = tr.g[i], c = Math.cos(g.a), s = Math.sin(g.a);
     for (const [l, w] of [[0, -1], [0, 1], [-0.6, -1], [0.6, 1], [0.6, -1], [-0.6, 1]]) {
       const ox = l * 0.92, oy = w * (0.42 + PL_R + 0.1), x = g.x + c * ox - s * oy, y = g.y + s * ox + c * oy;
@@ -4211,7 +4211,7 @@ function carToggle() {
   }
   let best = null, bd = 3;
   for (const o of S.cars) { const d = Math.hypot(o.x - P.x, o.y - P.y) - VEH[o.type].hw; if (d < bd) { bd = d; best = o; } }
-  for (const t of S.trains) { if (!t.g) trainGeo(t); t.g.forEach((g, i) => { if (t.cars[i].type !== 'loco') return; const d = Math.hypot(g.x - P.x, g.y - P.y) - 0.42; if (d < bd) { bd = d; best = t; } }); }
+  for (const t of S.trains) { if (!t.g) trainGeo(t); t.g.forEach((g, i) => { if (!isLoco(t.cars[i])) return; const d = Math.hypot(g.x - P.x, g.y - P.y) - 0.42; if (d < bd) { bd = d; best = t; } }); }
   if (!best) { toast('No vehicle nearby. Walk up to one and press F.', true); return false; }
   P.car = best.id; mining = null; camFree = false;
   if (!(best.e > 0) && !best.fc && !(S.inv.jerrycan > 0)) toast('The tank is empty. Fill jerrycans with diesel at a cylinder filler.', true);
@@ -4476,7 +4476,7 @@ function autoDrive(t) {
   const r = { thr: 0, brake: 1, lim: Infinity };
   t.sch = (t.sch || []).filter(id => { const e = ents.get(id); return e && e.type === 'train_stop'; });
   if (!t.sch.length) { t.st = 'No stops in the schedule'; return r; }
-  if (!t.cars.some(c => c.type === 'loco')) { t.st = 'No locomotive'; return r; }
+  if (!t.cars.some(isLoco)) { t.st = 'No locomotive'; return r; }
   t.si = (t.si || 0) % t.sch.length;
   const stp = ents.get(t.sch[t.si]);
   if (t.state === 'wait') { stopWork(t, stp); return r; }
@@ -4505,8 +4505,8 @@ function autoDrive(t) {
   }
   dist = Math.max(0, dist);
   t.st = dist < 1.5 && gi < 0 && t.v < 0.1 ? 'Waiting for the line ahead' : 'Heading to ' + stp.nm;
-  if (!(t.e > 0) && !t.fc) t.st = 'Out of fuel';
-  const vt = Math.min(T_VMAX, Math.sqrt(2 * 0.8 * T_BRAKE * dist));
+  if (t.cars.some(q => q.type === 'loco') ? !(t.e > 0) && !t.fc && !(t.bc > 0) : !(t.bc > 0)) t.st = t.cars.some(q => q.type === 'loco') ? 'Out of fuel' : 'Batteries flat';
+  const vt = Math.min(t.vm || T_VMAX, Math.sqrt(2 * 0.8 * T_BRAKE * dist));
   r.thr = t.v < vt - 0.3 ? 1 : 0; r.brake = t.v > vt + 0.3 ? 1 : 0; r.lim = dist;
   return r;
 }
@@ -4523,7 +4523,8 @@ function stopWork(t, stp) {
         if (e.type !== 'chest' || !e.store) continue;
         const dx = e.x + 0.5 - g.x, dy = e.y + 0.5 - g.y;
         if (Math.abs(dx * cs + dy * sn) >= 1.5 || Math.abs(dy * cs - dx * sn) >= 1.6) continue;
-        if (c.type === 'loco') {
+        if (isLoco(c)) {
+          if (c.type !== 'loco') continue;
           const m = Math.min(e.store.jerrycan || 0, T_FUEL - (t.fc || 0));
           if (m > 0) { e.store.jerrycan -= m; if (!e.store.jerrycan) delete e.store.jerrycan; t.fc = (t.fc || 0) + m; moved += m; }
           continue;
@@ -4582,6 +4583,20 @@ function trainCollide(t) {
   }
   return false;
 }
+function trainCharge(t, ne) {
+  const full = T_EBAT * ne;
+  t.bc = Math.min(full, t.bc || 0);
+  if (t.v > 0.1 || t.bc >= full) return;
+  if (!t.g) trainGeo(t);
+  for (const e of lists().machine) {
+    if (!BUILD[e.type].tc || !(e.ch > 0)) continue;
+    const cx = e.x + BUILD[e.type].w / 2, cy = e.y + BUILD[e.type].h / 2;
+    if (!t.cars.some((c, i) => c.type === 'eloco' && t.g[i] && Math.hypot(t.g[i].x - cx, t.g[i].y - cy) < 3.5)) continue;
+    const m = Math.min(BUILD[e.type].rate * DT, e.ch, full - t.bc);
+    e.ch -= m; t.bc += m;
+    if (t.bc >= full) return;
+  }
+}
 function trainFuel(t, rid) { return t.fc > 0 ? refuel(t, true) : rid ? refuel(t) : false; }
 function trainStep(t) {
   const P = S.pl, rid = P.car === t.id && !(P.dead > 0);
@@ -4597,15 +4612,23 @@ function trainStep(t) {
       else t.rl = 0;
     }
   } else { brake = 1; t.st = 'Parked'; }
-  const nl = t.cars.filter(c => c.type === 'loco').length;
+  const nd = t.cars.filter(q => q.type === 'loco').length, ne = t.cars.filter(q => q.type === 'eloco').length, nl = nd + ne;
+  t.vm = ne && !nd ? T_EV : T_VMAX;
   let mass = 0;
   for (const c of t.cars) mass += TRAIN[c.type].m + (c.type === 'wagon' ? carSlots(c) / TRAIN.wagon.slots : 0);
+  if (ne) trainCharge(t, ne);
   if (thr && nl) {
-    if (!(t.e > 0)) trainFuel(t, rid);
-    if (t.e > 0) { t.v += 6 * nl / mass * DT; t.e = Math.max(0, t.e - T_BURN * nl * DT); if (Math.random() < 0.4 * nl) { const g = t.g[t.cars.findIndex(c => c.type === 'loco')]; if (g) puffs.push({ x: g.x, y: g.y, t: S.t }); } }
+    let f = 0;
+    if (nd) {
+      if (!(t.e > 0)) trainFuel(t, rid);
+      if (t.e > 0) { f += 6 * nd; t.e = Math.max(0, t.e - T_BURN * nd * DT); if (Math.random() < 0.4 * nd) { const g = t.g[t.cars.findIndex(q => q.type === 'loco')]; if (g) puffs.push({ x: g.x, y: g.y, t: S.t }); } }
+    }
+    if (ne && t.bc > 0) { f += 8 * ne; t.bc = Math.max(0, t.bc - T_EKW * ne * DT); }
+    else if (ne && !nd && rid && S.t - noFuelT > 3) { noFuelT = S.t; toast('The traction batteries are flat. Stop beside a powered rail charger.', true); }
+    t.v += f / mass * DT;
   }
-  if (brake) t.v = Math.max(0, t.v - T_BRAKE * DT);
-  t.v = Math.max(0, Math.min(T_VMAX, t.v - t.v * 0.02 * DT - (thr ? 0 : 0.1 * DT)));
+  if (brake) { if (ne && t.v > 1) t.bc = Math.min(T_EBAT * ne, (t.bc || 0) + T_EKW * 0.35 * ne * DT); t.v = Math.max(0, t.v - T_BRAKE * DT); }
+  t.v = Math.max(0, Math.min(t.vm, t.v - t.v * 0.02 * DT - (thr ? 0 : 0.1 * DT)));
   if (t.v > 0) {
     const want = Math.min(t.v * DT, lim), L0 = t.L, got = advance(t, want);
     if (got < want - 1e-6) t.v = 0;
@@ -4620,7 +4643,7 @@ function trainTick() {
   for (const t of S.trains) { if (!t.g) trainGeo(t); trainOcc(t); }
   for (const t of S.trains) trainStep(t);
   const t = P.car && trainOf(P.car);
-  if (t) { let i = t.cars.findIndex(c => c.type === 'loco'); if (i < 0) i = 0; const g = t.g[i]; P.x = g.x; P.y = g.y; P.f = g.a; }
+  if (t) { let i = t.cars.findIndex(isLoco); if (i < 0) i = 0; const g = t.g[i]; P.x = g.x; P.y = g.y; P.f = g.a; }
 }
 function placeTrain(type, fx, fy, dir) {
   if (!(S.inv[type] > 0)) return 'You have no ' + nm(type);
@@ -5141,12 +5164,12 @@ function render() {
     const bx = 14, by = h - 98;
     ctx.fillStyle = 'rgba(14,16,20,0.84)'; ctx.beginPath(); ctx.roundRect(bx, by, 300, 84, 8); ctx.fill();
     ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1; ctx.stroke();
-    ctx.fillStyle = '#e8e4d8'; ctx.font = 'bold 13px system-ui, sans-serif'; ctx.fillText('Diesel Locomotive', bx + 12, by + 22);
+    ctx.fillStyle = '#e8e4d8'; ctx.font = 'bold 13px system-ui, sans-serif'; const dsl = dtr.cars.some(q => q.type === 'loco'), nel = dtr.cars.filter(q => q.type === 'eloco').length; ctx.fillText(nm(dsl ? 'loco' : 'eloco'), bx + 12, by + 22);
     ctx.textAlign = 'right'; ctx.font = 'bold 24px ui-monospace, monospace'; ctx.fillText(Math.round(dtr.v * 3.6), bx + 256, by + 28);
     ctx.font = '11px system-ui, sans-serif'; ctx.fillStyle = '#9aa0a8'; ctx.fillText('km/h', bx + 288, by + 28); ctx.textAlign = 'left';
-    ctx.fillText('Fuel', bx + 12, by + 48); ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(bx + 50, by + 40, 120, 9);
-    ctx.fillStyle = '#d8b848'; ctx.fillRect(bx + 50, by + 40, 120 * Math.min(1, (dtr.e || 0) / CAN_MJ), 9);
-    ctx.fillStyle = '#9aa0a8'; ctx.fillText(dtr.fc ? '+' + dtr.fc + ' can' + (dtr.fc > 1 ? 's' : '') : (S.inv.jerrycan || 0) + ' in pack', bx + 178, by + 48);
+    ctx.fillText(dsl ? 'Fuel' : 'Battery', bx + 12, by + 48); ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(bx + 60, by + 40, 110, 9);
+    ctx.fillStyle = dsl ? '#d8b848' : '#5aa0e0'; ctx.fillRect(bx + 60, by + 40, 110 * Math.min(1, dsl ? (dtr.e || 0) / CAN_MJ : (dtr.bc || 0) / (T_EBAT * nel)), 9);
+    ctx.fillStyle = '#9aa0a8'; ctx.fillText(!dsl ? Math.round((dtr.bc || 0) / 3600) + ' kWh' : dtr.fc ? '+' + dtr.fc + ' can' + (dtr.fc > 1 ? 's' : '') : (S.inv.jerrycan || 0) + ' in pack', bx + 178, by + 48);
     ctx.fillText(dtr.auto ? dtr.st || '' : 'Next junction: ' + (dtr.turn > 0 ? 'right' : dtr.turn < 0 ? 'left' : 'straight on'), bx + 12, by + 64);
     ctx.fillStyle = '#6a7078'; ctx.font = '10px system-ui, sans-serif'; ctx.fillText(dtr.auto ? 'Running on its schedule · F get out' : 'W throttle · S brake, then reverse · hold A/D at junctions · F get out', bx + 12, by + 78);
   }
@@ -6145,11 +6168,11 @@ function drawTrain(t, ox, oy, z, al) {
     ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.roundRect(-L + z * 0.08, -R + z * 0.14, L * 2, R * 2, z * 0.08); ctx.fill();
     ctx.fillStyle = '#18181a';
     for (const bx of [-0.58, 0.58]) ctx.fillRect(bx * L - z * 0.22, -R - z * 0.04, z * 0.44, R * 2 + z * 0.08);
-    if (c.type === 'loco') {
-      const gr = ctx.createLinearGradient(0, -R, 0, R);
-      gr.addColorStop(0, '#f0c840'); gr.addColorStop(0.45, '#e0b020'); gr.addColorStop(1, '#8a6a10');
+    if (isLoco(c)) {
+      const gr = ctx.createLinearGradient(0, -R, 0, R), el = c.type === 'eloco';
+      gr.addColorStop(0, el ? '#6aa8e0' : '#f0c840'); gr.addColorStop(0.45, el ? '#3a7ab8' : '#e0b020'); gr.addColorStop(1, el ? '#1a3a5a' : '#8a6a10');
       ctx.fillStyle = gr; ctx.beginPath(); ctx.roundRect(-L, -R, L * 2, R * 2, z * 0.1); ctx.fill();
-      ctx.fillStyle = '#b02a1e'; ctx.fillRect(-L, -R, L * 2, R * 0.16); ctx.fillRect(-L, R * 0.84, L * 2, R * 0.16);
+      ctx.fillStyle = el ? '#e8ecf0' : '#b02a1e'; ctx.fillRect(-L, -R, L * 2, R * 0.16); ctx.fillRect(-L, R * 0.84, L * 2, R * 0.16);
       ctx.fillStyle = '#5a5e64'; ctx.fillRect(-L * 0.56, -R * 0.62, L * 1.12, R * 1.24);
       ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = Math.max(1, z * 0.02);
       for (let k = 1; k < 7; k++) { const x = -L * 0.56 + L * 1.12 * k / 7; ctx.beginPath(); ctx.moveTo(x, -R * 0.62); ctx.lineTo(x, R * 0.62); ctx.stroke(); }
@@ -7690,17 +7713,20 @@ function selectTool(t) {
 
 function openTrain(t) {
   sel = null; selCar = null; selTrain = t.id;
-  const B = BUILD.loco, stops = [...ents.values()].filter(e => e.type === 'train_stop');
-  const nl = t.cars.filter(c => c.type === 'loco').length, nw = t.cars.length - nl;
-  panel.innerHTML = `<div class="ph"><span class="sw big" style="background:${B.c}">${B.ab}</span><div class="pt"><b>Train · ${nl} locomotive${nl === 1 ? '' : 's'}, ${nw} wagon${nw === 1 ? '' : 's'}</b><small>Diesel-electric. The engine turns a generator and the traction motors drive the axles. Click a stop below to add it to the schedule.</small></div><button class="x" data-act="close" title="Close">×</button></div><div id="pdyn"></div><div class="sec">Schedule</div><div class="sched">${(t.sch || []).map((id, i) => { const e = ents.get(id); return e ? `<div class="srow${t.auto && i === t.si ? ' on' : ''}"><span>${i + 1}. ${e.nm}</span><em>${e.mode === 'unload' ? 'unload' : 'load'}</em><button data-act="tdel" data-i="${i}" title="Remove">×</button></div>` : ''; }).join('') || '<span class="dim">No stops yet.</span>'}</div><label class="row">Add stop <select data-act="tadd"><option value="">Choose a stop</option>${stops.map(e => `<option value="${e.id}">${e.nm} (${e.mode === 'unload' ? 'unload' : 'load'})</option>`).join('')}</select></label><div class="pbtns"><button data-act="tauto">${t.auto ? 'Switch to manual' : 'Run automatically'}</button><button data-act="tfuel">Add jerrycans</button><button data-act="tdrive">${S.pl.car === t.id ? 'Get out (F)' : 'Get in (F)'}</button><button data-act="ttake">Take all cargo</button><button class="danger" data-act="tpick">Pick up</button></div>`;
+  const B = BUILD[(t.cars.find(isLoco) || { type: 'loco' }).type], stops = [...ents.values()].filter(e => e.type === 'train_stop');
+  const nl = t.cars.filter(isLoco).length, nw = t.cars.length - nl;
+  panel.innerHTML = `<div class="ph"><span class="sw big" style="background:${B.c}">${B.ab}</span><div class="pt"><b>Train · ${nl} locomotive${nl === 1 ? '' : 's'}, ${nw} wagon${nw === 1 ? '' : 's'}</b><small>${t.cars.some(q => q.type === 'loco') ? 'Diesel-electric. The engine turns a generator and the traction motors drive the axles.' : 'Battery-electric. Inverters feed the traction motors from the packs, and braking charges them.'} Click a stop below to add it to the schedule.</small></div><button class="x" data-act="close" title="Close">×</button></div><div id="pdyn"></div><div class="sec">Schedule</div><div class="sched">${(t.sch || []).map((id, i) => { const e = ents.get(id); return e ? `<div class="srow${t.auto && i === t.si ? ' on' : ''}"><span>${i + 1}. ${e.nm}</span><em>${e.mode === 'unload' ? 'unload' : 'load'}</em><button data-act="tdel" data-i="${i}" title="Remove">×</button></div>` : ''; }).join('') || '<span class="dim">No stops yet.</span>'}</div><label class="row">Add stop <select data-act="tadd"><option value="">Choose a stop</option>${stops.map(e => `<option value="${e.id}">${e.nm} (${e.mode === 'unload' ? 'unload' : 'load'})</option>`).join('')}</select></label><div class="pbtns"><button data-act="tauto">${t.auto ? 'Switch to manual' : 'Run automatically'}</button>${t.cars.some(q => q.type === 'loco') ? '<button data-act="tfuel">Add jerrycans</button>' : ''}<button data-act="tdrive">${S.pl.car === t.id ? 'Get out (F)' : 'Get in (F)'}</button><button data-act="ttake">Take all cargo</button><button class="danger" data-act="tpick">Pick up</button></div>`;
   panel.hidden = false;
   renderPanelDyn();
 }
 function trainDyn(t) {
   const col = t.auto ? (/Heading|At /.test(t.st) ? '#7fe08a' : '#e0b84a') : '#9aa0a8';
   let h = `<div class="status"><i style="background:${col}"></i>${t.auto ? t.st || 'Starting' : S.pl.car === t.id ? 'Manual, you are driving' : 'Manual, parked'} · ${Math.round(t.v * 3.6)} km/h</div>`;
-  h += `<div class="gauge"><span>Tank</span>${bar(t.e || 0, CAN_MJ, '#d8b848')}<b>${Math.round(t.e || 0)} MJ</b></div>`;
-  h += `<div class="sec">Fuel slot</div><div class="cgrid"><button class="cslot" data-act="tfuel" title="Add jerrycans from your pack">${ico('jerrycan')}<span class="cnt">${t.fc || 0}/${T_FUEL}</span></button></div><p class="dim">Locomotives take jerrycans from chests beside them at any stop.</p>`;
+  const ne = t.cars.filter(q => q.type === 'eloco').length;
+  if (ne) h += `<div class="gauge"><span>Battery</span>${bar(t.bc || 0, T_EBAT * ne, '#5aa0e0')}<b>${Math.round((t.bc || 0) / 3600)} / ${Math.round(T_EBAT * ne / 3600)} kWh</b></div>`;
+  if (!t.cars.some(q => q.type === 'loco')) h += '<p class="dim">Stop within three tiles of a powered rail charger to recharge.</p>';
+  else h += `<div class="gauge"><span>Tank</span>${bar(t.e || 0, CAN_MJ, '#d8b848')}<b>${Math.round(t.e || 0)} MJ</b></div>`;
+  if (t.cars.some(q => q.type === 'loco')) h += `<div class="sec">Fuel slot</div><div class="cgrid"><button class="cslot" data-act="tfuel" title="Add jerrycans from your pack">${ico('jerrycan')}<span class="cnt">${t.fc || 0}/${T_FUEL}</span></button></div><p class="dim">Locomotives take jerrycans from chests beside them at any stop.</p>`;
   t.cars.forEach((c, i) => {
     if (c.type !== 'wagon') return;
     h += `<div class="sec">Wagon ${t.cars.slice(0, i + 1).filter(q => q.type === 'wagon').length} · ${carSlots(c)} / ${TRAIN.wagon.slots} slots</div><div class="cgrid">`;
@@ -8512,6 +8538,7 @@ const CHAINS = [
   { n: 'Overhead lines', l: [['aluminium', 'Continuous rod mill', 'al_rod', 'Wire drawing machine', 'al_wire'], ['steel', 'Wire drawing machine (patented)', 'hc_wire', 'Galvanising kettle + zinc', 'core_wire'], ['al_wire', 'Planetary strander + 7 core wires', 'acsr', 'Galvanised tower + porcelain', 'Lattice pylon']], d: 'High-voltage lines are aluminium on a steel spine. Rod is cast and rolled in one pass, drawn hard, and stranded in layers around galvanised high-carbon steel wire.' },
   { n: 'Copper wire rod', l: [['copper_cathode', 'Continuous rod mill', 'cu_rod', 'Wire drawing machine', 'wire']], d: 'Cathodes melted and cast straight into rod, then drawn through dies, give twice the wire a workshop gets from hand-cutting cathode.' },
   { n: 'Grid batteries', l: [['aluminium', 'Foil rolling mill', 'al_foil', 'Electrode coater + LFP, NMP', 'lfp_sheet'], ['polypropylene', 'Cast film line, stretched, ceramic coat', 'separator'], ['lfp_sheet', 'Cell assembly line + graphite sheet, can, electrolyte', 'green_cell', 'Formation rack', 'li_cell'], ['li_cell', 'Cell assembly line + 16 in series, BMS', 'battery_module', 'Inverters + transformer', 'Battery container']], d: 'Rolled foil, coated electrodes and a stretched separator are stacked into cans in a dry room, filled and given a slow first charge. Formed cells go into modules, and eight modules fill a container that stores twenty times what a rack bank does.' },
+  { n: 'Electric locomotive', l: [['battery_module', 'Cell assembly line + BMS, glycol', 'traction_pack'], ['traction_pack', '+ SiC inverters, traction motors, bogies', 'Battery-electric locomotive'], ['battery_module', '+ inverters, power transformer', 'Rail charger']], d: 'Grid battery modules repackaged for rail. Two traction packs and SiC inverters replace the diesel engine; a wayside charger with its own buffer battery refills the locomotive at stops, and braking puts charge back on the way.' },
   { n: 'Rare earth magnets', l: [['monazite', 'Digester + naoh', 're_oh', 'Leach tank + hcl + water', 'recl3', '+', 'th_cake'], ['recl3', 'Solvent extraction + diesel', 'ndcl3', '+', 'ce_oxide'], ['ndcl3', 'Precipitator + soda_ash', 'ndpr_oxide', 'Electrolysis cell + anode + hf', 'nd_metal'], ['borax', 'Arc furnace + pig_iron + coke', 'ferroboron'], ['nd_metal', 'Vacuum induction furnace + ferroboron + steel + argon', 'ndfeb_strip', 'HD vessel + h2', 'hd_powder', 'Jet mill + n2', 'ndfeb_fine'], ['ndfeb_fine', 'Field press + n2', 'ndfeb_green', 'Sinter-HIP furnace + argon', 'ndfeb_block', 'Multi-wire saw + diamond_grit + water', 'ndfeb_bare'], ['ndfeb_bare', 'Plating line + copper_cathode + niso4', 'ndfeb_plated', 'Pulse magnetiser', 'ndfeb', 'Workshop + wire + plate', 'pm_motor'], ['ndfeb_swarf', 'Leach tank + hcl + water', 'ndcl3'], ['th_cake', 'Workshop + concrete + plate', 'waste_drum']], d: 'Monazite from the mineral sand separator is cracked with caustic soda and dissolved in hydrochloric acid, leaving thorium behind. Hundreds of solvent extraction stages split off neodymium and praseodymium, with cerium as a by-product. Reduced to metal and alloyed with iron and boron from desert borax, they make the strongest magnets there are, for direct-drive wind turbines and compact motors.' },
   { n: 'Water treatment', l: [['al_hydroxide', 'Pressure reactor + acid', 'alum'], ['water', 'Water treatment works + alum + cl2 + carbon bed', 'potable'], ['spent_carbon', 'Kiln + steam', 'carbon'], ['nylon', 'Workshop + polyester + glass_fibre', 'ro_membrane'], ['water', 'Reverse osmosis + membranes', 'potable'], ['potable', 'Blow moulder + pet', 'water_bottle'], ['bleach', 'Blow moulder + polyethylene', 'bleach_jug']], d: 'Alum makes dirt clump into flocs that settle and filter out, and a little chlorine disinfects what is left. An activated carbon bed doubles the rate but fills up and has to be reactivated in a kiln. Reverse osmosis needs only power and membranes, which slowly foul and need replacing.' },
   { n: 'Farming and fermentation', l: [['npk', 'Farm + water', 'sugar_beet'], ['npk', 'Farm + water', 'maize'], ['sugar_beet', 'Sugar factory + quicklime + co2 + water', 'sugar', '+', 'molasses'], ['molasses', 'Fermenter + water', 'ethanol', '+', 'co2'], ['maize', 'Fermenter + water', 'ethanol', '+', 'ddgs'], ['ethanol', 'Pressure reactor', 'ethylene'], ['molasses', 'Fermenter + o2 + quicklime + acid', 'citric', '+', 'gypsum'], ['ethanol', 'Blow moulder + polyethylene', 'sanitiser']], d: 'Fertiliser and water grow sugar beet and maize. The sugar factory cleans beet juice with lime and carbon dioxide, so it soaks up CO₂ from your kilns. Yeast turns molasses and maize into ethanol, which hot alumina dehydrates to ethylene for green plastics. A mould turns molasses into citric acid.' },
