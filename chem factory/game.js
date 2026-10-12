@@ -5,7 +5,7 @@ let W = 160, H = 160, PW = 20;
 const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
 const KEY = 'chemfactory-save-v1';
 const GAP = 0.25, BELT_V = 2 * DT, MINER_T = 2, PUMP_RATE = 60 * DT;
-const PARTS = ['casting', 'plate', 'wire', 'motor', 'brick', 'lead_sheet', 'brass', 'cartridge', 'cylinder', 'wheel', 'chassis', 'diesel_engine', 'gearbox', 'windscreen', 'rail_bar', 'sleeper', 'traction_motor', 'bogie', 'hull_section', 'propeller', 'zinc_anode'];
+const PARTS = ['casting', 'plate', 'wire', 'motor', 'brick', 'lead_sheet', 'brass', 'cartridge', 'cylinder', 'wheel', 'chassis', 'diesel_engine', 'gearbox', 'windscreen', 'rail_bar', 'sleeper', 'traction_motor', 'bogie', 'hull_section', 'propeller', 'zinc_anode', 'sci1', 'sci2', 'sci3', 'sci4', 'sci5'];
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 let tctx = null;
 const CK = 16, RG = 128, tch = new Map(), ovc = document.createElement('canvas'), ovx = ovc.getContext('2d');
@@ -1412,7 +1412,96 @@ function hurt(e, d, why) {
   if (e.hp <= 0) wreck(e, why);
 }
 const avail = r => !r.lock || !!(S.unl && S.unl[r.id]);
-const buildOk = t => !BUILD[t].lock || !!(S.unl && S.unl[BUILD[t].lock]);
+const TECH = {}, TECHL = [], PACKN = [0, 8, 20, 40, 60, 100], PACKT = [0, 5, 10, 15, 20, 30];
+(() => {
+  const start = new Set(Object.keys(START_INV));
+  for (const k in BUILD) if (!BUILD[k].cost || !Object.keys(BUILD[k].cost).length) start.add(k);
+  for (const k of ['inserter', 'long_inserter', 'splitter', 'sorter', 'wood_pole', 'turret', 'brick_wall', 'road', 'skiff', 'stack']) if (BUILD[k]) start.add(k);
+  const prod = {};
+  for (const r of RECIPES) for (const k in Object.assign({}, r.o, r.fo, r.ch)) (prod[k] = prod[k] || []).push(r);
+  const base = new Set(['water', 'seawater', 'air', 'wood', 'log', 'fish', 'steam', ...Object.keys(START_INV)]);
+  for (const o of ORES) if (o) base.add(o.item);
+  const L = {}, need = {}, N = k => base.has(k) ? 0 : need[k] ?? (prod[k] ? 1e9 : 0);
+  const ins = r => Object.keys(Object.assign({}, r.i, r.fi));
+  const lvl = r => { let m = L[r.b] ?? 1e9; for (const q of ins(r)) m = Math.max(m, N(q)); return m; };
+  for (const k in BUILD) L[k] = start.has(k) ? 0 : 1e9;
+  for (let it = 0; it < 80; it++) {
+    let ch = 0;
+    for (const k in prod) { let b = 1e9; for (const r of prod[k]) b = Math.min(b, lvl(r)); if (b !== need[k]) { need[k] = b; ch++; } }
+    for (const k in BUILD) { if (start.has(k)) continue; let m = 0; for (const q in BUILD[k].cost) m = Math.max(m, N(q)); if (m + 1 !== L[k]) { L[k] = m + 1; ch++; } }
+    if (!ch) break;
+  }
+  const pick = {};
+  for (const k in prod) pick[k] = prod[k].find(r => lvl(r) === need[k]);
+  const dm = {};
+  const deps = k => {
+    if (dm[k]) return dm[k];
+    dm[k] = new Set();
+    const r = pick[k];
+    if (!r || base.has(k)) return dm[k];
+    const s = new Set();
+    if (!start.has(r.b)) s.add(r.b);
+    for (const q of ins(r)) if (q !== k) for (const b of deps(q)) s.add(b);
+    return dm[k] = s;
+  };
+  for (const t in BUILD) {
+    if (start.has(t) || L[t] >= 1e9) continue;
+    const req = new Set();
+    for (const q in BUILD[t].cost) for (const b of deps(q)) if (b !== t && L[b] < L[t]) req.add(b);
+    const lv = Math.min(5, L[t]);
+    TECH[t] = { id: t, lv, req: [...req], n: PACKN[lv] + 2 * Math.min(10, req.size), ut: PACKT[lv] };
+  }
+  for (const t in TECH) {
+    const T = TECH[t];
+    T.dir = T.req.filter(p => !T.req.some(q => q !== p && TECH[q] && TECH[q].req.includes(p)));
+    TECHL.push(t);
+  }
+  TECHL.sort((a, b) => TECH[a].lv - TECH[b].lv || BUILD[a].n.localeCompare(BUILD[b].n));
+  RECIPE.study = { id: 'study', n: 'Research', b: 'rlab', t: 1, i: { sci1: 1, sci2: 1, sci3: 1, sci4: 1, sci5: 1 }, o: {} };
+})();
+const techOk = t => !TECH[t] || !!(S.tech && S.tech[t]);
+const techAvail = t => TECH[t].req.every(techOk);
+const buildOk = t => techOk(t) && (!BUILD[t].lock || !!(S.unl && S.unl[BUILD[t].lock]));
+const lockMsg = t => !techOk(t) ? `Needs research: ${BUILD[t].n}. Press T to open research.` : 'Locked. The design is in the lab books of an abandoned works.';
+const packs = t => Array.from({ length: TECH[t].lv }, (_, i) => 'sci' + (i + 1));
+function curTech() {
+  if (!S.rq) S.rq = [];
+  while (S.rq.length && (!TECH[S.rq[0]] || S.tech[S.rq[0]])) S.rq.shift();
+  return S.rq[0] || null;
+}
+function queueTech(t, front) {
+  if (!TECH[t] || S.tech[t]) return;
+  if (!S.rq) S.rq = [];
+  const add = [], seen = new Set();
+  const walk = x => { if (seen.has(x) || S.tech[x]) return; seen.add(x); for (const p of TECH[x].dir) walk(p); add.push(x); };
+  walk(t);
+  for (const x of TECH[t].req) if (!S.tech[x] && !seen.has(x)) { seen.add(x); add.unshift(x); }
+  add.sort((a, b) => TECH[a].lv - TECH[b].lv);
+  S.rq = S.rq.filter(x => !add.includes(x));
+  S.rq = front ? [...add, ...S.rq] : [...S.rq, ...add];
+}
+function labStart(e) {
+  const t = curTech();
+  if (!t) return 'nores';
+  const ps = packs(t);
+  if (ps.some(p => !(e.inv[p] >= 1))) return 'input';
+  for (const p of ps) { e.inv[p]--; if (!e.inv[p]) delete e.inv[p]; }
+  e.rt = t; e.cy = true;
+  return null;
+}
+function labDone(e) {
+  const t = e.rt;
+  if (!t || !TECH[t] || S.tech[t]) return;
+  if (!S.rp) S.rp = {};
+  S.rp[t] = (S.rp[t] || 0) + 1;
+  if (S.rp[t] >= TECH[t].n) {
+    S.tech[t] = 1; delete S.rp[t];
+    curTech();
+    toast(`Research complete: ${BUILD[t].n}. You can now craft it.`);
+    cSig = '';
+    if (modalKind === 'tech') renderModal();
+  }
+}
 function unlock(id) { S.unl[id] = 1; return RECIPE[id]; }
 const BOOKS = [['haber', 'ostwald', 'amm_nitrate'], ['ammonal', 'he_drum', 'nh3_scrub'], ['tnt', 'shell', 'wp_shell'], ['phosgene', 'fill_phos']];
 function labBook() {
@@ -3433,6 +3522,7 @@ function finish(e, r) {
   e.cy = false; e.prog = 0;
   catWear(e, r);
   if (r.well) wellDraw(e);
+  if (r.id === 'study') labDone(e);
   if (r.sea) S.osh = (S.osh || 0) + 1;
   if (r.id === 'hrsg_steam') S.hrsg = (S.hrsg || 0) + 1;
   if (r.id === 'geo_flash') S.geo = (S.geo || 0) + 1;
@@ -3521,11 +3611,12 @@ function tick() {
   for (const e of l.inserter) if (e.mv) net(e).demand += BUILD[e.type].kw || 0;
   for (const e of l.machine) {
     if (BUILD[e.type].store) { e.cy = false; continue; }
+    if (BUILD[e.type].lab) e.recipe = 'study';
     const r = RECIPE[e.recipe];
     if (!r) { e.st = 'none'; continue; }
     machineFluidIn(e, r);
     if (r.cat) catSwap(e, r);
-    if (!e.cy) e.st = tryStart(e, r) || 'work';
+    if (!e.cy) e.st = (BUILD[e.type].lab ? labStart(e) : tryStart(e, r)) || 'work';
     if (e.cy && BUILD[e.type].kw) net(e).demand += BUILD[e.type].kw;
     if (e.desc > 0) e.desc = Math.max(0, e.desc - DT);
     if (e.desc === 0) { e.desc = undefined; e.scale = 0; }
@@ -3569,7 +3660,7 @@ function tick() {
     if (kw && n.sat < 0.05) e.st = n === nop ? 'nopole' : 'power';
     else if (kw && (e.st === 'power' || e.st === 'nopole')) e.st = 'work';
     if (gn) { e.kw = gn * sunMul(e) * n.load; e.st = n === nop ? 'nopole' : n.load < 0.01 ? 'idle' : 'work'; }
-    e.prog += DT * sp * catMul(e, r) * scaleMul(e) * forestMul(e) * sunMul(e) / r.t;
+    e.prog += DT * sp * catMul(e, r) * scaleMul(e) * forestMul(e) * sunMul(e) / (r.id === 'study' ? (TECH[e.rt] ? TECH[e.rt].ut : 5) : r.t);
     if (e.prog >= 1) finish(e, r);
   }
   for (const e of l.miner) {
@@ -4353,7 +4444,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt; delete o.pn; delete o.pg; delete o.psat;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, ra: S.pl.ra || 0, rs: S.pl.rs || 0, aw: S.pl.aw || 0, ak: S.pl.ak, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, osh: S.osh || 0, hrsg: S.hrsg || 0, geo: S.geo || 0, dle: S.dle || 0, nrt: S.nrt || 0, fcr: S.fcr, ach: S.ach || {}, rk: S.rk || 0, trk: S.trk || undefined, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, iv: S.iv, mdn: S.mdn, tyk: S.tyk, egk: S.egk, lvn: S.lvn, lvk: S.lvk, icn: S.icn, ick: S.ick, vlv: S.vlv, wkk: S.wkk, wkn: S.wkn, dgk: S.dgk, xv: S.xv, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, tech: S.tech, rq: S.rq, rp: S.rp, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, ra: S.pl.ra || 0, rs: S.pl.rs || 0, aw: S.pl.aw || 0, ak: S.pl.ak, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, osh: S.osh || 0, hrsg: S.hrsg || 0, geo: S.geo || 0, dle: S.dle || 0, nrt: S.nrt || 0, fcr: S.fcr, ach: S.ach || {}, rk: S.rk || 0, trk: S.trk || undefined, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, iv: S.iv, mdn: S.mdn, tyk: S.tyk, egk: S.egk, lvn: S.lvn, lvk: S.lvk, icn: S.icn, ick: S.ick, vlv: S.vlv, wkk: S.wkk, wkn: S.wkn, dgk: S.dgk, xv: S.xv, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -4369,7 +4460,7 @@ function newGame(seed, opts) {
   const gen = opts && opts.legacy ? { legacy: 1 } : Object.assign({}, GEN_DEF, opts || {});
   setSize(gen.legacy ? 160 : gen.size);
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
-  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: [], evo: 0, lost: 0, kills: 0, hk: 0, res: {}, unl: {}, clouds: [], fires: [], shells: [], booms: [], wind: { a: Math.random() * 7, v: 0.3 }, orders: [], odone: 0, gen, cq: [], fs: {}, fk: 0 };
+  S = { seed, inv: Object.assign({}, START_INV), dep: {}, vent: {}, spill: {}, fails: 0, made: {}, pol: new Array(PW * PW).fill(0), t: 0, nextId: 1, help: !!(S && S.help), power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: [], evo: 0, lost: 0, kills: 0, hk: 0, res: {}, unl: {}, tech: {}, rq: [], rp: {}, clouds: [], fires: [], shells: [], booms: [], wind: { a: Math.random() * 7, v: 0.3 }, orders: [], odone: 0, gen, cq: [], fs: {}, fk: 0 };
   if (gen.kit) for (const k in S.inv) S.inv[k] *= 2;
   if (gen.wire) S.inv.wood_pole = 20;
   initWorld(seed, gen);
@@ -4390,7 +4481,7 @@ function load() {
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
   const gen = d.gen || { legacy: 1 };
   setSize(gen.legacy ? 160 : gen.size);
-  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0, fs: d.fs || {}, fk: d.fk || 0, osh: d.osh || 0, hrsg: d.hrsg || 0, geo: d.geo || 0, dle: d.dle || 0, nrt: d.nrt || 0, fcr: d.fcr, ach: d.ach || {}, rk: d.rk || 0, trk: d.trk || null, dg: d.dg || null, dgn: d.dgn || 0, dgc: d.dgc || 0, qk: d.qk || 0, bv: d.bv, iv: d.iv, mdn: d.mdn || 0, tyk: d.tyk || 0, egk: d.egk || 0, lvn: d.lvn || 0, lvk: d.lvk || 0, icn: d.icn || 0, ick: d.ick || 0, vlv: d.vlv || 0, wkk: d.wkk || 0, wkn: d.wkn || 0, dgk: d.dgk || {}, xv: d.xv };
+  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, tech: d.tech || {}, rq: d.rq || [], rp: d.rp || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0, fs: d.fs || {}, fk: d.fk || 0, osh: d.osh || 0, hrsg: d.hrsg || 0, geo: d.geo || 0, dle: d.dle || 0, nrt: d.nrt || 0, fcr: d.fcr, ach: d.ach || {}, rk: d.rk || 0, trk: d.trk || null, dg: d.dg || null, dgn: d.dgn || 0, dgc: d.dgc || 0, qk: d.qk || 0, bv: d.bv, iv: d.iv, mdn: d.mdn || 0, tyk: d.tyk || 0, egk: d.egk || 0, lvn: d.lvn || 0, lvk: d.lvk || 0, icn: d.icn || 0, ick: d.ick || 0, vlv: d.vlv || 0, wkk: d.wkk || 0, wkn: d.wkn || 0, dgk: d.dgk || {}, xv: d.xv };
   dgc = null; dgMine = null; dfx.length = 0; nades.length = 0;
   initWorld(d.seed, gen);
   if (rgd && d.rg) for (let r = 0; r < rgd.length; r++) if (d.rg[r] === '1') growRegion(r % (W / RG), Math.floor(r / (W / RG)), false);
@@ -4401,6 +4492,7 @@ function load() {
     addEnt(e);
     S.nextId = Math.max(S.nextId, e.id + 1);
   }
+  if (!d.tech) { for (const e of ents.values()) if (TECH[e.type]) S.tech[e.type] = 1; for (const k in S.inv) if (TECH[k]) S.tech[k] = 1; }
   if (!S.rv) spawnRuins();
   if (!S.hv) spawnHives();
   if (!S.bv) spawnBurrows();
@@ -4602,8 +4694,8 @@ function shade(hex, f) {
   return `rgb(${r},${g},${b})`;
 }
 
-const ST_COL = { idle: '#8ac8e0', scale: '#e04a4a', clean: '#e0b84a', work: '#5fd06a', input: '#e0b84a', output: '#e07a3a', power: '#e04a4a', nopole: '#e04a4a', charge: '#8ad0a0', full: '#5fd06a', none: '#8a8f99', empty: '#8a8f99', forest: '#8a8f99', fuel: '#e0b84a', elem: '#e0b84a' };
-const ST_TXT = { idle: 'Idle, no load', scale: 'Tubes choked with scale', clean: 'Descaling', work: 'Working', input: 'Waiting for inputs', output: 'Output full', power: 'No power', nopole: 'Not connected to a power pole', charge: 'Charging', full: 'Fully charged', none: 'No recipe set', empty: 'Depleted', forest: 'No forest in reach', fuel: 'No fuel loaded', elem: 'No elements loaded' };
+const ST_COL = { idle: '#8ac8e0', scale: '#e04a4a', clean: '#e0b84a', work: '#5fd06a', input: '#e0b84a', output: '#e07a3a', power: '#e04a4a', nopole: '#e04a4a', charge: '#8ad0a0', full: '#5fd06a', none: '#8a8f99', empty: '#8a8f99', forest: '#8a8f99', fuel: '#e0b84a', elem: '#e0b84a', nores: '#8ac8e0' };
+const ST_TXT = { idle: 'Idle, no load', scale: 'Tubes choked with scale', clean: 'Descaling', work: 'Working', input: 'Waiting for inputs', output: 'Output full', power: 'No power', nopole: 'Not connected to a power pole', charge: 'Charging', full: 'Fully charged', none: 'No recipe set', empty: 'Depleted', forest: 'No forest in reach', fuel: 'No fuel loaded', elem: 'No elements loaded', nores: 'Nothing to research. Press T' };
 
 let vig = null;
 const TREE = { 0: ['#2f5a26', '#477a35'], 5: ['#3a5a30', '#567a40'], 6: ['#22461d', '#3a6a2c'], 7: ['#30503e', '#f4f8fa'] };
@@ -7454,7 +7546,8 @@ function openPanel(e) {
   sel = e.id; selCar = null; selTrain = null;
   const B = BUILD[e.type];
   let h = `<div class="ph"><span class="sw big" style="background:${B.c}">${B.ab || ''}</span><div class="pt"><b>${B.n}</b><small>${B.d}</small></div><button class="x" data-act="close" title="Close">×</button></div>`;
-  if (kind(e) === 'machine' && !B.store) {
+  if (B.lab) { const t = curTech(); h += `<div class="row">Researching <b>${t ? BUILD[t].n : 'nothing'}</b> <button data-act="tech">Research (T)</button></div>`; }
+  if (kind(e) === 'machine' && !B.store && !B.lab) {
     h += `<label class="row">Recipe <select data-act="recipe"><option value="">Choose a recipe</option>${RECIPES.filter(r => r.b === e.type && (avail(r) || e.recipe === r.id)).map(r => `<option value="${r.id}" ${e.recipe === r.id ? 'selected' : ''}>${r.n}</option>`).join('')}</select></label>`;
   }
   if (e.type === 'sorter') {
@@ -7694,6 +7787,7 @@ function renderPanelDyn() {
 function panelAct(act, el) {
   const e = sel && ents.get(sel);
   if (act === 'close') return closePanel();
+  if (act === 'tech') return openModal('tech');
   if (selCar) return carAct(act, el);
   if (selTrain) return trainAct(act, el);
   if (!e) return;
@@ -7789,7 +7883,7 @@ function costHtml(cost, n) { return Object.keys(cost).map(k => chip(k, cost[k] *
 let modalHtml = '';
 function openModal(kind, tab) {
   modalKind = kind;
-  modalTab = tab || (kind === 'craft' ? 'craft' : kind === 'ency' ? 'chains' : kind === 'world' ? 'world' : kind === 'map' ? 'map' : kind === 'ach' ? 'ach' : 'help');
+  modalTab = tab || (kind === 'craft' ? 'craft' : kind === 'ency' ? 'chains' : kind === 'world' ? 'world' : kind === 'map' ? 'map' : kind === 'ach' ? 'ach' : kind === 'tech' ? 'tech' : 'help');
   modal.hidden = false;
   modal.querySelector('.mwin').classList.toggle('wide', kind === 'craft');
   cSig = '';
@@ -7804,6 +7898,7 @@ const TABS = {
   world: [['world', 'New world']],
   map: [['map', 'World map']],
   ach: [['ach', 'Achievements']],
+  tech: [['tech', 'Research']],
 };
 let wcfg = null;
 const parseSeed = v => { v = String(v).trim(); if (/^\d+$/.test(v)) return +v % 2147483647; let h = 7; for (const c of v) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0; return h % 2147483647; };
@@ -7902,6 +7997,7 @@ function renderModal() {
   if (tabs.innerHTML !== th) tabs.innerHTML = th;
   const body = modal.querySelector('.mbody'), st = body.scrollTop;
   if (modalKind === 'craft') return renderCraft(body);
+  if (modalKind === 'tech') return renderTech(body);
   let h = '';
   if (modalTab === 'chains') {
     for (const c of CHAINS) {
@@ -8147,6 +8243,29 @@ const achFrac = (a, c) => { if (!a[5]) return 0; const [x, y] = a[5](c); return 
 let achF = 'all';
 const achShow = (a, c) => achF === 'all' || (achF === 'on' ? achDone(a[0]) : !achDone(a[0]) && (achF === 'off' || achFrac(a, c) >= 0.5));
 const achQ = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+let tF = 'avail', tQ = '';
+function techCard(t) {
+  const T = TECH[t], B = BUILD[t], done = techOk(t), av = techAvail(t), qi = (S.rq || []).indexOf(t), p = (S.rp && S.rp[t]) || 0;
+  const miss = done ? [] : T.dir.filter(x => !techOk(x));
+  return `<button class="tc ${done ? 'done' : av ? 'av' : 'lkd'}${qi >= 0 ? ' q' : ''}" data-tech="${t}" data-k="${t}" data-m="t">${ico(t, 1)}<span class="tn">${B.n}</span><span class="tp">${packs(t).map(x => ico(x)).join('')}<em>× ${T.n} · ${T.ut}s</em></span>${miss.length ? `<span class="tr">Needs ${miss.map(x => BUILD[x].n).join(', ')}</span>` : ''}${qi >= 0 ? `<span class="tqn">${qi + 1}</span>` : ''}${p && !done ? `<i class="tb" style="width:${p / T.n * 100}%"></i>` : ''}</button>`;
+}
+function techHtml() {
+  const cur = curTech(), q = tQ.toLowerCase();
+  let h = '<div class="tq"><b>Queue</b>';
+  h += (S.rq || []).length ? S.rq.map((t, i) => `<button class="tqi${i ? '' : ' on'}" data-tech="${t}" data-k="${t}" data-m="t">${ico(t)}<span>${BUILD[t].n}</span>${i ? '' : `<i class="tb" style="width:${((S.rp && S.rp[t]) || 0) / TECH[t].n * 100}%"></i>`}</button>`).join('') : '<span class="dim">Empty. Click a technology below to research it. Its missing prerequisites are queued first.</span>';
+  h += `</div><div class="tfil">${[['avail', 'Available'], ['all', 'All'], ['done', 'Researched']].map(([id, n]) => `<button class="tab ${tF === id ? 'on' : ''}" data-tf="${id}">${n}</button>`).join('')}<span class="dim">${Object.keys(S.tech).filter(t => TECH[t]).length} / ${TECHL.length} researched</span></div>`;
+  const l = TECHL.filter(t => (q ? BUILD[t].n.toLowerCase().includes(q) : tF === 'all' || (tF === 'done' ? techOk(t) : !techOk(t) && techAvail(t))));
+  for (let lv = 1; lv <= 5; lv++) {
+    const ll = l.filter(t => TECH[t].lv === lv);
+    if (ll.length) h += `<h3>${ico('sci' + lv)} Tier ${lv}: ${nm('sci' + lv)}</h3><div class="tgrid">${ll.map(techCard).join('')}</div>`;
+  }
+  return h + (l.length ? '' : '<p class="dim">Nothing here.</p>') + (cur ? '' : '<p class="dim">Labs only work while something is queued.</p>');
+}
+function renderTech(body) {
+  if (!body.querySelector('#tview')) { body.innerHTML = '<div id="tview"><input id="tsearch" placeholder="Search technologies" spellcheck="false"><div id="tlist"></div></div>'; $('#tsearch').value = tQ; modalHtml = ''; }
+  const h = techHtml();
+  if (h !== modalHtml) { const st = body.scrollTop; $('#tlist').innerHTML = h; modalHtml = h; body.scrollTop = st; }
+}
 function achHtml() {
   const G = achGlob(), c = achCounts(), got = ACH.filter(a => achDone(a[0])).length, p = achScore(), r = rankOf(p), R = RANKS[r], N = RANKS[r + 1];
   const tot = ACH.reduce((s, a) => s + achPts(a), 0);
@@ -8189,6 +8308,7 @@ const HELP = `<div class="help">
 <p>Build a factory that turns real ore into metal using real chemistry.</p>
 <h3>Controls</h3>
 <ul>
+<li><b>T</b> opens research. Build a <b>research lab</b>, feed it science kits, and queue technologies to unlock new machines. Starting machines need no research.</li>
 <li><b>Left click</b> a building in the bar at the bottom, then click the map to place it. Drag to lay belts and pipes.</li>
 <li><b>R</b> rotates. <b>Q</b> or <b>Esc</b> puts the tool away.</li>
 <li><b>Right click</b> picks a building up again, with its contents.</li>
@@ -8486,7 +8606,7 @@ const HELP = `<div class="help">
 
 let cGrp = 'Logistics', cSig = '', iQ = '', cQ = '';
 const kindOf = k => { const B = BUILD[k]; return B ? B.kind + (B.kind === 'machine' ? B.w + 'x' + B.h : '') : 'part'; };
-const CGROUPS = [...CATS.map(c => ({ id: c, n: c, ks: Object.keys(BUILD).filter(t => BUILD[t].cat === c && BUILD[t].cost) })), { id: 'Parts', n: 'Intermediates', ks: PARTS.slice() }, { id: 'Combat', n: 'Combat', ks: CMB.slice() }];
+const CGROUPS = [...CATS.map(c => ({ id: c, n: c, ks: Object.keys(BUILD).filter(t => BUILD[t].cat === c && BUILD[t].cost) })), { id: 'Parts', n: 'Intermediates', ks: PARTS.filter(k => !/^sci\d$/.test(k)) }, { id: 'Science', n: 'Science', ks: ['rlab', 'sci1', 'sci2', 'sci3', 'sci4', 'sci5'] }, { id: 'Combat', n: 'Combat', ks: CMB.slice() }];
 for (const g of CGROUPS) { const o = [...new Set(g.ks.map(kindOf))]; g.ks.sort((a, b) => o.indexOf(kindOf(a)) - o.indexOf(kindOf(b))); }
 const craftCost = k => BUILD[k] ? BUILD[k].cost : RECIPE[k].i;
 const craftMakes = k => BUILD[k] ? BUILD[k].makes || 1 : RECIPE[k].o[k];
@@ -8515,7 +8635,7 @@ function maxCraft(k) {
   return lo;
 }
 function enqueue(k, n) {
-  if (BUILD[k] && !buildOk(k)) return toast('Locked. The design is in the lab books of an abandoned works.', true);
+  if (BUILD[k] && !buildOk(k)) return toast(lockMsg(k), true);
   const inv = Object.assign({}, S.inv), steps = [];
   if (!(n > 0) || !planCraft(craftCost(k), n, inv, steps, 0)) return toast('Not enough materials', true);
   const ref = {};
@@ -8566,7 +8686,7 @@ function tipHtml(k, m) {
   const B = BUILD[k];
   let h = `<div class="fth">${ico(k)}<b>${nm(k)}</b>${m === 'r' ? '<span>Recipe</span>' : m === 'q' ? '<span>Crafting</span>' : ''}</div><div class="ftb">`;
   if (m === 'r') {
-    if (B && !buildOk(k)) h += '<p class="bad">Locked. The design is in the lab books of an abandoned works.</p>';
+    if (B && !buildOk(k)) h += `<p class="bad">${lockMsg(k)}</p>`;
     const c = craftCost(k);
     h += '<div class="ftl">Ingredients</div>' + Object.keys(c).map(q => { const hv = S.inv[q] || 0; return `<div class="fti${hv >= c[q] ? '' : PARTS.includes(q) ? ' sub' : ' no'}">${ico(q)}<span>${c[q]} × ${nm(q)}</span><em>${fmt(hv)}</em></div>`; }).join('');
     if (Object.keys(c).some(q => (S.inv[q] || 0) < c[q] && PARTS.includes(q))) h += '<p class="warn">Missing parts in yellow are hand-crafted first, automatically.</p>';
@@ -8603,7 +8723,7 @@ function renderCraft(body) {
     $('#isearch').value = iQ; $('#csearch').value = cQ;
     cSig = '';
   }
-  const sig = cGrp + '|' + iQ + '|' + cQ + '|' + Object.entries(S.inv).join(';') + '|' + Object.keys(S.unl || {}).length + '|' + Object.keys(S.res || {}).length;
+  const sig = cGrp + '|' + iQ + '|' + cQ + '|' + Object.entries(S.inv).join(';') + '|' + Object.keys(S.unl || {}).length + '|' + Object.keys(S.tech || {}).length;
   if (sig === cSig) return;
   cSig = sig;
   const iq = iQ.toLowerCase(), cq = cQ.toLowerCase();
@@ -8617,7 +8737,7 @@ function renderCraft(body) {
   for (let i = used; i < Math.max(80, Math.ceil(Math.min(used, 400) / 10) * 10); i++) h += '<div class="slot e"></div>';
   $('#islots').innerHTML = h;
   $('#iinfo').textContent = `${used} slots used · ${ks.length} kinds of item${used > 400 ? ' · first 400 slots shown' : ''}`;
-  $('#cgroups').innerHTML = CGROUPS.map(g => { const any = cq && g.ks.some(k => nm(k).toLowerCase().includes(cq)); return `<button class="cg${g.id === cGrp && !cq ? ' on' : ''}${cq && !any ? ' dimg' : ''}" data-grp="${g.id}">${ico(g.id === 'Parts' ? 'motor' : g.ks[0], 1)}<span>${g.n}</span></button>`; }).join('');
+  $('#cgroups').innerHTML = CGROUPS.map(g => { const any = cq && g.ks.some(k => nm(k).toLowerCase().includes(cq)); return `<button class="cg${g.id === cGrp && !cq ? ' on' : ''}${cq && !any ? ' dimg' : ''}" data-grp="${g.id}">${ico(g.id === 'Parts' ? 'motor' : g.id === 'Science' ? 'sci1' : g.ks[0], 1)}<span>${g.n}</span></button>`; }).join('');
   const g = CGROUPS.find(x => x.id === cGrp) || CGROUPS[0];
   const list = cq ? CGROUPS.flatMap(x => x.ks).filter(k => nm(k).toLowerCase().includes(cq)) : g.ks;
   let rows = '', prev = null;
@@ -8766,6 +8886,7 @@ window.addEventListener('keydown', ev => {
   else if (k === 'h') { modalKind === 'ency' ? closeModal() : openModal('ency'); }
   else if (k === 'm') { modalKind === 'map' ? closeModal() : openModal('map'); }
   else if (k === 'j') { modalKind === 'ach' ? closeModal() : openModal('ach'); }
+  else if (k === 't') { modalKind === 'tech' ? closeModal() : openModal('tech'); }
   else if (k === 'escape') { if (modalKind) closeModal(); else if (tool) { tool = null; renderHotbar(); } else closePanel(); }
   else if (k === 'q') {
     if (modalKind) closeModal();
@@ -8805,6 +8926,10 @@ modal.addEventListener('click', ev => {
   if (ev.target === modal) return closeModal();
   const t = ev.target.closest('[data-tab]');
   if (t) { modalTab = t.dataset.tab; modal.querySelector('.mbody').scrollTop = 0; return renderModal(); }
+  const tc = ev.target.closest('[data-tech]');
+  if (tc) { const t = tc.dataset.tech; if (techOk(t)) return; if ((S.rq || []).includes(t) && tc.classList.contains('tqi')) S.rq = S.rq.filter(x => x !== t); else queueTech(t, ev.shiftKey); return renderModal(); }
+  const tfb = ev.target.closest('[data-tf]');
+  if (tfb) { tF = tfb.dataset.tf; return renderModal(); }
   const af = ev.target.closest('[data-achf]');
   if (af) { achF = af.dataset.achf; return renderModal(); }
   const at = ev.target.closest('[data-acht]');
@@ -8837,6 +8962,7 @@ modal.addEventListener('contextmenu', ev => {
 modal.addEventListener('input', ev => {
   if (ev.target.id === 'isearch') iQ = ev.target.value;
   else if (ev.target.id === 'csearch') cQ = ev.target.value;
+  else if (ev.target.id === 'tsearch') { tQ = ev.target.value; return renderModal(); }
   else return;
   cSig = ''; renderModal();
 });
@@ -8875,7 +9001,7 @@ function frame(now) {
     $('#power').innerHTML = powerHtml();
     $('#vent').innerHTML = ventHtml();
     renderPanelDyn();
-    if (modalKind === 'craft') renderModal();
+    if (modalKind === 'craft' || modalKind === 'tech') renderModal();
   }
   requestAnimationFrame(frame);
 }
@@ -8890,7 +9016,7 @@ renderHotbar();
 if (!S.help) { S.help = true; openModal('help'); }
 requestAnimationFrame(frame);
 
-window.game = {
+window.game = { tech: { TECH, TECHL, queueTech, curTech, techOk },
   get S() { return S; }, get W() { return W; }, get ents() { return ents; }, get patches() { return patches; }, get cam() { return cam; },
   place: (t, x, y, d) => place(t, x, y, d, true), at, buildOk, canPlace, setRecipe, removeEnt, save, load, newGame,
   step(n) { for (let i = 0; i < n; i++) tick(); render(); $('#power').innerHTML = powerHtml(); $('#vent').innerHTML = ventHtml(); renderPanelDyn(); renderHotbar(); renderQueue(); },

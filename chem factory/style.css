@@ -393,3 +393,25 @@ h3 .sw { width: 24px; height: 24px; font-size: 9px; }
 #achtrk p { margin: 2px 0; }
 #achtrk em { font: 11px var(--mono); color: #8a8f96; font-style: normal; }
 .ic.icx { background-position: center; background-size: contain; background-repeat: no-repeat; color: transparent; font-size: 0; box-shadow: none; border-radius: 0; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.6)); }
+#tsearch { width: 260px; margin: 2px 0 8px; }
+.tq { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; min-height: 34px; }
+.tqi { position: relative; display: flex; align-items: center; gap: 6px; padding: 3px 8px 3px 4px; background: #2a2e34; border: 1px solid #3a4048; border-radius: 4px; color: inherit; overflow: hidden; cursor: pointer; font-size: 12px; }
+.tqi.on { border-color: #e8c25a; }
+.tqi:hover { border-color: #c86a5a; }
+.tfil { display: flex; gap: 6px; align-items: center; margin-bottom: 4px; }
+.tgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+.tc { position: relative; display: grid; grid-template-columns: 40px 1fr; align-content: start; column-gap: 8px; row-gap: 2px; text-align: left; padding: 6px; min-height: 58px; background: #23272d; border: 1px solid #3a4048; border-radius: 4px; color: #ddd; overflow: hidden; cursor: pointer; }
+.tc > .ic { grid-row: 1 / span 3; }
+.tc .tn { font-weight: 600; font-size: 12px; padding-right: 14px; }
+.tc .tp { display: flex; align-items: center; gap: 1px; font-size: 11px; }
+.tc .tp .ic { width: 16px; height: 16px; }
+.tc .tp em { font-style: normal; color: #9aa3ad; margin-left: 4px; }
+.tc .tr { font-size: 10px; color: #d08a7a; line-height: 1.25; }
+.tc:hover { border-color: #8aa0c0; }
+.tc.done { background: #1f2e26; border-color: #3f6a4c; cursor: default; }
+.tc.av { border-color: #56657a; }
+.tc.lkd { opacity: 0.72; }
+.tc.q { border-color: #e8c25a; }
+.tqn { position: absolute; top: 4px; right: 6px; font-size: 11px; color: #e8c25a; font-weight: 700; }
+.tb { position: absolute; left: 0; bottom: 0; height: 3px; background: #5fd06a; }
+#tlist h3 { display: flex; align-items: center; gap: 6px; }

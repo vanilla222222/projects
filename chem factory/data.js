@@ -179,6 +179,11 @@ const ITEMS = {
   ferrochrome: { n: 'Ferrochrome', c: '#8a8a98', f: 'An alloy of about 60% Cr and 40% Fe, brittle and silvery, made only to be melted into steel' },
   ferronickel: { n: 'Ferronickel', c: '#9a9a88', f: 'Around 25% Ni in iron, cast as small ingots' },
   stainless: { n: 'Stainless Steel', c: '#d0d8e0', f: 'Type 304: 18% Cr, 8% Ni. The chromium forms an invisible oxide film that heals itself when scratched' },
+  sci1: { n: 'Fire Assay Kit', c: '#c8503a', f: 'Fireclay crucibles, bone-ash cupels and a copper wire balance. Melt ore with litharge flux, cupel off the lead, and weigh the bead of precious metal left behind' },
+  sci2: { n: 'Titration Kit', c: '#4aa860', f: 'Glass burettes with brass stopcocks and dried sodium carbonate as the primary standard. Titrate an acid against it to an end point and you know its strength to 0.1%' },
+  sci3: { n: 'Chromatography Column', c: '#4a7ad8', f: 'A stainless tube packed with silica gel between PTFE frits. Polar compounds stick to the silica longer, so a mixture comes out separated one component at a time' },
+  sci4: { n: 'Spectrometer Module', c: '#a050c8', f: 'A glass cuvette, optical fibres and a detector board. Each element and bond absorbs its own wavelengths, so the spectrum says what is in a sample and how much' },
+  sci5: { n: 'Lab-on-a-Chip', c: '#e8c040', f: 'A microchip with blue LED excitation and fibre optics. It runs a whole assay in channels thinner than a hair, on a drop of sample' },
   ptfe: { n: 'PTFE', c: '#f4f4f0', f: 'Polytetrafluoroethylene, (CF₂)ₙ. Waxy white, slippery, and almost nothing sticks to it or dissolves it. Good to 260°C' },
   spodumene: { n: 'Spodumene', c: '#b8a8c0', f: 'LiAlSi₂O₆, pale lilac crystals up to metres long. It grows in pegmatites, the last watery dregs of a cooling granite' },
   beta_spod: { n: 'Roasted Spodumene', c: '#d8c8d0', f: 'Spodumene heated to 1050°C. The crystal swells by a third into the β form and crumbles, and only then will acid touch it' },
@@ -1442,6 +1447,7 @@ const BUILD = {
   acid_plant: { n: 'Acid Plant', kind: 'machine', w: 3, h: 3, cat: 'Chemistry', c: '#b08a3a', ab: 'AP', kw: 50, cost: { lead_sheet: 10, plate: 6, motor: 2 }, d: 'Turns SO₂ into sulfuric acid.' },
   leach: { n: 'Leach Tank', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#5a9a8a', ab: 'LT', kw: 40, cost: { lead_sheet: 6, plate: 2 }, d: 'Dissolves metal oxides in acid.' },
   electro: { n: 'Electrolysis Cell', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#4a6ab0', ab: 'EC', kw: 300, cost: { lead_sheet: 6, wire: 10 }, d: 'Drives reactions with electric current: plates pure metal onto cathodes, splits brine, or splits molten salt.' },
+  rlab: { n: 'Research Lab', kind: 'machine', w: 3, h: 3, cat: 'Processing', c: '#5a7aa8', ab: 'LAB', kw: 60, lab: true, cost: { casting: 10, wire: 10, plate: 10, motor: 2 }, d: 'Uses up science kits to research new machines. Feed it kits by inserter or by hand, and choose what to research with T.' },
   workshop: { n: 'Workshop', kind: 'machine', w: 2, h: 2, cat: 'Processing', c: '#6a5a7a', ab: 'WS', kw: 75, cost: { casting: 6, motor: 2 }, d: 'Makes parts from metals.' },
   digester: { n: 'Digester', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#a8604a', ab: 'DG', kw: 60, cost: { plate: 10, motor: 1 }, d: 'Pressure vessel that dissolves alumina out of bauxite with hot caustic soda.' },
   precipitator: { n: 'Precipitator', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#b0b8c8', ab: 'PR', kw: 30, cost: { plate: 8, motor: 1 }, d: 'Cools the liquor and seeds it so aluminium hydroxide crystallises out.' },
@@ -1831,6 +1837,11 @@ const RECIPES = [
   { id: 'casting', b: 'workshop', t: 1, i: { pig_iron: 1 }, o: { casting: 1 } },
   { id: 'plate', b: 'workshop', t: 1, i: { steel: 1 }, o: { plate: 1 } },
   { id: 'wire', b: 'workshop', t: 0.5, i: { copper_cathode: 1 }, o: { wire: 2 } },
+  { id: 'sci1', b: 'workshop', t: 5, i: { brick: 1, plate: 1, wire: 2 }, o: { sci1: 1 }, eq: 'PbO + Ag → cupel absorbs PbO, Ag bead remains', note: 'Fire assay has weighed gold and silver in ore since the Middle Ages, and it is still the reference method.' },
+  { id: 'sci2', b: 'workshop', t: 6, i: { glass: 2, soda_ash: 1, brass: 1 }, o: { sci2: 1 }, eq: 'Na₂CO₃ + 2HCl → 2NaCl + H₂O + CO₂', note: 'Dried sodium carbonate is weighed out exactly and used to find the strength of every acid in the works.' },
+  { id: 'sci3', b: 'workshop', t: 8, i: { stainless: 1, silica: 2, ptfe: 1 }, o: { sci3: 1 }, note: 'Mikhail Tsvet separated plant pigments into coloured bands on a chalk column in 1903 and named it chromatography, colour writing.' },
+  { id: 'sci4', b: 'workshop', t: 10, i: { optic_fibre: 1, pcb: 1, glass: 1 }, o: { sci4: 1 }, eq: 'A = εlc (Beer–Lambert)', note: 'Absorbance rises in a straight line with concentration, so one reading gives the amount of a substance.' },
+  { id: 'sci5', b: 'workshop', t: 12, i: { microchip: 1, led_chip: 1, optic_fibre: 1 }, o: { sci5: 1 }, note: 'Microfluidic chips run blood and water tests in minutes with a few microlitres of sample.' },
   { id: 'motor', b: 'workshop', t: 3, i: { casting: 1, plate: 1, wire: 3 }, o: { motor: 1 } },
   { id: 'brick', b: 'workshop', t: 2, i: { sand: 2, quicklime: 1 }, o: { brick: 1 } },
   { id: 'lead_sheet', b: 'workshop', t: 1, i: { lead: 1 }, o: { lead_sheet: 1 } },
@@ -3099,7 +3110,7 @@ for (const r of RECIPES) {
 const START_INV = {
   belt: 80, ubelt: 6, pipe: 30, upipe: 4, chest: 4, miner: 8, pump: 2, boiler: 2, engine: 2,
   crusher: 3, mill: 2, magsep: 1, coke_oven: 1, kiln: 1, blast: 1, converter: 2, workshop: 2,
-  flotation: 1, roaster: 1, smelter: 1, electro: 1, acid_plant: 1, lead_pipe: 10, casting: 10, brick: 10, cartridge: 20,
+  flotation: 1, roaster: 1, smelter: 1, electro: 1, acid_plant: 1, lead_pipe: 10, casting: 10, brick: 10, cartridge: 20, rlab: 2, sci1: 10,
 };
 
 const ORDERS = [
