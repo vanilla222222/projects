@@ -1984,7 +1984,7 @@ function dgSlide(dt, mx, my, G) {
 function dgMove(dt, mx, my) {
   const P = S.pl, D = S.dg;
   P.mv = false;
-  if (P.dead <= 0 && D.ty === 'ice') return dgSlide(dt, mx, my, dgGrid());
+  if (!(P.dead > 0) && D.ty === 'ice') return dgSlide(dt, mx, my, dgGrid());
   if (P.dead > 0 || !(mx || my)) return false;
   const l = Math.hypot(mx, my), v = PL_V * 0.9;
   let left = dt;
