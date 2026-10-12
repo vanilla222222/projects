@@ -246,6 +246,31 @@ function genWorld(seed, g) {
       break;
     }
   }
+  seaOil(seed, sea, 0, 0, W, H, null);
+}
+function seaPatch(px, py, r, rich, seed, clip, sea) {
+  const t = ORES.findIndex(o => o && o.fluid);
+  let n0 = 0;
+  for (let y = Math.floor(py - r * 1.4); y <= py + r * 1.4; y++) for (let x = Math.floor(px - r * 1.4); x <= px + r * 1.4; x++) {
+    if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) continue;
+    if (clip && (x < clip[0] || y < clip[1] || x >= clip[2] || y >= clip[3])) continue;
+    const d = Math.hypot(x - px, y - py), n = vnoise(x / 2.5, y / 2.5, seed + t * 137), i = y * W + x;
+    if (d > r * (0.65 + 0.6 * n) || terrain[i] !== 1 || sea - elev[i] < 0.07) continue;
+    oreType[i] = t;
+    oreAmt[i] = Math.max(200, Math.round(rich * (1.15 - d / (r * 1.5)) * (0.7 + 0.6 * n)) + 200);
+    n0++;
+  }
+  if (n0 && (!clip || (px >= clip[0] && py >= clip[1] && px < clip[2] && py < clip[3]))) patches.push({ t, x: Math.round(px), y: Math.round(py), sea: 1 });
+  return n0;
+}
+function seaOil(seed, sea, X0, Y0, w, h, clip) {
+  const r = mulberry32(((seed ^ 0x5eaf00d) + Math.imul(X0 + 11, 7919) + Math.imul(Y0 + 5, 104729)) >>> 0), nf = w * h / 65536 * 1.6;
+  let k = Math.floor(nf) + (r() < nf % 1 ? 1 : 0);
+  for (let q = 0; q < 300 && k > 0; q++) {
+    const x = X0 + 8 + r() * (w - 16), y = Y0 + 8 + r() * (h - 16), i = Math.floor(y) * W + Math.floor(x);
+    if (terrain[i] !== 1 || sea - elev[i] < 0.09 || Math.hypot(x - W / 2, y - H / 2) < 40) continue;
+    if (seaPatch(x, y, 3 + r() * 2.5, 2500 + r() * 2500, seed, clip, sea) >= 6) k--;
+  }
 }
 function setSize(w) {
   W = H = w; PW = W / PC;
@@ -360,6 +385,7 @@ function genRegion(seed, g, rx, ry) {
       break;
     }
   }
+  seaOil(seed, sea, X0, Y0, RG, RG, clip);
 }
 function growRegion(rx, ry, spawn) {
   const nR = W / RG, r = ry * nR + rx;
@@ -561,7 +587,11 @@ function tileBase(x, y, D, stride, bx, by) {
         else if (edge < bw + 1.2) { r = (r + SAND[0]) / 2; g = (g + SAND[1]) / 2; bl = (bl + SAND[2]) / 2; }
       } else if (edge < 2 && b === 4) { r *= 0.72; g *= 0.72; bl *= 0.74; }
     }
-    if (ot) {
+    if (ot && isW) {
+      const s = vnoise(gx / 7, gy / 7, 61 + ot) * 0.7 + vnoise(gx / 3, gy / 3, 62) * 0.3;
+      if (s > 0.48) { const a = Math.min(1, (s - 0.48) * 5) * 0.4, hh = (gx * 0.05 + gy * 0.035 + s * 8) * 6.283; r = r * (1 - a) + (120 + 80 * Math.sin(hh)) * a; g = g * (1 - a) + (110 + 80 * Math.sin(hh + 2.1)) * a; bl = bl * (1 - a) + (130 + 80 * Math.sin(hh + 4.2)) * a; }
+      else if (s > 0.42) { r *= 0.86; g *= 0.86; bl *= 0.9; }
+    } else if (ot) {
       r *= 0.9; g *= 0.9; bl *= 0.9;
       const cx = gx >> 2, cy = gy >> 2;
       let hit = 0;
@@ -716,6 +746,11 @@ function canPlace(type, x, y) {
     if (occ[k]) return 'Something is in the way';
     if (type === 'pump') { if (terrain[k] !== 1) return 'Offshore pumps must go on water'; }
     else if (type === 'buoy') { if (terrain[k] !== 1) return 'Buoys float: put them on water'; }
+    else if (B.sea) {
+      if (terrain[k] === 4) return 'Bare rock: too steep to build on';
+      if (terrain[k] !== 1) { if (B.sea !== 3) return B.sea === 2 ? 'An oil platform stands on the seabed: build it out at sea' : 'An offshore turbine stands in the sea: build it on water'; }
+      else if (B.sea !== 3) { const d = elev ? seaLv() - elev[k] : 0.05; if (B.sea === 2 && d < 0.07) return 'Too shallow: a jacket platform needs deep water (dark blue)'; if (B.sea === 1 && d >= 0.07) return 'Too deep for a monopile: keep to the light blue shelf'; }
+    }
     else if (terrain[k] === 1) return 'Cannot build on water';
     else if (terrain[k] === 4) return 'Bare rock: too steep to build on';
     if (oreType[k] && !ORES[oreType[k]].fluid) ore = true;
@@ -723,7 +758,7 @@ function canPlace(type, x, y) {
   }
   if (type === 'dock' && ![[0, -1], [1, 0], [0, 1], [-1, 0]].some(([i, j]) => x + i >= 0 && y + j >= 0 && x + i < W && y + j < H && terrain[(y + j) * W + x + i] === 1)) return 'A dock must stand on the shore, right next to water';
   if (type === 'miner' && !ore) return 'A miner needs ore under it';
-  if (B.well && !oil) return 'A pumpjack must stand on an oil seep';
+  if (B.well && !oil) return B.sea ? 'An oil platform must stand over an offshore oil field' : 'A pumpjack must stand on an oil seep';
   if (B.soil && soilAt(x, y, B.w, B.h) < 0.1) return 'Nothing grows here. Farms need grassland, scrub or marsh';
   if (B.forest && !forestN(x, y, B.w, B.h)) return 'A timber harvester needs forest within 4 tiles';
   return null;
@@ -2306,11 +2341,11 @@ function sunOf(e) { if (e.su == null) e.su = sunAt(e.x, e.y, BUILD[e.type].w, BU
 const WINDX = [0.8, 1, 1, 0.8, 1, 0.8, 0.45, 1];
 function exposureAt(x, y, w, h) { let a = 0; for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) a += WINDX[terrain[(y + j) * W + x + i]] || 0; return a / (w * h); }
 function exposureOf(e) { if (e.wx == null) e.wx = exposureAt(e.x, e.y, BUILD[e.type].w, BUILD[e.type].h); return e.wx; }
-const windCurve = () => S.wind.v < 0.1 ? 0 : Math.min(1, Math.pow(S.wind.v / 0.5, 3));
+const windCurve = (m = 1) => S.wind.v * m < 0.1 ? 0 : Math.min(1, Math.pow(S.wind.v * m / 0.5, 3));
 const SOIL = [1, 0, 0.4, 0.05, 0, 0.35, 0.1, 0.1];
 function soilAt(x, y, w, h) { let a = 0; for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) a += SOIL[terrain[(y + j) * W + x + i]] || 0; return a / (w * h); }
 function soilOf(e) { if (e.sl == null) e.sl = soilAt(e.x, e.y, BUILD[e.type].w, BUILD[e.type].h); return e.sl; }
-const sunMul = e => BUILD[e.type].soil ? soilOf(e) : BUILD[e.type].sun ? sunOf(e) : BUILD[e.type].wind ? exposureOf(e) * windCurve() : 1;
+const sunMul = e => BUILD[e.type].soil ? soilOf(e) : BUILD[e.type].sun ? sunOf(e) : BUILD[e.type].wind ? exposureOf(e) * windCurve(BUILD[e.type].sea ? 1.25 : 1) : 1;
 function tryStart(e, r) {
   if (r.well && !wellTiles(e).length) return 'empty';
   if (BUILD[e.type].forest && !forestOf(e)) return 'forest';
@@ -2339,6 +2374,7 @@ function finish(e, r) {
   e.cy = false; e.prog = 0;
   catWear(e, r);
   if (r.well) wellDraw(e);
+  if (r.sea) S.osh = (S.osh || 0) + 1;
   if (r.o) for (const k in r.o) { e.out[k] = (e.out[k] || 0) + r.o[k]; S.made[k] = (S.made[k] || 0) + r.o[k]; }
   if (r.ch) for (const k in r.ch) if (Math.random() < r.ch[k]) { e.out[k] = (e.out[k] || 0) + 1; S.made[k] = (S.made[k] || 0) + 1; }
   if (r.fo) for (const f in r.fo) {
@@ -2793,7 +2829,7 @@ function pickCar(v) {
 function floats(x, y) {
   if (x < 0 || y < 0 || x >= W || y >= H || terrain[y * W + x] !== 1) return false;
   const o = at(x, y);
-  return !o || kind(o) === 'buoy';
+  return !o || kind(o) === 'buoy' || BUILD[o.type].sea === 3;
 }
 const boatMark = id => { const e = ents.get(id); return e && (e.type === 'dock' || e.type === 'buoy') ? e : null; };
 function boatGoal(e) {
@@ -3239,7 +3275,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, ra: S.pl.ra || 0, rs: S.pl.rs || 0, aw: S.pl.aw || 0, ak: S.pl.ak, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, fcr: S.fcr, ach: S.ach || {}, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, ra: S.pl.ra || 0, rs: S.pl.rs || 0, aw: S.pl.aw || 0, ak: S.pl.ak, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, osh: S.osh || 0, fcr: S.fcr, ach: S.ach || {}, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -3274,7 +3310,7 @@ function load() {
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
   const gen = d.gen || { legacy: 1 };
   setSize(gen.legacy ? 160 : gen.size);
-  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0, fs: d.fs || {}, fk: d.fk || 0, fcr: d.fcr, ach: d.ach || {}, dg: d.dg || null, dgn: d.dgn || 0, dgc: d.dgc || 0, qk: d.qk || 0, bv: d.bv };
+  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0, fs: d.fs || {}, fk: d.fk || 0, osh: d.osh || 0, fcr: d.fcr, ach: d.ach || {}, dg: d.dg || null, dgn: d.dgn || 0, dgc: d.dgc || 0, qk: d.qk || 0, bv: d.bv };
   dgc = null; dgMine = null; dfx.length = 0; nades.length = 0;
   initWorld(d.seed, gen);
   if (rgd && d.rg) for (let r = 0; r < rgd.length; r++) if (d.rg[r] === '1') growRegion(r % (W / RG), Math.floor(r / (W / RG)), false);
@@ -3329,6 +3365,8 @@ const ACH = [
   ['catch', 'eco', 'Full Nets', 'Land 200 fish with a trawler.', () => (S.fk || 0) >= 200],
   ['msy', 'eco', 'Sustainable Yield', 'Land 1000 fish without ever fishing a ground below a quarter of its stock.', () => (S.fk || 0) >= 1000 && !S.fcr],
   ['softgel', 'life', 'Cod Liver Oil, Refined', 'Fill fish oil softgels.', () => mk('softgel') >= 1],
+  ['rig', 'nrg', 'Out of Sight of Land', 'Lift crude from an offshore platform for ten minutes.', () => (S.osh || 0) >= 600],
+  ['owind', 'nrg', 'Horns Rev', 'Run five offshore wind turbines.', () => { let n = 0; for (const e of ents.values()) if (e.type === 'wind_offshore') n++; return n >= 5; }],
   ['kelp', 'chem', 'Courtois', 'Extract iodine from burnt seaweed.', () => mk('kelp_ash') >= 1 && mk('iodine') >= 1],
   ['soap', 'chem', 'Saponification', 'Boil fat with caustic soda into soap.', () => mk('soap') >= 1],
   ['aspirin', 'life', 'Willow Bark', 'Pack aspirin made from salicylic acid.', () => mk('aspirin_pack') >= 1],
@@ -3533,7 +3571,7 @@ function render() {
   ctx.fillStyle = 'rgba(0,0,0,0.3)';
   for (const e of vis) {
     const k = kind(e);
-    if (k === 'pipe' || e.type === 'belt' || k === 'hive' || k === 'ruin' || k === 'road' || k === 'rail' || k === 'stop' || k === 'buoy') continue;
+    if (k === 'pipe' || e.type === 'belt' || k === 'hive' || k === 'ruin' || k === 'road' || k === 'rail' || k === 'stop' || k === 'buoy' || e.type === 'wind_offshore') continue;
     const B = BUILD[e.type];
     ctx.fillRect(ox + e.x * z + z * 0.18, oy + e.y * z + z * 0.24, B.w * z - z * 0.12, B.h * z - z * 0.12);
   }
@@ -3659,6 +3697,7 @@ function pipeLinks(e, d) {
 
 function drawPipe(e, ox, oy, z) {
   const P = NP(e), cx = ox + (e.x + 0.5) * z, cy = oy + (e.y + 0.5) * z, t = z * (P.dn >= 100 ? 0.5 : 0.34);
+  if (BUILD[e.type].sea && terrain[e.y * W + e.x] === 1) ctx.globalAlpha = 0.55;
   const rust = Math.min(1, e.wear || 0);
   ctx.fillStyle = rust > 0.05 ? mix(BUILD[e.type].c, '#9a4a1a', rust) : shade(BUILD[e.type].c, 0.8);
   for (let d = 0; d < 4; d++) if (pipeLinks(e, d)) {
@@ -3674,6 +3713,7 @@ function drawPipe(e, ox, oy, z) {
     const f = Math.min(1, e.amt / P.v), s = t * 1.1 * Math.sqrt(f);
     ctx.fillRect(cx - s / 2, cy - s / 2, s, s);
   }
+  ctx.globalAlpha = 1;
 }
 
 function mix(a, b, f) {
@@ -4492,6 +4532,64 @@ function drawTrain(t, ox, oy, z, al) {
   });
   ctx.restore();
 }
+function drawRig(e, x, y, w, h, z) {
+  const m = w * 0.08, on = e.cy && e.st !== 'idle' && e.st !== 'output', t = performance.now() / 1000, lw = Math.max(1, z * 0.05);
+  ctx.fillStyle = 'rgba(8,20,32,0.35)'; ctx.fillRect(x + m + z * 0.25, y + m + z * 0.3, w - 2 * m, h - 2 * m);
+  ctx.fillStyle = '#d8c070';
+  for (const [a, b] of [[0, 0], [1, 0], [0, 1], [1, 1]]) { ctx.beginPath(); ctx.arc(x + m + a * (w - 2 * m), y + m + b * (h - 2 * m), z * 0.2, 0, 7); ctx.fill(); }
+  ctx.fillStyle = '#34383e'; ctx.fillRect(x + m, y + m, w - 2 * m, h - 2 * m);
+  ctx.fillStyle = '#6a7078'; ctx.fillRect(x + m + lw, y + m + lw, w - 2 * m - 2 * lw, h - 2 * m - 2 * lw);
+  ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 1;
+  for (let k = 1; k < 6; k++) { const gx = x + m + (w - 2 * m) * k / 6; ctx.beginPath(); ctx.moveTo(gx, y + m); ctx.lineTo(gx, y + h - m); ctx.stroke(); }
+  ctx.fillStyle = '#e8e4da'; ctx.fillRect(x + w * 0.1, y + h * 0.5, w * 0.34, h * 0.4);
+  ctx.fillStyle = '#e07a2a'; ctx.fillRect(x + w * 0.1, y + h * 0.5, w * 0.34, h * 0.06);
+  if (z >= 10) { ctx.fillStyle = '#3a5a7a'; for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) ctx.fillRect(x + w * (0.13 + c * 0.075), y + h * (0.6 + r * 0.09), w * 0.04, h * 0.04); }
+  const hx = x + w * 0.27, hy = y + h * 0.73, hr = w * 0.15;
+  ctx.fillStyle = '#2c4a34'; ctx.beginPath(); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4 + Math.PI / 8; ctx[k ? 'lineTo' : 'moveTo'](hx + Math.cos(a) * hr, hy + Math.sin(a) * hr); } ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#e8d84a'; ctx.lineWidth = lw; ctx.beginPath(); ctx.arc(hx, hy, hr * 0.62, 0, 7); ctx.stroke();
+  if (z >= 8) { ctx.fillStyle = '#f4f4f0'; ctx.font = `bold ${Math.floor(hr * 0.9)}px system-ui,sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('H', hx, hy + 1); }
+  for (let k = 0; k < 2; k++) {
+    const sy = y + h * (0.16 + k * 0.17), sx = x + w * 0.56;
+    ctx.fillStyle = '#c89a3a'; ctx.fillRect(sx, sy, w * 0.3, h * 0.11);
+    ctx.fillStyle = '#e8c060'; ctx.fillRect(sx, sy, w * 0.3, h * 0.03);
+    ctx.fillStyle = '#7a5a2a'; ctx.beginPath(); ctx.arc(sx, sy + h * 0.055, h * 0.055, 0, 7); ctx.arc(sx + w * 0.3, sy + h * 0.055, h * 0.055, 0, 7); ctx.fill();
+  }
+  const dx = x + w * 0.62, dy = y + h * 0.66, ds = w * 0.13;
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(dx - ds + z * 0.15, dy - ds + z * 0.2, ds * 2, ds * 2);
+  ctx.strokeStyle = '#c83a2a'; ctx.lineWidth = lw * 1.2;
+  ctx.strokeRect(dx - ds, dy - ds, ds * 2, ds * 2);
+  ctx.beginPath(); ctx.moveTo(dx - ds, dy - ds); ctx.lineTo(dx + ds, dy + ds); ctx.moveTo(dx + ds, dy - ds); ctx.lineTo(dx - ds, dy + ds); ctx.stroke();
+  ctx.strokeRect(dx - ds * 0.4, dy - ds * 0.4, ds * 0.8, ds * 0.8);
+  const ca = 0.6 + Math.sin(t * 0.3 + e.id) * 0.5, cx0 = x + w * 0.88, cy0 = y + h * 0.84;
+  ctx.strokeStyle = '#e8c838'; ctx.lineWidth = lw * 1.5; ctx.beginPath(); ctx.moveTo(cx0, cy0); ctx.lineTo(cx0 - Math.cos(ca) * w * 0.3, cy0 - Math.sin(ca) * w * 0.3); ctx.stroke();
+  ctx.fillStyle = '#e8c838'; ctx.beginPath(); ctx.arc(cx0, cy0, z * 0.12, 0, 7); ctx.fill();
+  const fx0 = x + w - m, fy0 = y + m, fx = x + w + w * 0.2, fy = y - h * 0.2;
+  ctx.strokeStyle = '#9aa0a8'; ctx.lineWidth = lw * 1.3; ctx.beginPath(); ctx.moveTo(fx0, fy0); ctx.lineTo(fx, fy); ctx.stroke();
+  if (z >= 10) { ctx.lineWidth = 1; ctx.beginPath(); for (let k = 1; k < 6; k++) { const a = k / 6, px = fx0 + (fx - fx0) * a, py = fy0 + (fy - fy0) * a; ctx.moveTo(px - z * 0.08, py - z * 0.08); ctx.lineTo(px + z * 0.08, py + z * 0.08); } ctx.stroke(); }
+  if (on) {
+    const fl = z * (0.42 + 0.12 * Math.sin(t * 13 + e.id) + 0.08 * Math.sin(t * 29));
+    const gr = ctx.createRadialGradient(fx, fy, 0, fx, fy, fl * 1.6);
+    gr.addColorStop(0, 'rgba(255,250,200,0.95)'); gr.addColorStop(0.35, 'rgba(255,170,40,0.85)'); gr.addColorStop(0.7, 'rgba(230,80,20,0.4)'); gr.addColorStop(1, 'rgba(200,60,20,0)');
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(fx + fl * 0.3, fy - fl * 0.35, fl * 1.6, fl * 1.1, -0.8, 0, 7); ctx.fill();
+  }
+}
+function drawOWT(e, x, y, w, h, z) {
+  const cx = x + w / 2, cy = y + h / 2, R = Math.min(w, h) * 0.48, a0 = S.t * 0.2 * windCurve(1.25) + e.id, ya = S.wind.a || 0;
+  ctx.fillStyle = 'rgba(230,245,255,0.35)'; ctx.beginPath(); ctx.arc(cx, cy, z * 0.48 + Math.sin(performance.now() / 600 + e.id) * z * 0.04, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(8,20,32,0.3)'; ctx.beginPath(); ctx.arc(cx + z * 0.2, cy + z * 0.25, z * 0.34, 0, 7); ctx.fill();
+  ctx.fillStyle = '#e8c020'; ctx.beginPath(); ctx.arc(cx, cy, z * 0.34, 0, 7); ctx.fill();
+  ctx.fillStyle = '#5a5e64'; ctx.beginPath(); ctx.arc(cx, cy, z * 0.2, 0, 7); ctx.fill();
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(ya);
+  ctx.fillStyle = '#dfe3e8'; ctx.fillRect(-z * 0.5, -z * 0.15, z * 0.75, z * 0.3);
+  ctx.restore();
+  ctx.fillStyle = '#f4f6f8'; ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 1;
+  for (let k = 0; k < 3; k++) {
+    const a = a0 + k * Math.PI * 2 / 3, ca = Math.cos(a), sa = Math.sin(a), bw = R * 0.07;
+    ctx.beginPath(); ctx.moveTo(cx - sa * bw, cy + ca * bw); ctx.lineTo(cx + ca * R, cy + sa * R); ctx.lineTo(cx + sa * bw, cy - ca * bw); ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+  ctx.fillStyle = '#c0c6cc'; ctx.beginPath(); ctx.arc(cx, cy, Math.max(1.5, R * 0.07), 0, 7); ctx.fill();
+  if (z >= 12) { ctx.fillStyle = e.id % 2 ? '#e04a3a' : '#ff6a5a'; ctx.globalAlpha = 0.5 + 0.5 * Math.sin(performance.now() / 400); ctx.beginPath(); ctx.arc(cx, cy, Math.max(1, z * 0.05), 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
+}
 function drawBuilding(e, ox, oy, z) {
   const B = BUILD[e.type], x = ox + e.x * z, y = oy + e.y * z, w = B.w * z, h = B.h * z, p = Math.max(1, z * 0.06);
   if (B.kind === 'hive') return drawHive(e, x, y, w, h, z);
@@ -4503,6 +4601,8 @@ function drawBuilding(e, ox, oy, z) {
   if (B.kind === 'projector') return drawProjector(e, x, y, w, h, z);
   if (B.kind === 'gun') return drawGun(e, x, y, w, h, z);
   if (B.kind === 'ruin') return e.type === 'burrow' ? drawBurrow(e, x, y, w, h, z) : drawRuin(e, x, y, w, h, z);
+  if (e.type === 'oil_platform') return drawRig(e, x, y, w, h, z);
+  if (e.type === 'wind_offshore') return drawOWT(e, x, y, w, h, z);
   ctx.fillStyle = shade(B.c, 0.42);
   ctx.fillRect(x + p, y + p, w - 2 * p, h - 2 * p);
   const gr = ctx.createLinearGradient(x, y, x + w * 0.3, y + h);
@@ -4740,6 +4840,7 @@ function tileInfo0(x, y) {
   }
   const i = y * W + x;
   if (!rgDone(x, y)) return '<b>Unexplored</b><br><span class="dim">Walk closer to see what is out here</span>';
+  if (oily(i) && terrain[i] === 1) return `<b>Offshore oil field</b><br>${S.gen && S.gen.inf ? 'Endless' : fmt(oreAmt[i]) + ' left'} · <span class="dim">Oil and gas trapped in rock under the seabed. A rainbow sheen marks seepage at the surface. Drill it from an offshore oil platform</span>`;
   if (oily(i)) return `<b>Oil seep</b><br>${S.gen && S.gen.inf ? 'Endless' : fmt(oreAmt[i]) + ' left'} · <span class="dim">Crude oil seeps up through the soil here. Drill it with a pumpjack</span>`;
   if (oreType[i]) return `<b>${nm(ORES[oreType[i]].item)}</b><br>${S.gen && S.gen.inf ? 'Endless' : fmt(oreAmt[i]) + ' left'} · <span class="dim">${ITEMS[ORES[oreType[i]].item].f}</span><br><span class="dim">Click and hold to mine by hand</span>`;
   return x >= 0 && y >= 0 && x < W && y < H && terrain[i] ? `<b>${TER_N[terrain[i]]}</b>` : '';
@@ -5478,6 +5579,7 @@ const CHAINS = [
   { n: 'Vitamin C', l: [['sorbitol', 'Fermenter + o2 + water', 'sorbose'], ['sorbose', 'Pressure reactor + acetone + o2 + hcl', 'ascorbic', '+', 'acetone'], ['ascorbic', 'Tablet line + starch + polypropylene', 'vitc_pack']], d: 'The Reichstein process, 1933: glucose to sorbitol with hydrogen, sorbitol to sorbose with bacteria, then acetone protection, oxidation and acid lactonisation. Most of the acetone comes back out, so pipe it to the reactor again.' },
   { n: 'Safety matches', l: [['potash', 'Electrolysis cell + water', 'kclo3', '+', 'h2'], ['phosphorus', 'Pressure reactor', 'red_p'], ['wood', 'Workshop + kclo3 + sulfur + gelatin + red_p + carton', 'matches']], d: 'A match head is a tiny fuel and oxidiser mix: chlorate gives oxygen, sulfur burns, gelatin glues it, and powdered glass adds friction. Red phosphorus on the box catches from the heat of rubbing and lights the head.' },
   { n: 'Sea harvest', l: [['trawl_net', 'Stern trawler in deep water', 'fish'], ['fish', 'Fishmeal plant + steam', 'fishmeal', '+', 'fish_oil'], ['fishmeal', 'Granulator + flour + fish_oil', 'aquafeed'], ['fish_oil', 'Pressure reactor + ethanol + naoh', 'fish_ee', '+', 'glycerol'], ['fish_ee', 'Short-path still', 'omega3', '+', 'diesel'], ['omega3', 'Tablet line + gelatin + glycerol', 'softgel'], ['fish', 'Canning line + food_can + salt + veg_oil', 'canned_fish']], d: 'Shoot the trawl over deep water and land the catch at a dock. Most of the world\'s wild catch of small oily fish is cooked, pressed and dried into meal and oil. The oil can be hardened to margarine with hydrogen, or turned into ethyl esters and distilled for omega-3 capsules. Every ground breeds back fastest at half strength, so fish a circuit of grounds instead of one.' },
+  { n: 'Offshore', l: [['oil_platform', 'Jacket over a sea oil field', 'crude', '+', 'methane'], ['crude', 'Subsea pipeline to shore', 'Distillation column'], ['wind_offshore', 'Monopile on the shallow shelf', '2 MW in a fresh breeze']], d: 'Oil fields lie under the sea as well as the land. A rainbow sheen on deep water marks seepage from one. Build a jacket platform over it and lay a subsea pipeline back to shore; boats sail straight over the line. The platform burns its own gas, so it needs no power. In the shallows, monopile wind turbines catch stronger, steadier wind than any on land.' },
   { n: 'Seaweed', l: [['trawler', 'Cutter bar in the shallows', 'kelp'], ['kelp', 'Leach tank + soda_ash + cacl2 + hcl', 'alginate'], ['alginate', 'Compounding room + gypsum + silica', 'impression'], ['alginate', 'Viscose spinning bath + cacl2', 'dressing'], ['kelp', 'Lime kiln', 'kelp_ash'], ['kelp_ash', 'Iodine plant + water + cl2', 'iodine', '+', 'potash']], d: 'Kelp beds grow in shallow water near the coast and regrow quickly. Alginate from the weed gels the moment it meets calcium, which makes dental impressions and wound dressings. Burnt to ash it gave Europe its first iodine.' },
   { n: 'By-products', l: [['ground_copper', 'Flotation', 'copper_conc', '+', 'pyrite_conc'], ['pyrite_conc', 'Roaster', 'pyrite_cinder', 'Blast furnace', 'pig_iron'], ['anode_slime', 'Roaster', 'dore', 'Leach tank + acid', 'silver']], d: 'Nothing is waste. Pyrite gives SO₂ for acid and its cinder is iron ore. Anode slime from copper refining yields selenium, silver and gold.' },
 ];
@@ -5654,6 +5756,8 @@ const HELP = `<div class="help">
 <p>Put a <b>V₂O₅ catalyst</b> in a pressure reactor with benzene and oxygen to make <b>maleic anhydride</b>; the catalyst wears out like it does for phthalic anhydride. Maleic and phthalic anhydride, propylene glycol and styrene make <b>polyester resin</b>. The <b>GRP moulding shop</b> lays the resin into glass fibre to make <b>boat hulls</b>, <b>water tanks</b> and <b>rooflights</b>. Hulls and tanks also need a little cobalt sulfate as accelerator.</p>
 <h3>Film, vitamins and matches</h3>
 <p>Cook limed pelt in hot water and steam to extract <b>gelatin</b>. Silver nitrate and sodium bromide run into gelatin make <b>silver bromide emulsion</b>. The polariser line can stretch PET into <b>polyester film base</b>, and the <b>emulsion coating line</b> coats both together into <b>X-ray film</b>. Sulfur, soda ash and SO₂ make <b>hypo</b> fixer. For vitamin C, ferment sorbitol into <b>L-sorbose</b>, then convert it with acetone, oxygen and HCl to <b>ascorbic acid</b>; most of the acetone comes back. An electrolysis cell turns potash brine into <b>potassium chlorate</b> and hydrogen, and heating white phosphorus without air gives safe <b>red phosphorus</b> for the striker of <b>safety matches</b>.</p>
+<h3>Offshore oil and wind</h3>
+<p>Some oil fields lie under deep water. Look for a <b>rainbow sheen</b> on the dark blue sea and hover it: it reads <b>Offshore oil field</b>. An <b>offshore oil platform</b> (3×3) must stand in deep water over the field. It lifts 30 crude and 6 methane a second, runs on its own gas turbines, and needs no power line. Lay <b>subsea pipeline</b> from the platform to shore: it goes on water or land, and boats pass over it. Gas with nowhere to go is flared. On the light blue shelf, an <b>offshore wind turbine</b> stands on a monopile and gives up to 2 MW. Sea wind is a quarter faster than over land, which is almost twice the power.</p>
 <h3>Fishing and seaweed</h3>
 <p>Weave a <b>trawl net</b> from monofilament, lead and polyethylene, and build a <b>stern trawler</b>. Drive it to sea and press <b>N</b> to shoot the gear. Over deep water (dark blue) it catches <b>fish</b>; dragged through the shallows it cuts <b>kelp</b>. The net slows you to about 12 knots. Shoals show as dark flickers under the water and kelp beds as olive fronds near the coast. Each 16×16 patch of sea has its own stock, shown in the boat panel. It breeds back fastest at half strength, and fished below a tenth it takes hours to recover. On a schedule the gear goes down on legs heading to a buoy and comes up for docks, so a ring of buoys over the grounds and a dock with chests makes an automatic fishery. Fish go to the <b>fishmeal plant</b> for meal and <b>fish oil</b>, or to the canning line. Kelp makes <b>sodium alginate</b>, and kelp ash makes <b>iodine</b> and potash.</p>
 <h3>Boiler water</h3>
@@ -6081,7 +6185,7 @@ window.game = {
   terrain: () => terrain, ACH, achCheck, wpnCycle, wpnCur, wpnRounds, nadeThrow, armSoak, armWorn, nades, plShoot, plHurt, dgHurt, enqueue, maxCraft, WPN, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
   select(e) { e ? openPanel(e) : closePanel(); }, openModal, closeModal, refresh: renderHotbar,
   setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; camFree = true; },
-  get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get trains() { return S.trains; }, placeTrain, trainAt, openTrain, openPanel, pickTrain, trainGeo, reverseTrain, railBusy, get puffs() { return puffs; }, get H() { return H; }, get wakes() { return wakes; }, floats, boatRoute, boatPilot, carStep, carHit, fishTick, fishRegrow, fground, fstock, netToggle, wdep, seaLv,
+  get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get trains() { return S.trains; }, placeTrain, trainAt, openTrain, openPanel, pickTrain, trainGeo, reverseTrain, railBusy, get puffs() { return puffs; }, get H() { return H; }, get wakes() { return wakes; }, floats, boatRoute, boatPilot, carStep, carHit, fishTick, fishRegrow, seaOil, seaPatch, oily, sunMul, get oreAmt() { return oreAmt; }, fground, fstock, netToggle, wdep, seaLv,
   htier, spits: () => spits, hiveTier, guardStep, addHive, bugKind, maxHp, hurt, rgd: () => rgd, tileInfo0, growNear, genRegion, tch: () => tch, ovc, mapWin, depleteTile,
   dgEnter, dgExit, dgTick, dgShoot, dgMove, dgUse, dgClick, dgGrid, dgGen, dgSolid, dgSee, dgPos, spawnBurrows, get dfx() { return dfx; },
   setOverlay(v) { overlay = v; }, elev: () => elev, drawPreview, startWorld, get wcfg() { return wcfg; },
