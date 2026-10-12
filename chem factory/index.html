@@ -4,14 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chem Factory</title>
-<link rel="stylesheet" href="style.css?v=24">
+<link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
 <header id="top">
   <a class="back" href="../index.html" title="Back to projects">‹</a>
   <span class="brand">Chem Factory</span>
-  <span id="power"></span>
-  <span id="vent"></span>
   <span class="sp"></span>
   <button data-ui="craft" title="Inventory and crafting (E)">Inventory <kbd>E</kbd></button>
   <button data-ui="ency" title="Encyclopedia (H)">Encyclopedia <kbd>H</kbd></button>
@@ -22,6 +20,7 @@
 </header>
 <main id="stage">
   <canvas id="cv"></canvas>
+  <aside id="hud"><div class="hmap"><canvas id="mini" width="200" height="200" title="Click: open the map · Wheel: zoom"></canvas><div class="hzb"><button data-mz="1" title="Zoom in">+</button><button data-mz="-1" title="Zoom out">−</button></div></div><button id="hstog" title="Show or hide the stats">Stats</button><div id="hstat"><div id="power"></div><div id="vent"></div></div></aside>
   <aside id="panel" hidden></aside>
   <div id="tip" hidden></div>
   <div id="toast"></div>
@@ -33,7 +32,7 @@
     <div class="mbody"></div>
   </div>
 </div>
-<script src="data.js?v=122"></script>
-<script src="game.js?v=122"></script>
+<script src="data.js?v=123"></script>
+<script src="game.js?v=123"></script>
 </body>
 </html>

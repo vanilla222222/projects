@@ -39,7 +39,7 @@ let modalTab = null, modalKind = null, overlay = 0;
 const nm = k => (ITEMS[k] || FLUIDS[k] || BUILD[k] || { n: k }).n;
 const col = k => (ITEMS[k] || FLUIDS[k] || BUILD[k] || { c: '#888' }).c;
 const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? (n / 1e3).toFixed(1) + 'k' : String(Math.floor(n));
-const chip = (k, n, cls) => `<span class="chip ${cls || ''}"><i style="background:${col(k)}"></i>${n != null ? '<b>' + n + '</b> ' : ''}${nm(k)}</span>`;
+const chip = (k, n, cls) => `<span class="chip ${cls || ''}" data-ck="${k}"><i style="background:${col(k)}"></i>${n != null ? '<b>' + n + '</b> ' : ''}${nm(k)}</span>`;
 const sum = o => { let s = 0; for (const k in o) s += o[k]; return s; };
 const isGas = f => FLUIDS[f] && FLUIDS[f].gas && f !== 'steam';
 const spills = (r, f) => isGas(f) || !!(r.bleed && r.bleed.includes(f));
@@ -7572,6 +7572,14 @@ function powerHtml() {
   const p = S.power;
   const pct = Math.round(p.sat * 100);
   const cls = p.demand === 0 ? '' : pct >= 99 ? 'ok' : pct > 40 ? 'warn' : 'bad';
+  let h = `<div class="hr"><span class="lbl">Power</span><b class="${cls}">${p.demand ? pct + '%' : 'idle'}</b></div><div class="hb ${cls}"><i style="width:${p.demand ? Math.min(100, pct) : 0}%"></i></div><div class="hs">${fmt(p.gen)} / ${fmt(p.demand)} kW · cap ${fmt(p.cap)}${wired() ? ` · ${p.nets || 0} grid${p.nets === 1 ? '' : 's'}` : ''}${p.nc ? ` · <span class="bad">${p.nc} unpowered</span>` : ''}</div>`;
+  if (p.bmax) { const bp = Math.round(p.bat / p.bmax * 100); h += `<div class="hr"><span class="lbl">Battery</span><b>${bp}%</b></div><div class="hb"><i style="width:${bp}%"></i></div><div class="hs">${p.bkw > 0.5 ? 'discharging ' + fmt(p.bkw) + ' kW' : p.bkw < -0.5 ? 'charging ' + fmt(-p.bkw) + ' kW' : 'holding'}</div>`; }
+  return h;
+}
+function powerHtmlOld() {
+  const p = S.power;
+  const pct = Math.round(p.sat * 100);
+  const cls = p.demand === 0 ? '' : pct >= 99 ? 'ok' : pct > 40 ? 'warn' : 'bad';
   return (wired() ? `<span class="dim">${p.nets || 0} grid${p.nets === 1 ? '' : 's'}</span> ` + (p.nc ? `<span class="bad">⚡ ${p.nc} unpowered</span> ` : '') : '') + `<span class="lbl">Power</span><b class="${cls}">${fmt(p.gen)}</b> / ${fmt(p.demand)} kW <span class="dim">(cap ${fmt(p.cap)})</span> <span class="${cls}">${p.demand ? pct + '%' : 'idle'}</span>` + (p.bmax ? ` <span class="lbl">Battery</span><b>${Math.round(p.bat / p.bmax * 100)}%</b><span class="dim"> ${p.bkw > 0.5 ? '▼ ' + fmt(p.bkw) + ' kW' : p.bkw < -0.5 ? '▲ ' + fmt(-p.bkw) + ' kW' : ''}</span>` : '');
 }
 function stackUsers(st) {
@@ -7584,6 +7592,13 @@ function ventHtml() {
   const t = sum(S.vent);
   const parts = Object.keys(S.vent).filter(f => S.vent[f] >= 1).map(f => `${nm(f)} ${fmt(S.vent[f])}`).join(', ');
   const sp = sum(S.spill || {});
+  let h = '';
+  if (t > 0) h += `<div class="hr"><span class="lbl">Vented</span><b class="warn">${fmt(t)}</b></div>` + (parts ? `<div class="hs">${parts}</div>` : '');
+  if (sp >= 1 || S.fails) h += `<div class="hr"><span class="lbl">Spilled</span><b class="bad">${fmt(sp)}</b></div><div class="hs">${S.fails || 0} pipe failures</div>`;
+  if (S.bugs.length || S.evo > 0.001 || S.lost) h += `<div class="hr"><span class="lbl">Crawlers</span><b class="${S.bugs.length ? 'bad' : ''}">${S.bugs.length}</b></div><div class="hs">evolution ${Math.round(S.evo * 100)}% · gear threat ${Math.round(gearT() * 100)}%<br>${lists().hive.length} hives${S.lost ? ' · ' + S.lost + ' buildings lost' : ''}</div>`;
+  if (S.clouds.length || lists().projector.length) h += `<div class="hr"><span class="lbl">Wind</span><b><span class="wind" style="display:inline-block;transform:rotate(${S.wind.a}rad)">→</span> ${(S.wind.v * 10).toFixed(1)} m/s</b></div>` + (S.clouds.length ? `<div class="hs">${S.clouds.length} gas clouds</div>` : '');
+  if (pk >= 1) h += `<div class="hr"><span class="lbl">Smog</span><b class="${pk > RAIN ? 'bad' : pk > RAIN * 0.6 ? 'warn' : ''}">${Math.round(pk)}</b></div>` + (pk > RAIN ? '<div class="hs bad">acid rain</div>' : '');
+  return h;
   return `<span class="lbl">Vented</span><b class="${t > 0 ? 'warn' : ''}">${fmt(t)}</b>` + (parts ? `<span class="dim"> · ${parts}</span>` : '') +
     (sp >= 1 || S.fails ? ` <span class="lbl">Spilled</span><b class="bad">${fmt(sp)}</b><span class="dim"> · ${S.fails || 0} pipe failures</span>` : '') +
     (S.bugs.length || S.evo > 0.001 || S.lost ? ` <span class="lbl">Crawlers</span><b class="${S.bugs.length ? 'bad' : ''}">${S.bugs.length}</b><span class="dim"> · evolution ${Math.round(S.evo * 100)}% · gear threat ${Math.round(gearT() * 100)}% · ${lists().hive.length} hives${S.lost ? ' · ' + S.lost + ' buildings lost' : ''}</span>` : '') +
@@ -8101,9 +8116,12 @@ function costHtml(cost, n) { return Object.keys(cost).map(k => chip(k, cost[k] *
 let modalHtml = '';
 function openModal(kind, tab) {
   modalKind = kind;
-  modalTab = tab || (kind === 'craft' ? 'craft' : kind === 'ency' ? 'chains' : kind === 'world' ? 'world' : kind === 'map' ? 'map' : kind === 'ach' ? 'ach' : kind === 'tech' ? 'tech' : 'help');
+  modalTab = tab || (kind === 'craft' ? 'craft' : kind === 'ency' ? 'index' : kind === 'world' ? 'world' : kind === 'map' ? 'map' : kind === 'ach' ? 'ach' : kind === 'tech' ? 'tech' : 'help');
   modal.hidden = false;
   modal.querySelector('.mwin').classList.toggle('wide', kind === 'craft');
+  modal.querySelector('.mwin').classList.toggle('mapw', kind === 'map');
+  if (kind === 'map') mapOpen();
+  if (kind === 'ency') { eQ = ''; ePush(); }
   cSig = '';
   renderModal();
 }
@@ -8111,7 +8129,7 @@ function closeModal() { modal.hidden = true; modalKind = null; ftip.hidden = tru
 
 const TABS = {
   craft: [['craft', 'Inventory and crafting'], ['equip', 'Armour']],
-  ency: [['chains', 'Ore chains'], ['recipes', 'Recipes'], ['mats', 'Materials'], ['pipes', 'Pipes']],
+  ency: [['index', 'Index'], ['chains', 'Chains'], ['recipes', 'Recipes'], ['mats', 'Materials'], ['pipes', 'Pipes']],
   help: [['help', 'How to play']],
   world: [['world', 'New world']],
   map: [['map', 'World map']],
@@ -8182,47 +8200,181 @@ function startWorld() {
   closeModal(); renderHotbar(); save();
   toast('New world generated');
 }
-function mapHtml() { return `<div class="wmap"><canvas id="wmap" width="720" height="720"></canvas><div class="wside">${legendHtml()}<div class="wleg"><span><i style="background:#e04040"></i>Crawler hive</span><span><i style="background:#c080ff"></i>Abandoned works</span><span><i style="background:#e0a040"></i>Crawler burrow</span><span><i style="background:#e06a40"></i>Infested mine</span><span><i style="background:#ff5020"></i>Lava tube</span><span><i style="background:#a0e0ff"></i>Ice cave</span><span><i style="background:#c0c8d0"></i>Ammonia works</span><span><i style="background:#ffe080"></i>Your buildings</span><span><i style="background:#4ae0ff"></i>You</span></div><p class="dim">Seed ${S.seed}${S.gen && !S.gen.legacy ? '' : ' · classic map'}${rgd ? ' · endless world. The map shows the 512×512 tiles around the camera, and land you have not been near yet stays dark' : ' · ' + W + '×' + H}${S.gen && S.gen.inf ? ' · endless ore' : ''}<br>Click anywhere to move the camera there.</p></div></div>`; }
+const entCol = (e, k) => k === 'hive' ? '#e04040' : e.type === 'burrow' ? (e.done ? '#6a5a4a' : '#e0a040') : e.type === 'infested' ? (e.done ? '#6a5a4a' : '#e06a40') : e.type === 'lavatube' ? (e.done ? '#6a5a4a' : '#ff5020') : e.type === 'icecave' ? (e.done ? '#6a5a4a' : '#a0e0ff') : e.type === 'nh3works' ? (e.done ? '#6a5a4a' : '#c0c8d0') : k === 'ruin' ? '#c080ff' : k === 'road' ? '#8a8a8a' : k === 'rail' ? '#b09070' : '#ffe080';
+const mv = { x: 0, y: 0, z: 2 };
+let mDrag = null;
+function mapHtml() { return `<div class="fmap"><canvas id="wmap"></canvas><details class="fleg" open><summary>Legend</summary>${legendHtml()}<div class="wleg"><span><i style="background:#e04040"></i>Crawler hive</span><span><i style="background:#c080ff"></i>Abandoned works</span><span><i style="background:#e0a040"></i>Crawler burrow</span><span><i style="background:#e06a40"></i>Infested mine</span><span><i style="background:#ff5020"></i>Lava tube</span><span><i style="background:#a0e0ff"></i>Ice cave</span><span><i style="background:#c0c8d0"></i>Ammonia works</span><span><i style="background:#ffe080"></i>Your buildings</span><span><i style="background:#ff4050"></i>Crawlers</span><span><i style="background:#4ae0ff"></i>You</span></div><p class="dim">Seed ${S.seed}${S.gen && !S.gen.legacy ? '' : ' · classic map'} · ${rgd ? 'endless world, unexplored land stays dark' : W + '×' + H}${S.gen && S.gen.inf ? ' · endless ore' : ''}</p></details><div class="fzb"><button data-fz="1" title="Zoom in">+</button><button data-fz="-1" title="Zoom out">−</button><button data-fz="0" title="Centre on you">◎</button></div><div class="fpos"></div><div class="fhint">Drag to pan · Wheel to zoom · Click to look there · M or Esc to close</div></div>`; }
+function mapOpen() { mv.x = cam.x; mv.y = cam.y; mv.z = rgd ? 2 : Math.max(1, Math.min(4, 700 / W)); }
+function mapZoom(f, px, py) {
+  const c = document.getElementById('wmap');
+  if (!c) return;
+  const cw = c.width, ch = c.height;
+  if (px == null) { px = cw / 2; py = ch / 2; }
+  const wx = mv.x + (px - cw / 2) / mv.z, wy = mv.y + (py - ch / 2) / mv.z;
+  mv.z = Math.max(0.25, Math.min(32, mv.z * f));
+  mv.x = wx - (px - cw / 2) / mv.z; mv.y = wy - (py - ch / 2) / mv.z;
+  drawMapView();
+}
+function drawEnts(x2, x0, y0, x1, y1, s, minS) {
+  for (const e of ents.values()) {
+    const B = BUILD[e.type];
+    if (e.x + B.w < x0 || e.y + B.h < y0 || e.x > x1 || e.y > y1) continue;
+    const k = kind(e), big = k === 'hive' || k === 'ruin';
+    x2.fillStyle = entCol(e, k);
+    x2.fillRect((e.x - x0) * s, (e.y - y0) * s, Math.max(big ? 4 : minS, B.w * s), Math.max(big ? 4 : minS, B.h * s));
+  }
+}
 function drawMapView() {
   const c = document.getElementById('wmap');
   if (!c) return;
-  const x2 = c.getContext('2d'), n = c.width, mw = mapWin(), s = n / mw.sz;
+  const w = Math.max(50, Math.round(c.clientWidth)), hh = Math.max(50, Math.round(c.clientHeight));
+  if (c.width !== w || c.height !== hh) { c.width = w; c.height = hh; }
+  const x2 = c.getContext('2d'), s = mv.z, x0 = mv.x - w / 2 / s, y0 = mv.y - hh / 2 / s, x1 = x0 + w / s, y1 = y0 + hh / s;
   x2.setTransform(1, 0, 0, 1, 0, 0);
-  x2.fillStyle = '#000'; x2.fillRect(0, 0, n, n);
-  x2.imageSmoothingEnabled = false;
-  x2.drawImage(ovc, mw.x0, mw.y0, mw.sz, mw.sz, 0, 0, n, n);
-  x2.setTransform(1, 0, 0, 1, -mw.x0 * s, -mw.y0 * s);
-  for (const e of ents.values()) {
-    const k = kind(e), B = BUILD[e.type];
-    x2.fillStyle = k === 'hive' ? '#e04040' : e.type === 'burrow' ? (e.done ? '#6a5a4a' : '#e0a040') : e.type === 'infested' ? (e.done ? '#6a5a4a' : '#e06a40') : e.type === 'lavatube' ? (e.done ? '#6a5a4a' : '#ff5020') : e.type === 'icecave' ? (e.done ? '#6a5a4a' : '#a0e0ff') : e.type === 'nh3works' ? (e.done ? '#6a5a4a' : '#c0c8d0') : k === 'ruin' ? '#c080ff' : k === 'road' ? '#8a8a8a' : k === 'rail' ? '#b09070' : '#ffe080';
-    const r = k === 'hive' || k === 'ruin' ? Math.max(4, B.w * s) : Math.max(1.5, B.w * s);
-    x2.fillRect(e.x * s, e.y * s, r, Math.max(k === 'hive' || k === 'ruin' ? 4 : 1.5, B.h * s));
-  }
+  x2.fillStyle = '#06080a'; x2.fillRect(0, 0, w, hh);
+  x2.imageSmoothingEnabled = s < 1;
+  const sx = Math.max(0, Math.floor(x0)), sy = Math.max(0, Math.floor(y0)), ex = Math.min(W, Math.ceil(x1)), ey = Math.min(H, Math.ceil(y1));
+  if (ex > sx && ey > sy) x2.drawImage(ovc, sx, sy, ex - sx, ey - sy, (sx - x0) * s, (sy - y0) * s, (ex - sx) * s, (ey - sy) * s);
+  if (s >= 4) { x2.strokeStyle = 'rgba(0,0,0,0.25)'; x2.lineWidth = 1; x2.beginPath(); const st = s >= 12 ? 1 : CK; for (let gx = Math.ceil(x0 / st) * st; gx < x1; gx += st) { x2.moveTo(Math.round((gx - x0) * s) + 0.5, 0); x2.lineTo(Math.round((gx - x0) * s) + 0.5, hh); } for (let gy = Math.ceil(y0 / st) * st; gy < y1; gy += st) { x2.moveTo(0, Math.round((gy - y0) * s) + 0.5); x2.lineTo(w, Math.round((gy - y0) * s) + 0.5); } x2.stroke(); }
+  drawEnts(x2, x0, y0, x1, y1, s, 1.5);
+  x2.fillStyle = '#ff4050';
+  for (const b of S.bugs) if (b.hp > 0 && b.x > x0 && b.x < x1 && b.y > y0 && b.y < y1) x2.fillRect((b.x - x0) * s - 1.5, (b.y - y0) * s - 1.5, 3, 3);
+  for (const v of S.cars) { x2.fillStyle = VEH[v.type].sea ? '#7fe0ff' : '#fff'; x2.fillRect((v.x - x0) * s - 2.5, (v.y - y0) * s - 2.5, 5, 5); }
+  x2.fillStyle = '#e0b020'; for (const t of S.trains) { if (!t.g) trainGeo(t); for (const q of t.g) x2.fillRect((q.x - x0) * s - 2.5, (q.y - y0) * s - 2.5, 5, 5); }
   const vw = cv.clientWidth / cam.z, vh = cv.clientHeight / cam.z;
-  for (const v of S.cars) { x2.fillStyle = VEH[v.type].sea ? '#7fe0ff' : '#fff'; x2.fillRect(v.x * s - 2.5, v.y * s - 2.5, 5, 5); }
-  x2.fillStyle = '#e0b020'; for (const t of S.trains) { if (!t.g) trainGeo(t); for (const g of t.g) x2.fillRect(g.x * s - 2.5, g.y * s - 2.5, 5, 5); }
-  x2.fillStyle = '#4ae0ff'; x2.strokeStyle = '#000'; x2.lineWidth = 1.5;
-  x2.beginPath(); x2.arc(S.pl.x * s, S.pl.y * s, 4, 0, 7); x2.fill(); x2.stroke();
-  x2.strokeStyle = '#fff'; x2.lineWidth = 1.5;
-  x2.strokeRect((cam.x - vw / 2) * s, (cam.y - vh / 2) * s, vw * s, vh * s);
+  x2.strokeStyle = 'rgba(255,255,255,0.8)'; x2.lineWidth = 1.5;
+  x2.strokeRect((cam.x - vw / 2 - x0) * s, (cam.y - vh / 2 - y0) * s, vw * s, vh * s);
+  x2.fillStyle = '#4ae0ff'; x2.strokeStyle = '#000';
+  x2.beginPath(); x2.arc((S.pl.x - x0) * s, (S.pl.y - y0) * s, 5, 0, 7); x2.fill(); x2.stroke();
+  const fp = c.parentNode.querySelector('.fpos');
+  if (fp) fp.textContent = `${Math.round(mv.x)}, ${Math.round(mv.y)} · ${s >= 1 ? s.toFixed(s < 4 ? 1 : 0) + ' px/tile' : (1 / s).toFixed(0) + ' tiles/px'}`;
+}
+let mz = 2, miniT = 0;
+try { const v = +localStorage.getItem('cf_mz'); if (v >= 0.5 && v <= 8) mz = v; if (localStorage.getItem('cf_hud') === '0') $('#hud').classList.add('hide'); } catch (e) {}
+function drawMini() {
+  const c = $('#mini');
+  if (!c || !c.offsetParent) return;
+  const x2 = c.getContext('2d'), n = c.width, s = mz;
   x2.setTransform(1, 0, 0, 1, 0, 0);
+  x2.fillStyle = '#06080a'; x2.fillRect(0, 0, n, n);
+  if (S.dg) { x2.fillStyle = '#8a7a6a'; x2.font = '13px sans-serif'; x2.textAlign = 'center'; x2.fillText('Underground', n / 2, n / 2); return; }
+  const cx = camFree ? cam.x : S.pl.x, cy = camFree ? cam.y : S.pl.y, x0 = cx - n / 2 / s, y0 = cy - n / 2 / s, x1 = x0 + n / s, y1 = y0 + n / s;
+  x2.imageSmoothingEnabled = false;
+  const sx = Math.max(0, Math.floor(x0)), sy = Math.max(0, Math.floor(y0)), ex = Math.min(W, Math.ceil(x1)), ey = Math.min(H, Math.ceil(y1));
+  if (ex > sx && ey > sy) x2.drawImage(ovc, sx, sy, ex - sx, ey - sy, (sx - x0) * s, (sy - y0) * s, (ex - sx) * s, (ey - sy) * s);
+  drawEnts(x2, x0, y0, x1, y1, s, 1);
+  x2.fillStyle = '#ff4050';
+  for (const b of S.bugs) if (b.hp > 0 && b.x > x0 && b.x < x1 && b.y > y0 && b.y < y1) x2.fillRect((b.x - x0) * s - 1, (b.y - y0) * s - 1, 2.5, 2.5);
+  for (const v of S.cars) if (v.x > x0 && v.x < x1 && v.y > y0 && v.y < y1) { x2.fillStyle = VEH[v.type].sea ? '#7fe0ff' : '#fff'; x2.fillRect((v.x - x0) * s - 2, (v.y - y0) * s - 2, 4, 4); }
+  const vw = cv.clientWidth / cam.z, vh = cv.clientHeight / cam.z;
+  x2.strokeStyle = 'rgba(255,255,255,0.55)'; x2.lineWidth = 1;
+  x2.strokeRect((cam.x - vw / 2 - x0) * s + 0.5, (cam.y - vh / 2 - y0) * s + 0.5, vw * s, vh * s);
+  const px = (S.pl.x - x0) * s, py = (S.pl.y - y0) * s, a = S.pl.f || 0;
+  x2.fillStyle = '#4ae0ff'; x2.strokeStyle = '#000'; x2.lineWidth = 1.2;
+  x2.beginPath(); x2.moveTo(px + Math.cos(a) * 6, py + Math.sin(a) * 6); x2.lineTo(px + Math.cos(a + 2.5) * 4.5, py + Math.sin(a + 2.5) * 4.5); x2.lineTo(px + Math.cos(a - 2.5) * 4.5, py + Math.sin(a - 2.5) * 4.5); x2.closePath(); x2.fill(); x2.stroke();
+}
+function miniZoom(d) { mz = Math.max(0.5, Math.min(8, d > 0 ? mz * 2 : mz / 2)); try { localStorage.setItem('cf_mz', mz); } catch (e) {} drawMini(); }
+$('#mini').addEventListener('click', () => openModal('map'));
+$('#mini').addEventListener('wheel', ev => { ev.preventDefault(); miniZoom(-ev.deltaY); }, { passive: false });
+$('#hud').addEventListener('click', ev => { const b = ev.target.closest('[data-mz]'); if (b) miniZoom(+b.dataset.mz); });
+$('#hstog').addEventListener('click', () => { const h = $('#hud').classList.toggle('hide'); try { localStorage.setItem('cf_hud', h ? '0' : '1'); } catch (e) {} });
+
+let eQ = '', eItem = null, eCat = 'Buildings', eHist = [], eHi = -1, hovCk = null;
+function ePush() { const s = [modalTab, eItem, eCat]; const c = eHist[eHi]; if (c && c[0] === s[0] && c[1] === s[1] && c[2] === s[2]) return; eHist = eHist.slice(0, eHi + 1); eHist.push(s); if (eHist.length > 60) eHist.shift(); eHi = eHist.length - 1; }
+function eGo(d) { const s = eHist[eHi + d]; if (!s) return; eHi += d; [modalTab, eItem, eCat] = s; eQ = ''; modal.querySelector('.mbody').scrollTop = 0; renderModal(); }
+function encyOpen(k) {
+  if (!(ITEMS[k] || FLUIDS[k] || BUILD[k])) return;
+  if (modalKind !== 'ency') openModal('ency');
+  modalTab = 'item'; eItem = k; eQ = ''; ePush();
+  modal.querySelector('.mbody').scrollTop = 0;
+  renderModal();
+}
+const eTile = k => `<span class="eic" data-ck="${k}" title="${nm(k).replace(/"/g, '&quot;')}">${ico(k)}</span>`;
+let ECATS = null;
+function eCats() {
+  if (ECATS) return ECATS;
+  const used = new Set(), cs = [];
+  const add = (n, ks) => { ks = ks.filter(k => (ITEMS[k] || FLUIDS[k] || BUILD[k]) && !used.has(k)); ks.forEach(k => used.add(k)); if (ks.length) cs.push({ n, ks }); };
+  add('Buildings', Object.keys(BUILD).filter(t => BUILD[t].cost));
+  const cmb = []; for (const m in WPN) { if (WPN[m].need) cmb.push(WPN[m].need); cmb.push(WPN[m].am); }
+  add('Weapons and armour', cmb.concat(Object.keys(ARMOR), Object.keys(EQ), CMB));
+  add('Ores', ORES.filter(o => o && !o.fluid).map(o => o.item));
+  add('Fluids and gases', Object.keys(FLUIDS));
+  add('Intermediates', PARTS.slice());
+  const by = {};
+  for (const r of RECIPES) for (const k in r.o || {}) if (!used.has(k) && ITEMS[k] && !by[k]) by[k] = BUILD[r.b] ? BUILD[r.b].cat || 'Processing' : 'Processing';
+  for (const c of CATS) add('Made by ' + c.toLowerCase() + ' buildings', Object.keys(by).filter(k => by[k] === c));
+  add('Other', Object.keys(ITEMS));
+  return ECATS = cs;
+}
+function encyIndex() {
+  const cs = eCats(), cur = cs.find(c => c.n === eCat) || cs[0];
+  return `<div class="ecats">${cs.map(c => `<button class="${c === cur ? 'on' : ''}" data-ecat="${c.n}">${c.n} <span class="dim">${c.ks.length}</span></button>`).join('')}</div><div class="egrid">${cur.ks.map(eTile).join('')}</div><p class="dim">Click any icon or chip to open its page. Hover an item anywhere in the game and press H to look it up.</p>`;
+}
+function encySearch(q) {
+  q = q.toLowerCase();
+  const hit = k => nm(k).toLowerCase().includes(q) || k.includes(q.replace(/ /g, '_'));
+  const ks = [...Object.keys(BUILD).filter(t => BUILD[t].cost), ...Object.keys(ITEMS), ...Object.keys(FLUIDS)].filter(hit);
+  const uniq = [...new Set(ks)];
+  let h = `<h3>${uniq.length} match${uniq.length === 1 ? '' : 'es'}</h3><div class="elist">${uniq.slice(0, 150).map(k => chip(k, null, FLUIDS[k] ? 'fl' : '')).join('')}${uniq.length > 150 ? `<span class="dim">and ${uniq.length - 150} more, keep typing</span>` : ''}</div>`;
+  const cs = CHAINS.filter(c => c.n.toLowerCase().includes(q) || c.d.toLowerCase().includes(q));
+  if (cs.length) h += `<h3>Production chains</h3>` + cs.slice(0, 12).map(chainHtml).join('');
+  return h;
+}
+const recUses = (r, k) => (r.i && k in r.i) || (r.fi && k in r.fi) || r.cat === k;
+const recMakes = (r, k) => (r.o && k in r.o) || (r.fo && k in r.fo) || (r.ch && k in r.ch);
+const eRec = r => `<div class="erec ${avail(r) ? '' : 'locked'}"><span class="rb">${chip(r.b)}<b>${r.n || nm(rMain(r))}</b></span>${avail(r) ? '' : ' <span class="bad">Locked</span>'}${recipeHtml(r)}</div>`;
+function encyItem(k) {
+  if (!k) return '';
+  const B = BUILD[k], I = ITEMS[k], F = FLUIDS[k];
+  let h = `<div class="eitem"><div class="eih">${ico(k, true)}<div><h2>${nm(k)}</h2><span class="dim">${B ? 'Building · ' + (B.cat || 'Placed') : F ? (isGas(k) ? 'Gas' : 'Fluid') : 'Item'}${S.inv[k] ? ' · ' + fmt(S.inv[k]) + ' in inventory' : ''}</span></div></div>`;
+  h += `<p>${B ? B.d || '' : I ? I.f || '' : F ? F.f || '' : ''}</p>`;
+  const st = [];
+  if (B) { if (B.kw) st.push(['Power', B.kw + ' kW']); if (B.gen) st.push(['Output', B.gen + ' kW']); st.push(['Size', B.w + '×' + B.h]); if (B.P) st.push(['Pipe', `DN${B.P.dn} · ${B.P.bar} bar · ${B.P.tmax}°C`]); }
+  for (const m in WPN) { const w = WPN[m]; if (w.need === k || (m === 'rifle' && k === 'rifle')) st.push(['Weapon', `${w.dm} damage${w.pel ? ' × ' + w.pel + ' pellets' : ''} · ${(1 / w.cd).toFixed(1)} shots/s · range ${w.r} · ammo ${nm(w.am)}`]); if (w.am === k) st.push(['Ammunition', `${w.per} rounds for the ${w.n.toLowerCase()} · ${w.dm} damage${w.arm ? ' · pierces ' + w.arm + '× armour' : ''}`]); }
+  if (ARMOR[k]) st.push(['Armour', `takes ${Math.round(ARMOR[k].a * 100)}% off every bite${ARMOR[k].g ? ' · ' + ARMOR[k].g + '×' + ARMOR[k].g + ' equipment grid' : ''}`]);
+  if (EQ[k]) { const E = EQ[k]; st.push(['Equipment', `${E.w}×${E.h}${E.use ? ' · uses ' + E.use + ' W' : ''}${E.gen ? ' · makes ' + E.gen + ' W' : ''}${E.cap ? ' · stores ' + fmt(E.cap / 1000) + ' kJ' : ''}`]); }
+  if (F && FLUIDS[k].ck) st.push(['Corrosive', 'needs a resistant pipe']);
+  if (st.length) h += `<div class="estat">${st.map(([a, b]) => `<span>${a}</span><span>${b}</span>`).join('')}</div>`;
+  if (B && B.cost) h += `<h3>Built from</h3><div class="elist">${Object.keys(B.cost).map(q => chip(q, B.cost[q])).join('')}</div>`;
+  const mk = RECIPES.filter(r => recMakes(r, k)), us = RECIPES.filter(r => recUses(r, k)), here = B ? RECIPES.filter(r => r.b === k) : [];
+  const ub = Object.keys(BUILD).filter(t => BUILD[t].cost && k in BUILD[t].cost);
+  if (mk.length) h += `<h3>Made by ${mk.length} recipe${mk.length === 1 ? '' : 's'}</h3>` + mk.slice(0, 30).map(eRec).join('');
+  else if (!B) h += `<h3>Made by</h3><p class="dim">${ORES.some(o => o && o.item === k) ? 'Mined from ore fields.' : 'Not made by any recipe. Find it, harvest it or salvage it.'}</p>`;
+  if (here.length) h += `<h3>Runs ${here.length} recipe${here.length === 1 ? '' : 's'}</h3>` + here.slice(0, 60).map(eRec).join('') + (here.length > 60 ? `<p class="dim">and ${here.length - 60} more</p>` : '');
+  if (us.length) h += `<h3>Used in ${us.length} recipe${us.length === 1 ? '' : 's'}</h3>` + us.slice(0, 40).map(eRec).join('') + (us.length > 40 ? `<p class="dim">and ${us.length - 40} more</p>` : '');
+  if (ub.length) h += `<h3>Used to build</h3><div class="elist">${ub.map(t => chip(t, BUILD[t].cost[k])).join('')}</div>`;
+  const cs = CHAINS.filter(c => JSON.stringify(c.l).includes(`"${k}"`));
+  if (cs.length) h += `<h3>Production chains</h3>` + cs.slice(0, 6).map(chainHtml).join('');
+  return h + '</div>';
+}
+function chainHtml(c) {
+  let h = `<div class="chain"><h3>${c.n}</h3>`;
+  for (const line of c.l) h += `<div class="cl">${line.map(s => typeof s === 'string' ? (ITEMS[s] || FLUIDS[s] ? chip(s) : `<span class="via">${viaTxt(s)}</span>`) : `<span class="via">${viaTxt(s[0])}</span>`).join('<span class="arr">→</span>').split('<span class="arr">→</span><span class="via">+</span><span class="arr">→</span>').join('<span class="arr">+</span>')}</div>`;
+  return h + `<p class="note">${c.d}</p></div>`;
+}
+function encyPut(body, h) {
+  let bar = body.querySelector('.ebar');
+  if (!bar) { body.innerHTML = `<div class="ebar"><button data-eb="-1" title="Back (Backspace or mouse back)">‹</button><button data-eb="1" title="Forward">›</button><input id="esearch" placeholder="Search items, fluids, buildings and chains" spellcheck="false" autocomplete="off"><span class="dim">/ to search</span></div><div id="eres"></div>`; modalHtml = ''; bar = body.querySelector('.ebar'); }
+  bar.children[0].disabled = eHi <= 0; bar.children[1].disabled = eHi >= eHist.length - 1;
+  const s = bar.querySelector('#esearch'); if (s.value !== eQ) s.value = eQ;
+  if (modalHtml !== h) { body.querySelector('#eres').innerHTML = h; modalHtml = h; }
 }
 
 function renderModal() {
   if (!modalKind) return;
-  const th = TABS[modalKind].map(([id, n]) => `<button class="tab ${modalTab === id ? 'on' : ''}" data-tab="${id}">${n}</button>`).join('');
+  const th = TABS[modalKind].concat(modalKind === 'ency' && eItem ? [['item', nm(eItem)]] : []).map(([id, n]) => `<button class="tab ${modalTab === id ? 'on' : ''}" data-tab="${id}">${n}</button>`).join('');
   const tabs = modal.querySelector('.tabs');
   if (tabs.innerHTML !== th) tabs.innerHTML = th;
   const body = modal.querySelector('.mbody'), st = body.scrollTop;
   if (modalKind === 'craft') return modalTab === 'equip' ? renderEquip(body) : renderCraft(body);
   if (modalKind === 'tech') return renderTech(body);
   let h = '';
-  if (modalTab === 'chains') {
-    for (const c of CHAINS) {
-      h += `<div class="chain"><h3>${c.n}</h3>`;
-      for (const line of c.l) h += `<div class="cl">${line.map(s => typeof s === 'string' ? (ITEMS[s] || FLUIDS[s] ? chip(s) : `<span class="via">${viaTxt(s)}</span>`) : `<span class="via">${viaTxt(s[0])}</span>`).join('<span class="arr">→</span>').split('<span class="arr">→</span><span class="via">+</span><span class="arr">→</span>').join('<span class="arr">+</span>')}</div>`;
-      h += `<p class="note">${c.d}</p></div>`;
-    }
+  if (modalKind === 'ency' && eQ.trim()) h = encySearch(eQ.trim());
+  else if (modalTab === 'item') h = encyItem(eItem);
+  else if (modalTab === 'index') h = encyIndex();
+  else if (modalTab === 'chains') {
+    for (const c of CHAINS) h += chainHtml(c);
   } else if (modalTab === 'recipes') {
     for (const t in BUILD) {
       const rs = RECIPES.filter(r => r.b === t);
@@ -8261,6 +8413,7 @@ function renderModal() {
   } else if (modalTab === 'map') {
     h += mapHtml();
   }
+  if (modalKind === 'ency') return encyPut(body, h);
   if (modalTab === 'ach') h = achHtml();
   if (modalHtml !== h) { body.innerHTML = h; modalHtml = h; body.scrollTop = st; if (modalTab === 'world') drawPreview(); }
   if (modalTab === 'map') drawMapView();
@@ -9154,6 +9307,9 @@ window.addEventListener('keydown', ev => {
   }
   const k = ev.key.toLowerCase();
   if (k === 'alt') { ev.preventDefault(); altMode = !altMode; toast(altMode ? 'Alt mode on: recipes, filters and chest contents shown on the map' : 'Alt mode off'); return; }
+  if (modalKind === 'ency' && (k === '/' || ((ev.ctrlKey || ev.metaKey) && k === 'f'))) { ev.preventDefault(); const s = $('#esearch'); if (s) s.focus(); return; }
+  if (modalKind === 'ency' && k === 'backspace') { ev.preventDefault(); return eGo(-1); }
+  if (k === 'h' && hovCk && hovCk.isConnected) { const hk = hovCk.dataset.ck || (hovCk.dataset.m === 'x' && RECIPE[hovCk.dataset.k] ? rMain(RECIPE[hovCk.dataset.k]) : hovCk.dataset.k); if (ITEMS[hk] || FLUIDS[hk] || BUILD[hk]) { keys[k] = true; return encyOpen(hk); } }
   if ((modalKind === 'craft' || modalKind === 'tech') && (k === '/' || ((ev.ctrlKey || ev.metaKey) && k === 'f'))) { ev.preventDefault(); const s = $(modalKind === 'craft' ? '#csearch' : '#tsearch'); if (s) s.focus(); return; }
   keys[k] = true;
   if (k === 'e' || k === 'i') { modalKind === 'craft' ? closeModal() : openModal('craft'); }
@@ -9200,7 +9356,15 @@ panel.addEventListener('change', ev => { const s = ev.target.closest('select[dat
 modal.addEventListener('click', ev => {
   if (ev.target === modal) return closeModal();
   const t = ev.target.closest('[data-tab]');
-  if (t) { modalTab = t.dataset.tab; modal.querySelector('.mbody').scrollTop = 0; return renderModal(); }
+  if (t) { modalTab = t.dataset.tab; if (modalKind === 'ency') { eQ = ''; ePush(); } modal.querySelector('.mbody').scrollTop = 0; return renderModal(); }
+  const ebk = ev.target.closest('[data-eb]');
+  if (ebk) return eGo(+ebk.dataset.eb);
+  const ecat = ev.target.closest('[data-ecat]');
+  if (ecat) { eCat = ecat.dataset.ecat; ePush(); return renderModal(); }
+  const ck = ev.target.closest('[data-ck]');
+  if (ck && modalKind === 'ency') return encyOpen(ck.dataset.ck);
+  const fz = ev.target.closest('[data-fz]');
+  if (fz) { if (+fz.dataset.fz) mapZoom(+fz.dataset.fz > 0 ? 1.5 : 1 / 1.5); else { mv.x = S.pl.x; mv.y = S.pl.y; drawMapView(); } return; }
   const tc = ev.target.closest('[data-tech]');
   if (tc) { const t = tc.dataset.tech; if (techOk(t)) return; if ((S.rq || []).includes(t) && tc.classList.contains('tqi')) S.rq = S.rq.filter(x => x !== t); else queueTech(t, ev.shiftKey); return renderModal(); }
   const tfb = ev.target.closest('[data-tf]');
@@ -9230,13 +9394,25 @@ modal.addEventListener('click', ev => {
   if (wb && wb.dataset.world === 'dice') { wcfg.seed = String(Math.floor(Math.random() * 1e9)); $('#wseed').value = wcfg.seed; return drawPreview(); }
   if (wb && wb.dataset.world === 'go') return startWorld();
   if (ev.target.id === 'wmap') {
+    if (mDrag && mDrag.moved) { mDrag = null; return; }
     const r = ev.target.getBoundingClientRect();
-    const mw = mapWin();
-    cam.x = mw.x0 + (ev.clientX - r.left) / r.width * mw.sz; cam.y = mw.y0 + (ev.clientY - r.top) / r.height * mw.sz; camFree = true;
+    cam.x = mv.x + (ev.clientX - r.left - r.width / 2) / mv.z; cam.y = mv.y + (ev.clientY - r.top - r.height / 2) / mv.z; camFree = true;
     return closeModal();
   }
   if (ev.target.closest('[data-ui="close"]')) closeModal();
 });
+modal.addEventListener('mousedown', ev => { if (ev.target.id === 'wmap' && ev.button === 0) { mDrag = { x: ev.clientX, y: ev.clientY, moved: false }; ev.target.classList.add('drag'); } });
+window.addEventListener('mousemove', ev => {
+  hovCk = ev.target.closest ? ev.target.closest('[data-ck],[data-k]') : null;
+  if (!mDrag || modalKind !== 'map') return;
+  const dx = ev.clientX - mDrag.x, dy = ev.clientY - mDrag.y;
+  if (!mDrag.moved && dx * dx + dy * dy < 16) return;
+  mDrag.moved = true; mv.x -= dx / mv.z; mv.y -= dy / mv.z; mDrag.x = ev.clientX; mDrag.y = ev.clientY;
+  drawMapView();
+});
+window.addEventListener('mouseup', ev => { const c = document.getElementById('wmap'); if (c) c.classList.remove('drag'); if (mDrag) { const m = mDrag; setTimeout(() => { if (mDrag === m) mDrag = null; }, 0); } });
+modal.addEventListener('wheel', ev => { if (ev.target.id !== 'wmap') return; ev.preventDefault(); const r = ev.target.getBoundingClientRect(); mapZoom(ev.deltaY < 0 ? 1.25 : 0.8, ev.clientX - r.left, ev.clientY - r.top); }, { passive: false });
+modal.addEventListener('mouseup', ev => { if (modalKind === 'ency' && (ev.button === 3 || ev.button === 4)) { ev.preventDefault(); eGo(ev.button === 3 ? -1 : 1); } });
 modal.addEventListener('contextmenu', ev => {
   const er = ev.target.closest('[data-eqr]');
   if (er) { ev.preventDefault(); eqTake(+er.dataset.eqr); return renderModal(); }
@@ -9246,6 +9422,7 @@ modal.addEventListener('contextmenu', ev => {
   enqueue(c.dataset.craft || c.dataset.part, 5);
 });
 modal.addEventListener('input', ev => {
+  if (ev.target.id === 'esearch') { eQ = ev.target.value; return renderModal(); }
   if (ev.target.id === 'isearch') iQ = ev.target.value;
   else if (ev.target.id === 'csearch') cQ = ev.target.value;
   else if (ev.target.id === 'tsearch') { tQ = ev.target.value; return renderModal(); }
@@ -9288,6 +9465,13 @@ function frame(now) {
     $('#vent').innerHTML = ventHtml();
     renderPanelDyn();
     if (modalKind === 'craft' || modalKind === 'tech') renderModal();
+    if (modalKind === 'map' && !mDrag) drawMapView();
+  }
+  miniT += dt;
+  if (miniT > 0.1) {
+    miniT = 0;
+    drawMini();
+    panel.classList.toggle('shift', !panel.hidden);
   }
   requestAnimationFrame(frame);
 }
@@ -9306,7 +9490,7 @@ window.game = { tech: { TECH, TECHL, queueTech, curTech, techOk },
   get S() { return S; }, get W() { return W; }, get ents() { return ents; }, get patches() { return patches; }, get cam() { return cam; },
   place: (t, x, y, d) => place(t, x, y, d, true), at, buildOk, canPlace, setRecipe, removeEnt, save, load, newGame,
   step(n) { for (let i = 0; i < n; i++) tick(); render(); $('#power').innerHTML = powerHtml(); $('#vent').innerHTML = ventHtml(); renderPanelDyn(); renderHotbar(); renderQueue(); },
-  terrain: () => terrain, ACH, achCheck, ACH_CH, RANKS, achScore, rankOf, wpnCycle, wpnCur, wpnRounds, nadeThrow, armSoak, armWorn, armWear, armOff, eqPut, eqTake, eqCap, armRed, EQ, ARMOR, nades, plShoot, plHurt, dgHurt, enqueue, maxCraft, WPN, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
+  terrain: () => terrain, encyOpen, eGo, drawMini, mv, mapZoom, get eHist() { return eHist; }, ACH, achCheck, ACH_CH, RANKS, achScore, rankOf, wpnCycle, wpnCur, wpnRounds, nadeThrow, armSoak, armWorn, armWear, armOff, eqPut, eqTake, eqCap, armRed, EQ, ARMOR, nades, plShoot, plHurt, dgHurt, enqueue, maxCraft, WPN, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
   select(e) { e ? openPanel(e) : closePanel(); }, openModal, closeModal, refresh: renderHotbar,
   setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; camFree = true; },
   get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get trains() { return S.trains; }, placeTrain, trainAt, openTrain, openPanel, pickTrain, trainGeo, reverseTrain, railBusy, get puffs() { return puffs; }, get H() { return H; }, get wakes() { return wakes; }, floats, boatRoute, boatPilot, carStep, carHit, fishTick, fishRegrow, seaOil, seaPatch, oily, sunMul, get oreAmt() { return oreAmt; }, fground, fstock, netToggle, wdep, seaLv,
