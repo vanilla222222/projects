@@ -2951,14 +2951,16 @@ const WPN = {
   lmg: { n: 'Light Machine Gun', am: 'ammo_belt', rk: 'rb', per: 50, dm: 10, hv: 10, cd: 0.08, r: PL_GUN, need: 'lmg' },
   marksman: { n: 'Marksman Rifle', am: 'match_round', rk: 'rm', per: 5, dm: 75, hv: 60, cd: 1.1, r: 22, arm: 1.5, need: 'marksman' },
   crossbow: { n: 'Crossbow', am: 'xbow_bolt', rk: 'rx', per: 1, dm: 24, hv: 18, cd: 1.0, r: 12, need: 'crossbow' },
-  amr: { n: 'Anti-Materiel Rifle', am: 'wha_round', rk: 'ra', per: 5, dm: 160, hv: 120, cd: 2.2, r: 26, arm: 2.5, need: 'amr' },
+  amr: { n: 'Anti-Materiel Rifle', am: 'wha_round', rk: 'rw', per: 5, dm: 160, hv: 120, cd: 2.2, r: 26, arm: 2.5, need: 'amr' },
   coilgun: { n: 'Coilgun', am: 'steel_slug', rk: 'rc', per: 10, dm: 40, hv: 30, cd: 0.45, r: 18, arm: 2, need: 'coilgun', en: 4000 },
+  arc: { n: 'Arc Caster', am: 'spark_gap', rk: 'rq', per: 20, dm: 26, hv: 14, cd: 0.6, r: 7, need: 'arc_caster', en: 3000, ch: 3 },
 };
-const WORDER = ['rifle', 'ap', 'shotgun', 'lmg', 'marksman', 'coilgun', 'crossbow', 'amr'];
+const WORDER = ['rifle', 'ap', 'shotgun', 'lmg', 'marksman', 'coilgun', 'crossbow', 'amr', 'arc'];
 const ARMOR = {
   exoframe3: { a: 0.5, g: 12 },
   exoframe2: { a: 0.45, g: 10 },
   exoframe: { a: 0.35, g: 7 },
+  laminate_carrier: { a: 0.4, g: 6 },
   carrier: { a: 0.3, g: 5 },
   ceramic_vest: { a: 0.6 },
   steel_vest: { a: 0.42 },
@@ -2979,12 +2981,14 @@ const EQ = {
   thermal_sight: { w: 1, h: 1, use: 20 },
   coil_turret: { w: 2, h: 2 },
   knee_gen: { w: 1, h: 2, gen: 10 },
+  sofc_pack: { w: 2, h: 2, fc: 300 },
+  supercap: { w: 1, h: 1, cap: 60000 },
 };
 const NADE = {
   ammonal_charge: { r: 3.2, dm: 130, hv: 160, c: '#c8c8c0' },
   powder_charge: { r: 2.2, dm: 55, hv: 60, c: '#4a4844' },
 };
-const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'crossbow', 'xbow_bolt', 'amr', 'wha_round', 'exoframe3', 'coil_turret', 'knee_gen', 'thermal_sight', 'thermal_cam', 'ultrasound_probe', 'surge_arrester', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug'];
+const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'crossbow', 'xbow_bolt', 'amr', 'wha_round', 'exoframe3', 'coil_turret', 'knee_gen', 'thermal_sight', 'thermal_cam', 'ultrasound_probe', 'surge_arrester', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug', 'arc_caster', 'spark_gap', 'laminate_carrier', 'sofc_pack', 'supercap'];
 const nades = [];
 const takeInv = k => { S.inv[k]--; if (!(S.inv[k] > 0)) delete S.inv[k]; };
 function wpnHas(m) {
@@ -3018,7 +3022,7 @@ function wpnShot(ox, oy, list, hives, see, under, arm) {
   for (const b of list) { const d = (b.x - ox) ** 2 + (b.y - oy) ** 2; if (b.hp > 0 && d < bd && (!see || see(b))) { bd = d; best = b; } }
   if (!best && hives) for (const o of hives) { const q = ctr(o), d = (q.x - ox) ** 2 + (q.y - oy) ** 2; if (d < bd) { bd = d; h = o; } }
   if (!best && !h) return null;
-  if (W.en && !((P.arm?.en || 0) >= W.en)) { if (S.t - noAmmoT > 3) { noAmmoT = S.t; toast('The coilgun needs 4 kJ a shot. Wear armour with charged batteries.', true); } return null; }
+  if (W.en && !((P.arm?.en || 0) >= W.en)) { if (S.t - noAmmoT > 3) { noAmmoT = S.t; toast(`The ${W.n.toLowerCase()} needs ${W.en / 1000} kJ a shot. Wear armour with charged batteries.`, true); } return null; }
   if (!wpnLoad(m, under)) return null;
   const q = best || ctr(h), tx = q.x, ty = q.y, hits = [];
   if (best) {
@@ -3035,6 +3039,16 @@ function wpnShot(ox, oy, list, hives, see, under, arm) {
       c.sort((u, v) => u[0] - v[0]);
       for (const [d, b] of c.slice(0, W.pel)) { b.hp -= W.dm * (1 - 0.5 * d / R) * (arm(b) ? W.arm || 1 : 1); hits.push(b); }
     } else { best.hp -= W.dm * (arm(best) ? W.arm || 1 : 1); hits.push(best); }
+    if (W.ch) {
+      let cur = best, dm = W.dm;
+      for (let k = 0; k < W.ch; k++) {
+        let nx = null, nd = 12.25;
+        for (const b of list) { const e = (b.x - cur.x) ** 2 + (b.y - cur.y) ** 2; if (b.hp > 0 && !hits.includes(b) && e < nd && (!see || see(b))) { nd = e; nx = b; } }
+        if (!nx) break;
+        dm *= 0.7; nx.hp -= dm; hits.push(nx); cur = nx;
+      }
+      P.ch = hits.map(b => [b.x, b.y]);
+    }
   }
   P[W.rk]--; P.cd = W.cd;
   if (W.en) P.arm.en -= W.en;
@@ -3045,7 +3059,7 @@ function wpnShot(ox, oy, list, hives, see, under, arm) {
 }
 function armWorn() { const A = S.pl.arm; return A && ARMOR[A.k] ? A.k : null; }
 const eqN = k => { const A = S.pl.arm; return A ? A.g.filter(m => m.k === k).length : 0; };
-function eqCap() { const A = S.pl.arm; return A && ARMOR[A.k].g ? 5000 + eqN('batt_pack') * EQ.batt_pack.cap : 0; }
+function eqCap() { const A = S.pl.arm; return A && ARMOR[A.k].g ? 5000 + eqN('batt_pack') * EQ.batt_pack.cap + eqN('supercap') * EQ.supercap.cap : 0; }
 const eqOn = () => (S.pl.arm?.en || 0) > 1;
 function armRed() {
   const k = armWorn();
@@ -3095,6 +3109,11 @@ function eqTick() {
   if (fcs && A.en < cap * 0.9) {
     if (!(P.fc > 0) && S.inv.meoh_cart > 0) { takeInv('meoh_cart'); P.fc = 450000; }
     if (P.fc > 0) { const f = fcs * EQ.dmfc.fc; gen += f; P.fc -= f * DT; }
+  }
+  const sos = eqN('sofc_pack');
+  if (sos && A.en < cap * 0.9) {
+    if (!(P.fc2 > 0) && S.inv.cng_cart > 0) { takeInv('cng_cart'); P.fc2 = 1800000; }
+    if (P.fc2 > 0) { const f = sos * EQ.sofc_pack.fc; gen += f; P.fc2 -= f * DT; }
   }
   if (P.mv && !P.car) use += Math.min(2, eqN('exo_legs')) * EQ.exo_legs.use;
   if (mining && !S.dg) use += eqN('drill_arm') * EQ.drill_arm.use;
@@ -4597,7 +4616,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt; delete o.pn; delete o.pg; delete o.psat;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, tech: S.tech, rq: S.rq, rp: S.rp, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, rb: S.pl.rb || 0, rm: S.pl.rm || 0, rc: S.pl.rc || 0, rx: S.pl.rx || 0, ra: S.pl.ra || 0, ra: S.pl.ra || 0, rs: S.pl.rs || 0, arm: S.pl.arm || null, fc: S.pl.fc || 0, sr: S.pl.sr || 0, sr2: S.pl.sr2 || 0, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, osh: S.osh || 0, hrsg: S.hrsg || 0, geo: S.geo || 0, dle: S.dle || 0, nrt: S.nrt || 0, fcr: S.fcr, ach: S.ach || {}, rk: S.rk || 0, trk: S.trk || undefined, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, iv: S.iv, mdn: S.mdn, tyk: S.tyk, egk: S.egk, lvn: S.lvn, lvk: S.lvk, icn: S.icn, ick: S.ick, vlv: S.vlv, wkk: S.wkk, wkn: S.wkn, dgk: S.dgk, xv: S.xv, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, tech: S.tech, rq: S.rq, rp: S.rp, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, rb: S.pl.rb || 0, rm: S.pl.rm || 0, rc: S.pl.rc || 0, rx: S.pl.rx || 0, ra: S.pl.ra || 0, ra: S.pl.ra || 0, rs: S.pl.rs || 0, arm: S.pl.arm || null, fc: S.pl.fc || 0, fc2: S.pl.fc2 || 0, rw: S.pl.rw || 0, rq: S.pl.rq || 0, sr: S.pl.sr || 0, sr2: S.pl.sr2 || 0, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, osh: S.osh || 0, hrsg: S.hrsg || 0, geo: S.geo || 0, dle: S.dle || 0, nrt: S.nrt || 0, fcr: S.fcr, ach: S.ach || {}, rk: S.rk || 0, trk: S.trk || undefined, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, iv: S.iv, mdn: S.mdn, tyk: S.tyk, egk: S.egk, lvn: S.lvn, lvk: S.lvk, icn: S.icn, ick: S.ick, vlv: S.vlv, wkk: S.wkk, wkn: S.wkn, dgk: S.dgk, xv: S.xv, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -5436,7 +5455,7 @@ function drawPlayer(ox, oy, z) {
     const gx = X + fx * s * 0.25, gy = Y - s * 0.05 + fy * s * 0.25;
     ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = Math.max(2, s * 0.07);
     ctx.beginPath(); ctx.moveTo(X, Y - s * 0.05); ctx.lineTo(gx, gy); ctx.stroke();
-    if (S.t - P.sh < 0.1) { ctx.strokeStyle = 'rgba(255,230,140,0.9)'; ctx.lineWidth = Math.max(1, z * 0.04); ctx.beginPath(); if (P.sw === 'shotgun') { const a = Math.atan2(P.ty * z + oy - gy, P.tx * z + ox - gx), L = Math.hypot(P.ty * z + oy - gy, P.tx * z + ox - gx); for (let k = -2.5; k <= 2.5; k++) { ctx.moveTo(gx, gy); ctx.lineTo(gx + Math.cos(a + k * 0.07) * L, gy + Math.sin(a + k * 0.07) * L); } } else { ctx.moveTo(gx, gy); ctx.lineTo(ox + P.tx * z, oy + P.ty * z); } ctx.stroke(); }
+    if (S.t - P.sh < 0.1) { ctx.strokeStyle = 'rgba(255,230,140,0.9)'; ctx.lineWidth = Math.max(1, z * 0.04); ctx.beginPath(); if (P.sw === 'arc' && P.ch) { ctx.strokeStyle = 'rgba(170,200,255,0.95)'; let px = gx, py = gy; for (const [cx, cy] of P.ch) { const X = ox + cx * z, Y = oy + cy * z; ctx.moveTo(px, py); for (let j = 1; j < 5; j++) ctx.lineTo(px + (X - px) * j / 5 + (Math.random() - 0.5) * z * 0.4, py + (Y - py) * j / 5 + (Math.random() - 0.5) * z * 0.4); ctx.lineTo(X, Y); px = X; py = Y; } } else if (P.sw === 'shotgun') { const a = Math.atan2(P.ty * z + oy - gy, P.tx * z + ox - gx), L = Math.hypot(P.ty * z + oy - gy, P.tx * z + ox - gx); for (let k = -2.5; k <= 2.5; k++) { ctx.moveTo(gx, gy); ctx.lineTo(gx + Math.cos(a + k * 0.07) * L, gy + Math.sin(a + k * 0.07) * L); } } else { ctx.moveTo(gx, gy); ctx.lineTo(ox + P.tx * z, oy + P.ty * z); } ctx.stroke(); }
   }
   if (P.hp < PL_HP) {
     const bw = s * 0.7, by = hy - s * 0.32;
@@ -8886,7 +8905,7 @@ function renderEquip(body) {
   if (body.querySelector('#eview') && sig === eSig) return eqDyn();
   eSig = sig;
   if (eSel && !(S.inv[eSel] > 0)) eSel = null;
-  const st = k => { const E = EQ[k]; return E.gen ? `+${E.gen} W` : E.cap ? `${E.cap / 1000} kJ` : E.fc ? `+${E.fc} W on methanol` : E.a ? `+${E.a * 100}% armour` : k === 'coil_turret' ? '2.5 kJ a shot' : k === 'thermal_sight' ? '+25% gun range, −20 W' : E.use ? `−${E.use} W` : k === 'aero_liner' ? 'halves heat and cold' : '250 J a shot'; };
+  const st = k => { const E = EQ[k]; return E.gen ? `+${E.gen} W` : E.cap ? `${E.cap / 1000} kJ` : E.fc ? `+${E.fc} W on ${k === 'sofc_pack' ? 'methane' : 'methanol'}` : E.a ? `+${E.a * 100}% armour` : k === 'coil_turret' ? '2.5 kJ a shot' : k === 'thermal_sight' ? '+25% gun range, −20 W' : E.use ? `−${E.use} W` : k === 'aero_liner' ? 'halves heat and cold' : '250 J a shot'; };
   let h = '<div id="eview"><section class="cpane"><div class="ctop"><b>Worn armour</b></div>';
   h += A ? `<div class="eworn">${ico(A.k)}<div><b>${nm(A.k)}</b><div class="dim">${n ? n + '×' + n + ' grid' : 'No equipment grid'}</div></div><button class="rs ok ebtn" data-eqoff="1">Take off</button></div>` : '<div class="dim">Nothing worn. Click an armour below to put it on.</div>';
   const ar = Object.keys(ARMOR).filter(k => S.inv[k] > 0);
@@ -8913,8 +8932,8 @@ function eqDyn() {
   let h = `<div class="sec">Effects</div><div class="gauge"><span>Armour</span>${bar(armRed(), 1, '#7fb0e0')}<b>${Math.round(armRed() * 100)}%</b></div>`;
   if (cap) {
     h += `<div class="gauge"><span>Energy</span>${bar(A.en || 0, cap, '#e0d04a')}<b>${Math.round((A.en || 0) / 1000)} kJ</b></div>`;
-    const gen = eqN('pv_film') * EQ.pv_film.gen, fc = eqN('dmfc') * EQ.dmfc.fc;
-    h += `<div class="dim">Solar ${gen} W${fc ? ` · fuel cell ${fc} W (${S.inv.meoh_cart || 0} cartridges)` : ''} · walk ×${eqSpd().toFixed(1)} · mine ×${eqMine()}${eqN('sentry_arm') ? ` · sentry ${S.inv.cartridge || 0} cartridges` : ''}</div>`;
+    const gen = eqN('pv_film') * EQ.pv_film.gen, fc = eqN('dmfc') * EQ.dmfc.fc, so = eqN('sofc_pack') * EQ.sofc_pack.fc;
+    h += `<div class="dim">Solar ${gen} W${fc ? ` · fuel cell ${fc} W (${S.inv.meoh_cart || 0} cartridges)` : ''}${so ? ` · SOFC ${so} W (${S.inv.cng_cart || 0} methane)` : ''} · walk ×${eqSpd().toFixed(1)} · mine ×${eqMine()}${eqN('sentry_arm') ? ` · sentry ${S.inv.cartridge || 0} cartridges` : ''}</div>`;
   }
   if (el.innerHTML !== h) el.innerHTML = h;
 }
