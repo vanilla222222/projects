@@ -4050,6 +4050,20 @@ const ORDERS = [
   { c: 'Aero-engine maker', item: 'smco_magnet', n: 40, tier: 5, rw: { superalloy: 4, microchip: 4 }, d: 'Magnets for speed sensors beside a turbine shaft.' },
   { c: 'Instrument maker', item: 'alnico', n: 40, tier: 3, rw: { glass: 20, motor: 4 }, d: 'Stable magnets for moving-coil meters.' },
   { c: 'Chemical plant', item: 'titanium', n: 30, tier: 3, rw: { ti_pipe: 20 }, d: 'Titanium for heat exchangers handling wet chlorine.' },
+  { c: 'Motor maker', item: 'goes', n: 60, tier: 3, rw: { motor: 10, wire: 40 }, d: 'Grain-oriented strip for the cores of distribution transformers.' },
+  { c: 'Cable maker', item: 'cu_rod', n: 80, tier: 2, rw: { wire: 120 }, d: 'Rod for building wire and the conductors of power cables.' },
+  { c: 'Tyre maker', item: 'hc_wire', n: 100, tier: 2, rw: { sbr: 20, casting: 30 }, d: 'Bead wire to hold truck tyres onto their rims.' },
+  { c: 'Grid operator', item: 'acsr', n: 20, tier: 3, rw: { pylon: 8, steel: 40 }, d: 'Conductor to restring a line across the river valley.' },
+  { c: 'Grid operator', item: 'transformer', n: 4, tier: 4, rw: { substation: 2, concrete: 40 }, d: 'Spare transformers for the bulk supply points.' },
+  { c: 'Grid operator', item: 'breaker', n: 10, tier: 4, rw: { pylon: 6, insulator: 20 }, d: 'Vacuum breakers to replace old oil switchgear.' },
+  { c: 'Solar developer', item: 'solar_module', n: 40, tier: 4, rw: { solar: 4, battery_module: 2 }, d: 'Modules for a farm on reclaimed quarry land.' },
+  { c: 'Wind farm developer', item: 'long_blade', n: 6, tier: 5, rw: { wind_dd: 1 }, d: 'Two rotor sets for an offshore extension.' },
+  { c: 'Power station', item: 'turbo_gen', n: 2, tier: 5, rw: { steam_turbine: 1, concrete: 40 }, d: 'New generators for a coal station converting to biomass.' },
+  { c: 'Nuclear utility', item: 'sg_tube', n: 200, tier: 5, rw: { stainless: 40, nickel: 20 }, d: 'Alloy 690 tubing for a replacement steam generator.' },
+  { c: 'Cell maker', item: 'al_foil', n: 120, tier: 3, rw: { aluminium: 30, motor: 4 }, d: 'Cathode foil for a new gigafactory line.' },
+  { c: 'Cell maker', item: 'separator', n: 120, tier: 3, rw: { polypropylene: 40 }, d: 'Coated separator for a cell plant that has run short.' },
+  { c: 'Utility', item: 'battery_module', n: 16, tier: 4, rw: { bess: 1 }, d: 'Modules for a peak-shaving battery at a substation.' },
+  { c: 'Rail operator', item: 'traction_pack', n: 4, tier: 5, rw: { rail_charger: 2, rail: 100 }, d: 'Packs to convert two shunting locomotives off diesel.' },
 ];
 
 const CATS = ['Logistics', 'Mining', 'Power', 'Processing', 'Smelting', 'Chemistry', 'Defence'];
