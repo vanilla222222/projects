@@ -813,7 +813,7 @@ function canPlace(type, x, y) {
   }
   if (B.marine && !openSea(y * W + x)) return 'Lakes are fresh water: seaweed farms need the open sea';
   if (type === 'dock' && ![[0, -1], [1, 0], [0, 1], [-1, 0]].some(([i, j]) => x + i >= 0 && y + j >= 0 && x + i < W && y + j < H && terrain[(y + j) * W + x + i] === 1)) return 'A dock must stand on the shore, right next to water';
-  if (type === 'miner' && !ore) return 'A miner needs ore under it';
+  if (B.kind === 'miner' && !ore) return 'A ' + B.n.toLowerCase() + ' needs ore under it';
   if (B.well && !oil) return B.sea ? 'An oil platform must stand over an offshore oil field' : 'A ' + B.n.toLowerCase() + ' must stand on an oil seep';
   if (B.soil && soilAt(x, y, B.w, B.h) < 0.1) return 'Nothing grows here. Farms need grassland, scrub or marsh';
   if (B.geo && !nearRock(x, y, B)) return 'Geothermal reservoirs lie under young volcanic ranges: build within 6 tiles of bare rock';
@@ -3786,7 +3786,8 @@ const solid = i => oreType[i] && !ORES[oreType[i]].fluid;
 const choppable = i => !oreType[i] && terrain[i] === 6;
 const oily = i => oreType[i] && ORES[oreType[i]].fluid;
 function minerOre(e) {
-  for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) if (solid((e.y + j) * W + e.x + i)) return true;
+  const B = BUILD[e.type];
+  for (let j = 0; j < B.h; j++) for (let i = 0; i < B.w; i++) if (solid((e.y + j) * W + e.x + i)) return true;
   return false;
 }
 function wellTiles(e) {
@@ -3801,14 +3802,15 @@ function wellDraw(e) {
   depleteTile(l[e.k]);
 }
 function minerDig(e) {
-  for (let t = 0; t < 4; t++) {
-    const q = (e.k + t) % 4, i = (e.y + (q >> 1)) * W + e.x + (q & 1);
+  const B = BUILD[e.type], n = B.w * B.h;
+  for (let t = 0; t < n; t++) {
+    const q = (e.k + t) % n, i = (e.y + Math.floor(q / B.w)) * W + e.x + q % B.w;
     if (!solid(i)) continue;
     const item = ORES[oreType[i]].item;
     depleteTile(i);
     e.out[item] = (e.out[item] || 0) + 1;
     S.made[item] = (S.made[item] || 0) + 1;
-    e.k = (q + 1) % 4;
+    e.k = (q + 1) % n;
     return;
   }
 }
@@ -3868,7 +3870,7 @@ function tick() {
   for (const e of l.miner) {
     e.cy = sum(e.out) < 5 && minerOre(e);
     e.st = e.cy ? 'work' : minerOre(e) ? 'output' : 'empty';
-    if (e.cy) net(e).demand += BUILD.miner.kw;
+    if (e.cy) net(e).demand += BUILD[e.type].kw;
   }
   for (const e of l.machine) if (e.cy && BUILD[e.type].gen) net(e).cap += BUILD[e.type].gen * sunMul(e);
   for (const g of l.engine) { g.eff = g.amt > 0.01 && g.tf >= 99.9 ? 0.2 + 0.8 * Math.max(0, Math.min(1, (g.tf - 100) / 50)) : 0; g.cap = g.pn >= 0 ? Math.min(1, g.amt) * 900 * g.eff : 0; net(g).cap += g.cap; }
@@ -3912,7 +3914,7 @@ function tick() {
     const n = net(e);
     if (n.sat < 0.05) e.st = n === nop ? 'nopole' : 'power';
     else if (e.st === 'power' || e.st === 'nopole') e.st = 'work';
-    e.prog += DT * n.sat / MINER_T;
+    e.prog += DT * n.sat / (BUILD[e.type].mt || MINER_T);
     if (e.prog >= 1) { e.prog -= 1; minerDig(e); }
   }
   for (const e of l.machine) { machineFluidOut(e); pushItems(e, e.out, 'machine'); }
@@ -7827,7 +7829,7 @@ function openPanel(e) {
   h += '<div id="pdyn"></div><div class="pbtns">';
   if (e.type === 'boiler') h += '<button data-act="descale">Descale (20 s outage)</button>';
   if (kind(e) === 'machine' && !B.store) h += '<button data-act="insert">Insert from inventory</button><button data-act="take">Take outputs</button>';
-  if (e.type === 'miner') h += '<button data-act="take">Take ore</button>';
+  if (kind(e) === 'miner') h += '<button data-act="take">Take ore</button>';
   if (e.type === 'depot') h += '<button data-act="deliver">Deliver from inventory</button>';
   if (e.type === 'chest') h += '<button data-act="takeall">Take all</button><button data-act="store">Store raw materials</button>';
   if (e.type === 'booster') h += `<label class="row">Outlet pressure <select data-act="head">${HEADS.concat(e.head).filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b).map(v => `<option value="${v}" ${e.head === v ? 'selected' : ''}>${v} bar</option>`).join('')}</select></label>`;
@@ -7945,8 +7947,9 @@ function renderPanelDyn() {
     }
   } else if (k === 'miner') {
     const ores = {};
-    for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) { const q = (e.y + j) * W + e.x + i; if (solid(q)) ores[ORES[oreType[q]].item] = (ores[ORES[oreType[q]].item] || 0) + oreAmt[q]; }
-    h += `<div class="status"><i style="background:${ST_COL[e.st] || '#888'}"></i>${ST_TXT[e.st] || ''} · 90 kW</div><div class="prog">${bar(e.prog, 1, '#7fe08a')}</div>`;
+    const MB = BUILD[e.type];
+    for (let j = 0; j < MB.h; j++) for (let i = 0; i < MB.w; i++) { const q = (e.y + j) * W + e.x + i; if (solid(q)) ores[ORES[oreType[q]].item] = (ores[ORES[oreType[q]].item] || 0) + oreAmt[q]; }
+    h += `<div class="status"><i style="background:${ST_COL[e.st] || '#888'}"></i>${ST_TXT[e.st] || ''} · ${MB.kw} kW · ${+(1 / (MB.mt || MINER_T)).toFixed(2)} ore/s</div><div class="prog">${bar(e.prog, 1, '#7fe08a')}</div>`;
     h += '<div class="sec">Ore underneath</div><div class="slots">' + (Object.keys(ores).map(q => `<div class="slot">${chip(q, fmt(ores[q]))}</div>`).join('') || '<span class="dim">None</span>') + '</div>';
     h += '<div class="sec">Output</div><div class="slots">' + (Object.keys(e.out).map(q => `<div class="slot">${chip(q, e.out[q])}</div>`).join('') || '<span class="dim">Empty</span>') + '</div>';
     h += '<p class="dim">Outputs onto any touching belt that does not point into it, or into chests and machines.</p>';
@@ -8500,7 +8503,8 @@ const CHAINS = [
   { n: 'Polyester', l: [['naphtha', 'Catalytic reformer', 'xylene', '+', 'h2'], ['xylene', 'Pressure reactor + o2 + acetic', 'pta'], ['ethylene', 'Pressure reactor + o2 + silver catalyst', 'eo'], ['eo', 'Pressure reactor + water', 'meg'], ['pta', 'Pressure reactor + meg', 'pet'], ['pet', 'Melt spinner', 'polyester'], ['pet', 'Blow moulder', 'pet_bottle']], d: 'Reforming naphtha over platinum gives p-xylene and a lot of hydrogen. Oxidise the xylene to terephthalic acid, turn ethylene into glycol through ethylene oxide, and the two condense into PET. Spin it into yarn or stretch-blow it into bottles.' },
   { n: 'Nuclear fuel', l: [['uraninite', 'Leach tank + acid + o2', 'uo2so4'], ['uo2so4', 'Precipitator + nh3', 'yellowcake'], ['yellowcake', 'Pressure reactor + h2 + hf', 'uf4'], ['hf', 'Electrolysis cell', 'f2', '+', 'h2'], ['uf4', 'Pressure reactor + f2', 'uf6'], ['uf6', 'Gas centrifuge hall', 'leu', '+', 'du_cyl'], ['du_cyl', 'Lime kiln + steam + h2', 'du_oxide', '+', 'hf'], ['leu', 'Lime kiln + steam + h2', 'uo2', '+', 'hf'], ['zircon', 'Chlorinator + coke + cl2', 'zrcl4', 'Hunter retort + magnesium', 'zirconium'], ['uo2', 'Workshop + zirconium + stainless', 'fuel_asm'], ['fuel_asm', 'Pressurised water reactor + bfw', 'steam', '+', 'spent_fuel'], ['spent_fuel', 'Workshop + concrete + steel', 'dry_cask']], d: 'Uranium is leached, dropped out as yellowcake, turned to UF₆ gas with hydrogen fluoride and fluorine, and spun in centrifuges until it holds 4% U-235. Pellets go into Zircaloy tubes, because zirconium lets neutrons through. One reactor makes as much steam as eight coal boilers, and the hydrogen fluoride comes back at every step.' },
   { n: 'Tin and electronics', l: [['cassiterite', 'Gravity spiral + water', 'tin_conc', 'Arc furnace + coke', 'tin'], ['tin', 'Tinning line + plate + acid', 'tinplate', 'Workshop', 'food_can'], ['copper_cathode', 'Electrolysis cell + acid', 'copper_foil'], ['glass_fibre', 'PCB line + epoxy + copper_foil + br2', 'laminate'], ['laminate', 'PCB line + fecl3', 'pcb', '+', 'etch'], ['etch', 'Electrolysis cell', 'fecl3', '+', 'copper_cathode'], ['pcb', 'PCB line + solder + wafer', 'board']], d: 'Cassiterite collects in marsh and river gravels. Gravity spirals concentrate it and the arc furnace reduces it with coke. Tin plated onto steel makes cans, and tin with a little copper makes solder. Glass cloth, brominated epoxy and copper foil press into laminate, ferric chloride etches the circuit, and the spent etchant is electrolysed back to ferric chloride and copper.' },
-  { n: 'Rare earth magnets', l: [['monazite', 'Digester + naoh', 're_oh', 'Leach tank + hcl + water', 'recl3', '+', 'th_cake'], ['recl3', 'Solvent extraction + diesel', 'ndcl3', '+', 'ce_oxide'], ['ndcl3', 'Precipitator + soda_ash', 'ndpr_oxide', 'Electrolysis cell + anode + hf', 'nd_metal'], ['borax', 'Arc furnace + pig_iron + coke', 'ferroboron'], ['nd_metal', 'Arc furnace + ferroboron + steel', 'ndfeb'], ['ndfeb', 'Workshop + wire + plate', 'pm_motor'], ['th_cake', 'Workshop + concrete + plate', 'waste_drum']], d: 'Monazite from the mineral sand separator is cracked with caustic soda and dissolved in hydrochloric acid, leaving thorium behind. Hundreds of solvent extraction stages split off neodymium and praseodymium, with cerium as a by-product. Reduced to metal and alloyed with iron and boron from desert borax, they make the strongest magnets there are, for direct-drive wind turbines and compact motors.' },
+  { n: 'Mining machines', l: [['butadiene', 'Pressure reactor + acn + water', 'nbr', 'Tyre curing press + ptfe + carbon_black', 'hyd_seal'], ['chromoly', 'Plating line + chromic_acid + acid', 'chrome_rod', '+', 'honed_tube'], ['base_oil', 'Compounding room + zddp', 'hyd_oil'], ['honed_tube', 'CNC machine shop + chrome_rod + hyd_seal + hyd_oil', 'hyd_cyl', '+', 'hyd_pump'], ['hyd_cyl', 'Hydraulic excavator + hyd_pump + chromoly'], ['chromoly', 'Isothermal forge', 'pick_body', 'Induction furnace + wc + brass', 'carbide_pick', 'CNC machine shop + gearbox', 'cutter_drum'], ['sic_inverter', 'Workshop + board', 'vfd'], ['cutter_drum', 'Continuous miner + pm_motor + vfd + hyd_cyl']], d: 'Faster miners need hydraulics. Nitrile rubber and PTFE make the seals, chromoly becomes hard-chromed rods and burnished tubes, and the machine shop builds them into cylinders and swashplate pumps. A hydraulic excavator digs twice as fast as a miner. A continuous miner adds a drum of carbide picks, permanent-magnet motors and variable-speed drives, and digs five times as fast over a 3×3 patch.' },
+  { n: 'Rare earth magnets', l: [['monazite', 'Digester + naoh', 're_oh', 'Leach tank + hcl + water', 'recl3', '+', 'th_cake'], ['recl3', 'Solvent extraction + diesel', 'ndcl3', '+', 'ce_oxide'], ['ndcl3', 'Precipitator + soda_ash', 'ndpr_oxide', 'Electrolysis cell + anode + hf', 'nd_metal'], ['borax', 'Arc furnace + pig_iron + coke', 'ferroboron'], ['nd_metal', 'Vacuum induction furnace + ferroboron + steel + argon', 'ndfeb_strip', 'HD vessel + h2', 'hd_powder', 'Jet mill + n2', 'ndfeb_fine'], ['ndfeb_fine', 'Field press + n2', 'ndfeb_green', 'Sinter-HIP furnace + argon', 'ndfeb_block', 'Multi-wire saw + diamond_grit + water', 'ndfeb_bare'], ['ndfeb_bare', 'Plating line + copper_cathode + niso4', 'ndfeb_plated', 'Pulse magnetiser', 'ndfeb', 'Workshop + wire + plate', 'pm_motor'], ['ndfeb_swarf', 'Leach tank + hcl + water', 'ndcl3'], ['th_cake', 'Workshop + concrete + plate', 'waste_drum']], d: 'Monazite from the mineral sand separator is cracked with caustic soda and dissolved in hydrochloric acid, leaving thorium behind. Hundreds of solvent extraction stages split off neodymium and praseodymium, with cerium as a by-product. Reduced to metal and alloyed with iron and boron from desert borax, they make the strongest magnets there are, for direct-drive wind turbines and compact motors.' },
   { n: 'Water treatment', l: [['al_hydroxide', 'Pressure reactor + acid', 'alum'], ['water', 'Water treatment works + alum + cl2 + carbon bed', 'potable'], ['spent_carbon', 'Kiln + steam', 'carbon'], ['nylon', 'Workshop + polyester + glass_fibre', 'ro_membrane'], ['water', 'Reverse osmosis + membranes', 'potable'], ['potable', 'Blow moulder + pet', 'water_bottle'], ['bleach', 'Blow moulder + polyethylene', 'bleach_jug']], d: 'Alum makes dirt clump into flocs that settle and filter out, and a little chlorine disinfects what is left. An activated carbon bed doubles the rate but fills up and has to be reactivated in a kiln. Reverse osmosis needs only power and membranes, which slowly foul and need replacing.' },
   { n: 'Farming and fermentation', l: [['npk', 'Farm + water', 'sugar_beet'], ['npk', 'Farm + water', 'maize'], ['sugar_beet', 'Sugar factory + quicklime + co2 + water', 'sugar', '+', 'molasses'], ['molasses', 'Fermenter + water', 'ethanol', '+', 'co2'], ['maize', 'Fermenter + water', 'ethanol', '+', 'ddgs'], ['ethanol', 'Pressure reactor', 'ethylene'], ['molasses', 'Fermenter + o2 + quicklime + acid', 'citric', '+', 'gypsum'], ['ethanol', 'Blow moulder + polyethylene', 'sanitiser']], d: 'Fertiliser and water grow sugar beet and maize. The sugar factory cleans beet juice with lime and carbon dioxide, so it soaks up CO₂ from your kilns. Yeast turns molasses and maize into ethanol, which hot alumina dehydrates to ethylene for green plastics. A mould turns molasses into citric acid.' },
   { n: 'Pharmaceuticals', l: [['phenol', 'Pressure reactor + hno3', 'nitrophenol'], ['nitrophenol', 'Pressure reactor + h2', 'aminophenol'], ['aminophenol', 'Precipitator + ac2o', 'paracetamol', '+', 'acetic'], ['paracetamol', 'Tablet line + pvc + aluminium', 'paracetamol_pack'], ['molasses', 'Fermenter + maize + o2 + nh3', 'penicillin'], ['penicillin', 'Sterile fill line + glass', 'penicillin_vial'], ['toluene', 'Pressure reactor + propylene', 'ibb'], ['ibb', 'Pressure reactor + ac2o + h2 + co', 'ibuprofen'], ['ibuprofen', 'Tablet line + sugar + pvc + aluminium', 'ibuprofen_pack']], d: 'Three medicines from three kinds of chemistry. Paracetamol is nitration, hydrogenation and acetylation of phenol. Penicillin is grown by a mould on molasses and maize. Ibuprofen is the three-step catalytic BHC route from toluene and propylene.' },
