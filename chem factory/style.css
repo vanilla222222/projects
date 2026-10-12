@@ -370,3 +370,25 @@ h3 .sw { width: 24px; height: 24px; font-size: 9px; }
 .achc.on b { color: #f0d070; }
 .achc.old { opacity: 0.8; }
 .achc.old b { color: #c8b070; }
+.achrank { display: flex; gap: 18px; align-items: center; background: linear-gradient(135deg, rgba(232, 194, 90, 0.18), var(--bg3)); border: 1px solid #b8902a; border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; }
+.achrk { min-width: 170px; }
+.achrk span { display: block; font-size: 21px; font-weight: 700; color: #f0d070; }
+.achrk small, .achpts small { color: #8a8f96; font-size: 12px; }
+.achpts { flex: 1; }
+.achpts b { font-size: 19px; color: #f6e6b0; }
+.achf { display: flex; gap: 6px; margin: 8px 0 2px; flex-wrap: wrap; }
+.achf button { background: var(--bg3); border: 1px solid var(--line); color: var(--text); border-radius: 14px; padding: 3px 12px; font-size: 12px; cursor: pointer; }
+.achf button.on { border-color: #b8902a; color: #f0d070; background: rgba(232, 194, 90, 0.14); }
+.help h3 small, .mbody h3 small { color: #8a8f96; font-weight: 400; font-size: 12px; margin-left: 4px; }
+.achc { cursor: pointer; position: relative; }
+.achc > div { flex: 1; min-width: 0; }
+.achc .achp { position: absolute; top: 6px; right: 8px; font: 700 10px var(--mono); color: #c8b070; font-style: normal; }
+.achc span { padding-right: 22px; display: block; }
+.achc.trk { outline: 2px solid #6fb3ff; outline-offset: -1px; opacity: 1; }
+.achbar.sm { height: 4px; margin: 4px 0 2px; }
+.achc .miss, #achtrk .miss { font-size: 11px; color: #b49a5c; }
+#achtrk { position: absolute; left: 10px; top: 10px; width: 250px; background: rgba(22, 25, 29, 0.92); border: 1px solid #5a4a20; border-left: 3px solid #e8c25a; border-radius: 6px; padding: 6px 9px; z-index: 3; cursor: pointer; font-size: 12px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); }
+#achtrk[hidden] { display: none; }
+#achtrk b { color: #f0d070; }
+#achtrk p { margin: 2px 0; }
+#achtrk em { font: 11px var(--mono); color: #8a8f96; font-style: normal; }

@@ -3984,7 +3984,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt; delete o.pn; delete o.pg; delete o.psat;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, ra: S.pl.ra || 0, rs: S.pl.rs || 0, aw: S.pl.aw || 0, ak: S.pl.ak, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, osh: S.osh || 0, hrsg: S.hrsg || 0, geo: S.geo || 0, dle: S.dle || 0, nrt: S.nrt || 0, fcr: S.fcr, ach: S.ach || {}, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, iv: S.iv, mdn: S.mdn, tyk: S.tyk, egk: S.egk, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, ra: S.pl.ra || 0, rs: S.pl.rs || 0, aw: S.pl.aw || 0, ak: S.pl.ak, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, osh: S.osh || 0, hrsg: S.hrsg || 0, geo: S.geo || 0, dle: S.dle || 0, nrt: S.nrt || 0, fcr: S.fcr, ach: S.ach || {}, rk: S.rk || 0, trk: S.trk || undefined, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, iv: S.iv, mdn: S.mdn, tyk: S.tyk, egk: S.egk, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -4020,7 +4020,7 @@ function load() {
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
   const gen = d.gen || { legacy: 1 };
   setSize(gen.legacy ? 160 : gen.size);
-  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0, fs: d.fs || {}, fk: d.fk || 0, osh: d.osh || 0, hrsg: d.hrsg || 0, geo: d.geo || 0, dle: d.dle || 0, nrt: d.nrt || 0, fcr: d.fcr, ach: d.ach || {}, dg: d.dg || null, dgn: d.dgn || 0, dgc: d.dgc || 0, qk: d.qk || 0, bv: d.bv, iv: d.iv, mdn: d.mdn || 0, tyk: d.tyk || 0, egk: d.egk || 0 };
+  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0, fs: d.fs || {}, fk: d.fk || 0, osh: d.osh || 0, hrsg: d.hrsg || 0, geo: d.geo || 0, dle: d.dle || 0, nrt: d.nrt || 0, fcr: d.fcr, ach: d.ach || {}, rk: d.rk || 0, trk: d.trk || null, dg: d.dg || null, dgn: d.dgn || 0, dgc: d.dgc || 0, qk: d.qk || 0, bv: d.bv, iv: d.iv, mdn: d.mdn || 0, tyk: d.tyk || 0, egk: d.egk || 0 };
   dgc = null; dgMine = null; dfx.length = 0; nades.length = 0;
   initWorld(d.seed, gen);
   if (rgd && d.rg) for (let r = 0; r < rgd.length; r++) if (d.rg[r] === '1') growRegion(r % (W / RG), Math.floor(r / (W / RG)), false);
@@ -4150,32 +4150,31 @@ const ACH = [
   ['clean', 'def', 'Clean Record', 'Run for an hour of game time without a single pipe or vessel failure.', () => S.t >= 3600 && !S.fails],
 ];
 const achGlob = () => { try { return JSON.parse(localStorage.getItem('cfAch') || '{}') || {}; } catch (e) { return {}; } };
+function achCounts() { const c = {}; for (const e of ents.values()) c[e.type] = (c[e.type] || 0) + 1; return c; }
 function achCheck() {
   S.ach = S.ach || {};
-  const c = {};
-  for (const e of ents.values()) c[e.type] = (c[e.type] || 0) + 1;
+  const c = achCounts(), nw = [];
   for (const [id, , n, d, f] of ACH) {
     if (S.ach[id] || !f(c)) continue;
     S.ach[id] = Math.max(1, Math.round(S.t));
-    const G = achGlob(); G[id] = 1;
+    nw.push([n, d]);
+  }
+  if (nw.length) {
+    const G = achGlob();
+    for (const id in S.ach) G[id] = 1;
     try { localStorage.setItem('cfAch', JSON.stringify(G)); } catch (e) {}
-    const t = toast('Achievement · ' + n + ' — ' + d);
-    t.classList.add('ach');
+    if (nw.length <= 3) for (const [n, d] of nw) toast('Achievement · ' + n + ' — ' + d).classList.add('ach');
+    else toast('Achievement · ' + nw.length + ' earned — ' + nw.slice(0, 3).map(a => a[0]).join(', ') + ' and ' + (nw.length - 3) + ' more').classList.add('ach');
   }
-}
-function achHtml() {
-  const G = achGlob(), got = ACH.filter(a => S.ach && S.ach[a[0]]).length;
-  let h = `<p class="dim">${got} of ${ACH.length} earned in this world · ${ACH.filter(a => G[a[0]]).length} across all your worlds. Press J to open this page.</p><div class="achbar"><i style="width:${(got / ACH.length * 100).toFixed(1)}%"></i></div>`;
-  for (const g in ACH_G) {
-    h += `<h3>${ACH_G[g]}</h3><div class="achs">`;
-    for (const [id, gg, n, d] of ACH) {
-      if (gg !== g) continue;
-      const t = S.ach && S.ach[id];
-      h += `<div class="achc ${t ? 'on' : G[id] ? 'old' : ''}"><b>${t ? '★' : G[id] ? '☆' : '·'}</b><div><span>${n}</span><p>${d}</p><em>${t ? 'Earned at ' + fmtT(t) : G[id] ? 'Earned in another world' : 'Not yet'}</em></div></div>`;
-    }
-    h += '</div>';
+  S.rk = S.rk || 0;
+  const r = rankOf(achScore());
+  while (S.rk < r) {
+    S.rk++;
+    const R = RANKS[S.rk];
+    for (const k in R[2]) give(k, R[2][k]);
+    toast('Promoted · ' + R[1] + ' — ' + achGift(R[2]) + ' delivered to your inventory').classList.add('ach');
   }
-  return h;
+  achTrk(c);
 }
 const fmtT = t => { const m = Math.floor(t / 60), hh = Math.floor(m / 60); return hh ? hh + ' h ' + (m % 60) + ' min' : m + ' min ' + (t % 60) + ' s'; };
 function toast(msg, bad) {
@@ -4185,8 +4184,8 @@ function toast(msg, bad) {
   const box = $('#toast');
   box.appendChild(t);
   while (box.children.length > 4) box.firstChild.remove();
-  setTimeout(() => t.classList.add('out'), /^Achievement/.test(msg) ? 5200 : 2200);
-  setTimeout(() => t.remove(), /^Achievement/.test(msg) ? 5700 : 2700);
+  setTimeout(() => t.classList.add('out'), /^(Achievement|Promoted)/.test(msg) ? 5200 : 2200);
+  setTimeout(() => t.remove(), /^(Achievement|Promoted)/.test(msg) ? 5700 : 2700);
   return t;
 }
 
@@ -6707,6 +6706,95 @@ const CHAINS = [
   { n: 'By-products', l: [['ground_copper', 'Flotation', 'copper_conc', '+', 'pyrite_conc'], ['pyrite_conc', 'Roaster', 'pyrite_cinder', 'Blast furnace', 'pig_iron'], ['anode_slime', 'Roaster', 'dore', 'Leach tank + acid', 'silver']], d: 'Nothing is waste. Pyrite gives SO₂ for acid and its cinder is iron ore. Anode slime from copper refining yields selenium, silver and gold.' },
 ];
 
+const ACH_X = ['Gas warfare', 'Phosgene', 'Ammunition', 'Coal tar and TNT'];
+const ACH_MK = new Set();
+for (const r of RECIPES) { for (const k in r.o || {}) ACH_MK.add(k); for (const k in r.ch || {}) ACH_MK.add(k); }
+const achDone = id => !!(S.ach && S.ach[id]);
+const fN = v => Math.floor(v).toLocaleString('en');
+const achGift = g => Object.entries(g).map(([k, n]) => n + ' ' + nm(k)).join(', ');
+const ACH_CH = [];
+Object.assign(ACH_G, { chain: 'Complete chains', scale: 'Milestones', meta: 'Collection' });
+for (const ch of CHAINS) {
+  if (ACH_X.includes(ch.n)) continue;
+  const its = [];
+  for (const l of ch.l) for (let i = 2; i < l.length; i += 2) if (ITEMS[l[i]] && ACH_MK.has(l[i]) && !its.includes(l[i])) its.push(l[i]);
+  if (its.length < 2) continue;
+  const id = 'ch_' + ch.n.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  ACH_CH.push(id);
+  ACH.push([id, 'chain', ch.n, `Make every product of the ${ch.n} chain at least once, ${its.length} in all.`, () => its.every(k => mk(k) > 0), () => [its.filter(k => mk(k) > 0).length, its.length], Math.min(60, 10 + its.length * 2), its]);
+}
+const ACH_TIER = [['Batch', 1, 10], ['Works', 10, 20], ['Industry', 100, 40]];
+for (const [k, b] of [['plate', 1000], ['steel', 1000], ['copper_cathode', 1000], ['aluminium', 1000], ['glass', 1000], ['polyethylene', 1000], ['npk', 1000], ['cement', 1000], ['concrete', 1000], ['brick', 1000], ['paper', 1000], ['wire', 1000], ['sulfur', 1000], ['soda_ash', 1000], ['pvc', 1000], ['polypropylene', 1000], ['pet', 1000], ['nylon', 1000], ['titanium', 100], ['stainless', 1000], ['motor', 100], ['board', 100], ['pcb', 100], ['microchip', 100], ['li_cell', 100], ['solar_cell', 100], ['tyre', 100]]) for (const [tn, m, p] of ACH_TIER) ACH.push(['ms_' + k + '_' + m, 'scale', nm(k) + ' · ' + tn, `Make ${fN(b * m)} ${nm(k)} in one world.`, () => mk(k) >= b * m, () => [mk(k), b * m], p]);
+const ACH_EL = ['aluminium', 'titanium', 'copper_cathode', 'lead', 'zinc', 'gold', 'silver', 'tin', 'nickel', 'cobalt', 'w_powder', 'molybdenum', 'platinum', 'palladium', 'rhodium', 'gallium', 'polysilicon', 'sulfur', 'phosphorus', 'iodine', 'magnesium', 'chromium', 'tantalum', 'indium', 'sodium', 'graphite', 'selenium', 'zirconium', 'niobium', 'pig_iron', 'rhenium', 'nd_metal'].filter(k => ITEMS[k]);
+const achSum = o => Object.values(o).reduce((a, b) => a + b, 0);
+const achMeta = (id, n, d, v, x, p) => ACH.push([id, 'meta', n, d, c => v(c) >= x, c => [v(c), x], p]);
+const vItems = () => Object.keys(S.made || {}).filter(k => S.made[k] > 0).length;
+const vTypes = c => Object.keys(c).length;
+const vEnts = c => achSum(c);
+const vEarned = () => ACH.filter(a => achDone(a[0])).length;
+const vChains = () => ACH_CH.filter(achDone).length;
+const vPow = () => Math.round((S.power && S.power.gen) || 0);
+const vRg = () => rgd ? Array.from(rgd).filter(v => v === 1).length : 0;
+const vEl = () => ACH_EL.filter(k => mk(k) > 0).length;
+[[50, 'Broad Church', 20], [150, 'Catalogue', 40], [300, 'Universal Works', 80], [600, 'Everything Factory', 150]].forEach(([x, n, p]) => achMeta('mi_' + x, n, `Make ${x} different products in one world.`, vItems, x, p));
+[[25, 'Mixed Site', 15], [75, 'Industrial Estate', 40], [150, 'Chemical Park', 80]].forEach(([x, n, p]) => achMeta('mt_' + x, n, `Have ${x} different kinds of building standing at once.`, vTypes, x, p));
+[[250, 'Small Works', 15], [1000, 'Big Works', 30], [5000, 'Company Town', 80]].forEach(([x, n, p]) => achMeta('me_' + x, n, `Have ${fN(x)} buildings, belts, pipes and poles placed.`, vEnts, x, p));
+[[25, 'Decorated', 20], [75, 'Honours List', 40], [150, 'Hall of Fame', 80], [300, 'Completionist', 200]].forEach(([x, n, p]) => achMeta('ma_' + x, n, `Earn ${x} achievements in one world.`, vEarned, x, p));
+[[5, 'Vertical Integration', 30], [25, 'Supply Chain', 60], [60, 'Conglomerate', 120], [ACH_CH.length, 'Every Chain', 300]].forEach(([x, n, p]) => achMeta('mc_' + x, n, `Complete ${x === ACH_CH.length ? 'every one' : x} of the production chains.`, vChains, x, p));
+[[1000, 'Megawatt', 10], [10000, 'Grid Operator', 25], [100000, 'Baseload', 60], [1000000, 'Gigawatt', 150]].forEach(([x, n, p]) => achMeta('mp_' + x, n, `Generate ${x >= 1e6 ? fN(x / 1e6) + ' GW' : fN(x / 1000) + ' MW'} of electricity at once.`, vPow, x, p));
+[[100, 'Preferred Supplier', 40], [500, 'Order Book', 100]].forEach(([x, n, p]) => achMeta('mo_' + x, n, `Fill ${x} orders.`, () => S.odone || 0, x, p));
+[[500, 'Exterminator', 30], [2500, 'Scourge of the Swarm', 80]].forEach(([x, n, p]) => achMeta('mk_' + x, n, `Kill ${fN(x)} crawlers.`, () => (S.kills || 0) + (S.pk || 0), x, p));
+[[10, 'Hive Clearer', 25], [50, 'Burn the Nests', 60]].forEach(([x, n, p]) => achMeta('mh_' + x, n, `Destroy ${x} crawler hives.`, () => S.hk || 0, x, p));
+[[100, 'Surveyor', 30], [250, 'Mapmaker', 60]].forEach(([x, n, p]) => achMeta('mr_' + x, n, `Explore ${x} regions of an endless world.`, vRg, x, p));
+[[36000, 'Long Shift', 30], [180000, 'Lifer', 80]].forEach(([x, n, p]) => ACH.push(['mg_' + x, 'meta', n, `Keep one world running for ${x / 3600} hours of game time.`, () => S.t >= x, () => [Math.floor(S.t / 3600), x / 3600], p]));
+[[250000, 'Mass Production', 40], [1000000, 'Million Units', 100]].forEach(([x, n, p]) => achMeta('mu_' + x, n, `Make ${fN(x)} items in one world.`, () => achSum(S.made || {}), x, p));
+[[10, 'Element Hunter', 20], [20, 'Mendeleev', 50], [ACH_EL.length, 'Periodic Table', 120]].forEach(([x, n, p]) => achMeta('mel_' + x, n, `Isolate ${x === ACH_EL.length ? 'all ' + x : x} of the pure elements you can make as solids, from aluminium to zirconium.`, vEl, x, p));
+const RANKS = [[0, 'Lab Assistant', {}], [100, 'Shift Chemist', { plate: 100, steel: 20 }], [300, 'Process Engineer', { steel: 60, motor: 10 }], [700, 'Plant Manager', { stainless: 40, motor: 20, board: 10 }], [1500, 'Works Director', { stainless: 100, board: 30, pcb: 20 }], [3000, 'Chief Chemist', { board: 60, pcb: 60, microchip: 20 }], [5000, 'Nobel Laureate', { microchip: 100, stainless: 200 }]];
+const achPts = a => a[6] || 10;
+const achScore = () => ACH.reduce((s, a) => s + (achDone(a[0]) ? achPts(a) : 0), 0);
+const rankOf = p => { let r = 0; RANKS.forEach((R, i) => { if (p >= R[0]) r = i; }); return r; };
+const achFrac = (a, c) => { if (!a[5]) return 0; const [x, y] = a[5](c); return y > 0 ? Math.min(1, x / y) : 0; };
+let achF = 'all';
+const achShow = (a, c) => achF === 'all' || (achF === 'on' ? achDone(a[0]) : !achDone(a[0]) && (achF === 'off' || achFrac(a, c) >= 0.5));
+const achQ = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+function achHtml() {
+  const G = achGlob(), c = achCounts(), got = ACH.filter(a => achDone(a[0])).length, p = achScore(), r = rankOf(p), R = RANKS[r], N = RANKS[r + 1];
+  const tot = ACH.reduce((s, a) => s + achPts(a), 0);
+  let h = `<div class="achrank"><div class="achrk"><small>Rank ${r + 1} of ${RANKS.length}</small><span>${R[1]}</span></div><div class="achpts"><div><b>${fN(p)}</b> points <small>of ${fN(tot)}</small></div><div class="achbar"><i style="width:${N ? ((p - R[0]) / (N[0] - R[0]) * 100).toFixed(1) : 100}%"></i></div><small>${N ? `${fN(N[0] - p)} more points to ${N[1]}. Promotion sends ${achGift(N[2])}.` : 'The highest rank there is.'}</small></div></div>`;
+  h += `<p class="dim">${got} of ${ACH.length} earned in this world · ${ACH.filter(a => G[a[0]]).length} across all your worlds. Click a card to pin it on screen. Press J to open this page.</p><div class="achbar"><i style="width:${(got / ACH.length * 100).toFixed(1)}%"></i></div>`;
+  h += '<div class="achf">' + [['all', 'All'], ['on', 'Earned'], ['off', 'Not yet'], ['near', 'Half way or more']].map(([k, n]) => `<button data-achf="${k}" class="${achF === k ? 'on' : ''}">${n}</button>`).join('') + '</div>';
+  let any = false;
+  for (const g in ACH_G) {
+    const L = ACH.filter(a => a[1] === g), sh = L.filter(a => achShow(a, c));
+    if (!sh.length) continue;
+    any = true;
+    h += `<h3>${ACH_G[g]} <small>${L.filter(a => achDone(a[0])).length} / ${L.length}</small></h3><div class="achs">`;
+    for (const a of sh) {
+      const [id, , n, d] = a, t = S.ach && S.ach[id], pr = !t && a[5] ? a[5](c) : null, miss = !t && a[7] ? a[7].filter(k => !mk(k)).map(nm) : [];
+      h += `<div class="achc ${t ? 'on' : G[id] ? 'old' : ''}${S.trk === id ? ' trk' : ''}" data-acht="${id}"${miss.length ? ` title="Still to make: ${achQ(miss.join(', '))}"` : ''}><b>${t ? '★' : G[id] ? '☆' : '·'}</b><div><span>${n}</span><i class="achp">${achPts(a)}</i><p>${d}</p>`;
+      if (pr) h += `<div class="achbar sm"><i style="width:${(Math.min(1, pr[1] > 0 ? pr[0] / pr[1] : 0) * 100).toFixed(1)}%"></i></div>`;
+      if (miss.length && pr && pr[0] > 0) h += `<p class="miss">Still to make: ${achQ(miss.slice(0, 3).join(', '))}${miss.length > 3 ? ' and ' + (miss.length - 3) + ' more' : ''}</p>`;
+      h += `<em>${t ? 'Earned at ' + fmtT(t) : G[id] ? 'Earned in another world' : pr ? fN(pr[0]) + ' / ' + fN(pr[1]) : 'Not yet'}</em></div></div>`;
+    }
+    h += '</div>';
+  }
+  if (!any) h += '<p class="dim">Nothing here yet.</p>';
+  return h;
+}
+function achTrk(c) {
+  let el = $('#achtrk');
+  const a = S.trk && ACH.find(x => x[0] === S.trk);
+  if (!a) { if (el) el.hidden = true; return; }
+  if (!el) { el = document.createElement('div'); el.id = 'achtrk'; $('#stage').appendChild(el); el.addEventListener('click', () => openModal('ach')); }
+  el.hidden = false;
+  const t = achDone(a[0]), pr = !t && a[5] ? a[5](c || achCounts()) : null, miss = !t && a[7] ? a[7].filter(k => !mk(k)).map(nm) : [];
+  let h = `<b>${t ? '★' : '☆'} ${a[2]}</b><p>${a[3]}</p>`;
+  if (pr) h += `<div class="achbar sm"><i style="width:${(Math.min(1, pr[1] > 0 ? pr[0] / pr[1] : 0) * 100).toFixed(1)}%"></i></div><em>${fN(pr[0])} / ${fN(pr[1])}</em>`;
+  if (miss.length) h += `<p class="miss">Next: ${achQ(miss.slice(0, 4).join(', '))}${miss.length > 4 ? ' …' : ''}</p>`;
+  if (t) h += '<em>Earned</em>';
+  if (el.innerHTML !== h) el.innerHTML = h;
+}
+
 const HELP = `<div class="help">
 <p>Build a factory that turns real ore into metal using real chemistry.</p>
 <h3>Controls</h3>
@@ -7320,6 +7408,10 @@ modal.addEventListener('click', ev => {
   if (ev.target === modal) return closeModal();
   const t = ev.target.closest('[data-tab]');
   if (t) { modalTab = t.dataset.tab; modal.querySelector('.mbody').scrollTop = 0; return renderModal(); }
+  const af = ev.target.closest('[data-achf]');
+  if (af) { achF = af.dataset.achf; return renderModal(); }
+  const at = ev.target.closest('[data-acht]');
+  if (at) { S.trk = S.trk === at.dataset.acht ? null : at.dataset.acht; achTrk(); return renderModal(); }
   const c = ev.target.closest('[data-craft]');
   if (c) return doCraft(c.dataset.craft, ev.shiftKey ? maxCraft(c.dataset.craft) : +c.dataset.n);
   const p = ev.target.closest('[data-part]');
@@ -7405,7 +7497,7 @@ window.game = {
   get S() { return S; }, get W() { return W; }, get ents() { return ents; }, get patches() { return patches; }, get cam() { return cam; },
   place: (t, x, y, d) => place(t, x, y, d, true), at, buildOk, canPlace, setRecipe, removeEnt, save, load, newGame,
   step(n) { for (let i = 0; i < n; i++) tick(); render(); $('#power').innerHTML = powerHtml(); $('#vent').innerHTML = ventHtml(); renderPanelDyn(); renderHotbar(); renderQueue(); },
-  terrain: () => terrain, ACH, achCheck, wpnCycle, wpnCur, wpnRounds, nadeThrow, armSoak, armWorn, nades, plShoot, plHurt, dgHurt, enqueue, maxCraft, WPN, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
+  terrain: () => terrain, ACH, achCheck, ACH_CH, RANKS, achScore, rankOf, wpnCycle, wpnCur, wpnRounds, nadeThrow, armSoak, armWorn, nades, plShoot, plHurt, dgHurt, enqueue, maxCraft, WPN, ore: (x, y) => ({ t: oreType[y * W + x], a: oreAmt[y * W + x] }),
   select(e) { e ? openPanel(e) : closePanel(); }, openModal, closeModal, refresh: renderHotbar,
   setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; camFree = true; },
   get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get trains() { return S.trains; }, placeTrain, trainAt, openTrain, openPanel, pickTrain, trainGeo, reverseTrain, railBusy, get puffs() { return puffs; }, get H() { return H; }, get wakes() { return wakes; }, floats, boatRoute, boatPilot, carStep, carHit, fishTick, fishRegrow, seaOil, seaPatch, oily, sunMul, get oreAmt() { return oreAmt; }, fground, fstock, netToggle, wdep, seaLv,
