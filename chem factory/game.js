@@ -2950,10 +2950,13 @@ const WPN = {
   shotgun: { n: 'Pump Shotgun', am: 'shotshell', rk: 'rs', per: 8, dm: 18, hv: 24, cd: 0.7, r: 8, cone: 0.42, pel: 6, need: 'shotgun' },
   lmg: { n: 'Light Machine Gun', am: 'ammo_belt', rk: 'rb', per: 50, dm: 10, hv: 10, cd: 0.08, r: PL_GUN, need: 'lmg' },
   marksman: { n: 'Marksman Rifle', am: 'match_round', rk: 'rm', per: 5, dm: 75, hv: 60, cd: 1.1, r: 22, arm: 1.5, need: 'marksman' },
+  crossbow: { n: 'Crossbow', am: 'xbow_bolt', rk: 'rx', per: 1, dm: 24, hv: 18, cd: 1.0, r: 12, need: 'crossbow' },
+  amr: { n: 'Anti-Materiel Rifle', am: 'wha_round', rk: 'ra', per: 5, dm: 160, hv: 120, cd: 2.2, r: 26, arm: 2.5, need: 'amr' },
   coilgun: { n: 'Coilgun', am: 'steel_slug', rk: 'rc', per: 10, dm: 40, hv: 30, cd: 0.45, r: 18, arm: 2, need: 'coilgun', en: 4000 },
 };
-const WORDER = ['rifle', 'ap', 'shotgun', 'lmg', 'marksman', 'coilgun'];
+const WORDER = ['rifle', 'ap', 'shotgun', 'lmg', 'marksman', 'coilgun', 'crossbow', 'amr'];
 const ARMOR = {
+  exoframe3: { a: 0.5, g: 12 },
   exoframe2: { a: 0.45, g: 10 },
   exoframe: { a: 0.35, g: 7 },
   carrier: { a: 0.3, g: 5 },
@@ -2974,12 +2977,14 @@ const EQ = {
   drill_arm: { w: 2, h: 2, use: 300 },
   aero_liner: { w: 2, h: 2 },
   thermal_sight: { w: 1, h: 1, use: 20 },
+  coil_turret: { w: 2, h: 2 },
+  knee_gen: { w: 1, h: 2, gen: 10 },
 };
 const NADE = {
   ammonal_charge: { r: 3.2, dm: 130, hv: 160, c: '#c8c8c0' },
   powder_charge: { r: 2.2, dm: 55, hv: 60, c: '#4a4844' },
 };
-const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'thermal_sight', 'thermal_cam', 'ultrasound_probe', 'surge_arrester', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug'];
+const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'crossbow', 'xbow_bolt', 'amr', 'wha_round', 'exoframe3', 'coil_turret', 'knee_gen', 'thermal_sight', 'thermal_cam', 'ultrasound_probe', 'surge_arrester', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug'];
 const nades = [];
 const takeInv = k => { S.inv[k]--; if (!(S.inv[k] > 0)) delete S.inv[k]; };
 function wpnHas(m) {
@@ -3085,7 +3090,7 @@ function eqTick() {
   const P = S.pl, A = P.arm;
   if (!A || !ARMOR[A.k] || !ARMOR[A.k].g) return;
   const cap = eqCap();
-  let gen = S.dg ? 0 : eqN('pv_film') * EQ.pv_film.gen, use = 0;
+  let gen = (S.dg ? 0 : eqN('pv_film') * EQ.pv_film.gen) + (P.mv && !P.car ? Math.min(2, eqN('knee_gen')) * EQ.knee_gen.gen : 0), use = 0;
   const fcs = eqN('dmfc');
   if (fcs && A.en < cap * 0.9) {
     if (!(P.fc > 0) && S.inv.meoh_cart > 0) { takeInv('meoh_cart'); P.fc = 450000; }
@@ -3095,18 +3100,25 @@ function eqTick() {
   if (mining && !S.dg) use += eqN('drill_arm') * EQ.drill_arm.use;
   use += Math.min(1, eqN('thermal_sight')) * EQ.thermal_sight.use;
   A.en = Math.max(0, Math.min(cap, (A.en || 0) + (gen - use) * DT));
-  const sn = eqN('sentry_arm');
-  P.scd = (P.scd || 0) - DT;
-  if (!sn || S.dg || P.dead > 0 || P.car || P.scd > 0 || A.en < 250) return;
-  let best = null, bd = 81;
-  for (const b of S.bugs) { const q = (b.x - P.x) ** 2 + (b.y - P.y) ** 2; if (b.hp > 0 && q < bd) { bd = q; best = b; } }
-  if (!best) return;
-  if (!(P.sr > 0)) { if (!(S.inv.cartridge > 0)) return; takeInv('cartridge'); P.sr = 10; }
-  P.sr--; A.en -= 250; P.scd = 0.6 / sn;
-  best.hp -= 12;
-  if (best.hp <= 0) S.pk = (S.pk || 0) + 1;
-  P.st = S.t; P.stx = best.x; P.sty = best.y;
+  if (S.dg || P.dead > 0 || P.car) return;
+  for (const T of TURRETS) {
+    const sn = eqN(T.k);
+    P[T.cd] = (P[T.cd] || 0) - DT;
+    if (!sn || P[T.cd] > 0 || A.en < T.en) continue;
+    let best = null, bd = T.r * T.r;
+    for (const b of S.bugs) { const q = (b.x - P.x) ** 2 + (b.y - P.y) ** 2; if (b.hp > 0 && q < bd) { bd = q; best = b; } }
+    if (!best) continue;
+    if (!(P[T.rk] > 0)) { if (!(S.inv[T.am] > 0)) continue; takeInv(T.am); P[T.rk] = 10; }
+    P[T.rk]--; A.en -= T.en; P[T.cd] = T.c / sn;
+    best.hp -= T.dm;
+    if (best.hp <= 0) S.pk = (S.pk || 0) + 1;
+    P.st = S.t; P.stx = best.x; P.sty = best.y;
+  }
 }
+const TURRETS = [
+  { k: 'sentry_arm', am: 'cartridge', rk: 'sr', cd: 'scd', en: 250, r: 9, dm: 12, c: 0.6 },
+  { k: 'coil_turret', am: 'steel_slug', rk: 'sr2', cd: 'scd2', en: 2500, r: 12, dm: 30, c: 1.2 },
+];
 const nadeKind = () => S.inv.ammonal_charge > 0 ? 'ammonal_charge' : S.inv.powder_charge > 0 ? 'powder_charge' : null;
 function nadeThrow(tx, ty) {
   const P = S.pl;
@@ -4585,7 +4597,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt; delete o.pn; delete o.pg; delete o.psat;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, tech: S.tech, rq: S.rq, rp: S.rp, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, rb: S.pl.rb || 0, rm: S.pl.rm || 0, rc: S.pl.rc || 0, ra: S.pl.ra || 0, rs: S.pl.rs || 0, arm: S.pl.arm || null, fc: S.pl.fc || 0, sr: S.pl.sr || 0, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, osh: S.osh || 0, hrsg: S.hrsg || 0, geo: S.geo || 0, dle: S.dle || 0, nrt: S.nrt || 0, fcr: S.fcr, ach: S.ach || {}, rk: S.rk || 0, trk: S.trk || undefined, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, iv: S.iv, mdn: S.mdn, tyk: S.tyk, egk: S.egk, lvn: S.lvn, lvk: S.lvk, icn: S.icn, ick: S.ick, vlv: S.vlv, wkk: S.wkk, wkn: S.wkn, dgk: S.dgk, xv: S.xv, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, tech: S.tech, rq: S.rq, rp: S.rp, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, rb: S.pl.rb || 0, rm: S.pl.rm || 0, rc: S.pl.rc || 0, rx: S.pl.rx || 0, ra: S.pl.ra || 0, ra: S.pl.ra || 0, rs: S.pl.rs || 0, arm: S.pl.arm || null, fc: S.pl.fc || 0, sr: S.pl.sr || 0, sr2: S.pl.sr2 || 0, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, osh: S.osh || 0, hrsg: S.hrsg || 0, geo: S.geo || 0, dle: S.dle || 0, nrt: S.nrt || 0, fcr: S.fcr, ach: S.ach || {}, rk: S.rk || 0, trk: S.trk || undefined, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, iv: S.iv, mdn: S.mdn, tyk: S.tyk, egk: S.egk, lvn: S.lvn, lvk: S.lvk, icn: S.icn, ick: S.ick, vlv: S.vlv, wkk: S.wkk, wkn: S.wkn, dgk: S.dgk, xv: S.xv, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -8874,7 +8886,7 @@ function renderEquip(body) {
   if (body.querySelector('#eview') && sig === eSig) return eqDyn();
   eSig = sig;
   if (eSel && !(S.inv[eSel] > 0)) eSel = null;
-  const st = k => { const E = EQ[k]; return E.gen ? `+${E.gen} W` : E.cap ? `${E.cap / 1000} kJ` : E.fc ? `+${E.fc} W on methanol` : E.a ? `+${E.a * 100}% armour` : k === 'thermal_sight' ? '+25% gun range, −20 W' : E.use ? `−${E.use} W` : k === 'aero_liner' ? 'halves heat and cold' : '250 J a shot'; };
+  const st = k => { const E = EQ[k]; return E.gen ? `+${E.gen} W` : E.cap ? `${E.cap / 1000} kJ` : E.fc ? `+${E.fc} W on methanol` : E.a ? `+${E.a * 100}% armour` : k === 'coil_turret' ? '2.5 kJ a shot' : k === 'thermal_sight' ? '+25% gun range, −20 W' : E.use ? `−${E.use} W` : k === 'aero_liner' ? 'halves heat and cold' : '250 J a shot'; };
   let h = '<div id="eview"><section class="cpane"><div class="ctop"><b>Worn armour</b></div>';
   h += A ? `<div class="eworn">${ico(A.k)}<div><b>${nm(A.k)}</b><div class="dim">${n ? n + '×' + n + ' grid' : 'No equipment grid'}</div></div><button class="rs ok ebtn" data-eqoff="1">Take off</button></div>` : '<div class="dim">Nothing worn. Click an armour below to put it on.</div>';
   const ar = Object.keys(ARMOR).filter(k => S.inv[k] > 0);
