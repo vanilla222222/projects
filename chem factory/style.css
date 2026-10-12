@@ -392,3 +392,4 @@ h3 .sw { width: 24px; height: 24px; font-size: 9px; }
 #achtrk b { color: #f0d070; }
 #achtrk p { margin: 2px 0; }
 #achtrk em { font: 11px var(--mono); color: #8a8f96; font-style: normal; }
+.ic.icx { background-position: center; background-size: contain; background-repeat: no-repeat; color: transparent; font-size: 0; box-shadow: none; border-radius: 0; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.6)); }
