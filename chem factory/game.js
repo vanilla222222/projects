@@ -18,7 +18,7 @@ const panel = $('#panel'), tip = $('#tip'), modal = $('#modal'), hotbar = $('#ho
 
 let S, terrain, oreType, oreAmt, elev, occ, ents, patches, L = null;
 let cam = { x: W / 2, y: H / 2, z: 32 };
-let tool = null, toolDir = 1, sel = null, mining = null, drag = null;
+let tool = null, toolDir = 1, sel = null, mining = null, drag = null, altMode = false, clip = null;
 let camFree = false, noAmmoT = 0, noFuelT = 0, selCar = null, selTrain = null, puffs = [], wakes = [];
 const VEH = {
   car: { vmax: 22, acc: 9, turn: 2.6, hl: 0.95, hw: 0.48, hp: 450, burn: 2.4, slots: 20, c: ['#6a1814', '#c8382e', '#4a100c'] },
@@ -988,6 +988,60 @@ function catAdd(e, r, n) {
   return m;
 }
 
+const rMain = r => Object.keys(r.o || {})[0] || Object.keys(r.fo || {})[0] || r.id;
+function copySet(e) {
+  clip = { t: e.type, recipe: e.recipe, filter: e.filter, mode: e.mode, head: e.head };
+  toast('Copied settings from ' + BUILD[e.type].n + (e.recipe && RECIPE[e.recipe] ? ': ' + (RECIPE[e.recipe].n || nm(rMain(RECIPE[e.recipe]))) : ''));
+}
+function pasteSet(e) {
+  if (!clip) return;
+  const k = kind(e);
+  if (k === 'machine' && !BUILD[e.type].lab && clip.recipe !== undefined) {
+    const r = clip.recipe && RECIPE[clip.recipe];
+    if (r && r.b !== e.type) return toast(BUILD[e.type].n + ' cannot run ' + (r.n || nm(rMain(r))), true);
+    if (r && !avail(r)) return toast('That recipe is not available yet', true);
+    setRecipe(e, clip.recipe || null);
+  } else if (e.type === 'sorter') e.filter = clip.filter || null;
+  else if ((e.type === 'dock' || e.type === 'train_stop') && clip.mode) e.mode = clip.mode;
+  else if (e.type === 'booster' && clip.head) e.head = clip.head;
+  else return toast('Nothing to paste onto this', true);
+  toast('Pasted settings onto ' + BUILD[e.type].n);
+  if (sel === e.id) openPanel(e);
+}
+function quickTake(e) {
+  const src = e.out || e.store;
+  if (!src) return toast('Nothing to take', true);
+  let n = 0;
+  for (const k in src) { give(k, src[k]); n += src[k]; }
+  if (e.out) e.out = {}; else e.store = {};
+  toast(n ? `Took ${Math.floor(n)} items` : 'Nothing to take', !n);
+  renderHotbar(); if (sel === e.id) renderPanelDyn();
+}
+function quickFill(e) {
+  const r = RECIPE[e.recipe];
+  if (!r || kind(e) !== 'machine') return toast('Set a recipe first', true);
+  let moved = 0;
+  if (r.i) for (const k in r.i) {
+    const n = Math.min(S.inv[k] || 0, inCap(r, k) - (e.inv[k] || 0));
+    if (n > 0) { S.inv[k] -= n; if (!S.inv[k]) delete S.inv[k]; e.inv[k] = (e.inv[k] || 0) + n; moved += n; }
+  }
+  toast(moved ? `Inserted ${moved} items` : 'You have none of the inputs', !moved);
+  renderHotbar(); if (sel === e.id) renderPanelDyn();
+}
+function drawAlt(vis, ox, oy, z) {
+  for (const e of vis) {
+    const B = BUILD[e.type], k = kind(e);
+    let ic = null;
+    if (B.lab) ic = curTech();
+    else if (k === 'machine' && e.recipe && RECIPE[e.recipe]) ic = rMain(RECIPE[e.recipe]);
+    else if (e.type === 'sorter') ic = e.filter || null;
+    else if (k === 'chest' && e.store) { let m = 0; for (const q in e.store) if (e.store[q] > m) { m = e.store[q]; ic = q; } }
+    if (!ic) continue;
+    const s = Math.min(B.w, B.h, 2) * z * 0.6, cx = ox + (e.x + B.w / 2) * z, cy = oy + (e.y + B.h / 2) * z;
+    ctx.fillStyle = 'rgba(16,18,22,0.7)'; ctx.fillRect(cx - s / 2 - 2, cy - s / 2 - 2, s + 4, s + 4);
+    ctx.drawImage(icoCv(ic), cx - s / 2, cy - s / 2, s, s);
+  }
+}
 function setRecipe(e, id) {
   if (e.recipe === id) return;
   if (e.catK && (!id || RECIPE[id].cat !== e.catK)) catDrop(e);
@@ -4842,6 +4896,7 @@ function render() {
   if (overlay !== 3) drawSmog(ox, oy, z);
   drawGas(ox, oy, z);
   if (overlay) drawOverlay(vis, ox, oy, z);
+  if (altMode) drawAlt(vis, ox, oy, z);
   drawNades(ox, oy, z, false);
   for (let i = fx.length - 1; i >= 0; i--) {
     const f = fx[i];
@@ -7548,7 +7603,8 @@ function openPanel(e) {
   let h = `<div class="ph"><span class="sw big" style="background:${B.c}">${B.ab || ''}</span><div class="pt"><b>${B.n}</b><small>${B.d}</small></div><button class="x" data-act="close" title="Close">×</button></div>`;
   if (B.lab) { const t = curTech(); h += `<div class="row">Researching <b>${t ? BUILD[t].n : 'nothing'}</b> <button data-act="tech">Research (T)</button></div>`; }
   if (kind(e) === 'machine' && !B.store && !B.lab) {
-    h += `<label class="row">Recipe <select data-act="recipe"><option value="">Choose a recipe</option>${RECIPES.filter(r => r.b === e.type && (avail(r) || e.recipe === r.id)).map(r => `<option value="${r.id}" ${e.recipe === r.id ? 'selected' : ''}>${r.n}</option>`).join('')}</select></label>`;
+    const rl = RECIPES.filter(r => r.b === e.type && (avail(r) || e.recipe === r.id));
+    h += `<div class="sec">Recipe <small class="dim">${e.recipe ? 'Shift+right-click copies it, Shift+click pastes' : 'pick one'}</small></div><div class="rpick">${rl.map(r => `<button class="rs ok rp${e.recipe === r.id ? ' on' : ''}" data-act="rpick" data-r="${r.id}" data-k="${r.id}" data-m="x">${ico(rMain(r))}</button>`).join('')}${e.recipe ? '<button class="rs no rpx" data-act="rpick" data-r="" title="Clear recipe">×</button>' : ''}</div>`;
   }
   if (e.type === 'sorter') {
     h += `<label class="row">Filter <select data-act="filter"><option value="">None (all forward)</option>${Object.keys(ITEMS).map(k => `<option value="${k}" ${e.filter === k ? 'selected' : ''}>${ITEMS[k].n}</option>`).join('')}</select></label>`;
@@ -7792,6 +7848,7 @@ function panelAct(act, el) {
   if (selTrain) return trainAct(act, el);
   if (!e) return;
   if (act === 'smode') { e.mode = el.value === 'unload' ? 'unload' : 'load'; return renderPanelDyn(); }
+  if (act === 'rpick') { setRecipe(e, el.dataset.r || null); return openPanel(e); }
   if (act === 'recipe') { setRecipe(e, el.value); renderPanelDyn(); }
   else if (act === 'filter') { e.filter = el.value || null; }
   else if (act === 'head') { e.head = +el.value; }
@@ -8319,6 +8376,8 @@ const HELP = `<div class="help">
 <li><b>Space</b> fires at the nearest crawler or hive within 15 tiles, using cartridges from your inventory. <b>X</b> switches between lead shot, armour-piercing rounds and a shotgun. <b>G</b> throws a blasting charge at the mouse. Vests in your pack soak up part of every bite until they wear out. Crawlers attack you if you get close. If they kill you, you wake up back at the landing site with your inventory.</li>
 <li><b>F</b> gets in or out of a car or a locomotive. Drag to lay <b>railway track</b>, put a locomotive on it and place wagons at either end to couple them. Click a train to give it a schedule of train stops.</li>
 <li><b>Boats</b> are launched on water. Build <b>docks</b> on the shore with chests beside them and <b>buoys</b> as waypoints, then give a boat a route and it plots its own course through open water. Hulls foul over time and slow down; repaint them with antifouling.</li>
+<li><b>Alt</b> toggles alt mode: every machine shows its recipe, sorters their filter and chests what they hold. <b>Shift+right-click</b> copies a building's recipe or setting and <b>Shift+click</b> pastes it onto another. <b>Ctrl+click</b> takes everything out of a machine or chest and <b>Ctrl+right-click</b> fills a machine's inputs from your inventory. <b>Q</b> over a building picks one from your inventory.</li>
+<li>In crafting, <b>click</b> queues one, <b>right-click</b> five and <b>Shift+click</b> as many as you can make. <b>/</b> or <b>Ctrl+F</b> jumps to the search box.</li>
 <li><b>E</b> opens crafting. <b>H</b> opens the encyclopedia. <b>V</b> cycles the pressure, temperature and smog overlays.</li>
 </ul>
 <h3>Getting started</h3>
@@ -8683,6 +8742,7 @@ cqEl.addEventListener('click', ev => { const b = ev.target.closest('[data-cq]');
 const ftip = document.createElement('div'); ftip.id = 'ftip'; ftip.hidden = true; document.body.appendChild(ftip);
 let ftipK = '', ftipEl = null;
 function tipHtml(k, m) {
+  if (m === 'x') { const r = RECIPE[k]; return `<div class="fth">${ico(rMain(r))}<b>${r.n || nm(rMain(r))}</b><span>${r.t} s</span></div><div class="ftb">${recipeHtml(r)}</div>`; }
   const B = BUILD[k];
   let h = `<div class="fth">${ico(k)}<b>${nm(k)}</b>${m === 'r' ? '<span>Recipe</span>' : m === 'q' ? '<span>Crafting</span>' : ''}</div><div class="ftb">`;
   if (m === 'r') {
@@ -8797,6 +8857,15 @@ cv.addEventListener('mousedown', ev => {
   if (ev.button === 1) { mouse.m = true; camFree = true; mouse.px = ev.clientX; mouse.py = ev.clientY; ev.preventDefault(); return; }
   if (ev.button === 2) {
     mouse.r = true;
+    if (!S.dg && !tool && (ev.shiftKey || ev.ctrlKey || ev.metaKey)) {
+      const e = at(mouse.tx, mouse.ty);
+      if (e && BUILD[e.type].cost) {
+        if (ev.shiftKey) copySet(e);
+        else if (!entReach(e, REACH)) toast('Out of reach. Walk closer.', true);
+        else quickFill(e);
+      }
+      return;
+    }
     if (S.dg) return;
     const vc = carAt(mouse.fx, mouse.fy);
     if (vc) return pickCar(vc);
@@ -8826,6 +8895,8 @@ cv.addEventListener('mousedown', ev => {
   if (tc) { openTrain(tc); return; }
   const e = at(mouse.tx, mouse.ty);
   if (e && ev.shiftKey && kind(e) === 'pole') { const s = sel && ents.get(sel); if (s && s !== e && kind(s) === 'pole') { const [m, bad] = wireToggle(s, e); toast(m, bad); renderPanelDyn(); return; } }
+  if (e && ev.shiftKey && clip && kind(e) !== 'pole') { pasteSet(e); return; }
+  if (e && (ev.ctrlKey || ev.metaKey) && (e.out || e.store)) { if (!entReach(e, REACH)) toast('Out of reach. Walk closer.', true); else quickTake(e); return; }
   if (e && kind(e) !== 'road' && kind(e) !== 'rail') { openPanel(e); return; }
   closePanel();
   if (S.pl.car) return toast('Get out of the vehicle to mine (F).', true);
@@ -8881,6 +8952,8 @@ window.addEventListener('keydown', ev => {
     return;
   }
   const k = ev.key.toLowerCase();
+  if (k === 'alt') { ev.preventDefault(); altMode = !altMode; toast(altMode ? 'Alt mode on: recipes, filters and chest contents shown on the map' : 'Alt mode off'); return; }
+  if ((modalKind === 'craft' || modalKind === 'tech') && (k === '/' || ((ev.ctrlKey || ev.metaKey) && k === 'f'))) { ev.preventDefault(); const s = $(modalKind === 'craft' ? '#csearch' : '#tsearch'); if (s) s.focus(); return; }
   keys[k] = true;
   if (k === 'e' || k === 'i') { modalKind === 'craft' ? closeModal() : openModal('craft'); }
   else if (k === 'h') { modalKind === 'ency' ? closeModal() : openModal('ency'); }
@@ -8907,7 +8980,7 @@ window.addEventListener('keydown', ev => {
   else if (k === 'v') { overlay = (overlay + 1) % 4; toast(['Overlay off', 'Pressure overlay', 'Temperature overlay', 'Smog overlay'][overlay]); }
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) ev.preventDefault();
 });
-window.addEventListener('keyup', ev => { keys[ev.key.toLowerCase()] = false; });
+window.addEventListener('keyup', ev => { if (ev.key === 'Alt') ev.preventDefault(); keys[ev.key.toLowerCase()] = false; });
 window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; mouse.l = mouse.r = mouse.m = false; });
 
 hotbar.addEventListener('click', ev => {

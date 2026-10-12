@@ -415,3 +415,8 @@ h3 .sw { width: 24px; height: 24px; font-size: 9px; }
 .tqn { position: absolute; top: 4px; right: 6px; font-size: 11px; color: #e8c25a; font-weight: 700; }
 .tb { position: absolute; left: 0; bottom: 0; height: 3px; background: #5fd06a; }
 #tlist h3 { display: flex; align-items: center; gap: 6px; }
+
+.rpick { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 2px; background: #0d0e10; padding: 3px; border-radius: 4px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.8); max-height: 190px; overflow-y: auto; margin-bottom: 6px; }
+.rpick .rs { aspect-ratio: 1; padding: 0; display: flex; align-items: center; justify-content: center; }
+.rpick .rp.on { outline: 2px solid #ffb43a; outline-offset: -2px; background: linear-gradient(#7a5a20, #4a3410); }
+.rpick .rpx { color: #ffb0a0; font-size: 18px; }
