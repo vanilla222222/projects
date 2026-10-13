@@ -1187,7 +1187,7 @@ function pushItems(e, src, mode) {
 }
 
 function laneTick(b, len, nx, ny, d, fo) {
-  const its = b.items, V = (BUILD[b.type].v || 2) * DT, hd = [null, null];
+  const its = b.items, V = (BUILD[b.type].v || 2) * DT * WXB, hd = [null, null];
   for (let j = 0; j < its.length; j++) {
     const it = its[j], l = it.l ? 1 : 0, h = hd[l];
     let np = it.m === BT ? it.p : it.p + V;
@@ -3773,6 +3773,7 @@ function windStep() {
   w.a += (Math.random() - 0.5) * 0.25;
   w.v = Math.max(0.05, Math.min(0.7, w.v + (Math.random() - 0.5) * 0.08));
   if (S.res) for (const g in S.res) S.res[g] *= 0.998;
+  wxStep();
 }
 function cloudStep(dt) {
   const wx = Math.cos(S.wind.a) * S.wind.v, wy = Math.sin(S.wind.a) * S.wind.v, hs = lists().hive;
@@ -3841,10 +3842,69 @@ try { nightOff = localStorage.getItem('cf_night') === '0'; } catch (e) {}
 const dayP = () => ((S.t || 0) / DAYLEN + 0.3) % 1;
 const sunEl = () => -Math.cos(dayP() * 2 * Math.PI);
 const darkF = () => nightOff ? 0 : Math.min(1, Math.max(0, -sunEl() / 0.45));
+const WXK = { clear: { n: 'Clear', i: '☀' }, rain: { n: 'Rain', i: '☂', t: 'Rain: walking off paths is slower, solar and evaporation ponds drop, lamps reach a little less far.' }, fog: { n: 'Fog', i: '≋', t: 'Fog: lamps and floodlights reach much less far, solar output falls, and crawlers swarm more often.' }, snow: { n: 'Snow', i: '❄', t: 'Snow: drifts settle on belts and slow them, walking off paths is slow, solar output falls.' }, storm: { n: 'Storm', i: '⚡', t: 'Storm: strong gusts drive the wind turbines hard, heavy rain slows walking off paths and stops ponds evaporating.' } };
+let WXB = 1;
+const wxI = k => { const w = S && S.wind; return w && w.wx === k ? w.wi || 0 : 0; };
+const wxWet = () => wxI('rain') + wxI('storm');
+const wxGust = () => 1 + wxI('storm') * (0.6 + 0.25 * Math.sin((S.t || 0) * 1.3)) + 0.15 * wxI('rain');
+const wxWalk = () => 1 - 0.15 * wxI('rain') - 0.22 * wxI('storm') - 0.3 * wxI('snow');
+const wxSun = e => e.type === 'pond' ? 1 - 0.75 * wxWet() - 0.45 * wxI('snow') - 0.3 * wxI('fog') : 1 - 0.45 * wxWet() - 0.35 * wxI('snow') - 0.3 * wxI('fog');
+const wxLit = () => 1 - 0.45 * wxI('fog') - 0.12 * (wxWet() + wxI('snow'));
+function wxStep() {
+  const w = S.wind;
+  if (!w.wx) { w.wx = 'clear'; w.wt = 120; w.wi = 0; }
+  w.wt--;
+  if (w.wt <= 0) {
+    if (w.wx !== 'clear') { w.wx = 'clear'; w.wt = 150 + Math.floor(Math.random() * 250); }
+    else { const u = Math.random(); w.wx = u < 0.38 ? 'rain' : u < 0.6 ? 'fog' : u < 0.8 ? 'snow' : 'storm'; w.wt = 90 + Math.floor(Math.random() * 150); }
+    w.wi = 0;
+  }
+  const tg = w.wx === 'clear' ? 0 : Math.min(1, w.wt / 20);
+  w.wi = Math.round(Math.max(0, Math.min(1, w.wi + Math.max(-0.05, Math.min(0.05, tg - w.wi)))) * 100) / 100;
+  WXB = 1 - 0.35 * wxI('snow');
+}
+const wxHud = () => { const w = S.wind; if (!w || !w.wx || w.wx === 'clear' || !(w.wi > 0.05)) return ''; const K = WXK[w.wx]; return ` <span class="dim" title="${K.t}">· ${K.i} ${K.n}</span>`; };
+function drawWeather(w, h) {
+  const Wd = S.wind;
+  if (!Wd || !Wd.wx || Wd.wx === 'clear' || !(Wd.wi > 0.02)) return;
+  const k = Wd.wx, I = Wd.wi, t = performance.now() / 1000, dk = darkF(), sx = Math.cos(Wd.a) * Wd.v, A = w * h / 1e6;
+  ctx.save();
+  if (k === 'fog') {
+    const c = dk > 0.5 ? '70,76,90' : '208,212,218';
+    ctx.fillStyle = `rgba(${c},${(0.4 * I).toFixed(3)})`; ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 10; i++) {
+      const R = (0.25 + hash(i, 1, 41) * 0.3) * Math.max(w, h), sp = w + 2 * R;
+      const X = ((hash(i, 2, 41) * sp + t * (6 + 30 * Math.abs(sx)) * (sx < 0 ? -1 : 1)) % sp + sp) % sp - R, Y = hash(i, 3, 41) * h + Math.sin(t * 0.1 + i) * 30;
+      const gr = ctx.createRadialGradient(X, Y, 0, X, Y, R);
+      gr.addColorStop(0, `rgba(${c},${(0.32 * I).toFixed(3)})`); gr.addColorStop(1, `rgba(${c},0)`);
+      ctx.fillStyle = gr; ctx.fillRect(X - R, Y - R, 2 * R, 2 * R);
+    }
+  } else if (k === 'rain' || k === 'storm') {
+    const st = k === 'storm', n = Math.min(1200, Math.round((st ? 520 : 300) * I * A)), vy = st ? 1100 : 850, vx = sx * vy * (st ? 1.8 : 1.1), L = 0.02;
+    ctx.fillStyle = `rgba(20,30,50,${((st ? 0.28 : 0.14) * I).toFixed(3)})`; ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = `rgba(185,205,235,${(0.3 + 0.25 * I).toFixed(2)})`; ctx.lineWidth = 1; ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const ph = hash(i, 5, 17), y = (hash(i, 6, 17) * h + t * vy * (0.8 + 0.4 * ph)) % (h + 40) - 20, x = ((hash(i, 7, 17) * w + (y + 20) / vy * vx) % w + w) % w;
+      ctx.moveTo(x, y); ctx.lineTo(x + vx * L, y + vy * L);
+    }
+    ctx.stroke();
+    if (st) { const f = Math.floor(t * 1.5), fr = t * 1.5 - f; if (hash(f, 9, 3) > 0.9 && fr < 0.18) { ctx.fillStyle = `rgba(230,235,255,${((0.18 - fr) * 2.2 * I).toFixed(3)})`; ctx.fillRect(0, 0, w, h); } }
+  } else if (k === 'snow') {
+    const n = Math.min(900, Math.round(280 * I * A));
+    ctx.fillStyle = `rgba(235,240,250,${(0.1 * I).toFixed(3)})`; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(250,252,255,0.85)'; ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const ph = hash(i, 5, 23), y = (hash(i, 6, 23) * h + t * 55 * (0.6 + 0.8 * ph)) % (h + 20) - 10, x = ((hash(i, 7, 23) * w + sx * 140 * t * (0.7 + ph) + Math.sin(t * 1.3 + i) * 12) % w + w) % w, r = 0.8 + 1.6 * ph;
+      ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, Math.PI * 2);
+    }
+    ctx.fill();
+  }
+  ctx.restore();
+}
 function clockHtml() {
   const p = dayP(), m = Math.floor(p * 1440), e = sunEl(), dk = darkF();
   const ph = dk > 0.6 ? 'Night' : e < 0.2 && p < 0.5 ? 'Dawn' : e < 0.2 ? 'Dusk' : 'Day';
-  return `<span class="ci">${dk > 0.3 ? '☾' : '☀'}</span> ${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')} <span class="dim">${ph}${nightOff ? ' (always lit)' : ''}</span>`;
+  return `<span class="ci">${dk > 0.3 ? '☾' : '☀'}</span> ${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')} <span class="dim">${ph}${nightOff ? ' (always lit)' : ''}</span>${wxHud()}`;
 }
 function drawNight(vis, ox, oy, z, w, h) {
   const e = sunEl(), dk = darkF();
@@ -3866,8 +3926,9 @@ function drawNight(vis, ox, oy, z, w, h) {
     g.fillStyle = gr; g.fillRect(X - R, Y - R, 2 * R, 2 * R);
     if (col) add.push(X, Y, R, col);
   };
-  for (const [lx, ly, r, lc] of lits) hole(lx, ly, r, 1, lc || '255,250,220');
-  for (const c of glows) { const B = BUILD[c.type]; hole(c.x + 0.5, c.y + 0.5, B.glow, 1, B.gc); }
+  const wl = wxLit();
+  for (const [lx, ly, r, lc] of lits) hole(lx, ly, r * wl, 1, lc || '255,250,220');
+  for (const c of glows) { const B = BUILD[c.type]; hole(c.x + 0.5, c.y + 0.5, B.glow * wl, 1, B.gc); }
   for (const c of vis) {
     const B = BUILD[c.type], k = kind(c);
     if (k === 'machine' && c.cy && !B.glow && !B.lit) hole(c.x + B.w / 2, c.y + B.h / 2, Math.max(B.w, B.h) * 0.75, 0.55, B.cat === 'Smelting' ? '255,140,60' : null);
@@ -4348,7 +4409,8 @@ function drawCals(ox, oy, z) {
 }
 const litAt = (x, y) => lits.some(([lx, ly, r]) => (x - lx) ** 2 + (y - ly) ** 2 <= r * r);
 function drawLits(ox, oy, z) {
-  for (const [lx, ly, r, lc] of lits) { const q = lc || '255,250,215', X = ox + lx * z, Y = oy + ly * z, gr = ctx.createRadialGradient(X, Y, 0, X, Y, r * z); gr.addColorStop(0, `rgba(${q},0.22)`); gr.addColorStop(0.7, `rgba(${q},0.08)`); gr.addColorStop(1, `rgba(${q},0)`); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(X, Y, r * z, 0, 7); ctx.fill(); }
+  const wl = wxLit();
+  for (const [lx, ly, r0, lc] of lits) { const r = r0 * wl, q = lc || '255,250,215', X = ox + lx * z, Y = oy + ly * z, gr = ctx.createRadialGradient(X, Y, 0, X, Y, r * z); gr.addColorStop(0, `rgba(${q},0.22)`); gr.addColorStop(0.7, `rgba(${q},0.08)`); gr.addColorStop(1, `rgba(${q},0)`); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(X, Y, r * z, 0, 7); ctx.fill(); }
 }
 function bugKind(h) {
   const u = Math.random(), t = h.tier || 2, gt = gearT();
@@ -4448,7 +4510,7 @@ function hiveStep() {
     guardStep(h);
     if (!(S.t - (h.lh || -99) < 15)) h.hp = Math.min(maxHp(h), h.hp + 2);
     h.dc = Math.max(0, h.dc - 1);
-    if (h.food >= 50) launch(h);
+    if (h.food >= 50 - 20 * wxI('fog')) launch(h);
   }
 }
 function guardStep(h) {
@@ -4456,7 +4518,7 @@ function guardStep(h) {
   let n = 0;
   if (pd > 70) { for (let i = S.bugs.length - 1; i >= 0; i--) if (S.bugs[i].hid === h.id) S.bugs.splice(i, 1); return; }
   for (const b of S.bugs) if (b.hid === h.id) n++;
-  if (pd < 40 && !(P.dead > 0) && !S.dg && n < htier(h).gd && !(h.gt > S.t)) { spawnBugs(h, 1, -3); h.gt = S.t + 5; }
+  if (pd < 40 && !(P.dead > 0) && !S.dg && n < htier(h).gd + (wxI('fog') > 0.5 ? 2 : 0) && !(h.gt > S.t)) { spawnBugs(h, 1, -3); h.gt = S.t + 5; }
 }
 function spitStep() {
   const P = S.pl;
@@ -4661,12 +4723,12 @@ function sunOf(e) { if (e.su == null) e.su = sunAt(e.x, e.y, BUILD[e.type].w, BU
 const WINDX = [0.8, 1, 1, 0.8, 1, 0.8, 0.45, 1];
 function exposureAt(x, y, w, h) { let a = 0; for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) a += WINDX[terrain[(y + j) * W + x + i]] || 0; return a / (w * h); }
 function exposureOf(e) { if (e.wx == null) e.wx = exposureAt(e.x, e.y, BUILD[e.type].w, BUILD[e.type].h); return e.wx; }
-const windCurve = (m = 1) => S.wind.v * m < 0.1 ? 0 : Math.min(1, Math.pow(S.wind.v * m / 0.5, 3));
+const windCurve = (m = 1) => { const v = S.wind.v * m * wxGust(); return v < 0.1 ? 0 : Math.min(1, Math.pow(v / 0.5, 3)); };
 const SOIL = [1, 0, 0.4, 0.05, 0, 0.35, 0.1, 0.1];
 function soilAt(x, y, w, h) { let a = 0; for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) a += SOIL[terrain[(y + j) * W + x + i]] || 0; return a / (w * h); }
 function soilOf(e) { if (e.sl == null) e.sl = soilAt(e.x, e.y, BUILD[e.type].w, BUILD[e.type].h); return e.sl; }
 const TIDE_T = 300, tideOf = () => Math.abs(Math.sin(S.t * Math.PI / TIDE_T)) ** 3;
-const sunMul = e => BUILD[e.type].tide ? tideOf() : BUILD[e.type].soil ? soilOf(e) : BUILD[e.type].sun ? sunOf(e) : BUILD[e.type].wind ? exposureOf(e) * windCurve(BUILD[e.type].sea ? 1.25 : 1) : 1;
+const sunMul = e => BUILD[e.type].tide ? tideOf() : BUILD[e.type].soil ? soilOf(e) : BUILD[e.type].sun ? sunOf(e) * wxSun(e) : BUILD[e.type].wind ? exposureOf(e) * windCurve(BUILD[e.type].sea ? 1.25 : 1) : 1;
 function tryStart(e, r) {
   if (r.well && !wellTiles(e).length) return 'empty';
   if (BUILD[e.type].forest && !forestOf(e)) return 'forest';
@@ -4907,7 +4969,7 @@ function plMove(dt, mx, my) {
     const tx = Math.floor(P.x), ty = Math.floor(P.y), o = at(tx, ty);
     let vx = 0, vy = 0;
     if (mx || my) {
-      const l = Math.hypot(mx, my), v = PL_V * eqSpd() * (o && (kind(o) === 'road' || kind(o) === 'rail') ? 1.1 : TSPD[terrain[ty * W + tx]] || 1);
+      const l = Math.hypot(mx, my), v = PL_V * eqSpd() * (o && (kind(o) === 'road' || kind(o) === 'rail') ? 1.1 : (TSPD[terrain[ty * W + tx]] || 1) * wxWalk());
       vx = mx / l * v; vy = my / l * v;
       if (S.t - (P.sh || -9) > 0.4) P.f = Math.atan2(my, mx);
       P.wk += h * v * 2.4; P.mv = true;
@@ -6099,6 +6161,7 @@ function render() {
     ctx.globalAlpha = 1;
   }
   drawNight(vis, ox, oy, z, w, h);
+  drawWeather(w, h);
   if (!vig || vig.w !== w || vig.h !== h) {
     const g = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.38, w / 2, h / 2, Math.hypot(w, h) * 0.62);
     g.addColorStop(0, 'rgba(10,8,4,0)'); g.addColorStop(1, 'rgba(10,8,4,0.45)');
@@ -6180,7 +6243,7 @@ function pipeLinks(e, d) {
 }
 
 function drawPipe(e, ox, oy, z) {
-  const P = NP(e), cx = ox + (e.x + 0.5) * z, cy = oy + (e.y + 0.5) * z, t = z * (P.dn >= 100 ? 0.5 : 0.34);
+  const P = NP(e), cx = ox + (e.x + 0.5) * z, cy = oy + (e.y + 0.5) * z, t = z * (P.dn >= 150 ? 0.66 : P.dn >= 100 ? 0.5 : 0.34);
   if (BUILD[e.type].sea && terrain[e.y * W + e.x] === 1) ctx.globalAlpha = 0.55;
   const rust = Math.min(1, e.wear || 0);
   ctx.fillStyle = rust > 0.05 ? mix(BUILD[e.type].c, '#9a4a1a', rust) : shade(BUILD[e.type].c, 0.8);
@@ -6202,6 +6265,7 @@ function drawPipe(e, ox, oy, z) {
   }
   ctx.fillRect(cx - bw, cy - bw, bw * 2, bw * 2);
   if (e.strain > 0.01) { ctx.strokeStyle = '#ff4a3a'; ctx.lineWidth = Math.max(1, z * 0.06); ctx.strokeRect(cx - bw, cy - bw, bw * 2, bw * 2); }
+  if (P.ins && z >= 10) { ctx.fillStyle = shade(BUILD[e.type].c, 0.6); for (let d = 0; d < 4; d++) if (pipeLinks(e, d)) { const m = z * 0.3; if (DX[d]) ctx.fillRect(cx + DX[d] * m - z * 0.03, cy - t * 0.55, z * 0.06, t * 1.1); else ctx.fillRect(cx - t * 0.55, cy + DY[d] * m - z * 0.03, t * 1.1, z * 0.06); } }
   if (P.lined && z >= 12) { ctx.fillStyle = '#c8cce0'; ctx.fillRect(cx - bw, cy - bw, bw * 2, Math.max(1, z * 0.04)); }
   if (e.fl && e.amt > 0.5) {
     ctx.fillStyle = col(e.fl);
@@ -6440,6 +6504,7 @@ function drawIns(e, ox, oy, z) {
 }
 
 function drawBeltItems(e, ox, oy, z) {
+  if (WXB < 0.98 && z >= 8) { const a = (1 - WXB) / 0.35, X = ox + e.x * z, Y = oy + e.y * z; ctx.fillStyle = `rgba(240,244,252,${(0.55 * a).toFixed(2)})`; ctx.beginPath(); for (let i = 0; i < 9; i++) { const u = hash(e.x * 9 + i, e.y, 77), v = hash(e.x, e.y * 9 + i, 78), r = z * (0.025 + 0.035 * a * hash(i, e.x, e.y)); ctx.moveTo(X + (0.1 + 0.8 * u) * z + r, Y + (0.15 + 0.7 * v) * z); ctx.arc(X + (0.1 + 0.8 * u) * z, Y + (0.15 + 0.7 * v) * z, r, 0, Math.PI * 2); } ctx.fill(); ctx.fillStyle = `rgba(240,244,252,${(0.35 * a).toFixed(2)})`; ctx.fillRect(X, Y + z * 0.12, z, z * 0.06); ctx.fillRect(X, Y + z * 0.82, z, z * 0.06); }
   const r = Math.max(1.5, z * 0.12);
   let len = 1, ex = null;
   if (kind(e) === 'ubelt') { if (e.mode !== 'in') return; const u = ugPair(e); if (u) { len = u.n + 1; ex = u.o; } }
