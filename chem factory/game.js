@@ -2412,6 +2412,7 @@ function dgTick() {
   for (let i = D.bugs.length - 1; i >= 0; i--) {
     const b = D.bugs[i];
     if (b.hp <= 0) { D.bugs.splice(i, 1); S.kills = (S.kills || 0) + 1; dfx.push({ x: b.x, y: b.y, t: 0.5, c: '#a0c040' }); dgDie(D, b, hit); if (!S.dg) return; continue; }
+    if (b.fz > 0) { b.fz -= DT; continue; }
     const K = BUGK[b.k || 0], pd = Math.hypot(D.px - b.x, D.py - b.y), bi = Math.floor(b.y) * N + Math.floor(b.x), fd = ff ? ff[bi] : -1;
     if (!b.aw && (pd < 6 || (fd >= 0 && fd < 9 && dgSee(b.x, b.y, D.px, D.py)))) b.aw = 1;
     if (!b.aw || pd0) { b.a += Math.sin(D.t + b.ph) * 0.02; continue; }
@@ -3200,9 +3201,10 @@ const WPN = {
   amr: { n: 'Anti-Materiel Rifle', am: 'wha_round', rk: 'rw', per: 5, dm: 160, hv: 120, cd: 2.2, r: 26, arm: 2.5, need: 'amr' },
   coilgun: { n: 'Coilgun', am: 'steel_slug', rk: 'rc', per: 10, dm: 40, hv: 30, cd: 0.45, r: 18, arm: 2, need: 'coilgun', en: 4000 },
   arc: { n: 'Arc Caster', am: 'spark_gap', rk: 'rq', per: 20, dm: 26, hv: 14, cd: 0.6, r: 7, need: 'arc_caster', en: 3000, ch: 3 },
+  cryo: { n: 'Cryo Lance', am: 'ln2_flask', rk: 'rn', per: 12, dm: 10, hv: 10, cd: 0.35, r: 6, cone: 0.5, pel: 8, need: 'cryo_lance', fz: 2.5 },
   rotary: { n: 'Rotary Gun', am: 'ammo_belt', rk: 'rb2', per: 50, dm: 10, hv: 10, cd: 0.035, r: PL_GUN, need: 'rotary_gun', en: 60 },
 };
-const WORDER = ['rifle', 'ap', 'shotgun', 'slug', 'flechette', 'auto_shotgun', 'lmg', 'rotary', 'marksman', 'marksman_w', 'coilgun', 'crossbow', 'amr', 'arc'];
+const WORDER = ['rifle', 'ap', 'shotgun', 'slug', 'flechette', 'auto_shotgun', 'lmg', 'rotary', 'marksman', 'marksman_w', 'coilgun', 'crossbow', 'amr', 'arc', 'cryo'];
 const ARMOR = {
   exoframe4: { a: 0.55, g: 14 },
   exoframe3: { a: 0.5, g: 12 },
@@ -3243,7 +3245,7 @@ const NADE = {
   ammonal_charge: { r: 3.2, dm: 130, hv: 160, c: '#c8c8c0' },
   powder_charge: { r: 2.2, dm: 55, hv: 60, c: '#4a4844' },
 };
-const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'crossbow', 'xbow_bolt', 'amr', 'wha_round', 'exoframe3', 'coil_turret', 'knee_gen', 'thermal_sight', 'thermal_cam', 'ultrasound_probe', 'surge_arrester', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug', 'arc_caster', 'spark_gap', 'laminate_carrier', 'sofc_pack', 'supercap', 'slug_shell', 'rotary_gun', 'discharge_ring', 'tandem_film', 'hemostat', 'med_injector', 'blast_suit', 'ss_batt', 'flechette_shell', 'wcore_round', 'heavy_carrier', 'arm_brace', 'auto_shotgun', 'exoframe4'];
+const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'crossbow', 'xbow_bolt', 'amr', 'wha_round', 'exoframe3', 'coil_turret', 'knee_gen', 'thermal_sight', 'thermal_cam', 'ultrasound_probe', 'surge_arrester', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug', 'arc_caster', 'spark_gap', 'laminate_carrier', 'sofc_pack', 'supercap', 'slug_shell', 'rotary_gun', 'discharge_ring', 'tandem_film', 'hemostat', 'med_injector', 'blast_suit', 'ss_batt', 'flechette_shell', 'wcore_round', 'heavy_carrier', 'arm_brace', 'auto_shotgun', 'exoframe4', 'cryo_lance', 'ln2_flask'];
 (() => {
   const { need, deps, L, xadd } = TKX;
   const its = new Set([...Object.values(WPN).map(w => w.need).filter(Boolean), ...Object.keys(ARMOR), ...Object.keys(EQ)].filter(k => !START_INV[k] && RECIPE[k] && need[k] < 1e9));
@@ -3321,6 +3323,7 @@ function wpnShot(ox, oy, list, hives, see, under, arm) {
       P.ch = hits.map(b => [b.x, b.y]);
     }
   }
+  if (W.fz) for (const b of hits) b.fz = Math.max(b.fz || 0, W.fz * (arm(b) ? 0.4 : 1));
   P[W.rk]--; P.cd = W.cd * (eqN('arm_brace') && eqOn() ? 0.8 : 1);
   if (W.en) P.arm.en -= W.en;
   P.f = Math.atan2(ty - oy, tx - ox);
@@ -3880,6 +3883,7 @@ function bugStep() {
   for (let i = S.bugs.length - 1; i >= 0; i--) {
     const b = S.bugs[i];
     if (b.hp <= 0) { S.bugs.splice(i, 1); S.kills = (S.kills || 0) + 1; fx.push({ x: b.x, y: b.y, t: 0.5, c: '#a0c040' }); continue; }
+    if (b.fz > 0) { b.fz -= DT; continue; }
     let t = b.tid > 0 ? ents.get(b.tid) : null;
     if (!t && b.tid > 0) { t = nearestEnt(b.x, b.y, 25); b.tid = t ? t.id : -1; }
     let tx = b.hx, ty = b.hy, cr = b.tid === -2 ? 40 : 7;
@@ -5888,7 +5892,7 @@ function drawPlayer(ox, oy, z) {
     const gx = X + fx * s * 0.25, gy = Y - s * 0.05 + fy * s * 0.25;
     ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = Math.max(2, s * 0.07);
     ctx.beginPath(); ctx.moveTo(X, Y - s * 0.05); ctx.lineTo(gx, gy); ctx.stroke();
-    if (S.t - P.sh < 0.1) { ctx.strokeStyle = 'rgba(255,230,140,0.9)'; ctx.lineWidth = Math.max(1, z * 0.04); ctx.beginPath(); if (P.sw === 'arc' && P.ch) { ctx.strokeStyle = 'rgba(170,200,255,0.95)'; let px = gx, py = gy; for (const [cx, cy] of P.ch) { const X = ox + cx * z, Y = oy + cy * z; ctx.moveTo(px, py); for (let j = 1; j < 5; j++) ctx.lineTo(px + (X - px) * j / 5 + (Math.random() - 0.5) * z * 0.4, py + (Y - py) * j / 5 + (Math.random() - 0.5) * z * 0.4); ctx.lineTo(X, Y); px = X; py = Y; } } else if (P.sw === 'shotgun') { const a = Math.atan2(P.ty * z + oy - gy, P.tx * z + ox - gx), L = Math.hypot(P.ty * z + oy - gy, P.tx * z + ox - gx); for (let k = -2.5; k <= 2.5; k++) { ctx.moveTo(gx, gy); ctx.lineTo(gx + Math.cos(a + k * 0.07) * L, gy + Math.sin(a + k * 0.07) * L); } } else { ctx.moveTo(gx, gy); ctx.lineTo(ox + P.tx * z, oy + P.ty * z); } ctx.stroke(); }
+    if (S.t - P.sh < 0.1) { ctx.strokeStyle = 'rgba(255,230,140,0.9)'; ctx.lineWidth = Math.max(1, z * 0.04); ctx.beginPath(); if (P.sw === 'arc' && P.ch) { ctx.strokeStyle = 'rgba(170,200,255,0.95)'; let px = gx, py = gy; for (const [cx, cy] of P.ch) { const X = ox + cx * z, Y = oy + cy * z; ctx.moveTo(px, py); for (let j = 1; j < 5; j++) ctx.lineTo(px + (X - px) * j / 5 + (Math.random() - 0.5) * z * 0.4, py + (Y - py) * j / 5 + (Math.random() - 0.5) * z * 0.4); ctx.lineTo(X, Y); px = X; py = Y; } } else if (P.sw === 'shotgun' || P.sw === 'cryo') { if (P.sw === 'cryo') { ctx.strokeStyle = 'rgba(210,240,255,0.85)'; ctx.lineWidth = Math.max(2, z * 0.12); } const a = Math.atan2(P.ty * z + oy - gy, P.tx * z + ox - gx), L = Math.hypot(P.ty * z + oy - gy, P.tx * z + ox - gx); for (let k = -2.5; k <= 2.5; k++) { ctx.moveTo(gx, gy); ctx.lineTo(gx + Math.cos(a + k * 0.07) * L, gy + Math.sin(a + k * 0.07) * L); } } else { ctx.moveTo(gx, gy); ctx.lineTo(ox + P.tx * z, oy + P.ty * z); } ctx.stroke(); }
   }
   if (P.hp < PL_HP) {
     const bw = s * 0.7, by = hy - s * 0.32;
@@ -6150,6 +6154,7 @@ function drawBugs(ox, oy, z, x0, y0, x1, y1) {
     if (b.x < x0 - 1 || b.y < y0 - 1 || b.x > x1 + 1 || b.y > y1 + 1) continue;
     const bk = b.k || 0, K = BUGK[bk] || BUGK[0], s = z * (0.22 + 0.08 * Math.min(1, b.mhp / (90 * K.hp))) * (K.sz || 1), X = ox + b.x * z, Y = oy + b.y * z;
     ctx.save();
+    if (b.fz > 0) { ctx.fillStyle = 'rgba(200,235,255,0.6)'; ctx.beginPath(); ctx.arc(X, Y, s * 1.3, 0, 7); ctx.fill(); }
     if (b.sub) { ctx.fillStyle = 'rgba(90,64,36,0.85)'; ctx.beginPath(); ctx.ellipse(X, Y, s * 0.9, s * 0.55, 0, 0, 7); ctx.fill(); ctx.fillStyle = 'rgba(140,104,60,0.7)'; for (let q = 0; q < 3; q++) { ctx.beginPath(); ctx.arc(X + Math.sin(now * 6 + q * 2 + b.ph) * s * 0.5, Y + Math.cos(now * 5 + q * 2) * s * 0.25, s * 0.14, 0, 7); ctx.fill(); } ctx.restore(); continue; }
     ctx.translate(X, Y); ctx.rotate(b.a);
     const g = Math.sin(now * (b.chew ? 30 : 18) + b.ph);
@@ -9196,6 +9201,7 @@ const CHAINS = [
   { n: 'Scandium from red mud', l: [['red_mud', 'Red mud leach train + acid', 'sc_leach'], ['sc_leach', 'Scandium ion exchange plant', 'sc_eluate'], ['sc_eluate', 'Scandium ion exchange plant + oxalic', 'sc_oxalate'], ['sc_oxalate', 'Master alloy furnace', 'sc2o3'], ['sc2o3', 'Ball mill + zirconia', 'scsz'], ['scsz', 'MLCC line + nickel + lcm', 'sofc_cell'], ['sc2o3', 'Master alloy furnace + aluminium', 'al_sc']], d: 'Bauxite residue holds a little scandium. Leached gently and caught on resin, it makes a zirconia electrolyte good enough to get more fuel cells from the same batch, and an aluminium alloy that welds without going soft.' },
   { n: 'Strontium ferrite', l: [['celestine', 'Flotation cell + tofa', 'cel_conc'], ['cel_conc', 'Celestine conversion plant + soda_ash', 'sr_crude'], ['sr_crude', 'Celestine conversion plant + hcl + soda_ash', 'srco3'], ['srco3', 'Anisotropic ferrite line + iron_red + la_oxide + co3o4', 'sr_ferrite'], ['sr_ferrite', 'Anisotropic ferrite line + wire + plate', 'pm_motor']], d: 'Celestine is converted to carbonate in soda ash without melting, purified, and fired with iron oxide into aligned hexaferrite. The magnets make permanent-magnet motors without neodymium.' },
   { n: 'UHPC wall', l: [['sand + coke + iron concentrate', 'Arc furnace', 'ferrosilicon + silica fume'], ['sand', 'Ball mill', 'quartz flour'], ['isobutylene + O₂ + steam', 'Multitubular oxidation reactor', 'methacrolein'], ['methacrolein + O₂', 'Multitubular oxidation reactor', 'methacrylic acid'], ['methanol + EO + KOH', 'Ethoxylation reactor', 'MPEG'], ['MPEG + methacrylic acid', 'Pressure reactor', 'MPEG methacrylate'], ['MPEG methacrylate + H₂O₂ + ascorbic', 'Pressure reactor', 'MPEG superplasticiser'], ['high-carbon wire + brass', 'Wire drawer', 'steel microfibre'], ['cement + fume + flour + sand', 'Intensive mixer', 'premix'], ['premix + fibre + superplasticiser', 'Intensive mixer', 'green panel'], ['green panel + steam', 'Steam curing chamber', 'UHPC panel → UHPC wall']] },
+  { n: 'Cryo lance', l: [['CCl₄', 'Chlorinolysis reactor', 'perchloroethylene + Cl₂'], ['perchloroethylene + Cl₂ + HF', 'Pressure reactor', 'CFC-113'], ['CFC-113 + zinc dust', 'Pressure reactor', 'CTFE'], ['CTFE + H₂O₂', 'Pressure reactor', 'PCTFE'], ['PET film + aluminium', 'Vacuum box coater', 'insulation film'], ['stainless + film + netting + carbon', 'Vacuum jacketing station', 'dewar'], ['N₂', 'Nitrogen liquefier', 'liquid nitrogen'], ['liquid nitrogen + aluminium', 'Vacuum jacketing station', 'LN₂ flasks'], ['dewar + cryogenic valves', 'Workshop', 'Cryo Lance']] },
   { n: 'Rare earth magnets', l: [['monazite', 'Digester + naoh', 're_oh', 'Leach tank + hcl + water', 'recl3', '+', 'th_cake'], ['recl3', 'Solvent extraction + diesel', 'ndcl3', '+', 'ce_oxide'], ['ndcl3', 'Precipitator + soda_ash', 'ndpr_oxide', 'Electrolysis cell + anode + hf', 'nd_metal'], ['borax', 'Arc furnace + pig_iron + coke', 'ferroboron'], ['nd_metal', 'Vacuum induction furnace + ferroboron + steel + argon', 'ndfeb_strip', 'HD vessel + h2', 'hd_powder', 'Jet mill + n2', 'ndfeb_fine'], ['ndfeb_fine', 'Field press + n2', 'ndfeb_green', 'Sinter-HIP furnace + argon', 'ndfeb_block', 'Multi-wire saw + diamond_grit + water', 'ndfeb_bare'], ['ndfeb_bare', 'Plating line + copper_cathode + niso4', 'ndfeb_plated', 'Pulse magnetiser', 'ndfeb', 'Workshop + wire + plate', 'pm_motor'], ['ndfeb_swarf', 'Leach tank + hcl + water', 'ndcl3'], ['th_cake', 'Workshop + concrete + plate', 'waste_drum']], d: 'Monazite from the mineral sand separator is cracked with caustic soda and dissolved in hydrochloric acid, leaving thorium behind. Hundreds of solvent extraction stages split off neodymium and praseodymium, with cerium as a by-product. Reduced to metal and alloyed with iron and boron from desert borax, they make the strongest magnets there are, for direct-drive wind turbines and compact motors.' },
   { n: 'Water treatment', l: [['al_hydroxide', 'Pressure reactor + acid', 'alum'], ['water', 'Water treatment works + alum + cl2 + carbon bed', 'potable'], ['spent_carbon', 'Kiln + steam', 'carbon'], ['nylon', 'Workshop + polyester + glass_fibre', 'ro_membrane'], ['water', 'Reverse osmosis + membranes', 'potable'], ['potable', 'Blow moulder + pet', 'water_bottle'], ['bleach', 'Blow moulder + polyethylene', 'bleach_jug']], d: 'Alum makes dirt clump into flocs that settle and filter out, and a little chlorine disinfects what is left. An activated carbon bed doubles the rate but fills up and has to be reactivated in a kiln. Reverse osmosis needs only power and membranes, which slowly foul and need replacing.' },
   { n: 'Farming and fermentation', l: [['npk', 'Farm + water', 'sugar_beet'], ['npk', 'Farm + water', 'maize'], ['sugar_beet', 'Sugar factory + quicklime + co2 + water', 'sugar', '+', 'molasses'], ['molasses', 'Fermenter + water', 'ethanol', '+', 'co2'], ['maize', 'Fermenter + water', 'ethanol', '+', 'ddgs'], ['ethanol', 'Pressure reactor', 'ethylene'], ['molasses', 'Fermenter + o2 + quicklime + acid', 'citric', '+', 'gypsum'], ['ethanol', 'Blow moulder + polyethylene', 'sanitiser']], d: 'Fertiliser and water grow sugar beet and maize. The sugar factory cleans beet juice with lime and carbon dioxide, so it soaks up CO₂ from your kilns. Yeast turns molasses and maize into ethanol, which hot alumina dehydrates to ethylene for green plastics. A mould turns molasses into citric acid.' },
@@ -10408,6 +10414,14 @@ const CMBI = (() => {
   T.crossbow = g => gun(g, { L: 12, stock: 'cross', bow: 1, grip: true, wc: '#5a4a38', s: 0.95 });
   T.coilgun = g => gun(g, { L: 30, stock: 'skel', coils: 1, sc: '#2a2a2a', bc: '#3a4a5a' });
   T.arc_caster = g => gun(g, { L: 26, stock: 'black', arc: 1, bc: '#3a3e44' });
+  T.cryo_lance = g => gun(g, { L: 22, stock: 'skel', tube: 1, bc: '#b8c4d0', bw: 4.2 });
+  T.ln2_flask = g => {
+    dshad(g, 32, 58, 18, 3);
+    rrect(g, 20, 16, 24, 40, 6); g.fillStyle = lgr(g, 20, 0, 44, 0, '#8a949e', '#e8eef4', '#7a848e'); g.fill(); ink(g, 1.2);
+    g.fillStyle = '#3a3e44'; g.fillRect(27, 8, 10, 9);
+    g.fillStyle = 'rgba(220,240,255,0.85)'; for (const [x, y, r] of [[30, 6, 2.4], [35, 3, 1.8], [27, 2, 1.4]]) { g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }
+    g.fillStyle = '#3a8ad0'; g.fillRect(22, 34, 20, 6);
+  };
   T.rotary_gun = g => gun(g, { L: 31, stock: 'none', barrels: 1, motor: 1, mag: 'belt', handle: 1, bc: '#3a3e44' });
   T.cartridge = g => rnds(g, { bc: '#7a7a80' });
   T.ap_cartridge = g => rnds(g, { bc: '#b87333', tip: '#1a1a1a', pt: 1 });
