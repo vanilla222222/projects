@@ -7155,8 +7155,40 @@ IP.heavy = (g, c, r, n) => {
   g.strokeStyle = 'rgba(0,0,0,0.3)'; g.lineWidth = 1; for (const x of [16, 28, 40]) { g.beginPath(); g.moveTo(x, 18); g.lineTo(x, 48); g.stroke(); }
   g.fillStyle = '#c8ccd0'; g.fillRect(0, 30, 6, 6); g.fillStyle = '#3a3e44'; g.fillRect(8, 48, 6, 8); g.fillRect(36, 48, 6, 8);
 };
+IP.scoil = (g, c, r, n) => {
+  const m = hmix(mcol(c), '#a4abb3', 0.65);
+  dshad(g, 32, 58, 24, 3);
+  g.fillStyle = '#5a4a3a'; poly(g, [12, 58, 52, 58, 46, 50, 18, 50]); g.fill();
+  g.fillStyle = rgr(g, 26, 26, 30, hsh(m, 1.25), hsh(m, 0.7)); g.beginPath(); g.arc(32, 32, 25, 0, 6.283); g.fill(); ink(g);
+  g.strokeStyle = 'rgba(0,0,0,0.22)'; g.lineWidth = 1; for (let q = 10; q < 25; q += 1.7) { g.beginPath(); g.arc(32, 32, q, 0, 6.283); g.stroke(); }
+  g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 2; g.beginPath(); g.arc(32, 32, 20, 3.6, 4.6); g.stroke();
+  g.fillStyle = '#2b2f36'; g.beginPath(); g.arc(32, 32, 9, 0, 6.283); g.fill(); g.strokeStyle = hsh(m, 0.5); g.lineWidth = 1.5; g.stroke();
+  g.fillStyle = '#3a3e44'; g.fillRect(30, 7, 4, 16); g.fillRect(30, 41, 4, 16);
+  if (/winding/.test(n)) { g.fillStyle = '#d8c070'; g.fillRect(6, 30, 52, 4); }
+};
 const IOV = {"laser_module":"nozzle","vfd":"cabinet","servo_drive":"cabinet","cnc_ctrl":"cabinet","breaker":"cabinet","jbox":"cabinet","fume_hood":"cabinet","rpv":"vessel","rpv_head":"vessel","steam_gen":"vessel","condenser":"vessel","comp_tank":"vessel","grp_tank":"vessel","hyd_pump":"pump","rcp":"pump","turbopump":"pump","gcms":"instrument","nmr":"instrument","ndfeb":"magnet","smco_magnet":"magnet","ba_ferrite":"magnet","alnico":"magnet","sc_magnet":"magnet","nmr_magnet":"magnet","ndfeb_block":"magnet","ndfeb_bare":"magnet","ndfeb_plated":"magnet","grad_coil":"magnet","rf_coil":"magnet","trafo_core":"magnet:core","amorph_core":"magnet:core","ferrite_core":"magnet:core","sic_mosfet":"comp","gan_hemt":"comp","saw_filter":"comp","varistor":"comp","ntc_thermistor":"comp","piezo_disc":"comp","teg":"comp","encoder":"comp","e_mult":"comp","vac_interrupter":"comp","surge_arrester":"comp","cucr":"comp","ultrasound_probe":"comp","gan_charger":"comp","graphene_hall":"comp","robot_arm":"robot","robot_joint":"robot","arm_casting":"robot","casting":"casting","pick_body":"casting","carbide_pick":"casting","bucket_tooth":"casting","bwe_bucket":"casting","mineral_cast":"casting","wax_pattern":"casting","ceramic_mould":"casting","green_shell":"casting","cutter_drum":"casting","slew_ring":"ring","slew_blank":"ring","rpv_ring":"ring","clad_ring":"ring","hyd_seal":"ring","flexspline":"ring","ball_screw":"shaft","linear_guide":"shaft","rotor_forging":"shaft","hyd_cyl":"shaft","crdm":"shaft","honed_tube":"shaft","solar_module":"panel","rooflight":"panel","sbr":"bale","neoprene":"bale","epdm":"bale","iir":"bale","nbr":"bale","pet_bale":"bale","fuel_asm":"bundle","control_rod":"bundle","spent_fuel":"bundle","quad_rods":"bundle","quadrupole":"bundle","transformer":"heavy","turbo_gen":"heavy","e_axle":"heavy","cork_board":"sheet","strand_board":"sheet","plasterboard":"sheet","particleboard":"sheet","hpl":"sheet","ccm":"sheet","tft_glass":"sheet","banana_paper":"sheet","bamboo_floor":"sheet","bipolar_plate":"sheet","pet_foam":"sheet","eggshell_membrane":"sheet","separator":"sheet","spar_cap":"sheet","mumetal":"sheet","shoyu_cake":"pile","palm_shell":"pile","coconut_shell":"pile","anode_slime":"pile","beet_pulp":"pile","bone_chip":"pile","steel_scrap":"pile","kelp_ash":"pile","mushroom_compost":"pile","spent_compost":"pile","ni_calcine":"pile","beta_spod":"pile","ndfeb_swarf":"pile","cullet":"pile","lino_cement":"pile","rape_meal":"pile","linseed_cake":"pile","copra_meal":"pile","pk_expeller":"pile","bran":"pile","rice_bran":"pile","bran_meal":"pile","husk_ash":"pile","rice_husk":"pile","rosin":"pile","shell_calcium":"sack","egg_powder":"sack","albumen_powder":"sack","feather_meal":"sack","potato_starch":"sack","banana_flour":"sack","potato_protein":"sack","sodium_nitrate":"sack","bio_detergent":"sack","wood_flour":"sack","linen_yarn":"yarn","bcf_yarn":"yarn","motor_oil":"bottle","choc_milk":"bottle","omega3":"bottle","rennet":"vial","lc_mix":"vial","ins_cartridge":"vial","grease":"paintcan","li_grease":"paintcan","ink":"paintcan","glaze":"paintcan","bike_cable":"coil","cord_belt":"coil","wire_rope":"coil","gc_column":"coil","acsr":"coil","pv_ribbon":"spool","metglas":"spool","ybco_tape":"spool","preform":"rod","rail_frog":"rod","ro_membrane":"rod","spent_membrane":"rod","mo_bar":"rod","superalloy":"ingot","soft_lead":"ingot","v_pig":"ingot","bismuth":"ingot","tellurium":"ingot","germanium":"ingot","alloy690":"ingot","tial":"ingot","wha":"ingot","solder":"ingot","sx_blade":"part:blade","spine_cage":"part","chrome_tap":"part","record78":"part:disc","pcd":"part:disc","ito_target":"part:disc","camera_lens":"lens","tel_mirror":"lens","flint_glass":"lens","cell_can":"can","traction_pack":"battery","bms_board":"board","graphite":"coal","bamboo_charcoal":"coal","crawler_shell":"ore","rutile":"ore","titanium":"ore","platinum":"ore","palladium":"ore","indium_sponge":"ore","cng_cart":"cyl","llzo":"pellet","ta_anode":"pellet","pva":"pellet","pfsa_resin":"pellet","ta_ox":"pellet","vial_stopper":"pellet","cork_stopper":"pellet","si3n4_ball":"pellet","led_chip":"chip","die":"chip","shoyu_koji":"grain","wheat_straw":"log","cork_plank":"log","tea_dhool":"leaf","citrus_peel":"fruit","tomato_peel":"fruit","palm_fruit":"fruit","retted_flax":"fluff","line_flax":"fluff","wetsuit":"garment","vaccine_shipper":"box","honey_frame":"box","agar_plates":"box","wax_cappings":"food","kiln_furniture":"brick","green_stack":"brick","grp_hull":"part:hull","cottonseed":"seeds"};
 const ICLS = [
+  [/flake\b/, 'pile'],
+  [/hot band|pickled|decarburised|cold-rolled|grain-oriented|coated strip/, 'scoil'],
+  [/winding/, 'coil'],
+  [/insulin|mrna|plasmid|ivt enzymes|trypsin|lipid|lysozyme|inclusion bodies|nucleoside|\bdspc\b|^penicillin /, 'vial'],
+  [/^(pom|pps|fep|emc|hot_melt|shellac|rosin_ester) /, 'pellet'],
+  [/\bdross\b|heavies|mixed hydroxide|casing soil|molybdenite concentrate|coltan concentrate|barite concentrate|stibnite concentrate|potato pulp|wood chips|cane bagasse/, 'pile'],
+  [/(kraft|bleached|dissolving|bagasse) pulp|carbonised strips|windscreen/, 'sheet'],
+  [/(epoxy|alkyd|melamine|urea-formaldehyde) resin|oleoresin|sodium silicate|bitumen|orange concentrate/, 'drum'],
+  [/instant coffee|baby food|^(lfp|nca|nmc) |lc cores/, 'jar'],
+  [/yeast|polyacrylamide|bleaching earth|dicalcium phosphate|\bargol\b|soda ash|^potash /, 'sack'],
+  [/aerogel|alcogel|green compact|porcelain body/, 'brick'],
+  [/polysilicon/, 'ore'],
+  [/^iodine /, 'crystal'],
+  [/\brayon|oxidised pan/, 'fluff'],
+  [/magazine|bracket/, 'part'],
+  [/water filter/, 'cyl'],
+  [/nanotubes$/, 'coal'],
+  [/wheels and pinions/, 'gear'],
+  [/^sulfur /, 'pile'],
+  [/castor wax|stearin/, 'food'],
+  [/scaffold/, 'log'],
   [/respirator|vest|armour tile|sic_tile/, 'vest'],
   [/shotgun/, 'gun'],
   [/cartridge(?!s)|shotshell|_shell\b|he shell|wp shell|powder_charge|ammonal_charge|black_powder|\btnt\b/, 'ammo'],
