@@ -427,6 +427,12 @@ function spawnRegion(rx, ry) {
     }
     break;
   }
+  if (rng() < 0.45) for (let k = 0; k < 60; k++) {
+    const [x, y] = pick(6);
+    if (Math.hypot(x - cx, y - cy) < 40 || !ruinSpot(x, y) || !farFromBase(x, y, 20) || lists().ruin.some(o => Math.hypot(o.x - x, o.y - y) < 24)) continue;
+    ruAdd(RUK[Math.floor(rng() * RUK.length)], x, y, rng);
+    break;
+  }
   const nh = Math.round(10 * RG * RG / 25600 * [0, 0.5, 1, 1.6][g.hives] * Math.min(2, 0.6 + dc / 600));
   for (let k = 0, n = 0; k < 60 * Math.max(1, nh) && n < nh; k++) {
     const [x, y] = pick(3);
@@ -3526,7 +3532,90 @@ function guards(e) {
   const c = ctr(e);
   return lists().hive.filter(h => { const q = ctr(h); return Math.hypot(q.x - c.x, q.y - c.y) < 16; });
 }
+const RU = {
+  raildepot: { c: '#c8b090', hv: 3, b: 'Search the depot', l: { rail: 40, rail_bar: 12, wheel: 4, bogie: 2, traction_motor: 2, diesel_engine: 1, jerrycan: 4, motor_oil: 6, steel: 30 }, x: [['loco', 1], ['wagon', 2], ['eloco', 1]], u: 1, t: 'The depot is open. The stores still hold wheelsets, rail, traction motors and engine parts, and the shed foreman kept a workshop manual.' },
+  gridsub: { c: '#a0e080', hv: 3, b: 'Search the substation', l: { wire: 80, insulator: 12, transformer: 1, breaker: 2, steel_pole: 8, copper_cathode: 30, battery: 4 }, x: [['substation', 2], ['miner', 1]], u: 1, t: 'The substation is open. The cable store, breaker hall and spares cage are yours, and the engineer\'s logbook is in the control hut.' },
+  refinery: { c: '#e0c060', hv: 4, b: 'Search the refinery', l: { steel_pipe: 30, pipe: 40, pump: 2, bitumen: 20, motor_oil: 10, zeolite: 6, pt_gauze: 1, plate: 20 }, x: [['still', 1], ['topping_column', 1], ['cracker', 1]], u: 2, t: 'The refinery is open. Pipe racks, pumps, drums of oil and bitumen are free for the taking, and the control room manuals describe old processes.' },
+  smelteryard: { c: '#e08060', hv: 4, b: 'Search the smelter yard', l: { copper_cathode: 40, steel: 40, plate: 20, brick: 30, motor: 3 }, x: [['anode_furnace', 1], ['blast', 1], ['smelter', 1], ['converter', 1], ['crusher', 1]], u: 1, t: 'The smelter yard is open. Cathode bundles and steel billets lie in the yard, the fitting shop holds spare furnaces, and the metallurgist\'s notes survived.' }
+};
+const RUK = Object.keys(RU);
+function ruAdd(ty, x, y, rng) {
+  const e = makeEnt(ty, x, y, 0);
+  addEnt(e);
+  const n = S.gen && !S.gen.legacy && !S.gen.hives ? 0 : RU[ty].hv;
+  for (let q = 0, m = 0; q < 80 && m < n; q++) {
+    const b = rng() * Math.PI * 2, r = 5 + rng() * 4, hx = Math.round(x + Math.cos(b) * r), hy = Math.round(y + Math.sin(b) * r);
+    if (!hiveSpot(hx, hy)) continue;
+    addHive(hx, hy, Math.min(3, Math.max(2, hiveTier(hx, hy)))); m++;
+  }
+  return e;
+}
+function spawnRu() {
+  S.ruv = 1;
+  const rng = mulberry32(S.seed + 6161), cx = W / 2, cy = H / 2, mx = rgd ? 92 : Math.min(92, W * 0.45);
+  for (const ty of RUK) for (let k = 0; k < 1500; k++) {
+    const a = rng() * Math.PI * 2, d = 40 + rng() * (mx - 40), x = Math.round(cx + Math.cos(a) * d), y = Math.round(cy + Math.sin(a) * d);
+    if (!ruinSpot(x, y) || !farFromBase(x, y, 18) || lists().ruin.some(o => Math.hypot(o.x - x, o.y - y) < 20)) continue;
+    ruAdd(ty, x, y, rng);
+    break;
+  }
+}
+function ruSearch(e) {
+  const R = RU[e.type], B = BUILD[e.type];
+  if (e.done) return toast('Already searched. Nothing left but rust.', true);
+  const g = guards(e).length;
+  if (g) return toast(`${g} hive${g > 1 ? 's' : ''} within 16 tiles still guard the ${B.n.toLowerCase()}. Clear them first.`, true);
+  e.done = 1;
+  S.rs = (S.rs || 0) + 1;
+  S.rus = (S.rus || 0) + 1;
+  const got = Object.assign({}, R.l), x = R.x[Math.floor(Math.random() * R.x.length)];
+  got[x[0]] = (got[x[0]] || 0) + x[1];
+  for (const k in got) give(k, got[k]);
+  toast(`${R.t} Salvaged ${Object.keys(got).map(k => got[k] + ' ' + nm(k)).join(', ')}.`);
+  const u = [];
+  const bk = BOOKS.flat();
+  for (let i = 0; i < R.u; i++) { const l = RECIPES.filter(r => r.lock && !S.unl[r.id] && !bk.includes(r.id)); if (l.length) u.push(unlock(l[Math.floor(Math.random() * l.length)].id).n); }
+  if (u.length) toast(`The records describe ${u.join(', ')}. Recipe${u.length > 1 ? 's' : ''} unlocked.`);
+  renderHotbar();
+}
+function drawRu(e, x, y, w, h, z) {
+  const t = e.type, lw = Math.max(1, z * 0.05);
+  ctx.fillStyle = '#4a4640'; ctx.fillRect(x + z * 0.08, y + z * 0.08, w - z * 0.16, h - z * 0.16);
+  for (let k = 0; k < 6; k++) { ctx.fillStyle = 'rgba(70,90,40,0.35)'; ctx.beginPath(); ctx.arc(x + w * hash(k, e.id, 7), y + h * hash(e.id, k, 9), z * (0.15 + 0.2 * hash(k, 3, e.id)), 0, 7); ctx.fill(); }
+  ctx.lineWidth = lw;
+  if (t === 'raildepot') {
+    ctx.strokeStyle = '#7a5a40'; for (let q = 0; q < 2; q++) { const ry = y + h * (0.62 + q * 0.2); ctx.beginPath(); ctx.moveTo(x + z * 0.1, ry); ctx.lineTo(x + w - z * 0.1, ry); ctx.moveTo(x + z * 0.1, ry + z * 0.18); ctx.lineTo(x + w - z * 0.1, ry + z * 0.18); ctx.stroke(); }
+    ctx.fillStyle = '#5a3a2a'; for (let s = 0; s < 14; s++) ctx.fillRect(x + z * 0.15 + s * (w - z * 0.3) / 14, y + h * 0.6, z * 0.06, h * 0.32);
+    ctx.fillStyle = '#6a5a50'; ctx.fillRect(x + w * 0.08, y + h * 0.08, w * 0.6, h * 0.46);
+    ctx.fillStyle = '#7e6e62'; for (let q = 0; q < 4; q++) ctx.fillRect(x + w * 0.08, y + h * (0.08 + q * 0.12), w * 0.6, h * 0.05);
+    ctx.fillStyle = '#2a2420'; ctx.fillRect(x + w * 0.62, y + h * 0.2, w * 0.06, h * 0.3);
+    ctx.fillStyle = '#8a4a2a'; ctx.fillRect(x + w * 0.72, y + h * 0.6, w * 0.22, h * 0.14);
+  } else if (t === 'gridsub') {
+    ctx.strokeStyle = '#8a8a80'; ctx.setLineDash([z * 0.1, z * 0.08]); ctx.strokeRect(x + z * 0.14, y + z * 0.14, w - z * 0.28, h - z * 0.28); ctx.setLineDash([]);
+    for (let q = 0; q < 2; q++) { const tx = x + w * (0.22 + q * 0.34), ty = y + h * 0.5; ctx.fillStyle = '#5a6a5a'; ctx.fillRect(tx, ty, w * 0.22, h * 0.3); ctx.fillStyle = '#3a4a3a'; for (let f = 0; f < 5; f++) ctx.fillRect(tx + f * w * 0.045, ty - z * 0.08, z * 0.05, h * 0.3 + z * 0.16); }
+    ctx.strokeStyle = '#a0a098'; ctx.beginPath(); ctx.moveTo(x + w * 0.15, y + h * 0.22); ctx.lineTo(x + w * 0.85, y + h * 0.22); ctx.moveTo(x + w * 0.2, y + h * 0.12); ctx.lineTo(x + w * 0.2, y + h * 0.45); ctx.moveTo(x + w * 0.8, y + h * 0.12); ctx.lineTo(x + w * 0.8, y + h * 0.45); ctx.stroke();
+    ctx.fillStyle = '#d8d0c0'; for (let q = 0; q < 3; q++) { ctx.beginPath(); ctx.arc(x + w * (0.35 + q * 0.15), y + h * 0.22, z * 0.08, 0, 7); ctx.fill(); }
+  } else if (t === 'refinery') {
+    for (let q = 0; q < 2; q++) { const tx = x + w * (0.25 + q * 0.42), ty = y + h * 0.7; ctx.fillStyle = '#8a8478'; ctx.beginPath(); ctx.arc(tx, ty, w * 0.17, 0, 7); ctx.fill(); ctx.fillStyle = '#a09a8c'; ctx.beginPath(); ctx.arc(tx - z * 0.05, ty - z * 0.05, w * 0.13, 0, 7); ctx.fill(); ctx.fillStyle = 'rgba(120,60,30,0.5)'; ctx.beginPath(); ctx.arc(tx + z * 0.1, ty + z * 0.05, w * 0.06, 0, 7); ctx.fill(); }
+    ctx.fillStyle = '#6a6a70'; ctx.beginPath(); ctx.arc(x + w * 0.7, y + h * 0.26, w * 0.1, 0, 7); ctx.fill(); ctx.fillStyle = '#9a4a30'; ctx.beginPath(); ctx.arc(x + w * 0.7, y + h * 0.26, w * 0.05, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#9a9488'; ctx.lineWidth = Math.max(1, z * 0.09); ctx.beginPath(); ctx.moveTo(x + w * 0.1, y + h * 0.42); ctx.lineTo(x + w * 0.9, y + h * 0.42); ctx.moveTo(x + w * 0.7, y + h * 0.36); ctx.lineTo(x + w * 0.7, y + h * 0.42); ctx.stroke();
+    ctx.fillStyle = '#5a5248'; ctx.fillRect(x + w * 0.12, y + h * 0.12, w * 0.3, h * 0.2);
+  } else {
+    ctx.fillStyle = '#7a4a38'; ctx.fillRect(x + w * 0.1, y + h * 0.1, w * 0.5, h * 0.42);
+    ctx.fillStyle = '#5a3426'; for (let q = 0; q < 3; q++) ctx.fillRect(x + w * 0.1, y + h * (0.16 + q * 0.12), w * 0.5, h * 0.03);
+    ctx.fillStyle = '#6a4a3a'; ctx.beginPath(); ctx.arc(x + w * 0.76, y + h * 0.26, w * 0.12, 0, 7); ctx.fill(); ctx.fillStyle = '#1a1614'; ctx.beginPath(); ctx.arc(x + w * 0.76, y + h * 0.26, w * 0.07, 0, 7); ctx.fill();
+    ctx.fillStyle = '#3a3634'; ctx.beginPath(); ctx.moveTo(x + w * 0.55, y + h * 0.92); ctx.quadraticCurveTo(x + w * 0.75, y + h * 0.5, x + w * 0.92, y + h * 0.92); ctx.fill();
+    ctx.fillStyle = '#c87a50'; for (let q = 0; q < 4; q++) ctx.fillRect(x + w * (0.12 + q * 0.09), y + h * 0.66, w * 0.07, h * 0.18);
+  }
+  if (e.done) { ctx.fillStyle = 'rgba(30,30,30,0.35)'; ctx.fillRect(x + z * 0.08, y + z * 0.08, w - z * 0.16, h - z * 0.16); return; }
+  const a = 0.5 + 0.5 * Math.sin(performance.now() / 1000 * 3 + e.id), gx = x + w * 0.5, gy = y + h * 0.5, r = z * (0.12 + 0.1 * a);
+  ctx.globalAlpha = 0.4 + 0.6 * a; ctx.fillStyle = '#ffe68a';
+  ctx.beginPath(); ctx.moveTo(gx, gy - r * 2); ctx.lineTo(gx + r * 0.5, gy); ctx.lineTo(gx, gy + r * 2); ctx.lineTo(gx - r * 0.5, gy); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(gx - r * 2, gy); ctx.lineTo(gx, gy + r * 0.5); ctx.lineTo(gx + r * 2, gy); ctx.lineTo(gx, gy - r * 0.5); ctx.fill();
+  ctx.globalAlpha = 1;
+}
 function searchRuin(e) {
+  if (RU[e.type]) return ruSearch(e);
   if (e.done) return toast('Already searched. Nothing left but rust.', true);
   const g = guards(e).length;
   if (g) return toast(`${g} hive${g > 1 ? 's' : ''} within 16 tiles still guard these works. Clear them first.`, true);
@@ -4946,7 +5035,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt; delete o.pn; delete o.pg; delete o.psat;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, tech: S.tech, tv: 1, rq: S.rq, rp: S.rp, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, rb: S.pl.rb || 0, rm: S.pl.rm || 0, rc: S.pl.rc || 0, rx: S.pl.rx || 0, ra: S.pl.ra || 0, ra: S.pl.ra || 0, rs: S.pl.rs || 0, arm: S.pl.arm || null, fc: S.pl.fc || 0, fc2: S.pl.fc2 || 0, rw: S.pl.rw || 0, rq: S.pl.rq || 0, rs2: S.pl.rs2 || 0, rb2: S.pl.rb2 || 0, rm2: S.pl.rm2 || 0, rf: S.pl.rf || 0, ra2: S.pl.ra2 || 0, sr: S.pl.sr || 0, sr2: S.pl.sr2 || 0, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, osh: S.osh || 0, hrsg: S.hrsg || 0, geo: S.geo || 0, dle: S.dle || 0, nrt: S.nrt || 0, fcr: S.fcr, ach: S.ach || {}, rk: S.rk || 0, trk: S.trk || undefined, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, iv: S.iv, mdn: S.mdn, tyk: S.tyk, egk: S.egk, lvn: S.lvn, lvk: S.lvk, icn: S.icn, ick: S.ick, vlv: S.vlv, wkk: S.wkk, wkn: S.wkn, dgk: S.dgk, xv: S.xv, fv: S.fv, fcn: S.fcn, slk: S.slk, qhv: S.qhv, qhn: S.qhn, qhk: S.qhk, qhd: S.qhd, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, tech: S.tech, tv: 1, rq: S.rq, rp: S.rp, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, rb: S.pl.rb || 0, rm: S.pl.rm || 0, rc: S.pl.rc || 0, rx: S.pl.rx || 0, ra: S.pl.ra || 0, ra: S.pl.ra || 0, rs: S.pl.rs || 0, arm: S.pl.arm || null, fc: S.pl.fc || 0, fc2: S.pl.fc2 || 0, rw: S.pl.rw || 0, rq: S.pl.rq || 0, rs2: S.pl.rs2 || 0, rb2: S.pl.rb2 || 0, rm2: S.pl.rm2 || 0, rf: S.pl.rf || 0, ra2: S.pl.ra2 || 0, sr: S.pl.sr || 0, sr2: S.pl.sr2 || 0, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, osh: S.osh || 0, hrsg: S.hrsg || 0, geo: S.geo || 0, dle: S.dle || 0, nrt: S.nrt || 0, fcr: S.fcr, ach: S.ach || {}, rk: S.rk || 0, trk: S.trk || undefined, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, iv: S.iv, mdn: S.mdn, tyk: S.tyk, egk: S.egk, lvn: S.lvn, lvk: S.lvk, icn: S.icn, ick: S.ick, vlv: S.vlv, wkk: S.wkk, wkn: S.wkn, dgk: S.dgk, xv: S.xv, fv: S.fv, fcn: S.fcn, slk: S.slk, qhv: S.qhv, qhn: S.qhn, qhk: S.qhk, qhd: S.qhd, ruv: S.ruv, rus: S.rus, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -4970,6 +5059,7 @@ function newGame(seed, opts) {
   if (rgd) { growNear(W / 2, H / 2, 100, 99); S.hv = S.rv = S.bv = S.iv = S.xv = S.fv = 1; }
   else { spawnRuins(); spawnHives(); spawnBurrows(); spawnMines(); spawnXdg(); }
   spawnQhive();
+  spawnRu();
   S.cars = []; S.trains = [];
   S.pl = newPl();
   cam = { x: S.pl.x, y: S.pl.y, z: 32 }; camFree = false;
@@ -4984,7 +5074,7 @@ function load() {
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
   const gen = d.gen || { legacy: 1 };
   setSize(gen.legacy ? 160 : gen.size);
-  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, tech: d.tech || {}, rq: d.rq || [], rp: d.rp || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0, fs: d.fs || {}, fk: d.fk || 0, osh: d.osh || 0, hrsg: d.hrsg || 0, geo: d.geo || 0, dle: d.dle || 0, nrt: d.nrt || 0, fcr: d.fcr, ach: d.ach || {}, rk: d.rk || 0, trk: d.trk || null, dg: d.dg || null, dgn: d.dgn || 0, dgc: d.dgc || 0, qk: d.qk || 0, bv: d.bv, iv: d.iv, mdn: d.mdn || 0, tyk: d.tyk || 0, egk: d.egk || 0, lvn: d.lvn || 0, lvk: d.lvk || 0, icn: d.icn || 0, ick: d.ick || 0, vlv: d.vlv || 0, wkk: d.wkk || 0, wkn: d.wkn || 0, dgk: d.dgk || {}, xv: d.xv, fv: d.fv, fcn: d.fcn || 0, slk: d.slk || 0, qhv: d.qhv, qhn: d.qhn || 0, qhk: d.qhk || 0, qhd: d.qhd || 0 };
+  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, tech: d.tech || {}, rq: d.rq || [], rp: d.rp || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0, fs: d.fs || {}, fk: d.fk || 0, osh: d.osh || 0, hrsg: d.hrsg || 0, geo: d.geo || 0, dle: d.dle || 0, nrt: d.nrt || 0, fcr: d.fcr, ach: d.ach || {}, rk: d.rk || 0, trk: d.trk || null, dg: d.dg || null, dgn: d.dgn || 0, dgc: d.dgc || 0, qk: d.qk || 0, bv: d.bv, iv: d.iv, mdn: d.mdn || 0, tyk: d.tyk || 0, egk: d.egk || 0, lvn: d.lvn || 0, lvk: d.lvk || 0, icn: d.icn || 0, ick: d.ick || 0, vlv: d.vlv || 0, wkk: d.wkk || 0, wkn: d.wkn || 0, dgk: d.dgk || {}, xv: d.xv, fv: d.fv, fcn: d.fcn || 0, slk: d.slk || 0, qhv: d.qhv, qhn: d.qhn || 0, qhk: d.qhk || 0, qhd: d.qhd || 0, ruv: d.ruv, rus: d.rus || 0 };
   dgc = null; dgMine = null; dfx.length = 0; nades.length = 0;
   initWorld(d.seed, gen);
   if (rgd && d.rg) for (let r = 0; r < rgd.length; r++) if (d.rg[r] === '1') growRegion(r % (W / RG), Math.floor(r / (W / RG)), false);
@@ -5005,6 +5095,7 @@ function load() {
   if (!S.xv) spawnXdg();
   else if (!S.fv) spawnXdg(['oldfactory']);
   if (!S.qhv) spawnQhive();
+  if (!S.ruv) spawnRu();
   if (S.dg && !ents.get(S.dg.bid)) S.dg = null;
   S.cars = d.cars || []; S.trains = d.trains || [];
   if (rgd) growNear(d.pl ? d.pl.x : W / 2, d.pl ? d.pl.y : H / 2, 100, 99);
@@ -5133,6 +5224,7 @@ const ACH = [
   ['valves', 'def', 'Lockout Tagout', 'Close 5 leaking ammonia valves.', () => (S.vlv || 0) >= 5],
   ['factory', 'def', 'Night Shift', 'Go into an abandoned factory.', () => (S.fcn || 0) >= 1],
   ['qhive', 'def', 'Into the Comb', 'Climb down into the queen hive near your landing site.', () => (S.qhn || 0) >= 1],
+  ['salvor', 'def', 'Salvor', 'Search four crawler-guarded sites: depots, substations, refineries or smelter yards.', () => (S.rus || 0) >= 4],
   ['qdeep', 'def', 'Hive Diver', 'Reach depth 10 of the queen hive.', () => (S.qhd || 0) >= 10],
   ['slag', 'def', 'Furnace Out', 'Kill the slag queen in the smelting hall of an abandoned factory.', () => (S.slk || 0) >= 1],
   ['brood', 'def', 'Plant Shutdown', 'Kill the broodmother in the synthesis hall of an ammonia works.', () => (S.wkk || 0) >= 1],
@@ -7840,7 +7932,7 @@ function drawBuilding(e, ox, oy, z) {
   if (B.kind === 'turret') return drawTurret(e, x, y, w, h, z);
   if (B.kind === 'projector') return drawProjector(e, x, y, w, h, z);
   if (B.kind === 'gun') return drawGun(e, x, y, w, h, z);
-  if (B.kind === 'ruin') return e.type === 'burrow' ? drawBurrow(e, x, y, w, h, z) : e.type === 'infested' ? drawInfested(e, x, y, w, h, z) : e.type === 'lavatube' ? drawLavaTube(e, x, y, w, h, z) : e.type === 'icecave' ? drawIceCave(e, x, y, w, h, z) : e.type === 'nh3works' ? drawWorks(e, x, y, w, h, z) : e.type === 'queenhive' ? drawQueenHive(e, x, y, w, h, z) : e.type === 'oldfactory' ? drawFactory(e, x, y, w, h, z) : drawRuin(e, x, y, w, h, z);
+  if (B.kind === 'ruin') return e.type === 'burrow' ? drawBurrow(e, x, y, w, h, z) : e.type === 'infested' ? drawInfested(e, x, y, w, h, z) : e.type === 'lavatube' ? drawLavaTube(e, x, y, w, h, z) : e.type === 'icecave' ? drawIceCave(e, x, y, w, h, z) : e.type === 'nh3works' ? drawWorks(e, x, y, w, h, z) : e.type === 'queenhive' ? drawQueenHive(e, x, y, w, h, z) : e.type === 'oldfactory' ? drawFactory(e, x, y, w, h, z) : RU[e.type] ? drawRu(e, x, y, w, h, z) : drawRuin(e, x, y, w, h, z);
   if (e.type === 'oil_platform') return drawRig(e, x, y, w, h, z);
   if (e.type === 'wind_offshore') return drawOWT(e, x, y, w, h, z);
   if (e.type === 'tidal') return drawTidal(e, x, y, w, h, z);
@@ -8102,6 +8194,7 @@ function tileInfo0(x, y) {
     if (e.type === 'queenhive') s += `<br>Depth ${e.dp || 1}${e.qhp != null ? ' · hive queen wounded' : ''} · click to go in`;
     else if (XDG[e.type] && e.type !== 'infested') s += `<br>${e.done ? DGX[XDG[e.type]].gone : 'Tier ' + burrowTier(e) + (e.qhp === 0 ? ' · ' + DGQ[XDG[e.type]].toLowerCase() + ' dead' : e.qhp != null ? ' · ' + DGQ[XDG[e.type]].toLowerCase() + ' wounded' : '') + ' · click to go in'}`;
     if (e.type === 'infested') s += `<br>${e.done ? 'Capped' : 'Tier ' + burrowTier(e) + (e.qhp === 0 ? ' · tyrant dead' : e.qhp != null ? ' · tyrant wounded' : '') + ' · click to ride the cage down'}`;
+    if (RU[e.type]) s += `<br>${e.done ? 'Searched' : guards(e).length ? guards(e).length + ' hives on guard' : 'Unguarded: click to search'}`;
     if (e.type === 'ruin') s += `<br>${e.done ? 'Searched' : guards(e).length ? guards(e).length + ' hives on guard' : 'Unguarded: click to search'}`;
     if (e.type === 'turret') s += `<br>${e.ammo} cartridges + ${e.rd} rounds · ${e.kills} kills`;
     if (e.hp != null && e.hp < maxHp(e)) s += `<br><span class="bad">Integrity ${Math.round(e.hp)}/${maxHp(e)}</span>`;
@@ -8356,6 +8449,7 @@ function openPanel(e) {
   if (e.type === 'nh3works') h += `<button data-act="delve" ${e.done ? 'disabled' : ''}>Go in through the gate</button>`;
   if (e.type === 'queenhive') h += `<button data-act="delve">Climb down into the hive (depth ${e.dp || 1})</button>`;
   if (e.type === 'oldfactory') h += `<button data-act="delve" ${e.done ? 'disabled' : ''}>Duck in under the dock shutter</button>`;
+  if (RU[e.type]) h += `<button data-act="search" ${e.done ? 'disabled' : ''}>${RU[e.type].b}</button>`;
   if (e.type === 'ruin') h += `<button data-act="search" ${e.done ? 'disabled' : ''}>Search the works</button>`;
   if (kind(e) === 'pole') h += '<button data-act="wauto">Connect to nearby grids</button><button data-act="wcut">Cut all wires</button>';
   if (kind(e) !== 'hive' && kind(e) !== 'ruin') h += '<button class="danger" data-act="remove">Pick up</button>';
@@ -8551,6 +8645,10 @@ function renderPanelDyn() {
     const T = burrowTier(e), oc = (e.oc || []).length, n = dgCaches(e), ty = XDG[e.type], qn = DGQ[ty].toLowerCase();
     h += `<div class="status"><i style="background:${e.done ? ST_COL.none : ST_COL.input}"></i>${e.done ? DGX[ty].gone : DGK[ty] + ' · tier ' + T + ' · ' + qn + ' ' + (e.qhp === 0 ? 'dead' : e.qhp != null ? 'wounded' : 'unhurt') + ' · ' + oc + ' of ' + n + (ty === 'works' ? ' lockers' : ty === 'factory' ? ' crates' : ' caches') + ' opened' + (e.key ? ' · hall key found' : '')}</div>`;
     h += `<p class="dim">${e.done ? DGX[ty].gone + '.' : DGX[ty].info}</p>`;
+  } else if (RU[e.type]) {
+    const g = guards(e).length;
+    h += `<div class="status"><i style="background:${e.done ? ST_COL.none : g ? ST_COL.input : ST_COL.work}"></i>${e.done ? 'Searched' : g ? g + ' hive' + (g > 1 ? 's' : '') + ' within 16 tiles' : 'Unguarded'}</div>`;
+    h += `<p class="dim">${e.done ? 'Stripped bare. Only rust and weeds are left.' : g ? 'Crawler hives guard this site. Clear every hive within 16 tiles, then search it for salvage, a spare machine and the old records.' : 'Nothing stops you now. Search it for salvage, a spare machine and the old records.'}</p>`;
   } else if (k === 'ruin') {
     const g = guards(e).length;
     h += `<div class="status"><i style="background:${e.done ? ST_COL.none : g ? ST_COL.input : ST_COL.work}"></i>${e.done ? 'Searched' : g ? g + ' hive' + (g > 1 ? 's' : '') + ' within 16 tiles' : 'Unguarded'}</div>`;
@@ -8758,10 +8856,10 @@ function startWorld() {
   closeModal(); renderHotbar(); save();
   toast('New world generated');
 }
-const entCol = (e, k) => k === 'hive' ? '#e04040' : e.type === 'burrow' ? (e.done ? '#6a5a4a' : '#e0a040') : e.type === 'infested' ? (e.done ? '#6a5a4a' : '#e06a40') : e.type === 'lavatube' ? (e.done ? '#6a5a4a' : '#ff5020') : e.type === 'icecave' ? (e.done ? '#6a5a4a' : '#a0e0ff') : e.type === 'nh3works' ? (e.done ? '#6a5a4a' : '#c0c8d0') : e.type === 'queenhive' ? '#ffb030' : e.type === 'oldfactory' ? (e.done ? '#6a5a4a' : '#d89060') : k === 'ruin' ? '#c080ff' : k === 'road' ? '#8a8a8a' : k === 'rail' ? '#b09070' : '#ffe080';
+const entCol = (e, k) => k === 'hive' ? '#e04040' : e.type === 'burrow' ? (e.done ? '#6a5a4a' : '#e0a040') : e.type === 'infested' ? (e.done ? '#6a5a4a' : '#e06a40') : e.type === 'lavatube' ? (e.done ? '#6a5a4a' : '#ff5020') : e.type === 'icecave' ? (e.done ? '#6a5a4a' : '#a0e0ff') : e.type === 'nh3works' ? (e.done ? '#6a5a4a' : '#c0c8d0') : e.type === 'queenhive' ? '#ffb030' : e.type === 'oldfactory' ? (e.done ? '#6a5a4a' : '#d89060') : RU[e.type] ? (e.done ? '#6a5a4a' : RU[e.type].c) : k === 'ruin' ? '#c080ff' : k === 'road' ? '#8a8a8a' : k === 'rail' ? '#b09070' : '#ffe080';
 const mv = { x: 0, y: 0, z: 2 };
 let mDrag = null;
-function mapHtml() { return `<div class="fmap"><canvas id="wmap"></canvas><details class="fleg" open><summary>Legend</summary>${legendHtml()}<div class="wleg"><span><i style="background:#e04040"></i>Crawler hive</span><span><i style="background:#c080ff"></i>Abandoned works</span><span><i style="background:#e0a040"></i>Crawler burrow</span><span><i style="background:#e06a40"></i>Infested mine</span><span><i style="background:#ff5020"></i>Lava tube</span><span><i style="background:#a0e0ff"></i>Ice cave</span><span><i style="background:#c0c8d0"></i>Ammonia works</span><span><i style="background:#d89060"></i>Abandoned factory</span><span><i style="background:#ffb030"></i>Queen hive</span><span><i style="background:#ffe080"></i>Your buildings</span><span><i style="background:#ff4050"></i>Crawlers</span><span><i style="background:#4ae0ff"></i>You</span></div><p class="dim">Seed ${S.seed}${S.gen && !S.gen.legacy ? '' : ' · classic map'} · ${rgd ? 'endless world, unexplored land stays dark' : W + '×' + H}${S.gen && S.gen.inf ? ' · endless ore' : ''}</p></details><div class="fzb"><button data-fz="1" title="Zoom in">+</button><button data-fz="-1" title="Zoom out">−</button><button data-fz="0" title="Centre on you">◎</button></div><div class="fpos"></div><div class="fhint">Drag to pan · Wheel to zoom · Click to look there · M or Esc to close</div></div>`; }
+function mapHtml() { return `<div class="fmap"><canvas id="wmap"></canvas><details class="fleg" open><summary>Legend</summary>${legendHtml()}<div class="wleg"><span><i style="background:#e04040"></i>Crawler hive</span><span><i style="background:#c080ff"></i>Abandoned works</span>${RUK.map(k => `<span><i style="background:${RU[k].c}"></i>${BUILD[k].n}</span>`).join('')}<span><i style="background:#e0a040"></i>Crawler burrow</span><span><i style="background:#e06a40"></i>Infested mine</span><span><i style="background:#ff5020"></i>Lava tube</span><span><i style="background:#a0e0ff"></i>Ice cave</span><span><i style="background:#c0c8d0"></i>Ammonia works</span><span><i style="background:#d89060"></i>Abandoned factory</span><span><i style="background:#ffb030"></i>Queen hive</span><span><i style="background:#ffe080"></i>Your buildings</span><span><i style="background:#ff4050"></i>Crawlers</span><span><i style="background:#4ae0ff"></i>You</span></div><p class="dim">Seed ${S.seed}${S.gen && !S.gen.legacy ? '' : ' · classic map'} · ${rgd ? 'endless world, unexplored land stays dark' : W + '×' + H}${S.gen && S.gen.inf ? ' · endless ore' : ''}</p></details><div class="fzb"><button data-fz="1" title="Zoom in">+</button><button data-fz="-1" title="Zoom out">−</button><button data-fz="0" title="Centre on you">◎</button></div><div class="fpos"></div><div class="fhint">Drag to pan · Wheel to zoom · Click to look there · M or Esc to close</div></div>`; }
 function mapOpen() { mv.x = cam.x; mv.y = cam.y; mv.z = rgd ? 2 : Math.max(1, Math.min(4, 700 / W)); }
 function mapZoom(f, px, py) {
   const c = document.getElementById('wmap');
@@ -10488,7 +10586,7 @@ window.game = { tech: { TECH, TECHL, queueTech, curTech, techOk, techAvail, gate
   setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; camFree = true; },
   get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get trains() { return S.trains; }, placeTrain, trainAt, openTrain, openPanel, pickTrain, trainGeo, reverseTrain, railBusy, get puffs() { return puffs; }, get H() { return H; }, get wakes() { return wakes; }, floats, boatRoute, boatPilot, carStep, carHit, fishTick, fishRegrow, seaOil, seaPatch, oily, sunMul, get oreAmt() { return oreAmt; }, fground, fstock, netToggle, wdep, seaLv,
   htier, spits: () => spits, gearT, gearReset() { gearCt = -99; }, spawnBugs, hiveTier, guardStep, addHive, bugKind, maxHp, hurt, rgd: () => rgd, tileInfo0, growNear, genRegion, tch: () => tch, ovc, mapWin, depleteTile,
-  dgEnter, dgExit, dgTick, dgShoot, dgMove, dgUse, dgClick, dgGrid, dgGen, dgSolid, dgSee, dgPos, spawnBurrows, mineGen, dgKind, dgCaches, spawnMines, dgDoor, spawnXdg, dgValve, broodTick, xdgAt, spawnQhive, qhK, biome, terNear, get dfx() { return dfx; },
+  dgEnter, dgExit, dgTick, dgShoot, dgMove, dgUse, dgClick, dgGrid, dgGen, dgSolid, dgSee, dgPos, spawnBurrows, mineGen, dgKind, dgCaches, spawnMines, dgDoor, spawnXdg, dgValve, broodTick, xdgAt, spawnQhive, qhK, spawnRu, guards, searchRuin, RU, biome, terNear, get dfx() { return dfx; },
   rotEnt, ugPair, lists: () => lists(), wireToggle, autoWire, wired, setTool(t) { tool = t; },
   tx: { CMBI, bIcon, IP, iArch, mArch, icoClass, icoCv, mLay, mulberry32 }, setOverlay(v) { overlay = v; }, elev: () => elev, drawPreview, startWorld, get wcfg() { return wcfg; },
 };
