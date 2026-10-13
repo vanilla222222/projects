@@ -312,6 +312,7 @@ const ITEMS = {
   cryo_valve: { n: 'Cryogenic Valve', c: '#a8b0b8', f: 'A long-stem stainless valve with a PCTFE seat. The long bonnet keeps the packing warm so it does not freeze solid' },
   ln2_flask: { n: 'Liquid Nitrogen Flask', c: '#d8ecf8', f: 'A small vented dewar filled with liquid nitrogen at −196°C. It boils off slowly, so carry it vented and never seal it' },
   cryo_lance: { n: 'Cryo Lance', c: '#b8c8d8', f: 'A backpack dewar feeding a hand lance through a cryogenic valve. It sprays a cone of liquid nitrogen that freezes crawlers in place for a few seconds. Armoured crawlers thaw faster' },
+  repair_pack: { n: 'Repair Kit', c: '#c87a3a', f: 'Steel patch plates, glass cloth and a two-part epoxy filler. Each kit restores 200 integrity to a building or wall.' },
   cylinder: { n: 'Steel Cylinder', c: '#7a8a7a', f: 'Seamless steel gas bottle, tested to 250 bar' },
   cl2_cyl: { n: 'Chlorine Cylinder', c: '#b8d84a', f: 'Liquid Cl₂ under its own vapour pressure, about 7 bar. Released, it boils into a cloud 2.5 times heavier than air that creeps along the ground' },
   nh3_cyl: { n: 'Ammonia Cylinder', c: '#a8c8e8', f: 'Liquid NH₃ at about 9 bar. A base: it neutralises the sulfuric acid in crawler blood. Lighter than air, so the cloud rises and blows away fast' },
@@ -2385,6 +2386,7 @@ const BUILD = {
   chlorinolysis: { n: 'Chlorinolysis Reactor', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#8aa098', ab: 'CL', kw: 80, cost: { stainless: 8, steel_pipe: 4, brick: 10 }, d: 'A nickel-lined tube at 600°C. Heavy chlorocarbons crack and recombine into perchloroethylene, and the chlorine is recycled.' },
   n2_liquefier: { n: 'Nitrogen Liquefier', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#a8c4e0', ab: 'LN', kw: 300, cost: { stainless: 8, motor: 4, steel_pipe: 4 }, d: 'A recycle compressor and two turbo-expanders. The cold expanded gas cools the warm incoming stream until part of it condenses.' },
   dewar_line: { n: 'Vacuum Jacketing Station', kind: 'machine', w: 3, h: 2, cat: 'Processing', c: '#8a98a8', ab: 'VJ', kw: 60, cost: { stainless: 10, pump: 2, pcb: 1, motor: 1 }, d: 'Orbital welders, a film wrapping head and a bake-out oven on turbomolecular pumps. A good jacket holds its vacuum for ten years.' },
+  mender: { n: 'Repair Station', kind: 'mender', w: 2, h: 2, cat: 'Defence', c: '#8a6a3a', ab: 'RS', hp: 600, cost: { plate: 8, motor: 2, pcb: 2 }, d: 'A crew bay that patches damaged buildings and walls within 8 tiles, 40 integrity a second. Burns one repair kit per 200 integrity. Load kits by hand, from a chest or off a belt.' },
   kiln: { n: 'Lime Kiln', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#b0a080', ab: 'LK', cost: { brick: 8, plate: 2 }, d: 'Burns limestone into quicklime.' },
   roaster: { n: 'Roaster', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#a06a3a', ab: 'RO', kw: 30, cost: { brick: 8, plate: 4 }, d: 'Burns sulfur out of sulfide concentrates. Gives off SO₂.' },
   blast: { n: 'Blast Furnace', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#7a3a2a', ab: 'BF', cost: { brick: 20, casting: 10 }, d: 'Reduces oxides with coke.' },
@@ -4243,6 +4245,7 @@ const RECIPES = [
   { id: 'cryo_valve', n: 'Cryogenic Valve', b: 'workshop', t: 4, i: { stainless: 2, pctfe: 1, brass: 1 }, o: { cryo_valve: 1 } },
   { id: 'ln2_flask', n: 'Fill Liquid Nitrogen Flasks', b: 'dewar_line', t: 2, i: { aluminium: 1 }, fi: { ln2: 10 }, o: { ln2_flask: 2 }, eq: 'N₂ (l) → vented aluminium flask', note: 'The flask is precooled with the first splash so that the rest does not boil away on warm metal.' },
   { id: 'cryo_lance', b: 'workshop', t: 12, i: { dewar: 1, cryo_valve: 2, stainless: 4, pctfe: 1 }, o: { cryo_lance: 1 } },
+  { id: 'repair_pack', n: 'Repair Kit', b: 'workshop', t: 3, i: { plate: 2, epoxy: 1, glass_fibre: 1 }, o: { repair_pack: 2 }, eq: 'Epoxy + amine hardener → cross-linked filler', note: 'Field repair the way bridge crews do it: cut steel patch plates, lay glass cloth over the break and wet it out with epoxy. The resin cures hard in an hour and bonds to rusty steel and broken concrete alike.' },
   { id: 'kraft_cook', n: 'Kraft Cook', b: 'digester', t: 4, i: { wood_chips: 4 }, fi: { wl: 20, steam: 10 }, o: { pulp: 2 }, fo: { bl: 30 }, eq: 'Lignin + OH⁻ + HS⁻ → soluble lignin fragments', note: 'Carl Dahl, 1879. Chips cook at 170°C for two hours. Hydrosulfide cleaves the ether links that bind lignin, so the fibres fall apart unharmed.' },
   { id: 'soda_cook', n: 'Soda Cook', b: 'digester', t: 4, i: { wood_chips: 4 }, fi: { naoh: 20, steam: 10 }, o: { pulp: 1 }, fo: { bl: 30 }, eq: 'Lignin + OH⁻ → soluble lignin fragments', note: 'The older soda process of 1851. Caustic alone is slower and harsher, so half the fibre is lost. Use it to start up a new mill before the liquor loop is running.' },
   { id: 'recover', n: 'Liquor Recovery', b: 'recovery', t: 3, fi: { bl: 30, water: 60 }, fo: { steam: 60, so2: 1 }, o: { smelt: 2 }, bleed: ['so2'], eq: 'Na-organics + O₂ → Na₂CO₃ + CO₂ + H₂O (steam)', note: 'Tomlinson recovery boiler, 1934. Black liquor is evaporated to 70% solids and sprayed into the furnace. About a tenth of the sodium is lost each round.' },
@@ -5471,6 +5474,7 @@ const ORDERS = [
   { c: 'Appliance motor maker', item: 'sr_ferrite', n: 200, tier: 6, rw: { sr_converter: 1 }, d: 'Arc segment magnets for washing machine and pump motors.' },
   { c: 'Bridge builder', item: 'uhpc_panel', n: 30, tier: 3, rw: { uhpc_wall: 12, curing_chamber: 1 }, d: 'Thin UHPC deck panels for a footbridge.' },
   { c: 'Cryobank', item: 'dewar', n: 8, tier: 3, rw: { ln2_flask: 20, n2_liquefier: 1 }, d: 'Storage dewars for a cell bank.' },
+  { c: 'Highways depot', item: 'repair_pack', n: 30, tier: 2, rw: { mender: 1, plate: 40 }, d: 'Patch kits for a winter of potholed bridge decks.' },
   { c: 'Rail operator', item: 'traction_pack', n: 4, tier: 5, rw: { rail_charger: 2, rail: 100 }, d: 'Packs to convert two shunting locomotives off diesel.' },
 ];
 

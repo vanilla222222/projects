@@ -768,6 +768,7 @@ function makeEnt(type, x, y, dir) {
     case 'pole': e.w = []; break;
     case 'miner': e.out = {}; e.prog = 0; e.k = 0; break;
     case 'turret': Object.assign(e, { ammo: 0, rd: 0, cd: 0, ang: -Math.PI / 2, sh: -1, kills: 0 }); break;
+    case 'mender': Object.assign(e, { pk: 0, pts: 0, fx: -9, tgt: null, fixed: 0 }); break;
     case 'hive': Object.assign(e, { food: 0, sw: 0, dc: 0 }); break;
     case 'projector': Object.assign(e, { pay: {}, pw: 0, cd: 0, ang: -Math.PI / 2, sh: -9, shots: 0 }); break;
     case 'gun': Object.assign(e, { ammo: 0, wp: 0, cd: 0, ang: -Math.PI / 2, sh: -9, shots: 0 }); break;
@@ -865,7 +866,7 @@ function removeEnt(e) {
 
 function lists() {
   if (L) return L;
-  L = { belt: [], ubelt: [], splitter: [], inserter: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [], wall: [], turret: [], hive: [], projector: [], gun: [], ruin: [], road: [], rail: [], stop: [], dock: [], buoy: [], pole: [] };
+  L = { belt: [], ubelt: [], splitter: [], inserter: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [], wall: [], turret: [], mender: [], hive: [], projector: [], gun: [], ruin: [], road: [], rail: [], stop: [], dock: [], buoy: [], pole: [] };
   for (const e of ents.values()) {
     const k = kind(e);
     if (k === 'pipe') L.node.push(e);
@@ -1067,6 +1068,11 @@ function acceptItem(o, k) {
     o.store[k] = (o.store[k] || 0) + 1;
     return true;
   }
+  if (kd === 'mender') {
+    if (k !== 'repair_pack' || o.pk >= MEND_CAP) return false;
+    o.pk++;
+    return true;
+  }
   if (kd === 'turret') {
     if (k !== 'cartridge' || o.ammo >= TUR_CAP) return false;
     o.ammo++;
@@ -1234,6 +1240,7 @@ function wants(o, k) {
   if (o.type === 'depot') { const a = (S.orders || []).find(a => ORDERS[a.i].item === k && a.got < ORDERS[a.i].n); return a ? ORDERS[a.i].n - a.got : 0; }
   if (kd === 'chest') return 400 - sum(o.store);
   if (kd === 'turret') return k === 'cartridge' ? TUR_CAP - o.ammo : 0;
+  if (kd === 'mender') return k === 'repair_pack' ? MEND_CAP - o.pk : 0;
   if (kd === 'gun') return k === 'shell' || k === 'wp_shell' ? GUN_CAP - o.ammo - (o.wp || 0) : 0;
   if (kd === 'projector') return k === 'black_powder' ? POW_CAP - o.pw : PAYLOADS.includes(k) ? PROJ_CAP - sum(o.pay) : 0;
   if (kd === 'sorter') return o.buf ? 0 : 1;
@@ -1441,6 +1448,7 @@ function burst(e, why) {
   return `${BUILD[e.type].n} at ${e.x},${e.y} ${why}`;
 }
 
+const MEND_CAP = 20, MEND_R = 8, MEND_HP = 200, MEND_RATE = 40;
 const TUR_CAP = 20, TUR_R = 10, BUG_V = 1.6, MAX_BUGS = 80, MAX_HIVES = 30, BUG_LIFE = 150;
 const HIVE_T = [null, { n: 'Crawler Nest', hp: 600, sw: 0.6, gd: 2, gr: 500, sh: 6, su: 8 }, { n: 'Crawler Hive', hp: 1200, sw: 1, gd: 4, gr: 1500, sh: 12, su: 16 }, { n: 'Brood Mound', hp: 2400, sw: 1.5, gd: 6, sh: 24, su: 30 }];
 const BUGK = [{ n: 'Crawler', hp: 1, v: 1, dm: 1, c: '#4a3038', hc: '#5e3c46', st: '#d8c84a' }, { n: 'Spitter', hp: 0.7, v: 0.85, dm: 0.8, rng: 4, c: '#3e4a2a', hc: '#52603a', st: '#b8e050', gl: '160,220,70' }, { n: 'Brute', hp: 4, v: 0.6, dm: 3, ar: 1, sz: 1.6, c: '#2e2224', hc: '#4a3436', st: '#c05030', pl: '#6a4a40' }, { n: 'Plated Crawler', hp: 2, v: 1.05, dm: 1.6, ar: 1, sz: 1.15, c: '#3a4048', hc: '#58626e', st: '#a8c0d8', pl: '#8a96a4' }, { n: 'Behemoth', hp: 9, v: 0.5, dm: 5, ar: 1, sz: 2.3, c: '#22222a', hc: '#3a3a46', st: '#e04020', pl: '#5a5a68' },
@@ -3935,6 +3943,28 @@ function bugStep() {
   }
   spitStep();
 }
+function menderTick(e) {
+  let t = e.tgt && ents.get(e.tgt);
+  if (!t || t.hp == null || t.hp >= maxHp(t)) {
+    t = null; e.tgt = null;
+    if ((e.scan = (e.scan || 0) - DT) > 0) return;
+    e.scan = 1;
+    const c = ctr(e); let best = 0;
+    for (const o of ents.values()) {
+      if (o === e || o.hp == null) continue;
+      const k = kind(o); if (k === 'hive' || k === 'ruin') continue;
+      const m = maxHp(o), q = ctr(o);
+      if (o.hp >= m || (q.x - c.x) ** 2 + (q.y - c.y) ** 2 > MEND_R * MEND_R) continue;
+      const lack = 1 - o.hp / m; if (lack > best) { best = lack; t = o; }
+    }
+    if (!t) return;
+    e.tgt = t.id;
+  }
+  let a = Math.min(MEND_RATE * DT, maxHp(t) - t.hp);
+  if (e.pts < a) { if (e.pk > 0) { e.pk--; e.pts += MEND_HP; } else return; }
+  a = Math.min(a, e.pts);
+  e.pts -= a; t.hp += a; e.fixed += a; e.fx = S.t;
+}
 function turretTick(e) {
   e.cd -= DT;
   if (e.cd > 0) return;
@@ -4157,6 +4187,7 @@ function tick() {
   for (const e of l.booster) boosterTick(e);
   bugStep();
   for (const e of l.turret) turretTick(e);
+  for (const e of l.mender) menderTick(e);
   fluidStep(l.pairs);
   const fails = [];
   for (const e of l.node) nodeHeat(e, fails);
@@ -8448,6 +8479,7 @@ function openPanel(e) {
   if (kind(e) === 'pipe') h += '<button data-act="flush">Flush network</button>';
   if (belty(e) || B.ug || kind(e) === 'inserter' || e.type === 'sorter' || e.type === 'booster') h += '<button data-act="rotate">Rotate (R)</button>';
   if (e.type === 'turret') h += '<button data-act="load">Load cartridges</button>';
+  if (kind(e) === 'mender') h += '<button data-act="mload">Load repair kits</button>';
   if (e.type === 'projector') h += '<button data-act="pload">Load from inventory</button>';
   if (e.type === 'howitzer') h += '<button data-act="gload">Load shells</button>';
   if (e.type === 'burrow') h += `<button data-act="delve" ${e.done ? 'disabled' : ''}>Climb down the rope</button>`;
@@ -8616,6 +8648,12 @@ function renderPanelDyn() {
     h += `<div class="spec">Smog around it ${Math.round(polAt(e.x + 1, e.y + 1))} · ${e.sw} swarms sent · crawler evolution ${Math.round(S.evo * 100)}%</div>`;
     h += resHtml();
     h += '<p class="dim">The hive breathes in smog from the 24×24 tiles around it. Each 50 food sends a swarm at whatever vented most recently. Every eighth swarm founds a new hive, as close to the smog as it can. Guns or poison gas are the only ways to clear one, and they defend themselves. Smog it eats also makes it grow: a nest becomes a hive, then a brood mound with more guards and bigger swarms. Guards circle the mound and go for anyone who comes close. Once evolution passes 20% some crawlers hatch as spitters that lob acid from 4 tiles away, and past 45% big armoured brutes appear. The wreck gives up crawler shell, a source of chitin, and the sulfur granules the crawlers hoard in their guts.</p>';
+  } else if (k === 'mender') {
+    const tg = e.tgt && ents.get(e.tgt), on = tg && S.t - e.fx < 0.3;
+    h += `<div class="status"><i style="background:${on ? ST_COL.work : e.pk || e.pts ? ST_COL.none : ST_COL.input}"></i>${on ? 'Patching ' + BUILD[tg.type].n : !e.pk && !e.pts ? 'Out of repair kits' : 'Nothing damaged nearby'} · range ${MEND_R} tiles</div>`;
+    h += `<div class="gauge"><span>Repair kits</span>${bar(e.pk, MEND_CAP, '#c87a3a')}<b>${e.pk} / ${MEND_CAP} + ${Math.round(e.pts)} hp</b></div>`;
+    h += `<div class="spec">${fmt(Math.round(e.fixed))} integrity restored so far</div>`;
+    h += '<p class="dim">Works on the most damaged building in range first. Chests and belts touching it top it up.</p>';
   } else if (k === 'turret') {
     h += `<div class="status"><i style="background:${e.ammo || e.rd ? (S.t - e.sh < 0.5 ? ST_COL.work : ST_COL.none) : ST_COL.input}"></i>${!e.ammo && !e.rd ? 'Out of ammunition' : S.t - e.sh < 0.5 ? 'Firing' : 'Watching'} · range ${TUR_R} tiles · ${e.kills} kills</div>`;
     h += `<div class="gauge"><span>Cartridges</span>${bar(e.ammo, TUR_CAP, '#c8a040')}<b>${e.ammo} / ${TUR_CAP} + ${e.rd} rounds</b></div>`;
@@ -8675,7 +8713,7 @@ function renderPanelDyn() {
   } else if (k === 'sorter') {
     h += `<div class="slots"><div class="slot">${e.buf ? chip(e.buf) : '<span class="dim">Empty</span>'}</div></div><p class="dim">Filtered item goes straight on. Everything else turns right.</p>`;
   }
-  if (k !== 'hive' && e.hp != null && e.hp < maxHp(e)) h += `<div class="gauge"><span>Integrity</span>${bar(e.hp, maxHp(e), '#e04a4a')}<b>${Math.round(e.hp)} / ${maxHp(e)}</b></div><p class="dim">Pick it up and put it back to rebuild it.</p>`;
+  if (k !== 'hive' && e.hp != null && e.hp < maxHp(e)) h += `<div class="gauge"><span>Integrity</span>${bar(e.hp, maxHp(e), '#e04a4a')}<b>${Math.round(e.hp)} / ${maxHp(e)}</b></div><p class="dim">${S.inv.repair_pack ? `<button data-act="repair">Repair with kits (${Math.min(S.inv.repair_pack, Math.ceil((maxHp(e) - e.hp) / MEND_HP))} of ${S.inv.repair_pack})</button>` : 'Patch it with repair kits from a workshop, or pick it up and put it back.'}</p>`;
   box.innerHTML = h;
 }
 
@@ -8743,6 +8781,16 @@ function panelAct(act, el) {
     for (const id of e.w.slice()) { const o = ents.get(id); if (o) wcut(e, o); }
     e.w = []; L = null; toast('Wires cut'); renderPanelDyn();
   } else if (act === 'rotate') { rotEnt(e); }
+  else if (act === 'repair') {
+    const n = Math.min(S.inv.repair_pack || 0, Math.ceil((maxHp(e) - (e.hp ?? maxHp(e))) / MEND_HP));
+    if (n > 0) { S.inv.repair_pack -= n; if (!S.inv.repair_pack) delete S.inv.repair_pack; e.hp = Math.min(maxHp(e), e.hp + n * MEND_HP); }
+    toast(n ? `Used ${n} repair kit${n === 1 ? '' : 's'}` : 'You have no repair kits', !n);
+  }
+  else if (act === 'mload') {
+    const n = Math.min(S.inv.repair_pack || 0, MEND_CAP - e.pk);
+    if (n > 0) { S.inv.repair_pack -= n; if (!S.inv.repair_pack) delete S.inv.repair_pack; e.pk += n; }
+    toast(n ? `Loaded ${n} repair kits` : e.pk >= MEND_CAP ? 'Station is full' : 'You have no repair kits', !n);
+  }
   else if (act === 'load') {
     const n = Math.min(S.inv.cartridge || 0, TUR_CAP - e.ammo);
     if (n > 0) { S.inv.cartridge -= n; if (!S.inv.cartridge) delete S.inv.cartridge; e.ammo += n; }
