@@ -487,3 +487,5 @@ h3 .sw { width: 24px; height: 24px; font-size: 9px; }
 .erec .rb { display: inline-flex; gap: 6px; align-items: center; }
 .txs{display:inline-flex;gap:2px;margin:0 8px;vertical-align:middle}
 .txs .tab{padding:2px 6px}
+.rfind { width: 100%; box-sizing: border-box; margin-bottom: 3px; padding: 4px 6px; background: #0d0e10; color: #e8e0d0; border: 1px solid #3a3d44; border-radius: 4px; font: inherit; font-size: 12px; }
+.rfind:focus { outline: none; border-color: #ffb43a; }

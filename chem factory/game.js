@@ -8515,6 +8515,9 @@ function carAct(act, el) {
   renderHotbar(); renderPanelDyn();
 }
 
+let rFilt = '';
+function rSearch(r) { return [r.n, ...[r.i, r.o, r.fi, r.fo].flatMap(m => Object.keys(m || {}).map(k => (ITEMS[k] || FLUIDS[k] || {}).n || k))].join(' ').toLowerCase(); }
+function rFilter() { const q = rFilt.trim().toLowerCase(); panel.querySelectorAll('.rpick .rp').forEach(b => { b.style.display = !q || b.dataset.s.includes(q) ? '' : 'none'; }); }
 function openPanel(e) {
   sel = e.id; selCar = null; selTrain = null;
   const B = BUILD[e.type];
@@ -8522,7 +8525,7 @@ function openPanel(e) {
   if (B.lab) { const t = curTech(); h += `<div class="row">Researching <b>${t ? BUILD[t].n : 'nothing'}</b>${B.ls ? ` at ×${B.ls} speed` : ''} <button data-act="tech">Research (T)</button></div>`; }
   if (kind(e) === 'machine' && !B.store && !B.lab) {
     const rl = RECIPES.filter(r => runs(e.type, r) && (avail(r) || e.recipe === r.id));
-    h += `<div class="sec">Recipe <small class="dim">${e.recipe ? 'Shift+right-click copies it, Shift+click pastes' : 'pick one'}</small></div><div class="rpick">${rl.map(r => `<button class="rs ok rp${e.recipe === r.id ? ' on' : ''}" data-act="rpick" data-r="${r.id}" data-k="${r.id}" data-m="x">${ico(rMain(r))}</button>`).join('')}${e.recipe ? '<button class="rs no rpx" data-act="rpick" data-r="" title="Clear recipe">×</button>' : ''}</div>`;
+    h += `<div class="sec">Recipe <small class="dim">${e.recipe ? 'Shift+right-click copies it, Shift+click pastes' : 'pick one'}</small></div>${rl.length > 10 ? `<input class="rfind" type="search" placeholder="Filter ${rl.length} recipes by name or ingredient" value="${rFilt.replace(/"/g, '')}">` : ''}<div class="rpick">${rl.map(r => `<button class="rs ok rp${e.recipe === r.id ? ' on' : ''}" data-act="rpick" data-r="${r.id}" data-s="${rSearch(r).replace(/"/g, '')}" data-k="${r.id}" data-m="x">${ico(rMain(r))}</button>`).join('')}${e.recipe ? '<button class="rs no rpx" data-act="rpick" data-r="" title="Clear recipe">×</button>' : ''}</div>`;
   }
   if (e.type === 'sorter') {
     h += `<label class="row">Filter <select data-act="filter"><option value="">None (all forward)</option>${Object.keys(ITEMS).map(k => `<option value="${k}" ${e.filter === k ? 'selected' : ''}>${ITEMS[k].n}</option>`).join('')}</select></label>`;
@@ -8555,6 +8558,7 @@ function openPanel(e) {
   h += '</div>';
   panel.innerHTML = h;
   panel.hidden = false;
+  if (rFilt) rFilter();
   renderPanelDyn();
 }
 
@@ -10209,6 +10213,7 @@ hotbar.addEventListener('contextmenu', ev => { const b = ev.target.closest('[dat
 hotbar.addEventListener('dragover', ev => { if (ev.target.closest('[data-q]')) ev.preventDefault(); });
 hotbar.addEventListener('drop', ev => { const b = ev.target.closest('[data-q]'), t = ev.dataTransfer.getData('text/plain'); if (!b || !BUILD[t]) return; ev.preventDefault(); qbSet(+b.dataset.q, t); });
 panel.addEventListener('click', ev => { const b = ev.target.closest('button[data-act]'); if (b) panelAct(b.dataset.act, b); });
+panel.addEventListener('input', ev => { if (ev.target.classList.contains('rfind')) { rFilt = ev.target.value; rFilter(); } });
 panel.addEventListener('change', ev => { const s = ev.target.closest('select[data-act]'); if (s) panelAct(s.dataset.act, s); });
 modal.addEventListener('click', ev => {
   if (ev.target === modal) return closeModal();
