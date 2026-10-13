@@ -222,6 +222,10 @@ const ITEMS = {
   sch_conc: { n: 'Scheelite Concentrate', c: '#d8d0b8', f: 'Cleaned to about 65% WO₃ in the Petrov process: heated with sodium silicate, the calcite and fluorite lose their collector and sink' },
   carbide_scrap: { n: 'Carbide Scrap', c: '#6a6a72', f: 'Worn inserts, broken drills and spent rock bit buttons bought back from machine shops and mines. Richer in tungsten than any ore' },
   wcco_powder: { n: 'Reclaimed Carbide Powder', c: '#62626a', f: 'Tungsten carbide grains still coated in their cobalt binder, crumbled out of scrap by the zinc process and milled to size' },
+  fluor_ore: { n: 'Fluorite Vein Ore', c: '#8a7aa0', f: 'Purple, green and yellow cubes of CaF₂ in veins of quartz, calcite and barite. Miners once used it only as smelting flux, which is where the name fluor, to flow, comes from' },
+  ground_fluor: { n: 'Ground Fluorite Ore', c: '#9a8ab0', f: 'Vein ore ground fine enough to free fluorite cubes from quartz and barite' },
+  metspar: { n: 'Metallurgical Fluorspar', c: '#a898c0', f: 'Rougher concentrate around 85% CaF₂. Good enough for steel flux, but the silica in it would waste acid in an HF kiln' },
+  tin_scrap: { n: 'Tinplate Skeleton Scrap', c: '#c8ccd0', f: 'The lattice of tinplate left after can ends are punched out, baled at the can plant. Steel with a skin of tin on both faces' },
   cylinder: { n: 'Steel Cylinder', c: '#7a8a7a', f: 'Seamless steel gas bottle, tested to 250 bar' },
   cl2_cyl: { n: 'Chlorine Cylinder', c: '#b8d84a', f: 'Liquid Cl₂ under its own vapour pressure, about 7 bar. Released, it boils into a cloud 2.5 times heavier than air that creeps along the ground' },
   nh3_cyl: { n: 'Ammonia Cylinder', c: '#a8c8e8', f: 'Liquid NH₃ at about 9 bar. A base: it neutralises the sulfuric acid in crawler blood. Lighter than air, so the cloud rises and blows away fast' },
@@ -1936,6 +1940,7 @@ const ORES = [
   { item: 'gold_ore', c: '#6a6458', s: '#e8c050' },
   { item: 'dolomite', c: '#b8b0a0', s: '#ece6da' },
   { item: 'scheelite', c: '#7a7468', s: '#e0f0ff' },
+  { item: 'fluor_ore', c: '#6a5a7a', s: '#c8a8f0' },
 ];
 
 const BUILD = {
@@ -2179,6 +2184,8 @@ const BUILD = {
   dross_press: { n: 'Hot Dross Press', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#6a6a70', ab: 'DP', kw: 60, cost: { steel: 18, motor: 2, pcb: 2, brick: 6 }, d: 'Dross is skimmed straight into a pan and squeezed with a cooled ram while still hot. Metal runs out of the bottom before it can burn, and the cake cools without thermiting.' },
   petrov_cell: { n: 'Petrov Cleaner Flotation Bank', kind: 'machine', w: 4, h: 3, cat: 'Processing', c: '#8a8a78', ab: 'PV', kw: 110, cost: { steel: 16, motor: 5, pcb: 3, rubber_pipe: 2 }, d: 'A steam-heated conditioning tank ahead of a bank of cleaner cells. Hot sodium silicate strips fatty acid off calcite and fluorite while scheelite keeps it.' },
   zinc_reclaim: { n: 'Zinc Reclaim Furnace', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#6a6a78', ab: 'ZR', kw: 140, cost: { steel: 18, brick: 8, pcb: 3, motor: 2 }, d: 'A sealed retort. Scrap soaks in molten zinc under argon, then the furnace is pumped down and heated so the zinc distils off into a condenser for reuse.' },
+  acidspar_bank: { n: 'Acidspar Cleaner Bank', kind: 'machine', w: 4, h: 3, cat: 'Processing', c: '#7a6a90', ab: 'AS', kw: 120, cost: { steel: 16, motor: 5, pcb: 3, rubber_pipe: 2 }, d: 'Six stages of heated cleaner flotation with a quebracho tannin depressant that holds calcite and barite down. Then a filter and a rotary dryer.' },
+  detin_cell: { n: 'Electrolytic Detinning Plant', kind: 'machine', w: 4, h: 3, cat: 'Electrochemistry', c: '#8a9098', ab: 'DT', kw: 200, cost: { steel: 18, copper_cathode: 8, pcb: 3, rubber_pipe: 2 }, d: 'Baskets of scrap hang as anodes in hot caustic. Tin dissolves as stannate and plates out as sponge on steel cathodes, leaving clean steel behind.' },
   kiln: { n: 'Lime Kiln', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#b0a080', ab: 'LK', cost: { brick: 8, plate: 2 }, d: 'Burns limestone into quicklime.' },
   roaster: { n: 'Roaster', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#a06a3a', ab: 'RO', kw: 30, cost: { brick: 8, plate: 4 }, d: 'Burns sulfur out of sulfide concentrates. Gives off SO₂.' },
   blast: { n: 'Blast Furnace', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#7a3a2a', ab: 'BF', cost: { brick: 20, casting: 10 }, d: 'Reduces oxides with coke.' },
@@ -3872,6 +3879,11 @@ const RECIPES = [
   { id: 'carbide_buyback', n: 'Carbide Scrap Buyback', b: 'kerb_depot', t: 8, o: { carbide_scrap: 2 }, note: 'Tool makers pay for worn inserts by weight, since the scrap is worth more than the ore.' },
   { id: 'zinc_process', n: 'Zinc Process Reclamation', b: 'zinc_reclaim', t: 8, i: { carbide_scrap: 4, zinc: 1 }, fi: { argon: 2 }, o: { wcco_powder: 4 }, eq: 'WC-Co + Zn (l, 900 °C) → Co-Zn swells → vacuum, Zn↑ → friable WC-Co', note: 'Zinc alloys with the cobalt binder and swells it until the part cracks apart. Distilling the zinc off leaves a sponge that crushes to powder. It uses a fraction of the energy of the APT route and keeps the cobalt.' },
   { id: 'recl_insert', n: 'Reclaimed Carbide Inserts', b: 'sinter_furnace', t: 4, i: { wcco_powder: 3, wc: 1 }, o: { carbide_insert: 4 }, eq: 'WC-Co (reclaimed) + WC (virgin) → sintered at 1450 °C', note: 'Reclaimed powder carries its own cobalt, so no fresh binder is needed. Virgin carbide is blended in to set the grain size.' },
+  { id: 'grind_fluor', n: 'Fluorite Ore Grinding', b: 'mill', t: 3, i: { fluor_ore: 4 }, fi: { water: 10 }, o: { ground_fluor: 4 }, eq: 'vein ore → −100 µm' },
+  { id: 'fluor_float', n: 'Fluorite Rougher Flotation', b: 'flotation', t: 4, i: { ground_fluor: 4, soda_ash: 1 }, fi: { tofa: 2, water: 10 }, o: { metspar: 2, sand: 2 }, eq: 'CaF₂ + RCOO⁻ → floats ; SiO₂ sinks', note: 'Fatty acid floats fluorite easily. Calcite floats too, which is why the rougher product only reaches metallurgical grade.' },
+  { id: 'acidspar', n: 'Acidspar Cleaning', b: 'acidspar_bank', t: 5, i: { metspar: 4, water_glass: 1 }, fi: { steam: 4 }, o: { fluorspar: 3, crushed_lime: 1 }, eq: 'metspar 85% → acidspar 97% CaF₂', note: 'Every percent of silica left in acidspar costs extra sulfuric acid and fluorine in the HF kiln, so buyers pay for grade above 97%.' },
+  { id: 'tin_skeleton', n: 'Can Plant Skeleton Scrap', b: 'kerb_depot', t: 6, o: { tin_scrap: 3 }, note: 'Can plants bale their punching skeleton separately so the tin can be recovered before the steel is remelted.' },
+  { id: 'detin', n: 'Electrolytic Detinning', b: 'detin_cell', t: 6, i: { tin_scrap: 6 }, fi: { naoh: 6, steam: 4 }, o: { tin: 1, steel_scrap: 5 }, eq: 'anode: Sn + 6OH⁻ → SnO₃²⁻ + 3H₂O + 4e⁻ ; cathode: SnO₃²⁻ + 3H₂O + 4e⁻ → Sn + 6OH⁻', note: 'Tin left on steel scrap makes steel brittle when hot, so detinning upgrades both metals. The caustic is regenerated at the cathode and reused.' },
   { id: 'kraft_cook', n: 'Kraft Cook', b: 'digester', t: 4, i: { wood_chips: 4 }, fi: { wl: 20, steam: 10 }, o: { pulp: 2 }, fo: { bl: 30 }, eq: 'Lignin + OH⁻ + HS⁻ → soluble lignin fragments', note: 'Carl Dahl, 1879. Chips cook at 170°C for two hours. Hydrosulfide cleaves the ether links that bind lignin, so the fibres fall apart unharmed.' },
   { id: 'soda_cook', n: 'Soda Cook', b: 'digester', t: 4, i: { wood_chips: 4 }, fi: { naoh: 20, steam: 10 }, o: { pulp: 1 }, fo: { bl: 30 }, eq: 'Lignin + OH⁻ → soluble lignin fragments', note: 'The older soda process of 1851. Caustic alone is slower and harsher, so half the fibre is lost. Use it to start up a new mill before the liquor loop is running.' },
   { id: 'recover', n: 'Liquor Recovery', b: 'recovery', t: 3, fi: { bl: 30, water: 60 }, fo: { steam: 60, so2: 1 }, o: { smelt: 2 }, bleed: ['so2'], eq: 'Na-organics + O₂ → Na₂CO₃ + CO₂ + H₂O (steam)', note: 'Tomlinson recovery boiler, 1934. Black liquor is evaporated to 70% solids and sprayed into the furnace. About a tenth of the sodium is lost each round.' },
@@ -5057,6 +5069,8 @@ const ORDERS = [
   { c: 'Deposit scheme operator', item: 'decoated_chip', n: 300, tier: 3, rw: { decoater: 1, weee_line: 1 }, d: 'Clean decoated chip for a deposit-return recycling contract.' },
   { c: 'Tungsten trader', item: 'sch_conc', n: 200, tier: 4, rw: { petrov_cell: 1 }, d: 'Saleable scheelite concentrate for an APT converter.' },
   { c: 'Tool maker', item: 'carbide_insert', n: 300, tier: 4, rw: { zinc_reclaim: 1 }, d: 'Inserts for a toolmaker that buys back its own worn tips.' },
+  { c: 'Fluorochemical plant', item: 'fluorspar', n: 300, tier: 4, rw: { acidspar_bank: 1 }, d: 'Acid-grade fluorspar for a hydrogen fluoride kiln.' },
+  { c: 'Can maker', item: 'tin', n: 200, tier: 4, rw: { detin_cell: 1 }, d: 'Tin recovered from punching skeleton, returned to the tinning line.' },
   { c: 'Rail operator', item: 'traction_pack', n: 4, tier: 5, rw: { rail_charger: 2, rail: 100 }, d: 'Packs to convert two shunting locomotives off diesel.' },
 ];
 
