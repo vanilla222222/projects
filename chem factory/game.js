@@ -4209,7 +4209,7 @@ function bugStep() {
     let r = tryMove(b.x + ux * v, b.y + uy * v);
     if (r === 'water') r = tryMove(b.x + Math.sign(ux) * v, b.y) && tryMove(b.x, b.y + Math.sign(uy) * v) && tryMove(b.x - uy * v, b.y + ux * v);
     b.chew = r && r !== 'water' ? r.id : 0;
-    if (b.chew) hurt(r, dmg * K.dm * (K.sa && kind(r) === 'wall' ? 5 : 1));
+    if (b.chew) { hurt(r, dmg * K.dm * (K.sa && kind(r) === 'wall' ? 5 : 1)); const th = BUILD[r.type] && BUILD[r.type].thorn; if (th) { b.hp -= th * DT; b.cut = S.t; } }
   }
   spitStep();
 }
@@ -6551,6 +6551,20 @@ function drawHive(e, x, y, w0, h0, z) {
 }
 function drawWall(e, x, y, z) {
   const B = BUILD[e.type], con = e.type === 'concrete_wall';
+  if (B.thorn) {
+    ctx.fillStyle = 'rgba(60,50,40,0.35)'; ctx.fillRect(x, y + z * 0.7, z, z * 0.2);
+    ctx.fillStyle = '#6a5a40'; ctx.fillRect(x + z * 0.08, y + z * 0.15, z * 0.08, z * 0.75); ctx.fillRect(x + z * 0.84, y + z * 0.15, z * 0.08, z * 0.75);
+    const f = 0.4 + 0.6 * e.hp / maxHp(e);
+    for (let k = 0; k < 4; k++) {
+      const cx = x + z * (0.12 + k * 0.25), cy = y + z * 0.5;
+      ctx.strokeStyle = '#3a3e44'; ctx.lineWidth = Math.max(1, z * 0.07);
+      ctx.beginPath(); ctx.ellipse(cx, cy, z * 0.2, z * 0.34 * f, 0, 0, 7); ctx.stroke();
+      ctx.strokeStyle = '#d8dce0'; ctx.lineWidth = Math.max(1, z * 0.03);
+      ctx.beginPath(); ctx.ellipse(cx, cy, z * 0.2, z * 0.34 * f, 0, 0, 7); ctx.stroke();
+      for (let j = 0; j < 6; j++) { const a = j * 1.047 + k, px = cx + Math.cos(a) * z * 0.2, py = cy + Math.sin(a) * z * 0.34 * f; ctx.beginPath(); ctx.moveTo(px - z * 0.05, py - z * 0.05); ctx.lineTo(px + z * 0.05, py + z * 0.05); ctx.moveTo(px + z * 0.05, py - z * 0.05); ctx.lineTo(px - z * 0.05, py + z * 0.05); ctx.stroke(); }
+    }
+    return;
+  }
   ctx.fillStyle = shade(B.c, 0.5);
   ctx.fillRect(x, y, z, z);
   ctx.fillStyle = B.c;
@@ -9564,6 +9578,7 @@ const CHAINS = [
   { n: 'Floodlight tower', l: [['silicon + chloromethane', 'Fluid bed chlorinator', 'methyltrichlorosilane'], ['MTCS + methanol', 'Pressure reactor', 'MTMS'], ['sodium silicate + water', 'Ion exchange column', 'colloidal silica'], ['MTMS + silica sol + acetic acid', 'Pressure reactor', 'hardcoat lacquer'], ['polycarbonate', 'Injection moulder', 'lens'], ['lens + lacquer', 'Catalyst coating line', 'hardcoated lens'], ['aluminium + copper foil + epoxy + alumina', 'PCB line', 'metal-core board'], ['LED chips + phosphor + board', 'Electronics assembly line', 'LED module'], ['modules + lens + heat sink + driver', 'Workshop', 'LED floodlight'], ['floodlights + mast', 'build', 'Floodlight tower']] },
   { n: 'Caltrop launcher', l: [['ferrosilicon + magnesium', 'Coreless induction furnace', 'nodulariser'], ['sand + bentonite + coal + water', 'Green sand muller', 'green sand'], ['pig iron + steel + nodulariser + FeSi + sand', 'Ductile iron foundry', 'caltrop blanks'], ['blanks + oil + gas', 'Quench and temper line', 'hardened caltrops'], ['caltrops + ZnO + H₃PO₄', 'Electroplating line', 'phosphated caltrops'], ['caltrops + PP', 'Workshop', 'caltrop canisters'], ['roving + epoxy', 'Filament winding machine', 'launch tube'], ['tube + air bottle + brass + PP', 'Workshop', 'Caltrop launcher']] },
   { n: 'Parks and street lights', l: [['logs', 'Sawmill', 'timber'], ['timber + steam', 'Timber modification kiln', 'thermowood'], ['limestone', 'Jaw crusher', 'gravel'], ['kaolin + sand', 'Lime kiln', 'clay pavers'], ['compost + bark + sand', 'Plant nursery', 'potting mix'], ['mix + NPK + water', 'Plant nursery', 'flowers, hedging, trees'], ['alumina + H2', 'Coreless induction furnace', 'PCA arc tube'], ['tube + sodium + glass', 'Workshop', 'sodium lamp']], d: 'Paths, gardens and lights for the works. Nights fall every few minutes, and lamps keep the site readable after dark.' },
+  { n: 'Razor wire fence', l: [['tallow + steam', 'Fat splitting column', 'stearic acid'], ['stearic + quicklime', 'Reactor', 'drawing soap'], ['steel + sand + gas', 'Fluid bed patenting line', 'patented rod'], ['rod + ZnO + HCl + H3PO4', 'Electroplating line', 'phosphated rod'], ['rod + soap', 'Wire drawing machine', 'spring wire'], ['zinc + aluminium', 'Coreless induction furnace', 'Galfan'], ['wire + Galfan', 'Galvanising kettle', 'core wire'], ['stainless + core wire', 'Razor tape line', 'razor coil'], ['coil + galvanised pickets', 'Build', 'razor wire fence']] },
   { n: 'Rare earth magnets', l: [['monazite', 'Digester + naoh', 're_oh', 'Leach tank + hcl + water', 'recl3', '+', 'th_cake'], ['recl3', 'Solvent extraction + diesel', 'ndcl3', '+', 'ce_oxide'], ['ndcl3', 'Precipitator + soda_ash', 'ndpr_oxide', 'Electrolysis cell + anode + hf', 'nd_metal'], ['borax', 'Arc furnace + pig_iron + coke', 'ferroboron'], ['nd_metal', 'Vacuum induction furnace + ferroboron + steel + argon', 'ndfeb_strip', 'HD vessel + h2', 'hd_powder', 'Jet mill + n2', 'ndfeb_fine'], ['ndfeb_fine', 'Field press + n2', 'ndfeb_green', 'Sinter-HIP furnace + argon', 'ndfeb_block', 'Multi-wire saw + diamond_grit + water', 'ndfeb_bare'], ['ndfeb_bare', 'Plating line + copper_cathode + niso4', 'ndfeb_plated', 'Pulse magnetiser', 'ndfeb', 'Workshop + wire + plate', 'pm_motor'], ['ndfeb_swarf', 'Leach tank + hcl + water', 'ndcl3'], ['th_cake', 'Workshop + concrete + plate', 'waste_drum']], d: 'Monazite from the mineral sand separator is cracked with caustic soda and dissolved in hydrochloric acid, leaving thorium behind. Hundreds of solvent extraction stages split off neodymium and praseodymium, with cerium as a by-product. Reduced to metal and alloyed with iron and boron from desert borax, they make the strongest magnets there are, for direct-drive wind turbines and compact motors.' },
   { n: 'Water treatment', l: [['al_hydroxide', 'Pressure reactor + acid', 'alum'], ['water', 'Water treatment works + alum + cl2 + carbon bed', 'potable'], ['spent_carbon', 'Kiln + steam', 'carbon'], ['nylon', 'Workshop + polyester + glass_fibre', 'ro_membrane'], ['water', 'Reverse osmosis + membranes', 'potable'], ['potable', 'Blow moulder + pet', 'water_bottle'], ['bleach', 'Blow moulder + polyethylene', 'bleach_jug']], d: 'Alum makes dirt clump into flocs that settle and filter out, and a little chlorine disinfects what is left. An activated carbon bed doubles the rate but fills up and has to be reactivated in a kiln. Reverse osmosis needs only power and membranes, which slowly foul and need replacing.' },
   { n: 'Farming and fermentation', l: [['npk', 'Farm + water', 'sugar_beet'], ['npk', 'Farm + water', 'maize'], ['sugar_beet', 'Sugar factory + quicklime + co2 + water', 'sugar', '+', 'molasses'], ['molasses', 'Fermenter + water', 'ethanol', '+', 'co2'], ['maize', 'Fermenter + water', 'ethanol', '+', 'ddgs'], ['ethanol', 'Pressure reactor', 'ethylene'], ['molasses', 'Fermenter + o2 + quicklime + acid', 'citric', '+', 'gypsum'], ['ethanol', 'Blow moulder + polyethylene', 'sanitiser']], d: 'Fertiliser and water grow sugar beet and maize. The sugar factory cleans beet juice with lime and carbon dioxide, so it soaks up CO₂ from your kilns. Yeast turns molasses and maize into ethanol, which hot alumina dehydrates to ethylene for green plastics. A mould turns molasses into citric acid.' },
