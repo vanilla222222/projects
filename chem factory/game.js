@@ -1467,7 +1467,7 @@ function hurt(e, d, why) {
   if (e.hp <= 0) wreck(e, why);
 }
 const runs = (t, r) => r.b === t || (BUILD[t] && BUILD[t].as === r.b);
-const avail = r => (!r.lock || !!(S.unl && S.unl[r.id])) && !(r.o && Object.keys(r.o).some(k => !BUILD[k] && TECH[k] && !techOk(k)));
+const avail = r => (!r.lock || !!(S.unl && S.unl[r.id])) && (!r.rq || r.rq.every(techOk)) && !(r.o && Object.keys(r.o).some(k => !BUILD[k] && TECH[k] && !techOk(k)));
 const XPK = ['sci_ag', 'sci_bio', 'sci_en', 'sci_met', 'sci_mil'];
 let TKX = null;
 const TECH = {}, TECHL = [], PACKN = [0, 8, 20, 40, 60, 100], PACKT = [0, 5, 10, 15, 20, 30];
@@ -1481,7 +1481,8 @@ const TECH = {}, TECHL = [], PACKN = [0, 8, 20, 40, 60, 100], PACKT = [0, 5, 10,
   for (const o of ORES) if (o) base.add(o.item);
   const L = {}, need = {}, N = k => base.has(k) ? 0 : need[k] ?? (prod[k] ? 1e9 : 0);
   const ins = r => Object.keys(Object.assign({}, r.i, r.fi));
-  const lvl = r => { let m = L[r.b] ?? 1e9; for (const q of ins(r)) m = Math.max(m, N(q)); return m; };
+  const lk = r => r.lock || (BUILD[r.b] && BUILD[r.b].lock) ? 2 : 0;
+  const lvl = r => { let m = L[r.b] ?? 1e9; for (const q of ins(r)) m = Math.max(m, N(q)); return m + lk(r); };
   for (const k in BUILD) L[k] = start.has(k) ? 0 : 1e9;
   for (let it = 0; it < 80; it++) {
     let ch = 0;
@@ -1502,12 +1503,26 @@ const TECH = {}, TECHL = [], PACKN = [0, 8, 20, 40, 60, 100], PACKT = [0, 5, 10,
     for (const q of ins(r)) if (q !== k) for (const b of deps(q)) s.add(b);
     return dm[k] = s;
   };
+  const inl = r => { let m = 0; for (const q of ins(r)) m = Math.max(m, N(q)); return m; };
+  const easy = {};
+  for (const r of RECIPES) { const v = inl(r); if (v < 1e9 && (!easy[r.b] || v < easy[r.b][0])) easy[r.b] = [v, r]; }
+  const LE = {};
+  for (const t in BUILD) LE[t] = start.has(t) ? 0 : L[t] >= 1e9 ? 7 : Math.max(L[t], easy[t] ? easy[t][0] + 1 : 0);
   for (const t in BUILD) {
-    if (start.has(t) || L[t] >= 1e9) continue;
-    const req = new Set();
-    for (const q in BUILD[t].cost) for (const b of deps(q)) if (b !== t && L[b] < L[t]) req.add(b);
-    const lv = Math.min(5, L[t]);
+    if (start.has(t)) continue;
+    const req = new Set(), E = easy[t];
+    for (const q of [...Object.keys(BUILD[t].cost || {}), ...(E ? ins(E[1]) : [])]) for (const b of deps(q)) if (b !== t && !start.has(b) && LE[b] < LE[t]) req.add(b);
+    const lv = Math.max(1, Math.min(5, Math.ceil(LE[t] * 5 / 7)));
     TECH[t] = { id: t, lv, req: [...req], n: PACKN[lv] + 2 * Math.min(10, req.size), ut: PACKT[lv] };
+  }
+  const clo = p => { const s = new Set(), st = [...deps(p)].filter(b => TECH[b]); while (st.length) { const b = st.pop(); if (s.has(b)) continue; s.add(b); st.push(...TECH[b].req); } return s; };
+  const nox = new Set();
+  for (const p of ['sci1', 'sci2', 'sci3', 'sci4', 'sci5', ...XPK]) for (const b of clo(p)) { nox.add(b); const c = /^sci\d$/.test(p) ? +p[3] - 1 : 5; if (TECH[b].lv > c) { TECH[b].lv = Math.max(1, c); TECH[b].n = PACKN[TECH[b].lv] + 2 * Math.min(10, TECH[b].req.length); TECH[b].ut = PACKT[TECH[b].lv]; } }
+  for (const r of RECIPES) {
+    const rq = new Set();
+    for (const q of ins(r)) for (const b of deps(q)) if (b !== r.b && TECH[b]) rq.add(b);
+    if (TECH[r.b]) for (const b of rq) if (TECH[r.b].req.includes(b)) rq.delete(b);
+    if (rq.size) r.rq = [...rq];
   }
   const RX = [['sci_mil', (t, B) => B.cat === 'Defence'], ['sci_ag', (t, B) => /farm|ranch|sheep_station|estate|apiary|grove|forest|field|paddy|sugarbush|shade|nopal|orchard|glasshouse|greenhouse|plantation|layer_house|broiler|pond|harvest|kerb|hatch|barn|silo|fertil|thresh|winnow|seed|nursery|aquacult|grow_room|ripening|rearing|honey|egg_|compost|fishmeal|curing_shed|withering|tea_|olive_mill|rice_mill|cane_mill|sugar_mill|juice|peel|cream_sep|churn|abattoir|granulator/.test(t)],
     ['sci_bio', (t, B) => /ferment|brew|pharma|enzyme|yeast|vaccine|culture|steril|malt|wine|cheese|spawn|koji|agar_plant|carrageen|refold|lnp|ultrafilter|ulc_|uv_tunnel|gel_cryst|sake|pickle|homogen|membrane_sep|starch_plant|tofu|ad_plant/.test(t)],
@@ -1519,11 +1534,11 @@ const TECH = {}, TECHL = [], PACKN = [0, 8, 20, 40, 60, 100], PACKT = [0, 5, 10,
     if (!(pn[x] < lt)) return;
     T.x = x;
     const rs = new Set(T.req);
-    for (const b of deps(x)) if (b !== t && L[b] < lt && TECH[b]) rs.add(b);
+    for (const b of deps(x)) if (b !== t && LE[b] < lt && TECH[b]) rs.add(b);
     T.req = [...rs];
   };
-  for (const t in TECH) { const f = RX.find(([, fn]) => fn(t, BUILD[t])); if (f) xadd(t, TECH[t], f[0], L[t]); }
-  TKX = { need, deps, L, xadd };
+  for (const t in TECH) { const f = !nox.has(t) && RX.find(([, fn]) => fn(t, BUILD[t])); if (f) xadd(t, TECH[t], f[0], LE[t]); }
+  TKX = { need, deps, L: LE, xadd, nox };
   for (const t in TECH) {
     const T = TECH[t];
     T.dir = T.req.filter(p => !T.req.some(q => q !== p && TECH[q] && TECH[q].req.includes(p)));
@@ -1535,8 +1550,9 @@ const TECH = {}, TECHL = [], PACKN = [0, 8, 20, 40, 60, 100], PACKT = [0, 5, 10,
 const techOk = t => !TECH[t] || !!(S.tech && S.tech[t]);
 const techAvail = t => TECH[t].req.every(techOk);
 const buildOk = t => techOk(t) && (!BUILD[t].lock || !!(S.unl && S.unl[BUILD[t].lock]));
-const gate = k => BUILD[k] ? buildOk(k) : techOk(k);
-const lockMsg = t => !techOk(t) ? `Needs research: ${nm(t)}. Press T to open research.` : 'Locked. The design is in the lab books of an abandoned works.';
+const partMiss = k => TKX && !BUILD[k] ? [...TKX.deps(k)].find(b => !techOk(b)) : null;
+const gate = k => BUILD[k] ? buildOk(k) : techOk(k) && !partMiss(k);
+const lockMsg = t => !techOk(t) ? `Needs research: ${nm(t)}. Press T to open research.` : partMiss(t) ? `Needs research: ${nm(partMiss(t))}. Press T to open research.` : 'Locked. The design is in the lab books of an abandoned works.';
 const packs = t => [...Array.from({ length: TECH[t].lv }, (_, i) => 'sci' + (i + 1)), ...(TECH[t].x ? [TECH[t].x] : [])];
 function curTech() {
   if (!S.rq) S.rq = [];
@@ -3027,7 +3043,7 @@ const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_c
   const its = new Set([...Object.values(WPN).map(w => w.need).filter(Boolean), ...Object.keys(ARMOR), ...Object.keys(EQ)].filter(k => !START_INV[k] && RECIPE[k] && need[k] < 1e9));
   const sub = (k, s, d) => { const r = RECIPE[k]; if (!r || d > 5) return; for (const q in r.i) { if (its.has(q)) s.add(q); else if (PARTS.includes(q) || CMB.includes(q)) sub(q, s, d + 1); } };
   for (const k of its) {
-    const lt = need[k] + 1, lv = Math.max(1, Math.min(5, lt)), req = new Set();
+    const lt = need[k] + 1, lv = Math.max(1, Math.min(5, Math.ceil(lt * 5 / 7))), req = new Set();
     for (const b of deps(k)) if (TECH[b] && L[b] < lt) req.add(b);
     sub(k, req, 0); req.delete(k);
     const T = TECH[k] = { id: k, lv, req: [...req], n: PACKN[lv] + 2 * Math.min(10, req.size), ut: PACKT[lv], it: 1 };
@@ -9355,7 +9371,7 @@ function planCraft(cost, n, inv, steps, d) {
   for (const k in cost) {
     const need = cost[k] * n, have = inv[k] || 0;
     if (have >= need) { inv[k] = have - need; continue; }
-    if (!PARTS.includes(k) && !CMB.includes(k) || d > 4 || !techOk(k)) return false;
+    if (!PARTS.includes(k) && !CMB.includes(k) || d > 4 || !gate(k)) return false;
     const r = RECIPE[k], runs = Math.ceil((need - have) / r.o[k]);
     inv[k] = 0;
     if (!planCraft(r.i, runs, inv, steps, d + 1)) return false;
@@ -10211,7 +10227,7 @@ const CMBI = (() => {
   T.powder_charge = g => IP.ammo(g, '#4a4844', () => 0.5, 'powder_charge');
   return T;
 })();
-window.game = { tech: { TECH, TECHL, queueTech, curTech, techOk },
+window.game = { tech: { TECH, TECHL, queueTech, curTech, techOk, techAvail, gate, PARTS, deps: k => [...TKX.deps(k)] },
   get S() { return S; }, get W() { return W; }, get ents() { return ents; }, get patches() { return patches; }, get cam() { return cam; },
   place: (t, x, y, d) => place(t, x, y, d, true), at, buildOk, canPlace, setRecipe, removeEnt, save, load, newGame,
   step(n) { for (let i = 0; i < n; i++) tick(); render(); $('#power').innerHTML = powerHtml(); $('#vent').innerHTML = ventHtml(); renderPanelDyn(); renderHotbar(); renderQueue(); },
