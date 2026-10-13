@@ -866,7 +866,7 @@ function removeEnt(e) {
 
 function lists() {
   if (L) return L;
-  L = { belt: [], ubelt: [], splitter: [], inserter: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [], wall: [], turret: [], mender: [], hive: [], projector: [], gun: [], ruin: [], road: [], rail: [], stop: [], dock: [], buoy: [], pole: [] };
+  L = { belt: [], ubelt: [], splitter: [], inserter: [], sorter: [], node: [], pump: [], machine: [], miner: [], chest: [], engine: [], booster: [], stack: [], wall: [], turret: [], mender: [], hive: [], projector: [], gun: [], ruin: [], road: [], deco: [], rail: [], stop: [], dock: [], buoy: [], pole: [] };
   for (const e of ents.values()) {
     const k = kind(e);
     if (k === 'pipe') L.node.push(e);
@@ -3834,7 +3834,186 @@ function gearT() {
   gearC = 0.55 * w + 0.45 * Math.min(1, armRed() / 0.75);
   return gearC;
 }
-let lits = [], cals = [];
+let lits = [], cals = [], glows = [], ncv = null;
+const DAYLEN = 600;
+let nightOff = false;
+try { nightOff = localStorage.getItem('cf_night') === '0'; } catch (e) {}
+const dayP = () => ((S.t || 0) / DAYLEN + 0.3) % 1;
+const sunEl = () => -Math.cos(dayP() * 2 * Math.PI);
+const darkF = () => nightOff ? 0 : Math.min(1, Math.max(0, -sunEl() / 0.45));
+function clockHtml() {
+  const p = dayP(), m = Math.floor(p * 1440), e = sunEl(), dk = darkF();
+  const ph = dk > 0.6 ? 'Night' : e < 0.2 && p < 0.5 ? 'Dawn' : e < 0.2 ? 'Dusk' : 'Day';
+  return `<span class="ci">${dk > 0.3 ? '☾' : '☀'}</span> ${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')} <span class="dim">${ph}${nightOff ? ' (always lit)' : ''}</span>`;
+}
+function drawNight(vis, ox, oy, z, w, h) {
+  const e = sunEl(), dk = darkF();
+  if (!nightOff && e < 0.3 && e > -0.35) { const a = (1 - Math.abs(e + 0.02) / 0.32) * 0.13; if (a > 0) { ctx.fillStyle = `rgba(255,120,50,${a.toFixed(3)})`; ctx.fillRect(0, 0, w, h); } }
+  if (dk < 0.02) return;
+  const dpr = window.devicePixelRatio || 1;
+  if (!ncv) ncv = document.createElement('canvas');
+  if (ncv.width !== cv.width || ncv.height !== cv.height) { ncv.width = cv.width; ncv.height = cv.height; }
+  const g = ncv.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, w, h);
+  g.fillStyle = `rgba(6,10,30,${(dk * 0.74).toFixed(3)})`; g.fillRect(0, 0, w, h);
+  g.globalCompositeOperation = 'destination-out';
+  const add = [];
+  const hole = (x, y, r, s, col) => {
+    const X = ox + x * z, Y = oy + y * z, R = r * z;
+    if (X + R < 0 || Y + R < 0 || X - R > w || Y - R > h) return;
+    const gr = g.createRadialGradient(X, Y, 0, X, Y, R);
+    gr.addColorStop(0, `rgba(0,0,0,${s})`); gr.addColorStop(0.55, `rgba(0,0,0,${s * 0.6})`); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(X - R, Y - R, 2 * R, 2 * R);
+    if (col) add.push(X, Y, R, col);
+  };
+  for (const [lx, ly, r] of lits) hole(lx, ly, r, 1, '255,250,220');
+  for (const c of glows) { const B = BUILD[c.type]; hole(c.x + 0.5, c.y + 0.5, B.glow, 1, B.gc); }
+  for (const c of vis) {
+    const B = BUILD[c.type], k = kind(c);
+    if (k === 'machine' && c.cy && !B.glow && !B.lit) hole(c.x + B.w / 2, c.y + B.h / 2, Math.max(B.w, B.h) * 0.75, 0.55, B.cat === 'Smelting' ? '255,140,60' : null);
+    else if (k === 'turret' || k === 'gun' || k === 'mender') hole(c.x + B.w / 2, c.y + B.h / 2, 1.6, 0.4, null);
+    else if (c.type === 'fountain') hole(c.x + 1, c.y + 1, 1.8, 0.35, '120,190,255');
+  }
+  if (!S.pl.dead && !S.pl.car) hole(S.pl.x, S.pl.y, 3.2, 0.75, '255,236,200');
+  for (const v of S.cars) hole(v.x, v.y, 4.5, 0.8, '255,244,210');
+  g.globalCompositeOperation = 'source-over';
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(ncv, 0, 0); ctx.restore();
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < add.length; i += 4) {
+    const [X, Y, R, col] = [add[i], add[i + 1], add[i + 2], add[i + 3]], gr = ctx.createRadialGradient(X, Y, 0, X, Y, R * 0.8);
+    gr.addColorStop(0, `rgba(${col},${(0.22 * dk).toFixed(3)})`); gr.addColorStop(1, `rgba(${col},0)`);
+    ctx.fillStyle = gr; ctx.fillRect(X - R, Y - R, 2 * R, 2 * R);
+  }
+  ctx.globalCompositeOperation = 'source-over';
+}
+const DECOK = new Set(['street_lamp', 'bollard', 'flower_bed', 'planter', 'orn_tree', 'hedge', 'bench', 'fountain', 'gravel_path', 'brick_path', 'boardwalk']);
+const FLC = ['#e84a6a', '#f0c040', '#f4f0f4', '#a060d0', '#f08a30', '#e070b0'];
+function flowers(c, X, Y, z, sd, n, rr) {
+  for (let k = 0; k < n; k++) {
+    const fx = X + (0.15 + hash(sd, k, 81) * 0.7) * z * rr, fy = Y + (0.15 + hash(sd, k, 82) * 0.7) * z * rr, s = Math.max(1, z * 0.055);
+    c.fillStyle = '#3a6a2a'; c.beginPath(); c.arc(fx, fy + s, s * 1.4, 0, 7); c.fill();
+    c.fillStyle = FLC[Math.floor(hash(sd, k, 83) * FLC.length)];
+    for (let p = 0; p < 5; p++) { c.beginPath(); c.arc(fx + Math.cos(p * 1.257) * s, fy + Math.sin(p * 1.257) * s, s * 0.8, 0, 7); c.fill(); }
+    c.fillStyle = '#f8e070'; c.beginPath(); c.arc(fx, fy, s * 0.55, 0, 7); c.fill();
+  }
+}
+function decoDraw(c, t, e, X, Y, z, on, nb) {
+  const sd = (e.x * 7349 + e.y * 1931) | 0, L = Math.max(1, z * 0.05);
+  if (t === 'street_lamp' || t === 'bollard') {
+    const sl = t === 'street_lamp', cx = X + z * 0.5, cy = Y + z * 0.5;
+    c.fillStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.ellipse(cx + z * 0.12, cy + z * 0.14, z * (sl ? 0.2 : 0.24), z * 0.12, 0, 0, 7); c.fill();
+    c.fillStyle = '#3a3e44'; c.beginPath(); c.arc(cx, cy, z * (sl ? 0.16 : 0.22), 0, 7); c.fill();
+    c.fillStyle = sl ? '#8a9098' : '#a8b0b8'; c.beginPath(); c.arc(cx, cy, z * (sl ? 0.11 : 0.17), 0, 7); c.fill();
+    if (sl) {
+      c.strokeStyle = '#6a7078'; c.lineWidth = Math.max(1, z * 0.07); c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx, cy - z * 0.42); c.stroke();
+      c.fillStyle = '#2a2e34'; c.beginPath(); c.ellipse(cx, cy - z * 0.42, z * 0.16, z * 0.09, 0, 0, 7); c.fill();
+      c.fillStyle = on ? '#ffd27a' : '#8a7a60'; c.beginPath(); c.ellipse(cx, cy - z * 0.42, z * 0.1, z * 0.055, 0, 0, 7); c.fill();
+      if (on) { c.fillStyle = 'rgba(255,190,90,0.35)'; c.beginPath(); c.arc(cx, cy - z * 0.42, z * 0.26, 0, 7); c.fill(); }
+    } else {
+      c.strokeStyle = on ? '#f4f8ff' : '#6a7078'; c.lineWidth = Math.max(1, z * 0.05); c.beginPath(); c.arc(cx, cy, z * 0.13, 0, 7); c.stroke();
+      if (on) { c.fillStyle = 'rgba(230,240,255,0.3)'; c.beginPath(); c.arc(cx, cy, z * 0.3, 0, 7); c.fill(); }
+    }
+    return;
+  }
+  if (t === 'flower_bed') {
+    c.fillStyle = '#a8a094'; c.fillRect(X, Y, z, z);
+    c.fillStyle = '#4a3020'; c.fillRect(X + z * 0.08, Y + z * 0.08, z * 0.84, z * 0.84);
+    c.fillStyle = 'rgba(0,0,0,0.25)'; for (let k = 0; k < 6; k++) c.fillRect(X + hash(sd, k, 84) * z * 0.8 + z * 0.1, Y + hash(sd, k, 85) * z * 0.8 + z * 0.1, L, L);
+    flowers(c, X + z * 0.04, Y + z * 0.04, z * 0.92, sd, z >= 14 ? 7 : 4, 1);
+    return;
+  }
+  if (t === 'planter') {
+    c.fillStyle = 'rgba(0,0,0,0.3)'; c.fillRect(X + z * 0.14, Y + z * 0.16, z * 0.86, z * 0.86);
+    c.fillStyle = '#6a4428'; c.fillRect(X + z * 0.04, Y + z * 0.04, z * 0.92, z * 0.92);
+    c.fillStyle = '#8a5a36'; c.fillRect(X + z * 0.04, Y + z * 0.04, z * 0.92, z * 0.14); c.fillRect(X + z * 0.04, Y + z * 0.82, z * 0.92, z * 0.14); c.fillRect(X + z * 0.04, Y + z * 0.04, z * 0.14, z * 0.92); c.fillRect(X + z * 0.82, Y + z * 0.04, z * 0.14, z * 0.92);
+    c.fillStyle = '#3a2618'; c.fillRect(X + z * 0.18, Y + z * 0.18, z * 0.64, z * 0.64);
+    c.fillStyle = '#4a7a34'; c.beginPath(); c.arc(X + z * 0.5, Y + z * 0.5, z * 0.26, 0, 7); c.fill();
+    flowers(c, X + z * 0.18, Y + z * 0.18, z * 0.64, sd, z >= 14 ? 5 : 3, 1);
+    return;
+  }
+  if (t === 'orn_tree') {
+    const sp = Math.floor(hash(e.x, e.y, 86) * 3), col = [['#e8a0b8', '#f8d0dc'], ['#a83a24', '#d8603a'], ['#7aa048', '#b0d070']][sp], cx = X + z * 0.5, cy = Y + z * 0.45;
+    c.fillStyle = '#5a4a3a'; c.beginPath(); c.arc(X + z * 0.5, Y + z * 0.5, z * 0.36, 0, 7); c.fill();
+    c.fillStyle = 'rgba(0,0,0,0.28)'; c.beginPath(); c.ellipse(cx + z * 0.2, cy + z * 0.25, z * 0.7, z * 0.5, 0, 0, 7); c.fill();
+    c.fillStyle = sp === 2 ? '#e8e4dc' : '#4a3424'; c.fillRect(cx - z * 0.05, cy, z * 0.1, z * 0.3);
+    c.fillStyle = shade(col[0], 0.7); c.beginPath();
+    for (let k = 0; k < 6; k++) { const a = k * 1.047 + hash(sd, k, 87), r = z * 0.32; c.moveTo(cx + Math.cos(a) * r + z * 0.3, cy + Math.sin(a) * r); c.arc(cx + Math.cos(a) * r, cy + Math.sin(a) * r, z * 0.3, 0, 7); }
+    c.fill();
+    c.fillStyle = col[0]; c.beginPath(); c.arc(cx, cy, z * 0.48, 0, 7); c.fill();
+    c.fillStyle = col[1]; c.globalAlpha = 0.7;
+    for (let k = 0; k < 8; k++) { c.beginPath(); c.arc(cx + (hash(sd, k, 88) - 0.6) * z * 0.7, cy + (hash(sd, k, 89) - 0.6) * z * 0.7, z * (0.07 + hash(sd, k, 90) * 0.08), 0, 7); c.fill(); }
+    c.globalAlpha = 1;
+    return;
+  }
+  if (t === 'hedge') {
+    const m = z * 0.1, l = nb(3) ? 0 : m, r = nb(1) ? 0 : m, u = nb(0) ? 0 : m, dn = nb(2) ? 0 : m;
+    c.fillStyle = 'rgba(0,0,0,0.3)'; c.fillRect(X + l + z * 0.08, Y + u + z * 0.12, z - l - r, z - u - dn);
+    c.fillStyle = '#2e5222'; c.fillRect(X + l, Y + u, z - l - r, z - u - dn);
+    c.fillStyle = '#3e6a2e'; c.fillRect(X + l + z * 0.05, Y + u + z * 0.04, z - l - r - z * 0.1, z - u - dn - z * 0.14);
+    c.fillStyle = '#5a8a3e';
+    for (let k = 0; k < (z >= 14 ? 14 : 6); k++) c.fillRect(X + l + hash(sd, k, 91) * (z - l - r - z * 0.12), Y + u + hash(sd, k, 92) * (z - u - dn - z * 0.16), Math.max(1, z * 0.09), Math.max(1, z * 0.06));
+    if (e.hp != null && e.hp < maxHp(e)) { c.fillStyle = 'rgba(120,90,40,0.5)'; c.fillRect(X + l, Y + u, (z - l - r) * (1 - e.hp / maxHp(e)), z - u - dn); }
+    return;
+  }
+  if (t === 'bench') {
+    c.fillStyle = 'rgba(0,0,0,0.3)'; c.fillRect(X + z * 0.14, Y + z * 0.38, z * 0.82, z * 0.42);
+    c.fillStyle = '#2a2c30'; c.fillRect(X + z * 0.1, Y + z * 0.26, z * 0.08, z * 0.48); c.fillRect(X + z * 0.82, Y + z * 0.26, z * 0.08, z * 0.48);
+    for (let k = 0; k < 4; k++) { c.fillStyle = k % 2 ? '#8a5a36' : '#7a4c2c'; c.fillRect(X + z * 0.06, Y + z * (0.28 + k * 0.11), z * 0.88, z * 0.08); }
+    return;
+  }
+  if (t === 'fountain') {
+    const cx = X + z, cy = Y + z, now = performance.now() / 1000;
+    c.fillStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.arc(cx + z * 0.12, cy + z * 0.14, z * 0.95, 0, 7); c.fill();
+    c.fillStyle = '#b8b4aa'; c.beginPath(); c.arc(cx, cy, z * 0.95, 0, 7); c.fill();
+    c.fillStyle = '#8a867c'; c.beginPath(); c.arc(cx, cy, z * 0.8, 0, 7); c.fill();
+    const wg = c.createRadialGradient(cx, cy, 0, cx, cy, z * 0.76); wg.addColorStop(0, '#6ab0d8'); wg.addColorStop(1, '#2a6a98');
+    c.fillStyle = wg; c.beginPath(); c.arc(cx, cy, z * 0.76, 0, 7); c.fill();
+    c.strokeStyle = 'rgba(220,240,255,0.5)'; c.lineWidth = Math.max(1, z * 0.025);
+    for (let k = 0; k < 3; k++) { const r = ((now * 0.4 + k / 3) % 1) * z * 0.7 + z * 0.08; c.globalAlpha = 1 - r / (z * 0.8); c.beginPath(); c.arc(cx, cy, r, 0, 7); c.stroke(); }
+    c.globalAlpha = 1;
+    c.fillStyle = '#c8c4ba'; c.beginPath(); c.arc(cx, cy, z * 0.14, 0, 7); c.fill();
+    c.fillStyle = 'rgba(235,248,255,0.85)';
+    for (let k = 0; k < 10; k++) { const a = k * 0.628 + now, r = z * (0.12 + ((now * 1.3 + k * 0.37) % 1) * 0.3); c.beginPath(); c.arc(cx + Math.cos(a) * r, cy + Math.sin(a) * r, Math.max(1, z * 0.03), 0, 7); c.fill(); }
+    return;
+  }
+  if (t === 'gravel_path') {
+    c.fillStyle = '#b8b09c'; c.fillRect(X, Y, z + 0.5, z + 0.5);
+    for (let k = 0; k < (z >= 14 ? 22 : 8); k++) { c.fillStyle = k % 3 ? 'rgba(255,250,235,0.45)' : 'rgba(70,64,52,0.35)'; c.fillRect(X + hash(sd, k, 93) * z, Y + hash(sd, k, 94) * z, Math.max(1, z * 0.06), Math.max(1, z * 0.05)); }
+    c.fillStyle = '#7a8a5a'; const t2 = Math.max(1, z * 0.06);
+    if (!nb(0)) c.fillRect(X, Y, z, t2); if (!nb(2)) c.fillRect(X, Y + z - t2, z, t2); if (!nb(3)) c.fillRect(X, Y, t2, z); if (!nb(1)) c.fillRect(X + z - t2, Y, t2, z);
+    return;
+  }
+  if (t === 'brick_path') {
+    c.fillStyle = '#7a6a5a'; c.fillRect(X, Y, z + 0.5, z + 0.5);
+    const bw = z / 4, gp = Math.max(0.5, z * 0.02);
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) {
+      const hz = (i + j) % 2 === 0, sh2 = hash(e.x * 4 + i, e.y * 4 + j, 95);
+      c.fillStyle = sh2 < 0.33 ? '#b8784a' : sh2 < 0.66 ? '#c48a58' : '#a8683e';
+      c.fillRect(X + i * bw + gp, Y + j * bw + gp, bw - 2 * gp, bw - 2 * gp);
+      c.fillStyle = 'rgba(80,50,30,0.35)';
+      if (hz) c.fillRect(X + i * bw + gp, Y + j * bw + bw / 2 - gp / 2, bw - 2 * gp, gp); else c.fillRect(X + i * bw + bw / 2 - gp / 2, Y + j * bw + gp, gp, bw - 2 * gp);
+    }
+    c.fillStyle = 'rgba(60,50,40,0.6)'; const t3 = Math.max(1, z * 0.05);
+    if (!nb(0)) c.fillRect(X, Y, z, t3); if (!nb(2)) c.fillRect(X, Y + z - t3, z, t3); if (!nb(3)) c.fillRect(X, Y, t3, z); if (!nb(1)) c.fillRect(X + z - t3, Y, t3, z);
+    return;
+  }
+  if (t === 'boardwalk') {
+    const vert = (nb(1) || nb(3)) && !(nb(0) || nb(2)), n = 5, bw = z / n;
+    c.fillStyle = '#3a2a1c'; c.fillRect(X, Y, z + 0.5, z + 0.5);
+    for (let k = 0; k < n; k++) {
+      c.fillStyle = hash(e.x, e.y * 7 + k, 96) < 0.5 ? '#8a6040' : '#7a5236';
+      if (vert) c.fillRect(X + k * bw + 0.5, Y, bw - 1, z); else c.fillRect(X, Y + k * bw + 0.5, z, bw - 1);
+      if (z >= 14) { c.fillStyle = '#2a1e14'; if (vert) { c.fillRect(X + k * bw + bw / 2 - 1, Y + z * 0.1, 2, 2); c.fillRect(X + k * bw + bw / 2 - 1, Y + z * 0.86, 2, 2); } else { c.fillRect(X + z * 0.1, Y + k * bw + bw / 2 - 1, 2, 2); c.fillRect(X + z * 0.86, Y + k * bw + bw / 2 - 1, 2, 2); } }
+    }
+    return;
+  }
+}
+function decoIco(g, k) {
+  if (!DECOK.has(k)) return false;
+  const B = BUILD[k], s = 56 / Math.max(B.w, B.h), o = (64 - s * Math.max(B.w, B.h)) / 2;
+  decoDraw(g, k, { x: 3, y: 5, id: 1, type: k }, o, o + (B.glow === 7 ? s * 0.15 : 0), s, true, () => false);
+  return true;
+}
 const calAt = (x, y) => { const dg = S.dg || null, now = dg ? dg.t : S.t; return cals.some(c => c.dg === dg && c.e > now && (x - c.x) ** 2 + (y - c.y) ** 2 <= c.r * c.r); };
 function drawCals(ox, oy, z) {
   const dg = S.dg || null, now = dg ? dg.t : S.t;
@@ -4292,7 +4471,7 @@ function tick() {
   for (const e of l.inserter) if (e.mv) net(e).demand += BUILD[e.type].kw || 0;
   for (const e of l.machine) {
     if (BUILD[e.type].store) { e.cy = false; continue; }
-    if (BUILD[e.type].ctl || BUILD[e.type].lit) { e.cy = false; net(e).demand += BUILD[e.type].kw; continue; }
+    if (BUILD[e.type].ctl || BUILD[e.type].lit || BUILD[e.type].glow) { e.cy = false; net(e).demand += BUILD[e.type].kw; continue; }
     if (BUILD[e.type].lab) e.recipe = 'study';
     const r = RECIPE[e.recipe];
     if (!r) { e.st = 'none'; continue; }
@@ -4337,6 +4516,7 @@ function tick() {
   for (const e of l.inserter) e.psat = net(e).sat;
   const ctls = []; lits = [];
   for (const c of l.machine) if (BUILD[c.type].lit) { const n = net(c), C = BUILD[c.type]; c.st = n === nop ? 'nopole' : n.sat < 0.5 ? 'power' : 'work'; if (c.st === 'work') lits.push([c.x + C.w / 2, c.y + C.h / 2, C.lit]); }
+  glows = []; for (const c of l.machine) if (BUILD[c.type].glow) { const n = net(c); c.st = n === nop ? 'nopole' : n.sat < 0.5 ? 'power' : 'work'; if (c.st === 'work') glows.push(c); }
   for (const c of l.machine) if (BUILD[c.type].ctl) { const n = net(c); c.cn = 0; c.st = n === nop ? 'nopole' : n.sat < 0.5 ? 'power' : 'work'; if (c.st === 'work') ctls.push(c); }
   for (const e of l.machine) {
     if (!e.cy) continue;
@@ -5440,7 +5620,7 @@ let vig = null;
 const TREE = { 0: ['#2f5a26', '#477a35'], 5: ['#3a5a30', '#567a40'], 6: ['#22461d', '#3a6a2c'], 7: ['#30503e', '#f4f8fa'] };
 function drawNature(ox, oy, z, x0, y0, x1, y1) {
   if (z < 6) return;
-  const now = performance.now() / 1000, sh = [], cn = [], hl = [];
+  const now = performance.now() / 1000, sh = [], cn = [], hl = [], fl = [], tf = [];
   for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
     const i = y * W + x, b = terrain[i];
     if (b === 1) {
@@ -5453,6 +5633,7 @@ function drawNature(ox, oy, z, x0, y0, x1, y1) {
       ctx.fillRect(ox + (x + hash(x, y, 24) * 0.6 + Math.sin(now * 0.5 + hh * 9) * 0.08) * z, oy + (y + 0.15 + hash(x, y, 25) * 0.7) * z, z * 0.34, Math.max(1, z * 0.045));
       continue;
     }
+    if (b === 0 && z >= 12 && !occ[i] && !oreType[i]) { const fh = hash(x, y, 71); if (fh < 0.05) fl.push(x, y); else if (fh < 0.2) tf.push(x, y); }
     const tc = TREE[b];
     if (!tc || oreType[i] || occ[i]) continue;
     const hh = hash(x, y, 27);
@@ -5467,6 +5648,8 @@ function drawNature(ox, oy, z, x0, y0, x1, y1) {
       hl.push(cx - r * 0.3, cy - r * 0.32, r * 0.48, tc, cx + Math.cos(la) * r * 0.45 - r * 0.15, cy + Math.sin(la) * r * 0.45 - r * 0.18, r * 0.3, tc);
     }
   }
+  if (tf.length) { ctx.strokeStyle = 'rgba(40,80,30,0.55)'; ctx.lineWidth = Math.max(1, z * 0.03); ctx.beginPath(); for (let i = 0; i < tf.length; i += 2) { const X = ox + (tf[i] + 0.2 + hash(tf[i], tf[i + 1], 72) * 0.6) * z, Y = oy + (tf[i + 1] + 0.3 + hash(tf[i], tf[i + 1], 73) * 0.5) * z; for (let k = -1; k <= 1; k++) { ctx.moveTo(X, Y); ctx.lineTo(X + k * z * 0.06, Y - z * 0.14); } } ctx.stroke(); }
+  for (let i = 0; i < fl.length; i += 2) flowers(ctx, ox + fl[i] * z, oy + fl[i + 1] * z, z, fl[i] * 131 + fl[i + 1], 3, 1);
   ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath();
   for (let i = 0; i < sh.length; i += 3) { ctx.moveTo(sh[i] + sh[i + 2], sh[i + 1]); ctx.ellipse(sh[i], sh[i + 1], sh[i + 2], sh[i + 2] * 0.75, 0, 0, 7); }
   ctx.fill();
@@ -5599,6 +5782,7 @@ function render() {
     ctx.beginPath(); ctx.arc(ox + f.x * z, oy + f.y * z, z * (0.2 + f.t * 1.2), 0, 7); ctx.stroke();
     ctx.globalAlpha = 1;
   }
+  drawNight(vis, ox, oy, z, w, h);
   if (!vig || vig.w !== w || vig.h !== h) {
     const g = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.38, w / 2, h / 2, Math.hypot(w, h) * 0.62);
     g.addColorStop(0, 'rgba(10,8,4,0)'); g.addColorStop(1, 'rgba(10,8,4,0.45)');
@@ -6037,6 +6221,7 @@ function drawPlayer(ox, oy, z) {
 function drawRoad(e, ox, oy, z) {
   const X = ox + e.x * z, Y = oy + e.y * z, cc = e.type === 'conc_road';
   const nb = d => { const o = at(e.x + DX[d], e.y + DY[d]); return o && kind(o) === 'road'; };
+  if (DECOK.has(e.type)) return decoDraw(ctx, e.type, e, X, Y, z, false, nb);
   ctx.fillStyle = cc ? '#9c9a92' : '#2c2d31';
   ctx.fillRect(X, Y, z + 0.5, z + 0.5);
   const hsh = ((e.x * 73856093) ^ (e.y * 19349663)) >>> 0;
@@ -8044,7 +8229,7 @@ function icoCv(k) {
     if (BUILD[k]) {
       if (k === 'solar') { g.fillStyle = '#1a2a5a'; g.fillRect(6, 10, 52, 44); g.strokeStyle = '#c0c8d0'; g.lineWidth = 2; for (let i = 0; i <= 4; i++) { g.beginPath(); g.moveTo(6 + i * 13, 10); g.lineTo(6 + i * 13, 54); g.stroke(); } for (let j = 0; j <= 3; j++) { g.beginPath(); g.moveTo(6, 10 + j * 14.67); g.lineTo(58, 10 + j * 14.67); g.stroke(); } }
       else if (k === 'wind_turbine') { g.fillStyle = '#ddd'; g.fillRect(30, 30, 4, 32); g.fillStyle = '#f4f6f8'; for (let i = 0; i < 3; i++) { g.save(); g.translate(32, 28); g.rotate(i * 2.094); poly(g, [-3, 0, 0, -26, 3, 0]); g.fill(); ink(g, 1); g.restore(); } }
-      else bIcon(g, k);
+      else if (!decoIco(g, k)) bIcon(g, k);
     } else if (FLUIDS[k]) IP.drop(g, FLUIDS[k].c, r, (k + ' ' + FLUIDS[k].n).toLowerCase(), !!FLUIDS[k].gas);
     else if (CMBI[k]) CMBI[k](g);
     else { const I = ITEMS[k] || { c: '#888', n: k }, h = IOV[k] ? IOV[k].split(':')[1] || '' : '', n = (k + ' ' + I.n + ' ' + h).toLowerCase(); (IP[iArch(k, I.n)] || IP.jar)(g, I.c, r, n); }
@@ -8069,7 +8254,9 @@ function drawBuilding(e, ox, oy, z) {
   if (B.kind === 'stop') return drawStop(e, x, y, z);
   if (B.kind === 'dock') return drawDock(e, x, y, z);
   if (B.kind === 'buoy') return drawBuoy(e, x, y, z);
+  if (B.kind === 'wall' && B.hedge) return decoDraw(ctx, e.type, e, x, y, z, false, d => { const o = at(e.x + DX[d], e.y + DY[d]); return o && o.type === e.type; });
   if (B.kind === 'wall') return drawWall(e, x, y, z);
+  if (DECOK.has(e.type)) return decoDraw(ctx, e.type, e, x, y, z, B.glow && e.st === 'work' && darkF() > 0.05, () => false);
   if (B.kind === 'turret') return drawTurret(e, x, y, w, h, z);
   if (B.kind === 'projector') return drawProjector(e, x, y, w, h, z);
   if (B.kind === 'gun') return drawGun(e, x, y, w, h, z);
@@ -8569,7 +8756,8 @@ function openPanel(e) {
   if (B.lab) { const t = curTech(); h += `<div class="row">Researching <b>${t ? BUILD[t].n : 'nothing'}</b>${B.ls ? ` at ×${B.ls} speed` : ''} <button data-act="tech">Research (T)</button></div>`; }
   if (B.ctl) h += `<div class="sec">Control</div><p class="dim">Machines whose centre is within ${B.ctl} tiles of this room run 15% faster while it has power. Steering <b>${e.cn || 0}</b> running machines now.</p>`;
   if (B.lit) h += `<div class="sec">Floodlight</div><p class="dim">${e.st === 'work' ? 'Lit.' : e.st === 'nopole' ? 'Not connected to a power pole.' : 'Not enough power.'} Crawlers within ${B.lit} tiles move 20% slower in the glare, and shade crawlers show up plainly.</p>`;
-  if (kind(e) === 'machine' && !B.store && !B.lab && !B.ctl && !B.lit) {
+  if (B.glow) h += `<div class="sec">Lamp</div><p class="dim">${e.st === 'work' ? (darkF() > 0.05 ? 'On.' : 'Powered. The photocell switches it on at dusk.') : e.st === 'nopole' ? 'Not connected to a power pole.' : 'Not enough power.'} Lights ${B.glow} tiles after dark.</p>`;
+  if (kind(e) === 'machine' && !B.store && !B.lab && !B.ctl && !B.lit && !B.glow) {
     const rl = RECIPES.filter(r => runs(e.type, r) && (avail(r) || e.recipe === r.id));
     h += `<div class="sec">Recipe <small class="dim">${e.recipe ? 'Shift+right-click copies it, Shift+click pastes' : 'pick one'}</small></div>${rl.length > 10 ? `<input class="rfind" type="search" placeholder="Filter ${rl.length} recipes by name or ingredient" value="${rFilt.replace(/"/g, '')}">` : ''}<div class="rpick">${rl.map(r => `<button class="rs ok rp${e.recipe === r.id ? ' on' : ''}" data-act="rpick" data-r="${r.id}" data-s="${rSearch(r).replace(/"/g, '')}" data-k="${r.id}" data-m="x">${ico(rMain(r))}</button>`).join('')}${e.recipe ? '<button class="rs no rpx" data-act="rpick" data-r="" title="Clear recipe">×</button>' : ''}</div>`;
   }
@@ -8580,7 +8768,7 @@ function openPanel(e) {
   if (e.type === 'train_stop') h += `<label class="row">Mode <select data-act="smode"><option value="load" ${e.mode !== 'unload' ? 'selected' : ''}>Load wagons</option><option value="unload" ${e.mode === 'unload' ? 'selected' : ''}>Unload wagons</option></select></label>`;
   h += '<div id="pdyn"></div><div class="pbtns">';
   if (e.type === 'boiler') h += '<button data-act="descale">Descale (20 s outage)</button>';
-  if (kind(e) === 'machine' && !B.store && !B.ctl && !B.lit) h += '<button data-act="insert">Insert from inventory</button><button data-act="take">Take outputs</button>';
+  if (kind(e) === 'machine' && !B.store && !B.ctl && !B.lit && !B.glow) h += '<button data-act="insert">Insert from inventory</button><button data-act="take">Take outputs</button>';
   if (kind(e) === 'miner') h += '<button data-act="take">Take ore</button>';
   if (e.type === 'depot') h += '<button data-act="deliver">Deliver from inventory</button>';
   if (e.type === 'chest') h += '<button data-act="takeall">Take all</button><button data-act="store">Store raw materials</button>';
@@ -8679,7 +8867,7 @@ function renderPanelDyn() {
     h += recipeHtml(RECIPE[e.recipe] || RECIPES.find(r => runs(e.type, r)) || RECIPE.store);
   } else if (k === 'machine') {
     const r = RECIPE[e.recipe];
-    if (!r && !BUILD[e.type].ctl && !BUILD[e.type].lit) h += '<p class="dim">Pick a recipe, or feed it an item and it will choose one.</p>';
+    if (!r && !BUILD[e.type].ctl && !BUILD[e.type].lit && !BUILD[e.type].glow) h += '<p class="dim">Pick a recipe, or feed it an item and it will choose one.</p>';
     else if (r) {
       h += recipeHtml(r);
       const st = e.cy && e.st !== 'power' && e.st !== 'nopole' && e.st !== 'idle' ? 'work' : e.st;
@@ -9098,6 +9286,7 @@ function miniZoom(d) { mz = Math.max(0.5, Math.min(8, d > 0 ? mz * 2 : mz / 2));
 $('#mini').addEventListener('click', () => openModal('map'));
 $('#mini').addEventListener('wheel', ev => { ev.preventDefault(); miniZoom(-ev.deltaY); }, { passive: false });
 $('#hud').addEventListener('click', ev => { const b = ev.target.closest('[data-mz]'); if (b) miniZoom(+b.dataset.mz); });
+$('#clock').addEventListener('click', () => { nightOff = !nightOff; try { localStorage.setItem('cf_night', nightOff ? '0' : '1'); } catch (e) {} $('#clock').innerHTML = clockHtml(); });
 $('#hstog').addEventListener('click', () => { const h = $('#hud').classList.toggle('hide'); try { localStorage.setItem('cf_hud', h ? '0' : '1'); } catch (e) {} });
 
 let eQ = '', eItem = null, eCat = 'Buildings', eHist = [], eHi = -1, hovCk = null;
@@ -9374,6 +9563,7 @@ const CHAINS = [
   { n: 'Pneumatic harpoon', l: [['Ti-6Al-4V + argon', 'Open-die forging press', 'titanium bar'], ['bar + stainless', 'CNC machine shop', 'barbed tips'], ['carbon fibre + epoxy', 'Pultrusion line', 'harpoon shafts'], ['UHMWPE + silicone', 'Planetary strander', 'braided line'], ['tips + shafts + line', 'Workshop', 'barbed harpoons'], ['6061 tube + acid', 'Plating line', 'hard-anodised barrel'], ['6061 tube', 'Transfer press line', 'bottle liner'], ['liner + carbon + epoxy', 'Filament winding machine', 'air bottle'], ['barrel + bottle + brass + PP + motor', 'Workshop', 'Pneumatic harpoon']] },
   { n: 'Floodlight tower', l: [['silicon + chloromethane', 'Fluid bed chlorinator', 'methyltrichlorosilane'], ['MTCS + methanol', 'Pressure reactor', 'MTMS'], ['sodium silicate + water', 'Ion exchange column', 'colloidal silica'], ['MTMS + silica sol + acetic acid', 'Pressure reactor', 'hardcoat lacquer'], ['polycarbonate', 'Injection moulder', 'lens'], ['lens + lacquer', 'Catalyst coating line', 'hardcoated lens'], ['aluminium + copper foil + epoxy + alumina', 'PCB line', 'metal-core board'], ['LED chips + phosphor + board', 'Electronics assembly line', 'LED module'], ['modules + lens + heat sink + driver', 'Workshop', 'LED floodlight'], ['floodlights + mast', 'build', 'Floodlight tower']] },
   { n: 'Caltrop launcher', l: [['ferrosilicon + magnesium', 'Coreless induction furnace', 'nodulariser'], ['sand + bentonite + coal + water', 'Green sand muller', 'green sand'], ['pig iron + steel + nodulariser + FeSi + sand', 'Ductile iron foundry', 'caltrop blanks'], ['blanks + oil + gas', 'Quench and temper line', 'hardened caltrops'], ['caltrops + ZnO + H₃PO₄', 'Electroplating line', 'phosphated caltrops'], ['caltrops + PP', 'Workshop', 'caltrop canisters'], ['roving + epoxy', 'Filament winding machine', 'launch tube'], ['tube + air bottle + brass + PP', 'Workshop', 'Caltrop launcher']] },
+  { n: 'Parks and street lights', l: [['logs', 'Sawmill', 'timber'], ['timber + steam', 'Timber modification kiln', 'thermowood'], ['limestone', 'Jaw crusher', 'gravel'], ['kaolin + sand', 'Lime kiln', 'clay pavers'], ['compost + bark + sand', 'Plant nursery', 'potting mix'], ['mix + NPK + water', 'Plant nursery', 'flowers, hedging, trees'], ['alumina + H2', 'Coreless induction furnace', 'PCA arc tube'], ['tube + sodium + glass', 'Workshop', 'sodium lamp']], d: 'Paths, gardens and lights for the works. Nights fall every few minutes, and lamps keep the site readable after dark.' },
   { n: 'Rare earth magnets', l: [['monazite', 'Digester + naoh', 're_oh', 'Leach tank + hcl + water', 'recl3', '+', 'th_cake'], ['recl3', 'Solvent extraction + diesel', 'ndcl3', '+', 'ce_oxide'], ['ndcl3', 'Precipitator + soda_ash', 'ndpr_oxide', 'Electrolysis cell + anode + hf', 'nd_metal'], ['borax', 'Arc furnace + pig_iron + coke', 'ferroboron'], ['nd_metal', 'Vacuum induction furnace + ferroboron + steel + argon', 'ndfeb_strip', 'HD vessel + h2', 'hd_powder', 'Jet mill + n2', 'ndfeb_fine'], ['ndfeb_fine', 'Field press + n2', 'ndfeb_green', 'Sinter-HIP furnace + argon', 'ndfeb_block', 'Multi-wire saw + diamond_grit + water', 'ndfeb_bare'], ['ndfeb_bare', 'Plating line + copper_cathode + niso4', 'ndfeb_plated', 'Pulse magnetiser', 'ndfeb', 'Workshop + wire + plate', 'pm_motor'], ['ndfeb_swarf', 'Leach tank + hcl + water', 'ndcl3'], ['th_cake', 'Workshop + concrete + plate', 'waste_drum']], d: 'Monazite from the mineral sand separator is cracked with caustic soda and dissolved in hydrochloric acid, leaving thorium behind. Hundreds of solvent extraction stages split off neodymium and praseodymium, with cerium as a by-product. Reduced to metal and alloyed with iron and boron from desert borax, they make the strongest magnets there are, for direct-drive wind turbines and compact motors.' },
   { n: 'Water treatment', l: [['al_hydroxide', 'Pressure reactor + acid', 'alum'], ['water', 'Water treatment works + alum + cl2 + carbon bed', 'potable'], ['spent_carbon', 'Kiln + steam', 'carbon'], ['nylon', 'Workshop + polyester + glass_fibre', 'ro_membrane'], ['water', 'Reverse osmosis + membranes', 'potable'], ['potable', 'Blow moulder + pet', 'water_bottle'], ['bleach', 'Blow moulder + polyethylene', 'bleach_jug']], d: 'Alum makes dirt clump into flocs that settle and filter out, and a little chlorine disinfects what is left. An activated carbon bed doubles the rate but fills up and has to be reactivated in a kiln. Reverse osmosis needs only power and membranes, which slowly foul and need replacing.' },
   { n: 'Farming and fermentation', l: [['npk', 'Farm + water', 'sugar_beet'], ['npk', 'Farm + water', 'maize'], ['sugar_beet', 'Sugar factory + quicklime + co2 + water', 'sugar', '+', 'molasses'], ['molasses', 'Fermenter + water', 'ethanol', '+', 'co2'], ['maize', 'Fermenter + water', 'ethanol', '+', 'ddgs'], ['ethanol', 'Pressure reactor', 'ethylene'], ['molasses', 'Fermenter + o2 + quicklime + acid', 'citric', '+', 'gypsum'], ['ethanol', 'Blow moulder + polyethylene', 'sanitiser']], d: 'Fertiliser and water grow sugar beet and maize. The sugar factory cleans beet juice with lime and carbon dioxide, so it soaks up CO₂ from your kilns. Yeast turns molasses and maize into ethanol, which hot alumina dehydrates to ethylene for green plastics. A mould turns molasses into citric acid.' },
@@ -10376,6 +10566,7 @@ function frame(now) {
   if (uiT > 0.2) {
     uiT = 0;
     $('#power').innerHTML = powerHtml();
+    $('#clock').innerHTML = clockHtml();
     $('#vent').innerHTML = ventHtml();
     renderPanelDyn();
     if (modalKind === 'craft' || modalKind === 'tech') renderModal();

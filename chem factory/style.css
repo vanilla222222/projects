@@ -87,6 +87,9 @@ h3 { margin: 14px 0 6px; font-size: 13px; color: var(--acc); display: flex; alig
 .hzb button { width: 20px; height: 20px; padding: 0; line-height: 18px; font-size: 14px; background: rgba(30,32,36,0.85); }
 #hstog { align-self: stretch; font-size: 11px; padding: 3px 8px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); background: linear-gradient(#33373c, #26292d); border-color: #000; }
 #hud.hide #hstat { display: none; }
+#clock { font-size: 12px; padding: 3px 8px; background: rgba(20,22,26,0.85); border: 1px solid #3a3e44; border-radius: 4px; cursor: pointer; color: var(--txt, #e8e4da); }
+#clock .ci { color: #f0c860; }
+#clock .dim { font-size: 11px; }
 #hstat { background: linear-gradient(rgba(36, 39, 44, 0.94), rgba(26, 28, 32, 0.94)); border: 1px solid #000; border-radius: 6px; padding: 6px 8px; font-family: var(--mono); font-size: 11px; box-shadow: 0 6px 20px rgba(0,0,0,0.5); max-height: calc(100vh - 360px); overflow-y: auto; }
 #hstat .hr { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
 #hstat .hr .lbl { margin: 0; }
