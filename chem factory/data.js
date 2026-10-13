@@ -294,6 +294,11 @@ const ITEMS = {
   sc2o3: { n: 'Scandia', c: '#f8f8f4', f: 'Sc₂O₃ at 99.9%. A tonne of red mud holds only about 100 g of it, yet bauxite residue is one of the larger untapped sources' },
   scsz: { n: 'Scandia-Stabilised Zirconia', c: '#f4f0e4', f: '10Sc1CeSZ: zirconia with 10% scandia and 1% ceria. It carries oxide ions about three times faster than yttria-stabilised zirconia' },
   al_sc: { n: 'Al-Sc Master Alloy', c: '#c0c8d4', f: 'Aluminium with 2% scandium. A few tenths of a percent in an alloy forms tiny Al₃Sc particles that stop grains growing, so welds stay as strong as the plate' },
+  celestine: { n: 'Celestine Ore', c: '#a8b8c8', f: 'SrSO₄ in gypsum and limestone beds, pale sky-blue crystals that give the mineral its name' },
+  cel_conc: { n: 'Celestine Concentrate', c: '#c8d8e8', f: 'Celestine floated free of gypsum and calcite, about 92% SrSO₄' },
+  sr_crude: { n: 'Crude Strontium Carbonate', c: '#e0e4e8', f: 'SrCO₃ still holding unconverted sulfate, calcium and a little barium, filtered from the conversion slurry' },
+  srco3: { n: 'Strontium Carbonate', c: '#f4f6f8', f: 'SrCO₃ at 98%, a fine white powder. Its main use is the strontium ferrite in small motors' },
+  sr_ferrite: { n: 'Strontium Ferrite Magnet', c: '#2a2a2e', f: 'SrFe₁₂O₁₉ with a little lanthanum and cobalt swapped in, pressed wet in a magnetic field. The strongest ferrite, made from iron oxide and no rare earths beyond a trace' },
   cylinder: { n: 'Steel Cylinder', c: '#7a8a7a', f: 'Seamless steel gas bottle, tested to 250 bar' },
   cl2_cyl: { n: 'Chlorine Cylinder', c: '#b8d84a', f: 'Liquid Cl₂ under its own vapour pressure, about 7 bar. Released, it boils into a cloud 2.5 times heavier than air that creeps along the ground' },
   nh3_cyl: { n: 'Ammonia Cylinder', c: '#a8c8e8', f: 'Liquid NH₃ at about 9 bar. A base: it neutralises the sulfuric acid in crawler blood. Lighter than air, so the cloud rises and blows away fast' },
@@ -2040,6 +2045,7 @@ const ORES = [
   { item: 'fluor_ore', c: '#6a5a7a', s: '#c8a8f0' },
   { item: 'graphite_ore', c: '#38383c', s: '#a0a4b0' },
   { item: 'vtm_ore', c: '#26262c', s: '#7a7a90' },
+  { item: 'celestine', c: '#8a98a8', s: '#c8e0f8' },
 ];
 
 const BUILD = {
@@ -2349,6 +2355,8 @@ const BUILD = {
   mud_leach_tank: { n: 'Red Mud Leach Train', kind: 'machine', w: 3, h: 3, cat: 'Chemistry', c: '#8a4a3a', ab: 'RL', kw: 60, cost: { stainless: 12, pipe: 6, motor: 3, pcb: 2 }, d: 'Agitated rubber-lined tanks and a belt filter. Mild acid at pH 2 dissolves the scandium while leaving most of the iron oxide behind.' },
   sc_ix_column: { n: 'Scandium Ion Exchange Plant', kind: 'machine', w: 2, h: 3, cat: 'Chemistry', c: '#7a8a8a', ab: 'SX', kw: 30, cost: { stainless: 10, glass: 4, pipe: 6, pcb: 2 }, d: 'Columns of chelating resin that grab scandium far more strongly than iron or aluminium. Stripping and precipitation tanks sit alongside.' },
   master_alloy_furnace: { n: 'Master Alloy Furnace', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#9a8a7a', ab: 'MA', kw: 250, cost: { brick: 10, steel: 8, wire: 10, pcb: 2 }, d: 'An induction-stirred crucible where oxides are reduced by molten aluminium under a fluoride flux.' },
+  sr_converter: { n: 'Celestine Conversion Plant', kind: 'machine', w: 3, h: 3, cat: 'Chemistry', c: '#8a9aaa', ab: 'SR', kw: 60, cost: { stainless: 10, pipe: 6, motor: 3, pcb: 2 }, d: 'Heated stirred tanks where soda ash swaps sulfate for carbonate in the solid grains, then rubber-lined dissolvers and precipitators for the pure carbonate.' },
+  ferrite_line: { n: 'Anisotropic Ferrite Line', kind: 'machine', w: 4, h: 2, cat: 'Processing', c: '#4a4a52', ab: 'FL', kw: 150, cost: { brick: 10, steel: 10, wire: 12, servo_drive: 2, pcb: 2 }, d: 'Calcines the mix to hexaferrite, wet-mills it to single-domain particles, presses the slurry inside a strong magnetic field so the grains line up, and sinters at 1200 °C.' },
   kiln: { n: 'Lime Kiln', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#b0a080', ab: 'LK', cost: { brick: 8, plate: 2 }, d: 'Burns limestone into quicklime.' },
   roaster: { n: 'Roaster', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#a06a3a', ab: 'RO', kw: 30, cost: { brick: 8, plate: 4 }, d: 'Burns sulfur out of sulfide concentrates. Gives off SO₂.' },
   blast: { n: 'Blast Furnace', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#7a3a2a', ab: 'BF', cost: { brick: 20, casting: 10 }, d: 'Reduces oxides with coke.' },
@@ -4174,6 +4182,11 @@ const RECIPES = [
   { id: 'scsz', n: 'Scandia-Stabilised Zirconia', b: 'mill', t: 3, i: { zirconia: 9, sc2o3: 1 }, fi: { water: 6 }, o: { scsz: 10 }, eq: 'ZrO₂ + 10% Sc₂O₃ + 1% CeO₂ → cubic ScSZ', note: 'Scandium is nearly the same size as zirconium, so it opens the lattice up for oxide ions with less strain than yttrium does.' },
   { id: 'sofc_cell_scsz', n: 'ScSZ Solid Oxide Cell', b: 'tape_caster', t: 6, i: { scsz: 2, nickel: 1, lcm: 1 }, fi: { h2: 4 }, o: { sofc_cell: 3 }, eq: 'Ni-ScSZ | ScSZ | LCM, sintered 1350 °C', note: 'The faster electrolyte lets the stack run 100 °C cooler at the same power, so cheaper steel interconnects and more cells per batch.' },
   { id: 'al_sc', n: 'Al-Sc Master Alloy', b: 'master_alloy_furnace', t: 6, i: { sc2o3: 1, aluminium: 10, cryolite: 1 }, o: { al_sc: 10 }, eq: 'Sc₂O₃ + 2Al → 2Sc + Al₂O₃ (in molten Al, 1000 °C)', note: 'The fluoride flux dissolves the alumina skin so the scandium can get into the melt.' },
+  { id: 'cel_float', n: 'Celestine Flotation', b: 'flotation', t: 3, i: { celestine: 4 }, fi: { water: 12, tofa: 1 }, o: { cel_conc: 2, tailings: 2 }, eq: 'SrSO₄ floated with fatty acid, gypsum depressed', note: 'Gypsum floats almost as easily as celestine, so starch is added to hold it down.' },
+  { id: 'sr_convert', n: 'Celestine Soda Conversion', b: 'sr_converter', t: 4, i: { cel_conc: 2, soda_ash: 2 }, fi: { water: 10 }, o: { sr_crude: 2, salt_cake: 1 }, eq: 'SrSO₄ + Na₂CO₃ → SrCO₃ + Na₂SO₄ (90 °C)', note: 'Strontium carbonate is far less soluble than the sulfate, so the reaction runs inside each grain without melting anything. The black ash roast was the older way.' },
+  { id: 'sr_purify', n: 'Strontium Carbonate Purification', b: 'sr_converter', t: 5, i: { sr_crude: 2, soda_ash: 1 }, fi: { hcl: 8 }, o: { srco3: 2 }, fo: { brine: 8, co2: 3 }, bleed: ['co2'], eq: 'SrCO₃ + 2HCl → SrCl₂ + CO₂ + H₂O ; SrCl₂ + Na₂CO₃ → SrCO₃↓ + 2NaCl', note: 'Unreacted sulfate stays behind when the crude dissolves, and a little sulfate added first drops the barium out.' },
+  { id: 'sr_ferrite', n: 'Strontium Ferrite Magnets', b: 'ferrite_line', t: 6, i: { srco3: 1, iron_red: 6, la_oxide: 1, co3o4: 1 }, o: { sr_ferrite: 6 }, fo: { co2: 2 }, bleed: ['co2'], eq: 'SrCO₃ + 6Fe₂O₃ → SrFe₁₂O₁₉ + CO₂ ; La³⁺/Co²⁺ substitution', note: 'Lanthanum on the strontium sites with cobalt on the iron sites raises the coercivity enough for motors that run hot.' },
+  { id: 'pm_motor_ferrite', n: 'Ferrite Permanent-Magnet Motor', b: 'ferrite_line', t: 6, i: { sr_ferrite: 6, wire: 3, plate: 2 }, o: { pm_motor: 2 }, eq: 'segment magnets bonded into a steel rotor + stator windings', note: 'Ferrite is a third as strong as NdFeB, so the magnets are thicker and the rotor longer, but the materials cost far less and need no rare earth mining.' },
   { id: 'kraft_cook', n: 'Kraft Cook', b: 'digester', t: 4, i: { wood_chips: 4 }, fi: { wl: 20, steam: 10 }, o: { pulp: 2 }, fo: { bl: 30 }, eq: 'Lignin + OH⁻ + HS⁻ → soluble lignin fragments', note: 'Carl Dahl, 1879. Chips cook at 170°C for two hours. Hydrosulfide cleaves the ether links that bind lignin, so the fibres fall apart unharmed.' },
   { id: 'soda_cook', n: 'Soda Cook', b: 'digester', t: 4, i: { wood_chips: 4 }, fi: { naoh: 20, steam: 10 }, o: { pulp: 1 }, fo: { bl: 30 }, eq: 'Lignin + OH⁻ → soluble lignin fragments', note: 'The older soda process of 1851. Caustic alone is slower and harsher, so half the fibre is lost. Use it to start up a new mill before the liquor loop is running.' },
   { id: 'recover', n: 'Liquor Recovery', b: 'recovery', t: 3, fi: { bl: 30, water: 60 }, fo: { steam: 60, so2: 1 }, o: { smelt: 2 }, bleed: ['so2'], eq: 'Na-organics + O₂ → Na₂CO₃ + CO₂ + H₂O (steam)', note: 'Tomlinson recovery boiler, 1934. Black liquor is evaporated to 70% solids and sprayed into the furnace. About a tenth of the sodium is lost each round.' },
@@ -5398,6 +5411,8 @@ const ORDERS = [
   { c: 'Connector moulder', item: 'pbt', n: 150, tier: 6, rw: { davy_hydrogenolysis: 1 }, d: 'PBT for electrical connectors and housings.' },
   { c: 'Alloy producer', item: 'sc2o3', n: 40, tier: 6, rw: { master_alloy_furnace: 1 }, d: 'Scandia for aluminium master alloy.' },
   { c: 'Bicycle frame builder', item: 'al_sc', n: 120, tier: 6, rw: { tape_caster: 1 }, d: 'Scandium aluminium tubes that keep their strength at the welds.' },
+  { c: 'Ceramic glaze supplier', item: 'srco3', n: 150, tier: 5, rw: { ferrite_line: 1 }, d: 'Strontium carbonate for glazes that stay glossy without lead.' },
+  { c: 'Appliance motor maker', item: 'sr_ferrite', n: 200, tier: 6, rw: { sr_converter: 1 }, d: 'Arc segment magnets for washing machine and pump motors.' },
   { c: 'Rail operator', item: 'traction_pack', n: 4, tier: 5, rw: { rail_charger: 2, rail: 100 }, d: 'Packs to convert two shunting locomotives off diesel.' },
 ];
 
