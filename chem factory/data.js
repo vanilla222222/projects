@@ -229,6 +229,11 @@ const ITEMS = {
   crude_feni: { n: 'Crude Ferronickel', c: '#8a8a7a', f: 'Metal tapped from the electric furnace, about 20% nickel, still carrying sulfur, carbon, silicon and phosphorus from the ore and reductant' },
   ss_mixed: { n: 'Mixed Alloy Scrap', c: '#9a9c9e', f: 'Turnings, offcuts and dismantled plant from scrap yards: stainless, nickel alloys and plain steel all jumbled together' },
   ss_scrap: { n: 'Sorted Stainless Scrap', c: '#c0c4c8', f: 'Austenitic stainless picked out by grade. Every tonne already holds about 180 kg of chromium and 80 kg of nickel' },
+  graphite_ore: { n: 'Flake Graphite Ore', c: '#4a4a4c', f: 'Old marble and gneiss with silvery flakes of graphite through it, made when organic mud was cooked deep in the crust. Usually 5-15% carbon' },
+  ground_gr: { n: 'Ground Graphite Ore', c: '#505052', f: 'Ore broken gently in rod mills so the flakes come free without being chopped small. Large flake sells for several times fine flake' },
+  gr_rough: { n: 'Graphite Rougher Concentrate', c: '#3a3a3e', f: 'A first float at about 80% carbon. Graphite is naturally water-repellent and floats with only a little oil' },
+  flake_conc: { n: 'Flake Graphite Concentrate', c: '#2e2e32', f: 'Cleaned through several polishing regrinds and refloats to about 95% carbon, sized into jumbo, large, medium and fine flake' },
+  sph_graphite: { n: 'Spheronised Graphite', c: '#343438', f: 'Fine flake rolled into potato-shaped grains around 15 µm. Round grains pack densely and let lithium in from every side' },
   cylinder: { n: 'Steel Cylinder', c: '#7a8a7a', f: 'Seamless steel gas bottle, tested to 250 bar' },
   cl2_cyl: { n: 'Chlorine Cylinder', c: '#b8d84a', f: 'Liquid Cl₂ under its own vapour pressure, about 7 bar. Released, it boils into a cloud 2.5 times heavier than air that creeps along the ground' },
   nh3_cyl: { n: 'Ammonia Cylinder', c: '#a8c8e8', f: 'Liquid NH₃ at about 9 bar. A base: it neutralises the sulfuric acid in crawler blood. Lighter than air, so the cloud rises and blows away fast' },
@@ -1944,6 +1949,7 @@ const ORES = [
   { item: 'dolomite', c: '#b8b0a0', s: '#ece6da' },
   { item: 'scheelite', c: '#7a7468', s: '#e0f0ff' },
   { item: 'fluor_ore', c: '#6a5a7a', s: '#c8a8f0' },
+  { item: 'graphite_ore', c: '#38383c', s: '#a0a4b0' },
 ];
 
 const BUILD = {
@@ -2192,6 +2198,8 @@ const BUILD = {
   rkef_kiln: { n: 'Laterite Calcining Kiln', kind: 'machine', w: 5, h: 3, cat: 'Smelting', c: '#7a4a32', ab: 'RK', kw: 120, cost: { brick: 28, steel: 18, motor: 4, pcb: 2 }, d: 'A 185 m rotary kiln that dries, calcines and partly reduces laterite with coal in one pass, then drops it hot into insulated containers for the furnace.' },
   rkef_furnace: { n: 'Rectangular Ferronickel Furnace', kind: 'machine', w: 5, h: 4, cat: 'Smelting', c: '#6a5a4a', ab: 'RF', kw: 900, cost: { brick: 30, steel: 20, anode: 6, pcb: 3 }, d: 'Six electrodes in a line over a shallow slag bath. Hot calcine is charged straight from the kiln so the furnace never has to dry or heat it.' },
   xrf_sorter: { n: 'Alloy Scrap Sorting Line', kind: 'machine', w: 4, h: 2, cat: 'Processing', c: '#6a7a8a', ab: 'XS', kw: 60, cost: { steel: 12, motor: 3, pcb: 4, glass: 2 }, d: 'Pieces pass one by one under an X-ray fluorescence head that reads their chromium, nickel and molybdenum in a fraction of a second. Air jets kick each one into its grade bin.' },
+  spheroniser: { n: 'Graphite Spheronising Line', kind: 'machine', w: 4, h: 3, cat: 'Processing', c: '#4a4a52', ab: 'SG', kw: 220, cost: { steel: 16, motor: 8, pcb: 4 }, d: 'A train of high-speed impact mills with air classifiers between them. Flakes are folded and rounded little by little, and the knocked-off edges are taken out as fines.' },
+  gr_purifier: { n: 'Graphite Purification Furnace', kind: 'machine', w: 4, h: 3, cat: 'Smelting', c: '#3a3440', ab: 'GP', kw: 700, cost: { brick: 20, steel: 14, anode: 6, pcb: 3 }, d: 'An induction furnace that heats graphite to about 2800 °C under argon. Silicate and metal impurities boil off and leave carbon above 99.95%, then a pitch skin is baked on.' },
   kiln: { n: 'Lime Kiln', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#b0a080', ab: 'LK', cost: { brick: 8, plate: 2 }, d: 'Burns limestone into quicklime.' },
   roaster: { n: 'Roaster', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#a06a3a', ab: 'RO', kw: 30, cost: { brick: 8, plate: 4 }, d: 'Burns sulfur out of sulfide concentrates. Gives off SO₂.' },
   blast: { n: 'Blast Furnace', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#7a3a2a', ab: 'BF', cost: { brick: 20, casting: 10 }, d: 'Reduces oxides with coke.' },
@@ -3896,6 +3904,11 @@ const RECIPES = [
   { id: 'ss_buy', n: 'Alloy Scrap Buying', b: 'kerb_depot', t: 6, o: { ss_mixed: 3 }, note: 'Scrap dealers pay a premium for stainless because of the nickel in it.' },
   { id: 'xrf_sort', n: 'X-ray Alloy Sorting', b: 'xrf_sorter', t: 3, i: { ss_mixed: 4 }, o: { ss_scrap: 3, steel_scrap: 1 }, eq: 'XRF: Cr, Ni, Mo Kα lines → grade', note: 'A grade mix-up costs the melt shop dearly, so every piece is read rather than sampled.' },
   { id: 'ss_scrap_melt', n: 'Stainless Scrap Melting', b: 'arc', t: 3, i: { ss_scrap: 4, ferrochrome: 1, quicklime: 1 }, o: { ss_melt: 5, slag: 1 }, eq: 'stainless scrap + FeCr trim → Fe-18Cr-8Ni-2C (liquid)', note: 'Sorted scrap brings its own nickel, so only a little ferrochrome is needed to trim the chromium lost to slag.' },
+  { id: 'grind_gr', n: 'Gentle Graphite Grinding', b: 'mill', t: 3, i: { graphite_ore: 4 }, fi: { water: 10 }, o: { ground_gr: 4 }, eq: 'ore → rod mill → flakes freed' },
+  { id: 'gr_float', n: 'Graphite Rougher Flotation', b: 'flotation', t: 3, i: { ground_gr: 4 }, fi: { diesel: 1, water: 10 }, o: { gr_rough: 2, sand: 2 }, eq: 'C (hydrophobic) + oil → froth', note: 'A splash of diesel as collector is enough. Graphite floats almost by itself.' },
+  { id: 'gr_clean', n: 'Graphite Polishing and Cleaning', b: 'flotation', t: 6, i: { gr_rough: 4 }, fi: { water: 15 }, o: { flake_conc: 3, sand: 1 }, eq: 'regrind (polish) → refloat ×5', note: 'Gangue sticks to flake surfaces, so each cleaner stage is preceded by a gentle polishing mill that rubs it off without breaking the flakes.' },
+  { id: 'spheronise', n: 'Graphite Spheronising', b: 'spheroniser', t: 6, i: { flake_conc: 4 }, o: { sph_graphite: 2 }, eq: 'flake → folded, rounded grains (D50 ≈ 15 µm)', note: 'Only about half the flake ends up as spheres. The fines are sold to refractory and lubricant makers.' },
+  { id: 'gr_purify', n: 'Thermal Purification and Coating', b: 'gr_purifier', t: 8, i: { sph_graphite: 3, pitch: 1 }, fi: { argon: 3 }, o: { graphite: 3 }, eq: 'SiO₂, metal oxides → vapour at 2800 °C ; pitch → carbon skin', note: 'Natural graphite needs a fraction of the furnace time of synthetic graphite, which spends days at Acheson temperatures turning coke into crystal.' },
   { id: 'kraft_cook', n: 'Kraft Cook', b: 'digester', t: 4, i: { wood_chips: 4 }, fi: { wl: 20, steam: 10 }, o: { pulp: 2 }, fo: { bl: 30 }, eq: 'Lignin + OH⁻ + HS⁻ → soluble lignin fragments', note: 'Carl Dahl, 1879. Chips cook at 170°C for two hours. Hydrosulfide cleaves the ether links that bind lignin, so the fibres fall apart unharmed.' },
   { id: 'soda_cook', n: 'Soda Cook', b: 'digester', t: 4, i: { wood_chips: 4 }, fi: { naoh: 20, steam: 10 }, o: { pulp: 1 }, fo: { bl: 30 }, eq: 'Lignin + OH⁻ → soluble lignin fragments', note: 'The older soda process of 1851. Caustic alone is slower and harsher, so half the fibre is lost. Use it to start up a new mill before the liquor loop is running.' },
   { id: 'recover', n: 'Liquor Recovery', b: 'recovery', t: 3, fi: { bl: 30, water: 60 }, fo: { steam: 60, so2: 1 }, o: { smelt: 2 }, bleed: ['so2'], eq: 'Na-organics + O₂ → Na₂CO₃ + CO₂ + H₂O (steam)', note: 'Tomlinson recovery boiler, 1934. Black liquor is evaporated to 70% solids and sprayed into the furnace. About a tenth of the sodium is lost each round.' },
@@ -5085,6 +5098,8 @@ const ORDERS = [
   { c: 'Can maker', item: 'tin', n: 200, tier: 4, rw: { detin_cell: 1 }, d: 'Tin recovered from punching skeleton, returned to the tinning line.' },
   { c: 'Ferronickel offtake', item: 'ferronickel', n: 300, tier: 4, rw: { rkef_kiln: 1, rkef_furnace: 1 }, d: 'Granulated ferronickel for stainless melt shops.' },
   { c: 'Stainless recycler', item: 'stainless', n: 400, tier: 4, rw: { xrf_sorter: 1 }, d: 'Stainless coil melted mostly from sorted scrap.' },
+  { c: 'Anode material maker', item: 'graphite', n: 300, tier: 4, rw: { spheroniser: 1, gr_purifier: 1 }, d: 'Coated spherical graphite for lithium-ion cell anodes.' },
+  { c: 'Refractory maker', item: 'flake_conc', n: 200, tier: 3, rw: { spheroniser: 1 }, d: 'Large flake for magnesia-carbon bricks.' },
   { c: 'Rail operator', item: 'traction_pack', n: 4, tier: 5, rw: { rail_charger: 2, rail: 100 }, d: 'Packs to convert two shunting locomotives off diesel.' },
 ];
 
