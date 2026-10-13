@@ -1438,7 +1438,12 @@ function burst(e, why) {
 const TUR_CAP = 20, TUR_R = 10, BUG_V = 1.6, MAX_BUGS = 80, MAX_HIVES = 30, BUG_LIFE = 150;
 const HIVE_T = [null, { n: 'Crawler Nest', hp: 600, sw: 0.6, gd: 2, gr: 500, sh: 6, su: 8 }, { n: 'Crawler Hive', hp: 1200, sw: 1, gd: 4, gr: 1500, sh: 12, su: 16 }, { n: 'Brood Mound', hp: 2400, sw: 1.5, gd: 6, sh: 24, su: 30 }];
 const BUGK = [{ n: 'Crawler', hp: 1, v: 1, dm: 1, c: '#4a3038', hc: '#5e3c46', st: '#d8c84a' }, { n: 'Spitter', hp: 0.7, v: 0.85, dm: 0.8, rng: 4, c: '#3e4a2a', hc: '#52603a', st: '#b8e050', gl: '160,220,70' }, { n: 'Brute', hp: 4, v: 0.6, dm: 3, ar: 1, sz: 1.6, c: '#2e2224', hc: '#4a3436', st: '#c05030', pl: '#6a4a40' }, { n: 'Plated Crawler', hp: 2, v: 1.05, dm: 1.6, ar: 1, sz: 1.15, c: '#3a4048', hc: '#58626e', st: '#a8c0d8', pl: '#8a96a4' }, { n: 'Behemoth', hp: 9, v: 0.5, dm: 5, ar: 1, sz: 2.3, c: '#22222a', hc: '#3a3a46', st: '#e04020', pl: '#5a5a68' },
-  { n: 'Gunner Crawler', hp: 0.9, v: 0.9, dm: 0.8, rng: 6.5, cd: 0.75, sd: 0.55, c: '#4a4238', hc: '#6a5a44', st: '#e0a040', gl: '240,170,60' }, { n: 'Acid Crawler', hp: 1.1, v: 1.1, dm: 0.9, po: 1, c: '#3a4a20', hc: '#56702a', st: '#c8f040', gl: '170,240,60' }, { n: 'Neuro Crawler', hp: 1.2, v: 0.95, dm: 0.8, nz: 1, c: '#3a2a48', hc: '#5a3a6a', st: '#c070ff', gl: '190,110,255' }];
+  { n: 'Gunner Crawler', hp: 0.9, v: 0.9, dm: 0.8, rng: 6.5, cd: 0.75, sd: 0.55, c: '#4a4238', hc: '#6a5a44', st: '#e0a040', gl: '240,170,60' }, { n: 'Acid Crawler', hp: 1.1, v: 1.1, dm: 0.9, po: 1, c: '#3a4a20', hc: '#56702a', st: '#c8f040', gl: '170,240,60' }, { n: 'Neuro Crawler', hp: 1.2, v: 0.95, dm: 0.8, nz: 1, c: '#3a2a48', hc: '#5a3a6a', st: '#c070ff', gl: '190,110,255' },
+  { n: 'Hive Drone', hp: 0.6, v: 1.5, dm: 0.6, sz: 0.85, c: '#5a4220', hc: '#7a5a28', st: '#ffd060', gl: '255,200,80' }, { n: 'Hive Warrior', hp: 1.6, v: 1.1, dm: 1.4, sz: 1.2, c: '#4a2e18', hc: '#6a4220', st: '#e0a040', pl: '#8a6030' }, { n: 'Bombardier', hp: 0.8, v: 0.8, dm: 0.7, rng: 5, cd: 2, sd: 0.8, fan: 1, c: '#5a3a1a', hc: '#7a5020', st: '#ffb040', gl: '255,150,50' }, { n: 'Bloater', hp: 2, v: 0.6, dm: 0.6, ex: 1, po: 1, sz: 1.5, c: '#5a6a28', hc: '#7a8a30', st: '#d0f060', gl: '200,240,80' }, { n: 'Broodcarrier', hp: 2.2, v: 0.7, dm: 0.8, sp: 1, sz: 1.4, c: '#4a3a2a', hc: '#6a5038', st: '#f0e0a0', pl: '#c0a870' },
+  { n: 'Leaper', hp: 0.9, v: 1.1, dm: 1.2, ld: 1, c: '#3a2a1a', hc: '#5a4028', st: '#ff9050' }, { n: 'Tunneler', hp: 1.3, v: 0.9, dm: 1.2, bw: 1, c: '#4a3a28', hc: '#6a5238', st: '#c8a060' }, { n: 'Shade Crawler', hp: 1, v: 1.1, dm: 1.1, cl: 1, c: '#1a1820', hc: '#2a2832', st: '#8080a0' }, { n: 'Spore Crawler', hp: 0.9, v: 0.8, dm: 0.7, rng: 5, cd: 2, sd: 0.6, nz: 1, c: '#3a2a40', hc: '#56405e', st: '#d090ff', gl: '200,140,255' }, { n: 'Webspinner', hp: 1, v: 0.85, dm: 0.8, rng: 5, cd: 1.8, sd: 0.5, wb: 1, c: '#3a3a3a', hc: '#5a5a5a', st: '#f0f0f0' },
+  { n: 'Mender', hp: 1.2, v: 0.8, dm: 0.5, hl: 1, c: '#2a4a30', hc: '#3a6a44', st: '#80ff90', gl: '120,255,140' }, { n: 'Leech Crawler', hp: 1.1, v: 1.15, dm: 1, dr: 1, c: '#4a1a20', hc: '#6a2a30', st: '#ff5060' }, { n: 'Ironback', hp: 5, v: 0.7, dm: 2, ar: 1, sz: 1.5, c: '#3a3a40', hc: '#5a5a64', st: '#b0b8c8', pl: '#7a8090' }, { n: 'Venom Lancer', hp: 1, v: 0.8, dm: 0.8, rng: 7, cd: 2.2, sd: 1.6, po: 1, c: '#3a4a1a', hc: '#567028', st: '#c8ff40', gl: '180,255,60' }, { n: 'Firebrand', hp: 1.2, v: 1, dm: 1.1, fi: 1, c: '#5a2a10', hc: '#803a14', st: '#ff8030', gl: '255,120,40' },
+  { n: 'Rimeback', hp: 1.6, v: 0.85, dm: 1.1, ch: 1, na: 2.6, c: '#3a5060', hc: '#507080', st: '#c0f0ff', gl: '170,230,255' }, { n: 'Nursery Crawler', hp: 2.4, v: 0.6, dm: 0.7, sm: 1, sz: 1.5, c: '#5a4a30', hc: '#7a6640', st: '#ffe0a0', pl: '#d0b080' }, { n: 'Ravager', hp: 2, v: 1.35, dm: 2.2, fr: 1, c: '#5a1a10', hc: '#802a18', st: '#ff6030' }, { n: 'Colossus', hp: 14, v: 0.45, dm: 6, ar: 1, sz: 2.7, c: '#2a1e18', hc: '#44322a', st: '#ffb060', pl: '#6a4a30' }, { n: 'Acid Sprayer', hp: 1, v: 0.9, dm: 0.7, rng: 3.5, cd: 0.5, sd: 0.45, po: 1, c: '#4a5a1a', hc: '#687e24', st: '#e0ff50', gl: '220,255,80' },
+  { n: 'Mind Crawler', hp: 1.5, v: 0.75, dm: 0.7, rng: 6, cd: 2.4, sd: 0.7, nz: 1, na: 4.5, c: '#2a1a3a', hc: '#46305e', st: '#e0a0ff', gl: '220,150,255' }, { n: 'Regenerator', hp: 1.8, v: 0.95, dm: 1.2, rg: 1, c: '#2a4a2a', hc: '#3e6a3e', st: '#a0ff80' }, { n: 'Skitter', hp: 0.35, v: 1.9, dm: 0.45, sz: 0.7, c: '#5a4a3a', hc: '#7a6450', st: '#f0d080' }, { n: 'Hive Guard', hp: 4, v: 0.95, dm: 2.2, ar: 1, sz: 1.45, c: '#4a3010', hc: '#6a4818', st: '#ffc040', pl: '#a07020' }, { n: 'Royal Lancer', hp: 2, v: 0.85, dm: 1, rng: 8, cd: 1.4, sd: 1.3, fan: 1, ar: 1, sz: 1.3, c: '#5a3a10', hc: '#80541a', st: '#ffd050', gl: '255,210,80' }];
 const htier = e => HIVE_T[e.tier || 2];
 let spits = [];
 const maxHp = e => BUILD[e.type].kind === 'hive' ? htier(e).hp : BUILD[e.type].hp || 60 * BUILD[e.type].w * BUILD[e.type].h;
@@ -1705,16 +1710,27 @@ function spawnRuins() {
   S.rv = 1;
 }
 const DGN = 60, DG_VEIN = ['sulfur', 'sulfur', 'pbzn_ore', 'copper_ore', 'cassiterite', 'wolframite', 'pgm_ore'], DG_BRIM = ['sulfur', 'sulfur', 'sulfur', 'pyrite_conc', 'gypsum'];
-const DGK = { nest: 'Crawler burrow', brim: 'Brimstone burrow', deep: 'Deep burrow', mine: 'Infested mine', lava: 'Lava tube', ice: 'Ice cave', works: 'Ammonia works', factory: 'Abandoned factory' };
-const DGQ = { nest: 'BURROW QUEEN', brim: 'BRIMSTONE QUEEN', deep: 'DEEP QUEEN', mine: 'BROOD TYRANT', lava: 'EMBER QUEEN', ice: 'FROST QUEEN', works: 'BROODMOTHER', factory: 'SLAG QUEEN' };
+const DGK = { nest: 'Crawler burrow', brim: 'Brimstone burrow', deep: 'Deep burrow', mine: 'Infested mine', lava: 'Lava tube', ice: 'Ice cave', works: 'Ammonia works', factory: 'Abandoned factory', qhive: 'Queen hive' };
+const DGQ = { nest: 'BURROW QUEEN', brim: 'BRIMSTONE QUEEN', deep: 'DEEP QUEEN', mine: 'BROOD TYRANT', lava: 'EMBER QUEEN', ice: 'FROST QUEEN', works: 'BROODMOTHER', factory: 'SLAG QUEEN', qhive: 'HIVE QUEEN' };
 const DG_LAVA = ['sulfur', 'sulfur', 'gypsum', 'pyrite_conc'], DG_ICE = ['cassiterite', 'wolframite', 'cassiterite', 'copper_ore'];
-const XDG = { infested: 'mine', lavatube: 'lava', icecave: 'ice', nh3works: 'works', oldfactory: 'factory' };
+const DG_QH = ['sulfur', 'copper_ore', 'pgm_ore', 'wolframite', 'cassiterite'];
+const dgFr = (n, a, b) => Array.from({ length: n }, (_, i) => a + (b - a) * (n > 1 ? i / (n - 1) : 0.5));
+const QHK = [[0, 1, 4], [1, 1, 2], [8, 1, 4], [9, 1, 2], [30, 1, 3], [3, 2, 2], [13, 2, 2], [10, 2, 2], [11, 2, 2], [16, 3, 2], [12, 3, 1.5], [17, 3, 2], [15, 4, 2], [6, 4, 1.5], [19, 4, 1.5], [2, 4, 1], [5, 5, 1.5], [14, 5, 1.5], [18, 5, 1], [22, 6, 1.5], [23, 6, 1.5], [24, 6, 1], [7, 7, 1], [20, 7, 1.5], [21, 7, 1.5], [25, 8, 1.5], [27, 8, 1.5], [29, 9, 1], [28, 9, 1], [31, 9, 1.5], [4, 9, 0.6], [26, 10, 0.6], [32, 10, 1]];
+function qhK(dp, r) {
+  const l = QHK.filter(q => q[1] <= dp), t = l.reduce((s, q) => s + q[2], 0);
+  let u = r() * t;
+  for (const q of l) if ((u -= q[2]) < 0) return q[0];
+  return l[0][0];
+}
+const qhFan = dp => dgFr(Math.min(9, 5 + Math.floor(dp / 3)), -0.6, 0.6);
+const XDG = { infested: 'mine', lavatube: 'lava', icecave: 'ice', nh3works: 'works', oldfactory: 'factory', queenhive: 'qhive' };
 const dgRooms = ty => ty === 'mine' || ty === 'works' || ty === 'factory';
 const dgFull = ty => dgRooms(ty) || ty === 'lava' || ty === 'ice';
 const DG_WR = [['motor', 1], ['wire', 6], ['gearbox', 1], ['cylinder', 2], ['cu_cat', 2], ['como_cat', 2], ['urea', 10], ['steel', 4], ['respirator', 1], ['plate', 12], ['cartridge', 6]];
 const DG_FI = [['wire', 12], ['motor', 2], ['steel', 8], ['pig_iron', 10], ['copper_cathode', 8], ['plate', 14], ['gearbox', 1], ['cylinder', 2], ['cartridge', 8]];
 const DG_FB = [['miner', 1], ['anode_furnace', 1], ['blast', 1], ['converter', 1], ['workshop', 1], ['crusher', 1], ['electro', 1], ['mill', 1], ['smelter', 1]];
 const DGX = {
+  qhive: { done: '', reach: 'Walk up to the hive mouth first.', gone: 'Sealed', info: 'A shaft down through the resin into the queen hive. Every floor ends in a queen chamber. Kill the queen, climb out, and the next time you go in the brood will have dug a deeper floor: bigger, with more hoards, richer loot and stranger crawlers. There is no bottom.' },
   factory: { done: 'The roof of the factory has come down. Nothing is left in there.', reach: 'Walk up to the loading dock first.', gone: 'Roof fallen in', info: 'A machine works the crawlers moved into, with assembly lines, motor and wire shops, a foundry, stores and offices. Parts crates in every room still hold copper wire, motors, steel, iron, copper cathode and sometimes whole machines still in their packing. The crawlers here are mixed: gunners that spit from range, acid crawlers whose bite keeps burning, and neuro crawlers that cloud your vision. The foreman\'s safe holds the key to the smelting hall, where the slag queen nests on the old furnace.' },
   mine: { done: 'The shaft is capped with concrete. Nothing is left down there.', reach: 'Walk up to the pithead first.', gone: 'Capped', info: '' },
   lava: { done: 'The roof of the tube has fallen in. Nothing is left down there.', reach: 'Walk up to the skylight first.', gone: 'Roof fallen in', info: 'A skylight into a lava tube, a tunnel left when the crust of a basalt flow froze and the molten core drained out. Fumaroles line the walls with sulfur, gypsum and pyrite. The floor is broken by pools that are still molten: they burn fast, so walk round them. An ember queen nests at the far end and spits burning globs that leave flames on the floor. Kill her and empty every cache and the roof comes down behind you.' },
@@ -1732,10 +1748,11 @@ function dgBfs(N, g, sx, sy) {
   }
   return d;
 }
-function dgGen(seed, ty) {
+function dgGen(seed, ty, dp) {
   ty = ty || 'nest';
+  const qh = ty === 'qhive'; dp = dp || 1;
   if (dgRooms(ty)) return mineGen(seed, ty);
-  const r = mulberry32(seed >>> 0), N = ty === 'deep' ? 80 : ty === 'lava' ? 70 : ty === 'ice' ? 64 : DGN, g = new Uint8Array(N * N), wf = ty === 'lava' ? 0.52 : 0.46;
+  const r = mulberry32(seed >>> 0), N = qh ? Math.min(140, 60 + 6 * dp) : ty === 'deep' ? 80 : ty === 'lava' ? 70 : ty === 'ice' ? 64 : DGN, g = new Uint8Array(N * N), wf = ty === 'lava' ? 0.52 : 0.46;
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) g[y * N + x] = x < 1 || y < 1 || x >= N - 1 || y >= N - 1 || r() < wf ? 1 : 0;
   const nb = (x, y) => { let n = 0; for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) if ((i || j) && (x + i < 0 || y + j < 0 || x + i >= N || y + j >= N || g[(y + j) * N + x + i])) n++; return n; };
   for (let it = 0; it < 5; it++) {
@@ -1763,7 +1780,7 @@ function dgGen(seed, ty) {
   d = dgBfs(N, g, ex, ey);
   for (let k = 0; k < N * N; k++) if (d[k] < 0) g[k] = 1;
   const md = d[qy * N + qx], caches = [];
-  for (const f of ty === 'deep' ? [0.2, 0.32, 0.45, 0.56, 0.67, 0.78, 0.9] : [0.28, 0.45, 0.6, 0.75, 0.88]) {
+  for (const f of qh ? dgFr(Math.min(12, 5 + Math.floor(dp / 2)), 0.2, 0.92) : ty === 'deep' ? [0.2, 0.32, 0.45, 0.56, 0.67, 0.78, 0.9] : [0.28, 0.45, 0.6, 0.75, 0.88]) {
     let best = -1, bs = -1;
     for (let k = 0; k < N * N; k++) {
       if (g[k] || d[k] < 4) continue;
@@ -1774,14 +1791,14 @@ function dgGen(seed, ty) {
     }
     if (best >= 0) caches.push({ x: best % N, y: Math.floor(best / N) });
   }
-  const vein = new Map(), VL = ty === 'brim' ? DG_BRIM : ty === 'lava' ? DG_LAVA : ty === 'ice' ? DG_ICE : DG_VEIN, vd = ty === 'brim' ? 0.18 : ty === 'lava' ? 0.1 : ty === 'ice' ? 0.09 : ty === 'deep' ? 0.09 : 0.075;
+  const vein = new Map(), VL = qh ? DG_QH : ty === 'brim' ? DG_BRIM : ty === 'lava' ? DG_LAVA : ty === 'ice' ? DG_ICE : DG_VEIN, vd = qh ? 0.08 : ty === 'brim' ? 0.18 : ty === 'lava' ? 0.1 : ty === 'ice' ? 0.09 : ty === 'deep' ? 0.09 : 0.075;
   for (let y = 1; y < N - 1; y++) for (let x = 1; x < N - 1; x++) {
     const k = y * N + x;
     if (!g[k] || !(!g[k - 1] || !g[k + 1] || !g[k - N] || !g[k + N])) continue;
     if (hash(x, y, seed & 0xffff) < vd) vein.set(k, VL[Math.floor(hash(y, x, seed & 0xfff) * VL.length)]);
   }
   const r2 = mulberry32((seed ^ 0x2545f491) >>> 0), eggs = [], pool = new Set();
-  for (const f of ty === 'deep' ? [0.3, 0.42, 0.54, 0.66, 0.76, 0.86, 0.94] : [0.35, 0.55, 0.7, 0.85]) {
+  for (const f of qh ? dgFr(Math.min(14, 4 + Math.floor(dp / 2)), 0.3, 0.94) : ty === 'deep' ? [0.3, 0.42, 0.54, 0.66, 0.76, 0.86, 0.94] : [0.35, 0.55, 0.7, 0.85]) {
     let best = -1, bs = -1e9;
     for (let k = 0; k < N * N; k++) {
       if (g[k] || d[k] < 10) continue;
@@ -1792,8 +1809,8 @@ function dgGen(seed, ty) {
     }
     if (best >= 0) eggs.push({ x: best % N, y: Math.floor(best / N) });
   }
-  if (ty === 'brim') {
-    for (let p = 0, t = 0; p < 7 && t < 400; t++) {
+  if (ty === 'brim' || qh) {
+    for (let p = 0, t = 0; p < (qh ? 6 + Math.floor(dp / 2) : 7) && t < 400; t++) {
       const x = 2 + Math.floor(r2() * (N - 4)), y = 2 + Math.floor(r2() * (N - 4)), k = y * N + x;
       if (g[k] || d[k] < 12 || Math.hypot(x - qx, y - qy) < 4 || caches.some(c => Math.hypot(c.x - x, c.y - y) < 3) || eggs.some(c => Math.hypot(c.x - x, c.y - y) < 3)) continue;
       const q = [k], sz = 3 + Math.floor(r2() * 5);
@@ -1830,7 +1847,7 @@ function dgGen(seed, ty) {
     }
     if (ty === 'ice') for (let y = 1; y < N - 1; y++) for (let x = 1; x < N - 1; x++) { const k = y * N + x; if (!g[k] && !pool.has(k) && d[k] > 4 && fbm(x / 7, y / 7, (seed & 0xffff) + 909) > 0.56) ice.add(k); }
   }
-  return { seed, ty, N, g, d, ex, ey, qx, qy, md, caches, vein, eggs, pool, ice, leak: new Set(), valves: [], deco: new Map(), lamps: [] };
+  return { seed, ty, N, g, d, ex, ey, qx, qy, md, caches, vein, eggs, pool, ice, leak: new Set(), valves: [], deco: new Map(), lamps: [], dp };
 }
 const MINE_RK = ['store', 'lamp', 'drift', 'crusher', 'office', 'pump'];
 const MINE_PROP = { store: ['crate', 'crate', 'barrel', 'rack'], lamp: ['rack', 'cabinet', 'rack'], drift: ['timber', 'cart', 'timber'], crusher: ['machine', 'cart', 'barrel'], office: ['desk', 'cabinet', 'cabinet'], pump: ['pumpset', 'barrel', 'machine'] };
@@ -1921,7 +1938,7 @@ function mineGen(seed, ty) {
   const qx = boss.cx - 2, qy = boss.cy;
   return { seed, ty: fc ? 'factory' : wk ? 'works' : 'mine', N, g, d: wk ? dgBfs(N, g, ex, ey) : d, ex, ey, qx, qy, md: d[qy * N + qx], caches, vein: new Map(), eggs, pool: new Set(), ice: new Set(), leak, valves, deco, lamps, rm, rooms, door, boss: bi };
 }
-const dgSeed = e => (S.seed * 131 + e.x * 7919 + e.y * 104729) >>> 0;
+const dgSeed = e => (S.seed * 131 + e.x * 7919 + e.y * 104729 + (e.dp || 0) * 15485863) >>> 0;
 function dgKind(e) {
   if (XDG[e.type]) return XDG[e.type];
   if (e.bk) return e.bk;
@@ -1931,9 +1948,9 @@ function dgKind(e) {
 }
 function dgCaches(e) {
   const ty = dgKind(e), s = dgSeed(e), key = s + ty;
-  return dgcc[key] || (dgcc[key] = dgGen(s, ty).caches.length);
+  return dgcc[key] || (dgcc[key] = dgGen(s, ty, e.dp || 1).caches.length);
 }
-const dgGrid = () => (dgc && dgc.seed === S.dg.seed && dgc.ty === (S.dg.ty || 'nest') ? dgc : (dgc = dgGen(S.dg.seed, S.dg.ty || 'nest')));
+const dgGrid = () => (dgc && dgc.seed === S.dg.seed && dgc.ty === (S.dg.ty || 'nest') ? dgc : (dgc = dgGen(S.dg.seed, S.dg.ty || 'nest', S.dg.dp)));
 function dgSolid(x, y) {
   const G = dgGrid(), X = Math.floor(x), Y = Math.floor(y);
   if (X < 0 || Y < 0 || X >= G.N || Y >= G.N) return true;
@@ -1952,11 +1969,12 @@ function dgMix(ty, k) {
   const u = Math.random();
   return u < 0.2 ? 5 : u < 0.38 ? 6 : u < 0.52 ? 7 : k;
 }
-const dgEggK = ty => ty === 'factory' ? [0, 0, 5, 6, 7][Math.floor(Math.random() * 5)] : Math.random() < 0.25 ? 1 : 0;
+const dgEggK = ty => ty === 'qhive' ? qhK(S.dg.dp || 1, Math.random) : ty === 'factory' ? [0, 0, 5, 6, 7][Math.floor(Math.random() * 5)] : Math.random() < 0.25 ? 1 : 0;
 function dgFx(D, s) {
   if (s.ch) D.chill = 3;
   if (s.po) { if (!D.pot) { D.pot = 1; toast('Acid! It keeps eating into your skin after the bite. Back off and let it burn out.', true); } D.poison = Math.max(D.poison || 0, 4); }
   if (s.nz) { if (!D.nzt) { D.nzt = 1; toast('Your vision swims and darkens at the edges. The neuro crawler\'s sting is clouding your sight. It wears off if you keep away from them.', true); } D.neuro = Math.max(D.neuro || 0, 5); }
+  if (s.wb) { if (!D.wbt) { D.wbt = 1; toast('Webbing! Sticky strands wrap round your legs and slow you down for a moment.', true); } D.web = Math.max(D.web || 0, 2.5); }
 }
 function dgEnter(e) {
   const P = S.pl, xt = XDG[e.type], X = xt && DGX[xt];
@@ -1965,35 +1983,38 @@ function dgEnter(e) {
   if (!entReach(e, 3)) return toast(X ? X.reach : 'Walk up to the burrow mouth first.', true);
   const ty = dgKind(e), seed = dgSeed(e), mine = dgRooms(ty);
   if (!xt) e.bk = ty;
-  S.dg = { bid: e.id, seed, ty, rx: P.x, ry: P.y, px: 0, py: 0, bugs: [], sp: [], t: 0 };
+  S.dg = { bid: e.id, seed, ty, rx: P.x, ry: P.y, px: 0, py: 0, bugs: [], sp: [], t: 0, dp: e.dp || 1 };
   dgc = null;
-  const G = dgGrid(), T = burrowTier(e), ev = 1 + 2 * S.evo, D = S.dg;
+  const G = dgGrid(), T = ty === 'qhive' ? Math.min(6, burrowTier(e) + Math.floor(((e.dp || 1) - 1) / 3)) : burrowTier(e), ev = 1 + 2 * S.evo, D = S.dg;
   D.px = G.ex + 0.5; D.py = G.ey + 0.5;
+  if (ty === 'qhive') { D.hm = 1 + 0.25 * D.dp; D.dm = 1 + 0.15 * D.dp; }
   D.mv = Object.assign({}, e.mv || {});
   D.oc = (e.oc || []).slice();
   D.eg = (e.eg || []).slice();
   D.key = e.key || 0;
   if (xt) { D.vc = (e.vc || []).slice(); D.fire = []; }
-  const eh = Math.round(50 * T * ev);
+  const eh = Math.round(50 * T * ev * (D.hm || 1));
   D.eggs = [];
   G.eggs.forEach((o, i) => { if (!D.eg.includes(i)) D.eggs.push({ x: o.x + 0.5, y: o.y + 0.5, hp: eh, mhp: eh, cd: 2 + i % 4, i, egg: 1 }); });
-  const qh = Math.round((ty === 'factory' ? 1600 : ty === 'mine' ? 1500 : ty === 'works' ? 1400 : ty === 'deep' ? 1100 : ty === 'lava' || ty === 'ice' ? 900 : 700) * T * (1 + S.evo));
+  const qh = Math.round((ty === 'qhive' ? 1000 * (1 + 0.4 * (D.dp - 1)) : ty === 'factory' ? 1600 : ty === 'mine' ? 1500 : ty === 'works' ? 1400 : ty === 'deep' ? 1100 : ty === 'lava' || ty === 'ice' ? 900 : 700) * T * (1 + S.evo));
   D.q = { x: G.qx + 0.5, y: G.qy + 0.5, hp: e.qhp != null ? Math.min(e.qhp, qh) : qh, mhp: qh, cd: 2, sp: 4, aw: 0, a: Math.PI };
   if (ty === 'mine') Object.assign(D.q, { ty: 'tyrant', cd: 3, sp: 6, a: Math.PI });
   if (ty === 'works') Object.assign(D.q, { ty: 'brood', sp: 8, sub: 1 });
   if (ty === 'lava') D.q.ty = 'ember';
   if (ty === 'factory') Object.assign(D.q, { ty: 'slag', sp: 6, pl: 6 });
   if (ty === 'ice') D.q.ty = 'frost';
+  if (ty === 'qhive') Object.assign(D.q, { ty: 'hive', pl: 9 });
   if (D.q.hp <= 0) { D.q.hp = 0; D.q.dead = 1; D.q.sub = 0; }
-  const rng = mulberry32(seed + 5), n = mine ? 14 + 6 * T : ty === 'deep' ? 16 + 7 * T : xt ? 13 + 6 * T : 10 + 5 * T;
+  const rng = mulberry32(seed + 5), n = ty === 'qhive' ? Math.min(90, 12 + 4 * D.dp) : mine ? 14 + 6 * T : ty === 'deep' ? 16 + 7 * T : xt ? 13 + 6 * T : 10 + 5 * T;
   for (let k = 0, tries = 0; k < n && tries < 4000; tries++) {
     const x = 1 + Math.floor(rng() * (G.N - 2)), y = 1 + Math.floor(rng() * (G.N - 2)), i = y * G.N + x;
     if (G.g[i] || G.d[i] < 12 || (G.rm && G.rm[i] === G.boss) || G.pool.has(i)) continue;
     const u = rng(), gt = gearT(), k0 = T >= 2 && u < 0.12 + 0.05 * T + (ty === 'deep' ? 0.06 : 0) ? 2 : u < 0.4 ? 1 : 0, kk = k0 === 2 && gt > 0.55 && Math.random() < gt - 0.4 ? 4 : k0 === 0 && gt > 0.25 && Math.random() < 0.6 * gt ? 3 : k0, mhp = Math.round(30 * ev * (1 + 1.2 * gt) * BUGK[kk].hp);
     const b = { x: x + 0.5, y: y + 0.5, hp: mhp, mhp, a: rng() * 7, ph: rng() * 7, aw: 0, cd: 0 };
-    const k2 = dgMix(ty, kk);
+    const k2 = ty === 'qhive' ? qhK(D.dp, rng) : dgMix(ty, kk);
     if (k2 !== kk) { b.hp = b.mhp = Math.round(mhp * BUGK[k2].hp / BUGK[kk].hp); }
     if (k2) b.k = k2;
+    if (D.hm) b.hp = b.mhp = Math.round(b.mhp * D.hm);
     D.bugs.push(b); k++;
   }
   P.x = e.x + 1; P.y = e.y + 1;
@@ -2006,7 +2027,8 @@ function dgEnter(e) {
   if (ty === 'ice') S.icn = (S.icn || 0) + 1;
   if (ty === 'works') S.wkn = (S.wkn || 0) + 1;
   if (ty === 'factory') S.fcn = (S.fcn || 0) + 1;
-  toast(ty === 'factory' ? `You duck under the half-raised shutter of the loading dock of a tier ${T} abandoned factory. The assembly lines and shops are dark and full of crawlers: gunners that spit from range, acid crawlers whose bite keeps burning, and neuro crawlers that cloud your sight. Parts crates in every room still hold wire, motors, steel and even whole machines. The foreman's safe holds the key to the smelting hall. Press F at the dock to leave.`
+  if (ty === 'qhive') { S.qhn = (S.qhn || 0) + 1; S.qhd = Math.max(S.qhd || 0, D.dp); }
+  toast(ty === 'qhive' ? `You lower yourself through the hive mouth into depth ${D.dp} of the queen hive. The walls are amber resin and wax comb, warm to the touch. Amber pools and webbing slow you down. Hoards of loot the brood dragged in are tucked into side cells, and the hive queen waits at the bottom. Kill her and the next floor down opens.${D.dp > 1 ? ' The crawlers down here are tougher and stranger than above.' : ''} Press F at the rope to climb out.` : ty === 'factory' ? `You duck under the half-raised shutter of the loading dock of a tier ${T} abandoned factory. The assembly lines and shops are dark and full of crawlers: gunners that spit from range, acid crawlers whose bite keeps burning, and neuro crawlers that cloud your sight. Parts crates in every room still hold wire, motors, steel and even whole machines. The foreman's safe holds the key to the smelting hall. Press F at the dock to leave.`
     : ty === 'mine' ? `You ride the cage down into a tier ${T} infested mine. Crawlers have taken over the old roadways. The storerooms and lamp rooms still have their lockers, and the shift boss's safe holds the key to the blast door of the old pump hall, where something big has nested. Press F in the cage to ride back up.`
     : ty === 'works' ? `You slip in through the gate of a tier ${T} ammonia works. Crawlers nest among the compressors and control panels. Where you hear a hiss, a cracked line is still bleeding ammonia from the storage spheres: close the red valve on the wall with F, or wear an ammonia respirator. The plant manager's safe holds the key to the synthesis hall. Press F at the gate to leave.`
     : ty === 'lava' ? `You climb down through a skylight into a tier ${T} lava tube. The basalt walls are glazed smooth by the old flow and crusted yellow and white where fumaroles vent sulfur. Pools of lava still glow on the floor: they burn badly, so walk round them. An ember queen nests at the far end. Press F at the rope to climb out.`
@@ -2017,9 +2039,11 @@ function dgEnter(e) {
 }
 function dgExit(dead) {
   const D = S.dg, P = S.pl, e = ents.get(D.bid), G = dgGrid();
+  let nq = 0;
   if (e) {
     e.mv = D.mv; e.oc = D.oc; e.eg = D.eg || []; if (D.key) e.key = 1; if (D.vc) e.vc = D.vc;
-    if (dgFull(D.ty)) { e.qhp = Math.max(0, D.q.hp); if (D.q.hp <= 0 && D.oc.length >= G.caches.length) e.done = 1; }
+    if (D.ty === 'qhive') { if (D.q.hp <= 0) { e.dp = (e.dp || 1) + 1; e.mv = {}; e.oc = []; e.eg = []; e.qhp = undefined; delete e.key; nq = e.dp; } else e.qhp = D.q.hp; }
+    else if (dgFull(D.ty)) { e.qhp = Math.max(0, D.q.hp); if (D.q.hp <= 0 && D.oc.length >= G.caches.length) e.done = 1; }
     else { e.qhp = D.q.hp > 0 ? D.q.hp : undefined; if (D.q.hp <= 0) e.done = 1; }
   }
   S.dg = null; dgMine = null;
@@ -2031,6 +2055,7 @@ function dgExit(dead) {
   } else { P.x = D.rx; P.y = D.ry; }
   if (dead) { P.dead = 6; P.hp = 0; }
   camFree = false;
+  if (nq) toast(`Far below, the brood is already sealing a new queen chamber. Next time you go into the hive you will be at depth ${nq}.`);
 }
 function dgFlow() {
   const G = dgGrid(), D = S.dg, N = G.N, f = new Int16Array(N * N).fill(-1), sx = Math.floor(D.px), sy = Math.floor(D.py), q = [sy * N + sx];
@@ -2066,7 +2091,17 @@ function dgLoot(c, i) {
   const add = (k, n) => { if (n > 0 && (ITEMS[k] || BUILD[k])) { give(k, n); got[k] = (got[k] || 0) + n; } };
   const pick = L => { const l = L.filter(([k]) => ITEMS[k] || BUILD[k]), [k, n] = l[Math.floor(rng() * l.length)]; add(k, n); };
   let msg = 'Old supply cache: ', ul = 0;
-  if (t === 'cache') {
+  if (t === 'cache' && D.ty === 'qhive') {
+    const dp = D.dp || 1, m = 1 + 0.3 * dp, pm = L => { const [k, n] = L[Math.floor(rng() * L.length)]; add(k, Math.max(1, Math.round(n * m))); };
+    const L1 = [['plate', 10], ['steel', 6], ['motor', 1], ['wire', 10], ['cartridge', 8]], L2 = [['gold', 2], ['silver', 4], ['ap_cartridge', 6], ['gearbox', 1], ['pt_gauze', 1]];
+    msg = `Hive hoard, depth ${dp}: `;
+    add('crawler_shell', Math.round((3 + Math.floor(rng() * 4)) * m));
+    pm(L1); pm(L1); pm(L2);
+    if (dp >= 3) pm(L2);
+    if (dp >= 4 && rng() < 0.25 + 0.03 * dp) pick(DG_FB);
+    if (dp >= 6) add('queen_carapace', 1);
+    ul = rng() < Math.min(0.6, 0.2 + 0.03 * dp);
+  } else if (t === 'cache') {
     add('sulfur', 6 + Math.floor(rng() * 10));
     if (D.ty === 'brim') add('sulfur', got.sulfur);
     if (D.ty === 'lava') add('pyrite_conc', 3 + Math.floor(rng() * 4));
@@ -2119,7 +2154,7 @@ function dgLoot(c, i) {
   S.dgc = (S.dgc || 0) + 1;
   toast(msg + Object.keys(got).map(k => got[k] + ' ' + nm(k)).join(', '));
   if (t === 'safe') toast(D.ty === 'factory' ? 'In the bottom drawer, under the time cards, lies a heavy key stamped SMELTING HALL. The roller door at the east end will open now.' : D.ty === 'works' ? 'Behind the shift logs hangs a key tagged SYNTHESIS HALL. The gate at the east end of the plant will open now.' : 'Under the shift reports lies a brass key tagged PUMP HALL. The blast door at the end of the east roadway will open now.');
-  if (ul) { const r = unlockRandom(); if (r) toast(`${t === 'cache' ? 'A waterlogged lab notebook in the cache' : D.ty === 'factory' ? 'A process sheet in the crate' : D.ty === 'works' ? 'A plant operating manual among the papers' : 'A mine assay book among the papers'}: ${r.n} (${BUILD[r.b].n}) unlocked`); }
+  if (ul) { const r = unlockRandom(); if (r) toast(`${D.ty === 'qhive' ? 'A field notebook sealed in resin' : t === 'cache' ? 'A waterlogged lab notebook in the cache' : D.ty === 'factory' ? 'A process sheet in the crate' : D.ty === 'works' ? 'A plant operating manual among the papers' : 'A mine assay book among the papers'}: ${r.n} (${BUILD[r.b].n}) unlocked`); }
   renderHotbar();
 }
 function dgDoor(D, G) {
@@ -2176,14 +2211,14 @@ function dgClick(fx, fy) {
 function dgShoot() {
   const P = S.pl, D = S.dg;
   if (P.cd > 0) return;
-  const Q = D.q, list = Q.hp > 0 && !Q.sub ? D.bugs.concat([Q]) : D.bugs, see = b => dgSee(D.px, D.py, b.x, b.y);
+  const Q = D.q, bs = D.bugs.filter(b => !b.sub), list = Q.hp > 0 && !Q.sub ? bs.concat([Q]) : bs, see = b => dgSee(D.px, D.py, b.x, b.y);
   let r = wpnShot(D.px, D.py, list, null, see, 1, b => b === Q || !!BUGK[b.k || 0].ar);
   if (!r && D.eggs && D.eggs.length) r = wpnShot(D.px, D.py, D.eggs, null, see, 1, () => false);
   if (!r) return;
   for (const b of r.hits) { b.aw = 1; if (b !== Q && !b.egg && b.hp <= 0) S.pk = (S.pk || 0) + 1; }
 }
 function dgSlide(dt, mx, my, G) {
-  const P = S.pl, D = S.dg, l = Math.hypot(mx, my), v = PL_V * 0.9 * (D.chill > 0 ? 0.6 : 1), on = G.ice.has(Math.floor(D.py) * G.N + Math.floor(D.px));
+  const P = S.pl, D = S.dg, l = Math.hypot(mx, my), v = PL_V * 0.9 * (D.chill > 0 || D.web > 0 ? 0.6 : 1), on = G.ice.has(Math.floor(D.py) * G.N + Math.floor(D.px));
   let vx = D.vx || 0, vy = D.vy || 0;
   const tx = l ? mx / l * v : 0, ty = l ? my / l * v : 0;
   if (on) { const a = Math.min(1, dt * 1.6); vx += (tx - vx) * a; vy += (ty - vy) * a; } else { vx = tx; vy = ty; }
@@ -2208,7 +2243,7 @@ function dgMove(dt, mx, my) {
   P.mv = false;
   if (!(P.dead > 0) && D.ty === 'ice') return dgSlide(dt, mx, my, dgGrid());
   if (P.dead > 0 || !(mx || my)) return false;
-  const l = Math.hypot(mx, my), v = PL_V * 0.9;
+  const l = Math.hypot(mx, my), v = PL_V * 0.9 * (D.web > 0 || D.chill > 0 ? 0.6 : 1);
   let left = dt;
   while (left > 1e-6) {
     const h = Math.min(0.04, left); left -= h;
@@ -2222,11 +2257,20 @@ function dgMove(dt, mx, my) {
   return true;
 }
 function dgSpawnAt(x, y, k) {
-  const ev = 1 + 2 * S.evo, mhp = Math.round(30 * ev * (1 + 1.2 * gearT()) * BUGK[k].hp), a = Math.random() * 7;
+  const ev = 1 + 2 * S.evo, mhp = Math.round(30 * ev * (1 + 1.2 * gearT()) * BUGK[k].hp * (S.dg.hm || 1)), a = Math.random() * 7;
   const b = { x: x + Math.cos(a) * 1.2, y: y + Math.sin(a) * 1.2, hp: mhp, mhp, a, ph: Math.random() * 7, aw: 1, cd: 0 };
   if (!dgFree(b.x, b.y, 0.2)) { b.x = x; b.y = y; }
   if (k) b.k = k;
   S.dg.bugs.push(b);
+}
+function dgDie(D, b, hit) {
+  const K = BUGK[b.k || 0];
+  if (K.sp) for (let k = 0; k < 3; k++) dgSpawnAt(b.x, b.y, 8);
+  if (K.ex) {
+    dfx.push({ x: b.x, y: b.y, t: 0, c: '#c8f040' });
+    for (const o of D.bugs) if (o !== b && Math.hypot(o.x - b.x, o.y - b.y) < 2) o.hp -= o.mhp * 0.5;
+    if (Math.hypot(D.px - b.x, D.py - b.y) < 2) { dgFx(D, { po: 1 }); dgHurt(hit * 2.5); }
+  }
 }
 function dgStep(D, ff, N, b, v, r) {
   const fd = ff ? ff[Math.floor(b.y) * N + Math.floor(b.x)] : -1;
@@ -2303,6 +2347,7 @@ function dgTick() {
   D.t += DT;
   if (D.chill > 0) D.chill -= DT;
   if (D.neuro > 0) D.neuro -= DT;
+  if (D.web > 0) D.web -= DT;
   if (D.poison > 0 && !(P.dead > 0)) { D.poison -= DT; dgHurt(5 * (1 + S.evo) * DT, 1); if (!S.dg) return; }
   D.eggs = D.eggs || []; D.eg = D.eg || [];
   P.cd = Math.max(0, (P.cd || 0) - DT);
@@ -2320,10 +2365,11 @@ function dgTick() {
       dgMine = null; D.ff = null;
     }
   }
-  const sp = BUG_V * DT * 1.15, dmg = 6 * (1 + S.evo) * (1 + gearT()) * DT, ff = D.ff, pd0 = P.dead > 0;
+  const sp = BUG_V * DT * 1.15, dmg = 6 * (1 + S.evo) * (1 + gearT()) * DT * (D.dm || 1), hit = dmg / DT, ff = D.ff, pd0 = P.dead > 0;
   const pk = Math.floor(D.py) * N + Math.floor(D.px);
   if (!pd0 && G.pool.has(pk)) {
     if (D.ty === 'lava') { if (!D.pt) { D.pt = 1; toast('Lava! Basalt melt at over 1000°C sets your boots and clothes smouldering. Get out of it now.', true); } dgHurt(30 * DT, 1); }
+    else if (D.ty === 'qhive') { if (!D.pt) { D.pt = 1; toast('Hive resin. It sticks to your boots and drags at every step. Walk round the amber pools.', true); } D.web = Math.max(D.web || 0, 0.6); }
     else if (D.ty === 'ice') { if (!D.pt) { D.pt = 1; toast('Meltwater at 0°C. It numbs your legs and soaks your clothes: you stay chilled and slow until you warm up.', true); } D.chill = 4; dgHurt(5 * DT, 1); }
     else {
       if (!D.pt) { D.pt = 1; toast('Sulfuric acid! The pool eats through your boots. Get out of it.', true); }
@@ -2359,19 +2405,36 @@ function dgTick() {
   }
   for (let i = D.bugs.length - 1; i >= 0; i--) {
     const b = D.bugs[i];
-    if (b.hp <= 0) { D.bugs.splice(i, 1); S.kills = (S.kills || 0) + 1; dfx.push({ x: b.x, y: b.y, t: 0.5, c: '#a0c040' }); continue; }
+    if (b.hp <= 0) { D.bugs.splice(i, 1); S.kills = (S.kills || 0) + 1; dfx.push({ x: b.x, y: b.y, t: 0.5, c: '#a0c040' }); dgDie(D, b, hit); if (!S.dg) return; continue; }
     const K = BUGK[b.k || 0], pd = Math.hypot(D.px - b.x, D.py - b.y), bi = Math.floor(b.y) * N + Math.floor(b.x), fd = ff ? ff[bi] : -1;
     if (!b.aw && (pd < 6 || (fd >= 0 && fd < 9 && dgSee(b.x, b.y, D.px, D.py)))) b.aw = 1;
     if (!b.aw || pd0) { b.a += Math.sin(D.t + b.ph) * 0.02; continue; }
-    if (K.nz && pd < 2.6 && Math.random() < DT * 1.5) dgFx(D, { nz: 1 });
-    if (pd < 0.7 && !K.rng) { b.a = Math.atan2(D.py - b.y, D.px - b.x); b.chew = 1; if (K.po || K.nz) dgFx(D, K); dgHurt(dmg * 2 * K.dm); if (!S.dg) return; continue; }
+    if (K.rg && b.hp < b.mhp) b.hp = Math.min(b.mhp, b.hp + b.mhp * 0.06 * DT);
+    if (K.hl && (b.hlt = (b.hlt || 0) - DT) <= 0) { b.hlt = 1; for (const o of D.bugs) if (o !== b && o.hp > 0 && o.hp < o.mhp && Math.hypot(o.x - b.x, o.y - b.y) < 4) { o.hp = Math.min(o.mhp, o.hp + o.mhp * 0.08); dfx.push({ x: o.x, y: o.y, t: 0.25, c: '#80ff90' }); } }
+    if (K.sm && (b.smt = (b.smt == null ? 7 : b.smt) - DT) <= 0) { b.smt = 7; if (D.bugs.length < 40) dgSpawnAt(b.x, b.y, 8); }
+    if (K.fi && (b.fit = (b.fit || 0) - DT) <= 0) { b.fit = 0.5; if ((D.fire = D.fire || []).length < 40) D.fire.push({ x: b.x, y: b.y, t: 3 }); }
+    if (K.bw) {
+      b.bwt = (b.bwt || 0) - DT;
+      if (b.sub && (b.bwt <= 0 || pd < 0.9)) { b.sub = 0; b.bwt = 3.5; dfx.push({ x: b.x, y: b.y, t: 0.4, c: '#8a6a40' }); }
+      else if (!b.sub && b.bwt <= 0 && pd > 2) { b.sub = 1; b.bwt = 2.2; }
+      if (b.sub) { dgStep(D, ff, N, b, sp * K.v * 1.8, 0.18); continue; }
+    }
+    if (K.ld) {
+      if (b.lt > 0) { b.lt -= DT; const nx = b.x + Math.cos(b.a) * 9 * DT, ny = b.y + Math.sin(b.a) * 9 * DT; if (dgFree(nx, ny, 0.18)) { b.x = nx; b.y = ny; } else b.lt = 0; if (!b.lh && Math.hypot(D.px - b.x, D.py - b.y) < 0.7) { b.lh = 1; dgHurt(hit * 1.5 * K.dm); if (!S.dg) return; } continue; }
+      b.lc = (b.lc || 0) - DT;
+      if (b.lc <= 0 && pd > 1.5 && pd < 4.5 && dgSee(b.x, b.y, D.px, D.py)) { b.lc = 3; b.lt = 0.4; b.lh = 0; b.a = Math.atan2(D.py - b.y, D.px - b.x); continue; }
+    }
+    if (K.ex && pd < 0.9) { b.hp = 0; continue; }
+    if ((K.nz || K.ch) && pd < (K.na || 2.6) && Math.random() < DT * 1.5) dgFx(D, K.ch ? { ch: 1 } : { nz: 1 });
+    if (pd < 0.7 && !K.rng) { b.a = Math.atan2(D.py - b.y, D.px - b.x); b.chew = 1; if (K.po || K.nz || K.ch || K.wb) dgFx(D, K); if (K.dr) b.hp = Math.min(b.mhp, b.hp + b.mhp * 0.3 * DT); dgHurt(dmg * 2 * K.dm); if (!S.dg) return; continue; }
     b.chew = 0;
+    if (K.hl && pd < 7) { if (pd < 4.5) { const a = Math.atan2(b.y - D.py, b.x - D.px), nx = b.x + Math.cos(a) * sp * K.v, ny = b.y + Math.sin(a) * sp * K.v; if (dgFree(nx, ny, 0.18)) { b.x = nx; b.y = ny; } b.a = a; } continue; }
     if (K.rng && pd < K.rng && dgSee(b.x, b.y, D.px, D.py)) {
       b.a = Math.atan2(D.py - b.y, D.px - b.x); b.cd = (b.cd || 0) - DT;
-      if (b.cd <= 0) { b.cd = K.cd || 1.6; const s = { x: b.x, y: b.y, tx: D.px, ty: D.py, d: 12 * (K.sd || 1) * (1 + S.evo) * (1 + gearT()) }; if (K.po) s.po = 1; if (K.nz) s.nz = 1; if (K.cd) s.gn = 1; D.sp.push(s); }
+      if (b.cd <= 0) { b.cd = K.cd || 1.6; for (const o of K.fan ? [-0.25, 0, 0.25] : [0]) { const a = b.a + o, s = { x: b.x, y: b.y, tx: b.x + Math.cos(a) * pd, ty: b.y + Math.sin(a) * pd, d: 12 * (K.sd || 1) * (1 + S.evo) * (1 + gearT()) * (D.dm || 1) }; if (K.po) s.po = 1; if (K.nz) s.nz = 1; if (K.ch) s.ch = 1; if (K.wb) s.wb = 1; if (K.cd && !K.po && !K.nz && !K.wb && !K.ch) s.gn = 1; D.sp.push(s); } }
       continue;
     }
-    dgStep(D, ff, N, b, sp * K.v, 0.18);
+    dgStep(D, ff, N, b, sp * K.v * (K.fr && b.hp < b.mhp * 0.5 ? 1.7 : 1), 0.18);
   }
   const Q = D.q;
   if (Q.hp > 0) {
@@ -2379,13 +2442,13 @@ function dgTick() {
     else if (Q.ty === 'brood') { broodTick(D, Q, pd0, dmg); if (!S.dg) return; }
     else {
       const pd = Math.hypot(D.px - Q.x, D.py - Q.y);
-      if (!Q.aw && pd < 9 && dgSee(Q.x, Q.y, D.px, D.py)) { Q.aw = 1; toast(Q.ty === 'slag' ? 'The slag queen hauls herself off the old furnace, her plates crusted with glassy slag. She flings fans of burning slag, calls gunners, acid and neuro crawlers to her, and when she is hurt she gives off a pulse that darkens your sight.' : Q.ty === 'ember' ? 'The ember queen stirs, glowing like a coal from the fumarole she sleeps on. Her spit burns, and it keeps burning on the floor where it lands.' : Q.ty === 'frost' ? 'The frost queen uncurls from the ice. Her spit is a slush of meltwater that chills you and slows you down.' : 'The burrow queen stirs. She is calling her brood.', true); }
+      if (!Q.aw && pd < 9 && dgSee(Q.x, Q.y, D.px, D.py)) { Q.aw = 1; toast(Q.ty === 'hive' ? `The hive queen rears up out of her comb, swollen and armoured in amber plates. She sprays fans of spit${D.dp >= 2 ? ' that keeps burning' : ''}, calls her brood to her${D.dp >= 4 ? ', and when she is hurt her pulse clouds your sight' : ''}.` : Q.ty === 'slag' ? 'The slag queen hauls herself off the old furnace, her plates crusted with glassy slag. She flings fans of burning slag, calls gunners, acid and neuro crawlers to her, and when she is hurt she gives off a pulse that darkens your sight.' : Q.ty === 'ember' ? 'The ember queen stirs, glowing like a coal from the fumarole she sleeps on. Her spit burns, and it keeps burning on the floor where it lands.' : Q.ty === 'frost' ? 'The frost queen uncurls from the ice. Her spit is a slush of meltwater that chills you and slows you down.' : 'The burrow queen stirs. She is calling her brood.', true); }
       if (Q.aw && !pd0) {
         Q.a = Math.atan2(D.py - Q.y, D.px - Q.x);
         Q.sp -= DT; Q.cd -= DT;
-        if (Q.sp <= 0 && D.bugs.length < 40) { Q.sp = 7; for (let k = 0; k < 3; k++) dgSpawnAt(Q.x, Q.y, Q.ty === 'slag' ? 5 + k : k === 2 && S.evo > 0.3 ? 2 : k === 1 ? 1 : 0); }
-        if (Q.ty === 'slag' && Q.hp < Q.mhp * 0.5) { Q.pl -= DT; if (Q.pl <= 0) { Q.pl = 9; dfx.push({ x: Q.x, y: Q.y, t: 0, c: '#c070ff' }); if (pd < 9) dgFx(D, { nz: 1 }); D.neuro = pd < 9 ? 7 : D.neuro; } }
-        if (Q.cd <= 0 && pd < 11 && dgSee(Q.x, Q.y, D.px, D.py)) { Q.cd = 2.2; for (const o of Q.ty === 'ember' || Q.ty === 'slag' ? [-0.5, -0.25, 0, 0.25, 0.5] : [-0.25, 0, 0.25]) { const a = Q.a + o, s = { x: Q.x, y: Q.y, tx: Q.x + Math.cos(a) * pd, ty: Q.y + Math.sin(a) * pd, d: (Q.ty === 'ember' || Q.ty === 'slag' ? 16 : 22) * (1 + S.evo), q: 1 }; if (Q.ty === 'ember' || Q.ty === 'slag') s.f = 1; if (Q.ty === 'frost') s.ch = 1; D.sp.push(s); } }
+        if (Q.sp <= 0 && D.bugs.length < 40) { Q.sp = Q.ty === 'hive' && Q.hp < Q.mhp * 0.5 ? 4.5 : 7; for (let k = 0; k < 3; k++) dgSpawnAt(Q.x, Q.y, Q.ty === 'hive' ? qhK(D.dp || 1, Math.random) : Q.ty === 'slag' ? 5 + k : k === 2 && S.evo > 0.3 ? 2 : k === 1 ? 1 : 0); }
+        if ((Q.ty === 'slag' || (Q.ty === 'hive' && D.dp >= 4)) && Q.hp < Q.mhp * 0.5) { Q.pl -= DT; if (Q.pl <= 0) { Q.pl = 9; dfx.push({ x: Q.x, y: Q.y, t: 0, c: '#c070ff' }); if (pd < 9) dgFx(D, { nz: 1 }); D.neuro = pd < 9 ? 7 : D.neuro; } }
+        if (Q.cd <= 0 && pd < 11 && dgSee(Q.x, Q.y, D.px, D.py)) { Q.cd = 2.2; for (const o of Q.ty === 'hive' ? qhFan(D.dp || 1) : Q.ty === 'ember' || Q.ty === 'slag' ? [-0.5, -0.25, 0, 0.25, 0.5] : [-0.25, 0, 0.25]) { const a = Q.a + o, s = { x: Q.x, y: Q.y, tx: Q.x + Math.cos(a) * pd, ty: Q.y + Math.sin(a) * pd, d: (Q.ty === 'hive' ? 18 * (D.dm || 1) : Q.ty === 'ember' || Q.ty === 'slag' ? 16 : 22) * (1 + S.evo), q: 1 }; if (Q.ty === 'hive' && D.dp >= 2) s.po = 1; if (Q.ty === 'ember' || Q.ty === 'slag') s.f = 1; if (Q.ty === 'frost') s.ch = 1; D.sp.push(s); } }
         if (pd < 1.6) dgHurt(dmg * 5);
         if (!S.dg) return;
       }
@@ -2404,6 +2467,14 @@ function dgTick() {
       dfx.push({ x: Q.x, y: Q.y, t: 0, c: '#d0d8a0' });
       toast('The broodmother is dead: 3 queen carapace, 20 crawler shell, 6 gold and 4 fused iron catalyst she had dragged out of the converter. The strongbox in the hall is yours.');
       for (let k = 0; k < 2; k++) { const r = unlockRandom(); if (r) toast(`The synthesis hall log book: ${r.n} (${BUILD[r.b].n}) unlocked`); }
+    } else if (Q.ty === 'hive') {
+      const dp = D.dp || 1, qc = 2 + Math.floor(dp / 2), cs = 15 + 5 * dp, au = 4 + 2 * dp, ap = dp >= 3 ? 10 + 4 * dp : 0;
+      S.qhk = (S.qhk || 0) + 1;
+      give('queen_carapace', qc); give('crawler_shell', cs); give('gold', au);
+      if (ap) give('ap_cartridge', ap);
+      dfx.push({ x: Q.x, y: Q.y, t: 0, c: '#ffb030' });
+      toast(`The hive queen of depth ${dp} is dead: ${qc} queen carapace, ${cs} crawler shell, ${au} gold${ap ? ' and ' + ap + ' AP cartridges' : ''}. Under her the comb gives way to a deeper shaft. Empty the hoards and climb out: next time the hive takes you one floor further down.`);
+      for (let k = 0; k < 1 + Math.floor(dp / 3); k++) { const r = unlockRandom(); if (r) toast(`A field notebook sealed in resin in her chamber: ${r.n} (${BUILD[r.b].n}) unlocked`); }
     } else if (Q.ty === 'slag') {
       S.slk = (S.slk || 0) + 1;
       give('queen_carapace', 3); give('crawler_shell', 20); give('gold', 6); give('motor', 4); give('steel', 20);
@@ -2604,6 +2675,47 @@ function drawWorks(e, x, y, w, h, z) {
   ctx.strokeStyle = '#a0a4a8'; ctx.lineWidth = 1; ctx.beginPath(); for (let q = 1; q < 4; q++) { ctx.moveTo(x + w * (0.4 + q * 0.05), y + h * 0.64); ctx.lineTo(x + w * (0.4 + q * 0.05), y + h * 0.92); } ctx.stroke();
   if (z >= 10) for (let k = 0; k < 4; k++) { const ph = (now * 0.3 + k / 4) % 1; ctx.fillStyle = `rgba(230,240,230,${0.3 * (1 - ph)})`; ctx.beginPath(); ctx.arc(x + w * 0.28 + ph * w * 0.3, y + h * 0.18 - ph * h * 0.3, z * (0.15 + ph * 0.4), 0, 7); ctx.fill(); }
 }
+function qhSpot(x, y) {
+  if (x < 2 || y < 2 || x > W - 6 || y > H - 6) return false;
+  for (let j = -1; j < 5; j++) for (let i = -1; i < 5; i++) { const k = (y + j) * W + x + i; if (occ[k] || terrain[k] === 1 || terrain[k] === 4) return false; }
+  return true;
+}
+function spawnQhive() {
+  const g = S.gen;
+  S.qhv = 1;
+  if ((g && !g.legacy && !g.hives) || lists().ruin.some(o => o.type === 'queenhive')) return;
+  const rng = mulberry32(S.seed + 9091), cx = Math.floor(W / 2), cy = Math.floor(H / 2);
+  for (let k = 0; k < 3000; k++) {
+    const dx = Math.round((rng() * 2 - 1) * 46), dy = Math.round((rng() * 2 - 1) * 46);
+    if (Math.max(Math.abs(dx), Math.abs(dy)) <= 28) continue;
+    const x = cx + dx - 2, y = cy + dy - 2;
+    if (!qhSpot(x, y) || !farFromBase(x + 2, y + 2, 10)) continue;
+    const e = makeEnt('queenhive', x, y, 0);
+    e.dp = 1;
+    addEnt(e);
+    return e;
+  }
+}
+function drawQueenHive(e, x, y, w, h, z) {
+  const cx = x + w / 2, cy = y + h / 2, now = performance.now() / 1000;
+  ctx.fillStyle = 'rgba(40,24,10,0.5)'; ctx.beginPath(); ctx.ellipse(cx, cy + h * 0.06, w * 0.56, h * 0.48, 0, 0, 7); ctx.fill();
+  const gr = ctx.createRadialGradient(cx - w * 0.12, cy - h * 0.16, w * 0.05, cx, cy, w * 0.5);
+  gr.addColorStop(0, '#d89a48'); gr.addColorStop(0.6, '#a06a30'); gr.addColorStop(1, '#5a3a18');
+  ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(cx, cy, w * 0.48, h * 0.42, 0, 0, 7); ctx.fill();
+  if (z >= 6) {
+    const hr = w * 0.055;
+    ctx.strokeStyle = 'rgba(60,34,12,0.6)'; ctx.lineWidth = Math.max(1, z * 0.04);
+    for (let j = -3; j <= 3; j++) for (let i = -4; i <= 4; i++) {
+      const hx = cx + (i + (j & 1) * 0.5) * hr * 1.75, hy = cy + j * hr * 1.5;
+      if (((hx - cx) / (w * 0.44)) ** 2 + ((hy - cy) / (h * 0.38)) ** 2 > 1) continue;
+      ctx.beginPath(); for (let q = 0; q <= 6; q++) { const a = q * Math.PI / 3 + Math.PI / 6; ctx[q ? 'lineTo' : 'moveTo'](hx + Math.cos(a) * hr, hy + Math.sin(a) * hr); } ctx.stroke();
+      if (hash(e.x + i, e.y + j, 7) < 0.3) { ctx.fillStyle = `rgba(255,${170 + 40 * Math.sin(now * 2 + i + j)},60,0.35)`; ctx.fill(); }
+    }
+  }
+  const pu = 0.5 + 0.5 * Math.sin(now * 2.2);
+  ctx.fillStyle = '#1a0e06'; ctx.beginPath(); ctx.ellipse(cx, cy + h * 0.2, w * 0.16, h * 0.1, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = `rgba(255,170,60,${0.25 + 0.3 * pu})`; ctx.beginPath(); ctx.ellipse(cx, cy + h * 0.2, w * 0.11, h * 0.06, 0, 0, 7); ctx.fill();
+}
 function drawFactory(e, x, y, w, h, z) {
   const now = performance.now() / 1000;
   ctx.fillStyle = '#5e5650'; ctx.fillRect(x + z * 0.06, y + z * 0.06, w - z * 0.12, h - z * 0.12);
@@ -2802,7 +2914,7 @@ function drawChest(c, X, Y, z, op, now) {
   }
 }
 function drawDungeon(w, h) {
-  const D = S.dg, G = dgGrid(), N = G.N, P = S.pl, z = Math.max(22, Math.min(64, cam.z)), now = performance.now() / 1000, ty = G.ty || 'nest', mine = dgRooms(ty), wk = ty === 'works', fc = ty === 'factory', lv = ty === 'lava', ic = ty === 'ice';
+  const D = S.dg, G = dgGrid(), N = G.N, P = S.pl, z = Math.max(22, Math.min(64, cam.z)), now = performance.now() / 1000, ty = G.ty || 'nest', mine = dgRooms(ty), wk = ty === 'works', fc = ty === 'factory', lv = ty === 'lava', ic = ty === 'ice', qv = ty === 'qhive';
   const lk = wk ? new Set([...G.leak].filter(i => !G.valves.some((v, j) => v.r === i && (D.vc || []).includes(j)))) : null;
   D.eggs = D.eggs || []; D.eg = D.eg || [];
   dgcam.x += (D.px - dgcam.x) * 0.25; dgcam.y += (D.py - dgcam.y) * 0.25; dgcam.z = z;
@@ -2839,6 +2951,7 @@ function drawDungeon(w, h) {
       const iy = ic && G.ice.has(k);
       ctx.fillStyle = iy ? `rgb(${150 + u * 14},${178 + u * 12},${196 + u * 10})` : qd < 6 ? (lv ? `rgb(${66 + u * 10},${34 + u * 8},${26 + u * 8})` : ic ? `rgb(${70 + u * 10},${80 + u * 8},${96 + u * 10})` : `rgb(${58 + u * 10},${40 + u * 8},${50 + u * 10})`) : lv ? `rgb(${38 + u * 10},${32 + u * 8},${32 + u * 8})` : ic ? `rgb(${66 + u * 10},${72 + u * 10},${80 + u * 10})` : ty === 'brim' ? `rgb(${66 + u * 12},${58 + u * 10},${30 + u * 8})` : ty === 'deep' ? `rgb(${40 + u * 10},${42 + u * 10},${50 + u * 10})` : `rgb(${52 + u * 12},${44 + u * 10},${36 + u * 8})`;
       ctx.fillRect(X, Y, z + 1, z + 1);
+      if (qv) { ctx.fillStyle = qd < 6 ? `rgb(${92 + u * 12},${58 + u * 8},${24 + u * 6})` : `rgb(${70 + u * 12},${48 + u * 8},${22 + u * 6})`; ctx.fillRect(X, Y, z + 1, z + 1); if (z >= 14 && hash(x, y, 61) < 0.3) { ctx.strokeStyle = 'rgba(255,200,90,0.25)'; ctx.lineWidth = Math.max(1, z * 0.03); ctx.beginPath(); ctx.moveTo(X + hash(x, y, 62) * z, Y); ctx.quadraticCurveTo(X + z * 0.5, Y + z * 0.5, X + hash(y, x, 63) * z, Y + z); ctx.stroke(); } }
       if (z >= 16) for (let q = 0; q < 3; q++) { const a = hash(x, y, q + 3), b = hash(y, x, q + 9); ctx.fillStyle = q === 1 ? 'rgba(0,0,0,0.18)' : ty === 'brim' ? 'rgba(240,220,90,0.1)' : 'rgba(255,240,220,0.06)'; ctx.fillRect(X + a * z * 0.85, Y + b * z * 0.85, z * 0.12, z * 0.08); }
       if (iy) { ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = Math.max(1, z * 0.03); ctx.beginPath(); ctx.moveTo(X + hash(x, y, 30) * z * 0.5, Y + z * 0.2 + hash(y, x, 31) * z * 0.6); ctx.lineTo(X + z * 0.5 + hash(x, y, 32) * z * 0.5, Y + hash(y, x, 33) * z * 0.6); ctx.stroke(); }
       if (lv && hash(x, y, 34) < 0.08) { ctx.fillStyle = `rgba(255,${90 + 40 * Math.sin(now * 2 + k)},30,0.5)`; ctx.fillRect(X + hash(x, y, 35) * z * 0.6, Y + hash(y, x, 36) * z * 0.8, z * 0.4, Math.max(1, z * 0.04)); }
@@ -2846,12 +2959,12 @@ function drawDungeon(w, h) {
       if (qd < 5 && hash(x, y, 13) < 0.35) { ctx.fillStyle = 'rgba(200,190,170,0.5)'; ctx.fillRect(X + z * 0.3, Y + z * 0.45, z * 0.4, z * 0.07); ctx.beginPath(); ctx.arc(X + z * 0.3, Y + z * 0.48, z * 0.06, 0, 7); ctx.arc(X + z * 0.7, Y + z * 0.48, z * 0.06, 0, 7); ctx.fill(); }
     }
     if (G.pool.has(k)) {
-      ctx.fillStyle = lv ? `rgba(${225 + 30 * Math.sin(now * 2 + k)},${90 + 45 * Math.sin(now * 1.3 + k * 0.7)},20,0.96)` : ic ? `rgba(${60 + 10 * Math.sin(now + k)},130,${180 + 15 * Math.sin(now * 1.4 + k)},0.82)` : `rgba(${150 + 20 * Math.sin(now * 2 + k)},190,60,0.78)`; ctx.fillRect(X, Y, z + 1, z + 1);
+      ctx.fillStyle = lv ? `rgba(${225 + 30 * Math.sin(now * 2 + k)},${90 + 45 * Math.sin(now * 1.3 + k * 0.7)},20,0.96)` : ic ? `rgba(${60 + 10 * Math.sin(now + k)},130,${180 + 15 * Math.sin(now * 1.4 + k)},0.82)` : qv ? `rgba(${220 + 20 * Math.sin(now * 1.5 + k)},150,40,0.8)` : `rgba(${150 + 20 * Math.sin(now * 2 + k)},190,60,0.78)`; ctx.fillRect(X, Y, z + 1, z + 1);
       if (lv) { ctx.strokeStyle = 'rgba(40,16,8,0.7)'; ctx.lineWidth = Math.max(1, z * 0.05); ctx.beginPath(); ctx.moveTo(X + hash(x, y, 87) * z, Y + z * 0.1); ctx.lineTo(X + z * 0.5, Y + z * (0.3 + 0.2 * Math.sin(now * 0.5 + k))); ctx.lineTo(X + hash(y, x, 88) * z, Y + z * 0.9); ctx.stroke(); }
       for (let q = 0; q < 2; q++) { const ph = (now * 0.7 + hash(x, y, q + 80)) % 1; ctx.strokeStyle = lv ? `rgba(255,230,120,${0.7 * (1 - ph)})` : ic ? `rgba(225,245,255,${0.6 * (1 - ph)})` : `rgba(230,250,150,${0.6 * (1 - ph)})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(X + hash(x, y, q + 84) * z * 0.7 + z * 0.15, Y + hash(y, x, q + 86) * z * 0.7 + z * 0.15, z * 0.1 * (0.4 + ph), 0, 7); ctx.stroke(); }
     }
   }
-  const WC = fc ? [86, 48, 36, 142, 84, 62] : wk ? [78, 80, 84, 132, 134, 132] : mine ? [70, 70, 66, 112, 110, 102] : lv ? [26, 22, 22, 56, 46, 44] : ic ? [64, 78, 92, 168, 192, 210] : ty === 'brim' ? [56, 48, 22, 98, 86, 38] : ty === 'deep' ? [26, 30, 38, 50, 56, 68] : [34, 28, 24, 62, 52, 42];
+  const WC = qv ? [44, 30, 22, 96, 64, 34] : fc ? [86, 48, 36, 142, 84, 62] : wk ? [78, 80, 84, 132, 134, 132] : mine ? [70, 70, 66, 112, 110, 102] : lv ? [26, 22, 22, 56, 46, 44] : ic ? [64, 78, 92, 168, 192, 210] : ty === 'brim' ? [56, 48, 22, 98, 86, 38] : ty === 'deep' ? [26, 30, 38, 50, 56, 68] : [34, 28, 24, 62, 52, 42];
   for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
     if (!solid(x, y)) continue;
     const X = ox + x * z, Y = oy + y * z, k = y * N + x, u = hash(x, y, 33), open = !solid(x, y + 1);
@@ -2874,6 +2987,7 @@ function drawDungeon(w, h) {
     } else {
       if (z >= 14) for (let q = 0; q < 2; q++) { ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.fillRect(X + hash(x, y, q + 40) * z * 0.7, Y + hash(y, x, q + 44) * z * 0.45, z * 0.24, z * 0.05); }
       if (lv && hash(x, y, 95) < 0.14) { ctx.strokeStyle = `rgba(255,${100 + 50 * Math.sin(now * 1.5 + k)},30,0.75)`; ctx.lineWidth = Math.max(1, z * 0.04); ctx.beginPath(); ctx.moveTo(X + z * 0.2, Y + z * 0.1); ctx.lineTo(X + z * 0.45, Y + z * 0.35); ctx.lineTo(X + z * 0.38, Y + z * 0.58); ctx.stroke(); }
+      if (qv && z >= 14) { ctx.strokeStyle = 'rgba(255,190,80,0.28)'; ctx.lineWidth = 1; const hr = z * 0.2, hx = X + z * (0.3 + 0.4 * (y % 2)), hy = Y + z * 0.3; ctx.beginPath(); for (let q = 0; q <= 6; q++) { const a = q * Math.PI / 3; ctx[q ? 'lineTo' : 'moveTo'](hx + Math.cos(a) * hr, hy + Math.sin(a) * hr); } ctx.stroke(); }
       if (ic && open) { ctx.fillStyle = 'rgba(220,240,255,0.85)'; for (let q = 0; q < 3; q++) if (hash(x, y, q + 96) < 0.6) { const ax = X + z * (0.15 + q * 0.3); ctx.beginPath(); ctx.moveTo(ax, Y + z * 0.98); ctx.lineTo(ax + z * 0.12, Y + z * 0.98); ctx.lineTo(ax + z * 0.06, Y + z * (1.1 + 0.15 * hash(y, x, q + 97))); ctx.fill(); } }
     }
     const vn = G.vein.get(k);
@@ -2964,13 +3078,13 @@ function drawDungeon(w, h) {
   } else if (Q.hp > 0 || Q.dead) {
     const qz = z * 2.8, qox = ox + Q.x * (z - qz), qoy = oy + Q.y * (z - qz), pu = 1 + 0.05 * Math.sin(now * 2.5);
     if (Q.hp > 0) {
-    ctx.fillStyle = Q.ty === 'slag' ? 'rgba(120,90,70,0.7)' : Q.ty === 'ember' ? 'rgba(255,130,50,0.6)' : Q.ty === 'frost' ? 'rgba(170,220,255,0.55)' : Q.ty === 'brood' ? 'rgba(170,180,150,0.6)' : ty === 'brim' ? 'rgba(220,200,110,0.55)' : 'rgba(200,170,190,0.55)';
+    ctx.fillStyle = Q.ty === 'hive' ? 'rgba(230,160,50,0.65)' : Q.ty === 'slag' ? 'rgba(120,90,70,0.7)' : Q.ty === 'ember' ? 'rgba(255,130,50,0.6)' : Q.ty === 'frost' ? 'rgba(170,220,255,0.55)' : Q.ty === 'brood' ? 'rgba(170,180,150,0.6)' : ty === 'brim' ? 'rgba(220,200,110,0.55)' : 'rgba(200,170,190,0.55)';
       ctx.beginPath(); ctx.ellipse(QX - Math.cos(Q.a) * z * 1.1, QY - Math.sin(Q.a) * z * 1.1, z * 0.9 * pu, z * 0.65 * pu, Q.a, 0, 7); ctx.fill();
       ctx.strokeStyle = 'rgba(120,80,100,0.6)'; ctx.lineWidth = Math.max(1, z * 0.04);
       for (let k = 0; k < 4; k++) { ctx.beginPath(); ctx.ellipse(QX - Math.cos(Q.a) * z * 1.1, QY - Math.sin(Q.a) * z * 1.1, z * (0.25 + k * 0.17) * pu, z * (0.18 + k * 0.12) * pu, Q.a, 0, 7); ctx.stroke(); }
       S.bugs = [{ x: Q.x, y: Q.y, a: Q.a, ph: 0, hp: Q.hp, mhp: Q.mhp || 90 * BUGK[2].hp, k: 2, chew: Q.aw ? 1 : 0 }];
       drawBugs(qox, qoy, qz, -1e9, -1e9, 1e9, 1e9);
-      ctx.fillStyle = Q.ty === 'ember' || Q.ty === 'slag' ? `rgba(255,150,40,${0.35 + 0.25 * Math.sin(now * 4)})` : Q.ty === 'frost' ? `rgba(180,240,255,${0.3 + 0.2 * Math.sin(now * 4)})` : `rgba(200,120,255,${0.25 + 0.2 * Math.sin(now * 4)})`;
+      ctx.fillStyle = Q.ty === 'ember' || Q.ty === 'slag' || Q.ty === 'hive' ? `rgba(255,150,40,${0.35 + 0.25 * Math.sin(now * 4)})` : Q.ty === 'frost' ? `rgba(180,240,255,${0.3 + 0.2 * Math.sin(now * 4)})` : `rgba(200,120,255,${0.25 + 0.2 * Math.sin(now * 4)})`;
       ctx.beginPath(); ctx.arc(QX + Math.cos(Q.a) * z * 0.5, QY + Math.sin(Q.a) * z * 0.5, z * 0.16, 0, 7); ctx.fill();
     } else {
       ctx.fillStyle = 'rgba(40,30,30,0.7)';
@@ -2978,7 +3092,7 @@ function drawDungeon(w, h) {
     }
   }
   S.bugs = sb;
-  for (const s of D.sp) { ctx.fillStyle = s.f ? '#ff8030' : s.ch ? '#b0e8ff' : s.q ? (wk ? '#c8c0a0' : mine ? '#ff7050' : '#d080ff') : s.nz ? '#c070ff' : s.gn ? '#ffb050' : s.po ? '#c8f040' : '#9ad040'; ctx.beginPath(); ctx.arc(ox + s.x * z, oy + s.y * z, z * (s.q ? 0.14 : 0.1), 0, 7); ctx.fill(); }
+  for (const s of D.sp) { ctx.fillStyle = s.wb ? '#f0f0f0' : s.f ? '#ff8030' : s.ch ? '#b0e8ff' : s.q ? (qv ? '#ffb030' : wk ? '#c8c0a0' : mine ? '#ff7050' : '#d080ff') : s.nz ? '#c070ff' : s.gn ? '#ffb050' : s.po ? '#c8f040' : '#9ad040'; ctx.beginPath(); ctx.arc(ox + s.x * z, oy + s.y * z, z * (s.q ? 0.14 : 0.1), 0, 7); ctx.fill(); }
   for (let i = dfx.length - 1; i >= 0; i--) {
     const f = dfx[i];
     f.t += 1 / 60;
@@ -3031,24 +3145,25 @@ function drawDungeon(w, h) {
   if (D.chill > 0) { const a = Math.min(1, D.chill / 3), cg2 = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.3, w / 2, h / 2, Math.max(w, h) * 0.7); cg2.addColorStop(0, 'rgba(150,210,255,0)'); cg2.addColorStop(1, `rgba(170,225,255,${0.45 * a})`); ctx.fillStyle = cg2; ctx.fillRect(0, 0, w, h); }
   if (D.neuro > 0) { const a = Math.min(1, D.neuro / 4), cg3 = ctx.createRadialGradient(w / 2 + 20 * Math.sin(now * 1.3), h / 2 + 14 * Math.cos(now * 1.7), Math.min(w, h) * 0.12, w / 2, h / 2, Math.max(w, h) * 0.6); cg3.addColorStop(0, 'rgba(40,10,60,0)'); cg3.addColorStop(1, `rgba(30,6,46,${0.8 * a})`); ctx.fillStyle = cg3; ctx.fillRect(0, 0, w, h); ctx.fillStyle = `rgba(90,40,130,${0.12 * a * (1 + Math.sin(now * 3))})`; ctx.fillRect(0, 0, w, h); }
   if (D.poison > 0) { const a = Math.min(1, D.poison / 3), cg4 = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.3, w / 2, h / 2, Math.max(w, h) * 0.7); cg4.addColorStop(0, 'rgba(150,220,60,0)'); cg4.addColorStop(1, `rgba(150,220,60,${0.35 * a})`); ctx.fillStyle = cg4; ctx.fillRect(0, 0, w, h); }
+  if (D.web > 0) { const a = Math.min(1, D.web / 2), r0 = Math.min(w, h) * 0.3, r1 = Math.max(w, h); ctx.strokeStyle = `rgba(240,240,240,${0.35 * a})`; ctx.lineWidth = 1; ctx.beginPath(); for (let q = 0; q < 14; q++) { const a1 = q / 14 * Math.PI * 2; ctx.moveTo(w / 2 + Math.cos(a1) * r0, h / 2 + Math.sin(a1) * r0); ctx.lineTo(w / 2 + Math.cos(a1) * r1, h / 2 + Math.sin(a1) * r1); } ctx.stroke(); }
   if (lk && lk.has(G.rm[Math.floor(D.py) * N + Math.floor(D.px)])) { ctx.fillStyle = `rgba(230,240,232,${0.14 + 0.05 * Math.sin(now * 2)})`; ctx.fillRect(0, 0, w, h); }
   const alive = D.bugs.length, left = G.caches.length - D.oc.length, eg = D.eggs.length, bar = Q.aw && Q.hp > 0;
   ctx.fillStyle = 'rgba(12,10,8,0.82)'; ctx.fillRect(w / 2 - 340, 10, 680, bar ? 58 : 38);
   ctx.strokeStyle = '#5a4a3a'; ctx.strokeRect(w / 2 - 339.5, 10.5, 679, bar ? 57 : 37);
   ctx.fillStyle = '#e8dcc8'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
   const door = mine ? (G.door.every(k => D.mv[k]) ? ' · door open' : D.key ? ' · key found' : ' · door locked') : '';
-  ctx.fillText(`${DGK[ty]} · ${alive} crawler${alive === 1 ? '' : 's'} · ${eg} egg clutch${eg === 1 ? '' : 'es'} · ${left} ${mine ? 'chest' : 'cache'}${left === 1 ? '' : 's'} left · ${(fc ? 'slag queen' : wk ? 'broodmother' : mine ? 'tyrant' : 'queen') + (Q.hp > 0 ? ' alive' : ' dead')}${door}${wk && G.valves.length ? ` · ${lk.size} leak${lk.size === 1 ? '' : 's'}` : ''}${D.chill > 0 ? ' · chilled' : ''}${D.poison > 0 ? ' · acid burns' : ''}${D.neuro > 0 ? ' · vision clouded' : ''}`, w / 2, 26);
+  ctx.fillText(`${DGK[ty]}${qv ? ' · depth ' + (D.dp || 1) : ''} · ${alive} crawler${alive === 1 ? '' : 's'} · ${eg} egg clutch${eg === 1 ? '' : 'es'} · ${left} ${mine ? 'chest' : 'cache'}${left === 1 ? '' : 's'} left · ${(qv ? 'hive queen' : fc ? 'slag queen' : wk ? 'broodmother' : mine ? 'tyrant' : 'queen') + (Q.hp > 0 ? ' alive' : ' dead')}${door}${wk && G.valves.length ? ` · ${lk.size} leak${lk.size === 1 ? '' : 's'}` : ''}${D.chill > 0 ? ' · chilled' : ''}${D.poison > 0 ? ' · acid burns' : ''}${D.neuro > 0 ? ' · vision clouded' : ''}${D.web > 0 ? ' · webbed' : ''}`, w / 2, 26);
   ctx.font = '11px sans-serif'; ctx.fillStyle = '#a89880';
   const atEx = Math.hypot(D.px - G.ex - 0.5, D.py - G.ey - 0.5) < 2;
   ctx.fillText(atEx ? (fc ? 'Press F to leave by the loading dock' : wk ? 'Press F to leave through the gate' : mine ? 'Press F to ride the cage back to the surface' : 'Press F to climb the rope back to the surface')
     : wk ? `Space shoots · G throws a charge · F opens lockers, doors and shuts red valves · the plant manager's safe holds the key · ${S.inv.respirator || 0} respirator${S.inv.respirator === 1 ? '' : 's'} · ${wpnRounds(wpnCur())} rounds`
     : fc ? `Space shoots · G throws a charge · F opens parts crates and the roller door · the foreman's safe holds the key · ${wpnRounds(wpnCur())} rounds`
     : mine ? `Space shoots · G throws a charge · F opens lockers and the blast door · find the shift boss's safe for the key · ${wpnRounds(wpnCur())} rounds`
-    : `Space shoots · G throws a charge · click rock to dig, veins glint · F opens a cache${ty === 'brim' ? ' · keep out of the acid' : lv ? ' · keep off the lava' : ic ? ' · glare ice is slippery, meltwater chills' : ''} · ${wpnRounds(wpnCur())} rounds`, w / 2, 41);
+    : `Space shoots · G throws a charge · click rock to dig, veins glint · F opens a cache${ty === 'brim' ? ' · keep out of the acid' : qv ? ' · resin and webs slow you' : lv ? ' · keep off the lava' : ic ? ' · glare ice is slippery, meltwater chills' : ''} · ${wpnRounds(wpnCur())} rounds`, w / 2, 41);
   if (bar) {
     ctx.fillStyle = '#2a1a24'; ctx.fillRect(w / 2 - 200, 50, 400, 10);
-    ctx.fillStyle = fc ? '#ff9040' : wk ? '#a0a880' : mine ? '#e04a3a' : lv ? '#ff7a30' : ic ? '#80c8f0' : ty === 'brim' ? '#d0b040' : '#c070e0'; ctx.fillRect(w / 2 - 200, 50, 400 * Q.hp / Q.mhp, 10);
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 9px sans-serif'; ctx.fillText(DGQ[ty], w / 2, 58.5);
+    ctx.fillStyle = qv ? '#e0a030' : fc ? '#ff9040' : wk ? '#a0a880' : mine ? '#e04a3a' : lv ? '#ff7a30' : ic ? '#80c8f0' : ty === 'brim' ? '#d0b040' : '#c070e0'; ctx.fillRect(w / 2 - 200, 50, 400 * Q.hp / Q.mhp, 10);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 9px sans-serif'; ctx.fillText(qv ? DGQ[ty] + ' · DEPTH ' + (D.dp || 1) : DGQ[ty], w / 2, 58.5);
   }
   ctx.textAlign = 'left';
   const mm = Math.max(2, Math.floor(180 / N)), mx0 = w - N * mm - 14, my0 = 14;
@@ -3056,7 +3171,7 @@ function drawDungeon(w, h) {
   D.seen = D.seen || {};
   const pr = 7, pxi = Math.floor(D.px), pyi = Math.floor(D.py);
   for (let j = -pr; j <= pr; j++) for (let i = -pr; i <= pr; i++) if (i * i + j * j <= pr * pr) D.seen[(pyi + j) * N + pxi + i] = 1;
-  for (const k in D.seen) { const kk = +k, x = kk % N, y = Math.floor(kk / N); if (x >= 0 && y >= 0 && x < N && y < N && !solid(x, y)) { ctx.fillStyle = G.pool.has(kk) ? (lv ? '#e06020' : ic ? '#4a8ac0' : '#8aa040') : G.ice.has(kk) ? '#a8c8d8' : lk && lk.has(G.rm[kk]) ? '#8a9a90' : '#6a5a48'; ctx.fillRect(mx0 + x * mm, my0 + y * mm, mm, mm); } }
+  for (const k in D.seen) { const kk = +k, x = kk % N, y = Math.floor(kk / N); if (x >= 0 && y >= 0 && x < N && y < N && !solid(x, y)) { ctx.fillStyle = G.pool.has(kk) ? (lv ? '#e06020' : ic ? '#4a8ac0' : qv ? '#d09030' : '#8aa040') : G.ice.has(kk) ? '#a8c8d8' : lk && lk.has(G.rm[kk]) ? '#8a9a90' : '#6a5a48'; ctx.fillRect(mx0 + x * mm, my0 + y * mm, mm, mm); } }
   ctx.fillStyle = '#ffe080'; ctx.fillRect(mx0 + G.ex * mm - 1, my0 + G.ey * mm - 1, mm + 2, mm + 2);
   if (wk) G.valves.forEach((v, i) => { if (D.seen[v.y * N + v.x]) { ctx.fillStyle = (D.vc || []).includes(i) ? '#60c060' : '#ff3030'; ctx.fillRect(mx0 + v.x * mm, my0 + v.y * mm, mm, mm); } });
   if (mine) for (const k of G.door) if (D.seen[k]) { ctx.fillStyle = D.mv[k] ? '#60c060' : '#e04030'; ctx.fillRect(mx0 + (k % N) * mm, my0 + Math.floor(k / N) * mm, mm, mm); }
@@ -4831,7 +4946,7 @@ function serialize() {
     delete o.per; delete o.st; delete o.cap; delete o.on; delete o.mv; delete o.ss; delete o.eff; delete o.puff; delete o.sh; delete o.tx; delete o.ty; delete o.tgt; delete o.pn; delete o.pg; delete o.psat;
     es.push(o);
   }
-  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, tech: S.tech, tv: 1, rq: S.rq, rp: S.rp, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, rb: S.pl.rb || 0, rm: S.pl.rm || 0, rc: S.pl.rc || 0, rx: S.pl.rx || 0, ra: S.pl.ra || 0, ra: S.pl.ra || 0, rs: S.pl.rs || 0, arm: S.pl.arm || null, fc: S.pl.fc || 0, fc2: S.pl.fc2 || 0, rw: S.pl.rw || 0, rq: S.pl.rq || 0, rs2: S.pl.rs2 || 0, rb2: S.pl.rb2 || 0, rm2: S.pl.rm2 || 0, rf: S.pl.rf || 0, ra2: S.pl.ra2 || 0, sr: S.pl.sr || 0, sr2: S.pl.sr2 || 0, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, osh: S.osh || 0, hrsg: S.hrsg || 0, geo: S.geo || 0, dle: S.dle || 0, nrt: S.nrt || 0, fcr: S.fcr, ach: S.ach || {}, rk: S.rk || 0, trk: S.trk || undefined, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, iv: S.iv, mdn: S.mdn, tyk: S.tyk, egk: S.egk, lvn: S.lvn, lvk: S.lvk, icn: S.icn, ick: S.ick, vlv: S.vlv, wkk: S.wkk, wkn: S.wkn, dgk: S.dgk, xv: S.xv, fv: S.fv, fcn: S.fcn, slk: S.slk, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
+  return JSON.stringify({ v: 1, seed: S.seed, gen: S.gen, inv: S.inv, dep: S.dep, vent: S.vent, spill: S.spill, fails: S.fails, made: S.made, bugs: S.bugs.map(b => ({ x: +b.x.toFixed(2), y: +b.y.toFixed(2), hp: b.hp, mhp: b.mhp, tid: b.tid, hx: b.hx, hy: b.hy, a: b.a, ph: b.ph, bt: b.bt, k: b.k, hid: b.hid })), evo: S.evo, lost: S.lost, kills: S.kills, hk: S.hk, hv: S.hv, rv: S.rv, rs: S.rs, res: S.res, unl: S.unl, tech: S.tech, tv: 1, rq: S.rq, rp: S.rp, wind: S.wind, clouds: S.clouds.map(c => ({ x: +c.x.toFixed(2), y: +c.y.toFixed(2), g: c.g, m: +c.m.toFixed(2), r: +c.r.toFixed(2), s: c.s })), fires: S.fires, shells: S.shells, orders: S.orders, odone: S.odone, olast: S.olast, pol: S.pol.map(v => Math.round(v * 10) / 10), t: S.t, nextId: S.nextId, cam, pl: { x: +S.pl.x.toFixed(2), y: +S.pl.y.toFixed(2), f: +S.pl.f.toFixed(2), hp: Math.round(S.pl.hp), rd: S.pl.rd || 0, wm: S.pl.wm, rb: S.pl.rb || 0, rm: S.pl.rm || 0, rc: S.pl.rc || 0, rx: S.pl.rx || 0, ra: S.pl.ra || 0, ra: S.pl.ra || 0, rs: S.pl.rs || 0, arm: S.pl.arm || null, fc: S.pl.fc || 0, fc2: S.pl.fc2 || 0, rw: S.pl.rw || 0, rq: S.pl.rq || 0, rs2: S.pl.rs2 || 0, rb2: S.pl.rb2 || 0, rm2: S.pl.rm2 || 0, rf: S.pl.rf || 0, ra2: S.pl.ra2 || 0, sr: S.pl.sr || 0, sr2: S.pl.sr2 || 0, boom: S.pl.boom, sg3: S.pl.sg3, dead: S.pl.dead || 0, car: S.pl.car || null }, trains: S.trains.map(t => { const o = Object.assign({}, t); delete o.g; delete o.occ; return o; }), cars: S.cars.map(v => Object.assign({}, v, { route: undefined, x: +v.x.toFixed(3), y: +v.y.toFixed(3), a: +v.a.toFixed(4), v: +v.v.toFixed(3) })), pk: S.pk || 0, fs: S.fs || {}, fk: S.fk || 0, osh: S.osh || 0, hrsg: S.hrsg || 0, geo: S.geo || 0, dle: S.dle || 0, nrt: S.nrt || 0, fcr: S.fcr, ach: S.ach || {}, rk: S.rk || 0, trk: S.trk || undefined, dg: S.dg ? Object.assign({}, S.dg, { ff: undefined, seen: undefined }) : undefined, dgn: S.dgn, dgc: S.dgc, qk: S.qk, bv: S.bv, iv: S.iv, mdn: S.mdn, tyk: S.tyk, egk: S.egk, lvn: S.lvn, lvk: S.lvk, icn: S.icn, ick: S.ick, vlv: S.vlv, wkk: S.wkk, wkn: S.wkn, dgk: S.dgk, xv: S.xv, fv: S.fv, fcn: S.fcn, slk: S.slk, qhv: S.qhv, qhn: S.qhn, qhk: S.qhk, qhd: S.qhd, help: S.help, qb: S.qb, cq: S.cq, rg: rgd ? Array.from(rgd).join('') : undefined, ents: es });
 }
 function save() { try { localStorage.setItem(KEY, serialize()); } catch (e) { } }
 
@@ -4854,6 +4969,7 @@ function newGame(seed, opts) {
   dgc = null; dgMine = null; dfx.length = 0; nades.length = 0;
   if (rgd) { growNear(W / 2, H / 2, 100, 99); S.hv = S.rv = S.bv = S.iv = S.xv = S.fv = 1; }
   else { spawnRuins(); spawnHives(); spawnBurrows(); spawnMines(); spawnXdg(); }
+  spawnQhive();
   S.cars = []; S.trains = [];
   S.pl = newPl();
   cam = { x: S.pl.x, y: S.pl.y, z: 32 }; camFree = false;
@@ -4868,7 +4984,7 @@ function load() {
   closePanel(); fx.length = 0; $('#toast').innerHTML = '';
   const gen = d.gen || { legacy: 1 };
   setSize(gen.legacy ? 160 : gen.size);
-  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, tech: d.tech || {}, rq: d.rq || [], rp: d.rp || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0, fs: d.fs || {}, fk: d.fk || 0, osh: d.osh || 0, hrsg: d.hrsg || 0, geo: d.geo || 0, dle: d.dle || 0, nrt: d.nrt || 0, fcr: d.fcr, ach: d.ach || {}, rk: d.rk || 0, trk: d.trk || null, dg: d.dg || null, dgn: d.dgn || 0, dgc: d.dgc || 0, qk: d.qk || 0, bv: d.bv, iv: d.iv, mdn: d.mdn || 0, tyk: d.tyk || 0, egk: d.egk || 0, lvn: d.lvn || 0, lvk: d.lvk || 0, icn: d.icn || 0, ick: d.ick || 0, vlv: d.vlv || 0, wkk: d.wkk || 0, wkn: d.wkn || 0, dgk: d.dgk || {}, xv: d.xv };
+  S = { seed: d.seed, gen, inv: d.inv || {}, dep: d.dep || {}, vent: d.vent || {}, spill: d.spill || {}, fails: d.fails || 0, made: d.made || {}, pol: d.pol && d.pol.length === PW * PW ? d.pol : new Array(PW * PW).fill(0), t: d.t || 0, nextId: d.nextId || 1, help: !!d.help, power: { gen: 0, demand: 0, cap: 0, sat: 1 }, bugs: d.bugs || [], evo: d.evo || 0, lost: d.lost || 0, kills: d.kills || 0, hk: d.hk || 0, hv: d.hv, rv: d.rv, rs: d.rs || 0, res: d.res || {}, unl: d.unl || {}, tech: d.tech || {}, rq: d.rq || [], rp: d.rp || {}, clouds: d.clouds || [], fires: d.fires || [], shells: d.shells || [], booms: [], wind: d.wind || { a: 0, v: 0.3 }, orders: d.orders || [], odone: d.odone || 0, olast: d.olast, qb: d.qb, cq: d.cq || [], pk: d.pk || 0, fs: d.fs || {}, fk: d.fk || 0, osh: d.osh || 0, hrsg: d.hrsg || 0, geo: d.geo || 0, dle: d.dle || 0, nrt: d.nrt || 0, fcr: d.fcr, ach: d.ach || {}, rk: d.rk || 0, trk: d.trk || null, dg: d.dg || null, dgn: d.dgn || 0, dgc: d.dgc || 0, qk: d.qk || 0, bv: d.bv, iv: d.iv, mdn: d.mdn || 0, tyk: d.tyk || 0, egk: d.egk || 0, lvn: d.lvn || 0, lvk: d.lvk || 0, icn: d.icn || 0, ick: d.ick || 0, vlv: d.vlv || 0, wkk: d.wkk || 0, wkn: d.wkn || 0, dgk: d.dgk || {}, xv: d.xv, fv: d.fv, fcn: d.fcn || 0, slk: d.slk || 0, qhv: d.qhv, qhn: d.qhn || 0, qhk: d.qhk || 0, qhd: d.qhd || 0 };
   dgc = null; dgMine = null; dfx.length = 0; nades.length = 0;
   initWorld(d.seed, gen);
   if (rgd && d.rg) for (let r = 0; r < rgd.length; r++) if (d.rg[r] === '1') growRegion(r % (W / RG), Math.floor(r / (W / RG)), false);
@@ -4888,6 +5004,7 @@ function load() {
   if (!S.iv) spawnMines();
   if (!S.xv) spawnXdg();
   else if (!S.fv) spawnXdg(['oldfactory']);
+  if (!S.qhv) spawnQhive();
   if (S.dg && !ents.get(S.dg.bid)) S.dg = null;
   S.cars = d.cars || []; S.trains = d.trains || [];
   if (rgd) growNear(d.pl ? d.pl.x : W / 2, d.pl ? d.pl.y : H / 2, 100, 99);
@@ -5015,6 +5132,8 @@ const ACH = [
   ['frost', 'def', 'Thaw', 'Kill the frost queen of an ice cave.', () => (S.ick || 0) >= 1],
   ['valves', 'def', 'Lockout Tagout', 'Close 5 leaking ammonia valves.', () => (S.vlv || 0) >= 5],
   ['factory', 'def', 'Night Shift', 'Go into an abandoned factory.', () => (S.fcn || 0) >= 1],
+  ['qhive', 'def', 'Into the Comb', 'Climb down into the queen hive near your landing site.', () => (S.qhn || 0) >= 1],
+  ['qdeep', 'def', 'Hive Diver', 'Reach depth 10 of the queen hive.', () => (S.qhd || 0) >= 10],
   ['slag', 'def', 'Furnace Out', 'Kill the slag queen in the smelting hall of an abandoned factory.', () => (S.slk || 0) >= 1],
   ['brood', 'def', 'Plant Shutdown', 'Kill the broodmother in the synthesis hall of an ammonia works.', () => (S.wkk || 0) >= 1],
   ['xdelve', 'def', 'Spelunker', 'Go into every kind of dungeon: all three burrows, a mine, a lava tube, an ice cave and an ammonia works.', () => ['nest', 'brim', 'deep', 'mine', 'lava', 'ice', 'works'].every(k => S.dgk && S.dgk[k])],
@@ -5939,6 +6058,7 @@ function drawBugs(ox, oy, z, x0, y0, x1, y1) {
     if (b.x < x0 - 1 || b.y < y0 - 1 || b.x > x1 + 1 || b.y > y1 + 1) continue;
     const bk = b.k || 0, K = BUGK[bk] || BUGK[0], s = z * (0.22 + 0.08 * Math.min(1, b.mhp / (90 * K.hp))) * (K.sz || 1), X = ox + b.x * z, Y = oy + b.y * z;
     ctx.save();
+    if (b.sub) { ctx.fillStyle = 'rgba(90,64,36,0.85)'; ctx.beginPath(); ctx.ellipse(X, Y, s * 0.9, s * 0.55, 0, 0, 7); ctx.fill(); ctx.fillStyle = 'rgba(140,104,60,0.7)'; for (let q = 0; q < 3; q++) { ctx.beginPath(); ctx.arc(X + Math.sin(now * 6 + q * 2 + b.ph) * s * 0.5, Y + Math.cos(now * 5 + q * 2) * s * 0.25, s * 0.14, 0, 7); ctx.fill(); } ctx.restore(); continue; }
     ctx.translate(X, Y); ctx.rotate(b.a);
     const g = Math.sin(now * (b.chew ? 30 : 18) + b.ph);
     ctx.strokeStyle = '#1a1214'; ctx.lineWidth = Math.max(1, s * 0.16);
@@ -7720,7 +7840,7 @@ function drawBuilding(e, ox, oy, z) {
   if (B.kind === 'turret') return drawTurret(e, x, y, w, h, z);
   if (B.kind === 'projector') return drawProjector(e, x, y, w, h, z);
   if (B.kind === 'gun') return drawGun(e, x, y, w, h, z);
-  if (B.kind === 'ruin') return e.type === 'burrow' ? drawBurrow(e, x, y, w, h, z) : e.type === 'infested' ? drawInfested(e, x, y, w, h, z) : e.type === 'lavatube' ? drawLavaTube(e, x, y, w, h, z) : e.type === 'icecave' ? drawIceCave(e, x, y, w, h, z) : e.type === 'nh3works' ? drawWorks(e, x, y, w, h, z) : e.type === 'oldfactory' ? drawFactory(e, x, y, w, h, z) : drawRuin(e, x, y, w, h, z);
+  if (B.kind === 'ruin') return e.type === 'burrow' ? drawBurrow(e, x, y, w, h, z) : e.type === 'infested' ? drawInfested(e, x, y, w, h, z) : e.type === 'lavatube' ? drawLavaTube(e, x, y, w, h, z) : e.type === 'icecave' ? drawIceCave(e, x, y, w, h, z) : e.type === 'nh3works' ? drawWorks(e, x, y, w, h, z) : e.type === 'queenhive' ? drawQueenHive(e, x, y, w, h, z) : e.type === 'oldfactory' ? drawFactory(e, x, y, w, h, z) : drawRuin(e, x, y, w, h, z);
   if (e.type === 'oil_platform') return drawRig(e, x, y, w, h, z);
   if (e.type === 'wind_offshore') return drawOWT(e, x, y, w, h, z);
   if (e.type === 'tidal') return drawTidal(e, x, y, w, h, z);
@@ -7979,7 +8099,8 @@ function tileInfo0(x, y) {
     if (e.type === 'projector') s += `<br>${sum(e.pay)} rounds loaded · ${e.pw} powder · ${e.shots} fired`;
     if (e.type === 'howitzer') s += `<br>${e.ammo} HE${e.wp ? ' + ' + e.wp + ' WP' : ''} shells · ${e.shots} fired`;
     if (e.type === 'burrow') s += `<br>${e.done ? 'Collapsed' : DGK[dgKind(e)] + ' · tier ' + burrowTier(e) + (e.qhp != null ? ' · queen wounded' : '') + ' · click to climb down'}`;
-    if (XDG[e.type] && e.type !== 'infested') s += `<br>${e.done ? DGX[XDG[e.type]].gone : 'Tier ' + burrowTier(e) + (e.qhp === 0 ? ' · ' + DGQ[XDG[e.type]].toLowerCase() + ' dead' : e.qhp != null ? ' · ' + DGQ[XDG[e.type]].toLowerCase() + ' wounded' : '') + ' · click to go in'}`;
+    if (e.type === 'queenhive') s += `<br>Depth ${e.dp || 1}${e.qhp != null ? ' · hive queen wounded' : ''} · click to go in`;
+    else if (XDG[e.type] && e.type !== 'infested') s += `<br>${e.done ? DGX[XDG[e.type]].gone : 'Tier ' + burrowTier(e) + (e.qhp === 0 ? ' · ' + DGQ[XDG[e.type]].toLowerCase() + ' dead' : e.qhp != null ? ' · ' + DGQ[XDG[e.type]].toLowerCase() + ' wounded' : '') + ' · click to go in'}`;
     if (e.type === 'infested') s += `<br>${e.done ? 'Capped' : 'Tier ' + burrowTier(e) + (e.qhp === 0 ? ' · tyrant dead' : e.qhp != null ? ' · tyrant wounded' : '') + ' · click to ride the cage down'}`;
     if (e.type === 'ruin') s += `<br>${e.done ? 'Searched' : guards(e).length ? guards(e).length + ' hives on guard' : 'Unguarded: click to search'}`;
     if (e.type === 'turret') s += `<br>${e.ammo} cartridges + ${e.rd} rounds · ${e.kills} kills`;
@@ -8233,6 +8354,7 @@ function openPanel(e) {
   if (e.type === 'infested') h += `<button data-act="delve" ${e.done ? 'disabled' : ''}>Ride the cage down</button>`;
   if (e.type === 'lavatube' || e.type === 'icecave') h += `<button data-act="delve" ${e.done ? 'disabled' : ''}>Climb down the rope</button>`;
   if (e.type === 'nh3works') h += `<button data-act="delve" ${e.done ? 'disabled' : ''}>Go in through the gate</button>`;
+  if (e.type === 'queenhive') h += `<button data-act="delve">Climb down into the hive (depth ${e.dp || 1})</button>`;
   if (e.type === 'oldfactory') h += `<button data-act="delve" ${e.done ? 'disabled' : ''}>Duck in under the dock shutter</button>`;
   if (e.type === 'ruin') h += `<button data-act="search" ${e.done ? 'disabled' : ''}>Search the works</button>`;
   if (kind(e) === 'pole') h += '<button data-act="wauto">Connect to nearby grids</button><button data-act="wcut">Cut all wires</button>';
@@ -8421,6 +8543,10 @@ function renderPanelDyn() {
     const T = burrowTier(e), oc = (e.oc || []).length, n = dgCaches(e);
     h += `<div class="status"><i style="background:${e.done ? ST_COL.none : ST_COL.input}"></i>${e.done ? 'Capped' : 'Tier ' + T + ' mine · tyrant ' + (e.qhp === 0 ? 'dead' : e.qhp != null ? 'wounded' : 'unhurt') + ' · ' + oc + ' of ' + n + ' chests opened' + (e.key ? ' · pump hall key found' : '')}</div>`;
     h += `<p class="dim">${e.done ? 'Cleared and capped. The headframe will rust in peace.' : 'An abandoned sulfide mine the crawlers moved into. The cage still runs. Below are shotcrete roadways, storerooms, lamp rooms and pump stations with miners\' lockers, egg clutches that keep hatching while you are near, and a padlocked blast door to the old pump hall where a brood tyrant has nested. The key is in the shift boss\'s safe. The mine is capped once the tyrant is dead and every chest is open.'}</p>`;
+  } else if (e.type === 'queenhive') {
+    const oc = (e.oc || []).length, n = dgCaches(e), dp = e.dp || 1;
+    h += `<div class="status"><i style="background:${ST_COL.input}"></i>Queen hive · depth ${dp} · hive queen ${e.qhp != null ? 'wounded' : 'unhurt'} · ${oc} of ${n} hoards opened${S.qhd ? ' · deepest reached ' + S.qhd : ''}</div>`;
+    h += `<p class="dim">${DGX.qhive.info}</p>`;
   } else if (XDG[e.type] && e.type !== 'infested') {
     const T = burrowTier(e), oc = (e.oc || []).length, n = dgCaches(e), ty = XDG[e.type], qn = DGQ[ty].toLowerCase();
     h += `<div class="status"><i style="background:${e.done ? ST_COL.none : ST_COL.input}"></i>${e.done ? DGX[ty].gone : DGK[ty] + ' · tier ' + T + ' · ' + qn + ' ' + (e.qhp === 0 ? 'dead' : e.qhp != null ? 'wounded' : 'unhurt') + ' · ' + oc + ' of ' + n + (ty === 'works' ? ' lockers' : ty === 'factory' ? ' crates' : ' caches') + ' opened' + (e.key ? ' · hall key found' : '')}</div>`;
@@ -8632,10 +8758,10 @@ function startWorld() {
   closeModal(); renderHotbar(); save();
   toast('New world generated');
 }
-const entCol = (e, k) => k === 'hive' ? '#e04040' : e.type === 'burrow' ? (e.done ? '#6a5a4a' : '#e0a040') : e.type === 'infested' ? (e.done ? '#6a5a4a' : '#e06a40') : e.type === 'lavatube' ? (e.done ? '#6a5a4a' : '#ff5020') : e.type === 'icecave' ? (e.done ? '#6a5a4a' : '#a0e0ff') : e.type === 'nh3works' ? (e.done ? '#6a5a4a' : '#c0c8d0') : e.type === 'oldfactory' ? (e.done ? '#6a5a4a' : '#d89060') : k === 'ruin' ? '#c080ff' : k === 'road' ? '#8a8a8a' : k === 'rail' ? '#b09070' : '#ffe080';
+const entCol = (e, k) => k === 'hive' ? '#e04040' : e.type === 'burrow' ? (e.done ? '#6a5a4a' : '#e0a040') : e.type === 'infested' ? (e.done ? '#6a5a4a' : '#e06a40') : e.type === 'lavatube' ? (e.done ? '#6a5a4a' : '#ff5020') : e.type === 'icecave' ? (e.done ? '#6a5a4a' : '#a0e0ff') : e.type === 'nh3works' ? (e.done ? '#6a5a4a' : '#c0c8d0') : e.type === 'queenhive' ? '#ffb030' : e.type === 'oldfactory' ? (e.done ? '#6a5a4a' : '#d89060') : k === 'ruin' ? '#c080ff' : k === 'road' ? '#8a8a8a' : k === 'rail' ? '#b09070' : '#ffe080';
 const mv = { x: 0, y: 0, z: 2 };
 let mDrag = null;
-function mapHtml() { return `<div class="fmap"><canvas id="wmap"></canvas><details class="fleg" open><summary>Legend</summary>${legendHtml()}<div class="wleg"><span><i style="background:#e04040"></i>Crawler hive</span><span><i style="background:#c080ff"></i>Abandoned works</span><span><i style="background:#e0a040"></i>Crawler burrow</span><span><i style="background:#e06a40"></i>Infested mine</span><span><i style="background:#ff5020"></i>Lava tube</span><span><i style="background:#a0e0ff"></i>Ice cave</span><span><i style="background:#c0c8d0"></i>Ammonia works</span><span><i style="background:#d89060"></i>Abandoned factory</span><span><i style="background:#ffe080"></i>Your buildings</span><span><i style="background:#ff4050"></i>Crawlers</span><span><i style="background:#4ae0ff"></i>You</span></div><p class="dim">Seed ${S.seed}${S.gen && !S.gen.legacy ? '' : ' · classic map'} · ${rgd ? 'endless world, unexplored land stays dark' : W + '×' + H}${S.gen && S.gen.inf ? ' · endless ore' : ''}</p></details><div class="fzb"><button data-fz="1" title="Zoom in">+</button><button data-fz="-1" title="Zoom out">−</button><button data-fz="0" title="Centre on you">◎</button></div><div class="fpos"></div><div class="fhint">Drag to pan · Wheel to zoom · Click to look there · M or Esc to close</div></div>`; }
+function mapHtml() { return `<div class="fmap"><canvas id="wmap"></canvas><details class="fleg" open><summary>Legend</summary>${legendHtml()}<div class="wleg"><span><i style="background:#e04040"></i>Crawler hive</span><span><i style="background:#c080ff"></i>Abandoned works</span><span><i style="background:#e0a040"></i>Crawler burrow</span><span><i style="background:#e06a40"></i>Infested mine</span><span><i style="background:#ff5020"></i>Lava tube</span><span><i style="background:#a0e0ff"></i>Ice cave</span><span><i style="background:#c0c8d0"></i>Ammonia works</span><span><i style="background:#d89060"></i>Abandoned factory</span><span><i style="background:#ffb030"></i>Queen hive</span><span><i style="background:#ffe080"></i>Your buildings</span><span><i style="background:#ff4050"></i>Crawlers</span><span><i style="background:#4ae0ff"></i>You</span></div><p class="dim">Seed ${S.seed}${S.gen && !S.gen.legacy ? '' : ' · classic map'} · ${rgd ? 'endless world, unexplored land stays dark' : W + '×' + H}${S.gen && S.gen.inf ? ' · endless ore' : ''}</p></details><div class="fzb"><button data-fz="1" title="Zoom in">+</button><button data-fz="-1" title="Zoom out">−</button><button data-fz="0" title="Centre on you">◎</button></div><div class="fpos"></div><div class="fhint">Drag to pan · Wheel to zoom · Click to look there · M or Esc to close</div></div>`; }
 function mapOpen() { mv.x = cam.x; mv.y = cam.y; mv.z = rgd ? 2 : Math.max(1, Math.min(4, 700 / W)); }
 function mapZoom(f, px, py) {
   const c = document.getElementById('wmap');
@@ -10362,7 +10488,7 @@ window.game = { tech: { TECH, TECHL, queueTech, curTech, techOk, techAvail, gate
   setCam(x, y, z) { cam.x = x; cam.y = y; if (z) cam.z = z; camFree = true; },
   get pl() { return S.pl; }, plMove, plShoot, keys, walkable, get camFree() { return camFree; }, carToggle, placeCar, carAt, openCar, pickCar, get trains() { return S.trains; }, placeTrain, trainAt, openTrain, openPanel, pickTrain, trainGeo, reverseTrain, railBusy, get puffs() { return puffs; }, get H() { return H; }, get wakes() { return wakes; }, floats, boatRoute, boatPilot, carStep, carHit, fishTick, fishRegrow, seaOil, seaPatch, oily, sunMul, get oreAmt() { return oreAmt; }, fground, fstock, netToggle, wdep, seaLv,
   htier, spits: () => spits, gearT, gearReset() { gearCt = -99; }, spawnBugs, hiveTier, guardStep, addHive, bugKind, maxHp, hurt, rgd: () => rgd, tileInfo0, growNear, genRegion, tch: () => tch, ovc, mapWin, depleteTile,
-  dgEnter, dgExit, dgTick, dgShoot, dgMove, dgUse, dgClick, dgGrid, dgGen, dgSolid, dgSee, dgPos, spawnBurrows, mineGen, dgKind, dgCaches, spawnMines, dgDoor, spawnXdg, dgValve, broodTick, xdgAt, biome, terNear, get dfx() { return dfx; },
+  dgEnter, dgExit, dgTick, dgShoot, dgMove, dgUse, dgClick, dgGrid, dgGen, dgSolid, dgSee, dgPos, spawnBurrows, mineGen, dgKind, dgCaches, spawnMines, dgDoor, spawnXdg, dgValve, broodTick, xdgAt, spawnQhive, qhK, biome, terNear, get dfx() { return dfx; },
   rotEnt, ugPair, lists: () => lists(), wireToggle, autoWire, wired, setTool(t) { tool = t; },
   tx: { CMBI, bIcon, IP, iArch, mArch, icoClass, icoCv, mLay, mulberry32 }, setOverlay(v) { overlay = v; }, elev: () => elev, drawPreview, startWorld, get wcfg() { return wcfg; },
 };
