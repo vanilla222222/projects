@@ -2421,6 +2421,7 @@ function dgTick() {
     const b = D.bugs[i];
     if (b.hp <= 0) { D.bugs.splice(i, 1); S.kills = (S.kills || 0) + 1; bugTally(b); dfx.push({ x: b.x, y: b.y, t: 0.5, c: '#a0c040' }); dgDie(D, b, hit); if (!S.dg) return; continue; }
     if (b.bd > 0) { b.bd -= DT; b.hp -= b.bp * DT; if (b.bd <= 0) b.bp = 0; }
+    b.cs = cals.length && calAt(b.x, b.y) ? 1 : 0; if (b.cs) b.hp -= WPN.caltrop.cdps * DT;
     if (b.fz > 0) { b.fz -= DT; continue; }
     if (b.tk > 0) b.tk -= DT;
     const K = BUGK[b.k || 0], pd = Math.hypot(D.px - b.x, D.py - b.y), bi = Math.floor(b.y) * N + Math.floor(b.x), fd = ff ? ff[bi] : -1;
@@ -2451,7 +2452,7 @@ function dgTick() {
       if (b.cd <= 0) { b.cd = K.cd || 1.6; for (const o of K.fan ? [-0.25, 0, 0.25] : [0]) { const a = b.a + o, s = { x: b.x, y: b.y, tx: b.x + Math.cos(a) * pd, ty: b.y + Math.sin(a) * pd, d: 12 * (K.sd || 1) * (1 + S.evo) * (1 + gearT()) * (D.dm || 1) }; if (K.po) s.po = 1; if (K.nz) s.nz = 1; if (K.ch) s.ch = 1; if (K.wb) s.wb = 1; if (K.cd && !K.po && !K.nz && !K.wb && !K.ch) s.gn = 1; D.sp.push(s); } }
       continue;
     }
-    dgStep(D, ff, N, b, sp * K.v * (K.fr && b.hp < b.mhp * 0.5 ? 1.7 : 1) * (b.tk > 0 ? 0.33 : 1), 0.18);
+    dgStep(D, ff, N, b, sp * K.v * (K.fr && b.hp < b.mhp * 0.5 ? 1.7 : 1) * (b.tk > 0 ? 0.33 : 1) * (b.cs ? 0.5 : 1), 0.18);
   }
   const Q = D.q;
   if (Q.hp > 0) {
@@ -3064,6 +3065,7 @@ function drawDungeon(w, h) {
   const Q = D.q;
   const sb = S.bugs;
   S.bugs = D.bugs;
+  if (cals.length) drawCals(ox, oy, z);
   drawBugs(ox, oy, z, x0 - 2, y0 - 2, x1 + 2, y1 + 2);
   const QX = ox + Q.x * z, QY = oy + Q.y * z;
   if (Q.ty === 'brood' && Q.hp > 0 && Q.wu > 0) {
@@ -3214,11 +3216,12 @@ const WPN = {
   cryo: { n: 'Cryo Lance', am: 'ln2_flask', rk: 'rn', per: 12, dm: 10, hv: 10, cd: 0.35, r: 6, cone: 0.5, pel: 8, need: 'cryo_lance', fz: 2.5 },
   bow: { n: 'Compound Bow', am: 'broadhead_arrow', rk: 'rbw', per: 1, dm: 45, hv: 30, cd: 0.7, r: 16, arm: 0.8, need: 'compound_bow', bl: 10, bt: 6 },
   harpoon: { n: 'Pneumatic Harpoon', am: 'harpoon', rk: 'rhp', per: 1, dm: 35, hv: 25, cd: 1.1, r: 13, arm: 1.2, need: 'harpoon_gun', pl: 6 },
+  caltrop: { n: 'Caltrop Launcher', am: 'caltrop_pack', rk: 'rcl', per: 1, dm: 10, hv: 8, cd: 1.0, r: 11, need: 'caltrop_launcher', sp: 1.2, cr: 2, cdur: 12, cdps: 12 },
   tack: { n: 'Tack Gel Launcher', am: 'tack_canister', rk: 'rtk', per: 6, dm: 8, hv: 6, cd: 0.9, r: 10, need: 'tack_launcher', sp: 1.8, tk: 5 },
   jet: { n: 'Abrasive Jet Lance', am: 'garnet_charge', rk: 'rj', per: 25, dm: 9, hv: 8, cd: 0.08, r: 6, arm: 3.2, need: 'jet_lance', ln: 0.55 },
   rotary: { n: 'Rotary Gun', am: 'ammo_belt', rk: 'rb2', per: 50, dm: 10, hv: 10, cd: 0.035, r: PL_GUN, need: 'rotary_gun', en: 60 },
 };
-const WORDER = ['rifle', 'ap', 'shotgun', 'slug', 'flechette', 'auto_shotgun', 'lmg', 'rotary', 'marksman', 'marksman_w', 'coilgun', 'crossbow', 'amr', 'arc', 'cryo', 'jet', 'tack', 'bow', 'harpoon'];
+const WORDER = ['rifle', 'ap', 'shotgun', 'slug', 'flechette', 'auto_shotgun', 'lmg', 'rotary', 'marksman', 'marksman_w', 'coilgun', 'crossbow', 'amr', 'arc', 'cryo', 'jet', 'tack', 'bow', 'harpoon', 'caltrop'];
 const ARMOR = {
   exoframe4: { a: 0.55, g: 14 },
   exoframe3: { a: 0.5, g: 12 },
@@ -3259,7 +3262,7 @@ const NADE = {
   ammonal_charge: { r: 3.2, dm: 130, hv: 160, c: '#c8c8c0' },
   powder_charge: { r: 2.2, dm: 55, hv: 60, c: '#4a4844' },
 };
-const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'crossbow', 'xbow_bolt', 'amr', 'wha_round', 'exoframe3', 'coil_turret', 'knee_gen', 'thermal_sight', 'thermal_cam', 'ultrasound_probe', 'surge_arrester', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug', 'arc_caster', 'spark_gap', 'laminate_carrier', 'sofc_pack', 'supercap', 'slug_shell', 'rotary_gun', 'discharge_ring', 'tandem_film', 'hemostat', 'med_injector', 'blast_suit', 'ss_batt', 'flechette_shell', 'wcore_round', 'heavy_carrier', 'arm_brace', 'auto_shotgun', 'exoframe4', 'cryo_lance', 'ln2_flask', 'jet_lance', 'garnet_charge', 'tack_launcher', 'tack_canister', 'compound_bow', 'broadhead_arrow', 'harpoon_gun', 'harpoon'];
+const CMB = ['ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'crossbow', 'xbow_bolt', 'amr', 'wha_round', 'exoframe3', 'coil_turret', 'knee_gen', 'thermal_sight', 'thermal_cam', 'ultrasound_probe', 'surge_arrester', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug', 'arc_caster', 'spark_gap', 'laminate_carrier', 'sofc_pack', 'supercap', 'slug_shell', 'rotary_gun', 'discharge_ring', 'tandem_film', 'hemostat', 'med_injector', 'blast_suit', 'ss_batt', 'flechette_shell', 'wcore_round', 'heavy_carrier', 'arm_brace', 'auto_shotgun', 'exoframe4', 'cryo_lance', 'ln2_flask', 'jet_lance', 'garnet_charge', 'tack_launcher', 'tack_canister', 'compound_bow', 'broadhead_arrow', 'harpoon_gun', 'harpoon', 'caltrop_launcher', 'caltrop_pack'];
 (() => {
   const { need, deps, L, xadd } = TKX;
   const its = new Set([...Object.values(WPN).map(w => w.need).filter(Boolean), ...Object.keys(ARMOR), ...Object.keys(EQ)].filter(k => !START_INV[k] && RECIPE[k] && need[k] < 1e9));
@@ -3351,6 +3354,7 @@ function wpnShot(ox, oy, list, hives, see, under, arm) {
   if (W.bl) for (const b of hits) if (!BUGK[b.k || 0].ct) { b.bp = Math.min((b.bp || 0) + W.bl * (arm(b) ? 0.5 : 1), W.bl * 3); b.bd = W.bt; }
   if (W.tk) for (const b of hits) if (!BUGK[b.k || 0].wx) b.tk = Math.max(b.tk || 0, W.tk);
   if (W.fz) for (const b of hits) if (!BUGK[b.k || 0].tf) b.fz = Math.max(b.fz || 0, W.fz * (arm(b) ? 0.4 : 1));
+  if (W.cr) { cals = cals.filter(c => c.e > (c.dg ? c.dg.t : S.t)); cals.push({ x: tx, y: ty, r: W.cr, e: (S.dg ? S.dg.t : S.t) + W.cdur, dg: S.dg || null, s: Math.random() * 1e4 }); }
   P[W.rk]--; P.cd = W.cd * (eqN('arm_brace') && eqOn() ? 0.8 : 1);
   if (W.en) P.arm.en -= W.en;
   P.f = Math.atan2(ty - oy, tx - ox);
@@ -3830,7 +3834,23 @@ function gearT() {
   gearC = 0.55 * w + 0.45 * Math.min(1, armRed() / 0.75);
   return gearC;
 }
-let lits = [];
+let lits = [], cals = [];
+const calAt = (x, y) => { const dg = S.dg || null, now = dg ? dg.t : S.t; return cals.some(c => c.dg === dg && c.e > now && (x - c.x) ** 2 + (y - c.y) ** 2 <= c.r * c.r); };
+function drawCals(ox, oy, z) {
+  const dg = S.dg || null, now = dg ? dg.t : S.t;
+  for (const c of cals) {
+    if (c.dg !== dg || c.e <= now) continue;
+    ctx.globalAlpha = Math.min(1, (c.e - now) / 2);
+    ctx.fillStyle = 'rgba(40,40,36,0.22)'; ctx.beginPath(); ctx.arc(ox + c.x * z, oy + c.y * z, c.r * z, 0, 7); ctx.fill();
+    let s = c.s;
+    const rn = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    for (let i = 0; i < 22; i++) {
+      const a = rn() * 6.283, d = Math.sqrt(rn()) * c.r, X = ox + (c.x + Math.cos(a) * d) * z, Y = oy + (c.y + Math.sin(a) * d) * z, L = Math.max(3, z * 0.2), r0 = rn() * 6.283;
+      for (const [cl, lw] of [['#16181a', 2.2], ['#a8acb0', 1]]) { ctx.strokeStyle = cl; ctx.lineWidth = Math.max(lw, z * 0.05 * lw); ctx.beginPath(); for (let k = 0; k < 3; k++) { ctx.moveTo(X, Y); ctx.lineTo(X + Math.cos(r0 + k * 2.094) * L, Y + Math.sin(r0 + k * 2.094) * L); } ctx.stroke(); } ctx.fillStyle = '#8a8c90'; ctx.fillRect(X - 1, Y - 1, 2, 2);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
 const litAt = (x, y) => lits.some(([lx, ly, r]) => (x - lx) ** 2 + (y - ly) ** 2 <= r * r);
 function drawLits(ox, oy, z) {
   for (const [lx, ly, r] of lits) { const X = ox + lx * z, Y = oy + ly * z, gr = ctx.createRadialGradient(X, Y, 0, X, Y, r * z); gr.addColorStop(0, 'rgba(255,250,215,0.22)'); gr.addColorStop(0.7, 'rgba(255,250,215,0.08)'); gr.addColorStop(1, 'rgba(255,250,215,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(X, Y, r * z, 0, 7); ctx.fill(); }
@@ -3860,6 +3880,7 @@ function arsenalHtml() {
     if (W.sp) sp.push(`${W.sp}-tile splash`);
     if (W.fz) sp.push(`freezes ${W.fz} s`);
     if (W.pl) sp.push(`reels the target up to ${W.pl} tiles in`);
+    if (W.cr) sp.push(`leaves caltrops over ${W.cr} tiles for ${W.cdur} s: crawlers on them move at half speed and take ${W.cdps} damage a second`);
     if (W.bl) sp.push(`ichor loss ${W.bl}/s for ${W.bt} s, stacks to ×3`);
     if (W.tk) sp.push(`slows to a third for ${W.tk} s`);
     if (W.en) sp.push(`${W.en / 1000} kJ a shot from armour batteries`);
@@ -3959,6 +3980,7 @@ function bugStep() {
     const b = S.bugs[i];
     if (b.hp <= 0) { S.bugs.splice(i, 1); S.kills = (S.kills || 0) + 1; bugTally(b); fx.push({ x: b.x, y: b.y, t: 0.5, c: '#a0c040' }); if (BUGK[b.k || 0].sp) broodOut(b); continue; }
     if (b.bd > 0) { b.bd -= DT; b.hp -= b.bp * DT; if (b.bd <= 0) b.bp = 0; }
+    b.cs = cals.length && calAt(b.x, b.y) ? 1 : 0; if (b.cs) b.hp -= WPN.caltrop.cdps * DT;
     if (b.fz > 0) { b.fz -= DT; continue; }
     if (b.tk > 0) b.tk -= DT;
     if (BUGK[b.k || 0].ct && b.hp < b.mhp) b.hp = Math.min(b.mhp, b.hp + b.mhp * 0.03 * DT);
@@ -4003,7 +4025,7 @@ function bugStep() {
       b.x = nx; b.y = ny;
       return null;
     };
-    const v = sp * K.v * (b.tk > 0 ? 0.33 : 1) * (lits.length && litAt(b.x, b.y) ? 0.8 : 1);
+    const v = sp * K.v * (b.tk > 0 ? 0.33 : 1) * (b.cs ? 0.5 : 1) * (lits.length && litAt(b.x, b.y) ? 0.8 : 1);
     let r = tryMove(b.x + ux * v, b.y + uy * v);
     if (r === 'water') r = tryMove(b.x + Math.sign(ux) * v, b.y) && tryMove(b.x, b.y + Math.sign(uy) * v) && tryMove(b.x - uy * v, b.y + ux * v);
     b.chew = r && r !== 'water' ? r.id : 0;
@@ -5543,6 +5565,7 @@ function render() {
   drawPuffs(ox, oy, z);
   if (!S.pl.car) drawPlayer(ox, oy, z);
   if (lits.length) drawLits(ox, oy, z);
+  if (cals.length) drawCals(ox, oy, z);
   drawBugs(ox, oy, z, x0, y0, x1, y1);
   if (wired()) drawNoPw(vis, ox, oy, z);
   for (const e of vis) if (e.type === 'turret' && S.t - e.sh < 0.07) {
@@ -9347,6 +9370,7 @@ const CHAINS = [
   { n: 'Process control room', l: [['implanted wafer + KOH', 'Wet bench', 'MEMS wafer'], ['MEMS wafer + glass', 'Chip assembly line', 'pressure sensor dies'], ['silicone + acid', 'Pressure reactor', 'silicone fill fluid'], ['stainless', 'Transfer press line', 'isolating diaphragm'], ['die + diaphragm + fill fluid + microchip + casting', 'Robotic assembly cell', 'pressure transmitter'], ['board + microchip + die', 'Electronics assembly line', 'positioner → control valve'], ['I/O cards + fibre cable', 'Robotic assembly cell', 'DCS cabinet'], ['cabinets + transmitters + valves + LCDs', 'build', 'Process control room']] },
   { n: 'Pneumatic harpoon', l: [['Ti-6Al-4V + argon', 'Open-die forging press', 'titanium bar'], ['bar + stainless', 'CNC machine shop', 'barbed tips'], ['carbon fibre + epoxy', 'Pultrusion line', 'harpoon shafts'], ['UHMWPE + silicone', 'Planetary strander', 'braided line'], ['tips + shafts + line', 'Workshop', 'barbed harpoons'], ['6061 tube + acid', 'Plating line', 'hard-anodised barrel'], ['6061 tube', 'Transfer press line', 'bottle liner'], ['liner + carbon + epoxy', 'Filament winding machine', 'air bottle'], ['barrel + bottle + brass + PP + motor', 'Workshop', 'Pneumatic harpoon']] },
   { n: 'Floodlight tower', l: [['silicon + chloromethane', 'Fluid bed chlorinator', 'methyltrichlorosilane'], ['MTCS + methanol', 'Pressure reactor', 'MTMS'], ['sodium silicate + water', 'Ion exchange column', 'colloidal silica'], ['MTMS + silica sol + acetic acid', 'Pressure reactor', 'hardcoat lacquer'], ['polycarbonate', 'Injection moulder', 'lens'], ['lens + lacquer', 'Catalyst coating line', 'hardcoated lens'], ['aluminium + copper foil + epoxy + alumina', 'PCB line', 'metal-core board'], ['LED chips + phosphor + board', 'Electronics assembly line', 'LED module'], ['modules + lens + heat sink + driver', 'Workshop', 'LED floodlight'], ['floodlights + mast', 'build', 'Floodlight tower']] },
+  { n: 'Caltrop launcher', l: [['ferrosilicon + magnesium', 'Coreless induction furnace', 'nodulariser'], ['sand + bentonite + coal + water', 'Green sand muller', 'green sand'], ['pig iron + steel + nodulariser + FeSi + sand', 'Ductile iron foundry', 'caltrop blanks'], ['blanks + oil + gas', 'Quench and temper line', 'hardened caltrops'], ['caltrops + ZnO + H₃PO₄', 'Electroplating line', 'phosphated caltrops'], ['caltrops + PP', 'Workshop', 'caltrop canisters'], ['roving + epoxy', 'Filament winding machine', 'launch tube'], ['tube + air bottle + brass + PP', 'Workshop', 'Caltrop launcher']] },
   { n: 'Rare earth magnets', l: [['monazite', 'Digester + naoh', 're_oh', 'Leach tank + hcl + water', 'recl3', '+', 'th_cake'], ['recl3', 'Solvent extraction + diesel', 'ndcl3', '+', 'ce_oxide'], ['ndcl3', 'Precipitator + soda_ash', 'ndpr_oxide', 'Electrolysis cell + anode + hf', 'nd_metal'], ['borax', 'Arc furnace + pig_iron + coke', 'ferroboron'], ['nd_metal', 'Vacuum induction furnace + ferroboron + steel + argon', 'ndfeb_strip', 'HD vessel + h2', 'hd_powder', 'Jet mill + n2', 'ndfeb_fine'], ['ndfeb_fine', 'Field press + n2', 'ndfeb_green', 'Sinter-HIP furnace + argon', 'ndfeb_block', 'Multi-wire saw + diamond_grit + water', 'ndfeb_bare'], ['ndfeb_bare', 'Plating line + copper_cathode + niso4', 'ndfeb_plated', 'Pulse magnetiser', 'ndfeb', 'Workshop + wire + plate', 'pm_motor'], ['ndfeb_swarf', 'Leach tank + hcl + water', 'ndcl3'], ['th_cake', 'Workshop + concrete + plate', 'waste_drum']], d: 'Monazite from the mineral sand separator is cracked with caustic soda and dissolved in hydrochloric acid, leaving thorium behind. Hundreds of solvent extraction stages split off neodymium and praseodymium, with cerium as a by-product. Reduced to metal and alloyed with iron and boron from desert borax, they make the strongest magnets there are, for direct-drive wind turbines and compact motors.' },
   { n: 'Water treatment', l: [['al_hydroxide', 'Pressure reactor + acid', 'alum'], ['water', 'Water treatment works + alum + cl2 + carbon bed', 'potable'], ['spent_carbon', 'Kiln + steam', 'carbon'], ['nylon', 'Workshop + polyester + glass_fibre', 'ro_membrane'], ['water', 'Reverse osmosis + membranes', 'potable'], ['potable', 'Blow moulder + pet', 'water_bottle'], ['bleach', 'Blow moulder + polyethylene', 'bleach_jug']], d: 'Alum makes dirt clump into flocs that settle and filter out, and a little chlorine disinfects what is left. An activated carbon bed doubles the rate but fills up and has to be reactivated in a kiln. Reverse osmosis needs only power and membranes, which slowly foul and need replacing.' },
   { n: 'Farming and fermentation', l: [['npk', 'Farm + water', 'sugar_beet'], ['npk', 'Farm + water', 'maize'], ['sugar_beet', 'Sugar factory + quicklime + co2 + water', 'sugar', '+', 'molasses'], ['molasses', 'Fermenter + water', 'ethanol', '+', 'co2'], ['maize', 'Fermenter + water', 'ethanol', '+', 'ddgs'], ['ethanol', 'Pressure reactor', 'ethylene'], ['molasses', 'Fermenter + o2 + quicklime + acid', 'citric', '+', 'gypsum'], ['ethanol', 'Blow moulder + polyethylene', 'sanitiser']], d: 'Fertiliser and water grow sugar beet and maize. The sugar factory cleans beet juice with lime and carbon dioxide, so it soaks up CO₂ from your kilns. Yeast turns molasses and maize into ethanol, which hot alumina dehydrates to ethylene for green plastics. A mould turns molasses into citric acid.' },
@@ -10580,6 +10604,22 @@ const CMBI = (() => {
   T.broadhead_arrow = g => {
     dshad(g, 32, 58, 24, 3);
     for (let i = 0; i < 3; i++) { g.save(); g.translate(12 + i * 9, 52 - i * 2); g.rotate(-0.85); g.fillStyle = '#26262a'; g.fillRect(0, -1.1, 44, 2.2); g.fillStyle = '#c8ccd4'; poly(g, [42, -4, 51, 0, 42, 4]); g.fill(); ink(g, 0.6); g.fillStyle = ['#e0c840', '#40a060', '#e0c840'][i]; poly(g, [1, -1, 10, -1, 4, -5]); g.fill(); poly(g, [1, 1, 10, 1, 4, 5]); g.fill(); g.restore(); }
+  };
+  T.caltrop_launcher = g => {
+    dshad(g, 32, 58, 26, 3);
+    g.save(); g.translate(32, 32); g.rotate(-0.5);
+    rrect(g, -28, -6, 40, 12, 3); g.fillStyle = lgr(g, 0, -6, 0, 6, '#8a8466', '#d0c8a0', '#8a8466'); g.fill(); ink(g, 1);
+    rrect(g, 8, -7, 18, 14, 6); g.fillStyle = lgr(g, 0, -7, 0, 7, '#1e2024', '#4a4e56', '#1e2024'); g.fill(); ink(g, 1);
+    g.beginPath(); g.arc(-4, 9, 4, 0, 7); g.fillStyle = '#c8b060'; g.fill(); ink(g, 1);
+    g.fillStyle = '#2a2a2a'; g.beginPath(); g.ellipse(-28, 0, 2, 5, 0, 0, 7); g.fill();
+    g.restore();
+  };
+  T.caltrop_pack = g => {
+    dshad(g, 32, 58, 20, 3);
+    rrect(g, 20, 14, 24, 40, 4); g.fillStyle = lgr(g, 20, 0, 44, 0, '#5a5448', '#9a9480', '#5a5448'); g.fill(); ink(g, 1);
+    g.strokeStyle = '#3a3630'; g.lineWidth = 1; g.beginPath(); g.moveTo(32, 14); g.lineTo(32, 54); g.stroke();
+    g.strokeStyle = '#2a2c2e'; g.lineWidth = 2.4;
+    for (const [x, y] of [[32, 8], [14, 46], [50, 46]]) { g.beginPath(); for (let k = 0; k < 3; k++) { g.moveTo(x, y); g.lineTo(x + Math.cos(k * 2.094 - 1.57) * 7, y + Math.sin(k * 2.094 - 1.57) * 7); } g.stroke(); }
   };
   T.harpoon_gun = g => {
     dshad(g, 32, 58, 26, 3);
