@@ -1457,7 +1457,7 @@ const BUGK = [{ n: 'Crawler', hp: 1, v: 1, dm: 1, c: '#4a3038', hc: '#5e3c46', s
   { n: 'Leaper', hp: 0.9, v: 1.1, dm: 1.2, ld: 1, c: '#3a2a1a', hc: '#5a4028', st: '#ff9050' }, { n: 'Tunneler', hp: 1.3, v: 0.9, dm: 1.2, bw: 1, c: '#4a3a28', hc: '#6a5238', st: '#c8a060' }, { n: 'Shade Crawler', hp: 1, v: 1.1, dm: 1.1, cl: 1, c: '#1a1820', hc: '#2a2832', st: '#8080a0' }, { n: 'Spore Crawler', hp: 0.9, v: 0.8, dm: 0.7, rng: 5, cd: 2, sd: 0.6, nz: 1, c: '#3a2a40', hc: '#56405e', st: '#d090ff', gl: '200,140,255' }, { n: 'Webspinner', hp: 1, v: 0.85, dm: 0.8, rng: 5, cd: 1.8, sd: 0.5, wb: 1, c: '#3a3a3a', hc: '#5a5a5a', st: '#f0f0f0' },
   { n: 'Mender', hp: 1.2, v: 0.8, dm: 0.5, hl: 1, c: '#2a4a30', hc: '#3a6a44', st: '#80ff90', gl: '120,255,140' }, { n: 'Leech Crawler', hp: 1.1, v: 1.15, dm: 1, dr: 1, c: '#4a1a20', hc: '#6a2a30', st: '#ff5060' }, { n: 'Ironback', hp: 5, v: 0.7, dm: 2, ar: 1, sz: 1.5, c: '#3a3a40', hc: '#5a5a64', st: '#b0b8c8', pl: '#7a8090' }, { n: 'Venom Lancer', hp: 1, v: 0.8, dm: 0.8, rng: 7, cd: 2.2, sd: 1.6, po: 1, c: '#3a4a1a', hc: '#567028', st: '#c8ff40', gl: '180,255,60' }, { n: 'Firebrand', hp: 1.2, v: 1, dm: 1.1, fi: 1, c: '#5a2a10', hc: '#803a14', st: '#ff8030', gl: '255,120,40' },
   { n: 'Rimeback', hp: 1.6, v: 0.85, dm: 1.1, ch: 1, na: 2.6, c: '#3a5060', hc: '#507080', st: '#c0f0ff', gl: '170,230,255' }, { n: 'Nursery Crawler', hp: 2.4, v: 0.6, dm: 0.7, sm: 1, sz: 1.5, c: '#5a4a30', hc: '#7a6640', st: '#ffe0a0', pl: '#d0b080' }, { n: 'Ravager', hp: 2, v: 1.35, dm: 2.2, fr: 1, c: '#5a1a10', hc: '#802a18', st: '#ff6030' }, { n: 'Colossus', hp: 14, v: 0.45, dm: 6, ar: 1, sz: 2.7, c: '#2a1e18', hc: '#44322a', st: '#ffb060', pl: '#6a4a30' }, { n: 'Acid Sprayer', hp: 1, v: 0.9, dm: 0.7, rng: 3.5, cd: 0.5, sd: 0.45, po: 1, c: '#4a5a1a', hc: '#687e24', st: '#e0ff50', gl: '220,255,80' },
-  { n: 'Mind Crawler', hp: 1.5, v: 0.75, dm: 0.7, rng: 6, cd: 2.4, sd: 0.7, nz: 1, na: 4.5, c: '#2a1a3a', hc: '#46305e', st: '#e0a0ff', gl: '220,150,255' }, { n: 'Regenerator', hp: 1.8, v: 0.95, dm: 1.2, rg: 1, c: '#2a4a2a', hc: '#3e6a3e', st: '#a0ff80' }, { n: 'Skitter', hp: 0.35, v: 1.9, dm: 0.45, sz: 0.7, c: '#5a4a3a', hc: '#7a6450', st: '#f0d080' }, { n: 'Hive Guard', hp: 4, v: 0.95, dm: 2.2, ar: 1, sz: 1.45, c: '#4a3010', hc: '#6a4818', st: '#ffc040', pl: '#a07020' }, { n: 'Royal Lancer', hp: 2, v: 0.85, dm: 1, rng: 8, cd: 1.4, sd: 1.3, fan: 1, ar: 1, sz: 1.3, c: '#5a3a10', hc: '#80541a', st: '#ffd050', gl: '255,210,80' }, { n: 'Sapper Crawler', hp: 2.6, v: 0.8, dm: 1.4, sa: 1, ar: 1, sz: 1.3, c: '#4a3a2a', hc: '#7a6040', st: '#e0e0d0', pl: '#9a8a70' }, { n: 'Thermic Crawler', hp: 2.2, v: 1.05, dm: 1.6, tf: 1, sz: 1.2, c: '#5a2418', hc: '#8a3a20', st: '#ffb060', gl: '255,150,60' }];
+  { n: 'Mind Crawler', hp: 1.5, v: 0.75, dm: 0.7, rng: 6, cd: 2.4, sd: 0.7, nz: 1, na: 4.5, c: '#2a1a3a', hc: '#46305e', st: '#e0a0ff', gl: '220,150,255' }, { n: 'Regenerator', hp: 1.8, v: 0.95, dm: 1.2, rg: 1, c: '#2a4a2a', hc: '#3e6a3e', st: '#a0ff80' }, { n: 'Skitter', hp: 0.35, v: 1.9, dm: 0.45, sz: 0.7, c: '#5a4a3a', hc: '#7a6450', st: '#f0d080' }, { n: 'Hive Guard', hp: 4, v: 0.95, dm: 2.2, ar: 1, sz: 1.45, c: '#4a3010', hc: '#6a4818', st: '#ffc040', pl: '#a07020' }, { n: 'Royal Lancer', hp: 2, v: 0.85, dm: 1, rng: 8, cd: 1.4, sd: 1.3, fan: 1, ar: 1, sz: 1.3, c: '#5a3a10', hc: '#80541a', st: '#ffd050', gl: '255,210,80' }, { n: 'Sapper Crawler', hp: 2.6, v: 0.8, dm: 1.4, sa: 1, ar: 1, sz: 1.3, c: '#4a3a2a', hc: '#7a6040', st: '#e0e0d0', pl: '#9a8a70' }, { n: 'Thermic Crawler', hp: 2.2, v: 1.05, dm: 1.6, tf: 1, sz: 1.2, c: '#5a2418', hc: '#8a3a20', st: '#ffb060', gl: '255,150,60' }, { n: 'Waxback', hp: 1.3, v: 1.35, dm: 1.1, wx: 1, c: '#7a6a3a', hc: '#a89058', st: '#f4e8b0' }];
 const htier = e => HIVE_T[e.tier || 2];
 let spits = [];
 const maxHp = e => BUILD[e.type].kind === 'hive' ? htier(e).hp : BUILD[e.type].hp || 60 * BUILD[e.type].w * BUILD[e.type].h;
@@ -3343,7 +3343,7 @@ function wpnShot(ox, oy, list, hives, see, under, arm) {
       P.ch = hits.map(b => [b.x, b.y]);
     }
   }
-  if (W.tk) for (const b of hits) b.tk = Math.max(b.tk || 0, W.tk);
+  if (W.tk) for (const b of hits) if (!BUGK[b.k || 0].wx) b.tk = Math.max(b.tk || 0, W.tk);
   if (W.fz) for (const b of hits) if (!BUGK[b.k || 0].tf) b.fz = Math.max(b.fz || 0, W.fz * (arm(b) ? 0.4 : 1));
   P[W.rk]--; P.cd = W.cd * (eqN('arm_brace') && eqOn() ? 0.8 : 1);
   if (W.en) P.arm.en -= W.en;
@@ -3826,6 +3826,7 @@ function gearT() {
 }
 function bugKind(h) {
   const u = Math.random(), t = h.tier || 2, gt = gearT();
+  if (gt > 0.4 && wpnHas('tack') && Math.random() < 0.1 + 0.15 * (gt - 0.4)) return 35;
   if (gt > 0.45 && Math.random() < (0.05 + 0.15 * (gt - 0.45)) * (wpnHas('jet') ? 2 : 1)) return 12;
   if (gt > 0.5 && u > 0.93 - 0.3 * (gt - 0.5)) return wpnHas('cryo') && Math.random() < 0.6 ? 34 : 33;
   if (gt > 0.55 && t >= 2 && u < 0.05 + 0.2 * (gt - 0.55)) return 4;
@@ -3835,7 +3836,7 @@ function bugKind(h) {
   return 0;
 }
 const bugTally = b => { const k = b.k || 0; S.kk = S.kk || {}; S.kk[k] = (S.kk[k] || 0) + 1; };
-const BTRAIT = { rng: K => `attacks from ${K.rng} tiles away`, fan: () => 'fires a fan of shots', ar: () => 'armoured: light rounds glance off, heavy rounds and blades bite', po: () => 'acid bite that keeps burning', nz: () => 'clouds that blur your vision', ex: () => 'bursts in a splash of acid when killed', sp: () => 'carries young that scatter when it dies', ld: () => 'leaps across gaps at you', bw: () => 'burrows under walls', cl: () => 'fades from sight until close', wb: () => 'spins webs that slow you down', hl: () => 'hangs back and heals wounded crawlers nearby', dr: () => 'heals itself as it bites', fi: () => 'leaves burning patches behind', ch: () => 'chilling aura that slows you', sm: () => 'calls in hive drones every few seconds', fr: () => 'frenzies when below half health', rg: () => 'regenerates over time', sa: () => 'chews through walls five times faster', tf: () => 'runs hot: cannot be frozen' };
+const BTRAIT = { rng: K => `attacks from ${K.rng} tiles away`, fan: () => 'fires a fan of shots', ar: () => 'armoured: light rounds glance off, heavy rounds and blades bite', po: () => 'acid bite that keeps burning', nz: () => 'clouds that blur your vision', ex: () => 'bursts in a splash of acid when killed', sp: () => 'carries young that scatter when it dies', ld: () => 'leaps across gaps at you', bw: () => 'burrows under walls', cl: () => 'fades from sight until close', wb: () => 'spins webs that slow you down', hl: () => 'hangs back and heals wounded crawlers nearby', dr: () => 'heals itself as it bites', fi: () => 'leaves burning patches behind', ch: () => 'chilling aura that slows you', sm: () => 'calls in hive drones every few seconds', fr: () => 'frenzies when below half health', rg: () => 'regenerates over time', sa: () => 'chews through walls five times faster', tf: () => 'runs hot: cannot be frozen', wx: () => 'waxy cuticle: tack gel will not stick' };
 function bestiaryHtml() {
   const kk = S.kk || {}, seen = BUGK.filter((K, k) => kk[k]).length;
   let h = `<p class="dim">${seen} of ${BUGK.length} crawler kinds recorded. Kill one to add its entry. Numbers are relative to a common crawler.</p><div class="mats">`;
@@ -3860,7 +3861,7 @@ function spawnBugs(h, n, tid) {
     const a = Math.random() * Math.PI * 2, k = bugKind(h), mhp = Math.round(30 * (1 + 2 * S.evo) * (1 + 1.2 * gearT()) * BUGK[k].hp);
     const b = { x: c.x + Math.cos(a) * 1.4, y: c.y + Math.sin(a) * 1.4, hp: mhp, mhp, tid, hx: c.x, hy: c.y, a, cd: 0, ph: Math.random() * 7, bt: S.t };
     if (k) b.k = k;
-    if ((k >= 33 || k === 12) && !S['bk' + k]) { S['bk' + k] = 1; toast(k === 12 ? 'Brood carriers! Kill one and the young clinging to its back scatter in every direction.' : k === 33 ? 'Sapper crawlers! Their mandibles grind through walls five times faster than the rest.' : 'Thermic crawlers! They run hot inside, and liquid nitrogen will not freeze them.', true); }
+    if ((k >= 33 || k === 12) && !S['bk' + k]) { S['bk' + k] = 1; toast(k === 35 ? 'Waxbacks! A waxy cuticle sheds tack gel, and they run faster than most.' : k === 12 ? 'Brood carriers! Kill one and the young clinging to its back scatter in every direction.' : k === 33 ? 'Sapper crawlers! Their mandibles grind through walls five times faster than the rest.' : 'Thermic crawlers! They run hot inside, and liquid nitrogen will not freeze them.', true); }
     if (tid === -3) b.hid = h.id;
     S.bugs.push(b);
   }
