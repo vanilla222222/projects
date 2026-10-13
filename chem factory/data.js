@@ -242,6 +242,10 @@ const ITEMS = {
   ti_chip: { n: 'Clean Titanium Chip', c: '#a8acb2', f: 'Swarf crushed, washed free of oil, dried, and passed under magnets and X-ray to remove tool tips and steel' },
   spent_liion: { n: 'Spent Li-ion Cells', c: '#4a4a52', f: 'Worn-out traction modules and laptop packs, taken apart down to modules. Each still holds some charge, so they are handled as live equipment' },
   black_mass: { n: 'Black Mass', c: '#1e1e22', f: 'The fine fraction from shredded cells: cathode oxides of nickel, cobalt, manganese and lithium mixed with anode graphite. It is richer in cobalt than any ore' },
+  vtm_ore: { n: 'Titanomagnetite Ore', c: '#2a2a2e', f: 'Black, heavy gabbro rock full of magnetite with ilmenite lamellae and vanadium locked into the magnetite lattice. Most of the world\'s vanadium comes from it' },
+  ground_vtm: { n: 'Ground Titanomagnetite', c: '#323236', f: 'Ore ground until magnetite grains come free of plagioclase and pyroxene' },
+  vtm_conc: { n: 'Titanomagnetite Concentrate', c: '#3a3a40', f: 'Magnetic concentrate around 1% V₂O₅ and 15% TiO₂, too rich in titanium for most blast furnaces' },
+  vtm_calcine: { n: 'Leached VTM Calcine', c: '#6a4a3a', f: 'Roasted concentrate after its vanadium has been washed out. Still mostly iron oxide, dried and screened for smelting' },
   cylinder: { n: 'Steel Cylinder', c: '#7a8a7a', f: 'Seamless steel gas bottle, tested to 250 bar' },
   cl2_cyl: { n: 'Chlorine Cylinder', c: '#b8d84a', f: 'Liquid Cl₂ under its own vapour pressure, about 7 bar. Released, it boils into a cloud 2.5 times heavier than air that creeps along the ground' },
   nh3_cyl: { n: 'Ammonia Cylinder', c: '#a8c8e8', f: 'Liquid NH₃ at about 9 bar. A base: it neutralises the sulfuric acid in crawler blood. Lighter than air, so the cloud rises and blows away fast' },
@@ -1960,6 +1964,7 @@ const ORES = [
   { item: 'scheelite', c: '#7a7468', s: '#e0f0ff' },
   { item: 'fluor_ore', c: '#6a5a7a', s: '#c8a8f0' },
   { item: 'graphite_ore', c: '#38383c', s: '#a0a4b0' },
+  { item: 'vtm_ore', c: '#26262c', s: '#7a7a90' },
 ];
 
 const BUILD = {
@@ -2215,6 +2220,7 @@ const BUILD = {
   swarf_line: { n: 'Swarf Recycling Line', kind: 'machine', w: 4, h: 2, cat: 'Processing', c: '#7a8088', ab: 'SW', kw: 90, cost: { steel: 14, motor: 4, pcb: 3, glass: 2 }, d: 'A crusher, an aqueous washer with a centrifuge, a dryer and an X-ray sorter that rejects any chip with tungsten carbide or steel in it.' },
   liion_shredder: { n: 'Inert Cell Shredder', kind: 'machine', w: 4, h: 3, cat: 'Processing', c: '#3a4a5a', ab: 'IS', kw: 160, cost: { steel: 18, motor: 6, pcb: 4, rubber_pipe: 2 }, d: 'A sealed shredder flooded with nitrogen so charged cells cannot catch fire as they are torn open. A dryer drives off electrolyte solvent, then screens and air tables split foils from black mass.' },
   bm_leach: { n: 'Black Mass Leaching Plant', kind: 'machine', w: 4, h: 3, cat: 'Chemistry', c: '#4a6a5a', ab: 'BL', kw: 120, cost: { steel: 18, lead_sheet: 4, pcb: 3, rubber_pipe: 3 }, d: 'Lined, agitated tanks where black mass meets hot sulfuric acid and hydrogen peroxide. The peroxide reduces trivalent cobalt and manganese so they dissolve.' },
+  salt_roaster: { n: 'Salt Roasting Kiln', kind: 'machine', w: 5, h: 3, cat: 'Smelting', c: '#7a5a3a', ab: 'SK', kw: 110, cost: { brick: 26, steel: 16, motor: 3, pcb: 3 }, d: 'A long rotary kiln that roasts pellets of concentrate and soda ash in air at about 1150 °C, followed by a counter-current water leach of the hot calcine.' },
   kiln: { n: 'Lime Kiln', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#b0a080', ab: 'LK', cost: { brick: 8, plate: 2 }, d: 'Burns limestone into quicklime.' },
   roaster: { n: 'Roaster', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#a06a3a', ab: 'RO', kw: 30, cost: { brick: 8, plate: 4 }, d: 'Burns sulfur out of sulfide concentrates. Gives off SO₂.' },
   blast: { n: 'Blast Furnace', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#7a3a2a', ab: 'BF', cost: { brick: 20, casting: 10 }, d: 'Reduces oxides with coke.' },
@@ -3936,6 +3942,10 @@ const RECIPES = [
   { id: 'bm_leach', n: 'Reductive Black Mass Leaching', b: 'bm_leach', t: 6, i: { black_mass: 3 }, fi: { acid: 20, h2o2: 3 }, o: { graphite: 1 }, fo: { bm_liquor: 24 }, eq: '2LiCoO₂ + 3H₂SO₄ + H₂O₂ → Li₂SO₄ + 2CoSO₄ + 4H₂O + O₂', note: 'Graphite does not dissolve and is filtered off for reuse as a lower-grade carbon.' },
   { id: 'bm_sx', n: 'Black Mass Solvent Extraction', b: 'sx_plant', t: 5, fi: { bm_liquor: 24, diesel: 1 }, o: { coso4: 1 }, fo: { niso4: 14, li_raffinate: 10 }, eq: 'Co²⁺, Ni²⁺ + 2HR (org) → MR₂ + 2H⁺ ; strip with H₂SO₄', note: 'Phosphinic acid extractant in kerosene separates cobalt from nickel by pH, leaving lithium behind in the aqueous raffinate.' },
   { id: 'li_recover', n: 'Lithium Carbonate Recovery', b: 'leach', t: 4, i: { soda_ash: 1 }, fi: { li_raffinate: 10 }, o: { li2co3: 1, salt_cake: 1 }, eq: 'Li₂SO₄ + Na₂CO₃ → Li₂CO₃↓ + Na₂SO₄', note: 'Lithium carbonate is less soluble hot than cold, so the liquor is heated to drop it out.' },
+  { id: 'grind_vtm', n: 'Titanomagnetite Grinding', b: 'mill', t: 3, i: { vtm_ore: 4 }, fi: { water: 10 }, o: { ground_vtm: 4 }, eq: 'gabbro → −100 µm' },
+  { id: 'vtm_mag', n: 'Titanomagnetite Magnetic Separation', b: 'salt_roaster', t: 3, i: { ground_vtm: 4 }, fi: { water: 10 }, o: { vtm_conc: 2, sand: 2 }, eq: 'Fe₃O₄(V) magnetic ; silicates non-magnetic', note: 'Low-intensity drum separators ahead of the kiln pull out the magnetite. Ilmenite grains are only weakly magnetic and much of it is lost to tails.' },
+  { id: 'vtm_roast', n: 'Direct Salt Roasting', b: 'salt_roaster', t: 6, i: { vtm_conc: 4, soda_ash: 1 }, fi: { fuel_gas: 4, water: 10 }, o: { na_vanadate: 1, vtm_calcine: 3 }, fo: { co2: 5 }, eq: 'V₂O₃ + Na₂CO₃ + O₂ → 2NaVO₃ + CO₂', note: 'Roasting concentrate straight from the mine skips the blast furnace and converter slag steps, recovering about 80% of the vanadium in one pass.' },
+  { id: 'vtm_calcine_dry', n: 'Calcine Drying and Screening', b: 'srv', t: 3, i: { vtm_calcine: 4 }, fi: { fuel_gas: 1 }, o: { ore_fines: 3 }, fo: { steam: 3 }, eq: 'Fe₂O₃·TiO₂ calcine → dried fines', note: 'Bath smelting tolerates titanium that would clog a blast furnace hearth, so the leached calcine still makes iron.' },
   { id: 'kraft_cook', n: 'Kraft Cook', b: 'digester', t: 4, i: { wood_chips: 4 }, fi: { wl: 20, steam: 10 }, o: { pulp: 2 }, fo: { bl: 30 }, eq: 'Lignin + OH⁻ + HS⁻ → soluble lignin fragments', note: 'Carl Dahl, 1879. Chips cook at 170°C for two hours. Hydrosulfide cleaves the ether links that bind lignin, so the fibres fall apart unharmed.' },
   { id: 'soda_cook', n: 'Soda Cook', b: 'digester', t: 4, i: { wood_chips: 4 }, fi: { naoh: 20, steam: 10 }, o: { pulp: 1 }, fo: { bl: 30 }, eq: 'Lignin + OH⁻ → soluble lignin fragments', note: 'The older soda process of 1851. Caustic alone is slower and harsher, so half the fibre is lost. Use it to start up a new mill before the liquor loop is running.' },
   { id: 'recover', n: 'Liquor Recovery', b: 'recovery', t: 3, fi: { bl: 30, water: 60 }, fo: { steam: 60, so2: 1 }, o: { smelt: 2 }, bleed: ['so2'], eq: 'Na-organics + O₂ → Na₂CO₃ + CO₂ + H₂O (steam)', note: 'Tomlinson recovery boiler, 1934. Black liquor is evaporated to 70% solids and sprayed into the furnace. About a tenth of the sodium is lost each round.' },
@@ -5130,6 +5140,7 @@ const ORDERS = [
   { c: 'Battery recycler', item: 'lead', n: 400, tier: 4, rw: { batt_breaker: 1, short_rotary: 1 }, d: 'Secondary lead for a battery maker running a closed loop.' },
   { c: 'Aerospace forge', item: 'ti_slab', n: 200, tier: 5, rw: { swarf_line: 1 }, d: 'Slab remelted from the forge\'s own swarf.' },
   { c: 'Cell maker recycling contract', item: 'coso4', n: 150, tier: 5, rw: { liion_shredder: 1, bm_leach: 1 }, d: 'Battery-grade cobalt sulfate recovered from the cell maker\'s own scrap.' },
+  { c: 'Vanadium trader', item: 'v2o5', n: 150, tier: 4, rw: { salt_roaster: 1 }, d: 'Flake pentoxide for steel mills and flow battery electrolyte.' },
   { c: 'Rail operator', item: 'traction_pack', n: 4, tier: 5, rw: { rail_charger: 2, rail: 100 }, d: 'Packs to convert two shunting locomotives off diesel.' },
 ];
 
