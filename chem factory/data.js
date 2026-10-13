@@ -2458,6 +2458,7 @@ const BUILD = {
   nh3works: { n: 'Ammonia Works', kind: 'ruin', w: 3, h: 3, c: '#5a6066', ab: 'NW', d: 'A wrecked Haber-Bosch ammonia plant: rusted synthesis loop, collapsed prilling tower, cracked storage spheres. The crawlers moved into the halls, and some lines still leak.' },
   infested: { n: 'Infested Mine', kind: 'ruin', w: 3, h: 3, c: '#4a4440', ab: 'IM', d: 'The pithead of an abandoned sulfide mine, headframe rusting over the shaft. The cage still runs down to shotcrete roadways, storerooms and lamp rooms full of miners\' lockers, and an old pump station hall that something large has made its nest.' },
   burrow: { n: 'Crawler Burrow', kind: 'ruin', w: 2, h: 2, c: '#4a3a2c', ab: 'CB', d: 'A shaft dug by crawlers, with an old survey rope still hanging into it. Below is a cave system with a queen at the far end, and the supply caches of a survey team that never came back up.' },
+  oldfactory: { n: 'Abandoned Factory', kind: 'ruin', w: 3, h: 3, c: '#7a5a48', ab: 'AF', d: 'A machine works from before the crawlers came: sawtooth roof, brick chimney, a loading dock with the shutter half up. Inside are the assembly lines, motor and wire shops, a foundry and the stores, still full of parts crates. Crawlers of every kind nest in there.' },
   ruin: { n: 'Abandoned Works', kind: 'ruin', w: 3, h: 3, c: '#6a6058', ab: 'AW', d: 'A chemical works from before the crawlers came. The roof is in, but the stores and the lab books may have survived.' },
   retort: { n: 'Hunter Retort', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#8a8a9a', ab: 'HR', kw: 80, cost: { plate: 10, brick: 6 }, d: 'Sealed steel pot where molten sodium strips chlorine from TiCl₄.' },
   still: { n: 'Distillation Column', kind: 'machine', w: 2, h: 2, cat: 'Chemistry', c: '#8a7a5a', ab: 'DC', kw: 40, cost: { plate: 8, brick: 4 }, d: 'A tall column of bubble-cap trays. Steam heats the bottom and each tray holds a liquid that boils a little cooler than the one below.' },
@@ -4868,7 +4869,7 @@ for (const r of RECIPES) {
 const START_INV = {
   belt: 80, ubelt: 6, pipe: 30, upipe: 4, chest: 4, miner: 8, pump: 2, boiler: 2, engine: 2,
   crusher: 3, mill: 2, magsep: 1, coke_oven: 1, kiln: 1, blast: 1, converter: 2, workshop: 2,
-  flotation: 1, roaster: 1, smelter: 1, electro: 1, acid_plant: 1, lead_pipe: 10, casting: 10, brick: 10, cartridge: 20, rlab: 2, sci1: 10,
+  flotation: 1, roaster: 1, smelter: 1, electro: 1, acid_plant: 1, anode_furnace: 1, lead_pipe: 10, casting: 10, brick: 10, cartridge: 20, rlab: 2, sci1: 10,
 };
 
 const ORDERS = [
