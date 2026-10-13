@@ -6301,6 +6301,7 @@ function drawBugs(ox, oy, z, x0, y0, x1, y1) {
       ctx.lineTo(s * (0.3 * k + sw), sd * s * 0.95);
     }
     ctx.stroke();
+    if (K.pf || K.an) { ctx.fillStyle = K.st; ctx.strokeStyle = '#1a1214'; ctx.lineWidth = Math.max(1, s * 0.1); for (let k = -1; k <= 1; k++) for (const sd of [-1, 1]) { const sw = (k % 2 === 0 ? g : -g) * sd * 0.35, X = s * (0.3 * k + sw), Y = sd * s * 0.95; ctx.beginPath(); if (K.pf) ctx.ellipse(X, Y, s * 0.17, s * 0.12, 0, 0, 7), ctx.fill(); else { ctx.moveTo(X, Y); ctx.quadraticCurveTo(X + s * 0.2, Y + sd * s * 0.1, X + s * 0.18, Y - sd * s * 0.12); ctx.stroke(); } } ctx.strokeStyle = '#1a1214'; }
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.beginPath(); ctx.ellipse(s * 0.1, s * 0.15, s * 0.95, s * 0.5, 0, 0, 7); ctx.fill();
     if (K.cl && (b.aw || !S.dg) && !(!S.dg && lits.length && litAt(b.x, b.y)) && Math.hypot(b.x - (S.dg ? S.dg.px : S.pl.x), b.y - (S.dg ? S.dg.py : S.pl.y)) > 3) ctx.globalAlpha = 0.25;
@@ -8290,6 +8291,7 @@ function drawGhost(ox, oy, z) {
     ctx.strokeStyle = 'rgba(120,255,140,0.6)'; ctx.lineWidth = 1; ctx.strokeRect(ox + r[0] * z + 0.5, oy + r[1] * z + 0.5, (r[2] - r[0] + 1) * z - 1, (r[3] - r[1] + 1) * z - 1);
     if (!err) { ctx.strokeStyle = '#e09a5a'; ctx.lineWidth = 2; ctx.setLineDash([5, 4]); for (const q of wireCands(g)) { const d = ctr(q); ctx.beginPath(); ctx.moveTo(ox + c.x * z, oy + c.y * z); ctx.lineTo(ox + d.x * z, oy + d.y * z); ctx.stroke(); } ctx.setLineDash([]); }
   }
+  if (B.lit) { const cx = ox + (o.x + B.w / 2) * z, cy = oy + (o.y + B.h / 2) * z; ctx.fillStyle = 'rgba(255,240,180,0.1)'; ctx.strokeStyle = 'rgba(255,236,160,0.65)'; ctx.lineWidth = 1.5; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.arc(cx, cy, B.lit * z, 0, 7); ctx.fill(); ctx.stroke(); ctx.setLineDash([]); }
   if (B.kind === 'belt' || B.kind === 'ubelt' || B.kind === 'splitter' || B.kind === 'inserter' || B.ug || tool === 'sorter' || tool === 'booster') arrow(ox + (o.x + 0.5) * z, oy + (o.y + 0.5) * z, toolDir, z * 0.28, '#fff');
   if (B.ug) {
     drawUgLinks(ox, oy, z, B.kind);
