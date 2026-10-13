@@ -3837,6 +3837,21 @@ function bugKind(h) {
 }
 const bugTally = b => { const k = b.k || 0; S.kk = S.kk || {}; S.kk[k] = (S.kk[k] || 0) + 1; };
 const BTRAIT = { rng: K => `attacks from ${K.rng} tiles away`, fan: () => 'fires a fan of shots', ar: () => 'armoured: light rounds glance off, heavy rounds and blades bite', po: () => 'acid bite that keeps burning', nz: () => 'clouds that blur your vision', ex: () => 'bursts in a splash of acid when killed', sp: () => 'carries young that scatter when it dies', ld: () => 'leaps across gaps at you', bw: () => 'burrows under walls', cl: () => 'fades from sight until close', wb: () => 'spins webs that slow you down', hl: () => 'hangs back and heals wounded crawlers nearby', dr: () => 'heals itself as it bites', fi: () => 'leaves burning patches behind', ch: () => 'chilling aura that slows you', sm: () => 'calls in hive drones every few seconds', fr: () => 'frenzies when below half health', rg: () => 'regenerates over time', sa: () => 'chews through walls five times faster', tf: () => 'runs hot: cannot be frozen', wx: () => 'waxy cuticle: tack gel will not stick' };
+function arsenalHtml() {
+  let h = '<p class="dim">Every hand weapon and load. Damage is per hit before armour; armoured crawlers take the armour multiplier instead of full damage. Bold rows are weapons you can fire now.</p><table class="ptab"><tr><th>Weapon</th><th>Ammo</th><th>Damage</th><th>Per second</th><th>Range</th><th>vs armour</th><th>Special</th></tr>';
+  for (const m of WORDER) {
+    const W = WPN[m], own = wpnHas(m), sp = [];
+    if (W.pel) sp.push(`${W.pel} pellets in a cone`);
+    if (W.ln) sp.push('pierces everything in line');
+    if (W.ch) sp.push(`arcs on to ${W.ch} more`);
+    if (W.sp) sp.push(`${W.sp}-tile splash`);
+    if (W.fz) sp.push(`freezes ${W.fz} s`);
+    if (W.tk) sp.push(`slows to a third for ${W.tk} s`);
+    if (W.en) sp.push(`${W.en / 1000} kJ a shot from armour batteries`);
+    h += `<tr${own ? ' style="font-weight:bold"' : ''}><td>${W.need && ITEMS[W.need].n === W.n ? chip(W.need) : (W.need ? chip(W.need) + '<br>' : '') + W.n}</td><td>${ITEMS[W.am] ? chip(W.am) : W.am}<br><span class="dim">${W.per} per item</span></td><td>${W.dm}${W.pel ? ' ×' + W.pel : ''}</td><td>${Math.round(W.dm * (W.pel || 1) / W.cd)}</td><td>${W.r} tiles</td><td>×${W.arm || 1}</td><td>${sp.join('; ') || '<span class="dim">none</span>'}</td></tr>`;
+  }
+  return h + '</table>';
+}
 function bestiaryHtml() {
   const kk = S.kk || {}, seen = BUGK.filter((K, k) => kk[k]).length;
   let h = `<p class="dim">${seen} of ${BUGK.length} crawler kinds recorded. Kill one to add its entry. Numbers are relative to a common crawler.</p><div class="mats">`;
@@ -8877,7 +8892,7 @@ function closeModal() { modal.hidden = true; modalKind = null; ftip.hidden = tru
 
 const TABS = {
   craft: [['craft', 'Inventory and crafting'], ['equip', 'Armour']],
-  ency: [['index', 'Index'], ['chains', 'Chains'], ['recipes', 'Recipes'], ['mats', 'Materials'], ['pipes', 'Pipes'], ['bugs', 'Crawlers']],
+  ency: [['index', 'Index'], ['chains', 'Chains'], ['recipes', 'Recipes'], ['mats', 'Materials'], ['pipes', 'Pipes'], ['bugs', 'Crawlers'], ['arms', 'Arsenal']],
   help: [['help', 'How to play']],
   world: [['world', 'New world']],
   map: [['map', 'World map']],
@@ -9122,6 +9137,7 @@ function renderModal() {
   else if (modalTab === 'item') h = encyItem(eItem);
   else if (modalTab === 'index') h = encyIndex();
   else if (modalTab === 'bugs') h = bestiaryHtml();
+  else if (modalTab === 'arms') h = arsenalHtml();
   else if (modalTab === 'chains') {
     for (const c of CHAINS) h += chainHtml(c);
   } else if (modalTab === 'recipes') {
