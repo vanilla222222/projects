@@ -4259,6 +4259,7 @@ function tick() {
   for (const e of l.inserter) if (e.mv) net(e).demand += BUILD[e.type].kw || 0;
   for (const e of l.machine) {
     if (BUILD[e.type].store) { e.cy = false; continue; }
+    if (BUILD[e.type].ctl) { e.cy = false; net(e).demand += BUILD[e.type].kw; continue; }
     if (BUILD[e.type].lab) e.recipe = 'study';
     const r = RECIPE[e.recipe];
     if (!r) { e.st = 'none'; continue; }
@@ -4301,14 +4302,18 @@ function tick() {
   S.power = { gen: pg, demand: pd, cap: pc, sat: pd > 0 ? pg / pd : 1, bat: pb, bmax: pm, bkw: pk, nets: nets.length, nc: l.nc || 0 };
   for (const e of l.booster) e.sat = net(e).sat;
   for (const e of l.inserter) e.psat = net(e).sat;
+  const ctls = [];
+  for (const c of l.machine) if (BUILD[c.type].ctl) { const n = net(c); c.cn = 0; c.st = n === nop ? 'nopole' : n.sat < 0.5 ? 'power' : 'work'; if (c.st === 'work') ctls.push(c); }
   for (const e of l.machine) {
     if (!e.cy) continue;
+    e.cm = 1;
+    if (ctls.length && !BUILD[e.type].gen && !BUILD[e.type].lab) { const B0 = BUILD[e.type]; for (const c of ctls) { const C = BUILD[c.type]; if (Math.abs(c.x + C.w / 2 - e.x - B0.w / 2) <= C.ctl && Math.abs(c.y + C.h / 2 - e.y - B0.h / 2) <= C.ctl) { e.cm = 1.15; c.cn++; break; } } }
     const r = RECIPE[e.recipe], kw = BUILD[e.type].kw, gn = BUILD[e.type].gen, n = net(e);
     const sp = kw ? n.sat : gn ? n.load : 1;
     if (kw && n.sat < 0.05) e.st = n === nop ? 'nopole' : 'power';
     else if (kw && (e.st === 'power' || e.st === 'nopole')) e.st = 'work';
     if (gn) { e.kw = gn * sunMul(e) * n.load; e.st = n === nop ? 'nopole' : n.load < 0.01 ? 'idle' : 'work'; }
-    e.prog += DT * sp * (BUILD[e.type].ms || 1) * catMul(e, r) * scaleMul(e) * forestMul(e) * sunMul(e) / (r.id === 'study' ? (TECH[e.rt] ? TECH[e.rt].ut : 5) / (BUILD[e.type].ls || 1) : r.t);
+    e.prog += DT * sp * e.cm * (BUILD[e.type].ms || 1) * catMul(e, r) * scaleMul(e) * forestMul(e) * sunMul(e) / (r.id === 'study' ? (TECH[e.rt] ? TECH[e.rt].ut : 5) / (BUILD[e.type].ls || 1) : r.t);
     if (e.prog >= 1) finish(e, r);
   }
   for (const e of l.miner) {
@@ -8523,7 +8528,8 @@ function openPanel(e) {
   const B = BUILD[e.type];
   let h = `<div class="ph"><span class="sw big" style="background:${B.c}">${B.ab || ''}</span><div class="pt"><b>${B.n}</b><small>${B.d}</small></div><button class="x" data-act="close" title="Close">×</button></div>`;
   if (B.lab) { const t = curTech(); h += `<div class="row">Researching <b>${t ? BUILD[t].n : 'nothing'}</b>${B.ls ? ` at ×${B.ls} speed` : ''} <button data-act="tech">Research (T)</button></div>`; }
-  if (kind(e) === 'machine' && !B.store && !B.lab) {
+  if (B.ctl) h += `<div class="sec">Control</div><p class="dim">Machines whose centre is within ${B.ctl} tiles of this room run 15% faster while it has power. Steering <b>${e.cn || 0}</b> running machines now.</p>`;
+  if (kind(e) === 'machine' && !B.store && !B.lab && !B.ctl) {
     const rl = RECIPES.filter(r => runs(e.type, r) && (avail(r) || e.recipe === r.id));
     h += `<div class="sec">Recipe <small class="dim">${e.recipe ? 'Shift+right-click copies it, Shift+click pastes' : 'pick one'}</small></div>${rl.length > 10 ? `<input class="rfind" type="search" placeholder="Filter ${rl.length} recipes by name or ingredient" value="${rFilt.replace(/"/g, '')}">` : ''}<div class="rpick">${rl.map(r => `<button class="rs ok rp${e.recipe === r.id ? ' on' : ''}" data-act="rpick" data-r="${r.id}" data-s="${rSearch(r).replace(/"/g, '')}" data-k="${r.id}" data-m="x">${ico(rMain(r))}</button>`).join('')}${e.recipe ? '<button class="rs no rpx" data-act="rpick" data-r="" title="Clear recipe">×</button>' : ''}</div>`;
   }
@@ -8534,7 +8540,7 @@ function openPanel(e) {
   if (e.type === 'train_stop') h += `<label class="row">Mode <select data-act="smode"><option value="load" ${e.mode !== 'unload' ? 'selected' : ''}>Load wagons</option><option value="unload" ${e.mode === 'unload' ? 'selected' : ''}>Unload wagons</option></select></label>`;
   h += '<div id="pdyn"></div><div class="pbtns">';
   if (e.type === 'boiler') h += '<button data-act="descale">Descale (20 s outage)</button>';
-  if (kind(e) === 'machine' && !B.store) h += '<button data-act="insert">Insert from inventory</button><button data-act="take">Take outputs</button>';
+  if (kind(e) === 'machine' && !B.store && !B.ctl) h += '<button data-act="insert">Insert from inventory</button><button data-act="take">Take outputs</button>';
   if (kind(e) === 'miner') h += '<button data-act="take">Take ore</button>';
   if (e.type === 'depot') h += '<button data-act="deliver">Deliver from inventory</button>';
   if (e.type === 'chest') h += '<button data-act="takeall">Take all</button><button data-act="store">Store raw materials</button>';
@@ -8633,8 +8639,8 @@ function renderPanelDyn() {
     h += recipeHtml(RECIPE[e.recipe] || RECIPES.find(r => runs(e.type, r)) || RECIPE.store);
   } else if (k === 'machine') {
     const r = RECIPE[e.recipe];
-    if (!r) h += '<p class="dim">Pick a recipe, or feed it an item and it will choose one.</p>';
-    else {
+    if (!r && !BUILD[e.type].ctl) h += '<p class="dim">Pick a recipe, or feed it an item and it will choose one.</p>';
+    else if (r) {
       h += recipeHtml(r);
       const st = e.cy && e.st !== 'power' && e.st !== 'nopole' && e.st !== 'idle' ? 'work' : e.st;
       h += `<div class="status"><i style="background:${ST_COL[st]}"></i>${e.type === 'boiler' && st === 'output' ? 'Steam full, waiting for demand' : ST_TXT[st] || ''}${BUILD[e.type].kw ? ` · ${BUILD[e.type].kw} kW` : BUILD[e.type].gen ? ` · ${Math.round(e.cy ? e.kw || 0 : 0)} / ${BUILD[e.type].gen} kW out` : BUILD[e.type].sun || BUILD[e.type].marine ? ' · needs no power' : ' · fuel-fired'}</div>`;
@@ -9324,6 +9330,7 @@ const CHAINS = [
   { n: 'Tack gel launcher', l: [['isobutylene + AlCl₃ in hexane', 'Pressure reactor', 'polyisobutylene'], ['PIB + rosin ester + fumed silica + base oil', 'Sigma blade kneader', 'tack gel'], ['gel + aluminium + N₂', 'Workshop', 'canisters'], ['PTFE + brass', 'Workshop', 'nozzle'], ['brass + butyl rubber', 'Workshop', 'regulator'], ['bottle + regulator + nozzle', 'Workshop', 'Tack gel launcher']] },
   { n: 'Iron-air battery', l: [['bismuth + sulfur', 'Pressure reactor', 'Bi₂S₃'], ['DRI + Bi₂S₃', 'Ball mill', 'sulfided iron pellets'], ['nickel', 'Wire drawing machine', 'nickel mesh'], ['carbon black + EMD + PTFE', 'Sigma blade kneader', 'air electrode dough'], ['dough + mesh + PTFE', 'Calender', 'air cathode'], ['pellets + cathodes + PP + LiOH + KOH', 'Iron-air cell line', 'cell → module'], ['modules + inverter + concrete', 'build', 'Iron-air battery']] },
   { n: 'Compound bow', l: [['stainless + copper + argon', 'Gas atomiser', '17-4PH powder'], ['powder + wax + PP', 'Sigma blade kneader', 'MIM feedstock'], ['feedstock', 'Injection moulder', 'green broadheads'], ['green + hexane', 'Pressure reactor', 'debound heads'], ['debound + H₂', 'Sinter-HIP furnace', 'broadheads'], ['carbon fibre + epoxy', 'Pultrusion line', 'arrow shafts'], ['shaft + head + PVC vanes + nylon', 'Workshop', 'broadhead arrows'], ['glass fibre + epoxy', 'GRP moulding shop', 'limbs'], ['UHMWPE + beeswax', 'Ring spinning frame', 'string'], ['7075', 'CNC machine shop', 'cams'], ['limbs + cams + string + riser', 'Workshop', 'Compound bow']] },
+  { n: 'Process control room', l: [['implanted wafer + KOH', 'Wet bench', 'MEMS wafer'], ['MEMS wafer + glass', 'Chip assembly line', 'pressure sensor dies'], ['silicone + acid', 'Pressure reactor', 'silicone fill fluid'], ['stainless', 'Transfer press line', 'isolating diaphragm'], ['die + diaphragm + fill fluid + microchip + casting', 'Robotic assembly cell', 'pressure transmitter'], ['board + microchip + die', 'Electronics assembly line', 'positioner → control valve'], ['I/O cards + fibre cable', 'Robotic assembly cell', 'DCS cabinet'], ['cabinets + transmitters + valves + LCDs', 'build', 'Process control room']] },
   { n: 'Rare earth magnets', l: [['monazite', 'Digester + naoh', 're_oh', 'Leach tank + hcl + water', 'recl3', '+', 'th_cake'], ['recl3', 'Solvent extraction + diesel', 'ndcl3', '+', 'ce_oxide'], ['ndcl3', 'Precipitator + soda_ash', 'ndpr_oxide', 'Electrolysis cell + anode + hf', 'nd_metal'], ['borax', 'Arc furnace + pig_iron + coke', 'ferroboron'], ['nd_metal', 'Vacuum induction furnace + ferroboron + steel + argon', 'ndfeb_strip', 'HD vessel + h2', 'hd_powder', 'Jet mill + n2', 'ndfeb_fine'], ['ndfeb_fine', 'Field press + n2', 'ndfeb_green', 'Sinter-HIP furnace + argon', 'ndfeb_block', 'Multi-wire saw + diamond_grit + water', 'ndfeb_bare'], ['ndfeb_bare', 'Plating line + copper_cathode + niso4', 'ndfeb_plated', 'Pulse magnetiser', 'ndfeb', 'Workshop + wire + plate', 'pm_motor'], ['ndfeb_swarf', 'Leach tank + hcl + water', 'ndcl3'], ['th_cake', 'Workshop + concrete + plate', 'waste_drum']], d: 'Monazite from the mineral sand separator is cracked with caustic soda and dissolved in hydrochloric acid, leaving thorium behind. Hundreds of solvent extraction stages split off neodymium and praseodymium, with cerium as a by-product. Reduced to metal and alloyed with iron and boron from desert borax, they make the strongest magnets there are, for direct-drive wind turbines and compact motors.' },
   { n: 'Water treatment', l: [['al_hydroxide', 'Pressure reactor + acid', 'alum'], ['water', 'Water treatment works + alum + cl2 + carbon bed', 'potable'], ['spent_carbon', 'Kiln + steam', 'carbon'], ['nylon', 'Workshop + polyester + glass_fibre', 'ro_membrane'], ['water', 'Reverse osmosis + membranes', 'potable'], ['potable', 'Blow moulder + pet', 'water_bottle'], ['bleach', 'Blow moulder + polyethylene', 'bleach_jug']], d: 'Alum makes dirt clump into flocs that settle and filter out, and a little chlorine disinfects what is left. An activated carbon bed doubles the rate but fills up and has to be reactivated in a kiln. Reverse osmosis needs only power and membranes, which slowly foul and need replacing.' },
   { n: 'Farming and fermentation', l: [['npk', 'Farm + water', 'sugar_beet'], ['npk', 'Farm + water', 'maize'], ['sugar_beet', 'Sugar factory + quicklime + co2 + water', 'sugar', '+', 'molasses'], ['molasses', 'Fermenter + water', 'ethanol', '+', 'co2'], ['maize', 'Fermenter + water', 'ethanol', '+', 'ddgs'], ['ethanol', 'Pressure reactor', 'ethylene'], ['molasses', 'Fermenter + o2 + quicklime + acid', 'citric', '+', 'gypsum'], ['ethanol', 'Blow moulder + polyethylene', 'sanitiser']], d: 'Fertiliser and water grow sugar beet and maize. The sugar factory cleans beet juice with lime and carbon dioxide, so it soaks up CO₂ from your kilns. Yeast turns molasses and maize into ethanol, which hot alumina dehydrates to ethylene for green plastics. A mould turns molasses into citric acid.' },
