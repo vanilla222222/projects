@@ -171,6 +171,12 @@ const ITEMS = {
   pbzn_sinter: { n: 'Lead-Zinc Sinter', c: '#6a5a50', f: 'Hard porous lumps of mixed lead and zinc oxides, roasted on a strand and strong enough to carry the burden of a shaft furnace' },
   isf_zinc: { n: 'Prime Western Zinc', c: '#a0a8b0', f: 'Zinc caught from the furnace gas in a rain of molten lead, about 98.5% pure. Fine for galvanising and die-casting alloy' },
   waelz_oxide: { n: 'Waelz Oxide', c: '#d8d0b8', f: 'A fluffy pale oxide caught in the kiln baghouse, about 60% zinc. The zinc boiled out of the charge and burned again in the freeboard' },
+  lode_tin: { n: 'Lode Tin Ore', c: '#5a5048', f: 'Hard granite vein rock with fine cassiterite grains locked in quartz, tourmaline and pyrite. Under 1% tin, far leaner than river gravel' },
+  ground_lodetin: { n: 'Ground Lode Tin Ore', c: '#7a7068', f: 'Lode ore ground just fine enough to free the cassiterite. Grind it any finer and the brittle mineral shatters into slimes' },
+  tin_rough: { n: 'Desulfurised Tin Rougher', c: '#6a6058', f: 'Ground lode ore with the pyrite floated off, ready for the tables' },
+  tin_slimes: { n: 'Tin Slimes', c: '#8a8070', f: 'Cassiterite particles under 20 microns, too fine to settle on a table. In old mills a third of the tin went down the river this way' },
+  tin_fume: { n: 'Tin Fume', c: '#e8e4d8', f: 'Fine white SnO₂ dust from the baghouse, around 55% tin. The tin left the furnace as volatile sulfide and burned back to oxide above the bath' },
+  crude_tin: { n: 'Crude Tin', c: '#8a9098', f: 'Tin from the smelter, about 97%, still carrying iron, lead and bismuth' },
   cylinder: { n: 'Steel Cylinder', c: '#7a8a7a', f: 'Seamless steel gas bottle, tested to 250 bar' },
   cl2_cyl: { n: 'Chlorine Cylinder', c: '#b8d84a', f: 'Liquid Cl₂ under its own vapour pressure, about 7 bar. Released, it boils into a cloud 2.5 times heavier than air that creeps along the ground' },
   nh3_cyl: { n: 'Ammonia Cylinder', c: '#a8c8e8', f: 'Liquid NH₃ at about 9 bar. A base: it neutralises the sulfuric acid in crawler blood. Lighter than air, so the cloud rises and blows away fast' },
@@ -1874,6 +1880,7 @@ const ORES = [
   { item: 'malachite', c: '#2a6a5a', s: '#5ad0a8' },
   { item: 'bentonite', c: '#8a7a60', s: '#e0d0b0' },
   { item: 'smithsonite', c: '#8a8478', s: '#e8e0d0' },
+  { item: 'lode_tin', c: '#4a4440', s: '#b0a090' },
 ];
 
 const BUILD = {
@@ -2089,6 +2096,8 @@ const BUILD = {
   zn_reflux: { n: 'Zinc Reflux Column', kind: 'machine', w: 2, h: 4, cat: 'Smelting', c: '#7a7a8a', ab: 'ZR', kw: 120, cost: { brick: 24, steel: 6, plate: 6 }, d: 'A stack of silicon carbide trays heated from outside. Zinc boils at 907°C and lead at 1749°C, so zinc climbs the column and lead runs back down.' },
   bath_smelter: { n: 'Top-Submerged Lance Smelter', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#7a5a3a', ab: 'TL', kw: 160, cost: { steel: 14, brick: 24, pipe: 6, motor: 2 }, d: 'A tall refractory cylinder with a steel lance blowing oxygen-enriched air deep into the molten bath. The bath churns so hard that concentrate dropped on top melts in seconds.' },
   waelz_kiln: { n: 'Waelz Kiln', kind: 'machine', w: 5, h: 2, cat: 'Smelting', c: '#8a6a4a', ab: 'WK', kw: 140, cost: { steel: 14, brick: 24, motor: 3 }, d: 'A long rotary kiln tumbling ore with coke. Zinc is reduced in the bed, boils off, burns again above it and leaves with the gas as fine oxide dust.' },
+  shaking_table: { n: 'Shaking Table', kind: 'machine', w: 3, h: 2, cat: 'Processing', c: '#6a8a7a', ab: 'ST', kw: 6, cost: { plate: 6, wood: 6, motor: 1 }, d: 'A riffled deck rocking with a fast forward stroke and a slow return. Wash water carries light quartz off the side while the heavy cassiterite creeps along the riffles to the end.' },
+  tin_crystallizer: { n: 'Tin Crystalliser', kind: 'machine', w: 2, h: 3, cat: 'Smelting', c: '#9098a8', ab: 'TX', kw: 50, cost: { stainless: 8, steel: 6, motor: 2 }, d: 'A sloping heated trough with a screw turning slowly inside. Pure tin crystals freeze first and are pushed uphill, while a lead and bismuth rich liquid drains to the bottom.' },
   kiln: { n: 'Lime Kiln', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#b0a080', ab: 'LK', cost: { brick: 8, plate: 2 }, d: 'Burns limestone into quicklime.' },
   roaster: { n: 'Roaster', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#a06a3a', ab: 'RO', kw: 30, cost: { brick: 8, plate: 4 }, d: 'Burns sulfur out of sulfide concentrates. Gives off SO₂.' },
   blast: { n: 'Blast Furnace', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#7a3a2a', ab: 'BF', cost: { brick: 20, casting: 10 }, d: 'Reduces oxides with coke.' },
@@ -3707,6 +3716,14 @@ const RECIPES = [
   { id: 'waelz', n: 'Waelz Process', b: 'waelz_kiln', t: 4, i: { smithsonite: 4, coke: 2 }, o: { waelz_oxide: 2, slag: 2 }, fo: { co2: 6 }, eq: 'ZnO + C → Zn(g) + CO ; 2Zn(g) + O₂ → 2ZnO', note: 'The kiln turns slowly so the bed stays reducing while the gas above it burns. Low-grade oxide ore that no flotation cell could treat becomes a rich zinc feed.' },
   { id: 'waelz_leach', n: 'Waelz Oxide Neutral Leach', b: 'neutral_leach', t: 4, i: { waelz_oxide: 2 }, fi: { zn_spent: 30 }, fo: { zn_neutral: 30 }, eq: 'ZnO + H₂SO₄ → ZnSO₄ + H₂O', note: 'The oxide is washed with soda first to take out chloride, then dissolves in return electrolyte like calcine does.' },
   { id: 'waelz_acid', n: 'Waelz Oxide Acid Leach', b: 'leach', t: 3, i: { waelz_oxide: 1 }, fi: { acid: 20 }, fo: { znso4: 20 }, eq: 'ZnO + H₂SO₄ → ZnSO₄ + H₂O' },
+  { id: 'crush_lodetin', n: 'Lode Tin Grinding', b: 'mill', t: 3, i: { lode_tin: 3 }, fi: { water: 15 }, o: { ground_lodetin: 3 }, note: 'Ground in stages with screens between, taking each size off as soon as it is free so the cassiterite is not overground.' },
+  { id: 'tin_sulfloat', n: 'Sulfide Removal Flotation', b: 'flotation', t: 3, i: { ground_lodetin: 4, sipx: 1 }, fi: { water: 20 }, o: { tin_rough: 3, pyrite_conc: 1 }, eq: 'FeS₂ + xanthate → froth ; SnO₂ stays in pulp', note: 'Pyrite is almost as dense as cassiterite and would ride the tables with it, so the sulfides are floated off first.' },
+  { id: 'tin_table', n: 'Tin Tabling', b: 'shaking_table', t: 3, i: { tin_rough: 3 }, fi: { water: 15 }, o: { tin_conc: 1, tin_slimes: 1, tailings: 1 }, eq: 'ρ SnO₂ 6.9 vs ρ quartz 2.65', note: 'Rougher, cleaner and recleaner tables raise the grade to about 65% tin. The overflow carries the slimes off to be thickened.' },
+  { id: 'tin_table_alluv', n: 'Alluvial Tin Tabling', b: 'shaking_table', t: 3, i: { cassiterite: 4 }, fi: { water: 15 }, o: { tin_conc: 2, tin_slimes: 1, tailings: 1 }, note: 'Tables finish the spiral rougher concentrate and catch the fine tin spirals let through.' },
+  { id: 'tin_fuming', n: 'Sulfide Fuming', b: 'bath_smelter', t: 5, i: { tin_slimes: 4, pyrite_conc: 1, coke: 1 }, fi: { o2: 6 }, o: { tin_fume: 2, slag: 2 }, fo: { so2: 8 }, eq: 'SnO₂ + FeS₂ (+C) → SnS(g) ; 2SnS + 3O₂ → 2SnO₂ + 2SO₂', note: 'Tin sulfide boils off at 1200°C while silica and iron stay in the slag. It burns above the bath and the fume is filtered from the gas.' },
+  { id: 'tin_tsl', n: 'Lance Tin Smelting', b: 'bath_smelter', t: 4, i: { tin_conc: 3, coke: 1, crushed_lime: 1 }, fi: { o2: 4 }, o: { crude_tin: 4, slag: 1 }, fo: { co2: 6 }, eq: 'SnO₂ + 2CO → Sn + 2CO₂', note: 'The lance controls how reducing the bath is. A weak stage takes most of the tin out as metal, then a strong stage cleans the slag so little is lost in it.' },
+  { id: 'tin_tsl_fume', n: 'Fume Smelting', b: 'bath_smelter', t: 4, i: { tin_fume: 3, coke: 1 }, fi: { o2: 2 }, o: { crude_tin: 2 }, fo: { co2: 4 }, eq: 'SnO₂ + 2CO → Sn + 2CO₂', note: 'The fume is pelletised so it does not blow straight back out with the gas.' },
+  { id: 'tin_crystal', n: 'Continuous Crystallisation', b: 'tin_crystallizer', t: 4, i: { crude_tin: 5 }, o: { tin: 4, solder: 1 }, eq: 'Sn freezes at 232°C ; Sn-Pb-Bi eutectic stays liquid', note: 'Iron is first skimmed off as a dross after stirring in sulfur. The crystalliser then makes tin over 99.95% and a lead and bismuth rich solder alloy.' },
   { id: 'kraft_cook', n: 'Kraft Cook', b: 'digester', t: 4, i: { wood_chips: 4 }, fi: { wl: 20, steam: 10 }, o: { pulp: 2 }, fo: { bl: 30 }, eq: 'Lignin + OH⁻ + HS⁻ → soluble lignin fragments', note: 'Carl Dahl, 1879. Chips cook at 170°C for two hours. Hydrosulfide cleaves the ether links that bind lignin, so the fibres fall apart unharmed.' },
   { id: 'soda_cook', n: 'Soda Cook', b: 'digester', t: 4, i: { wood_chips: 4 }, fi: { naoh: 20, steam: 10 }, o: { pulp: 1 }, fo: { bl: 30 }, eq: 'Lignin + OH⁻ → soluble lignin fragments', note: 'The older soda process of 1851. Caustic alone is slower and harsher, so half the fibre is lost. Use it to start up a new mill before the liquor loop is running.' },
   { id: 'recover', n: 'Liquor Recovery', b: 'recovery', t: 3, fi: { bl: 30, water: 60 }, fo: { steam: 60, so2: 1 }, o: { smelt: 2 }, bleed: ['so2'], eq: 'Na-organics + O₂ → Na₂CO₃ + CO₂ + H₂O (steam)', note: 'Tomlinson recovery boiler, 1934. Black liquor is evaporated to 70% solids and sprayed into the furnace. About a tenth of the sodium is lost each round.' },
@@ -4871,6 +4888,8 @@ const ORDERS = [
   { c: 'Mini-mill', item: 'dri', n: 400, tier: 4, rw: { dri_shaft: 1, arc: 1 }, d: 'Clean iron units to dilute the copper and tin in their scrap.' },
   { c: 'Die-casting shop', item: 'isf_zinc', n: 300, tier: 3, rw: { waelz_kiln: 1, bath_smelter: 1 }, d: 'Zinc for alloy housings and fittings. Prime western grade is fine once it is alloyed.' },
   { c: 'Cable sheathing works', item: 'lead', n: 500, tier: 4, rw: { isf: 1, zn_reflux: 1 }, d: 'Lead for extruded sheaths on submarine power cables.' },
+  { c: 'Tin trader', item: 'tin_conc', n: 300, tier: 3, rw: { shaking_table: 3, bath_smelter: 1 }, d: 'Tabled concentrate for a toll smelter downriver.' },
+  { c: 'Electronics assembler', item: 'tin', n: 600, tier: 4, rw: { tin_crystallizer: 1, flotation: 1 }, d: 'High purity tin for lead-free solder on circuit boards.' },
   { c: 'Rail operator', item: 'traction_pack', n: 4, tier: 5, rw: { rail_charger: 2, rail: 100 }, d: 'Packs to convert two shunting locomotives off diesel.' },
 ];
 
