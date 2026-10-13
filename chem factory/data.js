@@ -208,6 +208,10 @@ const ITEMS = {
   matte_powder: { n: 'Granulated Matte', c: '#4a3428', f: 'Matte tapped into a water jet, frozen into sand-sized grains and ground fine enough to burn in suspension' },
   pulv_coal: { n: 'Pulverised Coal', c: '#2a2a2e', f: 'Coal dried and ground finer than flour, conveyed by nitrogen so it cannot ignite in the pipes' },
   ore_fines: { n: 'Dried Iron Ore Fines', c: '#8a4a3a', f: 'Raw ore crushed below 6 mm and dried, too fine for a blast furnace but just right for injecting into a molten bath' },
+  dolomite: { n: 'Dolomite', c: '#d8d0c0', f: 'CaMg(CO₃)₂, a pale carbonate rock like limestone but with half the calcium replaced by magnesium. Fizzes only weakly in cold acid' },
+  dolime: { n: 'Calcined Dolomite', c: '#f0ece0', f: 'CaO·MgO from burning dolomite, a reactive white lime that slakes and absorbs moisture fast' },
+  mg_briq: { n: 'Pidgeon Briquettes', c: '#a8a8a0', f: 'Calcined dolomite, ferrosilicon and a little fluorspar pressed into pillow-shaped briquettes so gas can flow round them in the retort' },
+  mg_crown: { n: 'Magnesium Crowns', c: '#c8ccd0', f: 'Rings of crystalline magnesium grown on the cooled end of the retort, scraped out by hand' },
   cylinder: { n: 'Steel Cylinder', c: '#7a8a7a', f: 'Seamless steel gas bottle, tested to 250 bar' },
   cl2_cyl: { n: 'Chlorine Cylinder', c: '#b8d84a', f: 'Liquid Cl₂ under its own vapour pressure, about 7 bar. Released, it boils into a cloud 2.5 times heavier than air that creeps along the ground' },
   nh3_cyl: { n: 'Ammonia Cylinder', c: '#a8c8e8', f: 'Liquid NH₃ at about 9 bar. A base: it neutralises the sulfuric acid in crawler blood. Lighter than air, so the cloud rises and blows away fast' },
@@ -1920,6 +1924,7 @@ const ORES = [
   { item: 'pentlandite', c: '#5a4a30', s: '#d0b070' },
   { item: 'nepheline', c: '#7a746c', s: '#d8d0c8' },
   { item: 'gold_ore', c: '#6a6458', s: '#e8c050' },
+  { item: 'dolomite', c: '#b8b0a0', s: '#ece6da' },
 ];
 
 const BUILD = {
@@ -2156,6 +2161,8 @@ const BUILD = {
   flash_converter: { n: 'Flash Converting Furnace', kind: 'machine', w: 4, h: 3, cat: 'Smelting', c: '#8a5a3a', ab: 'FC', kw: 120, cost: { brick: 26, steel: 14, lead_sheet: 4, pcb: 2 }, d: 'A twin of the flash smelter fed with ground matte instead of concentrate. It runs continuously and seals in the gas, unlike batch Peirce-Smith converters that spill fume every time they tilt.' },
   pci_plant: { n: 'Coal Injection Plant', kind: 'machine', w: 3, h: 2, cat: 'Processing', c: '#4a4a50', ab: 'PC', kw: 90, cost: { steel: 12, motor: 3, pipe: 6, pcb: 1 }, d: 'A vertical roller mill swept with hot inert gas, bag filters and pressurised injection vessels that dose coal into each tuyere of the blast furnace.' },
   srv: { n: 'Smelt Reduction Vessel', kind: 'machine', w: 4, h: 4, cat: 'Smelting', c: '#7a4a3a', ab: 'SR', kw: 200, cost: { brick: 30, steel: 18, pump: 2, pcb: 3 }, d: 'A refractory vessel holding a molten iron bath. Ore fines and coal are shot deep into the metal through water-cooled lances, while hot blast burns the gas above to keep the bath hot. A cyclone preheater dries the fines first. No coke ovens and no sinter plant.' },
+  briq_press: { n: 'Roller Briquetting Press', kind: 'machine', w: 2, h: 2, cat: 'Processing', c: '#7a7a70', ab: 'RB', kw: 45, cost: { steel: 10, casting: 4, motor: 2, pcb: 1 }, d: 'Two rolls with matching pockets squeeze fine powder into dense briquettes at hundreds of bar, with no binder.' },
+  pidgeon_retort: { n: 'Pidgeon Retort Furnace', kind: 'machine', w: 4, h: 2, cat: 'Smelting', c: '#8a7a70', ab: 'PG', kw: 140, cost: { brick: 20, stainless: 8, pump: 2, pcb: 2 }, d: 'A row of nickel-chromium steel tubes set through a gas-fired furnace at 1200°C, under hard vacuum. Magnesium vapour rises from the briquettes and condenses in the water-cooled ends that stick out of the wall.' },
   kiln: { n: 'Lime Kiln', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#b0a080', ab: 'LK', cost: { brick: 8, plate: 2 }, d: 'Burns limestone into quicklime.' },
   roaster: { n: 'Roaster', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#a06a3a', ab: 'RO', kw: 30, cost: { brick: 8, plate: 4 }, d: 'Burns sulfur out of sulfide concentrates. Gives off SO₂.' },
   blast: { n: 'Blast Furnace', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#7a3a2a', ab: 'BF', cost: { brick: 20, casting: 10 }, d: 'Reduces oxides with coke.' },
@@ -3832,6 +3839,11 @@ const RECIPES = [
   { id: 'ore_dry', n: 'Ore Fines Preheating', b: 'srv', t: 3, i: { iron_ore: 4 }, fi: { fuel_gas: 2 }, o: { ore_fines: 4 }, fo: { steam: 3 }, eq: 'Fe₂O₃·nH₂O → Fe₂O₃ + nH₂O' },
   { id: 'hismelt', n: 'Smelting Reduction', b: 'srv', t: 4, i: { ore_fines: 5, pulv_coal: 2, crushed_lime: 1 }, fi: { o2: 10 }, o: { pig_iron: 3, slag: 2 }, fo: { co2: 16 }, eq: 'Fe₂O₃ + 3C → 2Fe + 3CO (in the bath) ; CO + ½O₂ → CO₂ (above it)', note: 'The ore reduces in the liquid iron itself. Phosphorus goes to the slag instead of the metal, so high-phosphorus ores that a blast furnace cannot use make good iron here.' },
   { id: 'bos_scrap', n: 'Oxygen Steelmaking with Scrap', b: 'converter', t: 3, i: { pig_iron: 3, steel_scrap: 1, quicklime: 1 }, fi: { o2: 20 }, o: { steel: 4, slag: 1 }, fo: { co: 10 }, eq: 'C + ½O₂ → CO ; heat melts the scrap', note: 'Burning the carbon and silicon out of hot metal gives off more heat than the bath needs, so a fifth of the charge can be cold scrap. The converter gas is caught for fuel.' },
+  { id: 'dolime', n: 'Dolomite Calcining', b: 'kiln', t: 4, i: { dolomite: 3, coal: 1 }, o: { dolime: 2 }, fo: { co2: 14 }, eq: 'CaMg(CO₃)₂ → CaO·MgO + 2CO₂' },
+  { id: 'mg_briq', n: 'Silicothermic Briquetting', b: 'briq_press', t: 2, i: { dolime: 5, ferrosilicon: 1, fluorspar: 1 }, o: { mg_briq: 5 }, eq: '2(CaO·MgO) + FeSi75 + 2.5% CaF₂', note: 'Fluorspar speeds the reaction. Everything must be bone dry, as water would oxidise the magnesium vapour.' },
+  { id: 'pidgeon', n: 'Pidgeon Process', b: 'pidgeon_retort', t: 8, i: { mg_briq: 5 }, fi: { fuel_gas: 6 }, o: { mg_crown: 2, slag: 3 }, fo: { co2: 4 }, eq: '2(CaO·MgO) + Si(Fe) → 2Mg(g) + Ca₂SiO₄ + Fe', note: 'Silicon cannot normally take oxygen from magnesium, but under vacuum the magnesium boils away as it forms and the reaction keeps going. Lime in the dolomite ties up the silica as dicalcium silicate.' },
+  { id: 'mg_crown_melt', n: 'Crown Remelting', b: 'ind_furnace', t: 3, i: { mg_crown: 3 }, fi: { sf6: 1, argon: 2 }, o: { magnesium: 3 }, eq: 'Mg (crowns) → Mg ingot under flux and SF₆ cover', note: 'The crowns are melted under a chloride flux that takes out oxide skins and cast into ingots.' },
+  { id: 'dow_mg', n: 'Dolime Magnesia Precipitation', b: 'leach', t: 4, i: { dolime: 1 }, fi: { bittern: 20 }, o: { mgoh2: 2, cacl2: 1 }, eq: 'CaO·MgO + MgCl₂ + 2H₂O → 2Mg(OH)₂ + CaCl₂', note: 'Bittern left after salt making is rich in magnesium chloride. Calcined dolomite precipitates it and brings its own magnesium along, so twice the hydroxide comes out of each tonne of lime.' },
   { id: 'kraft_cook', n: 'Kraft Cook', b: 'digester', t: 4, i: { wood_chips: 4 }, fi: { wl: 20, steam: 10 }, o: { pulp: 2 }, fo: { bl: 30 }, eq: 'Lignin + OH⁻ + HS⁻ → soluble lignin fragments', note: 'Carl Dahl, 1879. Chips cook at 170°C for two hours. Hydrosulfide cleaves the ether links that bind lignin, so the fibres fall apart unharmed.' },
   { id: 'soda_cook', n: 'Soda Cook', b: 'digester', t: 4, i: { wood_chips: 4 }, fi: { naoh: 20, steam: 10 }, o: { pulp: 1 }, fo: { bl: 30 }, eq: 'Lignin + OH⁻ → soluble lignin fragments', note: 'The older soda process of 1851. Caustic alone is slower and harsher, so half the fibre is lost. Use it to start up a new mill before the liquor loop is running.' },
   { id: 'recover', n: 'Liquor Recovery', b: 'recovery', t: 3, fi: { bl: 30, water: 60 }, fo: { steam: 60, so2: 1 }, o: { smelt: 2 }, bleed: ['so2'], eq: 'Na-organics + O₂ → Na₂CO₃ + CO₂ + H₂O (steam)', note: 'Tomlinson recovery boiler, 1934. Black liquor is evaporated to 70% solids and sprayed into the furnace. About a tenth of the sodium is lost each round.' },
@@ -5011,6 +5023,8 @@ const ORDERS = [
   { c: 'Electronics take-back scheme', item: 'cu_scrap', n: 200, tier: 3, rw: { weee_line: 1, anode_furnace: 1 }, d: 'Recovered copper for a closed-loop recycling commitment.' },
   { c: 'Smelter modernisation', item: 'blister_copper', n: 400, tier: 4, rw: { flash_converter: 1, isa_tankhouse: 1 }, d: 'Blister for a refinery while its own converters are relined.' },
   { c: 'Foundry merchant', item: 'pig_iron', n: 600, tier: 3, rw: { pci_plant: 1, srv: 1 }, d: 'Low-phosphorus pig iron for ductile iron castings.' },
+  { c: 'Die-caster', item: 'magnesium', n: 300, tier: 4, rw: { pidgeon_retort: 1, briq_press: 1 }, d: 'Magnesium for steering wheel frames and laptop housings.' },
+  { c: 'Refractory works', item: 'mgo', n: 400, tier: 3, rw: { pidgeon_retort: 1 }, d: 'Dead-burned magnesia for steel ladle bricks.' },
   { c: 'Rail operator', item: 'traction_pack', n: 4, tier: 5, rw: { rail_charger: 2, rail: 100 }, d: 'Packs to convert two shunting locomotives off diesel.' },
 ];
 
