@@ -6947,6 +6947,215 @@ IP.drop = (g, c, r, n, gas) => {
   g.fillStyle = 'rgba(255,255,255,0.65)'; ell(g, 24, 38, 3.5, 7, 0.3); g.fill();
   if (/oil|tar|crude|bitumen|molasses|syrup|latex/.test(n)) { g.strokeStyle = 'rgba(255,255,255,0.25)'; g.lineWidth = 1.5; g.beginPath(); g.arc(34, 44, 9, 0.2, 1.4); g.stroke(); }
 };
+const MET = (g, x0, y0, x1, y1, c) => lgr(g, x0, y0, x1, y1, hsh(c, 1.4), c, hsh(c, 0.58));
+const mcol = c => hlum(c) < 50 ? hsh(c, 1.9) : c;
+IP.cabinet = (g, c, r, n) => {
+  const m = mcol(c);
+  dshad(g, 32, 58, 22, 3);
+  if (/hood/.test(n)) {
+    rrect(g, 8, 4, 48, 54, 2); g.fillStyle = MET(g, 8, 0, 56, 0, '#d8dce0'); g.fill(); ink(g);
+    g.fillStyle = 'rgba(150,200,230,0.75)'; g.fillRect(13, 12, 38, 22); g.strokeStyle = '#555'; g.lineWidth = 2; g.strokeRect(13, 12, 38, 22);
+    g.fillStyle = '#3a3e44'; g.fillRect(13, 34, 38, 4); g.fillStyle = '#f2f2ee'; g.fillRect(13, 38, 38, 18); g.strokeStyle = 'rgba(0,0,0,0.4)'; g.lineWidth = 1; g.strokeRect(13, 38, 18, 18); g.strokeRect(33, 38, 18, 18);
+    g.fillStyle = '#8a9096'; g.fillRect(26, 0, 12, 5); return;
+  }
+  if (/jbox|junction/.test(n)) {
+    rrect(g, 12, 14, 40, 36, 4); g.fillStyle = MET(g, 0, 14, 0, 50, '#9aa0a6'); g.fill(); ink(g);
+    g.fillStyle = '#e0b030'; poly(g, [32, 22, 40, 36, 24, 36]); g.fill(); g.fillStyle = '#222'; g.fillRect(31, 26, 2, 6); g.fillRect(31, 33, 2, 2);
+    g.fillStyle = '#2a2e34'; for (const x of [18, 32, 46]) { g.fillRect(x - 3, 50, 6, 7); } return;
+  }
+  const big = /breaker|ctrl|cnc|vfd|drive/.test(n);
+  rrect(g, big ? 12 : 16, 4, big ? 40 : 32, 54, 3); g.fillStyle = MET(g, 12, 0, 52, 0, m); g.fill(); ink(g);
+  g.strokeStyle = 'rgba(0,0,0,0.35)'; g.lineWidth = 1; g.beginPath(); g.moveTo(32, 6); g.lineTo(32, 56); g.stroke();
+  if (/ctrl|cnc|drive|vfd/.test(n)) { g.fillStyle = '#10181e'; g.fillRect(18, 10, 28, 16); g.fillStyle = '#5fe0a0'; g.fillRect(20, 13, 14, 2); g.fillRect(20, 17, 20, 2); g.fillRect(20, 21, 9, 2); }
+  if (/cnc|ctrl/.test(n)) { g.fillStyle = '#2a2e34'; for (let j = 0; j < 3; j++) for (let i = 0; i < 5; i++) g.fillRect(18 + i * 6, 30 + j * 5, 4, 3); g.fillStyle = '#c03030'; g.beginPath(); g.arc(40, 50, 4, 0, 7); g.fill(); ink(g, 1); }
+  else if (/breaker/.test(n)) { g.fillStyle = '#2a2e34'; g.fillRect(18, 12, 28, 10); g.fillStyle = '#30a050'; g.fillRect(20, 26, 8, 6); g.fillStyle = '#c03030'; g.fillRect(36, 26, 8, 6); g.fillStyle = '#e8e8e0'; g.fillRect(22, 38, 20, 12); g.strokeStyle = '#555'; g.strokeRect(22, 38, 20, 12); }
+  else { g.strokeStyle = 'rgba(0,0,0,0.4)'; for (let y = 32; y < 52; y += 3) { g.beginPath(); g.moveTo(18, y); g.lineTo(46, y); g.stroke(); } g.fillStyle = '#30d060'; g.beginPath(); g.arc(42, 13, 2, 0, 7); g.fill(); }
+};
+IP.vessel = (g, c, r, n) => {
+  const m = mcol(c);
+  dshad(g, 32, 58, 26, 3);
+  if (/head/.test(n)) { g.beginPath(); g.moveTo(6, 46); g.quadraticCurveTo(6, 10, 32, 10); g.quadraticCurveTo(58, 10, 58, 46); g.closePath(); g.fillStyle = rgr(g, 32, 30, 30, hsh(m, 1.45), hsh(m, 0.6)); g.fill(); ink(g); g.fillStyle = hsh(m, 0.7); g.fillRect(4, 44, 56, 8); ink(g, 1); g.fillStyle = '#3a3e44'; for (let i = 0; i < 5; i++) { g.beginPath(); g.arc(18 + i * 7, 26 - Math.abs(i - 2) * 2, 2.5, 0, 7); g.fill(); } return; }
+  if (/condenser|tank|composite|fibreglass/.test(n)) {
+    rrect(g, 4, 18, 56, 30, 15); g.fillStyle = MET(g, 0, 18, 0, 48, m); g.fill(); ink(g);
+    if (/composite|fibreglass/.test(n)) { g.save(); rrect(g, 4, 18, 56, 30, 15); g.clip(); g.strokeStyle = 'rgba(0,0,0,0.22)'; g.lineWidth = 1; for (let x = -20; x < 70; x += 6) { g.beginPath(); g.moveTo(x, 18); g.lineTo(x + 18, 48); g.stroke(); } g.restore(); g.fillStyle = '#9aa0a6'; g.fillRect(56, 29, 6, 8); ink(g, 1); }
+    else { g.strokeStyle = 'rgba(0,0,0,0.35)'; for (const x of [16, 48]) { g.beginPath(); g.moveTo(x, 18); g.lineTo(x, 48); g.stroke(); } g.fillStyle = hsh(m, 0.75); for (const x of [22, 42]) { g.fillRect(x - 4, 10, 8, 9); g.fillRect(x - 4, 47, 8, 7); } }
+    return;
+  }
+  const sg = /steam_gen|steam generator/.test(n);
+  if (sg) { rrect(g, 20, 4, 24, 20, 8); g.fillStyle = MET(g, 20, 0, 44, 0, m); g.fill(); ink(g); poly(g, [20, 22, 44, 22, 40, 30, 24, 30]); g.fill(); ink(g, 1); rrect(g, 24, 28, 16, 30, 6); g.fill(); ink(g); }
+  else { rrect(g, 18, 4, 28, 54, 13); g.fillStyle = MET(g, 18, 0, 46, 0, m); g.fill(); ink(g); g.strokeStyle = 'rgba(0,0,0,0.3)'; g.lineWidth = 1; for (const y of [18, 30, 42]) { g.beginPath(); g.moveTo(18, y); g.lineTo(46, y); g.stroke(); } }
+  g.fillStyle = hsh(m, 0.7); for (const y of sg ? [12, 40] : [16, 34]) { g.fillRect(sg ? 44 : 46, y, 8, 6); g.fillRect(sg ? 12 : 10, y + 4, 8, 6); }
+};
+IP.pump = (g, c, r, n) => {
+  const m = mcol(c);
+  dshad(g, 32, 58, 26, 3);
+  if (/turbo/.test(n)) {
+    rrect(g, 16, 22, 32, 34, 4); g.fillStyle = MET(g, 16, 0, 48, 0, '#c8ccd0'); g.fill(); ink(g);
+    ell(g, 32, 20, 22, 8); g.fillStyle = MET(g, 10, 0, 54, 0, '#d8dce0'); g.fill(); ink(g); ell(g, 32, 20, 15, 5); g.fillStyle = '#2a2e34'; g.fill();
+    g.strokeStyle = '#8a9096'; g.lineWidth = 1.2; for (let i = 0; i < 10; i++) { const a = i / 10 * 6.28; g.beginPath(); g.moveTo(32, 20); g.lineTo(32 + Math.cos(a) * 14, 20 + Math.sin(a) * 4.6); g.stroke(); }
+    g.fillStyle = m; g.fillRect(16, 40, 32, 5); g.fillStyle = '#3a3e44'; g.fillRect(48, 44, 8, 6); ink(g, 1); return;
+  }
+  if (/coolant|rcp/.test(n)) {
+    rrect(g, 20, 4, 24, 26, 3); g.fillStyle = MET(g, 20, 0, 44, 0, m); g.fill(); ink(g); g.strokeStyle = 'rgba(0,0,0,0.35)'; g.lineWidth = 1; for (let x = 23; x < 42; x += 3) { g.beginPath(); g.moveTo(x, 6); g.lineTo(x, 28); g.stroke(); }
+    g.fillStyle = hsh(m, 0.7); g.fillRect(16, 30, 32, 5); ink(g, 1);
+    g.beginPath(); g.arc(32, 46, 13, 0, 7); g.fillStyle = rgr(g, 32, 46, 13, '#d8dce0', '#6a7078'); g.fill(); ink(g); g.fillStyle = '#8a9096'; g.fillRect(4, 42, 16, 8); g.fillRect(44, 42, 16, 8); ink(g, 1); return;
+  }
+  if (/piston|axial/.test(n)) {
+    rrect(g, 12, 18, 34, 28, 5); g.fillStyle = MET(g, 0, 18, 0, 46, m); g.fill(); ink(g);
+    g.fillStyle = hsh(m, 0.75); g.fillRect(44, 14, 6, 36); ink(g, 1); g.fillStyle = '#c8ccd0'; g.fillRect(50, 28, 10, 8); ink(g, 1);
+    g.fillStyle = hsh(m, 0.6); rrect(g, 18, 8, 14, 10, 2); g.fill(); ink(g, 1); rrect(g, 18, 46, 14, 8, 2); g.fill(); ink(g, 1); return;
+  }
+  g.beginPath(); g.arc(22, 34, 15, 0, 7); g.fillStyle = rgr(g, 22, 34, 15, hsh(m, 1.4), hsh(m, 0.6)); g.fill(); ink(g);
+  g.fillStyle = hsh(m, 0.8); g.fillRect(16, 10, 12, 10); ink(g, 1); g.beginPath(); g.arc(22, 34, 5, 0, 7); g.fillStyle = '#2a2e34'; g.fill();
+  rrect(g, 36, 24, 22, 22, 3); g.fillStyle = MET(g, 0, 24, 0, 46, '#4a6a8a'); g.fill(); ink(g); g.strokeStyle = 'rgba(0,0,0,0.35)'; g.lineWidth = 1; for (let x = 40; x < 56; x += 3) { g.beginPath(); g.moveTo(x, 25); g.lineTo(x, 45); g.stroke(); }
+  g.fillStyle = '#3a3e44'; g.fillRect(6, 50, 54, 5);
+};
+IP.instrument = (g, c, r, n) => {
+  const m = mcol(c);
+  dshad(g, 32, 58, 28, 3);
+  if (/nmr|spectrometer/.test(n)) {
+    g.fillStyle = '#3a3e44'; for (const x of [12, 28]) g.fillRect(x, 46, 3, 10);
+    rrect(g, 8, 8, 28, 40, 10); g.fillStyle = MET(g, 8, 0, 36, 0, '#d8dce0'); g.fill(); ink(g); ell(g, 22, 10, 14, 4); g.fillStyle = '#b8bec4'; g.fill(); ink(g, 1);
+    g.fillStyle = '#c8ccd0'; for (const x of [18, 26]) g.fillRect(x - 1.5, 0, 3, 8);
+    rrect(g, 40, 22, 20, 34, 2); g.fillStyle = MET(g, 0, 22, 0, 56, m); g.fill(); ink(g); g.fillStyle = '#10181e'; g.fillRect(43, 26, 14, 10); g.fillStyle = '#5fe0a0'; g.fillRect(44, 32, 12, 1.5); g.fillRect(48, 28, 1.5, 5); return;
+  }
+  rrect(g, 4, 18, 56, 38, 3); g.fillStyle = MET(g, 0, 18, 0, 56, hlum(m) > 120 ? m : '#d8dce0'); g.fill(); ink(g);
+  g.fillStyle = '#10181e'; g.fillRect(38, 24, 18, 13); g.fillStyle = '#5fe0a0'; g.beginPath(); g.moveTo(39, 34); for (let x = 0; x < 16; x++) g.lineTo(40 + x, 34 - (x % 5 === 2 ? 7 : x % 3 === 0 ? 3 : 1)); g.strokeStyle = '#5fe0a0'; g.lineWidth = 1; g.stroke();
+  rrect(g, 9, 23, 24, 22, 2); g.fillStyle = 'rgba(0,0,0,0.18)'; g.fill(); g.strokeStyle = 'rgba(0,0,0,0.4)'; g.stroke(); g.fillStyle = '#8a9096'; g.fillRect(29, 30, 3, 8);
+  g.fillStyle = m; g.fillRect(4, 48, 56, 3); g.fillStyle = '#c8ccd0'; g.fillRect(14, 10, 6, 9); ink(g, 1);
+};
+IP.magnet = (g, c, r, n) => {
+  dshad(g, 32, 58, 24, 3);
+  if (/alnico/.test(n)) { g.strokeStyle = '#c03030'; g.lineWidth = 12; g.beginPath(); g.arc(32, 28, 16, Math.PI, 0); g.lineTo(48, 44); g.moveTo(16, 28); g.lineTo(16, 44); g.stroke(); g.fillStyle = '#c8ccd0'; g.fillRect(10, 44, 12, 10); g.fillRect(42, 44, 12, 10); g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 1.2; g.strokeRect(10, 44, 12, 10); g.strokeRect(42, 44, 12, 10); return; }
+  if (/superconducting|nmr|sc_magnet|gradient|rf coil|rf_coil/.test(n)) {
+    g.beginPath(); g.arc(32, 32, 26, 0, 7); g.fillStyle = rgr(g, 32, 32, 26, /rf/.test(n) ? '#f0d0a0' : '#eef0f2', /rf/.test(n) ? '#a06030' : '#8a9096'); g.fill(); ink(g);
+    g.beginPath(); g.arc(32, 32, 12, 0, 7); g.fillStyle = '#1e2226'; g.fill(); ink(g, 1);
+    g.strokeStyle = /rf|grad/.test(n) ? '#c87a40' : 'rgba(0,0,0,0.25)'; g.lineWidth = /rf|grad/.test(n) ? 2 : 1; for (const R of [16, 20, 23]) { g.beginPath(); g.arc(32, 32, R, 0, 7); g.stroke(); } return;
+  }
+  if (/core/.test(n)) {
+    g.fillStyle = MET(g, 0, 8, 0, 56, /ferrite/.test(n) ? '#4a4e54' : '#8a9096'); g.fillRect(8, 8, 48, 48); g.fillStyle = 'rgba(0,0,0,0)';
+    g.clearRect(18, 18, 8, 28); g.clearRect(38, 18, 8, 28); g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 1.2; g.strokeRect(8, 8, 48, 48); g.strokeRect(18, 18, 8, 28); g.strokeRect(38, 18, 8, 28);
+    if (!/ferrite/.test(n)) { g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = 0.8; for (let y = 10; y < 56; y += 2.5) { g.beginPath(); g.moveTo(8, y); g.lineTo(56, y); g.stroke(); } }
+    return;
+  }
+  const plated = /ndfeb|plated|neodym/.test(n), base = plated ? '#c8ccd0' : /ferrite/.test(n) ? '#3a3c40' : mcol(c);
+  rrect(g, 8, 18, 48, 28, 3); g.fillStyle = MET(g, 0, 18, 0, 46, base); g.fill(); ink(g);
+  if (!/bare|ground|block/.test(n)) { g.fillStyle = 'rgba(200,40,40,0.85)'; g.fillRect(10, 20, 22, 24); g.fillStyle = 'rgba(40,80,200,0.85)'; g.fillRect(32, 20, 22, 24); g.fillStyle = '#fff'; g.font = 'bold 14px sans-serif'; g.textAlign = 'center'; g.fillText('N', 21, 37); g.fillText('S', 43, 37); }
+  else { g.strokeStyle = 'rgba(255,255,255,0.35)'; g.beginPath(); g.moveTo(12, 22); g.lineTo(52, 22); g.stroke(); }
+};
+IP.comp = (g, c, r, n) => {
+  dshad(g, 32, 58, 20, 3);
+  const leads = (xs, y0, y1, col) => { g.strokeStyle = col || '#c8ccd0'; g.lineWidth = 2; for (const x of xs) { g.beginPath(); g.moveTo(x, y0); g.lineTo(x, y1); g.stroke(); } };
+  if (/mosfet|hemt|transistor/.test(n)) { rrect(g, 18, 4, 28, 16, 2); g.fillStyle = MET(g, 0, 4, 0, 20, '#c8ccd0'); g.fill(); ink(g, 1); g.beginPath(); g.arc(32, 11, 3.5, 0, 7); g.fillStyle = '#2a2e34'; g.fill(); leads([24, 32, 40], 40, 60); rrect(g, 16, 18, 32, 24, 2); g.fillStyle = '#1e2024'; g.fill(); ink(g, 1); g.fillStyle = '#8a9096'; g.font = '6px sans-serif'; g.textAlign = 'center'; g.fillText(/gan|hemt/.test(n) ? 'GaN' : 'SiC', 32, 32); return; }
+  if (/piezo/.test(n)) { g.beginPath(); g.arc(32, 30, 22, 0, 7); g.fillStyle = rgr(g, 32, 30, 22, '#f0d890', '#a08030'); g.fill(); ink(g); g.beginPath(); g.arc(32, 30, 14, 0, 7); g.fillStyle = '#f2f0e8'; g.fill(); ink(g, 1); g.strokeStyle = '#c03030'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(32, 30); g.lineTo(54, 58); g.stroke(); g.strokeStyle = '#222'; g.beginPath(); g.moveTo(14, 40); g.lineTo(46, 60); g.stroke(); return; }
+  if (/varistor|thermistor/.test(n)) { const R = /varistor/.test(n) ? 16 : 9; leads([28, 36], 26, 60); g.beginPath(); g.arc(32, 22, R, 0, 7); g.fillStyle = rgr(g, 32, 22, R, hsh(mcol(c), 1.4), hsh(mcol(c), 0.6)); g.fill(); ink(g); return; }
+  if (/teg|thermoelectric/.test(n)) { rrect(g, 10, 10, 44, 40, 2); g.fillStyle = '#f2f0ea'; g.fill(); ink(g); g.strokeStyle = 'rgba(0,0,0,0.12)'; for (let i = 1; i < 8; i++) { g.beginPath(); g.moveTo(10 + i * 5.5, 10); g.lineTo(10 + i * 5.5, 50); g.stroke(); } g.strokeStyle = '#c03030'; g.lineWidth = 2; g.beginPath(); g.moveTo(14, 48); g.lineTo(10, 60); g.stroke(); g.strokeStyle = '#222'; g.beginPath(); g.moveTo(20, 48); g.lineTo(18, 60); g.stroke(); return; }
+  if (/encoder/.test(n)) { g.beginPath(); g.arc(28, 30, 20, 0, 7); g.fillStyle = MET(g, 8, 10, 48, 50, '#c8ccd0'); g.fill(); ink(g); g.beginPath(); g.arc(28, 30, 13, 0, 7); g.fillStyle = '#2a2e34'; g.fill(); g.beginPath(); g.arc(28, 30, 4, 0, 7); g.fillStyle = '#c8ccd0'; g.fill(); g.strokeStyle = '#2a2e34'; g.lineWidth = 4; g.beginPath(); g.moveTo(44, 42); g.quadraticCurveTo(54, 50, 60, 60); g.stroke(); return; }
+  if (/multiplier/.test(n)) { leads([22, 28, 36, 42], 48, 60); rrect(g, 16, 8, 32, 42, 10); g.fillStyle = 'rgba(200,220,235,0.55)'; g.fill(); ink(g); g.strokeStyle = '#c87a40'; g.lineWidth = 2; g.beginPath(); for (let i = 0; i < 6; i++) { g.moveTo(i % 2 ? 36 : 22, 14 + i * 6); g.lineTo(i % 2 ? 44 : 28, 14 + i * 6); } g.stroke(); return; }
+  if (/interrupter/.test(n)) { g.fillStyle = '#c87a40'; g.fillRect(28, 2, 8, 10); g.fillRect(28, 52, 8, 8); rrect(g, 18, 10, 28, 44, 3); g.fillStyle = MET(g, 18, 0, 46, 0, '#f0eee6'); g.fill(); ink(g); g.fillStyle = '#c8ccd0'; g.fillRect(18, 28, 28, 6); ink(g, 1); return; }
+  if (/arrester|surge/.test(n)) { g.fillStyle = '#8a9096'; g.fillRect(28, 2, 8, 56); for (let i = 0; i < 6; i++) { ell(g, 32, 10 + i * 8, 14, 3.5); g.fillStyle = '#9a9ea4'; g.fill(); ink(g, 1); } return; }
+  if (/contact|cucr/.test(n)) { g.beginPath(); g.arc(32, 32, 22, 0, 7); g.fillStyle = rgr(g, 32, 32, 22, '#f0b080', '#9a5a30'); g.fill(); ink(g); g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 2; for (let i = 0; i < 4; i++) { const a = i * 1.571 + 0.4; g.beginPath(); g.moveTo(32 + Math.cos(a) * 8, 32 + Math.sin(a) * 8); g.lineTo(32 + Math.cos(a + 0.6) * 21, 32 + Math.sin(a + 0.6) * 21); g.stroke(); } g.beginPath(); g.arc(32, 32, 5, 0, 7); g.fillStyle = '#6a3a20'; g.fill(); return; }
+  if (/probe/.test(n)) { g.save(); g.translate(30, 30); g.rotate(-0.5); rrect(g, -8, -22, 16, 34, 6); g.fillStyle = MET(g, -8, 0, 8, 0, '#e8eaec'); g.fill(); ink(g); g.fillStyle = '#2a2e34'; rrect(g, -10, -26, 20, 7, 3); g.fill(); g.restore(); g.strokeStyle = '#3a3e44'; g.lineWidth = 3; g.beginPath(); g.moveTo(36, 40); g.quadraticCurveTo(44, 58, 60, 54); g.stroke(); return; }
+  if (/charger/.test(n)) { rrect(g, 12, 14, 34, 40, 6); g.fillStyle = MET(g, 12, 0, 46, 0, '#f4f4f2'); g.fill(); ink(g); g.fillStyle = '#c8ccd0'; g.fillRect(20, 4, 4, 11); g.fillRect(34, 4, 4, 11); g.fillStyle = '#2a2e34'; rrect(g, 22, 40, 14, 5, 2); g.fill(); return; }
+  if (/hall|sensor|saw|filter/.test(n)) { rrect(g, 8, 26, 48, 26, 2); g.fillStyle = '#2f8a4a'; g.fill(); ink(g, 1); rrect(g, 20, 14, 24, 22, 2); g.fillStyle = MET(g, 0, 14, 0, 36, /saw/.test(n) ? '#c8ccd0' : '#1e2024'); g.fill(); ink(g, 1); g.fillStyle = '#d8b050'; for (let i = 0; i < 5; i++) { g.fillRect(14 + i * 9, 46, 5, 3); } return; }
+  rrect(g, 16, 18, 32, 28, 2); g.fillStyle = '#1e2024'; g.fill(); ink(g); g.fillStyle = '#c8ccd0'; for (let i = 0; i < 5; i++) { g.fillRect(12, 21 + i * 5, 4, 2); g.fillRect(48, 21 + i * 5, 4, 2); }
+};
+IP.robot = (g, c, r, n) => {
+  const m = hlum(c) < 60 ? '#e07a20' : c;
+  dshad(g, 30, 58, 24, 3);
+  if (/joint|module/.test(n)) { rrect(g, 12, 16, 40, 34, 8); g.fillStyle = MET(g, 0, 16, 0, 50, '#c8ccd0'); g.fill(); ink(g); ell(g, 52, 33, 6, 17); g.fillStyle = m; g.fill(); ink(g, 1); ell(g, 52, 33, 3, 8); g.fillStyle = '#2a2e34'; g.fill(); g.strokeStyle = '#2a2e34'; g.lineWidth = 3; g.beginPath(); g.moveTo(16, 40); g.quadraticCurveTo(6, 50, 4, 60); g.stroke(); return; }
+  if (/casting/.test(n)) { g.save(); g.translate(32, 32); g.rotate(-0.6); rrect(g, -26, -8, 52, 16, 8); g.fillStyle = MET(g, 0, -8, 0, 8, '#b8bcc0'); g.fill(); ink(g); for (const x of [-18, 18]) { g.beginPath(); g.arc(x, 0, 9, 0, 7); g.fillStyle = '#9aa0a6'; g.fill(); ink(g, 1); g.beginPath(); g.arc(x, 0, 4, 0, 7); g.fillStyle = '#2a2e34'; g.fill(); } g.restore(); return; }
+  g.fillStyle = '#3a3e44'; rrect(g, 8, 50, 28, 8, 2); g.fill(); ink(g, 1);
+  rrect(g, 12, 38, 20, 14, 3); g.fillStyle = MET(g, 12, 0, 32, 0, m); g.fill(); ink(g, 1);
+  const seg = (x0, y0, x1, y1, w) => { g.strokeStyle = 'rgba(0,0,0,0.55)'; g.lineWidth = w + 2.5; g.lineCap = 'round'; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); g.strokeStyle = m; g.lineWidth = w; g.stroke(); };
+  seg(22, 40, 26, 16, 9); seg(26, 16, 48, 22, 7); seg(48, 22, 54, 34, 5); g.lineCap = 'butt';
+  for (const [x, y, R] of [[22, 40, 6], [26, 16, 5.5], [48, 22, 4.5]]) { g.beginPath(); g.arc(x, y, R, 0, 7); g.fillStyle = '#3a3e44'; g.fill(); }
+  g.fillStyle = '#2a2e34'; g.fillRect(50, 34, 3, 8); g.fillRect(56, 34, 3, 8); g.fillRect(50, 34, 9, 3);
+};
+IP.nozzle = (g, c, r, n) => {
+  dshad(g, 32, 60, 14, 3);
+  rrect(g, 22, 4, 20, 28, 3); g.fillStyle = MET(g, 22, 0, 42, 0, '#3a3e44'); g.fill(); ink(g);
+  rrect(g, 18, 18, 28, 8, 2); g.fillStyle = MET(g, 18, 0, 46, 0, '#c8ccd0'); g.fill(); ink(g, 1);
+  g.fillStyle = mcol(c); g.fillRect(22, 8, 20, 4);
+  poly(g, [22, 32, 42, 32, 35, 52, 29, 52]); g.fillStyle = MET(g, 22, 0, 42, 0, '#d8b060'); g.fill(); ink(g);
+  g.fillStyle = '#c87a40'; g.fillRect(29, 52, 6, 4); ink(g, 1);
+  g.strokeStyle = '#e0b030'; g.lineWidth = 3; g.beginPath(); g.moveTo(42, 10); g.quadraticCurveTo(56, 8, 60, 2); g.stroke();
+  g.strokeStyle = '#2a6ac0'; g.lineWidth = 2; g.beginPath(); g.moveTo(22, 14); g.quadraticCurveTo(8, 16, 4, 6); g.stroke();
+};
+IP.casting = (g, c, r, n) => {
+  const m = mcol(c);
+  dshad(g, 32, 58, 24, 3);
+  if (/tooth|teeth|pick/.test(n)) { for (const [x, s] of /teeth/.test(n) ? [[20, 0.8], [44, 0.8]] : [[32, 1]]) { g.save(); g.translate(x, 34); g.scale(s, s); poly(g, [-12, 22, -12, -2, 0, -24, 12, -2, 12, 22]); g.fillStyle = MET(g, -12, 0, 12, 0, /pick/.test(n) ? '#8a7a6a' : m); g.fill(); ink(g); if (/carbide|pick/.test(n)) { poly(g, [-4, -14, 0, -26, 4, -14]); g.fillStyle = '#c8ccd0'; g.fill(); ink(g, 1); } g.restore(); } return; }
+  if (/bucket/.test(n)) { g.beginPath(); g.moveTo(8, 14); g.lineTo(50, 10); g.quadraticCurveTo(58, 32, 46, 52); g.lineTo(8, 46); g.closePath(); g.fillStyle = MET(g, 0, 10, 0, 52, m); g.fill(); ink(g); g.fillStyle = '#5a5e64'; for (let i = 0; i < 4; i++) { poly(g, [6, 16 + i * 8, 0, 19 + i * 8, 6, 22 + i * 8]); g.fill(); } return; }
+  if (/wax|pattern/.test(n)) { g.fillStyle = '#d8c070'; g.fillRect(29, 6, 6, 50); ink(g, 1); for (let i = 0; i < 4; i++) for (const s of [-1, 1]) { g.save(); g.translate(32 + s * 3, 14 + i * 11); g.scale(s, 1); ell(g, 10, 0, 9, 3.5, -0.2); g.fillStyle = '#e8d488'; g.fill(); ink(g, 1); g.restore(); } return; }
+  if (/mould|mold|shell/.test(n)) { g.beginPath(); g.moveTo(20, 6); g.quadraticCurveTo(52, 10, 46, 30); g.quadraticCurveTo(54, 52, 32, 56); g.quadraticCurveTo(10, 52, 18, 30); g.quadraticCurveTo(10, 12, 20, 6); g.fillStyle = rgr(g, 30, 30, 28, '#f2efe6', '#a8a498'); g.fill(); ink(g); g.beginPath(); g.arc(30, 10, 5, 0, 7); g.fillStyle = '#5a564c'; g.fill(); return; }
+  g.beginPath(); g.moveTo(10, 22); g.lineTo(24, 10); g.lineTo(46, 12); g.lineTo(56, 26); g.lineTo(52, 50); g.lineTo(28, 54); g.lineTo(10, 44); g.closePath(); g.fillStyle = MET(g, 10, 10, 56, 54, m); g.fill(); ink(g);
+  g.fillStyle = 'rgba(0,0,0,0.18)'; for (let i = 0; i < 50; i++) g.fillRect(14 + r() * 38, 16 + r() * 32, 1.5, 1.5);
+  g.beginPath(); g.arc(32, 32, 9, 0, 7); g.fillStyle = hsh(m, 0.55); g.fill(); ink(g, 1); g.beginPath(); g.arc(32, 32, 4, 0, 7); g.fillStyle = '#1e2024'; g.fill();
+  g.fillStyle = 'rgba(0,0,0,0.4)'; for (const [x, y] of [[20, 24], [44, 22], [20, 44], [44, 44]]) { g.beginPath(); g.arc(x, y, 2.5, 0, 7); g.fill(); }
+};
+IP.ring = (g, c, r, n) => {
+  const m = mcol(c);
+  dshad(g, 32, 58, 26, 4);
+  if (/seal/.test(n)) { for (const [x, y, R, w] of [[24, 26, 16, 4], [42, 36, 12, 3.5], [22, 46, 8, 3]]) { g.strokeStyle = '#1e2024'; g.lineWidth = w; g.beginPath(); g.arc(x, y, R, 0, 7); g.stroke(); g.strokeStyle = 'rgba(255,255,255,0.25)'; g.lineWidth = 1; g.beginPath(); g.arc(x, y, R, 3.6, 4.6); g.stroke(); } return; }
+  if (/flexspline/.test(n)) { ell(g, 32, 44, 24, 10); g.fillStyle = MET(g, 8, 0, 56, 0, '#c8ccd0'); g.fill(); ink(g); g.fillRect(8, 18, 48, 26); ell(g, 32, 18, 24, 10); g.fillStyle = '#d8dce0'; g.fill(); ink(g); ell(g, 32, 18, 19, 7); g.fillStyle = '#5a5e64'; g.fill(); g.strokeStyle = 'rgba(0,0,0,0.4)'; g.lineWidth = 1; for (let x = 10; x < 56; x += 3) { g.beginPath(); g.moveTo(x, 22); g.lineTo(x, 30); g.stroke(); } return; }
+  g.beginPath(); g.arc(32, 32, 27, 0, 7); g.arc(32, 32, /slew/.test(n) ? 18 : 15, 0, 7, true); g.fillStyle = MET(g, 5, 5, 59, 59, m); g.fill('evenodd'); ink(g);
+  if (/clad/.test(n)) { g.strokeStyle = '#d8dce0'; g.lineWidth = 2.5; g.beginPath(); g.arc(32, 32, 16.5, 0, 7); g.stroke(); }
+  if (/slew_ring|slewing ring\b/.test(n) && !/forging/.test(n)) { g.fillStyle = hsh(m, 0.6); for (let i = 0; i < 28; i++) { const a = i / 28 * 6.28; g.beginPath(); g.arc(32 + Math.cos(a) * 17, 32 + Math.sin(a) * 17, 1.6, 0, 7); g.fill(); } g.fillStyle = '#2a2e34'; for (let i = 0; i < 12; i++) { const a = i / 12 * 6.28; g.beginPath(); g.arc(32 + Math.cos(a) * 23, 32 + Math.sin(a) * 23, 1.6, 0, 7); g.fill(); } }
+};
+IP.shaft = (g, c, r, n) => {
+  const m = mcol(c);
+  dshad(g, 32, 58, 26, 3);
+  g.save(); g.translate(32, 32); g.rotate(-0.6);
+  if (/linear|guide/.test(n)) { g.fillStyle = MET(g, 0, -4, 0, 6, '#c8ccd0'); g.fillRect(-30, -3, 60, 8); g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 1; g.strokeRect(-30, -3, 60, 8); g.fillStyle = '#2a2e34'; for (let x = -26; x < 30; x += 8) { g.beginPath(); g.arc(x, 1, 1.4, 0, 7); g.fill(); } rrect(g, -8, -9, 18, 16, 2); g.fillStyle = MET(g, 0, -9, 0, 7, '#4a6a8a'); g.fill(); ink(g, 1); g.restore(); return; }
+  if (/screw/.test(n)) { g.fillStyle = MET(g, 0, -3, 0, 3, '#c8ccd0'); g.fillRect(-30, -3, 60, 6); g.strokeStyle = 'rgba(0,0,0,0.45)'; g.lineWidth = 1; for (let x = -28; x < 30; x += 2.5) { g.beginPath(); g.moveTo(x, -3); g.lineTo(x + 2, 3); g.stroke(); } rrect(g, 0, -8, 14, 16, 2); g.fillStyle = MET(g, 0, -8, 0, 8, m); g.fill(); ink(g, 1); g.fillStyle = hsh(m, 0.7); g.fillRect(-2, -10, 3, 20); g.restore(); return; }
+  if (/cyl|actuator|drive|piston/.test(n)) { g.fillStyle = MET(g, 0, -2, 0, 2, '#e8eaec'); g.fillRect(4, -2.5, 24, 5); rrect(g, -26, -7, 32, 14, 3); g.fillStyle = MET(g, 0, -7, 0, 7, m); g.fill(); ink(g, 1); for (const x of [-30, 30]) { g.beginPath(); g.arc(x, 0, 4.5, 0, 7); g.fillStyle = '#6a7078'; g.fill(); ink(g, 1); g.beginPath(); g.arc(x, 0, 1.8, 0, 7); g.fillStyle = '#1e2024'; g.fill(); } g.restore(); return; }
+  for (const [x, w, h] of [[-30, 12, 6], [-18, 10, 12], [-8, 18, 18], [10, 10, 12], [20, 10, 6]]) { g.fillStyle = MET(g, 0, -h / 2, 0, h / 2, m); g.fillRect(x, -h / 2, w, h); g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 1; g.strokeRect(x, -h / 2, w, h); }
+  g.restore();
+};
+IP.panel = (g, c, r, n) => {
+  dshad(g, 32, 58, 26, 3);
+  if (/rooflight|translucent/.test(n)) { poly(g, [4, 20, 50, 8, 60, 40, 14, 52]); g.fillStyle = 'rgba(220,235,240,0.8)'; g.fill(); ink(g); g.strokeStyle = 'rgba(80,110,130,0.4)'; g.lineWidth = 1.5; for (let i = 1; i < 8; i++) { g.beginPath(); g.moveTo(4 + i * 5.7, 20 - i * 1.5); g.lineTo(14 + i * 5.7, 52 - i * 1.5); g.stroke(); } return; }
+  poly(g, [6, 18, 48, 8, 58, 42, 16, 54]); g.fillStyle = '#c8ccd0'; g.fill(); ink(g, 1.5);
+  poly(g, [9, 19, 47, 10, 55, 41, 18, 51]); g.fillStyle = lgr(g, 9, 10, 55, 51, '#2a4a8a', '#14244a'); g.fill();
+  g.strokeStyle = 'rgba(200,210,230,0.6)'; g.lineWidth = 0.8; for (let i = 1; i < 6; i++) { const t = i / 6; g.beginPath(); g.moveTo(9 + 38 * t, 19 - 9 * t); g.lineTo(18 + 37 * t, 51 - 10 * t); g.stroke(); } for (let j = 1; j < 4; j++) { const t = j / 4; g.beginPath(); g.moveTo(9 + 9 * t, 19 + 32 * t); g.lineTo(47 + 8 * t, 10 + 31 * t); g.stroke(); }
+  g.fillStyle = 'rgba(255,255,255,0.15)'; poly(g, [9, 19, 30, 14, 20, 30]); g.fill();
+};
+IP.bale = (g, c, r, n) => {
+  dshad(g, 32, 58, 26, 3);
+  const m = c;
+  if (/pet_bale|bottle bale/.test(n)) { rrect(g, 8, 12, 48, 42, 3); g.fillStyle = 'rgba(180,215,230,0.9)'; g.fill(); ink(g); g.strokeStyle = 'rgba(40,90,140,0.5)'; g.lineWidth = 1; for (let i = 0; i < 18; i++) { const x = 10 + r() * 40, y = 14 + r() * 36; ell(g, x, y, 5, 2.5, r() * 3); g.stroke(); } g.fillStyle = '#2a2e34'; for (const y of [22, 42]) g.fillRect(6, y, 52, 2.5); return; }
+  rrect(g, 8, 16, 48, 36, 7); g.fillStyle = lgr(g, 0, 16, 0, 52, hsh(m, 1.35), m, hsh(m, 0.6)); g.fill(); ink(g);
+  g.fillStyle = 'rgba(255,255,255,0.22)'; rrect(g, 12, 19, 40, 6, 3); g.fill();
+  g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 1; g.beginPath(); g.moveTo(8, 30); g.lineTo(56, 26); g.moveTo(8, 42); g.lineTo(56, 40); g.stroke();
+};
+IP.bundle = (g, c, r, n) => {
+  const m = mcol(c);
+  dshad(g, 32, 60, 18, 3);
+  if (/quadrupole|rod set|quad/.test(n)) { g.fillStyle = '#3a3e44'; for (const y of [10, 50]) { rrect(g, 14, y, 36, 5, 2); g.fill(); } for (const x of [20, 28, 36, 44]) { g.fillStyle = MET(g, x - 3, 0, x + 3, 0, '#d8dce0'); g.fillRect(x - 3, 4, 6, 56); g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 1; g.strokeRect(x - 3, 4, 6, 56); } return; }
+  const sp = /spider|cluster|control/.test(n);
+  if (sp) { g.fillStyle = MET(g, 20, 0, 44, 0, '#8a9096'); g.fillRect(28, 2, 8, 12); for (let i = -3; i <= 3; i++) { g.strokeStyle = '#6a7078'; g.lineWidth = 2; g.beginPath(); g.moveTo(32, 8); g.lineTo(32 + i * 6, 14); g.stroke(); } for (let i = -3; i <= 3; i++) { g.fillStyle = MET(g, 0, 0, 4, 0, '#2a2e34'); g.fillRect(31 + i * 6, 14, 3, 44); } return; }
+  rrect(g, 16, 2, 32, 7, 1); g.fillStyle = MET(g, 16, 0, 48, 0, '#b8bec4'); g.fill(); ink(g, 1); rrect(g, 16, 53, 32, 7, 1); g.fill(); ink(g, 1);
+  for (let i = 0; i < 7; i++) { g.fillStyle = MET(g, 18 + i * 4, 0, 21 + i * 4, 0, /spent/.test(n) ? '#6a6458' : '#c8ccd0'); g.fillRect(18 + i * 4, 9, 3, 44); }
+  g.fillStyle = hsh(m, 0.9); for (const y of [18, 30, 42]) { g.fillRect(16, y, 32, 3); }
+  if (/spent/.test(n)) { g.fillStyle = 'rgba(60,140,255,0.25)'; g.fillRect(12, 2, 40, 58); }
+};
+IP.heavy = (g, c, r, n) => {
+  const m = mcol(c);
+  dshad(g, 32, 58, 28, 3);
+  if (/transformer/.test(n)) {
+    rrect(g, 14, 22, 36, 34, 2); g.fillStyle = MET(g, 0, 22, 0, 56, '#7a8a7a'); g.fill(); ink(g);
+    g.fillStyle = '#6a7a6a'; for (let i = 0; i < 5; i++) { g.fillRect(4 + i * 2, 24, 1.5, 28); g.fillRect(51 + i * 2, 24, 1.5, 28); }
+    for (const x of [22, 32, 42]) { g.fillStyle = '#a8603a'; for (let j = 0; j < 4; j++) { ell(g, x, 18 - j * 4, 4, 1.6); g.fill(); } g.fillRect(x - 1.5, 2, 3, 18); g.fillStyle = '#c8ccd0'; g.fillRect(x - 2, 0, 4, 3); }
+    return;
+  }
+  if (/axle/.test(n)) { g.fillStyle = MET(g, 0, 28, 0, 36, '#8a9096'); g.fillRect(2, 29, 60, 6); g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 1; g.strokeRect(2, 29, 60, 6); rrect(g, 18, 16, 28, 32, 6); g.fillStyle = MET(g, 0, 16, 0, 48, '#b8bec4'); g.fill(); ink(g); g.beginPath(); g.arc(32, 32, 9, 0, 7); g.fillStyle = m; g.fill(); ink(g, 1); for (const x of [4, 60]) { g.beginPath(); g.arc(x, 32, 5, 0, 7); g.fillStyle = '#5a5e64'; g.fill(); ink(g, 1); } g.fillStyle = '#e07a20'; g.fillRect(24, 10, 16, 6); ink(g, 1); return; }
+  rrect(g, 4, 18, 44, 30, 12); g.fillStyle = MET(g, 0, 18, 0, 48, m); g.fill(); ink(g);
+  rrect(g, 46, 24, 14, 18, 4); g.fillStyle = MET(g, 0, 24, 0, 42, hsh(m, 0.85)); g.fill(); ink(g, 1);
+  g.strokeStyle = 'rgba(0,0,0,0.3)'; g.lineWidth = 1; for (const x of [16, 28, 40]) { g.beginPath(); g.moveTo(x, 18); g.lineTo(x, 48); g.stroke(); }
+  g.fillStyle = '#c8ccd0'; g.fillRect(0, 30, 6, 6); g.fillStyle = '#3a3e44'; g.fillRect(8, 48, 6, 8); g.fillRect(36, 48, 6, 8);
+};
+const IOV = {"laser_module":"nozzle","vfd":"cabinet","servo_drive":"cabinet","cnc_ctrl":"cabinet","breaker":"cabinet","jbox":"cabinet","fume_hood":"cabinet","rpv":"vessel","rpv_head":"vessel","steam_gen":"vessel","condenser":"vessel","comp_tank":"vessel","grp_tank":"vessel","hyd_pump":"pump","rcp":"pump","turbopump":"pump","gcms":"instrument","nmr":"instrument","ndfeb":"magnet","smco_magnet":"magnet","ba_ferrite":"magnet","alnico":"magnet","sc_magnet":"magnet","nmr_magnet":"magnet","ndfeb_block":"magnet","ndfeb_bare":"magnet","ndfeb_plated":"magnet","grad_coil":"magnet","rf_coil":"magnet","trafo_core":"magnet:core","amorph_core":"magnet:core","ferrite_core":"magnet:core","sic_mosfet":"comp","gan_hemt":"comp","saw_filter":"comp","varistor":"comp","ntc_thermistor":"comp","piezo_disc":"comp","teg":"comp","encoder":"comp","e_mult":"comp","vac_interrupter":"comp","surge_arrester":"comp","cucr":"comp","ultrasound_probe":"comp","gan_charger":"comp","graphene_hall":"comp","robot_arm":"robot","robot_joint":"robot","arm_casting":"robot","casting":"casting","pick_body":"casting","carbide_pick":"casting","bucket_tooth":"casting","bwe_bucket":"casting","mineral_cast":"casting","wax_pattern":"casting","ceramic_mould":"casting","green_shell":"casting","cutter_drum":"casting","slew_ring":"ring","slew_blank":"ring","rpv_ring":"ring","clad_ring":"ring","hyd_seal":"ring","flexspline":"ring","ball_screw":"shaft","linear_guide":"shaft","rotor_forging":"shaft","hyd_cyl":"shaft","crdm":"shaft","honed_tube":"shaft","solar_module":"panel","rooflight":"panel","sbr":"bale","neoprene":"bale","epdm":"bale","iir":"bale","nbr":"bale","pet_bale":"bale","fuel_asm":"bundle","control_rod":"bundle","spent_fuel":"bundle","quad_rods":"bundle","quadrupole":"bundle","transformer":"heavy","turbo_gen":"heavy","e_axle":"heavy","cork_board":"sheet","strand_board":"sheet","plasterboard":"sheet","particleboard":"sheet","hpl":"sheet","ccm":"sheet","tft_glass":"sheet","banana_paper":"sheet","bamboo_floor":"sheet","bipolar_plate":"sheet","pet_foam":"sheet","eggshell_membrane":"sheet","separator":"sheet","spar_cap":"sheet","mumetal":"sheet","shoyu_cake":"pile","palm_shell":"pile","coconut_shell":"pile","anode_slime":"pile","beet_pulp":"pile","bone_chip":"pile","steel_scrap":"pile","kelp_ash":"pile","mushroom_compost":"pile","spent_compost":"pile","ni_calcine":"pile","beta_spod":"pile","ndfeb_swarf":"pile","cullet":"pile","lino_cement":"pile","rape_meal":"pile","linseed_cake":"pile","copra_meal":"pile","pk_expeller":"pile","bran":"pile","rice_bran":"pile","bran_meal":"pile","husk_ash":"pile","rice_husk":"pile","rosin":"pile","shell_calcium":"sack","egg_powder":"sack","albumen_powder":"sack","feather_meal":"sack","potato_starch":"sack","banana_flour":"sack","potato_protein":"sack","sodium_nitrate":"sack","bio_detergent":"sack","wood_flour":"sack","linen_yarn":"yarn","bcf_yarn":"yarn","motor_oil":"bottle","choc_milk":"bottle","omega3":"bottle","rennet":"vial","lc_mix":"vial","ins_cartridge":"vial","grease":"paintcan","li_grease":"paintcan","ink":"paintcan","glaze":"paintcan","bike_cable":"coil","cord_belt":"coil","wire_rope":"coil","gc_column":"coil","acsr":"coil","pv_ribbon":"spool","metglas":"spool","ybco_tape":"spool","preform":"rod","rail_frog":"rod","ro_membrane":"rod","spent_membrane":"rod","mo_bar":"rod","superalloy":"ingot","soft_lead":"ingot","v_pig":"ingot","bismuth":"ingot","tellurium":"ingot","germanium":"ingot","alloy690":"ingot","tial":"ingot","wha":"ingot","solder":"ingot","sx_blade":"part:blade","spine_cage":"part","chrome_tap":"part","record78":"part:disc","pcd":"part:disc","ito_target":"part:disc","camera_lens":"lens","tel_mirror":"lens","flint_glass":"lens","cell_can":"can","traction_pack":"battery","bms_board":"board","graphite":"coal","bamboo_charcoal":"coal","crawler_shell":"ore","rutile":"ore","titanium":"ore","platinum":"ore","palladium":"ore","indium_sponge":"ore","cng_cart":"cyl","llzo":"pellet","ta_anode":"pellet","pva":"pellet","pfsa_resin":"pellet","ta_ox":"pellet","vial_stopper":"pellet","cork_stopper":"pellet","si3n4_ball":"pellet","led_chip":"chip","die":"chip","shoyu_koji":"grain","wheat_straw":"log","cork_plank":"log","tea_dhool":"leaf","citrus_peel":"fruit","tomato_peel":"fruit","palm_fruit":"fruit","retted_flax":"fluff","line_flax":"fluff","wetsuit":"garment","vaccine_shipper":"box","honey_frame":"box","agar_plates":"box","wax_cappings":"food","kiln_furniture":"brick","green_stack":"brick","grp_hull":"part:hull","cottonseed":"seeds"};
 const ICLS = [
   [/respirator|vest|armour tile|sic_tile/, 'vest'],
   [/shotgun/, 'gun'],
@@ -6998,7 +7207,7 @@ const ICLS = [
   [/crushed|ground |_conc\b|concentrate|rougher|tailings|sand\b|calcine|cinder|slag|mud\b|sinter|clinker|cullet|husk|wood chips|granules|peat|digestate|litter|compost|press mud|pomace|bagasse|okara|spent|slime|residue|scrap|recycl|bale|asphalt|black_ash|smelt|salt cake|lime mud|tow|efb|empty fruit|meal\b|cake\b|expeller|ddgs|grains\b|pulp\b|bran\b|ash\b|shell\b|kasu|lees/, 'pile'],
   [/cement|fertil|potash|urea|npk|superphosphate|diammonium|flour|starch|feed|premix|fishmeal|detergent|washing powder|stucco|plaster of paris|sugar\b|raw sugar|salt\b|iodised|milk powder|whey protein|egg powder|white powder|baking powder|quicklime|slaked|soda ash|amm_sulfate|ammonium sulfate|ammonium nitrate|sodium nitrate|cocoa powder|instant coffee|tea\b|black_tea|green_tea|dextrin|gelatin|pectin|agar\b|carrageenan|alginate|impression|maple sugar|china clay/, 'sack']
 ];
-function iArch(k, n) { const s = (k + ' ' + n).toLowerCase(); for (const [re, a] of ICLS) if (re.test(s)) return a; return 'jar'; }
+function iArch(k, n) { if (IOV[k]) return IOV[k].split(':')[0]; const s = (k + ' ' + n).toLowerCase(); for (const [re, a] of ICLS) if (re.test(s)) return a; return 'jar'; }
 
 const MARCH = [
   [/glasshouse|greenhouse|vertical farm/, 'glass'],
@@ -7347,7 +7556,7 @@ function icoCv(k) {
       else bIcon(g, k);
     } else if (FLUIDS[k]) IP.drop(g, FLUIDS[k].c, r, (k + ' ' + FLUIDS[k].n).toLowerCase(), !!FLUIDS[k].gas);
     else if (CMBI[k]) CMBI[k](g);
-    else { const I = ITEMS[k] || { c: '#888', n: k }, n = (k + ' ' + I.n).toLowerCase(); (IP[iArch(k, I.n)] || IP.jar)(g, I.c, r, n); }
+    else { const I = ITEMS[k] || { c: '#888', n: k }, h = IOV[k] ? IOV[k].split(':')[1] || '' : '', n = (k + ' ' + I.n + ' ' + h).toLowerCase(); (IP[iArch(k, I.n)] || IP.jar)(g, I.c, r, n); }
   } catch (err) { g.clearRect(0, 0, 64, 64); g.fillStyle = col(k) || '#888'; g.beginPath(); g.arc(32, 32, 22, 0, 7); g.fill(); }
   TX.i.set(k, cv);
   return cv;
