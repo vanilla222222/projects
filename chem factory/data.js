@@ -216,6 +216,12 @@ const ITEMS = {
   ubc_shred: { n: 'Shredded Cans', c: '#a8acb4', f: 'Cans torn into palm-sized pieces, screened of fines and passed over magnets and eddy currents to drop steel, plastic and stray glass' },
   decoated_chip: { n: 'Decoated Can Chip', c: '#d0d4d8', f: 'Bright bare shreds with the paint and lacquer burnt away. Coatings left on would turn into oxide skins and dross in the melt' },
   al_dross: { n: 'Aluminium Dross', c: '#7a7a78', f: 'The grey crust skimmed off molten aluminium: oxide films with up to half its weight in trapped metal' },
+  scheelite: { n: 'Scheelite Ore', c: '#9a9080', f: 'Skarn rock with grains of CaWO₄ where granite met limestone. Under ultraviolet light the scheelite glows bright blue-white, which is how prospectors find it at night' },
+  ground_sch: { n: 'Ground Scheelite Ore', c: '#a8a090', f: 'Ore ground until the scheelite grains come free from garnet, calcite and quartz' },
+  sch_rough: { n: 'Scheelite Rougher Concentrate', c: '#b0a898', f: 'A first float with fatty acid collector. Calcite and fluorite float with the scheelite because all three are calcium minerals' },
+  sch_conc: { n: 'Scheelite Concentrate', c: '#d8d0b8', f: 'Cleaned to about 65% WO₃ in the Petrov process: heated with sodium silicate, the calcite and fluorite lose their collector and sink' },
+  carbide_scrap: { n: 'Carbide Scrap', c: '#6a6a72', f: 'Worn inserts, broken drills and spent rock bit buttons bought back from machine shops and mines. Richer in tungsten than any ore' },
+  wcco_powder: { n: 'Reclaimed Carbide Powder', c: '#62626a', f: 'Tungsten carbide grains still coated in their cobalt binder, crumbled out of scrap by the zinc process and milled to size' },
   cylinder: { n: 'Steel Cylinder', c: '#7a8a7a', f: 'Seamless steel gas bottle, tested to 250 bar' },
   cl2_cyl: { n: 'Chlorine Cylinder', c: '#b8d84a', f: 'Liquid Cl₂ under its own vapour pressure, about 7 bar. Released, it boils into a cloud 2.5 times heavier than air that creeps along the ground' },
   nh3_cyl: { n: 'Ammonia Cylinder', c: '#a8c8e8', f: 'Liquid NH₃ at about 9 bar. A base: it neutralises the sulfuric acid in crawler blood. Lighter than air, so the cloud rises and blows away fast' },
@@ -1929,6 +1935,7 @@ const ORES = [
   { item: 'nepheline', c: '#7a746c', s: '#d8d0c8' },
   { item: 'gold_ore', c: '#6a6458', s: '#e8c050' },
   { item: 'dolomite', c: '#b8b0a0', s: '#ece6da' },
+  { item: 'scheelite', c: '#7a7468', s: '#e0f0ff' },
 ];
 
 const BUILD = {
@@ -2170,6 +2177,8 @@ const BUILD = {
   decoater: { n: 'Delacquering Kiln', kind: 'machine', w: 4, h: 3, cat: 'Smelting', c: '#7a7068', ab: 'DL', kw: 90, cost: { brick: 16, steel: 14, motor: 3, pcb: 2 }, d: 'A rotary kiln run with low oxygen at about 520 °C. The coatings crack into gas, which is burnt in an afterburner and recirculated to heat the kiln.' },
   twin_chamber: { n: 'Twin-Chamber Melting Furnace', kind: 'machine', w: 4, h: 4, cat: 'Smelting', c: '#8a7a6a', ab: 'TC', kw: 160, cost: { brick: 24, steel: 16, motor: 4, pcb: 3 }, d: 'One chamber holds a burner-heated metal bath. An electromagnetic pump drives the hot metal through a second, closed well where light chips are dragged under before they can oxidise. No salt flux is needed.' },
   dross_press: { n: 'Hot Dross Press', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#6a6a70', ab: 'DP', kw: 60, cost: { steel: 18, motor: 2, pcb: 2, brick: 6 }, d: 'Dross is skimmed straight into a pan and squeezed with a cooled ram while still hot. Metal runs out of the bottom before it can burn, and the cake cools without thermiting.' },
+  petrov_cell: { n: 'Petrov Cleaner Flotation Bank', kind: 'machine', w: 4, h: 3, cat: 'Processing', c: '#8a8a78', ab: 'PV', kw: 110, cost: { steel: 16, motor: 5, pcb: 3, rubber_pipe: 2 }, d: 'A steam-heated conditioning tank ahead of a bank of cleaner cells. Hot sodium silicate strips fatty acid off calcite and fluorite while scheelite keeps it.' },
+  zinc_reclaim: { n: 'Zinc Reclaim Furnace', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#6a6a78', ab: 'ZR', kw: 140, cost: { steel: 18, brick: 8, pcb: 3, motor: 2 }, d: 'A sealed retort. Scrap soaks in molten zinc under argon, then the furnace is pumped down and heated so the zinc distils off into a condenser for reuse.' },
   kiln: { n: 'Lime Kiln', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#b0a080', ab: 'LK', cost: { brick: 8, plate: 2 }, d: 'Burns limestone into quicklime.' },
   roaster: { n: 'Roaster', kind: 'machine', w: 2, h: 2, cat: 'Smelting', c: '#a06a3a', ab: 'RO', kw: 30, cost: { brick: 8, plate: 4 }, d: 'Burns sulfur out of sulfide concentrates. Gives off SO₂.' },
   blast: { n: 'Blast Furnace', kind: 'machine', w: 3, h: 3, cat: 'Smelting', c: '#7a3a2a', ab: 'BF', cost: { brick: 20, casting: 10 }, d: 'Reduces oxides with coke.' },
@@ -3856,6 +3865,13 @@ const RECIPES = [
   { id: 'decoat', n: 'Thermal Delacquering', b: 'decoater', t: 4, i: { ubc_shred: 4 }, fi: { fuel_gas: 2 }, o: { decoated_chip: 4 }, fo: { co2: 4 }, eq: 'epoxy, polyester coatings → pyrolysis gas → afterburner', note: 'The coating gas supplies most of the heat once the kiln is running.' },
   { id: 'twin_melt', n: 'Submerged Chip Melting', b: 'twin_chamber', t: 4, i: { decoated_chip: 6 }, fi: { fuel_gas: 4, argon: 1 }, o: { aluminium: 5, al_dross: 1 }, fo: { co2: 4 }, eq: 'Al chip → submerged in Al bath → melt, ~2% oxidation loss', note: 'Thin can walls oxidise in seconds in an open flame. Dragged under molten metal they melt without ever meeting air, so yield rises from about 85% to over 95%. Argon lances degas hydrogen before casting.' },
   { id: 'dross_squeeze', n: 'Hot Dross Pressing', b: 'dross_press', t: 4, i: { al_dross: 3 }, o: { aluminium: 1, salt_slag: 1 }, eq: 'Al (in dross) → squeezed metal ; Al₂O₃ + residue → cake', note: 'Most of the trapped metal comes out without salt. The pressed cake still goes on to a salt-flux rotary furnace and leaching.' },
+  { id: 'grind_sch', n: 'Scheelite Grinding', b: 'mill', t: 3, i: { scheelite: 4 }, fi: { water: 10 }, o: { ground_sch: 4 }, eq: 'skarn → −150 µm' },
+  { id: 'sch_float', n: 'Scheelite Rougher Flotation', b: 'flotation', t: 4, i: { ground_sch: 4, soda_ash: 1 }, fi: { tofa: 2, water: 10 }, o: { sch_rough: 2, sand: 2 }, eq: 'CaWO₄ + RCOO⁻ → hydrophobic surface', note: 'Soda ash sets the pH near 10 and tall oil fatty acid coats every calcium mineral it meets.' },
+  { id: 'petrov', n: 'Petrov Hot Cleaning', b: 'petrov_cell', t: 5, i: { sch_rough: 4, water_glass: 1 }, fi: { steam: 6 }, o: { sch_conc: 2, crushed_lime: 1 }, eq: 'CaCO₃, CaF₂ (collector stripped at 85 °C) → tails', note: 'Hours of hot conditioning with concentrated sodium silicate leave scheelite floating while calcite drops out. It is slow but the only way to reach saleable grade from skarn.' },
+  { id: 'sch_soda', n: 'Soda Autoclave Digestion', b: 'autoclave', t: 4, i: { sch_conc: 2, soda_ash: 2 }, fi: { steam: 6 }, o: { pcc: 1 }, fo: { na2wo4: 24 }, eq: 'CaWO₄ + Na₂CO₃ → Na₂WO₄ + CaCO₃', note: 'Scheelite does not dissolve in caustic like wolframite. Soda ash at 220 °C swaps the calcium for sodium and the calcium falls out as carbonate.' },
+  { id: 'carbide_buyback', n: 'Carbide Scrap Buyback', b: 'kerb_depot', t: 8, o: { carbide_scrap: 2 }, note: 'Tool makers pay for worn inserts by weight, since the scrap is worth more than the ore.' },
+  { id: 'zinc_process', n: 'Zinc Process Reclamation', b: 'zinc_reclaim', t: 8, i: { carbide_scrap: 4, zinc: 1 }, fi: { argon: 2 }, o: { wcco_powder: 4 }, eq: 'WC-Co + Zn (l, 900 °C) → Co-Zn swells → vacuum, Zn↑ → friable WC-Co', note: 'Zinc alloys with the cobalt binder and swells it until the part cracks apart. Distilling the zinc off leaves a sponge that crushes to powder. It uses a fraction of the energy of the APT route and keeps the cobalt.' },
+  { id: 'recl_insert', n: 'Reclaimed Carbide Inserts', b: 'sinter_furnace', t: 4, i: { wcco_powder: 3, wc: 1 }, o: { carbide_insert: 4 }, eq: 'WC-Co (reclaimed) + WC (virgin) → sintered at 1450 °C', note: 'Reclaimed powder carries its own cobalt, so no fresh binder is needed. Virgin carbide is blended in to set the grain size.' },
   { id: 'kraft_cook', n: 'Kraft Cook', b: 'digester', t: 4, i: { wood_chips: 4 }, fi: { wl: 20, steam: 10 }, o: { pulp: 2 }, fo: { bl: 30 }, eq: 'Lignin + OH⁻ + HS⁻ → soluble lignin fragments', note: 'Carl Dahl, 1879. Chips cook at 170°C for two hours. Hydrosulfide cleaves the ether links that bind lignin, so the fibres fall apart unharmed.' },
   { id: 'soda_cook', n: 'Soda Cook', b: 'digester', t: 4, i: { wood_chips: 4 }, fi: { naoh: 20, steam: 10 }, o: { pulp: 1 }, fo: { bl: 30 }, eq: 'Lignin + OH⁻ → soluble lignin fragments', note: 'The older soda process of 1851. Caustic alone is slower and harsher, so half the fibre is lost. Use it to start up a new mill before the liquor loop is running.' },
   { id: 'recover', n: 'Liquor Recovery', b: 'recovery', t: 3, fi: { bl: 30, water: 60 }, fo: { steam: 60, so2: 1 }, o: { smelt: 2 }, bleed: ['so2'], eq: 'Na-organics + O₂ → Na₂CO₃ + CO₂ + H₂O (steam)', note: 'Tomlinson recovery boiler, 1934. Black liquor is evaporated to 70% solids and sprayed into the furnace. About a tenth of the sodium is lost each round.' },
@@ -5039,6 +5055,8 @@ const ORDERS = [
   { c: 'Refractory works', item: 'mgo', n: 400, tier: 3, rw: { pidgeon_retort: 1 }, d: 'Dead-burned magnesia for steel ladle bricks.' },
   { c: 'Can sheet mill', item: 'aluminium', n: 500, tier: 4, rw: { twin_chamber: 1, dross_press: 1 }, d: 'Remelt ingot for can body stock, closing the loop from bale back to can.' },
   { c: 'Deposit scheme operator', item: 'decoated_chip', n: 300, tier: 3, rw: { decoater: 1, weee_line: 1 }, d: 'Clean decoated chip for a deposit-return recycling contract.' },
+  { c: 'Tungsten trader', item: 'sch_conc', n: 200, tier: 4, rw: { petrov_cell: 1 }, d: 'Saleable scheelite concentrate for an APT converter.' },
+  { c: 'Tool maker', item: 'carbide_insert', n: 300, tier: 4, rw: { zinc_reclaim: 1 }, d: 'Inserts for a toolmaker that buys back its own worn tips.' },
   { c: 'Rail operator', item: 'traction_pack', n: 4, tier: 5, rw: { rail_charger: 2, rail: 100 }, d: 'Packs to convert two shunting locomotives off diesel.' },
 ];
 
