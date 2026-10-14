@@ -3847,7 +3847,7 @@ try { nightOff = localStorage.getItem('cf_night') === '0'; } catch (e) {}
 const dayP = () => ((S.t || 0) / DAYLEN + 0.3) % 1;
 const sunEl = () => -Math.cos(dayP() * 2 * Math.PI);
 const darkF = () => nightOff ? 0 : Math.min(1, Math.max(0, -sunEl() / 0.45));
-const WXK = { clear: { n: 'Clear', i: '☀' }, rain: { n: 'Rain', i: '☂', t: 'Rain: walking off paths is slower, solar and evaporation ponds drop, lamps reach a little less far.' }, fog: { n: 'Fog', i: '≋', t: 'Fog: lamps and floodlights reach much less far, solar output falls, and crawlers swarm more often.' }, snow: { n: 'Snow', i: '❄', t: 'Snow: drifts settle on belts and slow them, walking off paths is slow, solar output falls.' }, storm: { n: 'Storm', i: '⚡', t: 'Storm: strong gusts drive the wind turbines hard, heavy rain slows walking off paths and stops ponds evaporating.' } };
+const WXK = { clear: { n: 'Clear', i: '☀' }, rain: { n: 'Rain', i: '☂', t: 'Rain: walking off paths is slower, solar and evaporation ponds drop, lamps reach a little less far, rainwater tanks fill.' }, fog: { n: 'Fog', i: '≋', t: 'Fog: lamps and floodlights reach much less far, solar output falls, and crawlers swarm more often.' }, snow: { n: 'Snow', i: '❄', t: 'Snow: drifts settle on belts and slow them, walking off paths is slow, solar output falls.' }, storm: { n: 'Storm', i: '⚡', t: 'Storm: strong gusts drive the wind turbines hard, heavy rain slows walking off paths and stops ponds evaporating, rainwater tanks fill fast.' } };
 let WXB = 1, WXS = 0;
 const wxI = k => { const w = S && S.wind; return w && w.wx === k ? w.wi || 0 : 0; };
 const wxWet = () => wxI('rain') + wxI('storm');
@@ -4755,7 +4755,7 @@ const SOIL = [1, 0, 0.4, 0.05, 0, 0.35, 0.1, 0.1];
 function soilAt(x, y, w, h) { let a = 0; for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) a += SOIL[terrain[(y + j) * W + x + i]] || 0; return a / (w * h); }
 function soilOf(e) { if (e.sl == null) e.sl = soilAt(e.x, e.y, BUILD[e.type].w, BUILD[e.type].h); return e.sl; }
 const TIDE_T = 300, tideOf = () => Math.abs(Math.sin(S.t * Math.PI / TIDE_T)) ** 3;
-const sunMul = e => BUILD[e.type].tide ? tideOf() : BUILD[e.type].soil ? soilOf(e) : BUILD[e.type].sun ? sunOf(e) * wxSun(e) : BUILD[e.type].wind ? exposureOf(e) * windCurve(BUILD[e.type].sea ? 1.25 : 1) : 1;
+const sunMul = e => BUILD[e.type].rain ? Math.min(1.6, wxI('rain') + 1.6 * wxI('storm')) : BUILD[e.type].tide ? tideOf() : BUILD[e.type].soil ? soilOf(e) : BUILD[e.type].sun ? sunOf(e) * wxSun(e) : BUILD[e.type].wind ? exposureOf(e) * windCurve(BUILD[e.type].sea ? 1.25 : 1) : 1;
 function tryStart(e, r) {
   if (r.well && !wellTiles(e).length) return 'empty';
   if (BUILD[e.type].forest && !forestOf(e)) return 'forest';
