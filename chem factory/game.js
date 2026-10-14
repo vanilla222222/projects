@@ -3846,7 +3846,7 @@ const dayP = () => ((S.t || 0) / DAYLEN + 0.3) % 1;
 const sunEl = () => -Math.cos(dayP() * 2 * Math.PI);
 const darkF = () => nightOff ? 0 : Math.min(1, Math.max(0, -sunEl() / 0.45));
 const WXK = { clear: { n: 'Clear', i: '☀' }, rain: { n: 'Rain', i: '☂', t: 'Rain: walking off paths is slower, solar and evaporation ponds drop, lamps reach a little less far.' }, fog: { n: 'Fog', i: '≋', t: 'Fog: lamps and floodlights reach much less far, solar output falls, and crawlers swarm more often.' }, snow: { n: 'Snow', i: '❄', t: 'Snow: drifts settle on belts and slow them, walking off paths is slow, solar output falls.' }, storm: { n: 'Storm', i: '⚡', t: 'Storm: strong gusts drive the wind turbines hard, heavy rain slows walking off paths and stops ponds evaporating.' } };
-let WXB = 1;
+let WXB = 1, WXS = 0;
 const wxI = k => { const w = S && S.wind; return w && w.wx === k ? w.wi || 0 : 0; };
 const wxWet = () => wxI('rain') + wxI('storm');
 const wxGust = () => 1 + wxI('storm') * (0.6 + 0.25 * Math.sin((S.t || 0) * 1.3)) + 0.15 * wxI('rain');
@@ -3859,14 +3859,18 @@ function wxStep() {
   w.wt--;
   if (w.wt <= 0) {
     if (w.wx !== 'clear') { w.wx = 'clear'; w.wt = 150 + Math.floor(Math.random() * 250); }
-    else { const u = Math.random(); w.wx = u < 0.38 ? 'rain' : u < 0.6 ? 'fog' : u < 0.8 ? 'snow' : 'storm'; w.wt = 90 + Math.floor(Math.random() * 150); }
+    else { w.wx = w.nx || 'rain'; w.wt = 90 + Math.floor(Math.random() * 150); }
+    const u = Math.random(); w.nx = u < 0.38 ? 'rain' : u < 0.6 ? 'fog' : u < 0.8 ? 'snow' : 'storm';
     w.wi = 0;
   }
   const tg = w.wx === 'clear' ? 0 : Math.min(1, w.wt / 20);
   w.wi = Math.round(Math.max(0, Math.min(1, w.wi + Math.max(-0.05, Math.min(0.05, tg - w.wi)))) * 100) / 100;
   WXB = 1 - 0.35 * wxI('snow');
+  if (!w.nx) { const u = Math.random(); w.nx = u < 0.38 ? 'rain' : u < 0.6 ? 'fog' : u < 0.8 ? 'snow' : 'storm'; }
+  if (S.t % 5 < 1) { WXS = 0; for (const e of ents.values()) if (e.type === 'wx_station') { WXS = 1; break; } }
 }
-const wxHud = () => { const w = S.wind; if (!w || !w.wx || w.wx === 'clear' || !(w.wi > 0.05)) return ''; const K = WXK[w.wx]; return ` <span class="dim" title="${K.t}">· ${K.i} ${K.n}</span>`; };
+const wxFc = w => { if (!WXS || !w || !w.wx) return ''; const nk = w.wx === 'clear' ? w.nx : 'clear', K = WXK[nk] || WXK.clear, m = Math.max(1, Math.round(w.wt / 60)); return ` <span class="dim" title="Weather station forecast">· next ${K.i} ${K.n} in ~${m} min</span>`; };
+const wxHud = () => { const w = S.wind; if (!w || !w.wx || w.wx === 'clear' || !(w.wi > 0.05)) return wxFc(w); const K = WXK[w.wx]; return ` <span class="dim" title="${K.t}">· ${K.i} ${K.n}</span>` + wxFc(w); };
 function drawWeather(w, h) {
   const Wd = S.wind;
   if (!Wd || !Wd.wx || Wd.wx === 'clear' || !(Wd.wi > 0.02)) return;
@@ -3950,7 +3954,7 @@ function drawNight(vis, ox, oy, z, w, h) {
   }
   ctx.globalCompositeOperation = 'source-over';
 }
-const DECOK = new Set(['street_lamp', 'bollard', 'flower_bed', 'planter', 'orn_tree', 'hedge', 'bench', 'fountain', 'gravel_path', 'brick_path', 'boardwalk']);
+const DECOK = new Set(['wx_station', 'street_lamp', 'bollard', 'flower_bed', 'planter', 'orn_tree', 'hedge', 'bench', 'fountain', 'gravel_path', 'brick_path', 'boardwalk']);
 for (const k in BUILD) if (BUILD[k].pv || BUILD[k].wv || BUILD[k].dv || BUILD[k].lamp) DECOK.add(k);
 const FLC = ['#e84a6a', '#f0c040', '#f4f0f4', '#a060d0', '#f08a30', '#e070b0'];
 function flowers(c, X, Y, z, sd, n, rr) {
@@ -4021,6 +4025,19 @@ function decoDraw(c, t, e, X, Y, z, on, nb) {
     c.fillStyle = '#5a8a3e';
     for (let k = 0; k < (z >= 14 ? 14 : 6); k++) c.fillRect(X + l + hash(sd, k, 91) * (z - l - r - z * 0.12), Y + u + hash(sd, k, 92) * (z - u - dn - z * 0.16), Math.max(1, z * 0.09), Math.max(1, z * 0.06));
     if (e.hp != null && e.hp < maxHp(e)) { c.fillStyle = 'rgba(120,90,40,0.5)'; c.fillRect(X + l, Y + u, (z - l - r) * (1 - e.hp / maxHp(e)), z - u - dn); }
+    return;
+  }
+  if (t === 'wx_station') {
+    const cx = X + z * 0.5, cy = Y + z * 0.5, now = performance.now() / 1000, wa = S && S.wind ? S.wind.a : 0, sp = S && S.wind ? S.wind.v : 0.3;
+    c.fillStyle = 'rgba(0,0,0,0.3)'; c.fillRect(X + z * 0.3, Y + z * 0.62, z * 0.56, z * 0.3);
+    c.fillStyle = '#5a4630'; c.fillRect(X + z * 0.26, Y + z * 0.56, z * 0.06, z * 0.36); c.fillRect(X + z * 0.68, Y + z * 0.56, z * 0.06, z * 0.36);
+    c.fillStyle = '#f2f2ea'; c.fillRect(X + z * 0.2, Y + z * 0.3, z * 0.6, z * 0.34);
+    c.fillStyle = '#c8c8be'; for (let k = 0; k < 4; k++) c.fillRect(X + z * 0.22, Y + z * (0.34 + k * 0.075), z * 0.56, Math.max(1, z * 0.025));
+    c.fillStyle = '#d8d8d0'; c.beginPath(); c.moveTo(X + z * 0.15, Y + z * 0.31); c.lineTo(cx, Y + z * 0.2); c.lineTo(X + z * 0.85, Y + z * 0.31); c.closePath(); c.fill();
+    c.strokeStyle = '#6a7078'; c.lineWidth = Math.max(1, z * 0.04); c.beginPath(); c.moveTo(cx, Y + z * 0.22); c.lineTo(cx, Y + z * 0.04); c.stroke();
+    const r = z * 0.13, ang = now * (2 + 10 * sp);
+    for (let k = 0; k < 3; k++) { const a = ang + k * 2.094, ex = cx + Math.cos(a) * r, ey = Y + z * 0.04 + Math.sin(a) * r * 0.5; c.beginPath(); c.moveTo(cx, Y + z * 0.04); c.lineTo(ex, ey); c.stroke(); c.fillStyle = '#3a3e44'; c.beginPath(); c.arc(ex, ey, Math.max(1, z * 0.04), 0, 7); c.fill(); }
+    c.strokeStyle = '#b84030'; c.lineWidth = Math.max(1, z * 0.035); c.beginPath(); c.moveTo(cx - Math.cos(wa) * z * 0.12, Y + z * 0.1 - Math.sin(wa) * z * 0.05); c.lineTo(cx + Math.cos(wa) * z * 0.12, Y + z * 0.1 + Math.sin(wa) * z * 0.05); c.stroke();
     return;
   }
   if (t === 'bench') {
