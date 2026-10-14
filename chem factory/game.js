@@ -3853,8 +3853,8 @@ try { nightOff = localStorage.getItem('cf_night') === '0'; } catch (e) {}
 const dayP = () => ((S.t || 0) / DAYLEN + 0.3) % 1;
 const sunEl = () => -Math.cos(dayP() * 2 * Math.PI);
 const darkF = () => nightOff ? 0 : Math.min(1, Math.max(0, -sunEl() / 0.45));
-const WXK = { clear: { n: 'Clear', i: '☀' }, rain: { n: 'Rain', i: '☂', t: 'Rain: walking off paths is slower, solar and evaporation ponds drop, lamps reach a little less far, rainwater tanks fill.' }, fog: { n: 'Fog', i: '≋', t: 'Fog: lamps and floodlights reach much less far, solar output falls, and crawlers swarm more often.' }, snow: { n: 'Snow', i: '❄', t: 'Snow: drifts settle on belts and slow them, walking off paths is slow, solar output falls.' }, storm: { n: 'Storm', i: '⚡', t: 'Storm: strong gusts drive the wind turbines hard, heavy rain slows walking off paths and stops ponds evaporating, rainwater tanks fill fast.' } };
-let WXB = 1, WXS = 0;
+const WXK = { clear: { n: 'Clear', i: '☀' }, rain: { n: 'Rain', i: '☂', t: 'Rain: walking off paths is slower, solar and evaporation ponds drop, lamps reach a little less far, rainwater tanks fill.' }, fog: { n: 'Fog', i: '≋', t: 'Fog: lamps and floodlights reach much less far, solar output falls, and crawlers swarm more often.' }, snow: { n: 'Snow', i: '❄', t: 'Snow: drifts settle on belts and slow them, walking off paths is slow, solar output falls.' }, storm: { n: 'Storm', i: '⚡', t: 'Storm: strong gusts drive the wind turbines hard, heavy rain slows walking off paths and stops ponds evaporating, rainwater tanks fill fast. Lightning can strike machines unless a lightning rod stands within 12 tiles.' } };
+let WXB = 1, WXS = 0, LB = null;
 const wxI = k => { const w = S && S.wind; return w && w.wx === k ? w.wi || 0 : 0; };
 const wxWet = () => wxI('rain') + wxI('storm');
 const wxGust = () => 1 + wxI('storm') * (0.6 + 0.25 * Math.sin((S.t || 0) * 1.3)) + 0.15 * wxI('rain');
@@ -3874,11 +3874,41 @@ function wxStep() {
   const tg = w.wx === 'clear' ? 0 : Math.min(1, w.wt / 20);
   w.wi = Math.round(Math.max(0, Math.min(1, w.wi + Math.max(-0.05, Math.min(0.05, tg - w.wi)))) * 100) / 100;
   WXB = 1 - 0.35 * wxI('snow');
+  if (wxI('storm') > 0.5 && !S.dg && Math.random() < 0.05 * wxI('storm')) wxBolt();
   if (!w.nx) { const u = Math.random(); w.nx = u < 0.38 ? 'rain' : u < 0.6 ? 'fog' : u < 0.8 ? 'snow' : 'storm'; }
   if (S.t % 5 < 1) { WXS = 0; for (const e of ents.values()) if (e.type === 'wx_station') { WXS = 1; break; } }
 }
 const wxFc = w => { if (!WXS || !w || !w.wx) return ''; const nk = w.wx === 'clear' ? w.nx : 'clear', K = WXK[nk] || WXK.clear, m = Math.max(1, Math.round(w.wt / 60)); return ` <span class="dim" title="Weather station forecast">· next ${K.i} ${K.n} in ~${m} min</span>`; };
 const wxHud = () => { const w = S.wind; if (!w || !w.wx || w.wx === 'clear' || !(w.wi > 0.05)) return wxFc(w); const K = WXK[w.wx]; return ` <span class="dim" title="${K.t}">· ${K.i} ${K.n}</span>` + wxFc(w); };
+function wxBolt() {
+  const P = S.pl, x = P.x + (Math.random() - 0.5) * 44, y = P.y + (Math.random() - 0.5) * 30;
+  let rod = null, rd = 12, tg = null, td = 3;
+  for (const e of ents.values()) {
+    const c = ctr(e), dd = Math.hypot(c.x - x, c.y - y);
+    if (e.type === 'lightning_rod') { if (dd < rd) { rod = e; rd = dd; } }
+    else if (BUILD[e.type].kind === 'machine' && dd < td) { tg = e; td = dd; }
+  }
+  const h = rod || tg, c = h ? ctr(h) : { x, y }, s = [];
+  for (let k = 0; k < 9; k++) s.push(k === 8 ? 0 : (Math.random() - 0.5) * (2.4 - k * 0.25));
+  LB = { x: c.x, y: rod ? c.y - 0.45 : c.y, t: 0.35, s };
+  fx.push({ x: c.x, y: c.y, t: 0.3, c: '#e8f0ff' });
+  S.lbs = (S.lbs || 0) + 1;
+  if (rod) S.lbr = (S.lbr || 0) + 1;
+  else if (tg) { hurt(tg, 60 + Math.round(maxHp(tg) * 0.15), 'lightning'); toast(`Lightning struck the ${BUILD[tg.type].n}. Put up a lightning rod nearby.`, 1); }
+}
+function drawBolt(ox, oy, z, w, h) {
+  if (!LB) return;
+  LB.t -= 1 / 60; if (LB.t <= 0) { LB = null; return; }
+  const a = Math.min(1, LB.t / 0.25), X = ox + LB.x * z, Y = oy + LB.y * z, n = LB.s.length;
+  ctx.save();
+  ctx.fillStyle = `rgba(235,240,255,${(0.3 * a).toFixed(3)})`; ctx.fillRect(0, 0, w, h);
+  for (const [lw, col] of [[Math.max(4, z * 0.22), `rgba(170,190,255,${(0.35 * a).toFixed(2)})`], [Math.max(1.5, z * 0.07), `rgba(255,255,255,${a.toFixed(2)})`]]) {
+    ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(X + LB.s[0] * z, -10);
+    for (let k = 1; k < n; k++) ctx.lineTo(X + LB.s[k] * z, -10 + (Y + 10) * k / (n - 1));
+    ctx.stroke();
+  }
+  ctx.restore();
+}
 function drawWeather(w, h) {
   const Wd = S.wind;
   if (!Wd || !Wd.wx || Wd.wx === 'clear' || !(Wd.wi > 0.02)) return;
@@ -3962,7 +3992,7 @@ function drawNight(vis, ox, oy, z, w, h) {
   }
   ctx.globalCompositeOperation = 'source-over';
 }
-const DECOK = new Set(['wx_station', 'street_lamp', 'bollard', 'flower_bed', 'planter', 'orn_tree', 'hedge', 'bench', 'fountain', 'gravel_path', 'brick_path', 'boardwalk']);
+const DECOK = new Set(['lightning_rod', 'wx_station', 'street_lamp', 'bollard', 'flower_bed', 'planter', 'orn_tree', 'hedge', 'bench', 'fountain', 'gravel_path', 'brick_path', 'boardwalk']);
 for (const k in BUILD) if (BUILD[k].pv || BUILD[k].wv || BUILD[k].dv || BUILD[k].lamp) DECOK.add(k);
 const FLC = ['#e84a6a', '#f0c040', '#f4f0f4', '#a060d0', '#f08a30', '#e070b0'];
 function flowers(c, X, Y, z, sd, n, rr) {
@@ -4033,6 +4063,16 @@ function decoDraw(c, t, e, X, Y, z, on, nb) {
     c.fillStyle = '#5a8a3e';
     for (let k = 0; k < (z >= 14 ? 14 : 6); k++) c.fillRect(X + l + hash(sd, k, 91) * (z - l - r - z * 0.12), Y + u + hash(sd, k, 92) * (z - u - dn - z * 0.16), Math.max(1, z * 0.09), Math.max(1, z * 0.06));
     if (e.hp != null && e.hp < maxHp(e)) { c.fillStyle = 'rgba(120,90,40,0.5)'; c.fillRect(X + l, Y + u, (z - l - r) * (1 - e.hp / maxHp(e)), z - u - dn); }
+    return;
+  }
+  if (t === 'lightning_rod') {
+    const cx = X + z * 0.5;
+    c.fillStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.ellipse(cx + z * 0.06, Y + z * 0.86, z * 0.28, z * 0.1, 0, 0, 7); c.fill();
+    c.fillStyle = '#9a9a92'; c.fillRect(X + z * 0.3, Y + z * 0.74, z * 0.4, z * 0.16);
+    c.strokeStyle = '#5a3a20'; c.lineWidth = Math.max(1, z * 0.04); c.beginPath(); c.moveTo(cx + z * 0.1, Y + z * 0.8); c.lineTo(cx + z * 0.1, Y + z * 0.2); c.stroke();
+    const gr = c.createLinearGradient(cx - z * 0.05, 0, cx + z * 0.05, 0); gr.addColorStop(0, '#8a5028'); gr.addColorStop(0.5, '#e8a070'); gr.addColorStop(1, '#8a5028');
+    c.fillStyle = gr; c.fillRect(cx - z * 0.045, Y + z * 0.08, z * 0.09, z * 0.7);
+    c.beginPath(); c.moveTo(cx - z * 0.06, Y + z * 0.1); c.lineTo(cx, Y - z * 0.12); c.lineTo(cx + z * 0.06, Y + z * 0.1); c.closePath(); c.fill();
     return;
   }
   if (t === 'wx_station') {
@@ -6201,6 +6241,7 @@ function render() {
   }
   drawNight(vis, ox, oy, z, w, h);
   drawWeather(w, h);
+  drawBolt(ox, oy, z, w, h);
   if (!vig || vig.w !== w || vig.h !== h) {
     const g = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.38, w / 2, h / 2, Math.hypot(w, h) * 0.62);
     g.addColorStop(0, 'rgba(10,8,4,0)'); g.addColorStop(1, 'rgba(10,8,4,0.45)');
