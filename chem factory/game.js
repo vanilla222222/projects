@@ -3897,13 +3897,13 @@ try { nightOff = localStorage.getItem('cf_night') === '0'; } catch (e) {}
 const dayP = () => ((S.t || 0) / DAYLEN + 0.3) % 1;
 const sunEl = () => -Math.cos(dayP() * 2 * Math.PI);
 const darkF = () => nightOff ? 0 : Math.min(1, Math.max(0, -sunEl() / 0.45));
-const WXK = { clear: { n: 'Clear', i: '☀' }, rain: { n: 'Rain', i: '☂', t: 'Rain: walking off paths is slower, solar and evaporation ponds drop, lamps reach a little less far, rainwater tanks fill.' }, fog: { n: 'Fog', i: '≋', t: 'Fog: lamps and floodlights reach much less far, solar output falls, and crawlers swarm more often.' }, snow: { n: 'Snow', i: '❄', t: 'Snow: drifts settle on belts and slow them, walking off paths is slow, solar output falls.' }, storm: { n: 'Storm', i: '⚡', t: 'Storm: strong gusts drive the wind turbines hard, heavy rain slows walking off paths and stops ponds evaporating, rainwater tanks fill fast. Lightning can strike machines unless a lightning rod stands within 12 tiles.' }, heat: { n: 'Heatwave', i: '♨', t: 'Heatwave: evaporation ponds work half again as fast, hot solar cells lose about a tenth of their output, and walking is a little slower.' }, rime: { n: 'Freezing Fog', i: '❆', t: 'Freezing fog: supercooled droplets freeze as rime on everything they touch. Lamps reach less far, solar output falls, belts slow under the ice, and cold-blooded crawlers turn sluggish.' }, sleet: { n: 'Sleet', i: '❅', t: 'Sleet: half-melted snow and rain. Slush freezes onto belts and slows them, walking off paths is slow, solar output falls and rainwater tanks fill.' }, gale: { n: 'Gale', i: '≈', t: 'Gale: a strong, steady wind. Wind turbines run near full output, and both you and crawlers move slower against it.' }, hail: { n: 'Hail', i: '◌', t: 'Hail: ice pellets hammer down. Crawlers caught in the open are bruised, solar output falls, ponds stop drying, walking is slower and rainwater tanks fill.' }, calm: { n: 'Still Haze', i: '▤', t: 'Still haze: a high-pressure inversion puts a lid of warm air over cold. The wind dies, so wind turbines barely turn. Smoke and dust hang in a flat brown-grey layer, solar output dips, and lamps reach a little less far. Sound carries far under the lid, so hives hear the factory and stir sooner.' }, dust: { n: 'Dust storm', i: '≋', t: 'Dust storm: strong wind lifts dust in a brown wall. Solar output halves, ponds dry more slowly, it is darker, and walking against the wind is slower. Wind turbines spin faster.' } };
+const WXK = { clear: { n: 'Clear', i: '☀' }, rain: { n: 'Rain', i: '☂', t: 'Rain: walking off paths is slower, solar and evaporation ponds drop, lamps reach a little less far, rainwater tanks fill.' }, fog: { n: 'Fog', i: '≋', t: 'Fog: lamps and floodlights reach much less far, solar output falls, and crawlers swarm more often.' }, snow: { n: 'Snow', i: '❄', t: 'Snow: drifts settle on belts and slow them, walking off paths is slow, solar output falls.' }, storm: { n: 'Storm', i: '⚡', t: 'Storm: strong gusts drive the wind turbines hard, heavy rain slows walking off paths and stops ponds evaporating, rainwater tanks fill fast. Lightning can strike machines unless a lightning rod stands within 12 tiles.' }, heat: { n: 'Heatwave', i: '♨', t: 'Heatwave: evaporation ponds work half again as fast, hot solar cells lose about a tenth of their output, and walking is a little slower.' }, rime: { n: 'Freezing Fog', i: '❆', t: 'Freezing fog: supercooled droplets freeze as rime on everything they touch. Lamps reach less far, solar output falls, belts slow under the ice, and cold-blooded crawlers turn sluggish.' }, sleet: { n: 'Sleet', i: '❅', t: 'Sleet: half-melted snow and rain. Slush freezes onto belts and slows them, walking off paths is slow, solar output falls and rainwater tanks fill.' }, gale: { n: 'Gale', i: '≈', t: 'Gale: a strong, steady wind. Wind turbines run near full output, and both you and crawlers move slower against it.' }, hail: { n: 'Hail', i: '◌', t: 'Hail: ice pellets hammer down. Crawlers caught in the open are bruised, solar output falls, ponds stop drying, walking is slower and rainwater tanks fill.' }, calm: { n: 'Still Haze', i: '▤', t: 'Still haze: a high-pressure inversion puts a lid of warm air over cold. The wind dies, so wind turbines barely turn. Smoke and dust hang in a flat brown-grey layer, solar output dips, and lamps reach a little less far. Sound carries far under the lid, so hives hear the factory and stir sooner.' }, shower: { n: 'Sun Shower', i: '◠', t: 'Sun shower: a passing shower falls from a cloud edge while the sun stays out behind you. Each falling drop bends and reflects sunlight back at about 42 degrees, which splits it into a rainbow. Rainwater tanks fill, solar output barely drops, and walking off paths is only a little slower.' }, dust: { n: 'Dust storm', i: '≋', t: 'Dust storm: strong wind lifts dust in a brown wall. Solar output halves, ponds dry more slowly, it is darker, and walking against the wind is slower. Wind turbines spin faster.' } };
 let WXB = 1, WXS = 0, LB = null;
 const wxI = k => { const w = S && S.wind; return w && w.wx === k ? w.wi || 0 : 0; };
-const wxWet = () => wxI('rain') + wxI('storm') + wxI('hail') + 0.8 * wxI('sleet');
+const wxWet = () => 0.5 * wxI('shower') + wxI('rain') + wxI('storm') + wxI('hail') + 0.8 * wxI('sleet');
 const wxGust = () => 1 + wxI('storm') * (0.6 + 0.25 * Math.sin((S.t || 0) * 1.3)) + 0.15 * wxI('rain') + 0.45 * wxI('dust') + 0.9 * wxI('gale') - 0.65 * wxI('calm');
-const wxWalk = () => 1 - 0.1 * wxI('hail') - 0.15 * wxI('gale') - 0.12 * wxI('dust') - 0.08 * wxI('heat') - 0.15 * wxI('rain') - 0.22 * wxI('storm') - 0.3 * wxI('snow') - 0.22 * wxI('sleet') - 0.1 * wxI('rime');
-const wxSun = e => e.type === 'pond' ? 1 - 0.1 * wxI('calm') - 0.2 * wxI('dust') + 0.5 * wxI('heat') - 0.75 * wxWet() - 0.45 * wxI('snow') - 0.3 * wxI('fog') - 0.25 * wxI('rime') : 1 - 0.18 * wxI('calm') - 0.5 * wxI('dust') - 0.1 * wxI('heat') - 0.45 * wxWet() - 0.35 * wxI('snow') - 0.3 * wxI('fog') - 0.3 * wxI('rime');
+const wxWalk = () => 1 - 0.1 * wxI('hail') - 0.15 * wxI('gale') - 0.12 * wxI('dust') - 0.08 * wxI('heat') - 0.15 * wxI('rain') - 0.05 * wxI('shower') - 0.22 * wxI('storm') - 0.3 * wxI('snow') - 0.22 * wxI('sleet') - 0.1 * wxI('rime');
+const wxSun = e => e.type === 'pond' ? 1 - 0.1 * wxI('calm') - 0.2 * wxI('dust') + 0.5 * wxI('heat') - 0.75 * wxWet() - 0.45 * wxI('snow') - 0.3 * wxI('fog') - 0.25 * wxI('rime') : 1 - 0.05 * wxI('shower') - 0.18 * wxI('calm') - 0.5 * wxI('dust') - 0.1 * wxI('heat') - 0.45 * wxWet() - 0.35 * wxI('snow') - 0.3 * wxI('fog') - 0.3 * wxI('rime');
 const wxLit = () => 1 - 0.12 * wxI('calm') - 0.3 * wxI('dust') - 0.45 * wxI('fog') - 0.35 * wxI('rime') - 0.12 * (wxWet() + wxI('snow'));
 function wxStep() {
   const w = S.wind;
@@ -3912,7 +3912,7 @@ function wxStep() {
   if (w.wt <= 0) {
     if (w.wx !== 'clear') { w.wx = 'clear'; w.wt = 150 + Math.floor(Math.random() * 250); }
     else { w.wx = w.nx || 'rain'; w.wt = 90 + Math.floor(Math.random() * 150); }
-    const u = Math.random(); w.nx = u < 0.27 ? 'rain' : u < 0.3 ? 'sleet' : u < 0.42 ? 'fog' : u < 0.46 ? 'rime' : u < 0.6 ? 'snow' : u < 0.7 ? 'heat' : u < 0.74 ? 'calm' : u < 0.87 ? 'dust' : u < 0.92 ? 'hail' : u < 0.97 ? 'gale' : 'storm';
+    const u = Math.random(); w.nx = u < 0.24 ? 'rain' : u < 0.27 ? 'shower' : u < 0.3 ? 'sleet' : u < 0.42 ? 'fog' : u < 0.46 ? 'rime' : u < 0.6 ? 'snow' : u < 0.7 ? 'heat' : u < 0.74 ? 'calm' : u < 0.87 ? 'dust' : u < 0.92 ? 'hail' : u < 0.97 ? 'gale' : 'storm';
     w.wi = 0;
   }
   const tg = w.wx === 'clear' ? 0 : Math.min(1, w.wt / 20);
@@ -3920,7 +3920,7 @@ function wxStep() {
   WXB = 1 - 0.35 * wxI('snow') - 0.15 * wxI('gale') - 0.2 * wxI('sleet') - 0.1 * wxI('rime');
   if (wxI('hail') > 0.3 && !S.dg) for (const b of S.bugs) if (b.hp > 0) b.hp -= (b.mhp || 100) * 0.006 * wxI('hail') * (BUGK[b.k || 0].ar ? 0.3 : 1);
   if (wxI('storm') > 0.5 && !S.dg && Math.random() < 0.05 * wxI('storm')) wxBolt();
-  if (!w.nx) { const u = Math.random(); w.nx = u < 0.27 ? 'rain' : u < 0.3 ? 'sleet' : u < 0.42 ? 'fog' : u < 0.46 ? 'rime' : u < 0.6 ? 'snow' : u < 0.7 ? 'heat' : u < 0.74 ? 'calm' : u < 0.87 ? 'dust' : u < 0.92 ? 'hail' : u < 0.97 ? 'gale' : 'storm'; }
+  if (!w.nx) { const u = Math.random(); w.nx = u < 0.24 ? 'rain' : u < 0.27 ? 'shower' : u < 0.3 ? 'sleet' : u < 0.42 ? 'fog' : u < 0.46 ? 'rime' : u < 0.6 ? 'snow' : u < 0.7 ? 'heat' : u < 0.74 ? 'calm' : u < 0.87 ? 'dust' : u < 0.92 ? 'hail' : u < 0.97 ? 'gale' : 'storm'; }
   if (S.t % 5 < 1) { WXS = 0; for (const e of ents.values()) if (e.type === 'wx_station') { WXS = 1; break; } }
 }
 const wxFc = w => { if (!WXS || !w || !w.wx) return ''; const nk = w.wx === 'clear' ? w.nx : 'clear', K = WXK[nk] || WXK.clear, m = Math.max(1, Math.round(w.wt / 60)); return ` <span class="dim" title="Weather station forecast">· next ${K.i} ${K.n} in ~${m} min</span>`; };
@@ -4000,6 +4000,20 @@ function drawWeather(w, h) {
     ctx.fillStyle = 'rgba(232,238,246,0.75)'; ctx.beginPath();
     for (let i = 0; i < n; i++) { const ph = hash(i, 8, 31); if (ph < 0.6) continue; const y = (hash(i, 9, 31) * h + t * vy * (0.8 + 0.4 * ph)) % (h + 40) - 20, x = ((hash(i, 10, 31) * w + (y + 20) / vy * vx) % w + w) % w + Math.sin(t * 3 + i) * 3, r = 1.5 + 2.2 * (ph - 0.6); ctx.moveTo(x + r, y); ctx.ellipse(x, y, r, r * 0.7, 0.4, 0, Math.PI * 2); }
     ctx.fill();
+  } else if (k === 'shower') {
+    const n = Math.min(600, Math.round(140 * I * A)), vy = 800, vx = sx * vy * 1.1, L = 0.02;
+    ctx.fillStyle = `rgba(255,236,190,${(0.06 * I).toFixed(3)})`; ctx.fillRect(0, 0, w, h);
+    if (dk < 0.5) {
+      const cx = w * 0.5, cy = h * 1.1, R0 = h * 0.95, cols = ['255,60,60', '255,150,40', '255,235,60', '80,210,90', '60,140,255', '120,80,220'];
+      ctx.lineWidth = Math.max(6, R0 * 0.012);
+      cols.forEach((c, j) => { ctx.strokeStyle = `rgba(${c},${(0.16 * I * (1 - 2 * dk)).toFixed(3)})`; ctx.beginPath(); ctx.arc(cx, cy, R0 - j * ctx.lineWidth, Math.PI * 1.05, Math.PI * 1.95); ctx.stroke(); });
+    }
+    ctx.strokeStyle = `rgba(255,248,225,${(0.35 + 0.25 * I).toFixed(2)})`; ctx.lineWidth = 1; ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const ph = hash(i, 5, 19), y = (hash(i, 6, 19) * h + t * vy * (0.8 + 0.4 * ph)) % (h + 40) - 20, x = ((hash(i, 7, 19) * w + (y + 20) / vy * vx) % w + w) % w;
+      ctx.moveTo(x, y); ctx.lineTo(x + vx * L, y + vy * L);
+    }
+    ctx.stroke();
   } else if (k === 'calm') {
     const c = dk > 0.5 ? '58,52,46' : '176,162,138';
     const gr = ctx.createLinearGradient(0, 0, 0, h);
@@ -4945,7 +4959,7 @@ const SOIL = [1, 0, 0.4, 0.05, 0, 0.35, 0.1, 0.1];
 function soilAt(x, y, w, h) { let a = 0; for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) a += SOIL[terrain[(y + j) * W + x + i]] || 0; return a / (w * h); }
 function soilOf(e) { if (e.sl == null) e.sl = soilAt(e.x, e.y, BUILD[e.type].w, BUILD[e.type].h); return e.sl; }
 const TIDE_T = 300, tideOf = () => Math.abs(Math.sin(S.t * Math.PI / TIDE_T)) ** 3;
-const sunMul = e => BUILD[e.type].rain ? Math.min(1.6, wxI('rain') + 0.7 * wxI('hail') + 0.8 * wxI('sleet') + 1.6 * wxI('storm')) : BUILD[e.type].tide ? tideOf() : BUILD[e.type].soil ? soilOf(e) : BUILD[e.type].sun ? sunOf(e) * wxSun(e) : BUILD[e.type].wind ? exposureOf(e) * windCurve(BUILD[e.type].sea ? 1.25 : 1) : 1;
+const sunMul = e => BUILD[e.type].rain ? Math.min(1.6, wxI('rain') + 0.6 * wxI('shower') + 0.7 * wxI('hail') + 0.8 * wxI('sleet') + 1.6 * wxI('storm')) : BUILD[e.type].tide ? tideOf() : BUILD[e.type].soil ? soilOf(e) : BUILD[e.type].sun ? sunOf(e) * wxSun(e) : BUILD[e.type].wind ? exposureOf(e) * windCurve(BUILD[e.type].sea ? 1.25 : 1) : 1;
 function tryStart(e, r) {
   if (r.well && !wellTiles(e).length) return 'empty';
   if (BUILD[e.type].forest && !forestOf(e)) return 'forest';
