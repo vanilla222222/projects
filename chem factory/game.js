@@ -3261,12 +3261,13 @@ const WPN = {
   tknife: { n: 'Throwing Knives', am: 'tk_knife', rk: 'rtk', per: 1, dm: 12, hv: 8, cd: 0.5, r: 6, need: 'knife_belt', fl: 2.5 },
   atl: { n: 'Atlatl', am: 'at_dart', rk: 'rat', per: 1, dm: 14, hv: 9, cd: 0.6, r: 8, need: 'atlatl', bg: 2.2 },
   tstick: { n: 'Throwing Sticks', am: 'th_stick', rk: 'rts', per: 1, dm: 10, hv: 7, cd: 0.5, r: 8, need: 'stick_case', fs: 2.4 },
+  hatch: { n: 'Throwing Hatchets', am: 'th_hatchet', rk: 'rht', per: 1, dm: 13, hv: 9, cd: 0.55, r: 7, need: 'hatchet_belt', pk: 0.35 },
   wcan: { n: 'Water Cannon', am: 'water_cell', rk: 'rwc', per: 20, dm: 3, hv: 4, cd: 0.1, r: 7, need: 'water_cannon', ln: 0.5, kb: 0.6 },
   tack: { n: 'Tack Gel Launcher', am: 'tack_canister', rk: 'rtk', per: 6, dm: 8, hv: 6, cd: 0.9, r: 10, need: 'tack_launcher', sp: 1.8, tk: 5 },
   jet: { n: 'Abrasive Jet Lance', am: 'garnet_charge', rk: 'rj', per: 25, dm: 9, hv: 8, cd: 0.08, r: 6, arm: 3.2, need: 'jet_lance', ln: 0.55 },
   rotary: { n: 'Rotary Gun', am: 'ammo_belt', rk: 'rb2', per: 50, dm: 10, hv: 10, cd: 0.035, r: PL_GUN, need: 'rotary_gun', en: 60 },
 };
-const WORDER = ['rifle', 'ap', 'shotgun', 'slug', 'frang', 'flechette', 'mortar', 'driver', 'ram', 'spear', 'brk', 'sling', 'tknife', 'atl', 'tstick', 'auto_shotgun', 'lmg', 'rotary', 'marksman', 'marksman_w', 'coilgun', 'crossbow', 'amr', 'arc', 'cryo', 'jet', 'tack', 'bow', 'harpoon', 'caltrop', 'net', 'wcan', 'mark', 'strobe', 'sonic', 'bola', 'barb', 'disc', 'saw', 'rivet', 'boom', 'gum', 'lure', 'vortex', 'flail'];
+const WORDER = ['rifle', 'ap', 'shotgun', 'slug', 'frang', 'flechette', 'mortar', 'driver', 'ram', 'spear', 'brk', 'sling', 'tknife', 'atl', 'tstick', 'hatch', 'auto_shotgun', 'lmg', 'rotary', 'marksman', 'marksman_w', 'coilgun', 'crossbow', 'amr', 'arc', 'cryo', 'jet', 'tack', 'bow', 'harpoon', 'caltrop', 'net', 'wcan', 'mark', 'strobe', 'sonic', 'bola', 'barb', 'disc', 'saw', 'rivet', 'boom', 'gum', 'lure', 'vortex', 'flail'];
 const ARMOR = {
   exoframe4: { a: 0.55, g: 14 },
   exoframe3: { a: 0.5, g: 12 },
@@ -3307,7 +3308,7 @@ const NADE = {
   ammonal_charge: { r: 3.2, dm: 130, hv: 160, c: '#c8c8c0' },
   powder_charge: { r: 2.2, dm: 55, hv: 60, c: '#4a4844' },
 };
-const CMB = ['veneer', 'birch_ply', 'th_stick', 'stick_case', 'hide_glue', 'at_dart', 'atlatl', 'hc_bar', 'tk_knife', 'knife_belt', 'sling_tube', 'sl_ball', 'slingshot', 'cm_bar', 'br_bit', 'hbreaker', 'ph_bar', 'sg_shaft', 'speargun', 'ram_cell', 'hyd_ram', 'b_steel', 'drive_spike', 'post_driver', 'di_ball', 'air_mortar', 'thf', 'ptmeg', 'tpee', 'flail_line', 'flail_gun', 'sil_compound', 'sil_diaphragm', 'vortex_gun', 'iso_acetate', 'lure_pod', 'lure_gun', 'hotmelt', 'gum_cart', 'gum_gun', 'gf_pa6', 'boomerang', 'boom_arm', 'rivet_strip', 'rivet_gun', 'rivet', 'saw_mag', 'saw_launcher', 'saw_disc', 'disc_stack', 'disc_launcher', 'zta_disc', 'barb_mag', 'barb_gun', 'bola_pack', 'bola_launcher', 'pz_stack', 'sonic_pulser', 'flash_tube', 'strobe_lance', 'marker_ball', 'marker_gun', 'water_cell', 'water_cannon', 'net_pack', 'net_gun', 'ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'crossbow', 'xbow_bolt', 'amr', 'wha_round', 'exoframe3', 'coil_turret', 'knee_gen', 'thermal_sight', 'thermal_cam', 'ultrasound_probe', 'surge_arrester', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug', 'arc_caster', 'spark_gap', 'laminate_carrier', 'sofc_pack', 'supercap', 'slug_shell', 'rotary_gun', 'discharge_ring', 'tandem_film', 'hemostat', 'med_injector', 'blast_suit', 'ss_batt', 'flechette_shell', 'wcore_round', 'heavy_carrier', 'arm_brace', 'auto_shotgun', 'exoframe4', 'cryo_lance', 'ln2_flask', 'jet_lance', 'garnet_charge', 'tack_launcher', 'tack_canister', 'compound_bow', 'broadhead_arrow', 'harpoon_gun', 'harpoon', 'caltrop_launcher', 'caltrop_pack'];
+const CMB = ['hatchet_head', 'th_hatchet', 'hatchet_belt', 'veneer', 'birch_ply', 'th_stick', 'stick_case', 'hide_glue', 'at_dart', 'atlatl', 'hc_bar', 'tk_knife', 'knife_belt', 'sling_tube', 'sl_ball', 'slingshot', 'cm_bar', 'br_bit', 'hbreaker', 'ph_bar', 'sg_shaft', 'speargun', 'ram_cell', 'hyd_ram', 'b_steel', 'drive_spike', 'post_driver', 'di_ball', 'air_mortar', 'thf', 'ptmeg', 'tpee', 'flail_line', 'flail_gun', 'sil_compound', 'sil_diaphragm', 'vortex_gun', 'iso_acetate', 'lure_pod', 'lure_gun', 'hotmelt', 'gum_cart', 'gum_gun', 'gf_pa6', 'boomerang', 'boom_arm', 'rivet_strip', 'rivet_gun', 'rivet', 'saw_mag', 'saw_launcher', 'saw_disc', 'disc_stack', 'disc_launcher', 'zta_disc', 'barb_mag', 'barb_gun', 'bola_pack', 'bola_launcher', 'pz_stack', 'sonic_pulser', 'flash_tube', 'strobe_lance', 'marker_ball', 'marker_gun', 'water_cell', 'water_cannon', 'net_pack', 'net_gun', 'ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'crossbow', 'xbow_bolt', 'amr', 'wha_round', 'exoframe3', 'coil_turret', 'knee_gen', 'thermal_sight', 'thermal_cam', 'ultrasound_probe', 'surge_arrester', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug', 'arc_caster', 'spark_gap', 'laminate_carrier', 'sofc_pack', 'supercap', 'slug_shell', 'rotary_gun', 'discharge_ring', 'tandem_film', 'hemostat', 'med_injector', 'blast_suit', 'ss_batt', 'flechette_shell', 'wcore_round', 'heavy_carrier', 'arm_brace', 'auto_shotgun', 'exoframe4', 'cryo_lance', 'ln2_flask', 'jet_lance', 'garnet_charge', 'tack_launcher', 'tack_canister', 'compound_bow', 'broadhead_arrow', 'harpoon_gun', 'harpoon', 'caltrop_launcher', 'caltrop_pack'];
 (() => {
   const { need, deps, L, xadd } = TKX;
   const its = new Set([...Object.values(WPN).map(w => w.need).filter(Boolean), ...Object.keys(ARMOR), ...Object.keys(EQ)].filter(k => !START_INV[k] && RECIPE[k] && need[k] < 1e9));
@@ -3371,6 +3372,7 @@ function wpnShot(ox, oy, list, hives, see, under, arm) {
   const flF = W.fl && best && !BUGK[best.k || 0].re && Math.cos((best.a || 0) - Math.atan2(best.y - oy, best.x - ox)) > 0.3 ? W.fl : 1;
   const bgF = W.bg && best && !BUGK[best.k || 0].bb && (BUGK[best.k || 0].sz || 1) >= 1.2 ? W.bg : 1;
   const fsF = W.fs && best && !BUGK[best.k || 0].sc && best.hp >= (best.mhp || best.hp) ? W.fs : 1;
+  const pkF = W.pk && best && !BUGK[best.k || 0].ds ? 1 + W.pk * Math.min(4, list.filter(b => b !== best && b.hp > 0 && (b.x - best.x) ** 2 + (b.y - best.y) ** 2 < 9).length) : 1;
   const dgF = W.dg && best ? (BUGK[best.k || 0].dd ? Math.min(1, 0.5 + W.dg * Math.sqrt(bd) / R) : 0.5 + W.dg * Math.sqrt(bd) / R) : 1;
   if (best) {
     if (W.rad) {
@@ -3396,7 +3398,7 @@ function wpnShot(ox, oy, list, hives, see, under, arm) {
       }
     } else if (W.sp) {
       for (const b of list) if (b.hp > 0 && (b === best || (b.x - tx) ** 2 + (b.y - ty) ** 2 < W.sp * W.sp) && (!see || see(b))) { b.hp -= SH(b) * W.dm * (arm(b) ? W.arm || 1 : 1); hits.push(b); }
-    } else { best.hp -= SH(best) * W.dm * xq * wq * dgF * opF * loF * flF * bgF * fsF * (arm(best) ? W.arm || 1 : 1); hits.push(best); }
+    } else { best.hp -= SH(best) * W.dm * xq * wq * dgF * opF * loF * flF * bgF * fsF * pkF * (arm(best) ? W.arm || 1 : 1); hits.push(best); }
     if (W.bm) {
       const L = Math.hypot(tx - ox, ty - oy) || 1, ux = (tx - ox) / L, uy = (ty - oy) / L, ex = ox + ux * R, ey = oy + uy * R, cx = ox + ux * R / 2 + uy * R * 0.35, cy = oy + uy * R / 2 - ux * R * 0.35, pts = [];
       for (let j = 0; j <= 14; j++) { const t = j / 14, u = 1 - t; pts.push([u * u * ex + 2 * u * t * cx + t * t * ox, u * u * ey + 2 * u * t * cy + t * t * oy]); }
@@ -3418,6 +3420,7 @@ function wpnShot(ox, oy, list, hives, see, under, arm) {
   if (W.fr && best && !BUGK[best.k || 0].fp) { const L = Math.hypot(tx - ox, ty - oy) || 1, ux = (tx - ox) / L, uy = (ty - oy) / L, c = []; for (const b of list) { if (!(b.hp > 0) || hits.includes(b) || BUGK[b.k || 0].fp) continue; const dx = b.x - best.x, dy = b.y - best.y, dd = Math.hypot(dx, dy); if (dd < 1.8 && dx * ux + dy * uy > -0.2 && (!see || see(b))) c.push([dd, b]); } c.sort((u, v) => u[0] - v[0]); for (const [, b] of c.slice(0, W.fr)) { b.hp -= SH(b) * W.dm * 0.45 * (arm(b) ? 0.4 : 1); hits.push(b); } for (let j = 0; j < 6; j++) fx.push({ x: best.x + ux * 0.4 * j + (Math.random() - 0.5) * 0.8, y: best.y + uy * 0.4 * j + (Math.random() - 0.5) * 0.8, t: 0.3, c: '#c8904a' }); }
   if (W.ix && best && !S.dg) for (let j = 0; j < 10; j++) { const a = j * 0.63; fx.push({ x: tx + Math.cos(a) * W.sp * 0.6, y: ty + Math.sin(a) * W.sp * 0.6, t: 0.2, c: '#9a8a6a' }); }
   if (xq > 1 && !S.dg) for (let j = 0; j < 8; j++) fx.push({ x: tx + (Math.random() - 0.5) * 0.7, y: ty + (Math.random() - 0.5) * 0.7, t: 0.15, c: '#ffd070' });
+  if (pkF > 1) for (let j = 0; j < 6; j++) { const a = j * Math.PI / 3 + 0.3; fx.push({ x: tx + Math.cos(a) * 0.6, y: ty + Math.sin(a) * 0.3, t: 0.2, c: '#c0c8d0' }); }
   if (fsF > 1) for (let j = 0; j < 10; j++) { const a = j * Math.PI / 5; fx.push({ x: tx + Math.cos(a) * 0.35, y: ty + Math.sin(a) * 0.35, t: 0.22, c: '#ffe080' }); }
   if (bgF > 1) for (let j = 0; j < 8; j++) { const a = j * Math.PI / 4; fx.push({ x: tx + Math.cos(a) * 0.5, y: ty + Math.sin(a) * 0.5, t: 0.2, c: '#d8a860' }); }
   if (flF > 1) for (let j = 0; j < 7; j++) fx.push({ x: tx + (Math.random() - 0.5) * 0.6, y: ty + (Math.random() - 0.5) * 0.6, t: 0.16, c: '#f0f4ff' });
@@ -4736,6 +4739,7 @@ function arsenalHtml() {
     if (W.ix) sp.push(`lobbed: arcs over walls and rubble, but cannot hit anything closer than ${W.mn} tiles`);
     if (W.xq) sp.push(`finisher: ×${W.xq} damage on a crawler already below a third of its health`);
     if (W.op) sp.push(`opener: ×${W.op} damage on crawlers still above 80% health`);
+    if (W.pk) sp.push(`pack bite: +${Math.round(W.pk * 100)}% damage per crawler crowding the target (up to 4)`);
     if (W.fs) sp.push(`first strike: ×${W.fs} damage on unhurt crawlers`);
     if (W.bg) sp.push(`big game: ×${W.bg} damage on large crawlers`);
     if (W.fl) sp.push(`flank: ×${W.fl} damage on crawlers facing away from you`);
@@ -10351,6 +10355,7 @@ const CHAINS = [
   { n: 'Throwing knives', l: [['steel + coke', 'Coreless induction furnace', '1095 carbon steel bar'], ['bar + kaolin + fuel gas', 'Quench and temper line', 'clay-tempered throwing knives'], ['leather + spring wire', 'Workshop', 'knife bandolier']] },
   { n: 'Atlatl', l: [['limed pelt + hot water', 'Tanning drum', 'hide glue'], ['thermowood + carbon steel bar + glue', 'Workshop', 'atlatl darts'], ['thermowood + leather + glue', 'Workshop', 'atlatl']] },
   { n: 'Throwing sticks', l: [['pulpwood + steam', 'Sawmill', 'rotary birch veneer'], ['veneer + phenolic resin + steam', 'Laminate press', 'birch aircraft plywood'], ['plywood + linseed oil', 'Workshop', 'throwing sticks'], ['leather + thermowood', 'Workshop', 'throwing stick case']] },
+  { n: 'Throwing hatchets', l: [['steel + fuel gas + water', 'Quench and temper line', 'hatchet heads'], ['heads + thermowood + linseed oil', 'Workshop', 'throwing hatchets'], ['leather + steel', 'Workshop', 'hatchet belt']] },
   { n: 'Vortex cannon', l: [['silicone + fumed silica + platinum', 'Intensive mixer', 'HCR silicone'], ['silicone compound', 'Curing press', 'drum diaphragms'], ['air bottle + diaphragms + aluminium', 'Workshop', 'Vortex cannon']] },
   { n: 'Lure launcher', l: [['fusel oil + acetic acid', 'Pressure reactor, acid resin', 'isoamyl acetate'], ['ester + PVA + polypropylene', 'Workshop', 'lure pods'], ['steel + aluminium + circuit board', 'Workshop', 'Lure launcher']] },
   { n: 'Gum gun', l: [['EVA + rosin ester + paraffin wax', 'Wax melter', 'hot-melt adhesive'], ['hot-melt + polypropylene', 'Workshop', 'gum cartridges'], ['aluminium + steel + circuit board + wire', 'Workshop', 'Gum gun']] },
@@ -11976,6 +11981,24 @@ const CMBI = (() => {
     for (const [x, r] of [[24, -0.3], [32, 0], [40, 0.3]]) { g.save(); g.translate(x, 18); g.rotate(r); g.fillStyle = '#c09060'; g.beginPath(); g.moveTo(-8, 4); g.quadraticCurveTo(0, -12, 8, 4); g.lineTo(5, 5); g.quadraticCurveTo(0, -5, -5, 5); g.closePath(); g.fill(); ink(g, 1); g.restore(); }
     rrect(g, 16, 20, 32, 36, 5); g.fillStyle = lgr(g, 16, 0, 48, 0, '#9a6a3a', '#5a3818'); g.fill(); ink(g, 1);
     g.strokeStyle = '#d8b880'; g.lineWidth = 1; g.setLineDash([2, 2]); g.strokeRect(19, 24, 26, 28); g.setLineDash([]);
+  };
+  T.hatchet_head = g => {
+    dshad(g, 32, 56, 22, 3);
+    for (const [x, y] of [[20, 26], [40, 36]]) { g.save(); g.translate(x, y); g.fillStyle = lgr(g, -12, 0, 12, 0, '#6a7078', '#c8d0d8'); g.beginPath(); g.moveTo(-10, -5); g.lineTo(4, -6); g.quadraticCurveTo(14, -12, 15, -1); g.quadraticCurveTo(14, 10, 4, 6); g.lineTo(-10, 5); g.closePath(); g.fill(); ink(g, 1); g.fillStyle = '#2a2e34'; g.beginPath(); g.ellipse(-4, 0, 3, 4, 0, 0, 7); g.fill(); g.strokeStyle = '#eef2f6'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(13, -8); g.quadraticCurveTo(16, -1, 13, 7); g.stroke(); g.restore(); }
+  };
+  T.th_hatchet = g => {
+    dshad(g, 32, 58, 20, 3);
+    g.save(); g.translate(30, 34); g.rotate(-0.6);
+    g.fillStyle = lgr(g, -3, 0, 3, 0, '#c09060', '#7a5028'); g.fillRect(-3, -6, 6, 32); ink(g, 1);
+    g.fillStyle = lgr(g, -6, -20, 18, -20, '#6a7078', '#d0d8e0'); g.beginPath(); g.moveTo(-6, -14); g.lineTo(6, -14); g.quadraticCurveTo(18, -24, 19, -10); g.quadraticCurveTo(18, 2, 6, -4); g.lineTo(-6, -4); g.closePath(); g.fill(); ink(g, 1);
+    g.strokeStyle = '#f4f8fc'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(17, -20); g.quadraticCurveTo(20, -10, 17, -1); g.stroke();
+    g.restore();
+  };
+  T.hatchet_belt = g => {
+    dshad(g, 32, 56, 24, 3);
+    g.fillStyle = lgr(g, 0, 30, 0, 42, '#8a6038', '#4a3018'); g.fillRect(4, 30, 56, 12); ink(g, 1);
+    g.fillStyle = '#c0a060'; g.fillRect(6, 32, 6, 8); ink(g, 1);
+    for (const x of [22, 36, 50]) { g.fillStyle = '#9098a0'; g.fillRect(x - 4, 28, 8, 3); g.fillStyle = lgr(g, x - 6, 0, x + 6, 0, '#6a7078', '#c8d0d8'); g.beginPath(); g.moveTo(x - 5, 28); g.lineTo(x + 5, 28); g.quadraticCurveTo(x + 9, 16, x, 14); g.quadraticCurveTo(x - 9, 16, x - 5, 28); g.fill(); ink(g, 1); g.fillStyle = '#a07850'; g.fillRect(x - 2, 42, 4, 14); ink(g, 1); }
   };
   T.vortex_gun = g => {
     dshad(g, 32, 58, 24, 3);
