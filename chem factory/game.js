@@ -3231,12 +3231,13 @@ const WPN = {
   disc: { n: 'Disc Launcher', am: 'disc_stack', rk: 'rdl', per: 8, dm: 20, hv: 12, cd: 0.55, r: 9, need: 'disc_launcher', rc: 3 },
   saw: { n: 'Saw Launcher', am: 'saw_mag', rk: 'rsw', per: 12, dm: 12, hv: 10, cd: 0.4, r: 10, need: 'saw_launcher', xc: 1 },
   rivet: { n: 'Rivet Gun', am: 'rivet_strip', rk: 'rvt', per: 20, dm: 9, hv: 8, cd: 0.3, r: 8, need: 'rivet_gun', rp: 1 },
+  boom: { n: 'Boomerang', am: 'boomerang', rk: 'rbm', per: 30, dm: 14, hv: 10, cd: 0.7, r: 9, need: 'boom_arm', bm: 0.6 },
   wcan: { n: 'Water Cannon', am: 'water_cell', rk: 'rwc', per: 20, dm: 3, hv: 4, cd: 0.1, r: 7, need: 'water_cannon', ln: 0.5, kb: 0.6 },
   tack: { n: 'Tack Gel Launcher', am: 'tack_canister', rk: 'rtk', per: 6, dm: 8, hv: 6, cd: 0.9, r: 10, need: 'tack_launcher', sp: 1.8, tk: 5 },
   jet: { n: 'Abrasive Jet Lance', am: 'garnet_charge', rk: 'rj', per: 25, dm: 9, hv: 8, cd: 0.08, r: 6, arm: 3.2, need: 'jet_lance', ln: 0.55 },
   rotary: { n: 'Rotary Gun', am: 'ammo_belt', rk: 'rb2', per: 50, dm: 10, hv: 10, cd: 0.035, r: PL_GUN, need: 'rotary_gun', en: 60 },
 };
-const WORDER = ['rifle', 'ap', 'shotgun', 'slug', 'flechette', 'auto_shotgun', 'lmg', 'rotary', 'marksman', 'marksman_w', 'coilgun', 'crossbow', 'amr', 'arc', 'cryo', 'jet', 'tack', 'bow', 'harpoon', 'caltrop', 'net', 'wcan', 'mark', 'strobe', 'sonic', 'bola', 'barb', 'disc', 'saw', 'rivet'];
+const WORDER = ['rifle', 'ap', 'shotgun', 'slug', 'flechette', 'auto_shotgun', 'lmg', 'rotary', 'marksman', 'marksman_w', 'coilgun', 'crossbow', 'amr', 'arc', 'cryo', 'jet', 'tack', 'bow', 'harpoon', 'caltrop', 'net', 'wcan', 'mark', 'strobe', 'sonic', 'bola', 'barb', 'disc', 'saw', 'rivet', 'boom'];
 const ARMOR = {
   exoframe4: { a: 0.55, g: 14 },
   exoframe3: { a: 0.5, g: 12 },
@@ -3277,7 +3278,7 @@ const NADE = {
   ammonal_charge: { r: 3.2, dm: 130, hv: 160, c: '#c8c8c0' },
   powder_charge: { r: 2.2, dm: 55, hv: 60, c: '#4a4844' },
 };
-const CMB = ['rivet_strip', 'rivet_gun', 'rivet', 'saw_mag', 'saw_launcher', 'saw_disc', 'disc_stack', 'disc_launcher', 'zta_disc', 'barb_mag', 'barb_gun', 'bola_pack', 'bola_launcher', 'pz_stack', 'sonic_pulser', 'flash_tube', 'strobe_lance', 'marker_ball', 'marker_gun', 'water_cell', 'water_cannon', 'net_pack', 'net_gun', 'ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'crossbow', 'xbow_bolt', 'amr', 'wha_round', 'exoframe3', 'coil_turret', 'knee_gen', 'thermal_sight', 'thermal_cam', 'ultrasound_probe', 'surge_arrester', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug', 'arc_caster', 'spark_gap', 'laminate_carrier', 'sofc_pack', 'supercap', 'slug_shell', 'rotary_gun', 'discharge_ring', 'tandem_film', 'hemostat', 'med_injector', 'blast_suit', 'ss_batt', 'flechette_shell', 'wcore_round', 'heavy_carrier', 'arm_brace', 'auto_shotgun', 'exoframe4', 'cryo_lance', 'ln2_flask', 'jet_lance', 'garnet_charge', 'tack_launcher', 'tack_canister', 'compound_bow', 'broadhead_arrow', 'harpoon_gun', 'harpoon', 'caltrop_launcher', 'caltrop_pack'];
+const CMB = ['gf_pa6', 'boomerang', 'boom_arm', 'rivet_strip', 'rivet_gun', 'rivet', 'saw_mag', 'saw_launcher', 'saw_disc', 'disc_stack', 'disc_launcher', 'zta_disc', 'barb_mag', 'barb_gun', 'bola_pack', 'bola_launcher', 'pz_stack', 'sonic_pulser', 'flash_tube', 'strobe_lance', 'marker_ball', 'marker_gun', 'water_cell', 'water_cannon', 'net_pack', 'net_gun', 'ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'crossbow', 'xbow_bolt', 'amr', 'wha_round', 'exoframe3', 'coil_turret', 'knee_gen', 'thermal_sight', 'thermal_cam', 'ultrasound_probe', 'surge_arrester', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug', 'arc_caster', 'spark_gap', 'laminate_carrier', 'sofc_pack', 'supercap', 'slug_shell', 'rotary_gun', 'discharge_ring', 'tandem_film', 'hemostat', 'med_injector', 'blast_suit', 'ss_batt', 'flechette_shell', 'wcore_round', 'heavy_carrier', 'arm_brace', 'auto_shotgun', 'exoframe4', 'cryo_lance', 'ln2_flask', 'jet_lance', 'garnet_charge', 'tack_launcher', 'tack_canister', 'compound_bow', 'broadhead_arrow', 'harpoon_gun', 'harpoon', 'caltrop_launcher', 'caltrop_pack'];
 (() => {
   const { need, deps, L, xadd } = TKX;
   const its = new Set([...Object.values(WPN).map(w => w.need).filter(Boolean), ...Object.keys(ARMOR), ...Object.keys(EQ)].filter(k => !START_INV[k] && RECIPE[k] && need[k] < 1e9));
@@ -3358,6 +3359,12 @@ function wpnShot(ox, oy, list, hives, see, under, arm) {
     } else if (W.sp) {
       for (const b of list) if (b.hp > 0 && (b === best || (b.x - tx) ** 2 + (b.y - ty) ** 2 < W.sp * W.sp) && (!see || see(b))) { b.hp -= SH(b) * W.dm * (arm(b) ? W.arm || 1 : 1); hits.push(b); }
     } else { best.hp -= SH(best) * W.dm * (arm(best) ? W.arm || 1 : 1); hits.push(best); }
+    if (W.bm) {
+      const L = Math.hypot(tx - ox, ty - oy) || 1, ux = (tx - ox) / L, uy = (ty - oy) / L, ex = ox + ux * R, ey = oy + uy * R, cx = ox + ux * R / 2 + uy * R * 0.35, cy = oy + uy * R / 2 - ux * R * 0.35, pts = [];
+      for (let j = 0; j <= 14; j++) { const t = j / 14, u = 1 - t; pts.push([u * u * ex + 2 * u * t * cx + t * t * ox, u * u * ey + 2 * u * t * cy + t * t * oy]); }
+      P.bmp = pts;
+      for (const b of list) if (b.hp > 0 && b !== best && pts.some(([x, y], j) => j < 13 && (b.x - x) ** 2 + (b.y - y) ** 2 < 0.64) && (!see || see(b))) { b.hp -= SH(b) * W.dm * W.bm * (arm(b) ? W.arm || 1 : 1); hits.push(b); }
+    }
     if (W.ch || W.rc) {
       let cur = best, dm = W.dm;
       for (let k = 0; k < (W.ch || W.rc); k++) {
@@ -4565,6 +4572,7 @@ function arsenalHtml() {
     if (W.bo) sp.push(`binds a crawler's legs for ${W.bo} s: it can only shuffle at a sixth of its speed`);
     if (W.sh) sp.push(`lodged barbs make a crawler take 40% more from every hit for ${W.sh} s`);
     if (W.rc) sp.push(`discs ricochet on to ${W.rc} more crawlers within 3.5 tiles, losing a fifth each bounce`);
+    if (W.bm) sp.push(`flies on past the target and loops back, hitting everything on its way home for ${Math.round(W.bm * 100)}%`);
     if (W.rp) sp.push('each hit in a row on the same crawler does 25% more, up to double');
     if (W.xc) sp.push('double damage to crawlers already below 35% health');
     if (W.cf) sp.push(`dazzles crawlers for ${W.cf} s: they reel back away from you and cannot attack`);
@@ -6730,7 +6738,7 @@ function drawPlayer(ox, oy, z) {
     ctx.beginPath(); ctx.moveTo(X, Y - s * 0.05); ctx.lineTo(gx, gy); ctx.stroke();
     if (P.sw === 'harpoon' && P.hb && S.t - P.sh < 0.25 && !S.dg) { ctx.strokeStyle = 'rgba(232,228,206,0.95)'; ctx.lineWidth = Math.max(1, z * 0.05); ctx.beginPath(); ctx.moveTo(gx, gy); const hx = ox + P.hb.x * z, hy = oy + P.hb.y * z, sg = BUGK[P.hb.k || 0].an ? 0 : z * 0.3 * (1 - (S.t - P.sh) / 0.25); ctx.quadraticCurveTo((gx + hx) / 2, (gy + hy) / 2 + sg, hx, hy); ctx.stroke(); }
     if (P.sw === 'sonic' && S.t - P.sh < 0.35) { const f = (S.t - P.sh) / 0.35; for (let q = 0; q < 3; q++) { const r = WPN.sonic.rad * z * Math.min(1, f + q * 0.12); ctx.strokeStyle = `rgba(200,225,255,${(0.7 * (1 - f) / (q + 1)).toFixed(2)})`; ctx.lineWidth = Math.max(2, z * 0.12 / (q + 1)); ctx.beginPath(); ctx.arc(gx, gy, r, 0, 7); ctx.stroke(); } }
-    if (S.t - P.sh < 0.1 && !(P.sw === 'harpoon' && P.hb) && P.sw !== 'sonic') { ctx.strokeStyle = 'rgba(255,230,140,0.9)'; ctx.lineWidth = Math.max(1, z * 0.04); ctx.beginPath(); if (P.sw === 'arc' && P.ch) { ctx.strokeStyle = 'rgba(170,200,255,0.95)'; let px = gx, py = gy; for (const [cx, cy] of P.ch) { const X = ox + cx * z, Y = oy + cy * z; ctx.moveTo(px, py); for (let j = 1; j < 5; j++) ctx.lineTo(px + (X - px) * j / 5 + (Math.random() - 0.5) * z * 0.4, py + (Y - py) * j / 5 + (Math.random() - 0.5) * z * 0.4); ctx.lineTo(X, Y); px = X; py = Y; } } else if (P.sw === 'disc' && P.ch) { ctx.strokeStyle = 'rgba(240,238,228,0.95)'; ctx.lineWidth = Math.max(2, z * 0.07); let px = gx, py = gy; for (const [cx, cy] of P.ch) { const X = ox + cx * z, Y = oy + cy * z; ctx.moveTo(px, py); ctx.lineTo(X, Y); ctx.moveTo(X + z * 0.15, Y); ctx.arc(X, Y, z * 0.15, 0, Math.PI * 2); ctx.moveTo(X, Y); px = X; py = Y; } } else if (P.sw === 'shotgun' || P.sw === 'cryo') { if (P.sw === 'cryo') { ctx.strokeStyle = 'rgba(210,240,255,0.85)'; ctx.lineWidth = Math.max(2, z * 0.12); } const a = Math.atan2(P.ty * z + oy - gy, P.tx * z + ox - gx), L = Math.hypot(P.ty * z + oy - gy, P.tx * z + ox - gx); for (let k = -2.5; k <= 2.5; k++) { ctx.moveTo(gx, gy); ctx.lineTo(gx + Math.cos(a + k * 0.07) * L, gy + Math.sin(a + k * 0.07) * L); } } else if (P.sw === 'tack') { ctx.strokeStyle = 'rgba(220,170,70,0.9)'; ctx.lineWidth = Math.max(2, z * 0.14); ctx.moveTo(gx, gy); ctx.lineTo(ox + P.tx * z, oy + P.ty * z); ctx.stroke(); ctx.fillStyle = 'rgba(214,164,64,0.45)'; ctx.beginPath(); ctx.arc(ox + P.tx * z, oy + P.ty * z, WPN.tack.sp * z, 0, 7); ctx.fill(); ctx.beginPath(); } else if (P.sw === 'jet') { ctx.strokeStyle = 'rgba(225,240,255,0.9)'; ctx.lineWidth = Math.max(2, z * 0.1); const a = Math.atan2(P.ty * z + oy - gy, P.tx * z + ox - gx), L = WPN.jet.r * z; ctx.moveTo(gx, gy); ctx.lineTo(gx + Math.cos(a) * L, gy + Math.sin(a) * L); } else { ctx.moveTo(gx, gy); ctx.lineTo(ox + P.tx * z, oy + P.ty * z); } ctx.stroke(); }
+    if (S.t - P.sh < 0.1 && !(P.sw === 'harpoon' && P.hb) && P.sw !== 'sonic') { ctx.strokeStyle = 'rgba(255,230,140,0.9)'; ctx.lineWidth = Math.max(1, z * 0.04); ctx.beginPath(); if (P.sw === 'arc' && P.ch) { ctx.strokeStyle = 'rgba(170,200,255,0.95)'; let px = gx, py = gy; for (const [cx, cy] of P.ch) { const X = ox + cx * z, Y = oy + cy * z; ctx.moveTo(px, py); for (let j = 1; j < 5; j++) ctx.lineTo(px + (X - px) * j / 5 + (Math.random() - 0.5) * z * 0.4, py + (Y - py) * j / 5 + (Math.random() - 0.5) * z * 0.4); ctx.lineTo(X, Y); px = X; py = Y; } } else if (P.sw === 'disc' && P.ch) { ctx.strokeStyle = 'rgba(240,238,228,0.95)'; ctx.lineWidth = Math.max(2, z * 0.07); let px = gx, py = gy; for (const [cx, cy] of P.ch) { const X = ox + cx * z, Y = oy + cy * z; ctx.moveTo(px, py); ctx.lineTo(X, Y); ctx.moveTo(X + z * 0.15, Y); ctx.arc(X, Y, z * 0.15, 0, Math.PI * 2); ctx.moveTo(X, Y); px = X; py = Y; } } else if (P.sw === 'shotgun' || P.sw === 'cryo') { if (P.sw === 'cryo') { ctx.strokeStyle = 'rgba(210,240,255,0.85)'; ctx.lineWidth = Math.max(2, z * 0.12); } const a = Math.atan2(P.ty * z + oy - gy, P.tx * z + ox - gx), L = Math.hypot(P.ty * z + oy - gy, P.tx * z + ox - gx); for (let k = -2.5; k <= 2.5; k++) { ctx.moveTo(gx, gy); ctx.lineTo(gx + Math.cos(a + k * 0.07) * L, gy + Math.sin(a + k * 0.07) * L); } } else if (P.sw === 'tack') { ctx.strokeStyle = 'rgba(220,170,70,0.9)'; ctx.lineWidth = Math.max(2, z * 0.14); ctx.moveTo(gx, gy); ctx.lineTo(ox + P.tx * z, oy + P.ty * z); ctx.stroke(); ctx.fillStyle = 'rgba(214,164,64,0.45)'; ctx.beginPath(); ctx.arc(ox + P.tx * z, oy + P.ty * z, WPN.tack.sp * z, 0, 7); ctx.fill(); ctx.beginPath(); } else if (P.sw === 'boom') { ctx.strokeStyle = 'rgba(216,160,64,0.9)'; ctx.lineWidth = Math.max(2, z * 0.08); ctx.moveTo(gx, gy); ctx.lineTo(ox + P.tx * z, oy + P.ty * z); if (P.bmp) { const [ax, ay] = P.bmp[0]; ctx.lineTo(ox + ax * z, oy + ay * z); for (const [x, y] of P.bmp) ctx.lineTo(ox + x * z, oy + y * z); } } else if (P.sw === 'jet') { ctx.strokeStyle = 'rgba(225,240,255,0.9)'; ctx.lineWidth = Math.max(2, z * 0.1); const a = Math.atan2(P.ty * z + oy - gy, P.tx * z + ox - gx), L = WPN.jet.r * z; ctx.moveTo(gx, gy); ctx.lineTo(gx + Math.cos(a) * L, gy + Math.sin(a) * L); } else { ctx.moveTo(gx, gy); ctx.lineTo(ox + P.tx * z, oy + P.ty * z); } ctx.stroke(); }
   }
   if (P.hp < PL_HP) {
     const bw = s * 0.7, by = hy - s * 0.32;
@@ -10126,6 +10134,7 @@ const CHAINS = [
   { n: 'Floodlight tower', l: [['silicon + chloromethane', 'Fluid bed chlorinator', 'methyltrichlorosilane'], ['MTCS + methanol', 'Pressure reactor', 'MTMS'], ['sodium silicate + water', 'Ion exchange column', 'colloidal silica'], ['MTMS + silica sol + acetic acid', 'Pressure reactor', 'hardcoat lacquer'], ['polycarbonate', 'Injection moulder', 'lens'], ['lens + lacquer', 'Catalyst coating line', 'hardcoated lens'], ['aluminium + copper foil + epoxy + alumina', 'PCB line', 'metal-core board'], ['LED chips + phosphor + board', 'Electronics assembly line', 'LED module'], ['modules + lens + heat sink + driver', 'Workshop', 'LED floodlight'], ['floodlights + mast', 'build', 'Floodlight tower']] },
   { n: 'Caltrop launcher', l: [['ferrosilicon + magnesium', 'Coreless induction furnace', 'nodulariser'], ['sand + bentonite + coal + water', 'Green sand muller', 'green sand'], ['pig iron + steel + nodulariser + FeSi + sand', 'Ductile iron foundry', 'caltrop blanks'], ['blanks + oil + gas', 'Quench and temper line', 'hardened caltrops'], ['caltrops + ZnO + H₃PO₄', 'Electroplating line', 'phosphated caltrops'], ['caltrops + PP', 'Workshop', 'caltrop canisters'], ['roving + epoxy', 'Filament winding machine', 'launch tube'], ['tube + air bottle + brass + PP', 'Workshop', 'Caltrop launcher']] },
   { n: 'Net launcher', l: [['pet + N₂', 'SSP tower', 'high-IV PET'], ['high-IV PET', 'Melt spinner', 'high-tenacity yarn', 'Planetary strander', 'net twine'], ['twine', 'Knotless net machine + steam', 'heat-set net'], ['zinc alloy', 'Hot-chamber die caster', 'net weights'], ['steel plate', 'Transfer press line', 'cartridge shells', 'CO₂ filling + co2', 'CO₂ cartridges'], ['net + weights + cartridge + PP', 'Workshop', 'net canisters'], ['tube + brass + steel + PP', 'Workshop', 'Net launcher']] },
+  { n: 'Boomerang', l: [['nylon 6 + glass fibre', 'Compounding room', 'glass-filled nylon'], ['glass-filled nylon', 'Injection moulder', 'boomerangs'], ['aluminium + motor + gears + steel', 'Workshop', 'Boomerang launcher']] },
   { n: 'Rivet gun', l: [['phosphated wire rod + drawing soap', 'Cold heading machine', 'rivet blanks'], ['blanks + methane + nitrogen + quench oil', 'Sealed-quench furnace', 'case-hardened rivets'], ['rivets + polypropylene', 'Workshop', 'rivet strips'], ['steel + air cylinder + castings + ABS', 'Workshop', 'Rivet gun']] },
   { n: 'Saw launcher', l: [['steel + carbide scrap + FeMo + FeCr + V₂O₅ + FeSi', 'Vacuum induction furnace', 'M2 high-speed steel'], ['ingots', 'Hot strip mill', 'HSS strip'], ['strip', 'Fine blanking press', 'saw blanks'], ['blanks + nitrogen', 'Vacuum hardening furnace', 'saw discs'], ['discs + spring wire', 'Workshop', 'cassettes'], ['steel + motor + bearings + ABS', 'Workshop', 'Saw launcher']] },
   { n: 'Disc launcher', l: [['alumina + yttria-zirconia + PVA', 'Isostatic press', 'green discs'], ['green discs', 'Tunnel kiln', 'ZTA blanks'], ['blanks', 'Double-disc grinder', 'ZTA discs'], ['discs + spring wire', 'Workshop', 'disc stacks'], ['steel + motors + casting + ABS', 'Workshop', 'Disc launcher']] },
@@ -11499,6 +11508,26 @@ const CMBI = (() => {
     rrect(g, 12, -3, 12, 6, 1); g.fillStyle = '#9aa0a8'; g.fill(); ink(g, 1);
     rrect(g, -16, 6, 8, 16, 2); g.fillStyle = '#1e2228'; g.fill(); ink(g, 1);
     g.beginPath(); g.arc(-20, 16, 6, 0, Math.PI * 2); g.fillStyle = '#c84a3a'; g.fill(); ink(g, 1);
+    g.restore();
+  };
+  T.gf_pa6 = g => {
+    dshad(g, 32, 56, 22, 3);
+    for (let i = 0; i < 9; i++) { const x = 16 + (i % 3) * 14 + (i > 2 && i < 6 ? 7 : 0), y = 26 + Math.floor(i / 3) * 10; rrect(g, x - 5, y - 4, 10, 8, 3); g.fillStyle = lgr(g, x, y - 4, x, y + 4, '#f4f0e0', '#d4ceb8', '#f4f0e0'); g.fill(); ink(g, 0.6); }
+  };
+  T.boomerang = g => {
+    dshad(g, 32, 56, 22, 3);
+    g.save(); g.translate(32, 32);
+    for (let k = 0; k < 3; k++) { g.save(); g.rotate(k * 2.094); g.beginPath(); g.moveTo(-5, 0); g.quadraticCurveTo(-4, -16, 4, -24); g.quadraticCurveTo(8, -14, 5, 0); g.closePath(); g.fillStyle = lgr(g, -5, -24, 5, 0, '#f0c060', '#c88a30', '#f0c060'); g.fill(); ink(g, 1); g.restore(); }
+    g.beginPath(); g.arc(0, 0, 4, 0, 7); g.fillStyle = '#5a4020'; g.fill();
+    g.restore();
+  };
+  T.boom_arm = g => {
+    dshad(g, 32, 58, 24, 3);
+    g.save(); g.translate(32, 32); g.rotate(-0.3);
+    rrect(g, -22, -5, 32, 10, 3); g.fillStyle = lgr(g, 0, -5, 0, 5, '#3a4250', '#6a7484', '#3a4250'); g.fill(); ink(g, 1);
+    g.beginPath(); g.arc(14, 0, 9, 0, 7); g.fillStyle = rgr(g, 14, 0, 9, '#9aa4b0', '#4a5260'); g.fill(); ink(g, 1);
+    g.beginPath(); g.arc(14, 0, 3, 0, 7); g.fillStyle = '#d8a040'; g.fill();
+    rrect(g, -16, 4, 7, 14, 2); g.fillStyle = '#1e2228'; g.fill(); ink(g, 1);
     g.restore();
   };
   T.strobe_lance = g => {
