@@ -3241,12 +3241,13 @@ const WPN = {
   lure: { n: 'Lure Launcher', am: 'lure_pod', rk: 'rlu', per: 8, dm: 2, hv: 2, cd: 1.2, r: 10, sp: 5, need: 'lure_gun', lu: 5 },
   vortex: { n: 'Vortex Cannon', am: 'co2_cart', rk: 'rvx', per: 6, dm: 3, hv: 2, cd: 1.1, r: 9, sp: 2.5, need: 'vortex_gun', kb: 2.5, tu: 2.5 },
   flail: { n: 'Line Flail', am: 'flail_line', rk: 'rfl', per: 1, dm: 10, hv: 1, cd: 3, r: 2.2, need: 'flail_gun', ob: 4 },
+  frang: { n: 'Frangible Slugs', am: 'frang_shell', rk: 'rfr', per: 8, dm: 42, hv: 40, cd: 0.7, r: 10, need: 'shotgun', fr: 3 },
   wcan: { n: 'Water Cannon', am: 'water_cell', rk: 'rwc', per: 20, dm: 3, hv: 4, cd: 0.1, r: 7, need: 'water_cannon', ln: 0.5, kb: 0.6 },
   tack: { n: 'Tack Gel Launcher', am: 'tack_canister', rk: 'rtk', per: 6, dm: 8, hv: 6, cd: 0.9, r: 10, need: 'tack_launcher', sp: 1.8, tk: 5 },
   jet: { n: 'Abrasive Jet Lance', am: 'garnet_charge', rk: 'rj', per: 25, dm: 9, hv: 8, cd: 0.08, r: 6, arm: 3.2, need: 'jet_lance', ln: 0.55 },
   rotary: { n: 'Rotary Gun', am: 'ammo_belt', rk: 'rb2', per: 50, dm: 10, hv: 10, cd: 0.035, r: PL_GUN, need: 'rotary_gun', en: 60 },
 };
-const WORDER = ['rifle', 'ap', 'shotgun', 'slug', 'flechette', 'auto_shotgun', 'lmg', 'rotary', 'marksman', 'marksman_w', 'coilgun', 'crossbow', 'amr', 'arc', 'cryo', 'jet', 'tack', 'bow', 'harpoon', 'caltrop', 'net', 'wcan', 'mark', 'strobe', 'sonic', 'bola', 'barb', 'disc', 'saw', 'rivet', 'boom', 'gum', 'lure', 'vortex', 'flail'];
+const WORDER = ['rifle', 'ap', 'shotgun', 'slug', 'frang', 'flechette', 'auto_shotgun', 'lmg', 'rotary', 'marksman', 'marksman_w', 'coilgun', 'crossbow', 'amr', 'arc', 'cryo', 'jet', 'tack', 'bow', 'harpoon', 'caltrop', 'net', 'wcan', 'mark', 'strobe', 'sonic', 'bola', 'barb', 'disc', 'saw', 'rivet', 'boom', 'gum', 'lure', 'vortex', 'flail'];
 const ARMOR = {
   exoframe4: { a: 0.55, g: 14 },
   exoframe3: { a: 0.5, g: 12 },
@@ -3386,6 +3387,7 @@ function wpnShot(ox, oy, list, hives, see, under, arm) {
       P.ch = hits.map(b => [b.x, b.y]);
     }
   }
+  if (W.fr && best) { const L = Math.hypot(tx - ox, ty - oy) || 1, ux = (tx - ox) / L, uy = (ty - oy) / L, c = []; for (const b of list) { if (!(b.hp > 0) || hits.includes(b)) continue; const dx = b.x - best.x, dy = b.y - best.y, dd = Math.hypot(dx, dy); if (dd < 1.8 && dx * ux + dy * uy > -0.2 && (!see || see(b))) c.push([dd, b]); } c.sort((u, v) => u[0] - v[0]); for (const [, b] of c.slice(0, W.fr)) { b.hp -= SH(b) * W.dm * 0.45 * (arm(b) ? 0.4 : 1); hits.push(b); } for (let j = 0; j < 6; j++) fx.push({ x: best.x + ux * 0.4 * j + (Math.random() - 0.5) * 0.8, y: best.y + uy * 0.4 * j + (Math.random() - 0.5) * 0.8, t: 0.3, c: '#c8904a' }); }
   if (W.pl) P.hb = hits[0] || null;
   if (W.cf) for (const b of hits) if (!BUGK[b.k || 0].ey) b.cf = Math.max(b.cf || 0, W.cf * (arm(b) ? 0.6 : 1));
   if (W.bo) for (const b of hits) b.bo = Math.max(b.bo || 0, BUGK[b.k || 0].lg ? 0.4 : W.bo * (arm(b) ? 0.6 : 1));
@@ -4631,6 +4633,7 @@ function arsenalHtml() {
     if (W.gu) sp.push(`glues jaws for ${W.gu}s: bites and chewing do 40%`);
     if (W.lu) sp.push(`scent pod: crawlers within ${W.sp} tiles chase the smell for ${W.lu}s`);
     if (W.ob) sp.push(`whirls two line ends around you for ${W.ob}s, thrashing every crawler within 2 tiles, half as hard on armoured ones`);
+    if (W.fr) sp.push(`frangible: bursts on the first crawler and fragments strike ${W.fr} behind it for under half damage`);
     if (W.tu) sp.push(`air ring: bowled-over crawlers tumble for ${W.tu}s and cannot bite or chew`);
     if (W.rp) sp.push('each hit in a row on the same crawler does 25% more, up to double');
     if (W.xc) sp.push('double damage to crawlers already below 35% health');
@@ -10210,6 +10213,7 @@ const CHAINS = [
   { n: 'Caltrop launcher', l: [['ferrosilicon + magnesium', 'Coreless induction furnace', 'nodulariser'], ['sand + bentonite + coal + water', 'Green sand muller', 'green sand'], ['pig iron + steel + nodulariser + FeSi + sand', 'Ductile iron foundry', 'caltrop blanks'], ['blanks + oil + gas', 'Quench and temper line', 'hardened caltrops'], ['caltrops + ZnO + H₃PO₄', 'Electroplating line', 'phosphated caltrops'], ['caltrops + PP', 'Workshop', 'caltrop canisters'], ['roving + epoxy', 'Filament winding machine', 'launch tube'], ['tube + air bottle + brass + PP', 'Workshop', 'Caltrop launcher']] },
   { n: 'Net launcher', l: [['pet + N₂', 'SSP tower', 'high-IV PET'], ['high-IV PET', 'Melt spinner', 'high-tenacity yarn', 'Planetary strander', 'net twine'], ['twine', 'Knotless net machine + steam', 'heat-set net'], ['zinc alloy', 'Hot-chamber die caster', 'net weights'], ['steel plate', 'Transfer press line', 'cartridge shells', 'CO₂ filling + co2', 'CO₂ cartridges'], ['net + weights + cartridge + PP', 'Workshop', 'net canisters'], ['tube + brass + steel + PP', 'Workshop', 'Net launcher']] },
   { n: 'Line flail', l: [['butanediol + acid resin', 'Pressure reactor', 'THF'], ['THF + acetic acid + methanol', 'Pressure reactor', 'PTMEG'], ['PTA + butanediol + PTMEG', 'Pressure reactor', 'copolyester elastomer'], ['elastomer', 'Melt spinner', 'flail line'], ['motor + aluminium + line + circuit board', 'Workshop', 'Line flail']] },
+  { n: 'Frangible slugs', l: [['copper cathode + sulfuric acid', 'Electrolysis cell', 'dendritic copper powder'], ['copper powder + tin + hydrogen', 'Sinter-HIP furnace', 'sintered bronze slug'], ['slugs + hull + brass + powder', 'Workshop', 'frangible shells']] },
   { n: 'Vortex cannon', l: [['silicone + fumed silica + platinum', 'Intensive mixer', 'HCR silicone'], ['silicone compound', 'Curing press', 'drum diaphragms'], ['air bottle + diaphragms + aluminium', 'Workshop', 'Vortex cannon']] },
   { n: 'Lure launcher', l: [['fusel oil + acetic acid', 'Pressure reactor, acid resin', 'isoamyl acetate'], ['ester + PVA + polypropylene', 'Workshop', 'lure pods'], ['steel + aluminium + circuit board', 'Workshop', 'Lure launcher']] },
   { n: 'Gum gun', l: [['EVA + rosin ester + paraffin wax', 'Wax melter', 'hot-melt adhesive'], ['hot-melt + polypropylene', 'Workshop', 'gum cartridges'], ['aluminium + steel + circuit board + wire', 'Workshop', 'Gum gun']] },
@@ -11685,6 +11689,16 @@ const CMBI = (() => {
     g.strokeStyle = '#e89030'; g.lineWidth = 2; g.beginPath(); g.moveTo(44, 18); g.lineTo(60, 10); g.moveTo(44, 18); g.lineTo(30, 6); g.stroke();
     rrect(g, 14, 36, 10, 10, 2); g.fillStyle = '#2a2a22'; g.fill(); ink(g, 1);
   };
+  T.cu_powder = g => {
+    dshad(g, 32, 56, 20, 3);
+    g.beginPath(); g.ellipse(32, 42, 20, 10, 0, 0, 7); g.fillStyle = rgr(g, 28, 38, 20, '#e0905a', '#9a5030'); g.fill(); ink(g, 1);
+    g.strokeStyle = '#f0b080'; g.lineWidth = 1.2; for (const [x, y] of [[24, 38], [34, 36], [40, 44], [28, 45]]) { g.beginPath(); g.moveTo(x, y); g.lineTo(x + 4, y - 4); g.moveTo(x + 2, y - 2); g.lineTo(x + 5, y); g.stroke(); }
+  };
+  T.frang_core = g => {
+    dshad(g, 32, 56, 16, 3);
+    for (const x of [22, 36]) { rrect(g, x, 20, 10, 30, 3); g.fillStyle = lgr(g, x, 0, x + 10, 0, '#8a6030', '#d0a060', '#7a5028'); g.fill(); ink(g, 1); g.beginPath(); g.ellipse(x + 5, 20, 5, 2, 0, 0, 7); g.fillStyle = '#c09050'; g.fill(); }
+  };
+  T.frang_shell = g => shells(g, '#6a7a3a', 'slug');
   T.vortex_gun = g => {
     dshad(g, 32, 58, 24, 3);
     g.save(); g.translate(32, 30); g.rotate(-0.35);
