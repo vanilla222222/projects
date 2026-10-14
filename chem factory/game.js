@@ -2422,6 +2422,7 @@ function dgTick() {
     if (b.hp <= 0) { D.bugs.splice(i, 1); S.kills = (S.kills || 0) + 1; bugTally(b); dfx.push({ x: b.x, y: b.y, t: 0.5, c: '#a0c040' }); dgDie(D, b, hit); if (!S.dg) return; continue; }
     if (b.bd > 0) { b.bd -= DT; b.hp -= b.bp * DT; if (b.bd <= 0) b.bp = 0; }
     b.cs = cals.length && !BUGK[b.k || 0].pf && calAt(b.x, b.y) ? 1 : 0; if (b.cs) b.hp -= WPN.caltrop.cdps * DT;
+    if (b.mk > 0) { b.mk -= DT; if (b.hp < b.lh) b.hp -= (b.lh - b.hp) * 0.5; b.lh = b.hp; }
     if (b.fz > 0) { b.fz -= DT; continue; }
     if (b.nt > 0) { b.nt -= DT; continue; }
     if (b.tk > 0) b.tk -= DT;
@@ -3219,12 +3220,13 @@ const WPN = {
   harpoon: { n: 'Pneumatic Harpoon', am: 'harpoon', rk: 'rhp', per: 1, dm: 35, hv: 25, cd: 1.1, r: 13, arm: 1.2, need: 'harpoon_gun', pl: 6 },
   caltrop: { n: 'Caltrop Launcher', am: 'caltrop_pack', rk: 'rcl', per: 1, dm: 10, hv: 8, cd: 1.0, r: 11, need: 'caltrop_launcher', sp: 1.2, cr: 2, cdur: 12, cdps: 12 },
   net: { n: 'Net Launcher', am: 'net_pack', rk: 'rnt', per: 1, dm: 4, hv: 6, cd: 1.2, r: 9, need: 'net_gun', sp: 1.2, nt: 4 },
+  mark: { n: 'Phosphor Marker', am: 'marker_ball', rk: 'rmk', per: 1, dm: 2, hv: 2, cd: 0.35, r: 10, need: 'marker_gun', mk: 6 },
   wcan: { n: 'Water Cannon', am: 'water_cell', rk: 'rwc', per: 20, dm: 3, hv: 4, cd: 0.1, r: 7, need: 'water_cannon', ln: 0.5, kb: 0.6 },
   tack: { n: 'Tack Gel Launcher', am: 'tack_canister', rk: 'rtk', per: 6, dm: 8, hv: 6, cd: 0.9, r: 10, need: 'tack_launcher', sp: 1.8, tk: 5 },
   jet: { n: 'Abrasive Jet Lance', am: 'garnet_charge', rk: 'rj', per: 25, dm: 9, hv: 8, cd: 0.08, r: 6, arm: 3.2, need: 'jet_lance', ln: 0.55 },
   rotary: { n: 'Rotary Gun', am: 'ammo_belt', rk: 'rb2', per: 50, dm: 10, hv: 10, cd: 0.035, r: PL_GUN, need: 'rotary_gun', en: 60 },
 };
-const WORDER = ['rifle', 'ap', 'shotgun', 'slug', 'flechette', 'auto_shotgun', 'lmg', 'rotary', 'marksman', 'marksman_w', 'coilgun', 'crossbow', 'amr', 'arc', 'cryo', 'jet', 'tack', 'bow', 'harpoon', 'caltrop', 'net', 'wcan'];
+const WORDER = ['rifle', 'ap', 'shotgun', 'slug', 'flechette', 'auto_shotgun', 'lmg', 'rotary', 'marksman', 'marksman_w', 'coilgun', 'crossbow', 'amr', 'arc', 'cryo', 'jet', 'tack', 'bow', 'harpoon', 'caltrop', 'net', 'wcan', 'mark'];
 const ARMOR = {
   exoframe4: { a: 0.55, g: 14 },
   exoframe3: { a: 0.5, g: 12 },
@@ -3265,7 +3267,7 @@ const NADE = {
   ammonal_charge: { r: 3.2, dm: 130, hv: 160, c: '#c8c8c0' },
   powder_charge: { r: 2.2, dm: 55, hv: 60, c: '#4a4844' },
 };
-const CMB = ['water_cell', 'water_cannon', 'net_pack', 'net_gun', 'ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'crossbow', 'xbow_bolt', 'amr', 'wha_round', 'exoframe3', 'coil_turret', 'knee_gen', 'thermal_sight', 'thermal_cam', 'ultrasound_probe', 'surge_arrester', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug', 'arc_caster', 'spark_gap', 'laminate_carrier', 'sofc_pack', 'supercap', 'slug_shell', 'rotary_gun', 'discharge_ring', 'tandem_film', 'hemostat', 'med_injector', 'blast_suit', 'ss_batt', 'flechette_shell', 'wcore_round', 'heavy_carrier', 'arm_brace', 'auto_shotgun', 'exoframe4', 'cryo_lance', 'ln2_flask', 'jet_lance', 'garnet_charge', 'tack_launcher', 'tack_canister', 'compound_bow', 'broadhead_arrow', 'harpoon_gun', 'harpoon', 'caltrop_launcher', 'caltrop_pack'];
+const CMB = ['marker_ball', 'marker_gun', 'water_cell', 'water_cannon', 'net_pack', 'net_gun', 'ap_cartridge', 'shotshell', 'shotgun', 'powder_charge', 'ammonal_charge', 'shell_vest', 'steel_vest', 'ceramic_vest', 'carrier', 'exoframe', 'exoframe2', 'pv_film', 'batt_pack', 'dmfc', 'meoh_cart', 'exo_legs', 'trauma_plate', 'stf_pad', 'sentry_arm', 'drill_arm', 'aero_liner', 'b4c_plate', 'crossbow', 'xbow_bolt', 'amr', 'wha_round', 'exoframe3', 'coil_turret', 'knee_gen', 'thermal_sight', 'thermal_cam', 'ultrasound_probe', 'surge_arrester', 'amorph_core', 'tig_electrode', 'mail_shirt', 'lmg', 'ammo_belt', 'marksman', 'match_round', 'coilgun', 'steel_slug', 'arc_caster', 'spark_gap', 'laminate_carrier', 'sofc_pack', 'supercap', 'slug_shell', 'rotary_gun', 'discharge_ring', 'tandem_film', 'hemostat', 'med_injector', 'blast_suit', 'ss_batt', 'flechette_shell', 'wcore_round', 'heavy_carrier', 'arm_brace', 'auto_shotgun', 'exoframe4', 'cryo_lance', 'ln2_flask', 'jet_lance', 'garnet_charge', 'tack_launcher', 'tack_canister', 'compound_bow', 'broadhead_arrow', 'harpoon_gun', 'harpoon', 'caltrop_launcher', 'caltrop_pack'];
 (() => {
   const { need, deps, L, xadd } = TKX;
   const its = new Set([...Object.values(WPN).map(w => w.need).filter(Boolean), ...Object.keys(ARMOR), ...Object.keys(EQ)].filter(k => !START_INV[k] && RECIPE[k] && need[k] < 1e9));
@@ -3353,6 +3355,7 @@ function wpnShot(ox, oy, list, hives, see, under, arm) {
     }
   }
   if (W.pl) P.hb = hits[0] || null;
+  if (W.mk) for (const b of hits) { b.mk = W.mk; b.lh = b.hp; }
   if (W.kb) for (const b of hits) if (!BUGK[b.k || 0].an) { const dx = b.x - ox, dy = b.y - oy, dd = Math.hypot(dx, dy) || 1, m = W.kb * (arm(b) ? 0.5 : 1) * (BUGK[b.k || 0].kr ? 0.15 : 1); b.x += dx / dd * m; b.y += dy / dd * m; b.tk = Math.max(b.tk || 0, 0.4); }
   if (W.pl) for (const b of hits) if (!BUGK[b.k || 0].an) { const dx = ox - b.x, dy = oy - b.y, dd = Math.hypot(dx, dy), m = Math.min(W.pl * (arm(b) ? 0.5 : 1), dd - 1.2); if (m > 0) { b.x += dx / dd * m; b.y += dy / dd * m; b.tk = Math.max(b.tk || 0, 1); } }
   if (W.bl) for (const b of hits) if (!BUGK[b.k || 0].ct) { b.bp = Math.min((b.bp || 0) + W.bl * (arm(b) ? 0.5 : 1), W.bl * 3); b.bd = W.bt; }
@@ -4462,6 +4465,7 @@ function arsenalHtml() {
     if (W.sp) sp.push(`${W.sp}-tile splash`);
     if (W.fz) sp.push(`freezes ${W.fz} s`);
     if (W.nt) sp.push(`nets crawlers in the blast for ${W.nt} s: they cannot move or bite until they cut free, half as long for armoured ones`);
+    if (W.mk) sp.push(`marks crawlers for ${W.mk} s: marked crawlers take 50% more damage from every source`);
     if (W.kb) sp.push(`shoves crawlers back ${W.kb} tiles per burst, half for armoured ones`);
     if (W.pl) sp.push(`reels the target up to ${W.pl} tiles in`);
     if (W.cr) sp.push(`leaves caltrops over ${W.cr} tiles for ${W.cdur} s: crawlers on them move at half speed and take ${W.cdps} damage a second`);
@@ -4565,6 +4569,7 @@ function bugStep() {
     if (b.hp <= 0) { S.bugs.splice(i, 1); S.kills = (S.kills || 0) + 1; bugTally(b); fx.push({ x: b.x, y: b.y, t: 0.5, c: '#a0c040' }); if (BUGK[b.k || 0].sp) broodOut(b); continue; }
     if (b.bd > 0) { b.bd -= DT; b.hp -= b.bp * DT; if (b.bd <= 0) b.bp = 0; }
     b.cs = cals.length && !BUGK[b.k || 0].pf && calAt(b.x, b.y) ? 1 : 0; if (b.cs) b.hp -= WPN.caltrop.cdps * DT;
+    if (b.mk > 0) { b.mk -= DT; if (b.hp < b.lh) b.hp -= (b.lh - b.hp) * 0.5; b.lh = b.hp; }
     if (b.fz > 0) { b.fz -= DT; continue; }
     if (b.nt > 0) { b.nt -= DT; continue; }
     if (b.tk > 0) b.tk -= DT;
@@ -6880,6 +6885,7 @@ function drawBugs(ox, oy, z, x0, y0, x1, y1) {
     if (b.x < x0 - 1 || b.y < y0 - 1 || b.x > x1 + 1 || b.y > y1 + 1) continue;
     const bk = b.k || 0, K = BUGK[bk] || BUGK[0], s = z * (0.22 + 0.08 * Math.min(1, b.mhp / (90 * K.hp))) * (K.sz || 1), X = ox + b.x * z, Y = oy + b.y * z;
     ctx.save();
+    if (b.mk > 0) { const gl = 0.45 + 0.35 * Math.min(1, b.mk / 2); ctx.fillStyle = `rgba(150,255,120,${(gl * 0.35).toFixed(2)})`; ctx.beginPath(); ctx.arc(X, Y, s * 1.3, 0, 7); ctx.fill(); ctx.fillStyle = `rgba(170,255,140,${gl.toFixed(2)})`; for (let q = 0; q < 5; q++) { ctx.beginPath(); ctx.arc(X + Math.cos(q * 2.4) * s * 0.4, Y + Math.sin(q * 2.4) * s * 0.35, s * (0.12 + 0.04 * (q % 2)), 0, 7); ctx.fill(); } }
     if (b.nt > 0) { ctx.strokeStyle = 'rgba(220,210,170,0.85)'; ctx.lineWidth = Math.max(1, s * 0.06); const r = s * 1.25; ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); for (let q = -2; q <= 2; q++) { const o = q * r * 0.4, h = Math.sqrt(Math.max(0, r * r - o * o)); ctx.moveTo(X + o, Y - h); ctx.lineTo(X + o, Y + h); ctx.moveTo(X - h, Y + o); ctx.lineTo(X + h, Y + o); } ctx.stroke(); }
     if (b.fz > 0) { ctx.fillStyle = 'rgba(200,235,255,0.6)'; ctx.beginPath(); ctx.arc(X, Y, s * 1.3, 0, 7); ctx.fill(); }
     if (b.bd > 0) { ctx.fillStyle = 'rgba(150,180,50,0.8)'; for (let q = 0; q < 3; q++) { const u = (now * 1.5 + q / 3) % 1; ctx.beginPath(); ctx.arc(X + (q - 1) * s * 0.5, Y + s * (0.2 + u), s * 0.14 * (1 - u) + 0.8, 0, 7); ctx.fill(); } }
@@ -9992,6 +9998,7 @@ const CHAINS = [
   { n: 'Floodlight tower', l: [['silicon + chloromethane', 'Fluid bed chlorinator', 'methyltrichlorosilane'], ['MTCS + methanol', 'Pressure reactor', 'MTMS'], ['sodium silicate + water', 'Ion exchange column', 'colloidal silica'], ['MTMS + silica sol + acetic acid', 'Pressure reactor', 'hardcoat lacquer'], ['polycarbonate', 'Injection moulder', 'lens'], ['lens + lacquer', 'Catalyst coating line', 'hardcoated lens'], ['aluminium + copper foil + epoxy + alumina', 'PCB line', 'metal-core board'], ['LED chips + phosphor + board', 'Electronics assembly line', 'LED module'], ['modules + lens + heat sink + driver', 'Workshop', 'LED floodlight'], ['floodlights + mast', 'build', 'Floodlight tower']] },
   { n: 'Caltrop launcher', l: [['ferrosilicon + magnesium', 'Coreless induction furnace', 'nodulariser'], ['sand + bentonite + coal + water', 'Green sand muller', 'green sand'], ['pig iron + steel + nodulariser + FeSi + sand', 'Ductile iron foundry', 'caltrop blanks'], ['blanks + oil + gas', 'Quench and temper line', 'hardened caltrops'], ['caltrops + ZnO + H₃PO₄', 'Electroplating line', 'phosphated caltrops'], ['caltrops + PP', 'Workshop', 'caltrop canisters'], ['roving + epoxy', 'Filament winding machine', 'launch tube'], ['tube + air bottle + brass + PP', 'Workshop', 'Caltrop launcher']] },
   { n: 'Net launcher', l: [['pet + N₂', 'SSP tower', 'high-IV PET'], ['high-IV PET', 'Melt spinner', 'high-tenacity yarn', 'Planetary strander', 'net twine'], ['twine', 'Knotless net machine + steam', 'heat-set net'], ['zinc alloy', 'Hot-chamber die caster', 'net weights'], ['steel plate', 'Transfer press line', 'cartridge shells', 'CO₂ filling + co2', 'CO₂ cartridges'], ['net + weights + cartridge + PP', 'Workshop', 'net canisters'], ['tube + brass + steel + PP', 'Workshop', 'Net launcher']] },
+  { n: 'Phosphor marker', l: [['Sm-Eu-Gd chloride + zinc dust + acid + oxalic', 'Precipitator', 'europium oxide'], ['SrCO₃ + alumina + Eu₂O₃ + boric acid', 'Ball mill', 'phosphor batch'], ['batch + N₂ + H₂', 'Phosphor kiln', 'strontium aluminate'], ['pigment + PVA + glycerol', 'Workshop', 'marker balls'], ['tube + brass + CO₂ cartridges + PP', 'Workshop', 'Phosphor marker']] },
   { n: 'Water cannon', l: [['alumina + zirconia + PVA', 'Isostatic press', 'green plungers', 'Tunnel kiln', 'ZTA plungers'], ['EPDM + wire', 'Planetary strander', 'braided hose'], ['plungers + stainless + motor + bearings', 'Workshop', 'triplex pump'], ['PET + potable water', 'Bottler', 'water cells'], ['pump + hose + battery + steel', 'Workshop', 'Water cannon']] },
   { n: 'Stone, tiles and coloured light', l: [['limestone + water', 'Stone saw', 'ashlar, flags, setts'], ['kaolin + sand + iron red', 'Lime kiln', 'facing brick'], ['porcelain body + glaze', 'Lime kiln', 'floor tiles'], ['glass + Cu₂O / Cr₂O₃ / Co₃O₄', 'Glass tank', 'ruby, green, blue glass'], ['potting mix + NPK', 'Plant nursery', 'perennials, tulip bulbs']], d: 'Materials for 25 paths, 25 walls and fences, coloured lamps, garden structures and plants.' },
   { n: 'Parks and street lights', l: [['logs', 'Sawmill', 'timber'], ['timber + steam', 'Timber modification kiln', 'thermowood'], ['limestone', 'Jaw crusher', 'gravel'], ['kaolin + sand', 'Lime kiln', 'clay pavers'], ['compost + bark + sand', 'Plant nursery', 'potting mix'], ['mix + NPK + water', 'Plant nursery', 'flowers, hedging, trees'], ['alumina + H2', 'Coreless induction furnace', 'PCA arc tube'], ['tube + sodium + glass', 'Workshop', 'sodium lamp']], d: 'Paths, gardens and lights for the works. Nights fall every few minutes, and lamps keep the site readable after dark.' },
@@ -11246,6 +11253,19 @@ const CMBI = (() => {
     g.strokeStyle = '#3a3630'; g.lineWidth = 1; g.beginPath(); g.moveTo(32, 14); g.lineTo(32, 54); g.stroke();
     g.strokeStyle = '#2a2c2e'; g.lineWidth = 2.4;
     for (const [x, y] of [[32, 8], [14, 46], [50, 46]]) { g.beginPath(); for (let k = 0; k < 3; k++) { g.moveTo(x, y); g.lineTo(x + Math.cos(k * 2.094 - 1.57) * 7, y + Math.sin(k * 2.094 - 1.57) * 7); } g.stroke(); }
+  };
+  T.marker_gun = g => {
+    dshad(g, 32, 58, 24, 3);
+    g.save(); g.translate(32, 34); g.rotate(-0.35);
+    rrect(g, -18, -6, 34, 10, 3); g.fillStyle = lgr(g, 0, -6, 0, 4, '#3a5034', '#7a9a6a', '#3a5034'); g.fill(); ink(g, 1);
+    g.beginPath(); g.arc(-4, -10, 7, 0, 7); g.fillStyle = '#b8f098'; g.fill(); ink(g, 1);
+    rrect(g, -12, 4, 6, 12, 2); g.fillStyle = '#2a2c2e'; g.fill(); ink(g, 1);
+    rrect(g, -26, -3, 9, 5, 2); g.fillStyle = '#8a9098'; g.fill(); ink(g, 1);
+    g.restore();
+  };
+  T.marker_ball = g => {
+    dshad(g, 32, 56, 20, 3);
+    for (const [x, y] of [[24, 40], [40, 40], [32, 27]]) { g.beginPath(); g.arc(x, y, 10, 0, 7); g.fillStyle = rgr(g, x - 3, y - 3, 1, x, y, 10, '#f0ffe0', '#88d868'); g.fill(); ink(g, 1); }
   };
   T.water_cannon = g => {
     dshad(g, 32, 58, 26, 3);
