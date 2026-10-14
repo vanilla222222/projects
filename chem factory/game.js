@@ -3884,14 +3884,14 @@ try { nightOff = localStorage.getItem('cf_night') === '0'; } catch (e) {}
 const dayP = () => ((S.t || 0) / DAYLEN + 0.3) % 1;
 const sunEl = () => -Math.cos(dayP() * 2 * Math.PI);
 const darkF = () => nightOff ? 0 : Math.min(1, Math.max(0, -sunEl() / 0.45));
-const WXK = { clear: { n: 'Clear', i: '☀' }, rain: { n: 'Rain', i: '☂', t: 'Rain: walking off paths is slower, solar and evaporation ponds drop, lamps reach a little less far, rainwater tanks fill.' }, fog: { n: 'Fog', i: '≋', t: 'Fog: lamps and floodlights reach much less far, solar output falls, and crawlers swarm more often.' }, snow: { n: 'Snow', i: '❄', t: 'Snow: drifts settle on belts and slow them, walking off paths is slow, solar output falls.' }, storm: { n: 'Storm', i: '⚡', t: 'Storm: strong gusts drive the wind turbines hard, heavy rain slows walking off paths and stops ponds evaporating, rainwater tanks fill fast. Lightning can strike machines unless a lightning rod stands within 12 tiles.' }, heat: { n: 'Heatwave', i: '♨', t: 'Heatwave: evaporation ponds work half again as fast, hot solar cells lose about a tenth of their output, and walking is a little slower.' }, sleet: { n: 'Sleet', i: '❅', t: 'Sleet: half-melted snow and rain. Slush freezes onto belts and slows them, walking off paths is slow, solar output falls and rainwater tanks fill.' }, gale: { n: 'Gale', i: '≈', t: 'Gale: a strong, steady wind. Wind turbines run near full output, and both you and crawlers move slower against it.' }, hail: { n: 'Hail', i: '◌', t: 'Hail: ice pellets hammer down. Crawlers caught in the open are bruised, solar output falls, ponds stop drying, walking is slower and rainwater tanks fill.' }, dust: { n: 'Dust storm', i: '≋', t: 'Dust storm: strong wind lifts dust in a brown wall. Solar output halves, ponds dry more slowly, it is darker, and walking against the wind is slower. Wind turbines spin faster.' } };
+const WXK = { clear: { n: 'Clear', i: '☀' }, rain: { n: 'Rain', i: '☂', t: 'Rain: walking off paths is slower, solar and evaporation ponds drop, lamps reach a little less far, rainwater tanks fill.' }, fog: { n: 'Fog', i: '≋', t: 'Fog: lamps and floodlights reach much less far, solar output falls, and crawlers swarm more often.' }, snow: { n: 'Snow', i: '❄', t: 'Snow: drifts settle on belts and slow them, walking off paths is slow, solar output falls.' }, storm: { n: 'Storm', i: '⚡', t: 'Storm: strong gusts drive the wind turbines hard, heavy rain slows walking off paths and stops ponds evaporating, rainwater tanks fill fast. Lightning can strike machines unless a lightning rod stands within 12 tiles.' }, heat: { n: 'Heatwave', i: '♨', t: 'Heatwave: evaporation ponds work half again as fast, hot solar cells lose about a tenth of their output, and walking is a little slower.' }, rime: { n: 'Freezing Fog', i: '❆', t: 'Freezing fog: supercooled droplets freeze as rime on everything they touch. Lamps reach less far, solar output falls, belts slow under the ice, and cold-blooded crawlers turn sluggish.' }, sleet: { n: 'Sleet', i: '❅', t: 'Sleet: half-melted snow and rain. Slush freezes onto belts and slows them, walking off paths is slow, solar output falls and rainwater tanks fill.' }, gale: { n: 'Gale', i: '≈', t: 'Gale: a strong, steady wind. Wind turbines run near full output, and both you and crawlers move slower against it.' }, hail: { n: 'Hail', i: '◌', t: 'Hail: ice pellets hammer down. Crawlers caught in the open are bruised, solar output falls, ponds stop drying, walking is slower and rainwater tanks fill.' }, dust: { n: 'Dust storm', i: '≋', t: 'Dust storm: strong wind lifts dust in a brown wall. Solar output halves, ponds dry more slowly, it is darker, and walking against the wind is slower. Wind turbines spin faster.' } };
 let WXB = 1, WXS = 0, LB = null;
 const wxI = k => { const w = S && S.wind; return w && w.wx === k ? w.wi || 0 : 0; };
 const wxWet = () => wxI('rain') + wxI('storm') + wxI('hail') + 0.8 * wxI('sleet');
 const wxGust = () => 1 + wxI('storm') * (0.6 + 0.25 * Math.sin((S.t || 0) * 1.3)) + 0.15 * wxI('rain') + 0.45 * wxI('dust') + 0.9 * wxI('gale');
-const wxWalk = () => 1 - 0.1 * wxI('hail') - 0.15 * wxI('gale') - 0.12 * wxI('dust') - 0.08 * wxI('heat') - 0.15 * wxI('rain') - 0.22 * wxI('storm') - 0.3 * wxI('snow') - 0.22 * wxI('sleet');
-const wxSun = e => e.type === 'pond' ? 1 - 0.2 * wxI('dust') + 0.5 * wxI('heat') - 0.75 * wxWet() - 0.45 * wxI('snow') - 0.3 * wxI('fog') : 1 - 0.5 * wxI('dust') - 0.1 * wxI('heat') - 0.45 * wxWet() - 0.35 * wxI('snow') - 0.3 * wxI('fog');
-const wxLit = () => 1 - 0.3 * wxI('dust') - 0.45 * wxI('fog') - 0.12 * (wxWet() + wxI('snow'));
+const wxWalk = () => 1 - 0.1 * wxI('hail') - 0.15 * wxI('gale') - 0.12 * wxI('dust') - 0.08 * wxI('heat') - 0.15 * wxI('rain') - 0.22 * wxI('storm') - 0.3 * wxI('snow') - 0.22 * wxI('sleet') - 0.1 * wxI('rime');
+const wxSun = e => e.type === 'pond' ? 1 - 0.2 * wxI('dust') + 0.5 * wxI('heat') - 0.75 * wxWet() - 0.45 * wxI('snow') - 0.3 * wxI('fog') - 0.25 * wxI('rime') : 1 - 0.5 * wxI('dust') - 0.1 * wxI('heat') - 0.45 * wxWet() - 0.35 * wxI('snow') - 0.3 * wxI('fog') - 0.3 * wxI('rime');
+const wxLit = () => 1 - 0.3 * wxI('dust') - 0.45 * wxI('fog') - 0.35 * wxI('rime') - 0.12 * (wxWet() + wxI('snow'));
 function wxStep() {
   const w = S.wind;
   if (!w.wx) { w.wx = 'clear'; w.wt = 120; w.wi = 0; }
@@ -3899,15 +3899,15 @@ function wxStep() {
   if (w.wt <= 0) {
     if (w.wx !== 'clear') { w.wx = 'clear'; w.wt = 150 + Math.floor(Math.random() * 250); }
     else { w.wx = w.nx || 'rain'; w.wt = 90 + Math.floor(Math.random() * 150); }
-    const u = Math.random(); w.nx = u < 0.27 ? 'rain' : u < 0.3 ? 'sleet' : u < 0.46 ? 'fog' : u < 0.6 ? 'snow' : u < 0.74 ? 'heat' : u < 0.87 ? 'dust' : u < 0.92 ? 'hail' : u < 0.97 ? 'gale' : 'storm';
+    const u = Math.random(); w.nx = u < 0.27 ? 'rain' : u < 0.3 ? 'sleet' : u < 0.42 ? 'fog' : u < 0.46 ? 'rime' : u < 0.6 ? 'snow' : u < 0.74 ? 'heat' : u < 0.87 ? 'dust' : u < 0.92 ? 'hail' : u < 0.97 ? 'gale' : 'storm';
     w.wi = 0;
   }
   const tg = w.wx === 'clear' ? 0 : Math.min(1, w.wt / 20);
   w.wi = Math.round(Math.max(0, Math.min(1, w.wi + Math.max(-0.05, Math.min(0.05, tg - w.wi)))) * 100) / 100;
-  WXB = 1 - 0.35 * wxI('snow') - 0.15 * wxI('gale') - 0.2 * wxI('sleet');
+  WXB = 1 - 0.35 * wxI('snow') - 0.15 * wxI('gale') - 0.2 * wxI('sleet') - 0.1 * wxI('rime');
   if (wxI('hail') > 0.3 && !S.dg) for (const b of S.bugs) if (b.hp > 0) b.hp -= (b.mhp || 100) * 0.006 * wxI('hail') * (BUGK[b.k || 0].ar ? 0.3 : 1);
   if (wxI('storm') > 0.5 && !S.dg && Math.random() < 0.05 * wxI('storm')) wxBolt();
-  if (!w.nx) { const u = Math.random(); w.nx = u < 0.27 ? 'rain' : u < 0.3 ? 'sleet' : u < 0.46 ? 'fog' : u < 0.6 ? 'snow' : u < 0.74 ? 'heat' : u < 0.87 ? 'dust' : u < 0.92 ? 'hail' : u < 0.97 ? 'gale' : 'storm'; }
+  if (!w.nx) { const u = Math.random(); w.nx = u < 0.27 ? 'rain' : u < 0.3 ? 'sleet' : u < 0.42 ? 'fog' : u < 0.46 ? 'rime' : u < 0.6 ? 'snow' : u < 0.74 ? 'heat' : u < 0.87 ? 'dust' : u < 0.92 ? 'hail' : u < 0.97 ? 'gale' : 'storm'; }
   if (S.t % 5 < 1) { WXS = 0; for (const e of ents.values()) if (e.type === 'wx_station') { WXS = 1; break; } }
 }
 const wxFc = w => { if (!WXS || !w || !w.wx) return ''; const nk = w.wx === 'clear' ? w.nx : 'clear', K = WXK[nk] || WXK.clear, m = Math.max(1, Math.round(w.wt / 60)); return ` <span class="dim" title="Weather station forecast">· next ${K.i} ${K.n} in ~${m} min</span>`; };
@@ -3987,6 +3987,22 @@ function drawWeather(w, h) {
     ctx.fillStyle = 'rgba(232,238,246,0.75)'; ctx.beginPath();
     for (let i = 0; i < n; i++) { const ph = hash(i, 8, 31); if (ph < 0.6) continue; const y = (hash(i, 9, 31) * h + t * vy * (0.8 + 0.4 * ph)) % (h + 40) - 20, x = ((hash(i, 10, 31) * w + (y + 20) / vy * vx) % w + w) % w + Math.sin(t * 3 + i) * 3, r = 1.5 + 2.2 * (ph - 0.6); ctx.moveTo(x + r, y); ctx.ellipse(x, y, r, r * 0.7, 0.4, 0, Math.PI * 2); }
     ctx.fill();
+  } else if (k === 'rime') {
+    const c = dk > 0.5 ? '64,74,92' : '214,226,238';
+    ctx.fillStyle = `rgba(${c},${(0.36 * I).toFixed(3)})`; ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 8; i++) {
+      const R = (0.25 + hash(i, 1, 47) * 0.3) * Math.max(w, h), sp = w + 2 * R;
+      const X = ((hash(i, 2, 47) * sp + t * 8 * (sx < 0 ? -1 : 1)) % sp + sp) % sp - R, Y = hash(i, 3, 47) * h + Math.sin(t * 0.1 + i) * 20;
+      const gr = ctx.createRadialGradient(X, Y, 0, X, Y, R);
+      gr.addColorStop(0, `rgba(${c},${(0.28 * I).toFixed(3)})`); gr.addColorStop(1, `rgba(${c},0)`);
+      ctx.fillStyle = gr; ctx.fillRect(X - R, Y - R, 2 * R, 2 * R);
+    }
+    const E = Math.min(w, h) * 0.16 * I, eg = (x0, y0, x1, y1) => { const gr = ctx.createLinearGradient(x0, y0, x1, y1); gr.addColorStop(0, 'rgba(236,244,252,0.5)'); gr.addColorStop(1, 'rgba(236,244,252,0)'); return gr; };
+    ctx.fillStyle = eg(0, 0, 0, E); ctx.fillRect(0, 0, w, E); ctx.fillStyle = eg(0, h, 0, h - E); ctx.fillRect(0, h - E, w, E);
+    ctx.fillStyle = eg(0, 0, E, 0); ctx.fillRect(0, 0, E, h); ctx.fillStyle = eg(w, 0, w - E, 0); ctx.fillRect(w - E, 0, E, h);
+    ctx.strokeStyle = 'rgba(245,250,255,0.8)'; ctx.lineWidth = 1; ctx.beginPath();
+    for (let i = 0; i < Math.round(90 * I); i++) { const e = hash(i, 4, 47), u = hash(i, 5, 47), dd = hash(i, 6, 47) * E * 0.8, r = 2 + 3 * hash(i, 7, 47); if (Math.sin(t * 2 + i * 1.7) < 0.2) continue; const x = e < 0.25 ? u * w : e < 0.5 ? u * w : e < 0.75 ? dd : w - dd, y = e < 0.25 ? dd : e < 0.5 ? h - dd : u * h; for (let a = 0; a < 3; a++) { const c2 = Math.cos(a * Math.PI / 3) * r, s2 = Math.sin(a * Math.PI / 3) * r; ctx.moveTo(x - c2, y - s2); ctx.lineTo(x + c2, y + s2); } }
+    ctx.stroke();
   } else if (k === 'hail') {
     const n = Math.min(700, Math.round(220 * I * A)), vy = 1300, vx = sx * vy * 0.6;
     ctx.fillStyle = `rgba(60,70,90,${(0.22 * I).toFixed(3)})`; ctx.fillRect(0, 0, w, h);
@@ -4751,7 +4767,7 @@ function bugStep() {
       b.x = nx; b.y = ny;
       return null;
     };
-    const v = sp * K.v * (b.tk > 0 ? 0.33 : 1) * (b.bo > 0 ? 0.15 : 1) * (b.cs ? 0.5 : 1) * (lits.length && litAt(b.x, b.y) ? 0.8 : 1);
+    const v = sp * K.v * (1 - 0.25 * wxI('rime')) * (b.tk > 0 ? 0.33 : 1) * (b.bo > 0 ? 0.15 : 1) * (b.cs ? 0.5 : 1) * (lits.length && litAt(b.x, b.y) ? 0.8 : 1);
     let r = tryMove(b.x + ux * v, b.y + uy * v);
     if (r === 'water') r = tryMove(b.x + Math.sign(ux) * v, b.y) && tryMove(b.x, b.y + Math.sign(uy) * v) && tryMove(b.x - uy * v, b.y + ux * v);
     b.chew = r && r !== 'water' ? r.id : 0;
