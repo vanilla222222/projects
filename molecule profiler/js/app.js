@@ -46,6 +46,15 @@ const GLOSSARY = {
   atomType: ['Type', 'Which of the 68 Wildman–Crippen atom types the atom matched. The rules are tried in a fixed order and the first match wins.'],
   atomLogp: ['Δ log P', 'The atom type’s contribution to WLOGP, including its hydrogens.'],
   atomMr: ['Δ MR', 'The atom type’s contribution to molar refractivity, including its hydrogens.'],
+  tgtCount: ['Targets', 'How many targets to list. The ranking covers every target in the set either way.'],
+  tgtMin: ['Min score', 'Hides targets whose nearest known ligand is less similar than this. A low cut shows weak, speculative matches; raise it to keep only targets with a genuinely close relative of the query among their actives.'],
+  tgtRank: ['#', 'Rank by score, highest first.'],
+  tgtName: ['Target', 'The protein, named as it appears in the curated ligand set.'],
+  tgtGene: ['Gene', 'The human gene symbol, or the microbial gene name for antibacterial, antifungal and antiviral targets.'],
+  tgtFamily: ['Family', 'Broad target class: GPCR, enzyme, kinase, ion channel, transporter, nuclear receptor or ribosome.'],
+  tgtScore: ['Score', 'The similarity between the query and the most similar of this target’s known ligands — a nearest-neighbour score, computed with the fingerprint and metric chosen in the similarity panel above. It is a structural resemblance, not a probability of binding.'],
+  tgtNearest: ['Nearest ligand', 'The known ligand of this target that the query resembles most. Click the row to profile it.'],
+  tgtLigands: ['Actives', 'How many known ligands of this target are in the reference library. A target with one ligand can only ever be matched through that single compound, so its score says much less.'],
   simMethod: ['Fingerprint', 'Which structural fingerprint is compared. ECFP4 and ECFP6 hash circular atom environments out to two and three bonds; FCFP4 does the same but describes each atom by its pharmacophore role (donor, acceptor, aromatic, halogen, basic, acidic) instead of its element, so it tolerates element swaps; atom pairs record every pair of typed atoms together with the number of bonds between them.'],
   simMetric: ['Metric', 'How two bit sets are turned into one number. Tanimoto divides the shared bits by the union, Dice by the mean set size. Dice is always the larger of the two and is more forgiving when the molecules differ in size.'],
   simCount: ['Hits', 'How many of the ranked reference compounds to list.'],
@@ -286,6 +295,7 @@ function renderCurrent() {
   drawEgg(d);
   renderAtoms(record);
   renderSimilar(record);
+  renderTargets(record);
 
   document.querySelectorAll('#molecule-tabs button').forEach((button) => {
     button.setAttribute('aria-selected', String(Number(button.dataset.index) === current));
@@ -442,6 +452,87 @@ function renderSimilar(record) {
   )).join('');
 }
 
+const TGT_COLUMNS = [
+  ['tgtRank', '#'],
+  ['tgtName', 'Target'],
+  ['tgtGene', 'Gene'],
+  ['tgtFamily', 'Family'],
+  ['tgtScore', 'Score'],
+  ['tgtNearest', 'Nearest ligand'],
+  ['tgtLigands', 'Actives']
+];
+
+function renderTargets(record) {
+  const methodKey = document.getElementById('sim-method').value;
+  const metricKey = document.getElementById('sim-metric').value;
+  const limit = Number(document.getElementById('tgt-count').value);
+  const floor = Number(document.getElementById('tgt-min').value);
+  const method = FP_METHODS.find((entry) => entry.key === methodKey) || FP_METHODS[0];
+  const score = metricKey === 'dice' ? dice : tanimoto;
+
+  const query = fingerprint(record.mol, method.key);
+  const byName = new Map();
+  libraryFingerprints(method.key).forEach((item) => byName.set(item.entry.name, item));
+
+  const ranked = [];
+  TARGETS.forEach((target) => {
+    let best = null;
+    let count = 0;
+    target.ligands.forEach((name) => {
+      const item = byName.get(name);
+      if (!item) return;
+      count += 1;
+      const value = score(query, item.fp);
+      if (!best || value > best.value) best = { value: value, entry: item.entry };
+    });
+    if (best) ranked.push({ target: target, score: best.value, nearest: best.entry, count: count });
+  });
+  ranked.sort((a, b) => b.score - a.score);
+
+  const kept = ranked.filter((row) => row.score >= floor);
+  const shown = limit > 0 ? kept.slice(0, limit) : kept;
+
+  document.getElementById('tgt-summary').innerHTML = TARGETS.length + ' targets, '
+    + kept.length + ' above the score cut';
+  document.getElementById('tgt-blurb').textContent = 'Scored with ' + method.label + ' and '
+    + (metricKey === 'dice' ? 'Dice' : 'Tanimoto') + ', following the similarity panel above.';
+
+  const table = document.getElementById('targets');
+  table.querySelector('thead').innerHTML = '<tr>' + TGT_COLUMNS.map(([key, label]) => (
+    '<th>' + label + infoButton(key) + '</th>'
+  )).join('') + '</tr>';
+  table.querySelector('tbody').innerHTML = shown.length ? shown.map((row, index) => (
+    '<tr data-smiles="' + escapeHtml(row.nearest.smiles) + '" data-name="' + escapeHtml(row.nearest.name) + '">'
+      + '<td>' + (index + 1) + '</td>'
+      + '<td>' + escapeHtml(row.target.name) + '</td>'
+      + '<td>' + escapeHtml(row.target.gene) + '</td>'
+      + '<td>' + escapeHtml(row.target.family) + '</td>'
+      + '<td><span class="score"><span class="score-track"><span class="score-fill" style="width:'
+        + (row.score * 100).toFixed(1) + '%"></span></span>' + row.score.toFixed(3) + '</span></td>'
+      + '<td>' + escapeHtml(row.nearest.name) + '</td>'
+      + '<td>' + row.count + '</td>'
+      + '</tr>'
+  )).join('') : '<tr><td colspan="7">No target has a known ligand this similar to the query.</td></tr>';
+}
+
+function setupTargets() {
+  ['tgt-count', 'tgt-min'].forEach((id) => {
+    document.getElementById(id).addEventListener('change', () => {
+      if (records[current]) renderTargets(records[current]);
+    });
+  });
+  [['tgt-count', 'tgtCount'], ['tgt-min', 'tgtMin']].forEach(([id, key]) => {
+    document.getElementById(id).insertAdjacentHTML('beforebegin', infoButton(key));
+  });
+  document.getElementById('targets').addEventListener('click', (event) => {
+    const row = event.target.closest('tr[data-smiles]');
+    if (!row) return;
+    document.getElementById('smiles-input').value = row.dataset.name + ', ' + row.dataset.smiles;
+    analyse();
+    document.getElementById('identity').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+}
+
 function setupSimilarity() {
   const select = document.getElementById('sim-method');
   select.innerHTML = FP_METHODS.map((method) => (
@@ -449,7 +540,10 @@ function setupSimilarity() {
   )).join('');
   ['sim-method', 'sim-metric', 'sim-count'].forEach((id) => {
     document.getElementById(id).addEventListener('change', () => {
-      if (records[current]) renderSimilar(records[current]);
+      if (records[current]) {
+        renderSimilar(records[current]);
+        renderTargets(records[current]);
+      }
     });
   });
   [['sim-method', 'simMethod'], ['sim-metric', 'simMetric'], ['sim-count', 'simCount']].forEach(([id, key]) => {
@@ -571,5 +665,6 @@ document.getElementById('batch').addEventListener('click', (event) => {
 setupExamples();
 setupTheme();
 setupSimilarity();
+setupTargets();
 document.getElementById('smiles-input').value = 'aspirin, CC(=O)Oc1ccccc1C(=O)O';
 analyse();

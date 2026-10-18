@@ -108,6 +108,29 @@
       </article>
 
       <article class="panel wide">
+        <div class="panel-head">
+          <h2>Target prediction</h2>
+          <p class="hint" id="tgt-summary"></p>
+        </div>
+        <div class="tgt-controls">
+          <label>Targets<select id="tgt-count">
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+            <option value="0">all</option>
+          </select></label>
+          <label>Min score<select id="tgt-min">
+            <option value="0">any</option>
+            <option value="0.1" selected>0.10</option>
+            <option value="0.3">0.30</option>
+            <option value="0.5">0.50</option>
+          </select></label>
+        </div>
+        <p class="hint" id="tgt-blurb"></p>
+        <div class="table-wrap"><table id="targets"><thead></thead><tbody></tbody></table></div>
+        <p class="hint caveat" id="tgt-caveat">This is a nearest-neighbour lookup over a hand-curated set of known ligands, not a trained model: a target scores high when the query looks like a compound already recorded as binding it. The numbers are fingerprint similarities, not binding probabilities, and a target with no ligand in the set below can never appear here.</p>
+      </article>
+
+      <article class="panel wide">
         <div class="panel-head"><h2>Atom contributions</h2><p class="hint">Wildman&ndash;Crippen type per heavy atom, with its log P and molar-refractivity share.</p></div>
         <div class="table-wrap"><table id="atoms"><thead></thead><tbody></tbody></table></div>
       </article>
@@ -127,6 +150,7 @@
 <script src="js/rules.js"></script>
 <script src="js/fingerprints.js"></script>
 <script src="data/library.js"></script>
+<script src="data/targets.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
