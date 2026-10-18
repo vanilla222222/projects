@@ -1,6 +1,7 @@
 // Each project folder in this directory that contains an index.html.
 // icon: one of the keys in ICONS below. accent: the card's highlight color.
 const PROJECTS = [
+    { folder: "molecule profiler", name: "Molecule Profiler", tag: "Tool", description: "Paste a SMILES string and get physicochemistry, drug-likeness filters and absorption plots.", icon: "radar", accent: "#3fa89b" },
     { folder: "cellular automata", name: "Automaton", tag: "Simulation", description: "Configurable cellular life. Tweak the rules and watch patterns emerge.", icon: "cells", accent: "#4f9a8a" },
     { folder: "chem lab", name: "Chemical Graph Constructor", tag: "Tool", description: "Build molecules atom by atom and explore their structure.", icon: "molecule", accent: "#8a6fb8" },
     { folder: "Evolution Sim", name: "Evolution Sim", tag: "Simulation", description: "Procedural world maps with biomes from altitude, temperature and humidity.", icon: "globe", accent: "#6f9a4f" },
@@ -10,7 +11,6 @@ const PROJECTS = [
     { folder: "nightfall defense", name: "Nightfall Defense", tag: "Game", description: "Ponies hold the moonlit road against a hundred waves of DNBs. An incremental tower defense.", icon: "shield", accent: "#5b7fc2" },
     { folder: "vanilla incremental", name: "Vanilla Incremental", tag: "Game", description: "Dig a 10x10 mine for dirt, ores and gems, then spend each one on its own upgrades.", icon: "pick", accent: "#c9a24f" },
     { folder: "chem factory", name: "Chem Factory", tag: "Game", description: "Mine real ores and refine them with real chemistry. A factory game.", icon: "flask", accent: "#c08a3a" },
-    { folder: "molecule profiler", name: "Molecule Profiler", tag: "Tool", description: "Paste a SMILES string and get physicochemistry, drug-likeness filters and absorption plots.", icon: "radar", accent: "#3fa89b" },
 ];
 
 const ICONS = {
