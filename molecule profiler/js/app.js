@@ -45,7 +45,16 @@ const GLOSSARY = {
   atomH: ['H', 'Hydrogens on the atom: those written explicitly in brackets plus those added by the valence model.'],
   atomType: ['Type', 'Which of the 68 Wildman–Crippen atom types the atom matched. The rules are tried in a fixed order and the first match wins.'],
   atomLogp: ['Δ log P', 'The atom type’s contribution to WLOGP, including its hydrogens.'],
-  atomMr: ['Δ MR', 'The atom type’s contribution to molar refractivity, including its hydrogens.']
+  atomMr: ['Δ MR', 'The atom type’s contribution to molar refractivity, including its hydrogens.'],
+  simMethod: ['Fingerprint', 'Which structural fingerprint is compared. ECFP4 and ECFP6 hash circular atom environments out to two and three bonds; FCFP4 does the same but describes each atom by its pharmacophore role (donor, acceptor, aromatic, halogen, basic, acidic) instead of its element, so it tolerates element swaps; atom pairs record every pair of typed atoms together with the number of bonds between them.'],
+  simMetric: ['Metric', 'How two bit sets are turned into one number. Tanimoto divides the shared bits by the union, Dice by the mean set size. Dice is always the larger of the two and is more forgiving when the molecules differ in size.'],
+  simCount: ['Hits', 'How many of the ranked reference compounds to list.'],
+  simRank: ['Rank', 'Position in the ranking, best first. Ties are left in library order.'],
+  simName: ['Compound', 'The reference compound. Click the row to profile it on this page.'],
+  simClass: ['Class', 'A rough pharmacological label for the reference compound. It is only a hint about what the neighbourhood of your query looks like; it is not a prediction.'],
+  simScore: ['Score', 'The similarity between the query and this compound, from 0 to 1. For ECFP-type fingerprints a Tanimoto above roughly 0.6 usually means a recognisable common scaffold, and above 0.85 means close analogues; atom-pair scores run much higher for the same pair of molecules, so compare them only within one method.'],
+  simShared: ['Shared', 'Number of fingerprint bits present in both molecules, followed by the number set in the reference compound. It shows whether a high score comes from a real overlap or from both molecules simply having few bits.'],
+  simBits: ['Query bits', 'How many distinct fingerprint bits the query sets. Small molecules set few bits, which makes every score noisier.']
 };
 
 const EXAMPLES = [
@@ -84,6 +93,21 @@ document.body.appendChild(tip);
 
 let records = [];
 let current = 0;
+
+const libraryCache = new Map();
+
+function libraryFingerprints(methodKey) {
+  if (libraryCache.has(methodKey)) return libraryCache.get(methodKey);
+  const built = [];
+  LIBRARY.forEach((entry) => {
+    try {
+      const mol = buildMolecule(parseSmiles(entry.smiles));
+      built.push({ entry, fp: fingerprint(mol, methodKey) });
+    } catch (error) { /* a reference entry that will not parse is simply left out */ }
+  });
+  libraryCache.set(methodKey, built);
+  return built;
+}
 
 function infoButton(key) {
   if (!GLOSSARY[key]) return '';
@@ -261,6 +285,7 @@ function renderCurrent() {
   drawRadar(v.radar);
   drawEgg(d);
   renderAtoms(record);
+  renderSimilar(record);
 
   document.querySelectorAll('#molecule-tabs button').forEach((button) => {
     button.setAttribute('aria-selected', String(Number(button.dataset.index) === current));
@@ -371,6 +396,74 @@ function renderAtoms(record) {
   }).join('');
 }
 
+const SIM_COLUMNS = [
+  ['simRank', '#'],
+  ['simName', 'Compound'],
+  ['simClass', 'Class'],
+  ['formula', 'Formula'],
+  ['simScore', 'Score'],
+  ['simShared', 'Shared']
+];
+
+function renderSimilar(record) {
+  const methodKey = document.getElementById('sim-method').value;
+  const metricKey = document.getElementById('sim-metric').value;
+  const limit = Number(document.getElementById('sim-count').value);
+  const method = FP_METHODS.find((entry) => entry.key === methodKey) || FP_METHODS[0];
+  const score = metricKey === 'dice' ? dice : tanimoto;
+
+  const query = fingerprint(record.mol, method.key);
+  const library = libraryFingerprints(method.key);
+  const hits = library.map((item) => ({
+    entry: item.entry,
+    bits: item.fp.bits.size,
+    shared: sharedCount(query, item.fp),
+    score: score(query, item.fp)
+  })).sort((a, b) => b.score - a.score).slice(0, limit);
+
+  document.getElementById('sim-summary').innerHTML = library.length + ' reference compounds, '
+    + query.bits.size + ' query bits' + infoButton('simBits');
+  document.getElementById('sim-blurb').textContent = method.blurb;
+
+  const table = document.getElementById('similar');
+  table.querySelector('thead').innerHTML = '<tr>' + SIM_COLUMNS.map(([key, label]) => (
+    '<th>' + label + infoButton(key === 'formula' ? 'formula' : key) + '</th>'
+  )).join('') + '</tr>';
+  table.querySelector('tbody').innerHTML = hits.map((hit, index) => (
+    '<tr data-smiles="' + escapeHtml(hit.entry.smiles) + '" data-name="' + escapeHtml(hit.entry.name) + '">'
+      + '<td>' + (index + 1) + '</td>'
+      + '<td>' + escapeHtml(hit.entry.name) + '</td>'
+      + '<td>' + escapeHtml(hit.entry.cls) + '</td>'
+      + '<td>' + escapeHtml(hit.entry.formula) + '</td>'
+      + '<td><span class="score"><span class="score-track"><span class="score-fill" style="width:'
+        + (hit.score * 100).toFixed(1) + '%"></span></span>' + hit.score.toFixed(3) + '</span></td>'
+      + '<td>' + hit.shared + ' / ' + hit.bits + '</td>'
+      + '</tr>'
+  )).join('');
+}
+
+function setupSimilarity() {
+  const select = document.getElementById('sim-method');
+  select.innerHTML = FP_METHODS.map((method) => (
+    '<option value="' + method.key + '">' + method.label + '</option>'
+  )).join('');
+  ['sim-method', 'sim-metric', 'sim-count'].forEach((id) => {
+    document.getElementById(id).addEventListener('change', () => {
+      if (records[current]) renderSimilar(records[current]);
+    });
+  });
+  [['sim-method', 'simMethod'], ['sim-metric', 'simMetric'], ['sim-count', 'simCount']].forEach(([id, key]) => {
+    document.getElementById(id).insertAdjacentHTML('beforebegin', infoButton(key));
+  });
+  document.getElementById('similar').addEventListener('click', (event) => {
+    const row = event.target.closest('tr[data-smiles]');
+    if (!row) return;
+    document.getElementById('smiles-input').value = row.dataset.name + ', ' + row.dataset.smiles;
+    analyse();
+    document.getElementById('identity').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+}
+
 function batchRow(record) {
   return {
     name: record.name,
@@ -477,5 +570,6 @@ document.getElementById('batch').addEventListener('click', (event) => {
 
 setupExamples();
 setupTheme();
+setupSimilarity();
 document.getElementById('smiles-input').value = 'aspirin, CC(=O)Oc1ccccc1C(=O)O';
 analyse();

@@ -168,7 +168,7 @@ function perceiveAromaticity(mol) {
   mol.rings.forEach((ring) => {
     if (ring.length < 5 || ring.length > 7) return;
     if (ring.every((id) => flagged[id])) { ring.aromatic = true; return; }
-    const electrons = huckelElectrons(mol, ring);
+    const electrons = huckelElectrons(mol, ring, flagged);
     if (electrons !== null && (electrons - 2) % 4 === 0) ring.aromatic = true;
   });
 
@@ -183,7 +183,7 @@ function perceiveAromaticity(mol) {
   });
 }
 
-function huckelElectrons(mol, ring) {
+function huckelElectrons(mol, ring, flagged) {
   const inRing = new Set(ring);
   let total = 0;
   for (let k = 0; k < ring.length; k += 1) {
@@ -213,6 +213,7 @@ function huckelElectrons(mol, ring) {
     if (element === 'C' && atom.charge === -1) { total += 2; continue; }
     if (element === 'C' && atom.charge === 1) continue;
     if (element === 'B') continue;
+    if (element === 'C' && flagged && flagged[atom.index]) { total += 1; continue; }
     return null;
   }
   return total;
@@ -258,11 +259,8 @@ function kekulize(mol) {
 
 function atomNeedsPiBond(mol, id) {
   const atom = mol.atoms[id];
-  const hasExocyclicDouble = atom.neighbors.some((link) => {
-    const bond = mol.bonds[link.bond];
-    return bond.order === 2 && !bond.aromatic;
-  });
-  if (hasExocyclicDouble) return false;
+  const hasDouble = atom.neighbors.some((link) => mol.bonds[link.bond].order === 2);
+  if (hasDouble) return false;
 
   const element = atom.element;
   const charge = atom.charge || 0;
