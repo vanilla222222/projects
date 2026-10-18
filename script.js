@@ -10,6 +10,7 @@ const PROJECTS = [
     { folder: "nightfall defense", name: "Nightfall Defense", tag: "Game", description: "Ponies hold the moonlit road against a hundred waves of DNBs. An incremental tower defense.", icon: "shield", accent: "#5b7fc2" },
     { folder: "vanilla incremental", name: "Vanilla Incremental", tag: "Game", description: "Dig a 10x10 mine for dirt, ores and gems, then spend each one on its own upgrades.", icon: "pick", accent: "#c9a24f" },
     { folder: "chem factory", name: "Chem Factory", tag: "Game", description: "Mine real ores and refine them with real chemistry. A factory game.", icon: "flask", accent: "#c08a3a" },
+    { folder: "molecule profiler", name: "Molecule Profiler", tag: "Tool", description: "Paste a SMILES string and get physicochemistry, drug-likeness filters and absorption plots.", icon: "radar", accent: "#3fa89b" },
 ];
 
 const ICONS = {
@@ -22,6 +23,7 @@ const ICONS = {
     pick: '<path d="M4 9c4-4.5 11-4.5 16 0"/><path d="M12 6.5 7 20"/>',
     flask: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M7.5 15h9"/>',
     moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/><path d="M17 3v3M15.5 4.5h3"/>',
+    radar: '<path d="M12 3 21 18H3z"/><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/>',
 };
 
 const ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
