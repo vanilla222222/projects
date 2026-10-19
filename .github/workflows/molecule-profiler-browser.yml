@@ -28,12 +28,18 @@ jobs:
         working-directory: molecule profiler
         env:
           BROWSER_TEST_ARTIFACTS: browser-test-artifacts
-        run: python tools/browser-e2e.py
+          PYTHONUNBUFFERED: '1'
+        shell: bash
+        run: |
+          set -o pipefail
+          python tools/browser-e2e.py 2>&1 | tee browser-test-artifacts.log
       - name: Preserve browser screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: molecule-profiler-browser-screenshots
-          path: molecule profiler/browser-test-artifacts/
+          path: |
+            molecule profiler/browser-test-artifacts/
+            molecule profiler/browser-test-artifacts.log
           if-no-files-found: warn
           retention-days: 14

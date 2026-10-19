@@ -49,6 +49,7 @@ class BrowserWorkflowTests(unittest.TestCase):
         if os.environ.get("CHROMIUM_PATH"):
             opts["executable_path"] = os.environ["CHROMIUM_PATH"]
         cls.browser = cls.pw.chromium.launch(**opts)
+        print("Chromium version:", cls.browser.version, flush=True)
 
     @classmethod
     def tearDownClass(cls):
@@ -62,6 +63,7 @@ class BrowserWorkflowTests(unittest.TestCase):
         self.page = self.context.new_page()
         self.errors = []
         self.page.on("pageerror", lambda err: self.errors.append(str(err)))
+        self.context.tracing.start(screenshots=True, snapshots=True, sources=True)
         self.page.set_default_timeout(40000)
         self.page.goto(self.base_url, wait_until="domcontentloaded", timeout=60000)
         self.page.locator("#run").wait_for()
@@ -71,8 +73,18 @@ class BrowserWorkflowTests(unittest.TestCase):
 
     def tearDown(self):
         name = self.id().rsplit(".", 1)[-1]
-        self.page.screenshot(path=str(ARTIFACTS / f"{name}.png"), full_page=True)
-        self.context.close()
+        failure_cases = self._outcome.result.errors + self._outcome.result.failures
+        failed = any(case is self for case, _ in failure_cases)
+        try:
+            if failed or self.errors:
+                self.page.screenshot(path=str(ARTIFACTS / f"{name}.png"), full_page=True)
+                (ARTIFACTS / f"{name}-errors.txt").write_text(
+                    "\n".join(self.errors) or "Assertion failed; inspect trace.",
+                    encoding="utf-8",
+                )
+        finally:
+            self.context.tracing.stop(path=str(ARTIFACTS / f"{name}.zip") if failed else None)
+            self.context.close()
 
     def analyze(self, text, expected):
         self.page.locator("#smiles-input").fill(text)
@@ -99,6 +111,8 @@ class BrowserWorkflowTests(unittest.TestCase):
 
     def test_batch_chart_and_csv(self):
         self.analyze("Water, O\nEthanol, CCO\nPropane, CCC", "3 analyzed")
+        self.page.locator('#workspace-nav button[data-view="data"]').click()
+        self.assertFalse(self.page.locator("#descriptor-distributions").evaluate("(el) => el.hidden"))
         self.page.locator("#distribution-metric").select_option("mw")
         self.assertIn("3 valid of 3", self.page.locator("#distribution-summary").inner_text())
         self.assertEqual(self.page.locator("#distribution-plot svg rect").count(), 12)
@@ -112,6 +126,16 @@ class BrowserWorkflowTests(unittest.TestCase):
         self.assertEqual(len(rows), 4)
         self.assertTrue(any("Ethanol" in row for row in rows))
         self.assertEqual(self.errors, [], "Browser JavaScript errors: " + repr(self.errors))
+
+    def test_workspace_navigation(self):
+        self.page.locator('#workspace-nav button[data-view="data"]').click()
+        self.assertFalse(self.page.locator("#descriptor-distributions").evaluate("(el) => el.hidden"))
+        self.page.locator("#module-search").fill("distribution")
+        self.assertIn("section", self.page.locator("#workspace-description").inner_text().lower())
+        self.page.locator("#module-search").fill("")
+        self.page.locator('#workspace-nav button[data-view="overview"]').click()
+        self.assertTrue(self.page.locator("#descriptor-distributions").evaluate("(el) => el.hidden"))
+        self.assertEqual(self.errors, [])
 
     def test_import_snapshot_research_archive_and_clear(self):
         self.page.locator("#molecule-file").set_input_files({
