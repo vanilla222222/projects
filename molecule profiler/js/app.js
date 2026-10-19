@@ -140,6 +140,7 @@ const GLOSSARY = {
   tgtNearest: ['Nearest ligand', 'The known ligand of this target that the query resembles most. Click the row to profile it.'],
   tgtLigands: ['Actives', 'How many known ligands of this target are in the reference library. A target with one ligand can only ever be matched through that single compound, so its score says much less.'],
   tgtRecovered: ['Recovered', 'How often this target came first when one of its own known ligands was used as the query. Each of its ligands is removed from the library in turn, the remaining targets are re-scored exactly as they are here, and the share of those trials where this target ranked first is the number shown, with the number of trials in brackets. A target with fewer than two ligands cannot be tested at all and shows a dash, because dropping its only ligand leaves nothing to match against. This is the one number on the page that says how often the ranking has actually been right, measured rather than asserted \u2014 and it is measured on hand-curated ligand sets of a median of three compounds, so a target with 100% over two trials has been right twice, not validated. A low figure is not always a failure of the ranking: 5-HT2A and 5-HT2C share most of their ligands, so whichever of the two the fingerprint prefers takes every first place and the other scores zero while still sitting at rank two or three. For families like that the top-five figure in the line above the table is the fair one.'],
+  metCases: ['Known-answer tests', 'A fixture set of 16 documented metabolites across 14 drugs \u2014 aspirin to salicylic acid, codeine to morphine and norcodeine, diazepam to nordazepam, MDMA to MDA and HHMA, morphine to its glucuronide, and others whose major route is textbook. The engine is run on each parent, the products are canonicalised, and the documented metabolite is looked for by structure. Regenerate it with tools/metabolism-cases.js. Two cases land in the minor band rather than the major one: paracetamol to NAPQI, whose rule carries a deliberately low weight because the conjugation routes dominate at ordinary doses, and caffeine to paraxanthine, where N3-demethylation is about 80% of caffeine clearance in people while the aromatic N-methyl rule here carries a generic class frequency of 0.09. Those weights were left alone on purpose: tuning a rule until a fixture passes makes the fixture meaningless. What the test shows is that the documented route is found and ranked, not that the weights are rates.'],
   tgtBenchmark: ['Measured recall', 'The whole target panel, scored against itself by leave-one-out: every known ligand of every target is held out, the targets are re-ranked, and the rank of the ligand\u2019s own target is recorded. Regenerate it with tools/retrieval-benchmark.js. The three baselines matter as much as the headline: ranking targets by how many ligands they happen to have, with no structure at all, and ranking them at random. The gap between those and the measured number is what the fingerprint is worth here.'],
   simMethod: ['Fingerprint', 'Which structural fingerprint is compared. ECFP4 and ECFP6 hash circular atom environments out to two and three bonds; FCFP4 does the same but describes each atom by its pharmacophore role (donor, acceptor, aromatic, halogen, basic, acidic) instead of its element, so it tolerates element swaps; atom pairs record every pair of typed atoms together with the number of bonds between them.'],
   simMetric: ['Metric', 'How two bit sets are turned into one number. Tanimoto divides the shared bits by the union, Dice by the mean set size. Dice is always the larger of the two and is more forgiving when the molecules differ in size.'],
@@ -645,6 +646,19 @@ function recoveredCell(target) {
   const row = benchmarkRow(target);
   if (!row) return '<span class="quiet">\u2014</span>';
   return (row.r1 * 100).toFixed(0) + '% <span class="quiet">(' + row.n + ')</span>';
+}
+
+function casesLine() {
+  if (typeof METABOLISM_CASES === 'undefined') return '';
+  const c = METABOLISM_CASES;
+  const misses = c.rows.filter((row) => row.found && row.band !== 'major')
+    .map((row) => row.drug + ' to ' + row.metabolite);
+  return 'Known-answer tests: of ' + c.cases + ' documented metabolites across ' + c.drugs + ' drugs, '
+    + c.enumerated + ' are enumerated by this rule set within ' + c.generations + ' generations, '
+    + c.major + ' land in the major band and ' + c.top5 + ' fall inside the top five by weight.'
+    + (misses.length ? ' The ' + (misses.length === 1 ? 'one that lands' : misses.length + ' that land')
+      + ' in the minor band instead: ' + misses.join(' and ') + '.' : '')
+    + infoButton('metCases');
 }
 
 function benchmarkLine() {
@@ -1223,6 +1237,7 @@ function renderMetabolism(record) {
 }
 
 function setupMetabolism() {
+  document.getElementById('met-bench').innerHTML = casesLine();
   ['met-depth', 'met-phase', 'met-count', 'met-band', 'met-toxonly'].forEach((id) => {
     document.getElementById(id).addEventListener('change', () => {
       if (records[current]) renderMetabolism(records[current]);
@@ -1340,6 +1355,21 @@ function fullExportRows(record) {
     ['toxicity', 'Substructure matches against published alert catalogues. A match flags a motif the literature associates with a liability. Zero matches means no catalogued motif was found, not that the compound is safe.'],
     ['dependence', 'Structural analogy to labelled reference drugs, and nothing more. No row in this section is a pharmacological or abuse-liability finding about the query.']
   ].forEach(([item, text]) => add('provenance', item, 'note', text));
+
+  if (typeof METABOLISM_CASES !== 'undefined') {
+    const c = METABOLISM_CASES;
+    add('provenance', 'metabolism known-answer tests', 'summary', 'Generated ' + c.generated + ' by '
+      + 'tools/metabolism-cases.js over ' + c.cases + ' documented metabolites of ' + c.drugs + ' drugs, '
+      + c.generations + ' generations: ' + c.enumerated + ' enumerated, ' + c.major + ' in the major band, '
+      + c.top5 + ' inside the top five by weight. The cases that fall short of the major band are reported as '
+      + 'such rather than fixed by raising a rule weight.');
+    c.rows.forEach((row) => {
+      add('provenance', 'known-answer case: ' + row.drug + ' to ' + row.metabolite, 'result',
+        (row.found ? 'found, band ' + row.band + ', rank ' + row.rank + ', weight ' + row.weight.toFixed(4)
+          + ', generation ' + row.generation : 'not enumerated')
+        + ' \u2014 documented route: ' + row.route + '; standing: ' + row.standing);
+    });
+  }
 
   if (typeof RETRIEVAL_BENCHMARK !== 'undefined') {
     const b = RETRIEVAL_BENCHMARK;

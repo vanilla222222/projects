@@ -40,6 +40,24 @@ const METABOLISM = [
     note: 'Hydroxylation on the carbon next to nitrogen cleaves the N-C bond and releases the corresponding aldehyde. The amine is reported; the aldehyde fragment is not.'
   },
   {
+    name: 'N-dealkylation (branched alkyl)',
+    phase: 'I',
+    enzyme: 'CYP',
+    route: 'oxidative N-dealkylation',
+    smirks: '[CH;!R]([#6])([#6])[NX3;!$(N[!#6;!#1]);!$(NC=[O,N,S]);!$(N=*):1]>>[N:1]',
+    weight: 0.14,
+    note: 'The same carbinolamine collapse where the carbon next to nitrogen carries two substituents, so a ketone leaves rather than an aldehyde. This is the route that strips the isopropyl from beta blockers, giving N-desisopropylpropranolol and its relatives.'
+  },
+  {
+    name: 'N-demethylation (amide or lactam)',
+    phase: 'I',
+    enzyme: 'CYP',
+    route: 'oxidative N-dealkylation',
+    smirks: '[CH3][NX3;$(NC=O);!$(N=*):1]>>[N:1]',
+    weight: 0.18,
+    note: 'An amide nitrogen is a far weaker nucleophile than an amine, but its N-methyl is still hydroxylated and lost. Diazepam to nordazepam is the textbook case, and the product is usually longer-lived than the parent.'
+  },
+  {
     name: 'N-oxidation (tertiary amine)',
     phase: 'I',
     enzyme: 'FMO',
@@ -139,6 +157,15 @@ const METABOLISM = [
     note: 'CYP2D6 is the usual catalyst for electron-rich rings. The phenol it uncovers is a handle for sulfation and glucuronidation, so this reaction usually starts a two-step clearance route rather than ending one.'
   },
   {
+    name: 'O-dealkylation (aryl ether, larger alkyl)',
+    phase: 'I',
+    enzyme: 'CYP',
+    route: 'O-dealkylation',
+    smirks: '[CH2;!R]([#6])[OX2:1][c:2]>>[O:1][c:2]',
+    weight: 0.14,
+    note: 'Hydroxylation on the carbon next to the ether oxygen cleaves it, uncovering the phenol and releasing an aldehyde. Phenacetin loses its ethyl this way and becomes paracetamol, which is why it worked as an analgesic at all.'
+  },
+  {
     name: 'O-demethylation (aliphatic methyl ether)',
     phase: 'I',
     enzyme: 'CYP',
@@ -173,6 +200,15 @@ const METABOLISM = [
     smirks: '[OX2H:1][c:2]1[c:3]([OX2H:4])[c:5][c:6][c:7][c:8]1>>[O:1]=[C:2]1[C:3](=[O:4])[C:5]=[C:6][C:7]=[C:8]1',
     weight: 0.15,
     note: 'A catechol gives up two electrons to peroxidases, to tyrosinase, or simply to oxygen, and becomes an ortho-quinone. Quinones are electrophiles and redox cyclers: this is the single most common way a harmless-looking phenol becomes a reactive metabolite, and it is why the toxicity panel is worth re-running on the products of this reaction.'
+  },
+  {
+    name: 'Para-acylaminophenol oxidation to quinone imine',
+    phase: 'I',
+    enzyme: 'CYP2E1, CYP3A4 or peroxidase',
+    route: 'two-electron oxidation',
+    smirks: '[OX2H:1][c:2]1[c:3][c:4][c:5]([NX3;H1:6][C:7]=[O:8])[c:9][c:10]1>>[O:1]=[C:2]1[C:3]=[C:4][C:5](=[N:6][C:7]=[O:8])[C:9]=[C:10]1',
+    weight: 0.08,
+    note: 'A phenol para to an acylamino group gives up two electrons and becomes a quinone imine. This is the paracetamol route to NAPQI: a few percent of the dose, normally mopped up by glutathione, and the whole of the overdose problem once that glutathione runs out. The weight is deliberately low because the conjugation routes dominate at ordinary doses; it being minor is the point, not a reason to hide it.'
   },
   {
     name: 'Quinone glutathione addition',
