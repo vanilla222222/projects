@@ -28,7 +28,7 @@
     'Structural alerts': ['screening'],
     'Toxicity screens': ['screening'],
     'Metabolism': ['metabolism'],
-    'Physical addiction potential': ['screening'],
+    'Dependence-related structural similarity': ['discovery'],
     'Similarity search': ['discovery'],
     'Target prediction': ['discovery'],
     'Atom contributions': ['properties', 'data']
@@ -49,7 +49,7 @@
     'Structural alerts': 'pains brenk reactive covalent',
     'Toxicity screens': 'toxicology endpoint hazard rules',
     'Metabolism': 'enzymes transformation products phase',
-    'Physical addiction potential': 'dependence resemblance neighbour',
+    'Dependence-related structural similarity': 'dependence analogy resemblance neighbours not addiction prediction',
     'Similarity search': 'fingerprint nearest neighbors',
     'Target prediction': 'receptors ligands protein',
     'Atom contributions': 'crippen fragments'
