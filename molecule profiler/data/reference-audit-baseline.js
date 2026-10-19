@@ -1,9 +1,9 @@
 'use strict';
-// Baseline recorded 2026-10-19 from master. Intended for change detection,
+// Baseline refreshed after formula backfill on master. Intended for change detection,
 // not an assertion that chemical structures are correct.
 const REFERENCE_AUDIT_BASELINE={
   entries:2258,
-  missingFormula:344,
+  missingFormula:0,
   missingSmiles:0,
   duplicateNames:0,
   duplicateExactSmiles:0,
