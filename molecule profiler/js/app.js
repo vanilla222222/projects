@@ -899,7 +899,21 @@ function metabolismFor(record) {
 }
 
 function renderMetabolism(record) {
-  const tree = metabolismFor(record);
+  if (typeof metabolicTree !== 'function' || typeof METABOLISM === 'undefined') {
+    document.getElementById('met-summary').textContent =
+      'the metabolism engine did not load \u2014 reload the page, bypassing the cache';
+    return;
+  }
+  let tree;
+  try {
+    tree = metabolismFor(record);
+  } catch (error) {
+    document.getElementById('met-summary').textContent = 'enumeration failed: ' + error.message;
+    document.getElementById('met-cards').innerHTML = '';
+    document.getElementById('metabolites').querySelector('tbody').innerHTML =
+      '<tr><td colspan="' + MET_COLUMNS.length + '">No metabolite could be enumerated for this structure.</td></tr>';
+    return;
+  }
   const limit = Number(document.getElementById('met-count').value);
   const toxOnly = document.getElementById('met-toxonly').checked;
   const byId = new Map();
