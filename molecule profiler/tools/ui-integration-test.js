@@ -32,14 +32,14 @@ assert.match(metabolismRenderer, /const coverageSlot = document\.getElementById\
 for (const fn of ['toxicityCoverageReport', 'metabolismCoverageReport']) {
   assert.ok(app.includes(fn + '('), 'Coverage report is not wired: ' + fn);
 }
-const styles = [...html.matchAll(/<link\\b[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["']/g)].map(x => x[1].split('?')[0]);
+const styles = [...html.matchAll(/<link\b[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["']/g)].map(x => x[1].split('?')[0]);
 assert.ok(styles.includes('css/workspace.css'), 'Workspace stylesheet not loaded');
 assert.ok(scripts.indexOf('js/workspace-ui.js') > scripts.indexOf('js/app.js'), 'Workspace UI must load after analysis engine');
 for (const id of ['workspace-nav', 'module-search', 'workspace-description']) {
   assert.ok(ids.includes(id), 'Missing workspace control: ' + id);
 }
 const workspace = fs.readFileSync(path.join(root, 'js/workspace-ui.js'), 'utf8');
-const headings = [...html.matchAll(/<article class=["']panel[^"']*["'][\\s\\S]*?<h2>([^<]+)<\\/h2>/g)]
+const headings = [...html.matchAll(/<article class=["']panel[^"']*["'][\s\S]*?<h2>([^<]+)<\/h2>/g)]
   .map(x => x[1].replace(/&amp;/g, '&').trim());
 for (const title of headings) {
   assert.ok(workspace.includes("'" + title + "':"), 'Workspace view map missing module: ' + title);
