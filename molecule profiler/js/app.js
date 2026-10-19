@@ -356,7 +356,7 @@ function renderCurrent() {
 
   // Descriptor methods and extrapolation warnings; intentionally no new predictions.
   if (typeof propertyEvidenceRows === 'function') {
-    const items = propertyEvidenceRows(d);
+    const items = propertyEvidenceRows({ ...d, logS: v && v.logS });
     const host = document.getElementById('evidence-descriptors');
     if (host) {
       host.innerHTML = '<table class="table"><thead><tr><th>Property</th><th>Value</th><th>Method</th><th>Evidence</th></tr></thead><tbody>'
@@ -365,7 +365,7 @@ function renderCurrent() {
           + '</td><td>' + escapeHtml(item.method) + '</td><td>' + escapeHtml(item.tier) + '</td></tr>').join('')
         + '</tbody></table>';
     }
-    const warnings = propertyEvidenceWarnings(d);
+    const warnings = propertyEvidenceWarnings({ ...d, logS: v && v.logS });
     const warningHost = document.getElementById('evidence-warnings');
     if (warningHost) warningHost.textContent = warnings.length
       ? 'Applicability cautions: ' + warnings.join(' ')
