@@ -1,5 +1,14 @@
 'use strict';
 
+const MET_BAND_MAJOR = 0.1;
+const MET_BAND_MINOR = 0.02;
+
+function metaboliteBand(score) {
+  if (score >= MET_BAND_MAJOR) return 'major';
+  if (score >= MET_BAND_MINOR) return 'minor';
+  return 'trace';
+}
+
 const META_DEPTH = 2;
 const META_FRAGMENT_FLOOR = 5;
 const META_MAX_NODES = 120;
@@ -230,6 +239,8 @@ function metabolicTree(record, options) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     META_DEPTH, META_FRAGMENT_FLOOR, META_MAX_NODES,
-    META_KEY_ROUNDS, metaboliteKey, metaboliteShells, metaboliteRecord, metaboliteFragments, metabolicNotes, metabolicTree, newToxHits
+    META_KEY_ROUNDS, MET_BAND_MAJOR, MET_BAND_MINOR,
+    metaboliteKey, metaboliteShells, metaboliteRecord, metaboliteFragments,
+    metabolicNotes, metabolicTree, newToxHits, metaboliteBand
   };
 }

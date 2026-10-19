@@ -93,7 +93,8 @@ const GLOSSARY = {
   metStep: ['Step', 'The rule that produced this metabolite, and which structure it came from: the parent, or an earlier metabolite by its label.'],
   metEnzyme: ['Enzyme', 'The enzyme family that performs this class of reaction: CYP, MAO, FMO, ADH, AKR, COMT, UGT, SULT, NAT, GST, or a hydrolase. Attribution is by reaction class, not by a measured isoform assignment.'],
   metPhase: ['Phase', 'Phase I introduces or exposes a functional group; phase II attaches a polar conjugate to one. A phase II rule usually needs a phase I step first, which is why most conjugates appear in the second generation.'],
-  metScore: ['Relative weight', 'The product of the published class frequencies along the path from the parent. It orders the list; it is not a probability, a yield or a fraction of dose.'],
+  metScore: ['Relative weight', 'The product of the published class frequencies along the path from the parent, each one scaled by its site factor. It orders the list; it is not a probability, a yield or a fraction of dose. The band under the number is a reading of that same product against two fixed cuts: major at 0.10 and above, minor from 0.02 to 0.10, trace below 0.02. A trace label means the route needs an unlikely step or a chain of them, not that a measured fraction of the dose was small.'],
+  metBandFilter: ['Abundance', 'Shows only metabolites in one band. Major routes are the ones a rule set is most confident about; the trace list is where a reactive metabolite with a small predicted weight shows up, which is often what matters for toxicity.'],
   metSite: ['Site factor', 'How much the reaction weight is raised or lowered for the particular atom attacked, relative to an unsubstituted position of the same kind on the same ring or chain. Neighbouring groups that donate electron density raise an aromatic position, withdrawing groups lower it, crowding lowers it, and a branch point raises an aliphatic one. The factors are a transparent heuristic written from directing-effect and bond-strength arguments, clamped to 0.2x-2.5x; they are not fitted to measured turnover.'],
   metProps: ['MW / log P / TPSA', 'The metabolite run back through the same descriptor code as the parent. A conjugate adding 176 to the mass and 100 to the polar surface is the signature of glucuronidation.'],
   metTox: ['New toxicity flags', 'Toxicity rules firing on this metabolite that do not fire on the parent molecule.'],
@@ -918,6 +919,7 @@ function renderMetabolism(record) {
   }
   const limit = Number(document.getElementById('met-count').value);
   const toxOnly = document.getElementById('met-toxonly').checked;
+  const band = document.getElementById('met-band').value;
   const byId = new Map();
   tree.nodes.forEach((node) => byId.set(node.id, node));
 
@@ -928,10 +930,14 @@ function renderMetabolism(record) {
   }));
   const leading = tree.routes.length ? tree.routes[0] : null;
 
+  const bands = { major: 0, minor: 0, trace: 0 };
+  tree.metabolites.forEach((node) => { bands[metaboliteBand(node.score)] += 1; });
+
   document.getElementById('met-summary').innerHTML = tree.metabolites.length
     ? tree.metabolites.length + ' metabolites within ' + tree.depth
       + (tree.depth === 1 ? ' generation' : ' generations') + ', from ' + tree.rulesTried
       + ' reaction rules: ' + tree.phaseI + ' phase I, ' + tree.phaseII + ' phase II'
+      + ' \u2014 ' + bands.major + ' major, ' + bands.minor + ' minor, ' + bands.trace + ' trace'
       + (tree.truncated ? ' (enumeration capped)' : '')
     : 'no rule in the set finds a site on this structure';
 
@@ -967,6 +973,7 @@ function renderMetabolism(record) {
 
   let shown = tree.metabolites;
   if (toxOnly) shown = shown.filter((node) => node.newTox.length);
+  if (band !== 'all') shown = shown.filter((node) => metaboliteBand(node.score) === band);
   if (limit) shown = shown.slice(0, limit);
 
   const table = document.getElementById('metabolites');
@@ -989,7 +996,8 @@ function renderMetabolism(record) {
       + '<td>' + escapeHtml(node.enzyme) + '</td>'
       + '<td>' + escapeHtml(node.route) + '</td>'
       + '<td>' + escapeHtml(node.phase) + '</td>'
-      + '<td>' + node.score.toFixed(3) + '</td>'
+      + '<td>' + node.score.toFixed(3)
+      + '<br><span class="band ' + metaboliteBand(node.score) + '">' + metaboliteBand(node.score) + '</span></td>'
       + '<td' + (node.siteReasons && node.siteReasons.length ? ' title="' + escapeHtml(node.siteReasons.join('; ')) + '"' : '') + '>'
       + (typeof node.siteFactor === 'number' ? '\u00d7' + node.siteFactor.toFixed(2) : '\u2014')
       + (node.siteReasons && node.siteReasons.length
@@ -1019,12 +1027,12 @@ function renderMetabolism(record) {
 }
 
 function setupMetabolism() {
-  ['met-depth', 'met-phase', 'met-count', 'met-toxonly'].forEach((id) => {
+  ['met-depth', 'met-phase', 'met-count', 'met-band', 'met-toxonly'].forEach((id) => {
     document.getElementById(id).addEventListener('change', () => {
       if (records[current]) renderMetabolism(records[current]);
     });
   });
-  [['met-depth', 'metDepth'], ['met-phase', 'metPhaseFilter'], ['met-count', 'metCount']].forEach(([id, key]) => {
+  [['met-depth', 'metDepth'], ['met-phase', 'metPhaseFilter'], ['met-count', 'metCount'], ['met-band', 'metBandFilter']].forEach(([id, key]) => {
     document.getElementById(id).insertAdjacentHTML('beforebegin', infoButton(key));
   });
   document.getElementById('metabolites').addEventListener('click', (event) => {
