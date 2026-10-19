@@ -183,7 +183,8 @@ function perceiveAromaticity(mol) {
   const flagged = mol.atoms.map((atom) => atom.aromatic);
   mol.atoms.forEach((atom) => { atom.aromatic = false; });
 
-  const candidates = mol.rings.filter((ring) => ring.length >= 5 && ring.length <= 7);
+  // Small charged/conjugated rings can also satisfy 4n+2 (e.g. squarate systems).
+  const candidates = mol.rings.filter((ring) => ring.length >= 3 && ring.length <= 7);
   candidates.forEach((ring) => {
     // Lowercase input is a hint, not proof: neutral odd carbon rings and
     // exocyclic carbon double bonds can interrupt local aromaticity.

@@ -3,30 +3,30 @@
   "rdkitVersion": "2026.09.1",
   "scope": "Same-graph computed Crippen logP and molar refractivity; not experimental accuracy or identity verification.",
   "sourceSha256": {
-    "data/library.js": "1ecf116365af22eb476d0f8d858729ab41408ab032cc70d8b6129a22ba16f6ea",
+    "data/library.js": "e2e6309bb14fcfbefd843f8ce479e09d19a74a58d5b8b9f15dff4e85ed824962",
     "js/smiles.js": "ae7063246faee39707c62003a038fd8ce825e5c247f85ab9b6191e4383caca66",
-    "js/mol.js": "077744f7eb6be0df23afdc1e3d7dae0d7d09b428ecfd850cbad3528bb6806f45",
+    "js/mol.js": "64af3686d28cf3772cf1159a502ca5f406870ff9d42fa56fc4d84da4ebdc3b08",
     "js/descriptors.js": "2612d387dbe7a7d0d789984c8c062c5a3c6ae43781021e4f225659bc7a98ee4e",
     "tools/library-descriptor-audit.py": "1fafcff6fecc31133051a1695f39f6a96560ebfbe55cab65c2454a48006ec75c"
   },
-  "entries": 2782,
+  "entries": 3116,
   "errors": [],
   "summary": {
     "logp": {
-      "compared": 2782,
-      "meanAbsoluteDifference": 3.0445722503949397e-05,
+      "compared": 3116,
+      "meanAbsoluteDifference": 4.271501925764525e-05,
       "maxAbsoluteDifference": 0.048399999999998666,
-      "within1e_7": 2779,
+      "within1e_7": 3112,
       "above0_05": 0,
       "above0_5": 0
     },
     "mr": {
-      "compared": 2782,
-      "meanAbsoluteDifference": 0.0005645219267193086,
+      "compared": 3116,
+      "meanAbsoluteDifference": 0.0007877086008248077,
       "maxAbsoluteDifference": 0.8840000000000146,
-      "within1e_7": 2780,
-      "above0_05": 2,
-      "above0_5": 2
+      "within1e_7": 3113,
+      "above0_05": 3,
+      "above0_5": 3
     }
   },
   "differences": [
@@ -76,6 +76,22 @@
       "difference": {
         "logp": 0.002500000000000946,
         "mr": -2.1316282072803006e-14
+      }
+    },
+    {
+      "name": "CHEMBL405526",
+      "smiles": "CCN(CC)c1ccc2c(-c3ccc(S(=O)(=O)N(C)CCCCCC(=O)NCCOCCOCCN4CCN(CC(=O)N5c6ccccc6C(=O)Nc6cccnc65)CC4)cc3S(=O)(=O)[O-])c3ccc(=[N+](CC)CC)cc-3oc2c1",
+      "expected": {
+        "logp": 6.040400000000009,
+        "mr": 307.73690000000033
+      },
+      "actual": {
+        "logp": 6.088800000000002,
+        "mr": 308.6209
+      },
+      "difference": {
+        "logp": 0.04839999999999289,
+        "mr": 0.8839999999996735
       }
     }
   ]

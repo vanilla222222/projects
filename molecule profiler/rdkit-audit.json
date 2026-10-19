@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 2782,
+  "entries": 3116,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -257,6 +257,45 @@
     {
       "entries": [
         {
+          "index": 36,
+          "name": "Losartan"
+        },
+        {
+          "index": 3072,
+          "name": "CHEMBL191"
+        }
+      ],
+      "distinctCanonicalSmiles": 2
+    },
+    {
+      "entries": [
+        {
+          "index": 46,
+          "name": "Cimetidine"
+        },
+        {
+          "index": 2788,
+          "name": "CHEMBL30"
+        }
+      ],
+      "distinctCanonicalSmiles": 2
+    },
+    {
+      "entries": [
+        {
+          "index": 100,
+          "name": "Valsartan"
+        },
+        {
+          "index": 3073,
+          "name": "CHEMBL1069"
+        }
+      ],
+      "distinctCanonicalSmiles": 2
+    },
+    {
+      "entries": [
+        {
           "index": 381,
           "name": "Serine"
         },
@@ -280,6 +319,36 @@
         {
           "index": 2478,
           "name": "D-Aspartic acid"
+        }
+      ],
+      "distinctCanonicalSmiles": 2
+    },
+    {
+      "entries": [
+        {
+          "index": 3079,
+          "name": "CHEMBL4535903"
+        },
+        {
+          "index": 3080,
+          "name": "CHEMBL4463203"
+        },
+        {
+          "index": 3081,
+          "name": "CHEMBL4464191"
+        }
+      ],
+      "distinctCanonicalSmiles": 3
+    },
+    {
+      "entries": [
+        {
+          "index": 3094,
+          "name": "CHEMBL4449166"
+        },
+        {
+          "index": 3095,
+          "name": "CHEMBL4469350"
         }
       ],
       "distinctCanonicalSmiles": 2
@@ -10018,6 +10087,676 @@
       "atomIndices": [
         9
       ]
+    },
+    {
+      "index": 2790,
+      "name": "CHEMBL467094",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2810,
+      "name": "CHEMBL4562437",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 2814,
+      "name": "CHEMBL4875600",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2815,
+      "name": "CHEMBL4846638",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 2822,
+      "name": "CHEMBL4850448",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2823,
+      "name": "CHEMBL4870510",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2824,
+      "name": "CHEMBL4858849",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2825,
+      "name": "CHEMBL4869194",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 2826,
+      "name": "CHEMBL4848697",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2827,
+      "name": "CHEMBL4863347",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2828,
+      "name": "CHEMBL4876267",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2829,
+      "name": "CHEMBL4848026",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2830,
+      "name": "CHEMBL4863523",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2831,
+      "name": "CHEMBL64000",
+      "atomIndices": [
+        4,
+        6,
+        10
+      ]
+    },
+    {
+      "index": 2832,
+      "name": "CHEMBL313738",
+      "atomIndices": [
+        2,
+        6,
+        7
+      ]
+    },
+    {
+      "index": 2833,
+      "name": "CHEMBL84113",
+      "atomIndices": [
+        3,
+        5,
+        9
+      ]
+    },
+    {
+      "index": 2834,
+      "name": "CHEMBL440138",
+      "atomIndices": [
+        5,
+        7,
+        11
+      ]
+    },
+    {
+      "index": 2835,
+      "name": "CHEMBL310558",
+      "atomIndices": [
+        5,
+        7,
+        11
+      ]
+    },
+    {
+      "index": 2837,
+      "name": "CHEMBL315428",
+      "atomIndices": [
+        3,
+        5,
+        9
+      ]
+    },
+    {
+      "index": 2838,
+      "name": "CHEMBL85190",
+      "atomIndices": [
+        2,
+        6,
+        7
+      ]
+    },
+    {
+      "index": 2840,
+      "name": "CHEMBL314493",
+      "atomIndices": [
+        2,
+        6,
+        7
+      ]
+    },
+    {
+      "index": 2841,
+      "name": "CHEMBL82754",
+      "atomIndices": [
+        3,
+        5,
+        9
+      ]
+    },
+    {
+      "index": 2843,
+      "name": "CHEMBL22278",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2844,
+      "name": "CHEMBL22071",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2848,
+      "name": "CHEMBL21942",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2849,
+      "name": "CHEMBL22962",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2851,
+      "name": "CHEMBL25334",
+      "atomIndices": [
+        6,
+        9,
+        17,
+        22
+      ]
+    },
+    {
+      "index": 2852,
+      "name": "CHEMBL418189",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2862,
+      "name": "CHEMBL369062",
+      "atomIndices": [
+        35
+      ]
+    },
+    {
+      "index": 2864,
+      "name": "CHEMBL517712",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 2867,
+      "name": "CHEMBL177040",
+      "atomIndices": [
+        34
+      ]
+    },
+    {
+      "index": 2873,
+      "name": "CHEMBL184843",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 2874,
+      "name": "CHEMBL183903",
+      "atomIndices": [
+        13,
+        16
+      ]
+    },
+    {
+      "index": 2875,
+      "name": "CHEMBL183331",
+      "atomIndices": [
+        3,
+        6
+      ]
+    },
+    {
+      "index": 2876,
+      "name": "CHEMBL181447",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 2877,
+      "name": "CHEMBL360154",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 2884,
+      "name": "CHEMBL150624",
+      "atomIndices": [
+        31
+      ]
+    },
+    {
+      "index": 2886,
+      "name": "CHEMBL418446",
+      "atomIndices": [
+        28
+      ]
+    },
+    {
+      "index": 2892,
+      "name": "CHEMBL64788",
+      "atomIndices": [
+        4,
+        6,
+        10
+      ]
+    },
+    {
+      "index": 2893,
+      "name": "CHEMBL978",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 2897,
+      "name": "CHEMBL203249",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2898,
+      "name": "CHEMBL383248",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2899,
+      "name": "CHEMBL382213",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2900,
+      "name": "CHEMBL427013",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2902,
+      "name": "CHEMBL201933",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2905,
+      "name": "CHEMBL200319",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2906,
+      "name": "CHEMBL200210",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2907,
+      "name": "CHEMBL381020",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2908,
+      "name": "CHEMBL370862",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2911,
+      "name": "CHEMBL200566",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 2918,
+      "name": "CHEMBL197973",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2919,
+      "name": "CHEMBL373256",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2920,
+      "name": "CHEMBL200416",
+      "atomIndices": [
+        4,
+        8
+      ]
+    },
+    {
+      "index": 2921,
+      "name": "CHEMBL199821",
+      "atomIndices": [
+        5,
+        9
+      ]
+    },
+    {
+      "index": 2922,
+      "name": "CHEMBL200957",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2923,
+      "name": "CHEMBL200432",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2925,
+      "name": "CHEMBL200693",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 2932,
+      "name": "CHEMBL122757",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 2934,
+      "name": "CHEMBL308351",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 2947,
+      "name": "CHEMBL500",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 2977,
+      "name": "CHEMBL332964",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 2978,
+      "name": "CHEMBL121964",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 2979,
+      "name": "CHEMBL122992",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 2980,
+      "name": "CHEMBL121704",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 2981,
+      "name": "CHEMBL120278",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 2982,
+      "name": "CHEMBL122990",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2983,
+      "name": "CHEMBL123596",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 2984,
+      "name": "CHEMBL183921",
+      "atomIndices": [
+        1,
+        17
+      ]
+    },
+    {
+      "index": 3018,
+      "name": "CHEMBL53795",
+      "atomIndices": [
+        25
+      ]
+    },
+    {
+      "index": 3023,
+      "name": "CHEMBL298474",
+      "atomIndices": [
+        9,
+        11,
+        13,
+        14,
+        16
+      ]
+    },
+    {
+      "index": 3025,
+      "name": "CHEMBL52333",
+      "atomIndices": [
+        11,
+        13
+      ]
+    },
+    {
+      "index": 3061,
+      "name": "CHEMBL2094089",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 3075,
+      "name": "CHEMBL4440944",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 3076,
+      "name": "CHEMBL4558883",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3077,
+      "name": "CHEMBL4470834",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3078,
+      "name": "CHEMBL4579452",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3079,
+      "name": "CHEMBL4535903",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3082,
+      "name": "CHEMBL4459070",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3083,
+      "name": "CHEMBL4515703",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3084,
+      "name": "CHEMBL4453362",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3085,
+      "name": "CHEMBL4568554",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3086,
+      "name": "CHEMBL4458683",
+      "atomIndices": [
+        13,
+        16
+      ]
+    },
+    {
+      "index": 3087,
+      "name": "CHEMBL4472489",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3088,
+      "name": "CHEMBL4552884",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3089,
+      "name": "CHEMBL4463575",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3090,
+      "name": "CHEMBL4534876",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3091,
+      "name": "CHEMBL4451425",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3092,
+      "name": "CHEMBL4471668",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3093,
+      "name": "CHEMBL4438435",
+      "atomIndices": [
+        13,
+        16
+      ]
     }
   ],
   "chargedEntries": [
@@ -10060,22 +10799,38 @@
       "index": 2460,
       "name": "Acetylcholine",
       "formalCharge": 1
+    },
+    {
+      "index": 2839,
+      "name": "CHEMBL12587",
+      "formalCharge": 1
+    },
+    {
+      "index": 2893,
+      "name": "CHEMBL978",
+      "formalCharge": 1
     }
   ],
   "fragmentedEntries": [],
   "radicalEntries": [],
-  "nonAromaticSulfurRings": [],
+  "nonAromaticSulfurRings": [
+    {
+      "index": 2935,
+      "name": "CHEMBL177442",
+      "smiles": "CN(C)C(=N)NC1=NC(=O)/C(=C/c2ccc(N3CCC(NC[C@H](O)COc4cccc5[nH]c(O)nc45)CC3)cc2)S1"
+    }
+  ],
   "parseFailures": [],
   "counts": {
     "invalidSmiles": 0,
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
-    "tautomerGroups": 2,
-    "unspecifiedStereocenters": 1078,
-    "chargedEntries": 8,
+    "tautomerGroups": 7,
+    "unspecifiedStereocenters": 1167,
+    "chargedEntries": 10,
     "fragmentedEntries": 0,
     "radicalEntries": 0,
-    "nonAromaticSulfurRings": 0,
+    "nonAromaticSulfurRings": 1,
     "parseFailures": 0
   }
 }

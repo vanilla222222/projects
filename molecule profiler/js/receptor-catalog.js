@@ -4,13 +4,15 @@
   const ACTIONS = ['agonist','partial_agonist','antagonist','inverse_agonist','pam','nam',
     'channel_blocker','channel_opener','inhibitor','modulator','biased','binding_only'];
   const normalize = value => String(value || '').trim().toLowerCase();
-  function browse(receptors, options, targets, annotations) {
+  function browse(receptors, options, targets, annotations, library) {
     const o=options||{}, q=normalize(o.search);
     return receptors.filter(r => (!o.family || r.family===o.family)
       && (!o.kind || r.kind===o.kind)
       && (!q || [r.id,r.name,r.family,r.kind,r.description,r.mechanism,r.endogenousLigands,r.activation,r.blockade,
         ...r.genes,...(r.aliases||[])].join(' ').toLowerCase().includes(q))
-      && (!o.coverage || (o.coverage==='awaiting' ? links(r,targets).length===0
+      && (!o.coverage || (o.coverage==='below_goal' ? coverage(r,targets,library,annotations).remaining>0
+        : o.coverage==='at_goal' ? coverage(r,targets,library,annotations).remaining===0
+        : o.coverage==='awaiting' ? links(r,targets).length===0
         : o.coverage==='annotated' ? (annotations||[]).some(a=>a.receptorId===r.id)
         : links(r,targets).length>0)));
   }
@@ -20,6 +22,31 @@
     return (targets||[]).filter(t=>exact.has(t.gene)||legacy.has(t.gene)).map(target=>({
       target, mapping:legacy.has(target.gene)?'legacy_subunit':'catalog_id'
     }));
+  }
+  const LIGAND_GOAL=50;
+  function coverage(receptor,targets,library,annotations) {
+    const linked=links(receptor,targets);
+    const listed=new Set(linked.flatMap(({target})=>target.ligands||[]));
+    const entries=new Map((library||[]).filter(e=>!e.propertyOnly).map(e=>[e.name,e]));
+    const resolved=[...listed].filter(name=>entries.has(name));
+    const profiles=new Set();
+    for(const a of annotations||[]) {
+      const entry=entries.get(a.ligandName);
+      if(a.receptorId===receptor.id && listed.has(a.ligandName) && entry
+        && a.librarySmiles===entry.smiles && /^[a-f0-9]{64}$/.test(a.identityKey||''))profiles.add(a.identityKey);
+    }
+    return {id:receptor.id,name:receptor.name,family:receptor.family,goal:LIGAND_GOAL,
+      listedNames:listed.size,resolvedNames:resolved.length,sourcedProfiles:profiles.size,
+      remaining:Math.max(0,LIGAND_GOAL-profiles.size),hasTarget:linked.length>0};
+  }
+  function coverageReport(receptors,targets,library,annotations) {
+    const errors=validateAnnotations(annotations,receptors,library),invalid=new Set(errors.map(e=>e.index));
+    const valid=(annotations||[]).filter((a,i)=>!invalid.has(i));
+    const rows=receptors.map(r=>coverage(r,targets,library,valid));
+    return {schemaVersion:1,goal:LIGAND_GOAL,receptors:rows.length,atGoal:rows.filter(r=>r.remaining===0).length,
+      listedAtGoal:rows.filter(r=>r.resolvedNames>=LIGAND_GOAL).length,annotationIssues:errors.length,
+      interpretation:'Sourced profiles count non-stale, linked evidence with audited graph-group keys. Legacy names alone do not establish sourced coverage. Profiles are not independent scaffolds or predictive validation.',
+      rows:rows.sort((a,b)=>b.remaining-a.remaining||a.id.localeCompare(b.id))};
   }
   function validateAnnotations(annotations, receptors, library) {
     const ids=new Set(receptors.map(r=>r.id)), names=new Set((library||[]).map(r=>r.name));
@@ -65,7 +92,7 @@
         existingTargets:links(r,targets).map(x=>({gene:x.target.gene,mapping:x.mapping})),
         targetTemplate:targetTemplate(r)})), ligandAnnotations:[]};
   }
-  const api={ACTIONS,browse,links,validateAnnotations,targetTemplate,createHandoff};
+  const api={LIGAND_GOAL,coverage,coverageReport,ACTIONS,browse,links,validateAnnotations,targetTemplate,createHandoff};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   root.ReceptorCatalog=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

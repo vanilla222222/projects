@@ -9,6 +9,9 @@
   const errors=ReceptorCatalog.validateAnnotations(proposed,receptors,library);
   const invalid=new Set(errors.map(x=>x.index));
   const annotations=proposed.filter((a,index)=>!invalid.has(index));
+  const coverageReport=ReceptorCatalog.coverageReport(receptors,targets,library,annotations);
+  if(typeof RECEPTOR_BINDING_SOURCE!=='undefined')coverageReport.source=RECEPTOR_BINDING_SOURCE;
+  const coverageById=new Map(coverageReport.rows.map(r=>[r.id,r]));
   const detail=$('receptor-detail'),results=$('receptor-results');
   let selected=null;
   function mode(receptorMode) {
@@ -45,25 +48,33 @@
     addEffect(r.kind==='Catalytic receptor'?'Activation / pathway stimulation':r.id==='ABCC8'?'Channel opening':'Agonism / activation',r.activation);
     addEffect(r.kind==='Catalytic receptor'?'Blockade / kinase inhibition':r.id==='ABCC8'?'Channel closing':'Antagonism / blockade',r.blockade);
     detail.append(effects,node('p',r.caution,'context-note'),node('p',data.interpretation,'muted'));
+    const coverage=coverageById.get(r.id);
+    detail.append(node('h3','Ligand coverage target: 50'));
+    const progress=node('progress');progress.max=50;progress.value=Math.min(50,coverage.sourcedProfiles);
+    progress.setAttribute('aria-label',r.name+' source-linked ligand coverage');
+    detail.append(progress,node('p',coverage.sourcedProfiles+' / 50 source-linked distinct graph profiles · '+coverage.remaining+' still needed. '+coverage.resolvedNames+' resolved legacy / imported names.'));
+    detail.append(node('p','Coverage counts audited graph groups with current structure/evidence links. It is not scaffold diversity, selectivity or predictive accuracy.','muted'));
     detail.append(node('h3','Existing ligand links and annotation readiness'));
     const linked=ReceptorCatalog.links(r,targets);
     if(!linked.length) detail.append(node('p','Awaiting ligand curation. This receptor is registered but has no linked target row in the current scoring dataset.'));
     linked.forEach(({target,mapping})=>{
-      detail.append(node('p',target.name+' ('+target.gene+'): '+(target.ligands||[]).length+' legacy listed ligand names.'));
+      detail.append(node('p',target.name+' ('+target.gene+'): '+(target.ligands||[]).length+' listed ligand names (legacy and imported).'));
       if(mapping==='legacy_subunit')detail.append(node('p','Legacy subunit mapping only. The older target row does not establish a specific receptor assembly.','context-note'));
-      const disclosure=node('details');disclosure.append(node('summary','View legacy ligand names (actions unassigned)'));
+      const disclosure=node('details');disclosure.append(node('summary','View listed ligand names (actions unassigned)'));
       disclosure.append(node('p',(target.ligands||[]).join(', ')||'No listed ligands.'));detail.append(disclosure);
     });
     const curated=annotations.filter(a=>a.receptorId===r.id);
-    if(!curated.length)detail.append(node('p','No source-backed functional-action annotations have been curated here yet. Listed ligand names are not automatically agonists or antagonists.','muted'));
+    if(!curated.length)detail.append(node('p','No source-backed ligand evidence has been curated here yet. Listed ligand names are not automatically agonists or antagonists.','muted'));
     else {
-      const ul=node('ul');curated.forEach(a=>{const li=node('li');li.append(node('strong',a.ligandName+' — '+a.action.replace(/_/g,' ')),
-        node('p',a.species+' · '+a.assay+' · '+a.endpoint+(a.note?' · '+a.note:'')),external('Evidence source',a.sourceUrl));ul.append(li);});detail.append(ul);
+      const disclosure=node('details');disclosure.append(node('summary','View '+curated.length+' source-backed ligand entries'));
+      const ul=node('ul');curated.forEach(a=>{const li=node('li');li.append(node('strong',a.ligandName+' — '+(a.action==='binding_only'?'binding evidence; functional action unassigned':a.action.replace(/_/g,' '))),
+        node('p',a.species+' · '+a.assay+' · '+a.endpoint+(a.note?' · '+a.note:'')),external('Evidence source',a.sourceUrl));if(a.documentUrl)li.append(node('span',' · '),external('Source document',a.documentUrl));ul.append(li);});disclosure.append(ul);detail.append(disclosure);
     }
     detail.append(node('h3','Sources and evidence scope'));
     const sources=node('ul');r.sources.forEach(s=>{const li=node('li');li.append(external(s.label,s.url),node('p',s.scope,'muted'));sources.append(li);});
     detail.append(sources,node('p','Educational summaries have not undergone a systematic clinical evidence review. No potency, dose, compound-specific activity or safety conclusion is assigned.','muted'));
     const exportButton=node('button','Export this receptor scaffold');exportButton.type='button';exportButton.addEventListener('click',()=>download('receptor-'+r.id+'-scaffold.json',ReceptorCatalog.createHandoff([r],targets)));detail.append(exportButton);
+    if(curated.length){const evidenceButton=node('button','Export source-linked ligand evidence');evidenceButton.type='button';evidenceButton.addEventListener('click',()=>download('receptor-'+r.id+'-ligand-evidence.json',{schemaVersion:1,receptorId:r.id,source:typeof RECEPTOR_BINDING_SOURCE!=='undefined'?RECEPTOR_BINDING_SOURCE:null,scope:'Source-linked assay observations; functional actions remain unassigned for binding-only records.',ligands:curated}));detail.append(evidenceButton);}
     if(focus)detail.focus();
     renderList();
   }
@@ -71,7 +82,7 @@
     const filtered=ReceptorCatalog.browse(receptors,{
       search:$('receptor-search').value,family:$('receptor-family').value,
       kind:$('receptor-kind').value,coverage:$('receptor-coverage').value
-    },targets,annotations);
+    },targets,annotations,library);
     $('receptor-count').textContent=filtered.length+' of '+receptors.length+' receptor / related targets';
     const focusedId=document.activeElement && document.activeElement.dataset.receptorId;
     results.replaceChildren();
@@ -79,6 +90,7 @@
     filtered.forEach(r=>{
       const b=node('button',r.name,'item');b.type='button';b.dataset.receptorId=r.id;b.setAttribute('aria-pressed',String(r.id===selected));
       b.append(node('span',r.id+' · '+r.family,'muted item-meta'));
+      const coverage=coverageById.get(r.id);b.append(node('span',coverage.sourcedProfiles+' / 50 sourced · '+coverage.remaining+' needed','pill'));
       if(!ReceptorCatalog.links(r,targets).length)b.append(node('span','Awaiting ligand curation','pill'));
       b.addEventListener('click',()=>show(r,false));results.append(b);if(focusedId===r.id)b.focus();
     });
@@ -89,11 +101,13 @@
   for(const id of ['receptor-search','receptor-family','receptor-kind','receptor-coverage'])$(id).addEventListener(id==='receptor-search'?'input':'change',renderList);
   $('receptor-reset').addEventListener('click',()=>{for(const id of ['receptor-search','receptor-family','receptor-kind','receptor-coverage'])$(id).value='';renderList();$('receptor-search').focus();});
   $('receptor-export').addEventListener('click',()=>download('receptor-catalog-scaffolds.json',ReceptorCatalog.createHandoff(receptors,targets)));
+  $('receptor-coverage-export').addEventListener('click',()=>download('receptor-ligand-coverage.json',coverageReport));
   $('receptor-json').addEventListener('click',()=>download('receptor-reference-catalog.json',data));
   const glossary=$('action-glossary');
   data.actionTerms.forEach(term=>{const section=node('section');section.append(node('h3',term.label),node('p',term.description));glossary.append(section);});
   const awaiting=receptors.filter(r=>!ReceptorCatalog.links(r,targets).length).length;
-  $('receptor-summary').textContent=receptors.length+' catalog records across '+new Set(receptors.map(r=>r.family)).size+' families · '+awaiting+' awaiting linked target rows · '+annotations.length+' source-backed action annotations.';
+  $('receptor-summary').textContent=receptors.length+' catalog records across '+new Set(receptors.map(r=>r.family)).size+' families · '+awaiting+' awaiting linked target rows · '+coverageReport.atGoal+' / '+receptors.length+' at 50 sourced profiles · '+coverageReport.listedAtGoal+' panels at 50 listed names · '+annotations.length+' source-backed ligand evidence entries.';
+  if(typeof RECEPTOR_BINDING_SOURCE!=='undefined'){const credit=node('p',undefined,'muted');credit.append(node('span','Binding-reference data: '+RECEPTOR_BINDING_SOURCE.release+' · '),external('ChEMBL',RECEPTOR_BINDING_SOURCE.sourceUrl),node('span',' · '),external('CC BY-SA 3.0',RECEPTOR_BINDING_SOURCE.licenseUrl));$('receptor-summary').after(credit);}
   if(errors.length)$('annotation-status').textContent=errors.length+' annotation validation issue(s); affected records are hidden until corrected.';
   document.addEventListener('molecule-profiler:receptor-search',event=>{
     mode(true);for(const id of ['receptor-search','receptor-family','receptor-kind','receptor-coverage'])$(id).value='';

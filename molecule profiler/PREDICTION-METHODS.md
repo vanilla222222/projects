@@ -26,12 +26,12 @@ Reproduce the complete current evaluation with:
 node tools/target-ranking-evaluate.js --report validation/target-ranking-full-profile-v1.json
 ```
 
-The committed report covers 1,005 profiles, 132 targets and 2,782 library entries. Twenty queries have no rankable curated label after holdout. Display-order retrieval percentages are:
+The committed report covers 1,342 profiles, 132 targets and 3,116 library entries. 19 queries have no rankable curated label after holdout. Display-order retrieval percentages are:
 
 | Method | Top 1 | Top 5 | Top 10 | Target macro top 5, guaranteed–possible |
 | --- | ---: | ---: | ---: | ---: |
-| Legacy | 80.30% | 88.76% | 90.95% | 46.05–47.57% |
-| Experimental ensemble | 80.80% | 89.55% | 92.34% | 47.13–48.78% |
+| Legacy | 83.31% | 90.91% | 92.55% | 47.75–49.27% |
+| Experimental ensemble | 83.98% | 91.28% | 93.37% | 48.34–49.92% |
 
 The ensemble has a modest advantage on this full internal snapshot, while target-balanced coverage remains much weaker. This does not support a claim of generally accurate receptor prediction. Legacy remains the default. Neither formula nor weights were tuned to these results. The old `target-ranking-ensemble-v1.json` is a historical 100-query schema-v1 report and should not be compared as a longitudinal improvement figure. Compare methods within the same report and reference snapshot. Broader claims require verified assay-linked positives, negatives, temporal/scaffold splits and external review.
 
@@ -77,3 +77,9 @@ independent full-library descriptor comparison and remaining input limitations.
 The target report above has been regenerated for these corrected structures and
 now hashes the parser, molecular graph, stereochemistry and fingerprint modules
 as well as the ranking module and datasets.
+
+The ChEMBL_37 coverage batch adds assay-linked binding references under the
+50-entry goal. [RECEPTOR-COVERAGE.md](RECEPTOR-COVERAGE.md) describes its selection
+filters and shortfalls; [CHEMBL-DATA-NOTICE.md](CHEMBL-DATA-NOTICE.md) records data
+attribution. Neither increased coverage nor higher retrieval on this expanded
+curated label set establishes an improvement against external assays.

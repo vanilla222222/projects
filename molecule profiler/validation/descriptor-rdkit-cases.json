@@ -230,6 +230,33 @@
       ],
       "logp": 1.5528,
       "mr": 66.30360000000002
+    },
+    {
+      "name": "Small aromatic squaramide",
+      "inputs": [
+        "Nc1c(NCCCOc2cccc(CN3CCCCC3)c2)c(=O)c1=O",
+        "NC1=C(NCCCOC2=CC=CC(CN3CCCCC3)=C2)C(=O)C1=O"
+      ],
+      "logp": 1.7316999999999998,
+      "mr": 99.93810000000006
+    },
+    {
+      "name": "Cyclopropenium small aromatic control",
+      "inputs": [
+        "[cH+]1cc1",
+        "c1c[cH+]1",
+        "C1=C[CH+]1"
+      ],
+      "logp": 0.8432999999999999,
+      "mr": 13.221000000000002
+    },
+    {
+      "name": "Cyclobutadiene nonaromatic control",
+      "inputs": [
+        "C1=CC=C1"
+      ],
+      "logp": 1.1124,
+      "mr": 18.279999999999998
     }
   ]
 }

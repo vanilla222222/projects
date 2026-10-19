@@ -2,7 +2,8 @@
 
 The latest inherited reference milestone is commit `1530420`: 59 GABA-A-related
 structures and an expanded GABRA1 panel, following morphinan and steroid work.
-The complete library currently contains 2,782 entries and 132 target panels.
+At takeover the library contained 2,782 entries and 132 target panels; the
+subsequent assay-linked expansion is recorded in RECEPTOR-COVERAGE.md.
 
 Continuing curation prioritizes identity and assay provenance over a minimum
 number of labels. The existing scaffold-derivation scripts and formula checks
@@ -102,3 +103,14 @@ SMILES agrees with RDKit for these descriptors, while an alternate Kekule form
 can still be misclassified by the seven-membered heterocycle logic. The fixture
 records that uncovered input explicitly; the passing count does not include it.
 This is one reason not to claim complete aromaticity conformance.
+
+## Subsequent coverage expansion
+
+The library now has 3,116 entries after the first ChEMBL_37 binding-reference
+batch. The full-library descriptor comparison has been regenerated: 3,112 logP
+and 3,113 molar-refractivity values agree with RDKit within 1e-7, with no logP
+difference above 0.05. Three refractivity residuals remain, maximum 0.884. The
+new dye-like CHEMBL405526 joins the previously documented riboflavin and
+1-formyl-LSD refractivity cases; carboplatin still has a small logP residual.
+There are now 62 passing descriptor input representations. The historical
+2,782-entry figures above describe the preceding correction milestone.

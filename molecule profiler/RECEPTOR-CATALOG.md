@@ -9,12 +9,12 @@ Each card contains receptor identity, endogenous signals, main signalling mechan
 | File | Purpose |
 | --- | --- |
 | `data/receptor-catalog.js` | Stable receptor identities and educational biology summaries |
-| `data/receptor-ligand-annotations.js` | Source-backed molecule/action annotations; initially empty |
+| `data/receptor-ligand-annotations.js` | Source-backed ligand evidence; includes ChEMBL binding-only observations |
 | `js/receptor-catalog.js` | Search, legacy mapping, annotation validation and empty scaffold export |
 | `js/receptor-explorer-ui.js` | Receptor cards, filters, glossary and downloads |
 | `reference-explorer.js` | Existing molecule view, now with family-level receptor navigation |
-| `data/targets.js` | Existing target-scoring ligand dataset; unchanged by this expansion |
-| `data/library.js` | Chemical structures and names; unchanged by this expansion |
+| `data/targets.js` | Target-scoring ligand dataset, including assay-linked reference additions |
+| `data/library.js` | Chemical structures and names, including stable ChEMBL research IDs |
 
 Do not turn all scaffold entries into scoring targets merely to increase coverage. Empty scaffold entries have no curated ligand evidence. The catalog does not infer affinity, agonism, antagonism or clinical effects for user-supplied structures. An existing target ligand list establishes neither functional action nor selectivity.
 
@@ -111,3 +111,19 @@ This is not a rendering engine test. Chromium visual layout, mobile rendering an
 | Tachykinin | `TACR1`, `TACR2`, `TACR3` |
 | Trace amine | `TAAR1` |
 | Vasopressin and oxytocin | `AVPR1A`, `AVPR1B`, `OXTR`, `AVPR2` |
+
+## Fifty-entry coverage tracking
+
+The current target is 50 distinct source-linked ligand profiles per catalog
+record. See [RECEPTOR-COVERAGE.md](RECEPTOR-COVERAGE.md) for the import policy,
+source limits and reproducible commands. The explorer distinguishes legacy listed
+names from audited source-linked coverage, offers below/at-goal filters, and
+exports the complete gap report. Receptor cards also export their curated ligand
+evidence. Binding observations are displayed with functional action unassigned.
+
+Imported records additionally carry `identityKey`, `librarySmiles`,
+`curationSource`, ChEMBL molecule/target/activity/assay/document identifiers and
+document links. Profile counts require a matching current structure snapshot and
+a linked target association. Graph grouping reduces alias/protonation/tautomer
+inflation; it is not an assertion of scaffold diversity or equivalent effects.
+Manual functional annotations can coexist with these binding-only records.
