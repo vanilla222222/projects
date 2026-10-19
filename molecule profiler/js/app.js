@@ -139,6 +139,8 @@ const GLOSSARY = {
   tgtScore: ['Nearest similarity', 'The similarity between the query and the most similar of this target’s known ligands, computed with the fingerprint and metric chosen in the similarity panel above. It is the same number the similarity table would print for that one ligand. It is a structural resemblance and nothing else: 0.45 here means a Tanimoto of 0.45, not a 45% chance of binding. The column exists to rank these targets against each other, and the ranking is only over the ligand sets this page carries.'],
   tgtNearest: ['Nearest ligand', 'The known ligand of this target that the query resembles most. Click the row to profile it.'],
   tgtLigands: ['Actives', 'How many known ligands of this target are in the reference library. A target with one ligand can only ever be matched through that single compound, so its score says much less.'],
+  tgtRecovered: ['Recovered', 'How often this target came first when one of its own known ligands was used as the query. Each of its ligands is removed from the library in turn, the remaining targets are re-scored exactly as they are here, and the share of those trials where this target ranked first is the number shown, with the number of trials in brackets. A target with fewer than two ligands cannot be tested at all and shows a dash, because dropping its only ligand leaves nothing to match against. This is the one number on the page that says how often the ranking has actually been right, measured rather than asserted \u2014 and it is measured on hand-curated ligand sets of a median of three compounds, so a target with 100% over two trials has been right twice, not validated. A low figure is not always a failure of the ranking: 5-HT2A and 5-HT2C share most of their ligands, so whichever of the two the fingerprint prefers takes every first place and the other scores zero while still sitting at rank two or three. For families like that the top-five figure in the line above the table is the fair one.'],
+  tgtBenchmark: ['Measured recall', 'The whole target panel, scored against itself by leave-one-out: every known ligand of every target is held out, the targets are re-ranked, and the rank of the ligand\u2019s own target is recorded. Regenerate it with tools/retrieval-benchmark.js. The three baselines matter as much as the headline: ranking targets by how many ligands they happen to have, with no structure at all, and ranking them at random. The gap between those and the measured number is what the fingerprint is worth here.'],
   simMethod: ['Fingerprint', 'Which structural fingerprint is compared. ECFP4 and ECFP6 hash circular atom environments out to two and three bonds; FCFP4 does the same but describes each atom by its pharmacophore role (donor, acceptor, aromatic, halogen, basic, acidic) instead of its element, so it tolerates element swaps; atom pairs record every pair of typed atoms together with the number of bonds between them.'],
   simMetric: ['Metric', 'How two bit sets are turned into one number. Tanimoto divides the shared bits by the union, Dice by the mean set size. Dice is always the larger of the two and is more forgiving when the molecules differ in size.'],
   simCount: ['Hits', 'How many of the ranked reference compounds to list.'],
@@ -620,6 +622,7 @@ const TGT_COLUMNS = [
   ['tgtMean', 'Mean top-3'],
   ['tgtNearest', 'Nearest ligand'],
   ['tgtLigands', 'Actives'],
+  ['tgtRecovered', 'Recovered'],
   ['tgtNote', 'Mechanism']
 ];
 
@@ -631,6 +634,31 @@ const TGT_TIERS = [
 
 function tgtTier(value) {
   return TGT_TIERS.findIndex(([floor]) => value >= floor);
+}
+
+function benchmarkRow(target) {
+  if (typeof RETRIEVAL_BENCHMARK === 'undefined') return null;
+  return RETRIEVAL_BENCHMARK.perTarget[target.gene + '::' + target.name] || null;
+}
+
+function recoveredCell(target) {
+  const row = benchmarkRow(target);
+  if (!row) return '<span class="quiet">\u2014</span>';
+  return (row.r1 * 100).toFixed(0) + '% <span class="quiet">(' + row.n + ')</span>';
+}
+
+function benchmarkLine() {
+  if (typeof RETRIEVAL_BENCHMARK === 'undefined') return '';
+  const b = RETRIEVAL_BENCHMARK;
+  const share = (value) => (value * 100).toFixed(0) + '%';
+  return 'Measured by leave-one-out over the ' + b.trials + ' ligand slots that can be tested: the true target came '
+    + 'first in ' + share(b.overall.r1) + ' of trials, in the top five in ' + share(b.overall.r5)
+    + ', in the top ten in ' + share(b.overall.r10) + ', with a median true rank of ' + b.overall.median
+    + ' out of ' + b.targets + '. Ranking targets by ligand-set size alone gets ' + share(b.popularity.r1)
+    + ' and ' + share(b.popularity.r5) + '; ranking at random gets ' + share(b.random.r1) + ' and '
+    + share(b.random.r5) + '. ' + b.unmeasurable + ' of the ' + b.targets
+    + ' targets have fewer than two known ligands and cannot be tested at all.'
+    + infoButton('tgtBenchmark');
 }
 
 function renderTargets(record) {
@@ -680,6 +708,7 @@ function renderTargets(record) {
     + (strong ? strong + ' of them above 0.30' : 'none of them above 0.30');
   document.getElementById('tgt-blurb').textContent = 'Scored with ' + method.label + ' and '
     + (metricKey === 'dice' ? 'Dice' : 'Tanimoto') + ', following the similarity panel above.';
+  document.getElementById('tgt-bench').innerHTML = benchmarkLine();
 
   const table = document.getElementById('targets');
   table.querySelector('thead').innerHTML = '<tr>' + TGT_COLUMNS.map(([key, label]) => (
@@ -691,7 +720,7 @@ function renderTargets(record) {
     const band = tgtTier(row.score);
     if (band !== tier) {
       tier = band;
-      head = '<tr class="tier-break" data-tier="' + band + '"><td colspan="10">'
+      head = '<tr class="tier-break" data-tier="' + band + '"><td colspan="11">'
         + '<strong>' + escapeHtml(TGT_TIERS[band][1]) + '</strong>'
         + escapeHtml(TGT_TIERS[band][2]) + '</td></tr>';
     }
@@ -708,9 +737,10 @@ function renderTargets(record) {
       + '<td>' + row.mean.toFixed(3) + '</td>'
       + '<td>' + escapeHtml(row.nearest.name) + '</td>'
       + '<td>' + row.count + '</td>'
+      + '<td>' + recoveredCell(row.target) + '</td>'
       + '<td class="note">' + escapeHtml(row.target.note) + '</td>'
       + '</tr>';
-  }).join('') : '<tr><td colspan="10">No target has a known ligand this similar to the query.</td></tr>';
+  }).join('') : '<tr><td colspan="11">No target has a known ligand this similar to the query.</td></tr>';
 }
 
 function setupTargets() {
@@ -1305,10 +1335,21 @@ function fullExportRows(record) {
     ['drug-likeness', 'Rule-based filters with published cutoffs. A pass means the molecule falls inside a window drawn from earlier drug sets. It is not a verdict on whether the compound is a good drug.'],
     ['similarity', 'Fingerprint overlap between the query and each reference structure. A high value means the two structures share substructures; it does not mean they share pharmacology.'],
     ['targets', 'nearestLigandSimilarity is the fingerprint similarity between the query and the single most similar known ligand of that target; meanTop3Similarity is the mean over its three most similar. They are structural resemblances, used only to rank the targets in this file against each other. They are not probabilities of binding, not affinities, and not calibrated against any assay: a value of 0.45 means a Tanimoto of 0.45, not a 45% chance of interaction.'],
+    ['retrieval benchmark', 'looRecallAt1, looTrials and looMedianRank come from a leave-one-out test of the target panel against its own curated ligand sets, regenerated by tools/retrieval-benchmark.js and stored in data/benchmark.js. For each target, every known ligand is held out in turn, the targets are re-ranked, and the rank of the held-out ligand\u2019s own target is recorded. looRecallAt1 is the share of those trials where the target came first. A target with fewer than two known ligands cannot be tested and reports "not measurable". The benchmark measures how well this page recovers the labels it was given; it does not measure agreement with any external assay, and the sets are small enough that a per-target figure over two or three trials is an anecdote, not a validation.'],
     ['metabolism', 'relativeWeight is the product of published reaction-class frequencies along the path from the parent, each scaled by a per-site factor. It orders candidate routes against each other. It is not a yield, a fraction of dose or a concentration. Route summedWeight adds those products over all metabolites on a route, so route totals can exceed 1 and must not be read as fractions of a dose. The major / minor / trace band is a reading of the same product against fixed cuts at 0.10 and 0.02. enumerationCapped reports whether the search hit its own breadth limit; "no" does not mean every biologically possible route was considered.'],
     ['toxicity', 'Substructure matches against published alert catalogues. A match flags a motif the literature associates with a liability. Zero matches means no catalogued motif was found, not that the compound is safe.'],
     ['dependence', 'Structural analogy to labelled reference drugs, and nothing more. No row in this section is a pharmacological or abuse-liability finding about the query.']
   ].forEach(([item, text]) => add('provenance', item, 'note', text));
+
+  if (typeof RETRIEVAL_BENCHMARK !== 'undefined') {
+    const b = RETRIEVAL_BENCHMARK;
+    add('provenance', 'retrieval benchmark', 'summary', 'Generated ' + b.generated + ' with ' + b.method + ' / '
+      + b.metric + ' over ' + b.library + ' reference compounds: ' + b.trials + ' held-out trials across '
+      + b.measurable + ' of ' + b.targets + ' targets, recall@1 ' + b.overall.r1.toFixed(4) + ', recall@5 '
+      + b.overall.r5.toFixed(4) + ', recall@10 ' + b.overall.r10.toFixed(4) + ', median true rank '
+      + b.overall.median + '. Popularity baseline recall@1 ' + b.popularity.r1.toFixed(4)
+      + ', uniform random recall@1 ' + b.random.r1.toFixed(4) + '.');
+  }
 
   pair('identity', 'name', record.name);
   pair('identity', 'smiles', record.smiles);
@@ -1429,6 +1470,10 @@ function fullExportRows(record) {
     add('targets', label, 'nearestLigand', row.nearest.name);
     add('targets', label, 'activesScored', row.count);
     add('targets', label, 'similarityMetric', metricName);
+    const bench = benchmarkRow(row.target);
+    add('targets', label, 'looRecallAt1', bench ? bench.r1.toFixed(4) : 'not measurable');
+    add('targets', label, 'looTrials', bench ? bench.n : 0);
+    add('targets', label, 'looMedianRank', bench ? bench.median : 'not measurable');
     add('targets', label, 'mechanism', row.target.note);
   });
 
