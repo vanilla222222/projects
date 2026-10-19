@@ -55,6 +55,23 @@
   examples('Unresolved target ligand names',audit.orphanedLigands,x=>x.gene+': '+x.name);
   output.append(node('h3','Largest library classes'));
   const classes=node('ul');audit.classes.slice(0,15).forEach(x=>classes.append(node('li',x.name+': '+x.count)));output.append(classes);
+  if(typeof REFERENCE_AUDIT_BASELINE!=='undefined'){
+    output.append(node('h3','Regression dashboard — compared with recorded baseline'));
+    const measures=[
+      ['Library entries',audit.entries,REFERENCE_AUDIT_BASELINE.entries],
+      ['Missing formulas',audit.missingFormula,REFERENCE_AUDIT_BASELINE.missingFormula],
+      ['Missing SMILES',audit.missingSmiles,REFERENCE_AUDIT_BASELINE.missingSmiles],
+      ['Duplicate names',audit.duplicateNames.length,REFERENCE_AUDIT_BASELINE.duplicateNames],
+      ['Duplicate exact SMILES',audit.duplicateSmiles.length,REFERENCE_AUDIT_BASELINE.duplicateExactSmiles],
+      ['Unmatched profiles',audit.missingProfiles.length,REFERENCE_AUDIT_BASELINE.unmatchedProfiles],
+      ['Sparse targets (<3 ligands)',audit.sparseTargets,REFERENCE_AUDIT_BASELINE.sparseTargets],
+      ['Unresolved target ligand names',audit.orphanedLigands.length,REFERENCE_AUDIT_BASELINE.unresolvedLigands]
+    ];
+    const table=node('table');table.style.width='100%';const head=node('tr');
+    ['Metric','Current','Baseline','Change'].forEach(x=>head.append(node('th',x)));table.append(head);
+    measures.forEach(([name,now,before])=>{const tr=node('tr');[name,String(now),String(before),(now-before>0?'+':'')+String(now-before)].forEach(x=>tr.append(node('td',x)));table.append(tr)});
+    output.append(table,node('p','Changes are descriptive; a larger library is not necessarily a more accurate library.','muted'));
+  }
   const btn=$('audit-export');
   btn.addEventListener('click',()=>{
     const blob=new Blob([JSON.stringify({generatedAt:new Date().toISOString(),audit},null,2)],{type:'application/json'});
