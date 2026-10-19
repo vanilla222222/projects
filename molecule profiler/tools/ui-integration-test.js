@@ -73,6 +73,8 @@ assert.ok(fs.existsSync(path.join(root, 'js/library-inspector.js')), 'Library ca
 assert.ok(html.includes('id="sim-include-property-only"'), 'Reference filter missing');
 assert.ok(app.includes('rankedPool = includeProperty'), 'Filtered similarity pool missing');
 assert.ok(workspace.includes('details.open = true'), 'Safety caveats not visible by default');
+assert.ok(app.includes('entry.propertyOnly === true'), 'Similarity filtering must use explicit dataset-role flags');
+assert.ok(html.includes('earlier set of 596 compounds'), 'Historical validation cohort not disclosed');
 console.log('UI integration contract passed: ' + scripts.length + ' scripts, ' + ids.length + ' unique DOM IDs');
 assert.ok(app.includes('const DEP_GATE = 0.45;'), 'Dependence gate threshold missing');
 assert.ok(app.includes('const gated = profile.top < DEP_GATE;'), 'Dependence gate is not computed from the threshold');

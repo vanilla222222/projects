@@ -20,7 +20,7 @@ from rdkit.Chem import rdMolDescriptors
 RDLogger.DisableLog("rdApp.error")
 LIBRARY = Path(__file__).resolve().parents[1] / "data" / "library.js"
 PATTERN = re.compile(
-    r"(\{ name: '((?:\\'|[^'])+)', cls: '((?:\\'|[^'])*)', formula: ')((?:\\'|[^'])*)(', smiles: '((?:\\'|[^'])+)' \})"
+    r"(\{ name: '((?:\\'|[^'])+)', cls: '((?:\\'|[^'])*)', formula: ')((?:\\'|[^'])*)(', smiles: '((?:\\'|[^'])+)'(?:, propertyOnly: true)? \})"
 )
 
 def main():

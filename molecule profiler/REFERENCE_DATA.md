@@ -55,3 +55,9 @@ Collection membership is inferred **only** from each record's existing `cls` str
 These are organizational labels, **not proof** of external provenance, measured properties, canonical uniqueness, or confirmed identity. The inspector's completeness statistics and exact-string duplicate checks do not replace the independent RDKit audit. The main similarity search intentionally retains all parsed structures but explicitly discloses their mixed provenance; selecting "All parsed entries" now shows every result instead of a historical 596-row cap.
 
 Run `node tools/library-catalog-test.js` or the aggregate `node tools/run-validation.js` to check the index grouping and search behavior. No chemistry predictions are added here.
+
+## Explicit property-only entries and historical RDKit cohort
+
+The 844 class-labelled ESOL/ester/ether/ketone reference entries carry `propertyOnly: true` directly on their source rows. Default Similarity Search excludes flagged rows; the optional checkbox includes them. The metadata classifies use within this application only; it is not proof of experimental origin, structural verification, or biological relevance.
+
+All existing historical accuracy claims involving 596 compounds refer to the **original 596-compound validation set**, not the current 2,258-entry reference collection. The RDKit and formula auditing scripts have been extended to parse optional `propertyOnly` flags without dropping flagged entries.

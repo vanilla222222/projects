@@ -717,7 +717,7 @@ function renderSimilar(record) {
   const query = fingerprint(record.mol, method.key);
   const library = libraryFingerprints(method.key);
   const includeProperty = document.getElementById('sim-include-property-only').checked;
-  const isPropertyReference = (entry) => ['ESOL reference', 'Ester reference', 'Ether reference', 'Ketone reference'].includes(entry.cls);
+  const isPropertyReference = (entry) => entry.propertyOnly === true;
   const rankedPool = includeProperty ? library : library.filter(item => !isPropertyReference(item.entry));
   const hits = rankedPool.map((item) => ({
     entry: item.entry,
