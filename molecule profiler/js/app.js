@@ -380,6 +380,7 @@ function renderCurrent() {
   if (!record) return;
   const d = record.d;
   const v = record.v;
+  document.dispatchEvent(new Event('molecule-profiler:selected'));
 
   // Descriptor methods and extrapolation warnings; intentionally no new predictions.
   if (typeof propertyEvidenceRows === 'function') {

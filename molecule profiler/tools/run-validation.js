@@ -17,7 +17,8 @@ const scripts = [
   'library-catalog-test.js',
   'sim-pagination-test.js',
   'batch-browser-test.js',
-  'input-workflow-test.js'
+  'input-workflow-test.js',
+  'report-model-test.js'
 ];
 const started = new Date().toISOString();
 const outcomes = [];

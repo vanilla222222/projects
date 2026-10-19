@@ -185,3 +185,44 @@ body[data-theme="light"] .floating-compose { color: white; }
 .input-feedback #input-summary{color:var(--text-dim);margin:0 0 6px}
 .input-errors{max-height:260px;overflow:auto}
 .input-errors p{padding:9px 0;border-top:1px solid var(--line-soft);overflow-wrap:anywhere;font-family:var(--mono);font-size:12px;color:var(--text-dim);margin:0}
+
+/* Quick molecular dossier: calculated counts and model outputs are visibly separated */
+.report-summary{margin-bottom:18px}
+.report-summary[hidden]{display:none!important}
+.report-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.report-heading h2{margin:4px 0 5px;font-size:clamp(19px,2vw,26px);overflow-wrap:anywhere}
+.report-meta{margin:0;color:var(--text-dim);font-size:12px}
+.report-print{padding:10px 15px;min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--bg-sink);color:var(--text);font-weight:700;cursor:pointer}
+.report-print:hover{border-color:var(--accent);color:var(--accent)}
+.report-smiles{display:flex;gap:12px;flex-wrap:wrap;align-items:baseline;color:var(--text-dim);font-size:12px}
+.report-smiles strong{color:var(--text)}
+.report-smiles code{overflow-wrap:anywhere;user-select:text}
+.report-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:17px 0}
+.report-metric{min-width:0;padding:13px;background:var(--bg-sink);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;gap:6px}
+.report-metric-label{font-size:12px;color:var(--text-dim)}
+.report-metric-value{font-family:var(--mono);font-size:clamp(14px,1.65vw,21px);font-weight:700;overflow-wrap:anywhere}
+.report-metric-kind{font-size:10px;color:var(--text-dim);letter-spacing:.04em;text-transform:uppercase}
+.report-bottom{display:grid;grid-template-columns:1fr 1fr;gap:22px;border-top:1px solid var(--line);padding-top:15px}
+.report-bottom h3{font-size:14px;margin:0 0 10px}
+.report-bottom p,.report-evidence{font-size:12px;line-height:1.55;color:var(--text-dim)}
+.report-evidence{display:flex;flex-direction:column;gap:3px;margin-bottom:13px}
+.report-evidence strong{color:var(--text)}
+.report-evidence a{width:fit-content}
+.report-warning{border-left:2px solid var(--warn);padding-left:9px}
+@media(max-width:860px){.report-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.report-bottom{grid-template-columns:1fr;gap:10px}}
+@media(max-width:460px){.report-metrics{grid-template-columns:1fr 1fr}.report-metric{padding:10px}}
+@media print{
+  @page{size:auto;margin:14mm}
+  html,body{background:white!important;color:#111!important;color-scheme:light!important;font-size:12px}
+  body>header,.intro,.input-panel,.result-toolbar,.workspace-nav,.workspace-description,.molecule-strip,
+  .comparison-panel,.floating-compose,#results>.grid,.report-print{display:none!important}
+  main{margin:0!important;padding:0!important;max-width:none!important}
+  #results,#molecule-report{display:block!important;visibility:visible!important}
+  #molecule-report{background:white!important;color:#111!important;border:none!important;box-shadow:none!important;margin:0;padding:0}
+  .report-metric{background:white!important;border-color:#bbb!important;break-inside:avoid}
+  .report-metric-value,.report-heading h2,.report-evidence strong,.report-smiles strong{color:#111!important}
+  .report-meta,.report-metric-label,.report-metric-kind,.report-smiles,.report-bottom p,.report-evidence{color:#333!important}
+  .report-bottom{grid-template-columns:1fr 1fr;gap:20px}
+  .report-bottom section,.report-evidence{break-inside:avoid}
+  a{color:#111!important;text-decoration:underline}
+}

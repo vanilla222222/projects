@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Molecule Profiler</title>
-<link rel="stylesheet" href="css/style.css?v=2026-10-21-intake">
-<link rel="stylesheet" href="css/workspace.css?v=2026-10-21-intake">
+<link rel="stylesheet" href="css/style.css?v=2026-10-21-reports">
+<link rel="stylesheet" href="css/workspace.css?v=2026-10-21-reports">
 </head>
 <body data-theme="dark">
 <header class="topbar">
@@ -66,6 +66,19 @@
     <p id="workspace-description" class="workspace-description" role="status" aria-live="polite"></p>
     <div class="molecule-strip"><span class="strip-title">Molecules in this analysis</span><nav class="tabs" id="molecule-tabs" aria-label="Molecules"></nav></div>
 
+
+    <section class="report-summary panel" id="molecule-report" hidden aria-labelledby="report-title">
+      <div class="report-heading">
+        <div><span class="eyebrow">Molecular dossier / selected structure</span><h2 id="report-title">Molecule summary</h2><p class="report-meta"><span id="report-formula"></span> · <span id="report-date"></span></p></div>
+        <button type="button" id="report-print" class="report-print">Print summary / Save PDF</button>
+      </div>
+      <p class="report-smiles"><strong>Input SMILES</strong> <code id="report-smiles"></code></p>
+      <div id="report-metrics" class="report-metrics" aria-label="Summary molecular properties"></div>
+      <div class="report-bottom">
+        <section aria-labelledby="report-validation-title"><h3 id="report-validation-title">Model validation context</h3><div id="report-validation"></div></section>
+        <section aria-labelledby="report-cautions-title"><h3 id="report-cautions-title">Interpretation &amp; limitations</h3><div id="report-cautions"></div></section>
+      </div>
+    </section>
     <section class="comparison-panel panel" id="comparison-panel" hidden aria-labelledby="comparison-title">
       <div class="panel-head"><h2 id="comparison-title">Molecule comparison</h2><span class="evidence" data-tier="exact">descriptors &amp; estimates</span></div>
       <p class="hint">Compare up to four molecules from this analysis. Differences are arithmetic comparisons, not evidence of biological activity or safety.</p>
@@ -370,39 +383,41 @@
   </section>
 </main>
 
-<script src="js/smiles.js?v=2026-10-21-intake"></script>
-<script src="js/mol.js?v=2026-10-21-intake"></script>
-<script src="js/descriptors.js?v=2026-10-21-intake"></script>
-<script src="js/rules.js?v=2026-10-21-intake"></script>
-<script src="js/fingerprints.js?v=2026-10-21-intake"></script>
-<script src="js/smarts.js?v=2026-10-21-intake"></script>
-<script src="js/stereo.js?v=2026-10-21-intake"></script>
-<script src="data/library.js?v=2026-10-21-intake"></script>
-<script src="data/targets.js?v=2026-10-21-intake"></script>
-<script src="data/benchmark.js?v=2026-10-21-intake"></script>
-<script src="data/alerts.js?v=2026-10-21-intake"></script>
-<script src="data/toxalerts.js?v=2026-10-21-intake"></script>
-<script src="data/dependence.js?v=2026-10-21-intake"></script>
-<script src="js/tox.js?v=2026-10-21-intake"></script>
-<script src="js/transform.js?v=2026-10-21-intake"></script>
-<script src="js/sites.js?v=2026-10-21-intake"></script>
-<script src="js/depict.js?v=2026-10-21-intake"></script>
-<script src="data/metabolism.js?v=2026-10-21-intake"></script>
-<script src="data/metcases.js?v=2026-10-21-intake"></script>
-<script src="data/stereocases.js?v=2026-10-21-intake"></script>
-<script src="data/wedgecases.js?v=2026-10-21-intake"></script>
-<script src="data/propcases.js?v=2026-10-21-intake"></script>
-<script src="data/crippencases.js?v=2026-10-21-intake"></script>
-  <script src="data/citations.js?v=2026-10-21-intake"></script>
-<script src="js/metabolism.js?v=2026-10-21-intake"></script>
-<script src="js/evidence-report.js?v=2026-10-21-intake"></script>
-<script src="js/screen-coverage.js?v=2026-10-21-intake"></script>
-<script src="js/sim-pagination.js?v=2026-10-21-intake"></script>
-<script src="js/batch-browser.js?v=2026-10-21-intake"></script>
-<script src="js/input-workflow.js?v=2026-10-21-intake"></script>
-<script src="js/app.js?v=2026-10-21-intake"></script>
-<script src="js/comparison-data.js?v=2026-10-21-intake"></script>
-<script src="js/workspace-ui.js?v=2026-10-21-intake"></script>
-<script src="js/comparison-ui.js?v=2026-10-21-intake"></script>
+<script src="js/smiles.js?v=2026-10-21-reports"></script>
+<script src="js/mol.js?v=2026-10-21-reports"></script>
+<script src="js/descriptors.js?v=2026-10-21-reports"></script>
+<script src="js/rules.js?v=2026-10-21-reports"></script>
+<script src="js/fingerprints.js?v=2026-10-21-reports"></script>
+<script src="js/smarts.js?v=2026-10-21-reports"></script>
+<script src="js/stereo.js?v=2026-10-21-reports"></script>
+<script src="data/library.js?v=2026-10-21-reports"></script>
+<script src="data/targets.js?v=2026-10-21-reports"></script>
+<script src="data/benchmark.js?v=2026-10-21-reports"></script>
+<script src="data/alerts.js?v=2026-10-21-reports"></script>
+<script src="data/toxalerts.js?v=2026-10-21-reports"></script>
+<script src="data/dependence.js?v=2026-10-21-reports"></script>
+<script src="js/tox.js?v=2026-10-21-reports"></script>
+<script src="js/transform.js?v=2026-10-21-reports"></script>
+<script src="js/sites.js?v=2026-10-21-reports"></script>
+<script src="js/depict.js?v=2026-10-21-reports"></script>
+<script src="data/metabolism.js?v=2026-10-21-reports"></script>
+<script src="data/metcases.js?v=2026-10-21-reports"></script>
+<script src="data/stereocases.js?v=2026-10-21-reports"></script>
+<script src="data/wedgecases.js?v=2026-10-21-reports"></script>
+<script src="data/propcases.js?v=2026-10-21-reports"></script>
+<script src="data/crippencases.js?v=2026-10-21-reports"></script>
+  <script src="data/citations.js?v=2026-10-21-reports"></script>
+<script src="js/metabolism.js?v=2026-10-21-reports"></script>
+<script src="js/evidence-report.js?v=2026-10-21-reports"></script>
+<script src="js/screen-coverage.js?v=2026-10-21-reports"></script>
+<script src="js/sim-pagination.js?v=2026-10-21-reports"></script>
+<script src="js/batch-browser.js?v=2026-10-21-reports"></script>
+<script src="js/input-workflow.js?v=2026-10-21-reports"></script>
+<script src="js/app.js?v=2026-10-21-reports"></script>
+<script src="js/comparison-data.js?v=2026-10-21-reports"></script>
+<script src="js/workspace-ui.js?v=2026-10-21-reports"></script>
+<script src="js/comparison-ui.js?v=2026-10-21-reports"></script>
+<script src="js/report-model.js?v=2026-10-21-reports"></script>
+<script src="js/report-ui.js?v=2026-10-21-reports"></script>
 </body>
 </html>
