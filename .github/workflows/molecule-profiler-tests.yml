@@ -39,6 +39,8 @@ jobs:
         run: node tools/retrieval-benchmark.js
       - name: UI script and DOM integration
         run: node tools/ui-integration-test.js
+      - name: Side-by-side comparison tests
+        run: node tools/comparison-test.js
   rdkit:
     runs-on: ubuntu-latest
     defaults:
