@@ -4,6 +4,8 @@
 // of fullExportRows, not a new prediction or reference lookup.
 (function(root) {
  const VERSION='2.0';
+ const MAX_RANKED_RESULTS=50;
+ function topRanked(items){return Array.isArray(items)?items.slice(0,MAX_RANKED_RESULTS):[];}
  const HEADER=['schema_version','molecule_id','molecule_name','input_smiles','section','item','field',
   'value','value_type','unit','evidence_type','method','interpretation','source'];
  const SECTION={
@@ -97,7 +99,7 @@
   return serialize([['column','description','type','notes'],...DICT,
    ...Object.entries(SECTION).map(([key,val])=>['section:'+key,val[1],'category',val[2]])]);
  }
- const api={VERSION,HEADER,valueType,normalized,csvCell,createCsv,dictionaryCsv};
+ const api={VERSION,HEADER,MAX_RANKED_RESULTS,topRanked,valueType,normalized,csvCell,createCsv,dictionaryCsv};
  if(typeof module!=='undefined'&&module.exports)module.exports=api;
  root.FullCsvExport=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {HEADER,normalized,createCsv,dictionaryCsv,valueType,csvCell}=require('../js/full-csv-export.js');
+const {HEADER,normalized,createCsv,dictionaryCsv,valueType,csvCell,topRanked,MAX_RANKED_RESULTS}=require('../js/full-csv-export.js');
 const data=[['identity','molecularWeight','value','46.068'],['lipophilicity','logS','value','-2.3'],
  ['similarity','rank 1','score','0.751'],['provenance','methods','note','No experiment'],
  ['alerts','unexpected','note','=SUM(A1:A2)'],['drug-likeness','rule','verdict','pass']];
@@ -27,4 +27,11 @@ assert.ok(dictionaryCsv().includes('section:similarity'));
 assert.equal(csvCell('-42.1'),'"-42.1"');
 assert.equal(csvCell('-hello'),'"\'-hello"');
 assert.throws(()=>normalized(record,[['a']]),/four-column/);
+const many=Array.from({length:2258},(_,i)=>({rank:i+1}));
+assert.equal(MAX_RANKED_RESULTS,50);
+assert.equal(topRanked(many).length,50);
+assert.equal(topRanked(many)[49].rank,50);
+assert.equal(many.length,2258);
+assert.equal(topRanked(many.slice(0,12)).length,12);
+assert.deepEqual(topRanked([]),[]);
 console.log('Professional full CSV schema regression tests passed');

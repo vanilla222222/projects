@@ -1804,12 +1804,14 @@ function fullExportRows(record) {
   pair('similarity', 'fingerprint', method.label);
   pair('similarity', 'metric', metricKey === 'dice' ? 'Dice' : 'Tanimoto');
   pair('similarity', 'queryBits', query.bits.size);
-  libraryFingerprints(method.key).map((item) => ({
+  pair('similarity', 'rankedExportLimit', FullCsvExport.MAX_RANKED_RESULTS);
+  const similarityRanked = libraryFingerprints(method.key).map((item) => ({
     entry: item.entry,
     bits: item.fp.bits.size,
     shared: sharedCount(query, item.fp),
     value: score(query, item.fp)
-  })).sort((a, b) => b.value - a.value).forEach((hit, index) => {
+  })).sort((a, b) => b.value - a.value);
+  FullCsvExport.topRanked(similarityRanked).forEach((hit, index) => {
     const label = 'rank ' + (index + 1);
     add('similarity', label, 'name', hit.entry.name);
     add('similarity', label, 'class', hit.entry.cls);
@@ -1841,7 +1843,8 @@ function fullExportRows(record) {
     });
   });
   ranked.sort((a, b) => b.score - a.score || b.mean - a.mean);
-  ranked.forEach((row, index) => {
+  pair('targets', 'rankedExportLimit', FullCsvExport.MAX_RANKED_RESULTS);
+  FullCsvExport.topRanked(ranked).forEach((row, index) => {
     const label = 'rank ' + (index + 1);
     add('targets', label, 'target', row.target.name);
     add('targets', label, 'gene', row.target.gene);

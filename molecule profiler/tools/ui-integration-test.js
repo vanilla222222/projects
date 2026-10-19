@@ -94,6 +94,8 @@ assert.ok(scripts.indexOf('js/full-csv-export.js') > -1 && scripts.indexOf('js/f
   'Full CSV schema must load before app');
 assert.ok(ids.includes('export-full-dictionary'),'Full CSV dictionary button missing');
 assert.ok(app.includes('FullCsvExport.createCsv(record,fullExportRows(record))'),'Full CSV export schema not wired');
+assert.ok(app.includes('FullCsvExport.topRanked(similarityRanked)'), 'Full CSV similarity ranking limit missing');
+assert.ok(app.includes('FullCsvExport.topRanked(ranked)'), 'Full CSV target ranking limit missing');
 console.log('UI integration contract passed: ' + scripts.length + ' scripts, ' + ids.length + ' unique DOM IDs');
 assert.ok(app.includes('const DEP_GATE = 0.45;'), 'Dependence gate threshold missing');
 assert.ok(app.includes('const gated = profile.top < DEP_GATE;'), 'Dependence gate is not computed from the threshold');
