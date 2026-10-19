@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Molecule Profiler</title>
-<link rel="stylesheet" href="css/style.css?v=2026-10-19f">
+<link rel="stylesheet" href="css/style.css?v=2026-10-19g">
 </head>
 <body data-theme="dark">
 <header class="topbar">
@@ -49,6 +49,23 @@
       <article class="panel">
         <div class="panel-head"><h2>Identity</h2></div>
         <dl id="identity" class="data"></dl>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head">
+          <h2>Structure</h2>
+          <p class="hint" id="depict-summary"></p>
+        </div>
+        <div class="tgt-controls">
+          <label>Highlight<select id="depict-highlight">
+            <option value="none" selected>nothing</option>
+            <option value="sites">metabolism sites</option>
+            <option value="alerts">structural alerts</option>
+            <option value="tox">toxicity rules</option>
+          </select></label>
+        </div>
+        <div id="structure" class="depict-box"></div>
+        <p class="hint caveat">Coordinates are generated here, not read from a file. Across the 596 reference compounds, 579 draw with no two unbonded atoms closer than 0.72 bond lengths and 541 have every bond within 1&#37; of unit length; the exceptions are bridged cages &mdash; morphinans, tropanes, adamantanes, camphor, artemisinin &mdash; where no flat drawing can have both. Measured against RDKit&#39;s own <code>Compute2DCoords</code> over 16064 bond angles from 593 compounds, the median difference is 0.00&deg; and 92&#37; of angles agree within 5&deg;, with the rest concentrated in those same cages and in 120&deg; substituent flips on steroid frames. The drawing is a depiction, not a conformation: it says nothing about 3D geometry.</p>
       </article>
 
       <article class="panel">
@@ -265,22 +282,23 @@
   </section>
 </main>
 
-<script src="js/smiles.js?v=2026-10-19f"></script>
-<script src="js/mol.js?v=2026-10-19f"></script>
-<script src="js/descriptors.js?v=2026-10-19f"></script>
-<script src="js/rules.js?v=2026-10-19f"></script>
-<script src="js/fingerprints.js?v=2026-10-19f"></script>
-<script src="js/smarts.js?v=2026-10-19f"></script>
-<script src="data/library.js?v=2026-10-19f"></script>
-<script src="data/targets.js?v=2026-10-19f"></script>
-<script src="data/alerts.js?v=2026-10-19f"></script>
-<script src="data/toxalerts.js?v=2026-10-19f"></script>
-<script src="data/dependence.js?v=2026-10-19f"></script>
-<script src="js/tox.js?v=2026-10-19f"></script>
-<script src="js/transform.js?v=2026-10-19f"></script>
-<script src="js/sites.js?v=2026-10-19f"></script>
-<script src="data/metabolism.js?v=2026-10-19f"></script>
-<script src="js/metabolism.js?v=2026-10-19f"></script>
-<script src="js/app.js?v=2026-10-19f"></script>
+<script src="js/smiles.js?v=2026-10-19g"></script>
+<script src="js/mol.js?v=2026-10-19g"></script>
+<script src="js/descriptors.js?v=2026-10-19g"></script>
+<script src="js/rules.js?v=2026-10-19g"></script>
+<script src="js/fingerprints.js?v=2026-10-19g"></script>
+<script src="js/smarts.js?v=2026-10-19g"></script>
+<script src="data/library.js?v=2026-10-19g"></script>
+<script src="data/targets.js?v=2026-10-19g"></script>
+<script src="data/alerts.js?v=2026-10-19g"></script>
+<script src="data/toxalerts.js?v=2026-10-19g"></script>
+<script src="data/dependence.js?v=2026-10-19g"></script>
+<script src="js/tox.js?v=2026-10-19g"></script>
+<script src="js/transform.js?v=2026-10-19g"></script>
+<script src="js/sites.js?v=2026-10-19g"></script>
+<script src="js/depict.js?v=2026-10-19g"></script>
+<script src="data/metabolism.js?v=2026-10-19g"></script>
+<script src="js/metabolism.js?v=2026-10-19g"></script>
+<script src="js/app.js?v=2026-10-19g"></script>
 </body>
 </html>

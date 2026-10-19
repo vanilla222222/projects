@@ -567,3 +567,148 @@ function depictCoordinates(mol) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { depictCoordinates, depictPairs, depictPenalty, depictLayoutRings, depictSystems, depictOrderRing, DEPICT_BOND, DEPICT_CLASH };
 }
+
+const DEPICT_COLORS = {
+  N: '#4f7fd8', O: '#d64b4b', S: '#c9962b', P: '#d9772b',
+  F: '#39a06a', Cl: '#3f9e58', Br: '#a6652b', I: '#8b5bbf',
+  B: '#b38f6a', Si: '#8a8a8a', Se: '#b07a2b', Li: '#8b5bbf',
+  Na: '#8b5bbf', K: '#8b5bbf', Mg: '#5a9e8a', Ca: '#5a9e8a', Zn: '#6f8fa6'
+};
+
+function depictEscape(text) {
+  return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function depictLabel(mol, id) {
+  const atom = mol.atoms[id];
+  const charge = atom.charge || 0;
+  if (atom.element === 'C' && !charge && atom.neighbors.length) return null;
+  let text = atom.element;
+  if (atom.totalH === 1) text += 'H';
+  else if (atom.totalH > 1) text += 'H' + atom.totalH;
+  if (charge) {
+    const size = Math.abs(charge) > 1 ? Math.abs(charge) : '';
+    text += size + (charge > 0 ? '+' : '−');
+  }
+  return text;
+}
+
+function depictDoubleSide(mol, coords, bond) {
+  const ring = mol.atoms[bond.a].rings.filter((index) => mol.atoms[bond.b].rings.indexOf(index) >= 0);
+  if (ring.length) {
+    const members = mol.rings[ring[0]];
+    const center = members.reduce((sum, id) => ({
+      x: sum.x + coords[id].x / members.length,
+      y: sum.y + coords[id].y / members.length
+    }), { x: 0, y: 0 });
+    return { inner: true, center };
+  }
+  const others = mol.atoms[bond.a].neighbors.map((link) => link.atom)
+    .concat(mol.atoms[bond.b].neighbors.map((link) => link.atom))
+    .filter((id) => id !== bond.a && id !== bond.b);
+  if (!others.length) return { inner: false, center: null };
+  const center = others.reduce((sum, id) => ({
+    x: sum.x + coords[id].x / others.length,
+    y: sum.y + coords[id].y / others.length
+  }), { x: 0, y: 0 });
+  return { inner: true, center };
+}
+
+function depictSvg(mol, options) {
+  const settings = options || {};
+  const coords = settings.coords || depictCoordinates(mol);
+  const scale = settings.scale || 26;
+  const pad = settings.pad || 16;
+  const highlight = new Set(settings.highlight || []);
+
+  const xs = coords.map((point) => point.x);
+  const ys = coords.map((point) => point.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const width = (maxX - minX) * scale + pad * 2;
+  const height = (maxY - minY) * scale + pad * 2;
+  const at = (id) => ({
+    x: (coords[id].x - minX) * scale + pad,
+    y: (maxY - coords[id].y) * scale + pad
+  });
+
+  const labels = mol.atoms.map((atom, id) => depictLabel(mol, id));
+  const parts = [];
+
+  highlight.forEach((id) => {
+    if (!mol.atoms[id]) return;
+    const point = at(id);
+    parts.push('<circle class="hit" cx="' + point.x.toFixed(1) + '" cy="' + point.y.toFixed(1)
+      + '" r="' + (scale * 0.42).toFixed(1) + '"/>');
+  });
+
+  mol.bonds.forEach((bond) => {
+    const from = at(bond.a);
+    const to = at(bond.b);
+    const angle = Math.atan2(to.y - from.y, to.x - from.x);
+    const trimA = labels[bond.a] ? scale * 0.34 : 0;
+    const trimB = labels[bond.b] ? scale * 0.34 : 0;
+    const start = { x: from.x + Math.cos(angle) * trimA, y: from.y + Math.sin(angle) * trimA };
+    const end = { x: to.x - Math.cos(angle) * trimB, y: to.y - Math.sin(angle) * trimB };
+    const normal = { x: Math.cos(angle + Math.PI / 2), y: Math.sin(angle + Math.PI / 2) };
+    const hot = highlight.has(bond.a) && highlight.has(bond.b) ? ' hot' : '';
+    const line = (ax, ay, bx, by, extra) => parts.push('<line class="bond' + hot + (extra || '')
+      + '" x1="' + ax.toFixed(1) + '" y1="' + ay.toFixed(1)
+      + '" x2="' + bx.toFixed(1) + '" y2="' + by.toFixed(1) + '"/>');
+
+    if (bond.order === 2) {
+      const side = depictDoubleSide(mol, coords, bond);
+      const gap = scale * 0.17;
+      if (side.inner && side.center) {
+        const mid = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
+        const target = { x: (side.center.x - minX) * scale + pad, y: (maxY - side.center.y) * scale + pad };
+        const dot = (target.x - mid.x) * normal.x + (target.y - mid.y) * normal.y;
+        const sign = dot >= 0 ? 1 : -1;
+        line(start.x, start.y, end.x, end.y);
+        const inset = scale * 0.18;
+        line(
+          start.x + normal.x * gap * sign + Math.cos(angle) * inset,
+          start.y + normal.y * gap * sign + Math.sin(angle) * inset,
+          end.x + normal.x * gap * sign - Math.cos(angle) * inset,
+          end.y + normal.y * gap * sign - Math.sin(angle) * inset
+        );
+      } else {
+        line(start.x + normal.x * gap * 0.6, start.y + normal.y * gap * 0.6,
+          end.x + normal.x * gap * 0.6, end.y + normal.y * gap * 0.6);
+        line(start.x - normal.x * gap * 0.6, start.y - normal.y * gap * 0.6,
+          end.x - normal.x * gap * 0.6, end.y - normal.y * gap * 0.6);
+      }
+    } else if (bond.order === 3) {
+      const gap = scale * 0.2;
+      line(start.x, start.y, end.x, end.y);
+      line(start.x + normal.x * gap, start.y + normal.y * gap, end.x + normal.x * gap, end.y + normal.y * gap);
+      line(start.x - normal.x * gap, start.y - normal.y * gap, end.x - normal.x * gap, end.y - normal.y * gap);
+    } else {
+      line(start.x, start.y, end.x, end.y);
+    }
+  });
+
+  mol.atoms.forEach((atom, id) => {
+    const text = labels[id];
+    if (!text) return;
+    const point = at(id);
+    const color = DEPICT_COLORS[atom.element];
+    parts.push('<text class="atom" x="' + point.x.toFixed(1) + '" y="' + point.y.toFixed(1) + '"'
+      + (color ? ' fill="' + color + '"' : '')
+      + ' font-size="' + (scale * 0.62).toFixed(1) + '">' + depictEscape(text) + '</text>');
+  });
+
+  const title = settings.title ? '<title>' + depictEscape(settings.title) + '</title>' : '';
+  return '<svg class="depiction" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '
+    + width.toFixed(1) + ' ' + height.toFixed(1) + '" width="' + width.toFixed(1)
+    + '" height="' + height.toFixed(1) + '" role="img"'
+    + (settings.title ? ' aria-label="' + depictEscape(settings.title) + '"' : '')
+    + '>' + title + parts.join('') + '</svg>';
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports.depictSvg = depictSvg;
+  module.exports.depictLabel = depictLabel;
+}

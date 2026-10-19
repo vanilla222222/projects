@@ -8,6 +8,7 @@ const GLOSSARY = {
   exactMass: ['Monoisotopic mass', 'Mass using the most abundant isotope of each element. This is the number a mass spectrometer compares against, and it differs from the average molecular weight.'],
   heavyAtoms: ['Heavy atoms', 'Every atom except hydrogen. Several filters are written in terms of this count rather than molecular weight.'],
   carbons: ['Carbon atoms', 'Total carbons, aromatic and aliphatic. Muegge’s filter rejects fragments with four or fewer.'],
+  depictHighlight: ['Highlight', 'Which atoms to mark on the drawing. Metabolism sites are the atoms a first-generation reaction rule acts on, taken from the transform engine itself rather than a separate model, so they follow the generation and phase filters in the metabolism panel. The other two modes mark whatever the alert and toxicity catalogues match.'],
   heteroatoms: ['Heteroatoms', 'Non-carbon, non-hydrogen atoms. A molecule with at most one is usually too greasy to be a drug candidate, which is why Muegge’s filter asks for more than one.'],
   charge: ['Formal charge', 'Sum of the formal charges written in the SMILES. It decides which branch of the bioavailability score applies, since anions behave differently.'],
   rings: ['Rings', 'Size of the smallest set of smallest rings: the number of independent cycles in the graph, which equals bonds minus atoms plus connected components.'],
@@ -398,6 +399,7 @@ function renderCurrent() {
   renderAtoms(record);
   renderSimilar(record);
   renderTargets(record);
+  renderStructure(record);
   renderAlerts(record);
   renderTox(record);
   renderDependence(record);
@@ -672,6 +674,79 @@ const ALERT_COLUMNS = [
   ['alertSmarts', 'Pattern'],
   ['alertNote', 'Concern']
 ];
+
+function depictHighlightSet(record, mode) {
+  const atoms = [];
+  const push = (list) => list.forEach((index) => {
+    if (typeof index === 'number' && index >= 0 && index < record.mol.atoms.length
+      && atoms.indexOf(index) === -1) atoms.push(index);
+  });
+  if (mode === 'alerts') {
+    ALERTS.forEach((alert) => {
+      smartsMatches(compileSmarts(alert.smarts), record.mol, {}).forEach((match) => push(match));
+    });
+  } else if (mode === 'tox') {
+    toxFor(record).hits.forEach((row) => push(row.atoms || []));
+  } else if (mode === 'sites') {
+    let tree = null;
+    try { tree = metabolismFor(record); } catch (error) { tree = null; }
+    if (tree) {
+      tree.nodes.forEach((node) => {
+        if (node.depth !== 1) return;
+        push(node.touched || []);
+        if (typeof node.siteAtom === 'number') push([node.siteAtom]);
+      });
+    }
+  }
+  atoms.sort((a, b) => a - b);
+  return atoms;
+}
+
+const DEPICT_HIGHLIGHT_NOTE = {
+  none: 'no atoms marked',
+  sites: 'atoms a first-generation rule acts on',
+  alerts: 'atoms matched by any catalogued alert',
+  tox: 'atoms matched by a firing toxicity rule'
+};
+
+function renderStructure(record) {
+  const box = document.getElementById('structure');
+  if (typeof depictSvg !== 'function') {
+    box.innerHTML = '<p class="hint">the depiction engine did not load \u2014 reload the page, bypassing the cache</p>';
+    return;
+  }
+  const mode = document.getElementById('depict-highlight').value;
+  let atoms = [];
+  try { atoms = depictHighlightSet(record, mode); } catch (error) { atoms = []; }
+  try {
+    box.innerHTML = depictSvg(record.mol, {
+      highlight: atoms,
+      scale: 30,
+      title: record.name + ' \u2014 generated 2D depiction'
+    });
+  } catch (error) {
+    box.innerHTML = '<p class="hint">could not lay this structure out: ' + escapeHtml(error.message) + '</p>';
+    document.getElementById('depict-summary').textContent = 'layout failed';
+    return;
+  }
+  document.getElementById('depict-summary').textContent = mode === 'none'
+    ? record.mol.atoms.length + ' heavy atoms'
+    : atoms.length + ' of ' + record.mol.atoms.length + ' atoms marked \u2014 '
+      + DEPICT_HIGHLIGHT_NOTE[mode];
+}
+
+function setupStructure() {
+  const select = document.getElementById('depict-highlight');
+  select.addEventListener('change', () => {
+    if (records[current]) renderStructure(records[current]);
+  });
+  select.insertAdjacentHTML('beforebegin', infoButton('depictHighlight'));
+  ['met-depth', 'met-phase'].forEach((id) => {
+    document.getElementById(id).addEventListener('change', () => {
+      if (records[current] && select.value === 'sites') renderStructure(records[current]);
+    });
+  });
+}
 
 function renderAlerts(record) {
   const choice = document.getElementById('alert-source').value;
@@ -1198,6 +1273,7 @@ setupExamples();
 setupTheme();
 setupSimilarity();
 setupTargets();
+setupStructure();
 setupAlerts();
 setupTox();
 setupMetabolism();
