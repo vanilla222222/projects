@@ -12,7 +12,8 @@ const scripts = [
   'metabolism-cases.js',
   'retrieval-benchmark.js',
   'ui-integration-test.js',
-  'comparison-test.js'
+  'comparison-test.js',
+  'library-catalog-test.js'
 ];
 let failed = 0;
 for (const script of scripts) {

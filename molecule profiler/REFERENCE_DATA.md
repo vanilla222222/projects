@@ -40,3 +40,18 @@ This is a data-integrity regression check, not molecular graph canonicalization,
 From `molecule profiler/`, run `node tools/run-validation.js` to execute seven JavaScript regression scripts and receive an aggregated exit status. For independent chemical-structure checking, install RDKit and run `python tools/rdkit-library-audit.py --output rdkit-audit.json`. Inspect the generated JSON rather than automatically rewriting reference data.
 
 The GitHub Actions workflows were observed to fail on 2026-10-19 with zero reported job steps and unavailable logs. This is **not** evidence that the regression scripts passed or failed; investigate runner availability, account billing/usage limits, workflow permissions, and GitHub Actions settings before interpreting the failure as a test failure. No browser smoke test has been completed against the latest master.
+
+## Reference library inspector (text-only provenance grouping)
+
+Open `library-inspector.html` from the application header to browse the full structure index. Search by name, class, or molecular formula; filter by collection or class; sort; use pagination; or export a filtered metadata CSV. Filtering does not alter the molecular-analysis or target-reference scoring engines.
+
+Collection membership is inferred **only** from each record's existing `cls` string:
+
+- `ESOL reference` => ESOL-labelled entries (344 at the time of this implementation).
+- `Ester reference`, `Ether reference`, `Ketone reference` => homolog-series structural examples (500).
+- `Fragment` => fragment examples (74).
+- All other class labels => other named/reference entries (not described as independently curated or verified).
+
+These are organizational labels, **not proof** of external provenance, measured properties, canonical uniqueness, or confirmed identity. The inspector's completeness statistics and exact-string duplicate checks do not replace the independent RDKit audit. The main similarity search intentionally retains all parsed structures but explicitly discloses their mixed provenance; selecting "All parsed entries" now shows every result instead of a historical 596-row cap.
+
+Run `node tools/library-catalog-test.js` or the aggregate `node tools/run-validation.js` to check the index grouping and search behavior. No chemistry predictions are added here.

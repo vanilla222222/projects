@@ -727,9 +727,10 @@ function renderSimilar(record) {
     bits: item.fp.bits.size,
     shared: sharedCount(query, item.fp),
     score: score(query, item.fp)
-  })).sort((a, b) => b.score - a.score).slice(0, limit);
+  })).sort((a, b) => b.score - a.score);
+  const shown = limit > 0 ? hits.slice(0, limit) : hits;
 
-  document.getElementById('sim-summary').innerHTML = library.length + ' reference compounds, '
+  document.getElementById('sim-summary').innerHTML = library.length + ' parseable library structures (mixed provenance), '
     + query.bits.size + ' query bits' + infoButton('simBits');
   document.getElementById('sim-blurb').textContent = method.blurb;
 
@@ -737,7 +738,7 @@ function renderSimilar(record) {
   table.querySelector('thead').innerHTML = '<tr>' + SIM_COLUMNS.map(([key, label]) => (
     '<th>' + label + infoButton(key === 'formula' ? 'formula' : key) + '</th>'
   )).join('') + '</tr>';
-  table.querySelector('tbody').innerHTML = hits.map((hit, index) => (
+  table.querySelector('tbody').innerHTML = shown.map((hit, index) => (
     '<tr data-smiles="' + escapeHtml(hit.entry.smiles) + '" data-name="' + escapeHtml(hit.entry.name) + '">'
       + '<td>' + (index + 1) + '</td>'
       + '<td>' + escapeHtml(hit.entry.name) + '</td>'

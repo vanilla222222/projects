@@ -41,6 +41,8 @@ jobs:
         run: node tools/ui-integration-test.js
       - name: Side-by-side comparison tests
         run: node tools/comparison-test.js
+      - name: Reference library inspector tests
+        run: node tools/library-catalog-test.js
   rdkit:
     runs-on: ubuntu-latest
     defaults:

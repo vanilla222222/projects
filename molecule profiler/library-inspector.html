@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference Library Inspector — Molecule Profiler</title>
+<link rel="stylesheet" href="css/style.css?v=2026-10-20-design">
+<link rel="stylesheet" href="css/workspace.css?v=2026-10-21-catalog">
+<style>
+.catalog-intro {padding-bottom:5px}
+.catalog-intro p {max-width:82ch}
+.catalog-nav {display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.catalog-nav a {text-decoration:none;font-size:13px;font-weight:650;padding:8px 12px;border:1px solid var(--line);border-radius:10px}
+.catalog-nav a:hover {border-color:var(--accent);background:var(--accent-soft)}
+.catalog-cards {display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.catalog-card {padding:18px;background:var(--bg-raise);border:1px solid var(--line);border-radius:14px}
+.catalog-card strong {display:block;font:750 28px/1.2 var(--mono);color:var(--text)}
+.catalog-card span {display:block;margin-top:6px;font-size:12px;color:var(--text-dim)}
+.catalog-notice {border-left:3px solid var(--warn);padding:12px 16px;background:var(--bg-raise);border-radius:0 12px 12px 0;color:var(--text-dim);font-size:13px}
+.catalog-notice strong {color:var(--text)}
+.catalog-controls {display:grid;grid-template-columns:minmax(200px,2fr) repeat(3,minmax(130px,1fr)) auto;gap:12px;align-items:end;margin:18px 0}
+.catalog-controls label {display:grid;gap:6px;color:var(--text-dim);font-size:12px;font-weight:600;min-width:0}
+.catalog-controls input,.catalog-controls select,.catalog-action,.catalog-pagination button {width:100%;border:1px solid var(--line);border-radius:9px;background:var(--bg-sink);color:var(--text);padding:9px 11px;min-height:42px;font:inherit;font-size:13px}
+.catalog-action,.catalog-pagination button {font-weight:700;cursor:pointer}
+.catalog-action:hover,.catalog-pagination button:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.catalog-pagination button:disabled {opacity:.45;cursor:default}
+.catalog-bar,.catalog-pagination {display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:12px 0}
+.catalog-bar p,.catalog-pagination p {margin:0;color:var(--text-dim);font-size:12px}
+#catalog-table {min-width:770px;table-layout:auto}
+#catalog-table th,#catalog-table td {text-align:left;vertical-align:top;padding:11px 12px;white-space:normal}
+#catalog-table th:nth-child(1){min-width:65px}
+#catalog-table th:nth-child(2){min-width:190px}
+#catalog-table th:nth-child(3){min-width:160px}
+#catalog-table th:nth-child(4){min-width:160px}
+#catalog-table td code {display:block;max-width:370px;overflow-wrap:anywhere;font-size:11px;color:var(--text-dim)}
+.catalog-tag {display:inline-block;background:var(--accent-soft);border:1px solid var(--line);border-radius:7px;padding:2px 7px;font-size:11px;font-weight:650}
+.catalog-methods {margin-top:0}
+.catalog-methods p,.catalog-methods li {max-width:110ch;font-size:13px;color:var(--text-dim)}
+.catalog-methods h2 {margin:0 0 10px;font-size:16px}
+.catalog-methods ul {padding-left:20px}
+@media (max-width:1000px){.catalog-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.catalog-controls label:first-child{grid-column:1/-1}}
+@media (max-width:580px){.catalog-controls{grid-template-columns:minmax(0,1fr)}.catalog-controls label:first-child{grid-column:auto}.catalog-action{width:100%}}
+</style>
+</head>
+<body data-theme="dark">
+<header class="topbar">
+  <div class="brand"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" stroke-width="2"/><path d="m8 16 6-7 10 5-3 9-10-1z" fill="none" stroke="currentColor" stroke-width="2"/></svg><div><h1>Reference Library</h1><p class="sub">Molecule Profiler · structure index &amp; data transparency</p></div></div>
+  <nav class="catalog-nav" aria-label="Project pages"><a href="index.html">← Main analyzer</a><a href="reference-explorer.html">Signalling references</a></nav>
+</header>
+<main>
+  <section class="intro catalog-intro">
+    <span class="eyebrow">Dataset inspector / read-only</span>
+    <h2>Know what you're comparing.</h2>
+    <p>Browse the application's reference structures by name, class, formula and collection. Collection assignments describe how entries are organized; they are <strong>not scientific validation or experimental evidence</strong>.</p>
+  </section>
+  <div class="catalog-notice" role="note"><strong>Important:</strong> A complete formula or SMILES field does not prove correct molecular identity. Exact-text duplicate checks do not detect equivalent canonical structures, stereoisomers or tautomer relationships.</div>
+  <section class="catalog-cards" aria-label="Library statistics">
+    <div class="catalog-card"><strong id="catalog-total">—</strong><span>Total listed entries</span></div>
+    <div class="catalog-card"><strong id="catalog-other">—</strong><span>Other named/reference entries</span></div>
+    <div class="catalog-card"><strong id="catalog-series">—</strong><span>Ester / ether / ketone series</span></div>
+    <div class="catalog-card"><strong id="catalog-esol">—</strong><span>ESOL-labelled entries</span></div>
+    <div class="catalog-card"><strong id="catalog-fragment">—</strong><span>Fragment examples</span></div>
+  </section>
+  <section class="panel" aria-label="Reference catalogue">
+    <div class="panel-head"><h2>Explore entries</h2><span class="evidence" data-tier="rule">class-derived grouping</span></div>
+    <div class="catalog-controls">
+      <label>Find a reference<input id="catalog-search" type="search" placeholder="Name, class or formula" autocomplete="off"></label>
+      <label>Collection<select id="catalog-group"><option value="all">All collections</option><option value="other">Other named/reference</option><option value="series">Ester/ether/ketone series</option><option value="esol">ESOL-labelled</option><option value="fragment">Fragments</option></select></label>
+      <label>Library class<select id="catalog-class"><option value="">All classes</option></select></label>
+      <label>Sort entries<select id="catalog-sort"><option value="name">Name A–Z</option><option value="cls">Class</option><option value="formula">Formula</option><option value="group">Collection</option></select></label>
+      <button class="catalog-action" type="button" id="catalog-export">Export filtered index CSV</button>
+    </div>
+    <div class="catalog-bar"><p id="catalog-summary" role="status" aria-live="polite"></p><label for="catalog-size">Rows per page <select id="catalog-size"><option value="25">25</option><option value="50" selected>50</option><option value="100">100</option></select></label></div>
+    <div class="table-wrap"><table id="catalog-table"><caption class="sr-only">Reference names, classes, collection labels, molecular formulas and supplied SMILES</caption><thead><tr><th scope="col">#</th><th scope="col">Name</th><th scope="col">Class</th><th scope="col">Collection</th><th scope="col">Formula / SMILES</th></tr></thead><tbody></tbody></table></div>
+    <nav class="catalog-pagination" aria-label="Library results pages"><button type="button" id="catalog-previous">← Previous</button><p id="catalog-page"></p><button type="button" id="catalog-next">Next →</button></nav>
+  </section>
+  <section class="panel catalog-methods" aria-label="Data quality and method">
+    <h2>Data completeness and provenance</h2>
+    <p id="catalog-quality">Calculating basic field checks…</p>
+    <ul>
+      <li><strong>Other named/reference entries:</strong> not an independently verified or curated set. The class label does not establish a chemical identity or activity claim.</li>
+      <li><strong>ESOL-labelled entries:</strong> labelled as a solubility-reference subset; matching them to measured values and authoritative records requires independent validation.</li>
+      <li><strong>Ester/ether/ketone series:</strong> structural series examples, not measured biological reference annotations.</li>
+      <li><strong>Fragment examples:</strong> small structural examples rather than pharmacological reference data.</li>
+    </ul>
+    <p>Search and grouping are text/class based. This page performs no chemical canonicalization or biological predictions. The application includes an independent RDKit audit script, but its presence does not mean the stored data have all been verified.</p>
+    <a href="index.html">Return to Molecule Profiler →</a>
+  </section>
+</main>
+<script src="data/library.js?v=2026-10-21-catalog"></script>
+<script src="js/library-catalog.js?v=2026-10-21-catalog"></script>
+<script src="js/library-inspector.js?v=2026-10-21-catalog"></script>
+</body>
+</html>
