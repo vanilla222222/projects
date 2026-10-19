@@ -24,7 +24,7 @@ for (const id of ['evidence-descriptors', 'evidence-warnings', 'tox-coverage', '
   assert.ok(ids.includes(id), 'Missing UI element: ' + id);
 }
 const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
-assert.match(app, /propertyEvidenceRows\(\{\s*\.\.\.d,\s*logS:\s*v\s*&&\s*v\.logS\s*\}\)/,
+assert.match(app, /propertyEvidenceRows\(\{\s*\.\.\.d,\s*logS:\s*v\s*&&\s*v\.logS\s*\}\s*,/,
   'Evidence table must read calculated logS from record.v');
 const metabolismRenderer = app.slice(app.indexOf('function renderMetabolism(record) {'));
 assert.match(metabolismRenderer, /const coverageSlot = document\.getElementById\('met-coverage'\);\s*if \(coverageSlot\) coverageSlot\.textContent = '';/,
