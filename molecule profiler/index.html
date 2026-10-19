@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Molecule Profiler</title>
-<link rel="stylesheet" href="css/style.css?v=2026-10-19m">
+<link rel="stylesheet" href="css/style.css?v=2026-10-19n">
 </head>
 <body data-theme="dark">
 <header class="topbar">
@@ -260,7 +260,7 @@
         </div>
         <p class="hint" id="tgt-blurb"></p>
         <div class="table-wrap"><table id="targets"><colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="c8"><col class="c9"><col class="c10"></colgroup><thead></thead><tbody></tbody></table></div>
-        <p class="hint caveat" id="tgt-caveat">This is a nearest-neighbour lookup over a hand-curated set of known ligands, not a trained model: a target scores high when the query looks like a compound already recorded as binding it. The numbers are fingerprint similarities, not binding probabilities, and a target with no ligand in the set below can never appear here.</p>
+        <p class="hint caveat" id="tgt-caveat">This is a nearest-neighbour lookup over a hand-curated set of known ligands, not a trained model: a target scores high when the query looks like a compound already recorded as binding it. The numbers are fingerprint similarities, not binding probabilities, and a target with no ligand in the set below can never appear here. The list is cut into bands for that reason: a row above 0.50 is a close relative of a recorded active, a row between 0.30 and 0.50 is a lead to check, and everything below 0.30 is the weak tail, which is shown greyed because at that distance the ranking carries no information about binding.</p>
       </article>
 
       <article class="panel wide">
@@ -286,23 +286,23 @@
   </section>
 </main>
 
-<script src="js/smiles.js?v=2026-10-19m"></script>
-<script src="js/mol.js?v=2026-10-19m"></script>
-<script src="js/descriptors.js?v=2026-10-19m"></script>
-<script src="js/rules.js?v=2026-10-19m"></script>
-<script src="js/fingerprints.js?v=2026-10-19m"></script>
-<script src="js/smarts.js?v=2026-10-19m"></script>
-<script src="data/library.js?v=2026-10-19m"></script>
-<script src="data/targets.js?v=2026-10-19m"></script>
-<script src="data/alerts.js?v=2026-10-19m"></script>
-<script src="data/toxalerts.js?v=2026-10-19m"></script>
-<script src="data/dependence.js?v=2026-10-19m"></script>
-<script src="js/tox.js?v=2026-10-19m"></script>
-<script src="js/transform.js?v=2026-10-19m"></script>
-<script src="js/sites.js?v=2026-10-19m"></script>
-<script src="js/depict.js?v=2026-10-19m"></script>
-<script src="data/metabolism.js?v=2026-10-19m"></script>
-<script src="js/metabolism.js?v=2026-10-19m"></script>
-<script src="js/app.js?v=2026-10-19m"></script>
+<script src="js/smiles.js?v=2026-10-19n"></script>
+<script src="js/mol.js?v=2026-10-19n"></script>
+<script src="js/descriptors.js?v=2026-10-19n"></script>
+<script src="js/rules.js?v=2026-10-19n"></script>
+<script src="js/fingerprints.js?v=2026-10-19n"></script>
+<script src="js/smarts.js?v=2026-10-19n"></script>
+<script src="data/library.js?v=2026-10-19n"></script>
+<script src="data/targets.js?v=2026-10-19n"></script>
+<script src="data/alerts.js?v=2026-10-19n"></script>
+<script src="data/toxalerts.js?v=2026-10-19n"></script>
+<script src="data/dependence.js?v=2026-10-19n"></script>
+<script src="js/tox.js?v=2026-10-19n"></script>
+<script src="js/transform.js?v=2026-10-19n"></script>
+<script src="js/sites.js?v=2026-10-19n"></script>
+<script src="js/depict.js?v=2026-10-19n"></script>
+<script src="data/metabolism.js?v=2026-10-19n"></script>
+<script src="js/metabolism.js?v=2026-10-19n"></script>
+<script src="js/app.js?v=2026-10-19n"></script>
 </body>
 </html>

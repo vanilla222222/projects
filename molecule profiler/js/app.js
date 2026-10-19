@@ -579,6 +579,16 @@ const TGT_COLUMNS = [
   ['tgtNote', 'Mechanism']
 ];
 
+const TGT_TIERS = [
+  [0.5, 'Confident neighbours', 'The query shares most of its fingerprint with a compound already recorded as active at this target, so the row is worth treating as a real hypothesis to check against the literature.'],
+  [0.3, 'Worth a look', 'Enough shared substructure to be suggestive and nothing more. These are leads to verify, not binding.'],
+  [0, 'Weak tail \u2014 not a binding claim', 'Below about 0.30 a nearest-neighbour similarity says nothing about whether the query binds: these are simply the next-closest ligand sets in the catalogue, and a list like this comes back for almost any query. Shown for completeness, and greyed because the numbers should not be read as scores.']
+];
+
+function tgtTier(value) {
+  return TGT_TIERS.findIndex(([floor]) => value >= floor);
+}
+
 function renderTargets(record) {
   const methodKey = document.getElementById('sim-method').value;
   const metricKey = document.getElementById('sim-metric').value;
@@ -619,9 +629,11 @@ function renderTargets(record) {
   const shown = limit > 0 ? kept.slice(0, limit) : kept;
 
   const pool = organism === 'all' ? TARGETS.length : ranked.length;
+  const strong = kept.filter((row) => row.score >= 0.3).length;
   document.getElementById('tgt-summary').innerHTML = pool + ' targets'
     + (organism === 'all' ? '' : ' in ' + organism.toLowerCase() + ' scope')
-    + ', ' + kept.length + ' above the score cut';
+    + ', ' + kept.length + ' above the score cut, '
+    + (strong ? strong + ' of them above 0.30' : 'none of them above 0.30');
   document.getElementById('tgt-blurb').textContent = 'Scored with ' + method.label + ' and '
     + (metricKey === 'dice' ? 'Dice' : 'Tanimoto') + ', following the similarity panel above.';
 
@@ -629,8 +641,19 @@ function renderTargets(record) {
   table.querySelector('thead').innerHTML = '<tr>' + TGT_COLUMNS.map(([key, label]) => (
     '<th>' + label + infoButton(key) + '</th>'
   )).join('') + '</tr>';
-  table.querySelector('tbody').innerHTML = shown.length ? shown.map((row, index) => (
-    '<tr data-smiles="' + escapeHtml(row.nearest.smiles) + '" data-name="' + escapeHtml(row.nearest.name) + '">'
+  let tier = -1;
+  table.querySelector('tbody').innerHTML = shown.length ? shown.map((row, index) => {
+    let head = '';
+    const band = tgtTier(row.score);
+    if (band !== tier) {
+      tier = band;
+      head = '<tr class="tier-break" data-tier="' + band + '"><td colspan="10">'
+        + '<strong>' + escapeHtml(TGT_TIERS[band][1]) + '</strong>'
+        + escapeHtml(TGT_TIERS[band][2]) + '</td></tr>';
+    }
+    return head
+    + '<tr data-smiles="' + escapeHtml(row.nearest.smiles) + '" data-name="' + escapeHtml(row.nearest.name) + '"'
+      + (band === 2 ? ' class="quiet"' : '') + '>'
       + '<td>' + (index + 1) + '</td>'
       + '<td>' + escapeHtml(row.target.name) + '</td>'
       + '<td>' + escapeHtml(row.target.gene) + '</td>'
@@ -642,8 +665,8 @@ function renderTargets(record) {
       + '<td>' + escapeHtml(row.nearest.name) + '</td>'
       + '<td>' + row.count + '</td>'
       + '<td class="note">' + escapeHtml(row.target.note) + '</td>'
-      + '</tr>'
-  )).join('') : '<tr><td colspan="10">No target has a known ligand this similar to the query.</td></tr>';
+      + '</tr>';
+  }).join('') : '<tr><td colspan="10">No target has a known ligand this similar to the query.</td></tr>';
 }
 
 function setupTargets() {
