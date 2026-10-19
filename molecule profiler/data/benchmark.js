@@ -9,27 +9,27 @@ const RETRIEVAL_BENCHMARK = {
   "targets": 132,
   "measurable": 98,
   "unmeasurable": 34,
-  "trials": 727,
+  "trials": 1255,
   "scoredTargets": 132,
   "overall": {
-    "r1": 0.37551581843191195,
-    "r5": 0.6973865199449794,
-    "r10": 0.7730398899587345,
+    "r1": 0.3553784860557769,
+    "r5": 0.7729083665338645,
+    "r10": 0.8549800796812749,
     "median": 2,
-    "mean": 11.071526822558459
+    "mean": 7.756175298804781
   },
   "thick": {
-    "trials": 573,
-    "r1": 0.38045375218150085,
-    "r5": 0.7382198952879581,
-    "r10": 0.8202443280977313,
+    "trials": 1101,
+    "r1": 0.35513169845594916,
+    "r5": 0.8065395095367848,
+    "r10": 0.8928247048138056,
     "median": 2
   },
   "popularity": {
-    "r1": 0.12929848693259974,
-    "r5": 0.3356258596973865,
-    "r10": 0.47455295735900965,
-    "median": 12
+    "r1": 0.0749003984063745,
+    "r5": 0.25338645418326694,
+    "r10": 0.47649402390438245,
+    "median": 11
   },
   "random": {
     "r1": 0.007575757575757576,
@@ -46,38 +46,92 @@ const RETRIEVAL_BENCHMARK = {
     },
     "DRD2::Dopamine D2 receptor": {
       "n": 56,
-      "r1": 0.5536,
-      "r5": 0.9107,
+      "r1": 0.2679,
+      "r5": 0.8929,
+      "median": 2
+    },
+    "DRD3::Dopamine D3 receptor": {
+      "n": 56,
+      "r1": 0,
+      "r5": 0.875,
+      "median": 3
+    },
+    "HRH1::Histamine H1 receptor": {
+      "n": 56,
+      "r1": 0.3929,
+      "r5": 0.7143,
+      "median": 5
+    },
+    "HTR1A::Serotonin 5-HT1A receptor": {
+      "n": 56,
+      "r1": 0.875,
+      "r5": 0.8929,
+      "median": 1
+    },
+    "HTR2A::Serotonin 5-HT2A receptor": {
+      "n": 56,
+      "r1": 0.375,
+      "r5": 0.7857,
+      "median": 2
+    },
+    "HTR2B::Serotonin 5-HT2B receptor": {
+      "n": 56,
+      "r1": 0.6964,
+      "r5": 0.8036,
+      "median": 1
+    },
+    "HTR2C::Serotonin 5-HT2C receptor": {
+      "n": 56,
+      "r1": 0.2857,
+      "r5": 0.8571,
+      "median": 2
+    },
+    "HTR6::Serotonin 5-HT6 receptor": {
+      "n": 56,
+      "r1": 0.0893,
+      "r5": 0.8036,
+      "median": 2
+    },
+    "HTR7::Serotonin 5-HT7 receptor": {
+      "n": 56,
+      "r1": 0,
+      "r5": 0.7679,
+      "median": 3
+    },
+    "SLC18A2::Vesicular monoamine transporter 2": {
+      "n": 56,
+      "r1": 0.0536,
+      "r5": 0.9286,
+      "median": 3
+    },
+    "SLC6A2::Noradrenaline transporter": {
+      "n": 56,
+      "r1": 0.5357,
+      "r5": 0.8571,
       "median": 1
     },
     "SLC6A3::Dopamine transporter": {
-      "n": 36,
-      "r1": 0.4722,
-      "r5": 0.9167,
+      "n": 56,
+      "r1": 0.1607,
+      "r5": 0.9107,
       "median": 2
     },
-    "HTR2A::Serotonin 5-HT2A receptor": {
-      "n": 33,
-      "r1": 0.3939,
-      "r5": 0.8788,
-      "median": 3
-    },
-    "DRD3::Dopamine D3 receptor": {
-      "n": 25,
-      "r1": 0,
-      "r5": 0.68,
-      "median": 3
-    },
-    "HTR2C::Serotonin 5-HT2C receptor": {
-      "n": 25,
-      "r1": 0,
-      "r5": 0.8,
+    "SLC6A4::Serotonin transporter": {
+      "n": 56,
+      "r1": 0.4286,
+      "r5": 0.7857,
       "median": 2
+    },
+    "DRD4::Dopamine D4 receptor": {
+      "n": 53,
+      "r1": 0,
+      "r5": 0.8113,
+      "median": 4
     },
     "DRD1::Dopamine D1 receptor": {
-      "n": 20,
-      "r1": 0.65,
-      "r5": 0.75,
+      "n": 52,
+      "r1": 0.6923,
+      "r5": 0.8846,
       "median": 1
     },
     "OPRK1::Kappa opioid receptor": {
@@ -86,47 +140,11 @@ const RETRIEVAL_BENCHMARK = {
       "r5": 0.95,
       "median": 2
     },
-    "SLC6A2::Noradrenaline transporter": {
-      "n": 18,
-      "r1": 0.3333,
-      "r5": 0.6111,
-      "median": 2
-    },
-    "SLC6A4::Serotonin transporter": {
-      "n": 18,
-      "r1": 0.3889,
-      "r5": 0.5556,
-      "median": 3
-    },
-    "DRD4::Dopamine D4 receptor": {
-      "n": 14,
-      "r1": 0,
-      "r5": 0.9286,
-      "median": 3
-    },
     "OPRD1::Delta opioid receptor": {
       "n": 14,
       "r1": 0,
       "r5": 0.8571,
       "median": 3
-    },
-    "HRH1::Histamine H1 receptor": {
-      "n": 13,
-      "r1": 0.1538,
-      "r5": 0.3077,
-      "median": 8
-    },
-    "HTR1A::Serotonin 5-HT1A receptor": {
-      "n": 12,
-      "r1": 0.3333,
-      "r5": 0.75,
-      "median": 3
-    },
-    "HTR2B::Serotonin 5-HT2B receptor": {
-      "n": 12,
-      "r1": 0,
-      "r5": 0.5,
-      "median": 5
     },
     "ADRA1A::Alpha-1A adrenergic receptor": {
       "n": 11,
@@ -137,7 +155,7 @@ const RETRIEVAL_BENCHMARK = {
     "PTGS2::Cyclooxygenase-2": {
       "n": 11,
       "r1": 0,
-      "r5": 0.9091,
+      "r5": 0.8182,
       "median": 2
     },
     "PTGS1::Cyclooxygenase-1": {
@@ -146,23 +164,11 @@ const RETRIEVAL_BENCHMARK = {
       "r5": 1,
       "median": 1
     },
-    "SLC18A2::Vesicular monoamine transporter 2": {
-      "n": 9,
-      "r1": 0.3333,
-      "r5": 0.8889,
-      "median": 4
-    },
     "CHRM1::Muscarinic M1 receptor": {
       "n": 8,
       "r1": 0,
       "r5": 0.125,
-      "median": 11.5
-    },
-    "HTR7::Serotonin 5-HT7 receptor": {
-      "n": 8,
-      "r1": 0,
-      "r5": 0.125,
-      "median": 17.5
+      "median": 12.5
     },
     "ADRA2A::Alpha-2A adrenergic receptor": {
       "n": 7,
@@ -174,7 +180,7 @@ const RETRIEVAL_BENCHMARK = {
       "n": 7,
       "r1": 0.1429,
       "r5": 0.2857,
-      "median": 19
+      "median": 20
     },
     "ADRB2::Beta-2 adrenergic receptor": {
       "n": 6,
@@ -185,14 +191,14 @@ const RETRIEVAL_BENCHMARK = {
     "CA2::Carbonic anhydrase II": {
       "n": 6,
       "r1": 0.1667,
-      "r5": 1,
-      "median": 3
+      "r5": 0.6667,
+      "median": 3.5
     },
     "CYP2D6::Cytochrome P450 2D6": {
       "n": 6,
       "r1": 0,
       "r5": 0.3333,
-      "median": 40
+      "median": 41.5
     },
     "CYP3A4::Cytochrome P450 3A4": {
       "n": 6,
@@ -204,7 +210,7 @@ const RETRIEVAL_BENCHMARK = {
       "n": 6,
       "r1": 0.1667,
       "r5": 0.1667,
-      "median": 35
+      "median": 36
     },
     "HTR1B::Serotonin 5-HT1B receptor": {
       "n": 6,
@@ -212,23 +218,17 @@ const RETRIEVAL_BENCHMARK = {
       "r5": 0.6667,
       "median": 3.5
     },
-    "HTR6::Serotonin 5-HT6 receptor": {
-      "n": 6,
-      "r1": 0,
-      "r5": 0,
-      "median": 17.5
-    },
     "KCNH2::hERG potassium channel": {
       "n": 6,
       "r1": 0,
-      "r5": 0.3333,
+      "r5": 0,
       "median": 22
     },
     "ABCB1::P-glycoprotein": {
       "n": 5,
       "r1": 0,
       "r5": 0,
-      "median": 39
+      "median": 41
     },
     "ADRB1::Beta-1 adrenergic receptor": {
       "n": 5,
@@ -252,7 +252,7 @@ const RETRIEVAL_BENCHMARK = {
       "n": 5,
       "r1": 0,
       "r5": 0,
-      "median": 33
+      "median": 39
     },
     "GRIN1::NMDA receptor": {
       "n": 5,
@@ -269,14 +269,14 @@ const RETRIEVAL_BENCHMARK = {
     "HTR3A::Serotonin 5-HT3 receptor": {
       "n": 5,
       "r1": 0,
-      "r5": 0.2,
-      "median": 10
+      "r5": 0,
+      "median": 16
     },
     "pol::HIV-1 reverse transcriptase": {
       "n": 5,
       "r1": 0,
       "r5": 0.4,
-      "median": 33
+      "median": 34
     },
     "ACE::Angiotensin-converting enzyme": {
       "n": 4,
@@ -288,13 +288,13 @@ const RETRIEVAL_BENCHMARK = {
       "n": 4,
       "r1": 0,
       "r5": 0,
-      "median": 15
+      "median": 18
     },
     "CHRNA4::Nicotinic acetylcholine receptor": {
       "n": 4,
       "r1": 0.5,
       "r5": 0.5,
-      "median": 20
+      "median": 20.5
     },
     "EGFR::EGFR kinase": {
       "n": 4,
@@ -312,13 +312,13 @@ const RETRIEVAL_BENCHMARK = {
       "n": 4,
       "r1": 0,
       "r5": 0.5,
-      "median": 5
+      "median": 6
     },
     "MAOA::Monoamine oxidase A": {
       "n": 4,
       "r1": 0,
       "r5": 0,
-      "median": 62.5
+      "median": 63.5
     },
     "pbp::Penicillin-binding proteins": {
       "n": 4,
@@ -336,7 +336,7 @@ const RETRIEVAL_BENCHMARK = {
       "n": 4,
       "r1": 0,
       "r5": 0,
-      "median": 9.5
+      "median": 11.5
     },
     "TUBB::Beta-tubulin": {
       "n": 4,
@@ -347,14 +347,14 @@ const RETRIEVAL_BENCHMARK = {
     "ABL1::ABL1 kinase": {
       "n": 3,
       "r1": 0.6667,
-      "r5": 1,
+      "r5": 0.6667,
       "median": 1
     },
     "ACHE::Acetylcholinesterase": {
       "n": 3,
       "r1": 0,
       "r5": 0,
-      "median": 36
+      "median": 40
     },
     "CYP19A1::Aromatase": {
       "n": 3,
@@ -390,13 +390,13 @@ const RETRIEVAL_BENCHMARK = {
       "n": 3,
       "r1": 0,
       "r5": 0,
-      "median": 63
+      "median": 65
     },
     "MAOB::Monoamine oxidase B": {
       "n": 3,
       "r1": 0,
       "r5": 0,
-      "median": 14
+      "median": 15
     },
     "n/a::Genomic DNA (N7-guanine)": {
       "n": 3,
@@ -426,19 +426,19 @@ const RETRIEVAL_BENCHMARK = {
       "n": 3,
       "r1": 0,
       "r5": 0,
-      "median": 25
+      "median": 27
     },
     "TYMS::Thymidylate synthase": {
       "n": 3,
       "r1": 0,
       "r5": 0,
-      "median": 82
+      "median": 84
     },
     "XDH::Xanthine oxidase": {
       "n": 3,
       "r1": 0,
       "r5": 0,
-      "median": 6
+      "median": 9
     },
     "ABCC8::Sulfonylurea receptor 1": {
       "n": 2,
@@ -486,7 +486,7 @@ const RETRIEVAL_BENCHMARK = {
       "n": 2,
       "r1": 0,
       "r5": 0,
-      "median": 37
+      "median": 41
     },
     "CACNA2D1::Calcium channel alpha-2-delta subunit": {
       "n": 2,
@@ -510,13 +510,13 @@ const RETRIEVAL_BENCHMARK = {
       "n": 2,
       "r1": 0,
       "r5": 0,
-      "median": 15
+      "median": 18.5
     },
     "ERBB2::ERBB2 kinase": {
       "n": 2,
       "r1": 0,
       "r5": 0.5,
-      "median": 11
+      "median": 13
     },
     "ESR2::Estrogen receptor beta": {
       "n": 2,
@@ -528,13 +528,13 @@ const RETRIEVAL_BENCHMARK = {
       "n": 2,
       "r1": 0,
       "r5": 0,
-      "median": 9
+      "median": 11
     },
     "FLT3::FLT3 kinase": {
       "n": 2,
       "r1": 0,
       "r5": 0,
-      "median": 64
+      "median": 65.5
     },
     "HPRT1::Hypoxanthine-guanine phosphoribosyltransferase": {
       "n": 2,
@@ -546,7 +546,7 @@ const RETRIEVAL_BENCHMARK = {
       "n": 2,
       "r1": 0,
       "r5": 0,
-      "median": 94.5
+      "median": 95.5
     },
     "JAK1::JAK1 kinase": {
       "n": 2,
@@ -576,19 +576,19 @@ const RETRIEVAL_BENCHMARK = {
       "n": 2,
       "r1": 0,
       "r5": 0.5,
-      "median": 8.5
+      "median": 9.5
     },
     "PARP1::Poly(ADP-ribose) polymerase 1": {
       "n": 2,
       "r1": 0,
       "r5": 0,
-      "median": 43
+      "median": 44
     },
     "PDE4D::Phosphodiesterase 4D": {
       "n": 2,
       "r1": 0,
-      "r5": 1,
-      "median": 3
+      "r5": 0.5,
+      "median": 4.5
     },
     "PDE5A::Phosphodiesterase 5A": {
       "n": 2,
@@ -612,13 +612,13 @@ const RETRIEVAL_BENCHMARK = {
       "n": 2,
       "r1": 0,
       "r5": 0,
-      "median": 93
+      "median": 95
     },
     "RRM1::Ribonucleotide reductase": {
       "n": 2,
       "r1": 0,
       "r5": 0,
-      "median": 106
+      "median": 107.5
     },
     "SLC22A1::Organic cation transporter 1": {
       "n": 2,
