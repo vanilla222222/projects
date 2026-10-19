@@ -9,6 +9,7 @@
     { id: 'metabolism', label: 'Metabolism', description: 'Rule-enumerated biotransformations; candidate products are not experimentally confirmed.' },
     { id: 'discovery', label: 'References', description: 'Similarity, target-reference rankings and related comparisons.' },
     { id: 'data', label: 'Data & export', description: 'Batch results and per-atom descriptors.' },
+    { id: 'compare', label: 'Compare', description: 'Compare two to four analyzed molecules side by side, with a reference column and export.' },
     { id: 'all', label: 'All sections', description: 'Browse every analysis module on one page.' }
   ];
   const categories = {
@@ -57,6 +58,7 @@
   const search = document.getElementById('module-search');
   const description = document.getElementById('workspace-description');
   const grid = document.querySelector('#results > .grid');
+  const comparison = document.getElementById('comparison-panel');
   if (!nav || !search || !grid) return;
   const panels = Array.from(grid.querySelectorAll(':scope > article.panel')).map(panel => {
     const title = panel.querySelector('.panel-head h2');
@@ -85,6 +87,9 @@
       item.panel.hidden = !show;
       if (show) visible++;
     }
+    const comparisonVisible = !!comparison && (active === 'compare' || (active === 'all' && !term));
+    if (comparison) comparison.hidden = !comparisonVisible;
+    grid.hidden = active === 'compare' && !term;
     for (const btn of buttons) btn.setAttribute('aria-pressed', String(btn.dataset.view === active && !term));
     const selected = views.find(view => view.id === active);
     description.textContent = term
