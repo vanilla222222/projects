@@ -19,7 +19,8 @@ const scripts = [
   'batch-browser-test.js',
   'input-workflow-test.js',
   'report-model-test.js',
-  'full-csv-export-test.js'
+  'full-csv-export-test.js',
+  'research-package-test.js'
 ];
 const started = new Date().toISOString();
 const outcomes = [];

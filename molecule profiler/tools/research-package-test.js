@@ -1,0 +1,22 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {makeZip,crc32,utf8}=require('../js/research-zip.js');
+const {createPackage,METRICS,cell}=require('../js/research-package.js');
+assert.equal(crc32(utf8('123456789')),0xcbf43926);
+const row={name:'Ethanol',smiles:'CCO',d:{formula:'C2H6O',mw:46.07,exactMass:46.04,heavyAtoms:3,
+charge:0,tpsa:20.2,hbdStrict:1,hbaStrict:1,rotatableBonds:0,rings:0,fractionCsp3:1,logp:0.1,mr:12},v:{logS:-1}};
+const pkg=createPackage([row,{...row,name:'duplicate'}],{},[{line:5,reason:'Parse error'}],{createdAt:'2026-10-19',revision:'test'});
+assert.equal(pkg.files.length,7);
+assert.equal(pkg.manifest.moleculeCount,2);
+assert.equal(pkg.manifest.inputErrorCount,1);
+assert.equal(pkg.files.find(x=>x.name==='descriptors.csv').content.split('\r\n').filter(Boolean).length,1+2*METRICS.length);
+assert.ok(pkg.files.find(x=>x.name==='quality.csv').content.includes('exact_duplicate'));
+assert.ok(pkg.files.find(x=>x.name==='quality.csv').content.includes('input_error'));
+assert.ok(pkg.files.find(x=>x.name==='manifest.json').content.includes('"applicationRevision": "test"'));
+assert.equal(cell('-1.25'),'"-1.25"');
+assert.ok(cell('=HYPERLINK("x")').includes("'=HYPERLINK"));
+const data=makeZip(pkg.files);
+assert.deepEqual(Array.from(data.slice(0,4)),[0x50,0x4b,0x03,0x04]);
+assert.ok(data.length>500);
+assert.throws(()=>makeZip([{name:'../bad',content:'bad'}]),/Invalid ZIP/);
+console.log('Research package schema and ZIP integrity tests passed');

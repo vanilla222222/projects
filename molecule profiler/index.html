@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Molecule Profiler</title>
-<link rel="stylesheet" href="css/style.css?v=2026-10-21-export2">
-<link rel="stylesheet" href="css/workspace.css?v=2026-10-21-export2">
+<link rel="stylesheet" href="css/style.css?v=2026-10-21-package">
+<link rel="stylesheet" href="css/workspace.css?v=2026-10-21-package">
 </head>
 <body data-theme="dark">
 <header class="topbar">
@@ -48,6 +48,7 @@
       <button type="button" id="export-full" disabled>Export full CSV (v2)</button>
       <button type="button" id="export-full-dictionary">CSV data dictionary</button>
       <button type="button" id="export-snapshot" disabled>Export analysis JSON</button>
+      <button type="button" id="export-research" disabled>Research package (.zip)</button>
       <span id="status" class="status"></span>
     </div>
     <section class="input-feedback" id="input-feedback" hidden aria-labelledby="input-feedback-title">
@@ -384,42 +385,44 @@
   </section>
 </main>
 
-<script src="js/smiles.js?v=2026-10-21-export2"></script>
-<script src="js/mol.js?v=2026-10-21-export2"></script>
-<script src="js/descriptors.js?v=2026-10-21-export2"></script>
-<script src="js/rules.js?v=2026-10-21-export2"></script>
-<script src="js/fingerprints.js?v=2026-10-21-export2"></script>
-<script src="js/smarts.js?v=2026-10-21-export2"></script>
-<script src="js/stereo.js?v=2026-10-21-export2"></script>
-<script src="data/library.js?v=2026-10-21-export2"></script>
-<script src="data/targets.js?v=2026-10-21-export2"></script>
-<script src="data/benchmark.js?v=2026-10-21-export2"></script>
-<script src="data/alerts.js?v=2026-10-21-export2"></script>
-<script src="data/toxalerts.js?v=2026-10-21-export2"></script>
-<script src="data/dependence.js?v=2026-10-21-export2"></script>
-<script src="js/tox.js?v=2026-10-21-export2"></script>
-<script src="js/transform.js?v=2026-10-21-export2"></script>
-<script src="js/sites.js?v=2026-10-21-export2"></script>
-<script src="js/depict.js?v=2026-10-21-export2"></script>
-<script src="data/metabolism.js?v=2026-10-21-export2"></script>
-<script src="data/metcases.js?v=2026-10-21-export2"></script>
-<script src="data/stereocases.js?v=2026-10-21-export2"></script>
-<script src="data/wedgecases.js?v=2026-10-21-export2"></script>
-<script src="data/propcases.js?v=2026-10-21-export2"></script>
-<script src="data/crippencases.js?v=2026-10-21-export2"></script>
-  <script src="data/citations.js?v=2026-10-21-export2"></script>
-<script src="js/metabolism.js?v=2026-10-21-export2"></script>
-<script src="js/evidence-report.js?v=2026-10-21-export2"></script>
-<script src="js/screen-coverage.js?v=2026-10-21-export2"></script>
-<script src="js/sim-pagination.js?v=2026-10-21-export2"></script>
-<script src="js/batch-browser.js?v=2026-10-21-export2"></script>
-<script src="js/input-workflow.js?v=2026-10-21-export2"></script>
-<script src="js/full-csv-export.js?v=2026-10-21-export2"></script>
-<script src="js/app.js?v=2026-10-21-export2"></script>
-<script src="js/comparison-data.js?v=2026-10-21-export2"></script>
-<script src="js/workspace-ui.js?v=2026-10-21-export2"></script>
-<script src="js/comparison-ui.js?v=2026-10-21-export2"></script>
-<script src="js/report-model.js?v=2026-10-21-export2"></script>
-<script src="js/report-ui.js?v=2026-10-21-export2"></script>
+<script src="js/smiles.js?v=2026-10-21-package"></script>
+<script src="js/mol.js?v=2026-10-21-package"></script>
+<script src="js/descriptors.js?v=2026-10-21-package"></script>
+<script src="js/rules.js?v=2026-10-21-package"></script>
+<script src="js/fingerprints.js?v=2026-10-21-package"></script>
+<script src="js/smarts.js?v=2026-10-21-package"></script>
+<script src="js/stereo.js?v=2026-10-21-package"></script>
+<script src="data/library.js?v=2026-10-21-package"></script>
+<script src="data/targets.js?v=2026-10-21-package"></script>
+<script src="data/benchmark.js?v=2026-10-21-package"></script>
+<script src="data/alerts.js?v=2026-10-21-package"></script>
+<script src="data/toxalerts.js?v=2026-10-21-package"></script>
+<script src="data/dependence.js?v=2026-10-21-package"></script>
+<script src="js/tox.js?v=2026-10-21-package"></script>
+<script src="js/transform.js?v=2026-10-21-package"></script>
+<script src="js/sites.js?v=2026-10-21-package"></script>
+<script src="js/depict.js?v=2026-10-21-package"></script>
+<script src="data/metabolism.js?v=2026-10-21-package"></script>
+<script src="data/metcases.js?v=2026-10-21-package"></script>
+<script src="data/stereocases.js?v=2026-10-21-package"></script>
+<script src="data/wedgecases.js?v=2026-10-21-package"></script>
+<script src="data/propcases.js?v=2026-10-21-package"></script>
+<script src="data/crippencases.js?v=2026-10-21-package"></script>
+  <script src="data/citations.js?v=2026-10-21-package"></script>
+<script src="js/metabolism.js?v=2026-10-21-package"></script>
+<script src="js/evidence-report.js?v=2026-10-21-package"></script>
+<script src="js/screen-coverage.js?v=2026-10-21-package"></script>
+<script src="js/sim-pagination.js?v=2026-10-21-package"></script>
+<script src="js/batch-browser.js?v=2026-10-21-package"></script>
+<script src="js/input-workflow.js?v=2026-10-21-package"></script>
+<script src="js/full-csv-export.js?v=2026-10-21-package"></script>
+<script src="js/research-zip.js?v=2026-10-21-package"></script>
+<script src="js/research-package.js?v=2026-10-21-package"></script>
+<script src="js/app.js?v=2026-10-21-package"></script>
+<script src="js/comparison-data.js?v=2026-10-21-package"></script>
+<script src="js/workspace-ui.js?v=2026-10-21-package"></script>
+<script src="js/comparison-ui.js?v=2026-10-21-package"></script>
+<script src="js/report-model.js?v=2026-10-21-package"></script>
+<script src="js/report-ui.js?v=2026-10-21-package"></script>
 </body>
 </html>

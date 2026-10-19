@@ -197,6 +197,7 @@ let records = [];
 let current = 0;
 let simPage = 1;
 let batchPage = 1;
+let latestInputIssues = [];
 
 const libraryCache = new Map();
 
@@ -322,6 +323,7 @@ function analyse() {
     }
   });
 
+  latestInputIssues = problems.slice();
   const summary = InputWorkflow.summarizeOutcomes(records.length, problems, input.rows.length);
   status.classList.toggle('error', problems.length > 0);
   status.textContent = summary.status;
@@ -346,6 +348,7 @@ function analyse() {
   document.getElementById('export').disabled = records.length === 0;
   document.getElementById('export-full').disabled = records.length === 0;
   document.getElementById('export-snapshot').disabled = records.length === 0;
+  document.getElementById('export-research').disabled = records.length === 0;
   document.getElementById('results').hidden = records.length === 0;
   if (!records.length) {
     document.dispatchEvent(new Event('molecule-profiler:updated'));
@@ -2001,6 +2004,18 @@ function exportFullCsvDictionary() {
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
+function exportResearch() {
+  if(!records.length)return;
+  const val=typeof PROPERTY_VALIDATION==='undefined'?{}:PROPERTY_VALIDATION.datasets;
+  const pkg=ResearchPackage.createPackage(records,val,latestInputIssues,{
+    revision:'2026-10-21-package',analysisSettings:{modelFamily:'WLOGP and ESOL'}
+  });
+  const zip=ResearchZip.makeZip(pkg.files);
+  const url=URL.createObjectURL(new Blob([zip],{type:'application/zip'}));
+  const a=document.createElement('a');a.href=url;a.download='molecule-profiler-research.zip';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
 function exportSnapshot() {
   if(!records.length)return;
   const snapshot = InputWorkflow.createSnapshot(records);
@@ -2066,6 +2081,7 @@ document.getElementById('clear').addEventListener('click', () => {
   document.getElementById('export').disabled = true;
   document.getElementById('export-full').disabled = true;
   document.getElementById('export-snapshot').disabled = true;
+  document.getElementById('export-research').disabled = true;
   document.getElementById('input-feedback').hidden = true;
   records = [];
   document.dispatchEvent(new Event('molecule-profiler:updated'));
@@ -2074,6 +2090,7 @@ document.getElementById('export').addEventListener('click', exportCsv);
 document.getElementById('export-full').addEventListener('click', exportMoleculeCsv);
 document.getElementById('export-full-dictionary').addEventListener('click', exportFullCsvDictionary);
 document.getElementById('export-snapshot').addEventListener('click', exportSnapshot);
+document.getElementById('export-research').addEventListener('click', exportResearch);
 document.getElementById('molecule-file').addEventListener('change', async event => {
   const file=event.target.files && event.target.files[0];
   if(!file)return;
