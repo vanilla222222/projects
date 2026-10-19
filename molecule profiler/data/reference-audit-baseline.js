@@ -1,8 +1,10 @@
 'use strict';
-// Baseline refreshed after formula backfill on master. Intended for change detection,
-// not an assertion that chemical structures are correct.
+// Baseline refreshed after formula backfill on master, then lowered by two when the
+// shuffled ESOL ester block was corrected: two of those rows turned out to name
+// compounds the ester reference block already held, so the duplicates were removed.
+// Intended for change detection, not an assertion that chemical structures are correct.
 const REFERENCE_AUDIT_BASELINE={
-  entries:2258,
+  entries:2256,
   missingFormula:0,
   missingSmiles:0,
   duplicateNames:0,

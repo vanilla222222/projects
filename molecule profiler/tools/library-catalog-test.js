@@ -31,8 +31,8 @@ const all = catalogSummary(LIBRARY);
 assert.equal(all.total, LIBRARY.length);
 assert.equal(Object.values(all.groups).reduce((a,b) => a+b, 0), LIBRARY.length);
 assert.equal(all.groups.series, 500, 'Unexpected change in 500 class-labelled homolog series');
-assert.equal(all.groups.esol, 344, 'Unexpected change in ESOL-labelled subset');
-assert.equal(LIBRARY.filter(entry => entry.propertyOnly === true).length, 844, 'Expected 844 explicit property-only rows');
+assert.equal(all.groups.esol, 342, 'Unexpected change in ESOL-labelled subset');
+assert.equal(LIBRARY.filter(entry => entry.propertyOnly === true).length, 842, 'Expected 842 explicit property-only rows');
 for (const entry of LIBRARY) {
   const expected = ['ESOL reference', 'Ester reference', 'Ether reference', 'Ketone reference'].includes(entry.cls);
   assert.equal(entry.propertyOnly === true, expected, 'Incorrect propertyOnly flag for ' + entry.name);
