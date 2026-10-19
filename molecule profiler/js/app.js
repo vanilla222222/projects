@@ -59,6 +59,12 @@ const GLOSSARY = {
   halogens: ['Halogens', 'Fluorine, chlorine, bromine and iodine atoms. Halogens raise lipophilicity sharply and are often added to block metabolism.'],
   amideBonds: ['Amide bonds', 'Non-aromatic carbonyl-to-nitrogen single bonds. They resist rotation, which is why the strict rotatable-bond count excludes them.'],
   spiroAtoms: ['Spiro atoms', 'Atoms shared by two rings that have nothing else in common. A spiro centre forces the two rings perpendicular, which rigidifies the molecule.'],
+  stereoCenters: ['Stereocentres', 'Atoms whose four substituents are all different, so swapping two of them gives a different molecule. The count is perceived from the graph; the figure in brackets is how many of them the SMILES actually pins down with an @ or @@ tag.'],
+  stereoLabels: ['CIP labels', 'R or S per stereocentre, assigned by the Cahn\u2013Ingold\u2013Prelog rules from atomic number and substituent hierarchy. The number is the atom index in the SMILES, counting heavy atoms from 1. A centre whose configuration is given but whose label needs CIP rules beyond atomic number is withheld rather than guessed.'],
+  stereoWithheld: ['Labels withheld', 'Centres with a specified configuration that this engine will not label: nitrogen centres, and pseudo-asymmetric carbons in bridged cages where the ranking needs the later CIP rules. Withholding keeps the printed labels at zero disagreements with RDKit rather than filling them in with a guess.'],
+  stereoBonds: ['Stereogenic double bonds', 'Double bonds whose two ends each carry different substituents, so cis and trans are distinct molecules. The bracketed figure counts the ones the SMILES pins down with / or \\.'],
+  stereoBondLabels: ['E/Z labels', 'E or Z per stereogenic double bond, assigned by CIP priority on each end. The two numbers are the SMILES atom indices of the bond.'],
+  stereoUnspecified: ['Unspecified', 'Stereogenic centres and bonds the SMILES leaves open. Each one doubles the number of distinct compounds the string describes, so a value above zero means the input is a set of stereoisomers rather than a single substance.'],
   bridgeheadAtoms: ['Bridgehead atoms', 'The two end atoms of a bridge shared by two rings that have more than one bond in common — the hallmark of a caged, three-dimensional skeleton.'],
   chi0: ['Chi0', 'Zeroth-order connectivity index: the sum of 1/√δ over heavy atoms, where δ is the number of heavy neighbours. It grows with size and with branching.'],
   chi1: ['Chi1', 'First-order connectivity index: the same sum taken over bonds, as 1/√(δᵢδⱼ). Randić introduced it as a measure of branching, and it is still one of the most used descriptors in QSAR.'],
@@ -409,6 +415,8 @@ function renderCurrent() {
     ['bridgeheadAtoms', 'Bridgehead atoms', d.bridgeheadAtoms]
   ]);
 
+  renderStereo(record);
+
   rows(document.getElementById('topology'), [
     ['chi0', 'Chi0', d.chi.chi0.toFixed(3)],
     ['chi1', 'Chi1', d.chi.chi1.toFixed(3)],
@@ -547,6 +555,39 @@ function drawEgg(d) {
   out += '<text class="axis-label" x="14" y="' + ((top + bottom) / 2) + '" text-anchor="middle" transform="rotate(-90 14 '
     + ((top + bottom) / 2) + ')">WLOGP</text>';
   svg.innerHTML = out;
+}
+
+function stereoFor(record) {
+  if (!record.stereo) record.stereo = stereoAnalyse(record.mol);
+  return record.stereo;
+}
+
+function renderStereo(record) {
+  const s = stereoFor(record);
+  const withheld = s.centers.filter((item) => item.specified && !item.label).length;
+  rows(document.getElementById('stereo'), [
+    ['stereoCenters', 'Stereocentres', s.centerCount + (s.centerCount
+      ? ' (' + s.centerSpecified + ' specified)' : '')],
+    ['stereoLabels', 'CIP labels', s.labels.length ? s.labels.join(', ') : '\u2014'],
+    ['stereoWithheld', 'Labels withheld', withheld],
+    ['stereoBonds', 'Stereogenic double bonds', s.bondCount + (s.bondCount
+      ? ' (' + s.bondSpecified + ' specified)' : '')],
+    ['stereoBondLabels', 'E/Z labels', s.bondLabels.length ? s.bondLabels.join(', ') : '\u2014'],
+    ['stereoUnspecified', 'Unspecified', s.centerUnspecified + s.bondUnspecified]
+  ]);
+
+  const note = document.getElementById('stereo-note');
+  if (!note) return;
+  if (typeof STEREO_CONFORMANCE === 'undefined') { note.textContent = ''; return; }
+  const c = STEREO_CONFORMANCE;
+  note.textContent = 'Perception and CIP assignment are computed here from the SMILES, not read from a file. '
+    + 'Measured against RDKit\u2019s rdCIPLabeler over ' + c.cases + ' enumerated stereoisomers of the reference '
+    + 'library, ' + c.labelMatch + ' of ' + c.labels + ' R/S labels agreed (' + c.labelPct + '%), '
+    + c.labelMissing + ' were withheld and ' + c.labelWrong + ' disagreed, and '
+    + c.bondLabelMatch + ' of ' + c.bondLabels + ' E/Z labels agreed with '
+    + c.bondLabelWrong + ' disagreements. The perceived centre set matched exactly on '
+    + c.centerSetPct + '% of cases. Every label printed above is one that agreed; the withheld cases are '
+    + 'reported as withheld instead of being filled in.';
 }
 
 function renderAtoms(record) {
@@ -1347,6 +1388,7 @@ function fullExportRows(record) {
   [
     ['scope', 'Every row in this file is computed in the browser from the SMILES alone. Nothing here is a measurement, a literature value or a database lookup, and no column is calibrated against an assay.'],
     ['physicochemical', 'lipinskiNOCount and lipinskiNHOHCount are the atom and hydrogen tallies the rule of five tests; they match RDKit NOCount and NHOHCount. hbondAcceptors and hbondDonors are the chemically filtered counts; they match RDKit CalcNumHBA and NumHDonors. The two pairs answer different questions, so they are not expected to be equal, and the Lipinski pair is usually the larger.'],
+    ['stereochemistry', 'Stereocentres and stereogenic double bonds are perceived from the graph; R/S and E/Z come from a Cahn\u2013Ingold\u2013Prelog implementation that ranks branches by atomic number through a hierarchical digraph. Centres whose ranking needs the later CIP rules, and all nitrogen centres, are reported as withheld rather than labelled. cipLabelsWithheld counts them. Atom numbers are heavy-atom SMILES positions counting from 1.'],
     ['drug-likeness', 'Rule-based filters with published cutoffs. A pass means the molecule falls inside a window drawn from earlier drug sets. It is not a verdict on whether the compound is a good drug.'],
     ['similarity', 'Fingerprint overlap between the query and each reference structure. A high value means the two structures share substructures; it does not mean they share pharmacology.'],
     ['targets', 'nearestLigandSimilarity is the fingerprint similarity between the query and the single most similar known ligand of that target; meanTop3Similarity is the mean over its three most similar. They are structural resemblances, used only to rank the targets in this file against each other. They are not probabilities of binding, not affinities, and not calibrated against any assay: a value of 0.45 means a Tanimoto of 0.45, not a 45% chance of interaction.'],
@@ -1369,6 +1411,17 @@ function fullExportRows(record) {
           + ', generation ' + row.generation : 'not enumerated')
         + ' \u2014 documented route: ' + row.route + '; standing: ' + row.standing);
     });
+  }
+
+  if (typeof STEREO_CONFORMANCE !== 'undefined') {
+    const c = STEREO_CONFORMANCE;
+    add('provenance', 'stereochemistry conformance', 'summary', 'Generated ' + c.generated + ' by '
+      + 'tools/stereo-conformance.py against RDKit rdCIPLabeler over ' + c.cases + ' enumerated stereoisomers '
+      + 'of the reference library: ' + c.labelMatch + ' of ' + c.labels + ' R/S labels agreed ('
+      + c.labelPct + '%), ' + c.labelMissing + ' withheld, ' + c.labelWrong + ' disagreed; '
+      + c.bondLabelMatch + ' of ' + c.bondLabels + ' E/Z labels agreed, ' + c.bondLabelWrong + ' disagreed; '
+      + 'perceived centre set exact on ' + c.centerSetPct + '% of cases ('
+      + c.extraCenters + ' extra centres, ' + c.missedCenters + ' missed).');
   }
 
   if (typeof RETRIEVAL_BENCHMARK !== 'undefined') {
@@ -1411,6 +1464,17 @@ function fullExportRows(record) {
     ['hallKierAlpha', d.shape.hallKierAlpha], ['kappa1', d.shape.kappa1],
     ['kappa2', d.shape.kappa2], ['kappa3', d.shape.kappa3]
   ].forEach(([key, value]) => pair('topology', key, value.toFixed(4)));
+
+  const st = stereoFor(record);
+  pair('stereochemistry', 'stereocenters', st.centerCount);
+  pair('stereochemistry', 'stereocentersSpecified', st.centerSpecified);
+  pair('stereochemistry', 'cipLabels', st.labels.join(' '));
+  pair('stereochemistry', 'cipLabelsWithheld',
+    st.centers.filter((item) => item.specified && !item.label).length);
+  pair('stereochemistry', 'stereogenicDoubleBonds', st.bondCount);
+  pair('stereochemistry', 'stereogenicDoubleBondsSpecified', st.bondSpecified);
+  pair('stereochemistry', 'ezLabels', st.bondLabels.join(' '));
+  pair('stereochemistry', 'unspecifiedElements', st.centerUnspecified + st.bondUnspecified);
 
   pair('lipophilicity', 'wlogp', d.logp.toFixed(4));
   pair('lipophilicity', 'molarRefractivity', d.mr.toFixed(4));
