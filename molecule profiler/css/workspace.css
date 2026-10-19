@@ -105,3 +105,35 @@ body[data-theme="light"] .floating-compose { color: white; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { scroll-behavior: auto !important; }
 }
+
+/* Side-by-side comparisons */
+.grid[hidden], .comparison-panel[hidden] { display: none !important; }
+.comparison-panel { margin-bottom: 16px; }
+.comparison-panel .panel-head { margin-bottom: 6px; }
+.compare-toolbar { display: grid; gap: 15px; padding: 18px 0; }
+.compare-choices { display: flex; gap: 9px; flex-wrap: wrap; }
+.compare-choice { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 10px; padding: 9px 13px; background: var(--bg-sink); max-width: 100%; cursor: pointer; }
+.compare-choice:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); }
+.compare-choice span { overflow-wrap: anywhere; font-size: 13px; font-weight: 600; }
+.compare-choice input, .compare-toggle input { accent-color: var(--accent); width: 16px; height: 16px; }
+.compare-choice input:disabled { cursor: not-allowed; }
+.compare-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 22px; }
+.compare-actions label { display: inline-flex; align-items: center; gap: 9px; font-size: 12px; font-weight: 600; color: var(--text-dim); }
+.compare-actions select, .compare-actions button { min-height: 38px; background: var(--bg-sink); color: var(--text); border: 1px solid var(--line); border-radius: 9px; padding: 7px 10px; font: inherit; }
+.compare-actions button { font-weight: 700; cursor: pointer; }
+.compare-actions button:hover:not(:disabled) { border-color: var(--accent); }
+.compare-actions button:disabled { opacity: .45; cursor: not-allowed; }
+#comparison-status { padding: 2px 0 12px; }
+#comparison-table { min-width: 560px; }
+#comparison-table th,#comparison-table td { text-align: left; min-width: 130px; padding: 12px 15px; vertical-align: top; }
+#comparison-table th:first-child { min-width: 200px; }
+#comparison-table tbody th { font-weight: 650; color: var(--text-dim); background: var(--bg-raise); }
+#comparison-table tbody th small { display: block; opacity: .8; font-weight: 450; }
+.compare-reference { display: inline-block; margin-left: 7px; font-size: 10px; font-weight: 650; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); }
+.compare-value { display: block; font: 600 13px var(--mono); }
+.compare-delta { display: block; font: 11px/1.6 var(--mono); color: var(--text-dim); margin-top: 3px; }
+@media (max-width: 780px) {
+  .compare-actions { align-items: stretch; flex-direction: column; gap: 10px; }
+  .compare-actions label { justify-content: space-between; }
+  .compare-actions button { width: 100%; }
+}
