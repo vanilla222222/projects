@@ -282,6 +282,13 @@ th .info { margin-left: 5px; vertical-align: middle; display: inline-grid; }
 tbody tr.quiet { color: var(--text-faint); }
 td.atoms { font-variant-numeric: tabular-nums; max-width: 150px; white-space: normal; }
 table code { font-size: 11px; color: var(--text-faint); white-space: nowrap; }
+tbody tr.flagged td:first-child { box-shadow: inset 2px 0 0 var(--warn); }
+#metabolites td code { white-space: normal; word-break: break-all; }
+#metabolites td:nth-child(2) { min-width: 180px; max-width: 260px; }
+#metabolites td.note, #met-notes td.note { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; max-width: 340px; }
+#metabolites tbody tr:hover td.note, #met-notes tbody tr:hover td.note { -webkit-line-clamp: 12; }
+#metabolites span.quiet { color: var(--text-faint); }
+.tgt-controls input[type="checkbox"] { accent-color: var(--accent); }
 td.note { margin: 0; max-width: 300px; white-space: normal; font-size: 12px; color: var(--text-faint); line-height: 1.45; }
 .score { display: inline-flex; align-items: center; gap: 9px; }
 .score-track { width: 56px; height: 6px; border-radius: 3px; background: var(--bg-sink); overflow: hidden; }

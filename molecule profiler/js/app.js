@@ -83,6 +83,27 @@ const GLOSSARY = {
   Carcinogenicity: ['Carcinogenicity', 'Structural alerts from the Benigni-Bossa rulebase for the rodent carcinogenicity bioassay, plus the computed fused-aromatic rules. Genotoxic and non-genotoxic mechanisms are mixed together here, as they are in the published rulebase.'],
   Neurotoxicity: ['Neurotoxicity', 'Motifs with a named neurotoxic precedent (organophosphate and carbamate cholinesterase inhibition, gamma-diketone axonopathy, acrylamide, the MPTP-type tetrahydropyridine) read alongside whether the molecule is predicted to reach the brain at all.'],
   Cardiotoxicity: ['Cardiotoxicity', 'One rule, and a crude one: the lipophilic-basic-amine pharmacophore shared by most hERG potassium channel blockers. QT prolongation is the single commonest cause of late-stage attrition, which is why even a three-term rule is worth showing.'],
+  metSummary: ['Metabolism', 'How many distinct metabolites the rule set reaches from this structure within the chosen number of generations, and how they split between phase I (functionalisation) and phase II (conjugation).'],
+  metRoute: ['Route', 'The reaction class, named the way the metabolism literature names it: oxidative N-dealkylation, benzylic hydroxylation, glucuronidation, and so on.'],
+  metPrimary: ['Leading route', 'The enzyme family with the greatest summed weight across all reachable metabolites. Summed published class frequencies, not a measured flux.'],
+  metOpen: ['Open aromatic positions', 'Aromatic CH carbons, counted directly. Each one is a site CYP can hydroxylate; a fluorine, a methyl or any other substituent at that carbon removes it from this count, which is the mechanical reason a halogenated analogue has fewer ring-oxidation routes than its parent.'],
+  metNewTox: ['New toxicity flags', 'Toxicity rules that fire on at least one metabolite and do not fire on the parent. This is the panel asking whether the molecule becomes a liability only after the body has worked on it.'],
+  metRank: ['#', 'Rank by relative weight, highest first. Ties are broken by generation.'],
+  metSmiles: ['Metabolite', 'The predicted structure, written by this page\u2019s own SMILES writer. Click a row to load it as the query and run every panel on it.'],
+  metStep: ['Step', 'The rule that produced this metabolite, and which structure it came from: the parent, or an earlier metabolite by its label.'],
+  metEnzyme: ['Enzyme', 'The enzyme family that performs this class of reaction: CYP, MAO, FMO, ADH, AKR, COMT, UGT, SULT, NAT, GST, or a hydrolase. Attribution is by reaction class, not by a measured isoform assignment.'],
+  metPhase: ['Phase', 'Phase I introduces or exposes a functional group; phase II attaches a polar conjugate to one. A phase II rule usually needs a phase I step first, which is why most conjugates appear in the second generation.'],
+  metScore: ['Relative weight', 'The product of the published class frequencies along the path from the parent. It orders the list; it is not a probability, a yield or a fraction of dose.'],
+  metProps: ['MW / log P / TPSA', 'The metabolite run back through the same descriptor code as the parent. A conjugate adding 176 to the mass and 100 to the polar surface is the signature of glucuronidation.'],
+  metTox: ['New toxicity flags', 'Toxicity rules firing on this metabolite that do not fire on the parent molecule.'],
+  metNote: ['Mechanism', 'Why this reaction happens at this site, in one line. Reference text, hand-written.'],
+  metDepth: ['Generations', 'How many sequential metabolic steps to enumerate. Two is enough to reach the conjugates of phase I products, which is where most reported metabolites sit.'],
+  metPhaseFilter: ['Phase', 'Restricts the enumeration to one phase. Phase I only shows the oxidative and reductive chemistry; phase II only shows what can be conjugated directly on the parent.'],
+  metCount: ['Metabolites', 'How many rows to list. The ranking and the counts above cover every metabolite either way.'],
+  metNoteName: ['Observation', 'A structural feature with a known consequence for metabolism, matched on the parent molecule.'],
+  metNoteEnzyme: ['Enzyme', 'The enzyme the observation concerns.'],
+  metNoteAtoms: ['Atoms', 'Which atoms of the parent carry the feature, numbered as in the atom table.'],
+  metNoteText: ['Why it matters', 'What the feature does to the molecule\u2019s metabolism, including the cases where it blocks a route rather than opening one.'],
   depBand: ['Analogy band', 'A plain-language reading of the highest fingerprint similarity to any drug in the labelled dependence set. Four bands, cut at 0.85, 0.65 and 0.45 on the metric chosen in the similarity panel.'],
   depNearest: ['Nearest liability', 'The closest drug in the set that carries a documented high or moderate dependence liability, and how similar it is. Antagonists and the other counter-examples are excluded from this one number but still listed in the table.'],
   depReward: ['Reward-circuit proximity', 'The highest similarity between the query and any known ligand of the opioid, dopaminergic, nicotinic, GABAergic or glutamatergic targets through which dependence is mediated. Taken from the same target set as the prediction panel.'],
@@ -378,6 +399,7 @@ function renderCurrent() {
   renderAlerts(record);
   renderTox(record);
   renderDependence(record);
+  renderMetabolism(record);
 
   document.querySelectorAll('#molecule-tabs button').forEach((button) => {
     button.setAttribute('aria-selected', String(Number(button.dataset.index) === current));
@@ -838,6 +860,161 @@ function renderDependence(record) {
   )).join('') : '<tr><td colspan="4">No dependence-related target has a scored ligand.</td></tr>';
 }
 
+const MET_COLUMNS = [
+  ['metRank', '#'],
+  ['metSmiles', 'Metabolite'],
+  ['metStep', 'Step'],
+  ['metEnzyme', 'Enzyme'],
+  ['metRoute', 'Route'],
+  ['metPhase', 'Phase'],
+  ['metScore', 'Relative weight'],
+  ['metProps', 'MW / log P / TPSA'],
+  ['metTox', 'New toxicity flags'],
+  ['metNote', 'Mechanism']
+];
+
+const MET_NOTE_COLUMNS = [
+  ['metNoteName', 'Observation'],
+  ['metNoteEnzyme', 'Enzyme'],
+  ['metNoteAtoms', 'Atoms'],
+  ['metNoteText', 'Why it matters']
+];
+
+function metaboliteLabel(node) {
+  return node.id === 0 ? 'parent' : 'M' + node.id;
+}
+
+function metabolismFor(record) {
+  const depth = Number(document.getElementById('met-depth').value);
+  const phase = document.getElementById('met-phase').value;
+  const key = depth + '/' + phase;
+  if (!record.metabolism) record.metabolism = new Map();
+  if (!record.metabolism.has(key)) {
+    record.metabolism.set(key, metabolicTree(record, {
+      depth: depth,
+      phases: phase === 'all' ? ['I', 'II'] : [phase]
+    }));
+  }
+  return record.metabolism.get(key);
+}
+
+function renderMetabolism(record) {
+  const tree = metabolismFor(record);
+  const limit = Number(document.getElementById('met-count').value);
+  const toxOnly = document.getElementById('met-toxonly').checked;
+  const byId = new Map();
+  tree.nodes.forEach((node) => byId.set(node.id, node));
+
+  const openSites = smartsMatches(compileSmarts('[cH]'), record.mol, {}).length;
+  const newFlags = new Map();
+  tree.metabolites.forEach((node) => node.newTox.forEach((row) => {
+    if (!newFlags.has(row.name)) newFlags.set(row.name, row);
+  }));
+  const leading = tree.routes.length ? tree.routes[0] : null;
+
+  document.getElementById('met-summary').innerHTML = tree.metabolites.length
+    ? tree.metabolites.length + ' metabolites within ' + tree.depth
+      + (tree.depth === 1 ? ' generation' : ' generations') + ', from ' + tree.rulesTried
+      + ' reaction rules: ' + tree.phaseI + ' phase I, ' + tree.phaseII + ' phase II'
+      + (tree.truncated ? ' (enumeration capped)' : '')
+    : 'no rule in the set finds a site on this structure';
+
+  document.getElementById('met-cards').innerHTML = [
+    '<div class="filter ' + (leading ? 'pass' : 'fail') + '">'
+      + '<div class="name">Leading route' + infoButton('metPrimary') + '</div>'
+      + '<div class="verdict">' + escapeHtml(leading ? leading.enzyme : '\u2014') + '</div>'
+      + '<div class="why">' + escapeHtml(leading
+        ? leading.count + (leading.count === 1 ? ' metabolite' : ' metabolites')
+          + ', summed weight ' + leading.weight.toFixed(2)
+        : 'no route found') + '</div>'
+      + '</div>',
+    '<div class="filter ' + (tree.metabolites.length ? 'pass' : 'fail') + '">'
+      + '<div class="name">Metabolites' + infoButton('metSummary') + '</div>'
+      + '<div class="verdict">' + tree.metabolites.length + '</div>'
+      + '<div class="why">' + escapeHtml(tree.routes.map((row) => row.enzyme.toLowerCase() + ' ' + row.count).join(', ') || 'none') + '</div>'
+      + '</div>',
+    '<div class="filter ' + (openSites ? 'pass' : 'fail') + '">'
+      + '<div class="name">Open aromatic positions' + infoButton('metOpen') + '</div>'
+      + '<div class="verdict">' + openSites + '</div>'
+      + '<div class="why">' + escapeHtml(openSites
+        ? 'ring CH carbons available for hydroxylation'
+        : 'no unsubstituted aromatic carbon') + '</div>'
+      + '</div>',
+    '<div class="filter ' + (newFlags.size ? 'fail' : 'pass') + '">'
+      + '<div class="name">New toxicity flags' + infoButton('metNewTox') + '</div>'
+      + '<div class="verdict">' + (newFlags.size ? newFlags.size : 'NONE') + '</div>'
+      + '<div class="why">' + escapeHtml(newFlags.size
+        ? [...newFlags.values()].map((row) => row.name.toLowerCase() + ' (' + row.endpoint.toLowerCase() + ')').join('; ')
+        : 'no metabolite trips a rule the parent does not') + '</div>'
+      + '</div>'
+  ].join('');
+
+  let shown = tree.metabolites;
+  if (toxOnly) shown = shown.filter((node) => node.newTox.length);
+  if (limit) shown = shown.slice(0, limit);
+
+  const table = document.getElementById('metabolites');
+  table.querySelector('thead').innerHTML = '<tr>' + MET_COLUMNS.map(([key, label]) => (
+    '<th>' + label + infoButton(key) + '</th>'
+  )).join('') + '</tr>';
+  table.querySelector('tbody').innerHTML = shown.length ? shown.map((node, index) => {
+    const parent = byId.get(node.parent);
+    const released = node.released.length
+      ? ' Releases ' + node.released.join(' and ') + '.'
+      : '';
+    const extra = node.steps.length > 1
+      ? ' Also reached by ' + (node.steps.length - 1) + ' other path' + (node.steps.length > 2 ? 's' : '') + '.'
+      : '';
+    return '<tr data-smiles="' + escapeHtml(node.smiles) + '" data-name="' + escapeHtml(metaboliteLabel(node)) + '"'
+      + (node.newTox.length ? ' class="flagged"' : '') + '>'
+      + '<td>' + (index + 1) + '</td>'
+      + '<td><strong>' + metaboliteLabel(node) + '</strong> <code>' + escapeHtml(node.smiles) + '</code></td>'
+      + '<td>' + escapeHtml(node.rule) + '<br><span class="quiet">from ' + escapeHtml(parent ? metaboliteLabel(parent) : 'parent') + '</span></td>'
+      + '<td>' + escapeHtml(node.enzyme) + '</td>'
+      + '<td>' + escapeHtml(node.route) + '</td>'
+      + '<td>' + escapeHtml(node.phase) + '</td>'
+      + '<td>' + node.score.toFixed(3) + '</td>'
+      + '<td>' + node.d.mw.toFixed(1) + ' / ' + node.d.logp.toFixed(2) + ' / ' + node.d.tpsa.toFixed(1) + '</td>'
+      + '<td>' + (node.newTox.length
+        ? node.newTox.map((row) => escapeHtml(row.name) + ' <span class="quiet">(' + escapeHtml(row.endpoint.toLowerCase()) + ')</span>').join('<br>')
+        : '\u2014') + '</td>'
+      + '<td class="note" title="' + escapeHtml(node.steps[0].note + released + extra) + '">'
+      + escapeHtml(node.steps[0].note + released + extra) + '</td>'
+      + '</tr>';
+  }).join('') : '<tr><td colspan="' + MET_COLUMNS.length + '">No metabolite matches this filter.</td></tr>';
+
+  const notes = document.getElementById('met-notes');
+  notes.querySelector('thead').innerHTML = '<tr>' + MET_NOTE_COLUMNS.map(([key, label]) => (
+    '<th>' + label + infoButton(key) + '</th>'
+  )).join('') + '</tr>';
+  notes.querySelector('tbody').innerHTML = tree.notes.length ? tree.notes.map((note) => (
+    '<tr>'
+      + '<td>' + escapeHtml(note.name) + '</td>'
+      + '<td>' + escapeHtml(note.enzyme) + '</td>'
+      + '<td class="atoms">' + note.atoms.map((index) => index + 1).join(', ') + '</td>'
+      + '<td class="note" title="' + escapeHtml(note.note) + '">' + escapeHtml(note.note) + '</td>'
+      + '</tr>'
+  )).join('') : '<tr><td colspan="4">No structural observation applies to this molecule.</td></tr>';
+}
+
+function setupMetabolism() {
+  ['met-depth', 'met-phase', 'met-count', 'met-toxonly'].forEach((id) => {
+    document.getElementById(id).addEventListener('change', () => {
+      if (records[current]) renderMetabolism(records[current]);
+    });
+  });
+  [['met-depth', 'metDepth'], ['met-phase', 'metPhaseFilter'], ['met-count', 'metCount']].forEach(([id, key]) => {
+    document.getElementById(id).insertAdjacentHTML('beforebegin', infoButton(key));
+  });
+  document.getElementById('metabolites').addEventListener('click', (event) => {
+    const row = event.target.closest('tr[data-smiles]');
+    if (!row) return;
+    document.getElementById('smiles-input').value = row.dataset.name + ', ' + row.dataset.smiles;
+    analyse();
+    document.getElementById('identity').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+}
+
 function setupTox() {
   document.getElementById('tox-endpoint').addEventListener('change', () => {
     if (records[current]) renderTox(records[current]);
@@ -994,5 +1171,6 @@ setupSimilarity();
 setupTargets();
 setupAlerts();
 setupTox();
+setupMetabolism();
 document.getElementById('smiles-input').value = 'aspirin, CC(=O)Oc1ccccc1C(=O)O';
 analyse();
