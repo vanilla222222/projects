@@ -2231,6 +2231,37 @@ const LIBRARY = [
   { name: 'decyl heptadecyl ketone', cls: 'Ketone reference', formula: 'C28H56O', smiles: 'CCCCCCCCCCC(=O)CCCCCCCCCCCCCCCCC' },
   { name: 'decyl octadecyl ketone', cls: 'Ketone reference', formula: 'C29H58O', smiles: 'CCCCCCCCCCC(=O)CCCCCCCCCCCCCCCCCC' },
 
+  // Endogenous neurotransmitters, neuromodulators and related signalling metabolites.
+  // Reference identifiers/structures should be independently checked against PubChem before merging.
+  // Stereospecific entries are marked but parser/fingerprint stereochemical validation is pending.
+  { name: 'Acetylcholine', cls: 'Endogenous signalling reference', formula: 'C7H16NO2+', smiles: 'CC(=O)OCC[N+](C)(C)C' },
+  { name: 'GABA (gamma-aminobutyric acid)', cls: 'Endogenous signalling reference', formula: 'C4H9NO2', smiles: 'NCCCC(=O)O' },
+  { name: 'Noradrenaline (norepinephrine)', cls: 'Endogenous signalling reference', formula: 'C8H11NO3', smiles: 'NCC(O)c1ccc(O)c(O)c1' },
+  { name: 'Taurine', cls: 'Endogenous signalling reference', formula: 'C2H7NO3S', smiles: 'NCCS(=O)(=O)O' },
+  { name: 'Beta-alanine', cls: 'Endogenous signalling reference', formula: 'C3H7NO2', smiles: 'NCCC(=O)O' },
+  { name: 'Octopamine', cls: 'Endogenous signalling reference', formula: 'C8H11NO2', smiles: 'NCC(O)c1ccc(O)cc1' },
+  { name: 'Tyramine', cls: 'Endogenous signalling reference', formula: 'C8H11NO', smiles: 'NCCc1ccc(O)cc1' },
+  { name: 'Agmatine', cls: 'Endogenous signalling reference', formula: 'C5H14N4', smiles: 'NCCCCNC(=N)N' },
+  { name: 'Putrescine', cls: 'Endogenous signalling reference', formula: 'C4H12N2', smiles: 'NCCCCN' },
+  { name: 'Spermidine', cls: 'Endogenous signalling reference', formula: 'C7H19N3', smiles: 'NCCCCNCCCN' },
+  { name: 'Spermine', cls: 'Endogenous signalling reference', formula: 'C10H26N4', smiles: 'NCCCNCCCCNCCCN' },
+  { name: 'Anandamide', cls: 'Endogenous signalling reference', formula: 'C22H37NO2', smiles: 'CCCCCC/C=C\\C/C=C\\C/C=C\\C/C=C\\CCCC(=O)NCCO' },
+  { name: '2-Arachidonoylglycerol', cls: 'Endogenous signalling reference', formula: 'C23H38O4', smiles: 'CCCCCC/C=C\\C/C=C\\C/C=C\\C/C=C\\CCCC(=O)OCC(O)CO' },
+  { name: 'Kynurenic acid', cls: 'Endogenous signalling reference', formula: 'C10H7NO3', smiles: 'O=C(O)c1cc(=O)c2ccccc2[nH]1' },
+  { name: 'Quinolinic acid', cls: 'Endogenous signalling reference', formula: 'C7H5NO4', smiles: 'O=C(O)c1cccnc1C(=O)O' },
+  { name: 'Kynurenine', cls: 'Endogenous signalling reference', formula: 'C10H12N2O3', smiles: 'N[C@@H](CC(=O)c1ccccc1N)C(=O)O' },
+  { name: 'D-Serine', cls: 'Endogenous signalling reference', formula: 'C3H7NO3', smiles: 'N[C@H](CO)C(=O)O' },
+  { name: 'L-Serine', cls: 'Endogenous signalling reference', formula: 'C3H7NO3', smiles: 'N[C@@H](CO)C(=O)O' },
+  { name: 'D-Aspartic acid', cls: 'Endogenous signalling reference', formula: 'C4H7NO4', smiles: 'N[C@H](CC(=O)O)C(=O)O' },
+  { name: 'Adenosine triphosphate (ATP)', cls: 'Endogenous signalling reference', formula: 'C10H16N5O13P3', smiles: 'Nc1ncnc2c1ncn2C1OC(COP(=O)(O)OP(=O)(O)OP(=O)(O)O)C(O)C1O' },
+  { name: 'Adenosine diphosphate (ADP)', cls: 'Endogenous signalling reference', formula: 'C10H15N5O10P2', smiles: 'Nc1ncnc2c1ncn2C1OC(COP(=O)(O)OP(=O)(O)O)C(O)C1O' },
+  { name: 'Adenosine monophosphate (AMP)', cls: 'Endogenous signalling reference', formula: 'C10H14N5O7P', smiles: 'Nc1ncnc2c1ncn2C1OC(COP(=O)(O)O)C(O)C1O' },
+  { name: 'Uridine triphosphate (UTP)', cls: 'Endogenous signalling reference', formula: 'C9H15N2O15P3', smiles: 'O=c1cc[nH]c(=O)n1C1OC(COP(=O)(O)OP(=O)(O)OP(=O)(O)O)C(O)C1O' },
+  { name: 'Uridine diphosphate (UDP)', cls: 'Endogenous signalling reference', formula: 'C9H14N2O12P2', smiles: 'O=c1cc[nH]c(=O)n1C1OC(COP(=O)(O)OP(=O)(O)O)C(O)C1O' },
+  { name: 'Nitric oxide', cls: 'Endogenous signalling reference', formula: 'NO', smiles: '[N]=O' },
+  { name: 'Carbon monoxide', cls: 'Endogenous signalling reference', formula: 'CO', smiles: '[C-]#[O+]' },
+  { name: 'Hydrogen sulfide', cls: 'Endogenous signalling reference', formula: 'H2S', smiles: 'S' },
+
 ];
 
 if (typeof module !== 'undefined' && module.exports) {
