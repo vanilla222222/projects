@@ -37,8 +37,8 @@ jobs:
         run: node tools/metabolism-cases.js
       - name: Retrieval benchmark
         run: node tools/retrieval-benchmark.js
-      - name: Stereo conformance
-        run: node tools/stereo-conformance.js
+      - name: UI script and DOM integration
+        run: node tools/ui-integration-test.js
   rdkit:
     runs-on: ubuntu-latest
     defaults:
