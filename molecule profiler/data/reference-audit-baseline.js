@@ -4,7 +4,7 @@
 // compounds the ester reference block already held, so the duplicates were removed.
 // Intended for change detection, not an assertion that chemical structures are correct.
 const REFERENCE_AUDIT_BASELINE={
-  entries:2256,
+  entries:2315,
   missingFormula:0,
   missingSmiles:0,
   duplicateNames:0,
@@ -12,7 +12,7 @@ const REFERENCE_AUDIT_BASELINE={
   profiles:27,
   unmatchedProfiles:0,
   targets:132,
-  sparseTargets:66,
+  sparseTargets:65,
   unresolvedLigands:0
 };
 if(typeof module!=='undefined'&&module.exports)module.exports={REFERENCE_AUDIT_BASELINE};
