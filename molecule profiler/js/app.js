@@ -326,7 +326,7 @@ async function analyse() {
   try {
     if (input.error) {
       status.classList.add('error');
-      status.textContent = 'Could not import snapshot: ' + input.error + ' Previous completed results retained.';
+      status.textContent = 'Could not import ' + (input.format === 'snapshot' ? 'snapshot' : 'input') + ': ' + input.error + ' Previous completed results retained.';
       return;
     }
     const outcome = await CooperativeBatch.run(input.rows, (row, index) => {

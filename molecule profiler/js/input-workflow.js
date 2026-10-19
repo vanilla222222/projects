@@ -17,6 +17,28 @@
     if(quoted)throw new Error('Unterminated quoted field');
     return cells;
   }
+  function delimitedRecords(text, delimiter) {
+    const records = [];
+    let raw = '', line = 1, start = 1, quoted = false, fieldStart = true;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === '"') {
+        if (quoted && text[i + 1] === '"') { raw += '""'; i++; continue; }
+        if (quoted) quoted = false;
+        else if (fieldStart) quoted = true;
+        fieldStart = false;
+      } else if (ch === delimiter && !quoted) fieldStart = true;
+      else if (ch === '\n' && !quoted) {
+        if (raw.trim()) records.push({raw, line:start});
+        raw = ''; start = ++line; fieldStart = true;
+        continue;
+      } else if (!/\s/.test(ch)) fieldStart = false;
+      raw += ch;
+      if (ch === '\n') line++;
+    }
+    if (raw.trim()) records.push({raw,line:start});
+    return records;
+  }
   function parseSnapshot(text) {
     let snapshot;
     try { snapshot = JSON.parse(String(text).replace(/^\uFEFF/, '')); }
@@ -57,21 +79,32 @@
     const populated=lines.map((text,index)=>({text,index:index+1})).filter(x=>x.text.trim());
     if(!populated.length)return {rows:[],format:'plain'};
     const first=populated[0].text;
-    const delimiter=first.includes('\t')?'\t':',';
-    let fields;
-    try { fields=csvColumns(first,delimiter).map(x=>x.toLowerCase().trim().replace(/^"|"$/g,'')); } catch(_){fields=[];}
-    const nameCol=fields.indexOf('name');
-    const smilesCol=fields.indexOf('smiles');
-    const hasHeader=smilesCol!==-1 && nameCol!==-1 && nameCol!==smilesCol;
+    let delimiter=first.includes('\t')?'\t':',';
+    let fields=[];
+    for (const candidate of [',','\t']) {
+      let columns;
+      try { columns=csvColumns(first,candidate).map(x=>x.toLowerCase().trim()); }
+      catch (_) { continue; }
+      if (columns.some(column=>['smiles','input_smiles'].includes(column))) {
+        delimiter=candidate; fields=columns; break;
+      }
+    }
+    const nameCol=fields.includes('name') ? fields.indexOf('name') : fields.indexOf('molecule_name');
+    const structureColumns=fields.map((field,index)=>['smiles','input_smiles'].includes(field)?index:-1).filter(index=>index>=0);
+    const smilesCol=structureColumns[0];
+    const hasHeader=structureColumns.length>0;
+    if (structureColumns.length>1) return {format:delimiter==='\t'?'tsv':'csv',rows:[],
+      error:'Ambiguous structure columns. Include exactly one smiles or input_smiles column.'};
     if(!hasHeader) return {format:'plain',rows:populated.map(x=>({line:x.index,raw:x.text}))};
-    const rows=populated.slice(1).map(x=>{
+    const normalized=String(text||'').replace(/\r\n?/g,'\n');
+    const rows=delimitedRecords(normalized,delimiter).slice(1).map(x=>{
       try{
-        const cells=csvColumns(x.text,delimiter);
-        if(cells.length!==fields.length) return {line:x.index,error:'Expected '+fields.length+' columns, found '+cells.length+'.',raw:x.text};
+        const cells=csvColumns(x.raw,delimiter);
+        if(cells.length!==fields.length) return {line:x.line,error:'Expected '+fields.length+' columns, found '+cells.length+'.',raw:x.raw};
         const smiles=cells[smilesCol].trim();
-        if(!smiles)return {line:x.index,error:'SMILES field is empty.',raw:x.text};
-        return {line:x.index,name:cells[nameCol].trim(),smiles,raw:x.text};
-      }catch(e){return {line:x.index,error:e.message,raw:x.text};}
+        if(!smiles)return {line:x.line,error:'SMILES field is empty.',raw:x.raw};
+        return {line:x.line,name:nameCol<0?'':cells[nameCol].trim(),smiles,raw:x.raw};
+      }catch(e){return {line:x.line,error:e.message,raw:x.raw};}
     });
     return {format:delimiter==='\t'?'tsv':'csv',rows};
   }
