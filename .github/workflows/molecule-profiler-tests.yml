@@ -1,0 +1,60 @@
+name: Molecule Profiler regression tests
+on:
+  push:
+    paths:
+      - 'molecule profiler/**'
+      - '.github/workflows/molecule-profiler-tests.yml'
+  pull_request:
+    paths:
+      - 'molecule profiler/**'
+      - '.github/workflows/molecule-profiler-tests.yml'
+  workflow_dispatch:
+jobs:
+  javascript:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: molecule profiler
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax-check browser and Node scripts
+        run: |
+          find js data tools -name '*.js' -print0 | xargs -0 -n1 node --check
+          node --check reference-audit.js
+          node --check reference-explorer.js
+      - name: Reference integrity regression
+        run: node tools/reference-audit-test.js
+      - name: Evidence reporting
+        run: node tools/evidence-report-test.js
+      - name: Screening coverage reporting
+        run: node tools/screen-coverage-test.js
+      - name: Property validation
+        run: node tools/property-validation.js
+      - name: Metabolism reference cases
+        run: node tools/metabolism-cases.js
+      - name: Retrieval benchmark
+        run: node tools/retrieval-benchmark.js
+      - name: Stereo conformance
+        run: node tools/stereo-conformance.js
+  rdkit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: molecule profiler
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install rdkit
+      - name: Run RDKit structural audit
+        run: python tools/rdkit-library-audit.py --output rdkit-audit.json
+      - name: Upload structure diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rdkit-audit
+          path: molecule profiler/rdkit-audit.json
