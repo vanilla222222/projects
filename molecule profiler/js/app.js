@@ -1312,6 +1312,8 @@ function metabolismFor(record) {
 }
 
 function renderMetabolism(record) {
+  const coverageSlot = document.getElementById('met-coverage');
+  if (coverageSlot) coverageSlot.textContent = '';
   if (typeof metabolicTree !== 'function' || typeof METABOLISM === 'undefined') {
     document.getElementById('met-summary').textContent =
       'the metabolism engine did not load \u2014 reload the page, bypassing the cache';
@@ -1329,8 +1331,7 @@ function renderMetabolism(record) {
   }
   if (typeof metabolismCoverageReport === 'function') {
     const coverage = metabolismCoverageReport(tree);
-    const el = document.getElementById('met-coverage');
-    if (el) el.textContent = 'Enumeration scope: ' + coverage.predictedProducts
+    if (coverageSlot) coverageSlot.textContent = 'Enumeration scope: ' + coverage.predictedProducts
       + ' proposed products; ' + (coverage.rulesAttempted === null ? 'unknown' : coverage.rulesAttempted)
       + ' reaction rules attempted. ' + coverage.limitations.join(' ');
   }
