@@ -122,7 +122,7 @@ const TARGETS = [
 
   { name: 'GABA-A receptor', gene: 'GABRA1', family: 'Ion channel', organism: 'Human',
     note: 'Chloride channel potentiated by benzodiazepines and barbiturates.',
-    ligands: ['Diazepam', 'Lorazepam', 'Phenobarbital', 'Zolpidem', 'Topiramate', 'Bicuculline'] },
+    ligands: ['Diazepam', 'Lorazepam', 'Phenobarbital', 'Zolpidem', 'Topiramate', 'Bicuculline', 'Alprazolam', 'Clonazepam', 'Midazolam', 'Temazepam', 'Oxazepam', 'Chlordiazepoxide', 'Nordazepam', 'Nitrazepam', 'Nimetazepam', 'Flunitrazepam', 'Meclonazepam', 'Nifoxipam', 'Lormetazepam', 'Delorazepam', 'Fludiazepam', 'Diclazepam', 'Phenazepam', 'Flubromazepam', 'Norflurazepam', 'Flurazepam', 'Prazepam', 'Pinazepam', 'Halazepam', 'Clorazepate', 'Doxefazepam', 'Camazepam', 'Bromazepam', 'Triazolam', 'Estazolam', 'Flualprazolam', 'Flubromazolam', 'Bromazolam', 'Clonazolam', 'Nitrazolam', 'Flunitrazolam', 'Adinazolam', 'Pyrazolam', 'Climazolam', 'Pentobarbital', 'Thiopental', 'Barbital', 'Amobarbital', 'Butabarbital', 'Butalbital', 'Secobarbital', 'Allobarbital', 'Aprobarbital', 'Talbutal', 'Probarbital', 'Vinbarbital', 'Metharbital', 'Mephobarbital', 'Hexobarbital', 'Cyclobarbital', 'Heptabarbital', 'Methohexital', 'Thiamylal', 'Thiobarbital', 'Zopiclone', 'Zaleplon', 'Flumazenil', 'Alpidem', 'Muscimol', 'Gaboxadol', 'Pentylenetetrazol', 'Meprobamate', 'Carisoprodol', 'Ethchlorvynol', 'Glutethimide', 'Methyprylon', 'Clomethiazole', 'Etomidate', 'Propofol'] },
   { name: 'NMDA receptor', gene: 'GRIN1', family: 'Ion channel', organism: 'Human',
     note: 'Glutamate-gated channel; open-channel blockers are dissociative.',
     ligands: ['Ketamine', 'Memantine', 'Amantadine', 'Dextromethorphan', 'Dextrorphan'] },
