@@ -678,7 +678,7 @@ function kappaShapes(mol) {
   const p3 = pathsOfLength(mol, 3);
   const a = atoms + alpha;
   const kappa1 = bonds + alpha > 0 ? (a * (a - 1) * (a - 1)) / ((bonds + alpha) * (bonds + alpha)) : 0;
-  const kappa2 = p2 + alpha > 0 ? ((a - 1) * (a - 2) * (a - 2)) / ((p2 + alpha) * (p2 + alpha)) : 0;
+  const kappa2 = p2 + alpha !== 0 ? ((a - 1) * (a - 2) * (a - 2)) / ((p2 + alpha) * (p2 + alpha)) : 0;
   let kappa3 = 0;
   if (p3 + alpha !== 0) {
     const lead = atoms % 2 ? a - 1 : a - 2;

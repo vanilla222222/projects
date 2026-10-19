@@ -181,7 +181,6 @@ function morganFingerprint(mol, radius, features) {
       pending.push({ index, stamp: [...coverage].sort((a, b) => a - b).join(','), code: nextInvariants[index] });
     });
 
-    pending.sort((a, b) => (a.stamp < b.stamp ? -1 : a.stamp > b.stamp ? 1 : a.code !== b.code ? a.code - b.code : a.index - b.index));
     pending.forEach((entry) => {
       if (seen.has(entry.stamp)) {
         dead[entry.index] = true;
