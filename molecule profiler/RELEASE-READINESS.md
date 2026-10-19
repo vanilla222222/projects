@@ -29,4 +29,15 @@ An installed Chromium can be selected with CHROMIUM_PATH=/usr/bin/chromium.
 
 ## Current blocking uncertainty
 
-The browser workflow is committed but a passing whole-application run has not been demonstrated. The hosted GitHub Actions runs have reported failures without visible job steps or logs. This remains an unresolved CI execution/evidence issue, not a diagnosed chemical model failure.
+The browser workflow is committed but a passing whole-application run has not been demonstrated.
+
+On 2026-10-19, regression run 39324978173 at `02196e5e46b09db4a934df024b9914461dd616c6` had two failed jobs, both with no steps and runner ID 0. The JavaScript check annotation states: "The job was not started because your account is locked due to a billing issue." This is an account-level runner admission failure. Repository code changes cannot resolve it; the account owner must resolve GitHub billing, then rerun the workflows. Pages publication is a separate outcome.
+
+To diagnose future failures with no steps, inspect the check annotations, not only job logs:
+
+    gh api repos/vanilla222222/projects/actions/runs/39324978173/jobs
+    gh api repos/vanilla222222/projects/check-runs/118308325382/annotations
+
+Local Chromium launch was also attempted in the development container using Playwright 1.51.0 and Chromium 134.0.6998.35. The environment denied a socket operation in `process_singleton_posix.cc` before the browser launched. No browser assertions ran; this does not establish an application failure or a browser-suite pass. Run the suite in an environment that permits browser startup.
+
+The Node interaction tests use small DOM doubles. They cover selection identity and denied-storage error handling, but cannot establish browser focus, layout, accessibility or download behavior.

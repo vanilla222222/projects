@@ -545,12 +545,7 @@ function renderCurrent() {
   renderDependence(record);
   renderMetabolism(record);
 
-  document.querySelectorAll('#molecule-tabs button').forEach((button) => {
-    button.setAttribute('aria-selected', String(Number(button.dataset.index) === current));
-  });
-  document.querySelectorAll('#batch tbody tr').forEach((tr, index) => {
-    tr.classList.toggle('active', index === current);
-  });
+  synchronizeBatchSelection();
 }
 
 function drawRadar(axes) {
@@ -1626,6 +1621,15 @@ function batchRow(record) {
   };
 }
 
+function synchronizeBatchSelection() {
+  document.querySelectorAll('#batch tbody tr[data-index]').forEach(tr => {
+    const selected = Number(tr.dataset.index) === current;
+    tr.classList.toggle('active', selected);
+    if (selected) tr.setAttribute('aria-current', 'true');
+    else tr.removeAttribute('aria-current');
+  });
+}
+
 function renderBatch() {
   const table = document.getElementById('batch');
   const view = BatchBrowser.browseBatch(preparedBatchRows, {
@@ -1646,6 +1650,7 @@ function renderBatch() {
   document.getElementById('batch-page').textContent='Page '+view.page+' of '+view.pages;
   document.getElementById('batch-prev').disabled=view.page<=1;
   document.getElementById('batch-next').disabled=view.page>=view.pages;
+  synchronizeBatchSelection();
 }
 
 function csvCell(value) {
@@ -2085,8 +2090,9 @@ function setupExamples() {
 }
 
 function setupTheme() {
-  const saved = localStorage.getItem('molecule-profiler-theme');
-  if (saved) document.body.dataset.theme = saved;
+  let saved;
+  try { saved = localStorage.getItem('molecule-profiler-theme'); } catch (error) { /* storage may be blocked */ }
+  if (saved === 'dark' || saved === 'light') document.body.dataset.theme = saved;
   document.getElementById('theme-toggle').addEventListener('click', () => {
     const next = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
     document.body.dataset.theme = next;
@@ -2130,6 +2136,18 @@ document.getElementById('molecule-file').addEventListener('change', async event 
 });
 document.getElementById('smiles-input').addEventListener('keydown', (event) => {
   if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) analyse();
+});
+document.getElementById('molecule-tabs').addEventListener('keydown', event => {
+  if (!event.target.closest('[data-index]') || !records.length) return;
+  const movement = {ArrowRight: 1, ArrowLeft: -1};
+  if (Object.prototype.hasOwnProperty.call(movement, event.key)) {
+    current = (current + movement[event.key] + records.length) % records.length;
+  } else if (event.key === 'Home') current = 0;
+  else if (event.key === 'End') current = records.length - 1;
+  else return;
+  event.preventDefault();
+  renderCurrent();
+  document.querySelector('#molecule-tabs [data-index="' + current + '"]').focus();
 });
 document.getElementById('molecule-tabs').addEventListener('click', (event) => {
   const button = event.target.closest('[data-index]');

@@ -13,6 +13,7 @@ const scripts = [
   'metabolism-cases.js',
   'retrieval-benchmark.js',
   'ui-integration-test.js',
+  'interaction-test.js',
   'comparison-test.js',
   'library-catalog-test.js',
   'sim-pagination-test.js',

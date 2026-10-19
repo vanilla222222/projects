@@ -41,22 +41,19 @@ class BrowserWorkflowTests(unittest.TestCase):
         cls.server = ThreadingHTTPServer(
             ("127.0.0.1", 0), partial(QuietHandler, directory=str(SITE))
         )
+        cls.addClassCleanup(cls.server.server_close)
+        cls.addClassCleanup(cls.server.shutdown)
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
         cls.thread.start()
         cls.base_url = f"http://127.0.0.1:{cls.server.server_port}/index.html"
         cls.pw = sync_playwright().start()
+        cls.addClassCleanup(cls.pw.stop)
         opts = {"headless": True}
         if os.environ.get("CHROMIUM_PATH"):
             opts["executable_path"] = os.environ["CHROMIUM_PATH"]
         cls.browser = cls.pw.chromium.launch(**opts)
+        cls.addClassCleanup(cls.browser.close)
         print("Chromium version:", cls.browser.version, flush=True)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.browser.close()
-        cls.pw.stop()
-        cls.server.shutdown()
-        cls.server.server_close()
 
     def setUp(self):
         self.context = self.browser.new_context(accept_downloads=True)
@@ -64,6 +61,7 @@ class BrowserWorkflowTests(unittest.TestCase):
         self.errors = []
         self.page.on("pageerror", lambda err: self.errors.append(str(err)))
         self.context.tracing.start(screenshots=True, snapshots=True, sources=True)
+        self.addCleanup(self.capture_and_close)
         self.page.set_default_timeout(40000)
         self.page.goto(self.base_url, wait_until="domcontentloaded", timeout=60000)
         self.page.locator("#run").wait_for()
@@ -71,7 +69,7 @@ class BrowserWorkflowTests(unittest.TestCase):
             "() => !document.getElementById('results').hidden", timeout=120000
         )
 
-    def tearDown(self):
+    def capture_and_close(self):
         name = self.id().rsplit(".", 1)[-1]
         failure_cases = self._outcome.result.errors + self._outcome.result.failures
         failed = any(case is self for case, _ in failure_cases)
@@ -83,8 +81,10 @@ class BrowserWorkflowTests(unittest.TestCase):
                     encoding="utf-8",
                 )
         finally:
-            self.context.tracing.stop(path=str(ARTIFACTS / f"{name}.zip") if failed else None)
-            self.context.close()
+            try:
+                self.context.tracing.stop(path=str(ARTIFACTS / f"{name}.zip") if failed else None)
+            finally:
+                self.context.close()
 
     def analyze(self, text, expected):
         self.page.locator("#smiles-input").fill(text)
@@ -179,6 +179,49 @@ class BrowserWorkflowTests(unittest.TestCase):
         self.assertTrue(self.page.locator("#results").evaluate("(el) => el.hidden"))
         self.assertTrue(self.page.locator("#export-research").is_disabled())
         self.assertEqual(self.errors, [], "Browser JavaScript errors: " + repr(self.errors))
+
+    def test_keyboard_molecule_selection(self):
+        self.analyze("Water, O\nEthanol, CCO\nPropane, CCC", "3 analyzed")
+        tabs = self.page.locator('#molecule-tabs [role="tab"]')
+        tabs.nth(0).focus()
+        for key, selected in (("ArrowRight", 1), ("End", 2),
+                              ("ArrowRight", 0), ("ArrowLeft", 2), ("Home", 0)):
+            self.page.keyboard.press(key)
+            self.assertEqual(tabs.nth(selected).get_attribute("aria-selected"), "true")
+            self.assertTrue(tabs.nth(selected).evaluate("el => el === document.activeElement"))
+            self.assertEqual(self.page.locator('#molecule-tabs [tabindex="0"]').count(), 1)
+        self.assertEqual(self.errors, [])
+
+    def test_sorted_filtered_batch_selection(self):
+        self.analyze("Water, O\nEthanol, CCO\nPropane, CCC", "3 analyzed")
+        self.page.locator('#workspace-nav button[data-view="data"]').click()
+        # Alphabetical sorting places input record 0 last, not first.
+        selected = self.page.locator('#batch tbody tr.active')
+        self.assertEqual(selected.get_attribute("data-index"), "0")
+        self.page.locator('#batch-search').fill("Ethanol")
+        self.assertEqual(selected.count(), 0)
+        self.page.locator('#batch tbody tr[data-index="1"]').click()
+        self.assertEqual(selected.get_attribute("data-index"), "1")
+        self.assertEqual(selected.get_attribute("aria-current"), "true")
+        self.page.locator('#batch-search').fill("")
+        self.page.locator('#batch-order').select_option("desc")
+        self.assertEqual(selected.get_attribute("data-index"), "1")
+        self.assertEqual(self.errors, [])
+
+    def test_storage_denied_startup(self):
+        self.page.add_init_script("""
+            Object.defineProperty(Storage.prototype, 'getItem', {
+                value() { throw new DOMException('Storage denied', 'SecurityError'); }
+            });
+            Object.defineProperty(Storage.prototype, 'setItem', {
+                value() { throw new DOMException('Storage denied', 'SecurityError'); }
+            });
+        """)
+        self.page.reload(wait_until="domcontentloaded")
+        self.page.wait_for_function("() => !document.getElementById('results').hidden")
+        self.page.locator('#theme-toggle').click()
+        self.assertIn(self.page.locator('body').get_attribute('data-theme'), ('dark', 'light'))
+        self.assertEqual(self.errors, [])
 
     def test_full_csv_schema_and_limit(self):
         self.analyze("Water, O", "1 analyzed")
