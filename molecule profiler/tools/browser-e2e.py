@@ -103,9 +103,12 @@ class BrowserWorkflowTests(unittest.TestCase):
         tabs = self.page.locator("#molecule-tabs [data-index]")
         self.assertEqual(tabs.count(), 2)
         tabs.nth(1).click()
+        self.assertEqual(tabs.nth(1).get_attribute("aria-selected"), "true")
+        self.assertEqual(tabs.nth(0).get_attribute("aria-selected"), "false")
         self.assertIn("Ethanol", self.page.locator("#report-title").inner_text())
         self.assertFalse(self.page.locator("#quality-summary").evaluate("(el) => el.hidden"))
         tabs.nth(0).click()
+        self.assertEqual(tabs.nth(0).get_attribute("aria-selected"), "true")
         self.assertIn("Water", self.page.locator("#report-title").inner_text())
         self.assertEqual(self.errors, [], "Browser JavaScript errors: " + repr(self.errors))
 

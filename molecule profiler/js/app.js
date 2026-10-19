@@ -197,6 +197,7 @@ let records = [];
 let current = 0;
 let simPage = 1;
 let batchPage = 1;
+let preparedBatchRows = [];
 let latestInputIssues = [];
 
 const libraryCache = new Map();
@@ -302,6 +303,7 @@ function analyse() {
   const input = InputWorkflow.parseInputText(text);
   const status = document.getElementById('status');
   records = [];
+  preparedBatchRows = [];
   const problems = [];
 
   input.rows.forEach((row, index) => {
@@ -354,6 +356,7 @@ function analyse() {
     document.dispatchEvent(new Event('molecule-profiler:updated'));
     return;
   }
+  preparedBatchRows = records.map(record => ({name:record.name,smiles:record.smiles,row:batchRow(record)}));
   current = 0;
   simPage = 1;
   batchPage = 1;
@@ -381,6 +384,11 @@ function escapeHtml(text) {
 function renderCurrent() {
   const record = records[current];
   if (!record) return;
+  document.querySelectorAll('#molecule-tabs [data-index]').forEach(button => {
+    const selected = Number(button.dataset.index) === current;
+    button.setAttribute('aria-selected', String(selected));
+    button.tabIndex = selected ? 0 : -1;
+  });
   const d = record.d;
   const v = record.v;
   document.dispatchEvent(new Event('molecule-profiler:selected'));
@@ -1620,8 +1628,7 @@ function batchRow(record) {
 
 function renderBatch() {
   const table = document.getElementById('batch');
-  const prepared = records.map(record => ({name:record.name,smiles:record.smiles,row:batchRow(record)}));
-  const view = BatchBrowser.browseBatch(prepared, {
+  const view = BatchBrowser.browseBatch(preparedBatchRows, {
     filter:document.getElementById('batch-search').value,
     sort:document.getElementById('batch-sort').value,
     desc:document.getElementById('batch-order').value==='desc',
@@ -2100,6 +2107,7 @@ document.getElementById('clear').addEventListener('click', () => {
   document.getElementById('input-feedback').hidden = true;
   document.getElementById('quality-summary').hidden = true;
   records = [];
+  preparedBatchRows = [];
   document.dispatchEvent(new Event('molecule-profiler:updated'));
 });
 document.getElementById('export').addEventListener('click', exportCsv);

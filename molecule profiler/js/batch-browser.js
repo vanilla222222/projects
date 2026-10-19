@@ -3,6 +3,7 @@
 (function(root) {
   const NUMERIC = new Set(['mw','logp','tpsa','logS','hbd','hba','rotatableBonds','rings','fractionCsp3','abs']);
   const COLUMNS = new Set(['name','formula',...NUMERIC]);
+  const COLLATOR = new Intl.Collator('en', {numeric:true,sensitivity:'base'});
   function browseBatch(records, options) {
     const rows = Array.isArray(records) ? records : [];
     const o = options || {};
@@ -10,8 +11,7 @@
     const sort = COLUMNS.has(o.sort) ? o.sort : 'name';
     const desc = o.desc === true;
     const perPage = Number.isInteger(o.perPage) && o.perPage > 0 ? o.perPage : 50;
-    const collator = new Intl.Collator('en', {numeric:true,sensitivity:'base'});
-    const matches = rows.map((record,index)=>({record,index})).filter(({record})=>
+     const matches = rows.map((record,index)=>({record,index})).filter(({record})=>
       !filter || [record.name,record.smiles,record.row && record.row.formula].some(v=>String(v == null?'':v).toLowerCase().includes(filter))
     );
     matches.sort((a,b)=>{
@@ -19,7 +19,7 @@
       const x=value(a),y=value(b);
       const bad=v=>v==null || (typeof v==='number' && !Number.isFinite(v));
       if (bad(x)||bad(y)) return bad(x)===bad(y)?a.index-b.index:bad(x)?1:-1;
-      const d=NUMERIC.has(sort)?Number(x)-Number(y):collator.compare(String(x),String(y));
+      const d=NUMERIC.has(sort)?Number(x)-Number(y):COLLATOR.compare(String(x),String(y));
       return (desc?-d:d)||a.index-b.index;
     });
     const pages=Math.max(1,Math.ceil(matches.length/perPage));
