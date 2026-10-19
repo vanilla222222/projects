@@ -66,8 +66,13 @@
    if(!Array.isArray(r)||r.length!==4)throw new Error('Expected a four-column source row');
    const [section,item,field,value]=r.map(v=>String(v==null?'':v));
    const meta=metaFor(section,item,field);
+   // Many source pairs use field='value' with the semantic property in item.
+   // Retain the original key, but derive typing and unit from its full identity.
+   const semanticField=field==='value'?item:field;
+   const type=valueType(value,section,semanticField);
+   const unit=UNITS[semanticField]||'';
    return [VERSION,'mol-0001',name,smiles,section,item,field,value,
-    valueType(value,section,field),UNITS[field]||'',meta.evidence,meta.method,meta.interpretation,''];
+    type,unit,meta.evidence,meta.method,meta.interpretation,''];
   });
  }
  function serialize(rows){return '\uFEFF'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n')+'\r\n';}
