@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Molecule Profiler</title>
-<link rel="stylesheet" href="css/style.css?v=2026-10-20a">
+<link rel="stylesheet" href="css/style.css?v=2026-10-20-design">\n<link rel="stylesheet" href="css/workspace.css?v=2026-10-20-design">
 </head>
 <body data-theme="dark">
 <header class="topbar">
@@ -28,7 +28,7 @@
 </header>
 
 <main>
-  <section class="panel input-panel">
+  <div class="intro"><span class="eyebrow">Molecular analysis studio / Open methods</span><h2>From structure to insight.</h2><p>Enter one or more molecular structures to explore descriptors, structural screens, reference similarity and proposed biotransformations. Results are computational estimates, not laboratory measurements.</p></div>\n  <section class="panel input-panel">
     <div class="panel-head">
       <h2>Input</h2>
       <p class="hint">One molecule per line. Optional name before a comma, tab or space: <code>aspirin, CC(=O)Oc1ccccc1C(=O)O</code></p>
@@ -42,11 +42,17 @@
       <button type="button" id="export-full" disabled>Export everything for this molecule</button>
       <span id="status" class="status"></span>
     </div>
-    <p class="hint">The table export is one row per molecule with the batch columns. The full export is one row per value &mdash; <code>molecule, section, item, field, value</code> &mdash; and carries everything on this page for the molecule currently open: every descriptor, every filter verdict and violation, per-atom Crippen contributions, the whole similarity ranking, every scored target, matched alerts with their atoms, every firing toxicity rule, the dependence neighbours, and every enumerated metabolite with its weight, band, site factor and parent atoms. The similarity, target and dependence sections follow the fingerprint and metric selected below; the metabolite section follows the generation and phase filters.</p>
+    <details class="input-help"><summary>What is included in the exports?</summary><p class="hint">The table export is one row per molecule with the batch columns. The full export is one row per value &mdash; <code>molecule, section, item, field, value</code> &mdash; and carries everything on this page for the molecule currently open: every descriptor, every filter verdict and violation, per-atom Crippen contributions, the whole similarity ranking, every scored target, matched alerts with their atoms, every firing toxicity rule, the dependence neighbours, and every enumerated metabolite with its weight, band, site factor and parent atoms. The similarity, target and dependence sections follow the fingerprint and metric selected below; the metabolite section follows the generation and phase filters.</p></details>
   </section>
 
   <section id="results" hidden>
-    <nav class="tabs" id="molecule-tabs" aria-label="Molecules"></nav>
+    <div class="result-toolbar">
+      <div class="result-toolbar-heading"><span class="eyebrow">Analysis workspace</span><h2>Explore your results</h2><p>Switch between focused views, or show every section.</p></div>
+      <label class="module-search-label" for="module-search"><span>Find a section</span><input id="module-search" type="search" placeholder="e.g. solubility, toxicity, targets" autocomplete="off"></label>
+    </div>
+    <nav class="workspace-nav" id="workspace-nav" aria-label="Analysis sections"></nav>
+    <p id="workspace-description" class="workspace-description" role="status" aria-live="polite"></p>
+    <div class="molecule-strip"><span class="strip-title">Molecules in this analysis</span><nav class="tabs" id="molecule-tabs" aria-label="Molecules"></nav></div>
 
     <div class="grid">
       <article class="panel">
@@ -346,6 +352,6 @@
 <script src="js/metabolism.js?v=2026-10-20a"></script>
 <script src="js/evidence-report.js?v=2026-10-20b"></script>
 <script src="js/screen-coverage.js?v=2026-10-20c"></script>
-<script src="js/app.js?v=2026-10-20c"></script>
+<script src="js/app.js?v=2026-10-20c"></script>\n<script src="js/workspace-ui.js?v=2026-10-20-design"></script>
 </body>
 </html>
