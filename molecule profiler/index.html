@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Molecule Profiler</title>
-<link rel="stylesheet" href="css/style.css?v=2026-10-19b">
+<link rel="stylesheet" href="css/style.css?v=2026-10-19c">
 </head>
 <body data-theme="dark">
 <header class="topbar">
@@ -160,7 +160,7 @@
           </select></label>
           <label><input type="checkbox" id="met-toxonly"> new toxicity flags only</label>
         </div>
-        <div class="table-wrap"><table id="metabolites"><thead></thead><tbody></tbody></table></div>
+        <div class="table-wrap"><table id="metabolites"><colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="c8"><col class="c9"><col class="c10"><col class="c11"></colgroup><thead></thead><tbody></tbody></table></div>
         <div class="table-wrap"><table id="met-notes"><thead></thead><tbody></tbody></table></div>
         <p class="hint caveat">A metabolite listed here is a structure the rule set can reach, not a structure anyone has measured. The tree is enumerated breadth-first and every product is passed back through the parser, the descriptors and the toxicity screens of this page, so a flag on a metabolite means exactly what the same flag means on a parent molecule. Leaving groups below five heavy atoms are reported as released fragments rather than as metabolites of their own. Enzyme attribution is by reaction class: a carbon oxidation next to nitrogen is labelled CYP because that class of reaction is CYP work, which is not the same as predicting the isoform.</p>
       </article>
@@ -233,7 +233,7 @@
           </select></label>
         </div>
         <p class="hint" id="tgt-blurb"></p>
-        <div class="table-wrap"><table id="targets"><thead></thead><tbody></tbody></table></div>
+        <div class="table-wrap"><table id="targets"><colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="c8"><col class="c9"><col class="c10"></colgroup><thead></thead><tbody></tbody></table></div>
         <p class="hint caveat" id="tgt-caveat">This is a nearest-neighbour lookup over a hand-curated set of known ligands, not a trained model: a target scores high when the query looks like a compound already recorded as binding it. The numbers are fingerprint similarities, not binding probabilities, and a target with no ligand in the set below can never appear here.</p>
       </article>
 
@@ -259,22 +259,22 @@
   </section>
 </main>
 
-<script src="js/smiles.js?v=2026-10-19b"></script>
-<script src="js/mol.js?v=2026-10-19b"></script>
-<script src="js/descriptors.js?v=2026-10-19b"></script>
-<script src="js/rules.js?v=2026-10-19b"></script>
-<script src="js/fingerprints.js?v=2026-10-19b"></script>
-<script src="js/smarts.js?v=2026-10-19b"></script>
-<script src="data/library.js?v=2026-10-19b"></script>
-<script src="data/targets.js?v=2026-10-19b"></script>
-<script src="data/alerts.js?v=2026-10-19b"></script>
-<script src="data/toxalerts.js?v=2026-10-19b"></script>
-<script src="data/dependence.js?v=2026-10-19b"></script>
-<script src="js/tox.js?v=2026-10-19b"></script>
-<script src="js/transform.js?v=2026-10-19b"></script>
-<script src="js/sites.js?v=2026-10-19b"></script>
-<script src="data/metabolism.js?v=2026-10-19b"></script>
-<script src="js/metabolism.js?v=2026-10-19b"></script>
-<script src="js/app.js?v=2026-10-19b"></script>
+<script src="js/smiles.js?v=2026-10-19c"></script>
+<script src="js/mol.js?v=2026-10-19c"></script>
+<script src="js/descriptors.js?v=2026-10-19c"></script>
+<script src="js/rules.js?v=2026-10-19c"></script>
+<script src="js/fingerprints.js?v=2026-10-19c"></script>
+<script src="js/smarts.js?v=2026-10-19c"></script>
+<script src="data/library.js?v=2026-10-19c"></script>
+<script src="data/targets.js?v=2026-10-19c"></script>
+<script src="data/alerts.js?v=2026-10-19c"></script>
+<script src="data/toxalerts.js?v=2026-10-19c"></script>
+<script src="data/dependence.js?v=2026-10-19c"></script>
+<script src="js/tox.js?v=2026-10-19c"></script>
+<script src="js/transform.js?v=2026-10-19c"></script>
+<script src="js/sites.js?v=2026-10-19c"></script>
+<script src="data/metabolism.js?v=2026-10-19c"></script>
+<script src="js/metabolism.js?v=2026-10-19c"></script>
+<script src="js/app.js?v=2026-10-19c"></script>
 </body>
 </html>
