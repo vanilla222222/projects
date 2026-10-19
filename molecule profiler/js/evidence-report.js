@@ -25,6 +25,7 @@ function propertyEvidenceRows(d) {
 function propertyEvidenceWarnings(d) {
   const warnings = [];
   if (!Number.isFinite(d.mw) || !Number.isFinite(d.tpsa) || !Number.isFinite(d.logp)) warnings.push('A required descriptor is unavailable or non-finite.');
+  if (!Number.isFinite(d.logS)) warnings.push('Aqueous solubility estimate is unavailable; no log S evidence is shown.');
   if (d.charge !== 0) warnings.push('Charged structure: neutral-compound partitioning and solubility estimates may be unreliable.');
   if (d.mw > 700) warnings.push('High molecular weight: empirical solubility model may extrapolate beyond common training chemistry.');
   if (d.logp < -2 || d.logp > 7) warnings.push('Extreme predicted lipophilicity: treat ESOL estimates as low-confidence extrapolations.');
