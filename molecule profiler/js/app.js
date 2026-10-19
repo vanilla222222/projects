@@ -20,10 +20,10 @@ const GLOSSARY = {
   aromaticRings: ['Aromatic rings', 'Rings whose atoms were either written lowercase or satisfy a Hückel π-electron count of 4n+2.'],
   aromaticAtoms: ['Aromatic atoms', 'Atoms belonging to at least one aromatic ring after perception.'],
   rotatableBonds: ['Rotatable bonds', 'Single, acyclic bonds between two non-terminal heavy atoms, using the strict definition: triple-bond neighbours, CF₃, CCl₃, CBr₃ and tert-butyl groups are excluded, and so are amide and amidine-like bonds, whose rotation is hindered by conjugation.'],
-  hbd: ['H-bond donors', 'Lipinski’s count: every hydrogen attached to a nitrogen or oxygen. It overcounts in the chemical sense but it is what the rule of five was calibrated on.'],
-  hba: ['H-bond acceptors', 'Lipinski’s count: every nitrogen and oxygen atom, whether or not it can really accept a hydrogen bond.'],
-  hbdStrict: ['Donors (strict)', 'Only nitrogens and oxygens carrying a hydrogen that are plausible donors, skipping amide nitrogens and similar. Shown for comparison; the filters use the Lipinski count.'],
-  hbaStrict: ['Acceptors (strict)', 'The count most papers mean by “HBA”, and usually the smaller of the two. Only atoms with a lone pair actually available to accept: a hydroxyl next to a carbonyl is skipped, because a carboxylic acid’s own OH donates rather than accepts; an amide or sulfonamide nitrogen is skipped, because the lone pair is delocalised into the neighbouring double bond; a pyrrole-type ring nitrogen carrying a third substituent is skipped for the same reason, while a pyridine-type one is kept. A nitrogen whose neighbouring double bond lies inside a ring keeps its lone pair and is counted. Both this and the Lipinski count agree with RDKit on all 596 reference compounds.'],
+  hbd: ['NH+OH count (Lipinski)', 'Every hydrogen attached to a nitrogen or oxygen, counted one per hydrogen, so an NH2 contributes two. This is the quantity Lipinski’s rule of five tests, which is why the rule-of-five row uses it. It matches RDKit’s NHOHCount on all 1012 reference compounds. For a paper’s “HBD”, compare the donor row below instead.'],
+  hba: ['N+O count (Lipinski)', 'Every nitrogen and oxygen atom, whether or not it can really accept a hydrogen bond. This is the quantity Lipinski’s rule of five actually tests (“no more than 10 N or O”), which is why it is kept and why the rule-of-five row uses it. It is deliberately not the same number as the acceptor count below, and it is usually larger. It matches RDKit’s NOCount on all 1012 reference compounds. If you are comparing against a paper’s “HBA”, or against RDKit’s NumHAcceptors, compare the acceptor row instead.'],
+  hbdStrict: ['H-bond donors', 'Donor groups rather than donor hydrogens: each nitrogen or oxygen carrying at least one hydrogen counts once however many hydrogens it has, so an NH2 contributes one, and a neutral thiol SH counts as well. This is the row to compare against RDKit’s NumHDonors or a paper’s “HBD”: it matches RDKit on all 1012 reference compounds. The count above answers a different question and will be larger whenever an NH2 or a water-like OH is present.'],
+  hbaStrict: ['H-bond acceptors', 'The count most papers mean by “HBA”, and usually the smaller of the two. Only atoms with a lone pair actually available to accept: a hydroxyl next to a carbonyl is skipped, because a carboxylic acid’s own OH donates rather than accepts; an amide or sulfonamide nitrogen is skipped, because the lone pair is delocalised into the neighbouring double bond; a pyrrole-type ring nitrogen carrying a third substituent is skipped for the same reason, while a pyridine-type one is kept. A nitrogen whose neighbouring double bond lies inside a ring keeps its lone pair and is counted. This is the row to compare against RDKit’s NumHAcceptors or a paper’s “HBA”: it matches RDKit’s CalcNumHBA on all 1012 reference compounds. The N+O row above answers a different question and will usually be larger.'],
   tpsa: ['TPSA', 'Topological polar surface area in Å², by Ertl’s method: each nitrogen and oxygen contributes a value from a fitted table keyed on its bonding, and the contributions are summed. It tracks membrane permeability well; above roughly 140 Å² oral absorption tends to drop.'],
   fractionCsp3: ['Fraction Csp³', 'Share of carbons that are saturated. A low value means a flat, mostly aromatic molecule, which correlates with poorer solubility and more promiscuous binding.'],
   mr: ['Molar refractivity', 'Wildman–Crippen molar refractivity, a size-and-polarisability measure in cm³/mol. Ghose’s filter wants it between 40 and 130.'],
@@ -136,7 +136,7 @@ const GLOSSARY = {
   tgtName: ['Target', 'The protein, named as it appears in the curated ligand set.'],
   tgtGene: ['Gene', 'The human gene symbol, or the microbial gene name for antibacterial, antifungal and antiviral targets.'],
   tgtFamily: ['Family', 'Broad target class: GPCR, enzyme, kinase, ion channel, transporter, nuclear receptor or ribosome.'],
-  tgtScore: ['Score', 'The similarity between the query and the most similar of this target’s known ligands — a nearest-neighbour score, computed with the fingerprint and metric chosen in the similarity panel above. It is a structural resemblance, not a probability of binding.'],
+  tgtScore: ['Nearest similarity', 'The similarity between the query and the most similar of this target’s known ligands, computed with the fingerprint and metric chosen in the similarity panel above. It is the same number the similarity table would print for that one ligand. It is a structural resemblance and nothing else: 0.45 here means a Tanimoto of 0.45, not a 45% chance of binding. The column exists to rank these targets against each other, and the ranking is only over the ligand sets this page carries.'],
   tgtNearest: ['Nearest ligand', 'The known ligand of this target that the query resembles most. Click the row to profile it.'],
   tgtLigands: ['Actives', 'How many known ligands of this target are in the reference library. A target with one ligand can only ever be matched through that single compound, so its score says much less.'],
   simMethod: ['Fingerprint', 'Which structural fingerprint is compared. ECFP4 and ECFP6 hash circular atom environments out to two and three bonds; FCFP4 does the same but describes each atom by its pharmacophore role (donor, acceptor, aromatic, halogen, basic, acidic) instead of its element, so it tolerates element swaps; atom pairs record every pair of typed atoms together with the number of bonds between them.'],
@@ -170,8 +170,8 @@ const BATCH_COLUMNS = [
   ['logp', 'WLOGP', (d) => d.logp.toFixed(2)],
   ['tpsa', 'TPSA', (d) => d.tpsa.toFixed(1)],
   ['logS', 'Log S', (d) => d.logS.toFixed(2)],
-  ['hbd', 'HBD', (d) => d.hbd],
-  ['hba', 'HBA', (d) => d.hba],
+  ['hbd', 'NH+OH', (d) => d.hbd],
+  ['hba', 'N+O', (d) => d.hba],
   ['rotatableBonds', 'RotB', (d) => d.rotatableBonds],
   ['rings', 'Rings', (d) => d.rings],
   ['fractionCsp3', 'Csp3', (d) => d.fractionCsp3.toFixed(2)],
@@ -246,24 +246,43 @@ function rows(target, entries) {
   )).join('');
 }
 
+function parsesAsSmiles(text) {
+  if (!text) return false;
+  try {
+    return buildMolecule(parseSmiles(text)).atoms.length > 0;
+  } catch (error) {
+    return false;
+  }
+}
+
 function splitLine(line) {
-  const comma = line.indexOf(',');
-  const tab = line.indexOf('\t');
-  let cut = -1;
-  if (tab >= 0) cut = tab;
-  else if (comma >= 0) cut = comma;
-  else {
-    const space = line.search(/\s/);
-    if (space >= 0) cut = space;
+  const trimmed = line.trim();
+  const tab = trimmed.indexOf('\t');
+  const comma = trimmed.indexOf(',');
+  const cut = tab >= 0 ? tab : comma;
+  if (cut >= 0) {
+    const head = trimmed.slice(0, cut).trim();
+    const tail = trimmed.slice(cut + 1).trim();
+    if (!tail) return { name: null, smiles: head };
+    if (parsesAsSmiles(tail)) return { name: head || null, smiles: tail };
+    if (parsesAsSmiles(head)) return { name: tail || null, smiles: head };
+    return { name: head || null, smiles: tail };
   }
-  if (cut < 0) return { name: null, smiles: line.trim() };
-  const head = line.slice(0, cut).trim();
-  const tail = line.slice(cut + 1).trim();
-  if (!tail) return { name: null, smiles: head };
-  if (/^[A-Za-z0-9@+\-\[\]()=#$%./\\]+$/.test(head) && head.length > tail.length) {
-    return { name: tail, smiles: head };
+  if (parsesAsSmiles(trimmed)) return { name: null, smiles: trimmed };
+  const parts = trimmed.split(/\s+/);
+  for (let keep = parts.length - 1; keep >= 1; keep -= 1) {
+    const candidate = parts.slice(keep).join(' ');
+    if (parsesAsSmiles(candidate)) {
+      return { name: parts.slice(0, keep).join(' '), smiles: candidate };
+    }
   }
-  return { name: head, smiles: tail };
+  for (let keep = 1; keep < parts.length; keep += 1) {
+    const candidate = parts.slice(0, keep).join(' ');
+    if (parsesAsSmiles(candidate)) {
+      return { name: parts.slice(keep).join(' '), smiles: candidate };
+    }
+  }
+  return { name: null, smiles: trimmed };
 }
 
 function analyse() {
@@ -327,7 +346,9 @@ function renderCurrent() {
   const v = record.v;
 
   rows(document.getElementById('identity'), [
-    ['name', 'Name', escapeHtml(record.name)],
+    ['name', 'Name', '<span id="name-edit" contenteditable="true" spellcheck="false"'
+      + ' title="Click to rename. The name is used for the tab, the export and the file name.">'
+      + escapeHtml(record.name) + '</span>'],
     ['smiles', 'SMILES', escapeHtml(record.smiles)],
     ['formula', 'Formula', d.formula],
     ['mw', 'Molecular weight', d.mw.toFixed(2) + ' g/mol'],
@@ -338,15 +359,38 @@ function renderCurrent() {
     ['charge', 'Formal charge', d.charge > 0 ? '+' + d.charge : d.charge]
   ]);
 
+  const nameEdit = document.getElementById('name-edit');
+  if (nameEdit) {
+    const commit = () => {
+      const next = nameEdit.textContent.trim();
+      if (!next || next === record.name) {
+        nameEdit.textContent = record.name;
+        return;
+      }
+      record.name = next;
+      renderTabs();
+    };
+    nameEdit.addEventListener('blur', commit);
+    nameEdit.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        nameEdit.blur();
+      } else if (event.key === 'Escape') {
+        nameEdit.textContent = record.name;
+        nameEdit.blur();
+      }
+    });
+  }
+
   rows(document.getElementById('physchem'), [
     ['rings', 'Rings', d.rings],
     ['aromaticRings', 'Aromatic rings', d.aromaticRings],
     ['aromaticAtoms', 'Aromatic atoms', d.aromaticAtoms],
     ['rotatableBonds', 'Rotatable bonds', d.rotatableBonds],
-    ['hbd', 'H-bond donors', d.hbd],
-    ['hba', 'H-bond acceptors', d.hba],
-    ['hbdStrict', 'Donors (strict)', d.hbdStrict],
-    ['hbaStrict', 'Acceptors (strict)', d.hbaStrict],
+    ['hbd', 'NH+OH count (Lipinski)', d.hbd],
+    ['hba', 'N+O count (Lipinski)', d.hba],
+    ['hbdStrict', 'H-bond donors', d.hbdStrict],
+    ['hbaStrict', 'H-bond acceptors', d.hbaStrict],
     ['tpsa', 'TPSA', d.tpsa.toFixed(2) + ' Å²'],
     ['fractionCsp3', 'Fraction Csp³', d.fractionCsp3.toFixed(2)]
   ]);
@@ -572,7 +616,7 @@ const TGT_COLUMNS = [
   ['tgtGene', 'Gene'],
   ['tgtFamily', 'Family'],
   ['tgtOrganism', 'Organism'],
-  ['tgtScore', 'Score'],
+  ['tgtScore', 'Nearest similarity'],
   ['tgtMean', 'Mean top-3'],
   ['tgtNearest', 'Nearest ligand'],
   ['tgtLigands', 'Actives'],
@@ -1255,6 +1299,17 @@ function fullExportRows(record) {
   const add = (section, item, field, value) => out.push([section, item, field, value]);
   const pair = (section, item, value) => add(section, item, 'value', value);
 
+  [
+    ['scope', 'Every row in this file is computed in the browser from the SMILES alone. Nothing here is a measurement, a literature value or a database lookup, and no column is calibrated against an assay.'],
+    ['physicochemical', 'lipinskiNOCount and lipinskiNHOHCount are the atom and hydrogen tallies the rule of five tests; they match RDKit NOCount and NHOHCount. hbondAcceptors and hbondDonors are the chemically filtered counts; they match RDKit CalcNumHBA and NumHDonors. The two pairs answer different questions, so they are not expected to be equal, and the Lipinski pair is usually the larger.'],
+    ['drug-likeness', 'Rule-based filters with published cutoffs. A pass means the molecule falls inside a window drawn from earlier drug sets. It is not a verdict on whether the compound is a good drug.'],
+    ['similarity', 'Fingerprint overlap between the query and each reference structure. A high value means the two structures share substructures; it does not mean they share pharmacology.'],
+    ['targets', 'nearestLigandSimilarity is the fingerprint similarity between the query and the single most similar known ligand of that target; meanTop3Similarity is the mean over its three most similar. They are structural resemblances, used only to rank the targets in this file against each other. They are not probabilities of binding, not affinities, and not calibrated against any assay: a value of 0.45 means a Tanimoto of 0.45, not a 45% chance of interaction.'],
+    ['metabolism', 'relativeWeight is the product of published reaction-class frequencies along the path from the parent, each scaled by a per-site factor. It orders candidate routes against each other. It is not a yield, a fraction of dose or a concentration. Route summedWeight adds those products over all metabolites on a route, so route totals can exceed 1 and must not be read as fractions of a dose. The major / minor / trace band is a reading of the same product against fixed cuts at 0.10 and 0.02. enumerationCapped reports whether the search hit its own breadth limit; "no" does not mean every biologically possible route was considered.'],
+    ['toxicity', 'Substructure matches against published alert catalogues. A match flags a motif the literature associates with a liability. Zero matches means no catalogued motif was found, not that the compound is safe.'],
+    ['dependence', 'Structural analogy to labelled reference drugs, and nothing more. No row in this section is a pharmacological or abuse-liability finding about the query.']
+  ].forEach(([item, text]) => add('provenance', item, 'note', text));
+
   pair('identity', 'name', record.name);
   pair('identity', 'smiles', record.smiles);
   pair('identity', 'formula', d.formula);
@@ -1268,7 +1323,8 @@ function fullExportRows(record) {
   [
     ['rings', d.rings], ['aromaticRings', d.aromaticRings], ['aromaticAtoms', d.aromaticAtoms],
     ['aromaticProportion', d.aromaticProportion.toFixed(4)], ['rotatableBonds', d.rotatableBonds],
-    ['hbd', d.hbd], ['hba', d.hba], ['hbdStrict', d.hbdStrict], ['hbaStrict', d.hbaStrict],
+    ['lipinskiNHOHCount', d.hbd], ['lipinskiNOCount', d.hba],
+    ['hbondDonors', d.hbdStrict], ['hbondAcceptors', d.hbaStrict],
     ['tpsa', d.tpsa.toFixed(4)], ['fractionCsp3', d.fractionCsp3.toFixed(4)]
   ].forEach(([key, value]) => pair('physicochemical', key, value));
 
@@ -1320,6 +1376,7 @@ function fullExportRows(record) {
   const metricKey = document.getElementById('sim-metric').value;
   const method = FP_METHODS.find((entry) => entry.key === methodKey) || FP_METHODS[0];
   const score = metricKey === 'dice' ? dice : tanimoto;
+  const metricName = method.label + ' ' + (metricKey === 'dice' ? 'Dice' : 'Tanimoto');
   const query = fingerprint(record.mol, method.key);
   pair('similarity', 'fingerprint', method.label);
   pair('similarity', 'metric', metricKey === 'dice' ? 'Dice' : 'Tanimoto');
@@ -1367,10 +1424,11 @@ function fullExportRows(record) {
     add('targets', label, 'gene', row.target.gene);
     add('targets', label, 'family', row.target.family);
     add('targets', label, 'organism', row.target.organism);
-    add('targets', label, 'score', row.score.toFixed(4));
-    add('targets', label, 'meanTop3', row.mean.toFixed(4));
+    add('targets', label, 'nearestLigandSimilarity', row.score.toFixed(4));
+    add('targets', label, 'meanTop3Similarity', row.mean.toFixed(4));
     add('targets', label, 'nearestLigand', row.nearest.name);
     add('targets', label, 'activesScored', row.count);
+    add('targets', label, 'similarityMetric', metricName);
     add('targets', label, 'mechanism', row.target.note);
   });
 

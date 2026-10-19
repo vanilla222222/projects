@@ -4,8 +4,8 @@ function lipinski(d) {
   const fails = [];
   if (d.mw > 500) fails.push('MW ' + d.mw.toFixed(1) + ' > 500');
   if (d.logp > 5) fails.push('WLOGP ' + d.logp.toFixed(2) + ' > 5');
-  if (d.hbd > 5) fails.push('HBD ' + d.hbd + ' > 5');
-  if (d.hba > 10) fails.push('HBA ' + d.hba + ' > 10');
+  if (d.hbd > 5) fails.push('NH+OH ' + d.hbd + ' > 5');
+  if (d.hba > 10) fails.push('N+O ' + d.hba + ' > 10');
   return { name: 'Lipinski', allowed: 1, fails, pass: fails.length <= 1 };
 }
 
@@ -41,8 +41,8 @@ function muegge(d) {
   if (d.carbons <= 4) fails.push('Carbons ' + d.carbons + ' <= 4');
   if (d.heteroatoms <= 1) fails.push('Heteroatoms ' + d.heteroatoms + ' <= 1');
   if (d.rotatableBonds > 15) fails.push('Rotatable bonds ' + d.rotatableBonds + ' > 15');
-  if (d.hba > 10) fails.push('HBA ' + d.hba + ' > 10');
-  if (d.hbd > 5) fails.push('HBD ' + d.hbd + ' > 5');
+  if (d.hba > 10) fails.push('N+O ' + d.hba + ' > 10');
+  if (d.hbd > 5) fails.push('NH+OH ' + d.hbd + ' > 5');
   return { name: 'Muegge', allowed: 0, fails, pass: fails.length === 0 };
 }
 

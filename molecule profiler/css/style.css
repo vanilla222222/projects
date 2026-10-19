@@ -435,3 +435,14 @@ svg.depiction .atom {
   stroke-linejoin: round;
 }
 .depict-box { display: flex; align-items: center; justify-content: center; padding: 10px 6px; background: var(--bg-sink); border: 1px solid var(--line-soft); border-radius: var(--radius); }
+
+#name-edit {
+  border-bottom: 1px dashed var(--line);
+  cursor: text;
+  outline: none;
+}
+
+#name-edit:focus {
+  border-bottom-style: solid;
+  border-bottom-color: var(--accent);
+}

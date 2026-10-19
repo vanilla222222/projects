@@ -407,7 +407,10 @@ function lipinskiHBA(mol) {
 }
 
 function strictHBD(mol) {
-  return mol.atoms.filter((atom) => (atom.element === 'N' || atom.element === 'O') && atom.totalH > 0).length;
+  return mol.atoms.filter((atom) => {
+    if (atom.element === 'N' || atom.element === 'O') return atom.totalH > 0;
+    return atom.element === 'S' && atom.charge === 0 && atom.totalH === 1;
+  }).length;
 }
 
 function hbaValence(mol, atom) {
