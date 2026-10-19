@@ -11,4 +11,5 @@ assert.deepEqual(propertyEvidenceWarnings(base), []);
 assert.ok(propertyEvidenceWarnings({ ...base, charge: 1 }).some(x => x.includes('Charged')));
 assert.ok(propertyEvidenceWarnings({ ...base, logp: 9 }).some(x => x.includes('Extreme')));
 assert.equal(propertyEvidenceRows({ ...base, logS: NaN }).find(x => x.label === 'Aqueous log S').value, null);
+assert.ok(propertyEvidenceWarnings({ ...base, logS: NaN }).some(x => x.includes('solubility estimate is unavailable')));
 console.log('Descriptor evidence checks passed');
