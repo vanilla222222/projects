@@ -134,6 +134,104 @@ ANILIDES = [
     ("Beta-methylfentanyl", PROPANOYL, PHENYL, "", "CC(C)c1ccccc1", "", "C23H30N2O"),
 ]
 
+# {ACYL} the 4-acyl or 4-ester group, {ARYL} the 4-aryl ring, {NSUB} the nitrogen
+# substituent. Ring 9 again keeps the piperidine closure clear of the substituent rings.
+ARYLPIPERIDINE = "{ACYL}C9({ARYL})CCN{NSUB}CC9"
+
+# name, acyl, aryl, N-substituent, stated formula
+ARYLPIPERIDINES = [
+    ("Pethidine", "CCOC(=O)", PHENYL, "C", "C15H21NO2"),
+
+    ("Norpethidine", "CCOC(=O)", PHENYL, "", "C14H19NO2"),
+    ("Pethidinic acid", "OC(=O)", PHENYL, "C", "C13H17NO2"),
+    ("Properidine", "CC(C)OC(=O)", PHENYL, "C", "C16H23NO2"),
+    ("Anileridine", "CCOC(=O)", PHENYL, "CCc1ccc(N)cc1", "C22H28N2O2"),
+    ("Piminodine", "CCOC(=O)", PHENYL, "CCCNc1ccccc1", "C23H30N2O2"),
+    ("Phenoperidine", "CCOC(=O)", PHENYL, "CCC(O)c1ccccc1", "C23H29NO3"),
+    ("Ketobemidone", "CCC(=O)", "c1cccc(O)c1", "C", "C15H21NO2"),
+    ("Diphenoxylate", "CCOC(=O)", PHENYL,
+     "CCC(C#N)(c1ccccc1)c1ccccc1", "C30H32N2O2"),
+    ("Difenoxin", "OC(=O)", PHENYL, "CCC(C#N)(c1ccccc1)c1ccccc1", "C28H28N2O2"),
+]
+
+# 2-benzylbenzimidazole opioids. {NSUB} the 1-substituent, {R4} the benzyl ring
+# 4-substituent, {R5} the benzimidazole 5-substituent.
+NITAZENE = "{NSUB}n1c(Cc2ccc{R4}cc2)nc2cc{R5}ccc21"
+
+DIETHYLAMINOETHYL = "CCN(CC)CC"
+PYRROLIDINOETHYL = "C1CCCN1CC"
+PIPERIDINOETHYL = "C1CCCCN1CC"
+NITRO = "[N+](=O)[O-]"
+
+# name, 1-substituent, benzyl 4-substituent, benzimidazole 5-substituent, stated formula
+NITAZENES = [
+    ("Etonitazene", DIETHYLAMINOETHYL, "OCC", NITRO, "C22H28N4O3"),
+    ("Metonitazene", DIETHYLAMINOETHYL, "OC", NITRO, "C21H26N4O3"),
+    ("Isotonitazene", DIETHYLAMINOETHYL, "OC(C)C", NITRO, "C23H30N4O3"),
+    ("Protonitazene", DIETHYLAMINOETHYL, "OCCC", NITRO, "C23H30N4O3"),
+    ("Butonitazene", DIETHYLAMINOETHYL, "OCCCC", NITRO, "C24H32N4O3"),
+    ("Flunitazene", DIETHYLAMINOETHYL, "F", NITRO, "C20H23FN4O2"),
+    ("Etodesnitazene", DIETHYLAMINOETHYL, "OCC", "", "C22H29N3O"),
+    ("Metodesnitazene", DIETHYLAMINOETHYL, "OC", "", "C21H27N3O"),
+    ("Isotodesnitazene", DIETHYLAMINOETHYL, "OC(C)C", "", "C23H31N3O"),
+    ("N-Pyrrolidino etonitazene", PYRROLIDINOETHYL, "OCC", NITRO, "C22H26N4O3"),
+    ("N-Pyrrolidino metonitazene", PYRROLIDINOETHYL, "OC", NITRO, "C21H24N4O3"),
+    ("N-Piperidinyl etonitazene", PIPERIDINOETHYL, "OCC", NITRO, "C23H28N4O3"),
+]
+
+# Open-chain and remaining chemotypes. These are written out rather than decorated on a
+# template, so only the formula cross-check applies to them.
+SINGLETONS = [
+    ("Levomethadyl acetate", "Open-chain opioid",
+     "CC(=O)OC(CC)C(CC(C)N(C)C)(c1ccccc1)c1ccccc1", "C23H31NO2"),
+    ("Normethadone", "Open-chain opioid",
+     "CCC(=O)C(CCN(C)C)(c1ccccc1)c1ccccc1", "C20H25NO"),
+    ("Isomethadone", "Open-chain opioid",
+     "CCC(=O)C(C(C)CN(C)C)(c1ccccc1)c1ccccc1", "C21H27NO"),
+    ("Methadol", "Open-chain opioid",
+     "CCC(O)C(CC(C)N(C)C)(c1ccccc1)c1ccccc1", "C21H29NO"),
+    ("Dextropropoxyphene", "Open-chain opioid",
+     "CCC(=O)OC(CC(C)N(C)C)(Cc1ccccc1)c1ccccc1", "C22H29NO2"),
+    ("Dipipanone", "Open-chain opioid",
+     "CCC(=O)C(CC(C)N1CCCCC1)(c1ccccc1)c1ccccc1", "C24H31NO"),
+    ("Dextromoramide", "Open-chain opioid",
+     "O=C(N1CCCC1)C(C(C)CN1CCOCC1)(c1ccccc1)c1ccccc1", "C25H32N2O2"),
+    ("Phenadoxone", "Open-chain opioid",
+     "CCC(=O)C(CC(C)N1CCOCC1)(c1ccccc1)c1ccccc1", "C23H29NO2"),
+    ("Dextrorphan", "Morphinan opioid",
+     "Oc1ccc2CC3N(C)CCC4(CCCCC34)c2c1", "C17H23NO"),
+    ("Levallorphan", "Morphinan opioid",
+     "Oc1ccc2CC3N(CC=C)CCC4(CCCCC34)c2c1", "C19H25NO"),
+    ("Butorphanol", "Morphinan opioid",
+     "Oc1ccc2CC3N(CC4CCC4)CCC5(CCCCC35O)c2c1", "C21H29NO2"),
+    ("Pentazocine", "Benzomorphan opioid",
+     "CC1C2Cc3ccc(O)cc3C1(C)CCN2CC=C(C)C", "C19H27NO"),
+    ("Phenazocine", "Benzomorphan opioid",
+     "CC1C2Cc3ccc(O)cc3C1(C)CCN2CCc1ccccc1", "C22H27NO"),
+    ("Cyclazocine", "Benzomorphan opioid",
+     "CC1C2Cc3ccc(O)cc3C1(C)CCN2CC1CC1", "C18H25NO"),
+    ("Metazocine", "Benzomorphan opioid",
+     "CC1C2Cc3ccc(O)cc3C1(C)CCN2C", "C15H21NO"),
+    ("Tapentadol", "Open-chain opioid",
+     "CCC(c1cccc(O)c1)C(C)CN(C)C", "C14H23NO"),
+    ("O-Desmethyltramadol", "Open-chain opioid",
+     "Oc1cccc(c1)C1(O)CCCCC1CN(C)C", "C15H23NO2"),
+    ("N-Desmethyltramadol", "Open-chain opioid",
+     "COc1cccc(c1)C1(O)CCCCC1CNC", "C15H23NO2"),
+    ("Meptazinol", "Open-chain opioid",
+     "CCC1(c2cccc(O)c2)CCCCN(C)C1", "C15H23NO"),
+    ("Tilidine", "Open-chain opioid",
+     "CCOC(=O)C1(c2ccccc2)C=CCCC1N(C)C", "C17H23NO2"),
+    ("AH-7921", "Benzamide opioid",
+     "CN(C)C1(CNC(=O)c2ccc(Cl)c(Cl)c2)CCCCC1", "C16H22Cl2N2O"),
+    ("U-47700", "Benzamide opioid",
+     "CN(C1CCCCC1N(C)C)C(=O)c1ccc(Cl)c(Cl)c1", "C16H22Cl2N2O"),
+    ("U-48800", "Benzamide opioid",
+     "CN(C1CCCCC1N(C)C)C(=O)c1ccc(Cl)cc1Cl", "C16H22Cl2N2O"),
+    ("U-50488", "Benzamide opioid",
+     "CN(C1CCCCC1N1CCCC1)C(=O)Cc1ccc(Cl)c(Cl)c1", "C19H26Cl2N2O"),
+]
+
 ENTRY = re.compile(
     r"\{ name: '((?:\\.|[^'\\])*)', cls: '((?:\\.|[^'\\])*)', "
     r"formula: '((?:\\.|[^'\\])*)', smiles: '((?:\\.|[^'\\])*)'(?:, propertyOnly: true)? \}"
@@ -142,6 +240,19 @@ ENTRY = re.compile(
 
 def build(row):
     return TEMPLATE.format(N=row[1], R3=row[2], RING=row[3], R14=row[4])
+
+
+def build_arylpiperidine(row):
+    nitrogen = "(%s)" % row[3] if row[3] else ""
+    return ARYLPIPERIDINE.format(ACYL=row[1], ARYL=row[2], NSUB=nitrogen)
+
+
+def build_nitazene(row):
+    # An empty slot has to drop its parentheses too, or the ring atom is written c() and
+    # the structure does not parse.
+    benzyl = "(%s)" % row[2] if row[2] else ""
+    core = "(%s)" % row[3] if row[3] else ""
+    return NITAZENE.format(NSUB=row[1], R4=benzyl, R5=core)
 
 
 def build_anilide(row):
@@ -173,7 +284,18 @@ def main():
 
     families = ([(row[0], row[-1], build(row), "Morphinan opioid") for row in COMPOUNDS]
                 + [(row[0], row[-1], build_anilide(row), "Anilidopiperidine opioid")
-                   for row in ANILIDES])
+                   for row in ANILIDES]
+                + [(row[0], row[-1], build_arylpiperidine(row), "Arylpiperidine opioid")
+                   for row in ARYLPIPERIDINES]
+                + [(row[0], row[-1], build_nitazene(row), "Benzimidazole opioid")
+                   for row in NITAZENES]
+                + [(row[0], row[-1], row[2], row[1]) for row in SINGLETONS])
+
+    seen = {}
+    for name, (_formula, smiles) in stored.items():
+        key = flat(smiles)
+        if key is not None:
+            seen.setdefault(key, name)
 
     failures, rows, anchors = [], [], []
     for name, stated, smiles, cls in families:
@@ -194,7 +316,13 @@ def main():
                 failures.append("%s: template disagrees with the stored structure" % name)
             anchors.append(name)
             continue
-        rows.append({"name": name, "cls": cls, "formula": computed, "smiles": smiles})
+        key = flat(smiles)
+        if key in seen:
+            failures.append("%s: same structure as %s" % (name, seen[key]))
+            continue
+        seen[key] = name
+        rows.append({"name": name, "cls": cls, "formula": computed,
+                     "smiles": Chem.MolToSmiles(mol)})
 
     if failures:
         for line in failures:
