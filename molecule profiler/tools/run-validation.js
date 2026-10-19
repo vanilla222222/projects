@@ -11,7 +11,7 @@ const scripts = [
   'property-validation.js',
   'metabolism-cases.js',
   'retrieval-benchmark.js',
-  'stereo-conformance.js'
+  'ui-integration-test.js'
 ];
 let failed = 0;
 for (const script of scripts) {
