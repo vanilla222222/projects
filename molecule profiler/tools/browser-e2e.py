@@ -79,7 +79,7 @@ class BrowserWorkflowTests(unittest.TestCase):
         self.page.locator("#run").click()
         self.page.wait_for_function(
             "expected => document.getElementById('status').textContent.includes(expected)",
-            expected, timeout=120000
+            arg=expected, timeout=120000
         )
         self.assertFalse(self.page.locator("#results").evaluate("(el) => el.hidden"))
 
