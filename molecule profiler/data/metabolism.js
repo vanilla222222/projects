@@ -256,6 +256,15 @@ const METABOLISM = [
     note: 'Carboxylesterases in liver and plasma cleave esters quickly, which is the whole design of a soft drug or an ester prodrug. Both halves are reported as separate metabolites.'
   },
   {
+    name: 'Aryl ester hydrolysis',
+    phase: 'I',
+    enzyme: 'Esterase',
+    route: 'hydrolysis',
+    smirks: '[#6:4][CX3:1](=[OX1:2])[OX2][c:3]>>[*:4][C:1](=[O:2])O.[c:3]O',
+    weight: 0.7,
+    note: 'An ester of a phenol, rather than of an alcohol, is cleaved by carboxylesterases and by plasma esterases faster still, because the leaving phenolate is stabilised by the ring. This is the dominant first step for aspirin, which is deacetylated to salicylic acid in the gut wall, the liver and the blood, and for phenyl-ester prodrugs generally. Both halves are reported as separate metabolites.'
+  },
+  {
     name: 'Amide hydrolysis',
     phase: 'I',
     enzyme: 'Amidase',
