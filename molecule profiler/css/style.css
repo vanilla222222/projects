@@ -290,6 +290,27 @@ dl.data.inline { margin-top: 16px; }
 }
 .dep-notice[data-weak="yes"] { border-left-color: var(--warn); background: var(--bg-raise); }
 .dep-notice[data-weak="yes"] strong { color: var(--warn); }
+.dep-gate {
+  margin: 0 0 11px;
+  padding: 11px 13px;
+  border: 1px solid var(--warn);
+  border-left: 3px solid var(--warn);
+  border-radius: 8px;
+  background: var(--bg-raise);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text);
+}
+.dep-ranking { margin-top: 4px; }
+.dep-ranking > summary {
+  cursor: pointer;
+  width: fit-content;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.dep-ranking:not([open]) > summary { color: var(--text-dim); }
 .filters[data-weak="yes"] { opacity: 0.62; }
 .filters[data-weak="yes"]:hover { opacity: 1; }
 .filter {

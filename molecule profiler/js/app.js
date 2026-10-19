@@ -1190,11 +1190,13 @@ const DEP_TARGET_COLUMNS = [
   ['depTargetLigand', 'Nearest ligand']
 ];
 
+const DEP_GATE = 0.45;
+
 const DEP_VERDICTS = [
   [0.85, 'worth asking about', 'The query is a close structural analogue of a drug with a documented dependence liability, so the rows below are worth checking against the real pharmacology of that drug. They remain fingerprint neighbours: nearness of shape is not a shared mechanism, and this panel never tests one.'],
   [0.65, 'worth asking about', 'The query shares a scaffold with a drug that carries a documented dependence liability. That is a reason to go and read the pharmacology, not a finding in itself.'],
   [0.45, 'structural analogy only, not pharmacology', 'The nearest labelled drug is a distant resemblance. Below a score of about 0.65 a nearest-neighbour number carries no pharmacological claim at all, so the rows below are simply the closest shapes in the set, printed in rank order. Nothing here says the query touches the reward circuit, and the numbers in the cards should not be read as a liability assessment.'],
-  [0, 'structural analogy only, not pharmacology', 'Nothing in the labelled dependence set is a relative of this query. Every row below is a non-match listed in rank order, so the scores describe distance in fingerprint space and say nothing whatever about dependence. For a molecule with no pharmacological relation to any of these drugs, such as aspirin, this panel has no content and should be read as empty rather than as a low risk score.']
+  [0, 'structural analogy only, not pharmacology', 'Nothing in the labelled dependence set is a relative of this query, so this panel has no content and should be read as empty rather than as a low risk score. The ranked tables are withheld below the gate for exactly that reason.']
 ];
 
 function renderDependence(record) {
@@ -1212,13 +1214,35 @@ function renderDependence(record) {
 
   const verdict = DEP_VERDICTS.find(([floor]) => profile.top >= floor);
   const weak = profile.top < 0.65;
+  const gated = profile.top < DEP_GATE;
   const notice = document.getElementById('dep-verdict');
   notice.dataset.weak = weak ? 'yes' : 'no';
   notice.innerHTML = '<strong>' + escapeHtml(verdict[1]) + '</strong> ' + escapeHtml(verdict[2]);
 
+  const gateNote = document.getElementById('dep-gate-note');
+  gateNote.hidden = !gated;
+  gateNote.textContent = gated
+    ? 'Nothing in the labelled dependence set is a structural relative of this query. The closest drug carrying a documented liability scores '
+      + profile.top.toFixed(3) + ', below the ' + DEP_GATE.toFixed(2)
+      + ' floor at which a nearest-neighbour score starts to carry any meaning at all. The ranked tables are therefore withheld rather than printed: a list of addictive drugs sorted by a number that means nothing reads as a finding, and there is no finding here. Nothing was measured about this molecule and dependence. The rows remain available below and in the CSV export for audit, where they are distances in fingerprint space and nothing else.'
+    : '';
+
+  const ranking = document.getElementById('dep-ranking');
+  ranking.open = !gated;
+  document.getElementById('dep-ranking-summary').textContent = gated
+    ? 'Show the withheld ranking \u2014 fingerprint distances with no pharmacological meaning'
+    : 'Ranked neighbours and reward-circuit targets';
+
   const cards = document.getElementById('dep-cards');
   cards.dataset.weak = weak ? 'yes' : 'no';
-  cards.innerHTML = [
+  cards.innerHTML = gated ? [
+    '<div class="filter pass">'
+      + '<div class="name">Closest labelled analogy' + infoButton('depBand') + '</div>'
+      + '<div class="verdict">' + profile.top.toFixed(3) + '</div>'
+      + '<div class="why">' + escapeHtml(profile.band)
+        + ' \u2014 below the ' + DEP_GATE.toFixed(2) + ' gate, so no nearest drug, no reward-circuit score and no band verdict is reported</div>'
+      + '</div>'
+  ].join('') : [
     '<div class="filter ' + (profile.top >= 0.65 ? 'fail' : 'pass') + '">'
       + '<div class="name">Analogy band' + infoButton('depBand') + '</div>'
       + '<div class="verdict">' + profile.top.toFixed(3) + '</div>'
@@ -1834,6 +1858,10 @@ function fullExportRows(record) {
   pair('dependence', 'analogyScore', profile.top.toFixed(4));
   pair('dependence', 'analogyBand', profile.band);
   pair('dependence', 'claimType', DEP_VERDICTS.find(([floor]) => profile.top >= floor)[1]);
+  pair('dependence', 'gate', profile.top < DEP_GATE
+    ? 'withheld on screen: closest labelled analogy below ' + DEP_GATE.toFixed(2)
+    + '; the ranks below are fingerprint distances carrying no pharmacological claim'
+    : 'reported on screen: closest labelled analogy at or above ' + DEP_GATE.toFixed(2));
   pair('dependence', 'nearestLiability', profile.best
     ? profile.best.drug.name + ' (' + profile.best.drug.liability + ', ' + profile.best.value.toFixed(4) + ')'
     : '');

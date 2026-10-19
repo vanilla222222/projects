@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Molecule Profiler</title>
-<link rel="stylesheet" href="css/style.css?v=2026-10-21-ui1">
-<link rel="stylesheet" href="css/workspace.css?v=2026-10-21-ui1">
+<link rel="stylesheet" href="css/style.css?v=2026-10-21-dep1">
+<link rel="stylesheet" href="css/workspace.css?v=2026-10-21-dep1">
 </head>
 <body data-theme="dark">
 <header class="topbar">
@@ -251,16 +251,20 @@
         </div>
         <p class="dep-notice" id="dep-verdict"></p>
         <div class="filters" id="dep-cards"></div>
-        <div class="tgt-controls">
-          <label>Neighbours<select id="dep-count">
-            <option value="10" selected>10</option>
-            <option value="20">20</option>
-            <option value="0">all</option>
-          </select></label>
-        </div>
-        <div class="table-wrap"><table id="dependence"><thead></thead><tbody></tbody></table></div>
-        <div class="table-wrap"><table id="dep-targets"><thead></thead><tbody></tbody></table></div>
-        <p class="hint caveat">This panel asks one question and answers only that question: how close is the query, in fingerprint space, to drugs with a documented dependence liability, and to the receptors and transporters that liability runs through. Structural nearness is not mechanism. Naloxone and naltrexone sit in the table as deliberate counter-examples: for a morphine query they rank second and third out of all 596 reference compounds, and they are competitive antagonists used to treat dependence rather than cause it. Cannabidiol next to THC and the 5-HT2A agonists next to the amphetamines make the same point. Read the band as &ldquo;worth asking about&rdquo;, never as a verdict.</p>
+        <p class="dep-gate" id="dep-gate-note" hidden></p>
+        <details class="dep-ranking" id="dep-ranking" open>
+          <summary id="dep-ranking-summary">Ranked neighbours and reward-circuit targets</summary>
+          <div class="tgt-controls">
+            <label>Neighbours<select id="dep-count">
+              <option value="10" selected>10</option>
+              <option value="20">20</option>
+              <option value="0">all</option>
+            </select></label>
+          </div>
+          <div class="table-wrap"><table id="dependence"><thead></thead><tbody></tbody></table></div>
+          <div class="table-wrap"><table id="dep-targets"><thead></thead><tbody></tbody></table></div>
+        </details>
+        <p class="hint caveat">This panel asks one question and answers only that question: how close is the query, in fingerprint space, to drugs with a documented dependence liability, and to the receptors and transporters that liability runs through. Structural nearness is not mechanism. Naloxone and naltrexone sit in the table as deliberate counter-examples: for a morphine query, measured over all 2258 reference compounds, they are the second and third closest structures after codeine, at 0.303 and 0.299 ECFP4 Tanimoto, and they are competitive antagonists used to treat dependence rather than cause it — both scores sit below the 0.45 gate, which is the point. Cannabidiol next to THC and the 5-HT2A agonists next to the amphetamines make the same point. Below a closest-analogy score of 0.45 the panel withholds its ranked tables instead of printing them, because a list of addictive drugs sorted by a number that carries no meaning at that distance reads as a finding and is not one; the rows stay reachable behind the disclosure and in the CSV export, labelled as the fingerprint distances they are. Read the band as &ldquo;worth asking about&rdquo;, never as a verdict.</p>
       </article>
 
       <article class="panel wide">
@@ -344,36 +348,36 @@
   </section>
 </main>
 
-<script src="js/smiles.js?v=2026-10-21-ui1"></script>
-<script src="js/mol.js?v=2026-10-21-ui1"></script>
-<script src="js/descriptors.js?v=2026-10-21-ui1"></script>
-<script src="js/rules.js?v=2026-10-21-ui1"></script>
-<script src="js/fingerprints.js?v=2026-10-21-ui1"></script>
-<script src="js/smarts.js?v=2026-10-21-ui1"></script>
-<script src="js/stereo.js?v=2026-10-21-ui1"></script>
-<script src="data/library.js?v=2026-10-21-ui1"></script>
-<script src="data/targets.js?v=2026-10-21-ui1"></script>
-<script src="data/benchmark.js?v=2026-10-21-ui1"></script>
-<script src="data/alerts.js?v=2026-10-21-ui1"></script>
-<script src="data/toxalerts.js?v=2026-10-21-ui1"></script>
-<script src="data/dependence.js?v=2026-10-21-ui1"></script>
-<script src="js/tox.js?v=2026-10-21-ui1"></script>
-<script src="js/transform.js?v=2026-10-21-ui1"></script>
-<script src="js/sites.js?v=2026-10-21-ui1"></script>
-<script src="js/depict.js?v=2026-10-21-ui1"></script>
-<script src="data/metabolism.js?v=2026-10-21-ui1"></script>
-<script src="data/metcases.js?v=2026-10-21-ui1"></script>
-<script src="data/stereocases.js?v=2026-10-21-ui1"></script>
-<script src="data/wedgecases.js?v=2026-10-21-ui1"></script>
-<script src="data/propcases.js?v=2026-10-21-ui1"></script>
-<script src="data/crippencases.js?v=2026-10-21-ui1"></script>
-  <script src="data/citations.js?v=2026-10-21-ui1"></script>
-<script src="js/metabolism.js?v=2026-10-21-ui1"></script>
-<script src="js/evidence-report.js?v=2026-10-21-ui1"></script>
-<script src="js/screen-coverage.js?v=2026-10-21-ui1"></script>
-<script src="js/app.js?v=2026-10-21-ui1"></script>
-<script src="js/comparison-data.js?v=2026-10-21-ui1"></script>
-<script src="js/workspace-ui.js?v=2026-10-21-ui1"></script>
-<script src="js/comparison-ui.js?v=2026-10-21-ui1"></script>
+<script src="js/smiles.js?v=2026-10-21-dep1"></script>
+<script src="js/mol.js?v=2026-10-21-dep1"></script>
+<script src="js/descriptors.js?v=2026-10-21-dep1"></script>
+<script src="js/rules.js?v=2026-10-21-dep1"></script>
+<script src="js/fingerprints.js?v=2026-10-21-dep1"></script>
+<script src="js/smarts.js?v=2026-10-21-dep1"></script>
+<script src="js/stereo.js?v=2026-10-21-dep1"></script>
+<script src="data/library.js?v=2026-10-21-dep1"></script>
+<script src="data/targets.js?v=2026-10-21-dep1"></script>
+<script src="data/benchmark.js?v=2026-10-21-dep1"></script>
+<script src="data/alerts.js?v=2026-10-21-dep1"></script>
+<script src="data/toxalerts.js?v=2026-10-21-dep1"></script>
+<script src="data/dependence.js?v=2026-10-21-dep1"></script>
+<script src="js/tox.js?v=2026-10-21-dep1"></script>
+<script src="js/transform.js?v=2026-10-21-dep1"></script>
+<script src="js/sites.js?v=2026-10-21-dep1"></script>
+<script src="js/depict.js?v=2026-10-21-dep1"></script>
+<script src="data/metabolism.js?v=2026-10-21-dep1"></script>
+<script src="data/metcases.js?v=2026-10-21-dep1"></script>
+<script src="data/stereocases.js?v=2026-10-21-dep1"></script>
+<script src="data/wedgecases.js?v=2026-10-21-dep1"></script>
+<script src="data/propcases.js?v=2026-10-21-dep1"></script>
+<script src="data/crippencases.js?v=2026-10-21-dep1"></script>
+  <script src="data/citations.js?v=2026-10-21-dep1"></script>
+<script src="js/metabolism.js?v=2026-10-21-dep1"></script>
+<script src="js/evidence-report.js?v=2026-10-21-dep1"></script>
+<script src="js/screen-coverage.js?v=2026-10-21-dep1"></script>
+<script src="js/app.js?v=2026-10-21-dep1"></script>
+<script src="js/comparison-data.js?v=2026-10-21-dep1"></script>
+<script src="js/workspace-ui.js?v=2026-10-21-dep1"></script>
+<script src="js/comparison-ui.js?v=2026-10-21-dep1"></script>
 </body>
 </html>

@@ -74,3 +74,14 @@ assert.ok(html.includes('id="sim-include-property-only"'), 'Reference filter mis
 assert.ok(app.includes('rankedPool = includeProperty'), 'Filtered similarity pool missing');
 assert.ok(workspace.includes('details.open = true'), 'Safety caveats not visible by default');
 console.log('UI integration contract passed: ' + scripts.length + ' scripts, ' + ids.length + ' unique DOM IDs');
+assert.ok(app.includes('const DEP_GATE = 0.45;'), 'Dependence gate threshold missing');
+assert.ok(app.includes('const gated = profile.top < DEP_GATE;'), 'Dependence gate is not computed from the threshold');
+assert.ok(app.includes('ranking.open = !gated;'), 'Ranked dependence tables are not withheld below the gate');
+assert.ok(app.includes("cards.innerHTML = gated ?"), 'Reward-circuit card is not suppressed below the gate');
+for (const id of ['dep-gate-note', 'dep-ranking', 'dep-ranking-summary']) {
+  assert.ok(ids.includes(id), 'Missing dependence gate element: ' + id);
+}
+assert.ok(app.includes("pair('dependence', 'gate'"), 'CSV export does not record the dependence gate state');
+const sharedSheet = /css\/style\.css\?v=([^"]+)"/;
+assert.strictEqual(html.match(sharedSheet)[1], inspector.match(sharedSheet)[1],
+  'index.html and library-inspector.html disagree on the style.css cache version');
