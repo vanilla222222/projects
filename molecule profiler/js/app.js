@@ -1,6 +1,11 @@
 'use strict';
 
 const GLOSSARY = {
+  evidenceExact: ['Exact computation', 'Everything in this panel is counted or summed from the structure graph itself. There is no model and no training data, so there is nothing to be uncertain about beyond whether the SMILES you gave is the molecule you meant. Where a published definition is ambiguous the page shows both readings side by side rather than picking one.'],
+  evidenceFitted: ['Fitted model', 'These numbers come from a published model whose coefficients were fitted to measured data, reimplemented here from the paper. The arithmetic is exact; the answer carries whatever error the original fit had, which is typically a few tenths of a log unit and is larger for molecules unlike the training set. Treat the digits after the first decimal as spurious precision.'],
+  evidenceRule: ['Published rule', 'This panel applies thresholds somebody published, exactly as published. A pass or fail is a statement about the thresholds and nothing more: it is not a verdict on whether the molecule is a good drug, and plenty of marketed drugs fail several of these filters. Read it as a filter, not as a judgement.'],
+  evidenceAnalogy: ['Structural analogy', 'This panel finds reference molecules whose fingerprints resemble yours, and reports them. Fingerprint resemblance is a structural statement, not a pharmacological one: two molecules can share a scaffold and act on nothing in common, and two molecules can act identically with no fingerprint overlap at all. Nothing here is evidence that your molecule does what its neighbours do.'],
+  evidencePrediction: ['Prediction', 'This panel generates something that was not given to it, by applying reaction or scoring rules to the structure. The rules are drawn from reviews of the chemistry, but which of the possible outcomes actually happens, how much of it happens, and how fast, are not computed and cannot be read off this page. Treat the output as a list of plausible candidates to go and check.'],
   name: ['Name', 'The label you typed before the SMILES, or a generated one. It is only used to identify rows and tabs.'],
   smiles: ['SMILES', 'The structure you entered, as written. Everything on this page is derived from it: the parser builds an atom and bond graph, finds rings, decides aromaticity, kekulizes and then counts hydrogens from a valence model.'],
   formula: ['Molecular formula', 'Element counts in Hill order, with hydrogens added by the valence model rather than taken from the SMILES text.'],
@@ -224,12 +229,12 @@ function hideTip() {
 }
 
 document.addEventListener('pointerover', (event) => {
-  const target = event.target.closest('.info');
+  const target = event.target.closest('[data-tip]');
   if (target) showTip(target);
   else if (!event.target.closest('#tip')) hideTip();
 });
 document.addEventListener('focusin', (event) => {
-  const target = event.target.closest('.info');
+  const target = event.target.closest('[data-tip]');
   if (target) showTip(target);
 });
 document.addEventListener('focusout', hideTip);

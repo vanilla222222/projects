@@ -186,6 +186,26 @@ dl.data.inline { margin-top: 16px; }
 }
 .info:hover, .info:focus-visible { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); outline: none; }
 
+.evidence {
+  flex: none;
+  order: 9;
+  margin-left: auto;
+  padding: 2px 8px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font: 600 10px/1.5 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: help;
+  opacity: 0.85;
+}
+.evidence:hover, .evidence:focus-visible { opacity: 1; outline: none; }
+.evidence[data-tier="exact"] { color: var(--good); }
+.evidence[data-tier="fitted"] { color: var(--accent); }
+.evidence[data-tier="rule"] { color: var(--text-dim); }
+.evidence[data-tier="analogy"] { color: var(--warn); }
+.evidence[data-tier="prediction"] { color: var(--bad); }
+
 #tip {
   position: fixed;
   z-index: 60;

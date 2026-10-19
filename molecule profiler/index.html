@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Molecule Profiler</title>
-<link rel="stylesheet" href="css/style.css?v=2026-10-19i">
+<link rel="stylesheet" href="css/style.css?v=2026-10-19k">
 </head>
 <body data-theme="dark">
 <header class="topbar">
@@ -49,13 +49,13 @@
 
     <div class="grid">
       <article class="panel">
-        <div class="panel-head"><h2>Identity</h2></div>
+        <div class="panel-head"><h2>Identity</h2><span class="evidence" data-tier="exact" data-tip="evidenceExact" tabindex="0">exact</span></div>
         <dl id="identity" class="data"></dl>
       </article>
 
       <article class="panel">
         <div class="panel-head">
-          <h2>Structure</h2>
+          <h2>Structure</h2><span class="evidence" data-tier="exact" data-tip="evidenceExact" tabindex="0">exact</span>
           <p class="hint" id="depict-summary"></p>
         </div>
         <div class="tgt-controls">
@@ -71,54 +71,54 @@
       </article>
 
       <article class="panel">
-        <div class="panel-head"><h2>Physicochemical</h2></div>
+        <div class="panel-head"><h2>Physicochemical</h2><span class="evidence" data-tier="exact" data-tip="evidenceExact" tabindex="0">exact</span></div>
         <dl id="physchem" class="data"></dl>
       </article>
 
       <article class="panel">
-        <div class="panel-head"><h2>Rings &amp; substructure counts</h2></div>
+        <div class="panel-head"><h2>Rings &amp; substructure counts</h2><span class="evidence" data-tier="exact" data-tip="evidenceExact" tabindex="0">exact</span></div>
         <dl id="skeleton" class="data"></dl>
       </article>
 
       <article class="panel">
-        <div class="panel-head"><h2>Topological indices</h2></div>
+        <div class="panel-head"><h2>Topological indices</h2><span class="evidence" data-tier="exact" data-tip="evidenceExact" tabindex="0">exact</span></div>
         <dl id="topology" class="data"></dl>
         <p class="note">Kier&ndash;Hall connectivity and shape indices, computed from the hydrogen-suppressed graph. They are the descriptors QSAR models are usually built on, and all of them agree exactly with RDKit on the reference set.</p>
       </article>
 
       <article class="panel">
-        <div class="panel-head"><h2>Lipophilicity &amp; solubility</h2></div>
+        <div class="panel-head"><h2>Lipophilicity &amp; solubility</h2><span class="evidence" data-tier="fitted" data-tip="evidenceFitted" tabindex="0">fitted model</span></div>
         <dl id="lipo" class="data"></dl>
         <p class="note">WLOGP is the Wildman&ndash;Crippen atom-contribution log P. Solubility is the Delaney ESOL estimate from that log P, molecular weight, rotatable bonds and the aromatic atom fraction.</p>
       </article>
 
       <article class="panel wide">
-        <div class="panel-head"><h2>Drug-likeness</h2><p class="hint" id="filter-summary"></p></div>
+        <div class="panel-head"><h2>Drug-likeness</h2><span class="evidence" data-tier="rule" data-tip="evidenceRule" tabindex="0">published rule</span><p class="hint" id="filter-summary"></p></div>
         <div id="filters" class="filters"></div>
         <dl id="druglike-extra" class="data inline"></dl>
       </article>
 
       <article class="panel">
-        <div class="panel-head"><h2>Bioavailability radar</h2></div>
+        <div class="panel-head"><h2>Bioavailability radar</h2><span class="evidence" data-tier="rule" data-tip="evidenceRule" tabindex="0">published rule</span></div>
         <div class="chart"><svg id="radar" viewBox="0 0 320 300" role="img" aria-label="Bioavailability radar"></svg></div>
         <p class="hint radar-keys" id="radar-keys"></p>
         <p class="note">The shaded band is the favourable range on each axis.</p>
       </article>
 
       <article class="panel">
-        <div class="panel-head"><h2>Absorption plot</h2></div>
+        <div class="panel-head"><h2>Absorption plot</h2><span class="evidence" data-tier="rule" data-tip="evidenceRule" tabindex="0">published rule</span></div>
         <div class="chart"><svg id="egg" viewBox="0 0 340 300" role="img" aria-label="TPSA against WLOGP"></svg></div>
         <p class="note">TPSA against WLOGP. The two regions are approximations of the published BOILED-Egg boundaries for passive gastrointestinal absorption (outer) and blood&ndash;brain barrier permeation (inner), read off the original figure rather than refitted, so treat points near an edge as undecided.</p>
       </article>
 
       <article class="panel wide">
-        <div class="panel-head"><h2>Batch table</h2><p class="hint">Click a row to open that molecule.</p></div>
+        <div class="panel-head"><h2>Batch table</h2><span class="evidence" data-tier="exact" data-tip="evidenceExact" tabindex="0">exact</span><p class="hint">Click a row to open that molecule.</p></div>
         <div class="table-wrap"><table id="batch"><thead></thead><tbody></tbody></table></div>
       </article>
 
       <article class="panel wide">
         <div class="panel-head">
-          <h2>Structural alerts</h2>
+          <h2>Structural alerts</h2><span class="evidence" data-tier="rule" data-tip="evidenceRule" tabindex="0">published rule</span>
           <p class="hint" id="alert-summary"></p>
         </div>
         <div class="tgt-controls">
@@ -136,7 +136,7 @@
 
       <article class="panel wide">
         <div class="panel-head">
-          <h2>Toxicity screens</h2>
+          <h2>Toxicity screens</h2><span class="evidence" data-tier="rule" data-tip="evidenceRule" tabindex="0">published rule</span>
           <p class="hint" id="tox-summary"></p>
         </div>
         <div class="filters" id="tox-cards"></div>
@@ -156,7 +156,7 @@
 
       <article class="panel wide">
         <div class="panel-head">
-          <h2>Metabolism</h2>
+          <h2>Metabolism</h2><span class="evidence" data-tier="prediction" data-tip="evidencePrediction" tabindex="0">prediction</span>
           <p class="hint" id="met-summary"></p>
         </div>
         <p class="hint caveat"><strong>Routes, not rates.</strong> Every row below is a reaction the molecule offers a site for, with the enzyme family that performs that class of reaction. Nothing here says how fast it happens, what fraction of a dose goes that way, which metabolite dominates in a person, or which CYP isoform does the work. The relative weight is a published frequency for the reaction class, not a measured rate for this molecule.</p>
@@ -192,7 +192,7 @@
 
       <article class="panel wide">
         <div class="panel-head">
-          <h2>Physical addiction potential</h2>
+          <h2>Physical addiction potential</h2><span class="evidence" data-tier="analogy" data-tip="evidenceAnalogy" tabindex="0">structural analogy</span>
           <p class="hint" id="dep-summary"></p>
         </div>
         <div class="filters" id="dep-cards"></div>
@@ -210,7 +210,7 @@
 
       <article class="panel wide">
         <div class="panel-head">
-          <h2>Similarity search</h2>
+          <h2>Similarity search</h2><span class="evidence" data-tier="analogy" data-tip="evidenceAnalogy" tabindex="0">structural analogy</span>
           <p class="hint" id="sim-summary"></p>
         </div>
         <div class="sim-controls">
@@ -231,7 +231,7 @@
 
       <article class="panel wide">
         <div class="panel-head">
-          <h2>Target prediction</h2>
+          <h2>Target prediction</h2><span class="evidence" data-tier="analogy" data-tip="evidenceAnalogy" tabindex="0">structural analogy</span>
           <p class="hint" id="tgt-summary"></p>
         </div>
         <div class="tgt-controls">
@@ -263,7 +263,7 @@
       </article>
 
       <article class="panel wide">
-        <div class="panel-head"><h2>Atom contributions</h2><p class="hint">Wildman&ndash;Crippen type per heavy atom, with its log P and molar-refractivity share.</p></div>
+        <div class="panel-head"><h2>Atom contributions</h2><span class="evidence" data-tier="fitted" data-tip="evidenceFitted" tabindex="0">fitted model</span><p class="hint">Wildman&ndash;Crippen type per heavy atom, with its log P and molar-refractivity share.</p></div>
         <div class="table-wrap"><table id="atoms"><thead></thead><tbody></tbody></table></div>
       </article>
     </div>
@@ -271,12 +271,13 @@
 
   <section class="panel wide about">
     <div class="panel-head"><h2>What this is</h2></div>
+    <p>Every panel carries a badge saying what kind of claim it makes, because the panels are not all the same kind of thing and reading them as if they were is the fastest way to be misled by this page. <span class="evidence" data-tier="exact" data-tip="evidenceExact" tabindex="0">exact</span> means the panel counts or sums something off the structure graph and there is no model in the way. <span class="evidence" data-tier="fitted" data-tip="evidenceFitted" tabindex="0">fitted model</span> means a published regression, reimplemented from the paper, carrying the error of the original fit. <span class="evidence" data-tier="rule" data-tip="evidenceRule" tabindex="0">published rule</span> means somebody's thresholds applied as published, which is a filter and not a verdict. <span class="evidence" data-tier="analogy" data-tip="evidenceAnalogy" tabindex="0">structural analogy</span> means the panel found molecules that look like yours and is telling you so, which is a statement about fingerprints and not about pharmacology. <span class="evidence" data-tier="prediction" data-tip="evidencePrediction" tabindex="0">prediction</span> means the panel generated something that was not given to it, and the output is a list of candidates to check rather than a finding. Hovering a badge gives the longer version. The practical consequence: aspirin's two cyclo-oxygenase hits at the top of the target panel and its hydrolysis to salicylic acid at the top of the metabolism panel are both correct, and they are correct for different reasons than the page can show you &mdash; the panels ranked them, the textbooks confirmed them, and a lower-ranked row in either panel has only the ranking behind it.</p>
     <p>Everything here runs in the page: the SMILES parser, ring perception, aromaticity, kekulization and hydrogen counting are implemented from scratch, and the descriptors follow their published definitions &mdash; Ertl's topological polar surface area, Wildman&ndash;Crippen log P and molar refractivity, Lipinski-style hydrogen-bond counts, and the strict rotatable-bond definition. Aromaticity is perceived by H&uuml;ckel electron counting, iterated: a ring carbon whose double bond points out of the ring donates one electron when its partner is already aromatic instead of disqualifying the ring, a heteroatom bridging two rings contributes its lone pair once rather than to each ring, and a fused system of five- and six-membered rings is counted as a whole when no single ring satisfies the rule alone. Those three cases are what fused indoles, bridgehead-nitrogen bicyclics and lactam-containing tricyclics turn on, and each was added only after it moved the measured divergence from RDKit down. The descriptor layer is checked against RDKit on a 40-molecule reference set; TPSA, log P, molar refractivity, rotatable bonds, the H-bond counts and the sp&sup3; fraction all agree exactly. The ring and substructure counts, the Kier&ndash;Hall connectivity and shape indices and the remaining fifteen values are checked the same way across all 596 reference compounds below. Of the 8940 descriptor values that comparison covers, all but four match RDKit exactly, and both exceptions are known differences in ring and aromaticity models rather than arithmetic. Artemisinin's bridged trioxane cage has four independent rings by the cyclomatic count we use and six by RDKit's symmetrized smallest set of smallest rings, so its aliphatic-ring, saturated-ring and heterocycle counts read one lower here. Riboflavin's isoalloxazine ring system is aromatized by our perception and left partly non-aromatic by RDKit's, so RDKit reports two aliphatic rings where we report none &mdash; the same model difference that shows up on azulene. Both are reported rather than hidden by dropping the molecules. Molecular weight agrees to within 0.021 across the whole set; the residue is the standard-atomic-weight table, not the arithmetic &mdash; we use the current IUPAC abridged values and RDKit ships an older edition, so every disagreement is a molecule carrying sulfur, chlorine, selenium or boron and grows with how many such atoms it has. Isotopically labelled atoms are weighed as their nuclide rather than as the natural-abundance element, which is what makes a carbon-11 tracer come out a gram per mole lighter than its unlabelled parent.</p>
     <p>The fingerprints are checked the same way. On the 596 reference compounds, every bit-count and all 177310 pairwise similarity scores match RDKit exactly for the atom-pair fingerprint. For ECFP4, 27 of those pairs differ and every one of them involves riboflavin, whose flavin ring system our aromaticity model treats differently from RDKit's; ECFP6 adds two further pairs, nefazodone against trazodone and ropanicant against tebanicline. For FCFP4, 685 pairs differ, 595 of them riboflavin's, leaving 90 traced to two causes: 32-bit hash collisions inside RDKit's own fingerprint, where two chemically different environments land on the same key and are counted once instead of twice, and a tie that neither implementation can resolve the same way &mdash; when two atoms span exactly the same bonds, Morgan hashing keeps one environment and discards the other, and which one survives depends on hash values that differ between implementations. Removing the colliding keys from RDKit's intersection reproduces ours on the collision pairs, so the environment sets agree and the difference is in the hashing, not the chemistry. All of it is left reported rather than papered over.</p>
     <p>The structural-alert panel is a hand-encoded set of 51 SMARTS patterns drawn from the Brenk unwanted-functionality list, the PAINS frequent-hitter motifs and the reactive groups screening decks remove as a matter of course. It is a subset chosen for coverage of distinct chemistry, not a transcription of the complete published catalogues, and the panel says so rather than implying otherwise. The SMARTS parser and substructure matcher behind it are written from scratch in this page and were checked against RDKit's own matcher: all 51 patterns across the 596 reference compounds, 30396 molecule&ndash;pattern comparisons, agree on both the match counts and the matched atoms, as do twenty harder probe patterns covering recursive queries, ring-membership and ring-size counts, valence, charge and bond-type alternations &mdash; 11920 further comparisons, of which one differs, artemisinin's fused-ring atom count under the ring-model difference described above.</p>
     <p>The toxicity panel is three different kinds of thing kept visibly apart. Thirty-nine of its rules are substructure patterns: the genotoxicity ones are the toxicophores Kazius, McGuire and Bursi derived from 4337 Ames-tested compounds, the carcinogenicity ones are from the Benigni&ndash;Bossa rulebase implemented in Toxtree, and a handful of neurotoxicity motifs come from single named mechanisms &mdash; organophosphate and carbamate cholinesterase inhibition, the gamma-diketone axonopathy of hexane, acrylamide, the aryl tetrahydropyridine of MPTP, the trichloromethyl diarylmethane of DDT, and the catechol and its ortho-quinone, the pair that the metabolism panel below turns up and that the long-term serotonergic damage after MDMA is usually pinned on. As with the structural alerts, they were checked against RDKit's matcher: 39 patterns across the 596 reference compounds, 23244 molecule&ndash;pattern comparisons, agreeing on every match count and every matched atom. Four more rules are computed rather than matched, because SMARTS cannot express them: two count fused aromatic rings, which separates a genuine polycyclic aromatic hydrocarbon from a tricyclic drug whose benzene rings are joined through a non-aromatic bridge &mdash; that distinction is why amitriptyline, chlorpromazine and carbamazepine do not flag, and the fused-ring counts behind it agree with RDKit on all 596 compounds; one is the lipophilic-basic-amine hERG rule of thumb; one is simply whether the molecule is predicted to reach the brain, reported as context for the neurotoxicity motifs rather than counted as a flag of its own. What is deliberately missing is a trained classifier. The published toxicophores are rules and can be reimplemented honestly; the QSAR models that would turn them into a probability are not public, and a number invented here would be worse than no number.</p>
-    <p>The metabolism panel enumerates reactions, not rates. It applies 42 hand-written SMIRKS transforms &mdash; phase I oxidations, dealkylations, hydrolyses and reductions, phase II glucuronidation, sulfation, acetylation, methylation and glutathione conjugation &mdash; breadth-first to a chosen depth, keeping products whose leaving group has at least five heavy atoms and scoring each by the product of its rules' relative weights. The weight for a step is not flat across the molecule: every reaction whose route is an aromatic oxidation, an aliphatic oxidation, a glucuronidation or a sulfation is multiplied by a site factor for the atom actually attacked, relative to an unsubstituted position of the same kind on the same ring or chain. On a ring the factor comes from the classical directing argument &mdash; a donating substituent raises the ortho and para positions and lowers the meta one, a withdrawing substituent does the reverse, a halogen lowers everything slightly, and a flanked position is penalised for crowding; on a chain it comes from carbon-hydrogen bond strength, so a branch point is raised, a primary carbon and a position next to a carbonyl, a sulfonyl or a polyhalogenated carbon are lowered. The factor is clamped to the range 0.2 to 2.5 and the reasons behind it are listed in the table, because it is a transparent heuristic read off published directing effects and bond-dissociation arguments, not a model fitted to measured turnover. It changes the order of the list, which is all the list claims to give. Each metabolite then carries a band read off that same score against two fixed cuts &mdash; major at 0.10 and above, minor from 0.02 to 0.10, trace below 0.02 &mdash; because a list of eighty metabolites with no sense of scale is misleading in the other direction. The cuts are stated rather than tuned, and the band is a statement about the rules, not about a person: trace means the route needs an unlikely step, or a chain of them, and not that a measured fraction of a dose was small. The trace list is worth reading anyway, which is why it has its own filter: of MDMA's 18 metabolites that trip a toxicity rule the parent does not, half sit in the trace band. Those weights are frequencies for a reaction class in metabolite databases, the idea Ridder and Wagener published as SyGMa in 2008. SyGMa itself is GPL, so none of its code or its rule files is in this page: the SMARTS and the weights here are our own, written against the published chemistry and kept as a reference only. The enzyme named on each row is the family that performs that class of reaction &mdash; CYP for oxidative dealkylation, UGT for glucuronidation, SULT for sulfation, COMT for catechol O-methylation, MAO for oxidative deamination of an unhindered primary amine &mdash; and not a measured isoform call. Nothing here says how fast a route runs, what fraction of a dose takes it, or which metabolite dominates in a person. Which CYP isoform does the work, clearance, half-life and first-pass extraction are all outside what a rule set can honestly answer, and no number for them is invented.</p>
-    <p>Two parts of the engine are measured rather than asserted. The transform engine was compared against RDKit's reaction code on every rule applied to all 596 reference compounds, 25158 product comparisons, and agrees except on six rules covering 74 pairs, each of which is a limitation in RDKit's <code>RunReactants</code> rather than a disagreement about chemistry: a scaffold duplicated when an intramolecular bond is cleaved, an aromatic nitrogen left unkekulizable after its methyl is removed, a formal charge retained so a de-alkylated ammonium comes back as <code>[NH2+]</code>, and an explicit hydrogen retained onto a carbon that then has five bonds. Second, the same metabolite reached by two different routes has to be recognised as one compound. The identity key is a Weisfeiler&ndash;Lehman refinement of per-atom invariants rather than a fingerprint, because count fingerprints are not canonical &mdash; when two atoms span the same bonds, which environment survives Morgan hashing depends on atom order, and a first attempt using ECFP6 counts split 559 of these molecules across several keys with no collisions to show for it. The key in use now is a measured bijection: over 6563 enumerated nodes it produces 6453 keys against 6453 distinct RDKit canonical SMILES, no collisions and no splits, and it survives 25808 of 25812 RDKit-rewritten forms of the same structures.</p>
+    <p>The metabolism panel enumerates reactions, not rates. It applies 43 hand-written SMIRKS transforms &mdash; phase I oxidations, dealkylations, hydrolyses and reductions, phase II glucuronidation, sulfation, acetylation, methylation and glutathione conjugation &mdash; breadth-first to a chosen depth, keeping products whose leaving group has at least five heavy atoms and scoring each by the product of its rules' relative weights. The weight for a step is not flat across the molecule: every reaction whose route is an aromatic oxidation, an aliphatic oxidation, a glucuronidation or a sulfation is multiplied by a site factor for the atom actually attacked, relative to an unsubstituted position of the same kind on the same ring or chain. On a ring the factor comes from the classical directing argument &mdash; a donating substituent raises the ortho and para positions and lowers the meta one, a withdrawing substituent does the reverse, a halogen lowers everything slightly, and a flanked position is penalised for crowding; on a chain it comes from carbon-hydrogen bond strength, so a branch point is raised, a primary carbon and a position next to a carbonyl, a sulfonyl or a polyhalogenated carbon are lowered. The factor is clamped to the range 0.2 to 2.5 and the reasons behind it are listed in the table, because it is a transparent heuristic read off published directing effects and bond-dissociation arguments, not a model fitted to measured turnover. It changes the order of the list, which is all the list claims to give. Each metabolite then carries a band read off that same score against two fixed cuts &mdash; major at 0.10 and above, minor from 0.02 to 0.10, trace below 0.02 &mdash; because a list of eighty metabolites with no sense of scale is misleading in the other direction. The cuts are stated rather than tuned, and the band is a statement about the rules, not about a person: trace means the route needs an unlikely step, or a chain of them, and not that a measured fraction of a dose was small. The trace list is worth reading anyway, which is why it has its own filter: of MDMA's 18 metabolites that trip a toxicity rule the parent does not, half sit in the trace band. Those weights are frequencies for a reaction class in metabolite databases, the idea Ridder and Wagener published as SyGMa in 2008. SyGMa itself is GPL, so none of its code or its rule files is in this page: the SMARTS and the weights here are our own, written against the published chemistry and kept as a reference only. The enzyme named on each row is the family that performs that class of reaction &mdash; CYP for oxidative dealkylation, UGT for glucuronidation, SULT for sulfation, COMT for catechol O-methylation, MAO for oxidative deamination of an unhindered primary amine &mdash; and not a measured isoform call. Nothing here says how fast a route runs, what fraction of a dose takes it, or which metabolite dominates in a person. Which CYP isoform does the work, clearance, half-life and first-pass extraction are all outside what a rule set can honestly answer, and no number for them is invented.</p>
+    <p>Two parts of the engine are measured rather than asserted. The transform engine was compared against RDKit's reaction code on every rule applied to all 596 reference compounds, 25757 product comparisons, and agrees except on six rules covering 74 pairs, each of which is a limitation in RDKit's <code>RunReactants</code> rather than a disagreement about chemistry: a scaffold duplicated when an intramolecular bond is cleaved, an aromatic nitrogen left unkekulizable after its methyl is removed, a formal charge retained so a de-alkylated ammonium comes back as <code>[NH2+]</code>, and an explicit hydrogen retained onto a carbon that then has five bonds. Second, the same metabolite reached by two different routes has to be recognised as one compound. The identity key is a Weisfeiler&ndash;Lehman refinement of per-atom invariants rather than a fingerprint, because count fingerprints are not canonical &mdash; when two atoms span the same bonds, which environment survives Morgan hashing depends on atom order, and a first attempt using ECFP6 counts split 559 of these molecules across several keys with no collisions to show for it. The key in use now is a measured bijection: over 6563 enumerated nodes it produces 6453 keys against 6453 distinct RDKit canonical SMILES, no collisions and no splits, and it survives 25808 of 25812 RDKit-rewritten forms of the same structures.</p>
     <p>Worked example, since it is the question the panel was built for. MDMA offers N-demethylation to MDA, methylenedioxy ring opening to the catechol HHMA, benzylic and aromatic hydroxylation, deamination to MDP2P, and then COMT O-methylation to HMMA, glucuronides and sulfates on every phenol. The catechol oxidises one step further to an ortho-quinone, and that quinone and its Michael-acceptor character are the new toxicity flags the panel reports against the parent &mdash; 18 of 82 metabolites flagged, and the catechol itself lands in the major band at 0.26 while the quinone sits further down, which is the shape of the argument: the reactive species is reached through a route the rules rank highly, not through a fluke. MAO does not fire on MDMA itself, and the panel says why: the alpha-methyl blocks it, which is the structural note next to the row. Putting fluorine on the ring removes one open aromatic position and adds the observation that a ring fluorine blocks its own position, and the enumeration drops from 82 metabolites to 70 with 16 flagged, 4 of them major instead of 6 &mdash; but the methylenedioxy group is untouched by that substitution, so 2-fluoro-MDMA still reaches the catechol and still reaches its quinone. That is what the panel reports. Fluorination there changes how much of the ring is open to hydroxylation; it does not close the route the neurotoxicity argument actually runs through, and the panel will not claim otherwise.</p>
     <p>The addiction panel is a similarity argument, stated as one. Forty library compounds carry a hand-assigned dependence liability drawn from the clinical literature &mdash; opioids, stimulants, sedatives, dissociatives, nicotine, THC &mdash; and the panel reports how close the query is to the closest of them, together with its proximity to the nine opioid, dopaminergic, nicotinic, GABAergic and glutamatergic targets that dependence runs through. The set deliberately includes compounds whose structure and whose liability point in opposite directions: naloxone and naltrexone, cannabidiol, mescaline and lysergide. They are there so the panel cannot be mistaken for a predictor. Query morphine and naltrexone comes back as its second-nearest neighbour in the whole library, at 0.30 on ECFP4 and 0.55 on the feature fingerprint. Of the several differences between them, the one that decides agonist from antagonist is the N-substituent, and nothing in a fingerprint weighs it above the rest.</p>
 
@@ -284,23 +285,23 @@
   </section>
 </main>
 
-<script src="js/smiles.js?v=2026-10-19i"></script>
-<script src="js/mol.js?v=2026-10-19i"></script>
-<script src="js/descriptors.js?v=2026-10-19i"></script>
-<script src="js/rules.js?v=2026-10-19i"></script>
-<script src="js/fingerprints.js?v=2026-10-19i"></script>
-<script src="js/smarts.js?v=2026-10-19i"></script>
-<script src="data/library.js?v=2026-10-19i"></script>
-<script src="data/targets.js?v=2026-10-19i"></script>
-<script src="data/alerts.js?v=2026-10-19i"></script>
-<script src="data/toxalerts.js?v=2026-10-19i"></script>
-<script src="data/dependence.js?v=2026-10-19i"></script>
-<script src="js/tox.js?v=2026-10-19i"></script>
-<script src="js/transform.js?v=2026-10-19i"></script>
-<script src="js/sites.js?v=2026-10-19i"></script>
-<script src="js/depict.js?v=2026-10-19i"></script>
-<script src="data/metabolism.js?v=2026-10-19i"></script>
-<script src="js/metabolism.js?v=2026-10-19i"></script>
-<script src="js/app.js?v=2026-10-19i"></script>
+<script src="js/smiles.js?v=2026-10-19k"></script>
+<script src="js/mol.js?v=2026-10-19k"></script>
+<script src="js/descriptors.js?v=2026-10-19k"></script>
+<script src="js/rules.js?v=2026-10-19k"></script>
+<script src="js/fingerprints.js?v=2026-10-19k"></script>
+<script src="js/smarts.js?v=2026-10-19k"></script>
+<script src="data/library.js?v=2026-10-19k"></script>
+<script src="data/targets.js?v=2026-10-19k"></script>
+<script src="data/alerts.js?v=2026-10-19k"></script>
+<script src="data/toxalerts.js?v=2026-10-19k"></script>
+<script src="data/dependence.js?v=2026-10-19k"></script>
+<script src="js/tox.js?v=2026-10-19k"></script>
+<script src="js/transform.js?v=2026-10-19k"></script>
+<script src="js/sites.js?v=2026-10-19k"></script>
+<script src="js/depict.js?v=2026-10-19k"></script>
+<script src="data/metabolism.js?v=2026-10-19k"></script>
+<script src="js/metabolism.js?v=2026-10-19k"></script>
+<script src="js/app.js?v=2026-10-19k"></script>
 </body>
 </html>
