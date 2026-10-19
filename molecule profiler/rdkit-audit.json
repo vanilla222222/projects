@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 2723,
+  "entries": 2782,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -9898,6 +9898,126 @@
         19,
         21
       ]
+    },
+    {
+      "index": 2728,
+      "name": "Meclonazepam",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 2729,
+      "name": "Nifoxipam",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 2730,
+      "name": "Lormetazepam",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 2741,
+      "name": "Clorazepate",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 2742,
+      "name": "Doxefazepam",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2743,
+      "name": "Camazepam",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2758,
+      "name": "Butabarbital",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2760,
+      "name": "Secobarbital",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 2763,
+      "name": "Talbutal",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 2767,
+      "name": "Mephobarbital",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2768,
+      "name": "Hexobarbital",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 2771,
+      "name": "Methohexital",
+      "atomIndices": [
+        3,
+        4
+      ]
+    },
+    {
+      "index": 2772,
+      "name": "Thiamylal",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 2778,
+      "name": "Carisoprodol",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 2779,
+      "name": "Ethchlorvynol",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2780,
+      "name": "Glutethimide",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2781,
+      "name": "Methyprylon",
+      "atomIndices": [
+        9
+      ]
     }
   ],
   "chargedEntries": [
@@ -9951,7 +10071,7 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 2,
-    "unspecifiedStereocenters": 1061,
+    "unspecifiedStereocenters": 1078,
     "chargedEntries": 8,
     "fragmentedEntries": 0,
     "radicalEntries": 0,
