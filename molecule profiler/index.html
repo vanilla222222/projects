@@ -67,7 +67,7 @@
           </select></label>
         </div>
         <div id="structure" class="depict-box"></div>
-        <p class="hint caveat">Coordinates are generated here, not read from a file. Across the 596 reference compounds, 579 draw with no two unbonded atoms closer than 0.72 bond lengths and 541 have every bond within 1&#37; of unit length; the exceptions are bridged cages &mdash; morphinans, tropanes, adamantanes, camphor, artemisinin &mdash; where no flat drawing can have both. Measured against RDKit&#39;s own <code>Compute2DCoords</code> over 16064 bond angles from 593 compounds, the median difference is 0.00&deg; and 92&#37; of angles agree within 5&deg;, with the rest concentrated in those same cages and in 120&deg; substituent flips on steroid frames. The drawing is a depiction, not a conformation: it says nothing about 3D geometry.</p>
+        <p class="hint caveat">Coordinates are generated here, not read from a file. Across the 596 reference compounds, 579 draw with no two unbonded atoms closer than 0.72 bond lengths and 541 have every bond within 1&#37; of unit length; the exceptions are bridged cages &mdash; morphinans, tropanes, adamantanes, camphor, artemisinin &mdash; where no flat drawing can have both. Measured against RDKit&#39;s own <code>Compute2DCoords</code> over 16064 bond angles from 593 compounds, the median difference is 0.00&deg; and 92&#37; of angles agree within 5&deg;, with the rest concentrated in those same cages and in 120&deg; substituent flips on steroid frames. The drawing is a depiction, not a conformation: it says nothing about 3D geometry. Specified stereocentres carry a wedge or a hash; reading those drawings back with the ordinary convention recovers the configuration the SMILES states in <span id="wedge-note"></span>.</p>
       </article>
 
       <article class="panel">
@@ -325,6 +325,7 @@
 <script src="data/metabolism.js?v=2026-10-19x"></script>
 <script src="data/metcases.js?v=2026-10-19x"></script>
 <script src="data/stereocases.js?v=2026-10-19x"></script>
+<script src="data/wedgecases.js?v=2026-10-19x"></script>
 <script src="js/metabolism.js?v=2026-10-19x"></script>
 <script src="js/app.js?v=2026-10-19x"></script>
 </body>

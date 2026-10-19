@@ -635,6 +635,10 @@ function depictSvg(mol, options) {
   });
 
   const labels = mol.atoms.map((atom, id) => depictLabel(mol, id));
+  const stereo = new Map();
+  if (settings.stereo !== false && typeof stereoWedges === 'function') {
+    stereoWedges(mol, coords).forEach((item) => stereo.set(item.bond, item));
+  }
   const parts = [];
 
   highlight.forEach((id) => {
@@ -644,7 +648,7 @@ function depictSvg(mol, options) {
       + '" r="' + (scale * 0.42).toFixed(1) + '"/>');
   });
 
-  mol.bonds.forEach((bond) => {
+  mol.bonds.forEach((bond, index) => {
     const from = at(bond.a);
     const to = at(bond.b);
     const angle = Math.atan2(to.y - from.y, to.x - from.x);
@@ -657,6 +661,30 @@ function depictSvg(mol, options) {
     const line = (ax, ay, bx, by, extra) => parts.push('<line class="bond' + hot + (extra || '')
       + '" x1="' + ax.toFixed(1) + '" y1="' + ay.toFixed(1)
       + '" x2="' + bx.toFixed(1) + '" y2="' + by.toFixed(1) + '"/>');
+
+    const mark = stereo.get(index);
+    if (mark) {
+      const tip = mark.from === bond.a ? start : end;
+      const base = mark.from === bond.a ? end : start;
+      const span = Math.atan2(base.y - tip.y, base.x - tip.x);
+      const side = { x: Math.cos(span + Math.PI / 2), y: Math.sin(span + Math.PI / 2) };
+      const half = scale * 0.15;
+      if (mark.type === 'wedge') {
+        parts.push('<path class="wedge' + hot + '" d="M' + tip.x.toFixed(1) + ' ' + tip.y.toFixed(1)
+          + 'L' + (base.x + side.x * half).toFixed(1) + ' ' + (base.y + side.y * half).toFixed(1)
+          + 'L' + (base.x - side.x * half).toFixed(1) + ' ' + (base.y - side.y * half).toFixed(1) + 'Z"/>');
+      } else {
+        const steps = 6;
+        for (let k = 1; k <= steps; k += 1) {
+          const t = k / steps;
+          const mid = { x: tip.x + (base.x - tip.x) * t, y: tip.y + (base.y - tip.y) * t };
+          const reach = half * t;
+          line(mid.x + side.x * reach, mid.y + side.y * reach,
+            mid.x - side.x * reach, mid.y - side.y * reach, ' hash');
+        }
+      }
+      return;
+    }
 
     if (bond.order === 2) {
       const side = depictDoubleSide(mol, coords, bond);

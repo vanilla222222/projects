@@ -426,6 +426,10 @@ svg.depiction { display: block; max-width: 100%; height: auto; color: var(--text
 svg.depiction .bond { stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; }
 svg.depiction .bond.hot { stroke: var(--accent); stroke-width: 2.1; }
 svg.depiction .hit { fill: var(--accent-soft); }
+svg.depiction .wedge { fill: currentColor; stroke: none; }
+svg.depiction .wedge.hot { fill: var(--accent); }
+svg.depiction .bond.hash { stroke-width: 1.2; }
+
 svg.depiction .atom {
   fill: currentColor;
   text-anchor: middle;

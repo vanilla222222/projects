@@ -416,6 +416,7 @@ function renderCurrent() {
   ]);
 
   renderStereo(record);
+  renderWedgeNote();
 
   rows(document.getElementById('topology'), [
     ['chi0', 'Chi0', d.chi.chi0.toFixed(3)],
@@ -560,6 +561,14 @@ function drawEgg(d) {
 function stereoFor(record) {
   if (!record.stereo) record.stereo = stereoAnalyse(record.mol);
   return record.stereo;
+}
+
+function renderWedgeNote() {
+  const slot = document.getElementById('wedge-note');
+  if (!slot || typeof WEDGE_CONFORMANCE === 'undefined') return;
+  const w = WEDGE_CONFORMANCE;
+  slot.textContent = w.agree + ' of ' + w.drawn + ' cases (' + w.agreePct + '%), measured by '
+    + 'tools/stereo-depiction.js over ' + w.compounds + ' ' + w.source;
 }
 
 function renderStereo(record) {
@@ -1422,6 +1431,15 @@ function fullExportRows(record) {
       + c.bondLabelMatch + ' of ' + c.bondLabels + ' E/Z labels agreed, ' + c.bondLabelWrong + ' disagreed; '
       + 'perceived centre set exact on ' + c.centerSetPct + '% of cases ('
       + c.extraCenters + ' extra centres, ' + c.missedCenters + ' missed).');
+  }
+
+  if (typeof WEDGE_CONFORMANCE !== 'undefined') {
+    const w = WEDGE_CONFORMANCE;
+    add('provenance', 'wedge depiction conformance', 'summary', 'Generated ' + w.generated + ' by '
+      + 'tools/stereo-depiction.js over ' + w.compounds + ' ' + w.source + ': ' + w.drawn + ' of '
+      + w.centers + ' specified stereocentres carry a wedge or hash, and reading those drawings back with '
+      + 'the ordinary convention recovers the stated configuration in ' + w.agree + ' of them ('
+      + w.agreePct + '%), with ' + w.wrong + ' inverted.');
   }
 
   if (typeof RETRIEVAL_BENCHMARK !== 'undefined') {

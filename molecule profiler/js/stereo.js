@@ -222,6 +222,7 @@ function stereoTetrahedral(mol) {
       stereogenic: stereogenic,
       label: label,
       undetermined: !!tag && label === null,
+      tag: tag || null,
       neighbours: neighbours
     });
   });
@@ -317,6 +318,82 @@ function stereoDoubleBonds(mol) {
   return out;
 }
 
+function stereoAngleAt(coords, center, atom) {
+  return Math.atan2(coords[atom].y - coords[center].y, coords[atom].x - coords[center].x);
+}
+
+function stereoFreeAngle(angles) {
+  if (!angles.length) return 0;
+  const sorted = angles.slice().sort((a, b) => a - b);
+  let best = sorted[0] + Math.PI;
+  let span = -1;
+  for (let i = 0; i < sorted.length; i += 1) {
+    const next = i + 1 < sorted.length ? sorted[i + 1] : sorted[0] + Math.PI * 2;
+    if (next - sorted[i] > span) {
+      span = next - sorted[i];
+      best = (sorted[i] + next) / 2;
+    }
+  }
+  return best;
+}
+
+function stereoWedgeChoice(mol, center, slots, used) {
+  let best = null;
+  let score = -1;
+  slots.forEach((slot) => {
+    if (slot === null || slot === STEREO_LONE_PAIR) return;
+    const link = mol.atoms[center].neighbors.find((item) => item.atom === slot);
+    if (!link) return;
+    const bond = mol.bonds[link.bond];
+    if ((bond.order || 1) !== 1) return;
+    let value = 1;
+    if (!bond.ring) value += 4;
+    if (mol.atoms[slot].degree === 1) value += 2;
+    if (!used.has(link.bond)) value += 8;
+    if (value > score) {
+      score = value;
+      best = { slot: slot, bond: link.bond };
+    }
+  });
+  return best;
+}
+
+function stereoWedges(mol, coords) {
+  const out = [];
+  const used = new Set();
+  stereoTetrahedral(mol).forEach((center) => {
+    if (!center.tag) return;
+    const id = center.atom;
+    const slots = center.neighbours;
+    const real = slots.filter((slot) => slot !== null && slot !== STEREO_LONE_PAIR);
+    if (real.length < 3) return;
+    const free = stereoFreeAngle(real.map((slot) => stereoAngleAt(coords, id, slot)));
+    const angleOf = (slot) => (slot === null || slot === STEREO_LONE_PAIR
+      ? free : stereoAngleAt(coords, id, slot));
+    const choice = stereoWedgeChoice(mol, id, slots, used);
+    if (!choice) return;
+    const order = [choice.slot].concat(slots.filter((slot) => slot !== choice.slot));
+    const parity = stereoPermutationParity(slots, order);
+    if (parity === null) return;
+    const effective = parity ? (center.tag === '@' ? '@@' : '@') : center.tag;
+    const points = order.slice(1).map((slot) => {
+      const angle = angleOf(slot);
+      return { x: Math.cos(angle), y: Math.sin(angle) };
+    });
+    const cross = (points[1].x - points[0].x) * (points[2].y - points[0].y)
+      - (points[1].y - points[0].y) * (points[2].x - points[0].x);
+    if (Math.abs(cross) < 1e-6) return;
+    used.add(choice.bond);
+    out.push({
+      bond: choice.bond,
+      from: id,
+      to: choice.slot,
+      type: (cross > 0) === (effective === '@') ? 'wedge' : 'hash'
+    });
+  });
+  return out;
+}
+
 function stereoAnalyse(mol) {
   const centers = stereoTetrahedral(mol);
   const bonds = stereoDoubleBonds(mol);
@@ -341,6 +418,6 @@ function stereoAnalyse(mol) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     stereoAnalyse, stereoTetrahedral, stereoDoubleBonds, stereoClasses,
-    stereoNeighbourList, stereoCipRanks, stereoZ, stereoTreeCompare
+    stereoNeighbourList, stereoCipRanks, stereoZ, stereoTreeCompare, stereoWedges
   };
 }
