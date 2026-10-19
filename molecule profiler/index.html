@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Molecule Profiler</title>
-<link rel="stylesheet" href="css/style.css?v=2026-10-21-batch">
-<link rel="stylesheet" href="css/workspace.css?v=2026-10-21-batch">
+<link rel="stylesheet" href="css/style.css?v=2026-10-21-reports">
+<link rel="stylesheet" href="css/workspace.css?v=2026-10-21-reports">
 </head>
 <body data-theme="dark">
 <header class="topbar">
@@ -36,14 +36,24 @@
       <p class="hint">One molecule per line. Optional name before a comma, tab or space: <code>aspirin, CC(=O)Oc1ccccc1C(=O)O</code></p>
     </div>
     <textarea id="smiles-input" spellcheck="false" rows="5" placeholder="CC(=O)Oc1ccccc1C(=O)O"></textarea>
+    <div class="input-file-tools">
+      <label class="file-import" for="molecule-file">Import .smi, .txt, .csv or .tsv <input type="file" id="molecule-file" accept=".smi,.txt,.csv,.tsv,text/plain,text/csv,text/tab-separated-values"></label>
+      <span class="hint">CSV and TSV files should have <code>name</code> and <code>smiles</code> column headers.</span>
+    </div>
     <div class="examples" id="examples"></div>
     <div class="actions">
       <button type="button" id="run" class="primary">Analyse</button>
       <button type="button" id="clear">Clear</button>
       <button type="button" id="export" disabled>Export table CSV</button>
       <button type="button" id="export-full" disabled>Export everything for this molecule</button>
+      <button type="button" id="export-snapshot" disabled>Export analysis JSON</button>
       <span id="status" class="status"></span>
     </div>
+    <section class="input-feedback" id="input-feedback" hidden aria-labelledby="input-feedback-title">
+      <h3 id="input-feedback-title">Input validation</h3>
+      <p id="input-summary" role="status" aria-live="polite"></p>
+      <div class="input-errors" id="input-errors"></div>
+    </section>
     <details class="input-help"><summary>What is included in the exports?</summary><p class="hint">The table export is one row per molecule with the batch columns. The full export is one row per value &mdash; <code>molecule, section, item, field, value</code> &mdash; and carries everything on this page for the molecule currently open: every descriptor, every filter verdict and violation, per-atom Crippen contributions, the whole similarity ranking, every scored target, matched alerts with their atoms, every firing toxicity rule, the dependence neighbours, and every enumerated metabolite with its weight, band, site factor and parent atoms. The similarity, target and dependence sections follow the fingerprint and metric selected below; the metabolite section follows the generation and phase filters.</p></details>
   </section>
 
@@ -56,6 +66,19 @@
     <p id="workspace-description" class="workspace-description" role="status" aria-live="polite"></p>
     <div class="molecule-strip"><span class="strip-title">Molecules in this analysis</span><nav class="tabs" id="molecule-tabs" aria-label="Molecules"></nav></div>
 
+
+    <section class="report-summary panel" id="molecule-report" hidden aria-labelledby="report-title">
+      <div class="report-heading">
+        <div><span class="eyebrow">Molecular dossier / selected structure</span><h2 id="report-title">Molecule summary</h2><p class="report-meta"><span id="report-formula"></span> · <span id="report-date"></span></p></div>
+        <button type="button" id="report-print" class="report-print">Print summary / Save PDF</button>
+      </div>
+      <p class="report-smiles"><strong>Input SMILES</strong> <code id="report-smiles"></code></p>
+      <div id="report-metrics" class="report-metrics" aria-label="Summary molecular properties"></div>
+      <div class="report-bottom">
+        <section aria-labelledby="report-validation-title"><h3 id="report-validation-title">Model validation context</h3><div id="report-validation"></div></section>
+        <section aria-labelledby="report-cautions-title"><h3 id="report-cautions-title">Interpretation &amp; limitations</h3><div id="report-cautions"></div></section>
+      </div>
+    </section>
     <section class="comparison-panel panel" id="comparison-panel" hidden aria-labelledby="comparison-title">
       <div class="panel-head"><h2 id="comparison-title">Molecule comparison</h2><span class="evidence" data-tier="exact">descriptors &amp; estimates</span></div>
       <p class="hint">Compare up to four molecules from this analysis. Differences are arithmetic comparisons, not evidence of biological activity or safety.</p>
@@ -360,38 +383,41 @@
   </section>
 </main>
 
-<script src="js/smiles.js?v=2026-10-21-batch"></script>
-<script src="js/mol.js?v=2026-10-21-batch"></script>
-<script src="js/descriptors.js?v=2026-10-21-batch"></script>
-<script src="js/rules.js?v=2026-10-21-batch"></script>
-<script src="js/fingerprints.js?v=2026-10-21-batch"></script>
-<script src="js/smarts.js?v=2026-10-21-batch"></script>
-<script src="js/stereo.js?v=2026-10-21-batch"></script>
-<script src="data/library.js?v=2026-10-21-batch"></script>
-<script src="data/targets.js?v=2026-10-21-batch"></script>
-<script src="data/benchmark.js?v=2026-10-21-batch"></script>
-<script src="data/alerts.js?v=2026-10-21-batch"></script>
-<script src="data/toxalerts.js?v=2026-10-21-batch"></script>
-<script src="data/dependence.js?v=2026-10-21-batch"></script>
-<script src="js/tox.js?v=2026-10-21-batch"></script>
-<script src="js/transform.js?v=2026-10-21-batch"></script>
-<script src="js/sites.js?v=2026-10-21-batch"></script>
-<script src="js/depict.js?v=2026-10-21-batch"></script>
-<script src="data/metabolism.js?v=2026-10-21-batch"></script>
-<script src="data/metcases.js?v=2026-10-21-batch"></script>
-<script src="data/stereocases.js?v=2026-10-21-batch"></script>
-<script src="data/wedgecases.js?v=2026-10-21-batch"></script>
-<script src="data/propcases.js?v=2026-10-21-batch"></script>
-<script src="data/crippencases.js?v=2026-10-21-batch"></script>
-  <script src="data/citations.js?v=2026-10-21-batch"></script>
-<script src="js/metabolism.js?v=2026-10-21-batch"></script>
-<script src="js/evidence-report.js?v=2026-10-21-batch"></script>
-<script src="js/screen-coverage.js?v=2026-10-21-batch"></script>
-<script src="js/sim-pagination.js?v=2026-10-21-batch"></script>
-<script src="js/batch-browser.js?v=2026-10-21-batch"></script>
-<script src="js/app.js?v=2026-10-21-batch"></script>
-<script src="js/comparison-data.js?v=2026-10-21-batch"></script>
-<script src="js/workspace-ui.js?v=2026-10-21-batch"></script>
-<script src="js/comparison-ui.js?v=2026-10-21-batch"></script>
+<script src="js/smiles.js?v=2026-10-21-reports"></script>
+<script src="js/mol.js?v=2026-10-21-reports"></script>
+<script src="js/descriptors.js?v=2026-10-21-reports"></script>
+<script src="js/rules.js?v=2026-10-21-reports"></script>
+<script src="js/fingerprints.js?v=2026-10-21-reports"></script>
+<script src="js/smarts.js?v=2026-10-21-reports"></script>
+<script src="js/stereo.js?v=2026-10-21-reports"></script>
+<script src="data/library.js?v=2026-10-21-reports"></script>
+<script src="data/targets.js?v=2026-10-21-reports"></script>
+<script src="data/benchmark.js?v=2026-10-21-reports"></script>
+<script src="data/alerts.js?v=2026-10-21-reports"></script>
+<script src="data/toxalerts.js?v=2026-10-21-reports"></script>
+<script src="data/dependence.js?v=2026-10-21-reports"></script>
+<script src="js/tox.js?v=2026-10-21-reports"></script>
+<script src="js/transform.js?v=2026-10-21-reports"></script>
+<script src="js/sites.js?v=2026-10-21-reports"></script>
+<script src="js/depict.js?v=2026-10-21-reports"></script>
+<script src="data/metabolism.js?v=2026-10-21-reports"></script>
+<script src="data/metcases.js?v=2026-10-21-reports"></script>
+<script src="data/stereocases.js?v=2026-10-21-reports"></script>
+<script src="data/wedgecases.js?v=2026-10-21-reports"></script>
+<script src="data/propcases.js?v=2026-10-21-reports"></script>
+<script src="data/crippencases.js?v=2026-10-21-reports"></script>
+  <script src="data/citations.js?v=2026-10-21-reports"></script>
+<script src="js/metabolism.js?v=2026-10-21-reports"></script>
+<script src="js/evidence-report.js?v=2026-10-21-reports"></script>
+<script src="js/screen-coverage.js?v=2026-10-21-reports"></script>
+<script src="js/sim-pagination.js?v=2026-10-21-reports"></script>
+<script src="js/batch-browser.js?v=2026-10-21-reports"></script>
+<script src="js/input-workflow.js?v=2026-10-21-reports"></script>
+<script src="js/app.js?v=2026-10-21-reports"></script>
+<script src="js/comparison-data.js?v=2026-10-21-reports"></script>
+<script src="js/workspace-ui.js?v=2026-10-21-reports"></script>
+<script src="js/comparison-ui.js?v=2026-10-21-reports"></script>
+<script src="js/report-model.js?v=2026-10-21-reports"></script>
+<script src="js/report-ui.js?v=2026-10-21-reports"></script>
 </body>
 </html>

@@ -298,13 +298,14 @@ function splitLine(line) {
 
 function analyse() {
   const text = document.getElementById('smiles-input').value;
-  const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
+  const input = InputWorkflow.parseInputText(text);
   const status = document.getElementById('status');
   records = [];
   const problems = [];
 
-  lines.forEach((line, index) => {
-    const parsed = splitLine(line);
+  input.rows.forEach((row, index) => {
+    if(row.error){problems.push({line:row.line,input:row.raw,reason:row.error});return;}
+    const parsed = row.smiles ? {name:row.name,smiles:row.smiles} : splitLine(row.raw);
     try {
       const mol = buildMolecule(parseSmiles(parsed.smiles));
       const d = describe(mol);
@@ -317,18 +318,39 @@ function analyse() {
         v: verdicts
       });
     } catch (error) {
-      problems.push(parsed.smiles + ': ' + error.message);
+      problems.push({line:row.line,input:row.raw,reason:error.message});
     }
   });
 
+  const summary = InputWorkflow.summarizeOutcomes(records.length, problems, input.rows.length);
   status.classList.toggle('error', problems.length > 0);
-  if (problems.length) status.textContent = problems.join(' | ');
-  else status.textContent = records.length ? records.length + ' parsed' : '';
+  status.textContent = summary.status;
+  const feedback = document.getElementById('input-feedback');
+  feedback.hidden = input.rows.length===0 && problems.length===0;
+  document.getElementById('input-summary').textContent =
+    summary.successes+' of '+summary.total+' input records analyzed ('+input.format+' format). '
+    + (summary.failures ? 'Invalid entries were skipped; valid results are retained.' : 'No invalid entries found.');
+  const errors = document.getElementById('input-errors');
+  errors.replaceChildren();
+  problems.slice(0,100).forEach(problem => {
+    const item = document.createElement('p');
+    item.textContent = 'Line '+problem.line+': '+problem.reason+' — '+problem.input.slice(0,130);
+    errors.appendChild(item);
+  });
+  if(problems.length>100) {
+    const item=document.createElement('p');
+    item.textContent=(problems.length-100)+' additional errors not displayed.';
+    errors.appendChild(item);
+  }
 
   document.getElementById('export').disabled = records.length === 0;
   document.getElementById('export-full').disabled = records.length === 0;
+  document.getElementById('export-snapshot').disabled = records.length === 0;
   document.getElementById('results').hidden = records.length === 0;
-  if (!records.length) return;
+  if (!records.length) {
+    document.dispatchEvent(new Event('molecule-profiler:updated'));
+    return;
+  }
   current = 0;
   simPage = 1;
   batchPage = 1;
@@ -358,6 +380,7 @@ function renderCurrent() {
   if (!record) return;
   const d = record.d;
   const v = record.v;
+  document.dispatchEvent(new Event('molecule-profiler:selected'));
 
   // Descriptor methods and extrapolation warnings; intentionally no new predictions.
   if (typeof propertyEvidenceRows === 'function') {
@@ -1969,6 +1992,17 @@ function exportMoleculeCsv() {
   URL.revokeObjectURL(link.href);
 }
 
+function exportSnapshot() {
+  if(!records.length)return;
+  const snapshot = InputWorkflow.createSnapshot(records);
+  const content=JSON.stringify(snapshot,(key,value)=>typeof value==='number'&&!Number.isFinite(value)?null:value,2);
+  const url=URL.createObjectURL(new Blob([content],{type:'application/json;charset=utf-8'}));
+  const link=document.createElement('a');
+  link.href=url;link.download='molecule-analysis.json';
+  document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
 function exportCsv() {
   const header = ['name', 'smiles'].concat(BATCH_COLUMNS.map(([key]) => key));
   const lines = [header.join(',')];
@@ -2022,11 +2056,27 @@ document.getElementById('clear').addEventListener('click', () => {
   document.getElementById('status').textContent = '';
   document.getElementById('export').disabled = true;
   document.getElementById('export-full').disabled = true;
+  document.getElementById('export-snapshot').disabled = true;
+  document.getElementById('input-feedback').hidden = true;
   records = [];
   document.dispatchEvent(new Event('molecule-profiler:updated'));
 });
 document.getElementById('export').addEventListener('click', exportCsv);
 document.getElementById('export-full').addEventListener('click', exportMoleculeCsv);
+document.getElementById('export-snapshot').addEventListener('click', exportSnapshot);
+document.getElementById('molecule-file').addEventListener('change', async event => {
+  const file=event.target.files && event.target.files[0];
+  if(!file)return;
+  const status=document.getElementById('status');
+  if(file.size>1024*1024){status.textContent='File is too large (maximum 1 MB).';status.classList.add('error');event.target.value='';return;}
+  try {
+    document.getElementById('smiles-input').value=await file.text();
+    analyse();
+  } catch(error) {
+    status.textContent='Could not read input file: '+error.message;
+    status.classList.add('error');
+  } finally {event.target.value='';}
+});
 document.getElementById('smiles-input').addEventListener('keydown', (event) => {
   if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) analyse();
 });

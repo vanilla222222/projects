@@ -82,6 +82,14 @@ assert.ok(app.includes('SimPagination.paginateRanked'), 'Pagination engine not w
 assert.ok(scripts.indexOf('js/batch-browser.js') < scripts.indexOf('js/app.js') && scripts.includes('js/batch-browser.js'), 'Batch browser script must load before app');
 for (const id of ['batch-search','batch-sort','batch-order','batch-count','batch-prev','batch-next','batch-page']) assert.ok(ids.includes(id),'Missing batch browser control: '+id);
 assert.ok(app.includes('BatchBrowser.browseBatch'), 'Batch browsing not wired into analysis');
+assert.ok(scripts.indexOf('js/input-workflow.js') < scripts.indexOf('js/app.js'), 'Input workflow helper must load before application');
+for(const id of ['molecule-file','input-feedback','input-summary','input-errors','export-snapshot'])assert.ok(ids.includes(id),'Missing input workflow control: '+id);
+assert.ok(app.includes('InputWorkflow.parseInputText'), 'Structured input parser not connected');
+assert.ok(app.includes('InputWorkflow.createSnapshot'), 'Snapshot exporter not connected');
+assert.ok(scripts.indexOf('js/report-model.js') > -1,'Summary model not included');
+assert.ok(scripts.indexOf('js/report-ui.js') > scripts.indexOf('js/app.js'),'Summary UI should load after analysis app');
+for(const id of ['molecule-report','report-title','report-metrics','report-validation','report-cautions','report-print']) assert.ok(ids.includes(id),'Missing report element: '+id);
+assert.ok(app.includes("molecule-profiler:selected"),'Selected-molecule reporting update missing');
 console.log('UI integration contract passed: ' + scripts.length + ' scripts, ' + ids.length + ' unique DOM IDs');
 assert.ok(app.includes('const DEP_GATE = 0.45;'), 'Dependence gate threshold missing');
 assert.ok(app.includes('const gated = profile.top < DEP_GATE;'), 'Dependence gate is not computed from the threshold');
