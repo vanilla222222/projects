@@ -410,35 +410,42 @@ function strictHBD(mol) {
   return mol.atoms.filter((atom) => (atom.element === 'N' || atom.element === 'O') && atom.totalH > 0).length;
 }
 
+function hbaValence(mol, atom) {
+  const orders = atom.neighbors.reduce((sum, link) => sum + mol.bonds[link.bond].order, 0);
+  return orders + (atom.totalH || 0);
+}
+
+function hbaWithdrawn(mol, index, atom) {
+  return atom.neighbors.some((link) => {
+    if (mol.bonds[link.bond].order !== 1) return false;
+    const partner = mol.atoms[link.atom];
+    return partner.neighbors.some((inner) => {
+      if (inner.atom === index) return false;
+      const bond = mol.bonds[inner.bond];
+      if (bond.order !== 2 || bond.ring) return false;
+      return ['O', 'N', 'P', 'S'].includes(mol.atoms[inner.atom].element);
+    });
+  });
+}
+
 function strictHBA(mol) {
-  return mol.atoms.filter((atom) => {
-    if (atom.element === 'O') {
-      if (atom.charge > 0) return false;
-      const esterLike = atom.neighbors.some((link) => {
-        const partner = mol.atoms[link.atom];
-        if (partner.element !== 'C' && partner.element !== 'S' && partner.element !== 'P') return false;
-        return false;
-      });
-      return !esterLike;
+  return mol.atoms.filter((atom, index) => {
+    if (atom.aromatic) {
+      if (atom.charge !== 0) return false;
+      if (atom.element === 'O' || atom.element === 'S') return true;
+      return atom.element === 'N' && atom.totalH === 0 && atom.degree === 2;
+    }
+    if (atom.element === 'O' || atom.element === 'S') {
+      if (atom.charge < 0) return true;
+      if (atom.charge !== 0) return false;
+      if (hbaValence(mol, atom) !== 2) return false;
+      if (atom.totalH === 1) return !hbaWithdrawn(mol, index, atom);
+      return atom.totalH === 0;
     }
     if (atom.element !== 'N') return false;
-    if (atom.charge > 0) return false;
-    if (atom.aromatic) return atom.totalH === 0 && atom.degree === 2;
-    const amide = atom.neighbors.some((link) => {
-      const partner = mol.atoms[link.atom];
-      if (partner.element !== 'C') return false;
-      return partner.neighbors.some((inner) => {
-        const bond = mol.bonds[inner.bond];
-        return bond.order === 2 && ['O', 'S'].includes(mol.atoms[inner.atom].element);
-      });
-    });
-    if (amide) return false;
-    const nitro = atom.neighbors.filter((link) => {
-      const bond = mol.bonds[link.bond];
-      return bond.order === 2 && mol.atoms[link.atom].element === 'O';
-    }).length;
-    if (nitro) return false;
-    return true;
+    if (atom.charge !== 0) return false;
+    if (hbaValence(mol, atom) !== 3) return false;
+    return !hbaWithdrawn(mol, index, atom);
   }).length;
 }
 
