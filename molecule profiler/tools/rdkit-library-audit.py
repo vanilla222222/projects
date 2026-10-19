@@ -17,7 +17,7 @@ from rdkit.Chem.MolStandardize import rdMolStandardize
 
 RDLogger.DisableLog("rdApp.error")
 LIBRARY = Path(__file__).resolve().parents[1] / "data" / "library.js"
-ENTRY = re.compile(r"\{ name: '((?:\\.|[^'\\])*)', cls: '((?:\\.|[^'\\])*)', formula: '((?:\\.|[^'\\])*)', smiles: '((?:\\.|[^'\\])*)' \}")
+ENTRY = re.compile(r"\{ name: '((?:\\.|[^'\\])*)', cls: '((?:\\.|[^'\\])*)', formula: '((?:\\.|[^'\\])*)', smiles: '((?:\\.|[^'\\])*)'(?:, propertyOnly: true)? \}")
 
 def unescape(value):
     # Interpret JavaScript's simple string escapes used in this dataset.
