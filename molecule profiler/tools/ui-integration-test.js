@@ -49,4 +49,11 @@ for (const group of ['overview', 'properties', 'screening', 'metabolism', 'disco
 }
 assert.ok(workspace.includes('search.addEventListener'), 'Section search is not interactive');
 assert.ok(workspace.includes('event.key === \'/\''), 'Keyboard section search shortcut missing');
+for (const id of ['comparison-panel', 'comparison-choices', 'comparison-baseline', 'comparison-differences', 'comparison-table', 'comparison-export']) {
+  assert.ok(ids.includes(id), 'Missing comparison control: ' + id);
+}
+assert.ok(scripts.indexOf('js/comparison-data.js') > -1, 'Comparison data script missing');
+assert.ok(scripts.indexOf('js/comparison-ui.js') > scripts.indexOf('js/workspace-ui.js'), 'Comparison UI script order incorrect');
+assert.ok(workspace.includes("id: 'compare'"), 'Compare workspace navigation missing');
+assert.ok(app.includes("molecule-profiler:updated"), 'Comparison updates not wired to batch analysis');
 console.log('UI integration contract passed: ' + scripts.length + ' scripts, ' + ids.length + ' unique DOM IDs');
