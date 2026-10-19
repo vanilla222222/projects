@@ -508,6 +508,7 @@ if (typeof module !== 'undefined' && module.exports) {
     molecularWeight,
     exactMass,
     valenceUsed,
+    implicitHydrogens,
     findBond,
     cycleBondKeys,
     ATOMIC_WEIGHT,

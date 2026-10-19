@@ -40,6 +40,7 @@ function parseSmiles(text) {
 
   const addAtom = (atom) => {
     atom.index = atoms.length;
+    atom.order = [];
     atoms.push(atom);
     return atom;
   };
@@ -71,6 +72,8 @@ function parseSmiles(text) {
         aromatic = symbol === ':';
       }
       addBond(previous, atom.index, order, aromatic, position);
+      atoms[previous].order.push(atom.index);
+      atom.order.push(previous);
     }
     pendingBond = null;
     previous = atom.index;
@@ -128,6 +131,7 @@ function parseSmiles(text) {
       const atom = parseBracketAtom(src.slice(i + 1, end), i);
       addAtom(atom);
       connect(atom, i);
+      if (atom.chirality && atom.explicitH) atom.order.push(null);
       i = end + 1;
       continue;
     }
@@ -179,9 +183,14 @@ function parseSmiles(text) {
       const order = symbol ? BOND_ORDERS[symbol] : 1;
       const aromatic = symbol ? symbol === ':' : bothAromatic;
       addBond(open.atom, previous, order, aromatic, position);
+      const slot = atoms[open.atom].order.indexOf(open.slot);
+      if (slot >= 0) atoms[open.atom].order[slot] = previous;
+      atoms[previous].order.push(open.atom);
       pendingBond = null;
     } else {
-      ringOpen.set(key, { atom: previous, bond: pendingBond });
+      const slot = { ring: key };
+      atoms[previous].order.push(slot);
+      ringOpen.set(key, { atom: previous, bond: pendingBond, slot: slot });
       pendingBond = null;
     }
     return next;
