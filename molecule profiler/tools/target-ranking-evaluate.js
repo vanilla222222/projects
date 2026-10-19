@@ -26,7 +26,7 @@ for(const {item,aliases,hash:profileSha256} of sample){
  results.push(record);
 }
 const report={schemaVersion:2,algorithmVersion:api.VERSION,node:process.version,
- sourceSha256:Object.fromEntries(['data/library.js','data/targets.js','js/target-ranking.js','tools/target-ranking-evaluate.js','tools/target-ranking-metrics.js'].map(file=>[file,hash(fs.readFileSync(path.join(__dirname,'..',file)))])),
+ sourceSha256:Object.fromEntries(['data/library.js','data/targets.js','js/target-ranking.js','js/mol.js','js/smiles.js','js/stereo.js','js/fingerprints.js','tools/target-ranking-evaluate.js','tools/target-ranking-metrics.js'].map(file=>[file,hash(fs.readFileSync(path.join(__dirname,'..',file)))])),
  protocol:'One query per fingerprint-profile group, SHA-256 ordered; all indistinguishable profiles withheld from every target. Default evaluates every group.',
  selection:{limit:Number.isFinite(limit)?limit:null,complete:sample.length===groups.size},
  caveats:['Internal curated-label retrieval only, not confirmed binding validation.','Profile grouping is not chemical canonicalization or scaffold-disjoint validation.',

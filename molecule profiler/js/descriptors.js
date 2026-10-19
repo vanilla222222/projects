@@ -253,8 +253,16 @@ const NITROGEN_RULES = [
   ['N11', (c) => c.arom && c.charge === 0],
   ['N10', (c) => c.charge > 0 && c.h >= 1 && !c.arom],
   ['N12', (c) => c.charge > 0 && c.arom],
-  ['N13', (c) => c.charge > 0 && c.h === 0 && !c.arom && c.degree >= 3],
-  ['N14', (c) => c.charge !== 0]
+  ['N13', (c) => c.charge > 0 && c.h === 0 && !c.arom && (
+    (c.degree === 4 && c.heavy.every(ALIPHATIC_HEAVY))
+    || (c.degree === 3 && c.doubleTo(ALIPHATIC_HEAVY).length > 0
+      && c.singleTo(ALIPHATIC_HEAVY).length > 0)
+    || (c.doubleTo(a => a.element === 'C').length > 0
+      && c.doubleTo(a => a.element === 'N').length > 0))],
+  ['N14', (c) => c.charge < 0 || (c.charge > 0 && (
+    c.tripleTo(ALIPHATIC_HEAVY).length > 0
+    || (c.doubleTo(a => a.element === 'N' && a.charge < 0).length > 0
+      && c.doubleTo(a => a.element === 'N').length >= 2)))]
 ];
 
 const OXYGEN_RULES = [

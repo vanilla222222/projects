@@ -16,6 +16,7 @@ const scripts = [
   'evidence-report-test.js',
   'screen-coverage-test.js',
   'property-validation.js',
+  'descriptor-conformance-test.js',
   'metabolism-cases.js',
   'retrieval-benchmark.js',
   'ui-integration-test.js',

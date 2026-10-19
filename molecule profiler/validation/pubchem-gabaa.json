@@ -1,0 +1,2388 @@
+{
+  "schemaVersion": 1,
+  "gene": "GABRA1",
+  "rdkitVersion": "2026.09.1",
+  "scope": "Name-resolved PubChem structure comparison only; no activity, potency or subtype verification.",
+  "sourceSha256": {
+    "data/library.js": "1ecf116365af22eb476d0f8d858729ab41408ab032cc70d8b6129a22ba16f6ea",
+    "data/targets.js": "51639b633fbc791ee6883eb07df2367b51438b757bff314c82529cfc3cbe089c",
+    "tools/pubchem-reference-audit.py": "1969e067152f728e1357aa7037175de563423b4127f887023656903182720f93"
+  },
+  "counts": {
+    "connectivity_only_stereochemistry_differs": 5,
+    "different_graph_requires_review": 1,
+    "matched_isomeric_graph": 73
+  },
+  "records": [
+    {
+      "name": "Adinazolam",
+      "librarySmiles": "CN(C)Cc1nnc2n1-c1ccc(Cl)cc1C(c1ccccc1)=NC2",
+      "libraryFormula": "C19H18ClN5",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Adinazolam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 37632,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/37632",
+      "sourceSmiles": "CN(C)CC1=NN=C2N1C3=C(C=C(C=C3)Cl)C(=NC2)C4=CC=CC=C4",
+      "sourceFormula": "C19H18ClN5",
+      "sourceInchiKey": "GJSLOMWRLALDCT-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CN(C)Cc1nnc2n1-c1ccc(Cl)cc1C(c1ccccc1)=NC2",
+      "sourceCanonicalSmiles": "CN(C)Cc1nnc2n1-c1ccc(Cl)cc1C(c1ccccc1)=NC2",
+      "retrievedAt": "2026-10-19T22:33:57.652964+00:00",
+      "responseSha256": "6ccaaa459f84b0c64ecd08156273cdf968b1e13294868c93c2967f6305cb0b3e",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 37632,
+              "MolecularFormula": "C19H18ClN5",
+              "SMILES": "CN(C)CC1=NN=C2N1C3=C(C=C(C=C3)Cl)C(=NC2)C4=CC=CC=C4",
+              "ConnectivitySMILES": "CN(C)CC1=NN=C2N1C3=C(C=C(C=C3)Cl)C(=NC2)C4=CC=CC=C4",
+              "InChIKey": "GJSLOMWRLALDCT-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Allobarbital",
+      "librarySmiles": "C=CCC1(CC=C)C(=O)NC(=O)NC1=O",
+      "libraryFormula": "C10H12N2O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Allobarbital/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 5842,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/5842",
+      "sourceSmiles": "C=CCC1(C(=O)NC(=O)NC1=O)CC=C",
+      "sourceFormula": "C10H12N2O3",
+      "sourceInchiKey": "FDQGNLOWMMVRQL-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "C=CCC1(CC=C)C(=O)NC(=O)NC1=O",
+      "sourceCanonicalSmiles": "C=CCC1(CC=C)C(=O)NC(=O)NC1=O",
+      "retrievedAt": "2026-10-19T22:34:12.297034+00:00",
+      "responseSha256": "bd361934f093d3227b7127261ab3df91c628da4d1ad2914a5ccf49e43029b6cd",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 5842,
+              "MolecularFormula": "C10H12N2O3",
+              "SMILES": "C=CCC1(C(=O)NC(=O)NC1=O)CC=C",
+              "ConnectivitySMILES": "C=CCC1(C(=O)NC(=O)NC1=O)CC=C",
+              "InChIKey": "FDQGNLOWMMVRQL-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Alpidem",
+      "librarySmiles": "CCCN(CCC)C(=O)CC1=C(N=C2N1C=C(C=C2)Cl)C3=CC=C(C=C3)Cl",
+      "libraryFormula": "C21H23Cl2N3O",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Alpidem/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 54897,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/54897",
+      "sourceSmiles": "CCCN(CCC)C(=O)CC1=C(N=C2N1C=C(C=C2)Cl)C3=CC=C(C=C3)Cl",
+      "sourceFormula": "C21H23Cl2N3O",
+      "sourceInchiKey": "JRTIDHTUMYMPRU-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCCN(CCC)C(=O)Cc1c(-c2ccc(Cl)cc2)nc2ccc(Cl)cn12",
+      "sourceCanonicalSmiles": "CCCN(CCC)C(=O)Cc1c(-c2ccc(Cl)cc2)nc2ccc(Cl)cn12",
+      "retrievedAt": "2026-10-19T22:34:37.677347+00:00",
+      "responseSha256": "0ef50a467142794397a63f0f3ffac46dbc243831b7b081e03b5787e326c765cb",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 54897,
+              "MolecularFormula": "C21H23Cl2N3O",
+              "SMILES": "CCCN(CCC)C(=O)CC1=C(N=C2N1C=C(C=C2)Cl)C3=CC=C(C=C3)Cl",
+              "ConnectivitySMILES": "CCCN(CCC)C(=O)CC1=C(N=C2N1C=C(C=C2)Cl)C3=CC=C(C=C3)Cl",
+              "InChIKey": "JRTIDHTUMYMPRU-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Alprazolam",
+      "librarySmiles": "Cc1nnc2n1-c1ccc(Cl)cc1C(=NC2)c1ccccc1",
+      "libraryFormula": "C17H13ClN4",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Alprazolam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 2118,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/2118",
+      "sourceSmiles": "CC1=NN=C2N1C3=C(C=C(C=C3)Cl)C(=NC2)C4=CC=CC=C4",
+      "sourceFormula": "C17H13ClN4",
+      "sourceInchiKey": "VREFGVBLTWBCJP-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "Cc1nnc2n1-c1ccc(Cl)cc1C(c1ccccc1)=NC2",
+      "sourceCanonicalSmiles": "Cc1nnc2n1-c1ccc(Cl)cc1C(c1ccccc1)=NC2",
+      "retrievedAt": "2026-10-19T22:32:34.184929+00:00",
+      "responseSha256": "dcbe0c61545f39d6169e8886df30549f0ff45dfa1cd97fcf03d0324db7b8cbbc",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 2118,
+              "MolecularFormula": "C17H13ClN4",
+              "SMILES": "CC1=NN=C2N1C3=C(C=C(C=C3)Cl)C(=NC2)C4=CC=CC=C4",
+              "ConnectivitySMILES": "CC1=NN=C2N1C3=C(C=C(C=C3)Cl)C(=NC2)C4=CC=CC=C4",
+              "InChIKey": "VREFGVBLTWBCJP-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Amobarbital",
+      "librarySmiles": "CCC1(CCC(C)C)C(=O)NC(=O)NC1=O",
+      "libraryFormula": "C11H18N2O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Amobarbital/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 2164,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/2164",
+      "sourceSmiles": "CCC1(C(=O)NC(=O)NC1=O)CCC(C)C",
+      "sourceFormula": "C11H18N2O3",
+      "sourceInchiKey": "VIROVYVQCGLCII-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCC1(CCC(C)C)C(=O)NC(=O)NC1=O",
+      "sourceCanonicalSmiles": "CCC1(CCC(C)C)C(=O)NC(=O)NC1=O",
+      "retrievedAt": "2026-10-19T22:34:05.236973+00:00",
+      "responseSha256": "c4750df848a93fab9ae57fc36ed90a19c44ba70e21bac32e9f3bc23385a4dd7a",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 2164,
+              "MolecularFormula": "C11H18N2O3",
+              "SMILES": "CCC1(C(=O)NC(=O)NC1=O)CCC(C)C",
+              "ConnectivitySMILES": "CCC1(C(=O)NC(=O)NC1=O)CCC(C)C",
+              "InChIKey": "VIROVYVQCGLCII-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Aprobarbital",
+      "librarySmiles": "C=CCC1(C(C)C)C(=O)NC(=O)NC1=O",
+      "libraryFormula": "C10H14N2O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Aprobarbital/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 6464,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/6464",
+      "sourceSmiles": "CC(C)C1(C(=O)NC(=O)NC1=O)CC=C",
+      "sourceFormula": "C10H14N2O3",
+      "sourceInchiKey": "UORJNBVJVRLXMQ-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "C=CCC1(C(C)C)C(=O)NC(=O)NC1=O",
+      "sourceCanonicalSmiles": "C=CCC1(C(C)C)C(=O)NC(=O)NC1=O",
+      "retrievedAt": "2026-10-19T22:34:16.308902+00:00",
+      "responseSha256": "11c48088d3f9a5b32f55277469a9019c749b0d280a101b7c51c47df5ddb789a6",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 6464,
+              "MolecularFormula": "C10H14N2O3",
+              "SMILES": "CC(C)C1(C(=O)NC(=O)NC1=O)CC=C",
+              "ConnectivitySMILES": "CC(C)C1(C(=O)NC(=O)NC1=O)CC=C",
+              "InChIKey": "UORJNBVJVRLXMQ-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Barbital",
+      "librarySmiles": "CCC1(CC)C(=O)NC(=O)NC1=O",
+      "libraryFormula": "C8H12N2O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Barbital/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 2294,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/2294",
+      "sourceSmiles": "CCC1(C(=O)NC(=O)NC1=O)CC",
+      "sourceFormula": "C8H12N2O3",
+      "sourceInchiKey": "FTOAOBMCPZCFFF-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCC1(CC)C(=O)NC(=O)NC1=O",
+      "sourceCanonicalSmiles": "CCC1(CC)C(=O)NC(=O)NC1=O",
+      "retrievedAt": "2026-10-19T22:34:05.237139+00:00",
+      "responseSha256": "58961633ab0b91b40107de0e08a7a4dbe827a50017a7b2f9ad9821042f344872",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 2294,
+              "MolecularFormula": "C8H12N2O3",
+              "SMILES": "CCC1(C(=O)NC(=O)NC1=O)CC",
+              "ConnectivitySMILES": "CCC1(C(=O)NC(=O)NC1=O)CC",
+              "InChIKey": "FTOAOBMCPZCFFF-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Bicuculline",
+      "librarySmiles": "CN1CCC2=CC3=C(C=C2[C@H]1[C@@H]1OC(=O)C2=C1C=CC1=C2OCO1)OCO3",
+      "libraryFormula": "C20H17NO6",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Bicuculline/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 10237,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/10237",
+      "sourceSmiles": "CN1CCC2=CC3=C(C=C2[C@H]1[C@H]4C5=C(C6=C(C=C5)OCO6)C(=O)O4)OCO3",
+      "sourceFormula": "C20H17NO6",
+      "sourceInchiKey": "IYGYMKDQCDOMRE-ZWKOTPCHSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CN1CCc2cc3c(cc2[C@H]1[C@@H]1OC(=O)c2c1ccc1c2OCO1)OCO3",
+      "sourceCanonicalSmiles": "CN1CCc2cc3c(cc2[C@H]1[C@@H]1OC(=O)c2c1ccc1c2OCO1)OCO3",
+      "retrievedAt": "2026-10-19T22:32:48.889454+00:00",
+      "responseSha256": "f04af3aca9c8ba441344f6116f304616712294d6cc045c5736da0e570aba3e20",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 10237,
+              "MolecularFormula": "C20H17NO6",
+              "SMILES": "CN1CCC2=CC3=C(C=C2[C@H]1[C@H]4C5=C(C6=C(C=C5)OCO6)C(=O)O4)OCO3",
+              "ConnectivitySMILES": "CN1CCC2=CC3=C(C=C2C1C4C5=C(C6=C(C=C5)OCO6)C(=O)O4)OCO3",
+              "InChIKey": "IYGYMKDQCDOMRE-ZWKOTPCHSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Bromazepam",
+      "librarySmiles": "O=C1CN=C(c2ccccn2)c2cc(Br)ccc2N1",
+      "libraryFormula": "C14H10BrN3O",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Bromazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 2441,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/2441",
+      "sourceSmiles": "C1C(=O)NC2=C(C=C(C=C2)Br)C(=N1)C3=CC=CC=N3",
+      "sourceFormula": "C14H10BrN3O",
+      "sourceInchiKey": "VMIYHDSEFNYJSL-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "O=C1CN=C(c2ccccn2)c2cc(Br)ccc2N1",
+      "sourceCanonicalSmiles": "O=C1CN=C(c2ccccn2)c2cc(Br)ccc2N1",
+      "retrievedAt": "2026-10-19T22:33:42.472879+00:00",
+      "responseSha256": "2e4aeeb853f02752d74aee42e410fc7be2d4133fb8f5430661c4607ee7705ccb",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 2441,
+              "MolecularFormula": "C14H10BrN3O",
+              "SMILES": "C1C(=O)NC2=C(C=C(C=C2)Br)C(=N1)C3=CC=CC=N3",
+              "ConnectivitySMILES": "C1C(=O)NC2=C(C=C(C=C2)Br)C(=N1)C3=CC=CC=N3",
+              "InChIKey": "VMIYHDSEFNYJSL-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Bromazolam",
+      "librarySmiles": "Cc1nnc2n1-c1ccc(Br)cc1C(c1ccccc1)=NC2",
+      "libraryFormula": "C17H13BrN4",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Bromazolam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 12562546,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/12562546",
+      "sourceSmiles": "CC1=NN=C2N1C3=C(C=C(C=C3)Br)C(=NC2)C4=CC=CC=C4",
+      "sourceFormula": "C17H13BrN4",
+      "sourceInchiKey": "KCEIOBKDDQAYCM-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "Cc1nnc2n1-c1ccc(Br)cc1C(c1ccccc1)=NC2",
+      "sourceCanonicalSmiles": "Cc1nnc2n1-c1ccc(Br)cc1C(c1ccccc1)=NC2",
+      "retrievedAt": "2026-10-19T22:33:50.369149+00:00",
+      "responseSha256": "6f95a0bacb1e0df3e03196b76aca85975606ce66f0a1ca518baad97f903dadb4",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 12562546,
+              "MolecularFormula": "C17H13BrN4",
+              "SMILES": "CC1=NN=C2N1C3=C(C=C(C=C3)Br)C(=NC2)C4=CC=CC=C4",
+              "ConnectivitySMILES": "CC1=NN=C2N1C3=C(C=C(C=C3)Br)C(=NC2)C4=CC=CC=C4",
+              "InChIKey": "KCEIOBKDDQAYCM-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Butabarbital",
+      "librarySmiles": "CCC(C)C1(CC)C(=O)NC(=O)NC1=O",
+      "libraryFormula": "C10H16N2O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Butabarbital/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 2479,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/2479",
+      "sourceSmiles": "CCC(C)C1(C(=O)NC(=O)NC1=O)CC",
+      "sourceFormula": "C10H16N2O3",
+      "sourceInchiKey": "ZRIHAIZYIMGOAB-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCC(C)C1(CC)C(=O)NC(=O)NC1=O",
+      "sourceCanonicalSmiles": "CCC(C)C1(CC)C(=O)NC(=O)NC1=O",
+      "retrievedAt": "2026-10-19T22:34:08.857045+00:00",
+      "responseSha256": "79f9d5b3522749ce6f5287f2de8bc1c1639090738121915bb5a8ed1340364126",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 2479,
+              "MolecularFormula": "C10H16N2O3",
+              "SMILES": "CCC(C)C1(C(=O)NC(=O)NC1=O)CC",
+              "ConnectivitySMILES": "CCC(C)C1(C(=O)NC(=O)NC1=O)CC",
+              "InChIKey": "ZRIHAIZYIMGOAB-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Butalbital",
+      "librarySmiles": "C=CCC1(CC(C)C)C(=O)NC(=O)NC1=O",
+      "libraryFormula": "C11H16N2O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Butalbital/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 2481,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/2481",
+      "sourceSmiles": "CC(C)CC1(C(=O)NC(=O)NC1=O)CC=C",
+      "sourceFormula": "C11H16N2O3",
+      "sourceInchiKey": "UZVHFVZFNXBMQJ-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "C=CCC1(CC(C)C)C(=O)NC(=O)NC1=O",
+      "sourceCanonicalSmiles": "C=CCC1(CC(C)C)C(=O)NC(=O)NC1=O",
+      "retrievedAt": "2026-10-19T22:34:08.808917+00:00",
+      "responseSha256": "08d97a076ab316aba58ba883105f1c4ac3bfd9d507520a9e800390fd69b8a8f6",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 2481,
+              "MolecularFormula": "C11H16N2O3",
+              "SMILES": "CC(C)CC1(C(=O)NC(=O)NC1=O)CC=C",
+              "ConnectivitySMILES": "CC(C)CC1(C(=O)NC(=O)NC1=O)CC=C",
+              "InChIKey": "UZVHFVZFNXBMQJ-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Camazepam",
+      "librarySmiles": "CN(C)C(=O)OC1N=C(c2ccccc2)c2cc(Cl)ccc2N(C)C1=O",
+      "libraryFormula": "C19H18ClN3O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Camazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 37367,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/37367",
+      "sourceSmiles": "CN1C2=C(C=C(C=C2)Cl)C(=NC(C1=O)OC(=O)N(C)C)C3=CC=CC=C3",
+      "sourceFormula": "C19H18ClN3O3",
+      "sourceInchiKey": "PXBVEXGRHZFEOF-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CN(C)C(=O)OC1N=C(c2ccccc2)c2cc(Cl)ccc2N(C)C1=O",
+      "sourceCanonicalSmiles": "CN(C)C(=O)OC1N=C(c2ccccc2)c2cc(Cl)ccc2N(C)C1=O",
+      "retrievedAt": "2026-10-19T22:33:38.504886+00:00",
+      "responseSha256": "e0e5b964f51dee215310116a3796fe0eba760dbd0e9b8d8ce5d4739e1f18e0f5",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 37367,
+              "MolecularFormula": "C19H18ClN3O3",
+              "SMILES": "CN1C2=C(C=C(C=C2)Cl)C(=NC(C1=O)OC(=O)N(C)C)C3=CC=CC=C3",
+              "ConnectivitySMILES": "CN1C2=C(C=C(C=C2)Cl)C(=NC(C1=O)OC(=O)N(C)C)C3=CC=CC=C3",
+              "InChIKey": "PXBVEXGRHZFEOF-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Carisoprodol",
+      "librarySmiles": "CCCC(C)(COC(N)=O)COC(=O)NC(C)C",
+      "libraryFormula": "C12H24N2O4",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Carisoprodol/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 2576,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/2576",
+      "sourceSmiles": "CCCC(C)(COC(=O)N)COC(=O)NC(C)C",
+      "sourceFormula": "C12H24N2O4",
+      "sourceInchiKey": "OFZCIYFFPZCNJE-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCCC(C)(COC(N)=O)COC(=O)NC(C)C",
+      "sourceCanonicalSmiles": "CCCC(C)(COC(N)=O)COC(=O)NC(C)C",
+      "retrievedAt": "2026-10-19T22:34:45.344945+00:00",
+      "responseSha256": "a3f1866a47d41ac84bd6ebe4f99b001c0b542f6d162ce171f9cec878d45fa881",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 2576,
+              "MolecularFormula": "C12H24N2O4",
+              "SMILES": "CCCC(C)(COC(=O)N)COC(=O)NC(C)C",
+              "ConnectivitySMILES": "CCCC(C)(COC(=O)N)COC(=O)NC(C)C",
+              "InChIKey": "OFZCIYFFPZCNJE-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Chlordiazepoxide",
+      "librarySmiles": "CNC1=Nc2ccc(Cl)cc2C(=[N+]([O-])C1)c1ccccc1",
+      "libraryFormula": "C16H14ClN3O",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Chlordiazepoxide/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "different_graph_requires_review",
+      "cid": 2712,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/2712",
+      "sourceSmiles": "CN=C1CN(C(=C2C=C(C=CC2=N1)Cl)C3=CC=CC=C3)O",
+      "sourceFormula": "C16H14ClN3O",
+      "sourceInchiKey": "BUCORZSTKDOEKQ-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CNC1=Nc2ccc(Cl)cc2C(c2ccccc2)=[N+]([O-])C1",
+      "sourceCanonicalSmiles": "CN=C1CN(O)C(c2ccccc2)=c2cc(Cl)ccc2=N1",
+      "retrievedAt": "2026-10-19T22:32:52.785318+00:00",
+      "responseSha256": "4590ab4427c9d034aae1c26fc82d4eb7f23820fa5fcbc68f5eb48e5eb693c265",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 2712,
+              "MolecularFormula": "C16H14ClN3O",
+              "SMILES": "CN=C1CN(C(=C2C=C(C=CC2=N1)Cl)C3=CC=CC=C3)O",
+              "ConnectivitySMILES": "CN=C1CN(C(=C2C=C(C=CC2=N1)Cl)C3=CC=CC=C3)O",
+              "InChIKey": "BUCORZSTKDOEKQ-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Climazolam",
+      "librarySmiles": "Cc1ncc2n1-c1ccc(Cl)cc1C(c1ccccc1Cl)=NC2",
+      "libraryFormula": "C18H13Cl2N3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Climazolam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 68790,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/68790",
+      "sourceSmiles": "CC1=NC=C2N1C3=C(C=C(C=C3)Cl)C(=NC2)C4=CC=CC=C4Cl",
+      "sourceFormula": "C18H13Cl2N3",
+      "sourceInchiKey": "CHCISLOJADQUNQ-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "Cc1ncc2n1-c1ccc(Cl)cc1C(c1ccccc1Cl)=NC2",
+      "sourceCanonicalSmiles": "Cc1ncc2n1-c1ccc(Cl)cc1C(c1ccccc1Cl)=NC2",
+      "retrievedAt": "2026-10-19T22:34:01.284910+00:00",
+      "responseSha256": "51e286dbd7597040324565e3695cd9de16274b0d0df58d5f5fcc87a335606299",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 68790,
+              "MolecularFormula": "C18H13Cl2N3",
+              "SMILES": "CC1=NC=C2N1C3=C(C=C(C=C3)Cl)C(=NC2)C4=CC=CC=C4Cl",
+              "ConnectivitySMILES": "CC1=NC=C2N1C3=C(C=C(C=C3)Cl)C(=NC2)C4=CC=CC=C4Cl",
+              "InChIKey": "CHCISLOJADQUNQ-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Clomethiazole",
+      "librarySmiles": "Cc1ncsc1CCCl",
+      "libraryFormula": "C6H8ClNS",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Clomethiazole/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 10783,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/10783",
+      "sourceSmiles": "CC1=C(SC=N1)CCCl",
+      "sourceFormula": "C6H8ClNS",
+      "sourceInchiKey": "PCLITLDOTJTVDJ-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "Cc1ncsc1CCCl",
+      "sourceCanonicalSmiles": "Cc1ncsc1CCCl",
+      "retrievedAt": "2026-10-19T22:34:52.873132+00:00",
+      "responseSha256": "a9077ae7c3d170b4375ab8d02bd690e4a93a2d0847541c00e6cd2fd2143d1129",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 10783,
+              "MolecularFormula": "C6H8ClNS",
+              "SMILES": "CC1=C(SC=N1)CCCl",
+              "ConnectivitySMILES": "CC1=C(SC=N1)CCCl",
+              "InChIKey": "PCLITLDOTJTVDJ-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Clonazepam",
+      "librarySmiles": "O=C1CN=C(c2ccccc2Cl)c2cc([N+](=O)[O-])ccc2N1",
+      "libraryFormula": "C15H10ClN3O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Clonazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 2802,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/2802",
+      "sourceSmiles": "C1C(=O)NC2=C(C=C(C=C2)[N+](=O)[O-])C(=N1)C3=CC=CC=C3Cl",
+      "sourceFormula": "C15H10ClN3O3",
+      "sourceInchiKey": "DGBIGWXXNGSACT-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "O=C1CN=C(c2ccccc2Cl)c2cc([N+](=O)[O-])ccc2N1",
+      "sourceCanonicalSmiles": "O=C1CN=C(c2ccccc2Cl)c2cc([N+](=O)[O-])ccc2N1",
+      "retrievedAt": "2026-10-19T22:32:37.712890+00:00",
+      "responseSha256": "ca54d8caa2af58451f8456b1e250cdc3284f7bda43ebf54c8f3a6f10f2058713",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 2802,
+              "MolecularFormula": "C15H10ClN3O3",
+              "SMILES": "C1C(=O)NC2=C(C=C(C=C2)[N+](=O)[O-])C(=N1)C3=CC=CC=C3Cl",
+              "ConnectivitySMILES": "C1C(=O)NC2=C(C=C(C=C2)[N+](=O)[O-])C(=N1)C3=CC=CC=C3Cl",
+              "InChIKey": "DGBIGWXXNGSACT-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Clonazolam",
+      "librarySmiles": "Cc1nnc2n1-c1ccc([N+](=O)[O-])cc1C(c1ccccc1Cl)=NC2",
+      "libraryFormula": "C17H12ClN5O2",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Clonazolam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 12317881,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/12317881",
+      "sourceSmiles": "CC1=NN=C2N1C3=C(C=C(C=C3)[N+](=O)[O-])C(=NC2)C4=CC=CC=C4Cl",
+      "sourceFormula": "C17H12ClN5O2",
+      "sourceInchiKey": "XJRGLCAWBRZUFC-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "Cc1nnc2n1-c1ccc([N+](=O)[O-])cc1C(c1ccccc1Cl)=NC2",
+      "sourceCanonicalSmiles": "Cc1nnc2n1-c1ccc([N+](=O)[O-])cc1C(c1ccccc1Cl)=NC2",
+      "retrievedAt": "2026-10-19T22:33:53.940853+00:00",
+      "responseSha256": "29efb6872b73c83d02704df18c94663284d8594d3f53d1bfc00222045c5784a5",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 12317881,
+              "MolecularFormula": "C17H12ClN5O2",
+              "SMILES": "CC1=NN=C2N1C3=C(C=C(C=C3)[N+](=O)[O-])C(=NC2)C4=CC=CC=C4Cl",
+              "ConnectivitySMILES": "CC1=NN=C2N1C3=C(C=C(C=C3)[N+](=O)[O-])C(=NC2)C4=CC=CC=C4Cl",
+              "InChIKey": "XJRGLCAWBRZUFC-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Clorazepate",
+      "librarySmiles": "O=C(O)C1N=C(c2ccccc2)c2cc(Cl)ccc2NC1=O",
+      "libraryFormula": "C16H11ClN2O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Clorazepate/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 2809,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/2809",
+      "sourceSmiles": "C1=CC=C(C=C1)C2=NC(C(=O)NC3=C2C=C(C=C3)Cl)C(=O)O",
+      "sourceFormula": "C16H11ClN2O3",
+      "sourceInchiKey": "XDDJGVMJFWAHJX-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "O=C(O)C1N=C(c2ccccc2)c2cc(Cl)ccc2NC1=O",
+      "sourceCanonicalSmiles": "O=C(O)C1N=C(c2ccccc2)c2cc(Cl)ccc2NC1=O",
+      "retrievedAt": "2026-10-19T22:33:34.811572+00:00",
+      "responseSha256": "16b813fba733f34e5eb453ac0e1166f461d8f0848ecec095637e439de6f2f10a",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 2809,
+              "MolecularFormula": "C16H11ClN2O3",
+              "SMILES": "C1=CC=C(C=C1)C2=NC(C(=O)NC3=C2C=C(C=C3)Cl)C(=O)O",
+              "ConnectivitySMILES": "C1=CC=C(C=C1)C2=NC(C(=O)NC3=C2C=C(C=C3)Cl)C(=O)O",
+              "InChIKey": "XDDJGVMJFWAHJX-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Cyclobarbital",
+      "librarySmiles": "CCC1(C2=CCCCC2)C(=O)NC(=O)NC1=O",
+      "libraryFormula": "C12H16N2O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Cyclobarbital/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 5838,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/5838",
+      "sourceSmiles": "CCC1(C(=O)NC(=O)NC1=O)C2=CCCCC2",
+      "sourceFormula": "C12H16N2O3",
+      "sourceInchiKey": "WTYGAUXICFETTC-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCC1(C2=CCCCC2)C(=O)NC(=O)NC1=O",
+      "sourceCanonicalSmiles": "CCC1(C2=CCCCC2)C(=O)NC(=O)NC1=O",
+      "retrievedAt": "2026-10-19T22:34:26.893248+00:00",
+      "responseSha256": "c9c2d98e1dea277ab7211238772a5b14d423838d2e1c798706802374194b812d",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 5838,
+              "MolecularFormula": "C12H16N2O3",
+              "SMILES": "CCC1(C(=O)NC(=O)NC1=O)C2=CCCCC2",
+              "ConnectivitySMILES": "CCC1(C(=O)NC(=O)NC1=O)C2=CCCCC2",
+              "InChIKey": "WTYGAUXICFETTC-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delorazepam",
+      "librarySmiles": "O=C1CN=C(c2ccccc2Cl)c2cc(Cl)ccc2N1",
+      "libraryFormula": "C15H10Cl2N2O",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Delorazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 17925,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/17925",
+      "sourceSmiles": "C1C(=O)NC2=C(C=C(C=C2)Cl)C(=N1)C3=CC=CC=C3Cl",
+      "sourceFormula": "C15H10Cl2N2O",
+      "sourceInchiKey": "CHIFCDOIPRCHCF-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "O=C1CN=C(c2ccccc2Cl)c2cc(Cl)ccc2N1",
+      "sourceCanonicalSmiles": "O=C1CN=C(c2ccccc2Cl)c2cc(Cl)ccc2N1",
+      "retrievedAt": "2026-10-19T22:33:14.332896+00:00",
+      "responseSha256": "3086a9a157585cabbefa02e554ea114ac9b11a360a759a3f9a63c5c48a940546",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 17925,
+              "MolecularFormula": "C15H10Cl2N2O",
+              "SMILES": "C1C(=O)NC2=C(C=C(C=C2)Cl)C(=N1)C3=CC=CC=C3Cl",
+              "ConnectivitySMILES": "C1C(=O)NC2=C(C=C(C=C2)Cl)C(=N1)C3=CC=CC=C3Cl",
+              "InChIKey": "CHIFCDOIPRCHCF-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Diazepam",
+      "librarySmiles": "CN1c2ccc(Cl)cc2C(=NCC1=O)c1ccccc1",
+      "libraryFormula": "C16H13ClN2O",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Diazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 3016,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/3016",
+      "sourceSmiles": "CN1C(=O)CN=C(C2=C1C=CC(=C2)Cl)C3=CC=CC=C3",
+      "sourceFormula": "C16H13ClN2O",
+      "sourceInchiKey": "AAOVKJBEBIDNHE-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CN1C(=O)CN=C(c2ccccc2)c2cc(Cl)ccc21",
+      "sourceCanonicalSmiles": "CN1C(=O)CN=C(c2ccccc2)c2cc(Cl)ccc21",
+      "retrievedAt": "2026-10-19T22:32:25.988984+00:00",
+      "responseSha256": "80f9376c72eb469535c5b88a25b52b16c23bc98321326d5884184b05aa00f9dd",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 3016,
+              "MolecularFormula": "C16H13ClN2O",
+              "SMILES": "CN1C(=O)CN=C(C2=C1C=CC(=C2)Cl)C3=CC=CC=C3",
+              "ConnectivitySMILES": "CN1C(=O)CN=C(C2=C1C=CC(=C2)Cl)C3=CC=CC=C3",
+              "InChIKey": "AAOVKJBEBIDNHE-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Diclazepam",
+      "librarySmiles": "CN1C(=O)CN=C(c2ccccc2Cl)c2cc(Cl)ccc21",
+      "libraryFormula": "C16H12Cl2N2O",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Diclazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 76168,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/76168",
+      "sourceSmiles": "CN1C(=O)CN=C(C2=C1C=CC(=C2)Cl)C3=CC=CC=C3Cl",
+      "sourceFormula": "C16H12Cl2N2O",
+      "sourceInchiKey": "VPAYQWRBBOGGPY-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CN1C(=O)CN=C(c2ccccc2Cl)c2cc(Cl)ccc21",
+      "sourceCanonicalSmiles": "CN1C(=O)CN=C(c2ccccc2Cl)c2cc(Cl)ccc21",
+      "retrievedAt": "2026-10-19T22:33:18.884884+00:00",
+      "responseSha256": "80e465f9342a05872e3ccf1a64be333827c6b169e503409f8a005ad7a8ec54b8",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 76168,
+              "MolecularFormula": "C16H12Cl2N2O",
+              "SMILES": "CN1C(=O)CN=C(C2=C1C=CC(=C2)Cl)C3=CC=CC=C3Cl",
+              "ConnectivitySMILES": "CN1C(=O)CN=C(C2=C1C=CC(=C2)Cl)C3=CC=CC=C3Cl",
+              "InChIKey": "VPAYQWRBBOGGPY-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Doxefazepam",
+      "librarySmiles": "O=C1C(O)N=C(c2ccccc2F)c2cc(Cl)ccc2N1CCO",
+      "libraryFormula": "C17H14ClFN2O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Doxefazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 38668,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/38668",
+      "sourceSmiles": "C1=CC=C(C(=C1)C2=NC(C(=O)N(C3=C2C=C(C=C3)Cl)CCO)O)F",
+      "sourceFormula": "C17H14ClFN2O3",
+      "sourceInchiKey": "VOJLELRQLPENHL-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "O=C1C(O)N=C(c2ccccc2F)c2cc(Cl)ccc2N1CCO",
+      "sourceCanonicalSmiles": "O=C1C(O)N=C(c2ccccc2F)c2cc(Cl)ccc2N1CCO",
+      "retrievedAt": "2026-10-19T22:33:38.500978+00:00",
+      "responseSha256": "fb04e85cc62e40205cc286164c74142b47ca10f082f32816c0254ba159e9c9ab",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 38668,
+              "MolecularFormula": "C17H14ClFN2O3",
+              "SMILES": "C1=CC=C(C(=C1)C2=NC(C(=O)N(C3=C2C=C(C=C3)Cl)CCO)O)F",
+              "ConnectivitySMILES": "C1=CC=C(C(=C1)C2=NC(C(=O)N(C3=C2C=C(C=C3)Cl)CCO)O)F",
+              "InChIKey": "VOJLELRQLPENHL-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Estazolam",
+      "librarySmiles": "Clc1ccc2c(c1)C(c1ccccc1)=NCc1nncn1-2",
+      "libraryFormula": "C16H11ClN4",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Estazolam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 3261,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/3261",
+      "sourceSmiles": "C1C2=NN=CN2C3=C(C=C(C=C3)Cl)C(=N1)C4=CC=CC=C4",
+      "sourceFormula": "C16H11ClN4",
+      "sourceInchiKey": "CDCHDCWJMGXXRH-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "Clc1ccc2c(c1)C(c1ccccc1)=NCc1nncn1-2",
+      "sourceCanonicalSmiles": "Clc1ccc2c(c1)C(c1ccccc1)=NCc1nncn1-2",
+      "retrievedAt": "2026-10-19T22:33:46.372846+00:00",
+      "responseSha256": "4099e2dacff009b90d82406a371a3f457487da76f019946e58044719a7fa4052",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 3261,
+              "MolecularFormula": "C16H11ClN4",
+              "SMILES": "C1C2=NN=CN2C3=C(C=C(C=C3)Cl)C(=N1)C4=CC=CC=C4",
+              "ConnectivitySMILES": "C1C2=NN=CN2C3=C(C=C(C=C3)Cl)C(=N1)C4=CC=CC=C4",
+              "InChIKey": "CDCHDCWJMGXXRH-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Ethchlorvynol",
+      "librarySmiles": "C#CC(O)(C=CCl)CC",
+      "libraryFormula": "C7H9ClO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Ethchlorvynol/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "connectivity_only_stereochemistry_differs",
+      "cid": 5281077,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/5281077",
+      "sourceSmiles": "CCC(/C=C/Cl)(C#C)O",
+      "sourceFormula": "C7H9ClO",
+      "sourceInchiKey": "ZEHYJZXQEQOSON-AATRIKPKSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "C#CC(O)(C=CCl)CC",
+      "sourceCanonicalSmiles": "C#CC(O)(/C=C/Cl)CC",
+      "retrievedAt": "2026-10-19T22:34:45.352932+00:00",
+      "responseSha256": "5aa1ff08e57bbdf7d11d8ef4c913778b3d739f6420d76d35e3cd8b5e20569ef9",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 5281077,
+              "MolecularFormula": "C7H9ClO",
+              "SMILES": "CCC(/C=C/Cl)(C#C)O",
+              "ConnectivitySMILES": "CCC(C=CCl)(C#C)O",
+              "InChIKey": "ZEHYJZXQEQOSON-AATRIKPKSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Etomidate",
+      "librarySmiles": "CCOC(=O)c1cncn1C(C)c1ccccc1",
+      "libraryFormula": "C14H16N2O2",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Etomidate/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "connectivity_only_stereochemistry_differs",
+      "cid": 667484,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/667484",
+      "sourceSmiles": "CCOC(=O)C1=CN=CN1[C@H](C)C2=CC=CC=C2",
+      "sourceFormula": "C14H16N2O2",
+      "sourceInchiKey": "NPUKDXXFDDZOKR-LLVKDONJSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCOC(=O)c1cncn1C(C)c1ccccc1",
+      "sourceCanonicalSmiles": "CCOC(=O)c1cncn1[C@H](C)c1ccccc1",
+      "retrievedAt": "2026-10-19T22:33:00.197056+00:00",
+      "responseSha256": "aec276b2a444e5001b9c355dd21e32d1ddd0de9e3d28d6010f28e87051c20a3c",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 667484,
+              "MolecularFormula": "C14H16N2O2",
+              "SMILES": "CCOC(=O)C1=CN=CN1[C@H](C)C2=CC=CC=C2",
+              "ConnectivitySMILES": "CCOC(=O)C1=CN=CN1C(C)C2=CC=CC=C2",
+              "InChIKey": "NPUKDXXFDDZOKR-LLVKDONJSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Flualprazolam",
+      "librarySmiles": "Cc1nnc2n1-c1ccc(Cl)cc1C(c1ccccc1F)=NC2",
+      "libraryFormula": "C17H12ClFN4",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Flualprazolam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 10359044,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/10359044",
+      "sourceSmiles": "CC1=NN=C2N1C3=C(C=C(C=C3)Cl)C(=NC2)C4=CC=CC=C4F",
+      "sourceFormula": "C17H12ClFN4",
+      "sourceInchiKey": "MPZVLJCMGPYWQQ-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "Cc1nnc2n1-c1ccc(Cl)cc1C(c1ccccc1F)=NC2",
+      "sourceCanonicalSmiles": "Cc1nnc2n1-c1ccc(Cl)cc1C(c1ccccc1F)=NC2",
+      "retrievedAt": "2026-10-19T22:33:46.404910+00:00",
+      "responseSha256": "b5b761b7b876c02e12ee2a891221019e406866ad895ba1fc9d509d282eb673b7",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 10359044,
+              "MolecularFormula": "C17H12ClFN4",
+              "SMILES": "CC1=NN=C2N1C3=C(C=C(C=C3)Cl)C(=NC2)C4=CC=CC=C4F",
+              "ConnectivitySMILES": "CC1=NN=C2N1C3=C(C=C(C=C3)Cl)C(=NC2)C4=CC=CC=C4F",
+              "InChIKey": "MPZVLJCMGPYWQQ-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Flubromazepam",
+      "librarySmiles": "O=C1CN=C(c2ccccc2F)c2cc(Br)ccc2N1",
+      "libraryFormula": "C15H10BrFN2O",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Flubromazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 12947024,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/12947024",
+      "sourceSmiles": "C1C(=O)NC2=C(C=C(C=C2)Br)C(=N1)C3=CC=CC=C3F",
+      "sourceFormula": "C15H10BrFN2O",
+      "sourceInchiKey": "ZRKDDZBVSZLOFS-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "O=C1CN=C(c2ccccc2F)c2cc(Br)ccc2N1",
+      "sourceCanonicalSmiles": "O=C1CN=C(c2ccccc2F)c2cc(Br)ccc2N1",
+      "retrievedAt": "2026-10-19T22:33:22.632965+00:00",
+      "responseSha256": "885abc259a8278d92c37ca98cc204dfed7be6daa31746a5b05949af4eec5570e",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 12947024,
+              "MolecularFormula": "C15H10BrFN2O",
+              "SMILES": "C1C(=O)NC2=C(C=C(C=C2)Br)C(=N1)C3=CC=CC=C3F",
+              "ConnectivitySMILES": "C1C(=O)NC2=C(C=C(C=C2)Br)C(=N1)C3=CC=CC=C3F",
+              "InChIKey": "ZRKDDZBVSZLOFS-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Flubromazolam",
+      "librarySmiles": "Cc1nnc2n1-c1ccc(Br)cc1C(c1ccccc1F)=NC2",
+      "libraryFormula": "C17H12BrFN4",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Flubromazolam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 21930924,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/21930924",
+      "sourceSmiles": "CC1=NN=C2N1C3=C(C=C(C=C3)Br)C(=NC2)C4=CC=CC=C4F",
+      "sourceFormula": "C17H12BrFN4",
+      "sourceInchiKey": "VXGSZBZQCBNUIP-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "Cc1nnc2n1-c1ccc(Br)cc1C(c1ccccc1F)=NC2",
+      "sourceCanonicalSmiles": "Cc1nnc2n1-c1ccc(Br)cc1C(c1ccccc1F)=NC2",
+      "retrievedAt": "2026-10-19T22:33:50.385371+00:00",
+      "responseSha256": "5503789e99a926dfb8e427d0a4fdd046d3c7047495796e028877b2050508ee96",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 21930924,
+              "MolecularFormula": "C17H12BrFN4",
+              "SMILES": "CC1=NN=C2N1C3=C(C=C(C=C3)Br)C(=NC2)C4=CC=CC=C4F",
+              "ConnectivitySMILES": "CC1=NN=C2N1C3=C(C=C(C=C3)Br)C(=NC2)C4=CC=CC=C4F",
+              "InChIKey": "VXGSZBZQCBNUIP-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Fludiazepam",
+      "librarySmiles": "CN1C(=O)CN=C(c2ccccc2F)c2cc(Cl)ccc21",
+      "libraryFormula": "C16H12ClFN2O",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Fludiazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 3369,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/3369",
+      "sourceSmiles": "CN1C(=O)CN=C(C2=C1C=CC(=C2)Cl)C3=CC=CC=C3F",
+      "sourceFormula": "C16H12ClFN2O",
+      "sourceInchiKey": "ROYOYTLGDLIGBX-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CN1C(=O)CN=C(c2ccccc2F)c2cc(Cl)ccc21",
+      "sourceCanonicalSmiles": "CN1C(=O)CN=C(c2ccccc2F)c2cc(Cl)ccc21",
+      "retrievedAt": "2026-10-19T22:33:18.872974+00:00",
+      "responseSha256": "350b13a27fa6e1c927d90219fea346acd68c904d0c160f990b24e7cbb3fe6353",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 3369,
+              "MolecularFormula": "C16H12ClFN2O",
+              "SMILES": "CN1C(=O)CN=C(C2=C1C=CC(=C2)Cl)C3=CC=CC=C3F",
+              "ConnectivitySMILES": "CN1C(=O)CN=C(C2=C1C=CC(=C2)Cl)C3=CC=CC=C3F",
+              "InChIKey": "ROYOYTLGDLIGBX-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Flumazenil",
+      "librarySmiles": "CCOC(=O)C1=C2CN(C(=O)C3=C(N2C=N1)C=CC(=C3)F)C",
+      "libraryFormula": "C15H14FN3O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Flumazenil/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 3373,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/3373",
+      "sourceSmiles": "CCOC(=O)C1=C2CN(C(=O)C3=C(N2C=N1)C=CC(=C3)F)C",
+      "sourceFormula": "C15H14FN3O3",
+      "sourceInchiKey": "OFBIFZUFASYYRE-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCOC(=O)c1ncn2c1CN(C)C(=O)c1cc(F)ccc1-2",
+      "sourceCanonicalSmiles": "CCOC(=O)c1ncn2c1CN(C)C(=O)c1cc(F)ccc1-2",
+      "retrievedAt": "2026-10-19T22:32:56.704842+00:00",
+      "responseSha256": "ec01acabfc3fc49aa5c59895b70e6692bde33e4005c0dfdc4265298c56fba1a5",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 3373,
+              "MolecularFormula": "C15H14FN3O3",
+              "SMILES": "CCOC(=O)C1=C2CN(C(=O)C3=C(N2C=N1)C=CC(=C3)F)C",
+              "ConnectivitySMILES": "CCOC(=O)C1=C2CN(C(=O)C3=C(N2C=N1)C=CC(=C3)F)C",
+              "InChIKey": "OFBIFZUFASYYRE-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Flunitrazepam",
+      "librarySmiles": "CN1C(=O)CN=C(c2ccccc2F)c2cc([N+](=O)[O-])ccc21",
+      "libraryFormula": "C16H12FN3O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Flunitrazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 3380,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/3380",
+      "sourceSmiles": "CN1C(=O)CN=C(C2=C1C=CC(=C2)[N+](=O)[O-])C3=CC=CC=C3F",
+      "sourceFormula": "C16H12FN3O3",
+      "sourceInchiKey": "PPTYJKAXVCCBDU-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CN1C(=O)CN=C(c2ccccc2F)c2cc([N+](=O)[O-])ccc21",
+      "sourceCanonicalSmiles": "CN1C(=O)CN=C(c2ccccc2F)c2cc([N+](=O)[O-])ccc21",
+      "retrievedAt": "2026-10-19T22:33:07.100972+00:00",
+      "responseSha256": "278b8b6c2c2deef3c21e9f9725725931bf48b3ceb6019eefcf9194360dcb0fb2",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 3380,
+              "MolecularFormula": "C16H12FN3O3",
+              "SMILES": "CN1C(=O)CN=C(C2=C1C=CC(=C2)[N+](=O)[O-])C3=CC=CC=C3F",
+              "ConnectivitySMILES": "CN1C(=O)CN=C(C2=C1C=CC(=C2)[N+](=O)[O-])C3=CC=CC=C3F",
+              "InChIKey": "PPTYJKAXVCCBDU-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Flunitrazolam",
+      "librarySmiles": "Cc1nnc2n1-c1ccc([N+](=O)[O-])cc1C(c1ccccc1F)=NC2",
+      "libraryFormula": "C17H12FN5O2",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Flunitrazolam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 137700379,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/137700379",
+      "sourceSmiles": "CC1=NN=C2N1C3=C(C=C(C=C3)[N+](=O)[O-])C(=NC2)C4=CC=CC=C4F",
+      "sourceFormula": "C17H12FN5O2",
+      "sourceInchiKey": "RDLAGIOILLWVTM-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "Cc1nnc2n1-c1ccc([N+](=O)[O-])cc1C(c1ccccc1F)=NC2",
+      "sourceCanonicalSmiles": "Cc1nnc2n1-c1ccc([N+](=O)[O-])cc1C(c1ccccc1F)=NC2",
+      "retrievedAt": "2026-10-19T22:33:57.643314+00:00",
+      "responseSha256": "c323174f081669cad7ab627a7c762381a3e150c73cf37629d96a9577906f41ea",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 137700379,
+              "MolecularFormula": "C17H12FN5O2",
+              "SMILES": "CC1=NN=C2N1C3=C(C=C(C=C3)[N+](=O)[O-])C(=NC2)C4=CC=CC=C4F",
+              "ConnectivitySMILES": "CC1=NN=C2N1C3=C(C=C(C=C3)[N+](=O)[O-])C(=NC2)C4=CC=CC=C4F",
+              "InChIKey": "RDLAGIOILLWVTM-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Flurazepam",
+      "librarySmiles": "CCN(CC)CCN1C(=O)CN=C(c2ccccc2F)c2cc(Cl)ccc21",
+      "libraryFormula": "C21H23ClFN3O",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Flurazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 3393,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/3393",
+      "sourceSmiles": "CCN(CC)CCN1C(=O)CN=C(C2=C1C=CC(=C2)Cl)C3=CC=CC=C3F",
+      "sourceFormula": "C21H23ClFN3O",
+      "sourceInchiKey": "SAADBVWGJQAEFS-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCN(CC)CCN1C(=O)CN=C(c2ccccc2F)c2cc(Cl)ccc21",
+      "sourceCanonicalSmiles": "CCN(CC)CCN1C(=O)CN=C(c2ccccc2F)c2cc(Cl)ccc21",
+      "retrievedAt": "2026-10-19T22:33:27.260913+00:00",
+      "responseSha256": "c9f67173a3b7ca301e3f4f6015f9bfc35323e138d165c822b60d453d9fc2872f",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 3393,
+              "MolecularFormula": "C21H23ClFN3O",
+              "SMILES": "CCN(CC)CCN1C(=O)CN=C(C2=C1C=CC(=C2)Cl)C3=CC=CC=C3F",
+              "ConnectivitySMILES": "CCN(CC)CCN1C(=O)CN=C(C2=C1C=CC(=C2)Cl)C3=CC=CC=C3F",
+              "InChIKey": "SAADBVWGJQAEFS-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Gaboxadol",
+      "librarySmiles": "C1CNCC2=C1C(=O)NO2",
+      "libraryFormula": "C6H8N2O2",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Gaboxadol/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 3448,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/3448",
+      "sourceSmiles": "C1CNCC2=C1C(=O)NO2",
+      "sourceFormula": "C6H8N2O2",
+      "sourceInchiKey": "ZXRVKCBLGJOCEE-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "O=c1[nH]oc2c1CCNC2",
+      "sourceCanonicalSmiles": "O=c1[nH]oc2c1CCNC2",
+      "retrievedAt": "2026-10-19T22:34:37.676983+00:00",
+      "responseSha256": "d9203a239865302e1a4dff4dac2e0a220699558f6755efa54b6f2717cda7d979",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 3448,
+              "MolecularFormula": "C6H8N2O2",
+              "SMILES": "C1CNCC2=C1C(=O)NO2",
+              "ConnectivitySMILES": "C1CNCC2=C1C(=O)NO2",
+              "InChIKey": "ZXRVKCBLGJOCEE-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Glutethimide",
+      "librarySmiles": "CCC1(c2ccccc2)CCC(=O)NC1=O",
+      "libraryFormula": "C13H15NO2",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Glutethimide/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 3487,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/3487",
+      "sourceSmiles": "CCC1(CCC(=O)NC1=O)C2=CC=CC=C2",
+      "sourceFormula": "C13H15NO2",
+      "sourceInchiKey": "JMBQKKAJIKAWKF-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCC1(c2ccccc2)CCC(=O)NC1=O",
+      "sourceCanonicalSmiles": "CCC1(c2ccccc2)CCC(=O)NC1=O",
+      "retrievedAt": "2026-10-19T22:34:49.276855+00:00",
+      "responseSha256": "2c780638666bd5adf7ca203ee48a4cd5da52f7c8288a01df6f871e6936654863",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 3487,
+              "MolecularFormula": "C13H15NO2",
+              "SMILES": "CCC1(CCC(=O)NC1=O)C2=CC=CC=C2",
+              "ConnectivitySMILES": "CCC1(CCC(=O)NC1=O)C2=CC=CC=C2",
+              "InChIKey": "JMBQKKAJIKAWKF-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Halazepam",
+      "librarySmiles": "O=C1CN=C(c2ccccc2)c2cc(Cl)ccc2N1CC(F)(F)F",
+      "libraryFormula": "C17H12ClF3N2O",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Halazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 31640,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/31640",
+      "sourceSmiles": "C1C(=O)N(C2=C(C=C(C=C2)Cl)C(=N1)C3=CC=CC=C3)CC(F)(F)F",
+      "sourceFormula": "C17H12ClF3N2O",
+      "sourceInchiKey": "WYCLKVQLVUQKNZ-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "O=C1CN=C(c2ccccc2)c2cc(Cl)ccc2N1CC(F)(F)F",
+      "sourceCanonicalSmiles": "O=C1CN=C(c2ccccc2)c2cc(Cl)ccc2N1CC(F)(F)F",
+      "retrievedAt": "2026-10-19T22:33:34.816772+00:00",
+      "responseSha256": "f7827a6a40898f46d3b18bd22bf2c66983f4a9504cad584757fdc64131767076",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 31640,
+              "MolecularFormula": "C17H12ClF3N2O",
+              "SMILES": "C1C(=O)N(C2=C(C=C(C=C2)Cl)C(=N1)C3=CC=CC=C3)CC(F)(F)F",
+              "ConnectivitySMILES": "C1C(=O)N(C2=C(C=C(C=C2)Cl)C(=N1)C3=CC=CC=C3)CC(F)(F)F",
+              "InChIKey": "WYCLKVQLVUQKNZ-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Heptabarbital",
+      "librarySmiles": "CCC1(C2=CCCCCC2)C(=O)NC(=O)NC1=O",
+      "libraryFormula": "C13H18N2O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Heptabarbital/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 10518,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/10518",
+      "sourceSmiles": "CCC1(C(=O)NC(=O)NC1=O)C2=CCCCCC2",
+      "sourceFormula": "C13H18N2O3",
+      "sourceInchiKey": "PAZQYDJGLKSCSI-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCC1(C2=CCCCCC2)C(=O)NC(=O)NC1=O",
+      "sourceCanonicalSmiles": "CCC1(C2=CCCCCC2)C(=O)NC(=O)NC1=O",
+      "retrievedAt": "2026-10-19T22:34:30.396974+00:00",
+      "responseSha256": "ca940d4f3205d83caae7f734f260a9f7762ff856056b62b6abb414190f125e0b",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 10518,
+              "MolecularFormula": "C13H18N2O3",
+              "SMILES": "CCC1(C(=O)NC(=O)NC1=O)C2=CCCCCC2",
+              "ConnectivitySMILES": "CCC1(C(=O)NC(=O)NC1=O)C2=CCCCCC2",
+              "InChIKey": "PAZQYDJGLKSCSI-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Hexobarbital",
+      "librarySmiles": "CN1C(=O)NC(=O)C(C)(C2=CCCCC2)C1=O",
+      "libraryFormula": "C12H16N2O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Hexobarbital/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 3608,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/3608",
+      "sourceSmiles": "CC1(C(=O)NC(=O)N(C1=O)C)C2=CCCCC2",
+      "sourceFormula": "C12H16N2O3",
+      "sourceInchiKey": "UYXAWHWODHRRMR-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CN1C(=O)NC(=O)C(C)(C2=CCCCC2)C1=O",
+      "sourceCanonicalSmiles": "CN1C(=O)NC(=O)C(C)(C2=CCCCC2)C1=O",
+      "retrievedAt": "2026-10-19T22:34:26.860953+00:00",
+      "responseSha256": "238d5c3e410ac988fe3f5c2319e4b74852b5644611102a979e5903d925180b2f",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 3608,
+              "MolecularFormula": "C12H16N2O3",
+              "SMILES": "CC1(C(=O)NC(=O)N(C1=O)C)C2=CCCCC2",
+              "ConnectivitySMILES": "CC1(C(=O)NC(=O)N(C1=O)C)C2=CCCCC2",
+              "InChIKey": "UYXAWHWODHRRMR-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Lorazepam",
+      "librarySmiles": "OC1N=C(c2ccccc2Cl)c2cc(Cl)ccc2NC1=O",
+      "libraryFormula": "C15H10Cl2N2O2",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Lorazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 3958,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/3958",
+      "sourceSmiles": "C1=CC=C(C(=C1)C2=NC(C(=O)NC3=C2C=C(C=C3)Cl)O)Cl",
+      "sourceFormula": "C15H10Cl2N2O2",
+      "sourceInchiKey": "DIWRORZWFLOCLC-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "O=C1Nc2ccc(Cl)cc2C(c2ccccc2Cl)=NC1O",
+      "sourceCanonicalSmiles": "O=C1Nc2ccc(Cl)cc2C(c2ccccc2Cl)=NC1O",
+      "retrievedAt": "2026-10-19T22:32:25.889750+00:00",
+      "responseSha256": "10ce7cda69ea2fd8b554950de93ed3acf7a38181a2e2d4fbf4fa9bc62d314dde",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 3958,
+              "MolecularFormula": "C15H10Cl2N2O2",
+              "SMILES": "C1=CC=C(C(=C1)C2=NC(C(=O)NC3=C2C=C(C=C3)Cl)O)Cl",
+              "ConnectivitySMILES": "C1=CC=C(C(=C1)C2=NC(C(=O)NC3=C2C=C(C=C3)Cl)O)Cl",
+              "InChIKey": "DIWRORZWFLOCLC-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Lormetazepam",
+      "librarySmiles": "CN1C(=O)C(O)N=C(c2ccccc2Cl)c2cc(Cl)ccc21",
+      "libraryFormula": "C16H12Cl2N2O2",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Lormetazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 13314,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/13314",
+      "sourceSmiles": "CN1C2=C(C=C(C=C2)Cl)C(=NC(C1=O)O)C3=CC=CC=C3Cl",
+      "sourceFormula": "C16H12Cl2N2O2",
+      "sourceInchiKey": "FJIKWRGCXUCUIG-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CN1C(=O)C(O)N=C(c2ccccc2Cl)c2cc(Cl)ccc21",
+      "sourceCanonicalSmiles": "CN1C(=O)C(O)N=C(c2ccccc2Cl)c2cc(Cl)ccc21",
+      "retrievedAt": "2026-10-19T22:33:14.348847+00:00",
+      "responseSha256": "4de7f154960e62025317f64ff6cd3508b853290a17a72c298dca90195ece37b2",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 13314,
+              "MolecularFormula": "C16H12Cl2N2O2",
+              "SMILES": "CN1C2=C(C=C(C=C2)Cl)C(=NC(C1=O)O)C3=CC=CC=C3Cl",
+              "ConnectivitySMILES": "CN1C2=C(C=C(C=C2)Cl)C(=NC(C1=O)O)C3=CC=CC=C3Cl",
+              "InChIKey": "FJIKWRGCXUCUIG-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Meclonazepam",
+      "librarySmiles": "CC1N=C(c2ccccc2Cl)c2cc([N+](=O)[O-])ccc2NC1=O",
+      "libraryFormula": "C16H12ClN3O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Meclonazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "connectivity_only_stereochemistry_differs",
+      "cid": 3033985,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/3033985",
+      "sourceSmiles": "C[C@H]1C(=O)NC2=C(C=C(C=C2)[N+](=O)[O-])C(=N1)C3=CC=CC=C3Cl",
+      "sourceFormula": "C16H12ClN3O3",
+      "sourceInchiKey": "LMUVYJCAFWGNSY-VIFPVBQESA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CC1N=C(c2ccccc2Cl)c2cc([N+](=O)[O-])ccc2NC1=O",
+      "sourceCanonicalSmiles": "C[C@@H]1N=C(c2ccccc2Cl)c2cc([N+](=O)[O-])ccc2NC1=O",
+      "retrievedAt": "2026-10-19T22:33:10.752885+00:00",
+      "responseSha256": "8213e453e446368b2541f4274bb65e2293eb5f8293b53170b37b909ed4fb89e4",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 3033985,
+              "MolecularFormula": "C16H12ClN3O3",
+              "SMILES": "C[C@H]1C(=O)NC2=C(C=C(C=C2)[N+](=O)[O-])C(=N1)C3=CC=CC=C3Cl",
+              "ConnectivitySMILES": "CC1C(=O)NC2=C(C=C(C=C2)[N+](=O)[O-])C(=N1)C3=CC=CC=C3Cl",
+              "InChIKey": "LMUVYJCAFWGNSY-VIFPVBQESA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Mephobarbital",
+      "librarySmiles": "CCC1(c2ccccc2)C(=O)NC(=O)N(C)C1=O",
+      "libraryFormula": "C13H14N2O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Mephobarbital/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 8271,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/8271",
+      "sourceSmiles": "CCC1(C(=O)NC(=O)N(C1=O)C)C2=CC=CC=C2",
+      "sourceFormula": "C13H14N2O3",
+      "sourceInchiKey": "ALARQZQTBTVLJV-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCC1(c2ccccc2)C(=O)NC(=O)N(C)C1=O",
+      "sourceCanonicalSmiles": "CCC1(c2ccccc2)C(=O)NC(=O)N(C)C1=O",
+      "retrievedAt": "2026-10-19T22:34:23.436907+00:00",
+      "responseSha256": "b3510904259d36d73d92e59ba4dc697c60d4d451c9bf6e9ba786626f0d87ac53",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 8271,
+              "MolecularFormula": "C13H14N2O3",
+              "SMILES": "CCC1(C(=O)NC(=O)N(C1=O)C)C2=CC=CC=C2",
+              "ConnectivitySMILES": "CCC1(C(=O)NC(=O)N(C1=O)C)C2=CC=CC=C2",
+              "InChIKey": "ALARQZQTBTVLJV-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Meprobamate",
+      "librarySmiles": "CCCC(C)(COC(N)=O)COC(N)=O",
+      "libraryFormula": "C9H18N2O4",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Meprobamate/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 4064,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/4064",
+      "sourceSmiles": "CCCC(C)(COC(=O)N)COC(=O)N",
+      "sourceFormula": "C9H18N2O4",
+      "sourceInchiKey": "NPPQSCRMBWNHMW-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCCC(C)(COC(N)=O)COC(N)=O",
+      "sourceCanonicalSmiles": "CCCC(C)(COC(N)=O)COC(N)=O",
+      "retrievedAt": "2026-10-19T22:34:41.137130+00:00",
+      "responseSha256": "60dc5f8b4d268931e050f4d5c092069072afac83db081d2a7f6c69d5ca07e16a",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 4064,
+              "MolecularFormula": "C9H18N2O4",
+              "SMILES": "CCCC(C)(COC(=O)N)COC(=O)N",
+              "ConnectivitySMILES": "CCCC(C)(COC(=O)N)COC(=O)N",
+              "InChIKey": "NPPQSCRMBWNHMW-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Metharbital",
+      "librarySmiles": "CCC1(CC)C(=O)NC(=O)N(C)C1=O",
+      "libraryFormula": "C9H14N2O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Metharbital/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 4099,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/4099",
+      "sourceSmiles": "CCC1(C(=O)NC(=O)N(C1=O)C)CC",
+      "sourceFormula": "C9H14N2O3",
+      "sourceInchiKey": "FWJKNZONDWOGMI-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCC1(CC)C(=O)NC(=O)N(C)C1=O",
+      "sourceCanonicalSmiles": "CCC1(CC)C(=O)NC(=O)N(C)C1=O",
+      "retrievedAt": "2026-10-19T22:34:23.404929+00:00",
+      "responseSha256": "d468ff690693a02996a5af2f5982059aa7492b4f8954083f3686a965376afe63",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 4099,
+              "MolecularFormula": "C9H14N2O3",
+              "SMILES": "CCC1(C(=O)NC(=O)N(C1=O)C)CC",
+              "ConnectivitySMILES": "CCC1(C(=O)NC(=O)N(C1=O)C)CC",
+              "InChIKey": "FWJKNZONDWOGMI-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Methohexital",
+      "librarySmiles": "C=CCC1(C(C)C#CCC)C(=O)NC(=O)N(C)C1=O",
+      "libraryFormula": "C14H18N2O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Methohexital/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 9034,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/9034",
+      "sourceSmiles": "CCC#CC(C)C1(C(=O)NC(=O)N(C1=O)C)CC=C",
+      "sourceFormula": "C14H18N2O3",
+      "sourceInchiKey": "NZXKDOXHBHYTKP-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "C=CCC1(C(C)C#CCC)C(=O)NC(=O)N(C)C1=O",
+      "sourceCanonicalSmiles": "C=CCC1(C(C)C#CCC)C(=O)NC(=O)N(C)C1=O",
+      "retrievedAt": "2026-10-19T22:34:30.336932+00:00",
+      "responseSha256": "ec99dd4eb2295c122db95981a065d4e7bb6f2df4547cea608ea85695eefe2265",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 9034,
+              "MolecularFormula": "C14H18N2O3",
+              "SMILES": "CCC#CC(C)C1(C(=O)NC(=O)N(C1=O)C)CC=C",
+              "ConnectivitySMILES": "CCC#CC(C)C1(C(=O)NC(=O)N(C1=O)C)CC=C",
+              "InChIKey": "NZXKDOXHBHYTKP-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Methyprylon",
+      "librarySmiles": "CCC1(CC)C(=O)NCC(C)C1=O",
+      "libraryFormula": "C10H17NO2",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Methyprylon/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 4162,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/4162",
+      "sourceSmiles": "CCC1(C(=O)C(CNC1=O)C)CC",
+      "sourceFormula": "C10H17NO2",
+      "sourceInchiKey": "SIDLZWOQUZRBRU-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCC1(CC)C(=O)NCC(C)C1=O",
+      "sourceCanonicalSmiles": "CCC1(CC)C(=O)NCC(C)C1=O",
+      "retrievedAt": "2026-10-19T22:34:49.268936+00:00",
+      "responseSha256": "38a1b741855dd80089113e66c0edccdfeec7fe687a92410a6d9df3494f55f249",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 4162,
+              "MolecularFormula": "C10H17NO2",
+              "SMILES": "CCC1(C(=O)C(CNC1=O)C)CC",
+              "ConnectivitySMILES": "CCC1(C(=O)C(CNC1=O)C)CC",
+              "InChIKey": "SIDLZWOQUZRBRU-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Midazolam",
+      "librarySmiles": "Cc1ncc2n1-c1ccc(Cl)cc1C(=NC2)c1ccccc1F",
+      "libraryFormula": "C18H13ClFN3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Midazolam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 4192,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/4192",
+      "sourceSmiles": "CC1=NC=C2N1C3=C(C=C(C=C3)Cl)C(=NC2)C4=CC=CC=C4F",
+      "sourceFormula": "C18H13ClFN3",
+      "sourceInchiKey": "DDLIGBOFAVUZHB-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "Cc1ncc2n1-c1ccc(Cl)cc1C(c1ccccc1F)=NC2",
+      "sourceCanonicalSmiles": "Cc1ncc2n1-c1ccc(Cl)cc1C(c1ccccc1F)=NC2",
+      "retrievedAt": "2026-10-19T22:32:44.961010+00:00",
+      "responseSha256": "bd098f91f8909b00ffb9f99d5983f3f7c305b1c6872b2a2e70e5693200d8449a",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 4192,
+              "MolecularFormula": "C18H13ClFN3",
+              "SMILES": "CC1=NC=C2N1C3=C(C=C(C=C3)Cl)C(=NC2)C4=CC=CC=C4F",
+              "ConnectivitySMILES": "CC1=NC=C2N1C3=C(C=C(C=C3)Cl)C(=NC2)C4=CC=CC=C4F",
+              "InChIKey": "DDLIGBOFAVUZHB-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Muscimol",
+      "librarySmiles": "NCc1cc(=O)[nH]o1",
+      "libraryFormula": "C4H6N2O2",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Muscimol/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 4266,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/4266",
+      "sourceSmiles": "C1=C(ONC1=O)CN",
+      "sourceFormula": "C4H6N2O2",
+      "sourceInchiKey": "ZJQHPWUVQPJPQT-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "NCc1cc(=O)[nH]o1",
+      "sourceCanonicalSmiles": "NCc1cc(=O)[nH]o1",
+      "retrievedAt": "2026-10-19T22:32:45.129364+00:00",
+      "responseSha256": "ed8820345bd75004589a5c7e9c8c7975b278cfd7053bbe67b243e6142aec3c6f",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 4266,
+              "MolecularFormula": "C4H6N2O2",
+              "SMILES": "C1=C(ONC1=O)CN",
+              "ConnectivitySMILES": "C1=C(ONC1=O)CN",
+              "InChIKey": "ZJQHPWUVQPJPQT-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Nifoxipam",
+      "librarySmiles": "O=C1Nc2ccc([N+](=O)[O-])cc2C(c2ccccc2F)=NC1O",
+      "libraryFormula": "C15H10FN3O4",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Nifoxipam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 3058221,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/3058221",
+      "sourceSmiles": "C1=CC=C(C(=C1)C2=NC(C(=O)NC3=C2C=C(C=C3)[N+](=O)[O-])O)F",
+      "sourceFormula": "C15H10FN3O4",
+      "sourceInchiKey": "UHFIFTRHLBAWGY-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "O=C1Nc2ccc([N+](=O)[O-])cc2C(c2ccccc2F)=NC1O",
+      "sourceCanonicalSmiles": "O=C1Nc2ccc([N+](=O)[O-])cc2C(c2ccccc2F)=NC1O",
+      "retrievedAt": "2026-10-19T22:33:10.784921+00:00",
+      "responseSha256": "e6b3c7cb840931529258bc2719151a5ed9b7eb073dbb6cf188053b0272506808",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 3058221,
+              "MolecularFormula": "C15H10FN3O4",
+              "SMILES": "C1=CC=C(C(=C1)C2=NC(C(=O)NC3=C2C=C(C=C3)[N+](=O)[O-])O)F",
+              "ConnectivitySMILES": "C1=CC=C(C(=C1)C2=NC(C(=O)NC3=C2C=C(C=C3)[N+](=O)[O-])O)F",
+              "InChIKey": "UHFIFTRHLBAWGY-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Nimetazepam",
+      "librarySmiles": "CN1C(=O)CN=C(c2ccccc2)c2cc([N+](=O)[O-])ccc21",
+      "libraryFormula": "C16H13N3O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Nimetazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 4496,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/4496",
+      "sourceSmiles": "CN1C(=O)CN=C(C2=C1C=CC(=C2)[N+](=O)[O-])C3=CC=CC=C3",
+      "sourceFormula": "C16H13N3O3",
+      "sourceInchiKey": "GWUSZQUVEVMBPI-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CN1C(=O)CN=C(c2ccccc2)c2cc([N+](=O)[O-])ccc21",
+      "sourceCanonicalSmiles": "CN1C(=O)CN=C(c2ccccc2)c2cc([N+](=O)[O-])ccc21",
+      "retrievedAt": "2026-10-19T22:33:07.088947+00:00",
+      "responseSha256": "67f16174236fa73e7acf491f6fb0cc615ff230da0bd27425ae067989c0f8e89f",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 4496,
+              "MolecularFormula": "C16H13N3O3",
+              "SMILES": "CN1C(=O)CN=C(C2=C1C=CC(=C2)[N+](=O)[O-])C3=CC=CC=C3",
+              "ConnectivitySMILES": "CN1C(=O)CN=C(C2=C1C=CC(=C2)[N+](=O)[O-])C3=CC=CC=C3",
+              "InChIKey": "GWUSZQUVEVMBPI-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Nitrazepam",
+      "librarySmiles": "O=C1CN=C(c2ccccc2)c2cc([N+](=O)[O-])ccc2N1",
+      "libraryFormula": "C15H11N3O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Nitrazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 4506,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/4506",
+      "sourceSmiles": "C1C(=O)NC2=C(C=C(C=C2)[N+](=O)[O-])C(=N1)C3=CC=CC=C3",
+      "sourceFormula": "C15H11N3O3",
+      "sourceInchiKey": "KJONHKAYOJNZEC-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "O=C1CN=C(c2ccccc2)c2cc([N+](=O)[O-])ccc2N1",
+      "sourceCanonicalSmiles": "O=C1CN=C(c2ccccc2)c2cc([N+](=O)[O-])ccc2N1",
+      "retrievedAt": "2026-10-19T22:33:03.604863+00:00",
+      "responseSha256": "18553d713726545b7f555e74db40ed483e8319e2b25e52c00515d17090109d9e",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 4506,
+              "MolecularFormula": "C15H11N3O3",
+              "SMILES": "C1C(=O)NC2=C(C=C(C=C2)[N+](=O)[O-])C(=N1)C3=CC=CC=C3",
+              "ConnectivitySMILES": "C1C(=O)NC2=C(C=C(C=C2)[N+](=O)[O-])C(=N1)C3=CC=CC=C3",
+              "InChIKey": "KJONHKAYOJNZEC-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Nitrazolam",
+      "librarySmiles": "Cc1nnc2n1-c1ccc([N+](=O)[O-])cc1C(c1ccccc1)=NC2",
+      "libraryFormula": "C17H13N5O2",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Nitrazolam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 20317278,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/20317278",
+      "sourceSmiles": "CC1=NN=C2N1C3=C(C=C(C=C3)[N+](=O)[O-])C(=NC2)C4=CC=CC=C4",
+      "sourceFormula": "C17H13N5O2",
+      "sourceInchiKey": "OYRPNABWTHDOFK-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "Cc1nnc2n1-c1ccc([N+](=O)[O-])cc1C(c1ccccc1)=NC2",
+      "sourceCanonicalSmiles": "Cc1nnc2n1-c1ccc([N+](=O)[O-])cc1C(c1ccccc1)=NC2",
+      "retrievedAt": "2026-10-19T22:33:53.952798+00:00",
+      "responseSha256": "50456360cb5076d105e220ea3f2af75e42736699a8a33b15ac98b5f292f58844",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 20317278,
+              "MolecularFormula": "C17H13N5O2",
+              "SMILES": "CC1=NN=C2N1C3=C(C=C(C=C3)[N+](=O)[O-])C(=NC2)C4=CC=CC=C4",
+              "ConnectivitySMILES": "CC1=NN=C2N1C3=C(C=C(C=C3)[N+](=O)[O-])C(=NC2)C4=CC=CC=C4",
+              "InChIKey": "OYRPNABWTHDOFK-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Nordazepam",
+      "librarySmiles": "O=C1CN=C(c2ccccc2)c2cc(Cl)ccc2N1",
+      "libraryFormula": "C15H11ClN2O",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Nordazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 2997,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/2997",
+      "sourceSmiles": "C1C(=O)NC2=C(C=C(C=C2)Cl)C(=N1)C3=CC=CC=C3",
+      "sourceFormula": "C15H11ClN2O",
+      "sourceInchiKey": "AKPLHCDWDRPJGD-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "O=C1CN=C(c2ccccc2)c2cc(Cl)ccc2N1",
+      "sourceCanonicalSmiles": "O=C1CN=C(c2ccccc2)c2cc(Cl)ccc2N1",
+      "retrievedAt": "2026-10-19T22:33:03.568829+00:00",
+      "responseSha256": "084f1a78e52f1430a0b9daf8a4247a1e5e828a6de15b82f4f51d1cef6a72d781",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 2997,
+              "MolecularFormula": "C15H11ClN2O",
+              "SMILES": "C1C(=O)NC2=C(C=C(C=C2)Cl)C(=N1)C3=CC=CC=C3",
+              "ConnectivitySMILES": "C1C(=O)NC2=C(C=C(C=C2)Cl)C(=N1)C3=CC=CC=C3",
+              "InChIKey": "AKPLHCDWDRPJGD-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Norflurazepam",
+      "librarySmiles": "O=C1CN=C(c2ccccc2F)c2cc(Cl)ccc2N1",
+      "libraryFormula": "C15H10ClFN2O",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Norflurazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 4540,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/4540",
+      "sourceSmiles": "C1C(=O)NC2=C(C=C(C=C2)Cl)C(=N1)C3=CC=CC=C3F",
+      "sourceFormula": "C15H10ClFN2O",
+      "sourceInchiKey": "UVCOILFBWYKHHB-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "O=C1CN=C(c2ccccc2F)c2cc(Cl)ccc2N1",
+      "sourceCanonicalSmiles": "O=C1CN=C(c2ccccc2F)c2cc(Cl)ccc2N1",
+      "retrievedAt": "2026-10-19T22:33:27.060930+00:00",
+      "responseSha256": "994c0afc9c475e80f5735713b8271887a250ff0e66b71d2dae243e873abea650",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 4540,
+              "MolecularFormula": "C15H10ClFN2O",
+              "SMILES": "C1C(=O)NC2=C(C=C(C=C2)Cl)C(=N1)C3=CC=CC=C3F",
+              "ConnectivitySMILES": "C1C(=O)NC2=C(C=C(C=C2)Cl)C(=N1)C3=CC=CC=C3F",
+              "InChIKey": "UVCOILFBWYKHHB-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Oxazepam",
+      "librarySmiles": "OC1N=C(c2ccccc2)c2cc(Cl)ccc2NC1=O",
+      "libraryFormula": "C15H11ClN2O2",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Oxazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 4616,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/4616",
+      "sourceSmiles": "C1=CC=C(C=C1)C2=NC(C(=O)NC3=C2C=C(C=C3)Cl)O",
+      "sourceFormula": "C15H11ClN2O2",
+      "sourceInchiKey": "ADIMAYPTOBDMTL-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "O=C1Nc2ccc(Cl)cc2C(c2ccccc2)=NC1O",
+      "sourceCanonicalSmiles": "O=C1Nc2ccc(Cl)cc2C(c2ccccc2)=NC1O",
+      "retrievedAt": "2026-10-19T22:32:52.785449+00:00",
+      "responseSha256": "00a4acf8522ee66689fe4b46bb8cf1e4cf1dec46585d99eb117c3c37fdf218bb",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 4616,
+              "MolecularFormula": "C15H11ClN2O2",
+              "SMILES": "C1=CC=C(C=C1)C2=NC(C(=O)NC3=C2C=C(C=C3)Cl)O",
+              "ConnectivitySMILES": "C1=CC=C(C=C1)C2=NC(C(=O)NC3=C2C=C(C=C3)Cl)O",
+              "InChIKey": "ADIMAYPTOBDMTL-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Pentobarbital",
+      "librarySmiles": "CCCC(C)C1(CC)C(=O)NC(=O)NC1=O",
+      "libraryFormula": "C11H18N2O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Pentobarbital/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 4737,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/4737",
+      "sourceSmiles": "CCCC(C)C1(C(=O)NC(=O)NC1=O)CC",
+      "sourceFormula": "C11H18N2O3",
+      "sourceInchiKey": "WEXRUCMBJFQVBZ-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCCC(C)C1(CC)C(=O)NC(=O)NC1=O",
+      "sourceCanonicalSmiles": "CCCC(C)C1(CC)C(=O)NC(=O)NC1=O",
+      "retrievedAt": "2026-10-19T22:32:37.688908+00:00",
+      "responseSha256": "fe1a2de93af43b085f3eed953d7fda092b031fc864c554d21491aa4c421ca44b",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 4737,
+              "MolecularFormula": "C11H18N2O3",
+              "SMILES": "CCCC(C)C1(C(=O)NC(=O)NC1=O)CC",
+              "ConnectivitySMILES": "CCCC(C)C1(C(=O)NC(=O)NC1=O)CC",
+              "InChIKey": "WEXRUCMBJFQVBZ-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Pentylenetetrazol",
+      "librarySmiles": "C1CCc2nnnn2CC1",
+      "libraryFormula": "C6H10N4",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Pentylenetetrazol/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 5917,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/5917",
+      "sourceSmiles": "C1CCC2=NN=NN2CC1",
+      "sourceFormula": "C6H10N4",
+      "sourceInchiKey": "CWRVKFFCRWGWCS-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "C1CCc2nnnn2CC1",
+      "sourceCanonicalSmiles": "C1CCc2nnnn2CC1",
+      "retrievedAt": "2026-10-19T22:34:41.869000+00:00",
+      "responseSha256": "e0fe3c42a2183e9454f0783dc8c1e1a36b2d740fc52848b44f90d0e33687cf15",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 5917,
+              "MolecularFormula": "C6H10N4",
+              "SMILES": "C1CCC2=NN=NN2CC1",
+              "ConnectivitySMILES": "C1CCC2=NN=NN2CC1",
+              "InChIKey": "CWRVKFFCRWGWCS-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Phenazepam",
+      "librarySmiles": "O=C1CN=C(c2ccccc2Cl)c2cc(Br)ccc2N1",
+      "libraryFormula": "C15H10BrClN2O",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Phenazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 40113,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/40113",
+      "sourceSmiles": "C1C(=O)NC2=C(C=C(C=C2)Br)C(=N1)C3=CC=CC=C3Cl",
+      "sourceFormula": "C15H10BrClN2O",
+      "sourceInchiKey": "CGMJQQJSWIRRRL-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "O=C1CN=C(c2ccccc2Cl)c2cc(Br)ccc2N1",
+      "sourceCanonicalSmiles": "O=C1CN=C(c2ccccc2Cl)c2cc(Br)ccc2N1",
+      "retrievedAt": "2026-10-19T22:33:22.605265+00:00",
+      "responseSha256": "7fe232a0f735447db5ae117c81f5baeb51c66c1e65f23703a27772f4350fce75",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 40113,
+              "MolecularFormula": "C15H10BrClN2O",
+              "SMILES": "C1C(=O)NC2=C(C=C(C=C2)Br)C(=N1)C3=CC=CC=C3Cl",
+              "ConnectivitySMILES": "C1C(=O)NC2=C(C=C(C=C2)Br)C(=N1)C3=CC=CC=C3Cl",
+              "InChIKey": "CGMJQQJSWIRRRL-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Phenobarbital",
+      "librarySmiles": "CCC1(c2ccccc2)C(=O)NC(=O)NC1=O",
+      "libraryFormula": "C12H12N2O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Phenobarbital/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 4763,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/4763",
+      "sourceSmiles": "CCC1(C(=O)NC(=O)NC1=O)C2=CC=CC=C2",
+      "sourceFormula": "C12H12N2O3",
+      "sourceInchiKey": "DDBREPKUVSBGFI-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCC1(c2ccccc2)C(=O)NC(=O)NC1=O",
+      "sourceCanonicalSmiles": "CCC1(c2ccccc2)C(=O)NC(=O)NC1=O",
+      "retrievedAt": "2026-10-19T22:32:30.552906+00:00",
+      "responseSha256": "3311f8bdc40632dfd49941cdd2054acdb394d97c58e08bd2fde9f16f4ea67208",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 4763,
+              "MolecularFormula": "C12H12N2O3",
+              "SMILES": "CCC1(C(=O)NC(=O)NC1=O)C2=CC=CC=C2",
+              "ConnectivitySMILES": "CCC1(C(=O)NC(=O)NC1=O)C2=CC=CC=C2",
+              "InChIKey": "DDBREPKUVSBGFI-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Pinazepam",
+      "librarySmiles": "C#CCN1C(=O)CN=C(c2ccccc2)c2cc(Cl)ccc21",
+      "libraryFormula": "C18H13ClN2O",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Pinazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 40391,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/40391",
+      "sourceSmiles": "C#CCN1C(=O)CN=C(C2=C1C=CC(=C2)Cl)C3=CC=CC=C3",
+      "sourceFormula": "C18H13ClN2O",
+      "sourceInchiKey": "MFZOSKPPVCIFMT-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "C#CCN1C(=O)CN=C(c2ccccc2)c2cc(Cl)ccc21",
+      "sourceCanonicalSmiles": "C#CCN1C(=O)CN=C(c2ccccc2)c2cc(Cl)ccc21",
+      "retrievedAt": "2026-10-19T22:33:30.960896+00:00",
+      "responseSha256": "776bf7e490ee43cd8556033d67689d948ac0a19a700f48d034800fa145e3f335",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 40391,
+              "MolecularFormula": "C18H13ClN2O",
+              "SMILES": "C#CCN1C(=O)CN=C(C2=C1C=CC(=C2)Cl)C3=CC=CC=C3",
+              "ConnectivitySMILES": "C#CCN1C(=O)CN=C(C2=C1C=CC(=C2)Cl)C3=CC=CC=C3",
+              "InChIKey": "MFZOSKPPVCIFMT-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Prazepam",
+      "librarySmiles": "O=C1CN=C(c2ccccc2)c2cc(Cl)ccc2N1CC1CC1",
+      "libraryFormula": "C19H17ClN2O",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Prazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 4890,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/4890",
+      "sourceSmiles": "C1CC1CN2C(=O)CN=C(C3=C2C=CC(=C3)Cl)C4=CC=CC=C4",
+      "sourceFormula": "C19H17ClN2O",
+      "sourceInchiKey": "MWQCHHACWWAQLJ-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "O=C1CN=C(c2ccccc2)c2cc(Cl)ccc2N1CC1CC1",
+      "sourceCanonicalSmiles": "O=C1CN=C(c2ccccc2)c2cc(Cl)ccc2N1CC1CC1",
+      "retrievedAt": "2026-10-19T22:33:31.137085+00:00",
+      "responseSha256": "216eb3ea82815b28b149c2f4dac1dd6db2dc3a56340e5d43ef213fdd0e09cf03",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 4890,
+              "MolecularFormula": "C19H17ClN2O",
+              "SMILES": "C1CC1CN2C(=O)CN=C(C3=C2C=CC(=C3)Cl)C4=CC=CC=C4",
+              "ConnectivitySMILES": "C1CC1CN2C(=O)CN=C(C3=C2C=CC(=C3)Cl)C4=CC=CC=C4",
+              "InChIKey": "MWQCHHACWWAQLJ-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Probarbital",
+      "librarySmiles": "CCC1(C(C)C)C(=O)NC(=O)NC1=O",
+      "libraryFormula": "C9H14N2O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Probarbital/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 6455,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/6455",
+      "sourceSmiles": "CCC1(C(=O)NC(=O)NC1=O)C(C)C",
+      "sourceFormula": "C9H14N2O3",
+      "sourceInchiKey": "HHLXJTDUHFBYAU-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCC1(C(C)C)C(=O)NC(=O)NC1=O",
+      "sourceCanonicalSmiles": "CCC1(C(C)C)C(=O)NC(=O)NC1=O",
+      "retrievedAt": "2026-10-19T22:34:19.916972+00:00",
+      "responseSha256": "68f427943dcbcaac3d194f10849db291abb068a70132b2309b02d21333a9899c",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 6455,
+              "MolecularFormula": "C9H14N2O3",
+              "SMILES": "CCC1(C(=O)NC(=O)NC1=O)C(C)C",
+              "ConnectivitySMILES": "CCC1(C(=O)NC(=O)NC1=O)C(C)C",
+              "InChIKey": "HHLXJTDUHFBYAU-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Propofol",
+      "librarySmiles": "CC(C)c1cccc(C(C)C)c1O",
+      "libraryFormula": "C12H18O",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Propofol/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 4943,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/4943",
+      "sourceSmiles": "CC(C)C1=C(C(=CC=C1)C(C)C)O",
+      "sourceFormula": "C12H18O",
+      "sourceInchiKey": "OLBCVFGFOZPWHH-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CC(C)c1cccc(C(C)C)c1O",
+      "sourceCanonicalSmiles": "CC(C)c1cccc(C(C)C)c1O",
+      "retrievedAt": "2026-10-19T22:32:41.481026+00:00",
+      "responseSha256": "13d00fe27dfe2356f4d16c2d743c5ce32aff7d9cba5e0d878ad34b6b58a7a389",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 4943,
+              "MolecularFormula": "C12H18O",
+              "SMILES": "CC(C)C1=C(C(=CC=C1)C(C)C)O",
+              "ConnectivitySMILES": "CC(C)C1=C(C(=CC=C1)C(C)C)O",
+              "InChIKey": "OLBCVFGFOZPWHH-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Pyrazolam",
+      "librarySmiles": "Cc1nnc2n1-c1ccc(Br)cc1C(c1ccccn1)=NC2",
+      "libraryFormula": "C16H12BrN5",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Pyrazolam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 12562545,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/12562545",
+      "sourceSmiles": "CC1=NN=C2N1C3=C(C=C(C=C3)Br)C(=NC2)C4=CC=CC=N4",
+      "sourceFormula": "C16H12BrN5",
+      "sourceInchiKey": "BGRWSFIQQPVEML-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "Cc1nnc2n1-c1ccc(Br)cc1C(c1ccccn1)=NC2",
+      "sourceCanonicalSmiles": "Cc1nnc2n1-c1ccc(Br)cc1C(c1ccccn1)=NC2",
+      "retrievedAt": "2026-10-19T22:34:01.337047+00:00",
+      "responseSha256": "9fbfeebc820d4c1c37a00f91094901cf5b0d86b0b4e5b6d9fa5807fe92ab5afd",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 12562545,
+              "MolecularFormula": "C16H12BrN5",
+              "SMILES": "CC1=NN=C2N1C3=C(C=C(C=C3)Br)C(=NC2)C4=CC=CC=N4",
+              "ConnectivitySMILES": "CC1=NN=C2N1C3=C(C=C(C=C3)Br)C(=NC2)C4=CC=CC=N4",
+              "InChIKey": "BGRWSFIQQPVEML-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Secobarbital",
+      "librarySmiles": "C=CCC1(C(C)CCC)C(=O)NC(=O)NC1=O",
+      "libraryFormula": "C12H18N2O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Secobarbital/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 5193,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/5193",
+      "sourceSmiles": "CCCC(C)C1(C(=O)NC(=O)NC1=O)CC=C",
+      "sourceFormula": "C12H18N2O3",
+      "sourceInchiKey": "KQPKPCNLIDLUMF-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "C=CCC1(C(C)CCC)C(=O)NC(=O)NC1=O",
+      "sourceCanonicalSmiles": "C=CCC1(C(C)CCC)C(=O)NC(=O)NC1=O",
+      "retrievedAt": "2026-10-19T22:34:12.368998+00:00",
+      "responseSha256": "4af48ff5078661fed21adcac635c9d5970991ac95b25d67844ddafae8ae41f0b",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 5193,
+              "MolecularFormula": "C12H18N2O3",
+              "SMILES": "CCCC(C)C1(C(=O)NC(=O)NC1=O)CC=C",
+              "ConnectivitySMILES": "CCCC(C)C1(C(=O)NC(=O)NC1=O)CC=C",
+              "InChIKey": "KQPKPCNLIDLUMF-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Talbutal",
+      "librarySmiles": "C=CCC1(C(C)CC)C(=O)NC(=O)NC1=O",
+      "libraryFormula": "C11H16N2O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Talbutal/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 8275,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/8275",
+      "sourceSmiles": "CCC(C)C1(C(=O)NC(=O)NC1=O)CC=C",
+      "sourceFormula": "C11H16N2O3",
+      "sourceInchiKey": "BJVVMKUXKQHWJK-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "C=CCC1(C(C)CC)C(=O)NC(=O)NC1=O",
+      "sourceCanonicalSmiles": "C=CCC1(C(C)CC)C(=O)NC(=O)NC1=O",
+      "retrievedAt": "2026-10-19T22:34:16.264931+00:00",
+      "responseSha256": "c606b44aa6de06f45e2530899f57d09f1249a3497b5c790f9dcaaff3fdbda1c8",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 8275,
+              "MolecularFormula": "C11H16N2O3",
+              "SMILES": "CCC(C)C1(C(=O)NC(=O)NC1=O)CC=C",
+              "ConnectivitySMILES": "CCC(C)C1(C(=O)NC(=O)NC1=O)CC=C",
+              "InChIKey": "BJVVMKUXKQHWJK-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Temazepam",
+      "librarySmiles": "CN1c2ccc(Cl)cc2C(c2ccccc2)=NC(O)C1=O",
+      "libraryFormula": "C16H13ClN2O2",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Temazepam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 5391,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/5391",
+      "sourceSmiles": "CN1C2=C(C=C(C=C2)Cl)C(=NC(C1=O)O)C3=CC=CC=C3",
+      "sourceFormula": "C16H13ClN2O2",
+      "sourceInchiKey": "SEQDDYPDSLOBDC-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CN1C(=O)C(O)N=C(c2ccccc2)c2cc(Cl)ccc21",
+      "sourceCanonicalSmiles": "CN1C(=O)C(O)N=C(c2ccccc2)c2cc(Cl)ccc21",
+      "retrievedAt": "2026-10-19T22:32:48.840982+00:00",
+      "responseSha256": "6f98a6f5abc3634a991b2180bb761d6c8b6ee4cba0aab52aa6ff012673e4a6a0",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 5391,
+              "MolecularFormula": "C16H13ClN2O2",
+              "SMILES": "CN1C2=C(C=C(C=C2)Cl)C(=NC(C1=O)O)C3=CC=CC=C3",
+              "ConnectivitySMILES": "CN1C2=C(C=C(C=C2)Cl)C(=NC(C1=O)O)C3=CC=CC=C3",
+              "InChIKey": "SEQDDYPDSLOBDC-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Thiamylal",
+      "librarySmiles": "C=CCC1(C(C)CCC)C(=O)NC(=S)NC1=O",
+      "libraryFormula": "C12H18N2O2S",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Thiamylal/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 3032285,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/3032285",
+      "sourceSmiles": "CCCC(C)C1(C(=O)NC(=S)NC1=O)CC=C",
+      "sourceFormula": "C12H18N2O2S",
+      "sourceInchiKey": "XLOMZPUITCYLMJ-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "C=CCC1(C(C)CCC)C(=O)NC(=S)NC1=O",
+      "sourceCanonicalSmiles": "C=CCC1(C(C)CCC)C(=O)NC(=S)NC1=O",
+      "retrievedAt": "2026-10-19T22:34:34.040875+00:00",
+      "responseSha256": "eb6ad3635c94f6062bc926a9abbdf65a1b5800bf81fe0b00d13400e21bcfd7df",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 3032285,
+              "MolecularFormula": "C12H18N2O2S",
+              "SMILES": "CCCC(C)C1(C(=O)NC(=S)NC1=O)CC=C",
+              "ConnectivitySMILES": "CCCC(C)C1(C(=O)NC(=S)NC1=O)CC=C",
+              "InChIKey": "XLOMZPUITCYLMJ-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Thiobarbital",
+      "librarySmiles": "CCC1(CC)C(=O)NC(=S)NC1=O",
+      "libraryFormula": "C8H12N2O2S",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Thiobarbital/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 667509,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/667509",
+      "sourceSmiles": "CCC1(C(=O)NC(=S)NC1=O)CC",
+      "sourceFormula": "C8H12N2O2S",
+      "sourceInchiKey": "QGVNJRROSLYGKF-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCC1(CC)C(=O)NC(=S)NC1=O",
+      "sourceCanonicalSmiles": "CCC1(CC)C(=O)NC(=S)NC1=O",
+      "retrievedAt": "2026-10-19T22:34:33.996721+00:00",
+      "responseSha256": "eccbb8f89790fc74024254f81de4f6ee7d6add8700b2f324df465dcdf4d7837d",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 667509,
+              "MolecularFormula": "C8H12N2O2S",
+              "SMILES": "CCC1(C(=O)NC(=S)NC1=O)CC",
+              "ConnectivitySMILES": "CCC1(C(=O)NC(=S)NC1=O)CC",
+              "InChIKey": "QGVNJRROSLYGKF-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Thiopental",
+      "librarySmiles": "CCCC(C)C1(CC)C(=O)NC(=S)NC1=O",
+      "libraryFormula": "C11H18N2O2S",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Thiopental/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 3000715,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/3000715",
+      "sourceSmiles": "CCCC(C)C1(C(=O)NC(=S)NC1=O)CC",
+      "sourceFormula": "C11H18N2O2S",
+      "sourceInchiKey": "IUJDSEJGGMCXSG-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCCC(C)C1(CC)C(=O)NC(=S)NC1=O",
+      "sourceCanonicalSmiles": "CCCC(C)C1(CC)C(=O)NC(=S)NC1=O",
+      "retrievedAt": "2026-10-19T22:32:41.468963+00:00",
+      "responseSha256": "48dcc5320c9e6c04b8b0032fc7bd012db87c2ceb08082a215b9469d5ee55ec2a",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 3000715,
+              "MolecularFormula": "C11H18N2O2S",
+              "SMILES": "CCCC(C)C1(C(=O)NC(=S)NC1=O)CC",
+              "ConnectivitySMILES": "CCCC(C)C1(C(=O)NC(=S)NC1=O)CC",
+              "InChIKey": "IUJDSEJGGMCXSG-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Topiramate",
+      "librarySmiles": "CC1(C)OC2COC3(COS(N)(=O)=O)OC(C)(C)OC3C2O1",
+      "libraryFormula": "C12H21NO8S",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Topiramate/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "connectivity_only_stereochemistry_differs",
+      "cid": 5284627,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/5284627",
+      "sourceSmiles": "CC1(O[C@@H]2CO[C@@]3([C@H]([C@@H]2O1)OC(O3)(C)C)COS(=O)(=O)N)C",
+      "sourceFormula": "C12H21NO8S",
+      "sourceInchiKey": "KJADKKWYZYXHBB-XBWDGYHZSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CC1(C)OC2COC3(COS(N)(=O)=O)OC(C)(C)OC3C2O1",
+      "sourceCanonicalSmiles": "CC1(C)O[C@@H]2[C@@H](CO[C@@]3(COS(N)(=O)=O)OC(C)(C)O[C@@H]23)O1",
+      "retrievedAt": "2026-10-19T22:32:34.112993+00:00",
+      "responseSha256": "217afa7468d97cbb7de4346b7614f55351e79a2b87f3385dce143a9619896805",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 5284627,
+              "MolecularFormula": "C12H21NO8S",
+              "SMILES": "CC1(O[C@@H]2CO[C@@]3([C@H]([C@@H]2O1)OC(O3)(C)C)COS(=O)(=O)N)C",
+              "ConnectivitySMILES": "CC1(OC2COC3(C(C2O1)OC(O3)(C)C)COS(=O)(=O)N)C",
+              "InChIKey": "KJADKKWYZYXHBB-XBWDGYHZSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Triazolam",
+      "librarySmiles": "Cc1nnc2n1-c1ccc(Cl)cc1C(c1ccccc1Cl)=NC2",
+      "libraryFormula": "C17H12Cl2N4",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Triazolam/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 5556,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/5556",
+      "sourceSmiles": "CC1=NN=C2N1C3=C(C=C(C=C3)Cl)C(=NC2)C4=CC=CC=C4Cl",
+      "sourceFormula": "C17H12Cl2N4",
+      "sourceInchiKey": "JOFWLTCLBGQGBO-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "Cc1nnc2n1-c1ccc(Cl)cc1C(c1ccccc1Cl)=NC2",
+      "sourceCanonicalSmiles": "Cc1nnc2n1-c1ccc(Cl)cc1C(c1ccccc1Cl)=NC2",
+      "retrievedAt": "2026-10-19T22:33:42.484790+00:00",
+      "responseSha256": "6cda7e50e55d058eb2c9534d22b2d44e1fdb1581d3621ed6347356dd049ddad5",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 5556,
+              "MolecularFormula": "C17H12Cl2N4",
+              "SMILES": "CC1=NN=C2N1C3=C(C=C(C=C3)Cl)C(=NC2)C4=CC=CC=C4Cl",
+              "ConnectivitySMILES": "CC1=NN=C2N1C3=C(C=C(C=C3)Cl)C(=NC2)C4=CC=CC=C4Cl",
+              "InChIKey": "JOFWLTCLBGQGBO-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Vinbarbital",
+      "librarySmiles": "CCC=C(C)C1(CC)C(=O)NC(=O)NC1=O",
+      "libraryFormula": "C11H16N2O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Vinbarbital/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "connectivity_only_stereochemistry_differs",
+      "cid": 5284636,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/5284636",
+      "sourceSmiles": "CC/C=C(\\C)/C1(C(=O)NC(=O)NC1=O)CC",
+      "sourceFormula": "C11H16N2O3",
+      "sourceInchiKey": "RAFOHKSPUDGZPR-VOTSOKGWSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCC=C(C)C1(CC)C(=O)NC(=O)NC1=O",
+      "sourceCanonicalSmiles": "CC/C=C(\\C)C1(CC)C(=O)NC(=O)NC1=O",
+      "retrievedAt": "2026-10-19T22:34:19.836998+00:00",
+      "responseSha256": "1a6f897fd64e23a450b060eb8a49149b24579e38b79c59c50be6031dae0d77a8",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 5284636,
+              "MolecularFormula": "C11H16N2O3",
+              "SMILES": "CC/C=C(\\C)/C1(C(=O)NC(=O)NC1=O)CC",
+              "ConnectivitySMILES": "CCC=C(C)C1(C(=O)NC(=O)NC1=O)CC",
+              "InChIKey": "RAFOHKSPUDGZPR-VOTSOKGWSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Zaleplon",
+      "librarySmiles": "CCN(C1=CC=CC(=C1)C2=CC=NC3=C(C=NN23)C#N)C(=O)C",
+      "libraryFormula": "C17H15N5O",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Zaleplon/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 5719,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/5719",
+      "sourceSmiles": "CCN(C1=CC=CC(=C1)C2=CC=NC3=C(C=NN23)C#N)C(=O)C",
+      "sourceFormula": "C17H15N5O",
+      "sourceInchiKey": "HUNXMJYCHXQEGX-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCN(C(C)=O)c1cccc(-c2ccnc3c(C#N)cnn23)c1",
+      "sourceCanonicalSmiles": "CCN(C(C)=O)c1cccc(-c2ccnc3c(C#N)cnn23)c1",
+      "retrievedAt": "2026-10-19T22:33:00.329029+00:00",
+      "responseSha256": "6a91d2494365c6bcfb7f703090fcd1ccbfc1ebe48ee9209c8631732db912ba4a",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 5719,
+              "MolecularFormula": "C17H15N5O",
+              "SMILES": "CCN(C1=CC=CC(=C1)C2=CC=NC3=C(C=NN23)C#N)C(=O)C",
+              "ConnectivitySMILES": "CCN(C1=CC=CC(=C1)C2=CC=NC3=C(C=NN23)C#N)C(=O)C",
+              "InChIKey": "HUNXMJYCHXQEGX-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Zolpidem",
+      "librarySmiles": "Cc1ccc(cc1)c1nc2ccc(C)cn2c1CC(=O)N(C)C",
+      "libraryFormula": "C19H21N3O",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Zolpidem/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 5732,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/5732",
+      "sourceSmiles": "CC1=CC=C(C=C1)C2=C(N3C=C(C=CC3=N2)C)CC(=O)N(C)C",
+      "sourceFormula": "C19H21N3O",
+      "sourceInchiKey": "ZAFYATHCZYHLPB-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "Cc1ccc(-c2nc3ccc(C)cn3c2CC(=O)N(C)C)cc1",
+      "sourceCanonicalSmiles": "Cc1ccc(-c2nc3ccc(C)cn3c2CC(=O)N(C)C)cc1",
+      "retrievedAt": "2026-10-19T22:32:30.565045+00:00",
+      "responseSha256": "93e43015a150d48ae49c17473ee3e679db5f75457d10554af14eefdafed51aa1",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 5732,
+              "MolecularFormula": "C19H21N3O",
+              "SMILES": "CC1=CC=C(C=C1)C2=C(N3C=C(C=CC3=N2)C)CC(=O)N(C)C",
+              "ConnectivitySMILES": "CC1=CC=C(C=C1)C2=C(N3C=C(C=CC3=N2)C)CC(=O)N(C)C",
+              "InChIKey": "ZAFYATHCZYHLPB-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Zopiclone",
+      "librarySmiles": "CN1CCN(C(=O)OC2c3nccnc3C(=O)N2c2ccc(Cl)cn2)CC1",
+      "libraryFormula": "C17H17ClN6O3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Zopiclone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 5735,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/5735",
+      "sourceSmiles": "CN1CCN(CC1)C(=O)OC2C3=NC=CN=C3C(=O)N2C4=NC=C(C=C4)Cl",
+      "sourceFormula": "C17H17ClN6O3",
+      "sourceInchiKey": "GBBSUAFBMRNDJC-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CN1CCN(C(=O)OC2c3nccnc3C(=O)N2c2ccc(Cl)cn2)CC1",
+      "sourceCanonicalSmiles": "CN1CCN(C(=O)OC2c3nccnc3C(=O)N2c2ccc(Cl)cn2)CC1",
+      "retrievedAt": "2026-10-19T22:32:56.688952+00:00",
+      "responseSha256": "c34605a35b1e8545db60dee2f452cc14193099bf236435db09106446b67f1d6a",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 5735,
+              "MolecularFormula": "C17H17ClN6O3",
+              "SMILES": "CN1CCN(CC1)C(=O)OC2C3=NC=CN=C3C(=O)N2C4=NC=C(C=C4)Cl",
+              "ConnectivitySMILES": "CN1CCN(CC1)C(=O)OC2C3=NC=CN=C3C(=O)N2C4=NC=C(C=C4)Cl",
+              "InChIKey": "GBBSUAFBMRNDJC-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

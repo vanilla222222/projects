@@ -30,8 +30,8 @@ The committed report covers 1,005 profiles, 132 targets and 2,782 library entrie
 
 | Method | Top 1 | Top 5 | Top 10 | Target macro top 5, guaranteed–possible |
 | --- | ---: | ---: | ---: | ---: |
-| Legacy | 80.10% | 88.66% | 90.85% | 46.04–47.57% |
-| Experimental ensemble | 80.60% | 89.35% | 92.24% | 47.11–48.77% |
+| Legacy | 80.30% | 88.76% | 90.95% | 46.05–47.57% |
+| Experimental ensemble | 80.80% | 89.55% | 92.34% | 47.13–48.78% |
 
 The ensemble has a modest advantage on this full internal snapshot, while target-balanced coverage remains much weaker. This does not support a claim of generally accurate receptor prediction. Legacy remains the default. Neither formula nor weights were tuned to these results. The old `target-ranking-ensemble-v1.json` is a historical 100-query schema-v1 report and should not be compared as a longitudinal improvement figure. Compare methods within the same report and reference snapshot. Broader claims require verified assay-linked positives, negatives, temporal/scaffold splits and external review.
 
@@ -66,3 +66,14 @@ The optional jsdom 26.1.0 test executes the actual application and verifies ense
 - [SwissTargetPrediction 2019](https://pmc.ncbi.nlm.nih.gov/articles/PMC6602486/): a trained combined 2D/3D model, cited for comparison rather than as validation of this implementation.
 - [SwissTargetPrediction 2014](https://pmc.ncbi.nlm.nih.gov/articles/PMC4086140/): reports limitations of close-analogue target prediction and reference-set validation.
 - [Human hepatocyte metabolite-identification data (2025)](https://pmc.ncbi.nlm.nih.gov/articles/PMC12587390/): distinguishes reaction-rule enumeration, site models and experimental metabolite identification. These experimental data were not imported into this rule set or used as training data.
+
+## Reference and descriptor accuracy follow-up
+
+The current source includes four reviewed GABA-A-panel structure corrections and
+aromaticity/charged-nitrogen calculation fixes. See
+[REFERENCE-CURATION-HANDOFF.md](REFERENCE-CURATION-HANDOFF.md) for the source
+records, unresolved stereochemistry, chlordiazepoxide database disagreement,
+independent full-library descriptor comparison and remaining input limitations.
+The target report above has been regenerated for these corrected structures and
+now hashes the parser, molecular graph, stereochemistry and fingerprint modules
+as well as the ranking module and datasets.

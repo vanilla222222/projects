@@ -3,10 +3,14 @@
   "algorithmVersion": "ensemble-v1.1",
   "node": "v24.19.0",
   "sourceSha256": {
-    "data/library.js": "81bdea66f6dae39fc56684bae2303f1d373ffd77add90b68c0441c77b920f256",
+    "data/library.js": "1ecf116365af22eb476d0f8d858729ab41408ab032cc70d8b6129a22ba16f6ea",
     "data/targets.js": "51639b633fbc791ee6883eb07df2367b51438b757bff314c82529cfc3cbe089c",
     "js/target-ranking.js": "74f5d6a817e334098096a0d7cd5f1ffca201f47409a84af4120e8e0f388b8b57",
-    "tools/target-ranking-evaluate.js": "8ce369a1b0c9c147abc0f12645c9c1ccd8d863a793d7a48705ca318f5a3c04a3",
+    "js/mol.js": "077744f7eb6be0df23afdc1e3d7dae0d7d09b428ecfd850cbad3528bb6806f45",
+    "js/smiles.js": "ae7063246faee39707c62003a038fd8ce825e5c247f85ab9b6191e4383caca66",
+    "js/stereo.js": "6b65f4af103715c9814ec1bd56871b27280e9c8e3278475ce62726f38d3f2aaa",
+    "js/fingerprints.js": "274e1daec20d05d7daf0d28ca35a41ef65905ae5a2cde2f5ceeb34013722149f",
+    "tools/target-ranking-evaluate.js": "d2f4f4ee65ec0de3e0dcc513ae17e962c49078b54ed630e6d546acee3b52b02b",
     "tools/target-ranking-metrics.js": "13b9c7d8cdddd2077b58ee1e348d80cb5aba5d5b83cf30a6c13b6983095e2afa"
   },
   "protocol": "One query per fingerprint-profile group, SHA-256 ordered; all indistinguishable profiles withheld from every target. Default evaluates every group.",
@@ -32,48 +36,48 @@
     "queries": 1005,
     "unrankableQueries": 20,
     "top1": {
-      "display": 0.8009950248756219,
-      "guaranteed": 0.7880597014925373,
-      "possible": 0.8189054726368159
+      "display": 0.8029850746268656,
+      "guaranteed": 0.7900497512437811,
+      "possible": 0.8208955223880597
     },
     "top5": {
-      "display": 0.8865671641791045,
-      "guaranteed": 0.8855721393034826,
-      "possible": 0.8875621890547264
+      "display": 0.8875621890547264,
+      "guaranteed": 0.8865671641791045,
+      "possible": 0.8885572139303483
     },
     "top10": {
-      "display": 0.9084577114427861,
-      "guaranteed": 0.9074626865671642,
-      "possible": 0.9084577114427861
+      "display": 0.909452736318408,
+      "guaranteed": 0.9084577114427861,
+      "possible": 0.909452736318408
     },
     "targetMacroTop5": {
       "targets": 132,
-      "guaranteed": 0.4603675210793349,
-      "possible": 0.4756528174412128
+      "guaranteed": 0.46046341674485075,
+      "possible": 0.4757487131067287
     }
   },
   "ensemble": {
     "queries": 1005,
     "unrankableQueries": 20,
     "top1": {
-      "display": 0.8059701492537313,
-      "guaranteed": 0.7940298507462686,
-      "possible": 0.8228855721393035
+      "display": 0.8079601990049752,
+      "guaranteed": 0.7960199004975125,
+      "possible": 0.8248756218905473
     },
     "top5": {
-      "display": 0.8935323383084577,
-      "guaranteed": 0.8925373134328358,
-      "possible": 0.8945273631840795
+      "display": 0.8955223880597015,
+      "guaranteed": 0.8945273631840795,
+      "possible": 0.8965174129353234
     },
     "top10": {
-      "display": 0.9223880597014925,
-      "guaranteed": 0.9194029850746268,
-      "possible": 0.9223880597014925
+      "display": 0.9233830845771144,
+      "guaranteed": 0.9203980099502488,
+      "possible": 0.9233830845771144
     },
     "targetMacroTop5": {
       "targets": 132,
-      "guaranteed": 0.4711170647927423,
-      "possible": 0.48765347580982293
+      "guaranteed": 0.4713088561237741,
+      "possible": 0.48784526714085474
     }
   },
   "results": [
@@ -4546,16 +4550,16 @@
         ]
       },
       "ensemble": {
-        "bestRank": 9,
-        "bestPossibleRank": 9,
-        "guaranteedRank": 9,
+        "bestRank": 13,
+        "bestPossibleRank": 13,
+        "guaranteedRank": 13,
         "rankableLabels": 1,
         "labels": [
           {
             "key": "GABRA1::GABA-A receptor",
-            "displayRank": 9,
-            "bestRank": 9,
-            "worstRank": 9
+            "displayRank": 13,
+            "bestRank": 13,
+            "worstRank": 13
           }
         ]
       }
@@ -6416,6 +6420,45 @@
             "displayRank": 85,
             "bestRank": 85,
             "worstRank": 85
+          }
+        ]
+      }
+    },
+    {
+      "name": "Zaleplon",
+      "profileSha256": "1d5c9370f9e0a6cc2d26453ada103fc334719e75f071aec982ea130e09a9dea6",
+      "aliases": [
+        "Zaleplon"
+      ],
+      "positiveKeys": [
+        "GABRA1::GABA-A receptor"
+      ],
+      "labels": 1,
+      "legacy": {
+        "bestRank": 15,
+        "bestPossibleRank": 15,
+        "guaranteedRank": 15,
+        "rankableLabels": 1,
+        "labels": [
+          {
+            "key": "GABRA1::GABA-A receptor",
+            "displayRank": 15,
+            "bestRank": 15,
+            "worstRank": 15
+          }
+        ]
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "bestPossibleRank": 1,
+        "guaranteedRank": 1,
+        "rankableLabels": 1,
+        "labels": [
+          {
+            "key": "GABRA1::GABA-A receptor",
+            "displayRank": 1,
+            "bestRank": 1,
+            "worstRank": 1
           }
         ]
       }
@@ -17741,6 +17784,45 @@
       }
     },
     {
+      "name": "Alpidem",
+      "profileSha256": "553c89889853be736f178871ecbb13bf958ac144bc1ecb504868ce15100a8bde",
+      "aliases": [
+        "Alpidem"
+      ],
+      "positiveKeys": [
+        "GABRA1::GABA-A receptor"
+      ],
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "bestPossibleRank": 1,
+        "guaranteedRank": 1,
+        "rankableLabels": 1,
+        "labels": [
+          {
+            "key": "GABRA1::GABA-A receptor",
+            "displayRank": 1,
+            "bestRank": 1,
+            "worstRank": 1
+          }
+        ]
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "bestPossibleRank": 1,
+        "guaranteedRank": 1,
+        "rankableLabels": 1,
+        "labels": [
+          {
+            "key": "GABRA1::GABA-A receptor",
+            "displayRank": 1,
+            "bestRank": 1,
+            "worstRank": 1
+          }
+        ]
+      }
+    },
+    {
       "name": "Nomegestrol",
       "profileSha256": "55b71fddb18b36196348607441a531679df2452947fc2a458a1be892f7ff4592",
       "aliases": [
@@ -20074,45 +20156,6 @@
             "displayRank": 7,
             "bestRank": 5,
             "worstRank": 7
-          }
-        ]
-      }
-    },
-    {
-      "name": "Gaboxadol",
-      "profileSha256": "628f45d5549db2ee49102bd9de1342346609bac7b6877138963af46923c1a3b1",
-      "aliases": [
-        "Gaboxadol"
-      ],
-      "positiveKeys": [
-        "GABRA1::GABA-A receptor"
-      ],
-      "labels": 1,
-      "legacy": {
-        "bestRank": 21,
-        "bestPossibleRank": 21,
-        "guaranteedRank": 21,
-        "rankableLabels": 1,
-        "labels": [
-          {
-            "key": "GABRA1::GABA-A receptor",
-            "displayRank": 21,
-            "bestRank": 21,
-            "worstRank": 21
-          }
-        ]
-      },
-      "ensemble": {
-        "bestRank": 21,
-        "bestPossibleRank": 21,
-        "guaranteedRank": 21,
-        "rankableLabels": 1,
-        "labels": [
-          {
-            "key": "GABRA1::GABA-A receptor",
-            "displayRank": 21,
-            "bestRank": 21,
-            "worstRank": 21
           }
         ]
       }
@@ -22885,45 +22928,6 @@
       }
     },
     {
-      "name": "Zaleplon",
-      "profileSha256": "73925b71f778afb309caec428bca78c474ebcae98e11698f5e7ed398b2f95d7a",
-      "aliases": [
-        "Zaleplon"
-      ],
-      "positiveKeys": [
-        "GABRA1::GABA-A receptor"
-      ],
-      "labels": 1,
-      "legacy": {
-        "bestRank": 3,
-        "bestPossibleRank": 3,
-        "guaranteedRank": 3,
-        "rankableLabels": 1,
-        "labels": [
-          {
-            "key": "GABRA1::GABA-A receptor",
-            "displayRank": 3,
-            "bestRank": 3,
-            "worstRank": 3
-          }
-        ]
-      },
-      "ensemble": {
-        "bestRank": 1,
-        "bestPossibleRank": 1,
-        "guaranteedRank": 1,
-        "rankableLabels": 1,
-        "labels": [
-          {
-            "key": "GABRA1::GABA-A receptor",
-            "displayRank": 1,
-            "bestRank": 1,
-            "worstRank": 1
-          }
-        ]
-      }
-    },
-    {
       "name": "Butorphanol",
       "profileSha256": "73964d4fcd3593f38e459d8c0af73af2bad576a87c95bef835bdfa90a694c7d5",
       "aliases": [
@@ -24805,45 +24809,6 @@
             "displayRank": 3,
             "bestRank": 3,
             "worstRank": 3
-          }
-        ]
-      }
-    },
-    {
-      "name": "Flumazenil",
-      "profileSha256": "7bb018c6e0ef5be07a84b97cfaf4c0e1d6fa0b54ac68cfc34ba7e4ea1a163a9b",
-      "aliases": [
-        "Flumazenil"
-      ],
-      "positiveKeys": [
-        "GABRA1::GABA-A receptor"
-      ],
-      "labels": 1,
-      "legacy": {
-        "bestRank": 1,
-        "bestPossibleRank": 1,
-        "guaranteedRank": 1,
-        "rankableLabels": 1,
-        "labels": [
-          {
-            "key": "GABRA1::GABA-A receptor",
-            "displayRank": 1,
-            "bestRank": 1,
-            "worstRank": 1
-          }
-        ]
-      },
-      "ensemble": {
-        "bestRank": 1,
-        "bestPossibleRank": 1,
-        "guaranteedRank": 1,
-        "rankableLabels": 1,
-        "labels": [
-          {
-            "key": "GABRA1::GABA-A receptor",
-            "displayRank": 1,
-            "bestRank": 1,
-            "worstRank": 1
           }
         ]
       }
@@ -27444,45 +27409,6 @@
             "displayRank": 5,
             "bestRank": 5,
             "worstRank": 5
-          }
-        ]
-      }
-    },
-    {
-      "name": "Alpidem",
-      "profileSha256": "873bfc8c3303c2067d9ddfa49350d781d095c9a8249ac4e58b408322cdcf39bc",
-      "aliases": [
-        "Alpidem"
-      ],
-      "positiveKeys": [
-        "GABRA1::GABA-A receptor"
-      ],
-      "labels": 1,
-      "legacy": {
-        "bestRank": 1,
-        "bestPossibleRank": 1,
-        "guaranteedRank": 1,
-        "rankableLabels": 1,
-        "labels": [
-          {
-            "key": "GABRA1::GABA-A receptor",
-            "displayRank": 1,
-            "bestRank": 1,
-            "worstRank": 1
-          }
-        ]
-      },
-      "ensemble": {
-        "bestRank": 1,
-        "bestPossibleRank": 1,
-        "guaranteedRank": 1,
-        "rankableLabels": 1,
-        "labels": [
-          {
-            "key": "GABRA1::GABA-A receptor",
-            "displayRank": 1,
-            "bestRank": 1,
-            "worstRank": 1
           }
         ]
       }
@@ -41838,30 +41764,30 @@
       ],
       "labels": 1,
       "legacy": {
-        "bestRank": 20,
-        "bestPossibleRank": 20,
-        "guaranteedRank": 20,
+        "bestRank": 1,
+        "bestPossibleRank": 1,
+        "guaranteedRank": 1,
         "rankableLabels": 1,
         "labels": [
           {
             "key": "GABRA1::GABA-A receptor",
-            "displayRank": 20,
-            "bestRank": 20,
-            "worstRank": 20
+            "displayRank": 1,
+            "bestRank": 1,
+            "worstRank": 1
           }
         ]
       },
       "ensemble": {
-        "bestRank": 35,
-        "bestPossibleRank": 35,
-        "guaranteedRank": 35,
+        "bestRank": 1,
+        "bestPossibleRank": 1,
+        "guaranteedRank": 1,
         "rankableLabels": 1,
         "labels": [
           {
             "key": "GABRA1::GABA-A receptor",
-            "displayRank": 35,
-            "bestRank": 35,
-            "worstRank": 35
+            "displayRank": 1,
+            "bestRank": 1,
+            "worstRank": 1
           }
         ]
       }
@@ -42148,6 +42074,45 @@
             "displayRank": 2,
             "bestRank": 1,
             "worstRank": 2
+          }
+        ]
+      }
+    },
+    {
+      "name": "Flumazenil",
+      "profileSha256": "cc18de8a4eb42104380011c7e3010d2c870dddff43b6888e485c38f5de3e6e6a",
+      "aliases": [
+        "Flumazenil"
+      ],
+      "positiveKeys": [
+        "GABRA1::GABA-A receptor"
+      ],
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "bestPossibleRank": 1,
+        "guaranteedRank": 1,
+        "rankableLabels": 1,
+        "labels": [
+          {
+            "key": "GABRA1::GABA-A receptor",
+            "displayRank": 1,
+            "bestRank": 1,
+            "worstRank": 1
+          }
+        ]
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "bestPossibleRank": 1,
+        "guaranteedRank": 1,
+        "rankableLabels": 1,
+        "labels": [
+          {
+            "key": "GABRA1::GABA-A receptor",
+            "displayRank": 1,
+            "bestRank": 1,
+            "worstRank": 1
           }
         ]
       }
@@ -46222,6 +46187,45 @@
       }
     },
     {
+      "name": "Gaboxadol",
+      "profileSha256": "e622ac43bae0baaf9777cec09b2713907d797e5e92c997a069f60bd66d9fa63f",
+      "aliases": [
+        "Gaboxadol"
+      ],
+      "positiveKeys": [
+        "GABRA1::GABA-A receptor"
+      ],
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "bestPossibleRank": 1,
+        "guaranteedRank": 1,
+        "rankableLabels": 1,
+        "labels": [
+          {
+            "key": "GABRA1::GABA-A receptor",
+            "displayRank": 1,
+            "bestRank": 1,
+            "worstRank": 1
+          }
+        ]
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "bestPossibleRank": 1,
+        "guaranteedRank": 1,
+        "rankableLabels": 1,
+        "labels": [
+          {
+            "key": "GABRA1::GABA-A receptor",
+            "displayRank": 1,
+            "bestRank": 1,
+            "worstRank": 1
+          }
+        ]
+      }
+    },
+    {
       "name": "Lasofoxifene",
       "profileSha256": "e709a2566d514a6227f8f1aeffab709e69be60c972a25bc109d5eb6ed1f3343c",
       "aliases": [
@@ -49183,16 +49187,16 @@
         ]
       },
       "ensemble": {
-        "bestRank": 11,
-        "bestPossibleRank": 11,
-        "guaranteedRank": 11,
+        "bestRank": 12,
+        "bestPossibleRank": 12,
+        "guaranteedRank": 12,
         "rankableLabels": 1,
         "labels": [
           {
             "key": "XDH::Xanthine oxidase",
-            "displayRank": 11,
-            "bestRank": 11,
-            "worstRank": 11
+            "displayRank": 12,
+            "bestRank": 12,
+            "worstRank": 12
           }
         ]
       }

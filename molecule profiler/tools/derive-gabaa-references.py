@@ -128,12 +128,14 @@ BARBITURATES = [
 
 # Chemotypes with no shared parent scaffold here. These are written out rather than
 # decorated on a template, so only the formula cross-check applies to them.
+# Reviewed PubChem graph corrections: flumazenil CID 3373, alpidem CID 54897,
+# gaboxadol CID 3448. Source snapshots: validation/reference-identity-corrections.json.
 SINGLETONS = [
     ("Flumazenil", "Imidazobenzodiazepine",
-     "CCOC(=O)c1ncc2n1-c1ccc(F)cc1C(=O)N(C)C2", "C15H14FN3O3"),
+     "CCOC(=O)C1=C2CN(C(=O)C3=C(N2C=N1)C=CC(=C3)F)C", "C15H14FN3O3"),
     ("Alpidem", "Imidazopyridine",
-     "CCCN(CCC)C(=O)Cc1c(-c2ccc(Cl)cc2)n2ccc(Cl)cc2n1", "C21H23Cl2N3O"),
-    ("Gaboxadol", "Isoxazole", "Oc1noc2c1CNCC2", "C6H8N2O2"),
+     "CCCN(CCC)C(=O)CC1=C(N=C2N1C=C(C=C2)Cl)C3=CC=C(C=C3)Cl", "C21H23Cl2N3O"),
+    ("Gaboxadol", "Isoxazole", "C1CNCC2=C1C(=O)NO2", "C6H8N2O2"),
     ("Pentylenetetrazol", "Tetrazole", "C1CCCCc2nnnn21", "C6H10N4"),
     ("Meprobamate", "Carbamate",
      "CCCC(C)(COC(N)=O)COC(N)=O", "C9H18N2O4"),
