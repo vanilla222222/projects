@@ -25,6 +25,14 @@ const ATOMIC_WEIGHT = {
   Tl: 204.38, Pb: 207.2, Bi: 208.98, U: 238.03
 };
 
+const NUCLIDE_WEIGHT = {
+  H2: 2.014101778, H3: 3.016049278, C11: 11.0114336, C13: 13.00335484,
+  C14: 14.00324199, N13: 13.00573861, N15: 15.0001089, O15: 15.0030656,
+  O17: 16.9991317, O18: 17.999161, F18: 18.000938, P32: 31.97390727,
+  S35: 34.96903216, Br76: 75.924541, Br77: 76.921379, Tc99: 98.9062547,
+  I123: 122.905589, I124: 123.9062099, I125: 124.9046302, I131: 130.9061246
+};
+
 const MONOISOTOPIC_WEIGHT = {
   H: 1.0078250319, He: 4.0026032, Li: 7.0160045, Be: 9.0121822, B: 11.0093055,
   C: 12.0, N: 14.0030740052, O: 15.9949146221, F: 18.99840322, Ne: 19.9924401759,
@@ -173,11 +181,44 @@ function perceiveAromaticity(mol) {
   const flagged = mol.atoms.map((atom) => atom.aromatic);
   mol.atoms.forEach((atom) => { atom.aromatic = false; });
 
-  mol.rings.forEach((ring) => {
-    if (ring.length < 5 || ring.length > 7) return;
+  const candidates = mol.rings.filter((ring) => ring.length >= 5 && ring.length <= 7);
+  candidates.forEach((ring) => {
     if (ring.every((id) => flagged[id])) { ring.aromatic = true; return; }
-    const electrons = huckelElectrons(mol, ring, flagged);
+    const electrons = huckelElectrons(mol, ring, flagged, null);
     if (electrons !== null && (electrons - 2) % 4 === 0) ring.aromatic = true;
+  });
+
+  for (let pass = 0; pass < candidates.length; pass += 1) {
+    const settled = new Set();
+    candidates.forEach((ring) => { if (ring.aromatic) ring.forEach((id) => settled.add(id)); });
+    let grew = false;
+    candidates.forEach((ring) => {
+      if (ring.aromatic) return;
+      const electrons = huckelElectrons(mol, ring, flagged, settled);
+      if (electrons !== null && (electrons - 2) % 4 === 0) { ring.aromatic = true; grew = true; }
+    });
+    if (!grew) break;
+  }
+
+  const systems = [];
+  candidates.forEach((ring) => {
+    const touching = systems.filter((system) => system.rings.some((other) => other.some((id) => ring.includes(id))));
+    const merged = { rings: [ring], atoms: new Set(ring) };
+    touching.forEach((system) => {
+      system.rings.forEach((other) => merged.rings.push(other));
+      system.atoms.forEach((id) => merged.atoms.add(id));
+      systems.splice(systems.indexOf(system), 1);
+    });
+    systems.push(merged);
+  });
+  systems.forEach((system) => {
+    if (system.rings.length < 2) return;
+    if (system.rings.some((ring) => ring.length > 6)) return;
+    if (system.rings.every((ring) => ring.aromatic)) return;
+    const union = Array.from(system.atoms);
+    const electrons = huckelElectrons(mol, union, flagged, null);
+    if (electrons === null || (electrons - 2) % 4 !== 0) return;
+    system.rings.forEach((ring) => { ring.aromatic = true; });
   });
 
   mol.rings.forEach((ring) => {
@@ -202,7 +243,7 @@ function trimAromaticBonds(mol) {
   });
 }
 
-function huckelElectrons(mol, ring, flagged) {
+function huckelElectrons(mol, ring, flagged, fused) {
   const inRing = new Set(ring);
   let total = 0;
   for (let k = 0; k < ring.length; k += 1) {
@@ -221,14 +262,16 @@ function huckelElectrons(mol, ring, flagged) {
     if (doubleOutside.length) {
       const partner = mol.atoms[doubleOutside[0].atom];
       if (element === 'C' && ELECTRONEGATIVE.has(partner.element)) continue;
+      if (fused && fused.has(partner.index)) { total += 1; continue; }
       return null;
     }
+    const shared = fused && fused.has(atom.index) && atom.rings.length > 1;
     if (element === 'N' || element === 'P') {
       if (atom.charge === 1 && atom.degree === 4) return null;
-      total += 2;
+      total += shared ? 1 : 2;
       continue;
     }
-    if (element === 'O' || element === 'S' || element === 'Se') { total += 2; continue; }
+    if (element === 'O' || element === 'S' || element === 'Se') { total += shared ? 1 : 2; continue; }
     if (element === 'C' && atom.charge === -1) { total += 2; continue; }
     if (element === 'C' && atom.charge === 1) continue;
     if (element === 'B') continue;
@@ -426,10 +469,18 @@ function molecularFormula(mol) {
   return formula;
 }
 
+function nuclideWeight(atom) {
+  if (!atom.isotope) return null;
+  const mass = NUCLIDE_WEIGHT[atom.element + atom.isotope];
+  return mass === undefined ? null : mass;
+}
+
 function molecularWeight(mol) {
   let total = 0;
   mol.atoms.forEach((atom) => {
-    total += (ATOMIC_WEIGHT[atom.element] || 0) + atom.totalH * ATOMIC_WEIGHT.H;
+    const labelled = nuclideWeight(atom);
+    total += (labelled === null ? ATOMIC_WEIGHT[atom.element] || 0 : labelled)
+      + atom.totalH * ATOMIC_WEIGHT.H;
   });
   return total;
 }
@@ -437,8 +488,10 @@ function molecularWeight(mol) {
 function exactMass(mol) {
   let total = 0;
   mol.atoms.forEach((atom) => {
-    total += (MONOISOTOPIC_WEIGHT[atom.element] || ATOMIC_WEIGHT[atom.element] || 0)
-      + atom.totalH * MONOISOTOPIC_WEIGHT.H;
+    const labelled = nuclideWeight(atom);
+    total += (labelled === null
+      ? MONOISOTOPIC_WEIGHT[atom.element] || ATOMIC_WEIGHT[atom.element] || 0
+      : labelled) + atom.totalH * MONOISOTOPIC_WEIGHT.H;
   });
   return total;
 }
