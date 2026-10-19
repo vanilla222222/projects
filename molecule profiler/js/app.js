@@ -70,6 +70,33 @@ const GLOSSARY = {
   alertSmarts: ['Pattern', 'The SMARTS query that matched, shown so you can check what was actually asked. The matcher is implemented in this page and was validated against RDKit on every pattern across the reference library.'],
   alertNote: ['Concern', 'A one-line note on why the group is flagged. Hand-written reference text, not computed from the structure.'],
   alertTotal: ['Structural alerts', 'How many of the catalogued patterns match this molecule. A hit is not a verdict: many marketed drugs carry one deliberately, and the panel below says which and why.'],
+  toxFilter: ['Endpoint', 'Restricts the table to one toxicity endpoint, or shows every rule including the ones that did not fire.'],
+  toxName: ['Rule', 'The name of the toxicophore or computed rule. Most are SMARTS substructures; four are counted from the ring perception or the physicochemical descriptors because they cannot be written as a substructure query.'],
+  toxEndpoint: ['Endpoint', 'Which assay the rule was derived against: genotoxicity means bacterial mutagenicity (the Ames test), carcinogenicity means the rodent bioassay, neurotoxicity and cardiotoxicity are literature mechanisms rather than a single assay.'],
+  toxSource: ['Source', 'Where the rule comes from. Kazius for the Ames toxicophores published by Kazius, McGuire and Bursi; Benigni-Bossa for the carcinogenicity alerts implemented in Toxtree; Literature for single-mechanism motifs with a named precedent; Computed where no published catalogue stands behind the rule. Four rules in the table are evaluated from the ring perception or the descriptors rather than matched as a substructure; their rule body is written out in words instead of a pattern.'],
+  toxCount: ['Matches', 'How many distinct places in the molecule the rule fires. For the computed rules it is one if the condition holds and zero if it does not.'],
+  toxAtoms: ['Atoms', 'The atoms involved, numbered from 1 in the order they appear in the parsed SMILES. Empty for a rule that is a property test rather than a substructure.'],
+  toxPattern: ['Rule body', 'The SMARTS query, or for a computed rule the condition in words. Shown so you can check what was actually asked rather than trusting the label.'],
+  toxNote: ['Mechanism', 'A one-line note on the activation pathway or mechanism that makes the group a liability. Hand-written reference text, not computed.'],
+  toxTotal: ['Toxicity flags', 'How many toxicology rules fire across all four endpoints. A hit is a question to answer, not a finding: several marketed drugs match three or four.'],
+  Genotoxicity: ['Genotoxicity', 'Substructures enriched among Ames-positive compounds. The mechanism is almost always metabolic activation to an electrophile that alkylates DNA, so the patterns encode the precursor rather than the damage.'],
+  Carcinogenicity: ['Carcinogenicity', 'Structural alerts from the Benigni-Bossa rulebase for the rodent carcinogenicity bioassay, plus the computed fused-aromatic rules. Genotoxic and non-genotoxic mechanisms are mixed together here, as they are in the published rulebase.'],
+  Neurotoxicity: ['Neurotoxicity', 'Motifs with a named neurotoxic precedent (organophosphate and carbamate cholinesterase inhibition, gamma-diketone axonopathy, acrylamide, the MPTP-type tetrahydropyridine) read alongside whether the molecule is predicted to reach the brain at all.'],
+  Cardiotoxicity: ['Cardiotoxicity', 'One rule, and a crude one: the lipophilic-basic-amine pharmacophore shared by most hERG potassium channel blockers. QT prolongation is the single commonest cause of late-stage attrition, which is why even a three-term rule is worth showing.'],
+  depBand: ['Analogy band', 'A plain-language reading of the highest fingerprint similarity to any drug in the labelled dependence set. Four bands, cut at 0.85, 0.65 and 0.45 on the metric chosen in the similarity panel.'],
+  depNearest: ['Nearest liability', 'The closest drug in the set that carries a documented high or moderate dependence liability, and how similar it is. Antagonists and the other counter-examples are excluded from this one number but still listed in the table.'],
+  depReward: ['Reward-circuit proximity', 'The highest similarity between the query and any known ligand of the opioid, dopaminergic, nicotinic, GABAergic or glutamatergic targets through which dependence is mediated. Taken from the same target set as the prediction panel.'],
+  depCount: ['Neighbours', 'How many of the forty labelled drugs to list. The ranking covers all of them either way.'],
+  depRank: ['#', 'Rank by similarity to the query, counting every labelled drug including the counter-examples.'],
+  depName: ['Drug', 'A drug with a documented dependence liability, or a deliberate counter-example. All forty are entries in the reference library, so the similarity is computed the same way as everywhere else on this page.'],
+  depClass: ['Class', 'The pharmacological family: opioid, stimulant, sedative, dissociative, nicotinic, cannabinoid or hallucinogen, plus the antagonists kept as counter-examples.'],
+  depLiability: ['Liability', 'Hand-assigned from the clinical literature: high for a drug with tolerance and a defined withdrawal syndrome, moderate where dependence is documented but milder or route-dependent, low where misuse is reported without much physical dependence, none for the counter-examples. A label, not a measurement.'],
+  depSimilarity: ['Similarity', 'Fingerprint similarity between the query and that drug, using the method and metric selected in the similarity panel.'],
+  depNote: ['Mechanism', 'Why that drug has the liability it has, in one line. Reference text.'],
+  depTargetName: ['Target', 'A receptor or transporter through which physical dependence is mediated.'],
+  depTargetGene: ['Gene', 'The HGNC symbol for that target.'],
+  depTargetScore: ['Similarity', 'Similarity between the query and the closest known ligand of that target, scored exactly as in the target prediction panel.'],
+  depTargetLigand: ['Nearest ligand', 'The known active of that target which the query most resembles.'],
   tgtCount: ['Targets', 'How many targets to list. The ranking covers every target in the set either way.'],
   tgtMin: ['Min score', 'Hides targets whose nearest known ligand is less similar than this. A low cut shows weak, speculative matches; raise it to keep only targets with a genuinely close relative of the query among their actives.'],
   tgtOrganism: ['Organism', 'Which organism the target belongs to. Non-human targets are the selectivity story of an anti-infective: a bacterial, fungal, viral or parasite protein with no close human counterpart is why the drug can be given at all.'],
@@ -339,7 +366,8 @@ function renderCurrent() {
     ['lead', 'Lead-likeness', v.lead.pass ? 'pass' : escapeHtml(v.lead.fails.join('; '))],
     ['hia', 'Passive absorption', v.egg.hia ? 'likely' : 'unlikely'],
     ['bbb', 'Brain penetration', v.egg.bbb ? 'likely' : 'unlikely'],
-    ['alertTotal', 'Structural alerts', countAlerts(record.mol) + ' of ' + ALERTS.length + ' patterns']
+    ['alertTotal', 'Structural alerts', countAlerts(record.mol) + ' of ' + ALERTS.length + ' patterns'],
+    ['toxTotal', 'Toxicity flags', toxFor(record).hits.length + ' of ' + toxFor(record).scored + ' rules']
   ]);
 
   drawRadar(v.radar);
@@ -348,6 +376,8 @@ function renderCurrent() {
   renderSimilar(record);
   renderTargets(record);
   renderAlerts(record);
+  renderTox(record);
+  renderDependence(record);
 
   document.querySelectorAll('#molecule-tabs button').forEach((button) => {
     button.setAttribute('aria-selected', String(Number(button.dataset.index) === current));
@@ -665,6 +695,169 @@ function setupAlerts() {
   document.getElementById('alert-source').insertAdjacentHTML('beforebegin', infoButton('alertFilter'));
 }
 
+function toxFor(record) {
+  if (!record.tox) record.tox = toxScan(record);
+  return record.tox;
+}
+
+const TOX_COLUMNS = [
+  ['toxName', 'Rule'],
+  ['toxEndpoint', 'Endpoint'],
+  ['toxSource', 'Source'],
+  ['toxCount', 'Matches'],
+  ['toxAtoms', 'Atoms'],
+  ['toxPattern', 'Rule body'],
+  ['toxNote', 'Mechanism']
+];
+
+function renderTox(record) {
+  const scan = toxFor(record);
+  const choice = document.getElementById('tox-endpoint').value;
+
+  document.getElementById('tox-cards').innerHTML = scan.byEndpoint.map((group) => (
+    '<div class="filter ' + (group.hits.length ? 'fail' : 'pass') + '">'
+      + '<div class="name">' + group.endpoint + infoButton(group.endpoint) + '</div>'
+      + '<div class="verdict">' + (group.hits.length ? group.hits.length + ' OF ' + group.total : 'CLEAR') + '</div>'
+      + '<div class="why">' + escapeHtml([
+        group.hits.length ? group.hits.map((row) => row.name.toLowerCase()).join('; ') : 'no rule fires'
+      ].concat(group.context.map((row) => row.name.toLowerCase() + ': ' + (row.count ? 'likely' : 'unlikely'))).join(' / ')) + '</div>'
+      + '</div>'
+  )).join('');
+
+  const pool = choice === 'all-patterns' ? scan.rows : scan.hits;
+  const shown = choice === 'all' || choice === 'all-patterns'
+    ? pool
+    : pool.filter((row) => row.endpoint === choice);
+  shown.sort((a, b) => b.count - a.count
+    || TOX_ENDPOINTS.indexOf(a.endpoint) - TOX_ENDPOINTS.indexOf(b.endpoint)
+    || a.name.localeCompare(b.name));
+
+  document.getElementById('tox-summary').innerHTML = scan.hits.length
+    ? scan.hits.length + ' of ' + scan.scored + ' rules fire across ' + TOX_ENDPOINTS.length + ' endpoints'
+    : 'no toxicology rule fires';
+
+  const table = document.getElementById('tox');
+  table.querySelector('thead').innerHTML = '<tr>' + TOX_COLUMNS.map(([key, label]) => (
+    '<th>' + label + infoButton(key) + '</th>'
+  )).join('') + '</tr>';
+  table.querySelector('tbody').innerHTML = shown.length ? shown.map((row) => (
+    '<tr' + (row.count ? '' : ' class="quiet"') + '>'
+      + '<td>' + escapeHtml(row.name) + '</td>'
+      + '<td>' + escapeHtml(row.endpoint) + '</td>'
+      + '<td>' + escapeHtml(row.source) + '</td>'
+      + '<td>' + row.count + '</td>'
+      + '<td class="atoms">' + (row.atoms.length ? row.atoms.map((index) => index + 1).join(', ') : '\u2014') + '</td>'
+      + '<td><code>' + escapeHtml(row.pattern) + '</code></td>'
+      + '<td class="note">' + escapeHtml(row.note) + '</td>'
+      + '</tr>'
+  )).join('') : '<tr><td colspan="7">No rule fires for this endpoint.</td></tr>';
+}
+
+const DEP_COLUMNS = [
+  ['depRank', '#'],
+  ['depName', 'Drug'],
+  ['depClass', 'Class'],
+  ['depLiability', 'Liability'],
+  ['depSimilarity', 'Similarity'],
+  ['depNote', 'Mechanism']
+];
+
+const DEP_TARGET_COLUMNS = [
+  ['depTargetName', 'Target'],
+  ['depTargetGene', 'Gene'],
+  ['depTargetScore', 'Similarity'],
+  ['depTargetLigand', 'Nearest ligand']
+];
+
+function renderDependence(record) {
+  const methodKey = document.getElementById('sim-method').value;
+  const metricKey = document.getElementById('sim-metric').value;
+  const method = FP_METHODS.find((entry) => entry.key === methodKey) || FP_METHODS[0];
+  const score = metricKey === 'dice' ? dice : tanimoto;
+  const limit = Number(document.getElementById('dep-count').value);
+  const profile = dependenceProfile(record, method.key, score);
+  const reward = profile.rewards.length ? profile.rewards[0] : null;
+
+  document.getElementById('dep-summary').textContent = 'Scored against ' + DEPENDENCE.length
+    + ' labelled drugs with ' + method.label + ' and '
+    + (metricKey === 'dice' ? 'Dice' : 'Tanimoto') + ', following the similarity panel above.';
+
+  document.getElementById('dep-cards').innerHTML = [
+    '<div class="filter ' + (profile.top >= 0.65 ? 'fail' : 'pass') + '">'
+      + '<div class="name">Analogy band' + infoButton('depBand') + '</div>'
+      + '<div class="verdict">' + profile.top.toFixed(3) + '</div>'
+      + '<div class="why">' + escapeHtml(profile.band) + '</div>'
+      + '</div>',
+    '<div class="filter ' + (profile.best && profile.top >= 0.65 ? 'fail' : 'pass') + '">'
+      + '<div class="name">Nearest liability' + infoButton('depNearest') + '</div>'
+      + '<div class="verdict">' + (profile.best ? profile.best.value.toFixed(3) : '\u2014') + '</div>'
+      + '<div class="why">' + (profile.best
+        ? escapeHtml(profile.best.drug.name + ' \u2014 ' + profile.best.drug.klass.toLowerCase()
+          + ', ' + profile.best.drug.liability + ' liability')
+        : 'nothing in the set') + '</div>'
+      + '</div>',
+    '<div class="filter ' + (reward && reward.value >= 0.4 ? 'fail' : 'pass') + '">'
+      + '<div class="name">Reward-circuit proximity' + infoButton('depReward') + '</div>'
+      + '<div class="verdict">' + (reward ? reward.value.toFixed(3) : '\u2014') + '</div>'
+      + '<div class="why">' + (reward
+        ? escapeHtml(reward.target.gene + ' via ' + reward.nearest.name)
+        : 'no scored target') + '</div>'
+      + '</div>'
+  ].join('');
+
+  const shown = limit > 0 ? profile.neighbours.slice(0, limit) : profile.neighbours;
+  const table = document.getElementById('dependence');
+  table.querySelector('thead').innerHTML = '<tr>' + DEP_COLUMNS.map(([key, label]) => (
+    '<th>' + label + infoButton(key) + '</th>'
+  )).join('') + '</tr>';
+  table.querySelector('tbody').innerHTML = shown.map((row, index) => (
+    '<tr data-smiles="' + escapeHtml(row.entry.smiles) + '" data-name="' + escapeHtml(row.entry.name) + '"'
+      + (row.drug.liability === 'none' ? ' class="quiet"' : '') + '>'
+      + '<td>' + (index + 1) + '</td>'
+      + '<td>' + escapeHtml(row.drug.name) + '</td>'
+      + '<td>' + escapeHtml(row.drug.klass) + '</td>'
+      + '<td>' + escapeHtml(row.drug.liability) + '</td>'
+      + '<td><span class="score"><span class="score-track"><span class="score-fill" style="width:'
+        + (row.value * 100).toFixed(1) + '%"></span></span>' + row.value.toFixed(3) + '</span></td>'
+      + '<td class="note">' + escapeHtml(row.drug.note) + '</td>'
+      + '</tr>'
+  )).join('');
+
+  const targets = document.getElementById('dep-targets');
+  targets.querySelector('thead').innerHTML = '<tr>' + DEP_TARGET_COLUMNS.map(([key, label]) => (
+    '<th>' + label + infoButton(key) + '</th>'
+  )).join('') + '</tr>';
+  targets.querySelector('tbody').innerHTML = profile.rewards.length ? profile.rewards.map((row) => (
+    '<tr data-smiles="' + escapeHtml(row.nearest.smiles) + '" data-name="' + escapeHtml(row.nearest.name) + '">'
+      + '<td>' + escapeHtml(row.target.name) + '</td>'
+      + '<td>' + escapeHtml(row.target.gene) + '</td>'
+      + '<td><span class="score"><span class="score-track"><span class="score-fill" style="width:'
+        + (row.value * 100).toFixed(1) + '%"></span></span>' + row.value.toFixed(3) + '</span></td>'
+      + '<td>' + escapeHtml(row.nearest.name) + '</td>'
+      + '</tr>'
+  )).join('') : '<tr><td colspan="4">No dependence-related target has a scored ligand.</td></tr>';
+}
+
+function setupTox() {
+  document.getElementById('tox-endpoint').addEventListener('change', () => {
+    if (records[current]) renderTox(records[current]);
+  });
+  document.getElementById('tox-endpoint').insertAdjacentHTML('beforebegin', infoButton('toxFilter'));
+  document.getElementById('dep-count').addEventListener('change', () => {
+    if (records[current]) renderDependence(records[current]);
+  });
+  document.getElementById('dep-count').insertAdjacentHTML('beforebegin', infoButton('depCount'));
+  [['dependence', 0], ['dep-targets', 0]].forEach(([id]) => {
+    document.getElementById(id).addEventListener('click', (event) => {
+      const row = event.target.closest('tr[data-smiles]');
+      if (!row) return;
+      document.getElementById('smiles-input').value = row.dataset.name + ', ' + row.dataset.smiles;
+      analyse();
+      document.getElementById('identity').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  });
+}
+
 function setupSimilarity() {
   const select = document.getElementById('sim-method');
   select.innerHTML = FP_METHODS.map((method) => (
@@ -675,6 +868,7 @@ function setupSimilarity() {
       if (records[current]) {
         renderSimilar(records[current]);
         renderTargets(records[current]);
+        renderDependence(records[current]);
       }
     });
   });
@@ -799,5 +993,6 @@ setupTheme();
 setupSimilarity();
 setupTargets();
 setupAlerts();
+setupTox();
 document.getElementById('smiles-input').value = 'aspirin, CC(=O)Oc1ccccc1C(=O)O';
 analyse();

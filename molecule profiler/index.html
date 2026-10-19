@@ -117,6 +117,44 @@
 
       <article class="panel wide">
         <div class="panel-head">
+          <h2>Toxicity screens</h2>
+          <p class="hint" id="tox-summary"></p>
+        </div>
+        <div class="filters" id="tox-cards"></div>
+        <div class="tgt-controls">
+          <label>Endpoint<select id="tox-endpoint">
+            <option value="all" selected>matches only</option>
+            <option value="Genotoxicity">genotoxicity</option>
+            <option value="Carcinogenicity">carcinogenicity</option>
+            <option value="Neurotoxicity">neurotoxicity</option>
+            <option value="Cardiotoxicity">cardiotoxicity</option>
+            <option value="all-patterns">every rule</option>
+          </select></label>
+        </div>
+        <div class="table-wrap"><table id="tox"><thead></thead><tbody></tbody></table></div>
+        <p class="hint caveat">These are substructure and property screens, not toxicity predictions. A hit means the molecule carries a group that appears more often than chance among the positives of a published assay &mdash; the Ames test for the genotoxicity patterns, two-year rodent bioassays for the carcinogenicity ones. It does not say the molecule is mutagenic, and the converse is worse: cyclophosphamide, cisplatin and most of the cytotoxic drugs are proven human carcinogens, and several of them match nothing here at all. No trained model is involved, because the published toxicophores are rules and the trained models are not public.</p>
+      </article>
+
+      <article class="panel wide">
+        <div class="panel-head">
+          <h2>Physical addiction potential</h2>
+          <p class="hint" id="dep-summary"></p>
+        </div>
+        <div class="filters" id="dep-cards"></div>
+        <div class="tgt-controls">
+          <label>Neighbours<select id="dep-count">
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+            <option value="0">all</option>
+          </select></label>
+        </div>
+        <div class="table-wrap"><table id="dependence"><thead></thead><tbody></tbody></table></div>
+        <div class="table-wrap"><table id="dep-targets"><thead></thead><tbody></tbody></table></div>
+        <p class="hint caveat">This panel asks one question and answers only that question: how close is the query, in fingerprint space, to drugs with a documented dependence liability, and to the receptors and transporters that liability runs through. Structural nearness is not mechanism. Naloxone and naltrexone sit in the table as deliberate counter-examples: for a morphine query they rank second and third out of all 473 reference compounds, and they are competitive antagonists used to treat dependence rather than cause it. Cannabidiol next to THC and the 5-HT2A agonists next to the amphetamines make the same point. Read the band as &ldquo;worth asking about&rdquo;, never as a verdict.</p>
+      </article>
+
+      <article class="panel wide">
+        <div class="panel-head">
           <h2>Similarity search</h2>
           <p class="hint" id="sim-summary"></p>
         </div>
@@ -181,6 +219,9 @@
     <p>Everything here runs in the page: the SMILES parser, ring perception, aromaticity, kekulization and hydrogen counting are implemented from scratch, and the descriptors follow their published definitions &mdash; Ertl's topological polar surface area, Wildman&ndash;Crippen log P and molar refractivity, Lipinski-style hydrogen-bond counts, and the strict rotatable-bond definition. The descriptor layer is checked against RDKit on a 40-molecule reference set; TPSA, log P, molar refractivity, rotatable bonds, the H-bond counts and the sp&sup3; fraction all agree exactly. The ring and substructure counts, the Kier&ndash;Hall connectivity and shape indices and the remaining fifteen values are checked the same way across all 473 reference compounds below. Of the 7095 descriptor values that comparison covers, all but four match RDKit exactly, and both exceptions are known differences in ring and aromaticity models rather than arithmetic. Artemisinin's bridged trioxane cage has four independent rings by the cyclomatic count we use and six by RDKit's symmetrized smallest set of smallest rings, so its aliphatic-ring, saturated-ring and heterocycle counts read one lower here. Riboflavin's isoalloxazine ring system is aromatized by our perception and left partly non-aromatic by RDKit's, so RDKit reports two aliphatic rings where we report none &mdash; the same model difference that shows up on azulene. Both are reported rather than hidden by dropping the molecules.</p>
     <p>The fingerprints are checked the same way. On the 473 reference compounds, every bit-count and all 111628 pairwise similarity scores match RDKit exactly for the atom-pair fingerprint. For ECFP4, 26 of those pairs differ and every one of them involves riboflavin, whose flavin ring system our aromaticity model treats differently from RDKit's; ECFP6 adds a single further pair. For FCFP4, 552 pairs differ, 472 of them riboflavin's, leaving 80 traced to two causes: 32-bit hash collisions inside RDKit's own fingerprint, where two chemically different environments land on the same key and are counted once instead of twice, and a tie that neither implementation can resolve the same way &mdash; when two atoms span exactly the same bonds, Morgan hashing keeps one environment and discards the other, and which one survives depends on hash values that differ between implementations. Removing the colliding keys from RDKit's intersection reproduces ours on the collision pairs, so the environment sets agree and the difference is in the hashing, not the chemistry. All of it is left reported rather than papered over.</p>
     <p>The structural-alert panel is a hand-encoded set of 51 SMARTS patterns drawn from the Brenk unwanted-functionality list, the PAINS frequent-hitter motifs and the reactive groups screening decks remove as a matter of course. It is a subset chosen for coverage of distinct chemistry, not a transcription of the complete published catalogues, and the panel says so rather than implying otherwise. The SMARTS parser and substructure matcher behind it are written from scratch in this page and were checked against RDKit's own matcher: all 51 patterns across the 473 reference compounds, 24123 molecule&ndash;pattern comparisons, agree on both the match counts and the matched atoms, as do twenty harder probe patterns covering recursive queries, ring-membership and ring-size counts, valence, charge and bond-type alternations &mdash; 9460 further comparisons, of which one differs, artemisinin's fused-ring atom count under the ring-model difference described above.</p>
+    <p>The toxicity panel is three different kinds of thing kept visibly apart. Thirty-seven of its rules are substructure patterns: the genotoxicity ones are the toxicophores Kazius, McGuire and Bursi derived from 4337 Ames-tested compounds, the carcinogenicity ones are from the Benigni&ndash;Bossa rulebase implemented in Toxtree, and a handful of neurotoxicity motifs come from single named mechanisms &mdash; organophosphate and carbamate cholinesterase inhibition, the gamma-diketone axonopathy of hexane, acrylamide, the aryl tetrahydropyridine of MPTP, the trichloromethyl diarylmethane of DDT. As with the structural alerts, they were checked against RDKit's matcher: 37 patterns across the 473 reference compounds, 17501 molecule&ndash;pattern comparisons, agreeing on every match count and every matched atom. Four more rules are computed rather than matched, because SMARTS cannot express them: two count fused aromatic rings, which separates a genuine polycyclic aromatic hydrocarbon from a tricyclic drug whose benzene rings are joined through a non-aromatic bridge &mdash; that distinction is why amitriptyline, chlorpromazine and carbamazepine do not flag, and the fused-ring counts behind it agree with RDKit on all 473 compounds; one is the lipophilic-basic-amine hERG rule of thumb; one is simply whether the molecule is predicted to reach the brain, reported as context for the neurotoxicity motifs rather than counted as a flag of its own. What is deliberately missing is a trained classifier. The published toxicophores are rules and can be reimplemented honestly; the QSAR models that would turn them into a probability are not public, and a number invented here would be worse than no number.</p>
+    <p>The addiction panel is a similarity argument, stated as one. Forty library compounds carry a hand-assigned dependence liability drawn from the clinical literature &mdash; opioids, stimulants, sedatives, dissociatives, nicotine, THC &mdash; and the panel reports how close the query is to the closest of them, together with its proximity to the nine opioid, dopaminergic, nicotinic, GABAergic and glutamatergic targets that dependence runs through. The set deliberately includes compounds whose structure and whose liability point in opposite directions: naloxone and naltrexone, cannabidiol, mescaline and lysergide. They are there so the panel cannot be mistaken for a predictor. Query morphine and naltrexone comes back as its second-nearest neighbour in the whole library, at 0.30 on ECFP4 and 0.55 on the feature fingerprint. Of the several differences between them, the one that decides agonist from antagonist is the N-substituent, and nothing in a fingerprint weighs it above the rest.</p>
+
     <p>The filters are the published ones (Lipinski, Ghose, Veber, Egan, Muegge, lead-likeness) and the bioavailability score follows Martin's tiers. Where a service like SwissADME uses a trained model that was never released &mdash; XLOGP3, its solubility models, its pharmacokinetic classifiers &mdash; this tool does not pretend to reproduce it; it uses an open method and says which one.</p>
   </section>
 </main>
@@ -194,6 +235,9 @@
 <script src="data/library.js"></script>
 <script src="data/targets.js"></script>
 <script src="data/alerts.js"></script>
+<script src="data/toxalerts.js"></script>
+<script src="data/dependence.js"></script>
+<script src="js/tox.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
