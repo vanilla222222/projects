@@ -104,6 +104,9 @@ assert.ok(scripts.indexOf('js/descriptor-stats-ui.js') > scripts.indexOf('js/des
 assert.ok(ids.includes('quality-summary') && ids.includes('quality-issues') && ids.includes('quality-status'), 'Quality panel missing');
 assert.ok(scripts.indexOf('js/molecule-quality.js') < scripts.indexOf('js/app.js'),'Quality evaluator must load before app');
 assert.ok(app.includes('MoleculeQuality.evaluate(record)'),'Quality panel is not connected');
+assert.ok(app.includes('preparedBatchRows = records.map('), 'Batch rows must be cached on analysis');
+assert.ok(app.includes('BatchBrowser.browseBatch(preparedBatchRows'), 'Batch browsing must reuse cached rows');
+assert.ok(app.includes("button.setAttribute('aria-selected', String(selected))"), 'Tab selected-state sync missing');
 console.log('UI integration contract passed: ' + scripts.length + ' scripts, ' + ids.length + ' unique DOM IDs');
 assert.ok(app.includes('const DEP_GATE = 0.45;'), 'Dependence gate threshold missing');
 assert.ok(app.includes('const gated = profile.top < DEP_GATE;'), 'Dependence gate is not computed from the threshold');
