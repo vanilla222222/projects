@@ -2262,6 +2262,19 @@ const LIBRARY = [
   { name: 'Carbon monoxide', cls: 'Endogenous signalling reference', formula: 'CO', smiles: '[C-]#[O+]' },
   { name: 'Hydrogen sulfide', cls: 'Endogenous signalling reference', formula: 'H2S', smiles: 'S' },
 
+  // Additional endogenous signalling molecules and related metabolites.
+  // Structural reference entries only; these do not imply confirmed receptor binding.
+  // Verify formulas, stereochemistry and lipid double-bond geometry before release.
+  { name: 'Phenethylamine', cls: 'Trace amine', formula: 'C8H11N', smiles: 'NCCc1ccccc1' },
+  { name: '3-Methoxytyramine', cls: 'Dopamine metabolite', formula: 'C9H13NO2', smiles: 'COc1cc(CCN)ccc1O' },
+  { name: 'Metanephrine', cls: 'Catecholamine metabolite', formula: 'C10H15NO3', smiles: 'CNCC(O)c1ccc(O)c(OC)c1' },
+  { name: 'Normetanephrine', cls: 'Catecholamine metabolite', formula: 'C9H13NO3', smiles: 'NCC(O)c1ccc(O)c(OC)c1' },
+  { name: 'N-Acetyl-L-aspartate', cls: 'Neuronal metabolite', formula: 'C6H9NO5', smiles: 'CC(=O)N[C@@H](CC(=O)O)C(=O)O' },
+  { name: 'L-Homocysteic acid', cls: 'Excitatory amino acid candidate', formula: 'C4H9NO5S', smiles: 'N[C@@H](CCS(=O)(=O)O)C(=O)O' },
+  { name: 'L-Cysteine sulfinic acid', cls: 'Excitatory amino acid candidate', formula: 'C3H7NO4S', smiles: 'N[C@@H](CS(=O)O)C(=O)O' },
+  { name: 'Oleoylethanolamide', cls: 'Lipid signalling mediator', formula: 'C20H39NO2', smiles: 'CCCCCCCC/C=C\\CCCCCCCC(=O)NCCO' },
+  { name: 'Palmitoylethanolamide', cls: 'Lipid signalling mediator', formula: 'C18H37NO2', smiles: 'CCCCCCCCCCCCCCCC(=O)NCCO' },
+
 ];
 
 if (typeof module !== 'undefined' && module.exports) {
