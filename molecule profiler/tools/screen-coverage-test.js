@@ -1,0 +1,14 @@
+'use strict';
+const assert = require('node:assert/strict');
+const { toxicityCoverageReport, metabolismCoverageReport } = require('../js/screen-coverage.js');
+const tox = toxicityCoverageReport({byEndpoint:[{endpoint:'Genotoxicity'},{endpoint:'Neurotoxicity'}],hits:[{}],scored:39});
+assert.equal(tox.endpointCount,2);
+assert.equal(tox.matchedRules,1);
+assert.equal(tox.screenedRules,39);
+assert.ok(tox.limitations.some(x=>x.includes('does not demonstrate safety')));
+const met = metabolismCoverageReport({metabolites:[{},{}],rulesTried:22,truncated:true});
+assert.equal(met.predictedProducts,2);
+assert.equal(met.rulesAttempted,22);
+assert.ok(met.limitations.some(x=>x.includes('incomplete')));
+assert.equal(metabolismCoverageReport({metabolites:[],truncated:false}).capped,false);
+console.log('Screen coverage checks passed');
