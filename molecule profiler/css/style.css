@@ -225,6 +225,31 @@ dl.data.inline { margin-top: 16px; }
 #tip span { color: var(--text-dim); }
 
 .filters { display: grid; gap: 10px; }
+.coverage {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 11px;
+  margin-top: 12px;
+}
+.coverage > div {
+  padding: 9px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--bg-raise);
+}
+.coverage strong {
+  display: block;
+  margin-bottom: 4px;
+  font: 600 10.5px/1.5 var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.coverage p { margin: 0; font-size: 12px; line-height: 1.55; color: var(--text-dim); }
+.coverage .covered { border-left: 3px solid var(--good); }
+.coverage .covered strong { color: var(--good); }
+.coverage .missing { border-left: 3px solid var(--warn); }
+.coverage .missing strong { color: var(--warn); }
+@media (max-width: 900px) { .coverage { grid-template-columns: 1fr; } }
 .tier-break td {
   padding: 8px 10px;
   background: var(--bg-raise);

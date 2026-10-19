@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Molecule Profiler</title>
-<link rel="stylesheet" href="css/style.css?v=2026-10-19n">
+<link rel="stylesheet" href="css/style.css?v=2026-10-19o">
 </head>
 <body data-theme="dark">
 <header class="topbar">
@@ -151,6 +151,16 @@
           </select></label>
         </div>
         <div class="table-wrap"><table id="tox"><thead></thead><tbody></tbody></table></div>
+        <div class="coverage">
+          <div class="covered">
+            <strong>Covered</strong>
+            <p>Four endpoints, and only where a published rule exists for them: DNA-reactive genotoxicity from the Ames toxicophores, rodent carcinogenicity from the Benigni&ndash;Bossa rulebase, a short list of named neurotoxic mechanisms (cholinesterase inhibition, gamma-diketone axonopathy, the MPTP tetrahydropyridine, the DDT diarylmethane, the catechol and its quinone), and hERG liability as a lipophilic-basic-amine rule of thumb. Each is a structural claim about a group the molecule carries.</p>
+          </div>
+          <div class="missing">
+            <strong>Not covered at all</strong>
+            <p>Everything that depends on dose, exposure or on pharmacology rather than on a reactive group. There is no rule here for gastrointestinal irritation, ulceration or bleeding risk, for hepatotoxicity, nephrotoxicity or any other organ toxicity, for immune or idiosyncratic reactions, for reproductive and developmental toxicity, for respiratory or skin sensitisation, for drug interactions, or for overdose pharmacology of any kind. Aspirin is the plain example: its real safety profile is gastric erosion, platelet inhibition and salicylate poisoning, and this panel can see none of the three. A molecule with no hits has not been screened for those classes; they were never asked about.</p>
+          </div>
+        </div>
         <p class="hint caveat">These are substructure and property screens, not toxicity predictions. A hit means the molecule carries a group that appears more often than chance among the positives of a published assay &mdash; the Ames test for the genotoxicity patterns, two-year rodent bioassays for the carcinogenicity ones. It does not say the molecule is mutagenic, and the converse is worse: cyclophosphamide, cisplatin and most of the cytotoxic drugs are proven human carcinogens, and several of them match nothing here at all. No trained model is involved, because the published toxicophores are rules and the trained models are not public.</p>
       </article>
 
@@ -286,23 +296,23 @@
   </section>
 </main>
 
-<script src="js/smiles.js?v=2026-10-19n"></script>
-<script src="js/mol.js?v=2026-10-19n"></script>
-<script src="js/descriptors.js?v=2026-10-19n"></script>
-<script src="js/rules.js?v=2026-10-19n"></script>
-<script src="js/fingerprints.js?v=2026-10-19n"></script>
-<script src="js/smarts.js?v=2026-10-19n"></script>
-<script src="data/library.js?v=2026-10-19n"></script>
-<script src="data/targets.js?v=2026-10-19n"></script>
-<script src="data/alerts.js?v=2026-10-19n"></script>
-<script src="data/toxalerts.js?v=2026-10-19n"></script>
-<script src="data/dependence.js?v=2026-10-19n"></script>
-<script src="js/tox.js?v=2026-10-19n"></script>
-<script src="js/transform.js?v=2026-10-19n"></script>
-<script src="js/sites.js?v=2026-10-19n"></script>
-<script src="js/depict.js?v=2026-10-19n"></script>
-<script src="data/metabolism.js?v=2026-10-19n"></script>
-<script src="js/metabolism.js?v=2026-10-19n"></script>
-<script src="js/app.js?v=2026-10-19n"></script>
+<script src="js/smiles.js?v=2026-10-19o"></script>
+<script src="js/mol.js?v=2026-10-19o"></script>
+<script src="js/descriptors.js?v=2026-10-19o"></script>
+<script src="js/rules.js?v=2026-10-19o"></script>
+<script src="js/fingerprints.js?v=2026-10-19o"></script>
+<script src="js/smarts.js?v=2026-10-19o"></script>
+<script src="data/library.js?v=2026-10-19o"></script>
+<script src="data/targets.js?v=2026-10-19o"></script>
+<script src="data/alerts.js?v=2026-10-19o"></script>
+<script src="data/toxalerts.js?v=2026-10-19o"></script>
+<script src="data/dependence.js?v=2026-10-19o"></script>
+<script src="js/tox.js?v=2026-10-19o"></script>
+<script src="js/transform.js?v=2026-10-19o"></script>
+<script src="js/sites.js?v=2026-10-19o"></script>
+<script src="js/depict.js?v=2026-10-19o"></script>
+<script src="data/metabolism.js?v=2026-10-19o"></script>
+<script src="js/metabolism.js?v=2026-10-19o"></script>
+<script src="js/app.js?v=2026-10-19o"></script>
 </body>
 </html>
