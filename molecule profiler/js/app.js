@@ -62,6 +62,14 @@ const GLOSSARY = {
   kappa1: ['Kappa1', 'First-order shape index: how far the molecule is from a linear chain of the same size, corrected by the Hall-Kier alpha.'],
   kappa2: ['Kappa2', 'Second-order shape index, built from two-bond paths. It responds to branching and to how spread out the skeleton is.'],
   kappa3: ['Kappa3', 'Third-order shape index, built from three-bond paths. It is the one that reacts most strongly to ring fusion and central branching.'],
+  alertFilter: ['Catalogue', 'Restricts the table to one catalogue of alerts, or shows every pattern including the ones that did not match.'],
+  alertName: ['Alert', 'The name of the matched substructure. Each one is a SMARTS pattern encoding a group that medicinal chemists flag, either because it is chemically reactive or because it makes assay readouts unreliable.'],
+  alertSource: ['Catalogue', 'Where the pattern comes from: Brenk for the unwanted-functionality list published with the Brenk filter, PAINS for frequent-hitter motifs, and Reactive for plainly electrophilic or unstable groups that every screening deck removes.'],
+  alertCount: ['Matches', 'How many distinct places in the molecule match this pattern, counted the way RDKit counts unique substructure matches. Two matches of the same alert mean two separate liabilities, not a stronger single one.'],
+  alertAtoms: ['Atoms', 'The atoms involved, numbered from 1 in the order they appear in the parsed SMILES. Heavy atoms only, since hydrogens are added by the valence model rather than written out.'],
+  alertSmarts: ['Pattern', 'The SMARTS query that matched, shown so you can check what was actually asked. The matcher is implemented in this page and was validated against RDKit on every pattern across the reference library.'],
+  alertNote: ['Concern', 'A one-line note on why the group is flagged. Hand-written reference text, not computed from the structure.'],
+  alertTotal: ['Structural alerts', 'How many of the catalogued patterns match this molecule. A hit is not a verdict: many marketed drugs carry one deliberately, and the panel below says which and why.'],
   tgtCount: ['Targets', 'How many targets to list. The ranking covers every target in the set either way.'],
   tgtMin: ['Min score', 'Hides targets whose nearest known ligand is less similar than this. A low cut shows weak, speculative matches; raise it to keep only targets with a genuinely close relative of the query among their actives.'],
   tgtOrganism: ['Organism', 'Which organism the target belongs to. Non-human targets are the selectivity story of an anti-infective: a bacterial, fungal, viral or parasite protein with no close human counterpart is why the drug can be given at all.'],
@@ -330,7 +338,8 @@ function renderCurrent() {
     ['abs', 'Bioavailability score', v.bioavailability.score.toFixed(2) + ' — ' + v.bioavailability.reason],
     ['lead', 'Lead-likeness', v.lead.pass ? 'pass' : escapeHtml(v.lead.fails.join('; '))],
     ['hia', 'Passive absorption', v.egg.hia ? 'likely' : 'unlikely'],
-    ['bbb', 'Brain penetration', v.egg.bbb ? 'likely' : 'unlikely']
+    ['bbb', 'Brain penetration', v.egg.bbb ? 'likely' : 'unlikely'],
+    ['alertTotal', 'Structural alerts', countAlerts(record.mol) + ' of ' + ALERTS.length + ' patterns']
   ]);
 
   drawRadar(v.radar);
@@ -338,6 +347,7 @@ function renderCurrent() {
   renderAtoms(record);
   renderSimilar(record);
   renderTargets(record);
+  renderAlerts(record);
 
   document.querySelectorAll('#molecule-tabs button').forEach((button) => {
     button.setAttribute('aria-selected', String(Number(button.dataset.index) === current));
@@ -592,6 +602,69 @@ function setupTargets() {
   });
 }
 
+function countAlerts(mol) {
+  let total = 0;
+  ALERTS.forEach((alert) => {
+    if (hasSmartsMatch(alert.smarts, mol)) total += 1;
+  });
+  return total;
+}
+
+const ALERT_COLUMNS = [
+  ['alertName', 'Alert'],
+  ['alertSource', 'Catalogue'],
+  ['alertCount', 'Matches'],
+  ['alertAtoms', 'Atoms'],
+  ['alertSmarts', 'Pattern'],
+  ['alertNote', 'Concern']
+];
+
+function renderAlerts(record) {
+  const choice = document.getElementById('alert-source').value;
+  const scanned = ALERTS.map((alert) => {
+    const matches = smartsMatches(compileSmarts(alert.smarts), record.mol, {});
+    const atoms = [];
+    matches.forEach((match) => match.forEach((index) => {
+      if (atoms.indexOf(index) === -1) atoms.push(index);
+    }));
+    atoms.sort((a, b) => a - b);
+    return { alert: alert, count: matches.length, atoms: atoms };
+  });
+
+  const hits = scanned.filter((row) => row.count > 0);
+  const pool = choice === 'all-patterns' ? scanned : hits;
+  const shown = choice === 'all' || choice === 'all-patterns'
+    ? pool
+    : pool.filter((row) => row.alert.source === choice);
+  shown.sort((a, b) => b.count - a.count || a.alert.name.localeCompare(b.alert.name));
+
+  document.getElementById('alert-summary').innerHTML = hits.length
+    ? hits.length + ' of ' + ALERTS.length + ' patterns match'
+    : 'no catalogued alert matches';
+
+  const table = document.getElementById('alerts');
+  table.querySelector('thead').innerHTML = '<tr>' + ALERT_COLUMNS.map(([key, label]) => (
+    '<th>' + label + infoButton(key) + '</th>'
+  )).join('') + '</tr>';
+  table.querySelector('tbody').innerHTML = shown.length ? shown.map((row) => (
+    '<tr' + (row.count ? '' : ' class="quiet"') + '>'
+      + '<td>' + escapeHtml(row.alert.name) + '</td>'
+      + '<td>' + escapeHtml(row.alert.source) + '</td>'
+      + '<td>' + row.count + '</td>'
+      + '<td class="atoms">' + (row.atoms.length ? row.atoms.map((index) => index + 1).join(', ') : '—') + '</td>'
+      + '<td><code>' + escapeHtml(row.alert.smarts) + '</code></td>'
+      + '<td class="note">' + escapeHtml(row.alert.note) + '</td>'
+      + '</tr>'
+  )).join('') : '<tr><td colspan="6">Nothing matches in this catalogue.</td></tr>';
+}
+
+function setupAlerts() {
+  document.getElementById('alert-source').addEventListener('change', () => {
+    if (records[current]) renderAlerts(records[current]);
+  });
+  document.getElementById('alert-source').insertAdjacentHTML('beforebegin', infoButton('alertFilter'));
+}
+
 function setupSimilarity() {
   const select = document.getElementById('sim-method');
   select.innerHTML = FP_METHODS.map((method) => (
@@ -725,5 +798,6 @@ setupExamples();
 setupTheme();
 setupSimilarity();
 setupTargets();
+setupAlerts();
 document.getElementById('smiles-input').value = 'aspirin, CC(=O)Oc1ccccc1C(=O)O';
 analyse();

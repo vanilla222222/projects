@@ -99,6 +99,24 @@
 
       <article class="panel wide">
         <div class="panel-head">
+          <h2>Structural alerts</h2>
+          <p class="hint" id="alert-summary"></p>
+        </div>
+        <div class="tgt-controls">
+          <label>Catalogue<select id="alert-source">
+            <option value="all" selected>matches only</option>
+            <option value="Brenk">Brenk</option>
+            <option value="PAINS">PAINS</option>
+            <option value="Reactive">reactive</option>
+            <option value="all-patterns">every pattern</option>
+          </select></label>
+        </div>
+        <div class="table-wrap"><table id="alerts"><thead></thead><tbody></tbody></table></div>
+        <p class="hint caveat">An alert is a flag, not a rejection. Penicillin G matches the beta-lactam alert, curcumin matches two Michael-acceptor patterns, and both are used anyway &mdash; in the first case the reactive group <em>is</em> the mechanism. The patterns say what a screening deck would ask about; the note next to each says why it asks. Aspirin, paracetamol and ibuprofen match nothing here.</p>
+      </article>
+
+      <article class="panel wide">
+        <div class="panel-head">
           <h2>Similarity search</h2>
           <p class="hint" id="sim-summary"></p>
         </div>
@@ -162,6 +180,7 @@
     <div class="panel-head"><h2>What this is</h2></div>
     <p>Everything here runs in the page: the SMILES parser, ring perception, aromaticity, kekulization and hydrogen counting are implemented from scratch, and the descriptors follow their published definitions &mdash; Ertl's topological polar surface area, Wildman&ndash;Crippen log P and molar refractivity, Lipinski-style hydrogen-bond counts, and the strict rotatable-bond definition. The descriptor layer is checked against RDKit on a 40-molecule reference set; TPSA, log P, molar refractivity, rotatable bonds, the H-bond counts and the sp&sup3; fraction all agree exactly. The ring and substructure counts, the Kier&ndash;Hall connectivity and shape indices and the remaining fifteen values are checked the same way across all 223 reference drugs below, and every one matches RDKit exactly.</p>
     <p>The fingerprints are checked the same way. On the 223 reference drugs, every bit-count and all 24753 pairwise similarity scores match RDKit exactly for ECFP4, ECFP6 and the atom-pair fingerprint. For FCFP4, 23 of the 24753 pairs differ, and the cause has been traced: each of those 23 is one 32-bit hash collision inside RDKit's own folded fingerprint, where two chemically different environments land on the same key and are counted once instead of twice. Removing the colliding keys from RDKit's intersection reproduces ours for all 23 pairs, so the environment sets agree and the difference is in the hashing, not the chemistry. It is left reported rather than papered over.</p>
+    <p>The structural-alert panel is a hand-encoded set of 51 SMARTS patterns drawn from the Brenk unwanted-functionality list, the PAINS frequent-hitter motifs and the reactive groups screening decks remove as a matter of course. It is a subset chosen for coverage of distinct chemistry, not a transcription of the complete published catalogues, and the panel says so rather than implying otherwise. The SMARTS parser and substructure matcher behind it are written from scratch in this page and were checked against RDKit's own matcher: all 51 patterns across the 223 reference drugs, 11373 molecule&ndash;pattern comparisons, agree on both the match counts and the matched atoms, as do twenty harder probe patterns covering recursive queries, ring-membership and ring-size counts, valence, charge and bond-type alternations.</p>
     <p>The filters are the published ones (Lipinski, Ghose, Veber, Egan, Muegge, lead-likeness) and the bioavailability score follows Martin's tiers. Where a service like SwissADME uses a trained model that was never released &mdash; XLOGP3, its solubility models, its pharmacokinetic classifiers &mdash; this tool does not pretend to reproduce it; it uses an open method and says which one.</p>
   </section>
 </main>
@@ -171,8 +190,10 @@
 <script src="js/descriptors.js"></script>
 <script src="js/rules.js"></script>
 <script src="js/fingerprints.js"></script>
+<script src="js/smarts.js"></script>
 <script src="data/library.js"></script>
 <script src="data/targets.js"></script>
+<script src="data/alerts.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
