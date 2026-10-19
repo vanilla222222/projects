@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Molecule Profiler</title>
-<link rel="stylesheet" href="css/style.css?v=2026-10-19g">
+<link rel="stylesheet" href="css/style.css?v=2026-10-19h">
 </head>
 <body data-theme="dark">
 <header class="topbar">
@@ -37,9 +37,11 @@
     <div class="actions">
       <button type="button" id="run" class="primary">Analyse</button>
       <button type="button" id="clear">Clear</button>
-      <button type="button" id="export" disabled>Export CSV</button>
+      <button type="button" id="export" disabled>Export table CSV</button>
+      <button type="button" id="export-full" disabled>Export everything for this molecule</button>
       <span id="status" class="status"></span>
     </div>
+    <p class="hint">The table export is one row per molecule with the batch columns. The full export is one row per value &mdash; <code>molecule, section, item, field, value</code> &mdash; and carries everything on this page for the molecule currently open: every descriptor, every filter verdict and violation, per-atom Crippen contributions, the whole similarity ranking, every scored target, matched alerts with their atoms, every firing toxicity rule, the dependence neighbours, and every enumerated metabolite with its weight, band, site factor and parent atoms. The similarity, target and dependence sections follow the fingerprint and metric selected below; the metabolite section follows the generation and phase filters.</p>
   </section>
 
   <section id="results" hidden>
@@ -282,23 +284,23 @@
   </section>
 </main>
 
-<script src="js/smiles.js?v=2026-10-19g"></script>
-<script src="js/mol.js?v=2026-10-19g"></script>
-<script src="js/descriptors.js?v=2026-10-19g"></script>
-<script src="js/rules.js?v=2026-10-19g"></script>
-<script src="js/fingerprints.js?v=2026-10-19g"></script>
-<script src="js/smarts.js?v=2026-10-19g"></script>
-<script src="data/library.js?v=2026-10-19g"></script>
-<script src="data/targets.js?v=2026-10-19g"></script>
-<script src="data/alerts.js?v=2026-10-19g"></script>
-<script src="data/toxalerts.js?v=2026-10-19g"></script>
-<script src="data/dependence.js?v=2026-10-19g"></script>
-<script src="js/tox.js?v=2026-10-19g"></script>
-<script src="js/transform.js?v=2026-10-19g"></script>
-<script src="js/sites.js?v=2026-10-19g"></script>
-<script src="js/depict.js?v=2026-10-19g"></script>
-<script src="data/metabolism.js?v=2026-10-19g"></script>
-<script src="js/metabolism.js?v=2026-10-19g"></script>
-<script src="js/app.js?v=2026-10-19g"></script>
+<script src="js/smiles.js?v=2026-10-19h"></script>
+<script src="js/mol.js?v=2026-10-19h"></script>
+<script src="js/descriptors.js?v=2026-10-19h"></script>
+<script src="js/rules.js?v=2026-10-19h"></script>
+<script src="js/fingerprints.js?v=2026-10-19h"></script>
+<script src="js/smarts.js?v=2026-10-19h"></script>
+<script src="data/library.js?v=2026-10-19h"></script>
+<script src="data/targets.js?v=2026-10-19h"></script>
+<script src="data/alerts.js?v=2026-10-19h"></script>
+<script src="data/toxalerts.js?v=2026-10-19h"></script>
+<script src="data/dependence.js?v=2026-10-19h"></script>
+<script src="js/tox.js?v=2026-10-19h"></script>
+<script src="js/transform.js?v=2026-10-19h"></script>
+<script src="js/sites.js?v=2026-10-19h"></script>
+<script src="js/depict.js?v=2026-10-19h"></script>
+<script src="data/metabolism.js?v=2026-10-19h"></script>
+<script src="js/metabolism.js?v=2026-10-19h"></script>
+<script src="js/app.js?v=2026-10-19h"></script>
 </body>
 </html>

@@ -291,6 +291,7 @@ function analyse() {
   else status.textContent = records.length ? records.length + ' parsed' : '';
 
   document.getElementById('export').disabled = records.length === 0;
+  document.getElementById('export-full').disabled = records.length === 0;
   document.getElementById('results').hidden = records.length === 0;
   if (!records.length) return;
   current = 0;
@@ -1197,13 +1198,256 @@ function renderBatch() {
   }).join('');
 }
 
+function csvCell(value) {
+  return '"' + String(value === null || value === undefined ? '' : value).replace(/"/g, '""') + '"';
+}
+
+function fullExportRows(record) {
+  const d = record.d;
+  const v = record.v;
+  const out = [];
+  const add = (section, item, field, value) => out.push([section, item, field, value]);
+  const pair = (section, item, value) => add(section, item, 'value', value);
+
+  pair('identity', 'name', record.name);
+  pair('identity', 'smiles', record.smiles);
+  pair('identity', 'formula', d.formula);
+  pair('identity', 'molecularWeight', d.mw.toFixed(4));
+  pair('identity', 'monoisotopicMass', d.exactMass.toFixed(4));
+  pair('identity', 'heavyAtoms', d.heavyAtoms);
+  pair('identity', 'carbons', d.carbons);
+  pair('identity', 'heteroatoms', d.heteroatoms);
+  pair('identity', 'formalCharge', d.charge);
+
+  [
+    ['rings', d.rings], ['aromaticRings', d.aromaticRings], ['aromaticAtoms', d.aromaticAtoms],
+    ['aromaticProportion', d.aromaticProportion.toFixed(4)], ['rotatableBonds', d.rotatableBonds],
+    ['hbd', d.hbd], ['hba', d.hba], ['hbdStrict', d.hbdStrict], ['hbaStrict', d.hbaStrict],
+    ['tpsa', d.tpsa.toFixed(4)], ['fractionCsp3', d.fractionCsp3.toFixed(4)]
+  ].forEach(([key, value]) => pair('physicochemical', key, value));
+
+  [
+    ['aliphaticRings', d.aliphaticRings], ['saturatedRings', d.saturatedRings],
+    ['heterocycles', d.heterocycles], ['largestRing', d.largestRing],
+    ['halogens', d.halogens], ['amideBonds', d.amideBonds],
+    ['spiroAtoms', d.spiroAtoms], ['bridgeheadAtoms', d.bridgeheadAtoms]
+  ].forEach(([key, value]) => pair('skeleton', key, value));
+
+  [
+    ['chi0', d.chi.chi0], ['chi1', d.chi.chi1], ['chi0v', d.chi.chi0v], ['chi1v', d.chi.chi1v],
+    ['hallKierAlpha', d.shape.hallKierAlpha], ['kappa1', d.shape.kappa1],
+    ['kappa2', d.shape.kappa2], ['kappa3', d.shape.kappa3]
+  ].forEach(([key, value]) => pair('topology', key, value.toFixed(4)));
+
+  pair('lipophilicity', 'wlogp', d.logp.toFixed(4));
+  pair('lipophilicity', 'molarRefractivity', d.mr.toFixed(4));
+  pair('lipophilicity', 'logS', v.logS.toFixed(4));
+  pair('lipophilicity', 'solubilityClass', v.solubility);
+
+  v.filters.forEach((filter) => {
+    add('drug-likeness', filter.name, 'verdict', filter.pass ? 'pass' : 'fail');
+    add('drug-likeness', filter.name, 'violations', filter.fails.join('; '));
+  });
+  pair('drug-likeness', 'filtersPassed', v.passed + ' of ' + v.total);
+  pair('drug-likeness', 'bioavailabilityScore', v.bioavailability.score.toFixed(2));
+  pair('drug-likeness', 'bioavailabilityReason', v.bioavailability.reason);
+  pair('drug-likeness', 'leadLikeness', v.lead.pass ? 'pass' : v.lead.fails.join('; '));
+  pair('drug-likeness', 'passiveAbsorption', v.egg.hia ? 'likely' : 'unlikely');
+  pair('drug-likeness', 'brainPenetration', v.egg.bbb ? 'likely' : 'unlikely');
+
+  v.radar.forEach((axis) => {
+    add('radar', axis.label, 'value', axis.value.toFixed(4));
+    add('radar', axis.label, 'inRange', axis.inRange ? 'yes' : 'no');
+  });
+
+  d.crippenTypes.forEach((entry) => {
+    const atom = record.mol.atoms[entry.atom];
+    const label = 'atom ' + (entry.atom + 1);
+    add('atoms', label, 'element', atom.aromatic ? atom.element.toLowerCase() : atom.element);
+    add('atoms', label, 'hydrogens', atom.totalH);
+    add('atoms', label, 'crippenType', entry.type);
+    add('atoms', label, 'logpContribution', entry.logp.toFixed(4));
+    add('atoms', label, 'mrContribution', entry.mr.toFixed(4));
+  });
+
+  const methodKey = document.getElementById('sim-method').value;
+  const metricKey = document.getElementById('sim-metric').value;
+  const method = FP_METHODS.find((entry) => entry.key === methodKey) || FP_METHODS[0];
+  const score = metricKey === 'dice' ? dice : tanimoto;
+  const query = fingerprint(record.mol, method.key);
+  pair('similarity', 'fingerprint', method.label);
+  pair('similarity', 'metric', metricKey === 'dice' ? 'Dice' : 'Tanimoto');
+  pair('similarity', 'queryBits', query.bits.size);
+  libraryFingerprints(method.key).map((item) => ({
+    entry: item.entry,
+    bits: item.fp.bits.size,
+    shared: sharedCount(query, item.fp),
+    value: score(query, item.fp)
+  })).sort((a, b) => b.value - a.value).forEach((hit, index) => {
+    const label = 'rank ' + (index + 1);
+    add('similarity', label, 'name', hit.entry.name);
+    add('similarity', label, 'class', hit.entry.cls);
+    add('similarity', label, 'formula', hit.entry.formula);
+    add('similarity', label, 'smiles', hit.entry.smiles);
+    add('similarity', label, 'score', hit.value.toFixed(4));
+    add('similarity', label, 'sharedBits', hit.shared);
+    add('similarity', label, 'referenceBits', hit.bits);
+  });
+
+  const byName = new Map();
+  libraryFingerprints(method.key).forEach((item) => byName.set(item.entry.name, item));
+  const ranked = [];
+  TARGETS.forEach((target) => {
+    const scored = [];
+    target.ligands.forEach((name) => {
+      const item = byName.get(name);
+      if (item) scored.push({ value: score(query, item.fp), entry: item.entry });
+    });
+    if (!scored.length) return;
+    scored.sort((a, b) => b.value - a.value);
+    const top = scored.slice(0, 3);
+    ranked.push({
+      target: target,
+      score: scored[0].value,
+      mean: top.reduce((sum, item) => sum + item.value, 0) / top.length,
+      nearest: scored[0].entry,
+      count: scored.length
+    });
+  });
+  ranked.sort((a, b) => b.score - a.score || b.mean - a.mean);
+  ranked.forEach((row, index) => {
+    const label = 'rank ' + (index + 1);
+    add('targets', label, 'target', row.target.name);
+    add('targets', label, 'gene', row.target.gene);
+    add('targets', label, 'family', row.target.family);
+    add('targets', label, 'organism', row.target.organism);
+    add('targets', label, 'score', row.score.toFixed(4));
+    add('targets', label, 'meanTop3', row.mean.toFixed(4));
+    add('targets', label, 'nearestLigand', row.nearest.name);
+    add('targets', label, 'activesScored', row.count);
+    add('targets', label, 'mechanism', row.target.note);
+  });
+
+  ALERTS.forEach((alert) => {
+    const matches = smartsMatches(compileSmarts(alert.smarts), record.mol, {});
+    if (!matches.length) return;
+    const atoms = [];
+    matches.forEach((match) => match.forEach((index) => {
+      if (atoms.indexOf(index) === -1) atoms.push(index);
+    }));
+    atoms.sort((a, b) => a - b);
+    add('alerts', alert.name, 'catalogue', alert.source);
+    add('alerts', alert.name, 'matches', matches.length);
+    add('alerts', alert.name, 'atoms', atoms.map((index) => index + 1).join(' '));
+    add('alerts', alert.name, 'pattern', alert.smarts);
+    add('alerts', alert.name, 'concern', alert.note);
+  });
+  pair('alerts', 'patternsMatched', countAlerts(record.mol) + ' of ' + ALERTS.length);
+
+  const scan = toxFor(record);
+  scan.byEndpoint.forEach((group) => {
+    add('toxicity', group.endpoint, 'rulesFiring', group.hits.length + ' of ' + group.total);
+    add('toxicity', group.endpoint, 'firing', group.hits.map((row) => row.name).join('; '));
+    group.context.forEach((row) => {
+      add('toxicity', group.endpoint, 'context: ' + row.name, row.count ? 'likely' : 'unlikely');
+    });
+  });
+  scan.hits.forEach((row) => {
+    add('toxicity rules', row.name, 'endpoint', row.endpoint);
+    add('toxicity rules', row.name, 'source', row.source);
+    add('toxicity rules', row.name, 'matches', row.count);
+    add('toxicity rules', row.name, 'atoms', (row.atoms || []).map((index) => index + 1).join(' '));
+    add('toxicity rules', row.name, 'ruleBody', row.pattern || row.smarts || '');
+    add('toxicity rules', row.name, 'mechanism', row.note);
+  });
+
+  const profile = dependenceProfile(record, method.key, score);
+  pair('dependence', 'analogyScore', profile.top.toFixed(4));
+  pair('dependence', 'analogyBand', profile.band);
+  pair('dependence', 'nearestLiability', profile.best
+    ? profile.best.drug.name + ' (' + profile.best.drug.liability + ', ' + profile.best.value.toFixed(4) + ')'
+    : '');
+  profile.neighbours.forEach((row, index) => {
+    const label = 'rank ' + (index + 1);
+    add('dependence', label, 'drug', row.drug.name);
+    add('dependence', label, 'class', row.drug.klass);
+    add('dependence', label, 'liability', row.drug.liability);
+    add('dependence', label, 'score', row.value.toFixed(4));
+    add('dependence', label, 'note', row.drug.note);
+  });
+  profile.rewards.forEach((row) => {
+    add('reward targets', row.target.name, 'gene', row.target.gene);
+    add('reward targets', row.target.name, 'score', row.value.toFixed(4));
+    add('reward targets', row.target.name, 'nearestLigand', row.nearest.name);
+  });
+
+  let tree = null;
+  try { tree = metabolismFor(record); } catch (error) { tree = null; }
+  if (tree) {
+    pair('metabolism', 'generations', tree.depth);
+    pair('metabolism', 'rulesTried', tree.rulesTried);
+    pair('metabolism', 'metabolites', tree.metabolites.length);
+    pair('metabolism', 'enumerationCapped', tree.truncated ? 'yes' : 'no');
+    tree.routes.forEach((row) => {
+      add('metabolism', 'route: ' + row.enzyme, 'metabolites', row.count);
+      add('metabolism', 'route: ' + row.enzyme, 'summedWeight', row.weight.toFixed(4));
+    });
+    tree.metabolites.forEach((node) => {
+      const label = metaboliteLabel(node);
+      add('metabolites', label, 'smiles', node.smiles);
+      add('metabolites', label, 'formula', node.d.formula);
+      add('metabolites', label, 'rule', node.rule);
+      add('metabolites', label, 'enzyme', node.enzyme);
+      add('metabolites', label, 'route', node.route);
+      add('metabolites', label, 'phase', node.phase);
+      add('metabolites', label, 'generation', node.depth);
+      add('metabolites', label, 'parent', metaboliteLabel({ id: node.parent }));
+      add('metabolites', label, 'relativeWeight', node.score.toFixed(6));
+      add('metabolites', label, 'abundanceBand', metaboliteBand(node.score));
+      add('metabolites', label, 'siteFactor', typeof node.siteFactor === 'number' ? node.siteFactor.toFixed(4) : '');
+      add('metabolites', label, 'siteReasons', (node.siteReasons || []).join('; '));
+      add('metabolites', label, 'parentAtomsTouched', (node.touched || []).map((index) => index + 1).join(' '));
+      add('metabolites', label, 'routesReaching', node.steps.length);
+      add('metabolites', label, 'released', node.released.join(' '));
+      add('metabolites', label, 'mw', node.d.mw.toFixed(4));
+      add('metabolites', label, 'logp', node.d.logp.toFixed(4));
+      add('metabolites', label, 'tpsa', node.d.tpsa.toFixed(4));
+      add('metabolites', label, 'newToxicityFlags', node.newTox.map((row) => row.name + ' (' + row.endpoint + ')').join('; '));
+      add('metabolites', label, 'mechanism', node.steps[0].note);
+    });
+    tree.notes.forEach((note) => {
+      add('metabolism notes', note.name, 'enzyme', note.enzyme);
+      add('metabolism notes', note.name, 'atoms', note.atoms.map((index) => index + 1).join(' '));
+      add('metabolism notes', note.name, 'whyItMatters', note.note);
+    });
+  }
+
+  return out;
+}
+
+function exportMoleculeCsv() {
+  const record = records[current];
+  if (!record) return;
+  const lines = [['molecule', 'section', 'item', 'field', 'value'].join(',')];
+  fullExportRows(record).forEach((row) => {
+    lines.push([record.name].concat(row).map(csvCell).join(','));
+  });
+  const slug = record.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'molecule';
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = slug + '-full-profile.csv';
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
 function exportCsv() {
   const header = ['name', 'smiles'].concat(BATCH_COLUMNS.map(([key]) => key));
   const lines = [header.join(',')];
   records.forEach((record) => {
     const row = batchRow(record);
     const cells = [record.name, record.smiles].concat(BATCH_COLUMNS.map(([, , get]) => String(get(row))));
-    lines.push(cells.map((cell) => '"' + String(cell).replace(/"/g, '""') + '"').join(','));
+    lines.push(cells.map(csvCell).join(','));
   });
   const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
   const link = document.createElement('a');
@@ -1249,9 +1493,11 @@ document.getElementById('clear').addEventListener('click', () => {
   document.getElementById('results').hidden = true;
   document.getElementById('status').textContent = '';
   document.getElementById('export').disabled = true;
+  document.getElementById('export-full').disabled = true;
   records = [];
 });
 document.getElementById('export').addEventListener('click', exportCsv);
+document.getElementById('export-full').addEventListener('click', exportMoleculeCsv);
 document.getElementById('smiles-input').addEventListener('keydown', (event) => {
   if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) analyse();
 });
