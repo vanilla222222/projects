@@ -331,6 +331,7 @@ function analyse() {
   renderTabs();
   renderBatch();
   renderCurrent();
+  document.dispatchEvent(new Event('molecule-profiler:updated'));
 }
 
 function renderTabs() {
@@ -396,6 +397,8 @@ function renderCurrent() {
       }
       record.name = next;
       renderTabs();
+      renderBatch();
+      document.dispatchEvent(new Event('molecule-profiler:updated'));
     };
     nameEdit.addEventListener('blur', commit);
     nameEdit.addEventListener('keydown', (event) => {
@@ -1960,6 +1963,7 @@ document.getElementById('clear').addEventListener('click', () => {
   document.getElementById('export').disabled = true;
   document.getElementById('export-full').disabled = true;
   records = [];
+  document.dispatchEvent(new Event('molecule-profiler:updated'));
 });
 document.getElementById('export').addEventListener('click', exportCsv);
 document.getElementById('export-full').addEventListener('click', exportMoleculeCsv);
