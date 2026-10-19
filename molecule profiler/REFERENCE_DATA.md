@@ -22,14 +22,14 @@ node tools/reference-audit-test.js
 This is a data-integrity regression check, not molecular graph canonicalization, pharmacology validation or a measurement accuracy benchmark.
 
 ## Important limitations
-1. The existing library contains entries without formulas. Missing formulas are reported rather than silently filled.
+1. The library's previously blank formula fields were backfilled from SMILES-derived atom counts. These calculations are not independently verified against external compound identities.
 2. Two different SMILES can encode the same molecule. Exact-string duplicate checks do not catch those cases.
 3. Biological roles in `data/signalling-profiles.js` are contextual summaries, not individual measured affinity claims.
 4. Source search links are not provenance. A future curated identifier table should record exact PubChem CID, source URL, accessed date, and the claim supported.
 5. A sparse target means fewer than three *listed* ligands in the local data; this does not imply the target has few ligands in reality.
 6. A passing audit does not mean a molecule is safe, active or synthesizable.
 
-## Next verification milestones
+## RDKit independent structure audit\n\nRun `python tools/rdkit-library-audit.py --output rdkit-audit.json` after installing RDKit. The read-only audit reports invalid SMILES, mismatched formulas, canonical isomeric-SMILES duplicates, tautomer groupings, unspecified stereocenters, charged molecules and disconnected fragments. Its full JSON report is also uploaded by `.github/workflows/rdkit-structure-audit.yml`.\n\nA canonical duplicate is not automatically a data error: multiple legitimate names can refer to one structure. A tautomer match does not establish equivalent experimental behavior. A missing stereochemical assignment can be intentional for mixtures or racemates. Review each flagged case before editing the library.\n\n## Next verification milestones
 - Independently validate library structures with RDKit and canonicalize isomeric SMILES.
 - Resolve and verify molecular formulas against a reliable compound identifier source.
 - Attach source-level provenance to each biological relationship.
