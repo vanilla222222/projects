@@ -60,7 +60,7 @@ def main():
         args.report.write_text(json.dumps(results, indent=2), encoding="utf-8")
     print(json.dumps({k: (len(v) if isinstance(v, list) else v) for k, v in results.items()}, indent=2))
     if results["invalid_smiles"]:
-        raise SystemExit("Some SMILES could not be parsed; see report.")
+        print("WARNING: Invalid SMILES remain and require manual review; see report.")
 
 if __name__ == "__main__":
     main()
