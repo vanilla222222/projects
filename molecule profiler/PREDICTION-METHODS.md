@@ -2,11 +2,11 @@
 
 These revisions improve reference retrieval, deterministic search behaviour, diagnostics and data consistency. They do not establish experimentally validated prediction of receptor binding, functional action, enzyme isoform, clearance, metabolite abundance or human exposure.
 
-## Target retrieval: ensemble-v1
+## Target retrieval: ensemble-v1.1
 
 The optional experimental multi-fingerprint mode compares each query/reference pair using three 2D views: stereo-aware ECFP4, FCFP4 pharmacophore features and atom-pair fingerprints. The per-reference score is their geometric mean Tanimoto. Target ranking uses 70% of the nearest-reference score plus 30% of the mean of the top three available distinct fingerprint profiles. Those weights are fixed engineering choices, not fitted coefficients or binding probabilities. This is not SwissTargetPrediction's trained 2D/3D method; there are no molecular conformers, protein structures, docking scores or trained activity classifiers here.
 
-The index is built once over referenced ligand names. Query fingerprints and rankings are cached on each molecule. Property-only references, missing names and parse failures are excluded and counted. References indistinguishable under stereo-aware ECFP4, ECFP6 and atom-pair count profiles are grouped for ensemble support. Such grouping is not canonical molecular identity and cannot establish independent scaffold diversity. Legacy mode keeps name-level reference counting and the chosen similarity-panel fingerprint/metric.
+The index is built once over referenced ligand names. Query fingerprints and rankings are cached on each molecule. Property-only references, missing names and parse failures are excluded and counted. References indistinguishable under stereo-aware ECFP4, ECFP6 and atom-pair count profiles are grouped for ensemble support. Such grouping is not canonical molecular identity and cannot establish independent scaffold diversity. Legacy scoring keeps name-level references and the chosen similarity-panel fingerprint/metric. In both modes, the displayed distinct-profile and support counts are deduplicated by fingerprint profile. Support always uses the ensemble definition below, regardless of the selected ranking metric. Matching query/reference profiles are explicitly flagged as reference matches, not independent predictions or proof of molecular identity.
 
 The evidence view shows the top three supporting references and their component scores. The operational support count uses per-reference ensemble similarity at least 0.35 and all three component scores at least 0.20. These thresholds are uncalibrated and must not be interpreted as positive/negative binding cutoffs. Fingerprint views are correlated evidence, not independent experiments. A receptor-related target filter is available. Unlisted targets are unassessed, never predicted inactive. Neither mode infers agonism, antagonism, potency or selectivity from similarity.
 
@@ -16,24 +16,26 @@ Legacy nearest-neighbour ranking remains the default because the latest internal
 
 ## Internal evaluation
 
-`tools/target-ranking-evaluate.js` samples 100 fingerprint-profile groups deterministically across sorted reference names. Each query's complete indistinguishable profile group is withheld from every target, reducing alias/self-match leakage. The ground truth is the target labels attached to the representative curated library name; missing labels are unknown, not validated negatives. This is neither scaffold-disjoint validation nor an external measured-activity test. It cannot estimate specificity or calibrate probabilities. The sample is small and selection-dependent.
+`tools/target-ranking-evaluate.js` now evaluates every indexed fingerprint-profile group by default, rather than an alphabetically spaced 100-query sample. SHA-256 profile ordering supports a reproducible `--limit N` quick check. Each query's complete indistinguishable profile group is withheld from every target. The report records the representative name, aliases, target labels and profile hash; labels are never transferred between aliases. The ground truth remains curated labels, with missing labels unknown rather than validated negatives.
 
-`validation/target-ranking-ensemble-v1.json` records the complete per-query ranks, aggregate top-k retrieval, Node version, reference counts, and SHA-256 of the library, targets and ranking module. No score weights were fitted to that sample. Reproduce it with:
+Schema v2 records display ranks and guaranteed/possible top-k bounds for ties in both rank score and mean, so arbitrary target ordering cannot masquerade as stronger retrieval. It also reports per-target macro top-five recall: each target has equal weight, including labels with no remaining references after holdout. This exposes uneven target coverage hidden by a query-level average. It is neither scaffold-disjoint validation nor an external measured-activity test and cannot establish specificity or calibrate probabilities.
+
+Reproduce the complete current evaluation with:
 
 ```sh
-node tools/target-ranking-evaluate.js --report validation/target-ranking-ensemble-v1.json
+node tools/target-ranking-evaluate.js --report validation/target-ranking-full-profile-v1.json
 ```
 
-Report improvements as internal curated-label retrieval only. Broader gains require verified assay-linked positives, negatives, temporal/scaffold splits and an independently reviewed external benchmark.
+The committed report covers 1,005 profiles, 132 targets and 2,782 library entries. Twenty queries have no rankable curated label after holdout. Display-order retrieval percentages are:
 
-Latest recorded 100-query comparison on the combined reference snapshot:
+| Method | Top 1 | Top 5 | Top 10 | Target macro top 5, guaranteed–possible |
+| --- | ---: | ---: | ---: | ---: |
+| Legacy | 80.10% | 88.66% | 90.85% | 46.04–47.57% |
+| Experimental ensemble | 80.60% | 89.35% | 92.24% | 47.11–48.77% |
 
-| Method | Top 1 | Top 5 | Top 10 |
-| --- | ---: | ---: | ---: |
-| Legacy | 83% | 89% | 92% |
-| Experimental ensemble | 80% | 91% | 92% |
+The ensemble has a modest advantage on this full internal snapshot, while target-balanced coverage remains much weaker. This does not support a claim of generally accurate receptor prediction. Legacy remains the default. Neither formula nor weights were tuned to these results. The old `target-ranking-ensemble-v1.json` is a historical 100-query schema-v1 report and should not be compared as a longitudinal improvement figure. Compare methods within the same report and reference snapshot. Broader claims require verified assay-linked positives, negatives, temporal/scaffold splits and external review.
 
-This mixed result is why the legacy method remains the default. Expanding the library also changes this deterministic sample, so compare methods within a shared report rather than comparing percentages across snapshots.
+CSV adds `matchingQueryProfiles` (integer) and a textual `supportMetric` definition; existing fields remain. `distinctFingerprintProfiles` and `supportingProfiles` now correctly count profiles in legacy mode as well. The algorithm version distinguishes this reporting correction from previous exports.
 
 ## Metabolism search
 

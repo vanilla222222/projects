@@ -967,7 +967,7 @@ function renderTargets(record) {
   document.getElementById('tgt-bench').innerHTML = legacy && methodKey==='ecfp4' && metricKey==='tanimoto'
     ? benchmarkLine() : 'The historical ECFP4/Tanimoto benchmark does not validate this selected method.';
   document.getElementById('tgt-evidence').textContent = ranked.length
-    ? 'Top result: '+ranked[0].applicability+'; '+ranked[0].support+' corroborating fingerprint profiles at operational similarity ≥0.35. The three fingerprint views are correlated, not independent experiments. '+targetRankingIndex.issues.length+' reference-index issue(s). Unlisted targets remain unassessed; no agonist/antagonist action is inferred.'
+    ? 'Top result: '+ranked[0].applicability+'; '+ranked[0].support+' distinct supporting fingerprint profiles at ensemble similarity ≥0.35 (each component ≥0.20). The three fingerprint views are correlated, not independent experiments. '+targetRankingIndex.issues.length+' reference-index issue(s). Unlisted targets remain unassessed; no agonist/antagonist action is inferred.'
     : 'No usable references in this target scope. Unlisted targets are unassessed.';
 
   const table = document.getElementById('targets');
@@ -997,6 +997,7 @@ function renderTargets(record) {
       + '<td>' + row.mean.toFixed(3) + '</td>'
       + '<td><details><summary>' + escapeHtml(row.nearest.name) + '</summary>'
         + row.evidence.map(e=>escapeHtml(e.entry.name)+': '+e.value.toFixed(3)
+          +(e.sameProfile?' [matching query fingerprint profile; not proof of molecular identity]':'')
           +' (stereo / features / pairs: '+e.components.map(v=>v.toFixed(3)).join(' / ')+')').join('<br>')
         + '<br>'+row.distinctCount+' distinct fingerprint profiles from '+row.count+' listed references.</details></td>'
       + '<td>' + row.count + '</td>'
@@ -1922,6 +1923,7 @@ function fullExportRows(record) {
   pair('targets','rankingMode',document.getElementById('tgt-mode').value);
   pair('targets','algorithmVersion',TargetRanking.VERSION);
   pair('targets','supportCut',TargetRanking.SUPPORT_CUT);
+  pair('targets','supportMetric','Distinct profiles: geometric mean stereo ECFP4 / FCFP4 / pairs Tanimoto >=0.35 and every component >=0.20');
   pair('targets','organismScope',document.getElementById('tgt-organism').value);
   pair('targets','targetScope',document.getElementById('tgt-scope').value);
   pair('targets', 'rankedExportLimit', FullCsvExport.MAX_RANKED_RESULTS);
@@ -1934,6 +1936,7 @@ function fullExportRows(record) {
     add('targets', label, 'rankingScore', row.rankScore.toFixed(4));
     add('targets', label, 'supportingProfiles', row.support);
     add('targets', label, 'distinctFingerprintProfiles', row.distinctCount);
+    add('targets', label, 'matchingQueryProfiles', row.matchingProfiles);
     add('targets', label, 'applicability', row.applicability);
     add('targets', label, 'nearestLigandSimilarity', row.score.toFixed(4));
     add('targets', label, 'meanTop3Similarity', row.mean.toFixed(4));

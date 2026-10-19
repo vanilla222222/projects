@@ -1,7 +1,7 @@
 'use strict';
 // Transparent 2D reference retrieval, not trained probabilities or functional-action prediction.
 (function(root){
-  const VERSION='ensemble-v1';
+  const VERSION='ensemble-v1.1';
   const METHODS=['ecfp4','ecfp6','fcfp4','ecfp4s','pairs'];
   const ENSEMBLE=['ecfp4s','fcfp4','pairs'];
   const SUPPORT_CUT=0.35;
@@ -34,7 +34,7 @@
       const components=ENSEMBLE.map(key=>index.engine.tanimoto(prepared.fps[key],item.fps[key]));
       const value=mode==='legacy'?metric(prepared.fps[method],item.fps[method]):Math.cbrt(components.reduce((a,b)=>a*b,1));
       values.set(name,{entry:item.entry,profile:item.profile,value,components,
-        sameInput:false});
+        sameProfile:prepared.profile===item.profile});
     }
     const ranked=[];
     for(const [order,target] of index.targets.entries()){
@@ -50,11 +50,13 @@
       if(!scored.length)continue;
       const top=scored.slice(0,3),mean=top.reduce((sum,x)=>sum+x.value,0)/top.length;
       const score=scored[0].value,rankScore=mode==='legacy'?score:0.7*score+0.3*mean;
-      const support=scored.filter(x=>x.value>=SUPPORT_CUT&&x.components.every(v=>v>=0.2)).length;
-      ranked.push({target,order,score,rankScore,mean,nearest:scored[0].entry,count:listed,distinctCount:scored.length,
+      const profileCount=new Set(scored.map(x=>x.profile)).size;
+      const support=new Set(scored.filter(x=>Math.cbrt(x.components.reduce((a,b)=>a*b,1))>=SUPPORT_CUT&&x.components.every(v=>v>=0.2)).map(x=>x.profile)).size;
+      const matchingProfiles=new Set(scored.filter(x=>x.sameProfile).map(x=>x.profile)).size;
+      ranked.push({target,order,score,rankScore,mean,nearest:scored[0].entry,count:listed,distinctCount:profileCount,matchingProfiles,
         support,agreement:scored[0].components.filter(v=>v>=SUPPORT_CUT).length,
         components:scored[0].components,evidence:top,mode,
-        applicability:score<0.3?'remote resemblance':support<2?'single-profile support':'multiple-profile support'});
+        applicability:matchingProfiles?'matching reference fingerprint profile (not independent prediction)':score<0.3?'remote resemblance':support<2?'single-profile support':'multiple-profile support'});
     }
     return ranked.sort((a,b)=>b.rankScore-a.rankScore||b.mean-a.mean||a.order-b.order);
   }

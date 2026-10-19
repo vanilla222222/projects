@@ -1,39 +1,39 @@
 'use strict';
-// Internal grouped-profile holdout, not external pharmacology validation. Reports
-// curated-label retrieval; unlisted targets are unknown, not confirmed negatives.
-const fs=require('node:fs');
-const path=require('node:path');
-const crypto=require('node:crypto');
-const api=require('../js/target-ranking.js');
+// Full internal profile holdout by default. Unknown labels are not negatives.
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+const api=require('../js/target-ranking.js'),metrics=require('./target-ranking-metrics.js');
+const hash=text=>crypto.createHash('sha256').update(text).digest('hex');
+const limitArg=process.argv.indexOf('--limit');
+const limit=limitArg<0?Infinity:Number(process.argv[limitArg+1]);
+if(limit!==Infinity&&(!Number.isSafeInteger(limit)||limit<1))throw Error('--limit requires a positive integer');
 for(const file of ['smiles','mol','stereo','fingerprints'])Object.assign(global,require('../js/'+file+'.js'));
 const {LIBRARY}=require('../data/library.js'),{TARGETS}=require('../data/targets.js');
 const index=api.createIndex(LIBRARY,TARGETS,{parse:s=>buildMolecule(parseSmiles(s)),fingerprint,tanimoto,dice});
 const all=[...index.entries.values()].sort((a,b)=>a.entry.name.localeCompare(b.entry.name));
-const unique=[...new Map(all.map(item=>[item.profile,item])).values()];
-const max=100;
-const sample=Array.from({length:Math.min(max,unique.length)},(_,i)=>unique[Math.floor(i*unique.length/Math.min(max,unique.length))]);
-const keys=target=>target.gene+'::'+target.name;
-const results=[];
-for(const item of sample){
+const groups=new Map();for(const item of all){if(!groups.has(item.profile))groups.set(item.profile,[]);groups.get(item.profile).push(item);}
+// Hash ordering avoids alphabetic/position sampling drift. Group representative
+// stays the first sorted name; labels are never transferred between profiles.
+const sample=[...groups.values()].map(group=>({item:group[0],aliases:group.map(x=>x.entry.name),hash:hash(group[0].profile)}))
+ .sort((a,b)=>a.hash.localeCompare(b.hash)).slice(0,limit);
+const keys=target=>target.gene+'::'+target.name,results=[];
+for(const {item,aliases,hash:profileSha256} of sample){
  const positives=new Set(TARGETS.filter(t=>t.ligands.includes(item.entry.name)).map(keys));
- const record={name:item.entry.name,labels:positives.size};
+ const record={name:item.entry.name,profileSha256,aliases,positiveKeys:[...positives].sort(),labels:positives.size};
  for(const mode of ['legacy','ensemble']){
   const ranks=api.rank({fps:item.fps,profile:item.profile},index,{mode,excludeProfile:item.profile});
-  const positions=ranks.map((r,i)=>positives.has(keys(r.target))?i+1:null).filter(Boolean);
-  record[mode]={bestRank:positions.length?Math.min(...positions):null,rankableLabels:positions.length};
+  record[mode]=metrics.positions(ranks,positives,keys);
  }
  results.push(record);
 }
-const summarize=mode=>({queries:results.length,top1:results.filter(r=>r[mode].bestRank===1).length/results.length,
- top5:results.filter(r=>r[mode].bestRank!==null&&r[mode].bestRank<=5).length/results.length,
- top10:results.filter(r=>r[mode].bestRank!==null&&r[mode].bestRank<=10).length/results.length,
- unrankableQueries:results.filter(r=>r[mode].bestRank===null).length});
-const report={schemaVersion:1,algorithmVersion:api.VERSION,node:process.version,
- sourceSha256:Object.fromEntries(['data/library.js','data/targets.js','js/target-ranking.js'].map(file=>[file,crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname,'..',file))).digest('hex')])),
- protocol:'Deterministic sample of 100 fingerprint-profile groups; all indistinguishable profiles withheld from every target.',
+const report={schemaVersion:2,algorithmVersion:api.VERSION,node:process.version,
+ sourceSha256:Object.fromEntries(['data/library.js','data/targets.js','js/target-ranking.js','tools/target-ranking-evaluate.js','tools/target-ranking-metrics.js'].map(file=>[file,hash(fs.readFileSync(path.join(__dirname,'..',file)))])),
+ protocol:'One query per fingerprint-profile group, SHA-256 ordered; all indistinguishable profiles withheld from every target. Default evaluates every group.',
+ selection:{limit:Number.isFinite(limit)?limit:null,complete:sample.length===groups.size},
  caveats:['Internal curated-label retrieval only, not confirmed binding validation.','Profile grouping is not chemical canonicalization or scaffold-disjoint validation.',
- 'No negative experimental set; these metrics cannot establish specificity or binding probabilities.','Sampling and label incompleteness can change the apparent winner. No weights were fitted to these results.'],
- sourceCounts:{library:LIBRARY.length,targets:TARGETS.length,indexed:index.entries.size,uniqueProfiles:unique.length,issues:index.issues.length},
- legacy:summarize('legacy'),ensemble:summarize('ensemble'),results};
-const out=process.argv.indexOf('--report');if(out>=0)fs.writeFileSync(process.argv[out+1],JSON.stringify(report,null,2)+'\n');
+ 'No negative experimental set; these metrics cannot establish specificity or binding probabilities.',
+ 'One alphabetical representative per profile; aliases and representative labels are recorded. Labels are not transferred between profile aliases.',
+ 'Tie intervals use equality of rank score and mean; display order is arbitrary within ties. No weights were fitted to these results.'],
+ sourceCounts:{library:LIBRARY.length,targets:TARGETS.length,indexed:index.entries.size,uniqueProfiles:groups.size,issues:index.issues.length},
+ legacy:metrics.summarize(results,'legacy'),ensemble:metrics.summarize(results,'ensemble'),results};
+const out=process.argv.indexOf('--report');if(out>=0){if(!process.argv[out+1])throw Error('--report requires a path');fs.writeFileSync(process.argv[out+1],JSON.stringify(report,null,2)+'\n');}
 console.log(JSON.stringify({...report,results:undefined},null,2));

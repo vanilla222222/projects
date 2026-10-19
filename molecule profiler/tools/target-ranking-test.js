@@ -21,7 +21,14 @@ assert.deepEqual(row.components,[1,1,1]);
 assert.equal(index.issues.length,2);
 assert.ok(api.rank(q,index,{organism:'Human',receptorsOnly:true}).every(r=>r.target.gene==='A'));
 assert.ok(api.rank(q,index,{excludeProfile:q.profile}).find(r=>r.target.gene==='A').score<1,'all profile aliases must be held out together');
-assert.equal(api.rank(q,index,{mode:'legacy'}).find(r=>r.target.gene==='A').distinctCount,3);
+const legacy=api.rank(q,index,{mode:'legacy'}).find(r=>r.target.gene==='A');
+assert.equal(legacy.count,3);assert.equal(legacy.distinctCount,2);
+assert.equal(legacy.support,row.support,'support must use distinct ensemble profiles regardless of ranking mode');
+assert.equal(legacy.matchingProfiles,1);assert.equal(row.matchingProfiles,1);
+assert.ok(row.evidence.some(e=>e.sameProfile));
+assert.match(row.applicability,/not independent prediction/);
+assert.equal(api.rank(q,index,{excludeProfile:q.profile})[0].matchingProfiles,0);
+assert.equal(api.rank(q,index,{mode:'legacy',method:'ecfp6',metric:'dice'}).find(r=>r.target.gene==='A').support,row.support);
 const untouched=JSON.stringify(targets);api.rank(q,index,{});assert.equal(JSON.stringify(targets),untouched);
 const mirrorIndex=api.createIndex([{name:'R',smiles:'N[C@@H](C)C(=O)O'},{name:'S',smiles:'N[C@H](C)C(=O)O'}],
  [{gene:'R',ligands:['R']},{gene:'S',ligands:['S']}],engine);
