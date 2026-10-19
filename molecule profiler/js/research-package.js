@@ -1,7 +1,7 @@
 'use strict';
 // Transparent physicochemical data only; no pharmacological rankings or synthesis routes.
 (function(root){
- const VERSION='1.0';
+ const VERSION='1.1';
  const METRICS=[
   ['formula','text','','calculated','Parsed structure'],
   ['mw','number','g/mol','calculated','Atomic-mass sum'],
@@ -40,18 +40,19 @@
  function createPackage(records,datasets,issues,settings){
   const source=Array.isArray(records)?records:[],validation=datasets||{},bad=Array.isArray(issues)?issues:[],meta=settings||{};
   const molecules=[],descriptors=[],quality=[],seen=new Map();
+  const counts={exact_duplicate:0,missing_descriptor:0,input_error:0},missingByDescriptor={};
   source.forEach((r,i)=>{
    const id='mol-'+String(i+1).padStart(4,'0'),smiles=String(r.smiles||''),d=r.d||{},v=r.v||{};
    molecules.push([id,r.name||'Molecule '+(i+1),smiles,d.formula||'','analyzed']);
-   if(seen.has(smiles))quality.push([id,'exact_duplicate','info','Same text SMILES as '+seen.get(smiles)]);else seen.set(smiles,id);
+   if(seen.has(smiles)){quality.push([id,'exact_duplicate','info','Same text SMILES as '+seen.get(smiles)]);counts.exact_duplicate++;}else seen.set(smiles,id);
    for(const [key,type,unit,evidence,method] of METRICS){
     const raw=key==='logS'?v.logS:d[key];
     const val=type==='text'?String(raw==null?'':raw):finite(raw);
     descriptors.push([id,key,val,unit,type,evidence,method]);
-    if(val==='')quality.push([id,'missing_descriptor','warning',key+' is unavailable']);
+    if(val===''){quality.push([id,'missing_descriptor','warning',key+' is unavailable']);counts.missing_descriptor++;missingByDescriptor[key]=(missingByDescriptor[key]||0)+1;}
    }
   });
-  for(const issue of bad)quality.push(['','input_error','warning','Line '+(issue.line||'?')+': '+String(issue.reason||'Invalid input')]);
+  for(const issue of bad){quality.push(['','input_error','warning','Line '+(issue.line||'?')+': '+String(issue.reason||'Invalid input')]);counts.input_error++;}
   const validationRows=Object.entries(validation).map(([key,set])=>[key,set.label||key,finite(set.n),finite(set.mae),
    finite(set.rmse),finite(set.r2),/^https:\/\//.test(set.source||'')?set.source:'',
    set.note||'Dataset-level error is not per-molecule uncertainty']);
@@ -65,12 +66,15 @@
   };
   const files=Object.entries(contents).map(([name,content])=>({name,content}));
   const manifest={schemaVersion:VERSION,application:'Molecule Profiler',
-   createdAt:meta.createdAt||new Date().toISOString(),applicationRevision:meta.revision||'unspecified',
+   createdAt:meta.createdAt||new Date().toISOString(),applicationRevision:meta.revision||null,
+   applicationAssetToken:meta.assetToken||null,
    analysisSettings:meta.analysisSettings||{},moleculeCount:source.length,inputErrorCount:bad.length,
    files:files.map(f=>({name:f.name,bytes:ResearchZip.utf8(f.content).length,
     crc32:ResearchZip.crc32(ResearchZip.utf8(f.content)).toString(16).padStart(8,'0')})),
    integrityAlgorithm:'CRC-32 (accidental corruption check, not a cryptographic authenticity guarantee)',
    referenceLibraryCount:meta.referenceLibraryCount==null?null:meta.referenceLibraryCount,
+   qualitySummary:{counts,missingByDescriptor},
+   qualityScope:'Duplicates use exact input SMILES text, not molecular canonicalization.',
    caveats:['Calculated and estimated properties are not measurements.',
     'Labels and input structures have not undergone independent identity verification.',
     'Validation statistics are aggregate dataset metrics, not individual uncertainties.',

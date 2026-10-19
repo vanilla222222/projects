@@ -2008,7 +2008,7 @@ function exportResearch() {
   if(!records.length)return;
   const val=typeof PROPERTY_VALIDATION==='undefined'?{}:PROPERTY_VALIDATION.datasets;
   const pkg=ResearchPackage.createPackage(records,val,latestInputIssues,{
-    revision:(document.querySelector('script[src*="js/app.js?"]')?.getAttribute('src')||'unrecorded'),
+    assetToken:(document.querySelector('script[src*="js/app.js?"]')?.getAttribute('src')||null),
     referenceLibraryCount:typeof LIBRARY!=='undefined'?LIBRARY.length:null,
     analysisSettings:{modelFamily:'WLOGP and ESOL'}
   });

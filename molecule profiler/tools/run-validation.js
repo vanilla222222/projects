@@ -21,7 +21,8 @@ const scripts = [
   'report-model-test.js',
   'full-csv-export-test.js',
   'research-package-test.js',
-  'descriptor-stats-test.js'
+  'descriptor-stats-test.js',
+  'research-zip-external-test.js'
 ];
 const started = new Date().toISOString();
 const outcomes = [];

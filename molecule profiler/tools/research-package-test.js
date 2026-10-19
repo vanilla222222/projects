@@ -8,6 +8,10 @@ charge:0,tpsa:20.2,hbdStrict:1,hbaStrict:1,rotatableBonds:0,rings:0,fractionCsp3
 const pkg=createPackage([row,{...row,name:'duplicate'}],{},[{line:5,reason:'Parse error'}],{createdAt:'2026-10-19',revision:'test'});
 assert.equal(pkg.files.length,7);
 assert.equal(pkg.manifest.moleculeCount,2);
+assert.equal(pkg.manifest.schemaVersion,'1.1');
+assert.equal(pkg.manifest.qualitySummary.counts.exact_duplicate,1);
+assert.equal(pkg.manifest.qualitySummary.counts.input_error,1);
+assert.equal(pkg.manifest.qualitySummary.counts.missing_descriptor,0);
 assert.equal(pkg.manifest.files[0].crc32.length,8);
 assert.match(pkg.manifest.integrityAlgorithm,/not a cryptographic/);
 assert.equal(pkg.manifest.inputErrorCount,1);
