@@ -56,4 +56,8 @@ assert.ok(scripts.indexOf('js/comparison-data.js') > -1, 'Comparison data script
 assert.ok(scripts.indexOf('js/comparison-ui.js') > scripts.indexOf('js/workspace-ui.js'), 'Comparison UI script order incorrect');
 assert.ok(workspace.includes("id: 'compare'"), 'Compare workspace navigation missing');
 assert.ok(app.includes("molecule-profiler:updated"), 'Comparison updates not wired to batch analysis');
+assert.match(html, /data\/library\.js\?v=2026-10-20-library-refresh/, 'Reference library cache key not refreshed');
+assert.ok(!html.includes('<h2>Physical addiction potential</h2>'), 'Misleading dependence heading reintroduced');
+assert.ok(workspace.includes("'Dependence-related structural similarity': ['discovery']"),
+  'Dependence analogy must be grouped with reference comparisons, not toxicity screening');
 console.log('UI integration contract passed: ' + scripts.length + ' scripts, ' + ids.length + ' unique DOM IDs');
