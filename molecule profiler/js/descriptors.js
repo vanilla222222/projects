@@ -238,6 +238,10 @@ const NITROGEN_RULES = [
   ['N3', (c) => c.charge === 0 && c.h === 2 && !c.arom && c.heavy.some(AROMATIC_ANY)],
   ['N4', (c) => c.charge === 0 && c.h === 1 && !c.arom && c.heavy.some(AROMATIC_ANY)
     && c.degree >= 2],
+  ['N13', (c) => c.charge === 0 && c.h === 0 && !c.arom && c.degree >= 3
+    && c.doubleTo(ANY_HEAVY).length >= 2],
+  ['N14', (c) => c.charge === 0 && c.h === 0 && !c.arom && c.degree === 2
+    && c.doubleTo(ANY_HEAVY).length >= 2],
   ['N5', (c) => c.charge === 0 && c.h === 1 && !c.arom && c.doubleTo(ANY_HEAVY).length > 0],
   ['N6', (c) => c.charge === 0 && c.h === 0 && !c.arom && c.doubleTo(ANY_HEAVY).length > 0
     && c.degree >= 2],

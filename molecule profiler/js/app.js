@@ -417,6 +417,8 @@ function renderCurrent() {
 
   renderStereo(record);
   renderWedgeNote();
+  renderPropertyValidation(record);
+  renderPropertyDomain(record);
 
   rows(document.getElementById('topology'), [
     ['chi0', 'Chi0', d.chi.chi0.toFixed(3)],
@@ -561,6 +563,70 @@ function drawEgg(d) {
 function stereoFor(record) {
   if (!record.stereo) record.stereo = stereoAnalyse(record.mol);
   return record.stereo;
+}
+
+function renderPropertyValidation(record) {
+  const slot = document.getElementById('property-validation');
+  if (!slot || typeof PROPERTY_VALIDATION === 'undefined') return;
+  const sets = PROPERTY_VALIDATION.datasets;
+  const parts = [];
+  if (sets.logS) {
+    parts.push('Log S against ' + sets.logS.n + ' measured aqueous solubilities (Delaney set): MAE '
+      + sets.logS.mae + ', RMSE ' + sets.logS.rmse + ', R\u00b2 ' + sets.logS.r2 + ', '
+      + sets.logS.within1Pct + '% within one log unit.');
+  }
+  if (sets.logSBlind) {
+    parts.push('On the independent DLS-100 set (' + sets.logSBlind.n + ' compounds Delaney did not fit): MAE '
+      + sets.logSBlind.mae + ', R\u00b2 ' + sets.logSBlind.r2 + '.');
+  }
+  if (sets.logPNeutral) {
+    parts.push('WLOGP against ' + sets.logPNeutral.n
+      + ' measured log D values at pH 7.4 for compounds with no ionisable group: MAE '
+      + sets.logPNeutral.mae + ', mean signed error ' + sets.logPNeutral.bias
+      + '. Over the whole lipophilicity set, including acids and bases whose log D is below their log P by the degree of ionisation, MAE is '
+      + sets.logP.mae + ' with a ' + sets.logP.bias + ' bias, which bounds the error rather than measuring it.');
+  }
+  if (typeof CRIPPEN_CONFORMANCE !== 'undefined') {
+    parts.push('The atom-contribution step itself agrees with RDKit on '
+      + CRIPPEN_CONFORMANCE.logPWithin0_05 + '% of ' + CRIPPEN_CONFORMANCE.compounds
+      + ' compounds to within 0.05 log units; the '
+      + CRIPPEN_CONFORMANCE.disagreeOver0_05 + ' that differ are listed in data/crippencases.js.');
+  }
+  slot.textContent = 'Measured: ' + parts.join(' ');
+}
+
+const DOMAIN_LABELS = {
+  mw: 'molecular weight', logp: 'log P', tpsa: 'TPSA',
+  rotatableBonds: 'rotatable bonds', aromaticProportion: 'aromatic atom fraction',
+  heavyAtoms: 'heavy atoms'
+};
+
+function renderPropertyDomain(record) {
+  const slot = document.getElementById('property-domain');
+  if (!slot) return;
+  if (typeof PROPERTY_VALIDATION === 'undefined' || !PROPERTY_VALIDATION.datasets.logS) {
+    slot.hidden = true;
+    return;
+  }
+  const domain = PROPERTY_VALIDATION.datasets.logS.domain;
+  const outside = [];
+  Object.keys(domain).forEach((key) => {
+    const value = record.d[key];
+    if (typeof value !== 'number') return;
+    const span = domain[key];
+    if (value < span[0] || value > span[1]) {
+      outside.push((DOMAIN_LABELS[key] || key) + ' ' + value.toFixed(2)
+        + ' (set covers ' + span[0] + ' to ' + span[1] + ')');
+    }
+  });
+  if (!outside.length) {
+    slot.hidden = true;
+    return;
+  }
+  slot.hidden = false;
+  slot.textContent = 'Outside the applicability domain of the solubility measurement: '
+    + outside.join('; ') + '. The errors quoted above were measured on compounds unlike this one, '
+    + 'so they do not apply here.';
 }
 
 function renderWedgeNote() {
@@ -1440,6 +1506,34 @@ function fullExportRows(record) {
       + w.centers + ' specified stereocentres carry a wedge or hash, and reading those drawings back with '
       + 'the ordinary convention recovers the stated configuration in ' + w.agree + ' of them ('
       + w.agreePct + '%), with ' + w.wrong + ' inverted.');
+  }
+
+  if (typeof PROPERTY_VALIDATION !== 'undefined') {
+    const sets = PROPERTY_VALIDATION.datasets;
+    Object.keys(sets).forEach((key) => {
+      const d = sets[key];
+      add('provenance', 'property validation: ' + key, 'summary', d.label + ' \u2014 n ' + d.n
+        + ', MAE ' + d.mae + ', RMSE ' + d.rmse + ', R\u00b2 ' + d.r2 + ', mean signed error ' + d.bias
+        + ', within one unit ' + d.within1Pct + '%'
+        + (d.source ? '; source ' + d.source : '')
+        + (d.sha256 ? '; sha256 ' + d.sha256 : '')
+        + (d.note ? '; ' + d.note : ''));
+    });
+    const domain = sets.logS && sets.logS.domain;
+    if (domain) {
+      add('provenance', 'property validation: applicability domain', 'summary',
+        Object.keys(domain).map((key) => key + ' ' + domain[key][0] + ' to ' + domain[key][1]).join('; ')
+        + ' (1st to 99th percentile of the measured solubility set)');
+    }
+  }
+
+  if (typeof CRIPPEN_CONFORMANCE !== 'undefined') {
+    const c = CRIPPEN_CONFORMANCE;
+    add('provenance', 'crippen conformance', 'summary', 'Generated ' + c.generated + ' by '
+      + 'tools/crippen-conformance.py against RDKit over ' + c.compounds + ' compounds from ' + c.source
+      + ': mean absolute log P difference ' + c.logPMeanAbsDiff + ', ' + c.logPWithin0_05
+      + '% within 0.05, worst ' + c.logPMaxAbsDiff + '; molar refractivity mean absolute difference '
+      + c.mrMeanAbsDiff + ', worst ' + c.mrMaxAbsDiff + '; ' + c.disagreeOver0_05 + ' disagreements over 0.05.');
   }
 
   if (typeof RETRIEVAL_BENCHMARK !== 'undefined') {
