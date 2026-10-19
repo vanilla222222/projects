@@ -421,6 +421,7 @@ if (typeof module !== 'undefined' && module.exports) {
     exactMass,
     valenceUsed,
     findBond,
+    cycleBondKeys,
     ATOMIC_WEIGHT,
     ELECTRONEGATIVE
   };

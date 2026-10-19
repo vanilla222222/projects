@@ -46,6 +46,22 @@ const GLOSSARY = {
   atomType: ['Type', 'Which of the 68 Wildman–Crippen atom types the atom matched. The rules are tried in a fixed order and the first match wins.'],
   atomLogp: ['Δ log P', 'The atom type’s contribution to WLOGP, including its hydrogens.'],
   atomMr: ['Δ MR', 'The atom type’s contribution to molar refractivity, including its hydrogens.'],
+  aliphaticRings: ['Aliphatic rings', 'Rings carrying at least one non-aromatic bond. Saturated and partly unsaturated rings both count.'],
+  saturatedRings: ['Saturated rings', 'Rings in which every bond is a single bond and no atom is aromatic — the fully sp³ rings that raise the saturated-carbon fraction.'],
+  heterocycles: ['Heterocycles', 'Rings containing at least one atom that is neither carbon nor hydrogen.'],
+  largestRing: ['Largest ring', 'Size of the biggest ring in the smallest set of smallest rings. A macrocycle shows up here as a ring well above six.'],
+  halogens: ['Halogens', 'Fluorine, chlorine, bromine and iodine atoms. Halogens raise lipophilicity sharply and are often added to block metabolism.'],
+  amideBonds: ['Amide bonds', 'Non-aromatic carbonyl-to-nitrogen single bonds. They resist rotation, which is why the strict rotatable-bond count excludes them.'],
+  spiroAtoms: ['Spiro atoms', 'Atoms shared by two rings that have nothing else in common. A spiro centre forces the two rings perpendicular, which rigidifies the molecule.'],
+  bridgeheadAtoms: ['Bridgehead atoms', 'The two end atoms of a bridge shared by two rings that have more than one bond in common — the hallmark of a caged, three-dimensional skeleton.'],
+  chi0: ['Chi0', 'Zeroth-order connectivity index: the sum of 1/√δ over heavy atoms, where δ is the number of heavy neighbours. It grows with size and with branching.'],
+  chi1: ['Chi1', 'First-order connectivity index: the same sum taken over bonds, as 1/√(δᵢδⱼ). Randić introduced it as a measure of branching, and it is still one of the most used descriptors in QSAR.'],
+  chi0v: ['Chi0v', 'Valence-corrected Chi0, where each atom\u2019s degree is replaced by a valence degree derived from its valence electrons, hydrogens and atomic number. This lets it distinguish heteroatoms from carbon.'],
+  chi1v: ['Chi1v', 'Valence-corrected Chi1, the bond-wise version of the same idea.'],
+  hallKierAlpha: ['Hall-Kier alpha', 'Sum of per-atom corrections for atom size and hybridization, relative to sp³ carbon. It is negative for small, unsaturated, mostly organic molecules and positive for ones carrying sulfur, chlorine, bromine or iodine. The shape indices below are all adjusted by it.'],
+  kappa1: ['Kappa1', 'First-order shape index: how far the molecule is from a linear chain of the same size, corrected by the Hall-Kier alpha.'],
+  kappa2: ['Kappa2', 'Second-order shape index, built from two-bond paths. It responds to branching and to how spread out the skeleton is.'],
+  kappa3: ['Kappa3', 'Third-order shape index, built from three-bond paths. It is the one that reacts most strongly to ring fusion and central branching.'],
   tgtCount: ['Targets', 'How many targets to list. The ranking covers every target in the set either way.'],
   tgtMin: ['Min score', 'Hides targets whose nearest known ligand is less similar than this. A low cut shows weak, speculative matches; raise it to keep only targets with a genuinely close relative of the query among their actives.'],
   tgtRank: ['#', 'Rank by score, highest first.'],
@@ -264,6 +280,28 @@ function renderCurrent() {
     ['hbaStrict', 'Acceptors (strict)', d.hbaStrict],
     ['tpsa', 'TPSA', d.tpsa.toFixed(2) + ' Å²'],
     ['fractionCsp3', 'Fraction Csp³', d.fractionCsp3.toFixed(2)]
+  ]);
+
+  rows(document.getElementById('skeleton'), [
+    ['aliphaticRings', 'Aliphatic rings', d.aliphaticRings],
+    ['saturatedRings', 'Saturated rings', d.saturatedRings],
+    ['heterocycles', 'Heterocycles', d.heterocycles],
+    ['largestRing', 'Largest ring', d.largestRing || '—'],
+    ['halogens', 'Halogens', d.halogens],
+    ['amideBonds', 'Amide bonds', d.amideBonds],
+    ['spiroAtoms', 'Spiro atoms', d.spiroAtoms],
+    ['bridgeheadAtoms', 'Bridgehead atoms', d.bridgeheadAtoms]
+  ]);
+
+  rows(document.getElementById('topology'), [
+    ['chi0', 'Chi0', d.chi.chi0.toFixed(3)],
+    ['chi1', 'Chi1', d.chi.chi1.toFixed(3)],
+    ['chi0v', 'Chi0v', d.chi.chi0v.toFixed(3)],
+    ['chi1v', 'Chi1v', d.chi.chi1v.toFixed(3)],
+    ['hallKierAlpha', 'Hall-Kier alpha', d.shape.hallKierAlpha.toFixed(2)],
+    ['kappa1', 'Kappa1', d.shape.kappa1.toFixed(3)],
+    ['kappa2', 'Kappa2', d.shape.kappa2.toFixed(3)],
+    ['kappa3', 'Kappa3', d.shape.kappa3.toFixed(3)]
   ]);
 
   rows(document.getElementById('lipo'), [

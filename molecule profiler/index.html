@@ -57,6 +57,17 @@
       </article>
 
       <article class="panel">
+        <div class="panel-head"><h2>Rings &amp; substructure counts</h2></div>
+        <dl id="skeleton" class="data"></dl>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head"><h2>Topological indices</h2></div>
+        <dl id="topology" class="data"></dl>
+        <p class="note">Kier&ndash;Hall connectivity and shape indices, computed from the hydrogen-suppressed graph. They are the descriptors QSAR models are usually built on, and all of them agree exactly with RDKit on the reference set.</p>
+      </article>
+
+      <article class="panel">
         <div class="panel-head"><h2>Lipophilicity &amp; solubility</h2></div>
         <dl id="lipo" class="data"></dl>
         <p class="note">WLOGP is the Wildman&ndash;Crippen atom-contribution log P. Solubility is the Delaney ESOL estimate from that log P, molecular weight, rotatable bonds and the aromatic atom fraction.</p>
@@ -139,7 +150,7 @@
 
   <section class="panel wide about">
     <div class="panel-head"><h2>What this is</h2></div>
-    <p>Everything here runs in the page: the SMILES parser, ring perception, aromaticity, kekulization and hydrogen counting are implemented from scratch, and the descriptors follow their published definitions &mdash; Ertl's topological polar surface area, Wildman&ndash;Crippen log P and molar refractivity, Lipschitz-style hydrogen-bond counts, and the strict rotatable-bond definition. The descriptor layer is checked against RDKit on a 40-molecule reference set; TPSA, log P, molar refractivity, rotatable bonds, the H-bond counts and the sp&sup3; fraction all agree exactly. The fingerprints are checked the same way: on the 108 reference drugs below, every bit-count and all 5778 pairwise similarity scores match RDKit exactly for each of the four methods.</p>
+    <p>Everything here runs in the page: the SMILES parser, ring perception, aromaticity, kekulization and hydrogen counting are implemented from scratch, and the descriptors follow their published definitions &mdash; Ertl's topological polar surface area, Wildman&ndash;Crippen log P and molar refractivity, Lipschitz-style hydrogen-bond counts, and the strict rotatable-bond definition. The descriptor layer is checked against RDKit on a 40-molecule reference set; TPSA, log P, molar refractivity, rotatable bonds, the H-bond counts and the sp&sup3; fraction all agree exactly. The ring and substructure counts and the Kier&ndash;Hall connectivity and shape indices are checked the same way across all 108 reference drugs below, and every one of those fifteen values matches RDKit exactly. The fingerprints are checked the same way: on the 108 reference drugs below, every bit-count and all 5778 pairwise similarity scores match RDKit exactly for each of the four methods.</p>
     <p>The filters are the published ones (Lipinski, Ghose, Veber, Egan, Muegge, lead-likeness) and the bioavailability score follows Martin's tiers. Where a service like SwissADME uses a trained model that was never released &mdash; XLOGP3, its solubility models, its pharmacokinetic classifiers &mdash; this tool does not pretend to reproduce it; it uses an open method and says which one.</p>
   </section>
 </main>

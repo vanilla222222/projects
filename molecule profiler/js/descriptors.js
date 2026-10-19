@@ -552,6 +552,225 @@ function formalCharge(mol) {
   return mol.atoms.reduce((sum, atom) => sum + (atom.charge || 0), 0);
 }
 
+const HALOGEN_ELEMENTS = ['F', 'Cl', 'Br', 'I'];
+
+const HK_ALPHA = {
+  'C.sp3': 0.0, 'C.sp2': -0.13, 'C.sp': -0.22,
+  'N.sp3': -0.04, 'N.sp2': -0.20, 'N.sp': -0.29,
+  'O.sp3': -0.04, 'O.sp2': -0.20,
+  'P.sp3': 0.43, 'P.sp2': 0.30,
+  'S.sp3': 0.35, 'S.sp2': 0.22,
+  F: -0.07, Cl: 0.29, Br: 0.48, I: 0.73
+};
+
+const VALENCE_ELECTRONS = {
+  H: 1, B: 3, C: 4, N: 5, O: 6, F: 7, Si: 4, P: 5, S: 6, Cl: 7,
+  As: 5, Se: 6, Br: 7, Te: 6, I: 7
+};
+
+const ATOMIC_NUMBER = {
+  H: 1, B: 5, C: 6, N: 7, O: 8, F: 9, Si: 14, P: 15, S: 16, Cl: 17,
+  As: 33, Se: 34, Br: 35, Te: 52, I: 53
+};
+
+const LONE_PAIR_ELEMENTS = new Set(['N', 'O', 'P', 'S', 'Se']);
+
+function conjugatedLonePair(mol, atom) {
+  if (!LONE_PAIR_ELEMENTS.has(atom.element)) return false;
+  if (atom.element === 'S' || atom.element === 'P') return false;
+  return atom.neighbors.some((link) => {
+    const other = mol.atoms[link.atom];
+    if (other.element === 'S' || other.element === 'P') return false;
+    return other.aromatic || maxBondOrder(mol, other) > 1;
+  });
+}
+
+function hybridization(mol, atom) {
+  if (atom.aromatic) return 'sp2';
+  const order = maxBondOrder(mol, atom);
+  const bulky = (atom.element === 'S' || atom.element === 'P') && atom.degree + atom.totalH >= 3;
+  if (bulky) return 'sp3';
+  const doubles = atom.neighbors.filter((link) => mol.bonds[link.bond].order === 2).length;
+  if (doubles >= 2) return 'sp';
+  if (order >= 3) return 'sp';
+  if (order === 2) return 'sp2';
+  return conjugatedLonePair(mol, atom) ? 'sp2' : 'sp3';
+}
+
+function hallKierAlpha(mol) {
+  let total = 0;
+  mol.atoms.forEach((atom) => {
+    if (atom.element === 'H') return;
+    const keyed = HK_ALPHA[atom.element + '.' + hybridization(mol, atom)];
+    const plain = HK_ALPHA[atom.element];
+    if (typeof keyed === 'number') total += keyed;
+    else if (typeof plain === 'number') total += plain;
+  });
+  return total;
+}
+
+function heavyDegrees(mol) {
+  return mol.atoms.map((atom) => (
+    atom.element === 'H' ? 0 : atom.neighbors.filter((link) => mol.atoms[link.atom].element !== 'H').length
+  ));
+}
+
+function valenceDegrees(mol) {
+  return mol.atoms.map((atom) => {
+    if (atom.element === 'H') return 0;
+    const zv = VALENCE_ELECTRONS[atom.element];
+    if (!zv) return 0;
+    const hydrogens = atom.totalH;
+    const z = ATOMIC_NUMBER[atom.element] || 6;
+    if (z <= 10) return zv - hydrogens;
+    return (zv - hydrogens) / (z - zv - 1);
+  });
+}
+
+function chiIndices(mol) {
+  const delta = heavyDegrees(mol);
+  const valence = valenceDegrees(mol);
+  let chi0 = 0;
+  let chi0v = 0;
+  mol.atoms.forEach((atom, index) => {
+    if (atom.element === 'H') return;
+    if (delta[index] > 0) chi0 += 1 / Math.sqrt(delta[index]);
+    if (valence[index] > 0) chi0v += 1 / Math.sqrt(valence[index]);
+  });
+  let chi1 = 0;
+  let chi1v = 0;
+  mol.bonds.forEach((bond) => {
+    if (mol.atoms[bond.a].element === 'H' || mol.atoms[bond.b].element === 'H') return;
+    const product = delta[bond.a] * delta[bond.b];
+    if (product > 0) chi1 += 1 / Math.sqrt(product);
+    const valenceProduct = valence[bond.a] * valence[bond.b];
+    if (valenceProduct > 0) chi1v += 1 / Math.sqrt(valenceProduct);
+  });
+  return { chi0, chi1, chi0v, chi1v };
+}
+
+function pathsOfLength(mol, length) {
+  const heavy = (index) => mol.atoms[index].element !== 'H';
+  const found = new Set();
+  const walk = (tail, used) => {
+    if (used.length === length) {
+      found.add(used.slice().sort((a, b) => a - b).join(','));
+      return;
+    }
+    mol.atoms[tail].neighbors.forEach((link) => {
+      if (!heavy(link.atom) || used.includes(link.bond)) return;
+      used.push(link.bond);
+      walk(link.atom, used);
+      used.pop();
+    });
+  };
+  mol.atoms.forEach((atom, index) => { if (heavy(index)) walk(index, []); });
+  return found.size;
+}
+
+function kappaShapes(mol) {
+  const atoms = heavyAtoms(mol);
+  const alpha = hallKierAlpha(mol);
+  const bonds = mol.bonds.filter((bond) => (
+    mol.atoms[bond.a].element !== 'H' && mol.atoms[bond.b].element !== 'H'
+  )).length;
+  const p2 = pathsOfLength(mol, 2);
+  const p3 = pathsOfLength(mol, 3);
+  const a = atoms + alpha;
+  const kappa1 = bonds + alpha > 0 ? (a * (a - 1) * (a - 1)) / ((bonds + alpha) * (bonds + alpha)) : 0;
+  const kappa2 = p2 + alpha > 0 ? ((a - 1) * (a - 2) * (a - 2)) / ((p2 + alpha) * (p2 + alpha)) : 0;
+  let kappa3 = 0;
+  if (p3 + alpha !== 0) {
+    const lead = atoms % 2 ? a - 1 : a - 2;
+    kappa3 = (lead * (a - 3) * (a - 3)) / ((p3 + alpha) * (p3 + alpha));
+  }
+  return { hallKierAlpha: alpha, kappa1, kappa2, kappa3 };
+}
+
+function ringIsAliphatic(mol, ring) {
+  return cycleBondList(mol, ring).some((bond) => !bond.aromatic);
+}
+
+function cycleBondList(mol, ring) {
+  const list = [];
+  for (let k = 0; k < ring.length; k += 1) {
+    const bond = findBond(mol, ring[k], ring[(k + 1) % ring.length]);
+    if (bond) list.push(bond);
+  }
+  return list;
+}
+
+function countAliphaticRings(mol) {
+  return mol.rings.filter((ring) => ringIsAliphatic(mol, ring)).length;
+}
+
+function countSaturatedRings(mol) {
+  return mol.rings.filter((ring) => (
+    cycleBondList(mol, ring).every((bond) => !bond.aromatic && bond.order === 1)
+      && ring.every((id) => !mol.atoms[id].aromatic)
+  )).length;
+}
+
+function countHeterocycles(mol) {
+  return mol.rings.filter((ring) => ring.some((id) => (
+    mol.atoms[id].element !== 'C' && mol.atoms[id].element !== 'H'
+  ))).length;
+}
+
+function countHalogens(mol) {
+  return mol.atoms.filter((atom) => HALOGEN_ELEMENTS.includes(atom.element)).length;
+}
+
+function countAmideBonds(mol) {
+  let total = 0;
+  mol.bonds.forEach((bond) => {
+    const a = mol.atoms[bond.a];
+    const b = mol.atoms[bond.b];
+    const pair = a.element === 'C' && b.element === 'N' ? [bond.a, bond.b]
+      : (b.element === 'C' && a.element === 'N' ? [bond.b, bond.a] : null);
+    if (!pair) return;
+    if (bond.order !== 1 || a.aromatic || b.aromatic) return;
+    const carbon = mol.atoms[pair[0]];
+    const carbonyl = carbon.neighbors.some((link) => (
+      mol.atoms[link.atom].element === 'O' && mol.bonds[link.bond].order === 2
+    ));
+    if (carbonyl) total += 1;
+  });
+  return total;
+}
+
+function countSpiroAtoms(mol) {
+  const spiro = new Set();
+  for (let i = 0; i < mol.rings.length; i += 1) {
+    for (let j = i + 1; j < mol.rings.length; j += 1) {
+      const shared = mol.rings[i].filter((id) => mol.rings[j].includes(id));
+      if (shared.length === 1) spiro.add(shared[0]);
+    }
+  }
+  return spiro.size;
+}
+
+function countBridgeheadAtoms(mol) {
+  const bridge = new Set();
+  for (let i = 0; i < mol.rings.length; i += 1) {
+    const keysI = new Set(cycleBondKeys(mol.rings[i]));
+    for (let j = i + 1; j < mol.rings.length; j += 1) {
+      const sharedKeys = cycleBondKeys(mol.rings[j]).filter((key) => keysI.has(key));
+      if (sharedKeys.length < 2) continue;
+      const incident = new Map();
+      sharedKeys.forEach((key) => {
+        key.split(':').map(Number).forEach((id) => incident.set(id, (incident.get(id) || 0) + 1));
+      });
+      incident.forEach((count, id) => { if (count === 1) bridge.add(id); });
+    }
+  }
+  return bridge.size;
+}
+
+function largestRing(mol) {
+  return mol.rings.reduce((best, ring) => Math.max(best, ring.length), 0);
+}
+
 function describe(mol) {
   const crippenResult = crippen(mol);
   return {
@@ -575,17 +794,30 @@ function describe(mol) {
     rotatableBonds: rotatableBonds(mol),
     fractionCsp3: fractionCsp3(mol),
     charge: formalCharge(mol),
+    aliphaticRings: countAliphaticRings(mol),
+    saturatedRings: countSaturatedRings(mol),
+    heterocycles: countHeterocycles(mol),
+    largestRing: largestRing(mol),
+    halogens: countHalogens(mol),
+    amideBonds: countAmideBonds(mol),
+    spiroAtoms: countSpiroAtoms(mol),
+    bridgeheadAtoms: countBridgeheadAtoms(mol),
+    chi: chiIndices(mol),
+    shape: kappaShapes(mol),
     crippenTypes: crippenResult.types
   };
 }
 
 if (typeof module !== 'undefined' && module.exports) {
   const molModule = require('./mol.js');
+  global.findBond = molModule.findBond;
+  global.cycleBondKeys = molModule.cycleBondKeys;
   global.molecularFormula = molModule.molecularFormula;
   global.molecularWeight = molModule.molecularWeight;
   global.exactMass = molModule.exactMass;
   module.exports = {
     describe, tpsa, crippen, rotatableBonds, fractionCsp3,
+    chiIndices, kappaShapes, hallKierAlpha, countAmideBonds, countHeterocycles,
     lipinskiHBD, lipinskiHBA, strictHBD, strictHBA, CRIPPEN, crippenAtomType
   };
 }
