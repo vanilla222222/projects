@@ -53,3 +53,10 @@ This is cooperative scheduling on the main thread, not a Web Worker. Parsing inp
 `tools/run-validation.js --report <path>` retains the existing report schema and adds `source.before`, `source.after` and `source.integrity`. Snapshots contain the local Git commit when available, source dirty-state details and a sorted per-file SHA-256 inventory of runtime and test source. Their aggregate digest is SHA-256 over the UTF-8 JSON encoding of that inventory. This identifies actual local source bytes, including uncommitted source; a Git SHA alone does not do that.
 
 The runner exits nonzero if inventoried source or the local Git revision changes while tests run, even when every test passes. Re-run from a stable checkout in that case. A checkout without Git metadata explicitly reports an unavailable revision and unknown dirty state. Generated reports, logs, screenshots and JSON audits are excluded so writing evidence does not invalidate itself. The inventory's declared scope is not a hash of the entire repository, external software or fetched datasets. Preserve dependency versions, test output and any dataset checksums alongside it. Hashes establish identity and detect changes; they do not certify scientific accuracy.
+
+
+## Reopening analysis snapshots
+
+Use the structure-file input to reopen a Molecule Profiler schema-version-1 JSON snapshot, or paste its JSON into the input box. The file input accepts up to 1 MB. Only molecule names and SMILES are restored: all properties are recalculated with the current engine. Saved values are not treated as current calculations or experimental evidence, and settings are not restored. Unsupported schema versions and malformed snapshot envelopes retain the previous completed analysis. Individual invalid molecule records are skipped and identified by their snapshot record number, including in research-package quality warnings.
+
+Node tests exercise snapshot parsing and restoration with the actual descriptor engine, including tampered saved values and partial failures. The corresponding Chromium import/download test is present but has not been executed successfully in the restricted development environment.

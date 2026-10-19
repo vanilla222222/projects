@@ -180,6 +180,30 @@ class BrowserWorkflowTests(unittest.TestCase):
         self.assertTrue(self.page.locator("#export-research").is_disabled())
         self.assertEqual(self.errors, [], "Browser JavaScript errors: " + repr(self.errors))
 
+    def test_reopen_analysis_snapshot(self):
+        snapshot = {"tool":"Molecule Profiler", "schemaVersion":1, "molecules":[
+            {"name":"Restored ethanol", "smiles":"CCO",
+             "descriptors":{"molecularWeight":99999}},
+            {"name":"Broken", "smiles":"C1CC"}
+        ]}
+        self.page.locator('#molecule-file').set_input_files({
+            "name":"analysis.json", "mimeType":"application/json",
+            "buffer":json.dumps(snapshot).encode('utf-8')
+        })
+        self.page.wait_for_function(
+            "() => document.getElementById('status').textContent.includes('1 analyzed')"
+        )
+        self.assertIn('Restored ethanol', self.page.locator('#report-title').inner_text())
+        self.assertIn('Snapshot molecule 2', self.page.locator('#input-errors').inner_text())
+        self.assertIn('saved property values were not imported',
+                      self.page.locator('#input-summary').inner_text())
+        with self.page.expect_download() as event:
+            self.page.locator('#export-snapshot').click()
+        recalculated = json.loads(pathlib.Path(event.value.path()).read_text(encoding='utf-8'))
+        self.assertAlmostEqual(recalculated['molecules'][0]['descriptors']['molecularWeight'],
+                               46.069, places=2)
+        self.assertEqual(self.errors, [])
+
     def test_cancel_batch_retains_completed_results(self):
         self.analyze("Water, O", "1 analyzed")
         self.page.locator('#smiles-input').fill("\n".join(

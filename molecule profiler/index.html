@@ -37,8 +37,8 @@
     </div>
     <textarea id="smiles-input" spellcheck="false" rows="5" placeholder="CC(=O)Oc1ccccc1C(=O)O"></textarea>
     <div class="input-file-tools">
-      <label class="file-import" for="molecule-file">Import .smi, .txt, .csv or .tsv <input type="file" id="molecule-file" accept=".smi,.txt,.csv,.tsv,text/plain,text/csv,text/tab-separated-values"></label>
-      <span class="hint">CSV and TSV files should have <code>name</code> and <code>smiles</code> column headers.</span>
+      <label class="file-import" for="molecule-file">Import structures or analysis JSON <input type="file" id="molecule-file" accept=".smi,.txt,.csv,.tsv,.json,text/plain,text/csv,text/tab-separated-values,application/json"></label>
+      <span class="hint">CSV and TSV files should have <code>name</code> and <code>smiles</code> column headers. Reopen a Molecule Profiler JSON snapshot to recalculate its structures; saved property values are not reused. Maximum file size: 1 MB.</span>
     </div>
     <div class="examples" id="examples"></div>
     <div class="actions">

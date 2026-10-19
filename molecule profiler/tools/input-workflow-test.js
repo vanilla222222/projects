@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {parseInputText,csvColumns,summarizeOutcomes,safeCell,createSnapshot}=require('../js/input-workflow.js');
+const {parseInputText,csvColumns,summarizeOutcomes,safeCell,createSnapshot,parseSnapshot}=require('../js/input-workflow.js');
 assert.deepEqual(csvColumns('"A, quoted","C, C"',','),['A, quoted','C, C']);
 assert.deepEqual(csvColumns('"A ""name""",CCO',','),['A "name"','CCO']);
 assert.throws(()=>csvColumns('"broken',','),/Unterminated/);
@@ -25,4 +25,28 @@ const snap=createSnapshot([{name:'Water',smiles:'O',d:{formula:'H2O',mw:18,exact
 assert.equal(snap.molecules[0].estimates.aqueousLogS,0.5);
 assert.equal(snap.molecules[0].descriptors.molecularWeight,18);
 assert.match(snap.declaration,/not laboratory measurements/);
-console.log('Input workflow tests passed');
+const reopened=parseSnapshot(JSON.stringify(snap));
+assert.equal(reopened.format,'snapshot');
+assert.equal(reopened.rows[0].name,'Water');
+assert.equal(reopened.rows[0].smiles,'O');
+assert.equal(reopened.rows[0].descriptors,undefined);
+assert.equal(reopened.source.generatedAt,'2026-10-19T00:00:00Z');
+assert.equal(parseInputText('  '+JSON.stringify(snap)).format,'snapshot');
+assert.equal(parseSnapshot('\uFEFF'+JSON.stringify(snap)).rows.length,1);
+assert.throws(()=>parseSnapshot('{broken'),/Invalid JSON/);
+assert.throws(()=>parseSnapshot('[]'),/not a Molecule Profiler/);
+assert.throws(()=>parseSnapshot(JSON.stringify({...snap,tool:'Other'})),/not a Molecule Profiler/);
+assert.throws(()=>parseSnapshot(JSON.stringify({...snap,schemaVersion:2})),/Unsupported/);
+assert.throws(()=>parseSnapshot(JSON.stringify({...snap,molecules:{}})),/array/);
+assert.match(parseInputText('{broken').error,/Invalid JSON/);
+const mixed=parseSnapshot(JSON.stringify({...snap,molecules:[
+  null,[],{smiles:''},{smiles:42},{smiles:'O',name:12},
+  {smiles:' CCO ',name:'<img src=x onerror=alert(1)>',descriptors:{molecularWeight:99999}}
+]}));
+assert.equal(mixed.rows.filter(row=>row.error).length,5);
+assert.equal(mixed.rows[5].smiles,'CCO');
+assert.equal(mixed.rows[5].name,'<img src=x onerror=alert(1)>');
+assert.equal(mixed.rows[5].location,'Snapshot molecule 6');
+assert.equal(mixed.rows[5].descriptors,undefined);
+assert.equal(parseInputText('[NH4+]').format,'plain', 'bracket SMILES must not be interpreted as a JSON array');
+console.log('Input workflow and snapshot import tests passed');

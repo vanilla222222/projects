@@ -82,5 +82,26 @@ async function drain() {
   assert.equal(get('records.length'),0);
   assert.equal(element('status').textContent,'');
   assert.equal(element('export').disabled,true);
+  // Saved numeric properties must never be treated as a fresh calculation.
+  element('smiles-input').value=JSON.stringify({tool:'Molecule Profiler',schemaVersion:1,molecules:[
+    {name:'Restored ethanol',smiles:'CCO',descriptors:{molecularWeight:99999}},
+    {name:'Bad snapshot record',smiles:'C1CC'},null
+  ]});
+  const restored=get('analyse()');
+  await drain(); await restored;
+  assert.equal(get('records.length'),1);
+  assert.equal(get('records[0].name'),'Restored ethanol');
+  assert.ok(Math.abs(get('records[0].d.mw')-46.069)<0.01);
+  assert.equal(get('latestInputIssues[0].location'),'Snapshot molecule 2');
+  assert.equal(get('latestInputIssues.length'),2);
+  assert.match(element('input-summary').textContent,/saved property values were not imported/);
+  assert.match(element('input-errors').children[0].textContent,/Snapshot molecule 2/);
+  const previous=get('records');
+  element('smiles-input').value='{invalid';
+  const malformed=get('analyse()');
+  await drain(); await malformed;
+  assert.equal(get('records'),previous, 'invalid snapshot envelopes must retain completed results');
+  assert.match(element('status').textContent,/Could not import snapshot/);
+  assert.equal(element('run').disabled,false);
   console.log('Analysis lifecycle: chemistry equivalence, partial input success, cancellation, replacement and clear passed');
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -17,7 +17,42 @@
     if(quoted)throw new Error('Unterminated quoted field');
     return cells;
   }
+  function parseSnapshot(text) {
+    let snapshot;
+    try { snapshot = JSON.parse(String(text).replace(/^\uFEFF/, '')); }
+    catch (_) { throw new Error('Invalid JSON. Choose a Molecule Profiler analysis snapshot.'); }
+    if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)
+        || snapshot.tool !== 'Molecule Profiler') {
+      throw new Error('This is not a Molecule Profiler analysis snapshot.');
+    }
+    if (snapshot.schemaVersion !== 1) {
+      throw new Error('Unsupported snapshot schema version. This application supports version 1.');
+    }
+    if (!Array.isArray(snapshot.molecules)) throw new Error('Snapshot molecules must be an array.');
+    const rows = snapshot.molecules.map((entry, index) => {
+      const location = 'Snapshot molecule ' + (index + 1);
+      const base = {line:index + 1, location, raw:''};
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+        return {...base,error:'Molecule record must be an object.'};
+      }
+      if (typeof entry.smiles !== 'string' || !entry.smiles.trim()) {
+        return {...base,error:'A nonempty SMILES string is required.'};
+      }
+      if (entry.name != null && typeof entry.name !== 'string') {
+        return {...base,error:'Molecule name must be text when provided.'};
+      }
+      // Select input fields explicitly. Stored properties, estimates and other
+      // object keys never enter the chemistry engine or application state.
+      return {...base,name:entry.name || null,smiles:entry.smiles.trim(),raw:entry.smiles};
+    });
+    return {format:'snapshot',rows,source:{tool:'Molecule Profiler',schemaVersion:1,
+      generatedAt:typeof snapshot.generatedAt === 'string' ? snapshot.generatedAt : null}};
+  }
   function parseInputText(text) {
+    if (String(text || '').trimStart().startsWith('{')) {
+      try { return parseSnapshot(text); }
+      catch (error) { return {format:'snapshot',rows:[],error:error.message}; }
+    }
     const lines=String(text||'').replace(/\r\n?/g,'\n').split('\n');
     const populated=lines.map((text,index)=>({text,index:index+1})).filter(x=>x.text.trim());
     if(!populated.length)return {rows:[],format:'plain'};
@@ -56,6 +91,7 @@
       tool:'Molecule Profiler',
       generatedAt:(meta&&meta.generatedAt)||new Date().toISOString(),
       declaration:'Computational descriptors and estimates are not laboratory measurements; no safety or efficacy conclusions are established.',
+      restoration:'Reopening this snapshot recalculates supplied structures with the current engine; saved properties are not imported as new results.',
       methodology:'Calculated fields are derived from supplied SMILES; estimated fields are model outputs whose applicability may be limited.',
       molecules:(Array.isArray(records)?records:[]).map((record,index)=>({
         index:index+1,name:record.name,smiles:record.smiles,
@@ -76,7 +112,7 @@
       }))
     };
   }
-  const api={parseInputText,csvColumns,summarizeOutcomes,safeCell,createSnapshot};
+  const api={parseInputText,parseSnapshot,csvColumns,summarizeOutcomes,safeCell,createSnapshot};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   root.InputWorkflow=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

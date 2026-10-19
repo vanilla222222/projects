@@ -322,8 +322,13 @@ async function analyse() {
   setAnalysisBusy(true);
   status.classList.remove('error');
   try {
+    if (input.error) {
+      status.classList.add('error');
+      status.textContent = 'Could not import snapshot: ' + input.error + ' Previous completed results retained.';
+      return;
+    }
     const outcome = await CooperativeBatch.run(input.rows, (row, index) => {
-      if(row.error){problems.push({line:row.line,input:row.raw,reason:row.error});return;}
+      if(row.error){problems.push({line:row.line,location:row.location,input:row.raw,reason:row.error});return;}
       const parsed = row.smiles ? {name:row.name,smiles:row.smiles} : splitLine(row.raw);
       try {
         const mol = buildMolecule(parseSmiles(parsed.smiles));
@@ -340,7 +345,7 @@ async function analyse() {
         nextRecords.push(record);
         nextPrepared.push(prepared);
       } catch (error) {
-        problems.push({line:row.line,input:row.raw,reason:error.message});
+        problems.push({line:row.line,location:row.location,input:row.raw,reason:error.message});
       }
     }, {
       isCancelled: () => job.cancelled || activeAnalysis !== job,
@@ -368,12 +373,13 @@ async function analyse() {
     feedback.hidden = input.rows.length===0 && problems.length===0;
     document.getElementById('input-summary').textContent =
       summary.successes+' of '+summary.total+' input records analyzed ('+input.format+' format). '
-      + (summary.failures ? 'Invalid entries were skipped; valid results are retained.' : 'No invalid entries found.');
+      + (summary.failures ? 'Invalid entries were skipped; valid results are retained.' : 'No invalid entries found.')
+      + (input.format === 'snapshot' ? ' Snapshot structures were recalculated with the current engine; saved property values were not imported.' : '');
     const errors = document.getElementById('input-errors');
     errors.replaceChildren();
     problems.slice(0,100).forEach(problem => {
       const item = document.createElement('p');
-      item.textContent = 'Line '+problem.line+': '+problem.reason+' — '+problem.input.slice(0,130);
+      item.textContent = (problem.location || 'Line '+problem.line)+': '+problem.reason+' — '+problem.input.slice(0,130);
       errors.appendChild(item);
     });
     if(problems.length>100) {
@@ -2178,10 +2184,12 @@ document.getElementById('molecule-file').addEventListener('change', async event 
   const status=document.getElementById('status');
   if(file.size>1024*1024){status.textContent='File is too large (maximum 1 MB).';status.classList.add('error');event.target.value='';return;}
   try {
-    document.getElementById('smiles-input').value=await file.text();
+    const text = await file.text();
+    if (/\.json$/i.test(file.name)) InputWorkflow.parseSnapshot(text);
+    document.getElementById('smiles-input').value=text;
     analyse();
   } catch(error) {
-    status.textContent='Could not read input file: '+error.message;
+    status.textContent='Could not import input file: '+error.message;
     status.classList.add('error');
   } finally {event.target.value='';}
 });

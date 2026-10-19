@@ -61,7 +61,7 @@
     if(val===''){quality.push([id,'missing_descriptor','warning',key+' is unavailable']);counts.missing_descriptor++;missingByDescriptor[key]=(missingByDescriptor[key]||0)+1;}
    }
   });
-  for(const issue of bad){quality.push(['','input_error','warning','Line '+(issue.line||'?')+': '+String(issue.reason||'Invalid input')]);counts.input_error++;}
+  for(const issue of bad){quality.push(['','input_error','warning',(issue.location || 'Line '+(issue.line||'?'))+': '+String(issue.reason||'Invalid input')]);counts.input_error++;}
   const validationRows=Object.entries(validation).map(([key,set])=>[key,set.label||key,finite(set.n),finite(set.mae),
    finite(set.rmse),finite(set.r2),/^https:\/\//.test(set.source||'')?set.source:'',
    set.note||'Dataset-level error is not per-molecule uncertainty']);
