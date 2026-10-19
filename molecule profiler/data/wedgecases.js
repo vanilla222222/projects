@@ -4,11 +4,11 @@
 const WEDGE_CONFORMANCE = {
   "generated": "2026-10-19",
   "source": "enumerated stereoisomers of the reference library",
-  "compounds": 2068,
-  "centers": 3214,
-  "drawn": 3214,
+  "compounds": 2067,
+  "centers": 3213,
+  "drawn": 3213,
   "drawnPct": 100,
-  "agree": 3214,
+  "agree": 3213,
   "agreePct": 100,
   "undecided": 0,
   "wrong": 0

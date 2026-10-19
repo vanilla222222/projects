@@ -7,6 +7,8 @@ const FP_METHODS = [
     blurb: 'Circular atom environments out to three bonds, so larger fragments must match.' },
   { key: 'fcfp4', label: 'FCFP4', kind: 'morgan', radius: 2, features: true,
     blurb: 'Circular environments described by pharmacophore role rather than element.' },
+  { key: 'ecfp4s', label: 'ECFP4 (stereo)', kind: 'morgan', radius: 2, features: false, chirality: true,
+    blurb: 'ECFP4 with the perceived R/S and E/Z configuration folded into the atom and bond codes, so enantiomers no longer look identical.' },
   { key: 'pairs', label: 'Atom pairs', kind: 'pairs', radius: 0, features: false,
     blurb: 'Every pair of atoms, typed and keyed by the bond distance between them.' }
 ];
@@ -23,6 +25,23 @@ function hash32(text) {
 function bondCode(bond) {
   if (bond.aromatic) return 4;
   return bond.order;
+}
+
+function stereoCodes(mol) {
+  const atoms = mol.atoms.map(() => '');
+  const bonds = mol.bonds.map(() => '');
+  if (typeof stereoAnalyse !== 'function') return { atoms, bonds };
+  const analysis = stereoAnalyse(mol);
+  analysis.centers.forEach((item) => {
+    if (item.label) atoms[item.atom] = item.label;
+    else if (item.specified) atoms[item.atom] = '?';
+  });
+  analysis.bonds.forEach((item) => {
+    if (item.label === undefined || item.label === null) return;
+    const link = mol.atoms[item.a].neighbors.find((entry) => entry.atom === item.b);
+    if (link) bonds[link.bond] = item.label;
+  });
+  return { atoms, bonds };
 }
 
 function piElectrons(mol, atom) {
@@ -149,9 +168,11 @@ function elementInvariant(mol, atom) {
   ].join('|');
 }
 
-function morganFingerprint(mol, radius, features) {
+function morganFingerprint(mol, radius, features, chirality) {
   const describe = features ? featureInvariant : elementInvariant;
-  let invariants = mol.atoms.map((atom) => hash32(describe(mol, atom)));
+  const stereo = chirality ? stereoCodes(mol) : null;
+  let invariants = mol.atoms.map((atom, index) => hash32(describe(mol, atom)
+    + (stereo ? '/' + stereo.atoms[index] : '')));
   const counts = new Map();
   const bump = (code) => counts.set(code, (counts.get(code) || 0) + 1);
 
@@ -171,7 +192,8 @@ function morganFingerprint(mol, radius, features) {
       const coverage = new Set(shells[index]);
       const pairs = [];
       atom.neighbors.forEach((link) => {
-        pairs.push(bondCode(mol.bonds[link.bond]) + ':' + invariants[link.atom]);
+        pairs.push(bondCode(mol.bonds[link.bond])
+          + (stereo ? stereo.bonds[link.bond] : '') + ':' + invariants[link.atom]);
         coverage.add(link.bond);
         shells[link.atom].forEach((item) => coverage.add(item));
       });
@@ -242,7 +264,7 @@ function fingerprint(mol, methodKey) {
   const method = FP_METHODS.find((entry) => entry.key === methodKey) || FP_METHODS[0];
   const counts = method.kind === 'pairs'
     ? atomPairFingerprint(mol)
-    : morganFingerprint(mol, method.radius, method.features);
+    : morganFingerprint(mol, method.radius, method.features, method.chirality);
   const keys = [...counts.keys()].sort((a, b) => a - b);
   return { method: method.key, counts, keys, bits: new Set(keys) };
 }
@@ -284,6 +306,9 @@ function sharedCount(a, b) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
+  if (typeof stereoAnalyse !== 'function') {
+    global.stereoAnalyse = require('./stereo.js').stereoAnalyse;
+  }
   module.exports = {
     FP_METHODS,
     featureBits,

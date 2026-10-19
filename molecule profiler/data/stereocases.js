@@ -3,15 +3,15 @@
 
 const STEREO_CONFORMANCE = {
   "generated": "2026-10-19",
-  "cases": 2068,
-  "centerSetMatch": 2008,
+  "cases": 2067,
+  "centerSetMatch": 2007,
   "centerSetPct": 97.1,
-  "labels": 3208,
-  "labelMatch": 3120,
+  "labels": 3207,
+  "labelMatch": 3119,
   "labelPct": 97.26,
   "labelMissing": 88,
   "labelWrong": 0,
-  "bondSetMatch": 2068,
+  "bondSetMatch": 2067,
   "bondSetPct": 100.0,
   "bondLabels": 178,
   "bondLabelMatch": 178,
@@ -22,8 +22,8 @@ const STEREO_CONFORMANCE = {
   "missedCenters": 93,
   "byElement": {
     "C:4": {
-      "compared": 3172,
-      "agree": 3100,
+      "compared": 3171,
+      "agree": 3099,
       "pct": 97.73
     },
     "N:3": {
