@@ -1119,6 +1119,13 @@ const TOX_COLUMNS = [
 
 function renderTox(record) {
   const scan = toxFor(record);
+  if (typeof toxicityCoverageReport === 'function') {
+    const coverage = toxicityCoverageReport(scan);
+    const el = document.getElementById('tox-coverage');
+    if (el) el.textContent = 'Screen coverage: ' + coverage.matchedRules + ' matching patterns across '
+      + coverage.endpointCount + ' endpoint categories. ' + coverage.limitations.join(' ');
+  }
+
   const choice = document.getElementById('tox-endpoint').value;
 
   document.getElementById('tox-cards').innerHTML = scan.byEndpoint.map((group) => (
@@ -1319,6 +1326,13 @@ function renderMetabolism(record) {
     document.getElementById('metabolites').querySelector('tbody').innerHTML =
       '<tr><td colspan="' + MET_COLUMNS.length + '">No metabolite could be enumerated for this structure.</td></tr>';
     return;
+  }
+  if (typeof metabolismCoverageReport === 'function') {
+    const coverage = metabolismCoverageReport(tree);
+    const el = document.getElementById('met-coverage');
+    if (el) el.textContent = 'Enumeration scope: ' + coverage.predictedProducts
+      + ' proposed products; ' + (coverage.rulesAttempted === null ? 'unknown' : coverage.rulesAttempted)
+      + ' reaction rules attempted. ' + coverage.limitations.join(' ');
   }
   const limit = Number(document.getElementById('met-count').value);
   const toxOnly = document.getElementById('met-toxonly').checked;
