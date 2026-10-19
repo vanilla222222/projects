@@ -130,18 +130,34 @@ function metabolicTree(record, options) {
             if (nodes.length >= META_MAX_NODES) { truncated = true; return; }
             const key = metaboliteKey(piece.mol, piece.d);
             const seen = byKey.get(key);
+            const site = typeof siteScore === 'function'
+                  ? siteScore(parent.mol, rule, result.touched || [])
+                  : { factor: 1, reasons: [], atom: null };
+            const siteWeight = rule.weight * site.factor;
             const step = {
               rule: rule.name,
               enzyme: rule.enzyme,
               route: rule.route,
               phase: rule.phase,
-              weight: rule.weight,
+              weight: siteWeight,
+              ruleWeight: rule.weight,
+              siteFactor: site.factor,
+              siteReasons: site.reasons,
+              siteAtom: site.atom,
               note: rule.note,
               from: parent.id
             };
             if (seen) {
               if (seen !== parent && seen.steps.every((item) => item.rule !== rule.name || item.from !== parent.id)) {
                 seen.steps.push(step);
+                const reached = parent.score * siteWeight;
+                if (reached > seen.score) {
+                  seen.score = reached;
+                  seen.weight = siteWeight;
+                  seen.siteFactor = site.factor;
+                  seen.siteReasons = site.reasons;
+                  seen.siteAtom = site.atom;
+                }
               }
               return;
             }
@@ -158,8 +174,12 @@ function metabolicTree(record, options) {
               enzyme: rule.enzyme,
               route: rule.route,
               phase: rule.phase,
-              weight: rule.weight,
-              score: parent.score * rule.weight,
+              weight: siteWeight,
+              ruleWeight: rule.weight,
+              siteFactor: site.factor,
+              siteReasons: site.reasons,
+              siteAtom: site.atom,
+              score: parent.score * siteWeight,
               touched: result.touched || [],
               released: split.released.map((piece2) => piece2.smiles),
               children: [],

@@ -94,6 +94,7 @@ const GLOSSARY = {
   metEnzyme: ['Enzyme', 'The enzyme family that performs this class of reaction: CYP, MAO, FMO, ADH, AKR, COMT, UGT, SULT, NAT, GST, or a hydrolase. Attribution is by reaction class, not by a measured isoform assignment.'],
   metPhase: ['Phase', 'Phase I introduces or exposes a functional group; phase II attaches a polar conjugate to one. A phase II rule usually needs a phase I step first, which is why most conjugates appear in the second generation.'],
   metScore: ['Relative weight', 'The product of the published class frequencies along the path from the parent. It orders the list; it is not a probability, a yield or a fraction of dose.'],
+  metSite: ['Site factor', 'How much the reaction weight is raised or lowered for the particular atom attacked, relative to an unsubstituted position of the same kind on the same ring or chain. Neighbouring groups that donate electron density raise an aromatic position, withdrawing groups lower it, crowding lowers it, and a branch point raises an aliphatic one. The factors are a transparent heuristic written from directing-effect and bond-strength arguments, clamped to 0.2x-2.5x; they are not fitted to measured turnover.'],
   metProps: ['MW / log P / TPSA', 'The metabolite run back through the same descriptor code as the parent. A conjugate adding 176 to the mass and 100 to the polar surface is the signature of glucuronidation.'],
   metTox: ['New toxicity flags', 'Toxicity rules firing on this metabolite that do not fire on the parent molecule.'],
   metNote: ['Mechanism', 'Why this reaction happens at this site, in one line. Reference text, hand-written.'],
@@ -868,6 +869,7 @@ const MET_COLUMNS = [
   ['metRoute', 'Route'],
   ['metPhase', 'Phase'],
   ['metScore', 'Relative weight'],
+  ['metSite', 'Site factor'],
   ['metProps', 'MW / log P / TPSA'],
   ['metTox', 'New toxicity flags'],
   ['metNote', 'Mechanism']
@@ -988,6 +990,11 @@ function renderMetabolism(record) {
       + '<td>' + escapeHtml(node.route) + '</td>'
       + '<td>' + escapeHtml(node.phase) + '</td>'
       + '<td>' + node.score.toFixed(3) + '</td>'
+      + '<td' + (node.siteReasons && node.siteReasons.length ? ' title="' + escapeHtml(node.siteReasons.join('; ')) + '"' : '') + '>'
+      + (typeof node.siteFactor === 'number' ? '\u00d7' + node.siteFactor.toFixed(2) : '\u2014')
+      + (node.siteReasons && node.siteReasons.length
+        ? '<br><span class="quiet">' + escapeHtml(node.siteReasons[0].replace(/ \([0-9.]+\)$/, '')) + (node.siteReasons.length > 1 ? ', +' + (node.siteReasons.length - 1) : '') + '</span>'
+        : '') + '</td>'
       + '<td>' + node.d.mw.toFixed(1) + ' / ' + node.d.logp.toFixed(2) + ' / ' + node.d.tpsa.toFixed(1) + '</td>'
       + '<td>' + (node.newTox.length
         ? node.newTox.map((row) => escapeHtml(row.name) + ' <span class="quiet">(' + escapeHtml(row.endpoint.toLowerCase()) + ')</span>').join('<br>')

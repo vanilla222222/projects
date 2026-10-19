@@ -112,6 +112,15 @@ const METABOLISM = [
     note: 'Hydroxylation inside a saturated chain. Secondary carbon-hydrogen bonds are weaker than primary ones, so this competes well with terminal hydroxylation.'
   },
   {
+    name: 'Aliphatic hydroxylation (tertiary C-H)',
+    phase: 'I',
+    enzyme: 'CYP',
+    route: 'aliphatic oxidation',
+    smirks: '[CX4;H1;!R;!$(C[!#6;!#1]):1]>>[C:1]O',
+    weight: 0.09,
+    note: 'A tertiary carbon-hydrogen bond is the weakest of the three and the radical left behind is the most stabilised, so a lone branch point is often the position that is hydroxylated. Ibuprofen is the standard example: the isobutyl methine, not the ring, gives its 2-hydroxy metabolite.'
+  },
+  {
     name: 'Alicyclic hydroxylation',
     phase: 'I',
     enzyme: 'CYP',
