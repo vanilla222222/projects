@@ -14,7 +14,8 @@ const scripts = [
   'ui-integration-test.js',
   'comparison-test.js',
   'library-catalog-test.js',
-  'sim-pagination-test.js'
+  'sim-pagination-test.js',
+  'batch-browser-test.js'
 ];
 let failed = 0;
 for (const script of scripts) {

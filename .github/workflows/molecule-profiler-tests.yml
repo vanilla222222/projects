@@ -45,6 +45,8 @@ jobs:
         run: node tools/library-catalog-test.js
       - name: Similarity pagination tests
         run: node tools/sim-pagination-test.js
+      - name: Batch browsing tests
+        run: node tools/batch-browser-test.js
   rdkit:
     runs-on: ubuntu-latest
     defaults:

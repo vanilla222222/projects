@@ -1,0 +1,17 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {browseBatch}=require('../js/batch-browser.js');
+const records=Array.from({length:123},(_,i)=>({name:'Example '+i,smiles:'C'+i,row:{formula:'C'+i,mw:i,logp:i/10}}));
+assert.equal(browseBatch(records,{}).total,123);
+assert.equal(browseBatch(records,{page:1}).visible.length,50);
+assert.equal(browseBatch(records,{page:99}).page,3);
+assert.equal(browseBatch(records,{page:99}).visible.length,23);
+assert.equal(browseBatch(records,{sort:'mw',desc:true,page:1}).visible[0].record.row.mw,122);
+assert.equal(browseBatch(records,{sort:'mw',desc:false,page:1}).visible[0].record.row.mw,0);
+assert.equal(browseBatch(records,{filter:'example 10'}).total,11);
+assert.equal(browseBatch(records,{filter:'not found'}).total,0);
+assert.equal(browseBatch(records,{filter:'not found'}).from,0);
+assert.equal(browseBatch(records,{sort:'name',desc:false}).visible[0].record.name,'Example 0');
+assert.equal(browseBatch([{name:'a',row:{mw:NaN}},{name:'b',row:{mw:1}}],{sort:'mw'}).visible[0].record.name,'b');
+assert.equal(browseBatch([],{}).pages,1);
+console.log('Batch browsing regression tests passed');

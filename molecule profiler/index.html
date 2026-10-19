@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Molecule Profiler</title>
-<link rel="stylesheet" href="css/style.css?v=2026-10-21-pages">
-<link rel="stylesheet" href="css/workspace.css?v=2026-10-21-pages">
+<link rel="stylesheet" href="css/style.css?v=2026-10-21-batch">
+<link rel="stylesheet" href="css/workspace.css?v=2026-10-21-batch">
 </head>
 <body data-theme="dark">
 <header class="topbar">
@@ -152,7 +152,14 @@
 
       <article class="panel wide">
         <div class="panel-head"><h2>Batch table</h2><span class="evidence" data-tier="exact" data-tip="evidenceExact" tabindex="0">exact</span><p class="hint">Click a row to open that molecule.</p></div>
+        <div class="batch-controls">
+          <label>Find molecule<input type="search" id="batch-search" placeholder="Name, formula or SMILES" autocomplete="off"></label>
+          <label>Sort<select id="batch-sort"><option value="name">Name</option><option value="formula">Formula</option><option value="mw">Molecular weight</option><option value="logp">WLOGP</option><option value="tpsa">TPSA</option><option value="logS">Log S</option><option value="hbd">H-bond donors</option><option value="hba">H-bond acceptors</option><option value="rings">Rings</option></select></label>
+          <label>Order<select id="batch-order"><option value="asc">Ascending</option><option value="desc">Descending</option></select></label>
+        </div>
+        <p class="hint" id="batch-count" role="status" aria-live="polite"></p>
         <div class="table-wrap"><table id="batch"><thead></thead><tbody></tbody></table></div>
+        <nav class="batch-pages" aria-label="Batch result pages"><button type="button" id="batch-prev">← Previous</button><span id="batch-page"></span><button type="button" id="batch-next">Next →</button></nav>
       </article>
 
       <article class="panel wide">
@@ -353,37 +360,38 @@
   </section>
 </main>
 
-<script src="js/smiles.js?v=2026-10-21-pages"></script>
-<script src="js/mol.js?v=2026-10-21-pages"></script>
-<script src="js/descriptors.js?v=2026-10-21-pages"></script>
-<script src="js/rules.js?v=2026-10-21-pages"></script>
-<script src="js/fingerprints.js?v=2026-10-21-pages"></script>
-<script src="js/smarts.js?v=2026-10-21-pages"></script>
-<script src="js/stereo.js?v=2026-10-21-pages"></script>
-<script src="data/library.js?v=2026-10-21-pages"></script>
-<script src="data/targets.js?v=2026-10-21-pages"></script>
-<script src="data/benchmark.js?v=2026-10-21-pages"></script>
-<script src="data/alerts.js?v=2026-10-21-pages"></script>
-<script src="data/toxalerts.js?v=2026-10-21-pages"></script>
-<script src="data/dependence.js?v=2026-10-21-pages"></script>
-<script src="js/tox.js?v=2026-10-21-pages"></script>
-<script src="js/transform.js?v=2026-10-21-pages"></script>
-<script src="js/sites.js?v=2026-10-21-pages"></script>
-<script src="js/depict.js?v=2026-10-21-pages"></script>
-<script src="data/metabolism.js?v=2026-10-21-pages"></script>
-<script src="data/metcases.js?v=2026-10-21-pages"></script>
-<script src="data/stereocases.js?v=2026-10-21-pages"></script>
-<script src="data/wedgecases.js?v=2026-10-21-pages"></script>
-<script src="data/propcases.js?v=2026-10-21-pages"></script>
-<script src="data/crippencases.js?v=2026-10-21-pages"></script>
-  <script src="data/citations.js?v=2026-10-21-pages"></script>
-<script src="js/metabolism.js?v=2026-10-21-pages"></script>
-<script src="js/evidence-report.js?v=2026-10-21-pages"></script>
-<script src="js/screen-coverage.js?v=2026-10-21-pages"></script>
-<script src="js/sim-pagination.js?v=2026-10-21-pages"></script>
-<script src="js/app.js?v=2026-10-21-pages"></script>
-<script src="js/comparison-data.js?v=2026-10-21-pages"></script>
-<script src="js/workspace-ui.js?v=2026-10-21-pages"></script>
-<script src="js/comparison-ui.js?v=2026-10-21-pages"></script>
+<script src="js/smiles.js?v=2026-10-21-batch"></script>
+<script src="js/mol.js?v=2026-10-21-batch"></script>
+<script src="js/descriptors.js?v=2026-10-21-batch"></script>
+<script src="js/rules.js?v=2026-10-21-batch"></script>
+<script src="js/fingerprints.js?v=2026-10-21-batch"></script>
+<script src="js/smarts.js?v=2026-10-21-batch"></script>
+<script src="js/stereo.js?v=2026-10-21-batch"></script>
+<script src="data/library.js?v=2026-10-21-batch"></script>
+<script src="data/targets.js?v=2026-10-21-batch"></script>
+<script src="data/benchmark.js?v=2026-10-21-batch"></script>
+<script src="data/alerts.js?v=2026-10-21-batch"></script>
+<script src="data/toxalerts.js?v=2026-10-21-batch"></script>
+<script src="data/dependence.js?v=2026-10-21-batch"></script>
+<script src="js/tox.js?v=2026-10-21-batch"></script>
+<script src="js/transform.js?v=2026-10-21-batch"></script>
+<script src="js/sites.js?v=2026-10-21-batch"></script>
+<script src="js/depict.js?v=2026-10-21-batch"></script>
+<script src="data/metabolism.js?v=2026-10-21-batch"></script>
+<script src="data/metcases.js?v=2026-10-21-batch"></script>
+<script src="data/stereocases.js?v=2026-10-21-batch"></script>
+<script src="data/wedgecases.js?v=2026-10-21-batch"></script>
+<script src="data/propcases.js?v=2026-10-21-batch"></script>
+<script src="data/crippencases.js?v=2026-10-21-batch"></script>
+  <script src="data/citations.js?v=2026-10-21-batch"></script>
+<script src="js/metabolism.js?v=2026-10-21-batch"></script>
+<script src="js/evidence-report.js?v=2026-10-21-batch"></script>
+<script src="js/screen-coverage.js?v=2026-10-21-batch"></script>
+<script src="js/sim-pagination.js?v=2026-10-21-batch"></script>
+<script src="js/batch-browser.js?v=2026-10-21-batch"></script>
+<script src="js/app.js?v=2026-10-21-batch"></script>
+<script src="js/comparison-data.js?v=2026-10-21-batch"></script>
+<script src="js/workspace-ui.js?v=2026-10-21-batch"></script>
+<script src="js/comparison-ui.js?v=2026-10-21-batch"></script>
 </body>
 </html>

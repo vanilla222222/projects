@@ -79,6 +79,9 @@ assert.ok(scripts.indexOf('js/sim-pagination.js') < scripts.indexOf('js/app.js')
   'Similarity pagination must load before the main application');
 for (const id of ['sim-prev','sim-next','sim-page','sim-pagination']) assert.ok(ids.includes(id), 'Missing pagination control: ' + id);
 assert.ok(app.includes('SimPagination.paginateRanked'), 'Pagination engine not wired');
+assert.ok(scripts.indexOf('js/batch-browser.js') < scripts.indexOf('js/app.js') && scripts.includes('js/batch-browser.js'), 'Batch browser script must load before app');
+for (const id of ['batch-search','batch-sort','batch-order','batch-count','batch-prev','batch-next','batch-page']) assert.ok(ids.includes(id),'Missing batch browser control: '+id);
+assert.ok(app.includes('BatchBrowser.browseBatch'), 'Batch browsing not wired into analysis');
 console.log('UI integration contract passed: ' + scripts.length + ' scripts, ' + ids.length + ' unique DOM IDs');
 assert.ok(app.includes('const DEP_GATE = 0.45;'), 'Dependence gate threshold missing');
 assert.ok(app.includes('const gated = profile.top < DEP_GATE;'), 'Dependence gate is not computed from the threshold');

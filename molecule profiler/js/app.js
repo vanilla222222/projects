@@ -196,6 +196,7 @@ document.body.appendChild(tip);
 let records = [];
 let current = 0;
 let simPage = 1;
+let batchPage = 1;
 
 const libraryCache = new Map();
 
@@ -330,6 +331,7 @@ function analyse() {
   if (!records.length) return;
   current = 0;
   simPage = 1;
+  batchPage = 1;
   renderTabs();
   renderBatch();
   renderCurrent();
@@ -1579,15 +1581,25 @@ function batchRow(record) {
 
 function renderBatch() {
   const table = document.getElementById('batch');
-  table.querySelector('thead').innerHTML = '<tr>' + BATCH_COLUMNS.map(([key, label]) => (
-    '<th>' + label + infoButton(key) + '</th>'
+  const prepared = records.map(record => ({name:record.name,smiles:record.smiles,row:batchRow(record)}));
+  const view = BatchBrowser.browseBatch(prepared, {
+    filter:document.getElementById('batch-search').value,
+    sort:document.getElementById('batch-sort').value,
+    desc:document.getElementById('batch-order').value==='desc',
+    page:batchPage
+  });
+  batchPage=view.page;
+  table.querySelector('thead').innerHTML = '<tr>' + BATCH_COLUMNS.map(([key,label]) => (
+    '<th scope="col">' + label + infoButton(key) + '</th>'
   )).join('') + '</tr>';
-  table.querySelector('tbody').innerHTML = records.map((record, index) => {
-    const row = batchRow(record);
-    return '<tr data-index="' + index + '">' + BATCH_COLUMNS.map(([, , get]) => (
-      '<td>' + escapeHtml(get(row)) + '</td>'
-    )).join('') + '</tr>';
-  }).join('');
+  table.querySelector('tbody').innerHTML = view.visible.map(({record,index}) =>
+    '<tr data-index="' + index + '">' + BATCH_COLUMNS.map(([, ,get]) =>
+      '<td>' + escapeHtml(get(record.row)) + '</td>').join('') + '</tr>'
+  ).join('') || '<tr><td colspan="' + BATCH_COLUMNS.length + '">No matching molecules.</td></tr>';
+  document.getElementById('batch-count').textContent='Showing '+view.from+'–'+view.to+' of '+view.total+' matching molecules ('+view.overall+' analyzed).';
+  document.getElementById('batch-page').textContent='Page '+view.page+' of '+view.pages;
+  document.getElementById('batch-prev').disabled=view.page<=1;
+  document.getElementById('batch-next').disabled=view.page>=view.pages;
 }
 
 function csvCell(value) {
@@ -2024,6 +2036,13 @@ document.getElementById('molecule-tabs').addEventListener('click', (event) => {
   current = Number(button.dataset.index);
   renderCurrent();
 });
+for(const id of ['batch-search','batch-sort','batch-order']) {
+  document.getElementById(id).addEventListener(id==='batch-search'?'input':'change',()=>{
+    batchPage=1; renderBatch();
+  });
+}
+document.getElementById('batch-prev').addEventListener('click',()=>{if(batchPage>1){batchPage--;renderBatch();}});
+document.getElementById('batch-next').addEventListener('click',()=>{batchPage++;renderBatch();});
 document.getElementById('batch').addEventListener('click', (event) => {
   const row = event.target.closest('tr[data-index]');
   if (!row) return;
