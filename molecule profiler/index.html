@@ -56,6 +56,20 @@
     <p id="workspace-description" class="workspace-description" role="status" aria-live="polite"></p>
     <div class="molecule-strip"><span class="strip-title">Molecules in this analysis</span><nav class="tabs" id="molecule-tabs" aria-label="Molecules"></nav></div>
 
+    <section class="comparison-panel panel" id="comparison-panel" hidden aria-labelledby="comparison-title">
+      <div class="panel-head"><h2 id="comparison-title">Molecule comparison</h2><span class="evidence" data-tier="exact">descriptors &amp; estimates</span></div>
+      <p class="hint">Compare up to four molecules from this analysis. Differences are arithmetic comparisons, not evidence of biological activity or safety.</p>
+      <div class="compare-toolbar">
+        <div id="comparison-choices" class="compare-choices" role="group" aria-label="Choose molecules to compare"></div>
+        <div class="compare-actions">
+          <label for="comparison-baseline">Reference column <select id="comparison-baseline"></select></label>
+          <label class="compare-toggle"><input type="checkbox" id="comparison-differences"> Show differences only</label>
+          <button type="button" id="comparison-export" disabled>Export comparison CSV</button>
+        </div>
+      </div>
+      <p id="comparison-status" class="hint" role="status" aria-live="polite"></p>
+      <div class="table-wrap"><table id="comparison-table"><thead></thead><tbody></tbody></table></div>
+    </section>
     <div class="grid">
       <article class="panel">
         <div class="panel-head"><h2>Identity</h2><span class="evidence" data-tier="exact" data-tip="evidenceExact" tabindex="0">exact</span></div>
@@ -355,6 +369,8 @@
 <script src="js/evidence-report.js?v=2026-10-20b"></script>
 <script src="js/screen-coverage.js?v=2026-10-20c"></script>
 <script src="js/app.js?v=2026-10-20c"></script>
+<script src="js/comparison-data.js?v=2026-10-20-compare"></script>
 <script src="js/workspace-ui.js?v=2026-10-20-design"></script>
+<script src="js/comparison-ui.js?v=2026-10-20-compare"></script>
 </body>
 </html>
