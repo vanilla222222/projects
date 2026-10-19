@@ -154,3 +154,12 @@ body[data-theme="light"] .floating-compose { color: white; }
 #evidence-descriptors {max-width:100%;overflow-x:auto}
 #evidence-descriptors table {min-width:760px}
 #evidence-warnings {border-left:3px solid var(--warn);padding-left:12px}
+
+/* Paginated similarity ranking */
+.sim-pagination {display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px}
+.sim-pagination[hidden] {display:none!important}
+.sim-pagination button {min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--bg-sink);color:var(--text);padding:8px 16px;font:650 13px system-ui,sans-serif;cursor:pointer}
+.sim-pagination button:not(:disabled):hover {border-color:var(--accent);color:var(--accent)}
+.sim-pagination button:disabled {opacity:.4;cursor:default}
+.sim-pagination span {color:var(--text-dim);font-size:12px;text-align:center}
+@media(max-width:580px){.sim-pagination span {order:-1;flex-basis:100%}.sim-pagination button {flex:1}}

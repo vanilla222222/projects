@@ -43,6 +43,8 @@ jobs:
         run: node tools/comparison-test.js
       - name: Reference library inspector tests
         run: node tools/library-catalog-test.js
+      - name: Similarity pagination tests
+        run: node tools/sim-pagination-test.js
   rdkit:
     runs-on: ubuntu-latest
     defaults:

@@ -13,7 +13,8 @@ const scripts = [
   'retrieval-benchmark.js',
   'ui-integration-test.js',
   'comparison-test.js',
-  'library-catalog-test.js'
+  'library-catalog-test.js',
+  'sim-pagination-test.js'
 ];
 let failed = 0;
 for (const script of scripts) {

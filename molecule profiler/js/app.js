@@ -195,6 +195,7 @@ document.body.appendChild(tip);
 
 let records = [];
 let current = 0;
+let simPage = 1;
 
 const libraryCache = new Map();
 
@@ -328,6 +329,7 @@ function analyse() {
   document.getElementById('results').hidden = records.length === 0;
   if (!records.length) return;
   current = 0;
+  simPage = 1;
   renderTabs();
   renderBatch();
   renderCurrent();
@@ -725,7 +727,16 @@ function renderSimilar(record) {
     shared: sharedCount(query, item.fp),
     score: score(query, item.fp)
   })).sort((a, b) => b.score - a.score);
-  const shown = limit > 0 ? hits.slice(0, limit) : hits;
+  const pagination = SimPagination.paginateRanked(hits, limit, simPage, 50);
+  simPage = pagination.page;
+  const shown = pagination.rows;
+  const paginationNav = document.getElementById('sim-pagination');
+  paginationNav.hidden = pagination.pages <= 1;
+  document.getElementById('sim-page').textContent =
+    'Showing ' + pagination.from + '–' + pagination.to + ' of ' + pagination.total
+    + ' ranked results · page ' + pagination.page + ' of ' + pagination.pages;
+  document.getElementById('sim-prev').disabled = pagination.page <= 1;
+  document.getElementById('sim-next').disabled = pagination.page >= pagination.pages;
 
   document.getElementById('sim-summary').innerHTML = rankedPool.length + ' reference structures ranked, '
     + query.bits.size + ' query bits' + infoButton('simBits');
@@ -741,7 +752,7 @@ function renderSimilar(record) {
   )).join('') + '</tr>';
   table.querySelector('tbody').innerHTML = shown.map((hit, index) => (
     '<tr data-smiles="' + escapeHtml(hit.entry.smiles) + '" data-name="' + escapeHtml(hit.entry.name) + '">'
-      + '<td>' + (index + 1) + '</td>'
+      + '<td>' + (pagination.start + index + 1) + '</td>'
       + '<td>' + escapeHtml(hit.entry.name) + '</td>'
       + '<td>' + escapeHtml(hit.entry.cls) + '</td>'
       + '<td>' + escapeHtml(hit.entry.formula) + '</td>'
@@ -1521,6 +1532,7 @@ function setupSimilarity() {
   )).join('');
   ['sim-method', 'sim-metric', 'sim-count', 'sim-include-property-only'].forEach((id) => {
     document.getElementById(id).addEventListener('change', () => {
+      simPage = 1;
       if (records[current]) {
         renderSimilar(records[current]);
         renderTargets(records[current]);
@@ -1530,6 +1542,12 @@ function setupSimilarity() {
   });
   [['sim-method', 'simMethod'], ['sim-metric', 'simMetric'], ['sim-count', 'simCount']].forEach(([id, key]) => {
     document.getElementById(id).insertAdjacentHTML('beforebegin', infoButton(key));
+  });
+  document.getElementById('sim-prev').addEventListener('click', () => {
+    if (simPage > 1 && records[current]) { simPage -= 1; renderSimilar(records[current]); }
+  });
+  document.getElementById('sim-next').addEventListener('click', () => {
+    if (records[current]) { simPage += 1; renderSimilar(records[current]); }
   });
   document.getElementById('similar').addEventListener('click', (event) => {
     const row = event.target.closest('tr[data-smiles]');
