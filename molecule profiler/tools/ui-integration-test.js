@@ -65,7 +65,7 @@ const inspector = fs.readFileSync(path.join(root, 'library-inspector.html'), 'ut
 assert.ok(html.includes('href="library-inspector.html"'), 'Reference catalogue not linked from main app');
 assert.match(html, /<option value="0">All parsed entries<\/option>/, 'Similarity all-results option is still capped');
 assert.ok(!html.includes('<option value="596">all</option>'), 'Stale similarity result limit still present');
-assert.ok(app.includes('limit > 0 ? hits.slice(0, limit) : hits'), 'All-results option does not return all ranked entries');
+assert.ok(app.includes('SimPagination.paginateRanked(hits, limit, simPage, 50)'), 'All-results option must paginate the entire ranked pool');
 assert.ok(inspector.includes('js/library-catalog.js'), 'Library catalogue data script missing');
 assert.ok(inspector.includes('js/library-inspector.js'), 'Library catalogue UI script missing');
 assert.ok(fs.existsSync(path.join(root, 'js/library-catalog.js')), 'Library catalogue code missing');
