@@ -1317,6 +1317,8 @@ function renderMetabolism(record) {
   if (typeof metabolicTree !== 'function' || typeof METABOLISM === 'undefined') {
     document.getElementById('met-summary').textContent =
       'the metabolism engine did not load \u2014 reload the page, bypassing the cache';
+    document.getElementById('met-cards').innerHTML = '';
+    document.getElementById('metabolites').querySelector('tbody').innerHTML = '<tr><td colspan="' + MET_COLUMNS.length + '">Metabolism engine unavailable.</td></tr>';
     return;
   }
   let tree;
