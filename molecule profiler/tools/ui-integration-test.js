@@ -26,6 +26,9 @@ for (const id of ['evidence-descriptors', 'evidence-warnings', 'tox-coverage', '
 const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
 assert.match(app, /propertyEvidenceRows\(\{\s*\.\.\.d,\s*logS:\s*v\s*&&\s*v\.logS\s*\}\)/,
   'Evidence table must read calculated logS from record.v');
+const metabolismRenderer = app.slice(app.indexOf('function renderMetabolism(record) {'));
+assert.match(metabolismRenderer, /const coverageSlot = document\.getElementById\('met-coverage'\);\s*if \(coverageSlot\) coverageSlot\.textContent = '';/,
+  'Metabolism coverage must clear stale output before early errors');
 for (const fn of ['toxicityCoverageReport', 'metabolismCoverageReport']) {
   assert.ok(app.includes(fn + '('), 'Coverage report is not wired: ' + fn);
 }
