@@ -180,6 +180,21 @@ class BrowserWorkflowTests(unittest.TestCase):
         self.assertTrue(self.page.locator("#export-research").is_disabled())
         self.assertEqual(self.errors, [], "Browser JavaScript errors: " + repr(self.errors))
 
+    def test_cancel_batch_retains_completed_results(self):
+        self.analyze("Water, O", "1 analyzed")
+        self.page.locator('#smiles-input').fill("\n".join(
+            f"Example {i}, CCO" for i in range(10000)
+        ))
+        self.page.locator('#run').click()
+        self.page.locator('#cancel-analysis').click()
+        self.page.wait_for_function(
+            "() => document.getElementById('status').textContent.includes('cancelled')"
+        )
+        self.assertIn('Water', self.page.locator('#report-title').inner_text())
+        self.assertTrue(self.page.locator('#run').is_enabled())
+        self.assertTrue(self.page.locator('#export').is_enabled())
+        self.assertEqual(self.errors, [])
+
     def test_keyboard_molecule_selection(self):
         self.analyze("Water, O\nEthanol, CCO\nPropane, CCC", "3 analyzed")
         tabs = self.page.locator('#molecule-tabs [role="tab"]')

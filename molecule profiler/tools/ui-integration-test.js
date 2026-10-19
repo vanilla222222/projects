@@ -104,7 +104,9 @@ assert.ok(scripts.indexOf('js/descriptor-stats-ui.js') > scripts.indexOf('js/des
 assert.ok(ids.includes('quality-summary') && ids.includes('quality-issues') && ids.includes('quality-status'), 'Quality panel missing');
 assert.ok(scripts.indexOf('js/molecule-quality.js') < scripts.indexOf('js/app.js'),'Quality evaluator must load before app');
 assert.ok(app.includes('MoleculeQuality.evaluate(record)'),'Quality panel is not connected');
-assert.ok(app.includes('preparedBatchRows = records.map('), 'Batch rows must be cached on analysis');
+assert.ok(app.includes('preparedBatchRows = nextPrepared;'), 'Completed analysis must publish cached batch rows');
+assert.ok(scripts.indexOf('js/cooperative-batch.js') < scripts.indexOf('js/app.js'), 'Cooperative scheduler must load before application');
+for (const id of ['cancel-analysis', 'analysis-progress']) assert.ok(ids.includes(id), 'Missing batch progress control: ' + id);
 assert.ok(app.includes('BatchBrowser.browseBatch(preparedBatchRows'), 'Batch browsing must reuse cached rows');
 assert.ok(app.includes("button.setAttribute('aria-selected', String(selected))"), 'Tab selected-state sync missing');
 console.log('UI integration contract passed: ' + scripts.length + ' scripts, ' + ids.length + ' unique DOM IDs');

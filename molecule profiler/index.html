@@ -43,13 +43,15 @@
     <div class="examples" id="examples"></div>
     <div class="actions">
       <button type="button" id="run" class="primary">Analyse</button>
+      <button type="button" id="cancel-analysis" hidden>Cancel analysis</button>
+      <progress id="analysis-progress" aria-label="Analysis progress" max="1" value="0" hidden></progress>
       <button type="button" id="clear">Clear</button>
       <button type="button" id="export" disabled>Export table CSV</button>
       <button type="button" id="export-full" disabled>Export full CSV (v2)</button>
       <button type="button" id="export-full-dictionary">CSV data dictionary</button>
       <button type="button" id="export-snapshot" disabled>Export analysis JSON</button>
       <button type="button" id="export-research" disabled>Research package (.zip)</button>
-      <span id="status" class="status"></span>
+      <span id="status" class="status" role="status" aria-live="polite"></span>
     </div>
     <section class="input-feedback" id="input-feedback" hidden aria-labelledby="input-feedback-title">
       <h3 id="input-feedback-title">Input validation</h3>
@@ -428,6 +430,7 @@
 <script src="js/screen-coverage.js?v=2026-10-21-quality"></script>
 <script src="js/sim-pagination.js?v=2026-10-21-quality"></script>
 <script src="js/batch-browser.js?v=2026-10-21-quality"></script>
+<script src="js/cooperative-batch.js?v=2026-10-21-quality"></script>
 <script src="js/input-workflow.js?v=2026-10-21-quality"></script>
 <script src="js/full-csv-export.js?v=2026-10-21-quality"></script>
 <script src="js/research-zip.js?v=2026-10-21-quality"></script>

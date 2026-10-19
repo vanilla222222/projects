@@ -199,6 +199,7 @@ let simPage = 1;
 let batchPage = 1;
 let preparedBatchRows = [];
 let latestInputIssues = [];
+let activeAnalysis = null;
 
 const libraryCache = new Map();
 
@@ -298,72 +299,116 @@ function splitLine(line) {
   return { name: null, smiles: trimmed };
 }
 
-function analyse() {
+function setAnalysisBusy(busy) {
+  document.getElementById('run').disabled = busy;
+  document.getElementById('cancel-analysis').hidden = !busy;
+  document.getElementById('analysis-progress').hidden = !busy;
+  document.getElementById('smiles-input').setAttribute('aria-busy', String(busy));
+  for (const id of ['export', 'export-full', 'export-snapshot', 'export-research']) {
+    document.getElementById(id).disabled = busy || records.length === 0;
+  }
+}
+
+async function analyse() {
   const text = document.getElementById('smiles-input').value;
   const input = InputWorkflow.parseInputText(text);
   const status = document.getElementById('status');
-  records = [];
-  preparedBatchRows = [];
+  if (activeAnalysis) activeAnalysis.cancelled = true;
+  const job = {cancelled:false};
+  activeAnalysis = job;
+  const nextRecords = [];
+  const nextPrepared = [];
   const problems = [];
-
-  input.rows.forEach((row, index) => {
-    if(row.error){problems.push({line:row.line,input:row.raw,reason:row.error});return;}
-    const parsed = row.smiles ? {name:row.name,smiles:row.smiles} : splitLine(row.raw);
-    try {
-      const mol = buildMolecule(parseSmiles(parsed.smiles));
-      const d = describe(mol);
-      const verdicts = evaluate(d);
-      records.push({
-        name: parsed.name || ('molecule ' + (index + 1)),
-        smiles: parsed.smiles,
-        mol,
-        d,
-        v: verdicts
-      });
-    } catch (error) {
-      problems.push({line:row.line,input:row.raw,reason:error.message});
+  setAnalysisBusy(true);
+  status.classList.remove('error');
+  try {
+    const outcome = await CooperativeBatch.run(input.rows, (row, index) => {
+      if(row.error){problems.push({line:row.line,input:row.raw,reason:row.error});return;}
+      const parsed = row.smiles ? {name:row.name,smiles:row.smiles} : splitLine(row.raw);
+      try {
+        const mol = buildMolecule(parseSmiles(parsed.smiles));
+        const d = describe(mol);
+        const verdicts = evaluate(d);
+        const record = {
+          name: parsed.name || ('molecule ' + (index + 1)),
+          smiles: parsed.smiles,
+          mol,
+          d,
+          v: verdicts
+        };
+        const prepared = {name:record.name,smiles:record.smiles,row:batchRow(record)};
+        nextRecords.push(record);
+        nextPrepared.push(prepared);
+      } catch (error) {
+        problems.push({line:row.line,input:row.raw,reason:error.message});
+      }
+    }, {
+      isCancelled: () => job.cancelled || activeAnalysis !== job,
+      onProgress: (completed, total) => {
+        if (activeAnalysis !== job) return;
+        const progress = document.getElementById('analysis-progress');
+        progress.max = Math.max(1, total);
+        progress.value = completed;
+        status.textContent = 'Analyzing ' + completed + ' of ' + total + ' input records…';
+      }
+    });
+    if (activeAnalysis !== job) return;
+    if (outcome.cancelled) {
+      status.textContent = 'Analysis cancelled after ' + outcome.completed + ' of ' + outcome.total
+        + ' records. Previous completed results retained.';
+      return;
     }
-  });
+    records = nextRecords;
+    preparedBatchRows = nextPrepared;
+    latestInputIssues = problems.slice();
+    const summary = InputWorkflow.summarizeOutcomes(records.length, problems, input.rows.length);
+    status.classList.toggle('error', problems.length > 0);
+    status.textContent = summary.status;
+    const feedback = document.getElementById('input-feedback');
+    feedback.hidden = input.rows.length===0 && problems.length===0;
+    document.getElementById('input-summary').textContent =
+      summary.successes+' of '+summary.total+' input records analyzed ('+input.format+' format). '
+      + (summary.failures ? 'Invalid entries were skipped; valid results are retained.' : 'No invalid entries found.');
+    const errors = document.getElementById('input-errors');
+    errors.replaceChildren();
+    problems.slice(0,100).forEach(problem => {
+      const item = document.createElement('p');
+      item.textContent = 'Line '+problem.line+': '+problem.reason+' — '+problem.input.slice(0,130);
+      errors.appendChild(item);
+    });
+    if(problems.length>100) {
+      const item=document.createElement('p');
+      item.textContent=(problems.length-100)+' additional errors not displayed.';
+      errors.appendChild(item);
+    }
 
-  latestInputIssues = problems.slice();
-  const summary = InputWorkflow.summarizeOutcomes(records.length, problems, input.rows.length);
-  status.classList.toggle('error', problems.length > 0);
-  status.textContent = summary.status;
-  const feedback = document.getElementById('input-feedback');
-  feedback.hidden = input.rows.length===0 && problems.length===0;
-  document.getElementById('input-summary').textContent =
-    summary.successes+' of '+summary.total+' input records analyzed ('+input.format+' format). '
-    + (summary.failures ? 'Invalid entries were skipped; valid results are retained.' : 'No invalid entries found.');
-  const errors = document.getElementById('input-errors');
-  errors.replaceChildren();
-  problems.slice(0,100).forEach(problem => {
-    const item = document.createElement('p');
-    item.textContent = 'Line '+problem.line+': '+problem.reason+' — '+problem.input.slice(0,130);
-    errors.appendChild(item);
-  });
-  if(problems.length>100) {
-    const item=document.createElement('p');
-    item.textContent=(problems.length-100)+' additional errors not displayed.';
-    errors.appendChild(item);
-  }
-
-  document.getElementById('export').disabled = records.length === 0;
-  document.getElementById('export-full').disabled = records.length === 0;
-  document.getElementById('export-snapshot').disabled = records.length === 0;
-  document.getElementById('export-research').disabled = records.length === 0;
-  document.getElementById('results').hidden = records.length === 0;
-  if (!records.length) {
+    document.getElementById('export').disabled = records.length === 0;
+    document.getElementById('export-full').disabled = records.length === 0;
+    document.getElementById('export-snapshot').disabled = records.length === 0;
+    document.getElementById('export-research').disabled = records.length === 0;
+    document.getElementById('results').hidden = records.length === 0;
+    if (!records.length) {
+      document.dispatchEvent(new Event('molecule-profiler:updated'));
+      return;
+    }
+    current = 0;
+    simPage = 1;
+    batchPage = 1;
+    renderTabs();
+    renderBatch();
+    renderCurrent();
     document.dispatchEvent(new Event('molecule-profiler:updated'));
-    return;
+  } catch (error) {
+    if (activeAnalysis === job) {
+      status.classList.add('error');
+      status.textContent = 'Analysis could not finish: ' + error.message;
+    }
+  } finally {
+    if (activeAnalysis === job) {
+      activeAnalysis = null;
+      setAnalysisBusy(false);
+    }
   }
-  preparedBatchRows = records.map(record => ({name:record.name,smiles:record.smiles,row:batchRow(record)}));
-  current = 0;
-  simPage = 1;
-  batchPage = 1;
-  renderTabs();
-  renderBatch();
-  renderCurrent();
-  document.dispatchEvent(new Event('molecule-profiler:updated'));
 }
 
 function renderTabs() {
@@ -2102,7 +2147,13 @@ function setupTheme() {
 }
 
 document.getElementById('run').addEventListener('click', analyse);
+document.getElementById('cancel-analysis').addEventListener('click', () => {
+  if (activeAnalysis) activeAnalysis.cancelled = true;
+});
 document.getElementById('clear').addEventListener('click', () => {
+  if (activeAnalysis) activeAnalysis.cancelled = true;
+  activeAnalysis = null;
+  setAnalysisBusy(false);
   document.getElementById('smiles-input').value = '';
   document.getElementById('results').hidden = true;
   document.getElementById('status').textContent = '';

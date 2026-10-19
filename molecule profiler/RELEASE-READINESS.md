@@ -41,3 +41,9 @@ To diagnose future failures with no steps, inspect the check annotations, not on
 Local Chromium launch was also attempted in the development container using Playwright 1.51.0 and Chromium 134.0.6998.35. The environment denied a socket operation in `process_singleton_posix.cc` before the browser launched. No browser assertions ran; this does not establish an application failure or a browser-suite pass. Run the suite in an environment that permits browser startup.
 
 The Node interaction tests use small DOM doubles. They cover selection identity and denied-storage error handling, but cannot establish browser focus, layout, accessibility or download behavior.
+
+## Cooperative batch analysis
+
+Descriptor analysis yields to the browser between chunks (12 ms budget or 25 records, whichever is reached first). Progress counts attempted input records, including invalid records. Cancellation discards the in-progress batch and retains the last completed analysis and its exports. Clear also invalidates pending calculations; an older run cannot publish over a newer run.
+
+This is cooperative scheduling on the main thread, not a Web Worker. Parsing input, one complex molecular calculation, reference fingerprint preparation, rendering, and exports may still block. The scheduler's 10,000-item regression verifies ordering and cancellation; it is not an end-to-end chemistry throughput benchmark. The analysis lifecycle test separately compares real engine output with synchronous calculation and checks partial input success and transaction behavior. Chromium coverage for progress/cancellation is committed but remains unverified until browser execution is available.

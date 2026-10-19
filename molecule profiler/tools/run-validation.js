@@ -14,6 +14,8 @@ const scripts = [
   'retrieval-benchmark.js',
   'ui-integration-test.js',
   'interaction-test.js',
+  'cooperative-batch-test.js',
+  'analysis-lifecycle-test.js',
   'comparison-test.js',
   'library-catalog-test.js',
   'sim-pagination-test.js',
