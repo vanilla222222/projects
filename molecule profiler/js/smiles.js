@@ -56,7 +56,7 @@ function parseSmiles(text) {
     if (pendingDot) {
       pendingDot = false;
       pendingBond = null;
-      previous = atom;
+      previous = atom.index;
       return;
     }
     if (previous !== null) {

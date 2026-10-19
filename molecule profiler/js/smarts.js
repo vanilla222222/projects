@@ -427,7 +427,7 @@ function smartsMatches(query, mol, options) {
 
   const step = (position) => {
     if (position === query.order.length) {
-      const key = map.slice().sort((a, b) => a - b).join(',');
+      const key = settings.mapping ? map.join(',') : map.slice().sort((a, b) => a - b).join(',');
       if (!seen.has(key)) { seen.add(key); results.push(map.slice()); }
       return results.length >= limit;
     }

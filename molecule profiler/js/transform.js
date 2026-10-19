@@ -248,12 +248,26 @@ function samePair(bond, a, b) {
 function orderSum(bonds, id) {
   let total = 0;
   bonds.forEach((bond) => {
-    if (!bond.keep) return;
+    if (bond.keep === false) return;
     if (bond.a === id || bond.b === id) total += bond.order;
   });
   return total;
 }
 
+function neighbourKey(bonds, id, live) {
+  const out = [];
+  bonds.forEach((bond) => {
+    if (live && !bond.keep) return;
+    if (bond.a === id) out.push(bond.b + '/' + bond.order);
+    else if (bond.b === id) out.push(bond.a + '/' + bond.order);
+  });
+  return out.sort().join(',');
+}
+function unchangedCentre(mol, atoms, bonds, id) {
+  if (atoms[id].element !== mol.atoms[id].element) return false;
+  if (atoms[id].totalH !== mol.atoms[id].totalH) return false;
+  return neighbourKey(bonds, id, true) === neighbourKey(mol.bonds, id, false);
+}
 function runTransform(mol, tf, match) {
   const atoms = mol.atoms.map((atom) => ({
     element: atom.element,
@@ -261,6 +275,8 @@ function runTransform(mol, tf, match) {
     charge: atom.charge || 0,
     isotope: atom.isotope || null,
     totalH: atom.totalH,
+    chirality: atom.chirality || null,
+    order: Array.isArray(atom.order) ? atom.order.slice() : null,
     keep: true,
     template: false
   }));
@@ -353,9 +369,17 @@ function runTransform(mol, tf, match) {
   });
 
   atoms.forEach((atom, id) => {
-    if (!atom.keep || atom.template) return;
+    if (!atom.keep || atom.template || id >= mol.atoms.length) return;
     if (!needsBracket(atom)) atom.totalH = null;
     else if (orderSum(bonds, id) !== orderSum(mol.bonds, id)) atom.totalH = null;
+  });
+
+  atoms.forEach((atom, id) => {
+    if (!atom.keep || !atom.chirality) return;
+    if (id >= mol.atoms.length || !unchangedCentre(mol, atoms, bonds, id)) {
+      atom.chirality = null;
+      atom.order = null;
+    }
   });
 
   return assemble(atoms, bonds, touched);
@@ -395,6 +419,22 @@ function assemble(atoms, bonds, touched) {
     kept.push(atom);
   });
   if (!kept.length) return null;
+  kept.forEach((atom) => {
+    if (!atom.chirality || !atom.order) return;
+    const moved = [];
+    let lost = false;
+    atom.order.forEach((slot) => {
+      if (slot === null) { moved.push(null); return; }
+      if (typeof slot !== 'number' || !index.has(slot)) { lost = true; return; }
+      moved.push(index.get(slot));
+    });
+    if (lost) {
+      atom.chirality = null;
+      atom.order = null;
+      return;
+    }
+    atom.order = moved;
+  });
   const edges = [];
   live.forEach((bond) => {
     if (!index.has(bond.a) || !index.has(bond.b)) return;
@@ -406,12 +446,15 @@ function assemble(atoms, bonds, touched) {
 
 function applyTransform(mol, smirks) {
   const tf = compileTransform(smirks);
-  const found = smartsMatches(tf.query, mol, {});
+  const found = smartsMatches(tf.query, mol, { mapping: true });
   const products = [];
+  const seen = new Set();
   found.forEach((match) => {
     let result = null;
     try { result = runTransform(mol, tf, match); } catch (error) { result = null; }
-    if (result) products.push(result);
+    if (!result || seen.has(result.smiles)) return;
+    seen.add(result.smiles);
+    products.push(result);
   });
   return products;
 }
