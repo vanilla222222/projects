@@ -2008,7 +2008,9 @@ function exportResearch() {
   if(!records.length)return;
   const val=typeof PROPERTY_VALIDATION==='undefined'?{}:PROPERTY_VALIDATION.datasets;
   const pkg=ResearchPackage.createPackage(records,val,latestInputIssues,{
-    revision:'2026-10-21-package',analysisSettings:{modelFamily:'WLOGP and ESOL'}
+    revision:(document.querySelector('script[src*="js/app.js?"]')?.getAttribute('src')||'unrecorded'),
+    referenceLibraryCount:typeof LIBRARY!=='undefined'?LIBRARY.length:null,
+    analysisSettings:{modelFamily:'WLOGP and ESOL'}
   });
   const zip=ResearchZip.makeZip(pkg.files);
   const url=URL.createObjectURL(new Blob([zip],{type:'application/zip'}));

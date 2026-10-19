@@ -99,6 +99,8 @@ assert.ok(app.includes('FullCsvExport.topRanked(ranked)'), 'Full CSV target rank
 assert.ok(ids.includes('export-research'),'Research package button missing');
 assert.ok(scripts.includes('js/research-package.js')&&scripts.includes('js/research-zip.js'),'Research ZIP scripts missing');
 assert.ok(app.includes('ResearchPackage.createPackage(records'),'Research package not wired');
+assert.ok(ids.includes('distribution-metric') && ids.includes('distribution-plot'),'Descriptor statistics UI missing');
+assert.ok(scripts.indexOf('js/descriptor-stats-ui.js') > scripts.indexOf('js/descriptor-stats.js'),'Chart scripts out of order');
 console.log('UI integration contract passed: ' + scripts.length + ' scripts, ' + ids.length + ' unique DOM IDs');
 assert.ok(app.includes('const DEP_GATE = 0.45;'), 'Dependence gate threshold missing');
 assert.ok(app.includes('const gated = profile.top < DEP_GATE;'), 'Dependence gate is not computed from the threshold');

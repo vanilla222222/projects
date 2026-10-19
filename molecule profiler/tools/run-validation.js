@@ -20,7 +20,8 @@ const scripts = [
   'input-workflow-test.js',
   'report-model-test.js',
   'full-csv-export-test.js',
-  'research-package-test.js'
+  'research-package-test.js',
+  'descriptor-stats-test.js'
 ];
 const started = new Date().toISOString();
 const outcomes = [];

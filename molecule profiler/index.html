@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Molecule Profiler</title>
-<link rel="stylesheet" href="css/style.css?v=2026-10-21-package">
-<link rel="stylesheet" href="css/workspace.css?v=2026-10-21-package">
+<link rel="stylesheet" href="css/style.css?v=2026-10-21-stats">
+<link rel="stylesheet" href="css/workspace.css?v=2026-10-21-stats">
 </head>
 <body data-theme="dark">
 <header class="topbar">
@@ -173,6 +173,14 @@
         <div class="panel-head"><h2>Absorption plot</h2><span class="evidence" data-tier="rule" data-tip="evidenceRule" tabindex="0">published rule</span></div>
         <div class="chart"><svg id="egg" viewBox="0 0 340 300" role="img" aria-label="TPSA against WLOGP"></svg></div>
         <p class="note">TPSA against WLOGP. The two regions are approximations of the published BOILED-Egg boundaries for passive gastrointestinal absorption (outer) and blood&ndash;brain barrier permeation (inner), read off the original figure rather than refitted, so treat points near an edge as undecided.</p>
+      </article>
+
+      <article class="panel wide" id="descriptor-distributions">
+        <div class="panel-head"><h2>Descriptor distributions</h2><span class="evidence" data-tier="exact">descriptive statistics</span></div>
+        <p class="hint">Distribution of values in your analyzed batch. Missing and non-finite values are excluded and counted. These are not population estimates or model confidence intervals.</p>
+        <label class="distribution-control">Descriptor <select id="distribution-metric" aria-label="Distribution descriptor"></select></label>
+        <p id="distribution-summary" class="hint" role="status" aria-live="polite"></p>
+        <div id="distribution-plot" class="descriptor-chart"></div>
       </article>
 
       <article class="panel wide">
@@ -385,44 +393,46 @@
   </section>
 </main>
 
-<script src="js/smiles.js?v=2026-10-21-package"></script>
-<script src="js/mol.js?v=2026-10-21-package"></script>
-<script src="js/descriptors.js?v=2026-10-21-package"></script>
-<script src="js/rules.js?v=2026-10-21-package"></script>
-<script src="js/fingerprints.js?v=2026-10-21-package"></script>
-<script src="js/smarts.js?v=2026-10-21-package"></script>
-<script src="js/stereo.js?v=2026-10-21-package"></script>
-<script src="data/library.js?v=2026-10-21-package"></script>
-<script src="data/targets.js?v=2026-10-21-package"></script>
-<script src="data/benchmark.js?v=2026-10-21-package"></script>
-<script src="data/alerts.js?v=2026-10-21-package"></script>
-<script src="data/toxalerts.js?v=2026-10-21-package"></script>
-<script src="data/dependence.js?v=2026-10-21-package"></script>
-<script src="js/tox.js?v=2026-10-21-package"></script>
-<script src="js/transform.js?v=2026-10-21-package"></script>
-<script src="js/sites.js?v=2026-10-21-package"></script>
-<script src="js/depict.js?v=2026-10-21-package"></script>
-<script src="data/metabolism.js?v=2026-10-21-package"></script>
-<script src="data/metcases.js?v=2026-10-21-package"></script>
-<script src="data/stereocases.js?v=2026-10-21-package"></script>
-<script src="data/wedgecases.js?v=2026-10-21-package"></script>
-<script src="data/propcases.js?v=2026-10-21-package"></script>
-<script src="data/crippencases.js?v=2026-10-21-package"></script>
-  <script src="data/citations.js?v=2026-10-21-package"></script>
-<script src="js/metabolism.js?v=2026-10-21-package"></script>
-<script src="js/evidence-report.js?v=2026-10-21-package"></script>
-<script src="js/screen-coverage.js?v=2026-10-21-package"></script>
-<script src="js/sim-pagination.js?v=2026-10-21-package"></script>
-<script src="js/batch-browser.js?v=2026-10-21-package"></script>
-<script src="js/input-workflow.js?v=2026-10-21-package"></script>
-<script src="js/full-csv-export.js?v=2026-10-21-package"></script>
-<script src="js/research-zip.js?v=2026-10-21-package"></script>
-<script src="js/research-package.js?v=2026-10-21-package"></script>
-<script src="js/app.js?v=2026-10-21-package"></script>
-<script src="js/comparison-data.js?v=2026-10-21-package"></script>
-<script src="js/workspace-ui.js?v=2026-10-21-package"></script>
-<script src="js/comparison-ui.js?v=2026-10-21-package"></script>
-<script src="js/report-model.js?v=2026-10-21-package"></script>
-<script src="js/report-ui.js?v=2026-10-21-package"></script>
+<script src="js/smiles.js?v=2026-10-21-stats"></script>
+<script src="js/mol.js?v=2026-10-21-stats"></script>
+<script src="js/descriptors.js?v=2026-10-21-stats"></script>
+<script src="js/rules.js?v=2026-10-21-stats"></script>
+<script src="js/fingerprints.js?v=2026-10-21-stats"></script>
+<script src="js/smarts.js?v=2026-10-21-stats"></script>
+<script src="js/stereo.js?v=2026-10-21-stats"></script>
+<script src="data/library.js?v=2026-10-21-stats"></script>
+<script src="data/targets.js?v=2026-10-21-stats"></script>
+<script src="data/benchmark.js?v=2026-10-21-stats"></script>
+<script src="data/alerts.js?v=2026-10-21-stats"></script>
+<script src="data/toxalerts.js?v=2026-10-21-stats"></script>
+<script src="data/dependence.js?v=2026-10-21-stats"></script>
+<script src="js/tox.js?v=2026-10-21-stats"></script>
+<script src="js/transform.js?v=2026-10-21-stats"></script>
+<script src="js/sites.js?v=2026-10-21-stats"></script>
+<script src="js/depict.js?v=2026-10-21-stats"></script>
+<script src="data/metabolism.js?v=2026-10-21-stats"></script>
+<script src="data/metcases.js?v=2026-10-21-stats"></script>
+<script src="data/stereocases.js?v=2026-10-21-stats"></script>
+<script src="data/wedgecases.js?v=2026-10-21-stats"></script>
+<script src="data/propcases.js?v=2026-10-21-stats"></script>
+<script src="data/crippencases.js?v=2026-10-21-stats"></script>
+  <script src="data/citations.js?v=2026-10-21-stats"></script>
+<script src="js/metabolism.js?v=2026-10-21-stats"></script>
+<script src="js/evidence-report.js?v=2026-10-21-stats"></script>
+<script src="js/screen-coverage.js?v=2026-10-21-stats"></script>
+<script src="js/sim-pagination.js?v=2026-10-21-stats"></script>
+<script src="js/batch-browser.js?v=2026-10-21-stats"></script>
+<script src="js/input-workflow.js?v=2026-10-21-stats"></script>
+<script src="js/full-csv-export.js?v=2026-10-21-stats"></script>
+<script src="js/research-zip.js?v=2026-10-21-stats"></script>
+<script src="js/research-package.js?v=2026-10-21-stats"></script>
+<script src="js/app.js?v=2026-10-21-stats"></script>
+<script src="js/comparison-data.js?v=2026-10-21-stats"></script>
+<script src="js/workspace-ui.js?v=2026-10-21-stats"></script>
+<script src="js/comparison-ui.js?v=2026-10-21-stats"></script>
+<script src="js/descriptor-stats.js?v=2026-10-21-stats"></script>
+<script src="js/descriptor-stats-ui.js?v=2026-10-21-stats"></script>
+<script src="js/report-model.js?v=2026-10-21-stats"></script>
+<script src="js/report-ui.js?v=2026-10-21-stats"></script>
 </body>
 </html>

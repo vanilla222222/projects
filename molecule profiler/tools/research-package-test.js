@@ -8,6 +8,8 @@ charge:0,tpsa:20.2,hbdStrict:1,hbaStrict:1,rotatableBonds:0,rings:0,fractionCsp3
 const pkg=createPackage([row,{...row,name:'duplicate'}],{},[{line:5,reason:'Parse error'}],{createdAt:'2026-10-19',revision:'test'});
 assert.equal(pkg.files.length,7);
 assert.equal(pkg.manifest.moleculeCount,2);
+assert.equal(pkg.manifest.files[0].crc32.length,8);
+assert.match(pkg.manifest.integrityAlgorithm,/not a cryptographic/);
 assert.equal(pkg.manifest.inputErrorCount,1);
 assert.equal(pkg.files.find(x=>x.name==='descriptors.csv').content.split('\r\n').filter(Boolean).length,1+2*METRICS.length);
 assert.ok(pkg.files.find(x=>x.name==='quality.csv').content.includes('exact_duplicate'));

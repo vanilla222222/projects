@@ -1,0 +1,13 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {histogram}=require('../js/descriptor-stats.js');
+const rows=[{d:{mw:10,tpsa:5}},{d:{mw:20}},{d:{mw:30}},{d:{mw:NaN}}];
+let h=histogram(rows,'mw',4);
+assert.equal(h.count,3);assert.equal(h.missing,1);assert.equal(h.mean,20);assert.equal(h.median,20);
+assert.equal(h.bins.reduce((a,b)=>a+b.count,0),3);
+assert.equal(h.bins[h.bins.length-1].count,1);
+assert.equal(histogram([],'mw').count,0);
+assert.equal(histogram([{d:{mw:8}},{d:{mw:8}}],'mw').bins.reduce((a,b)=>a+b.count,0),2);
+assert.equal(histogram(rows,'tpsa').count,1);
+assert.equal(histogram(rows,'invalid').metric.key,'mw');
+console.log('Descriptor distribution tests passed');
