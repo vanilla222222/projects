@@ -40,11 +40,20 @@
  function createPackage(records,datasets,issues,settings){
   const source=Array.isArray(records)?records:[],validation=datasets||{},bad=Array.isArray(issues)?issues:[],meta=settings||{};
   const molecules=[],descriptors=[],quality=[],seen=new Map();
-  const counts={exact_duplicate:0,missing_descriptor:0,input_error:0},missingByDescriptor={};
+  const counts={exact_duplicate:0,missing_descriptor:0,input_error:0,applicability_caution:0},missingByDescriptor={};
   source.forEach((r,i)=>{
    const id='mol-'+String(i+1).padStart(4,'0'),smiles=String(r.smiles||''),d=r.d||{},v=r.v||{};
    molecules.push([id,r.name||'Molecule '+(i+1),smiles,d.formula||'','analyzed']);
    if(seen.has(smiles)){quality.push([id,'exact_duplicate','info','Same text SMILES as '+seen.get(smiles)]);counts.exact_duplicate++;}else seen.set(smiles,id);
+   // Additional structural review flags reuse the exact same module as the UI.
+   if(typeof MoleculeQuality!=='undefined') {
+    const result=MoleculeQuality.evaluate(r);
+    for(const flag of result.issues) {
+     if(flag.severity!=='caution')continue;
+     quality.push([id,flag.code,'caution',flag.reason]);
+     counts.applicability_caution++;
+    }
+   }
    for(const [key,type,unit,evidence,method] of METRICS){
     const raw=key==='logS'?v.logS:d[key];
     const val=type==='text'?String(raw==null?'':raw):finite(raw);

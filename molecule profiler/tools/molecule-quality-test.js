@@ -1,0 +1,17 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {evaluate}=require('../js/molecule-quality.js');
+const clean={smiles:'CCO',d:{mw:46,tpsa:20,logp:0.2,heavyAtoms:3,rings:0,charge:0},v:{logS:-1}};
+assert.equal(evaluate(clean).status,'complete');
+assert.equal(evaluate(clean).missing,0);
+const flagged=evaluate({...clean,d:{...clean.d,mw:710,charge:1,logp:8},v:{logS:NaN}});
+assert.equal(flagged.status,'review');
+assert.ok(flagged.issues.some(x=>x.code==='charged_structure'));
+assert.ok(flagged.issues.some(x=>x.code==='high_mass'));
+assert.ok(flagged.issues.some(x=>x.code==='extreme_logp'));
+assert.ok(flagged.issues.some(x=>x.code==='missing_logS'));
+const seen=new Map();
+assert.equal(evaluate(clean,{seen,id:'mol-0001'}).issues.length,0);
+assert.ok(evaluate(clean,{seen,id:'mol-0002'}).issues.some(x=>x.code==='duplicate_input'));
+assert.ok(evaluate({smiles:'O',d:{},v:{}}).missing>=5);
+console.log('Molecule data-quality tests passed');

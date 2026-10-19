@@ -22,6 +22,7 @@ const scripts = [
   'full-csv-export-test.js',
   'research-package-test.js',
   'descriptor-stats-test.js',
+  'molecule-quality-test.js',
   'research-zip-external-test.js'
 ];
 const started = new Date().toISOString();

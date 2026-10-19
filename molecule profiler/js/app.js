@@ -384,6 +384,19 @@ function renderCurrent() {
   const d = record.d;
   const v = record.v;
   document.dispatchEvent(new Event('molecule-profiler:selected'));
+  const quality = MoleculeQuality.evaluate(record);
+  const qualityHost = document.getElementById('quality-summary');
+  qualityHost.hidden = false;
+  document.getElementById('quality-status').textContent =
+    quality.status === 'complete' ? 'No basic descriptor quality flags detected.' :
+    quality.issues.length + ' review flag(s) for this molecule.';
+  const qualityList = document.getElementById('quality-issues');
+  qualityList.replaceChildren();
+  for (const issue of quality.issues) {
+    const item = document.createElement('li');
+    item.textContent = issue.reason;
+    qualityList.appendChild(item);
+  }
 
   // Descriptor methods and extrapolation warnings; intentionally no new predictions.
   if (typeof propertyEvidenceRows === 'function') {
@@ -2085,6 +2098,7 @@ document.getElementById('clear').addEventListener('click', () => {
   document.getElementById('export-snapshot').disabled = true;
   document.getElementById('export-research').disabled = true;
   document.getElementById('input-feedback').hidden = true;
+  document.getElementById('quality-summary').hidden = true;
   records = [];
   document.dispatchEvent(new Event('molecule-profiler:updated'));
 });

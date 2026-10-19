@@ -232,3 +232,11 @@ body[data-theme="light"] .floating-compose { color: white; }
   .report-bottom section,.report-evidence{break-inside:avoid}
   a{color:#111!important;text-decoration:underline}
 }
+
+/* Structural input and descriptor quality warnings */
+.quality-summary[hidden]{display:none!important}
+.quality-summary{margin-bottom:16px}
+.quality-summary #quality-status{font-weight:650;font-size:13px;margin:9px 0}
+.quality-summary ul{margin:8px 0 12px;padding-left:21px;display:grid;gap:7px}
+.quality-summary li{font-size:12px;line-height:1.5;color:var(--text-dim);overflow-wrap:anywhere}
+@media print{.quality-summary{display:none!important}}

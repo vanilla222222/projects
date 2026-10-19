@@ -101,6 +101,9 @@ assert.ok(scripts.includes('js/research-package.js')&&scripts.includes('js/resea
 assert.ok(app.includes('ResearchPackage.createPackage(records'),'Research package not wired');
 assert.ok(ids.includes('distribution-metric') && ids.includes('distribution-plot'),'Descriptor statistics UI missing');
 assert.ok(scripts.indexOf('js/descriptor-stats-ui.js') > scripts.indexOf('js/descriptor-stats.js'),'Chart scripts out of order');
+assert.ok(ids.includes('quality-summary') && ids.includes('quality-issues') && ids.includes('quality-status'), 'Quality panel missing');
+assert.ok(scripts.indexOf('js/molecule-quality.js') < scripts.indexOf('js/app.js'),'Quality evaluator must load before app');
+assert.ok(app.includes('MoleculeQuality.evaluate(record)'),'Quality panel is not connected');
 console.log('UI integration contract passed: ' + scripts.length + ' scripts, ' + ids.length + ' unique DOM IDs');
 assert.ok(app.includes('const DEP_GATE = 0.45;'), 'Dependence gate threshold missing');
 assert.ok(app.includes('const gated = profile.top < DEP_GATE;'), 'Dependence gate is not computed from the threshold');
