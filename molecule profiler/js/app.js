@@ -874,6 +874,13 @@ const DEP_TARGET_COLUMNS = [
   ['depTargetLigand', 'Nearest ligand']
 ];
 
+const DEP_VERDICTS = [
+  [0.85, 'worth asking about', 'The query is a close structural analogue of a drug with a documented dependence liability, so the rows below are worth checking against the real pharmacology of that drug. They remain fingerprint neighbours: nearness of shape is not a shared mechanism, and this panel never tests one.'],
+  [0.65, 'worth asking about', 'The query shares a scaffold with a drug that carries a documented dependence liability. That is a reason to go and read the pharmacology, not a finding in itself.'],
+  [0.45, 'structural analogy only, not pharmacology', 'The nearest labelled drug is a distant resemblance. Below a score of about 0.65 a nearest-neighbour number carries no pharmacological claim at all, so the rows below are simply the closest shapes in the set, printed in rank order. Nothing here says the query touches the reward circuit, and the numbers in the cards should not be read as a liability assessment.'],
+  [0, 'structural analogy only, not pharmacology', 'Nothing in the labelled dependence set is a relative of this query. Every row below is a non-match listed in rank order, so the scores describe distance in fingerprint space and say nothing whatever about dependence. For a molecule with no pharmacological relation to any of these drugs, such as aspirin, this panel has no content and should be read as empty rather than as a low risk score.']
+];
+
 function renderDependence(record) {
   const methodKey = document.getElementById('sim-method').value;
   const metricKey = document.getElementById('sim-metric').value;
@@ -887,11 +894,20 @@ function renderDependence(record) {
     + ' labelled drugs with ' + method.label + ' and '
     + (metricKey === 'dice' ? 'Dice' : 'Tanimoto') + ', following the similarity panel above.';
 
-  document.getElementById('dep-cards').innerHTML = [
+  const verdict = DEP_VERDICTS.find(([floor]) => profile.top >= floor);
+  const weak = profile.top < 0.65;
+  const notice = document.getElementById('dep-verdict');
+  notice.dataset.weak = weak ? 'yes' : 'no';
+  notice.innerHTML = '<strong>' + escapeHtml(verdict[1]) + '</strong> ' + escapeHtml(verdict[2]);
+
+  const cards = document.getElementById('dep-cards');
+  cards.dataset.weak = weak ? 'yes' : 'no';
+  cards.innerHTML = [
     '<div class="filter ' + (profile.top >= 0.65 ? 'fail' : 'pass') + '">'
       + '<div class="name">Analogy band' + infoButton('depBand') + '</div>'
       + '<div class="verdict">' + profile.top.toFixed(3) + '</div>'
-      + '<div class="why">' + escapeHtml(profile.band) + '</div>'
+      + '<div class="why">' + escapeHtml(profile.band)
+        + (weak ? ' \u2014 no pharmacological claim' : '') + '</div>'
       + '</div>',
     '<div class="filter ' + (profile.best && profile.top >= 0.65 ? 'fail' : 'pass') + '">'
       + '<div class="name">Nearest liability' + infoButton('depNearest') + '</div>'
@@ -899,13 +915,15 @@ function renderDependence(record) {
       + '<div class="why">' + (profile.best
         ? escapeHtml(profile.best.drug.name + ' \u2014 ' + profile.best.drug.klass.toLowerCase()
           + ', ' + profile.best.drug.liability + ' liability')
-        : 'nothing in the set') + '</div>'
+        : 'nothing in the set')
+        + (weak ? ' \u2014 shape only' : '') + '</div>'
       + '</div>',
     '<div class="filter ' + (reward && reward.value >= 0.4 ? 'fail' : 'pass') + '">'
       + '<div class="name">Reward-circuit proximity' + infoButton('depReward') + '</div>'
       + '<div class="verdict">' + (reward ? reward.value.toFixed(3) : '\u2014') + '</div>'
       + '<div class="why">' + (reward
         ? escapeHtml(reward.target.gene + ' via ' + reward.nearest.name)
+          + (reward.value < 0.4 ? ' \u2014 below any meaningful level' : '')
         : 'no scored target') + '</div>'
       + '</div>'
   ].join('');
@@ -1369,6 +1387,7 @@ function fullExportRows(record) {
   const profile = dependenceProfile(record, method.key, score);
   pair('dependence', 'analogyScore', profile.top.toFixed(4));
   pair('dependence', 'analogyBand', profile.band);
+  pair('dependence', 'claimType', DEP_VERDICTS.find(([floor]) => profile.top >= floor)[1]);
   pair('dependence', 'nearestLiability', profile.best
     ? profile.best.drug.name + ' (' + profile.best.drug.liability + ', ' + profile.best.value.toFixed(4) + ')'
     : '');
