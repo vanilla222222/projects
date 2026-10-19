@@ -42,14 +42,14 @@ const reportArg = process.argv.indexOf('--report');
 if (reportArg !== -1) {
   const target = process.argv[reportArg + 1];
   if (!target || target.startsWith('--')) {
-    process.stderr.write('Usage: node tools/run-validation.js --report <path>\\n');
+    process.stderr.write('Usage: node tools/run-validation.js --report <path>\n');
     process.exitCode = 2;
   } else {
     try {
-      fs.writeFileSync(path.resolve(process.cwd(),target),JSON.stringify(report,null,2)+'\\n');
-      process.stdout.write('Wrote validation diagnostics to '+target+'\\n');
+      fs.writeFileSync(path.resolve(process.cwd(),target),JSON.stringify(report,null,2)+'\n');
+      process.stdout.write('Wrote validation diagnostics to '+target+'\n');
     } catch(error) {
-      process.stderr.write('Could not write validation report: '+String(error)+'\\n');
+      process.stderr.write('Could not write validation report: '+String(error)+'\n');
       process.exitCode = 2;
     }
   }
