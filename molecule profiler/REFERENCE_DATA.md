@@ -34,3 +34,9 @@ This is a data-integrity regression check, not molecular graph canonicalization,
 - Resolve and verify molecular formulas against a reliable compound identifier source.
 - Attach source-level provenance to each biological relationship.
 - Measure retrieval performance on held-out, experimentally characterized data.
+
+## Local validation when GitHub Actions is unavailable
+
+From `molecule profiler/`, run `node tools/run-validation.js` to execute seven JavaScript regression scripts and receive an aggregated exit status. For independent chemical-structure checking, install RDKit and run `python tools/rdkit-library-audit.py --output rdkit-audit.json`. Inspect the generated JSON rather than automatically rewriting reference data.
+
+The GitHub Actions workflows were observed to fail on 2026-10-19 with zero reported job steps and unavailable logs. This is **not** evidence that the regression scripts passed or failed; investigate runner availability, account billing/usage limits, workflow permissions, and GitHub Actions settings before interpreting the failure as a test failure. No browser smoke test has been completed against the latest master.
