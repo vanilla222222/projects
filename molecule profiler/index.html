@@ -115,6 +115,8 @@
           <p class="hint" id="depict-summary"></p>
         </div>
         <div class="tgt-controls">
+          <label>Ranking<select id="tgt-mode"><option value="ensemble">Multi-fingerprint (experimental)</option><option value="legacy" selected>Legacy nearest neighbour</option></select></label>
+          <label>Scope<select id="tgt-scope"><option value="all">All target types</option><option value="receptors">Receptor-related targets</option></select></label>
           <label>Highlight<select id="depict-highlight">
             <option value="none" selected>nothing</option>
             <option value="sites">metabolism sites</option>
@@ -269,6 +271,7 @@
             <option value="2" selected>2</option>
             <option value="3">3</option>
           </select></label>
+          <label>Search budget (incl. parent)<select id="met-budget"><option value="60">60</option><option value="120" selected>120</option><option value="300">300</option></select></label>
           <label>Phase<select id="met-phase">
             <option value="all" selected>both</option>
             <option value="I">phase I only</option>
@@ -281,12 +284,13 @@
           </select></label>
           <label>Abundance<select id="met-band">
             <option value="all" selected>any band</option>
-            <option value="major">major only</option>
-            <option value="minor">minor only</option>
-            <option value="trace">trace only</option>
+            <option value="major">higher heuristic weight</option>
+            <option value="minor">intermediate heuristic weight</option>
+            <option value="trace">lower heuristic weight</option>
           </select></label>
           <label><input type="checkbox" id="met-toxonly"> new toxicity flags only</label>
         </div>
+        <p class="hint" id="met-diagnostics" role="status"></p>
         <div class="table-wrap"><table id="metabolites"><colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="c8"><col class="c9"><col class="c10"><col class="c11"></colgroup><thead></thead><tbody></tbody></table></div>
         <div class="table-wrap"><table id="met-notes"><thead></thead><tbody></tbody></table></div>
         <p class="hint caveat">A metabolite listed here is a structure the rule set can reach, not a structure anyone has measured. The tree is enumerated breadth-first and every product is passed back through the parser, the descriptors and the toxicity screens of this page, so a flag on a metabolite means exactly what the same flag means on a parent molecule. Leaving groups below five heavy atoms are reported as released fragments rather than as metabolites of their own. Enzyme attribution is by reaction class: a carbon oxidation next to nitrogen is labelled CYP because that class of reaction is CYP work, which is not the same as predicting the isoform.</p>
@@ -374,8 +378,9 @@
         </div>
         <p class="hint" id="tgt-blurb"></p>
         <p class="hint" id="tgt-bench"></p>
+        <p class="hint caveat" id="tgt-evidence" role="status"></p>
         <div class="table-wrap"><table id="targets"><colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="c8"><col class="c9"><col class="c10"><col class="c11"></colgroup><thead></thead><tbody></tbody></table></div>
-        <p class="hint caveat" id="tgt-caveat">This is a nearest-neighbour lookup over a hand-curated set of known ligands, not a trained model: a target scores high when the query looks like a compound already recorded as binding it. The numbers are fingerprint similarities, not binding probabilities, and a target with no ligand in the set below can never appear here. The list is cut into bands for that reason: a row above 0.50 is a close relative of a recorded active, a row between 0.30 and 0.50 is a lead to check, and everything below 0.30 is the weak tail, which is shown greyed because at that distance the ranking carries no information about binding.</p>
+        <p class="hint caveat" id="tgt-caveat">This is structural reference retrieval over hand-curated ligand lists, not a trained or calibrated model: a target scores high when the query looks like a compound already recorded as binding it. The numbers are fingerprint similarities, not binding probabilities, and a target with no ligand in the set below can never appear here. The list is cut into bands for that reason: a row above 0.50 is a close relative of a recorded active, a row between 0.30 and 0.50 is a lead to check, and everything below 0.30 is the weak tail, which is shown greyed because at that distance the ranking carries no information about binding.</p>
       </article>
 
       <article class="panel wide">
@@ -436,6 +441,7 @@
 <script src="js/research-zip.js?v=2026-10-21-quality"></script>
 <script src="js/research-package.js?v=2026-10-21-quality"></script>
 <script src="js/molecule-quality.js?v=2026-10-21-quality"></script>
+<script src="js/target-ranking.js?v=2026-10-21-quality"></script>
 <script src="js/app.js?v=2026-10-21-quality"></script>
 <script src="js/comparison-data.js?v=2026-10-21-quality"></script>
 <script src="js/workspace-ui.js?v=2026-10-21-quality"></script>

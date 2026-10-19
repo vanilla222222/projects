@@ -1,0 +1,64 @@
+'use strict';
+// Transparent 2D reference retrieval, not trained probabilities or functional-action prediction.
+(function(root){
+  const VERSION='ensemble-v1';
+  const METHODS=['ecfp4','ecfp6','fcfp4','ecfp4s','pairs'];
+  const ENSEMBLE=['ecfp4s','fcfp4','pairs'];
+  const SUPPORT_CUT=0.35;
+  function signature(fps){
+    return ['ecfp4s','ecfp6','pairs'].map(key=>key+':'+[...fps[key].counts].sort((a,b)=>a[0]-b[0]).map(x=>x.join('=')).join(',')).join('|');
+  }
+  function createIndex(library,targets,engine){
+    const entries=new Map(),issues=[];
+    const wanted=new Set(targets.flatMap(t=>t.ligands||[]));
+    for(const entry of library){
+      if(!wanted.has(entry.name))continue;
+      if(entry.propertyOnly===true){issues.push({name:entry.name,reason:'property-only reference excluded'});continue;}
+      try{
+        const mol=engine.parse(entry.smiles),fps={};
+        METHODS.forEach(key=>fps[key]=engine.fingerprint(mol,key));
+        entries.set(entry.name,{entry,fps,profile:signature(fps)});
+      }catch(error){issues.push({name:entry.name,reason:String(error.message)});}
+    }
+    for(const name of wanted)if(!entries.has(name)&&!issues.some(x=>x.name===name))issues.push({name,reason:'unresolved ligand name'});
+    return {entries,targets,issues,engine};
+  }
+  function query(mol,index){const fps={};METHODS.forEach(key=>fps[key]=index.engine.fingerprint(mol,key));return {fps,profile:signature(fps)};}
+  function rank(prepared,index,options){
+    const o=options||{},mode=o.mode==='legacy'?'legacy':'ensemble';
+    const metric=o.metric==='dice'?index.engine.dice:index.engine.tanimoto;
+    const method=METHODS.includes(o.method)?o.method:'ecfp4';
+    const values=new Map();
+    for(const [name,item] of index.entries){
+      if(o.excludeProfile===item.profile || (o.excludeNames||[]).includes(name))continue;
+      const components=ENSEMBLE.map(key=>index.engine.tanimoto(prepared.fps[key],item.fps[key]));
+      const value=mode==='legacy'?metric(prepared.fps[method],item.fps[method]):Math.cbrt(components.reduce((a,b)=>a*b,1));
+      values.set(name,{entry:item.entry,profile:item.profile,value,components,
+        sameInput:false});
+    }
+    const ranked=[];
+    for(const [order,target] of index.targets.entries()){
+      if(o.organism && o.organism!=='all' && target.organism!==o.organism)continue;
+      if(o.receptorsOnly && !['GPCR','Nuclear receptor'].includes(target.family) && !/receptor/i.test(target.name))continue;
+      const distinct=new Map();let listed=0;
+      for(const name of target.ligands||[]){const item=values.get(name);if(!item)continue;listed++;
+        // Group indistinguishable fingerprint profiles, not asserted chemical identities.
+        const key=mode==='legacy'?name:item.profile;
+        if(!distinct.has(key)||name.localeCompare(distinct.get(key).entry.name)<0)distinct.set(key,item);
+      }
+      const scored=[...distinct.values()].sort((a,b)=>b.value-a.value||a.entry.name.localeCompare(b.entry.name));
+      if(!scored.length)continue;
+      const top=scored.slice(0,3),mean=top.reduce((sum,x)=>sum+x.value,0)/top.length;
+      const score=scored[0].value,rankScore=mode==='legacy'?score:0.7*score+0.3*mean;
+      const support=scored.filter(x=>x.value>=SUPPORT_CUT&&x.components.every(v=>v>=0.2)).length;
+      ranked.push({target,order,score,rankScore,mean,nearest:scored[0].entry,count:listed,distinctCount:scored.length,
+        support,agreement:scored[0].components.filter(v=>v>=SUPPORT_CUT).length,
+        components:scored[0].components,evidence:top,mode,
+        applicability:score<0.3?'remote resemblance':support<2?'single-profile support':'multiple-profile support'});
+    }
+    return ranked.sort((a,b)=>b.rankScore-a.rankScore||b.mean-a.mean||a.order-b.order);
+  }
+  const api={VERSION,METHODS,ENSEMBLE,SUPPORT_CUT,signature,createIndex,query,rank};
+  if(typeof module!=='undefined'&&module.exports)module.exports=api;
+  root.TargetRanking=api;
+})(typeof globalThis!=='undefined'?globalThis:this);

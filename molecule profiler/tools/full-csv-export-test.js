@@ -34,4 +34,7 @@ assert.equal(topRanked(many)[49].rank,50);
 assert.equal(many.length,2258);
 assert.equal(topRanked(many.slice(0,12)).length,12);
 assert.deepEqual(topRanked([]),[]);
+const extra=normalized(record,[['targets','rank 1','rankingScore','0.52'],['targets','rank 1','supportingProfiles','3'],['targets','supportCut','value','0.35']]);
+assert.equal(extra[0][8],'number');assert.equal(extra[0][9],'unitless');
+assert.equal(extra[1][8],'integer');assert.equal(extra[2][8],'number');
 console.log('Professional full CSV schema regression tests passed');

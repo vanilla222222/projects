@@ -10,6 +10,8 @@ const sourceBefore = provenance.capture(root);
 const scripts = [
   'reference-audit-test.js',
   'receptor-catalog-test.js',
+  'target-ranking-test.js',
+  'metabolism-engine-test.js',
   'evidence-report-test.js',
   'screen-coverage-test.js',
   'property-validation.js',

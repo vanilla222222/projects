@@ -8,7 +8,9 @@ const METABOLISM_CASES = {
   "drugs": 14,
   "enumerated": 16,
   "major": 14,
-  "top5": 15,
+  "top5": 14,
+  "top5Guaranteed": 14,
+  "top5Possible": 15,
   "rows": [
     {
       "drug": "Aspirin",
@@ -20,6 +22,8 @@ const METABOLISM_CASES = {
       "rank": 1,
       "weight": 0.7,
       "generation": 1,
+      "tieBestRank": 1,
+      "tieWorstRank": 1,
       "predictedRoute": "Esterase, Aryl ester hydrolysis",
       "enumerated": 50
     },
@@ -33,6 +37,8 @@ const METABOLISM_CASES = {
       "rank": 4,
       "weight": 0.22,
       "generation": 1,
+      "tieBestRank": 4,
+      "tieWorstRank": 4,
       "predictedRoute": "CYP, O-demethylation (aryl methyl ether)",
       "enumerated": 67
     },
@@ -46,6 +52,8 @@ const METABOLISM_CASES = {
       "rank": 2,
       "weight": 0.24,
       "generation": 1,
+      "tieBestRank": 2,
+      "tieWorstRank": 2,
       "predictedRoute": "CYP, N-demethylation (tertiary amine)",
       "enumerated": 67
     },
@@ -56,9 +64,11 @@ const METABOLISM_CASES = {
       "standing": "a few percent of dose, and the reason overdose is hepatotoxic",
       "found": true,
       "band": "minor",
-      "rank": 5,
+      "rank": 6,
       "weight": 0.08,
       "generation": 1,
+      "tieBestRank": 5,
+      "tieWorstRank": 6,
       "predictedRoute": "CYP2E1, CYP3A4 or peroxidase, Para-acylaminophenol oxidation to quinone imine",
       "enumerated": 41
     },
@@ -72,6 +82,8 @@ const METABOLISM_CASES = {
       "rank": 1,
       "weight": 0.28,
       "generation": 1,
+      "tieBestRank": 1,
+      "tieWorstRank": 1,
       "predictedRoute": "CYP, N-demethylation (secondary amine)",
       "enumerated": 87
     },
@@ -85,6 +97,8 @@ const METABOLISM_CASES = {
       "rank": 3,
       "weight": 0.26,
       "generation": 1,
+      "tieBestRank": 3,
+      "tieWorstRank": 3,
       "predictedRoute": "CYP, Methylenedioxy ring opening",
       "enumerated": 87
     },
@@ -98,6 +112,8 @@ const METABOLISM_CASES = {
       "rank": 1,
       "weight": 0.18,
       "generation": 1,
+      "tieBestRank": 1,
+      "tieWorstRank": 1,
       "predictedRoute": "CYP, N-demethylation (amide or lactam)",
       "enumerated": 44
     },
@@ -108,9 +124,11 @@ const METABOLISM_CASES = {
       "standing": "documented route alongside ring hydroxylation",
       "found": true,
       "band": "major",
-      "rank": 9,
+      "rank": 10,
       "weight": 0.14,
       "generation": 1,
+      "tieBestRank": 9,
+      "tieWorstRank": 10,
       "predictedRoute": "CYP, N-dealkylation (branched alkyl)",
       "enumerated": 119
     },
@@ -124,6 +142,8 @@ const METABOLISM_CASES = {
       "rank": 1,
       "weight": 0.24,
       "generation": 1,
+      "tieBestRank": 1,
+      "tieWorstRank": 1,
       "predictedRoute": "CYP, N-demethylation (tertiary amine)",
       "enumerated": 61
     },
@@ -137,6 +157,8 @@ const METABOLISM_CASES = {
       "rank": 3,
       "weight": 0.09,
       "generation": 1,
+      "tieBestRank": 2,
+      "tieWorstRank": 4,
       "predictedRoute": "CYP, N-demethylation (aromatic N-methyl)",
       "enumerated": 12
     },
@@ -150,6 +172,8 @@ const METABOLISM_CASES = {
       "rank": 1,
       "weight": 0.24,
       "generation": 1,
+      "tieBestRank": 1,
+      "tieWorstRank": 1,
       "predictedRoute": "CYP, N-demethylation (tertiary amine)",
       "enumerated": 44
     },
@@ -163,6 +187,8 @@ const METABOLISM_CASES = {
       "rank": 5,
       "weight": 0.1125,
       "generation": 1,
+      "tieBestRank": 5,
+      "tieWorstRank": 5,
       "predictedRoute": "CYP, Aliphatic hydroxylation (tertiary C-H)",
       "enumerated": 68
     },
@@ -176,6 +202,8 @@ const METABOLISM_CASES = {
       "rank": 3,
       "weight": 0.14,
       "generation": 1,
+      "tieBestRank": 3,
+      "tieWorstRank": 3,
       "predictedRoute": "CYP, O-dealkylation (aryl ether, larger alkyl)",
       "enumerated": 29
     },
@@ -189,6 +217,8 @@ const METABOLISM_CASES = {
       "rank": 2,
       "weight": 0.24,
       "generation": 1,
+      "tieBestRank": 2,
+      "tieWorstRank": 2,
       "predictedRoute": "CYP, N-demethylation (tertiary amine)",
       "enumerated": 113
     },
@@ -202,6 +232,8 @@ const METABOLISM_CASES = {
       "rank": 1,
       "weight": 0.12,
       "generation": 1,
+      "tieBestRank": 1,
+      "tieWorstRank": 1,
       "predictedRoute": "UGT, Acyl glucuronidation",
       "enumerated": 43
     },
@@ -215,6 +247,8 @@ const METABOLISM_CASES = {
       "rank": 2,
       "weight": 0.25,
       "generation": 1,
+      "tieBestRank": 2,
+      "tieWorstRank": 2,
       "predictedRoute": "UGT, Aromatic O-glucuronidation",
       "enumerated": 87
     }

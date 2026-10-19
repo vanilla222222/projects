@@ -444,14 +444,15 @@ function assemble(atoms, bonds, touched) {
   return { smiles: smiles, fragments: smiles.split('.'), touched: touched };
 }
 
-function applyTransform(mol, smirks) {
+function applyTransform(mol, smirks, diagnostics) {
   const tf = compileTransform(smirks);
   const found = smartsMatches(tf.query, mol, { mapping: true });
+  if(diagnostics){diagnostics.matches=found.length;diagnostics.rejected=0;}
   const products = [];
   const seen = new Set();
   found.forEach((match) => {
     let result = null;
-    try { result = runTransform(mol, tf, match); } catch (error) { result = null; }
+    try { result = runTransform(mol, tf, match); } catch (error) { result = null;if(diagnostics)diagnostics.rejected++; }
     if (!result || seen.has(result.smiles)) return;
     seen.add(result.smiles);
     products.push(result);

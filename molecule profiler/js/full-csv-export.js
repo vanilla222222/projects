@@ -34,12 +34,12 @@
   molecularWeight:'g/mol',monoisotopicMass:'Da',mw:'g/mol',tpsa:'Å²',
   logp:'log10',wlogp:'log10',logS:'log10(mol/L)',molarRefractivity:'cm³/mol',
   formalCharge:'e',logpContribution:'log10',score:'unitless',
-  nearestLigandSimilarity:'unitless',meanTop3Similarity:'unitless',
+  supportCut:'unitless',rankingScore:'unitless',nearestLigandSimilarity:'unitless',meanTop3Similarity:'unitless',
   analogyScore:'unitless',relativeWeight:'relative score',
   summedWeight:'relative score',siteFactor:'relative score',bioavailabilityScore:'model score'
  };
- const INTEGERS=new Set('heavyAtoms carbons heteroatoms rings aromaticRings aromaticAtoms rotatableBonds lipinskiNHOHCount lipinskiNOCount hbondDonors hbondAcceptors aliphaticRings saturatedRings heterocycles largestRing halogens amideBonds spiroAtoms bridgeheadAtoms stereocenters stereocentersSpecified stereogenicDoubleBonds stereogenicDoubleBondsSpecified cipLabelsWithheld unspecifiedElements generations rulesTried metabolites generation routesReaching matches activesScored looTrials parentAtomsTouched referenceBits sharedBits queryBits'.split(' '));
- const DECIMALS=new Set('molecularWeight monoisotopicMass aromaticProportion tpsa fractionCsp3 chi0 chi1 chi0v chi1v hallKierAlpha kappa1 kappa2 kappa3 wlogp molarRefractivity logS bioavailabilityScore logpContribution mrContribution score nearestLigandSimilarity meanTop3Similarity looRecallAt1 analogyScore relativeWeight summedWeight siteFactor mw logp'.split(' '));
+ const INTEGERS=new Set('supportingProfiles distinctFingerprintProfiles maxNodes heavyAtoms carbons heteroatoms rings aromaticRings aromaticAtoms rotatableBonds lipinskiNHOHCount lipinskiNOCount hbondDonors hbondAcceptors aliphaticRings saturatedRings heterocycles largestRing halogens amideBonds spiroAtoms bridgeheadAtoms stereocenters stereocentersSpecified stereogenicDoubleBonds stereogenicDoubleBondsSpecified cipLabelsWithheld unspecifiedElements generations rulesTried metabolites generation routesReaching matches activesScored looTrials parentAtomsTouched referenceBits sharedBits queryBits'.split(' '));
+ const DECIMALS=new Set('supportCut rankingScore molecularWeight monoisotopicMass aromaticProportion tpsa fractionCsp3 chi0 chi1 chi0v chi1v hallKierAlpha kappa1 kappa2 kappa3 wlogp molarRefractivity logS bioavailabilityScore logpContribution mrContribution score nearestLigandSimilarity meanTop3Similarity looRecallAt1 analogyScore relativeWeight summedWeight siteFactor mw logp'.split(' '));
  const numeric=/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i;
  function valueType(value,section,field){
   const str=String(value==null?'':value).trim();
