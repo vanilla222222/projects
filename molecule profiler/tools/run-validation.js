@@ -18,7 +18,8 @@ const scripts = [
   'sim-pagination-test.js',
   'batch-browser-test.js',
   'input-workflow-test.js',
-  'report-model-test.js'
+  'report-model-test.js',
+  'full-csv-export-test.js'
 ];
 const started = new Date().toISOString();
 const outcomes = [];

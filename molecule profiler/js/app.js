@@ -1979,17 +1979,23 @@ function fullExportRows(record) {
 function exportMoleculeCsv() {
   const record = records[current];
   if (!record) return;
-  const lines = [['molecule', 'section', 'item', 'field', 'value'].join(',')];
-  fullExportRows(record).forEach((row) => {
-    lines.push([record.name].concat(row).map(csvCell).join(','));
-  });
+  const csv = FullCsvExport.createCsv(record,fullExportRows(record));
   const slug = record.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'molecule';
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = slug + '-full-profile.csv';
+  link.download = slug + '-full-profile-v2.csv';
   link.click();
   URL.revokeObjectURL(link.href);
+}
+
+function exportFullCsvDictionary() {
+  const csv=FullCsvExport.dictionaryCsv();
+  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  const a=document.createElement('a');
+  a.href=url;a.download='molecule-profiler-full-csv-dictionary-v2.csv';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
 function exportSnapshot() {
@@ -2063,6 +2069,7 @@ document.getElementById('clear').addEventListener('click', () => {
 });
 document.getElementById('export').addEventListener('click', exportCsv);
 document.getElementById('export-full').addEventListener('click', exportMoleculeCsv);
+document.getElementById('export-full-dictionary').addEventListener('click', exportFullCsvDictionary);
 document.getElementById('export-snapshot').addEventListener('click', exportSnapshot);
 document.getElementById('molecule-file').addEventListener('change', async event => {
   const file=event.target.files && event.target.files[0];
