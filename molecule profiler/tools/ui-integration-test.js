@@ -90,6 +90,12 @@ assert.ok(scripts.indexOf('js/report-model.js') > -1,'Summary model not included
 assert.ok(scripts.indexOf('js/report-ui.js') > scripts.indexOf('js/app.js'),'Summary UI should load after analysis app');
 for(const id of ['molecule-report','report-title','report-metrics','report-validation','report-cautions','report-print']) assert.ok(ids.includes(id),'Missing report element: '+id);
 assert.ok(app.includes("molecule-profiler:selected"),'Selected-molecule reporting update missing');
+assert.ok(scripts.indexOf('js/full-csv-export.js') > -1 && scripts.indexOf('js/full-csv-export.js') < scripts.indexOf('js/app.js'),
+  'Full CSV schema must load before app');
+assert.ok(ids.includes('export-full-dictionary'),'Full CSV dictionary button missing');
+assert.ok(app.includes('FullCsvExport.createCsv(record,fullExportRows(record))'),'Full CSV export schema not wired');
+assert.ok(app.includes('FullCsvExport.topRanked(similarityRanked)'), 'Full CSV similarity ranking limit missing');
+assert.ok(app.includes('FullCsvExport.topRanked(ranked)'), 'Full CSV target ranking limit missing');
 console.log('UI integration contract passed: ' + scripts.length + ' scripts, ' + ids.length + ' unique DOM IDs');
 assert.ok(app.includes('const DEP_GATE = 0.45;'), 'Dependence gate threshold missing');
 assert.ok(app.includes('const gated = profile.top < DEP_GATE;'), 'Dependence gate is not computed from the threshold');

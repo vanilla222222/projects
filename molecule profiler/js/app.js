@@ -1804,12 +1804,14 @@ function fullExportRows(record) {
   pair('similarity', 'fingerprint', method.label);
   pair('similarity', 'metric', metricKey === 'dice' ? 'Dice' : 'Tanimoto');
   pair('similarity', 'queryBits', query.bits.size);
-  libraryFingerprints(method.key).map((item) => ({
+  pair('similarity', 'rankedExportLimit', FullCsvExport.MAX_RANKED_RESULTS);
+  const similarityRanked = libraryFingerprints(method.key).map((item) => ({
     entry: item.entry,
     bits: item.fp.bits.size,
     shared: sharedCount(query, item.fp),
     value: score(query, item.fp)
-  })).sort((a, b) => b.value - a.value).forEach((hit, index) => {
+  })).sort((a, b) => b.value - a.value);
+  FullCsvExport.topRanked(similarityRanked).forEach((hit, index) => {
     const label = 'rank ' + (index + 1);
     add('similarity', label, 'name', hit.entry.name);
     add('similarity', label, 'class', hit.entry.cls);
@@ -1841,7 +1843,8 @@ function fullExportRows(record) {
     });
   });
   ranked.sort((a, b) => b.score - a.score || b.mean - a.mean);
-  ranked.forEach((row, index) => {
+  pair('targets', 'rankedExportLimit', FullCsvExport.MAX_RANKED_RESULTS);
+  FullCsvExport.topRanked(ranked).forEach((row, index) => {
     const label = 'rank ' + (index + 1);
     add('targets', label, 'target', row.target.name);
     add('targets', label, 'gene', row.target.gene);
@@ -1979,17 +1982,23 @@ function fullExportRows(record) {
 function exportMoleculeCsv() {
   const record = records[current];
   if (!record) return;
-  const lines = [['molecule', 'section', 'item', 'field', 'value'].join(',')];
-  fullExportRows(record).forEach((row) => {
-    lines.push([record.name].concat(row).map(csvCell).join(','));
-  });
+  const csv = FullCsvExport.createCsv(record,fullExportRows(record));
   const slug = record.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'molecule';
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = slug + '-full-profile.csv';
+  link.download = slug + '-full-profile-v2.csv';
   link.click();
   URL.revokeObjectURL(link.href);
+}
+
+function exportFullCsvDictionary() {
+  const csv=FullCsvExport.dictionaryCsv();
+  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  const a=document.createElement('a');
+  a.href=url;a.download='molecule-profiler-full-csv-dictionary-v2.csv';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
 function exportSnapshot() {
@@ -2063,6 +2072,7 @@ document.getElementById('clear').addEventListener('click', () => {
 });
 document.getElementById('export').addEventListener('click', exportCsv);
 document.getElementById('export-full').addEventListener('click', exportMoleculeCsv);
+document.getElementById('export-full-dictionary').addEventListener('click', exportFullCsvDictionary);
 document.getElementById('export-snapshot').addEventListener('click', exportSnapshot);
 document.getElementById('molecule-file').addEventListener('change', async event => {
   const file=event.target.files && event.target.files[0];
