@@ -109,6 +109,12 @@ const TOXALERTS = [
   { name: 'Trihalomethyl diarylmethane', endpoint: 'Neurotoxicity', source: 'Literature',
     smarts: 'c[CX4;H1](c)[CX4]([Cl,Br])([Cl,Br])[Cl,Br]',
     note: 'The DDT skeleton; holds sodium channels open and produces tremor, and the class persists in fat.' },
+  { name: 'ortho-Quinone', endpoint: 'Neurotoxicity', source: 'Literature',
+    smarts: 'O=[CX3]1[CX3](=O)~[#6]~[#6]~[#6]~[#6]1',
+    note: 'Two carbonyls on adjacent ring carbons. An ortho-quinone is both an electrophile and a redox cycler, and it reacts with cysteine thiols fast enough to run off glutathione and then attack protein. The quinones formed from catecholamines and from their alpha-methylated analogues are the metabolites most often put forward to explain the long-term serotonergic damage seen after MDMA, so this pattern matters most when it appears on a metabolite rather than on the parent. The para isomer is matched by the separate quinone rule.' },
+  { name: 'Catechol', endpoint: 'Neurotoxicity', source: 'Literature',
+    smarts: '[OX2H][c]1[c]([OX2H])[c,n][c,n][c,n][c,n]1',
+    note: 'Two hydroxyls on adjacent aromatic carbons. A catechol is not itself reactive, but it is one two-electron oxidation away from the ortho-quinone above, and that oxidation happens without an enzyme. This flag is a statement about what the compound can become, which is why dopamine, noradrenaline and L-DOPA carry it as well; COMT methylation competes for the same group and is the exit from this route.' },
   { name: 'Alkyl nitrile', endpoint: 'Neurotoxicity', source: 'Literature',
     smarts: '[CX4;H1,H2][CX2]#[NX1]',
     note: 'Nitriles can release cyanide on oxidation at the carbon next to the nitrile, which blocks cytochrome oxidase.' }
