@@ -200,6 +200,7 @@ let batchPage = 1;
 let preparedBatchRows = [];
 let latestInputIssues = [];
 let activeAnalysis = null;
+let fileReadSequence = 0;
 
 const libraryCache = new Map();
 
@@ -310,6 +311,7 @@ function setAnalysisBusy(busy) {
 }
 
 async function analyse() {
+  fileReadSequence += 1;
   const text = document.getElementById('smiles-input').value;
   const input = InputWorkflow.parseInputText(text);
   const status = document.getElementById('status');
@@ -2157,6 +2159,7 @@ document.getElementById('cancel-analysis').addEventListener('click', () => {
   if (activeAnalysis) activeAnalysis.cancelled = true;
 });
 document.getElementById('clear').addEventListener('click', () => {
+  fileReadSequence += 1;
   if (activeAnalysis) activeAnalysis.cancelled = true;
   activeAnalysis = null;
   setAnalysisBusy(false);
@@ -2178,21 +2181,26 @@ document.getElementById('export-full').addEventListener('click', exportMoleculeC
 document.getElementById('export-full-dictionary').addEventListener('click', exportFullCsvDictionary);
 document.getElementById('export-snapshot').addEventListener('click', exportSnapshot);
 document.getElementById('export-research').addEventListener('click', exportResearch);
-document.getElementById('molecule-file').addEventListener('change', async event => {
+async function importMoleculeFile(event) {
   const file=event.target.files && event.target.files[0];
   if(!file)return;
+  const readId = ++fileReadSequence;
   const status=document.getElementById('status');
   if(file.size>1024*1024){status.textContent='File is too large (maximum 1 MB).';status.classList.add('error');event.target.value='';return;}
   try {
     const text = await file.text();
+    if (readId !== fileReadSequence) return;
     if (/\.json$/i.test(file.name)) InputWorkflow.parseSnapshot(text);
     document.getElementById('smiles-input').value=text;
+    event.target.value = '';
     analyse();
   } catch(error) {
+    if (readId !== fileReadSequence) return;
     status.textContent='Could not import input file: '+error.message;
     status.classList.add('error');
-  } finally {event.target.value='';}
-});
+  } finally {if (readId === fileReadSequence) event.target.value='';}
+}
+document.getElementById('molecule-file').addEventListener('change', importMoleculeFile);
 document.getElementById('smiles-input').addEventListener('keydown', (event) => {
   if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) analyse();
 });

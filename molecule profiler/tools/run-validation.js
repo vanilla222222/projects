@@ -24,6 +24,7 @@ const scripts = [
   'sim-pagination-test.js',
   'batch-browser-test.js',
   'input-workflow-test.js',
+  'file-import-test.js',
   'report-model-test.js',
   'full-csv-export-test.js',
   'research-package-test.js',

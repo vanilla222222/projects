@@ -26,7 +26,7 @@ const context = vm.createContext({
   CooperativeBatch:{run:(rows,fn,opts)=>scheduler.run(rows,fn,{
     ...opts,chunkSize:1,now:()=>0,yieldControl:()=>new Promise(resolve=>yields.push(resolve))
   })},
-  records:[{name:'Previous'}], preparedBatchRows:[], latestInputIssues:[], activeAnalysis:null,
+  records:[{name:'Previous'}], preparedBatchRows:[], latestInputIssues:[], activeAnalysis:null, fileReadSequence:0,
   document:{getElementById:element,createElement:()=>({textContent:''}),dispatchEvent(){}},
   Event:class {},current:0,simPage:1,batchPage:1,
   renderTabs(){},renderBatch(){},renderCurrent(){}
