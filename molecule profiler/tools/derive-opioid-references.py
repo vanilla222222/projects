@@ -47,6 +47,13 @@ SAT_6METHYLENE = "C(=C)CC"  # 6-methylene
 
 ACETYL = "OC(C)=O"
 
+# Orvinol ring C: C6 carries the 6-methoxy and opens the bridge to C14, C7 carries the
+# tertiary alcohol side chain, C8 is a methylene. The bridge itself is written into the
+# C14 slot, so ring number 6 stays clear of the template rings 1-5.
+ORVINOL_OME_BUTYL = "C6(OC)C(C(C)(O)CCC)C"
+ORVINOL_OME_TBU = "C6(OC)C(C(C)(O)C(C)(C)C)C"
+ETHENO, ETHANO = "(C=C6)", "(CC6)"
+
 # name, N-substituent, 3-substituent, ring C pattern, C14 substituent, stated formula
 COMPOUNDS = [
     ("Morphine", METHYL, "O", ENOL_6OH, "", "C17H19NO3"),
@@ -76,6 +83,32 @@ COMPOUNDS = [
     ("Noroxycodone", "N", "OC", SAT_6KETO, "(O)", "C17H19NO4"),
     ("Oxycodone", METHYL, "OC", SAT_6KETO, "(O)", "C18H21NO4"),
     ("Codeine", METHYL, "OC", ENOL_6OH, "", "C18H21NO3"),
+    ("Desomorphine", METHYL, "O", "CCC", "", "C17H21NO2"),
+    ("Heterocodeine", METHYL, "O", "C(OC)C=C", "", "C18H21NO3"),
+    ("Hydromorphinol", METHYL, "O", SAT_6OH, "(O)", "C17H21NO4"),
+    ("Acetylcodeine", METHYL, "OC", "C(OC(C)=O)C=C", "", "C20H23NO4"),
+    ("Diacetyldihydromorphine", METHYL, ACETYL, "C(OC(C)=O)CC", "",
+     "C21H25NO5"),
+    ("Thebacon", METHYL, "OC", "C(OC(C)=O)=CC", "", "C20H23NO4"),
+    ("Benzylmorphine", METHYL, "OCc6ccccc6", ENOL_6OH, "", "C24H25NO3"),
+    ("Pholcodine", METHYL, "OCCN6CCOCC6", ENOL_6OH, "", "C23H30N2O4"),
+    ("Nicocodeine", METHYL, "OC", "C(OC(=O)c6cccnc6)C=C", "", "C24H24N2O4"),
+    ("Nicomorphine", METHYL, "OC(=O)c6cccnc6",
+     "C(OC(=O)c6cccnc6)C=C", "", "C29H25N3O5"),
+    ("Naloxol", ALLYL, "O", SAT_6OH, "(O)", "C19H23NO4"),
+    ("Nalmexone", "CC(C)=CCN", "O", SAT_6KETO, "(O)", "C21H25NO4"),
+    ("Thebaine", METHYL, "OC", "C(OC)=CC=", "", "C19H21NO3"),
+    ("Oripavine", METHYL, "O", "C(OC)=CC=", "", "C18H19NO3"),
+    ("Naltrindole", CPM, "O", "c6[nH]c7ccccc7c6C", "(O)", "C26H26N2O3"),
+    ("Nalfurafine", CPM, "O", "C(N(C)C(=O)C=Cc6ccoc6)CC", "(O)",
+     "C28H32N2O5"),
+    ("Etorphine", METHYL, "O", ORVINOL_OME_BUTYL, ETHENO, "C25H33NO4"),
+    ("Dihydroetorphine", METHYL, "O", ORVINOL_OME_BUTYL, ETHANO,
+     "C25H35NO4"),
+    ("Diprenorphine", CPM, "O", "C6(OC)C(C(C)(C)O)C", ETHANO,
+     "C26H35NO4"),
+    ("Buprenorphine", CPM, "O", ORVINOL_OME_TBU, ETHANO, "C29H41NO4"),
+    ("Norbuprenorphine", NOR, "O", ORVINOL_OME_TBU, ETHANO, "C25H35NO4"),
 ]
 
 # {ACYL} anilide acyl group, {ARYL} the N-aryl ring, {C4} piperidine 4-substituent,
@@ -182,6 +215,19 @@ NITAZENES = [
 # Open-chain and remaining chemotypes. These are written out rather than decorated on a
 # template, so only the formula cross-check applies to them.
 SINGLETONS = [
+    ("Dezocine", "Morphinan", "CC1CCCCC2(N)CCC1c1ccc(O)cc12", "C16H23NO"),
+    ("Metazocine", "Benzomorphan", "CN1CCC2(C)c3cc(O)ccc3CC1C2C",
+     "C15H21NO"),
+    ("Spiradoline", "Arylacetamide",
+     "O=C(Cc1ccc(Cl)c(Cl)c1)N(C)C1CCC2(CCCO2)CC1N1CCCC1",
+     "C22H30Cl2N2O2"),
+    ("Salvinorin A", "Neoclerodane",
+     "COC(=O)C1CC(OC(C)=O)C2(C)C(=O)CCC3(C)C2C1(C)OC(=O)C3c1ccoc1",
+     "C23H28O8"),
+    ("Mitragynine", "Indole alkaloid",
+     "CCC1CN2CCc3c([nH]c4cccc(OC)c34)C2CC1C(=COC)C(=O)OC", "C23H30N2O4"),
+    ("7-Hydroxymitragynine", "Indole alkaloid",
+     "CCC1CN2CCC3(O)c4cccc(OC)c4N=C3C2CC1C(=COC)C(=O)OC", "C23H30N2O5"),
     ("Levomethadyl acetate", "Open-chain opioid",
      "CC(=O)OC(CC)C(CC(C)N(C)C)(c1ccccc1)c1ccccc1", "C23H31NO2"),
     ("Normethadone", "Open-chain opioid",

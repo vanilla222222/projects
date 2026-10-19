@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 2697,
+  "entries": 2723,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -9616,6 +9616,288 @@
       "atomIndices": [
         8
       ]
+    },
+    {
+      "index": 2698,
+      "name": "Desomorphine",
+      "atomIndices": [
+        4,
+        13,
+        17,
+        18
+      ]
+    },
+    {
+      "index": 2699,
+      "name": "Heterocodeine",
+      "atomIndices": [
+        2,
+        5,
+        6,
+        15,
+        20
+      ]
+    },
+    {
+      "index": 2700,
+      "name": "Hydromorphinol",
+      "atomIndices": [
+        4,
+        13,
+        14,
+        18,
+        20
+      ]
+    },
+    {
+      "index": 2701,
+      "name": "Acetylcodeine",
+      "atomIndices": [
+        9,
+        10,
+        17,
+        18,
+        24
+      ]
+    },
+    {
+      "index": 2702,
+      "name": "Diacetyldihydromorphine",
+      "atomIndices": [
+        11,
+        12,
+        19,
+        20,
+        26
+      ]
+    },
+    {
+      "index": 2703,
+      "name": "Thebacon",
+      "atomIndices": [
+        9,
+        17,
+        18,
+        24
+      ]
+    },
+    {
+      "index": 2704,
+      "name": "Benzylmorphine",
+      "atomIndices": [
+        4,
+        20,
+        21,
+        25,
+        26
+      ]
+    },
+    {
+      "index": 2705,
+      "name": "Pholcodine",
+      "atomIndices": [
+        4,
+        21,
+        22,
+        26,
+        27
+      ]
+    },
+    {
+      "index": 2706,
+      "name": "Nicocodeine",
+      "atomIndices": [
+        9,
+        10,
+        22,
+        23,
+        29
+      ]
+    },
+    {
+      "index": 2707,
+      "name": "Nicomorphine",
+      "atomIndices": [
+        4,
+        21,
+        22,
+        34,
+        35
+      ]
+    },
+    {
+      "index": 2708,
+      "name": "Naloxol",
+      "atomIndices": [
+        6,
+        15,
+        16,
+        20,
+        22
+      ]
+    },
+    {
+      "index": 2709,
+      "name": "Nalmexone",
+      "atomIndices": [
+        8,
+        17,
+        22,
+        24
+      ]
+    },
+    {
+      "index": 2710,
+      "name": "Thebaine",
+      "atomIndices": [
+        6,
+        16,
+        21
+      ]
+    },
+    {
+      "index": 2711,
+      "name": "Oripavine",
+      "atomIndices": [
+        6,
+        15,
+        20
+      ]
+    },
+    {
+      "index": 2712,
+      "name": "Naltrindole",
+      "atomIndices": [
+        8,
+        19,
+        21,
+        30
+      ]
+    },
+    {
+      "index": 2713,
+      "name": "Nalfurafine",
+      "atomIndices": [
+        11,
+        14,
+        16,
+        25,
+        33
+      ]
+    },
+    {
+      "index": 2714,
+      "name": "Etorphine",
+      "atomIndices": [
+        3,
+        6,
+        8,
+        11,
+        14,
+        23,
+        28
+      ]
+    },
+    {
+      "index": 2715,
+      "name": "Dihydroetorphine",
+      "atomIndices": [
+        3,
+        6,
+        8,
+        11,
+        14,
+        23,
+        28
+      ]
+    },
+    {
+      "index": 2716,
+      "name": "Diprenorphine",
+      "atomIndices": [
+        2,
+        5,
+        7,
+        12,
+        21,
+        29
+      ]
+    },
+    {
+      "index": 2717,
+      "name": "Buprenorphine",
+      "atomIndices": [
+        2,
+        5,
+        7,
+        8,
+        15,
+        24,
+        32
+      ]
+    },
+    {
+      "index": 2718,
+      "name": "Norbuprenorphine",
+      "atomIndices": [
+        2,
+        5,
+        7,
+        8,
+        15,
+        24,
+        28
+      ]
+    },
+    {
+      "index": 2719,
+      "name": "Dezocine",
+      "atomIndices": [
+        1,
+        6,
+        10
+      ]
+    },
+    {
+      "index": 2720,
+      "name": "Spiradoline",
+      "atomIndices": [
+        13,
+        16,
+        22
+      ]
+    },
+    {
+      "index": 2721,
+      "name": "Salvinorin A",
+      "atomIndices": [
+        4,
+        6,
+        11,
+        17,
+        19,
+        28,
+        30
+      ]
+    },
+    {
+      "index": 2722,
+      "name": "Mitragynine",
+      "atomIndices": [
+        2,
+        18,
+        20
+      ]
+    },
+    {
+      "index": 2723,
+      "name": "7-Hydroxymitragynine",
+      "atomIndices": [
+        2,
+        7,
+        19,
+        21
+      ]
     }
   ],
   "chargedEntries": [
@@ -9669,7 +9951,7 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 2,
-    "unspecifiedStereocenters": 1035,
+    "unspecifiedStereocenters": 1061,
     "chargedEntries": 8,
     "fragmentedEntries": 0,
     "radicalEntries": 0,
