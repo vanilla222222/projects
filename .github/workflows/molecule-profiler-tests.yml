@@ -9,9 +9,12 @@ on:
       - 'molecule profiler/**'
       - '.github/workflows/molecule-profiler-tests.yml'
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   javascript:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     defaults:
       run:
         working-directory: molecule profiler
@@ -20,35 +23,40 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Syntax-check browser and Node scripts
+      - name: Runner environment
         run: |
-          find js data tools -name '*.js' -print0 | xargs -0 -n1 node --check
-          node --check reference-audit.js
-          node --check reference-explorer.js
-      - name: Reference integrity regression
-        run: node tools/reference-audit-test.js
-      - name: Evidence reporting
-        run: node tools/evidence-report-test.js
-      - name: Screening coverage reporting
-        run: node tools/screen-coverage-test.js
-      - name: Property validation
-        run: node tools/property-validation.js
-      - name: Metabolism reference cases
-        run: node tools/metabolism-cases.js
-      - name: Retrieval benchmark
-        run: node tools/retrieval-benchmark.js
-      - name: UI script and DOM integration
-        run: node tools/ui-integration-test.js
-      - name: Side-by-side comparison tests
-        run: node tools/comparison-test.js
-      - name: Reference library inspector tests
-        run: node tools/library-catalog-test.js
-      - name: Similarity pagination tests
-        run: node tools/sim-pagination-test.js
-      - name: Batch browsing tests
-        run: node tools/batch-browser-test.js
+          echo "RUN_ID=$GITHUB_RUN_ID"
+          echo "HEAD_SHA=$GITHUB_SHA"
+          node --version
+          python --version
+          pwd
+      - name: Syntax-check browser and Node scripts
+        shell: bash
+        run: |
+          set -o pipefail
+          ( find js data tools -name '*.js' -print0 | xargs -0 -n1 node --check
+            node --check reference-audit.js
+            node --check reference-explorer.js
+          ) 2>&1 | tee syntax-check.log
+      - name: Run complete JavaScript validation
+        shell: bash
+        run: |
+          set -o pipefail
+          node tools/run-validation.js --report validation-report.json 2>&1 | tee validation-console.log
+      - name: Upload JavaScript diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: molecule-profiler-js-diagnostics
+          path: |
+            molecule profiler/syntax-check.log
+            molecule profiler/validation-console.log
+            molecule profiler/validation-report.json
+          if-no-files-found: warn
+          retention-days: 14
   rdkit:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     defaults:
       run:
         working-directory: molecule profiler
@@ -57,12 +65,23 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: python -m pip install rdkit
+      - name: Python and RDKit environment
+        run: |
+          python --version
+          python -m pip install rdkit
+          python -c "from rdkit import rdBase; print('RDKit',rdBase.rdkitVersion)"
       - name: Run RDKit structural audit
-        run: python tools/rdkit-library-audit.py --output rdkit-audit.json
+        shell: bash
+        run: |
+          set -o pipefail
+          python tools/rdkit-library-audit.py --output rdkit-audit.json 2>&1 | tee rdkit-audit.log
       - name: Upload structure diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rdkit-audit
-          path: molecule profiler/rdkit-audit.json
+          name: molecule-profiler-rdkit-diagnostics
+          path: |
+            molecule profiler/rdkit-audit.json
+            molecule profiler/rdkit-audit.log
+          if-no-files-found: warn
+          retention-days: 14
