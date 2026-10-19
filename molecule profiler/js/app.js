@@ -64,6 +64,10 @@ const GLOSSARY = {
   kappa3: ['Kappa3', 'Third-order shape index, built from three-bond paths. It is the one that reacts most strongly to ring fusion and central branching.'],
   tgtCount: ['Targets', 'How many targets to list. The ranking covers every target in the set either way.'],
   tgtMin: ['Min score', 'Hides targets whose nearest known ligand is less similar than this. A low cut shows weak, speculative matches; raise it to keep only targets with a genuinely close relative of the query among their actives.'],
+  tgtOrganism: ['Organism', 'Which organism the target belongs to. Non-human targets are the selectivity story of an anti-infective: a bacterial, fungal, viral or parasite protein with no close human counterpart is why the drug can be given at all.'],
+  tgtOrganismFilter: ['Organism', 'Restricts the table to targets from one organism. Useful for asking what an anti-infective scaffold looks like against human proteins, or the reverse.'],
+  tgtMean: ['Mean top-3', 'The average similarity of the three closest known ligands of this target, or of all of them if there are fewer than three. The single-best score can be carried by one lucky neighbour; a high mean means the query resembles the whole cluster of actives, which is the stronger signal.'],
+  tgtNote: ['Mechanism', 'A one-line note on what the target does and why it is drugged. Hand-written reference text, not computed from the structure.'],
   tgtRank: ['#', 'Rank by score, highest first.'],
   tgtName: ['Target', 'The protein, named as it appears in the curated ligand set.'],
   tgtGene: ['Gene', 'The human gene symbol, or the microbial gene name for antibacterial, antifungal and antiviral targets.'],
@@ -495,9 +499,12 @@ const TGT_COLUMNS = [
   ['tgtName', 'Target'],
   ['tgtGene', 'Gene'],
   ['tgtFamily', 'Family'],
+  ['tgtOrganism', 'Organism'],
   ['tgtScore', 'Score'],
+  ['tgtMean', 'Mean top-3'],
   ['tgtNearest', 'Nearest ligand'],
-  ['tgtLigands', 'Actives']
+  ['tgtLigands', 'Actives'],
+  ['tgtNote', 'Mechanism']
 ];
 
 function renderTargets(record) {
@@ -505,6 +512,7 @@ function renderTargets(record) {
   const metricKey = document.getElementById('sim-metric').value;
   const limit = Number(document.getElementById('tgt-count').value);
   const floor = Number(document.getElementById('tgt-min').value);
+  const organism = document.getElementById('tgt-organism').value;
   const method = FP_METHODS.find((entry) => entry.key === methodKey) || FP_METHODS[0];
   const score = metricKey === 'dice' ? dice : tanimoto;
 
@@ -514,24 +522,34 @@ function renderTargets(record) {
 
   const ranked = [];
   TARGETS.forEach((target) => {
-    let best = null;
-    let count = 0;
+    if (organism !== 'all' && target.organism !== organism) return;
+    const scored = [];
     target.ligands.forEach((name) => {
       const item = byName.get(name);
       if (!item) return;
-      count += 1;
-      const value = score(query, item.fp);
-      if (!best || value > best.value) best = { value: value, entry: item.entry };
+      scored.push({ value: score(query, item.fp), entry: item.entry });
     });
-    if (best) ranked.push({ target: target, score: best.value, nearest: best.entry, count: count });
+    if (!scored.length) return;
+    scored.sort((a, b) => b.value - a.value);
+    const top = scored.slice(0, 3);
+    const mean = top.reduce((sum, item) => sum + item.value, 0) / top.length;
+    ranked.push({
+      target: target,
+      score: scored[0].value,
+      mean: mean,
+      nearest: scored[0].entry,
+      count: scored.length
+    });
   });
-  ranked.sort((a, b) => b.score - a.score);
+  ranked.sort((a, b) => b.score - a.score || b.mean - a.mean);
 
   const kept = ranked.filter((row) => row.score >= floor);
   const shown = limit > 0 ? kept.slice(0, limit) : kept;
 
-  document.getElementById('tgt-summary').innerHTML = TARGETS.length + ' targets, '
-    + kept.length + ' above the score cut';
+  const pool = organism === 'all' ? TARGETS.length : ranked.length;
+  document.getElementById('tgt-summary').innerHTML = pool + ' targets'
+    + (organism === 'all' ? '' : ' in ' + organism.toLowerCase() + ' scope')
+    + ', ' + kept.length + ' above the score cut';
   document.getElementById('tgt-blurb').textContent = 'Scored with ' + method.label + ' and '
     + (metricKey === 'dice' ? 'Dice' : 'Tanimoto') + ', following the similarity panel above.';
 
@@ -545,21 +563,24 @@ function renderTargets(record) {
       + '<td>' + escapeHtml(row.target.name) + '</td>'
       + '<td>' + escapeHtml(row.target.gene) + '</td>'
       + '<td>' + escapeHtml(row.target.family) + '</td>'
+      + '<td>' + escapeHtml(row.target.organism) + '</td>'
       + '<td><span class="score"><span class="score-track"><span class="score-fill" style="width:'
         + (row.score * 100).toFixed(1) + '%"></span></span>' + row.score.toFixed(3) + '</span></td>'
+      + '<td>' + row.mean.toFixed(3) + '</td>'
       + '<td>' + escapeHtml(row.nearest.name) + '</td>'
       + '<td>' + row.count + '</td>'
+      + '<td class="note">' + escapeHtml(row.target.note) + '</td>'
       + '</tr>'
-  )).join('') : '<tr><td colspan="7">No target has a known ligand this similar to the query.</td></tr>';
+  )).join('') : '<tr><td colspan="10">No target has a known ligand this similar to the query.</td></tr>';
 }
 
 function setupTargets() {
-  ['tgt-count', 'tgt-min'].forEach((id) => {
+  ['tgt-count', 'tgt-min', 'tgt-organism'].forEach((id) => {
     document.getElementById(id).addEventListener('change', () => {
       if (records[current]) renderTargets(records[current]);
     });
   });
-  [['tgt-count', 'tgtCount'], ['tgt-min', 'tgtMin']].forEach(([id, key]) => {
+  [['tgt-count', 'tgtCount'], ['tgt-min', 'tgtMin'], ['tgt-organism', 'tgtOrganismFilter']].forEach(([id, key]) => {
     document.getElementById(id).insertAdjacentHTML('beforebegin', infoButton(key));
   });
   document.getElementById('targets').addEventListener('click', (event) => {

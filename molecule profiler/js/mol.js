@@ -59,6 +59,7 @@ function buildMolecule(parsed) {
   perceiveRings(mol);
   perceiveAromaticity(mol);
   kekulize(mol);
+  trimAromaticBonds(mol);
   assignHydrogens(mol);
   indexRingSystems(mol);
   return mol;
@@ -115,6 +116,13 @@ function perceiveRings(mol) {
       chosen.push(cycle);
       keys.forEach((key) => covered.add(key));
     }
+  });
+
+  const sizes = new Set(chosen.map((cycle) => cycle.length));
+  candidates.forEach((cycle) => {
+    if (chosen.includes(cycle)) return;
+    if (!sizes.has(cycle.length)) return;
+    chosen.push(cycle);
   });
 
   mol.rings = chosen;
@@ -183,6 +191,17 @@ function perceiveAromaticity(mol) {
   });
 }
 
+function trimAromaticBonds(mol) {
+  const inAromaticRing = new Set();
+  mol.rings.forEach((ring) => {
+    if (!ring.aromatic) return;
+    cycleBondKeys(ring).forEach((key) => inAromaticRing.add(key));
+  });
+  mol.bonds.forEach((bond) => {
+    if (bond.aromatic && !inAromaticRing.has(bondKey(bond.a, bond.b))) bond.aromatic = false;
+  });
+}
+
 function huckelElectrons(mol, ring, flagged) {
   const inRing = new Set(ring);
   let total = 0;
@@ -244,9 +263,17 @@ function kekulize(mol) {
     adjacency.get(bond.b).push({ atom: bond.a, bond: bondIndex });
   });
 
-  const matched = new Map();
-  const order = [...needsPi].sort((a, b) => adjacency.get(a).length - adjacency.get(b).length);
-  if (matchPi(order, 0, adjacency, matched)) {
+  const byDegree = (a, b) => adjacency.get(a).length - adjacency.get(b).length;
+  const strict = [...needsPi].sort(byDegree);
+  const relaxed = [...needsPi].filter((id) => !lonePairCandidate(mol, id)).sort(byDegree);
+
+  let matched = new Map();
+  let solved = matchPi(strict, 0, adjacency, matched);
+  if (!solved) {
+    matched = new Map();
+    solved = matchPi(relaxed, 0, adjacency, matched);
+  }
+  if (solved) {
     matched.forEach((bondIndex, id) => {
       if (mol.bonds[bondIndex].a === id) mol.bonds[bondIndex].order = 2;
     });
@@ -255,6 +282,14 @@ function kekulize(mol) {
   } else {
     mol.kekulized = false;
   }
+}
+
+function lonePairCandidate(mol, id) {
+  const atom = mol.atoms[id];
+  if (atom.element !== 'N' && atom.element !== 'P') return false;
+  if ((atom.charge || 0) !== 0) return false;
+  if (atom.explicitH) return false;
+  return atom.degree === 2;
 }
 
 function atomNeedsPiBond(mol, id) {
@@ -269,7 +304,7 @@ function atomNeedsPiBond(mol, id) {
 
   if (element === 'C') return charge === 0;
   if (element === 'N' || element === 'P') {
-    if (charge === 1) return heavyDegree === 2 || (heavyDegree === 3 && explicitH === 0 && !atom.bracket);
+    if (charge === 1) return heavyDegree === 2 || (heavyDegree === 3 && explicitH === 0);
     if (charge === -1) return false;
     if (explicitH > 0) return false;
     return heavyDegree === 2;
