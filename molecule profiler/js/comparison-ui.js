@@ -50,7 +50,7 @@
       + (row.field.unit ? '<small> ' + escapeText(row.field.unit) + '</small>' : '') + '</th>'
       + row.cells.map(cell => '<td><span class="compare-value">' + escapeText(MoleculeComparison.display(cell.value, row.field.digits))
         + '</span>' + (cell.delta !== null && !cell.isReference && row.different
-          ? '<small class="compare-delta">' + (cell.delta > 0 ? '+' : '') + cell.delta.toFixed(row.field.digits) + ' vs ref.</small>'
+          ? '<small class="compare-delta">Δ ' + (cell.delta > 0 ? '+' : '') + cell.delta.toFixed(row.field.digits) + ' vs ref.</small>'
           : '') + '</td>').join('') + '</tr>').join('');
     if (!rows.length) status.textContent = 'No differences found among the selected fields.';
   }

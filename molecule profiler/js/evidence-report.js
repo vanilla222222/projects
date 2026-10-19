@@ -10,10 +10,21 @@ const PROPERTY_EVIDENCE = Object.freeze([
   { key: 'hba', label: 'Hydrogen bond acceptors', method: 'Graph-based rule count', tier: 'calculated', unit: '' },
   { key: 'rotatableBonds', label: 'Rotatable bonds', method: 'Graph-based rule count', tier: 'calculated', unit: '' }
 ]);
-function propertyEvidenceRows(d) {
+function propertyEvidenceRows(d, datasets) {
+  const sets = datasets || {};
   return PROPERTY_EVIDENCE.map(item => {
     const value = d[item.key];
+    const refs = item.key === 'logS' ? [sets.logS, sets.logSBlind]
+      : item.key === 'logp' ? [sets.logPNeutral] : [];
+    const available = refs.filter(set => set && Number.isFinite(set.n) && Number.isFinite(set.mae) && Number.isFinite(set.rmse));
+    const validation = available.map((set, i) => {
+      const kind = item.key === 'logS' ? (i === 0 ? 'Development set' : 'Independent set') : 'Neutral-only log D comparison';
+      return kind + ' (n=' + set.n + '): MAE ' + set.mae + ', RMSE ' + set.rmse
+        + ', R² ' + (Number.isFinite(set.r2) ? set.r2 : 'n/a');
+    }).join('; ');
+    const validationUrl = available[0] && /^https:\/\//.test(available[0].source) ? available[0].source : null;
     return {
+      validation, validationUrl,
       label: item.label,
       value: typeof value === 'number' && Number.isFinite(value) ? Number(value.toFixed(3)) : null,
       unit: item.unit,

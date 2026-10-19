@@ -56,7 +56,8 @@ assert.ok(scripts.indexOf('js/comparison-data.js') > -1, 'Comparison data script
 assert.ok(scripts.indexOf('js/comparison-ui.js') > scripts.indexOf('js/workspace-ui.js'), 'Comparison UI script order incorrect');
 assert.ok(workspace.includes("id: 'compare'"), 'Compare workspace navigation missing');
 assert.ok(app.includes("molecule-profiler:updated"), 'Comparison updates not wired to batch analysis');
-assert.match(html, /data\/library\.js\?v=2026-10-20-library-refresh/, 'Reference library cache key not refreshed');
+const cacheVersions = [...html.matchAll(/(?:src|href)="(?:data|js|css)\/[^"]+\?v=([^"]+)"/g)].map(x=>x[1]);
+assert.ok(cacheVersions.length > 20 && new Set(cacheVersions).size === 1, 'Static assets must share one cache version');
 assert.ok(!html.includes('<h2>Physical addiction potential</h2>'), 'Misleading dependence heading reintroduced');
 assert.ok(workspace.includes("'Dependence-related structural similarity': ['discovery']"),
   'Dependence analogy must be grouped with reference comparisons, not toxicity screening');
@@ -69,4 +70,7 @@ assert.ok(inspector.includes('js/library-catalog.js'), 'Library catalogue data s
 assert.ok(inspector.includes('js/library-inspector.js'), 'Library catalogue UI script missing');
 assert.ok(fs.existsSync(path.join(root, 'js/library-catalog.js')), 'Library catalogue code missing');
 assert.ok(fs.existsSync(path.join(root, 'js/library-inspector.js')), 'Library catalogue UI missing');
+assert.ok(html.includes('id="sim-include-property-only"'), 'Reference filter missing');
+assert.ok(app.includes('rankedPool = includeProperty'), 'Filtered similarity pool missing');
+assert.ok(workspace.includes('details.open = true'), 'Safety caveats not visible by default');
 console.log('UI integration contract passed: ' + scripts.length + ' scripts, ' + ids.length + ' unique DOM IDs');

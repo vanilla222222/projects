@@ -357,13 +357,17 @@ function renderCurrent() {
 
   // Descriptor methods and extrapolation warnings; intentionally no new predictions.
   if (typeof propertyEvidenceRows === 'function') {
-    const items = propertyEvidenceRows({ ...d, logS: v && v.logS });
+    const items = propertyEvidenceRows({ ...d, logS: v && v.logS },
+      typeof PROPERTY_VALIDATION !== 'undefined' ? PROPERTY_VALIDATION.datasets : null);
     const host = document.getElementById('evidence-descriptors');
     if (host) {
-      host.innerHTML = '<table class="table"><thead><tr><th>Property</th><th>Value</th><th>Method</th><th>Evidence</th></tr></thead><tbody>'
+      host.innerHTML = '<table class="table"><thead><tr><th>Property</th><th>Value</th><th>Method</th><th>Evidence</th><th>Validation</th></tr></thead><tbody>'
         + items.map(item => '<tr><td>' + escapeHtml(item.label) + '</td><td>'
           + (item.value === null ? 'Unavailable' : escapeHtml(String(item.value) + (item.unit ? ' ' + item.unit : '')))
-          + '</td><td>' + escapeHtml(item.method) + '</td><td>' + escapeHtml(item.tier) + '</td></tr>').join('')
+          + '</td><td>' + escapeHtml(item.method) + '</td><td>' + escapeHtml(item.tier)
+          + '</td><td>' + escapeHtml(item.validation || 'No measured-error benchmark supplied')
+          + (item.validationUrl ? ' <a href="' + escapeHtml(item.validationUrl) + '" target="_blank" rel="noopener noreferrer">Source dataset ↗</a>' : '')
+          + '</td></tr>').join('')
         + '</tbody></table>';
     }
     const warnings = propertyEvidenceWarnings({ ...d, logS: v && v.logS });
@@ -623,31 +627,21 @@ const DOMAIN_LABELS = {
 };
 
 function renderPropertyDomain(record) {
-  const slot = document.getElementById('property-domain');
-  if (!slot) return;
-  if (typeof PROPERTY_VALIDATION === 'undefined' || !PROPERTY_VALIDATION.datasets.logS) {
-    slot.hidden = true;
-    return;
-  }
+  const slot = document.getElementById('evidence-warnings');
+  if (!slot || typeof PROPERTY_VALIDATION === 'undefined' || !PROPERTY_VALIDATION.datasets.logS) return;
   const domain = PROPERTY_VALIDATION.datasets.logS.domain;
   const outside = [];
   Object.keys(domain).forEach((key) => {
     const value = record.d[key];
-    if (typeof value !== 'number') return;
-    const span = domain[key];
-    if (value < span[0] || value > span[1]) {
+    const range = domain[key];
+    if (!Number.isFinite(value) || !Array.isArray(range)) return;
+    if (value < range[0] || value > range[1]) {
       outside.push((DOMAIN_LABELS[key] || key) + ' ' + value.toFixed(2)
-        + ' (set covers ' + span[0] + ' to ' + span[1] + ')');
+        + ' (validation set spans ' + range[0] + ' to ' + range[1] + ')');
     }
   });
-  if (!outside.length) {
-    slot.hidden = true;
-    return;
-  }
-  slot.hidden = false;
-  slot.textContent = 'Outside the applicability domain of the solubility measurement: '
-    + outside.join('; ') + '. The errors quoted above were measured on compounds unlike this one, '
-    + 'so they do not apply here.';
+  if (outside.length) slot.textContent += ' Outside the solubility validation range: '
+    + outside.join('; ') + '. Aggregate validation error is not a compound-specific bound.';
 }
 
 function renderWedgeNote() {
@@ -722,7 +716,10 @@ function renderSimilar(record) {
 
   const query = fingerprint(record.mol, method.key);
   const library = libraryFingerprints(method.key);
-  const hits = library.map((item) => ({
+  const includeProperty = document.getElementById('sim-include-property-only').checked;
+  const isPropertyReference = (entry) => ['ESOL reference', 'Ester reference', 'Ether reference', 'Ketone reference'].includes(entry.cls);
+  const rankedPool = includeProperty ? library : library.filter(item => !isPropertyReference(item.entry));
+  const hits = rankedPool.map((item) => ({
     entry: item.entry,
     bits: item.fp.bits.size,
     shared: sharedCount(query, item.fp),
@@ -730,8 +727,12 @@ function renderSimilar(record) {
   })).sort((a, b) => b.score - a.score);
   const shown = limit > 0 ? hits.slice(0, limit) : hits;
 
-  document.getElementById('sim-summary').innerHTML = library.length + ' parseable library structures (mixed provenance), '
+  document.getElementById('sim-summary').innerHTML = rankedPool.length + ' reference structures ranked, '
     + query.bits.size + ' query bits' + infoButton('simBits');
+  document.getElementById('sim-scope-count').textContent =
+    rankedPool.length + ' of ' + library.length + ' parseable structures ranked; '
+    + (library.length - rankedPool.length) + ' property-reference/illustrative entries excluded'
+    + (includeProperty ? ' (included by request)' : ' by default') + '. Collection labels are not verified provenance.';
   document.getElementById('sim-blurb').textContent = method.blurb;
 
   const table = document.getElementById('similar');
@@ -1494,7 +1495,7 @@ function setupSimilarity() {
   select.innerHTML = FP_METHODS.map((method) => (
     '<option value="' + method.key + '">' + method.label + '</option>'
   )).join('');
-  ['sim-method', 'sim-metric', 'sim-count'].forEach((id) => {
+  ['sim-method', 'sim-metric', 'sim-count', 'sim-include-property-only'].forEach((id) => {
     document.getElementById(id).addEventListener('change', () => {
       if (records[current]) {
         renderSimilar(records[current]);

@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Molecule Profiler</title>
-<link rel="stylesheet" href="css/style.css?v=2026-10-20-design">
-<link rel="stylesheet" href="css/workspace.css?v=2026-10-20-design">
+<link rel="stylesheet" href="css/style.css?v=2026-10-21-ui1">
+<link rel="stylesheet" href="css/workspace.css?v=2026-10-21-ui1">
 </head>
 <body data-theme="dark">
 <header class="topbar">
@@ -120,7 +120,7 @@
         <dl id="lipo" class="data"></dl>
         <p class="note">WLOGP is the Wildman&ndash;Crippen atom-contribution log P. Solubility is the Delaney ESOL estimate from that log P, molecular weight, rotatable bonds and the aromatic atom fraction.</p>
         <p class="note" id="property-validation"></p>
-        <p class="note warn" id="property-domain" hidden></p>
+
       </article>
 
       <article class="panel wide">
@@ -281,6 +281,8 @@
           </select></label>
         </div>
         <p class="hint" id="sim-blurb"></p>
+        <label class="sim-scope-toggle"><input type="checkbox" id="sim-include-property-only"> Include property-reference and illustrative series entries</label>
+        <p class="hint" id="sim-scope-count" role="status" aria-live="polite"></p>
         <p class="hint reference-scope-notice">This comparison includes a mixed-provenance library, including illustrative homolog series and ESOL-labelled records. A structural match does not establish shared activity. <a href="library-inspector.html">Inspect the reference collections ↗</a></p>
         <div class="table-wrap"><table id="similar"><thead></thead><tbody></tbody></table></div>
       </article>
@@ -342,36 +344,36 @@
   </section>
 </main>
 
-<script src="js/smiles.js?v=2026-10-20a"></script>
-<script src="js/mol.js?v=2026-10-20a"></script>
-<script src="js/descriptors.js?v=2026-10-20a"></script>
-<script src="js/rules.js?v=2026-10-20a"></script>
-<script src="js/fingerprints.js?v=2026-10-20a"></script>
-<script src="js/smarts.js?v=2026-10-20a"></script>
-<script src="js/stereo.js?v=2026-10-20a"></script>
-<script src="data/library.js?v=2026-10-20-library-refresh"></script>
-<script src="data/targets.js?v=2026-10-20a"></script>
-<script src="data/benchmark.js?v=2026-10-20a"></script>
-<script src="data/alerts.js?v=2026-10-20a"></script>
-<script src="data/toxalerts.js?v=2026-10-20a"></script>
-<script src="data/dependence.js?v=2026-10-20a"></script>
-<script src="js/tox.js?v=2026-10-20a"></script>
-<script src="js/transform.js?v=2026-10-20a"></script>
-<script src="js/sites.js?v=2026-10-20a"></script>
-<script src="js/depict.js?v=2026-10-20a"></script>
-<script src="data/metabolism.js?v=2026-10-20a"></script>
-<script src="data/metcases.js?v=2026-10-20a"></script>
-<script src="data/stereocases.js?v=2026-10-20a"></script>
-<script src="data/wedgecases.js?v=2026-10-20a"></script>
-<script src="data/propcases.js?v=2026-10-20a"></script>
-<script src="data/crippencases.js?v=2026-10-20a"></script>
-  <script src="data/citations.js?v=2026-10-20a"></script>
-<script src="js/metabolism.js?v=2026-10-20a"></script>
-<script src="js/evidence-report.js?v=2026-10-20b"></script>
-<script src="js/screen-coverage.js?v=2026-10-20c"></script>
-<script src="js/app.js?v=2026-10-20c"></script>
-<script src="js/comparison-data.js?v=2026-10-20-compare"></script>
-<script src="js/workspace-ui.js?v=2026-10-20-design"></script>
-<script src="js/comparison-ui.js?v=2026-10-20-compare"></script>
+<script src="js/smiles.js?v=2026-10-21-ui1"></script>
+<script src="js/mol.js?v=2026-10-21-ui1"></script>
+<script src="js/descriptors.js?v=2026-10-21-ui1"></script>
+<script src="js/rules.js?v=2026-10-21-ui1"></script>
+<script src="js/fingerprints.js?v=2026-10-21-ui1"></script>
+<script src="js/smarts.js?v=2026-10-21-ui1"></script>
+<script src="js/stereo.js?v=2026-10-21-ui1"></script>
+<script src="data/library.js?v=2026-10-21-ui1"></script>
+<script src="data/targets.js?v=2026-10-21-ui1"></script>
+<script src="data/benchmark.js?v=2026-10-21-ui1"></script>
+<script src="data/alerts.js?v=2026-10-21-ui1"></script>
+<script src="data/toxalerts.js?v=2026-10-21-ui1"></script>
+<script src="data/dependence.js?v=2026-10-21-ui1"></script>
+<script src="js/tox.js?v=2026-10-21-ui1"></script>
+<script src="js/transform.js?v=2026-10-21-ui1"></script>
+<script src="js/sites.js?v=2026-10-21-ui1"></script>
+<script src="js/depict.js?v=2026-10-21-ui1"></script>
+<script src="data/metabolism.js?v=2026-10-21-ui1"></script>
+<script src="data/metcases.js?v=2026-10-21-ui1"></script>
+<script src="data/stereocases.js?v=2026-10-21-ui1"></script>
+<script src="data/wedgecases.js?v=2026-10-21-ui1"></script>
+<script src="data/propcases.js?v=2026-10-21-ui1"></script>
+<script src="data/crippencases.js?v=2026-10-21-ui1"></script>
+  <script src="data/citations.js?v=2026-10-21-ui1"></script>
+<script src="js/metabolism.js?v=2026-10-21-ui1"></script>
+<script src="js/evidence-report.js?v=2026-10-21-ui1"></script>
+<script src="js/screen-coverage.js?v=2026-10-21-ui1"></script>
+<script src="js/app.js?v=2026-10-21-ui1"></script>
+<script src="js/comparison-data.js?v=2026-10-21-ui1"></script>
+<script src="js/workspace-ui.js?v=2026-10-21-ui1"></script>
+<script src="js/comparison-ui.js?v=2026-10-21-ui1"></script>
 </body>
 </html>

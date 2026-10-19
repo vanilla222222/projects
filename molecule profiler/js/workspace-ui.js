@@ -125,6 +125,7 @@
       if (note.id || note.querySelector('[id]')) return;
       const details = document.createElement('details');
       details.className = 'method-details';
+      details.open = true; // Scientific caveats should be visible on first load.
       const summary = document.createElement('summary');
       summary.textContent = 'Read methods and limitations';
       details.appendChild(summary);
