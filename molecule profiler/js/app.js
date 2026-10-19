@@ -354,6 +354,24 @@ function renderCurrent() {
   const d = record.d;
   const v = record.v;
 
+  // Descriptor methods and extrapolation warnings; intentionally no new predictions.
+  if (typeof propertyEvidenceRows === 'function') {
+    const items = propertyEvidenceRows(d);
+    const host = document.getElementById('evidence-descriptors');
+    if (host) {
+      host.innerHTML = '<table class="table"><thead><tr><th>Property</th><th>Value</th><th>Method</th><th>Evidence</th></tr></thead><tbody>'
+        + items.map(item => '<tr><td>' + escapeHtml(item.label) + '</td><td>'
+          + (item.value === null ? 'Unavailable' : escapeHtml(String(item.value) + (item.unit ? ' ' + item.unit : '')))
+          + '</td><td>' + escapeHtml(item.method) + '</td><td>' + escapeHtml(item.tier) + '</td></tr>').join('')
+        + '</tbody></table>';
+    }
+    const warnings = propertyEvidenceWarnings(d);
+    const warningHost = document.getElementById('evidence-warnings');
+    if (warningHost) warningHost.textContent = warnings.length
+      ? 'Applicability cautions: ' + warnings.join(' ')
+      : 'No simple applicability flags triggered. This does not establish model accuracy or chemical safety.';
+  }
+
   rows(document.getElementById('identity'), [
     ['name', 'Name', '<span id="name-edit" contenteditable="true" spellcheck="false"'
       + ' title="Click to rename. The name is used for the tab, the export and the file name.">'
