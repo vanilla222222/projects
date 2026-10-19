@@ -474,6 +474,6 @@ function countSmartsMatches(pattern, mol) {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    parseSmarts, smartsMatches, compileSmarts, hasSmartsMatch, countSmartsMatches
+    parseSmarts, smartsMatches, compileSmarts, hasSmartsMatch, countSmartsMatches, SMARTS_Z
   };
 }

@@ -19,6 +19,12 @@ const ELEMENT_SYMBOLS = new Set([
 
 const BOND_ORDERS = { '-': 1, '=': 2, '#': 3, '$': 4, ':': 1, '/': 1, '\\': 1 };
 
+function bondDirection(symbol) {
+  if (symbol === '/') return 1;
+  if (symbol === '\\') return -1;
+  return 0;
+}
+
 function smilesError(message, position) {
   const err = new Error(message);
   err.position = position;
@@ -45,11 +51,11 @@ function parseSmiles(text) {
     return atom;
   };
 
-  const addBond = (a, b, order, aromatic, position) => {
+  const addBond = (a, b, order, aromatic, position, dir) => {
     if (a === b) throw smilesError('Atom bonded to itself', position);
     const exists = bonds.some((bond) => (bond.a === a && bond.b === b) || (bond.a === b && bond.b === a));
     if (exists) throw smilesError('Duplicate bond between the same two atoms', position);
-    bonds.push({ a, b, order, aromatic: !!aromatic });
+    bonds.push({ a, b, order, aromatic: !!aromatic, dir: dir || 0 });
   };
 
   const connect = (atom, position) => {
@@ -71,7 +77,7 @@ function parseSmiles(text) {
         order = BOND_ORDERS[symbol];
         aromatic = symbol === ':';
       }
-      addBond(previous, atom.index, order, aromatic, position);
+      addBond(previous, atom.index, order, aromatic, position, bondDirection(symbol));
       atoms[previous].order.push(atom.index);
       atom.order.push(previous);
     }
@@ -105,10 +111,17 @@ function parseSmiles(text) {
       continue;
     }
 
+    if (ch === '<' && src[i + 1] === '-') {
+      if (pendingBond !== null) throw smilesError('Two bond symbols in a row', i);
+      pendingBond = '-';
+      i += 2;
+      continue;
+    }
+
     if (ch in BOND_ORDERS) {
       if (pendingBond !== null) throw smilesError('Two bond symbols in a row', i);
       pendingBond = ch;
-      if (ch === '/' || ch === '\\') pendingBond = '-';
+      if (ch === '-' && src[i + 1] === '>') { i += 2; continue; }
       i += 1;
       continue;
     }
@@ -182,7 +195,8 @@ function parseSmiles(text) {
       const bothAromatic = atoms[open.atom].aromatic && atoms[previous].aromatic;
       const order = symbol ? BOND_ORDERS[symbol] : 1;
       const aromatic = symbol ? symbol === ':' : bothAromatic;
-      addBond(open.atom, previous, order, aromatic, position);
+      const dir = pendingBond ? -bondDirection(pendingBond) : bondDirection(open.bond);
+      addBond(open.atom, previous, order, aromatic, position, dir);
       const slot = atoms[open.atom].order.indexOf(open.slot);
       if (slot >= 0) atoms[open.atom].order[slot] = previous;
       atoms[previous].order.push(open.atom);
@@ -270,5 +284,5 @@ function parseBracketAtom(body, position) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { parseSmiles, ELEMENT_SYMBOLS, AROMATIC_LOWER };
+  module.exports = { parseSmiles, bondDirection, ELEMENT_SYMBOLS, AROMATIC_LOWER };
 }
