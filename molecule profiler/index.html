@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Molecule Profiler</title>
-<link rel="stylesheet" href="css/style.css?v=2026-10-19z">
+<link rel="stylesheet" href="css/style.css?v=2026-10-20a">
 </head>
 <body data-theme="dark">
 <header class="topbar">
@@ -135,11 +135,12 @@
             <option value="all" selected>matches only</option>
             <option value="Brenk">Brenk</option>
             <option value="PAINS">PAINS</option>
-            <option value="Reactive">reactive</option>
+            <option value="Covalent warhead">covalent warhead</option>
             <option value="all-patterns">every pattern</option>
           </select></label>
         </div>
         <div class="table-wrap"><table id="alerts"><thead></thead><tbody></tbody></table></div>
+        <div class="cite-block" id="alert-citations"></div>
         <p class="hint caveat">An alert is a flag, not a rejection. Penicillin G matches the beta-lactam alert, curcumin matches two Michael-acceptor patterns, and both are used anyway &mdash; in the first case the reactive group <em>is</em> the mechanism. The patterns say what a screening deck would ask about; the note next to each says why it asks. Aspirin, paracetamol and ibuprofen match nothing here.</p>
       </article>
 
@@ -160,6 +161,7 @@
           </select></label>
         </div>
         <div class="table-wrap"><table id="tox"><thead></thead><tbody></tbody></table></div>
+        <div class="cite-block" id="tox-citations"></div>
         <div class="coverage">
           <div class="covered">
             <strong>Covered</strong>
@@ -307,30 +309,31 @@
   </section>
 </main>
 
-<script src="js/smiles.js?v=2026-10-19z"></script>
-<script src="js/mol.js?v=2026-10-19z"></script>
-<script src="js/descriptors.js?v=2026-10-19z"></script>
-<script src="js/rules.js?v=2026-10-19z"></script>
-<script src="js/fingerprints.js?v=2026-10-19z"></script>
-<script src="js/smarts.js?v=2026-10-19z"></script>
-<script src="js/stereo.js?v=2026-10-19z"></script>
-<script src="data/library.js?v=2026-10-19z"></script>
-<script src="data/targets.js?v=2026-10-19z"></script>
-<script src="data/benchmark.js?v=2026-10-19z"></script>
-<script src="data/alerts.js?v=2026-10-19z"></script>
-<script src="data/toxalerts.js?v=2026-10-19z"></script>
-<script src="data/dependence.js?v=2026-10-19z"></script>
-<script src="js/tox.js?v=2026-10-19z"></script>
-<script src="js/transform.js?v=2026-10-19z"></script>
-<script src="js/sites.js?v=2026-10-19z"></script>
-<script src="js/depict.js?v=2026-10-19z"></script>
-<script src="data/metabolism.js?v=2026-10-19z"></script>
-<script src="data/metcases.js?v=2026-10-19z"></script>
-<script src="data/stereocases.js?v=2026-10-19z"></script>
-<script src="data/wedgecases.js?v=2026-10-19z"></script>
-<script src="data/propcases.js?v=2026-10-19z"></script>
-<script src="data/crippencases.js?v=2026-10-19z"></script>
-<script src="js/metabolism.js?v=2026-10-19z"></script>
-<script src="js/app.js?v=2026-10-19z"></script>
+<script src="js/smiles.js?v=2026-10-20a"></script>
+<script src="js/mol.js?v=2026-10-20a"></script>
+<script src="js/descriptors.js?v=2026-10-20a"></script>
+<script src="js/rules.js?v=2026-10-20a"></script>
+<script src="js/fingerprints.js?v=2026-10-20a"></script>
+<script src="js/smarts.js?v=2026-10-20a"></script>
+<script src="js/stereo.js?v=2026-10-20a"></script>
+<script src="data/library.js?v=2026-10-20a"></script>
+<script src="data/targets.js?v=2026-10-20a"></script>
+<script src="data/benchmark.js?v=2026-10-20a"></script>
+<script src="data/alerts.js?v=2026-10-20a"></script>
+<script src="data/toxalerts.js?v=2026-10-20a"></script>
+<script src="data/dependence.js?v=2026-10-20a"></script>
+<script src="js/tox.js?v=2026-10-20a"></script>
+<script src="js/transform.js?v=2026-10-20a"></script>
+<script src="js/sites.js?v=2026-10-20a"></script>
+<script src="js/depict.js?v=2026-10-20a"></script>
+<script src="data/metabolism.js?v=2026-10-20a"></script>
+<script src="data/metcases.js?v=2026-10-20a"></script>
+<script src="data/stereocases.js?v=2026-10-20a"></script>
+<script src="data/wedgecases.js?v=2026-10-20a"></script>
+<script src="data/propcases.js?v=2026-10-20a"></script>
+<script src="data/crippencases.js?v=2026-10-20a"></script>
+  <script src="data/citations.js?v=2026-10-20a"></script>
+<script src="js/metabolism.js?v=2026-10-20a"></script>
+<script src="js/app.js?v=2026-10-20a"></script>
 </body>
 </html>

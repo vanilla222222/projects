@@ -981,6 +981,61 @@ function setupStructure() {
   });
 }
 
+function citationFor(ref, cite) {
+  if (cite) return cite;
+  const set = rulesetFor(ref);
+  if (!set) return '';
+  return set.citation + (set.doi ? ' doi:' + set.doi : '');
+}
+
+function rulesetFor(ref) {
+  if (typeof RULESETS === 'undefined' || !ref) return null;
+  return RULESETS[ref] || null;
+}
+
+function sourceCell(source, ref) {
+  const set = rulesetFor(ref);
+  const label = escapeHtml(source);
+  if (!set) return label;
+  const tip = escapeHtml(set.citation + ' ' + set.coverage);
+  if (!set.url) return '<abbr title="' + tip + '">' + label + '</abbr>';
+  return '<a href="' + escapeHtml(set.url) + '" target="_blank" rel="noopener" title="' + tip + '">'
+    + label + '</a>';
+}
+
+function citeSpan(cite) {
+  return cite ? ' <span class="cite">' + escapeHtml(cite) + '</span>' : '';
+}
+
+function renderCitations(id, refs, notImplemented) {
+  const host = document.getElementById(id);
+  if (!host) return;
+  const used = Object.keys(RULESETS).filter((ref) => refs.indexOf(ref) !== -1);
+  if (!used.length) {
+    host.innerHTML = '';
+    return;
+  }
+  let html = '<p class="note"><strong>Sources for the rules above</strong></p><ul class="cites">'
+    + used.map((ref) => {
+      const set = RULESETS[ref];
+      const link = set.url
+        ? ' <a href="' + escapeHtml(set.url) + '" target="_blank" rel="noopener">'
+          + escapeHtml(set.doi || 'link') + '</a>'
+        : '';
+      return '<li><strong>' + escapeHtml(set.label) + '</strong> &mdash; ' + escapeHtml(set.citation) + link
+        + ' <em>' + escapeHtml(set.coverage) + '</em></li>';
+    }).join('') + '</ul>';
+  html += '<p class="note warn">' + escapeHtml(ALERT_ENCODING_NOTE) + '</p>';
+  if (notImplemented && typeof RULESETS_NOT_IMPLEMENTED !== 'undefined') {
+    html += '<p class="note"><strong>Published rule sets this tool does not implement</strong></p><ul class="cites">'
+      + RULESETS_NOT_IMPLEMENTED.map((entry) => (
+        '<li><strong>' + escapeHtml(entry.label) + '</strong> &mdash; ' + escapeHtml(entry.citation)
+          + ' ' + escapeHtml(entry.reason) + '</li>'
+      )).join('') + '</ul>';
+  }
+  host.innerHTML = html;
+}
+
 function renderAlerts(record) {
   const choice = document.getElementById('alert-source').value;
   const scanned = ALERTS.map((alert) => {
@@ -1011,13 +1066,15 @@ function renderAlerts(record) {
   table.querySelector('tbody').innerHTML = shown.length ? shown.map((row) => (
     '<tr' + (row.count ? '' : ' class="quiet"') + '>'
       + '<td>' + escapeHtml(row.alert.name) + '</td>'
-      + '<td>' + escapeHtml(row.alert.source) + '</td>'
+      + '<td>' + sourceCell(row.alert.source, row.alert.ref) + '</td>'
       + '<td>' + row.count + '</td>'
       + '<td class="atoms">' + (row.atoms.length ? row.atoms.map((index) => index + 1).join(', ') : '—') + '</td>'
       + '<td><code>' + escapeHtml(row.alert.smarts) + '</code></td>'
-      + '<td class="note">' + escapeHtml(row.alert.note) + '</td>'
+      + '<td class="note">' + escapeHtml(row.alert.note) + citeSpan(row.alert.cite) + '</td>'
       + '</tr>'
   )).join('') : '<tr><td colspan="6">Nothing matches in this catalogue.</td></tr>';
+
+  renderCitations('alert-citations', scanned.map((row) => row.alert.ref), true);
 }
 
 function setupAlerts() {
@@ -1076,13 +1133,15 @@ function renderTox(record) {
     '<tr' + (row.count ? '' : ' class="quiet"') + '>'
       + '<td>' + escapeHtml(row.name) + '</td>'
       + '<td>' + escapeHtml(row.endpoint) + '</td>'
-      + '<td>' + escapeHtml(row.source) + '</td>'
+      + '<td>' + sourceCell(row.source, row.ref) + '</td>'
       + '<td>' + row.count + '</td>'
       + '<td class="atoms">' + (row.atoms.length ? row.atoms.map((index) => index + 1).join(', ') : '\u2014') + '</td>'
       + '<td><code>' + escapeHtml(row.pattern) + '</code></td>'
-      + '<td class="note">' + escapeHtml(row.note) + '</td>'
+      + '<td class="note">' + escapeHtml(row.note) + citeSpan(row.cite) + '</td>'
       + '</tr>'
   )).join('') : '<tr><td colspan="7">No rule fires for this endpoint.</td></tr>';
+
+  renderCitations('tox-citations', scan.rows.map((row) => row.ref), false);
 }
 
 const DEP_COLUMNS = [
@@ -1696,8 +1755,22 @@ function fullExportRows(record) {
     add('alerts', alert.name, 'atoms', atoms.map((index) => index + 1).join(' '));
     add('alerts', alert.name, 'pattern', alert.smarts);
     add('alerts', alert.name, 'concern', alert.note);
+    add('alerts', alert.name, 'citation', citationFor(alert.ref, alert.cite));
   });
   pair('alerts', 'patternsMatched', countAlerts(record.mol) + ' of ' + ALERTS.length);
+  if (typeof RULESETS !== 'undefined') {
+    Object.keys(RULESETS).forEach((ref) => {
+      const set = RULESETS[ref];
+      add('provenance', 'ruleset: ' + set.label, 'citation', set.citation);
+      add('provenance', 'ruleset: ' + set.label, 'doi', set.doi || '');
+      add('provenance', 'ruleset: ' + set.label, 'coverage', set.coverage);
+    });
+    add('provenance', 'rule encoding', 'statement', ALERT_ENCODING_NOTE);
+    RULESETS_NOT_IMPLEMENTED.forEach((entry) => {
+      add('provenance', 'not implemented: ' + entry.label, 'citation', entry.citation);
+      add('provenance', 'not implemented: ' + entry.label, 'reason', entry.reason);
+    });
+  }
 
   const scan = toxFor(record);
   scan.byEndpoint.forEach((group) => {
@@ -1714,6 +1787,7 @@ function fullExportRows(record) {
     add('toxicity rules', row.name, 'atoms', (row.atoms || []).map((index) => index + 1).join(' '));
     add('toxicity rules', row.name, 'ruleBody', row.pattern || row.smarts || '');
     add('toxicity rules', row.name, 'mechanism', row.note);
+    add('toxicity rules', row.name, 'citation', citationFor(row.ref, row.cite));
   });
 
   const profile = dependenceProfile(record, method.key, score);

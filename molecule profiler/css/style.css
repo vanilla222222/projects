@@ -452,3 +452,10 @@ svg.depiction .atom {
   border-bottom-style: solid;
   border-bottom-color: var(--accent);
 }
+
+.cite-block { margin-top: 10px; }
+.cite-block ul.cites { margin: 4px 0 8px; padding-left: 18px; font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+.cite-block ul.cites li { margin-bottom: 5px; }
+.cite-block ul.cites strong { color: var(--text); }
+.cite-block ul.cites em { color: var(--muted); }
+span.cite { display: block; margin-top: 3px; font-size: 0.72rem; color: var(--muted); font-style: italic; }
