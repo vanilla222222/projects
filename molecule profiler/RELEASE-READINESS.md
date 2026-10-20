@@ -62,3 +62,28 @@ Use the structure-file input to reopen a Molecule Profiler schema-version-1 JSON
 Node tests exercise snapshot parsing and restoration with the actual descriptor engine, including tampered saved values and partial failures. The corresponding Chromium import/download test is present but has not been executed successfully in the restricted development environment.
 
 File reads are invalidated by Clear, a newer selected file, or a new analysis. Out-of-order read completions and stale read failures cannot replace newer input or status. Invalid JSON files are checked before replacing the input text. Deferred-read Node regressions exercise these handlers, including the 1 MB file limit.
+
+
+## Local browser-install attempt, 2026-10-20
+
+Playwright 1.64.0 attempted to install its official Chromium 156.0.8078.4
+(build 1248) and, separately, the matching headless-shell package. Both
+downloads failed ZIP archive validation: the end-of-central-directory record
+was missing. Browser installation did not complete, and no Chromium assertions
+ran. This is an unresolved test-environment/download failure, not evidence of
+an application failure or a browser-suite pass. The separate explorer and
+prediction jsdom workflows passed; they do not verify Chromium rendering.
+
+The local validation runner prints each script name before execution and records
+its monotonic duration and timeout budget in the JSON diagnostics. The exhaustive
+retrieval benchmark has a separate bounded 300-second budget; other scripts
+retain 120 seconds. Local exhaustive runs exceeded two minutes; the separate budget accommodates
+this workload in slower environments. A timeout remains a failed check; no
+assertions or datasets are skipped to accommodate the increased work.
+
+The historical retrieval evaluator now reuses reverse comparisons only when the
+caller explicitly selects an exactly symmetric metric. Its triangular Float64
+cache is bounded to 64 MiB; oversized datasets retain per-query caching. Generic
+directional metrics keep their original behaviour. The fourth-batch generated
+report is byte-for-byte unchanged; source hashes and the comparison are recorded
+in `validation/retrieval-cache-equivalence-batch-4.json`.

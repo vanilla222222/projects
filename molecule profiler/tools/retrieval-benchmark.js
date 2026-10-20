@@ -54,7 +54,9 @@ function run(methodKey, metricKey) {
     ligands: target.ligands.filter((name) => byName.has(name))
   }));
 
-  const {trials}=evaluate(sets,byName,score);
+  // These two bit-set metrics are exactly symmetric. Reuse reverse comparisons
+  // without changing fingerprint generation, holdout rules, or target-order ties.
+  const {trials}=evaluate(sets,byName,score,{symmetric:true});
   const perTarget=new Map();
   for(const trial of trials){
     if(!perTarget.has(trial.key))perTarget.set(trial.key,[]);

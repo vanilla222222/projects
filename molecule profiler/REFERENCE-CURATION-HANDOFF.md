@@ -129,3 +129,11 @@ mismatches. All 177 additions agree with the same-graph Crippen logP/MR
 implementation within 1e-7; the previous four logP and three MR residuals remain
 unchanged. The complete audit is `validation/library-descriptor-rdkit.json`.
 This is computed-descriptor equivalence, not experimental property validation.
+
+
+The fourth receptor batch adds 149 structures, taking the library to 4,007.
+All 149 additions agree with the same-graph RDKit Crippen logP/MR audit within
+1e-7; the earlier four logP and three MR residuals are unchanged. The scaffold
+audit additionally recomputes identities for all counted source profiles and
+reports ring-scaffold concentration separately from acyclic profiles. Neither
+audit establishes measured-property or biological prediction accuracy.

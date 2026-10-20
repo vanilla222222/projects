@@ -1,0 +1,5492 @@
+{
+  "schemaVersion": 1,
+  "rdkitVersion": "2026.09.1",
+  "sourceSha256": {
+    "data/library.js": "152b16e8ddefe057ef76e00260466c0dfe5c2aaa07e83c968b6440b79f4e0f08",
+    "data/targets.js": "b6b8a5362b47f9506b34c502588c0b0cf75e83ea2c4d3452530589d2d61928c1",
+    "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
+    "data/receptor-ligand-annotations.js": "69453d34d6eb5d6cfe5f2410decec4492ff8bbeecf261706c896273488629490",
+    "js/receptor-catalog.js": "c89696b0ea6e22873929f2e3c777774b13579c917a541cf7820de253e19305e1",
+    "tools/receptor-diversity-audit.py": "c507a5086e772e7b5f052feac394a3637c8e986e61ee57d11b3771491c29bd71"
+  },
+  "method": "RDKit Bemis-Murcko ring/linker scaffolds after audited uncharging and tautomer grouping; scaffold stereochemistry and isotopic labels omitted, atom and bond types retained.",
+  "limitations": [
+    "Current valid, linked and non-stale sourced profiles only; legacy names excluded.",
+    "Profiles deduplicated within each receptor; the same profile may occur at multiple receptors.",
+    "Acyclic profiles have no Murcko ring scaffold and are reported separately, not as one shared scaffold.",
+    "Scaffold diversity is representation-dependent and does not establish pharmacological diversity, assay independence or prediction accuracy.",
+    "No similarity threshold, potency weighting, or structure-activity extrapolation."
+  ],
+  "rows": [
+    {
+      "id": "HTR1A",
+      "name": "5-HT1A receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "HTR1B",
+      "name": "5-HT1B receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "HTR1D",
+      "name": "5-HT1D receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "HTR1E",
+      "name": "5-HT1E receptor",
+      "sourcedProfiles": 4,
+      "ringProfiles": 4,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 3,
+      "largestRingScaffoldProfiles": 2,
+      "largestRingScaffoldFractionOfRingProfiles": 0.5,
+      "ringScaffolds": [
+        {
+          "smiles": "c1ccc(-c2[nH]nc3c2CCNCC3)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(OCc1ccccc1)N1Cc2ccc(N3CCNCC3)cc2C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2[nH]ccc2c1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "HTR1F",
+      "name": "5-HT1F receptor",
+      "sourcedProfiles": 26,
+      "ringProfiles": 26,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 15,
+      "largestRingScaffoldProfiles": 6,
+      "largestRingScaffoldFractionOfRingProfiles": 0.23076923076923078,
+      "ringScaffolds": [
+        {
+          "smiles": "O=C(Nc1cccc(C(=O)C2CCNCC2)c1)c1ccccc1",
+          "profiles": 6
+        },
+        {
+          "smiles": "O=C(Nc1ccc2onc(C3CCNCC3)c2c1)c1ccccc1",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=S(=O)(Nc1ccc2[nH]cc(CC3CCCN3)c2c1)c1ccccc1",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=C(Nc1ccc2c(c1)N(C1CCNCC1)CN2)c1ccccc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(Nc1cccc(C(=O)C2CCNCC2)n1)c1ccccc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(Nc1ccc2[nH]c3c(c2c1)CCCC3)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Nc1ccc2c(c1)C(C1CCNCC1)CN2)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Nc1ccc2c(c1)N(C1CCNCC1)CC2)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Nc1ccc2c(c1)N(C1CCNCC1)CCO2)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Nc1ccc2ccn(C3CCNCC3)c2c1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Nc1ccc2cnn(C3CCNCC3)c2c1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Nc1ccc2n[nH]c(C3CCNCC3)c2c1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=S(=O)(Cc1ccccc1)Nc1ccc2[nH]cc(CC3CCCN3)c2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=S1(=O)CCCN1c1cccc(CC2CCN(CCOc3cccc4ncccc34)CC2)c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CC2CCN(CCOc3cccc4ncccc34)CC2)cc1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "HTR5A",
+      "name": "5-HT5A receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 20,
+      "largestRingScaffoldProfiles": 26,
+      "largestRingScaffoldFractionOfRingProfiles": 0.52,
+      "ringScaffolds": [
+        {
+          "smiles": "C1=NCc2ccccc2N1",
+          "profiles": 26
+        },
+        {
+          "smiles": "C1=Nc2ccccc2CN1",
+          "profiles": 5
+        },
+        {
+          "smiles": "c1ccc2[nH]ccc2c1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(C=Cc1ccccc1)NCc1ccc(-c2ccc(CNCCc3ccccc3)cc2)nc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(C=Cc1ccccc1)NCc1ccc(-c2ccc(CNCCc3ccccc3)cn2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCC1CCCC1)NCc1ccc(-c2ccc(CNCCc3ccccc3)cc2)nc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCC1CCCC1)NCc1ccc(-c2ccc(CNCCc3ccccc3)cn2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CNC2Cc3c[nH]c4cccc(c34)C2C1)OCc1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1NCCCCC1NC1=NCc2ccccc2N1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1cnn(CCCCN2CCN(c3cccc4ccccc34)CC2)c(=O)[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCNCc2ccc(-c3ccc(CNC4CCN(Cc5ccccc5)CC4)cc3)cc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCNCc2ccc(-c3cccc(CNC4CCN(Cc5ccccc5)CC4)c3)cc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(OCCCN2CCc3[nH]c4ccccc4c3C2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CC(N1CCNCC1)c1ccccc1S2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CN=C(NC1CCC1)N2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CN=C(NCC1CCCO1)N2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CN=C(NCC1COCCO1)N2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CN=C(NCC1COc3ccccc3O1)N2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CN=C(NCCC1CCCCC1)N2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)N=C(N1CCNCC1)c1ccccc1N2",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "HTR2A",
+      "name": "5-HT2A receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "HTR2B",
+      "name": "5-HT2B receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "HTR2C",
+      "name": "5-HT2C receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "HTR4",
+      "name": "5-HT4 receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 38,
+      "largestRingScaffoldProfiles": 10,
+      "largestRingScaffoldFractionOfRingProfiles": 0.2,
+      "ringScaffolds": [
+        {
+          "smiles": "O=C(NCC1CCN(CCCS(=O)(=O)N2CCNCC2)CC1)c1cccc2c1OCCO2",
+          "profiles": 10
+        },
+        {
+          "smiles": "O=C(NCC1CCN(CCCS(=O)(=O)N2CCCCC2)CC1)c1cccc2c1OCCO2",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=C(OCCN1CCCCC1)c1ccccc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(CCC(=O)NC1CCN(CCOC(=O)c2ccccc2)CC1)NC1CCN(CCOC(=O)c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCC(=O)NCC1CCN(CCOC(=O)c2ccccc2)CC1)NCC1CCN(CCOC(=O)c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCC(=O)NCCC1CCN(CCOC(=O)c2ccccc2)CC1)NCCC1CCN(CCOC(=O)c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCC(=O)NCC1CCN(CCOC(=O)c2ccccc2)CC1)NCC1CCN(CCOC(=O)c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCC(=O)NCCC1CCN(CCOC(=O)c2ccccc2)CC1)NCCC1CCN(CCOC(=O)c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCCCC(=O)NCC1CCN(CCOC(=O)c2ccccc2)CC1)NCC1CCN(CCOC(=O)c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCCCC(=O)NCCC1CCN(CCOC(=O)c2ccccc2)CC1)NCCC1CCN(CCOC(=O)c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCCCCCCCCC(=O)NC1CCN(Cc2ccccc2)CC1)NC1CCN(CCOC(=O)c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCCCCCCCCC(=O)NCC1CCN(CCOC(=O)c2ccccc2)CC1)NCC1CCN(CCOC(=O)c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCCCCCCCCC(=O)NCCC1CCN(CCOC(=O)c2ccccc2)CC1)NCCC1CCN(CCOC(=O)c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCCCCCCCCNC(=O)C1CCN(CCOC(=O)c2ccccc2)CC1)NC1CCN(CCOC(=O)c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCNC(=O)C1CCN(CCOC(=O)c2ccccc2)CC1)NC1CCN(CCOC(=O)c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCNC(=O)C1CCN(CCOC(=O)c2ccccc2)CC1)NC1CCN(CCOC(=O)c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCc1ccc2c(c1)oc1cc(CCC(=O)NC3CCN(CCOC(=O)c4ccccc4)CC3)ccc12)NC1CCN(CCOC(=O)c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CN(CCCCCCCCCCC(=O)NC1CCN(CCOC(=O)c2ccccc2)CC1)CCCCCCCCCCC(=O)NC1CCN(CCOC(=O)c2ccccc2)CC1)NCC1CCNCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCN(CCCS(=O)(=O)N2CCC3(CCCC3)CC2)CC1)c1cccc2c1OCCO2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCN(CCCS(=O)(=O)N2CCN(C(=O)c3ccco3)CC2)CC1)c1cccc2c1OCCO2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCN(CCCS(=O)(=O)N2CCN(C3CCCC3)CC2)CC1)c1cccc2c1OCCO2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCN(CCCS(=O)(=O)N2CCN(Cc3cccnc3)CC2)CC1)c1cccc2c1OCCO2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCN(CCCS(=O)(=O)N2CCN(S(=O)(=O)N3CCCC3)CC2)CC1)c1cccc2c1OCCO2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCN(CCCS(=O)(=O)N2CCN(S(=O)(=O)c3ccccc3)CC2)CC1)c1cccc2c1OCCO2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCN(CCCS(=O)(=O)N2CCN(c3ccccc3)CC2)CC1)c1cccc2c1OCCO2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCN(CCCS(=O)(=O)N2CCN(c3ccccn3)CC2)CC1)c1cccc2c1OCCO2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCN(CCCS(=O)(=O)N2CCOCC2)CC1)c1cccc2c1OCCO2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCNCC1)c1c2n(c3ccccc13)CCCO2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCNCC1)c1cccc2c1OCCO2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(OCCN1CCC(C(=O)NCCCOCCOCCOCNC(=O)C2CCN(CCOC(=O)c3ccccc3)CC2)CC1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(OCCN1CCC(C(=O)NCCNC(=O)C2CCN(CCOC(=O)c3ccccc3)CC2)CC1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(OCCN1CCC(C(=O)NCCOCCNC(=O)C2CCN(CCOC(=O)c3ccccc3)CC2)CC1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(OCCN1CCC(C(=O)NCCOCCOCCNC(=O)C2CCN(CCOC(=O)c3ccccc3)CC2)CC1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(OCCN1CCC(C(=O)NCc2cccc(CNC(=O)C3CCN(CCOC(=O)c4ccccc4)CC3)c2)CC1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(OCCN1CCN(C(=O)CCCCCC(=O)N2CCN(CCOC(=O)c3ccccc3)CC2)CC1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(OCCN1CCN(C(=O)CCCCCCCCCCC(=O)N2CCN(CCOC(=O)c3ccccc3)CC2)CC1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1C(=Nc2ccccc2)c2ccccc2N1c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2[nH]ncc2c1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "HTR6",
+      "name": "5-HT6 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "HTR7",
+      "name": "5-HT7 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "DRD1",
+      "name": "Dopamine D1 receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 22,
+      "largestRingScaffoldProfiles": 16,
+      "largestRingScaffoldFractionOfRingProfiles": 0.32,
+      "ringScaffolds": [
+        {
+          "smiles": "c1ccc2c(c1)CCNCCc1ccccc1C2",
+          "profiles": 16
+        },
+        {
+          "smiles": "O=c1[nH]c2[nH]c(-c3ccccc3)cc2c(=O)n1CCN1CCN(c2ccccc2)CC1",
+          "profiles": 5
+        },
+        {
+          "smiles": "O=C(NCCCCN1CCN(c2ccccc2)CC1)c1cc2ccc1CCc1ccc(cc1)CC2",
+          "profiles": 3
+        },
+        {
+          "smiles": "c1ccc2c(c1)Oc1ccccc1C1OCCC21",
+          "profiles": 3
+        },
+        {
+          "smiles": "c1ccc2c(c1)Sc1ccccc1C1OCCC21",
+          "profiles": 3
+        },
+        {
+          "smiles": "c1ccc(C2CNCCc3ccccc32)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCNCCOc1ccccc1C2",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc2c(c1)Sc1ccccc1N2CCC1CCCCN1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(CCCN1CCC(c2ccccc2)CC1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCCCN1CCN(c2ccccc2)CC1)c1cc2c3ccc(c2o1)CCc1ccc(cc1)CC3",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Cc2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Cc2ccccc2OCCCN2CCCC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Cc2ccccc2OCCN2CCCC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Cc2ccccc2OCCN2CCCCC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Cc2ccccc2OCCN2CCOCC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CC1NCCc3cccc-2c31",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCN(CC1CC1)CCc1c([nH]c3ccccc13)C2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCNCCc1[nH]ccc1C2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCNCCc1c([nH]c3ccccc13)C2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCNCCc1sccc1C2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)Cc1ccccc1C1OCCC21",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1n[nH]c2c1CC1NCCCC1C2",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "DRD5",
+      "name": "Dopamine D5 receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 23,
+      "largestRingScaffoldProfiles": 10,
+      "largestRingScaffoldFractionOfRingProfiles": 0.2,
+      "ringScaffolds": [
+        {
+          "smiles": "c1ccc2c(c1)CCNCCc1ccccc1C2",
+          "profiles": 10
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCCNCCc1ccccc1C2",
+          "profiles": 8
+        },
+        {
+          "smiles": "O=C(NN1c2ccccc2N=C(N2CCNCC2)c2ccccc21)c1ccccc1",
+          "profiles": 6
+        },
+        {
+          "smiles": "O=C1c2ccccc2CN1CCCCN1CCN(c2ccccc2)CC1",
+          "profiles": 4
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCCNCCCc1ccccc1C2",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCNCCOc1ccccc1C2",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCNCCc1c([nH]c3ccccc13)C2",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(CCCN1CCC(c2ccccc2)CC1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NN1c2ccccc2N=C(N2CCNCC2)c2ccccc21)c1cccc2ccccc12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1C(=Nc2ccccc2)c2ccccc2N1c1cccc(OCCN2CCCC2)c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1C(=Nc2ccccc2)c2ccccc2N1c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Cc2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Cc2ccccc2OCCCN2CCCC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Cc2ccccc2OCCN2CCCC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Cc2ccccc2OCCN2CCCCC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Cc2ccccc2OCCN2CCN(c3ccccc3)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Cc2ccccc2OCCN2CCOCC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCCNCCc1c([nH]c3ccccc13)C2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCN(CC1CC1)CCc1c([nH]c3ccccc13)C2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCNCCCc1c([nH]c3ccccc13)C2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCNCCc1[nH]ccc1C2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCNCCc1sccc1C2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CNC1COc3ccccc3C21",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "DRD2",
+      "name": "Dopamine D2 receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 28,
+      "largestRingScaffoldProfiles": 6,
+      "largestRingScaffoldFractionOfRingProfiles": 0.12,
+      "ringScaffolds": [
+        {
+          "smiles": "O=C(C=Cc1ccccc1)NC1CCC(CCN2Cc3ccccc3C2)CC1",
+          "profiles": 6
+        },
+        {
+          "smiles": "c1ccc(CN2CCN(c3cccc4[nH]ccc34)CC2)cc1",
+          "profiles": 5
+        },
+        {
+          "smiles": "c1cc2c3c(ccc2[nH]1)CCCC3",
+          "profiles": 4
+        },
+        {
+          "smiles": "O=C1CCCC(=O)N1CCCCNC1CCc2ccc3[nH]ccc3c2C1",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=c1[nH]c2cccc3c2n1CCC3",
+          "profiles": 3
+        },
+        {
+          "smiles": "c1ccc(N2CCN(Cc3cc4ccccc4[nH]3)CC2)cc1",
+          "profiles": 3
+        },
+        {
+          "smiles": "c1ccc(CN2CCN(c3cccc4[nH]cnc34)CC2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(CNCCOc2cccc3[nH]cnc23)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(N2CCN(Cc3c[nH]c4ccccc34)CC2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCCC2",
+          "profiles": 2
+        },
+        {
+          "smiles": "C1=C2c3cccc4[nH]cc(c34)CC2NCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NC1OC2C3CCCN3C(=O)CN2C1=O)C1C=C2c3cccc4[nH]cc(c34)CC2NC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCCCN1CCCC2c3ccccc3CCC21)c1ccc(-c2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCN(CCCN1CCN(c2ccccc2)CC1)C1CCc2ccccc2C1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CC2(CCCC2)CC(=O)N1CCCCN1CCN(c2ncccn2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c2cccc(N3CCN(Cc4ccccc4)CC3)c2[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c2cccc(OCCNCc3ccccc3)c2[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c3c(c1)ncn3CCC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c3c(c[nH]c3c1)CC1NCCCC21",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c3c(ccc2[nH]1)CCC(NCC1CC1)C3",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CN2CCN(c3ccccc3)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CNC2CCc3ccccc3C2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CNCCOc2cccc3[nH]ccc23)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CNCCOc2cccc3[nH]ncc23)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(N2CCN(CCCCNC3CCc4ccccc4C3)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(N2CCN(Cc3c[nH]c4ncccc34)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2[nH]ccc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1csc(CNC2CCc3ccccc3C2)c1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "DRD3",
+      "name": "Dopamine D3 receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 27,
+      "largestRingScaffoldProfiles": 6,
+      "largestRingScaffoldFractionOfRingProfiles": 0.12,
+      "ringScaffolds": [
+        {
+          "smiles": "O=C(C=Cc1ccccc1)NC1CCC(CCN2Cc3ccccc3C2)CC1",
+          "profiles": 6
+        },
+        {
+          "smiles": "c1ccc(CN2CCN(c3cccc4[nH]ccc34)CC2)cc1",
+          "profiles": 5
+        },
+        {
+          "smiles": "c1ccc(CNCCOc2cccc3[nH]cnc23)cc1",
+          "profiles": 4
+        },
+        {
+          "smiles": "c1ccc(C2CCCNC2)cc1",
+          "profiles": 3
+        },
+        {
+          "smiles": "c1ccc(N2CCN(CCCCNC3CCc4ccccc4C3)CC2)cc1",
+          "profiles": 3
+        },
+        {
+          "smiles": "c1ccc(N2CCN(CCNC3CCc4ccccc4C3)CC2)cc1",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=c1[nH]c2cccc(OCCNCc3ccccc3)c2[nH]1",
+          "profiles": 2
+        },
+        {
+          "smiles": "S=c1[nH]c2cccc(OCCNCc3ccccc3)c2[nH]1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(CN2CCN(c3cccc4[nH]cnc34)CC2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(N2CCN(Cc3c[nH]c4ccccc34)CC2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCCC2",
+          "profiles": 2
+        },
+        {
+          "smiles": "C1=C2c3cccc4[nH]cc(c34)CC2NCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCN1CCC(c2ccccc2)CC1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NC1CCC(CCN2Cc3ccccc3C2)CC1)c1cc2ccccc2[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NC1CCC(CCN2Cc3ccccc3C2)CC1)c1ccnc2ccccc12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NC1OC2C3CCCN3C(=O)CN2C1=O)C1C=C2c3cccc4[nH]cc(c34)CC2NC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCCCN(CCCN1CCN(c2ccccc2)CC1)C1CCc2ccccc2C1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCN(CCCN1CCN(c2ccccc2)CC1)C1CCc2ccccc2C1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c2cccc(N3CCN(Cc4ccccc4)CC3)c2[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c2cccc3c2n1CCC3",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c3c(c[nH]c3c1)CC1NCCCC21",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CN2CCN(c3ccccc3)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CNCCOc2cccc3[nH]ccc23)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CNCCOc2cccc3[nH]ncc23)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(N2CCN(CCCNC3CCc4ccccc4C3)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(N2CCN(Cc3cc4ccccc4[nH]3)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2[nH]ccc2c1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "DRD4",
+      "name": "Dopamine D4 receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 25,
+      "largestRingScaffoldProfiles": 9,
+      "largestRingScaffoldFractionOfRingProfiles": 0.18,
+      "ringScaffolds": [
+        {
+          "smiles": "O=C1C(N2CCN(Cc3ccccc3)CC2)CCc2cccc3c2N1CC3",
+          "profiles": 9
+        },
+        {
+          "smiles": "c1ccc(CN2CCN(c3cccc4[nH]ccc34)CC2)cc1",
+          "profiles": 5
+        },
+        {
+          "smiles": "c1ccc(N2CCN(Cc3c[nH]c4ccccc34)CC2)cc1",
+          "profiles": 5
+        },
+        {
+          "smiles": "c1ccc(N2CCN(Cc3cc4ccccc4[nH]3)CC2)cc1",
+          "profiles": 4
+        },
+        {
+          "smiles": "c1ccc(C2CCN(Cc3ccn(-c4ccccc4)c3)CC2)cc1",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=C(NCCN1CCN(c2ccccc2)CC1)c1ccccc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(CN2CCN(c3cccc4[nH]cnc34)CC2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(N2CCN(Cc3ccn(-c4ccccc4)c3)CC2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCCC2",
+          "profiles": 2
+        },
+        {
+          "smiles": "C1=C(c2ccccc2)CCN(Cc2ccn(-c3ccccc3)c2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCCN1CCN(c2ccccc2)CC1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCN1CCC(c2ccccc2)CC1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCN1CCN(c2ccccc2)CC1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCN1CCN(c2ccccc2)CC1)NC1CCCc2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCCN1CCN(c2ccccc2)CC1)C1CCCc2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCN1CCN(c2ccccc2)CC1)C1CCCc2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1NCN(c2ccccc2)C12CCN(Cc1ccn(-c3ccccc3)c1)CC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c2cccc(N3CCN(Cc4ccccc4)CC3)c2[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c2ccccc2n1C1CCN(Cc2ccn(-c3ccccc3)c2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-c2cccc(CN3CCN(c4ccccc4)CC3)c2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-n2ccc(CN3CCN(c4ccccn4)CC3)c2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C2CCCNC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(N2CCN(CCCC3CCCc4ccccc43)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(N2CCN(CCCCC3CCCc4ccccc43)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)N=C(N1CCNCC1)c1ccccc1N2",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "ADRA1A",
+      "name": "Alpha-1A adrenoceptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 35,
+      "largestRingScaffoldProfiles": 5,
+      "largestRingScaffoldFractionOfRingProfiles": 0.1,
+      "ringScaffolds": [
+        {
+          "smiles": "O=C1c2ccccc2S(=O)(=O)N1CCCCN1CCC(n2c(=O)oc3ccccc32)CC1",
+          "profiles": 5
+        },
+        {
+          "smiles": "O=c1[nH]c2scc(-c3ccccc3)c2c(=O)n1CCN1CCN(c2ccccc2)CC1",
+          "profiles": 4
+        },
+        {
+          "smiles": "c1ccc(OC2CCC(NCC3COc4ccccc4O3)C2)cc1",
+          "profiles": 4
+        },
+        {
+          "smiles": "O=C1OCC2=NC(=O)N(C(=O)NCCCN3CCC(c4ccccc4)CC3)C(c3ccccc3)C12",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=C1CC2(CCN(CCc3cccc4ccccc34)CC2)Oc2ccccc21",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C1OCC2=NC(=O)N(C(=O)NCCCN3CCN(c4ccccc4)CC3)C(c3ccccc3)C12",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1cc2c3c(csc3c1)CNCC2",
+          "profiles": 2
+        },
+        {
+          "smiles": "C1=CC(c2ccccc2)N(CCCCCN2CCC(c3ccccc3)(c3ccccc3)CC2)C=N1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=CC2(CCN(CCc3cccc4ccccc34)CC2)Oc2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(C1CCCO1)N1CCN(c2ncc3ccccc3n2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(C1COc2ccccc2O1)N1CCN(c2ncc3ccccc3n2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCCN1CCC(c2ccccc2)(c2ccccc2)CC1)C1=CN=CCC1c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCCNc1ncc2ccccc2n1)C1CCCO1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(c1ccco1)N1CCN(c2ncc3ccccc3n2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CC2(CCCC2)CC(=O)N1CCN1CCN(c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CC2(CCN(CCc3c[nH]c4ccccc34)CC2)Oc2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CC2(CCN(CCc3cccc4ccccc34)CC2)Oc2ccc(NS(=O)(=O)Cc3ccccc3)cc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CC2(CCN(CCc3cccc4ccccc34)CC2)Oc2ccc(NS(=O)(=O)c3c[nH]cn3)cc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CC2(CCN(CCc3ccccc3)CC2)Oc2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CC2(CCN(CCc3ccccn3)CC2)Oc2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OC2(CCN(CCc3cccc4ccccc34)CC2)Cc2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OCC2=NC(=O)N(C(=O)NCCCCN3CCC(c4ccccc4)CC3)C(c3ccccc3)C12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OCC2=NC(=O)N(C(=O)NCCCN3CCC(c4ccccc4)(c4ccccc4)CC3)C(c3ccccc3)C12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OCC2=NC(=O)N(C(=O)NCCCN3CCC(c4ccccc4)CC3)C(c3ccc4c(c3)OCO4)C12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OCC2=NC(=O)N(C(=O)NCCCN3CCC(c4ccccc4)CC3)C(c3ccc4nonc4c3)C12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OCC2=NC(=O)N(C(=O)NCCN3CCC(c4ccccc4)CC3)C(c3ccccc3)C12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1c2ccccc2C(=O)N1CCCCN1CCC(n2c(=O)[nH]c3ccccc32)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1c2ccccc2CC12CCN(CCc1cccc3ccccc13)CC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c2sc(-c3ccccc3)cc2c(=O)n1CCN1CCN(c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c2scc(-c3ccccc3)c2c(=O)n1CCCN1CCN(c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c2sccc2c(=O)n1CCN1CCN(c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(OCCNCC2COc3ccccc3O2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCC1(CCN(CCc3cccc4ccccc34)CC1)O2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCN(c1ccc3ccccc3n1)C2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCNCC2",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "ADRA1B",
+      "name": "Alpha-1B adrenoceptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 37,
+      "largestRingScaffoldProfiles": 4,
+      "largestRingScaffoldFractionOfRingProfiles": 0.08,
+      "ringScaffolds": [
+        {
+          "smiles": "O=c1[nH]c2scc(-c3ccccc3)c2c(=O)n1CCN1CCN(c2ccccc2)CC1",
+          "profiles": 4
+        },
+        {
+          "smiles": "O=C1OCC2=NC(=O)N(C(=O)NCCCN3CCC(c4ccccc4)CC3)C(c3ccccc3)C12",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=C(NCCCN1CCC(c2ccccc2)(c2ccccc2)CC1)C1C=NC=CC1c1ccccc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(OCCCN1CCC(c2ccccc2)(c2ccccc2)CC1)C1C=NC=CC1c1ccccc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C1CC2(CCCC2)CC(=O)N1CCN1CCN(c2ccccc2)CC1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C1CC2(CCN(CCc3cccc4ccccc34)CC2)Oc2ccccc21",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C1OCC2=NC(=O)N(C(=O)NCCCN3CCN(c4ccccc4)CC3)C(c3ccccc3)C12",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1cc2c3c(csc3c1)CNCC2",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCNCC2",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc2c3c([nH]c2c1)C1CC2CCCCC2CN1CC3",
+          "profiles": 2
+        },
+        {
+          "smiles": "C1=CC2(CCN(CCc3cccc4ccccc34)CC2)Oc2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(C1CCCO1)N1CCN(c2ncc3ccccc3n2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(C1COc2ccccc2O1)N1CCN(c2ncc3ccccc3n2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCCN1CCC(c2ccccc2)(c2ccccc2)CC1)C1=CN=CCC1c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCCNc1ncc2ccccc2n1)C1CCCO1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(c1ccco1)N1CCN(c2ncc3ccccc3n2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CC2(CCN(CCc3c[nH]c4ccccc34)CC2)Oc2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CC2(CCN(CCc3cccc4ccccc34)CC2)Oc2ccc(NS(=O)(=O)Cc3ccccc3)cc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CC2(CCN(CCc3cccc4ccccc34)CC2)Oc2ccc(NS(=O)(=O)c3c[nH]cn3)cc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CC2(CCN(CCc3cccc4ccccc34)CC2)Oc2ccc(NS(=O)(=O)c3cnoc3)cc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CC2(CCN(CCc3ccccc3)CC2)Oc2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CCCCCN1Cc1csc(CN2CCN(c3ccccc3)CC2)c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OC2(CCN(CCc3cccc4ccccc34)CC2)Cc2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OCC2=NC(=O)N(C(=O)NCCCCN3CCC(c4ccccc4)CC3)C(c3ccccc3)C12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OCC2=NC(=O)N(C(=O)NCCCN3CCC(c4ccccc4)(c4ccccc4)CC3)C(c3ccccc3)C12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OCC2=NC(=O)N(C(=O)NCCCN3CCC(c4ccccc4)CC3)C(c3ccc4c(c3)OCO4)C12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OCC2=NC(=O)N(C(=O)NCCCN3CCC(c4ccccc4)CC3)C(c3ccc4nonc4c3)C12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1c2ccccc2CC12CCN(CCc1cccc3ccccc13)CC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c2sc(-c3ccccc3)cc2c(=O)n1CCN1CCN(c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c2scc(-c3ccccc3)c2c(=O)n1CCCN1CCN(c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c2sccc2c(=O)n1CCN1CCN(c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c3c(coc3c1)CNCC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(N2CCN(Cc3cccs3)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(OC2CCC(NCC3COc4ccccc4O3)C2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(OCCNCC2COc3ccccc3O2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCC1(CCN(CCc3cccc4ccccc34)CC1)O2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCN(c1ccc3ccccc3n1)C2",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "ADRA1D",
+      "name": "Alpha-1D adrenoceptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 38,
+      "largestRingScaffoldProfiles": 3,
+      "largestRingScaffoldFractionOfRingProfiles": 0.06,
+      "ringScaffolds": [
+        {
+          "smiles": "c1ccc(OC2CCC(NCC3COc4ccccc4O3)C2)cc1",
+          "profiles": 3
+        },
+        {
+          "smiles": "c1ccc2c3c([nH]c2c1)C1CC2CCCCC2CN1CC3",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=C(NCCCN1CCC(c2ccccc2)(c2ccccc2)CC1)C1C=NC=CC1c1ccccc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(OCCCN1CCC(c2ccccc2)(c2ccccc2)CC1)C1C=NC=CC1c1ccccc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C1CC2(CCN(CCc3cccc4ccccc34)CC2)Oc2ccccc21",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C1OCC2=NC(=O)N(C(=O)NCCCN3CCC(c4ccccc4)CC3)C(c3ccccc3)C12",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C1OCC2=NC(=O)N(C(=O)NCCCN3CCN(c4ccccc4)CC3)C(c3ccccc3)C12",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1cc2c3c(csc3c1)CNCC2",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(N2CCN(Cc3cccs3)CC2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCNCC2",
+          "profiles": 2
+        },
+        {
+          "smiles": "C1=CC(c2ccccc2)N(CCCCCN2CCC(c3ccccc3)(c3ccccc3)CC2)C=N1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=CC2(CCN(CCc3cccc4ccccc34)CC2)Oc2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(C1CCCO1)N1CCN(c2ncc3ccccc3n2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(C1COc2ccccc2O1)N1CCN(c2ncc3ccccc3n2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NC1CCN(CCc2c[nH]c3ccccc23)CC1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCCN1CCC(c2ccccc2)(c2ccccc2)CC1)C1=CN=CCC1c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCCNc1ncc2ccccc2n1)C1CCCO1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(c1ccco1)N1CCN(c2ncc3ccccc3n2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CC2(CCCC2)CC(=O)N1CCN1CCN(c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CC2(CCN(CCc3c[nH]c4ccccc34)CC2)Oc2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CC2(CCN(CCc3cccc4ccccc34)CC2)Oc2ccc(NS(=O)(=O)Cc3ccccc3)cc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CC2(CCN(CCc3cccc4ccccc34)CC2)Oc2ccc(NS(=O)(=O)c3c[nH]cn3)cc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CC2(CCN(CCc3cccc4ccccc34)CC2)Oc2ccc(NS(=O)(=O)c3cnoc3)cc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CC2(CCN(CCc3ccccc3)CC2)Oc2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CCCCCN1Cc1ccc(CN2CCN(c3ccccc3)CC2)s1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CCCCCN1Cc1csc(CN2CCN(c3ccccc3)CC2)c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CCCN1Cc1ccc(CN2CCN(c3ccccc3)CC2)s1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CCCN1Cc1csc(CN2CCN(c3ccccc3)CC2)c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OC2(CCN(CCc3cccc4ccccc34)CC2)Cc2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OCC2=NC(=O)N(C(=O)NCCCCN3CCC(c4ccccc4)CC3)C(c3ccccc3)C12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OCC2=NC(=O)N(C(=O)NCCCN3CCC(c4ccccc4)(c4ccccc4)CC3)C(c3ccccc3)C12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OCC2=NC(=O)N(C(=O)NCCCN3CCC(c4ccccc4)CC3)C(c3ccc4nonc4c3)C12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1c2ccccc2CC12CCN(CCc1cccc3ccccc13)CC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1cc(NCCCN2CCN(c3ccccc3)CC2)[nH]c(=O)[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c3c(coc3c1)CNCC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(OCCNCC2COc3ccccc3O2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCC1(CCN(CCc3cccc4ccccc34)CC1)O2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCN(c1ccc3ccccc3n1)C2",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "ADRA2A",
+      "name": "Alpha-2A adrenoceptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 39,
+      "largestRingScaffoldProfiles": 7,
+      "largestRingScaffoldFractionOfRingProfiles": 0.14,
+      "ringScaffolds": [
+        {
+          "smiles": "C1=NCC2(CCc3ccccc3C2)N1",
+          "profiles": 7
+        },
+        {
+          "smiles": "O=C(NCCCN1CCC(c2ccccc2)(c2ccccc2)CC1)C1C=NC=CC1c1ccccc1",
+          "profiles": 4
+        },
+        {
+          "smiles": "C1=NCC(CC2=Cc3ccccc3CC2)N1",
+          "profiles": 3
+        },
+        {
+          "smiles": "C(=Cc1ccccc1)CC1C2CCC(C2)C1N=C1NCCO1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=C(c2c[nH]cn2)c2ccsc2CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=C(c2c[nH]cn2)c2cscc2CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=C(c2c[nH]cn2)c2sccc2CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=NC(CC2=Cc3ccccc3CC2)CN1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=NC(CC2Cc3ccccc3C2)CN1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=NC(Cc2cc3ccccc3o2)CN1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=NC2(CCc3ccccc3C2)CN1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=NCC(C2CC23CCc2ccccc2C3)N1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=NCC(CC23CCc4ccccc4C2C3)N1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=NCC(Cc2ccc3ccccc3c2)N1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=NCC2(CCC3Cc4ccccc4CC3C2)N1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1CCC(N=C2NCCO2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1COC(=NC2CC3CCC2C3)N1",
+          "profiles": 1
+        },
+        {
+          "smiles": "N=C1NC2(CCc3ccccc3C2)CO1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(C1COc2ccccc2O1)N1CCN(c2ncc3ccccc3n2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCCCN1CCC(c2ccccc2)(c2ccccc2)CC1)C1=CN=CCC1c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCCN1CCC(c2ccccc2)(c2ccccc2)CC1)C1=CN=CCC1c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc(-c2c[nH]cn2)c2ccsc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C2CCCCC2N=C2NCCO2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CC2C3CCC(C3)C2N=C2NCCO2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CC2CCCCC2N=C2NCCO2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCC2CCCCC2N=C2NCCO2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCCC2C3CCC(C3)C2N=C2NCCO2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCCC2CCCCC2N=C2NCCO2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(COc2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(NC2=NCCN2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Nc2ncc[nH]2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(OCCNCC2COc3ccccc3O2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CC(c1c[nH]cn1)C2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCNCC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c3c([nH]c2c1)C1CC2CCCCC2CN1CC3",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1nc(C2CCCc3cscc32)c[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1nc(C2CCCc3sccc32)c[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ncc(NC2=NCCN2)cn1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "ADRA2B",
+      "name": "Alpha-2B adrenoceptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 34,
+      "largestRingScaffoldProfiles": 6,
+      "largestRingScaffoldFractionOfRingProfiles": 0.12,
+      "ringScaffolds": [
+        {
+          "smiles": "c1cnc2cc(NC3=NCCN3)ccc2n1",
+          "profiles": 6
+        },
+        {
+          "smiles": "c1ccc2c(Nc3ccc(N4CCNCC4)cc3)ccnc2c1",
+          "profiles": 5
+        },
+        {
+          "smiles": "O=C(NCCCN1CCC(c2ccccc2)(c2ccccc2)CC1)C1C=NC=CC1c1ccccc1",
+          "profiles": 4
+        },
+        {
+          "smiles": "c1ccc(-c2ccccc2OCC2=NCCN2)cc1",
+          "profiles": 4
+        },
+        {
+          "smiles": "c1ccc(N(NC2=NCCN2)c2ccccc2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "C(=Cc1ccccc1)CC1C2CCC(C2)C1N=C1NCCO1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=C(c2c[nH]cn2)c2ccsc2CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=C(c2c[nH]cn2)c2cscc2CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1CCC(N=C2NCCO2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1COC(=NC2CC3CCC2C3)N1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(C1CCCO1)N1CCN(c2ncc3ccccc3n2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCN1C2CCC1CC(c1ccccc1)C2)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NC1CCN(CCc2c[nH]c3ccccc23)CC1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCCCN1CCC(c2ccccc2)(c2ccccc2)CC1)C1=CN=CCC1c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCCN1CCC(c2ccccc2)(c2ccccc2)CC1)C1=CN=CCC1c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(c1ccco1)N1CCN(c2ncc3ccccc3n2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1cc(NCCCN2CCN(c3ccccc3)CC2)[nH]c(=O)[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1cnn(CCCCN2CCN(c3cccc4ccccc34)CC2)c(=O)[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc(-c2c[nH]cn2)c2ccsc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c(cc1NC1=NCCN1)NCCN2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C2CCCCC2N=C2NCCO2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CC2C3CCC(C3)C2N=C2NCCO2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CC2CCCCC2N=C2NCCO2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCC2CCCCC2N=C2NCCO2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCCC2C3CCC(C3)C2N=C2NCCO2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCCC2CCCCC2N=C2NCCO2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Cc2cnc3ccccc3c2Nc2ccc(N3CCNCC3)cc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(N(CC2=NCCN2)c2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(OCCNCC2COc3ccccc3O2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCNCC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CNC1COc3ccccc3C21",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c3c([nH]c2c1)C1CC2CCCCC2CN1CC3",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1nc(C2CCCc3cscc32)c[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1nc(C2CCCc3sccc32)c[nH]1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "ADRA2C",
+      "name": "Alpha-2C adrenoceptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 32,
+      "largestRingScaffoldProfiles": 6,
+      "largestRingScaffoldFractionOfRingProfiles": 0.12,
+      "ringScaffolds": [
+        {
+          "smiles": "O=C(NCCCN1CCC(c2ccccc2)(c2ccccc2)CC1)C1C=NC=CC1c1ccccc1",
+          "profiles": 6
+        },
+        {
+          "smiles": "c1cnc2cc(NC3=NCCN3)ccc2n1",
+          "profiles": 6
+        },
+        {
+          "smiles": "c1ccc2c(c1)Oc1ccccc1C1OCCC21",
+          "profiles": 5
+        },
+        {
+          "smiles": "c1ccc(Nc2ncc[nH]2)cc1",
+          "profiles": 3
+        },
+        {
+          "smiles": "c1ccc2c(c1)Sc1ccccc1C1OCCC21",
+          "profiles": 3
+        },
+        {
+          "smiles": "C1=C(c2c[nH]cn2)c2cscc2CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(C1COc2ccccc2O1)N1CCN(c2ncc3ccccc3n2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NC1CCN(CCc2c[nH]c3ccccc23)CC1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCCCN1CCC(c2ccccc2)(c2ccccc2)CC1)C1=CN=CCC1c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCCN1CCC(c2ccccc2)(c2ccccc2)CC1)C1=CN=CCC1c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCCNC(=O)C1CCCC2CN3CCc4c([nH]c5ccccc45)C3CC21)C1CCCC2CN3CCc4c([nH]c5ccccc45)C3CC21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(c1ccco1)N1CCN(c2ncc3ccccc3n2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1c(CCN2CCC(c3noc4ccccc34)CC2)cnc2n1CCCC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1cc(NCCCN2CCN(c3ccccc3)CC2)[nH]c(=O)[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1c[nH]c(Nc2ccc3[nH]cnc3c2)n1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1c[nH]c(Nc2ccc3c(c2)NCCO3)n1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1c[nH]c(Nc2ccc3c(c2)OCCO3)n1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1c[nH]c(Nc2ccc3nccnc3c2)n1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c(cc1NC1=NCCN1)NCCN2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(N(CC2=NCCN2)c2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(NC2=NCCN2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(OCCNCC2COc3ccccc3O2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCNCC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)Cc1ccccc1C1OCCC21",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)Cc1ccccc1N1CCNCC21",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)Cc1cccnc1N1CCNCC21",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)N=C(N1CCNCC1)c1ccccc1N2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)N=C(N1CCNCC1)c1ccsc1N2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c3c([nH]c2c1)C1CC2CCCCC2CN1CC3",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1nc(C2CCCc3cscc32)c[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1nc(C2CCCc3sccc32)c[nH]1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "ADRB1",
+      "name": "Beta-1 adrenoceptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 24,
+      "largestRingScaffoldProfiles": 7,
+      "largestRingScaffoldFractionOfRingProfiles": 0.14,
+      "ringScaffolds": [
+        {
+          "smiles": "c1cncc(CCNCCOc2ccc(-c3cocn3)cc2)c1",
+          "profiles": 7
+        },
+        {
+          "smiles": "c1ccc(CCCNC(CCc2ccccc2)c2ccccc2)cc1",
+          "profiles": 6
+        },
+        {
+          "smiles": "O=S(=O)(Nc1cccc(CCNCCc2c[nH]c3ccccc23)c1)c1cccs1",
+          "profiles": 5
+        },
+        {
+          "smiles": "c1cncc(CCNCCOc2ccc(-c3cscn3)cc2)c1",
+          "profiles": 4
+        },
+        {
+          "smiles": "c1ccc(CC2NCCc3ccccc32)cc1",
+          "profiles": 3
+        },
+        {
+          "smiles": "c1ccc(CCNCCc2ccccc2)cc1",
+          "profiles": 3
+        },
+        {
+          "smiles": "c1ccc(CCNCCc2ccno2)cc1",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=S(=O)(Nc1cccc(CCNCCc2c[nH]c3ccccc23)c1)c1ccccc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(CCCNC(Cc2ccccc2)c2ccccc2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "N=C1NC(=O)C(=Cc2ccc(N3CCC(NCCCOc4cccc5[nH]c(=O)[nH]c45)CC3)cc2)S1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(C1CNC2Cc3ccccc3CC2C1)N1CCN(c2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=S(=O)(Nc1ccc(CCNCCCOc2ccccc2)cc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c2ccccc2[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1cnn(CCCCN2CCN(c3cccc4ccccc34)CC2)c(=O)[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc(OCCCNC23CC4CC(CC(C4)C2)C3)c2cc[nH]c2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc(OCCCNC2CCCCC2)c2cc[nH]c2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-c2nc(-c3ccc(OCCNCCc4cccnc4)cc3)cs2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCNCCNc2cccc(-c3ccccc3)c2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(COCc2nc(-c3ccc(OCCNCCc4cccnc4)cc3)co2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2[nH]ccc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cncc(CCNCCOc2ccc(-c3csc(-c4cccnc4)n3)cc2)c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cncc(CCNCCOc2ccc(-c3csc(-c4ccncc4)n3)cc2)c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cncc(CCNCCOc2ccc(-c3csc(C4CCCC4)n3)cc2)c1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "ADRB2",
+      "name": "Beta-2 adrenoceptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 24,
+      "largestRingScaffoldProfiles": 9,
+      "largestRingScaffoldFractionOfRingProfiles": 0.18,
+      "ringScaffolds": [
+        {
+          "smiles": "c1ccc(CC2NCCc3ccccc32)cc1",
+          "profiles": 9
+        },
+        {
+          "smiles": "c1ccc(CCNCCc2ccccc2)cc1",
+          "profiles": 7
+        },
+        {
+          "smiles": "c1ccc(CCNCCc2ccno2)cc1",
+          "profiles": 6
+        },
+        {
+          "smiles": "O=S(=O)(Nc1cccc(CCNCCc2c[nH]c3ccccc23)c1)c1cccs1",
+          "profiles": 5
+        },
+        {
+          "smiles": "O=C1COc2ccc(OCCNCCCOc3cccc4[nH]ccc34)cc2N1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=S(=O)(Nc1cccc(CCNCCc2c[nH]c3ccccc23)c1)c1ccccc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(CCNCCc2cccc3ccccc23)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "N=C1NC(=O)C(=Cc2ccc(N3CCC(NCCCOc4cccc5[nH]c(=O)[nH]c45)CC3)cc2)S1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCc1ccccc1)c1ccc(N2CCC(NCCc3ccccc3)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Nc1ccc(CC2NCCc3ccccc32)cc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=S(=O)(Nc1ccc(CCNCCCOc2ccccc2)cc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c2ccccc2[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1cnn(CCCCN2CCN(c3cccc4ccccc34)CC2)c(=O)[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc(OCCCNC23CC4CC(CC(C4)C2)C3)c2cc[nH]c2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc(OCCCNC2CCCCC2)c2cc[nH]c2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCCCOCCCCCCNCCc2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCCCOc2ccc(CCNCCc3ccccc3)cc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCCCOc2cccc(CCNCCc3ccccc3)c2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCCOc2ccc(CCNCCc3ccccc3)cc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCNCCc2ccc(OC3Cc4ccccc4C3)cc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCNCCc2ccc(OCCc3ccccc3)cc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCNCCc2ccc(Oc3ccccc3)cc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCNCCc2cccc(OCCCOc3ccccc3)c2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2[nH]ccc2c1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "ADRB3",
+      "name": "Beta-3 adrenoceptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 19,
+      "largestRingScaffoldProfiles": 13,
+      "largestRingScaffoldFractionOfRingProfiles": 0.26,
+      "ringScaffolds": [
+        {
+          "smiles": "c1ccc(CCCNC(Cc2ccccc2)c2ccccc2)cc1",
+          "profiles": 13
+        },
+        {
+          "smiles": "c1ccc(CCCNC(CCc2ccccc2)c2ccccc2)cc1",
+          "profiles": 7
+        },
+        {
+          "smiles": "O=S(=O)(Nc1cccc(CCNCCc2c[nH]c3ccccc23)c1)c1cccs1",
+          "profiles": 5
+        },
+        {
+          "smiles": "O=C1c2cccc3cccc(c23)C(=O)N1CC1CCN(CCCOc2cccc3[nH]c4ccccc4c23)CC1",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=C1c2cccc3cccc(c23)C(=O)N1CC1CCN(CCCOc2ccccc2)CC1",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=C(CCCNC(Cc1ccccc1)c1ccccc1)c1ccccc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=S(=O)(Nc1cccc(CCNCCc2c[nH]c3ccccc23)c1)c1ccccc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(CC2CCN(CCCOc3cccc4[nH]c5ccccc5c34)CC2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(CCCCNC(Cc2ccccc2)c2ccccc2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(CCNCc2ccccc2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(CCCNCc1ccccc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1c2cccc3cccc(c23)C(=O)N1C1CCN(CCCOc2cccc3[nH]c4ccccc4c23)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1c2cccc3cccc(c23)C(=O)N1CC1CCN(CCCOc2cccc3[nH]ccc23)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCCNC(Cc2ccccc2)Cc2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCCNC(c2ccccc2)c2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCNC(Cc2ccccc2)c2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCNCCc2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(OCCCNC2CCN(c3ncnc4scc(-c5ccccc5)c34)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cncc(CC2CCN(CCCOc3cccc4[nH]c5ccccc5c34)CC2)c1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "CHRM1",
+      "name": "Muscarinic M1 receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 33,
+      "largestRingScaffoldProfiles": 4,
+      "largestRingScaffoldFractionOfRingProfiles": 0.08,
+      "ringScaffolds": [
+        {
+          "smiles": "C1CC2CCC(C1)N2",
+          "profiles": 4
+        },
+        {
+          "smiles": "C=C(c1ccc(S(=O)(=O)c2ccccc2)cc1)C1CCN(C2CCNCC2)CC1",
+          "profiles": 4
+        },
+        {
+          "smiles": "C(=CC1c2ccccc2Cc2ccccc21)C1CCCCN1",
+          "profiles": 3
+        },
+        {
+          "smiles": "C(CC1CCCCN1)=C1c2ccccc2Cc2ccccc21",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=C(OC1CC2CCCC1N2)c1ccccc1",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=C(OC1CC2CCCC1N2)C1CCCCC1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C1OCC2C(=CCC3CCCN3)C3CCCCC3=CC12",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C1OCC2C1CC1CCCCC1C2C=CC1CCCCN1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C1OCC2C1CC1CCCCC1C2CCC1CCCCN1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C1OCC2C1CC1CCCCC1C2CCC1CCCN1",
+          "profiles": 2
+        },
+        {
+          "smiles": "C(=CC1CCCCN1)c1c2ccccc2cc2ccccc12",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(=CC1c2ccccc2Cc2ccccc21)CC1CCCCN1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(CCC1CCCCN1)=C1c2ccccc2Cc2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=C(c2cnsn2)CNCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=C(c2nsnc2OCCOCCOCCOCCOc2nsnc2C2=CCCNC2)CNCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=CC2Oc3ccccc3C(C=CC3CCCCN3)C2C=C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=CCNCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1CCOC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCCCNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCCC(=O)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCNC(=O)CNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCNC(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCCC(=O)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCNC(=O)CNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CNC(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)OC1CC2CCC(C1)N2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCCN(CC2CCCCC2)C1)C1CCCN1C(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CCCN1CC#CCN1CCCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1Nc2cccnc2N(C(=O)CN2CCNCC2)c2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OCC2C(=CCC3CCCCN3)C3CCCCC3CC12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OCC2C(=CCC3CCCN3)C3CCCCC3CC12",
+          "profiles": 1
+        },
+        {
+          "smiles": "[N+]=c1ccc2c(-c3ccc(S(=O)(=O)NCCCCCC(=O)NCCOCCOCCN4CCN(CC(=O)N5c6ccccc6C(=O)Nc6cccnc65)CC4)cc3)c3ccccc3oc-2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C(c2ccccc2)C2CCN(CCc3ccc4c(c3)CCO4)C2)cc1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "CHRM3",
+      "name": "Muscarinic M3 receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 32,
+      "largestRingScaffoldProfiles": 8,
+      "largestRingScaffoldFractionOfRingProfiles": 0.16,
+      "ringScaffolds": [
+        {
+          "smiles": "C(#CC1CN2CCC1CC2)C(c1ccccc1)c1ccccc1",
+          "profiles": 8
+        },
+        {
+          "smiles": "C(#CC1CN2CCC1CC2)C(c1ccccc1)c1cccnc1",
+          "profiles": 5
+        },
+        {
+          "smiles": "C=C(c1ccc(S(=O)(=O)c2ccccc2)cc1)C1CCN(C2CCNCC2)CC1",
+          "profiles": 4
+        },
+        {
+          "smiles": "O=C1OCC2C1CC1CCCCC1C2C=CC1CCCCN1",
+          "profiles": 3
+        },
+        {
+          "smiles": "C(#CC(c1ccccc1)C1CCCCC1)C1CN2CCC1CC2",
+          "profiles": 2
+        },
+        {
+          "smiles": "C(#CC1CN2CCC1CC2)Cc1ccccc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "C(#CC(c1ccccc1)C1CCC1)C1CN2CCC1CC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(#CC(c1ccccc1)C1CCCC1)C1CN2CCC1CC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(#CC(c1ccccn1)C1CCC1)C1CN2CCC1CC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(#CC(c1ccccn1)C1CCCC1)C1CN2CCC1CC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(#CC1CN2CCC1CC2)C(Cc1ccccc1)Cc1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(#CC1CN2CCC1CC2)C(Cc1ccccc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(#CC1CN2CCC1CC2)C(c1ccccc1)c1ccccn1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(#CC1CN2CCC1CC2)C(c1ccccc1)c1cccnn1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(#CC1CN2CCC1CC2)C(c1ccccc1)c1ccncc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(#CC1CN2CCC1CC2)C(c1ccccc1)c1cncnc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(#CC1CN2CCC1CC2)C(c1cccnc1)c1cccnc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(#CC1CN2CCC1CC2)C(c1cccs1)c1cccs1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(#CC1CN2CCC1CC2)C(c1ccsc1)c1ccsc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(#CC1CN2CCC1CC2)CC1c2ccccc2C=Cc2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCCCNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCCC(=O)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCNC(=O)CNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCNC(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCCC(=O)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCNC(=O)CNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CNC(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)OC1CC2CCC(C1)N2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCCN(CC2CCCCC2)C1)C1CCCN1C(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C(c2ccccc2)C2CCN(CCc3ccc4c(c3)CCO4)C2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CC2CCCCC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Cc2ccccc2)cc1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "CHRM5",
+      "name": "Muscarinic M5 receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 37,
+      "largestRingScaffoldProfiles": 5,
+      "largestRingScaffoldFractionOfRingProfiles": 0.1,
+      "ringScaffolds": [
+        {
+          "smiles": "c1ccc(C(c2ccc(C3CCCN3)o2)C2CCCCC2)cc1",
+          "profiles": 5
+        },
+        {
+          "smiles": "c1ccc(C2(C3CCCCC3)OC(C3CCCN3)CS2)cc1",
+          "profiles": 4
+        },
+        {
+          "smiles": "c1ccc(C2(C3CCCCC3)OC(C3CCCN3)C[SH+]2)cc1",
+          "profiles": 4
+        },
+        {
+          "smiles": "c1ccc(C(c2ccccc2)c2ccc(C3CCCN3)o2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(C2(c3ccccc3)OC(C3CCCN3)CS2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(C2(c3ccccc3)OC(C3CCCN3)C[SH+]2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "C(#CCn1ccnc1)COc1ccon1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=C(c2cnsn2)CNCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=C(c2nsnc2OCCOCCOCCOCCOCCOc2cnsn2)CNCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=C(c2nsnc2OCCOCCOCCOCCOc2cnsn2)CNCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=C(c2nsnc2OCCOCCOCCOc2cnsn2)CNCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=C(c2nsnc2OCCOCCOc2cnsn2)CNCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=CC(c2nsnc2OCCOCCOCCOCCOc2ncns2)NCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=CCNCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCCCNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCCC(=O)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCNC(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCCC(=O)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCNC(=O)CNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)OC1CC2CCC(C1)N2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)OC1CC2[NH2+]C(C1)C1OC21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCCN(CC2CCCCC2)C1)C1CCCN1C(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCN(CC2CCCC2)CC1)C1CCCN1C(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCC1CCNCC1)C1CCCN1C(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1C(=O)N(Cc2ccccc2)c2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CCCN1CC#CCn1ccnc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CCON1CC#CCN1CCCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1Nc2cccnc2N(C(=O)CN2CCNCC2)c2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c2ccccc2n1C1CCN(C2CCN(Cc3ccccc3)CC2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1c(NC2CC2)nc(C2CC2)nc1N1CCCCCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C(c2ccccc2)C2CCN(CCc3ccc4c(c3)CCO4)C2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CNCCCCCCN2CCC(CCC3CCN(CCCCCCNCc4ccccc4)CC3)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CNCCCCCCNCCCCCCCCNCCCCCCNCc2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Cc2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)N=C(N1CCNCC1)c1ccccc1N2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cncc(-c2nsnc2OCCCOCCCOCCCOc2cnsn2)c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cncc(-c2nsnc2OCCCOCCCOCCCOc2ncns2)c1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "CHRM2",
+      "name": "Muscarinic M2 receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 49,
+      "acyclicProfiles": 1,
+      "distinctRingScaffolds": 35,
+      "largestRingScaffoldProfiles": 5,
+      "largestRingScaffoldFractionOfRingProfiles": 0.10204081632653061,
+      "ringScaffolds": [
+        {
+          "smiles": "O=C1OCC2C1CC1CCCCC1C2C=CC1CCCCN1",
+          "profiles": 5
+        },
+        {
+          "smiles": "C1CC2CCC(C1)N2",
+          "profiles": 4
+        },
+        {
+          "smiles": "O=C(OC1CC2CCCC1N2)c1ccccc1",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=C(c1cccc2ccccc12)N1CCC(N2CCC(=Cc3ccccc3)CC2)CC1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(c1cccc2ccccc12)N1CCC(N2CCC(Cc3ccccc3)CC2)CC1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(c1ccccc1)N1CCC(N2CCC(=Cc3ccccc3)CC2)CC1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C1OCC2C1CC1CCCCC1C2CCC1CCCCN1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C1OCC2C1CC1CCCCC1C2CCC1CCCN1",
+          "profiles": 2
+        },
+        {
+          "smiles": "C(#CC1CN2CCC1CC2)C(c1ccccc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(#CC1CN2CCC1CC2)C(c1ccccc1)c1cccnc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(#CC1CN2CCC1CC2)C(c1ccccc1)c1cccnn1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(#CC1CN2CCC1CC2)C(c1ccccc1)c1cncnc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=CCNCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1CCOC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCCCNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCCC(=O)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCNC(=O)CNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCNC(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCCC(=O)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCNC(=O)CNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CNC(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)OC1CC2CCC(C1)N2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCCN(CC2CCCCC2)C1)C1CCCN1C(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(OC1CC2CCCC1N2)C1CCCCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(c1ccccc1)N1CCC(N2CCC(Cc3ccc(S(=O)(=O)c4ccccc4)cc3)CC2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(c1ccccc1)N1CCC(N2CCC(Cc3ccccc3)CC2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CCCN1CC#CCN1CCCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OCC2C(=CCC3CCCCN3)C3CCCCC3CC12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OCC2C(=CCC3CCCN3)C3CCCCC3=CC12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OCC2C(=CCC3CCCN3)C3CCCCC3CC12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OCC2C1CC1CCCCC1C2C#CC1CCCCN1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OCC2C1CC1CCCCC1C2C(=O)CC1CCCCN1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C(c2ccccc2)C2CCN(CCc3ccc4c(c3)CCO4)C2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CC2CCCCC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Cc2ccccc2)cc1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "CHRM4",
+      "name": "Muscarinic M4 receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 29,
+      "largestRingScaffoldProfiles": 6,
+      "largestRingScaffoldFractionOfRingProfiles": 0.12,
+      "ringScaffolds": [
+        {
+          "smiles": "O=C1OCC2C1CC1CCCCC1C2C=CC1CCCCN1",
+          "profiles": 6
+        },
+        {
+          "smiles": "C1CC2CCC(C1)N2",
+          "profiles": 5
+        },
+        {
+          "smiles": "O=C(NCC1CCNCC1)C1CCCN1C(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1",
+          "profiles": 5
+        },
+        {
+          "smiles": "O=C(NCC1CCCNC1)C1CCCN1C(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=C(NCCC1CCNCC1)C1CCCN1C(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=C(OC1CC2CCCC1N2)c1ccccc1",
+          "profiles": 3
+        },
+        {
+          "smiles": "C1=CCNCC1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(OC1CC2CCCC1N2)C1CCCCC1",
+          "profiles": 2
+        },
+        {
+          "smiles": "C1CCOC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)N1CCCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCCCNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCCC(=O)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCCNC(=O)CNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCNC(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCCC(=O)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCNC(=O)CNC(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CNC(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1)NCC1CCCN(CC2CCCCC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)OC1CC2CCC(C1)N2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCCN(CC2CCCCC2)C1)C1CCCN1C(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCN(C2CCCC2)CC1)C1CCCN1C(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCN(CC2CC2)CC1)C1CCCN1C(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCN(CC2CCC2)CC1)C1CCCN1C(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CCN(CC2CCCC2)CC1)C1CCCN1C(=O)C1CCCN1C(=O)CC(c1ccccc1)(c1ccccc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CCCN1CC#CCN1CCCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OCC2C1CC1CCCCC1C2C#CC1CCCCN1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1c(NC2CC2)nc(C2CC2)nc1N1CCCCCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C(c2ccccc2)C2CCN(CCc3ccc4c(c3)CCO4)C2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cncc(-c2nsnc2OCCCOCCCOCCCOc2cnsn2)c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cncc(-c2nsnc2OCCCOCCCOCCCOc2ncns2)c1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "HRH1",
+      "name": "Histamine H1 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "HRH2",
+      "name": "Histamine H2 receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 31,
+      "largestRingScaffoldProfiles": 13,
+      "largestRingScaffoldFractionOfRingProfiles": 0.26,
+      "ringScaffolds": [
+        {
+          "smiles": "O=C(N=CNCCCc1cncs1)NCc1ccccc1",
+          "profiles": 13
+        },
+        {
+          "smiles": "c1cscn1",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=C(OCc1ccccc1)N1CCc2ccc(N3CCNCC3)cc2C1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1c[nH]cn1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(-c2ccc3c(-c4ccc(C5CCN(CCCCc6c[nH]nn6)CC5)cc4)cccc3c2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(C2CCN(CCCC(c3ccccc3)c3ccccc3)CC2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(N2CCN(Cc3cc(CN4CCN(c5ccccc5)CC4)c4cccccc3-4)CC2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "C(#Cc1cccs1)c1nc(NCCc2ccccc2)c2[nH]cnc2n1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(=NCCSCc1c[nH]cn1)NCCCc1c[nH]cn1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(CCCN1CCC(c2ccccc2)CC1)=C(c1ccccc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "N=c1[nH]ccs1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCNC(=O)Cc1ccc(NC(=O)NC2N=C(c3ccccc3)c3ccccc3NC2=O)cc1)NCCCOc1cccc(CN2CCCCC2)c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(N=CNCCCc1cncs1)NC(c1ccccc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(N=CNCCCc1cncs1)NC1CCCCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(N=CNCCCc1cncs1)NCCC1CCCCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(OCc1ccccc1)N1Cc2ccc(N3CCNCC3)cc2C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(c1ccccc1)C1CCN(CCc2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(c1ccccc1)c1ccc2oc(CCN3CCCC3)cc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1C(CC2CNc3ccccc32)NC2(CCNCC2)C(=O)N1c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1C=NC2(CCNCC2)C(=O)N1c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1cc(NCCCOc2cccc(CN3CCCCC3)c2)c1=O",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1cnn(CCCCN2CCN(c3cccc4ccccc34)CC2)c(=O)[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c3c(c1)-c1cc4c(cc1CC3NCC2)OCO4",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-c2nc3c(N4CCN(Cc5ccc6nccnc6c5)CC4)cccc3[nH]2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-c2nnc(SCCCN3CCC4(CC3)CCN(c3ccccc3)CC4)[nH]2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-c2nnc(SCCCN3CCN(c4ccccc4)CC3)[nH]2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C2CCN(CCC(c3ccccc3)c3ccccc3)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C2CCN(CCCCC(c3ccccc3)c3ccccc3)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C2CCN(CCCN(c3ccccc3)c3ccccc3)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCCCCN2CCC(c3ccccc3)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CN2CCCCC2)cc1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "HRH3",
+      "name": "Histamine H3 receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 34,
+      "largestRingScaffoldProfiles": 4,
+      "largestRingScaffoldFractionOfRingProfiles": 0.08,
+      "ringScaffolds": [
+        {
+          "smiles": "C(=C1CCNCC1)c1c[nH]cn1",
+          "profiles": 4
+        },
+        {
+          "smiles": "c1ccc(-c2ccc(OCCCN3CCCC3)cc2)cc1",
+          "profiles": 4
+        },
+        {
+          "smiles": "c1nc(CC2CCNCC2)c[nH]1",
+          "profiles": 4
+        },
+        {
+          "smiles": "c1ccc(OCCCc2c[nH]cn2)cc1",
+          "profiles": 3
+        },
+        {
+          "smiles": "c1nc(CCC2CCNCC2)c[nH]1",
+          "profiles": 3
+        },
+        {
+          "smiles": "c1ccc(COCCCc2c[nH]cn2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc2c(NCCc3ccc(OCCCN4CCCCC4)cc3)ccnc2c1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc2c(Nc3ccc(OCCCN4CCCCC4)cc3)ccnc2c1",
+          "profiles": 2
+        },
+        {
+          "smiles": "C(=C1CCN(C2CCCCC2)CC1)c1c[nH]cn1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(=C1CCN(CCc2ccccc2)CC1)c1c[nH]cn1",
+          "profiles": 1
+        },
+        {
+          "smiles": "N=C(NCc1ccccc1)SCCCc1c[nH]cn1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(c1ccc(OCCCc2c[nH]cn2)cc1)C1CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc(CCCc2c[nH]cn2)ccn1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc(CCc2c[nH]cn2)ccn1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc(Cc2c[nH]cn2)ccn1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-c2ccc(OCCCN3CCCCC3)cc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCCCc2c[nH]cn2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCCN2CCC(Cc3c[nH]cn3)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Cc2c[nH]cn2)nc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(OCCCCc2c[nH]cn2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(OCCc2c[nH]cn2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(SCCCc2c[nH]cn2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(SCCc2c[nH]cn2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(NCCCCc3ccc(OCCCN4CCCCC4)cc3)c3c(nc2c1)CCCC3",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(NCCCCc3ccc(OCCCN4CCCCC4)cc3)ccnc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(NCCCc3ccc(OCCCN4CCCCC4)cc3)c3c(nc2c1)CCCC3",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(NCCCc3ccc(OCCCN4CCCCC4)cc3)ccnc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(NCCc3ccc(OCCCN4CCCCC4)cc3)c3c(nc2c1)CCCC3",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cncc(CCCc2c[nH]cn2)c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cncc(CCc2c[nH]cn2)c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cncc(Cc2c[nH]cn2)c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1nc(CC2CCN(C3CCCCC3)CC2)c[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1nc(CCC2CCN(C3CCCCC3)CC2)c[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1nc(CCCC2CCNCC2)c[nH]1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "HRH4",
+      "name": "Histamine H4 receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 21,
+      "largestRingScaffoldProfiles": 11,
+      "largestRingScaffoldFractionOfRingProfiles": 0.22,
+      "ringScaffolds": [
+        {
+          "smiles": "O=C(c1nc2ccccc2[nH]1)N1CCNCC1",
+          "profiles": 11
+        },
+        {
+          "smiles": "c1c[nH]cn1",
+          "profiles": 11
+        },
+        {
+          "smiles": "O=C(c1cc2ccccc2[nH]1)N1CCNCC1",
+          "profiles": 6
+        },
+        {
+          "smiles": "O=C(c1cc2sccc2[nH]1)N1CCNCC1",
+          "profiles": 4
+        },
+        {
+          "smiles": "O=C(c1cc2ccsc2[nH]1)N1CCNCC1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(c1cc2ccccc2[nH]1)C1CCNCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc(CCCc2c[nH]cn2)ccn1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc(Cc2c[nH]cn2)ccn1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CNCCCCc2c[nH]cn2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2[nH]cnc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cncc(CCCc2c[nH]cn2)c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cncc(Cc2c[nH]cn2)c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1nc(CC2CCNCC2)c[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1nc(CCCCCN2CCCCC2)c[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1nc(CCCCCN2CCCCCC2)c[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1nc(CCCCN2CCCC2)c[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1nc(CCCCN2CCCCC2)c[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1nc(CCCCN2CCCCCC2)c[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1nc(CCCCNC2CCCC2)c[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1nc(CCCCNC2CCCCC2)c[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1nc(CCCCNC2CCCCCC2)c[nH]1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "ADORA1",
+      "name": "Adenosine A1 receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 28,
+      "largestRingScaffoldProfiles": 17,
+      "largestRingScaffoldFractionOfRingProfiles": 0.34,
+      "ringScaffolds": [
+        {
+          "smiles": "O=C(Nc1ccccc1)Nc1nc2n[nH]cc2c2nc(-c3ccco3)nn12",
+          "profiles": 17
+        },
+        {
+          "smiles": "O=C(NC1COC(n2cnc3c(NC4CCCC4)ncnc32)C1)c1ccccc1",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=C(CCCc1cccs1)NC1COC(n2cnc3c(NC4CCCC4)ncnc32)C1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)Nc1nc2n[nH]cc2c2nc(-c3ccco3)nn12",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=c1cc(-c2ccccc2)[nH]c2ncccc12",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(CNc2ncnc3c2ncn3C2CCCO2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(C=Cc1c(-c2ccccc2)nn2ccccc12)N1CCCCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCC1CCCC1)Nc1ncc2ncn(C3CCCO3)c2n1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(COc1cc(-c2nc3[nH]c(=O)[nH]c(=O)c3[nH]2)[nH]n1)Nc1ccc2c(c1)OCO2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(COc1ccccc1)Nc1nc2n[nH]cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(COc1ccccc1)Nc1nc2nn(CCCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(COc1ccccc1)Nc1nc2nn(CCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1cccc2ccccc12)Nc1nc2n[nH]cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1cccc2ccccc12)Nc1nc2nn(CCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)Nc1nc2nn(CCCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)Nc1nc2nn(CCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NC1COC(n2cnc3c(NC4CCCC4)ncnc32)C1)C1CCCCC1C(=O)c1cccs1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NC1COC(n2cnc3c(NC4CCCC4)ncnc32)C1)c1ccc2c(c1)OCO2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Nc1ccc2c(c1)OCO2)Nc1nc2n[nH]cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c(=O)c2[nH]c(C34CC5CC(CC3C5)C4)nc2[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c(=O)c2[nH]c(C3CC4CC3C3OC43)nc2[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c(=O)c2[nH]c(C3CCCC3)nc2[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-c2cc(NC3CCCCC3)c3cccnc3n2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CNc2ncnc3c2ncn3C2CCCS2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(N=Nc2ncc3ncn(C4CCCO4)c3n2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1coc(-c2nc3c4ccccc4ncn3n2)c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1nc(NC2CCCC2)c2ncn(C3CCCO3)c2n1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ncc2ncn(C3CCCS3)c2n1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "ADORA3",
+      "name": "Adenosine A3 receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 37,
+      "largestRingScaffoldProfiles": 6,
+      "largestRingScaffoldFractionOfRingProfiles": 0.12,
+      "ringScaffolds": [
+        {
+          "smiles": "c1ncc2ncn(C3CCCO3)c2n1",
+          "profiles": 6
+        },
+        {
+          "smiles": "c1ccc(CNc2ncnc3c2ncn3C2CCCO2)cc1",
+          "profiles": 5
+        },
+        {
+          "smiles": "O=C(NN=Nc1ncc2ncn(C3CCCO3)c2n1)Nc1ccccc1",
+          "profiles": 4
+        },
+        {
+          "smiles": "c1ncc2ncn(C3CCCS3)c2n1",
+          "profiles": 2
+        },
+        {
+          "smiles": "C(#Cc1nc2cncnc2[nH]1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(#Cc1nc2cncnc2n1C1CCCO1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(COc1ccccc1)Nc1nc2n[nH]cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(COc1ccccc1)Nc1nc2nn(CCCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(COc1ccccc1)Nc1nc2nn(CCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1cccc2ccccc12)Nc1nc2n[nH]cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1cccc2ccccc12)Nc1nc2nn(CCCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1cccc2ccccc12)Nc1nc2nn(CCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)Nc1nc2n[nH]cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)Nc1nc2nn(CCCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)Nc1nc2nn(CCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(N=NNc1ncc2ncn(C3CCCO3)c2n1)Nc1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCc1ccccc1)NN=Nc1ncc2ncn(C3CCCO3)c2n1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NN=Nc1nc(NCC(c2ccccc2)c2ccccc2)c2ncn(C3CCCO3)c2n1)Nc1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NN=Nc1nc(Nc2ccccc2)c2ncn(C3CCCO3)c2n1)Nc1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NN=Nc1ncc2ncn(C3CCCO3)c2n1)NC1CCCCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NN=Nc1ncc2ncn(C3CCCO3)c2n1)Nc1nccs1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NN=Nc1ncc2ncn(C3CCCO3)c2n1)Oc1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(OCc1ccccc1)C1C(C2CC2)=NC=CC1C#Cc1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(OCc1ccccc1)C1C(C2CCC2)=NC=CC1C#Cc1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(OCc1ccccc1)C1C(C2CCCC2)=NC=CC1C#Cc1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(OCc1ccccc1)C1C(C2CCCCC2)=NC=CC1C#Cc1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c(=O)c2[nH]c(-c3ccccc3)nc2[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc(NCCCCCCCCCCNc2ncnc3c2ncn3C2CCCO2)c2nonc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc(NCCCCCCCCNc2ncnc3c2ncn3C2CCCO2)c2nonc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc(NCCCCCCNc2ncnc3c2ncn3C2CCCO2)c2nonc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc(NCCCCNc2ncnc3c2ncn3C2CCCO2)c2nonc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc(NCCNc2ncnc3c2ncn3C2CCCO2)c2nonc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCn2cc3c(ncn4nc(-c5ccco5)nc34)n2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CNc2ncnc3c2ncn3C2CCCS2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(NNc2ncnc3c2ncn3C2CCCO2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Nc2ncnc3c2ncn3C2CCCO2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1nc(NC2CCCC2)c2ncn(C3CCCO3)c2n1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "ADORA2A",
+      "name": "Adenosine A2A receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 25,
+      "largestRingScaffoldProfiles": 17,
+      "largestRingScaffoldFractionOfRingProfiles": 0.34,
+      "ringScaffolds": [
+        {
+          "smiles": "O=C(Nc1ccccc1)Nc1nc2n[nH]cc2c2nc(-c3ccco3)nn12",
+          "profiles": 17
+        },
+        {
+          "smiles": "c1ncc2ncn(C3CCCO3)c2n1",
+          "profiles": 6
+        },
+        {
+          "smiles": "c1ccc(CNc2ncnc3c2ncn3C2CCCO2)cc1",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)Nc1nc2n[nH]cc2c2nc(-c3ccco3)nn12",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ncc2ncn(C3CCCS3)c2n1",
+          "profiles": 2
+        },
+        {
+          "smiles": "C(#Cc1nc2cncnc2[nH]1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(COc1ccccc1)Nc1nc2n[nH]cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(COc1ccccc1)Nc1nc2nn(CCCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(COc1ccccc1)Nc1nc2nn(CCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1cccc2ccccc12)Nc1nc2n[nH]cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1cccc2ccccc12)Nc1nc2nn(CCCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1cccc2ccccc12)Nc1nc2nn(CCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)Nc1nc2nn(CCCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)Nc1nc2nn(CCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NN=Nc1ncc2ncn(C3CCCO3)c2n1)NC1CCCCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NN=Nc1ncc2ncn(C3CCCO3)c2n1)Nc1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NN=Nc1ncc2ncn(C3CCCO3)c2n1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Nc1ccc2c(c1)OCO2)Nc1nc2n[nH]cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c(=O)c2[nH]c(-c3ccccc3)nc2[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c(=O)c2[nH]c(C3CCCC3)nc2[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C(CNc2ncnc3c2ncn3C2CCCO2)c2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCNc2ncc3ncn(C4CCCO4)c3n2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CNc2ncnc3c2ncn3C2CCCS2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(N=Nc2ncc3ncn(C4CCCO4)c3n2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1coc(-c2nc3c4ccccc4ncn3n2)c1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "ADORA2B",
+      "name": "Adenosine A2B receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 17,
+      "largestRingScaffoldProfiles": 26,
+      "largestRingScaffoldFractionOfRingProfiles": 0.52,
+      "ringScaffolds": [
+        {
+          "smiles": "O=C(Nc1ccccc1)Nc1nc2n[nH]cc2c2nc(-c3ccco3)nn12",
+          "profiles": 26
+        },
+        {
+          "smiles": "O=c1[nH]c(=O)c2nc(-c3ccc(S(=O)(=O)Oc4ccccc4)cc3)[nH]c2[nH]1",
+          "profiles": 4
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)Nc1nc2n[nH]cc2c2nc(-c3ccco3)nn12",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=C(Nc1ccc2c(c1)OCO2)Nc1nc2n[nH]cc2c2nc(-c3ccco3)nn12",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=c1[nH]c(=O)c2nc(-c3ccccc3)[nH]c2[nH]1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1coc(-c2nc3c4ccccc4ncn3n2)c1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(COc1cc(-c2nc3[nH]c(=O)[nH]c(=O)c3[nH]2)[nH]n1)Nc1ccc2c(c1)OCO2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(COc1ccccc1)Nc1nc2n[nH]cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(COc1ccccc1)Nc1nc2nn(CCCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(COc1ccccc1)Nc1nc2nn(CCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1cccc2ccccc12)Nc1nc2n[nH]cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1cccc2ccccc12)Nc1nc2nn(CCCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1cccc2ccccc12)Nc1nc2nn(CCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)Nc1nc2nn(CCCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)Nc1nc2nn(CCc3ccccc3)cc2c2nc(-c3ccco3)nn12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c(=O)c2[nH]c(-c3ccc(S(=O)(=O)Oc4ccccc4)cc3)nc2[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c(=O)c2[nH]c(-c3ccccc3)nc2[nH]1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "MTNR1A",
+      "name": "Melatonin MT1 receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 18,
+      "largestRingScaffoldProfiles": 9,
+      "largestRingScaffoldFractionOfRingProfiles": 0.18,
+      "ringScaffolds": [
+        {
+          "smiles": "c1ccc2[nH]ccc2c1",
+          "profiles": 9
+        },
+        {
+          "smiles": "c1ccc2ccccc2c1",
+          "profiles": 9
+        },
+        {
+          "smiles": "c1ccc(CCCCC2Cc3c(cccc3C3CC3)O2)cc1",
+          "profiles": 6
+        },
+        {
+          "smiles": "c1ccc(CCCCC2Cc3ccccc3O2)cc1",
+          "profiles": 5
+        },
+        {
+          "smiles": "c1ccc(CCCCc2cc3c(C4CC4)cccc3o2)cc1",
+          "profiles": 5
+        },
+        {
+          "smiles": "c1ccc(CCCCc2cc3ccccc3o2)cc1",
+          "profiles": 4
+        },
+        {
+          "smiles": "O=C(NCC1CC1c1cccc2c1CC(CCCCc1ccccc1)O2)C1CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC1CC1c1cccc2oc(CCCCc3ccccc3)cc12)C1CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCCc1cccc2c1CC(CCCCc1ccccc1)O2)C1CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCCc1cccc2oc(CCCCc3ccccc3)cc12)C1CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c(c3c1CCC3)CCO2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2cc(OCCCCCCCCCCOc3ccc4ccccc4c3)ccc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2cc(OCCCCCCCCOc3ccc4ccccc4c3)ccc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2cc(OCCCCCCOc3ccc4ccccc4c3)ccc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2cc(OCCCCCOc3ccc4ccccc4c3)ccc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2cc(OCCCCOc3ccc4ccccc4c3)ccc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2cc(OCCCOc3ccc4ccccc4c3)ccc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2cc(OCCOc3ccc4ccccc4c3)ccc2c1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "MTNR1B",
+      "name": "Melatonin MT2 receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 15,
+      "largestRingScaffoldProfiles": 23,
+      "largestRingScaffoldFractionOfRingProfiles": 0.46,
+      "ringScaffolds": [
+        {
+          "smiles": "c1ccc2ocnc2c1",
+          "profiles": 23
+        },
+        {
+          "smiles": "c1ccc(-c2nc3ccccc3o2)cc1",
+          "profiles": 5
+        },
+        {
+          "smiles": "O=C(NCCCc1cccc2ncoc12)C1CC1",
+          "profiles": 4
+        },
+        {
+          "smiles": "c1ccc(CCCCc2nc3ccccc3o2)cc1",
+          "profiles": 4
+        },
+        {
+          "smiles": "c1ccc2ccccc2c1",
+          "profiles": 4
+        },
+        {
+          "smiles": "O=C(NCCCc1cccc2nc(-c3ccccc3)oc12)C1CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCCc1cccc2nc(CCCCc3ccccc3)oc12)C1CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2[nH]ccc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2cc(OCCCCCCCCCCOc3ccc4ccccc4c3)ccc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2cc(OCCCCCCCCOc3ccc4ccccc4c3)ccc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2cc(OCCCCCCOc3ccc4ccccc4c3)ccc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2cc(OCCCCCOc3ccc4ccccc4c3)ccc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2cc(OCCCCOc3ccc4ccccc4c3)ccc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2cc(OCCCOc3ccc4ccccc4c3)ccc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2cc(OCCOc3ccc4ccccc4c3)ccc2c1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "OPRM1",
+      "name": "Mu opioid receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "OPRK1",
+      "name": "Kappa opioid receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "OPRD1",
+      "name": "Delta opioid receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "OPRL1",
+      "name": "Nociceptin/orphanin FQ receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "CNR1",
+      "name": "Cannabinoid CB1 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "CNR2",
+      "name": "Cannabinoid CB2 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "TAAR1",
+      "name": "Trace amine-associated receptor 1",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "HCRTR1",
+      "name": "Orexin OX1 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "HCRTR2",
+      "name": "Orexin OX2 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "TACR1",
+      "name": "Neurokinin NK1 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "TACR2",
+      "name": "Neurokinin NK2 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "TACR3",
+      "name": "Neurokinin NK3 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "NPY1R",
+      "name": "Neuropeptide Y Y1 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "NPY2R",
+      "name": "Neuropeptide Y Y2 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "NPY4R",
+      "name": "Neuropeptide Y Y4 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "NPY5R",
+      "name": "Neuropeptide Y Y5 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "SSTR1",
+      "name": "Somatostatin SST1 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "SSTR2",
+      "name": "Somatostatin SST2 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "SSTR3",
+      "name": "Somatostatin SST3 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "SSTR4",
+      "name": "Somatostatin SST4 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "SSTR5",
+      "name": "Somatostatin SST5 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "AVPR1A",
+      "name": "Vasopressin V1A receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "AVPR1B",
+      "name": "Vasopressin V1B receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "OXTR",
+      "name": "Oxytocin receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "AVPR2",
+      "name": "Vasopressin V2 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "AGTR1",
+      "name": "Angiotensin AT1 receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 22,
+      "largestRingScaffoldProfiles": 25,
+      "largestRingScaffoldFractionOfRingProfiles": 0.5,
+      "ringScaffolds": [
+        {
+          "smiles": "c1ccc(-c2ccc(Cn3ccnc3)cc2)cc1",
+          "profiles": 25
+        },
+        {
+          "smiles": "O=C(CCc1ccccc1)NCc1cncn1Cc1ccc(-c2ccccc2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(-c2ccc(Cn3cnc(C4CC4)c3)cc2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(-c2nn[nH]n2)c(-c2ccc(Cn3ccnc3)cc2)c1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1cnc2c(c1)ncn2Cc1ccc(-c2cscn2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(C(c1ccccc1)c1ccccc1)N1CCc2c(ncn2Cc2ccccc2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCC1CC1)NCc1cncn1Cc1ccc(-c2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCC1CCCC1)NCc1cncn1Cc1ccc(-c2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCC1CCCCC1)NCc1cncn1Cc1ccc(-c2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCc1ccc(-c2ccccc2)cc1)NCc1cncn1Cc1ccc(-c2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCc1ccc2ccccc2c1)NCc1cncn1Cc1ccc(-c2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCc1cccc2ccccc12)NCc1cncn1Cc1ccc(-c2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCc1ccccc1)NCC(=O)NCc1cncn1Cc1ccc(-c2ccccc2-c2nn[nH]n2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCc1ccccc1)NCc1cncn1Cc1ccc(-c2ccccc2-c2nn[nH]n2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NS(=O)(=O)c1ccccc1-c1ccc(CN2CC3(CN2)C(=O)CCC3=O)cc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1C(=Cc2ccccc2)N=CN1Cc1ccc(-c2ccccc2-c2nnn(C(c3ccccc3)(c3ccccc3)c3ccccc3)n2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CCC(=O)C12CNN(Cc1ccc(-c3ccccc3-c3nn[nH]n3)cc1)C2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1N(Cc2ccc(-c3ccccc3-c3nn[nH]n3)cc2)C=NC12CCCC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1N(Cc2ccc(-c3ccccc3S(=O)(=O)Nc3ccon3)cc2)C=NC12CCCC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-c2ccccc2-c2nn[nH]n2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-c2nn[nH]n2)c(-c2ccc(Cn3cnc4ccccc43)cc2)c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-c2nn[nH]n2)c(-c2ccc3c(c2)CCC3n2cnc3cccnc32)c1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "AGTR2",
+      "name": "Angiotensin AT2 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "BDKRB1",
+      "name": "Bradykinin B1 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "BDKRB2",
+      "name": "Bradykinin B2 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "EDNRA",
+      "name": "Endothelin ETA receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "EDNRB",
+      "name": "Endothelin ETB receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "CYSLTR1",
+      "name": "Cysteinyl leukotriene CysLT1 receptor",
+      "sourcedProfiles": 1,
+      "ringProfiles": 0,
+      "acyclicProfiles": 1,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "CYSLTR2",
+      "name": "Cysteinyl leukotriene CysLT2 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "LTB4R",
+      "name": "Leukotriene BLT1 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "LTB4R2",
+      "name": "Leukotriene BLT2 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "GRM1",
+      "name": "Metabotropic glutamate mGlu1 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "GRM5",
+      "name": "Metabotropic glutamate mGlu5 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "GRM2",
+      "name": "Metabotropic glutamate mGlu2 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "GRM3",
+      "name": "Metabotropic glutamate mGlu3 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "GRM4",
+      "name": "Metabotropic glutamate mGlu4 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "GRM6",
+      "name": "Metabotropic glutamate mGlu6 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "GRM7",
+      "name": "Metabotropic glutamate mGlu7 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "GRM8",
+      "name": "Metabotropic glutamate mGlu8 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "P2RY1",
+      "name": "P2Y1 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "P2RY2",
+      "name": "P2Y2 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "P2RY4",
+      "name": "P2Y4 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "P2RY6",
+      "name": "P2Y6 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "P2RY11",
+      "name": "P2Y11 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "P2RY12",
+      "name": "P2Y12 receptor",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 10,
+      "largestRingScaffoldProfiles": 20,
+      "largestRingScaffoldFractionOfRingProfiles": 0.4,
+      "ringScaffolds": [
+        {
+          "smiles": "O=C(NCC(=O)N1CCNCC1)c1cccc(-c2ccccc2)n1",
+          "profiles": 20
+        },
+        {
+          "smiles": "c1ccc(C2CC2Nc2ncnc3c2nnn3C2CCCC2)cc1",
+          "profiles": 10
+        },
+        {
+          "smiles": "O=C(NCC(=O)N1CCNCC1)c1cc(N2CCCCC2)cc(-c2ccccc2)n1",
+          "profiles": 9
+        },
+        {
+          "smiles": "O=C(NCC(=O)N1CCNCC1)c1cc(OC2CCNCC2)cc(-c2ccccc2)n1",
+          "profiles": 3
+        },
+        {
+          "smiles": "c1ncc2nnn(C3CCCC3)c2n1",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=C(NCC(=O)N1CCN(C(=O)OCCC2CCCC2)CC1)c1cc(N2CCCCC2)cc(-c2ccccc2)n1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC(=O)N1CCN(c2ccccc2)CC1)c1cc(-c2ccccc2)cc(-c2ccccc2)n1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC(=O)N1CCNCC1)c1cc(-c2ccccc2)cc(-c2ccccc2)n1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC(=O)N1CCNCC1)c1cc(NCc2ccccc2)cc(-c2ccccc2)n1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCC(=O)N1CCNCC1)c1cc(OCc2ccccc2)cc(-c2ccccc2)n1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "P2RY13",
+      "name": "P2Y13 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "P2RY14",
+      "name": "P2Y14 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "P2RX1",
+      "name": "P2X1-containing receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "P2RX2",
+      "name": "P2X2-containing receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "P2RX3",
+      "name": "P2X3-containing receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "P2RX4",
+      "name": "P2X4-containing receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "P2RX5",
+      "name": "P2X5-containing receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "P2RX6",
+      "name": "P2X6-containing receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "P2RX7",
+      "name": "P2X7 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "GLP1R",
+      "name": "GLP-1 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "GIPR",
+      "name": "GIP receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "GCGR",
+      "name": "Glucagon receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "GHSR",
+      "name": "Ghrelin receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "CCKAR",
+      "name": "Cholecystokinin CCK1 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "CCKBR",
+      "name": "Cholecystokinin CCK2 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "CRHR1",
+      "name": "Corticotropin-releasing factor CRF1 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "CRHR2",
+      "name": "Corticotropin-releasing factor CRF2 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "CCR2",
+      "name": "Chemokine CCR2 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "CCR5",
+      "name": "Chemokine CCR5 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "CXCR3",
+      "name": "Chemokine CXCR3 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "CXCR4",
+      "name": "Chemokine CXCR4 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "AR",
+      "name": "Androgen receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "ESR1",
+      "name": "Estrogen receptor alpha",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "ESR2",
+      "name": "Estrogen receptor beta",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "PGR",
+      "name": "Progesterone receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "NR3C1",
+      "name": "Glucocorticoid receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "NR3C2",
+      "name": "Mineralocorticoid receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "PPARA",
+      "name": "PPAR-alpha",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "PPARD",
+      "name": "PPAR-delta",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "PPARG",
+      "name": "PPAR-gamma",
+      "sourcedProfiles": 50,
+      "ringProfiles": 50,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 26,
+      "largestRingScaffoldProfiles": 11,
+      "largestRingScaffoldFractionOfRingProfiles": 0.22,
+      "ringScaffolds": [
+        {
+          "smiles": "c1ccc(-c2nc(CCOc3ccc(CC4CCCO4)cn3)co2)cc1",
+          "profiles": 11
+        },
+        {
+          "smiles": "c1ccc(-c2nc(CCOc3ccccn3)co2)cc1",
+          "profiles": 6
+        },
+        {
+          "smiles": "c1ccc(-c2nc(CCOc3ccc(CC4CCCO4)nc3)co2)cc1",
+          "profiles": 5
+        },
+        {
+          "smiles": "c1ccc(OCCNc2nc3ccccc3o2)cc1",
+          "profiles": 4
+        },
+        {
+          "smiles": "c1ccc2ccccc2c1",
+          "profiles": 3
+        },
+        {
+          "smiles": "C(COc1ccccc1)=C(c1ccc(-c2ccccc2)cc1)c1ccc(-c2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CC=NCCc1ccc(OCCc2coc(-c3ccccc3)n2)cc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCc1ccccc1)c1cccc(Cc2c[nH]c(=O)s2)c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]cc(-c2cccc(OCCCOc3ccc(Oc4ccccc4)cc3)c2)s1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]cc(Cc2ccc(OCCNc3ccccn3)cc2)s1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]cc(Cc2ccc(OCCNc3nc4ccccc4o3)cc2)s1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-c2nc(CCCOc3ccc(CC4CCCO4)cn3)co2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-c2nc(CCOc3ccc(CC4CCC4)cn3)co2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-c2nc(CCOc3ccc(CC4CCCCO4)cn3)co2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-c2nc(CCOc3cccnc3)co2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-c2nc(CCOc3cnc(CC4CCCO4)cn3)co2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCCCCc2ccc(OCCNc3nc4ccccc4o3)cc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCc2c(-c3ccccc3)[nH]c3ccccc23)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(OCCN2c3ccccc3Oc3ccccc32)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(OCCc2ccc(OCCNc3nc4ccccc4o3)cc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(OCCc2ccc(OCCc3coc(-c4cccs4)n3)cc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(OCCc2coc(-c3ccc(-c4ccccc4)cc3)n2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(OCCn2c3ccccc3c3ccccc32)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Oc2ccc(CCOc3ccccn3)cc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(SCCc2ccc(OCCNc3nc4ccccc4o3)cc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccccc1",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "RARA",
+      "name": "Retinoic acid receptor alpha",
+      "sourcedProfiles": 29,
+      "ringProfiles": 29,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 24,
+      "largestRingScaffoldProfiles": 3,
+      "largestRingScaffoldFractionOfRingProfiles": 0.10344827586206896,
+      "ringScaffolds": [
+        {
+          "smiles": "C(#Cc1ccccc1)C=CC1=C(c2ccccc2)CCCC1",
+          "profiles": 3
+        },
+        {
+          "smiles": "C1=C(c2cccc(C34CC5CC(CC(C5)C3)C4)c2)COc2ccccc21",
+          "profiles": 2
+        },
+        {
+          "smiles": "C=C(c1ccc2c(c1)CCCC2)c1ccc2ccccc2c1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(C=Cc1ccccc1)c1ccc2c(c1)CCCC2",
+          "profiles": 2
+        },
+        {
+          "smiles": "C(#Cc1ccc2c(c1)C(c1ccccc1)=CCC2)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(#Cc1ccccc1)C=CC1=CCCC=C1c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(#Cc1ccccc1)C=CC1=CCCCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(=CC1CC1)C1=CCCCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(=Cc1ccccc1)Cc1ccc2c(c1)CCCC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=C(c2ccc3c(c2)CCCC3)COc2ccccc21",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=C(c2ccccc2)c2cc3cc(-c4ccccc4)ccc3cc2CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=C(c2ccccc2)c2cc3cc(-c4ccccc4)ccc3cc2OC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=C(c2ccccc2)c2cc3cc(-c4ccccc4)ccc3cc2SC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=C(c2cccs2)c2cc3cc(-c4ccccc4)ccc3cc2CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=C(c2cccs2)c2cc3cc(-c4ccccc4)ccc3cc2OC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=C(c2cccs2)c2cc3cc(-c4ccccc4)ccc3cc2SC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=CCCCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C=C(c1ccccc1)c1ccc2c(c1)CCCC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "N=C(c1ccc2c(c1)CCCC2)c1ccc2ccccc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(c1ccc2c(c1)CCCC2)c1ccc2ccccc2c1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c(cc1C1CC1)CCCC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C2=Nc3ccccc3Oc3cc4c(cc32)CCCC4)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C2=Nc3ccccc3Sc3cc4c(cc32)CCCC4)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CCCC2",
+          "profiles": 1
+        }
+      ]
+    },
+    {
+      "id": "RARB",
+      "name": "Retinoic acid receptor beta",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "RARG",
+      "name": "Retinoic acid receptor gamma",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "VDR",
+      "name": "Vitamin D receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "THRA",
+      "name": "Thyroid hormone receptor alpha",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "THRB",
+      "name": "Thyroid hormone receptor beta",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "EGFR",
+      "name": "EGF receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "ERBB2",
+      "name": "HER2/ERBB2 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "KDR",
+      "name": "VEGFR2 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "PDGFRB",
+      "name": "PDGF receptor beta",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "KIT",
+      "name": "KIT receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "ALK",
+      "name": "ALK receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "MET",
+      "name": "MET receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "FLT3",
+      "name": "FLT3 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "HTR3A",
+      "name": "5-HT3 receptors",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "GABAA",
+      "name": "GABA-A receptors",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "GABAB",
+      "name": "GABA-B receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "NMDA",
+      "name": "NMDA receptors",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "AMPA",
+      "name": "AMPA receptors",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "KAINATE",
+      "name": "Kainate receptors",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "GLYR",
+      "name": "Glycine receptors",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "NACHR_A4B2",
+      "name": "Nicotinic alpha4beta2-containing receptors",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "NACHR_A7",
+      "name": "Nicotinic alpha7 receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "NACHR_A3B4",
+      "name": "Nicotinic alpha3beta4-containing receptors",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "NACHR_MUSCLE",
+      "name": "Adult muscle nicotinic receptor",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    },
+    {
+      "id": "ABCC8",
+      "name": "SUR1 regulatory subunit",
+      "sourcedProfiles": 0,
+      "ringProfiles": 0,
+      "acyclicProfiles": 0,
+      "distinctRingScaffolds": 0,
+      "largestRingScaffoldProfiles": 0,
+      "largestRingScaffoldFractionOfRingProfiles": null,
+      "ringScaffolds": []
+    }
+  ]
+}

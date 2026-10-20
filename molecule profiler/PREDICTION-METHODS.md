@@ -26,12 +26,12 @@ Reproduce the complete current evaluation with:
 node tools/target-ranking-evaluate.js --report validation/target-ranking-full-profile-v1.json
 ```
 
-The committed report covers 2,084 profiles, 147 targets and 3,858 library entries. 16 queries have no rankable curated label after holdout. Display-order retrieval percentages are:
+The committed report covers 2,234 profiles, 149 targets and 4,007 library entries. 16 queries have no rankable curated label after holdout. Display-order retrieval percentages are:
 
 | Method | Top 1 | Top 5 | Top 10 | Target macro top 5, guaranteed–possible |
 | --- | ---: | ---: | ---: | ---: |
-| Legacy | 86.71% | 93.09% | 94.39% | 54.29–55.48% |
-| Experimental ensemble | 87.24% | 93.52% | 95.01% | 54.76–55.99% |
+| Legacy | 86.97% | 93.64% | 94.72% | 55.22–55.92% |
+| Experimental ensemble | 87.65% | 94.05% | 95.21% | 55.69–56.39% |
 
 The ensemble has a modest advantage on this full internal snapshot, while target-balanced coverage remains much weaker. This does not support a claim of generally accurate receptor prediction. Legacy remains the default. Neither formula nor weights were tuned to these results. The old `target-ranking-ensemble-v1.json` is a historical 100-query schema-v1 report and should not be compared as a longitudinal improvement figure. Compare methods within the same report and reference snapshot. Broader claims require verified assay-linked positives, negatives, temporal/scaffold splits and external review.
 
@@ -86,7 +86,10 @@ curated label set establishes an improvement against external assays.
 
 The second ChEMBL batch registers ten additional catalog receptors as scoring
 targets. The historical name-holdout benchmark now caches held-out query rankings
-and per-query reference similarities; fixture equivalence checks preserve its
-score-only/target-order tie protocol. The grouped-profile evaluation above
+and per-query reference similarities. Bit-set Tanimoto and Dice additionally
+opt into a triangular symmetric-pair cache bounded to 64 MiB per evaluation;
+larger datasets fall back to directional per-query caching. Generic callers
+retain directional scoring by default. Fixture checks and byte-for-byte full
+generated-report equivalence preserve the score-only/target-order tie protocol. The grouped-profile evaluation above
 remains a separate protocol, with mean-score tie handling and profile holdout.
 Neither benchmark establishes experimental accuracy on unknown molecules.

@@ -4,8 +4,8 @@
   "rdkitVersion": "2026.09.1",
   "scope": "Name-resolved PubChem structure comparison only; no activity, potency or subtype verification.",
   "sourceSha256": {
-    "data/library.js": "3fd4fac1b43947235fb29e137d589a3d6fa6be6fcc70e2c396ceabc6fb2fd779",
-    "data/targets.js": "7c336540122d84d2373e156b81e8f032c9d113bd19934e59380269f9b9eeeaf6",
+    "data/library.js": "152b16e8ddefe057ef76e00260466c0dfe5c2aaa07e83c968b6440b79f4e0f08",
+    "data/targets.js": "b6b8a5362b47f9506b34c502588c0b0cf75e83ea2c4d3452530589d2d61928c1",
     "tools/pubchem-reference-audit.py": "1969e067152f728e1357aa7037175de563423b4127f887023656903182720f93"
   },
   "counts": {

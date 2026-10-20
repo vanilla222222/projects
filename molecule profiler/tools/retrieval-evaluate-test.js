@@ -22,9 +22,18 @@ for(const method of ['ecfp4','ecfp6','fcfp4','ecfp4s','pairs'])for(const metric 
  assert.ok(actual.similarityCalls<uncachedCalls/2,'shared references and held-out names must avoid repeated comparisons');
  assert.ok(actual.similarityCalls<=byName.size*(byName.size-1));
  assert.equal(actual.queries,7);
+ const symmetric=evaluate(sets,byName,metric,{symmetric:true});
+ assert.deepEqual(symmetric.trials,expected,method+' symmetric-cache equivalence');
+ assert.ok(symmetric.similarityCalls<=byName.size*(byName.size-1)/2);
+ assert.ok(symmetric.similarityCalls<actual.similarityCalls);
+ assert.equal(symmetric.pairCacheBytes,byName.size*(byName.size+1)/2*8);
+ const fallback=evaluate(sets,byName,metric,{symmetric:true,maxCacheBytes:0});
+ assert.deepEqual(fallback.trials,expected,'budget fallback preserves every trial');
+ assert.equal(fallback.pairCacheBytes,0);
 }
 const values=new Map(Object.keys(structures).map((name,i)=>[name,i+1]));
 const asymmetric=(a,b)=>a/10+b/100;
 assert.deepEqual(evaluate(sets,values,asymmetric).trials,reference(sets,values,asymmetric),'comparison direction must remain unchanged');
 assert.deepEqual(evaluate([],new Map(),tanimoto).trials,[]);
+assert.throws(()=>evaluate([],new Map(),tanimoto,{maxCacheBytes:-1}),RangeError);
 console.log('Cached retrieval: exact uncached trial/rank/score agreement across 5 fingerprints × 2 metrics, ties, aliases, shared ligands, empty/singleton sets; fewer than half the similarity calls');

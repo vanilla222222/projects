@@ -11,6 +11,7 @@ const scripts = [
   'reference-audit-test.js',
   'receptor-catalog-test.js',
   'receptor-coverage-test.js',
+  'receptor-diversity-report-test.js',
   'chembl-binding-test.js',
   'target-ranking-test.js',
   'target-ranking-metrics-test.js',
@@ -44,11 +45,17 @@ const started = new Date().toISOString();
 const outcomes = [];
 let failed = 0;
 for (const script of scripts) {
+  // Exhaustive retrieval grows with the reference dataset; keep a separate,
+  // bounded budget rather than applying its cost to every regression script.
+  const timeoutMs = script === 'retrieval-benchmark.js' ? 300000 : 120000;
+  const testStarted = process.hrtime.bigint();
+  process.stdout.write('RUN ' + script + ' (timeout ' + timeoutMs / 1000 + 's)\n');
   const result = spawnSync(process.execPath, [path.join(__dirname, script)], {
-    cwd: root, encoding: 'utf8', timeout: 120000
+    cwd: root, encoding: 'utf8', timeout: timeoutMs
   });
+  const durationMs = Math.round(Number(process.hrtime.bigint() - testStarted) / 1e6);
   const passed = !result.error && result.status === 0;
-  outcomes.push({script,passed,signal:result.signal || null,status:result.status,error:result.error ? String(result.error) : null,
+  outcomes.push({script,passed,durationMs,timeoutMs,signal:result.signal || null,status:result.status,error:result.error ? String(result.error) : null,
     stdout:result.stdout || '',stderr:result.stderr || ''});
   process.stdout.write((passed ? 'PASS ' : 'FAIL ') + script + '\n');
   if (result.stdout) process.stdout.write(result.stdout);

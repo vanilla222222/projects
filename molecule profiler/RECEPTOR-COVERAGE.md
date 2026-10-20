@@ -175,3 +175,35 @@ These are coverage counts, not independent scaffold counts or accuracy metrics.
 run and its before/after source digest. The digest identifies the tested working
 source; the recorded Git revision is its parent commit when the source is dirty.
 Regression success checks implementation consistency, not experimental accuracy.
+
+
+## Fourth batch: dopamine and serotonin coverage gaps
+
+`validation/chembl-receptor-binding-batch-4.json` records 230 ChEMBL_37 human
+binding associations and 149 added structures. DRD1, DRD2, DRD3 and DRD4 each
+have 50 distinct source-linked profiles. HTR1E has four and HTR1F has 26; their
+gaps remain 46 and 24 under the unchanged strict Ki/Kd protocol. These two
+receptors gain scoring rows only for the qualifying source-backed entries.
+Shortfalls do not establish that other endpoint types or experiments are absent.
+
+DRD2, DRD3 and DRD4 reach the 2,000-activity examination cap. The snapshot
+retains the cap flag and all selected assay/document records. Existing dopamine
+ligand lists are extended, not replaced. No functional action is inferred.
+
+```sh
+python -B tools/curate-receptor-bindings.py --add-targets \
+  --genes DRD1,DRD2,DRD3,DRD4,HTR1E,HTR1F \
+  --output candidate-batch-4.json
+```
+
+Review before applying. After this batch there are 4,007 structures, 149 scoring
+targets and 1,710 source-linked binding observations. Thirty-three catalog
+panels meet the strict 50-profile goal; 51 have at least 50 resolved listed names.
+Sixty-eight catalog records link to target rows, while 78 await them.
+
+The separate [scaffold-diversity audit](RECEPTOR-DIVERSITY.md) recomputes current
+source-profile identities and describes ring-scaffold concentration. Its counts
+are descriptive reference-set properties, not predictive validation.
+`validation/receptor-batch-4-regression.json` stores the local regression run
+and its tested source digest; the Git revision identifies the parent commit
+when the tested working source is dirty.

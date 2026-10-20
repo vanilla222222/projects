@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "goal": 50,
   "receptors": 146,
-  "atGoal": 29,
+  "atGoal": 33,
   "listedAtGoal": 51,
   "annotationIssues": 0,
   "interpretation": "Sourced profiles count non-stale, linked evidence with audited graph-group keys. Legacy names alone do not establish sourced coverage. Profiles are not independent scaffolds or predictive validation.",
@@ -237,50 +237,6 @@
       "sourcedProfiles": 0,
       "remaining": 50,
       "hasTarget": false
-    },
-    {
-      "id": "DRD1",
-      "name": "Dopamine D1 receptor",
-      "family": "Dopamine",
-      "goal": 50,
-      "listedNames": 52,
-      "resolvedNames": 52,
-      "sourcedProfiles": 0,
-      "remaining": 50,
-      "hasTarget": true
-    },
-    {
-      "id": "DRD2",
-      "name": "Dopamine D2 receptor",
-      "family": "Dopamine",
-      "goal": 50,
-      "listedNames": 56,
-      "resolvedNames": 56,
-      "sourcedProfiles": 0,
-      "remaining": 50,
-      "hasTarget": true
-    },
-    {
-      "id": "DRD3",
-      "name": "Dopamine D3 receptor",
-      "family": "Dopamine",
-      "goal": 50,
-      "listedNames": 56,
-      "resolvedNames": 56,
-      "sourcedProfiles": 0,
-      "remaining": 50,
-      "hasTarget": true
-    },
-    {
-      "id": "DRD4",
-      "name": "Dopamine D4 receptor",
-      "family": "Dopamine",
-      "goal": 50,
-      "listedNames": 53,
-      "resolvedNames": 53,
-      "sourcedProfiles": 0,
-      "remaining": 50,
-      "hasTarget": true
     },
     {
       "id": "EDNRA",
@@ -589,28 +545,6 @@
       "sourcedProfiles": 0,
       "remaining": 50,
       "hasTarget": true
-    },
-    {
-      "id": "HTR1E",
-      "name": "5-HT1E receptor",
-      "family": "Serotonin",
-      "goal": 50,
-      "listedNames": 0,
-      "resolvedNames": 0,
-      "sourcedProfiles": 0,
-      "remaining": 50,
-      "hasTarget": false
-    },
-    {
-      "id": "HTR1F",
-      "name": "5-HT1F receptor",
-      "family": "Serotonin",
-      "goal": 50,
-      "listedNames": 0,
-      "resolvedNames": 0,
-      "sourcedProfiles": 0,
-      "remaining": 50,
-      "hasTarget": false
     },
     {
       "id": "HTR2A",
@@ -1284,6 +1218,28 @@
       "hasTarget": true
     },
     {
+      "id": "HTR1E",
+      "name": "5-HT1E receptor",
+      "family": "Serotonin",
+      "goal": 50,
+      "listedNames": 4,
+      "resolvedNames": 4,
+      "sourcedProfiles": 4,
+      "remaining": 46,
+      "hasTarget": true
+    },
+    {
+      "id": "HTR1F",
+      "name": "5-HT1F receptor",
+      "family": "Serotonin",
+      "goal": 50,
+      "listedNames": 26,
+      "resolvedNames": 26,
+      "sourcedProfiles": 26,
+      "remaining": 24,
+      "hasTarget": true
+    },
+    {
       "id": "RARA",
       "name": "Retinoic acid receptor alpha",
       "family": "Nuclear metabolic",
@@ -1499,6 +1455,50 @@
       "goal": 50,
       "listedNames": 50,
       "resolvedNames": 50,
+      "sourcedProfiles": 50,
+      "remaining": 0,
+      "hasTarget": true
+    },
+    {
+      "id": "DRD1",
+      "name": "Dopamine D1 receptor",
+      "family": "Dopamine",
+      "goal": 50,
+      "listedNames": 101,
+      "resolvedNames": 101,
+      "sourcedProfiles": 50,
+      "remaining": 0,
+      "hasTarget": true
+    },
+    {
+      "id": "DRD2",
+      "name": "Dopamine D2 receptor",
+      "family": "Dopamine",
+      "goal": 50,
+      "listedNames": 106,
+      "resolvedNames": 106,
+      "sourcedProfiles": 50,
+      "remaining": 0,
+      "hasTarget": true
+    },
+    {
+      "id": "DRD3",
+      "name": "Dopamine D3 receptor",
+      "family": "Dopamine",
+      "goal": 50,
+      "listedNames": 104,
+      "resolvedNames": 104,
+      "sourcedProfiles": 50,
+      "remaining": 0,
+      "hasTarget": true
+    },
+    {
+      "id": "DRD4",
+      "name": "Dopamine D4 receptor",
+      "family": "Dopamine",
+      "goal": 50,
+      "listedNames": 101,
+      "resolvedNames": 101,
       "sourcedProfiles": 50,
       "remaining": 0,
       "hasTarget": true
