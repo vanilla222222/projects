@@ -16,6 +16,20 @@ MOTIFS = [(name,Chem.MolFromSmarts(smarts)) for name,smarts in [
     ('Sulfonamide','S(=O)(=O)N'),('Indole','c1ccc2[nH]ccc2c1'),
     ('Pyridine','n1ccccc1')]]
 
+# Explicit substructure definitions, not inferred pharmacology or exhaustive
+# taxonomic membership. Nested motifs intentionally produce multiple tags.
+FAMILY_MOTIFS = [(name,Chem.MolFromSmarts(smarts)) for name,smarts in [
+    ('Phenethylamines','[N]-[CX4]-[CX4]-c1ccccc1'),
+    ('Amphetamines (alpha-methylphenethylamines)','[N]-[CX4]([CH3])-[CH2]-c1ccccc1'),
+    ('Tryptamines','[N]-[CX4]-[CX4]-c1c[nH,nH0]c2ccccc12'),
+    ('Cathinones','[N]-[CX4]-[CX3](=[OX1])-c1ccccc1'),
+    ('2Cs (2,5-dimethoxyphenethylamines)','[$([NX3H2]),$([NX4H3+])]-[CH2]-[CH2]-c1c([OX2][CH3])ccc([OX2][CH3])c1'),
+    ('Nitazene-related benzimidazoles','[N]-[CX4]-[CX4]-n1c([CX4]-c2ccccc2)nc2ccccc21'),
+    ('Nitazenes','[N]-[CX4]-[CX4]-n1c([CX4]-c2ccccc2)nc2cc([N+](=O)[O-])ccc21'),
+    ('N-benzylphenethylamines','[NX3,NX4+](Cc1ccccc1)CCc1ccccc1')]]
+if any(pattern is None for _,pattern in FAMILY_MOTIFS):
+    raise ValueError('Invalid family motif definition')
+
 
 def group(entry):
     cls=entry.get('cls','')
@@ -32,6 +46,7 @@ def tags_for(entry, bindings=()):
     charge='positive' if sum(charges)>0 else 'negative' if sum(charges)<0 else 'charge-separated' if any(charges) else 'neutral'
     hbd=Lipinski.NumHDonors(mol);hba=Lipinski.NumHAcceptors(mol);rot=Lipinski.NumRotatableBonds(mol);tpsa=Descriptors.TPSA(mol)
     motifs=[name+' motif' for name,pattern in MOTIFS if mol.HasSubstructMatch(pattern)]
+    motifs += ['Family motif: '+name for name,pattern in FAMILY_MOTIFS if mol.HasSubstructMatch(pattern)]
     elements={a.GetSymbol() for a in mol.GetAtoms()}
     motifs += [name for element,name in [('F','Fluorinated'),('Cl','Chlorinated'),('Br','Brominated'),('I','Iodinated'),('S','Sulfur-containing'),('P','Phosphorus-containing')] if element in elements]
     if elements & {'F','Cl','Br','I'}:
@@ -80,6 +95,15 @@ console.log(JSON.stringify({library:l,bindings}));
             'method':'Ten descriptive base tags plus functional-group/element motifs and source-linked binding tags. Stored graph charges and calculated bins are not physiological protonation or clinical claims. Original class labels remain explicitly labelled, not experimentally validated.',
             'dataSha256':hashlib.sha256(text.encode()).hexdigest()}
     (ROOT/'validation/library-tag-provenance.json').write_text(json.dumps(report,indent=2)+'\n')
+    families=[{'tag':'Family motif: '+name,
+               'entries':[e['name'] for e in data['library'] if 'Family motif: '+name in entries[e['name']]['tags']]}
+              for name,_ in FAMILY_MOTIFS]
+    for family in families:
+        family['count']=len(family['entries'])
+    coverage={'schemaVersion':1,'sourceSha256':hashes,'dataSha256':report['dataSha256'],
+              'interpretation':'Overlapping structural motifs in stored graphs; not evidence of pharmacological function, exhaustive family membership or independently verified molecular identities.',
+              'families':families}
+    (ROOT/'validation/library-family-coverage.json').write_text(json.dumps(coverage,indent=2)+'\n')
     print(json.dumps({k:report[k] for k in ['entries','minTags','maxTags']}))
 
 

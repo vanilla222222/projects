@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Reference Library Inspector — Molecule Profiler</title>
-<link rel="stylesheet" href="css/style.css?v=2026-10-20-named1">
-<link rel="stylesheet" href="css/workspace.css?v=2026-10-20-named1">
+<link rel="stylesheet" href="css/style.css?v=2026-10-20-families1">
+<link rel="stylesheet" href="css/workspace.css?v=2026-10-20-families1">
 <style>
 .catalog-intro {padding-bottom:5px}
 .catalog-intro p {max-width:82ch}
@@ -71,6 +71,8 @@
       <label>Sort entries<select id="catalog-sort"><option value="name">Name A–Z</option><option value="tag">Tag A–Z</option><option value="tagCount">Most tags first</option><option value="formula">Formula</option><option value="group">Collection</option></select></label>
       <button class="catalog-action" type="button" id="catalog-export">Export filtered index CSV</button>
     </div>
+    <p>Browse structural family motifs. Groups overlap and do not establish pharmacology. <a href="FAMILY-COVERAGE.md">Definitions and identity checks</a></p>
+    <div id="catalog-families" class="catalog-tags" style="max-width:none;margin:10px 0 14px" aria-label="Structural family filters"></div>
     <div class="catalog-bar"><button type="button" class="catalog-action" id="catalog-clear-tags" style="width:auto">Clear tag filter</button><p id="catalog-summary" role="status" aria-live="polite"></p><label for="catalog-size">Rows per page <select id="catalog-size"><option value="25">25</option><option value="50" selected>50</option><option value="100">100</option></select></label></div>
     <div class="table-wrap"><table id="catalog-table"><caption class="sr-only">Reference names, searchable tags, collection labels, molecular formulas and supplied SMILES</caption><thead><tr><th scope="col">#</th><th scope="col">Name</th><th scope="col">Tags</th><th scope="col">Collection</th><th scope="col">Formula / SMILES</th></tr></thead><tbody></tbody></table></div>
     <nav class="catalog-pagination" aria-label="Library results pages"><button type="button" id="catalog-previous">← Previous</button><p id="catalog-page"></p><button type="button" id="catalog-next">Next →</button></nav>
@@ -88,10 +90,10 @@
     <a href="index.html">Return to Molecule Profiler →</a>
   </section>
 </main>
-<script src="data/library.js?v=2026-10-20-named1"></script>
-<script src="data/library-names.js?v=2026-10-20-named1"></script>
-<script src="data/library-tags.js?v=2026-10-20-named1"></script>
-<script src="js/library-catalog.js?v=2026-10-20-named1"></script>
-<script src="js/library-inspector.js?v=2026-10-20-named1"></script>
+<script src="data/library.js?v=2026-10-20-families1"></script>
+<script src="data/library-names.js?v=2026-10-20-families1"></script>
+<script src="data/library-tags.js?v=2026-10-20-families1"></script>
+<script src="js/library-catalog.js?v=2026-10-20-families1"></script>
+<script src="js/library-inspector.js?v=2026-10-20-families1"></script>
 </body>
 </html>

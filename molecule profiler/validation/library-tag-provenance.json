@@ -2,16 +2,16 @@
   "schemaVersion": 1,
   "rdkitVersion": "2026.09.1",
   "sourceSha256": {
-    "data/library.js": "8975af38b98d1c781448fe06741bdc6a192285d9a597b95a36cd25dc7c2886ad",
+    "data/library.js": "7badd4bf49712f316d052608504074711f6ea2f47283b0596c1b31667880d3ae",
     "data/targets.js": "3cfceec74b4186d5b1c4e78cb4adc22ea3bc30312cdaddacb724e9eb382de551",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
     "data/receptor-ligand-annotations.js": "28bcfc10324b17fc8a30d2e4b3cf3c589e55fe9af76cd61dfb8986d9a3b30d01",
     "js/receptor-catalog.js": "c89696b0ea6e22873929f2e3c777774b13579c917a541cf7820de253e19305e1",
-    "tools/build-library-tags.py": "308010ce4ee4fd9861977192b5317023453076fe1736815da9125111766d1651"
+    "tools/build-library-tags.py": "b1b9d2eb9960ab6803f2c9e43936d4317688bc067a00d30b27d9cf1c1ee08f6e"
   },
-  "entries": 4066,
+  "entries": 4072,
   "minTags": 10,
-  "maxTags": 23,
+  "maxTags": 24,
   "method": "Ten descriptive base tags plus functional-group/element motifs and source-linked binding tags. Stored graph charges and calculated bins are not physiological protonation or clinical claims. Original class labels remain explicitly labelled, not experimentally validated.",
-  "dataSha256": "c418fb9c76ead48cc9760548eb79791c40b7685c7fd4c12107760e0cb5e5ce62"
+  "dataSha256": "e161acb0781880e16397d065b7941118087d2dd768d49cf6f2c80714f8c4ebf6"
 }

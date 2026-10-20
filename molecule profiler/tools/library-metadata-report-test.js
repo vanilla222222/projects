@@ -3,6 +3,13 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const root=path.resolve(__dirname,'..'),hash=file=>crypto.createHash('sha256').update(fs.readFileSync(path.join(root,file))).digest('hex');
 const {LIBRARY}=require('../data/library'),{LIBRARY_NAME_METADATA:n}=require('../data/library-names'),{LIBRARY_TAG_METADATA:t}=require('../data/library-tags');
 const names=require('../validation/library-name-provenance.json'),tags=require('../validation/library-tag-provenance.json');
+const families=require('../validation/library-family-coverage.json');
+assert.equal(families.dataSha256,tags.dataSha256);
+assert.deepEqual(families.sourceSha256,tags.sourceSha256);
+for(const family of families.families){
+ assert.equal(family.count,family.entries.length);
+ assert.deepEqual(family.entries,LIBRARY.filter(e=>t.entries[e.name].tags.includes(family.tag)).map(e=>e.name));
+}
 const api=require('../js/library-catalog'),ctx={names:n,tags:t};
 assert.equal(hash('data/library.js'),names.librarySha256);
 assert.equal(hash('tools/curate-library-names.py'),names.toolSha256);

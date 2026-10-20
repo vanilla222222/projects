@@ -1,0 +1,828 @@
+{
+  "schemaVersion": 1,
+  "gene": null,
+  "className": "Cathinone",
+  "rdkitVersion": "2026.09.1",
+  "scope": "Name-resolved PubChem structure comparison only; no activity, potency or subtype verification.",
+  "sourceSha256": {
+    "data/library.js": "7badd4bf49712f316d052608504074711f6ea2f47283b0596c1b31667880d3ae",
+    "data/targets.js": "3cfceec74b4186d5b1c4e78cb4adc22ea3bc30312cdaddacb724e9eb382de551",
+    "tools/pubchem-reference-audit.py": "b4318268f50e216a2d7e0e6d29dcd59010ef3dee5b4a099f1320f12104bd089b"
+  },
+  "counts": {
+    "connectivity_only_stereochemistry_differs": 1,
+    "matched_isomeric_graph": 26
+  },
+  "records": [
+    {
+      "name": "3-Methylmethcathinone",
+      "librarySmiles": "CNC(C)C(=O)c1cccc(C)c1",
+      "libraryFormula": "C11H15NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-Methylmethcathinone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 71741532,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/71741532",
+      "sourceSmiles": "CC1=CC(=CC=C1)C(=O)C(C)NC",
+      "sourceFormula": "C11H15NO",
+      "sourceInchiKey": "QDNXSIYWHYGMCD-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CNC(C)C(=O)c1cccc(C)c1",
+      "sourceCanonicalSmiles": "CNC(C)C(=O)c1cccc(C)c1",
+      "retrievedAt": "2026-10-20T12:07:52.146402+00:00",
+      "responseSha256": "2b780fcfede05344d11a9975f0d3096108015ec76b88a5233a401d06189f0ee7",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 71741532,
+              "MolecularFormula": "C11H15NO",
+              "SMILES": "CC1=CC(=CC=C1)C(=O)C(C)NC",
+              "ConnectivitySMILES": "CC1=CC(=CC=C1)C(=O)C(C)NC",
+              "InChIKey": "QDNXSIYWHYGMCD-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "4-Chloromethcathinone",
+      "librarySmiles": "CNC(C)C(=O)c1ccc(Cl)cc1",
+      "libraryFormula": "C10H12ClNO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-Chloromethcathinone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 82100418,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/82100418",
+      "sourceSmiles": "CC(C(=O)C1=CC=C(C=C1)Cl)NC",
+      "sourceFormula": "C10H12ClNO",
+      "sourceInchiKey": "UEJBEYOXRNGPEI-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CNC(C)C(=O)c1ccc(Cl)cc1",
+      "sourceCanonicalSmiles": "CNC(C)C(=O)c1ccc(Cl)cc1",
+      "retrievedAt": "2026-10-20T12:07:59.486360+00:00",
+      "responseSha256": "d1cb5b8e5530c51565ba2a0ad323428bf6b60d57bee4e08df88e35f44acf7e75",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 82100418,
+              "MolecularFormula": "C10H12ClNO",
+              "SMILES": "CC(C(=O)C1=CC=C(C=C1)Cl)NC",
+              "ConnectivitySMILES": "CC(C(=O)C1=CC=C(C=C1)Cl)NC",
+              "InChIKey": "UEJBEYOXRNGPEI-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "4-Fluoromethcathinone",
+      "librarySmiles": "CNC(C)C(=O)c1ccc(F)cc1",
+      "libraryFormula": "C10H12FNO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-Fluoromethcathinone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 49853406,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/49853406",
+      "sourceSmiles": "CC(C(=O)C1=CC=C(C=C1)F)NC",
+      "sourceFormula": "C10H12FNO",
+      "sourceInchiKey": "MWKQPIROPJSFRI-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CNC(C)C(=O)c1ccc(F)cc1",
+      "sourceCanonicalSmiles": "CNC(C)C(=O)c1ccc(F)cc1",
+      "retrievedAt": "2026-10-20T12:07:55.850416+00:00",
+      "responseSha256": "aaa69b5155693ee5077b50973b279e6a979f1c2b5df578482e5f131d90d60948",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 49853406,
+              "MolecularFormula": "C10H12FNO",
+              "SMILES": "CC(C(=O)C1=CC=C(C=C1)F)NC",
+              "ConnectivitySMILES": "CC(C(=O)C1=CC=C(C=C1)F)NC",
+              "InChIKey": "MWKQPIROPJSFRI-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "4-Methyl-alpha-PPP",
+      "librarySmiles": "CC1=CC=C(C=C1)C(=O)C(C)N2CCCC2",
+      "libraryFormula": "C14H19NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-MePPP/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 6430745,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/6430745",
+      "sourceSmiles": "CC1=CC=C(C=C1)C(=O)C(C)N2CCCC2",
+      "sourceFormula": "C14H19NO",
+      "sourceInchiKey": "APSJUNFBAXIXLK-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "Cc1ccc(C(=O)C(C)N2CCCC2)cc1",
+      "sourceCanonicalSmiles": "Cc1ccc(C(=O)C(C)N2CCCC2)cc1",
+      "retrievedAt": "2026-10-20T12:14:42.278400+00:00",
+      "responseSha256": "365f3e96ceb4fc10fbf14a9bc4bc1de4eda391df3bbae3e59b1ad981e18f86a1",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 6430745,
+              "MolecularFormula": "C14H19NO",
+              "SMILES": "CC1=CC=C(C=C1)C(=O)C(C)N2CCCC2",
+              "ConnectivitySMILES": "CC1=CC=C(C=C1)C(=O)C(C)N2CCCC2",
+              "InChIKey": "APSJUNFBAXIXLK-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "4-Methylethcathinone",
+      "librarySmiles": "CCNC(C)C(=O)c1ccc(C)cc1",
+      "libraryFormula": "C12H17NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-Methylethcathinone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 52988259,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/52988259",
+      "sourceSmiles": "CCNC(C)C(=O)C1=CC=C(C=C1)C",
+      "sourceFormula": "C12H17NO",
+      "sourceInchiKey": "ZOXZWYWOECCBSH-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCNC(C)C(=O)c1ccc(C)cc1",
+      "sourceCanonicalSmiles": "CCNC(C)C(=O)c1ccc(C)cc1",
+      "retrievedAt": "2026-10-20T12:07:55.758367+00:00",
+      "responseSha256": "df22272fc8e081cfbf76abfbcda24eff56ae3124f2a9a2f12796986c3a397961",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 52988259,
+              "MolecularFormula": "C12H17NO",
+              "SMILES": "CCNC(C)C(=O)C1=CC=C(C=C1)C",
+              "ConnectivitySMILES": "CCNC(C)C(=O)C1=CC=C(C=C1)C",
+              "InChIKey": "ZOXZWYWOECCBSH-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Alpha-PBP",
+      "librarySmiles": "CCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+      "libraryFormula": "C14H19NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Alpha-PBP/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 23199082,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/23199082",
+      "sourceSmiles": "CCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+      "sourceFormula": "C14H19NO",
+      "sourceInchiKey": "GSESDIFGJCCBHN-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCC(C(=O)c1ccccc1)N1CCCC1",
+      "sourceCanonicalSmiles": "CCC(C(=O)c1ccccc1)N1CCCC1",
+      "retrievedAt": "2026-10-20T12:08:22.806523+00:00",
+      "responseSha256": "dc04ab2dc243df02023e63af11cdb9e7331d95ab233b2e7bfde02ec7037be729",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 23199082,
+              "MolecularFormula": "C14H19NO",
+              "SMILES": "CCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+              "ConnectivitySMILES": "CCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+              "InChIKey": "GSESDIFGJCCBHN-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Alpha-PHP",
+      "librarySmiles": "CCCCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+      "libraryFormula": "C16H23NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Alpha-PHP/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 102107923,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/102107923",
+      "sourceSmiles": "CCCCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+      "sourceFormula": "C16H23NO",
+      "sourceInchiKey": "KYIJLDDXQWBNGX-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCCCC(C(=O)c1ccccc1)N1CCCC1",
+      "sourceCanonicalSmiles": "CCCCC(C(=O)c1ccccc1)N1CCCC1",
+      "retrievedAt": "2026-10-20T12:08:26.946629+00:00",
+      "responseSha256": "8ae0fb1a70bc72d2715f93f25c695db83d5ab65d5b074e60f26fd53ff674619f",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 102107923,
+              "MolecularFormula": "C16H23NO",
+              "SMILES": "CCCCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+              "ConnectivitySMILES": "CCCCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+              "InChIKey": "KYIJLDDXQWBNGX-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Alpha-PPP",
+      "librarySmiles": "CC(C(=O)C1=CC=CC=C1)N2CCCC2",
+      "libraryFormula": "C13H17NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Alpha-PPP/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 209045,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/209045",
+      "sourceSmiles": "CC(C(=O)C1=CC=CC=C1)N2CCCC2",
+      "sourceFormula": "C13H17NO",
+      "sourceInchiKey": "KPUJAQRFIJAORQ-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CC(C(=O)c1ccccc1)N1CCCC1",
+      "sourceCanonicalSmiles": "CC(C(=O)c1ccccc1)N1CCCC1",
+      "retrievedAt": "2026-10-20T12:08:22.826354+00:00",
+      "responseSha256": "c7b1a2fb1d81ccf6ce454d06c359a4603118052771f30e6de77a8d1b0bab195f",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 209045,
+              "MolecularFormula": "C13H17NO",
+              "SMILES": "CC(C(=O)C1=CC=CC=C1)N2CCCC2",
+              "ConnectivitySMILES": "CC(C(=O)C1=CC=CC=C1)N2CCCC2",
+              "InChIKey": "KPUJAQRFIJAORQ-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Alpha-PVP",
+      "librarySmiles": "CCCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+      "libraryFormula": "C15H21NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Alpha-PVP/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 11148955,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/11148955",
+      "sourceSmiles": "CCCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+      "sourceFormula": "C15H21NO",
+      "sourceInchiKey": "YDIIDRWHPFMLGR-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCCC(C(=O)c1ccccc1)N1CCCC1",
+      "sourceCanonicalSmiles": "CCCC(C(=O)c1ccccc1)N1CCCC1",
+      "retrievedAt": "2026-10-20T12:08:26.858709+00:00",
+      "responseSha256": "3b9b556439d36a05cb90d99492efa6d536471274caea967b7df30d9b07b4cbd1",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 11148955,
+              "MolecularFormula": "C15H21NO",
+              "SMILES": "CCCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+              "ConnectivitySMILES": "CCCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+              "InChIKey": "YDIIDRWHPFMLGR-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Amfepramone",
+      "librarySmiles": "CCN(CC)C(C)C(=O)c1ccccc1",
+      "libraryFormula": "C13H19NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Amfepramone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 7029,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/7029",
+      "sourceSmiles": "CCN(CC)C(C)C(=O)C1=CC=CC=C1",
+      "sourceFormula": "C13H19NO",
+      "sourceInchiKey": "XXEPPPIWZFICOJ-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCN(CC)C(C)C(=O)c1ccccc1",
+      "sourceCanonicalSmiles": "CCN(CC)C(C)C(=O)c1ccccc1",
+      "retrievedAt": "2026-10-20T12:08:07.486382+00:00",
+      "responseSha256": "e8b12719d075d39dfa2c9f6764c17c8ed096c10540fe144f96fe39ff12f2b36a",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 7029,
+              "MolecularFormula": "C13H19NO",
+              "SMILES": "CCN(CC)C(C)C(=O)C1=CC=CC=C1",
+              "ConnectivitySMILES": "CCN(CC)C(C)C(=O)C1=CC=CC=C1",
+              "InChIKey": "XXEPPPIWZFICOJ-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Buphedrone",
+      "librarySmiles": "CCC(NC)C(=O)c1ccccc1",
+      "libraryFormula": "C11H15NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Buphedrone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 53249194,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/53249194",
+      "sourceSmiles": "CCC(C(=O)C1=CC=CC=C1)NC",
+      "sourceFormula": "C11H15NO",
+      "sourceInchiKey": "DDPMGIMJSRUULN-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCC(NC)C(=O)c1ccccc1",
+      "sourceCanonicalSmiles": "CCC(NC)C(=O)c1ccccc1",
+      "retrievedAt": "2026-10-20T12:07:59.478377+00:00",
+      "responseSha256": "5b06138744de935c672d89b14c71f1b8181ec0f1d6822f835c76ccc49a27b78b",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 53249194,
+              "MolecularFormula": "C11H15NO",
+              "SMILES": "CCC(C(=O)C1=CC=CC=C1)NC",
+              "ConnectivitySMILES": "CCC(C(=O)C1=CC=CC=C1)NC",
+              "InChIKey": "DDPMGIMJSRUULN-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Butylone",
+      "librarySmiles": "CCC(NC)C(=O)c1ccc2c(c1)OCO2",
+      "libraryFormula": "C12H15NO3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Butylone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 56843046,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/56843046",
+      "sourceSmiles": "CCC(C(=O)C1=CC2=C(C=C1)OCO2)NC",
+      "sourceFormula": "C12H15NO3",
+      "sourceInchiKey": "CGKQZIULZRXRRJ-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCC(NC)C(=O)c1ccc2c(c1)OCO2",
+      "sourceCanonicalSmiles": "CCC(NC)C(=O)c1ccc2c(c1)OCO2",
+      "retrievedAt": "2026-10-20T12:08:11.494502+00:00",
+      "responseSha256": "97b8f5553ebcf4de29bcb2a5c757048da795d16e811ad1909e2361f4aa4bbd6f",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 56843046,
+              "MolecularFormula": "C12H15NO3",
+              "SMILES": "CCC(C(=O)C1=CC2=C(C=C1)OCO2)NC",
+              "ConnectivitySMILES": "CCC(C(=O)C1=CC2=C(C=C1)OCO2)NC",
+              "InChIKey": "CGKQZIULZRXRRJ-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Cathinone",
+      "librarySmiles": "CC(N)C(=O)c1ccccc1",
+      "libraryFormula": "C9H11NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Cathinone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "connectivity_only_stereochemistry_differs",
+      "cid": 62258,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/62258",
+      "sourceSmiles": "C[C@@H](C(=O)C1=CC=CC=C1)N",
+      "sourceFormula": "C9H11NO",
+      "sourceInchiKey": "PUAQLLVFLMYYJJ-ZETCQYMHSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CC(N)C(=O)c1ccccc1",
+      "sourceCanonicalSmiles": "C[C@H](N)C(=O)c1ccccc1",
+      "retrievedAt": "2026-10-20T12:07:48.382431+00:00",
+      "responseSha256": "cee1e56988cc51ee6db2ab75d1ff970842deee6d345e6d21ff0639220c1500a7",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 62258,
+              "MolecularFormula": "C9H11NO",
+              "SMILES": "C[C@@H](C(=O)C1=CC=CC=C1)N",
+              "ConnectivitySMILES": "CC(C(=O)C1=CC=CC=C1)N",
+              "InChIKey": "PUAQLLVFLMYYJJ-ZETCQYMHSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Dibutylone",
+      "librarySmiles": "CCC(C(=O)c1ccc2c(c1)OCO2)N(C)C",
+      "libraryFormula": "C13H17NO3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Dibutylone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 71308182,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/71308182",
+      "sourceSmiles": "CCC(C(=O)C1=CC2=C(C=C1)OCO2)N(C)C",
+      "sourceFormula": "C13H17NO3",
+      "sourceInchiKey": "USEBIPUIVPERGC-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCC(C(=O)c1ccc2c(c1)OCO2)N(C)C",
+      "sourceCanonicalSmiles": "CCC(C(=O)c1ccc2c(c1)OCO2)N(C)C",
+      "retrievedAt": "2026-10-20T12:08:19.150366+00:00",
+      "responseSha256": "13db7681e8febee831069e0e48efd5978c0da41926b172aadde11928b7bf30c0",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 71308182,
+              "MolecularFormula": "C13H17NO3",
+              "SMILES": "CCC(C(=O)C1=CC2=C(C=C1)OCO2)N(C)C",
+              "ConnectivitySMILES": "CCC(C(=O)C1=CC2=C(C=C1)OCO2)N(C)C",
+              "InChIKey": "USEBIPUIVPERGC-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Dimethylone",
+      "librarySmiles": "CC(C(=O)c1ccc2c(c1)OCO2)N(C)C",
+      "libraryFormula": "C12H15NO3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Dimethylone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 9794472,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/9794472",
+      "sourceSmiles": "CC(C(=O)C1=CC2=C(C=C1)OCO2)N(C)C",
+      "sourceFormula": "C12H15NO3",
+      "sourceInchiKey": "OSNIIMCBVLBNGS-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CC(C(=O)c1ccc2c(c1)OCO2)N(C)C",
+      "sourceCanonicalSmiles": "CC(C(=O)c1ccc2c(c1)OCO2)N(C)C",
+      "retrievedAt": "2026-10-20T12:08:19.130367+00:00",
+      "responseSha256": "3b1a91bb2cb1f88b1ce3d9315b41f6a3e3caeb2d4ac4b3dc8617d7d2723d7ba3",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 9794472,
+              "MolecularFormula": "C12H15NO3",
+              "SMILES": "CC(C(=O)C1=CC2=C(C=C1)OCO2)N(C)C",
+              "ConnectivitySMILES": "CC(C(=O)C1=CC2=C(C=C1)OCO2)N(C)C",
+              "InChIKey": "OSNIIMCBVLBNGS-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Ethcathinone",
+      "librarySmiles": "CCNC(C)C(=O)c1ccccc1",
+      "libraryFormula": "C11H15NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Ethcathinone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 458519,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/458519",
+      "sourceSmiles": "CCNC(C)C(=O)C1=CC=CC=C1",
+      "sourceFormula": "C11H15NO",
+      "sourceInchiKey": "LYMHIBZGTAPASQ-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCNC(C)C(=O)c1ccccc1",
+      "sourceCanonicalSmiles": "CCNC(C)C(=O)c1ccccc1",
+      "retrievedAt": "2026-10-20T12:07:52.162590+00:00",
+      "responseSha256": "7554eac55242551c0ac0356773f5503f5543abc5349833da536128d230c94bfc",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 458519,
+              "MolecularFormula": "C11H15NO",
+              "SMILES": "CCNC(C)C(=O)C1=CC=CC=C1",
+              "ConnectivitySMILES": "CCNC(C)C(=O)C1=CC=CC=C1",
+              "InChIKey": "LYMHIBZGTAPASQ-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Ethylone",
+      "librarySmiles": "CCNC(C)C(=O)c1ccc2c(c1)OCO2",
+      "libraryFormula": "C12H15NO3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Ethylone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 57252245,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/57252245",
+      "sourceSmiles": "CCNC(C)C(=O)C1=CC2=C(C=C1)OCO2",
+      "sourceFormula": "C12H15NO3",
+      "sourceInchiKey": "MJEMIOXXNCZZFK-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCNC(C)C(=O)c1ccc2c(c1)OCO2",
+      "sourceCanonicalSmiles": "CCNC(C)C(=O)c1ccc2c(c1)OCO2",
+      "retrievedAt": "2026-10-20T12:08:07.502387+00:00",
+      "responseSha256": "85a866737ea55d8d7e597c343d532bf57dceee2dd41ac3acdf532b9dbcdbd672",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 57252245,
+              "MolecularFormula": "C12H15NO3",
+              "SMILES": "CCNC(C)C(=O)C1=CC2=C(C=C1)OCO2",
+              "ConnectivitySMILES": "CCNC(C)C(=O)C1=CC2=C(C=C1)OCO2",
+              "InChIKey": "MJEMIOXXNCZZFK-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Eutylone",
+      "librarySmiles": "CCNC(CC)C(=O)c1ccc2c(c1)OCO2",
+      "libraryFormula": "C13H17NO3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Eutylone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 57360686,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/57360686",
+      "sourceSmiles": "CCC(C(=O)C1=CC2=C(C=C1)OCO2)NCC",
+      "sourceFormula": "C13H17NO3",
+      "sourceInchiKey": "YERSNXHEOIYEGX-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCNC(CC)C(=O)c1ccc2c(c1)OCO2",
+      "sourceCanonicalSmiles": "CCNC(CC)C(=O)c1ccc2c(c1)OCO2",
+      "retrievedAt": "2026-10-20T12:08:11.558381+00:00",
+      "responseSha256": "433566d1d65a5b7110287056d199aec5910a9878c545d57a898e4e81b28d3e75",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 57360686,
+              "MolecularFormula": "C13H17NO3",
+              "SMILES": "CCC(C(=O)C1=CC2=C(C=C1)OCO2)NCC",
+              "ConnectivitySMILES": "CCC(C(=O)C1=CC2=C(C=C1)OCO2)NCC",
+              "InChIKey": "YERSNXHEOIYEGX-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Hexedrone",
+      "librarySmiles": "CCCCC(NC)C(=O)c1ccccc1",
+      "libraryFormula": "C13H19NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Hexedrone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 129844496,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/129844496",
+      "sourceSmiles": "CCCCC(C(=O)C1=CC=CC=C1)NC",
+      "sourceFormula": "C13H19NO",
+      "sourceInchiKey": "BHIZKPHLTVLXIV-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCCCC(NC)C(=O)c1ccccc1",
+      "sourceCanonicalSmiles": "CCCCC(NC)C(=O)c1ccccc1",
+      "retrievedAt": "2026-10-20T12:08:03.470513+00:00",
+      "responseSha256": "f5a5e028b740c3c3bfa47db6afcaf7832774d874aeec8034a08b33aa3bbf4f30",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 129844496,
+              "MolecularFormula": "C13H19NO",
+              "SMILES": "CCCCC(C(=O)C1=CC=CC=C1)NC",
+              "ConnectivitySMILES": "CCCCC(C(=O)C1=CC=CC=C1)NC",
+              "InChIKey": "BHIZKPHLTVLXIV-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "MDPPP",
+      "librarySmiles": "CC(C(=O)C1=CC2=C(C=C1)OCO2)N3CCCC3",
+      "libraryFormula": "C14H17NO3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/MDPPP/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 6430845,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/6430845",
+      "sourceSmiles": "CC(C(=O)C1=CC2=C(C=C1)OCO2)N3CCCC3",
+      "sourceFormula": "C14H17NO3",
+      "sourceInchiKey": "NIYQOTCYXGXMPI-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CC(C(=O)c1ccc2c(c1)OCO2)N1CCCC1",
+      "sourceCanonicalSmiles": "CC(C(=O)c1ccc2c(c1)OCO2)N1CCCC1",
+      "retrievedAt": "2026-10-20T12:08:34.954487+00:00",
+      "responseSha256": "79fdd94f1eddaee38e07504a8a48397ec04919c4e6b701970348c508ab735cbf",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 6430845,
+              "MolecularFormula": "C14H17NO3",
+              "SMILES": "CC(C(=O)C1=CC2=C(C=C1)OCO2)N3CCCC3",
+              "ConnectivitySMILES": "CC(C(=O)C1=CC2=C(C=C1)OCO2)N3CCCC3",
+              "InChIKey": "NIYQOTCYXGXMPI-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "MDPV",
+      "librarySmiles": "CCCC(C(=O)C1=CC2=C(C=C1)OCO2)N3CCCC3",
+      "libraryFormula": "C16H21NO3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/MDPV/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 20111961,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/20111961",
+      "sourceSmiles": "CCCC(C(=O)C1=CC2=C(C=C1)OCO2)N3CCCC3",
+      "sourceFormula": "C16H21NO3",
+      "sourceInchiKey": "SYHGEUNFJIGTRX-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCCC(C(=O)c1ccc2c(c1)OCO2)N1CCCC1",
+      "sourceCanonicalSmiles": "CCCC(C(=O)c1ccc2c(c1)OCO2)N1CCCC1",
+      "retrievedAt": "2026-10-20T12:08:34.906358+00:00",
+      "responseSha256": "4332db6564f616ef5e52cfec21f83e56921badebe48e2d8018c13e4d2a474d7a",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 20111961,
+              "MolecularFormula": "C16H21NO3",
+              "SMILES": "CCCC(C(=O)C1=CC2=C(C=C1)OCO2)N3CCCC3",
+              "ConnectivitySMILES": "CCCC(C(=O)C1=CC2=C(C=C1)OCO2)N3CCCC3",
+              "InChIKey": "SYHGEUNFJIGTRX-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Methcathinone",
+      "librarySmiles": "CNC(C)C(=O)c1ccccc1",
+      "libraryFormula": "C10H13NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Methcathinone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 1576,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/1576",
+      "sourceSmiles": "CC(C(=O)C1=CC=CC=C1)NC",
+      "sourceFormula": "C10H13NO",
+      "sourceInchiKey": "LPLLVINFLBSFRP-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CNC(C)C(=O)c1ccccc1",
+      "sourceCanonicalSmiles": "CNC(C)C(=O)c1ccccc1",
+      "retrievedAt": "2026-10-20T12:07:48.418332+00:00",
+      "responseSha256": "bdb912289b3f27d7637b3ab5ec77ab3861f00b2f9402c3df4f671bd662f321b9",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 1576,
+              "MolecularFormula": "C10H13NO",
+              "SMILES": "CC(C(=O)C1=CC=CC=C1)NC",
+              "ConnectivitySMILES": "CC(C(=O)C1=CC=CC=C1)NC",
+              "InChIKey": "LPLLVINFLBSFRP-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "N-Ethylpentylone",
+      "librarySmiles": "CCCC(NCC)C(=O)c1ccc2c(c1)OCO2",
+      "libraryFormula": "C14H19NO3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/N-Ethylpentylone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 57359308,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/57359308",
+      "sourceSmiles": "CCCC(C(=O)C1=CC2=C(C=C1)OCO2)NCC",
+      "sourceFormula": "C14H19NO3",
+      "sourceInchiKey": "VERDHJIMZYXGIW-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCCC(NCC)C(=O)c1ccc2c(c1)OCO2",
+      "sourceCanonicalSmiles": "CCCC(NCC)C(=O)c1ccc2c(c1)OCO2",
+      "retrievedAt": "2026-10-20T12:08:15.370474+00:00",
+      "responseSha256": "02e47aedee50795a1109b97ab2b61531942157815a324d4f33d1918f8c10ac53",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 57359308,
+              "MolecularFormula": "C14H19NO3",
+              "SMILES": "CCCC(C(=O)C1=CC2=C(C=C1)OCO2)NCC",
+              "ConnectivitySMILES": "CCCC(C(=O)C1=CC2=C(C=C1)OCO2)NCC",
+              "InChIKey": "VERDHJIMZYXGIW-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Naphyrone",
+      "librarySmiles": "CCCC(C(=O)C1=CC2=CC=CC=C2C=C1)N3CCCC3",
+      "libraryFormula": "C19H23NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Naphyrone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 11243002,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/11243002",
+      "sourceSmiles": "CCCC(C(=O)C1=CC2=CC=CC=C2C=C1)N3CCCC3",
+      "sourceFormula": "C19H23NO",
+      "sourceInchiKey": "DTNUPBSOODGRKW-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCCC(C(=O)c1ccc2ccccc2c1)N1CCCC1",
+      "sourceCanonicalSmiles": "CCCC(C(=O)c1ccc2ccccc2c1)N1CCCC1",
+      "retrievedAt": "2026-10-20T12:08:38.282380+00:00",
+      "responseSha256": "2885af516f8c5ec3bc1f28695f3c9862d69600de07355f23c471fe10f9d66662",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 11243002,
+              "MolecularFormula": "C19H23NO",
+              "SMILES": "CCCC(C(=O)C1=CC2=CC=CC=C2C=C1)N3CCCC3",
+              "ConnectivitySMILES": "CCCC(C(=O)C1=CC2=CC=CC=C2C=C1)N3CCCC3",
+              "InChIKey": "DTNUPBSOODGRKW-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Pentedrone",
+      "librarySmiles": "CCCC(NC)C(=O)c1ccccc1",
+      "libraryFormula": "C12H17NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Pentedrone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 57501499,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/57501499",
+      "sourceSmiles": "CCCC(C(=O)C1=CC=CC=C1)NC",
+      "sourceFormula": "C12H17NO",
+      "sourceInchiKey": "WLIWIUNEJRETFX-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCCC(NC)C(=O)c1ccccc1",
+      "sourceCanonicalSmiles": "CCCC(NC)C(=O)c1ccccc1",
+      "retrievedAt": "2026-10-20T12:08:03.118539+00:00",
+      "responseSha256": "0d41f79d4e3a6a9dce10d9a95fb3b2de7d74a45b117795388b3959be7152a24f",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 57501499,
+              "MolecularFormula": "C12H17NO",
+              "SMILES": "CCCC(C(=O)C1=CC=CC=C1)NC",
+              "ConnectivitySMILES": "CCCC(C(=O)C1=CC=CC=C1)NC",
+              "InChIKey": "WLIWIUNEJRETFX-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Pentylone",
+      "librarySmiles": "CCCC(NC)C(=O)c1ccc2c(c1)OCO2",
+      "libraryFormula": "C13H17NO3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Pentylone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 60208608,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/60208608",
+      "sourceSmiles": "CCCC(C(=O)C1=CC2=C(C=C1)OCO2)NC",
+      "sourceFormula": "C13H17NO3",
+      "sourceInchiKey": "DFMLULIEUUXXSA-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCCC(NC)C(=O)c1ccc2c(c1)OCO2",
+      "sourceCanonicalSmiles": "CCCC(NC)C(=O)c1ccc2c(c1)OCO2",
+      "retrievedAt": "2026-10-20T12:08:15.398287+00:00",
+      "responseSha256": "8b3b4c9c0115b582e7eda6b5f51014bddddf41f96c503a66ccdfcb58f7773ceb",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 60208608,
+              "MolecularFormula": "C13H17NO3",
+              "SMILES": "CCCC(C(=O)C1=CC2=C(C=C1)OCO2)NC",
+              "ConnectivitySMILES": "CCCC(C(=O)C1=CC2=C(C=C1)OCO2)NC",
+              "InChIKey": "DFMLULIEUUXXSA-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Pyrovalerone",
+      "librarySmiles": "CCCC(C(=O)C1=CC=C(C=C1)C)N2CCCC2",
+      "libraryFormula": "C16H23NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Pyrovalerone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "matched_isomeric_graph",
+      "cid": 14373,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/14373",
+      "sourceSmiles": "CCCC(C(=O)C1=CC=C(C=C1)C)N2CCCC2",
+      "sourceFormula": "C16H23NO",
+      "sourceInchiKey": "SWUVZKWCOBGPTH-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCCC(C(=O)c1ccc(C)cc1)N1CCCC1",
+      "sourceCanonicalSmiles": "CCCC(C(=O)c1ccc(C)cc1)N1CCCC1",
+      "retrievedAt": "2026-10-20T12:08:30.790356+00:00",
+      "responseSha256": "52ac960feb7d84a3557e630d4976516d07e7d5e30890c2afe33448c9040ba9c3",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 14373,
+              "MolecularFormula": "C16H23NO",
+              "SMILES": "CCCC(C(=O)C1=CC=C(C=C1)C)N2CCCC2",
+              "ConnectivitySMILES": "CCCC(C(=O)C1=CC=C(C=C1)C)N2CCCC2",
+              "InChIKey": "SWUVZKWCOBGPTH-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

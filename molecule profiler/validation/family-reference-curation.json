@@ -1,0 +1,447 @@
+{
+  "schemaVersion": 1,
+  "applied": true,
+  "rdkitVersion": "2026.09.1",
+  "sourceBeforeSha256": {
+    "data/library.js": "8975af38b98d1c781448fe06741bdc6a192285d9a597b95a36cd25dc7c2886ad",
+    "data/targets.js": "3cfceec74b4186d5b1c4e78cb4adc22ea3bc30312cdaddacb724e9eb382de551",
+    "data/receptor-ligand-annotations.js": "28bcfc10324b17fc8a30d2e4b3cf3c589e55fe9af76cd61dfb8986d9a3b30d01"
+  },
+  "changes": [
+    {
+      "name": "Alpha-PBP",
+      "librarySmiles": "CCC(C(=O)c1ccccc1)C1CCCN1",
+      "libraryFormula": "C14H19NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Alpha-PBP/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "different_graph_requires_review",
+      "cid": 23199082,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/23199082",
+      "sourceSmiles": "CCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+      "sourceFormula": "C14H19NO",
+      "sourceInchiKey": "GSESDIFGJCCBHN-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCC(C(=O)c1ccccc1)C1CCCN1",
+      "sourceCanonicalSmiles": "CCC(C(=O)c1ccccc1)N1CCCC1",
+      "retrievedAt": "2026-10-20T12:08:22.806523+00:00",
+      "responseSha256": "dc04ab2dc243df02023e63af11cdb9e7331d95ab233b2e7bfde02ec7037be729",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 23199082,
+              "MolecularFormula": "C14H19NO",
+              "SMILES": "CCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+              "ConnectivitySMILES": "CCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+              "InChIKey": "GSESDIFGJCCBHN-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Alpha-PHP",
+      "librarySmiles": "CCCCC(C(=O)c1ccccc1)C1CCCN1",
+      "libraryFormula": "C16H23NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Alpha-PHP/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "different_graph_requires_review",
+      "cid": 102107923,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/102107923",
+      "sourceSmiles": "CCCCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+      "sourceFormula": "C16H23NO",
+      "sourceInchiKey": "KYIJLDDXQWBNGX-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCCCC(C(=O)c1ccccc1)C1CCCN1",
+      "sourceCanonicalSmiles": "CCCCC(C(=O)c1ccccc1)N1CCCC1",
+      "retrievedAt": "2026-10-20T12:08:26.946629+00:00",
+      "responseSha256": "8ae0fb1a70bc72d2715f93f25c695db83d5ab65d5b074e60f26fd53ff674619f",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 102107923,
+              "MolecularFormula": "C16H23NO",
+              "SMILES": "CCCCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+              "ConnectivitySMILES": "CCCCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+              "InChIKey": "KYIJLDDXQWBNGX-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Alpha-PPP",
+      "librarySmiles": "CC(C(=O)c1ccccc1)C1CCCN1",
+      "libraryFormula": "C13H17NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Alpha-PPP/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "different_graph_requires_review",
+      "cid": 209045,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/209045",
+      "sourceSmiles": "CC(C(=O)C1=CC=CC=C1)N2CCCC2",
+      "sourceFormula": "C13H17NO",
+      "sourceInchiKey": "KPUJAQRFIJAORQ-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CC(C(=O)c1ccccc1)C1CCCN1",
+      "sourceCanonicalSmiles": "CC(C(=O)c1ccccc1)N1CCCC1",
+      "retrievedAt": "2026-10-20T12:08:22.826354+00:00",
+      "responseSha256": "c7b1a2fb1d81ccf6ce454d06c359a4603118052771f30e6de77a8d1b0bab195f",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 209045,
+              "MolecularFormula": "C13H17NO",
+              "SMILES": "CC(C(=O)C1=CC=CC=C1)N2CCCC2",
+              "ConnectivitySMILES": "CC(C(=O)C1=CC=CC=C1)N2CCCC2",
+              "InChIKey": "KPUJAQRFIJAORQ-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Alpha-PVP",
+      "librarySmiles": "CCCC(C(=O)c1ccccc1)C1CCCN1",
+      "libraryFormula": "C15H21NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Alpha-PVP/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "different_graph_requires_review",
+      "cid": 11148955,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/11148955",
+      "sourceSmiles": "CCCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+      "sourceFormula": "C15H21NO",
+      "sourceInchiKey": "YDIIDRWHPFMLGR-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCCC(C(=O)c1ccccc1)C1CCCN1",
+      "sourceCanonicalSmiles": "CCCC(C(=O)c1ccccc1)N1CCCC1",
+      "retrievedAt": "2026-10-20T12:08:26.858709+00:00",
+      "responseSha256": "3b9b556439d36a05cb90d99492efa6d536471274caea967b7df30d9b07b4cbd1",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 11148955,
+              "MolecularFormula": "C15H21NO",
+              "SMILES": "CCCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+              "ConnectivitySMILES": "CCCC(C(=O)C1=CC=CC=C1)N2CCCC2",
+              "InChIKey": "YDIIDRWHPFMLGR-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "MDPPP",
+      "librarySmiles": "CC(C(=O)c1ccc2c(c1)OCO2)C1CCCN1",
+      "libraryFormula": "C14H17NO3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/MDPPP/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "different_graph_requires_review",
+      "cid": 6430845,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/6430845",
+      "sourceSmiles": "CC(C(=O)C1=CC2=C(C=C1)OCO2)N3CCCC3",
+      "sourceFormula": "C14H17NO3",
+      "sourceInchiKey": "NIYQOTCYXGXMPI-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CC(C(=O)c1ccc2c(c1)OCO2)C1CCCN1",
+      "sourceCanonicalSmiles": "CC(C(=O)c1ccc2c(c1)OCO2)N1CCCC1",
+      "retrievedAt": "2026-10-20T12:08:34.954487+00:00",
+      "responseSha256": "79fdd94f1eddaee38e07504a8a48397ec04919c4e6b701970348c508ab735cbf",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 6430845,
+              "MolecularFormula": "C14H17NO3",
+              "SMILES": "CC(C(=O)C1=CC2=C(C=C1)OCO2)N3CCCC3",
+              "ConnectivitySMILES": "CC(C(=O)C1=CC2=C(C=C1)OCO2)N3CCCC3",
+              "InChIKey": "NIYQOTCYXGXMPI-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "MDPV",
+      "librarySmiles": "CCCC(C(=O)c1ccc2c(c1)OCO2)C1CCCN1",
+      "libraryFormula": "C16H21NO3",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/MDPV/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "different_graph_requires_review",
+      "cid": 20111961,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/20111961",
+      "sourceSmiles": "CCCC(C(=O)C1=CC2=C(C=C1)OCO2)N3CCCC3",
+      "sourceFormula": "C16H21NO3",
+      "sourceInchiKey": "SYHGEUNFJIGTRX-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCCC(C(=O)c1ccc2c(c1)OCO2)C1CCCN1",
+      "sourceCanonicalSmiles": "CCCC(C(=O)c1ccc2c(c1)OCO2)N1CCCC1",
+      "retrievedAt": "2026-10-20T12:08:34.906358+00:00",
+      "responseSha256": "4332db6564f616ef5e52cfec21f83e56921badebe48e2d8018c13e4d2a474d7a",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 20111961,
+              "MolecularFormula": "C16H21NO3",
+              "SMILES": "CCCC(C(=O)C1=CC2=C(C=C1)OCO2)N3CCCC3",
+              "ConnectivitySMILES": "CCCC(C(=O)C1=CC2=C(C=C1)OCO2)N3CCCC3",
+              "InChIKey": "SYHGEUNFJIGTRX-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Naphyrone",
+      "librarySmiles": "CCCC(C(=O)c1ccc2ccccc2c1)C1CCCN1",
+      "libraryFormula": "C19H23NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Naphyrone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "different_graph_requires_review",
+      "cid": 11243002,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/11243002",
+      "sourceSmiles": "CCCC(C(=O)C1=CC2=CC=CC=C2C=C1)N3CCCC3",
+      "sourceFormula": "C19H23NO",
+      "sourceInchiKey": "DTNUPBSOODGRKW-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCCC(C(=O)c1ccc2ccccc2c1)C1CCCN1",
+      "sourceCanonicalSmiles": "CCCC(C(=O)c1ccc2ccccc2c1)N1CCCC1",
+      "retrievedAt": "2026-10-20T12:08:38.282380+00:00",
+      "responseSha256": "2885af516f8c5ec3bc1f28695f3c9862d69600de07355f23c471fe10f9d66662",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 11243002,
+              "MolecularFormula": "C19H23NO",
+              "SMILES": "CCCC(C(=O)C1=CC2=CC=CC=C2C=C1)N3CCCC3",
+              "ConnectivitySMILES": "CCCC(C(=O)C1=CC2=CC=CC=C2C=C1)N3CCCC3",
+              "InChIKey": "DTNUPBSOODGRKW-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Pyrovalerone",
+      "librarySmiles": "CCCC(C(=O)c1ccc(C)cc1)C1CCCN1",
+      "libraryFormula": "C16H23NO",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/Pyrovalerone/property/CanonicalSMILES,IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "status": "different_graph_requires_review",
+      "cid": 14373,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/14373",
+      "sourceSmiles": "CCCC(C(=O)C1=CC=C(C=C1)C)N2CCCC2",
+      "sourceFormula": "C16H23NO",
+      "sourceInchiKey": "SWUVZKWCOBGPTH-UHFFFAOYSA-N",
+      "storedFormulaMatchesSource": true,
+      "libraryCanonicalSmiles": "CCCC(C(=O)c1ccc(C)cc1)C1CCCN1",
+      "sourceCanonicalSmiles": "CCCC(C(=O)c1ccc(C)cc1)N1CCCC1",
+      "retrievedAt": "2026-10-20T12:08:30.790356+00:00",
+      "responseSha256": "52ac960feb7d84a3557e630d4976516d07e7d5e30890c2afe33448c9040ba9c3",
+      "sourceResponse": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 14373,
+              "MolecularFormula": "C16H23NO",
+              "SMILES": "CCCC(C(=O)C1=CC=C(C=C1)C)N2CCCC2",
+              "ConnectivitySMILES": "CCCC(C(=O)C1=CC=C(C=C1)C)N2CCCC2",
+              "InChIKey": "SWUVZKWCOBGPTH-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "4-Methyl-alpha-PPP",
+      "librarySmiles": "Cc1ccc(C(=O)C(C)C2CCCN2)cc1",
+      "retrievedAt": "2026-10-20T12:12:29.342751+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 6430745,
+              "MolecularFormula": "C14H19NO",
+              "SMILES": "CC1=CC=C(C=C1)C(=O)C(C)N2CCCC2",
+              "InChIKey": "APSJUNFBAXIXLK-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      },
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/6430745/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/6430745",
+      "sourceSmiles": "CC1=CC=C(C=C1)C(=O)C(C)N2CCCC2",
+      "sourceFormula": "C14H19NO"
+    }
+  ],
+  "namedSelections": [
+    {
+      "name": "Dextroamphetamine",
+      "documentedRole": "Amphetamine enantiomer reference",
+      "roleSourceUrl": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=6b8c97ac-c83c-4a1f-a33c-121239253abf",
+      "retrievedAt": "2026-10-20T12:12:34.090466+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 5826,
+              "MolecularFormula": "C9H13N",
+              "SMILES": "C[C@@H](CC1=CC=CC=C1)N",
+              "InChIKey": "KWTSXDURSIMDCE-QMMMGPOBSA-N"
+            }
+          ]
+        }
+      },
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/dextroamphetamine/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/5826",
+      "sourceSmiles": "C[C@@H](CC1=CC=CC=C1)N",
+      "sourceFormula": "C9H13N"
+    },
+    {
+      "name": "Levoamphetamine",
+      "documentedRole": "Amphetamine enantiomer reference",
+      "roleSourceUrl": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=690e1ef4-caf7-4c48-a4ae-d2a0ab684e82",
+      "retrievedAt": "2026-10-20T12:13:17.614516+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 32893,
+              "MolecularFormula": "C9H13N",
+              "SMILES": "C[C@H](CC1=CC=CC=C1)N",
+              "InChIKey": "KWTSXDURSIMDCE-MRVPVSSYSA-N"
+            }
+          ]
+        }
+      },
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/levamfetamine/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/32893",
+      "sourceSmiles": "C[C@H](CC1=CC=CC=C1)N",
+      "sourceFormula": "C9H13N"
+    },
+    {
+      "name": "Lisdexamfetamine",
+      "documentedRole": "Amphetamine prodrug reference",
+      "roleSourceUrl": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=da3148af-f9b6-4725-adae-3595b4c7dc4b",
+      "retrievedAt": "2026-10-20T12:13:21.810765+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 11597698,
+              "MolecularFormula": "C15H25N3O",
+              "SMILES": "C[C@@H](CC1=CC=CC=C1)NC(=O)[C@H](CCCCN)N",
+              "InChIKey": "VOBHXZCDAVEXEY-JSGCOSHPSA-N"
+            }
+          ]
+        }
+      },
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/lisdexamfetamine/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/11597698",
+      "sourceSmiles": "C[C@@H](CC1=CC=CC=C1)NC(=O)[C@H](CCCCN)N",
+      "sourceFormula": "C15H25N3O"
+    },
+    {
+      "name": "Phentermine",
+      "documentedRole": "Sympathomimetic reference",
+      "roleSourceUrl": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=70bc6f36-8087-4ccd-a396-a911c0ebae79",
+      "retrievedAt": "2026-10-20T12:13:25.982409+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 4771,
+              "MolecularFormula": "C10H15N",
+              "SMILES": "CC(C)(CC1=CC=CC=C1)N",
+              "InChIKey": "DHHVAGZRUROJKS-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      },
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/phentermine/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/4771",
+      "sourceSmiles": "CC(C)(CC1=CC=CC=C1)N",
+      "sourceFormula": "C10H15N"
+    },
+    {
+      "name": "Benzphetamine",
+      "documentedRole": "Sympathomimetic reference",
+      "roleSourceUrl": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=60a394a5-04c6-819e-e053-2a91aa0add1f",
+      "retrievedAt": "2026-10-20T12:13:29.426686+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 5311017,
+              "MolecularFormula": "C17H21N",
+              "SMILES": "C[C@@H](CC1=CC=CC=C1)N(C)CC2=CC=CC=C2",
+              "InChIKey": "YXKTVDFXDRQTKV-HNNXBMFYSA-N"
+            }
+          ]
+        }
+      },
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/benzphetamine/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/5311017",
+      "sourceSmiles": "C[C@@H](CC1=CC=CC=C1)N(C)CC2=CC=CC=C2",
+      "sourceFormula": "C17H21N"
+    },
+    {
+      "name": "Levomethamphetamine",
+      "documentedRole": "Nasal decongestant reference",
+      "roleSourceUrl": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=d11e916f-90a6-4099-bf83-75f2dfbd6266",
+      "retrievedAt": "2026-10-20T12:13:32.966410+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 36604,
+              "MolecularFormula": "C10H15N",
+              "SMILES": "C[C@H](CC1=CC=CC=C1)NC",
+              "InChIKey": "MYWUZJCMWCOHBA-SECBINFHSA-N"
+            }
+          ]
+        }
+      },
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/levmetamfetamine/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/36604",
+      "sourceSmiles": "C[C@H](CC1=CC=CC=C1)NC",
+      "sourceFormula": "C10H15N"
+    }
+  ],
+  "additions": [
+    {
+      "name": "Dextroamphetamine",
+      "cls": "Amphetamine-related reference",
+      "formula": "C9H13N",
+      "smiles": "C[C@@H](CC1=CC=CC=C1)N"
+    },
+    {
+      "name": "Levoamphetamine",
+      "cls": "Amphetamine-related reference",
+      "formula": "C9H13N",
+      "smiles": "C[C@H](CC1=CC=CC=C1)N"
+    },
+    {
+      "name": "Lisdexamfetamine",
+      "cls": "Amphetamine-related reference",
+      "formula": "C15H25N3O",
+      "smiles": "C[C@@H](CC1=CC=CC=C1)NC(=O)[C@H](CCCCN)N"
+    },
+    {
+      "name": "Phentermine",
+      "cls": "Amphetamine-related reference",
+      "formula": "C10H15N",
+      "smiles": "CC(C)(CC1=CC=CC=C1)N"
+    },
+    {
+      "name": "Benzphetamine",
+      "cls": "Amphetamine-related reference",
+      "formula": "C17H21N",
+      "smiles": "C[C@@H](CC1=CC=CC=C1)N(C)CC2=CC=CC=C2"
+    },
+    {
+      "name": "Levomethamphetamine",
+      "cls": "Amphetamine-related reference",
+      "formula": "C10H15N",
+      "smiles": "C[C@H](CC1=CC=CC=C1)NC"
+    }
+  ],
+  "scope": "Reviewed identity corrections and named parent-structure references. No target links or pharmacological predictions added. Product-label roles do not establish a receptor mechanism; stored parent graphs do not represent marketed salts/formulations.",
+  "toolSha256": "62c00167d8b20d3f2d4bc7ab9005ecf81efbf453b7c6e5159f8401ce9a9c5274"
+}

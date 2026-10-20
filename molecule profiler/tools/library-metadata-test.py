@@ -66,6 +66,26 @@ class MetadataTests(unittest.TestCase):
             expected=source.get('pref_name') or names.choose_name(source)[0]
             self.assertEqual(record['preferredName'],expected)
 
+    def test_family_motifs_are_graph_based_and_overlap_explicitly(self):
+        def families(smiles):
+            return set(tags.tags_for({'name':'Uninformative name','cls':'Not a family','smiles':smiles}))
+        two_c=families('COc1cc(Br)c(OC)cc1CCN')
+        self.assertIn('Family motif: Phenethylamines',two_c)
+        self.assertIn('Family motif: 2Cs (2,5-dimethoxyphenethylamines)',two_c)
+        self.assertNotIn('Family motif: 2Cs (2,5-dimethoxyphenethylamines)',families('NCCc1ccccc1'))
+        self.assertIn('Family motif: Tryptamines',families('CN(C)CCc1c[nH]c2ccccc12'))
+        self.assertNotIn('Family motif: Tryptamines',families('c1ccc2[nH]ccc2c1'))
+        self.assertIn('Family motif: Cathinones',families('CC(N)C(=O)c1ccccc1'))
+        self.assertNotIn('Family motif: Cathinones',families('CC(N)Cc1ccccc1'))
+        self.assertIn('Family motif: Amphetamines (alpha-methylphenethylamines)',families('CC(N)Cc1ccccc1'))
+        self.assertNotIn('Family motif: Amphetamines (alpha-methylphenethylamines)',families('NCCc1ccccc1'))
+        nitazene=families('CCOc1ccc(Cc2nc3cc([N+](=O)[O-])ccc3n2CCN(CC)CC)cc1')
+        self.assertIn('Family motif: Nitazenes',nitazene)
+        self.assertIn('Family motif: Nitazene-related benzimidazoles',nitazene)
+        desnitazene=families('CCOc1ccc(Cc2nc3ccccc3n2CCN(CC)CC)cc1')
+        self.assertIn('Family motif: Nitazene-related benzimidazoles',desnitazene)
+        self.assertNotIn('Family motif: Nitazenes',desnitazene)
+
 
 if __name__=='__main__':
     unittest.main()
