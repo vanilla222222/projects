@@ -33,6 +33,7 @@ const scripts = [
   'library-metadata-report-test.js',
   'family-reference-test.js',
   'pharmacology-test.js',
+  'pk-applicability-test.js',
   'sim-pagination-test.js',
   'batch-browser-test.js',
   'input-workflow-test.js',

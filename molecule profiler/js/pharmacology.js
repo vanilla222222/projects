@@ -38,11 +38,12 @@
   const correction=exponent>300?exponent:Math.log10(1+10**exponent);
   return {neutralFraction:10**(-correction),logD:Number.isFinite(logp)?logp-correction:null,scope:'Monoprotic Henderson–Hasselbalch approximation; assumes negligible partitioning of ionized species. Not valid as a general polyprotic/zwitterion model.'};
  }
+ function ionizationProfile(pka,kind,logp){return Array.from({length:15},(_,ph)=>({ph,...ionization(pka,ph,kind,logp)}));}
  function effects(ranks,catalog){return ranks.slice(0,8).flatMap(row=>{
   if(row.target.organism!=='Human')return [];
   const receptor=catalog.receptors.find(r=>r.id===row.target.gene||(r.targetAliases||[]).includes(row.target.gene));
   return receptor?[{target:receptor.name,rankScore:row.rankScore,mechanism:receptor.mechanism,activation:receptor.activation,blockade:receptor.blockade,sources:receptor.sources,
    scope:'Conditional receptor biology. Neither binding, action, exposure nor a clinical effect is established for the query.'}]:[];
  });}
- const api={exactGraph,relatedGraph,prodrugs,halfLife,ionization,effects};if(typeof module!=='undefined'&&module.exports)module.exports=api;root.Pharmacology=api;
+ const api={exactGraph,relatedGraph,prodrugs,halfLife,ionization,ionizationProfile,effects};if(typeof module!=='undefined'&&module.exports)module.exports=api;root.Pharmacology=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

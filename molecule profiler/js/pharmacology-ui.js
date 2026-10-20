@@ -9,18 +9,21 @@
   if(!current)return;
   const pka=read('pk-pka'),ph=read('pk-ph'),kind=$('pk-ion-kind').value,cl=read('pk-clearance'),vd=read('pk-volume');
   snapshot.scenarios={inputs:{pka,ph,kind,pkaSource:$('pk-pka-source').value,clearanceLPerHour:cl,volumeL:vd},source:'User-supplied parameters, not inferred measurements'};
+  $('pk-profile-details').hidden=true;$('pk-profile').tBodies[0].textContent='';
   if(pka===null)$('pk-ion-result').textContent='Enter a sourced pKa to calculate a conditional ionization/logD scenario. No pKa is guessed from a generic amine or acid group.';
   else try{const result=Pharmacology.ionization(pka,ph,kind,current.d.logp);snapshot.scenarios.ionization=result;
+   const profile=Pharmacology.ionizationProfile(pka,kind,current.d.logp);snapshot.scenarios.phProfile=profile;
+   $('pk-profile').tBodies[0].innerHTML=profile.map(p=>'<tr><th scope="row">'+p.ph+'</th><td>'+number(100*p.neutralFraction)+'</td><td>'+number(p.logD)+'</td></tr>').join('');$('pk-profile-details').hidden=false;
    $('pk-ion-result').textContent='Neutral fraction ≈ '+number(100*result.neutralFraction)+'%; conditional logD ≈ '+number(result.logD)+'. '+result.scope;
   }catch(e){$('pk-ion-result').textContent=e.message;}
   if(cl===null||vd===null)$('pk-half-scenario').textContent='Enter both values for a one-compartment half-life scenario.';
   else try{const h=Pharmacology.halfLife(cl,vd);snapshot.scenarios.halfLifeHours=h;$('pk-half-scenario').textContent='One-compartment scenario: '+number(h)+' h (ln(2) × Vd / CL). This is conditional on supplied parameters and is not an observed terminal half-life.';}catch(e){$('pk-half-scenario').textContent=e.message;}
  }
  function render(record,ranks){
-  if(current!==record){for(const id of ['pk-pka','pk-pka-source','pk-clearance','pk-volume'])$(id).value='';}
+  if(current!==record){$('pk-profile-details').open=false;for(const id of ['pk-pka','pk-pka-source','pk-clearance','pk-volume'])$(id).value='';}
   current=record;
   if(!record.pkPredictions){const feature=PKFeatures.features(record.mol,record.d,fingerprint(record.mol,'ecfp4s'));
-   record.pkPredictions=Object.fromEntries(Object.entries(PK_MODELS.models).map(([id,m])=>[id,PKFeatures.predict(m,feature)]));}
+   record.pkPredictions=Object.fromEntries(Object.entries(PK_MODELS.models).map(([id,m])=>[id,PKApplicability.predict(m,feature,record.mol)]));}
   const predictions=record.pkPredictions;
   const observed=PHARMACOLOGY_EVIDENCE.halfLifeObservations.filter(r=>Pharmacology.exactGraph(record.mol,buildMolecule(parseSmiles(r.compound.smiles))));
   $('pk-predictions').innerHTML=Object.entries(PK_MODELS.models).map(([id,model])=>{
@@ -45,7 +48,7 @@
   $('prodrug-sites').textContent=motifs.includes('ester')||motifs.includes('amide')?'A potentially cleavable ester/amide motif is present. This is a structural observation only: it does not establish biological cleavage, conversion speed, an active product or prodrug status.':'No ester/amide clue in this limited vocabulary. Other bioactivation mechanisms remain possible.';
   const effects=Pharmacology.effects(ranks,RECEPTOR_REFERENCE_CATALOG);
   $('effect-context').innerHTML=effects.length?effects.map(e=>'<details><summary>'+esc(e.target)+' — conditional functional context</summary><p>'+esc(e.mechanism)+'</p><p><strong>If activated:</strong> '+esc(e.activation)+'</p><p><strong>If blocked:</strong> '+esc(e.blockade)+'</p><p>'+esc(e.scope)+' '+e.sources.map(s=>link(s.url,s.label)).join(' · ')+'</p></details>').join(''):'No receptor context linked to the leading references in this scope. Other targets and effects remain unassessed.';
-  snapshot={schemaVersion:1,inputSmiles:record.smiles,name:record.name,modelVersion:'pk-exploratory-v1',modelSourceSha256:PK_MODELS.sourceSha256,
+  snapshot={schemaVersion:1,inputSmiles:record.smiles,name:record.name,chemistryEligibility:PKApplicability.assess(record.mol),modelVersion:'pk-exploratory-v1',modelSourceSha256:PK_MODELS.sourceSha256,
    modelInformation:Object.fromEntries(Object.entries(PK_MODELS.models).map(([id,m])=>[id,{version:m.version,units:m.units,metrics:m.metrics,sourceUrl:m.sourceUrl,transportUrl:m.transportUrl,inputSha256:m.inputSha256}])),
    predictions,preferredHalfLifeEvidence:observed.length?'source_observation':'experimental_model',observations:observed,prodrugs:relationships,conditionalEffects:effects,queryMotifs:motifs,
    interpretation:'Experimental regressions, documented exact-graph relationships and conditional receptor biology are distinct evidence types. No individual effects, BBB delivery or functional action inferred from motifs or binding similarity.'};
@@ -65,6 +68,8 @@
  $('prodrug-panel').addEventListener('click',event=>{const button=event.target.closest('button[data-pharm-smiles]');if(!button)return;$('smiles-input').value=button.dataset.pharmName+', '+button.dataset.pharmSmiles;$('run').click();});
  $('pharmacology-export').addEventListener('click',()=>{if(!snapshot)return;const b=new Blob([JSON.stringify(snapshot,null,2)+'\n'],{type:'application/json'}),url=URL.createObjectURL(b),a=document.createElement('a');a.href=url;a.download='pharmacology-evidence.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
  function safeRender(record,ranks){try{render(record,ranks);}catch(error){
+  $('pk-profile-details').hidden=true;$('pk-profile').tBodies[0].textContent='';
+  $('pk-ion-result').textContent='Ionization scenario unavailable.';$('pk-half-scenario').textContent='Half-life scenario unavailable.';
   current=record;snapshot={schemaVersion:1,inputSmiles:record.smiles,error:String(error.message),interpretation:'Additional prediction/evidence module unavailable; no result inferred.'};
   for(const id of ['pk-predictions','pk-observations','prodrug-matches','prodrug-examples','prodrug-related','prodrug-all','prodrug-enumeration','prodrug-sites','effect-context'])$(id).textContent='';
   $('pk-predictions').textContent='Additional predictors unavailable: '+error.message;

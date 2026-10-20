@@ -183,3 +183,22 @@ Training does not contact a prediction service. Browser inference and graph
 matching run locally. Internal regression, source agreement and held-out dataset
 performance are distinct from independent experimental validation. Real
 Chromium/visual testing remains unverified in this environment.
+
+## Browser eligibility and pH exploration update
+
+The `pk-chemistry-gate-v1` screen runs before model inference. It withholds
+model outputs for disconnected mixtures, elements outside C/N/O/S/P/F/Cl/Br/I,
+isotope-labelled graphs and unrecognized valences or possible open-shell
+chemistry. Common closed-shell ionic forms are recognized explicitly. This is
+a deliberately conservative browser screen, not RDKit sanitization or a complete
+radical detector. No salts are stripped or structures silently neutralized.
+Passing does not establish applicability; descriptor bounds and coarse
+fingerprint similarity checks still apply, and the original accuracy limitations
+remain. Neither model weights nor feature definitions were changed or retrained.
+The JSON sidecar includes chemistry eligibility and its policy version.
+
+Supplying a pKa also exposes an expandable pH 0–14 table and exports the
+conditional profile. Every point uses the same monoprotic approximation and
+WLOGP estimate. These are scenarios, not measured logD, solubility, absorption
+or BBB predictions. Invalid or missing inputs clear the profile; changing
+molecules resets the pKa and collapses the table.

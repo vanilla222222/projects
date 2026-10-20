@@ -19,11 +19,16 @@ const {PHARMACOLOGY_EVIDENCE:evidence}=require('../data/pharmacology-evidence');
   assert.match($('pk-predictions').textContent,/Held-out/);assert.match($('prodrug-status').textContent,/unknown/);
   function input(id,value){$(id).value=value;$(id).dispatchEvent(new w.Event('input',{bubbles:true}));}
   input('pk-pka','7.4');input('pk-ph','7.4');assert.match($('pk-ion-result').textContent,/50%/);
+  assert.equal($('pk-profile-details').hidden,false);assert.equal($('pk-profile').tBodies[0].rows.length,15);
   input('pk-pka-source','Fixture source');input('pk-clearance','10');input('pk-volume','100');assert.match($('pk-half-scenario').textContent,/6.93/);
   input('pk-clearance','0');assert.match($('pk-half-scenario').textContent,/positive/);input('pk-clearance','10');
   $('pharmacology-export').click();const sidecar=JSON.parse(await downloads.at(-1).text());
+  assert.equal(sidecar.scenarios.phProfile.length,15);assert.ok(sidecar.chemistryEligibility.eligible);
   assert.equal(sidecar.scenarios.inputs.pkaSource,'Fixture source');assert.equal(sidecar.scenarios.inputs.pka,7.4);
   assert.ok(sidecar.modelInformation.halfLife.sourceUrl);assert.ok(sidecar.modelSourceSha256['js/pk-features.js']);
+  $('smiles-input').value='Mixture, CCO.O';$('run').click();
+  await until(()=>w.PharmacologyUI.getSnapshot().inputSmiles==='CCO.O'&&!$('run').disabled);
+  const unsupported=w.PharmacologyUI.getSnapshot();assert.equal(unsupported.predictions.halfLife.available,false);assert.match(unsupported.predictions.halfLife.reason,/Disconnected/);assert.equal($('pk-profile-details').hidden,true);
   const r=evidence.relationships.find(r=>r.prodrug.name==='Lisdexamfetamine');
   $('smiles-input').value='Lisdexamfetamine, '+r.prodrug.smiles;$('run').click();
   await until(()=>w.PharmacologyUI.getSnapshot().inputSmiles===r.prodrug.smiles&&!$('run').disabled);
