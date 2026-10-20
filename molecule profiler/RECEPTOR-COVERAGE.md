@@ -136,3 +136,5 @@ These figures reflect the stated Ki/Kd query policy. Shortfalls are not proof
 that no additional binding-IC50, functional or other experimental evidence
 exists. Those endpoints require an explicitly documented extension of the
 curation protocol, with their experimental interpretation preserved.
+
+Coverage cards, evidence filters, and exported coverage reports apply the same annotation contract. Invalid source URLs, missing assay context, and unsupported functional-action claims cannot count toward the 50-profile goal. Malformed annotations are rejected rather than crashing coverage browsing. This contract checks record completeness and consistency; it does not independently validate the cited experiment.

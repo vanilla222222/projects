@@ -16,7 +16,7 @@
       && (!o.coverage || (o.coverage==='below_goal' ? coverage(r,targets,library,annotations).remaining>0
         : o.coverage==='at_goal' ? coverage(r,targets,library,annotations).remaining===0
         : o.coverage==='awaiting' ? links(r,targets).length===0
-        : o.coverage==='annotated' ? (annotations||[]).some(a=>a.receptorId===r.id)
+        : o.coverage==='annotated' ? validAnnotationsFor(r,library,annotations).length>0
         : links(r,targets).length>0)));
   }
   function links(receptor, targets) {
@@ -27,13 +27,18 @@
     }));
   }
   const LIGAND_GOAL=50;
+  function validAnnotationsFor(receptor,library,annotations) {
+    const relevant=(annotations||[]).filter(a=>a && a.receptorId===receptor.id);
+    const invalid=new Set(validateAnnotations(relevant,[receptor],library).map(e=>e.index));
+    return relevant.filter((a,i)=>!invalid.has(i));
+  }
   function coverage(receptor,targets,library,annotations) {
     const linked=links(receptor,targets);
     const listed=new Set(linked.flatMap(({target})=>target.ligands||[]));
     const entries=new Map((library||[]).filter(e=>!e.propertyOnly).map(e=>[e.name,e]));
     const resolved=[...listed].filter(name=>entries.has(name));
     const profiles=new Set();
-    for(const a of annotations||[]) {
+    for(const a of validAnnotationsFor(receptor,library,annotations)) {
       const entry=entries.get(a.ligandName);
       if(a.receptorId===receptor.id && listed.has(a.ligandName) && entry
         && a.librarySmiles===entry.smiles && /^[a-f0-9]{64}$/.test(a.identityKey||''))profiles.add(a.identityKey);
