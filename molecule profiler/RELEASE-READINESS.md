@@ -29,9 +29,16 @@ An installed Chromium can be selected with CHROMIUM_PATH=/usr/bin/chromium.
 
 ## Current blocking uncertainty
 
-The browser workflow is committed but a passing whole-application run has not been demonstrated.
+The browser test suite is retained locally, but a passing whole-application Chromium run has not been demonstrated.
 
-On 2026-10-19, regression run 39324978173 at `02196e5e46b09db4a934df024b9914461dd616c6` had two failed jobs, both with no steps and runner ID 0. The JavaScript check annotation states: "The job was not started because your account is locked due to a billing issue." This is an account-level runner admission failure. Repository code changes cannot resolve it; the account owner must resolve GitHub billing, then rerun the workflows. Pages publication is a separate outcome.
+GitHub-hosted project test workflows are removed; verification runs locally. The remaining hosted RDKit and formula-audit workflows were removed after the RDKit check on `9601b8cf6965f86f18a0ab540acc1fc9c37a3afe` failed before any steps ran (runner ID 0). Its annotation reported an account billing lock. This was a runner-admission failure, not an executed chemistry test. Pages build and deployment succeeded separately. Historical failed checks remain attached to their original commits; removing the workflows prevents new project audit jobs from being scheduled.
+
+The local audit tools remain available:
+
+    python tools/rdkit-library-audit.py --output rdkit-audit.json
+    python tools/verify-reference-formulas.py --report reference-formula-report.json
+
+The formula command above is read-only; `--write-missing` is an explicit repair option. Local regression success and scientific validation must still be reported separately from Pages publication.
 
 To diagnose future failures with no steps, inspect the check annotations, not only job logs:
 
