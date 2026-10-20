@@ -121,3 +121,11 @@ logP and 3,678 molar-refractivity values within 1e-7 of RDKit. Residual counts a
 maximum differences are unchanged: four small logP residuals (maximum 0.0484)
 and three refractivity residuals (maximum 0.884). The complete per-query source
 records and remaining coverage shortfalls are retained with the second batch.
+
+
+The third receptor-binding batch adds 177 structures, taking the library to
+3,858 entries. Independent RDKit checks found no invalid structures or formula
+mismatches. All 177 additions agree with the same-graph Crippen logP/MR
+implementation within 1e-7; the previous four logP and three MR residuals remain
+unchanged. The complete audit is `validation/library-descriptor-rdkit.json`.
+This is computed-descriptor equivalence, not experimental property validation.

@@ -26,12 +26,12 @@ Reproduce the complete current evaluation with:
 node tools/target-ranking-evaluate.js --report validation/target-ranking-full-profile-v1.json
 ```
 
-The committed report covers 1,907 profiles, 142 targets and 3,681 library entries. 16 queries have no rankable curated label after holdout. Display-order retrieval percentages are:
+The committed report covers 2,084 profiles, 147 targets and 3,858 library entries. 16 queries have no rankable curated label after holdout. Display-order retrieval percentages are:
 
 | Method | Top 1 | Top 5 | Top 10 | Target macro top 5, guaranteed–possible |
 | --- | ---: | ---: | ---: | ---: |
-| Legacy | 86.73% | 92.76% | 94.18% | 52.91–54.36% |
-| Experimental ensemble | 87.15% | 93.18% | 94.70% | 53.33–54.77% |
+| Legacy | 86.71% | 93.09% | 94.39% | 54.29–55.48% |
+| Experimental ensemble | 87.24% | 93.52% | 95.01% | 54.76–55.99% |
 
 The ensemble has a modest advantage on this full internal snapshot, while target-balanced coverage remains much weaker. This does not support a claim of generally accurate receptor prediction. Legacy remains the default. Neither formula nor weights were tuned to these results. The old `target-ranking-ensemble-v1.json` is a historical 100-query schema-v1 report and should not be compared as a longitudinal improvement figure. Compare methods within the same report and reference snapshot. Broader claims require verified assay-linked positives, negatives, temporal/scaffold splits and external review.
 

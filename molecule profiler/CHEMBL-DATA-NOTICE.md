@@ -2,8 +2,9 @@
 
 Imported binding-reference data are from **ChEMBL_37** (EMBL-EBI), released
 2026-05-01: https://www.ebi.ac.uk/chembl/ . The source version and retrieval times
-are retained in `validation/chembl-receptor-binding-batch.json` and
-`validation/chembl-receptor-binding-batch-2.json`. Per-record release provenance
+are retained in `validation/chembl-receptor-binding-batch.json`,
+`validation/chembl-receptor-binding-batch-2.json`, and
+`validation/chembl-receptor-binding-batch-3.json`. Per-record release provenance
 is retained in the published ligand annotations.
 
 The imported subset and adaptations of it are redistributed under the

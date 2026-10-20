@@ -138,3 +138,40 @@ exists. Those endpoints require an explicitly documented extension of the
 curation protocol, with their experimental interpretation preserved.
 
 Coverage cards, evidence filters, and exported coverage reports apply the same annotation contract. Invalid source URLs, missing assay context, and unsupported functional-action claims cannot count toward the 50-profile goal. Malformed annotations are rejected rather than crashing coverage browsing. This contract checks record completeness and consistency; it does not independently validate the cited experiment.
+
+
+## Third batch: adenosine A3 and alpha-adrenoceptors
+
+`validation/chembl-receptor-binding-batch-3.json` retains the selected ChEMBL_37
+assay records for ADORA3, ADRA1A, ADRA1B, ADRA1D, ADRA2A, ADRA2B and ADRA2C.
+Each panel has 50 distinct source-linked profiles under the same Ki/Kd policy.
+The batch adds 350 binding associations and 177 structures, reusing exact
+isomeric graph matches already in the library. Five new scoring rows are
+registered: ADORA3, ADRA1B, ADRA1D, ADRA2B and ADRA2C. Existing ADRA1A and
+ADRA2A ligand lists are extended, preserving their earlier entries.
+
+A3 reaches the 2,000-activity examination cap. The snapshot records this limit;
+the selected profiles are neither an exhaustive inventory nor a diversity-
+optimized sample. Multi-receptor target records, incomplete tautomer enumerations
+and unsupported structures do not count. No functional action or selectivity is
+inferred from these binding measurements.
+
+```sh
+python -B tools/curate-receptor-bindings.py --add-targets \
+  --genes ADORA3,ADRA1A,ADRA1B,ADRA1D,ADRA2A,ADRA2B,ADRA2C \
+  --output candidate-batch-3.json
+```
+
+Review the snapshot before adding `--apply`. Preserve all earlier batch snapshots
+as historical source records.
+
+After this batch, the library contains 3,858 structures and 147 scoring targets,
+with 1,480 source-linked observations across the three snapshots. There are
+29 catalog panels at the strict 50-profile goal and 51 with at least 50 resolved
+listed names. Sixty-six catalog records link to scoring rows; 80 await them.
+These are coverage counts, not independent scaffold counts or accuracy metrics.
+
+`validation/receptor-batch-3-regression.json` records the local Node regression
+run and its before/after source digest. The digest identifies the tested working
+source; the recorded Git revision is its parent commit when the source is dirty.
+Regression success checks implementation consistency, not experimental accuracy.
