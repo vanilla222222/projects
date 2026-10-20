@@ -3,28 +3,28 @@
   "rdkitVersion": "2026.09.1",
   "scope": "Same-graph computed Crippen logP and molar refractivity; not experimental accuracy or identity verification.",
   "sourceSha256": {
-    "data/library.js": "e2e6309bb14fcfbefd843f8ce479e09d19a74a58d5b8b9f15dff4e85ed824962",
+    "data/library.js": "27d60c3f594459add60152ee98ff2a9061fdf288f5e20aec62a8c119aee26450",
     "js/smiles.js": "ae7063246faee39707c62003a038fd8ce825e5c247f85ab9b6191e4383caca66",
     "js/mol.js": "64af3686d28cf3772cf1159a502ca5f406870ff9d42fa56fc4d84da4ebdc3b08",
     "js/descriptors.js": "2612d387dbe7a7d0d789984c8c062c5a3c6ae43781021e4f225659bc7a98ee4e",
     "tools/library-descriptor-audit.py": "1fafcff6fecc31133051a1695f39f6a96560ebfbe55cab65c2454a48006ec75c"
   },
-  "entries": 3116,
+  "entries": 3681,
   "errors": [],
   "summary": {
     "logp": {
-      "compared": 3116,
-      "meanAbsoluteDifference": 4.271501925764525e-05,
+      "compared": 3681,
+      "meanAbsoluteDifference": 3.61586525422882e-05,
       "maxAbsoluteDifference": 0.048399999999998666,
-      "within1e_7": 3112,
+      "within1e_7": 3677,
       "above0_05": 0,
       "above0_5": 0
     },
     "mr": {
-      "compared": 3116,
-      "meanAbsoluteDifference": 0.0007877086008248077,
+      "compared": 3681,
+      "meanAbsoluteDifference": 0.0006668024993846689,
       "maxAbsoluteDifference": 0.8840000000000146,
-      "within1e_7": 3113,
+      "within1e_7": 3678,
       "above0_05": 3,
       "above0_5": 3
     }

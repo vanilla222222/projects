@@ -114,3 +114,10 @@ new dye-like CHEMBL405526 joins the previously documented riboflavin and
 1-formyl-LSD refractivity cases; carboplatin still has a small logP residual.
 There are now 62 passing descriptor input representations. The historical
 2,782-entry figures above describe the preceding correction milestone.
+
+The second coverage batch expands the library to 3,681 entries and the scoring
+registry to 142 targets. The regenerated same-graph Crippen comparison has 3,677
+logP and 3,678 molar-refractivity values within 1e-7 of RDKit. Residual counts and
+maximum differences are unchanged: four small logP residuals (maximum 0.0484)
+and three refractivity residuals (maximum 0.884). The complete per-query source
+records and remaining coverage shortfalls are retained with the second batch.

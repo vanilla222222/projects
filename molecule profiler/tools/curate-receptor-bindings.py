@@ -26,7 +26,12 @@ ROOT = Path(__file__).resolve().parents[1]
 API = 'https://www.ebi.ac.uk/chembl/api/data/'
 ACCESSIONS = {'HRH2':'P25021','CHRM1':'P11229','CHRM2':'P08172','CHRM3':'P20309',
  'ADRB1':'P08588','ADRB2':'P07550','ADORA1':'P30542','ADORA2A':'P29274',
- 'AGTR1':'P30556','CYSLTR1':'Q9Y271'}
+ 'AGTR1':'P30556','CYSLTR1':'Q9Y271',
+ 'MTNR1A':'P48039','P2RY12':'Q9H244','PPARG':'P37231','RARA':'P10276',
+ 'HRH3':'Q9Y5N1','HRH4':'Q9H3N8','CHRM4':'P08173','CHRM5':'P08912',
+ 'MTNR1B':'P49286','ADRB3':'P13945','DRD5':'P21918','ADORA2B':'P29275',
+ 'HTR4':'Q13639','HTR5A':'P47898'}
+DEFAULT_GENES=('HRH2','CHRM1','CHRM2','CHRM3','ADRB1','ADRB2','ADORA1','ADORA2A','AGTR1','CYSLTR1')
 
 
 def accepted_activity(a, target_id):
@@ -76,14 +81,52 @@ def js_string(value):
     return "'" + value.replace('\\','\\\\').replace("'","\\'") + "'"
 
 
+def target_from_catalog(gene, catalog):
+    matches=[r for r in catalog if r['id']==gene and r.get('genes')==[gene]
+             and r.get('kind') in ('GPCR','Nuclear receptor','Catalytic receptor')]
+    if len(matches)!=1:
+        raise ValueError('New target must resolve to one ordinary catalog gene: '+gene)
+    r=matches[0]
+    family={'GPCR':'GPCR','Nuclear receptor':'Nuclear receptor','Catalytic receptor':'Kinase'}[r['kind']]
+    return {'name':r['name'],'gene':gene,'family':family,'organism':'Human',
+            'note':'ChEMBL assay-linked human binding references. Functional action and selectivity unassigned.',
+            'ligands':[]}
+
+
+def append_target_rows(text, rows):
+    marker='];\n\nif (typeof module'
+    if text.count(marker)!=1:
+        raise ValueError('Unexpected target file format')
+    prefix,suffix=text.split(marker)
+    prefix=prefix.rstrip()
+    if rows and prefix.endswith('}'):
+        prefix+=','
+    added=''
+    for t in rows:
+        added+='  { name: '+js_string(t['name'])+', gene: '+js_string(t['gene'])+', family: '+js_string(t['family'])+', organism: '+js_string(t['organism'])+',\n'
+        added+='    note: '+js_string(t['note'])+',\n    ligands: ['+', '.join(js_string(n) for n in t['ligands'])+'] },\n'
+    return prefix+'\n'+added+marker+suffix
+
+
+def merge_annotations(existing, incoming, genes, previous_release):
+    retained=[]
+    for a in existing:
+        own=a.get('curationSource')=='chembl-human-binding-v1'
+        if own and a['receptorId'] in genes:
+            continue
+        retained.append({**a,'sourceRelease':a.get('sourceRelease',previous_release)} if own else a)
+    return retained+incoming
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument('--genes', default=','.join(ACCESSIONS))
+    ap.add_argument('--genes', default=','.join(DEFAULT_GENES))
     ap.add_argument('--goal', type=int, default=50)
     ap.add_argument('--max-activities', type=int, default=2000)
     ap.add_argument('--cache', type=Path, default=Path('/tmp/mp-chembl-cache'))
     ap.add_argument('--offline', action='store_true')
     ap.add_argument('--apply', action='store_true')
+    ap.add_argument('--add-targets', action='store_true',help='Permit source-backed rows for ordinary catalog genes; never assemblies')
     ap.add_argument('--output', type=Path, required=True)
     args = ap.parse_args()
     if not 1 <= args.goal <= 100 or not 1 <= args.max_activities <= 10000:
@@ -115,23 +158,30 @@ def main():
     release = source_status.get('chembl_db_version')
     if not release:
         raise ValueError('Missing ChEMBL release metadata')
-    code="const {LIBRARY}=require('./data/library.js'),{TARGETS}=require('./data/targets.js'),{RECEPTOR_LIGAND_ANNOTATIONS}=require('./data/receptor-ligand-annotations.js');console.log(JSON.stringify({library:LIBRARY,targets:TARGETS,annotations:RECEPTOR_LIGAND_ANNOTATIONS}));"
-    current = json.loads(subprocess.check_output(['node','-e',code],cwd=ROOT,text=True))
-    targets = {t['gene']:t for t in current['targets']}
-    exact = {}
+    source_paths=['data/library.js','data/targets.js','data/receptor-ligand-annotations.js','data/receptor-catalog.js']
+    source_before={p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in source_paths}
+    code="const {LIBRARY}=require('./data/library.js'),{TARGETS}=require('./data/targets.js'),{RECEPTOR_LIGAND_ANNOTATIONS,RECEPTOR_BINDING_SOURCE}=require('./data/receptor-ligand-annotations.js'),{RECEPTOR_REFERENCE_CATALOG}=require('./data/receptor-catalog.js');console.log(JSON.stringify({library:LIBRARY,targets:TARGETS,annotations:RECEPTOR_LIGAND_ANNOTATIONS,source:RECEPTOR_BINDING_SOURCE,catalog:RECEPTOR_REFERENCE_CATALOG.receptors}));"
+    current=json.loads(subprocess.check_output(['node','-e',code],cwd=ROOT,text=True))
+    if any(hashlib.sha256((ROOT/p).read_bytes()).hexdigest()!=h for p,h in source_before.items()):
+        raise ValueError('Source changed while loading the curation snapshot')
+    targets={t['gene']:t for t in current['targets']}
+    new_genes=set()
+    exact={}
     for e in current['library']:
         if e.get('propertyOnly'):
             continue
-        mol = Chem.MolFromSmiles(e['smiles'])
+        mol=Chem.MolFromSmiles(e['smiles'])
         if mol is not None:
             exact.setdefault(Chem.MolToSmiles(mol,isomericSmiles=True),e)
-    used_names = {e['name'] for e in current['library']}
-    additions, annotations, panels = [], [], []
-    source_before = {str(p):hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in ['data/library.js','data/targets.js','data/receptor-ligand-annotations.js']}
+    used_names={e['name'] for e in current['library']}
+    additions,annotations,panels=[],[],[]
 
     for gene in genes:
         if gene not in targets:
-            raise ValueError('No existing target row for '+gene)
+            if not args.add_targets:
+                raise ValueError('No existing target row for '+gene+'; use --add-targets after reviewing catalog identity')
+            targets[gene]=target_from_catalog(gene,current['catalog'])
+            new_genes.add(gene)
         accession = ACCESSIONS[gene]
         matches = get('target',{'target_components__accession':accession,'organism':'Homo sapiens','limit':100})['targets']
         matches = [t for t in matches if t['target_type']=='SINGLE PROTEIN' and len(t['target_components'])==1
@@ -192,7 +242,7 @@ def main():
                 additions.append(entry);used_names.add(entry['name']);exact[item['entry']['smiles']]=entry
             if entry['name'] not in targets[gene]['ligands']:
                 targets[gene]['ligands'].append(entry['name'])
-            annotations.append({'receptorId':gene,'ligandName':entry['name'],'action':'binding_only','evidenceType':'binding','curationSource':'chembl-human-binding-v1',
+            annotations.append({'receptorId':gene,'ligandName':entry['name'],'action':'binding_only','evidenceType':'binding','curationSource':'chembl-human-binding-v1','sourceRelease':release,
               'sourceUrl':'https://www.ebi.ac.uk/chembl/explore/assay/'+a['assay_chembl_id'],
               'species':'Homo sapiens','assay':assay['description'],
               'endpoint':a['standard_type']+' = '+a['standard_value']+' nM (ChEMBL standardized)',
@@ -201,21 +251,21 @@ def main():
               'chemblMoleculeId':a['molecule_chembl_id'],'chemblTargetId':tid,'activityId':a['activity_id'],
               'assayId':a['assay_chembl_id'],'documentId':a['document_chembl_id'],
               'identityKey':item['identityKey'],'librarySmiles':entry['smiles']})
-        panel={'gene':gene,'accession':accession,'chemblTargetId':tid,'targetName':target['pref_name'],
+        panel={'gene':gene,'newTarget':gene in new_genes,'targetRegistered':gene not in new_genes or bool(chosen),'accession':accession,'chemblTargetId':tid,'targetName':target['pref_name'],
                'targetComponent':target['target_components'][0],
                'availableActivityRows':total,'examinedRows':len(raw),'activityCapReached':len(raw)<total,
                'eligibleActivityRows':len(eligible),'distinctCandidateProfiles':len(selected),
                'browserFormulaRejected':structure_failures,'selected':chosen,'count':len(chosen),'remaining':max(0,args.goal-len(chosen))}
         panels.append(panel)
         print(gene+': '+str(len(chosen))+'/'+str(args.goal)+' sourced distinct binding profiles; '+str(len(raw))+' activity rows examined',flush=True)
-    retained=[a for a in current['annotations'] if a['receptorId'] not in genes or a.get('curationSource')!='chembl-human-binding-v1']
-    merged_annotations=retained+annotations
+    merged_annotations=merge_annotations(current['annotations'],annotations,genes,current.get('source',{}).get('release','unrecorded'))
     report={'schemaVersion':1,'rdkitVersion':rdBase.rdkitVersion,'goal':args.goal,
        'sourceDatabase':source_status,'sourceUrl':'https://www.ebi.ac.uk/chembl/','licenseUrl':'https://creativecommons.org/licenses/by-sa/3.0/',
        'protocol':'Human single-protein binding Ki/Kd, exact nM values in (0,1000], ChEMBL source 1, no data-validity flags/duplicates/variants; direct human assay assignment with confidence 9. First qualifying distinct profiles by activity ID; not a diversity-optimized or comprehensive ligand inventory.',
        'identityMethod':'SHA256 of RDKit canonical isomeric SMILES after uncharging/tautomer grouping (stereo removal disabled); grouping only, stored source graphs unchanged.',
        'limitations':['ChEMBL-curated assay records, not independent remeasurement.','Binding does not establish agonism, antagonism or selectivity.','Research IDs are valid entries even without established drug names.','Coverage is not scaffold diversity or predictive validation.','Availability may be limited by query filters and activity cap; do not fill gaps with inferred ligands.'],
-       'sourceBeforeSha256':source_before,'requests':requests,'panels':panels,'newStructures':additions,'annotations':annotations}
+       'sourceBeforeSha256':source_before,'requests':requests,'panels':panels,'newStructures':additions,'annotations':annotations,
+       'newTargets':[targets[g] for g in genes if g in new_genes and targets[g]['ligands']]}
     if args.apply:
         for p,h in source_before.items():
             if hashlib.sha256((ROOT/p).read_bytes()).hexdigest()!=h:
@@ -225,7 +275,7 @@ def main():
         if text.count(marker)!=1:
             raise ValueError('Unexpected library format')
         rows=''.join('  { name: '+js_string(e['name'])+', cls: '+js_string(e['cls'])+', formula: '+js_string(e['formula'])+', smiles: '+js_string(e['smiles'])+' },\n' for e in additions)
-        library_path.write_text(text.replace(marker,rows+marker))
+        library_text=text.replace(marker,rows+marker)
         path=ROOT/'data/targets.js';text=path.read_text();lines=text.splitlines(True);gene=None
         for i,line in enumerate(lines):
             match=re.search(r"gene: '([^']*)'",line)
@@ -233,8 +283,21 @@ def main():
             if gene in genes and line.lstrip().startswith('ligands: ['):
                 head,_,tail=re.match(r'(\s*ligands: \[)(.*)(\] \},?\n?)',line).groups()
                 lines[i]=head+', '.join(js_string(n) for n in targets[gene]['ligands'])+tail
-        path.write_text(''.join(lines))
-        (ROOT/'data/receptor-ligand-annotations.js').write_text("'use strict';\n// ChEMBL "+release+" assay-linked binding evidence, CC BY-SA 3.0. See CHEMBL-DATA-NOTICE.md.\n// Binding associations do not establish functional actions.\nconst RECEPTOR_BINDING_SOURCE = "+json.dumps({'database':'ChEMBL','release':release,'sourceUrl':'https://www.ebi.ac.uk/chembl/','licenseUrl':'https://creativecommons.org/licenses/by-sa/3.0/'})+";\nconst RECEPTOR_LIGAND_ANNOTATIONS = "+json.dumps(merged_annotations,indent=2)+";\nif(typeof module!=='undefined'&&module.exports)module.exports={RECEPTOR_LIGAND_ANNOTATIONS,RECEPTOR_BINDING_SOURCE};\n")
+        target_text=''.join(lines)
+        new_targets=report['newTargets']
+        if new_targets:
+            target_text=append_target_rows(target_text,new_targets)
+        metadata={'database':'ChEMBL','release':release,
+                  'releases':sorted({release}|{a['sourceRelease'] for a in merged_annotations if a.get('sourceRelease') and a.get('curationSource')=='chembl-human-binding-v1'}),
+                  'sourceUrl':'https://www.ebi.ac.uk/chembl/','licenseUrl':'https://creativecommons.org/licenses/by-sa/3.0/'}
+        annotation_text="'use strict';\n// "+release+" assay-linked binding evidence, CC BY-SA 3.0. See CHEMBL-DATA-NOTICE.md.\n// Binding associations do not establish functional actions.\nconst RECEPTOR_BINDING_SOURCE = "+json.dumps(metadata)+";\nconst RECEPTOR_LIGAND_ANNOTATIONS = "+json.dumps(merged_annotations,indent=2)+";\nif(typeof module!=='undefined'&&module.exports)module.exports={RECEPTOR_LIGAND_ANNOTATIONS,RECEPTOR_BINDING_SOURCE};\n"
+        # Prepare all serializations before writing any project file.
+        for p,h in source_before.items():
+            if hashlib.sha256((ROOT/p).read_bytes()).hexdigest()!=h:
+                raise ValueError('Source changed while preparing the update: '+p)
+        library_path.write_text(library_text)
+        path.write_text(target_text)
+        (ROOT/'data/receptor-ligand-annotations.js').write_text(annotation_text)
     report['applied']=args.apply
     report['sourceAfterSha256']={p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in source_before}
     report['toolSha256']=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()

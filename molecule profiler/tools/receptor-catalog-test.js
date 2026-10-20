@@ -45,10 +45,13 @@ assert.ok(api.validateAnnotations([{...fixture,receptorId:'made-up'}],rows,LIBRA
 assert.equal(api.browse(rows,{search:'5-HT1F'},TARGETS,annotations)[0].id,'HTR1F');
 assert.ok(api.browse(rows,{search:'cholin'},TARGETS,annotations).some(r=>r.id==='CHRM1'));
 assert.ok(api.browse(rows,{family:'Dopamine'},TARGETS,annotations).length===5);
+const sourced=annotations.find(a=>a.chemblMoleculeId);
+assert.ok(api.browse(rows,{search:sourced.chemblMoleculeId},TARGETS,annotations).some(r=>r.id===sourced.receptorId),'Published molecule IDs must find their linked receptor');
+assert.ok(api.browse(rows,{search:'Cimetidine'},TARGETS,annotations).some(r=>r.id==='HRH2'),'Legacy ligand names must remain searchable');
 assert.equal(api.browse(rows,{coverage:'annotated'},TARGETS,[]).length,0);
 const awaiting=api.browse(rows,{coverage:'awaiting'},TARGETS,annotations);
-assert.ok(awaiting.length>=90);
-assert.ok(awaiting.some(r=>r.id==='DRD5'));
+assert.ok(awaiting.every(r=>api.links(r,TARGETS).length===0),'Awaiting filter must exclude newly sourced target rows');
+assert.equal(awaiting.length,rows.filter(r=>api.links(r,TARGETS).length===0).length);
 const untouched=JSON.stringify(TARGETS);
 const handoff=api.createHandoff(rows,TARGETS);
 assert.equal(handoff.receptors.length,rows.length);

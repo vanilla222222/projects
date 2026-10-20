@@ -5,8 +5,9 @@
 //   node tools/retrieval-benchmark.js            print the report
 //   node tools/retrieval-benchmark.js --write    also regenerate data/benchmark.js
 //
-// For every ligand of every target, the ligand is removed from the pool, the
-// 132 targets are re-scored exactly as the page scores them, and the rank of
+// For every ligand of every target, the ligand name is removed from the pool.
+// Registered targets retain the historical score-only/target-order tie protocol;
+// the rank of
 // the ligand's own target is recorded. A target with fewer than two ligands
 // cannot be measured at all: dropping its only ligand leaves it unscoreable.
 
@@ -21,6 +22,7 @@ Object.assign(global, molmod);
 const fp = require(path.join(base, 'js/fingerprints.js'));
 const { LIBRARY } = require(path.join(base, 'data/library.js'));
 const { TARGETS } = require(path.join(base, 'data/targets.js'));
+const {evaluate} = require('./retrieval-evaluate.js');
 
 function median(list) {
   const sorted = [...list].sort((a, b) => a - b);
@@ -52,39 +54,12 @@ function run(methodKey, metricKey) {
     ligands: target.ligands.filter((name) => byName.has(name))
   }));
 
-  const trials = [];
-  const perTarget = new Map();
-  sets.forEach((set) => {
-    if (set.ligands.length < 2) return;
-    set.ligands.forEach((held) => {
-      const query = byName.get(held);
-      const scored = [];
-      sets.forEach((other) => {
-        let best = -1;
-        other.ligands.forEach((name) => {
-          if (name === held) return;
-          const value = score(query, byName.get(name));
-          if (value > best) best = value;
-        });
-        if (best >= 0) scored.push({ index: other.index, gene: other.gene, value: best });
-      });
-      scored.sort((a, b) => b.value - a.value || a.index - b.index);
-      const trial = {
-        index: set.index,
-        gene: set.gene,
-        key: set.key,
-        held: held,
-        rank: scored.findIndex((row) => row.index === set.index) + 1,
-        scoredTargets: scored.length,
-        topGene: scored[0].gene,
-        topScore: scored[0].value,
-        ligands: set.ligands.length
-      };
-      trials.push(trial);
-      if (!perTarget.has(set.key)) perTarget.set(set.key, []);
-      perTarget.get(set.key).push(trial);
-    });
-  });
+  const {trials}=evaluate(sets,byName,score);
+  const perTarget=new Map();
+  for(const trial of trials){
+    if(!perTarget.has(trial.key))perTarget.set(trial.key,[]);
+    perTarget.get(trial.key).push(trial);
+  }
 
   const thick = trials.filter((trial) => trial.ligands >= 5);
   const scoredTargets = median(trials.map((trial) => trial.scoredTargets));

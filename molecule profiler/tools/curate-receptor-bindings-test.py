@@ -37,6 +37,30 @@ class EvidenceTests(unittest.TestCase):
     def test_unsupported_graphs(self):
         for smiles in ['CC','CCCCCC.[Cl-]','[Cu+2]','[CH2]CCCC']:
             self.assertIsNone(m.compound(smiles),smiles)
+    def test_catalog_target_gates(self):
+        record={'id':'HRH3','genes':['HRH3'],'name':'Histamine H3','kind':'GPCR'}
+        self.assertEqual(m.target_from_catalog('HRH3',[record])['family'],'GPCR')
+        for bad in [{**record,'genes':['HRH3','OTHER']},{**record,'kind':'Ligand-gated channel'},
+                    {**record,'id':'OTHER'}]:
+            with self.assertRaises(ValueError):m.target_from_catalog('HRH3',[bad])
+    def test_target_append_handles_missing_trailing_comma(self):
+        text="const TARGETS = [\n{ name: 'Existing', ligands: [] }\n];\n\nif (typeof module !== 'undefined') {}"
+        row={'name':'New receptor','gene':'NEW','family':'GPCR','organism':'Human','note':'Binding only','ligands':['CHEMBL1']}
+        result=m.append_target_rows(text,[row])
+        self.assertIn("ligands: [] },\n  { name: 'New receptor'",result)
+        self.assertIn("gene: 'NEW'",result)
+        self.assertEqual(result.count("name: 'New receptor'"),1)
+        with self.assertRaises(ValueError):m.append_target_rows('invalid file',[row])
+    def test_import_preserves_manual_evidence_and_release_history(self):
+        manual={'receptorId':'HRH3','action':'agonist','sourceUrl':'https://example.org/experiment'}
+        old={'receptorId':'HRH3','curationSource':'chembl-human-binding-v1'}
+        other={'receptorId':'HRH4','curationSource':'chembl-human-binding-v1','sourceRelease':'ChEMBL_36'}
+        new={'receptorId':'HRH3','curationSource':'chembl-human-binding-v1','sourceRelease':'ChEMBL_37'}
+        merged=m.merge_annotations([manual,old,other],[new],['HRH3'],'ChEMBL_37')
+        self.assertEqual(merged,[manual,other,new])
+        self.assertNotIn('sourceRelease',manual)
+        migration=m.merge_annotations([{'receptorId':'HRH4','curationSource':'chembl-human-binding-v1'}],[],[],'ChEMBL_37')
+        self.assertEqual(migration[0]['sourceRelease'],'ChEMBL_37')
     def test_js_literals(self):
         self.assertEqual(m.js_string("a'b\\c"),"'a\\'b\\\\c'")
 

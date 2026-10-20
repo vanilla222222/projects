@@ -1,6 +1,6 @@
 # Receptor biology catalog and ligand annotation handoff
 
-The signalling explorer has a receptor view and the existing signalling-molecule view. The catalog contains 146 human receptor, assembly and related regulatory records across 36 families. It covers all 51 currently linked receptor-related target rows, with 95 additional catalog entries awaiting a target row. This is an expanded selected catalog, not an inventory of every human receptor.
+The signalling explorer has a receptor view and the existing signalling-molecule view. The catalog contains 146 human receptor, assembly and related regulatory records across 36 families. It now covers 61 linked receptor-related target rows, with 85 additional catalog entries awaiting a target row. This is an expanded selected catalog, not an inventory of every human receptor.
 
 Each card contains receptor identity, endogenous signals, main signalling mechanism, biological functions, qualitative consequences of activation and blockade, limitations, direct source links and legacy target-link status. The shared action glossary covers agonists, partial agonists, antagonists, inverse agonists, positive/negative allosteric modulation, biased signalling, channel opening/blockade, kinase inhibition and binding-only evidence. Search includes gene symbols, aliases, functions and endogenous signals. Family, target-type and curation filters are independent.
 

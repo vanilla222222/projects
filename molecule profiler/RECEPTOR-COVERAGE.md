@@ -60,8 +60,8 @@ for that panel and preserves other manually curated evidence. The tool checks so
 applying so changes made during acquisition cannot be overwritten.
 
 For additional targets, first add and independently verify the gene/accession
-mapping in the tool. It deliberately refuses ambiguous target mappings or missing
-target rows. Complexes require an assembly-aware workflow; single-protein assay
+mapping in the tool. It refuses ambiguous target mappings. Missing target rows require the explicit
+`--add-targets` mode described below. Complexes require an assembly-aware workflow; single-protein assay
 confidence rules must not be applied to them as if they were ordinary GPCRs.
 A failed lookup or a shortfall must stay visible, not be filled with inferred
 ligands. Extending the query cap changes the examined population and must be
@@ -95,3 +95,44 @@ RDKit integrity audit also treats nonaromatic unsaturated sulfur rings as review
 flags, because valid thiazolinone-type structures can produce that pattern;
 invalid structures and formula contradictions still fail. These corrections do
 not change the imported binding observations or infer functional mechanisms.
+
+## Second batch and new scoring rows
+
+The next batch covers MTNR1A, PPARG, RARA, P2RY12, HRH3, HRH4, CHRM4, CHRM5,
+MTNR1B, ADRB3, DRD5, ADORA2B, HTR4 and HTR5A. Its source snapshot is
+`validation/chembl-receptor-binding-batch-2.json`. Source availability and filter
+shortfalls remain recorded for every panel.
+
+The explicit `--add-targets` option permits new scoring rows when the catalog ID
+is the exact primary gene, the catalog lists only that gene, the receptor kind
+is supported, and a unique human ChEMBL single-protein target matches the
+reviewed accession and primary gene symbol. At least one selected assay-backed
+ligand is required before a new row is written. Assembly records and ambiguous
+mappings are rejected. Each new row retains unassigned functional action and
+selectivity; registration alone does not establish a predictive model.
+
+```sh
+python -B tools/curate-receptor-bindings.py --add-targets \
+  --genes MTNR1A,PPARG,RARA,P2RY12,HRH3,HRH4,CHRM4,CHRM5,MTNR1B,ADRB3,DRD5,ADORA2B,HTR4,HTR5A \
+  --output candidate-batch-2.json
+```
+
+Use `--apply` after reviewing the snapshot. Imports preserve manual annotations,
+retain per-record ChEMBL release provenance, and prepare all output files before
+writing them. Source hashes cover the catalog as well as the molecule, target
+and annotation datasets. Regression checks examine every published batch, rather
+than only the first one. Explorer search now includes linked ligand names and
+ChEMBL molecule IDs, making the added references discoverable by their source ID.
+
+The completed second batch adds 679 associations and 565 structures. MTNR1A,
+PPARG, P2RY12, HRH3, HRH4, CHRM4, CHRM5, MTNR1B, ADRB3, DRD5, ADORA2B, HTR4 and
+HTR5A each reach 50 source-linked profiles; RARA has 29 and retains a gap of 21.
+The catalog now has 22 panels at the strict sourced-profile goal and 46 with at
+least 50 resolved listed names. Ten new scoring rows reduce awaiting catalog
+registrations from 95 to 85. The library has 3,681 structures and 142 scoring
+targets, with 1,130 source-linked ligand observations across both batches.
+
+These figures reflect the stated Ki/Kd query policy. Shortfalls are not proof
+that no additional binding-IC50, functional or other experimental evidence
+exists. Those endpoints require an explicitly documented extension of the
+curation protocol, with their experimental interpretation preserved.

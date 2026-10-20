@@ -25,7 +25,7 @@ const {JSDOM,VirtualConsole}=require('jsdom');
   assert.equal($('smiles-input').value,inputBefore,'evidence expansion must not submit the nearest ligand as a new query');
   function change(id,value){$(id).value=value;$(id).dispatchEvent(new w.Event('change',{bubbles:true}));}
   change('tgt-scope','receptors');
-  assert.ok([...$('targets').querySelectorAll('tr[data-smiles]')].every(tr=>/receptor/i.test(tr.children[1].textContent)));
+  assert.ok([...$('targets').querySelectorAll('tr[data-smiles]')].every(tr=>['GPCR','Nuclear receptor'].includes(tr.children[3].textContent)||/receptor/i.test(tr.children[1].textContent)),'Receptor scope must classify target families, including adrenoceptor names');
   change('tgt-mode','legacy');assert.match($('tgt-blurb').textContent,/Legacy nearest/);
   change('tgt-mode','ensemble');change('tgt-scope','all');
   change('met-budget','60');assert.match($('met-diagnostics').textContent,/rule applications/);

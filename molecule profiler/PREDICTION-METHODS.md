@@ -26,12 +26,12 @@ Reproduce the complete current evaluation with:
 node tools/target-ranking-evaluate.js --report validation/target-ranking-full-profile-v1.json
 ```
 
-The committed report covers 1,342 profiles, 132 targets and 3,116 library entries. 19 queries have no rankable curated label after holdout. Display-order retrieval percentages are:
+The committed report covers 1,907 profiles, 142 targets and 3,681 library entries. 16 queries have no rankable curated label after holdout. Display-order retrieval percentages are:
 
 | Method | Top 1 | Top 5 | Top 10 | Target macro top 5, guaranteed–possible |
 | --- | ---: | ---: | ---: | ---: |
-| Legacy | 83.31% | 90.91% | 92.55% | 47.75–49.27% |
-| Experimental ensemble | 83.98% | 91.28% | 93.37% | 48.34–49.92% |
+| Legacy | 86.73% | 92.76% | 94.18% | 52.91–54.36% |
+| Experimental ensemble | 87.15% | 93.18% | 94.70% | 53.33–54.77% |
 
 The ensemble has a modest advantage on this full internal snapshot, while target-balanced coverage remains much weaker. This does not support a claim of generally accurate receptor prediction. Legacy remains the default. Neither formula nor weights were tuned to these results. The old `target-ranking-ensemble-v1.json` is a historical 100-query schema-v1 report and should not be compared as a longitudinal improvement figure. Compare methods within the same report and reference snapshot. Broader claims require verified assay-linked positives, negatives, temporal/scaffold splits and external review.
 
@@ -83,3 +83,10 @@ The ChEMBL_37 coverage batch adds assay-linked binding references under the
 filters and shortfalls; [CHEMBL-DATA-NOTICE.md](CHEMBL-DATA-NOTICE.md) records data
 attribution. Neither increased coverage nor higher retrieval on this expanded
 curated label set establishes an improvement against external assays.
+
+The second ChEMBL batch registers ten additional catalog receptors as scoring
+targets. The historical name-holdout benchmark now caches held-out query rankings
+and per-query reference similarities; fixture equivalence checks preserve its
+score-only/target-order tie protocol. The grouped-profile evaluation above
+remains a separate protocol, with mean-score tie handling and profile holdout.
+Neither benchmark establishes experimental accuracy on unknown molecules.

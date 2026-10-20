@@ -6,10 +6,13 @@
   const normalize = value => String(value || '').trim().toLowerCase();
   function browse(receptors, options, targets, annotations, library) {
     const o=options||{}, q=normalize(o.search);
+    const evidenceTerms=new Map();
+    if(q)for(const a of annotations||[]){if(!a||typeof a!=='object')continue;
+      const terms=evidenceTerms.get(a.receptorId)||[];terms.push(a.ligandName,a.chemblMoleculeId);evidenceTerms.set(a.receptorId,terms);}
     return receptors.filter(r => (!o.family || r.family===o.family)
       && (!o.kind || r.kind===o.kind)
       && (!q || [r.id,r.name,r.family,r.kind,r.description,r.mechanism,r.endogenousLigands,r.activation,r.blockade,
-        ...r.genes,...(r.aliases||[])].join(' ').toLowerCase().includes(q))
+        ...r.genes,...(r.aliases||[]),...links(r,targets).flatMap(x=>x.target.ligands||[]),...(evidenceTerms.get(r.id)||[])].join(' ').toLowerCase().includes(q))
       && (!o.coverage || (o.coverage==='below_goal' ? coverage(r,targets,library,annotations).remaining>0
         : o.coverage==='at_goal' ? coverage(r,targets,library,annotations).remaining===0
         : o.coverage==='awaiting' ? links(r,targets).length===0

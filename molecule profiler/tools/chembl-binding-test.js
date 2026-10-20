@@ -1,13 +1,15 @@
 'use strict';
 const assert=require('node:assert/strict');
-const batch=require('../validation/chembl-receptor-binding-batch.json');
+const fs=require('node:fs'),path=require('node:path');
+const batches=fs.readdirSync(path.join(__dirname,'../validation')).filter(name=>/^chembl-receptor-binding-batch(?:-\d+)?\.json$/.test(name)).sort().map(name=>require('../validation/'+name));
 const {LIBRARY}=require('../data/library.js'),{TARGETS}=require('../data/targets.js');
 const {RECEPTOR_LIGAND_ANNOTATIONS:annotations,RECEPTOR_BINDING_SOURCE:source}=require('../data/receptor-ligand-annotations.js');
 const api=require('../js/receptor-catalog.js');
 const {RECEPTOR_REFERENCE_CATALOG:catalog}=require('../data/receptor-catalog.js');
 for(const file of ['smiles','mol'])Object.assign(global,require('../js/'+file+'.js'));
+for(const batch of batches){
 assert.equal(batch.applied,true);assert.equal(batch.goal,50);
-assert.equal(source.release,batch.sourceDatabase.chembl_db_version);
+assert.ok((source.releases||[source.release]).includes(batch.sourceDatabase.chembl_db_version));
 assert.equal(source.licenseUrl,'https://creativecommons.org/licenses/by-sa/3.0/');
 const library=new Map(LIBRARY.map(e=>[e.name,e]));let selected=0;
 for(const panel of batch.panels){
@@ -37,4 +39,5 @@ for(const panel of batch.panels){
 const report=api.coverageReport(catalog.receptors,TARGETS,LIBRARY,annotations);
 for(const panel of batch.panels)assert.equal(report.rows.find(r=>r.id===panel.gene).sourcedProfiles,panel.count);
 assert.equal(report.annotationIssues,0);
-console.log('ChEMBL binding snapshot: '+selected+' source-linked associations, direct human assay identity, strict endpoints, unique profiles, current structures and coverage verified');
+}
+console.log('ChEMBL binding snapshots: '+batches.length+' batches verified against direct human assay identity, strict endpoints, unique profiles, current structures and coverage');
