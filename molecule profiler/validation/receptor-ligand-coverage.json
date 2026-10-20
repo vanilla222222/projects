@@ -800,50 +800,6 @@
       "hasTarget": false
     },
     {
-      "id": "OPRD1",
-      "name": "Delta opioid receptor",
-      "family": "Opioid",
-      "goal": 50,
-      "listedNames": 56,
-      "resolvedNames": 56,
-      "sourcedProfiles": 0,
-      "remaining": 50,
-      "hasTarget": true
-    },
-    {
-      "id": "OPRK1",
-      "name": "Kappa opioid receptor",
-      "family": "Opioid",
-      "goal": 50,
-      "listedNames": 60,
-      "resolvedNames": 60,
-      "sourcedProfiles": 0,
-      "remaining": 50,
-      "hasTarget": true
-    },
-    {
-      "id": "OPRL1",
-      "name": "Nociceptin/orphanin FQ receptor",
-      "family": "Opioid",
-      "goal": 50,
-      "listedNames": 0,
-      "resolvedNames": 0,
-      "sourcedProfiles": 0,
-      "remaining": 50,
-      "hasTarget": false
-    },
-    {
-      "id": "OPRM1",
-      "name": "Mu opioid receptor",
-      "family": "Opioid",
-      "goal": 50,
-      "listedNames": 94,
-      "resolvedNames": 94,
-      "sourcedProfiles": 0,
-      "remaining": 50,
-      "hasTarget": true
-    },
-    {
       "id": "OXTR",
       "name": "Oxytocin receptor",
       "family": "Vasopressin and oxytocin",
@@ -1229,6 +1185,28 @@
       "hasTarget": true
     },
     {
+      "id": "OPRL1",
+      "name": "Nociceptin/orphanin FQ receptor",
+      "family": "Opioid",
+      "goal": 50,
+      "listedNames": 6,
+      "resolvedNames": 6,
+      "sourcedProfiles": 6,
+      "remaining": 44,
+      "hasTarget": true
+    },
+    {
+      "id": "OPRD1",
+      "name": "Delta opioid receptor",
+      "family": "Opioid",
+      "goal": 50,
+      "listedNames": 80,
+      "resolvedNames": 80,
+      "sourcedProfiles": 24,
+      "remaining": 26,
+      "hasTarget": true
+    },
+    {
       "id": "HTR1F",
       "name": "5-HT1F receptor",
       "family": "Serotonin",
@@ -1248,6 +1226,28 @@
       "resolvedNames": 30,
       "sourcedProfiles": 29,
       "remaining": 21,
+      "hasTarget": true
+    },
+    {
+      "id": "OPRM1",
+      "name": "Mu opioid receptor",
+      "family": "Opioid",
+      "goal": 50,
+      "listedNames": 128,
+      "resolvedNames": 128,
+      "sourcedProfiles": 36,
+      "remaining": 14,
+      "hasTarget": true
+    },
+    {
+      "id": "OPRK1",
+      "name": "Kappa opioid receptor",
+      "family": "Opioid",
+      "goal": 50,
+      "listedNames": 104,
+      "resolvedNames": 104,
+      "sourcedProfiles": 44,
+      "remaining": 6,
       "hasTarget": true
     },
     {
@@ -1613,14 +1613,5 @@
       "remaining": 0,
       "hasTarget": true
     }
-  ],
-  "source": {
-    "database": "ChEMBL",
-    "release": "ChEMBL_37",
-    "releases": [
-      "ChEMBL_37"
-    ],
-    "sourceUrl": "https://www.ebi.ac.uk/chembl/",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/"
-  }
+  ]
 }

@@ -1,0 +1,12388 @@
+{
+  "schemaVersion": 1,
+  "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
+  "entries": 4066,
+  "invalidSmiles": [],
+  "formulaMismatches": [],
+  "canonicalDuplicates": [
+    {
+      "canonicalSmiles": "C#CC1(O)CCC2C3CCc4cc(O)ccc4C3CCC21C",
+      "entries": [
+        {
+          "index": 323,
+          "name": "Ethinylestradiol"
+        },
+        {
+          "index": 1857,
+          "name": "Ethinyl estradiol"
+        }
+      ]
+    },
+    {
+      "canonicalSmiles": "c1ccc2c(c1)cc1ccc3cccc4ccc2c1c34",
+      "entries": [
+        {
+          "index": 333,
+          "name": "Benzo[a]pyrene"
+        },
+        {
+          "index": 1795,
+          "name": "Benzo(a)pyrene"
+        }
+      ]
+    },
+    {
+      "canonicalSmiles": "C=C(C)C1CC=C(C)CC1",
+      "entries": [
+        {
+          "index": 424,
+          "name": "Limonene"
+        },
+        {
+          "index": 1654,
+          "name": "d-Limonene"
+        }
+      ]
+    },
+    {
+      "canonicalSmiles": "CC(C)=O",
+      "entries": [
+        {
+          "index": 463,
+          "name": "Acetone"
+        },
+        {
+          "index": 2310,
+          "name": "methyl methyl ketone"
+        }
+      ]
+    },
+    {
+      "canonicalSmiles": "CCCC(C)=O",
+      "entries": [
+        {
+          "index": 1634,
+          "name": "2-Pentanone"
+        },
+        {
+          "index": 2312,
+          "name": "methyl propyl ketone"
+        }
+      ]
+    },
+    {
+      "canonicalSmiles": "COC=O",
+      "entries": [
+        {
+          "index": 1646,
+          "name": "Methyl formate"
+        },
+        {
+          "index": 1960,
+          "name": "methyl methanoate"
+        }
+      ]
+    },
+    {
+      "canonicalSmiles": "CCC(C)=O",
+      "entries": [
+        {
+          "index": 1659,
+          "name": "2-Butanone"
+        },
+        {
+          "index": 2311,
+          "name": "methyl ethyl ketone"
+        }
+      ]
+    },
+    {
+      "canonicalSmiles": "CC12CCC3C(CCC4CC(O)CCC43C)C1CCC2=O",
+      "entries": [
+        {
+          "index": 1686,
+          "name": "Epiandrosterone"
+        },
+        {
+          "index": 1799,
+          "name": "Androsterone"
+        }
+      ]
+    },
+    {
+      "canonicalSmiles": "CCCCCCCCC(C)=O",
+      "entries": [
+        {
+          "index": 1691,
+          "name": "2-Decanone"
+        },
+        {
+          "index": 2317,
+          "name": "methyl octyl ketone"
+        }
+      ]
+    },
+    {
+      "canonicalSmiles": "CCCOC=O",
+      "entries": [
+        {
+          "index": 1708,
+          "name": "Propyl formate"
+        },
+        {
+          "index": 1986,
+          "name": "propyl methanoate"
+        }
+      ]
+    },
+    {
+      "canonicalSmiles": "CCC(=O)OC",
+      "entries": [
+        {
+          "index": 1720,
+          "name": "Methyl propionate"
+        },
+        {
+          "index": 1961,
+          "name": "methyl propanoate"
+        }
+      ]
+    },
+    {
+      "canonicalSmiles": "CCCC(=O)CC",
+      "entries": [
+        {
+          "index": 1728,
+          "name": "3-Hexanone"
+        },
+        {
+          "index": 2330,
+          "name": "ethyl propyl ketone"
+        }
+      ]
+    },
+    {
+      "canonicalSmiles": "CCCCOC(C)=O",
+      "entries": [
+        {
+          "index": 1780,
+          "name": "Butyl acetate"
+        },
+        {
+          "index": 2004,
+          "name": "butyl ethanoate"
+        }
+      ]
+    },
+    {
+      "canonicalSmiles": "CCCCCC(C)=O",
+      "entries": [
+        {
+          "index": 1832,
+          "name": "2-Heptanone"
+        },
+        {
+          "index": 2314,
+          "name": "methyl pentyl ketone"
+        }
+      ]
+    },
+    {
+      "canonicalSmiles": "CCCCCCCCCCCC(=O)OC",
+      "entries": [
+        {
+          "index": 1858,
+          "name": "methyl laurate"
+        },
+        {
+          "index": 1965,
+          "name": "methyl dodecanoate"
+        }
+      ]
+    },
+    {
+      "canonicalSmiles": "CCCCCCCC(C)=O",
+      "entries": [
+        {
+          "index": 1899,
+          "name": "2-Nonanone"
+        },
+        {
+          "index": 2316,
+          "name": "methyl heptyl ketone"
+        }
+      ]
+    },
+    {
+      "canonicalSmiles": "CCCCCCC(C)=O",
+      "entries": [
+        {
+          "index": 1910,
+          "name": "2-Octanone"
+        },
+        {
+          "index": 2315,
+          "name": "methyl hexyl ketone"
+        }
+      ]
+    },
+    {
+      "canonicalSmiles": "CCOC=O",
+      "entries": [
+        {
+          "index": 1918,
+          "name": "Ethyl formate"
+        },
+        {
+          "index": 1974,
+          "name": "ethyl methanoate"
+        }
+      ]
+    },
+    {
+      "canonicalSmiles": "CCCCC(C)=O",
+      "entries": [
+        {
+          "index": 1922,
+          "name": "2-Hexanone"
+        },
+        {
+          "index": 2313,
+          "name": "methyl butyl ketone"
+        }
+      ]
+    }
+  ],
+  "tautomerGroups": [
+    {
+      "entries": [
+        {
+          "index": 36,
+          "name": "Losartan"
+        },
+        {
+          "index": 3072,
+          "name": "CHEMBL191"
+        }
+      ],
+      "distinctCanonicalSmiles": 2
+    },
+    {
+      "entries": [
+        {
+          "index": 46,
+          "name": "Cimetidine"
+        },
+        {
+          "index": 2788,
+          "name": "CHEMBL30"
+        }
+      ],
+      "distinctCanonicalSmiles": 2
+    },
+    {
+      "entries": [
+        {
+          "index": 100,
+          "name": "Valsartan"
+        },
+        {
+          "index": 3073,
+          "name": "CHEMBL1069"
+        }
+      ],
+      "distinctCanonicalSmiles": 2
+    },
+    {
+      "entries": [
+        {
+          "index": 381,
+          "name": "Serine"
+        },
+        {
+          "index": 2476,
+          "name": "D-Serine"
+        },
+        {
+          "index": 2477,
+          "name": "L-Serine"
+        }
+      ],
+      "distinctCanonicalSmiles": 3
+    },
+    {
+      "entries": [
+        {
+          "index": 387,
+          "name": "Aspartic acid"
+        },
+        {
+          "index": 2478,
+          "name": "D-Aspartic acid"
+        }
+      ],
+      "distinctCanonicalSmiles": 2
+    },
+    {
+      "entries": [
+        {
+          "index": 3079,
+          "name": "CHEMBL4535903"
+        },
+        {
+          "index": 3080,
+          "name": "CHEMBL4463203"
+        },
+        {
+          "index": 3081,
+          "name": "CHEMBL4464191"
+        }
+      ],
+      "distinctCanonicalSmiles": 3
+    },
+    {
+      "entries": [
+        {
+          "index": 3094,
+          "name": "CHEMBL4449166"
+        },
+        {
+          "index": 3095,
+          "name": "CHEMBL4469350"
+        }
+      ],
+      "distinctCanonicalSmiles": 2
+    },
+    {
+      "entries": [
+        {
+          "index": 3757,
+          "name": "CHEMBL15245"
+        },
+        {
+          "index": 3764,
+          "name": "CHEMBL31410"
+        }
+      ],
+      "distinctCanonicalSmiles": 2
+    },
+    {
+      "entries": [
+        {
+          "index": 4045,
+          "name": "SALVINORIN A [CHEMBL445332]"
+        },
+        {
+          "index": 4049,
+          "name": "SALVINORIN A (ESTER)"
+        }
+      ],
+      "distinctCanonicalSmiles": 2
+    }
+  ],
+  "unspecifiedStereocenters": [
+    {
+      "index": 3,
+      "name": "Ibuprofen",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 4,
+      "name": "Naproxen",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 5,
+      "name": "Ketoprofen",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 9,
+      "name": "Morphine",
+      "atomIndices": [
+        4,
+        13,
+        14,
+        18,
+        19
+      ]
+    },
+    {
+      "index": 10,
+      "name": "Codeine",
+      "atomIndices": [
+        4,
+        14,
+        15,
+        19,
+        20
+      ]
+    },
+    {
+      "index": 12,
+      "name": "Tramadol",
+      "atomIndices": [
+        8,
+        14
+      ]
+    },
+    {
+      "index": 15,
+      "name": "Nicotine",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 17,
+      "name": "Fluoxetine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 18,
+      "name": "Sertraline",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 19,
+      "name": "Citalopram",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 25,
+      "name": "Levodopa",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 28,
+      "name": "Adrenaline",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 29,
+      "name": "Salbutamol",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 30,
+      "name": "Propranolol",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 31,
+      "name": "Atenolol",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 32,
+      "name": "Metoprolol",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 33,
+      "name": "Amlodipine",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 35,
+      "name": "Verapamil",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 37,
+      "name": "Captopril",
+      "atomIndices": [
+        1,
+        10
+      ]
+    },
+    {
+      "index": 38,
+      "name": "Enalapril",
+      "atomIndices": [
+        5,
+        15,
+        23
+      ]
+    },
+    {
+      "index": 39,
+      "name": "Lisinopril",
+      "atomIndices": [
+        5,
+        7,
+        25
+      ]
+    },
+    {
+      "index": 40,
+      "name": "Warfarin",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 44,
+      "name": "Omeprazole",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 48,
+      "name": "Cetirizine",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 50,
+      "name": "Penicillin G",
+      "atomIndices": [
+        4,
+        5,
+        19
+      ]
+    },
+    {
+      "index": 51,
+      "name": "Amoxicillin",
+      "atomIndices": [
+        4,
+        5,
+        9,
+        21
+      ]
+    },
+    {
+      "index": 52,
+      "name": "Ampicillin",
+      "atomIndices": [
+        4,
+        5,
+        9,
+        20
+      ]
+    },
+    {
+      "index": 59,
+      "name": "Testosterone",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        14,
+        16,
+        19
+      ]
+    },
+    {
+      "index": 60,
+      "name": "Estradiol",
+      "atomIndices": [
+        1,
+        4,
+        14,
+        15,
+        18
+      ]
+    },
+    {
+      "index": 61,
+      "name": "Cholesterol",
+      "atomIndices": [
+        6,
+        8,
+        11,
+        13,
+        16,
+        17,
+        22,
+        26
+      ]
+    },
+    {
+      "index": 62,
+      "name": "Glucose",
+      "atomIndices": [
+        2,
+        4,
+        6,
+        8,
+        10
+      ]
+    },
+    {
+      "index": 63,
+      "name": "Ascorbic acid",
+      "atomIndices": [
+        2,
+        4
+      ]
+    },
+    {
+      "index": 66,
+      "name": "Tryptophan",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 67,
+      "name": "Phenylalanine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 68,
+      "name": "Histidine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 73,
+      "name": "Atorvastatin",
+      "atomIndices": [
+        32,
+        35
+      ]
+    },
+    {
+      "index": 74,
+      "name": "Simvastatin",
+      "atomIndices": [
+        8,
+        10,
+        16,
+        18,
+        21,
+        23,
+        29
+      ]
+    },
+    {
+      "index": 75,
+      "name": "Prednisolone",
+      "atomIndices": [
+        1,
+        10,
+        11,
+        12,
+        15,
+        17,
+        20
+      ]
+    },
+    {
+      "index": 76,
+      "name": "Dexamethasone",
+      "atomIndices": [
+        1,
+        3,
+        4,
+        13,
+        15,
+        17,
+        20,
+        22
+      ]
+    },
+    {
+      "index": 78,
+      "name": "Flurbiprofen",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 79,
+      "name": "Methadone",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 89,
+      "name": "Mianserin",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 91,
+      "name": "Lysergide",
+      "atomIndices": [
+        7,
+        11
+      ]
+    },
+    {
+      "index": 95,
+      "name": "Iodoamphetamine",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 96,
+      "name": "Paroxetine",
+      "atomIndices": [
+        7,
+        12
+      ]
+    },
+    {
+      "index": 97,
+      "name": "Venlafaxine",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 98,
+      "name": "Chlorpheniramine",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 99,
+      "name": "Promethazine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 100,
+      "name": "Valsartan",
+      "atomIndices": [
+        25
+      ]
+    },
+    {
+      "index": 101,
+      "name": "Rosuvastatin",
+      "atomIndices": [
+        24,
+        27
+      ]
+    },
+    {
+      "index": 103,
+      "name": "Tadalafil",
+      "atomIndices": [
+        6,
+        19
+      ]
+    },
+    {
+      "index": 104,
+      "name": "Lorazepam",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 107,
+      "name": "Methotrexate",
+      "atomIndices": [
+        24
+      ]
+    },
+    {
+      "index": 108,
+      "name": "Chloramphenicol",
+      "atomIndices": [
+        2,
+        9
+      ]
+    },
+    {
+      "index": 109,
+      "name": "Zidovudine",
+      "atomIndices": [
+        4,
+        6,
+        10
+      ]
+    },
+    {
+      "index": 110,
+      "name": "Progesterone",
+      "atomIndices": [
+        3,
+        6,
+        7,
+        16,
+        18,
+        21
+      ]
+    },
+    {
+      "index": 112,
+      "name": "Ondansetron",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 114,
+      "name": "Ketamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 115,
+      "name": "Amphetamine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 116,
+      "name": "Methylphenidate",
+      "atomIndices": [
+        4,
+        11
+      ]
+    },
+    {
+      "index": 125,
+      "name": "Crizotinib",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 127,
+      "name": "Ibrutinib",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 129,
+      "name": "Ruxolitinib",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 130,
+      "name": "Tofacitinib",
+      "atomIndices": [
+        1,
+        5
+      ]
+    },
+    {
+      "index": 132,
+      "name": "Gemcitabine",
+      "atomIndices": [
+        8,
+        10,
+        13
+      ]
+    },
+    {
+      "index": 134,
+      "name": "Cytarabine",
+      "atomIndices": [
+        8,
+        10,
+        13,
+        15
+      ]
+    },
+    {
+      "index": 136,
+      "name": "Capecitabine",
+      "atomIndices": [
+        17,
+        19,
+        21,
+        23
+      ]
+    },
+    {
+      "index": 141,
+      "name": "Bicalutamide",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 143,
+      "name": "Pioglitazone",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 144,
+      "name": "Rosiglitazone",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 145,
+      "name": "Thalidomide",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 146,
+      "name": "Lenalidomide",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 147,
+      "name": "Cyclophosphamide",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 148,
+      "name": "Melphalan",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 152,
+      "name": "Terbutaline",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 153,
+      "name": "Formoterol",
+      "atomIndices": [
+        7,
+        11
+      ]
+    },
+    {
+      "index": 154,
+      "name": "Isoprenaline",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 155,
+      "name": "Phenylephrine",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 156,
+      "name": "Montelukast",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 159,
+      "name": "Pramipexole",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 161,
+      "name": "Atropine",
+      "atomIndices": [
+        2,
+        5,
+        12
+      ]
+    },
+    {
+      "index": 162,
+      "name": "Oxybutynin",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 164,
+      "name": "Mirtazapine",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 165,
+      "name": "Naloxone",
+      "atomIndices": [
+        6,
+        15,
+        20,
+        22
+      ]
+    },
+    {
+      "index": 166,
+      "name": "Naltrexone",
+      "atomIndices": [
+        7,
+        16,
+        21,
+        23
+      ]
+    },
+    {
+      "index": 168,
+      "name": "Cocaine",
+      "atomIndices": [
+        2,
+        5,
+        6,
+        11
+      ]
+    },
+    {
+      "index": 174,
+      "name": "Sitagliptin",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 175,
+      "name": "Donepezil",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 176,
+      "name": "Rivastigmine",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 178,
+      "name": "Selegiline",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 179,
+      "name": "Rasagiline",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 181,
+      "name": "Tranylcypromine",
+      "atomIndices": [
+        1,
+        3
+      ]
+    },
+    {
+      "index": 182,
+      "name": "Carbidopa",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 183,
+      "name": "Zileuton",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 184,
+      "name": "Ezetimibe",
+      "atomIndices": [
+        10,
+        18,
+        21
+      ]
+    },
+    {
+      "index": 188,
+      "name": "Ethambutol",
+      "atomIndices": [
+        2,
+        9
+      ]
+    },
+    {
+      "index": 190,
+      "name": "Linezolid",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 191,
+      "name": "Cefalexin",
+      "atomIndices": [
+        4,
+        7,
+        11
+      ]
+    },
+    {
+      "index": 193,
+      "name": "Moxifloxacin",
+      "atomIndices": [
+        6,
+        11
+      ]
+    },
+    {
+      "index": 198,
+      "name": "Chloroquine",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 199,
+      "name": "Hydroxychloroquine",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 200,
+      "name": "Quinine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 201,
+      "name": "Oseltamivir",
+      "atomIndices": [
+        6,
+        10,
+        15
+      ]
+    },
+    {
+      "index": 202,
+      "name": "Lamivudine",
+      "atomIndices": [
+        8,
+        11
+      ]
+    },
+    {
+      "index": 203,
+      "name": "Tenofovir",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 205,
+      "name": "Efavirenz",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 206,
+      "name": "Ribavirin",
+      "atomIndices": [
+        8,
+        10,
+        13,
+        15
+      ]
+    },
+    {
+      "index": 208,
+      "name": "Bupivacaine",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 209,
+      "name": "Mexiletine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 211,
+      "name": "Flecainide",
+      "atomIndices": [
+        22
+      ]
+    },
+    {
+      "index": 217,
+      "name": "Pregabalin",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 218,
+      "name": "Topiramate",
+      "atomIndices": [
+        4,
+        7,
+        19,
+        20
+      ]
+    },
+    {
+      "index": 219,
+      "name": "Levetiracetam",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 222,
+      "name": "Baclofen",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 224,
+      "name": "Memantine",
+      "atomIndices": [
+        3,
+        6
+      ]
+    },
+    {
+      "index": 225,
+      "name": "Diltiazem",
+      "atomIndices": [
+        8,
+        24
+      ]
+    },
+    {
+      "index": 226,
+      "name": "Nimodipine",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 229,
+      "name": "Clopidogrel",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 230,
+      "name": "Rivaroxaban",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 232,
+      "name": "Pantoprazole",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 235,
+      "name": "Hydrocortisone",
+      "atomIndices": [
+        1,
+        10,
+        11,
+        12,
+        15,
+        17,
+        20
+      ]
+    },
+    {
+      "index": 236,
+      "name": "Cefadroxil",
+      "atomIndices": [
+        4,
+        7,
+        11
+      ]
+    },
+    {
+      "index": 237,
+      "name": "Oxacillin",
+      "atomIndices": [
+        15,
+        19,
+        27
+      ]
+    },
+    {
+      "index": 238,
+      "name": "Cloxacillin",
+      "atomIndices": [
+        16,
+        20,
+        28
+      ]
+    },
+    {
+      "index": 239,
+      "name": "Clavulanic acid",
+      "atomIndices": [
+        5,
+        10
+      ]
+    },
+    {
+      "index": 240,
+      "name": "Clindamycin",
+      "atomIndices": [
+        3,
+        5,
+        9,
+        10,
+        13,
+        15,
+        18,
+        20,
+        22
+      ]
+    },
+    {
+      "index": 243,
+      "name": "Ofloxacin",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 249,
+      "name": "Voriconazole",
+      "atomIndices": [
+        1,
+        9
+      ]
+    },
+    {
+      "index": 250,
+      "name": "Ketoconazole",
+      "atomIndices": [
+        15,
+        18
+      ]
+    },
+    {
+      "index": 252,
+      "name": "Miconazole",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 254,
+      "name": "Griseofulvin",
+      "atomIndices": [
+        7,
+        9
+      ]
+    },
+    {
+      "index": 257,
+      "name": "Mefloquine",
+      "atomIndices": [
+        1,
+        2
+      ]
+    },
+    {
+      "index": 258,
+      "name": "Artemisinin",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        10,
+        12,
+        16,
+        17
+      ]
+    },
+    {
+      "index": 263,
+      "name": "Abacavir",
+      "atomIndices": [
+        12,
+        14
+      ]
+    },
+    {
+      "index": 264,
+      "name": "Emtricitabine",
+      "atomIndices": [
+        9,
+        12
+      ]
+    },
+    {
+      "index": 266,
+      "name": "Rimantadine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 267,
+      "name": "Zanamivir",
+      "atomIndices": [
+        4,
+        5,
+        16,
+        17,
+        19
+      ]
+    },
+    {
+      "index": 268,
+      "name": "Ramipril",
+      "atomIndices": [
+        5,
+        15,
+        20,
+        24,
+        26
+      ]
+    },
+    {
+      "index": 272,
+      "name": "Carvedilol",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 273,
+      "name": "Bisoprolol",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 274,
+      "name": "Labetalol",
+      "atomIndices": [
+        2,
+        12
+      ]
+    },
+    {
+      "index": 275,
+      "name": "Chlorthalidone",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 276,
+      "name": "Propafenone",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 277,
+      "name": "Quinidine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 278,
+      "name": "Ranolazine",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 283,
+      "name": "Gliclazide",
+      "atomIndices": [
+        16,
+        20
+      ]
+    },
+    {
+      "index": 285,
+      "name": "Colchicine",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 287,
+      "name": "Guaifenesin",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 288,
+      "name": "Dextromethorphan",
+      "atomIndices": [
+        7,
+        12,
+        17
+      ]
+    },
+    {
+      "index": 290,
+      "name": "Lansoprazole",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 293,
+      "name": "Indapamide",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 294,
+      "name": "Salmeterol",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 297,
+      "name": "Pentobarbital",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 298,
+      "name": "Thiopental",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 302,
+      "name": "Vigabatrin",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 304,
+      "name": "Modafinil",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 305,
+      "name": "Atomoxetine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 306,
+      "name": "Bupropion",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 307,
+      "name": "Duloxetine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 310,
+      "name": "Mephedrone",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 311,
+      "name": "Methylenedioxymethamphetamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 312,
+      "name": "Tetrahydrocannabinol",
+      "atomIndices": [
+        16,
+        22
+      ]
+    },
+    {
+      "index": 313,
+      "name": "Cannabidiol",
+      "atomIndices": [
+        10,
+        16
+      ]
+    },
+    {
+      "index": 316,
+      "name": "Ifosfamide",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 322,
+      "name": "Estrone",
+      "atomIndices": [
+        1,
+        4,
+        14,
+        15
+      ]
+    },
+    {
+      "index": 323,
+      "name": "Ethinylestradiol",
+      "atomIndices": [
+        1,
+        4,
+        14,
+        15,
+        18
+      ]
+    },
+    {
+      "index": 324,
+      "name": "Thyroxine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 325,
+      "name": "Liothyronine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 368,
+      "name": "Malathion",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 372,
+      "name": "Riboflavin",
+      "atomIndices": [
+        15,
+        17,
+        19
+      ]
+    },
+    {
+      "index": 374,
+      "name": "Folic acid",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 375,
+      "name": "Biotin",
+      "atomIndices": [
+        7,
+        10,
+        15
+      ]
+    },
+    {
+      "index": 376,
+      "name": "Alpha-tocopherol",
+      "atomIndices": [
+        8,
+        13,
+        18
+      ]
+    },
+    {
+      "index": 378,
+      "name": "Pantothenic acid",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 380,
+      "name": "Alanine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 381,
+      "name": "Serine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 382,
+      "name": "Cysteine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 383,
+      "name": "Methionine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 384,
+      "name": "Lysine",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 385,
+      "name": "Arginine",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 386,
+      "name": "Glutamic acid",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 387,
+      "name": "Aspartic acid",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 388,
+      "name": "Proline",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 389,
+      "name": "Threonine",
+      "atomIndices": [
+        1,
+        3
+      ]
+    },
+    {
+      "index": 390,
+      "name": "Valine",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 391,
+      "name": "Leucine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 392,
+      "name": "Isoleucine",
+      "atomIndices": [
+        2,
+        4
+      ]
+    },
+    {
+      "index": 393,
+      "name": "Tyrosine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 394,
+      "name": "Asparagine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 395,
+      "name": "Glutamine",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 401,
+      "name": "Adenosine",
+      "atomIndices": [
+        10,
+        12,
+        15,
+        17
+      ]
+    },
+    {
+      "index": 402,
+      "name": "Guanosine",
+      "atomIndices": [
+        8,
+        10,
+        13,
+        15
+      ]
+    },
+    {
+      "index": 404,
+      "name": "Fructose",
+      "atomIndices": [
+        2,
+        4,
+        6
+      ]
+    },
+    {
+      "index": 405,
+      "name": "Lactic acid",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 411,
+      "name": "Glutathione",
+      "atomIndices": [
+        1,
+        7
+      ]
+    },
+    {
+      "index": 413,
+      "name": "Acetylcysteine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 417,
+      "name": "Catechin",
+      "atomIndices": [
+        7,
+        9
+      ]
+    },
+    {
+      "index": 422,
+      "name": "Menthol",
+      "atomIndices": [
+        3,
+        6,
+        9
+      ]
+    },
+    {
+      "index": 423,
+      "name": "Camphor",
+      "atomIndices": [
+        3,
+        6
+      ]
+    },
+    {
+      "index": 424,
+      "name": "Limonene",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 428,
+      "name": "Scopolamine",
+      "atomIndices": [
+        2,
+        6,
+        7,
+        9,
+        13
+      ]
+    },
+    {
+      "index": 429,
+      "name": "Ephedrine",
+      "atomIndices": [
+        2,
+        4
+      ]
+    },
+    {
+      "index": 434,
+      "name": "Fexofenadine",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 436,
+      "name": "Hydroxyzine",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 437,
+      "name": "Meclizine",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 438,
+      "name": "Doxylamine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 440,
+      "name": "Thioridazine",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 442,
+      "name": "Amisulpride",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 443,
+      "name": "Sulpiride",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 444,
+      "name": "Fosfomycin",
+      "atomIndices": [
+        1,
+        3
+      ]
+    },
+    {
+      "index": 452,
+      "name": "Aspartame",
+      "atomIndices": [
+        4,
+        15
+      ]
+    },
+    {
+      "index": 475,
+      "name": "Brolamfetamine",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 476,
+      "name": "2,5-Dimethoxyamphetamine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 477,
+      "name": "Methoxamine",
+      "atomIndices": [
+        5,
+        7
+      ]
+    },
+    {
+      "index": 478,
+      "name": "4-Methyl-2,5-dimethoxyamphetamine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 479,
+      "name": "2,5-Dimethoxy-4-ethylamphetamine",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 480,
+      "name": "3,4,5-Trimethoxyamphetamine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 482,
+      "name": "Tenamfetamine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 483,
+      "name": "MMDA",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 484,
+      "name": "Midodrine",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 485,
+      "name": "4-Methoxyamphetamine",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 486,
+      "name": "BK-MDA",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 487,
+      "name": "Methylone",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 489,
+      "name": "2,5-Dimethoxy-4-ethylthioamphetamine",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 492,
+      "name": "Hydrastinine",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 495,
+      "name": "2-(Benzodioxol-5-ylmethyl)-3-benzylsuccinic acid",
+      "atomIndices": [
+        3,
+        11
+      ]
+    },
+    {
+      "index": 502,
+      "name": "1-Naphthyl-L-alanine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 503,
+      "name": "Methyl L-phenylalaninate",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 504,
+      "name": "Oxycodone",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 505,
+      "name": "Hydromorphone",
+      "atomIndices": [
+        4,
+        13,
+        18,
+        19
+      ]
+    },
+    {
+      "index": 506,
+      "name": "Hydrocodone",
+      "atomIndices": [
+        4,
+        14,
+        19,
+        20
+      ]
+    },
+    {
+      "index": 507,
+      "name": "Oxymorphone",
+      "atomIndices": [
+        4,
+        13,
+        18,
+        20
+      ]
+    },
+    {
+      "index": 508,
+      "name": "Dihydromorphine",
+      "atomIndices": [
+        4,
+        13,
+        14,
+        18,
+        19
+      ]
+    },
+    {
+      "index": 509,
+      "name": "Dihydrocodeine",
+      "atomIndices": [
+        4,
+        14,
+        15,
+        19,
+        20
+      ]
+    },
+    {
+      "index": 510,
+      "name": "Morphinone",
+      "atomIndices": [
+        4,
+        13,
+        18,
+        19
+      ]
+    },
+    {
+      "index": 511,
+      "name": "Codeinone",
+      "atomIndices": [
+        4,
+        14,
+        19,
+        20
+      ]
+    },
+    {
+      "index": 512,
+      "name": "14-Hydroxycodeinone",
+      "atomIndices": [
+        4,
+        14,
+        19,
+        21
+      ]
+    },
+    {
+      "index": 513,
+      "name": "Ethylmorphine",
+      "atomIndices": [
+        4,
+        15,
+        16,
+        20,
+        21
+      ]
+    },
+    {
+      "index": 514,
+      "name": "Diamorphine",
+      "atomIndices": [
+        4,
+        16,
+        17,
+        24,
+        25
+      ]
+    },
+    {
+      "index": 515,
+      "name": "6-Monoacetylmorphine",
+      "atomIndices": [
+        4,
+        13,
+        14,
+        21,
+        22
+      ]
+    },
+    {
+      "index": 516,
+      "name": "3-Monoacetylmorphine",
+      "atomIndices": [
+        4,
+        16,
+        17,
+        21,
+        22
+      ]
+    },
+    {
+      "index": 517,
+      "name": "Nalorphine",
+      "atomIndices": [
+        6,
+        15,
+        16,
+        20,
+        21
+      ]
+    },
+    {
+      "index": 518,
+      "name": "Nalmefene",
+      "atomIndices": [
+        7,
+        16,
+        21,
+        23
+      ]
+    },
+    {
+      "index": 519,
+      "name": "Nalbuphine",
+      "atomIndices": [
+        8,
+        17,
+        18,
+        22,
+        24
+      ]
+    },
+    {
+      "index": 520,
+      "name": "Naltrexol",
+      "atomIndices": [
+        7,
+        16,
+        17,
+        21,
+        23
+      ]
+    },
+    {
+      "index": 521,
+      "name": "Noroxymorphone",
+      "atomIndices": [
+        3,
+        12,
+        17,
+        19
+      ]
+    },
+    {
+      "index": 522,
+      "name": "Normorphine",
+      "atomIndices": [
+        3,
+        12,
+        13,
+        17,
+        18
+      ]
+    },
+    {
+      "index": 523,
+      "name": "Norcodeine",
+      "atomIndices": [
+        3,
+        13,
+        14,
+        18,
+        19
+      ]
+    },
+    {
+      "index": 524,
+      "name": "Norhydrocodone",
+      "atomIndices": [
+        3,
+        13,
+        18,
+        19
+      ]
+    },
+    {
+      "index": 525,
+      "name": "Noroxycodone",
+      "atomIndices": [
+        3,
+        13,
+        18,
+        20
+      ]
+    },
+    {
+      "index": 537,
+      "name": "Tetrahydrofuranylfentanyl",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 550,
+      "name": "3-Methylfentanyl",
+      "atomIndices": [
+        11,
+        24
+      ]
+    },
+    {
+      "index": 551,
+      "name": "3-Methylbutyrylfentanyl",
+      "atomIndices": [
+        12,
+        25
+      ]
+    },
+    {
+      "index": 556,
+      "name": "Lofentanil",
+      "atomIndices": [
+        11,
+        28
+      ]
+    },
+    {
+      "index": 562,
+      "name": "Beta-hydroxyfentanyl",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 563,
+      "name": "Beta-methylfentanyl",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 569,
+      "name": "Phenoperidine",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 585,
+      "name": "Levomethadyl acetate",
+      "atomIndices": [
+        2,
+        9
+      ]
+    },
+    {
+      "index": 587,
+      "name": "Isomethadone",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 588,
+      "name": "Methadol",
+      "atomIndices": [
+        2,
+        6
+      ]
+    },
+    {
+      "index": 589,
+      "name": "Dextropropoxyphene",
+      "atomIndices": [
+        5,
+        14
+      ]
+    },
+    {
+      "index": 590,
+      "name": "Dipipanone",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 591,
+      "name": "Dextromoramide",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 592,
+      "name": "Phenadoxone",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 593,
+      "name": "Dextrorphan",
+      "atomIndices": [
+        4,
+        9,
+        10
+      ]
+    },
+    {
+      "index": 594,
+      "name": "Levallorphan",
+      "atomIndices": [
+        6,
+        11,
+        12
+      ]
+    },
+    {
+      "index": 595,
+      "name": "Butorphanol",
+      "atomIndices": [
+        7,
+        12,
+        14
+      ]
+    },
+    {
+      "index": 596,
+      "name": "Pentazocine",
+      "atomIndices": [
+        8,
+        18,
+        19
+      ]
+    },
+    {
+      "index": 597,
+      "name": "Phenazocine",
+      "atomIndices": [
+        1,
+        2,
+        11
+      ]
+    },
+    {
+      "index": 598,
+      "name": "Cyclazocine",
+      "atomIndices": [
+        1,
+        2,
+        11
+      ]
+    },
+    {
+      "index": 599,
+      "name": "Metazocine",
+      "atomIndices": [
+        1,
+        2,
+        11
+      ]
+    },
+    {
+      "index": 600,
+      "name": "Tapentadol",
+      "atomIndices": [
+        2,
+        10
+      ]
+    },
+    {
+      "index": 601,
+      "name": "O-Desmethyltramadol",
+      "atomIndices": [
+        4,
+        9
+      ]
+    },
+    {
+      "index": 602,
+      "name": "N-Desmethyltramadol",
+      "atomIndices": [
+        3,
+        8
+      ]
+    },
+    {
+      "index": 603,
+      "name": "Meptazinol",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 604,
+      "name": "Tilidine",
+      "atomIndices": [
+        5,
+        16
+      ]
+    },
+    {
+      "index": 606,
+      "name": "U-47700",
+      "atomIndices": [
+        3,
+        8
+      ]
+    },
+    {
+      "index": 607,
+      "name": "U-48800",
+      "atomIndices": [
+        3,
+        8
+      ]
+    },
+    {
+      "index": 608,
+      "name": "U-50488",
+      "atomIndices": [
+        13,
+        18
+      ]
+    },
+    {
+      "index": 614,
+      "name": "Haloperidol reduced",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 616,
+      "name": "Sultopride",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 618,
+      "name": "Raclopride",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 619,
+      "name": "Eticlopride",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 620,
+      "name": "Nemonapride",
+      "atomIndices": [
+        11,
+        22
+      ]
+    },
+    {
+      "index": 621,
+      "name": "Clebopride",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 622,
+      "name": "Cocaethylene",
+      "atomIndices": [
+        5,
+        6,
+        17,
+        20
+      ]
+    },
+    {
+      "index": 623,
+      "name": "Norcocaine",
+      "atomIndices": [
+        4,
+        5,
+        8,
+        10
+      ]
+    },
+    {
+      "index": 624,
+      "name": "Ecgonine methyl ester",
+      "atomIndices": [
+        4,
+        5,
+        8,
+        11
+      ]
+    },
+    {
+      "index": 625,
+      "name": "Ecgonine",
+      "atomIndices": [
+        2,
+        5,
+        6,
+        10
+      ]
+    },
+    {
+      "index": 626,
+      "name": "Troparil",
+      "atomIndices": [
+        4,
+        5,
+        13,
+        16
+      ]
+    },
+    {
+      "index": 627,
+      "name": "Beta-CFT",
+      "atomIndices": [
+        4,
+        5,
+        14,
+        17
+      ]
+    },
+    {
+      "index": 628,
+      "name": "RTI-31",
+      "atomIndices": [
+        4,
+        5,
+        14,
+        17
+      ]
+    },
+    {
+      "index": 629,
+      "name": "RTI-32",
+      "atomIndices": [
+        4,
+        5,
+        14,
+        17
+      ]
+    },
+    {
+      "index": 630,
+      "name": "RTI-55",
+      "atomIndices": [
+        4,
+        5,
+        14,
+        17
+      ]
+    },
+    {
+      "index": 631,
+      "name": "Dichloropane",
+      "atomIndices": [
+        4,
+        5,
+        15,
+        18
+      ]
+    },
+    {
+      "index": 632,
+      "name": "Tropacocaine",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 633,
+      "name": "Nortropacocaine",
+      "atomIndices": [
+        5,
+        8
+      ]
+    },
+    {
+      "index": 634,
+      "name": "Cathinone",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 635,
+      "name": "Methcathinone",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 636,
+      "name": "Ethcathinone",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 637,
+      "name": "3-Methylmethcathinone",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 638,
+      "name": "4-Methylethcathinone",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 639,
+      "name": "4-Fluoromethcathinone",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 640,
+      "name": "4-Chloromethcathinone",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 641,
+      "name": "Buphedrone",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 642,
+      "name": "Pentedrone",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 643,
+      "name": "Hexedrone",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 644,
+      "name": "Amfepramone",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 645,
+      "name": "Ethylone",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 646,
+      "name": "Butylone",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 647,
+      "name": "Eutylone",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 648,
+      "name": "Pentylone",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 649,
+      "name": "N-Ethylpentylone",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 650,
+      "name": "Dimethylone",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 651,
+      "name": "Dibutylone",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 652,
+      "name": "Alpha-PPP",
+      "atomIndices": [
+        1,
+        10
+      ]
+    },
+    {
+      "index": 653,
+      "name": "Alpha-PBP",
+      "atomIndices": [
+        2,
+        11
+      ]
+    },
+    {
+      "index": 654,
+      "name": "Alpha-PVP",
+      "atomIndices": [
+        3,
+        12
+      ]
+    },
+    {
+      "index": 655,
+      "name": "Alpha-PHP",
+      "atomIndices": [
+        4,
+        13
+      ]
+    },
+    {
+      "index": 656,
+      "name": "4-Methyl-alpha-PPP",
+      "atomIndices": [
+        7,
+        9
+      ]
+    },
+    {
+      "index": 657,
+      "name": "Pyrovalerone",
+      "atomIndices": [
+        3,
+        13
+      ]
+    },
+    {
+      "index": 658,
+      "name": "MDPV",
+      "atomIndices": [
+        3,
+        15
+      ]
+    },
+    {
+      "index": 659,
+      "name": "MDPPP",
+      "atomIndices": [
+        1,
+        13
+      ]
+    },
+    {
+      "index": 660,
+      "name": "Naphyrone",
+      "atomIndices": [
+        3,
+        16
+      ]
+    },
+    {
+      "index": 661,
+      "name": "SKF-38393",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 662,
+      "name": "SCH-23390",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 663,
+      "name": "Fenoldopam",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 664,
+      "name": "SKF-82958",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 665,
+      "name": "SKF-81297",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 666,
+      "name": "SKF-83566",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 672,
+      "name": "Apomorphine",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 674,
+      "name": "Sumanirole",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 675,
+      "name": "7-OH-DPAT",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 676,
+      "name": "Pergolide",
+      "atomIndices": [
+        5,
+        10,
+        21
+      ]
+    },
+    {
+      "index": 677,
+      "name": "Lisuride",
+      "atomIndices": [
+        8,
+        21
+      ]
+    },
+    {
+      "index": 678,
+      "name": "Cabergoline",
+      "atomIndices": [
+        5,
+        21,
+        32
+      ]
+    },
+    {
+      "index": 681,
+      "name": "Nomifensine",
+      "atomIndices": [
+        9,
+        16
+      ]
+    },
+    {
+      "index": 682,
+      "name": "Mazindol",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 683,
+      "name": "Methamphetamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 685,
+      "name": "Dihydrotetrabenazine",
+      "atomIndices": [
+        13,
+        19,
+        21
+      ]
+    },
+    {
+      "index": 686,
+      "name": "Valbenazine",
+      "atomIndices": [
+        10,
+        11,
+        15,
+        21
+      ]
+    },
+    {
+      "index": 687,
+      "name": "Lobeline",
+      "atomIndices": [
+        2,
+        15,
+        17
+      ]
+    },
+    {
+      "index": 688,
+      "name": "Reserpine",
+      "atomIndices": [
+        4,
+        6,
+        8,
+        24,
+        25,
+        28
+      ]
+    },
+    {
+      "index": 689,
+      "name": "Troxipide",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 691,
+      "name": "4-Iodo-D-phenylalanine hydroxamic acid",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 694,
+      "name": "Viloxazine",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 696,
+      "name": "Phenylalanine-N-sulfonamide",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 707,
+      "name": "N-Carbamoylphenylalanine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 711,
+      "name": "Metamelfalan",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 718,
+      "name": "Guanoxan",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 720,
+      "name": "N-[(4-Methoxyphenyl)sulfonyl]-D-alanine",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 725,
+      "name": "N-Benzoyl-D-alanine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 728,
+      "name": "Indoximod",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 730,
+      "name": "Primaquine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 732,
+      "name": "4,4-Dihydroxy-5-nitro-2-benzylpentanoic acid",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 733,
+      "name": "3-Ethyl-N-tosyl-L-aspartic acid",
+      "atomIndices": [
+        2,
+        6
+      ]
+    },
+    {
+      "index": 734,
+      "name": "Tosyl-D-proline",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 739,
+      "name": "Benzoylecgonine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 741,
+      "name": "Fenoprofen",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 742,
+      "name": "Loxoprofen",
+      "atomIndices": [
+        1,
+        10
+      ]
+    },
+    {
+      "index": 743,
+      "name": "Tiaprofenic acid",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 744,
+      "name": "Suprofen",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 745,
+      "name": "Pirprofen",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 746,
+      "name": "Indoprofen",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 747,
+      "name": "Alminoprofen",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 748,
+      "name": "Benoxaprofen",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 749,
+      "name": "Carprofen",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 779,
+      "name": "Oxyphenbutazone",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 786,
+      "name": "Ketorolac",
+      "atomIndices": [
+        15
+      ]
+    },
+    {
+      "index": 790,
+      "name": "Sulindac",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 795,
+      "name": "Etodolac",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 800,
+      "name": "Phthalofyne",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 804,
+      "name": "SB-409513",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 806,
+      "name": "Zofenoprilat",
+      "atomIndices": [
+        1,
+        17
+      ]
+    },
+    {
+      "index": 809,
+      "name": "Furoyl-leucine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 813,
+      "name": "1-[(2-Amino-4-chloro-5-methylphenyl)sulfonyl]-L-proline",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 820,
+      "name": "Thiophenylacetamido methylene dihydrothiazine dicarboxylic acid",
+      "atomIndices": [
+        5,
+        19
+      ]
+    },
+    {
+      "index": 828,
+      "name": "3-Formyl-2-[(4-nitrophenylsulfonylamino)methyl]pentanoic acid",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 833,
+      "name": "GPI-1485",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 835,
+      "name": "Hopantenic acid",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 883,
+      "name": "Aeruginascin",
+      "atomIndices": [
+        15
+      ]
+    },
+    {
+      "index": 916,
+      "name": "5-MeO-MsBT",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 945,
+      "name": "AMT",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 946,
+      "name": "4-HO-AMT",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 947,
+      "name": "4-Methyl-AMT",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 948,
+      "name": "5-Fluoro-AMT",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 949,
+      "name": "6-Fluoro-AMT",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 950,
+      "name": "alpha-Methylserotonin",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 951,
+      "name": "alpha,N,N-TMT",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 952,
+      "name": "N-Hydroxy-AMT",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 953,
+      "name": "5-MeO-AMT",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 954,
+      "name": "5-MeO-AET",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 955,
+      "name": "alpha,N,O-TMS",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 956,
+      "name": "alpha,N,N,O-TeMS",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 960,
+      "name": "MPMI",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 961,
+      "name": "4-HO-MPMI",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 962,
+      "name": "5-MeO-MPMI",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 966,
+      "name": "Mebfap",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 967,
+      "name": "3-APBT",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 969,
+      "name": "Ro60-0175",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1027,
+      "name": "2C-T-17",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 1040,
+      "name": "beta-Methyl-2C-B",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1041,
+      "name": "BOB",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1042,
+      "name": "BOD",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1043,
+      "name": "BOHB",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1046,
+      "name": "HOT-17",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 1056,
+      "name": "3C-E",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1057,
+      "name": "3C-P",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1058,
+      "name": "3C-AL",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1059,
+      "name": "3C-MAL",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1060,
+      "name": "3C-BZ",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1061,
+      "name": "3C-DFE",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1062,
+      "name": "3C-FP",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1063,
+      "name": "DOC",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1064,
+      "name": "DOPR",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1065,
+      "name": "DOIP",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1066,
+      "name": "DOBU",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1067,
+      "name": "DOIB",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1068,
+      "name": "DOAM",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1069,
+      "name": "DOEF",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1070,
+      "name": "DOTFM",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1071,
+      "name": "DON",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1072,
+      "name": "Aleph",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1073,
+      "name": "Aleph-4",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1074,
+      "name": "Aleph-6",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1075,
+      "name": "Aleph-7",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1076,
+      "name": "TMA-2",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1077,
+      "name": "MEM",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1078,
+      "name": "MPM",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1079,
+      "name": "MIPM",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1080,
+      "name": "MAL",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1081,
+      "name": "MMAL",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1082,
+      "name": "MFEM",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1083,
+      "name": "MDFEM",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1084,
+      "name": "MTFEM",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1085,
+      "name": "N-Hydroxy-DOM",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1086,
+      "name": "MME",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1087,
+      "name": "Ganesha",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1088,
+      "name": "Ganesha-3",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1089,
+      "name": "Ganesha-5",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1090,
+      "name": "4C-B",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1091,
+      "name": "4C-D",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1092,
+      "name": "4C-I",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1093,
+      "name": "4C-P",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1094,
+      "name": "4C-T-2",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1095,
+      "name": "4C-TFM",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1098,
+      "name": "Psi-DOM",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1099,
+      "name": "Psi-DODFMO",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1100,
+      "name": "TMA-6",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1102,
+      "name": "TMA-3",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1103,
+      "name": "TMA-4",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1104,
+      "name": "TMA-5",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1105,
+      "name": "2,4-DMA",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1106,
+      "name": "3,4-DMA",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1107,
+      "name": "MMA",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1108,
+      "name": "4-Hydroxyamphetamine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1109,
+      "name": "2-DM-DOM",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1110,
+      "name": "5-DM-DOM",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1112,
+      "name": "2-TOM",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1113,
+      "name": "5-TOM",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1114,
+      "name": "5-TOET",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1115,
+      "name": "Fenfluramine",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 1116,
+      "name": "Norfenfluramine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1117,
+      "name": "MDOH",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1118,
+      "name": "MDHMA",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 1119,
+      "name": "MMDA-2",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1120,
+      "name": "MMDA-3a",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1121,
+      "name": "MMDA-3b",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1122,
+      "name": "MMDMA",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1124,
+      "name": "DMMDA",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1125,
+      "name": "DMMDA-2",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1126,
+      "name": "5-Methyl-MDA",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1127,
+      "name": "6-Methyl-MDA",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1128,
+      "name": "Lys-MDA",
+      "atomIndices": [
+        5,
+        10
+      ]
+    },
+    {
+      "index": 1129,
+      "name": "N-t-BOC-MDMA",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 1134,
+      "name": "DOB-FLY",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1135,
+      "name": "DOH-FLY",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1138,
+      "name": "Bromo-DragonFLY",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1140,
+      "name": "DOB-5-hemiFLY",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1141,
+      "name": "DOH-5-hemiFLY",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1169,
+      "name": "DOM-NBOMe",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 1172,
+      "name": "5-APB",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1173,
+      "name": "6-APB",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1174,
+      "name": "5-APDB",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1175,
+      "name": "6-APDB",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1176,
+      "name": "5-APBT",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1177,
+      "name": "6-APBT",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1178,
+      "name": "DOM-AI",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1179,
+      "name": "UH-232",
+      "atomIndices": [
+        7,
+        18
+      ]
+    },
+    {
+      "index": 1180,
+      "name": "Lorcaserin",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1181,
+      "name": "TCB-2",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1182,
+      "name": "Tomscaline",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1183,
+      "name": "DMCPA",
+      "atomIndices": [
+        1,
+        3
+      ]
+    },
+    {
+      "index": 1184,
+      "name": "TMT-PCA",
+      "atomIndices": [
+        1,
+        3
+      ]
+    },
+    {
+      "index": 1185,
+      "name": "2C-B-aminorex",
+      "atomIndices": [
+        1,
+        6
+      ]
+    },
+    {
+      "index": 1186,
+      "name": "Ergine",
+      "atomIndices": [
+        3,
+        16
+      ]
+    },
+    {
+      "index": 1187,
+      "name": "DAL",
+      "atomIndices": [
+        9,
+        22
+      ]
+    },
+    {
+      "index": 1188,
+      "name": "DAM-57",
+      "atomIndices": [
+        5,
+        18
+      ]
+    },
+    {
+      "index": 1189,
+      "name": "DiPLA",
+      "atomIndices": [
+        9,
+        22
+      ]
+    },
+    {
+      "index": 1190,
+      "name": "DPL",
+      "atomIndices": [
+        9,
+        22
+      ]
+    },
+    {
+      "index": 1191,
+      "name": "EcPLA",
+      "atomIndices": [
+        8,
+        21
+      ]
+    },
+    {
+      "index": 1192,
+      "name": "EiPLA",
+      "atomIndices": [
+        8,
+        21
+      ]
+    },
+    {
+      "index": 1193,
+      "name": "EPLA",
+      "atomIndices": [
+        8,
+        21
+      ]
+    },
+    {
+      "index": 1194,
+      "name": "Ergometrine",
+      "atomIndices": [
+        1,
+        7,
+        20
+      ]
+    },
+    {
+      "index": 1195,
+      "name": "ETFELA",
+      "atomIndices": [
+        10,
+        23
+      ]
+    },
+    {
+      "index": 1196,
+      "name": "iPLA",
+      "atomIndices": [
+        6,
+        19
+      ]
+    },
+    {
+      "index": 1197,
+      "name": "LAE-32",
+      "atomIndices": [
+        5,
+        18
+      ]
+    },
+    {
+      "index": 1198,
+      "name": "LAM",
+      "atomIndices": [
+        4,
+        17
+      ]
+    },
+    {
+      "index": 1199,
+      "name": "LAMPA",
+      "atomIndices": [
+        7,
+        20
+      ]
+    },
+    {
+      "index": 1200,
+      "name": "LAP",
+      "atomIndices": [
+        6,
+        19
+      ]
+    },
+    {
+      "index": 1201,
+      "name": "LME-54",
+      "atomIndices": [
+        4,
+        17
+      ]
+    },
+    {
+      "index": 1202,
+      "name": "LPD-824",
+      "atomIndices": [
+        7,
+        20
+      ]
+    },
+    {
+      "index": 1203,
+      "name": "LSB",
+      "atomIndices": [
+        2,
+        7,
+        20
+      ]
+    },
+    {
+      "index": 1204,
+      "name": "LSD-Pip",
+      "atomIndices": [
+        8,
+        21
+      ]
+    },
+    {
+      "index": 1205,
+      "name": "LSH",
+      "atomIndices": [
+        1,
+        6,
+        19
+      ]
+    },
+    {
+      "index": 1206,
+      "name": "LSM-775",
+      "atomIndices": [
+        8,
+        21
+      ]
+    },
+    {
+      "index": 1207,
+      "name": "2-LSP",
+      "atomIndices": [
+        3,
+        8,
+        21
+      ]
+    },
+    {
+      "index": 1208,
+      "name": "LSP",
+      "atomIndices": [
+        8,
+        21
+      ]
+    },
+    {
+      "index": 1209,
+      "name": "LSZ",
+      "atomIndices": [
+        3,
+        6,
+        8,
+        21
+      ]
+    },
+    {
+      "index": 1210,
+      "name": "LPN",
+      "atomIndices": [
+        7,
+        20
+      ]
+    },
+    {
+      "index": 1211,
+      "name": "Methylergometrine",
+      "atomIndices": [
+        2,
+        8,
+        21
+      ]
+    },
+    {
+      "index": 1212,
+      "name": "MiPLA",
+      "atomIndices": [
+        7,
+        20
+      ]
+    },
+    {
+      "index": 1213,
+      "name": "BU-LAD",
+      "atomIndices": [
+        7,
+        20
+      ]
+    },
+    {
+      "index": 1214,
+      "name": "CE-LAD",
+      "atomIndices": [
+        7,
+        20
+      ]
+    },
+    {
+      "index": 1215,
+      "name": "CPM-LAD",
+      "atomIndices": [
+        7,
+        20
+      ]
+    },
+    {
+      "index": 1216,
+      "name": "CYP-LAD",
+      "atomIndices": [
+        7,
+        20
+      ]
+    },
+    {
+      "index": 1217,
+      "name": "ETH-LAD",
+      "atomIndices": [
+        7,
+        20
+      ]
+    },
+    {
+      "index": 1218,
+      "name": "FLUORETH-LAD",
+      "atomIndices": [
+        7,
+        20
+      ]
+    },
+    {
+      "index": 1219,
+      "name": "FP-LAD",
+      "atomIndices": [
+        7,
+        20
+      ]
+    },
+    {
+      "index": 1220,
+      "name": "IP-LAD",
+      "atomIndices": [
+        7,
+        20
+      ]
+    },
+    {
+      "index": 1221,
+      "name": "NBOMe-LAD",
+      "atomIndices": [
+        7,
+        20
+      ]
+    },
+    {
+      "index": 1222,
+      "name": "PARGY-LAD",
+      "atomIndices": [
+        7,
+        20
+      ]
+    },
+    {
+      "index": 1223,
+      "name": "PRO-LAD",
+      "atomIndices": [
+        7,
+        20
+      ]
+    },
+    {
+      "index": 1224,
+      "name": "AL-LAD",
+      "atomIndices": [
+        7,
+        20
+      ]
+    },
+    {
+      "index": 1225,
+      "name": "Methysergide",
+      "atomIndices": [
+        2,
+        8,
+        22
+      ]
+    },
+    {
+      "index": 1226,
+      "name": "MLA-74",
+      "atomIndices": [
+        5,
+        19
+      ]
+    },
+    {
+      "index": 1227,
+      "name": "MLD-41",
+      "atomIndices": [
+        7,
+        21
+      ]
+    },
+    {
+      "index": 1228,
+      "name": "MPD-75",
+      "atomIndices": [
+        7,
+        21
+      ]
+    },
+    {
+      "index": 1229,
+      "name": "OML-632",
+      "atomIndices": [
+        7,
+        22
+      ]
+    },
+    {
+      "index": 1230,
+      "name": "1-Formyl-LSD",
+      "atomIndices": [
+        7,
+        22
+      ]
+    },
+    {
+      "index": 1231,
+      "name": "1B-LSD",
+      "atomIndices": [
+        7,
+        25
+      ]
+    },
+    {
+      "index": 1232,
+      "name": "1Bz-LSD",
+      "atomIndices": [
+        7,
+        28
+      ]
+    },
+    {
+      "index": 1233,
+      "name": "1cP-LSD",
+      "atomIndices": [
+        7,
+        25
+      ]
+    },
+    {
+      "index": 1234,
+      "name": "1cP-AL-LAD",
+      "atomIndices": [
+        7,
+        25
+      ]
+    },
+    {
+      "index": 1235,
+      "name": "1cP-MiPLA",
+      "atomIndices": [
+        7,
+        25
+      ]
+    },
+    {
+      "index": 1236,
+      "name": "1P-LSD",
+      "atomIndices": [
+        7,
+        24
+      ]
+    },
+    {
+      "index": 1237,
+      "name": "1P-AL-LAD",
+      "atomIndices": [
+        7,
+        24
+      ]
+    },
+    {
+      "index": 1238,
+      "name": "1P-ETH-LAD",
+      "atomIndices": [
+        7,
+        24
+      ]
+    },
+    {
+      "index": 1239,
+      "name": "1P-MiPLA",
+      "atomIndices": [
+        7,
+        24
+      ]
+    },
+    {
+      "index": 1240,
+      "name": "ALA-10",
+      "atomIndices": [
+        5,
+        21
+      ]
+    },
+    {
+      "index": 1241,
+      "name": "ALD-52",
+      "atomIndices": [
+        7,
+        23
+      ]
+    },
+    {
+      "index": 1242,
+      "name": "1V-LSD",
+      "atomIndices": [
+        7,
+        26
+      ]
+    },
+    {
+      "index": 1243,
+      "name": "1SB-LSD",
+      "atomIndices": [
+        7,
+        32
+      ]
+    },
+    {
+      "index": 1252,
+      "name": "Penicillin V",
+      "atomIndices": [
+        4,
+        5,
+        20
+      ]
+    },
+    {
+      "index": 1253,
+      "name": "Flucloxacillin",
+      "atomIndices": [
+        16,
+        20,
+        25
+      ]
+    },
+    {
+      "index": 1254,
+      "name": "Piperacillin",
+      "atomIndices": [
+        16,
+        26,
+        30,
+        35
+      ]
+    },
+    {
+      "index": 1255,
+      "name": "Ticarcillin",
+      "atomIndices": [
+        3,
+        12,
+        16,
+        21
+      ]
+    },
+    {
+      "index": 1256,
+      "name": "Cefazolin",
+      "atomIndices": [
+        15,
+        25
+      ]
+    },
+    {
+      "index": 1257,
+      "name": "Cefuroxime",
+      "atomIndices": [
+        7,
+        11
+      ]
+    },
+    {
+      "index": 1258,
+      "name": "Ceftriaxone",
+      "atomIndices": [
+        7,
+        11
+      ]
+    },
+    {
+      "index": 1259,
+      "name": "Cefotaxime",
+      "atomIndices": [
+        7,
+        11
+      ]
+    },
+    {
+      "index": 1260,
+      "name": "Ceftazidime",
+      "atomIndices": [
+        9,
+        13
+      ]
+    },
+    {
+      "index": 1261,
+      "name": "Cefepime",
+      "atomIndices": [
+        7,
+        11
+      ]
+    },
+    {
+      "index": 1262,
+      "name": "Meropenem",
+      "atomIndices": [
+        1,
+        2,
+        9,
+        18,
+        25,
+        26
+      ]
+    },
+    {
+      "index": 1263,
+      "name": "Imipenem",
+      "atomIndices": [
+        1,
+        2
+      ]
+    },
+    {
+      "index": 1264,
+      "name": "Ertapenem",
+      "atomIndices": [
+        1,
+        2,
+        9,
+        12,
+        29,
+        30
+      ]
+    },
+    {
+      "index": 1265,
+      "name": "Aztreonam",
+      "atomIndices": [
+        1,
+        2
+      ]
+    },
+    {
+      "index": 1266,
+      "name": "Tetracycline",
+      "atomIndices": [
+        1,
+        3,
+        5,
+        6,
+        18
+      ]
+    },
+    {
+      "index": 1267,
+      "name": "Minocycline",
+      "atomIndices": [
+        3,
+        4,
+        6,
+        23
+      ]
+    },
+    {
+      "index": 1268,
+      "name": "Tigecycline",
+      "atomIndices": [
+        3,
+        4,
+        6,
+        32
+      ]
+    },
+    {
+      "index": 1269,
+      "name": "Oxytetracycline",
+      "atomIndices": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        19
+      ]
+    },
+    {
+      "index": 1270,
+      "name": "Clarithromycin",
+      "atomIndices": [
+        2,
+        6,
+        8,
+        10,
+        12,
+        16,
+        18,
+        21,
+        23,
+        25,
+        27,
+        30,
+        34,
+        36,
+        41,
+        45,
+        47,
+        49
+      ]
+    },
+    {
+      "index": 1271,
+      "name": "Erythromycin",
+      "atomIndices": [
+        2,
+        6,
+        8,
+        10,
+        12,
+        15,
+        17,
+        20,
+        22,
+        24,
+        26,
+        29,
+        33,
+        35,
+        39,
+        43,
+        45,
+        47
+      ]
+    },
+    {
+      "index": 1272,
+      "name": "Telithromycin",
+      "atomIndices": [
+        2,
+        6,
+        10,
+        12,
+        14,
+        16,
+        19,
+        23,
+        25,
+        43,
+        50,
+        51
+      ]
+    },
+    {
+      "index": 1273,
+      "name": "Gentamicin C1a",
+      "atomIndices": [
+        4,
+        6,
+        8,
+        10,
+        13,
+        15,
+        17,
+        19,
+        21,
+        23,
+        25,
+        29,
+        31
+      ]
+    },
+    {
+      "index": 1274,
+      "name": "Streptomycin",
+      "atomIndices": [
+        2,
+        3,
+        5,
+        7,
+        11,
+        13,
+        14,
+        18,
+        20,
+        24,
+        26,
+        27,
+        32,
+        34,
+        39,
+        41
+      ]
+    },
+    {
+      "index": 1275,
+      "name": "Amikacin",
+      "atomIndices": [
+        3,
+        8,
+        10,
+        12,
+        14,
+        16,
+        19,
+        21,
+        23,
+        25,
+        27,
+        29,
+        31,
+        34,
+        36,
+        38
+      ]
+    },
+    {
+      "index": 1276,
+      "name": "Tobramycin",
+      "atomIndices": [
+        2,
+        4,
+        6,
+        7,
+        10,
+        12,
+        14,
+        16,
+        19,
+        21,
+        23,
+        25,
+        27,
+        29,
+        31
+      ]
+    },
+    {
+      "index": 1278,
+      "name": "Lincomycin",
+      "atomIndices": [
+        3,
+        5,
+        9,
+        10,
+        13,
+        15,
+        18,
+        20,
+        22
+      ]
+    },
+    {
+      "index": 1279,
+      "name": "Daptomycin core fragment",
+      "atomIndices": [
+        12,
+        26
+      ]
+    },
+    {
+      "index": 1280,
+      "name": "Tedizolid",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 1281,
+      "name": "Rifabutin",
+      "atomIndices": [
+        1,
+        13,
+        15,
+        31,
+        36,
+        41,
+        43,
+        45
+      ]
+    },
+    {
+      "index": 1283,
+      "name": "Bedaquiline",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 1285,
+      "name": "Cycloserine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1286,
+      "name": "Mupirocin",
+      "atomIndices": [
+        1,
+        2,
+        4,
+        6,
+        8,
+        10,
+        30
+      ]
+    },
+    {
+      "index": 1287,
+      "name": "Fusidic acid",
+      "atomIndices": [
+        1,
+        2,
+        5,
+        7,
+        11,
+        13,
+        14,
+        17,
+        19
+      ]
+    },
+    {
+      "index": 1288,
+      "name": "Fidaxomicin fragment",
+      "atomIndices": [
+        2,
+        11,
+        13,
+        16,
+        23
+      ]
+    },
+    {
+      "index": 1289,
+      "name": "Colistin fragment",
+      "atomIndices": [
+        2,
+        9,
+        16
+      ]
+    },
+    {
+      "index": 1290,
+      "name": "Polymyxin fragment",
+      "atomIndices": [
+        3,
+        17
+      ]
+    },
+    {
+      "index": 1293,
+      "name": "Itraconazole",
+      "atomIndices": [
+        2,
+        22,
+        25
+      ]
+    },
+    {
+      "index": 1294,
+      "name": "Posaconazole",
+      "atomIndices": [
+        2,
+        4,
+        6,
+        26,
+        29
+      ]
+    },
+    {
+      "index": 1295,
+      "name": "Isavuconazole",
+      "atomIndices": [
+        1,
+        21
+      ]
+    },
+    {
+      "index": 1296,
+      "name": "Amphotericin B fragment",
+      "atomIndices": [
+        1,
+        6,
+        9,
+        12,
+        16,
+        18,
+        32,
+        34
+      ]
+    },
+    {
+      "index": 1297,
+      "name": "Caspofungin fragment",
+      "atomIndices": [
+        5,
+        7,
+        11,
+        13,
+        19,
+        20,
+        22
+      ]
+    },
+    {
+      "index": 1298,
+      "name": "Nystatin fragment",
+      "atomIndices": [
+        1,
+        6,
+        9,
+        13,
+        16,
+        19,
+        21,
+        34,
+        36
+      ]
+    },
+    {
+      "index": 1300,
+      "name": "Dolutegravir",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1302,
+      "name": "Ritonavir",
+      "atomIndices": [
+        12,
+        20,
+        23
+      ]
+    },
+    {
+      "index": 1303,
+      "name": "Lopinavir",
+      "atomIndices": [
+        12,
+        20,
+        23,
+        34
+      ]
+    },
+    {
+      "index": 1304,
+      "name": "Darunavir",
+      "atomIndices": [
+        6,
+        8,
+        20,
+        23,
+        27
+      ]
+    },
+    {
+      "index": 1305,
+      "name": "Atazanavir",
+      "atomIndices": [
+        5,
+        24,
+        26,
+        37
+      ]
+    },
+    {
+      "index": 1306,
+      "name": "Nirmatrelvir",
+      "atomIndices": [
+        3,
+        4,
+        5,
+        9,
+        13,
+        22
+      ]
+    },
+    {
+      "index": 1307,
+      "name": "Molnupiravir",
+      "atomIndices": [
+        7,
+        9,
+        19,
+        21
+      ]
+    },
+    {
+      "index": 1308,
+      "name": "Sofosbuvir",
+      "atomIndices": [
+        6,
+        9,
+        13,
+        15,
+        24,
+        27
+      ]
+    },
+    {
+      "index": 1309,
+      "name": "Ledipasvir fragment",
+      "atomIndices": [
+        5,
+        15,
+        28
+      ]
+    },
+    {
+      "index": 1311,
+      "name": "Valacyclovir",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 1312,
+      "name": "Cidofovir",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 1315,
+      "name": "Praziquantel metabolite",
+      "atomIndices": [
+        1,
+        4
+      ]
+    },
+    {
+      "index": 1318,
+      "name": "Levamisole",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 1324,
+      "name": "Miltefosine",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 1325,
+      "name": "Artemether",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        7,
+        11,
+        13,
+        17,
+        18
+      ]
+    },
+    {
+      "index": 1326,
+      "name": "Artesunate",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        7,
+        17,
+        19,
+        23,
+        24
+      ]
+    },
+    {
+      "index": 1327,
+      "name": "Lumefantrine",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 1328,
+      "name": "Tafenoquine",
+      "atomIndices": [
+        24
+      ]
+    },
+    {
+      "index": 1331,
+      "name": "Daunorubicin",
+      "atomIndices": [
+        15,
+        21,
+        23,
+        25,
+        27,
+        29
+      ]
+    },
+    {
+      "index": 1332,
+      "name": "Epirubicin",
+      "atomIndices": [
+        15,
+        22,
+        24,
+        26,
+        28,
+        30
+      ]
+    },
+    {
+      "index": 1333,
+      "name": "Idarubicin",
+      "atomIndices": [
+        16,
+        22,
+        24,
+        26,
+        28,
+        30
+      ]
+    },
+    {
+      "index": 1334,
+      "name": "Bleomycin fragment",
+      "atomIndices": [
+        4,
+        9,
+        11,
+        13,
+        18,
+        19,
+        39
+      ]
+    },
+    {
+      "index": 1335,
+      "name": "Mitomycin C",
+      "atomIndices": [
+        12,
+        14,
+        15,
+        18
+      ]
+    },
+    {
+      "index": 1336,
+      "name": "Dactinomycin fragment",
+      "atomIndices": [
+        15,
+        25
+      ]
+    },
+    {
+      "index": 1338,
+      "name": "Oxaliplatin fragment",
+      "atomIndices": [
+        1,
+        6
+      ]
+    },
+    {
+      "index": 1339,
+      "name": "Topotecan",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1340,
+      "name": "Irinotecan",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1341,
+      "name": "Camptothecin",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1342,
+      "name": "Teniposide fragment",
+      "atomIndices": [
+        5,
+        12,
+        14,
+        19
+      ]
+    },
+    {
+      "index": 1343,
+      "name": "Vinblastine fragment",
+      "atomIndices": [
+        2,
+        5,
+        7
+      ]
+    },
+    {
+      "index": 1344,
+      "name": "Vinorelbine fragment",
+      "atomIndices": [
+        4,
+        6
+      ]
+    },
+    {
+      "index": 1345,
+      "name": "Cabazitaxel fragment",
+      "atomIndices": [
+        3,
+        6,
+        8,
+        11,
+        14,
+        19,
+        20,
+        28
+      ]
+    },
+    {
+      "index": 1346,
+      "name": "Ixabepilone fragment",
+      "atomIndices": [
+        1,
+        5,
+        10,
+        12
+      ]
+    },
+    {
+      "index": 1347,
+      "name": "Eribulin fragment",
+      "atomIndices": [
+        3,
+        6,
+        8,
+        10,
+        12,
+        14
+      ]
+    },
+    {
+      "index": 1355,
+      "name": "Pemetrexed",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 1356,
+      "name": "Pralatrexate",
+      "atomIndices": [
+        3,
+        12
+      ]
+    },
+    {
+      "index": 1357,
+      "name": "Raltitrexed",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 1359,
+      "name": "Fludarabine",
+      "atomIndices": [
+        11,
+        13,
+        16,
+        18
+      ]
+    },
+    {
+      "index": 1360,
+      "name": "Cladribine",
+      "atomIndices": [
+        11,
+        13,
+        15
+      ]
+    },
+    {
+      "index": 1361,
+      "name": "Clofarabine",
+      "atomIndices": [
+        11,
+        13,
+        16,
+        18
+      ]
+    },
+    {
+      "index": 1362,
+      "name": "Azacitidine",
+      "atomIndices": [
+        5,
+        7,
+        10,
+        12
+      ]
+    },
+    {
+      "index": 1363,
+      "name": "Decitabine",
+      "atomIndices": [
+        5,
+        7,
+        9
+      ]
+    },
+    {
+      "index": 1364,
+      "name": "Trifluridine",
+      "atomIndices": [
+        2,
+        4,
+        18
+      ]
+    },
+    {
+      "index": 1365,
+      "name": "Tegafur",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 1368,
+      "name": "Afatinib",
+      "atomIndices": [
+        29
+      ]
+    },
+    {
+      "index": 1376,
+      "name": "Acalabrutinib",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 1378,
+      "name": "Upadacitinib",
+      "atomIndices": [
+        2,
+        14
+      ]
+    },
+    {
+      "index": 1386,
+      "name": "Everolimus fragment",
+      "atomIndices": [
+        2,
+        4,
+        11
+      ]
+    },
+    {
+      "index": 1387,
+      "name": "Temsirolimus fragment",
+      "atomIndices": [
+        9,
+        12,
+        15
+      ]
+    },
+    {
+      "index": 1388,
+      "name": "Idelalisib",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1389,
+      "name": "Alpelisib",
+      "atomIndices": [
+        28
+      ]
+    },
+    {
+      "index": 1392,
+      "name": "Talazoparib",
+      "atomIndices": [
+        1,
+        19
+      ]
+    },
+    {
+      "index": 1394,
+      "name": "Carfilzomib fragment",
+      "atomIndices": [
+        4,
+        8,
+        23,
+        33
+      ]
+    },
+    {
+      "index": 1395,
+      "name": "Ixazomib",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 1396,
+      "name": "Romidepsin fragment",
+      "atomIndices": [
+        3,
+        13
+      ]
+    },
+    {
+      "index": 1399,
+      "name": "Entinostat",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1400,
+      "name": "Exemestane",
+      "atomIndices": [
+        3,
+        9,
+        10
+      ]
+    },
+    {
+      "index": 1401,
+      "name": "Fulvestrant fragment",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        9,
+        11,
+        13,
+        14,
+        22
+      ]
+    },
+    {
+      "index": 1404,
+      "name": "Darolutamide",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1405,
+      "name": "Abiraterone",
+      "atomIndices": [
+        1,
+        4,
+        10,
+        11,
+        14,
+        16
+      ]
+    },
+    {
+      "index": 1406,
+      "name": "Degarelix fragment",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 1407,
+      "name": "Leuprorelin fragment",
+      "atomIndices": [
+        1,
+        15
+      ]
+    },
+    {
+      "index": 1412,
+      "name": "Adapalene",
+      "atomIndices": [
+        23,
+        25
+      ]
+    },
+    {
+      "index": 1414,
+      "name": "Pomalidomide",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 1415,
+      "name": "Apremilast",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 1417,
+      "name": "Siponimod",
+      "atomIndices": [
+        13,
+        18
+      ]
+    },
+    {
+      "index": 1421,
+      "name": "Sirolimus fragment",
+      "atomIndices": [
+        2,
+        4,
+        8,
+        12,
+        14,
+        19
+      ]
+    },
+    {
+      "index": 1422,
+      "name": "Triamcinolone",
+      "atomIndices": [
+        1,
+        3,
+        4,
+        13,
+        15,
+        17,
+        20,
+        22
+      ]
+    },
+    {
+      "index": 1423,
+      "name": "Fludrocortisone",
+      "atomIndices": [
+        1,
+        10,
+        11,
+        13,
+        16,
+        18,
+        21
+      ]
+    },
+    {
+      "index": 1424,
+      "name": "Mometasone",
+      "atomIndices": [
+        1,
+        3,
+        4,
+        13,
+        15,
+        17,
+        20,
+        22
+      ]
+    },
+    {
+      "index": 1425,
+      "name": "Clobetasol",
+      "atomIndices": [
+        1,
+        3,
+        4,
+        13,
+        15,
+        17,
+        20,
+        22
+      ]
+    },
+    {
+      "index": 1426,
+      "name": "Methylprednisolone",
+      "atomIndices": [
+        1,
+        3,
+        4,
+        5,
+        8,
+        10,
+        13,
+        19
+      ]
+    },
+    {
+      "index": 1427,
+      "name": "Cortisone",
+      "atomIndices": [
+        1,
+        10,
+        11,
+        15,
+        17,
+        20
+      ]
+    },
+    {
+      "index": 1428,
+      "name": "Aldosterone",
+      "atomIndices": [
+        1,
+        10,
+        11,
+        12,
+        15,
+        18,
+        21
+      ]
+    },
+    {
+      "index": 1429,
+      "name": "Spironolactone",
+      "atomIndices": [
+        4,
+        12,
+        14,
+        17,
+        19,
+        22,
+        28
+      ]
+    },
+    {
+      "index": 1430,
+      "name": "Eplerenone",
+      "atomIndices": [
+        4,
+        12,
+        14,
+        15,
+        16,
+        18,
+        21,
+        27
+      ]
+    },
+    {
+      "index": 1431,
+      "name": "Pravastatin",
+      "atomIndices": [
+        2,
+        7,
+        9,
+        15,
+        17,
+        20,
+        23,
+        29
+      ]
+    },
+    {
+      "index": 1432,
+      "name": "Fluvastatin",
+      "atomIndices": [
+        7,
+        10
+      ]
+    },
+    {
+      "index": 1433,
+      "name": "Pitavastatin",
+      "atomIndices": [
+        1,
+        3
+      ]
+    },
+    {
+      "index": 1434,
+      "name": "Lovastatin",
+      "atomIndices": [
+        2,
+        7,
+        9,
+        15,
+        17,
+        20,
+        22,
+        28
+      ]
+    },
+    {
+      "index": 1436,
+      "name": "Perindopril",
+      "atomIndices": [
+        3,
+        5,
+        10,
+        15,
+        20
+      ]
+    },
+    {
+      "index": 1437,
+      "name": "Quinapril",
+      "atomIndices": [
+        5,
+        15,
+        28
+      ]
+    },
+    {
+      "index": 1438,
+      "name": "Trandolapril",
+      "atomIndices": [
+        5,
+        15,
+        20,
+        25,
+        30
+      ]
+    },
+    {
+      "index": 1439,
+      "name": "Fosinopril",
+      "atomIndices": [
+        4,
+        13,
+        26,
+        34
+      ]
+    },
+    {
+      "index": 1442,
+      "name": "Sacubitril",
+      "atomIndices": [
+        10,
+        12
+      ]
+    },
+    {
+      "index": 1443,
+      "name": "Aliskiren",
+      "atomIndices": [
+        10,
+        15,
+        17
+      ]
+    },
+    {
+      "index": 1444,
+      "name": "Felodipine",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 1445,
+      "name": "Nicardipine",
+      "atomIndices": [
+        25
+      ]
+    },
+    {
+      "index": 1446,
+      "name": "Lercanidipine",
+      "atomIndices": [
+        35
+      ]
+    },
+    {
+      "index": 1447,
+      "name": "Nebivolol",
+      "atomIndices": [
+        1,
+        5,
+        7,
+        18
+      ]
+    },
+    {
+      "index": 1448,
+      "name": "Sotalol",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 1449,
+      "name": "Esmolol",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 1450,
+      "name": "Timolol",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 1451,
+      "name": "Betaxolol",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 1452,
+      "name": "Celiprolol",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 1453,
+      "name": "Doxazosin",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 1454,
+      "name": "Terazosin",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 1456,
+      "name": "Methyldopa",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1459,
+      "name": "Isosorbide dinitrate",
+      "atomIndices": [
+        4,
+        7,
+        8,
+        15
+      ]
+    },
+    {
+      "index": 1465,
+      "name": "Tolvaptan",
+      "atomIndices": [
+        21,
+        23
+      ]
+    },
+    {
+      "index": 1466,
+      "name": "Digoxin fragment",
+      "atomIndices": [
+        1,
+        3,
+        5,
+        8,
+        10,
+        13,
+        14,
+        17,
+        19,
+        28,
+        32,
+        34
+      ]
+    },
+    {
+      "index": 1469,
+      "name": "Ticagrelor",
+      "atomIndices": [
+        8,
+        10,
+        23,
+        25,
+        27,
+        32
+      ]
+    },
+    {
+      "index": 1470,
+      "name": "Prasugrel",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 1473,
+      "name": "Edoxaban",
+      "atomIndices": [
+        5,
+        8,
+        23
+      ]
+    },
+    {
+      "index": 1475,
+      "name": "Argatroban fragment",
+      "atomIndices": [
+        1,
+        5,
+        12
+      ]
+    },
+    {
+      "index": 1476,
+      "name": "Fondaparinux fragment",
+      "atomIndices": [
+        2,
+        4,
+        6,
+        7,
+        9,
+        15,
+        19,
+        21,
+        27,
+        29
+      ]
+    },
+    {
+      "index": 1480,
+      "name": "Repaglinide",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 1481,
+      "name": "Nateglinide",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 1482,
+      "name": "Saxagliptin",
+      "atomIndices": [
+        2,
+        3,
+        5,
+        9,
+        13,
+        19
+      ]
+    },
+    {
+      "index": 1484,
+      "name": "Vildagliptin",
+      "atomIndices": [
+        2,
+        11
+      ]
+    },
+    {
+      "index": 1485,
+      "name": "Alogliptin",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 1486,
+      "name": "Empagliflozin",
+      "atomIndices": [
+        2,
+        4,
+        17,
+        25,
+        27,
+        29
+      ]
+    },
+    {
+      "index": 1487,
+      "name": "Dapagliflozin",
+      "atomIndices": [
+        11,
+        13,
+        16,
+        18,
+        20
+      ]
+    },
+    {
+      "index": 1488,
+      "name": "Canagliflozin",
+      "atomIndices": [
+        19,
+        21,
+        24,
+        26,
+        28
+      ]
+    },
+    {
+      "index": 1489,
+      "name": "Acarbose fragment",
+      "atomIndices": [
+        1,
+        3,
+        5,
+        6,
+        8,
+        10,
+        14,
+        16,
+        18,
+        20,
+        22,
+        27,
+        29,
+        31
+      ]
+    },
+    {
+      "index": 1490,
+      "name": "Liraglutide fragment",
+      "atomIndices": [
+        25
+      ]
+    },
+    {
+      "index": 1499,
+      "name": "Calcitriol",
+      "atomIndices": [
+        1,
+        9,
+        12,
+        14,
+        19,
+        22
+      ]
+    },
+    {
+      "index": 1500,
+      "name": "Cinacalcet",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1501,
+      "name": "Rabeprazole",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 1503,
+      "name": "Sucralfate fragment",
+      "atomIndices": [
+        5,
+        6,
+        12,
+        19,
+        26
+      ]
+    },
+    {
+      "index": 1504,
+      "name": "Misoprostol",
+      "atomIndices": [
+        4,
+        11,
+        16
+      ]
+    },
+    {
+      "index": 1506,
+      "name": "Granisetron",
+      "atomIndices": [
+        9,
+        13
+      ]
+    },
+    {
+      "index": 1507,
+      "name": "Palonosetron",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 1508,
+      "name": "Aprepitant",
+      "atomIndices": [
+        7,
+        10,
+        22
+      ]
+    },
+    {
+      "index": 1511,
+      "name": "Hyoscine butylbromide fragment",
+      "atomIndices": [
+        1,
+        6,
+        8,
+        12,
+        22,
+        23,
+        25
+      ]
+    },
+    {
+      "index": 1512,
+      "name": "Mebeverine",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 1513,
+      "name": "Linaclotide fragment",
+      "atomIndices": [
+        1,
+        9,
+        21
+      ]
+    },
+    {
+      "index": 1514,
+      "name": "Lubiprostone",
+      "atomIndices": [
+        11,
+        12,
+        17
+      ]
+    },
+    {
+      "index": 1515,
+      "name": "Ursodeoxycholic acid",
+      "atomIndices": [
+        1,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        21,
+        23,
+        26
+      ]
+    },
+    {
+      "index": 1516,
+      "name": "Obeticholic acid",
+      "atomIndices": [
+        2,
+        3,
+        5,
+        9,
+        10,
+        19,
+        21,
+        25,
+        27,
+        28
+      ]
+    },
+    {
+      "index": 1517,
+      "name": "Cholic acid",
+      "atomIndices": [
+        1,
+        7,
+        10,
+        11,
+        12,
+        15,
+        17,
+        21,
+        23,
+        24,
+        27
+      ]
+    },
+    {
+      "index": 1519,
+      "name": "Eslicarbazepine",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 1521,
+      "name": "Primidone",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1522,
+      "name": "Lacosamide",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 1524,
+      "name": "Brivaracetam",
+      "atomIndices": [
+        3,
+        8
+      ]
+    },
+    {
+      "index": 1525,
+      "name": "Tiagabine",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 1527,
+      "name": "Stiripentol",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 1530,
+      "name": "Nabilone",
+      "atomIndices": [
+        19,
+        25
+      ]
+    },
+    {
+      "index": 1531,
+      "name": "Levodopa methyl ester",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 1532,
+      "name": "Benserazide",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 1535,
+      "name": "Rotigotine",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 1536,
+      "name": "Safinamide",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1537,
+      "name": "Trihexyphenidyl",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1538,
+      "name": "Benztropine",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 1539,
+      "name": "Tetrabenazine",
+      "atomIndices": [
+        4,
+        8
+      ]
+    },
+    {
+      "index": 1544,
+      "name": "Asenapine",
+      "atomIndices": [
+        3,
+        18
+      ]
+    },
+    {
+      "index": 1545,
+      "name": "Lurasidone",
+      "atomIndices": [
+        4,
+        9,
+        11
+      ]
+    },
+    {
+      "index": 1554,
+      "name": "Trimipramine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1559,
+      "name": "Milnacipran",
+      "atomIndices": [
+        7,
+        15
+      ]
+    },
+    {
+      "index": 1560,
+      "name": "Reboxetine",
+      "atomIndices": [
+        10,
+        17
+      ]
+    },
+    {
+      "index": 1563,
+      "name": "Temazepam",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 1564,
+      "name": "Oxazepam",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1567,
+      "name": "Zopiclone",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 1570,
+      "name": "Ramelteon",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 1573,
+      "name": "Solriamfetol",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1574,
+      "name": "Ropivacaine",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 1575,
+      "name": "Mepivacaine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 1576,
+      "name": "Prilocaine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 1577,
+      "name": "Articaine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 1578,
+      "name": "Etomidate",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 1580,
+      "name": "Isoflurane",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 1581,
+      "name": "Desflurane",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 1582,
+      "name": "Halothane",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 1583,
+      "name": "Rocuronium fragment",
+      "atomIndices": [
+        1,
+        3,
+        6,
+        7,
+        10,
+        12,
+        18,
+        24,
+        26,
+        28
+      ]
+    },
+    {
+      "index": 1587,
+      "name": "Physostigmine",
+      "atomIndices": [
+        11,
+        17
+      ]
+    },
+    {
+      "index": 1588,
+      "name": "Ipratropium",
+      "atomIndices": [
+        5,
+        8,
+        14
+      ]
+    },
+    {
+      "index": 1589,
+      "name": "Tiotropium fragment",
+      "atomIndices": [
+        15,
+        17,
+        20
+      ]
+    },
+    {
+      "index": 1590,
+      "name": "Glycopyrronium",
+      "atomIndices": [
+        6,
+        11
+      ]
+    },
+    {
+      "index": 1591,
+      "name": "Solifenacin",
+      "atomIndices": [
+        3,
+        20
+      ]
+    },
+    {
+      "index": 1592,
+      "name": "Tolterodine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 1593,
+      "name": "Mirabegron",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 1594,
+      "name": "Finasteride",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        8,
+        14,
+        16,
+        19
+      ]
+    },
+    {
+      "index": 1595,
+      "name": "Dutasteride",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        8,
+        14,
+        16,
+        19
+      ]
+    },
+    {
+      "index": 1596,
+      "name": "Tamsulosin",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 1597,
+      "name": "Silodosin",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1598,
+      "name": "Alfuzosin",
+      "atomIndices": [
+        15
+      ]
+    },
+    {
+      "index": 1600,
+      "name": "Avanafil",
+      "atomIndices": [
+        15
+      ]
+    },
+    {
+      "index": 1603,
+      "name": "Indacaterol",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 1609,
+      "name": "Chlorphenamine",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 1612,
+      "name": "Latanoprost",
+      "atomIndices": [
+        12,
+        13,
+        16,
+        18,
+        21
+      ]
+    },
+    {
+      "index": 1614,
+      "name": "Brinzolamide",
+      "atomIndices": [
+        4,
+        6
+      ]
+    },
+    {
+      "index": 1615,
+      "name": "Dorzolamide",
+      "atomIndices": [
+        3,
+        5
+      ]
+    },
+    {
+      "index": 1622,
+      "name": "2-Methylbutanol",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1623,
+      "name": "2-Undecanol",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 1630,
+      "name": "2-Heptanol",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 1638,
+      "name": "Menthone",
+      "atomIndices": [
+        3,
+        6
+      ]
+    },
+    {
+      "index": 1641,
+      "name": "styrene oxide",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1643,
+      "name": "Deoxycorticosterone",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        14,
+        16,
+        19
+      ]
+    },
+    {
+      "index": 1644,
+      "name": "L-arabinose",
+      "atomIndices": [
+        2,
+        4,
+        6,
+        8
+      ]
+    },
+    {
+      "index": 1654,
+      "name": "d-Limonene",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 1664,
+      "name": "pregnenolone",
+      "atomIndices": [
+        3,
+        6,
+        7,
+        12,
+        16,
+        18,
+        21
+      ]
+    },
+    {
+      "index": 1669,
+      "name": "Ethisterone",
+      "atomIndices": [
+        1,
+        10,
+        11,
+        14,
+        16,
+        19
+      ]
+    },
+    {
+      "index": 1670,
+      "name": "Diosgenin",
+      "atomIndices": [
+        1,
+        5,
+        8,
+        11,
+        13,
+        16,
+        19,
+        22,
+        24,
+        26,
+        27
+      ]
+    },
+    {
+      "index": 1682,
+      "name": "Carvone",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 1684,
+      "name": "linalool",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 1686,
+      "name": "Epiandrosterone",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        8,
+        10,
+        14,
+        16
+      ]
+    },
+    {
+      "index": 1687,
+      "name": "mannitol",
+      "atomIndices": [
+        2,
+        4,
+        6,
+        8
+      ]
+    },
+    {
+      "index": 1692,
+      "name": "megestrol acetate",
+      "atomIndices": [
+        4,
+        7,
+        8,
+        18,
+        20,
+        23
+      ]
+    },
+    {
+      "index": 1697,
+      "name": "Equilin",
+      "atomIndices": [
+        1,
+        4,
+        15
+      ]
+    },
+    {
+      "index": 1698,
+      "name": "Raffinose",
+      "atomIndices": [
+        2,
+        4,
+        8,
+        10,
+        13,
+        15,
+        18,
+        20,
+        22,
+        24,
+        26,
+        28,
+        30,
+        32
+      ]
+    },
+    {
+      "index": 1701,
+      "name": "17a-Methyltestosterone",
+      "atomIndices": [
+        1,
+        5,
+        6,
+        15,
+        17,
+        20
+      ]
+    },
+    {
+      "index": 1716,
+      "name": "Hexestrol",
+      "atomIndices": [
+        2,
+        3
+      ]
+    },
+    {
+      "index": 1724,
+      "name": "3-Hexanol",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 1727,
+      "name": "2-Nonanol",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 1729,
+      "name": "deoxycorticosterone acetate",
+      "atomIndices": [
+        7,
+        10,
+        11,
+        20,
+        22,
+        25
+      ]
+    },
+    {
+      "index": 1735,
+      "name": "Equilenin",
+      "atomIndices": [
+        1,
+        15
+      ]
+    },
+    {
+      "index": 1737,
+      "name": "Lactose",
+      "atomIndices": [
+        2,
+        4,
+        6,
+        7,
+        9,
+        11,
+        14,
+        17,
+        19,
+        21
+      ]
+    },
+    {
+      "index": 1741,
+      "name": "testosterone acetate",
+      "atomIndices": [
+        4,
+        7,
+        8,
+        17,
+        19,
+        22
+      ]
+    },
+    {
+      "index": 1742,
+      "name": "2-Hexanol",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 1746,
+      "name": "3-Methyl-2-butanol",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 1751,
+      "name": "Coumatetralyl",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 1758,
+      "name": "3-Methyl-3-heptanol",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 1767,
+      "name": "2-Methyltetrahydrofurane",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1768,
+      "name": "Santonin",
+      "atomIndices": [
+        1,
+        2,
+        5,
+        13
+      ]
+    },
+    {
+      "index": 1769,
+      "name": "Salicin",
+      "atomIndices": [
+        2,
+        4,
+        14,
+        16,
+        18
+      ]
+    },
+    {
+      "index": 1771,
+      "name": "Hydroxyprogesterone-17a",
+      "atomIndices": [
+        3,
+        7,
+        8,
+        17,
+        19,
+        22
+      ]
+    },
+    {
+      "index": 1772,
+      "name": "2-Pentanol",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 1773,
+      "name": "benzoin",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1774,
+      "name": "3-Methyl-2-pentanol",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1776,
+      "name": "hydrobenzoin",
+      "atomIndices": [
+        6,
+        8
+      ]
+    },
+    {
+      "index": 1781,
+      "name": "adrenosterone",
+      "atomIndices": [
+        1,
+        5,
+        6,
+        15,
+        17
+      ]
+    },
+    {
+      "index": 1799,
+      "name": "Androsterone",
+      "atomIndices": [
+        1,
+        4,
+        7,
+        10,
+        11,
+        14,
+        16
+      ]
+    },
+    {
+      "index": 1802,
+      "name": "Prasterone",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        10,
+        14,
+        16
+      ]
+    },
+    {
+      "index": 1804,
+      "name": "meconin",
+      "atomIndices": [
+        7,
+        12
+      ]
+    },
+    {
+      "index": 1811,
+      "name": "cortisone acetate",
+      "atomIndices": [
+        7,
+        11,
+        12,
+        21,
+        23,
+        27
+      ]
+    },
+    {
+      "index": 1813,
+      "name": "prednisolone acetate",
+      "atomIndices": [
+        7,
+        11,
+        12,
+        21,
+        23,
+        24,
+        27
+      ]
+    },
+    {
+      "index": 1817,
+      "name": "testosterone propionate",
+      "atomIndices": [
+        5,
+        8,
+        9,
+        18,
+        20,
+        23
+      ]
+    },
+    {
+      "index": 1826,
+      "name": "2-Methyl-3-pentanol",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1827,
+      "name": "borneol",
+      "atomIndices": [
+        3,
+        6,
+        8
+      ]
+    },
+    {
+      "index": 1831,
+      "name": "Medrogestone",
+      "atomIndices": [
+        3,
+        7,
+        8,
+        18,
+        20,
+        23
+      ]
+    },
+    {
+      "index": 1834,
+      "name": "3-Methyl-3-hexanol",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 1839,
+      "name": "2-Ethylhexanal",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 1847,
+      "name": "hematein",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 1850,
+      "name": "D-fenchone",
+      "atomIndices": [
+        3,
+        6
+      ]
+    },
+    {
+      "index": 1851,
+      "name": "Erythritol",
+      "atomIndices": [
+        2,
+        4
+      ]
+    },
+    {
+      "index": 1857,
+      "name": "Ethinyl estradiol",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        15,
+        18
+      ]
+    },
+    {
+      "index": 1865,
+      "name": "Butan-2-ol",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1866,
+      "name": "estriol",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        15,
+        17,
+        19
+      ]
+    },
+    {
+      "index": 1872,
+      "name": "Di(2-ethylhexyl)-phthalate",
+      "atomIndices": [
+        4,
+        21
+      ]
+    },
+    {
+      "index": 1874,
+      "name": "Hydrocortisone 21-acetate",
+      "atomIndices": [
+        7,
+        11,
+        12,
+        21,
+        23,
+        24,
+        27
+      ]
+    },
+    {
+      "index": 1877,
+      "name": "3-Octanol",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 1878,
+      "name": "2-Methylpentanol",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 1881,
+      "name": "Methoprene",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 1886,
+      "name": "Stanolone",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        8,
+        14,
+        16,
+        19
+      ]
+    },
+    {
+      "index": 1887,
+      "name": "1-Hexene-3-ol",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 1895,
+      "name": "3-Methyl-2-pentanone",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 1896,
+      "name": "Androstenedione",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        14,
+        16
+      ]
+    },
+    {
+      "index": 1901,
+      "name": "1-Phenylethanol",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 1903,
+      "name": "methyltestosterone acetate",
+      "atomIndices": [
+        4,
+        8,
+        9,
+        18,
+        20,
+        23
+      ]
+    },
+    {
+      "index": 1905,
+      "name": "Corticosterone",
+      "atomIndices": [
+        1,
+        3,
+        5,
+        6,
+        15,
+        17,
+        20
+      ]
+    },
+    {
+      "index": 1912,
+      "name": "phenothrin",
+      "atomIndices": [
+        4,
+        5
+      ]
+    },
+    {
+      "index": 1915,
+      "name": "Norethisterone",
+      "atomIndices": [
+        2,
+        6,
+        7,
+        16,
+        17,
+        20
+      ]
+    },
+    {
+      "index": 1923,
+      "name": "3-Methylheptane",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 1927,
+      "name": "Sucrose",
+      "atomIndices": [
+        2,
+        4,
+        6,
+        10,
+        13,
+        15,
+        17,
+        19,
+        21
+      ]
+    },
+    {
+      "index": 1930,
+      "name": "gentisin",
+      "atomIndices": [
+        3,
+        6,
+        12,
+        14
+      ]
+    },
+    {
+      "index": 1932,
+      "name": "Monotropitoside",
+      "atomIndices": [
+        11,
+        13,
+        16,
+        19,
+        21,
+        23,
+        25,
+        27,
+        29
+      ]
+    },
+    {
+      "index": 1933,
+      "name": "3-Heptanol",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 1935,
+      "name": "2-Ethyl-1-hexanol",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 1946,
+      "name": "norethindrone acetate",
+      "atomIndices": [
+        4,
+        7,
+        8,
+        17,
+        18,
+        21
+      ]
+    },
+    {
+      "index": 1948,
+      "name": "Eriodictyol",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 1953,
+      "name": "4-Methyl-2-pentanol",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 1956,
+      "name": "2-Octanol",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2462,
+      "name": "Noradrenaline (norepinephrine)",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2465,
+      "name": "Octopamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2472,
+      "name": "2-Arachidonoylglycerol",
+      "atomIndices": [
+        23
+      ]
+    },
+    {
+      "index": 2479,
+      "name": "Adenosine triphosphate (ATP)",
+      "atomIndices": [
+        10,
+        12,
+        15,
+        19,
+        27,
+        29
+      ]
+    },
+    {
+      "index": 2480,
+      "name": "Adenosine diphosphate (ADP)",
+      "atomIndices": [
+        10,
+        12,
+        15,
+        23,
+        25
+      ]
+    },
+    {
+      "index": 2481,
+      "name": "Adenosine monophosphate (AMP)",
+      "atomIndices": [
+        10,
+        12,
+        19,
+        21
+      ]
+    },
+    {
+      "index": 2482,
+      "name": "Uridine triphosphate (UTP)",
+      "atomIndices": [
+        8,
+        10,
+        13,
+        17,
+        25,
+        27
+      ]
+    },
+    {
+      "index": 2483,
+      "name": "Uridine diphosphate (UDP)",
+      "atomIndices": [
+        8,
+        10,
+        13,
+        21,
+        23
+      ]
+    },
+    {
+      "index": 2489,
+      "name": "Metanephrine",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 2490,
+      "name": "Normetanephrine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2493,
+      "name": "L-Cysteine sulfinic acid",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 2496,
+      "name": "Prednisone",
+      "atomIndices": [
+        1,
+        10,
+        11,
+        15,
+        17,
+        20
+      ]
+    },
+    {
+      "index": 2497,
+      "name": "Beclometasone",
+      "atomIndices": [
+        1,
+        3,
+        4,
+        13,
+        15,
+        17,
+        20,
+        22
+      ]
+    },
+    {
+      "index": 2498,
+      "name": "Alclometasone",
+      "atomIndices": [
+        1,
+        3,
+        4,
+        5,
+        14,
+        16,
+        17,
+        20,
+        22
+      ]
+    },
+    {
+      "index": 2499,
+      "name": "Flumethasone",
+      "atomIndices": [
+        1,
+        3,
+        4,
+        6,
+        14,
+        16,
+        18,
+        21,
+        23
+      ]
+    },
+    {
+      "index": 2500,
+      "name": "Fluocinolone",
+      "atomIndices": [
+        1,
+        8,
+        11,
+        12,
+        14,
+        16,
+        22,
+        25,
+        27
+      ]
+    },
+    {
+      "index": 2501,
+      "name": "Paramethasone",
+      "atomIndices": [
+        1,
+        3,
+        4,
+        6,
+        14,
+        16,
+        17,
+        20,
+        22
+      ]
+    },
+    {
+      "index": 2502,
+      "name": "Desoximetasone",
+      "atomIndices": [
+        1,
+        3,
+        4,
+        13,
+        15,
+        17,
+        20,
+        22
+      ]
+    },
+    {
+      "index": 2503,
+      "name": "Fluorometholone",
+      "atomIndices": [
+        3,
+        7,
+        8,
+        10,
+        18,
+        20,
+        22,
+        25
+      ]
+    },
+    {
+      "index": 2504,
+      "name": "Medrysone",
+      "atomIndices": [
+        3,
+        6,
+        7,
+        9,
+        17,
+        19,
+        20,
+        23
+      ]
+    },
+    {
+      "index": 2505,
+      "name": "Fluprednisolone",
+      "atomIndices": [
+        1,
+        8,
+        11,
+        12,
+        13,
+        16,
+        18,
+        21
+      ]
+    },
+    {
+      "index": 2506,
+      "name": "Isoflupredone",
+      "atomIndices": [
+        1,
+        10,
+        11,
+        14,
+        20,
+        23,
+        25
+      ]
+    },
+    {
+      "index": 2507,
+      "name": "Meprednisone",
+      "atomIndices": [
+        1,
+        3,
+        4,
+        13,
+        15,
+        19,
+        21
+      ]
+    },
+    {
+      "index": 2508,
+      "name": "Cortodoxone",
+      "atomIndices": [
+        1,
+        10,
+        11,
+        14,
+        16,
+        19
+      ]
+    },
+    {
+      "index": 2509,
+      "name": "Tixocortol",
+      "atomIndices": [
+        1,
+        10,
+        11,
+        12,
+        15,
+        17,
+        20
+      ]
+    },
+    {
+      "index": 2510,
+      "name": "Rimexolone",
+      "atomIndices": [
+        4,
+        6,
+        9,
+        10,
+        19,
+        21,
+        22,
+        25
+      ]
+    },
+    {
+      "index": 2511,
+      "name": "Diflucortolone",
+      "atomIndices": [
+        1,
+        3,
+        4,
+        6,
+        14,
+        16,
+        18,
+        21,
+        23
+      ]
+    },
+    {
+      "index": 2512,
+      "name": "Fluocortolone",
+      "atomIndices": [
+        1,
+        3,
+        4,
+        6,
+        14,
+        16,
+        17,
+        20,
+        22
+      ]
+    },
+    {
+      "index": 2513,
+      "name": "Clocortolone",
+      "atomIndices": [
+        1,
+        3,
+        4,
+        6,
+        14,
+        16,
+        18,
+        21,
+        23
+      ]
+    },
+    {
+      "index": 2514,
+      "name": "Halometasone",
+      "atomIndices": [
+        1,
+        3,
+        4,
+        6,
+        15,
+        17,
+        19,
+        22,
+        24
+      ]
+    },
+    {
+      "index": 2515,
+      "name": "Methylprednisolone acetate",
+      "atomIndices": [
+        7,
+        11,
+        12,
+        14,
+        22,
+        24,
+        25,
+        28
+      ]
+    },
+    {
+      "index": 2516,
+      "name": "Dexamethasone acetate",
+      "atomIndices": [
+        7,
+        9,
+        12,
+        13,
+        22,
+        24,
+        26,
+        29
+      ]
+    },
+    {
+      "index": 2517,
+      "name": "Betamethasone valerate",
+      "atomIndices": [
+        7,
+        12,
+        15,
+        16,
+        25,
+        27,
+        29,
+        32
+      ]
+    },
+    {
+      "index": 2518,
+      "name": "Clobetasol propionate",
+      "atomIndices": [
+        5,
+        10,
+        13,
+        14,
+        23,
+        25,
+        27,
+        30
+      ]
+    },
+    {
+      "index": 2519,
+      "name": "Mometasone furoate",
+      "atomIndices": [
+        1,
+        3,
+        4,
+        13,
+        15,
+        17,
+        20,
+        22
+      ]
+    },
+    {
+      "index": 2520,
+      "name": "Fluticasone propionate",
+      "atomIndices": [
+        5,
+        11,
+        14,
+        15,
+        17,
+        25,
+        27,
+        29,
+        32
+      ]
+    },
+    {
+      "index": 2521,
+      "name": "Fluticasone furoate",
+      "atomIndices": [
+        1,
+        3,
+        4,
+        6,
+        14,
+        16,
+        18,
+        21,
+        23
+      ]
+    },
+    {
+      "index": 2522,
+      "name": "Hydrocortisone butyrate",
+      "atomIndices": [
+        6,
+        13,
+        14,
+        23,
+        25,
+        26,
+        29
+      ]
+    },
+    {
+      "index": 2523,
+      "name": "Hydrocortisone valerate",
+      "atomIndices": [
+        7,
+        14,
+        15,
+        24,
+        26,
+        27,
+        30
+      ]
+    },
+    {
+      "index": 2524,
+      "name": "Prednicarbate",
+      "atomIndices": [
+        6,
+        17,
+        18,
+        27,
+        29,
+        30,
+        33
+      ]
+    },
+    {
+      "index": 2525,
+      "name": "Difluprednate",
+      "atomIndices": [
+        6,
+        16,
+        17,
+        19,
+        27,
+        29,
+        31,
+        34
+      ]
+    },
+    {
+      "index": 2526,
+      "name": "Triamcinolone acetonide",
+      "atomIndices": [
+        4,
+        6,
+        7,
+        16,
+        18,
+        20,
+        23,
+        25
+      ]
+    },
+    {
+      "index": 2527,
+      "name": "Fluocinolone acetonide",
+      "atomIndices": [
+        4,
+        6,
+        7,
+        9,
+        17,
+        19,
+        21,
+        24,
+        26
+      ]
+    },
+    {
+      "index": 2528,
+      "name": "Fluocinonide",
+      "atomIndices": [
+        7,
+        13,
+        15,
+        16,
+        18,
+        26,
+        28,
+        30,
+        33
+      ]
+    },
+    {
+      "index": 2529,
+      "name": "Desonide",
+      "atomIndices": [
+        4,
+        6,
+        7,
+        16,
+        18,
+        19,
+        22,
+        24
+      ]
+    },
+    {
+      "index": 2530,
+      "name": "Flunisolide",
+      "atomIndices": [
+        4,
+        6,
+        7,
+        9,
+        17,
+        19,
+        20,
+        23,
+        25
+      ]
+    },
+    {
+      "index": 2531,
+      "name": "Halcinonide",
+      "atomIndices": [
+        4,
+        6,
+        7,
+        16,
+        18,
+        20,
+        23,
+        25
+      ]
+    },
+    {
+      "index": 2532,
+      "name": "Amcinonide",
+      "atomIndices": [
+        7,
+        15,
+        17,
+        18,
+        27,
+        29,
+        31,
+        34
+      ]
+    },
+    {
+      "index": 2533,
+      "name": "Budesonide",
+      "atomIndices": [
+        3,
+        5,
+        7,
+        8,
+        17,
+        19,
+        20,
+        23,
+        25
+      ]
+    },
+    {
+      "index": 2534,
+      "name": "Ciclesonide",
+      "atomIndices": [
+        9,
+        11,
+        19,
+        21,
+        22,
+        31,
+        33,
+        34,
+        37
+      ]
+    },
+    {
+      "index": 2535,
+      "name": "Medroxyprogesterone",
+      "atomIndices": [
+        3,
+        7,
+        8,
+        10,
+        18,
+        20,
+        23
+      ]
+    },
+    {
+      "index": 2536,
+      "name": "Medroxyprogesterone acetate",
+      "atomIndices": [
+        4,
+        10,
+        11,
+        13,
+        21,
+        23,
+        26
+      ]
+    },
+    {
+      "index": 2537,
+      "name": "Megestrol",
+      "atomIndices": [
+        3,
+        7,
+        8,
+        18,
+        20,
+        23
+      ]
+    },
+    {
+      "index": 2538,
+      "name": "Chlormadinone",
+      "atomIndices": [
+        3,
+        7,
+        8,
+        18,
+        20,
+        23
+      ]
+    },
+    {
+      "index": 2539,
+      "name": "Chlormadinone acetate",
+      "atomIndices": [
+        4,
+        10,
+        11,
+        21,
+        23,
+        26
+      ]
+    },
+    {
+      "index": 2540,
+      "name": "Delmadinone acetate",
+      "atomIndices": [
+        4,
+        10,
+        11,
+        21,
+        23,
+        26
+      ]
+    },
+    {
+      "index": 2541,
+      "name": "Nomegestrol",
+      "atomIndices": [
+        3,
+        7,
+        8,
+        18,
+        19,
+        22
+      ]
+    },
+    {
+      "index": 2542,
+      "name": "Nomegestrol acetate",
+      "atomIndices": [
+        4,
+        10,
+        11,
+        21,
+        22,
+        25
+      ]
+    },
+    {
+      "index": 2543,
+      "name": "Dydrogesterone",
+      "atomIndices": [
+        3,
+        6,
+        7,
+        16,
+        18,
+        21
+      ]
+    },
+    {
+      "index": 2544,
+      "name": "Hydroxyprogesterone acetate",
+      "atomIndices": [
+        4,
+        10,
+        11,
+        20,
+        22,
+        25
+      ]
+    },
+    {
+      "index": 2545,
+      "name": "Hydroxyprogesterone caproate",
+      "atomIndices": [
+        8,
+        14,
+        15,
+        24,
+        26,
+        29
+      ]
+    },
+    {
+      "index": 2546,
+      "name": "Dimethisterone",
+      "atomIndices": [
+        3,
+        7,
+        8,
+        10,
+        18,
+        20,
+        23
+      ]
+    },
+    {
+      "index": 2547,
+      "name": "Levonorgestrel",
+      "atomIndices": [
+        2,
+        6,
+        7,
+        16,
+        17,
+        20
+      ]
+    },
+    {
+      "index": 2548,
+      "name": "Etonogestrel",
+      "atomIndices": [
+        2,
+        6,
+        7,
+        16,
+        17,
+        21
+      ]
+    },
+    {
+      "index": 2549,
+      "name": "Desogestrel",
+      "atomIndices": [
+        2,
+        6,
+        7,
+        15,
+        16,
+        20
+      ]
+    },
+    {
+      "index": 2550,
+      "name": "Norethandrolone",
+      "atomIndices": [
+        2,
+        6,
+        7,
+        16,
+        17,
+        20
+      ]
+    },
+    {
+      "index": 2551,
+      "name": "Lynestrenol",
+      "atomIndices": [
+        2,
+        6,
+        7,
+        15,
+        16,
+        19
+      ]
+    },
+    {
+      "index": 2552,
+      "name": "Allylestrenol",
+      "atomIndices": [
+        3,
+        7,
+        8,
+        16,
+        17,
+        20
+      ]
+    },
+    {
+      "index": 2553,
+      "name": "Ethylestrenol",
+      "atomIndices": [
+        2,
+        6,
+        7,
+        15,
+        16,
+        19
+      ]
+    },
+    {
+      "index": 2554,
+      "name": "Nandrolone",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        14,
+        15,
+        18
+      ]
+    },
+    {
+      "index": 2555,
+      "name": "Nandrolone decanoate",
+      "atomIndices": [
+        12,
+        15,
+        16,
+        25,
+        26,
+        29
+      ]
+    },
+    {
+      "index": 2556,
+      "name": "Nandrolone phenylpropionate",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        14,
+        15,
+        18
+      ]
+    },
+    {
+      "index": 2557,
+      "name": "Norclostebol",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        15,
+        16,
+        19
+      ]
+    },
+    {
+      "index": 2558,
+      "name": "Trestolone",
+      "atomIndices": [
+        1,
+        9,
+        10,
+        13,
+        15,
+        19,
+        20
+      ]
+    },
+    {
+      "index": 2559,
+      "name": "Boldenone",
+      "atomIndices": [
+        1,
+        10,
+        11,
+        14,
+        16,
+        20
+      ]
+    },
+    {
+      "index": 2560,
+      "name": "Boldione",
+      "atomIndices": [
+        1,
+        10,
+        11,
+        14,
+        20
+      ]
+    },
+    {
+      "index": 2561,
+      "name": "Methandienone",
+      "atomIndices": [
+        1,
+        10,
+        11,
+        14,
+        16,
+        19
+      ]
+    },
+    {
+      "index": 2562,
+      "name": "Fluoxymesterone",
+      "atomIndices": [
+        1,
+        5,
+        6,
+        15,
+        17,
+        19,
+        22
+      ]
+    },
+    {
+      "index": 2563,
+      "name": "Bolasterone",
+      "atomIndices": [
+        1,
+        9,
+        11,
+        14,
+        16,
+        19,
+        22
+      ]
+    },
+    {
+      "index": 2564,
+      "name": "Clostebol",
+      "atomIndices": [
+        1,
+        11,
+        12,
+        15,
+        17,
+        21
+      ]
+    },
+    {
+      "index": 2565,
+      "name": "Mesterolone",
+      "atomIndices": [
+        1,
+        6,
+        9,
+        10,
+        13,
+        15,
+        19,
+        20
+      ]
+    },
+    {
+      "index": 2566,
+      "name": "Drostanolone",
+      "atomIndices": [
+        1,
+        3,
+        5,
+        8,
+        9,
+        12,
+        14,
+        18
+      ]
+    },
+    {
+      "index": 2567,
+      "name": "Oxandrolone",
+      "atomIndices": [
+        1,
+        7,
+        10,
+        11,
+        14,
+        16,
+        19
+      ]
+    },
+    {
+      "index": 2568,
+      "name": "Oxymetholone",
+      "atomIndices": [
+        1,
+        9,
+        12,
+        13,
+        16,
+        18,
+        21
+      ]
+    },
+    {
+      "index": 2569,
+      "name": "Androstanedione",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        8,
+        14,
+        16
+      ]
+    },
+    {
+      "index": 2570,
+      "name": "Androstenediol",
+      "atomIndices": [
+        1,
+        4,
+        10,
+        11,
+        14,
+        16,
+        20
+      ]
+    },
+    {
+      "index": 2571,
+      "name": "11-Ketotestosterone",
+      "atomIndices": [
+        1,
+        10,
+        11,
+        15,
+        17,
+        21
+      ]
+    },
+    {
+      "index": 2572,
+      "name": "11b-Hydroxytestosterone",
+      "atomIndices": [
+        1,
+        10,
+        11,
+        12,
+        15,
+        17,
+        21
+      ]
+    },
+    {
+      "index": 2573,
+      "name": "11-Ketodihydrotestosterone",
+      "atomIndices": [
+        1,
+        5,
+        6,
+        9,
+        15,
+        17,
+        20
+      ]
+    },
+    {
+      "index": 2574,
+      "name": "Testosterone isocaproate",
+      "atomIndices": [
+        8,
+        11,
+        12,
+        21,
+        23,
+        26
+      ]
+    },
+    {
+      "index": 2575,
+      "name": "Testosterone enanthate",
+      "atomIndices": [
+        9,
+        12,
+        13,
+        22,
+        24,
+        27
+      ]
+    },
+    {
+      "index": 2576,
+      "name": "Testosterone cypionate",
+      "atomIndices": [
+        1,
+        10,
+        11,
+        14,
+        16,
+        29
+      ]
+    },
+    {
+      "index": 2577,
+      "name": "Testosterone phenylpropionate",
+      "atomIndices": [
+        1,
+        10,
+        11,
+        14,
+        16,
+        30
+      ]
+    },
+    {
+      "index": 2578,
+      "name": "Testosterone undecanoate",
+      "atomIndices": [
+        13,
+        16,
+        17,
+        26,
+        28,
+        31
+      ]
+    },
+    {
+      "index": 2579,
+      "name": "Formestane",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        15,
+        17
+      ]
+    },
+    {
+      "index": 2580,
+      "name": "Atamestane",
+      "atomIndices": [
+        3,
+        11,
+        12,
+        15,
+        21
+      ]
+    },
+    {
+      "index": 2581,
+      "name": "Androstenetrione",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        15,
+        17
+      ]
+    },
+    {
+      "index": 2582,
+      "name": "Mestranol",
+      "atomIndices": [
+        2,
+        6,
+        7,
+        18,
+        21
+      ]
+    },
+    {
+      "index": 2583,
+      "name": "Estradiol 3-methyl ether",
+      "atomIndices": [
+        10,
+        11,
+        14,
+        16,
+        20
+      ]
+    },
+    {
+      "index": 2584,
+      "name": "Estradiol acetate",
+      "atomIndices": [
+        4,
+        7,
+        8,
+        18,
+        21
+      ]
+    },
+    {
+      "index": 2585,
+      "name": "Estradiol valerate",
+      "atomIndices": [
+        7,
+        10,
+        11,
+        21,
+        24
+      ]
+    },
+    {
+      "index": 2586,
+      "name": "Estradiol enanthate",
+      "atomIndices": [
+        9,
+        12,
+        13,
+        23,
+        26
+      ]
+    },
+    {
+      "index": 2587,
+      "name": "Estradiol benzoate",
+      "atomIndices": [
+        1,
+        4,
+        14,
+        15,
+        18
+      ]
+    },
+    {
+      "index": 2588,
+      "name": "Estradiol cypionate",
+      "atomIndices": [
+        1,
+        4,
+        14,
+        15,
+        18
+      ]
+    },
+    {
+      "index": 2589,
+      "name": "Estradiol undecylate",
+      "atomIndices": [
+        13,
+        16,
+        17,
+        27,
+        30
+      ]
+    },
+    {
+      "index": 2590,
+      "name": "Estradiol dipropionate",
+      "atomIndices": [
+        13,
+        14,
+        17,
+        19,
+        27
+      ]
+    },
+    {
+      "index": 2591,
+      "name": "Estrone acetate",
+      "atomIndices": [
+        12,
+        13,
+        16,
+        22
+      ]
+    },
+    {
+      "index": 2592,
+      "name": "Quinestrol",
+      "atomIndices": [
+        2,
+        6,
+        7,
+        22,
+        25
+      ]
+    },
+    {
+      "index": 2593,
+      "name": "16a-Hydroxyestrone",
+      "atomIndices": [
+        1,
+        4,
+        14,
+        15,
+        17
+      ]
+    },
+    {
+      "index": 2594,
+      "name": "Estetrol",
+      "atomIndices": [
+        1,
+        4,
+        14,
+        15,
+        16,
+        18,
+        20
+      ]
+    },
+    {
+      "index": 2595,
+      "name": "2-Hydroxyestradiol",
+      "atomIndices": [
+        1,
+        4,
+        15,
+        16,
+        19
+      ]
+    },
+    {
+      "index": 2596,
+      "name": "2-Methoxyestradiol",
+      "atomIndices": [
+        11,
+        12,
+        15,
+        17,
+        21
+      ]
+    },
+    {
+      "index": 2597,
+      "name": "2-Methoxyestrone",
+      "atomIndices": [
+        11,
+        12,
+        15,
+        21
+      ]
+    },
+    {
+      "index": 2598,
+      "name": "4-Hydroxyestradiol",
+      "atomIndices": [
+        1,
+        4,
+        15,
+        16,
+        19
+      ]
+    },
+    {
+      "index": 2599,
+      "name": "4-Methoxyestradiol",
+      "atomIndices": [
+        11,
+        12,
+        15,
+        17,
+        21
+      ]
+    },
+    {
+      "index": 2600,
+      "name": "Fulvestrant",
+      "atomIndices": [
+        1,
+        4,
+        13,
+        23,
+        35,
+        36,
+        39
+      ]
+    },
+    {
+      "index": 2609,
+      "name": "Lasofoxifene",
+      "atomIndices": [
+        7,
+        22
+      ]
+    },
+    {
+      "index": 2610,
+      "name": "Benzestrol",
+      "atomIndices": [
+        2,
+        10,
+        13
+      ]
+    },
+    {
+      "index": 2611,
+      "name": "Promethestrol",
+      "atomIndices": [
+        2,
+        11
+      ]
+    },
+    {
+      "index": 2620,
+      "name": "Zearalenone",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 2621,
+      "name": "Zeranol",
+      "atomIndices": [
+        1,
+        5
+      ]
+    },
+    {
+      "index": 2622,
+      "name": "a-Zearalenol",
+      "atomIndices": [
+        1,
+        5
+      ]
+    },
+    {
+      "index": 2628,
+      "name": "Equol",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 2634,
+      "name": "Naringenin",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 2635,
+      "name": "Liquiritigenin",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 2636,
+      "name": "8-Prenylnaringenin",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 2637,
+      "name": "Enterolactone",
+      "atomIndices": [
+        4,
+        13
+      ]
+    },
+    {
+      "index": 2638,
+      "name": "Enterodiol",
+      "atomIndices": [
+        2,
+        11
+      ]
+    },
+    {
+      "index": 2639,
+      "name": "Aminoglutethimide",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2640,
+      "name": "Rogletimide",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2641,
+      "name": "Fadrozole",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2642,
+      "name": "Vorozole",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 2645,
+      "name": "Cyproterone",
+      "atomIndices": [
+        3,
+        7,
+        8,
+        16,
+        18,
+        19,
+        21,
+        24
+      ]
+    },
+    {
+      "index": 2646,
+      "name": "Cyproterone acetate",
+      "atomIndices": [
+        4,
+        10,
+        11,
+        19,
+        21,
+        22,
+        24,
+        27
+      ]
+    },
+    {
+      "index": 2647,
+      "name": "Canrenone",
+      "atomIndices": [
+        1,
+        10,
+        11,
+        14,
+        16,
+        19
+      ]
+    },
+    {
+      "index": 2648,
+      "name": "Galeterone",
+      "atomIndices": [
+        1,
+        4,
+        10,
+        11,
+        14,
+        28
+      ]
+    },
+    {
+      "index": 2649,
+      "name": "Mifepristone",
+      "atomIndices": [
+        3,
+        7,
+        8,
+        19,
+        30
+      ]
+    },
+    {
+      "index": 2650,
+      "name": "Ulipristal acetate",
+      "atomIndices": [
+        4,
+        10,
+        11,
+        22,
+        33
+      ]
+    },
+    {
+      "index": 2651,
+      "name": "19-Norprogesterone",
+      "atomIndices": [
+        3,
+        6,
+        7,
+        16,
+        17,
+        20
+      ]
+    },
+    {
+      "index": 2652,
+      "name": "Gestonorone",
+      "atomIndices": [
+        3,
+        7,
+        8,
+        17,
+        18,
+        21
+      ]
+    },
+    {
+      "index": 2653,
+      "name": "Gestonorone caproate",
+      "atomIndices": [
+        8,
+        14,
+        15,
+        24,
+        25,
+        28
+      ]
+    },
+    {
+      "index": 2654,
+      "name": "Segesterone",
+      "atomIndices": [
+        3,
+        4,
+        13,
+        14,
+        17,
+        19
+      ]
+    },
+    {
+      "index": 2655,
+      "name": "Segesterone acetate",
+      "atomIndices": [
+        3,
+        4,
+        13,
+        14,
+        17,
+        19
+      ]
+    },
+    {
+      "index": 2656,
+      "name": "Norgestomet",
+      "atomIndices": [
+        4,
+        10,
+        11,
+        20,
+        21,
+        22,
+        25
+      ]
+    },
+    {
+      "index": 2657,
+      "name": "Norethisterone enanthate",
+      "atomIndices": [
+        2,
+        14,
+        15,
+        24,
+        25,
+        28
+      ]
+    },
+    {
+      "index": 2658,
+      "name": "Etynodiol",
+      "atomIndices": [
+        2,
+        6,
+        7,
+        12,
+        16,
+        17,
+        20
+      ]
+    },
+    {
+      "index": 2659,
+      "name": "Etynodiol diacetate",
+      "atomIndices": [
+        2,
+        9,
+        10,
+        15,
+        22,
+        23,
+        26
+      ]
+    },
+    {
+      "index": 2660,
+      "name": "Norgestimate",
+      "atomIndices": [
+        2,
+        9,
+        10,
+        20,
+        21,
+        24
+      ]
+    },
+    {
+      "index": 2661,
+      "name": "Norelgestromin",
+      "atomIndices": [
+        2,
+        6,
+        7,
+        17,
+        18,
+        21
+      ]
+    },
+    {
+      "index": 2662,
+      "name": "Gestodene",
+      "atomIndices": [
+        2,
+        6,
+        7,
+        16,
+        17,
+        20
+      ]
+    },
+    {
+      "index": 2663,
+      "name": "Normethandrone",
+      "atomIndices": [
+        1,
+        5,
+        6,
+        15,
+        16,
+        19
+      ]
+    },
+    {
+      "index": 2664,
+      "name": "Dimethandrolone",
+      "atomIndices": [
+        1,
+        3,
+        4,
+        5,
+        8,
+        10,
+        14,
+        15
+      ]
+    },
+    {
+      "index": 2665,
+      "name": "Trestolone acetate",
+      "atomIndices": [
+        4,
+        7,
+        8,
+        10,
+        18,
+        19,
+        22
+      ]
+    },
+    {
+      "index": 2666,
+      "name": "Melengestrol acetate",
+      "atomIndices": [
+        3,
+        4,
+        14,
+        16,
+        19,
+        21
+      ]
+    },
+    {
+      "index": 2667,
+      "name": "Clomegestone acetate",
+      "atomIndices": [
+        4,
+        8,
+        11,
+        12,
+        22,
+        24,
+        27
+      ]
+    },
+    {
+      "index": 2668,
+      "name": "Delmadinone",
+      "atomIndices": [
+        3,
+        7,
+        8,
+        18,
+        20,
+        23
+      ]
+    },
+    {
+      "index": 2669,
+      "name": "Hydroxyprogesterone enanthate",
+      "atomIndices": [
+        9,
+        15,
+        16,
+        25,
+        27,
+        30
+      ]
+    },
+    {
+      "index": 2670,
+      "name": "Flugestone",
+      "atomIndices": [
+        3,
+        7,
+        8,
+        17,
+        19,
+        21,
+        24
+      ]
+    },
+    {
+      "index": 2671,
+      "name": "Flugestone acetate",
+      "atomIndices": [
+        4,
+        10,
+        11,
+        20,
+        22,
+        24,
+        27
+      ]
+    },
+    {
+      "index": 2672,
+      "name": "Anagestone",
+      "atomIndices": [
+        3,
+        7,
+        8,
+        10,
+        17,
+        19,
+        22
+      ]
+    },
+    {
+      "index": 2673,
+      "name": "Anagestone acetate",
+      "atomIndices": [
+        4,
+        10,
+        11,
+        13,
+        20,
+        22,
+        25
+      ]
+    },
+    {
+      "index": 2674,
+      "name": "5a-Dihydroprogesterone",
+      "atomIndices": [
+        3,
+        6,
+        7,
+        10,
+        16,
+        18,
+        21
+      ]
+    },
+    {
+      "index": 2675,
+      "name": "20a-Dihydroprogesterone",
+      "atomIndices": [
+        1,
+        3,
+        6,
+        7,
+        16,
+        18,
+        21
+      ]
+    },
+    {
+      "index": 2676,
+      "name": "17a-Hydroxypregnenolone",
+      "atomIndices": [
+        3,
+        7,
+        8,
+        13,
+        17,
+        19,
+        22
+      ]
+    },
+    {
+      "index": 2677,
+      "name": "19-Hydroxyandrostenedione",
+      "atomIndices": [
+        2,
+        11,
+        12,
+        17,
+        21
+      ]
+    },
+    {
+      "index": 2678,
+      "name": "16a-Hydroxyandrostenedione",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        14,
+        16,
+        18
+      ]
+    },
+    {
+      "index": 2679,
+      "name": "Androstadienedione",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        14,
+        16
+      ]
+    },
+    {
+      "index": 2680,
+      "name": "Androstatrienedione",
+      "atomIndices": [
+        1,
+        10,
+        11,
+        14,
+        20
+      ]
+    },
+    {
+      "index": 2681,
+      "name": "Minamestane",
+      "atomIndices": [
+        1,
+        11,
+        12,
+        15,
+        21
+      ]
+    },
+    {
+      "index": 2682,
+      "name": "Plomestane",
+      "atomIndices": [
+        3,
+        12,
+        13,
+        18,
+        22
+      ]
+    },
+    {
+      "index": 2683,
+      "name": "4-Acetoxyandrostenedione",
+      "atomIndices": [
+        8,
+        9,
+        14,
+        18,
+        19
+      ]
+    },
+    {
+      "index": 2684,
+      "name": "6-Methyleneandrostenedione",
+      "atomIndices": [
+        3,
+        4,
+        9,
+        13,
+        14
+      ]
+    },
+    {
+      "index": 2685,
+      "name": "Testolactone",
+      "atomIndices": [
+        1,
+        4,
+        5,
+        14,
+        16
+      ]
+    },
+    {
+      "index": 2686,
+      "name": "Liarozole",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2692,
+      "name": "Hesperetin",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2695,
+      "name": "Econazole",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 2696,
+      "name": "Sulconazole",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 2697,
+      "name": "Bifonazole",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 2698,
+      "name": "Desomorphine",
+      "atomIndices": [
+        4,
+        13,
+        17,
+        18
+      ]
+    },
+    {
+      "index": 2699,
+      "name": "Heterocodeine",
+      "atomIndices": [
+        2,
+        5,
+        6,
+        15,
+        20
+      ]
+    },
+    {
+      "index": 2700,
+      "name": "Hydromorphinol",
+      "atomIndices": [
+        4,
+        13,
+        14,
+        18,
+        20
+      ]
+    },
+    {
+      "index": 2701,
+      "name": "Acetylcodeine",
+      "atomIndices": [
+        9,
+        10,
+        17,
+        18,
+        24
+      ]
+    },
+    {
+      "index": 2702,
+      "name": "Diacetyldihydromorphine",
+      "atomIndices": [
+        11,
+        12,
+        19,
+        20,
+        26
+      ]
+    },
+    {
+      "index": 2703,
+      "name": "Thebacon",
+      "atomIndices": [
+        9,
+        17,
+        18,
+        24
+      ]
+    },
+    {
+      "index": 2704,
+      "name": "Benzylmorphine",
+      "atomIndices": [
+        4,
+        20,
+        21,
+        25,
+        26
+      ]
+    },
+    {
+      "index": 2705,
+      "name": "Pholcodine",
+      "atomIndices": [
+        4,
+        21,
+        22,
+        26,
+        27
+      ]
+    },
+    {
+      "index": 2706,
+      "name": "Nicocodeine",
+      "atomIndices": [
+        9,
+        10,
+        22,
+        23,
+        29
+      ]
+    },
+    {
+      "index": 2707,
+      "name": "Nicomorphine",
+      "atomIndices": [
+        4,
+        21,
+        22,
+        34,
+        35
+      ]
+    },
+    {
+      "index": 2708,
+      "name": "Naloxol",
+      "atomIndices": [
+        6,
+        15,
+        16,
+        20,
+        22
+      ]
+    },
+    {
+      "index": 2709,
+      "name": "Nalmexone",
+      "atomIndices": [
+        8,
+        17,
+        22,
+        24
+      ]
+    },
+    {
+      "index": 2710,
+      "name": "Thebaine",
+      "atomIndices": [
+        6,
+        16,
+        21
+      ]
+    },
+    {
+      "index": 2711,
+      "name": "Oripavine",
+      "atomIndices": [
+        6,
+        15,
+        20
+      ]
+    },
+    {
+      "index": 2712,
+      "name": "Naltrindole",
+      "atomIndices": [
+        8,
+        19,
+        21,
+        30
+      ]
+    },
+    {
+      "index": 2713,
+      "name": "Nalfurafine",
+      "atomIndices": [
+        11,
+        14,
+        16,
+        25,
+        33
+      ]
+    },
+    {
+      "index": 2714,
+      "name": "Etorphine",
+      "atomIndices": [
+        3,
+        6,
+        8,
+        11,
+        14,
+        23,
+        28
+      ]
+    },
+    {
+      "index": 2715,
+      "name": "Dihydroetorphine",
+      "atomIndices": [
+        3,
+        6,
+        8,
+        11,
+        14,
+        23,
+        28
+      ]
+    },
+    {
+      "index": 2716,
+      "name": "Diprenorphine",
+      "atomIndices": [
+        2,
+        5,
+        7,
+        12,
+        21,
+        29
+      ]
+    },
+    {
+      "index": 2717,
+      "name": "Buprenorphine",
+      "atomIndices": [
+        2,
+        5,
+        7,
+        8,
+        15,
+        24,
+        32
+      ]
+    },
+    {
+      "index": 2718,
+      "name": "Norbuprenorphine",
+      "atomIndices": [
+        2,
+        5,
+        7,
+        8,
+        15,
+        24,
+        28
+      ]
+    },
+    {
+      "index": 2719,
+      "name": "Dezocine",
+      "atomIndices": [
+        1,
+        6,
+        10
+      ]
+    },
+    {
+      "index": 2720,
+      "name": "Spiradoline",
+      "atomIndices": [
+        13,
+        16,
+        22
+      ]
+    },
+    {
+      "index": 2721,
+      "name": "Salvinorin A",
+      "atomIndices": [
+        4,
+        6,
+        11,
+        17,
+        19,
+        28,
+        30
+      ]
+    },
+    {
+      "index": 2722,
+      "name": "Mitragynine",
+      "atomIndices": [
+        2,
+        18,
+        20
+      ]
+    },
+    {
+      "index": 2723,
+      "name": "7-Hydroxymitragynine",
+      "atomIndices": [
+        2,
+        7,
+        19,
+        21
+      ]
+    },
+    {
+      "index": 2728,
+      "name": "Meclonazepam",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 2729,
+      "name": "Nifoxipam",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 2730,
+      "name": "Lormetazepam",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 2741,
+      "name": "Clorazepate",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 2742,
+      "name": "Doxefazepam",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2743,
+      "name": "Camazepam",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2758,
+      "name": "Butabarbital",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2760,
+      "name": "Secobarbital",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 2763,
+      "name": "Talbutal",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 2767,
+      "name": "Mephobarbital",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2768,
+      "name": "Hexobarbital",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 2771,
+      "name": "Methohexital",
+      "atomIndices": [
+        3,
+        4
+      ]
+    },
+    {
+      "index": 2772,
+      "name": "Thiamylal",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 2778,
+      "name": "Carisoprodol",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 2779,
+      "name": "Ethchlorvynol",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2780,
+      "name": "Glutethimide",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2781,
+      "name": "Methyprylon",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 2790,
+      "name": "CHEMBL467094",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2810,
+      "name": "CHEMBL4562437",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 2814,
+      "name": "CHEMBL4875600",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2815,
+      "name": "CHEMBL4846638",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 2822,
+      "name": "CHEMBL4850448",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2823,
+      "name": "CHEMBL4870510",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2824,
+      "name": "CHEMBL4858849",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2825,
+      "name": "CHEMBL4869194",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 2826,
+      "name": "CHEMBL4848697",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2827,
+      "name": "CHEMBL4863347",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2828,
+      "name": "CHEMBL4876267",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2829,
+      "name": "CHEMBL4848026",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2830,
+      "name": "CHEMBL4863523",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2831,
+      "name": "CHEMBL64000",
+      "atomIndices": [
+        4,
+        6,
+        10
+      ]
+    },
+    {
+      "index": 2832,
+      "name": "CHEMBL313738",
+      "atomIndices": [
+        2,
+        6,
+        7
+      ]
+    },
+    {
+      "index": 2833,
+      "name": "CHEMBL84113",
+      "atomIndices": [
+        3,
+        5,
+        9
+      ]
+    },
+    {
+      "index": 2834,
+      "name": "CHEMBL440138",
+      "atomIndices": [
+        5,
+        7,
+        11
+      ]
+    },
+    {
+      "index": 2835,
+      "name": "CHEMBL310558",
+      "atomIndices": [
+        5,
+        7,
+        11
+      ]
+    },
+    {
+      "index": 2837,
+      "name": "CHEMBL315428",
+      "atomIndices": [
+        3,
+        5,
+        9
+      ]
+    },
+    {
+      "index": 2838,
+      "name": "CHEMBL85190",
+      "atomIndices": [
+        2,
+        6,
+        7
+      ]
+    },
+    {
+      "index": 2840,
+      "name": "CHEMBL314493",
+      "atomIndices": [
+        2,
+        6,
+        7
+      ]
+    },
+    {
+      "index": 2841,
+      "name": "CHEMBL82754",
+      "atomIndices": [
+        3,
+        5,
+        9
+      ]
+    },
+    {
+      "index": 2843,
+      "name": "CHEMBL22278",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2844,
+      "name": "CHEMBL22071",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2848,
+      "name": "CHEMBL21942",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2849,
+      "name": "CHEMBL22962",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2851,
+      "name": "CHEMBL25334",
+      "atomIndices": [
+        6,
+        9,
+        17,
+        22
+      ]
+    },
+    {
+      "index": 2852,
+      "name": "CHEMBL418189",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2862,
+      "name": "CHEMBL369062",
+      "atomIndices": [
+        35
+      ]
+    },
+    {
+      "index": 2864,
+      "name": "CHEMBL517712",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 2867,
+      "name": "CHEMBL177040",
+      "atomIndices": [
+        34
+      ]
+    },
+    {
+      "index": 2873,
+      "name": "CHEMBL184843",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 2874,
+      "name": "CHEMBL183903",
+      "atomIndices": [
+        13,
+        16
+      ]
+    },
+    {
+      "index": 2875,
+      "name": "CHEMBL183331",
+      "atomIndices": [
+        3,
+        6
+      ]
+    },
+    {
+      "index": 2876,
+      "name": "CHEMBL181447",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 2877,
+      "name": "CHEMBL360154",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 2884,
+      "name": "CHEMBL150624",
+      "atomIndices": [
+        31
+      ]
+    },
+    {
+      "index": 2886,
+      "name": "CHEMBL418446",
+      "atomIndices": [
+        28
+      ]
+    },
+    {
+      "index": 2892,
+      "name": "CHEMBL64788",
+      "atomIndices": [
+        4,
+        6,
+        10
+      ]
+    },
+    {
+      "index": 2893,
+      "name": "CHEMBL978",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 2897,
+      "name": "CHEMBL203249",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2898,
+      "name": "CHEMBL383248",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2899,
+      "name": "CHEMBL382213",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2900,
+      "name": "CHEMBL427013",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2902,
+      "name": "CHEMBL201933",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2905,
+      "name": "CHEMBL200319",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2906,
+      "name": "CHEMBL200210",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2907,
+      "name": "CHEMBL381020",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2908,
+      "name": "CHEMBL370862",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2911,
+      "name": "CHEMBL200566",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 2918,
+      "name": "CHEMBL197973",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2919,
+      "name": "CHEMBL373256",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2920,
+      "name": "CHEMBL200416",
+      "atomIndices": [
+        4,
+        8
+      ]
+    },
+    {
+      "index": 2921,
+      "name": "CHEMBL199821",
+      "atomIndices": [
+        5,
+        9
+      ]
+    },
+    {
+      "index": 2922,
+      "name": "CHEMBL200957",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2923,
+      "name": "CHEMBL200432",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2925,
+      "name": "CHEMBL200693",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 2932,
+      "name": "CHEMBL122757",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 2934,
+      "name": "CHEMBL308351",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 2947,
+      "name": "CHEMBL500",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 2977,
+      "name": "CHEMBL332964",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 2978,
+      "name": "CHEMBL121964",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 2979,
+      "name": "CHEMBL122992",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 2980,
+      "name": "CHEMBL121704",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 2981,
+      "name": "CHEMBL120278",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 2982,
+      "name": "CHEMBL122990",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2983,
+      "name": "CHEMBL123596",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 2984,
+      "name": "CHEMBL183921",
+      "atomIndices": [
+        1,
+        17
+      ]
+    },
+    {
+      "index": 3018,
+      "name": "CHEMBL53795",
+      "atomIndices": [
+        25
+      ]
+    },
+    {
+      "index": 3023,
+      "name": "CHEMBL298474",
+      "atomIndices": [
+        9,
+        11,
+        13,
+        14,
+        16
+      ]
+    },
+    {
+      "index": 3025,
+      "name": "CHEMBL52333",
+      "atomIndices": [
+        11,
+        13
+      ]
+    },
+    {
+      "index": 3061,
+      "name": "CHEMBL2094089",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 3075,
+      "name": "CHEMBL4440944",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 3076,
+      "name": "CHEMBL4558883",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3077,
+      "name": "CHEMBL4470834",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3078,
+      "name": "CHEMBL4579452",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3079,
+      "name": "CHEMBL4535903",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3082,
+      "name": "CHEMBL4459070",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3083,
+      "name": "CHEMBL4515703",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3084,
+      "name": "CHEMBL4453362",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3085,
+      "name": "CHEMBL4568554",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3086,
+      "name": "CHEMBL4458683",
+      "atomIndices": [
+        13,
+        16
+      ]
+    },
+    {
+      "index": 3087,
+      "name": "CHEMBL4472489",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3088,
+      "name": "CHEMBL4552884",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3089,
+      "name": "CHEMBL4463575",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3090,
+      "name": "CHEMBL4534876",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3091,
+      "name": "CHEMBL4451425",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3092,
+      "name": "CHEMBL4471668",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3093,
+      "name": "CHEMBL4438435",
+      "atomIndices": [
+        13,
+        16
+      ]
+    },
+    {
+      "index": 3155,
+      "name": "CHEMBL186586",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3156,
+      "name": "CHEMBL186736",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3157,
+      "name": "CHEMBL363947",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 3158,
+      "name": "CHEMBL184562",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 3159,
+      "name": "CHEMBL360428",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3166,
+      "name": "CHEMBL24458",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3168,
+      "name": "CHEMBL306229",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 3169,
+      "name": "CHEMBL307544",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 3170,
+      "name": "CHEMBL65805",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3171,
+      "name": "CHEMBL67948",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 3172,
+      "name": "CHEMBL67098",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3173,
+      "name": "CHEMBL66767",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3174,
+      "name": "CHEMBL304046",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3175,
+      "name": "CHEMBL17805",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3177,
+      "name": "CHEMBL82602",
+      "atomIndices": [
+        19
+      ]
+    },
+    {
+      "index": 3179,
+      "name": "CHEMBL94306",
+      "atomIndices": [
+        26
+      ]
+    },
+    {
+      "index": 3183,
+      "name": "CHEMBL197268",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 3184,
+      "name": "CHEMBL198166",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 3185,
+      "name": "CHEMBL198708",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 3186,
+      "name": "CHEMBL198170",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 3187,
+      "name": "CHEMBL426878",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 3188,
+      "name": "CHEMBL217907",
+      "atomIndices": [
+        22
+      ]
+    },
+    {
+      "index": 3189,
+      "name": "CHEMBL426550",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 3190,
+      "name": "CHEMBL221649",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 3191,
+      "name": "CHEMBL221525",
+      "atomIndices": [
+        24
+      ]
+    },
+    {
+      "index": 3192,
+      "name": "CHEMBL221641",
+      "atomIndices": [
+        24
+      ]
+    },
+    {
+      "index": 3193,
+      "name": "CHEMBL425639",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3194,
+      "name": "CHEMBL221474",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3195,
+      "name": "CHEMBL374448",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 3196,
+      "name": "CHEMBL221184",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 3197,
+      "name": "CHEMBL376235",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3198,
+      "name": "CHEMBL220533",
+      "atomIndices": [
+        20
+      ]
+    },
+    {
+      "index": 3200,
+      "name": "CHEMBL386957",
+      "atomIndices": [
+        20
+      ]
+    },
+    {
+      "index": 3203,
+      "name": "CHEMBL221850",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 3204,
+      "name": "CHEMBL220597",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 3205,
+      "name": "CHEMBL373874",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 3206,
+      "name": "CHEMBL222107",
+      "atomIndices": [
+        20
+      ]
+    },
+    {
+      "index": 3207,
+      "name": "CHEMBL374296",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 3208,
+      "name": "CHEMBL385106",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 3210,
+      "name": "CHEMBL221490",
+      "atomIndices": [
+        20
+      ]
+    },
+    {
+      "index": 3211,
+      "name": "CHEMBL221489",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 3212,
+      "name": "CHEMBL221438",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 3213,
+      "name": "CHEMBL375370",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3214,
+      "name": "CHEMBL221388",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 3226,
+      "name": "CHEMBL74331",
+      "atomIndices": [
+        4,
+        6
+      ]
+    },
+    {
+      "index": 3388,
+      "name": "CHEMBL294273",
+      "atomIndices": [
+        4,
+        6,
+        10
+      ]
+    },
+    {
+      "index": 3410,
+      "name": "CHEMBL216928",
+      "atomIndices": [
+        24
+      ]
+    },
+    {
+      "index": 3427,
+      "name": "CHEMBL523518",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3428,
+      "name": "CHEMBL524061",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3429,
+      "name": "CHEMBL496915",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3430,
+      "name": "CHEMBL493980",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3431,
+      "name": "CHEMBL493979",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3432,
+      "name": "CHEMBL493795",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3434,
+      "name": "CHEMBL576663",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 3435,
+      "name": "CHEMBL583051",
+      "atomIndices": [
+        5,
+        10
+      ]
+    },
+    {
+      "index": 3439,
+      "name": "CHEMBL571123",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 3440,
+      "name": "CHEMBL576707",
+      "atomIndices": [
+        5,
+        10
+      ]
+    },
+    {
+      "index": 3504,
+      "name": "CHEMBL1083994",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 3505,
+      "name": "CHEMBL1086005",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 3506,
+      "name": "CHEMBL1083995",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3507,
+      "name": "CHEMBL1083368",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3508,
+      "name": "CHEMBL1084772",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3509,
+      "name": "CHEMBL1083666",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3510,
+      "name": "CHEMBL1084706",
+      "atomIndices": [
+        22
+      ]
+    },
+    {
+      "index": 3511,
+      "name": "CHEMBL1084707",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3512,
+      "name": "CHEMBL1083363",
+      "atomIndices": [
+        20
+      ]
+    },
+    {
+      "index": 3513,
+      "name": "CHEMBL1086542",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3514,
+      "name": "CHEMBL1082500",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 3515,
+      "name": "CHEMBL1082501",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3549,
+      "name": "CHEMBL217299",
+      "atomIndices": [
+        8,
+        17
+      ]
+    },
+    {
+      "index": 3603,
+      "name": "CHEMBL181202",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 3638,
+      "name": "CHEMBL93240",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3647,
+      "name": "CHEMBL270840",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 3648,
+      "name": "CHEMBL270841",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 3650,
+      "name": "CHEMBL270176",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 3651,
+      "name": "CHEMBL272781",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3652,
+      "name": "CHEMBL258073",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 3653,
+      "name": "CHEMBL401745",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 3654,
+      "name": "CHEMBL402179",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 3655,
+      "name": "CHEMBL258075",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 3656,
+      "name": "CHEMBL408152",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 3657,
+      "name": "CHEMBL271298",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 3658,
+      "name": "CHEMBL273170",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3659,
+      "name": "CHEMBL439240",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 3660,
+      "name": "CHEMBL269964",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 3661,
+      "name": "CHEMBL270177",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3662,
+      "name": "CHEMBL271253",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3663,
+      "name": "CHEMBL257744",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 3664,
+      "name": "CHEMBL446459",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 3665,
+      "name": "CHEMBL404248",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 3668,
+      "name": "CHEMBL429136",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3669,
+      "name": "CHEMBL404511",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3670,
+      "name": "CHEMBL429925",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3671,
+      "name": "CHEMBL272355",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3672,
+      "name": "CHEMBL257450",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3673,
+      "name": "CHEMBL402874",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3674,
+      "name": "CHEMBL270658",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 3675,
+      "name": "CHEMBL272517",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3676,
+      "name": "CHEMBL402400",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3677,
+      "name": "CHEMBL257302",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3678,
+      "name": "CHEMBL404365",
+      "atomIndices": [
+        1,
+        6
+      ]
+    },
+    {
+      "index": 3679,
+      "name": "CHEMBL403103",
+      "atomIndices": [
+        1,
+        5
+      ]
+    },
+    {
+      "index": 3680,
+      "name": "CHEMBL403102",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3681,
+      "name": "CHEMBL256693",
+      "atomIndices": [
+        1,
+        6
+      ]
+    },
+    {
+      "index": 3685,
+      "name": "CHEMBL2112484",
+      "atomIndices": [
+        26
+      ]
+    },
+    {
+      "index": 3686,
+      "name": "CHEMBL2112485",
+      "atomIndices": [
+        25
+      ]
+    },
+    {
+      "index": 3687,
+      "name": "CHEMBL2112486",
+      "atomIndices": [
+        24
+      ]
+    },
+    {
+      "index": 3689,
+      "name": "CHEMBL2112483",
+      "atomIndices": [
+        27
+      ]
+    },
+    {
+      "index": 3690,
+      "name": "CHEMBL611562",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3691,
+      "name": "CHEMBL611273",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3692,
+      "name": "CHEMBL611561",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3693,
+      "name": "CHEMBL611274",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3694,
+      "name": "CHEMBL611552",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3696,
+      "name": "CHEMBL605054",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3697,
+      "name": "CHEMBL605885",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3698,
+      "name": "CHEMBL605266",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3699,
+      "name": "CHEMBL603394",
+      "atomIndices": [
+        22
+      ]
+    },
+    {
+      "index": 3707,
+      "name": "CHEMBL605486",
+      "atomIndices": [
+        23
+      ]
+    },
+    {
+      "index": 3720,
+      "name": "CHEMBL145746",
+      "atomIndices": [
+        34
+      ]
+    },
+    {
+      "index": 3723,
+      "name": "CHEMBL50490",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3725,
+      "name": "CHEMBL50081",
+      "atomIndices": [
+        29
+      ]
+    },
+    {
+      "index": 3727,
+      "name": "CHEMBL299539",
+      "atomIndices": [
+        30
+      ]
+    },
+    {
+      "index": 3728,
+      "name": "CHEMBL300272",
+      "atomIndices": [
+        29
+      ]
+    },
+    {
+      "index": 3729,
+      "name": "CHEMBL300222",
+      "atomIndices": [
+        30
+      ]
+    },
+    {
+      "index": 3730,
+      "name": "CHEMBL51019",
+      "atomIndices": [
+        31
+      ]
+    },
+    {
+      "index": 3731,
+      "name": "CHEMBL301077",
+      "atomIndices": [
+        30
+      ]
+    },
+    {
+      "index": 3732,
+      "name": "CHEMBL51871",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3733,
+      "name": "CHEMBL25554",
+      "atomIndices": [
+        15
+      ]
+    },
+    {
+      "index": 3735,
+      "name": "CHEMBL298579",
+      "atomIndices": [
+        28
+      ]
+    },
+    {
+      "index": 3736,
+      "name": "CHEMBL299984",
+      "atomIndices": [
+        30
+      ]
+    },
+    {
+      "index": 3751,
+      "name": "CHEMBL279436",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3758,
+      "name": "CHEMBL3392246",
+      "atomIndices": [
+        35
+      ]
+    },
+    {
+      "index": 3760,
+      "name": "CHEMBL3392247",
+      "atomIndices": [
+        35
+      ]
+    },
+    {
+      "index": 3761,
+      "name": "CHEMBL284103",
+      "atomIndices": [
+        35
+      ]
+    },
+    {
+      "index": 3774,
+      "name": "CHEMBL30739",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3779,
+      "name": "CHEMBL284213",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 3780,
+      "name": "CHEMBL407509",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 3782,
+      "name": "CHEMBL167644",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 3783,
+      "name": "CHEMBL168168",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3784,
+      "name": "CHEMBL354611",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 3785,
+      "name": "CHEMBL353843",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 3787,
+      "name": "CHEMBL353139",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3788,
+      "name": "CHEMBL353200",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3789,
+      "name": "CHEMBL436234",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3790,
+      "name": "CHEMBL353212",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 3793,
+      "name": "CHEMBL316495",
+      "atomIndices": [
+        29
+      ]
+    },
+    {
+      "index": 3794,
+      "name": "CHEMBL133231",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 3795,
+      "name": "CHEMBL95578",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3796,
+      "name": "CHEMBL336332",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3797,
+      "name": "CHEMBL180561",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3798,
+      "name": "CHEMBL131220",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3799,
+      "name": "CHEMBL338683",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 3800,
+      "name": "CHEMBL133579",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 3801,
+      "name": "CHEMBL323579",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3802,
+      "name": "CHEMBL100045",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3803,
+      "name": "CHEMBL336970",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3804,
+      "name": "CHEMBL98471",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3805,
+      "name": "CHEMBL130853",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 3806,
+      "name": "CHEMBL99864",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3807,
+      "name": "CHEMBL131417",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 3808,
+      "name": "CHEMBL295186",
+      "atomIndices": [
+        6,
+        9
+      ]
+    },
+    {
+      "index": 3814,
+      "name": "CHEMBL297827",
+      "atomIndices": [
+        10,
+        13
+      ]
+    },
+    {
+      "index": 3815,
+      "name": "CHEMBL48341",
+      "atomIndices": [
+        8,
+        11
+      ]
+    },
+    {
+      "index": 3816,
+      "name": "CHEMBL296660",
+      "atomIndices": [
+        4,
+        7
+      ]
+    },
+    {
+      "index": 3819,
+      "name": "CHEMBL320736",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3829,
+      "name": "CHEMBL210578",
+      "atomIndices": [
+        6,
+        9
+      ]
+    },
+    {
+      "index": 3831,
+      "name": "CHEMBL1689423",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3832,
+      "name": "CHEMBL218730",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 3834,
+      "name": "CHEMBL217203",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 3836,
+      "name": "CHEMBL128168",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3837,
+      "name": "CHEMBL223836",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3838,
+      "name": "CHEMBL222371",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3839,
+      "name": "CHEMBL221523",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3840,
+      "name": "CHEMBL95290",
+      "atomIndices": [
+        41
+      ]
+    },
+    {
+      "index": 3847,
+      "name": "CHEMBL72995",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3850,
+      "name": "CHEMBL654",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 3851,
+      "name": "CHEMBL195706",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3852,
+      "name": "CHEMBL194659",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3853,
+      "name": "CHEMBL364270",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3854,
+      "name": "CHEMBL435301",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3855,
+      "name": "CHEMBL193435",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3856,
+      "name": "CHEMBL363581",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3857,
+      "name": "CHEMBL193639",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3858,
+      "name": "CHEMBL371516",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3861,
+      "name": "CHEMBL588",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 3862,
+      "name": "CHEMBL611207",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3863,
+      "name": "CHEMBL608530",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3922,
+      "name": "CHEMBL157293",
+      "atomIndices": [
+        20
+      ]
+    },
+    {
+      "index": 3923,
+      "name": "CHEMBL422883",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3928,
+      "name": "CHEMBL107492",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3929,
+      "name": "CHEMBL276500",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3935,
+      "name": "CHEMBL158013",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 3939,
+      "name": "CHEMBL346512",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3940,
+      "name": "CHEMBL155826",
+      "atomIndices": [
+        20
+      ]
+    },
+    {
+      "index": 3941,
+      "name": "CHEMBL156816",
+      "atomIndices": [
+        23
+      ]
+    },
+    {
+      "index": 3942,
+      "name": "CHEMBL157035",
+      "atomIndices": [
+        22
+      ]
+    },
+    {
+      "index": 3945,
+      "name": "CHEMBL156639",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 3946,
+      "name": "CHEMBL156689",
+      "atomIndices": [
+        20
+      ]
+    },
+    {
+      "index": 3949,
+      "name": "CHEMBL349833",
+      "atomIndices": [
+        1,
+        12
+      ]
+    },
+    {
+      "index": 3950,
+      "name": "CHEMBL439646",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3951,
+      "name": "CHEMBL351963",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3952,
+      "name": "CHEMBL352207",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 3953,
+      "name": "CHEMBL351989",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3954,
+      "name": "CHEMBL159742",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 3955,
+      "name": "CHEMBL354699",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 3957,
+      "name": "CHEMBL345438",
+      "atomIndices": [
+        10,
+        22
+      ]
+    },
+    {
+      "index": 3961,
+      "name": "CHEMBL351612",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 3965,
+      "name": "CHEMBL283211",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 3970,
+      "name": "CHEMBL26426",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 3971,
+      "name": "CHEMBL26929",
+      "atomIndices": [
+        15
+      ]
+    },
+    {
+      "index": 3972,
+      "name": "CHEMBL28063",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 3973,
+      "name": "CHEMBL28209",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 3986,
+      "name": "CHEMBL187952",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 4010,
+      "name": "ORGANON",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 4044,
+      "name": "ICI-204448",
+      "atomIndices": [
+        13
+      ]
+    }
+  ],
+  "chargedEntries": [
+    {
+      "index": 876,
+      "name": "4-HO-TMT",
+      "formalCharge": 1
+    },
+    {
+      "index": 1292,
+      "name": "Benzalkonium fragment",
+      "formalCharge": 1
+    },
+    {
+      "index": 1584,
+      "name": "Suxamethonium",
+      "formalCharge": 2
+    },
+    {
+      "index": 1585,
+      "name": "Neostigmine",
+      "formalCharge": 1
+    },
+    {
+      "index": 1586,
+      "name": "Pyridostigmine",
+      "formalCharge": 1
+    },
+    {
+      "index": 1588,
+      "name": "Ipratropium",
+      "formalCharge": 1
+    },
+    {
+      "index": 1590,
+      "name": "Glycopyrronium",
+      "formalCharge": 1
+    },
+    {
+      "index": 2460,
+      "name": "Acetylcholine",
+      "formalCharge": 1
+    },
+    {
+      "index": 2839,
+      "name": "CHEMBL12587",
+      "formalCharge": 1
+    },
+    {
+      "index": 2893,
+      "name": "CHEMBL978",
+      "formalCharge": 1
+    },
+    {
+      "index": 3416,
+      "name": "CHEMBL376897",
+      "formalCharge": 1
+    }
+  ],
+  "fragmentedEntries": [],
+  "radicalEntries": [],
+  "nonAromaticSulfurRings": [
+    {
+      "index": 2935,
+      "name": "CHEMBL177442",
+      "smiles": "CN(C)C(=N)NC1=NC(=O)/C(=C/c2ccc(N3CCC(NC[C@H](O)COc4cccc5[nH]c(O)nc45)CC3)cc2)S1"
+    }
+  ],
+  "parseFailures": [],
+  "counts": {
+    "invalidSmiles": 0,
+    "formulaMismatches": 0,
+    "canonicalDuplicates": 19,
+    "tautomerGroups": 9,
+    "unspecifiedStereocenters": 1382,
+    "chargedEntries": 11,
+    "fragmentedEntries": 0,
+    "radicalEntries": 0,
+    "nonAromaticSulfurRings": 1,
+    "parseFailures": 0
+  }
+}

@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "rdkitVersion": "2026.09.1",
   "sourceSha256": {
-    "data/library.js": "152b16e8ddefe057ef76e00260466c0dfe5c2aaa07e83c968b6440b79f4e0f08",
-    "data/targets.js": "b6b8a5362b47f9506b34c502588c0b0cf75e83ea2c4d3452530589d2d61928c1",
+    "data/library.js": "8975af38b98d1c781448fe06741bdc6a192285d9a597b95a36cd25dc7c2886ad",
+    "data/targets.js": "3cfceec74b4186d5b1c4e78cb4adc22ea3bc30312cdaddacb724e9eb382de551",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
-    "data/receptor-ligand-annotations.js": "69453d34d6eb5d6cfe5f2410decec4492ff8bbeecf261706c896273488629490",
+    "data/receptor-ligand-annotations.js": "28bcfc10324b17fc8a30d2e4b3cf3c589e55fe9af76cd61dfb8986d9a3b30d01",
     "js/receptor-catalog.js": "c89696b0ea6e22873929f2e3c777774b13579c917a541cf7820de253e19305e1",
     "tools/receptor-diversity-audit.py": "c507a5086e772e7b5f052feac394a3637c8e986e61ee57d11b3771491c29bd71"
   },
@@ -4004,46 +4004,390 @@
     {
       "id": "OPRM1",
       "name": "Mu opioid receptor",
-      "sourcedProfiles": 0,
-      "ringProfiles": 0,
+      "sourcedProfiles": 36,
+      "ringProfiles": 36,
       "acyclicProfiles": 0,
-      "distinctRingScaffolds": 0,
-      "largestRingScaffoldProfiles": 0,
-      "largestRingScaffoldFractionOfRingProfiles": null,
-      "ringScaffolds": []
+      "distinctRingScaffolds": 30,
+      "largestRingScaffoldProfiles": 3,
+      "largestRingScaffoldFractionOfRingProfiles": 0.08333333333333333,
+      "ringScaffolds": [
+        {
+          "smiles": "O=C1CCC2C3Cc4cccc5c4C2(CCN3)C1O5",
+          "profiles": 3
+        },
+        {
+          "smiles": "C1=CC2C3Cc4cccc5c4C2(CCN3)C(C1)O5",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C1C=CC2C3Cc4cccc5c4C2(CCN3)C1O5",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(C2CCN(CCC(c3ccccc3)c3ccccc3)CC2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(CCN2CCC(Nc3ccccc3)CC2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "C1=CC2Oc3cccc4c3C23CCNC(C4)C3=C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C=C1CCC2C3Cc4cccc5c4C2(CCN3CC2CC2)C1O5",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(C=Cc1ccccc1)NC12CCC(=O)C3Oc4cccc5c4C31CCN(CC1CC1)C2C5",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCc1ccccc1)NCC(=O)NCC(=O)NCCc1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)NC(CN1CCCC1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCN1CCC(c2ccccc2)CC1)C1Cc2ccccc2CN1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCc1ccccc1)C(Cc1c[nH]c2ccccc12)NC(=O)C1CCCN1C(=O)CCc1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCc1ccccc1)C(Cc1ccccc1)NC(=O)C1CCCN1C(=O)CCc1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(OC1CCC2CCC3C(=O)OC(c4ccoc4)CC3C2C1=O)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CCC2C3Cc4cccc5c4C2(CCN3CC2CC2)C1O5",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CCC2C3Cc4ccccc4C2(CCN3CC2CC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=S(=O)(c1ccccc1-c1ccccc1)N1CCCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c2ccccc2n1C1CCN(CCCOc2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c3c(c1)OC1C4CCC5(CC4)C(C2)N(CC2CC2)CCC315",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c3c(c1)OC1CCCC4C(C2)N(CC2CCC2)CCC314",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c3c(c1)OC1c4[nH]c5c(c4CC4C(C2)N(CC2CC2)CCC314)CC1C2Cc3cccc4c3C1(CCN2CC1CC1)C5O4",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c3c(c1)OC1c4[nH]c5ccccc5c4CC4C(C2)N(CC2CC2)CCC314",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C(c2ccccc2)N2CCNCC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C2CCCCC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCCN2CCC(c3ccccc3)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Oc2ccc(CN3CCCC3c3ccccc3)cc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CC1C3CCCCC23CCN1CC1CCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CC1CC2CCN1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CC1CC2CCN1CC1CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccccc1",
+          "profiles": 1
+        }
+      ]
     },
     {
       "id": "OPRK1",
       "name": "Kappa opioid receptor",
-      "sourcedProfiles": 0,
-      "ringProfiles": 0,
+      "sourcedProfiles": 44,
+      "ringProfiles": 44,
       "acyclicProfiles": 0,
-      "distinctRingScaffolds": 0,
-      "largestRingScaffoldProfiles": 0,
-      "largestRingScaffoldFractionOfRingProfiles": null,
-      "ringScaffolds": []
+      "distinctRingScaffolds": 27,
+      "largestRingScaffoldProfiles": 13,
+      "largestRingScaffoldFractionOfRingProfiles": 0.29545454545454547,
+      "ringScaffolds": [
+        {
+          "smiles": "O=C1OC(c2ccoc2)CC2C1CCC1CCCC(=O)C12",
+          "profiles": 13
+        },
+        {
+          "smiles": "O=C1CCC2C3Cc4cccc5c4C2(CCN3)C1O5",
+          "profiles": 3
+        },
+        {
+          "smiles": "C1=CC2C3Cc4cccc5c4C2(CCN3)C(C1)O5",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)NC(CN1CCCC1)c1ccccc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccc(C2CCCCC2)cc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "C1=CC23CCC1C1Oc4cccc5c4C12CCN(CC1CC1)C3C5",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=CC23CCC1C1Oc4cccc5c4C12CCNC3C5",
+          "profiles": 1
+        },
+        {
+          "smiles": "C=C1CCC2C3Cc4cccc5c4C2(CCN3CC2CC2)C1O5",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(C=Cc1ccccc1)NC12CCC(=O)C3Oc4cccc5c4C31CCN(CC1CC1)C2C5",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)NC1CCC2(CCCO2)CC1N1CCCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCN1CCC(c2ccccc2)CC1)C1Cc2ccccc2CN1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(OC1CCC2CCC3C(=O)OC(c4ccoc4)CC3C2C1=O)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CCC2C3Cc4cccc5c4C2(CCN3CC2CC2)C1O5",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CCC2C3Cc4ccccc4C2(CCN3CC2CC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OC(C2CCOC2)CC2C1CCC1CCCC(=O)C12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1OC(c2ccoc2)CC2C1CCC1CCC(OCOCc3ccccc3)C(=O)C12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=S(=O)(c1ccccc1-c1ccccc1)N1CCCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c3c(c1)OC1C4CCC5(CC4)C(C2)N(CC2CC2)CCC315",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c3c(c1)OC1CCCC4C(C2)N(CC2CCC2)CCC314",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c3c(c1)OC1c4[nH]c5c(c4CC4C(C2)N(CC2CC2)CCC314)CC1C2Cc3cccc4c3C1(CCN2CC1CC1)C5O4",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c3c(c1)OC1c4[nH]c5ccccc5c4CC4C(C2)N(CC2CC2)CCC314",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C2C3CN(CC4Cc5ccccc5C4)CC32)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCCN2CCC(c3ccccc3)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Oc2ccc(CN3CCCC3c3ccccc3)cc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CC1C3CCCCC23CCN1CC1CCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CC1CC2CCN1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CC1CC2CCN1CC1CC1",
+          "profiles": 1
+        }
+      ]
     },
     {
       "id": "OPRD1",
       "name": "Delta opioid receptor",
-      "sourcedProfiles": 0,
-      "ringProfiles": 0,
+      "sourcedProfiles": 24,
+      "ringProfiles": 24,
       "acyclicProfiles": 0,
-      "distinctRingScaffolds": 0,
-      "largestRingScaffoldProfiles": 0,
-      "largestRingScaffoldFractionOfRingProfiles": null,
-      "ringScaffolds": []
+      "distinctRingScaffolds": 22,
+      "largestRingScaffoldProfiles": 2,
+      "largestRingScaffoldFractionOfRingProfiles": 0.08333333333333333,
+      "ringScaffolds": [
+        {
+          "smiles": "C1=C(c2ccccc2)c2ccccc2OC12CCNCC2",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C1CCC2C3Cc4cccc5c4C2(CCN3)C1O5",
+          "profiles": 2
+        },
+        {
+          "smiles": "C1=CC2C3Cc4cccc5c4C2(CCN3)C(C1)O5",
+          "profiles": 1
+        },
+        {
+          "smiles": "C=C1CCC2C3Cc4cccc5c4C2(CCN3CC2CC2)C1O5",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(C=Cc1ccccc1)NC12CCC(=O)C3Oc4cccc5c4C31CCN(CC1CC1)C2C5",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(CCc1ccccc1)NCC(=O)NCC(=O)NCCc1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Cc1ccccc1)NC(CN1CCCC1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NCCN1CCC(c2ccccc2)CC1)C1Cc2ccccc2CN1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CCC2C3Cc4cccc5c4C2(CCN3CC2CC2)C1O5",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CCC2C3Cc4ccccc4C2(CCN3CC2CC2)C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c2ccccc2n1C1CCN(CCCOc2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c3c(c1)OC1C4CCC5(CC4)C(C2)N(CC2CC2)CCC315",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c3c(c1)OC1CCCC4C(C2)N(CC2CCC2)CCC314",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c3c(c1)OC1c4[nH]c5c(c4CC4C(C2)N(CC2CC2)CCC314)CC1C2Cc3cccc4c3C1(CCN2CC1CC1)C5O4",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c3c(c1)OC1c4[nH]c5ccccc5c4CC4C(C2)N(CC2CC2)CCC314",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C(c2ccccc2)N2CCNCC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C2CCCCC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCCN2CCC(c3ccccc3)CC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(Oc2ccc(CN3CCCC3c3ccccc3)cc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CC1C3CCCCC23CCN1CC1CCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CC1CC2CCN1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)CC1CC2CCN1CC1CC1",
+          "profiles": 1
+        }
+      ]
     },
     {
       "id": "OPRL1",
       "name": "Nociceptin/orphanin FQ receptor",
-      "sourcedProfiles": 0,
-      "ringProfiles": 0,
+      "sourcedProfiles": 6,
+      "ringProfiles": 6,
       "acyclicProfiles": 0,
-      "distinctRingScaffolds": 0,
-      "largestRingScaffoldProfiles": 0,
-      "largestRingScaffoldFractionOfRingProfiles": null,
-      "ringScaffolds": []
+      "distinctRingScaffolds": 6,
+      "largestRingScaffoldProfiles": 1,
+      "largestRingScaffoldFractionOfRingProfiles": 0.16666666666666666,
+      "ringScaffolds": [
+        {
+          "smiles": "O=C1NCN(c2ccccc2)C12CCN(CCCC(c1ccccc1)c1ccccc1)CC2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c2ccccc2n1C1CCN(CC2CCCCCCC2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=c1[nH]c2ccccc2n1C1CCN(CCCOc2ccccc2)CC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1cc2c3c(c1)OC1C4CCC5(CC4)C(C2)N(CC2CC2)CCC315",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C2CCC3(CC2)OCCc2c3[nH]c3ccccc23)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(CCCN2CCC3(CC2)OCCc2ccsc23)cc1",
+          "profiles": 1
+        }
+      ]
     },
     {
       "id": "CNR1",

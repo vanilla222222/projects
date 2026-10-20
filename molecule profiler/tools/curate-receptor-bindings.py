@@ -34,8 +34,33 @@ ACCESSIONS = {'HRH2':'P25021','CHRM1':'P11229','CHRM2':'P08172','CHRM3':'P20309'
  'ADORA3':'P0DMS8','ADRA1A':'P35348','ADRA1B':'P35368','ADRA1D':'P25100',
  'ADRA2A':'P08913','ADRA2B':'P18089','ADRA2C':'P18825',
  'DRD1':'P21728','DRD2':'P14416','DRD3':'P35462','DRD4':'P21917',
- 'HTR1E':'P28566','HTR1F':'P30939'}
+ 'HTR1E':'P28566','HTR1F':'P30939',
+ 'OPRM1':'P35372','OPRD1':'P41143','OPRK1':'P41145','OPRL1':'P41146'}
 DEFAULT_GENES=('HRH2','CHRM1','CHRM2','CHRM3','ADRB1','ADRB2','ADORA1','ADORA2A','AGTR1','CYSLTR1')
+
+
+def pharmacology_name(activity):
+    """A source preferred name, never an invented name or inferred action."""
+    name = activity.get('molecule_pref_name')
+    if not isinstance(name, str):
+        return None
+    name = name.strip()
+    if not name or re.fullmatch(r'CHEMBL\d+|\d{2,7}-\d{2}-\d', name, re.I):
+        return None
+    return name
+
+
+def new_reference_name(activity, used_names, named_only):
+    if not named_only:
+        return activity['molecule_chembl_id']
+    name = pharmacology_name(activity)
+    if name is None:
+        raise ValueError('Named reference lacks a source preferred name')
+    if name.casefold() in {n.strip().casefold() for n in used_names}:
+        # Distinct source graphs must not differ only by name capitalization.
+        # Keep the actual name first and identify the source form explicitly.
+        name += ' [' + activity['molecule_chembl_id'] + ']'
+    return name
 
 
 def accepted_activity(a, target_id):
@@ -129,6 +154,7 @@ def main():
     ap.add_argument('--max-activities', type=int, default=2000)
     ap.add_argument('--cache', type=Path, default=Path('/tmp/mp-chembl-cache'))
     ap.add_argument('--offline', action='store_true')
+    ap.add_argument('--named-only', action='store_true', help='Require a ChEMBL preferred molecule name as well as qualifying binding evidence; leave shortfalls visible')
     ap.add_argument('--apply', action='store_true')
     ap.add_argument('--add-targets', action='store_true',help='Permit source-backed rows for ordinary catalog genes; never assemblies')
     ap.add_argument('--output', type=Path, required=True)
@@ -204,7 +230,8 @@ def main():
             if not page['activities'] or offset>=total:
                 break
         eligible=[a for a in raw if accepted_activity(a,tid)]
-        assay_ids=sorted({a['assay_chembl_id'] for a in eligible})
+        candidates=[a for a in eligible if not args.named_only or pharmacology_name(a) is not None]
+        assay_ids=sorted({a['assay_chembl_id'] for a in candidates})
         batches=[assay_ids[i:i+40] for i in range(0,len(assay_ids),40)]
         def assays(batch):
             result=get('assay',{'assay_chembl_id__in':','.join(batch),'limit':100})
@@ -213,8 +240,11 @@ def main():
             return result['assays']
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
             assay_map={a['assay_chembl_id']:a for batch in pool.map(assays,batches) for a in batch}
-        seen=set();selected=[];structure_failures=[]
-        for a in sorted(eligible,key=lambda x:x['activity_id']):
+        seen=set();selected=[];structure_failures=[];planned_names=set(used_names)
+        for a in sorted(candidates,key=lambda x:x['activity_id']):
+            preferred_name = pharmacology_name(a)
+            if args.named_only and preferred_name is None:
+                continue
             assay=assay_map.get(a['assay_chembl_id'],{})
             if not accepted_assay(assay,tid):
                 continue
@@ -223,10 +253,11 @@ def main():
                 continue
             entry=exact.get(c['smiles'])
             if entry is None:
-                name=a['molecule_chembl_id']
-                if name in used_names:
+                name=new_reference_name(a, planned_names, args.named_only)
+                if name in planned_names:
                     raise ValueError('Compound ID resolves to conflicting graph: '+name)
                 entry={'name':name,'cls':'ChEMBL binding reference','formula':c['formula'],'smiles':c['smiles']}
+                planned_names.add(name)
             source_activity = {k:v for k,v in a.items() if k != 'ligand_efficiency'}
             selected.append({'entry':entry,'identityKey':c['identityKey'],'activity':source_activity,'assay':assay})
             seen.add(c['identityKey'])
@@ -259,6 +290,7 @@ def main():
                'targetComponent':target['target_components'][0],
                'availableActivityRows':total,'examinedRows':len(raw),'activityCapReached':len(raw)<total,
                'eligibleActivityRows':len(eligible),'distinctCandidateProfiles':len(selected),
+               'unnamedActivityRowsExcluded':sum(pharmacology_name(a) is None for a in eligible) if args.named_only else 0,
                'browserFormulaRejected':structure_failures,'selected':chosen,'count':len(chosen),'remaining':max(0,args.goal-len(chosen))}
         panels.append(panel)
         print(gene+': '+str(len(chosen))+'/'+str(args.goal)+' sourced distinct binding profiles; '+str(len(raw))+' activity rows examined',flush=True)
@@ -268,8 +300,13 @@ def main():
        'protocol':'Human single-protein binding Ki/Kd, exact nM values in (0,1000], ChEMBL source 1, no data-validity flags/duplicates/variants; direct human assay assignment with confidence 9. First qualifying distinct profiles by activity ID; not a diversity-optimized or comprehensive ligand inventory.',
        'identityMethod':'SHA256 of RDKit canonical isomeric SMILES after uncharging/tautomer grouping (stereo removal disabled); grouping only, stored source graphs unchanged.',
        'limitations':['ChEMBL-curated assay records, not independent remeasurement.','Binding does not establish agonism, antagonism or selectivity.','Research IDs are valid entries even without established drug names.','Coverage is not scaffold diversity or predictive validation.','Availability may be limited by query filters and activity cap; do not fill gaps with inferred ligands.'],
+       'selectionPolicy':'named-only' if args.named_only else 'all-qualifying',
        'sourceBeforeSha256':source_before,'requests':requests,'panels':panels,'newStructures':additions,'annotations':annotations,
        'newTargets':[targets[g] for g in genes if g in new_genes and targets[g]['ligands']]}
+    if args.named_only:
+        report['protocol'] += ' Named-only selection requires a non-identifier ChEMBL molecule preferred name on the activity record; new entries use that source name, with a bracketed compound ID when a case-insensitive name collision needs a distinct graph key. Existing exact-graph reference keys are preserved.'
+        report['limitations'] = [s for s in report['limitations'] if not s.startswith('Research IDs')]
+        report['limitations'].append('A preferred name and binding observation do not establish an approved therapeutic role or a functional mechanism. Named-only filtering can leave fewer than 50 profiles.')
     if args.apply:
         for p,h in source_before.items():
             if hashlib.sha256((ROOT/p).read_bytes()).hexdigest()!=h:

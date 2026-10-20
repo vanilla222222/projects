@@ -10,7 +10,8 @@ visible, with additional tags available under the expansion control.
 
 ## Names and stable identifiers
 
-The 4,007 stored structures and all target/evidence keys are unchanged. Display
+The library currently contains 4,066 stored structures. Display-name metadata
+does not change structures or target/evidence keys. Display
 metadata maps names to an original reference key and exact stored SMILES. If
 that graph changes, the name/tag overlay is ignored until regenerated. Original
 identifiers remain visible and searchable; identical display labels do not

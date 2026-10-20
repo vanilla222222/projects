@@ -64,4 +64,18 @@ class EvidenceTests(unittest.TestCase):
     def test_js_literals(self):
         self.assertEqual(m.js_string("a'b\\c"),"'a\\'b\\\\c'")
 
+    def test_named_selection_requires_source_preferred_name(self):
+        for name in [None, '', '  ', 'CHEMBL123', 'chembl123', '12345-67-8']:
+            self.assertIsNone(m.pharmacology_name({'molecule_pref_name':name}))
+        for name in ['Morphine', 'N/OFQ', 'SB-612111', '(R)-SKF-38393']:
+            self.assertEqual(m.pharmacology_name({'molecule_pref_name':' '+name+' '}),name)
+        self.assertIsNone(m.pharmacology_name({'molecule_chembl_id':'CHEMBL123','action_type':'AGONIST'}))
+
+    def test_named_graph_variants_have_distinct_reference_keys(self):
+        a={'molecule_pref_name':'MORPHINE','molecule_chembl_id':'CHEMBL70'}
+        self.assertEqual(m.new_reference_name(a,{'Morphine'},True),'MORPHINE [CHEMBL70]')
+        self.assertEqual(m.new_reference_name(a,set(),True),'MORPHINE')
+        self.assertEqual(m.new_reference_name(a,{'Morphine'},False),'CHEMBL70')
+        with self.assertRaises(ValueError):m.new_reference_name({'molecule_chembl_id':'CHEMBL70'},set(),True)
+
 if __name__=='__main__':unittest.main()

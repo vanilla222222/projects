@@ -48,6 +48,39 @@ report records source availability and truncation.
 
 ## Reproduce and extend
 
+### Prefer named pharmacology references
+
+For new expansions, prefer drugs, endogenous ligands and established research
+compounds with source-provided names and documented target evidence. Use
+`--named-only` to require a ChEMBL `molecule_pref_name` on each qualifying
+activity record. Database IDs and CAS numbers alone do not qualify as names.
+New structures use the preferred name; if that name already labels a different
+graph (ignoring capitalization), a bracketed ChEMBL compound ID distinguishes
+the source form. Exact graph matches reuse their existing stable library keys.
+The original source name and compound ID remain in the activity snapshot.
+A further conflicting name/graph aborts the import rather than silently
+relabelling a different structure.
+
+This filter adds a naming requirement to the same strict human Ki/Kd binding
+protocol. It does not establish an approved indication or functional mechanism.
+Binding-only evidence remains binding-only; agonism and antagonism require
+separate functional evidence. Keep shortfalls visible instead of adding unnamed
+structures merely to reach fifty. Historical identifier-based batches remain
+available and are not removed by this preference.
+
+The next named-compound panel uses reviewed human UniProt mappings:
+[OPRM1/P35372](https://www.uniprot.org/uniprotkb/P35372/entry),
+[OPRD1/P41143](https://www.uniprot.org/uniprotkb/P41143/entry),
+[OPRK1/P41145](https://www.uniprot.org/uniprotkb/P41145/entry) and
+[OPRL1/P41146](https://www.uniprot.org/uniprotkb/P41146/entry).
+The importer independently checks the accession and primary gene annotation
+against the human ChEMBL single-protein target before accepting its assays.
+
+```sh
+python -B tools/curate-receptor-bindings.py --named-only --add-targets \
+  --genes OPRM1,OPRD1,OPRK1,OPRL1 --output named-opioid-candidate.json
+```
+
 ```sh
 python -B tools/curate-receptor-bindings.py --output candidate-batch.json
 python -B tools/curate-receptor-bindings-test.py
@@ -175,6 +208,29 @@ These are coverage counts, not independent scaffold counts or accuracy metrics.
 run and its before/after source digest. The digest identifies the tested working
 source; the recorded Git revision is its parent commit when the source is dirty.
 Regression success checks implementation consistency, not experimental accuracy.
+
+## Fifth batch: named opioid and nociceptin references
+
+`validation/chembl-receptor-binding-batch-5.json` uses the named-only policy
+above and records 110 human binding associations: OPRM1 36, OPRD1 24, OPRK1 44
+and OPRL1 6. Each query examines at most 2,000 activity records and reaches that
+cap. Gaps of 14, 26, 6 and 44 remain visible. These counts describe this bounded
+query and do not imply that other named ligands or other endpoint types are
+absent. No unnamed records are added to fill the gaps.
+
+The batch adds 59 source structures and registers OPRL1 as a scoring target.
+Some structures provide specified stereochemistry absent from older named
+entries; they are retained separately and must not be described as 59 distinct
+new drug identities. Existing graph keys and structures are preserved. Source
+names retain their source capitalization; bracketed source IDs distinguish name
+collisions between different graphs. Binding observations
+do not assign agonism, antagonism, an indication or selectivity.
+
+There are now 4,066 library structures, 150 scoring targets and 1,820 sourced
+binding annotations. Sixty-nine catalog records link to scoring rows and 77
+await them. Thirty-three panels meet the strict sourced-profile goal; 51 have
+at least 50 resolved listed names. The updated coverage and scaffold snapshots
+retain the distinction between list size, sourced profiles and chemical diversity.
 
 
 ## Fourth batch: dopamine and serotonin coverage gaps
