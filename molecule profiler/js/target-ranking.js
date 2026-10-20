@@ -17,13 +17,15 @@
       try{
         const mol=engine.parse(entry.smiles),fps={};
         METHODS.forEach(key=>fps[key]=engine.fingerprint(mol,key));
-        entries.set(entry.name,{entry,fps,profile:signature(fps)});
+        entries.set(entry.name,{entry,fps,profile:signature(fps),motifs:engine.referenceMotifs?engine.referenceMotifs(entry):[]});
       }catch(error){issues.push({name:entry.name,reason:String(error.message)});}
     }
     for(const name of wanted)if(!entries.has(name)&&!issues.some(x=>x.name===name))issues.push({name,reason:'unresolved ligand name'});
-    return {entries,targets,issues,engine};
+    const profiles=new Map();for(const item of entries.values())if(!profiles.has(item.profile))profiles.set(item.profile,item);
+    const motifBackground=new Map();for(const item of profiles.values())for(const m of item.motifs)motifBackground.set(m,(motifBackground.get(m)||0)+1);
+    return {entries,targets,issues,engine,motifBackground,motifBackgroundN:profiles.size};
   }
-  function query(mol,index){const fps={};METHODS.forEach(key=>fps[key]=index.engine.fingerprint(mol,key));return {fps,profile:signature(fps)};}
+  function query(mol,index){const fps={};METHODS.forEach(key=>fps[key]=index.engine.fingerprint(mol,key));return {fps,profile:signature(fps),motifs:index.engine.queryMotifs?index.engine.queryMotifs(mol):[]};}
   function rank(prepared,index,options){
     const o=options||{},mode=o.mode==='legacy'?'legacy':'ensemble';
     const metric=o.metric==='dice'?index.engine.dice:index.engine.tanimoto;
@@ -33,7 +35,7 @@
       if(o.excludeProfile===item.profile || (o.excludeNames||[]).includes(name))continue;
       const components=ENSEMBLE.map(key=>index.engine.tanimoto(prepared.fps[key],item.fps[key]));
       const value=mode==='legacy'?metric(prepared.fps[method],item.fps[method]):Math.cbrt(components.reduce((a,b)=>a*b,1));
-      values.set(name,{entry:item.entry,profile:item.profile,value,components,
+      values.set(name,{entry:item.entry,profile:item.profile,value,components,motifs:item.motifs,
         sameProfile:prepared.profile===item.profile});
     }
     const ranked=[];
@@ -53,7 +55,10 @@
       const profileCount=new Set(scored.map(x=>x.profile)).size;
       const support=new Set(scored.filter(x=>Math.cbrt(x.components.reduce((a,b)=>a*b,1))>=SUPPORT_CUT&&x.components.every(v=>v>=0.2)).map(x=>x.profile)).size;
       const matchingProfiles=new Set(scored.filter(x=>x.sameProfile).map(x=>x.profile)).size;
-      ranked.push({target,order,score,rankScore,mean,nearest:scored[0].entry,count:listed,distinctCount:profileCount,matchingProfiles,
+      const profiles=new Map(scored.map(x=>[x.profile,x]));
+      const motifEvidence=(prepared.motifs||[]).map(id=>({id,support:[...profiles.values()].filter(x=>x.motifs.includes(id)).length,
+        total:profiles.size,background:index.motifBackground.get(id)||0,backgroundTotal:index.motifBackgroundN})).filter(x=>x.support>0).sort((a,b)=>b.support-a.support||a.id.localeCompare(b.id));
+      ranked.push({target,order,score,rankScore,mean,nearest:scored[0].entry,count:listed,distinctCount:profileCount,matchingProfiles,motifEvidence,
         support,agreement:scored[0].components.filter(v=>v>=SUPPORT_CUT).length,
         components:scored[0].components,evidence:top,mode,
         applicability:matchingProfiles?'matching reference fingerprint profile (not independent prediction)':score<0.3?'remote resemblance':support<2?'single-profile support':'multiple-profile support'});

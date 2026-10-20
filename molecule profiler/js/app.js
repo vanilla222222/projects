@@ -113,8 +113,8 @@ const GLOSSARY = {
   metStep: ['Step', 'The rule that produced this metabolite, and which structure it came from: the parent, or an earlier metabolite by its label.'],
   metEnzyme: ['Enzyme', 'The enzyme family that performs this class of reaction: CYP, MAO, FMO, ADH, AKR, COMT, UGT, SULT, NAT, GST, or a hydrolase. Attribution is by reaction class, not by a measured isoform assignment.'],
   metPhase: ['Phase', 'Phase I introduces or exposes a functional group; phase II attaches a polar conjugate to one. A phase II rule usually needs a phase I step first, which is why most conjugates appear in the second generation.'],
-  metScore: ['Relative weight', 'The product of the published class frequencies along the path from the parent, each one scaled by its site factor. It orders the list; it is not a probability, a yield or a fraction of dose. The band under the number is a reading of that same product against two fixed cuts: major at 0.10 and above, minor from 0.02 to 0.10, trace below 0.02. A trace label means the route needs an unlikely step or a chain of them, not that a measured fraction of the dose was small.'],
-  metBandFilter: ['Abundance', 'Shows only metabolites in one band. Major routes are the ones a rule set is most confident about; the trace list is where a reactive metabolite with a small predicted weight shows up, which is often what matters for toxicity.'],
+  metScore: ['Relative weight', 'The product of the published class frequencies along the path from the parent, each one scaled by its site factor. It orders the list; it is not a probability, a yield or a fraction of dose. The band under the number is a reading of that same product against two fixed cuts: major at 0.10 and above, minor from 0.02 to 0.10, trace below 0.02. A lower-weight label can result from a lower reaction-class frequency or a longer path. It is not evidence that the route is rare in a particular person.'],
+  metBandFilter: ['Heuristic weight band', 'Filters rule-generated candidates by uncalibrated route weight, not measured abundance or confidence. Lower-weight candidates normally appear under an expansion control; candidates with new structural-alert flags stay visible.'],
   metSite: ['Site factor', 'How much the reaction weight is raised or lowered for the particular atom attacked, relative to an unsubstituted position of the same kind on the same ring or chain. Neighbouring groups that donate electron density raise an aromatic position, withdrawing groups lower it, crowding lowers it, and a branch point raises an aliphatic one. The factors are a transparent heuristic written from directing-effect and bond-strength arguments, clamped to 0.2x-2.5x; they are not fitted to measured turnover.'],
   metProps: ['MW / log P / TPSA', 'The metabolite run back through the same descriptor code as the parent. A conjugate adding 176 to the mass and 100 to the polar surface is the signature of glucuronidation.'],
   metTox: ['New toxicity flags', 'Toxicity rules firing on this metabolite that do not fire on the parent molecule.'],
@@ -934,7 +934,8 @@ function benchmarkLine() {
 let targetRankingIndex = null;
 function targetRankingFor(record) {
   if (!targetRankingIndex) targetRankingIndex=TargetRanking.createIndex(LIBRARY,TARGETS,{
-    parse:smiles=>buildMolecule(parseSmiles(smiles)),fingerprint,tanimoto,dice
+    parse:smiles=>buildMolecule(parseSmiles(smiles)),fingerprint,tanimoto,dice,
+    referenceMotifs:entry=>typeof StructuralEvidence==='undefined'?[]:StructuralEvidence.reference(entry),queryMotifs:mol=>typeof StructuralEvidence==='undefined'?[]:StructuralEvidence.detect(mol)
   });
   const mode=document.getElementById('tgt-mode').value;
   const method=document.getElementById('sim-method').value;
@@ -958,6 +959,7 @@ function renderTargets(record) {
   const floor=Number(document.getElementById('tgt-min').value);
   const organism=document.getElementById('tgt-organism').value;
   const ranked=targetRankingFor(record);
+  document.getElementById('tgt-motifs').textContent='Query structural motifs: '+(record.targetQuery.motifs.map(id=>StructuralEvidence.label(id)).join(', ')||'none in the current motif vocabulary')+'. Shared motifs describe chemical context, not binding or functional action.';
   const kept = ranked.filter((row) => row.rankScore >= floor);
   const shown = limit > 0 ? kept.slice(0, limit) : kept;
 
@@ -1005,12 +1007,14 @@ function renderTargets(record) {
         + row.evidence.map(e=>escapeHtml(referenceDisplayName(e.entry))+': '+e.value.toFixed(3)
           +(e.sameProfile?' [matching query fingerprint profile; not proof of molecular identity]':'')
           +' (stereo / features / pairs: '+e.components.map(v=>v.toFixed(3)).join(' / ')+')').join('<br>')
-        + '<br>'+row.distinctCount+' distinct fingerprint profiles from '+row.count+' listed references.</details></td>'
+        + '<br>'+row.distinctCount+' distinct fingerprint profiles from '+row.count+' listed references.'
+        + (row.motifEvidence.length?'<br><strong>Shared motifs across the reference panel:</strong><br>'+row.motifEvidence.slice(0,5).map(m=>escapeHtml(StructuralEvidence.label(m.id))+': '+m.support+'/'+m.total+' distinct target-reference profiles; background '+m.background+'/'+m.backgroundTotal+' indexed profiles').join('<br>'):'<br>No shared motif in the current vocabulary.')+'</details></td>'
       + '<td>' + row.count + '</td>'
       + '<td>' + (legacy?recoveredCell(row.target):row.support+' / '+row.distinctCount) + '</td>'
       + '<td class="note">' + escapeHtml(row.target.note) + '</td>'
       + '</tr>';
   }).join('') : '<tr><td colspan="11">No target has a known ligand this similar to the query.</td></tr>';
+  if(typeof PharmacologyUI!=='undefined')PharmacologyUI.render(record,ranked);
 }
 
 function setupTargets() {
@@ -1460,6 +1464,9 @@ function metabolismFor(record) {
 }
 
 function renderMetabolism(record) {
+  const lowerDetails=document.getElementById('met-low-details');
+  if(lowerDetails.dataset.smiles!==record.smiles){lowerDetails.open=false;lowerDetails.dataset.smiles=record.smiles;}
+  lowerDetails.hidden=true;document.getElementById('met-low').querySelector('tbody').textContent='';
   const coverageSlot = document.getElementById('met-coverage');
   if (coverageSlot) coverageSlot.textContent = '';
   document.getElementById('met-diagnostics').textContent='';
@@ -1553,13 +1560,16 @@ function renderMetabolism(record) {
   let shown = tree.metabolites;
   if (toxOnly) shown = shown.filter((node) => node.newTox.length);
   if (band !== 'all') shown = shown.filter((node) => metaboliteBand(node.score) === band);
-  if (limit) shown = shown.slice(0, limit);
+  const lower=band==='all'?shown.filter(node=>metaboliteBand(node.score)==='trace'&&!node.newTox.length):[];
+  shown=shown.filter(node=>!lower.includes(node));
+  const visibleCount=shown.length;
+  if (limit){const first=shown.slice(0,limit);shown=shown.filter(node=>first.includes(node)||node.newTox.length);}
 
   const table = document.getElementById('metabolites');
   table.querySelector('thead').innerHTML = '<tr>' + MET_COLUMNS.map(([key, label]) => (
     '<th>' + label + infoButton(key) + '</th>'
   )).join('') + '</tr>';
-  table.querySelector('tbody').innerHTML = shown.length ? shown.map((node, index) => {
+  const rowHtml=(node, index) => {
     const parent = byId.get(node.parent);
     const released = node.released.length
       ? ' Releases ' + node.released.join(' and ') + '.'
@@ -1589,9 +1599,17 @@ function renderMetabolism(record) {
       + '<td class="note" title="' + escapeHtml(node.steps[0].note + released + extra) + '">'
       + escapeHtml(node.steps[0].note + released + extra) + '</td>'
       + '</tr>';
-  }).join('') : '<tr><td colspan="' + MET_COLUMNS.length + '">No metabolite matches this filter.</td></tr>';
+  };
+  table.querySelector('tbody').innerHTML = shown.length ? shown.map(rowHtml).join('') : '<tr><td colspan="' + MET_COLUMNS.length + '">No higher-priority candidate matches this filter. Expand lower-weight candidates when available.</td></tr>';
+  const lowTable=document.getElementById('met-low');
+  lowTable.querySelector('thead').innerHTML=table.querySelector('thead').innerHTML;
+  lowTable.querySelector('tbody').innerHTML=lower.map(rowHtml).join('');
+  document.getElementById('met-low-details').hidden=!lower.length;
+  document.getElementById('met-low-summary').textContent='Show '+lower.length+' lower-weight candidates';
+  document.getElementById('met-summary').textContent+='; '+shown.length+' of '+visibleCount+' main candidates displayed'+(lower.length?'; '+lower.length+' lower-weight candidates in expandable list':'');
 
   const notes = document.getElementById('met-notes');
+  if(typeof PharmacologyUI!=='undefined')PharmacologyUI.updateMetabolism(record,tree);
   notes.querySelector('thead').innerHTML = '<tr>' + MET_NOTE_COLUMNS.map(([key, label]) => (
     '<th>' + label + infoButton(key) + '</th>'
   )).join('') + '</tr>';
@@ -1615,7 +1633,7 @@ function setupMetabolism() {
   [['met-depth', 'metDepth'], ['met-phase', 'metPhaseFilter'], ['met-count', 'metCount'], ['met-band', 'metBandFilter']].forEach(([id, key]) => {
     document.getElementById(id).insertAdjacentHTML('beforebegin', infoButton(key));
   });
-  document.getElementById('metabolites').addEventListener('click', (event) => {
+  for(const tableId of ['metabolites','met-low'])document.getElementById(tableId).addEventListener('click', (event) => {
     const row = event.target.closest('tr[data-smiles]');
     if (!row) return;
     document.getElementById('smiles-input').value = row.dataset.name + ', ' + row.dataset.smiles;

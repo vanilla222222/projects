@@ -15,7 +15,7 @@ const {JSDOM,VirtualConsole}=require('jsdom');
   const deadline=Date.now()+30000;while($('results').hidden && Date.now()<deadline)await new Promise(r=>setTimeout(r,30));
   assert.equal($('results').hidden,false,errors.join('\n'));
   assert.deepEqual(errors,[]);
-  assert.equal($('tgt-mode').value,'legacy');
+  assert.equal($('tgt-mode').value,'ensemble');
   $('tgt-mode').value='ensemble';$('tgt-mode').dispatchEvent(new w.Event('change',{bubbles:true}));
   assert.match($('tgt-blurb').textContent,/geometric mean/);
   assert.match($('tgt-bench').textContent,/does not validate/);
