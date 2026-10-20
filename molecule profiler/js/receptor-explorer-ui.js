@@ -5,6 +5,9 @@
   const data=RECEPTOR_REFERENCE_CATALOG, receptors=data.receptors;
   const targets=typeof TARGETS!=='undefined'?TARGETS:[];
   const library=typeof LIBRARY!=='undefined'?LIBRARY:[];
+  const byReference=new Map(library.map(e=>[e.name,e]));
+  function referenceLabel(id){const entry=byReference.get(id);if(!entry||typeof LibraryCatalog==='undefined')return id;
+    const record=LibraryCatalog.nameRecord(entry);return LibraryCatalog.displayName(entry)+(record?.matchType==='tautomer-standardized'?' [standardized-form name]':'')+(record?' ('+id+')':'');}
   const proposed=typeof RECEPTOR_LIGAND_ANNOTATIONS!=='undefined'?RECEPTOR_LIGAND_ANNOTATIONS:[];
   const errors=ReceptorCatalog.validateAnnotations(proposed,receptors,library);
   const invalid=new Set(errors.map(x=>x.index));
@@ -61,13 +64,13 @@
       detail.append(node('p',target.name+' ('+target.gene+'): '+(target.ligands||[]).length+' listed ligand names (legacy and imported).'));
       if(mapping==='legacy_subunit')detail.append(node('p','Legacy subunit mapping only. The older target row does not establish a specific receptor assembly.','context-note'));
       const disclosure=node('details');disclosure.append(node('summary','View listed ligand names (actions unassigned)'));
-      disclosure.append(node('p',(target.ligands||[]).join(', ')||'No listed ligands.'));detail.append(disclosure);
+      disclosure.append(node('p',(target.ligands||[]).map(referenceLabel).join(', ')||'No listed ligands.'));detail.append(disclosure);
     });
     const curated=annotations.filter(a=>a.receptorId===r.id);
     if(!curated.length)detail.append(node('p','No source-backed ligand evidence has been curated here yet. Listed ligand names are not automatically agonists or antagonists.','muted'));
     else {
       const disclosure=node('details');disclosure.append(node('summary','View '+curated.length+' source-backed ligand entries'));
-      const ul=node('ul');curated.forEach(a=>{const li=node('li');li.append(node('strong',a.ligandName+' — '+(a.action==='binding_only'?'binding evidence; functional action unassigned':a.action.replace(/_/g,' '))),
+      const ul=node('ul');curated.forEach(a=>{const li=node('li');li.append(node('strong',referenceLabel(a.ligandName)+' — '+(a.action==='binding_only'?'binding evidence; functional action unassigned':a.action.replace(/_/g,' '))),
         node('p',a.species+' · '+a.assay+' · '+a.endpoint+(a.note?' · '+a.note:'')),external('Evidence source',a.sourceUrl));if(a.documentUrl)li.append(node('span',' · '),external('Source document',a.documentUrl));ul.append(li);});disclosure.append(ul);detail.append(disclosure);
     }
     detail.append(node('h3','Sources and evidence scope'));
@@ -79,10 +82,13 @@
     renderList();
   }
   function renderList() {
+    const query=$('receptor-search').value.trim().toLowerCase();
+    const matchingReferences=new Set(query&&typeof LibraryCatalog!=='undefined'?library.filter(e=>LibraryCatalog.searchText(e).includes(query)).map(e=>e.name):[]);
     const filtered=ReceptorCatalog.browse(receptors,{
-      search:$('receptor-search').value,family:$('receptor-family').value,
+      search:'',family:$('receptor-family').value,
       kind:$('receptor-kind').value,coverage:$('receptor-coverage').value
-    },targets,annotations,library);
+    },targets,annotations,library).filter(r=>!query||ReceptorCatalog.browse([r],{search:query},targets,annotations,library).length
+      ||ReceptorCatalog.links(r,targets).some(x=>(x.target.ligands||[]).some(name=>matchingReferences.has(name))));
     $('receptor-count').textContent=filtered.length+' of '+receptors.length+' receptor / related targets';
     const focusedId=document.activeElement && document.activeElement.dataset.receptorId;
     results.replaceChildren();

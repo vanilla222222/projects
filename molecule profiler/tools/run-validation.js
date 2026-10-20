@@ -30,6 +30,7 @@ const scripts = [
   'validation-provenance-test.js',
   'comparison-test.js',
   'library-catalog-test.js',
+  'library-metadata-report-test.js',
   'sim-pagination-test.js',
   'batch-browser-test.js',
   'input-workflow-test.js',

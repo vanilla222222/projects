@@ -29,3 +29,8 @@ Source data and curation documentation:
 These are curated database observations, with their original experimental and
 curation limitations. The import adds no claim of independent remeasurement,
 functional action, selectivity, safety or clinical efficacy.
+
+Additional ChEMBL preferred-name labels in `data/library-names.js` retain direct
+source links and the same ChEMBL attribution. `validation/library-name-provenance.json`
+records the naming lookups separately, including retrieval timestamps and
+source graph checks. PubChem-derived name labels are identified separately.

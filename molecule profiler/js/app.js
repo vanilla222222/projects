@@ -1,5 +1,11 @@
 'use strict';
 
+// Display labels are separate from stable reference keys used in scientific exports.
+function referenceDisplayName(entry) {
+  if(typeof LibraryCatalog==='undefined')return entry.name;
+  return LibraryCatalog.displayName(entry)+(LibraryCatalog.nameRecord(entry)?.matchType==='tautomer-standardized'?' [standardized-form name]':'');
+}
+
 const GLOSSARY = {
   tgtSupport: ['Reference support', 'Number of distinct fingerprint profiles above the operational similarity cut. Profiles are correlated chemical evidence, not independent binding experiments.'],
   tgtEnsemble: ['Multi-fingerprint rank', 'A heuristic combination of stereo-aware atomic, pharmacophore-feature and atom-pair 2D fingerprints. Not a trained probability.'],
@@ -850,9 +856,9 @@ function renderSimilar(record) {
     '<th>' + label + infoButton(key === 'formula' ? 'formula' : key) + '</th>'
   )).join('') + '</tr>';
   table.querySelector('tbody').innerHTML = shown.map((hit, index) => (
-    '<tr data-smiles="' + escapeHtml(hit.entry.smiles) + '" data-name="' + escapeHtml(hit.entry.name) + '">'
+    '<tr data-smiles="' + escapeHtml(hit.entry.smiles) + '" data-name="' + escapeHtml(referenceDisplayName(hit.entry)) + '">'
       + '<td>' + (pagination.start + index + 1) + '</td>'
-      + '<td>' + escapeHtml(hit.entry.name) + '</td>'
+      + '<td>' + escapeHtml(referenceDisplayName(hit.entry)) + '</td>'
       + '<td>' + escapeHtml(hit.entry.cls) + '</td>'
       + '<td>' + escapeHtml(hit.entry.formula) + '</td>'
       + '<td><span class="score"><span class="score-track"><span class="score-fill" style="width:'
@@ -985,7 +991,7 @@ function renderTargets(record) {
         + escapeHtml(legacy?TGT_TIERS[band][2]:'Similarity band only; not calibrated confidence or evidence of binding.') + '</td></tr>';
     }
     return head
-    + '<tr data-smiles="' + escapeHtml(row.nearest.smiles) + '" data-name="' + escapeHtml(row.nearest.name) + '"'
+    + '<tr data-smiles="' + escapeHtml(row.nearest.smiles) + '" data-name="' + escapeHtml(referenceDisplayName(row.nearest)) + '"'
       + (band === 2 ? ' class="quiet"' : '') + '>'
       + '<td>' + (index + 1) + '</td>'
       + '<td>' + escapeHtml(row.target.name) + '</td>'
@@ -995,8 +1001,8 @@ function renderTargets(record) {
       + '<td><span class="score"><span class="score-track"><span class="score-fill" style="width:'
         + (row.rankScore * 100).toFixed(1) + '%"></span></span>' + row.rankScore.toFixed(3) + '</span></td>'
       + '<td>' + row.mean.toFixed(3) + '</td>'
-      + '<td><details><summary>' + escapeHtml(row.nearest.name) + '</summary>'
-        + row.evidence.map(e=>escapeHtml(e.entry.name)+': '+e.value.toFixed(3)
+      + '<td><details><summary>' + escapeHtml(referenceDisplayName(row.nearest)) + '</summary>'
+        + row.evidence.map(e=>escapeHtml(referenceDisplayName(e.entry))+': '+e.value.toFixed(3)
           +(e.sameProfile?' [matching query fingerprint profile; not proof of molecular identity]':'')
           +' (stereo / features / pairs: '+e.components.map(v=>v.toFixed(3)).join(' / ')+')').join('<br>')
         + '<br>'+row.distinctCount+' distinct fingerprint profiles from '+row.count+' listed references.</details></td>'
