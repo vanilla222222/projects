@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 5497,
+  "entries": 5510,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -16873,6 +16873,34 @@
       "atomIndices": [
         9
       ]
+    },
+    {
+      "index": 5507,
+      "name": "3-cyclobutyl-3-[4-(7H-pyrrolo[2,3-d]pyrimidin-4-yl)pyrazol-1-yl]propanenitrile",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5508,
+      "name": "3-cyclohexyl-3-[4-(7H-pyrrolo[2,3-d]pyrimidin-4-yl)pyrazol-1-yl]propanenitrile",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5509,
+      "name": "4-methyl-3-[4-(7H-pyrrolo[2,3-d]pyrimidin-4-yl)pyrazol-1-yl]pentanenitrile",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5510,
+      "name": "3-[4-(7H-pyrrolo[2,3-d]pyrimidin-4-yl)pyrazol-1-yl]pentanenitrile",
+      "atomIndices": [
+        3
+      ]
     }
   ],
   "chargedEntries": [
@@ -17122,7 +17150,7 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 9,
-    "unspecifiedStereocenters": 1969,
+    "unspecifiedStereocenters": 1973,
     "chargedEntries": 46,
     "fragmentedEntries": 0,
     "radicalEntries": 0,

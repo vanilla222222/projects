@@ -5515,6 +5515,19 @@ const LIBRARY = [
   { name: '2-amino-9-(3-hydroxypropyl)-1H-purin-6-one', cls: 'Antiviral', formula: 'C8H11N5O2', smiles: 'Nc1nc2c(ncn2CCCO)c(=O)[nH]1' },
   { name: '2-amino-9-(4-hydroxybutyl)-1H-purin-6-one', cls: 'Antiviral', formula: 'C9H13N5O2', smiles: 'Nc1nc2c(ncn2CCCCO)c(=O)[nH]1' },
   { name: '2-amino-9-(2,3-dihydroxypropyl)-1H-purin-6-one', cls: 'Antiviral', formula: 'C8H11N5O3', smiles: 'Nc1nc2c(ncn2CC(O)CO)c(=O)[nH]1' },
+  { name: 'N-(3-chloro-4-fluorophenyl)-7-(2-methoxyethoxy)-6-(3-morpholin-4-ylpropoxy)quinazolin-4-amine', cls: 'Kinase inhibitor', formula: 'C24H28ClFN4O4', smiles: 'COCCOc1cc2ncnc(Nc3ccc(F)c(Cl)c3)c2cc1OCCCN3CCOCC3' },
+  { name: 'N-(3-chloro-4-fluorophenyl)-7-methoxy-6-(2-methoxyethoxy)quinazolin-4-amine', cls: 'Kinase inhibitor', formula: 'C18H17ClFN3O3', smiles: 'COc1cc2ncnc(Nc3ccc(F)c(Cl)c3)c2cc1OCCOC' },
+  { name: 'N-(3-ethynylphenyl)-7-methoxy-6-(3-morpholin-4-ylpropoxy)quinazolin-4-amine', cls: 'Kinase inhibitor', formula: 'C24H26N4O3', smiles: 'COc1cc2ncnc(Nc3cccc(C#C)c3)c2cc1OCCCN3CCOCC3' },
+  { name: 'N-(3-chloro-4-fluorophenyl)-6,7-bis(2-methoxyethoxy)quinazolin-4-amine', cls: 'Kinase inhibitor', formula: 'C20H21ClFN3O4', smiles: 'COCCOc1cc2ncnc(Nc3ccc(F)c(Cl)c3)c2cc1OCCOC' },
+  { name: 'N-(3-chloro-4-fluorophenyl)-7-methoxy-6-[(1-methylpiperidin-4-yl)methoxy]quinazolin-4-amine', cls: 'Kinase inhibitor', formula: 'C22H24ClFN4O2', smiles: 'COc1cc2ncnc(Nc3ccc(F)c(Cl)c3)c2cc1OCC3CCN(C)CC3' },
+  { name: '4-[4-[(4-chlorophenyl)carbamoylamino]phenoxy]-N-methylpyridine-2-carboxamide', cls: 'Kinase inhibitor', formula: 'C20H17ClN4O3', smiles: 'CNC(=O)c1cc(Oc2ccc(NC(=O)Nc3ccc(Cl)cc3)cc2)ccn1' },
+  { name: '4-[4-[[4-chloro-3-(trifluoromethyl)phenyl]carbamoylamino]-3-chlorophenoxy]-N-methylpyridine-2-carboxamide', cls: 'Kinase inhibitor', formula: 'C21H15Cl2F3N4O3', smiles: 'CNC(=O)c1cc(Oc2ccc(NC(=O)Nc3ccc(Cl)c(C(F)(F)F)c3)c(Cl)c2)ccn1' },
+  { name: '4-[4-[(4-chlorophenyl)carbamoylamino]-3-fluorophenoxy]-N-methylpyridine-2-carboxamide', cls: 'Kinase inhibitor', formula: 'C20H16ClFN4O3', smiles: 'CNC(=O)c1cc(Oc2ccc(NC(=O)Nc3ccc(Cl)cc3)c(F)c2)ccn1' },
+  { name: '4-[4-[[4-(trifluoromethyl)phenyl]carbamoylamino]phenoxy]-N-methylpyridine-2-carboxamide', cls: 'Kinase inhibitor', formula: 'C21H17F3N4O3', smiles: 'CNC(=O)c1cc(Oc2ccc(NC(=O)Nc3ccc(C(F)(F)F)cc3)cc2)ccn1' },
+  { name: '3-cyclobutyl-3-[4-(7H-pyrrolo[2,3-d]pyrimidin-4-yl)pyrazol-1-yl]propanenitrile', cls: 'Kinase inhibitor', formula: 'C16H16N6', smiles: 'N#CCC(C3CCC3)n1cc(cn1)c1ncnc2[nH]ccc12' },
+  { name: '3-cyclohexyl-3-[4-(7H-pyrrolo[2,3-d]pyrimidin-4-yl)pyrazol-1-yl]propanenitrile', cls: 'Kinase inhibitor', formula: 'C18H20N6', smiles: 'N#CCC(C3CCCCC3)n1cc(cn1)c1ncnc2[nH]ccc12' },
+  { name: '4-methyl-3-[4-(7H-pyrrolo[2,3-d]pyrimidin-4-yl)pyrazol-1-yl]pentanenitrile', cls: 'Kinase inhibitor', formula: 'C15H16N6', smiles: 'N#CCC(C(C)C)n1cc(cn1)c1ncnc2[nH]ccc12' },
+  { name: '3-[4-(7H-pyrrolo[2,3-d]pyrimidin-4-yl)pyrazol-1-yl]pentanenitrile', cls: 'Kinase inhibitor', formula: 'C14H14N6', smiles: 'N#CCC(CC)n1cc(cn1)c1ncnc2[nH]ccc12' },
 ];
 
 if (typeof module !== 'undefined' && module.exports) {
