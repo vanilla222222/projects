@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
  "rdkitVersion": "2026.09.1",
- "librarySha256": "c769a8e00ae87b438d3b2f1adc1f525dcf5b75eb039ef791ab5545571cd6f150",
+ "librarySha256": "6e5c9dff47f32a7a98c3f581bdd33ed9ad3f898d7b2eb77da815abe84e946864",
  "toolSha256": "5474a832b1cd427e4246f1c4b12ec2c47a2b3a12586201f388f5cf52f1bfcd16",
  "dataSha256": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
  "protocol": "Prefer exact isomeric graph matches to PubChem titles/IUPAC names or ChEMBL preferred names. Otherwise require the full InChIKey plus completed RDKit tautomer-family agreement, no neutralization and tetrahedral stereo retained; explicitly label these as PubChem standardized-form names, not exact stored-graph names. Never change reference keys or graphs.",
@@ -13626,8 +13626,8 @@
   }
  ],
  "libraryRepin": {
-  "previousLibrarySha256": "9d743a70f4e39fabd653b9a63679261397d8fab09b9cdd34ba89bc7678307935",
-  "reason": "Added 27 derived nicotinic ligand scaffold references; no curated name record changed.",
+  "previousLibrarySha256": "c769a8e00ae87b438d3b2f1adc1f525dcf5b75eb039ef791ab5545571cd6f150",
+  "reason": "Added 122 derived NSAID, antimuscarinic and antimetabolite scaffold references; no curated name record changed.",
   "verified": "Every source InChIKey skeleton in records is still present in data/library.js."
  }
 }

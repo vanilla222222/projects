@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 5752,
+  "entries": 5874,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -18061,6 +18061,590 @@
       "atomIndices": [
         3
       ]
+    },
+    {
+      "index": 5753,
+      "name": "2-(4-propylphenyl)propanoic acid",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5754,
+      "name": "2-[4-(propan-2-yl)phenyl]propanoic acid",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5755,
+      "name": "2-(4-propylphenyl)butanoic acid",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5756,
+      "name": "2-[4-(2-methylpropyl)phenyl]pentanoic acid",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 5757,
+      "name": "2-(4-butylphenyl)propanoic acid",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 5758,
+      "name": "2-[4-(propan-2-yl)phenyl]butanoic acid",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5759,
+      "name": "2-(4-propylphenyl)pentanoic acid",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5760,
+      "name": "3-methyl-2-[4-(2-methylpropyl)phenyl]butanoic acid",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 5761,
+      "name": "2-(4-phenylphenyl)propanoic acid",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 5762,
+      "name": "2-(4-butylphenyl)butanoic acid",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 5763,
+      "name": "2-[4-(propan-2-yl)phenyl]pentanoic acid",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5764,
+      "name": "3-methyl-2-(4-propylphenyl)butanoic acid",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5765,
+      "name": "2-(4-benzoylphenyl)propanoic acid",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 5766,
+      "name": "2-(4-butylphenyl)pentanoic acid",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 5767,
+      "name": "3-methyl-2-[4-(propan-2-yl)phenyl]butanoic acid",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5768,
+      "name": "2-(4-benzoylphenyl)butanoic acid",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 5769,
+      "name": "2-(4-phenylphenyl)pentanoic acid",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 5770,
+      "name": "2-(4-butylphenyl)-3-methylbutanoic acid",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 5771,
+      "name": "2-(3-benzoylphenyl)butanoic acid",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 5772,
+      "name": "2-[3-(4-fluorobenzoyl)phenyl]propanoic acid",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 5773,
+      "name": "2-(3-phenoxyphenyl)butanoic acid",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 5774,
+      "name": "2-(3-benzoylphenyl)pentanoic acid",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 5775,
+      "name": "2-[3-(4-fluorophenoxy)phenyl]propanoic acid",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 5776,
+      "name": "2-[3-(4-fluorobenzoyl)phenyl]butanoic acid",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 5777,
+      "name": "2-(3-phenoxyphenyl)pentanoic acid",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 5778,
+      "name": "2-(3-benzoylphenyl)-3-methylbutanoic acid",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 5779,
+      "name": "2-[3-(thiophene-2-carbonyl)phenyl]propanoic acid",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 5780,
+      "name": "2-[3-(4-fluorophenoxy)phenyl]butanoic acid",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 5781,
+      "name": "2-[3-(4-fluorobenzoyl)phenyl]pentanoic acid",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 5782,
+      "name": "3-methyl-2-(3-phenoxyphenyl)butanoic acid",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 5783,
+      "name": "8-ethyl-8-azabicyclo[3.2.1]octan-3-yl 3-hydroxy-2-phenylpropanoate",
+      "atomIndices": [
+        3,
+        6,
+        13
+      ]
+    },
+    {
+      "index": 5784,
+      "name": "8-propyl-8-azabicyclo[3.2.1]octan-3-yl 3-hydroxy-2-phenylpropanoate",
+      "atomIndices": [
+        4,
+        7,
+        14
+      ]
+    },
+    {
+      "index": 5785,
+      "name": "8-ethyl-8-azabicyclo[3.2.1]octan-3-yl 2-hydroxy-2,2-diphenylacetate",
+      "atomIndices": [
+        3,
+        6
+      ]
+    },
+    {
+      "index": 5786,
+      "name": "8-methyl-8-azabicyclo[3.2.1]octan-3-yl 2-cyclohexyl-2-hydroxy-2-phenylacetate",
+      "atomIndices": [
+        2,
+        5,
+        12
+      ]
+    },
+    {
+      "index": 5787,
+      "name": "8-propan-2-yl-8-azabicyclo[3.2.1]octan-3-yl 3-hydroxy-2-phenylpropanoate",
+      "atomIndices": [
+        4,
+        7,
+        14
+      ]
+    },
+    {
+      "index": 5788,
+      "name": "8-propyl-8-azabicyclo[3.2.1]octan-3-yl 2-hydroxy-2,2-diphenylacetate",
+      "atomIndices": [
+        4,
+        7
+      ]
+    },
+    {
+      "index": 5789,
+      "name": "8-ethyl-8-azabicyclo[3.2.1]octan-3-yl 2-cyclohexyl-2-hydroxy-2-phenylacetate",
+      "atomIndices": [
+        3,
+        6,
+        13
+      ]
+    },
+    {
+      "index": 5790,
+      "name": "8-methyl-8-azabicyclo[3.2.1]octan-3-yl 2-hydroxy-2,2-dithiophen-2-ylacetate",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 5791,
+      "name": "1,1-dimethylpiperidin-1-ium-3-yl 2-cyclohexyl-2-hydroxy-2-phenylacetate",
+      "atomIndices": [
+        6,
+        10
+      ]
+    },
+    {
+      "index": 5792,
+      "name": "1-methyl-1-propylpiperidin-1-ium-3-yl 2-hydroxy-2,2-diphenylacetate",
+      "atomIndices": [
+        1,
+        8
+      ]
+    },
+    {
+      "index": 5793,
+      "name": "1-ethyl-1-methylpiperidin-1-ium-3-yl 2-cyclohexyl-2-hydroxy-2-phenylacetate",
+      "atomIndices": [
+        1,
+        7,
+        11
+      ]
+    },
+    {
+      "index": 5794,
+      "name": "1,1-dimethylpiperidin-1-ium-3-yl 2-hydroxy-2,2-dithiophen-2-ylacetate",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5795,
+      "name": "1-methyl-1-propan-2-ylpiperidin-1-ium-3-yl 2-hydroxy-2,2-diphenylacetate",
+      "atomIndices": [
+        1,
+        8
+      ]
+    },
+    {
+      "index": 5796,
+      "name": "1-methyl-1-propylpiperidin-1-ium-3-yl 2-cyclohexyl-2-hydroxy-2-phenylacetate",
+      "atomIndices": [
+        1,
+        8,
+        12
+      ]
+    },
+    {
+      "index": 5797,
+      "name": "1-ethyl-1-methylpiperidin-1-ium-3-yl 2-hydroxy-2,2-dithiophen-2-ylacetate",
+      "atomIndices": [
+        1,
+        7
+      ]
+    },
+    {
+      "index": 5798,
+      "name": "1,1-dimethylpiperidin-1-ium-3-yl 3-hydroxy-2-phenylpropanoate",
+      "atomIndices": [
+        6,
+        10
+      ]
+    },
+    {
+      "index": 5799,
+      "name": "trimethyl-[2-(2-cyclohexyl-2-hydroxy-2-phenylacetyl)oxyethyl]azanium",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 5800,
+      "name": "ethyl-dimethyl-[2-(2-cyclohexyl-2-hydroxy-2-phenylacetyl)oxyethyl]azanium",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 5802,
+      "name": "dimethyl-propyl-[2-(2-cyclohexyl-2-hydroxy-2-phenylacetyl)oxyethyl]azanium",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 5805,
+      "name": "dimethyl-propan-2-yl-[2-(2-cyclohexyl-2-hydroxy-2-phenylacetyl)oxyethyl]azanium",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 5806,
+      "name": "ethyl-methyl-propyl-[2-(2-cyclohexyl-2-hydroxy-2-phenylacetyl)oxyethyl]azanium",
+      "atomIndices": [
+        2,
+        12
+      ]
+    },
+    {
+      "index": 5808,
+      "name": "2-[(4-chlorophenyl)-phenylmethoxy]-N,N-dimethylethanamine",
+      "atomIndices": [
+        0
+      ]
+    },
+    {
+      "index": 5811,
+      "name": "2-[(4-chlorophenyl)-phenylmethoxy]-N-ethyl-N-methylethanamine",
+      "atomIndices": [
+        0
+      ]
+    },
+    {
+      "index": 5812,
+      "name": "2-[(4-fluorophenyl)-phenylmethoxy]-N,N-dimethylethanamine",
+      "atomIndices": [
+        0
+      ]
+    },
+    {
+      "index": 5822,
+      "name": "5-ethenyl-1-[4-hydroxy-5-(hydroxymethyl)oxolan-2-yl]pyrimidine-2,4-dione",
+      "atomIndices": [
+        2,
+        4,
+        16
+      ]
+    },
+    {
+      "index": 5823,
+      "name": "5-cyano-1-[4-hydroxy-5-(hydroxymethyl)oxolan-2-yl]pyrimidine-2,4-dione",
+      "atomIndices": [
+        2,
+        4,
+        16
+      ]
+    },
+    {
+      "index": 5824,
+      "name": "5-amino-1-[4-hydroxy-5-(hydroxymethyl)oxolan-2-yl]pyrimidine-2,4-dione",
+      "atomIndices": [
+        2,
+        4,
+        15
+      ]
+    },
+    {
+      "index": 5825,
+      "name": "5-hydroxy-1-[4-hydroxy-5-(hydroxymethyl)oxolan-2-yl]pyrimidine-2,4-dione",
+      "atomIndices": [
+        2,
+        4,
+        15
+      ]
+    },
+    {
+      "index": 5826,
+      "name": "1-[4-hydroxy-5-(hydroxymethyl)oxolan-2-yl]-5-methoxypyrimidine-2,4-dione",
+      "atomIndices": [
+        2,
+        4,
+        16
+      ]
+    },
+    {
+      "index": 5827,
+      "name": "1-[4-hydroxy-5-(hydroxymethyl)oxolan-2-yl]-5-methylsulfanylpyrimidine-2,4-dione",
+      "atomIndices": [
+        2,
+        4,
+        16
+      ]
+    },
+    {
+      "index": 5828,
+      "name": "1-[4-hydroxy-5-(hydroxymethyl)oxolan-2-yl]-5-hydroxymethylpyrimidine-2,4-dione",
+      "atomIndices": [
+        2,
+        4,
+        16
+      ]
+    },
+    {
+      "index": 5829,
+      "name": "5-fluoromethyl-1-[4-hydroxy-5-(hydroxymethyl)oxolan-2-yl]pyrimidine-2,4-dione",
+      "atomIndices": [
+        2,
+        4,
+        16
+      ]
+    },
+    {
+      "index": 5830,
+      "name": "1-[4-hydroxy-5-(hydroxymethyl)oxolan-2-yl]-5-propylpyrimidine-2,4-dione",
+      "atomIndices": [
+        2,
+        4,
+        17
+      ]
+    },
+    {
+      "index": 5831,
+      "name": "2-(6-amino-2-chloropurin-9-yl)-5-(hydroxymethyl)oxolane-3,4-diol",
+      "atomIndices": [
+        11,
+        13,
+        16,
+        18
+      ]
+    },
+    {
+      "index": 5832,
+      "name": "2-(6-amino-2-bromopurin-9-yl)-5-(hydroxymethyl)oxolane-3,4-diol",
+      "atomIndices": [
+        11,
+        13,
+        16,
+        18
+      ]
+    },
+    {
+      "index": 5833,
+      "name": "2-(6-amino-2-methylpurin-9-yl)-5-(hydroxymethyl)oxolane-3,4-diol",
+      "atomIndices": [
+        11,
+        13,
+        16,
+        18
+      ]
+    },
+    {
+      "index": 5834,
+      "name": "2-(6,2-diaminopurin-9-yl)-5-(hydroxymethyl)oxolane-3,4-diol",
+      "atomIndices": [
+        11,
+        13,
+        16,
+        18
+      ]
+    },
+    {
+      "index": 5835,
+      "name": "2-(6-amino-2-methoxypurin-9-yl)-5-(hydroxymethyl)oxolane-3,4-diol",
+      "atomIndices": [
+        12,
+        14,
+        17,
+        19
+      ]
+    },
+    {
+      "index": 5836,
+      "name": "2-(6-amino-2-cyanopurin-9-yl)-5-(hydroxymethyl)oxolane-3,4-diol",
+      "atomIndices": [
+        12,
+        14,
+        17,
+        19
+      ]
+    },
+    {
+      "index": 5837,
+      "name": "2-[[4-[(2,4-diaminopteridin-6-yl)methyl-ethylamino]benzoyl]amino]pentanedioic acid",
+      "atomIndices": [
+        25
+      ]
+    },
+    {
+      "index": 5838,
+      "name": "2-[[4-[(2,4-diaminopteridin-6-yl)methyl-propylamino]benzoyl]amino]pentanedioic acid",
+      "atomIndices": [
+        26
+      ]
+    },
+    {
+      "index": 5839,
+      "name": "2-[[4-[(2,4-diaminopteridin-6-yl)methyl-prop-2-enylamino]benzoyl]amino]pentanedioic acid",
+      "atomIndices": [
+        26
+      ]
+    },
+    {
+      "index": 5840,
+      "name": "2-[[4-[(2,4-diaminopteridin-6-yl)methyl-prop-2-ynylamino]benzoyl]amino]pentanedioic acid",
+      "atomIndices": [
+        26
+      ]
+    },
+    {
+      "index": 5841,
+      "name": "2-[[4-[(2,4-diaminopteridin-6-yl)methyl-benzylamino]benzoyl]amino]pentanedioic acid",
+      "atomIndices": [
+        30
+      ]
+    },
+    {
+      "index": 5842,
+      "name": "2-[[4-[(2,4-diaminopteridin-6-yl)methyl-butylamino]benzoyl]amino]pentanedioic acid",
+      "atomIndices": [
+        27
+      ]
     }
   ],
   "chargedEntries": [
@@ -18293,6 +18877,86 @@
       "index": 4418,
       "name": "QX-314",
       "formalCharge": 1
+    },
+    {
+      "index": 5791,
+      "name": "1,1-dimethylpiperidin-1-ium-3-yl 2-cyclohexyl-2-hydroxy-2-phenylacetate",
+      "formalCharge": 1
+    },
+    {
+      "index": 5792,
+      "name": "1-methyl-1-propylpiperidin-1-ium-3-yl 2-hydroxy-2,2-diphenylacetate",
+      "formalCharge": 1
+    },
+    {
+      "index": 5793,
+      "name": "1-ethyl-1-methylpiperidin-1-ium-3-yl 2-cyclohexyl-2-hydroxy-2-phenylacetate",
+      "formalCharge": 1
+    },
+    {
+      "index": 5794,
+      "name": "1,1-dimethylpiperidin-1-ium-3-yl 2-hydroxy-2,2-dithiophen-2-ylacetate",
+      "formalCharge": 1
+    },
+    {
+      "index": 5795,
+      "name": "1-methyl-1-propan-2-ylpiperidin-1-ium-3-yl 2-hydroxy-2,2-diphenylacetate",
+      "formalCharge": 1
+    },
+    {
+      "index": 5796,
+      "name": "1-methyl-1-propylpiperidin-1-ium-3-yl 2-cyclohexyl-2-hydroxy-2-phenylacetate",
+      "formalCharge": 1
+    },
+    {
+      "index": 5797,
+      "name": "1-ethyl-1-methylpiperidin-1-ium-3-yl 2-hydroxy-2,2-dithiophen-2-ylacetate",
+      "formalCharge": 1
+    },
+    {
+      "index": 5798,
+      "name": "1,1-dimethylpiperidin-1-ium-3-yl 3-hydroxy-2-phenylpropanoate",
+      "formalCharge": 1
+    },
+    {
+      "index": 5799,
+      "name": "trimethyl-[2-(2-cyclohexyl-2-hydroxy-2-phenylacetyl)oxyethyl]azanium",
+      "formalCharge": 1
+    },
+    {
+      "index": 5800,
+      "name": "ethyl-dimethyl-[2-(2-cyclohexyl-2-hydroxy-2-phenylacetyl)oxyethyl]azanium",
+      "formalCharge": 1
+    },
+    {
+      "index": 5801,
+      "name": "trimethyl-[2-(2-hydroxy-2,2-diphenylacetyl)oxyethyl]azanium",
+      "formalCharge": 1
+    },
+    {
+      "index": 5802,
+      "name": "dimethyl-propyl-[2-(2-cyclohexyl-2-hydroxy-2-phenylacetyl)oxyethyl]azanium",
+      "formalCharge": 1
+    },
+    {
+      "index": 5803,
+      "name": "ethyl-dimethyl-[2-(2-hydroxy-2,2-diphenylacetyl)oxyethyl]azanium",
+      "formalCharge": 1
+    },
+    {
+      "index": 5804,
+      "name": "trimethyl-[2-(2-hydroxy-2,2-dithiophen-2-ylacetyl)oxyethyl]azanium",
+      "formalCharge": 1
+    },
+    {
+      "index": 5805,
+      "name": "dimethyl-propan-2-yl-[2-(2-cyclohexyl-2-hydroxy-2-phenylacetyl)oxyethyl]azanium",
+      "formalCharge": 1
+    },
+    {
+      "index": 5806,
+      "name": "ethyl-methyl-propyl-[2-(2-cyclohexyl-2-hydroxy-2-phenylacetyl)oxyethyl]azanium",
+      "formalCharge": 1
     }
   ],
   "fragmentedEntries": [],
@@ -18310,8 +18974,8 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 10,
-    "unspecifiedStereocenters": 2106,
-    "chargedEntries": 46,
+    "unspecifiedStereocenters": 2181,
+    "chargedEntries": 62,
     "fragmentedEntries": 0,
     "radicalEntries": 0,
     "nonAromaticSulfurRings": 1,
