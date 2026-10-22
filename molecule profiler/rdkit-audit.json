@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 5585,
+  "entries": 5620,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -17097,6 +17097,49 @@
       "atomIndices": [
         3
       ]
+    },
+    {
+      "index": 5592,
+      "name": "Cyclic adenosine monophosphate (cAMP)",
+      "atomIndices": [
+        15
+      ]
+    },
+    {
+      "index": 5593,
+      "name": "Cyclic guanosine monophosphate (cGMP)",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 5594,
+      "name": "Guanosine triphosphate (GTP)",
+      "atomIndices": [
+        14,
+        18
+      ]
+    },
+    {
+      "index": 5596,
+      "name": "Hypotaurine",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5604,
+      "name": "2-Oleoylglycerol",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 5608,
+      "name": "3,4-Dihydroxyphenylglycol",
+      "atomIndices": [
+        2
+      ]
     }
   ],
   "chargedEntries": [
@@ -17346,7 +17389,7 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 9,
-    "unspecifiedStereocenters": 2001,
+    "unspecifiedStereocenters": 2007,
     "chargedEntries": 46,
     "fragmentedEntries": 0,
     "radicalEntries": 0,

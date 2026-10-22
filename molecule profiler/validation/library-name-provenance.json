@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
  "rdkitVersion": "2026.09.1",
- "librarySha256": "53482ada42f5fcfb1be4ed058d716f2f7d08a4bd0e6c9fd954af2e11bf4d70fe",
+ "librarySha256": "b31ca2eda17381164114937be362534e9985dff6eff4dd5275b7e4ff24fcd300",
  "toolSha256": "5474a832b1cd427e4246f1c4b12ec2c47a2b3a12586201f388f5cf52f1bfcd16",
  "dataSha256": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
  "protocol": "Prefer exact isomeric graph matches to PubChem titles/IUPAC names or ChEMBL preferred names. Otherwise require the full InChIKey plus completed RDKit tautomer-family agreement, no neutralization and tetrahedral stereo retained; explicitly label these as PubChem standardized-form names, not exact stored-graph names. Never change reference keys or graphs.",
@@ -13626,8 +13626,8 @@
   }
  ],
  "libraryRepin": {
-  "previousLibrarySha256": "e420eea45d3f7ffff7b360e3ef85edef1eff66357861f7c1c6f82c08261032f7",
-  "reason": "Added 26 derived phytoestrogen scaffold references; no curated name record changed.",
+  "previousLibrarySha256": "53482ada42f5fcfb1be4ed058d716f2f7d08a4bd0e6c9fd954af2e11bf4d70fe",
+  "reason": "Added 35 documented endogenous signalling references; no curated name record changed.",
   "verified": "Every source InChIKey skeleton in records is still present in data/library.js."
  }
 }
