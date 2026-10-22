@@ -51,11 +51,11 @@ function metaboliteRecord(smiles) {
   return { smiles: smiles, mol: mol, d: d, v: evaluate(d) };
 }
 
-function metaboliteFragments(result) {
+function metaboliteFragments(result, diagnostics) {
   const pieces = [];
   result.fragments.forEach((smiles) => {
     let record = null;
-    try { record = metaboliteRecord(smiles); } catch (error) { return; }
+    try { record = metaboliteRecord(smiles); } catch (error) { if(diagnostics)diagnostics.rejectedFragments++;return; }
     pieces.push(record);
   });
   if (!pieces.length) return { kept: [], released: [] };
@@ -96,8 +96,13 @@ function newToxHits(node, root) {
 
 function metabolicTree(record, options) {
   const settings = options || {};
-  const depth = settings.depth || META_DEPTH;
+  const requestedDepth = settings.depth === undefined ? META_DEPTH : Number(settings.depth);
+  if (!Number.isInteger(requestedDepth) || requestedDepth < 0 || requestedDepth > 3) throw new Error('Metabolism depth must be an integer from 0 to 3.');
+  const depth = requestedDepth;
+  const maxNodes = settings.maxNodes === undefined ? META_MAX_NODES : Number(settings.maxNodes);
+  if (!Number.isInteger(maxNodes) || maxNodes < 1 || maxNodes > 500) throw new Error('Metabolism product budget must be an integer from 1 to 500.');
   const phases = settings.phases || META_PHASES;
+  if (!Array.isArray(phases) || phases.some(p=>!META_PHASES.includes(p))) throw new Error('Unknown metabolic phase.');
   const rules = METABOLISM.filter((rule) => phases.indexOf(rule.phase) !== -1);
 
   const root = {
@@ -126,84 +131,68 @@ function metabolicTree(record, options) {
   byKey.set(metaboliteKey(record.mol, record.d), root);
   let truncated = false;
 
+  const diagnostics={ruleApplications:0,transformMatches:0,rejectedTransforms:0,ruleErrors:[],
+    revisitedProducts:0,rejectedFragments:0,candidatesDiscardedByCap:0,uniqueCandidatesByGeneration:[]};
   let frontier = [root];
   for (let level = 1; level <= depth; level += 1) {
-    const next = [];
-    frontier.forEach((parent) => {
-      rules.forEach((rule) => {
-        let results = [];
-        try { results = applyTransform(parent.mol, rule.smirks); } catch (error) { results = []; }
-        results.forEach((result) => {
-          const split = metaboliteFragments(result);
-          split.kept.forEach((piece) => {
-            if (nodes.length >= META_MAX_NODES) { truncated = true; return; }
-            const key = metaboliteKey(piece.mol, piece.d);
-            const seen = byKey.get(key);
-            const site = typeof siteScore === 'function'
-                  ? siteScore(parent.mol, rule, result.touched || [])
-                  : { factor: 1, reasons: [], atom: null };
-            const siteWeight = rule.weight * site.factor;
-            const step = {
-              rule: rule.name,
-              enzyme: rule.enzyme,
-              route: rule.route,
-              phase: rule.phase,
-              weight: siteWeight,
-              ruleWeight: rule.weight,
-              siteFactor: site.factor,
-              siteReasons: site.reasons,
-              siteAtom: site.atom,
-              note: rule.note,
-              from: parent.id
-            };
-            if (seen) {
-              if (seen !== parent && seen.steps.every((item) => item.rule !== rule.name || item.from !== parent.id)) {
-                seen.steps.push(step);
-                const reached = parent.score * siteWeight;
-                if (reached > seen.score) {
-                  seen.score = reached;
-                  seen.weight = siteWeight;
-                  seen.siteFactor = site.factor;
-                  seen.siteReasons = site.reasons;
-                  seen.siteAtom = site.atom;
-                }
+    const candidates = new Map();
+    for (const parent of frontier) {
+      for (const rule of rules) {
+        diagnostics.ruleApplications++;
+        let results;
+        const transformStats={};
+        try { results=applyTransform(parent.mol,rule.smirks,transformStats); }
+        catch(error) {diagnostics.ruleErrors.push({rule:rule.name,parent:parent.id,reason:error.message});continue;}
+        diagnostics.transformMatches+=transformStats.matches||0;
+        diagnostics.rejectedTransforms+=transformStats.rejected||0;
+        for (const result of results) {
+          const split=metaboliteFragments(result,diagnostics);
+          for (const piece of split.kept) {
+            const key=metaboliteKey(piece.mol,piece.d);
+            const site=typeof siteScore==='function'?siteScore(parent.mol,rule,result.touched||[]):{factor:1,reasons:[],atom:null};
+            const siteWeight=rule.weight*site.factor;
+            const step={rule:rule.name,enzyme:rule.enzyme,route:rule.route,phase:rule.phase,
+              weight:siteWeight,ruleWeight:rule.weight,siteFactor:site.factor,siteReasons:site.reasons,
+              siteAtom:site.atom,note:rule.note,from:parent.id,generation:level,routeScore:parent.score*siteWeight};
+            const seen=byKey.get(key);
+            if(seen) {
+              if(seen!==root && seen!==parent) {
+                diagnostics.revisitedProducts++;
+                if(!seen.steps.some(s=>s.rule===step.rule&&s.from===step.from&&s.siteAtom===step.siteAtom))seen.steps.push(step);
               }
-              return;
+              // Do not recycle a deeper route back through a previously expanded
+              // node. Its representative score/path stays internally consistent.
+              continue;
             }
-            const node = {
-              id: nodes.length,
-              parent: parent.id,
-              depth: level,
-              name: rule.name,
-              smiles: piece.smiles,
-              mol: piece.mol,
-              d: piece.d,
-              v: piece.v,
-              rule: rule.name,
-              enzyme: rule.enzyme,
-              route: rule.route,
-              phase: rule.phase,
-              weight: siteWeight,
-              ruleWeight: rule.weight,
-              siteFactor: site.factor,
-              siteReasons: site.reasons,
-              siteAtom: site.atom,
-              score: parent.score * siteWeight,
-              touched: result.touched || [],
-              released: split.released.map((piece2) => piece2.smiles),
-              children: [],
-              steps: [step]
-            };
-            byKey.set(key, node);
-            nodes.push(node);
-            parent.children.push(node.id);
-            next.push(node);
-          });
-        });
-      });
-    });
-    frontier = next;
-    if (!frontier.length) break;
+            const candidate={key,piece,parent,rule,site,siteWeight,step,result,split,score:step.routeScore};
+            const old=candidates.get(key);
+            if(!old)candidates.set(key,{best:candidate,steps:[step]});
+            else {
+              if(!old.steps.some(s=>s.rule===step.rule&&s.from===step.from&&s.siteAtom===step.siteAtom))old.steps.push(step);
+              if(candidate.score>old.best.score || (candidate.score===old.best.score &&
+                (rule.name+'::'+parent.id)<(old.best.rule.name+'::'+old.best.parent.id)))old.best=candidate;
+            }
+          }
+        }
+      }
+    }
+    const ordered=[...candidates.values()].sort((a,b)=>b.best.score-a.best.score||a.best.key.localeCompare(b.best.key));
+    diagnostics.uniqueCandidatesByGeneration.push({generation:level,candidates:ordered.length});
+    const slots=Math.max(0,maxNodes-nodes.length);
+    if(ordered.length>slots){truncated=true;diagnostics.candidatesDiscardedByCap+=ordered.length-slots;}
+    const next=[];
+    for(const candidate of ordered.slice(0,slots)) {
+      const {best:c,steps}=candidate;
+      const node={id:nodes.length,parent:c.parent.id,depth:level,name:c.rule.name,smiles:c.piece.smiles,
+        mol:c.piece.mol,d:c.piece.d,v:c.piece.v,rule:c.rule.name,enzyme:c.rule.enzyme,route:c.rule.route,
+        phase:c.rule.phase,weight:c.siteWeight,ruleWeight:c.rule.weight,siteFactor:c.site.factor,
+        siteReasons:c.site.reasons,siteAtom:c.site.atom,score:c.score,touched:c.result.touched||[],
+        released:c.split.released.map(piece=>piece.smiles),children:[],steps:[c.step,...steps.filter(step=>step!==c.step)]};
+      byKey.set(c.key,node);nodes.push(node);c.parent.children.push(node.id);next.push(node);
+    }
+    frontier=next;
+    if(!frontier.length)break;
+    if(nodes.length>=maxNodes && level<depth){truncated=true;break;}
   }
 
   const metabolites = nodes.slice(1);
@@ -232,7 +221,10 @@ function metabolicTree(record, options) {
     phaseI: metabolites.filter((node) => node.phase === 'I').length,
     phaseII: metabolites.filter((node) => node.phase === 'II').length,
     rulesTried: rules.length,
-    truncated: truncated
+    truncated: truncated,
+    diagnostics, maxNodes,
+    rankingPolicy:'Generation-wise best-relative-weight selection; representative route is best among shortest-generation routes. Deeper revisits do not recycle scores.',
+    identityScope:'Graph-hash grouping is approximate and does not establish stereochemical identity.'
   };
 }
 

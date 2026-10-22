@@ -9,11 +9,20 @@ const provenance = require('./validation-provenance.js');
 const sourceBefore = provenance.capture(root);
 const scripts = [
   'reference-audit-test.js',
+  'receptor-catalog-test.js',
+  'receptor-coverage-test.js',
+  'receptor-diversity-report-test.js',
+  'chembl-binding-test.js',
+  'target-ranking-test.js',
+  'target-ranking-metrics-test.js',
+  'metabolism-engine-test.js',
   'evidence-report-test.js',
   'screen-coverage-test.js',
   'property-validation.js',
+  'descriptor-conformance-test.js',
   'metabolism-cases.js',
   'retrieval-benchmark.js',
+  'retrieval-evaluate-test.js',
   'ui-integration-test.js',
   'interaction-test.js',
   'cooperative-batch-test.js',
@@ -21,6 +30,10 @@ const scripts = [
   'validation-provenance-test.js',
   'comparison-test.js',
   'library-catalog-test.js',
+  'library-metadata-report-test.js',
+  'family-reference-test.js',
+  'pharmacology-test.js',
+  'pk-applicability-test.js',
   'sim-pagination-test.js',
   'batch-browser-test.js',
   'input-workflow-test.js',
@@ -36,11 +49,17 @@ const started = new Date().toISOString();
 const outcomes = [];
 let failed = 0;
 for (const script of scripts) {
+  // Exhaustive retrieval grows with the reference dataset; keep a separate,
+  // bounded budget rather than applying its cost to every regression script.
+  const timeoutMs = script === 'retrieval-benchmark.js' ? 300000 : 120000;
+  const testStarted = process.hrtime.bigint();
+  process.stdout.write('RUN ' + script + ' (timeout ' + timeoutMs / 1000 + 's)\n');
   const result = spawnSync(process.execPath, [path.join(__dirname, script)], {
-    cwd: root, encoding: 'utf8', timeout: 120000
+    cwd: root, encoding: 'utf8', timeout: timeoutMs
   });
+  const durationMs = Math.round(Number(process.hrtime.bigint() - testStarted) / 1e6);
   const passed = !result.error && result.status === 0;
-  outcomes.push({script,passed,signal:result.signal || null,status:result.status,error:result.error ? String(result.error) : null,
+  outcomes.push({script,passed,durationMs,timeoutMs,signal:result.signal || null,status:result.status,error:result.error ? String(result.error) : null,
     stdout:result.stdout || '',stderr:result.stderr || ''});
   process.stdout.write((passed ? 'PASS ' : 'FAIL ') + script + '\n');
   if (result.stdout) process.stdout.write(result.stdout);

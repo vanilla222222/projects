@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "scope": "Four reviewed graph replacements from name-matched PubChem records. Chlordiazepoxide retains its FDA/ChEBI-supported N-oxide representation; PubChem currently gives a different representation. No activity claims added.",
+  "changes": [
+    {
+      "name": "Alpidem",
+      "librarySmiles": "CCCN(CCC)C(=O)Cc1nc2cc(Cl)ccn2c1-c1ccc(Cl)cc1",
+      "sourceSmiles": "CCCN(CCC)C(=O)CC1=C(N=C2N1C=C(C=C2)Cl)C3=CC=C(C=C3)Cl",
+      "cid": 54897,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/54897",
+      "sourceFormula": "C21H23Cl2N3O",
+      "retrievedAt": "2026-10-19T22:34:37.677347+00:00"
+    },
+    {
+      "name": "Flumazenil",
+      "librarySmiles": "CCOC(=O)c1ncc2n1-c1ccc(F)cc1C(=O)N(C)C2",
+      "sourceSmiles": "CCOC(=O)C1=C2CN(C(=O)C3=C(N2C=N1)C=CC(=C3)F)C",
+      "cid": 3373,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/3373",
+      "sourceFormula": "C15H14FN3O3",
+      "retrievedAt": "2026-10-19T22:32:56.704842+00:00"
+    },
+    {
+      "name": "Gaboxadol",
+      "librarySmiles": "Oc1noc2c1CNCC2",
+      "sourceSmiles": "C1CNCC2=C1C(=O)NO2",
+      "cid": 3448,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/3448",
+      "sourceFormula": "C6H8N2O2",
+      "retrievedAt": "2026-10-19T22:34:37.676983+00:00"
+    },
+    {
+      "name": "Zaleplon",
+      "librarySmiles": "CCN(C(C)=O)c1cccc(-c2ccn3ncc(C#N)c3n2)c1",
+      "sourceSmiles": "CCN(C1=CC=CC(=C1)C2=CC=NC3=C(C=NN23)C#N)C(=O)C",
+      "cid": 5719,
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/5719",
+      "sourceFormula": "C17H15N5O",
+      "retrievedAt": "2026-10-19T22:33:00.329029+00:00"
+    }
+  ],
+  "retainedSourceDisagreements": [
+    {
+      "name": "Chlordiazepoxide",
+      "decision": "Keep original N-oxide representation supported by FDA GSRS and ChEBI; do not replace solely to match a name-resolved PubChem record.",
+      "sources": [
+        "https://precision.fda.gov/ginas/app/ui/substances/6RZ6XEZ3CR",
+        "https://www.ebi.ac.uk/chebi/CHEBI:3611"
+      ],
+      "inchiKey": "ANTSCNMPPGJYLG-UHFFFAOYSA-N",
+      "pubchemCid": 2712
+    }
+  ]
+}

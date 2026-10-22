@@ -1,0 +1,17 @@
+'use strict';
+const assert=require('node:assert/strict'),{positions,summarize}=require('./target-ranking-metrics.js');
+const row=(name,score=1,mean=1)=>({target:{name},rankScore:score,mean}),key=t=>t.name;
+const rows=[row('negative'),row('A'),row('B'),row('other',0.5,0.5)];
+const a=positions(rows,new Set(['A']),key);
+assert.equal(a.bestRank,2);assert.equal(a.bestPossibleRank,1);assert.equal(a.guaranteedRank,3);
+const multi=positions(rows,new Set(['A','B']),key);
+assert.equal(multi.guaranteedRank,2,'two positives in a 3-way tie guarantee a hit by rank two');
+const reversed=positions([...rows.slice(0,3)].reverse().concat(rows[3]),new Set(['A']),key);
+assert.equal(reversed.guaranteedRank,a.guaranteedRank);assert.equal(reversed.bestPossibleRank,a.bestPossibleRank);
+const missing=positions(rows,new Set(['absent']),key);assert.equal(missing.bestRank,null);
+const report=summarize([{positiveKeys:['A','absent'],legacy:a},{positiveKeys:['absent'],legacy:missing}],'legacy');
+assert.equal(report.top1.possible,0.5);assert.equal(report.top1.guaranteed,0);assert.equal(report.top5.guaranteed,0.5);
+assert.equal(report.targetMacroTop5.guaranteed,0.5,'each target gets equal weight including unretrievable targets');
+const secondKey=positions([row('negative',1,1),row('A',1,0.9)],new Set(['A']),key);
+assert.equal(secondKey.bestPossibleRank,2,'the mean is a genuine secondary ordering key');
+console.log('Target evaluation: tie bounds, multiple positive labels, missing labels, target macro weighting and secondary keys passed');

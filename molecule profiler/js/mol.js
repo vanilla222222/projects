@@ -66,6 +66,8 @@ function buildMolecule(parsed) {
 
   perceiveRings(mol);
   perceiveAromaticity(mol);
+  // Remove bonds belonging only to rejected aromatic rings before assigning pi bonds.
+  trimAromaticBonds(mol, true);
   kekulize(mol);
   trimAromaticBonds(mol);
   assignHydrogens(mol);
@@ -181,9 +183,20 @@ function perceiveAromaticity(mol) {
   const flagged = mol.atoms.map((atom) => atom.aromatic);
   mol.atoms.forEach((atom) => { atom.aromatic = false; });
 
-  const candidates = mol.rings.filter((ring) => ring.length >= 5 && ring.length <= 7);
+  // Small charged/conjugated rings can also satisfy 4n+2 (e.g. squarate systems).
+  const candidates = mol.rings.filter((ring) => ring.length >= 3 && ring.length <= 7);
   candidates.forEach((ring) => {
-    if (ring.every((id) => flagged[id])) { ring.aromatic = true; return; }
+    // Lowercase input is a hint, not proof: neutral odd carbon rings and
+    // exocyclic carbon double bonds can interrupt local aromaticity.
+    const neutralOddCarbon = ring.length % 2 === 1 && ring.every(id =>
+      mol.atoms[id].element === 'C' && !mol.atoms[id].charge);
+    const exocyclicCarbonDouble = ring.some(id => mol.atoms[id].neighbors.some(link =>
+      !ring.includes(link.atom) && mol.bonds[link.bond].order === 2
+      && mol.atoms[id].element === 'C' && mol.atoms[link.atom].element === 'C'));
+    ring.rejectedInputAromatic = ring.every(id => flagged[id]) && (neutralOddCarbon || exocyclicCarbonDouble);
+    if (ring.every((id) => flagged[id]) && !neutralOddCarbon && !exocyclicCarbonDouble) {
+      ring.aromatic = true; return;
+    }
     const electrons = huckelElectrons(mol, ring, flagged, null);
     if (electrons !== null && (electrons - 2) % 4 === 0) ring.aromatic = true;
   });
@@ -213,33 +226,50 @@ function perceiveAromaticity(mol) {
   });
   systems.forEach((system) => {
     if (system.rings.length < 2) return;
-    if (system.rings.some((ring) => ring.length > 6)) return;
     if (system.rings.every((ring) => ring.aromatic)) return;
     const union = Array.from(system.atoms);
+    // Seven-membered fused-system promotion is supported here only for
+    // neutral carbon systems; heteroatom cases need a fuller electron model.
+    if (system.rings.some(ring => ring.length > 6) && !union.every(id =>
+      mol.atoms[id].element === 'C' && !mol.atoms[id].charge)) return;
     const electrons = huckelElectrons(mol, union, flagged, null);
     if (electrons === null || (electrons - 2) % 4 !== 0) return;
-    system.rings.forEach((ring) => { ring.aromatic = true; });
+    system.rings.forEach((ring) => { ring.systemPromoted = !ring.aromatic; ring.aromatic = true; });
   });
 
+  const eligibleBonds = aromaticRingBondKeys(mol);
   mol.rings.forEach((ring) => {
     if (!ring.aromatic) return;
     ring.forEach((id) => { mol.atoms[id].aromatic = true; });
     cycleBondKeys(ring).forEach((key) => {
       const [a, b] = key.split(':').map(Number);
       const target = findBond(mol, a, b);
-      if (target) target.aromatic = true;
+      if (target && eligibleBonds.has(key)) target.aromatic = true;
     });
   });
 }
 
-function trimAromaticBonds(mol) {
-  const inAromaticRing = new Set();
-  mol.rings.forEach((ring) => {
-    if (!ring.aromatic) return;
-    cycleBondKeys(ring).forEach((key) => inAromaticRing.add(key));
+// A fused system can be aromatic while an internal fusing bond is not.
+function aromaticRingBondKeys(mol) {
+  const local = new Set(), promoted = new Map();
+  mol.rings.filter(ring => ring.aromatic).forEach(ring => {
+    cycleBondKeys(ring).forEach(key => {
+      if (!ring.systemPromoted) local.add(key);
+      else promoted.set(key, (promoted.get(key) || 0) + 1);
+    });
   });
+  promoted.forEach((count, key) => { if (count === 1) local.add(key); });
+  return local;
+}
+
+function trimAromaticBonds(mol, rejectedOnly) {
+  const inAromaticRing = aromaticRingBondKeys(mol);
+  const rejected = new Set();
+  if (rejectedOnly) mol.rings.filter(ring => ring.rejectedInputAromatic && !ring.aromatic)
+    .forEach(ring => cycleBondKeys(ring).forEach(key => rejected.add(key)));
   mol.bonds.forEach((bond) => {
-    if (bond.aromatic && !inAromaticRing.has(bondKey(bond.a, bond.b))) bond.aromatic = false;
+    const key = bondKey(bond.a, bond.b);
+    if (bond.aromatic && !inAromaticRing.has(key) && (!rejectedOnly || rejected.has(key))) bond.aromatic = false;
   });
 }
 

@@ -386,6 +386,10 @@ th .info { margin-left: 5px; vertical-align: middle; display: inline-grid; }
 .tgt-controls label { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
 .tgt-controls select { border: 1px solid var(--line); background: var(--bg-sink); color: var(--text); border-radius: 8px; padding: 5px 9px; font: 13px var(--mono); text-transform: none; letter-spacing: 0; }
 .tgt-controls select:focus { outline: none; border-color: var(--accent); }
+.tgt-controls input:not([type="checkbox"]) { min-width: 90px; max-width: 240px; width: 100%; border: 1px solid var(--line); background: var(--bg-sink); color: var(--text); border-radius: 8px; padding: 6px 9px; font: 13px var(--mono); }
+.tgt-controls input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#effect-context details, #met-low-details { margin: 12px 0; }
+#effect-context summary, #met-low-details summary { cursor: pointer; padding: 8px 0; }
 .caveat { margin-top: 12px; border-left: 2px solid var(--line); padding-left: 11px; }
 tbody tr.quiet { color: var(--text-faint); }
 td.atoms { font-variant-numeric: tabular-nums; max-width: 150px; white-space: normal; }

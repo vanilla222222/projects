@@ -19,7 +19,23 @@
     if(entry){field('SMILES',entry.smiles||'Not provided');field('Formula',entry.formula||'Not provided');field('Library class',entry.cls||'Unclassified')}
     detail.append(dl);
     detail.append(node('h3','Associated signalling systems'));
-    if(p.systems.length){const ul=node('ul');p.systems.forEach(x=>ul.append(node('li',x)));detail.append(ul)}
+    if(p.systems.length){
+      const ul=node('ul');p.systems.forEach(x=>ul.append(node('li',x)));detail.append(ul);
+      const related={
+        'Acetylcholine':'cholin', 'GABA (gamma-aminobutyric acid)':'GABA',
+        'Glutamic acid':'glutamate', 'Glycine':'glycine', 'D-Serine':'NMDA',
+        'Dopamine':'dopamine', 'Serotonin':'serotonin',
+        'Noradrenaline (norepinephrine)':'adrenergic', 'Adrenaline':'adrenergic',
+        'Histamine':'histamine', 'Adenosine':'adenosine', 'Adenosine triphosphate (ATP)':'purinergic',
+        'Anandamide':'cannabinoid', '2-Arachidonoylglycerol':'cannabinoid',
+        'Octopamine':'trace amine', 'Tyramine':'trace amine', 'Phenethylamine':'trace amine'
+      };
+      if(related[p.name]){
+        const browse=node('button','Browse related receptor biology');browse.type='button';
+        browse.addEventListener('click',()=>document.dispatchEvent(new CustomEvent('molecule-profiler:receptor-search',{detail:{query:related[p.name]}})));
+        detail.append(browse,node('p','Family-level navigation only; this is not an additional ligand interaction assertion.','muted'));
+      }
+    }
     else detail.append(node('p','No receptor/system relationships asserted for this metabolite.'));
     detail.append(node('p','Evidence: biological context (not a measured affinity or target prediction). Library structure status: unverified against external authoritative identifiers.','muted'));
     const links=node('p');

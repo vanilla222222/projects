@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Molecule Profiler</title>
-<link rel="stylesheet" href="css/style.css?v=2026-10-21-quality">
-<link rel="stylesheet" href="css/workspace.css?v=2026-10-21-quality">
+<link rel="stylesheet" href="css/style.css?v=2026-10-20-domain1">
+<link rel="stylesheet" href="css/workspace.css?v=2026-10-20-domain1">
 </head>
 <body data-theme="dark">
 <header class="topbar">
@@ -115,6 +115,8 @@
           <p class="hint" id="depict-summary"></p>
         </div>
         <div class="tgt-controls">
+          <label>Ranking<select id="tgt-mode"><option value="ensemble" selected>Multi-fingerprint (experimental)</option><option value="legacy">Legacy nearest neighbour</option></select></label>
+          <label>Scope<select id="tgt-scope"><option value="all">All target types</option><option value="receptors">Receptor-related targets</option></select></label>
           <label>Highlight<select id="depict-highlight">
             <option value="none" selected>nothing</option>
             <option value="sites">metabolism sites</option>
@@ -254,21 +256,55 @@
         <p class="hint caveat">These are substructure and property screens, not toxicity predictions. A hit means the molecule carries a group that appears more often than chance among the positives of a published assay &mdash; the Ames test for the genotoxicity patterns, two-year rodent bioassays for the carcinogenicity ones. It does not say the molecule is mutagenic, and the converse is worse: cyclophosphamide, cisplatin and most of the cytotoxic drugs are proven human carcinogens, and several of them match nothing here at all. No trained model is involved, because the published toxicophores are rules and the trained models are not public.</p>
       </article>
 
+      <article class="panel wide" id="pharmacokinetics-panel">
+        <div class="panel-head"><h2>Pharmacokinetics &amp; exposure</h2><span class="evidence" data-tier="prediction">experimental models</span></div>
+        <p class="hint">Structure-based research estimates with scaffold-held-out errors. Elimination half-life is not duration of effects. Reaction enumeration weights are not used as kinetic rates.</p>
+        <div class="filters" id="pk-predictions"></div>
+        <p class="note" id="pk-observations"></p>
+        <details><summary>Model evidence and limitations</summary><p>Models use measured-endpoint datasets and the same descriptor/stereo-fingerprint implementation used at prediction time. Calibration-residual intervals have no guaranteed coverage for a new scaffold or individual. Estimates are withheld outside basic descriptor-range/similarity checks. The half-life model uses a third-party TDC-format mirror whose equivalence to the inaccessible official download has not been independently confirmed. <a href="PK-PREDICTIONS.md">Protocol, sources and limitations</a> · <a href="validation/pk-model-evaluation.json">Held-out results and split records</a></p></details>
+        <details><summary>Calculate a half-life from supplied pharmacokinetic parameters</summary><div class="tgt-controls"><label>Clearance (L/h)<input id="pk-clearance" type="number" min="0" step="any"></label><label>One-compartment Vd (L)<input id="pk-volume" type="number" min="0" step="any"></label></div><p id="pk-half-scenario" role="status"></p></details>
+        <button type="button" id="pharmacology-export">Export pharmacology evidence JSON</button>
+      </article>
+
+      <article class="panel wide" id="ionization-panel">
+        <div class="panel-head"><h2>Ionization scenarios</h2><span class="evidence" data-tier="prediction">conditional calculation</span></div>
+        <p class="hint">Supply a measured or independently predicted pKa. The calculation uses one acid/base site and the graph-derived WLOGP estimate; it does not fit pKa or handle general polyprotic/zwitterionic chemistry.</p>
+        <div class="tgt-controls"><label>pKa<input id="pk-pka" type="number" step="any"></label><label>pH<input id="pk-ph" type="number" step="any" value="7.4"></label><label>Site type<select id="pk-ion-kind"><option value="base">Base</option><option value="acid">Acid</option></select></label><label>pKa source (optional)<input id="pk-pka-source" type="text" placeholder="Publication, dataset or method"></label></div>
+        <p id="pk-ion-result" role="status"></p>
+        <details id="pk-profile-details" hidden><summary>Explore conditional pH dependence (0–14)</summary><p class="hint">Same supplied pKa and monoprotic assumptions at every pH. This is not a solubility, absorption or BBB prediction.</p><div class="table-scroll"><table id="pk-profile"><caption>Conditional neutral fraction and logD by pH</caption><thead><tr><th scope="col">pH</th><th scope="col">Neutral fraction (%)</th><th scope="col">Conditional logD</th></tr></thead><tbody></tbody></table></div></details>
+      </article>
+
+      <article class="panel wide" id="prodrug-panel">
+        <div class="panel-head"><h2>Prodrugs &amp; bioactivation</h2><span class="evidence" data-tier="rule">curated source evidence</span></div>
+        <p id="prodrug-status" role="status"></p><div id="prodrug-matches"></div><p class="note" id="prodrug-related"></p>
+        <h3>Documented prodrugs for this active structure</h3><div id="prodrug-examples"></div>
+        <p class="note" id="prodrug-sites"></p>
+        <p class="note" id="prodrug-enumeration"></p>
+        <details><summary>Browse the documented prodrug examples</summary><div id="prodrug-all"></div></details>
+        <p class="hint">A prodrug must be converted to a pharmacologically relevant product. A cleavable group alone is insufficient. These examples do not imply improved BBB delivery for a new compound. No novel prodrug structures are generated.</p>
+      </article>
+
+      <article class="panel wide" id="functional-context-panel">
+        <div class="panel-head"><h2>Functional effect context</h2><span class="evidence" data-tier="analogy">conditional receptor biology</span></div>
+        <p class="hint">Biological context for leading human receptor references. Activation and blockade are alternative conditions, not predicted actions of your molecule. Exposure, tissue, selectivity and active metabolites can change the outcome; structural resemblance cannot determine subjective effects.</p>
+        <div id="effect-context"></div>
+      </article>
+
       <article class="panel wide">
         <div class="panel-head">
           <h2>Metabolism</h2><span class="evidence" data-tier="prediction" data-tip="evidencePrediction" tabindex="0">prediction</span>
           <p class="hint" id="met-summary"></p>
         </div>
         <p class="hint caveat"><strong>Routes, not rates.</strong> Every row below is a reaction the molecule offers a site for, with the enzyme family that performs that class of reaction. Nothing here says how fast it happens, what fraction of a dose goes that way, which metabolite dominates in a person, or which CYP isoform does the work. The relative weight is a published frequency for the reaction class, not a measured rate for this molecule.</p>
-        <p class="hint" id="met-bench"></p>
+        <details class="method-details"><summary>Enumeration methods and diagnostics</summary><p class="hint" id="met-bench"></p><p class="note" id="met-coverage"></p><p class="hint" id="met-diagnostics" role="status"></p></details>
         <div class="filters" id="met-cards"></div>
-        <p class="note" id="met-coverage"></p>
         <div class="tgt-controls">
           <label>Generations<select id="met-depth">
             <option value="1">1</option>
             <option value="2" selected>2</option>
             <option value="3">3</option>
           </select></label>
+          <label>Search budget (incl. parent)<select id="met-budget"><option value="60">60</option><option value="120" selected>120</option><option value="300">300</option></select></label>
           <label>Phase<select id="met-phase">
             <option value="all" selected>both</option>
             <option value="I">phase I only</option>
@@ -279,16 +315,17 @@
             <option value="30" selected>30</option>
             <option value="0">all</option>
           </select></label>
-          <label>Abundance<select id="met-band">
+          <label>Heuristic weight band<select id="met-band">
             <option value="all" selected>any band</option>
-            <option value="major">major only</option>
-            <option value="minor">minor only</option>
-            <option value="trace">trace only</option>
+            <option value="major">higher heuristic weight</option>
+            <option value="minor">intermediate heuristic weight</option>
+            <option value="trace">lower heuristic weight</option>
           </select></label>
           <label><input type="checkbox" id="met-toxonly"> new toxicity flags only</label>
         </div>
         <div class="table-wrap"><table id="metabolites"><colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="c8"><col class="c9"><col class="c10"><col class="c11"></colgroup><thead></thead><tbody></tbody></table></div>
-        <div class="table-wrap"><table id="met-notes"><thead></thead><tbody></tbody></table></div>
+        <details id="met-low-details"><summary id="met-low-summary">Lower-weight candidates</summary><p class="hint">Lower heuristic weight does not mean biologically unimportant. Candidates with new structural-alert flags remain in the main table. All candidates remain in research exports.</p><div class="table-wrap"><table id="met-low"><thead></thead><tbody></tbody></table></div></details>
+        <details><summary>Additional structural observations</summary><div class="table-wrap"><table id="met-notes"><thead></thead><tbody></tbody></table></div></details>
         <p class="hint caveat">A metabolite listed here is a structure the rule set can reach, not a structure anyone has measured. The tree is enumerated breadth-first and every product is passed back through the parser, the descriptors and the toxicity screens of this page, so a flag on a metabolite means exactly what the same flag means on a parent molecule. Leaving groups below five heavy atoms are reported as released fragments rather than as metabolites of their own. Enzyme attribution is by reaction class: a carbon oxidation next to nitrogen is labelled CYP because that class of reaction is CYP work, which is not the same as predicting the isoform.</p>
       </article>
 
@@ -374,8 +411,10 @@
         </div>
         <p class="hint" id="tgt-blurb"></p>
         <p class="hint" id="tgt-bench"></p>
+        <p class="hint caveat" id="tgt-evidence" role="status"></p>
+        <p class="note" id="tgt-motifs"></p>
         <div class="table-wrap"><table id="targets"><colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="c8"><col class="c9"><col class="c10"><col class="c11"></colgroup><thead></thead><tbody></tbody></table></div>
-        <p class="hint caveat" id="tgt-caveat">This is a nearest-neighbour lookup over a hand-curated set of known ligands, not a trained model: a target scores high when the query looks like a compound already recorded as binding it. The numbers are fingerprint similarities, not binding probabilities, and a target with no ligand in the set below can never appear here. The list is cut into bands for that reason: a row above 0.50 is a close relative of a recorded active, a row between 0.30 and 0.50 is a lead to check, and everything below 0.30 is the weak tail, which is shown greyed because at that distance the ranking carries no information about binding.</p>
+        <p class="hint caveat" id="tgt-caveat">This is structural reference retrieval over hand-curated ligand lists, not a trained or calibrated model: a target scores high when the query looks like a compound already recorded as binding it. The numbers are fingerprint similarities, not binding probabilities, and a target with no ligand in the set below can never appear here. The list is cut into bands for that reason: a row above 0.50 is a close relative of a recorded active, a row between 0.30 and 0.50 is a lead to check, and everything below 0.30 is the weak tail, which is shown greyed because at that distance the ranking carries no information about binding.</p>
       </article>
 
       <article class="panel wide">
@@ -386,7 +425,7 @@
   </section>
 
   <section class="panel wide about">
-    <div class="panel-head"><h2>What this is</h2><p class="note">The numerical RDKit conformance figures below describe tests on an earlier set of 596 compounds. The current reference library contains 2,258 entries, and the historical figures do not represent an audit of the expanded library.</p></div>
+    <div class="panel-head"><h2>What this is</h2><p class="note">The numerical RDKit conformance figures below describe tests on an earlier set of 596 compounds. The reference library has expanded since that test set; those historical figures do not represent an audit of the current library.</p></div>
     <p>Every panel carries a badge saying what kind of claim it makes, because the panels are not all the same kind of thing and reading them as if they were is the fastest way to be misled by this page. <span class="evidence" data-tier="exact" data-tip="evidenceExact" tabindex="0">exact</span> means the panel counts or sums something off the structure graph and there is no model in the way. <span class="evidence" data-tier="fitted" data-tip="evidenceFitted" tabindex="0">fitted model</span> means a published regression, reimplemented from the paper, carrying the error of the original fit. <span class="evidence" data-tier="rule" data-tip="evidenceRule" tabindex="0">published rule</span> means somebody's thresholds applied as published, which is a filter and not a verdict. <span class="evidence" data-tier="analogy" data-tip="evidenceAnalogy" tabindex="0">structural analogy</span> means the panel found molecules that look like yours and is telling you so, which is a statement about fingerprints and not about pharmacology. <span class="evidence" data-tier="prediction" data-tip="evidencePrediction" tabindex="0">prediction</span> means the panel generated something that was not given to it, and the output is a list of candidates to check rather than a finding. Hovering a badge gives the longer version. The practical consequence: aspirin's two cyclo-oxygenase hits at the top of the target panel and its hydrolysis to salicylic acid at the top of the metabolism panel are both correct, and they are correct for different reasons than the page can show you &mdash; the panels ranked them, the textbooks confirmed them, and a lower-ranked row in either panel has only the ranking behind it.</p>
     <p>Everything here runs in the page: the SMILES parser, ring perception, aromaticity, kekulization and hydrogen counting are implemented from scratch, and the descriptors follow their published definitions &mdash; Ertl's topological polar surface area, Wildman&ndash;Crippen log P and molar refractivity, Lipinski-style hydrogen-bond counts, and the strict rotatable-bond definition. Aromaticity is perceived by H&uuml;ckel electron counting, iterated: a ring carbon whose double bond points out of the ring donates one electron when its partner is already aromatic instead of disqualifying the ring, a heteroatom bridging two rings contributes its lone pair once rather than to each ring, and a fused system of five- and six-membered rings is counted as a whole when no single ring satisfies the rule alone. Those three cases are what fused indoles, bridgehead-nitrogen bicyclics and lactam-containing tricyclics turn on, and each was added only after it moved the measured divergence from RDKit down. The descriptor layer is checked against RDKit on a 40-molecule reference set; TPSA, log P, molar refractivity, rotatable bonds, the H-bond counts and the sp&sup3; fraction all agree exactly. The page reports two acceptor counts because the literature means two different things by HBA: the Lipinski count is every nitrogen and oxygen, and the strict count is only the lone pairs actually available, which skips a carboxylic acid&rsquo;s own hydroxyl, amide and sulfonamide nitrogens, and a pyrrole-type ring nitrogen carrying a third substituent, while keeping a pyridine-type one and keeping a nitrogen whose neighbouring double bond lies inside a ring. Both counts agree with RDKit on all 596 compounds in the original validation set. Aspirin is the case that shows why both are shown: four by the Lipinski count and three strictly, and a paper quoting &ldquo;HBA 3&rdquo; means the second. The ring and substructure counts, the Kier&ndash;Hall connectivity and shape indices and the remaining fifteen values are checked the same way across the original 596-compound validation set below. Of the 8940 descriptor values that comparison covers, all but four match RDKit exactly, and both exceptions are known differences in ring and aromaticity models rather than arithmetic. Artemisinin's bridged trioxane cage has four independent rings by the cyclomatic count we use and six by RDKit's symmetrized smallest set of smallest rings, so its aliphatic-ring, saturated-ring and heterocycle counts read one lower here. Riboflavin's isoalloxazine ring system is aromatized by our perception and left partly non-aromatic by RDKit's, so RDKit reports two aliphatic rings where we report none &mdash; the same model difference that shows up on azulene. Both are reported rather than hidden by dropping the molecules. Molecular weight agrees to within 0.021 across the whole set; the residue is the standard-atomic-weight table, not the arithmetic &mdash; we use the current IUPAC abridged values and RDKit ships an older edition, so every disagreement is a molecule carrying sulfur, chlorine, selenium or boron and grows with how many such atoms it has. Isotopically labelled atoms are weighed as their nuclide rather than as the natural-abundance element, which is what makes a carbon-11 tracer come out a gram per mole lighter than its unlabelled parent.</p>
     <p>The fingerprints are checked the same way. On the original 596-compound validation set, every bit-count and all 177310 pairwise similarity scores match RDKit exactly for the atom-pair fingerprint. For ECFP4, 27 of those pairs differ and every one of them involves riboflavin, whose flavin ring system our aromaticity model treats differently from RDKit's; ECFP6 adds two further pairs, nefazodone against trazodone and ropanicant against tebanicline. For FCFP4, 685 pairs differ, 595 of them riboflavin's, leaving 90 traced to two causes: 32-bit hash collisions inside RDKit's own fingerprint, where two chemically different environments land on the same key and are counted once instead of twice, and a tie that neither implementation can resolve the same way &mdash; when two atoms span exactly the same bonds, Morgan hashing keeps one environment and discards the other, and which one survives depends on hash values that differ between implementations. Removing the colliding keys from RDKit's intersection reproduces ours on the collision pairs, so the environment sets agree and the difference is in the hashing, not the chemistry. All of it is left reported rather than papered over.</p>
@@ -399,50 +438,63 @@
 
     <p>The filters are the published ones (Lipinski, Ghose, Veber, Egan, Muegge, lead-likeness) and the bioavailability score follows Martin's tiers. Where a service like SwissADME uses a trained model that was never released &mdash; XLOGP3, its solubility models, its pharmacokinetic classifiers &mdash; this tool does not pretend to reproduce it; it uses an open method and says which one.</p>
   </section>
+<p class="muted">Binding-reference data: <a href="https://www.ebi.ac.uk/chembl/">ChEMBL_37</a> · <a href="CHEMBL-DATA-NOTICE.md">Data attribution and license</a>.</p>
 </main>
 
-<script src="js/smiles.js?v=2026-10-21-quality"></script>
-<script src="js/mol.js?v=2026-10-21-quality"></script>
-<script src="js/descriptors.js?v=2026-10-21-quality"></script>
-<script src="js/rules.js?v=2026-10-21-quality"></script>
-<script src="js/fingerprints.js?v=2026-10-21-quality"></script>
-<script src="js/smarts.js?v=2026-10-21-quality"></script>
-<script src="js/stereo.js?v=2026-10-21-quality"></script>
-<script src="data/library.js?v=2026-10-21-quality"></script>
-<script src="data/targets.js?v=2026-10-21-quality"></script>
-<script src="data/benchmark.js?v=2026-10-21-quality"></script>
-<script src="data/alerts.js?v=2026-10-21-quality"></script>
-<script src="data/toxalerts.js?v=2026-10-21-quality"></script>
-<script src="data/dependence.js?v=2026-10-21-quality"></script>
-<script src="js/tox.js?v=2026-10-21-quality"></script>
-<script src="js/transform.js?v=2026-10-21-quality"></script>
-<script src="js/sites.js?v=2026-10-21-quality"></script>
-<script src="js/depict.js?v=2026-10-21-quality"></script>
-<script src="data/metabolism.js?v=2026-10-21-quality"></script>
-<script src="data/metcases.js?v=2026-10-21-quality"></script>
-<script src="data/stereocases.js?v=2026-10-21-quality"></script>
-<script src="data/wedgecases.js?v=2026-10-21-quality"></script>
-<script src="data/propcases.js?v=2026-10-21-quality"></script>
-<script src="data/crippencases.js?v=2026-10-21-quality"></script>
-  <script src="data/citations.js?v=2026-10-21-quality"></script>
-<script src="js/metabolism.js?v=2026-10-21-quality"></script>
-<script src="js/evidence-report.js?v=2026-10-21-quality"></script>
-<script src="js/screen-coverage.js?v=2026-10-21-quality"></script>
-<script src="js/sim-pagination.js?v=2026-10-21-quality"></script>
-<script src="js/batch-browser.js?v=2026-10-21-quality"></script>
-<script src="js/cooperative-batch.js?v=2026-10-21-quality"></script>
-<script src="js/input-workflow.js?v=2026-10-21-quality"></script>
-<script src="js/full-csv-export.js?v=2026-10-21-quality"></script>
-<script src="js/research-zip.js?v=2026-10-21-quality"></script>
-<script src="js/research-package.js?v=2026-10-21-quality"></script>
-<script src="js/molecule-quality.js?v=2026-10-21-quality"></script>
-<script src="js/app.js?v=2026-10-21-quality"></script>
-<script src="js/comparison-data.js?v=2026-10-21-quality"></script>
-<script src="js/workspace-ui.js?v=2026-10-21-quality"></script>
-<script src="js/comparison-ui.js?v=2026-10-21-quality"></script>
-<script src="js/descriptor-stats.js?v=2026-10-21-quality"></script>
-<script src="js/descriptor-stats-ui.js?v=2026-10-21-quality"></script>
-<script src="js/report-model.js?v=2026-10-21-quality"></script>
-<script src="js/report-ui.js?v=2026-10-21-quality"></script>
+<script src="js/smiles.js?v=2026-10-20-domain1"></script>
+<script src="js/mol.js?v=2026-10-20-domain1"></script>
+<script src="js/descriptors.js?v=2026-10-20-domain1"></script>
+<script src="js/rules.js?v=2026-10-20-domain1"></script>
+<script src="js/fingerprints.js?v=2026-10-20-domain1"></script>
+<script src="js/smarts.js?v=2026-10-20-domain1"></script>
+<script src="js/stereo.js?v=2026-10-20-domain1"></script>
+<script src="data/library.js?v=2026-10-20-domain1"></script>
+<script src="data/targets.js?v=2026-10-20-domain1"></script>
+<script src="data/benchmark.js?v=2026-10-20-domain1"></script>
+<script src="data/alerts.js?v=2026-10-20-domain1"></script>
+<script src="data/toxalerts.js?v=2026-10-20-domain1"></script>
+<script src="data/dependence.js?v=2026-10-20-domain1"></script>
+<script src="js/tox.js?v=2026-10-20-domain1"></script>
+<script src="js/transform.js?v=2026-10-20-domain1"></script>
+<script src="js/sites.js?v=2026-10-20-domain1"></script>
+<script src="js/depict.js?v=2026-10-20-domain1"></script>
+<script src="data/metabolism.js?v=2026-10-20-domain1"></script>
+<script src="data/metcases.js?v=2026-10-20-domain1"></script>
+<script src="data/stereocases.js?v=2026-10-20-domain1"></script>
+<script src="data/wedgecases.js?v=2026-10-20-domain1"></script>
+<script src="data/propcases.js?v=2026-10-20-domain1"></script>
+<script src="data/crippencases.js?v=2026-10-20-domain1"></script>
+  <script src="data/citations.js?v=2026-10-20-domain1"></script>
+<script src="js/metabolism.js?v=2026-10-20-domain1"></script>
+<script src="js/evidence-report.js?v=2026-10-20-domain1"></script>
+<script src="js/screen-coverage.js?v=2026-10-20-domain1"></script>
+<script src="js/sim-pagination.js?v=2026-10-20-domain1"></script>
+<script src="js/batch-browser.js?v=2026-10-20-domain1"></script>
+<script src="js/cooperative-batch.js?v=2026-10-20-domain1"></script>
+<script src="js/input-workflow.js?v=2026-10-20-domain1"></script>
+<script src="js/full-csv-export.js?v=2026-10-20-domain1"></script>
+<script src="js/research-zip.js?v=2026-10-20-domain1"></script>
+<script src="js/research-package.js?v=2026-10-20-domain1"></script>
+<script src="js/molecule-quality.js?v=2026-10-20-domain1"></script>
+<script src="js/target-ranking.js?v=2026-10-20-domain1"></script>
+<script src="js/structural-evidence.js?v=2026-10-20-domain1"></script>
+<script src="data/reference-motifs.js?v=2026-10-20-domain1"></script>
+<script src="data/receptor-catalog.js?v=2026-10-20-domain1"></script>
+<script src="data/pharmacology-evidence.js?v=2026-10-20-domain1"></script>
+<script src="data/pk-models.js?v=2026-10-20-domain1"></script>
+<script src="js/pk-features.js?v=2026-10-20-domain1"></script>
+<script src="js/pk-applicability.js?v=2026-10-20-domain1"></script>
+<script src="js/pharmacology.js?v=2026-10-20-domain1"></script>
+<script src="js/pharmacology-ui.js?v=2026-10-20-domain1"></script>
+<script src="data/library-names.js?v=2026-10-20-domain1"></script>
+<script src="js/library-catalog.js?v=2026-10-20-domain1"></script>
+<script src="js/app.js?v=2026-10-20-domain1"></script>
+<script src="js/comparison-data.js?v=2026-10-20-domain1"></script>
+<script src="js/workspace-ui.js?v=2026-10-20-domain1"></script>
+<script src="js/comparison-ui.js?v=2026-10-20-domain1"></script>
+<script src="js/descriptor-stats.js?v=2026-10-20-domain1"></script>
+<script src="js/descriptor-stats-ui.js?v=2026-10-20-domain1"></script>
+<script src="js/report-model.js?v=2026-10-20-domain1"></script>
+<script src="js/report-ui.js?v=2026-10-20-domain1"></script>
 </body>
 </html>

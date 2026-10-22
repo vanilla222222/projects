@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 2861,
+  "entries": 4151,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -251,9 +251,87 @@
           "name": "methyl butyl ketone"
         }
       ]
+    },
+    {
+      "canonicalSmiles": "O=C1CCCN1CC#CCN1CCCC1",
+      "entries": [
+        {
+          "index": 2836,
+          "name": "CHEMBL7634"
+        },
+        {
+          "index": 4128,
+          "name": "Oxotremorine"
+        }
+      ]
+    },
+    {
+      "canonicalSmiles": "CCCCCCOc1nsnc1C1=CCCN(C)C1",
+      "entries": [
+        {
+          "index": 2858,
+          "name": "CHEMBL21536"
+        },
+        {
+          "index": 4127,
+          "name": "Xanomeline"
+        }
+      ]
+    },
+    {
+      "canonicalSmiles": "CC(=O)OC(C)C[N+](C)(C)C",
+      "entries": [
+        {
+          "index": 2893,
+          "name": "CHEMBL978"
+        },
+        {
+          "index": 4091,
+          "name": "Methacholine"
+        }
+      ]
     }
   ],
   "tautomerGroups": [
+    {
+      "entries": [
+        {
+          "index": 36,
+          "name": "Losartan"
+        },
+        {
+          "index": 3072,
+          "name": "CHEMBL191"
+        }
+      ],
+      "distinctCanonicalSmiles": 2
+    },
+    {
+      "entries": [
+        {
+          "index": 46,
+          "name": "Cimetidine"
+        },
+        {
+          "index": 2788,
+          "name": "CHEMBL30"
+        }
+      ],
+      "distinctCanonicalSmiles": 2
+    },
+    {
+      "entries": [
+        {
+          "index": 100,
+          "name": "Valsartan"
+        },
+        {
+          "index": 3073,
+          "name": "CHEMBL1069"
+        }
+      ],
+      "distinctCanonicalSmiles": 2
+    },
     {
       "entries": [
         {
@@ -280,6 +358,62 @@
         {
           "index": 2478,
           "name": "D-Aspartic acid"
+        }
+      ],
+      "distinctCanonicalSmiles": 2
+    },
+    {
+      "entries": [
+        {
+          "index": 3079,
+          "name": "CHEMBL4535903"
+        },
+        {
+          "index": 3080,
+          "name": "CHEMBL4463203"
+        },
+        {
+          "index": 3081,
+          "name": "CHEMBL4464191"
+        }
+      ],
+      "distinctCanonicalSmiles": 3
+    },
+    {
+      "entries": [
+        {
+          "index": 3094,
+          "name": "CHEMBL4449166"
+        },
+        {
+          "index": 3095,
+          "name": "CHEMBL4469350"
+        }
+      ],
+      "distinctCanonicalSmiles": 2
+    },
+    {
+      "entries": [
+        {
+          "index": 3757,
+          "name": "CHEMBL15245"
+        },
+        {
+          "index": 3764,
+          "name": "CHEMBL31410"
+        }
+      ],
+      "distinctCanonicalSmiles": 2
+    },
+    {
+      "entries": [
+        {
+          "index": 4045,
+          "name": "SALVINORIN A [CHEMBL445332]"
+        },
+        {
+          "index": 4049,
+          "name": "SALVINORIN A (ESTER)"
         }
       ],
       "distinctCanonicalSmiles": 2
@@ -2829,39 +2963,34 @@
       "index": 652,
       "name": "Alpha-PPP",
       "atomIndices": [
-        1,
-        10
+        1
       ]
     },
     {
       "index": 653,
       "name": "Alpha-PBP",
       "atomIndices": [
-        2,
-        11
+        2
       ]
     },
     {
       "index": 654,
       "name": "Alpha-PVP",
       "atomIndices": [
-        3,
-        12
+        3
       ]
     },
     {
       "index": 655,
       "name": "Alpha-PHP",
       "atomIndices": [
-        4,
-        13
+        4
       ]
     },
     {
       "index": 656,
       "name": "4-Methyl-alpha-PPP",
       "atomIndices": [
-        7,
         9
       ]
     },
@@ -2869,32 +2998,28 @@
       "index": 657,
       "name": "Pyrovalerone",
       "atomIndices": [
-        3,
-        13
+        3
       ]
     },
     {
       "index": 658,
       "name": "MDPV",
       "atomIndices": [
-        3,
-        15
+        3
       ]
     },
     {
       "index": 659,
       "name": "MDPPP",
       "atomIndices": [
-        1,
-        13
+        1
       ]
     },
     {
       "index": 660,
       "name": "Naphyrone",
       "atomIndices": [
-        3,
-        16
+        3
       ]
     },
     {
@@ -10020,7 +10145,2198 @@
       ]
     },
     {
-      "index": 2783,
+      "index": 2790,
+      "name": "CHEMBL467094",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2810,
+      "name": "CHEMBL4562437",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 2814,
+      "name": "CHEMBL4875600",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2815,
+      "name": "CHEMBL4846638",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 2822,
+      "name": "CHEMBL4850448",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2823,
+      "name": "CHEMBL4870510",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2824,
+      "name": "CHEMBL4858849",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2825,
+      "name": "CHEMBL4869194",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 2826,
+      "name": "CHEMBL4848697",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2827,
+      "name": "CHEMBL4863347",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2828,
+      "name": "CHEMBL4876267",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2829,
+      "name": "CHEMBL4848026",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2830,
+      "name": "CHEMBL4863523",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 2831,
+      "name": "CHEMBL64000",
+      "atomIndices": [
+        4,
+        6,
+        10
+      ]
+    },
+    {
+      "index": 2832,
+      "name": "CHEMBL313738",
+      "atomIndices": [
+        2,
+        6,
+        7
+      ]
+    },
+    {
+      "index": 2833,
+      "name": "CHEMBL84113",
+      "atomIndices": [
+        3,
+        5,
+        9
+      ]
+    },
+    {
+      "index": 2834,
+      "name": "CHEMBL440138",
+      "atomIndices": [
+        5,
+        7,
+        11
+      ]
+    },
+    {
+      "index": 2835,
+      "name": "CHEMBL310558",
+      "atomIndices": [
+        5,
+        7,
+        11
+      ]
+    },
+    {
+      "index": 2837,
+      "name": "CHEMBL315428",
+      "atomIndices": [
+        3,
+        5,
+        9
+      ]
+    },
+    {
+      "index": 2838,
+      "name": "CHEMBL85190",
+      "atomIndices": [
+        2,
+        6,
+        7
+      ]
+    },
+    {
+      "index": 2840,
+      "name": "CHEMBL314493",
+      "atomIndices": [
+        2,
+        6,
+        7
+      ]
+    },
+    {
+      "index": 2841,
+      "name": "CHEMBL82754",
+      "atomIndices": [
+        3,
+        5,
+        9
+      ]
+    },
+    {
+      "index": 2843,
+      "name": "CHEMBL22278",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2844,
+      "name": "CHEMBL22071",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2848,
+      "name": "CHEMBL21942",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2849,
+      "name": "CHEMBL22962",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2851,
+      "name": "CHEMBL25334",
+      "atomIndices": [
+        6,
+        9,
+        17,
+        22
+      ]
+    },
+    {
+      "index": 2852,
+      "name": "CHEMBL418189",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2862,
+      "name": "CHEMBL369062",
+      "atomIndices": [
+        35
+      ]
+    },
+    {
+      "index": 2864,
+      "name": "CHEMBL517712",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 2867,
+      "name": "CHEMBL177040",
+      "atomIndices": [
+        34
+      ]
+    },
+    {
+      "index": 2873,
+      "name": "CHEMBL184843",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 2874,
+      "name": "CHEMBL183903",
+      "atomIndices": [
+        13,
+        16
+      ]
+    },
+    {
+      "index": 2875,
+      "name": "CHEMBL183331",
+      "atomIndices": [
+        3,
+        6
+      ]
+    },
+    {
+      "index": 2876,
+      "name": "CHEMBL181447",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 2877,
+      "name": "CHEMBL360154",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 2884,
+      "name": "CHEMBL150624",
+      "atomIndices": [
+        31
+      ]
+    },
+    {
+      "index": 2886,
+      "name": "CHEMBL418446",
+      "atomIndices": [
+        28
+      ]
+    },
+    {
+      "index": 2892,
+      "name": "CHEMBL64788",
+      "atomIndices": [
+        4,
+        6,
+        10
+      ]
+    },
+    {
+      "index": 2893,
+      "name": "CHEMBL978",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 2897,
+      "name": "CHEMBL203249",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2898,
+      "name": "CHEMBL383248",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2899,
+      "name": "CHEMBL382213",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2900,
+      "name": "CHEMBL427013",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2902,
+      "name": "CHEMBL201933",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2905,
+      "name": "CHEMBL200319",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2906,
+      "name": "CHEMBL200210",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2907,
+      "name": "CHEMBL381020",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2908,
+      "name": "CHEMBL370862",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2911,
+      "name": "CHEMBL200566",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 2918,
+      "name": "CHEMBL197973",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 2919,
+      "name": "CHEMBL373256",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2920,
+      "name": "CHEMBL200416",
+      "atomIndices": [
+        4,
+        8
+      ]
+    },
+    {
+      "index": 2921,
+      "name": "CHEMBL199821",
+      "atomIndices": [
+        5,
+        9
+      ]
+    },
+    {
+      "index": 2922,
+      "name": "CHEMBL200957",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2923,
+      "name": "CHEMBL200432",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 2925,
+      "name": "CHEMBL200693",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 2932,
+      "name": "CHEMBL122757",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 2934,
+      "name": "CHEMBL308351",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 2947,
+      "name": "CHEMBL500",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 2977,
+      "name": "CHEMBL332964",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 2978,
+      "name": "CHEMBL121964",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 2979,
+      "name": "CHEMBL122992",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 2980,
+      "name": "CHEMBL121704",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 2981,
+      "name": "CHEMBL120278",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 2982,
+      "name": "CHEMBL122990",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 2983,
+      "name": "CHEMBL123596",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 2984,
+      "name": "CHEMBL183921",
+      "atomIndices": [
+        1,
+        17
+      ]
+    },
+    {
+      "index": 3018,
+      "name": "CHEMBL53795",
+      "atomIndices": [
+        25
+      ]
+    },
+    {
+      "index": 3023,
+      "name": "CHEMBL298474",
+      "atomIndices": [
+        9,
+        11,
+        13,
+        14,
+        16
+      ]
+    },
+    {
+      "index": 3025,
+      "name": "CHEMBL52333",
+      "atomIndices": [
+        11,
+        13
+      ]
+    },
+    {
+      "index": 3061,
+      "name": "CHEMBL2094089",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 3075,
+      "name": "CHEMBL4440944",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 3076,
+      "name": "CHEMBL4558883",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3077,
+      "name": "CHEMBL4470834",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3078,
+      "name": "CHEMBL4579452",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3079,
+      "name": "CHEMBL4535903",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3082,
+      "name": "CHEMBL4459070",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3083,
+      "name": "CHEMBL4515703",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3084,
+      "name": "CHEMBL4453362",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3085,
+      "name": "CHEMBL4568554",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3086,
+      "name": "CHEMBL4458683",
+      "atomIndices": [
+        13,
+        16
+      ]
+    },
+    {
+      "index": 3087,
+      "name": "CHEMBL4472489",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3088,
+      "name": "CHEMBL4552884",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3089,
+      "name": "CHEMBL4463575",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3090,
+      "name": "CHEMBL4534876",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3091,
+      "name": "CHEMBL4451425",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3092,
+      "name": "CHEMBL4471668",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3093,
+      "name": "CHEMBL4438435",
+      "atomIndices": [
+        13,
+        16
+      ]
+    },
+    {
+      "index": 3155,
+      "name": "CHEMBL186586",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3156,
+      "name": "CHEMBL186736",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3157,
+      "name": "CHEMBL363947",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 3158,
+      "name": "CHEMBL184562",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 3159,
+      "name": "CHEMBL360428",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3166,
+      "name": "CHEMBL24458",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3168,
+      "name": "CHEMBL306229",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 3169,
+      "name": "CHEMBL307544",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 3170,
+      "name": "CHEMBL65805",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3171,
+      "name": "CHEMBL67948",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 3172,
+      "name": "CHEMBL67098",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3173,
+      "name": "CHEMBL66767",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3174,
+      "name": "CHEMBL304046",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3175,
+      "name": "CHEMBL17805",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3177,
+      "name": "CHEMBL82602",
+      "atomIndices": [
+        19
+      ]
+    },
+    {
+      "index": 3179,
+      "name": "CHEMBL94306",
+      "atomIndices": [
+        26
+      ]
+    },
+    {
+      "index": 3183,
+      "name": "CHEMBL197268",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 3184,
+      "name": "CHEMBL198166",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 3185,
+      "name": "CHEMBL198708",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 3186,
+      "name": "CHEMBL198170",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 3187,
+      "name": "CHEMBL426878",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 3188,
+      "name": "CHEMBL217907",
+      "atomIndices": [
+        22
+      ]
+    },
+    {
+      "index": 3189,
+      "name": "CHEMBL426550",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 3190,
+      "name": "CHEMBL221649",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 3191,
+      "name": "CHEMBL221525",
+      "atomIndices": [
+        24
+      ]
+    },
+    {
+      "index": 3192,
+      "name": "CHEMBL221641",
+      "atomIndices": [
+        24
+      ]
+    },
+    {
+      "index": 3193,
+      "name": "CHEMBL425639",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3194,
+      "name": "CHEMBL221474",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3195,
+      "name": "CHEMBL374448",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 3196,
+      "name": "CHEMBL221184",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 3197,
+      "name": "CHEMBL376235",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3198,
+      "name": "CHEMBL220533",
+      "atomIndices": [
+        20
+      ]
+    },
+    {
+      "index": 3200,
+      "name": "CHEMBL386957",
+      "atomIndices": [
+        20
+      ]
+    },
+    {
+      "index": 3203,
+      "name": "CHEMBL221850",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 3204,
+      "name": "CHEMBL220597",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 3205,
+      "name": "CHEMBL373874",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 3206,
+      "name": "CHEMBL222107",
+      "atomIndices": [
+        20
+      ]
+    },
+    {
+      "index": 3207,
+      "name": "CHEMBL374296",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 3208,
+      "name": "CHEMBL385106",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 3210,
+      "name": "CHEMBL221490",
+      "atomIndices": [
+        20
+      ]
+    },
+    {
+      "index": 3211,
+      "name": "CHEMBL221489",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 3212,
+      "name": "CHEMBL221438",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 3213,
+      "name": "CHEMBL375370",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3214,
+      "name": "CHEMBL221388",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 3226,
+      "name": "CHEMBL74331",
+      "atomIndices": [
+        4,
+        6
+      ]
+    },
+    {
+      "index": 3388,
+      "name": "CHEMBL294273",
+      "atomIndices": [
+        4,
+        6,
+        10
+      ]
+    },
+    {
+      "index": 3410,
+      "name": "CHEMBL216928",
+      "atomIndices": [
+        24
+      ]
+    },
+    {
+      "index": 3427,
+      "name": "CHEMBL523518",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3428,
+      "name": "CHEMBL524061",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3429,
+      "name": "CHEMBL496915",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3430,
+      "name": "CHEMBL493980",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3431,
+      "name": "CHEMBL493979",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3432,
+      "name": "CHEMBL493795",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3434,
+      "name": "CHEMBL576663",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 3435,
+      "name": "CHEMBL583051",
+      "atomIndices": [
+        5,
+        10
+      ]
+    },
+    {
+      "index": 3439,
+      "name": "CHEMBL571123",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 3440,
+      "name": "CHEMBL576707",
+      "atomIndices": [
+        5,
+        10
+      ]
+    },
+    {
+      "index": 3504,
+      "name": "CHEMBL1083994",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 3505,
+      "name": "CHEMBL1086005",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 3506,
+      "name": "CHEMBL1083995",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3507,
+      "name": "CHEMBL1083368",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3508,
+      "name": "CHEMBL1084772",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3509,
+      "name": "CHEMBL1083666",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3510,
+      "name": "CHEMBL1084706",
+      "atomIndices": [
+        22
+      ]
+    },
+    {
+      "index": 3511,
+      "name": "CHEMBL1084707",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3512,
+      "name": "CHEMBL1083363",
+      "atomIndices": [
+        20
+      ]
+    },
+    {
+      "index": 3513,
+      "name": "CHEMBL1086542",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3514,
+      "name": "CHEMBL1082500",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 3515,
+      "name": "CHEMBL1082501",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3549,
+      "name": "CHEMBL217299",
+      "atomIndices": [
+        8,
+        17
+      ]
+    },
+    {
+      "index": 3603,
+      "name": "CHEMBL181202",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 3638,
+      "name": "CHEMBL93240",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3647,
+      "name": "CHEMBL270840",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 3648,
+      "name": "CHEMBL270841",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 3650,
+      "name": "CHEMBL270176",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 3651,
+      "name": "CHEMBL272781",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3652,
+      "name": "CHEMBL258073",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 3653,
+      "name": "CHEMBL401745",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 3654,
+      "name": "CHEMBL402179",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 3655,
+      "name": "CHEMBL258075",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 3656,
+      "name": "CHEMBL408152",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 3657,
+      "name": "CHEMBL271298",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 3658,
+      "name": "CHEMBL273170",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3659,
+      "name": "CHEMBL439240",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 3660,
+      "name": "CHEMBL269964",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 3661,
+      "name": "CHEMBL270177",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3662,
+      "name": "CHEMBL271253",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3663,
+      "name": "CHEMBL257744",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 3664,
+      "name": "CHEMBL446459",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 3665,
+      "name": "CHEMBL404248",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 3668,
+      "name": "CHEMBL429136",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3669,
+      "name": "CHEMBL404511",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3670,
+      "name": "CHEMBL429925",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3671,
+      "name": "CHEMBL272355",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3672,
+      "name": "CHEMBL257450",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3673,
+      "name": "CHEMBL402874",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3674,
+      "name": "CHEMBL270658",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 3675,
+      "name": "CHEMBL272517",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3676,
+      "name": "CHEMBL402400",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3677,
+      "name": "CHEMBL257302",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3678,
+      "name": "CHEMBL404365",
+      "atomIndices": [
+        1,
+        6
+      ]
+    },
+    {
+      "index": 3679,
+      "name": "CHEMBL403103",
+      "atomIndices": [
+        1,
+        5
+      ]
+    },
+    {
+      "index": 3680,
+      "name": "CHEMBL403102",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3681,
+      "name": "CHEMBL256693",
+      "atomIndices": [
+        1,
+        6
+      ]
+    },
+    {
+      "index": 3685,
+      "name": "CHEMBL2112484",
+      "atomIndices": [
+        26
+      ]
+    },
+    {
+      "index": 3686,
+      "name": "CHEMBL2112485",
+      "atomIndices": [
+        25
+      ]
+    },
+    {
+      "index": 3687,
+      "name": "CHEMBL2112486",
+      "atomIndices": [
+        24
+      ]
+    },
+    {
+      "index": 3689,
+      "name": "CHEMBL2112483",
+      "atomIndices": [
+        27
+      ]
+    },
+    {
+      "index": 3690,
+      "name": "CHEMBL611562",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3691,
+      "name": "CHEMBL611273",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3692,
+      "name": "CHEMBL611561",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3693,
+      "name": "CHEMBL611274",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3694,
+      "name": "CHEMBL611552",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3696,
+      "name": "CHEMBL605054",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3697,
+      "name": "CHEMBL605885",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3698,
+      "name": "CHEMBL605266",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3699,
+      "name": "CHEMBL603394",
+      "atomIndices": [
+        22
+      ]
+    },
+    {
+      "index": 3707,
+      "name": "CHEMBL605486",
+      "atomIndices": [
+        23
+      ]
+    },
+    {
+      "index": 3720,
+      "name": "CHEMBL145746",
+      "atomIndices": [
+        34
+      ]
+    },
+    {
+      "index": 3723,
+      "name": "CHEMBL50490",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3725,
+      "name": "CHEMBL50081",
+      "atomIndices": [
+        29
+      ]
+    },
+    {
+      "index": 3727,
+      "name": "CHEMBL299539",
+      "atomIndices": [
+        30
+      ]
+    },
+    {
+      "index": 3728,
+      "name": "CHEMBL300272",
+      "atomIndices": [
+        29
+      ]
+    },
+    {
+      "index": 3729,
+      "name": "CHEMBL300222",
+      "atomIndices": [
+        30
+      ]
+    },
+    {
+      "index": 3730,
+      "name": "CHEMBL51019",
+      "atomIndices": [
+        31
+      ]
+    },
+    {
+      "index": 3731,
+      "name": "CHEMBL301077",
+      "atomIndices": [
+        30
+      ]
+    },
+    {
+      "index": 3732,
+      "name": "CHEMBL51871",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3733,
+      "name": "CHEMBL25554",
+      "atomIndices": [
+        15
+      ]
+    },
+    {
+      "index": 3735,
+      "name": "CHEMBL298579",
+      "atomIndices": [
+        28
+      ]
+    },
+    {
+      "index": 3736,
+      "name": "CHEMBL299984",
+      "atomIndices": [
+        30
+      ]
+    },
+    {
+      "index": 3751,
+      "name": "CHEMBL279436",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3758,
+      "name": "CHEMBL3392246",
+      "atomIndices": [
+        35
+      ]
+    },
+    {
+      "index": 3760,
+      "name": "CHEMBL3392247",
+      "atomIndices": [
+        35
+      ]
+    },
+    {
+      "index": 3761,
+      "name": "CHEMBL284103",
+      "atomIndices": [
+        35
+      ]
+    },
+    {
+      "index": 3774,
+      "name": "CHEMBL30739",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3779,
+      "name": "CHEMBL284213",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 3780,
+      "name": "CHEMBL407509",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 3782,
+      "name": "CHEMBL167644",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 3783,
+      "name": "CHEMBL168168",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3784,
+      "name": "CHEMBL354611",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 3785,
+      "name": "CHEMBL353843",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 3787,
+      "name": "CHEMBL353139",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3788,
+      "name": "CHEMBL353200",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3789,
+      "name": "CHEMBL436234",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3790,
+      "name": "CHEMBL353212",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 3793,
+      "name": "CHEMBL316495",
+      "atomIndices": [
+        29
+      ]
+    },
+    {
+      "index": 3794,
+      "name": "CHEMBL133231",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 3795,
+      "name": "CHEMBL95578",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3796,
+      "name": "CHEMBL336332",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3797,
+      "name": "CHEMBL180561",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3798,
+      "name": "CHEMBL131220",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3799,
+      "name": "CHEMBL338683",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 3800,
+      "name": "CHEMBL133579",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 3801,
+      "name": "CHEMBL323579",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3802,
+      "name": "CHEMBL100045",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3803,
+      "name": "CHEMBL336970",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3804,
+      "name": "CHEMBL98471",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 3805,
+      "name": "CHEMBL130853",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 3806,
+      "name": "CHEMBL99864",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3807,
+      "name": "CHEMBL131417",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 3808,
+      "name": "CHEMBL295186",
+      "atomIndices": [
+        6,
+        9
+      ]
+    },
+    {
+      "index": 3814,
+      "name": "CHEMBL297827",
+      "atomIndices": [
+        10,
+        13
+      ]
+    },
+    {
+      "index": 3815,
+      "name": "CHEMBL48341",
+      "atomIndices": [
+        8,
+        11
+      ]
+    },
+    {
+      "index": 3816,
+      "name": "CHEMBL296660",
+      "atomIndices": [
+        4,
+        7
+      ]
+    },
+    {
+      "index": 3819,
+      "name": "CHEMBL320736",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3829,
+      "name": "CHEMBL210578",
+      "atomIndices": [
+        6,
+        9
+      ]
+    },
+    {
+      "index": 3831,
+      "name": "CHEMBL1689423",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3832,
+      "name": "CHEMBL218730",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 3834,
+      "name": "CHEMBL217203",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 3836,
+      "name": "CHEMBL128168",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3837,
+      "name": "CHEMBL223836",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3838,
+      "name": "CHEMBL222371",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3839,
+      "name": "CHEMBL221523",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3840,
+      "name": "CHEMBL95290",
+      "atomIndices": [
+        41
+      ]
+    },
+    {
+      "index": 3847,
+      "name": "CHEMBL72995",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 3850,
+      "name": "CHEMBL654",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 3851,
+      "name": "CHEMBL195706",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3852,
+      "name": "CHEMBL194659",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3853,
+      "name": "CHEMBL364270",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3854,
+      "name": "CHEMBL435301",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3855,
+      "name": "CHEMBL193435",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3856,
+      "name": "CHEMBL363581",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3857,
+      "name": "CHEMBL193639",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 3858,
+      "name": "CHEMBL371516",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3861,
+      "name": "CHEMBL588",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 3862,
+      "name": "CHEMBL611207",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3863,
+      "name": "CHEMBL608530",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3922,
+      "name": "CHEMBL157293",
+      "atomIndices": [
+        20
+      ]
+    },
+    {
+      "index": 3923,
+      "name": "CHEMBL422883",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3928,
+      "name": "CHEMBL107492",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3929,
+      "name": "CHEMBL276500",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 3935,
+      "name": "CHEMBL158013",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 3939,
+      "name": "CHEMBL346512",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 3940,
+      "name": "CHEMBL155826",
+      "atomIndices": [
+        20
+      ]
+    },
+    {
+      "index": 3941,
+      "name": "CHEMBL156816",
+      "atomIndices": [
+        23
+      ]
+    },
+    {
+      "index": 3942,
+      "name": "CHEMBL157035",
+      "atomIndices": [
+        22
+      ]
+    },
+    {
+      "index": 3945,
+      "name": "CHEMBL156639",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 3946,
+      "name": "CHEMBL156689",
+      "atomIndices": [
+        20
+      ]
+    },
+    {
+      "index": 3949,
+      "name": "CHEMBL349833",
+      "atomIndices": [
+        1,
+        12
+      ]
+    },
+    {
+      "index": 3950,
+      "name": "CHEMBL439646",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 3951,
+      "name": "CHEMBL351963",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3952,
+      "name": "CHEMBL352207",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 3953,
+      "name": "CHEMBL351989",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 3954,
+      "name": "CHEMBL159742",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 3955,
+      "name": "CHEMBL354699",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 3957,
+      "name": "CHEMBL345438",
+      "atomIndices": [
+        10,
+        22
+      ]
+    },
+    {
+      "index": 3961,
+      "name": "CHEMBL351612",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 3965,
+      "name": "CHEMBL283211",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 3970,
+      "name": "CHEMBL26426",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 3971,
+      "name": "CHEMBL26929",
+      "atomIndices": [
+        15
+      ]
+    },
+    {
+      "index": 3972,
+      "name": "CHEMBL28063",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 3973,
+      "name": "CHEMBL28209",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 3986,
+      "name": "CHEMBL187952",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 4010,
+      "name": "ORGANON",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 4044,
+      "name": "ICI-204448",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 4073,
       "name": "Tropine",
       "atomIndices": [
         2,
@@ -10028,7 +12344,7 @@
       ]
     },
     {
-      "index": 2784,
+      "index": 4074,
       "name": "Nortropine",
       "atomIndices": [
         3,
@@ -10036,7 +12352,7 @@
       ]
     },
     {
-      "index": 2785,
+      "index": 4075,
       "name": "Noratropine",
       "atomIndices": [
         5,
@@ -10045,7 +12361,7 @@
       ]
     },
     {
-      "index": 2786,
+      "index": 4076,
       "name": "Methylatropine",
       "atomIndices": [
         3,
@@ -10054,7 +12370,7 @@
       ]
     },
     {
-      "index": 2787,
+      "index": 4077,
       "name": "Homatropine",
       "atomIndices": [
         2,
@@ -10063,7 +12379,7 @@
       ]
     },
     {
-      "index": 2788,
+      "index": 4078,
       "name": "Homatropine methylbromide",
       "atomIndices": [
         3,
@@ -10072,7 +12388,7 @@
       ]
     },
     {
-      "index": 2789,
+      "index": 4079,
       "name": "Apoatropine",
       "atomIndices": [
         7,
@@ -10080,7 +12396,7 @@
       ]
     },
     {
-      "index": 2790,
+      "index": 4080,
       "name": "Etybenzatropine",
       "atomIndices": [
         3,
@@ -10088,7 +12404,7 @@
       ]
     },
     {
-      "index": 2791,
+      "index": 4081,
       "name": "Octatropine methylbromide",
       "atomIndices": [
         12,
@@ -10096,7 +12412,7 @@
       ]
     },
     {
-      "index": 2792,
+      "index": 4082,
       "name": "Tropanyl benzilate",
       "atomIndices": [
         2,
@@ -10104,7 +12420,7 @@
       ]
     },
     {
-      "index": 2793,
+      "index": 4083,
       "name": "Scopine",
       "atomIndices": [
         2,
@@ -10114,7 +12430,7 @@
       ]
     },
     {
-      "index": 2794,
+      "index": 4084,
       "name": "Methscopolamine",
       "atomIndices": [
         3,
@@ -10125,7 +12441,7 @@
       ]
     },
     {
-      "index": 2795,
+      "index": 4085,
       "name": "Butylscopolamine",
       "atomIndices": [
         6,
@@ -10136,7 +12452,7 @@
       ]
     },
     {
-      "index": 2796,
+      "index": 4086,
       "name": "Oxitropium",
       "atomIndices": [
         4,
@@ -10147,7 +12463,7 @@
       ]
     },
     {
-      "index": 2797,
+      "index": 4087,
       "name": "Tiotropium",
       "atomIndices": [
         3,
@@ -10157,7 +12473,7 @@
       ]
     },
     {
-      "index": 2798,
+      "index": 4088,
       "name": "Anisodamine",
       "atomIndices": [
         2,
@@ -10168,7 +12484,7 @@
       ]
     },
     {
-      "index": 2799,
+      "index": 4089,
       "name": "Anisodine",
       "atomIndices": [
         2,
@@ -10179,49 +12495,49 @@
       ]
     },
     {
-      "index": 2800,
+      "index": 4090,
       "name": "Desethyloxybutynin",
       "atomIndices": [
         10
       ]
     },
     {
-      "index": 2801,
+      "index": 4091,
       "name": "Methacholine",
       "atomIndices": [
         4
       ]
     },
     {
-      "index": 2803,
+      "index": 4093,
       "name": "Bethanechol",
       "atomIndices": [
         1
       ]
     },
     {
-      "index": 2804,
+      "index": 4094,
       "name": "Aceclidine",
       "atomIndices": [
         4
       ]
     },
     {
-      "index": 2808,
+      "index": 4098,
       "name": "Cyclopentolate",
       "atomIndices": [
         8
       ]
     },
     {
-      "index": 2809,
+      "index": 4099,
       "name": "Oxyphenonium",
       "atomIndices": [
         11
       ]
     },
     {
-      "index": 2812,
+      "index": 4102,
       "name": "Phenserine",
       "atomIndices": [
         4,
@@ -10229,14 +12545,14 @@
       ]
     },
     {
-      "index": 2817,
+      "index": 4107,
       "name": "Procyclidine",
       "atomIndices": [
         1
       ]
     },
     {
-      "index": 2818,
+      "index": 4108,
       "name": "Biperiden",
       "atomIndices": [
         1,
@@ -10246,28 +12562,28 @@
       ]
     },
     {
-      "index": 2819,
+      "index": 4109,
       "name": "5-Hydroxymethyltolterodine",
       "atomIndices": [
         6
       ]
     },
     {
-      "index": 2820,
+      "index": 4110,
       "name": "Fesoterodine",
       "atomIndices": [
         14
       ]
     },
     {
-      "index": 2821,
+      "index": 4111,
       "name": "Darifenacin",
       "atomIndices": [
         16
       ]
     },
     {
-      "index": 2822,
+      "index": 4112,
       "name": "Trospium",
       "atomIndices": [
         5,
@@ -10275,21 +12591,21 @@
       ]
     },
     {
-      "index": 2823,
+      "index": 4113,
       "name": "Clidinium",
       "atomIndices": [
         7
       ]
     },
     {
-      "index": 2824,
+      "index": 4114,
       "name": "Mepenzolate",
       "atomIndices": [
         6
       ]
     },
     {
-      "index": 2825,
+      "index": 4115,
       "name": "Pipenzolate",
       "atomIndices": [
         2,
@@ -10297,35 +12613,35 @@
       ]
     },
     {
-      "index": 2826,
+      "index": 4116,
       "name": "Aclidinium",
       "atomIndices": [
         3
       ]
     },
     {
-      "index": 2829,
+      "index": 4119,
       "name": "Propiverine",
       "atomIndices": [
         4
       ]
     },
     {
-      "index": 2830,
+      "index": 4120,
       "name": "Tropicamide",
       "atomIndices": [
         12
       ]
     },
     {
-      "index": 2831,
+      "index": 4121,
       "name": "Orphenadrine",
       "atomIndices": [
         7
       ]
     },
     {
-      "index": 2832,
+      "index": 4122,
       "name": "Clemastine",
       "atomIndices": [
         5,
@@ -10333,7 +12649,7 @@
       ]
     },
     {
-      "index": 2835,
+      "index": 4125,
       "name": "Muscarine",
       "atomIndices": [
         1,
@@ -10342,7 +12658,7 @@
       ]
     },
     {
-      "index": 2836,
+      "index": 4126,
       "name": "Pilocarpine",
       "atomIndices": [
         2,
@@ -10350,49 +12666,49 @@
       ]
     },
     {
-      "index": 2841,
+      "index": 4131,
       "name": "Velnacrine",
       "atomIndices": [
         11
       ]
     },
     {
-      "index": 2845,
+      "index": 4135,
       "name": "Metrifonate",
       "atomIndices": [
         6
       ]
     },
     {
-      "index": 2850,
+      "index": 4140,
       "name": "Anabasine",
       "atomIndices": [
         5
       ]
     },
     {
-      "index": 2851,
+      "index": 4141,
       "name": "Nornicotine",
       "atomIndices": [
         5
       ]
     },
     {
-      "index": 2852,
+      "index": 4142,
       "name": "Anatabine",
       "atomIndices": [
         3
       ]
     },
     {
-      "index": 2853,
+      "index": 4143,
       "name": "Cotinine",
       "atomIndices": [
         6
       ]
     },
     {
-      "index": 2854,
+      "index": 4144,
       "name": "Mecamylamine",
       "atomIndices": [
         2,
@@ -10401,7 +12717,7 @@
       ]
     },
     {
-      "index": 2857,
+      "index": 4147,
       "name": "Epibatidine",
       "atomIndices": [
         5,
@@ -10410,14 +12726,14 @@
       ]
     },
     {
-      "index": 2860,
+      "index": 4150,
       "name": "ABT-418",
       "atomIndices": [
         4
       ]
     },
     {
-      "index": 2861,
+      "index": 4151,
       "name": "A-85380",
       "atomIndices": [
         7
@@ -10466,160 +12782,181 @@
       "formalCharge": 1
     },
     {
-      "index": 2786,
+      "index": 2839,
+      "name": "CHEMBL12587",
+      "formalCharge": 1
+    },
+    {
+      "index": 2893,
+      "name": "CHEMBL978",
+      "formalCharge": 1
+    },
+    {
+      "index": 3416,
+      "name": "CHEMBL376897",
+      "formalCharge": 1
+    },
+    {
+      "index": 4076,
       "name": "Methylatropine",
       "formalCharge": 1
     },
     {
-      "index": 2788,
+      "index": 4078,
       "name": "Homatropine methylbromide",
       "formalCharge": 1
     },
     {
-      "index": 2791,
+      "index": 4081,
       "name": "Octatropine methylbromide",
       "formalCharge": 1
     },
     {
-      "index": 2794,
+      "index": 4084,
       "name": "Methscopolamine",
       "formalCharge": 1
     },
     {
-      "index": 2795,
+      "index": 4085,
       "name": "Butylscopolamine",
       "formalCharge": 1
     },
     {
-      "index": 2796,
+      "index": 4086,
       "name": "Oxitropium",
       "formalCharge": 1
     },
     {
-      "index": 2797,
+      "index": 4087,
       "name": "Tiotropium",
       "formalCharge": 1
     },
     {
-      "index": 2801,
+      "index": 4091,
       "name": "Methacholine",
       "formalCharge": 1
     },
     {
-      "index": 2802,
+      "index": 4092,
       "name": "Carbachol",
       "formalCharge": 1
     },
     {
-      "index": 2803,
+      "index": 4093,
       "name": "Bethanechol",
       "formalCharge": 1
     },
     {
-      "index": 2809,
+      "index": 4099,
       "name": "Oxyphenonium",
       "formalCharge": 1
     },
     {
-      "index": 2810,
+      "index": 4100,
       "name": "Propantheline",
       "formalCharge": 1
     },
     {
-      "index": 2811,
+      "index": 4101,
       "name": "Methantheline",
       "formalCharge": 1
     },
     {
-      "index": 2822,
+      "index": 4112,
       "name": "Trospium",
       "formalCharge": 1
     },
     {
-      "index": 2823,
+      "index": 4113,
       "name": "Clidinium",
       "formalCharge": 1
     },
     {
-      "index": 2824,
+      "index": 4114,
       "name": "Mepenzolate",
       "formalCharge": 1
     },
     {
-      "index": 2825,
+      "index": 4115,
       "name": "Pipenzolate",
       "formalCharge": 1
     },
     {
-      "index": 2826,
+      "index": 4116,
       "name": "Aclidinium",
       "formalCharge": 1
     },
     {
-      "index": 2827,
+      "index": 4117,
       "name": "Umeclidinium",
       "formalCharge": 1
     },
     {
-      "index": 2834,
+      "index": 4124,
       "name": "Choline",
       "formalCharge": 1
     },
     {
-      "index": 2835,
+      "index": 4125,
       "name": "Muscarine",
       "formalCharge": 1
     },
     {
-      "index": 2839,
+      "index": 4129,
       "name": "Oxotremorine-M",
       "formalCharge": 1
     },
     {
-      "index": 2843,
+      "index": 4133,
       "name": "Edrophonium",
       "formalCharge": 1
     },
     {
-      "index": 2844,
+      "index": 4134,
       "name": "Echothiophate",
       "formalCharge": 1
     },
     {
-      "index": 2849,
+      "index": 4139,
       "name": "Pralidoxime",
       "formalCharge": 1
     },
     {
-      "index": 2855,
+      "index": 4145,
       "name": "Hexamethonium",
       "formalCharge": 2
     },
     {
-      "index": 2856,
+      "index": 4146,
       "name": "Decamethonium",
       "formalCharge": 2
     },
     {
-      "index": 2858,
+      "index": 4148,
       "name": "Dimethylphenylpiperazinium",
       "formalCharge": 1
     }
   ],
   "fragmentedEntries": [],
   "radicalEntries": [],
-  "nonAromaticSulfurRings": [],
+  "nonAromaticSulfurRings": [
+    {
+      "index": 2935,
+      "name": "CHEMBL177442",
+      "smiles": "CN(C)C(=N)NC1=NC(=O)/C(=C/c2ccc(N3CCC(NC[C@H](O)COc4cccc5[nH]c(O)nc45)CC3)cc2)S1"
+    }
+  ],
   "parseFailures": [],
   "counts": {
     "invalidSmiles": 0,
     "formulaMismatches": 0,
-    "canonicalDuplicates": 19,
-    "tautomerGroups": 2,
-    "unspecifiedStereocenters": 1128,
-    "chargedEntries": 36,
+    "canonicalDuplicates": 22,
+    "tautomerGroups": 9,
+    "unspecifiedStereocenters": 1432,
+    "chargedEntries": 39,
     "fragmentedEntries": 0,
     "radicalEntries": 0,
-    "nonAromaticSulfurRings": 0,
+    "nonAromaticSulfurRings": 1,
     "parseFailures": 0
   }
 }

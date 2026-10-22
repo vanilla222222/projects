@@ -1,0 +1,2018 @@
+{
+  "schemaVersion": 1,
+  "started": "2026-10-20T15:12:50.780Z",
+  "finished": "2026-10-20T15:13:25.868Z",
+  "node": "v24.19.0",
+  "platform": "linux",
+  "cwd": "/workspace/scratch/50cf8ae365e9/mp-upgrade/molecule profiler",
+  "source": {
+    "before": {
+      "algorithm": "SHA-256",
+      "scope": "Project root HTML/JS/Python/CSS plus js/, data/, tools/ and css/ source files; excludes generated JSON, logs and browser artifacts.",
+      "git": {
+        "commit": "9cc1f21b65214ba745cdd9844fa60f325315e780",
+        "available": true,
+        "sourceDirty": true,
+        "changes": [
+          {
+            "status": " M",
+            "path": "molecule profiler/index.html"
+          },
+          {
+            "status": " M",
+            "path": "molecule profiler/js/pharmacology-ui.js"
+          },
+          {
+            "status": " M",
+            "path": "molecule profiler/js/pharmacology.js"
+          },
+          {
+            "status": " M",
+            "path": "molecule profiler/library-inspector.html"
+          },
+          {
+            "status": " M",
+            "path": "molecule profiler/reference-explorer.html"
+          },
+          {
+            "status": " M",
+            "path": "molecule profiler/tools/pharmacology-dom-test.js"
+          },
+          {
+            "status": " M",
+            "path": "molecule profiler/tools/run-validation.js"
+          },
+          {
+            "status": "??",
+            "path": "molecule profiler/js/pk-applicability.js"
+          },
+          {
+            "status": "??",
+            "path": "molecule profiler/tools/pk-applicability-test.js"
+          }
+        ]
+      },
+      "fileCount": 150,
+      "digest": "e7bb53ef388745da8be682bd355b58edff346ecb3db6b042ddbf38c9d19aa060",
+      "files": [
+        {
+          "path": "css/style.css",
+          "bytes": 17737,
+          "sha256": "7cf2dac5011d1575ee310d84bfb504e127d606480ddcef6257d4447f6ea164ca"
+        },
+        {
+          "path": "css/workspace.css",
+          "bytes": 17237,
+          "sha256": "0059d7d89222798a16aabe92d86ea1c87b1b98247c6eb3a8afc0e3591347ad1e"
+        },
+        {
+          "path": "data/alerts.js",
+          "bytes": 8858,
+          "sha256": "f2895e3e21af9bc9597eedd003d1ad7223cea550b65d58b3c1acc1cc91aad013"
+        },
+        {
+          "path": "data/benchmark.js",
+          "bytes": 14610,
+          "sha256": "e25e113576335ab879c5d588a98e7b8d6cc60fd05e0bb9b0abff241bafbf9b11"
+        },
+        {
+          "path": "data/citations.js",
+          "bytes": 5752,
+          "sha256": "df9907f0767a28d44608123e7c9ac2b5a3da98b6e8f27cab3c14cc58417a1b4c"
+        },
+        {
+          "path": "data/crippencases.js",
+          "bytes": 1249,
+          "sha256": "41dd6da94b9a7ddedaa7a2f9a2aae439a1446fc234f215c1393d68d6d0b183ab"
+        },
+        {
+          "path": "data/dependence.js",
+          "bytes": 7595,
+          "sha256": "6945349136201f7790b8ed05f04a7a5a2260cfaefa511ea3e846aaa022eef213"
+        },
+        {
+          "path": "data/library-names.js",
+          "bytes": 475057,
+          "sha256": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e"
+        },
+        {
+          "path": "data/library-tags.js",
+          "bytes": 1503881,
+          "sha256": "e161acb0781880e16397d065b7941118087d2dd768d49cf6f2c80714f8c4ebf6"
+        },
+        {
+          "path": "data/library.js",
+          "bytes": 532523,
+          "sha256": "7badd4bf49712f316d052608504074711f6ea2f47283b0596c1b31667880d3ae"
+        },
+        {
+          "path": "data/metabolism.js",
+          "bytes": 23256,
+          "sha256": "239f447dab3cc33a9126c62fccb14e077475b0d25dbd7b9828b42bc4cb08ad00"
+        },
+        {
+          "path": "data/metcases.js",
+          "bytes": 7371,
+          "sha256": "12491bdc8772d5f09ac267db2ba81d380d7548479a37f5905d759317643f0b48"
+        },
+        {
+          "path": "data/neuropeptides.js",
+          "bytes": 1378,
+          "sha256": "e43fec22de58f5d71e39ec98f6c7fd42720da564c424292773a683b0299f0c62"
+        },
+        {
+          "path": "data/pharmacology-evidence.js",
+          "bytes": 7310,
+          "sha256": "cbad25f546a0a26e04bfcde658fd9cd9a5f0c47a50d2f3bcf015537529057104"
+        },
+        {
+          "path": "data/pk-models.js",
+          "bytes": 1397377,
+          "sha256": "02ea6bbb668939785b9f2009ae73bae89bc628a05db610e88336f2b8044b77ad"
+        },
+        {
+          "path": "data/propcases.js",
+          "bytes": 5001,
+          "sha256": "604445672d282a02f575a0236b88ae267fafe0458650ec90a31be7182a75db89"
+        },
+        {
+          "path": "data/receptor-catalog.js",
+          "bytes": 220330,
+          "sha256": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d"
+        },
+        {
+          "path": "data/receptor-ligand-annotations.js",
+          "bytes": 1852813,
+          "sha256": "28bcfc10324b17fc8a30d2e4b3cf3c589e55fe9af76cd61dfb8986d9a3b30d01"
+        },
+        {
+          "path": "data/reference-audit-baseline.js",
+          "bytes": 676,
+          "sha256": "2f2eb35bb0aa9b06497f43f930b60d246cb5525661ac805402efea211bfdb929"
+        },
+        {
+          "path": "data/reference-evidence.js",
+          "bytes": 1134,
+          "sha256": "e6a44d16b6c1a675cf9d6bfd98b79a84f1d0673445cd4a18ce718231d7f83ba0"
+        },
+        {
+          "path": "data/reference-motifs.js",
+          "bytes": 408230,
+          "sha256": "6db18268dbaa31f58226817cabe7c9f74e623c3321bb7b9f1f67647028024494"
+        },
+        {
+          "path": "data/signalling-profiles.js",
+          "bytes": 4382,
+          "sha256": "75314af2322969a5dce67afeb86ec20099044739afb401517d5a792d6d0745e0"
+        },
+        {
+          "path": "data/stereocases.js",
+          "bytes": 1051,
+          "sha256": "8dda599c3502d0ab769e8ce50714da28bbab8607964a15818db9d665b4b7ada8"
+        },
+        {
+          "path": "data/targets.js",
+          "bytes": 86494,
+          "sha256": "3cfceec74b4186d5b1c4e78cb4adc22ea3bc30312cdaddacb724e9eb382de551"
+        },
+        {
+          "path": "data/toxalerts.js",
+          "bytes": 13703,
+          "sha256": "10ed637a581255818700f2bf0431e0183a58a55d3bf4d7b4732368f62701eae1"
+        },
+        {
+          "path": "data/wedgecases.js",
+          "bytes": 447,
+          "sha256": "9653fb9d6c5823cbfb4b1f26a4a9f6cd4ab28fccc662513083c390ad53bd1036"
+        },
+        {
+          "path": "index.html",
+          "bytes": 58611,
+          "sha256": "1be28f15d08fd0aaba9524159d13aaf2905a9756b19e895e4bf50ff02d6afd2f"
+        },
+        {
+          "path": "js/app.js",
+          "bytes": 143444,
+          "sha256": "914346e19122df7cd541cf8e7ca5d7f11efcf49b35ba2bf71da8d010a8271314"
+        },
+        {
+          "path": "js/batch-browser.js",
+          "bytes": 2013,
+          "sha256": "b76ad2ab74985404242843c372b76182dec3f36cf4d850f1cafc2d747e8e5714"
+        },
+        {
+          "path": "js/comparison-data.js",
+          "bytes": 4641,
+          "sha256": "692c29a5c455dc2c6c010879c6372740b5fe12b2b0a95df3f850befdb9af82ac"
+        },
+        {
+          "path": "js/comparison-ui.js",
+          "bytes": 5361,
+          "sha256": "dab34368387acd22e8139a9f56b3205604fb5edd84e808d04d6775f49f4cf00b"
+        },
+        {
+          "path": "js/cooperative-batch.js",
+          "bytes": 1563,
+          "sha256": "e510f27ccf7662767e341c3fce82df7bb14c54852055636dd765009d1cc04918"
+        },
+        {
+          "path": "js/depict.js",
+          "bytes": 27733,
+          "sha256": "94901e6c2d7c528eaf41112f32464a301220855850c37a4fb3436a3826b18139"
+        },
+        {
+          "path": "js/descriptor-stats-ui.js",
+          "bytes": 2946,
+          "sha256": "d8daab3dfd78405542cb198a368c0ecfb474c7dcf3bc565f2f15c8cbb42f6adb"
+        },
+        {
+          "path": "js/descriptor-stats.js",
+          "bytes": 1746,
+          "sha256": "fd15dd4fd11291e20078c150a52de43ce5a4400a4f0a9959cfdf59fc750ffdc0"
+        },
+        {
+          "path": "js/descriptors.js",
+          "bytes": 33503,
+          "sha256": "2612d387dbe7a7d0d789984c8c062c5a3c6ae43781021e4f225659bc7a98ee4e"
+        },
+        {
+          "path": "js/evidence-report.js",
+          "bytes": 3163,
+          "sha256": "29997157c83efec66f578cc077f8551befa0c343871cdc2a01beac3b782e9a78"
+        },
+        {
+          "path": "js/fingerprints.js",
+          "bytes": 10747,
+          "sha256": "274e1daec20d05d7daf0d28ca35a41ef65905ae5a2cde2f5ceeb34013722149f"
+        },
+        {
+          "path": "js/full-csv-export.js",
+          "bytes": 8334,
+          "sha256": "13812c5aaa3e1f678a9b509db87c50e1576b9ec3befdcc31bca47fd9194caa81"
+        },
+        {
+          "path": "js/input-workflow.js",
+          "bytes": 7421,
+          "sha256": "97ac7fd3c3b8fd1a9fddd8adad7f225e87c63b1a0e2b688e81f4553c45653c0e"
+        },
+        {
+          "path": "js/library-catalog.js",
+          "bytes": 7678,
+          "sha256": "e54ba46136a4291d5d2df2e5c87ca35242c5965b2eaaa27a81198721d9b796bd"
+        },
+        {
+          "path": "js/library-inspector.js",
+          "bytes": 6505,
+          "sha256": "15cf968b07527c7f09302f3460dd8a6315f6be87c785a20b5fcc08658fb5fe85"
+        },
+        {
+          "path": "js/metabolism.js",
+          "bytes": 10021,
+          "sha256": "eae1f807265997c9b5dc176f15d827862bc98f4a43e3c3545959b0d9609a9611"
+        },
+        {
+          "path": "js/mol.js",
+          "bytes": 19192,
+          "sha256": "64af3686d28cf3772cf1159a502ca5f406870ff9d42fa56fc4d84da4ebdc3b08"
+        },
+        {
+          "path": "js/molecule-quality.js",
+          "bytes": 2215,
+          "sha256": "64b28f4710648c55fe3a00c282326f4f2214beeca0ed3f3b9bd1f48d3846d036"
+        },
+        {
+          "path": "js/pharmacology-ui.js",
+          "bytes": 10612,
+          "sha256": "df05039621abf06ba8767780f4142dc63160938339fb905b6cd25b2a130a2fb7"
+        },
+        {
+          "path": "js/pharmacology.js",
+          "bytes": 4683,
+          "sha256": "3cd49fd39120f943fe939fd25c49252d733a3b953965dcfb8de268d83b876b86"
+        },
+        {
+          "path": "js/pk-applicability.js",
+          "bytes": 2277,
+          "sha256": "1467a0a2275e623d9c47fc6e9dfdd6fe37d154f297fa058fc50a884bf1cc5ca2"
+        },
+        {
+          "path": "js/pk-features.js",
+          "bytes": 2282,
+          "sha256": "032c8ef74040713a50b6bb2616c02d79d6f103e804a96fe8275b911d9d2d3fdb"
+        },
+        {
+          "path": "js/receptor-catalog.js",
+          "bytes": 7553,
+          "sha256": "c89696b0ea6e22873929f2e3c777774b13579c917a541cf7820de253e19305e1"
+        },
+        {
+          "path": "js/receptor-explorer-ui.js",
+          "bytes": 11727,
+          "sha256": "f404c11301c76f61acae6ea42c33381beac749bbce7bb3a310bdb3a3d5948840"
+        },
+        {
+          "path": "js/report-model.js",
+          "bytes": 3240,
+          "sha256": "6d18088af88b2507e1834e9200191d9d03d438dc813b7f3852668dc24dae81fc"
+        },
+        {
+          "path": "js/report-ui.js",
+          "bytes": 2739,
+          "sha256": "02fba2ccd7ed820df9ba5034a1befc28ee103335dfffad74e3e3babaa0d2f6c4"
+        },
+        {
+          "path": "js/research-package.js",
+          "bytes": 7119,
+          "sha256": "1de30c5774465d354885fa5660184507017e473186b47edf9ce3a55ae5b4d375"
+        },
+        {
+          "path": "js/research-zip.js",
+          "bytes": 2126,
+          "sha256": "013eaee97b2e9124a7b27331726f02c29f86feab10bba5cb1486fa22d4eefff3"
+        },
+        {
+          "path": "js/rules.js",
+          "bytes": 5814,
+          "sha256": "be94dad6930e28436e87f6afbf46ee3f6b5da034f8cb78094bc5ce7f71d80118"
+        },
+        {
+          "path": "js/screen-coverage.js",
+          "bytes": 1659,
+          "sha256": "6891e54a45bb8cb32ff8831f6acbf7ce10b83c96b640bd4c953ee05773b1368b"
+        },
+        {
+          "path": "js/sim-pagination.js",
+          "bytes": 1224,
+          "sha256": "a7b7a5f9af7e395e7f23abaf86d57207c52091b8432ade29edf742d3df308ed5"
+        },
+        {
+          "path": "js/sites.js",
+          "bytes": 7518,
+          "sha256": "fbd69e4de7226bc1efd4a7c54c33345961a097905a907a259cb88e4fa518ba51"
+        },
+        {
+          "path": "js/smarts.js",
+          "bytes": 16843,
+          "sha256": "daab3275c06a4d8c9052a428d77a789e017f35bdd4578f100d09f906c1005685"
+        },
+        {
+          "path": "js/smiles.js",
+          "bytes": 8702,
+          "sha256": "ae7063246faee39707c62003a038fd8ce825e5c247f85ab9b6191e4383caca66"
+        },
+        {
+          "path": "js/stereo.js",
+          "bytes": 15549,
+          "sha256": "6b65f4af103715c9814ec1bd56871b27280e9c8e3278475ce62726f38d3f2aaa"
+        },
+        {
+          "path": "js/structural-evidence.js",
+          "bytes": 1459,
+          "sha256": "70e7a99e69a4039569d4ebb3526031a77a3eed9912398b3aa973204f4644ff94"
+        },
+        {
+          "path": "js/target-ranking.js",
+          "bytes": 5217,
+          "sha256": "dbd10ad677a3e33a034fe09d2198a16a5a5bb5f604ceaf97a76d950a26a72cd8"
+        },
+        {
+          "path": "js/tox.js",
+          "bytes": 7033,
+          "sha256": "c54cfa0fed52f1382cf8bcc8ad19f7534e12364049d88878d6c9322c9fc7a60f"
+        },
+        {
+          "path": "js/transform.js",
+          "bytes": 15205,
+          "sha256": "9986be4f039806893de3a781cd4467573865cacff59fe3b52f9baaf230e26f0f"
+        },
+        {
+          "path": "js/workspace-ui.js",
+          "bytes": 7829,
+          "sha256": "95f3ead101653c31b414281ea991f77f7543b997967438c5bd0bcd6056854629"
+        },
+        {
+          "path": "library-inspector.html",
+          "bytes": 10354,
+          "sha256": "25b4136a48347a5b5964f535f36d67f9647bb33b6e88215fd58aea1d2936479f"
+        },
+        {
+          "path": "reference-audit.js",
+          "bytes": 2331,
+          "sha256": "57fa3750ccf4a4e2f7f3495030545ad12a81339970dd6326e973c6c2d576daf1"
+        },
+        {
+          "path": "reference-explorer.html",
+          "bytes": 9310,
+          "sha256": "0f90dc7af007a520560a15d658f5966675d92409853ff9785acb42a1df8d800c"
+        },
+        {
+          "path": "reference-explorer.js",
+          "bytes": 7532,
+          "sha256": "a941d1e6a1e36ba488a7639670e38339e6ac4f578ba13c6bae9891159487748e"
+        },
+        {
+          "path": "tools/analysis-lifecycle-test.js",
+          "bytes": 5794,
+          "sha256": "5942c517476c784bf5f7a61f233e34f65a72555e7aa73f91f8a76a668b978970"
+        },
+        {
+          "path": "tools/batch-browser-test.js",
+          "bytes": 1689,
+          "sha256": "a6859e50ac38f2ef1820e7e5bd6bfa3f6fdc67a82ee8d5d35e43610699597718"
+        },
+        {
+          "path": "tools/browser-e2e.py",
+          "bytes": 14627,
+          "sha256": "cd657cd558ad57aa5c668900c16e852e75e7b923743bb882ab849d1e6da49fb1"
+        },
+        {
+          "path": "tools/build-library-tags.py",
+          "bytes": 7803,
+          "sha256": "b1b9d2eb9960ab6803f2c9e43936d4317688bc067a00d30b27d9cf1c1ee08f6e"
+        },
+        {
+          "path": "tools/build-pharmacology-evidence.py",
+          "bytes": 5693,
+          "sha256": "cb756fea3c0fb9dbe1112728012116a7821d1c6fdd4b68e631a4e6c5309060ac"
+        },
+        {
+          "path": "tools/build-reference-motifs.py",
+          "bytes": 1555,
+          "sha256": "2431acf9f47babf4519d24bb97e0a01d8b7fd3cc3f2f12570c774236f1fb0373"
+        },
+        {
+          "path": "tools/chembl-binding-test.js",
+          "bytes": 4330,
+          "sha256": "7c208bc12128726ad9bedb5391487bc13aa6da0f632040b95ae5e133f09f7513"
+        },
+        {
+          "path": "tools/comparison-test.js",
+          "bytes": 1668,
+          "sha256": "02ec01e13df68d9642c37ffbf6bd7b4ad4d7029f6dd3ce72c5087048e3f58e8c"
+        },
+        {
+          "path": "tools/cooperative-batch-test.js",
+          "bytes": 2073,
+          "sha256": "48e6f11bf80170bf7e2cfe0eb8557fc8ade8a8539c8a3b35ca26bed6b0b96525"
+        },
+        {
+          "path": "tools/crippen-conformance.py",
+          "bytes": 3318,
+          "sha256": "f7eba5f3b5486f2cc87ea9a8e3ac5013ee61fab2f5855e2bda22ebd1428427e3"
+        },
+        {
+          "path": "tools/curate-family-references.py",
+          "bytes": 8648,
+          "sha256": "62c00167d8b20d3f2d4bc7ab9005ecf81efbf453b7c6e5159f8401ce9a9c5274"
+        },
+        {
+          "path": "tools/curate-library-names.py",
+          "bytes": 11087,
+          "sha256": "5474a832b1cd427e4246f1c4b12ec2c47a2b3a12586201f388f5cf52f1bfcd16"
+        },
+        {
+          "path": "tools/curate-receptor-bindings-test.py",
+          "bytes": 5582,
+          "sha256": "600d2cdaba9f04a350357c8099a2a7b9130bf2bfa67c4cde5e2aebe79ab0769b"
+        },
+        {
+          "path": "tools/curate-receptor-bindings.py",
+          "bytes": 22228,
+          "sha256": "ca8bb02ee52a138acd67fe6aac9d85980ae2452d5730125e144cb526362e901b"
+        },
+        {
+          "path": "tools/derive-dopaminergic-references.py",
+          "bytes": 14586,
+          "sha256": "eaf8ba4cb7da1b0fc9cb2589f5fb735a25b25ad6a4909b56404aef85b1026507"
+        },
+        {
+          "path": "tools/derive-gabaa-references.py",
+          "bytes": 10739,
+          "sha256": "0d9faf780574d9dbf00c69042eb66dcc1461e3571848fae1f4d6245a77f3aef2"
+        },
+        {
+          "path": "tools/derive-nsaid-references.py",
+          "bytes": 11112,
+          "sha256": "268973f18c2afcae37dc932f5b5bb5155be65d293f87fc7e085570aab984782c"
+        },
+        {
+          "path": "tools/derive-opioid-references.py",
+          "bytes": 19048,
+          "sha256": "7a39382fc0ae7be9739b317d4f68f3277f9580f2d39d8e666a100187017e35c8"
+        },
+        {
+          "path": "tools/derive-steroid-references.py",
+          "bytes": 30926,
+          "sha256": "6157becdc59136d2db4c19f665bc30dd39d133d572d557678d66f4abecd05499"
+        },
+        {
+          "path": "tools/descriptor-conformance-test.js",
+          "bytes": 692,
+          "sha256": "d06e0ea5868275ee8583ceeab5efa5e4650c736686817366456bd319bc4f40d1"
+        },
+        {
+          "path": "tools/descriptor-stats-test.js",
+          "bytes": 700,
+          "sha256": "a242f036d7b3219b5986aa0ff91949f121c12f8eea6a00fe810be9c2475bba7e"
+        },
+        {
+          "path": "tools/evidence-report-test.js",
+          "bytes": 1701,
+          "sha256": "17ae0f9812ad0d16a0100152dd7cf6b2f0578dcae39e7b6c35057732d3766bee"
+        },
+        {
+          "path": "tools/family-reference-test.js",
+          "bytes": 1731,
+          "sha256": "73833065a8345a4d58e24dc4fe4f85cb9efdd36516c18ffbb9220904a1d61d97"
+        },
+        {
+          "path": "tools/file-import-test.js",
+          "bytes": 3482,
+          "sha256": "ab31ea58e5b9518ab8ac29f9e6be9a369f1f5282f460207b5b1d148915d0b096"
+        },
+        {
+          "path": "tools/full-csv-export-test.js",
+          "bytes": 2175,
+          "sha256": "064680f7cb25022878fae7cbc0d55294982b63fb3deb866c3ef208cf1ea90655"
+        },
+        {
+          "path": "tools/generate-research-zip-fixture.js",
+          "bytes": 691,
+          "sha256": "445511ba7a89e54bee830c91e440732a560683a4e560f9239b4c3ea8225f1931"
+        },
+        {
+          "path": "tools/input-workflow-test.js",
+          "bytes": 4386,
+          "sha256": "21afe6dbc18dcda6300ac9793299608aef822a8002064bdbd99571d64cb9d9fe"
+        },
+        {
+          "path": "tools/interaction-test.js",
+          "bytes": 2377,
+          "sha256": "16055fad4e1f29c3c4b138a5c8e8aa306a6210aa334a9ca5c894ff20d6e2445b"
+        },
+        {
+          "path": "tools/label-targets.py",
+          "bytes": 2370,
+          "sha256": "760c8d501154ec5cb18e98fcfe49a80d0774e2fd437f1376cf9f5a6d4e6de9c2"
+        },
+        {
+          "path": "tools/library-catalog-test.js",
+          "bytes": 2712,
+          "sha256": "176917dac28d0e60ff2658e752b929fea27f0c6a90f5369724d70f4888822a00"
+        },
+        {
+          "path": "tools/library-descriptor-audit.py",
+          "bytes": 3005,
+          "sha256": "1fafcff6fecc31133051a1695f39f6a96560ebfbe55cab65c2454a48006ec75c"
+        },
+        {
+          "path": "tools/library-inspector-dom-test.js",
+          "bytes": 3897,
+          "sha256": "2e6f5fa6813cd809dec8f229e9ffb6d18aeec036ed296f321658dfd054ec50c1"
+        },
+        {
+          "path": "tools/library-metadata-report-test.js",
+          "bytes": 3397,
+          "sha256": "18e068dd9df98219ee14f938183596533d13280c34c5662e1107ac8aec56952e"
+        },
+        {
+          "path": "tools/library-metadata-test.py",
+          "bytes": 5312,
+          "sha256": "d5f6bfbdb14d4a5d23b9dfd62b5f0f841c810862de4f9f693b6ff797be95fe0b"
+        },
+        {
+          "path": "tools/metabolism-cases.js",
+          "bytes": 9410,
+          "sha256": "9ac99a589b093922e1f49a240b1c4ab44257a4ce6f40b0296ffbedbaeaf3de67"
+        },
+        {
+          "path": "tools/metabolism-engine-test.js",
+          "bytes": 2570,
+          "sha256": "1598bef714cfa534dc74f67fd4f0d35d42f00059d4a47d68a4a0812dfb44fb1e"
+        },
+        {
+          "path": "tools/metabolism-product-fixture.js",
+          "bytes": 854,
+          "sha256": "6a0eaca5bab3596ee8df8feaefa0263faeccad08fb35b6e63eeb6d899bf15aae"
+        },
+        {
+          "path": "tools/metabolism-rdkit-check.py",
+          "bytes": 1078,
+          "sha256": "65dc5449f6dac5d9d303b9a00fd4c641ea0a8a4d49dbd33798d7a69b4337e4b7"
+        },
+        {
+          "path": "tools/molecule-quality-test.js",
+          "bytes": 957,
+          "sha256": "ebe08df50b9e964ab2d6723b6212bd15d5e424ed48021b1369b89e48f3e9c725"
+        },
+        {
+          "path": "tools/pharmacology-dom-test.js",
+          "bytes": 4771,
+          "sha256": "dcb31a8bd666d62bd8ccf00c9c3a8b5144d284db9cb7460b58cae393051e9e0a"
+        },
+        {
+          "path": "tools/pharmacology-test.js",
+          "bytes": 5334,
+          "sha256": "2993b2c88fa7258d0b1d40800a0da63e341c68f145047eef2d93e3bde4bb958f"
+        },
+        {
+          "path": "tools/pk-applicability-test.js",
+          "bytes": 2413,
+          "sha256": "dd736db314a9c54c51949bd5f29309e0c7ff5c0cfdf0204426e306321450b102"
+        },
+        {
+          "path": "tools/pk-features.js",
+          "bytes": 457,
+          "sha256": "425b7c04847a7328f2315ef8db91a54a1cc3edbe8a34057dc138094b2d976709"
+        },
+        {
+          "path": "tools/prediction-workflow-dom-test.js",
+          "bytes": 3004,
+          "sha256": "ce4d70d26fa247aacec176351cbbe2ddd3cf6a7be095e22a6de358853f688db8"
+        },
+        {
+          "path": "tools/property-validation.js",
+          "bytes": 9029,
+          "sha256": "8ae9f19c93a10754a7d995d7dc9ebf7678f7aa0f9200bd45182c8d7eaa187930"
+        },
+        {
+          "path": "tools/pubchem-reference-audit-test.py",
+          "bytes": 1905,
+          "sha256": "5a17a62ec260b1ae95786a36df94bc5f0900affb7a3fcb5a4681a67d7070ba0e"
+        },
+        {
+          "path": "tools/pubchem-reference-audit.py",
+          "bytes": 6547,
+          "sha256": "b4318268f50e216a2d7e0e6d29dcd59010ef3dee5b4a099f1320f12104bd089b"
+        },
+        {
+          "path": "tools/rdkit-library-audit-test.py",
+          "bytes": 1941,
+          "sha256": "3cd0b62ae1166aca13f659ac44b8021733e5c857778f08170aa803209792d52d"
+        },
+        {
+          "path": "tools/rdkit-library-audit.py",
+          "bytes": 6613,
+          "sha256": "dd3747308fe6af5b7cd04602f28c94424f3475f079bf1dcb6e5526b5ee8b4b0e"
+        },
+        {
+          "path": "tools/receptor-catalog-test.js",
+          "bytes": 5791,
+          "sha256": "ddba3105ce55da436881b87f3dec704046b61d543bacd6a2895915a89b2cbe4a"
+        },
+        {
+          "path": "tools/receptor-coverage-test.js",
+          "bytes": 3988,
+          "sha256": "cb77ddc6ba470417280354dbe948c1521b5fa672dff8fecea740aa91a7e57433"
+        },
+        {
+          "path": "tools/receptor-diversity-audit.py",
+          "bytes": 5820,
+          "sha256": "c507a5086e772e7b5f052feac394a3637c8e986e61ee57d11b3771491c29bd71"
+        },
+        {
+          "path": "tools/receptor-diversity-report-test.js",
+          "bytes": 2493,
+          "sha256": "9d185279756b8729099d6e97c866fdb0f3f662edac130e46f83d8913100269ae"
+        },
+        {
+          "path": "tools/receptor-diversity-test.py",
+          "bytes": 2267,
+          "sha256": "a9dc84269f3ba71450f4b425e74ab8606b20f69ec50f8c5a13a3ff20abda9947"
+        },
+        {
+          "path": "tools/receptor-explorer-dom-test.js",
+          "bytes": 6236,
+          "sha256": "4e59685cb1fe8631c15dde31ec5eb20dd30eb26d596ea690531726551365caf7"
+        },
+        {
+          "path": "tools/reference-audit-test.js",
+          "bytes": 1831,
+          "sha256": "7081f84b45956b21658c392646b2bea35db0dff6715d4b8c219bd48b0bb2dda8"
+        },
+        {
+          "path": "tools/report-model-test.js",
+          "bytes": 1569,
+          "sha256": "33d7505e765278ff46f7a49c1b6c3f11b4e35c9df68e62a53ba16bac70cf9124"
+        },
+        {
+          "path": "tools/research-package-test.js",
+          "bytes": 2261,
+          "sha256": "7e372a26a534b9bdb3720a486673a2232a86d1bc3d4c62d7cb6bb43062096393"
+        },
+        {
+          "path": "tools/research-zip-external-test.js",
+          "bytes": 450,
+          "sha256": "d93faa829e4b4d47f38b5bded148a8843ab17de59f63ddc8d86ded687fb1eaf2"
+        },
+        {
+          "path": "tools/retrieval-benchmark.js",
+          "bytes": 8052,
+          "sha256": "3c329d0e76dfbafb64c1834c8d0db987e038252cfa79984c75b9ddd79505d843"
+        },
+        {
+          "path": "tools/retrieval-evaluate-test.js",
+          "bytes": 3227,
+          "sha256": "78a11b381665232640e37dc6b28c35e837bbbf52fae1cf6032a710d8fcfa6ee6"
+        },
+        {
+          "path": "tools/retrieval-evaluate.js",
+          "bytes": 2424,
+          "sha256": "b6a5157ca67a880c6614cb7c8937521c1fc69beda636364cfbe3d574fe9c8e51"
+        },
+        {
+          "path": "tools/run-validation.js",
+          "bytes": 4113,
+          "sha256": "906ecec4fb1f50b1c362389e39473e809702831b05279924bf68913d579e115a"
+        },
+        {
+          "path": "tools/screen-coverage-test.js",
+          "bytes": 828,
+          "sha256": "b452cb77084becc47ec170304c07f0a7389e333373839cdec7ff6aabdab7cdf0"
+        },
+        {
+          "path": "tools/sim-pagination-test.js",
+          "bytes": 1220,
+          "sha256": "254ec0509a7545e085c536b1ac8aa80280ac87e16f99a79674469a127d1c89a3"
+        },
+        {
+          "path": "tools/stereo-conformance.js",
+          "bytes": 1952,
+          "sha256": "5cf60937d4d0d3b841a09275ee41d06af6ef4fcf1878962be9a008520ca8f205"
+        },
+        {
+          "path": "tools/stereo-conformance.py",
+          "bytes": 8948,
+          "sha256": "a2917116b3351e18b84ed314aef0007c09945f946a4d7460ff1bba5dab609589"
+        },
+        {
+          "path": "tools/stereo-depiction.js",
+          "bytes": 4865,
+          "sha256": "07ded258f0e39497e0bc7d4616c312945270122dde29bdad1a3b42327122d4a1"
+        },
+        {
+          "path": "tools/target-ranking-evaluate.js",
+          "bytes": 3715,
+          "sha256": "d2f4f4ee65ec0de3e0dcc513ae17e962c49078b54ed630e6d546acee3b52b02b"
+        },
+        {
+          "path": "tools/target-ranking-metrics-test.js",
+          "bytes": 1529,
+          "sha256": "be005900bdf058d1117c339bd37e9dd58439195b1a1cbdb7f7c2337f6651965b"
+        },
+        {
+          "path": "tools/target-ranking-metrics.js",
+          "bytes": 2052,
+          "sha256": "13b9c7d8cdddd2077b58ee1e348d80cb5aba5d5b83cf30a6c13b6983095e2afa"
+        },
+        {
+          "path": "tools/target-ranking-test.js",
+          "bytes": 2852,
+          "sha256": "dd6eb82000d2d87368f65ba6d49675c91aed0cbfa14bfd4c072aac437de9b1d4"
+        },
+        {
+          "path": "tools/train-pk-models.py",
+          "bytes": 8657,
+          "sha256": "ee9caf18d4b7819d4fe9dea9e0ee05289849038ace379fbb6bfd0f8762f86905"
+        },
+        {
+          "path": "tools/ui-integration-test.js",
+          "bytes": 11061,
+          "sha256": "f53c2148835a9cff245eec091a7033fe2f720fcf18773e82f5349ca68ec47133"
+        },
+        {
+          "path": "tools/validation-provenance-test.js",
+          "bytes": 2469,
+          "sha256": "b4abd8299a19f542ec6d4a7a8f99de7a9f46ef95d4ad9b4989fe86418100c79c"
+        },
+        {
+          "path": "tools/validation-provenance.js",
+          "bytes": 2878,
+          "sha256": "2cefcc5f1936bb59a9e6b8f5c73314188a76553ef6d809755b43439123af2027"
+        },
+        {
+          "path": "tools/verify-reference-formulas.py",
+          "bytes": 2877,
+          "sha256": "f4b29b46ee66aa8d1425bc92606043e00782b74b0cc16c16dc491dca2c0d00f1"
+        },
+        {
+          "path": "tools/verify-research-zip.py",
+          "bytes": 1847,
+          "sha256": "7f472b8134ec51d9f062f7ef7b301129beb93bc5c19821cf0be8358d4452d6fb"
+        },
+        {
+          "path": "tools/verify-systematic-names.py",
+          "bytes": 5395,
+          "sha256": "9f53e2f6ef230d336a9bce72e31d2d6b4f25506d6defafdd4cf11fe178b8afce"
+        }
+      ]
+    },
+    "after": {
+      "algorithm": "SHA-256",
+      "scope": "Project root HTML/JS/Python/CSS plus js/, data/, tools/ and css/ source files; excludes generated JSON, logs and browser artifacts.",
+      "git": {
+        "commit": "9cc1f21b65214ba745cdd9844fa60f325315e780",
+        "available": true,
+        "sourceDirty": true,
+        "changes": [
+          {
+            "status": " M",
+            "path": "molecule profiler/index.html"
+          },
+          {
+            "status": " M",
+            "path": "molecule profiler/js/pharmacology-ui.js"
+          },
+          {
+            "status": " M",
+            "path": "molecule profiler/js/pharmacology.js"
+          },
+          {
+            "status": " M",
+            "path": "molecule profiler/library-inspector.html"
+          },
+          {
+            "status": " M",
+            "path": "molecule profiler/reference-explorer.html"
+          },
+          {
+            "status": " M",
+            "path": "molecule profiler/tools/pharmacology-dom-test.js"
+          },
+          {
+            "status": " M",
+            "path": "molecule profiler/tools/run-validation.js"
+          },
+          {
+            "status": "??",
+            "path": "molecule profiler/js/pk-applicability.js"
+          },
+          {
+            "status": "??",
+            "path": "molecule profiler/tools/pk-applicability-test.js"
+          }
+        ]
+      },
+      "fileCount": 150,
+      "digest": "e7bb53ef388745da8be682bd355b58edff346ecb3db6b042ddbf38c9d19aa060",
+      "files": [
+        {
+          "path": "css/style.css",
+          "bytes": 17737,
+          "sha256": "7cf2dac5011d1575ee310d84bfb504e127d606480ddcef6257d4447f6ea164ca"
+        },
+        {
+          "path": "css/workspace.css",
+          "bytes": 17237,
+          "sha256": "0059d7d89222798a16aabe92d86ea1c87b1b98247c6eb3a8afc0e3591347ad1e"
+        },
+        {
+          "path": "data/alerts.js",
+          "bytes": 8858,
+          "sha256": "f2895e3e21af9bc9597eedd003d1ad7223cea550b65d58b3c1acc1cc91aad013"
+        },
+        {
+          "path": "data/benchmark.js",
+          "bytes": 14610,
+          "sha256": "e25e113576335ab879c5d588a98e7b8d6cc60fd05e0bb9b0abff241bafbf9b11"
+        },
+        {
+          "path": "data/citations.js",
+          "bytes": 5752,
+          "sha256": "df9907f0767a28d44608123e7c9ac2b5a3da98b6e8f27cab3c14cc58417a1b4c"
+        },
+        {
+          "path": "data/crippencases.js",
+          "bytes": 1249,
+          "sha256": "41dd6da94b9a7ddedaa7a2f9a2aae439a1446fc234f215c1393d68d6d0b183ab"
+        },
+        {
+          "path": "data/dependence.js",
+          "bytes": 7595,
+          "sha256": "6945349136201f7790b8ed05f04a7a5a2260cfaefa511ea3e846aaa022eef213"
+        },
+        {
+          "path": "data/library-names.js",
+          "bytes": 475057,
+          "sha256": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e"
+        },
+        {
+          "path": "data/library-tags.js",
+          "bytes": 1503881,
+          "sha256": "e161acb0781880e16397d065b7941118087d2dd768d49cf6f2c80714f8c4ebf6"
+        },
+        {
+          "path": "data/library.js",
+          "bytes": 532523,
+          "sha256": "7badd4bf49712f316d052608504074711f6ea2f47283b0596c1b31667880d3ae"
+        },
+        {
+          "path": "data/metabolism.js",
+          "bytes": 23256,
+          "sha256": "239f447dab3cc33a9126c62fccb14e077475b0d25dbd7b9828b42bc4cb08ad00"
+        },
+        {
+          "path": "data/metcases.js",
+          "bytes": 7371,
+          "sha256": "12491bdc8772d5f09ac267db2ba81d380d7548479a37f5905d759317643f0b48"
+        },
+        {
+          "path": "data/neuropeptides.js",
+          "bytes": 1378,
+          "sha256": "e43fec22de58f5d71e39ec98f6c7fd42720da564c424292773a683b0299f0c62"
+        },
+        {
+          "path": "data/pharmacology-evidence.js",
+          "bytes": 7310,
+          "sha256": "cbad25f546a0a26e04bfcde658fd9cd9a5f0c47a50d2f3bcf015537529057104"
+        },
+        {
+          "path": "data/pk-models.js",
+          "bytes": 1397377,
+          "sha256": "02ea6bbb668939785b9f2009ae73bae89bc628a05db610e88336f2b8044b77ad"
+        },
+        {
+          "path": "data/propcases.js",
+          "bytes": 5001,
+          "sha256": "604445672d282a02f575a0236b88ae267fafe0458650ec90a31be7182a75db89"
+        },
+        {
+          "path": "data/receptor-catalog.js",
+          "bytes": 220330,
+          "sha256": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d"
+        },
+        {
+          "path": "data/receptor-ligand-annotations.js",
+          "bytes": 1852813,
+          "sha256": "28bcfc10324b17fc8a30d2e4b3cf3c589e55fe9af76cd61dfb8986d9a3b30d01"
+        },
+        {
+          "path": "data/reference-audit-baseline.js",
+          "bytes": 676,
+          "sha256": "2f2eb35bb0aa9b06497f43f930b60d246cb5525661ac805402efea211bfdb929"
+        },
+        {
+          "path": "data/reference-evidence.js",
+          "bytes": 1134,
+          "sha256": "e6a44d16b6c1a675cf9d6bfd98b79a84f1d0673445cd4a18ce718231d7f83ba0"
+        },
+        {
+          "path": "data/reference-motifs.js",
+          "bytes": 408230,
+          "sha256": "6db18268dbaa31f58226817cabe7c9f74e623c3321bb7b9f1f67647028024494"
+        },
+        {
+          "path": "data/signalling-profiles.js",
+          "bytes": 4382,
+          "sha256": "75314af2322969a5dce67afeb86ec20099044739afb401517d5a792d6d0745e0"
+        },
+        {
+          "path": "data/stereocases.js",
+          "bytes": 1051,
+          "sha256": "8dda599c3502d0ab769e8ce50714da28bbab8607964a15818db9d665b4b7ada8"
+        },
+        {
+          "path": "data/targets.js",
+          "bytes": 86494,
+          "sha256": "3cfceec74b4186d5b1c4e78cb4adc22ea3bc30312cdaddacb724e9eb382de551"
+        },
+        {
+          "path": "data/toxalerts.js",
+          "bytes": 13703,
+          "sha256": "10ed637a581255818700f2bf0431e0183a58a55d3bf4d7b4732368f62701eae1"
+        },
+        {
+          "path": "data/wedgecases.js",
+          "bytes": 447,
+          "sha256": "9653fb9d6c5823cbfb4b1f26a4a9f6cd4ab28fccc662513083c390ad53bd1036"
+        },
+        {
+          "path": "index.html",
+          "bytes": 58611,
+          "sha256": "1be28f15d08fd0aaba9524159d13aaf2905a9756b19e895e4bf50ff02d6afd2f"
+        },
+        {
+          "path": "js/app.js",
+          "bytes": 143444,
+          "sha256": "914346e19122df7cd541cf8e7ca5d7f11efcf49b35ba2bf71da8d010a8271314"
+        },
+        {
+          "path": "js/batch-browser.js",
+          "bytes": 2013,
+          "sha256": "b76ad2ab74985404242843c372b76182dec3f36cf4d850f1cafc2d747e8e5714"
+        },
+        {
+          "path": "js/comparison-data.js",
+          "bytes": 4641,
+          "sha256": "692c29a5c455dc2c6c010879c6372740b5fe12b2b0a95df3f850befdb9af82ac"
+        },
+        {
+          "path": "js/comparison-ui.js",
+          "bytes": 5361,
+          "sha256": "dab34368387acd22e8139a9f56b3205604fb5edd84e808d04d6775f49f4cf00b"
+        },
+        {
+          "path": "js/cooperative-batch.js",
+          "bytes": 1563,
+          "sha256": "e510f27ccf7662767e341c3fce82df7bb14c54852055636dd765009d1cc04918"
+        },
+        {
+          "path": "js/depict.js",
+          "bytes": 27733,
+          "sha256": "94901e6c2d7c528eaf41112f32464a301220855850c37a4fb3436a3826b18139"
+        },
+        {
+          "path": "js/descriptor-stats-ui.js",
+          "bytes": 2946,
+          "sha256": "d8daab3dfd78405542cb198a368c0ecfb474c7dcf3bc565f2f15c8cbb42f6adb"
+        },
+        {
+          "path": "js/descriptor-stats.js",
+          "bytes": 1746,
+          "sha256": "fd15dd4fd11291e20078c150a52de43ce5a4400a4f0a9959cfdf59fc750ffdc0"
+        },
+        {
+          "path": "js/descriptors.js",
+          "bytes": 33503,
+          "sha256": "2612d387dbe7a7d0d789984c8c062c5a3c6ae43781021e4f225659bc7a98ee4e"
+        },
+        {
+          "path": "js/evidence-report.js",
+          "bytes": 3163,
+          "sha256": "29997157c83efec66f578cc077f8551befa0c343871cdc2a01beac3b782e9a78"
+        },
+        {
+          "path": "js/fingerprints.js",
+          "bytes": 10747,
+          "sha256": "274e1daec20d05d7daf0d28ca35a41ef65905ae5a2cde2f5ceeb34013722149f"
+        },
+        {
+          "path": "js/full-csv-export.js",
+          "bytes": 8334,
+          "sha256": "13812c5aaa3e1f678a9b509db87c50e1576b9ec3befdcc31bca47fd9194caa81"
+        },
+        {
+          "path": "js/input-workflow.js",
+          "bytes": 7421,
+          "sha256": "97ac7fd3c3b8fd1a9fddd8adad7f225e87c63b1a0e2b688e81f4553c45653c0e"
+        },
+        {
+          "path": "js/library-catalog.js",
+          "bytes": 7678,
+          "sha256": "e54ba46136a4291d5d2df2e5c87ca35242c5965b2eaaa27a81198721d9b796bd"
+        },
+        {
+          "path": "js/library-inspector.js",
+          "bytes": 6505,
+          "sha256": "15cf968b07527c7f09302f3460dd8a6315f6be87c785a20b5fcc08658fb5fe85"
+        },
+        {
+          "path": "js/metabolism.js",
+          "bytes": 10021,
+          "sha256": "eae1f807265997c9b5dc176f15d827862bc98f4a43e3c3545959b0d9609a9611"
+        },
+        {
+          "path": "js/mol.js",
+          "bytes": 19192,
+          "sha256": "64af3686d28cf3772cf1159a502ca5f406870ff9d42fa56fc4d84da4ebdc3b08"
+        },
+        {
+          "path": "js/molecule-quality.js",
+          "bytes": 2215,
+          "sha256": "64b28f4710648c55fe3a00c282326f4f2214beeca0ed3f3b9bd1f48d3846d036"
+        },
+        {
+          "path": "js/pharmacology-ui.js",
+          "bytes": 10612,
+          "sha256": "df05039621abf06ba8767780f4142dc63160938339fb905b6cd25b2a130a2fb7"
+        },
+        {
+          "path": "js/pharmacology.js",
+          "bytes": 4683,
+          "sha256": "3cd49fd39120f943fe939fd25c49252d733a3b953965dcfb8de268d83b876b86"
+        },
+        {
+          "path": "js/pk-applicability.js",
+          "bytes": 2277,
+          "sha256": "1467a0a2275e623d9c47fc6e9dfdd6fe37d154f297fa058fc50a884bf1cc5ca2"
+        },
+        {
+          "path": "js/pk-features.js",
+          "bytes": 2282,
+          "sha256": "032c8ef74040713a50b6bb2616c02d79d6f103e804a96fe8275b911d9d2d3fdb"
+        },
+        {
+          "path": "js/receptor-catalog.js",
+          "bytes": 7553,
+          "sha256": "c89696b0ea6e22873929f2e3c777774b13579c917a541cf7820de253e19305e1"
+        },
+        {
+          "path": "js/receptor-explorer-ui.js",
+          "bytes": 11727,
+          "sha256": "f404c11301c76f61acae6ea42c33381beac749bbce7bb3a310bdb3a3d5948840"
+        },
+        {
+          "path": "js/report-model.js",
+          "bytes": 3240,
+          "sha256": "6d18088af88b2507e1834e9200191d9d03d438dc813b7f3852668dc24dae81fc"
+        },
+        {
+          "path": "js/report-ui.js",
+          "bytes": 2739,
+          "sha256": "02fba2ccd7ed820df9ba5034a1befc28ee103335dfffad74e3e3babaa0d2f6c4"
+        },
+        {
+          "path": "js/research-package.js",
+          "bytes": 7119,
+          "sha256": "1de30c5774465d354885fa5660184507017e473186b47edf9ce3a55ae5b4d375"
+        },
+        {
+          "path": "js/research-zip.js",
+          "bytes": 2126,
+          "sha256": "013eaee97b2e9124a7b27331726f02c29f86feab10bba5cb1486fa22d4eefff3"
+        },
+        {
+          "path": "js/rules.js",
+          "bytes": 5814,
+          "sha256": "be94dad6930e28436e87f6afbf46ee3f6b5da034f8cb78094bc5ce7f71d80118"
+        },
+        {
+          "path": "js/screen-coverage.js",
+          "bytes": 1659,
+          "sha256": "6891e54a45bb8cb32ff8831f6acbf7ce10b83c96b640bd4c953ee05773b1368b"
+        },
+        {
+          "path": "js/sim-pagination.js",
+          "bytes": 1224,
+          "sha256": "a7b7a5f9af7e395e7f23abaf86d57207c52091b8432ade29edf742d3df308ed5"
+        },
+        {
+          "path": "js/sites.js",
+          "bytes": 7518,
+          "sha256": "fbd69e4de7226bc1efd4a7c54c33345961a097905a907a259cb88e4fa518ba51"
+        },
+        {
+          "path": "js/smarts.js",
+          "bytes": 16843,
+          "sha256": "daab3275c06a4d8c9052a428d77a789e017f35bdd4578f100d09f906c1005685"
+        },
+        {
+          "path": "js/smiles.js",
+          "bytes": 8702,
+          "sha256": "ae7063246faee39707c62003a038fd8ce825e5c247f85ab9b6191e4383caca66"
+        },
+        {
+          "path": "js/stereo.js",
+          "bytes": 15549,
+          "sha256": "6b65f4af103715c9814ec1bd56871b27280e9c8e3278475ce62726f38d3f2aaa"
+        },
+        {
+          "path": "js/structural-evidence.js",
+          "bytes": 1459,
+          "sha256": "70e7a99e69a4039569d4ebb3526031a77a3eed9912398b3aa973204f4644ff94"
+        },
+        {
+          "path": "js/target-ranking.js",
+          "bytes": 5217,
+          "sha256": "dbd10ad677a3e33a034fe09d2198a16a5a5bb5f604ceaf97a76d950a26a72cd8"
+        },
+        {
+          "path": "js/tox.js",
+          "bytes": 7033,
+          "sha256": "c54cfa0fed52f1382cf8bcc8ad19f7534e12364049d88878d6c9322c9fc7a60f"
+        },
+        {
+          "path": "js/transform.js",
+          "bytes": 15205,
+          "sha256": "9986be4f039806893de3a781cd4467573865cacff59fe3b52f9baaf230e26f0f"
+        },
+        {
+          "path": "js/workspace-ui.js",
+          "bytes": 7829,
+          "sha256": "95f3ead101653c31b414281ea991f77f7543b997967438c5bd0bcd6056854629"
+        },
+        {
+          "path": "library-inspector.html",
+          "bytes": 10354,
+          "sha256": "25b4136a48347a5b5964f535f36d67f9647bb33b6e88215fd58aea1d2936479f"
+        },
+        {
+          "path": "reference-audit.js",
+          "bytes": 2331,
+          "sha256": "57fa3750ccf4a4e2f7f3495030545ad12a81339970dd6326e973c6c2d576daf1"
+        },
+        {
+          "path": "reference-explorer.html",
+          "bytes": 9310,
+          "sha256": "0f90dc7af007a520560a15d658f5966675d92409853ff9785acb42a1df8d800c"
+        },
+        {
+          "path": "reference-explorer.js",
+          "bytes": 7532,
+          "sha256": "a941d1e6a1e36ba488a7639670e38339e6ac4f578ba13c6bae9891159487748e"
+        },
+        {
+          "path": "tools/analysis-lifecycle-test.js",
+          "bytes": 5794,
+          "sha256": "5942c517476c784bf5f7a61f233e34f65a72555e7aa73f91f8a76a668b978970"
+        },
+        {
+          "path": "tools/batch-browser-test.js",
+          "bytes": 1689,
+          "sha256": "a6859e50ac38f2ef1820e7e5bd6bfa3f6fdc67a82ee8d5d35e43610699597718"
+        },
+        {
+          "path": "tools/browser-e2e.py",
+          "bytes": 14627,
+          "sha256": "cd657cd558ad57aa5c668900c16e852e75e7b923743bb882ab849d1e6da49fb1"
+        },
+        {
+          "path": "tools/build-library-tags.py",
+          "bytes": 7803,
+          "sha256": "b1b9d2eb9960ab6803f2c9e43936d4317688bc067a00d30b27d9cf1c1ee08f6e"
+        },
+        {
+          "path": "tools/build-pharmacology-evidence.py",
+          "bytes": 5693,
+          "sha256": "cb756fea3c0fb9dbe1112728012116a7821d1c6fdd4b68e631a4e6c5309060ac"
+        },
+        {
+          "path": "tools/build-reference-motifs.py",
+          "bytes": 1555,
+          "sha256": "2431acf9f47babf4519d24bb97e0a01d8b7fd3cc3f2f12570c774236f1fb0373"
+        },
+        {
+          "path": "tools/chembl-binding-test.js",
+          "bytes": 4330,
+          "sha256": "7c208bc12128726ad9bedb5391487bc13aa6da0f632040b95ae5e133f09f7513"
+        },
+        {
+          "path": "tools/comparison-test.js",
+          "bytes": 1668,
+          "sha256": "02ec01e13df68d9642c37ffbf6bd7b4ad4d7029f6dd3ce72c5087048e3f58e8c"
+        },
+        {
+          "path": "tools/cooperative-batch-test.js",
+          "bytes": 2073,
+          "sha256": "48e6f11bf80170bf7e2cfe0eb8557fc8ade8a8539c8a3b35ca26bed6b0b96525"
+        },
+        {
+          "path": "tools/crippen-conformance.py",
+          "bytes": 3318,
+          "sha256": "f7eba5f3b5486f2cc87ea9a8e3ac5013ee61fab2f5855e2bda22ebd1428427e3"
+        },
+        {
+          "path": "tools/curate-family-references.py",
+          "bytes": 8648,
+          "sha256": "62c00167d8b20d3f2d4bc7ab9005ecf81efbf453b7c6e5159f8401ce9a9c5274"
+        },
+        {
+          "path": "tools/curate-library-names.py",
+          "bytes": 11087,
+          "sha256": "5474a832b1cd427e4246f1c4b12ec2c47a2b3a12586201f388f5cf52f1bfcd16"
+        },
+        {
+          "path": "tools/curate-receptor-bindings-test.py",
+          "bytes": 5582,
+          "sha256": "600d2cdaba9f04a350357c8099a2a7b9130bf2bfa67c4cde5e2aebe79ab0769b"
+        },
+        {
+          "path": "tools/curate-receptor-bindings.py",
+          "bytes": 22228,
+          "sha256": "ca8bb02ee52a138acd67fe6aac9d85980ae2452d5730125e144cb526362e901b"
+        },
+        {
+          "path": "tools/derive-dopaminergic-references.py",
+          "bytes": 14586,
+          "sha256": "eaf8ba4cb7da1b0fc9cb2589f5fb735a25b25ad6a4909b56404aef85b1026507"
+        },
+        {
+          "path": "tools/derive-gabaa-references.py",
+          "bytes": 10739,
+          "sha256": "0d9faf780574d9dbf00c69042eb66dcc1461e3571848fae1f4d6245a77f3aef2"
+        },
+        {
+          "path": "tools/derive-nsaid-references.py",
+          "bytes": 11112,
+          "sha256": "268973f18c2afcae37dc932f5b5bb5155be65d293f87fc7e085570aab984782c"
+        },
+        {
+          "path": "tools/derive-opioid-references.py",
+          "bytes": 19048,
+          "sha256": "7a39382fc0ae7be9739b317d4f68f3277f9580f2d39d8e666a100187017e35c8"
+        },
+        {
+          "path": "tools/derive-steroid-references.py",
+          "bytes": 30926,
+          "sha256": "6157becdc59136d2db4c19f665bc30dd39d133d572d557678d66f4abecd05499"
+        },
+        {
+          "path": "tools/descriptor-conformance-test.js",
+          "bytes": 692,
+          "sha256": "d06e0ea5868275ee8583ceeab5efa5e4650c736686817366456bd319bc4f40d1"
+        },
+        {
+          "path": "tools/descriptor-stats-test.js",
+          "bytes": 700,
+          "sha256": "a242f036d7b3219b5986aa0ff91949f121c12f8eea6a00fe810be9c2475bba7e"
+        },
+        {
+          "path": "tools/evidence-report-test.js",
+          "bytes": 1701,
+          "sha256": "17ae0f9812ad0d16a0100152dd7cf6b2f0578dcae39e7b6c35057732d3766bee"
+        },
+        {
+          "path": "tools/family-reference-test.js",
+          "bytes": 1731,
+          "sha256": "73833065a8345a4d58e24dc4fe4f85cb9efdd36516c18ffbb9220904a1d61d97"
+        },
+        {
+          "path": "tools/file-import-test.js",
+          "bytes": 3482,
+          "sha256": "ab31ea58e5b9518ab8ac29f9e6be9a369f1f5282f460207b5b1d148915d0b096"
+        },
+        {
+          "path": "tools/full-csv-export-test.js",
+          "bytes": 2175,
+          "sha256": "064680f7cb25022878fae7cbc0d55294982b63fb3deb866c3ef208cf1ea90655"
+        },
+        {
+          "path": "tools/generate-research-zip-fixture.js",
+          "bytes": 691,
+          "sha256": "445511ba7a89e54bee830c91e440732a560683a4e560f9239b4c3ea8225f1931"
+        },
+        {
+          "path": "tools/input-workflow-test.js",
+          "bytes": 4386,
+          "sha256": "21afe6dbc18dcda6300ac9793299608aef822a8002064bdbd99571d64cb9d9fe"
+        },
+        {
+          "path": "tools/interaction-test.js",
+          "bytes": 2377,
+          "sha256": "16055fad4e1f29c3c4b138a5c8e8aa306a6210aa334a9ca5c894ff20d6e2445b"
+        },
+        {
+          "path": "tools/label-targets.py",
+          "bytes": 2370,
+          "sha256": "760c8d501154ec5cb18e98fcfe49a80d0774e2fd437f1376cf9f5a6d4e6de9c2"
+        },
+        {
+          "path": "tools/library-catalog-test.js",
+          "bytes": 2712,
+          "sha256": "176917dac28d0e60ff2658e752b929fea27f0c6a90f5369724d70f4888822a00"
+        },
+        {
+          "path": "tools/library-descriptor-audit.py",
+          "bytes": 3005,
+          "sha256": "1fafcff6fecc31133051a1695f39f6a96560ebfbe55cab65c2454a48006ec75c"
+        },
+        {
+          "path": "tools/library-inspector-dom-test.js",
+          "bytes": 3897,
+          "sha256": "2e6f5fa6813cd809dec8f229e9ffb6d18aeec036ed296f321658dfd054ec50c1"
+        },
+        {
+          "path": "tools/library-metadata-report-test.js",
+          "bytes": 3397,
+          "sha256": "18e068dd9df98219ee14f938183596533d13280c34c5662e1107ac8aec56952e"
+        },
+        {
+          "path": "tools/library-metadata-test.py",
+          "bytes": 5312,
+          "sha256": "d5f6bfbdb14d4a5d23b9dfd62b5f0f841c810862de4f9f693b6ff797be95fe0b"
+        },
+        {
+          "path": "tools/metabolism-cases.js",
+          "bytes": 9410,
+          "sha256": "9ac99a589b093922e1f49a240b1c4ab44257a4ce6f40b0296ffbedbaeaf3de67"
+        },
+        {
+          "path": "tools/metabolism-engine-test.js",
+          "bytes": 2570,
+          "sha256": "1598bef714cfa534dc74f67fd4f0d35d42f00059d4a47d68a4a0812dfb44fb1e"
+        },
+        {
+          "path": "tools/metabolism-product-fixture.js",
+          "bytes": 854,
+          "sha256": "6a0eaca5bab3596ee8df8feaefa0263faeccad08fb35b6e63eeb6d899bf15aae"
+        },
+        {
+          "path": "tools/metabolism-rdkit-check.py",
+          "bytes": 1078,
+          "sha256": "65dc5449f6dac5d9d303b9a00fd4c641ea0a8a4d49dbd33798d7a69b4337e4b7"
+        },
+        {
+          "path": "tools/molecule-quality-test.js",
+          "bytes": 957,
+          "sha256": "ebe08df50b9e964ab2d6723b6212bd15d5e424ed48021b1369b89e48f3e9c725"
+        },
+        {
+          "path": "tools/pharmacology-dom-test.js",
+          "bytes": 4771,
+          "sha256": "dcb31a8bd666d62bd8ccf00c9c3a8b5144d284db9cb7460b58cae393051e9e0a"
+        },
+        {
+          "path": "tools/pharmacology-test.js",
+          "bytes": 5334,
+          "sha256": "2993b2c88fa7258d0b1d40800a0da63e341c68f145047eef2d93e3bde4bb958f"
+        },
+        {
+          "path": "tools/pk-applicability-test.js",
+          "bytes": 2413,
+          "sha256": "dd736db314a9c54c51949bd5f29309e0c7ff5c0cfdf0204426e306321450b102"
+        },
+        {
+          "path": "tools/pk-features.js",
+          "bytes": 457,
+          "sha256": "425b7c04847a7328f2315ef8db91a54a1cc3edbe8a34057dc138094b2d976709"
+        },
+        {
+          "path": "tools/prediction-workflow-dom-test.js",
+          "bytes": 3004,
+          "sha256": "ce4d70d26fa247aacec176351cbbe2ddd3cf6a7be095e22a6de358853f688db8"
+        },
+        {
+          "path": "tools/property-validation.js",
+          "bytes": 9029,
+          "sha256": "8ae9f19c93a10754a7d995d7dc9ebf7678f7aa0f9200bd45182c8d7eaa187930"
+        },
+        {
+          "path": "tools/pubchem-reference-audit-test.py",
+          "bytes": 1905,
+          "sha256": "5a17a62ec260b1ae95786a36df94bc5f0900affb7a3fcb5a4681a67d7070ba0e"
+        },
+        {
+          "path": "tools/pubchem-reference-audit.py",
+          "bytes": 6547,
+          "sha256": "b4318268f50e216a2d7e0e6d29dcd59010ef3dee5b4a099f1320f12104bd089b"
+        },
+        {
+          "path": "tools/rdkit-library-audit-test.py",
+          "bytes": 1941,
+          "sha256": "3cd0b62ae1166aca13f659ac44b8021733e5c857778f08170aa803209792d52d"
+        },
+        {
+          "path": "tools/rdkit-library-audit.py",
+          "bytes": 6613,
+          "sha256": "dd3747308fe6af5b7cd04602f28c94424f3475f079bf1dcb6e5526b5ee8b4b0e"
+        },
+        {
+          "path": "tools/receptor-catalog-test.js",
+          "bytes": 5791,
+          "sha256": "ddba3105ce55da436881b87f3dec704046b61d543bacd6a2895915a89b2cbe4a"
+        },
+        {
+          "path": "tools/receptor-coverage-test.js",
+          "bytes": 3988,
+          "sha256": "cb77ddc6ba470417280354dbe948c1521b5fa672dff8fecea740aa91a7e57433"
+        },
+        {
+          "path": "tools/receptor-diversity-audit.py",
+          "bytes": 5820,
+          "sha256": "c507a5086e772e7b5f052feac394a3637c8e986e61ee57d11b3771491c29bd71"
+        },
+        {
+          "path": "tools/receptor-diversity-report-test.js",
+          "bytes": 2493,
+          "sha256": "9d185279756b8729099d6e97c866fdb0f3f662edac130e46f83d8913100269ae"
+        },
+        {
+          "path": "tools/receptor-diversity-test.py",
+          "bytes": 2267,
+          "sha256": "a9dc84269f3ba71450f4b425e74ab8606b20f69ec50f8c5a13a3ff20abda9947"
+        },
+        {
+          "path": "tools/receptor-explorer-dom-test.js",
+          "bytes": 6236,
+          "sha256": "4e59685cb1fe8631c15dde31ec5eb20dd30eb26d596ea690531726551365caf7"
+        },
+        {
+          "path": "tools/reference-audit-test.js",
+          "bytes": 1831,
+          "sha256": "7081f84b45956b21658c392646b2bea35db0dff6715d4b8c219bd48b0bb2dda8"
+        },
+        {
+          "path": "tools/report-model-test.js",
+          "bytes": 1569,
+          "sha256": "33d7505e765278ff46f7a49c1b6c3f11b4e35c9df68e62a53ba16bac70cf9124"
+        },
+        {
+          "path": "tools/research-package-test.js",
+          "bytes": 2261,
+          "sha256": "7e372a26a534b9bdb3720a486673a2232a86d1bc3d4c62d7cb6bb43062096393"
+        },
+        {
+          "path": "tools/research-zip-external-test.js",
+          "bytes": 450,
+          "sha256": "d93faa829e4b4d47f38b5bded148a8843ab17de59f63ddc8d86ded687fb1eaf2"
+        },
+        {
+          "path": "tools/retrieval-benchmark.js",
+          "bytes": 8052,
+          "sha256": "3c329d0e76dfbafb64c1834c8d0db987e038252cfa79984c75b9ddd79505d843"
+        },
+        {
+          "path": "tools/retrieval-evaluate-test.js",
+          "bytes": 3227,
+          "sha256": "78a11b381665232640e37dc6b28c35e837bbbf52fae1cf6032a710d8fcfa6ee6"
+        },
+        {
+          "path": "tools/retrieval-evaluate.js",
+          "bytes": 2424,
+          "sha256": "b6a5157ca67a880c6614cb7c8937521c1fc69beda636364cfbe3d574fe9c8e51"
+        },
+        {
+          "path": "tools/run-validation.js",
+          "bytes": 4113,
+          "sha256": "906ecec4fb1f50b1c362389e39473e809702831b05279924bf68913d579e115a"
+        },
+        {
+          "path": "tools/screen-coverage-test.js",
+          "bytes": 828,
+          "sha256": "b452cb77084becc47ec170304c07f0a7389e333373839cdec7ff6aabdab7cdf0"
+        },
+        {
+          "path": "tools/sim-pagination-test.js",
+          "bytes": 1220,
+          "sha256": "254ec0509a7545e085c536b1ac8aa80280ac87e16f99a79674469a127d1c89a3"
+        },
+        {
+          "path": "tools/stereo-conformance.js",
+          "bytes": 1952,
+          "sha256": "5cf60937d4d0d3b841a09275ee41d06af6ef4fcf1878962be9a008520ca8f205"
+        },
+        {
+          "path": "tools/stereo-conformance.py",
+          "bytes": 8948,
+          "sha256": "a2917116b3351e18b84ed314aef0007c09945f946a4d7460ff1bba5dab609589"
+        },
+        {
+          "path": "tools/stereo-depiction.js",
+          "bytes": 4865,
+          "sha256": "07ded258f0e39497e0bc7d4616c312945270122dde29bdad1a3b42327122d4a1"
+        },
+        {
+          "path": "tools/target-ranking-evaluate.js",
+          "bytes": 3715,
+          "sha256": "d2f4f4ee65ec0de3e0dcc513ae17e962c49078b54ed630e6d546acee3b52b02b"
+        },
+        {
+          "path": "tools/target-ranking-metrics-test.js",
+          "bytes": 1529,
+          "sha256": "be005900bdf058d1117c339bd37e9dd58439195b1a1cbdb7f7c2337f6651965b"
+        },
+        {
+          "path": "tools/target-ranking-metrics.js",
+          "bytes": 2052,
+          "sha256": "13b9c7d8cdddd2077b58ee1e348d80cb5aba5d5b83cf30a6c13b6983095e2afa"
+        },
+        {
+          "path": "tools/target-ranking-test.js",
+          "bytes": 2852,
+          "sha256": "dd6eb82000d2d87368f65ba6d49675c91aed0cbfa14bfd4c072aac437de9b1d4"
+        },
+        {
+          "path": "tools/train-pk-models.py",
+          "bytes": 8657,
+          "sha256": "ee9caf18d4b7819d4fe9dea9e0ee05289849038ace379fbb6bfd0f8762f86905"
+        },
+        {
+          "path": "tools/ui-integration-test.js",
+          "bytes": 11061,
+          "sha256": "f53c2148835a9cff245eec091a7033fe2f720fcf18773e82f5349ca68ec47133"
+        },
+        {
+          "path": "tools/validation-provenance-test.js",
+          "bytes": 2469,
+          "sha256": "b4abd8299a19f542ec6d4a7a8f99de7a9f46ef95d4ad9b4989fe86418100c79c"
+        },
+        {
+          "path": "tools/validation-provenance.js",
+          "bytes": 2878,
+          "sha256": "2cefcc5f1936bb59a9e6b8f5c73314188a76553ef6d809755b43439123af2027"
+        },
+        {
+          "path": "tools/verify-reference-formulas.py",
+          "bytes": 2877,
+          "sha256": "f4b29b46ee66aa8d1425bc92606043e00782b74b0cc16c16dc491dca2c0d00f1"
+        },
+        {
+          "path": "tools/verify-research-zip.py",
+          "bytes": 1847,
+          "sha256": "7f472b8134ec51d9f062f7ef7b301129beb93bc5c19821cf0be8358d4452d6fb"
+        },
+        {
+          "path": "tools/verify-systematic-names.py",
+          "bytes": 5395,
+          "sha256": "9f53e2f6ef230d336a9bce72e31d2d6b4f25506d6defafdd4cf11fe178b8afce"
+        }
+      ]
+    },
+    "integrity": {
+      "stable": true,
+      "revisionChanged": false,
+      "changedFiles": []
+    }
+  },
+  "total": 36,
+  "passed": 36,
+  "failed": 0,
+  "results": [
+    {
+      "script": "reference-audit-test.js",
+      "passed": true,
+      "durationMs": 78,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "{\n  \"passed\": true,\n  \"entries\": 4072,\n  \"missingFormula\": 0,\n  \"targets\": 150,\n  \"sparseTargets\": 55,\n  \"profiles\": 27\n}\n",
+      "stderr": ""
+    },
+    {
+      "script": "receptor-catalog-test.js",
+      "passed": true,
+      "durationMs": 141,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Receptor catalog: 146 records, 36 families, 69 existing target links, 77 awaiting target rows; identity, action-evidence and scaffold contracts passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "receptor-coverage-test.js",
+      "passed": true,
+      "durationMs": 284,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Receptor 50-entry coverage: audited-profile deduplication, stale/unresolved/property-only exclusions, evidence validation and gap filters passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "receptor-diversity-report-test.js",
+      "passed": true,
+      "durationMs": 197,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Receptor scaffold snapshot: current source hashes, coverage counts, separate acyclic profiles and ring-scaffold totals passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "chembl-binding-test.js",
+      "passed": true,
+      "durationMs": 816,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "ChEMBL binding snapshots: 5 batches verified against direct human assay identity, strict endpoints, unique profiles, current structures and coverage\n",
+      "stderr": ""
+    },
+    {
+      "script": "target-ranking-test.js",
+      "passed": true,
+      "durationMs": 69,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Target ranking: multi-view scoring, grouped references, self-profile holdout, stereochemistry, scopes and exclusions passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "target-ranking-metrics-test.js",
+      "passed": true,
+      "durationMs": 63,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Target evaluation: tie bounds, multiple positive labels, missing labels, target macro weighting and secondary keys passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "metabolism-engine-test.js",
+      "passed": true,
+      "durationMs": 202,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Metabolism: generation budgets, rule-order invariance, coherent representative paths, diagnostics and settings passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "evidence-report-test.js",
+      "passed": true,
+      "durationMs": 66,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Descriptor evidence checks passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "screen-coverage-test.js",
+      "passed": true,
+      "durationMs": 57,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Screen coverage checks passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "property-validation.js",
+      "passed": true,
+      "durationMs": 57,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "script": "descriptor-conformance-test.js",
+      "passed": true,
+      "durationMs": 87,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "RDKit 2026.09.1 descriptor fixtures: 62 alternate representations passed (implementation equivalence only)\n",
+      "stderr": ""
+    },
+    {
+      "script": "metabolism-cases.js",
+      "passed": true,
+      "durationMs": 1399,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "metabolism known-answer cases, 2 generations, phase I and II\n  16 documented metabolites across 14 drugs\n  enumerated at all: 16/16\n  in the major band: 14/16\n  inside the top five by deterministic display order: 14/16\n  top-five tie interval: 14 guaranteed to 15 possible of 16\n\n  MAJOR Aspirin       -> Salicylic acid                    rank   1 of 50   weight 0.7000  gen 1  Esterase, Aryl ester hydrolysis\n        documented: ester hydrolysis by carboxylesterase and plasma esterases — dominant: essentially all absorbed aspirin is deacetylated\n  MAJOR Codeine       -> Morphine                          rank   4 of 67   weight 0.2200  gen 1  CYP, O-demethylation (aryl methyl ether)\n        documented: CYP2D6 O-demethylation — minor by mass but the analgesically decisive route\n  MAJOR Codeine       -> Norcodeine                        rank   2 of 67   weight 0.2400  gen 1  CYP, N-demethylation (tertiary amine)\n        documented: CYP3A4 N-demethylation — documented secondary route\n  minor Paracetamol   -> NAPQI                             rank   6 of 41   weight 0.0800  gen 1  CYP2E1, CYP3A4 or peroxidase, Para-acylaminophenol oxidation to quinone imine\n        documented: CYP2E1 and CYP3A4 oxidation — a few percent of dose, and the reason overdose is hepatotoxic\n  MAJOR MDMA          -> MDA                               rank   1 of 87   weight 0.2800  gen 1  CYP, N-demethylation (secondary amine)\n        documented: CYP2D6 and CYP1A2 N-demethylation — documented, about a tenth of the dose\n  MAJOR MDMA          -> HHMA                              rank   3 of 87   weight 0.2600  gen 1  CYP, Methylenedioxy ring opening\n        documented: CYP2D6 O-demethylenation — the dominant route; HMMA is its O-methylated product\n  MAJOR Diazepam      -> Nordazepam                        rank   1 of 44   weight 0.1800  gen 1  CYP, N-demethylation (amide or lactam)\n        documented: CYP2C19 and CYP3A4 N-demethylation — dominant first-pass route\n  MAJOR Propranolol   -> N-desisopropylpropranolol         rank  10 of 119  weight 0.1400  gen 1  CYP, N-dealkylation (branched alkyl)\n        documented: CYP1A2 N-dealkylation — documented route alongside ring hydroxylation\n  MAJOR Amitriptyline -> Nortriptyline                     rank   1 of 61   weight 0.2400  gen 1  CYP, N-demethylation (tertiary amine)\n        documented: CYP2C19 and CYP3A4 N-demethylation — dominant, and an active drug in its own right\n  minor Caffeine      -> Paraxanthine                      rank   3 of 12   weight 0.0900  gen 1  CYP, N-demethylation (aromatic N-methyl)\n        documented: CYP1A2 N3-demethylation — about 80% of caffeine clearance\n  MAJOR Nicotine      -> Nornicotine                       rank   1 of 44   weight 0.2400  gen 1  CYP, N-demethylation (tertiary amine)\n        documented: CYP2A6 N-demethylation — minor; cotinine, the dominant route, needs an oxidation this engine does not carry\n  MAJOR Ibuprofen     -> Carboxyibuprofen precursor (2-hydroxyibuprofen)rank   5 of 68   weight 0.1125  gen 1  CYP, Aliphatic hydroxylation (tertiary C-H)\n        documented: CYP2C9 hydroxylation — documented oxidative route\n  MAJOR Phenacetin    -> Paracetamol                       rank   3 of 29   weight 0.1400  gen 1  CYP, O-dealkylation (aryl ether, larger alkyl)\n        documented: CYP1A2 O-deethylation — dominant; this is why phenacetin was an analgesic\n  MAJOR Tamoxifen     -> N-desmethyltamoxifen              rank   2 of 113  weight 0.2400  gen 1  CYP, N-demethylation (tertiary amine)\n        documented: CYP3A4 N-demethylation — the dominant circulating metabolite\n  MAJOR Valproic acid -> Valproate glucuronide             rank   1 of 43   weight 0.1200  gen 1  UGT, Acyl glucuronidation\n        documented: UGT glucuronidation — dominant, roughly half the dose\n  MAJOR Morphine      -> Morphine glucuronide              rank   2 of 87   weight 0.2500  gen 1  UGT, Aromatic O-glucuronidation\n        documented: UGT2B7 glucuronidation — dominant; the 3- and 6-glucuronides together are most of the dose\n",
+      "stderr": ""
+    },
+    {
+      "script": "retrieval-benchmark.js",
+      "passed": true,
+      "durationMs": 29598,
+      "timeoutMs": 300000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "leave-one-out target retrieval, ecfp4 / tanimoto\n  library 4072 compounds, 150 targets, 121 measurable, 29 with fewer than two ligands\n  3805 held-out trials over a median of 150 scored targets\n  recall@1 49.8%  recall@5 88.1%  recall@10 92.9%  median rank 2  mean rank 5.0\n  targets with >=5 ligands (3674 trials): recall@1 50.3%  recall@5 89.4%  median rank 1\n  popularity baseline: recall@1 3.4%  recall@5 14.3%  median rank 27\n  uniform random baseline: recall@1 0.7%  recall@5 3.3%  median rank 75\n\nother fingerprints\n  ecfp6  recall@1 49.7%  recall@5 88.1%  median rank 2\n  fcfp4  recall@1 49.2%  recall@5 87.9%  median rank 2\n  pairs  recall@1 49.0%  recall@5 87.5%  median rank 2\n  ecfp4 with Dice: recall@1 49.8%  recall@5 88.1%  median rank 2\n\nper target: gene, trials, recall@1, recall@5, median rank\n  OPRM1     128   91.4%   96.1%  1\n  DRD2      106   47.2%   95.3%  2\n  DRD3      104   17.3%   96.2%  2\n  OPRK1     104   32.7%   96.2%  2\n  ADRA2A    103   41.7%   62.1%  3\n  DRD1      101   78.2%   90.1%  1\n  DRD4      101   30.7%   92.1%  3\n  ADRA1A     97   47.4%   67.0%  2\n  OPRD1      80    2.5%   90.0%  3\n  GABRA1     79   86.1%   88.6%  1\n  CHRM1      57   73.7%   84.2%  1\n  ESR1       56   69.6%  100.0%  1\n  ESR2       56    0.0%  100.0%  2\n  HRH1       56   39.3%   66.1%  5\n  HTR1A      56   85.7%   87.5%  1\n  HTR1B      56   78.6%   98.2%  1\n  HTR1D      56    5.4%   98.2%  2\n  HTR2A      56   37.5%   76.8%  2\n  HTR2B      56    0.0%   80.4%  3\n  HTR2C      56   28.6%   85.7%  2\n  HTR6       56    0.0%   80.4%  4\n  HTR7       56    0.0%   76.8%  5\n  PTGS1      56   98.2%  100.0%  1\n  PTGS2      56    0.0%   98.2%  2\n  SLC18A2    56    5.4%   87.5%  3\n  SLC6A2     56   51.8%   82.1%  1\n  SLC6A3     56   16.1%   83.9%  2\n  SLC6A4     56   42.9%   71.4%  3.5\n  ADRB2      55   50.9%   98.2%  1\n  CYP19A1    55   87.3%   98.2%  1\n  NR3C1      55   85.5%  100.0%  1\n  ADRB1      54   74.1%   96.3%  1\n  CHRM3      54   44.4%   92.6%  2\n  HRH2       53   81.1%   88.7%  1\n  ADORA1     52   67.3%   98.1%  1\n  ADORA2A    52   26.9%  100.0%  2\n  AGTR1      52   98.1%   98.1%  1\n  AR         52   55.8%   98.1%  1\n  CHRM2      52   17.3%   82.7%  2\n  P2RY12     51   98.0%   98.0%  1\n  PGR        51   49.0%  100.0%  2\n  PPARG      51   98.0%   98.0%  1\n  ADORA2B    50   40.0%  100.0%  3\n  ADORA3     50   36.0%   98.0%  2\n  ADRA1B     50   12.0%   98.0%  2\n  ADRA1D     50    8.0%   92.0%  3\n  ADRA2B     50   38.0%   80.0%  2\n  ADRA2C     50   18.0%   78.0%  2.5\n  ADRB3      50   56.0%  100.0%  1\n  CHRM4      50   44.0%   90.0%  3\n  CHRM5      50   52.0%   86.0%  1\n  DRD5       50   52.0%   96.0%  1\n  HRH3       50   98.0%  100.0%  1\n  HRH4       50   90.0%  100.0%  1\n  HTR4       50   96.0%   96.0%  1\n  HTR5A      50   88.0%   88.0%  1\n  MTNR1A     50  100.0%  100.0%  1\n  MTNR1B     50   76.0%  100.0%  1\n  RARA       30  100.0%  100.0%  1\n  HTR1F      26  100.0%  100.0%  1\n  SCN9A       7   14.3%   28.6%  36\n  CA2         6    0.0%   50.0%  4.5\n  CYP2D6      6    0.0%   33.3%  61\n  CYP3A4      6    0.0%    0.0%  76\n  KCNH2       6    0.0%    0.0%  39\n  OPRL1       6    0.0%   16.7%  22.5\n  ABCB1       5    0.0%    0.0%  67\n  CACNA1C     5   20.0%   60.0%  3\n  CYP2C9      5    0.0%    0.0%  63\n  GRIN1       5   60.0%   80.0%  1\n  HTR3A       5    0.0%    0.0%  21\n  pol         5    0.0%   20.0%  47\n  ACE         4  100.0%  100.0%  1\n  CHRNA4      4   50.0%   50.0%  31.5\n  EGFR        4   50.0%  100.0%  2\n  HTR1E       4   50.0%   50.0%  50\n  KIT         4    0.0%   50.0%  7.5\n  MAOA        4    0.0%    0.0%  86\n  pbp         4  100.0%  100.0%  1\n  PDGFRB      4    0.0%   50.0%  6.5\n  SCN5A       4    0.0%    0.0%  15.5\n  TUBB        4   50.0%   75.0%  2\n  ABL1        3   66.7%   66.7%  1\n  ACHE        3    0.0%    0.0%  70\n  folP        3  100.0%  100.0%  1\n  gyrA        3  100.0%  100.0%  1\n  HMGCR       3   66.7%   66.7%  1\n  KDR         3    0.0%    0.0%  92\n  MAOB        3    0.0%    0.0%  23\n  n/a         3  100.0%  100.0%  1\n  n/a         3   66.7%   66.7%  1\n  parC        3    0.0%  100.0%  2\n  SCN8A       3    0.0%    0.0%  42\n  TYMS        3    0.0%    0.0%  113\n  XDH         3    0.0%    0.0%  9\n  ABCC8       2  100.0%  100.0%  1\n  ATP4A       2  100.0%  100.0%  1\n  ben-1       2    0.0%  100.0%  2\n  BRAF        2    0.0%    0.0%  63\n  CACNA2D1    2   50.0%  100.0%  3\n  CRBN        2  100.0%  100.0%  1\n  CYSLTR1     2    0.0%    0.0%  69.5\n  DDC         2    0.0%  100.0%  2.5\n  DHFR        2    0.0%    0.0%  30\n  ERBB2       2    0.0%    0.0%  33\n  F10         2    0.0%    0.0%  19.5\n  FLT3        2    0.0%    0.0%  91.5\n  HPRT1       2   50.0%  100.0%  1.5\n  IMPDH2      2    0.0%    0.0%  120.5\n  JAK1        2  100.0%  100.0%  1\n  JAK2        2    0.0%  100.0%  2\n  M2          2    0.0%  100.0%  2\n  NA          2  100.0%  100.0%  1\n  nfsA        2    0.0%    0.0%  22\n  PARP1       2    0.0%    0.0%  71\n  PDE4D       2    0.0%   50.0%  4.5\n  PDE5A       2    0.0%    0.0%  84.5\n  POLA1       2   50.0%  100.0%  1.5\n  rplC        2    0.0%    0.0%  119.5\n  RRM1        2    0.0%    0.0%  130.5\n  SLC22A1     2    0.0%    0.0%  118\n\nworst trials\n  XDH      Febuxostat                  rank  145, top was PPARG at 0.221\n  RRM1     Gemcitabine                 rank  144, top was POLA1 at 0.592\n  MAOA     Moclobemide                 rank  137, top was DRD4 at 0.361\n  SLC22A1  Cimetidine                  rank  136, top was HRH2 at 0.654\n  HTR1E    CHEMBL4163428               rank  132, top was HRH2 at 0.644\n  IMPDH2   Ribavirin                   rank  130, top was ADORA2A at 0.415\n  HMGCR    Simvastatin                 rank  128, top was NR3C1 at 0.163\n  rplC     Linezolid                   rank  127, top was F10 at 0.438\n  HTR3A    Serotonin                   rank  125, top was HTR5A at 0.590\n  HTR4     CHEMBL371300                rank  121, top was SLC6A2 at 0.350\n  TYMS     Capecitabine                rank  117, top was POLA1 at 0.282\n  RRM1     Hydroxyurea                 rank  117, top was PTGS2 at 0.185\n  TYMS     Methotrexate                rank  113, top was P2RY12 at 0.272\n  KDR      BMS-690514                  rank  112, top was OPRM1 at 0.244\n  rplC     Chloramphenicol             rank  112, top was CHRM1 at 0.234\n\nnot measurable (fewer than two resolved ligands)\n  ALOX5 BCHE GABBR1 SV2A SLC12A1 SLC12A3 SLC22A12 NPC1L1 VKORC1 NDUFS1 COMT ABAT ADH1B DPP4 SRC ALK MET BTK CDK4 CDK6 JAK3 folA inhA embB pncA ERG11 UL30 UL23 NS5B\n",
+      "stderr": ""
+    },
+    {
+      "script": "retrieval-evaluate-test.js",
+      "passed": true,
+      "durationMs": 77,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Cached retrieval: exact uncached trial/rank/score agreement across 5 fingerprints × 2 metrics, ties, aliases, shared ligands, empty/singleton sets; fewer than half the similarity calls\n",
+      "stderr": ""
+    },
+    {
+      "script": "ui-integration-test.js",
+      "passed": true,
+      "durationMs": 59,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "UI integration contract passed: 55 scripts, 163 unique DOM IDs\n",
+      "stderr": ""
+    },
+    {
+      "script": "interaction-test.js",
+      "passed": true,
+      "durationMs": 61,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Batch selection and storage-denied startup regressions passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "cooperative-batch-test.js",
+      "passed": true,
+      "durationMs": 65,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Cooperative batch: 10,000 ordered records, time/item budgets, cancellation, errors and empty input passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "analysis-lifecycle-test.js",
+      "passed": true,
+      "durationMs": 90,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Analysis lifecycle: chemistry equivalence, partial input success, cancellation, replacement and clear passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "validation-provenance-test.js",
+      "passed": true,
+      "durationMs": 101,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Validation provenance: deterministic SHA-256, changed/added/deleted files, Git revision and dirty state passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "comparison-test.js",
+      "passed": true,
+      "durationMs": 59,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Comparison data regression checks passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "library-catalog-test.js",
+      "passed": true,
+      "durationMs": 96,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Library catalogue and provenance-grouping checks passed: 4072 entries\n",
+      "stderr": ""
+    },
+    {
+      "script": "library-metadata-report-test.js",
+      "passed": true,
+      "durationMs": 138,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Library metadata: sourced-name and tag freshness, stable keys, graph guards, tag filtering, aliases and export passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "family-reference-test.js",
+      "passed": true,
+      "durationMs": 76,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Named family references: nine reviewed identities, source/formula guards, documented selection roles and explicit amphetamine stereo passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "pharmacology-test.js",
+      "passed": true,
+      "durationMs": 259,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Pharmacology: source freshness, conservative graph identity/stereo, prodrug relations, conditional equations, leakage guards, model parity/domain and motif support passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "pk-applicability-test.js",
+      "passed": true,
+      "durationMs": 155,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "PK applicability: fragments, elements, isotope labels, open-shell/valence withholding and unchanged eligible inference passed\nConditional pH profiles: midpoint, acid/base monotonicity, finite ranges and invalid input passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "sim-pagination-test.js",
+      "passed": true,
+      "durationMs": 64,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Similarity pagination regression tests passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "batch-browser-test.js",
+      "passed": true,
+      "durationMs": 73,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Batch browsing regression tests passed; 10,000-row benchmark: 5.6 ms for two queries (informational only)\n",
+      "stderr": ""
+    },
+    {
+      "script": "input-workflow-test.js",
+      "passed": true,
+      "durationMs": 53,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Input workflow: snapshots, package CSV, multiline records, structure-only headers and line numbers passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "file-import-test.js",
+      "passed": true,
+      "durationMs": 70,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "File import: latest-read wins, Clear invalidation, stale errors, JSON preflight and size limits passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "report-model-test.js",
+      "passed": true,
+      "durationMs": 56,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Molecule summary and report methodology regression checks passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "full-csv-export-test.js",
+      "passed": true,
+      "durationMs": 55,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Professional full CSV schema regression tests passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "research-package-test.js",
+      "passed": true,
+      "durationMs": 59,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Research package schema and ZIP integrity tests passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "descriptor-stats-test.js",
+      "passed": true,
+      "durationMs": 58,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Descriptor distribution tests passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "molecule-quality-test.js",
+      "passed": true,
+      "durationMs": 61,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Molecule data-quality tests passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "research-zip-external-test.js",
+      "passed": true,
+      "durationMs": 171,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Independent ZIP/CSV/manifest validation passed\n",
+      "stderr": ""
+    }
+  ]
+}

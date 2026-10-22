@@ -4,7 +4,7 @@
   const engine = typeof LibraryCatalog !== 'undefined' ? LibraryCatalog : null;
   if (!engine) return;
   const $ = id => document.getElementById(id);
-  const query = $('catalog-search'), group = $('catalog-group'), cls = $('catalog-class');
+  const query = $('catalog-search'), group = $('catalog-group'), tagFilter = $('catalog-tag');
   const sort = $('catalog-sort'), size = $('catalog-size');
   const tbody = $('catalog-table').querySelector('tbody'), summary = $('catalog-summary');
   const pageLabel = $('catalog-page'), prev = $('catalog-previous'), next = $('catalog-next');
@@ -19,12 +19,19 @@
     stats.missingFormulas + ' blank formulas; ' + stats.missingSmiles + ' blank SMILES; ' +
     stats.duplicateNames + ' case-insensitive duplicate names; ' +
     stats.duplicateExactSmiles + ' duplicate exact SMILES. These are text-level checks, not chemical verification.';
-  for (const entry of stats.classes) {
+  for (const entry of stats.tags) {
     const opt = document.createElement('option');
     opt.value = entry.name;
-    opt.textContent = entry.name + ' (' + entry.count + ')';
-    cls.appendChild(opt);
+    opt.label = entry.name + ' (' + entry.count + ')';
+    $('catalog-tag-options').appendChild(opt);
   }
+  const familyButtons=stats.tags.filter(entry=>entry.name.startsWith('Family motif: ')).map(entry=>{
+    const button=document.createElement('button');button.type='button';button.className='catalog-tag';
+    button.textContent=entry.name.slice('Family motif: '.length)+' ('+entry.count+')';
+    button.setAttribute('aria-label','Filter by '+entry.name);button.dataset.tag=entry.name;
+    button.addEventListener('click',()=>{tagFilter.value=entry.name;page=1;render();tagFilter.focus();});
+    $('catalog-families').appendChild(button);return button;
+  });
   function cell(tr, text, type) {
     const td = document.createElement(type || 'td');
     td.textContent = String(text == null ? '' : text);
@@ -32,18 +39,31 @@
     return td;
   }
   function settings() {
-    return { query: query.value, group: group.value, cls: cls.value,
+    return { query: query.value, group: group.value, tag: tagFilter.value,
       sort: sort.value, perPage: Number(size.value), page };
   }
   function render() {
+    familyButtons.forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.tag===tagFilter.value)));
     const view = engine.catalogQuery(rows, settings());
     page = view.page;
     const fragment = document.createDocumentFragment();
     for (const item of view.rows) {
       const tr = document.createElement('tr');
       cell(tr, item.index + 1);
-      cell(tr, item.entry.name);
-      cell(tr, item.entry.cls);
+      const name=cell(tr,item.label);
+      const record=engine.nameRecord(item.entry);
+      if(record){const small=document.createElement('small');small.className='catalog-id';small.textContent=item.entry.name+' · '+record.nameKind;name.appendChild(small);
+        const source=document.createElement('a');source.href=record.sourceUrl;source.textContent='Name source';source.target='_blank';source.rel='noopener noreferrer';name.appendChild(source);}
+      else if(/^CHEMBL\d+$/.test(item.entry.name)){const note=document.createElement('small');note.className='catalog-id';note.textContent='Name not verified; identifier retained';name.appendChild(note);}
+      const tagCell=cell(tr,'');tagCell.className='catalog-tags-cell';
+      const tags=document.createElement('div');tags.className='catalog-tags';
+      let extraTags;
+      item.tags.forEach((label,index)=>{let target=tags;
+        if(index===10){const more=document.createElement('details'),head=document.createElement('summary');head.textContent='+'+(item.tags.length-10)+' tags';more.appendChild(head);extraTags=document.createElement('div');extraTags.className='catalog-tags';more.appendChild(extraTags);tags.appendChild(more);}
+        if(index>=10)target=extraTags;
+        const button=document.createElement('button');button.type='button';button.className='catalog-tag';button.textContent=label;button.setAttribute('aria-label','Filter by tag '+label);
+        button.addEventListener('click',()=>{tagFilter.value=label;page=1;render();tagFilter.focus();});target.appendChild(button);
+      });tagCell.appendChild(tags);
       const collection = cell(tr, '');
       const tag = document.createElement('span');
       tag.className = 'catalog-tag';
@@ -70,9 +90,10 @@
     prev.disabled = view.page <= 1;
     next.disabled = view.page >= view.pages;
   }
-  for (const control of [query, group, cls, sort, size]) {
-    control.addEventListener(control === query ? 'input' : 'change', () => { page = 1; render(); });
+  for (const control of [query, group, tagFilter, sort, size]) {
+    control.addEventListener(control === query || control===tagFilter ? 'input' : 'change', () => { page = 1; render(); });
   }
+  $('catalog-clear-tags').addEventListener('click',()=>{tagFilter.value='';page=1;render();tagFilter.focus();});
   prev.addEventListener('click', () => { page--; render(); });
   next.addEventListener('click', () => { page++; render(); });
   $('catalog-export').addEventListener('click', () => {

@@ -1,0 +1,262 @@
+{
+  "schemaVersion": 1,
+  "rdkitVersion": "2026.09.1",
+  "scope": "Computed Wildman-Crippen implementation equivalence, not experimental validation. Includes alternate SMILES representations and boundary controls.",
+  "cases": [
+    {
+      "name": "library regression 1",
+      "inputs": [
+        "COC(=O)c1ccc2[nH]c(=O)c(=C(Nc3ccc(N(C)C(=O)CN4CCN(C)CC4)cc3)c3ccccc3)c2c1",
+        "COC(=O)c1ccc2c(c1)C(=C(Nc1ccc(N(C)C(=O)CN3CCN(C)CC3)cc1)c1ccccc1)C(=O)N2",
+        "COC(=O)C1=CC2=C(C=C1)NC(=O)C2=C(NC1=CC=C(N(C)C(=O)CN2CCN(C)CC2)C=C1)C1=CC=CC=C1"
+      ],
+      "logp": 3.6159000000000026,
+      "mr": 157.07889999999966
+    },
+    {
+      "name": "library regression 2",
+      "inputs": [
+        "CN(C)C(=O)Oc1cccc([N+](C)(C)C)c1",
+        "CN(C)C(=O)OC1=CC([N+](C)(C)C)=CC=C1"
+      ],
+      "logp": 1.9437,
+      "mr": 65.71900000000004
+    },
+    {
+      "name": "library regression 3",
+      "inputs": [
+        "c1ccc2c(c1)c3cccc4cccc2c34",
+        "c1ccc2c(c1)-c1cccc3cccc-2c13",
+        "C1=CC=C2C(=C1)C1=CC=CC3=C1C2=CC=C3"
+      ],
+      "logp": 4.487200000000002,
+      "mr": 68.37800000000004
+    },
+    {
+      "name": "library regression 4",
+      "inputs": [
+        "c1ccc2c(c1)c3cccc4c3c2cc5ccccc54",
+        "c1ccc2c(c1)-c1cccc3c1c-2cc1ccccc13",
+        "C1=CC=C2C(=C1)C1=CC=CC3=C1C2=CC1=CC=CC=C13"
+      ],
+      "logp": 5.640400000000003,
+      "mr": 85.88400000000003
+    },
+    {
+      "name": "library regression 5",
+      "inputs": [
+        "c1ccc2cc3c4cccc5cccc(c3cc2c1)c45",
+        "c1ccc2cc3c(cc2c1)-c1cccc2cccc-3c12",
+        "C1=CC=C2C=C3C(=CC2=C1)C1=CC=CC2=C1C3=CC=C2"
+      ],
+      "logp": 5.640400000000003,
+      "mr": 85.88400000000003
+    },
+    {
+      "name": "library regression 6",
+      "inputs": [
+        "c1ccc2c3c(ccc2c1)c4cccc5cccc3c45",
+        "c1ccc2c3c(ccc2c1)-c1cccc2cccc-3c12",
+        "C1=CC=C2C3=C(C=CC2=C1)C1=CC=CC2=C1C3=CC=C2"
+      ],
+      "logp": 5.640400000000003,
+      "mr": 85.88400000000003
+    },
+    {
+      "name": "Nevirapine",
+      "inputs": [
+        "Cc1ccnc2c1NC(=O)c1cccnc1N2C1CC1"
+      ],
+      "logp": 2.6512200000000004,
+      "mr": 76.32520000000002,
+      "knownUncoveredInputs": [
+        "CC1=C2NC(=O)C3=CC=CN=C3N(C3CC3)C2=NC=C1"
+      ],
+      "limitation": "Alternate Kekule input can still trigger incorrect aromaticity in the inherited seven-membered heterocycle model; only the current library representation is covered here."
+    },
+    {
+      "name": "Alpidem",
+      "inputs": [
+        "CCCN(CCC)C(=O)CC1=C(N=C2N1C=C(C=C2)Cl)C3=CC=C(C=C3)Cl",
+        "CCCN(CCC)C(=O)Cc1c(-c2ccc(Cl)cc2)nc2ccc(Cl)cn12",
+        "CCCN(CCC)C(=O)CC1=C(C2=CC=C(Cl)C=C2)N=C2C=CC(Cl)=CN12"
+      ],
+      "logp": 5.4992000000000045,
+      "mr": 111.51400000000004
+    },
+    {
+      "name": "Flumazenil",
+      "inputs": [
+        "CCOC(=O)C1=C2CN(C(=O)C3=C(N2C=N1)C=CC(=C3)F)C",
+        "CCOC(=O)c1ncn2c1CN(C)C(=O)c1cc(F)ccc1-2",
+        "CCOC(=O)C1=C2CN(C)C(=O)C3=C(C=CC(F)=C3)N2C=N1"
+      ],
+      "logp": 1.7737,
+      "mr": 75.27600000000002
+    },
+    {
+      "name": "Gaboxadol",
+      "inputs": [
+        "C1CNCC2=C1C(=O)NO2",
+        "O=c1[nH]oc2c1CCNC2",
+        "O=C1NOC2=C1CCNC2"
+      ],
+      "logp": -0.3864,
+      "mr": 34.73939999999999
+    },
+    {
+      "name": "Zaleplon",
+      "inputs": [
+        "CCN(C1=CC=CC(=C1)C2=CC=NC3=C(C=NN23)C#N)C(=O)C",
+        "CCN(C(C)=O)c1cccc(-c2ccnc3c(C#N)cnn23)c1",
+        "CCN(C(C)=O)C1=CC=CC(C2=CC=NC3=C(C#N)C=NN23)=C1"
+      ],
+      "logp": 2.6407800000000003,
+      "mr": 86.83900000000003
+    },
+    {
+      "name": "azulene fused 5+7 control",
+      "inputs": [
+        "c1ccc2cccc-2cc1",
+        "C1=CC=C2C=CC=C2C=C1"
+      ],
+      "logp": 2.7914000000000003,
+      "mr": 43.06400000000002
+    },
+    {
+      "name": "tropylium control",
+      "inputs": [
+        "[cH+]1cccccc1",
+        "c1ccc[cH+]cc1",
+        "C1=CC=C[CH+]C=C1"
+      ],
+      "logp": 1.9677,
+      "mr": 30.848999999999993
+    },
+    {
+      "name": "tropone control",
+      "inputs": [
+        "O=c1cccccc1",
+        "O=C1C=CC=CC=C1"
+      ],
+      "logp": 1.0468,
+      "mr": 32.711999999999996
+    },
+    {
+      "name": "pyridine",
+      "inputs": [
+        "c1ccncc1",
+        "C1=CC=NC=C1"
+      ],
+      "logp": 1.0816,
+      "mr": 24.236999999999995
+    },
+    {
+      "name": "pyrrole",
+      "inputs": [
+        "c1cc[nH]c1",
+        "C1=CNC=C1"
+      ],
+      "logp": 1.0147,
+      "mr": 20.792699999999996
+    },
+    {
+      "name": "pyridone",
+      "inputs": [
+        "O=c1cccc[nH]1",
+        "O=C1C=CC=CN1"
+      ],
+      "logp": 0.37489999999999996,
+      "mr": 27.062699999999996
+    },
+    {
+      "name": "naphthalene",
+      "inputs": [
+        "c1ccc2ccccc2c1",
+        "C1=CC=C2C=CC=CC2=C1"
+      ],
+      "logp": 2.839800000000001,
+      "mr": 43.94800000000003
+    },
+    {
+      "name": "quaternary aliphatic ammonium",
+      "inputs": [
+        "C[N+](C)(C)C"
+      ],
+      "logp": 0.3224,
+      "mr": 23.95639999999999
+    },
+    {
+      "name": "protonated amine",
+      "inputs": [
+        "C[NH2+]C"
+      ],
+      "logp": -1.1905999999999999,
+      "mr": 13.773400000000002
+    },
+    {
+      "name": "charged aromatic nitrogen",
+      "inputs": [
+        "C[n+]1ccccc1",
+        "C[N+]1=CC=CC=C1"
+      ],
+      "logp": 0.5110999999999999,
+      "mr": 27.617999999999988
+    },
+    {
+      "name": "cyclopentadienyl anion",
+      "inputs": [
+        "[cH-]1cccc1",
+        "c1cc[cH-]c1",
+        "C1=C[CH-]C=C1"
+      ],
+      "logp": 1.4055,
+      "mr": 22.034999999999993
+    },
+    {
+      "name": "mixed input ring control",
+      "inputs": [
+        "c1c(OC)c(OC)C2C(=O)OCC2c1",
+        "COC1=C(OC)C2C(=O)OCC2C=C1"
+      ],
+      "logp": 0.8497999999999999,
+      "mr": 48.123000000000026
+    },
+    {
+      "name": "mixed fused input control",
+      "inputs": [
+        "c1c(O)C2C(=O)C3cc(O)ccC3OC2cc1(OC)",
+        "COC1=CC2OC3C=CC(O)=CC3C(=O)C2C(O)=C1"
+      ],
+      "logp": 1.5528,
+      "mr": 66.30360000000002
+    },
+    {
+      "name": "Small aromatic squaramide",
+      "inputs": [
+        "Nc1c(NCCCOc2cccc(CN3CCCCC3)c2)c(=O)c1=O",
+        "NC1=C(NCCCOC2=CC=CC(CN3CCCCC3)=C2)C(=O)C1=O"
+      ],
+      "logp": 1.7316999999999998,
+      "mr": 99.93810000000006
+    },
+    {
+      "name": "Cyclopropenium small aromatic control",
+      "inputs": [
+        "[cH+]1cc1",
+        "c1c[cH+]1",
+        "C1=C[CH+]1"
+      ],
+      "logp": 0.8432999999999999,
+      "mr": 13.221000000000002
+    },
+    {
+      "name": "Cyclobutadiene nonaromatic control",
+      "inputs": [
+        "C1=CC=C1"
+      ],
+      "logp": 1.1124,
+      "mr": 18.279999999999998
+    }
+  ]
+}

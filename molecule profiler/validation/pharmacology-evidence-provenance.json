@@ -1,0 +1,298 @@
+{
+  "schemaVersion": 1,
+  "rdkitVersion": "2026.09.1",
+  "toolSha256": "cb756fea3c0fb9dbe1112728012116a7821d1c6fdd4b68e631a4e6c5309060ac",
+  "dataSha256": "cbad25f546a0a26e04bfcde658fd9cd9a5f0c47a50d2f3bcf015537529057104",
+  "structures": [
+    {
+      "name": "Levodopa",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/levodopa/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "retrievedAt": "2026-10-20T12:48:27.678612+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 6047,
+              "MolecularFormula": "C9H11NO4",
+              "SMILES": "C1=CC(=C(C=C1C[C@@H](C(=O)O)N)O)O",
+              "InChIKey": "WTDRDQBEARUVNC-LURJTMIESA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Lisdexamfetamine",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/lisdexamfetamine/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "retrievedAt": "2026-10-20T12:48:27.674703+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 11597698,
+              "MolecularFormula": "C15H25N3O",
+              "SMILES": "C[C@@H](CC1=CC=CC=C1)NC(=O)[C@H](CCCCN)N",
+              "InChIKey": "VOBHXZCDAVEXEY-JSGCOSHPSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Valacyclovir",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/valacyclovir/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "retrievedAt": "2026-10-20T12:48:32.070625+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 135398742,
+              "MolecularFormula": "C13H20N6O4",
+              "SMILES": "CC(C)[C@@H](C(=O)OCCOCN1C=NC2=C1N=C(NC2=O)N)N",
+              "InChIKey": "HDOVUKNUBWVHOX-QMMMGPOBSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Enalapril",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/enalapril/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "retrievedAt": "2026-10-20T12:48:32.122596+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 5388962,
+              "MolecularFormula": "C20H28N2O5",
+              "SMILES": "CCOC(=O)[C@H](CCC1=CC=CC=C1)N[C@@H](C)C(=O)N2CCC[C@H]2C(=O)O",
+              "InChIKey": "GBXSMTUPTTWBMN-XIRDDKMYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Prednisone",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/prednisone/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "retrievedAt": "2026-10-20T12:48:35.338408+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 5865,
+              "MolecularFormula": "C21H26O5",
+              "SMILES": "C[C@]12CC(=O)[C@H]3[C@H]([C@@H]1CC[C@@]2(C(=O)CO)O)CCC4=CC(=O)C=C[C@]34C",
+              "InChIKey": "XOFYZVNMUHMLCC-ZPOLXVRWSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Capecitabine",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/capecitabine/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "retrievedAt": "2026-10-20T12:48:35.306323+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 60953,
+              "MolecularFormula": "C15H22FN3O6",
+              "SMILES": "CCCCCOC(=O)NC1=NC(=O)N(C=C1F)[C@H]2[C@@H]([C@@H]([C@H](O2)C)O)O",
+              "InChIKey": "GAGWJHPBXLXJQN-UORFTKCHSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Famciclovir",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/famciclovir/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "retrievedAt": "2026-10-20T12:48:38.694641+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 3324,
+              "MolecularFormula": "C14H19N5O4",
+              "SMILES": "CC(=O)OCC(CCN1C=NC2=CN=C(N=C21)N)COC(=O)C",
+              "InChIKey": "GGXKWVWZWMLJEH-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Valganciclovir",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/valganciclovir/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "retrievedAt": "2026-10-20T12:48:38.874514+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 135413535,
+              "MolecularFormula": "C14H22N6O5",
+              "SMILES": "CC(C)[C@@H](C(=O)OCC(CO)OCN1C=NC2=C1N=C(NC2=O)N)N",
+              "InChIKey": "WPVFJKSGQUFQAP-GKAPJAKFSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Dopamine",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/dopamine/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "retrievedAt": "2026-10-20T12:48:43.074520+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 681,
+              "MolecularFormula": "C8H11NO2",
+              "SMILES": "C1=CC(=C(C=C1CCN)O)O",
+              "InChIKey": "VYFYYTLLBUKUHU-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Dextroamphetamine",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/dextroamphetamine/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "retrievedAt": "2026-10-20T12:48:43.110392+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 5826,
+              "MolecularFormula": "C9H13N",
+              "SMILES": "C[C@@H](CC1=CC=CC=C1)N",
+              "InChIKey": "KWTSXDURSIMDCE-QMMMGPOBSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Acyclovir",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/acyclovir/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "retrievedAt": "2026-10-20T12:48:47.374823+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 135398513,
+              "MolecularFormula": "C8H11N5O3",
+              "SMILES": "C1=NC2=C(N1COCCO)N=C(NC2=O)N",
+              "InChIKey": "MKUXAQIIEYXACX-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Enalaprilat",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/enalaprilat/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "retrievedAt": "2026-10-20T12:48:47.346468+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 5462501,
+              "MolecularFormula": "C18H24N2O5",
+              "SMILES": "C[C@@H](C(=O)N1CCC[C@H]1C(=O)O)N[C@@H](CCC2=CC=CC=C2)C(=O)O",
+              "InChIKey": "LZFZMUMEGBBDTC-QEJZJMRPSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Prednisolone",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/prednisolone/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "retrievedAt": "2026-10-20T12:48:50.991723+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 5755,
+              "MolecularFormula": "C21H28O5",
+              "SMILES": "C[C@]12C[C@@H]([C@H]3[C@H]([C@@H]1CC[C@@]2(C(=O)CO)O)CCC4=CC(=O)C=C[C@]34C)O",
+              "InChIKey": "OIGNJSKKLXVSLS-VWUMJDOOSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Fluorouracil",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/fluorouracil/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "retrievedAt": "2026-10-20T12:48:50.890526+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 3385,
+              "MolecularFormula": "C4H3FN2O2",
+              "SMILES": "C1=C(C(=O)NC(=O)N1)F",
+              "InChIKey": "GHASVSINZRGABV-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Penciclovir",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/penciclovir/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "retrievedAt": "2026-10-20T12:48:55.390567+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 135398748,
+              "MolecularFormula": "C10H15N5O3",
+              "SMILES": "C1=NC2=C(N1CCC(CO)CO)N=C(NC2=O)N",
+              "InChIKey": "JNTOCHDNEULJHD-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Ganciclovir",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/ganciclovir/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "retrievedAt": "2026-10-20T12:48:55.442448+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 135398740,
+              "MolecularFormula": "C9H13N5O4",
+              "SMILES": "C1=NC2=C(N1COC(CO)CO)N=C(NC2=O)N",
+              "InChIKey": "IRSCQMHQWWYFCW-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Aspirin",
+      "requestUrl": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/aspirin/property/IsomericSMILES,MolecularFormula,InChIKey/JSON",
+      "retrievedAt": "2026-10-20T13:03:55.442470+00:00",
+      "response": {
+        "PropertyTable": {
+          "Properties": [
+            {
+              "CID": 2244,
+              "MolecularFormula": "C9H8O4",
+              "SMILES": "CC(=O)OC1=CC=CC=C1C(=O)O",
+              "InChIKey": "BSYNRYMUTXBXSQ-UHFFFAOYSA-N"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "scope": "Named PubChem parent structures and manually curated NCI/label relationships. No unverified derivative generation, CNS delivery inference, predicted potency or patient-effect assertion."
+}

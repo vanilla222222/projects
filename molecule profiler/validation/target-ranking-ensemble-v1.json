@@ -1,0 +1,1240 @@
+{
+  "schemaVersion": 1,
+  "algorithmVersion": "ensemble-v1",
+  "node": "v24.19.0",
+  "sourceSha256": {
+    "data/library.js": "81bdea66f6dae39fc56684bae2303f1d373ffd77add90b68c0441c77b920f256",
+    "data/targets.js": "51639b633fbc791ee6883eb07df2367b51438b757bff314c82529cfc3cbe089c",
+    "js/target-ranking.js": "fbfa3e5d0804427cdc7ab3f105e0177dfa5893075077e30d9904dd7bc0a6715e"
+  },
+  "protocol": "Deterministic sample of 100 fingerprint-profile groups; all indistinguishable profiles withheld from every target.",
+  "caveats": [
+    "Internal curated-label retrieval only, not confirmed binding validation.",
+    "Profile grouping is not chemical canonicalization or scaffold-disjoint validation.",
+    "No negative experimental set; these metrics cannot establish specificity or binding probabilities.",
+    "Sampling and label incompleteness can change the apparent winner. No weights were fitted to these results."
+  ],
+  "sourceCounts": {
+    "library": 2782,
+    "targets": 132,
+    "indexed": 1005,
+    "uniqueProfiles": 1005,
+    "issues": 0
+  },
+  "legacy": {
+    "queries": 100,
+    "top1": 0.83,
+    "top5": 0.89,
+    "top10": 0.92,
+    "unrankableQueries": 1
+  },
+  "ensemble": {
+    "queries": 100,
+    "top1": 0.8,
+    "top5": 0.91,
+    "top10": 0.92,
+    "unrankableQueries": 1
+  },
+  "results": [
+    {
+      "name": "1-Formyl-LSD",
+      "labels": 4,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 4
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 4
+      }
+    },
+    {
+      "name": "1Bz-LSD",
+      "labels": 4,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 4
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 4
+      }
+    },
+    {
+      "name": "2,5-Dimethoxy-4-ethylamphetamine",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "2C-E",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "2C-Se",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "2C-T-7",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "3,4,5-Trimethoxyamphetamine",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "4-HO-DPT",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "4-HO-NiPT",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "4-Methyl-2,5-dimethoxyamphetamine",
+      "labels": 3,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      }
+    },
+    {
+      "name": "6-APDB",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Aceclofenac",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "AH-7921",
+      "labels": 3,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      }
+    },
+    {
+      "name": "Allylestrenol",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "Amfenac",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "Amoxicillin",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Androstenetrione",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "AS-8112",
+      "labels": 3,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      }
+    },
+    {
+      "name": "Barbital",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Beta-CFT",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Bolasterone",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 3,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Bromperidol",
+      "labels": 4,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 4
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 4
+      }
+    },
+    {
+      "name": "Butonitazene",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Carbamazepine",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 39,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 6,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Cefalexin",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Chlorphenamine",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Clobetasol",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Clonixin",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "Cortisone",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Cyclophosphamide",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "DAM-57",
+      "labels": 5,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 5
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 5
+      }
+    },
+    {
+      "name": "Desloratadine",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Dextropropoxyphene",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Diethylstilbestrol",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "Dimemebfe",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "DiPT",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "DPL",
+      "labels": 5,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 5
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 5
+      }
+    },
+    {
+      "name": "Efavirenz",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 48,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 69,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "EPLA",
+      "labels": 5,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 5
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 5
+      }
+    },
+    {
+      "name": "Estradiol acetate",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "Ethambutol",
+      "labels": 1,
+      "legacy": {
+        "bestRank": null,
+        "rankableLabels": 0
+      },
+      "ensemble": {
+        "bestRank": null,
+        "rankableLabels": 0
+      }
+    },
+    {
+      "name": "Etodolac",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 3,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 11,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "Famotidine",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 3,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Flecainide",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 82,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 71,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Flumazenil",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Fluocortolone",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Flurazepam",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Fulvestrant",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "Gefitinib",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Guabenxan",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Heterocodeine",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 2,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 2,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "Hydromorphone",
+      "labels": 3,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      }
+    },
+    {
+      "name": "Idoxifene",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "Isobutyrylfentanyl",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Kaempferol",
+      "labels": 3,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      }
+    },
+    {
+      "name": "LAE-32",
+      "labels": 5,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 5
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 5
+      }
+    },
+    {
+      "name": "Levallorphan",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "Lisinopril",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Lormetazepam",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "LSM-775",
+      "labels": 5,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 5
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 5
+      }
+    },
+    {
+      "name": "McPT",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Medroxyprogesterone",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Melphalan",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Mestranol",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "Methcathinone",
+      "labels": 3,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      }
+    },
+    {
+      "name": "Methylprednisolone",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Mexiletine",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 13,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 25,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Mirtazapine",
+      "labels": 7,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 7
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 7
+      }
+    },
+    {
+      "name": "Modafinil",
+      "labels": 3,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      },
+      "ensemble": {
+        "bestRank": 4,
+        "rankableLabels": 3
+      }
+    },
+    {
+      "name": "Muscimol",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 20,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 35,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Nalbuphine",
+      "labels": 3,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      }
+    },
+    {
+      "name": "Naltrindole",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 2,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 2,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "Nemonapride",
+      "labels": 3,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      }
+    },
+    {
+      "name": "Nilotinib",
+      "labels": 3,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      }
+    },
+    {
+      "name": "Nomegestrol acetate",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 2,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Norfenfluramine",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Noscapine",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 10,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 14,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Ondansetron",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 9,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 16,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "Oxycodone",
+      "labels": 3,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      }
+    },
+    {
+      "name": "PARGY-LAD",
+      "labels": 5,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 5
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 5
+      }
+    },
+    {
+      "name": "Perphenazine",
+      "labels": 7,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 7
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 7
+      }
+    },
+    {
+      "name": "Phenytoin",
+      "labels": 3,
+      "legacy": {
+        "bestRank": 23,
+        "rankableLabels": 3
+      },
+      "ensemble": {
+        "bestRank": 3,
+        "rankableLabels": 3
+      }
+    },
+    {
+      "name": "Piribedil",
+      "labels": 4,
+      "legacy": {
+        "bestRank": 8,
+        "rankableLabels": 4
+      },
+      "ensemble": {
+        "bestRank": 5,
+        "rankableLabels": 4
+      }
+    },
+    {
+      "name": "Pregabalin",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 5,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 2,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Protonitazene",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Quinestrol",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "Resveratrol",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Rogletimide",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 2,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 2,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Ruxolitinib",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "Serotonin",
+      "labels": 9,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 9
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 9
+      }
+    },
+    {
+      "name": "Solriamfetol",
+      "labels": 3,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      }
+    },
+    {
+      "name": "Sulindac",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "Tamsulosin",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Testosterone",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 2,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "Thebacon",
+      "labels": 2,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 2
+      }
+    },
+    {
+      "name": "Tilidine",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Trazodone",
+      "labels": 8,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 8
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 8
+      }
+    },
+    {
+      "name": "Troparil",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Vemurafenib",
+      "labels": 1,
+      "legacy": {
+        "bestRank": 45,
+        "rankableLabels": 1
+      },
+      "ensemble": {
+        "bestRank": 5,
+        "rankableLabels": 1
+      }
+    },
+    {
+      "name": "Zearalenone",
+      "labels": 3,
+      "legacy": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      },
+      "ensemble": {
+        "bestRank": 1,
+        "rankableLabels": 3
+      }
+    }
+  ]
+}

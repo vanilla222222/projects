@@ -8,6 +8,13 @@ const {TARGETS}=require('../data/targets.js');
 const {SIGNAL_REFERENCE_PROFILES}=require('../data/signalling-profiles.js');
 const {REFERENCE_AUDIT_BASELINE}=require('../data/reference-audit-baseline.js');
 const {auditLibrary}=require('../reference-audit.js');
+const identityCorrections=require('../validation/reference-identity-corrections.json');
+for(const correction of identityCorrections.changes){
+  const entry=LIBRARY.find(e=>e.name===correction.name);
+  assert.ok(entry,'Reviewed compound missing: '+correction.name);
+  assert.equal(entry.smiles,correction.sourceSmiles,'Reviewed source structure regressed: '+correction.name);
+  assert.equal(entry.formula,correction.sourceFormula);
+}
 const a=auditLibrary(LIBRARY,TARGETS,SIGNAL_REFERENCE_PROFILES);
 assert.ok(a.entries>=REFERENCE_AUDIT_BASELINE.entries,'Unexpected reduction in library entries');
 assert.equal(a.missingSmiles,0,'Library entries missing SMILES');

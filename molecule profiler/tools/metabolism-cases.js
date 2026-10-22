@@ -134,6 +134,8 @@ const results = CASES.map((item) => {
     weight: hit ? hit.score : null,
     rank: rank,
     generation: hit ? hit.depth : null,
+    tieBestRank: hit ? 1+tree.metabolites.filter(n=>n.score>hit.score+1e-12).length : null,
+    tieWorstRank: hit ? tree.metabolites.filter(n=>n.score>=hit.score-1e-12).length : null,
     predictedRoute: hit ? hit.enzyme + ', ' + hit.rule : null,
     enumerated: tree.metabolites.length,
     truncated: tree.truncated
@@ -143,13 +145,15 @@ const results = CASES.map((item) => {
 const found = results.filter((row) => row.found);
 const major = results.filter((row) => row.band === 'major');
 const top5 = found.filter((row) => row.rank <= 5);
+if(found.length!==CASES.length)process.exitCode=1;
 
 console.log('metabolism known-answer cases, ' + depth + ' generations, phase I and II');
 console.log('  ' + results.length + ' documented metabolites across '
   + new Set(CASES.map((item) => item.drug)).size + ' drugs');
 console.log('  enumerated at all: ' + found.length + '/' + results.length);
 console.log('  in the major band: ' + major.length + '/' + results.length);
-console.log('  inside the top five by weight: ' + top5.length + '/' + results.length);
+console.log('  inside the top five by deterministic display order: ' + top5.length + '/' + results.length);
+console.log('  top-five tie interval: '+found.filter(r=>r.tieWorstRank<=5).length+' guaranteed to '+found.filter(r=>r.tieBestRank<=5).length+' possible of '+results.length);
 console.log('');
 results.forEach((row) => {
   console.log('  ' + (row.found ? (row.band === 'major' ? 'MAJOR ' : row.band === 'minor' ? 'minor ' : 'trace ') : 'MISSED')
@@ -170,11 +174,13 @@ if (process.argv.includes('--write')) {
     enumerated: found.length,
     major: major.length,
     top5: top5.length,
+    top5Guaranteed:found.filter(r=>r.tieWorstRank<=5).length,
+    top5Possible:found.filter(r=>r.tieBestRank<=5).length,
     rows: results.map((row) => ({
       drug: row.drug, metabolite: row.metabolite, route: row.route, standing: row.standing,
       found: row.found, band: row.band, rank: row.rank,
       weight: row.weight === null ? null : Number(row.weight.toFixed(5)),
-      generation: row.generation, predictedRoute: row.predictedRoute, enumerated: row.enumerated
+      generation: row.generation,tieBestRank:row.tieBestRank,tieWorstRank:row.tieWorstRank, predictedRoute: row.predictedRoute, enumerated: row.enumerated
     }))
   };
   fs.writeFileSync(path.join(base, 'data/metcases.js'), "'use strict';\n\n"

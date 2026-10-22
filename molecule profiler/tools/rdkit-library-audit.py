@@ -70,10 +70,8 @@ def run():
             radicals = sum(atom.GetNumRadicalElectrons() for atom in mol.GetAtoms())
             if radicals and mol.GetNumHeavyAtoms() >= 3:
                 report["radicalEntries"].append({**label, "radicalElectrons": radicals, "smiles": row["smiles"]})
-            # A five-membered ring holding one sulfur plus ring unsaturation is a thiophene in
-            # every compound this library covers, so a non-aromatic one marks a mis-drawn ring
-            # rather than a real alternative. Oxygen is excluded: furanones and oxazolines are
-            # legitimately non-aromatic.
+            # Descriptive review flag, not a validity test: thiazolinones and
+            # other exocyclic-carbonyl sulfur rings may legitimately be nonaromatic.
             for ring in mol.GetRingInfo().AtomRings():
                 if len(ring) != 5:
                     continue
@@ -100,7 +98,7 @@ def run():
     # cannot be what it is written as. Duplicates, charges and unassigned stereocentres are
     # reported but not failed, because legitimate entries produce all three.
     hard = {key: report[key] for key in
-            ("invalidSmiles", "parseFailures", "formulaMismatches", "radicalEntries", "nonAromaticSulfurRings")
+            ("invalidSmiles", "parseFailures", "formulaMismatches", "radicalEntries")
             if report[key]}
     if hard:
         for key, values in hard.items():

@@ -29,9 +29,16 @@ An installed Chromium can be selected with CHROMIUM_PATH=/usr/bin/chromium.
 
 ## Current blocking uncertainty
 
-The browser workflow is committed but a passing whole-application run has not been demonstrated.
+The browser test suite is retained locally, but a passing whole-application Chromium run has not been demonstrated.
 
-On 2026-10-19, regression run 39324978173 at `02196e5e46b09db4a934df024b9914461dd616c6` had two failed jobs, both with no steps and runner ID 0. The JavaScript check annotation states: "The job was not started because your account is locked due to a billing issue." This is an account-level runner admission failure. Repository code changes cannot resolve it; the account owner must resolve GitHub billing, then rerun the workflows. Pages publication is a separate outcome.
+GitHub-hosted project test workflows are removed; verification runs locally. The remaining hosted RDKit and formula-audit workflows were removed after the RDKit check on `9601b8cf6965f86f18a0ab540acc1fc9c37a3afe` failed before any steps ran (runner ID 0). Its annotation reported an account billing lock. This was a runner-admission failure, not an executed chemistry test. Pages build and deployment succeeded separately. Historical failed checks remain attached to their original commits; removing the workflows prevents new project audit jobs from being scheduled.
+
+The local audit tools remain available:
+
+    python tools/rdkit-library-audit.py --output rdkit-audit.json
+    python tools/verify-reference-formulas.py --report reference-formula-report.json
+
+The formula command above is read-only; `--write-missing` is an explicit repair option. Local regression success and scientific validation must still be reported separately from Pages publication.
 
 To diagnose future failures with no steps, inspect the check annotations, not only job logs:
 
@@ -62,3 +69,28 @@ Use the structure-file input to reopen a Molecule Profiler schema-version-1 JSON
 Node tests exercise snapshot parsing and restoration with the actual descriptor engine, including tampered saved values and partial failures. The corresponding Chromium import/download test is present but has not been executed successfully in the restricted development environment.
 
 File reads are invalidated by Clear, a newer selected file, or a new analysis. Out-of-order read completions and stale read failures cannot replace newer input or status. Invalid JSON files are checked before replacing the input text. Deferred-read Node regressions exercise these handlers, including the 1 MB file limit.
+
+
+## Local browser-install attempt, 2026-10-20
+
+Playwright 1.64.0 attempted to install its official Chromium 156.0.8078.4
+(build 1248) and, separately, the matching headless-shell package. Both
+downloads failed ZIP archive validation: the end-of-central-directory record
+was missing. Browser installation did not complete, and no Chromium assertions
+ran. This is an unresolved test-environment/download failure, not evidence of
+an application failure or a browser-suite pass. The separate explorer and
+prediction jsdom workflows passed; they do not verify Chromium rendering.
+
+The local validation runner prints each script name before execution and records
+its monotonic duration and timeout budget in the JSON diagnostics. The exhaustive
+retrieval benchmark has a separate bounded 300-second budget; other scripts
+retain 120 seconds. Local exhaustive runs exceeded two minutes; the separate budget accommodates
+this workload in slower environments. A timeout remains a failed check; no
+assertions or datasets are skipped to accommodate the increased work.
+
+The historical retrieval evaluator now reuses reverse comparisons only when the
+caller explicitly selects an exactly symmetric metric. Its triangular Float64
+cache is bounded to 64 MiB; oversized datasets retain per-query caching. Generic
+directional metrics keep their original behaviour. The fourth-batch generated
+report is byte-for-byte unchanged; source hashes and the comparison are recorded
+in `validation/retrieval-cache-equivalence-batch-4.json`.

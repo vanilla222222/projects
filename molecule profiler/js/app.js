@@ -1,6 +1,14 @@
 'use strict';
 
+// Display labels are separate from stable reference keys used in scientific exports.
+function referenceDisplayName(entry) {
+  if(typeof LibraryCatalog==='undefined')return entry.name;
+  return LibraryCatalog.displayName(entry)+(LibraryCatalog.nameRecord(entry)?.matchType==='tautomer-standardized'?' [standardized-form name]':'');
+}
+
 const GLOSSARY = {
+  tgtSupport: ['Reference support', 'Number of distinct fingerprint profiles above the operational similarity cut. Profiles are correlated chemical evidence, not independent binding experiments.'],
+  tgtEnsemble: ['Multi-fingerprint rank', 'A heuristic combination of stereo-aware atomic, pharmacophore-feature and atom-pair 2D fingerprints. Not a trained probability.'],
   evidenceExact: ['Exact computation', 'Everything in this panel is counted or summed from the structure graph itself. There is no model and no training data, so there is nothing to be uncertain about beyond whether the SMILES you gave is the molecule you meant. Where a published definition is ambiguous the page shows both readings side by side rather than picking one.'],
   evidenceFitted: ['Fitted model', 'These numbers come from a published model whose coefficients were fitted to measured data, reimplemented here from the paper. The arithmetic is exact; the answer carries whatever error the original fit had, which is typically a few tenths of a log unit and is larger for molecules unlike the training set. Treat the digits after the first decimal as spurious precision.'],
   evidenceRule: ['Published rule', 'This panel applies thresholds somebody published, exactly as published. A pass or fail is a statement about the thresholds and nothing more: it is not a verdict on whether the molecule is a good drug, and plenty of marketed drugs fail several of these filters. Read it as a filter, not as a judgement.'],
@@ -105,8 +113,8 @@ const GLOSSARY = {
   metStep: ['Step', 'The rule that produced this metabolite, and which structure it came from: the parent, or an earlier metabolite by its label.'],
   metEnzyme: ['Enzyme', 'The enzyme family that performs this class of reaction: CYP, MAO, FMO, ADH, AKR, COMT, UGT, SULT, NAT, GST, or a hydrolase. Attribution is by reaction class, not by a measured isoform assignment.'],
   metPhase: ['Phase', 'Phase I introduces or exposes a functional group; phase II attaches a polar conjugate to one. A phase II rule usually needs a phase I step first, which is why most conjugates appear in the second generation.'],
-  metScore: ['Relative weight', 'The product of the published class frequencies along the path from the parent, each one scaled by its site factor. It orders the list; it is not a probability, a yield or a fraction of dose. The band under the number is a reading of that same product against two fixed cuts: major at 0.10 and above, minor from 0.02 to 0.10, trace below 0.02. A trace label means the route needs an unlikely step or a chain of them, not that a measured fraction of the dose was small.'],
-  metBandFilter: ['Abundance', 'Shows only metabolites in one band. Major routes are the ones a rule set is most confident about; the trace list is where a reactive metabolite with a small predicted weight shows up, which is often what matters for toxicity.'],
+  metScore: ['Relative weight', 'The product of the published class frequencies along the path from the parent, each one scaled by its site factor. It orders the list; it is not a probability, a yield or a fraction of dose. The band under the number is a reading of that same product against two fixed cuts: major at 0.10 and above, minor from 0.02 to 0.10, trace below 0.02. A lower-weight label can result from a lower reaction-class frequency or a longer path. It is not evidence that the route is rare in a particular person.'],
+  metBandFilter: ['Heuristic weight band', 'Filters rule-generated candidates by uncalibrated route weight, not measured abundance or confidence. Lower-weight candidates normally appear under an expansion control; candidates with new structural-alert flags stay visible.'],
   metSite: ['Site factor', 'How much the reaction weight is raised or lowered for the particular atom attacked, relative to an unsubstituted position of the same kind on the same ring or chain. Neighbouring groups that donate electron density raise an aromatic position, withdrawing groups lower it, crowding lowers it, and a branch point raises an aliphatic one. The factors are a transparent heuristic written from directing-effect and bond-strength arguments, clamped to 0.2x-2.5x; they are not fitted to measured turnover.'],
   metProps: ['MW / log P / TPSA', 'The metabolite run back through the same descriptor code as the parent. A conjugate adding 176 to the mass and 100 to the polar surface is the signature of glucuronidation.'],
   metTox: ['New toxicity flags', 'Toxicity rules firing on this metabolite that do not fire on the parent molecule.'],
@@ -848,9 +856,9 @@ function renderSimilar(record) {
     '<th>' + label + infoButton(key === 'formula' ? 'formula' : key) + '</th>'
   )).join('') + '</tr>';
   table.querySelector('tbody').innerHTML = shown.map((hit, index) => (
-    '<tr data-smiles="' + escapeHtml(hit.entry.smiles) + '" data-name="' + escapeHtml(hit.entry.name) + '">'
+    '<tr data-smiles="' + escapeHtml(hit.entry.smiles) + '" data-name="' + escapeHtml(referenceDisplayName(hit.entry)) + '">'
       + '<td>' + (pagination.start + index + 1) + '</td>'
-      + '<td>' + escapeHtml(hit.entry.name) + '</td>'
+      + '<td>' + escapeHtml(referenceDisplayName(hit.entry)) + '</td>'
       + '<td>' + escapeHtml(hit.entry.cls) + '</td>'
       + '<td>' + escapeHtml(hit.entry.formula) + '</td>'
       + '<td><span class="score"><span class="score-track"><span class="score-fill" style="width:'
@@ -902,9 +910,10 @@ function casesLine() {
     .map((row) => row.drug + ' to ' + row.metabolite);
   return 'Known-answer tests: of ' + c.cases + ' documented metabolites across ' + c.drugs + ' drugs, '
     + c.enumerated + ' are enumerated by this rule set within ' + c.generations + ' generations, '
-    + c.major + ' land in the major band and ' + c.top5 + ' fall inside the top five by weight.'
+    + c.major + ' land in the higher heuristic-weight band and ' + c.top5 + ' fall inside the top five by deterministic weight ordering.'
+    + (Number.isFinite(c.top5Guaranteed)?' With tied scores, '+c.top5Guaranteed+' are guaranteed and '+c.top5Possible+' could fall in the top five.':'')
     + (misses.length ? ' The ' + (misses.length === 1 ? 'one that lands' : misses.length + ' that land')
-      + ' in the minor band instead: ' + misses.join(' and ') + '.' : '')
+      + ' in lower heuristic bands instead: ' + misses.join(' and ') + '.' : '')
     + infoButton('metCases');
 }
 
@@ -922,71 +931,69 @@ function benchmarkLine() {
     + infoButton('tgtBenchmark');
 }
 
-function renderTargets(record) {
-  const methodKey = document.getElementById('sim-method').value;
-  const metricKey = document.getElementById('sim-metric').value;
-  const limit = Number(document.getElementById('tgt-count').value);
-  const floor = Number(document.getElementById('tgt-min').value);
-  const organism = document.getElementById('tgt-organism').value;
-  const method = FP_METHODS.find((entry) => entry.key === methodKey) || FP_METHODS[0];
-  const score = metricKey === 'dice' ? dice : tanimoto;
-
-  const query = fingerprint(record.mol, method.key);
-  const byName = new Map();
-  libraryFingerprints(method.key).forEach((item) => byName.set(item.entry.name, item));
-
-  const ranked = [];
-  TARGETS.forEach((target) => {
-    if (organism !== 'all' && target.organism !== organism) return;
-    const scored = [];
-    target.ligands.forEach((name) => {
-      const item = byName.get(name);
-      if (!item) return;
-      scored.push({ value: score(query, item.fp), entry: item.entry });
-    });
-    if (!scored.length) return;
-    scored.sort((a, b) => b.value - a.value);
-    const top = scored.slice(0, 3);
-    const mean = top.reduce((sum, item) => sum + item.value, 0) / top.length;
-    ranked.push({
-      target: target,
-      score: scored[0].value,
-      mean: mean,
-      nearest: scored[0].entry,
-      count: scored.length
-    });
+let targetRankingIndex = null;
+function targetRankingFor(record) {
+  if (!targetRankingIndex) targetRankingIndex=TargetRanking.createIndex(LIBRARY,TARGETS,{
+    parse:smiles=>buildMolecule(parseSmiles(smiles)),fingerprint,tanimoto,dice,
+    referenceMotifs:entry=>typeof StructuralEvidence==='undefined'?[]:StructuralEvidence.reference(entry),queryMotifs:mol=>typeof StructuralEvidence==='undefined'?[]:StructuralEvidence.detect(mol)
   });
-  ranked.sort((a, b) => b.score - a.score || b.mean - a.mean);
+  const mode=document.getElementById('tgt-mode').value;
+  const method=document.getElementById('sim-method').value;
+  const metric=document.getElementById('sim-metric').value;
+  const organism=document.getElementById('tgt-organism').value;
+  const receptorsOnly=document.getElementById('tgt-scope').value==='receptors';
+  const key=[mode,method,metric,organism,receptorsOnly].join('/');
+  if(!record.targetQuery)record.targetQuery=TargetRanking.query(record.mol,targetRankingIndex);
+  if(!record.targetRankings)record.targetRankings=new Map();
+  if(!record.targetRankings.has(key))record.targetRankings.set(key,TargetRanking.rank(record.targetQuery,targetRankingIndex,{mode,method,metric,organism,receptorsOnly}));
+  return record.targetRankings.get(key);
+}
 
-  const kept = ranked.filter((row) => row.score >= floor);
+function renderTargets(record) {
+  const mode=document.getElementById('tgt-mode').value;
+  const legacy=mode==='legacy';
+  const methodKey=document.getElementById('sim-method').value;
+  const metricKey=document.getElementById('sim-metric').value;
+  const method=FP_METHODS.find(x=>x.key===methodKey)||FP_METHODS[0];
+  const limit=Number(document.getElementById('tgt-count').value);
+  const floor=Number(document.getElementById('tgt-min').value);
+  const organism=document.getElementById('tgt-organism').value;
+  const ranked=targetRankingFor(record);
+  document.getElementById('tgt-motifs').textContent='Query structural motifs: '+(record.targetQuery.motifs.map(id=>StructuralEvidence.label(id)).join(', ')||'none in the current motif vocabulary')+'. Shared motifs describe chemical context, not binding or functional action.';
+  const kept = ranked.filter((row) => row.rankScore >= floor);
   const shown = limit > 0 ? kept.slice(0, limit) : kept;
 
-  const pool = organism === 'all' ? TARGETS.length : ranked.length;
+  const pool = ranked.length;
   const strong = kept.filter((row) => row.score >= 0.3).length;
   document.getElementById('tgt-summary').innerHTML = pool + ' targets'
     + (organism === 'all' ? '' : ' in ' + organism.toLowerCase() + ' scope')
     + ', ' + kept.length + ' above the score cut, '
     + (strong ? strong + ' of them above 0.30' : 'none of them above 0.30');
-  document.getElementById('tgt-blurb').textContent = 'Scored with ' + method.label + ' and '
-    + (metricKey === 'dice' ? 'Dice' : 'Tanimoto') + ', following the similarity panel above.';
-  document.getElementById('tgt-bench').innerHTML = benchmarkLine();
+  document.getElementById('tgt-blurb').textContent = legacy
+    ? 'Legacy nearest-neighbour ranking: '+method.label+' / '+metricKey+'.'
+    : 'Multi-fingerprint ranking: geometric mean of stereo-aware ECFP4, FCFP4 and atom-pair Tanimoto per ligand; rank = 70% nearest + 30% mean top three distinct fingerprint profiles. These are heuristic weights, not trained probabilities.';
+  document.getElementById('tgt-bench').innerHTML = legacy && methodKey==='ecfp4' && metricKey==='tanimoto'
+    ? benchmarkLine() : 'The historical ECFP4/Tanimoto benchmark does not validate this selected method.';
+  document.getElementById('tgt-evidence').textContent = ranked.length
+    ? 'Top result: '+ranked[0].applicability+'; '+ranked[0].support+' distinct supporting fingerprint profiles at ensemble similarity ≥0.35 (each component ≥0.20). The three fingerprint views are correlated, not independent experiments. '+targetRankingIndex.issues.length+' reference-index issue(s). Unlisted targets remain unassessed; no agonist/antagonist action is inferred.'
+    : 'No usable references in this target scope. Unlisted targets are unassessed.';
 
   const table = document.getElementById('targets');
   table.querySelector('thead').innerHTML = '<tr>' + TGT_COLUMNS.map(([key, label]) => (
-    '<th>' + label + infoButton(key) + '</th>'
+    '<th>' + (key==='tgtScore'&&!legacy?'Ranking score':key==='tgtRecovered'&&!legacy?'Support profiles':label) + infoButton(!legacy && key==='tgtRecovered'?'tgtSupport':!legacy && key==='tgtScore'?'tgtEnsemble':key) + '</th>'
   )).join('') + '</tr>';
   let tier = -1;
   table.querySelector('tbody').innerHTML = shown.length ? shown.map((row, index) => {
     let head = '';
-    const band = tgtTier(row.score);
+    const band = tgtTier(row.rankScore);
     if (band !== tier) {
       tier = band;
       head = '<tr class="tier-break" data-tier="' + band + '"><td colspan="11">'
-        + '<strong>' + escapeHtml(TGT_TIERS[band][1]) + '</strong>'
-        + escapeHtml(TGT_TIERS[band][2]) + '</td></tr>';
+        + '<strong>' + escapeHtml((legacy?TGT_TIERS[band][1]:['Close reference resemblance','Moderate reference resemblance','Remote reference resemblance'][band])) + '</strong>'
+        + escapeHtml(legacy?TGT_TIERS[band][2]:'Similarity band only; not calibrated confidence or evidence of binding.') + '</td></tr>';
     }
     return head
-    + '<tr data-smiles="' + escapeHtml(row.nearest.smiles) + '" data-name="' + escapeHtml(row.nearest.name) + '"'
+    + '<tr data-smiles="' + escapeHtml(row.nearest.smiles) + '" data-name="' + escapeHtml(referenceDisplayName(row.nearest)) + '"'
       + (band === 2 ? ' class="quiet"' : '') + '>'
       + '<td>' + (index + 1) + '</td>'
       + '<td>' + escapeHtml(row.target.name) + '</td>'
@@ -994,18 +1001,24 @@ function renderTargets(record) {
       + '<td>' + escapeHtml(row.target.family) + '</td>'
       + '<td>' + escapeHtml(row.target.organism) + '</td>'
       + '<td><span class="score"><span class="score-track"><span class="score-fill" style="width:'
-        + (row.score * 100).toFixed(1) + '%"></span></span>' + row.score.toFixed(3) + '</span></td>'
+        + (row.rankScore * 100).toFixed(1) + '%"></span></span>' + row.rankScore.toFixed(3) + '</span></td>'
       + '<td>' + row.mean.toFixed(3) + '</td>'
-      + '<td>' + escapeHtml(row.nearest.name) + '</td>'
+      + '<td><details><summary>' + escapeHtml(referenceDisplayName(row.nearest)) + '</summary>'
+        + row.evidence.map(e=>escapeHtml(referenceDisplayName(e.entry))+': '+e.value.toFixed(3)
+          +(e.sameProfile?' [matching query fingerprint profile; not proof of molecular identity]':'')
+          +' (stereo / features / pairs: '+e.components.map(v=>v.toFixed(3)).join(' / ')+')').join('<br>')
+        + '<br>'+row.distinctCount+' distinct fingerprint profiles from '+row.count+' listed references.'
+        + (row.motifEvidence.length?'<br><strong>Shared motifs across the reference panel:</strong><br>'+row.motifEvidence.slice(0,5).map(m=>escapeHtml(StructuralEvidence.label(m.id))+': '+m.support+'/'+m.total+' distinct target-reference profiles; background '+m.background+'/'+m.backgroundTotal+' indexed profiles').join('<br>'):'<br>No shared motif in the current vocabulary.')+'</details></td>'
       + '<td>' + row.count + '</td>'
-      + '<td>' + recoveredCell(row.target) + '</td>'
+      + '<td>' + (legacy?recoveredCell(row.target):row.support+' / '+row.distinctCount) + '</td>'
       + '<td class="note">' + escapeHtml(row.target.note) + '</td>'
       + '</tr>';
   }).join('') : '<tr><td colspan="11">No target has a known ligand this similar to the query.</td></tr>';
+  if(typeof PharmacologyUI!=='undefined')PharmacologyUI.render(record,ranked);
 }
 
 function setupTargets() {
-  ['tgt-count', 'tgt-min', 'tgt-organism'].forEach((id) => {
+  ['tgt-count', 'tgt-min', 'tgt-organism', 'tgt-mode', 'tgt-scope'].forEach((id) => {
     document.getElementById(id).addEventListener('change', () => {
       if (records[current]) renderTargets(records[current]);
     });
@@ -1014,6 +1027,7 @@ function setupTargets() {
     document.getElementById(id).insertAdjacentHTML('beforebegin', infoButton(key));
   });
   document.getElementById('targets').addEventListener('click', (event) => {
+    if(event.target.closest('details,button,a,input,select'))return;
     const row = event.target.closest('tr[data-smiles]');
     if (!row) return;
     document.getElementById('smiles-input').value = row.dataset.name + ', ' + row.dataset.smiles;
@@ -1437,11 +1451,12 @@ function metaboliteLabel(node) {
 function metabolismFor(record) {
   const depth = Number(document.getElementById('met-depth').value);
   const phase = document.getElementById('met-phase').value;
-  const key = depth + '/' + phase;
+  const maxNodes=Number(document.getElementById('met-budget').value);
+  const key = depth + '/' + phase+'/'+maxNodes;
   if (!record.metabolism) record.metabolism = new Map();
   if (!record.metabolism.has(key)) {
     record.metabolism.set(key, metabolicTree(record, {
-      depth: depth,
+      depth: depth,maxNodes,
       phases: phase === 'all' ? ['I', 'II'] : [phase]
     }));
   }
@@ -1449,8 +1464,12 @@ function metabolismFor(record) {
 }
 
 function renderMetabolism(record) {
+  const lowerDetails=document.getElementById('met-low-details');
+  if(lowerDetails.dataset.smiles!==record.smiles){lowerDetails.open=false;lowerDetails.dataset.smiles=record.smiles;}
+  lowerDetails.hidden=true;document.getElementById('met-low').querySelector('tbody').textContent='';
   const coverageSlot = document.getElementById('met-coverage');
   if (coverageSlot) coverageSlot.textContent = '';
+  document.getElementById('met-diagnostics').textContent='';
   if (typeof metabolicTree !== 'function' || typeof METABOLISM === 'undefined') {
     document.getElementById('met-summary').textContent =
       'the metabolism engine did not load \u2014 reload the page, bypassing the cache';
@@ -1474,6 +1493,16 @@ function renderMetabolism(record) {
       + ' proposed products; ' + (coverage.rulesAttempted === null ? 'unknown' : coverage.rulesAttempted)
       + ' reaction rules attempted. ' + coverage.limitations.join(' ');
   }
+  document.getElementById('met-bench').innerHTML=tree.depth===2
+    && document.getElementById('met-phase').value==='all' && tree.maxNodes===120
+    ? casesLine() : 'The known-answer benchmark applies to two generations, both phases and a 120-structure budget; the current settings differ.';
+  const diagnostic=tree.diagnostics;
+  document.getElementById('met-diagnostics').textContent=diagnostic
+    ? diagnostic.ruleApplications+' rule applications; '+diagnostic.transformMatches+' site mappings; '
+      +diagnostic.rejectedTransforms+' transform failures; '+diagnostic.rejectedFragments+' unreadable product fragments; '
+      +diagnostic.ruleErrors.length+' rule errors; '+diagnostic.candidatesDiscardedByCap+' unique candidates excluded by budget. '
+      +tree.rankingPolicy+' '+tree.identityScope
+    : 'Detailed engine diagnostics unavailable.';
   const limit = Number(document.getElementById('met-count').value);
   const toxOnly = document.getElementById('met-toxonly').checked;
   const band = document.getElementById('met-band').value;
@@ -1494,7 +1523,7 @@ function renderMetabolism(record) {
     ? tree.metabolites.length + ' metabolites within ' + tree.depth
       + (tree.depth === 1 ? ' generation' : ' generations') + ', from ' + tree.rulesTried
       + ' reaction rules: ' + tree.phaseI + ' phase I, ' + tree.phaseII + ' phase II'
-      + ' \u2014 ' + bands.major + ' major, ' + bands.minor + ' minor, ' + bands.trace + ' trace'
+      + ' \u2014 ' + bands.major + ' higher, ' + bands.minor + ' intermediate, ' + bands.trace + ' lower heuristic weight'
       + (tree.truncated ? ' (enumeration capped)' : '')
     : 'no rule in the set finds a site on this structure';
 
@@ -1531,13 +1560,16 @@ function renderMetabolism(record) {
   let shown = tree.metabolites;
   if (toxOnly) shown = shown.filter((node) => node.newTox.length);
   if (band !== 'all') shown = shown.filter((node) => metaboliteBand(node.score) === band);
-  if (limit) shown = shown.slice(0, limit);
+  const lower=band==='all'?shown.filter(node=>metaboliteBand(node.score)==='trace'&&!node.newTox.length):[];
+  shown=shown.filter(node=>!lower.includes(node));
+  const visibleCount=shown.length;
+  if (limit){const first=shown.slice(0,limit);shown=shown.filter(node=>first.includes(node)||node.newTox.length);}
 
   const table = document.getElementById('metabolites');
   table.querySelector('thead').innerHTML = '<tr>' + MET_COLUMNS.map(([key, label]) => (
     '<th>' + label + infoButton(key) + '</th>'
   )).join('') + '</tr>';
-  table.querySelector('tbody').innerHTML = shown.length ? shown.map((node, index) => {
+  const rowHtml=(node, index) => {
     const parent = byId.get(node.parent);
     const released = node.released.length
       ? ' Releases ' + node.released.join(' and ') + '.'
@@ -1567,9 +1599,17 @@ function renderMetabolism(record) {
       + '<td class="note" title="' + escapeHtml(node.steps[0].note + released + extra) + '">'
       + escapeHtml(node.steps[0].note + released + extra) + '</td>'
       + '</tr>';
-  }).join('') : '<tr><td colspan="' + MET_COLUMNS.length + '">No metabolite matches this filter.</td></tr>';
+  };
+  table.querySelector('tbody').innerHTML = shown.length ? shown.map(rowHtml).join('') : '<tr><td colspan="' + MET_COLUMNS.length + '">No higher-priority candidate matches this filter. Expand lower-weight candidates when available.</td></tr>';
+  const lowTable=document.getElementById('met-low');
+  lowTable.querySelector('thead').innerHTML=table.querySelector('thead').innerHTML;
+  lowTable.querySelector('tbody').innerHTML=lower.map(rowHtml).join('');
+  document.getElementById('met-low-details').hidden=!lower.length;
+  document.getElementById('met-low-summary').textContent='Show '+lower.length+' lower-weight candidates';
+  document.getElementById('met-summary').textContent+='; '+shown.length+' of '+visibleCount+' main candidates displayed'+(lower.length?'; '+lower.length+' lower-weight candidates in expandable list':'');
 
   const notes = document.getElementById('met-notes');
+  if(typeof PharmacologyUI!=='undefined')PharmacologyUI.updateMetabolism(record,tree);
   notes.querySelector('thead').innerHTML = '<tr>' + MET_NOTE_COLUMNS.map(([key, label]) => (
     '<th>' + label + infoButton(key) + '</th>'
   )).join('') + '</tr>';
@@ -1585,7 +1625,7 @@ function renderMetabolism(record) {
 
 function setupMetabolism() {
   document.getElementById('met-bench').innerHTML = casesLine();
-  ['met-depth', 'met-phase', 'met-count', 'met-band', 'met-toxonly'].forEach((id) => {
+  ['met-depth', 'met-phase', 'met-count', 'met-band', 'met-toxonly', 'met-budget'].forEach((id) => {
     document.getElementById(id).addEventListener('change', () => {
       if (records[current]) renderMetabolism(records[current]);
     });
@@ -1593,7 +1633,7 @@ function setupMetabolism() {
   [['met-depth', 'metDepth'], ['met-phase', 'metPhaseFilter'], ['met-count', 'metCount'], ['met-band', 'metBandFilter']].forEach(([id, key]) => {
     document.getElementById(id).insertAdjacentHTML('beforebegin', infoButton(key));
   });
-  document.getElementById('metabolites').addEventListener('click', (event) => {
+  for(const tableId of ['metabolites','met-low'])document.getElementById(tableId).addEventListener('click', (event) => {
     const row = event.target.closest('tr[data-smiles]');
     if (!row) return;
     document.getElementById('smiles-input').value = row.dataset.name + ', ' + row.dataset.smiles;
@@ -1903,27 +1943,13 @@ function fullExportRows(record) {
     add('similarity', label, 'referenceBits', hit.bits);
   });
 
-  const byName = new Map();
-  libraryFingerprints(method.key).forEach((item) => byName.set(item.entry.name, item));
-  const ranked = [];
-  TARGETS.forEach((target) => {
-    const scored = [];
-    target.ligands.forEach((name) => {
-      const item = byName.get(name);
-      if (item) scored.push({ value: score(query, item.fp), entry: item.entry });
-    });
-    if (!scored.length) return;
-    scored.sort((a, b) => b.value - a.value);
-    const top = scored.slice(0, 3);
-    ranked.push({
-      target: target,
-      score: scored[0].value,
-      mean: top.reduce((sum, item) => sum + item.value, 0) / top.length,
-      nearest: scored[0].entry,
-      count: scored.length
-    });
-  });
-  ranked.sort((a, b) => b.score - a.score || b.mean - a.mean);
+  const ranked = targetRankingFor(record);
+  pair('targets','rankingMode',document.getElementById('tgt-mode').value);
+  pair('targets','algorithmVersion',TargetRanking.VERSION);
+  pair('targets','supportCut',TargetRanking.SUPPORT_CUT);
+  pair('targets','supportMetric','Distinct profiles: geometric mean stereo ECFP4 / FCFP4 / pairs Tanimoto >=0.35 and every component >=0.20');
+  pair('targets','organismScope',document.getElementById('tgt-organism').value);
+  pair('targets','targetScope',document.getElementById('tgt-scope').value);
   pair('targets', 'rankedExportLimit', FullCsvExport.MAX_RANKED_RESULTS);
   FullCsvExport.topRanked(ranked).forEach((row, index) => {
     const label = 'rank ' + (index + 1);
@@ -1931,12 +1957,17 @@ function fullExportRows(record) {
     add('targets', label, 'gene', row.target.gene);
     add('targets', label, 'family', row.target.family);
     add('targets', label, 'organism', row.target.organism);
+    add('targets', label, 'rankingScore', row.rankScore.toFixed(4));
+    add('targets', label, 'supportingProfiles', row.support);
+    add('targets', label, 'distinctFingerprintProfiles', row.distinctCount);
+    add('targets', label, 'matchingQueryProfiles', row.matchingProfiles);
+    add('targets', label, 'applicability', row.applicability);
     add('targets', label, 'nearestLigandSimilarity', row.score.toFixed(4));
     add('targets', label, 'meanTop3Similarity', row.mean.toFixed(4));
     add('targets', label, 'nearestLigand', row.nearest.name);
     add('targets', label, 'activesScored', row.count);
-    add('targets', label, 'similarityMetric', metricName);
-    const bench = benchmarkRow(row.target);
+    add('targets', label, 'similarityMetric', row.mode==='legacy'?metricName:'Geometric mean stereo ECFP4 / FCFP4 / pairs Tanimoto');
+    const bench = row.mode==='legacy' && method.key==='ecfp4' && metricKey==='tanimoto' ? benchmarkRow(row.target) : null;
     add('targets', label, 'looRecallAt1', bench ? bench.r1.toFixed(4) : 'not measurable');
     add('targets', label, 'looTrials', bench ? bench.n : 0);
     add('targets', label, 'looMedianRank', bench ? bench.median : 'not measurable');
@@ -2023,6 +2054,10 @@ function fullExportRows(record) {
     pair('metabolism', 'rulesTried', tree.rulesTried);
     pair('metabolism', 'metabolites', tree.metabolites.length);
     pair('metabolism', 'enumerationCapped', tree.truncated ? 'yes' : 'no');
+    pair('metabolism','rankingPolicy',tree.rankingPolicy||'legacy');
+    pair('metabolism','identityScope',tree.identityScope||'unspecified');
+    pair('metabolism','maxNodes',tree.maxNodes);
+    if(tree.diagnostics)Object.entries(tree.diagnostics).forEach(([key,value])=>pair('metabolism','diagnostics.'+key,typeof value==='object'?JSON.stringify(value):value));
     tree.routes.forEach((row) => {
       add('metabolism', 'route: ' + row.enzyme, 'metabolites', row.count);
       add('metabolism', 'route: ' + row.enzyme, 'summedWeight', row.weight.toFixed(4));
