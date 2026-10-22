@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 5559,
+  "entries": 5585,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -17048,6 +17048,55 @@
       "atomIndices": [
         2
       ]
+    },
+    {
+      "index": 5579,
+      "name": "5,7,8-trihydroxy-2-(4-hydroxyphenyl)-2,3-dihydrochromen-4-one",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5580,
+      "name": "5-hydroxy-2-(4-hydroxyphenyl)-2,3-dihydrochromen-4-one",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5581,
+      "name": "5,6,7-trihydroxy-2-(4-hydroxyphenyl)-2,3-dihydrochromen-4-one",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5582,
+      "name": "5,7-dihydroxy-2-phenyl-2,3-dihydrochromen-4-one",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5583,
+      "name": "5,7-dihydroxy-2-(4-hydroxyphenyl)-8-methoxy-2,3-dihydrochromen-4-one",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5584,
+      "name": "5,8-dihydroxy-2-(4-hydroxyphenyl)-2,3-dihydrochromen-4-one",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5585,
+      "name": "5-hydroxy-2-(4-hydroxyphenyl)-7-methoxy-2,3-dihydrochromen-4-one",
+      "atomIndices": [
+        3
+      ]
     }
   ],
   "chargedEntries": [
@@ -17297,7 +17346,7 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 9,
-    "unspecifiedStereocenters": 1994,
+    "unspecifiedStereocenters": 2001,
     "chargedEntries": 46,
     "fragmentedEntries": 0,
     "radicalEntries": 0,
