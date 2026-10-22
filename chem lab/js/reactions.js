@@ -133,6 +133,8 @@ const REACTION_LIMITS = { tempMin: -100, tempMax: 300, maxCompounds: 12, maxAddi
 const REACTION_SCHEME_SETTINGS = { gap: 45, plusGap: 30, arrowLength: 150, emptyWidth: 60 };
 
 const REACTION_NAME_ALIASES = {
+  'peracetic acid': 'CC(=O)OO',
+  phthalimide: 'O=C1NC(=O)c2ccccc21',
   'acetic formic anhydride': 'CC(=O)OC=O',
   'phosphorus trichloride': 'ClP(Cl)Cl',
   pcl3: 'ClP(Cl)Cl',

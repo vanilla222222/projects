@@ -26,7 +26,7 @@ function pathFinderRouteRank(route) {
 }
 
 function pathFinderProtectionLinks(candidate, carried, destination) {
-  if (!candidate.pgSteps || !candidate.protection || candidate.protection.group !== 'amine') return null;
+  if (!candidate.pgSteps || !candidate.protection) return null;
   const selected = pathFinderStructure(candidate.protection.precursor);
   if (selected.key !== carried.key || candidate.pgSteps.length !== 3) return null;
   const links = [];
@@ -38,7 +38,8 @@ function pathFinderProtectionLinks(candidate, carried, destination) {
     if (precursor < 0) return null;
     const kind = step.role === 'step' ? 'reaction' : step.role;
     const group = candidate.protection.label;
-    const name = kind === 'protect' ? 'Protect amine with ' + group : kind === 'deprotect' ? 'Remove ' + group + ' and restore the amine' : step.outcome.name + ' with the amine protected';
+    const functionalGroup = candidate.protection.group;
+    const name = kind === 'protect' ? 'Protect ' + functionalGroup + ' with ' + group : kind === 'deprotect' ? 'Remove ' + group + ' and restore the ' + functionalGroup : step.outcome.name + ' with the ' + functionalGroup + ' protected';
     const c = {
       transform: kind === 'reaction' ? candidate.transform : step.outcome.rule || step.outcome.id,
       name, group: kind === 'reaction' ? candidate.group : 'Protecting groups',
@@ -46,7 +47,7 @@ function pathFinderProtectionLinks(candidate, carried, destination) {
       outcomeName: name, precursors, reagents: step.reagents, conditions: step.conditions,
       compounds: step.compounds, outcome: step.outcome, product: step.product,
       minor: step.minor, labels: reactionConditionLabels(step.conditions, step.compounds),
-      planning: { kind, group, reason: candidate.protection.reason },
+      planning: { kind, group, groupId: candidate.protection.id, reason: candidate.protection.reason, compatibility: candidate.protection.compatibility || null },
     };
     // Keep each visible substep independently checkable; the combined candidate
     // must not hide a failed or discontinuous protecting-group operation.
@@ -55,6 +56,21 @@ function pathFinderProtectionLinks(candidate, carried, destination) {
     from = product;
   }
   return from.key === destination.key ? links : null;
+}
+
+function pathFinderProtectionConflict(candidate) {
+  if (typeof protectionAssess !== 'function' || typeof protectionGroups !== 'function') return null;
+  try {
+    const products = candidate.outcome && candidate.outcome.products || (candidate.product ? [candidate.product] : []);
+    const remaining = new Set(products.flatMap((p) => protectionGroups(p.fragment || p.isomericSmiles || p.smiles)).map((s) => s.id));
+    for (const compound of (candidate.compounds || []).filter((c) => c.role === 'reactant')) {
+      const source = compound.fragment || compound.isomericSmiles || compound.smiles;
+      const report = protectionAssess(source, candidate.compounds, candidate.conditions);
+      const failed = (report.sites || []).find((site) => remaining.has(site.id) && site.status !== 'compatible');
+      if (failed) return failed.label + ' is retained in the predicted product, but its survival is ' + failed.status + ': ' + (failed.reasons || []).join(' ');
+    }
+  } catch (error) { return 'Protecting-group survival could not be assessed for this candidate.'; }
+  return null;
 }
 
 function pathFinderAmineConflict(candidate) {
@@ -92,12 +108,14 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
   });
   const split = (values) => (Array.isArray(values) ? values : String(values || '').split(/[\n,]+/)).map((s) => String(s).trim()).filter(Boolean);
   const forbiddenRules = split(opts.forbiddenRules).map((s) => s.toLowerCase());
+  opts.allowedProtectingGroups = options && options.allowedProtectingGroups !== undefined
+    ? split(options.allowedProtectingGroups).map((id) => id.toLowerCase()) : null;
   const forbiddenReagents = split(opts.forbiddenReagents).map((text) => {
     let key = '';
     try { key = pathFinderMaterialKey(reactionParseCompound(text).smiles); } catch (error) { /* Named catalyst labels need no structure. */ }
     return { text: text.toLowerCase(), key };
   });
-  const diagnostics = { candidates: 0, inventory: 0, reagents: 0, rules: 0, stereo: 0, protection: 0, protectionMessages: [], noDisconnections: 0, depth: 0, branch: 0, missingMaterials: [] };
+  const diagnostics = { candidates: 0, inventory: 0, reagents: 0, rules: 0, stereo: 0, protection: 0, protectionMessages: opts.allowedProtectingGroups && !opts.allowedProtectingGroups.length ? ['Automatic protection planning is disabled.'] : [], noDisconnections: 0, depth: 0, branch: 0, missingMaterials: [] };
   const job = { start: start.smiles, target: target.smiles, options: opts, status: start.key === target.key ? 'identical' : 'running', route: [], routes: [], expanded: 0, truncated: false, elapsedMs: 0, diagnostics, termination: '' };
   const queue = [{ smiles: target.smiles, key: target.key, chain: [], ancestors: new Set([target.key]) }];
   const queued = new Set(), expanded = new Map(), routeKeys = new Set();
@@ -141,7 +159,19 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
     if (candidates.length > opts.maxBranch) { diagnostics.branch += candidates.length - opts.maxBranch; job.truncated = true; }
     for (const candidate of candidates.slice(0, opts.maxBranch)) {
       diagnostics.candidates++;
+      if (candidate.pgSteps && opts.allowedProtectingGroups && !opts.allowedProtectingGroups.includes(candidate.protection && candidate.protection.id)) {
+        diagnostics.protection++;
+        const reason = opts.allowedProtectingGroups.length ? 'The required protecting group is excluded by the allowed protecting groups setting.' : 'Automatic protection planning is disabled.';
+        if (!diagnostics.protectionMessages.includes(reason)) diagnostics.protectionMessages.push(reason);
+        continue;
+      }
       if (candidate.stereo === 'mismatch' || candidate.stereo === 'racemic') { diagnostics.stereo++; continue; }
+      const preservationConflict = candidate.pgSteps ? null : pathFinderProtectionConflict(candidate);
+      if (preservationConflict) {
+        diagnostics.protection++;
+        if (diagnostics.protectionMessages.length < 4 && !diagnostics.protectionMessages.includes(preservationConflict)) diagnostics.protectionMessages.push(preservationConflict);
+        continue;
+      }
       const amineConflict = pathFinderAmineConflict(candidate);
       if (amineConflict) {
         diagnostics.protection++;
@@ -166,6 +196,7 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
         const links = candidate.pgSteps ? pathFinderProtectionLinks(candidate, carried, node)
           : [{ candidate, precursor: i, from: carried.smiles, to: node.smiles, fromKey: carried.key, toKey: node.key }];
         if (!links) { diagnostics.protection++; continue; }
+        if (links.some((link) => pathFinderProtectionConflict(link.candidate))) { diagnostics.protection++; continue; }
         if (links.some((link) => ruleBlocked(link.candidate))) { diagnostics.rules++; continue; }
         if (links.some((link) => reagentBlocked(link.candidate))) { diagnostics.reagents++; continue; }
         if (links.some((link) => link.candidate.precursors.some((p, j) => j !== link.precursor && !stocked(p.isomericSmiles || p.smiles)))) { diagnostics.inventory++; continue; }
@@ -197,7 +228,7 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
         if (expanded.has(node.key)) { attach(node, expanded.get(node.key)); continue; }
         if (job.expanded >= opts.maxNodes) { finish('node-limit'); break; }
         const graph = retroFromSmiles(node.smiles);
-        current = { node, iterator: retroDisconnectSteps(graph, retroIds(graph), { protect: true }) };
+        current = { node, iterator: retroDisconnectSteps(graph, retroIds(graph), { protect: !opts.allowedProtectingGroups || opts.allowedProtectingGroups.length > 0 }) };
         job.expanded++;
       }
       const next = current.iterator.next();
@@ -298,6 +329,7 @@ function createPathFinder(deps) {
         maxDepth: Number(value('path-depth', 3)), maxRoutes: Number(value('path-route-count', 3)), stockPolicy: value('path-stock-policy', 'builtin'),
         availableMaterials: String(value('path-inventory', '')).split(/\n/).map((s) => s.trim()).filter(Boolean),
         forbiddenReagents: value('path-forbidden-reagents', ''), forbiddenRules: value('path-forbidden-rules', ''),
+        allowedProtectingGroups: value('path-protection-policy', 'auto') === 'off' ? [] : String(value('path-allowed-protecting-groups', '')).trim() ? String(value('path-allowed-protecting-groups', '')).split(/[\s,]+/).filter(Boolean) : undefined,
       });
     } catch (error) { status.textContent = error.message; return; }
     run.disabled = true; cancel.disabled = false;

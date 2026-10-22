@@ -1033,9 +1033,19 @@ function rxxRuleProtection(ctx) {
       if (nitrogen) {
         rxRemoveBranch(g, carbonyl, nitrogen.atom.id);
       }
+      // Hydrogenolysis is not orthogonal to ordinary alkene/alkyne and nitro
+      // reduction on the same molecule. Do not offer an isolated Cbz/Bn
+      // cleavage endpoint that silently preserves those susceptible groups.
+      const unsaturated = s.info.alkenes.concat(s.info.alkynes).filter(e => g.getAtom(e.a) && g.getAtom(e.b));
+      unsaturated.forEach(e => rxSetOrder(g, e.a, e.b, 1));
+      const nitro = typeof rxyNitro === 'function' ? rxyNitro(s).filter(n => g.getAtom(n.n)) : [];
+      nitro.forEach(n => { n.os.forEach(id => g.removeAtom(id)); g.getAtom(n.n).charge = 0; });
+      if (unsaturated.length) rxyCleanAlkenes(g);
+      const hydrogenDemand = 1 + s.info.alkenes.length + 2 * s.info.alkynes.length + 3 * nitro.length;
       out.push(rxOutcome('hydrogenolysis', nitrogen ? 'Cbz removal (hydrogenolysis)' : 'Benzyl hydrogenolysis', 'Protecting group removal', g,
         'On the Pd surface H₂ cleaves the weak benzylic C–O bond, releasing toluene and the free ' + (nitrogen ? 'carbamic acid, which loses CO₂ to give the amine.' : carbonyl !== undefined ? 'carboxylic acid.' : 'alcohol.'),
-        { score: 14, byproducts: ['toluene'].concat(nitrogen ? ['CO₂'] : []), consumes: [rxUse(s, 1), rxUse(ctx.get('H2'), 1)] }));
+        { score: 14, byproducts: ['toluene'].concat(nitrogen ? ['CO₂'] : [], nitro.length ? ['water from nitro reduction'] : []), consumes: [rxUse(s, 1), rxUse(ctx.get('H2'), hydrogenDemand)],
+          warnings: unsaturated.length || nitro.length ? ['C=C/C≡C and nitro reduction is included with hydrogenolysis. Selective removal while retaining these groups is not established by this model.'] : [] }));
     });
   }
   return out;

@@ -154,6 +154,7 @@ function routeComparisonRender(container, job, deps) {
       }
       detail.append(make('p', 'Stereochemistry: ' + step.stereo + '. Unreported concerns are not evidence of experimental selectivity.'));
       addList(detail, 'Step warnings', step.warnings);
+      if (step.candidate.outcome && step.candidate.outcome.protectionAssessment && typeof protectionAssessmentElement === 'function') detail.append(protectionAssessmentElement(step.candidate.outcome.protectionAssessment));
       if (step.evidence && typeof reactionEvidenceElement === 'function') detail.append(reactionEvidenceElement(step.evidence, true));
       else detail.append(make('p', 'Evidence details are unavailable for this step.'));
       if (deps.openInLab) {

@@ -1,0 +1,41 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
+const root=path.join(__dirname,'..'),ctx=vm.createContext({console,performance,setTimeout,clearTimeout});
+for(const m of fs.readFileSync(path.join(root,'index.html'),'utf8').matchAll(/<script src="([^"]+)"/g))if(m[1]!=='js/app.js')vm.runInContext(fs.readFileSync(path.join(root,m[1]),'utf8'),ctx,{filename:m[1]});
+const run=code=>vm.runInContext(code,ctx);let checks=0;const check=(code,expected,label)=>{assert.equal(run(code),expected,label);checks++;};
+run(`function pg4Search(start,target,options={}){const job=pathFinderCreate(start,target,{maxDepth:3,maxRoutes:1,stockPolicy:'custom',availableMaterials:['CC(=O)Cl'],forbiddenRules:['fischer'],...options});while(job.status==='running')job.step(100);return job;}
+var pg4Jobs={};`);
+for(const id of ['boc','cbz','fmoc']){
+ run(`pg4Jobs.${id}=pg4Search('NCCO','NCCOC(C)=O',{allowedProtectingGroups:['${id}']});`);
+ check(`pg4Jobs.${id}.status`,'found',id+' supported route');
+ check(`pg4Jobs.${id}.route.length`,3,id+' all operations counted');
+ check(`pg4Jobs.${id}.route.map(l=>l.candidate.planning.kind).join(',')`,'protect,reaction,deprotect',id+' explicit roles');
+ check(`pg4Jobs.${id}.route.every(l=>l.candidate.planning.groupId==='${id}' && /competes/.test(l.candidate.planning.reason))`,true,id+' stable group ID and rationale');
+ check(`pg4Jobs.${id}.route.every(l=>retroForwardCheck(l.candidate,l.to))`,true,id+' all substeps independently verified');
+ check(`pg4Jobs.${id}.route.slice(1).every((l,i)=>l.fromKey===pg4Jobs.${id}.route[i].toKey)`,true,id+' exact intermediate continuity');
+ check(`Object.values(pg4Jobs.${id}.route[0].candidate.planning.compatibility).every(r=>r && r.status==='compatible')`,true,id+' registry approves installation/main/removal');
+}
+check(`pg4Search('NCCO','NCCOC(C)=O',{forbiddenReagents:['Boc2O','TFA']}).status`,'found','Boc constraints select an alternative removal strategy');
+check(`pg4Search('NCCO','NCCOC(C)=O',{allowedProtectingGroups:['cbz'],forbiddenReagents:['Pd/C']}).status==='found'`,false,'Cbz catalyst exclusion applies to removal');
+check(`pg4Search('NCCO','NCCOC(C)=O',{allowedProtectingGroups:['fmoc'],forbiddenReagents:['piperidine']}).status==='found'`,false,'Fmoc removal reagent exclusion applies');
+check(`pg4Search('NCCO','NCCOC(C)=O',{allowedProtectingGroups:[]}).status==='found'`,false,'Empty allowlist disables protection');
+check(`pg4Search('NCCO','NCCOC(C)=O',{allowedProtectingGroups:['imaginary']}).status==='found'`,false,'Unknown group ID cannot invent a route');
+check(`pg4Search('NCCO','NCCOC(C)=O',{allowedProtectingGroups:['cbz'],maxDepth:2}).status==='found'`,false,'Alternative protection cannot hide substeps within depth');
+check(`pg4Search('NCCO','NCCOC(C)=O',{allowedProtectingGroups:['cbz'],availableMaterials:[]}).status==='found'`,false,'Building block inventory applies within triplet');
+check(`(()=>{const j=pg4Search('NCCO','NCCOC(C)=O',{allowedProtectingGroups:[]});return /disabled/.test(pathFinderExplanation(j));})()`,true,'Disabled planning reason is explained');
+run(`pg4Jobs.tbs=pg4Search('OCCC=O','OCCC(O)C',{availableMaterials:['C[Mg]Br'],allowedProtectingGroups:['tbs'],forbiddenRules:['dehydration','hydration','hydroboration']});`);
+check(`pg4Jobs.tbs.status`,'found','Alcohol masked before Grignard addition');
+check(`pg4Jobs.tbs.route.map(l=>l.candidate.planning.groupId).join(',')`,'tbs,tbs,tbs','TBS protection appears as three visible steps');
+check(`pg4Jobs.tbs.route.map(l=>l.candidate.outcomeId).join(',')`,'silyl-protection,grignard,silyl-deprotection','Actual TBS/Grignard/fluoride chemistry');
+check(`pg4Jobs.tbs.route.every(l=>retroForwardCheck(l.candidate,l.to))`,true,'TBS path forward verified');
+check(`pg4Search('OCCC=O','OCCC(O)C',{availableMaterials:['C[Mg]Br'],allowedProtectingGroups:['tbs'],forbiddenRules:['dehydration','hydration','hydroboration'],forbiddenReagents:['TBAF'],maxNodes:1}).status==='found'`,false,'TBAF restriction blocks required removal');
+check(`(()=>{const r=retroDisconnectSmiles('NCC(OC(C)=O)CC=C',{budgetMs:30000});return r.candidates.some(c=>c.protection&&c.protection.id==='boc')&&!r.candidates.some(c=>c.protection&&c.protection.id==='cbz');})()`,true,'Cbz hydrogenolysis rejected when it would reduce a retained alkene');
+check(`(()=>{const r=retroDisconnectSmiles('NCCOC(C)=O',{budgetMs:30000});return new Set(r.candidates.filter(c=>c.pgSteps).map(c=>c.key)).size===3;})()`,true,'Group alternatives retain distinct route identities');
+check(`(()=>{const old=protectionAssess;try{protectionAssess=()=>({sites:[{id:'boc',status:'unknown',reasons:['Unmodeled regime']}]});const r=retroDisconnectSmiles('NCCOC(C)=O',{budgetMs:30000});return !r.candidates.some(c=>c.pgSteps);}finally{protectionAssess=old;}})()`,true,'Unknown compatibility cannot approve an automatic protection plan');
+check(`(()=>{const g=retroFromSmiles('NCCOC(C)=O'),before=JSON.stringify(g);retroDisconnect(g,undefined,{budgetMs:30000});return JSON.stringify(g)===before;})()`,true,'Protection alternatives do not mutate target graph');
+check(`pg4Search('NC[C@H](O)C','NC[C@H](OC(C)=O)C',{allowedProtectingGroups:['cbz']}).status`,'found','Cbz route retains supported spectator stereochemistry');
+check(`(()=>{const j=pg4Search('[13CH2](N)CO','[13CH2](N)COC(C)=O',{allowedProtectingGroups:['fmoc']});return j.status==='found'&&j.route.every(l=>l.to.includes('13C'));})()`,true,'Fmoc route retains isotope labels');
+check(`pg4Search('NCCC=O','NCCC(O)C',{availableMaterials:['C[Mg]Br'],allowedProtectingGroups:['boc','cbz','fmoc'],maxDepth:1}).status==='found'`,false,'No carbamate assumed to solve protic N-H organometallic conflict');
+check(`(()=>{const j=pg4Search('CC(C)(C)OC(=O)NCCCO','CC(C)(C)OC(=O)NCC=C',{maxDepth:1,availableMaterials:[]});return j.status!=='found'&&/Boc is retained/.test(pathFinderExplanation(j));})()`,true,'Ordinary candidate cannot silently preserve acid-labile Boc in hot acidic dehydration');
+check(`(()=>{const compounds=[retroCompound({smiles:'CC(C)(C)OC(=O)NCCO',role:'reactant'}),retroCompound(RETRO_REAGENTS.tfa)],conditions=defaultReactionConditions(),result=predictReaction(compounds,conditions),outcome=[result.best,...result.alternatives].filter(Boolean).find(o=>o.id==='boc-deprotection');return !!outcome&&pathFinderProtectionConflict({compounds,conditions,outcome,product:outcome.products[0]})===null;})()`,true,'Intentional verified cleavage is allowed when the group disappears');
+console.log('Protection planner round 4: '+checks+' checks passed.');

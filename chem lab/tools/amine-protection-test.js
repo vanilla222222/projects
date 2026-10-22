@@ -29,8 +29,9 @@ check(`pathFinderCreate('CCO','CCO',{maxDepth:10}).options.budgetMs`, 30000, 'Lo
 check(`pathFinderCreate('CCO','CCO',{maxDepth:3}).options.maxNodes`, 60, 'Short search retains bounded budget');
 check(`pathFinderCreate('CCO','CCO',{maxDepth:10,maxNodes:2,budgetMs:50}).options.maxNodes`, 2, 'Explicit smaller budget honored');
 check(`protectionSearch('NCCO','NCCOC(C)=O',{forbiddenRules:['fischer','protection']}).status==='found'`, false, 'Protection rule exclusion applies to substeps');
-check(`protectionSearch('NCCO','NCCOC(C)=O',{forbiddenReagents:['Boc2O']}).status==='found'`, false, 'Protection reagent exclusion applies');
-check(`protectionSearch('NCCO','NCCOC(C)=O',{forbiddenReagents:['TFA']}).status==='found'`, false, 'Deprotection reagent exclusion applies');
+check(`(()=>{const j=protectionSearch('NCCO','NCCOC(C)=O',{forbiddenReagents:['Boc2O']});return j.status==='found'&&j.route.every(l=>l.candidate.planning.group!=='Boc');})()`, true, 'Protection reagent exclusion selects an independent compatible alternative');
+check(`(()=>{const j=protectionSearch('NCCO','NCCOC(C)=O',{forbiddenReagents:['TFA']});return j.status==='found'&&j.route.every(l=>l.candidate.planning.group!=='Boc');})()`, true, 'Deprotection reagent exclusion selects an alternative removal strategy');
+check(`protectionSearch('NCCO','NCCOC(C)=O',{forbiddenReagents:['Boc2O','CbzCl','Fmoc-Cl']}).status==='found'`, false, 'All encoded amine installation reagents excluded');
 check(`protectionSearch('NCCO','NCCOC(C)=O',{availableMaterials:[]}).status==='found'`, false, 'Other main-step building block still required');
 check(`(()=>{const j=protectionSearch('CC(C)(C)OC(=O)NCCO','CC(C)(C)OC(=O)NCCOC(C)=O',{maxDepth:1});return j.status==='found' && j.route.length===1 && !j.route[0].candidate.planning;})()`, true, 'Already protected amine does not add needless protection');
 check(`(()=>{const j=protectionSearch('NC[C@H](O)C','NC[C@H](OC(C)=O)C');return j.status==='found' && j.route.length===3 && j.route[2].toKey===pathFinderKey('NC[C@H](OC(C)=O)C') && j.route[0].fromKey===pathFinderKey('NC[C@H](O)C');})()`, true, 'Pre-existing tetrahedral stereochemistry preserved');
