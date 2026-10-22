@@ -3,6 +3,18 @@ const MONO_MASS = { H: 1.00782503, D: 2.01410178, C: 12, N: 14.003074, O: 15.994
 fillElementTable(ATOMIC_MASS, (element) => element.mass);
 fillElementTable(MONO_MASS, (element) => element.monoMass);
 
+// NIST Atomic Weights and Isotopic Compositions, relative atomic masses.
+// https://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl?ele=C
+// The same table endpoint supplies H, N, O and S. Unknown isotope masses are
+// unavailable; a mass number must not be substituted for an exact mass.
+const PROP_ISOTOPE_MASS = Object.freeze({
+  H: { 1: 1.00782503223, 2: 2.01410177812, 3: 3.0160492779 },
+  C: { 12: 12, 13: 13.00335483507, 14: 14.0032419884 },
+  N: { 14: 14.00307400443, 15: 15.00010889888 },
+  O: { 16: 15.99491461957, 17: 16.99913175650, 18: 17.99915961286 },
+  S: { 32: 31.9720711744, 33: 32.9714589098, 34: 33.967867004, 36: 35.96708071 },
+});
+
 function propContext(graph, atomIds) {
   const ids = atomIds.slice();
   const idSet = new Set(ids);
@@ -100,9 +112,14 @@ function propFindRings(ctx) {
 
 function propMass(ctx, table) {
   let total = 0;
-  ctx.ids.forEach((id) => {
-    total += table[ctx.el.get(id)] + ctx.hydrogens.get(id) * table.H;
-  });
+  for (const id of ctx.ids) {
+    const atom = ctx.graph.getAtom(id);
+    const isotope = atom.element === 'D' ? 2 : atom.isotope;
+    const element = atom.element === 'D' ? 'H' : atom.element;
+    const atomicMass = isotope ? (PROP_ISOTOPE_MASS[element] || {})[isotope] : table[element];
+    if (!Number.isFinite(atomicMass)) return null;
+    total += atomicMass + ctx.hydrogens.get(id) * table.H;
+  }
   return total;
 }
 
@@ -565,6 +582,26 @@ function propSmiles(ctx, options) {
   if (ctx.ids.length === 0) {
     return '';
   }
+  // Traverse each component separately. A single DFS tree omits counterions
+  // and leaves stereocentres in other components without traversal metadata.
+  const remaining = new Set(ctx.ids);
+  const components = [];
+  while (remaining.size) {
+    const stack = [remaining.values().next().value];
+    const ids = [];
+    remaining.delete(stack[0]);
+    while (stack.length) {
+      const id = stack.pop();
+      ids.push(id);
+      ctx.nbrs.get(id).forEach((n) => {
+        if (remaining.delete(n.id)) stack.push(n.id);
+      });
+    }
+    components.push(ids);
+  }
+  if (components.length > 1) {
+    return components.map((ids) => propSmiles(propContext(ctx.graph, ids), options)).sort().join('.');
+  }
   const rank = propCanonicalRank(ctx);
   const order = (a, b) => rank.get(a) - rank.get(b) || a - b;
   const start = ctx.ids.slice().sort((a, b) => {
@@ -616,13 +653,14 @@ function propSmiles(ctx, options) {
     const q = ctx.charge.get(v);
     const e = ctx.el.get(v);
     const chiral = stereo ? stereo.chiral.get(v) || '' : '';
-    if (!q && !chiral && PROP_SMILES_ORGANIC.has(e)) {
+    const isotope = ctx.graph.getAtom(v).isotope;
+    if (!q && !chiral && !isotope && PROP_SMILES_ORGANIC.has(e)) {
       return e;
     }
     const h = ctx.hydrogens.get(v);
     const mag = Math.abs(q);
     const qText = q ? (q > 0 ? '+' : '-') + (mag > 1 ? mag : '') : '';
-    return '[' + (e === 'D' ? '2H' : e) + chiral + (h ? 'H' + (h > 1 ? h : '') : '') + qText + ']';
+    return '[' + (e === 'D' ? '2H' : (isotope || '') + e) + chiral + (h ? 'H' + (h > 1 ? h : '') : '') + qText + ']';
   };
   const edgeText = (v, w) => (stereo && stereo.dir.has(v + '>' + w) ? stereo.dir.get(v + '>' + w) : bondChar(orderOf(v, w)));
   const write = (v) => {
@@ -703,7 +741,7 @@ function propSmilesStereo(ctx, start, children, openings, closings) {
   const treeEdge = (a, b) => parent.get(b) === a || parent.get(a) === b;
   const dbs = findStereoDoubleBonds(graph, ctx.ids)
     .map((r) => graph.bonds.find((b) => b.id === r.bondId))
-    .filter((b) => b)
+    .filter((b) => b && b.stereoSpecified !== false)
     .sort((x, y) => Math.min(pre.get(x.atomA), pre.get(x.atomB)) - Math.min(pre.get(y.atomA), pre.get(y.atomB)));
   const symbolFor = (end, ref, d) => {
     const up = parent.get(end) === ref ? -d : d;
@@ -787,6 +825,7 @@ function computePropertiesProtio(graph, atomIds) {
     formula: propHillFormula(ctx),
     averageMass: mass,
     exactMass: propMass(ctx, MONO_MASS),
+    isotopeMassWarning: mass === null ? 'Mass unavailable: the structure contains an isotope outside the supported isotope mass table.' : null,
     heavyAtoms: ctx.ids.length,
     hydrogens: propHydrogenCount(ctx),
     rings: Math.max(0, ringCount),
@@ -822,5 +861,13 @@ function computeProperties(graph, atomIds) {
   p.exactMass += dCount * (MONO_MASS.D - MONO_MASS.H);
   p.hydrogens = remaining;
   p.deuterium = dCount;
+  // The protio copy is useful for descriptor arithmetic, but must never be
+  // used to serialize the isotope-labelled structure.
+  const original = propContext(graph, atomIds);
+  p.averageMass = propMass(original, ATOMIC_MASS);
+  p.exactMass = propMass(original, MONO_MASS);
+  p.isotopeMassWarning = p.averageMass === null ? 'Mass unavailable: the structure contains an isotope outside the supported isotope mass table.' : null;
+  p.smiles = propSmiles(original);
+  p.isomericSmiles = propSmiles(original, { isomeric: true });
   return p;
 }

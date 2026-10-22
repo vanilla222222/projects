@@ -35,7 +35,7 @@
   }
 
   function fmt(value, digits) {
-    return Number(value).toFixed(digits);
+    return Number.isFinite(value) ? value.toFixed(digits) : 'Unavailable';
   }
 
   function row(label, value) {
@@ -69,8 +69,9 @@
       }
     }
     html += copyBlock('SMILES', p.isomericSmiles || p.smiles, '');
-    if (p.deuterium) {
-      html += '<div class="info-note">SMILES and PubChem data describe the non-deuterated compound.</div>';
+    if (atomIds.some((id) => graph.getAtom(id).isotope)) html += '<div class="info-note">Use the structure or SMILES to identify isotope-labelled atoms.</div>';
+    if (p.isotopeMassWarning) {
+      html += '<div class="info-note">' + escapeHtml(p.isotopeMassWarning) + '</div>';
     }
     html += '<div class="info-block"><h3>Tier 1 &mdash; composition</h3><table class="info-table">' +
       row('Formula', '<span class="formula">' + formulaHtml(p.formula) + '</span>') +
@@ -442,6 +443,7 @@
         if (a.abbrHidden === true) {
           atom.abbrHidden = true;
         }
+        if (Number.isInteger(a.isotope) && a.isotope > 0 && a.isotope <= 300) atom.isotope = a.isotope;
         return atom;
       });
     const ids = new Set(atoms.map((a) => a.id));
@@ -453,6 +455,7 @@
         atomB: b.atomB,
         order: b.order,
         stereo: b.stereo === 'wedge' || b.stereo === 'hash' ? b.stereo : null,
+        ...(typeof b.stereoSpecified === 'boolean' ? { stereoSpecified: b.stereoSpecified } : {}),
       }));
     graph.atoms = atoms;
     graph.bonds = bonds;
@@ -552,9 +555,9 @@
     });
     statusFormula.innerHTML = formulas.map(formulaHtml).join(' + ') + (components.length > 4 ? ' + …' : '');
     if (components.length === 1 && masses.length === 1) {
-      statusMass.textContent = 'M ' + masses[0].averageMass.toFixed(2) + ' g/mol · exact ' + masses[0].exactMass.toFixed(4);
+      statusMass.textContent = 'M ' + fmt(masses[0].averageMass, 2) + ' g/mol · exact ' + fmt(masses[0].exactMass, 4);
     } else if (components.length > 1 && components.length <= 4 && masses.length === components.length) {
-      statusMass.textContent = 'ΣM ' + masses.reduce((sum, p) => sum + p.averageMass, 0).toFixed(2) + ' g/mol';
+      statusMass.textContent = masses.every((p) => Number.isFinite(p.averageMass)) ? 'ΣM ' + masses.reduce((sum, p) => sum + p.averageMass, 0).toFixed(2) + ' g/mol' : 'Mass unavailable';
     } else {
       statusMass.textContent = '';
     }
@@ -1453,6 +1456,7 @@
       if (a.charge) {
         atom.charge = a.charge;
       }
+      if (a.isotope) atom.isotope = a.isotope;
       idMap.set(a.id, atom.id);
     });
     fragment.bonds.forEach((b) => {
@@ -1460,6 +1464,7 @@
       if (bond) {
         bond.order = b.order;
         bond.stereo = b.stereo;
+        if (typeof b.stereoSpecified === 'boolean') bond.stereoSpecified = b.stereoSpecified;
       }
     });
     return temp.connectedComponents()
@@ -1732,6 +1737,7 @@
         if (a.charge) {
           atom.charge = a.charge;
         }
+        if (a.isotope) atom.isotope = a.isotope;
         idMap.set(a.id, atom.id);
       });
       importFragment.bonds.forEach((b) => {
@@ -1739,6 +1745,7 @@
         if (bond) {
           bond.order = b.order;
           bond.stereo = b.stereo;
+        if (typeof b.stereoSpecified === 'boolean') bond.stereoSpecified = b.stereoSpecified;
         }
       });
     }
@@ -1781,6 +1788,7 @@
           if (a.charge) {
             atom.charge = a.charge;
           }
+          if (a.isotope) atom.isotope = a.isotope;
           idMap.set(a.id, atom.id);
         });
         importFragment.bonds.forEach((b) => {
@@ -1788,6 +1796,7 @@
           if (bond) {
             bond.order = b.order;
             bond.stereo = b.stereo;
+        if (typeof b.stereoSpecified === 'boolean') bond.stereoSpecified = b.stereoSpecified;
           }
         });
         const parts = temp.connectedComponents().map((c) => {
@@ -2870,9 +2879,10 @@
         if (a.charge) {
           atom.charge = a.charge;
         }
+        if (a.isotope) atom.isotope = a.isotope;
         return atom;
       }),
-      bonds: contributor.graph.bonds.map((b) => ({ atomA: b.atomA, atomB: b.atomB, order: b.order, stereo: b.stereo || null })),
+      bonds: contributor.graph.bonds.map((b) => ({ atomA: b.atomA, atomB: b.atomB, order: b.order, stereo: b.stereo || null, ...(typeof b.stereoSpecified === 'boolean' ? { stereoSpecified: b.stereoSpecified } : {}) })),
     };
     const source = renderer.contentBounds(resonanceSource.filter((id) => graph.getAtom(id)));
     const xs = fragment.atoms.map((a) => a.x);
@@ -3639,7 +3649,7 @@
   }
 
   document.addEventListener('keydown', (event) => {
-    if (!ptableOverlay.hidden || document.body.dataset.view === 'reactions') {
+    if (!ptableOverlay.hidden || ['reactions', 'pathfinder', 'workspace'].includes(document.body.dataset.view)) {
       return;
     }
     if (!resonanceOverlay.hidden) {
@@ -3954,7 +3964,11 @@
 
   function setView(view) {
     const reactions = view === 'reactions';
-    document.body.dataset.view = reactions ? 'reactions' : 'editor';
+    const pathfinder = view === 'pathfinder';
+    const workspace = view === 'workspace';
+    document.body.dataset.view = reactions ? 'reactions' : pathfinder ? 'pathfinder' : workspace ? 'workspace' : 'editor';
+    document.getElementById('path-view').hidden = !pathfinder;
+    document.getElementById('workspace-view').hidden = !workspace;
     reactionView.hidden = !reactions;
     viewTabs.forEach((tab) => {
       const on = tab.dataset.view === document.body.dataset.view;
@@ -3965,6 +3979,10 @@
     storageSet('view', document.body.dataset.view);
     if (reactions) {
       reactionLab.show();
+    } else if (pathfinder) {
+      pathFinder.show();
+    } else if (workspace) {
+      routeWorkspace.show();
     } else {
       resizeCanvas();
     }
@@ -4049,6 +4067,7 @@
     },
     openInLab(compounds, conditions) {
       reactionLab.state.compounds = [];
+      reactionLab.state.selected = '';
       reactionLab.state.conditions = normalizeReactionConditions(JSON.parse(JSON.stringify(conditions)));
       compounds.forEach((c) => {
         const added = reactionLab.addSmiles(c.smiles, c.role);
@@ -4060,9 +4079,32 @@
     },
   });
   document.getElementById('retro-button').addEventListener('click', () => openRetro(null));
-  viewTabs.forEach((tab) => tab.addEventListener('click', () => setView(tab.dataset.view)));
-  if (storageGet('view') === 'reactions') {
+  function openRouteStepInLab(compounds, conditions) {
+    reactionLab.state.compounds = [];
+    reactionLab.state.selected = '';
+    reactionLab.state.conditions = normalizeReactionConditions(JSON.parse(JSON.stringify(conditions)));
+    compounds.forEach((c) => {
+      const added = reactionLab.addSmiles(c.isomericSmiles || c.smiles, c.role);
+      if (added && c.label) added.label = c.label;
+    });
     setView('reactions');
+  }
+  const routeWorkspace = createRouteWorkspace({
+    container: document.getElementById('route-workspace'),
+    thumbnail: structureThumbnail,
+    openInLab: openRouteStepInLab,
+  });
+  const pathFinder = createPathFinder({
+    thumbnail: structureThumbnail,
+    openInLab: openRouteStepInLab,
+    saveRoute(doc) {
+      routeWorkspace.addRoute(doc);
+      setView('workspace');
+    },
+  });
+  viewTabs.forEach((tab) => tab.addEventListener('click', () => setView(tab.dataset.view)));
+  if (['reactions', 'pathfinder', 'workspace'].includes(storageGet('view'))) {
+    setView(storageGet('view'));
   } else {
     document.body.dataset.view = 'editor';
   }

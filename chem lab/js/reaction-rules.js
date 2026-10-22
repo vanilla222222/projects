@@ -71,14 +71,13 @@ function rxMerge(target, source, ids) {
   ids.forEach((id) => {
     const a = source.getAtom(id);
     const n = target.addAtom(a.element, a.x + 200, a.y);
-    if (a.charge) {
-      n.charge = a.charge;
-    }
+    Object.assign(n, a, { id: n.id, x: n.x, y: n.y });
     map.set(id, n.id);
   });
   source.bonds.forEach((b) => {
     if (map.has(b.atomA) && map.has(b.atomB)) {
-      target.addBond(map.get(b.atomA), map.get(b.atomB)).order = b.order;
+      const copy = target.addBond(map.get(b.atomA), map.get(b.atomB));
+      Object.assign(copy, b, { id: copy.id, atomA: copy.atomA, atomB: copy.atomB });
     }
   });
   rxsMergeSpecs(target, source, map);
@@ -404,9 +403,8 @@ function rxCationMechanism(source, spec) {
 
 function rxComponentFragment(g, ids) {
   const set = new Set(ids);
-  const atoms = g.atoms.filter((a) => set.has(a.id)).map((a) => Object.assign({ id: a.id, element: a.element, x: a.x, y: a.y }, a.charge ? { charge: a.charge } : {},
-    a.abbr ? { abbr: a.abbr } : {}, a.abbrHidden ? { abbrHidden: true } : {}));
-  const bonds = g.bonds.filter((b) => set.has(b.atomA) && set.has(b.atomB)).map((b) => ({ atomA: b.atomA, atomB: b.atomB, order: b.order, stereo: b.stereo || null }));
+  const atoms = g.atoms.filter((a) => set.has(a.id)).map((a) => Object.assign({}, a));
+  const bonds = g.bonds.filter((b) => set.has(b.atomA) && set.has(b.atomB)).map((b) => Object.assign({}, b));
   return { format: 'chemical-graph-fragment', atoms, bonds };
 }
 
@@ -605,7 +603,32 @@ function rxMechanism(g, spec) {
   }
 }
 
+function rxValidateProductGraph(g) {
+  const ids = new Set(g.atoms.map((a) => a.id));
+  if (ids.size !== g.atoms.length) {
+    throw new Error('Reaction product has duplicate atom IDs.');
+  }
+  const pairs = new Set();
+  g.bonds.forEach((b) => {
+    const key = [b.atomA, b.atomB].sort((a, z) => a - z).join(':');
+    if (!ids.has(b.atomA) || !ids.has(b.atomB) || b.atomA === b.atomB || pairs.has(key) || ![1, 2, 3].includes(b.order)) {
+      throw new Error('Reaction product has an invalid bond.');
+    }
+    pairs.add(key);
+  });
+  // Deliberately narrow: transition metals and hypervalent main-group atoms
+  // need chemistry-specific validation rather than a blanket octet rule.
+  const ceilings = { H: 1, D: 1, C: 4, Si: 4, F: 1 };
+  g.atoms.forEach((a) => {
+    const max = a.element === 'O' ? 2 + Math.max(0, a.charge || 0) : ceilings[a.element];
+    if (max !== undefined && g.totalBondOrder(a.id) > max) {
+      throw new Error('Reaction product exceeds the supported valence of ' + a.element + '.');
+    }
+  });
+}
+
 function rxProductList(g) {
+  rxValidateProductGraph(g);
   const neutral = [];
   const ions = [];
   g.connectedComponents().forEach((comp) => {
@@ -620,22 +643,28 @@ function rxProductList(g) {
     }
     const charge = comp.atomIds.reduce((s, id) => s + (g.getAtom(id).charge || 0), 0);
     const hasCharge = comp.atomIds.some((id) => g.getAtom(id).charge);
-    const real = hasCharge ? { fragment: null, stereo: null } : rxsRealize(g, comp.atomIds);
-    (hasCharge ? ions : neutral).push({ smiles, size: comp.atomIds.length, charge, fragment: real.fragment, stereo: real.stereo });
+    const real = rxsRealize(g, comp.atomIds);
+    const item = { smiles, size: comp.atomIds.length, charge, fragment: real.fragment, stereo: real.stereo };
+    item.isomericSmiles = rxIsomericSmiles(item);
+    (hasCharge ? ions : neutral).push(item);
   });
   const items = neutral.slice();
   if (ions.length) {
     ions.sort((p, q) => q.size - p.size);
-    items.push({ smiles: ions.map((x) => x.smiles).join('.'), size: ions[0].size, fragment: null });
+    items.push({ smiles: ions.map((x) => x.smiles).join('.'), isomericSmiles: ions.map((x) => x.isomericSmiles).join('.'), size: ions[0].size, fragment: null });
   }
   items.sort((p, q) => q.size - p.size);
   const out = [];
+  const byIdentity = new Map();
   items.forEach((item) => {
-    const found = out.find((x) => x.smiles === item.smiles);
+    const identity = reactionProductIdentity(item);
+    const found = identity && byIdentity.get(identity);
     if (found) {
       found.count += 1;
     } else {
-      out.push(Object.assign({ smiles: item.smiles, isomericSmiles: rxIsomericSmiles(item), count: 1 }, item.fragment ? { fragment: item.fragment } : {}, item.stereo ? { stereo: item.stereo } : {}));
+      const product = Object.assign({ smiles: item.smiles, isomericSmiles: item.isomericSmiles, count: 1 }, item.fragment ? { fragment: item.fragment } : {}, item.stereo ? { stereo: item.stereo } : {});
+      out.push(product);
+      if (identity) byIdentity.set(identity, product);
     }
   });
   return out;
@@ -709,6 +738,9 @@ function rxSpeciesTag(g, ids) {
   const anion = ids.map((id) => g.getAtom(id)).find((a) => a.charge === -1);
   if (anion && anion.element === 'O' && rxNeighbors(g, anion.id).length === 1 && rxNeighbors(g, anion.id)[0].atom.element === 'C') {
     const carbon = rxNeighbors(g, anion.id)[0].atom;
+    if (rxNeighbors(g, carbon.id).some((n) => n.bond.order === 2 && n.atom.element === 'O')) {
+      return { tag: 'carboxylate', atom: anion.id, formula: props.formula };
+    }
     return { tag: 'alkoxide', atom: anion.id, bulky: rxCarbonNeighbors(g, carbon.id).length >= 3, formula: props.formula };
   }
   if (anion && anion.element === 'N' && rxNeighbors(g, anion.id).length === 2) {
@@ -1778,7 +1810,7 @@ function rxRuleHalide(ctx) {
     };
     const withMinor = (out, other) => {
       if (other) {
-        out.minor = out.minor.concat(other.products.filter((p) => !out.minor.some((m) => m.smiles === p.smiles)));
+        out.minor = out.minor.concat(other.products.filter((p) => { const key = reactionProductIdentity(p); return !key || !out.minor.some((m) => reactionProductIdentity(m) === key); }));
         delete out.ratio;
       }
       return out;
@@ -3116,6 +3148,11 @@ function predictReaction(compounds, conditions) {
         }
       } else if (r.products.length) {
         r.rule = rule.id;
+        r.evidence = typeof reactionOutcomeEvidence === 'function' ? reactionOutcomeEvidence(r, rule) : {
+          id: rule.id, outcomeId: r.id, name: rule.name, evidenceLevel: 'Rule-based prediction', experimentalValidation: false,
+          scope: 'Only the substrate patterns encoded by this local rule.', references: [],
+          sourceStatus: 'Reaction catalog unavailable', assumptions: [], limitations: ['No experimental validation for this query is established.'],
+        };
         outcomes.push(r);
       }
     });
@@ -3139,7 +3176,8 @@ function predictReaction(compounds, conditions) {
   });
   const unique = [];
   outcomes.forEach((o) => {
-    const key = o.id + '|' + o.products.map((p) => p.smiles).join('.');
+    const identities = o.products.map(reactionProductIdentity);
+    const key = o.id + '|' + (identities.every(Boolean) ? identities.sort().join('.') : 'unresolved:' + unique.length);
     if (!unique.some((u) => u.key === key)) {
       unique.push(Object.assign(o, { key }));
     }
@@ -3233,5 +3271,5 @@ function reactionBranches(compounds, conditions, current) {
 }
 
 function reactionProductFragment(product) {
-  return product.fragment || smilesToFragment(product.smiles);
+  return product.fragment || smilesToFragment(product.isomericSmiles || product.smiles);
 }

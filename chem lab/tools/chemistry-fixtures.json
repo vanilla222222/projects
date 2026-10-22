@@ -1,0 +1,587 @@
+{
+  "description": "Fixed small-molecule expectations chosen independently of app output. These finite examples are regression coverage, not a prospective accuracy estimate or proof of professional validation. Sources justify reaction families and naming conventions; individual simple examples are deductions from those rules. Naming accepts valid systematic names and selected retained names, not universal PIN compliance.",
+  "sources": {
+    "nomenclature": "https://iupac.qmul.ac.uk/BlueBook/P3.html",
+    "principalParent": "https://iupac.qmul.ac.uk/BlueBook/P4.html#P-44.1.1",
+    "alcoholOxidation": "https://www.chem.ucalgary.ca/courses/350/Carey5th/Ch15/ch15-4-6.html",
+    "carbonylReduction": "https://openstax.org/books/organic-chemistry/pages/19-7-nucleophilic-addition-of-hydride-and-grignard-reagents-alcohol-formation",
+    "alkeneReactions": "https://openstax.org/books/organic-chemistry/pages/8-summary-of-reactions",
+    "hydrogenation": "https://openstax.org/books/organic-chemistry/pages/8-6-reduction-of-alkenes-hydrogenation",
+    "esterification": "https://openstax.org/books/organic-chemistry/pages/21-3-reactions-of-carboxylic-acids"
+  },
+  "naming": [
+    {
+      "smiles": "C",
+      "expected": "methane",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CC",
+      "expected": "ethane",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CCC",
+      "expected": "propane",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CCCC",
+      "expected": "butane",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CC(C)C",
+      "expected": "2-methylpropane",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CC(C)(C)C",
+      "expected": "2,2-dimethylpropane",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CO",
+      "expected": "methanol",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CCO",
+      "expected": "ethanol",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CC(C)O",
+      "expected": "propan-2-ol",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "OCCO",
+      "expected": "ethane-1,2-diol",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CC=O",
+      "expected": "ethanal",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CCC=O",
+      "expected": "propanal",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CC(=O)C",
+      "expected": "propan-2-one",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CC(=O)O",
+      "expected": "ethanoic acid",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CCC(=O)O",
+      "expected": "propanoic acid",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CCOC(C)=O",
+      "expected": "ethyl acetate",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CC(=O)N",
+      "expected": "acetamide",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "NCC",
+      "expected": "ethanamine",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CC#N",
+      "expected": "ethanenitrile",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CCCl",
+      "expected": "chloroethane",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "c1ccccc1",
+      "expected": "benzene",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "Cc1ccccc1",
+      "expected": "methylbenzene",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "Oc1ccccc1",
+      "expected": "phenol",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "Nc1ccccc1",
+      "expected": "aniline",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "C1CCCCC1",
+      "expected": "cyclohexane",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "C1CCOC1",
+      "expected": "tetrahydrofuran",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "COC",
+      "expected": "methoxymethane",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CS",
+      "expected": "methanethiol",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CCS",
+      "expected": "ethanethiol",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CC(=O)C(O)C",
+      "expected": "3-hydroxybutan-2-one",
+      "source": "nomenclature"
+    },
+    {
+      "smiles": "CCC(CO)CCO",
+      "expected": "2-ethylbutane-1,4-diol",
+      "source": "principalParent"
+    },
+    {
+      "smiles": "CCC(CN)CCN",
+      "expected": "2-ethylbutane-1,4-diamine",
+      "source": "principalParent"
+    }
+  ],
+  "reactions": [
+    {
+      "label": "PCC primary alcohol",
+      "compounds": [
+        {
+          "smiles": "CCO",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[O-][Cr](=O)(=O)Cl.c1cc[nH+]cc1",
+          "role": "reagent"
+        }
+      ],
+      "rule": "oxidation-pcc",
+      "products": [
+        "CC=O"
+      ],
+      "source": "alcoholOxidation",
+      "conditions": {}
+    },
+    {
+      "label": "PCC secondary alcohol",
+      "compounds": [
+        {
+          "smiles": "CC(C)O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[O-][Cr](=O)(=O)Cl.c1cc[nH+]cc1",
+          "role": "reagent"
+        }
+      ],
+      "rule": "oxidation-pcc",
+      "products": [
+        "CC(=O)C"
+      ],
+      "source": "alcoholOxidation",
+      "conditions": {}
+    },
+    {
+      "label": "Permanganate primary alcohol",
+      "compounds": [
+        {
+          "smiles": "CCO",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[O-][Mn](=O)(=O)=O.[K+]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "oxidation-kmno4",
+      "products": [
+        "CC(=O)O"
+      ],
+      "source": "alcoholOxidation",
+      "conditions": {}
+    },
+    {
+      "label": "Borohydride aldehyde",
+      "compounds": [
+        {
+          "smiles": "CC=O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[Na+].[BH4-]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "reduction-nabh4",
+      "products": [
+        "CCO"
+      ],
+      "source": "carbonylReduction",
+      "conditions": {}
+    },
+    {
+      "label": "Borohydride ketone",
+      "compounds": [
+        {
+          "smiles": "CC(=O)C",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[Na+].[BH4-]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "reduction-nabh4",
+      "products": [
+        "CC(C)O"
+      ],
+      "source": "carbonylReduction",
+      "conditions": {}
+    },
+    {
+      "label": "Catalytic alkene hydrogenation",
+      "compounds": [
+        {
+          "smiles": "C=C",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[H][H]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "hydrogenation",
+      "products": [
+        "CC"
+      ],
+      "source": "hydrogenation",
+      "conditions": {
+        "additives": [
+          "pdc"
+        ]
+      }
+    },
+    {
+      "label": "Bromine addition",
+      "compounds": [
+        {
+          "smiles": "C=C",
+          "role": "reactant"
+        },
+        {
+          "smiles": "BrBr",
+          "role": "reagent"
+        }
+      ],
+      "rule": "halogenation",
+      "products": [
+        "BrCCBr"
+      ],
+      "source": "alkeneReactions",
+      "conditions": {}
+    },
+    {
+      "label": "Hydrogen bromide addition",
+      "compounds": [
+        {
+          "smiles": "C=C",
+          "role": "reactant"
+        },
+        {
+          "smiles": "Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "hydrohalogenation",
+      "products": [
+        "CCBr"
+      ],
+      "source": "alkeneReactions",
+      "conditions": {}
+    },
+    {
+      "label": "Acid hydration",
+      "compounds": [
+        {
+          "smiles": "C=C",
+          "role": "reactant"
+        },
+        {
+          "smiles": "O",
+          "role": "reagent"
+        }
+      ],
+      "rule": "hydration",
+      "products": [
+        "CCO"
+      ],
+      "source": "alkeneReactions",
+      "conditions": {
+        "additives": [
+          "h2so4"
+        ]
+      }
+    },
+    {
+      "label": "Fischer esterification",
+      "compounds": [
+        {
+          "smiles": "CC(=O)O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "CCO",
+          "role": "reactant"
+        }
+      ],
+      "rule": "fischer",
+      "products": [
+        "CCOC(C)=O"
+      ],
+      "source": "esterification",
+      "conditions": {
+        "additives": [
+          "h2so4"
+        ],
+        "temperature": 80
+      }
+    },
+    {
+      "label": "Basic ester hydrolysis",
+      "compounds": [
+        {
+          "smiles": "CCOC(C)=O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[Na+].[OH-]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "saponification",
+      "products": [
+        "CC(=O)[O-].[Na+]",
+        "CCO"
+      ],
+      "source": "esterification",
+      "conditions": {}
+    }
+  ],
+  "negativeReactions": [
+    {
+      "label": "No PCC oxidation of tertiary alcohol",
+      "compounds": [
+        {
+          "smiles": "CC(C)(C)O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[O-][Cr](=O)(=O)Cl.c1cc[nH+]cc1",
+          "role": "reagent"
+        }
+      ],
+      "rule": "oxidation-pcc",
+      "products": [],
+      "source": "alcoholOxidation",
+      "conditions": {}
+    },
+    {
+      "label": "No borohydride ester reduction",
+      "compounds": [
+        {
+          "smiles": "CCOC(C)=O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[Na+].[BH4-]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "reduction-nabh4",
+      "products": [],
+      "source": "carbonylReduction",
+      "conditions": {}
+    },
+    {
+      "label": "No hydrogenation without catalyst",
+      "compounds": [
+        {
+          "smiles": "C=C",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[H][H]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "hydrogenation",
+      "products": [],
+      "source": "hydrogenation",
+      "conditions": {}
+    },
+    {
+      "label": "No hydration without acid",
+      "compounds": [
+        {
+          "smiles": "C=C",
+          "role": "reactant"
+        },
+        {
+          "smiles": "O",
+          "role": "reagent"
+        }
+      ],
+      "rule": "hydration",
+      "products": [],
+      "source": "alkeneReactions",
+      "conditions": {}
+    },
+    {
+      "label": "No esterification without acid",
+      "compounds": [
+        {
+          "smiles": "CC(=O)O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "CCO",
+          "role": "reactant"
+        }
+      ],
+      "rule": "fischer",
+      "products": [],
+      "source": "esterification",
+      "conditions": {}
+    },
+    {
+      "label": "No alcohol oxidation of an ether",
+      "compounds": [
+        {
+          "smiles": "COC",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[O-][Cr](=O)(=O)Cl.c1cc[nH+]cc1",
+          "role": "reagent"
+        }
+      ],
+      "rule": "oxidation-pcc",
+      "products": [],
+      "source": "alcoholOxidation",
+      "conditions": {}
+    },
+    {
+      "label": "No alkane hydrogen bromide addition",
+      "compounds": [
+        {
+          "smiles": "CCC",
+          "role": "reactant"
+        },
+        {
+          "smiles": "Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "hydrohalogenation",
+      "products": [],
+      "source": "alkeneReactions",
+      "conditions": {}
+    },
+    {
+      "label": "No alkane bromine addition without radical conditions",
+      "compounds": [
+        {
+          "smiles": "CCC",
+          "role": "reactant"
+        },
+        {
+          "smiles": "BrBr",
+          "role": "reagent"
+        }
+      ],
+      "rule": "halogenation",
+      "products": [],
+      "source": "alkeneReactions",
+      "conditions": {}
+    }
+  ],
+  "roundTrips": [
+    "CCO",
+    "c1ccccc1",
+    "CC(=O)[O-].[Na+]",
+    "C[C@H](O)CC",
+    "C[C@@H](O)CC",
+    "F/C=C/F",
+    "F/C=C\\F",
+    "C[C@H](O)C[NH3+].[Cl-]"
+  ],
+  "molfileRoundTrips": [
+    "CCO",
+    "c1ccccc1",
+    "C[C@H](O)CC",
+    "C[C@H](O)C[NH3+].[Cl-]"
+  ],
+  "invalidSmiles": [
+    "C1CC",
+    "C(C",
+    "C#",
+    "[XX]",
+    "C(C)(C)(C)(C)C"
+  ],
+  "stereo": [
+    {
+      "smiles": "F/C=C/F",
+      "expected": {
+        "tetrahedral": [],
+        "doubleBond": [
+          "E"
+        ]
+      }
+    },
+    {
+      "smiles": "F/C=C\\F",
+      "expected": {
+        "tetrahedral": [],
+        "doubleBond": [
+          "Z"
+        ]
+      }
+    },
+    {
+      "smiles": "FC=CF",
+      "expected": {
+        "tetrahedral": [],
+        "doubleBond": []
+      }
+    }
+  ]
+}

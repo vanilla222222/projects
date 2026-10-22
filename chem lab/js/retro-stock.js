@@ -404,8 +404,8 @@ function stockCanonical(smiles) {
     const graph = reactionFragmentGraph(smilesToFragment(text));
     const components = graph.connectedComponents();
     out = components.length < 2
-      ? computeProperties(graph, graph.atoms.map((a) => a.id)).smiles || ''
-      : components.map((c) => computeProperties(graph, c.atomIds).smiles || '').sort().join('.');
+      ? computeProperties(graph, graph.atoms.map((a) => a.id)).isomericSmiles || ''
+      : components.map((c) => computeProperties(graph, c.atomIds).isomericSmiles || '').sort().join('.');
   } catch (error) {
     out = '';
   }
@@ -442,11 +442,11 @@ function stockNameMap() {
 function stockLookup(smiles) {
   const user = stockState.user.get(smiles);
   if (user) {
-    return { tier: user.tier, source: 'user', name: user.name || '' };
+    return { tier: user.tier, source: 'user', name: user.name || '', smiles: user.smiles };
   }
   const builtin = stockBuiltinMap().get(smiles);
   if (builtin) {
-    return { tier: builtin.tier, source: 'builtin', name: builtin.name };
+    return { tier: builtin.tier, source: 'builtin', name: builtin.name, smiles: builtin.smiles };
   }
   const name = stockNameMap().get(smiles);
   return name ? { tier: STOCK_LIMITS.nameTier, source: 'names', name } : null;

@@ -33,6 +33,7 @@ const RETRO_REAGENTS = {
   isobutylene: { smiles: 'C=C(C)C', role: 'reagent', label: 'isobutylene' },
   ethyleneGlycol: { smiles: 'OCCO', role: 'reactant', label: 'ethylene glycol' },
   propanediol: { smiles: 'OCCCO', role: 'reactant', label: '1,3-propanediol' },
+  tcep: { smiles: 'P(CCC(=O)O)(CCC(=O)O)CCC(=O)O', role: 'reagent', label: 'TCEP (free base)' },
 };
 
 function retroIds(g) {
@@ -51,19 +52,14 @@ function retroClone(graph, ids, out) {
       return;
     }
     const b = g.addAtom(a.element, a.x || 0, a.y || 0);
-    if (a.charge) {
-      b.charge = a.charge;
-    }
+    Object.assign(b, a, { id: b.id, x: b.x, y: b.y });
     map.set(a.id, b.id);
   });
   graph.bonds.forEach((b) => {
     if (map.has(b.atomA) && map.has(b.atomB)) {
       const bond = g.addBond(map.get(b.atomA), map.get(b.atomB));
       if (bond) {
-        bond.order = b.order;
-        if (b.stereo) {
-          bond.stereo = b.stereo;
-        }
+        Object.assign(bond, b, { id: bond.id, atomA: bond.atomA, atomB: bond.atomB });
       }
     }
   });
@@ -762,6 +758,53 @@ const RETRO_TRANSFORMS = [
         });
       });
       return out.slice(0, RETRO_LIMITS.maxPerTransform);
+    },
+  },
+  {
+    id: 'thiolate-alkylation', name: 'Thioether from thiol and alkyl halide', rule: 'thiolate-alkylation', group: 'Sulfur',
+    match: (t) => {
+      const g = t.graph;
+      const out = [];
+      const seen = new Set();
+      g.atoms.filter((atom) => atom.element === 'S' && !atom.charge).forEach((s) => {
+        const neighbors = rxNeighbors(g, s.id);
+        if (neighbors.length !== 2 || !neighbors.every((n) => n.atom.element === 'C' && n.bond.order === 1)) return;
+        neighbors.forEach((n) => {
+          if (!rxIsSp3(g, n.atom.id) || t.aromatic.has(n.atom.id) || rxCarbonNeighbors(g, n.atom.id).length > 1) return;
+          const pieces = retroEdit(t, (h) => {
+            if (!retroCut(h, s.id, n.atom.id)) return false;
+            rxAttach(h, 'Br', n.atom.id);
+            return true;
+          });
+          if (!pieces || pieces.length !== 2) return;
+          const key = retroKey(pieces);
+          if (seen.has(key)) return;
+          seen.add(key);
+          out.push(retroSpec(retroReactants(pieces), [RETRO_REAGENTS.hydroxide], { solvents: ['dmso'] }));
+        });
+      });
+      return out.slice(0, RETRO_LIMITS.maxPerTransform);
+    },
+  },
+  {
+    id: 'disulfide-reduction', name: 'Thiol from symmetric disulfide', rule: 'disulfide-reduction', group: 'Sulfur',
+    match: (t) => {
+      // Use one bounded symmetric precursor, rather than inventing arbitrary
+      // partners for the second thiol released by disulfide reduction.
+      const g = t.graph;
+      if (g.atoms.length * 2 > RETRO_LIMITS.maxHeavy || t.components !== 1) return [];
+      const thiols = g.atoms.filter((s) => {
+        if (s.element !== 'S' || s.charge) return false;
+        const neighbors = rxNeighbors(g, s.id);
+        return neighbors.length === 1 && neighbors[0].atom.element === 'C' && neighbors[0].bond.order === 1 && rxHydrogens(g, s.id) === 1;
+      });
+      if (thiols.length !== 1) return [];
+      const s = thiols[0];
+      const piece = retroSinglePiece(t, (h) => {
+        const copy = rxMerge(h, g, retroIds(g));
+        h.addBond(s.id, copy.get(s.id));
+      });
+      return piece ? [retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO_REAGENTS.tcep], { solvents: ['water'] })] : [];
     },
   },
   {
@@ -1533,6 +1576,15 @@ function retroCompound(item) {
 }
 
 function retroFindProduct(list, smiles) {
+  if (typeof moleculeIdentity === 'function') {
+    try {
+      const target = moleculeIdentity(smiles).connectivityKey;
+      return (list || []).find((p) => {
+        try { return !!p && moleculeIdentity(p.fragment || p.isomericSmiles || p.smiles).connectivityKey === target; }
+        catch (error) { return false; }
+      }) || null;
+    } catch (error) { return null; }
+  }
   return (list || []).find((p) => p && p.smiles === smiles) || null;
 }
 

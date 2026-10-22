@@ -206,7 +206,7 @@ function smilesStripHydrogens(mol) {
     if (atom.element !== 'H') {
       return;
     }
-    if (atom.charge || atom.nbrs.length !== 1 || mol.atoms[atom.nbrs[0]].element === 'H') {
+    if (atom.charge || atom.isotope || atom.nbrs.length !== 1 || mol.atoms[atom.nbrs[0]].element === 'H') {
       return;
     }
     const host = mol.atoms[atom.nbrs[0]];
@@ -334,6 +334,7 @@ function smilesBuildGraph(mol) {
     if (atom.charge && atom.element !== 'D') {
       a.charge = atom.charge;
     }
+    if (atom.isotope) a.isotope = atom.isotope;
     return a.id;
   });
   const bondMap = new Map();
@@ -505,6 +506,7 @@ function smilesToFragment(text) {
   smilesCheckValence(mol);
   const ezSpecs = smilesDoubleBondStereo(mol);
   const { graph, ids, bondMap } = smilesBuildGraph(mol);
+  graph.bonds.filter((b) => b.order === 2).forEach((b) => { b.stereoSpecified = false; });
   smilesNeutralize(graph);
   smilesValidateGraph(graph);
   const positions = computeLayout(graph, graph.atoms.map((a) => a.id));
@@ -515,13 +517,14 @@ function smilesToFragment(text) {
   });
   ezSpecs.forEach((spec) => {
     const bond = bondMap.get(spec.bond);
+    bond.stereoSpecified = true;
     enforceDoubleBondGeometry(graph, bond, ids[spec.refA], ids[spec.refB], spec.same);
   });
   smilesApplyChirality(mol, graph, ids);
   return {
     format: 'chemical-graph-fragment',
-    atoms: graph.atoms.map((a) => (a.charge ? { id: a.id, element: a.element, x: a.x, y: a.y, charge: a.charge } : { id: a.id, element: a.element, x: a.x, y: a.y })),
-    bonds: graph.bonds.map((b) => ({ atomA: b.atomA, atomB: b.atomB, order: b.order, stereo: b.stereo || null })),
+    atoms: graph.atoms.map((a) => Object.assign({ id: a.id, element: a.element, x: a.x, y: a.y }, a.charge ? { charge: a.charge } : {}, a.isotope ? { isotope: a.isotope } : {})),
+    bonds: graph.bonds.map((b) => Object.assign({ atomA: b.atomA, atomB: b.atomB, order: b.order, stereo: b.stereo || null }, b.stereoSpecified !== undefined ? { stereoSpecified: b.stereoSpecified } : {})),
   };
 }
 
