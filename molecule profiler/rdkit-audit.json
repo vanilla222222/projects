@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 5510,
+  "entries": 5533,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -16901,6 +16901,41 @@
       "atomIndices": [
         3
       ]
+    },
+    {
+      "index": 5529,
+      "name": "2-bromo-N-carbamoyl-2-methylbutanamide",
+      "atomIndices": [
+        0
+      ]
+    },
+    {
+      "index": 5530,
+      "name": "N-carbamoyl-2-chloro-2-methylbutanamide",
+      "atomIndices": [
+        0
+      ]
+    },
+    {
+      "index": 5531,
+      "name": "2-bromo-N-carbamoyl-2-ethylpentanamide",
+      "atomIndices": [
+        0
+      ]
+    },
+    {
+      "index": 5532,
+      "name": "N-carbamoyl-2-chloro-2-ethylpentanamide",
+      "atomIndices": [
+        0
+      ]
+    },
+    {
+      "index": 5533,
+      "name": "2-bromo-N-carbamoyl-2-ethylhexanamide",
+      "atomIndices": [
+        0
+      ]
     }
   ],
   "chargedEntries": [
@@ -17150,7 +17185,7 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 9,
-    "unspecifiedStereocenters": 1973,
+    "unspecifiedStereocenters": 1978,
     "chargedEntries": 46,
     "fragmentedEntries": 0,
     "radicalEntries": 0,
