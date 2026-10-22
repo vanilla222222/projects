@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 4519,
+  "entries": 4622,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -14313,6 +14313,107 @@
         32,
         34
       ]
+    },
+    {
+      "index": 4529,
+      "name": "Octisalate",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4530,
+      "name": "Homosalate",
+      "atomIndices": [
+        1,
+        3
+      ]
+    },
+    {
+      "index": 4531,
+      "name": "Menthyl salicylate",
+      "atomIndices": [
+        1,
+        4,
+        8
+      ]
+    },
+    {
+      "index": 4585,
+      "name": "Glafenine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4586,
+      "name": "Floctafenine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4587,
+      "name": "Vedaprofen",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4588,
+      "name": "Zaltoprofen",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4589,
+      "name": "Ibuproxam",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 4606,
+      "name": "gamma-Hydroxyphenylbutazone",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4613,
+      "name": "Bucetin",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 4615,
+      "name": "Lactylphenetidin",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 4617,
+      "name": "Mofebutazone",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4621,
+      "name": "Butibufen",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4622,
+      "name": "Xenbucin",
+      "atomIndices": [
+        2
+      ]
     }
   ],
   "chargedEntries": [
@@ -14562,7 +14663,7 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 9,
-    "unspecifiedStereocenters": 1634,
+    "unspecifiedStereocenters": 1648,
     "chargedEntries": 46,
     "fragmentedEntries": 0,
     "radicalEntries": 0,
