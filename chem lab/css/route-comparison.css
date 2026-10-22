@@ -1,0 +1,20 @@
+.route-comparison { margin: 20px 0; min-width: 0; }
+.route-comparison-note { color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+.route-comparison-grid { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(300px, 1fr); gap: 16px; overflow-x: auto; align-items: start; padding-bottom: 10px; }
+.route-comparison-card { min-width: 0; padding: 16px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-elevated); overflow-wrap: anywhere; }
+.route-comparison-card > h4 { font-size: 18px; margin: 0 0 12px; }
+.route-comparison-card h5 { margin: 14px 0 7px; font-size: 13px; }
+.route-comparison-card p, .route-comparison-card li { line-height: 1.5; font-size: 13px; }
+.route-comparison-card ul { padding-left: 19px; margin: 6px 0; }
+.route-comparison-metrics { width: 100%; border-collapse: collapse; font-size: 13px; }
+.route-comparison-metrics th, .route-comparison-metrics td { padding: 9px 3px; border-bottom: 1px solid var(--border-soft); vertical-align: top; }
+.route-comparison-metrics th { text-align: left; color: var(--text-secondary); font-weight: 400; }
+.route-comparison-metrics td { text-align: right; white-space: nowrap; min-width: 48px; font-variant-numeric: tabular-nums; }
+.route-comparison-assumptions, .route-comparison-step { padding: 12px 0; border-top: 1px solid var(--border); margin-top: 12px; }
+.route-comparison-assumptions summary, .route-comparison-step summary { cursor: pointer; font-size: 13px; line-height: 1.5; }
+.route-comparison-step > summary { font-weight: 500; }
+.route-comparison-smiles { display: block; font: 11px var(--font-mono); overflow-wrap: anywhere; margin: 10px 0; }
+.route-comparison-structures { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 12px 0; }
+.route-comparison-structures canvas { width: 140px; height: auto; max-width: 45%; }
+.route-comparison-card > .text-button { margin: 10px 0; }
+@media (max-width: 760px) { .route-comparison-grid { grid-auto-flow: row; grid-template-columns: minmax(0, 1fr); grid-auto-columns: auto; overflow-x: visible; } .route-comparison-card { padding: 12px; } }

@@ -28,6 +28,7 @@ function routeWorkspaceNormalize(raw) {
       to: routeWorkspaceSmiles(link.to),
       name: String(source.outcomeName || source.name || 'Reaction step').slice(0, 120),
       ruleId: String(source.outcomeId || source.ruleId || source.id || '').slice(0, 100),
+      planning: source.planning && ['protect', 'reaction', 'deprotect'].includes(source.planning.kind) ? { kind: source.planning.kind, group: String(source.planning.group || '').slice(0, 80), reason: String(source.planning.reason || '').slice(0, 800) } : null,
       compounds: compounds.map((c) => {
         if (!c || !roles.includes(c.role)) throw new Error('Step ' + (index + 1) + ' has an invalid compound role.');
         return { smiles: routeWorkspaceSmiles(c.isomericSmiles || c.smiles), role: c.role, label: String(c.label || '').slice(0, 80) };
@@ -84,8 +85,8 @@ function routeWorkspaceCsvEscape(value) {
 
 function routeWorkspaceCsv(route) {
   const report = routeWorkspaceValidate(route);
-  const rows = [['Route', route.name], ['Starting material', route.start], ['Target', route.target], ['Route status', report.status], ['Continuity issues', report.issues.join('; ')], [], ['Step', 'Reaction', 'Rule', 'From SMILES', 'Target SMILES', 'Compounds (role: SMILES)', 'Temperature (°C)', 'Solvents', 'Additives', 'Atmosphere', 'Energy', 'Pressure (atm)', 'Reflux', 'Time', 'Concentration', 'Notes', 'Verification', 'Explanation']];
-  route.steps.forEach((s, i) => rows.push([i + 1, s.name, s.ruleId, s.from, s.to, s.compounds.map((c) => c.role + ': ' + c.smiles).join('\n'), s.conditions.temperature, s.conditions.solvents.join('; '), s.conditions.additives.join('; '), s.conditions.atmosphere, s.conditions.energy, s.conditions.pressure, s.conditions.reflux, s.conditions.time, s.conditions.concentration, s.conditions.notes, report.steps[i].status, report.steps[i].message]));
+  const rows = [['Route', route.name], ['Starting material', route.start], ['Target', route.target], ['Route status', report.status], ['Continuity issues', report.issues.join('; ')], [], ['Step', 'Reaction', 'Rule', 'From SMILES', 'Target SMILES', 'Compounds (role: SMILES)', 'Temperature (°C)', 'Solvents', 'Additives', 'Atmosphere', 'Energy', 'Pressure (atm)', 'Reflux', 'Time', 'Concentration', 'Notes', 'Verification', 'Explanation', 'Step role', 'Protecting group', 'Planning rationale']];
+  route.steps.forEach((s, i) => rows.push([i + 1, s.name, s.ruleId, s.from, s.to, s.compounds.map((c) => c.role + ': ' + c.smiles).join('\n'), s.conditions.temperature, s.conditions.solvents.join('; '), s.conditions.additives.join('; '), s.conditions.atmosphere, s.conditions.energy, s.conditions.pressure, s.conditions.reflux, s.conditions.time, s.conditions.concentration, s.conditions.notes, report.steps[i].status, report.steps[i].message, s.planning ? s.planning.kind : '', s.planning ? s.planning.group : '', s.planning ? s.planning.reason : '']));
   return rows.map((row) => row.map(routeWorkspaceCsvEscape).join(',')).join('\r\n');
 }
 
@@ -147,6 +148,7 @@ function createRouteWorkspace(deps) {
     route.steps.forEach((step, index) => {
       const card = element('article', undefined, 'workspace-step');
       card.append(element('h3', (index + 1) + '. ' + step.name), element('p', report.steps[index].status + ': ' + report.steps[index].message, 'workspace-status ' + report.steps[index].status));
+      if (step.planning) card.append(element('p', (step.planning.kind === 'protect' ? 'Amine protection' : step.planning.kind === 'deprotect' ? 'Amine deprotection' : 'Protected reaction') + (step.planning.group ? ' · ' + step.planning.group : '') + ': ' + step.planning.reason, 'workspace-planning'));
       const verifiedOutcome = report.steps[index].outcome;
       if (typeof reactionEvidenceElement === 'function' && verifiedOutcome && verifiedOutcome.evidence) card.append(reactionEvidenceElement(verifiedOutcome.evidence, true));
       const structures = element('div', undefined, 'workspace-structures');

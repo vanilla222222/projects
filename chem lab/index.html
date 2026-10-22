@@ -6,6 +6,7 @@
 <title>Chemical Graph Constructor</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/route-workspace.css">
+<link rel="stylesheet" href="css/route-comparison.css">
 </head>
 <body data-theme="dark">
 <aside id="sidebar">
@@ -347,13 +348,13 @@
       <span class="path-input-arrow" aria-hidden="true">→</span>
       <label>Target compound<input id="path-target" type="text" placeholder="Name or SMILES, e.g. ethanal" autocomplete="off" spellcheck="false"></label>
     </div>
-    <div class="path-controls"><label for="path-depth">Maximum steps</label><select id="path-depth"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option></select><button id="path-run" type="button" class="text-button primary">Find a path</button><button id="path-cancel" type="button" class="text-button" disabled>Cancel</button><button id="path-example" type="button" class="text-button">Load example</button></div>
+    <div class="path-controls"><label for="path-depth">Maximum steps</label><select id="path-depth"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select><button id="path-run" type="button" class="text-button primary">Find a path</button><button id="path-cancel" type="button" class="text-button" disabled>Cancel</button><button id="path-example" type="button" class="text-button">Load example</button></div>
     <div class="path-controls"><label for="path-route-count">Alternative routes</label><select id="path-route-count"><option value="1">1</option><option value="3" selected>Up to 3</option><option value="5">Up to 5</option></select><label for="path-stock-policy">Available building blocks</label><select id="path-stock-policy"><option value="builtin" selected>Local stock + my list</option><option value="custom">Only my list + starting material</option></select></div>
     <details class="path-options"><summary>Inventory and reaction filters</summary>
       <div class="path-inputs"><label>My available building blocks<textarea id="path-inventory" rows="4" placeholder="One name or SMILES per line, e.g. methanol"></textarea></label><label>Forbidden reagents or solvents<textarea id="path-forbidden-reagents" rows="4" placeholder="One name, SMILES or label per line, e.g. PCC"></textarea></label><label>Forbidden reaction IDs or names<textarea id="path-forbidden-rules" rows="4" placeholder="One ID or name fragment per line, e.g. oxidation"></textarea></label></div>
       <p>The starting material is always available. Inventory restricts additional building blocks; reagents and solvents remain allowed unless excluded above. Local stock includes built-in and user stock entries in tiers 1–2. Filters match structures when names resolve, plus case-insensitive label text.</p>
     </details>
-    <p class="path-caveat">Candidate routes use textbook reaction rules, not experimental validation. Additional building blocks follow your inventory policy; reagents may also be required. Search is limited to 60 structures and 12 seconds. It does not search the literature or establish feasibility, selectivity, yield or safety.</p>
+    <p class="path-caveat">Candidate routes use textbook reaction rules, not experimental validation. Additional building blocks follow your inventory policy; reagents may also be required. <span id="path-search-limits">Search is limited to 60 structures and 12 seconds.</span> Protection and deprotection count as separate steps. It does not search the literature or establish feasibility, selectivity, yield or safety.</p>
     <p id="path-status" role="status" aria-live="polite">Enter two compounds to begin. Names resolve locally; SMILES gives the most precise input.</p>
     <div id="path-results"></div>
   </section>
@@ -807,15 +808,20 @@
 <script src="js/reaction-aromatic.js"></script>
 <script src="js/reaction-rules-extra3.js"></script>
 <script src="js/reaction-rules-extra4.js"></script>
+<script src="js/reaction-rules-extra5.js"></script>
 <script src="js/reaction-catalog.js"></script>
+<script src="js/reaction-evidence-core.js"></script>
+<script src="js/reaction-evidence-named.js"></script>
 <script src="js/retro-stock.js"></script>
 <script src="js/retro.js"></script>
 <script src="js/retro-families-extra.js"></script>
+<script src="js/retro-families-extra2.js"></script>
 <script src="js/retro-search.js"></script>
 <script src="js/reaction-lab.js"></script>
 <script src="js/spectra-view.js"></script>
 <script src="js/viewer3d.js"></script>
 <script src="js/retro-view.js"></script>
+<script src="js/route-comparison.js"></script>
 <script src="js/path-finder.js"></script>
 <script src="js/route-workspace.js"></script>
 <script src="js/app.js"></script>

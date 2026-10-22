@@ -133,6 +133,10 @@ const REACTION_LIMITS = { tempMin: -100, tempMax: 300, maxCompounds: 12, maxAddi
 const REACTION_SCHEME_SETTINGS = { gap: 45, plusGap: 30, arrowLength: 150, emptyWidth: 60 };
 
 const REACTION_NAME_ALIASES = {
+  disiamylborane: 'B(C(C)C(C)C)C(C)C(C)C',
+  sia2bh: 'B(C(C)C(C)C)C(C)C(C)C',
+  'boron tribromide': 'BrB(Br)Br',
+  bbr3: 'BrB(Br)Br',
   tcep: 'P(CCC(=O)O)(CCC(=O)O)CCC(=O)O',
   ethanethiol: 'CCS',
   methanethiol: 'CS',
