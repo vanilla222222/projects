@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 5424,
+  "entries": 5446,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -16485,6 +16485,202 @@
       "atomIndices": [
         3
       ]
+    },
+    {
+      "index": 5425,
+      "name": "methyl 3-phenyl-8-azabicyclo[3.2.1]octane-2-carboxylate",
+      "atomIndices": [
+        4,
+        5,
+        13,
+        16
+      ]
+    },
+    {
+      "index": 5426,
+      "name": "ethyl 8-methyl-3-phenyl-8-azabicyclo[3.2.1]octane-2-carboxylate",
+      "atomIndices": [
+        5,
+        6,
+        14,
+        17
+      ]
+    },
+    {
+      "index": 5427,
+      "name": "methyl 8-ethyl-3-phenyl-8-azabicyclo[3.2.1]octane-2-carboxylate",
+      "atomIndices": [
+        4,
+        5,
+        13,
+        16
+      ]
+    },
+    {
+      "index": 5428,
+      "name": "ethyl 3-phenyl-8-azabicyclo[3.2.1]octane-2-carboxylate",
+      "atomIndices": [
+        5,
+        6,
+        14,
+        17
+      ]
+    },
+    {
+      "index": 5429,
+      "name": "propyl 8-methyl-3-phenyl-8-azabicyclo[3.2.1]octane-2-carboxylate",
+      "atomIndices": [
+        6,
+        7,
+        15,
+        18
+      ]
+    },
+    {
+      "index": 5430,
+      "name": "methyl 3-(4-fluorophenyl)-8-azabicyclo[3.2.1]octane-2-carboxylate",
+      "atomIndices": [
+        4,
+        5,
+        14,
+        17
+      ]
+    },
+    {
+      "index": 5431,
+      "name": "ethyl 3-(4-fluorophenyl)-8-methyl-8-azabicyclo[3.2.1]octane-2-carboxylate",
+      "atomIndices": [
+        5,
+        6,
+        15,
+        18
+      ]
+    },
+    {
+      "index": 5432,
+      "name": "methyl 3-phenyl-8-propyl-8-azabicyclo[3.2.1]octane-2-carboxylate",
+      "atomIndices": [
+        4,
+        5,
+        13,
+        16
+      ]
+    },
+    {
+      "index": 5433,
+      "name": "ethyl 8-ethyl-3-phenyl-8-azabicyclo[3.2.1]octane-2-carboxylate",
+      "atomIndices": [
+        5,
+        6,
+        14,
+        17
+      ]
+    },
+    {
+      "index": 5434,
+      "name": "propyl 3-phenyl-8-azabicyclo[3.2.1]octane-2-carboxylate",
+      "atomIndices": [
+        6,
+        7,
+        15,
+        18
+      ]
+    },
+    {
+      "index": 5435,
+      "name": "(8-methyl-8-azabicyclo[3.2.1]octan-3-yl) 4-fluorobenzoate",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 5436,
+      "name": "(8-ethyl-8-azabicyclo[3.2.1]octan-3-yl) benzoate",
+      "atomIndices": [
+        3,
+        6
+      ]
+    },
+    {
+      "index": 5437,
+      "name": "(8-azabicyclo[3.2.1]octan-3-yl) 4-fluorobenzoate",
+      "atomIndices": [
+        1,
+        4
+      ]
+    },
+    {
+      "index": 5438,
+      "name": "(8-methyl-8-azabicyclo[3.2.1]octan-3-yl) 4-chlorobenzoate",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 5439,
+      "name": "(8-propyl-8-azabicyclo[3.2.1]octan-3-yl) benzoate",
+      "atomIndices": [
+        4,
+        7
+      ]
+    },
+    {
+      "index": 5440,
+      "name": "(8-ethyl-8-azabicyclo[3.2.1]octan-3-yl) 4-fluorobenzoate",
+      "atomIndices": [
+        3,
+        6
+      ]
+    },
+    {
+      "index": 5441,
+      "name": "(8-azabicyclo[3.2.1]octan-3-yl) 4-chlorobenzoate",
+      "atomIndices": [
+        1,
+        4
+      ]
+    },
+    {
+      "index": 5442,
+      "name": "(8-methyl-8-azabicyclo[3.2.1]octan-3-yl) 4-methylbenzoate",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 5443,
+      "name": "(8-propan-2-yl-8-azabicyclo[3.2.1]octan-3-yl) benzoate",
+      "atomIndices": [
+        4,
+        7
+      ]
+    },
+    {
+      "index": 5444,
+      "name": "(8-propyl-8-azabicyclo[3.2.1]octan-3-yl) 4-fluorobenzoate",
+      "atomIndices": [
+        4,
+        7
+      ]
+    },
+    {
+      "index": 5445,
+      "name": "(8-ethyl-8-azabicyclo[3.2.1]octan-3-yl) 4-chlorobenzoate",
+      "atomIndices": [
+        3,
+        6
+      ]
+    },
+    {
+      "index": 5446,
+      "name": "(8-azabicyclo[3.2.1]octan-3-yl) 4-methylbenzoate",
+      "atomIndices": [
+        1,
+        4
+      ]
     }
   ],
   "chargedEntries": [
@@ -16734,7 +16930,7 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 9,
-    "unspecifiedStereocenters": 1921,
+    "unspecifiedStereocenters": 1943,
     "chargedEntries": 46,
     "fragmentedEntries": 0,
     "radicalEntries": 0,

@@ -2,16 +2,16 @@
   "schemaVersion": 1,
   "rdkitVersion": "2026.09.1",
   "sourceSha256": {
-    "data/library.js": "5cdf70f8778bff457c5b9b2d9bdba0623113ebfd3455d0c81f54f8238d841263",
+    "data/library.js": "79219311d594de2cbd47d8affb641e7da0cce1fcb1b3ecfc6b9c1ab70e570bd3",
     "data/targets.js": "facc465ef72687224df3577fbf7a600102e7c3b07cc033a4de21ba76191192fa",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
     "data/receptor-ligand-annotations.js": "28bcfc10324b17fc8a30d2e4b3cf3c589e55fe9af76cd61dfb8986d9a3b30d01",
     "js/receptor-catalog.js": "c89696b0ea6e22873929f2e3c777774b13579c917a541cf7820de253e19305e1",
     "tools/build-library-tags.py": "b1b9d2eb9960ab6803f2c9e43936d4317688bc067a00d30b27d9cf1c1ee08f6e"
   },
-  "entries": 5424,
+  "entries": 5446,
   "minTags": 10,
   "maxTags": 24,
   "method": "Ten descriptive base tags plus functional-group/element motifs and source-linked binding tags. Stored graph charges and calculated bins are not physiological protonation or clinical claims. Original class labels remain explicitly labelled, not experimentally validated.",
-  "dataSha256": "ba698186805f67351effc7d36c15e46ab2b6090a991e01ddbe368c47f5844a58"
+  "dataSha256": "6906c8d3b988abc8e77edd600beb1024a7abbe24645c43fac045f42e9b7e5583"
 }
