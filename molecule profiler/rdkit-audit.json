@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 5725,
+  "entries": 5752,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -17867,6 +17867,200 @@
       "atomIndices": [
         3
       ]
+    },
+    {
+      "index": 5726,
+      "name": "6-methyl-3-pyrrolidin-2-ylpyridine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 5727,
+      "name": "6-methyl-3-piperidin-2-ylpyridine",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5728,
+      "name": "6-chloro-3-pyrrolidin-2-ylpyridine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 5729,
+      "name": "3-(1-methylpiperidin-2-yl)pyridine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5730,
+      "name": "6-methyl-3-(1-methylpyrrolidin-2-yl)pyridine",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5731,
+      "name": "3-(1-ethylpyrrolidin-2-yl)pyridine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5732,
+      "name": "6-chloro-3-piperidin-2-ylpyridine",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5733,
+      "name": "6-fluoro-3-pyrrolidin-2-ylpyridine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 5734,
+      "name": "6-methyl-3-(1-methylpiperidin-2-yl)pyridine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5735,
+      "name": "6-chloro-3-(1-methylpyrrolidin-2-yl)pyridine",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5736,
+      "name": "1-methyl-5-(6-methylpyridin-3-yl)pyrrolidin-2-one",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5737,
+      "name": "1,4-dimethyl-5-pyridin-3-ylpyrrolidin-2-one",
+      "atomIndices": [
+        5,
+        7
+      ]
+    },
+    {
+      "index": 5738,
+      "name": "4-hydroxy-1-methyl-5-(6-methylpyridin-3-yl)pyrrolidin-2-one",
+      "atomIndices": [
+        5,
+        7
+      ]
+    },
+    {
+      "index": 5739,
+      "name": "5-(6-chloropyridin-3-yl)-1-methylpyrrolidin-2-one",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5740,
+      "name": "4-hydroxy-5-pyridin-3-ylpyrrolidin-2-one",
+      "atomIndices": [
+        4,
+        6
+      ]
+    },
+    {
+      "index": 5741,
+      "name": "5-(6-methylpyridin-3-yl)pyrrolidin-2-one",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5742,
+      "name": "1-ethyl-5-pyridin-3-ylpyrrolidin-2-one",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5743,
+      "name": "4-methoxy-1-methyl-5-pyridin-3-ylpyrrolidin-2-one",
+      "atomIndices": [
+        5,
+        8
+      ]
+    },
+    {
+      "index": 5744,
+      "name": "1,4-dimethyl-5-(6-methylpyridin-3-yl)pyrrolidin-2-one",
+      "atomIndices": [
+        5,
+        7
+      ]
+    },
+    {
+      "index": 5745,
+      "name": "N-(1-azabicyclo[2.2.2]octan-3-yl)benzamide",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5746,
+      "name": "N-(1-azabicyclo[2.2.2]octan-3-yl)-4-fluorobenzamide",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5747,
+      "name": "N-(1-azabicyclo[2.2.2]octan-3-yl)pyridine-3-carboxamide",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5748,
+      "name": "N-(1-azabicyclo[2.2.2]octan-3-yl)-4-methylbenzamide",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5749,
+      "name": "N-(1-azabicyclo[2.2.2]octan-3-yl)-4-methoxybenzamide",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5750,
+      "name": "N-(1-azabicyclo[2.2.2]octan-3-yl)-6-chloropyridine-3-carboxamide",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5751,
+      "name": "N-(1-azabicyclo[2.2.2]octan-3-yl)thiophene-2-carboxamide",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5752,
+      "name": "N-(1-azabicyclo[2.2.2]octan-3-yl)pyridine-4-carboxamide",
+      "atomIndices": [
+        3
+      ]
     }
   ],
   "chargedEntries": [
@@ -18116,7 +18310,7 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 10,
-    "unspecifiedStereocenters": 2079,
+    "unspecifiedStereocenters": 2106,
     "chargedEntries": 46,
     "fragmentedEntries": 0,
     "radicalEntries": 0,
