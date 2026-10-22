@@ -5488,6 +5488,21 @@ const LIBRARY = [
   { name: '4-phenoxy-3-(propylamino)-5-sulfamoylbenzoic acid', cls: 'Diuretic', formula: 'C16H18N2O5S', smiles: 'OC(=O)c1cc(S(N)(=O)=O)c(Oc3ccccc3)c(NCCC)c1' },
   { name: '4-(4-fluorophenoxy)-3-(pyrrolidin-1-yl)-5-sulfamoylbenzoic acid', cls: 'Diuretic', formula: 'C17H17FN2O5S', smiles: 'OC(=O)c1cc(S(N)(=O)=O)c(Oc3ccc(F)cc3)c(N3CCCC3)c1' },
   { name: '3-(butylamino)-4-(4-methylphenoxy)-5-sulfamoylbenzoic acid', cls: 'Diuretic', formula: 'C18H22N2O5S', smiles: 'OC(=O)c1cc(S(N)(=O)=O)c(Oc3ccc(C)cc3)c(NCCCC)c1' },
+  { name: '1-[2-(2,4-dichlorophenyl)-2-[(2,4-dichlorophenyl)methoxy]ethyl]-1,2,4-triazole', cls: 'Antifungal', formula: 'C17H13Cl4N3O', smiles: 'C(Cn1cncn1)(c3ccc(Cl)cc3Cl)OCc3ccc(Cl)cc3Cl' },
+  { name: '1-[2-[(2,4-dichlorophenyl)methoxy]-2-(2,4-difluorophenyl)ethyl]imidazole', cls: 'Antifungal', formula: 'C18H14Cl2F2N2O', smiles: 'C(Cn1ccnc1)(c3ccc(F)cc3F)OCc3ccc(Cl)cc3Cl' },
+  { name: '1-[2-(2,4-dichlorophenyl)-2-[(2,6-dichlorophenyl)methoxy]ethyl]-1,2,4-triazole', cls: 'Antifungal', formula: 'C17H13Cl4N3O', smiles: 'C(Cn1cncn1)(c3ccc(Cl)cc3Cl)OCc3c(Cl)cccc3Cl' },
+  { name: '1-[2-[(2,6-dichlorophenyl)methoxy]-2-(2,4-difluorophenyl)ethyl]imidazole', cls: 'Antifungal', formula: 'C18H14Cl2F2N2O', smiles: 'C(Cn1ccnc1)(c3ccc(F)cc3F)OCc3c(Cl)cccc3Cl' },
+  { name: '2-(2,4-dichlorophenyl)-1-(1,2,4-triazol-1-yl)pentan-2-ol', cls: 'Antifungal', formula: 'C13H15Cl2N3O', smiles: 'OC(Cn1cncn1)(c3ccc(Cl)cc3Cl)CCC' },
+  { name: '2-(2,4-dichlorophenyl)-1-(imidazol-1-yl)hexan-2-ol', cls: 'Antifungal', formula: 'C15H18Cl2N2O', smiles: 'OC(Cn1ccnc1)(c3ccc(Cl)cc3Cl)CCCC' },
+  { name: '2-(2,4-difluorophenyl)-1-(1,2,4-triazol-1-yl)hexan-2-ol', cls: 'Antifungal', formula: 'C14H17F2N3O', smiles: 'OC(Cn1cncn1)(c3ccc(F)cc3F)CCCC' },
+  { name: '2-(2,4-dichlorophenyl)-1-(1,2,4-triazol-1-yl)butan-2-ol', cls: 'Antifungal', formula: 'C12H13Cl2N3O', smiles: 'OC(Cn1cncn1)(c3ccc(Cl)cc3Cl)CC' },
+  { name: '1-(4-fluorophenoxy)-3,3-dimethyl-1-(1,2,4-triazol-1-yl)butan-2-one', cls: 'Antifungal', formula: 'C14H16FN3O2', smiles: 'CC(C)(C)C(=O)C(Oc3ccc(F)cc3)n1cncn1' },
+  { name: '1-(4-chlorophenoxy)-1-(imidazol-1-yl)-3,3-dimethylbutan-2-ol', cls: 'Antifungal', formula: 'C15H19ClN2O2', smiles: 'CC(C)(C)C(O)C(Oc3ccc(Cl)cc3)n1ccnc1' },
+  { name: '1-(4-fluorophenoxy)-3,3-dimethyl-1-(1,2,4-triazol-1-yl)butan-2-ol', cls: 'Antifungal', formula: 'C14H18FN3O2', smiles: 'CC(C)(C)C(O)C(Oc3ccc(F)cc3)n1cncn1' },
+  { name: '1-(4-fluorophenoxy)-1-(imidazol-1-yl)-3,3-dimethylbutan-2-one', cls: 'Antifungal', formula: 'C15H17FN2O2', smiles: 'CC(C)(C)C(=O)C(Oc3ccc(F)cc3)n1ccnc1' },
+  { name: 'N-[3-(4-chlorophenyl)prop-2-enyl]-N-methyl-1-naphthalen-1-ylmethanamine', cls: 'Antifungal', formula: 'C21H20ClN', smiles: 'CN(Cc1cccc2ccccc12)CC=Cc3ccc(Cl)cc3' },
+  { name: 'N-[3-(4-fluorophenyl)prop-2-enyl]-N-methyl-1-naphthalen-1-ylmethanamine', cls: 'Antifungal', formula: 'C21H20FN', smiles: 'CN(Cc1cccc2ccccc12)CC=Cc3ccc(F)cc3' },
+  { name: 'N-(4,4-dimethylpent-2-enyl)-N-methyl-1-naphthalen-1-ylmethanamine', cls: 'Antifungal', formula: 'C19H25N', smiles: 'CN(Cc1cccc2ccccc12)CC=CC(C)(C)C' },
 ];
 
 if (typeof module !== 'undefined' && module.exports) {

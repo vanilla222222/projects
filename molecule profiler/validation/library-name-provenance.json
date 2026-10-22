@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
  "rdkitVersion": "2026.09.1",
- "librarySha256": "af30ec8878cc5e3a2e8d393c1a9efb39712b69a26694a02fb4aa5c4c1e405350",
+ "librarySha256": "b41245705e7e22087ed049406419da0311cf6807ffeed80bb09093ec91b26462",
  "toolSha256": "5474a832b1cd427e4246f1c4b12ec2c47a2b3a12586201f388f5cf52f1bfcd16",
  "dataSha256": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
  "protocol": "Prefer exact isomeric graph matches to PubChem titles/IUPAC names or ChEMBL preferred names. Otherwise require the full InChIKey plus completed RDKit tautomer-family agreement, no neutralization and tetrahedral stereo retained; explicitly label these as PubChem standardized-form names, not exact stored-graph names. Never change reference keys or graphs.",
@@ -13626,8 +13626,8 @@
   }
  ],
  "libraryRepin": {
-  "previousLibrarySha256": "79219311d594de2cbd47d8affb641e7da0cce1fcb1b3ecfc6b9c1ab70e570bd3",
-  "reason": "Added 24 derived diuretic scaffold references; no curated name record changed.",
+  "previousLibrarySha256": "af30ec8878cc5e3a2e8d393c1a9efb39712b69a26694a02fb4aa5c4c1e405350",
+  "reason": "Added 15 derived antifungal scaffold references; no curated name record changed.",
   "verified": "Every source InChIKey skeleton in records is still present in data/library.js."
  }
 }
