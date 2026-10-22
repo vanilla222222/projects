@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 4905,
+  "entries": 5145,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -15084,6 +15084,447 @@
       "atomIndices": [
         6
       ]
+    },
+    {
+      "index": 4918,
+      "name": "9-([3-(dimethylamino)-2-methylpropyl]methylidene)thioxanthene",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4923,
+      "name": "2-chloro-9-([3-(dimethylamino)-2-methylpropyl]methylidene)thioxanthene",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4929,
+      "name": "2-fluoro-9-([3-(dimethylamino)-2-methylpropyl]methylidene)thioxanthene",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4936,
+      "name": "2-methyl-9-([3-(dimethylamino)-2-methylpropyl]methylidene)thioxanthene",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4944,
+      "name": "2-methoxy-9-([3-(dimethylamino)-2-methylpropyl]methylidene)thioxanthene",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4949,
+      "name": "2-(methylsulfinyl)-9-([3-(dimethylamino)propyl]methylidene)thioxanthene",
+      "atomIndices": [
+        19
+      ]
+    },
+    {
+      "index": 4977,
+      "name": "5-([3-(dimethylamino)-2-methylpropyl]methylidene)-10,11-dihydro-5H-dibenzo[a,d]cycloheptene",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4978,
+      "name": "5-([3-(dimethylamino)-2-methylpropyl]methylidene)-5H-dibenzo[a,d]cycloheptene",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4987,
+      "name": "5-([2-(1-methylpiperidin-2-yl)ethyl]methylidene)-10,11-dihydro-5H-dibenzo[a,d]cycloheptene",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4988,
+      "name": "5-([2-(1-methylpiperidin-2-yl)ethyl]methylidene)-5H-dibenzo[a,d]cycloheptene",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4989,
+      "name": "5-([(1-ethylpyrrolidin-2-yl)methyl]methylidene)-10,11-dihydro-5H-dibenzo[a,d]cycloheptene",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5023,
+      "name": "1-[4-(4-fluorophenyl)-4-(phenyl)butyl]-4-(2-oxo-2,3-dihydro-1H-benzimidazol-1-yl)piperidine",
+      "atomIndices": [
+        19
+      ]
+    },
+    {
+      "index": 5027,
+      "name": "1-[4-(4-fluorophenyl)-4-(4-chlorophenyl)butyl]-4-(2-oxo-2,3-dihydro-1H-benzimidazol-1-yl)piperidine",
+      "atomIndices": [
+        19
+      ]
+    },
+    {
+      "index": 5028,
+      "name": "1-[4-(4-fluorophenyl)-4-(phenyl)butyl]-4-phenylpiperidine",
+      "atomIndices": [
+        15
+      ]
+    },
+    {
+      "index": 5031,
+      "name": "1-[4-(4-methylphenyl)-4-(4-fluorophenyl)butyl]-4-(2-oxo-2,3-dihydro-1H-benzimidazol-1-yl)piperidine",
+      "atomIndices": [
+        19
+      ]
+    },
+    {
+      "index": 5032,
+      "name": "1-[4-(4-fluorophenyl)-4-(4-chlorophenyl)butyl]-4-phenylpiperidine",
+      "atomIndices": [
+        15
+      ]
+    },
+    {
+      "index": 5033,
+      "name": "1-[4-(4-fluorophenyl)-4-(phenyl)butyl]-4-benzylpiperidine",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 5037,
+      "name": "1-[4-(4-methoxyphenyl)-4-(4-fluorophenyl)butyl]-4-(2-oxo-2,3-dihydro-1H-benzimidazol-1-yl)piperidine",
+      "atomIndices": [
+        19
+      ]
+    },
+    {
+      "index": 5038,
+      "name": "1-[4-(4-methylphenyl)-4-(4-fluorophenyl)butyl]-4-phenylpiperidine",
+      "atomIndices": [
+        15
+      ]
+    },
+    {
+      "index": 5039,
+      "name": "1-[4-(4-fluorophenyl)-4-(4-chlorophenyl)butyl]-4-benzylpiperidine",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 5040,
+      "name": "1-[4-(4-fluorophenyl)-4-(phenyl)butyl]-4-(4-chlorophenyl)-4-hydroxypiperidine",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 5044,
+      "name": "1-[4-(4-methoxyphenyl)-4-(4-fluorophenyl)butyl]-4-phenylpiperidine",
+      "atomIndices": [
+        15
+      ]
+    },
+    {
+      "index": 5045,
+      "name": "1-[4-(4-methylphenyl)-4-(4-fluorophenyl)butyl]-4-benzylpiperidine",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 5046,
+      "name": "1-[4-(4-fluorophenyl)-4-(4-chlorophenyl)butyl]-4-(4-chlorophenyl)-4-hydroxypiperidine",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 5047,
+      "name": "1-[4-(4-fluorophenyl)-4-(phenyl)butyl]-4-hydroxy-4-phenylpiperidine",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 5051,
+      "name": "1-[4-(4-methoxyphenyl)-4-(4-fluorophenyl)butyl]-4-benzylpiperidine",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 5052,
+      "name": "1-[4-(4-methylphenyl)-4-(4-fluorophenyl)butyl]-4-(4-chlorophenyl)-4-hydroxypiperidine",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 5053,
+      "name": "1-[4-(4-fluorophenyl)-4-(4-chlorophenyl)butyl]-4-hydroxy-4-phenylpiperidine",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 5054,
+      "name": "1-[4-(4-fluorophenyl)-4-(phenyl)butyl]-4-(2-methoxyphenyl)piperazine",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 5058,
+      "name": "1-[4-(4-methoxyphenyl)-4-(4-fluorophenyl)butyl]-4-(4-chlorophenyl)-4-hydroxypiperidine",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 5059,
+      "name": "1-[4-(4-methylphenyl)-4-(4-fluorophenyl)butyl]-4-hydroxy-4-phenylpiperidine",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 5060,
+      "name": "1-[4-(4-fluorophenyl)-4-(4-chlorophenyl)butyl]-4-(2-methoxyphenyl)piperazine",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 5061,
+      "name": "1-[4-(4-fluorophenyl)-4-(phenyl)butyl]-4-(pyridin-2-yl)piperazine",
+      "atomIndices": [
+        15
+      ]
+    },
+    {
+      "index": 5064,
+      "name": "1-[4-(4-methoxyphenyl)-4-(4-fluorophenyl)butyl]-4-hydroxy-4-phenylpiperidine",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 5065,
+      "name": "1-[4-(4-methylphenyl)-4-(4-fluorophenyl)butyl]-4-(2-methoxyphenyl)piperazine",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 5106,
+      "name": "N-[(1-methylpyrrolidin-2-yl)methyl]-2-methoxy-5-sulfamoylbenzamide",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5107,
+      "name": "N-[(1-methylpyrrolidin-2-yl)methyl]-2-methoxy-5-(methylsulfonyl)benzamide",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5108,
+      "name": "N-[(1-ethylpyrrolidin-2-yl)methyl]-2-methoxy-5-(methylsulfamoyl)benzamide",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5109,
+      "name": "N-[(1-methylpyrrolidin-2-yl)methyl]-2-methoxy-5-(ethylsulfonyl)benzamide",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5110,
+      "name": "N-[(pyrrolidin-2-yl)methyl]-2-methoxy-5-(methylsulfonyl)benzamide",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 5111,
+      "name": "N-[(1-ethylpiperidin-2-yl)methyl]-2-methoxy-5-sulfamoylbenzamide",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5112,
+      "name": "N-[(1-ethylpyrrolidin-2-yl)methyl]-2-methoxy-5-(propylsulfonyl)benzamide",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5113,
+      "name": "N-[(1-methylpyrrolidin-2-yl)methyl]-2-methoxy-5-(methylsulfamoyl)benzamide",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5114,
+      "name": "N-[(pyrrolidin-2-yl)methyl]-2-methoxy-5-(ethylsulfonyl)benzamide",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 5115,
+      "name": "N-[(1-ethylpiperidin-2-yl)methyl]-2-methoxy-5-(methylsulfonyl)benzamide",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5117,
+      "name": "N-[(1-methylpyrrolidin-2-yl)methyl]-2-methoxy-5-(propylsulfonyl)benzamide",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5118,
+      "name": "N-[(pyrrolidin-2-yl)methyl]-2-methoxy-5-(methylsulfamoyl)benzamide",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 5119,
+      "name": "N-[(1-ethylpiperidin-2-yl)methyl]-2-methoxy-5-(ethylsulfonyl)benzamide",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5121,
+      "name": "N-[(1-ethylpyrrolidin-2-yl)methyl]-2-methoxy-4-amino-5-chlorobenzamide",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5122,
+      "name": "N-[(1-methylpyrrolidin-2-yl)methyl]-2-methoxy-4-amino-5-(ethylsulfonyl)benzamide",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5123,
+      "name": "N-[(pyrrolidin-2-yl)methyl]-2-methoxy-5-(propylsulfonyl)benzamide",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 5124,
+      "name": "N-[(1-ethylpiperidin-2-yl)methyl]-2-methoxy-5-(methylsulfamoyl)benzamide",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5128,
+      "name": "N-[(1-ethylpyrrolidin-2-yl)methyl]-2-methoxy-4-amino-5-bromobenzamide",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5129,
+      "name": "N-[(1-methylpyrrolidin-2-yl)methyl]-2-methoxy-4-amino-5-chlorobenzamide",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5130,
+      "name": "N-[(pyrrolidin-2-yl)methyl]-2-methoxy-4-amino-5-(ethylsulfonyl)benzamide",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 5131,
+      "name": "N-[(1-ethylpiperidin-2-yl)methyl]-2-methoxy-5-(propylsulfonyl)benzamide",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5135,
+      "name": "N-[(1-methylpyrrolidin-2-yl)methyl]-2-methoxy-4-amino-5-bromobenzamide",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5136,
+      "name": "N-[(pyrrolidin-2-yl)methyl]-2-methoxy-4-amino-5-chlorobenzamide",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 5137,
+      "name": "N-[(1-ethylpiperidin-2-yl)methyl]-2-methoxy-4-amino-5-(ethylsulfonyl)benzamide",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5141,
+      "name": "N-[(1-ethylpyrrolidin-2-yl)methyl]-2-methoxy-5-cyanobenzamide",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5142,
+      "name": "N-[(1-methylpyrrolidin-2-yl)methyl]-2-methoxy-3-bromo-6-methoxybenzamide",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5143,
+      "name": "N-[(pyrrolidin-2-yl)methyl]-2-methoxy-4-amino-5-bromobenzamide",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 5144,
+      "name": "N-[(1-ethylpiperidin-2-yl)methyl]-2-methoxy-4-amino-5-chlorobenzamide",
+      "atomIndices": [
+        7
+      ]
     }
   ],
   "chargedEntries": [
@@ -15333,7 +15774,7 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 9,
-    "unspecifiedStereocenters": 1743,
+    "unspecifiedStereocenters": 1806,
     "chargedEntries": 46,
     "fragmentedEntries": 0,
     "radicalEntries": 0,
