@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
  "rdkitVersion": "2026.09.1",
- "librarySha256": "babefd27de7075a6f5dff8c6566bd79b6ba62f9f78c4a56b04d2a5f814359de5",
+ "librarySha256": "d9ac8617e00e54e4ae1489ab8e70ff1aec3191081f726c02021e5b3b48869be2",
  "toolSha256": "5474a832b1cd427e4246f1c4b12ec2c47a2b3a12586201f388f5cf52f1bfcd16",
  "dataSha256": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
  "protocol": "Prefer exact isomeric graph matches to PubChem titles/IUPAC names or ChEMBL preferred names. Otherwise require the full InChIKey plus completed RDKit tautomer-family agreement, no neutralization and tetrahedral stereo retained; explicitly label these as PubChem standardized-form names, not exact stored-graph names. Never change reference keys or graphs.",
@@ -13626,8 +13626,8 @@
   }
  ],
  "libraryRepin": {
-  "previousLibrarySha256": "ef86fee1be2cc5cfefc07e4c0c28ed2f9f5d17f290ad6220e8464416d17b3109",
-  "reason": "Added 157 derived opioid scaffold references and reclassified six opioids into their structural families; no curated name record changed.",
+  "previousLibrarySha256": "babefd27de7075a6f5dff8c6566bd79b6ba62f9f78c4a56b04d2a5f814359de5",
+  "reason": "Added 27 derived aryloxypropanolamine beta-blocker and local-anaesthetic scaffold references; no curated name record changed.",
   "verified": "Every source InChIKey skeleton in records is still present in data/library.js."
  }
 }
