@@ -533,8 +533,8 @@ function rxyRuleGrignardFormation(ctx) {
     if (!pick) {
       return [];
     }
-    if (ctx.protic || ctx.has('H2O')) {
-      return [rxHint('Grignard reagents are destroyed by water and alcohols; make them in dry ether or THF.')];
+    if (rxGrignardProticConflict(ctx)) {
+      return [rxHint('An O–H/N–H donor, acid or protic solvent prevents the supported Grignard formation. A compatible protection plan is required; no generic protecting group is assumed.')];
     }
     const g = rxCloneGraph(s.graph);
     rxSetOrder(g, pick.c, pick.x, 0);

@@ -793,6 +793,13 @@ function formulaHtml(formula) {
   return body.replace(/([A-Za-z)\]])(\d+)/g, '$1<sub>$2</sub>') + (charge ? '<sup>' + charge[1] + '</sup>' : '');
 }
 
+// Ionic monoisotopic masses include the electron deficit/excess, as in RDKit.
+const PROP_ELECTRON_MASS_U = 0.000548579909;
+function propExactMass(ctx) {
+  const mass = propMass(ctx, MONO_MASS);
+  return mass === null ? null : mass - propNetCharge(ctx) * PROP_ELECTRON_MASS_U;
+}
+
 function computePropertiesProtio(graph, atomIds) {
   const ctx = propContext(graph, atomIds);
   const hb = propHydrogenBonding(ctx);
@@ -824,7 +831,7 @@ function computePropertiesProtio(graph, atomIds) {
   return {
     formula: propHillFormula(ctx),
     averageMass: mass,
-    exactMass: propMass(ctx, MONO_MASS),
+    exactMass: propExactMass(ctx),
     isotopeMassWarning: mass === null ? 'Mass unavailable: the structure contains an isotope outside the supported isotope mass table.' : null,
     heavyAtoms: ctx.ids.length,
     hydrogens: propHydrogenCount(ctx),
@@ -865,7 +872,7 @@ function computeProperties(graph, atomIds) {
   // used to serialize the isotope-labelled structure.
   const original = propContext(graph, atomIds);
   p.averageMass = propMass(original, ATOMIC_MASS);
-  p.exactMass = propMass(original, MONO_MASS);
+  p.exactMass = propExactMass(original);
   p.isotopeMassWarning = p.averageMass === null ? 'Mass unavailable: the structure contains an isotope outside the supported isotope mass table.' : null;
   p.smiles = propSmiles(original);
   p.isomericSmiles = propSmiles(original, { isomeric: true });

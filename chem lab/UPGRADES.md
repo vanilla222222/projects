@@ -1,5 +1,47 @@
 # Chem Lab upgrades
 
+## Validation and synthesis-planning update — 2026-10-22
+
+- **Desktop and mobile browser coverage:** the complete app now has a real
+  Chromium test covering all four tabs, route comparisons, responsive layout,
+  save/reload, step reordering and revalidation, exports/imports, rule search,
+  extended depth settings and an explicit amine-protection route. Mobile means
+  touch/viewport emulation, not a physical-device claim. See `tools/README.md`.
+- **Sources and scope:** all 105 current rule descriptors have attributable
+  reaction-class references and implementation-specific substrate/condition
+  limits. Combined-rule branches still state where source coverage is narrower
+  than the local model; a source is not validation of the code or query.
+- **Independent checks:** the RDKit oracle compares actual exported structures
+  and fixed product expectations independently. It found an ionic exact-mass
+  omission; exact masses now include the net-charge electron-mass correction.
+  The versioned report records fixture and loaded-script hashes.
+- **Route comparison:** alternatives are displayed side by side on desktop and
+  stacked on mobile, with step/material counts, source coverage, assumptions,
+  scope and reported stereo/minor-product concerns. No numerical experimental
+  feasibility or yield score is inferred from these counts.
+- **Three additional families:** terminal-alkyne hydroboration/oxidation,
+  BH3/THF carboxylic-acid reduction, and BBr3 aryl methyl ether cleavage, each with
+  bounded scope, negative cases and forward-checked retrosynthesis.
+- **Amine protection:** supported conflicts can expand into explicit protect,
+  main reaction and deprotect steps. Automatic Boc planning is currently
+  restricted to the encoded amine-versus-alcohol acyl-substitution case; each
+  operation is independently forward checked. Forbidden reagents/rules and
+  inventory checks apply to every substep. Unsupported amine conflicts produce
+  an explanation instead of a guessed compatible protection scheme. Planning
+  roles and reasons survive workspace JSON and CSV export.
+  The forward Grignard, nitrile-addition and formation branches also reject the
+  encoded O–H/N–H/acid conflicts rather than disagreeing with the planner.
+- **One to ten steps:** Path Finder settings now include 6–10 steps. Protection
+  and deprotection count separately. Searches up to five steps default to 60
+  expanded structures/12 seconds; six to ten default to 200/30 seconds, remain
+  cancellable, and do not establish impossibility when exhausted.
+
+The current reproducible checks are `node tools/run-validation.js`, with optional
+`--rdkit --browser` checks documented in `tools/README.md`. These are finite
+regression and oracle comparisons, not a general accuracy percentage.
+Integration results: all 18 default suites pass, RDKit passes 385 independent
+checks, and the Chromium suite passes 56 desktop/mobile-emulation checks.
+
 ## Coordinated workbench upgrade — 2026-10-22
 
 This round implements the six requested areas:
@@ -43,14 +85,15 @@ implementation is not a complete implementation of every modern CIP rule.
 Common labelled-isotope masses are supported; unknown isotope masses are shown
 as unavailable. Historical stock entries whose stereo was previously discarded
 cannot recover that information without re-importing the original structures.
-Rule-source coverage remains partial and is disclosed in the interface. None of
+At that earlier release rule-source coverage was partial; the update above adds
+reaction-class references for every current rule. None of
 these checks establishes experimental yield, selectivity or general feasibility.
 
 Validation at integration: 61 browser scripts parse, and 11 regression/benchmark
-suites pass. A full-app DOM smoke test also passed startup, tab switching, path
+suites passed at that release. A full-app DOM smoke test also passed startup, tab switching, path
 search, route save/verification, reaction-step handoff and evidence/explorer
-initialization, using jsdom with a stub canvas. Full browser rendering could not be checked: the local Chromium
-download was unavailable and the remote browser cannot reach the local server.
+initialization, using jsdom with a stub canvas. Full browser rendering was not
+available then; the current update adds the real Chromium suite described above.
 
 ## Naming
 

@@ -1899,6 +1899,11 @@ function retroProtectOptions(t, spec, chemo) {
 
 function retroProtectTry(t, spec, option) {
   const pg = RETRO_PROTECTION[option.kind];
+  // The current amine planner has one explicitly supported compatibility
+  // case: suppressing N-acylation while an alcohol undergoes acyl substitution.
+  // A Boc carbamate is not a general solution for organometallics, hydrides or
+  // acid-mediated transformations (it can retain N-H and is acid-labile).
+  if (option.kind === 'amine' && spec.transform.rule !== 'acyl') return null;
   const record = spec.record;
   const hAtoms = option.atoms.map((id) => record.map.get(id));
   const pOut = {};
@@ -1912,24 +1917,33 @@ function retroProtectTry(t, spec, option) {
   if (index < 0 || !protectedPiece) {
     return null;
   }
+  const precursorSmiles = retroProps(record.graph, Array.from(piece.ids)).isomericSmiles || piece.smiles;
+  const protectedPrecursor = retroProps(pGraph, Array.from(protectedPiece.ids)).isomericSmiles || protectedPiece.smiles;
   const tOut = {};
   const tGraph = retroClone(t.graph, null, tOut);
   if (!pg.apply(tGraph, option.atoms.map((id) => tOut.map.get(id))) || !retroValid(tGraph)) {
     return null;
   }
-  const protectedTarget = retroCanonical(tGraph);
+  const protectedTarget = retroProps(tGraph).isomericSmiles;
   if (!protectedTarget || protectedTarget === t.smiles) {
     return null;
   }
-  const protectSpec = retroSpec([{ smiles: piece.smiles, role: 'reactant' }], pg.protect, pg.protectConditions);
-  const protect = retroTryVerify(protectSpec, protectedPiece.smiles);
+  const protectSpec = retroSpec([{ smiles: precursorSmiles, role: 'reactant' }], pg.protect, pg.protectConditions);
+  const protect = retroTryVerify(protectSpec, protectedPrecursor);
   if (!protect) {
     return null;
   }
-  const stepSpec = retroSpec(spec.precursors.map((p, i) => (i === index ? Object.assign({}, p, { smiles: protectedPiece.smiles }) : p)), spec.reagents, spec.conditions);
+  const stepSpec = retroSpec(spec.precursors.map((p, i) => (i === index ? Object.assign({}, p, { smiles: protectedPrecursor }) : p)), spec.reagents, spec.conditions);
   const step = retroTryVerify(stepSpec, protectedTarget);
   if (!step) {
     return null;
+  }
+  if (option.kind === 'amine') {
+    const mainContext = reactionContext(step.compounds, step.conditions);
+    if (mainContext.has('strongAcid') || mainContext.has('grignard') || mainContext.has('alanate')) return null;
+    const beforeBoc = rxChemoGroups(retroFromSmiles(protectedPrecursor)).boc || [];
+    const afterBoc = rxChemoGroups(retroFromSmiles(protectedTarget)).boc || [];
+    if (!beforeBoc.length || beforeBoc.length !== afterBoc.length) return null;
   }
   const deprotectSpec = retroSpec([{ smiles: protectedTarget, role: 'reactant' }], pg.deprotect, pg.deprotectConditions);
   const deprotect = retroTryVerify(deprotectSpec, t.smiles);
@@ -1940,14 +1954,14 @@ function retroProtectTry(t, spec, option) {
     role,
     precursors: s.precursors,
     reagents: s.reagents,
-    target: v.product.smiles,
+    target: v.product.isomericSmiles || v.product.smiles,
     compounds: v.compounds,
     conditions: v.conditions,
     outcome: v.outcome,
     product: v.product,
     minor: v.minor,
   }));
-  return { option, pg, precursor: piece.smiles, protectedPrecursor: protectedPiece.smiles, protectedTarget, pgSteps };
+  return { option, pg, precursor: precursorSmiles, precursorIndex: index, protectedPrecursor, protectedTarget, pgSteps };
 }
 
 function retroProtectPlan(spec, target) {
@@ -1968,7 +1982,7 @@ function retroProtectPlan(spec, target) {
 
 function retroProtectCandidate(t, spec, plan) {
   const step = plan.pgSteps[1];
-  const precursors = spec.precursors.map(retroPrecursorInfo);
+  const precursors = spec.precursors.map((p, i) => retroPrecursorInfo(i === plan.precursorIndex ? Object.assign({}, p, { smiles: plan.precursor, isomericSmiles: plan.precursor }) : p));
   const edit = retroEditAtoms(t, spec.record);
   const groupLabel = (typeof RX_CHEMO_GROUP_LABELS === 'object' && RX_CHEMO_GROUP_LABELS[plan.option.kind]) || plan.option.kind;
   return {
@@ -1991,7 +2005,7 @@ function retroProtectCandidate(t, spec, plan) {
     bonds: edit.bonds,
     changedAtoms: edit.changedAtoms,
     stereo: null,
-    protection: { group: plan.option.kind, label: plan.pg.label, atoms: plan.option.atoms.map((id) => t.map.get(id)), precursor: plan.precursor, protectedPrecursor: plan.protectedPrecursor, protectedTarget: plan.protectedTarget },
+    protection: { group: plan.option.kind, label: plan.pg.label, atoms: plan.option.atoms.map((id) => t.map.get(id)), precursor: plan.precursor, protectedPrecursor: plan.protectedPrecursor, protectedTarget: plan.protectedTarget, reason: plan.option.kind === 'amine' ? 'The free amine competes for the acylating reagent. Boc protection suppresses N-acylation while the alcohol is acylated; the amine is restored afterwards.' : 'The encoded chemoselectivity rules identify a competing functional group.' },
     pgSteps: plan.pgSteps,
     rank: retroRank(t, 'Protecting groups', precursors, null),
   };
@@ -2000,7 +2014,7 @@ function retroProtectCandidate(t, spec, plan) {
 function* retroDisconnectSteps(graph, ids, options) {
   const start = retroNow();
   const t = retroTarget(graph, ids);
-  const out = { smiles: t.smiles, isomericSmiles: t.isomericSmiles, stereocentres: t.stereocentres, candidates: [], tried: 0, truncated: false, reason: '', ms: 0 };
+  const out = { smiles: t.smiles, isomericSmiles: t.isomericSmiles, stereocentres: t.stereocentres, candidates: [], protectionNeeds: [], tried: 0, truncated: false, reason: '', ms: 0 };
   if (!t.graph.atoms.length || !t.smiles) {
     out.reason = 'empty';
     return out;
@@ -2060,10 +2074,22 @@ function* retroDisconnectSteps(graph, ids, options) {
       }
     }
     if (planning && (!verified || verified.outcome.chemoselectivity)) {
+      try {
+        const context = reactionContext(spec.precursors.concat(spec.reagents).map(retroCompound), normalizeReactionConditions(spec.conditions));
+        if (context.has('grignard') && context.substrates.some((s) => s.graph.atoms.some((a) => a.element === 'N' && rxHydrogens(s.graph, a.id) > 0))) {
+          out.protectionNeeds.push({ group: 'amine', transform: spec.transform.id, reason: 'An N–H group would consume the Grignard reagent. No compatible forward-verified amine-protection plan is supported for this step.' });
+        }
+      } catch (error) { /* Unparseable precursor specs cannot produce plans. */ }
       const plan = retroProtectPlan(spec, t);
       if (plan && !keys.has(plan.key)) {
         keys.add(plan.key);
         out.candidates.push(plan);
+      } else if (!plan) {
+        const outcome = verified ? verified.outcome : sink.result && sink.result.best;
+        const chemo = outcome && outcome.chemoselectivity;
+        if (spec.record && chemo && retroProtectOptions(t, spec, chemo).some((option) => option.kind === 'amine')) {
+          out.protectionNeeds.push({ group: 'amine', transform: spec.transform.id, reason: 'A free amine may compete in ' + spec.transform.name + ', but no compatible forward-verified amine-protection sequence is supported for this step.' });
+        }
       }
     }
     spec.attempt = null;

@@ -1435,12 +1435,21 @@ function rxRuleDissolvingMetal(ctx) {
   });
 }
 
+function rxHasProticNH(graph) {
+  return graph.atoms.some((atom) => atom.element === 'N' && (rxHydrogens(graph, atom.id) > 0 || rxNeighbors(graph, atom.id).some((n) => ['H', 'D'].includes(n.atom.element))));
+}
+
+function rxGrignardProticConflict(ctx) {
+  const graphs = ctx.substrates.concat(ctx.organicCatalysts || []).map((s) => s.graph).concat([...ctx.species.values()].map((s) => s.graph).filter(Boolean));
+  return ctx.protic || ctx.has('H2O') || ctx.has('strongAcid') || graphs.some(rxHasProticNH) || ctx.substrates.some((s) => s.info.alcohols.length || s.info.carbonyls.some((c) => c.kind === 'acid'));
+}
+
 function rxRuleGrignard(ctx) {
   const reagent = ctx.get('grignard');
   if (!reagent) {
     return [];
   }
-  const quench = ctx.protic || ctx.substrates.some((s) => s.info.alcohols.length || s.info.carbonyls.some((c) => c.kind === 'acid'));
+  const quench = rxGrignardProticConflict(ctx);
   const rGraph = rxCloneGraph(reagent.graph);
   rxNeighbors(rGraph, reagent.metal).forEach((n) => {
     if (n.atom.id !== reagent.carbon) {
@@ -1453,8 +1462,8 @@ function rxRuleGrignard(ctx) {
     const g = new Graph();
     rxMerge(g, rGraph, rIds);
     return [rxOutcome('grignard-quench', 'Grignard reagent destroyed', 'Acid–base', g,
-      'Grignard reagents are very strong bases. Any O–H in the flask (water, an alcohol or an acid) protonates the carbanion before it can attack the carbonyl, leaving just the alkane.',
-      { score: 14, byproducts: ['Mg(OH)X salts'], warnings: ['Use a dry ether solvent (Et₂O or THF) under N₂ and add acid only in the work-up.'] })];
+      'The encoded mixture contains a protic solvent, acid, O–H or N–H donor. The Grignard reagent is modeled as protonated to the alkane instead of adding to the carbonyl.',
+      { score: 14, byproducts: ['Magnesium salts of the proton donor'], warnings: ['Use a dry ether solvent (Et₂O or THF) under N₂ and add acid only in the work-up.', 'A compatible amine-protection strategy is not assumed for this organometallic step; a protected amine that retains N–H may still quench the reagent.'] })];
   }
   return ctx.substrates.flatMap((s) => {
     const target = s.info.carbonyls.find((c) => c.kind === 'aldehyde' || c.kind === 'ketone') || s.info.carbonyls.find((c) => c.kind === 'ester');
