@@ -5503,6 +5503,18 @@ const LIBRARY = [
   { name: 'N-[3-(4-chlorophenyl)prop-2-enyl]-N-methyl-1-naphthalen-1-ylmethanamine', cls: 'Antifungal', formula: 'C21H20ClN', smiles: 'CN(Cc1cccc2ccccc12)CC=Cc3ccc(Cl)cc3' },
   { name: 'N-[3-(4-fluorophenyl)prop-2-enyl]-N-methyl-1-naphthalen-1-ylmethanamine', cls: 'Antifungal', formula: 'C21H20FN', smiles: 'CN(Cc1cccc2ccccc12)CC=Cc3ccc(F)cc3' },
   { name: 'N-(4,4-dimethylpent-2-enyl)-N-methyl-1-naphthalen-1-ylmethanamine', cls: 'Antifungal', formula: 'C19H25N', smiles: 'CN(Cc1cccc2ccccc12)CC=CC(C)(C)C' },
+  { name: '5-bromo-1-[4-hydroxy-5-(hydroxymethyl)oxolan-2-yl]pyrimidine-2,4-dione', cls: 'Antiviral', formula: 'C9H11BrN2O5', smiles: 'O=c1[nH]c(=O)n(C2CC(O)C(CO)O2)cc1Br' },
+  { name: '5-chloro-1-[4-hydroxy-5-(hydroxymethyl)oxolan-2-yl]pyrimidine-2,4-dione', cls: 'Antiviral', formula: 'C9H11ClN2O5', smiles: 'O=c1[nH]c(=O)n(C2CC(O)C(CO)O2)cc1Cl' },
+  { name: '5-ethyl-1-[4-hydroxy-5-(hydroxymethyl)oxolan-2-yl]pyrimidine-2,4-dione', cls: 'Antiviral', formula: 'C11H16N2O5', smiles: 'O=c1[nH]c(=O)n(C2CC(O)C(CO)O2)cc1CC' },
+  { name: '5-ethynyl-1-[4-hydroxy-5-(hydroxymethyl)oxolan-2-yl]pyrimidine-2,4-dione', cls: 'Antiviral', formula: 'C11H12N2O5', smiles: 'O=c1[nH]c(=O)n(C2CC(O)C(CO)O2)cc1C#C' },
+  { name: '1-adamantylmethanamine', cls: 'Antiviral', formula: 'C11H19N', smiles: 'NCC12CC3CC(CC(C3)C1)C2' },
+  { name: '2-(1-adamantyl)ethanamine', cls: 'Antiviral', formula: 'C12H21N', smiles: 'NCCC12CC3CC(CC(C3)C1)C2' },
+  { name: '2-(1-adamantyl)propan-2-amine', cls: 'Antiviral', formula: 'C13H23N', smiles: 'CC(C)(N)C12CC3CC(CC(C3)C1)C2' },
+  { name: '1-(1-adamantyl)propan-1-amine', cls: 'Antiviral', formula: 'C13H23N', smiles: 'CCC(N)C12CC3CC(CC(C3)C1)C2' },
+  { name: '2-amino-9-(2-hydroxyethyl)-1H-purin-6-one', cls: 'Antiviral', formula: 'C7H9N5O2', smiles: 'Nc1nc2c(ncn2CCO)c(=O)[nH]1' },
+  { name: '2-amino-9-(3-hydroxypropyl)-1H-purin-6-one', cls: 'Antiviral', formula: 'C8H11N5O2', smiles: 'Nc1nc2c(ncn2CCCO)c(=O)[nH]1' },
+  { name: '2-amino-9-(4-hydroxybutyl)-1H-purin-6-one', cls: 'Antiviral', formula: 'C9H13N5O2', smiles: 'Nc1nc2c(ncn2CCCCO)c(=O)[nH]1' },
+  { name: '2-amino-9-(2,3-dihydroxypropyl)-1H-purin-6-one', cls: 'Antiviral', formula: 'C8H11N5O3', smiles: 'Nc1nc2c(ncn2CC(O)CO)c(=O)[nH]1' },
 ];
 
 if (typeof module !== 'undefined' && module.exports) {

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 5485,
+  "entries": 5497,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -16823,6 +16823,56 @@
       "atomIndices": [
         6
       ]
+    },
+    {
+      "index": 5486,
+      "name": "5-bromo-1-[4-hydroxy-5-(hydroxymethyl)oxolan-2-yl]pyrimidine-2,4-dione",
+      "atomIndices": [
+        6,
+        8,
+        10
+      ]
+    },
+    {
+      "index": 5487,
+      "name": "5-chloro-1-[4-hydroxy-5-(hydroxymethyl)oxolan-2-yl]pyrimidine-2,4-dione",
+      "atomIndices": [
+        6,
+        8,
+        10
+      ]
+    },
+    {
+      "index": 5488,
+      "name": "5-ethyl-1-[4-hydroxy-5-(hydroxymethyl)oxolan-2-yl]pyrimidine-2,4-dione",
+      "atomIndices": [
+        6,
+        8,
+        10
+      ]
+    },
+    {
+      "index": 5489,
+      "name": "5-ethynyl-1-[4-hydroxy-5-(hydroxymethyl)oxolan-2-yl]pyrimidine-2,4-dione",
+      "atomIndices": [
+        6,
+        8,
+        10
+      ]
+    },
+    {
+      "index": 5493,
+      "name": "1-(1-adamantyl)propan-1-amine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5497,
+      "name": "2-amino-9-(2,3-dihydroxypropyl)-1H-purin-6-one",
+      "atomIndices": [
+        9
+      ]
     }
   ],
   "chargedEntries": [
@@ -17072,7 +17122,7 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 9,
-    "unspecifiedStereocenters": 1963,
+    "unspecifiedStereocenters": 1969,
     "chargedEntries": 46,
     "fragmentedEntries": 0,
     "radicalEntries": 0,
