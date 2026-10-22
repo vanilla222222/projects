@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 4209,
+  "entries": 4431,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -1363,18 +1363,18 @@
       "index": 237,
       "name": "Oxacillin",
       "atomIndices": [
-        15,
-        19,
-        27
+        4,
+        5,
+        24
       ]
     },
     {
       "index": 238,
       "name": "Cloxacillin",
       "atomIndices": [
-        16,
-        20,
-        28
+        4,
+        5,
+        25
       ]
     },
     {
@@ -4693,19 +4693,19 @@
       "index": 1253,
       "name": "Flucloxacillin",
       "atomIndices": [
-        16,
-        20,
-        25
+        4,
+        5,
+        26
       ]
     },
     {
       "index": 1254,
       "name": "Piperacillin",
       "atomIndices": [
-        16,
-        26,
-        30,
-        35
+        4,
+        5,
+        9,
+        32
       ]
     },
     {
@@ -4773,9 +4773,9 @@
         1,
         2,
         9,
-        18,
-        25,
-        26
+        12,
+        22,
+        23
       ]
     },
     {
@@ -4783,7 +4783,8 @@
       "name": "Imipenem",
       "atomIndices": [
         1,
-        2
+        3,
+        4
       ]
     },
     {
@@ -12840,6 +12841,898 @@
       "atomIndices": [
         7
       ]
+    },
+    {
+      "index": 4210,
+      "name": "6-Aminopenicillanic acid",
+      "atomIndices": [
+        4,
+        5,
+        10
+      ]
+    },
+    {
+      "index": 4211,
+      "name": "Methicillin",
+      "atomIndices": [
+        13,
+        17,
+        22
+      ]
+    },
+    {
+      "index": 4212,
+      "name": "Nafcillin",
+      "atomIndices": [
+        16,
+        20,
+        25
+      ]
+    },
+    {
+      "index": 4213,
+      "name": "Dicloxacillin",
+      "atomIndices": [
+        17,
+        21,
+        26
+      ]
+    },
+    {
+      "index": 4214,
+      "name": "Carbenicillin",
+      "atomIndices": [
+        4,
+        5,
+        9,
+        22
+      ]
+    },
+    {
+      "index": 4215,
+      "name": "Azlocillin",
+      "atomIndices": [
+        4,
+        5,
+        9,
+        28
+      ]
+    },
+    {
+      "index": 4216,
+      "name": "Mezlocillin",
+      "atomIndices": [
+        4,
+        5,
+        9,
+        32
+      ]
+    },
+    {
+      "index": 4217,
+      "name": "Phenethicillin",
+      "atomIndices": [
+        1,
+        12,
+        16,
+        21
+      ]
+    },
+    {
+      "index": 4218,
+      "name": "Propicillin",
+      "atomIndices": [
+        2,
+        13,
+        17,
+        22
+      ]
+    },
+    {
+      "index": 4219,
+      "name": "Azidocillin",
+      "atomIndices": [
+        4,
+        5,
+        9,
+        22
+      ]
+    },
+    {
+      "index": 4220,
+      "name": "Epicillin",
+      "atomIndices": [
+        4,
+        5,
+        9,
+        20
+      ]
+    },
+    {
+      "index": 4221,
+      "name": "Ciclacillin",
+      "atomIndices": [
+        4,
+        5,
+        19
+      ]
+    },
+    {
+      "index": 4222,
+      "name": "Cefalotin",
+      "atomIndices": [
+        13,
+        23
+      ]
+    },
+    {
+      "index": 4223,
+      "name": "Cefapirin",
+      "atomIndices": [
+        13,
+        25
+      ]
+    },
+    {
+      "index": 4224,
+      "name": "Cefacetrile",
+      "atomIndices": [
+        13,
+        20
+      ]
+    },
+    {
+      "index": 4225,
+      "name": "Cefaclor",
+      "atomIndices": [
+        1,
+        5,
+        17
+      ]
+    },
+    {
+      "index": 4226,
+      "name": "Cephradine",
+      "atomIndices": [
+        9,
+        13,
+        21
+      ]
+    },
+    {
+      "index": 4227,
+      "name": "Cefroxadine",
+      "atomIndices": [
+        10,
+        14,
+        22
+      ]
+    },
+    {
+      "index": 4228,
+      "name": "Cefatrizine",
+      "atomIndices": [
+        1,
+        5,
+        23
+      ]
+    },
+    {
+      "index": 4229,
+      "name": "Cefamandole",
+      "atomIndices": [
+        16,
+        20,
+        28
+      ]
+    },
+    {
+      "index": 4230,
+      "name": "Cefonicid",
+      "atomIndices": [
+        19,
+        20,
+        24
+      ]
+    },
+    {
+      "index": 4231,
+      "name": "Cefmenoxime",
+      "atomIndices": [
+        7,
+        26
+      ]
+    },
+    {
+      "index": 4232,
+      "name": "Cefotiam",
+      "atomIndices": [
+        20,
+        31
+      ]
+    },
+    {
+      "index": 4233,
+      "name": "Ceftezole",
+      "atomIndices": [
+        9,
+        27
+      ]
+    },
+    {
+      "index": 4234,
+      "name": "Cefoperazone",
+      "atomIndices": [
+        9,
+        13,
+        32
+      ]
+    },
+    {
+      "index": 4235,
+      "name": "Ceftizoxime",
+      "atomIndices": [
+        7,
+        18
+      ]
+    },
+    {
+      "index": 4236,
+      "name": "Cefixime",
+      "atomIndices": [
+        10,
+        27
+      ]
+    },
+    {
+      "index": 4237,
+      "name": "Cefpodoxime",
+      "atomIndices": [
+        11,
+        25
+      ]
+    },
+    {
+      "index": 4238,
+      "name": "Cefdinir",
+      "atomIndices": [
+        10,
+        23
+      ]
+    },
+    {
+      "index": 4239,
+      "name": "Ceftibuten",
+      "atomIndices": [
+        13,
+        24
+      ]
+    },
+    {
+      "index": 4241,
+      "name": "Lomefloxacin",
+      "atomIndices": [
+        19
+      ]
+    },
+    {
+      "index": 4247,
+      "name": "Orbifloxacin",
+      "atomIndices": [
+        1,
+        25
+      ]
+    },
+    {
+      "index": 4248,
+      "name": "Sparfloxacin",
+      "atomIndices": [
+        1,
+        25
+      ]
+    },
+    {
+      "index": 4249,
+      "name": "Gatifloxacin",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 4250,
+      "name": "Grepafloxacin",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 4251,
+      "name": "Clinafloxacin",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4252,
+      "name": "Besifloxacin",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4257,
+      "name": "Flumequine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4260,
+      "name": "Loracarbef",
+      "atomIndices": [
+        1,
+        5,
+        17
+      ]
+    },
+    {
+      "index": 4261,
+      "name": "Sulbactam",
+      "atomIndices": [
+        3,
+        11
+      ]
+    },
+    {
+      "index": 4262,
+      "name": "Tazobactam",
+      "atomIndices": [
+        1,
+        8,
+        16
+      ]
+    },
+    {
+      "index": 4263,
+      "name": "Thienamycin",
+      "atomIndices": [
+        1,
+        3,
+        17
+      ]
+    },
+    {
+      "index": 4264,
+      "name": "Doripenem",
+      "atomIndices": [
+        1,
+        3,
+        9,
+        12,
+        24,
+        25
+      ]
+    },
+    {
+      "index": 4265,
+      "name": "Panipenem",
+      "atomIndices": [
+        6,
+        13,
+        15,
+        16
+      ]
+    },
+    {
+      "index": 4300,
+      "name": "Bendroflumethiazide",
+      "atomIndices": [
+        15
+      ]
+    },
+    {
+      "index": 4301,
+      "name": "Trichlormethiazide",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 4302,
+      "name": "Methyclothiazide",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4303,
+      "name": "Polythiazide",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4304,
+      "name": "Epitizide",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 4305,
+      "name": "Altizide",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 4306,
+      "name": "Cyclopenthiazide",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 4307,
+      "name": "Buthiazide",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4308,
+      "name": "Ethiazide",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4311,
+      "name": "Metolazone",
+      "atomIndices": [
+        22
+      ]
+    },
+    {
+      "index": 4312,
+      "name": "Quinethazone",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4313,
+      "name": "Clopamide",
+      "atomIndices": [
+        1,
+        5
+      ]
+    },
+    {
+      "index": 4315,
+      "name": "Mefruside",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 4332,
+      "name": "Sulfinpyrazone",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 4336,
+      "name": "Isoconazole",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 4337,
+      "name": "Tioconazole",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 4338,
+      "name": "Fenticonazole",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 4339,
+      "name": "Sertaconazole",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 4340,
+      "name": "Enilconazole",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4341,
+      "name": "Efinaconazole",
+      "atomIndices": [
+        5,
+        7
+      ]
+    },
+    {
+      "index": 4342,
+      "name": "Hexaconazole",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4343,
+      "name": "Tebuconazole",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4344,
+      "name": "Terconazole",
+      "atomIndices": [
+        13,
+        16
+      ]
+    },
+    {
+      "index": 4345,
+      "name": "Propiconazole",
+      "atomIndices": [
+        3,
+        6
+      ]
+    },
+    {
+      "index": 4346,
+      "name": "Difenoconazole",
+      "atomIndices": [
+        1,
+        4
+      ]
+    },
+    {
+      "index": 4347,
+      "name": "Thymidine",
+      "atomIndices": [
+        4,
+        6,
+        8
+      ]
+    },
+    {
+      "index": 4348,
+      "name": "Uridine",
+      "atomIndices": [
+        5,
+        7,
+        10,
+        12
+      ]
+    },
+    {
+      "index": 4349,
+      "name": "Inosine",
+      "atomIndices": [
+        10,
+        12,
+        15,
+        17
+      ]
+    },
+    {
+      "index": 4350,
+      "name": "Nelarabine",
+      "atomIndices": [
+        12,
+        14,
+        17,
+        19
+      ]
+    },
+    {
+      "index": 4351,
+      "name": "Floxuridine",
+      "atomIndices": [
+        6,
+        8,
+        10
+      ]
+    },
+    {
+      "index": 4352,
+      "name": "Idoxuridine",
+      "atomIndices": [
+        6,
+        8,
+        10
+      ]
+    },
+    {
+      "index": 4353,
+      "name": "Brivudine",
+      "atomIndices": [
+        6,
+        8,
+        10
+      ]
+    },
+    {
+      "index": 4354,
+      "name": "Clevudine",
+      "atomIndices": [
+        4,
+        6,
+        9,
+        11
+      ]
+    },
+    {
+      "index": 4355,
+      "name": "Stavudine",
+      "atomIndices": [
+        4,
+        7
+      ]
+    },
+    {
+      "index": 4356,
+      "name": "Didanosine",
+      "atomIndices": [
+        10,
+        13
+      ]
+    },
+    {
+      "index": 4357,
+      "name": "Zalcitabine",
+      "atomIndices": [
+        5,
+        8
+      ]
+    },
+    {
+      "index": 4358,
+      "name": "Entecavir",
+      "atomIndices": [
+        2,
+        5,
+        8
+      ]
+    },
+    {
+      "index": 4361,
+      "name": "Valganciclovir",
+      "atomIndices": [
+        3,
+        9
+      ]
+    },
+    {
+      "index": 4363,
+      "name": "Mizoribine",
+      "atomIndices": [
+        7,
+        9,
+        12,
+        14
+      ]
+    },
+    {
+      "index": 4364,
+      "name": "Aminopterin",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 4366,
+      "name": "Butoconazole",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 4367,
+      "name": "Climbazole",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4369,
+      "name": "Luliconazole",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4370,
+      "name": "Penconazole",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 4371,
+      "name": "Myclobutanil",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4372,
+      "name": "Epoxiconazole",
+      "atomIndices": [
+        5,
+        13
+      ]
+    },
+    {
+      "index": 4374,
+      "name": "Triadimefon",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4375,
+      "name": "Triadimenol",
+      "atomIndices": [
+        4,
+        6
+      ]
+    },
+    {
+      "index": 4376,
+      "name": "Bitertanol",
+      "atomIndices": [
+        4,
+        6
+      ]
+    },
+    {
+      "index": 4379,
+      "name": "Amorolfine",
+      "atomIndices": [
+        10,
+        15,
+        18
+      ]
+    },
+    {
+      "index": 4380,
+      "name": "Fenpropimorph",
+      "atomIndices": [
+        1,
+        16,
+        19
+      ]
+    },
+    {
+      "index": 4384,
+      "name": "Etidocaine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4390,
+      "name": "Pipecolylxylidide",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 4391,
+      "name": "Tocainide",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 4400,
+      "name": "Amylocaine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4403,
+      "name": "Hexylcaine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4404,
+      "name": "Piperocaine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4405,
+      "name": "Cyclomethycaine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4416,
+      "name": "Diperodon",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 4421,
+      "name": "Disopyramide",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4422,
+      "name": "Encainide",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 4426,
+      "name": "Cibenzoline",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 4427,
+      "name": "Ethotoin",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4428,
+      "name": "Mephenytoin",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4429,
+      "name": "Nirvanol",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4430,
+      "name": "Carbamazepine-10,11-epoxide",
+      "atomIndices": [
+        10,
+        12
+      ]
+    },
+    {
+      "index": 4431,
+      "name": "Eslicarbazepine acetate",
+      "atomIndices": [
+        4
+      ]
     }
   ],
   "chargedEntries": [
@@ -13067,6 +13960,11 @@
       "index": 4182,
       "name": "Methoxime",
       "formalCharge": 2
+    },
+    {
+      "index": 4418,
+      "name": "QX-314",
+      "formalCharge": 1
     }
   ],
   "fragmentedEntries": [],
@@ -13084,8 +13982,8 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 9,
-    "unspecifiedStereocenters": 1451,
-    "chargedEntries": 45,
+    "unspecifiedStereocenters": 1562,
+    "chargedEntries": 46,
     "fragmentedEntries": 0,
     "radicalEntries": 0,
     "nonAromaticSulfurRings": 1,

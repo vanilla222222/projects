@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "scope": "Stored reference entries whose written constitution did not match the compound the name denotes, found while proving derivation templates against the library rather than by fetching a source record. Each correction was derived from the compound's IUPAC name and cross-checked against the molecular formula computed by RDKit from the corrected structure. No source record was fetched for any of them, so the evidence here is structural reasoning, not a database response; the PubChem-sourced replacements are recorded separately in reference-identity-corrections.json.",
+  "method": "Four of the first six were found while proving a penam template against the library: the template regenerated the other stored penicillins exactly and disagreed with these. The isoxazolyl penicillins are the case the formula cross-check cannot catch on its own, because the reversed substitution pattern is an isomer. Valacyclovir was found the same way, by a nucleoside template proven against 17 stored anchors including Acyclovir, whose stored structure does carry the oxymethyl bridge that the stored Valacyclovir had dropped. Articaine was found the same way: an aminoamide template proven against five stored local anesthetics could not reproduce it, and the stored entry proved to be missing the thiophene 4-methyl group and to have the C2 ester and C3 amide interchanged.",
+  "changes": [
+    {
+      "name": "Oxacillin",
+      "previousFormula": "C19H19N3O5S",
+      "previousSmiles": "Cc1c(-c2ccccc2)onc1C(=O)NC1C(=O)N2C(C(=O)O)C(C)(C)SC12",
+      "correctedFormula": "C19H19N3O5S",
+      "correctedSmiles": "CC1(C)SC2C(NC(=O)c3c(-c4ccccc4)noc3C)C(=O)N2C1C(=O)O",
+      "reason": "the isoxazole was written 4-methyl-5-phenyl-3-carboxamide; oxacillin is the 5-methyl-3-phenylisoxazole-4-carboxamide, an isomer the formula check cannot separate"
+    },
+    {
+      "name": "Cloxacillin",
+      "previousFormula": "C19H18ClN3O5S",
+      "previousSmiles": "Cc1c(-c2ccccc2Cl)onc1C(=O)NC1C(=O)N2C(C(=O)O)C(C)(C)SC12",
+      "correctedFormula": "C19H18ClN3O5S",
+      "correctedSmiles": "CC1(C)SC2C(NC(=O)c3c(-c4ccccc4Cl)noc3C)C(=O)N2C1C(=O)O",
+      "reason": "same reversed isoxazole substitution pattern as the stored oxacillin"
+    },
+    {
+      "name": "Flucloxacillin",
+      "previousFormula": "C19H18FN3O5S",
+      "previousSmiles": "Cc1onc(-c2ccccc2F)c1C(=O)NC1C(=O)N2C1SC(C)(C)C2C(=O)O",
+      "correctedFormula": "C19H17ClFN3O5S",
+      "correctedSmiles": "CC1(C)SC2C(NC(=O)c3c(-c4c(Cl)cccc4F)noc3C)C(=O)N2C1C(=O)O",
+      "reason": "the 2-chloro substituent of the 2-chloro-6-fluorophenyl ring was missing, and the isoxazole substitution pattern was reversed"
+    },
+    {
+      "name": "Piperacillin",
+      "previousFormula": "C24H28N6O8S",
+      "previousSmiles": "CCN1C(=O)C(=O)N(CC)C(=O)N1C(=O)NC(c1ccccc1)C(=O)NC1C(=O)N2C1SC(C)(C)C2C(=O)O",
+      "correctedFormula": "C23H27N5O7S",
+      "correctedSmiles": "CC1(C)SC2C(NC(=O)C(NC(=O)N3CCN(CC)C(=O)C3=O)c3ccccc3)C(=O)N2C1C(=O)O",
+      "reason": "the 4-ethyl-2,3-dioxopiperazine-1-carboxamide was written as a three-nitrogen, three-carbonyl, two-ethyl six-membered ring"
+    },
+    {
+      "name": "Meropenem",
+      "previousFormula": "C18H25N3O7S",
+      "previousSmiles": "CC1C2C(C(=O)O)=C(SC3CN(C(=O)N(C)C)CC3C(=O)O)N2C(=O)C1C(C)O",
+      "correctedFormula": "C17H25N3O5S",
+      "correctedSmiles": "CC1C2C(C(=O)O)=C(SC3CNC(C(=O)N(C)C)C3)N2C(=O)C1C(C)O",
+      "reason": "the dimethylcarbamoyl group was placed on the pyrrolidine nitrogen with a spurious second carboxylic acid on a ring carbon; it belongs on the C5 ring carbon with the nitrogen left as NH"
+    },
+    {
+      "name": "Imipenem",
+      "previousFormula": "C11H15N3O3S",
+      "previousSmiles": "CC1C2CC(SCCNC=N)=C(C(=O)O)N2C1=O",
+      "correctedFormula": "C12H17N3O4S",
+      "correctedSmiles": "CC(O)C1C2CC(SCCNC=N)=C(C(=O)O)N2C1=O",
+      "reason": "the 6-(1-hydroxyethyl) side chain was written as a bare methyl"
+    },
+    {
+      "name": "Valacyclovir",
+      "previousFormula": "C12H18N6O3",
+      "previousSmiles": "CC(C)C(N)C(=O)OCCn1cnc2c(=O)[nH]c(N)nc21",
+      "correctedFormula": "C13H20N6O4",
+      "correctedSmiles": "CC(C)C(N)C(=O)OCCOCn1cnc2c(=O)[nH]c(N)nc21",
+      "reason": "the 9-(2-hydroxyethoxymethyl) side chain was written as a 9-(2-hydroxyethyl) chain, dropping the oxymethyl bridge; valacyclovir is the L-valyl ester of acyclovir, whose own stored entry carries that bridge"
+    },
+    {
+      "name": "Articaine",
+      "previousFormula": "C12H18N2O3S",
+      "previousSmiles": "CCCNC(C)C(=O)Nc1sccc1C(=O)OC",
+      "correctedFormula": "C13H20N2O3S",
+      "correctedSmiles": "CCCNC(C)C(=O)Nc1c(C)csc1C(=O)OC",
+      "reason": "articaine is methyl 4-methyl-3-(2-propylaminopropanamido)thiophene-2-carboxylate; the stored entry omitted the 4-methyl group entirely and placed the ester on C3 and the amide on C2, the reverse of the real substitution pattern"
+    }
+  ]
+}

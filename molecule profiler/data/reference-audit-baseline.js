@@ -4,7 +4,7 @@
 // compounds the ester reference block already held, so the duplicates were removed.
 // Intended for change detection, not an assertion that chemical structures are correct.
 const REFERENCE_AUDIT_BASELINE={
-  entries:4209,
+  entries:4431,
   missingFormula:0,
   missingSmiles:0,
   duplicateNames:0,

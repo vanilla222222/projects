@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "rdkitVersion": "2026.09.1",
-  "librarySha256": "6011b914ce36ae1860a032039235d23d827b11976c794d3638d5e3ee49094126",
+  "librarySha256": "d31641ad997b44cbdad8cc4f4ef2e8d9ee93477fb1c38bb09351a94d43e37a10",
   "toolSha256": "5474a832b1cd427e4246f1c4b12ec2c47a2b3a12586201f388f5cf52f1bfcd16",
   "dataSha256": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
   "protocol": "Prefer exact isomeric graph matches to PubChem titles/IUPAC names or ChEMBL preferred names. Otherwise require the full InChIKey plus completed RDKit tautomer-family agreement, no neutralization and tetrahedral stereo retained; explicitly label these as PubChem standardized-form names, not exact stored-graph names. Never change reference keys or graphs.",
@@ -13626,8 +13626,8 @@
     }
   ],
   "libraryRepin": {
-    "previousLibrarySha256": "46ae2412c2b079676a7cfeabc5f4e34af67a248422557f60c5b8c7ff91c94ecf",
-    "reason": "Library grew by appended reference entries only; no CHEMBL-keyed entry was added, removed or restructured, so no name request changes.",
-    "verified": "All 1196 resolved reference ids still resolve to an entry whose stored SMILES is byte-identical to the librarySmiles recorded here, and the CHEMBL-keyed request set is still 1225 entries. No source response was re-fetched."
+    "previousLibrarySha256": "6011b914ce36ae1860a032039235d23d827b11976c794d3638d5e3ee49094126",
+    "reason": "Library grew by appended reference entries and, unlike earlier re-pins, eight stored entries were corrected in place: six beta-lactams, Valacyclovir and Articaine. Each correction is recorded in derived-identity-corrections.json with the previous and corrected structure and the reason. None of the eight is a CHEMBL-keyed entry, so the name request set is unchanged and no name response is affected.",
+    "verified": "Every one of the 1128 distinct InChIKey skeletons in the 1178 source responses recorded here still matches at least one library entry, by RDKit InChIKey computed from the stored SMILES of all 4431 entries; none went missing. The CHEMBL-keyed request set is unchanged at 1225 records and no source response was re-fetched. This replaces an earlier re-pin's wording, which claimed a byte-identical comparison against a librarySmiles field that no record in this file actually carries."
   }
 }
