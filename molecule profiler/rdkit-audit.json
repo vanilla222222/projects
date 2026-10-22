@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 4151,
+  "entries": 4209,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -249,45 +249,6 @@
         {
           "index": 2313,
           "name": "methyl butyl ketone"
-        }
-      ]
-    },
-    {
-      "canonicalSmiles": "O=C1CCCN1CC#CCN1CCCC1",
-      "entries": [
-        {
-          "index": 2836,
-          "name": "CHEMBL7634"
-        },
-        {
-          "index": 4128,
-          "name": "Oxotremorine"
-        }
-      ]
-    },
-    {
-      "canonicalSmiles": "CCCCCCOc1nsnc1C1=CCCN(C)C1",
-      "entries": [
-        {
-          "index": 2858,
-          "name": "CHEMBL21536"
-        },
-        {
-          "index": 4127,
-          "name": "Xanomeline"
-        }
-      ]
-    },
-    {
-      "canonicalSmiles": "CC(=O)OC(C)C[N+](C)(C)C",
-      "entries": [
-        {
-          "index": 2893,
-          "name": "CHEMBL978"
-        },
-        {
-          "index": 4091,
-          "name": "Methacholine"
         }
       ]
     }
@@ -12502,42 +12463,35 @@
       ]
     },
     {
-      "index": 4091,
-      "name": "Methacholine",
-      "atomIndices": [
-        4
-      ]
-    },
-    {
-      "index": 4093,
+      "index": 4092,
       "name": "Bethanechol",
       "atomIndices": [
         1
       ]
     },
     {
-      "index": 4094,
+      "index": 4093,
       "name": "Aceclidine",
       "atomIndices": [
         4
       ]
     },
     {
-      "index": 4098,
+      "index": 4097,
       "name": "Cyclopentolate",
       "atomIndices": [
         8
       ]
     },
     {
-      "index": 4099,
+      "index": 4098,
       "name": "Oxyphenonium",
       "atomIndices": [
         11
       ]
     },
     {
-      "index": 4102,
+      "index": 4101,
       "name": "Phenserine",
       "atomIndices": [
         4,
@@ -12545,14 +12499,14 @@
       ]
     },
     {
-      "index": 4107,
+      "index": 4106,
       "name": "Procyclidine",
       "atomIndices": [
         1
       ]
     },
     {
-      "index": 4108,
+      "index": 4107,
       "name": "Biperiden",
       "atomIndices": [
         1,
@@ -12562,28 +12516,28 @@
       ]
     },
     {
-      "index": 4109,
+      "index": 4108,
       "name": "5-Hydroxymethyltolterodine",
       "atomIndices": [
         6
       ]
     },
     {
-      "index": 4110,
+      "index": 4109,
       "name": "Fesoterodine",
       "atomIndices": [
         14
       ]
     },
     {
-      "index": 4111,
+      "index": 4110,
       "name": "Darifenacin",
       "atomIndices": [
         16
       ]
     },
     {
-      "index": 4112,
+      "index": 4111,
       "name": "Trospium",
       "atomIndices": [
         5,
@@ -12591,21 +12545,21 @@
       ]
     },
     {
-      "index": 4113,
+      "index": 4112,
       "name": "Clidinium",
       "atomIndices": [
         7
       ]
     },
     {
-      "index": 4114,
+      "index": 4113,
       "name": "Mepenzolate",
       "atomIndices": [
         6
       ]
     },
     {
-      "index": 4115,
+      "index": 4114,
       "name": "Pipenzolate",
       "atomIndices": [
         2,
@@ -12613,35 +12567,35 @@
       ]
     },
     {
-      "index": 4116,
+      "index": 4115,
       "name": "Aclidinium",
       "atomIndices": [
         3
       ]
     },
     {
-      "index": 4119,
+      "index": 4118,
       "name": "Propiverine",
       "atomIndices": [
         4
       ]
     },
     {
-      "index": 4120,
+      "index": 4119,
       "name": "Tropicamide",
       "atomIndices": [
         12
       ]
     },
     {
-      "index": 4121,
+      "index": 4120,
       "name": "Orphenadrine",
       "atomIndices": [
         7
       ]
     },
     {
-      "index": 4122,
+      "index": 4121,
       "name": "Clemastine",
       "atomIndices": [
         5,
@@ -12649,7 +12603,7 @@
       ]
     },
     {
-      "index": 4125,
+      "index": 4124,
       "name": "Muscarine",
       "atomIndices": [
         1,
@@ -12658,7 +12612,7 @@
       ]
     },
     {
-      "index": 4126,
+      "index": 4125,
       "name": "Pilocarpine",
       "atomIndices": [
         2,
@@ -12666,49 +12620,49 @@
       ]
     },
     {
-      "index": 4131,
+      "index": 4128,
       "name": "Velnacrine",
       "atomIndices": [
         11
       ]
     },
     {
-      "index": 4135,
+      "index": 4132,
       "name": "Metrifonate",
       "atomIndices": [
         6
       ]
     },
     {
-      "index": 4140,
+      "index": 4137,
       "name": "Anabasine",
       "atomIndices": [
         5
       ]
     },
     {
-      "index": 4141,
+      "index": 4138,
       "name": "Nornicotine",
       "atomIndices": [
         5
       ]
     },
     {
-      "index": 4142,
+      "index": 4139,
       "name": "Anatabine",
       "atomIndices": [
         3
       ]
     },
     {
-      "index": 4143,
+      "index": 4140,
       "name": "Cotinine",
       "atomIndices": [
         6
       ]
     },
     {
-      "index": 4144,
+      "index": 4141,
       "name": "Mecamylamine",
       "atomIndices": [
         2,
@@ -12717,7 +12671,7 @@
       ]
     },
     {
-      "index": 4147,
+      "index": 4144,
       "name": "Epibatidine",
       "atomIndices": [
         5,
@@ -12726,15 +12680,163 @@
       ]
     },
     {
-      "index": 4150,
+      "index": 4147,
       "name": "ABT-418",
       "atomIndices": [
         4
       ]
     },
     {
-      "index": 4151,
+      "index": 4148,
       "name": "A-85380",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 4149,
+      "name": "Tropisetron",
+      "atomIndices": [
+        2,
+        5
+      ]
+    },
+    {
+      "index": 4151,
+      "name": "Fenobucarb",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4158,
+      "name": "Tolserine",
+      "atomIndices": [
+        17,
+        23
+      ]
+    },
+    {
+      "index": 4159,
+      "name": "Cymserine",
+      "atomIndices": [
+        17,
+        23
+      ]
+    },
+    {
+      "index": 4160,
+      "name": "Ladostigil",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4161,
+      "name": "Cytisine",
+      "atomIndices": [
+        8,
+        12
+      ]
+    },
+    {
+      "index": 4162,
+      "name": "Varenicline",
+      "atomIndices": [
+        10,
+        14
+      ]
+    },
+    {
+      "index": 4164,
+      "name": "PNU-282987",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 4165,
+      "name": "PHA-543613",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 4168,
+      "name": "Norcotinine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4169,
+      "name": "3-Hydroxycotinine",
+      "atomIndices": [
+        5,
+        7
+      ]
+    },
+    {
+      "index": 4170,
+      "name": "Nicotine-N-oxide",
+      "atomIndices": [
+        1,
+        6
+      ]
+    },
+    {
+      "index": 4172,
+      "name": "Eseroline",
+      "atomIndices": [
+        4,
+        15
+      ]
+    },
+    {
+      "index": 4174,
+      "name": "Ethopropazine",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 4175,
+      "name": "Bambuterol",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 4188,
+      "name": "Butocarboxim",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 4197,
+      "name": "Methamidophos",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4198,
+      "name": "Acephate",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4203,
+      "name": "Profenofos",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4204,
+      "name": "Naled",
       "atomIndices": [
         7
       ]
@@ -12833,108 +12935,138 @@
     },
     {
       "index": 4091,
-      "name": "Methacholine",
-      "formalCharge": 1
-    },
-    {
-      "index": 4092,
       "name": "Carbachol",
       "formalCharge": 1
     },
     {
-      "index": 4093,
+      "index": 4092,
       "name": "Bethanechol",
       "formalCharge": 1
     },
     {
-      "index": 4099,
+      "index": 4098,
       "name": "Oxyphenonium",
       "formalCharge": 1
     },
     {
-      "index": 4100,
+      "index": 4099,
       "name": "Propantheline",
       "formalCharge": 1
     },
     {
-      "index": 4101,
+      "index": 4100,
       "name": "Methantheline",
       "formalCharge": 1
     },
     {
-      "index": 4112,
+      "index": 4111,
       "name": "Trospium",
       "formalCharge": 1
     },
     {
-      "index": 4113,
+      "index": 4112,
       "name": "Clidinium",
       "formalCharge": 1
     },
     {
-      "index": 4114,
+      "index": 4113,
       "name": "Mepenzolate",
       "formalCharge": 1
     },
     {
-      "index": 4115,
+      "index": 4114,
       "name": "Pipenzolate",
       "formalCharge": 1
     },
     {
-      "index": 4116,
+      "index": 4115,
       "name": "Aclidinium",
       "formalCharge": 1
     },
     {
-      "index": 4117,
+      "index": 4116,
       "name": "Umeclidinium",
       "formalCharge": 1
     },
     {
-      "index": 4124,
+      "index": 4123,
       "name": "Choline",
       "formalCharge": 1
     },
     {
-      "index": 4125,
+      "index": 4124,
       "name": "Muscarine",
       "formalCharge": 1
     },
     {
-      "index": 4129,
+      "index": 4126,
       "name": "Oxotremorine-M",
       "formalCharge": 1
     },
     {
-      "index": 4133,
+      "index": 4130,
       "name": "Edrophonium",
       "formalCharge": 1
     },
     {
-      "index": 4134,
+      "index": 4131,
       "name": "Echothiophate",
       "formalCharge": 1
     },
     {
-      "index": 4139,
+      "index": 4136,
       "name": "Pralidoxime",
       "formalCharge": 1
     },
     {
-      "index": 4145,
+      "index": 4142,
       "name": "Hexamethonium",
       "formalCharge": 2
     },
     {
-      "index": 4146,
+      "index": 4143,
       "name": "Decamethonium",
       "formalCharge": 2
     },
     {
-      "index": 4148,
+      "index": 4145,
       "name": "Dimethylphenylpiperazinium",
       "formalCharge": 1
+    },
+    {
+      "index": 4171,
+      "name": "Pentolinium",
+      "formalCharge": 2
+    },
+    {
+      "index": 4177,
+      "name": "Ambenonium",
+      "formalCharge": 2
+    },
+    {
+      "index": 4178,
+      "name": "Demecarium",
+      "formalCharge": 2
+    },
+    {
+      "index": 4179,
+      "name": "Obidoxime",
+      "formalCharge": 2
+    },
+    {
+      "index": 4180,
+      "name": "HI-6",
+      "formalCharge": 2
+    },
+    {
+      "index": 4181,
+      "name": "Trimedoxime",
+      "formalCharge": 2
+    },
+    {
+      "index": 4182,
+      "name": "Methoxime",
+      "formalCharge": 2
     }
   ],
   "fragmentedEntries": [],
@@ -12950,10 +13082,10 @@
   "counts": {
     "invalidSmiles": 0,
     "formulaMismatches": 0,
-    "canonicalDuplicates": 22,
+    "canonicalDuplicates": 19,
     "tautomerGroups": 9,
-    "unspecifiedStereocenters": 1432,
-    "chargedEntries": 39,
+    "unspecifiedStereocenters": 1451,
+    "chargedEntries": 45,
     "fragmentedEntries": 0,
     "radicalEntries": 0,
     "nonAromaticSulfurRings": 1,

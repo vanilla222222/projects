@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "rdkitVersion": "2026.09.1",
-  "librarySha256": "46ae2412c2b079676a7cfeabc5f4e34af67a248422557f60c5b8c7ff91c94ecf",
+  "librarySha256": "6011b914ce36ae1860a032039235d23d827b11976c794d3638d5e3ee49094126",
   "toolSha256": "5474a832b1cd427e4246f1c4b12ec2c47a2b3a12586201f388f5cf52f1bfcd16",
   "dataSha256": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
   "protocol": "Prefer exact isomeric graph matches to PubChem titles/IUPAC names or ChEMBL preferred names. Otherwise require the full InChIKey plus completed RDKit tautomer-family agreement, no neutralization and tetrahedral stereo retained; explicitly label these as PubChem standardized-form names, not exact stored-graph names. Never change reference keys or graphs.",
@@ -13626,7 +13626,7 @@
     }
   ],
   "libraryRepin": {
-    "previousLibrarySha256": "7badd4bf49712f316d052608504074711f6ea2f47283b0596c1b31667880d3ae",
+    "previousLibrarySha256": "46ae2412c2b079676a7cfeabc5f4e34af67a248422557f60c5b8c7ff91c94ecf",
     "reason": "Library grew by appended reference entries only; no CHEMBL-keyed entry was added, removed or restructured, so no name request changes.",
     "verified": "All 1196 resolved reference ids still resolve to an entry whose stored SMILES is byte-identical to the librarySmiles recorded here, and the CHEMBL-keyed request set is still 1225 entries. No source response was re-fetched."
   }
