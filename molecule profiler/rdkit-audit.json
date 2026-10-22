@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 5620,
+  "entries": 5672,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -276,6 +276,19 @@
         {
           "index": 2788,
           "name": "CHEMBL30"
+        }
+      ],
+      "distinctCanonicalSmiles": 2
+    },
+    {
+      "entries": [
+        {
+          "index": 60,
+          "name": "Estradiol"
+        },
+        {
+          "index": 5659,
+          "name": "17-hydroxyestra-1,4-dien-3-one"
         }
       ],
       "distinctCanonicalSmiles": 2
@@ -17140,6 +17153,580 @@
       "atomIndices": [
         2
       ]
+    },
+    {
+      "index": 5621,
+      "name": "1-[2-[[1-ethoxy-1-oxo-4-(4-fluorophenyl)butan-2-yl]amino]propanoyl]pyrrolidine-2-carboxylic acid",
+      "atomIndices": [
+        5,
+        16,
+        24
+      ]
+    },
+    {
+      "index": 5622,
+      "name": "1-[2-[[1-ethoxy-1-oxo-4-phenylbutan-2-yl]amino]butanoyl]pyrrolidine-2-carboxylic acid",
+      "atomIndices": [
+        5,
+        15,
+        24
+      ]
+    },
+    {
+      "index": 5623,
+      "name": "1-[2-[[1-ethoxy-1-oxopentan-2-yl]amino]propanoyl]pyrrolidine-2-carboxylic acid",
+      "atomIndices": [
+        5,
+        10,
+        18
+      ]
+    },
+    {
+      "index": 5624,
+      "name": "1-[2-[[1-carboxy-3-(4-fluorophenyl)propyl]amino]propanoyl]pyrrolidine-2-carboxylic acid",
+      "atomIndices": [
+        3,
+        14,
+        22
+      ]
+    },
+    {
+      "index": 5625,
+      "name": "1-[2-[[1-methoxy-1-oxo-4-phenylbutan-2-yl]amino]propanoyl]pyrrolidine-2-carboxylic acid",
+      "atomIndices": [
+        4,
+        14,
+        22
+      ]
+    },
+    {
+      "index": 5626,
+      "name": "1-[2-[[1-ethoxy-1-oxo-4-(4-fluorophenyl)butan-2-yl]amino]butanoyl]pyrrolidine-2-carboxylic acid",
+      "atomIndices": [
+        5,
+        16,
+        25
+      ]
+    },
+    {
+      "index": 5627,
+      "name": "1-[2-[[1-carboxy-3-phenylpropyl]amino]butanoyl]pyrrolidine-2-carboxylic acid",
+      "atomIndices": [
+        3,
+        13,
+        22
+      ]
+    },
+    {
+      "index": 5628,
+      "name": "1-[2-[[1-ethoxy-1-oxo-4-phenylbutan-2-yl]amino]pentanoyl]pyrrolidine-2-carboxylic acid",
+      "atomIndices": [
+        5,
+        15,
+        25
+      ]
+    },
+    {
+      "index": 5629,
+      "name": "1-[2-[[1-ethoxy-1-oxohexan-2-yl]amino]propanoyl]pyrrolidine-2-carboxylic acid",
+      "atomIndices": [
+        5,
+        11,
+        19
+      ]
+    },
+    {
+      "index": 5630,
+      "name": "1-[2-[[1-carboxybutyl]amino]propanoyl]pyrrolidine-2-carboxylic acid",
+      "atomIndices": [
+        3,
+        8,
+        16
+      ]
+    },
+    {
+      "index": 5631,
+      "name": "1-[2-[[1-methoxy-1-oxo-4-(4-fluorophenyl)butan-2-yl]amino]propanoyl]pyrrolidine-2-carboxylic acid",
+      "atomIndices": [
+        4,
+        15,
+        23
+      ]
+    },
+    {
+      "index": 5632,
+      "name": "1-[2-[[1-propoxy-1-oxo-4-phenylbutan-2-yl]amino]propanoyl]pyrrolidine-2-carboxylic acid",
+      "atomIndices": [
+        6,
+        16,
+        24
+      ]
+    },
+    {
+      "index": 5633,
+      "name": "2-[2-[[1-ethoxy-1-oxo-4-phenylbutan-2-yl]amino]propanoyl]-7-methoxy-1,2,3,4-tetrahydroisoquinoline-3-carboxylic acid",
+      "atomIndices": [
+        5,
+        15,
+        30
+      ]
+    },
+    {
+      "index": 5634,
+      "name": "2-[2-[[1-ethoxy-1-oxo-4-phenylbutan-2-yl]amino]propanoyl]-6-methoxy-1,2,3,4-tetrahydroisoquinoline-3-carboxylic acid",
+      "atomIndices": [
+        5,
+        15,
+        30
+      ]
+    },
+    {
+      "index": 5635,
+      "name": "2-[2-[[1-ethoxy-1-oxo-4-(4-fluorophenyl)butan-2-yl]amino]propanoyl]-1,2,3,4-tetrahydroisoquinoline-3-carboxylic acid",
+      "atomIndices": [
+        5,
+        16,
+        29
+      ]
+    },
+    {
+      "index": 5636,
+      "name": "2-[2-[[1-ethoxy-1-oxo-4-phenylbutan-2-yl]amino]butanoyl]-1,2,3,4-tetrahydroisoquinoline-3-carboxylic acid",
+      "atomIndices": [
+        5,
+        15,
+        29
+      ]
+    },
+    {
+      "index": 5637,
+      "name": "2-[2-[[1-ethoxy-1-oxo-4-(4-fluorophenyl)butan-2-yl]amino]propanoyl]-7-methoxy-1,2,3,4-tetrahydroisoquinoline-3-carboxylic acid",
+      "atomIndices": [
+        5,
+        16,
+        31
+      ]
+    },
+    {
+      "index": 5638,
+      "name": "2-[2-[[1-ethoxy-1-oxo-4-(4-fluorophenyl)butan-2-yl]amino]propanoyl]-6-methoxy-1,2,3,4-tetrahydroisoquinoline-3-carboxylic acid",
+      "atomIndices": [
+        5,
+        16,
+        31
+      ]
+    },
+    {
+      "index": 5639,
+      "name": "2-[2-[[1-ethoxy-1-oxopentan-2-yl]amino]propanoyl]-1,2,3,4-tetrahydroisoquinoline-3-carboxylic acid",
+      "atomIndices": [
+        5,
+        10,
+        23
+      ]
+    },
+    {
+      "index": 5640,
+      "name": "2-[2-[[1-carboxy-3-phenylpropyl]amino]propanoyl]-7-methoxy-1,2,3,4-tetrahydroisoquinoline-3-carboxylic acid",
+      "atomIndices": [
+        3,
+        13,
+        28
+      ]
+    },
+    {
+      "index": 5641,
+      "name": "1-[2-methyl-4-sulfanylbutanoyl]pyrrolidine-2-carboxylic acid",
+      "atomIndices": [
+        1,
+        11
+      ]
+    },
+    {
+      "index": 5642,
+      "name": "1-[3-sulfanylpropanoyl]pyrrolidine-2-carboxylic acid",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 5643,
+      "name": "1-[3-benzoylsulfanyl-2-methylpropanoyl]pyrrolidine-2-carboxylic acid",
+      "atomIndices": [
+        1,
+        18
+      ]
+    },
+    {
+      "index": 5644,
+      "name": "1-[2-methyl-4-sulfanylbutanoyl]-4-phenylsulfanylpyrrolidine-2-carboxylic acid",
+      "atomIndices": [
+        1,
+        9,
+        18
+      ]
+    },
+    {
+      "index": 5645,
+      "name": "4-methylsulfanyl-1-[2-methyl-3-sulfanylpropanoyl]pyrrolidine-2-carboxylic acid",
+      "atomIndices": [
+        1,
+        8,
+        12
+      ]
+    },
+    {
+      "index": 5646,
+      "name": "1-[4-sulfanylbutanoyl]pyrrolidine-2-carboxylic acid",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 5647,
+      "name": "17-hydroxy-7-methylandrost-4-en-3-one",
+      "atomIndices": [
+        1,
+        9,
+        11,
+        12,
+        15,
+        17,
+        21
+      ]
+    },
+    {
+      "index": 5648,
+      "name": "17-hydroxy-6-methylandrost-4-en-3-one",
+      "atomIndices": [
+        1,
+        8,
+        11,
+        12,
+        15,
+        17,
+        21
+      ]
+    },
+    {
+      "index": 5649,
+      "name": "17-hydroxy-6,7-dimethylandrost-4-en-3-one",
+      "atomIndices": [
+        1,
+        8,
+        10,
+        12,
+        13,
+        16,
+        18,
+        22
+      ]
+    },
+    {
+      "index": 5650,
+      "name": "4-chloro-17-hydroxy-7-methylandrost-4-en-3-one",
+      "atomIndices": [
+        1,
+        10,
+        12,
+        13,
+        16,
+        18,
+        22
+      ]
+    },
+    {
+      "index": 5651,
+      "name": "4-chloro-17-hydroxy-6-methylandrost-4-en-3-one",
+      "atomIndices": [
+        1,
+        9,
+        12,
+        13,
+        16,
+        18,
+        22
+      ]
+    },
+    {
+      "index": 5652,
+      "name": "17-hydroxy-4-methylandrost-4-en-3-one",
+      "atomIndices": [
+        1,
+        11,
+        12,
+        15,
+        17,
+        21
+      ]
+    },
+    {
+      "index": 5653,
+      "name": "17-hydroxy-6,17-dimethylandrost-4-en-3-one",
+      "atomIndices": [
+        1,
+        8,
+        11,
+        12,
+        15,
+        17,
+        22
+      ]
+    },
+    {
+      "index": 5654,
+      "name": "4-chloro-17-hydroxy-17-methylandrost-4-en-3-one",
+      "atomIndices": [
+        1,
+        11,
+        12,
+        15,
+        17,
+        22
+      ]
+    },
+    {
+      "index": 5655,
+      "name": "17-ethyl-17-hydroxyandrost-4-en-3-one",
+      "atomIndices": [
+        1,
+        10,
+        11,
+        14,
+        16,
+        22
+      ]
+    },
+    {
+      "index": 5656,
+      "name": "11,17-dihydroxy-7-methylandrost-4-en-3-one",
+      "atomIndices": [
+        1,
+        9,
+        11,
+        12,
+        13,
+        16,
+        18,
+        22
+      ]
+    },
+    {
+      "index": 5657,
+      "name": "17-hydroxy-6-methylestr-4-en-3-one",
+      "atomIndices": [
+        0,
+        7,
+        10,
+        11,
+        14,
+        16,
+        20
+      ]
+    },
+    {
+      "index": 5658,
+      "name": "11,17-dihydroxyestr-4-en-3-one",
+      "atomIndices": [
+        0,
+        9,
+        10,
+        11,
+        14,
+        16,
+        20
+      ]
+    },
+    {
+      "index": 5659,
+      "name": "17-hydroxyestra-1,4-dien-3-one",
+      "atomIndices": [
+        0,
+        9,
+        10,
+        13,
+        15,
+        19
+      ]
+    },
+    {
+      "index": 5660,
+      "name": "17-hydroxy-6,7-dimethylestr-4-en-3-one",
+      "atomIndices": [
+        0,
+        7,
+        9,
+        11,
+        12,
+        15,
+        17,
+        21
+      ]
+    },
+    {
+      "index": 5661,
+      "name": "4-chloro-17-hydroxy-7-methylestr-4-en-3-one",
+      "atomIndices": [
+        0,
+        9,
+        11,
+        12,
+        15,
+        17,
+        21
+      ]
+    },
+    {
+      "index": 5662,
+      "name": "4-chloro-17-hydroxy-6-methylestr-4-en-3-one",
+      "atomIndices": [
+        0,
+        8,
+        11,
+        12,
+        15,
+        17,
+        21
+      ]
+    },
+    {
+      "index": 5663,
+      "name": "17-hydroxy-4-methylestr-4-en-3-one",
+      "atomIndices": [
+        0,
+        10,
+        11,
+        14,
+        16,
+        20
+      ]
+    },
+    {
+      "index": 5664,
+      "name": "17-hydroxy-7,17-dimethylestr-4-en-3-one",
+      "atomIndices": [
+        0,
+        8,
+        10,
+        11,
+        14,
+        16,
+        21
+      ]
+    },
+    {
+      "index": 5665,
+      "name": "17-hydroxy-7-methylandrostan-3-one",
+      "atomIndices": [
+        1,
+        7,
+        9,
+        11,
+        12,
+        15,
+        17,
+        21
+      ]
+    },
+    {
+      "index": 5666,
+      "name": "17-hydroxy-6-methylandrostan-3-one",
+      "atomIndices": [
+        1,
+        7,
+        8,
+        11,
+        12,
+        15,
+        17,
+        21
+      ]
+    },
+    {
+      "index": 5667,
+      "name": "17-hydroxy-4-methylandrostan-3-one",
+      "atomIndices": [
+        1,
+        6,
+        8,
+        11,
+        12,
+        15,
+        17,
+        21
+      ]
+    },
+    {
+      "index": 5668,
+      "name": "17-hydroxy-17-methylandrostan-3-one",
+      "atomIndices": [
+        1,
+        7,
+        10,
+        11,
+        14,
+        16,
+        21
+      ]
+    },
+    {
+      "index": 5669,
+      "name": "17-hydroxy-6,7-dimethylandrostan-3-one",
+      "atomIndices": [
+        1,
+        7,
+        8,
+        10,
+        12,
+        13,
+        16,
+        18,
+        22
+      ]
+    },
+    {
+      "index": 5670,
+      "name": "17-hydroxy-4,7-dimethylandrostan-3-one",
+      "atomIndices": [
+        1,
+        6,
+        8,
+        10,
+        12,
+        13,
+        16,
+        18,
+        22
+      ]
+    },
+    {
+      "index": 5671,
+      "name": "17-hydroxy-4,6-dimethylandrostan-3-one",
+      "atomIndices": [
+        1,
+        6,
+        8,
+        9,
+        12,
+        13,
+        16,
+        18,
+        22
+      ]
+    },
+    {
+      "index": 5672,
+      "name": "4-chloro-17-hydroxyandrostan-3-one",
+      "atomIndices": [
+        1,
+        6,
+        8,
+        11,
+        12,
+        15,
+        17,
+        21
+      ]
     }
   ],
   "chargedEntries": [
@@ -17388,8 +17975,8 @@
     "invalidSmiles": 0,
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
-    "tautomerGroups": 9,
-    "unspecifiedStereocenters": 2007,
+    "tautomerGroups": 10,
+    "unspecifiedStereocenters": 2059,
     "chargedEntries": 46,
     "fragmentedEntries": 0,
     "radicalEntries": 0,
