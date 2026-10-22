@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 5533,
+  "entries": 5559,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -16936,6 +16936,118 @@
       "atomIndices": [
         0
       ]
+    },
+    {
+      "index": 5544,
+      "name": "1-(4-ethyl-2,5-dimethoxyphenyl)butan-2-amine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5545,
+      "name": "1-(2,5-dimethoxy-4-methylsulfanylphenyl)butan-2-amine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5546,
+      "name": "1-(4-chloro-2,5-dimethoxyphenyl)butan-2-amine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5547,
+      "name": "1-(4-fluoro-2,5-dimethoxyphenyl)butan-2-amine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5548,
+      "name": "1-(2,5-dimethoxy-4-propylsulfanylphenyl)butan-2-amine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5549,
+      "name": "1-(2,5-dimethoxy-4-propan-2-ylphenyl)butan-2-amine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5550,
+      "name": "1-(2,5-dimethoxy-4-propan-2-ylsulfanylphenyl)butan-2-amine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5551,
+      "name": "2-(4-iodo-2,5-dimethoxyphenyl)-2-methoxyethanamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5552,
+      "name": "2-(2,5-dimethoxy-4-methylphenyl)-2-hydroxyethanamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5553,
+      "name": "2-(4-bromo-2,5-dimethoxyphenyl)-2-ethoxyethanamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5554,
+      "name": "2-(4-ethyl-2,5-dimethoxyphenyl)-2-methoxyethanamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5555,
+      "name": "2-hydroxy-2-(4-iodo-2,5-dimethoxyphenyl)ethanamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5556,
+      "name": "2-(2,5-dimethoxy-4-methylphenyl)-2-ethoxyethanamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5557,
+      "name": "2-(4-bromo-2,5-dimethoxyphenyl)-2-propoxyethanamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5558,
+      "name": "2-(2,5-dimethoxy-4-methylsulfanylphenyl)-2-methoxyethanamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5559,
+      "name": "2-(4-ethyl-2,5-dimethoxyphenyl)-2-hydroxyethanamine",
+      "atomIndices": [
+        2
+      ]
     }
   ],
   "chargedEntries": [
@@ -17185,7 +17297,7 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 9,
-    "unspecifiedStereocenters": 1978,
+    "unspecifiedStereocenters": 1994,
     "chargedEntries": 46,
     "fragmentedEntries": 0,
     "radicalEntries": 0,

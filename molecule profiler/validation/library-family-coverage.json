@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "sourceSha256": {
-    "data/library.js": "5a443ca7d008302cc4724fabc6f3e3aaa961263a2a58164ba71e4764a2d658f0",
+    "data/library.js": "e420eea45d3f7ffff7b360e3ef85edef1eff66357861f7c1c6f82c08261032f7",
     "data/targets.js": "facc465ef72687224df3577fbf7a600102e7c3b07cc033a4de21ba76191192fa",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
     "data/receptor-ligand-annotations.js": "28bcfc10324b17fc8a30d2e4b3cf3c589e55fe9af76cd61dfb8986d9a3b30d01",
     "js/receptor-catalog.js": "c89696b0ea6e22873929f2e3c777774b13579c917a541cf7820de253e19305e1",
     "tools/build-library-tags.py": "b1b9d2eb9960ab6803f2c9e43936d4317688bc067a00d30b27d9cf1c1ee08f6e"
   },
-  "dataSha256": "060ea10f520c8667017394230e45e474199c225ea88291a9ff1808be8c5d73e4",
+  "dataSha256": "cff4eaa2284f08889f4e4d4b264898c35b878845f69e9a5de750cd804330e739",
   "interpretation": "Overlapping structural motifs in stored graphs; not evidence of pharmacological function, exhaustive family membership or independently verified molecular identities.",
   "families": [
     {
@@ -881,9 +881,35 @@
         "2-(4-ethyl-2,5-dimethoxyphenyl)-N-[(2-methylphenyl)methyl]ethan-1-amine",
         "N-[(2-chlorophenyl)methyl]-2-(2,5-dimethoxy-4-methylphenyl)ethan-1-amine",
         "N-[(2-bromophenyl)methyl]-2-(4-fluoro-2,5-dimethoxyphenyl)ethan-1-amine",
-        "4-chloro-N-(2,3-dihydro-1H-indol-1-yl)-3-sulfamoylbenzamide"
+        "4-chloro-N-(2,3-dihydro-1H-indol-1-yl)-3-sulfamoylbenzamide",
+        "2-(4-bromo-5-ethoxy-2-methoxyphenyl)ethanamine",
+        "2-(4-bromo-2,5-diethoxyphenyl)ethanamine",
+        "2-(4-bromo-5-methoxy-2-propoxyphenyl)ethanamine",
+        "2-(2-methoxy-4-methyl-5-propoxyphenyl)ethanamine",
+        "2-(4-bromo-2-methoxy-5-propan-2-yloxyphenyl)ethanamine",
+        "2-(2-ethoxy-4-ethyl-5-methoxyphenyl)ethanamine",
+        "2-(2,5-diethoxy-4-methylphenyl)ethanamine",
+        "2-(4-bromo-2-ethoxy-5-propoxyphenyl)ethanamine",
+        "2-(5-methoxy-4-methyl-2-propoxyphenyl)ethanamine",
+        "2-(4-bromo-5-ethoxy-2-propoxyphenyl)ethanamine",
+        "1-(4-ethyl-2,5-dimethoxyphenyl)butan-2-amine",
+        "1-(2,5-dimethoxy-4-methylsulfanylphenyl)butan-2-amine",
+        "1-(4-chloro-2,5-dimethoxyphenyl)butan-2-amine",
+        "1-(4-fluoro-2,5-dimethoxyphenyl)butan-2-amine",
+        "1-(2,5-dimethoxy-4-propylsulfanylphenyl)butan-2-amine",
+        "1-(2,5-dimethoxy-4-propan-2-ylphenyl)butan-2-amine",
+        "1-(2,5-dimethoxy-4-propan-2-ylsulfanylphenyl)butan-2-amine",
+        "2-(4-iodo-2,5-dimethoxyphenyl)-2-methoxyethanamine",
+        "2-(2,5-dimethoxy-4-methylphenyl)-2-hydroxyethanamine",
+        "2-(4-bromo-2,5-dimethoxyphenyl)-2-ethoxyethanamine",
+        "2-(4-ethyl-2,5-dimethoxyphenyl)-2-methoxyethanamine",
+        "2-hydroxy-2-(4-iodo-2,5-dimethoxyphenyl)ethanamine",
+        "2-(2,5-dimethoxy-4-methylphenyl)-2-ethoxyethanamine",
+        "2-(4-bromo-2,5-dimethoxyphenyl)-2-propoxyethanamine",
+        "2-(2,5-dimethoxy-4-methylsulfanylphenyl)-2-methoxyethanamine",
+        "2-(4-ethyl-2,5-dimethoxyphenyl)-2-hydroxyethanamine"
       ],
-      "count": 868
+      "count": 894
     },
     {
       "tag": "Family motif: Amphetamines (alpha-methylphenethylamines)",
