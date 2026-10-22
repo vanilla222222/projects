@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 5672,
+  "entries": 5698,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -17727,6 +17727,90 @@
         17,
         21
       ]
+    },
+    {
+      "index": 5673,
+      "name": "5-phenylimidazolidine-2,4-dione",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5675,
+      "name": "5-methyl-5-phenylimidazolidine-2,4-dione",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5676,
+      "name": "5-ethylimidazolidine-2,4-dione",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5677,
+      "name": "5-phenyl-5-propylimidazolidine-2,4-dione",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5678,
+      "name": "3-methyl-5-phenylimidazolidine-2,4-dione",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5680,
+      "name": "5-ethyl-5-methylimidazolidine-2,4-dione",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5681,
+      "name": "5-propylimidazolidine-2,4-dione",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5682,
+      "name": "5-phenyl-5-propan-2-ylimidazolidine-2,4-dione",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5686,
+      "name": "5-ethyl-5-(4-fluorophenyl)-1-methylbarbituric acid",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5687,
+      "name": "1,5-dimethyl-5-phenylbarbituric acid",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 5696,
+      "name": "10-hydroxy-N-methyl-10,11-dihydro-5H-dibenzo[b,f]azepine-5-carboxamide",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 5697,
+      "name": "10-fluoro-10,11-dihydro-5H-dibenzo[b,f]azepine-5-carboxamide",
+      "atomIndices": [
+        11
+      ]
     }
   ],
   "chargedEntries": [
@@ -17976,7 +18060,7 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 10,
-    "unspecifiedStereocenters": 2059,
+    "unspecifiedStereocenters": 2071,
     "chargedEntries": 46,
     "fragmentedEntries": 0,
     "radicalEntries": 0,
