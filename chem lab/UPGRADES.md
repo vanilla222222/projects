@@ -1,5 +1,57 @@
 # Chem Lab upgrades
 
+## Coordinated workbench upgrade — 2026-10-22
+
+This round implements the six requested areas:
+
+1. **Identity consistency:** a shared bounded exact graph key distinguishes
+   connectivity, charge, isotope labels and supported specified stereochemistry.
+   Reaction products, Path Finder and the workspace use shared identity checks.
+   Copy/paste, schemes, SMILES, MOL and share links preserve isotope metadata;
+   unmarked imported double bonds stay unspecified instead of inheriting E/Z
+   from automatic layout. New v2 share links retain isotope/stereo flags while
+   the decoder continues to accept legacy v1 links.
+2. **Broader validation:** a fixture-based benchmark covers naming, eleven
+   established forward families, negative controls, stereo and file roundtrips.
+   `node tools/run-validation.js` runs every regression suite and syntax checks.
+   The fixture set is finite regression coverage, not a measured accuracy rate
+   across chemical space.
+3. **Reaction coverage:** four additional bounded families and matching
+   forward-verified retrosynthesis transforms: Finkelstein exchange, periodate
+   thioether oxidation, peracid sulfoxide oxidation and iodine-mediated
+   symmetric disulfide formation. Their descriptors record supported substrates,
+   conditions, assumptions, limitations and literature/teaching references.
+4. **Prediction evidence:** all 102 reaction descriptors can be searched and
+   filtered in Reactions. Every outcome carries its generating rule, scope,
+   assumptions and limitations. Curated sources are linked; older rules with
+   missing source records are explicitly identified. References support a
+   reaction class, not experimental validation of the local implementation.
+5. **Cleaner internals:** reaction metadata is separated from graph edits in a
+   common catalog/registration API. Naming parent selection and stereo-locant
+   state management now use shared helpers; phenol/aniline retained names and
+   suffix-group parent selection have regression coverage.
+6. **Route workflow:** Path Finder returns ranked alternatives with editable
+   inventory and reagent/rule exclusions. Each route can be saved to the Route
+   Workspace, renamed, reordered and edited. Every edit is checked for endpoint
+   continuity and forward-rule reproduction. Intermediate previews, step
+   handoff, local persistence, validated JSON import/export and readable CSV
+   exports are available; CSV text fields guard spreadsheet formula injection.
+
+Known limits: endpoints currently require one connected molecule; search and
+identity computation have explicit size/time/symmetry budgets. The existing CIP
+implementation is not a complete implementation of every modern CIP rule.
+Common labelled-isotope masses are supported; unknown isotope masses are shown
+as unavailable. Historical stock entries whose stereo was previously discarded
+cannot recover that information without re-importing the original structures.
+Rule-source coverage remains partial and is disclosed in the interface. None of
+these checks establishes experimental yield, selectivity or general feasibility.
+
+Validation at integration: 61 browser scripts parse, and 11 regression/benchmark
+suites pass. A full-app DOM smoke test also passed startup, tab switching, path
+search, route save/verification, reaction-step handoff and evidence/explorer
+initialization, using jsdom with a stub canvas. Full browser rendering could not be checked: the local Chromium
+download was unavailable and the remote browser cannot reach the local server.
+
 ## Naming
 
 The parent-selection fallback now prefers a parent containing more principal

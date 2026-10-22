@@ -628,7 +628,9 @@ function polishAromaticName(name) {
   }
   return name
     .replace(/benzen-1-ol$/, 'phenol')
+    .replace(/benzenol$/, 'phenol')
     .replace(/benzen-1-amine$/, 'aniline')
+    .replace(/benzenamine$/, 'aniline')
     .replace(/benzen-1-thiol$/, 'benzenethiol')
     .replace(/(^|-)(di(?:methyl|ethyl)amino|methylamino|ethylamino|trifluoromethyl|trichloromethyl)(?=[a-z-])(?!rex)/g, '$1($2)')
     .replace(/(di|tri)(di(?:methyl|ethyl)amino)/g, (m, mult, group) => (mult === 'di' ? 'bis(' : 'tris(') + group + ')')
@@ -653,6 +655,44 @@ function oxyPrefixStyle(name) {
 function sulfanylPrefixStyle(name) {
   return oxyPrefixStyle(indicatedHydrogenStyle(name)).replace(/(^|\d-)(methyl|ethyl|propyl|butyl|pentyl|hexyl|isopropyl|benzyl|phenyl)(thio(?!phen|l|u|c|x|a|ur)|sulfanyl|sulfinyl|sulfonyl)(?=[a-z])/g,
     (m, lead, alkyl, kind) => lead + '(' + alkyl + (kind === 'thio' ? 'sulfanyl' : kind) + ')');
+}
+
+// Keep the fast recognizer/general-engine reconciliation in one place. Both
+// engines may find valid names, but the displayed parent and its stereo locants
+// must be selected as a pair rather than recomputed independently by callers.
+function namingCaptureStereoLocants() {
+  return {
+    substituent: lastSubstituentStereoLocants,
+    scaffold: lastScaffoldStereoLocants,
+    ring: lastRingStereoLocants,
+    chain: lastChainStereoLocants,
+    display: lastRingDisplayLocants,
+  };
+}
+
+function namingRestoreStereoLocants(saved) {
+  lastSubstituentStereoLocants = saved.substituent;
+  lastScaffoldStereoLocants = saved.scaffold;
+  lastRingStereoLocants = saved.ring;
+  lastChainStereoLocants = saved.chain;
+  lastRingDisplayLocants = saved.display;
+}
+
+function namingPreferGeneralParent(graph, atomIds, derived, alt, chainLocants, alternativeLocants) {
+  if (!alt || /bicyclo|spiro|nitrilo/.test(alt)) return false;
+  const idSet = new Set(atomIds);
+  const acyclic = graph.bonds.filter((b) => idSet.has(b.atomA) && idSet.has(b.atomB)).length < atomIds.length;
+  // IUPAC P-44.1.1: suffix-bearing principal groups outrank parent length.
+  const principalCoverage = acyclic && chainLocants && alternativeLocants &&
+    genPrincipalCoverage(graph, atomIds, alternativeLocants) > genPrincipalCoverage(graph, atomIds, chainLocants);
+  const amineParent = acyclic && /amine$/.test(alt) && /amino/.test(derived) && (/(ane|ene|yne)$/.test(derived) || /(^|-)N(,N)?-/.test(alt));
+  const fusedSuffix = /(hydroxy|amino|sulfanyl|mercapto)/.test(derived) && /(indole|naphthalene|quinoline|quinoxaline|quinazoline|cinnoline|phthalazine|phenanthrene|acridine|anthracene)$/.test(derived) && /(ol|amine|thiol)$/.test(alt);
+  const lostSulfur = graph.atoms.some((a) => a.element === 'S' && idSet.has(a.id)) && !/sulf|thi|mercapto/.test(derived) && /sulf|thi/.test(alt);
+  const sulfurClass = / (di|tri|tetra)?sulf(ide|oxide)$/.test(alt) && /(thio|sulfinyl|sulfanyl)[a-z]*(ane|ene|benzene)$/.test(derived);
+  const alcoholParent = /ol$/.test(alt) && /hydroxy/.test(derived) && /(ane|ene)$/.test(derived);
+  return !!(principalCoverage || amineParent || fusedSuffix || lostSulfur || sulfurClass || alcoholParent ||
+    /carboxy|cyano|formyl|(?<![a-z])oxo(?![a-z])|acetyl|carbamoyl|carbonyl|sulfo|sulfamoyl|acetoxy|propionyloxy|butyryloxy|valeryloxy|benzoyl/.test(derived) ||
+    /'/.test(alt) || /^benzylbenzene$/.test(derived) || /^\(.*yl\)(meth|eth|prop)ane$/.test(derived));
 }
 
 function nameStructureOnce(graph, atomIds) {
@@ -689,51 +729,26 @@ function nameStructureOnce(graph, atomIds) {
   derived = primary;
   const isFinalizedScaffoldName = /(noramine|carboline|carboline-\d+-carboxylic acid|tetrahydrocarbazole|benzodifuran|benzofuran|lysergamide|lysergol|ergoline|ergoline-8-carboxylic acid)$/.test(derived || '');
   if (derived && !isFinalizedScaffoldName) {
-    const savedSubstituentLocants = lastSubstituentStereoLocants;
-    const savedScaffoldLocants = lastScaffoldStereoLocants;
-    const savedRingLocants = lastRingStereoLocants;
-    const savedChainLocants = lastChainStereoLocants;
-    const savedDisplayLocants = lastRingDisplayLocants;
+    const savedLocants = namingCaptureStereoLocants();
     try {
       const alt = generalName(graph, atomIds, true);
-      const idSetForAlt = new Set(atomIds);
-      const acyclic = graph.bonds.filter((b) => idSetForAlt.has(b.atomA) && idSetForAlt.has(b.atomB)).length < atomIds.length;
-      // P-44.1.1: maximize suffix-bearing characteristic groups before chain
-      // length. The fast longest-chain recognizer can strand another OH/NH2
-      // group in a branch even when the general engine finds a diol/diamine.
-      const principalCoverage = acyclic && alt && savedChainLocants && genParentLocants &&
-        genPrincipalCoverage(graph, atomIds, genParentLocants) > genPrincipalCoverage(graph, atomIds, savedChainLocants);
-      const amineParent = acyclic && alt && /amine$/.test(alt) && /amino/.test(derived) && (/(ane|ene|yne)$/.test(derived) || /(^|-)N(,N)?-/.test(alt));
-      const fusedSuffix = alt && /(hydroxy|amino|sulfanyl|mercapto)/.test(derived) && /(indole|naphthalene|quinoline|quinoxaline|quinazoline|cinnoline|phthalazine|phenanthrene|acridine|anthracene)$/.test(derived) && /(ol|amine|thiol)$/.test(alt);
-      const lostSulfur = alt && graph.atoms.some((a) => a.element === 'S' && idSetForAlt.has(a.id)) && !/sulf|thi|mercapto/.test(derived) && /sulf|thi/.test(alt);
-      const sulfurClass = alt && / (di|tri|tetra)?sulf(ide|oxide)$/.test(alt) && /(thio|sulfinyl|sulfanyl)[a-z]*(ane|ene|benzene)$/.test(derived);
-      const alcoholParent = alt && /ol$/.test(alt) && /hydroxy/.test(derived) && /(ane|ene)$/.test(derived);
-      const wanted = principalCoverage || amineParent || fusedSuffix || lostSulfur || sulfurClass || alcoholParent || /carboxy|cyano|formyl|(?<![a-z])oxo(?![a-z])|acetyl|carbamoyl|carbonyl|sulfo|sulfamoyl|acetoxy|propionyloxy|butyryloxy|valeryloxy|benzoyl/.test(derived) || (alt && /'/.test(alt)) || /^benzylbenzene$/.test(derived) || /^\(.*yl\)(meth|eth|prop)ane$/.test(derived);
-      const useAlt = alt && wanted && !/bicyclo|spiro|nitrilo/.test(alt);
+      const useAlt = namingPreferGeneralParent(graph, atomIds, derived, alt, savedLocants.chain, genParentLocants);
       derived = useAlt ? polishAromaticName(alt) : derived;
       if (useAlt) {
         lastChainStereoLocants = genParentLocants;
         lastSubstituentStereoLocants = null;
         lastRingStereoLocants = null;
         lastScaffoldStereoLocants = null;
+        lastRingDisplayLocants = null;
       } else {
-        lastSubstituentStereoLocants = savedSubstituentLocants;
-        lastScaffoldStereoLocants = savedScaffoldLocants;
-        lastRingStereoLocants = savedRingLocants;
-        lastRingDisplayLocants = savedDisplayLocants;
-        lastChainStereoLocants = savedChainLocants;
-        const noLocants = !savedChainLocants && !savedRingLocants && !savedSubstituentLocants && !savedScaffoldLocants;
+        namingRestoreStereoLocants(savedLocants);
+        const noLocants = !savedLocants.chain && !savedLocants.ring && !savedLocants.substituent && !savedLocants.scaffold;
         if (noLocants && alt && polishAromaticName(alt) === derived) {
           lastChainStereoLocants = genParentLocants;
         }
       }
     } catch (error) {
-      derived = derived;
-      lastSubstituentStereoLocants = savedSubstituentLocants;
-      lastScaffoldStereoLocants = savedScaffoldLocants;
-      lastRingStereoLocants = savedRingLocants;
-      lastRingDisplayLocants = savedDisplayLocants;
-      lastChainStereoLocants = savedChainLocants;
+      namingRestoreStereoLocants(savedLocants);
     }
   }
   let common = null;

@@ -11,8 +11,11 @@ function cipAtomicNumber(element) {
     : 0;
 }
 
-function cipMassRank(element) {
-  return element === 'D' ? 2 : 1;
+function cipMassRank(element, isotope) {
+  if (isotope) return isotope;
+  if (element === 'D') return 2;
+  const entry = periodicElement(element);
+  return entry ? Math.round(entry.monoMass) : 0;
 }
 
 function cipChildren(graph, atomId, parentId, visited) {
@@ -26,7 +29,7 @@ function cipChildren(graph, atomId, parentId, visited) {
     const extraDuplicates = bond.order - 1;
     if (neighborId === parentId) {
       for (let i = 0; i < extraDuplicates; i++) {
-        children.push({ atomId: null, element: neighborAtom.element, duplicate: true, visited });
+        children.push({ atomId: null, element: neighborAtom.element, isotope: neighborAtom.isotope, duplicate: true, visited });
       }
       return;
     }
@@ -34,11 +37,12 @@ function cipChildren(graph, atomId, parentId, visited) {
     children.push({
       atomId: neighborId,
       element: neighborAtom.element,
+      isotope: neighborAtom.isotope,
       duplicate: isRingClosure,
       visited: isRingClosure ? visited : new Set(visited).add(atomId),
     });
     for (let i = 0; i < extraDuplicates; i++) {
-      children.push({ atomId: null, element: neighborAtom.element, duplicate: true, visited });
+      children.push({ atomId: null, element: neighborAtom.element, isotope: neighborAtom.isotope, duplicate: true, visited });
     }
   });
   return children;
@@ -72,11 +76,9 @@ function cipCompareNodes(graph, nodeA, nodeB) {
   const zb = nodeB.element ? cipAtomicNumber(nodeB.element) : 0;
   if (za !== zb) return za - zb;
   if (za === 0) return 0;
-  if ((nodeA.element === 'H' || nodeA.element === 'D') && (nodeB.element === 'H' || nodeB.element === 'D')) {
-    const ma = cipMassRank(nodeA.element);
-    const mb = cipMassRank(nodeB.element);
-    if (ma !== mb) return ma - mb;
-  }
+  const ma = cipMassRank(nodeA.element, nodeA.isotope);
+  const mb = cipMassRank(nodeB.element, nodeB.isotope);
+  if (ma !== mb) return ma - mb;
 
   const childrenA = nodeA.duplicate || nodeA.atomId === null
     ? []
@@ -120,6 +122,7 @@ function cipRankSubstituents(graph, centerId, neighborIds) {
     return {
       atomId: id,
       element: atom.element,
+      isotope: atom.isotope,
       duplicate: false,
       parentId: centerId,
       visited: new Set([centerId]),
@@ -228,6 +231,7 @@ function findStereoDoubleBonds(graph, atomIds) {
   const seen = new Set();
   graph.bonds.forEach((bond) => {
     if (bond.order !== 2) return;
+    if (bond.stereoSpecified === false) return;
     if (!idSet.has(bond.atomA) || !idSet.has(bond.atomB)) return;
     if (seen.has(bond.id)) return;
     seen.add(bond.id);

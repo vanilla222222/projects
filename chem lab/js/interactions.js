@@ -839,11 +839,12 @@ class Interactions {
           if (a.abbrHidden) {
             entry.abbrHidden = true;
           }
+          if (a.isotope) entry.isotope = a.isotope;
           return entry;
         }),
       bonds: this.graph.bonds
         .filter((b) => ids.has(b.atomA) && ids.has(b.atomB))
-        .map((b) => ({ atomA: b.atomA, atomB: b.atomB, order: b.order, stereo: b.stereo || null })),
+        .map((b) => Object.assign({}, b)),
     };
     const brackets = this.graph.annotations
       .filter((a) => a.kind === 'bracket' && a.atomIds.every((id) => ids.has(id)))
@@ -911,6 +912,7 @@ class Interactions {
       if (a.abbrHidden === true) {
         atom.abbrHidden = true;
       }
+      if (Number.isInteger(a.isotope) && a.isotope > 0 && a.isotope <= 300) atom.isotope = a.isotope;
       idMap.set(a.id, atom.id);
     });
     (fragment.bonds || []).forEach((b) => {
@@ -921,6 +923,7 @@ class Interactions {
       if (bond) {
         bond.order = [1, 2, 3].includes(b.order) ? b.order : 1;
         bond.stereo = bond.order === 1 && (b.stereo === 'wedge' || b.stereo === 'hash') ? b.stereo : null;
+        if (typeof b.stereoSpecified === 'boolean') bond.stereoSpecified = b.stereoSpecified;
       }
     });
     const newIds = Array.from(idMap.values());

@@ -49,16 +49,14 @@ function graphToMolfile(graph, atomIds, title) {
     if (charge) {
       charges.push([i + 1, charge]);
     }
-    if (atom.element === 'D') {
-      isotopes.push([i + 1, 2]);
-    }
+    if (atom.element === 'D' || atom.isotope) isotopes.push([i + 1, atom.element === 'D' ? 2 : atom.isotope]);
     const symbol = atom.element === 'D' ? 'H' : atom.element;
     lines.push(molfileCoordinate((atom.x - cx) * scale) + molfileCoordinate(-(atom.y - cy) * scale) + molfileCoordinate(0) +
       ' ' + symbol.padEnd(3, ' ') + ' 0' + molfilePad(MOLFILE_CHARGE_CODES[charge] || 0, 3) + '  0  0  0  0  0  0  0  0  0  0');
   });
   bonds.forEach((bond) => {
     lines.push(molfilePad(index.get(bond.atomA), 3) + molfilePad(index.get(bond.atomB), 3) + molfilePad(bond.order, 3) +
-      molfilePad(bond.order === 1 ? MOLFILE_STEREO_CODES[bond.stereo] || 0 : 0, 3) + '  0  0  0');
+      molfilePad(bond.order === 1 ? MOLFILE_STEREO_CODES[bond.stereo] || 0 : bond.order === 2 && bond.stereoSpecified === false ? 3 : 0, 3) + '  0  0  0');
   });
   return lines.concat(molfilePropertyLines('CHG', charges), molfilePropertyLines('ISO', isotopes), ['M  END']).join('\n') + '\n';
 }
@@ -162,7 +160,7 @@ function molRecordToGraph(mol) {
     }
     if (element === 'H') {
       const partners = mol.bonds.filter((bond) => bond.a === index || bond.b === index).map((bond) => mol.atoms[bond.a === index ? bond.b : bond.a]);
-      if (!atom.charge && partners.length === 1 && partners[0] && partners[0].symbol !== 'H') {
+      if (!atom.charge && !atom.mass && partners.length === 1 && partners[0] && partners[0].symbol !== 'H') {
         ids.push(null);
         return;
       }
@@ -174,6 +172,7 @@ function molRecordToGraph(mol) {
     if (atom.charge) {
       created.charge = atom.charge;
     }
+    if (atom.mass) created.isotope = atom.mass;
     ids.push(created.id);
   });
   const scaleSamples = [];
@@ -194,6 +193,7 @@ function molRecordToGraph(mol) {
       return;
     }
     created.order = bond.order;
+    if (bond.order === 2) created.stereoSpecified = bond.stereo !== 3;
     if (bond.order === 1 && (bond.stereo === 1 || bond.stereo === 6)) {
       created.stereo = bond.stereo === 1 ? 'wedge' : 'hash';
     }

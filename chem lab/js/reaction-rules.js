@@ -403,9 +403,8 @@ function rxCationMechanism(source, spec) {
 
 function rxComponentFragment(g, ids) {
   const set = new Set(ids);
-  const atoms = g.atoms.filter((a) => set.has(a.id)).map((a) => Object.assign({ id: a.id, element: a.element, x: a.x, y: a.y }, a.charge ? { charge: a.charge } : {},
-    a.abbr ? { abbr: a.abbr } : {}, a.abbrHidden ? { abbrHidden: true } : {}));
-  const bonds = g.bonds.filter((b) => set.has(b.atomA) && set.has(b.atomB)).map((b) => ({ atomA: b.atomA, atomB: b.atomB, order: b.order, stereo: b.stereo || null }));
+  const atoms = g.atoms.filter((a) => set.has(a.id)).map((a) => Object.assign({}, a));
+  const bonds = g.bonds.filter((b) => set.has(b.atomA) && set.has(b.atomB)).map((b) => Object.assign({}, b));
   return { format: 'chemical-graph-fragment', atoms, bonds };
 }
 
@@ -656,12 +655,16 @@ function rxProductList(g) {
   }
   items.sort((p, q) => q.size - p.size);
   const out = [];
+  const byIdentity = new Map();
   items.forEach((item) => {
-    const found = out.find((x) => x.isomericSmiles === item.isomericSmiles);
+    const identity = reactionProductIdentity(item);
+    const found = identity && byIdentity.get(identity);
     if (found) {
       found.count += 1;
     } else {
-      out.push(Object.assign({ smiles: item.smiles, isomericSmiles: item.isomericSmiles, count: 1 }, item.fragment ? { fragment: item.fragment } : {}, item.stereo ? { stereo: item.stereo } : {}));
+      const product = Object.assign({ smiles: item.smiles, isomericSmiles: item.isomericSmiles, count: 1 }, item.fragment ? { fragment: item.fragment } : {}, item.stereo ? { stereo: item.stereo } : {});
+      out.push(product);
+      if (identity) byIdentity.set(identity, product);
     }
   });
   return out;
@@ -1807,7 +1810,7 @@ function rxRuleHalide(ctx) {
     };
     const withMinor = (out, other) => {
       if (other) {
-        out.minor = out.minor.concat(other.products.filter((p) => !out.minor.some((m) => (m.isomericSmiles || m.smiles) === (p.isomericSmiles || p.smiles))));
+        out.minor = out.minor.concat(other.products.filter((p) => { const key = reactionProductIdentity(p); return !key || !out.minor.some((m) => reactionProductIdentity(m) === key); }));
         delete out.ratio;
       }
       return out;
@@ -3145,6 +3148,11 @@ function predictReaction(compounds, conditions) {
         }
       } else if (r.products.length) {
         r.rule = rule.id;
+        r.evidence = typeof reactionOutcomeEvidence === 'function' ? reactionOutcomeEvidence(r, rule) : {
+          id: rule.id, outcomeId: r.id, name: rule.name, evidenceLevel: 'Rule-based prediction', experimentalValidation: false,
+          scope: 'Only the substrate patterns encoded by this local rule.', references: [],
+          sourceStatus: 'Reaction catalog unavailable', assumptions: [], limitations: ['No experimental validation for this query is established.'],
+        };
         outcomes.push(r);
       }
     });
@@ -3168,7 +3176,8 @@ function predictReaction(compounds, conditions) {
   });
   const unique = [];
   outcomes.forEach((o) => {
-    const key = o.id + '|' + o.products.map((p) => p.isomericSmiles || p.smiles).join('.');
+    const identities = o.products.map(reactionProductIdentity);
+    const key = o.id + '|' + (identities.every(Boolean) ? identities.sort().join('.') : 'unresolved:' + unique.length);
     if (!unique.some((u) => u.key === key)) {
       unique.push(Object.assign(o, { key }));
     }

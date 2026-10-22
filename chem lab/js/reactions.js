@@ -459,25 +459,23 @@ function reactionFragmentGraph(fragment) {
   const idMap = new Map();
   fragment.atoms.forEach((a) => {
     const atom = temp.addAtom(a.element, a.x, a.y);
-    if (a.charge) {
-      atom.charge = a.charge;
-    }
-    if (a.abbr) {
-      atom.abbr = a.abbr;
-    }
-    if (a.abbrHidden) {
-      atom.abbrHidden = true;
-    }
+    Object.assign(atom, a, { id: atom.id, x: atom.x, y: atom.y });
     idMap.set(a.id, atom.id);
   });
   fragment.bonds.forEach((b) => {
     const bond = temp.addBond(idMap.get(b.atomA), idMap.get(b.atomB));
     if (bond) {
-      bond.order = b.order;
-      bond.stereo = b.stereo || null;
+      Object.assign(bond, b, { id: bond.id, atomA: bond.atomA, atomB: bond.atomB, stereo: b.stereo || null });
     }
   });
   return temp;
+}
+
+function reactionProductIdentity(product) {
+  const text = product.isomericSmiles || product.smiles;
+  if (typeof moleculeIdentity !== 'function') return text;
+  try { return moleculeIdentity(product.fragment || text).key; }
+  catch (error) { return null; } // Unresolved identity must not merge products.
 }
 
 const REACTION_REAGENT_LABELS = [
@@ -559,7 +557,7 @@ function buildReactionScheme(compounds, conditions, products, captions) {
     const map = new Map();
     fragment.atoms.forEach((a) => {
       map.set(a.id, nextId);
-      const entry = { id: nextId, element: a.element, x: a.x + shiftX, y: a.y + shiftY };
+      const entry = Object.assign({}, a, { id: nextId, x: a.x + shiftX, y: a.y + shiftY });
       if (a.charge) {
         entry.charge = a.charge;
       }
@@ -567,7 +565,7 @@ function buildReactionScheme(compounds, conditions, products, captions) {
       nextId += 1;
     });
     fragment.bonds.forEach((b) => {
-      out.bonds.push({ atomA: map.get(b.atomA), atomB: map.get(b.atomB), order: b.order, stereo: b.stereo || null });
+      out.bonds.push({ atomA: map.get(b.atomA), atomB: map.get(b.atomB), order: b.order, stereo: b.stereo || null, ...(typeof b.stereoSpecified === 'boolean' ? { stereoSpecified: b.stereoSpecified } : {}) });
     });
     cursor += box.maxX - box.minX;
     return { x: shiftX + (box.minX + box.maxX) / 2, bottom: (box.maxY - box.minY) / 2 };
@@ -780,7 +778,7 @@ function buildRouteScheme(steps) {
     const map = new Map();
     fragment.atoms.forEach((a) => {
       map.set(a.id, nextId);
-      const entry = { id: nextId, element: a.element, x: a.x + shiftX, y: a.y + shiftY };
+      const entry = Object.assign({}, a, { id: nextId, x: a.x + shiftX, y: a.y + shiftY });
       if (a.charge) {
         entry.charge = a.charge;
       }
@@ -788,13 +786,13 @@ function buildRouteScheme(steps) {
       nextId += 1;
     });
     fragment.bonds.forEach((b) => {
-      out.bonds.push({ atomA: map.get(b.atomA), atomB: map.get(b.atomB), order: b.order, stereo: b.stereo || null });
+      out.bonds.push({ atomA: map.get(b.atomA), atomB: map.get(b.atomB), order: b.order, stereo: b.stereo || null, ...(typeof b.stereoSpecified === 'boolean' ? { stereoSpecified: b.stereoSpecified } : {}) });
     });
     lowest = Math.max(lowest, (box.maxY - box.minY) / 2);
     places.push({ x: cursor + (box.maxX - box.minX) / 2, number });
     cursor += box.maxX - box.minX;
   };
-  const fragmentOf = (end) => end.fragment || smilesToFragment(end.smiles);
+  const fragmentOf = (end) => end.fragment || smilesToFragment(end.isomericSmiles || end.smiles);
   place(fragmentOf(steps[0].from), 1);
   steps.forEach((step, i) => {
     cursor += REACTION_SCHEME_SETTINGS.gap;

@@ -761,6 +761,9 @@ function createReactionLab(host) {
       predictionBox.appendChild(element('div', 'rx-byproducts', 'Also formed: ' + outcome.byproducts.join(', ')));
     }
     predictionBox.appendChild(element('p', 'rx-reason', outcome.reason));
+    if (outcome.evidence && typeof reactionEvidenceElement === 'function') {
+      predictionBox.appendChild(reactionEvidenceElement(outcome.evidence));
+    }
     const chemo = outcome.chemoselectivity;
     const warnings = chemo ? outcome.warnings.filter((w) => w.indexOf('Chemoselectivity: ') !== 0) : outcome.warnings;
     if (warnings.length) {
@@ -1031,6 +1034,48 @@ function createReactionLab(host) {
     renderConditions();
     renderSummary();
   }
+
+  function createRuleExplorer() {
+    if (typeof reactionCatalog !== 'function') return;
+    const explorer = element('details', 'rx-rule-explorer');
+    explorer.id = 'rx-rule-explorer';
+    explorer.appendChild(element('summary', '', 'Reaction rule explorer'));
+    const description = element('p', '', 'Search supported transformations, assumptions and source coverage. A listed rule is not a claim that every substrate in its reaction class is supported.');
+    const label = element('label', '', 'Search rules ');
+    const search = element('input', '');
+    search.type = 'search'; search.placeholder = 'Name, family, substrate or limitation';
+    search.setAttribute('aria-label', 'Search reaction rules');
+    label.appendChild(search);
+    const families = element('select', '');
+    families.setAttribute('aria-label', 'Reaction family');
+    const all = element('option', '', 'All families'); all.value = ''; families.appendChild(all);
+    Array.from(new Set(reactionCatalog().map((r) => r.family))).sort().forEach((family) => {
+      const option = element('option', '', family); option.value = family; families.appendChild(option);
+    });
+    const count = element('p', ''); count.setAttribute('role', 'status');
+    const list = element('div', 'rx-rule-results');
+    const more = element('button', 'text-button', 'Show more rules'); more.type = 'button';
+    let limit = 12;
+    const render = () => {
+      const rules = reactionCatalog(search.value, { family: families.value });
+      list.replaceChildren();
+      rules.slice(0, limit).forEach((rule) => {
+        const card = element('article', 'rx-rule-card');
+        card.appendChild(element('h3', '', rule.name));
+        card.appendChild(reactionEvidenceElement(rule, true));
+        list.appendChild(card);
+      });
+      count.textContent = 'Showing ' + Math.min(limit, rules.length) + ' of ' + rules.length + ' matching rules.';
+      more.hidden = rules.length <= limit;
+    };
+    search.addEventListener('input', () => { limit = 12; render(); });
+    families.addEventListener('change', () => { limit = 12; render(); });
+    more.addEventListener('click', () => { limit += 12; render(); });
+    explorer.append(description, label, families, count, list, more);
+    root.appendChild(explorer);
+    render();
+  }
+  createRuleExplorer();
 
   scaleInput.addEventListener('input', () => {
     const value = Number(scaleInput.value);

@@ -52,19 +52,14 @@ function retroClone(graph, ids, out) {
       return;
     }
     const b = g.addAtom(a.element, a.x || 0, a.y || 0);
-    if (a.charge) {
-      b.charge = a.charge;
-    }
+    Object.assign(b, a, { id: b.id, x: b.x, y: b.y });
     map.set(a.id, b.id);
   });
   graph.bonds.forEach((b) => {
     if (map.has(b.atomA) && map.has(b.atomB)) {
       const bond = g.addBond(map.get(b.atomA), map.get(b.atomB));
       if (bond) {
-        bond.order = b.order;
-        if (b.stereo) {
-          bond.stereo = b.stereo;
-        }
+        Object.assign(bond, b, { id: bond.id, atomA: bond.atomA, atomB: bond.atomB });
       }
     }
   });
@@ -1581,6 +1576,15 @@ function retroCompound(item) {
 }
 
 function retroFindProduct(list, smiles) {
+  if (typeof moleculeIdentity === 'function') {
+    try {
+      const target = moleculeIdentity(smiles).connectivityKey;
+      return (list || []).find((p) => {
+        try { return !!p && moleculeIdentity(p.fragment || p.isomericSmiles || p.smiles).connectivityKey === target; }
+        catch (error) { return false; }
+      }) || null;
+    } catch (error) { return null; }
+  }
   return (list || []).find((p) => p && p.smiles === smiles) || null;
 }
 

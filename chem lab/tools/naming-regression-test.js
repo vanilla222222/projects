@@ -61,6 +61,9 @@ for (const [geometry, expectedCommon] of [[null, null], ['E', 'fumaric acid'], [
   const result = vm.runInContext(`(() => {
     const {graph, ids} = smilesBuildGraph(parseSmiles('O=C(O)C=CC(=O)O'));
     if (geometry) {
+      // This case models a user explicitly drawing alkene geometry. Imported
+      // SMILES without / or \\ now correctly marks that geometry unspecified.
+      graph.bonds.filter(b => b.order === 2).forEach(b => delete b.stereoSpecified);
       graph.getAtom(ids[3]).x = 0;
       graph.getAtom(ids[4]).x = 1;
       graph.getAtom(ids[1]).y = 1;

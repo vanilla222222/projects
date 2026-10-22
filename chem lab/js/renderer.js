@@ -486,7 +486,7 @@ class Renderer {
   }
 
   labelTrim(atom, ux, uy) {
-    if (atom.element === 'C' && !atom.charge && !atom.abbr) {
+    if (atom.element === 'C' && !atom.charge && !atom.abbr && !atom.isotope) {
       return 0;
     }
     const boost = this.labelBoost();
@@ -494,7 +494,7 @@ class Renderer {
     const ctx = this.ctx;
     ctx.save();
     ctx.font = this.atomFont('label', boost);
-    const halfWidth = ctx.measureText(text).width / 2;
+    const halfWidth = ctx.measureText(text).width / 2 + (atom.isotope ? ctx.measureText(String(atom.isotope)).width * 0.65 : 0);
     ctx.restore();
     const gap = RENDER_SETTINGS.labelGap * boost;
     const halfHeight = RENDER_SETTINGS.labelSize * boost * 0.36;
@@ -504,7 +504,7 @@ class Renderer {
   }
 
   isLabeled(atom) {
-    return atom.element !== 'C' || !!atom.abbr || !!atom.charge || this.graph.bondsForAtom(atom.id).length === 0;
+    return atom.element !== 'C' || !!atom.abbr || !!atom.charge || !!atom.isotope || this.graph.bondsForAtom(atom.id).length === 0;
   }
 
   implicitHydrogens(atom) {
@@ -2002,6 +2002,7 @@ class Renderer {
     ctx.font = subFont;
     const subText = hydrogens > 1 ? String(hydrogens) : '';
     const subWidth = subText ? ctx.measureText(subText).width : 0;
+    const isotopeWidth = atom.isotope ? ctx.measureText(String(atom.isotope)).width : 0;
     const side = hydrogens > 0 ? this.hydrogenSide(atom) : 1;
     const groupWidth = hWidth + subWidth;
     const charge = atom.charge || 0;
@@ -2010,7 +2011,7 @@ class Renderer {
     ctx.font = this.atomFont('charge', boost);
     const chargeLabel = circled ? '' : chargeText(charge);
     const chargeWidth = circled ? chargeRadius * 2 + boost : chargeLabel ? ctx.measureText(chargeLabel).width + boost : 0;
-    const left = atom.x - elementWidth / 2 - (side < 0 ? groupWidth : 0);
+    const left = atom.x - elementWidth / 2 - (side < 0 ? groupWidth : 0) - isotopeWidth;
     const right = atom.x + elementWidth / 2 + (side > 0 ? groupWidth : 0) + chargeWidth;
     const padding = 1.5 * boost;
     ctx.fillStyle = palette.background;
@@ -2020,6 +2021,12 @@ class Renderer {
     ctx.textAlign = 'center';
     ctx.font = labelFont;
     ctx.fillText(atom.element, atom.x, atom.y);
+    if (atom.isotope) {
+      ctx.textAlign = 'right';
+      ctx.font = subFont;
+      ctx.fillText(String(atom.isotope), atom.x - elementWidth / 2, atom.y - size * 0.4);
+      ctx.font = labelFont;
+    }
     if (hydrogens > 0) {
       ctx.textAlign = 'left';
       const hx = side > 0 ? atom.x + elementWidth / 2 : left;

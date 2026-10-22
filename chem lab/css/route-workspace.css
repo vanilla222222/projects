@@ -1,0 +1,43 @@
+#workspace-view { flex: 1 1 auto; padding: 26px; overflow: auto; color: var(--text-primary); font-family: var(--font-ui); box-sizing: border-box; }
+#workspace-view[hidden] { display: none; }
+body[data-view="workspace"] #sidebar, body[data-view="workspace"] #toolbar, body[data-view="workspace"] #canvas-wrapper, body[data-view="workspace"] #statusbar, body[data-view="workspace"] #spectra-dock, body[data-view="workspace"] #info-panel { display: none; }
+#route-workspace { max-width: 1160px; margin: 0 auto; }
+.workspace-heading h2 { margin: 0 0 8px; }
+.workspace-heading p, .workspace-caveat, .workspace-message { color: var(--text-secondary); line-height: 1.5; }
+.workspace-controls, .workspace-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0; }
+.workspace-controls select { min-width: 200px; max-width: 100%; }
+.workspace-meta, .workspace-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
+.workspace-meta label, .workspace-fields label { display: flex; flex-direction: column; gap: 7px; font-size: 13px; }
+.workspace-meta input, .workspace-fields input, .workspace-fields textarea, .workspace-controls select { font: inherit; color: inherit; border: 1px solid var(--border); border-radius: 5px; padding: 9px; background: var(--bg-elevated); box-sizing: border-box; }
+.workspace-fields textarea { width: 100%; min-height: 180px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; resize: vertical; }
+.workspace-step { margin: 16px 0; padding: 18px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-elevated); }
+.workspace-step h3 { margin: 0 0 10px; }
+.workspace-step details summary { cursor: pointer; font-size: 13px; }
+.workspace-equation { font-size: 17px; font-weight: 500; }
+.workspace-structures { display: flex; gap: 18px; align-items: center; justify-content: flex-start; flex-wrap: wrap; }
+.workspace-structures > div { min-width: 0; max-width: 45%; }
+.workspace-structures p { margin: 5px 0; font-size: 13px; }
+.workspace-structures code { font-size: 11px; overflow-wrap: anywhere; }
+.workspace-structures svg, .workspace-structures canvas { width: 180px; height: 140px; max-width: 100%; }
+.workspace-status { font-size: 13px; line-height: 1.5; }
+.workspace-status.verified { color: var(--ok); }
+.workspace-status.invalid { color: var(--danger); }
+.workspace-status.unverified { color: var(--warn); }
+@media (max-width: 700px) { #workspace-view { padding: 16px; } .workspace-meta, .workspace-fields { grid-template-columns: 1fr; } .workspace-structures > div { max-width: 100%; } }
+
+.path-route { margin: 24px 0; padding: 18px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-elevated); }
+.path-route > h3 { margin-top: 0; }
+.path-options { padding: 12px 0; }
+.path-options summary, .rx-evidence summary, .rx-rule-explorer summary { cursor: pointer; }
+.path-options .path-inputs { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; margin-top: 12px; }
+.path-options textarea { box-sizing: border-box; width: 100%; min-height: 100px; padding: 10px; resize: vertical; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-control); color: var(--text-primary); font: 12px var(--font-mono); }
+.path-options p { color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+.rx-evidence { margin: 12px 0; padding: 12px; border: 1px solid var(--border); border-radius: 7px; background: var(--bg-elevated); font-size: 13px; overflow-wrap: anywhere; }
+.rx-evidence p, .rx-evidence li { line-height: 1.5; color: var(--text-secondary); }
+.rx-evidence a { color: var(--accent); }
+.rx-rule-explorer { margin: 20px 0; padding: 16px; border: 1px solid var(--border); border-radius: 8px; }
+.rx-rule-explorer input, .rx-rule-explorer select { max-width: 100%; box-sizing: border-box; padding: 9px; margin: 8px 8px 8px 0; color: var(--text-primary); background: var(--bg-control); border: 1px solid var(--border); border-radius: 5px; font: inherit; }
+.rx-rule-results { max-height: 560px; overflow: auto; }
+.rx-rule-card { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.rx-rule-card h4 { margin: 6px 0; }
+@media (max-width: 760px) { .path-options .path-inputs { grid-template-columns: 1fr; } .path-route { padding: 12px; } #view-tabs { flex-wrap: wrap; } }

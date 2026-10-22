@@ -1,4 +1,4 @@
-const SHARE_FORMAT_VERSION = 1;
+const SHARE_FORMAT_VERSION = 2;
 const SHARE_LINK_WARN_LENGTH = 8000;
 const SHARE_MAX_JSON_LENGTH = 4000000;
 const SHARE_STEREO_CODES = [null, 'wedge', 'hash'];
@@ -40,11 +40,11 @@ function shareEncodeAnnotation(a) {
 function shareEncodeGraph(state) {
   const data = typeof state === 'string' ? JSON.parse(state) : state;
   const atoms = (data.atoms || []).map((a) => shareTrim(
-    [a.id, a.element, shareTenths(a.x), shareTenths(a.y), a.charge || 0, a.abbr || '', a.abbrHidden ? 1 : 0],
-    [undefined, undefined, undefined, undefined, 0, '', 0]));
+    [a.id, a.element, shareTenths(a.x), shareTenths(a.y), a.charge || 0, a.abbr || '', a.abbrHidden ? 1 : 0, a.isotope || 0],
+    [undefined, undefined, undefined, undefined, 0, '', 0, 0]));
   const bonds = (data.bonds || []).map((b) => shareTrim(
-    [b.id, b.atomA, b.atomB, b.order, Math.max(0, SHARE_STEREO_CODES.indexOf(b.stereo || null))],
-    [undefined, undefined, undefined, 1, 0]));
+    [b.id, b.atomA, b.atomB, b.order, Math.max(0, SHARE_STEREO_CODES.indexOf(b.stereo || null)), typeof b.stereoSpecified === 'boolean' ? b.stereoSpecified : null],
+    [undefined, undefined, undefined, 1, 0, null]));
   const annotations = (data.annotations || []).map(shareEncodeAnnotation).filter((row) => row);
   const next = [data.nextAtomId || 1, data.nextBondId || 1, data.nextAnnotationId || 1];
   return JSON.stringify([SHARE_FORMAT_VERSION, next, atoms, bonds, annotations]);
@@ -103,7 +103,7 @@ function shareDecodeGraph(text) {
   } catch (error) {
     return { error: 'the link data is not readable' };
   }
-  if (!Array.isArray(data) || data[0] !== SHARE_FORMAT_VERSION || !Array.isArray(data[1]) || !Array.isArray(data[2]) || !Array.isArray(data[3]) || !Array.isArray(data[4])) {
+  if (!Array.isArray(data) || ![1, SHARE_FORMAT_VERSION].includes(data[0]) || !Array.isArray(data[1]) || !Array.isArray(data[2]) || !Array.isArray(data[3]) || !Array.isArray(data[4])) {
     return { error: 'the link is not a structure from this app' };
   }
   const atoms = [];
@@ -122,6 +122,10 @@ function shareDecodeGraph(text) {
     if (row[6] === 1) {
       atom.abbrHidden = true;
     }
+    if (row[7] !== undefined && row[7] !== 0) {
+      if (!shareIsInt(row[7]) || row[7] < 1 || row[7] > 300) return { error: 'an isotope in the link is malformed' };
+      atom.isotope = row[7];
+    }
     atoms.push(atom);
   }
   const ids = new Set(atoms.map((a) => a.id));
@@ -132,7 +136,12 @@ function shareDecodeGraph(text) {
     if (!Array.isArray(row) || !shareIsInt(row[0]) || !ids.has(row[1]) || !ids.has(row[2]) || ![1, 2, 3].includes(order) || ![0, 1, 2].includes(stereo)) {
       return { error: 'a bond in the link is malformed' };
     }
-    bonds.push({ id: row[0], atomA: row[1], atomB: row[2], order, stereo: SHARE_STEREO_CODES[stereo] });
+    const bond = { id: row[0], atomA: row[1], atomB: row[2], order, stereo: SHARE_STEREO_CODES[stereo] };
+    if (row[5] !== undefined && row[5] !== null) {
+      if (typeof row[5] !== 'boolean') return { error: 'a stereo flag in the link is malformed' };
+      bond.stereoSpecified = row[5];
+    }
+    bonds.push(bond);
   }
   const annotations = [];
   for (const row of data[4]) {
