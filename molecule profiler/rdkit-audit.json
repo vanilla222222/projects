@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 5446,
+  "entries": 5470,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -16681,6 +16681,62 @@
         1,
         4
       ]
+    },
+    {
+      "index": 5447,
+      "name": "6-chloro-3-methyl-3,4-dihydro-2H-1,2,4-benzothiadiazine-7-sulfonamide 1,1-dioxide",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 5450,
+      "name": "3-methyl-6-(trifluoromethyl)-3,4-dihydro-2H-1,2,4-benzothiadiazine-7-sulfonamide 1,1-dioxide",
+      "atomIndices": [
+        15
+      ]
+    },
+    {
+      "index": 5452,
+      "name": "6-chloro-2,3-dimethyl-3,4-dihydro-2H-1,2,4-benzothiadiazine-7-sulfonamide 1,1-dioxide",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 5455,
+      "name": "7-chloro-2-methyl-4-oxo-1,2,3,4-tetrahydroquinazoline-6-sulfonamide",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 5456,
+      "name": "7-chloro-2-ethyl-3-(2-methylphenyl)-4-oxo-1,2,3,4-tetrahydroquinazoline-6-sulfonamide",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 5457,
+      "name": "7-chloro-4-oxo-2-propyl-1,2,3,4-tetrahydroquinazoline-6-sulfonamide",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 5458,
+      "name": "7-chloro-2-ethyl-3-methyl-4-oxo-1,2,3,4-tetrahydroquinazoline-6-sulfonamide",
+      "atomIndices": [
+        14
+      ]
+    },
+    {
+      "index": 5461,
+      "name": "4-chloro-N-(2-methylpiperidin-1-yl)-3-sulfamoylbenzamide",
+      "atomIndices": [
+        4
+      ]
     }
   ],
   "chargedEntries": [
@@ -16930,7 +16986,7 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 9,
-    "unspecifiedStereocenters": 1943,
+    "unspecifiedStereocenters": 1951,
     "chargedEntries": 46,
     "fragmentedEntries": 0,
     "radicalEntries": 0,

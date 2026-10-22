@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "sourceSha256": {
-    "data/library.js": "79219311d594de2cbd47d8affb641e7da0cce1fcb1b3ecfc6b9c1ab70e570bd3",
+    "data/library.js": "af30ec8878cc5e3a2e8d393c1a9efb39712b69a26694a02fb4aa5c4c1e405350",
     "data/targets.js": "facc465ef72687224df3577fbf7a600102e7c3b07cc033a4de21ba76191192fa",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
     "data/receptor-ligand-annotations.js": "28bcfc10324b17fc8a30d2e4b3cf3c589e55fe9af76cd61dfb8986d9a3b30d01",
     "js/receptor-catalog.js": "c89696b0ea6e22873929f2e3c777774b13579c917a541cf7820de253e19305e1",
     "tools/build-library-tags.py": "b1b9d2eb9960ab6803f2c9e43936d4317688bc067a00d30b27d9cf1c1ee08f6e"
   },
-  "dataSha256": "6906c8d3b988abc8e77edd600beb1024a7abbe24645c43fac045f42e9b7e5583",
+  "dataSha256": "49cbe5a0c7f8214cd7153441231473e3a12218051ba635971e30772475910f60",
   "interpretation": "Overlapping structural motifs in stored graphs; not evidence of pharmacological function, exhaustive family membership or independently verified molecular identities.",
   "families": [
     {
@@ -880,9 +880,10 @@
         "2-(2,5-dimethoxy-4-propylphenyl)-N-(phenylmethyl)ethan-1-amine",
         "2-(4-ethyl-2,5-dimethoxyphenyl)-N-[(2-methylphenyl)methyl]ethan-1-amine",
         "N-[(2-chlorophenyl)methyl]-2-(2,5-dimethoxy-4-methylphenyl)ethan-1-amine",
-        "N-[(2-bromophenyl)methyl]-2-(4-fluoro-2,5-dimethoxyphenyl)ethan-1-amine"
+        "N-[(2-bromophenyl)methyl]-2-(4-fluoro-2,5-dimethoxyphenyl)ethan-1-amine",
+        "4-chloro-N-(2,3-dihydro-1H-indol-1-yl)-3-sulfamoylbenzamide"
       ],
-      "count": 867
+      "count": 868
     },
     {
       "tag": "Family motif: Amphetamines (alpha-methylphenethylamines)",
