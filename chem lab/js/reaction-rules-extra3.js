@@ -421,3 +421,87 @@ RX_RULES.push(
   { id: 'pmb-protection', name: 'PMB ethers (install, DDQ/CAN removal)', run: rxzRuleEthers },
   { id: 'ester-protection', name: 'tert-Butyl and methyl esters', run: rxzRuleEsters },
 );
+
+// Sulfur transformations. Scope is intentionally restricted to simple sites;
+// these are candidate textbook transformations, not yield predictions.
+// TCEP: Burns et al., J. Org. Chem. 1991, 56, 2648–2650, doi:10.1021/jo00008a014.
+// Thiolate SN2: University of Calgary, Carey Ch16, ch16-7-1.html.
+RX_SPECIES_DETECTORS.push((g, ids) => {
+  const atoms = ids.map((id) => g.getAtom(id));
+  const sulfur = atoms.find((a) => a.element === 'S' && a.charge === -1 &&
+    rxNeighbors(g, a.id).length === 1 && rxNeighbors(g, a.id)[0].atom.element === 'C' && rxNeighbors(g, a.id)[0].bond.order === 1);
+  if (sulfur) return { tag: 'thiolate', atom: sulfur.id };
+  const p = atoms.find((a) => a.element === 'P' && !a.charge && rxNeighbors(g, a.id).length === 3);
+  if (!p || atoms.length !== 16 || atoms.filter((a) => a.element === 'C').length !== 9 || atoms.filter((a) => a.element === 'O').length !== 6) return null;
+  const arms = rxNeighbors(g, p.id);
+  const correct = arms.every((first) => {
+    if (first.atom.element !== 'C' || first.bond.order !== 1 || rxHydrogens(g, first.atom.id) !== 2) return false;
+    const next = rxCarbonNeighbors(g, first.atom.id);
+    if (next.length !== 1 || next[0].bond.order !== 1 || rxHydrogens(g, next[0].atom.id) !== 2) return false;
+    const ends = rxCarbonNeighbors(g, next[0].atom.id, first.atom.id);
+    if (ends.length !== 1) return false;
+    return rxAnalyze(g).carbonyls.some((c) => c.c === ends[0].atom.id && c.kind === 'acid');
+  });
+  return correct ? { tag: 'tcep', atom: p.id } : null;
+});
+
+function rxzRuleThioether(ctx) {
+  const base = rxxBase(ctx, ['hydroxide', 'hydride', 'alkoxide']);
+  const ion = ctx.get('thiolate');
+  const donors = ion ? [{ graph: ion.graph, atom: ion.atom, entry: ion, ids: ion.ids }] : [];
+  if (base) ctx.substrates.forEach((s) => {
+    const sites = rxxThiols(s);
+    if (sites.length === 1) donors.push({ graph: s.graph, atom: sites[0], entry: s, ids: s.graph.atoms.map((a) => a.id), needsBase: true });
+  });
+  if (!donors.length) return [];
+  const out = [];
+  ctx.substrates.forEach((s) => s.info.halides.forEach((h) => {
+    if (h.degree > 1) return;
+    // Neopentyl sites are outside this simple SN2 model.
+    if (rxCarbonNeighbors(s.graph, h.c).some((n) => rxCarbonNeighbors(s.graph, n.atom.id, h.c).length >= 3)) return;
+    donors.forEach((donor) => {
+      if (donor.graph === s.graph) return;
+      const g = rxCloneGraph(s.graph);
+      const ids = donor.graph.connectedComponents().find((c) => c.atomIds.includes(donor.atom)).atomIds;
+      const map = rxMerge(g, donor.graph, ids);
+      const sulfur = map.get(donor.atom);
+      g.getAtom(sulfur).charge = 0;
+      rxsReplace(g, h.c, h.x, sulfur, true);
+      g.removeAtom(h.x);
+      g.addBond(h.c, sulfur);
+      out.push(rxOutcome('thiolate-alkylation', 'Thioether synthesis (thiolate Sₙ2)', 'Substitution (Sₙ2)', g,
+        'A thiolate displaces a methyl or primary alkyl halide to make a C–S bond. Neutral thiols require base; preformed thiolates supply the nucleophile directly.',
+        { score: 17, consumes: [rxUse(s, 1), rxUse(donor.entry, 1), donor.needsBase && base ? rxUse(base.entry, 1) : null],
+          byproducts: ['halide salt'], warnings: ['Restricted to methyl and primary halides with one thiol site; competing electrophiles and further S-alkylation require review.'] }));
+    });
+  }));
+  return out;
+}
+
+function rxzDisulfideBonds(g) {
+  return g.bonds.filter((b) => b.order === 1 && [b.atomA, b.atomB].every((id) => {
+    const a = g.getAtom(id), n = rxNeighbors(g, id);
+    return a.element === 'S' && !a.charge && n.length === 2 && n.every((x) => x.bond.order === 1) &&
+      n.some((x) => x.atom.element === 'C') && n.some((x) => x.atom.element === 'S');
+  }));
+}
+
+function rxzRuleDisulfideReduction(ctx) {
+  const reagent = ctx.get('tcep');
+  if (!reagent || !ctx.has('H2O')) return [];
+  return ctx.substrates.flatMap((s) => {
+    const bonds = rxzDisulfideBonds(s.graph);
+    if (!bonds.length) return [];
+    const g = rxCloneGraph(s.graph);
+    bonds.forEach((b) => g.removeBond(b.id));
+    return [rxOutcome('disulfide-reduction', 'Disulfide reduction (TCEP)', 'Reduction', g,
+      'TCEP cleaves the S–S bond in water. The displayed products are the neutral thiols after proton transfer; TCEP is converted to its phosphine oxide.',
+      { score: 18, consumes: [rxUse(s, 1), rxUse(reagent, bonds.length)], byproducts: ['TCEP oxide'],
+        warnings: ['Thiol ionisation depends on pH, which this reaction model does not calculate.'] })];
+  });
+}
+
+RX_RULES.push(
+  { id: 'thiolate-alkylation', name: 'Thioether synthesis (thiolate SN2)', run: rxzRuleThioether },
+  { id: 'disulfide-reduction', name: 'TCEP disulfide reduction', run: rxzRuleDisulfideReduction }
+);

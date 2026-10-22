@@ -198,7 +198,10 @@ function createReactionLab(host) {
   function importReaction(text) {
     const raw = String(text || '');
     const parsed = /^\s*\$RXN/.test(raw) ? rxioParseRxn(raw) : rxioParseReactionSmiles(raw);
-    const items = parsed.compounds.slice(0, REACTION_LIMITS.maxCompounds).map((c) => ({ c, fragment: smilesToFragment(c.smiles) }));
+    if (parsed.compounds.length > REACTION_LIMITS.maxCompounds) {
+      throw new Error('This reaction has ' + parsed.compounds.length + ' compounds; the lab supports at most ' + REACTION_LIMITS.maxCompounds + '. No compounds were imported.');
+    }
+    const items = parsed.compounds.map((c) => ({ c, fragment: smilesToFragment(c.smiles) }));
     if (!items.length) {
       throw new Error('The reaction has no starting materials or reagents');
     }

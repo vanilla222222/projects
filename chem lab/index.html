@@ -209,6 +209,7 @@
   <nav id="view-tabs" role="tablist" aria-label="View">
     <button type="button" role="tab" class="view-tab selected" data-view="editor" aria-selected="true">Editor</button>
     <button type="button" role="tab" class="view-tab" data-view="reactions" aria-selected="false">Reactions</button>
+    <button type="button" role="tab" class="view-tab" data-view="pathfinder" aria-selected="false">Path Finder</button>
   </nav>
   <header id="toolbar">
     <div class="tool-group segmented" role="group" aria-label="Tool">
@@ -337,6 +338,18 @@
     <span id="status-hover" class="status-grow"></span>
     <span id="status-tool"></span>
   </footer>
+  <section id="path-view" hidden aria-labelledby="path-title">
+    <div class="path-heading"><h2 id="path-title">Synthesis Path Finder</h2><p>Choose a starting material and target. Search for a chain of supported transformations between them.</p></div>
+    <div class="path-inputs">
+      <label>Starting material<input id="path-start" type="text" placeholder="Name or SMILES, e.g. ethanol" autocomplete="off" spellcheck="false"></label>
+      <span class="path-input-arrow" aria-hidden="true">→</span>
+      <label>Target compound<input id="path-target" type="text" placeholder="Name or SMILES, e.g. ethanal" autocomplete="off" spellcheck="false"></label>
+    </div>
+    <div class="path-controls"><label for="path-depth">Maximum steps</label><select id="path-depth"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option></select><button id="path-run" type="button" class="text-button primary">Find a path</button><button id="path-cancel" type="button" class="text-button" disabled>Cancel</button><button id="path-example" type="button" class="text-button">Load example</button></div>
+    <p class="path-caveat">Candidate routes use textbook reaction rules, not experimental validation. Additional building blocks come from the local stock list; reagents may also be required. Search is limited to 60 structures and 12 seconds. It does not search the literature or establish feasibility, selectivity, yield or safety.</p>
+    <p id="path-status" role="status" aria-live="polite">Enter two compounds to begin. Names resolve locally; SMILES gives the most precise input.</p>
+    <div id="path-results"></div>
+  </section>
   <section id="reaction-view" hidden>
     <div class="rx-banner">
       <div class="rx-banner-scheme">
@@ -791,6 +804,7 @@
 <script src="js/spectra-view.js"></script>
 <script src="js/viewer3d.js"></script>
 <script src="js/retro-view.js"></script>
+<script src="js/path-finder.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

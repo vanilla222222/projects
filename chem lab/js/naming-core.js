@@ -165,7 +165,6 @@ const COMMON_NAMES = {
   'tetrahydrofuran': 'THF',
   'dimethyl sulfoxide': 'DMSO',
   'N,N-dimethylformamide': 'DMF',
-  'but-2-enedioic acid': 'fumaric acid',
   '3-carboxy-3-hydroxypentanedioic acid': 'citric acid',
   '2-hydroxypropanoic acid': 'lactic acid',
   'ethanedioic acid': 'oxalic acid',
@@ -699,12 +698,17 @@ function nameStructureOnce(graph, atomIds) {
       const alt = generalName(graph, atomIds, true);
       const idSetForAlt = new Set(atomIds);
       const acyclic = graph.bonds.filter((b) => idSetForAlt.has(b.atomA) && idSetForAlt.has(b.atomB)).length < atomIds.length;
+      // P-44.1.1: maximize suffix-bearing characteristic groups before chain
+      // length. The fast longest-chain recognizer can strand another OH/NH2
+      // group in a branch even when the general engine finds a diol/diamine.
+      const principalCoverage = acyclic && alt && savedChainLocants && genParentLocants &&
+        genPrincipalCoverage(graph, atomIds, genParentLocants) > genPrincipalCoverage(graph, atomIds, savedChainLocants);
       const amineParent = acyclic && alt && /amine$/.test(alt) && /amino/.test(derived) && (/(ane|ene|yne)$/.test(derived) || /(^|-)N(,N)?-/.test(alt));
       const fusedSuffix = alt && /(hydroxy|amino|sulfanyl|mercapto)/.test(derived) && /(indole|naphthalene|quinoline|quinoxaline|quinazoline|cinnoline|phthalazine|phenanthrene|acridine|anthracene)$/.test(derived) && /(ol|amine|thiol)$/.test(alt);
       const lostSulfur = alt && graph.atoms.some((a) => a.element === 'S' && idSetForAlt.has(a.id)) && !/sulf|thi|mercapto/.test(derived) && /sulf|thi/.test(alt);
       const sulfurClass = alt && / (di|tri|tetra)?sulf(ide|oxide)$/.test(alt) && /(thio|sulfinyl|sulfanyl)[a-z]*(ane|ene|benzene)$/.test(derived);
       const alcoholParent = alt && /ol$/.test(alt) && /hydroxy/.test(derived) && /(ane|ene)$/.test(derived);
-      const wanted = amineParent || fusedSuffix || lostSulfur || sulfurClass || alcoholParent || /carboxy|cyano|formyl|(?<![a-z])oxo(?![a-z])|acetyl|carbamoyl|carbonyl|sulfo|sulfamoyl|acetoxy|propionyloxy|butyryloxy|valeryloxy|benzoyl/.test(derived) || (alt && /'/.test(alt)) || /^benzylbenzene$/.test(derived) || /^\(.*yl\)(meth|eth|prop)ane$/.test(derived);
+      const wanted = principalCoverage || amineParent || fusedSuffix || lostSulfur || sulfurClass || alcoholParent || /carboxy|cyano|formyl|(?<![a-z])oxo(?![a-z])|acetyl|carbamoyl|carbonyl|sulfo|sulfamoyl|acetoxy|propionyloxy|butyryloxy|valeryloxy|benzoyl/.test(derived) || (alt && /'/.test(alt)) || /^benzylbenzene$/.test(derived) || /^\(.*yl\)(meth|eth|prop)ane$/.test(derived);
       const useAlt = alt && wanted && !/bicyclo|spiro|nitrilo/.test(alt);
       derived = useAlt ? polishAromaticName(alt) : derived;
       if (useAlt) {
@@ -738,7 +742,7 @@ function nameStructureOnce(graph, atomIds) {
   } else if (derived && Object.prototype.hasOwnProperty.call(COMMON_NAMES, derived)) {
     common = COMMON_NAMES[derived];
   }
-  const systematic = primary || derived;
+  const systematic = derived || primary;
   if (!derived) {
     try {
       derived = polishAromaticName(generalName(graph, atomIds, true));
@@ -974,14 +978,22 @@ function nameStructureDetailed(graph, atomIds) {
     const ester = name.match(/^((?:[a-z]+yl )+)(\S+ate)$/);
     return ester ? ester[1] + prefix + ester[2] : prefix + name;
   };
-  const withStereo = (detail, stereoPrefix) => (
-    stereoPrefix
+  const withStereo = (detail, stereoPrefix) => {
+    // Fumaric and maleic acid denote different geometrical isomers. A
+    // connectivity-only match must not invent trans geometry.
+    if (detail.full === 'but-2-enedioic acid') {
+      return Object.assign({}, detail, {
+        full: stereoPrefix + detail.full,
+        common: stereoPrefix === '(E)-' ? 'fumaric acid' : stereoPrefix === '(Z)-' ? 'maleic acid' : null,
+      });
+    }
+    return stereoPrefix
       ? Object.assign({}, detail, {
           full: place(stereoPrefix, detail.full),
           common: detail.common ? place(stereoPrefix, resolveDiastereomerCommonName(detail.common, stereoPrefix)) : detail.common,
         })
-      : detail
-  );
+      : detail;
+  };
 
   const dCount = (atomIds || []).filter((id) => {
     const a = graph.getAtom(id);

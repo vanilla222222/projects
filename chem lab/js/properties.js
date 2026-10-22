@@ -565,6 +565,26 @@ function propSmiles(ctx, options) {
   if (ctx.ids.length === 0) {
     return '';
   }
+  // Traverse each component separately. A single DFS tree omits counterions
+  // and leaves stereocentres in other components without traversal metadata.
+  const remaining = new Set(ctx.ids);
+  const components = [];
+  while (remaining.size) {
+    const stack = [remaining.values().next().value];
+    const ids = [];
+    remaining.delete(stack[0]);
+    while (stack.length) {
+      const id = stack.pop();
+      ids.push(id);
+      ctx.nbrs.get(id).forEach((n) => {
+        if (remaining.delete(n.id)) stack.push(n.id);
+      });
+    }
+    components.push(ids);
+  }
+  if (components.length > 1) {
+    return components.map((ids) => propSmiles(propContext(ctx.graph, ids), options)).sort().join('.');
+  }
   const rank = propCanonicalRank(ctx);
   const order = (a, b) => rank.get(a) - rank.get(b) || a - b;
   const start = ctx.ids.slice().sort((a, b) => {

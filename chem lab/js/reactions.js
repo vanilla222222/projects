@@ -133,6 +133,11 @@ const REACTION_LIMITS = { tempMin: -100, tempMax: 300, maxCompounds: 12, maxAddi
 const REACTION_SCHEME_SETTINGS = { gap: 45, plusGap: 30, arrowLength: 150, emptyWidth: 60 };
 
 const REACTION_NAME_ALIASES = {
+  tcep: 'P(CCC(=O)O)(CCC(=O)O)CCC(=O)O',
+  ethanethiol: 'CCS',
+  methanethiol: 'CS',
+  'sodium ethanethiolate': 'CC[S-].[Na+]',
+  'dimethyl disulfide': 'CSSC',
   bromine: 'BrBr',
   chlorine: 'ClCl',
   iodine: 'II',
@@ -624,7 +629,7 @@ function reactionRouteStep(compounds, conditions, outcome, product, minor, previ
   if (!outcome || !product || !product.smiles) {
     return null;
   }
-  const fragment = product.fragment || smilesToFragment(product.smiles);
+  const fragment = product.fragment || smilesToFragment(product.isomericSmiles || product.smiles);
   const carried = reactionRouteCarried(compounds, previousSmiles, fragment);
   if (!carried) {
     return null;

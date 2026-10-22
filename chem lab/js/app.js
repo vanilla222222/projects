@@ -3639,7 +3639,7 @@
   }
 
   document.addEventListener('keydown', (event) => {
-    if (!ptableOverlay.hidden || document.body.dataset.view === 'reactions') {
+    if (!ptableOverlay.hidden || ['reactions', 'pathfinder'].includes(document.body.dataset.view)) {
       return;
     }
     if (!resonanceOverlay.hidden) {
@@ -3954,7 +3954,9 @@
 
   function setView(view) {
     const reactions = view === 'reactions';
-    document.body.dataset.view = reactions ? 'reactions' : 'editor';
+    const pathfinder = view === 'pathfinder';
+    document.body.dataset.view = reactions ? 'reactions' : pathfinder ? 'pathfinder' : 'editor';
+    document.getElementById('path-view').hidden = !pathfinder;
     reactionView.hidden = !reactions;
     viewTabs.forEach((tab) => {
       const on = tab.dataset.view === document.body.dataset.view;
@@ -3965,6 +3967,8 @@
     storageSet('view', document.body.dataset.view);
     if (reactions) {
       reactionLab.show();
+    } else if (pathfinder) {
+      pathFinder.show();
     } else {
       resizeCanvas();
     }
@@ -4049,6 +4053,7 @@
     },
     openInLab(compounds, conditions) {
       reactionLab.state.compounds = [];
+      reactionLab.state.selected = '';
       reactionLab.state.conditions = normalizeReactionConditions(JSON.parse(JSON.stringify(conditions)));
       compounds.forEach((c) => {
         const added = reactionLab.addSmiles(c.smiles, c.role);
@@ -4060,9 +4065,22 @@
     },
   });
   document.getElementById('retro-button').addEventListener('click', () => openRetro(null));
+  const pathFinder = createPathFinder({
+    thumbnail: structureThumbnail,
+    openInLab(compounds, conditions) {
+      reactionLab.state.compounds = [];
+      reactionLab.state.selected = '';
+      reactionLab.state.conditions = normalizeReactionConditions(JSON.parse(JSON.stringify(conditions)));
+      compounds.forEach((c) => {
+        const added = reactionLab.addSmiles(c.smiles, c.role);
+        if (added && c.label) added.label = c.label;
+      });
+      setView('reactions');
+    },
+  });
   viewTabs.forEach((tab) => tab.addEventListener('click', () => setView(tab.dataset.view)));
-  if (storageGet('view') === 'reactions') {
-    setView('reactions');
+  if (['reactions', 'pathfinder'].includes(storageGet('view'))) {
+    setView(storageGet('view'));
   } else {
     document.body.dataset.view = 'editor';
   }

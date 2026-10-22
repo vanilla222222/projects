@@ -807,6 +807,17 @@ function genEsterWord(ctx, principal) {
   }).join(' ') + ' ';
 }
 
+function genPrincipalCoverage(graph, atomIds, locants) {
+  if (!locants || !locants.size) {
+    return 0;
+  }
+  const ctx = genContext(graph, atomIds);
+  const carbons = atomIds.filter((id) => genEl(ctx, id) === 'C' && !ctx.ringSet.has(id));
+  const rank = genBestRank(ctx, carbons);
+  const path = Array.from(locants).sort((a, b) => a[1] - b[1]).map(([id]) => id);
+  return path.reduce((count, id) => count + genClassifyPrincipal(ctx, id, path).filter((group) => group.rank === rank).length, 0);
+}
+
 function genNameAcyclic(ctx, atomIds) {
   const carbons = atomIds.filter((id) => genEl(ctx, id) === 'C' && !ctx.ringSet.has(id));
   if (carbons.length === 0 || carbons.length > MAX_NAMED_CHAIN * 3) {

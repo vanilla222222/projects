@@ -23,7 +23,12 @@ function rxioFragmentCharge(fragment) {
 }
 
 function rxioSplitSide(text) {
-  const parts = String(text || '').split('.').filter((s) => s.trim());
+  const side = String(text || '').trim();
+  if (!side) return [];
+  const parts = side.split('.');
+  if (parts.some((part) => !part.trim())) {
+    throw new Error('A reaction component is empty (check the dot separators)');
+  }
   const out = [];
   let pending = [];
   let charge = 0;
@@ -80,7 +85,7 @@ function rxioToRxn(compounds, products) {
 }
 
 function rxioParseRxn(text) {
-  const clean = String(text || '').replace(/\r\n?/g, '\n');
+  const clean = String(text || '').replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').trimStart();
   const lines = clean.split('\n');
   if (!/^\$RXN\b/.test(lines[0] || '')) {
     throw new Error('Not an RXN file');
@@ -89,12 +94,20 @@ function rxioParseRxn(text) {
     throw new Error('RXN V3000 files are not supported — save as V2000');
   }
   const counts = lines[4] || '';
-  const reactantCount = parseInt(counts.slice(0, 3), 10) || 0;
-  const productCount = parseInt(counts.slice(3, 6), 10) || 0;
-  const agentCount = parseInt(counts.slice(6, 9), 10) || 0;
+  const readCount = (start, optional) => {
+    const field = counts.slice(start, start + 3).trim();
+    if (optional && !field) return 0;
+    if (!/^\d{1,3}$/.test(field)) throw new Error('Invalid RXN molecule counts line');
+    return Number(field);
+  };
+  const reactantCount = readCount(0, false);
+  const productCount = readCount(3, false);
+  const agentCount = readCount(6, true);
+  const totalCount = reactantCount + productCount + agentCount;
+  if (!totalCount) throw new Error('The RXN file is empty');
   const records = clean.split(/^\$MOL[ \t]*\n/m).slice(1);
-  if (records.length < reactantCount + productCount) {
-    throw new Error('The RXN file lists fewer molecules than its counts line');
+  if (records.length !== totalCount) {
+    throw new Error('The RXN molecule records do not match its counts line (including agents)');
   }
   const toSmiles = (record) => {
     const mol = parseMolRecord(record);
