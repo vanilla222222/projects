@@ -5367,6 +5367,20 @@ const LIBRARY = [
   { name: '17-(acetyloxy)-9-fluoro-11,21-dihydroxy-6-methylpregn-4-ene-3,20-dione', cls: 'Corticosteroid', formula: 'C24H33FO6', smiles: 'CC(=O)OC1(C(=O)CO)CCC2C3CC(C)C4=CC(=O)CCC4(C)C3(F)C(O)CC21C' },
   { name: '17-(acetyloxy)-6-fluoro-11,21-dihydroxypregn-4-ene-3,20-dione', cls: 'Corticosteroid', formula: 'C23H31FO6', smiles: 'CC(=O)OC1(C(=O)CO)CCC2C3CC(F)C4=CC(=O)CCC4(C)C3C(O)CC21C' },
   { name: '17-(acetyloxy)-21-chloro-9-fluoro-11-hydroxypregn-4-ene-3,20-dione', cls: 'Corticosteroid', formula: 'C23H30ClFO5', smiles: 'CC(=O)OC1(C(=O)CCl)CCC2C3CCC4=CC(=O)CCC4(C)C3(F)C(O)CC21C' },
+  { name: 'butan-2-one O-(methylcarbamoyl)oxime', cls: 'Cholinesterase inhibitor', formula: 'C6H12N2O2', smiles: 'CNC(=O)ON=C(C)CC' },
+  { name: 'pentan-2-one O-(methylcarbamoyl)oxime', cls: 'Cholinesterase inhibitor', formula: 'C7H14N2O2', smiles: 'CNC(=O)ON=C(C)CCC' },
+  { name: 'butan-2-one O-(ethylcarbamoyl)oxime', cls: 'Cholinesterase inhibitor', formula: 'C7H14N2O2', smiles: 'CCNC(=O)ON=C(C)CC' },
+  { name: '3-methylbutan-2-one O-(methylcarbamoyl)oxime', cls: 'Cholinesterase inhibitor', formula: 'C7H14N2O2', smiles: 'CNC(=O)ON=C(C)C(C)C' },
+  { name: 'pentan-2-one O-(ethylcarbamoyl)oxime', cls: 'Cholinesterase inhibitor', formula: 'C8H16N2O2', smiles: 'CCNC(=O)ON=C(C)CCC' },
+  { name: 'butan-2-one O-(propylcarbamoyl)oxime', cls: 'Cholinesterase inhibitor', formula: 'C8H16N2O2', smiles: 'CCCNC(=O)ON=C(C)CC' },
+  { name: '3,3-dimethylbutan-2-one O-(methylcarbamoyl)oxime', cls: 'Cholinesterase inhibitor', formula: 'C8H16N2O2', smiles: 'CNC(=O)ON=C(C)C(C)(C)C' },
+  { name: '3-methylbutan-2-one O-(ethylcarbamoyl)oxime', cls: 'Cholinesterase inhibitor', formula: 'C8H16N2O2', smiles: 'CCNC(=O)ON=C(C)C(C)C' },
+  { name: 'pentan-2-one O-(propylcarbamoyl)oxime', cls: 'Cholinesterase inhibitor', formula: 'C9H18N2O2', smiles: 'CCCNC(=O)ON=C(C)CCC' },
+  { name: 'butan-2-one O-(dimethylcarbamoyl)oxime', cls: 'Cholinesterase inhibitor', formula: 'C7H14N2O2', smiles: 'CN(C)C(=O)ON=C(C)CC' },
+  { name: '1-(methylsulfanyl)propan-2-one O-(methylcarbamoyl)oxime', cls: 'Cholinesterase inhibitor', formula: 'C6H12N2O2S', smiles: 'CNC(=O)ON=C(C)CSC' },
+  { name: '2,2-dimethylpentan-3-one O-(methylcarbamoyl)oxime', cls: 'Cholinesterase inhibitor', formula: 'C9H18N2O2', smiles: 'CNC(=O)ON=C(CC)C(C)(C)C' },
+  { name: '3,3-dimethylbutan-2-one O-(ethylcarbamoyl)oxime', cls: 'Cholinesterase inhibitor', formula: 'C9H18N2O2', smiles: 'CCNC(=O)ON=C(C)C(C)(C)C' },
+  { name: '3-methylbutan-2-one O-(propylcarbamoyl)oxime', cls: 'Cholinesterase inhibitor', formula: 'C9H18N2O2', smiles: 'CCCNC(=O)ON=C(C)C(C)C' },
 ];
 
 if (typeof module !== 'undefined' && module.exports) {

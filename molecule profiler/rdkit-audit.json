@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 5349,
+  "entries": 5363,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
