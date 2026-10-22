@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 4622,
+  "entries": 4808,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -14414,6 +14414,521 @@
       "atomIndices": [
         2
       ]
+    },
+    {
+      "index": 4623,
+      "name": "2-Fluoroamphetamine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4624,
+      "name": "3-Fluoroamphetamine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4625,
+      "name": "4-Fluoroamphetamine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4626,
+      "name": "2-Chloroamphetamine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4627,
+      "name": "3-Chloroamphetamine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4628,
+      "name": "4-Chloroamphetamine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4629,
+      "name": "3-Bromoamphetamine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4630,
+      "name": "4-Bromoamphetamine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4631,
+      "name": "4-Iodoamphetamine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4632,
+      "name": "2-Methylamphetamine",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 4633,
+      "name": "3-Methylamphetamine",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 4634,
+      "name": "4-Methylamphetamine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4635,
+      "name": "4-Ethylamphetamine",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 4636,
+      "name": "4-Methylthioamphetamine",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 4637,
+      "name": "2-Methoxyamphetamine",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 4638,
+      "name": "3-Methoxyamphetamine",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 4639,
+      "name": "4-Trifluoromethylamphetamine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4640,
+      "name": "N-Hydroxyamphetamine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4641,
+      "name": "2-Fluoromethamphetamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4642,
+      "name": "3-Fluoromethamphetamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4643,
+      "name": "4-Fluoromethamphetamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4644,
+      "name": "4-Chloromethamphetamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4645,
+      "name": "3-Methylmethamphetamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4646,
+      "name": "4-Methylmethamphetamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4647,
+      "name": "4-Methoxymethamphetamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4648,
+      "name": "Methoxyphenamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4649,
+      "name": "Pholedrine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4650,
+      "name": "3,4-Dimethoxymethamphetamine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4651,
+      "name": "4-Methoxyethylamphetamine",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 4652,
+      "name": "4-Fluoroethylamphetamine",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 4653,
+      "name": "DOF",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4654,
+      "name": "Ethylamphetamine",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 4655,
+      "name": "Dimethylamphetamine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4656,
+      "name": "N-Propylamphetamine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4657,
+      "name": "Mefenorex",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4658,
+      "name": "Fenproporex",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4659,
+      "name": "Clobenzorex",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4660,
+      "name": "Furfenorex",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4661,
+      "name": "Prenylamine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4662,
+      "name": "Fenethylline",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4663,
+      "name": "Iofetamine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4664,
+      "name": "MDEA",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 4665,
+      "name": "MDDM",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4666,
+      "name": "MDPR",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4667,
+      "name": "MDIP",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4668,
+      "name": "MDBU",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 4669,
+      "name": "MDAL",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4670,
+      "name": "MDPL",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4671,
+      "name": "MDCPM",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4672,
+      "name": "BDB",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4673,
+      "name": "MBDB",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4727,
+      "name": "Propylhexedrine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4728,
+      "name": "Cinolazepam",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 4729,
+      "name": "Ethyl loflazepate",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 4739,
+      "name": "Vinylbital",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 4743,
+      "name": "Thialbarbital",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 4744,
+      "name": "Thiobutabarbital",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4763,
+      "name": "Metaclazepam",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 4767,
+      "name": "Ketazolam",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 4768,
+      "name": "Oxazolam",
+      "atomIndices": [
+        1,
+        15
+      ]
+    },
+    {
+      "index": 4769,
+      "name": "Cloxazolam",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 4770,
+      "name": "Haloxazolam",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 4771,
+      "name": "Mexazolam",
+      "atomIndices": [
+        1,
+        15
+      ]
+    },
+    {
+      "index": 4776,
+      "name": "Tofisopam",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4786,
+      "name": "Diproqualone",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 4790,
+      "name": "Mebutamate",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4791,
+      "name": "Tybamate",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 4796,
+      "name": "Methylpentynol",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4798,
+      "name": "Bromisoval",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 4800,
+      "name": "Apronal",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 4805,
+      "name": "Desmethylzopiclone",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 4807,
+      "name": "Tasimelteon",
+      "atomIndices": [
+        6,
+        8
+      ]
+    },
+    {
+      "index": 4808,
+      "name": "Lemborexant",
+      "atomIndices": [
+        7,
+        16
+      ]
     }
   ],
   "chargedEntries": [
@@ -14663,7 +15178,7 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 9,
-    "unspecifiedStereocenters": 1648,
+    "unspecifiedStereocenters": 1721,
     "chargedEntries": 46,
     "fragmentedEntries": 0,
     "radicalEntries": 0,
