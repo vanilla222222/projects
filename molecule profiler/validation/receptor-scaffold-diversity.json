@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "rdkitVersion": "2026.09.1",
   "sourceSha256": {
-    "data/library.js": "d9ac8617e00e54e4ae1489ab8e70ff1aec3191081f726c02021e5b3b48869be2",
+    "data/library.js": "010b6933c48aa5dcc59f4740d685a7d57a31fd11e9315c0b09168bf1f19fd75f",
     "data/targets.js": "facc465ef72687224df3577fbf7a600102e7c3b07cc033a4de21ba76191192fa",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
     "data/receptor-ligand-annotations.js": "28bcfc10324b17fc8a30d2e4b3cf3c589e55fe9af76cd61dfb8986d9a3b30d01",
