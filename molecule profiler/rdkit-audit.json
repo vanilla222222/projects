@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 5145,
+  "entries": 5302,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -15525,6 +15525,365 @@
       "atomIndices": [
         7
       ]
+    },
+    {
+      "index": 5206,
+      "name": "2-(phenyl)-2-(4-fluorophenyl)-2-[2-(dimethylamino)propyl]propan-1-one",
+      "atomIndices": [
+        4,
+        6
+      ]
+    },
+    {
+      "index": 5207,
+      "name": "2,2-bis(phenyl)-2-[2-(dimethylamino)propyl]ethanone",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5208,
+      "name": "2-(phenyl)-2-(4-fluorophenyl)-2-[2-(dimethylamino)ethyl]propan-1-one",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 5209,
+      "name": "2,2-bis(4-fluorophenyl)-2-[2-(dimethylamino)propyl]propan-1-one",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5210,
+      "name": "2-(4-methylphenyl)-2-(phenyl)-2-[2-(dimethylamino)propyl]propan-1-one",
+      "atomIndices": [
+        4,
+        6
+      ]
+    },
+    {
+      "index": 5212,
+      "name": "2-(phenyl)-2-(4-fluorophenyl)-2-[2-(dimethylamino)propyl]ethanone",
+      "atomIndices": [
+        3,
+        5
+      ]
+    },
+    {
+      "index": 5213,
+      "name": "2,2-bis(phenyl)-2-[2-(dimethylamino)propyl]butan-1-one",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5214,
+      "name": "2-(phenyl)-2-(4-fluorophenyl)-2-[2-(piperidin-1-yl)propyl]propan-1-one",
+      "atomIndices": [
+        4,
+        6
+      ]
+    },
+    {
+      "index": 5216,
+      "name": "2-(4-methylphenyl)-2-(phenyl)-2-[2-(dimethylamino)ethyl]propan-1-one",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 5217,
+      "name": "2-(4-methylphenyl)-2-(4-fluorophenyl)-2-[2-(dimethylamino)propyl]propan-1-one",
+      "atomIndices": [
+        4,
+        6
+      ]
+    },
+    {
+      "index": 5218,
+      "name": "2-(4-methoxyphenyl)-2-(phenyl)-2-[2-(dimethylamino)propyl]propan-1-one",
+      "atomIndices": [
+        4,
+        6
+      ]
+    },
+    {
+      "index": 5219,
+      "name": "2,2-bis(phenyl)-2-[2-(piperidin-1-yl)propyl]ethanone",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5220,
+      "name": "2-(phenyl)-2-(4-fluorophenyl)-2-[2-(dimethylamino)ethyl]ethanone",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5221,
+      "name": "2,2-bis(4-fluorophenyl)-2-[2-(dimethylamino)propyl]ethanone",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5222,
+      "name": "2-(4-methylphenyl)-2-(phenyl)-2-[2-(dimethylamino)propyl]ethanone",
+      "atomIndices": [
+        3,
+        5
+      ]
+    },
+    {
+      "index": 5224,
+      "name": "2-(phenyl)-2-(4-fluorophenyl)-2-[2-(dimethylamino)propyl]butan-1-one",
+      "atomIndices": [
+        5,
+        7
+      ]
+    },
+    {
+      "index": 5225,
+      "name": "2,2-bis(phenyl)-2-[2-(dimethylamino)propyl]-2-methylpropan-1-one",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5226,
+      "name": "2,2-bis(phenyl)-2-[2-(pyrrolidin-1-yl)propyl]propan-1-one",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5227,
+      "name": "2-(phenyl)-2-(4-fluorophenyl)-2-[2-(morpholin-4-yl)propyl]propan-1-one",
+      "atomIndices": [
+        4,
+        6
+      ]
+    },
+    {
+      "index": 5228,
+      "name": "2,2-bis(4-fluorophenyl)-2-[2-(piperidin-1-yl)propyl]propan-1-one",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5229,
+      "name": "2-(4-methylphenyl)-2-(phenyl)-2-[2-(piperidin-1-yl)propyl]propan-1-one",
+      "atomIndices": [
+        4,
+        6
+      ]
+    },
+    {
+      "index": 5230,
+      "name": "2-(4-methylphenyl)-2-(4-fluorophenyl)-2-[2-(dimethylamino)ethyl]propan-1-one",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 5231,
+      "name": "2-(4-methoxyphenyl)-2-(phenyl)-2-[2-(dimethylamino)ethyl]propan-1-one",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 5232,
+      "name": "2-(4-methoxyphenyl)-2-(4-fluorophenyl)-2-[2-(dimethylamino)propyl]propan-1-one",
+      "atomIndices": [
+        4,
+        6
+      ]
+    },
+    {
+      "index": 5233,
+      "name": "2,2-bis(phenyl)-2-[2-(morpholin-4-yl)propyl]ethanone",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5234,
+      "name": "2-(phenyl)-2-(4-fluorophenyl)-2-[2-(piperidin-1-yl)propyl]ethanone",
+      "atomIndices": [
+        3,
+        5
+      ]
+    },
+    {
+      "index": 5236,
+      "name": "2-(4-methylphenyl)-2-(phenyl)-2-[2-(dimethylamino)ethyl]ethanone",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5237,
+      "name": "2-(4-methylphenyl)-2-(4-fluorophenyl)-2-[2-(dimethylamino)propyl]ethanone",
+      "atomIndices": [
+        3,
+        5
+      ]
+    },
+    {
+      "index": 5238,
+      "name": "2-(4-methoxyphenyl)-2-(phenyl)-2-[2-(dimethylamino)propyl]ethanone",
+      "atomIndices": [
+        3,
+        5
+      ]
+    },
+    {
+      "index": 5239,
+      "name": "2,2-bis(phenyl)-2-[2-(piperidin-1-yl)propyl]butan-1-one",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5240,
+      "name": "2-(phenyl)-2-(4-fluorophenyl)-2-[2-(dimethylamino)ethyl]butan-1-one",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5241,
+      "name": "2,2-bis(4-fluorophenyl)-2-[2-(dimethylamino)propyl]butan-1-one",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5242,
+      "name": "2-(4-methylphenyl)-2-(phenyl)-2-[2-(dimethylamino)propyl]butan-1-one",
+      "atomIndices": [
+        5,
+        7
+      ]
+    },
+    {
+      "index": 5244,
+      "name": "2-(phenyl)-2-(4-fluorophenyl)-2-[2-(dimethylamino)propyl]-2-methylpropan-1-one",
+      "atomIndices": [
+        5,
+        7
+      ]
+    },
+    {
+      "index": 5246,
+      "name": "2-(phenyl)-2-(4-fluorophenyl)-2-[2-(pyrrolidin-1-yl)propyl]propan-1-one",
+      "atomIndices": [
+        4,
+        6
+      ]
+    },
+    {
+      "index": 5247,
+      "name": "2,2-bis(4-fluorophenyl)-2-[2-(morpholin-4-yl)propyl]propan-1-one",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5293,
+      "name": "3-hydroxy-17-ethylmorphinan",
+      "atomIndices": [
+        5,
+        10,
+        11
+      ]
+    },
+    {
+      "index": 5294,
+      "name": "3-methoxy-17-ethylmorphinan",
+      "atomIndices": [
+        5,
+        10,
+        11
+      ]
+    },
+    {
+      "index": 5295,
+      "name": "3-ethoxy-17-methylmorphinan",
+      "atomIndices": [
+        4,
+        9,
+        10
+      ]
+    },
+    {
+      "index": 5296,
+      "name": "17-ethylmorphinan",
+      "atomIndices": [
+        5,
+        10,
+        11
+      ]
+    },
+    {
+      "index": 5297,
+      "name": "3-methoxy-17-allylmorphinan",
+      "atomIndices": [
+        6,
+        11,
+        12
+      ]
+    },
+    {
+      "index": 5298,
+      "name": "3-hydroxy-17-cyclopropylmethylmorphinan",
+      "atomIndices": [
+        7,
+        12,
+        13
+      ]
+    },
+    {
+      "index": 5299,
+      "name": "3-fluoro-17-methylmorphinan",
+      "atomIndices": [
+        4,
+        9,
+        10
+      ]
+    },
+    {
+      "index": 5300,
+      "name": "3-ethoxy-17-ethylmorphinan",
+      "atomIndices": [
+        5,
+        10,
+        11
+      ]
+    },
+    {
+      "index": 5301,
+      "name": "17-allylmorphinan",
+      "atomIndices": [
+        6,
+        11,
+        12
+      ]
+    },
+    {
+      "index": 5302,
+      "name": "3-methoxy-17-cyclopropylmethylmorphinan",
+      "atomIndices": [
+        7,
+        12,
+        13
+      ]
     }
   ],
   "chargedEntries": [
@@ -15774,7 +16133,7 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 9,
-    "unspecifiedStereocenters": 1806,
+    "unspecifiedStereocenters": 1852,
     "chargedEntries": 46,
     "fragmentedEntries": 0,
     "radicalEntries": 0,
