@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
  "rdkitVersion": "2026.09.1",
- "librarySha256": "16682cff43d841a8d9a03d2fdbe65ef352c0048dbc185fcbe82ddcbe0b0be6f5",
+ "librarySha256": "51e9d6ddcefc8bed559cb68383587a97f5b496252020709813b28c12adced18f",
  "toolSha256": "5474a832b1cd427e4246f1c4b12ec2c47a2b3a12586201f388f5cf52f1bfcd16",
  "dataSha256": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
  "protocol": "Prefer exact isomeric graph matches to PubChem titles/IUPAC names or ChEMBL preferred names. Otherwise require the full InChIKey plus completed RDKit tautomer-family agreement, no neutralization and tetrahedral stereo retained; explicitly label these as PubChem standardized-form names, not exact stored-graph names. Never change reference keys or graphs.",
@@ -13626,8 +13626,8 @@
   }
  ],
  "libraryRepin": {
-  "previousLibrarySha256": "2e337e91f6a10dd54e6327d47d66dc43d4ce4d8931095e0563a8d0df01837e28",
-  "reason": "Library grew from 4622 to 4808 entries by 186 appended structures: 105 substituted amphetamine, 2,5-dimethoxyphenethylamine and N-benzyl phenethylamine references derived by tools/derive-amphetamine-references.py, and 81 benzodiazepine, barbiturate, quinazolinone and other sedative-hypnotic references derived by tools/derive-sedative-references.py. Each tool's scaffold templates are validated by regenerating structures already stored in the library and requiring a canonical-SMILES match; they reproduce 97 and 35 stored entries respectively. Every emitted compound states its molecular formula independently of its structure and the run aborts if RDKit computes a different formula from the constructed graph. No stored structure was changed and no entry was reclassified in this change, so the name request set is unchanged and no name response is affected.",
-  "verified": "Every one of the 1128 distinct InChIKey skeletons in the 1196 source responses recorded here still matches at least one library entry, by RDKit InChIKey computed from the stored SMILES of all 4808 entries (4687 distinct skeletons); none went missing. The CHEMBL-keyed request set is unchanged at 1225 records with 1196 resolved, and no source response was re-fetched."
+  "previousLibrarySha256": "16682cff43d841a8d9a03d2fdbe65ef352c0048dbc185fcbe82ddcbe0b0be6f5",
+  "reason": "Appended 97 template-derived psychotropic reference structures (phenothiazines, thioxanthenes, tricyclic antidepressants, butyrophenones, diphenylbutylpiperidines, dibenzazepine antipsychotics, substituted benzamide antipsychotics) and reclassified 30 stored entries onto structural class names.",
+  "verified": "Every one of the 1128 distinct InChIKey skeletons recorded in this file is still present in the re-pinned data/library.js, which now holds 4905 entries (4784 distinct skeletons); none went missing. The appended rows are new structures, not replacements, and carry no provenance records of their own."
  }
 }

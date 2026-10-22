@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 4808,
+  "entries": 4905,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -14929,6 +14929,161 @@
         7,
         16
       ]
+    },
+    {
+      "index": 4811,
+      "name": "Levomepromazine",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 4812,
+      "name": "Alimemazine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4813,
+      "name": "Cyamemazine",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4814,
+      "name": "Propiomazine",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 4815,
+      "name": "Aceprometazine",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 4818,
+      "name": "Etymemazine",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 4819,
+      "name": "Pecazine",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 4828,
+      "name": "Mesoridazine",
+      "atomIndices": [
+        6,
+        21
+      ]
+    },
+    {
+      "index": 4829,
+      "name": "Sulforidazine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4830,
+      "name": "Northioridazine",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 4835,
+      "name": "Norlevomepromazine",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 4836,
+      "name": "Norpromethazine",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4850,
+      "name": "10-(1-Methylpiperidin-2-ylethyl)phenothiazine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4851,
+      "name": "10-(1-Methylpiperidin-2-ylethyl)-2-chlorophenothiazine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4852,
+      "name": "2-Trifluoromethyl-10-(1-methylpiperidin-2-ylethyl)phenothiazine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4861,
+      "name": "Nortrimipramine",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 4870,
+      "name": "Butriptyline",
+      "atomIndices": [
+        1
+      ]
+    },
+    {
+      "index": 4901,
+      "name": "Desethylsulpiride",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 4902,
+      "name": "Sulpiride methylsulfonyl analogue",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4903,
+      "name": "Aminosulpiride",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4904,
+      "name": "Chlorosulpiride analogue",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4905,
+      "name": "Dimethoxy benzamide antipsychotic",
+      "atomIndices": [
+        6
+      ]
     }
   ],
   "chargedEntries": [
@@ -15178,7 +15333,7 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 9,
-    "unspecifiedStereocenters": 1721,
+    "unspecifiedStereocenters": 1743,
     "chargedEntries": 46,
     "fragmentedEntries": 0,
     "radicalEntries": 0,
