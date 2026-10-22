@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "sourceSha256": {
-    "data/library.js": "7badd4bf49712f316d052608504074711f6ea2f47283b0596c1b31667880d3ae",
-    "data/targets.js": "3cfceec74b4186d5b1c4e78cb4adc22ea3bc30312cdaddacb724e9eb382de551",
+    "data/library.js": "46ae2412c2b079676a7cfeabc5f4e34af67a248422557f60c5b8c7ff91c94ecf",
+    "data/targets.js": "6735dd56650196e94a0dcf20b8e4bb0bf6e1d34cc5068e66d1a7f6b2daf755fc",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
     "data/receptor-ligand-annotations.js": "28bcfc10324b17fc8a30d2e4b3cf3c589e55fe9af76cd61dfb8986d9a3b30d01",
     "js/receptor-catalog.js": "c89696b0ea6e22873929f2e3c777774b13579c917a541cf7820de253e19305e1",
     "tools/build-library-tags.py": "b1b9d2eb9960ab6803f2c9e43936d4317688bc067a00d30b27d9cf1c1ee08f6e"
   },
-  "dataSha256": "e161acb0781880e16397d065b7941118087d2dd768d49cf6f2c80714f8c4ebf6",
+  "dataSha256": "f95b73e5ec4d7344ddb594ef050fdc166ce648c4e70af8073567a234607f2d18",
   "interpretation": "Overlapping structural motifs in stored graphs; not evidence of pharmacological function, exhaustive family membership or independently verified molecular identities.",
   "families": [
     {
@@ -690,9 +690,11 @@
         "Lisdexamfetamine",
         "Phentermine",
         "Benzphetamine",
-        "Levomethamphetamine"
+        "Levomethamphetamine",
+        "Phenserine",
+        "Darifenacin"
       ],
-      "count": 677
+      "count": 679
     },
     {
       "tag": "Family motif: Amphetamines (alpha-methylphenethylamines)",
