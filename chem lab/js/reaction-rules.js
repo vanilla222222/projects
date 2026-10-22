@@ -3145,6 +3145,7 @@ function predictReaction(compounds, conditions) {
   }
   const outcomes = [];
   const hints = [];
+  const protectionAssessment = typeof reactionProtectionAssessment === 'function' ? reactionProtectionAssessment(ctx) : null;
   RX_RULES.forEach((rule) => {
     let results = [];
     try {
@@ -3159,6 +3160,7 @@ function predictReaction(compounds, conditions) {
         }
       } else if (r.products.length) {
         r.rule = rule.id;
+        if (protectionAssessment) r.protectionAssessment = protectionAssessment;
         r.evidence = typeof reactionOutcomeEvidence === 'function' ? reactionOutcomeEvidence(r, rule) : {
           id: rule.id, outcomeId: r.id, name: rule.name, evidenceLevel: 'Rule-based prediction', experimentalValidation: false,
           scope: 'Only the substrate patterns encoded by this local rule.', references: [],

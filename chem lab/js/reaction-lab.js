@@ -761,6 +761,9 @@ function createReactionLab(host) {
       predictionBox.appendChild(element('div', 'rx-byproducts', 'Also formed: ' + outcome.byproducts.join(', ')));
     }
     predictionBox.appendChild(element('p', 'rx-reason', outcome.reason));
+    if (outcome.protectionAssessment && typeof protectionAssessmentElement === 'function') {
+      predictionBox.appendChild(protectionAssessmentElement(outcome.protectionAssessment));
+    }
     if (outcome.evidence && typeof reactionEvidenceElement === 'function') {
       predictionBox.appendChild(reactionEvidenceElement(outcome.evidence));
     }
@@ -1076,6 +1079,7 @@ function createReactionLab(host) {
     render();
   }
   createRuleExplorer();
+  if (typeof protectionGuideElement === 'function' && typeof protectionCatalog === 'function') root.appendChild(protectionGuideElement());
 
   scaleInput.addEventListener('input', () => {
     const value = Number(scaleInput.value);

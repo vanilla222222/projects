@@ -99,6 +99,10 @@ try {
       RX_RULES.length >= 122 && ['anhydride-hydrolysis', 'amine-n-oxidation', 'thiol-ene', 'intramolecular-williamson'].every(id =>
         reactionRuleDescriptor(id).references.length > 0) && REACTION_ADDITIVES.some(a => a.id === 'rosenmund') &&
       RETRO_TRANSFORMS.some(t => t.id === 'intramolecular-williamson')));
+    await page.locator('#rx-protection-guide > summary').click();
+    await page.getByLabel('Search protecting groups', { exact: true }).fill('fmoc');
+    await page.locator('#rx-protection-guide .rx-evidence > summary').click();
+    checked(profile.name + ': protecting-group guide and source', (await page.locator('#rx-protection-guide').innerText()).includes('Piperidine') && await page.locator('#rx-protection-guide a[href="https://doi.org/10.1021/jo00795a005"]').count() === 1);
     await page.getByRole('tab', { name: 'Editor', exact: true }).click();
     checked(profile.name + ': return to editor', await page.locator('body').getAttribute('data-view') === 'editor');
     await page.getByRole('tab', { name: 'Path Finder', exact: true }).click();
@@ -121,10 +125,22 @@ try {
     checked(profile.name + ': protection rationale present', planText.includes('Protection plan: protect') && planText.includes('Protection plan: deprotect'));
     await page.getByRole('button', { name: /^Save route 1 to workspace$/ }).click();
     checked(profile.name + ': saved protection route verified', (await page.locator('#route-workspace').innerText()).includes('Route status: verified'));
+    checked(profile.name + ': preservation checks rendered in workspace', await page.locator('#route-workspace .protection-assessment').count() >= 2);
     const [planDownload] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Export JSON', exact: true }).click()]);
     const planFile = path.join(output, profile.name + '-protected-route.json'); await planDownload.saveAs(planFile);
     const plan = JSON.parse(fs.readFileSync(planFile, 'utf8'));
     checked(profile.name + ': protection survives JSON export', plan.steps.length === 3 && plan.steps[0].planning.kind === 'protect' && plan.steps[2].planning.kind === 'deprotect');
+    await page.getByRole('tab', { name: 'Path Finder', exact: true }).click();
+    await page.locator('#path-allowed-protecting-groups').fill('cbz');
+    await page.locator('#path-run').click();
+    await page.waitForFunction(() => !document.getElementById('path-run').disabled, null, { timeout: 30000 });
+    const cbzPlan = await page.locator('.route-comparison').textContent();
+    checked(profile.name + ': Cbz-only protection route', /routes? found/.test(await page.locator('#path-status').innerText()) && await page.locator('.route-comparison-step').count() === 3 && cbzPlan.includes('Protection plan: protect · Cbz') && !cbzPlan.includes('Protection plan: protect · Boc'));
+    await page.locator('#path-protection-policy').selectOption('off');
+    checked(profile.name + ': disable-new-protection control', await page.locator('#path-protection-policy').inputValue() === 'off');
+    checked(profile.name + ': protection controls fit viewport', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+    const protectionScreenshot = path.join(output, profile.name + '-protection.png');
+    await page.screenshot({ path: protectionScreenshot, fullPage: true }); screenshots.push(protectionScreenshot);
     checked(profile.name + ': no runtime errors', errors.length === 0);
     await context.close();
     await browser.close();

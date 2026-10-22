@@ -45,7 +45,8 @@ The test starts a loopback HTTP server and runs the complete application in
 Chromium at desktop and mobile/touch viewport sizes. It checks navigation,
 alternative-route comparison, responsive layout, save/reload, reorder validation,
 JSON/CSV export and JSON reimport, reaction handoff, evidence search, ten-step
-settings and an explicit amine-protection route. This is viewport/touch emulation,
+settings, explicit protection routes, group allowlists and the protecting-group
+reference/preservation panels. This is viewport/touch emulation,
 not a physical Android or iOS test.
 
 Reports and screenshots are written to `/tmp/chem-lab-browser-qa`, or

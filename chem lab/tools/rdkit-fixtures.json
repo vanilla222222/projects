@@ -23,7 +23,13 @@
     "sulfonylhydro": "https://doi.org/10.1007/PL00021981",
     "peroxideamide": "https://doi.org/10.1055/s-1989-27441",
     "thiolene": "https://doi.org/10.1002/adsc.202300990",
-    "cyclicether": "https://bpb-us-e2.wpmucdn.com/about.illinoisstate.edu/dist/3/399/files/2023/04/230_C9_Rev.pdf"
+    "cyclicether": "https://bpb-us-e2.wpmucdn.com/about.illinoisstate.edu/dist/3/399/files/2023/04/230_C9_Rev.pdf",
+    "pyridineOx": "https://doi.org/10.15227/orgsyn.033.0079",
+    "pyridineRed": "https://doi.org/10.1248/yakushi1947.75.2_121",
+    "cope": "https://www.chem.ucla.edu/~harding/IGOC/C/cope_elimination.html",
+    "gabriel": "https://openstax.org/books/organic-chemistry/pages/24-6-synthesis-of-amines",
+    "gabrielHydrazine": "https://doi.org/10.1002/anie.196809191",
+    "imineHydrolysis": "https://openstax.org/books/organic-chemistry/pages/19-8-nucleophilic-addition-of-amines-imine-and-enamine-formation"
   },
   "tolerances": {
     "exactMassDa": 2e-05
@@ -316,6 +322,98 @@
         "CC(C)(C)OC(=O)NCCO",
         "CC(C)(C)OC(=O)NCCOC(C)=O",
         "NCCOC(C)=O"
+      ]
+    },
+    {
+      "id": "amine-cbz-protect-O-acetylate-deprotect",
+      "scope": "Encoded structural planning fixture; no experimental viability, chemoselectivity, isolation, yield or stability claim.",
+      "start": "NCCO",
+      "target": "NCCOC(C)=O",
+      "options": {
+        "maxDepth": 3,
+        "maxRoutes": 1,
+        "stockPolicy": "custom",
+        "availableMaterials": [
+          "CC(=O)Cl"
+        ],
+        "forbiddenRules": [
+          "fischer"
+        ],
+        "allowedProtectingGroups": [
+          "cbz"
+        ]
+      },
+      "expectedKinds": [
+        "protect",
+        "reaction",
+        "deprotect"
+      ],
+      "expectedProducts": [
+        "O=C(NCCO)OCc1ccccc1",
+        "CC(=O)OCCNC(=O)OCc1ccccc1",
+        "NCCOC(C)=O"
+      ]
+    },
+    {
+      "id": "amine-fmoc-protect-O-acetylate-deprotect",
+      "scope": "Encoded structural planning fixture; no experimental viability, chemoselectivity, isolation, yield or stability claim.",
+      "start": "NCCO",
+      "target": "NCCOC(C)=O",
+      "options": {
+        "maxDepth": 3,
+        "maxRoutes": 1,
+        "stockPolicy": "custom",
+        "availableMaterials": [
+          "CC(=O)Cl"
+        ],
+        "forbiddenRules": [
+          "fischer"
+        ],
+        "allowedProtectingGroups": [
+          "fmoc"
+        ]
+      },
+      "expectedKinds": [
+        "protect",
+        "reaction",
+        "deprotect"
+      ],
+      "expectedProducts": [
+        "O=C(NCCO)OCC1c2ccccc2-c2ccccc21",
+        "CC(=O)OCCNC(=O)OCC1c2ccccc2-c2ccccc21",
+        "NCCOC(C)=O"
+      ]
+    },
+    {
+      "id": "TBS-protect-OH-Grignard-deprotect",
+      "scope": "Encoded structural planning fixture; no experimental compatibility or yield claim.",
+      "start": "OCCC=O",
+      "target": "OCCC(O)C",
+      "options": {
+        "maxDepth": 3,
+        "maxRoutes": 1,
+        "stockPolicy": "custom",
+        "availableMaterials": [
+          "C[Mg]Br"
+        ],
+        "allowedProtectingGroups": [
+          "tbs"
+        ],
+        "forbiddenRules": [
+          "dehydration",
+          "hydration",
+          "hydroboration"
+        ]
+      },
+      "expectedKinds": [
+        "protect",
+        "reaction",
+        "deprotect"
+      ],
+      "expectedProducts": [
+        "CC(C)(C)[Si](C)(C)OCCC=O",
+        "CC(CCO[Si](C)(C)C(C)(C)C)O",
+        "OCCC(O)C"
       ]
     }
   ],
@@ -925,6 +1023,254 @@
         "C[C@H]1CCCO1"
       ],
       "source": "cyclicether"
+    },
+    {
+      "label": "pyridine-n-oxidation",
+      "compounds": [
+        {
+          "smiles": "c1ccncc1",
+          "role": "reactant"
+        },
+        {
+          "smiles": "CC(=O)OO",
+          "role": "reagent"
+        }
+      ],
+      "conditions": {
+        "solvents": [
+          "acoh"
+        ],
+        "temperature": 80
+      },
+      "rule": "pyridine-n-oxidation",
+      "products": [
+        "[O-][n+]1ccccc1"
+      ],
+      "source": "pyridineOx"
+    },
+    {
+      "label": "pyridine-oxide-deoxygenation",
+      "compounds": [
+        {
+          "smiles": "[O-][n+]1ccccc1",
+          "role": "reactant"
+        },
+        {
+          "smiles": "ClP(Cl)Cl",
+          "role": "reagent"
+        }
+      ],
+      "conditions": {
+        "solvents": [
+          "chloroform"
+        ],
+        "temperature": 20
+      },
+      "rule": "pyridine-oxide-deoxygenation",
+      "products": [
+        "c1ccncc1"
+      ],
+      "source": "pyridineRed"
+    },
+    {
+      "label": "cope-elimination",
+      "compounds": [
+        {
+          "smiles": "CCC[N+](C)(C)[O-]",
+          "role": "reactant"
+        }
+      ],
+      "conditions": {
+        "temperature": 140,
+        "solvents": [
+          "none"
+        ]
+      },
+      "rule": "cope-elimination",
+      "products": [
+        "C=CC",
+        "CN(C)O"
+      ],
+      "source": "cope"
+    },
+    {
+      "label": "gabriel-alkylation",
+      "compounds": [
+        {
+          "smiles": "O=C1NC(=O)c2ccccc21",
+          "role": "reactant"
+        },
+        {
+          "smiles": "CCBr",
+          "role": "reagent"
+        }
+      ],
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ],
+        "additives": [
+          "koh"
+        ]
+      },
+      "rule": "gabriel-alkylation",
+      "products": [
+        "CCN1C(=O)c2ccccc2C1=O"
+      ],
+      "source": "gabriel"
+    },
+    {
+      "label": "gabriel-hydrazinolysis",
+      "compounds": [
+        {
+          "smiles": "CCN1C(=O)c2ccccc2C1=O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "NN",
+          "role": "reagent"
+        }
+      ],
+      "conditions": {
+        "solvents": [
+          "ethanol"
+        ],
+        "temperature": 70
+      },
+      "rule": "gabriel-hydrazinolysis",
+      "products": [
+        "CCN",
+        "O=C1NNC(=O)c2ccccc21"
+      ],
+      "source": "gabrielHydrazine"
+    },
+    {
+      "label": "imine-hydrolysis",
+      "compounds": [
+        {
+          "smiles": "CC(=NC)C",
+          "role": "reactant"
+        }
+      ],
+      "conditions": {
+        "solvents": [
+          "water"
+        ],
+        "additives": [
+          "hcl"
+        ],
+        "temperature": 25
+      },
+      "rule": "imine-hydrolysis",
+      "products": [
+        "CC(C)=O",
+        "CN"
+      ],
+      "source": "imineHydrolysis"
+    },
+    {
+      "label": "enamine-hydrolysis",
+      "compounds": [
+        {
+          "smiles": "C=C(N(C)C)C",
+          "role": "reactant"
+        }
+      ],
+      "conditions": {
+        "solvents": [
+          "water"
+        ],
+        "additives": [
+          "hcl"
+        ],
+        "temperature": 25
+      },
+      "rule": "enamine-hydrolysis",
+      "products": [
+        "CC(C)=O",
+        "CNC"
+      ],
+      "source": "imineHydrolysis"
+    },
+    {
+      "label": "curtius-hydrolysis",
+      "compounds": [
+        {
+          "smiles": "CCC(=O)N=[N+]=[N-]",
+          "role": "reactant"
+        }
+      ],
+      "conditions": {
+        "solvents": [
+          "water"
+        ],
+        "temperature": 80
+      },
+      "rule": "curtius-hydrolysis",
+      "products": [
+        "CCN"
+      ],
+      "source": "gabriel"
+    },
+    {
+      "label": "Curtius migrating stereocentre retention",
+      "compounds": [
+        {
+          "smiles": "C[C@H](F)C(=O)N=[N+]=[N-]",
+          "role": "reactant"
+        }
+      ],
+      "conditions": {
+        "solvents": [
+          "water"
+        ],
+        "temperature": 80
+      },
+      "rule": "curtius-hydrolysis",
+      "products": [
+        "C[C@H](F)N"
+      ],
+      "source": "gabriel"
+    },
+    {
+      "label": "Cbz removal also hydrogenates alkene",
+      "compounds": [
+        {
+          "smiles": "C=CCNC(=O)OCc1ccccc1",
+          "role": "reactant"
+        }
+      ],
+      "conditions": {
+        "atmosphere": "h2",
+        "additives": [
+          "pdc"
+        ]
+      },
+      "rule": "hydrogenolysis",
+      "products": [
+        "CCCN"
+      ],
+      "source": "gabriel"
+    },
+    {
+      "label": "Cbz removal also reduces nitro",
+      "compounds": [
+        {
+          "smiles": "O=[N+]([O-])c1ccc(NC(=O)OCc2ccccc2)cc1",
+          "role": "reactant"
+        }
+      ],
+      "conditions": {
+        "atmosphere": "h2",
+        "additives": [
+          "pdc"
+        ]
+      },
+      "rule": "hydrogenolysis",
+      "products": [
+        "Nc1ccc(N)cc1"
+      ],
+      "source": "gabriel"
     }
   ]
 }

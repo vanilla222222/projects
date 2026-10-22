@@ -352,6 +352,8 @@
     <div class="path-controls"><label for="path-route-count">Alternative routes</label><select id="path-route-count"><option value="1">1</option><option value="3" selected>Up to 3</option><option value="5">Up to 5</option></select><label for="path-stock-policy">Available building blocks</label><select id="path-stock-policy"><option value="builtin" selected>Local stock + my list</option><option value="custom">Only my list + starting material</option></select></div>
     <details class="path-options"><summary>Inventory and reaction filters</summary>
       <div class="path-inputs"><label>My available building blocks<textarea id="path-inventory" rows="4" placeholder="One name or SMILES per line, e.g. methanol"></textarea></label><label>Forbidden reagents or solvents<textarea id="path-forbidden-reagents" rows="4" placeholder="One name, SMILES or label per line, e.g. PCC"></textarea></label><label>Forbidden reaction IDs or names<textarea id="path-forbidden-rules" rows="4" placeholder="One ID or name fragment per line, e.g. oxidation"></textarea></label></div>
+      <div class="path-controls"><label for="path-protection-policy">Protection planning</label><select id="path-protection-policy"><option value="auto">Allow verified protection sequences</option><option value="off">No new protection steps</option></select><label for="path-allowed-protecting-groups">Allowed protecting groups</label><input id="path-allowed-protecting-groups" type="text" placeholder="All supported; or boc, cbz, fmoc, tbs, acetal, tbu-ester" autocomplete="off" spellcheck="false"></div>
+      <p>Protection choices apply to new planned sequences. Every installation, main reaction and removal must pass the encoded forward checks and compatibility assessment. Unknown compatibility does not qualify as a verified protection plan.</p>
       <p>The starting material is always available. Inventory restricts additional building blocks; reagents and solvents remain allowed unless excluded above. Local stock includes built-in and user stock entries in tiers 1–2. Filters match structures when names resolve, plus case-insensitive label text.</p>
     </details>
     <p class="path-caveat">Candidate routes use textbook reaction rules, not experimental validation. Additional building blocks follow your inventory policy; reagents may also be required. <span id="path-search-limits">Search is limited to 60 structures and 12 seconds.</span> Protection and deprotection count as separate steps. It does not search the literature or establish feasibility, selectivity, yield or safety.</p>
@@ -812,7 +814,10 @@
 <script src="js/reaction-rules-extra6.js"></script>
 <script src="js/reaction-rules-extra7.js"></script>
 <script src="js/reaction-rules-extra8.js"></script>
+<script src="js/reaction-rules-extra9.js"></script>
 <script src="js/reaction-catalog.js"></script>
+<script src="js/protection-compatibility.js"></script>
+<script src="js/protection-view.js"></script>
 <script src="js/reaction-evidence-core.js"></script>
 <script src="js/reaction-evidence-named.js"></script>
 <script src="js/retro-stock.js"></script>
@@ -820,6 +825,7 @@
 <script src="js/retro-families-extra.js"></script>
 <script src="js/retro-families-extra2.js"></script>
 <script src="js/retro-families-extra3.js"></script>
+<script src="js/retro-families-extra4.js"></script>
 <script src="js/retro-search.js"></script>
 <script src="js/reaction-lab.js"></script>
 <script src="js/spectra-view.js"></script>
