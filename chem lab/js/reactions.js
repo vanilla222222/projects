@@ -133,6 +133,11 @@ const REACTION_LIMITS = { tempMin: -100, tempMax: 300, maxCompounds: 12, maxAddi
 const REACTION_SCHEME_SETTINGS = { gap: 45, plusGap: 30, arrowLength: 150, emptyWidth: 60 };
 
 const REACTION_NAME_ALIASES = {
+  'acetic formic anhydride': 'CC(=O)OC=O',
+  'phosphorus trichloride': 'ClP(Cl)Cl',
+  pcl3: 'ClP(Cl)Cl',
+  'acetic anhydride': 'CC(=O)OC(C)=O',
+  'succinic anhydride': 'O=C1CCC(=O)O1',
   disiamylborane: 'B(C(C)C(C)C)C(C)C(C)C',
   sia2bh: 'B(C(C)C(C)C)C(C)C(C)C',
   'boron tribromide': 'BrB(Br)Br',

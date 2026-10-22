@@ -93,6 +93,12 @@ try {
     const search = page.locator('#rx-rule-explorer input');
     await search.fill('hydrogenation');
     checked(profile.name + ': rule explorer search', (await page.locator('#rx-rule-explorer .rx-rule-results').innerText()).toLowerCase().includes('hydrogenation'));
+    await search.fill('lactonization');
+    checked(profile.name + ': new reaction discoverable', (await page.locator('#rx-rule-explorer .rx-rule-results').innerText()).includes('hydroxy acid lactonization'));
+    checked(profile.name + ': expanded chemistry modules integrated', await page.evaluate(() =>
+      RX_RULES.length >= 122 && ['anhydride-hydrolysis', 'amine-n-oxidation', 'thiol-ene', 'intramolecular-williamson'].every(id =>
+        reactionRuleDescriptor(id).references.length > 0) && REACTION_ADDITIVES.some(a => a.id === 'rosenmund') &&
+      RETRO_TRANSFORMS.some(t => t.id === 'intramolecular-williamson')));
     await page.getByRole('tab', { name: 'Editor', exact: true }).click();
     checked(profile.name + ': return to editor', await page.locator('body').getAttribute('data-view') === 'editor');
     await page.getByRole('tab', { name: 'Path Finder', exact: true }).click();

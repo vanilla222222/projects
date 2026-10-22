@@ -354,6 +354,11 @@ function smilesNeutralize(graph) {
     if (bond.order !== 1 || !a.charge || !b.charge || a.charge + b.charge !== 0 || Math.abs(a.charge) !== 1) {
       return;
     }
+    // N-oxides and nitro groups require charge-separated N+-O- bonds.
+    // Turning them into neutral N=O can create pentavalent nitrogen and an
+    // invalid exported SMILES, even if the drawing valence heuristic allows it.
+    if ((a.element === 'N' && a.charge === 1 && b.element === 'O' && b.charge === -1) ||
+        (b.element === 'N' && b.charge === 1 && a.element === 'O' && a.charge === -1)) return;
     const saved = [a.charge, b.charge];
     delete a.charge;
     delete b.charge;
