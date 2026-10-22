@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 4431,
+  "entries": 4519,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -5990,10 +5990,10 @@
       "index": 1439,
       "name": "Fosinopril",
       "atomIndices": [
-        4,
-        13,
-        26,
-        34
+        5,
+        10,
+        27,
+        35
       ]
     },
     {
@@ -13733,6 +13733,586 @@
       "atomIndices": [
         4
       ]
+    },
+    {
+      "index": 4432,
+      "name": "Acebutolol",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 4433,
+      "name": "Diacetolol",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 4434,
+      "name": "Carteolol",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4435,
+      "name": "Nadolol",
+      "atomIndices": [
+        6,
+        17,
+        19
+      ]
+    },
+    {
+      "index": 4436,
+      "name": "Oxprenolol",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 4437,
+      "name": "Penbutolol",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4438,
+      "name": "Mepindolol",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 4439,
+      "name": "Practolol",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 4440,
+      "name": "Alprenolol",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 4441,
+      "name": "Dihydroalprenolol",
+      "atomIndices": [
+        11
+      ]
+    },
+    {
+      "index": 4442,
+      "name": "Bupranolol",
+      "atomIndices": [
+        9
+      ]
+    },
+    {
+      "index": 4443,
+      "name": "Carazolol",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 4444,
+      "name": "Levobunolol",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4445,
+      "name": "Moprolol",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 4446,
+      "name": "Toliprolol",
+      "atomIndices": [
+        8
+      ]
+    },
+    {
+      "index": 4447,
+      "name": "Bevantolol",
+      "atomIndices": [
+        10
+      ]
+    },
+    {
+      "index": 4448,
+      "name": "Talinolol",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4449,
+      "name": "Xamoterol",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 4450,
+      "name": "Bunitrolol",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4451,
+      "name": "Bucindolol",
+      "atomIndices": [
+        15
+      ]
+    },
+    {
+      "index": 4452,
+      "name": "4-Hydroxypropranolol",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 4453,
+      "name": "5-Hydroxypropranolol",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 4454,
+      "name": "N-Desisopropylpropranolol",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 4455,
+      "name": "O-Desmethylmetoprolol",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 4456,
+      "name": "alpha-Hydroxymetoprolol",
+      "atomIndices": [
+        3,
+        11
+      ]
+    },
+    {
+      "index": 4457,
+      "name": "Esmolol acid",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 4458,
+      "name": "O-Desmethylcarvedilol",
+      "atomIndices": [
+        12
+      ]
+    },
+    {
+      "index": 4459,
+      "name": "Pronethalol",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 4460,
+      "name": "Nifenalol",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 4461,
+      "name": "Dichloroisoprenaline",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 4462,
+      "name": "Bufuralol",
+      "atomIndices": [
+        9,
+        10
+      ]
+    },
+    {
+      "index": 4463,
+      "name": "Butoxamine",
+      "atomIndices": [
+        9,
+        11
+      ]
+    },
+    {
+      "index": 4464,
+      "name": "Arotinolol",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 4465,
+      "name": "Bopindolol",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 4466,
+      "name": "Isradipine",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 4468,
+      "name": "Nisoldipine",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 4469,
+      "name": "Nitrendipine",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 4470,
+      "name": "Nilvadipine",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 4472,
+      "name": "Benidipine",
+      "atomIndices": [
+        14,
+        27
+      ]
+    },
+    {
+      "index": 4473,
+      "name": "Barnidipine",
+      "atomIndices": [
+        14,
+        26
+      ]
+    },
+    {
+      "index": 4474,
+      "name": "Manidipine",
+      "atomIndices": [
+        35
+      ]
+    },
+    {
+      "index": 4475,
+      "name": "Cilnidipine",
+      "atomIndices": [
+        26
+      ]
+    },
+    {
+      "index": 4476,
+      "name": "Aranidipine",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 4477,
+      "name": "Azelnidipine",
+      "atomIndices": [
+        9,
+        23
+      ]
+    },
+    {
+      "index": 4478,
+      "name": "Clevidipine",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 4479,
+      "name": "Pranidipine",
+      "atomIndices": [
+        23
+      ]
+    },
+    {
+      "index": 4484,
+      "name": "Diisopropyl 2,6-dimethyl-4-(3-nitrophenyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        19
+      ]
+    },
+    {
+      "index": 4485,
+      "name": "Dimethyl 1,2,6-trimethyl-4-(3-nitrophenyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 4492,
+      "name": "Enalaprilat",
+      "atomIndices": [
+        1,
+        3,
+        21
+      ]
+    },
+    {
+      "index": 4493,
+      "name": "Quinaprilat",
+      "atomIndices": [
+        1,
+        3,
+        26
+      ]
+    },
+    {
+      "index": 4494,
+      "name": "Ramiprilat",
+      "atomIndices": [
+        1,
+        3,
+        18,
+        23,
+        27
+      ]
+    },
+    {
+      "index": 4495,
+      "name": "Trandolaprilat",
+      "atomIndices": [
+        1,
+        3,
+        18,
+        23,
+        28
+      ]
+    },
+    {
+      "index": 4496,
+      "name": "Moexipril",
+      "atomIndices": [
+        5,
+        15,
+        32
+      ]
+    },
+    {
+      "index": 4497,
+      "name": "Moexiprilat",
+      "atomIndices": [
+        14,
+        17,
+        29
+      ]
+    },
+    {
+      "index": 4498,
+      "name": "Delapril",
+      "atomIndices": [
+        5,
+        15
+      ]
+    },
+    {
+      "index": 4499,
+      "name": "Delaprilat",
+      "atomIndices": [
+        1,
+        3
+      ]
+    },
+    {
+      "index": 4500,
+      "name": "Imidapril",
+      "atomIndices": [
+        5,
+        15,
+        25
+      ]
+    },
+    {
+      "index": 4501,
+      "name": "Imidaprilat",
+      "atomIndices": [
+        1,
+        3,
+        23
+      ]
+    },
+    {
+      "index": 4502,
+      "name": "Zofenopril",
+      "atomIndices": [
+        1,
+        16,
+        25
+      ]
+    },
+    {
+      "index": 4503,
+      "name": "Alacepril",
+      "atomIndices": [
+        5,
+        13,
+        17
+      ]
+    },
+    {
+      "index": 4504,
+      "name": "Benazepril",
+      "atomIndices": [
+        5,
+        15
+      ]
+    },
+    {
+      "index": 4505,
+      "name": "Benazeprilat",
+      "atomIndices": [
+        7,
+        9
+      ]
+    },
+    {
+      "index": 4506,
+      "name": "Perindoprilat",
+      "atomIndices": [
+        3,
+        5,
+        10,
+        15,
+        20
+      ]
+    },
+    {
+      "index": 4507,
+      "name": "Fosinoprilat",
+      "atomIndices": [
+        3,
+        5,
+        17
+      ]
+    },
+    {
+      "index": 4509,
+      "name": "Candesartan cilexetil",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 4513,
+      "name": "Mevastatin",
+      "atomIndices": [
+        2,
+        7,
+        14,
+        16,
+        19,
+        21,
+        27
+      ]
+    },
+    {
+      "index": 4514,
+      "name": "Simvastatin acid",
+      "atomIndices": [
+        8,
+        10,
+        16,
+        18,
+        21,
+        24,
+        30
+      ]
+    },
+    {
+      "index": 4515,
+      "name": "Lovastatin acid",
+      "atomIndices": [
+        2,
+        7,
+        9,
+        15,
+        17,
+        20,
+        23,
+        29
+      ]
+    },
+    {
+      "index": 4516,
+      "name": "Mevastatin acid",
+      "atomIndices": [
+        2,
+        7,
+        14,
+        16,
+        19,
+        22,
+        28
+      ]
+    },
+    {
+      "index": 4517,
+      "name": "Pravastatin lactone",
+      "atomIndices": [
+        2,
+        7,
+        9,
+        15,
+        17,
+        20,
+        22,
+        28
+      ]
+    },
+    {
+      "index": 4518,
+      "name": "Cerivastatin",
+      "atomIndices": [
+        16,
+        19
+      ]
+    },
+    {
+      "index": 4519,
+      "name": "Atorvastatin lactone",
+      "atomIndices": [
+        32,
+        34
+      ]
     }
   ],
   "chargedEntries": [
@@ -13982,7 +14562,7 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 9,
-    "unspecifiedStereocenters": 1562,
+    "unspecifiedStereocenters": 1634,
     "chargedEntries": 46,
     "fragmentedEntries": 0,
     "radicalEntries": 0,

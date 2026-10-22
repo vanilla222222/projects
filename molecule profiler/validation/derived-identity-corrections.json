@@ -66,6 +66,14 @@
       "correctedFormula": "C13H20N2O3S",
       "correctedSmiles": "CCCNC(C)C(=O)Nc1c(C)csc1C(=O)OC",
       "reason": "articaine is methyl 4-methyl-3-(2-propylaminopropanamido)thiophene-2-carboxylate; the stored entry omitted the 4-methyl group entirely and placed the ester on C3 and the amide on C2, the reverse of the real substitution pattern"
+    },
+    {
+      "name": "Fosinopril",
+      "previousFormula": "C30H46NO6P",
+      "previousSmiles": "CCCCC(CCc1ccccc1)P(=O)(OC(=O)C(C)C)CC(=O)N1CC(C2CCCCC2)CC1C(=O)O",
+      "correctedFormula": "C30H46NO7P",
+      "correctedSmiles": "CCC(=O)OC(C(C)C)OP(=O)(CCCCc1ccccc1)CC(=O)N1CC(C2CCCCC2)CC1C(=O)O",
+      "reason": "Fosinopril is 4-cyclohexyl-1-[[[2-methyl-1-(propanoyloxy)propoxy](4-phenylbutyl)phosphinyl]acetyl]-L-proline. The stored row wrote the phosphinate ester as an isobutyryl ester bonded directly to phosphorus and placed the phenyl on a branched alkyl chain, giving C30H46NO6P. That structure carries one oxygen too few and, decisively, cannot yield fosinoprilat by ester hydrolysis, which is what the prodrug is defined by. The corrected structure restores the 1-(propanoyloxy)-2-methylpropoxy ester on phosphorus and the straight 4-phenylbutyl group on phosphorus; RDKit computes C30H46NO7P and a molecular weight of 563.67 from it, matching the documented 563.66. Found while proving the aryloxypropanolamine and mercaptopropanoyl derivation templates against the library, not by fetching a source record."
     }
   ]
 }

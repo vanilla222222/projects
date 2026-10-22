@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "sourceSha256": {
-    "data/library.js": "d31641ad997b44cbdad8cc4f4ef2e8d9ee93477fb1c38bb09351a94d43e37a10",
-    "data/targets.js": "766c869a661eee24445133ff1b5f738339a7971b02a3db5b82321e4e1c5fe8ea",
+    "data/library.js": "c02ba53550836e656b0e94ee0d83a5b362b08a4a0719092f4bce5e5c317eece0",
+    "data/targets.js": "0a370cd5d42eb549f62952b3fb868917814d66614d96e22159224aebbdd93287",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
     "data/receptor-ligand-annotations.js": "28bcfc10324b17fc8a30d2e4b3cf3c589e55fe9af76cd61dfb8986d9a3b30d01",
     "js/receptor-catalog.js": "c89696b0ea6e22873929f2e3c777774b13579c917a541cf7820de253e19305e1",
     "tools/build-library-tags.py": "b1b9d2eb9960ab6803f2c9e43936d4317688bc067a00d30b27d9cf1c1ee08f6e"
   },
-  "dataSha256": "e42a0c84e2cda2d28418e07e01f7004e71d1605fbb8d5e5f90668be4d16a3f46",
+  "dataSha256": "1f06b474fc3e3e3c578dc9c8713a34c12ea1e29f506584fef2e6532cbfc194b3",
   "interpretation": "Overlapping structural motifs in stored graphs; not evidence of pharmacological function, exhaustive family membership or independently verified molecular identities.",
   "families": [
     {
@@ -701,9 +701,20 @@
         "Bendroflumethiazide",
         "Efinaconazole",
         "Oxetacaine",
-        "Aprindine"
+        "Aprindine",
+        "Bevantolol",
+        "Pronethalol",
+        "Nifenalol",
+        "Dichloroisoprenaline",
+        "Butoxamine",
+        "Quinaprilat",
+        "Moexipril",
+        "Moexiprilat",
+        "Delapril",
+        "Delaprilat",
+        "Alacepril"
       ],
-      "count": 688
+      "count": 699
     },
     {
       "tag": "Family motif: Amphetamines (alpha-methylphenethylamines)",
@@ -1082,9 +1093,10 @@
         "CHEMBL609742",
         "CHEMBL2113386",
         "CHEMBL1628565",
-        "ENDOMORPHIN-1"
+        "ENDOMORPHIN-1",
+        "Bucindolol"
       ],
-      "count": 244
+      "count": 245
     },
     {
       "tag": "Family motif: Cathinones",

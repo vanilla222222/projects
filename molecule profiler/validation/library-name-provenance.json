@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "rdkitVersion": "2026.09.1",
-  "librarySha256": "d31641ad997b44cbdad8cc4f4ef2e8d9ee93477fb1c38bb09351a94d43e37a10",
+  "librarySha256": "c02ba53550836e656b0e94ee0d83a5b362b08a4a0719092f4bce5e5c317eece0",
   "toolSha256": "5474a832b1cd427e4246f1c4b12ec2c47a2b3a12586201f388f5cf52f1bfcd16",
   "dataSha256": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
   "protocol": "Prefer exact isomeric graph matches to PubChem titles/IUPAC names or ChEMBL preferred names. Otherwise require the full InChIKey plus completed RDKit tautomer-family agreement, no neutralization and tetrahedral stereo retained; explicitly label these as PubChem standardized-form names, not exact stored-graph names. Never change reference keys or graphs.",
@@ -13626,8 +13626,8 @@
     }
   ],
   "libraryRepin": {
-    "previousLibrarySha256": "6011b914ce36ae1860a032039235d23d827b11976c794d3638d5e3ee49094126",
-    "reason": "Library grew by appended reference entries and, unlike earlier re-pins, eight stored entries were corrected in place: six beta-lactams, Valacyclovir and Articaine. Each correction is recorded in derived-identity-corrections.json with the previous and corrected structure and the reason. None of the eight is a CHEMBL-keyed entry, so the name request set is unchanged and no name response is affected.",
-    "verified": "Every one of the 1128 distinct InChIKey skeletons in the 1178 source responses recorded here still matches at least one library entry, by RDKit InChIKey computed from the stored SMILES of all 4431 entries; none went missing. The CHEMBL-keyed request set is unchanged at 1225 records and no source response was re-fetched. This replaces an earlier re-pin's wording, which claimed a byte-identical comparison against a librarySmiles field that no record in this file actually carries."
+    "previousLibrarySha256": "d31641ad997b44cbdad8cc4f4ef2e8d9ee93477fb1c38bb09351a94d43e37a10",
+    "reason": "Library grew from 4431 to 4519 entries by 88 appended cardiovascular reference structures, one stored entry was corrected in place (Fosinopril, recorded in derived-identity-corrections.json with its previous and corrected structure and the reason), and 115 stored entries had only their cls field rewritten: 102 moved into the Amphetamine and 2C phenethylamine chemical classes from broader or pharmacological classes, 6 dihydropyridines from Calcium blocker, and 7 sartans from Angiotensin blocker. No structure was changed by any reclassification. None of the reclassified entries and neither the corrected entry is a CHEMBL-keyed entry, so the name request set is unchanged and no name response is affected.",
+    "verified": "Every one of the 1128 distinct InChIKey skeletons in the 1196 source responses recorded here still matches at least one library entry, by RDKit InChIKey computed from the stored SMILES of all 4519 entries (4399 distinct skeletons); none went missing. The CHEMBL-keyed request set is unchanged at 1225 records with 1196 resolved, and no source response was re-fetched."
   }
 }
