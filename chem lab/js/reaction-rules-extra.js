@@ -360,6 +360,9 @@ function rxxRuleBaeyerVilliger(ctx) {
 }
 
 function rxxRuleNitrileHydrolysis(ctx) {
+  // The cold alkaline-peroxide regime has a separate amide endpoint; do not
+  // also present exhaustive carboxylate hydrolysis under those mild conditions.
+  if (ctx.has('hydrogenPeroxide') && ctx.temperature <= 30) return [];
   const hydroxide = ctx.get('hydroxide');
   const acid = ctx.has('strongAcid') && rxxWater(ctx);
   if (!hydroxide && !acid) {

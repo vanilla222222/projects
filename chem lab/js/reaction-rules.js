@@ -3138,7 +3138,9 @@ function rxWhyNot(ctx, o) {
 
 function predictReaction(compounds, conditions) {
   const ctx = reactionContext(compounds, conditions);
-  if (!ctx.substrates.length) {
+  // Organic sulfonyl chlorides are classified as reagent species, but their
+  // hydrolysis is supported when no other organic substrate is added.
+  if (!ctx.substrates.length && !ctx.has('sulfonylChloride')) {
     return { best: null, alternatives: [], hints: ['Add at least one organic reactant to predict a product.'] };
   }
   const outcomes = [];

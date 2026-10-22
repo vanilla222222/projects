@@ -1,0 +1,58 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const root=path.join(__dirname,'..'),ctx=vm.createContext({console,performance,setTimeout,clearTimeout});
+const scripts=['elements','graph','valence','stereo','naming-core','naming-chain','naming-ring','naming-scaffolds','naming-general','common-names-extra','naming-elements','properties','layout','smiles','reactions','molecular-identity','reaction-stereo','reaction-rules','reaction-rules-extra','reaction-rules-extra2','reaction-aromatic','reaction-rules-extra3','reaction-rules-extra4','reaction-rules-extra5','reaction-rules-extra7','reaction-catalog'];
+scripts.forEach(n=>vm.runInContext(fs.readFileSync(path.join(root,'js',n+'.js'),'utf8'),ctx,{filename:n+'.js'}));
+const run=code=>vm.runInContext(code,ctx);run(`function r7Predict(ss,conditions){const compounds=ss.map((smiles,i)=>({smiles,fragment:smilesToFragment(smiles),role:i?'reagent':'reactant',equiv:1}));const r=predictReaction(compounds,{...defaultReactionConditions(),...conditions});return [r.best,...r.alternatives].filter(Boolean);}
+function r7Products(ss,c,id,expected){return r7Predict(ss,c).some(o=>o.id===id&&expected.every(s=>o.products.some(p=>moleculeSame(p.fragment||p.smiles,s))));}`);
+const peracid='O=C(OO)c1cccc(Cl)c1',dry={solvents:['dcm'],temperature:20};
+let checks=0;
+function yes(ss,c,id,expected,label){assert.equal(run(`r7Products(${JSON.stringify(ss)},${JSON.stringify(c)},${JSON.stringify(id)},${JSON.stringify(expected)})`),true,label||id);checks++;}
+function no(ss,c,id,label){assert.equal(run(`r7Predict(${JSON.stringify(ss)},${JSON.stringify(c)}).some(o=>o.id===${JSON.stringify(id)})`),false,label||id);checks++;}
+yes(['CN(C)C',peracid],dry,'amine-n-oxidation',['C[N+](C)(C)[O-]']);
+yes(['CCCN(C)C',peracid],dry,'amine-n-oxidation',['CCC[N+](C)(C)[O-]']);
+for(const s of ['CNC','CN','CN(C)CC=C','CN(C)CC#C','CN(C)CC=O','CN(C)CCS','CN(C)c1ccccc1','CN(C)CCN(C)C'])no([s,peracid],dry,'amine-n-oxidation',s);
+no(['CN(C)C',peracid],{...dry,temperature:100},'amine-n-oxidation','No thermal N-oxide endpoint');
+no(['CN(C)C',peracid],{...dry,solvents:['water']},'amine-n-oxidation');
+yes(['C[N+](C)(C)[O-]','CC(=O)OC=O'],dry,'amine-oxide-deoxygenation',['CN(C)C']);
+yes(['CCC[N+](C)(C)[O-]','CC(=O)OC=O'],dry,'amine-oxide-deoxygenation',['CCCN(C)C']);
+no(['C[N+](C)(C)[O-]','CC(=O)OC(C)=O'],dry,'amine-oxide-deoxygenation','Acetic anhydride is not the mixed reagent');
+no(['C[N+](C)(C)[O-]'],dry,'amine-oxide-deoxygenation');
+no(['C[N+](C)(CCO)[O-]','CC(=O)OC=O'],dry,'amine-oxide-deoxygenation','Extra OH');
+yes(['CS(=O)c1ccccc1','ClP(Cl)Cl'],dry,'sulfoxide-deoxygenation',['CSc1ccccc1']);
+yes(['O=S(c1ccccc1)c1ccccc1','ClP(Cl)Cl'],dry,'sulfoxide-deoxygenation',['S(c1ccccc1)c1ccccc1']);
+for(const s of ['CS(C)=O','CS(=O)(=O)c1ccccc1','CS(=O)c1ccc(N)cc1','CS(=O)c1ccc(O)cc1'])no([s,'ClP(Cl)Cl'],dry,'sulfoxide-deoxygenation',s);
+no(['CS(=O)c1ccccc1','ClP(Cl)Cl'],{solvents:['water'],temperature:20},'sulfoxide-deoxygenation');
+yes(['CCS','CC(=O)Cl'],{...dry,additives:['et3n']},'thiol-acylation',['CCSC(C)=O']);
+yes(['Sc1ccccc1','CCC(=O)Cl'],{...dry,additives:['et3n']},'thiol-acylation',['CCC(=O)Sc1ccccc1']);
+no(['CCS','CC(=O)Cl'],dry,'thiol-acylation','Added base required');
+no(['NCCS','CC(=O)Cl'],{...dry,additives:['et3n']},'thiol-acylation','Competing amine');
+no(['SCCS','CC(=O)Cl'],{...dry,additives:['et3n']},'thiol-acylation','Multiple thiols');
+no(['CCS','CC(=O)Cl'],{...dry,solvents:['water'],additives:['et3n']},'thiol-acylation','Competing water');
+yes(['CCSC(C)=O'],{solvents:['water'],additives:['hcl'],temperature:80},'thioester-hydrolysis',['CCS','CC(=O)O']);
+yes(['CCC(=O)Sc1ccccc1'],{solvents:['water'],additives:['hcl'],temperature:80},'thioester-hydrolysis',['Sc1ccccc1','CCC(=O)O']);
+for(const s of ['CCOC(C)=O','O=C1SCCC1','CCSC(=O)CO'])no([s],{solvents:['water'],additives:['hcl'],temperature:80},'thioester-hydrolysis',s);
+no(['CCSC(C)=O'],{solvents:['water'],temperature:80},'thioester-hydrolysis');
+no(['CCSC(C)=O'],{solvents:['water'],additives:['hcl'],temperature:20},'thioester-hydrolysis');
+yes(['CS(=O)(=O)Cl'],{solvents:['water'],temperature:20},'sulfonyl-chloride-hydrolysis',['CS(=O)(=O)O']);
+yes(['O=S(=O)(Cl)c1ccccc1'],{solvents:['water'],temperature:20},'sulfonyl-chloride-hydrolysis',['O=S(=O)(O)c1ccccc1']);
+no(['CS(=O)(=O)N'],{solvents:['water'],temperature:20},'sulfonyl-chloride-hydrolysis');
+no(['CS(=O)(=O)Cl'],dry,'sulfonyl-chloride-hydrolysis');
+no(['CS(=O)(=O)Cl'],{solvents:['water'],additives:['naoh'],temperature:20},'sulfonyl-chloride-hydrolysis');
+const hyd={solvents:['dmso','water'],additives:['naoh'],temperature:20};
+yes(['CCC#N','OO'],hyd,'nitrile-peroxide-hydration',['CCC(N)=O']);
+yes(['N#Cc1ccccc1','OO'],hyd,'nitrile-peroxide-hydration',['NC(=O)c1ccccc1']);
+for(const s of ['N#CCC#N','C=CCC#N','NCCC#N','CSCC#N'])no([s,'OO'],hyd,'nitrile-peroxide-hydration',s);
+no(['CCC#N'],hyd,'nitrile-peroxide-hydration');
+no(['CCC#N','OO'],{...hyd,temperature:90},'nitrile-peroxide-hydration');
+const light={...dry,energy:'light'};
+yes(['C=CCC','CCS'],light,'thiol-ene',['CCSCCCC']);
+yes(['C=C','Sc1ccccc1'],light,'thiol-ene',['CCSc1ccccc1']);
+for(const s of ['CC=CC','C=C(C)C','C=CCC=C','C=CCC#C','OCC=C'])no([s,'CCS'],light,'thiol-ene',s);
+no(['C=CCC','CCS'],dry,'thiol-ene','Light required');
+no(['C=CCC','SCCS'],light,'thiol-ene','Single thiol required');
+// Isotope retention across edited and spectator atoms.
+yes(['[13CH3]C#N','OO'],hyd,'nitrile-peroxide-hydration',['[13CH3]C(N)=O']);
+yes(['C[N+](C)([13CH3])[O-]','CC(=O)OC=O'],dry,'amine-oxide-deoxygenation',['CN(C)[13CH3]']);
+assert.equal(run(`RX7_RULE_DATA.every(([id])=>{const r=reactionRuleDescriptor(id);return r&&r.scope&&r.references.length&&r.assumptions.length&&r.limitations.length})`),true);checks++;
+console.log('Reaction expansion round 3b: '+checks+' checks passed.');

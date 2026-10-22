@@ -1,5 +1,16 @@
 # Chem Lab upgrades
 
+## Expanded reaction engine — 2026-10-22
+
+- **122 sourced rules (17 new):** acid-anhydride hydrolysis, alcohol/phenol acylation, aminolysis, reduction and formation; gamma/delta hydroxy-acid lactonization; Rosenmund reduction; peracid aldehyde oxidation; tertiary-amine N-oxidation and N-oxide deoxygenation; aryl-sulfoxide deoxygenation; thiol acylation; thioester and sulfonyl-chloride hydrolysis; selective peroxide nitrile hydration; photochemical thiol–ene addition; and intramolecular Williamson five/six-membered ether formation.
+- **13 new reverse transformations:** added to the existing planner with forward verification, isotope/stereo checks and explicit scope limits. Reversible or multi-product reactions do not imply a uniquely preferred synthesis.
+- **Reagent access:** named inputs include acetic/formic anhydride and PCl3; the condition selector has a dedicated Pd/BaSO4 Rosenmund catalyst. Ordinary Pd/C is not treated as equivalent.
+- **Chemical identity fix:** imported N-oxides and nitro groups retain N+–O− charges instead of becoming invalid neutral pentavalent N=O structures.
+- **Consistent endpoints:** cold alkaline-peroxide nitrile hydration reports the encoded amide endpoint without also asserting exhaustive acid hydrolysis. All anhydride/thioester coproducts and repeated product counts are independently checked.
+- **Validation:** 23 default suites pass, with 465 independent RDKit checks covering 42 structures, 18 identity pairs, 37 reaction fixtures and one encoded protection route; 60 Chromium desktop/mobile-emulation checks cover the integrated application.
+
+Rules are bounded structural models. Sources document the reaction classes; neither source coverage nor RDKit agreement establishes experimental feasibility, yield, selectivity or general chemical-space accuracy. Explicit exclusions prevent unsupported functional-group competition from being treated as established chemistry.
+
 ## Validation and synthesis-planning update — 2026-10-22
 
 - **Desktop and mobile browser coverage:** the complete app now has a real
@@ -7,7 +18,7 @@
   save/reload, step reordering and revalidation, exports/imports, rule search,
   extended depth settings and an explicit amine-protection route. Mobile means
   touch/viewport emulation, not a physical-device claim. See `tools/README.md`.
-- **Sources and scope:** all 105 current rule descriptors have attributable
+- **Sources and scope:** all 105 rule descriptors in that release have attributable
   reaction-class references and implementation-specific substrate/condition
   limits. Combined-rule branches still state where source coverage is narrower
   than the local model; a source is not validation of the code or query.
@@ -36,10 +47,10 @@
   expanded structures/12 seconds; six to ten default to 200/30 seconds, remain
   cancellable, and do not establish impossibility when exhausted.
 
-The current reproducible checks are `node tools/run-validation.js`, with optional
+The reproducible checks are `node tools/run-validation.js`, with optional
 `--rdkit --browser` checks documented in `tools/README.md`. These are finite
 regression and oracle comparisons, not a general accuracy percentage.
-Integration results: all 18 default suites pass, RDKit passes 385 independent
+Results at that release: all 18 default suites passed, RDKit passed 385 independent
 checks, and the Chromium suite passes 56 desktop/mobile-emulation checks.
 
 ## Coordinated workbench upgrade — 2026-10-22
