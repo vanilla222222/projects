@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification",
-  "entries": 5874,
+  "entries": 5970,
   "invalidSmiles": [],
   "formulaMismatches": [],
   "canonicalDuplicates": [
@@ -18645,6 +18645,363 @@
       "atomIndices": [
         27
       ]
+    },
+    {
+      "index": 5875,
+      "name": "3-(4-chlorophenyl)-N-ethyl-N-methyl-3-(pyridin-2-yl)propan-1-amine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5876,
+      "name": "N,N-dimethyl-3-phenyl-3-(pyridin-2-yl)propan-1-amine",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5877,
+      "name": "3-(4-chlorophenyl)-N-methyl-N-propyl-3-(pyridin-2-yl)propan-1-amine",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5878,
+      "name": "3-(4-chlorophenyl)-N,N-diethyl-3-(pyridin-2-yl)propan-1-amine",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5879,
+      "name": "3-(4-chlorophenyl)-N-ethyl-N-methyl-3-phenylpropan-1-amine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5881,
+      "name": "N-ethyl-N-methyl-3-phenyl-3-(pyridin-2-yl)propan-1-amine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5884,
+      "name": "3-(4-chlorophenyl)-N-methyl-N-propan-2-yl-3-(pyridin-2-yl)propan-1-amine",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5886,
+      "name": "1-[(4-chlorophenyl)-phenylmethyl]-4-methylpiperazine",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5888,
+      "name": "1-[(4-chlorophenyl)-phenylmethyl]-4-ethylpiperazine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5889,
+      "name": "4-methyl-1-[phenyl-(pyridin-2-yl)methyl]piperazine",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5892,
+      "name": "1-[(4-chlorophenyl)-phenylmethyl]-4-propylpiperazine",
+      "atomIndices": [
+        7
+      ]
+    },
+    {
+      "index": 5893,
+      "name": "4-ethyl-1-[phenyl-(pyridin-2-yl)methyl]piperazine",
+      "atomIndices": [
+        6
+      ]
+    },
+    {
+      "index": 5894,
+      "name": "1-[(4-fluorophenyl)-phenylmethyl]-4-methylpiperazine",
+      "atomIndices": [
+        5
+      ]
+    },
+    {
+      "index": 5904,
+      "name": "2-chloro-10-[2-(dimethylamino)propyl]-10H-phenothiazine",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5906,
+      "name": "10-[2-(dimethylamino)propyl]-2-fluoro-10H-phenothiazine",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5907,
+      "name": "2-chloro-10-[3-(dimethylamino)-2-methylpropyl]-10H-phenothiazine",
+      "atomIndices": [
+        4
+      ]
+    },
+    {
+      "index": 5909,
+      "name": "3-methyl 5-(propan-2-yl) 2,6-dimethyl-4-(3-nitrophenyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 5910,
+      "name": "3-(2-methoxyethyl) 5-methyl 2,6-dimethyl-4-(3-nitrophenyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 5911,
+      "name": "3-ethyl 5-methyl 2,6-dimethyl-4-(2-nitrophenyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 5912,
+      "name": "3-methyl 5-(2-methylpropyl) 2,6-dimethyl-4-(3-nitrophenyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 5913,
+      "name": "3-ethyl 5-(propan-2-yl) 2,6-dimethyl-4-(3-nitrophenyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 5914,
+      "name": "3-ethyl 5-(2-methoxyethyl) 2,6-dimethyl-4-(3-nitrophenyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        19
+      ]
+    },
+    {
+      "index": 5915,
+      "name": "3-methyl 5-(propan-2-yl) 2,6-dimethyl-4-(2-nitrophenyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 5916,
+      "name": "3-(2-methoxyethyl) 5-methyl 2,6-dimethyl-4-(2-nitrophenyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 5917,
+      "name": "3-ethyl 5-(2-methylpropyl) 2,6-dimethyl-4-(3-nitrophenyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        19
+      ]
+    },
+    {
+      "index": 5918,
+      "name": "3-ethyl 5-(propan-2-yl) 2,6-dimethyl-4-(2-nitrophenyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 5919,
+      "name": "3-ethyl 5-(2-methoxyethyl) 2,6-dimethyl-4-(2-nitrophenyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        19
+      ]
+    },
+    {
+      "index": 5920,
+      "name": "3-methyl 5-(propan-2-yl) 4-(2,3-dichlorophenyl)-2,6-dimethyl-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 5922,
+      "name": "3-(2-methoxyethyl) 5-methyl 4-(2,3-dichlorophenyl)-2,6-dimethyl-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 5923,
+      "name": "3-ethyl 5-methyl 4-(2-chlorophenyl)-2,6-dimethyl-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        16
+      ]
+    },
+    {
+      "index": 5925,
+      "name": "3-methyl 5-propyl 2,6-dimethyl-4-(3-nitrophenyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        17
+      ]
+    },
+    {
+      "index": 5926,
+      "name": "3-(2-methoxyethyl) 5-(2-methylpropyl) 2,6-dimethyl-4-(3-nitrophenyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 5928,
+      "name": "3-ethyl 5-(2-methylpropyl) 2,6-dimethyl-4-(2-nitrophenyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        19
+      ]
+    },
+    {
+      "index": 5929,
+      "name": "3-(2-methoxyethyl) 5-(propan-2-yl) 2,6-dimethyl-4-(2-nitrophenyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        20
+      ]
+    },
+    {
+      "index": 5930,
+      "name": "3-methyl 5-(2-methylpropyl) 4-(2,3-dichlorophenyl)-2,6-dimethyl-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        18
+      ]
+    },
+    {
+      "index": 5931,
+      "name": "3-ethyl 5-methyl 4-(2-chlorophenyl)-6-methyl-2-(2-(methylamino)ethoxymethyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 5932,
+      "name": "diethyl 2-(2-aminoethoxymethyl)-4-(2-chlorophenyl)-6-methyl-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 5933,
+      "name": "dimethyl 2-(2-aminoethoxymethyl)-4-(2-chlorophenyl)-6-methyl-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        19
+      ]
+    },
+    {
+      "index": 5934,
+      "name": "3-ethyl 5-methyl 2-(2-aminoethoxymethyl)-6-methyl-4-(3-nitrophenyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        20
+      ]
+    },
+    {
+      "index": 5935,
+      "name": "3-ethyl 5-methyl 2-(3-aminopropoxymethyl)-4-(2-chlorophenyl)-6-methyl-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        21
+      ]
+    },
+    {
+      "index": 5936,
+      "name": "diethyl 4-(2-chlorophenyl)-6-methyl-2-(2-(methylamino)ethoxymethyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        22
+      ]
+    },
+    {
+      "index": 5937,
+      "name": "3-ethyl 5-(propan-2-yl) 2-(2-aminoethoxymethyl)-4-(2-chlorophenyl)-6-methyl-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        22
+      ]
+    },
+    {
+      "index": 5938,
+      "name": "dimethyl 4-(2-chlorophenyl)-6-methyl-2-(2-(methylamino)ethoxymethyl)-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        20
+      ]
+    },
+    {
+      "index": 5939,
+      "name": "3-methyl 5-ethyl 2-(2-aminoethoxymethyl)-4-(2-chlorophenyl)-6-methyl-1,4-dihydropyridine-3,5-dicarboxylate",
+      "atomIndices": [
+        20
+      ]
+    },
+    {
+      "index": 5950,
+      "name": "(2-butan-2-yl-4-methylsulfanylphenyl) N-methylcarbamate",
+      "atomIndices": [
+        13
+      ]
+    },
+    {
+      "index": 5954,
+      "name": "[2-methyl-3-(methylcarbamoyloxy)-2-propylpropyl] carbamate",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5958,
+      "name": "[3-carbamoyloxy-2-ethyl-2-methylpropyl] N-propan-2-ylcarbamate",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5959,
+      "name": "[3-carbamoyloxy-2-ethyl-2-propylpropyl] N-propan-2-ylcarbamate",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5960,
+      "name": "[2-ethyl-2-methyl-3-(methylcarbamoyloxy)propyl] carbamate",
+      "atomIndices": [
+        2
+      ]
+    },
+    {
+      "index": 5961,
+      "name": "[2-ethyl-3-(methylcarbamoyloxy)-2-propylpropyl] carbamate",
+      "atomIndices": [
+        3
+      ]
+    },
+    {
+      "index": 5962,
+      "name": "[2-methyl-3-(methylcarbamoyloxy)-2-propylpropyl] N-propan-2-ylcarbamate",
+      "atomIndices": [
+        3
+      ]
     }
   ],
   "chargedEntries": [
@@ -18974,7 +19331,7 @@
     "formulaMismatches": 0,
     "canonicalDuplicates": 19,
     "tautomerGroups": 10,
-    "unspecifiedStereocenters": 2181,
+    "unspecifiedStereocenters": 2232,
     "chargedEntries": 62,
     "fragmentedEntries": 0,
     "radicalEntries": 0,
