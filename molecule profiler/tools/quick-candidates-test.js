@@ -1,0 +1,21 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
+const root=path.join(__dirname,'..');for(const name of ['smiles','mol','smarts','stereo','transform','pharmacology','prodrug-candidates'])vm.runInThisContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'));
+const parse=s=>buildMolecule(parseSmiles(s));let checks=0;const ok=(v,s)=>{assert.ok(v,s);checks++;};
+const fixtures=['CCO','Oc1ccccc1','CC(=O)O','CCN','CCNC','CCS','CC(=O)N','CC=O','CC(=O)C','NCCO','[Cl-].CC[NH3+]','[Na+].CC(=O)[O-]','C/C=C/CO','C[C@H](O)C(=O)O','[13CH3]CO','CC[18OH]'];
+const reports=[];
+for(const s of fixtures){const m=parse(s),before=JSON.stringify(m),r=ProdrugCandidates.generateQuick(m);ok(r.rows.length===25,'25 distinct candidates for '+s+' (got '+r.rows.length+')');ok(JSON.stringify(m)===before,'Immutable input');ok(r.rows.every(row=>row.parentRecoveryVerified&&!row.experimentalValidation),'Unvalidated designs retain recovery checks');ok(r.sampling.positionCounts.reduce((n,p)=>n+p.count,0)===r.rows.length,'Sampling counts match rows');ok(r.sampling.positionCounts.length<=5&&r.sampling.attempts<=300,'Position and attempt bounds');for(let i=0;i<r.rows.length;i++)for(let j=0;j<i;j++)assert.ok(!Pharmacology.exactGraph(parse(r.rows[i].smiles),parse(r.rows[j].smiles)),'No duplicate molecular graphs');checks++;reports.push({parent:s,report:r});}
+const five='OCC(O)CC(O)CC(O)CCO',r=ProdrugCandidates.generateQuick(parse(five));
+ok(r.sampling.positionCounts.length===5&&r.sampling.positionCounts.every(p=>p.count===5),'Five compatible positions receive five designs each');reports.push({parent:five,report:r});
+const six='OCC(O)CC(O)CC(O)CC(O)CCO',s=ProdrugCandidates.generateQuick(parse(six));ok(s.sampling.positionCounts.length===5&&s.rows.length===25,'More than five positions stays bounded to five');
+const prefer=ProdrugCandidates.generateQuick(parse('CN(C)CC(O)CC(O)CC(O)CC(O)CCO'));ok(prefer.sampling.positionCounts.length===5&&prefer.sampling.positionCounts.every(p=>p.element==='O'&&p.count===5),'Five full-capacity sites are preferred over a sparse N-oxide position');
+const two=ProdrugCandidates.generateQuick(parse('NCCO'));ok(two.sampling.positionCounts.length===2&&two.sampling.positionCounts.every(p=>p.count>5),'Unused position capacity is redistributed');
+const one=ProdrugCandidates.generateQuick(parse('CCO'));ok(one.sampling.positionCounts.length===1&&one.sampling.positionCounts[0].count===25,'One position fills all 25 slots');
+const scarce=ProdrugCandidates.generateQuick(parse('CN(C)CCO'));ok(scarce.rows.length===25&&scarce.sampling.positionCounts.find(p=>p.element==='N').count===1&&scarce.sampling.positionCounts.find(p=>p.element==='O').count===24,'Sparse nitrogen library reallocates to oxygen');
+const oxide=ProdrugCandidates.generateQuick(parse('CCN(C)C'));ok(oxide.rows.length===1&&oxide.sampling.shortfall===24&&oxide.reasons.some(s=>s.includes('not padded')),'Limited supported chemistry reports a truthful shortfall');
+ok(ProdrugCandidates.generateQuick(parse('CCO'),{limit:100}).rows.length===25,'Quick hard cap 25');
+ok(ProdrugCandidates.generateQuick(parse('CCO'),{limit:7}).rows.length===7,'Smaller quick requests honored');
+ok(ProdrugCandidates.generateQuick(parse('CCO'),{limit:0}).rows.length===0,'Zero request honored');
+ok(ProdrugCandidates.generate(parse('CCO')).rows.length===5&&ProdrugCandidates.sites(parse('CCO'))[0].designs.length===5,'Compact builder default remains five');
+ok(ProdrugCandidates.generateQuick(parse('CCO.O')).rows.length===0,'Unsupported mixtures stay excluded');
+if(process.argv.includes('--json'))console.log(JSON.stringify(reports));else console.log('Quick candidate sampling: '+checks+' focused checks passed.');

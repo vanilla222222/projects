@@ -45,6 +45,33 @@
   {id:'carbonyl-oxime',name:'Carbonyl oxime',fragment:'O',cleavage:'carbonyl-oxime'},
   {id:'carbonyl-hydrazone',name:'Carbonyl hydrazone',fragment:'N',cleavage:'carbonyl-hydrazone'}
  ].map(d=>({...d,operation:'carbonyl-condensation',hypothesis:'Hydrolysis of the C=N linkage could restore the parent carbonyl and release a nitrogen-containing fragment. Hydrolysis may be very slow and reversible; biological release from this candidate is not established.',sources:[SOURCES.carbonyl],limitations:['This design replaces the carbonyl oxygen during a formal condensation. Structural recovery does not demonstrate retention of that oxygen atom in a real reaction.','Oxime/hydrazone E/Z stereochemistry is unassigned. No isomer-specific activity or cleavage is predicted.','Hydroxylamine- or hydrazine-derived byproducts and competing chemistry have not been assessed for safety.']}));
+ // Expanded structural libraries are used only by Quick candidates. The site
+ // builder keeps its compact default menus. These are class extrapolations.
+ const QUICK_TAILS=[
+  ['acetyl','Acetyl','C'],['propionyl','Propionyl','CC'],['butyryl','Butyryl','CCC'],
+  ['pentanoyl','Pentanoyl','CCCC'],['hexanoyl','Hexanoyl','CCCCC'],['heptanoyl','Heptanoyl','CCCCCC'],['octanoyl','Octanoyl','CCCCCCC'],['nonanoyl','Nonanoyl','CCCCCCCC'],['decanoyl','Decanoyl','CCCCCCCCC'],
+  ['isobutyryl','Isobutyryl','C(C)C'],['isovaleryl','Isovaleryl','CC(C)C'],['pivaloyl','Pivaloyl','C(C)(C)C'],
+  ['cyclopropanecarbonyl','Cyclopropanecarbonyl','C1CC1'],['cyclobutanecarbonyl','Cyclobutanecarbonyl','C1CCC1'],['cyclopentanecarbonyl','Cyclopentanecarbonyl','C1CCCC1'],['cyclohexanecarbonyl','Cyclohexanecarbonyl','C1CCCCC1'],
+  ['benzoyl','Benzoyl','c1ccccc1'],['phenylacetyl','Phenylacetyl','Cc1ccccc1'],['phenylpropionyl','3-Phenylpropionyl','CCc1ccccc1'],
+  ['methoxyacetyl','Methoxyacetyl','COC'],['methoxypropionyl','3-Methoxypropionyl','CCOC'],['hydroxyacetyl','Hydroxyacetyl','CO'],['hydroxypropionyl','3-Hydroxypropionyl','CCO'],['hydroxybutanoyl','4-Hydroxybutanoyl','CCCO'],['methoxybutanoyl','4-Methoxybutanoyl','CCCOC']
+ ];
+ const QUICK_ALCOHOLS=[['pentyl','n-Pentyl','CCCCC'],['hexyl','n-Hexyl','CCCCCC'],['heptyl','n-Heptyl','CCCCCCC'],['octyl','n-Octyl','CCCCCCCC'],['nonyl','n-Nonyl','CCCCCCCCC'],['decyl','n-Decyl','CCCCCCCCCC'],['sec-butyl','sec-Butyl','C(C)CC'],['isobutyl','Isobutyl','CC(C)C'],['cyclopropyl','Cyclopropyl','C1CC1'],['cyclobutyl','Cyclobutyl','C1CCC1'],['cyclopentyl','Cyclopentyl','C1CCCC1'],['cyclohexyl','Cyclohexyl','C1CCCCC1'],['cyclopropylmethyl','Cyclopropylmethyl','CC1CC1'],['benzyl','Benzyl','Cc1ccccc1'],['phenethyl','2-Phenylethyl','CCc1ccccc1'],['phenylpropyl','3-Phenylpropyl','CCCc1ccccc1'],['methoxyethyl','2-Methoxyethyl','CCOC'],['methoxypropyl','3-Methoxypropyl','CCCOC'],['hydroxyethyl','2-Hydroxyethyl','CCO'],['hydroxypropyl','3-Hydroxypropyl','CCCO']];
+ const QUICK_CARBONYL=[
+  ...[['methyl','Methyl','OC'],['ethyl','Ethyl','OCC'],['propyl','n-Propyl','OCCC'],['isopropyl','Isopropyl','OC(C)C'],['butyl','n-Butyl','OCCCC'],['isobutyl','Isobutyl','OCC(C)C'],['pentyl','n-Pentyl','OCCCCC'],['benzyl','Benzyl','OCc1ccccc1'],['phenethyl','2-Phenylethyl','OCCc1ccccc1'],['methoxyethyl','2-Methoxyethyl','OCCOC'],['hydroxyethyl','2-Hydroxyethyl','OCCO']].map(([id,name,fragment])=>({...CARBONYL_DESIGNS[0],id:'quick-oxime-'+id,name:'O-'+name+' oxime ether',fragment})),
+  ...[['methyl','Methyl','NC'],['ethyl','Ethyl','NCC'],['propyl','n-Propyl','NCCC'],['isopropyl','Isopropyl','NC(C)C'],['butyl','n-Butyl','NCCCC'],['dimethyl','Dimethyl','N(C)C'],['benzyl','Benzyl','NCc1ccccc1'],['phenyl','Phenyl','Nc1ccccc1'],['acetyl','Acetyl','NC(=O)C'],['propionyl','Propionyl','NC(=O)CC'],['benzoyl','Benzoyl','NC(=O)c1ccccc1'],['carbamoyl','Carbamoyl','NC(=O)N']].map(([id,name,fragment])=>({...CARBONYL_DESIGNS[1],id:'quick-hydrazone-'+id,name:name+' hydrazone',fragment}))
+ ];
+ const QUICK_CACHE=new Map();
+ function expandedDesigns(base){
+  if(QUICK_CACHE.has(base))return QUICK_CACHE.get(base);let extras=[];
+  if(base===OH_DESIGNS)extras=QUICK_TAILS.map(([id,name,tail])=>({...base[0],id:'quick-o-'+id,name:'O-'+name+' ester',fragment:'C(=O)'+tail,hypothesis:'Ester hydrolysis could regenerate the parent OH group and the corresponding carboxylic acid. Release, enzyme recognition and competing reactions are untested.'}));
+  if(base===ACID_DESIGNS)extras=QUICK_ALCOHOLS.map(([id,name,fragment])=>({...base[0],id:'quick-acid-'+id,name:name+' carboxylate ester',fragment,hypothesis:'Ester hydrolysis could restore the parent acid and the corresponding alcohol. Conversion and alcohol-derived exposure are untested.'}));
+  if(base===AMINE_DESIGNS)extras=QUICK_TAILS.map(([id,name,tail])=>({...base[0],id:'quick-amine-'+id,name:name+'-triggered oxymethyl N-carbamate',fragment:'C(=O)OCOC(=O)'+tail}));
+  if(base===THIOL_DESIGNS)extras=QUICK_TAILS.map(([id,name,tail])=>({...base[0],id:'quick-s-'+id,name:'S-'+name+' thioester',fragment:'C(=O)'+tail}));
+  if(base===NH_LINKER_DESIGNS)extras=QUICK_TAILS.map(([id,name,tail])=>({...base[1],id:'quick-nh-'+id,name:'N-hydroxymethyl '+name+' ester',fragment:'COC(=O)'+tail}));
+  if(base===CARBONYL_DESIGNS)extras=QUICK_CARBONYL;
+  const result=[],seen=new Set();for(const d of base.concat(extras)){const key=d.cleavage+'|'+d.fragment;if(seen.has(key))continue;seen.add(key);result.push({...d,limitations:(d.limitations||[]).concat('Expanded structural sampling within a reaction class. This exact promoiety has not been validated for this parent; new promoiety stereochemistry is unassigned.')});}
+  QUICK_CACHE.set(base,result);return result;
+ }
  const cloneAtom=a=>Object.assign({},a,{order:Array.isArray(a.order)?a.order.slice():null,neighbors:[],rings:[]});
  function cloneGraph(m){return {atoms:m.atoms.map(cloneAtom),bonds:m.bonds.map(b=>Object.assign({},b))};}
  function neighbors(m,id){return m.bonds.flatMap(b=>b.a===id?[{id:b.b,bond:b}]:b.b===id?[{id:b.a,bond:b}]:[]);}
@@ -114,7 +141,7 @@
     const terminal=cleavage==='carbonyl-oxime'?'O':'N';
     for(let i=0;i<m.atoms.length;i++){
      const n=m.atoms[i],links=neighbors(m,i);if(n.element!=='N'||n.charge||n.isotope||n.totalH||links.length!==2)continue;
-     const carbon=links.find(x=>x.bond.order===2&&m.atoms[x.id].element==='C'&&!m.atoms[x.id].aromatic),end=links.find(x=>x.bond.order===1&&m.atoms[x.id].element===terminal&&neighbors(m,x.id).length===1&&!m.atoms[x.id].charge);
+     const carbon=links.find(x=>x.bond.order===2&&m.atoms[x.id].element==='C'&&!m.atoms[x.id].aromatic),end=links.find(x=>x.bond.order===1&&m.atoms[x.id].element===terminal&&!m.atoms[x.id].charge);
      if(!carbon||!end)continue;
      const recovered=removeBranch(m,i,end.id,{hydrogens:0,charge:0});if(!recovered)continue;
      recovered.atoms[recovered.anchorIndex].element='O';const smiles=serialized(recovered);
@@ -177,12 +204,14 @@
   const report=generateSingle(prepared.mol,mapped);report.normalization=prepared.normalization;report.reasons.push(prepared.normalization.scope);
   const remap=s=>({...s,parentAtom:s.atom,atom:prepared.inputAtoms[s.atom],index:prepared.inputAtoms[s.atom],...(s.carbonylOxygen!==undefined?{parentCarbonylOxygen:s.carbonylOxygen,carbonylOxygen:prepared.inputAtoms[s.carbonylOxygen]}:{}),label:s.label.replace(/\d+$/,String(prepared.inputAtoms[s.atom]+1))});
   report.eligibleSites=(report.eligibleSites||[]).map(remap);
+  if(report.sampling)report.sampling.positionCounts=report.sampling.positionCounts.map(s=>({...s,atom:prepared.inputAtoms[s.atom]}));
   report.rows.forEach(row=>{row.site=remap(row.site);row.id=row.id.replace(/\d+$/,String(row.site.atom+1));row.name=row.name.replace(/\d+$/,String(row.site.atom+1));row.normalization=prepared.normalization;row.parentRecoveryScope=prepared.normalization.scope;row.limitations.push(prepared.normalization.scope);});
   return report;
  }
  function generateSingle(parent,options){
   const rows=[],reasons=[],skipped=[];
-  const report={version:5,status:'unavailable',rows,candidates:rows,reasons,skipped,evidenceLevel:'Unvalidated structural designs',scope:'At most five single-site ester, phosphate, carbamate, thioester, N–H linker, N-oxide or carbonyl-condensation hypotheses. Structural parent recovery does not establish biological conversion or prodrug status.'};
+  const quick=options?.profile==='quick';
+  const report={version:6,status:'unavailable',rows,candidates:rows,reasons,skipped,evidenceLevel:'Unvalidated structural designs',scope:'Bounded single-site ester, phosphate, carbamate, thioester, N–H linker, N-oxide or carbonyl-condensation hypotheses. Structural parent recovery does not establish biological conversion or prodrug status.'};
   const fail=message=>{reasons.push(message);return report;};
   try{
    if(!parent||!Array.isArray(parent.atoms)||!Array.isArray(parent.bonds))return fail('A parsed molecular graph is required.');
@@ -191,7 +220,7 @@
    if(parent.atoms.some(a=>!['C','H','N','O','F','P','S','Cl','Br','I'].includes(a.element)))return fail('Unsupported element in this bounded design subset.');
    if(!supportedValences(parent))return fail('Radical or unsupported valence states are outside this design subset.');
    if(!exact(parent,parse(serialized(parent))))return fail('The complete parent isotope/stereochemical identity could not be verified after serialization.');
-   let sites=freeSites(parent);report.eligibleSites=sites.map(({designs,...site})=>({...site,designs:designs.map(({id,name,cleavage})=>({id,name,cleavage}))}));
+   let sites=freeSites(parent);if(quick)sites=sites.map(site=>({...site,designs:expandedDesigns(site.designs)}));report.eligibleSites=sites.map(({designs,...site})=>({...site,designs:designs.map(({id,name,cleavage})=>({id,name,cleavage}))}));
    if(options&&options.atom!==undefined){
     if(!Number.isInteger(options.atom)||!parent.atoms[options.atom])return fail('Select a valid input atom.');
     sites=sites.filter(s=>s.atom===options.atom);
@@ -201,29 +230,45 @@
    }
    if(!sites.length){report.status='no-compatible-site';return fail('No compatible site for the current ester, phosphate, amine-carbamate, N-oxide, thioester, N–H linker or aldehyde/ketone design classes at the selected site(s). This is a coverage limit, not evidence that no prodrug is possible.');}
    const requested=options&&options.limit!==undefined?Number(options.limit):5;
-   const limit=Number.isFinite(requested)?Math.max(0,Math.min(5,Math.floor(requested))):5;
+   const limit=Number.isFinite(requested)?Math.max(0,Math.min(quick?25:5,Math.floor(requested))):(quick?25:5);
    if(!limit)return fail('Candidate limit is zero.');
-   // Round-robin across handles before homologues, rather than hide every site
-   // behind five modifications of the first oxygen.
-   const structures=[];
-   for(let d=0;d<5&&rows.length<limit;d++)for(const site of sites){
-    if(rows.length>=limit)break;const design=site.designs[d];if(!design)continue;
+   const structures=[];let attempts=0;
+   const attempt=(site,design)=>{
+    if(rows.length>=limit||quick&&attempts>=300)return false;attempts++;const before=rows.length;
     try{
      const smiles=serialized(attach(parent,site,design)),candidate=parse(smiles);
-     if(!connected(candidate)||!supportedValences(candidate)||exact(candidate,parent)||structures.some(m=>exact(m,candidate)))continue;
-     if(!exact(candidate,parse(serialized(candidate)))){skipped.push({site:site.label,promoiety:design.name,reason:'Candidate stereochemical identity is unresolved or not preserved.'});continue;}
-     const recovery=recoverParent(smiles,design.cleavage,parent);if(!recovery.verified){skipped.push({site:site.label,promoiety:design.name,reason:'Exact parent recovery was not verified.'});continue;}
+     if(!connected(candidate)||!supportedValences(candidate)||exact(candidate,parent)||structures.some(m=>exact(m,candidate)))return false;
+     if(!exact(candidate,parse(serialized(candidate)))){skipped.push({site:site.label,promoiety:design.name,reason:'Candidate stereochemical identity is unresolved or not preserved.'});return false;}
+     const recovery=recoverParent(smiles,design.cleavage,parent);if(!recovery.verified){skipped.push({site:site.label,promoiety:design.name,reason:'Exact parent recovery was not verified.'});return false;}
      structures.push(candidate);
      rows.push({id:design.id+'-'+site.element.toLowerCase()+(site.atom+1),name:design.name+' candidate at '+site.element+(site.atom+1),smiles,promoiety:design.name,site:{atom:site.atom,index:site.atom,kind:site.kind,label:site.label},cleavage:design.cleavage,activationHypothesis:design.hypothesis,
       parentRecoveryScope:'Reverse graph edit restores the supplied isotope, stereo and charge state; it does not predict biological release or solution protonation.',
       limitations:COMMON_LIMITS.concat(design.limitations||[],parent.atoms[site.atom].charge!==site.charge?['The design changes the handle charge; reverse checking restores the input charge state by bookkeeping, not a pKa or physiological protonation model.']:[],report.eligibleSites.length>1?['This is a single-site design on a molecule with several eligible handles; selective preparation and competing activation are not established.']:[]),
       evidenceLevel:'Unvalidated structural design',designStatus:'hypothesis',sourceUrl:design.sources[0].url,sources:design.sources.map(s=>Object.assign({},s)),referenceScope:'Reaction-class precedents only; no molecule-specific experimental evidence.',parentRecoveryVerified:true,recoveredParentSmiles:recovery.smiles,attachment:recovery.attachment,experimentalValidation:false});
     }catch(error){skipped.push({site:site.label,promoiety:design.name,reason:'The proposed structure could not be validated.'});}
+    return rows.length>before;
+   };
+   if(quick){
+    const chosen=[];
+    // Five positions, five unique designs each where their libraries allow it.
+    const ordered=sites.slice().sort((a,b)=>Number(b.designs.length>=5)-Number(a.designs.length>=5));
+    for(const site of ordered){
+     if(chosen.length>=5||rows.length>=limit||attempts>=300)break;
+     const state={site,cursor:0,count:0};
+     while(state.count<5&&state.cursor<site.designs.length&&rows.length<limit&&attempts<300){if(attempt(site,site.designs[state.cursor++]))state.count++;}
+     if(state.count)chosen.push(state);
+    }
+    // Fill unused capacity from the selected compatible positions.
+    let work=true;while(rows.length<limit&&work&&attempts<300){work=false;for(const state of chosen){if(state.cursor>=state.site.designs.length||rows.length>=limit||attempts>=300)continue;work=true;if(attempt(state.site,state.site.designs[state.cursor++]))state.count++;}}
+    report.sampling={target:limit,maxPositions:5,basePerPosition:5,attempts,attemptLimit:300,positionCounts:chosen.map(s=>({atom:s.site.atom,element:s.site.element,count:s.count})),shortfall:limit-rows.length};
+    if(rows.length<limit)reasons.push('Only '+rows.length+' distinct designs passed the supported template and exact-parent checks within the sampling bounds; the remaining slots are not padded with duplicate or unsupported structures.');
+   }else{
+    for(let d=0;d<5&&rows.length<limit;d++)for(const site of sites){if(rows.length>=limit)break;const design=site.designs[d];if(design)attempt(site,design);}
    }
    if(rows.length){report.status='generated';reasons.push(rows.length+' unique unvalidated candidate'+(rows.length===1?'':'s')+' generated. No ranking of clinical benefit is made.');}
    else reasons.push('No candidate passed the bounded structure and exact-parent recovery checks.');
   }catch(error){reasons.push('Candidate generation unavailable for this structure: '+error.message);}
   return report;
  }
- const api={generate,recoverParent,prepareParent,validGraph:supportedValences,sites:parent=>generate(parent,{limit:0}).eligibleSites||[],sources:SOURCES};root.ProdrugCandidates=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
+ const api={generate,generateQuick:(parent,options={})=>generate(parent,{...options,limit:options.limit??25,profile:'quick'}),recoverParent,prepareParent,validGraph:supportedValences,sites:parent=>generate(parent,{limit:0}).eligibleSites||[],sources:SOURCES};root.ProdrugCandidates=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

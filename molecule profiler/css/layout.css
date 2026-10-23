@@ -82,3 +82,5 @@ main{max-width:1480px;padding-inline:clamp(16px,3vw,48px);gap:26px}
 /* Resolve shared surfaces in the active body theme, including hover states. */
 body{--border:var(--line);--surface-hover:color-mix(in srgb,var(--accent) 6%,var(--bg-raise))}
 .panel .design-studio-nav button[aria-pressed=true]:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+
+.quick-candidate-group{padding:16px 18px;border:1px solid var(--line);border-radius:12px;margin:14px 0;background:var(--bg-raise)}.quick-candidate-group>summary{color:var(--accent);font-size:14px}.quick-candidate-group .prodrug-candidate-grid{margin-top:18px}

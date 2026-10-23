@@ -29,7 +29,7 @@ Validation uses a focused DOM test covering reference availability, correct high
 Choose **Design on current input**, then use **Compatible site** or
 the full atom menu. Supported sites are labelled by atom and functional group.
 Choose a template and select **Preview selected option**. The builder can target
-any compatible site, including sites beyond the automatic five-candidate list.
+any compatible site, including sites beyond the automatic Quick candidate list.
 It never falls back to a different atom if a selected site or template is invalid.
 
 Supported classes include alcohol/phenol O-acyl and phosphate attachments,
@@ -386,3 +386,56 @@ found routes (nine steps), exact final parent stereo/isotope identity, formal
 atom/charge bookkeeping and every reported remaining product equivalent.
 These are structure and interface checks, not validation of a priority model,
 biological release, safety or efficacy.
+
+### Quick candidates: 25 designs across up to five positions (2026-10-23)
+
+Quick candidates now request 25 distinct single-site structural designs. The
+sampler prefers positions with at least five available templates, allocates five
+successful distinct candidates per position across up to five positions, then
+fills unused capacity from those selected positions. With fewer than five usable
+positions, remaining slots are distributed across the available positions. Other
+positions are considered if a position cannot supply a distinct valid design.
+Positions use original input atom numbers, including when recognized counterions
+are omitted. Symmetry-equivalent edits are deduplicated by full molecular graph,
+so equivalent positions can expose different promoiety choices rather than
+repeated structures. No simultaneous multi-position substitutions are generated.
+
+The expanded profile adds acyl and alcohol-side ester variants, related trigger
+variants for amine carbamates and N–H linkers, thioesters, O-substituted oxime ethers,
+and substituted hydrazones. They stay within the existing reaction classes and
+reuse class-level sources; those sources do not validate every new promoiety.
+New promoiety stereochemistry remains unassigned. Carbonyl reversal removes the
+complete N–O/N–N branch and restores the original unlabeled carbonyl oxygen;
+isotope-labelled carbonyl oxygen remains excluded as before. Product valence,
+round-trip stereo/isotope identity and exact structural parent recovery checks
+remain required. These checks are structural, not evidence of physiological
+cleavage, useful conversion, synthesis selectivity, improved delivery or safety.
+
+Sampling is bounded to 25 outputs, five positions and 300 attempted edits.
+`ProdrugCandidates.generateQuick(parent)` exposes the expanded profile, while
+`generate()` keeps its default five-output bound and the selected-site builder
+keeps its compact template menus. A limited class such as a tertiary amine
+N-oxide can still yield fewer than 25 designs when no other compatible position
+is available; the UI and JSON report the shortfall instead of padding duplicates
+or introducing unsupported attachment classes. The sampling export records the
+target, per-position counts, attempts and unfilled slots.
+
+The Quick candidates view groups cards in position disclosures, showing counts
+per position and opening the first group by default. Every design retains its
+SMILES, analysis handoff, activation hypothesis, parent recovery and source/limit
+disclosures. Pharmacology JSON includes the complete set of generated designs.
+
+Primary carbonyl-class reference (includes methoxyamine-derived oxime and alkyl/
+acyl hydrazones, with strongly variable hydrolytic stability):
+https://pmc.ncbi.nlm.nih.gov/articles/PMC2743602/
+All other expanded classes retain the class sources already documented above.
+
+Validation: `tools/quick-candidates-test.js` checks 25-output generation across
+oxygen, acid, amine, sulfur, N–H linker and carbonyl classes, five-by-five quotas,
+full-capacity site preference, redistribution, graph deduplication, charge/salt
+indices, stereo/isotope handling, truthful shortfalls and preservation of compact
+builder limits. `tools/quick-candidates-rdkit-test.py` independently checks 425
+Quick structures across 17 inputs for sanitization, canonical distinctness,
+attachment indices and recovered parent isotope/stereo/charge identity, including
+an independent graph reversal for substituted carbonyl derivatives. UI tests
+cover 25 cards and handoffs, position grouping and original salt atom numbering.

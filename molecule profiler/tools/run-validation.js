@@ -35,6 +35,7 @@ const scripts = [
   'pharmacology-test.js',
   'pk-applicability-test.js',
   'prodrug-candidates-test.js',
+  'quick-candidates-test.js',
   'cleavable-groups-test.js',
   'analogue-candidates-test.js',
   'directional-smiles-test.js',

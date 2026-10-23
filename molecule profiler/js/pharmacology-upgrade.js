@@ -29,8 +29,8 @@
  const chartHost=make('section');chartHost.id='pk-decay-view';chartHost.className='pk-research-extension';pk.closest('article').append(chartHost);
  const decay=typeof createPKDecayView==='function'?createPKDecayView(chartHost):null;
  const designs=make('section');designs.id='prodrug-candidate-designs';designs.className='pk-research-extension';
- designs.append(make('h3','Generated research candidates — up to five'),make('p','Compatible alcohols, phenols, acids/carboxylates, amines, thiols and aldehyde/ketone carbonyls can produce unvalidated structural designs, separate from documented prodrugs above. A reversible graph edit does not establish enzymatic cleavage, parent release in the body, absorption, safety or efficacy.'));
- const candidateStatus=make('p');candidateStatus.setAttribute('role','status');const cards=make('div');cards.className='prodrug-candidate-grid';designs.append(candidateStatus,cards);panel.append(designs);
+ designs.append(make('h3','Quick candidates — up to 25 designs'),make('p','Compatible alcohols, phenols, acids/carboxylates, amines, thiols and aldehyde/ketone carbonyls can produce unvalidated structural designs, separate from documented prodrugs above. A reversible graph edit does not establish enzymatic cleavage, parent release in the body, absorption, safety or efficacy.'));
+ const candidateStatus=make('p');candidateStatus.setAttribute('role','status');const cards=make('div');cards.className='quick-candidate-groups';designs.append(candidateStatus,cards);panel.append(designs);
  let current=null;
  function updateCurve(){
   if(!decay)return;
@@ -44,17 +44,21 @@
   cards.replaceChildren();const snapshot=root.PharmacologyUI.getSnapshot();
   if(!root.ProdrugCandidates){candidateStatus.textContent='Candidate enumeration is unavailable.';return;}
   try{
-   const result=root.ProdrugCandidates.generate(record.mol,{limit:5});if(snapshot)snapshot.prodrugCandidates=result;
+   const result=root.ProdrugCandidates.generateQuick(record.mol);if(snapshot)snapshot.prodrugCandidates=result;
    const rows=result.rows||result.candidates||[];
    candidateStatus.textContent=(result.reasons||[]).join(' ')||(rows.length+' unvalidated structural candidates generated.');
+   if(result.sampling){const sampling=result.sampling;candidateStatus.textContent+=' Target: '+sampling.target+' designs across up to five positions; '+sampling.positionCounts.map(s=>s.element+(s.atom+1)+': '+s.count).join(' · ')+'.';}
+   const groups=new Map();
    rows.forEach((row,index)=>{
+    if(!groups.has(row.site.atom)){const group=make('details');group.className='quick-candidate-group';group.open=groups.size===0;const count=rows.filter(r=>r.site.atom===row.site.atom).length;group.append(make('summary','Position '+record.mol.atoms[row.site.atom].element+(row.site.atom+1)+' · '+count+' distinct design'+(count===1?'':'s')));const grid=make('div');grid.className='prodrug-candidate-grid';group.append(grid);cards.append(group);groups.set(row.site.atom,grid);}
+
     const card=make('article');card.className='prodrug-candidate-card';card.append(make('h4',(index+1)+'. '+row.name));
     if(typeof depictSvg==='function'){try{const preview=make('div');preview.className='prodrug-candidate-structure';preview.innerHTML=depictSvg(buildMolecule(parseSmiles(row.smiles)),{title:row.name+' — unvalidated design'});card.append(preview);}catch(_){/* SMILES remains available if depiction is unsupported. */}}
     card.append(make('code',row.smiles),make('p','Release hypothesis: '+row.activationHypothesis),make('p','Structural parent recovery: '+(row.parentRecoveryVerified?'checked; biological release remains unverified.':'not established.')));
     const limitations=make('ul');(row.limitations||[]).forEach(text=>limitations.append(make('li',text)));card.append(limitations);
     const sources=row.sources&&row.sources.length?row.sources:[{url:row.sourceUrl,title:'Reaction-class source'}];
     sources.forEach(source=>{const url=source.url||source.sourceUrl;if(!/^https:\/\//.test(url||''))return;const a=make('a',source.title||source.label||'Class reference');a.href=url;a.target='_blank';a.rel='noopener noreferrer';const p=make('p');p.append(a);card.append(p);});
-    const button=make('button','Analyze candidate structure');button.type='button';button.dataset.pharmSmiles=row.smiles;button.dataset.pharmName='Unvalidated candidate '+(index+1);card.append(button);cards.append(card);
+    const button=make('button','Analyze candidate structure');button.type='button';button.dataset.pharmSmiles=row.smiles;button.dataset.pharmName='Unvalidated candidate '+(index+1);card.append(button);groups.get(row.site.atom).append(card);
    });
   }catch(error){candidateStatus.textContent='No candidate design inferred: '+error.message;if(snapshot)snapshot.prodrugCandidates={status:'unavailable',rows:[],reason:error.message};}
  }

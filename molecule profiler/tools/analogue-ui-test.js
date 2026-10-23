@@ -14,5 +14,5 @@ render('Oc1ccccc1');assert.ok(snapshot.analogueCandidates.rows.length>0);assert.
 const button=panel.querySelector('button[data-smiles]');button.click();assert.equal(runCount,1);assert.ok(w.document.getElementById('smiles-input').value.includes(button.dataset.smiles));
 panel.querySelector('button').click();assert.ok(downloadText,'Download created from current rows');
 render('CCO');assert.equal(snapshot.analogueCandidates.rows.length,0);assert.equal(panel.querySelectorAll('button[data-smiles]').length,0);assert.ok(panel.querySelector('button').disabled);
-render('C[NH2+]CCO');assert.equal(snapshot.prodrugCandidates.rows.length,5);assert.equal(snapshot.analogueCandidates.rows.length,0);
+render('C[NH2+]CCO');assert.equal(snapshot.prodrugCandidates.rows.length,25);assert.equal(snapshot.analogueCandidates.rows.length,0);
 console.log('Analogue UI: rendering, chained prodrug integration, candidate handoff, download and changed-input clearing passed.');dom.window.close();
