@@ -1,0 +1,17 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
+const root=path.join(__dirname,'..'),ctx=vm.createContext({console,performance,setTimeout,clearTimeout});
+for(const m of fs.readFileSync(path.join(root,'index.html'),'utf8').matchAll(/<script src="([^"]+)"/g))if(m[1]!=='js/app.js')vm.runInContext(fs.readFileSync(path.join(root,m[1]),'utf8'),ctx,{filename:m[1]});
+const run=c=>vm.runInContext(c,ctx);let checks=0;const check=(c,e,label)=>{assert.equal(run(c),e,label);checks++;};
+run(`function managed(options){const j=protectionProgramCreate('NCC(O)CC=O','NCC(O)CCO',{managedProtectingGroups:['fmoc','tbs'],maxDepth:5,maxRoutes:1,budgetMs:3000,...options});while(j.status==='running')j.step(50);return j;} var managedJob=managed();`);
+check(`managedJob.status`,'found','Two distinct masks can span a benign carbonyl reduction');
+check(`managedJob.route.map(l=>l.candidate.planning.kind).join(',')`,'protect,protect,reaction,deprotect,deprotect','Each installation/main/removal is a separate visible operation');
+check(`managedJob.route.every(l=>retroForwardCheck(l.candidate,l.to))`,true,'Every edge independently replays');
+check(`protectionRouteAudit(managedJob.route,['fmoc','tbs']).conflicts.length`,0,'Masks survive the main step and have a compatible removal order');
+check(`routeWorkspaceValidate(routeWorkspaceNormalize({start:managedJob.start,target:managedJob.target,steps:managedJob.route})).status`,'verified','Five-step route survives save/normalize/revalidation');
+check(`managed({forbiddenReagents:['TBAF']}).status==='found'`,false,'Removal material filters apply');
+assert.throws(()=>run(`managed({allowedProtectingGroups:['fmoc']})`),/allowed protecting/);checks++;
+assert.throws(()=>run(`managed({maxDepth:4})`),/at least 5 steps/);checks++;
+check(`(()=>{const j=protectionProgramCreate('NCC(O)CO','NCC(O)CO',{managedProtectingGroups:['fmoc','tbs'],maxDepth:5,maxRoutes:1,budgetMs:200});while(j.status==='running')j.step(30);return j.status==='found';})()`,false,'Repeated alcohol sites do not get an invented selective installation');
+check(`(()=>{const j=protectionProgramCreate('CCO','CC=O',{managedProtectingGroups:['tbs'],maxDepth:3,maxRoutes:1,budgetMs:200});j.cancel();return j.step().status;})()`,'cancelled','Coordinator remains cancellable');
+console.log('Protection program: '+checks+' focused checks passed.');

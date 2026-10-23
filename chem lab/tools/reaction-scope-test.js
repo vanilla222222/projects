@@ -1,0 +1,16 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
+const root=path.join(__dirname,'..'),ctx=vm.createContext({console,performance,setTimeout,clearTimeout});
+for(const m of fs.readFileSync(path.join(root,'index.html'),'utf8').matchAll(/<script src="([^"]+)"/g))if(m[1]!=='js/app.js'&&m[1]!=='js/reaction-scope.js')vm.runInContext(fs.readFileSync(path.join(root,m[1]),'utf8'),ctx,{filename:m[1]});
+vm.runInContext(fs.readFileSync(path.join(root,'js/reaction-scope.js'),'utf8'),ctx,{filename:'reaction-scope.js'});
+const run=c=>vm.runInContext(c,ctx);let checks=0;const check=(c,e,label)=>{assert.equal(run(c),e,label);checks++;};
+run(`function scopeFixture(s,conditions){const compounds=[{smiles:s,role:'reactant',fragment:smilesToFragment(s)}],c={...defaultReactionConditions(),solvents:['dcm'],additives:['dmp'],...conditions},prediction=predictReaction(compounds,c);return {compounds,c,prediction,report:reactionScopeAssess(compounds,c,prediction.best)};}`);
+check(`scopeFixture('CCO').report.modelReproduced`,true,'Selected oxidation branch is replayed');
+check(`scopeFixture('CCO').report.selectivity.status`,'single-recognized-site','Only one recognized susceptible site is described');
+check(`(()=>{const f=scopeFixture('CCO');return reactionScopeAssess(f.compounds,{...f.c,solvents:['dcm','not-a-solvent']},f.prediction.best).reasons.some(r=>r.code==='unknown-solvents');})()`,true,'Unknown solvent is surfaced before normalization');
+check(`(()=>{const f=scopeFixture('CCO');return reactionScopeAssess(f.compounds,{...f.c,temperature:9999},f.prediction.best).reasons.some(r=>r.code==='normalized-temperature');})()`,true,'Clamped temperature is not accepted as recorded evidence');
+check(`(()=>{const f=scopeFixture('OCC(O)CC'),o=f.prediction.alternatives.find(o=>o.partialConversion),r=reactionScopeAssess(f.compounds,f.c,o);return r.selectivity.status==='unestablished'&&r.selectivity.selected.atomIndex>0&&r.sites.filter(s=>s.group==='alcohol').length===2;})()`,true,'Partial site alternatives retain both competing input sites');
+check(`(()=>{const f=scopeFixture('CCO');return reactionScopeAssess(f.compounds,{...f.c,additives:[]},f.prediction.best).status;})()`,'conflict','Stale product cannot pass a changed-condition audit');
+check(`(()=>{const f=scopeFixture('CCO');return reactionScopeAssess(f.compounds,{...f.c,time:'1 hour'},f.prediction.best).reasons.some(r=>r.code==='unmodelled-time');})()`,true,'Time text is not treated as a kinetic model');
+check(`(()=>{const f=scopeFixture('CCO'),before=JSON.stringify(f);reactionScopeAssess(f.compounds,f.c,f.prediction.best);return before===JSON.stringify(f);})()`,true,'Audit does not mutate inputs or selected products');
+console.log('Reaction scope: '+checks+' focused checks passed.');

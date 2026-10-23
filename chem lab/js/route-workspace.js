@@ -63,6 +63,10 @@ function routeWorkspaceValidateStep(step) {
       const assessment = routeStepAssessment({outcome,compounds,conditions:step.conditions});
       if (assessment.blockers.length) return {status:'unverified',message:assessment.blockers.map(b=>b.message).join(' '),ruleId:outcome.id,outcome,assessment};
     }
+    if (outcome && typeof reactionScopeAssess === 'function') {
+      const scope = reactionScopeAssess(compounds,step.conditions,outcome);
+      if (scope.status === 'conflict') return {status:'unverified',message:scope.reasons.filter(r=>r.level==='conflict').map(r=>r.message).join(' ')||'Condition/substrate scope conflict.',ruleId:outcome.id,outcome,scope};
+    }
     return outcome ? { status: 'verified', message: 'Target reproduced by ' + outcome.name + ' in the current rule model.', ruleId: outcome.id, outcome }
       : { status: 'unverified', message: 'The current rules did not reproduce the selected target with these inputs and conditions.' };
   } catch (error) { return { status: 'invalid', message: error.message }; }
@@ -150,6 +154,7 @@ function createRouteWorkspace(deps) {
       try { const a = routeWorkspaceSmiles(start.input.value), b = routeWorkspaceSmiles(target.input.value); route.start = a; route.target = b; if (persist()) message.textContent = 'Endpoints updated. Continuity was rechecked.'; redraw(); } catch (error) { message.textContent = error.message; }
     }));
     content.append(meta, element('p', simpleName(route.start) + ' → ' + simpleName(route.target), 'workspace-equation'), element('p', 'Route status: ' + report.status + '. ' + (report.issues.join(' ') || 'Intermediates connect in the current order.'), 'workspace-status ' + report.status));
+    if (typeof protectionRouteAudit === 'function' && typeof protectionRouteElement === 'function') content.append(protectionRouteElement(protectionRouteAudit(route.steps)));
     route.steps.forEach((step, index) => {
       const card = element('article', undefined, 'workspace-step');
       card.append(element('h3', (index + 1) + '. ' + step.name), element('p', report.steps[index].status + ': ' + report.steps[index].message, 'workspace-status ' + report.steps[index].status));
@@ -157,6 +162,7 @@ function createRouteWorkspace(deps) {
       const verifiedOutcome = report.steps[index].outcome;
       if (verifiedOutcome && verifiedOutcome.protectionAssessment && typeof protectionAssessmentElement === 'function') card.append(protectionAssessmentElement(verifiedOutcome.protectionAssessment));
       if (typeof reactionEvidenceElement === 'function' && verifiedOutcome && verifiedOutcome.evidence) card.append(reactionEvidenceElement(verifiedOutcome.evidence, true));
+      if (typeof reactionScopeAssess === 'function' && typeof reactionScopeElement === 'function' && verifiedOutcome) card.append(reactionScopeElement(reactionScopeAssess(step.compounds,step.conditions,verifiedOutcome)));
       if (typeof reactionAtomMapping === 'function' && typeof reactionMappingElement === 'function') {
         const inspect = element('details'); inspect.append(element('summary', 'Inspect product atom correspondence'));
         let mapped = false;

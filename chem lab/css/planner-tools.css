@@ -1,0 +1,11 @@
+#path-cascade, #path-benchmarks { margin: 18px 0; }
+#path-cascade > details, #path-benchmarks > details { border: 1px solid var(--border); border-radius: 9px; padding: 14px; background: var(--bg-elevated); }
+#path-cascade summary, #path-benchmarks summary { cursor: pointer; line-height: 1.5; }
+#path-cascade label { display: block; margin: 14px 0; }
+#path-cascade input, #path-cascade textarea { box-sizing: border-box; display: block; width: 100%; margin-top: 7px; padding: 10px; color: var(--text-primary); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; }
+#path-cascade textarea { resize: vertical; font: 12px var(--font-mono); line-height: 1.5; }
+#path-benchmarks article { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 10px; overflow-wrap: anywhere; }
+#path-benchmarks p, #path-cascade p { line-height: 1.5; }
+#path-managed-protection { min-width: 0; width: min(100%, 420px); padding: 8px; margin: 6px; }
+.route-comparison-card details table, .workspace-step details table, .rx-atom-mapping table { border-collapse: collapse; width: 100%; font-size: 12px; }
+.route-comparison-card details th, .route-comparison-card details td, .workspace-step details th, .workspace-step details td, .rx-atom-mapping th, .rx-atom-mapping td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }

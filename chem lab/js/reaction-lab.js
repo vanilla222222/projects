@@ -772,6 +772,7 @@ function createReactionLab(host) {
     if (outcome.evidence && typeof reactionEvidenceElement === 'function') {
       predictionBox.appendChild(reactionEvidenceElement(outcome.evidence));
     }
+    if (typeof reactionScopeAssess === 'function' && typeof reactionScopeElement === 'function') predictionBox.appendChild(reactionScopeElement(reactionScopeAssess(state.compounds,state.conditions,outcome)));
     if (typeof reactionAtomMapping === 'function' && typeof reactionMappingElement === 'function') {
       const inspect = element('details', 'rx-atom-mapping');
       inspect.append(element('summary', '', 'Inspect product atom correspondence'));

@@ -388,7 +388,10 @@ function createPathFinder(deps) {
     results.replaceChildren();
     try {
       const a = reactionParseCompound(start.value), b = reactionParseCompound(target.value);
-      job = pathFinderCreate(a.isomericSmiles || a.smiles, b.isomericSmiles || b.smiles, {
+      const managedProtectingGroups = String(value('path-managed-protection','')).trim();
+      const create = managedProtectingGroups && typeof protectionProgramCreate === 'function' ? protectionProgramCreate : pathFinderCreate;
+      job = create(a.isomericSmiles || a.smiles, b.isomericSmiles || b.smiles, {
+        managedProtectingGroups,
         maxDepth: Number(value('path-depth', 3)), maxRoutes: Number(value('path-route-count', 3)), stockPolicy: value('path-stock-policy', 'builtin'),
         availableMaterials: String(value('path-inventory', '')).split(/\n/).map((s) => s.trim()).filter(Boolean),
         forbiddenReagents: value('path-forbidden-reagents', ''), forbiddenRules: value('path-forbidden-rules', ''),
@@ -408,5 +411,7 @@ function createPathFinder(deps) {
   cancel.addEventListener('click', () => { if (job) { ++token; job.cancel(); finish(); } });
   [start, target].forEach((input) => input.addEventListener('keydown', (event) => { if (event.key === 'Enter' && !run.disabled) run.click(); }));
   get('path-example').addEventListener('click', () => { start.value = 'ethanol'; target.value = 'ethanal'; });
+  if (get('path-cascade') && typeof createReactionCascade === 'function') createReactionCascade(get('path-cascade'),deps);
+  if (get('path-benchmarks') && typeof createRouteBenchmarks === 'function') createRouteBenchmarks(get('path-benchmarks'),deps);
   return { show() { updateLimits(); start.focus(); } };
 }

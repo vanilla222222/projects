@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/route-workspace.css">
 <link rel="stylesheet" href="css/route-comparison.css">
+<link rel="stylesheet" href="css/planner-tools.css">
 </head>
 <body data-theme="dark">
 <aside id="sidebar">
@@ -354,11 +355,15 @@
       <div class="path-inputs"><label>My available building blocks<textarea id="path-inventory" rows="4" placeholder="One name or SMILES per line, e.g. methanol"></textarea></label><label>Forbidden reagents or solvents<textarea id="path-forbidden-reagents" rows="4" placeholder="One name, SMILES or label per line, e.g. PCC"></textarea></label><label>Forbidden reaction IDs or names<textarea id="path-forbidden-rules" rows="4" placeholder="One ID or name fragment per line, e.g. oxidation"></textarea></label></div>
       <div class="path-controls"><label for="path-protection-policy">Protection planning</label><select id="path-protection-policy"><option value="auto">Allow verified protection sequences</option><option value="off">No new protection steps</option></select><label for="path-allowed-protecting-groups">Allowed protecting groups</label><input id="path-allowed-protecting-groups" type="text" placeholder="All supported; or boc, cbz, fmoc, tbs, acetal, tbu-ester" autocomplete="off" spellcheck="false"></div>
       <p>Protection choices apply to new planned sequences. Every installation, main reaction and removal must pass the encoded forward checks and compatibility assessment. Unknown compatibility does not qualify as a verified protection plan.</p>
+      <label>Explicit masks across the route<input id="path-managed-protection" type="text" placeholder="Optional: fmoc, tbs (or boc / cbz for the amine)" autocomplete="off" spellcheck="false"></label>
+      <p>Explicit masks request one amine group and/or one alcohol group across the main route. The planner checks installation order, preservation and removal; it does not infer that these masks are necessary. Two masks need at least five steps. Repeated competing installation sites are unsupported.</p>
       <p>The starting material is always available. Inventory restricts additional building blocks; reagents and solvents remain allowed unless excluded above. Local stock includes built-in and user stock entries in tiers 1–2. Filters match structures when names resolve, plus case-insensitive label text.</p>
     </details>
     <p class="path-caveat">Candidate routes use textbook reaction rules, not experimental validation. Additional building blocks follow your inventory policy; reagents may also be required. <span id="path-search-limits">Search is limited to 60 structures and 12 seconds.</span> Protection and deprotection count as separate steps. It does not search the literature or establish feasibility, selectivity, yield or safety.</p>
     <p id="path-status" role="status" aria-live="polite">Enter two compounds to begin. Names resolve locally; SMILES gives the most precise input.</p>
     <div id="path-results"></div>
+    <div id="path-cascade"></div>
+    <div id="path-benchmarks"></div>
   </section>
   <section id="workspace-view" hidden aria-label="Route workspace"><div id="route-workspace"></div></section>
   <section id="reaction-view" hidden>
@@ -846,7 +851,11 @@
 <script src="js/path-protection-sequences.js"></script>
 <script src="js/reaction-mapping.js"></script>
 <script src="js/route-assessment.js"></script>
+<script src="js/reaction-scope.js"></script>
+<script src="js/protection-program.js"></script>
 <script src="js/route-workspace.js"></script>
+<script src="js/reaction-cascade.js"></script>
+<script src="js/route-benchmarks.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

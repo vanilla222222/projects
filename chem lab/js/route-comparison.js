@@ -126,6 +126,7 @@ function routeComparisonRender(container, job, deps) {
     card.append(make('p', summary.inventoryComplete ? 'Additional building blocks match the search inventory policy.' : 'Additional building-block availability needs review.', 'route-comparison-inventory'));
     addList(card, 'Additional building blocks', summary.buildingBlocks.map((p) => p.name + ' — ' + p.availability));
     addList(card, 'Other required materials', summary.reagents.map((p) => p.name + ' (' + p.role + ')'));
+    if (typeof protectionRouteAudit === 'function' && typeof protectionRouteElement === 'function') card.append(protectionRouteElement(protectionRouteAudit(summary.route)));
     const assumptions = make('details', undefined, 'route-comparison-assumptions');
     assumptions.append(make('summary', 'Assumptions and limitations requiring review'));
     addList(assumptions, 'Assumptions', summary.assumptions);
@@ -148,6 +149,7 @@ function routeComparisonRender(container, job, deps) {
       const labels = step.candidate.labels || {};
       detail.append(make('p', 'Conditions: ' + ([labels.above, labels.below].filter(Boolean).join(' · ') || 'Not recorded.')));
       detail.append(make('p', 'Scope: ' + step.scope));
+      if (typeof reactionScopeAssess === 'function' && typeof reactionScopeElement === 'function') detail.append(reactionScopeElement(reactionScopeAssess(step.candidate.compounds || [],step.candidate.conditions || {},step.candidate.outcome)));
       if (typeof routeStepAssessment === 'function') {
         const audit = routeStepAssessment(step.candidate);
         detail.append(make('p', 'Substrate review: ' + (audit.blockers.length ? audit.blockers.map(b => b.message).join(' ') : 'No encoded compatibility conflict.')));
