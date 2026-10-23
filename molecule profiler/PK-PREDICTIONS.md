@@ -330,3 +330,15 @@ https://opensmiles.org/opensmiles.html#_cis_trans_configuration_of_double_bonds
 
 Run `node tools/directional-smiles-test.js` and, with RDKit installed,
 `python tools/directional-smiles-rdkit-test.py` for the dedicated regression set.
+
+### Molecule-site explorer (2026-10-23)
+
+The prodrug panel now includes an all-atom compatibility scan with exclusion
+reasons, a 12-design comparison shortlist (MW, estimated WLOGP, TPSA, strict
+HBD/HBA, rotatable bonds and charge), CSV/SMILES exports, and a user-directed
+four-step release explorer retaining intermediates and all product equivalents.
+Generated options remain reaction-class hypotheses. Exact parent presence at
+the end of a route is a structural match, not validated biological release.
+No descriptor change is interpreted as improved ADME. See
+[PRODRUG-SITE-EVIDENCE.md](PRODRUG-SITE-EVIDENCE.md) for rules, primary sources,
+formal reaction inputs, normalization scope and independent RDKit cascade tests.

@@ -254,3 +254,64 @@ https://opensmiles.org/opensmiles.html#_cis_trans_configuration_of_double_bonds
 
 Run `node tools/directional-smiles-test.js` and, with RDKit installed,
 `python tools/directional-smiles-rdkit-test.py` for the dedicated regression set.
+
+### All-atom explorer, release routes and comparisons (2026-10-23)
+
+The selected-input explorer scans every input atom, including explicit reasons
+for uncovered environments, whole-input eligibility failures and omitted
+recognized counterions. Supported option counts describe rule coverage; they
+are not scores for likely cleavage or clinical benefit. Selecting a scan row
+updates the existing atom and site controls. Generated site options are labelled
+reaction-class hypotheses; exact documented compound relationships remain in
+the separate reference viewer and are not transferred to generated designs.
+
+A shortlist compares up to 12 distinct graph-checked derivatives across sites
+against the input organic component. It reports MW, TPSA, strict HBD/HBA,
+rotatable bonds, formal charge and estimated WLOGP, with numerical differences
+from the parent. Salts explicitly use the normalized organic component as the
+baseline. No direction of descriptor change is called an ADME improvement.
+Property CSV and SMILES exports support external research; these are local
+calculations, not SwissADME calculations or an automatic SwissADME submission.
+
+The release-step explorer starts from a generated derivative or an existing-group
+preview. Users choose a fragment and an available next rule; the engine does not
+select a dominant pathway or designate an active fragment. All product equivalents
+retain separate IDs, and previous intermediates remain in the step history.
+Exploration is bounded to four steps, supports undo, and exports the full route
+with sources, limitations and formal additional inputs. A target-parent indicator
+uses exact isotope, charge and supported stereo identity. Its success is a
+structural observation; protonation differences can prevent a match and are not
+silently neutralized. Changing the site, template, mode, reference or input
+clears the previous route. A new analysis clears the comparison shortlist.
+
+Two restricted fragmentation classes expose continuation steps: an uncharged
+N-hydroxymethyl group on a carbonyl-linked nitrogen, or a hydroxymethyl O linker
+on a carbamate, can formally release formaldehyde and an N–H/O–H fragment;
+a neutral carbamic acid can formally release amine and carbon dioxide. These
+rules require an exposed OH intermediate. They do not apply directly to a
+protected ester trigger or a generic methyl ether/amine. Individual previews
+retain all fragments and pass valence and full-graph serialization checks.
+No physiological rate is assigned. In particular, N-hydroxymethyl amides can
+be too stable for useful release; offering a formal step does not establish
+practical bioreversibility.
+
+Primary class precedents and stability limits:
+- Alexander et al. (1988), acyloxyalkyl carbamate amine prodrugs:
+  https://pubmed.ncbi.nlm.nih.gov/2892933/
+- Varia et al. (1984), hydroxymethyl phenytoin ester hydrolysis:
+  https://pubmed.ncbi.nlm.nih.gov/6548518/
+- N-(hydroxyalkyl) amide decomposition and limitations:
+  https://www.sciencedirect.com/science/article/pii/0378517384900449
+
+Validation: `tools/prodrug-explorer-test.js` covers all-atom reasons, charge/salt
+scope, strict-count comparison, deduplication, immutable route extension,
+isolated fragment equivalents, invalid/stale choices, the four-step limit and
+complete amine/N–H linker cascades. `tools/prodrug-explorer-ui-test.js` checks
+scan selection, filters, shortlist persistence across sites and reset across
+inputs, downloads, three-step release, undo, reference separation and stale
+route clearing. `tools/prodrug-explorer-rdkit-test.py` independently checks
+20 steps across eight complete cascades for product sanitization, charge and
+atom/isotope conservation (including formal hydrolysis water), exact final
+parent identity, remote E/Z/tetrahedral stereo, and all four terminal fragments
+of the amine-carbamate cascade. These checks validate structure bookkeeping,
+not biological activation.

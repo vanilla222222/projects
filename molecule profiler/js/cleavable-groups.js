@@ -2,6 +2,9 @@
 // Existing-group transformations, distinct from parent-regenerating attachments.
 (function(root){
  const SOURCES={
+  'hydroxymethyl-linker':{title:'Bioreversible amine carbamates and hydroxymethyl linker precedents',url:'https://pubmed.ncbi.nlm.nih.gov/2892933/'},
+  'nh-hydroxymethyl':{title:'Hydrolysis of N-(hydroxyalkyl) amides: stability limits for prodrug design',url:'https://www.sciencedirect.com/science/article/pii/0378517384900449'},
+  'carbamic-acid':{title:'Alexander et al.: Bioreversible acyloxyalkyl carbamates for amines',url:'https://pubmed.ncbi.nlm.nih.gov/2892933/'},
   imine:{title:'NMR studies of Schiff bases: imines in aqueous solution',url:'https://www.sciencedirect.com/science/article/pii/0022236474901541'},
   oxime:{title:'Hydrolytic Stability of Hydrazones and Oximes',url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC2743602/'},
   hydrazone:{title:'Hydrolytic Stability of Hydrazones and Oximes',url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC2743602/'},
@@ -31,6 +34,23 @@
   const add=(kind,anchors,cutBonds,action,label,note,extra={})=>rows.push({id:kind+'-'+anchors.join('-')+'-'+rows.length,kind,atoms:anchors.map(i=>p.inputAtoms[i]),cutBonds:cutBonds.map(([a,b])=>[p.inputAtoms[a],p.inputAtoms[b]]),localCuts:cutBonds,action,label,note,source:SOURCES[kind],normalization:p.normalization,...extra});
   m.atoms.forEach((a,i)=>{
    const links=ns(m,i);
+   // Formal fragmentation hypotheses for exposed linker intermediates only.
+   if(a.element==='C'&&!a.aromatic&&!a.charge&&!a.chirality&&a.totalH===2&&links.length===2&&links.every(n=>n.bond.order===1)){
+    const oh=links.find(n=>{const o=m.atoms[n.id];return o.element==='O'&&!o.charge&&o.totalH===1&&ns(m,n.id).length===1;});
+    const anchor=oh&&links.find(n=>n.id!==oh.id);
+    if(anchor){
+     const x=m.atoms[anchor.id],xn=ns(m,anchor.id),carbonyl=n=>m.atoms[n.id].element==='C'&&ns(m,n.id).some(v=>v.bond.order===2&&m.atoms[v.id].element==='O');
+     const nLinked=x.element==='N'&&!x.aromatic&&!x.charge&&!x.chirality&&xn.every(n=>n.bond.order===1&&m.atoms[n.id].element==='C')&&xn.some(carbonyl);
+     const oLinked=x.element==='O'&&!x.charge&&!x.totalH&&xn.length===2&&xn.some(n=>n.id!==i&&carbonyl(n)&&ns(m,n.id).some(v=>v.bond.order===1&&m.atoms[v.id].element==='N'));
+     if(nLinked||oLinked)add(nLinked?'nh-hydroxymethyl':'hydroxymethyl-linker',[anchor.id,i,oh.id],[[anchor.id,i]],'linker-fragmentation','Hydroxymethyl linker fragmentation','Formal fragmentation exposes an N–H or O–H group and formaldehyde. This is a possible intermediate step, not evidence of physiological release; N-hydroxymethyl amides can be too stable for useful conversion.',{linkerCarbon:i,linkerOxygen:oh.id,linkerAnchor:anchor.id});
+    }
+   }
+   if(a.element==='C'&&!a.aromatic&&!a.charge&&links.length===3){
+    const oxo=links.find(n=>n.bond.order===2&&m.atoms[n.id].element==='O'&&!m.atoms[n.id].charge);
+    const oh=links.find(n=>n.bond.order===1&&m.atoms[n.id].element==='O'&&!m.atoms[n.id].charge&&m.atoms[n.id].totalH===1&&ns(m,n.id).length===1);
+    const n=links.find(n=>{const x=m.atoms[n.id];return n.bond.order===1&&x.element==='N'&&!x.aromatic&&!x.charge&&!x.chirality&&ns(m,n.id).every(v=>v.bond.order===1&&m.atoms[v.id].element==='C');});
+    if(oxo&&oh&&n)add('carbamic-acid',[i,n.id,oh.id],[[i,n.id]],'decarboxylation','Carbamic acid decarboxylation','Formal decarboxylation can expose an amine plus carbon dioxide. The step has no assigned rate or physiological conversion probability.',{carbamicCarbon:i,carbamicOxygen:oh.id,carbamicNitrogen:n.id});
+   }
    if(a.element==='N'&&!a.aromatic&&[0,1].includes(a.charge||0)){
     const double=links.filter(n=>n.bond.order===2&&m.atoms[n.id].element==='C'&&!m.atoms[n.id].aromatic&&!m.atoms[n.id].charge),single=links.filter(n=>n.bond.order===1);
     if(double.length===1&&links.length===1+single.length&&single.length<=1&&single.every(n=>['C','N','O'].includes(m.atoms[n.id].element))){
@@ -97,7 +117,13 @@
    result.stereoChanges=[];
    const planarize=i=>{if(g.atoms[i].chirality)result.stereoChanges.push({inputAtom:p.inputAtoms[i],change:'Reacting tetrahedral carbon becomes a planar carbonyl; its prior tetrahedral stereo is removed.'});g.atoms[i].chirality=null;g.atoms[i].order=null;};
    path.localCuts.forEach(([a,b])=>cut(a,b));
-   if(path.action==='ether'){
+   if(path.action==='linker-fragmentation'){
+    setH(path.linkerAnchor,g.atoms[path.linkerAnchor].totalH+1);setH(path.linkerOxygen,0);
+    const b=g.bonds.find(b=>(b.a===path.linkerCarbon&&b.b===path.linkerOxygen)||(b.b===path.linkerCarbon&&b.a===path.linkerOxygen));b.order=2;b.dir=0;
+   }else if(path.action==='decarboxylation'){
+    setH(path.carbamicNitrogen,g.atoms[path.carbamicNitrogen].totalH+1);setH(path.carbamicOxygen,0);
+    const b=g.bonds.find(b=>(b.a===path.carbamicCarbon&&b.b===path.carbamicOxygen)||(b.b===path.carbamicCarbon&&b.a===path.carbamicOxygen));b.order=2;b.dir=0;
+   }else if(path.action==='ether'){
     const [oxygen,carbon]=path.localCuts[0];setH(oxygen,1);setH(carbon,g.atoms[carbon].totalH-1);planarize(carbon);addO(carbon,2,0);
    }else if(path.action==='hydrolysis'){
     const [leaving,carbonyl]=path.localCuts[0];setH(leaving,1);addO(carbonyl,1,1);

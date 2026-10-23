@@ -38,6 +38,7 @@ const scripts = [
   'cleavable-groups-test.js',
   'analogue-candidates-test.js',
   'directional-smiles-test.js',
+  'prodrug-explorer-test.js',
   'sim-pagination-test.js',
   'batch-browser-test.js',
   'input-workflow-test.js',
