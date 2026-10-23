@@ -4,12 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Molecule Profiler</title>
-<link rel="stylesheet" href="css/style.css?v=2026-10-23-priority10">
-<link rel="stylesheet" href="css/workspace.css?v=2026-10-23-priority10">
-<link rel="stylesheet" href="css/pk-research.css?v=2026-10-23-priority10">
-<link rel="stylesheet" href="css/prodrug-site-evidence.css?v=2026-10-23-priority10">
+<link rel="stylesheet" href="css/style.css?v=2026-10-23-layout11">
+<link rel="stylesheet" href="css/workspace.css?v=2026-10-23-layout11">
+<link rel="stylesheet" href="css/pk-research.css?v=2026-10-23-layout11">
+<link rel="stylesheet" href="css/prodrug-site-evidence.css?v=2026-10-23-layout11">
+<link rel="stylesheet" href="css/layout.css?v=2026-10-23-layout11">
 </head>
 <body data-theme="dark">
+<a class="skip-link" href="#smiles-input">Skip to molecule input</a>
 <header class="topbar">
   <div class="brand">
     <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
@@ -23,7 +25,7 @@
       <p class="sub">Physicochemistry, drug-likeness and similarity from a SMILES string</p>
     </div>
   </div>
-  <nav class="top-links" aria-label="Reference resources"><a href="library-inspector.html">Reference library ↗</a><a href="reference-explorer.html">Signalling references ↗</a></nav>
+  <details class="resource-menu"><summary>Resources</summary><nav class="top-links" aria-label="Reference resources"><a href="library-inspector.html">Reference library ↗</a><a href="reference-explorer.html">Signalling references ↗</a></nav></details>
   <button id="theme-toggle" class="icon-btn" type="button" aria-label="Toggle theme">
     <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
     <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -31,28 +33,31 @@
 </header>
 
 <main>
-  <div class="intro"><span class="eyebrow">Molecular analysis studio / Open methods</span><h2>From structure to insight.</h2><p>Enter one or more molecular structures to explore descriptors, structural screens, reference similarity and proposed biotransformations. Results are computational estimates, not laboratory measurements.</p></div>
+  <div class="intro"><span class="eyebrow">Molecular research workspace</span><h2>A clearer view of your chemistry.</h2><p>Start with a structure. Explore its properties, inspect transformation hypotheses and compare research designs in focused workspaces.</p></div>
   <section class="panel input-panel">
     <div class="panel-head">
-      <h2>Input</h2>
+      <h2>01 <span>Start with a molecule</span></h2>
       <p class="hint">One molecule per line. Optional name before a comma, tab or space: <code>aspirin, CC(=O)Oc1ccccc1C(=O)O</code></p>
     </div>
+    <div class="input-workbench"><div class="structure-entry"><label class="field-label" for="smiles-input">Molecular structures <span>SMILES · one per line</span></label>
     <textarea id="smiles-input" spellcheck="false" rows="5" placeholder="CC(=O)Oc1ccccc1C(=O)O"></textarea>
-    <div class="input-file-tools">
-      <label class="file-import" for="molecule-file">Import structures or analysis JSON <input type="file" id="molecule-file" accept=".smi,.txt,.csv,.tsv,.json,text/plain,text/csv,text/tab-separated-values,application/json"></label>
-      <span class="hint">CSV and TSV files need a <code>smiles</code> or <code>input_smiles</code> column; <code>name</code> is optional. Research-package <code>molecules.csv</code> files can be reopened. Reopen a Molecule Profiler JSON snapshot to recalculate its structures; saved property values are not reused. Maximum file size: 1 MB.</span>
-    </div>
-    <div class="examples" id="examples"></div>
+    <details class="example-picker"><summary>Try an example molecule</summary><div class="examples" id="examples"></div></details>
+    </div><aside class="import-card" aria-label="Import molecules"><span class="eyebrow">Working with a file?</span><h3>Bring your structures</h3><p>Import SMILES, CSV, TSV or a saved analysis.</p>
+      <label class="file-import" for="molecule-file">Choose a file <input type="file" id="molecule-file" accept=".smi,.txt,.csv,.tsv,.json,text/plain,text/csv,text/tab-separated-values,application/json"></label>
+      <details class="import-help"><summary>File format guidance</summary><p>CSV/TSV requires a <code>smiles</code> or <code>input_smiles</code> column; <code>name</code> is optional. Saved JSON structures are recalculated. Maximum file size: 1 MB.</p></details>
+    </aside></div>
     <div class="actions">
       <button type="button" id="run" class="primary">Analyse</button>
       <button type="button" id="cancel-analysis" hidden>Cancel analysis</button>
       <progress id="analysis-progress" aria-label="Analysis progress" max="1" value="0" hidden></progress>
       <button type="button" id="clear">Clear</button>
+      <details class="export-menu" id="analysis-export-menu"><summary>Download results <span aria-hidden="true">↓</span></summary><div class="export-menu-items"><p class="eyebrow">Choose an export</p>
       <button type="button" id="export" disabled>Export table CSV</button>
       <button type="button" id="export-full" disabled>Export full CSV (v2)</button>
       <button type="button" id="export-full-dictionary">CSV data dictionary</button>
       <button type="button" id="export-snapshot" disabled>Export analysis JSON</button>
       <button type="button" id="export-research" disabled>Research package (.zip)</button>
+      </div></details>
       <span id="status" class="status" role="status" aria-live="polite"></span>
     </div>
     <section class="input-feedback" id="input-feedback" hidden aria-labelledby="input-feedback-title">
@@ -60,13 +65,13 @@
       <p id="input-summary" role="status" aria-live="polite"></p>
       <div class="input-errors" id="input-errors"></div>
     </section>
-    <details class="input-help"><summary>What is included in the exports?</summary><p class="hint">The table export is one row per molecule with the batch columns. The full CSV v2 is a tidy long-format table with <code>molecule_id, molecule_name, input_smiles, section, item, field, value, value_type, unit, evidence_type, method, interpretation</code> plus schema and source columns. Download its data dictionary separately. Values are not laboratory measurements. All analysis sections remain included, with long similarity and target ranking lists capped at 50 entries each. Previously, the export was one row per value &mdash; <code>molecule, section, item, field, value</code> &mdash; and carries everything on this page for the molecule currently open: every descriptor, every filter verdict and violation, per-atom Crippen contributions, the top 50 similarity hits and top 50 ranked targets, matched alerts with their atoms, every firing toxicity rule, the dependence neighbours, and every enumerated metabolite with its weight, band, site factor and parent atoms. The similarity, target and dependence sections follow the fingerprint and metric selected below; the metabolite section follows the generation and phase filters.</p></details>
+    <details class="input-help"><summary>Which export should I use?</summary><dl class="export-guide"><dt>Table CSV</dt><dd>One row per molecule for quick comparisons.</dd><dt>Full CSV v2</dt><dd>Detailed analysis in long format. Rankings are capped at 50 entries; the data dictionary explains each field.</dd><dt>Analysis JSON</dt><dd>Reopen your structures and recalculate them later.</dd><dt>Research ZIP</dt><dd>Package your molecular structures and research outputs together.</dd></dl></details>
   </section>
 
   <section id="results" hidden>
     <div class="result-toolbar">
-      <div class="result-toolbar-heading"><span class="eyebrow">Analysis workspace</span><h2>Explore your results</h2><p>Switch between focused views, or show every section.</p></div>
-      <label class="module-search-label" for="module-search"><span>Find a section</span><input id="module-search" type="search" placeholder="e.g. solubility, toxicity, targets" autocomplete="off"></label>
+      <div class="result-toolbar-heading"><span class="eyebrow">Analysis workspace</span><h2>Explore your results</h2><p>Choose a workspace. Use section search to find a specific tool.</p></div>
+      <label class="module-search-label" for="module-search"><span>Find a section</span><input id="module-search" type="search" placeholder="Search properties, prodrugs, targets…" autocomplete="off"></label>
     </div>
     <nav class="workspace-nav" id="workspace-nav" aria-label="Analysis sections"></nav>
     <p id="workspace-description" class="workspace-description" role="status" aria-live="polite"></p>
@@ -282,12 +287,14 @@
       </article>
       <article class="panel wide" id="prodrug-panel">
         <div class="panel-head"><h2>Prodrugs &amp; bioactivation</h2><span class="evidence" data-tier="rule">curated source evidence</span></div>
+        <div id="prodrug-reference-library">
         <p id="prodrug-status" role="status"></p><div id="prodrug-matches"></div><p class="note" id="prodrug-related"></p>
         <h3>Documented prodrugs for this active structure</h3><div id="prodrug-examples"></div>
         <p class="note" id="prodrug-sites"></p>
         <p class="note" id="prodrug-enumeration"></p>
         <details><summary>Browse the documented prodrug examples</summary><div id="prodrug-all"></div></details>
         <p class="hint">A prodrug must be converted to a pharmacologically relevant product. A cleavable group alone is insufficient. These examples do not imply improved BBB delivery for a new compound. Generated candidates are separately labelled unvalidated designs, with no inferred clinical benefit.</p>
+        </div>
       </article>
 
       <article class="panel wide" id="functional-context-panel">
@@ -430,7 +437,7 @@
     </div>
   </section>
 
-  <section class="panel wide about">
+  <details class="panel wide about"><summary>Methods, interpretation &amp; validation history</summary>
     <div class="panel-head"><h2>What this is</h2><p class="note">The numerical RDKit conformance figures below describe tests on an earlier set of 596 compounds. The reference library has expanded since that test set; those historical figures do not represent an audit of the current library.</p></div>
     <p>Every panel carries a badge saying what kind of claim it makes, because the panels are not all the same kind of thing and reading them as if they were is the fastest way to be misled by this page. <span class="evidence" data-tier="exact" data-tip="evidenceExact" tabindex="0">exact</span> means the panel counts or sums something off the structure graph and there is no model in the way. <span class="evidence" data-tier="fitted" data-tip="evidenceFitted" tabindex="0">fitted model</span> means a published regression, reimplemented from the paper, carrying the error of the original fit. <span class="evidence" data-tier="rule" data-tip="evidenceRule" tabindex="0">published rule</span> means somebody's thresholds applied as published, which is a filter and not a verdict. <span class="evidence" data-tier="analogy" data-tip="evidenceAnalogy" tabindex="0">structural analogy</span> means the panel found molecules that look like yours and is telling you so, which is a statement about fingerprints and not about pharmacology. <span class="evidence" data-tier="prediction" data-tip="evidencePrediction" tabindex="0">prediction</span> means the panel generated something that was not given to it, and the output is a list of candidates to check rather than a finding. Hovering a badge gives the longer version. The practical consequence: aspirin's two cyclo-oxygenase hits at the top of the target panel and its hydrolysis to salicylic acid at the top of the metabolism panel are both correct, and they are correct for different reasons than the page can show you &mdash; the panels ranked them, the textbooks confirmed them, and a lower-ranked row in either panel has only the ranking behind it.</p>
     <p>Everything here runs in the page: the SMILES parser, ring perception, aromaticity, kekulization and hydrogen counting are implemented from scratch, and the descriptors follow their published definitions &mdash; Ertl's topological polar surface area, Wildman&ndash;Crippen log P and molar refractivity, Lipinski-style hydrogen-bond counts, and the strict rotatable-bond definition. Aromaticity is perceived by H&uuml;ckel electron counting, iterated: a ring carbon whose double bond points out of the ring donates one electron when its partner is already aromatic instead of disqualifying the ring, a heteroatom bridging two rings contributes its lone pair once rather than to each ring, and a fused system of five- and six-membered rings is counted as a whole when no single ring satisfies the rule alone. Those three cases are what fused indoles, bridgehead-nitrogen bicyclics and lactam-containing tricyclics turn on, and each was added only after it moved the measured divergence from RDKit down. The descriptor layer is checked against RDKit on a 40-molecule reference set; TPSA, log P, molar refractivity, rotatable bonds, the H-bond counts and the sp&sup3; fraction all agree exactly. The page reports two acceptor counts because the literature means two different things by HBA: the Lipinski count is every nitrogen and oxygen, and the strict count is only the lone pairs actually available, which skips a carboxylic acid&rsquo;s own hydroxyl, amide and sulfonamide nitrogens, and a pyrrole-type ring nitrogen carrying a third substituent, while keeping a pyridine-type one and keeping a nitrogen whose neighbouring double bond lies inside a ring. Both counts agree with RDKit on all 596 compounds in the original validation set. Aspirin is the case that shows why both are shown: four by the Lipinski count and three strictly, and a paper quoting &ldquo;HBA 3&rdquo; means the second. The ring and substructure counts, the Kier&ndash;Hall connectivity and shape indices and the remaining fifteen values are checked the same way across the original 596-compound validation set below. Of the 8940 descriptor values that comparison covers, all but four match RDKit exactly, and both exceptions are known differences in ring and aromaticity models rather than arithmetic. Artemisinin's bridged trioxane cage has four independent rings by the cyclomatic count we use and six by RDKit's symmetrized smallest set of smallest rings, so its aliphatic-ring, saturated-ring and heterocycle counts read one lower here. Riboflavin's isoalloxazine ring system is aromatized by our perception and left partly non-aromatic by RDKit's, so RDKit reports two aliphatic rings where we report none &mdash; the same model difference that shows up on azulene. Both are reported rather than hidden by dropping the molecules. Molecular weight agrees to within 0.021 across the whole set; the residue is the standard-atomic-weight table, not the arithmetic &mdash; we use the current IUPAC abridged values and RDKit ships an older edition, so every disagreement is a molecule carrying sulfur, chlorine, selenium or boron and grows with how many such atoms it has. Isotopically labelled atoms are weighed as their nuclide rather than as the natural-abundance element, which is what makes a carbon-11 tracer come out a gram per mole lighter than its unlabelled parent.</p>
@@ -443,75 +450,76 @@
     <p>The addiction panel is a similarity argument, stated as one. Forty library compounds carry a hand-assigned dependence liability drawn from the clinical literature &mdash; opioids, stimulants, sedatives, dissociatives, nicotine, THC &mdash; and the panel reports how close the query is to the closest of them, together with its proximity to the nine opioid, dopaminergic, nicotinic, GABAergic and glutamatergic targets that dependence runs through. The set deliberately includes compounds whose structure and whose liability point in opposite directions: naloxone and naltrexone, cannabidiol, mescaline and lysergide. They are there so the panel cannot be mistaken for a predictor. Query morphine and naltrexone comes back as its second-nearest neighbour in the whole library, at 0.30 on ECFP4 and 0.55 on the feature fingerprint. Of the several differences between them, the one that decides agonist from antagonist is the N-substituent, and nothing in a fingerprint weighs it above the rest.</p>
 
     <p>The filters are the published ones (Lipinski, Ghose, Veber, Egan, Muegge, lead-likeness) and the bioavailability score follows Martin's tiers. Where a service like SwissADME uses a trained model that was never released &mdash; XLOGP3, its solubility models, its pharmacokinetic classifiers &mdash; this tool does not pretend to reproduce it; it uses an open method and says which one.</p>
-  </section>
+  </details>
 <p class="muted">Binding-reference data: <a href="https://www.ebi.ac.uk/chembl/">ChEMBL_37</a> · <a href="CHEMBL-DATA-NOTICE.md">Data attribution and license</a>.</p>
 </main>
 
-<script src="js/smiles.js?v=2026-10-23-priority10"></script>
-<script src="js/mol.js?v=2026-10-23-priority10"></script>
-<script src="js/descriptors.js?v=2026-10-23-priority10"></script>
-<script src="js/rules.js?v=2026-10-23-priority10"></script>
-<script src="js/fingerprints.js?v=2026-10-23-priority10"></script>
-<script src="js/smarts.js?v=2026-10-23-priority10"></script>
-<script src="js/stereo.js?v=2026-10-23-priority10"></script>
-<script src="data/library.js?v=2026-10-23-priority10"></script>
-<script src="data/targets.js?v=2026-10-23-priority10"></script>
-<script src="data/benchmark.js?v=2026-10-23-priority10"></script>
-<script src="data/alerts.js?v=2026-10-23-priority10"></script>
-<script src="data/toxalerts.js?v=2026-10-23-priority10"></script>
-<script src="data/dependence.js?v=2026-10-23-priority10"></script>
-<script src="js/tox.js?v=2026-10-23-priority10"></script>
-<script src="js/transform.js?v=2026-10-23-priority10"></script>
-<script src="js/sites.js?v=2026-10-23-priority10"></script>
-<script src="js/depict.js?v=2026-10-23-priority10"></script>
-<script src="data/metabolism.js?v=2026-10-23-priority10"></script>
-<script src="data/metcases.js?v=2026-10-23-priority10"></script>
-<script src="data/stereocases.js?v=2026-10-23-priority10"></script>
-<script src="data/wedgecases.js?v=2026-10-23-priority10"></script>
-<script src="data/propcases.js?v=2026-10-23-priority10"></script>
-<script src="data/crippencases.js?v=2026-10-23-priority10"></script>
-  <script src="data/citations.js?v=2026-10-23-priority10"></script>
-<script src="js/metabolism.js?v=2026-10-23-priority10"></script>
-<script src="js/evidence-report.js?v=2026-10-23-priority10"></script>
-<script src="js/screen-coverage.js?v=2026-10-23-priority10"></script>
-<script src="js/sim-pagination.js?v=2026-10-23-priority10"></script>
-<script src="js/batch-browser.js?v=2026-10-23-priority10"></script>
-<script src="js/cooperative-batch.js?v=2026-10-23-priority10"></script>
-<script src="js/input-workflow.js?v=2026-10-23-priority10"></script>
-<script src="js/full-csv-export.js?v=2026-10-23-priority10"></script>
-<script src="js/research-zip.js?v=2026-10-23-priority10"></script>
-<script src="js/research-package.js?v=2026-10-23-priority10"></script>
-<script src="js/molecule-quality.js?v=2026-10-23-priority10"></script>
-<script src="js/target-ranking.js?v=2026-10-23-priority10"></script>
-<script src="js/structural-evidence.js?v=2026-10-23-priority10"></script>
-<script src="data/reference-motifs.js?v=2026-10-23-priority10"></script>
-<script src="data/receptor-catalog.js?v=2026-10-23-priority10"></script>
-<script src="data/pharmacology-evidence.js?v=2026-10-23-priority10"></script>
-<script src="data/pk-models.js?v=2026-10-23-priority10"></script>
-<script src="js/pk-features.js?v=2026-10-23-priority10"></script>
-<script src="js/pk-applicability.js?v=2026-10-23-priority10"></script>
-<script src="js/pharmacology.js?v=2026-10-23-priority10"></script>
-<script src="js/pharmacology-ui.js?v=2026-10-23-priority10"></script>
-<script src="js/pk-decay.js?v=2026-10-23-priority10"></script>
-<script src="js/prodrug-candidates.js?v=2026-10-23-priority10"></script>
-<script src="js/cleavable-groups.js?v=2026-10-23-priority10"></script>
-<script src="js/analogue-candidates.js?v=2026-10-23-priority10"></script>
-<script src="js/analogue-ui.js?v=2026-10-23-priority10"></script>
-<script src="js/pharmacology-upgrade.js?v=2026-10-23-priority10"></script>
-<script src="js/prodrug-explorer.js?v=2026-10-23-priority10"></script>
-<script src="js/prodrug-site-evidence.js?v=2026-10-23-priority10"></script>
-<script src="js/prodrug-priority.js?v=2026-10-23-priority10"></script>
-<script src="js/prodrug-explorer-ui.js?v=2026-10-23-priority10"></script>
-<script src="data/library-names.js?v=2026-10-23-priority10"></script>
-<script src="js/library-catalog.js?v=2026-10-23-priority10"></script>
-<script src="js/app.js?v=2026-10-23-priority10"></script>
-<script src="js/comparison-data.js?v=2026-10-23-priority10"></script>
-<script src="js/workspace-ui.js?v=2026-10-23-priority10"></script>
-<script src="js/comparison-ui.js?v=2026-10-23-priority10"></script>
-<script src="js/descriptor-stats.js?v=2026-10-23-priority10"></script>
-<script src="js/descriptor-stats-ui.js?v=2026-10-23-priority10"></script>
-<script src="js/report-model.js?v=2026-10-23-priority10"></script>
-<script src="js/report-ui.js?v=2026-10-23-priority10"></script>
+<script src="js/smiles.js?v=2026-10-23-layout11"></script>
+<script src="js/mol.js?v=2026-10-23-layout11"></script>
+<script src="js/descriptors.js?v=2026-10-23-layout11"></script>
+<script src="js/rules.js?v=2026-10-23-layout11"></script>
+<script src="js/fingerprints.js?v=2026-10-23-layout11"></script>
+<script src="js/smarts.js?v=2026-10-23-layout11"></script>
+<script src="js/stereo.js?v=2026-10-23-layout11"></script>
+<script src="data/library.js?v=2026-10-23-layout11"></script>
+<script src="data/targets.js?v=2026-10-23-layout11"></script>
+<script src="data/benchmark.js?v=2026-10-23-layout11"></script>
+<script src="data/alerts.js?v=2026-10-23-layout11"></script>
+<script src="data/toxalerts.js?v=2026-10-23-layout11"></script>
+<script src="data/dependence.js?v=2026-10-23-layout11"></script>
+<script src="js/tox.js?v=2026-10-23-layout11"></script>
+<script src="js/transform.js?v=2026-10-23-layout11"></script>
+<script src="js/sites.js?v=2026-10-23-layout11"></script>
+<script src="js/depict.js?v=2026-10-23-layout11"></script>
+<script src="data/metabolism.js?v=2026-10-23-layout11"></script>
+<script src="data/metcases.js?v=2026-10-23-layout11"></script>
+<script src="data/stereocases.js?v=2026-10-23-layout11"></script>
+<script src="data/wedgecases.js?v=2026-10-23-layout11"></script>
+<script src="data/propcases.js?v=2026-10-23-layout11"></script>
+<script src="data/crippencases.js?v=2026-10-23-layout11"></script>
+  <script src="data/citations.js?v=2026-10-23-layout11"></script>
+<script src="js/metabolism.js?v=2026-10-23-layout11"></script>
+<script src="js/evidence-report.js?v=2026-10-23-layout11"></script>
+<script src="js/screen-coverage.js?v=2026-10-23-layout11"></script>
+<script src="js/sim-pagination.js?v=2026-10-23-layout11"></script>
+<script src="js/batch-browser.js?v=2026-10-23-layout11"></script>
+<script src="js/cooperative-batch.js?v=2026-10-23-layout11"></script>
+<script src="js/input-workflow.js?v=2026-10-23-layout11"></script>
+<script src="js/full-csv-export.js?v=2026-10-23-layout11"></script>
+<script src="js/research-zip.js?v=2026-10-23-layout11"></script>
+<script src="js/research-package.js?v=2026-10-23-layout11"></script>
+<script src="js/molecule-quality.js?v=2026-10-23-layout11"></script>
+<script src="js/target-ranking.js?v=2026-10-23-layout11"></script>
+<script src="js/structural-evidence.js?v=2026-10-23-layout11"></script>
+<script src="data/reference-motifs.js?v=2026-10-23-layout11"></script>
+<script src="data/receptor-catalog.js?v=2026-10-23-layout11"></script>
+<script src="data/pharmacology-evidence.js?v=2026-10-23-layout11"></script>
+<script src="data/pk-models.js?v=2026-10-23-layout11"></script>
+<script src="js/pk-features.js?v=2026-10-23-layout11"></script>
+<script src="js/pk-applicability.js?v=2026-10-23-layout11"></script>
+<script src="js/pharmacology.js?v=2026-10-23-layout11"></script>
+<script src="js/pharmacology-ui.js?v=2026-10-23-layout11"></script>
+<script src="js/pk-decay.js?v=2026-10-23-layout11"></script>
+<script src="js/prodrug-candidates.js?v=2026-10-23-layout11"></script>
+<script src="js/cleavable-groups.js?v=2026-10-23-layout11"></script>
+<script src="js/analogue-candidates.js?v=2026-10-23-layout11"></script>
+<script src="js/analogue-ui.js?v=2026-10-23-layout11"></script>
+<script src="js/pharmacology-upgrade.js?v=2026-10-23-layout11"></script>
+<script src="js/prodrug-explorer.js?v=2026-10-23-layout11"></script>
+<script src="js/prodrug-site-evidence.js?v=2026-10-23-layout11"></script>
+<script src="js/prodrug-priority.js?v=2026-10-23-layout11"></script>
+<script src="js/prodrug-explorer-ui.js?v=2026-10-23-layout11"></script>
+<script src="data/library-names.js?v=2026-10-23-layout11"></script>
+<script src="js/library-catalog.js?v=2026-10-23-layout11"></script>
+<script src="js/app.js?v=2026-10-23-layout11"></script>
+<script src="js/comparison-data.js?v=2026-10-23-layout11"></script>
+<script src="js/workspace-ui.js?v=2026-10-23-layout11"></script>
+<script src="js/layout-ui.js?v=2026-10-23-layout11"></script>
+<script src="js/comparison-ui.js?v=2026-10-23-layout11"></script>
+<script src="js/descriptor-stats.js?v=2026-10-23-layout11"></script>
+<script src="js/descriptor-stats-ui.js?v=2026-10-23-layout11"></script>
+<script src="js/report-model.js?v=2026-10-23-layout11"></script>
+<script src="js/report-ui.js?v=2026-10-23-layout11"></script>
 </body>
 </html>
 

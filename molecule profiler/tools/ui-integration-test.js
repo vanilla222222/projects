@@ -126,3 +126,5 @@ assert.ok(scripts.indexOf('js/prodrug-explorer.js') > scripts.indexOf('js/cleava
 assert.ok(scripts.indexOf('js/prodrug-explorer-ui.js') > scripts.indexOf('js/prodrug-site-evidence.js'), 'Explorer UI must load after site controls');
 
 assert.ok(scripts.indexOf('js/prodrug-priority.js') > scripts.indexOf('js/prodrug-explorer.js') && scripts.indexOf('js/prodrug-priority.js') < scripts.indexOf('js/prodrug-explorer-ui.js'), 'Research priority must load between explorer engine and UI');
+
+assert.ok(scripts.indexOf('js/layout-ui.js') > scripts.indexOf('js/prodrug-explorer-ui.js'), 'Layout controller must load after the design controls');

@@ -6,6 +6,9 @@
     { id: 'overview', label: 'Overview', description: 'Structure, identity, key properties and major screening summaries.' },
     { id: 'properties', label: 'Properties', description: 'Physical descriptors, stereochemistry, topology and supporting evidence.' },
     { id: 'screening', label: 'Screening', description: 'Rule-based filters and structural alerts. These do not establish safety.' },
+    { id: 'design', label: 'Prodrug studio', description: 'Build at a molecular site, compare designs, inspect release steps or check curated references.' },
+    { id: 'analogues', label: 'Analogues', description: 'Browse local structural variants independently from prodrug designs.' },
+    { id: 'exposure', label: 'Exposure', description: 'Research pharmacokinetic estimates and conditional ionization scenarios.' },
     { id: 'metabolism', label: 'Metabolism', description: 'Rule-enumerated biotransformations; candidate products are not experimentally confirmed.' },
     { id: 'discovery', label: 'References', description: 'Similarity, target-reference rankings and related comparisons.' },
     { id: 'data', label: 'Data & export', description: 'Batch results and per-atom descriptors.' },
@@ -29,10 +32,10 @@
     'Structural alerts': ['screening'],
     'Toxicity screens': ['screening'],
     'Metabolism': ['metabolism'],
-    'Pharmacokinetics & exposure': ['metabolism', 'properties'],
-    'Prodrugs & bioactivation': ['metabolism'],
-    'Generated analogues': ['discovery', 'metabolism'],
-    'Ionization scenarios': ['properties'],
+    'Pharmacokinetics & exposure': ['exposure'],
+    'Prodrugs & bioactivation': ['design'],
+    'Generated analogues': ['analogues'],
+    'Ionization scenarios': ['exposure'],
     'Functional effect context': ['discovery'],
     'Dependence-related structural similarity': ['discovery'],
     'Similarity search': ['discovery'],
@@ -56,6 +59,10 @@
     'Structural alerts': 'pains brenk reactive covalent',
     'Toxicity screens': 'toxicology endpoint hazard rules',
     'Metabolism': 'enzymes transformation products phase',
+    'Prodrugs & bioactivation': 'design studio attachments molecule sites cleavable cleavage release pathways research priority comparison evidence',
+    'Generated analogues': 'analogues variants substitutions structural designs',
+    'Pharmacokinetics & exposure': 'pk pharmacokinetics half life decay exposure',
+    'Ionization scenarios': 'pka ph logd ionization charge',
     'Dependence-related structural similarity': 'dependence analogy resemblance neighbours not addiction prediction',
     'Similarity search': 'fingerprint nearest neighbors',
     'Target prediction': 'receptors ligands protein',
@@ -88,6 +95,7 @@
   });
   function apply() {
     const term = search.value.trim().toLowerCase();
+    document.getElementById('results').dataset.workspace = term ? 'search' : active;
     let visible = 0;
     for (const item of panels) {
       const show = (!term && (active === 'all' || item.tags.includes(active))) || (term && item.search.includes(term));
