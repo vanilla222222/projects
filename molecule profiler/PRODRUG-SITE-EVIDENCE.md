@@ -454,3 +454,12 @@ Eligibility requires a valid round-trippable organic graph, an acyclic ether bou
 Reaction-class precedent: Thomas, Majumdar and Sloan, *Soft Alkyl Ether Prodrugs of a Model Phenolic Drug: The Effect of Incorporation of Ethyleneoxy Groups on Transdermal Delivery*, Molecules 2009, [doi:10.3390/molecules14104231](https://doi.org/10.3390/molecules14104231). This is experimental evidence for related phenolic soft-ether classes, not for every sampled acyl tail or the selected molecule. Aliphatic and substituted linkers are labelled extrapolations. No physiological cleavage rate, esterase recognition, synthesis feasibility, ADME improvement, efficacy or safety is inferred.
 
 Validation: `node tools/soft-ethers-test.js`; `python tools/soft-ethers-rdkit-test.py` with RDKit installed; expanded `prodrug-explorer-ui-test.js`. Independent RDKit checks cover 105 designs / 210 formal release steps, product sanitization, target identity, remote stereo and isotope/charge/atom balance.
+
+
+### Methoxy selection on substituted rings — 2026-10-23
+
+The all-options site builder now initially selects an eligible methoxy oxygen and its ester redesign even when an amine, phenol, methyl ester or other supported group occurs earlier in the input atom order. Explicit selections of other atoms and exploration filters remain available. Existing O-dealkylation is selectable in Existing-group pathways.
+
+A **Methoxy / ether group** selector names each eligible ether, its input O–C atom pair and (for aryl ethers) the attached aromatic ring carbon. Selecting a group switches to the ether redesign filter, synchronizes the displayed atom, and offers seven ester variants for that exact carbon side. Multiple methoxy groups have separate choices. A shared ether oxygen does not collapse the two carbon-side choices. The depiction highlights both atoms and the O–C bond. Recognized counterions preserve original input atom numbering. Methyl esters are not classified as methoxy ethers. Reference mode and unsupported inputs clear these controls and generated state.
+
+This changes selection and labelling, not chemistry eligibility or evidence scope. The release target remains a different OH analogue, with biological activation unvalidated. Regression checks: `tools/methoxy-selection-ui-test.js` (100 assertions across substituted rings, multiple methoxy positions, salts, alternate atom order, competing groups, shared oxygen, explicit non-methoxy choice and state resets).

@@ -95,11 +95,13 @@
  const useInput=make('button','Design on current input');useInput.type='button';useInput.id='prodrug-design-use-input';
  const siteLabel=make('label','Compatible site '),siteJump=make('select');siteJump.id='prodrug-design-site';siteLabel.append(siteJump);
  const designLabel=make('label','Attachment or existing-group pathway '),designSelect=make('select');designSelect.id='prodrug-design-template';designLabel.append(designSelect);
+ const etherLabel=make('label','Methoxy / ether group '),etherGroup=make('select');etherGroup.id='prodrug-ether-group';etherLabel.append(etherGroup);etherLabel.hidden=true;
  const build=make('button','Preview selected option');build.type='button';build.id='prodrug-design-build';
  const builderStatus=make('p');builderStatus.id='prodrug-design-status';builderStatus.setAttribute('role','status');
  const preview=make('div');preview.id='prodrug-design-preview';preview.setAttribute('aria-live','polite');
- builderControls.append(useInput,modeLabel,siteLabel,designLabel,build);builder.append(builderControls,builderStatus,preview);host.append(builder);
- let availableSites=[];
+ builderControls.append(useInput,modeLabel,etherLabel,siteLabel,designLabel,build);builder.append(builderControls,builderStatus,preview);host.append(builder);
+ let availableSites=[],etherGroups=[];
+ function preferredSite(sites){const methoxy=etherGroups.find(g=>g.kind==='methoxy'&&sites.some(s=>s.atom===g.oxygenAtom));return sites.find(s=>s.atom===methoxy?.oxygenAtom)||sites.find(s=>['O','N','S'].includes(s.element))||sites[0];}
  function compatibleSites(c){
   if(!c?.isInput)return [];
   const sites=root.ProdrugCandidates?root.ProdrugCandidates.sites(c.mol):[];
@@ -116,12 +118,17 @@
  function updateBuilder(){
   clearDesign();siteJump.replaceChildren();designSelect.replaceChildren();const c=selected();useInput.disabled=!current;
   const compatibility=c&&c.isInput&&root.ProdrugCandidates?root.ProdrugCandidates.generate(c.mol,{limit:0}):null;
+  etherGroups=c?.isInput?(root.CleavableGroups?.redesignGroups(c.mol)||[]):[];
+  etherGroup.replaceChildren();const prompt=make('option','Choose a named group');prompt.value='';etherGroup.append(prompt);
+  for(const group of etherGroups){const option=make('option',group.label);option.value=group.id;etherGroup.append(option);}etherLabel.hidden=!etherGroups.length;
   availableSites=compatibleSites(c);
   const selectedAtom=Number(atomSelect.value),site=availableSites.find(s=>s.atom===selectedAtom);
+  etherGroup.value=etherGroups.find(g=>[g.atom,g.oxygenAtom].includes(selectedAtom))?.id||'';
   const empty=make('option','Choose a compatible site');empty.value='';empty.disabled=true;siteJump.append(empty);
   availableSites.forEach(s=>{const o=make('option',s.element+(s.atom+1)+' · '+s.kind);o.value=String(s.atom);siteJump.append(o);});
   siteJump.value=site?String(site.atom):'';siteJump.disabled=!availableSites.length;
   (site?.designs||[]).forEach(d=>{const o=make('option',d.name);o.value=d.id;designSelect.append(o);});
+  if(['all','redesign'].includes(actionMode.value)){const group=etherGroups.find(g=>g.kind==='methoxy'&&[g.atom,g.oxygenAtom].includes(selectedAtom)),preferred=site?.designs.find(d=>group&&d.id.startsWith(group.id+':'));if(preferred)designSelect.value=preferred.id;}
   designSelect.disabled=!site;build.disabled=!site;
   builderStatus.textContent=!c||!c.isInput?'Select Current input molecule to design attachments on your own structure.':!root.ProdrugCandidates?'The candidate generator is unavailable.':site?'Selected '+site.kind+' at '+site.element+(site.atom+1)+'. Choose an attachment or existing-group pathway to preview.':availableSites.length?'No supported option at this atom. Choose a labelled site from Compatible site.':'No compatible attachment or existing-group pathway passed the current structure and identity checks. Reference annotations do not create a pathway at an unsupported site.';
   if(compatibility?.normalization)builderStatus.textContent+=' '+compatibility.normalization.scope;
@@ -191,19 +198,26 @@
  }
  actionMode.addEventListener('change',()=>{
   const options=compatibleSites(selected());
-  if(!options.some(s=>s.atom===Number(atomSelect.value))&&options.length){const first=options.find(s=>['O','N','S'].includes(s.element))||options[0];atomSelect.value=String(first.atom);}
+  if(!options.some(s=>s.atom===Number(atomSelect.value))&&options.length){const first=preferredSite(options);atomSelect.value=String(first.atom);}
   clearSnapshot();output.replaceChildren(make('p','Exploration mode changed. Check evidence for this displayed atom if needed.'));draw();updateBuilder();
+ });
+ etherGroup.addEventListener('change',()=>{
+  const group=etherGroups.find(g=>g.id===etherGroup.value);if(!group)return;
+  actionMode.value='redesign';actionMode.dispatchEvent(new root.Event('change'));
+  atomSelect.value=String(group.oxygenAtom);atomSelect.dispatchEvent(new root.Event('change'));
+  const option=[...designSelect.options].find(o=>o.value.startsWith(group.id+':'));if(option){designSelect.value=option.value;designSelect.dispatchEvent(new root.Event('change'));}
  });
  useInput.addEventListener('click',()=>{if(!current)return;refSelect.value='__input__';choose();context.textContent='Designing on your current input structure; reference evidence remains separate.';});
  siteJump.addEventListener('change',()=>{if(siteJump.value==='')return;atomSelect.value=siteJump.value;clearSnapshot();output.replaceChildren(make('p','Selection changed. Check evidence for this displayed site.'));draw();updateBuilder();});
- designSelect.addEventListener('change',()=>{clearDesign();builderStatus.textContent='Option changed. Preview the selected attachment or pathway.';});
+ designSelect.addEventListener('change',()=>{etherGroup.value=etherGroups.find(g=>designSelect.value.startsWith(g.id+':'))?.id||'';draw();clearDesign();builderStatus.textContent='Option changed. Preview the selected attachment or pathway.';});
  build.addEventListener('click',previewDesign);
  let current=null;
  const selected=()=>refSelect.value==='__input__'&&current?{isInput:true,id:'current-input',mol:current.mol,atom:0,prodrug:{name:current.name||'Current input molecule',smiles:current.smiles}}:cases.find(c=>c.id===refSelect.value);
  const clearSnapshot=()=>{const s=root.PharmacologyUI.getSnapshot();if(s)s.prodrugSiteEvidence=null;};
  function draw(){
   depiction.replaceChildren();const c=selected();if(!c||typeof depictSvg!=='function')return;
-  try{depiction.innerHTML=depictSvg(c.mol,{highlight:[Number(atomSelect.value)],title:c.prodrug.name+'; selected atom '+(Number(atomSelect.value)+1)});}catch(_){depiction.append(make('p','Structure preview unavailable; SMILES and atom list remain available.'));}
+  const atom=Number(atomSelect.value),groups=c.isInput?(root.CleavableGroups?.redesignGroups(c.mol)||[]):[],group=groups.find(g=>[g.atom,g.oxygenAtom].includes(atom)&&designSelect.value.startsWith(g.id+':'))||groups.find(g=>[g.atom,g.oxygenAtom].includes(atom));
+  try{depiction.innerHTML=depictSvg(c.mol,{highlight:group&&['all','redesign'].includes(actionMode.value)?[group.atom,group.oxygenAtom]:[atom],title:c.prodrug.name+'; selected atom '+(atom+1)+(group?'; '+group.label:'')});}catch(_){depiction.append(make('p','Structure preview unavailable; SMILES and atom list remain available.'));}
  }
  function inspect(){
   output.replaceChildren();const c=selected();clearSnapshot();if(!c)return;
@@ -222,7 +236,8 @@
   if(!c){updateBuilder();return;}
   const compatible=compatibleSites(c);
   c.mol.atoms.forEach((a,i)=>{const o=make('option','Atom '+(i+1)+' · '+a.element+(!c.isInput&&i===c.atom?' · annotated '+c.kind:compatible.some(s=>s.atom===i)?' · compatible: '+compatible.find(s=>s.atom===i).kind:''));o.value=String(i);atomSelect.append(o);});
-  const preferred=compatible.find(s=>['O','N','S'].includes(s.element))||compatible[0];
+  etherGroups=c.isInput?(root.CleavableGroups?.redesignGroups(c.mol)||[]):[];
+  const preferred=preferredSite(compatible);
   atomSelect.value=String(preferred?preferred.atom:c.atom);smiles.textContent=c.prodrug.smiles;draw();inspect();updateBuilder();
  }
  refSelect.addEventListener('change',()=>{choose();context.textContent=refSelect.value==='__input__'?'Inspecting the current input structure. Reference evidence is not transferred to it.':'Inspecting a named reference independently from the current input molecule.';});

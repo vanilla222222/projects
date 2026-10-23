@@ -36,7 +36,7 @@ $('prodrug-explorer-route-undo').click();ok(snapshot.prodrugReleasePathway.steps
 change('prodrug-design-template','amine-propionyloxy');ok(!snapshot.prodrugReleasePathway&&!$('prodrug-explorer-route-view').textContent,'Template changes clear stale route');
 change('prodrug-reference-select','enalapril');ok($('prodrug-explorer').hidden&&snapshot.prodrugSiteEvidence.status==='documented-reference-site','Reference evidence stays separate from generated scan');
 $('prodrug-design-use-input').click();ok(!$('prodrug-explorer').hidden,'Explorer returns for current input');
-render('COc1ccccc1');$('prodrug-design-build').click();$('prodrug-explorer-start-route').click();ok(snapshot.prodrugReleasePathway.steps.length===1&&!snapshot.prodrugReleasePathway.targetSmiles,'Existing-group preview starts a route without claiming input regeneration');
+render('COc1ccccc1');change('prodrug-site-action-mode','cleavage');$('prodrug-design-build').click();$('prodrug-explorer-start-route').click();ok(snapshot.prodrugReleasePathway.steps.length===1&&!snapshot.prodrugReleasePathway.targetSmiles,'Existing-group preview starts a route without claiming input regeneration');
 render('[Cl-].CC[NH3+]');ok(snapshot.prodrugSiteExplorer.atoms[0].reason.includes('counterion')&&snapshot.prodrugSiteComparison.rows[0].smiles==='CC[NH3+]','Salt scan and comparison scope are explicit');
 render('CCO.O');ok($('prodrug-explorer-compare-site').disabled&&snapshot.prodrugSiteComparison.rows.length===0&&snapshot.prodrugSiteExplorer.atoms.every(a=>a.reason.includes('Input-level check')),'Unsupported input clears old comparison and explains block');
 

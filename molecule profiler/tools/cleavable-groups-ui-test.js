@@ -10,7 +10,7 @@ vm.runInContext(fs.readFileSync(path.join(root,'js/prodrug-site-evidence.js'),'u
 const $=id=>w.document.getElementById(id);let checks=0;const ok=(v,s)=>{assert.ok(v,s);checks++;};
 function render(smiles){w.testInput=smiles;w.PharmacologyUI.render({smiles,mol:vm.runInContext('buildMolecule(parseSmiles(testInput))',ctx)},[]);}
 function change(id,value){$(id).value=value;$(id).dispatchEvent(new w.Event('change'));}
-render('COc1ccccc1');
+render('COc1ccccc1');change('prodrug-site-action-mode','cleavage');
 ok($('prodrug-reference-atom').value==='1'&&!$('prodrug-design-build').disabled,'Aryl ether oxygen is offered as a compatible existing-group site');
 ok($('prodrug-design-template').selectedOptions[0].textContent.includes('O-dealkylation'),'The ether option describes the reaction rather than an added attachment');
 $('prodrug-design-build').click();
@@ -35,6 +35,6 @@ render('COC(=O)CC=O');change('prodrug-site-action-mode','design');ok(Array.from(
 change('prodrug-site-action-mode','cleavage');ok(Array.from($('prodrug-design-template').options).every(o=>o.value.startsWith('cleave:'))&&!$('prodrug-design-build').disabled,'Pathway filter selects a compatible existing group');
 render('CCOP(=O)(O)O');$('prodrug-design-build').click();ok(snapshot.prodrugSiteCleavage?.pathway.kind==='phosphate','Phosphate cleavage is usable in the interface');
 render('C[N+](C)(C)[O-]');$('prodrug-design-build').click();ok(snapshot.prodrugSiteCleavage?.pathway.kind==='n-oxide','Existing N-oxide reduction is usable in the interface');
-render('COc1ccc(/C=C/C)cc1');$('prodrug-design-build').click();ok(snapshot.prodrugSiteCleavage?.products.some(p=>p.smiles.includes('/')),'Remote alkene stereo remains in exported products');
+render('COc1ccc(/C=C/C)cc1');change('prodrug-site-action-mode','cleavage');$('prodrug-design-build').click();ok(snapshot.prodrugSiteCleavage?.products.some(p=>p.smiles.includes('/')),'Remote alkene stereo remains in exported products');
 render('C/C=C/CO');$('prodrug-design-build').click();ok(snapshot.prodrugSiteDesign?.candidate.parentRecoveryVerified,'Specified alkene parent now supports attachment preview');
 console.log('Existing-group UI: '+checks+' focused checks passed.');dom.window.close();
