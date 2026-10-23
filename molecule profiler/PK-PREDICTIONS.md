@@ -342,3 +342,14 @@ the end of a route is a structural match, not validated biological release.
 No descriptor change is interpreted as improved ADME. See
 [PRODRUG-SITE-EVIDENCE.md](PRODRUG-SITE-EVIDENCE.md) for rules, primary sources,
 formal reaction inputs, normalization scope and independent RDKit cascade tests.
+
+### Research-priority view (2026-10-23)
+
+Shortlisted designs can be reviewed by separate evidence provenance, bounded
+formal route coverage, byproduct concern catalog matches, property deltas and
+other matched sites. Exact curated-pair evidence requires both complete organic
+graphs; class precedents and nearby structures do not inherit it. Unknown route
+or byproduct criteria remain unknown and sort last. No aggregate priority,
+safety, clinical benefit or improved ADME score is calculated. Source links,
+route limits, concern-catalog coverage and exported JSON preserve the scope.
+See [PRODRUG-SITE-EVIDENCE.md](PRODRUG-SITE-EVIDENCE.md) for methods and tests.

@@ -315,3 +315,74 @@ atom/isotope conservation (including formal hydrolysis water), exact final
 parent identity, remote E/Z/tetrahedral stereo, and all four terminal fragments
 of the amine-carbamate cascade. These checks validate structure bookkeeping,
 not biological activation.
+
+### Research-priority review (2026-10-23)
+
+The comparison shortlist now has an explicit **Review shortlist** action. Up to
+12 designs are reviewed, one per browser event-loop turn, with separate columns
+for evidence provenance, formal route coverage, other route-frontier products,
+property deltas and other matched sites. Each criterion sorts independently;
+there is no combined score or implied ranking of clinical benefit. Unknown
+numeric values remain last in either sort direction. A route-coverage filter
+and full JSON export preserve the selected view in the pharmacology snapshot.
+
+An exact curated-pair label requires both the candidate and supplied parent
+organic graphs to match an existing documented relationship, including isotope,
+charge and supported stereo. Candidate-only matches, another ester position,
+mirror images and class references do not qualify. A generated structure remains
+experimentally unvalidated by this software even when it matches a documented
+compound pair. Sources and provenance scope remain visible for every entry.
+
+Route review uses breadth-first exploration bounded to four steps, 32 visited
+states and 96 attempted extensions per design. A found route is one implemented
+formal sequence to the exact supplied parent state, not a predicted preferred
+biological activation sequence. The first found route need not complete the
+breakdown of other fragments. Products at its parent-reaching frontier may
+still be intermediates; earlier products and sources remain in the inspectable
+route history. Search exhaustion and missing rules are explicit unresolved
+states. Protonation steps are not invented to force parent recovery. Every
+reviewed candidate is independently checked against the current parent before
+being assessed; failed entries are excluded with reasons.
+
+The concern catalog covers four chemical species, reviewed 2026-10-23:
+formaldehyde, methanol, hydrazine and hydroxylamine. It matches whole product
+graphs, not substructures; isotopic labels are ignored only for the concern
+lookup, with isotope-specific effects explicitly unassessed. Charge is retained.
+All product structures and formal equivalents remain unchanged in the report.
+An unlisted product is unknown, not safe. An unresolved route has unknown
+products/concern counts, not zero concerns. Counts describe distinct catalog
+matches rather than hazard severity. Occupational/chemical hazard sources do
+not establish patient exposure, conversion, a dose threshold or individual risk.
+
+Primary agency publications for this limited concern catalog:
+- NIOSH, Formaldehyde: https://www.cdc.gov/niosh/npg/npgd0293.html
+- NIOSH, Methyl alcohol: https://www.cdc.gov/niosh/npg/npgd0397.html
+- NIOSH, Hydrazine: https://www.cdc.gov/niosh/npg/npgd0329.html
+- ILO/WHO, Hydroxylamine ICSC 0661:
+  https://chemicalsafety.ilo.org/dyn/icsc/showcard.display?p_card_id=0661&p_lang=en&p_version=1
+
+Other parent attachment handles use original input atom numbers. Other candidate
+transformations are distinct implemented rule/cut-bond matches excluding the
+first step of the found route, when available. Same-kind parent handles and
+same-class alternative first steps are retained separately in JSON. These counts
+are coverage observations, not predictions of competition or selectivity.
+Property deltas use the existing comparison engine's normalized parent baseline;
+WLOGP remains estimated. No direction of change implies improved ADME.
+
+Shortlist changes invalidate old reviews. A new analysis also resets sort and
+route filters. Pending review work is cancelled by an epoch check when the
+shortlist/input changes, preventing old results from appearing on a new input.
+A selected reviewed route can be opened in the existing release-step explorer.
+
+Validation: `tools/prodrug-priority-test.js` checks exact-pair provenance,
+wrong-position/stereo/candidate-only negatives, missing sources, unresolved
+charge states, catalog identity, alternative-site counts, deduplication,
+independent criteria sorting, unknown-last ordering and route-search bounds.
+`tools/prodrug-priority-ui-test.js` checks explicit review, source links,
+unknown-product text, sorting/filtering, inspectable routes, JSON/snapshot view,
+stale-review invalidation, input-change cancellation and reference separation.
+`tools/prodrug-priority-rdkit-test.py` independently checks eight automatically
+found routes (nine steps), exact final parent stereo/isotope identity, formal
+atom/charge bookkeeping and every reported remaining product equivalent.
+These are structure and interface checks, not validation of a priority model,
+biological release, safety or efficacy.

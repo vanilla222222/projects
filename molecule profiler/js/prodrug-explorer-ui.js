@@ -39,7 +39,21 @@
  const undo=button('Undo last step',()=>{if(!route?.steps.length)return;const steps=route.steps.slice(0,-1),old=route;route=root.ProdrugExplorer.start(old.startSmiles,old.targetSmiles);for(const step of steps){const option=root.ProdrugExplorer.options(route).find(o=>o.productId===step.consumed.id&&o.pathId===step.pathway.id);route=root.ProdrugExplorer.advance(route,option);}renderRoute();});undo.id='prodrug-explorer-route-undo';
  const routeExport=button('Download pathway JSON',()=>{if(route)download('hypothetical-release-pathway.json',JSON.stringify(route,null,2)+'\n','application/json');});routeExport.id='prodrug-explorer-export-route';
  routeHost.append(routeStatus,routeLabel,advance,undo,routeExport,routeView);section.append(routeHost);host.append(section);
- let record=null,scan=null,shortlist=[],route=null,routeError='';
+ const priority=make('section');priority.id='prodrug-priority';priority.className='pk-research-extension';
+ priority.append(make('h4','Research-priority view'),make('p','Review the shortlist by one criterion at a time. Exact compound relationships, formal release steps, known byproduct concerns, property changes and other matched sites remain separate. Sorting is for research review; it is not a score for clinical benefit or safety.'));
+ const review=button('Review shortlist',reviewShortlist);review.id='prodrug-priority-review';
+ const sortLabel=make('label','Sort criterion '),sortKey=make('select');sortKey.id='prodrug-priority-sort';
+ [['evidence','Evidence provenance'],['steps','Formal steps to parent'],['concerns','Products with catalog concerns'],['alternatives','Alternative input transformations'],['handles','Other parent attachment sites'],['mw','Absolute MW change'],['tpsa','Absolute TPSA change'],['logp','Absolute estimated WLOGP change']].forEach(([v,t])=>{const o=make('option',t);o.value=v;sortKey.append(o);});sortLabel.append(sortKey);
+ const directionLabel=make('label','Order '),sortDirection=make('select');sortDirection.id='prodrug-priority-direction';
+ [['asc','Ascending'],['desc','Descending']].forEach(([v,t])=>{const o=make('option',t);o.value=v;sortDirection.append(o);});directionLabel.append(sortDirection);
+ const routeFilterLabel=make('label','Route coverage '),routeFilter=make('select');routeFilter.id='prodrug-priority-route-filter';
+ [['all','All candidates'],['found','Formal route found'],['unresolved','Parent not reached']].forEach(([v,t])=>{const o=make('option',t);o.value=v;routeFilter.append(o);});routeFilterLabel.append(routeFilter);
+ const priorityExport=button('Download research review JSON',()=>{if(priorityReport)download('prodrug-research-review.json',JSON.stringify({...priorityReport,view:{criterion:sortKey.value,direction:sortDirection.value,routeFilter:routeFilter.value}},null,2)+'\n','application/json');});priorityExport.id='prodrug-priority-export';
+ const priorityStatus=make('p');priorityStatus.id='prodrug-priority-status';priorityStatus.setAttribute('role','status');
+ const priorityRows=make('div');priorityRows.id='prodrug-priority-results';priorityRows.className='prodrug-table-scroll';
+ priority.append(review,sortLabel,directionLabel,routeFilterLabel,priorityExport,priorityStatus,priorityRows);compare.after(priority);
+ let record=null,scan=null,shortlist=[],route=null,routeError='',priorityReport=null,priorityEpoch=0;
+
  const snapshot=()=>root.PharmacologyUI.getSnapshot(),inputMode=()=>$('prodrug-reference-select').value==='__input__';
  function addCandidate(row){
   if(shortlist.some(r=>Pharmacology.exactGraph(parse(r.smiles),parse(row.smiles))))return;
@@ -61,6 +75,7 @@
   const s=snapshot();if(s)s.prodrugSiteExplorer={inputSmiles:record.smiles,...scan};
  }
  function renderComparison(){
+  invalidatePriority();
   const report=comparison(),s=snapshot();if(s)s.prodrugSiteComparison=record?{inputSmiles:record.smiles,...report}:null;
   compareTable.replaceChildren();compareSmiles.disabled=compareCsv.disabled=!report.rows.some(r=>r.role==='candidate');
   if(!report.rows.length){compareTable.append(make('p',report.reason||'No comparison is available.'));return;}
@@ -70,6 +85,61 @@
    for(const key of ['mw','logp','tpsa','hbd','hba','rotatableBonds','charge']){const value=row.values?.[key],delta=row.delta?.[key],digits=['mw','logp','tpsa'].includes(key)?2:0;tr.append(make('td',Number.isFinite(value)?value.toFixed(digits)+(row.role==='candidate'&&Number.isFinite(delta)?' ('+(delta>0?'+':'')+delta.toFixed(digits)+')':''):'Unavailable'));}body.append(tr);
   }table.append(body);compareTable.append(table);
  }
+ function invalidatePriority(){
+  priorityEpoch++;priorityReport=null;priorityRows.replaceChildren();priorityExport.disabled=true;
+  review.disabled=!record||!shortlist.length||!root.ProdrugPriority;
+  priorityStatus.textContent=shortlist.length?'Shortlist changed. Review '+shortlist.length+' candidate(s) to populate these criteria.':'Add designs to the comparison shortlist, then review them here.';
+  const s=snapshot();if(s)s.prodrugResearchReview=null;
+ }
+ async function reviewShortlist(){
+  if(!record||!shortlist.length||!root.ProdrugPriority)return;
+  const epoch=++priorityEpoch,input=record.mol,rows=shortlist.slice(),reports=[];priorityReport=null;priorityRows.replaceChildren();review.disabled=true;priorityExport.disabled=true;
+  const s=snapshot();if(s)s.prodrugResearchReview=null;
+  try{
+   for(let i=0;i<rows.length;i++){
+    priorityStatus.textContent='Reviewing candidate '+(i+1)+' of '+rows.length+' with bounded structural route checks…';
+    await new Promise(resolve=>root.setTimeout(resolve,0));if(epoch!==priorityEpoch)return;
+    reports.push(root.ProdrugPriority.assess(input,[rows[i]]));
+   }
+   if(epoch!==priorityEpoch)return;
+   priorityReport={...reports[0],rows:reports.flatMap(r=>r.rows),excluded:reports.flatMap(r=>r.excluded)};
+   const s=snapshot();if(s)s.prodrugResearchReview=priorityReport;
+   priorityStatus.textContent='Reviewed '+priorityReport.rows.length+' candidate(s). Unknown values sort last in either direction. Route search: at most four steps, 32 states and 96 attempts per candidate. Byproduct lookup covers four species; unlisted does not mean safe.'+(priorityReport.excluded.length?' '+priorityReport.excluded.length+' candidate(s) failed review checks.':'');
+   priorityExport.disabled=!priorityReport.rows.length;renderPriority();
+  }catch(e){if(epoch===priorityEpoch)priorityStatus.textContent='Review unavailable: '+e.message;}
+  finally{if(epoch===priorityEpoch)review.disabled=!shortlist.length;}
+ }
+ function renderPriority(){
+  priorityRows.replaceChildren();if(!priorityReport)return;
+  const snapshotValue=snapshot();if(snapshotValue)snapshotValue.prodrugResearchReview={...priorityReport,view:{criterion:sortKey.value,direction:sortDirection.value,routeFilter:routeFilter.value}};
+  const filtered=priorityReport.rows.filter(r=>routeFilter.value==='all'||(routeFilter.value==='found')===(r.route.status==='found'));
+  const rows=root.ProdrugPriority.sort(filtered,sortKey.value,sortDirection.value),table=make('table'),head=make('tr');
+  table.append(make('caption',rows.length+' of '+priorityReport.rows.length+' reviewed candidates · independent criteria, no combined score'));
+  ['Design and evidence','Formal route','Other route products','Property changes','Other matched sites'].forEach(t=>head.append(make('th',t)));const thead=make('thead');thead.append(head);table.append(thead);const body=make('tbody');
+  for(const row of rows){
+   const tr=make('tr');tr.dataset.candidateId=row.id;const identity=make('td');identity.append(make('strong',row.name),make('p',row.evidence.label),make('small',row.evidence.scope));
+   for(const source of row.evidence.sources){const a=make('a',source.title);a.href=source.url;a.target='_blank';a.rel='noopener noreferrer';identity.append(a,make('br'));}
+   const structure=make('details');structure.append(make('summary','Design SMILES'),make('code',row.smiles));identity.append(structure);
+   const path=make('td');path.append(make('strong',row.route.steps===null?'Parent not reached':row.route.steps+' formal step(s)'),make('p',row.route.reason));
+   if(row.route.route){const load=button('Inspect this formal route',()=>{route=JSON.parse(JSON.stringify(row.route.route));routeError='';renderRoute();routeHost.scrollIntoView?.({block:'nearest'});});load.dataset.priorityRoute=row.id;path.append(load);}
+   const products=make('td');
+   if(!row.byproducts)products.append(make('p','Not enumerated: no complete supported route found. Byproduct concerns remain unknown.'));
+   else if(!row.byproducts.length)products.append(make('p','No additional fragment at the parent-reaching frontier. This does not establish safety.'));
+   else {products.append(make('p',row.concernMatches+' distinct product(s) match catalog concerns; '+row.unlistedProducts+' distinct product(s) are unlisted.'));
+    const details=make('details');details.append(make('summary','Products and concern sources'));
+    for(const p of row.byproducts){const item=make('div');item.append(make('strong',p.name+' · '+p.equivalents+' formal equivalent(s)'),make('code',p.smiles),make('p',p.concern));if(p.source){const a=make('a',p.source.title);a.href=p.source.url;a.target='_blank';a.rel='noopener noreferrer';item.append(a,make('p',p.matchScope));}details.append(item);}products.append(details);
+   }
+   products.append(make('small','Hazard references concern the chemical species. Released exposure, biological conversion and individual risk are not calculated. Listed products are the parent-reaching frontier and may still be intermediates; other sequences may release different products. Earlier intermediates remain in the route history.'));
+   const properties=make('td');for(const [key,label,unit] of [['mw','Δ MW',' g/mol'],['tpsa','Δ TPSA',' Å²'],['logp','Δ estimated WLOGP','']]){const value=row.properties?.delta?.[key];properties.append(make('p',label+': '+(Number.isFinite(value)?(value>0?'+':'')+value.toFixed(2)+unit:'Unavailable')));}
+   const competing=make('td');competing.append(make('p',row.competing.otherHandleCount+' other parent handle(s); '+row.competing.sameKindHandleCount+' of the same kind.'),make('p',row.competing.alternativeCount+' other candidate transformation(s) match the implemented rules.'),make('small',row.competing.scope));
+   const details=make('details');details.append(make('summary','Other handles and transformations'));
+   row.competing.otherHandles.forEach(h=>details.append(make('p',h.element+(h.atom+1)+' · '+h.kind)));
+   row.competing.alternativeTransformations.forEach(p=>details.append(make('p',p.label+' · bonds '+p.cutBonds.map(([a,b])=>(a+1)+'–'+(b+1)).join(', '))));competing.append(details);
+   tr.append(identity,path,products,properties,competing);body.append(tr);
+  }table.append(body);priorityRows.append(table);
+  if(priorityReport.excluded.length){const excluded=make('details');excluded.append(make('summary','Excluded review entries'));priorityReport.excluded.forEach(e=>excluded.append(make('p',e.name+': '+e.reason)));priorityRows.append(excluded);}
+ }
+ for(const control of [sortKey,sortDirection,routeFilter])control.addEventListener('change',renderPriority);
  function renderRoute(){
   routeView.replaceChildren();routeSelect.replaceChildren();const options=root.ProdrugExplorer.options(route);
   options.forEach((o,i)=>{const option=make('option',o.productId+' · '+o.label);option.value=String(i);routeSelect.append(option);});advance.disabled=!options.length;routeSelect.disabled=!options.length;undo.disabled=!route?.steps.length;routeExport.disabled=!route;
@@ -105,7 +175,7 @@
  $('prodrug-design-build').addEventListener('click',()=>{resetRoute();attachPreviewActions();});
  const original=root.PharmacologyUI.render;
  root.PharmacologyUI.render=function(next,ranks){
-  record=null;scan=null;shortlist=[];route=null;routeError='';compareStatus.textContent='';filter.value='all';original(next,ranks);record=next;scan=root.ProdrugExplorer.scan(next.mol);renderScan();renderComparison();renderRoute();
+  record=null;scan=null;shortlist=[];route=null;routeError='';compareStatus.textContent='';filter.value='all';sortKey.value='evidence';sortDirection.value='asc';routeFilter.value='all';original(next,ranks);record=next;scan=root.ProdrugExplorer.scan(next.mol);renderScan();renderComparison();renderRoute();
  };
- section.hidden=true;renderRoute();
+ section.hidden=true;renderRoute();invalidatePriority();
 })(globalThis);

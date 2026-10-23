@@ -124,3 +124,5 @@ assert.strictEqual(html.match(sharedSheet)[1], inspector.match(sharedSheet)[1],
 
 assert.ok(scripts.indexOf('js/prodrug-explorer.js') > scripts.indexOf('js/cleavable-groups.js'), 'Explorer must load after pathway engine');
 assert.ok(scripts.indexOf('js/prodrug-explorer-ui.js') > scripts.indexOf('js/prodrug-site-evidence.js'), 'Explorer UI must load after site controls');
+
+assert.ok(scripts.indexOf('js/prodrug-priority.js') > scripts.indexOf('js/prodrug-explorer.js') && scripts.indexOf('js/prodrug-priority.js') < scripts.indexOf('js/prodrug-explorer-ui.js'), 'Research priority must load between explorer engine and UI');
