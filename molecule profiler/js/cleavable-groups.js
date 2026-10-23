@@ -21,7 +21,7 @@
  const serialize=m=>writeSmiles(clone(m));
  function prepared(input){
   try{
-   const p=root.ProdrugCandidates?.prepareParent(input);if(!p||p.mol.atoms.length>120||/[\\/]/.test(p.mol.smiles||'')||!root.ProdrugCandidates.validGraph(p.mol))return null;
+   const p=root.ProdrugCandidates?.prepareParent(input);if(!p||p.mol.atoms.length>120||!root.ProdrugCandidates.validGraph(p.mol))return null;
    return Pharmacology.exactGraph(p.mol,parse(serialize(p.mol)))?p:null;
   }catch(_){return null;}
  }
@@ -102,7 +102,9 @@
    }else if(path.action==='hydrolysis'){
     const [leaving,carbonyl]=path.localCuts[0];setH(leaving,1);addO(carbonyl,1,1);
    }else if(path.action==='imine-hydrolysis'){
-    const [carbon,nitrogen]=path.localCuts[0];setH(nitrogen,g.atoms[nitrogen].totalH+2);planarize(carbon);addO(carbon,2,0);
+    const [carbon,nitrogen]=path.localCuts[0];
+    if(stereoAnalyse(p.mol).bonds.some(b=>b.specified&&[carbon,nitrogen].includes(b.a)&&[carbon,nitrogen].includes(b.b)))result.stereoChanges.push({inputAtom:p.inputAtoms[carbon],change:'Reacting C=N geometry is consumed by hydrolysis; remote specified double-bond geometry is retained.'});
+    setH(nitrogen,g.atoms[nitrogen].totalH+2);planarize(carbon);addO(carbon,2,0);
    }else if(path.action==='n-oxide-reduction'){
     const [nitrogen,oxygen]=path.localCuts[0];g.atoms[nitrogen].charge=0;g.atoms[oxygen].charge=0;setH(oxygen,2);
    }else if(path.action==='disulfide'){
@@ -110,6 +112,9 @@
    }else if(path.action==='acetal'){
     path.localCuts.forEach(([,oxygen])=>setH(oxygen,1));planarize(path.oxidizedCarbon);addO(path.oxidizedCarbon,2,0);
    }
+   // A consumed C=N no longer has E/Z geometry. Keep shared markers if they
+   // still specify an adjacent, unchanged double bond in a conjugated system.
+   g.bonds.forEach(b=>{if(b.dir&&!g.bonds.some(d=>d.order===2&&(d.a===b.a||d.b===b.a||d.a===b.b||d.b===b.b)))b.dir=0;});
    const edited=buildMolecule(g),smiles=serialize(edited),parsed=parse(smiles);
    if(!root.ProdrugCandidates.validGraph(edited)||!Pharmacology.exactGraph(edited,parsed))throw Error('Product graph validation failed.');
    result.products=smiles.split('.').map((s,i)=>({name:'Hypothetical product '+(i+1),smiles:s,evidenceLevel:result.evidenceLevel}));

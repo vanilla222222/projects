@@ -10,7 +10,7 @@ for(const smiles of ['CCO','Oc1ccccc1','CC(=O)O','C[C@H](O)C(=O)O','[13CH3]CO','
  check(`pg(input).rows.length`,5,'Five bounded designs: '+smiles);
  check(`(()=>{const m=buildMolecule(parseSmiles(input)),r=ProdrugCandidates.generate(m);return r.rows.every(x=>x.parentRecoveryVerified&&ProdrugCandidates.recoverParent(x.smiles,x.cleavage,m).verified&&!x.experimentalValidation);})()`,true,'Actual generated graph reverses exactly: '+smiles);
 }
-for(const smiles of ['CC(=O)OC','COOC','CCO.O','C/C=C/CO','[CH2]CO']){ctx.input=smiles;check(`pg(input).rows.length`,0,'Unsupported state not assigned five designs: '+smiles);}
+for(const smiles of ['CC(=O)OC','COOC','CCO.O','[CH2]CO']){ctx.input=smiles;check(`pg(input).rows.length`,0,'Unsupported state not assigned five designs: '+smiles);}
 check(`pg('CCO',2).rows.length`,2,'Requested smaller limit');
 check(`pg('CCO',100).rows.length`,5,'Hard maximum five');
 check(`pg('CCO',0).rows.length`,0,'Zero limit honored');
@@ -67,4 +67,5 @@ for(const smiles of ['CC=O','CC(=O)C','O=Cc1ccccc1','O=C1CCCCC1','C=O','[13CH3]C
 for(const smiles of ['CC(=[18O])C','CC(=O)O','CC(=O)N','COC(=O)OC']){ctx.input=smiles;check(`ProdrugCandidates.sites(buildMolecule(parseSmiles(input))).some(s=>s.kind==='aldehyde carbonyl'||s.kind==='ketone carbonyl')`,false,'Condensation excludes labelled carbonyl oxygen and acyl derivatives: '+smiles);}
 check(`(()=>{const p=buildMolecule(parseSmiles('[Cl-].[NH3+]CCC=O')),site=ProdrugCandidates.sites(p).find(s=>s.kind==='aldehyde carbonyl'),r=ProdrugCandidates.generate(p,{atom:site.atom,designId:'carbonyl-oxime',limit:1});return site.carbonylOxygen===5&&r.rows.length===1&&r.rows[0].normalization.applied;})()`,true,'Carbonyl salt preserves input oxygen and selection indices');
 check(`(()=>{const p=buildMolecule(parseSmiles('CC(=O)C')),before=JSON.stringify(p);ProdrugCandidates.generate(p);return JSON.stringify(p)===before;})()`,true,'Condensation does not mutate input');
+for(const smiles of ['C/C=C/CO','C/C=C\\CO','OC/C=C/C=C/C','OC[C@H](F)/C=C/C']){ctx.input=smiles;check(`pg(input).rows.length>0`,true,'Specified alkene geometry permits validated designs: '+smiles);}
 console.log('Prodrug candidates: '+checks+' focused checks passed.');

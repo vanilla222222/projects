@@ -73,7 +73,7 @@ hydantoin/imide work; availability in this builder does not establish biological
 conversion from a different amide, lactam, urea or carbamate. Their possible
 formaldehyde release, equilibrium and competing reactions remain unassessed.
 Pyrrole-like aromatic N–H, permanently quaternary nitrogen and unsupported
-chemistry are not opened by these rules. Directional alkene stereo remains gated.
+chemistry are not opened by these rules. Specified alkene geometry is retained when full graph serialization checks succeed.
 
 Additional primary precedents:
 - Varia et al. (1984), phenytoin hydroxymethyl ester/phosphate prodrugs:
@@ -225,3 +225,32 @@ zero lost). Reproduce with
 `node tools/prodrug-coverage-benchmark.js a6417075` with that baseline available.
 This count concerns derivative generation only; it excludes the separate
 existing-group pathway previews and is not a biological-validation result.
+
+
+### Specified double-bond compatibility (2026-10-23)
+
+The selected-input prodrug builder, existing-group pathway explorer and analogue
+builder no longer reject every input containing directional SMILES markers.
+The shared writer retains bond direction relative to traversal, including
+branches and opposite ring-closure endpoints. Complete graph round trips remain
+required; this expands serialization coverage rather than weakening chemical
+site eligibility. New oxime/hydrazone geometry remains unassigned. Hydrolysis of
+a specified reacting C=N explicitly records consumption of its geometry;
+unchanged remote double bonds retain their supplied configuration. Unused
+direction markers are removed after cleavage without dropping shared markers
+that still describe an adjacent double bond.
+
+Validation: 133 prodrug and 74 existing-group focused checks; 27 pathway UI
+checks; independent RDKit checks for 218 designs across 54 parents, 51 pathways
+across 39 inputs, and 54 directional serialization/analogue outputs. Directional
+fixtures cover reversed edges, reordered atoms, both isomers, branches, ring
+closures, conjugation, salts and combined tetrahedral/double-bond stereo.
+The deterministic 200-library-entry generation sample increased from 167 to 169
+compatible entries against commit 519cfbbf, with zero losses. This is structural
+coverage only, with no new biological cleavage, activity or ADME validation.
+
+Serialization convention: OpenSMILES section 3.8.3,
+https://opensmiles.org/opensmiles.html#_cis_trans_configuration_of_double_bonds
+
+Run `node tools/directional-smiles-test.js` and, with RDKit installed,
+`python tools/directional-smiles-rdkit-test.py` for the dedicated regression set.

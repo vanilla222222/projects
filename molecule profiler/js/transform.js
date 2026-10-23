@@ -62,11 +62,13 @@ function writeAtom(atom, count, emitted) {
     + hydrogenText(count) + chargeText(atom.charge || 0) + ']';
 }
 
-function writeBond(bond, graph) {
+function writeBond(bond, graph, from) {
   if (bond.aromatic) return '';
   if (bond.order === 2) return '=';
   if (bond.order === 3) return '#';
   if (bond.order === 4) return '$';
+  // Direction is relative to the emitted traversal, including ring endpoints.
+  if (bond.dir) return (bond.a === from ? bond.dir : -bond.dir) > 0 ? '/' : '\\';
   if (graph.atoms[bond.a].aromatic && graph.atoms[bond.b].aromatic) return '-';
   return '';
 }
@@ -105,10 +107,10 @@ function writeSmiles(graph) {
       spent[link.bond] = true;
       label += 1;
       const tag = label < 10 ? String(label) : '%' + label;
-      const symbol = writeBond(graph.bonds[link.bond], graph);
+      const symbol = writeBond(graph.bonds[link.bond], graph, id);
       node.closures.push(symbol + tag);
       node.ringOrder.push(link.atom);
-      nodes[link.atom].closures.push(symbol + tag);
+      nodes[link.atom].closures.push(writeBond(graph.bonds[link.bond], graph, link.atom) + tag);
       nodes[link.atom].ringOrder.push(id);
     });
     links[id].forEach((link) => {
@@ -123,7 +125,7 @@ function writeSmiles(graph) {
   const render = (node) => {
     let out = node.token + node.closures.join('');
     node.children.forEach((child, index) => {
-      const text = writeBond(graph.bonds[child.bond], graph) + render(child.node);
+      const text = writeBond(graph.bonds[child.bond], graph, node.atom) + render(child.node);
       out += index === node.children.length - 1 ? text : '(' + text + ')';
     });
     return out;

@@ -15,7 +15,6 @@
    // isotope exclusion: this generator makes no kinetic prediction.
    const chemistry=root.PKApplicability.assess({...parent,atoms:parent.atoms.map(a=>({...a,isotope:null}))});
    if(!chemistry.eligible)return fail(chemistry.reasons.join(' '));
-   if(/[\\/]/.test(parent.smiles||''))return fail('Directional alkene stereo is not preserved by the serializer; no variants generated.');
    if(!Pharmacology.exactGraph(parent,parse(serialize(parent))))return fail('Parent isotope/stereochemical identity did not survive serialization.');
    const requested=options.limit===undefined?12:Number(options.limit),limit=Number.isFinite(requested)?Math.min(60,Math.max(0,Math.floor(requested))):12;
    const edits=[];
@@ -35,7 +34,7 @@
      const smiles=serialize(g),mol=parse(smiles);
      if(!root.PKApplicability.assess({...mol,atoms:mol.atoms.map(a=>({...a,isotope:null}))}).eligible||!Pharmacology.exactGraph(mol,parse(serialize(mol))))throw new Error('Graph validation failed');
      if(Pharmacology.exactGraph(parent,mol)||seen.some(m=>Pharmacology.exactGraph(m,mol)))continue;
-     seen.push(mol);rows.push({id:'analogue-'+(rows.length+1),name:edit.label+' variant at atom '+(edit.atom+1),smiles,site:{atom:edit.atom},edit:edit.label,evidenceLevel:'Unvalidated structural design',experimentalValidation:false,limitations:['Local graph edit only; biological activity, selectivity, metabolism and safety are unknown.','Retained supported isotope and tetrahedral stereo labels; no new experimental stereochemical assignment.','Analyze the candidate for descriptors or export SMILES for external ADME research.']});
+     seen.push(mol);rows.push({id:'analogue-'+(rows.length+1),name:edit.label+' variant at atom '+(edit.atom+1),smiles,site:{atom:edit.atom},edit:edit.label,evidenceLevel:'Unvalidated structural design',experimentalValidation:false,limitations:['Local graph edit only; biological activity, selectivity, metabolism and safety are unknown.','Retained supported isotope, tetrahedral and double-bond stereo labels; no new experimental stereochemical assignment.','Analyze the candidate for descriptors or export SMILES for external ADME research.']});
     }catch(_){skipped.push({atom:edit.atom,edit:edit.label,reason:'Candidate failed graph validation.'});}
    }
    report.status=rows.length?'generated':'unavailable';

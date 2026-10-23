@@ -8,6 +8,9 @@ from rdkit import Chem, rdBase
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = [
+    'C/C=C/CO', 'C/C=C\\CO', 'OC/C=C/C=C/C', 'OC/C=C\\C=C/C',
+    'OC[C@H](F)/C=C/C', '[Na+].C/C=C/C(=O)[O-]', 'OCC1CC/C=C/CC1',
+    'OCC1/C=C/CCCCCC1', 'O=C/C=C/c1ccccc1',
     'CCO', 'Oc1ccccc1', 'CC(=O)O', 'CC(=O)[O-]', 'CCN', 'CCNC',
     'N1CCCCC1', 'CN1CCCCC1', 'CCN(C)C', 'CC[NH3+]', 'CC[NH2+]C',
     'CC[NH+](C)C', '[NH3+]CC(=O)[O-]', '[15NH2]CC', '[13CH3]CO',

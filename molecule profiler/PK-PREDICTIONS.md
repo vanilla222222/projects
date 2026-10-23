@@ -246,8 +246,8 @@ Primary class precedents:
   https://pubmed.ncbi.nlm.nih.gov/10974206/
 
 No compatible site returns `no-compatible-site` with an explicit coverage limit;
-it is not evidence that no prodrug could exist. Directional alkene stereo remains
-unsupported by the serializer. The UI reports the reason once rather than
+it is not evidence that no prodrug could exist. Specified double-bond geometry is retained when the complete parent and product
+graphs pass serialization checks. The UI reports the reason once rather than
 prefixing every unsupported input with a repeated zero-count message.
 
 Generated analogues is a separate panel in References and Metabolism. It applies
@@ -301,3 +301,32 @@ with graph recovery, and existing imine/oxime/hydrazone, phosphate-ester and
 N-oxide transformation previews. Parent recovery and product transformations have
 separate modes and snapshots. See `PRODRUG-SITE-EVIDENCE.md` for scope, exclusions
 and validation; model training and PK inference remain unchanged.
+
+
+### Specified double-bond compatibility (2026-10-23)
+
+The selected-input prodrug builder, existing-group pathway explorer and analogue
+builder no longer reject every input containing directional SMILES markers.
+The shared writer retains bond direction relative to traversal, including
+branches and opposite ring-closure endpoints. Complete graph round trips remain
+required; this expands serialization coverage rather than weakening chemical
+site eligibility. New oxime/hydrazone geometry remains unassigned. Hydrolysis of
+a specified reacting C=N explicitly records consumption of its geometry;
+unchanged remote double bonds retain their supplied configuration. Unused
+direction markers are removed after cleavage without dropping shared markers
+that still describe an adjacent double bond.
+
+Validation: 133 prodrug and 74 existing-group focused checks; 27 pathway UI
+checks; independent RDKit checks for 218 designs across 54 parents, 51 pathways
+across 39 inputs, and 54 directional serialization/analogue outputs. Directional
+fixtures cover reversed edges, reordered atoms, both isomers, branches, ring
+closures, conjugation, salts and combined tetrahedral/double-bond stereo.
+The deterministic 200-library-entry generation sample increased from 167 to 169
+compatible entries against commit 519cfbbf, with zero losses. This is structural
+coverage only, with no new biological cleavage, activity or ADME validation.
+
+Serialization convention: OpenSMILES section 3.8.3,
+https://opensmiles.org/opensmiles.html#_cis_trans_configuration_of_double_bonds
+
+Run `node tools/directional-smiles-test.js` and, with RDKit installed,
+`python tools/directional-smiles-rdkit-test.py` for the dedicated regression set.

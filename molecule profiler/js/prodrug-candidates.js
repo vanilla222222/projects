@@ -190,7 +190,6 @@
    if(!connected(parent))return fail('Use one connected parent structure; only one organic component with recognized, charge-balanced simple inorganic counterions can be normalized; other mixtures are not modified.');
    if(parent.atoms.some(a=>!['C','H','N','O','F','P','S','Cl','Br','I'].includes(a.element)))return fail('Unsupported element in this bounded design subset.');
    if(!supportedValences(parent))return fail('Radical or unsupported valence states are outside this design subset.');
-   if(/[\\/]/.test(parent.smiles||''))return fail('Directional alkene stereochemistry cannot yet be preserved by the design serializer; no candidate was generated.');
    if(!exact(parent,parse(serialized(parent))))return fail('The complete parent isotope/stereochemical identity could not be verified after serialization.');
    let sites=freeSites(parent);report.eligibleSites=sites.map(({designs,...site})=>({...site,designs:designs.map(({id,name,cleavage})=>({id,name,cleavage}))}));
    if(options&&options.atom!==undefined){

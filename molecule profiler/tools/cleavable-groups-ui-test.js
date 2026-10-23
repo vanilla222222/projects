@@ -35,4 +35,6 @@ render('COC(=O)CC=O');change('prodrug-site-action-mode','design');ok(Array.from(
 change('prodrug-site-action-mode','cleavage');ok(Array.from($('prodrug-design-template').options).every(o=>o.value.startsWith('cleave:'))&&!$('prodrug-design-build').disabled,'Pathway filter selects a compatible existing group');
 render('CCOP(=O)(O)O');$('prodrug-design-build').click();ok(snapshot.prodrugSiteCleavage?.pathway.kind==='phosphate','Phosphate cleavage is usable in the interface');
 render('C[N+](C)(C)[O-]');$('prodrug-design-build').click();ok(snapshot.prodrugSiteCleavage?.pathway.kind==='n-oxide','Existing N-oxide reduction is usable in the interface');
+render('COc1ccc(/C=C/C)cc1');$('prodrug-design-build').click();ok(snapshot.prodrugSiteCleavage?.products.some(p=>p.smiles.includes('/')),'Remote alkene stereo remains in exported products');
+render('C/C=C/CO');$('prodrug-design-build').click();ok(snapshot.prodrugSiteDesign?.candidate.parentRecoveryVerified,'Specified alkene parent now supports attachment preview');
 console.log('Existing-group UI: '+checks+' focused checks passed.');dom.window.close();
