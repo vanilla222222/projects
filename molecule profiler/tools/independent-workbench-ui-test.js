@@ -1,0 +1,44 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
+const {JSDOM}=require(process.env.PROFILER_JSDOM_PATH||'jsdom'),root=path.join(__dirname,'..');
+const dom=new JSDOM(fs.readFileSync(path.join(root,'index.html'),'utf8'),{runScripts:'outside-only',url:'http://127.0.0.1:8765/'}),w=dom.window,ctx=dom.getInternalVMContext();
+for(const name of ['smiles','mol','smarts','stereo','transform','descriptors','rules','input-workflow','research-tools'])vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),ctx);
+let snapshot,requests=[],pending=null,online=true;
+w.PharmacologyUI={render(r){snapshot={name:r.name,inputSmiles:r.smiles,prodrugCandidates:{rows:[{name:'Candidate',smiles:'CCOC'}]}};},getSnapshot(){return snapshot;}};
+w.URL.createObjectURL=()=> 'blob:test';w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=function(){};
+w.fetch=async(url,options)=>{requests.push({url,body:options?JSON.parse(options.body):null});if(!online)throw Error('offline');if(url==='/api/status')return {ok:true,json:async()=>({available:['adme','conformers','screen','fragments','replace'],docking:true,rdkit:'test'})};return new Promise(resolve=>{pending=resolve;});};
+for(const name of ['research-workbench-ui','workspace-ui','layout-ui','workbench-layout'])vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),ctx);
+const $=id=>w.document.getElementById(id),tick=()=>new Promise(r=>setTimeout(r,0));let checks=0;
+const ok=(v,s)=>{assert.ok(v,s);checks++;};
+function render(smiles){w.PharmacologyUI.render({name:'Working input',smiles});w.document.dispatchEvent(new w.Event('molecule-profiler:updated'));}
+function finish(result){pending({ok:true,json:async()=>({result})});pending=null;}
+(async()=>{
+ await tick();render('COc1ccccc1');$('results').hidden=false;w.WorkspaceUI.select('research');
+ ok(!$('research-workbench').hidden&&$('prodrug-panel').hidden,'Research has its own focused workspace');
+ ok($('research-query').options.length===2&&$('research-module-adme').textContent.includes('C7H8O'),'Input and candidate pool, local molecular facts');
+ ok($('research-workbench').querySelectorAll('[data-module]').length===6,'Six native modules');
+ ok($('workbench-context').textContent.includes('Working input'),'Molecular context bar');
+ $('workbench-compose-toggle').click();ok($('workbench-compose-toggle').getAttribute('aria-expanded')==='false','Input can collapse');
+ w.document.querySelector('#workbench-context a').dispatchEvent(new w.MouseEvent('click',{bubbles:true}));ok($('workbench-compose-toggle').getAttribute('aria-expanded')==='true','Editing reopens input');
+ $('research-analyze').click();ok(requests.at(-1).url==='/api/analyze'&&requests.at(-1).body.smiles==='COc1ccccc1','Native compute uses own same-origin API');
+ finish({formula:'C7H8O',logp:1,qed:.5,syntheticAccessibility:2,skinLogKp:-5,alerts:[],scope:'test'});await tick();
+ ok(snapshot.independentResearch.currentResult.query.smiles==='COc1ccccc1'&&$('research-status').textContent.includes('Complete'),'Result retains query identity');
+ $('research-analyze').click();const stale=pending;pending=null;render('CCO');stale({ok:true,json:async()=>({result:{formula:'WRONG'}})});await tick();
+ ok(snapshot.independentResearch.currentResult===null&&!$('research-module-adme').textContent.includes('WRONG'),'Stale compute cannot overwrite new molecule');
+ $('research-query').value='1';$('research-query').dispatchEvent(new w.Event('change'));$('research-brics').click();
+ ok(requests.at(-1).body.smiles==='CCOC','Selected candidate drives the native job');finish({fragments:['[3*]O[3*]'],scope:'BRICS'});await tick();
+ ok($('research-module-fragments').textContent.includes('[3*]O[3*]'),'BRICS result rendered');
+ $('research-screen-references').value='name,smiles\nEthanol,CCO\nWater,O';$('research-screen').click();ok(requests.at(-1).body.references.length===2&&requests.at(-1).body.references[0].smiles==='CCO','CSV references preserve names and structures');finish({rows:[{name:'Ethanol',tanimoto2D:1,shape3D:1,color3D:1}]});await tick();
+ $('research-screen-references').value='Ethanol, CCO\nO';$('research-screen').click();ok(requests.at(-1).body.references[0].name==='Ethanol'&&requests.at(-1).body.references[1].smiles==='O','Plain named reference lines and SMILES accepted');finish({rows:[]});await tick();
+ $('research-generate-3d').click();finish({method:'MMFF94',conformers:[{energy:1,converged:true,molblock:'test',atoms:[{element:'O',x:0,y:0,z:0},{element:'C',x:1,y:0,z:1}]}],forcefield:{atoms:[{},{}],bonds:[{a:1,b:2}]}});await tick();
+ ok($('research-coordinate-view').querySelectorAll('circle').length===2&&$('research-coordinate-view').querySelectorAll('line').length===1,'3D display uses actual coordinate and bond arrays');
+ ok(w.ResearchTools.SIDECHAINS.length===12&&w.ResearchTools.SIDECHAINS.every(s=>s.smiles),'Local amino-acid starting set');
+ const atom='ATOM      1  C   LIG A   1       1.000   2.000   3.000  1.00  0.00     0.000 C';
+ ok(w.ResearchTools.vina('MODEL 1\nREMARK VINA RESULT: -5.0 0 0\n'+atom+'\nENDMDL')[0].energy===-5,'Vina score and coordinates parsed');
+ assert.throws(()=>w.ResearchTools.vina('ATOM  '+ ' '.repeat(70)),/coordinates/);checks++;
+ online=false;$('research-workbench').querySelector('.compute-connection button').click();await tick();
+ ok($('research-analyze').disabled&&$('research-engine-state').textContent.includes('Browser mode'),'Static/offline mode disables native actions honestly');
+ const ids=[...w.document.querySelectorAll('[id]')].map(e=>e.id);ok(new Set(ids).size===ids.length,'Dynamically created IDs remain unique');
+ ok(requests.every(r=>r.url.startsWith('/api/')),'New native modules never call an external service');
+ console.log('Independent workbench UI: '+checks+' checks passed.');w.close();
+})().catch(e=>{console.error(e);w.close();process.exitCode=1;});

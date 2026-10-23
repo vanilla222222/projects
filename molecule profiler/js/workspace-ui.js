@@ -1,7 +1,7 @@
 'use strict';
 // Non-destructive workspace navigation over the existing analysis panels.
 // The core chemistry calculations and all export APIs remain unchanged.
-(function () {
+(function (root) {
   const views = [
     { id: 'overview', label: 'Overview', description: 'Structure, identity, key properties and major screening summaries.' },
     { id: 'properties', label: 'Properties', description: 'Physical descriptors, stereochemistry, topology and supporting evidence.' },
@@ -11,11 +11,13 @@
     { id: 'exposure', label: 'Exposure', description: 'Research pharmacokinetic estimates and conditional ionization scenarios.' },
     { id: 'metabolism', label: 'Metabolism', description: 'Rule-enumerated biotransformations; candidate products are not experimentally confirmed.' },
     { id: 'discovery', label: 'References', description: 'Similarity, target-reference rankings and related comparisons.' },
+    { id: 'research', label: 'Research tools', description: 'Independent native chemistry, conformers, force fields, reference shapes, fragment edits and docking.' },
     { id: 'data', label: 'Data & export', description: 'Batch results and per-atom descriptors.' },
     { id: 'compare', label: 'Compare', description: 'Compare two to four analyzed molecules side by side, with a reference column and export.' },
     { id: 'all', label: 'All sections', description: 'Browse every analysis module on one page.' }
   ];
   const categories = {
+    'Independent research tools': ['research'],
     'Identity': ['overview', 'properties'],
     'Structure': ['overview', 'properties'],
     'Physicochemical': ['overview', 'properties'],
@@ -43,6 +45,7 @@
     'Atom contributions': ['properties', 'data']
   };
   const keywords = {
+    'Independent research tools': 'independent native rdkit qed synthetic accessibility pains brenk nih zinc 3d conformers mmff uff forcefield docking vina fragments brics amino acid sidechains',
     'Identity': 'name formula smiles mass',
     'Structure': '2d molecule diagram depiction atom bonds',
     'Physicochemical': 'tpsa molecular weight donors acceptors',
@@ -111,6 +114,8 @@
       ? visible + (visible === 1 ? ' section matches ' : ' sections match ') + '“' + search.value.trim() + '”. Clear search to return to your selected workspace.'
       : selected.description + ' · ' + visible + (visible === 1 ? ' section' : ' sections');
     grid.classList.toggle('workspace-is-filtered', active !== 'all' || !!term);
+    document.body.dataset.workspace=term?'search':active;
+    document.dispatchEvent(new CustomEvent('molecule-profiler:workspace',{detail:{view:active,search:term}}));
   }
   nav.addEventListener('click', event => {
     const button = event.target.closest('button[data-view]');
@@ -155,5 +160,6 @@
   jump.textContent = '↑ Edit input';
   jump.setAttribute('aria-label', 'Return to SMILES input');
   document.body.appendChild(jump);
+  root.WorkspaceUI={select(id){if(!views.some(v=>v.id===id))return;active=id;search.value='';apply();},getActive:()=>active};
   apply();
-})();
+})(globalThis);

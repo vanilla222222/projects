@@ -20,7 +20,7 @@
   report.rows.forEach(addCandidate);compareStatus.textContent=report.rows.length?'Added eligible designs. Up to 12 distinct candidates can be compared.':report.reasons.join(' ');renderComparison();
  });compareButton.id='prodrug-explorer-compare-site';
  const compareClear=button('Clear shortlist',()=>{shortlist=[];compareStatus.textContent='Shortlist cleared.';renderComparison();});
- const compareSmiles=button('Download SMILES for SwissADME',()=>{const data=comparison();download('molecule-site-comparison.smi',data.rows.map(r=>r.smiles+'\t'+r.name.replace(/[\t\r\n]/g,' ')).join('\n')+'\n');});compareSmiles.id='prodrug-explorer-export-smiles';
+ const compareSmiles=button('Download shortlist SMILES',()=>{const data=comparison();download('molecule-site-comparison.smi',data.rows.map(r=>r.smiles+'\t'+r.name.replace(/[\t\r\n]/g,' ')).join('\n')+'\n');});compareSmiles.id='prodrug-explorer-export-smiles';
  const compareCsv=button('Download property CSV',()=>{
   const fields=['mw','logp','tpsa','hbd','hba','rotatableBonds','charge'],data=comparison(),quote=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
   const rows=[['Name','SMILES','Evidence','MW (g/mol)','WLOGP estimate','TPSA (angstrom^2)','HBD strict','HBA strict','Rotatable bonds','Formal charge',...fields.map(k=>'Delta '+k)],...data.rows.map(r=>[r.name,r.smiles,r.evidenceLevel,...fields.map(k=>r.values?.[k]??''),...fields.map(k=>r.delta?.[k]??'')])];
