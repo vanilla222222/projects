@@ -56,3 +56,10 @@ arguments when a particular test environment needs them.
 
 Use both `--rdkit --browser` to run the optional checks together. The application
 itself has no runtime dependency on Python, RDKit or Playwright.
+
+## Focused expansion checks
+
+The latest family expansion uses its new `reaction-expansion-round5*` and
+`lactamization-test.js` checks plus module syntax and catalog integration. Full
+RDKit/browser runs were intentionally not repeated for that expansion. Saved
+full reports retain the source hashes of the earlier version they validated.

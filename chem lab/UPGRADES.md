@@ -1,5 +1,12 @@
 # Chem Lab upgrades
 
+## Family expansion — 2026-10-23
+
+- **154 sourced rules, 24 new families:** MPV reduction, Oppenauer oxidation, Tishchenko ester formation, Perkin condensation, Darzens glycidic esters, benzilic acid rearrangement, Hunsdiecker bromodecarboxylation, Kolbe–Schmitt carboxylation, McMurry coupling, acyloin cyclization, isocyanate urea/carbamate formation and hydrolysis, isothiocyanate thiourea formation, aldoxime dehydration, amide thionation, thiourea alkylation/isothiouronium release, Paal–Knorr thiophenes, Hantzsch thiazoles, amino-acid lactamization, and Negishi/Kumada/Stille cross-couplings.
+- **17 new reverse transforms:** useful precursors are proposed through the existing forward verifier. Darzens disconnection first opens the epoxide ring before separating the precursor fragments.
+- **Reagent access:** new catalyst/reagent condition choices register with the application; common isocyanate, isothiocyanate, oxime, thiourea and thioamide names resolve locally. Each rule records its specific conditions, substrate exclusions, sequential work-up assumptions and reaction-class sources.
+- **Focused validation:** 69 new product/exclusion/reverse checks passed, plus syntax checks for the eight new modules and catalog integration confirming sources/scopes for all 154 rules. The full browser, RDKit and historical regression suites were intentionally not rerun for this expansion; their saved reports identify the earlier source versions they checked. These are bounded structural models, not experimental feasibility or yield predictions.
+
 ## Protection compatibility and nitrogen chemistry — 2026-10-22
 
 - **130 sourced rules:** eight new bounded families cover pyridine N-oxidation/deoxygenation, Cope elimination, Gabriel alkylation/hydrazinolysis, imine/enamine hydrolysis and Curtius rearrangement with aqueous work-up. Eight matching reverse transforms are forward checked; exact coproduct counts, isotope fate and migrating stereochemistry are tested.

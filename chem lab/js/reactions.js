@@ -133,6 +133,13 @@ const REACTION_LIMITS = { tempMin: -100, tempMax: 300, maxCompounds: 12, maxAddi
 const REACTION_SCHEME_SETTINGS = { gap: 45, plusGap: 30, arrowLength: 150, emptyWidth: 60 };
 
 const REACTION_NAME_ALIASES = {
+  'methyl isocyanate': 'CN=C=O',
+  'phenyl isocyanate': 'O=C=Nc1ccccc1',
+  'methyl isothiocyanate': 'CN=C=S',
+  'thiourea': 'NC(N)=S',
+  'acetaldoxime': 'CC=NO',
+  'benzaldoxime': 'ON=Cc1ccccc1',
+  'thioacetamide': 'CC(N)=S',
   'peracetic acid': 'CC(=O)OO',
   phthalimide: 'O=C1NC(=O)c2ccccc21',
   'acetic formic anhydride': 'CC(=O)OC=O',
