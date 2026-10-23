@@ -3,6 +3,7 @@
  // Structural design hypotheses only. The reverse edit checks identity, not
  // biological activation, enzyme recognition, efficacy or delivery benefit.
  const SOURCES={
+  thiol:{title:'Disposition and metabolism of alacepril in rats: deacetylation to desacetyl-alacepril',url:'https://pubmed.ncbi.nlm.nih.gov/3513776/',kind:'primary'},
   amine:{title:'Alexander et al. (1988): (Acyloxy)alkyl carbamates as bioreversible prodrugs for primary and secondary amines',url:'https://pubmed.ncbi.nlm.nih.gov/2892933/',kind:'primary'},
   nOxide:{title:'Siim et al. (2000): Comparison of aromatic and tertiary amine N-oxides of acridine DNA intercalators as bioreductive drugs',url:'https://pubmed.ncbi.nlm.nih.gov/10974206/',kind:'primary'},
   ester:{title:'In vitro dermal transport and bioconversion of aliphatic metronidazole esters',url:'https://www.sciencedirect.com/science/article/pii/0378517386901791',kind:'primary'},
@@ -29,6 +30,7 @@
  // treating an arbitrary stable amide as an established cleavable prodrug.
  const AMINE_DESIGNS=[['acetoxy','Acetoxymethyl','C'],['propionyloxy','Propionyloxymethyl','CC'],['butyryloxy','Butyryloxymethyl','CCC'],['isobutyryloxy','Isobutyryloxymethyl','C(C)C'],['pentanoyloxy','Pentanoyloxymethyl','CCCC']].map(([id,name,tail])=>({id:'amine-'+id,name:name+' N-carbamate',fragment:'C(=O)OCOC(=O)'+tail,cleavage:'n-carbamate',hypothesis:'Terminal ester hydrolysis followed by linker fragmentation and decarboxylation could regenerate the parent amine. This multistep activation is a design-class hypothesis, not a demonstrated pathway for this candidate.',sources:[SOURCES.amine],limitations:['The acyloxymethyl linker can release formaldehyde, carbon dioxide and a carboxylic acid; their exposure and toxicity are not assessed.']}));
  const N_OXIDE_DESIGNS=[{id:'n-oxide',name:'Tertiary amine N-oxide',fragment:'[O-]',cleavage:'n-oxide',hypothesis:'Bioreduction of the N-oxide could regenerate the parent tertiary amine. Activity depends on compound, enzymes and oxygen conditions; hypoxia selectivity and human conversion are not inferred.',sources:[SOURCES.nOxide],limitations:['An N-oxide may itself be active or undergo competing reactions. New nitrogen stereochemistry is unassigned; no individual stereoisomer is claimed.']}];
+ const THIOL_DESIGNS=[['s-acetyl','S-acetyl','C'],['s-propionyl','S-propionyl','CC'],['s-butyryl','S-butyryl','CCC']].map(([id,name,tail])=>({id,name:name+' thioester',fragment:'C(=O)'+tail,cleavage:'s-acyl',hypothesis:'Thioester hydrolysis could regenerate the parent thiol. Alacepril deacetylation is a precedent in another compound, not proof of human activation of this candidate.',sources:[SOURCES.thiol],limitations:['Thioester reactivity, acyl transfer to biological nucleophiles and competing thiol oxidation are unassessed.']}));
  const cloneAtom=a=>Object.assign({},a,{order:Array.isArray(a.order)?a.order.slice():null,neighbors:[],rings:[]});
  function cloneGraph(m){return {atoms:m.atoms.map(cloneAtom),bonds:m.bonds.map(b=>Object.assign({},b))};}
  function neighbors(m,id){return m.bonds.flatMap(b=>b.a===id?[{id:b.b,bond:b}]:b.b===id?[{id:b.a,bond:b}]:[]);}
@@ -39,6 +41,7 @@
  function freeSites(m){
   return m.atoms.flatMap((a,index)=>{
    const ns=neighbors(m,index),site=(kind,label,designs,hydrogens=0,charge=0)=>[{atom:index,index,kind,label:label+' '+(index+1),element:a.element,designs,hydrogens,charge}];
+   if(a.element==='S'&&[0,-1].includes(a.charge||0)&&a.totalH===(a.charge===-1?0:1)&&ns.length===1&&ns[0].bond.order===1&&m.atoms[ns[0].id].element==='C'&&!m.atoms[ns[0].id].charge&&!neighbors(m,ns[0].id).some(n=>n.bond.order>=2&&['O','S','N'].includes(m.atoms[n.id].element)))return site(a.charge===-1?'thiolate':'thiol','thiol sulfur',THIOL_DESIGNS);
    if(a.element==='N'&&!a.aromatic&&!a.chirality&&[0,1].includes(a.charge||0)&&ns.length>=1&&ns.length<=3&&ns.every(n=>n.bond.order===1&&m.atoms[n.id].element==='C'&&!m.atoms[n.id].charge)){
     // Exclude amides, ureas, carbamates, amidines and related conjugated N.
     const conjugated=ns.some(n=>neighbors(m,n.id).some(x=>x.bond.order>=2&&['N','O','S','P'].includes(m.atoms[x.id].element)));
@@ -75,17 +78,17 @@
   return {atoms,bonds};
  }
  function recoverParent(candidateSmiles,cleavage,parent){
-  if(!['o-acyl','o-phosphate','acid-ester','n-carbamate','n-oxide'].includes(cleavage))return {verified:false,smiles:null};
+  if(!['o-acyl','o-phosphate','acid-ester','n-carbamate','n-oxide','s-acyl'].includes(cleavage))return {verified:false,smiles:null};
   try{
    const m=parse(candidateSmiles);
    for(let anchor=0;anchor<m.atoms.length;anchor++){
     const a=m.atoms[anchor],ns=neighbors(m,anchor),nitrogen=cleavage.startsWith('n-');
-    if(a.element!==(nitrogen?'N':'O')||ns.some(n=>n.bond.order!==1))continue;
+    if(a.element!==(nitrogen?'N':cleavage==='s-acyl'?'S':'O')||ns.some(n=>n.bond.order!==1))continue;
     if(nitrogen?(cleavage==='n-oxide'?a.charge!==1||ns.length!==4:a.charge||![2,3].includes(ns.length)):a.charge||ns.length!==2)continue;
     for(const n of ns){
      const atom=m.atoms[n.id],neighborsOfBranch=neighbors(m,n.id),oxo=neighborsOfBranch.filter(x=>x.bond.order===2&&m.atoms[x.id].element==='O');
      const carbonyl=atom.element==='C'&&oxo.length===1;
-     if(cleavage==='o-acyl'&&!carbonyl)continue;
+     if(['o-acyl','s-acyl'].includes(cleavage)&&!carbonyl)continue;
      if(cleavage==='o-phosphate'&&(atom.element!=='P'||oxo.length!==1))continue;
      if(cleavage==='acid-ester'&&(atom.element!=='C'||carbonyl||!ns.some(x=>x.id!==n.id&&m.atoms[x.id].element==='C'&&neighbors(m,x.id).some(y=>y.bond.order===2&&m.atoms[y.id].element==='O'))))continue;
      if(cleavage==='n-carbamate'&&(!carbonyl||!neighborsOfBranch.some(x=>x.bond.order===1&&m.atoms[x.id].element==='O')))continue;
@@ -93,7 +96,7 @@
      const restores=nitrogen?(cleavage==='n-oxide'?[{hydrogens:0,charge:0},{hydrogens:1,charge:1}]:[{hydrogens:a.totalH+1,charge:0},{hydrogens:a.totalH+2,charge:1}]):[{hydrogens:1,charge:0},{hydrogens:0,charge:-1}];
      for(const restore of restores){
       const recovered=removeBranch(m,anchor,n.id,restore);if(!recovered)continue;
-      const smiles=serialized(recovered);if(exact(parent,parse(smiles)))return {verified:true,smiles};
+      const smiles=serialized(recovered);if(exact(parent,parse(smiles)))return {verified:true,smiles,attachment:{parentAtom:anchor,promoietyAtom:n.id},restoredCharge:restore.charge,restoredHydrogens:restore.hydrogens};
      }
     }
    }
@@ -107,7 +110,7 @@
  }
  function generate(parent,options){
   const rows=[],reasons=[],skipped=[];
-  const report={version:2,status:'unavailable',rows,candidates:rows,reasons,skipped,evidenceLevel:'Unvalidated structural designs',scope:'At most five single-site ester, phosphate, amine-carbamate or N-oxide hypotheses. Structural parent recovery does not establish biological conversion or prodrug status.'};
+  const report={version:3,status:'unavailable',rows,candidates:rows,reasons,skipped,evidenceLevel:'Unvalidated structural designs',scope:'At most five single-site ester, phosphate, amine-carbamate, N-oxide or thiol-thioester hypotheses. Structural parent recovery does not establish biological conversion or prodrug status.'};
   const fail=message=>{reasons.push(message);return report;};
   try{
    if(!parent||!Array.isArray(parent.atoms)||!Array.isArray(parent.bonds))return fail('A parsed molecular graph is required.');
@@ -117,8 +120,15 @@
    if(!supportedValences(parent))return fail('Radical or unsupported valence states are outside this design subset.');
    if(/[\\/]/.test(parent.smiles||''))return fail('Directional alkene stereochemistry cannot yet be preserved by the design serializer; no candidate was generated.');
    if(!exact(parent,parse(serialized(parent))))return fail('The complete parent isotope/stereochemical identity could not be verified after serialization.');
-   const sites=freeSites(parent);report.eligibleSites=sites.map(({designs,...site})=>site);
-   if(!sites.length){report.status='no-compatible-site';return fail('No compatible site for the current ester, phosphate, amine-carbamate or tertiary-amine N-oxide design classes. This is a coverage limit, not evidence that no prodrug is possible.');}
+   let sites=freeSites(parent);report.eligibleSites=sites.map(({designs,...site})=>({...site,designs:designs.map(({id,name,cleavage})=>({id,name,cleavage}))}));
+   if(options&&options.atom!==undefined){
+    if(!Number.isInteger(options.atom)||!parent.atoms[options.atom])return fail('Select a valid input atom.');
+    sites=sites.filter(s=>s.atom===options.atom);
+   }
+   if(options&&options.designId!==undefined){
+    sites=sites.map(s=>({...s,designs:s.designs.filter(d=>d.id===options.designId)})).filter(s=>s.designs.length);
+   }
+   if(!sites.length){report.status='no-compatible-site';return fail('No compatible site for the current ester, phosphate, amine-carbamate, tertiary-amine N-oxide or thiol-thioester design classes at the selected site(s). This is a coverage limit, not evidence that no prodrug is possible.');}
    const requested=options&&options.limit!==undefined?Number(options.limit):5;
    const limit=Number.isFinite(requested)?Math.max(0,Math.min(5,Math.floor(requested))):5;
    if(!limit)return fail('Candidate limit is zero.');
@@ -135,8 +145,8 @@
      structures.push(candidate);
      rows.push({id:design.id+'-'+site.element.toLowerCase()+(site.atom+1),name:design.name+' candidate at '+site.element+(site.atom+1),smiles,promoiety:design.name,site:{atom:site.atom,index:site.atom,kind:site.kind,label:site.label},cleavage:design.cleavage,activationHypothesis:design.hypothesis,
       parentRecoveryScope:'Reverse graph edit restores the supplied isotope, stereo and charge state; it does not predict biological release or solution protonation.',
-      limitations:COMMON_LIMITS.concat(design.limitations||[],parent.atoms[site.atom].charge!==site.charge?['The design changes the handle charge; reverse checking restores the input charge state by bookkeeping, not a pKa or physiological protonation model.']:[],sites.length>1?['This is a single-site design on a molecule with several eligible handles; selective preparation and competing activation are not established.']:[]),
-      evidenceLevel:'Unvalidated structural design',designStatus:'hypothesis',sourceUrl:design.sources[0].url,sources:design.sources.map(s=>Object.assign({},s)),referenceScope:'Reaction-class precedents only; no molecule-specific experimental evidence.',parentRecoveryVerified:true,recoveredParentSmiles:recovery.smiles,experimentalValidation:false});
+      limitations:COMMON_LIMITS.concat(design.limitations||[],parent.atoms[site.atom].charge!==site.charge?['The design changes the handle charge; reverse checking restores the input charge state by bookkeeping, not a pKa or physiological protonation model.']:[],report.eligibleSites.length>1?['This is a single-site design on a molecule with several eligible handles; selective preparation and competing activation are not established.']:[]),
+      evidenceLevel:'Unvalidated structural design',designStatus:'hypothesis',sourceUrl:design.sources[0].url,sources:design.sources.map(s=>Object.assign({},s)),referenceScope:'Reaction-class precedents only; no molecule-specific experimental evidence.',parentRecoveryVerified:true,recoveredParentSmiles:recovery.smiles,attachment:recovery.attachment,experimentalValidation:false});
     }catch(error){skipped.push({site:site.label,promoiety:design.name,reason:'The proposed structure could not be validated.'});}
    }
    if(rows.length){report.status='generated';reasons.push(rows.length+' unique unvalidated candidate'+(rows.length===1?'':'s')+' generated. No ranking of clinical benefit is made.');}
@@ -144,5 +154,5 @@
   }catch(error){reasons.push('Candidate generation unavailable for this structure: '+error.message);}
   return report;
  }
- const api={generate,recoverParent,sources:SOURCES};root.ProdrugCandidates=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
+ const api={generate,recoverParent,sites:parent=>generate(parent,{limit:0}).eligibleSites||[],sources:SOURCES};root.ProdrugCandidates=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

@@ -208,7 +208,7 @@ molecules resets the pKa and collapses the table.
 
 The existing half-life model now feeds an interactive single-exponential parent-amount curve, 100 × 2^(−t/t½), with hours on the time axis. A supplied clearance/one-compartment volume scenario takes precedence while those parameters are entered. Exact sourced observations take precedence over model estimates: the aspirin 20-minute observation is usable as a scenario input; a reported numerical range uses an explicitly labelled illustrative midpoint and propagated range. A censored observation such as “less than 1 hour” is not turned into an exact curve. Unavailable estimates and incomplete scenarios clear the prior structure’s plot. Input half-life intervals propagate into a scenario envelope; this is not a validated concentration confidence interval. The model excludes absorption, repeated administration, multi-compartment kinetics, active metabolites and pharmacodynamics. It does not predict subjective strength or duration of effects. Milestones and a CSV are available.
 
-The Prodrugs panel retains documented exact-graph relationships and separately displays up to five unvalidated structural candidate designs. Enumeration supports free alcohol/phenol, acid/carboxylate and compatible primary, secondary and tertiary amine handles on neutral or charged parents, with exact-parent structural recovery checks, preserved supported stereochemistry/isotopes and explicit unsupported-input reasons. Some structures produce fewer than five or none. A design-class reference does not establish that an arbitrary derivative releases the parent in vivo, improves delivery, is pharmacologically inactive, or has an acceptable safety profile. No release rate, benefit, potency, dose or candidate half-life is inferred by this enumeration. Each design retains an activation hypothesis, class references, limitations and an analysis handoff. The pharmacology JSON export records candidate designs separately from curated evidence and includes the current plotted scenario.
+The Prodrugs panel retains documented exact-graph relationships and separately displays up to five unvalidated structural candidate designs. Enumeration supports free alcohol/phenol, acid/carboxylate and compatible primary, secondary and tertiary amine and thiol/thiolate handles on neutral or charged parents, with exact-parent structural recovery checks, preserved supported stereochemistry/isotopes and explicit unsupported-input reasons. Some structures produce fewer than five or none. A design-class reference does not establish that an arbitrary derivative releases the parent in vivo, improves delivery, is pharmacologically inactive, or has an acceptable safety profile. No release rate, benefit, potency, dose or candidate half-life is inferred by this enumeration. Each design retains an activation hypothesis, class references, limitations and an analysis handoff. The pharmacology JSON export records candidate designs separately from curated evidence and includes the current plotted scenario.
 
 Focused formula, candidate-identity and interface checks cover this extension. The existing PK models were not retrained or newly clinically validated.
 
@@ -269,3 +269,10 @@ from 22 neutral, charged, isotope-labelled and chiral parents, deduplicates them
 and compares each recovered parent by RDKit isomeric canonical SMILES. This
 checks graph consistency, not biological activation. Browser visual layout was
 not retested.
+
+
+The Molecule sites section now exposes the generator by selected atom and
+template, independently from the automatic five-candidate list. Its selected-site
+snapshot and highlighted candidate attachment indices are documented in
+`PRODRUG-SITE-EVIDENCE.md`. Sulfur attachment hypotheses extend the available
+handles to compatible thiols/thiolates.

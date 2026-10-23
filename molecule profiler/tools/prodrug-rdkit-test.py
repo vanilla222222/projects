@@ -11,7 +11,7 @@ FIXTURES = [
     'N1CCCCC1', 'CN1CCCCC1', 'CCN(C)C', 'CC[NH3+]', 'CC[NH2+]C',
     'CC[NH+](C)C', '[NH3+]CC(=O)[O-]', '[15NH2]CC', '[13CH3]CO',
     'CC[18OH]', 'N[C@H](C)F', 'C[C@H](O)C(=O)O', 'NCCO',
-    '[O-][N+](=O)c1ccc(O)cc1', 'NCc1ccccc1', 'CNCCc1ccccc1',
+    '[O-][N+](=O)c1ccc(O)cc1', 'NCc1ccccc1', 'CNCCc1ccccc1', 'CCS', 'CC[S-]', 'Sc1ccccc1', 'NCCS',
 ]
 NODE = r"""
 const fs=require('node:fs'),vm=require('node:vm');

@@ -1,0 +1,37 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
+const {JSDOM}=require(process.env.PROFILER_JSDOM_PATH||'jsdom'),root=path.join(__dirname,'..');
+const dom=new JSDOM(fs.readFileSync(path.join(root,'index.html'),'utf8'),{runScripts:'outside-only',url:'https://example.test/'}),ctx=dom.getInternalVMContext(),w=dom.window;
+for(const file of ['js/smiles.js','js/mol.js','js/stereo.js','js/transform.js','js/pharmacology.js','js/prodrug-candidates.js','js/depict.js','data/pharmacology-evidence.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),ctx);
+let snapshot,downloaded;
+w.PharmacologyUI={render(record){snapshot={inputSmiles:record.smiles};},getSnapshot(){return snapshot;}};
+w.URL.createObjectURL=blob=>{downloaded=blob;return 'blob:test';};w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=function(){};
+vm.runInContext(fs.readFileSync(path.join(root,'js/prodrug-site-evidence.js'),'utf8'),ctx);
+const doc=w.document,$=id=>doc.getElementById(id),run=s=>vm.runInContext(s,ctx);let checks=0;
+const ok=(value,label)=>{assert.ok(value,label);checks++;};
+function render(smiles){w.testInput=smiles;w.PharmacologyUI.render({smiles,mol:run('buildMolecule(parseSmiles(testInput))')},[]);}
+function change(id,value){$(id).value=value;$(id).dispatchEvent(new w.Event('change'));}
+render('NCCO');
+ok($('prodrug-design-site').options.length===3,'Both N and O sites are offered');
+ok($('prodrug-reference-atom').options[0].textContent.includes('attachment: primary amine'),'Atom menu marks attachment sites');
+$('prodrug-design-build').click();
+ok(snapshot.prodrugSiteDesign.selectedAtom===0&&snapshot.prodrugSiteDesign.candidate.cleavage==='n-carbamate','Build at selected nitrogen');
+ok($('prodrug-design-preview').querySelector('svg .bond.hot')||$('prodrug-design-preview').querySelector('svg .hot'),'Candidate attachment bond is highlighted');
+ok($('prodrug-design-preview').textContent.includes('THEORETICAL DESIGN')&&!snapshot.prodrugSiteEvidence.relationship,'Hypothesis remains separate from reference evidence');
+change('prodrug-design-site','3');
+ok(!snapshot.prodrugSiteDesign&&!$('prodrug-design-preview').textContent,'Site change clears stale design');
+ok($('prodrug-reference-atom').value==='3'&&$('prodrug-design-template').options.length===5,'Site menu synchronizes atom and templates');
+change('prodrug-design-template','phosphate');$('prodrug-design-build').click();
+ok(snapshot.prodrugSiteDesign.selectedAtom===3&&snapshot.prodrugSiteDesign.candidate.cleavage==='o-phosphate','Select a different attachment class at oxygen');
+const row=snapshot.prodrugSiteDesign.candidate,analyze=$('prodrug-design-preview').querySelector('button[data-pharm-smiles]');
+ok(analyze.dataset.pharmSmiles===row.smiles,'Existing analysis handoff receives exact preview SMILES');
+Array.from($('prodrug-design-preview').querySelectorAll('button')).find(b=>b.textContent.includes('Download')).click();ok(downloaded,'Selected design can download SMILES');
+change('prodrug-reference-atom','1');
+ok($('prodrug-design-build').disabled&&!snapshot.prodrugSiteDesign,'Unsupported carbon does not inherit nitrogen/oxygen design');
+change('prodrug-reference-select','enalapril');
+ok($('prodrug-design-build').disabled&&snapshot.prodrugSiteEvidence.status==='documented-reference-site','Reference mode preserves evidence but disables input design');
+$('prodrug-design-use-input').click();ok($('prodrug-reference-select').value==='__input__'&&!$('prodrug-design-build').disabled,'Return to original current input for design');
+render('CC[S-]');ok($('prodrug-design-template').options.length===3,'Thiolate has three S-acyl options');$('prodrug-design-build').click();ok(snapshot.prodrugSiteDesign.candidate.cleavage==='s-acyl'&&snapshot.prodrugSiteDesign.candidate.parentRecoveryVerified,'Sulfur preview checks exact parent recovery');
+render('CCO.O');ok(!snapshot.prodrugSiteDesign&&$('prodrug-design-build').disabled&&!$('prodrug-design-preview').textContent,'Mixture inspection clears prior design without modifying fragments');
+render('CCCC');ok($('prodrug-design-build').disabled&&$('prodrug-design-status').textContent.includes('No compatible'),'No-compatible-site state is explicit');
+console.log('Prodrug site builder: '+checks+' focused checks passed.');dom.window.close();

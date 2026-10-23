@@ -1,7 +1,7 @@
 'use strict';
 (function(root){
- // Reference annotations only. No structural edits or generalized activation
- // rules are created, and evidence is never transferred by similarity.
+ // Reference annotations remain separate from selected-input design hypotheses.
+ // Experimental evidence is never transferred by similarity.
  const ANNOTATIONS=[
   {id:'valacyclovir',name:'Valacyclovir',category:'ester',atom:6,element:'O',kind:'Ester attachment oxygen',
    explanation:'The highlighted oxygen belongs to the documented valine ester. The recorded relationship is hydrolysis to acyclovir; acyclovir requires subsequent intracellular activation.'},
@@ -44,7 +44,7 @@
    explanation:supported?reference.explanation:'No supported transformation is documented at this selected reference atom. Evidence from another site is not transferred here.',
    limitations:['Atom numbers follow the displayed reference SMILES parse order; they are not IUPAC ring locants or atom numbers in another input.',
     'A documented drug relationship does not establish conversion speed, completeness, exposure, safety or efficacy for an individual.',
-    'This viewer filters existing evidence. It does not generate analogues, infer a pathway for another compound or predict parent regeneration.']};
+    'This reference assessment filters existing evidence. Generated input designs are separate hypotheses and do not inherit this relationship.']};
  }
  function inspectInput(mol,atomIndex){
   if(!mol||!Array.isArray(mol.atoms)||!Array.isArray(mol.bonds)||!Number.isInteger(atomIndex)||!mol.atoms[atomIndex])return {status:'unsupported',explanation:'Choose a valid atom in the parsed input molecule.'};
@@ -63,7 +63,7 @@
  const data=typeof PHARMACOLOGY_EVIDENCE!=='undefined'?PHARMACOLOGY_EVIDENCE:null;
  const cases=references(data),make=(tag,text)=>{const e=doc.createElement(tag);if(text!==undefined)e.textContent=String(text);return e;};
  const host=make('section');host.id='prodrug-site-evidence';host.className='pk-research-extension';
- host.append(make('h3','Molecule sites and prodrug evidence'),make('p','Inspect any analyzed input molecule, or choose a documented reference. Select an atom to highlight it and check the available evidence. Atom numbers follow the displayed SMILES, not IUPAC ring locants.'));
+ host.append(make('h3','Molecule sites and prodrug evidence'),make('p','Inspect any analyzed input molecule, or choose a documented reference. Select an atom to check evidence or attach a compatible cleavable group as an unvalidated design. Compatible nitrogen, oxygen and sulfur sites are labelled below. Atom numbers follow the displayed SMILES, not IUPAC ring locants.'));
  const context=make('p');context.id='prodrug-site-context';context.setAttribute('role','status');
  const controls=make('div');controls.className='prodrug-site-controls';
  const typeLabel=make('label','Reference evidence class '),typeSelect=make('select');typeSelect.id='prodrug-reference-type';
@@ -87,6 +87,56 @@
  theoreticalLabel.append(theoretical,doc.createTextNode(' Mark current input as theoretical / unvalidated'));
  const banner=make('p','THEORETICAL ONLY — experimental testing required. No biological conversion or parent regeneration is established.');banner.className='prodrug-theoretical-banner';banner.id='prodrug-theoretical-banner';banner.setAttribute('role','note');banner.hidden=true;
  controls.after(theoreticalLabel,banner);
+ const builder=make('section');builder.id='prodrug-site-builder';builder.className='pk-research-extension';
+ builder.append(make('h4','Design a cleavable attachment at this input site'),make('p','Choose a compatible site and attachment. Each design changes one site; it does not cut an arbitrary scaffold bond. Attachment-bond highlighting is structural, not proof of biological cleavage.'));
+ const builderControls=make('div');builderControls.className='prodrug-site-controls';
+ const useInput=make('button','Design on current input');useInput.type='button';useInput.id='prodrug-design-use-input';
+ const siteLabel=make('label','Compatible attachment site '),siteJump=make('select');siteJump.id='prodrug-design-site';siteLabel.append(siteJump);
+ const designLabel=make('label','Cleavable attachment '),designSelect=make('select');designSelect.id='prodrug-design-template';designLabel.append(designSelect);
+ const build=make('button','Preview selected design');build.type='button';build.id='prodrug-design-build';
+ const builderStatus=make('p');builderStatus.id='prodrug-design-status';builderStatus.setAttribute('role','status');
+ const preview=make('div');preview.id='prodrug-design-preview';preview.setAttribute('aria-live','polite');
+ builderControls.append(useInput,siteLabel,designLabel,build);builder.append(builderControls,builderStatus,preview);host.append(builder);
+ let availableSites=[];
+ function clearDesign(){
+  preview.replaceChildren();const snapshot=root.PharmacologyUI.getSnapshot();if(snapshot)snapshot.prodrugSiteDesign=null;
+ }
+ function updateBuilder(){
+  clearDesign();siteJump.replaceChildren();designSelect.replaceChildren();const c=selected();useInput.disabled=!current;
+  availableSites=c&&c.isInput&&root.ProdrugCandidates?root.ProdrugCandidates.sites(c.mol):[];
+  const selectedAtom=Number(atomSelect.value),site=availableSites.find(s=>s.atom===selectedAtom);
+  const empty=make('option','Choose a compatible site');empty.value='';siteJump.append(empty);
+  availableSites.forEach(s=>{const o=make('option',s.element+(s.atom+1)+' · '+s.kind);o.value=String(s.atom);siteJump.append(o);});
+  siteJump.value=site?String(site.atom):'';siteJump.disabled=!availableSites.length;
+  (site?.designs||[]).forEach(d=>{const o=make('option',d.name);o.value=d.id;designSelect.append(o);});
+  designSelect.disabled=!site;build.disabled=!site;
+  builderStatus.textContent=!c||!c.isInput?'Select Current input molecule to design attachments on your own structure.':!root.ProdrugCandidates?'The candidate generator is unavailable.':site?'Selected '+site.kind+' at '+site.element+(site.atom+1)+'. Choose an attachment to preview.':availableSites.length?'No supported attachment at this atom. Choose a labelled nitrogen, oxygen or sulfur site from Compatible attachment site.':'No compatible attachment site passed the current structure and identity checks. Reference annotations do not create a pathway at an unsupported site.';
+ }
+ function previewDesign(){
+  clearDesign();const c=selected();if(!c?.isInput||build.disabled)return;
+  const atom=Number(atomSelect.value),designId=designSelect.value;
+  const report=root.ProdrugCandidates.generate(c.mol,{atom,designId,limit:1}),row=report.rows[0];
+  if(!row){builderStatus.textContent=report.reasons.join(' ');return;}
+  const snapshot=root.PharmacologyUI.getSnapshot();if(snapshot&&current&&snapshot.inputSmiles===current.smiles)snapshot.prodrugSiteDesign={inputSmiles:current.smiles,selectedAtom:atom,designId,candidate:row};
+  builderStatus.textContent='Unvalidated design at input '+c.mol.atoms[atom].element+(atom+1)+'. Exact parent recovery checked as a graph edit.';
+  const warning=make('p','THEORETICAL DESIGN — biological cleavage and parent release require experimental testing.');warning.className='prodrug-theoretical-banner';preview.append(warning,make('h4',row.name));
+  const figures=make('div');figures.className='prodrug-candidate-grid';
+  for(const [title,smiles,highlight] of [['Candidate · highlighted attachment bond',row.smiles,row.attachment?[row.attachment.parentAtom,row.attachment.promoietyAtom]:[]],['Structurally recovered parent',row.recoveredParentSmiles,[]]]){
+   const figure=make('figure');figure.append(make('figcaption',title));
+   if(typeof depictSvg==='function'){try{const image=make('div');image.className='prodrug-site-depiction';image.innerHTML=depictSvg(parse(smiles),{title,highlight});figure.append(image);}catch(_){}}
+   figure.append(make('code',smiles));figures.append(figure);
+  }
+  preview.append(figures,make('p','Activation hypothesis: '+row.activationHypothesis),make('p',row.parentRecoveryScope));
+  const limitations=make('ul');row.limitations.forEach(t=>limitations.append(make('li',t)));preview.append(limitations);
+  row.sources.forEach(source=>{if(!/^https:\/\//.test(source.url))return;const line=make('p'),a=make('a',source.title);a.href=source.url;a.target='_blank';a.rel='noopener noreferrer';line.append(a);preview.append(line);});
+  const analyze=make('button','Analyze this design');analyze.type='button';analyze.dataset.pharmSmiles=row.smiles;analyze.dataset.pharmName='Unvalidated site design: '+row.name;
+  const download=make('button','Download design SMILES');download.type='button';download.addEventListener('click',()=>{const url=root.URL.createObjectURL(new root.Blob([row.smiles+'\t'+row.name+' | unvalidated design\n'],{type:'text/plain;charset=utf-8'})),a=make('a');a.href=url;a.download='unvalidated-site-design.smi';a.click();root.setTimeout(()=>root.URL.revokeObjectURL(url),1000);});
+  preview.append(analyze,download);
+ }
+ useInput.addEventListener('click',()=>{if(!current)return;refSelect.value='__input__';choose();context.textContent='Designing on your current input structure; reference evidence remains separate.';});
+ siteJump.addEventListener('change',()=>{if(siteJump.value==='')return;atomSelect.value=siteJump.value;clearSnapshot();output.replaceChildren(make('p','Selection changed. Check evidence for this displayed site.'));draw();updateBuilder();});
+ designSelect.addEventListener('change',()=>{clearDesign();builderStatus.textContent='Attachment changed. Preview the selected design.';});
+ build.addEventListener('click',previewDesign);
  let current=null;
  const selected=()=>refSelect.value==='__input__'&&current?{isInput:true,id:'current-input',mol:current.mol,atom:0,prodrug:{name:current.name||'Current input molecule',smiles:current.smiles}}:cases.find(c=>c.id===refSelect.value);
  const clearSnapshot=()=>{const s=root.PharmacologyUI.getSnapshot();if(s)s.prodrugSiteEvidence=null;};
@@ -105,16 +155,17 @@
   const list=make('ul');(report.limitations||[]).forEach(t=>list.append(make('li',t)));output.append(list);
  }
  function choose(){
-  clearSnapshot();output.replaceChildren();atomSelect.replaceChildren();depiction.replaceChildren();smiles.textContent='';
+  clearSnapshot();clearDesign();output.replaceChildren();atomSelect.replaceChildren();depiction.replaceChildren();smiles.textContent='';
   const c=selected();atomSelect.disabled=!c;check.disabled=!c;
   theoreticalLabel.hidden=!c||!c.isInput;banner.hidden=!c||!c.isInput||!theoretical.checked;
-  if(!c)return;
-  c.mol.atoms.forEach((a,i)=>{const o=make('option','Atom '+(i+1)+' · '+a.element+(!c.isInput&&i===c.atom?' · annotated '+c.kind:''));o.value=String(i);atomSelect.append(o);});
-  atomSelect.value=String(c.atom);smiles.textContent=c.prodrug.smiles;draw();inspect();
+  if(!c){updateBuilder();return;}
+  const compatible=c.isInput&&root.ProdrugCandidates?root.ProdrugCandidates.sites(c.mol):[];
+  c.mol.atoms.forEach((a,i)=>{const o=make('option','Atom '+(i+1)+' · '+a.element+(!c.isInput&&i===c.atom?' · annotated '+c.kind:compatible.some(s=>s.atom===i)?' · attachment: '+compatible.find(s=>s.atom===i).kind:''));o.value=String(i);atomSelect.append(o);});
+  atomSelect.value=String(compatible.length?compatible[0].atom:c.atom);smiles.textContent=c.prodrug.smiles;draw();inspect();updateBuilder();
  }
  refSelect.addEventListener('change',()=>{choose();context.textContent=refSelect.value==='__input__'?'Inspecting the current input structure. Reference evidence is not transferred to it.':'Inspecting a named reference independently from the current input molecule.';});
  typeSelect.addEventListener('change',()=>{populate(current?'__input__':'');choose();context.textContent='Reference filter updated. The current input remains available for structural inspection.';});
- atomSelect.addEventListener('change',()=>{clearSnapshot();output.replaceChildren(make('p','Selection changed. Check evidence for this displayed site.'));draw();});
+ atomSelect.addEventListener('change',()=>{clearSnapshot();output.replaceChildren(make('p','Selection changed. Check evidence for this displayed site.'));draw();updateBuilder();});
  check.addEventListener('click',inspect);
  theoretical.addEventListener('change',()=>{banner.hidden=!theoretical.checked;inspect();});
  const originalRender=root.PharmacologyUI.render;
