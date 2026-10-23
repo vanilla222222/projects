@@ -9,7 +9,7 @@ w.PharmacologyUI={render(record){snapshot={inputSmiles:record.smiles};},getSnaps
 vm.runInContext(fs.readFileSync(path.join(root,'js/prodrug-site-evidence.js'),'utf8'),ctx,{filename:'prodrug-site-evidence.js'});
 const run=s=>vm.runInContext(s,ctx);let checks=0;const ok=(value,label)=>{assert.ok(value,label);checks++;};
 const refs=run('ProdrugSiteEvidence.references(PHARMACOLOGY_EVIDENCE)');
-ok(refs.length===3,'All three guarded reference annotations load');
+ok(refs.length===4,'All four guarded reference annotations load');
 ok(refs.every(r=>r.mol.atoms[r.atom].element===r.element),'Each anchor matches its declared element');
 function render(smiles){w.record={smiles,mol:run('buildMolecule(parseSmiles('+JSON.stringify(smiles)+'))')};w.PharmacologyUI.render(w.record,[]);}
 const select=w.document.getElementById('prodrug-reference-select'),atom=w.document.getElementById('prodrug-reference-atom'),check=w.document.getElementById('prodrug-reference-check'),result=w.document.getElementById('prodrug-reference-result');
@@ -29,4 +29,14 @@ select.value='enalapril';select.dispatchEvent(new w.Event('change'));
 ok(snapshot.prodrugSiteEvidence.referenceId==='enalapril'&&snapshot.prodrugSiteEvidence.inputSmiles==='CCN','Independent reference inspection is recorded separately from input identity');
 const before=JSON.stringify(refs[1].mol);w.ProdrugSiteEvidence.assess(refs[1],refs[1].atom);
 ok(before===JSON.stringify(refs[1].mol),'Evidence assessment makes no structural edits');
+const type=w.document.getElementById('prodrug-reference-type');
+type.value='ester';type.dispatchEvent(new w.Event('change'));
+ok(select.options.length===3&&Array.from(select.options).slice(1).every(o=>o.textContent.includes('ester')),'Ester filter shows the two documented ester references');
+type.value='amide';type.dispatchEvent(new w.Event('change'));
+ok(select.options.length===2&&select.options[1].value==='parecoxib'&&snapshot.prodrugSiteEvidence===null,'Amide filter clears stale evidence and shows its reference only');
+select.value='parecoxib';select.dispatchEvent(new w.Event('change'));
+ok(snapshot.prodrugSiteEvidence.category==='amide'&&result.textContent.includes('not transferred to ordinary amides'),'Amide evidence stays specific to its documented scaffold');
+ok(result.querySelector('a').href.includes('ema.europa.eu'),'Amide example links to the original regulatory assessment');
+render(refs[3].active.smiles);
+ok(select.value==='parecoxib'&&type.value==='all','Exact active relationship matches the added reference and resets filters');
 console.log('Prodrug site evidence: '+checks+' focused checks passed.');dom.window.close();
