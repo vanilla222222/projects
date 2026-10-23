@@ -1603,15 +1603,16 @@ function retroVerify(spec, targetSmiles, sink) {
   if (!result.best) {
     return null;
   }
-  const main = retroFindProduct(result.best.products, targetSmiles);
+  const main = !result.best.partialConversion && retroFindProduct(result.best.products, targetSmiles);
   if (main) {
     return { compounds, conditions, outcome: result.best, product: main, minor: false };
   }
-  const minorOfBest = retroFindProduct(result.best.minor, targetSmiles);
+  const minorOfBest = !result.best.partialConversion && retroFindProduct(result.best.minor, targetSmiles);
   if (minorOfBest) {
     return { compounds, conditions, outcome: result.best, product: minorOfBest, minor: true };
   }
   for (const alt of result.alternatives) {
+    if (alt.partialConversion) continue;
     const hit = retroFindProduct(alt.products, targetSmiles) || retroFindProduct(alt.minor, targetSmiles);
     if (hit) {
       return { compounds, conditions, outcome: alt, product: hit, minor: true };

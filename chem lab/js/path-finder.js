@@ -217,9 +217,17 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
       }
     }
   };
+  let sequenceTried = false;
   job.step = (sliceMs) => {
     if (job.status !== 'running') return job;
     const began = retroNow(), until = began + Math.max(1, sliceMs || opts.sliceMs);
+    if (!sequenceTried && typeof pathFinderSequenceRoutes === 'function') {
+      sequenceTried = true;
+      const sequenceRoutes = pathFinderSequenceRoutes(start,target,opts,{ruleBlocked,reagentBlocked,stocked});
+      sequenceRoutes.forEach(route => {const id=route.map(signature).join('/');if(!routeKeys.has(id)){routeKeys.add(id);job.routes.push(route);}});
+      rankRoutes();
+      if (job.routes.length >= opts.maxRoutes) {finish('route-limit');job.elapsedMs+=retroNow()-began;return job;}
+    }
     while (job.status === 'running' && retroNow() < until) {
       if (job.elapsedMs + retroNow() - began >= opts.budgetMs) { finish('time-limit'); break; }
       if (!current) {

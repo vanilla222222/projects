@@ -1,0 +1,17 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
+const root=path.join(__dirname,'..'),ctx=vm.createContext({console,performance,setTimeout,clearTimeout});
+const files=[...fs.readFileSync(path.join(root,'index.html'),'utf8').matchAll(/<script src="([^"]+)"/g)].map(m=>m[1]).filter(s=>s!=='js/app.js');
+for(const file of files)vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),ctx,{filename:file});
+if(!files.includes('js/protection-sequences.js'))vm.runInContext(fs.readFileSync(path.join(root,'js/protection-sequences.js'),'utf8'),ctx,{filename:'protection-sequences.js'});
+const run=s=>vm.runInContext(s,ctx);let checks=0;const check=(s,label)=>{assert.equal(run(s),true,label);checks++;};
+run(`var bocCbz='CC(C)(C)OC(=O)NCCNC(=O)OCc1ccccc1';var bocFmoc='CC(C)(C)OC(=O)NCCNC(=O)OCC1c2ccccc2-c2ccccc21';var bocOnly='CC(C)(C)OC(=O)NCCN';var cbzOnly='NCCNC(=O)OCc1ccccc1';`);
+check(`(()=>{const g=protectionGraph(bocCbz),before=JSON.stringify(g),p=protectionSequencePlan(g,'NCCN');return p.status==='found'&&p.routes[0].steps.length===2&&p.routes[0].steps.map(s=>s.candidate.planning.groupId).join(',')==='cbz,boc'&&JSON.stringify(g)===before&&p.routes[0].steps.every(s=>retroForwardCheck(s.candidate,s.to));})()`,'Cbz-first then Boc reaches the free diamine with independently checkable links and unchanged input');
+check(`(()=>{const p=protectionSequencePlan(bocCbz,bocOnly,{preserveGroups:['boc']});return p.status==='found'&&p.routes[0].steps.length===1&&p.routes[0].steps[0].candidate.planning.groupId==='cbz';})()`,'Selective Cbz removal preserves Boc');
+check(`protectionSequencePlan(bocCbz,cbzOnly).status!=='found'`,'Unknown Cbz survival under the acid regime blocks a guessed selective order');
+check(`(()=>{const p=protectionSequencePlan(bocFmoc,'NCCN');return p.status==='found'&&p.routes[0].steps.length===2;})()`,'Two-group Fmoc/Boc sequence reaches free diamine');
+check(`(()=>{const p=protectionSequencePlan(bocFmoc,bocOnly,{preserveGroups:['boc'],removeGroups:['fmoc']});return p.status==='found'&&p.routes[0].steps.length===1;})()`,'Group allowlist and preserved group respected');
+check(`protectionSequencePlan(bocCbz,'NCCN',{forbiddenReagents:['TFA']}).status!=='found'&&protectionSequencePlan(bocCbz,'NCCN',{maxDepth:1}).status!=='found'`,'Reagent and depth constraints cannot be hidden');
+check(`protectionSequencePlan('CC(C)(C)OC(=O)NCCNC(=O)OC(C)(C)C',bocOnly).status!=='found'`,'No invented partial cleavage between repeated Boc groups');
+check(`(()=>{const p=protectionSequencePlan('CC(C)(C)OC(=O)N[13CH2]CNC(=O)OCc1ccccc1','N[13CH2]CN');return p.status==='found'&&p.routes[0].steps.every(s=>s.to.includes('13C'));})()`,'Isotope retained across complete multi-group sequence');
+console.log('Protecting-group sequences: '+checks+' focused checks passed.');

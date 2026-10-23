@@ -58,6 +58,7 @@ function routeWorkspaceValidateStep(step) {
     const outcome = outcomes.find((o) => (!step.ruleId || o.id === step.ruleId) && (o.products || []).concat(o.minor || []).some((p) => {
       try { return routeWorkspaceKey(p.isomericSmiles || p.smiles) === target; } catch (error) { return false; }
     }));
+    if (outcome && outcome.partialConversion) return {status:'unverified',message:'This is a one-site partial-conversion alternative; selective preparation is not established by the current rules.',ruleId:outcome.id,outcome};
     return outcome ? { status: 'verified', message: 'Target reproduced by ' + outcome.name + ' in the current rule model.', ruleId: outcome.id, outcome }
       : { status: 'unverified', message: 'The current rules did not reproduce the selected target with these inputs and conditions.' };
   } catch (error) { return { status: 'invalid', message: error.message }; }

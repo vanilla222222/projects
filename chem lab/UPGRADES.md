@@ -1,5 +1,12 @@
 # Chem Lab upgrades
 
+## Complex-substrate planning — 2026-10-23
+
+- **Multiple installed groups:** Path Finder can seed compatible removal sequences of up to four separately counted steps. Boc/Cbz and Boc/Fmoc examples support complete removal and selected one-group removal. Every edge is forward reproduced and checked for retained-group compatibility. Existing reagent/rule/inventory filters and depth limits apply. Unknown survival, repeated-group selective cleavage and collateral hydrogenation are rejected; this is not general simultaneous multi-group installation.
+- **Site alternatives:** two bounded generators show inequivalent one-site oxidation products for polyols with PCC/DMP and reduction products for polycarbonyls with NaBH4. Equivalent outcomes deduplicate; names identify the input carbon index and the Reactions view displays the selected site. These are partial-conversion alternatives with no assigned kinetic preference or ratio. They are withheld from verified retrosynthesis routes, and saved steps remain unverified as selective preparations. The catalog now has 156 descriptors, including these two inspection generators.
+- **Broader coupling substrates:** source-bounded Kumada chemistry covers selected pyridyl/thienyl electrophiles and 2-pyridyl/2-thienyl Mg donors. Stille supports 2-thienyl trimethyl/tributylstannanes with exact ligand topology. Unsupported NH heterocycles, furyl cases and incompatible reactive groups remain excluded; Negishi retains its prior scope.
+- **Focused checks:** 10 integration checks, eight multi-group sequence checks, 10 heteroaryl checks and the existing 10 coupling checks pass. No full browser/RDKit regression rerun was used for this update. Source references and explicit substrate limits accompany the implementation.
+
 ## Family expansion — 2026-10-23
 
 - **154 sourced rules, 24 new families:** MPV reduction, Oppenauer oxidation, Tishchenko ester formation, Perkin condensation, Darzens glycidic esters, benzilic acid rearrangement, Hunsdiecker bromodecarboxylation, Kolbe–Schmitt carboxylation, McMurry coupling, acyloin cyclization, isocyanate urea/carbamate formation and hydrolysis, isothiocyanate thiourea formation, aldoxime dehydration, amide thionation, thiourea alkylation/isothiouronium release, Paal–Knorr thiophenes, Hantzsch thiazoles, amino-acid lactamization, and Negishi/Kumada/Stille cross-couplings.

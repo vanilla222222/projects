@@ -761,6 +761,11 @@ function createReactionLab(host) {
       predictionBox.appendChild(element('div', 'rx-byproducts', 'Also formed: ' + outcome.byproducts.join(', ')));
     }
     predictionBox.appendChild(element('p', 'rx-reason', outcome.reason));
+    if (outcome.site) {
+      const site = element('div', 'rx-chemo');
+      site.append(element('strong', '', 'Reaction site: ' + outcome.site.label + ' in input atom order'), element('p', '', 'Partial-conversion alternative; no preference over competing sites is established.'), element('code', '', outcome.site.substrateSmiles));
+      predictionBox.appendChild(site);
+    }
     if (outcome.protectionAssessment && typeof protectionAssessmentElement === 'function') {
       predictionBox.appendChild(protectionAssessmentElement(outcome.protectionAssessment));
     }
