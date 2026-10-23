@@ -1,0 +1,32 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
+let JSDOM;try{({JSDOM}=require(process.env.PROFILER_JSDOM_PATH||'jsdom'));}catch(_){throw Error('Install jsdom outside the repository or set PROFILER_JSDOM_PATH.');}
+const root=path.join(__dirname,'..');
+const html=fs.readFileSync(process.env.PROFILER_INDEX_PATH||path.join(root,'index.html'),'utf8');
+const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://example.test/'}),ctx=dom.getInternalVMContext(),w=dom.window;
+for(const name of ['smiles','mol','stereo','transform','pharmacology','depict','pk-decay','prodrug-candidates'])vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),ctx,{filename:name});
+let snapshot;
+w.PharmacologyUI={render(record){snapshot={inputSmiles:record.smiles,...record.snapshot};},getSnapshot(){return snapshot;}};
+vm.runInContext(fs.readFileSync(path.join(root,'js/pharmacology-upgrade.js'),'utf8'),ctx,{filename:'pharmacology-upgrade'});
+const run=s=>vm.runInContext(s,ctx);let checks=0;const ok=(a,m)=>{assert.ok(a,m);checks++;};
+function render(smiles,extra={}){w.record={smiles,name:'Fixture',mol:run('buildMolecule(parseSmiles('+JSON.stringify(smiles)+'))'),snapshot:{predictions:{halfLife:{available:true,value:2,lower:1,upper:4}},observations:[],scenarios:{inputs:{}},...extra}};w.PharmacologyUI.render(w.record,[]);}
+render('CCO');
+ok(w.document.querySelector('#pk-decay-view svg'),'Model curve rendered');
+ok(snapshot.decayPlot.halfLifeHours===2,'Model half-life used without reaction weights');
+ok(w.document.querySelectorAll('.prodrug-candidate-card').length===5,'Five supported designs displayed');
+ok(snapshot.prodrugCandidates.rows.length===5&&snapshot.prodrugCandidates.rows.every(r=>r.parentRecoveryVerified&&!r.experimentalValidation),'Export distinguishes design and evidence');
+ok(w.document.querySelectorAll('button[data-pharm-smiles]').length===5,'Candidate handoff buttons exist');
+render('CC(=O)OC1=CC=CC=C1C(=O)O',{observations:[{reported:'20 min (parent aspirin)',population:'Label parent context',sourceUrl:'https://example.test/label'}]});
+ok(Math.abs(snapshot.decayPlot.halfLifeHours-1/3)<1e-12,'Source observation takes precedence');
+render('CCN',{observations:[{reported:'Typically less than 1 h',population:'Censored source'}]});
+ok(w.document.querySelector('#pk-decay-view figure').hidden&&snapshot.decayPlot===null,'Censored observation clears old curve');
+ok(w.document.querySelectorAll('.prodrug-candidate-card').length===0,'Unsupported amine does not inherit previous candidates');
+render('CCO',{scenarios:{inputs:{clearanceLPerHour:2,volumeL:20},halfLifeHours:Math.LN2*10}});
+ok(Math.abs(snapshot.decayPlot.halfLifeHours-Math.LN2*10)<1e-12,'User scenario selected and labelled');
+snapshot.scenarios={inputs:{clearanceLPerHour:2,volumeL:null}};w.document.getElementById('pk-volume').dispatchEvent(new w.Event('input'));
+ok(snapshot.decayPlot===null&&w.document.querySelector('#pk-decay-view figure').hidden,'Incomplete scenario clears prior curve');
+render('CCO',{predictions:{halfLife:{available:false,reason:'Outside model domain'}}});
+ok(snapshot.decayPlot===null,'Unavailable estimate is not invented');
+const range=w.PKResearchUpgrade.halfLifePlotInput({observations:[{reported:'10–11.3 h',population:'Source range'}]});
+ok(range.halfLifeHours===10.65&&range.intervalHours[0]===10&&range.sourceLabel.includes('illustrative'),'Range midpoint explicitly labelled');
+console.log('PK/prodrug interface integration: '+checks+' focused checks passed.');dom.window.close();
