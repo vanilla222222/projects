@@ -59,6 +59,10 @@ function routeWorkspaceValidateStep(step) {
       try { return routeWorkspaceKey(p.isomericSmiles || p.smiles) === target; } catch (error) { return false; }
     }));
     if (outcome && outcome.partialConversion) return {status:'unverified',message:'This is a one-site partial-conversion alternative; selective preparation is not established by the current rules.',ruleId:outcome.id,outcome};
+    if (outcome && typeof routeStepAssessment === 'function') {
+      const assessment = routeStepAssessment({outcome,compounds,conditions:step.conditions});
+      if (assessment.blockers.length) return {status:'unverified',message:assessment.blockers.map(b=>b.message).join(' '),ruleId:outcome.id,outcome,assessment};
+    }
     return outcome ? { status: 'verified', message: 'Target reproduced by ' + outcome.name + ' in the current rule model.', ruleId: outcome.id, outcome }
       : { status: 'unverified', message: 'The current rules did not reproduce the selected target with these inputs and conditions.' };
   } catch (error) { return { status: 'invalid', message: error.message }; }
@@ -153,6 +157,12 @@ function createRouteWorkspace(deps) {
       const verifiedOutcome = report.steps[index].outcome;
       if (verifiedOutcome && verifiedOutcome.protectionAssessment && typeof protectionAssessmentElement === 'function') card.append(protectionAssessmentElement(verifiedOutcome.protectionAssessment));
       if (typeof reactionEvidenceElement === 'function' && verifiedOutcome && verifiedOutcome.evidence) card.append(reactionEvidenceElement(verifiedOutcome.evidence, true));
+      if (typeof reactionAtomMapping === 'function' && typeof reactionMappingElement === 'function') {
+        const inspect = element('details'); inspect.append(element('summary', 'Inspect product atom correspondence'));
+        let mapped = false;
+        inspect.addEventListener('toggle', () => { if (inspect.open && !mapped) { mapped = true; inspect.append(reactionMappingElement(reactionAtomMapping(step.compounds, step.to))); } });
+        card.append(inspect);
+      }
       const structures = element('div', undefined, 'workspace-structures');
       [step.from, step.to].forEach((smiles, i) => {
         if (i) structures.append(element('span', '→'));

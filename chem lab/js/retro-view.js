@@ -207,6 +207,12 @@ function createRetroView(deps) {
     } else {
       result.candidates.forEach((candidate, index) => list.appendChild(candidateCard(state.tree, node, candidate, index)));
     }
+    if (result && (result.compatibilityRejected || []).length) {
+      const rejected = retroViewElement('details', 'retro-rejected');
+      rejected.appendChild(retroViewElement('summary', '', 'Substrate conflicts excluded from these candidates'));
+      result.compatibilityRejected.forEach(r => rejected.appendChild(retroViewElement('p', '', r.reaction + ': ' + r.reason)));
+      list.appendChild(rejected);
+    }
     list.scrollTop = 0;
     renderButtons();
   }

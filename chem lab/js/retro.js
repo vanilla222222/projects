@@ -2083,7 +2083,7 @@ function retroProtectCandidate(t, spec, plan) {
 function* retroDisconnectSteps(graph, ids, options) {
   const start = retroNow();
   const t = retroTarget(graph, ids);
-  const out = { smiles: t.smiles, isomericSmiles: t.isomericSmiles, stereocentres: t.stereocentres, candidates: [], protectionNeeds: [], tried: 0, truncated: false, reason: '', ms: 0 };
+  const out = { smiles: t.smiles, isomericSmiles: t.isomericSmiles, stereocentres: t.stereocentres, candidates: [], protectionNeeds: [], forwardRejected: [], tried: 0, truncated: false, reason: '', ms: 0 };
   if (!t.graph.atoms.length || !t.smiles) {
     out.reason = 'empty';
     return out;
@@ -2136,6 +2136,10 @@ function* retroDisconnectSteps(graph, ids, options) {
     const sink = {};
     const verified = retroTryVerify(spec, t.smiles, sink);
     spec.attempt = { verified, result: sink.result || null };
+    if (!verified && out.forwardRejected.length < 8) {
+      const prediction = sink.result;
+      out.forwardRejected.push({reaction:spec.transform.name,target:t.smiles,code:'forward-model',reason:prediction && prediction.best ? 'The forward rule did not reproduce the requested product identity and stereochemistry.' : 'No forward outcome matched these generated inputs and conditions.'});
+    }
     if (verified) {
       const candidate = retroCandidate(t, spec, verified);
       if (candidate) {
@@ -2164,6 +2168,17 @@ function* retroDisconnectSteps(graph, ids, options) {
     spec.attempt = null;
   }
   out.truncated = stopped;
+  if (typeof routeStepAssessment === 'function') {
+    out.compatibilityRejected = [];
+    out.candidates = out.candidates.filter(candidate => {
+      const report = routeStepAssessment(candidate);
+      if (!report.blockers.length) return true;
+      if (out.compatibilityRejected.length < 12) report.blockers.forEach(b => {
+        if (out.compatibilityRejected.length < 12) out.compatibilityRejected.push({reaction:candidate.name,target:t.smiles,code:b.code,reason:b.message});
+      });
+      return false;
+    });
+  }
   out.candidates.sort(retroCompare);
   out.candidates = out.candidates.slice(0, RETRO_LIMITS.maxCandidates);
   out.ms = Math.round(retroNow() - start);

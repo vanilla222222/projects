@@ -1,5 +1,12 @@
 # Chem Lab upgrades
 
+## Planner inspection and compatibility — 2026-10-23
+
+- **Inspectable atom correspondence:** Reactions, route comparison and saved routes can show heavy-atom input/product pairs and formed, broken or order-changed bonds. Source atom indices refer to each listed input SMILES. Detached input atoms are shown explicitly; omitted atoms are not treated as a balanced byproduct equation. Mapping preserves element/isotope identity and uses injective assignments across multiple inputs. It is a bounded minimum-edit heuristic, with explicit symmetry, incomplete-input and search-limit messages; it does not establish mechanism, hydrogen transfers or experimental atom origins.
+- **Stricter substrate gates:** unresolved competing-site annotations and unestablished partial-conversion alternatives are excluded from planner candidates. Existing retained-group survival and proton-donor checks are reused. Each operation in an automatic protection sequence is assessed separately. Bulk conversion of multiple groups is allowed when no competing site is left. Saved route verification recalculates these checks rather than trusting a historical status. Unencoded chemistry remains outside these checks.
+- **Search and rejection explanations:** breadth-first depth ordering now uses graph-count similarity to the requested starting material as a tie-breaker, without pruning dissimilar intermediates. Search limits remain bounded. Path Finder shows up to 12 rejection examples, including forward-product mismatches and compatibility reasons; single-step retrosynthesis also displays excluded substrate conflicts. Sources still document reaction classes rather than validating a queried substrate.
+- **Validation:** 17 focused planner/mapping checks and the existing 10 complex-substrate integration checks. No full regression, browser or RDKit rerun for this update.
+
 ## Complex-substrate planning — 2026-10-23
 
 - **Multiple installed groups:** Path Finder can seed compatible removal sequences of up to four separately counted steps. Boc/Cbz and Boc/Fmoc examples support complete removal and selected one-group removal. Every edge is forward reproduced and checked for retained-group compatibility. Existing reagent/rule/inventory filters and depth limits apply. Unknown survival, repeated-group selective cleavage and collateral hydrogenation are rejected; this is not general simultaneous multi-group installation.

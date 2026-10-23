@@ -772,6 +772,19 @@ function createReactionLab(host) {
     if (outcome.evidence && typeof reactionEvidenceElement === 'function') {
       predictionBox.appendChild(reactionEvidenceElement(outcome.evidence));
     }
+    if (typeof reactionAtomMapping === 'function' && typeof reactionMappingElement === 'function') {
+      const inspect = element('details', 'rx-atom-mapping');
+      inspect.append(element('summary', '', 'Inspect product atom correspondence'));
+      let rendered = false;
+      inspect.addEventListener('toggle', () => {
+        if (!inspect.open || rendered) return;
+        rendered = true;
+        outcome.products.forEach((product, i) => {
+          inspect.append(element('h4', '', 'Product ' + (i + 1)), reactionMappingElement(reactionAtomMapping(state.compounds, product.isomericSmiles || product.smiles)));
+        });
+      });
+      predictionBox.appendChild(inspect);
+    }
     const chemo = outcome.chemoselectivity;
     const warnings = chemo ? outcome.warnings.filter((w) => w.indexOf('Chemoselectivity: ') !== 0) : outcome.warnings;
     if (warnings.length) {

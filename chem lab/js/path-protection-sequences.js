@@ -21,6 +21,7 @@ function pathFinderSequenceRoutes(start, target, opts, filters) {
         outcome:detail.outcome,product:detail.outcome.products.find(p=>moleculeSame(p.isomericSmiles||p.smiles,to.smiles)),minor:false,
         planning:detail.planning,labels:reactionConditionLabels(detail.conditions,detail.compounds)};
       if (!candidate.product || filters.ruleBlocked(candidate) || filters.reagentBlocked(candidate) ||
+          typeof routeStepAssessment === 'function' && routeStepAssessment(candidate).blockers.length ||
           pathFinderProtectionConflict(candidate) || !retroForwardCheck(candidate,to.smiles) ||
           precursors.some((p,i)=>i!==precursor&&!filters.stocked(p.isomericSmiles||p.smiles))) return [];
       links.push({candidate,precursor,from:from.smiles,to:to.smiles,fromKey:from.key,toKey:to.key}); previous=to.key;

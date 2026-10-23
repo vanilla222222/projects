@@ -20,6 +20,16 @@ function pathFinderMaterialKey(smiles) {
   return props.isomericSmiles || props.smiles;
 }
 
+// A cheap graph-count distance orders equally deep frontier entries. It never
+// supplies a reaction, excludes a branch, or serves as a feasibility score.
+function pathFinderFingerprint(smiles) {
+  const g = reactionFragmentGraph(smilesToFragment(smiles)), counts = {};
+  const add = key => { counts[key] = (counts[key] || 0) + 1; };
+  g.atoms.forEach(a => add('atom:' + a.element + ':' + (a.isotope || 0)));
+  g.bonds.forEach(b => add('bond:' + [g.getAtom(b.atomA).element,g.getAtom(b.atomB).element].sort().join('-') + ':' + b.order));
+  return counts;
+}
+
 function pathFinderRouteRank(route) {
   return [route.length, route.filter((link) => link.candidate.minor).length,
     route.reduce((n, link) => n + Math.max(0, link.candidate.precursors.length - 1), 0)];
@@ -101,6 +111,14 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
     return cache.get(smiles);
   };
   const start = pathFinderStructure(startSmiles), target = pathFinderStructure(targetSmiles);
+  const startFeatures = pathFinderFingerprint(start.smiles), priorities = new Map();
+  const priority = smiles => {
+    if (!priorities.has(smiles)) {
+      const features = pathFinderFingerprint(smiles), keys = new Set([...Object.keys(startFeatures),...Object.keys(features)]);
+      priorities.set(smiles,[...keys].reduce((n,k)=>n+Math.abs((features[k]||0)-(startFeatures[k]||0)),0));
+    }
+    return priorities.get(smiles);
+  };
   const available = new Set([start.key]);
   (opts.availableMaterials || []).forEach((text) => {
     const parsed = reactionParseCompound(text);
@@ -115,7 +133,7 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
     try { key = pathFinderMaterialKey(reactionParseCompound(text).smiles); } catch (error) { /* Named catalyst labels need no structure. */ }
     return { text: text.toLowerCase(), key };
   });
-  const diagnostics = { candidates: 0, inventory: 0, reagents: 0, rules: 0, stereo: 0, protection: 0, protectionMessages: opts.allowedProtectingGroups && !opts.allowedProtectingGroups.length ? ['Automatic protection planning is disabled.'] : [], noDisconnections: 0, depth: 0, branch: 0, missingMaterials: [] };
+  const diagnostics = { candidates: 0, inventory: 0, reagents: 0, rules: 0, stereo: 0, compatibility: 0, rejected: [], protection: 0, protectionMessages: opts.allowedProtectingGroups && !opts.allowedProtectingGroups.length ? ['Automatic protection planning is disabled.'] : [], noDisconnections: 0, depth: 0, branch: 0, missingMaterials: [] };
   const job = { start: start.smiles, target: target.smiles, options: opts, status: start.key === target.key ? 'identical' : 'running', route: [], routes: [], expanded: 0, truncated: false, elapsedMs: 0, diagnostics, termination: '' };
   const queue = [{ smiles: target.smiles, key: target.key, chain: [], ancestors: new Set([target.key]) }];
   const queued = new Set(), expanded = new Map(), routeKeys = new Set();
@@ -159,6 +177,17 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
     if (candidates.length > opts.maxBranch) { diagnostics.branch += candidates.length - opts.maxBranch; job.truncated = true; }
     for (const candidate of candidates.slice(0, opts.maxBranch)) {
       diagnostics.candidates++;
+      if (typeof routeStepAssessment === 'function') {
+        const assessment = routeStepAssessment(candidate);
+        if (assessment.blockers.length) {
+          diagnostics.compatibility++;
+          assessment.blockers.forEach(b => {
+            const record = { reaction: candidate.name, target: node.smiles, code: b.code, reason: b.message };
+            if (diagnostics.rejected.length < 12 && !diagnostics.rejected.some(r => r.reaction === record.reaction && r.target === record.target && r.code === record.code)) diagnostics.rejected.push(record);
+          });
+          continue;
+        }
+      }
       if (candidate.pgSteps && opts.allowedProtectingGroups && !opts.allowedProtectingGroups.includes(candidate.protection && candidate.protection.id)) {
         diagnostics.protection++;
         const reason = opts.allowedProtectingGroups.length ? 'The required protecting group is excluded by the allowed protecting groups setting.' : 'Automatic protection planning is disabled.';
@@ -196,6 +225,7 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
         const links = candidate.pgSteps ? pathFinderProtectionLinks(candidate, carried, node)
           : [{ candidate, precursor: i, from: carried.smiles, to: node.smiles, fromKey: carried.key, toKey: node.key }];
         if (!links) { diagnostics.protection++; continue; }
+        if (typeof routeStepAssessment === 'function' && links.some(link => routeStepAssessment(link.candidate).blockers.length)) { diagnostics.compatibility++; continue; }
         if (links.some((link) => pathFinderProtectionConflict(link.candidate))) { diagnostics.protection++; continue; }
         if (links.some((link) => ruleBlocked(link.candidate))) { diagnostics.rules++; continue; }
         if (links.some((link) => reagentBlocked(link.candidate))) { diagnostics.reagents++; continue; }
@@ -212,7 +242,7 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
         const id = chain.map(signature).join('/');
         if (!queued.has(id) && queue.length < opts.maxNodes * opts.maxBranch) {
           queued.add(id);
-          queue.push({ smiles: carried.smiles, key: carried.key, chain, ancestors: new Set([...node.ancestors, carried.key]) });
+          queue.push({ smiles: carried.smiles, key: carried.key, chain, priority: priority(carried.smiles), ancestors: new Set([...node.ancestors, carried.key]) });
         }
       }
     }
@@ -231,7 +261,11 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
     while (job.status === 'running' && retroNow() < until) {
       if (job.elapsedMs + retroNow() - began >= opts.budgetMs) { finish('time-limit'); break; }
       if (!current) {
-        const node = queue.shift();
+        // Preserve breadth-first depth ordering, then favor intermediates with
+        // graph counts closer to the requested starting material.
+        let nextIndex = 0;
+        for (let i = 1; i < queue.length; i++) if (queue[i].chain.length < queue[nextIndex].chain.length || queue[i].chain.length === queue[nextIndex].chain.length && (queue[i].priority || 0) < (queue[nextIndex].priority || 0)) nextIndex = i;
+        const node = queue.splice(nextIndex, 1)[0];
         if (!node) { finish('exhausted'); break; }
         if (expanded.has(node.key)) { attach(node, expanded.get(node.key)); continue; }
         if (job.expanded >= opts.maxNodes) { finish('node-limit'); break; }
@@ -243,6 +277,16 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
       if (next.done) {
         const result = next.value || {};
         job.truncated = job.truncated || !!result.truncated;
+        diagnostics.compatibility += (result.compatibilityRejected || []).length;
+        (result.compatibilityRejected || []).forEach(record => {
+          if (!diagnostics.rejected.some(r => r.reaction === record.reaction && r.target === record.target && r.code === record.code)) {
+            if (diagnostics.rejected.length >= 12) diagnostics.rejected.pop();
+            diagnostics.rejected.unshift(record);
+          }
+        });
+        (result.forwardRejected || []).forEach(record => {
+          if (diagnostics.rejected.length < 12 && !diagnostics.rejected.some(r => r.reaction === record.reaction && r.target === record.target && r.code === record.code)) diagnostics.rejected.push(record);
+        });
         (result.protectionNeeds || []).forEach((need) => {
           diagnostics.protection++;
           if (diagnostics.protectionMessages.length < 4 && !diagnostics.protectionMessages.includes(need.reason)) diagnostics.protectionMessages.push(need.reason);
@@ -267,6 +311,8 @@ function pathFinderExplanation(job) {
   if (d.inventory) reasons.push(d.inventory + ' branches need unavailable building blocks');
   if (d.depth) reasons.push(d.depth + ' branches reached the step limit');
   if (d.stereo) reasons.push(d.stereo + ' candidates did not preserve the required structure or stereochemistry');
+  if (d.compatibility) reasons.push(d.compatibility + ' candidate branches have unresolved substrate compatibility or selectivity conflicts');
+  (d.rejected || []).slice(0, 4).forEach(r => reasons.push(r.reaction + ': ' + r.reason));
   if (d.protection) reasons.push(d.protection + ' candidate branches need an unsupported or incompatible protection plan');
   (d.protectionMessages || []).forEach((message) => reasons.push(message));
   if (job.truncated) reasons.push('some candidates were omitted by search limits');
@@ -292,14 +338,23 @@ function createPathFinder(deps) {
     run.disabled = false; cancel.disabled = true;
     results.replaceChildren();
     const stats = ' ' + job.expanded + ' structures searched in ' + (job.elapsedMs / 1000).toFixed(1) + ' s.';
+    const rejectionDetails = () => {
+      const records = job.diagnostics.rejected || [];
+      if (!records.length) return;
+      const detail = element('details'), list = element('ul');
+      detail.append(element('summary', 'Why candidate branches were rejected (up to 12 examples)'));
+      records.forEach(r => list.append(element('li', r.reaction + ' · target ' + r.target + ': ' + r.reason)));
+      detail.append(list); results.append(detail);
+    };
     if (job.status === 'identical') { status.textContent = 'The endpoints describe the same structure; no reaction is needed.'; return; }
     if (!job.routes.length) {
       status.textContent = (job.status === 'cancelled' ? 'Search cancelled.' : 'No route found within these rules and limits.') + stats + ' ' + pathFinderExplanation(job) + ' This does not establish that synthesis is impossible.';
       if (job.diagnostics.missingMaterials.length) results.append(element('p', 'Missing building blocks: ' + job.diagnostics.missingMaterials.map(name).join(', ')));
+      rejectionDetails();
       return;
     }
     status.textContent = job.routes.length + ' rule-verified candidate route' + (job.routes.length === 1 ? '' : 's') + ' found.' + stats + ' Ranked by fewer steps, fewer minor products, then fewer extra building blocks.' + (job.status === 'cancelled' ? ' Search cancelled; partial results retained.' : '');
-    if (typeof routeComparisonRender === 'function') { routeComparisonRender(results, job, deps); return; }
+    if (typeof routeComparisonRender === 'function') { routeComparisonRender(results, job, deps); rejectionDetails(); return; }
     job.routes.forEach((route, index) => {
       const wrapper = element('section', undefined, 'path-route');
       const rank = pathFinderRouteRank(route);

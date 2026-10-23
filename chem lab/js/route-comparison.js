@@ -148,6 +148,20 @@ function routeComparisonRender(container, job, deps) {
       const labels = step.candidate.labels || {};
       detail.append(make('p', 'Conditions: ' + ([labels.above, labels.below].filter(Boolean).join(' · ') || 'Not recorded.')));
       detail.append(make('p', 'Scope: ' + step.scope));
+      if (typeof routeStepAssessment === 'function') {
+        const audit = routeStepAssessment(step.candidate);
+        detail.append(make('p', 'Substrate review: ' + (audit.blockers.length ? audit.blockers.map(b => b.message).join(' ') : 'No encoded compatibility conflict.')));
+        addList(detail, 'Compatibility limits', audit.warnings);
+      }
+      if (typeof reactionAtomMapping === 'function' && typeof reactionMappingElement === 'function') {
+        // Compute on first inspection, rather than spending search time mapping
+        // every candidate or blocking first render of a long route.
+        const holder = make('div'); detail.append(holder);
+        detail.addEventListener('toggle', () => {
+          if (!detail.open || holder.childNodes.length) return;
+          holder.append(reactionMappingElement(reactionAtomMapping(step.candidate.compounds || [], step.to)));
+        });
+      }
       if (step.link && step.link.candidate && step.link.candidate.planning) {
         const plan = step.link.candidate.planning;
         detail.append(make('p', 'Protection plan: ' + plan.kind + (plan.group ? ' · ' + plan.group : '') + '. ' + plan.reason));
