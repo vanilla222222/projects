@@ -1,0 +1,9 @@
+.prodrug-site-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin: 14px 0; }
+.prodrug-site-controls label { display: grid; gap: 5px; min-width: 0; }
+.prodrug-site-controls select { max-width: 100%; padding: 8px; }
+.prodrug-site-controls button { padding: 8px 12px; }
+.prodrug-site-depiction svg { display: block; max-width: 100%; max-height: 280px; margin: 12px auto; }
+.prodrug-site-depiction .hit { fill: #ffbf47; fill-opacity: .65; }
+#prodrug-site-evidence code { display: block; overflow-wrap: anywhere; }
+#prodrug-reference-result { margin: 12px 0; line-height: 1.5; }
+@media (max-width: 600px) { .prodrug-site-controls { display: grid; } }
