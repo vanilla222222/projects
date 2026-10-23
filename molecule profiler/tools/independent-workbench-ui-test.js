@@ -14,6 +14,7 @@ function render(smiles){w.PharmacologyUI.render({name:'Working input',smiles});w
 function finish(result){pending({ok:true,json:async()=>({result})});pending=null;}
 (async()=>{
  await tick();render('COc1ccccc1');$('results').hidden=false;w.WorkspaceUI.select('research');
+ let navigated=false;$('research-workbench').scrollIntoView=()=>{navigated=true;};$('workspace-nav').querySelector('[data-view=research]').click();ok(navigated,'Workspace selection brings the chosen tools into view');
  ok(!$('research-workbench').hidden&&$('prodrug-panel').hidden,'Research has its own focused workspace');
  ok($('research-query').options.length===2&&$('research-module-adme').textContent.includes('C7H8O'),'Input and candidate pool, local molecular facts');
  ok($('research-workbench').querySelectorAll('[data-module]').length===6,'Six native modules');
