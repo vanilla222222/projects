@@ -1,0 +1,30 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
+const {JSDOM}=require(process.env.PROFILER_JSDOM_PATH||'jsdom'),root=path.join(__dirname,'..');
+const dom=new JSDOM(fs.readFileSync(path.join(root,'index.html'),'utf8'),{runScripts:'outside-only',url:'https://example.test/'}),ctx=dom.getInternalVMContext(),w=dom.window;
+for(const name of ['smiles','mol','smarts','stereo','transform','pharmacology','prodrug-candidates','cleavable-groups','depict'])vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),ctx);
+vm.runInContext(fs.readFileSync(path.join(root,'data/pharmacology-evidence.js'),'utf8'),ctx);
+let snapshot,downloaded;w.PharmacologyUI={render(record){snapshot={inputSmiles:record.smiles};},getSnapshot(){return snapshot;}};
+w.URL.createObjectURL=blob=>{downloaded=blob;return 'blob:test';};w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=function(){};
+vm.runInContext(fs.readFileSync(path.join(root,'js/prodrug-site-evidence.js'),'utf8'),ctx);
+const $=id=>w.document.getElementById(id);let checks=0;const ok=(v,s)=>{assert.ok(v,s);checks++;};
+function render(smiles){w.testInput=smiles;w.PharmacologyUI.render({smiles,mol:vm.runInContext('buildMolecule(parseSmiles(testInput))',ctx)},[]);}
+function change(id,value){$(id).value=value;$(id).dispatchEvent(new w.Event('change'));}
+render('COc1ccccc1');
+ok($('prodrug-reference-atom').value==='1'&&!$('prodrug-design-build').disabled,'Aryl ether oxygen is offered as a compatible existing-group site');
+ok($('prodrug-design-template').selectedOptions[0].textContent.includes('O-dealkylation'),'The ether option describes the reaction rather than an added attachment');
+$('prodrug-design-build').click();
+ok(snapshot.prodrugSiteCleavage.status==='predicted-products'&&!snapshot.prodrugSiteDesign&&!snapshot.prodrugSiteCleavage.inputRegenerated,'Cleavage products have a separate snapshot without a recovery claim');
+ok($('prodrug-design-preview').textContent.includes('Products differ')||$('prodrug-design-status').textContent.includes('Products differ'),'Product distinction is visible');
+ok($('prodrug-design-preview').querySelector('svg .hot'),'Input bond is highlighted');
+const products=snapshot.prodrugSiteCleavage.products,phenol=products.find(p=>p.smiles==='Oc1ccccc1');
+ok(phenol&&products.some(p=>p.smiles==='C=O'),'Both phenol and formaldehyde are shown');
+ok($('prodrug-design-preview').querySelectorAll('button[data-pharm-smiles]').length===2,'Both products have existing analysis handoffs');
+Array.from($('prodrug-design-preview').querySelectorAll('button')).find(b=>b.textContent.includes('Download')).click();ok(downloaded,'All product SMILES can be downloaded');
+change('prodrug-reference-atom','3');ok(!snapshot.prodrugSiteCleavage&&!$('prodrug-design-preview').textContent&&$('prodrug-design-build').disabled,'Selecting an unsupported atom clears stale products');
+render(phenol.smiles);ok(!snapshot.prodrugSiteCleavage&&$('prodrug-design-template').options.length===5,'Analyzing the exposed phenol opens five attachment designs');$('prodrug-design-build').click();ok(snapshot.prodrugSiteDesign?.candidate.parentRecoveryVerified&&!snapshot.prodrugSiteCleavage,'Derived-parent attachment remains separate from original ether cleavage');
+render('COC(C)OC');ok(Array.from($('prodrug-design-template').options).some(o=>o.textContent.includes('O-dealkylation')),'Other ether pathways are present');
+const acetalSite=Array.from($('prodrug-design-site').options).find(o=>o.textContent.includes('acetal'));change('prodrug-design-site',acetalSite.value);const acetalOption=Array.from($('prodrug-design-template').options).find(o=>o.textContent.includes('Acetal'));change('prodrug-design-template',acetalOption.value);$('prodrug-design-build').click();ok(snapshot.prodrugSiteCleavage.pathway.kind==='acetal','Acetal hydrolysis is explicitly selectable');
+change('prodrug-reference-select','enalapril');ok(!snapshot.prodrugSiteCleavage&&$('prodrug-design-build').disabled&&snapshot.prodrugSiteEvidence.status==='documented-reference-site','Reference evidence does not inherit a generated cleavage preview');
+render('c1ccc(Oc2ccccc2)cc1');ok($('prodrug-design-build').disabled&&!snapshot.prodrugSiteCleavage,'A diaryl ether is not mislabelled as oxidative O-dealkylation');
+console.log('Existing-group UI: '+checks+' focused checks passed.');dom.window.close();

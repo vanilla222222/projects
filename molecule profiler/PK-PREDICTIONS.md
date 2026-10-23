@@ -287,3 +287,10 @@ Further compatibility coverage, new N–H linker and aromatic N-oxide classes,
 ionized oxygen handles, and explicit simple-counterion normalization are described
 in `PRODRUG-SITE-EVIDENCE.md`. The prediction models are unchanged; a generated
 structure is not evidence that an existing PK model is applicable to it.
+
+
+The site explorer now also has an **existing-group transformation** mode for
+aryl/alkyl ethers and other recognized linkages. This mode produces separate
+hypothetical product structures, not parent-regenerating prodrug attachments.
+Its snapshot, sources, supported scope and validation are documented in
+`PRODRUG-SITE-EVIDENCE.md`; no PK model was retrained or broadened.

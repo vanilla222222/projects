@@ -201,5 +201,5 @@
   }catch(error){reasons.push('Candidate generation unavailable for this structure: '+error.message);}
   return report;
  }
- const api={generate,recoverParent,sites:parent=>generate(parent,{limit:0}).eligibleSites||[],sources:SOURCES};root.ProdrugCandidates=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
+ const api={generate,recoverParent,prepareParent,validGraph:supportedValences,sites:parent=>generate(parent,{limit:0}).eligibleSites||[],sources:SOURCES};root.ProdrugCandidates=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

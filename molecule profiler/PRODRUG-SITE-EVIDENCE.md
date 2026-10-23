@@ -26,9 +26,9 @@ Validation uses a focused DOM test covering reference availability, correct high
 
 ## Selected-site attachment builder
 
-Choose **Design on current input**, then use **Compatible attachment site** or
+Choose **Design on current input**, then use **Compatible site** or
 the full atom menu. Supported sites are labelled by atom and functional group.
-Choose a template and select **Preview selected design**. The builder can target
+Choose a template and select **Preview selected option**. The builder can target
 any compatible site, including sites beyond the automatic five-candidate list.
 It never falls back to a different atom if a selected site or template is invalid.
 
@@ -105,3 +105,62 @@ entries generated at least one candidate for 139 inputs before and 158 after
 available. This measures enumerator coverage only, not biological validation or
 whole-library coverage. Focused checks: 117 generator, 24 builder DOM, 21 reference
 viewer and 16 PK/prodrug interface checks, plus existing analogue UI integration.
+
+
+## Existing oxygen–carbon groups and other cleavage explorations
+
+The same compatible-site menu now offers existing-group transformations alongside
+new attachment designs. A benzene/aryl–O–alkyl ether (for example anisole,
+`COc1ccccc1`) exposes an **Explore O-dealkylation** option at its ether oxygen or adjacent ether-bond carbons. Each option names the proposed input bond(s), and the preview highlights the bond(s) actually changed.
+The preview shows hypothetical phenol and formaldehyde products. Ethyl ethers
+yield an aldehyde hypothesis; an eligible secondary alkyl carbon yields a ketone.
+Aliphatic, benzyl and cyclic ethers are also recognized when the attacked carbon
+is saturated and bears an alpha hydrogen. A tertiary alkyl carbon without that
+hydrogen, a diaryl ether, peroxide or unsupported graph is not assigned this
+oxidative route. Competing ring oxidation or other metabolism may dominate.
+
+Additional classes: esters/lactones, carbonates, carbamates, thioesters,
+acetals/ketals (including methylenedioxy ring systems), and disulfides. Ester and
+thioester previews show formal hydrolysis products. Carbonate/carbamate previews
+stop at the first hydrolysis products; an intermediate is not assumed to complete
+a fragmentation cascade. Acetal previews are chemical hydrolysis hypotheses with
+no general physiological pH or rate claim. Disulfide previews show formal thiol
+ends without assuming subsequent payload release. All product equivalents are
+retained, including duplicate products of a symmetric cleavage.
+
+These are transformations **of the input into different products**, not
+parent-regenerating attachments to that input. They are recorded separately as
+`PharmacologyUI.getSnapshot().prodrugSiteCleavage`, with `inputRegenerated:false`.
+The original `prodrugSiteDesign` remains reserved for attachment designs checked
+against their supplied parent. Changing input, site, mode or template clears both
+previews. Reference evidence remains independent from either hypothesis type.
+
+Each product has an **Analyze this product / explore its attachment sites**
+button. For example, analyzing the phenol exposed from an aryl ether makes its
+free OH available for the existing ester/phosphate attachment generator. Product
+SMILES can also be downloaded. No product is ranked as the active species.
+
+Input bonds are highlighted using original atom indices; recognized-counterion
+normalization is carried through in the snapshot and limitations. Oxidation of a
+reacting tetrahedral carbon to a planar carbonyl explicitly removes its prior
+stereo tag and records this change. Remote supported stereo and isotope labels
+are retained; any added oxygen is formal reaction input, not an experimentally
+assigned oxygen-isotope origin.
+
+Primary class sources, also linked with each preview:
+- Ether oxidation in rat liver microsomes: https://pubmed.ncbi.nlm.nih.gov/1492425/
+- Ester prodrug hydrolysis: https://pubmed.ncbi.nlm.nih.gov/24179032/
+- Carbonates/carbamates: https://pubmed.ncbi.nlm.nih.gov/8234176/
+- Phenolic carbamate prodrugs: https://pubmed.ncbi.nlm.nih.gov/17268110/
+- Thioester deacetylation: https://pubmed.ncbi.nlm.nih.gov/3513776/
+- Acetal drug-delivery linkages: https://pubmed.ncbi.nlm.nih.gov/15546191/
+- Releasable disulfide conjugates:
+  https://www.sciencedirect.com/science/article/abs/pii/S0223523415301252
+
+Validation: 51 focused pathway checks; 15 UI checks including ether-to-phenol
+analysis, exposure of new OH attachment sites, stale-state clearing and reference
+separation; independent RDKit product sanitization, atom/isotope conservation and
+net reaction bookkeeping for 28 pathways across 20 inputs. The optional command
+is `python tools/cleavable-groups-rdkit-test.py`. These are structure and interface
+checks, not validation of biological occurrence. Browser visual layout was not
+verified.

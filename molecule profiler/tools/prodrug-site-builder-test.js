@@ -13,7 +13,7 @@ function render(smiles){w.testInput=smiles;w.PharmacologyUI.render({smiles,mol:r
 function change(id,value){$(id).value=value;$(id).dispatchEvent(new w.Event('change'));}
 render('NCCO');
 ok($('prodrug-design-site').options.length===3,'Both N and O sites are offered');
-ok($('prodrug-reference-atom').options[0].textContent.includes('attachment: primary amine'),'Atom menu marks attachment sites');
+ok($('prodrug-reference-atom').options[0].textContent.includes('compatible: primary amine'),'Atom menu marks attachment sites');
 $('prodrug-design-build').click();
 ok(snapshot.prodrugSiteDesign.selectedAtom===0&&snapshot.prodrugSiteDesign.candidate.cleavage==='n-carbamate','Build at selected nitrogen');
 ok($('prodrug-design-preview').querySelector('svg .bond.hot')||$('prodrug-design-preview').querySelector('svg .hot'),'Candidate attachment bond is highlighted');
