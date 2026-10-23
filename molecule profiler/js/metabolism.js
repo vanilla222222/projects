@@ -197,8 +197,8 @@ function metabolicTree(record, options) {
 
   const metabolites = nodes.slice(1);
   metabolites.forEach((node) => {
-    node.newTox = newToxHits(node, root);
-    node.toxHits = metaboliteTox(node).hits;
+    node.newTox = settings.includeToxicity===false?[]:newToxHits(node, root);
+    node.toxHits = settings.includeToxicity===false?[]:metaboliteTox(node).hits;
   });
   metabolites.sort((a, b) => b.score - a.score || a.depth - b.depth);
 
@@ -222,7 +222,7 @@ function metabolicTree(record, options) {
     phaseII: metabolites.filter((node) => node.phase === 'II').length,
     rulesTried: rules.length,
     truncated: truncated,
-    diagnostics, maxNodes,
+    diagnostics, maxNodes, toxicityIncluded:settings.includeToxicity!==false,
     rankingPolicy:'Generation-wise best-relative-weight selection; representative route is best among shortest-generation routes. Deeper revisits do not recycle scores.',
     identityScope:'Graph-hash grouping is approximate and does not establish stereochemical identity.'
   };

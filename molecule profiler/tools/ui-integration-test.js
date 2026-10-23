@@ -122,6 +122,7 @@ const sharedSheet = /css\/style\.css\?v=([^"]+)"/;
 assert.strictEqual(html.match(sharedSheet)[1], inspector.match(sharedSheet)[1],
   'index.html and library-inspector.html disagree on the style.css cache version');
 
+assert.ok(scripts.indexOf('js/candidate-info.js') > scripts.indexOf('js/metabolism.js') && scripts.indexOf('js/candidate-info.js') < scripts.indexOf('js/pharmacology-upgrade.js'), 'Candidate summaries must load after metabolism and before Quick UI');
 assert.ok(scripts.indexOf('js/prodrug-explorer.js') > scripts.indexOf('js/cleavable-groups.js'), 'Explorer must load after pathway engine');
 assert.ok(scripts.indexOf('js/prodrug-explorer-ui.js') > scripts.indexOf('js/prodrug-site-evidence.js'), 'Explorer UI must load after site controls');
 
