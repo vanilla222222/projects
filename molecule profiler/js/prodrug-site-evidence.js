@@ -153,11 +153,11 @@
  function previewRedesign(c,atom,id){
   const report=root.CleavableGroups.redesign(c.mol,id,atom);
   if(report.status!=='designed'){builderStatus.textContent=report.reasons.join(' ');return;}
-  const snapshot=root.PharmacologyUI.getSnapshot();if(snapshot)snapshot.prodrugSiteRedesign={inputSmiles:c.smiles,...report};
+  const snapshot=root.PharmacologyUI.getSnapshot();if(snapshot)snapshot.prodrugSiteRedesign={inputSmiles:c.prodrug.smiles,...report};
   builderStatus.textContent='Ester-triggered ether redesign at C'+(report.modifiedCarbon+1)+'. Releases an OH analogue; original methoxy / alkoxy recovery is not claimed.';
   const warning=make('p','DIFFERENT RELEASE TARGET — unvalidated soft-ether redesign.');warning.className='prodrug-theoretical-banner';preview.append(warning,make('h4',report.name));
   const figures=make('div');figures.className='prodrug-candidate-grid';
-  for(const [title,smiles] of [['Original ether input',c.smiles],['Ester-bearing soft ether',report.smiles],['Intended OH analogue · different molecule',report.releaseTargetSmiles]]){
+  for(const [title,smiles] of [['Original ether input',c.prodrug.smiles],['Ester-bearing soft ether',report.smiles],['Intended OH analogue · different molecule',report.releaseTargetSmiles]]){
    const figure=make('figure');figure.append(make('figcaption',title));
    if(typeof depictSvg==='function'){try{const image=make('div');image.className='prodrug-site-depiction';image.innerHTML=depictSvg(parse(smiles),{title});figure.append(image);}catch(_){}}
    figure.append(make('code',smiles));figures.append(figure);

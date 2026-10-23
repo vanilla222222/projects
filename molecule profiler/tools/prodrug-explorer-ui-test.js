@@ -44,7 +44,7 @@ render('COc1ccccc1');change('prodrug-site-action-mode','redesign');
 ok($('prodrug-design-template').options.length===7&&$('prodrug-design-template').value.startsWith('redesign:'),'Dedicated ether redesign mode offers seven ester variants');
 $('prodrug-design-build').click();
 ok(snapshot.prodrugSiteRedesign.status==='designed'&&!snapshot.prodrugSiteDesign&&!snapshot.prodrugSiteCleavage,'Redesign snapshot remains separate from original-parent designs and existing cleavage');
-ok($('prodrug-design-preview').querySelectorAll('figure').length===3&&$('prodrug-design-preview').textContent.includes('DIFFERENT RELEASE TARGET'),'Preview depicts input, ester-bearing ether and OH target');
+ok(snapshot.prodrugSiteRedesign.inputSmiles==='COc1ccccc1'&&$('prodrug-design-preview').querySelector('figure code').textContent==='COc1ccccc1'&&$('prodrug-design-preview').querySelector('figure svg')&&$('prodrug-design-preview').querySelectorAll('figure').length===3&&$('prodrug-design-preview').textContent.includes('DIFFERENT RELEASE TARGET'),'Preview depicts input, ester-bearing ether and OH target');
 ok(!$('prodrug-explorer-add-design')&&$('prodrug-explorer-start-route'),'Redesign cannot enter original-parent comparison; release route available');
 const etherDesign=snapshot.prodrugSiteRedesign;
 ok($('prodrug-design-preview').querySelector('button[data-pharm-smiles]').dataset.pharmSmiles===etherDesign.smiles,'Analyze handoff uses exact redesign');
