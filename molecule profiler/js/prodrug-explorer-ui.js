@@ -36,7 +36,7 @@
  const advance=button('Preview next step',()=>{
   try{const options=root.ProdrugExplorer.options(route),option=options[Number(routeSelect.value)];route=root.ProdrugExplorer.advance(route,option);routeError='';renderRoute();}catch(e){routeStatus.textContent=e.message;}
  });advance.id='prodrug-explorer-route-next';
- const undo=button('Undo last step',()=>{if(!route?.steps.length)return;const steps=route.steps.slice(0,-1),old=route;route=root.ProdrugExplorer.start(old.startSmiles,old.targetSmiles);for(const step of steps){const option=root.ProdrugExplorer.options(route).find(o=>o.productId===step.consumed.id&&o.pathId===step.pathway.id);route=root.ProdrugExplorer.advance(route,option);}renderRoute();});undo.id='prodrug-explorer-route-undo';
+ const undo=button('Undo last step',()=>{if(!route?.steps.length)return;const steps=route.steps.slice(0,-1),old=route;route=root.ProdrugExplorer.start(old.startSmiles,old.targetSmiles);if(old.targetRole)route.targetRole=old.targetRole;for(const step of steps){const option=root.ProdrugExplorer.options(route).find(o=>o.productId===step.consumed.id&&o.pathId===step.pathway.id);route=root.ProdrugExplorer.advance(route,option);}renderRoute();});undo.id='prodrug-explorer-route-undo';
  const routeExport=button('Download pathway JSON',()=>{if(route)download('hypothetical-release-pathway.json',JSON.stringify(route,null,2)+'\n','application/json');});routeExport.id='prodrug-explorer-export-route';
  routeHost.append(routeStatus,routeLabel,advance,undo,routeExport,routeView);section.append(routeHost);host.append(section);
  const priority=make('section');priority.id='prodrug-priority';priority.className='pk-research-extension';
@@ -143,7 +143,7 @@
  function renderRoute(){
   routeView.replaceChildren();routeSelect.replaceChildren();const options=root.ProdrugExplorer.options(route);
   options.forEach((o,i)=>{const option=make('option',o.productId+' · '+o.label);option.value=String(i);routeSelect.append(option);});advance.disabled=!options.length;routeSelect.disabled=!options.length;undo.disabled=!route?.steps.length;routeExport.disabled=!route;
-  routeStatus.textContent=route?route.steps.length+' step(s) explored. '+(route.targetPresent?'The frontier contains an exact structural match to the design parent; biological release remains unvalidated.':route.targetSmiles?'The design parent has not been reached by the selected steps.':'No parent-regeneration claim is assigned.')+(route.steps.length>=4?' Four-step exploration limit reached.':!options.length?' No further supported rule matches the remaining fragments.':''):'Start a pathway from a design or existing-group preview.';
+  routeStatus.textContent=route?route.steps.length+' step(s) explored. '+(route.targetPresent?route.targetRole?'The frontier contains the intended OH analogue, which differs from the original ether input; biological release remains unvalidated.':'The frontier contains an exact structural match to the design parent; biological release remains unvalidated.':route.targetSmiles?(route.targetRole?'The intended OH analogue has not been reached by the selected steps.':'The design parent has not been reached by the selected steps.'):'No parent-regeneration claim is assigned.')+(route.steps.length>=4?' Four-step exploration limit reached.':!options.length?' No further supported rule matches the remaining fragments.':''):'Start a pathway from a design or existing-group preview.';
   if(routeError)routeStatus.textContent=routeError;
   if(route){
    const start=make('details');start.append(make('summary','Starting structure'),make('code',route.startSmiles));routeView.append(start);
@@ -163,10 +163,10 @@
  }
  function resetRoute(){route=null;routeError='';renderRoute();}
  function attachPreviewActions(){
-  if(!record||!inputMode())return;const s=snapshot(),design=s?.prodrugSiteDesign?.candidate,cleavage=s?.prodrugSiteCleavage,preview=$('prodrug-design-preview');
+  if(!record||!inputMode())return;const s=snapshot(),design=s?.prodrugSiteDesign?.candidate,cleavage=s?.prodrugSiteCleavage,redesign=s?.prodrugSiteRedesign,preview=$('prodrug-design-preview');
   if(design){const add=button('Add design to comparison',()=>{addCandidate(design);renderComparison();compareStatus.textContent='Shortlist contains '+shortlist.length+' distinct design(s), maximum 12.';});add.id='prodrug-explorer-add-design';preview.append(add);}
-  if(design||cleavage){const start=button('Explore release steps',()=>{
-   try{route=root.ProdrugExplorer.start(design?design.smiles:record.smiles,design?design.recoveredParentSmiles:null);if(cleavage){const option=root.ProdrugExplorer.options(route).find(o=>o.pathId===cleavage.pathway.id&&o.atom===cleavage.pathway.atoms[0]);route=root.ProdrugExplorer.advance(route,option);}routeError='';renderRoute();routeHost.scrollIntoView?.({block:'nearest'});}catch(e){routeError=e.message;renderRoute();}
+  if(design||cleavage||redesign){const start=button('Explore release steps',()=>{
+   try{route=root.ProdrugExplorer.start(redesign?redesign.smiles:design?design.smiles:record.smiles,redesign?redesign.releaseTargetSmiles:design?design.recoveredParentSmiles:null);if(redesign){route.targetRole='OH analogue from ether redesign; different from original input';}if(cleavage){const option=root.ProdrugExplorer.options(route).find(o=>o.pathId===cleavage.pathway.id&&o.atom===cleavage.pathway.atoms[0]);route=root.ProdrugExplorer.advance(route,option);}routeError='';renderRoute();routeHost.scrollIntoView?.({block:'nearest'});}catch(e){routeError=e.message;renderRoute();}
   });start.id='prodrug-explorer-start-route';preview.append(start);}
  }
  filter.addEventListener('change',renderScan);

@@ -2,6 +2,7 @@
 // Existing-group transformations, distinct from parent-regenerating attachments.
 (function(root){
  const SOURCES={
+  'ether-hemiacetal':{title:'Soft Alkyl Ether Prodrugs of a Model Phenolic Drug (experimental reaction-class precedent)',url:'https://doi.org/10.3390/molecules14104231'},
   'hydroxymethyl-linker':{title:'Bioreversible amine carbamates and hydroxymethyl linker precedents',url:'https://pubmed.ncbi.nlm.nih.gov/2892933/'},
   'nh-hydroxymethyl':{title:'Hydrolysis of N-(hydroxyalkyl) amides: stability limits for prodrug design',url:'https://www.sciencedirect.com/science/article/pii/0378517384900449'},
   'carbamic-acid':{title:'Alexander et al.: Bioreversible acyloxyalkyl carbamates for amines',url:'https://pubmed.ncbi.nlm.nih.gov/2892933/'},
@@ -35,13 +36,15 @@
   m.atoms.forEach((a,i)=>{
    const links=ns(m,i);
    // Formal fragmentation hypotheses for exposed linker intermediates only.
-   if(a.element==='C'&&!a.aromatic&&!a.charge&&!a.chirality&&a.totalH===2&&links.length===2&&links.every(n=>n.bond.order===1)){
+   if(a.element==='C'&&!a.aromatic&&!a.charge&&!a.chirality&&a.totalH<=2&&links.length>=2&&links.every(n=>n.bond.order===1&&['C','N','O'].includes(m.atoms[n.id].element))){
     const oh=links.find(n=>{const o=m.atoms[n.id];return o.element==='O'&&!o.charge&&o.totalH===1&&ns(m,n.id).length===1;});
-    const anchor=oh&&links.find(n=>n.id!==oh.id);
+    const anchor=oh&&links.find(n=>n.id!==oh.id&&['N','O'].includes(m.atoms[n.id].element));
     if(anchor){
      const x=m.atoms[anchor.id],xn=ns(m,anchor.id),carbonyl=n=>m.atoms[n.id].element==='C'&&ns(m,n.id).some(v=>v.bond.order===2&&m.atoms[v.id].element==='O');
-     const nLinked=x.element==='N'&&!x.aromatic&&!x.charge&&!x.chirality&&xn.every(n=>n.bond.order===1&&m.atoms[n.id].element==='C')&&xn.some(carbonyl);
-     const oLinked=x.element==='O'&&!x.charge&&!x.totalH&&xn.length===2&&xn.some(n=>n.id!==i&&carbonyl(n)&&ns(m,n.id).some(v=>v.bond.order===1&&m.atoms[v.id].element==='N'));
+     const nLinked=a.totalH===2&&links.length===2&&x.element==='N'&&!x.aromatic&&!x.charge&&!x.chirality&&xn.every(n=>n.bond.order===1&&m.atoms[n.id].element==='C')&&xn.some(carbonyl);
+     const oLinked=a.totalH===2&&links.length===2&&x.element==='O'&&!x.charge&&!x.totalH&&xn.length===2&&xn.some(n=>n.id!==i&&carbonyl(n)&&ns(m,n.id).some(v=>v.bond.order===1&&m.atoms[v.id].element==='N'));
+     const hemiacetal=x.element==='O'&&!x.charge&&!x.totalH&&xn.length===2&&xn.every(n=>n.bond.order===1&&m.atoms[n.id].element==='C')&&xn.some(n=>n.id!==i&&!carbonyl(n))&&links.filter(n=>m.atoms[n.id].element==='O').length===2&&links.every(n=>['C','O'].includes(m.atoms[n.id].element));
+     if(hemiacetal)add('ether-hemiacetal',[anchor.id,i,oh.id],[[anchor.id,i]],'linker-fragmentation','Soft ether: hemiacetal / hemiketal fragmentation','Formal fragmentation exposes a phenol or alcohol plus an aldehyde or ketone. Phenolic soft-ether precedents support the reaction class; other scaffolds and substituted linkers are extrapolations. No physiological rate or conversion is assigned.',{linkerCarbon:i,linkerOxygen:oh.id,linkerAnchor:anchor.id});
      if(nLinked||oLinked)add(nLinked?'nh-hydroxymethyl':'hydroxymethyl-linker',[anchor.id,i,oh.id],[[anchor.id,i]],'linker-fragmentation','Hydroxymethyl linker fragmentation','Formal fragmentation exposes an N–H or O–H group and formaldehyde. This is a possible intermediate step, not evidence of physiological release; N-hydroxymethyl amides can be too stable for useful conversion.',{linkerCarbon:i,linkerOxygen:oh.id,linkerAnchor:anchor.id});
     }
    }
@@ -118,7 +121,7 @@
    const planarize=i=>{if(g.atoms[i].chirality)result.stereoChanges.push({inputAtom:p.inputAtoms[i],change:'Reacting tetrahedral carbon becomes a planar carbonyl; its prior tetrahedral stereo is removed.'});g.atoms[i].chirality=null;g.atoms[i].order=null;};
    path.localCuts.forEach(([a,b])=>cut(a,b));
    if(path.action==='linker-fragmentation'){
-    setH(path.linkerAnchor,g.atoms[path.linkerAnchor].totalH+1);setH(path.linkerOxygen,0);
+    planarize(path.linkerCarbon);setH(path.linkerAnchor,g.atoms[path.linkerAnchor].totalH+1);setH(path.linkerOxygen,0);
     const b=g.bonds.find(b=>(b.a===path.linkerCarbon&&b.b===path.linkerOxygen)||(b.b===path.linkerCarbon&&b.a===path.linkerOxygen));b.order=2;b.dir=0;
    }else if(path.action==='decarboxylation'){
     setH(path.carbamicNitrogen,g.atoms[path.carbamicNitrogen].totalH+1);setH(path.carbamicOxygen,0);
@@ -150,5 +153,45 @@
   }catch(e){result.products=[];result.reasons.push('Transformation unavailable: '+e.message);}
   return result;
  }
- root.CleavableGroups={pathways,sites,preview,sources:SOURCES};if(typeof module!=='undefined'&&module.exports)module.exports=root.CleavableGroups;
+
+ // Redesign of an existing ether, NOT a parent-regenerating attachment.
+ const ETHER_ACYLS=[['acetate','Acetate','C'],['propionate','Propionate','CC'],['butyrate','Butyrate','CCC'],['isobutyrate','Isobutyrate','C(C)C'],['pivalate','Pivalate','C(C)(C)C'],['benzoate','Benzoate','c1ccccc1'],['hemisuccinate','Hemisuccinate','CCC(=O)O']];
+ function etherTargets(input){
+  const p=prepared(input);if(!p)return [];
+  return pathways(input).filter(path=>path.kind==='ether').flatMap(path=>{
+   const [o,c]=path.localCuts[0],m=p.mol,a=m.atoms[c];
+   // Replacing a specified stereocentre would require a stereochemical design.
+   if(a.chirality||a.totalH<1)return [];
+   const gone=new Set(),q=[c];while(q.length){const i=q.pop();if(gone.has(i))continue;gone.add(i);ns(m,i).forEach(n=>{if(n.id!==o)q.push(n.id);});}
+   if(m.bonds.filter(b=>gone.has(b.a)!==gone.has(b.b)).length!==1)return [];
+   const indices=new Map(),g=clone(m);g.atoms=g.atoms.filter((a,i)=>{if(gone.has(i))return false;indices.set(i,indices.size);return true;});
+   for(const a of g.atoms){if(a.order)a.order=a.order.map(i=>i===null?null:indices.get(i));if(a.chirality&&a.order?.some(i=>i===undefined))return [];}
+   g.bonds=g.bonds.filter(b=>indices.has(b.a)&&indices.has(b.b)).map(b=>({...b,a:indices.get(b.a),b:indices.get(b.b)}));
+   const anchor=g.atoms[indices.get(o)];anchor.totalH=anchor.explicitH=1;anchor.implicitH=0;
+   try{const target=serialize(g);if(!root.ProdrugCandidates.validGraph(parse(target))||!Pharmacology.exactGraph(buildMolecule(g),parse(target)))return [];
+    return [{id:'redesign:'+p.inputAtoms[c]+'-'+p.inputAtoms[o],carbon:c,oxygen:o,atom:p.inputAtoms[c],oxygenAtom:p.inputAtoms[o],releaseTargetSmiles:target,normalization:p.normalization}];
+   }catch(_){return [];}
+  });
+ }
+ function redesignSites(input){
+  const map=new Map();for(const t of etherTargets(input))for(const atom of [t.atom,t.oxygenAtom]){
+   if(!map.has(atom))map.set(atom,{atom,element:input.atoms[atom].element,kind:'ester-triggered ether redesign · different release target',designs:[]});
+   map.get(atom).designs.push(...ETHER_ACYLS.map(([id,name])=>({id:t.id+':'+id,name:name+' soft ether · modify C'+(t.atom+1)+' · releases OH analogue',mode:'redesign'})));
+  }return [...map.values()];
+ }
+ function redesign(input,id,atom){
+  const result={version:1,status:'unavailable',mode:'ether-redesign',parentRecoveryVerified:false,inputRegenerated:false,experimentalValidation:false,reasons:[]};
+  try{
+   const t=etherTargets(input).find(t=>id.startsWith(t.id+':')&&[t.atom,t.oxygenAtom].includes(atom)),acyl=ETHER_ACYLS.find(a=>id===t?.id+':'+a[0]),p=prepared(input);
+   if(!t||!acyl||!p)throw Error('Select a supported acyclic ether carbon bearing hydrogen.');
+   const g=clone(p.mol),part=clone(parse('OC(=O)'+acyl[2])),offset=g.atoms.length;
+   g.atoms[t.carbon].totalH--;g.atoms[t.carbon].explicitH=g.atoms[t.carbon].totalH;g.atoms[t.carbon].implicitH=0;
+   part.atoms[0].totalH=part.atoms[0].explicitH=0;part.atoms[0].implicitH=0;
+   part.atoms.forEach(a=>{if(a.order)a.order=a.order.map(i=>i===null?null:i+offset);});
+   g.atoms.push(...part.atoms);g.bonds.push(...part.bonds.map(b=>({...b,a:b.a+offset,b:b.b+offset})),{a:t.carbon,b:offset,order:1,aromatic:false});
+   const smiles=serialize(g),m=parse(smiles);if(!root.ProdrugCandidates.validGraph(m)||!Pharmacology.exactGraph(buildMolecule(g),m))throw Error('Redesign identity / valence validation failed.');
+   return {...result,status:'designed',id,name:acyl[1]+' ester-triggered ether redesign',smiles,releaseTargetSmiles:t.releaseTargetSmiles,selectedAtom:atom,modifiedCarbon:t.atom,normalization:t.normalization,source:SOURCES['ether-hemiacetal'],hypothesis:'Ester hydrolysis → exposed hemiacetal / hemiketal → phenol or alcohol plus a carbonyl byproduct.',limitations:['The release target is the OH analogue, not the original methoxy / alkoxy input. Original-molecule recovery is not claimed.','This is a structural redesign, not a synthesis procedure or evidence of biological activation.','The new ester replaces a carbon-bound hydrogen; the ether oxygen remains neutral and two-coordinate.','New linker stereochemistry is unspecified. Existing specified linker stereocentres and cyclic ether bonds are excluded.','Phenolic soft-ether evidence supports the reaction class only; aliphatic and substituted linker designs are extrapolations.','No rate, enzyme recognition, ADME benefit, activity or safety is predicted. All release fragments are retained in the pathway view.']};
+  }catch(e){result.reasons.push(e.message);return result;}
+ }
+ root.CleavableGroups={pathways,sites,preview,redesignSites,redesign,sources:SOURCES};if(typeof module!=='undefined'&&module.exports)module.exports=root.CleavableGroups;
 })(globalThis);

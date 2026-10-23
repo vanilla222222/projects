@@ -39,4 +39,20 @@ $('prodrug-design-use-input').click();ok(!$('prodrug-explorer').hidden,'Explorer
 render('COc1ccccc1');$('prodrug-design-build').click();$('prodrug-explorer-start-route').click();ok(snapshot.prodrugReleasePathway.steps.length===1&&!snapshot.prodrugReleasePathway.targetSmiles,'Existing-group preview starts a route without claiming input regeneration');
 render('[Cl-].CC[NH3+]');ok(snapshot.prodrugSiteExplorer.atoms[0].reason.includes('counterion')&&snapshot.prodrugSiteComparison.rows[0].smiles==='CC[NH3+]','Salt scan and comparison scope are explicit');
 render('CCO.O');ok($('prodrug-explorer-compare-site').disabled&&snapshot.prodrugSiteComparison.rows.length===0&&snapshot.prodrugSiteExplorer.atoms.every(a=>a.reason.includes('Input-level check')),'Unsupported input clears old comparison and explains block');
+
+render('COc1ccccc1');change('prodrug-site-action-mode','redesign');
+ok($('prodrug-design-template').options.length===7&&$('prodrug-design-template').value.startsWith('redesign:'),'Dedicated ether redesign mode offers seven ester variants');
+$('prodrug-design-build').click();
+ok(snapshot.prodrugSiteRedesign.status==='designed'&&!snapshot.prodrugSiteDesign&&!snapshot.prodrugSiteCleavage,'Redesign snapshot remains separate from original-parent designs and existing cleavage');
+ok($('prodrug-design-preview').querySelectorAll('figure').length===3&&$('prodrug-design-preview').textContent.includes('DIFFERENT RELEASE TARGET'),'Preview depicts input, ester-bearing ether and OH target');
+ok(!$('prodrug-explorer-add-design')&&$('prodrug-explorer-start-route'),'Redesign cannot enter original-parent comparison; release route available');
+const etherDesign=snapshot.prodrugSiteRedesign;
+ok($('prodrug-design-preview').querySelector('button[data-pharm-smiles]').dataset.pharmSmiles===etherDesign.smiles,'Analyze handoff uses exact redesign');
+Array.from($('prodrug-design-preview').querySelectorAll('button')).find(b=>b.textContent.includes('Download')).click();ok(downloaded.text.includes(etherDesign.smiles)&&downloaded.text.includes(etherDesign.releaseTargetSmiles),'SMILES export labels redesigned molecule and distinct release target');
+$('prodrug-explorer-start-route').click();ok(snapshot.prodrugReleasePathway.targetRole.includes('different from original'),'Route retains distinct target role');
+for(const kind of ['ester','ether-hemiacetal']){const options=w.ProdrugExplorer.options(snapshot.prodrugReleasePathway);$('prodrug-explorer-route-option').value=String(options.findIndex(o=>o.kind===kind));$('prodrug-explorer-route-next').click();}
+ok(snapshot.prodrugReleasePathway.targetPresent&&$('prodrug-explorer-route-status').textContent.includes('differs from the original ether'),'Two-step UI route reaches OH analogue without claiming original recovery');
+$('prodrug-explorer-route-undo').click();ok(snapshot.prodrugReleasePathway.targetRole&&!snapshot.prodrugReleasePathway.targetPresent,'Undo preserves redesigned target scope');
+change('prodrug-site-action-mode','design');ok(!snapshot.prodrugSiteRedesign&&$('prodrug-design-build').disabled&&!snapshot.prodrugReleasePathway,'Parent-recovery filter excludes ether redesign and clears stale snapshot');
+change('prodrug-site-action-mode','redesign');render('CCCC');ok($('prodrug-design-build').disabled&&!snapshot.prodrugSiteRedesign,'Unsupported input clears ether preview');
 console.log('Molecule-site explorer UI: '+checks+' checks passed.');dom.window.close();

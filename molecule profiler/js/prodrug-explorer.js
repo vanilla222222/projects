@@ -6,13 +6,15 @@
  function scan(input){
   if(!input?.atoms?.length)return {atoms:[],reasons:['Analyze a molecule first.']};
   const report=root.ProdrugCandidates.generate(input,{limit:0}),paths=root.CleavableGroups.pathways(input),prepared=root.ProdrugCandidates.prepareParent(input),organic=new Set(prepared?.inputAtoms||[]);
+  const redesigns=root.CleavableGroups.redesignSites(input);
   const sites=new Map((report.eligibleSites||[]).map(s=>[s.atom,s]));
   const globalBlock=!report.eligibleSites?report.reasons.join(' '):null;
   const atoms=input.atoms.map((a,atom)=>{
    const attachment=sites.get(atom),existing=paths.filter(p=>p.atoms.includes(atom)),links=ns(input,atom);
-   const options=(attachment?.designs||[]).map(d=>({...d,mode:'design',evidenceLevel:EVIDENCE})).concat(existing.map(p=>({id:'cleave:'+p.id,name:p.label,mode:'cleavage',evidenceLevel:EVIDENCE})));
+   const redesign=redesigns.find(s=>s.atom===atom);
+   const options=(attachment?.designs||[]).map(d=>({...d,mode:'design',evidenceLevel:EVIDENCE})).concat(existing.map(p=>({id:'cleave:'+p.id,name:p.label,mode:'cleavage',evidenceLevel:EVIDENCE}))).concat((redesign?.designs||[]).map(d=>({...d,evidenceLevel:EVIDENCE})));
    let reason;
-   if(options.length)reason=[attachment?'Recognized '+attachment.kind+' handle; '+attachment.designs.length+' attachment templates.':'',existing.length?existing.length+' existing-group pathway(s) involve this atom.':''].filter(Boolean).join(' ');
+   if(options.length)reason=[attachment?'Recognized '+attachment.kind+' handle; '+attachment.designs.length+' attachment templates.':'',existing.length?existing.length+' existing-group pathway(s) involve this atom.':'',redesign?'Ester-triggered ether redesigns release a different OH analogue.':''].filter(Boolean).join(' ');
    else if(prepared?.normalization&&!organic.has(atom))reason='Recognized inorganic counterion; omitted from organic-component design and pathway checks.';
    else if(globalBlock)reason='Input-level check: '+globalBlock;
    else if(a.element==='O'&&links.length===1&&links[0].bond.order===2)reason='Carbonyl oxygen is not a free OH handle. Select the adjacent carbonyl carbon for eligible condensation designs.';
@@ -23,7 +25,7 @@
    else if(a.element==='C')reason=a.aromatic?'Aromatic carbon is not a direct cleavable attachment handle in this builder. Nearby heteroatom pathways are assessed separately.':'This carbon does not match a supported aldehyde/ketone, acetal, linker or other existing transformation site.';
    else if(['F','Cl','Br','I','H'].includes(a.element))reason='No supported prodrug attachment or existing-group release rule targets this atom.';
    else reason='No implemented attachment or transformation rule matches this atom’s current bonding and charge state.';
-   return {atom,element:a.element,compatible:!!options.length,options,reason,evidenceLevel:options.length?EVIDENCE:'Structural observation · no supported rule',kind:attachment?.kind||existing.map(p=>p.kind).join(' / ')||'No supported option'};
+   return {atom,element:a.element,compatible:!!options.length,options,reason,evidenceLevel:options.length?EVIDENCE:'Structural observation · no supported rule',kind:[attachment?.kind,...existing.map(p=>p.kind),redesign?.kind].filter(Boolean).join(' / ')||'No supported option'};
   });
   return {version:1,inputSmiles:input.smiles,atoms,compatibleAtoms:atoms.filter(a=>a.compatible).length,normalization:report.normalization||null,reasons:globalBlock?[globalBlock]:[],scope:'Rule coverage, not a ranking of efficacy, cleavage speed or safety.'};
  }
@@ -58,7 +60,7 @@
   const next=JSON.parse(JSON.stringify(route)),step=next.steps.length+1;
   const products=report.products.map(p=>({...p,id:'p'+next.nextId++,fromStep:step}));
   next.frontier=next.frontier.filter(p=>p.id!==option.productId).concat(products);
-  const kind=report.pathway.kind,formalInput=kind==='ether'?'One oxygen atom added formally; oxidant and cofactors are not specified.':['disulfide','n-oxide'].includes(kind)?'Two hydrogen equivalents added formally; reductant is not specified.':['hydroxymethyl-linker','nh-hydroxymethyl','carbamic-acid'].includes(kind)?'No additional atoms in this formal fragmentation.':'One water molecule added in formal hydrolysis.';
+  const kind=report.pathway.kind,formalInput=kind==='ether'?'One oxygen atom added formally; oxidant and cofactors are not specified.':['disulfide','n-oxide'].includes(kind)?'Two hydrogen equivalents added formally; reductant is not specified.':['hydroxymethyl-linker','nh-hydroxymethyl','carbamic-acid','ether-hemiacetal'].includes(kind)?'No additional atoms in this formal fragmentation.':'One water molecule added in formal hydrolysis.';
   next.steps.push({number:step,formalInput,consumed:product,pathway:report.pathway,products,source:report.source,hypothesis:report.hypothesis,limitations:report.limitations,stereoChanges:report.stereoChanges,normalization:report.normalization});
   next.targetPresent=!!next.targetSmiles&&next.frontier.some(p=>Pharmacology.exactGraph(parse(p.smiles),parse(next.targetSmiles)));
   return next;

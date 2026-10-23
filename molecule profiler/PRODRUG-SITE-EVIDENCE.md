@@ -439,3 +439,18 @@ Quick structures across 17 inputs for sanitization, canonical distinctness,
 attachment indices and recovered parent isotope/stereo/charge identity, including
 an independent graph reversal for substituted carbonyl derivatives. UI tests
 cover 25 cards and handoffs, position grouping and original salt atom numbering.
+
+
+### Ester-triggered ether redesigns — 2026-10-23
+
+The site builder now offers a separate **Ester-triggered ether redesigns** filter. Methoxy, eligible acyclic primary/secondary alkoxy and benzyl ether positions can replace an alpha carbon-bound hydrogen with an O-acyl substituent. Seven sampled tails are available: acetate, propionate, butyrate, isobutyrate, pivalate, benzoate and hemisuccinate. This changes the molecule into a soft ether; it does not acylate an already two-coordinate ether oxygen.
+
+Example: `COc1ccccc1` → `CC(=O)OCOc1ccccc1`. Formal ester hydrolysis gives an exposed hemiacetal and acetic acid; a separate fragmentation step gives `Oc1ccccc1` and formaldehyde. The OH analogue differs from the original methoxy input. It is not evidence of parent regeneration or biological activity. Secondary alpha substitution can give a ketone byproduct instead. Every fragment, including acid and carbonyl products, remains visible in the release explorer.
+
+The preview displays input, redesigned ether and intended OH analogue together. Analyze and SMILES download actions preserve these identities. Release exploration targets the OH analogue explicitly; undo and JSON export retain this different-target scope. Original-parent comparison and Quick parent-recovery candidate generation remain separate. Site scan explanations and snapshot `prodrugSiteRedesign` expose the redesign role; `parentRecoveryVerified` and `inputRegenerated` stay false.
+
+Eligibility requires a valid round-trippable organic graph, an acyclic ether boundary, a neutral saturated alpha carbon bearing hydrogen, and a graph-valid target. Specified alpha stereocentres are excluded; remote stereochemistry, isotopes, charges and recognized salt input numbering are retained. New linker stereochemistry remains unspecified. Diaryl ethers, tertiary alkyl sides without alpha hydrogen, cyclic ether bonds, peroxides, radicals and unsupported mixtures do not inherit these designs.
+
+Reaction-class precedent: Thomas, Majumdar and Sloan, *Soft Alkyl Ether Prodrugs of a Model Phenolic Drug: The Effect of Incorporation of Ethyleneoxy Groups on Transdermal Delivery*, Molecules 2009, [doi:10.3390/molecules14104231](https://doi.org/10.3390/molecules14104231). This is experimental evidence for related phenolic soft-ether classes, not for every sampled acyl tail or the selected molecule. Aliphatic and substituted linkers are labelled extrapolations. No physiological cleavage rate, esterase recognition, synthesis feasibility, ADME improvement, efficacy or safety is inferred.
+
+Validation: `node tools/soft-ethers-test.js`; `python tools/soft-ethers-rdkit-test.py` with RDKit installed; expanded `prodrug-explorer-ui-test.js`. Independent RDKit checks cover 105 designs / 210 formal release steps, product sanitization, target identity, remote stereo and isotope/charge/atom balance.

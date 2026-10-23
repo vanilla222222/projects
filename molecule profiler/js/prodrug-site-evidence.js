@@ -88,10 +88,10 @@
  const banner=make('p','THEORETICAL ONLY — experimental testing required. No biological conversion or parent regeneration is established.');banner.className='prodrug-theoretical-banner';banner.id='prodrug-theoretical-banner';banner.setAttribute('role','note');banner.hidden=true;
  controls.after(theoreticalLabel,banner);
  const builder=make('section');builder.id='prodrug-site-builder';builder.className='pk-research-extension';
- builder.append(make('h4','Explore attachments and existing cleavable groups'),make('p','Choose a site and an attachment or existing-group pathway. Benzene–O–carbon ethers can expose a phenol through an O-dealkylation hypothesis. Analyze a product to explore attachments on its newly exposed group. All previews are unvalidated.'));
+ builder.append(make('h4','Explore attachments and existing cleavable groups'),make('p','Choose a site and an attachment or existing-group pathway. Methoxy and other eligible acyclic ethers also offer ester-triggered soft-ether redesigns, releasing a different OH analogue. Existing ethers can be explored through O-dealkylation. Analyze a product to explore attachments on its newly exposed group. All previews are unvalidated.'));
  const builderControls=make('div');builderControls.className='prodrug-site-controls';
  const modeLabel=make('label','Explore '),actionMode=make('select');actionMode.id='prodrug-site-action-mode';
- [['all','All supported options'],['design','Parent-recovery designs'],['cleavage','Existing-group pathways']].forEach(([value,label])=>{const o=make('option',label);o.value=value;actionMode.append(o);});modeLabel.append(actionMode);
+ [['all','All supported options'],['design','Parent-recovery designs'],['redesign','Ester-triggered ether redesigns'],['cleavage','Existing-group pathways']].forEach(([value,label])=>{const o=make('option',label);o.value=value;actionMode.append(o);});modeLabel.append(actionMode);
  const useInput=make('button','Design on current input');useInput.type='button';useInput.id='prodrug-design-use-input';
  const siteLabel=make('label','Compatible site '),siteJump=make('select');siteJump.id='prodrug-design-site';siteLabel.append(siteJump);
  const designLabel=make('label','Attachment or existing-group pathway '),designSelect=make('select');designSelect.id='prodrug-design-template';designLabel.append(designSelect);
@@ -104,14 +104,14 @@
   if(!c?.isInput)return [];
   const sites=root.ProdrugCandidates?root.ProdrugCandidates.sites(c.mol):[];
   const map=new Map(sites.map(s=>[s.atom,{...s,designs:s.designs.slice()}]));
-  if(root.CleavableGroups)for(const s of root.CleavableGroups.sites(c.mol)){
+  if(root.CleavableGroups)for(const s of [...root.CleavableGroups.sites(c.mol),...root.CleavableGroups.redesignSites(c.mol)]){
    if(map.has(s.atom)){const prior=map.get(s.atom);prior.designs.push(...s.designs);prior.kind+=' / '+s.kind;}
    else map.set(s.atom,s);
   }
-  return [...map.values()].map(s=>({...s,designs:s.designs.filter(d=>actionMode.value==='all'||(actionMode.value==='cleavage')===d.id.startsWith('cleave:'))})).filter(s=>s.designs.length).sort((a,b)=>a.atom-b.atom);
+  return [...map.values()].map(s=>({...s,designs:s.designs.filter(d=>actionMode.value==='all'||(actionMode.value==='cleavage'?d.id.startsWith('cleave:'):actionMode.value==='redesign'?d.id.startsWith('redesign:'):!d.id.startsWith('cleave:')&&!d.id.startsWith('redesign:')))})).filter(s=>s.designs.length).sort((a,b)=>a.atom-b.atom);
  }
  function clearDesign(){
-  preview.replaceChildren();const snapshot=root.PharmacologyUI.getSnapshot();if(snapshot){snapshot.prodrugSiteDesign=null;snapshot.prodrugSiteCleavage=null;}
+  preview.replaceChildren();const snapshot=root.PharmacologyUI.getSnapshot();if(snapshot){snapshot.prodrugSiteDesign=null;snapshot.prodrugSiteCleavage=null;snapshot.prodrugSiteRedesign=null;}
  }
  function updateBuilder(){
   clearDesign();siteJump.replaceChildren();designSelect.replaceChildren();const c=selected();useInput.disabled=!current;
@@ -129,6 +129,7 @@
  function previewDesign(){
   clearDesign();const c=selected();if(!c?.isInput||build.disabled)return;
   const atom=Number(atomSelect.value),designId=designSelect.value;
+  if(designId.startsWith('redesign:')){previewRedesign(c,atom,designId);return;}
   if(designId.startsWith('cleave:')){previewCleavage(c,atom,designId.slice(7));return;}
   const report=root.ProdrugCandidates.generate(c.mol,{atom,designId,limit:1}),row=report.rows[0];
   if(!row){builderStatus.textContent=report.reasons.join(' ');return;}
@@ -146,6 +147,26 @@
   row.sources.forEach(source=>{if(!/^https:\/\//.test(source.url))return;const line=make('p'),a=make('a',source.title);a.href=source.url;a.target='_blank';a.rel='noopener noreferrer';line.append(a);preview.append(line);});
   const analyze=make('button','Analyze this design');analyze.type='button';analyze.dataset.pharmSmiles=row.smiles;analyze.dataset.pharmName='Unvalidated site design: '+row.name;
   const download=make('button','Download design SMILES');download.type='button';download.addEventListener('click',()=>{const url=root.URL.createObjectURL(new root.Blob([row.smiles+'\t'+row.name+' | unvalidated design\n'],{type:'text/plain;charset=utf-8'})),a=make('a');a.href=url;a.download='unvalidated-site-design.smi';a.click();root.setTimeout(()=>root.URL.revokeObjectURL(url),1000);});
+  preview.append(analyze,download);
+ }
+
+ function previewRedesign(c,atom,id){
+  const report=root.CleavableGroups.redesign(c.mol,id,atom);
+  if(report.status!=='designed'){builderStatus.textContent=report.reasons.join(' ');return;}
+  const snapshot=root.PharmacologyUI.getSnapshot();if(snapshot)snapshot.prodrugSiteRedesign={inputSmiles:c.smiles,...report};
+  builderStatus.textContent='Ester-triggered ether redesign at C'+(report.modifiedCarbon+1)+'. Releases an OH analogue; original methoxy / alkoxy recovery is not claimed.';
+  const warning=make('p','DIFFERENT RELEASE TARGET — unvalidated soft-ether redesign.');warning.className='prodrug-theoretical-banner';preview.append(warning,make('h4',report.name));
+  const figures=make('div');figures.className='prodrug-candidate-grid';
+  for(const [title,smiles] of [['Original ether input',c.smiles],['Ester-bearing soft ether',report.smiles],['Intended OH analogue · different molecule',report.releaseTargetSmiles]]){
+   const figure=make('figure');figure.append(make('figcaption',title));
+   if(typeof depictSvg==='function'){try{const image=make('div');image.className='prodrug-site-depiction';image.innerHTML=depictSvg(parse(smiles),{title});figure.append(image);}catch(_){}}
+   figure.append(make('code',smiles));figures.append(figure);
+  }preview.append(figures,make('p',report.hypothesis));
+  const limits=make('ul');report.limitations.forEach(t=>limits.append(make('li',t)));preview.append(limits);
+  if(report.normalization)preview.append(make('p',report.normalization.scope));
+  const source=make('a',report.source.title);source.href=report.source.url;source.target='_blank';source.rel='noopener noreferrer';preview.append(source);
+  const analyze=make('button','Analyze this ether redesign');analyze.type='button';analyze.dataset.pharmSmiles=report.smiles;analyze.dataset.pharmName=report.name;
+  const download=make('button','Download ether redesign SMILES');download.type='button';download.addEventListener('click',()=>{const url=root.URL.createObjectURL(new root.Blob([report.smiles+'\t'+report.name+' | unvalidated; releases different OH analogue\n'+report.releaseTargetSmiles+'\tIntended OH analogue; not original input\n'],{type:'text/plain;charset=utf-8'})),a=make('a');a.href=url;a.download='unvalidated-ether-redesign.smi';a.click();root.setTimeout(()=>root.URL.revokeObjectURL(url),1000);});
   preview.append(analyze,download);
  }
  function previewCleavage(c,atom,pathId){
