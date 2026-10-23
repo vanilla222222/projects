@@ -76,3 +76,5 @@ main{max-width:1480px;padding-inline:clamp(16px,3vw,48px);gap:26px}
 #prodrug-panel[data-studio-view=build] #prodrug-site-context,#prodrug-panel[data-studio-view=build] label:has(#prodrug-reference-type),#prodrug-panel[data-studio-view=build] label:has(#prodrug-reference-select),#prodrug-panel[data-studio-view=build] #prodrug-design-use-input{display:none}
 #prodrug-panel[data-studio-view=build] #prodrug-site-evidence>.prodrug-site-controls{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
 @media(max-width:780px){#prodrug-panel[data-studio-view=build] #prodrug-site-evidence>.prodrug-site-controls{grid-template-columns:minmax(0,1fr)}}
+
+.design-studio-nav{scroll-margin-top:150px}

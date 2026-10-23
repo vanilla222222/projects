@@ -48,3 +48,7 @@ hidden. Builder controls focus on the selected atom; reference-only controls sta
 in the reference view. Selected-site evidence remains available in a labelled
 disclosure that opens when explicitly checked. The studio header badge follows
 the selected view's evidence scope.
+
+Automatic workflow changes also scroll the workflow navigation into view below
+the sticky page navigation, so adding a design from a long preview does not
+leave the user at the bottom of a newly selected view.

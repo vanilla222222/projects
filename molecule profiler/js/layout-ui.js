@@ -31,7 +31,7 @@
   if(['build','comparison','route'].includes(id)&&$('prodrug-reference-select')?.value!=='__input__')$('prodrug-design-use-input')?.click();
   evidenceDetails.open=id==='references';const badge=panel.querySelector('.panel-head .evidence');if(badge){badge.textContent=id==='references'?'curated source evidence':'research hypotheses';badge.dataset.tier=id==='references'?'rule':'prediction';}
   panel.dataset.studioView=id;buttons.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.studioView===id)));hint.textContent=view.description;refreshContext();
-  if(focus)buttons.find(b=>b.dataset.studioView===id)?.focus({preventScroll:true});
+  if(focus){buttons.find(b=>b.dataset.studioView===id)?.focus({preventScroll:true});nav.scrollIntoView?.({block:'start',behavior:'auto'});}
  }
  nav.addEventListener('click',event=>{const b=event.target.closest('button[data-studio-view]');if(b)select(b.dataset.studioView);});
  nav.addEventListener('keydown',event=>{

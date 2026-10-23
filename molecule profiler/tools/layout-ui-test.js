@@ -26,7 +26,7 @@ ok($('prodrug-panel').dataset.studioView==='build'&&$('prodrug-reference-select'
 ok($('design-studio-nav').querySelectorAll('[aria-pressed="true"]').length===1,'Exactly one workflow view selected');
 ok($('prodrug-explorer-comparison').closest('section').dataset.studioPiece==='comparison'&&$('prodrug-priority').dataset.studioPiece==='comparison','Comparison and priority form one workflow view');
 $('prodrug-design-build').click();const smiles=snapshot.prodrugSiteDesign.candidate.smiles;
-$('prodrug-explorer-add-design').click();ok($('prodrug-panel').dataset.studioView==='comparison'&&snapshot.prodrugSiteComparison.rows.length===2,'Adding design navigates to populated comparison');
+let workflowScrolled=false;$('design-studio-nav').scrollIntoView=()=>{workflowScrolled=true;};$('prodrug-explorer-add-design').click();ok(workflowScrolled,'Automatic workflow switch scrolls its navigation into view');ok($('prodrug-panel').dataset.studioView==='comparison'&&snapshot.prodrugSiteComparison.rows.length===2,'Adding design navigates to populated comparison');
 ok(w.document.activeElement.dataset.studioView==='comparison','Automatic navigation moves focus to visible workflow control');
 studio('build');ok(snapshot.prodrugSiteDesign.candidate.smiles===smiles,'View changes preserve current preview and shortlist');
 $('prodrug-explorer-start-route').click();ok($('prodrug-panel').dataset.studioView==='route'&&snapshot.prodrugReleasePathway.startSmiles===smiles,'Starting route navigates to release view');
