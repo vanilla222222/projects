@@ -3,6 +3,8 @@
  // Structural design hypotheses only. The reverse edit checks identity, not
  // biological activation, enzyme recognition, efficacy or delivery benefit.
  const SOURCES={
+  imide:{title:'Phenytoin prodrugs IV: Hydrolysis of 3-(hydroxymethyl)phenytoin esters',url:'https://pubmed.ncbi.nlm.nih.gov/6548518/',kind:'primary'},
+  amide:{title:'Bioreversible derivatization of hydantoins by N-hydroxymethylation; comparison with N-hydroxymethyl amides and imides',url:'https://www.sciencedirect.com/science/article/pii/0378517380900514',kind:'primary'},
   thiol:{title:'Disposition and metabolism of alacepril in rats: deacetylation to desacetyl-alacepril',url:'https://pubmed.ncbi.nlm.nih.gov/3513776/',kind:'primary'},
   amine:{title:'Alexander et al. (1988): (Acyloxy)alkyl carbamates as bioreversible prodrugs for primary and secondary amines',url:'https://pubmed.ncbi.nlm.nih.gov/2892933/',kind:'primary'},
   nOxide:{title:'Siim et al. (2000): Comparison of aromatic and tertiary amine N-oxides of acridine DNA intercalators as bioreductive drugs',url:'https://pubmed.ncbi.nlm.nih.gov/10974206/',kind:'primary'},
@@ -31,6 +33,13 @@
  const AMINE_DESIGNS=[['acetoxy','Acetoxymethyl','C'],['propionyloxy','Propionyloxymethyl','CC'],['butyryloxy','Butyryloxymethyl','CCC'],['isobutyryloxy','Isobutyryloxymethyl','C(C)C'],['pentanoyloxy','Pentanoyloxymethyl','CCCC']].map(([id,name,tail])=>({id:'amine-'+id,name:name+' N-carbamate',fragment:'C(=O)OCOC(=O)'+tail,cleavage:'n-carbamate',hypothesis:'Terminal ester hydrolysis followed by linker fragmentation and decarboxylation could regenerate the parent amine. This multistep activation is a design-class hypothesis, not a demonstrated pathway for this candidate.',sources:[SOURCES.amine],limitations:['The acyloxymethyl linker can release formaldehyde, carbon dioxide and a carboxylic acid; their exposure and toxicity are not assessed.']}));
  const N_OXIDE_DESIGNS=[{id:'n-oxide',name:'Tertiary amine N-oxide',fragment:'[O-]',cleavage:'n-oxide',hypothesis:'Bioreduction of the N-oxide could regenerate the parent tertiary amine. Activity depends on compound, enzymes and oxygen conditions; hypoxia selectivity and human conversion are not inferred.',sources:[SOURCES.nOxide],limitations:['An N-oxide may itself be active or undergo competing reactions. New nitrogen stereochemistry is unassigned; no individual stereoisomer is claimed.']}];
  const THIOL_DESIGNS=[['s-acetyl','S-acetyl','C'],['s-propionyl','S-propionyl','CC'],['s-butyryl','S-butyryl','CCC']].map(([id,name,tail])=>({id,name:name+' thioester',fragment:'C(=O)'+tail,cleavage:'s-acyl',hypothesis:'Thioester hydrolysis could regenerate the parent thiol. Alacepril deacetylation is a precedent in another compound, not proof of human activation of this candidate.',sources:[SOURCES.thiol],limitations:['Thioester reactivity, acyl transfer to biological nucleophiles and competing thiol oxidation are unassessed.']}));
+ const NH_LINKER_DESIGNS=[
+  {id:'nh-hydroxymethyl',name:'N-hydroxymethyl',fragment:'CO',cleavage:'n-linker',hypothesis:'Breakdown of the N-hydroxymethyl linkage could regenerate the parent N–H compound and formaldehyde. Equilibrium and fragmentation depend strongly on the parent; physiological release is not established.'},
+  {id:'nh-acetoxymethyl',name:'N-acetoxymethyl',fragment:'COC(=O)C',cleavage:'n-linker',hypothesis:'Ester hydrolysis followed by N-hydroxymethyl fragmentation could regenerate the parent N–H compound. Both steps remain unvalidated for this structure.'},
+  {id:'nh-propionyloxymethyl',name:'N-propionyloxymethyl',fragment:'COC(=O)CC',cleavage:'n-linker',hypothesis:'Ester hydrolysis followed by N-hydroxymethyl fragmentation could regenerate the parent N–H compound. Neither enzyme recognition nor fragmentation is established.'},
+  {id:'nh-phosphoryloxymethyl',name:'N-phosphoryloxymethyl',fragment:'COP(=O)(O)O',cleavage:'n-linker',hypothesis:'Dephosphorylation followed by N-hydroxymethyl fragmentation could regenerate the parent N–H compound. Fosphenytoin-class activation is a precedent, not evidence for this new derivative.'}
+ ].map(d=>({...d,sources:[SOURCES.imide,SOURCES.amide],limitations:['Hydantoin/imide precedents do not establish release from a different amide or lactam. Formaldehyde release, equilibrium, competing pathways and toxicity are unassessed.']}));
+ const AROMATIC_OXIDE_DESIGNS=N_OXIDE_DESIGNS.map(d=>({...d,id:'aromatic-n-oxide',name:'Pyridine-like aromatic N-oxide',cleavage:'aromatic-n-oxide',hypothesis:'Reductive deoxygenation could restore the parent aromatic nitrogen. Aromatic N-oxide studies are compound-specific; reduction, hypoxia selectivity and parent activity are not inferred.',limitations:['Aromatic N-oxides may retain or change biological activity. Reduction of a different aromatic N-oxide is not evidence of release from this candidate.']}));
  const cloneAtom=a=>Object.assign({},a,{order:Array.isArray(a.order)?a.order.slice():null,neighbors:[],rings:[]});
  function cloneGraph(m){return {atoms:m.atoms.map(cloneAtom),bonds:m.bonds.map(b=>Object.assign({},b))};}
  function neighbors(m,id){return m.bonds.flatMap(b=>b.a===id?[{id:b.b,bond:b}]:b.b===id?[{id:b.a,bond:b}]:[]);}
@@ -41,6 +50,12 @@
  function freeSites(m){
   return m.atoms.flatMap((a,index)=>{
    const ns=neighbors(m,index),site=(kind,label,designs,hydrogens=0,charge=0)=>[{atom:index,index,kind,label:label+' '+(index+1),element:a.element,designs,hydrogens,charge}];
+   if(a.element==='N'&&a.aromatic&&!a.chirality&&[0,1].includes(a.charge||0)&&a.totalH===(a.charge===1?1:0)&&ns.length===2&&ns.every(n=>m.atoms[n.id].element==='C'&&n.bond.aromatic))return site('pyridine-like nitrogen','aromatic nitrogen',AROMATIC_OXIDE_DESIGNS,0,1);
+   if(a.element==='N'&&!a.aromatic&&!a.chirality&&[0,-1].includes(a.charge||0)&&ns.length>=1&&ns.length<=2&&a.totalH===3-ns.length+(a.charge||0)&&ns.every(n=>n.bond.order===1&&m.atoms[n.id].element==='C'&&!m.atoms[n.id].charge)){
+    const carbonyls=ns.filter(n=>neighbors(m,n.id).some(x=>x.bond.order===2&&m.atoms[x.id].element==='O')).length;
+    const otherConjugation=ns.some(n=>neighbors(m,n.id).some(x=>x.bond.order>=2&&['N','S','P'].includes(m.atoms[x.id].element)));
+    if(carbonyls&&!otherConjugation)return site(carbonyls===2?'imide N–H':'amide/lactam N–H','carbonyl-linked nitrogen',NH_LINKER_DESIGNS,3-ns.length-1,0);
+   }
    if(a.element==='S'&&[0,-1].includes(a.charge||0)&&a.totalH===(a.charge===-1?0:1)&&ns.length===1&&ns[0].bond.order===1&&m.atoms[ns[0].id].element==='C'&&!m.atoms[ns[0].id].charge&&!neighbors(m,ns[0].id).some(n=>n.bond.order>=2&&['O','S','N'].includes(m.atoms[n.id].element)))return site(a.charge===-1?'thiolate':'thiol','thiol sulfur',THIOL_DESIGNS);
    if(a.element==='N'&&!a.aromatic&&!a.chirality&&[0,1].includes(a.charge||0)&&ns.length>=1&&ns.length<=3&&ns.every(n=>n.bond.order===1&&m.atoms[n.id].element==='C'&&!m.atoms[n.id].charge)){
     // Exclude amides, ureas, carbamates, amidines and related conjugated N.
@@ -52,9 +67,9 @@
    const carbon=m.atoms[ns[0].id];if(carbon.element!=='C'||carbon.charge)return [];
    const cn=neighbors(m,ns[0].id),oxo=cn.filter(n=>n.bond.order===2&&m.atoms[n.id].element==='O');
    if(oxo.length===1&&cn.every(n=>['C','O'].includes(m.atoms[n.id].element))&&cn.filter(n=>m.atoms[n.id].element==='O').length===2)return site(a.charge===-1?'carboxylate':'carboxylic acid','acid oxygen',ACID_DESIGNS);
-   if(a.charge||oxo.length)return [];
-   if(carbon.aromatic)return site('phenol','phenolic oxygen',OH_DESIGNS);
-   if(cn.every(n=>n.bond.order===1)&&cn.filter(n=>m.atoms[n.id].element==='O').length===1)return site('alcohol','alcohol oxygen',OH_DESIGNS);
+   if(oxo.length)return [];
+   if(carbon.aromatic)return site(a.charge===-1?'phenolate':'phenol','phenolic oxygen',OH_DESIGNS);
+   if(cn.every(n=>n.bond.order===1)&&cn.filter(n=>m.atoms[n.id].element==='O').length===1)return site(a.charge===-1?'alkoxide':'alcohol','alcohol oxygen',OH_DESIGNS);
    return [];
   });
  }
@@ -78,13 +93,14 @@
   return {atoms,bonds};
  }
  function recoverParent(candidateSmiles,cleavage,parent){
-  if(!['o-acyl','o-phosphate','acid-ester','n-carbamate','n-oxide','s-acyl'].includes(cleavage))return {verified:false,smiles:null};
+  if(!['o-acyl','o-phosphate','acid-ester','n-carbamate','n-oxide','s-acyl','n-linker','aromatic-n-oxide'].includes(cleavage))return {verified:false,smiles:null};
   try{
+   const normalized=prepareParent(parent);if(!normalized)return {verified:false,smiles:null};parent=normalized.mol;
    const m=parse(candidateSmiles);
    for(let anchor=0;anchor<m.atoms.length;anchor++){
-    const a=m.atoms[anchor],ns=neighbors(m,anchor),nitrogen=cleavage.startsWith('n-');
-    if(a.element!==(nitrogen?'N':cleavage==='s-acyl'?'S':'O')||ns.some(n=>n.bond.order!==1))continue;
-    if(nitrogen?(cleavage==='n-oxide'?a.charge!==1||ns.length!==4:a.charge||![2,3].includes(ns.length)):a.charge||ns.length!==2)continue;
+    const a=m.atoms[anchor],ns=neighbors(m,anchor),aromaticOxide=cleavage==='aromatic-n-oxide',nitrogen=cleavage.startsWith('n-')||aromaticOxide;
+    if(a.element!==(nitrogen?'N':cleavage==='s-acyl'?'S':'O')||(!aromaticOxide&&ns.some(n=>n.bond.order!==1)))continue;
+    if(aromaticOxide?(!a.aromatic||a.charge!==1||ns.length!==3):nitrogen?(cleavage==='n-oxide'?a.charge!==1||ns.length!==4:a.charge||![2,3].includes(ns.length)):a.charge||ns.length!==2)continue;
     for(const n of ns){
      const atom=m.atoms[n.id],neighborsOfBranch=neighbors(m,n.id),oxo=neighborsOfBranch.filter(x=>x.bond.order===2&&m.atoms[x.id].element==='O');
      const carbonyl=atom.element==='C'&&oxo.length===1;
@@ -92,8 +108,9 @@
      if(cleavage==='o-phosphate'&&(atom.element!=='P'||oxo.length!==1))continue;
      if(cleavage==='acid-ester'&&(atom.element!=='C'||carbonyl||!ns.some(x=>x.id!==n.id&&m.atoms[x.id].element==='C'&&neighbors(m,x.id).some(y=>y.bond.order===2&&m.atoms[y.id].element==='O'))))continue;
      if(cleavage==='n-carbamate'&&(!carbonyl||!neighborsOfBranch.some(x=>x.bond.order===1&&m.atoms[x.id].element==='O')))continue;
-     if(cleavage==='n-oxide'&&(atom.element!=='O'||atom.charge!==-1||neighborsOfBranch.length!==1))continue;
-     const restores=nitrogen?(cleavage==='n-oxide'?[{hydrogens:0,charge:0},{hydrogens:1,charge:1}]:[{hydrogens:a.totalH+1,charge:0},{hydrogens:a.totalH+2,charge:1}]):[{hydrogens:1,charge:0},{hydrogens:0,charge:-1}];
+     if((cleavage==='n-oxide'||aromaticOxide)&&(atom.element!=='O'||atom.charge!==-1||neighborsOfBranch.length!==1))continue;
+     if(cleavage==='n-linker'&&(atom.element!=='C'||atom.aromatic||atom.totalH!==2||neighborsOfBranch.length!==2||!neighborsOfBranch.some(x=>m.atoms[x.id].element==='O')))continue;
+     const restores=nitrogen?((cleavage==='n-oxide'||aromaticOxide)?[{hydrogens:0,charge:0},{hydrogens:1,charge:1}]:[{hydrogens:a.totalH+1,charge:0},{hydrogens:a.totalH+2,charge:1},{hydrogens:a.totalH,charge:-1}]):[{hydrogens:1,charge:0},{hydrogens:0,charge:-1}];
      for(const restore of restores){
       const recovered=removeBranch(m,anchor,n.id,restore);if(!recovered)continue;
       const smiles=serialized(recovered);if(exact(parent,parse(smiles)))return {verified:true,smiles,attachment:{parentAtom:anchor,promoietyAtom:n.id},restoredCharge:restore.charge,restoredHydrogens:restore.hydrogens};
@@ -108,14 +125,44 @@
   const ionic={C:{'-1':[3],'1':[3]},N:{'-1':[2],'1':[4]},O:{'-1':[1],'1':[3]},S:{'-1':[1],'1':[3]},P:{'1':[4]}};
   return m.atoms.every((a,i)=>Number.isFinite(a.totalH)&&(a.charge?(ionic[a.element]?.[a.charge]||[]):(neutral[a.element]||[])).includes(neighbors(m,i).reduce((n,x)=>n+x.bond.order,0)+a.totalH));
  }
+ function prepareParent(input){
+  if(!input?.atoms?.length||input.atoms.length>128||!Array.isArray(input.bonds))return null;
+  if(connected(input))return {mol:input,inputAtoms:input.atoms.map((_,i)=>i),normalization:null};
+  const seen=new Set(),groups=[];
+  input.atoms.forEach((_,i)=>{if(seen.has(i))return;const group=[],todo=[i];seen.add(i);while(todo.length){const id=todo.pop();group.push(id);neighbors(input,id).forEach(n=>{if(!seen.has(n.id)){seen.add(n.id);todo.push(n.id);}});}groups.push(group.sort((a,b)=>a-b));});
+  const organic=groups.filter(g=>g.some(i=>input.atoms[i].element==='C'));
+  if(organic.length!==1)return null;
+  const selected=new Set(organic[0]),spectators=groups.filter(g=>!selected.has(g[0]));
+  const charges={Li:1,Na:1,K:1,Mg:2,Ca:2,F:-1,Cl:-1,Br:-1,I:-1};
+  if(!spectators.length||spectators.some(g=>g.length!==1||charges[input.atoms[g[0]].element]!==input.atoms[g[0]].charge||input.atoms[g[0]].totalH!==0)||input.atoms.reduce((n,a)=>n+(a.charge||0),0)!==0)return null;
+  const inputAtoms=organic[0],indices=new Map(inputAtoms.map((id,i)=>[id,i]));
+  const atoms=inputAtoms.map(id=>{const a=cloneAtom(input.atoms[id]);a.index=indices.get(id);a.explicitH=a.totalH;a.implicitH=0;if(a.order)a.order=a.order.map(x=>x===null?null:indices.get(x));return a;});
+  if(atoms.some(a=>a.chirality&&a.order?.some(x=>x===undefined)))return null;
+  const bonds=input.bonds.filter(b=>selected.has(b.a)&&selected.has(b.b)).map(b=>({...b,a:indices.get(b.a),b:indices.get(b.b)}));
+  const mol=buildMolecule({atoms,bonds,smiles:input.smiles});
+  if(!exact(mol,parse(serialized(mol))))return null;
+  return {mol,inputAtoms,normalization:{applied:true,policy:'single-organic-component-simple-inorganic-counterions-v1',parentSmiles:serialized(mol),removedAtoms:spectators.flat().map(i=>({inputAtom:i,element:input.atoms[i].element,charge:input.atoms[i].charge,isotope:input.atoms[i].isotope||null})),scope:'Recognized inorganic counterions omitted from design only. Recovery checks the organic parent component, not the complete salt or solution protonation.'}};
+ }
  function generate(parent,options){
+  let prepared;try{prepared=prepareParent(parent);}catch(_){prepared=null;}
+  if(!prepared)return generateSingle(parent,options);
+  if(!prepared.normalization)return generateSingle(parent,options);
+  const mapped={...options};
+  if(options?.atom!==undefined){mapped.atom=Number.isInteger(options.atom)?prepared.inputAtoms.indexOf(options.atom):-1;}
+  const report=generateSingle(prepared.mol,mapped);report.normalization=prepared.normalization;report.reasons.push(prepared.normalization.scope);
+  const remap=s=>({...s,parentAtom:s.atom,atom:prepared.inputAtoms[s.atom],index:prepared.inputAtoms[s.atom],label:s.label.replace(/\d+$/,String(prepared.inputAtoms[s.atom]+1))});
+  report.eligibleSites=(report.eligibleSites||[]).map(remap);
+  report.rows.forEach(row=>{row.site=remap(row.site);row.id=row.id.replace(/\d+$/,String(row.site.atom+1));row.name=row.name.replace(/\d+$/,String(row.site.atom+1));row.normalization=prepared.normalization;row.parentRecoveryScope=prepared.normalization.scope;row.limitations.push(prepared.normalization.scope);});
+  return report;
+ }
+ function generateSingle(parent,options){
   const rows=[],reasons=[],skipped=[];
-  const report={version:3,status:'unavailable',rows,candidates:rows,reasons,skipped,evidenceLevel:'Unvalidated structural designs',scope:'At most five single-site ester, phosphate, amine-carbamate, N-oxide or thiol-thioester hypotheses. Structural parent recovery does not establish biological conversion or prodrug status.'};
+  const report={version:4,status:'unavailable',rows,candidates:rows,reasons,skipped,evidenceLevel:'Unvalidated structural designs',scope:'At most five single-site ester, phosphate, carbamate, thioester, N–H linker or N-oxide hypotheses. Structural parent recovery does not establish biological conversion or prodrug status.'};
   const fail=message=>{reasons.push(message);return report;};
   try{
    if(!parent||!Array.isArray(parent.atoms)||!Array.isArray(parent.bonds))return fail('A parsed molecular graph is required.');
    if(parent.atoms.length>120)return fail('The bounded generator accepts at most 120 atoms.');
-   if(!connected(parent))return fail('Use one connected parent structure; salts and mixtures are not normalized for design.');
+   if(!connected(parent))return fail('Use one connected parent structure; only one organic component with recognized, charge-balanced simple inorganic counterions can be normalized; other mixtures are not modified.');
    if(parent.atoms.some(a=>!['C','H','N','O','F','P','S','Cl','Br','I'].includes(a.element)))return fail('Unsupported element in this bounded design subset.');
    if(!supportedValences(parent))return fail('Radical or unsupported valence states are outside this design subset.');
    if(/[\\/]/.test(parent.smiles||''))return fail('Directional alkene stereochemistry cannot yet be preserved by the design serializer; no candidate was generated.');
@@ -128,7 +175,7 @@
    if(options&&options.designId!==undefined){
     sites=sites.map(s=>({...s,designs:s.designs.filter(d=>d.id===options.designId)})).filter(s=>s.designs.length);
    }
-   if(!sites.length){report.status='no-compatible-site';return fail('No compatible site for the current ester, phosphate, amine-carbamate, tertiary-amine N-oxide or thiol-thioester design classes at the selected site(s). This is a coverage limit, not evidence that no prodrug is possible.');}
+   if(!sites.length){report.status='no-compatible-site';return fail('No compatible site for the current ester, phosphate, amine-carbamate, N-oxide, thioester or N–H linker design classes at the selected site(s). This is a coverage limit, not evidence that no prodrug is possible.');}
    const requested=options&&options.limit!==undefined?Number(options.limit):5;
    const limit=Number.isFinite(requested)?Math.max(0,Math.min(5,Math.floor(requested))):5;
    if(!limit)return fail('Candidate limit is zero.');

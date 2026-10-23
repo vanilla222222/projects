@@ -2,7 +2,7 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const {JSDOM}=require(process.env.PROFILER_JSDOM_PATH||'jsdom'),root=path.join(__dirname,'..');
 const dom=new JSDOM(fs.readFileSync(path.join(root,'index.html'),'utf8'),{runScripts:'outside-only',url:'https://example.test/'}),ctx=dom.getInternalVMContext(),w=dom.window;
-for(const file of ['js/smiles.js','js/mol.js','js/stereo.js','js/transform.js','js/pharmacology.js','js/prodrug-candidates.js','js/depict.js','data/pharmacology-evidence.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),ctx);
+for(const file of ['js/smiles.js','js/mol.js','js/smarts.js','js/stereo.js','js/transform.js','js/pharmacology.js','js/prodrug-candidates.js','js/depict.js','data/pharmacology-evidence.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),ctx);
 let snapshot,downloaded;
 w.PharmacologyUI={render(record){snapshot={inputSmiles:record.smiles};},getSnapshot(){return snapshot;}};
 w.URL.createObjectURL=blob=>{downloaded=blob;return 'blob:test';};w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=function(){};
@@ -34,4 +34,8 @@ $('prodrug-design-use-input').click();ok($('prodrug-reference-select').value==='
 render('CC[S-]');ok($('prodrug-design-template').options.length===3,'Thiolate has three S-acyl options');$('prodrug-design-build').click();ok(snapshot.prodrugSiteDesign.candidate.cleavage==='s-acyl'&&snapshot.prodrugSiteDesign.candidate.parentRecoveryVerified,'Sulfur preview checks exact parent recovery');
 render('CCO.O');ok(!snapshot.prodrugSiteDesign&&$('prodrug-design-build').disabled&&!$('prodrug-design-preview').textContent,'Mixture inspection clears prior design without modifying fragments');
 render('CCCC');ok($('prodrug-design-build').disabled&&$('prodrug-design-status').textContent.includes('No compatible'),'No-compatible-site state is explicit');
+render('c1ccncc1');ok($('prodrug-design-template').options.length===1&&!$('prodrug-design-build').disabled,'Pyridine-like nitrogen now selectable');$('prodrug-design-build').click();ok(snapshot.prodrugSiteDesign.candidate.cleavage==='aromatic-n-oxide','Preview aromatic N-oxide hypothesis');
+render('O=C1NC(=O)CC1');ok($('prodrug-design-template').options.length===4,'Imide NH exposes four linker designs');change('prodrug-design-template','nh-phosphoryloxymethyl');$('prodrug-design-build').click();ok(snapshot.prodrugSiteDesign.candidate.cleavage==='n-linker','Preview imide phosphate-trigger linker');
+render('[Cl-].CC[NH3+]');ok($('prodrug-reference-atom').value==='3'&&$('prodrug-design-status').textContent.includes('counterions'),'Recognized salt exposes organic site and reports omitted counterion');$('prodrug-design-build').click();ok(snapshot.prodrugSiteDesign.selectedAtom===3&&snapshot.prodrugSiteDesign.normalization.applied&&snapshot.prodrugSiteDesign.candidate.site.atom===3,'Salt preview retains original input atom and normalization context');
+render('[O-]c1ccccc1');ok($('prodrug-design-template').options.length===5,'Ionized phenolic oxygen is compatible');
 console.log('Prodrug site builder: '+checks+' focused checks passed.');dom.window.close();

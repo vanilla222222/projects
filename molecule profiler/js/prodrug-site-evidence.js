@@ -103,7 +103,8 @@
  }
  function updateBuilder(){
   clearDesign();siteJump.replaceChildren();designSelect.replaceChildren();const c=selected();useInput.disabled=!current;
-  availableSites=c&&c.isInput&&root.ProdrugCandidates?root.ProdrugCandidates.sites(c.mol):[];
+  const compatibility=c&&c.isInput&&root.ProdrugCandidates?root.ProdrugCandidates.generate(c.mol,{limit:0}):null;
+  availableSites=compatibility?.eligibleSites||[];
   const selectedAtom=Number(atomSelect.value),site=availableSites.find(s=>s.atom===selectedAtom);
   const empty=make('option','Choose a compatible site');empty.value='';siteJump.append(empty);
   availableSites.forEach(s=>{const o=make('option',s.element+(s.atom+1)+' · '+s.kind);o.value=String(s.atom);siteJump.append(o);});
@@ -111,13 +112,14 @@
   (site?.designs||[]).forEach(d=>{const o=make('option',d.name);o.value=d.id;designSelect.append(o);});
   designSelect.disabled=!site;build.disabled=!site;
   builderStatus.textContent=!c||!c.isInput?'Select Current input molecule to design attachments on your own structure.':!root.ProdrugCandidates?'The candidate generator is unavailable.':site?'Selected '+site.kind+' at '+site.element+(site.atom+1)+'. Choose an attachment to preview.':availableSites.length?'No supported attachment at this atom. Choose a labelled nitrogen, oxygen or sulfur site from Compatible attachment site.':'No compatible attachment site passed the current structure and identity checks. Reference annotations do not create a pathway at an unsupported site.';
+  if(compatibility?.normalization)builderStatus.textContent+=' '+compatibility.normalization.scope;
  }
  function previewDesign(){
   clearDesign();const c=selected();if(!c?.isInput||build.disabled)return;
   const atom=Number(atomSelect.value),designId=designSelect.value;
   const report=root.ProdrugCandidates.generate(c.mol,{atom,designId,limit:1}),row=report.rows[0];
   if(!row){builderStatus.textContent=report.reasons.join(' ');return;}
-  const snapshot=root.PharmacologyUI.getSnapshot();if(snapshot&&current&&snapshot.inputSmiles===current.smiles)snapshot.prodrugSiteDesign={inputSmiles:current.smiles,selectedAtom:atom,designId,candidate:row};
+  const snapshot=root.PharmacologyUI.getSnapshot();if(snapshot&&current&&snapshot.inputSmiles===current.smiles)snapshot.prodrugSiteDesign={inputSmiles:current.smiles,selectedAtom:atom,designId,normalization:report.normalization||null,candidate:row};
   builderStatus.textContent='Unvalidated design at input '+c.mol.atoms[atom].element+(atom+1)+'. Exact parent recovery checked as a graph edit.';
   const warning=make('p','THEORETICAL DESIGN — biological cleavage and parent release require experimental testing.');warning.className='prodrug-theoretical-banner';preview.append(warning,make('h4',row.name));
   const figures=make('div');figures.className='prodrug-candidate-grid';

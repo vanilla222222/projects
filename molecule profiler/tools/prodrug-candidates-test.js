@@ -1,7 +1,7 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const root=path.join(__dirname,'..'),ctx=vm.createContext({console});
-for(const name of ['smiles','mol','stereo','transform','pharmacology','prodrug-candidates'])vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),ctx,{filename:name+'.js'});
+for(const name of ['smiles','mol','smarts','stereo','transform','pharmacology','prodrug-candidates'])vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),ctx,{filename:name+'.js'});
 const run=code=>vm.runInContext(code,ctx);let checks=0;
 const check=(code,value,label)=>{assert.equal(run(code),value,label);checks++;};
 run(`function pg(s,n){return ProdrugCandidates.generate(buildMolecule(parseSmiles(s)),{limit:n===undefined?5:n});}`);
@@ -10,7 +10,7 @@ for(const smiles of ['CCO','Oc1ccccc1','CC(=O)O','C[C@H](O)C(=O)O','[13CH3]CO','
  check(`pg(input).rows.length`,5,'Five bounded designs: '+smiles);
  check(`(()=>{const m=buildMolecule(parseSmiles(input)),r=ProdrugCandidates.generate(m);return r.rows.every(x=>x.parentRecoveryVerified&&ProdrugCandidates.recoverParent(x.smiles,x.cleavage,m).verified&&!x.experimentalValidation);})()`,true,'Actual generated graph reverses exactly: '+smiles);
 }
-for(const smiles of ['CC(=O)N','CC(=O)OC','COOC','CC[O-]','CCO.O','C/C=C/CO','[CH2]CO']){ctx.input=smiles;check(`pg(input).rows.length`,0,'Unsupported state not assigned five designs: '+smiles);}
+for(const smiles of ['CC(=O)OC','COOC','CCO.O','C/C=C/CO','[CH2]CO']){ctx.input=smiles;check(`pg(input).rows.length`,0,'Unsupported state not assigned five designs: '+smiles);}
 check(`pg('CCO',2).rows.length`,2,'Requested smaller limit');
 check(`pg('CCO',100).rows.length`,5,'Hard maximum five');
 check(`pg('CCO',0).rows.length`,0,'Zero limit honored');
@@ -25,7 +25,7 @@ for(const smiles of ['CCN(C)C','CC[NH+](C)C','CN1CCCCC1']){
  check(`pg(input).rows.length`,1,'One distinct N-oxide per tertiary amine: '+smiles);
  check(`(()=>{const m=buildMolecule(parseSmiles(input)),r=pg(input);return r.rows.every(x=>x.cleavage==='n-oxide'&&ProdrugCandidates.recoverParent(x.smiles,x.cleavage,m).verified);})()`,true,'N-oxide restores exact supplied parent state');
 }
-for(const smiles of ['CC(=O)N','CNC(=O)OC','CNS(=O)(=O)C','NC(=N)N','NN','C[N+](C)(C)C','c1ccncc1','c1cc[nH]c1','CCCC']){ctx.input=smiles;check(`pg(input).status`,'no-compatible-site','Non-amine nitrogen or no compatible handle: '+smiles);}
+for(const smiles of ['CNS(=O)(=O)C','NC(=N)N','NN','C[N+](C)(C)C','c1cc[nH]c1','CCCC']){ctx.input=smiles;check(`pg(input).status`,'no-compatible-site','Non-amine nitrogen or no compatible handle: '+smiles);}
 check(`pg('CCN').rows.every(r=>r.cleavage==='n-carbamate'&&r.name.includes('N')&&r.sourceUrl.includes('2892933')&&r.limitations.some(s=>s.includes('formaldehyde')))`,true,'Amine candidates carry appropriate chemistry and sources');
 check(`pg('CC[NH3+]').rows.every(r=>r.limitations.some(s=>s.includes('charge'))&&r.parentRecoveryScope.includes('charge'))`,true,'Charge restoration is bookkeeping, not a pKa prediction');
 for(const smiles of ['CC[NH3+]','CCN(C)C','[NH3+]CC(=O)[O-]','[15NH2]CC','N[C@H](C)F']){
@@ -46,4 +46,18 @@ check(`ProdrugCandidates.generate(buildMolecule(parseSmiles('NCCO')),{atom:0,des
 check(`ProdrugCandidates.generate(buildMolecule(parseSmiles('CCO')),{atom:-1}).rows.length`,0,'Invalid input atom rejected');
 check(`(()=>{const m=buildMolecule(parseSmiles('NCCO'));return ProdrugCandidates.generate(m).rows.every(r=>{const c=buildMolecule(parseSmiles(r.smiles));return c.bonds.some(b=>(b.a===r.attachment.parentAtom&&b.b===r.attachment.promoietyAtom)||(b.b===r.attachment.parentAtom&&b.a===r.attachment.promoietyAtom));});})()`,true,'Attachment indices belong to serialized candidate graph');
 for(const smiles of ['CSSC','CS(=O)C','CS(=O)(=O)C','CC(=O)S']){ctx.input=smiles;check(`ProdrugCandidates.sites(buildMolecule(parseSmiles(input))).some(s=>s.element==='S')`,false,'Non-thiol sulfur excluded: '+smiles);}
+for(const [smiles,count,kind] of [['CC(=O)N',4,'amide/lactam N–H'],['CNC(=O)C',4,'amide/lactam N–H'],['O=C1NCCC1',4,'amide/lactam N–H'],['O=C1NC(=O)CC1',4,'imide N–H'],['O=C1[N-]C(=O)CC1',4,'imide N–H'],['c1ccncc1',1,'pyridine-like nitrogen'],['c1cc[nH+]cc1',1,'pyridine-like nitrogen'],['[O-]c1ccccc1',5,'phenolate'],['CC[O-]',5,'alkoxide']]){
+ ctx.input=smiles;ctx.expectedKind=kind;
+ check(`pg(input).rows.length`,count,'New compatible class: '+smiles);
+ check(`(()=>{const p=buildMolecule(parseSmiles(input)),r=pg(input);return r.rows.every(x=>x.site.kind===expectedKind&&ProdrugCandidates.recoverParent(x.smiles,x.cleavage,p).verified&&!x.experimentalValidation);})()`,true,'New class restores complete parent: '+smiles);
+}
+for(const smiles of ['[Cl-].CC[NH3+]','CC[NH3+].[Cl-]','[Na+].CC(=O)[O-]','[Cl-].[NH3+][C@H](C)CO']){
+ ctx.input=smiles;
+ check(`(()=>{const p=buildMolecule(parseSmiles(input)),before=JSON.stringify(p),r=pg(input);return r.rows.length>0&&r.normalization.applied&&r.rows.every(x=>x.normalization.removedAtoms.length===1&&x.parentRecoveryScope.includes('not the complete salt')&&ProdrugCandidates.recoverParent(x.smiles,x.cleavage,p).verified)&&before===JSON.stringify(p);})()`,true,'Recognized salt is explicit and original input immutable: '+smiles);
+}
+check(`(()=>{const p=buildMolecule(parseSmiles('[Cl-].CC[NH3+]')),site=ProdrugCandidates.sites(p)[0],r=ProdrugCandidates.generate(p,{atom:3,designId:site.designs[0].id,limit:1});return site.atom===3&&r.rows.length===1&&r.rows[0].site.atom===3&&r.rows[0].site.parentAtom===2;})()`,true,'Leading counterion preserves input atom numbering');
+check(`ProdrugCandidates.generate(buildMolecule(parseSmiles('[Cl-].CC[NH3+]')),{atom:0}).rows.length`,0,'Counterion cannot become a design site');
+for(const smiles of ['CCO.O','CCO.[Na+]','CCN.CC(=O)O','CCN.Cl','CC[NH3+].[Cl-].[Cl-]','[Na+].[Cl-]','[Ca+2].CC(=O)[O-].CC(=O)[O-]']){ctx.input=smiles;check(`pg(input).rows.length`,0,'Ambiguous or unbalanced mixture is not stripped: '+smiles);}
+check(`ProdrugCandidates.generate(buildMolecule(parseSmiles('CC(=O)N')),{atom:3,designId:'nh-phosphoryloxymethyl',limit:1}).rows[0].cleavage`,'n-linker','Selected carbonyl-linked NH supports a phosphate trigger');
+check(`ProdrugCandidates.generate(buildMolecule(parseSmiles('c1ccncc1')),{atom:3,designId:'aromatic-n-oxide',limit:1}).rows[0].cleavage`,'aromatic-n-oxide','Aromatic nitrogen has its own template');
 console.log('Prodrug candidates: '+checks+' focused checks passed.');

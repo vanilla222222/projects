@@ -3,7 +3,7 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),asse
 const {JSDOM}=require(process.env.PROFILER_JSDOM_PATH||'jsdom');
 const root=path.join(__dirname,'..'),base=process.env.PROFILER_BASE_ROOT||root;
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8'),dom=new JSDOM(html,{runScripts:'outside-only',url:'https://example.test/'}),ctx=dom.getInternalVMContext(),w=dom.window;
-for(const file of ['js/smiles.js','js/mol.js','js/stereo.js','js/pharmacology.js','js/depict.js','data/pharmacology-evidence.js'])vm.runInContext(fs.readFileSync(path.join(base,file),'utf8'),ctx,{filename:file});
+for(const file of ['js/smiles.js','js/mol.js','js/smarts.js','js/stereo.js','js/pharmacology.js','js/depict.js','data/pharmacology-evidence.js'])vm.runInContext(fs.readFileSync(path.join(base,file),'utf8'),ctx,{filename:file});
 let snapshot;
 w.PharmacologyUI={render(record){snapshot={inputSmiles:record.smiles};},getSnapshot(){return snapshot;}};
 vm.runInContext(fs.readFileSync(path.join(root,'js/prodrug-site-evidence.js'),'utf8'),ctx,{filename:'prodrug-site-evidence.js'});

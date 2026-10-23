@@ -222,11 +222,16 @@ N-carbamate design hypotheses. A terminal ester trigger and subsequent linker
 fragmentation/decarboxylation are hypothesized; an ordinary stable amide is not
 labelled as generically cleavable. Compatible tertiary amines and their protonated
 forms can produce one distinct N-oxide hypothesis per site rather than padding
-the list to five. Amides, ureas, carbamates, sulfonamides, amidines, aromatic ring
-nitrogen and permanently quaternary ammonium are excluded from these amine rules.
+the list to five. Amides, ureas and carbamates are excluded from the amine-carbamate rules;
+compatible carbonyl-linked N–H sites now have separate linker hypotheses.
+Pyridine-like aromatic nitrogen has a separate N-oxide class. Sulfonamides,
+amidines, pyrrole-like aromatic N–H and permanently quaternary ammonium remain
+outside these rules.
 
-Exact structural parent recovery, isotope/stereo round trips, connected input,
-size and supported-valence checks remain required. Candidates also pass the
+Exact structural parent recovery, isotope/stereo round trips, a connected design
+parent, size and supported-valence checks remain required. Recognized simple
+inorganic counterions can be omitted with explicit normalization metadata;
+recovery then checks the original organic component rather than the full salt. Candidates also pass the
 closed-shell valence screen. Reverse checking restores the exact supplied charge
 state by bookkeeping; it does not predict physiological protonation, pKa or
 activation. Sources are class precedents in other compounds, not validation of a
@@ -276,3 +281,9 @@ template, independently from the automatic five-candidate list. Its selected-sit
 snapshot and highlighted candidate attachment indices are documented in
 `PRODRUG-SITE-EVIDENCE.md`. Sulfur attachment hypotheses extend the available
 handles to compatible thiols/thiolates.
+
+
+Further compatibility coverage, new N–H linker and aromatic N-oxide classes,
+ionized oxygen handles, and explicit simple-counterion normalization are described
+in `PRODRUG-SITE-EVIDENCE.md`. The prediction models are unchanged; a generated
+structure is not evidence that an existing PK model is applicable to it.

@@ -4,7 +4,7 @@ let JSDOM;try{({JSDOM}=require(process.env.PROFILER_JSDOM_PATH||'jsdom'));}catch
 const root=path.join(__dirname,'..');
 const html=fs.readFileSync(process.env.PROFILER_INDEX_PATH||path.join(root,'index.html'),'utf8');
 const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://example.test/'}),ctx=dom.getInternalVMContext(),w=dom.window;
-for(const name of ['smiles','mol','stereo','transform','pharmacology','depict','pk-decay','prodrug-candidates'])vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),ctx,{filename:name});
+for(const name of ['smiles','mol','smarts','stereo','transform','pharmacology','depict','pk-decay','prodrug-candidates'])vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),ctx,{filename:name});
 let snapshot;
 w.PharmacologyUI={render(record){snapshot={inputSmiles:record.smiles,...record.snapshot};},getSnapshot(){return snapshot;}};
 vm.runInContext(fs.readFileSync(path.join(root,'js/pharmacology-upgrade.js'),'utf8'),ctx,{filename:'pharmacology-upgrade'});

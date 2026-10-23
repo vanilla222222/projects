@@ -59,3 +59,49 @@ template changes clear stale previews and design snapshots. The existing
 Validation: 89 focused generator checks, 17 selected-site builder DOM checks,
 21 reference-viewer checks, and independent RDKit checks on 112 candidates from
 26 neutral/charged/isotopic/chiral parents. Browser visual layout was not verified.
+
+
+## Compatibility expansion
+
+The builder additionally recognizes pyridine-like aromatic nitrogens,
+carbonyl-linked amide/lactam/imide N–H sites (including compatible N-anions),
+and phenolate/alkoxide forms of supported oxygen sites. Aromatic N-oxide
+hypotheses are separate from tertiary aliphatic amine N-oxides. Carbonyl-linked
+N–H sites offer hydroxymethyl, acetoxymethyl, propionyloxymethyl and
+phosphoryloxymethyl linker hypotheses. These are class extrapolations from
+hydantoin/imide work; availability in this builder does not establish biological
+conversion from a different amide, lactam, urea or carbamate. Their possible
+formaldehyde release, equilibrium and competing reactions remain unassessed.
+Pyrrole-like aromatic N–H, permanently quaternary nitrogen and unsupported
+chemistry are not opened by these rules. Directional alkene stereo remains gated.
+
+Additional primary precedents:
+- Varia et al. (1984), phenytoin hydroxymethyl ester/phosphate prodrugs:
+  https://pubmed.ncbi.nlm.nih.gov/6548518/
+- 1980 hydantoin study, N-hydroxymethylation and amide/imide comparison:
+  https://www.sciencedirect.com/science/article/pii/0378517380900514
+- Aromatic N-oxide class precedent (Siim et al., 2000):
+  https://pubmed.ncbi.nlm.nih.gov/10974206/
+
+One organic component plus recognized monatomic Li/Na/K/Mg/Ca or halide
+counterions can now be used for design when the full input is charge-balanced.
+Counterion omission is reported in the builder and export snapshot, the organic
+parent keeps its supplied charge state, and selected atom numbers still refer to
+the original input. Preview recovery verifies that organic component, never the
+complete salt. Neutral solvates, organic counterions, multiple organic components,
+complex ions, unbalanced mixtures and unsupported elements remain excluded from
+this normalization policy. Parsed mixtures still remain available for inspection.
+
+Regression checks cover all new site classes, exact recovery, charged and chiral
+salt inputs, original atom-index mapping and spectator rejection. Optional RDKit
+checks validate 159 candidates across 38 parents, including candidate attachment
+bond indices and recovery of the original organic component for normalized salts.
+
+
+Coverage benchmark against `60699dbe`: the fixed 200 evenly spaced library
+entries generated at least one candidate for 139 inputs before and 158 after
+(19 gained, zero lost). Reproduce with
+`node tools/prodrug-coverage-benchmark.js 60699dbe` when baseline history is
+available. This measures enumerator coverage only, not biological validation or
+whole-library coverage. Focused checks: 117 generator, 24 builder DOM, 21 reference
+viewer and 16 PK/prodrug interface checks, plus existing analogue UI integration.
