@@ -2,6 +2,11 @@
 // Existing-group transformations, distinct from parent-regenerating attachments.
 (function(root){
  const SOURCES={
+  imine:{title:'NMR studies of Schiff bases: imines in aqueous solution',url:'https://www.sciencedirect.com/science/article/pii/0022236474901541'},
+  oxime:{title:'Hydrolytic Stability of Hydrazones and Oximes',url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC2743602/'},
+  hydrazone:{title:'Hydrolytic Stability of Hydrazones and Oximes',url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC2743602/'},
+  phosphate:{title:'Hydrolysis of pharmaceutically relevant phosphate monoester monoanions',url:'https://pubmed.ncbi.nlm.nih.gov/8429495/'},
+  'n-oxide':{title:'Comparison of aromatic and tertiary amine N-oxides as bioreductive compounds',url:'https://pubmed.ncbi.nlm.nih.gov/10974206/'},
   ether:{title:'Anisole homologues: O-dealkylation and competing oxidation in rat liver microsomes',url:'https://pubmed.ncbi.nlm.nih.gov/1492425/'},
   ester:{title:'In vitro hydrolysis and transesterification of the ester prodrug CDP323',url:'https://pubmed.ncbi.nlm.nih.gov/24179032/'},
   carbonate:{title:'Phosphoryloxymethyl carbamates and carbonates: regeneration and instability studies',url:'https://pubmed.ncbi.nlm.nih.gov/8234176/'},
@@ -26,6 +31,23 @@
   const add=(kind,anchors,cutBonds,action,label,note,extra={})=>rows.push({id:kind+'-'+anchors.join('-')+'-'+rows.length,kind,atoms:anchors.map(i=>p.inputAtoms[i]),cutBonds:cutBonds.map(([a,b])=>[p.inputAtoms[a],p.inputAtoms[b]]),localCuts:cutBonds,action,label,note,source:SOURCES[kind],normalization:p.normalization,...extra});
   m.atoms.forEach((a,i)=>{
    const links=ns(m,i);
+   if(a.element==='N'&&!a.aromatic&&[0,1].includes(a.charge||0)){
+    const double=links.filter(n=>n.bond.order===2&&m.atoms[n.id].element==='C'&&!m.atoms[n.id].aromatic&&!m.atoms[n.id].charge),single=links.filter(n=>n.bond.order===1);
+    if(double.length===1&&links.length===1+single.length&&single.length<=1&&single.every(n=>['C','N','O'].includes(m.atoms[n.id].element))){
+     const c=double[0].id,cn=ns(m,c);
+     if(cn.every(n=>n.id===i||n.bond.order===1&&['C','H'].includes(m.atoms[n.id].element))){
+      const partner=single[0]&&m.atoms[single[0].id],kind=partner?.element==='O'?'oxime':partner?.element==='N'?'hydrazone':'imine';
+      add(kind,[i,c,...single.map(n=>n.id)],[[c,i]],'imine-hydrolysis',kind[0].toUpperCase()+kind.slice(1)+' hydrolysis','Formal C=N hydrolysis can restore a carbonyl and a nitrogen-containing product. Equilibrium, pH and substitution strongly affect release; oximes can be particularly stable. No rapid or physiological cleavage is inferred.');
+     }
+    }
+   }
+   if(a.element==='P'&&!a.charge&&!a.chirality&&links.length===4&&links.filter(n=>n.bond.order===2&&m.atoms[n.id].element==='O').length===1&&links.every(n=>m.atoms[n.id].element==='O'&&[1,2].includes(n.bond.order))){
+    for(const n of links){const o=m.atoms[n.id],on=ns(m,n.id);if(n.bond.order===1&&!o.charge&&!o.totalH&&on.length===2&&on.every(x=>x.bond.order===1)&&on.some(x=>x.id!==i&&m.atoms[x.id].element==='C'))add('phosphate',[i,n.id],[[n.id,i]],'hydrolysis','Phosphate ester: one dephosphorylation step','Formal P–O ester hydrolysis exposes an OH group and a phosphate fragment. The supplied charge state is retained; phosphatase recognition, pKa, speed and subsequent steps are not predicted.');}
+   }
+   if(a.element==='N'&&a.charge===1&&!a.totalH&&!a.chirality){
+    const oxygen=links.find(n=>n.bond.order===1&&m.atoms[n.id].element==='O'&&m.atoms[n.id].charge===-1&&ns(m,n.id).length===1);
+    if(oxygen&&links.length===(a.aromatic?3:4)&&links.filter(n=>n.id!==oxygen.id).every(n=>m.atoms[n.id].element==='C'&&(a.aromatic?n.bond.aromatic:n.bond.order===1)))add('n-oxide',[i,oxygen.id],[[i,oxygen.id]],'n-oxide-reduction','N-oxide reductive deoxygenation','Formal reduction restores an amine or aromatic nitrogen and water. Enzymatic conversion, oxygen dependence and activity of the product remain compound-specific.');
+   }
    if(a.element==='O'&&!a.charge&&!a.totalH&&links.length===2&&links.every(n=>n.bond.order===1&&m.atoms[n.id].element==='C')){
     const carbonyls=links.filter(n=>ns(m,n.id).some(x=>x.bond.order===2&&m.atoms[x.id].element==='O'));
     if(carbonyls.length===1){
@@ -79,6 +101,10 @@
     const [oxygen,carbon]=path.localCuts[0];setH(oxygen,1);setH(carbon,g.atoms[carbon].totalH-1);planarize(carbon);addO(carbon,2,0);
    }else if(path.action==='hydrolysis'){
     const [leaving,carbonyl]=path.localCuts[0];setH(leaving,1);addO(carbonyl,1,1);
+   }else if(path.action==='imine-hydrolysis'){
+    const [carbon,nitrogen]=path.localCuts[0];setH(nitrogen,g.atoms[nitrogen].totalH+2);planarize(carbon);addO(carbon,2,0);
+   }else if(path.action==='n-oxide-reduction'){
+    const [nitrogen,oxygen]=path.localCuts[0];g.atoms[nitrogen].charge=0;g.atoms[oxygen].charge=0;setH(oxygen,2);
    }else if(path.action==='disulfide'){
     path.localCuts[0].forEach(i=>setH(i,1));
    }else if(path.action==='acetal'){
@@ -87,9 +113,9 @@
    const edited=buildMolecule(g),smiles=serialize(edited),parsed=parse(smiles);
    if(!root.ProdrugCandidates.validGraph(edited)||!Pharmacology.exactGraph(edited,parsed))throw Error('Product graph validation failed.');
    result.products=smiles.split('.').map((s,i)=>({name:'Hypothetical product '+(i+1),smiles:s,evidenceLevel:result.evidenceLevel}));
-   result.status='predicted-products';result.pathway={id:path.id,kind:path.kind,label:path.label,atoms:path.atoms,cutBonds:path.cutBonds};result.inputSmiles=input.smiles;result.selectedAtom=selectedAtom;result.source=path.source;result.normalization=path.normalization;result.hypothesis=path.note;
-   result.limitations=['These products differ from the input. This preview does not regenerate or validate a prodrug of the original molecule.','No rate, enzyme specificity, human conversion, activity, ADME benefit or safety is predicted.','Sources describe reaction classes in other compounds; they do not establish this pathway for the selected molecule.','All fragments, including potentially reactive carbonyls and intermediates, are shown without ranking any as the active product.','New oxygen is a formal oxidation/hydrolysis input. Product isotope tracing is not an experimental assignment.'];
-   if(path.normalization)result.limitations.push(path.normalization.scope);
+   result.status='predicted-products';result.pathway={id:path.id,kind:path.kind,label:path.label,atoms:path.atoms,cutBonds:path.cutBonds};result.inputSmiles=input.smiles;result.selectedAtom=selectedAtom;result.source=path.source;result.normalization=path.normalization?{...path.normalization,scope:'Recognized counterions omitted. These transformations concern the organic component, not the complete salt or solution protonation.'}:null;result.hypothesis=path.note;
+   result.limitations=['These products differ from the input. This preview does not regenerate or validate a prodrug of the original molecule.','No rate, enzyme specificity, human conversion, activity, ADME benefit or safety is predicted.','Sources describe reaction classes in other compounds; they do not establish this pathway for the selected molecule.','All fragments, including potentially reactive carbonyls and intermediates, are shown without ranking any as the active product.','Any new oxygen is a formal oxidation/hydrolysis input. Product isotope tracing is not an experimental assignment.'];
+   if(result.normalization)result.limitations.push(result.normalization.scope);
   }catch(e){result.products=[];result.reasons.push('Transformation unavailable: '+e.message);}
   return result;
  }

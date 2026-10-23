@@ -90,13 +90,15 @@
  const builder=make('section');builder.id='prodrug-site-builder';builder.className='pk-research-extension';
  builder.append(make('h4','Explore attachments and existing cleavable groups'),make('p','Choose a site and an attachment or existing-group pathway. Benzene–O–carbon ethers can expose a phenol through an O-dealkylation hypothesis. Analyze a product to explore attachments on its newly exposed group. All previews are unvalidated.'));
  const builderControls=make('div');builderControls.className='prodrug-site-controls';
+ const modeLabel=make('label','Explore '),actionMode=make('select');actionMode.id='prodrug-site-action-mode';
+ [['all','All supported options'],['design','Parent-recovery designs'],['cleavage','Existing-group pathways']].forEach(([value,label])=>{const o=make('option',label);o.value=value;actionMode.append(o);});modeLabel.append(actionMode);
  const useInput=make('button','Design on current input');useInput.type='button';useInput.id='prodrug-design-use-input';
  const siteLabel=make('label','Compatible site '),siteJump=make('select');siteJump.id='prodrug-design-site';siteLabel.append(siteJump);
  const designLabel=make('label','Attachment or existing-group pathway '),designSelect=make('select');designSelect.id='prodrug-design-template';designLabel.append(designSelect);
  const build=make('button','Preview selected option');build.type='button';build.id='prodrug-design-build';
  const builderStatus=make('p');builderStatus.id='prodrug-design-status';builderStatus.setAttribute('role','status');
  const preview=make('div');preview.id='prodrug-design-preview';preview.setAttribute('aria-live','polite');
- builderControls.append(useInput,siteLabel,designLabel,build);builder.append(builderControls,builderStatus,preview);host.append(builder);
+ builderControls.append(useInput,modeLabel,siteLabel,designLabel,build);builder.append(builderControls,builderStatus,preview);host.append(builder);
  let availableSites=[];
  function compatibleSites(c){
   if(!c?.isInput)return [];
@@ -106,7 +108,7 @@
    if(map.has(s.atom)){const prior=map.get(s.atom);prior.designs.push(...s.designs);prior.kind+=' / '+s.kind;}
    else map.set(s.atom,s);
   }
-  return [...map.values()].sort((a,b)=>a.atom-b.atom);
+  return [...map.values()].map(s=>({...s,designs:s.designs.filter(d=>actionMode.value==='all'||(actionMode.value==='cleavage')===d.id.startsWith('cleave:'))})).filter(s=>s.designs.length).sort((a,b)=>a.atom-b.atom);
  }
  function clearDesign(){
   preview.replaceChildren();const snapshot=root.PharmacologyUI.getSnapshot();if(snapshot){snapshot.prodrugSiteDesign=null;snapshot.prodrugSiteCleavage=null;}
@@ -134,7 +136,7 @@
   builderStatus.textContent='Unvalidated design at input '+c.mol.atoms[atom].element+(atom+1)+'. Exact parent recovery checked as a graph edit.';
   const warning=make('p','THEORETICAL DESIGN — biological cleavage and parent release require experimental testing.');warning.className='prodrug-theoretical-banner';preview.append(warning,make('h4',row.name));
   const figures=make('div');figures.className='prodrug-candidate-grid';
-  for(const [title,smiles,highlight] of [['Candidate · highlighted attachment bond',row.smiles,row.attachment?[row.attachment.parentAtom,row.attachment.promoietyAtom]:[]],['Structurally recovered parent',row.recoveredParentSmiles,[]]]){
+  for(const [title,smiles,highlight] of [['Candidate · highlighted attachment / modified linkage',row.smiles,row.attachment?[row.attachment.parentAtom,row.attachment.promoietyAtom]:[]],['Structurally recovered parent',row.recoveredParentSmiles,[]]]){
    const figure=make('figure');figure.append(make('figcaption',title));
    if(typeof depictSvg==='function'){try{const image=make('div');image.className='prodrug-site-depiction';image.innerHTML=depictSvg(parse(smiles),{title,highlight});figure.append(image);}catch(_){}}
    figure.append(make('code',smiles));figures.append(figure);
@@ -166,6 +168,11 @@
   if(/^https:\/\//.test(report.source.url)){const a=make('a',report.source.title);a.href=report.source.url;a.target='_blank';a.rel='noopener noreferrer';preview.append(a);}
   const download=make('button','Download product SMILES');download.type='button';download.addEventListener('click',()=>{const url=root.URL.createObjectURL(new root.Blob([report.products.map(p=>p.smiles+'\t'+p.name+' | unvalidated transformation').join('\n')+'\n'],{type:'text/plain;charset=utf-8'})),a=make('a');a.href=url;a.download='hypothetical-cleavage-products.smi';a.click();root.setTimeout(()=>root.URL.revokeObjectURL(url),1000);});preview.append(download);
  }
+ actionMode.addEventListener('change',()=>{
+  const options=compatibleSites(selected());
+  if(!options.some(s=>s.atom===Number(atomSelect.value))&&options.length){const first=options.find(s=>['O','N','S'].includes(s.element))||options[0];atomSelect.value=String(first.atom);}
+  clearSnapshot();output.replaceChildren(make('p','Exploration mode changed. Check evidence for this displayed atom if needed.'));draw();updateBuilder();
+ });
  useInput.addEventListener('click',()=>{if(!current)return;refSelect.value='__input__';choose();context.textContent='Designing on your current input structure; reference evidence remains separate.';});
  siteJump.addEventListener('change',()=>{if(siteJump.value==='')return;atomSelect.value=siteJump.value;clearSnapshot();output.replaceChildren(make('p','Selection changed. Check evidence for this displayed site.'));draw();updateBuilder();});
  designSelect.addEventListener('change',()=>{clearDesign();builderStatus.textContent='Option changed. Preview the selected attachment or pathway.';});
@@ -205,7 +212,7 @@
  const originalRender=root.PharmacologyUI.render;
  root.PharmacologyUI.render=function(record,ranks){
   const sameInput=current&&current.smiles===record.smiles;
-  if(!sameInput)theoretical.checked=false;
+  if(!sameInput){theoretical.checked=false;actionMode.value='all';}
   current=null;choose();originalRender(record,ranks);current=record;
   const match=cases.find(c=>Pharmacology.exactGraph(record.mol,c.mol)||Pharmacology.exactGraph(record.mol,parse(c.active.smiles)));
   typeSelect.value='all';populate(match?match.id:'__input__');choose();

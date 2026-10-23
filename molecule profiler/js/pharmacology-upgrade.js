@@ -29,7 +29,7 @@
  const chartHost=make('section');chartHost.id='pk-decay-view';chartHost.className='pk-research-extension';pk.closest('article').append(chartHost);
  const decay=typeof createPKDecayView==='function'?createPKDecayView(chartHost):null;
  const designs=make('section');designs.id='prodrug-candidate-designs';designs.className='pk-research-extension';
- designs.append(make('h3','Generated research candidates — up to five'),make('p','Compatible alcohols, phenols, acids/carboxylates and amines can produce unvalidated structural designs, separate from documented prodrugs above. A reversible graph edit does not establish enzymatic cleavage, parent release in the body, absorption, safety or efficacy.'));
+ designs.append(make('h3','Generated research candidates — up to five'),make('p','Compatible alcohols, phenols, acids/carboxylates, amines, thiols and aldehyde/ketone carbonyls can produce unvalidated structural designs, separate from documented prodrugs above. A reversible graph edit does not establish enzymatic cleavage, parent release in the body, absorption, safety or efficacy.'));
  const candidateStatus=make('p');candidateStatus.setAttribute('role','status');const cards=make('div');cards.className='prodrug-candidate-grid';designs.append(candidateStatus,cards);panel.append(designs);
  let current=null;
  function updateCurve(){

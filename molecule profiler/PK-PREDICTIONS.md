@@ -294,3 +294,10 @@ aryl/alkyl ethers and other recognized linkages. This mode produces separate
 hypothetical product structures, not parent-regenerating prodrug attachments.
 Its snapshot, sources, supported scope and validation are documented in
 `PRODRUG-SITE-EVIDENCE.md`; no PK model was retrained or broadened.
+
+
+The next site-explorer extension adds aldehyde/ketone oxime and hydrazone designs
+with graph recovery, and existing imine/oxime/hydrazone, phosphate-ester and
+N-oxide transformation previews. Parent recovery and product transformations have
+separate modes and snapshots. See `PRODRUG-SITE-EVIDENCE.md` for scope, exclusions
+and validation; model training and PK inference remain unchanged.

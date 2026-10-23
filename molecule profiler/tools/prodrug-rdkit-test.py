@@ -2,6 +2,7 @@
 """Independent optional graph check. Requires Node.js and Python RDKit."""
 import json
 import subprocess
+from collections import Counter
 from pathlib import Path
 from rdkit import Chem, rdBase
 
@@ -15,6 +16,7 @@ FIXTURES = [
     'CC(=O)N', 'CNC(=O)C', 'O=C1NCCC1', 'O=C1NC(=O)CC1',
     'O=C1[N-]C(=O)CC1', 'c1ccncc1', 'c1cc[nH+]cc1', '[O-]c1ccccc1',
     'CC[O-]', '[Cl-].CC[NH3+]', '[Na+].CC(=O)[O-]', '[Cl-].[NH3+][C@H](C)CO',
+    'CC=O', 'CC(=O)C', 'O=Cc1ccccc1', 'O=C1CCCCC1', 'C=O', '[13CH3]C(=O)C', '[Cl-].[NH3+]CCC=O',
 ]
 NODE = r"""
 const fs=require('node:fs'),vm=require('node:vm');
@@ -28,10 +30,12 @@ checked = 0
 for fixture in reports:
     parent = Chem.MolFromSmiles(fixture['smiles'])
     assert parent is not None
+    design_parent = parent
     parent_key = Chem.MolToSmiles(parent, isomericSmiles=True)
     if fixture['report'].get('normalization'):
         fragments = [m for m in Chem.GetMolFrags(parent, asMols=True) if any(a.GetAtomicNum() == 6 for a in m.GetAtoms())]
         assert len(fragments) == 1
+        design_parent = fragments[0]
         parent_key = Chem.MolToSmiles(fragments[0], isomericSmiles=True)
         normalized = Chem.MolFromSmiles(fixture['report']['normalization']['parentSmiles'])
         assert Chem.MolToSmiles(normalized, isomericSmiles=True) == parent_key
@@ -46,6 +50,18 @@ for fixture in reports:
         candidate_key = Chem.MolToSmiles(candidate, isomericSmiles=True)
         attachment = row['attachment']
         assert candidate.GetBondBetweenAtoms(attachment['parentAtom'], attachment['promoietyAtom']) is not None, row
+        if row['cleavage'].startswith('carbonyl-'):
+            expected = Counter((a.GetAtomicNum(),a.GetIsotope()) for a in Chem.AddHs(design_parent).GetAtoms())
+            if row['cleavage'] == 'carbonyl-oxime':
+                expected[(7,0)] += 1
+                expected[(1,0)] += 1
+            else:
+                expected[(8,0)] -= 1
+                expected[(7,0)] += 2
+                expected[(1,0)] += 2
+            actual = Counter((a.GetAtomicNum(),a.GetIsotope()) for a in Chem.AddHs(candidate).GetAtoms())
+            assert actual == expected, row
+            assert Chem.GetFormalCharge(candidate) == Chem.GetFormalCharge(design_parent), row
         assert candidate_key != parent_key and candidate_key not in seen, row
         assert len(Chem.GetMolFrags(candidate)) == 1, row
         assert Chem.MolToSmiles(recovered, isomericSmiles=True) == parent_key, row

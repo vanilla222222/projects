@@ -164,3 +164,64 @@ net reaction bookkeeping for 28 pathways across 20 inputs. The optional command
 is `python tools/cleavable-groups-rdkit-test.py`. These are structure and interface
 checks, not validation of biological occurrence. Browser visual layout was not
 verified.
+
+
+## Carbonyl designs and additional existing-group pathways
+
+Aldehyde and ketone **carbonyl carbons** now offer two formal condensation
+designs: oxime and hydrazone. The reverse C=N hydrolysis graph is checked against
+the complete input parent. Carboxylic acids, esters, amides and other acyl
+derivatives are not treated as aldehydes/ketones by these rules. Carbonyl oxygen
+isotope labels block this design class because condensation removes the original
+oxygen; the generator must not claim to preserve its isotope identity. Remote
+isotopes and supported stereo remain subject to existing round-trip checks.
+E/Z configurations of the new C=N linkage are unassigned, and hydrolysis may be
+slow, reversible or biologically irrelevant. Hydroxylamine/hydrazine-derived
+byproducts are not evaluated for safety. An identity check is not isotope tracing
+or validation of in-vivo release.
+
+Existing **imines, oximes and hydrazones** now offer formal C=N hydrolysis previews
+showing carbonyl and nitrogen-containing products. Compatible iminium forms retain
+the supplied nitrogen charge; solution speciation is not predicted. Amidines,
+nitriles, aromatic ring C=N and unsupported stereochemical states are excluded
+from those rules. Oxime hydrolysis is not assumed to be as fast as hydrazone or
+imine hydrolysis. Primary reaction-class references:
+- Hydrolytic Stability of Hydrazones and Oximes:
+  https://pmc.ncbi.nlm.nih.gov/articles/PMC2743602/
+- NMR studies of imines in aqueous solution:
+  https://www.sciencedirect.com/science/article/pii/0022236474901541
+
+Existing **phosphate esters** can preview one P–O–carbon ester hydrolysis at a
+time, exposing an alcohol/phenol and a phosphate-containing fragment. Neutral
+and compatible anionic phosphate forms and recognized counterion salts are
+handled without changing their supplied charge state. P–N phosphoramidates,
+P–C phosphonates, sulfates and explicitly chiral phosphorus are outside this
+rule. No phosphatase, pKa, rate or complete cascade is predicted. Primary
+reference: https://pubmed.ncbi.nlm.nih.gov/8429495/.
+
+Existing tertiary-amine and pyridine-like **N-oxides** can preview formal
+reductive deoxygenation to the nitrogen parent and water. The formal reduction
+adds two hydrogen atoms, preserves total charge and retains any existing oxygen
+isotope in the water product. No enzyme, oxygen dependence or activity is
+predicted. Primary class precedent: https://pubmed.ncbi.nlm.nih.gov/10974206/.
+
+The **Explore** filter separates **Parent-recovery designs** from
+**Existing-group pathways**, or shows both. Changing the filter clears stale
+previews and selects a compatible site where available. A changed input resets
+the filter to all options. The filter changes only visible options and does not
+change chemistry or assign evidence.
+
+Validation: 130 generator checks, 72 pathway checks and 25 combined workflow DOM
+checks, alongside the existing interface regressions. Independent RDKit checks
+cover 176 derivative candidates from 45 parents (including carbonyl condensation
+atom/charge bookkeeping and exact recovery), and 44 transformation pathways from
+33 inputs (including charge, isotope and net atom bookkeeping). Browser visual
+layout was not verified.
+
+
+The fixed 200-reference derivative-generation benchmark against `a6417075`
+increased from 158 to 167 inputs generating at least one derivative (nine gained,
+zero lost). Reproduce with
+`node tools/prodrug-coverage-benchmark.js a6417075` with that baseline available.
+This count concerns derivative generation only; it excludes the separate
+existing-group pathway previews and is not a biological-validation result.

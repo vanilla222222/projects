@@ -60,4 +60,11 @@ check(`ProdrugCandidates.generate(buildMolecule(parseSmiles('[Cl-].CC[NH3+]')),{
 for(const smiles of ['CCO.O','CCO.[Na+]','CCN.CC(=O)O','CCN.Cl','CC[NH3+].[Cl-].[Cl-]','[Na+].[Cl-]','[Ca+2].CC(=O)[O-].CC(=O)[O-]']){ctx.input=smiles;check(`pg(input).rows.length`,0,'Ambiguous or unbalanced mixture is not stripped: '+smiles);}
 check(`ProdrugCandidates.generate(buildMolecule(parseSmiles('CC(=O)N')),{atom:3,designId:'nh-phosphoryloxymethyl',limit:1}).rows[0].cleavage`,'n-linker','Selected carbonyl-linked NH supports a phosphate trigger');
 check(`ProdrugCandidates.generate(buildMolecule(parseSmiles('c1ccncc1')),{atom:3,designId:'aromatic-n-oxide',limit:1}).rows[0].cleavage`,'aromatic-n-oxide','Aromatic nitrogen has its own template');
+for(const smiles of ['CC=O','CC(=O)C','O=Cc1ccccc1','O=C1CCCCC1','C=O','[13CH3]C(=O)C','N[C@H](C)CC=O']){
+ ctx.input=smiles;
+ check(`(()=>{const p=buildMolecule(parseSmiles(input)),site=ProdrugCandidates.sites(p).find(s=>s.kind==='aldehyde carbonyl'||s.kind==='ketone carbonyl'),r=ProdrugCandidates.generate(p,{atom:site.atom});return r.rows.length===2&&r.rows.every(x=>x.cleavage.startsWith('carbonyl-')&&ProdrugCandidates.recoverParent(x.smiles,x.cleavage,p).verified&&x.limitations.some(t=>t.includes('E/Z')));})()`,true,'Carbonyl templates restore original graph: '+smiles);
+}
+for(const smiles of ['CC(=[18O])C','CC(=O)O','CC(=O)N','COC(=O)OC']){ctx.input=smiles;check(`ProdrugCandidates.sites(buildMolecule(parseSmiles(input))).some(s=>s.kind==='aldehyde carbonyl'||s.kind==='ketone carbonyl')`,false,'Condensation excludes labelled carbonyl oxygen and acyl derivatives: '+smiles);}
+check(`(()=>{const p=buildMolecule(parseSmiles('[Cl-].[NH3+]CCC=O')),site=ProdrugCandidates.sites(p).find(s=>s.kind==='aldehyde carbonyl'),r=ProdrugCandidates.generate(p,{atom:site.atom,designId:'carbonyl-oxime',limit:1});return site.carbonylOxygen===5&&r.rows.length===1&&r.rows[0].normalization.applied;})()`,true,'Carbonyl salt preserves input oxygen and selection indices');
+check(`(()=>{const p=buildMolecule(parseSmiles('CC(=O)C')),before=JSON.stringify(p);ProdrugCandidates.generate(p);return JSON.stringify(p)===before;})()`,true,'Condensation does not mutate input');
 console.log('Prodrug candidates: '+checks+' focused checks passed.');
