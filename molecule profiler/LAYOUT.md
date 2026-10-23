@@ -41,3 +41,10 @@ checks. Run the DOM test with jsdom available:
 ```sh
 PROFILER_JSDOM_PATH=/path/to/node_modules/jsdom node tools/layout-ui-test.js
 ```
+
+Live-browser review also verified the input layout and studio navigation. A single
+selected molecule retains a visible name when the multi-molecule tablist is
+hidden. Builder controls focus on the selected atom; reference-only controls stay
+in the reference view. Selected-site evidence remains available in a labelled
+disclosure that opens when explicitly checked. The studio header badge follows
+the selected view's evidence scope.

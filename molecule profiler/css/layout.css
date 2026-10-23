@@ -69,3 +69,10 @@ main{max-width:1480px;padding-inline:clamp(16px,3vw,48px);gap:26px}
 .panel button.info{width:22px;height:22px;min-height:22px;padding:0;border-radius:50%;font:600 10px/1 var(--mono);background:transparent;cursor:help;flex:none}
 #results:not([data-workspace=overview]):not([data-workspace=all]) #molecule-report{display:none}
 @media print{#results #molecule-report{display:block!important}}
+
+.single-molecule-name{display:none;font-size:13px;font-weight:650;color:var(--text);padding:6px 12px;border:1px solid var(--line);border-radius:9px;background:var(--bg-raise)}
+.molecule-strip:has(#molecule-tabs[hidden]) .single-molecule-name{display:inline-block}
+.site-evidence-details{margin:18px 0;border-top:1px solid var(--line);padding-top:14px}.site-evidence-details>summary{font-size:12px;color:var(--accent)}
+#prodrug-panel[data-studio-view=build] #prodrug-site-context,#prodrug-panel[data-studio-view=build] label:has(#prodrug-reference-type),#prodrug-panel[data-studio-view=build] label:has(#prodrug-reference-select),#prodrug-panel[data-studio-view=build] #prodrug-design-use-input{display:none}
+#prodrug-panel[data-studio-view=build] #prodrug-site-evidence>.prodrug-site-controls{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+@media(max-width:780px){#prodrug-panel[data-studio-view=build] #prodrug-site-evidence>.prodrug-site-controls{grid-template-columns:minmax(0,1fr)}}

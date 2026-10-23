@@ -6,6 +6,11 @@
  const make=(tag,text)=>{const e=doc.createElement(tag);if(text!==undefined)e.textContent=text;return e;};
  const pieces=[['prodrug-explorer-comparison','comparison'],['prodrug-priority','comparison'],['prodrug-explorer-route','route']];
  for(const [id,piece] of pieces){const node=$(id);if(node)(id==='prodrug-explorer-comparison'?node.closest('section'):node).dataset.studioPiece=piece;}
+ const evidenceDetails=make('details');evidenceDetails.id='prodrug-site-evidence-details';evidenceDetails.className='site-evidence-details';evidenceDetails.append(make('summary','Selected-site evidence and interpretation limits'));
+ const evidenceResult=$('prodrug-reference-result');if(evidenceResult){evidenceResult.before(evidenceDetails);evidenceDetails.append(evidenceResult);}
+ $('prodrug-reference-check')?.addEventListener('click',()=>{evidenceDetails.open=true;});
+ const singleName=make('span');singleName.id='single-molecule-name';singleName.className='single-molecule-name';$('molecule-tabs')?.after(singleName);
+ function refreshMoleculeName(){const tabs=$('molecule-tabs');singleName.textContent=tabs?.querySelector('[aria-selected=true]')?.textContent||root.PharmacologyUI?.getSnapshot()?.name||'Current molecule';const title=doc.querySelector('.molecule-strip .strip-title');if(title)title.textContent=tabs?.hidden?'Selected molecule':'Molecules in this analysis';}
  const views=[
   {id:'build',label:'Build at a site',description:'Choose an input atom, inspect compatible options and preview a single design or transformation.'},
   {id:'comparison',label:'Compare & review',description:'Collect designs from different sites, compare their properties and review research evidence.'},
@@ -24,6 +29,7 @@
  function select(id,focus=false){
   const view=views.find(v=>v.id===id);if(!view)return;
   if(['build','comparison','route'].includes(id)&&$('prodrug-reference-select')?.value!=='__input__')$('prodrug-design-use-input')?.click();
+  evidenceDetails.open=id==='references';const badge=panel.querySelector('.panel-head .evidence');if(badge){badge.textContent=id==='references'?'curated source evidence':'research hypotheses';badge.dataset.tier=id==='references'?'rule':'prediction';}
   panel.dataset.studioView=id;buttons.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.studioView===id)));hint.textContent=view.description;refreshContext();
   if(focus)buttons.find(b=>b.dataset.studioView===id)?.focus({preventScroll:true});
  }
@@ -48,8 +54,9 @@
    for(const p of [...card.querySelectorAll(':scope > p')])if(p.querySelector('a'))details.append(p);
   }
  }
- if(root.PharmacologyUI){const original=root.PharmacologyUI.render;root.PharmacologyUI.render=function(record,ranks){original(record,ranks);polishCards();select('build');};}
- root.ProdrugStudioLayout={select};select('build');
+ if(root.PharmacologyUI){const original=root.PharmacologyUI.render;root.PharmacologyUI.render=function(record,ranks){original(record,ranks);polishCards();select('build');refreshMoleculeName();};}
+ root.ProdrugStudioLayout={select};polishCards();select('build');refreshMoleculeName();
+ doc.addEventListener('molecule-profiler:updated',refreshMoleculeName);doc.addEventListener('molecule-profiler:selected',refreshMoleculeName);
  // Escape dismisses optional input menus while preserving keyboard focus.
  for(const menu of doc.querySelectorAll('.export-menu,.resource-menu'))menu.addEventListener('keydown',event=>{if(event.key==='Escape'){menu.open=false;menu.querySelector('summary').focus();}});
  // Tables scroll inside their own region rather than widening the page.
