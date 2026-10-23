@@ -34,6 +34,8 @@ const scripts = [
   'family-reference-test.js',
   'pharmacology-test.js',
   'pk-applicability-test.js',
+  'prodrug-candidates-test.js',
+  'analogue-candidates-test.js',
   'sim-pagination-test.js',
   'batch-browser-test.js',
   'input-workflow-test.js',

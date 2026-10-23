@@ -31,6 +31,7 @@
     'Metabolism': ['metabolism'],
     'Pharmacokinetics & exposure': ['metabolism', 'properties'],
     'Prodrugs & bioactivation': ['metabolism'],
+    'Generated analogues': ['discovery', 'metabolism'],
     'Ionization scenarios': ['properties'],
     'Functional effect context': ['discovery'],
     'Dependence-related structural similarity': ['discovery'],

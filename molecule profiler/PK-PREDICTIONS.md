@@ -208,6 +208,32 @@ molecules resets the pKa and collapses the table.
 
 The existing half-life model now feeds an interactive single-exponential parent-amount curve, 100 × 2^(−t/t½), with hours on the time axis. A supplied clearance/one-compartment volume scenario takes precedence while those parameters are entered. Exact sourced observations take precedence over model estimates: the aspirin 20-minute observation is usable as a scenario input; a reported numerical range uses an explicitly labelled illustrative midpoint and propagated range. A censored observation such as “less than 1 hour” is not turned into an exact curve. Unavailable estimates and incomplete scenarios clear the prior structure’s plot. Input half-life intervals propagate into a scenario envelope; this is not a validated concentration confidence interval. The model excludes absorption, repeated administration, multi-compartment kinetics, active metabolites and pharmacodynamics. It does not predict subjective strength or duration of effects. Milestones and a CSV are available.
 
-The Prodrugs panel retains documented exact-graph relationships and separately displays up to five unvalidated structural candidate designs. Enumeration is restricted to supported neutral alcohol/phenol and carboxylic-acid handles, with exact-parent structural recovery checks, preserved supported stereochemistry/isotopes and explicit unsupported-input reasons. Some structures produce fewer than five or none. An ester/phosphate class reference does not establish that an arbitrary derivative releases the parent in vivo, improves delivery, is pharmacologically inactive, or has an acceptable safety profile. No release rate, benefit, potency, dose or candidate half-life is inferred by this enumeration. Each design retains an activation hypothesis, class references, limitations and an analysis handoff. The pharmacology JSON export records candidate designs separately from curated evidence and includes the current plotted scenario.
+The Prodrugs panel retains documented exact-graph relationships and separately displays up to five unvalidated structural candidate designs. Enumeration supports free alcohol/phenol and neutral carboxylic-acid handles on compatible neutral or charged parents, with exact-parent structural recovery checks, preserved supported stereochemistry/isotopes and explicit unsupported-input reasons. Some structures produce fewer than five or none. An ester/phosphate class reference does not establish that an arbitrary derivative releases the parent in vivo, improves delivery, is pharmacologically inactive, or has an acceptable safety profile. No release rate, benefit, potency, dose or candidate half-life is inferred by this enumeration. Each design retains an activation hypothesis, class references, limitations and an analysis handoff. The pharmacology JSON export records candidate designs separately from curated evidence and includes the current plotted scenario.
 
 Focused formula, candidate-identity and interface checks cover this extension. The existing PK models were not retrained or newly clinically validated.
+
+
+## General-input structural designs
+
+Prodrug generation has no named-molecule allowlist. Common closed-shell ionic
+valences are now accepted elsewhere in the parent graph, including protonated
+amines and charge-separated nitro groups, while the modified handle remains
+neutral. Exact structural parent recovery, isotope/stereo round trips, connected
+input, size and supported-valence checks remain required. Carboxylate handles,
+amine-only parents and directional alkene stereo are still unsupported; the UI
+reports why rather than inventing a candidate.
+
+Generated analogues is a separate panel in References and Metabolism. It applies
+single aromatic CH substitutions (fluoro, methyl, hydroxy) and terminal halogen
+exchanges to compatible input graphs, with no catalogue or compound-name match.
+It defaults to twelve unique variants and deduplicates by graph identity. The
+API accepts a limit up to sixty. Unsupported edits or inputs can produce zero
+results. Isotopically labelled halogens are not exchanged. Candidate SMILES can
+be downloaded or sent back through the existing analysis workflow for descriptor
+comparison and external SwissADME-adjacent research. This is not a SwissADME
+integration or an inference of improved ADME, potency, safety or prodrug status.
+
+Validation: `tools/analogue-candidates-test.js`,
+`tools/prodrug-candidates-test.js`, and (with jsdom installed)
+`tools/analogue-ui-test.js`, `tools/pk-research-ui-test.js`,
+`tools/prodrug-site-evidence-test.js`. Browser visual layout was not verified.

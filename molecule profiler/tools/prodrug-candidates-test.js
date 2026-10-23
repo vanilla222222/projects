@@ -5,7 +5,7 @@ for(const name of ['smiles','mol','stereo','transform','pharmacology','prodrug-c
 const run=code=>vm.runInContext(code,ctx);let checks=0;
 const check=(code,value,label)=>{assert.equal(run(code),value,label);checks++;};
 run(`function pg(s,n){return ProdrugCandidates.generate(buildMolecule(parseSmiles(s)),{limit:n===undefined?5:n});}`);
-for(const smiles of ['CCO','Oc1ccccc1','CC(=O)O','C[C@H](O)C(=O)O','[13CH3]CO','CC[18OH]']){
+for(const smiles of ['CCO','Oc1ccccc1','CC(=O)O','C[C@H](O)C(=O)O','[13CH3]CO','CC[18OH]','C[NH2+]CCO','[O-][N+](=O)c1ccc(O)cc1']){
  ctx.input=smiles;
  check(`pg(input).rows.length`,5,'Five bounded designs: '+smiles);
  check(`(()=>{const m=buildMolecule(parseSmiles(input)),r=ProdrugCandidates.generate(m);return r.rows.every(x=>x.parentRecoveryVerified&&ProdrugCandidates.recoverParent(x.smiles,x.cleavage,m).verified&&!x.experimentalValidation);})()`,true,'Actual generated graph reverses exactly: '+smiles);

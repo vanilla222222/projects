@@ -88,10 +88,10 @@
    if(!parent||!Array.isArray(parent.atoms)||!Array.isArray(parent.bonds))return fail('A parsed molecular graph is required.');
    if(parent.atoms.length>120)return fail('The bounded generator accepts at most 120 atoms.');
    if(!connected(parent))return fail('Use one connected parent structure; salts and mixtures are not normalized for design.');
-   if(parent.atoms.some(a=>a.charge))return fail('Charged parent structures are outside this neutral-parent design subset.');
    if(parent.atoms.some(a=>!['C','H','N','O','F','P','S','Cl','Br','I'].includes(a.element)))return fail('Unsupported element in this bounded design subset.');
    const valences={C:[4],H:[1],N:[3],O:[2],F:[1],P:[3,5],S:[2,4,6],Cl:[1],Br:[1],I:[1]};
-   if(parent.atoms.some((a,i)=>!Number.isFinite(a.totalH)||!valences[a.element].includes(neighbors(parent,i).reduce((n,x)=>n+x.bond.order,0)+a.totalH)))return fail('Radical or unsupported neutral valence states are outside this design subset.');
+   const ionic={C:{'-1':[3],'1':[3]},N:{'-1':[2],'1':[4]},O:{'-1':[1],'1':[3]},S:{'-1':[1],'1':[3]},P:{'1':[4]}};
+   if(parent.atoms.some((a,i)=>!Number.isFinite(a.totalH)||!(a.charge?(ionic[a.element]?.[a.charge]||[]):valences[a.element]).includes(neighbors(parent,i).reduce((n,x)=>n+x.bond.order,0)+a.totalH)))return fail('Radical or unsupported valence states are outside this design subset.');
    if(/[\\/]/.test(parent.smiles||''))return fail('Directional alkene stereochemistry cannot yet be preserved by the design serializer; no candidate was generated.');
    if(!exact(parent,parse(serialized(parent))))return fail('The complete parent isotope/stereochemical identity could not be verified after serialization.');
    const sites=freeSites(parent);if(!sites.length)return fail('No supported free alcohol, phenol or carboxylic-acid handle was found. Amine-only structures are not assigned speculative cleavable amides.');
