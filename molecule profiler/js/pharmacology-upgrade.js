@@ -29,7 +29,7 @@
  const chartHost=make('section');chartHost.id='pk-decay-view';chartHost.className='pk-research-extension';pk.closest('article').append(chartHost);
  const decay=typeof createPKDecayView==='function'?createPKDecayView(chartHost):null;
  const designs=make('section');designs.id='prodrug-candidate-designs';designs.className='pk-research-extension';
- designs.append(make('h3','Generated research candidates — up to five'),make('p','These are unvalidated structural designs, separate from documented prodrugs above. A reversible graph edit does not establish enzymatic cleavage, parent release in the body, absorption, safety or efficacy.'));
+ designs.append(make('h3','Generated research candidates — up to five'),make('p','Compatible alcohols, phenols, acids/carboxylates and amines can produce unvalidated structural designs, separate from documented prodrugs above. A reversible graph edit does not establish enzymatic cleavage, parent release in the body, absorption, safety or efficacy.'));
  const candidateStatus=make('p');candidateStatus.setAttribute('role','status');const cards=make('div');cards.className='prodrug-candidate-grid';designs.append(candidateStatus,cards);panel.append(designs);
  let current=null;
  function updateCurve(){
@@ -46,7 +46,7 @@
   try{
    const result=root.ProdrugCandidates.generate(record.mol,{limit:5});if(snapshot)snapshot.prodrugCandidates=result;
    const rows=result.rows||result.candidates||[];
-   candidateStatus.textContent=rows.length+' unvalidated candidate'+(rows.length===1?'':'s')+' generated. '+(result.reasons||[]).join(' ');
+   candidateStatus.textContent=(result.reasons||[]).join(' ')||(rows.length+' unvalidated structural candidates generated.');
    rows.forEach((row,index)=>{
     const card=make('article');card.className='prodrug-candidate-card';card.append(make('h4',(index+1)+'. '+row.name));
     if(typeof depictSvg==='function'){try{const preview=make('div');preview.className='prodrug-candidate-structure';preview.innerHTML=depictSvg(buildMolecule(parseSmiles(row.smiles)),{title:row.name+' — unvalidated design'});card.append(preview);}catch(_){/* SMILES remains available if depiction is unsupported. */}}

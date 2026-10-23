@@ -18,9 +18,16 @@ ok(snapshot.prodrugCandidates.rows.length===5&&snapshot.prodrugCandidates.rows.e
 ok(w.document.querySelectorAll('button[data-pharm-smiles]').length===5,'Candidate handoff buttons exist');
 render('CC(=O)OC1=CC=CC=C1C(=O)O',{observations:[{reported:'20 min (parent aspirin)',population:'Label parent context',sourceUrl:'https://example.test/label'}]});
 ok(Math.abs(snapshot.decayPlot.halfLifeHours-1/3)<1e-12,'Source observation takes precedence');
-render('CCN',{observations:[{reported:'Typically less than 1 h',population:'Censored source'}]});
+render('CC(=O)OC',{observations:[{reported:'Typically less than 1 h',population:'Censored source'}]});
 ok(w.document.querySelector('#pk-decay-view figure').hidden&&snapshot.decayPlot===null,'Censored observation clears old curve');
-ok(w.document.querySelectorAll('.prodrug-candidate-card').length===0,'Unsupported amine does not inherit previous candidates');
+ok(w.document.querySelectorAll('.prodrug-candidate-card').length===0,'Unsupported ester-only input does not inherit previous candidates');
+ok(!w.document.querySelector('#prodrug-candidate-designs [role=status]').textContent.includes('0 unvalidated'),'Empty state reports coverage reason without redundant zero prefix');
+render('CCN');
+ok(snapshot.prodrugCandidates.rows.length===5,'Amine-only input now has five carbamate design hypotheses');
+render('CCN(C)C');
+ok(snapshot.prodrugCandidates.rows.length===1,'Tertiary amine produces one N-oxide without padding');
+render('CC[NH3+]');
+ok(snapshot.prodrugCandidates.rows.length===5,'Protonated primary amine is supported');
 render('CCO',{scenarios:{inputs:{clearanceLPerHour:2,volumeL:20},halfLifeHours:Math.LN2*10}});
 ok(Math.abs(snapshot.decayPlot.halfLifeHours-Math.LN2*10)<1e-12,'User scenario selected and labelled');
 snapshot.scenarios={inputs:{clearanceLPerHour:2,volumeL:null}};w.document.getElementById('pk-volume').dispatchEvent(new w.Event('input'));

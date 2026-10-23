@@ -208,20 +208,42 @@ molecules resets the pKa and collapses the table.
 
 The existing half-life model now feeds an interactive single-exponential parent-amount curve, 100 × 2^(−t/t½), with hours on the time axis. A supplied clearance/one-compartment volume scenario takes precedence while those parameters are entered. Exact sourced observations take precedence over model estimates: the aspirin 20-minute observation is usable as a scenario input; a reported numerical range uses an explicitly labelled illustrative midpoint and propagated range. A censored observation such as “less than 1 hour” is not turned into an exact curve. Unavailable estimates and incomplete scenarios clear the prior structure’s plot. Input half-life intervals propagate into a scenario envelope; this is not a validated concentration confidence interval. The model excludes absorption, repeated administration, multi-compartment kinetics, active metabolites and pharmacodynamics. It does not predict subjective strength or duration of effects. Milestones and a CSV are available.
 
-The Prodrugs panel retains documented exact-graph relationships and separately displays up to five unvalidated structural candidate designs. Enumeration supports free alcohol/phenol and neutral carboxylic-acid handles on compatible neutral or charged parents, with exact-parent structural recovery checks, preserved supported stereochemistry/isotopes and explicit unsupported-input reasons. Some structures produce fewer than five or none. An ester/phosphate class reference does not establish that an arbitrary derivative releases the parent in vivo, improves delivery, is pharmacologically inactive, or has an acceptable safety profile. No release rate, benefit, potency, dose or candidate half-life is inferred by this enumeration. Each design retains an activation hypothesis, class references, limitations and an analysis handoff. The pharmacology JSON export records candidate designs separately from curated evidence and includes the current plotted scenario.
+The Prodrugs panel retains documented exact-graph relationships and separately displays up to five unvalidated structural candidate designs. Enumeration supports free alcohol/phenol, acid/carboxylate and compatible primary, secondary and tertiary amine handles on neutral or charged parents, with exact-parent structural recovery checks, preserved supported stereochemistry/isotopes and explicit unsupported-input reasons. Some structures produce fewer than five or none. A design-class reference does not establish that an arbitrary derivative releases the parent in vivo, improves delivery, is pharmacologically inactive, or has an acceptable safety profile. No release rate, benefit, potency, dose or candidate half-life is inferred by this enumeration. Each design retains an activation hypothesis, class references, limitations and an analysis handoff. The pharmacology JSON export records candidate designs separately from curated evidence and includes the current plotted scenario.
 
 Focused formula, candidate-identity and interface checks cover this extension. The existing PK models were not retrained or newly clinically validated.
 
 
 ## General-input structural designs
 
-Prodrug generation has no named-molecule allowlist. Common closed-shell ionic
-valences are now accepted elsewhere in the parent graph, including protonated
-amines and charge-separated nitro groups, while the modified handle remains
-neutral. Exact structural parent recovery, isotope/stereo round trips, connected
-input, size and supported-valence checks remain required. Carboxylate handles,
-amine-only parents and directional alkene stereo are still unsupported; the UI
-reports why rather than inventing a candidate.
+Prodrug generation has no named-molecule allowlist. In addition to alcohols,
+phenols and carboxylic acids, the generator now accepts carboxylates and compatible
+primary/secondary amines (including their protonated forms) for acyloxymethyl
+N-carbamate design hypotheses. A terminal ester trigger and subsequent linker
+fragmentation/decarboxylation are hypothesized; an ordinary stable amide is not
+labelled as generically cleavable. Compatible tertiary amines and their protonated
+forms can produce one distinct N-oxide hypothesis per site rather than padding
+the list to five. Amides, ureas, carbamates, sulfonamides, amidines, aromatic ring
+nitrogen and permanently quaternary ammonium are excluded from these amine rules.
+
+Exact structural parent recovery, isotope/stereo round trips, connected input,
+size and supported-valence checks remain required. Candidates also pass the
+closed-shell valence screen. Reverse checking restores the exact supplied charge
+state by bookkeeping; it does not predict physiological protonation, pKa or
+activation. Sources are class precedents in other compounds, not validation of a
+new derivative. The carbamate cascade can release formaldehyde and other
+byproducts whose exposure and toxicity are unassessed. N-oxide reduction is
+context-dependent, and any new nitrogen stereochemistry is unassigned.
+
+Primary class precedents:
+- Alexander et al. (1988), DOI 10.1021/jm00397a008:
+  https://pubmed.ncbi.nlm.nih.gov/2892933/
+- Siim et al. (2000), DOI 10.1016/S0006-2952(00)00420-2:
+  https://pubmed.ncbi.nlm.nih.gov/10974206/
+
+No compatible site returns `no-compatible-site` with an explicit coverage limit;
+it is not evidence that no prodrug could exist. Directional alkene stereo remains
+unsupported by the serializer. The UI reports the reason once rather than
+prefixing every unsupported input with a repeated zero-count message.
 
 Generated analogues is a separate panel in References and Metabolism. It applies
 single aromatic CH substitutions (fluoro, methyl, hydroxy) and terminal halogen
@@ -237,3 +259,13 @@ Validation: `tools/analogue-candidates-test.js`,
 `tools/prodrug-candidates-test.js`, and (with jsdom installed)
 `tools/analogue-ui-test.js`, `tools/pk-research-ui-test.js`,
 `tools/prodrug-site-evidence-test.js`. Browser visual layout was not verified.
+
+
+Amine expansion validation: 75 focused generator checks, 16 PK/prodrug DOM checks,
+existing analogue integration, 21 reference-site checks, UI contract and
+pharmacology regressions pass. Independent optional
+`python tools/prodrug-rdkit-test.py` (requires RDKit) sanitizes 98 candidates
+from 22 neutral, charged, isotope-labelled and chiral parents, deduplicates them
+and compares each recovered parent by RDKit isomeric canonical SMILES. This
+checks graph consistency, not biological activation. Browser visual layout was
+not retested.
