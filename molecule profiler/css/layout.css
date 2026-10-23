@@ -78,3 +78,7 @@ main{max-width:1480px;padding-inline:clamp(16px,3vw,48px);gap:26px}
 @media(max-width:780px){#prodrug-panel[data-studio-view=build] #prodrug-site-evidence>.prodrug-site-controls{grid-template-columns:minmax(0,1fr)}}
 
 .design-studio-nav{scroll-margin-top:150px}
+
+/* Resolve shared surfaces in the active body theme, including hover states. */
+body{--border:var(--line);--surface-hover:color-mix(in srgb,var(--accent) 6%,var(--bg-raise))}
+.panel .design-studio-nav button[aria-pressed=true]:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
