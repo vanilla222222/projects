@@ -15,7 +15,7 @@
   {id:'build',label:'Build at a site',description:'Choose an input atom, inspect compatible options and preview a single design or transformation.'},
   {id:'comparison',label:'Compare & review',description:'Collect designs from different sites, compare their properties and review research evidence.'},
   {id:'route',label:'Release steps',description:'Follow a selected design or product through supported formal steps. Every fragment stays in the history.'},
-  {id:'candidates',label:'Quick candidates',description:'Browse up to 25 unique designs, grouped by up to five input positions. Spare capacity is filled from other compatible positions.'},
+  {id:'candidates',label:'Quick candidates',description:'Browse up to 25 unique designs across up to five positions, including eligible methoxy / ether sites. Spare capacity is redistributed. Ether redesigns show their different OH release target.'},
   {id:'references',label:'Reference evidence',description:'Inspect curated compound relationships separately from generated hypotheses.'}
  ];
  const nav=make('nav');nav.className='design-studio-nav';nav.id='design-studio-nav';nav.setAttribute('aria-label','Prodrug studio workflow');

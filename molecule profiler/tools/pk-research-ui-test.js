@@ -4,7 +4,7 @@ let JSDOM;try{({JSDOM}=require(process.env.PROFILER_JSDOM_PATH||'jsdom'));}catch
 const root=path.join(__dirname,'..');
 const html=fs.readFileSync(process.env.PROFILER_INDEX_PATH||path.join(root,'index.html'),'utf8');
 const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://example.test/'}),ctx=dom.getInternalVMContext(),w=dom.window;
-for(const name of ['smiles','mol','smarts','stereo','transform','pharmacology','depict','pk-decay','prodrug-candidates'])vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),ctx,{filename:name});
+for(const name of ['smiles','mol','smarts','stereo','transform','pharmacology','depict','pk-decay','prodrug-candidates','cleavable-groups'])vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),ctx,{filename:name});
 let snapshot;
 w.PharmacologyUI={render(record){snapshot={inputSmiles:record.smiles,...record.snapshot};},getSnapshot(){return snapshot;}};
 vm.runInContext(fs.readFileSync(path.join(root,'js/pharmacology-upgrade.js'),'utf8'),ctx,{filename:'pharmacology-upgrade'});
@@ -39,4 +39,14 @@ ok(range.halfLifeHours===10.65&&range.intervalHours[0]===10&&range.sourceLabel.i
 render('OCC(O)CC(O)CC(O)CCO');ok(w.document.querySelectorAll('.quick-candidate-group').length===5&&Array.from(w.document.querySelectorAll('.quick-candidate-group')).every(g=>g.querySelectorAll('.prodrug-candidate-card').length===5),'Five position groups each contain five distinct designs');
 ok(w.document.querySelectorAll('.quick-candidate-group[open]').length===1,'Only the first position group opens by default');
 render('[Cl-].CC[NH3+]');ok(w.document.querySelector('.quick-candidate-group summary').textContent.includes('N4')&&snapshot.prodrugCandidates.sampling.positionCounts[0].atom===3,'Salt group keeps original input atom numbering');
+
+render('NCCc1cc(OC)c(OC)c(OC)c1OC');
+const mixed=snapshot.prodrugCandidates,etherRows=mixed.rows.filter(r=>r.designMode==='ether-redesign');
+ok(mixed.rows.length===25&&mixed.sampling.positionCounts.length===5&&mixed.sampling.positionCounts.every(p=>p.count===5),'Quick batch includes four methoxy carbons plus the amine, five each');
+ok(etherRows.length===20&&mixed.rows.filter(r=>r.parentRecoveryVerified).length===5,'Snapshot distinguishes 20 OH-analogue redesigns from five original-parent designs');
+ok(w.document.querySelectorAll('.quick-candidate-group').length===5&&Array.from(w.document.querySelectorAll('.quick-candidate-group')).filter(g=>g.textContent.includes('DIFFERENT RELEASE TARGET')).length===4,'Four ether position groups display different-target scope');
+ok(w.document.querySelector('#prodrug-candidate-designs [role=status]').textContent.includes('methoxy ether redesign'),'Quick status names methoxy positions');
+ok(etherRows.every(r=>Array.from(w.document.querySelectorAll('.prodrug-candidate-card code')).some(e=>e.textContent===r.releaseTargetSmiles)),'Every redesigned OH target is visible');
+ok(w.document.querySelectorAll('button[data-pharm-smiles]').length===25,'Every mixed candidate retains analysis handoff');
+render('COc1ccccc1');ok(snapshot.prodrugCandidates.rows.length===25&&snapshot.prodrugCandidates.rows.every(r=>r.designMode==='ether-redesign'&&!r.parentRecoveryVerified),'Methoxy-only input now supplies Quick candidates without an amine');
 console.log('PK/prodrug interface integration: '+checks+' focused checks passed.');dom.window.close();

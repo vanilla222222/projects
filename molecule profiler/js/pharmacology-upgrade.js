@@ -29,7 +29,7 @@
  const chartHost=make('section');chartHost.id='pk-decay-view';chartHost.className='pk-research-extension';pk.closest('article').append(chartHost);
  const decay=typeof createPKDecayView==='function'?createPKDecayView(chartHost):null;
  const designs=make('section');designs.id='prodrug-candidate-designs';designs.className='pk-research-extension';
- designs.append(make('h3','Quick candidates — up to 25 designs'),make('p','Compatible alcohols, phenols, acids/carboxylates, amines, thiols and aldehyde/ketone carbonyls can produce unvalidated structural designs, separate from documented prodrugs above. A reversible graph edit does not establish enzymatic cleavage, parent release in the body, absorption, safety or efficacy.'));
+ designs.append(make('h3','Quick candidates — up to 25 designs'),make('p','Compatible methoxy/alkoxy ethers, alcohols, phenols, acids/carboxylates, amines, thiols and carbonyls share this batch. Ether redesigns release a different OH analogue; parent-recovery designs target the original input. All are unvalidated and separate from documented prodrugs above. A reversible graph edit does not establish enzymatic cleavage, parent release in the body, absorption, safety or efficacy.'));
  const candidateStatus=make('p');candidateStatus.setAttribute('role','status');const cards=make('div');cards.className='quick-candidate-groups';designs.append(candidateStatus,cards);panel.append(designs);
  let current=null;
  function updateCurve(){
@@ -47,14 +47,16 @@
    const result=root.ProdrugCandidates.generateQuick(record.mol);if(snapshot)snapshot.prodrugCandidates=result;
    const rows=result.rows||result.candidates||[];
    candidateStatus.textContent=(result.reasons||[]).join(' ')||(rows.length+' unvalidated structural candidates generated.');
-   if(result.sampling){const sampling=result.sampling;candidateStatus.textContent+=' Target: '+sampling.target+' designs across up to five positions; '+sampling.positionCounts.map(s=>s.element+(s.atom+1)+': '+s.count).join(' · ')+'.';}
+   if(result.sampling){const sampling=result.sampling;candidateStatus.textContent+=' Target: '+sampling.target+' designs across up to five positions; '+sampling.positionCounts.map(s=>s.element+(s.atom+1)+(s.kind?.includes('ether redesign')?' ('+s.kind+')':'')+': '+s.count).join(' · ')+'.';}
    const groups=new Map();
    rows.forEach((row,index)=>{
-    if(!groups.has(row.site.atom)){const group=make('details');group.className='quick-candidate-group';group.open=groups.size===0;const count=rows.filter(r=>r.site.atom===row.site.atom).length;group.append(make('summary','Position '+record.mol.atoms[row.site.atom].element+(row.site.atom+1)+' · '+count+' distinct design'+(count===1?'':'s')));const grid=make('div');grid.className='prodrug-candidate-grid';group.append(grid);cards.append(group);groups.set(row.site.atom,grid);}
+    if(!groups.has(row.site.atom)){const group=make('details');group.className='quick-candidate-group';group.open=groups.size===0;const count=rows.filter(r=>r.site.atom===row.site.atom).length;group.append(make('summary','Position '+record.mol.atoms[row.site.atom].element+(row.site.atom+1)+(row.designMode==='ether-redesign'?' · '+row.site.kind:'')+' · '+count+' distinct design'+(count===1?'':'s')));const grid=make('div');grid.className='prodrug-candidate-grid';group.append(grid);cards.append(group);groups.set(row.site.atom,grid);}
 
     const card=make('article');card.className='prodrug-candidate-card';card.append(make('h4',(index+1)+'. '+row.name));
     if(typeof depictSvg==='function'){try{const preview=make('div');preview.className='prodrug-candidate-structure';preview.innerHTML=depictSvg(buildMolecule(parseSmiles(row.smiles)),{title:row.name+' — unvalidated design'});card.append(preview);}catch(_){/* SMILES remains available if depiction is unsupported. */}}
-    card.append(make('code',row.smiles),make('p','Release hypothesis: '+row.activationHypothesis),make('p','Structural parent recovery: '+(row.parentRecoveryVerified?'checked; biological release remains unverified.':'not established.')));
+    card.append(make('code',row.smiles),make('p','Release hypothesis: '+row.activationHypothesis));
+    if(row.designMode==='ether-redesign'){card.append(make('p','DIFFERENT RELEASE TARGET — OH analogue. Original methoxy / alkoxy input recovery is not claimed.'),make('code',row.releaseTargetSmiles),make('p','Two-step formal release graph checked; biological activation remains unvalidated.'));}
+    else card.append(make('p','Structural parent recovery: '+(row.parentRecoveryVerified?'checked; biological release remains unverified.':'not established.')));
     const limitations=make('ul');(row.limitations||[]).forEach(text=>limitations.append(make('li',text)));card.append(limitations);
     const sources=row.sources&&row.sources.length?row.sources:[{url:row.sourceUrl,title:'Reaction-class source'}];
     sources.forEach(source=>{const url=source.url||source.sourceUrl;if(!/^https:\/\//.test(url||''))return;const a=make('a',source.title||source.label||'Class reference');a.href=url;a.target='_blank';a.rel='noopener noreferrer';const p=make('p');p.append(a);card.append(p);});

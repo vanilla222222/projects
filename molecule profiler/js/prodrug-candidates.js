@@ -201,17 +201,20 @@
   if(!prepared.normalization)return generateSingle(parent,options);
   const mapped={...options};
   if(options?.atom!==undefined){mapped.atom=Number.isInteger(options.atom)?prepared.inputAtoms.indexOf(options.atom):-1;}
-  const report=generateSingle(prepared.mol,mapped);report.normalization=prepared.normalization;report.reasons.push(prepared.normalization.scope);
-  const remap=s=>({...s,parentAtom:s.atom,atom:prepared.inputAtoms[s.atom],index:prepared.inputAtoms[s.atom],...(s.carbonylOxygen!==undefined?{parentCarbonylOxygen:s.carbonylOxygen,carbonylOxygen:prepared.inputAtoms[s.carbonylOxygen]}:{}),label:s.label.replace(/\d+$/,String(prepared.inputAtoms[s.atom]+1))});
+  const report=generateSingle(prepared.mol,mapped),normalization={...prepared.normalization};
+  if(report.rows.some(row=>row.designMode==='ether-redesign'))normalization.scope='Recognized inorganic counterions omitted. Designs concern the organic component; each row declares an original-input or different OH release target, not a complete-salt or solution-protonation claim.';
+  report.normalization=normalization;report.reasons.push(normalization.scope);
+  const remapEtherId=id=>id.replace(/^redesign:(\d+)-(\d+):/,(_,c,o)=>'redesign:'+prepared.inputAtoms[Number(c)]+'-'+prepared.inputAtoms[Number(o)]+':');
+  const remap=s=>({...s,parentAtom:s.atom,atom:prepared.inputAtoms[s.atom],index:prepared.inputAtoms[s.atom],...(s.etherOxygen!==undefined?{etherOxygen:prepared.inputAtoms[s.etherOxygen],...(s.designs?{designs:s.designs.map(d=>({...d,id:remapEtherId(d.id),name:d.name.replace(/modify C\d+/,'modify C'+(prepared.inputAtoms[s.atom]+1))}))}:{})}:{}),...(s.carbonylOxygen!==undefined?{parentCarbonylOxygen:s.carbonylOxygen,carbonylOxygen:prepared.inputAtoms[s.carbonylOxygen]}:{}),label:s.label.replace(/\d+$/,String(prepared.inputAtoms[s.atom]+1))});
   report.eligibleSites=(report.eligibleSites||[]).map(remap);
   if(report.sampling)report.sampling.positionCounts=report.sampling.positionCounts.map(s=>({...s,atom:prepared.inputAtoms[s.atom]}));
-  report.rows.forEach(row=>{row.site=remap(row.site);row.id=row.id.replace(/\d+$/,String(row.site.atom+1));row.name=row.name.replace(/\d+$/,String(row.site.atom+1));row.normalization=prepared.normalization;row.parentRecoveryScope=prepared.normalization.scope;row.limitations.push(prepared.normalization.scope);});
+  report.rows.forEach(row=>{row.site=remap(row.site);row.id=row.designMode==='ether-redesign'?remapEtherId(row.id):row.id.replace(/\d+$/,String(row.site.atom+1));row.name=row.name.replace(/\d+$/,String(row.site.atom+1));row.normalization=normalization;row.parentRecoveryScope=(row.designMode==='ether-redesign'?'Releases a different OH analogue; original input recovery is not claimed. ':'')+normalization.scope;row.limitations.push(normalization.scope);});
   return report;
  }
  function generateSingle(parent,options){
   const rows=[],reasons=[],skipped=[];
   const quick=options?.profile==='quick';
-  const report={version:6,status:'unavailable',rows,candidates:rows,reasons,skipped,evidenceLevel:'Unvalidated structural designs',scope:'Bounded single-site ester, phosphate, carbamate, thioester, N–H linker, N-oxide or carbonyl-condensation hypotheses. Structural parent recovery does not establish biological conversion or prodrug status.'};
+  const report={version:7,status:'unavailable',rows,candidates:rows,reasons,skipped,evidenceLevel:'Unvalidated structural designs',scope:'Bounded single-site designs. Quick sampling includes parent-recovery designs and ether redesigns with a different OH release target. Structural edits and formal release checks do not establish biological conversion or prodrug status.'};
   const fail=message=>{reasons.push(message);return report;};
   try{
    if(!parent||!Array.isArray(parent.atoms)||!Array.isArray(parent.bonds))return fail('A parsed molecular graph is required.');
@@ -220,7 +223,10 @@
    if(parent.atoms.some(a=>!['C','H','N','O','F','P','S','Cl','Br','I'].includes(a.element)))return fail('Unsupported element in this bounded design subset.');
    if(!supportedValences(parent))return fail('Radical or unsupported valence states are outside this design subset.');
    if(!exact(parent,parse(serialized(parent))))return fail('The complete parent isotope/stereochemical identity could not be verified after serialization.');
-   let sites=freeSites(parent);if(quick)sites=sites.map(site=>({...site,designs:expandedDesigns(site.designs)}));report.eligibleSites=sites.map(({designs,...site})=>({...site,designs:designs.map(({id,name,cleavage})=>({id,name,cleavage}))}));
+   let sites=freeSites(parent);if(quick){
+    sites=sites.map(site=>({...site,designs:expandedDesigns(site.designs)}));
+    if(root.CleavableGroups){const groups=root.CleavableGroups.redesignGroups(parent);sites.push(...root.CleavableGroups.redesignSites(parent,{profile:'quick'}).filter(s=>s.element==='C').map(s=>{const group=groups.find(g=>g.atom===s.atom);return {...s,kind:group.kind+' ether redesign',label:group.kind+' carbon '+(s.atom+1),etherOxygen:group.oxygenAtom,designs:s.designs.map(d=>({...d,operation:'ether-redesign',cleavage:'ether-redesign'}))};}));}
+   }report.eligibleSites=sites.map(({designs,...site})=>({...site,designs:designs.map(({id,name,cleavage})=>({id,name,cleavage}))}));
    if(options&&options.atom!==undefined){
     if(!Number.isInteger(options.atom)||!parent.atoms[options.atom])return fail('Select a valid input atom.');
     sites=sites.filter(s=>s.atom===options.atom);
@@ -228,7 +234,7 @@
    if(options&&options.designId!==undefined){
     sites=sites.map(s=>({...s,designs:s.designs.filter(d=>d.id===options.designId)})).filter(s=>s.designs.length);
    }
-   if(!sites.length){report.status='no-compatible-site';return fail('No compatible site for the current ester, phosphate, amine-carbamate, N-oxide, thioester, N–H linker or aldehyde/ketone design classes at the selected site(s). This is a coverage limit, not evidence that no prodrug is possible.');}
+   if(!sites.length){report.status='no-compatible-site';return fail('No compatible site for the current ester, phosphate, amine-carbamate, N-oxide, thioester, N–H linker, aldehyde/ketone or ether-redesign classes at the selected site(s). This is a coverage limit, not evidence that no prodrug is possible.');}
    const requested=options&&options.limit!==undefined?Number(options.limit):5;
    const limit=Number.isFinite(requested)?Math.max(0,Math.min(quick?25:5,Math.floor(requested))):(quick?25:5);
    if(!limit)return fail('Candidate limit is zero.');
@@ -236,22 +242,28 @@
    const attempt=(site,design)=>{
     if(rows.length>=limit||quick&&attempts>=300)return false;attempts++;const before=rows.length;
     try{
-     const smiles=serialized(attach(parent,site,design)),candidate=parse(smiles);
+     const redesign=design.operation==='ether-redesign'?root.CleavableGroups.redesign(parent,design.id,site.atom,{profile:'quick'}):null;
+     if(redesign&&redesign.status!=='designed')return false;
+     const smiles=redesign?redesign.smiles:serialized(attach(parent,site,design)),candidate=parse(smiles);
      if(!connected(candidate)||!supportedValences(candidate)||exact(candidate,parent)||structures.some(m=>exact(m,candidate)))return false;
      if(!exact(candidate,parse(serialized(candidate)))){skipped.push({site:site.label,promoiety:design.name,reason:'Candidate stereochemical identity is unresolved or not preserved.'});return false;}
+     if(redesign){
+      if(!redesign.releaseTargetVerified||exact(parse(redesign.releaseTargetSmiles),parent))return false;
+      structures.push(candidate);rows.push({id:design.id,name:redesign.name+' at C'+(site.atom+1),smiles,promoiety:redesign.name,site:{atom:site.atom,index:site.atom,kind:site.kind,label:site.label,etherOxygen:site.etherOxygen},cleavage:'ether-redesign',designMode:'ether-redesign',activationHypothesis:redesign.hypothesis,parentRecoveryVerified:false,recoveredParentSmiles:null,parentRecoveryScope:'Releases a different OH analogue; original input recovery is not claimed.',releaseTargetSmiles:redesign.releaseTargetSmiles,releaseTargetVerified:true,releaseCheck:redesign.releaseCheck,experimentalValidation:false,evidenceLevel:'Unvalidated ether redesign · different release target',designStatus:'hypothesis',sourceUrl:redesign.source.url,sources:[redesign.source],referenceScope:'Reaction-class precedent; this molecule and acyl tail are unvalidated.',limitations:redesign.limitations.concat('Expanded Quick sampling; new linker and promoiety stereochemistry are unassigned.')});return true;
+     }
      const recovery=recoverParent(smiles,design.cleavage,parent);if(!recovery.verified){skipped.push({site:site.label,promoiety:design.name,reason:'Exact parent recovery was not verified.'});return false;}
      structures.push(candidate);
      rows.push({id:design.id+'-'+site.element.toLowerCase()+(site.atom+1),name:design.name+' candidate at '+site.element+(site.atom+1),smiles,promoiety:design.name,site:{atom:site.atom,index:site.atom,kind:site.kind,label:site.label},cleavage:design.cleavage,activationHypothesis:design.hypothesis,
       parentRecoveryScope:'Reverse graph edit restores the supplied isotope, stereo and charge state; it does not predict biological release or solution protonation.',
       limitations:COMMON_LIMITS.concat(design.limitations||[],parent.atoms[site.atom].charge!==site.charge?['The design changes the handle charge; reverse checking restores the input charge state by bookkeeping, not a pKa or physiological protonation model.']:[],report.eligibleSites.length>1?['This is a single-site design on a molecule with several eligible handles; selective preparation and competing activation are not established.']:[]),
-      evidenceLevel:'Unvalidated structural design',designStatus:'hypothesis',sourceUrl:design.sources[0].url,sources:design.sources.map(s=>Object.assign({},s)),referenceScope:'Reaction-class precedents only; no molecule-specific experimental evidence.',parentRecoveryVerified:true,recoveredParentSmiles:recovery.smiles,attachment:recovery.attachment,experimentalValidation:false});
+      evidenceLevel:'Unvalidated structural design',designStatus:'hypothesis',sourceUrl:design.sources[0].url,sources:design.sources.map(s=>Object.assign({},s)),referenceScope:'Reaction-class precedents only; no molecule-specific experimental evidence.',designMode:'parent-recovery',parentRecoveryVerified:true,recoveredParentSmiles:recovery.smiles,attachment:recovery.attachment,experimentalValidation:false});
     }catch(error){skipped.push({site:site.label,promoiety:design.name,reason:'The proposed structure could not be validated.'});}
     return rows.length>before;
    };
    if(quick){
     const chosen=[];
     // Five positions, five unique designs each where their libraries allow it.
-    const ordered=sites.slice().sort((a,b)=>Number(b.designs.length>=5)-Number(a.designs.length>=5));
+    const ordered=sites.slice().sort((a,b)=>Number(b.designs.length>=5)-Number(a.designs.length>=5)||Number(b.designs[0]?.operation==='ether-redesign')-Number(a.designs[0]?.operation==='ether-redesign'));
     for(const site of ordered){
      if(chosen.length>=5||rows.length>=limit||attempts>=300)break;
      const state={site,cursor:0,count:0};
@@ -260,8 +272,8 @@
     }
     // Fill unused capacity from the selected compatible positions.
     let work=true;while(rows.length<limit&&work&&attempts<300){work=false;for(const state of chosen){if(state.cursor>=state.site.designs.length||rows.length>=limit||attempts>=300)continue;work=true;if(attempt(state.site,state.site.designs[state.cursor++]))state.count++;}}
-    report.sampling={target:limit,maxPositions:5,basePerPosition:5,attempts,attemptLimit:300,positionCounts:chosen.map(s=>({atom:s.site.atom,element:s.site.element,count:s.count})),shortfall:limit-rows.length};
-    if(rows.length<limit)reasons.push('Only '+rows.length+' distinct designs passed the supported template and exact-parent checks within the sampling bounds; the remaining slots are not padded with duplicate or unsupported structures.');
+    report.sampling={target:limit,maxPositions:5,basePerPosition:5,attempts,attemptLimit:300,positionCounts:chosen.map(s=>({atom:s.site.atom,element:s.site.element,kind:s.site.kind,count:s.count})),shortfall:limit-rows.length};
+    if(rows.length<limit)reasons.push('Only '+rows.length+' distinct designs passed the supported structure and declared release-target checks within the sampling bounds; the remaining slots are not padded with duplicate or unsupported structures.');
    }else{
     for(let d=0;d<5&&rows.length<limit;d++)for(const site of sites){if(rows.length>=limit)break;const design=site.designs[d];if(design)attempt(site,design);}
    }
@@ -270,5 +282,5 @@
   }catch(error){reasons.push('Candidate generation unavailable for this structure: '+error.message);}
   return report;
  }
- const api={generate,generateQuick:(parent,options={})=>generate(parent,{...options,limit:options.limit??25,profile:'quick'}),recoverParent,prepareParent,validGraph:supportedValences,sites:parent=>generate(parent,{limit:0}).eligibleSites||[],sources:SOURCES};root.ProdrugCandidates=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
+ const api={generate,quickAcylTails:()=>QUICK_TAILS.map(t=>t.slice()),generateQuick:(parent,options={})=>generate(parent,{...options,limit:options.limit??25,profile:'quick'}),recoverParent,prepareParent,validGraph:supportedValences,sites:parent=>generate(parent,{limit:0}).eligibleSites||[],sources:SOURCES};root.ProdrugCandidates=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
