@@ -18,6 +18,16 @@ Variables persist between runs. **Stop** and **Reset interpreter** terminate the
 
 Successful runs capture code, exact input copies, output, versions and timestamp. Save the matching analysis in Project notebooks to retain the capture, or download run JSON directly. Runs finishing after a structure change are not attached to the new analysis. Notebook snapshots are historical records, not executed scripts or validated findings.
 
+## Ready-to-run analysis templates
+
+In Python workspace, choose an **Analysis template**, click **Load template**, then **Run code**. The description explains the selected template before you load its code. Selecting a dropdown option alone does not replace the editor.
+
+- **Compare all designs with parent** lists all copied designs in their original order and shows MW, WLOGP, TPSA and ESOL log S differences when both input and design values exist. The comparison uses the dashboard's input baseline to keep calculation methods consistent. Differences are not benefit scores.
+- **Formula, properties and BBB summary** prints full descriptive names, formula, MW, TPSA, WLOGP, SMILES and any available passive BBB screen for the input and every design. It does not present passive screens as measured penetration or trained-model probabilities. Unavailable estimates remain unavailable.
+- **Cleavage products and release targets** reads the current snapshot's release checks. For more results, first run **Check all release paths** in Candidate comparison. It distinguishes original-input, organic-component and different-OH-analogue targets, then lists available formal steps, products and coproducts. Unchecked paths stay unchecked; no biological metabolism is inferred.
+
+All three use only the included Python standard library. Their source is in `js/python-analysis-templates.js`. Successful unmodified template runs retain the template ID and version alongside their exact code, inputs and output in the run JSON and notebook snapshot. Edited scripts retain their code with no built-in-template attribution.
+
 ## Full engine status
 
 This workspace includes Python's standard library. Full Python RDKit, NumPy, pandas and Vina are not bundled yet. Research tools and BBB research retain their explicit standalone-engine requirements. No chemistry calculations are silently substituted, and model-version guards are unchanged.

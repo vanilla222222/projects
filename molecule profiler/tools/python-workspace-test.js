@@ -6,7 +6,7 @@ let snapshot=null,pendingRun=null,terminated=0;
 w.PharmacologyUI={render:r=>{snapshot={inputSmiles:r.smiles,candidateComparison:{rows:[{name:'Design',smiles:'CCOC',properties:{mw:74}}]}};},getSnapshot:()=>snapshot};
 class FakeWorker{postMessage(m){if(m.type==='init')queueMicrotask(()=>this.onmessage({data:{id:m.id,type:'done',versions:{python:'3.13.2',pyodide:'0.29.3'}}}));else pendingRun={worker:this,m};}terminate(){terminated++;}}
 w.Worker=FakeWorker;w.URL.createObjectURL=()=> 'blob:test';w.URL.revokeObjectURL=()=>{};
-for(const file of ['js/python-kernel.js','js/python-workspace-ui.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),ctx,{filename:file});
+for(const file of ['js/python-kernel.js','js/python-analysis-templates.js','js/python-workspace-ui.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),ctx,{filename:file});
 const el=id=>w.document.getElementById(id),tick=()=>new Promise(r=>setTimeout(r,0));
 function finish(text='test output\n'){const {worker,m}=pendingRun;worker.onmessage({data:{id:m.id,type:'output',text,stream:'stdout'}});worker.onmessage({data:{id:m.id,type:'done'}});}
 (async()=>{try{
@@ -14,5 +14,6 @@ function finish(text='test output\n'){const {worker,m}=pendingRun;worker.onmessa
  el('python-run').click();await tick();assert.ok(!('pythonExperiment' in pendingRun.m.context.evidence),'Previous experiment is not recursively copied');w.PharmacologyUI.render({name:'Second',smiles:'CCC',d:{mw:44}});finish('old structure result\n');await tick();assert.equal(snapshot.pythonExperiment,undefined,'Stale input run is not attached to new structure');assert.equal(w.PythonWorkspaceUI.getLastRun().input.molecule.smiles,'CCO');
  el('python-run').click();await tick();const old=pendingRun;el('python-stop').click();await tick();assert.ok(terminated>0);assert.equal(el('python-run').disabled,false);old.worker.onmessage({data:{id:old.m.id,type:'done'}});assert.equal(snapshot.pythonExperiment,undefined);assert.equal(el('python-code').value,"print(query_smiles)");
  el('python-run').click();await tick();finish('fresh\n');await tick();assert.equal(snapshot.pythonExperiment.input.molecule.smiles,'CCC');el('python-reset').click();assert.match(el('python-status').textContent,/Reset/);
+ for(const [name,template] of Object.entries(w.PythonAnalysisTemplates)){el('python-example').value=name;el('python-example').dispatchEvent(new w.Event('change'));assert.equal(el('python-template-help').textContent,template.description);el('python-example-load').click();assert.equal(el('python-code').value,template.code);el('python-run').click();await tick();assert.equal(pendingRun.m.code,template.code);finish('template result\n');await tick();assert.equal(snapshot.pythonExperiment.template.id,template.id);assert.equal(snapshot.pythonExperiment.template.version,template.version);}
  console.log('Python UI passed: exact input capture, notebook snapshot, recursive-copy prevention, stale-input handling, stop, restart and reset.');
 }finally{w.PythonWorkspaceUI.stop();w.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
