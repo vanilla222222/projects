@@ -16,10 +16,11 @@ async function settled(){for(let i=0;i<200;i++){if($('candidate-dashboard-stop')
  ok($('candidate-dashboard').textContent.includes('majority-class baseline'),'BBB limitations are visible where designs are compared');
  $('candidate-dashboard-kind').value='different-analogue';$('candidate-dashboard-kind').dispatchEvent(new w.Event('change'));
  ok($('candidate-dashboard').querySelectorAll('tbody tr').length===snapshot.candidateComparison.rows.filter(r=>r.releaseKind==='different-analogue').length&&snapshot.candidateComparison.rows.length===25,'Filtering preserves the entire exported report');
- $('candidate-dashboard').querySelector('[data-candidate-index="0"]').click();await tick();
+ let scrolledToDetail=false;$('candidate-release-detail').scrollIntoView=()=>{scrolledToDetail=true;};$('candidate-dashboard').querySelector('[data-candidate-index="0"]').click();await tick();ok(scrolledToDetail&&w.document.activeElement===$('candidate-release-detail'),'Inspect scrolls and moves focus directly to the release details');
  ok($('candidate-release-detail').textContent.includes('different OH analogue')&&$('candidate-release-detail').querySelectorAll('.release-step').length===2,'Methoxy designs show the correct different target and two-step cascade');
  ok($('candidate-release-detail').textContent.includes('remaining formal step')&&$('candidate-release-detail').textContent.includes('Bond(s) broken:'),'Remaining steps and explicitly numbered cleavage bonds displayed');
  ok($('candidate-release-detail').querySelectorAll('.atom-index').length===4,'Each broken-bond endpoint is numbered on its reactant drawing');
+ let returned=false;w.document.querySelector('.candidate-table').scrollIntoView=()=>{returned=true;};[...$('candidate-release-detail').querySelectorAll('button')].find(b=>b.textContent==='Back to comparison table').click();ok(returned,'Selected pathway has a direct return to the table');
  ok(snapshot.candidateComparison.rows[0].release.steps.length===2,'Checked route and products exported');
  $('candidate-dashboard-check-all').click();await tick();const old=snapshot;render('CCO');await tick();
  ok(snapshot!==old&&snapshot.candidateComparison.input.smiles==='CCO'&&snapshot.candidateComparison.rows.every(r=>r.release===null),'Changing input cancels stale all-candidate work');
