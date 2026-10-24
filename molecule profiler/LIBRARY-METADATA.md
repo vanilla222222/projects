@@ -85,3 +85,7 @@ Sources:
 ChEMBL-derived preferred-name labels retain the attribution described in
 [CHEMBL-DATA-NOTICE.md](CHEMBL-DATA-NOTICE.md). PubChem labels have their own
 direct source links in the metadata and provenance report.
+
+## Receptor action filters
+
+The additional graph-guarded `data/library-receptor-tags.js` dataset adds source-classified receptor/action pairs without altering structural tags. Separate categories expose receptor targets, binding observations, general actions and exact receptor/action pairs across the 146-receptor catalogue. See [receptor tag methods, attribution and limitations](RECEPTOR-TAGS.md). Source classifications and assay measurements are distinct; binding affinity never establishes an action by itself.

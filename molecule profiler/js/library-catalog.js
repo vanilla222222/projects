@@ -21,7 +21,7 @@
     return 'other';
   }
   function norm(value) { return String(value == null ? '' : value).trim().toLocaleLowerCase('en'); }
-  function metadata(context) { return context || { names: root.LIBRARY_NAME_METADATA, tags: root.LIBRARY_TAG_METADATA }; }
+  function metadata(context) { return context || { names: root.LIBRARY_NAME_METADATA, tags: root.LIBRARY_TAG_METADATA, receptors: root.LIBRARY_RECEPTOR_METADATA }; }
   function matchedRecord(dataset, entry) {
     if (!entry || !dataset || !dataset.entries || !Object.prototype.hasOwnProperty.call(dataset.entries, entry.name)) return null;
     const record=dataset.entries[entry.name];
@@ -45,9 +45,12 @@
   function aliasesFor(entry, context) { return nameRecord(entry,context)?.aliases || []; }
   function tagsFor(entry, context) {
     const tags=matchedRecord(metadata(context).tags,entry)?.tags;
-    return Array.isArray(tags) ? tags.filter(t=>typeof t==='string'&&t.trim()) : (entry.cls?['Label: '+entry.cls]:[]);
+    const base=Array.isArray(tags) ? tags.filter(t=>typeof t==='string'&&t.trim()) : (entry.cls?['Label: '+entry.cls]:[]);
+    return [...new Set([...base,...(matchedRecord(metadata(context).receptors,entry)?.tags||[])])];
   }
-  function searchText(entry, context) {const r=nameRecord(entry,context),s=sourceRecord(entry);return norm([entry.name,displayName(entry,context),...aliasesFor(entry,context),r?.pubchemCid,r?.chemblId,s?.id,s?.cas,s?.inchiKey,entry.cls,entry.formula,...tagsFor(entry,context),tagsFor(entry,context).includes('Series: 2C / 2C-x phenethylamines')?'2x phenethylamine 2c-x phenethylamine':''].filter(v=>v!=null).join(' ')); }
+  function receptorEvidence(entry,context) { return matchedRecord(metadata(context).receptors,entry)?.evidence || []; }
+  function receptorTerms(entry,context) { const m=metadata(context).receptors;return [...new Set(receptorEvidence(entry,context).map(e=>e.receptorId))].flatMap(id=>{const r=m?.receptors?.[id];return r?[id,r.name,r.family,...r.aliases,...r.genes]:[id];}); }
+  function searchText(entry, context) {const r=nameRecord(entry,context),s=sourceRecord(entry);return norm([entry.name,displayName(entry,context),...aliasesFor(entry,context),r?.pubchemCid,r?.chemblId,s?.id,s?.cas,s?.inchiKey,entry.cls,entry.formula,...receptorTerms(entry,context),...tagsFor(entry,context),tagsFor(entry,context).includes('Series: 2C / 2C-x phenethylamines')?'2x phenethylamine 2c-x phenethylamine':''].filter(v=>v!=null).join(' ')); }
   function catalogSummary(entries, context) {
     const rows = Array.isArray(entries) ? entries : [];
     const groups = { sourced: 0, chebi: 0, other: 0, esol: 0, series: 0, fragment: 0 };
@@ -76,6 +79,9 @@
     };
   }
   const TAG_ALIASES={
+    'agonism':'Action: Agonist','antagonism':'Action: Antagonist','modulation':'Action: Modulator',
+    'partial agonism':'Action: Partial agonist','inverse agonism':'Action: Inverse agonist',
+    'pam':'Action: Positive allosteric modulator (PAM)','nam':'Action: Negative allosteric modulator (NAM)',
     'indole motif':'Family motif: Indoles','pyridine motif':'Family motif: Pyridines',
     'label: 2c phenethylamine':'Series: 2C / 2C-x phenethylamines','label: 2x phenethylamine':'Series: 2C / 2C-x phenethylamines',
     'family motif: 2cs (2,5-dimethoxyphenethylamines)':'Series: 2C / 2C-x phenethylamines',
@@ -145,7 +151,7 @@
     }
     return lines.join('\r\n') + '\r\n';
   }
-  const api = { canonicalTag,queryTerms,GROUPS, groupFor, sourceRecord, nameRecord, displayName, aliasesFor, tagsFor, searchText, catalogSummary, catalogQuery, catalogCsv };
+  const api = { receptorEvidence, canonicalTag,queryTerms,GROUPS, groupFor, sourceRecord, nameRecord, displayName, aliasesFor, tagsFor, searchText, catalogSummary, catalogQuery, catalogCsv };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.LibraryCatalog = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

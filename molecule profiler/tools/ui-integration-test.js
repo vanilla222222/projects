@@ -129,3 +129,6 @@ assert.ok(scripts.indexOf('js/prodrug-explorer-ui.js') > scripts.indexOf('js/pro
 assert.ok(scripts.indexOf('js/prodrug-priority.js') > scripts.indexOf('js/prodrug-explorer.js') && scripts.indexOf('js/prodrug-priority.js') < scripts.indexOf('js/prodrug-explorer-ui.js'), 'Research priority must load between explorer engine and UI');
 
 assert.ok(scripts.indexOf('js/layout-ui.js') > scripts.indexOf('js/prodrug-explorer-ui.js'), 'Layout controller must load after the design controls');
+
+assert.ok(scripts.indexOf('data/library-receptor-tags.js') < scripts.indexOf('js/library-catalog.js'),'Receptor metadata must precede catalogue queries');
+assert.ok(inspector.includes('data/library-receptor-tags.js'),'Reference explorer must load receptor evidence');

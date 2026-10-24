@@ -1,0 +1,2943 @@
+{
+  "schemaVersion": 1,
+  "rdkitVersion": "2026.09.1",
+  "sourceSha256": {
+    "data/library.js": "98a41eb22a3c0d746973c6a3cbd7b5e3fc5062fef842b7f5e205d2610dad4b41",
+    "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
+    "data/receptor-ligand-annotations.js": "28bcfc10324b17fc8a30d2e4b3cf3c589e55fe9af76cd61dfb8986d9a3b30d01",
+    "data/targets.js": "facc465ef72687224df3577fbf7a600102e7c3b07cc033a4de21ba76191192fa",
+    "tools/build-receptor-tags.py": "158e00b34c85db738c51f2b6e911cbe35e92466927a408051bcbd6c647b55535",
+    "validation/sources/receptor-actions-iuphar.json": "db35688868dbaeeb2666bd20e91cf157c9035ac1864b3ab125791ca0c9a1e5c3"
+  },
+  "sourceVersion": "\"# GtoPdb Version: 2026.3.1 - published: 2026-10-12\"",
+  "receptors": 146,
+  "annotatedEntries": 1705,
+  "evidenceRecords": {
+    "iuphar": 1878,
+    "chembl": 1820
+  },
+  "definitions": 2350,
+  "coverage": [
+    {
+      "receptorId": "HTR1A",
+      "binding": 0,
+      "actions": {
+        "agonist": 27,
+        "full_agonist": 15,
+        "partial_agonist": 11,
+        "antagonist": 18,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "HTR1B",
+      "binding": 0,
+      "actions": {
+        "agonist": 26,
+        "full_agonist": 15,
+        "partial_agonist": 10,
+        "antagonist": 9,
+        "inverse_agonist": 2,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "HTR1D",
+      "binding": 0,
+      "actions": {
+        "agonist": 28,
+        "full_agonist": 19,
+        "partial_agonist": 7,
+        "antagonist": 15,
+        "inverse_agonist": 1,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "HTR1E",
+      "binding": 4,
+      "actions": {
+        "agonist": 23,
+        "full_agonist": 20,
+        "partial_agonist": 3,
+        "antagonist": 8,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "HTR1F",
+      "binding": 26,
+      "actions": {
+        "agonist": 23,
+        "full_agonist": 20,
+        "partial_agonist": 3,
+        "antagonist": 5,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "HTR5A",
+      "binding": 50,
+      "actions": {
+        "agonist": 3,
+        "full_agonist": 3,
+        "partial_agonist": 0,
+        "antagonist": 7,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "HTR2A",
+      "binding": 0,
+      "actions": {
+        "agonist": 23,
+        "full_agonist": 15,
+        "partial_agonist": 5,
+        "antagonist": 32,
+        "inverse_agonist": 3,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "HTR2B",
+      "binding": 0,
+      "actions": {
+        "agonist": 16,
+        "full_agonist": 12,
+        "partial_agonist": 4,
+        "antagonist": 22,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "HTR2C",
+      "binding": 0,
+      "actions": {
+        "agonist": 20,
+        "full_agonist": 12,
+        "partial_agonist": 7,
+        "antagonist": 16,
+        "inverse_agonist": 8,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "HTR4",
+      "binding": 50,
+      "actions": {
+        "agonist": 7,
+        "full_agonist": 4,
+        "partial_agonist": 3,
+        "antagonist": 1,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "HTR6",
+      "binding": 0,
+      "actions": {
+        "agonist": 11,
+        "full_agonist": 8,
+        "partial_agonist": 3,
+        "antagonist": 8,
+        "inverse_agonist": 6,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "HTR7",
+      "binding": 0,
+      "actions": {
+        "agonist": 5,
+        "full_agonist": 5,
+        "partial_agonist": 0,
+        "antagonist": 12,
+        "inverse_agonist": 8,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "DRD1",
+      "binding": 50,
+      "actions": {
+        "agonist": 8,
+        "full_agonist": 5,
+        "partial_agonist": 3,
+        "antagonist": 11,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "DRD5",
+      "binding": 50,
+      "actions": {
+        "agonist": 7,
+        "full_agonist": 5,
+        "partial_agonist": 2,
+        "antagonist": 8,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "DRD2",
+      "binding": 50,
+      "actions": {
+        "agonist": 8,
+        "full_agonist": 4,
+        "partial_agonist": 3,
+        "antagonist": 23,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "DRD3",
+      "binding": 50,
+      "actions": {
+        "agonist": 6,
+        "full_agonist": 1,
+        "partial_agonist": 5,
+        "antagonist": 17,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "DRD4",
+      "binding": 50,
+      "actions": {
+        "agonist": 5,
+        "full_agonist": 2,
+        "partial_agonist": 3,
+        "antagonist": 15,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "ADRA1A",
+      "binding": 50,
+      "actions": {
+        "agonist": 7,
+        "full_agonist": 6,
+        "partial_agonist": 0,
+        "antagonist": 21,
+        "inverse_agonist": 1,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "ADRA1B",
+      "binding": 50,
+      "actions": {
+        "agonist": 5,
+        "full_agonist": 4,
+        "partial_agonist": 1,
+        "antagonist": 14,
+        "inverse_agonist": 2,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "ADRA1D",
+      "binding": 50,
+      "actions": {
+        "agonist": 6,
+        "full_agonist": 4,
+        "partial_agonist": 1,
+        "antagonist": 18,
+        "inverse_agonist": 2,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "ADRA2A",
+      "binding": 50,
+      "actions": {
+        "agonist": 14,
+        "full_agonist": 3,
+        "partial_agonist": 7,
+        "antagonist": 15,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "ADRA2B",
+      "binding": 50,
+      "actions": {
+        "agonist": 12,
+        "full_agonist": 3,
+        "partial_agonist": 4,
+        "antagonist": 16,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "ADRA2C",
+      "binding": 50,
+      "actions": {
+        "agonist": 14,
+        "full_agonist": 3,
+        "partial_agonist": 0,
+        "antagonist": 14,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "ADRB1",
+      "binding": 50,
+      "actions": {
+        "agonist": 25,
+        "full_agonist": 1,
+        "partial_agonist": 14,
+        "antagonist": 13,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "ADRB2",
+      "binding": 50,
+      "actions": {
+        "agonist": 26,
+        "full_agonist": 1,
+        "partial_agonist": 16,
+        "antagonist": 14,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "ADRB3",
+      "binding": 50,
+      "actions": {
+        "agonist": 24,
+        "full_agonist": 1,
+        "partial_agonist": 14,
+        "antagonist": 10,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "CHRM1",
+      "binding": 50,
+      "actions": {
+        "agonist": 12,
+        "full_agonist": 7,
+        "partial_agonist": 4,
+        "antagonist": 16,
+        "inverse_agonist": 0,
+        "modulator": 6,
+        "pam": 3,
+        "nam": 1,
+        "neutral_allosteric": 3,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "CHRM3",
+      "binding": 50,
+      "actions": {
+        "agonist": 12,
+        "full_agonist": 8,
+        "partial_agonist": 3,
+        "antagonist": 17,
+        "inverse_agonist": 0,
+        "modulator": 3,
+        "pam": 0,
+        "nam": 1,
+        "neutral_allosteric": 2,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "CHRM5",
+      "binding": 50,
+      "actions": {
+        "agonist": 8,
+        "full_agonist": 2,
+        "partial_agonist": 3,
+        "antagonist": 13,
+        "inverse_agonist": 0,
+        "modulator": 3,
+        "pam": 2,
+        "nam": 1,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "CHRM2",
+      "binding": 50,
+      "actions": {
+        "agonist": 11,
+        "full_agonist": 9,
+        "partial_agonist": 1,
+        "antagonist": 17,
+        "inverse_agonist": 3,
+        "modulator": 6,
+        "pam": 3,
+        "nam": 1,
+        "neutral_allosteric": 2,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "CHRM4",
+      "binding": 50,
+      "actions": {
+        "agonist": 12,
+        "full_agonist": 8,
+        "partial_agonist": 3,
+        "antagonist": 17,
+        "inverse_agonist": 0,
+        "modulator": 4,
+        "pam": 3,
+        "nam": 0,
+        "neutral_allosteric": 1,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "HRH1",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 36,
+        "inverse_agonist": 3,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "HRH2",
+      "binding": 50,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 3,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "HRH3",
+      "binding": 50,
+      "actions": {
+        "agonist": 1,
+        "full_agonist": 1,
+        "partial_agonist": 0,
+        "antagonist": 2,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "HRH4",
+      "binding": 50,
+      "actions": {
+        "agonist": 1,
+        "full_agonist": 1,
+        "partial_agonist": 0,
+        "antagonist": 5,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "ADORA1",
+      "binding": 50,
+      "actions": {
+        "agonist": 6,
+        "full_agonist": 3,
+        "partial_agonist": 0,
+        "antagonist": 9,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "ADORA3",
+      "binding": 50,
+      "actions": {
+        "agonist": 6,
+        "full_agonist": 5,
+        "partial_agonist": 0,
+        "antagonist": 16,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "ADORA2A",
+      "binding": 50,
+      "actions": {
+        "agonist": 7,
+        "full_agonist": 5,
+        "partial_agonist": 0,
+        "antagonist": 15,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "ADORA2B",
+      "binding": 50,
+      "actions": {
+        "agonist": 6,
+        "full_agonist": 4,
+        "partial_agonist": 0,
+        "antagonist": 8,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "MTNR1A",
+      "binding": 50,
+      "actions": {
+        "agonist": 5,
+        "full_agonist": 4,
+        "partial_agonist": 1,
+        "antagonist": 1,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "MTNR1B",
+      "binding": 50,
+      "actions": {
+        "agonist": 5,
+        "full_agonist": 4,
+        "partial_agonist": 1,
+        "antagonist": 1,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "OPRM1",
+      "binding": 36,
+      "actions": {
+        "agonist": 21,
+        "full_agonist": 8,
+        "partial_agonist": 2,
+        "antagonist": 11,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "OPRK1",
+      "binding": 44,
+      "actions": {
+        "agonist": 18,
+        "full_agonist": 4,
+        "partial_agonist": 7,
+        "antagonist": 10,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "OPRD1",
+      "binding": 24,
+      "actions": {
+        "agonist": 15,
+        "full_agonist": 7,
+        "partial_agonist": 3,
+        "antagonist": 9,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "OPRL1",
+      "binding": 6,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 1,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "CNR1",
+      "binding": 0,
+      "actions": {
+        "agonist": 3,
+        "full_agonist": 0,
+        "partial_agonist": 3,
+        "antagonist": 1,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "CNR2",
+      "binding": 0,
+      "actions": {
+        "agonist": 3,
+        "full_agonist": 0,
+        "partial_agonist": 2,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "TAAR1",
+      "binding": 0,
+      "actions": {
+        "agonist": 5,
+        "full_agonist": 5,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "HCRTR1",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "HCRTR2",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "TACR1",
+      "binding": 0,
+      "actions": {
+        "agonist": 1,
+        "full_agonist": 1,
+        "partial_agonist": 0,
+        "antagonist": 3,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "TACR2",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "TACR3",
+      "binding": 0,
+      "actions": {
+        "agonist": 1,
+        "full_agonist": 1,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "NPY1R",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "NPY2R",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "NPY4R",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "NPY5R",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "SSTR1",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 1,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "SSTR2",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "SSTR3",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "SSTR4",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "SSTR5",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "AVPR1A",
+      "binding": 0,
+      "actions": {
+        "agonist": 2,
+        "full_agonist": 2,
+        "partial_agonist": 0,
+        "antagonist": 2,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "AVPR1B",
+      "binding": 0,
+      "actions": {
+        "agonist": 2,
+        "full_agonist": 2,
+        "partial_agonist": 0,
+        "antagonist": 2,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "OXTR",
+      "binding": 0,
+      "actions": {
+        "agonist": 2,
+        "full_agonist": 1,
+        "partial_agonist": 0,
+        "antagonist": 1,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "AVPR2",
+      "binding": 0,
+      "actions": {
+        "agonist": 2,
+        "full_agonist": 2,
+        "partial_agonist": 0,
+        "antagonist": 1,
+        "inverse_agonist": 1,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "AGTR1",
+      "binding": 50,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 5,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "AGTR2",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 1,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "BDKRB1",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "BDKRB2",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "EDNRA",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 4,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "EDNRB",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 3,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "CYSLTR1",
+      "binding": 1,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 1,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "CYSLTR2",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 1,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "LTB4R",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "LTB4R2",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "GRM1",
+      "binding": 0,
+      "actions": {
+        "agonist": 1,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "GRM5",
+      "binding": 0,
+      "actions": {
+        "agonist": 1,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "GRM2",
+      "binding": 0,
+      "actions": {
+        "agonist": 1,
+        "full_agonist": 1,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "GRM3",
+      "binding": 0,
+      "actions": {
+        "agonist": 1,
+        "full_agonist": 1,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "GRM4",
+      "binding": 0,
+      "actions": {
+        "agonist": 2,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "GRM6",
+      "binding": 0,
+      "actions": {
+        "agonist": 2,
+        "full_agonist": 2,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "GRM7",
+      "binding": 0,
+      "actions": {
+        "agonist": 2,
+        "full_agonist": 2,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "GRM8",
+      "binding": 0,
+      "actions": {
+        "agonist": 2,
+        "full_agonist": 2,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "P2RY1",
+      "binding": 0,
+      "actions": {
+        "agonist": 1,
+        "full_agonist": 0,
+        "partial_agonist": 1,
+        "antagonist": 3,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "P2RY2",
+      "binding": 0,
+      "actions": {
+        "agonist": 3,
+        "full_agonist": 3,
+        "partial_agonist": 0,
+        "antagonist": 1,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "P2RY4",
+      "binding": 0,
+      "actions": {
+        "agonist": 4,
+        "full_agonist": 2,
+        "partial_agonist": 1,
+        "antagonist": 1,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "P2RY6",
+      "binding": 0,
+      "actions": {
+        "agonist": 1,
+        "full_agonist": 0,
+        "partial_agonist": 1,
+        "antagonist": 1,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "P2RY11",
+      "binding": 0,
+      "actions": {
+        "agonist": 4,
+        "full_agonist": 4,
+        "partial_agonist": 0,
+        "antagonist": 1,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "P2RY12",
+      "binding": 50,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 2,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "P2RY13",
+      "binding": 0,
+      "actions": {
+        "agonist": 1,
+        "full_agonist": 1,
+        "partial_agonist": 0,
+        "antagonist": 2,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "P2RY14",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "P2RX1",
+      "binding": 0,
+      "actions": {
+        "agonist": 1,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "P2RX2",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "P2RX3",
+      "binding": 0,
+      "actions": {
+        "agonist": 1,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 1,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "P2RX4",
+      "binding": 0,
+      "actions": {
+        "agonist": 1,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 2,
+        "pam": 1,
+        "nam": 1,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "P2RX5",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "P2RX6",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "P2RX7",
+      "binding": 0,
+      "actions": {
+        "agonist": 1,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "GLP1R",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "GIPR",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "GCGR",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "GHSR",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "CCKAR",
+      "binding": 0,
+      "actions": {
+        "agonist": 1,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 1,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "CCKBR",
+      "binding": 0,
+      "actions": {
+        "agonist": 1,
+        "full_agonist": 1,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "CRHR1",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "CRHR2",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "CCR2",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "CCR5",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "CXCR3",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 1,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "CXCR4",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 1,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "AR",
+      "binding": 0,
+      "actions": {
+        "agonist": 4,
+        "full_agonist": 1,
+        "partial_agonist": 0,
+        "antagonist": 6,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "ESR1",
+      "binding": 0,
+      "actions": {
+        "agonist": 6,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 4,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "ESR2",
+      "binding": 0,
+      "actions": {
+        "agonist": 4,
+        "full_agonist": 0,
+        "partial_agonist": 1,
+        "antagonist": 2,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "PGR",
+      "binding": 0,
+      "actions": {
+        "agonist": 2,
+        "full_agonist": 0,
+        "partial_agonist": 1,
+        "antagonist": 1,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "NR3C1",
+      "binding": 1,
+      "actions": {
+        "agonist": 7,
+        "full_agonist": 2,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "NR3C2",
+      "binding": 0,
+      "actions": {
+        "agonist": 2,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 2,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "PPARA",
+      "binding": 0,
+      "actions": {
+        "agonist": 13,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "PPARD",
+      "binding": 0,
+      "actions": {
+        "agonist": 1,
+        "full_agonist": 1,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "PPARG",
+      "binding": 50,
+      "actions": {
+        "agonist": 12,
+        "full_agonist": 10,
+        "partial_agonist": 1,
+        "antagonist": 2,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "RARA",
+      "binding": 29,
+      "actions": {
+        "agonist": 4,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 1,
+        "inverse_agonist": 1,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "RARB",
+      "binding": 0,
+      "actions": {
+        "agonist": 4,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 1,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "RARG",
+      "binding": 0,
+      "actions": {
+        "agonist": 4,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 1,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "VDR",
+      "binding": 0,
+      "actions": {
+        "agonist": 6,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "THRA",
+      "binding": 0,
+      "actions": {
+        "agonist": 5,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "THRB",
+      "binding": 0,
+      "actions": {
+        "agonist": 5,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "EGFR",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 15,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "ERBB2",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 6,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "KDR",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 14,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "PDGFRB",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 4,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "KIT",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 6,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "ALK",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 3,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "MET",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 4,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "FLT3",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 8,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "HTR3A",
+      "binding": 0,
+      "actions": {
+        "agonist": 4,
+        "full_agonist": 0,
+        "partial_agonist": 2,
+        "antagonist": 6,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 2,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "GABAA",
+      "binding": 1,
+      "actions": {
+        "agonist": 5,
+        "full_agonist": 4,
+        "partial_agonist": 1,
+        "antagonist": 3,
+        "inverse_agonist": 1,
+        "modulator": 11,
+        "pam": 7,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "GABAB",
+      "binding": 0,
+      "actions": {
+        "agonist": 3,
+        "full_agonist": 2,
+        "partial_agonist": 1,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "NMDA",
+      "binding": 0,
+      "actions": {
+        "agonist": 5,
+        "full_agonist": 2,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 4,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "AMPA",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 3,
+        "pam": 3,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "KAINATE",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "GLYR",
+      "binding": 0,
+      "actions": {
+        "agonist": 3,
+        "full_agonist": 0,
+        "partial_agonist": 1,
+        "antagonist": 5,
+        "inverse_agonist": 0,
+        "modulator": 3,
+        "pam": 3,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 2,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "NACHR_A4B2",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "NACHR_A7",
+      "binding": 0,
+      "actions": {
+        "agonist": 1,
+        "full_agonist": 1,
+        "partial_agonist": 0,
+        "antagonist": 2,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 1,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "NACHR_A3B4",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "NACHR_MUSCLE",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 0,
+        "activator": 0,
+        "biased": 0
+      }
+    },
+    {
+      "receptorId": "ABCC8",
+      "binding": 0,
+      "actions": {
+        "agonist": 0,
+        "full_agonist": 0,
+        "partial_agonist": 0,
+        "antagonist": 0,
+        "inverse_agonist": 0,
+        "modulator": 0,
+        "pam": 0,
+        "nam": 0,
+        "neutral_allosteric": 0,
+        "channel_blocker": 0,
+        "channel_opener": 0,
+        "inhibitor": 1,
+        "activator": 0,
+        "biased": 0
+      }
+    }
+  ],
+  "dataSha256": "f7d9b756ac2d343faa169f390cc2a3f366c45e0fa9cf7e19ea4f3195472deaff"
+}
