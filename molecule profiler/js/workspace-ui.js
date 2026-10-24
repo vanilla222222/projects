@@ -13,6 +13,7 @@
     { id: 'metabolism', label: 'Metabolism', description: 'Rule-enumerated biotransformations; candidate products are not experimentally confirmed.' },
     { id: 'discovery', label: 'References', description: 'Similarity, target-reference rankings and related comparisons.' },
     { id: 'research', label: 'Research tools', description: 'Independent native chemistry, conformers, force fields, reference shapes, fragment edits and docking.' },
+    { id: 'python', label: 'Python workspace', description: 'Run Python in your browser against copied molecule, candidate and evidence data.' },
     { id: 'bbb', label: 'BBB research', description: 'Independent scaffold-tested BBBP-label model with calibration, applicability checks and abstention.' },
     { id: 'validation', label: 'Validation', description: 'Fixed-model experimental benchmarks, applicability coverage and your own measurement evaluation.' },
     { id: 'notebooks', label: 'Project notebooks', description: 'Local versioned research projects, notes, selected designs and reproducible evidence snapshots.' },
@@ -22,6 +23,7 @@
   ];
   const categories = {
     'Independent research tools': ['research'],
+    'Python workspace': ['python'],
     'Candidate comparison': ['candidates'],
     'Prediction validation': ['validation'],
     'Identity': ['overview', 'properties'],
