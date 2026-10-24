@@ -1,0 +1,162 @@
+{
+  "rdkitVersion": "2026.09.1",
+  "scope": "Algorithm equivalence, not experimental prediction accuracy.",
+  "cases": [
+    {
+      "smiles": "[NH4+]",
+      "exactMass": 18.03382554809
+    },
+    {
+      "smiles": "[Cl-]",
+      "exactMass": 34.96940125991
+    },
+    {
+      "smiles": "[Na+]",
+      "exactMass": 22.98922070009
+    },
+    {
+      "smiles": "[13CH3]CO",
+      "exactMass": 47.045219652
+    },
+    {
+      "smiles": "C[37Cl]",
+      "exactMass": 51.989377686
+    },
+    {
+      "smiles": "C[81Br]",
+      "exactMass": 95.939765696
+    },
+    {
+      "smiles": "[2H]OC",
+      "exactMass": 33.032491494
+    },
+    {
+      "smiles": "[15NH2]CC",
+      "exactMass": 46.054884124
+    },
+    {
+      "smiles": "[18OH]CC",
+      "exactMass": 48.046111192
+    },
+    {
+      "smiles": "[127I]C",
+      "exactMass": 141.927948096
+    },
+    {
+      "smiles": "[99Tc]",
+      "exactMass": 98.9062547
+    },
+    {
+      "smiles": "[Se]",
+      "exactMass": 79.9165213
+    },
+    {
+      "smiles": "[Pt]",
+      "exactMass": 194.9647911
+    },
+    {
+      "smiles": "O=CO",
+      "exactMass": 46.005479304
+    },
+    {
+      "smiles": "O=CN",
+      "exactMass": 45.021463716
+    },
+    {
+      "smiles": "O=Cn1cccc1",
+      "exactMass": 95.03711378
+    },
+    {
+      "smiles": "O=Cc1ccccc1",
+      "exactMass": 106.041864812
+    },
+    {
+      "smiles": "O=Cn1ccnc1",
+      "exactMass": 96.032362748
+    },
+    {
+      "smiles": "c1cc[nH]c1",
+      "exactMass": 67.04219916
+    },
+    {
+      "smiles": "C[NH3+]",
+      "exactMass": 32.04947561209
+    },
+    {
+      "smiles": "[NH3+]CC(=O)[O-]",
+      "exactMass": 75.0320284
+    },
+    {
+      "smiles": "O=P(O)(O)O",
+      "exactMass": 97.97689520600001
+    },
+    {
+      "smiles": "CS(=O)(=O)C",
+      "exactMass": 94.008850432
+    },
+    {
+      "smiles": "c1ccsc1",
+      "exactMass": 84.003371128
+    },
+    {
+      "smiles": "C1CO1",
+      "exactMass": 44.026214748
+    },
+    {
+      "smiles": "C1CN1",
+      "exactMass": 43.042199159999996
+    },
+    {
+      "smiles": "CN(C)C(=N)N",
+      "exactMass": 87.07964728799999
+    },
+    {
+      "smiles": "N#CCO",
+      "exactMass": 57.021463716
+    },
+    {
+      "smiles": "C#CCO",
+      "exactMass": 56.026214748
+    },
+    {
+      "smiles": "CC(=O)NCC",
+      "exactMass": 87.068413908
+    },
+    {
+      "smiles": "CC(=O)OCC",
+      "exactMass": 88.052429496
+    },
+    {
+      "smiles": "c1ccc2ccccc2c1",
+      "exactMass": 128.062600256
+    },
+    {
+      "smiles": "c1ccc(-c2ccccc2)cc1",
+      "exactMass": 154.07825032
+    },
+    {
+      "smiles": "[CH3]",
+      "exactMass": 15.023475096
+    },
+    {
+      "smiles": "[N]=O",
+      "exactMass": 29.99798862
+    },
+    {
+      "smiles": "[O-][N+](=O)c1ccccc1",
+      "exactMass": 123.0320284
+    },
+    {
+      "smiles": "[O-]C=O",
+      "exactMass": 44.998202851909994
+    },
+    {
+      "smiles": "COOC",
+      "exactMass": 62.036779431999996
+    },
+    {
+      "smiles": "[N-]=[N+]=N",
+      "exactMass": 43.017047032
+    }
+  ]
+}

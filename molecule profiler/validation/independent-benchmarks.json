@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-23T23:51:32.554931+00:00",
+  "generatedAt": "2026-10-24T09:35:20.199436+00:00",
   "sourceHashes": {
     "js/smiles.js": "ae7063246faee39707c62003a038fd8ce825e5c247f85ab9b6191e4383caca66",
-    "js/mol.js": "64af3686d28cf3772cf1159a502ca5f406870ff9d42fa56fc4d84da4ebdc3b08",
+    "js/mol.js": "ff9a643a4e25986903d897e962ff97a4db3453b8ac12685ffed14e16521cb96d",
     "js/smarts.js": "daab3275c06a4d8c9052a428d77a789e017f35bdd4578f100d09f906c1005685",
     "js/stereo.js": "6b65f4af103715c9814ec1bd56871b27280e9c8e3278475ce62726f38d3f2aaa",
     "js/descriptors.js": "2612d387dbe7a7d0d789984c8c062c5a3c6ae43781021e4f225659bc7a98ee4e",

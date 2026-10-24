@@ -25,23 +25,42 @@ const ATOMIC_WEIGHT = {
   Tl: 204.38, Pb: 207.2, Bi: 208.98, U: 238.03
 };
 
+// Isotope and monoisotopic masses follow the RDKit periodic-table reference.
+// Unknown isotope labels remain unavailable instead of losing their label.
 const NUCLIDE_WEIGHT = {
   H2: 2.014101778, H3: 3.016049278, C11: 11.0114336, C13: 13.00335484,
   C14: 14.00324199, N13: 13.00573861, N15: 15.0001089, O15: 15.0030656,
   O17: 16.9991317, O18: 17.999161, F18: 18.000938, P32: 31.97390727,
   S35: 34.96903216, Br76: 75.924541, Br77: 76.921379, Tc99: 98.9062547,
-  I123: 122.905589, I124: 123.9062099, I125: 124.9046302, I131: 130.9061246
+  I123: 122.905589, I124: 123.9062099, I125: 124.9046302, I131: 130.9061246,
+  H1: 1.007825032, B10: 10.012937, B11: 11.0093054, C12: 12.0,
+  N14: 14.003074, O16: 15.99491462, F19: 18.99840322, Si28: 27.97692653,
+  Si29: 28.9764947, Si30: 29.97377017, P31: 30.97376163, S32: 31.972071,
+  S33: 32.97145876, S34: 33.9678669, S36: 35.96708076, Cl35: 34.96885268,
+  Cl37: 36.96590259, Br79: 78.9183371, Br81: 80.9162906, I127: 126.904473,
+  Se74: 73.9224764, Se76: 75.9192136, Se77: 76.919914, Se78: 77.9173091,
+  Se80: 79.9165213, Se82: 81.9166994
 };
 
 const MONOISOTOPIC_WEIGHT = {
-  H: 1.0078250319, He: 4.0026032, Li: 7.0160045, Be: 9.0121822, B: 11.0093055,
-  C: 12.0, N: 14.0030740052, O: 15.9949146221, F: 18.99840322, Ne: 19.9924401759,
-  Na: 22.98976967, Mg: 23.9850419, Al: 26.98153844, Si: 27.9769265327,
-  P: 30.97376151, S: 31.97207069, Cl: 34.96885271, Ar: 39.962383123,
-  K: 38.9637069, Ca: 39.9625912, Fe: 55.9349421, Cu: 62.9296011, Zn: 63.9291466,
-  As: 74.9215964, Se: 79.9165218, Br: 78.9183376, Rb: 84.9117893, Sn: 119.9021947,
-  I: 126.904468, Cs: 132.905447, Pt: 194.9647911, Au: 196.9665687, Hg: 201.970626
+  H: 1.007825032, He: 4.002603254, Li: 7.01600455, Be: 9.0121822,
+  B: 11.0093054, C: 12.0, N: 14.003074, O: 15.99491462,
+  F: 18.99840322, Ne: 19.99244018, Na: 22.98976928, Mg: 23.9850417,
+  Al: 26.98153863, Si: 27.97692653, P: 30.97376163, S: 31.972071,
+  Cl: 34.96885268, Ar: 39.96238312, K: 38.96370668, Ca: 39.96259098,
+  Sc: 44.9559119, Ti: 47.9479463, V: 50.9439595, Cr: 51.9405075,
+  Mn: 54.9380451, Fe: 55.9349375, Co: 58.933195, Ni: 57.9353429,
+  Cu: 62.9295975, Zn: 63.9291422, Ga: 68.9255736, Ge: 73.9211778,
+  As: 74.9215965, Se: 79.9165213, Br: 78.9183371, Kr: 83.911507,
+  Rb: 84.91178974, Sr: 87.9056121, Y: 88.9058483, Zr: 89.9047044,
+  Nb: 92.9063781, Mo: 97.9054082, Tc: 96.906365, Ru: 101.9043493,
+  Rh: 102.905504, Pd: 105.903486, Ag: 106.905097, Cd: 113.9033585,
+  In: 114.903878, Sn: 119.9021947, Sb: 120.9038157, Te: 129.9062244,
+  I: 126.904473, Xe: 131.9041535, Cs: 132.9054519, Ba: 137.9052472,
+  La: 138.9063533, Pt: 194.9647911, Au: 196.9665687, Hg: 201.970643,
+  Tl: 204.9744275, Pb: 207.9766521, Bi: 208.9803987, U: 238.0507882
 };
+const ELECTRON_MASS = 0.000548579909065;
 
 const ELECTRONEGATIVE = new Set(['N', 'O', 'F', 'S', 'P', 'Cl', 'Br', 'I', 'Se', 'As', 'B', 'Si', 'Te']);
 
@@ -502,14 +521,14 @@ function molecularFormula(mol) {
 function nuclideWeight(atom) {
   if (!atom.isotope) return null;
   const mass = NUCLIDE_WEIGHT[atom.element + atom.isotope];
-  return mass === undefined ? null : mass;
+  return mass === undefined ? NaN : mass;
 }
 
 function molecularWeight(mol) {
   let total = 0;
   mol.atoms.forEach((atom) => {
     const labelled = nuclideWeight(atom);
-    total += (labelled === null ? ATOMIC_WEIGHT[atom.element] || 0 : labelled)
+    total += (labelled === null ? (ATOMIC_WEIGHT[atom.element] ?? NaN) : labelled)
       + atom.totalH * ATOMIC_WEIGHT.H;
   });
   return total;
@@ -520,10 +539,11 @@ function exactMass(mol) {
   mol.atoms.forEach((atom) => {
     const labelled = nuclideWeight(atom);
     total += (labelled === null
-      ? MONOISOTOPIC_WEIGHT[atom.element] || ATOMIC_WEIGHT[atom.element] || 0
+      ? (MONOISOTOPIC_WEIGHT[atom.element] ?? NaN)
       : labelled) + atom.totalH * MONOISOTOPIC_WEIGHT.H;
   });
-  return total;
+  // Atomic masses include electrons; a positive ion has lost electrons.
+  return total - mol.atoms.reduce((sum, atom) => sum + (atom.charge || 0), 0) * ELECTRON_MASS;
 }
 
 function moleculeFromSmiles(text) {
