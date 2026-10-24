@@ -4,7 +4,7 @@
     "js/pk-features.js": "032c8ef74040713a50b6bb2616c02d79d6f103e804a96fe8275b911d9d2d3fdb",
     "tools/pk-features.js": "425b7c04847a7328f2315ef8db91a54a1cc3edbe8a34057dc138094b2d976709",
     "js/smiles.js": "ae7063246faee39707c62003a038fd8ce825e5c247f85ab9b6191e4383caca66",
-    "js/mol.js": "64af3686d28cf3772cf1159a502ca5f406870ff9d42fa56fc4d84da4ebdc3b08",
+    "js/mol.js": "ff9a643a4e25986903d897e962ff97a4db3453b8ac12685ffed14e16521cb96d",
     "js/stereo.js": "6b65f4af103715c9814ec1bd56871b27280e9c8e3278475ce62726f38d3f2aaa",
     "js/smarts.js": "daab3275c06a4d8c9052a428d77a789e017f35bdd4578f100d09f906c1005685",
     "js/descriptors.js": "2612d387dbe7a7d0d789984c8c062c5a3c6ae43781021e4f225659bc7a98ee4e",
@@ -30950,5 +30950,17 @@
       ],
       "predictionTransformed": 2.3926943757188974
     }
-  ]
+  ],
+  "trainingSourceSha256": {
+    "js/pk-features.js": "032c8ef74040713a50b6bb2616c02d79d6f103e804a96fe8275b911d9d2d3fdb",
+    "tools/pk-features.js": "425b7c04847a7328f2315ef8db91a54a1cc3edbe8a34057dc138094b2d976709",
+    "js/smiles.js": "ae7063246faee39707c62003a038fd8ce825e5c247f85ab9b6191e4383caca66",
+    "js/mol.js": "64af3686d28cf3772cf1159a502ca5f406870ff9d42fa56fc4d84da4ebdc3b08",
+    "js/stereo.js": "6b65f4af103715c9814ec1bd56871b27280e9c8e3278475ce62726f38d3f2aaa",
+    "js/smarts.js": "daab3275c06a4d8c9052a428d77a789e017f35bdd4578f100d09f906c1005685",
+    "js/descriptors.js": "2612d387dbe7a7d0d789984c8c062c5a3c6ae43781021e4f225659bc7a98ee4e",
+    "js/fingerprints.js": "274e1daec20d05d7daf0d28ca35a41ef65905ae5a2cde2f5ceeb34013722149f",
+    "tools/train-pk-models.py": "ee9caf18d4b7819d4fe9dea9e0ee05289849038ace379fbb6bfd0f8762f86905"
+  },
+  "compatibilityRevalidation": "validation/pk-mass-compatibility.json"
 }

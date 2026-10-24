@@ -8,6 +8,14 @@ const {REFERENCE_MOTIFS:references}=require('../data/reference-motifs');
 const hash=f=>crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname,'..',f))).digest('hex');
 for(const [f,h] of Object.entries(evaluation.sourceSha256))assert.equal(hash(f),h,'Stale model input: '+f);
 assert.equal(hash('data/pk-models.js'),evaluation.modelSha256);
+if(evaluation.compatibilityRevalidation){
+ const recheck=require('../'+evaluation.compatibilityRevalidation);
+ assert.equal(hash('js/mol.js'),recheck.currentMolSha256);
+ assert.equal(hash('tools/revalidate-pk-mass.py'),recheck.toolSha256);
+ assert.equal(recheck.modelSha256,evaluation.modelSha256);
+ assert.equal(recheck.baselineMolSha256,evaluation.trainingSourceSha256['js/mol.js']);
+ for(const row of recheck.datasets){assert.equal(row.inputSha256,evaluation.models[row.model].inputSha256);assert.equal(row.changedRows,0);assert.equal(row.rows,evaluation.models[row.model].inputRows);}
+}
 assert.equal(hash('tools/build-pharmacology-evidence.py'),source.toolSha256);assert.equal(hash('data/pharmacology-evidence.js'),source.dataSha256);
 for(const [f,h] of Object.entries(references.sourceSha256))assert.equal(hash(f),h,'Stale motif source: '+f);
 const mol=s=>buildMolecule(parseSmiles(s));

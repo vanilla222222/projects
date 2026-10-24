@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "baselineCommit": "d47212bb3393fb0eff269f0d093561b48d2e49c5",
+  "baselineMolSha256": "64af3686d28cf3772cf1159a502ca5f406870ff9d42fa56fc4d84da4ebdc3b08",
+  "currentMolSha256": "ff9a643a4e25986903d897e962ff97a4db3453b8ac12685ffed14e16521cb96d",
+  "datasets": [
+    {
+      "model": "halfLife",
+      "inputSha256": "79fb8c943b64a9488bce588d747b59af1a782f1ce46bc51137c61fb895ede1df",
+      "rows": 667,
+      "changedRows": 0
+    },
+    {
+      "model": "logD74",
+      "inputSha256": "aed41590cb30609d51d8e08ad3ff06495a76e80e211358801f596b10da69bacd",
+      "rows": 4200,
+      "changedRows": 0
+    }
+  ],
+  "modelSha256": "02ea6bbb668939785b9f2009ae73bae89bc628a05db610e88336f2b8044b77ad",
+  "toolSha256": "15b12add53f517154f57c57c27e7085b209d0ef2473f9f9a9881f9f317c11c11",
+  "scope": "All original raw training/calibration/test input feature vectors compared byte-for-byte before and after the mass fix, including error outputs. No refitting, label changes, split changes, model tuning or new prediction accuracy claim."
+}
