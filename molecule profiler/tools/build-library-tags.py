@@ -5,6 +5,7 @@ import json
 import re
 from pathlib import Path
 import subprocess
+import importlib.util
 from rdkit import Chem, rdBase
 from rdkit.Chem import Descriptors, Lipinski, rdMolDescriptors
 
@@ -33,6 +34,12 @@ FAMILY_MOTIFS = [(name,Chem.MolFromSmarts(smarts)) for name,smarts in [
     ('N-benzylphenethylamines','[NX3,NX4+](Cc1ccccc1)CCc1ccccc1')]]
 if any(pattern is None for _,pattern in FAMILY_MOTIFS):
     raise ValueError('Invalid family motif definition')
+
+
+_spec=importlib.util.spec_from_file_location('library_taxonomy',Path(__file__).with_name('library-taxonomy.py'))
+_tax=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(_tax)
+FAMILY_MOTIFS += _tax.compile_patterns(_tax.RINGS+_tax.SERIES)
+MOTIFS = [(n,p)for n,p in MOTIFS if n not in {'Indole','Pyridine'}] + _tax.compile_patterns(_tax.EXTRA_MOTIFS)
 
 
 def group(entry):
@@ -73,18 +80,27 @@ def tags_for(entry, bindings=()):
         motifs.append('Stereo: specified double bonds')
     base=['Label: '+entry.get('cls','Unclassified'),'Collection: '+group(entry),
           'Size: '+('small (<20 heavy atoms)' if heavy<20 else 'medium (20-39 heavy atoms)' if heavy<40 else 'large (40+ heavy atoms)'),
-          'Rings: '+(str(rings) if rings<3 else '3+'),'Aromatic' if aromatic else 'Nonaromatic',
+          'Rings: '+(str(rings) if rings<5 else '5+'),'Aromatic' if aromatic else 'Nonaromatic',
           'Graph charge: '+charge,'HBD: '+('0' if hbd==0 else '1' if hbd==1 else '2+'),
           'HBA: '+('0' if hba==0 else '1-3' if hba<4 else '4+'),
           'Rotatable bonds: '+('0' if rot==0 else '1-3' if rot<4 else '4+'),
           'TPSA: '+('<40 A^2' if tpsa<40 else '40-90 A^2' if tpsa<=90 else '>90 A^2')]
+    if rdMolDescriptors.CalcNumSpiroAtoms(mol):motifs.append('Topology: spiro rings')
+    if rdMolDescriptors.CalcNumBridgeheadAtoms(mol):motifs.append('Topology: bridged rings')
+    if any(len(r)>=8 for r in mol.GetRingInfo().AtomRings()):motifs.append('Topology: macrocycle (8+ ring atoms)')
+    if aromatic and rdMolDescriptors.CalcNumAliphaticRings(mol):motifs.append('Ring composition: aromatic and aliphatic')
+    if not centers:motifs.append('Tetrahedral stereo: no potential centers')
+    elif all(c!='?'for _,c in centers):motifs.append('Tetrahedral stereo: fully specified')
+    elif all(c=='?'for _,c in centers):motifs.append('Tetrahedral stereo: unspecified')
+    else:motifs.append('Tetrahedral stereo: partially specified')
     source=entry.get('source',{})
-    provenance=['Source: '+source['provider'],'Source snapshot: '+source['snapshot']] if source.get('provider') in {'DrugCentral','ChEBI'} else []
+    if source.get('provider')in {'DrugCentral','ChEBI'}:base=base[1:]
+    provenance=['Source snapshot: '+source['snapshot']] if source.get('provider') in {'DrugCentral','ChEBI'} else []
     return list(dict.fromkeys(base[:2]+provenance+motifs+base[2:]+sorted(bindings)))
 
 
 def main():
-    paths=['data/library.js','data/targets.js','data/receptor-catalog.js','data/receptor-ligand-annotations.js','js/receptor-catalog.js','tools/build-library-tags.py']
+    paths=['data/library.js','data/library-names.js','data/targets.js','data/receptor-catalog.js','data/receptor-ligand-annotations.js','js/receptor-catalog.js','tools/build-library-tags.py','tools/library-taxonomy.py']
     hashes={p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in paths}
     code=r"""
 const {LIBRARY:l}=require('./data/library'),{TARGETS:t}=require('./data/targets'),
@@ -102,12 +118,12 @@ console.log(JSON.stringify({library:l,bindings,names:require('./data/library-nam
     entries={e['name']:{'librarySmiles':e['smiles'],'tags':tags_for({**e,'studyName':data['names'].get(e['name'],{}).get('preferredName',e['name'])},data['bindings'].get(e['name'],[]))} for e in data['library']}
     if any(hashlib.sha256((ROOT/p).read_bytes()).hexdigest()!=h for p,h in hashes.items()):
         raise ValueError('Source changed while generating tags')
-    metadata={'schemaVersion':1,'entries':entries}
+    metadata={'schemaVersion':2,'familyDefinitions':[{'tag':'Family motif: '+name,'smarts':Chem.MolToSmarts(pattern)}for name,pattern in FAMILY_MOTIFS],'entries':entries}
     text="'use strict';\n// Descriptive graph tags and qualified reference labels. See LIBRARY-METADATA.md.\nconst LIBRARY_TAG_METADATA = "+json.dumps(metadata,ensure_ascii=False,separators=(',',':'))+";\nif(typeof module!=='undefined'&&module.exports)module.exports={LIBRARY_TAG_METADATA};\nif(typeof globalThis!=='undefined')globalThis.LIBRARY_TAG_METADATA=LIBRARY_TAG_METADATA;\n"
     (ROOT/'data/library-tags.js').write_text(text)
     report={'schemaVersion':1,'rdkitVersion':rdBase.rdkitVersion,'sourceSha256':hashes,'entries':len(entries),
             'minTags':min(len(e['tags']) for e in entries.values()),'maxTags':max(len(e['tags']) for e in entries.values()),
-            'method':'Ten descriptive base tags plus functional-group/element motifs and source-linked binding tags. Stored graph charges and calculated bins are not physiological protonation or clinical claims. Original class labels remain explicitly labelled, not experimentally validated.',
+            'method':'Explicit graph families and functional groups, source collections, property bins and qualified binding labels. Ring synonyms and duplicate source labels are consolidated. Family definitions are serialized with SMARTS. Stored graph charges and calculated bins are not physiological protonation or clinical claims. Original class labels remain explicitly labelled, not experimentally validated.',
             'dataSha256':hashlib.sha256(text.encode()).hexdigest()}
     (ROOT/'validation/library-tag-provenance.json').write_text(json.dumps(report,indent=2)+'\n')
     families=[{'tag':'Family motif: '+name,
