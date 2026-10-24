@@ -1,19 +1,15 @@
 'use strict';
-const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
-const {JSDOM}=require(process.env.PROFILER_JSDOM_PATH||'jsdom'),root=path.join(__dirname,'..');
-const dom=new JSDOM(fs.readFileSync(path.join(root,'index.html'),'utf8'),{runScripts:'outside-only',url:'https://example.test/'}),ctx=dom.getInternalVMContext(),w=dom.window;
-for(const name of ['smiles','mol','smarts','stereo','transform','pharmacology','pk-applicability','analogue-candidates','depict','pk-decay','prodrug-candidates'])vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),ctx);
-let snapshot,downloadText,runCount=0;
-w.PharmacologyUI={render(record){snapshot={inputSmiles:record.smiles};},getSnapshot(){return snapshot;}};
-w.URL.createObjectURL=blob=>{downloadText=blob;return 'blob:test';};w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=function(){};
-w.document.getElementById('run').addEventListener('click',()=>runCount++);
-for(const name of ['analogue-ui','pharmacology-upgrade','prodrug-site-evidence'])vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),ctx);
-function render(smiles){w.testInput=smiles;const mol=vm.runInContext('buildMolecule(parseSmiles(testInput))',ctx);w.PharmacologyUI.render({smiles,mol,name:'Fixture'},[]);}
-const panel=w.document.getElementById('analogue-panel');
-render('Oc1ccccc1');assert.ok(snapshot.analogueCandidates.rows.length>0);assert.equal(panel.querySelectorAll('button[data-smiles]').length,snapshot.analogueCandidates.rows.length);assert.ok(snapshot.prodrugCandidates.rows.length);
-const button=panel.querySelector('button[data-smiles]');button.click();assert.equal(runCount,1);assert.ok(w.document.getElementById('smiles-input').value.includes(button.dataset.smiles));
-panel.querySelector('button').click();assert.ok(downloadText,'Download created from current rows');
-render('CCO');assert.ok(snapshot.analogueCandidates.rows.length>0,'Aliphatic alcohols now have analogue edits');
-render('CC');assert.equal(snapshot.analogueCandidates.rows.length,0);assert.equal(panel.querySelectorAll('button[data-smiles]').length,0);assert.ok(panel.querySelector('button').disabled);
-render('C[NH2+]CCO');assert.equal(snapshot.prodrugCandidates.rows.length,25);assert.ok(snapshot.analogueCandidates.rows.length>0,'Compatible ionic amines and alcohols can be edited');
-console.log('Analogue UI: rendering, chained prodrug integration, candidate handoff, download and changed-input clearing passed.');dom.window.close();
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');const {JSDOM}=require(process.env.PROFILER_JSDOM_PATH||'jsdom'),root=path.join(__dirname,'..'),dom=new JSDOM(fs.readFileSync(path.join(root,'index.html'),'utf8'),{runScripts:'outside-only',url:'https://example.test/'}),ctx=dom.getInternalVMContext(),w=dom.window;
+for(const n of ['smiles','mol','smarts','stereo','transform','descriptors','rules','fingerprints','pharmacology','pk-applicability','candidate-info','analogue-candidates','analogue-workbench','depict'])vm.runInContext(fs.readFileSync(path.join(root,'js',n+'.js'),'utf8'),ctx);
+let snapshot,downloads=0,runCount=0;w.PharmacologyUI={render:r=>{snapshot={inputSmiles:r.smiles};},getSnapshot:()=>snapshot};w.URL.createObjectURL=()=>{downloads++;return 'blob:test';};w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=function(){};w.HTMLElement.prototype.scrollIntoView=function(){};w.document.getElementById('run').onclick=()=>runCount++;vm.runInContext(fs.readFileSync(path.join(root,'js/analogue-ui.js'),'utf8'),ctx);
+const el=id=>w.document.getElementById(id),change=e=>e.dispatchEvent(new w.Event('change')),input=e=>e.dispatchEvent(new w.Event('input'));function render(smiles){w.testInput=smiles;const mol=vm.runInContext('buildMolecule(parseSmiles(testInput))',ctx);w.PharmacologyUI.render({smiles,mol,name:'Fixture'},[]);}async function settled(){for(let i=0;i<1000;i++){if(!el('analogue-family').disabled)return;await new Promise(r=>setTimeout(r,5));}throw Error('Generation did not settle');}
+(async()=>{try{
+ render('COc1ccccc1');assert.equal(snapshot.analogueCandidates.rows.length,25);assert.equal(w.document.querySelectorAll('#analogue-results tbody tr').length,12);assert.equal(w.document.querySelectorAll('#analogue-detail figure').length,2);el('analogue-analyze').click();assert.equal(runCount,1);el('analogue-download').click();assert.equal(downloads,1);
+ const first=snapshot.analogueCandidates.rows.map(r=>r.smiles);el('analogue-more').click();await settled();assert.equal(snapshot.analogueCandidates.rows.length,30);assert.deepEqual(snapshot.analogueCandidates.rows.slice(0,25).map(r=>r.smiles),first);
+ el('analogue-view').value='cards';change(el('analogue-view'));assert.equal(w.document.querySelectorAll('#analogue-results .analogue-card').length,12);el('analogue-next').click();assert.match(el('analogue-count').textContent,/page 2/);el('analogue-search').value='no such design';input(el('analogue-search'));assert.equal(w.document.querySelectorAll('#analogue-results .analogue-card').length,0);el('analogue-search').value='';input(el('analogue-search'));
+ el('analogue-max-mw').value='0';input(el('analogue-max-mw'));assert.match(el('analogue-count').textContent,/greater than zero/);el('analogue-max-mw').value='';input(el('analogue-max-mw'));
+ el('analogue-family').value='ether';change(el('analogue-family'));assert.equal(el('analogue-more').disabled,true,'Draft settings must be applied');el('analogue-generate').click();await settled();assert.equal(snapshot.analogueCandidates.rows.length,3);assert.ok(snapshot.analogueCandidates.rows.every(r=>r.family==='ether'));assert.equal(el('analogue-more').disabled,true,'No duplicate padding after exhaustion');
+ render('CCO');assert.ok(snapshot.analogueCandidates.rows.length>0);el('analogue-family').value='functional';change(el('analogue-family'));el('analogue-site').value='2';el('analogue-generate').click();await settled();assert.ok(snapshot.analogueCandidates.rows.every(r=>r.site.atom===2&&r.family==='functional'));
+ render('COc1ccccc1');el('analogue-more').click();render('CC');await settled();await new Promise(r=>setTimeout(r,10));assert.equal(snapshot.analogueCandidates.rows.length,0,'New input clears old results and queued generation');assert.equal(el('analogue-more').disabled,true);assert.equal(el('analogue-download').disabled,true);
+ console.log('Analogue workspace UI: pagination/grid, comparison preview, property filters, site/family generation, +5, exhaustion, handoff, export and stale-job clearing passed.');
+}finally{w.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
