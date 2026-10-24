@@ -28,11 +28,17 @@ In Python workspace, choose an **Analysis template**, click **Load template**, t
 
 All three use only the included Python standard library. Their source is in `js/python-analysis-templates.js`. Successful unmodified template runs retain the template ID and version alongside their exact code, inputs and output in the run JSON and notebook snapshot. Edited scripts retain their code with no built-in-template attribution.
 
-## Generate five more designs
+## Structured results and five more designs
 
-In Quick candidates, **Generate another 5** appends up to five additional unique designs from the same supported classes and up to five compatible positions. The initial batch remains 25; the session is bounded to 100 designs and 300 generation attempts per enumeration. Existing designs, order, dashboard release checks and notebook selections are retained. Finite libraries may yield fewer than five; no duplicates or unsupported structures are used to fill a batch. The button stops when sampling is exhausted or the session limit is reached. A new input starts a fresh batch.
+The three analysis templates now return a `profiler_result` dictionary as well as text. On success, the worker serializes it as JSON (maximum 2 MB) and the workspace presents a sortable, searchable comparison table. The input baseline stays first when sorting. Missing numeric values and unavailable BBB estimates remain explicit; every generated design is labelled unvalidated. Expand a design, then a formal step, to see available reactants, cut bonds, products, target identity and coproducts. Raw output is collapsed after a structured run and remains available. Text-only custom scripts continue to work; they clear any previous structured table when they complete.
 
-New designs appear in Candidate comparison and subsequent Python runs. Existing completed Python runs remain historical snapshots. Notebooks permit up to 100 selected designs with the same size limits.
+**Download visible CSV** includes the input and currently filtered/sorted designs. **Download results JSON** includes all captured result rows, source code, template identity and runtime versions. The existing **Download run JSON** also retains the full input snapshot and raw structured response. The worker resets `profiler_result` before every run, so a text-only script cannot inherit an earlier table. Non-JSON numeric values and oversized structured responses receive explicit errors.
+
+**Generate another 5** is available in Quick candidates and the Python results viewer. It acts on the current analyzed molecule, appending up to five additional designs from the same supported classes and up to five compatible positions. The initial batch remains 25; the session is bounded to 100 designs and 300 generation attempts per enumeration. It keeps existing designs, order, dashboard release checks and notebook selections. Finite libraries may yield fewer than five; no duplicates or unsupported structures are used to fill the batch. The button stops when sampling is exhausted or the session limit is reached. A new input starts a fresh batch.
+
+Completed Python runs remain historical snapshots. Generating more designs does not rewrite their input or results. The viewer marks a changed current candidate set and asks you to rerun the template. New designs are included in candidate comparison, subsequent Python runs and notebook selection; notebooks allow at most 100 selected designs while retaining their existing size limits.
+
+`tools/python-results-test.js` and `tools/python-results-ui-test.js` cover sorting, missing values, safe rendering, release expansion, export scope and historical-run labels. The full app smoke checks repeated generation, preserved checks/selections, exhausted libraries and cancellation when the input changes. `tools/python-workbench-e2e-test.js` runs all UI modules with the actual shipped Python worker/WASM runtime, then verifies the 25-design table, five-design extension, historical-result notice, 30-design rerun and notebook capture.
 
 ## Full engine status
 

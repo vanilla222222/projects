@@ -1,0 +1,20 @@
+'use strict';
+// All UI modules + the actual shipped worker/WASM runtime, using a Node transport.
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict'),{Worker}=require('node:worker_threads'),{JSDOM}=require(process.env.PROFILER_JSDOM_PATH||'jsdom');
+const root=path.resolve(__dirname,'..'),html=fs.readFileSync(path.join(root,'index.html'),'utf8'),dom=new JSDOM(html,{runScripts:'outside-only',pretendToBeVisual:true,url:'https://example.test/'}),w=dom.window,ctx=dom.getInternalVMContext();
+w.indexedDB=require(process.env.PROFILER_FAKE_IDB_PATH||'fake-indexeddb').indexedDB;w.TextEncoder=TextEncoder;w.fetch=async()=>({ok:false,status:404,json:async()=>({error:'Browser mode'})});w.URL.createObjectURL=()=> 'blob:test';w.URL.revokeObjectURL=()=>{};w.HTMLElement.prototype.scrollIntoView=function(){};
+class BrowserWorker{
+ constructor(url){assert.match(String(url),/\/js\/python-worker\.js\?/);this.worker=new Worker(`const {parentPort,workerData}=require('node:worker_threads');const {pathToFileURL,fileURLToPath}=require('node:url');global.self=global;self.location={href:pathToFileURL(workerData).href};self.postMessage=m=>parentPort.postMessage(m);global.importScripts=u=>{const api=require(fileURLToPath(u));global.loadPyodide=opts=>api.loadPyodide({...opts,indexURL:fileURLToPath(opts.indexURL)});};require('node:vm').runInThisContext(require('node:fs').readFileSync(workerData,'utf8'));parentPort.on('message',data=>self.onmessage({data}));`,{eval:true,workerData:path.join(root,'js/python-worker.js')});this.worker.on('message',data=>this.onmessage?.({data}));this.worker.on('error',e=>this.onerror?.({message:e.message,preventDefault(){}}));}
+ postMessage(data){this.worker.postMessage(data);}terminate(){return this.worker.terminate();}
+}
+w.Worker=BrowserWorker;const el=id=>w.document.getElementById(id);
+async function until(test,label){for(let i=0;i<3000;i++){if(test())return;await new Promise(r=>setTimeout(r,10));}throw Error(label+' timed out: '+el('python-status')?.textContent);}
+async function run(){el('python-run').click();await until(()=>!el('python-run').disabled,'Python run');assert.match(el('python-status').textContent,/^Completed/);}
+(async()=>{try{
+ for(const match of html.matchAll(/<script src="([^"?]+)(?:\?[^"]*)?"><\/script>/g))vm.runInContext(fs.readFileSync(path.join(root,match[1]),'utf8'),ctx,{filename:match[1]});
+ await until(()=>w.PharmacologyUI.getSnapshot()?.candidateComparison,'Initial analysis');el('smiles-input').value='Mixed sites, NCCc1ccc(OC)c(OC)c1OC';el('run').click();await until(()=>w.PharmacologyUI.getSnapshot()?.inputSmiles==='NCCc1ccc(OC)c(OC)c1OC','Mixed-site analysis');
+ el('python-example').value='Formula, properties and BBB summary';el('python-example-load').click();await run();assert.equal(w.PythonResultsUI.getReport().rows.length,25);assert.equal(w.PharmacologyUI.getSnapshot().pythonExperiment.structured.rows.length,25);assert.equal(w.document.querySelector('.python-raw-output').open,false,'Text output collapses after structured success');
+ el('python-results-more').click();await until(()=>w.PharmacologyUI.getSnapshot().candidateComparison.rows.length===30,'Five more designs');assert.equal(w.PythonResultsUI.getReport().rows.length,25,'Completed run stays historical');assert.match(el('python-results-status').textContent,/Rerun/);
+ await run();assert.equal(w.PythonResultsUI.getReport().rows.length,30);assert.equal(w.document.querySelectorAll('#python-results tbody tr').length,31);assert.equal(w.PharmacologyUI.getSnapshot().pythonExperiment.structured.rows.length,30);assert.match(el('python-output').textContent,/DESIGN 30/);
+ console.log('Full app + actual Python WASM passed: template → structured table → five more → historical notice → rerun with all 30 designs and notebook capture.');
+}finally{w.PythonWorkspaceUI?.stop();await w.ProjectNotebooks?.close();w.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

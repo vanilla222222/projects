@@ -20,9 +20,11 @@ async function handle(m){
   if(m.type==='init'){self.postMessage({id:m.id,type:'done',versions:{pyodide:py.version,python:py.runPython('import sys; sys.version.split()[0]')}});return;}
   if(m.type!=='run'||typeof m.code!=='string'||m.code.length>100000)throw Error('Invalid Python request.');
   py.globals.set('__profiler_context_json',JSON.stringify(m.context));
-  py.runPython("import json as __profiler_json\nanalysis = __profiler_json.loads(__profiler_context_json)\nmolecule = analysis['molecule']\ncandidates = analysis['candidates']\nevidence = analysis['evidence']\nquery_smiles = molecule['smiles']\ndel __profiler_context_json");
+  py.runPython("import json as __profiler_json\nanalysis = __profiler_json.loads(__profiler_context_json)\nmolecule = analysis['molecule']\ncandidates = analysis['candidates']\nevidence = analysis['evidence']\nquery_smiles = molecule['smiles']\nprofiler_result = None\ndel __profiler_context_json");
   let result;try{result=await py.runPythonAsync(m.code,{filename:'workspace.py'});if(result!==undefined&&result!==null)output('stdout',String(result));}finally{if(result&&typeof result.destroy==='function')result.destroy();}
-  self.postMessage({id:m.id,type:'done'});
+  const json=py.runPython("__import__('json').dumps(globals().get('profiler_result'), allow_nan=False)");
+  if(json.length>2*1024*1024)throw Error('Structured results exceed 2 MB. Return fewer rows or less detail.');
+  self.postMessage({id:m.id,type:'done',structured:JSON.parse(json)});
  }catch(e){self.postMessage({id:m.id,type:'error',message:String(e.message||e)});}finally{activeId=null;}
 }
 self.onmessage=e=>{queue=queue.then(()=>handle(e.data));};

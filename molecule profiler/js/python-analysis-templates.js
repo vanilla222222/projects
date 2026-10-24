@@ -27,6 +27,23 @@ def _bbb(properties):
         return "Unavailable: " + _text(screen.get("reason"), "no compatible BBB estimate in this snapshot")
     return _text(screen.get("label")) + " (passive screen; not measured penetration)"
 
+def _clean_properties(props):
+    props = props if isinstance(props, dict) else {}
+    result = {key: props.get(key) if _number(props.get(key)) else None for key in ["mw", "logp", "tpsa", "logS", "hbd", "hba", "charge", "rotatableBonds"]}
+    result["formula"] = props.get("formula")
+    screen = props.get("bbb") or {}
+    result["bbb"] = {"available": screen.get("available") is True, "label": screen.get("label"), "reason": screen.get("reason"), "scope": screen.get("scope"), "model": screen.get("model")}
+    return result
+
+def _structured(kind):
+    parent = _clean_properties(_parent_properties())
+    rows = []
+    for index, candidate in enumerate(candidates):
+        props = _clean_properties(candidate.get("properties"))
+        delta = {key: props[key] - parent[key] if _number(props.get(key)) and _number(parent.get(key)) else None for key in ["mw", "logp", "tpsa", "logS"]}
+        rows.append({"index": index, "name": candidate.get("name"), "smiles": candidate.get("smiles"), "properties": props, "delta": delta, "releaseKind": candidate.get("releaseKind"), "declaredTargetSmiles": candidate.get("declaredTargetSmiles"), "release": candidate.get("release"), "error": candidate.get("error"), "experimentalValidation": False})
+    return {"schemaVersion": 1, "kind": kind, "input": {"name": molecule.get("name"), "smiles": molecule.get("smiles"), "properties": parent}, "rows": rows, "scope": "App descriptors and unvalidated formal release checks. Property differences and passive BBB screens do not establish clinical benefit, biological conversion or measured exposure."}
+
 def _heading(title):
     print(title)
     print("Input:", _text(molecule.get("name")))
@@ -37,7 +54,7 @@ def _heading(title):
 `;
  const templates = {
   'Compare all designs with parent': {
-   id:'candidate-parent-comparison',version:1,
+   id:'candidate-parent-comparison',version:2,
    description:'Compare all copied quick candidates with the input: molecular weight, WLOGP, TPSA and ESOL log S, with differences where both values are available. Original design order is retained.',
    code:common+`_heading("CANDIDATES COMPARED WITH INPUT")
 parent = _parent_properties()
@@ -59,10 +76,11 @@ for position, candidate in enumerate(candidates, 1):
         print("  " + label + ": " + _fmt(value) + " | difference from input " + _fmt(delta, signed=True))
     if candidate.get("error"):
         print("  Calculation issue:", _text(candidate["error"]))
+profiler_result = _structured("candidate-comparison")
 `
   },
   'Formula, properties and BBB summary': {
-   id:'candidate-basic-summary',version:1,
+   id:'candidate-basic-summary',version:2,
    description:'Show the input and every design with full descriptive names, formula, molecular weight, TPSA, WLOGP and any available passive BBB screen. Missing estimates remain unavailable.',
    code:common+`_heading("MOLECULE AND CANDIDATE SUMMARIES")
 print("Names are app/reference labels; generated design names are not verified IUPAC names.")
@@ -84,10 +102,11 @@ for position, candidate in enumerate(candidates, 1):
         print("  Calculation issue:", _text(candidate["error"]))
 if not candidates:
     print("No candidate designs are available for this input.")
+profiler_result = _structured("candidate-summary")
 `
   },
   'Cleavage products and release targets': {
-   id:'candidate-release-review',version:1,
+   id:'candidate-release-review',version:2,
    description:'Review declared targets and any release checks already performed in Candidate comparison. Lists formal products, intermediates and coproducts without predicting biological conversion. Run “Check all release paths” there first to populate more results.',
    code:common+`_heading("FORMAL RELEASE REVIEW")
 print("This script reads existing checks; it does not perform new cleavage searches.")
@@ -139,6 +158,7 @@ if unchecked:
     print(str(unchecked) + " design(s) have no saved release check. Open Candidate comparison, choose Check all release paths, then rerun this template.")
 if not candidates:
     print("No candidate designs are available for this input.")
+profiler_result = _structured("release-review")
 `
   }
  };

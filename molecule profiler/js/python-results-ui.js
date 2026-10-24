@@ -1,0 +1,55 @@
+'use strict';
+(function(root){
+ const doc=root.document,$=id=>doc.getElementById(id),host=$('python-workspace'),model=root.PythonResults;if(!host||!model)return;
+ const make=(tag,text)=>Object.assign(doc.createElement(tag),text===undefined?{}:{textContent:text}),section=make('section');section.id='python-results';section.setAttribute('aria-label','Structured Python results');
+ section.append(make('h3','Structured results'));
+ const caption=make('p','Run one of the three analysis templates to populate this viewer.'),notice=make('p');caption.id='python-results-context';notice.id='python-results-status';notice.setAttribute('role','status');section.append(caption,notice);
+ const toolbar=make('div');toolbar.className='python-toolbar';const searchLabel=make('label','Find designs '),search=make('input');search.type='search';search.id='python-results-search';searchLabel.append(search);toolbar.append(searchLabel);
+ const sortLabel=make('label','Sort by '),sort=make('select');sort.id='python-results-sort';for(const [value,label] of [['index','Design number'],['name','Name'],['formula','Formula'],['mw','Molecular weight'],['delta-mw','MW difference'],['logp','WLOGP'],['delta-logp','WLOGP difference'],['tpsa','TPSA'],['delta-tpsa','TPSA difference'],['logS','ESOL log S'],['delta-logS','ESOL difference']]){const o=make('option',label);o.value=value;sort.append(o);}sortLabel.append(sort);toolbar.append(sortLabel);
+ const directionLabel=make('label','Order '),direction=make('select');direction.id='python-results-direction';for(const [value,label] of [['asc','Ascending'],['desc','Descending']]){const o=make('option',label);o.value=value;direction.append(o);}directionLabel.append(direction);toolbar.append(directionLabel);
+ const csv=make('button','Download visible CSV'),json=make('button','Download results JSON'),more=make('button','Generate another 5');csv.id='python-results-csv';json.id='python-results-json';more.id='python-results-more';for(const b of [csv,json,more]){b.type='button';toolbar.append(b);}section.append(toolbar);
+ const scope=make('p','Generated designs are unvalidated. BBB is an available passive screen, not measured penetration. Missing values remain unavailable. Δ compares each design with this run’s input; it is not a benefit score.');scope.className='python-result-scope';section.append(scope);
+ const count=make('p'),tableHost=make('div'),paths=make('div');tableHost.className='table-wrap python-results-table';tableHost.tabIndex=0;tableHost.setAttribute('aria-label','Python candidate comparison table');count.id='python-results-count';paths.id='python-results-paths';section.append(count,tableHost,paths);const output=$('python-output'),oldHeading=output.previousElementSibling;if(oldHeading?.tagName==='H3'&&oldHeading.textContent==='Output')oldHeading.remove();output.before(section);const raw=make('details');raw.className='python-raw-output';raw.open=true;raw.append(make('summary','Raw Python output'));output.before(raw);raw.append(output);
+ let report=null,run=null,visible=[];
+ const number=(n,signed=false)=>model.finite(n)?(signed&&n>0?'+':'')+n.toFixed(2):'Unavailable';
+ const kindLabel=k=>({'original-input':'Original input','organic-component':'Organic component; full salt not recovered','different-analogue':'Different OH analogue; original input not recovered'}[k]||'Unknown / not reported');
+ function fact(parent,label,value,code=false){const p=make('p');p.append(make('strong',label+': '),make(code?'code':'span',value==null||value===''?'Unavailable':String(value)));parent.append(p);}
+ function releaseBody(body,r){
+  fact(body,'Design SMILES',r.smiles,true);fact(body,'Declared target kind',kindLabel(r.releaseKind));fact(body,'Declared target SMILES',r.declaredTargetSmiles,true);
+  const release=r.release;if(!release){body.append(make('p','Not checked. Open Candidate comparison → Check all release paths, then rerun the Python template. No cleavage products are inferred.'));return;}
+  if(release.limitsApplied)body.append(make('p','Display/export bounds applied: up to 20 steps and 50 coproducts. Download the full run JSON for the original result.'));fact(body,'Release check',release.status);fact(body,'Check detail',release.reason);fact(body,'Target structural identity',release.releaseTarget?.status);fact(body,'Checked target SMILES',release.releaseTarget?.smiles,true);
+  if(release.status!=='formal-route-found'){body.append(make('p','No supported formal route is reported in this snapshot. This does not rule out biological conversion.'));return;}
+  for(const step of (Array.isArray(release.steps)?release.steps:[]).slice(0,20)){
+   const details=make('details');details.className='python-release-step';details.append(make('summary','Step '+(step.number??'?')+' · '+(step.label||'Formal transformation')));fact(details,'Reactant',step.reactantSmiles,true);fact(details,'Formal input',step.formalInput);
+   for(const b of (Array.isArray(step.cutBonds)?step.cutBonds:[]).slice(0,20))fact(details,'Cut-bond atom numbers',(Array.isArray(b.atoms)?b.atoms.join('–'):'Unavailable')+' · '+(b.numbering||'Numbering not supplied'));
+   for(const product of (Array.isArray(step.products)?step.products:[]).slice(0,50)){fact(details,product.isReleaseTarget?'Declared release target':'Formal product / intermediate',(product.formula||'Formula unavailable')+' · '+(product.smiles||'SMILES unavailable'),true);}
+   if(/^https:\/\//.test(step.source?.url||'')){const a=make('a','Reaction-class source');a.href=step.source.url;a.target='_blank';a.rel='noopener noreferrer';details.append(a);}body.append(details);
+  }
+  body.append(make('h5','Remaining formal coproducts'));
+  if(!Array.isArray(release.byproducts))body.append(make('p','Not reported.'));
+  else if(!release.byproducts.length)body.append(make('p','None reported by this formal graph route.'));
+  else for(const p of release.byproducts.slice(0,50))fact(body,'Formal coproduct',(p.formula||'Formula unavailable')+' · '+(p.smiles||'SMILES unavailable'),true);
+  body.append(make('p','Formal products are structural hypotheses. Enzymatic cleavage, measured conversion, exposure, activity and safety are not established.'));
+ }
+ function draw(){
+  tableHost.replaceChildren();paths.replaceChildren();csv.disabled=json.disabled=!report;if(!report){count.textContent='';return;}
+  visible=model.sort(report.rows,sort.value,direction.value,search.value);count.textContent=visible.length+' / '+report.rows.length+' designs shown. Input remains pinned.';
+  const table=make('table'),head=make('thead'),header=make('tr');for(const h of ['Design / name','Formula','MW g/mol / Δ','WLOGP / Δ','TPSA Å² / Δ','ESOL log S mol/L / Δ','BBB · passive screen','Evidence / target']){const th=make('th',h);th.scope='col';header.append(th);}head.append(header);table.append(head);const body=make('tbody');
+  function line(r,parent=false){const tr=make('tr');if(parent)tr.className='python-results-parent';const identity=make('th',(parent?'INPUT · ':r.index+1+'. ')+(r.name||'Unnamed design'));identity.scope='row';tr.append(identity,make('td',r.properties.formula||'Unavailable'));
+   for(const k of ['mw','logp','tpsa','logS']){const cell=make('td',number(r.properties[k]));if(!model.finite(r.properties[k]))cell.className='python-unavailable';cell.append(make('small',parent?'Input baseline':'Δ '+number(r.delta[k],true)));tr.append(cell);}
+   const b=r.properties.bbb,bbb=make('td',b.available?b.label||'Unavailable':'Unavailable');bbb.append(make('small',b.available?'Unvalidated passive estimate':b.reason||'No compatible estimate'));tr.append(bbb);const evidence=make('td',parent?'Analyzed input':'Unvalidated design');if(!parent)evidence.append(make('small',kindLabel(r.releaseKind)));tr.append(evidence);body.append(tr);
+  }line(report.input,true);visible.forEach(r=>line(r));table.append(body);tableHost.append(table);
+  paths.append(make('h4','Cleavage steps, products and release targets'),make('p','These are the checks captured by this Python run. Expand a design to inspect its available evidence.'));
+  for(const r of visible){const details=make('details');details.className='python-release-design';details.append(make('summary',(r.index+1)+'. '+(r.name||'Unnamed design')+' · '+(r.release?.status||'not-checked')));let loaded=false;details.addEventListener('toggle',()=>{if(details.open&&!loaded){loaded=true;const content=make('div');releaseBody(content,r);details.append(content);}});paths.append(details);}
+ }
+ function updateCurrent(){const s=root.PharmacologyUI?.getSnapshot(),currentRows=s?.candidateComparison?.rows||[],state=root.QuickCandidatesUI?.getState();more.disabled=!state?.canGenerate;
+  if(!report)return;const changed=s?.inputSmiles!==report.input.smiles||currentRows.length!==report.rows.length||currentRows.some((r,i)=>r.smiles!==report.rows[i]?.smiles);
+  notice.textContent=changed?'Current analysis differs from this saved run. Rerun the template to refresh the table. Generate another 5 acts on the current input.':'Results match this run’s current candidate set. Release checks added afterward require a new Python run.';
+ }
+ function render(value){run=value;report=null;try{if(value.structured){report=model.normalize(value.structured);caption.textContent='RUN INPUT · '+report.input.name+' · '+report.input.smiles+' · '+new Date(value.createdAt).toLocaleString();}else{caption.textContent='This script returned text only. Run an analysis template, or assign a supported result dictionary to profiler_result.';notice.textContent='';}}catch(e){caption.textContent=e.message;notice.textContent='';}raw.open=!report;search.value='';sort.value='index';direction.value='asc';draw();updateCurrent();}
+ function download(name,text,type){const u=URL.createObjectURL(new Blob([text],{type})),a=make('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);}
+ csv.onclick=()=>{if(report)download('python-results-visible.csv',model.csv(report,visible),'text/csv');};json.onclick=()=>{if(report)download('python-results.json',JSON.stringify({report,provenance:{createdAt:run.createdAt,template:run.template,code:run.code,versions:run.versions},scope:'All designs from the captured run; table filters do not remove rows from this JSON export.'},null,2),'application/json');};
+ more.onclick=()=>root.QuickCandidatesUI?.generateMore();for(const e of [search,sort,direction])e.addEventListener(e===search?'input':'change',draw);
+ for(const name of ['molecule-profiler:candidates','molecule-profiler:candidate-generation'])doc.addEventListener(name,updateCurrent);
+ root.PythonResultsUI={render,updateCurrent,getReport:()=>report,beginRun(){raw.open=true;if(report)notice.textContent='A new script is running. The table is from the previous completed run.';},failedRun(){raw.open=true;if(report)notice.textContent='The new run did not complete. This table remains the previous completed run.';}};draw();updateCurrent();
+})(globalThis);

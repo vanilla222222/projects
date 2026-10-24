@@ -1,6 +1,6 @@
 'use strict';
 (function(root){
- const workerURL=new URL('python-worker.js?v=2026-10-24-python',document.currentScript?.src||new URL('js/python-kernel.js',document.baseURI).href);
+ const workerURL=new URL('python-worker.js?v=2026-10-24-results',document.currentScript?.src||new URL('js/python-kernel.js',document.baseURI).href);
  function create(onOutput=()=>{}){
   let worker=null,pending=null,sequence=0,ready=false,versions=null;
   function stop(reason='Python stopped. Variables cleared; code retained.'){
@@ -18,7 +18,7 @@
    return new Promise((resolve,reject)=>{const id=++sequence;pending={id,resolve,reject,timer:setTimeout(()=>stop('Python timed out after two minutes. Run again for a fresh interpreter.'),120000)};try{worker.postMessage({id,type,...data});}catch(e){stop(e.message);}});
   }
   async function initialize(){if(!ready){const r=await request('init');versions=r.versions;ready=true;}return versions;}
-  return {initialize,async run(code,context){await initialize();await request('run',{code,context});return versions;},stop,get ready(){return ready;}};
+  return {initialize,async run(code,context){await initialize();const result=await request('run',{code,context});return {versions,structured:result.structured??null};},stop,get ready(){return ready;}};
  }
  root.BrowserPython={create};
 })(globalThis);
