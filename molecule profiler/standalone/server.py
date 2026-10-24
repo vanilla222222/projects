@@ -8,7 +8,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 ROOT=Path(__file__).resolve().parents[1]
 SLOTS=threading.BoundedSemaphore(2)
-ACTIONS={'analyze','conformers','screen','fragments','replace','dock'}
+ACTIONS={'analyze','conformers','screen','fragments','replace','dock','bbb'}
 class Handler(SimpleHTTPRequestHandler):
  def respond(self,status,payload):
   body=json.dumps(payload,allow_nan=False).encode();self.send_response(status);self.send_header('Content-Type','application/json');self.send_header('Cache-Control','no-store');self.send_header('Content-Length',str(len(body)));self.end_headers();self.wfile.write(body)

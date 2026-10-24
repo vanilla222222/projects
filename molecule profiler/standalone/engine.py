@@ -19,7 +19,7 @@ def molecule(smiles):
 
 def capabilities():
  import importlib.util
- return {'project':'Molecule Profiler','engine':'independent-local-v1','rdkit':rdBase.rdkitVersion,'available':['adme','conformers','forcefield','screen','fragments','replace'], 'docking':all(importlib.util.find_spec(p) is not None for p in ['vina','meeko','gemmi']), 'unavailable':{'cypInhibition':'No trained model supplied.','pgpSubstrate':'No trained model supplied.','clinicalMetaboliteAbundance':'No calibrated abundance model supplied.'},'privacy':'All structures are processed on this server; no remote services are contacted.'}
+ return {'project':'Molecule Profiler','engine':'independent-local-v1','rdkit':rdBase.rdkitVersion,'available':['adme','conformers','forcefield','screen','fragments','replace','bbb'], 'docking':all(importlib.util.find_spec(p) is not None for p in ['vina','meeko','gemmi']), 'unavailable':{'cypInhibition':'No trained model supplied.','pgpSubstrate':'No trained model supplied.','clinicalMetaboliteAbundance':'No calibrated abundance model supplied.'},'privacy':'All structures are processed on this server; no remote services are contacted.'}
 
 def analysis(data):
  mol=molecule(data.get('smiles'));logp=Crippen.MolLogP(mol);mw=Descriptors.MolWt(mol)
@@ -114,4 +114,6 @@ def docking(data):
   poses=v.poses(n_poses=5);energies=v.energies(n_poses=5).tolist()
  return {'poses':poses,'energies':energies,'method':'AutoDock Vina; exhaustiveness 1, up to 5 poses, one CPU, deterministic seed','scope':'Exploratory docking on the supplied prepared receptor. Receptor preparation, protonation and box choice remain user responsibilities. Scores are not experimental affinities.'}
 
-ACTIONS={'analyze':analysis,'conformers':conformers,'screen':screen,'fragments':fragments,'replace':replace,'dock':docking}
+from bbb_model import predict as bbb_predict
+
+ACTIONS={'bbb':bbb_predict,'analyze':analysis,'conformers':conformers,'screen':screen,'fragments':fragments,'replace':replace,'dock':docking}

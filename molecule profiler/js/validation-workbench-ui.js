@@ -13,6 +13,7 @@
  for(const row of [
   ['ESOL solubility','External DLS subset measurements; fixed model, no fitting','Limited chemical space and assay conditions; no candidate-specific uncertainty'],
   ['Passive BBB screen','External BBBP binary-label comparison; coverage reported','Development overlap is unaudited; transporters, efflux and in-vivo exposure differ from passive screening'],
+  ['BBB research classifier','Separate training, calibration and test scaffold groups; report in BBB research','Internal test only; the full BBBP passive-screen comparison is not external validation of this trained model'],
   ['WLOGP','Existing RDKit conformance and historical neutral log-D comparison','Direct experimental log-P validation is not supplied by these two new datasets'],
   ['Skin log Kp','Published equation only','No independent skin-permeation benchmark supplied'],
   ['QED / SA / structural alerts','Published empirical scores and catalog checks','Not experimental predictions of efficacy, synthesis success or safety'],
