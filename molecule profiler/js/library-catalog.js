@@ -5,12 +5,14 @@
 (function (root) {
   const GROUPS = Object.freeze([
     { key: 'all', label: 'All collections', description: 'Every listed structure, regardless of provenance.' },
+    { key: 'sourced', label: 'DrugCentral named compounds', description: 'Named source records with checked structures; historical snapshot, not a current approval list.' },
     { key: 'other', label: 'Other named/reference entries', description: 'No externally verified identity or provenance is implied.' },
     { key: 'esol', label: 'ESOL-labelled references', description: 'Labelled as belonging to the ESOL reference subset; experimental measurements are not verified here.' },
     { key: 'series', label: 'Ester / ether / ketone series', description: 'Class-labelled homolog series useful as illustrative structural examples.' },
     { key: 'fragment', label: 'Fragment examples', description: 'Fragment-sized structural entries; not experimentally verified reference annotations.' }
   ]);
   function groupFor(entry) {
+    if (sourceRecord(entry)) return 'sourced';
     const cls = String(entry && entry.cls || '').trim();
     if (cls === 'ESOL reference') return 'esol';
     if (cls === 'Ester reference' || cls === 'Ether reference' || cls === 'Ketone reference') return 'series';
@@ -24,7 +26,19 @@
     const record=dataset.entries[entry.name];
     return record && record.librarySmiles===entry.smiles ? record : null;
   }
-  function nameRecord(entry, context) { return matchedRecord(metadata(context).names, entry); }
+  function sourceRecord(entry) {
+    const source=entry?.source;
+    return source?.provider==='DrugCentral' && /^\d+$/.test(source.id)
+      && source.url==='https://drugcentral.org/drugcard/'+source.id
+      && source.librarySmiles===entry.smiles ? source : null;
+  }
+  function nameRecord(entry, context) {
+    const recorded=matchedRecord(metadata(context).names, entry);
+    if(recorded)return recorded;
+    const source=sourceRecord(entry);
+    return source?{librarySmiles:entry.smiles,preferredName:entry.name,nameKind:source.nameKind,
+      sourceUrl:source.url,aliases:['DrugCentral '+source.id,source.cas,source.inchiKey].filter(Boolean)}:null;
+  }
   function displayName(entry, context) { return nameRecord(entry,context)?.preferredName || entry.name; }
   function aliasesFor(entry, context) { return nameRecord(entry,context)?.aliases || []; }
   function tagsFor(entry, context) {
@@ -34,7 +48,7 @@
   function searchText(entry, context) { return norm([entry.name,displayName(entry,context),...aliasesFor(entry,context),entry.cls,entry.formula,...tagsFor(entry,context)].join(' ')); }
   function catalogSummary(entries, context) {
     const rows = Array.isArray(entries) ? entries : [];
-    const groups = { other: 0, esol: 0, series: 0, fragment: 0 };
+    const groups = { sourced: 0, other: 0, esol: 0, series: 0, fragment: 0 };
     const classes = new Map();
     const tags = new Map();
     const names = new Set(), smiles = new Set();
@@ -112,7 +126,7 @@
     }
     return lines.join('\r\n') + '\r\n';
   }
-  const api = { GROUPS, groupFor, nameRecord, displayName, aliasesFor, tagsFor, searchText, catalogSummary, catalogQuery, catalogCsv };
+  const api = { GROUPS, groupFor, sourceRecord, nameRecord, displayName, aliasesFor, tagsFor, searchText, catalogSummary, catalogQuery, catalogCsv };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.LibraryCatalog = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

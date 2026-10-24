@@ -30,8 +30,11 @@ def run():
     args = parser.parse_args()
     text = LIBRARY.read_text(encoding="utf8")
     rows = [dict(name=unescape(m[1]), cls=unescape(m[2]), formula=unescape(m[3]), smiles=unescape(m[4])) for m in ENTRY.finditer(text)]
+    # Sourced imports use one JSON object per line to preserve name/SMILES escapes.
+    sourced = [json.loads(line.strip().rstrip(',')) for line in text.splitlines() if line.lstrip().startswith('{"name":')]
+    rows.extend(sourced)
     # Guard against silently skipping entries when the JS library format changes.
-    entry_markers = text.count("{ name: '")
+    entry_markers = text.count("{ name: '") + text.count('{"name":')
     if len(rows) != entry_markers:
         raise SystemExit(f"Parsed {len(rows)} entries but found {entry_markers} entry markers; inspect library formatting.")
     report = {"schemaVersion": 1, "method": "RDKit structure parsing, formula, stereochemistry and tautomer canonicalization; no identity verification", "entries": len(rows), "invalidSmiles": [], "formulaMismatches": [], "canonicalDuplicates": [], "tautomerGroups": [], "unspecifiedStereocenters": [], "chargedEntries": [], "fragmentedEntries": [], "radicalEntries": [], "nonAromaticSulfurRings": [], "parseFailures": [], "counts": {}}

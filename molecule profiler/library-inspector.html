@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Reference Library Inspector — Molecule Profiler</title>
-<link rel="stylesheet" href="css/style.css?v=2026-10-24-analogue-research">
-<link rel="stylesheet" href="css/workspace.css?v=2026-10-24-analogue-research">
+<link rel="stylesheet" href="css/style.css?v=2026-10-24-named-library">
+<link rel="stylesheet" href="css/workspace.css?v=2026-10-24-named-library">
 <style>
 .catalog-intro {padding-bottom:5px}
 .catalog-intro p {max-width:82ch}
@@ -57,6 +57,7 @@
   <div class="catalog-notice" role="note"><strong>Important:</strong> A complete formula or SMILES field does not prove correct molecular identity. Exact-text duplicate checks do not detect equivalent canonical structures, stereoisomers or tautomer relationships.</div>
   <section class="catalog-cards" aria-label="Library statistics">
     <div class="catalog-card"><strong id="catalog-total">—</strong><span>Total listed entries</span></div>
+    <div class="catalog-card"><strong id="catalog-sourced">—</strong><span>DrugCentral named compounds</span></div>
     <div class="catalog-card"><strong id="catalog-other">—</strong><span>Other named/reference entries</span></div>
     <div class="catalog-card"><strong id="catalog-series">—</strong><span>Ester / ether / ketone series</span></div>
     <div class="catalog-card"><strong id="catalog-esol">—</strong><span>ESOL-labelled entries</span></div>
@@ -65,8 +66,8 @@
   <section class="panel" aria-label="Reference catalogue">
     <div class="panel-head"><h2>Explore entries</h2><span class="evidence" data-tier="rule">descriptive reference tags</span></div>
     <div class="catalog-controls">
-      <label>Find a reference<input id="catalog-search" type="search" placeholder="Name, identifier, formula or tag" autocomplete="off"></label>
-      <label>Collection<select id="catalog-group"><option value="all">All collections</option><option value="other">Other named/reference</option><option value="series">Ester/ether/ketone series</option><option value="esol">ESOL-labelled</option><option value="fragment">Fragments</option></select></label>
+      <label>Find a reference<input id="catalog-search" type="search" placeholder="Chemical name, CAS, source ID, formula or tag" autocomplete="off"></label>
+      <label>Collection<select id="catalog-group"><option value="all">All collections</option><option value="sourced">DrugCentral named compounds</option><option value="other">Other named/reference</option><option value="series">Ester/ether/ketone series</option><option value="esol">ESOL-labelled</option><option value="fragment">Fragments</option></select></label>
       <label>Filter by tag<input id="catalog-tag" type="search" list="catalog-tag-options" placeholder="Type a tag, e.g. Amide or DRD2" autocomplete="off"><datalist id="catalog-tag-options"></datalist></label>
       <label>Sort entries<select id="catalog-sort"><option value="name">Name A–Z</option><option value="tag">Tag A–Z</option><option value="tagCount">Most tags first</option><option value="formula">Formula</option><option value="group">Collection</option></select></label>
       <button class="catalog-action" type="button" id="catalog-export">Export filtered index CSV</button>
@@ -81,6 +82,7 @@
     <h2>Data completeness and provenance</h2>
     <p id="catalog-quality">Calculating basic field checks…</p>
     <ul>
+      <li><strong>DrugCentral named compounds:</strong> names and structures from the University of New Mexico’s <a href="https://drugcentral.org/download" target="_blank" rel="noopener noreferrer">DrugCentral download</a>, snapshot 2021-09-01, under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>. Structures were selected, checked and reserialized; formulas were recalculated. Source links, CAS identifiers and source IDs are searchable. This is a historical structure collection, not a current approval list. <a href="NAMED-LIBRARY.md">Import methods and attribution</a>.</li>
       <li><strong>Other named/reference entries:</strong> not an independently verified or curated set. The class label does not establish a chemical identity or activity claim.</li>
       <li><strong>ESOL-labelled entries:</strong> labelled as a solubility-reference subset; matching them to measured values and authoritative records requires independent validation.</li>
       <li><strong>Ester/ether/ketone series:</strong> structural series examples, not measured biological reference annotations.</li>
@@ -90,10 +92,10 @@
     <a href="index.html">Return to Molecule Profiler →</a>
   </section>
 </main>
-<script src="data/library.js?v=2026-10-24-analogue-research"></script>
-<script src="data/library-names.js?v=2026-10-24-analogue-research"></script>
-<script src="data/library-tags.js?v=2026-10-24-analogue-research"></script>
-<script src="js/library-catalog.js?v=2026-10-24-analogue-research"></script>
-<script src="js/library-inspector.js?v=2026-10-24-analogue-research"></script>
+<script src="data/library.js?v=2026-10-24-named-library"></script>
+<script src="data/library-names.js?v=2026-10-24-named-library"></script>
+<script src="data/library-tags.js?v=2026-10-24-named-library"></script>
+<script src="js/library-catalog.js?v=2026-10-24-named-library"></script>
+<script src="js/library-inspector.js?v=2026-10-24-named-library"></script>
 </body>
 </html>

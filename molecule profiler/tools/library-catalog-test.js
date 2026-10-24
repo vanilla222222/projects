@@ -8,7 +8,7 @@ const sample = [
   { name: '=formula injection', cls: 'Other', formula: 'CO2', smiles: 'O=C=O' },
   { name: 'Gamma', cls: 'ESOL reference', formula: 'H2O', smiles: 'O' }
 ];
-assert.equal(GROUPS.length, 5);
+assert.equal(GROUPS.length, 6);
 assert.equal(groupFor(sample[0]), 'series');
 assert.equal(groupFor(sample[1]), 'fragment');
 assert.equal(groupFor(sample[2]), 'other');
@@ -40,4 +40,13 @@ for (const entry of LIBRARY) {
 assert.equal(all.groups.fragment, 74, 'Unexpected change in fragment set');
 assert.equal(all.missingNames, 0);
 assert.equal(all.missingSmiles, 0);
+const sourced=LIBRARY.filter(entry=>entry.source?.provider==='DrugCentral');
+assert.ok(sourced.length>2000);
+assert.equal(catalogQuery(LIBRARY,{group:'sourced'}).total,sourced.length);
+const compound=sourced.find(e=>e.name==='capmatinib');assert.ok(compound);
+for(const term of [compound.name,compound.source.cas,compound.source.inchiKey,'DrugCentral '+compound.source.id]){
+ assert.ok(catalogQuery(LIBRARY,{query:term,group:'sourced'}).rows.some(r=>r.entry===compound));
+}
+assert.equal(groupFor({...compound,smiles:'CC'}),'other','Stale source metadata cannot label a changed graph');
+assert.ok(catalogCsv([compound],{}).includes(compound.source.url));
 console.log('Library catalogue and provenance-grouping checks passed:', all.total, 'entries');
