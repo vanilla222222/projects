@@ -8,7 +8,7 @@ Each run supplies independent JSON copies:
 
 - `molecule`: name, SMILES and scalar descriptors calculated by the existing app.
 - `query_smiles`: input SMILES string.
-- `candidates`: up to 25 candidate-comparison records, properties and available evidence.
+- `candidates`: initially up to 25 candidate-comparison records, with optional five-design extensions up to 100, properties and available evidence.
 - `evidence`: analysis snapshot, excluding previous Python experiments.
 - `analysis`: dictionary containing molecule, candidates and evidence.
 
@@ -27,6 +27,12 @@ In Python workspace, choose an **Analysis template**, click **Load template**, t
 - **Cleavage products and release targets** reads the current snapshot's release checks. For more results, first run **Check all release paths** in Candidate comparison. It distinguishes original-input, organic-component and different-OH-analogue targets, then lists available formal steps, products and coproducts. Unchecked paths stay unchecked; no biological metabolism is inferred.
 
 All three use only the included Python standard library. Their source is in `js/python-analysis-templates.js`. Successful unmodified template runs retain the template ID and version alongside their exact code, inputs and output in the run JSON and notebook snapshot. Edited scripts retain their code with no built-in-template attribution.
+
+## Generate five more designs
+
+In Quick candidates, **Generate another 5** appends up to five additional unique designs from the same supported classes and up to five compatible positions. The initial batch remains 25; the session is bounded to 100 designs and 300 generation attempts per enumeration. Existing designs, order, dashboard release checks and notebook selections are retained. Finite libraries may yield fewer than five; no duplicates or unsupported structures are used to fill a batch. The button stops when sampling is exhausted or the session limit is reached. A new input starts a fresh batch.
+
+New designs appear in Candidate comparison and subsequent Python runs. Existing completed Python runs remain historical snapshots. Notebooks permit up to 100 selected designs with the same size limits.
 
 ## Full engine status
 

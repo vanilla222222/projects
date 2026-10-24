@@ -214,7 +214,7 @@
  function generateSingle(parent,options){
   const rows=[],reasons=[],skipped=[];
   const quick=options?.profile==='quick';
-  const report={version:7,status:'unavailable',rows,candidates:rows,reasons,skipped,evidenceLevel:'Unvalidated structural designs',scope:'Bounded single-site designs. Quick sampling includes parent-recovery designs and ether redesigns with a different OH release target. Structural edits and formal release checks do not establish biological conversion or prodrug status.'};
+  const report={version:8,status:'unavailable',rows,candidates:rows,reasons,skipped,evidenceLevel:'Unvalidated structural designs',scope:'Bounded single-site designs. Quick sampling includes parent-recovery designs and ether redesigns with a different OH release target. Structural edits and formal release checks do not establish biological conversion or prodrug status.'};
   const fail=message=>{reasons.push(message);return report;};
   try{
    if(!parent||!Array.isArray(parent.atoms)||!Array.isArray(parent.bonds))return fail('A parsed molecular graph is required.');
@@ -236,7 +236,7 @@
    }
    if(!sites.length){report.status='no-compatible-site';return fail('No compatible site for the current ester, phosphate, amine-carbamate, N-oxide, thioester, N–H linker, aldehyde/ketone or ether-redesign classes at the selected site(s). This is a coverage limit, not evidence that no prodrug is possible.');}
    const requested=options&&options.limit!==undefined?Number(options.limit):5;
-   const limit=Number.isFinite(requested)?Math.max(0,Math.min(quick?25:5,Math.floor(requested))):(quick?25:5);
+   const limit=Number.isFinite(requested)?Math.max(0,Math.min(quick?100:5,Math.floor(requested))):(quick?25:5);
    if(!limit)return fail('Candidate limit is zero.');
    const structures=[];let attempts=0;
    const attempt=(site,design)=>{

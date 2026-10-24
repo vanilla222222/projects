@@ -6,7 +6,7 @@
  function capture(input,snapshot,settings={}){
   if(!input||typeof input.smiles!=='string'||!input.smiles||input.smiles.length>4000||!snapshot||typeof snapshot!=='object'||Array.isArray(snapshot))throw Error('An analyzed structure and snapshot are required.');
   const title=String(settings.title||input.name||'Research project').trim(),notes=String(settings.notes||'');if(!title||title.length>160||notes.length>20000)throw Error('Title limit: 160 characters; notes limit: 20,000.');
-  const selected=Array.isArray(settings.selected)?settings.selected:[];if(selected.length>25||selected.some(s=>typeof s.smiles!=='string'||s.smiles.length>4000))throw Error('Select at most 25 bounded design structures.');
+  const selected=Array.isArray(settings.selected)?settings.selected:[];if(selected.length>100||selected.some(s=>typeof s.smiles!=='string'||s.smiles.length>4000))throw Error('Select at most 100 bounded design structures.');
   const revision={createdAt:new Date().toISOString(),title,notes,input:{name:String(input.name||'Input').slice(0,160),smiles:input.smiles},selectedDesigns:selected.map(s=>({id:String(s.id||'').slice(0,160),name:String(s.name||'Design').slice(0,300),smiles:s.smiles})),versions:clone(settings.versions||{}),snapshot:clone(snapshot)};
   if(size(revision)>MAX_SNAPSHOT)throw Error('Revision exceeds 5 MB. Export the full analysis separately or reduce its stored detail.');return revision;
  }

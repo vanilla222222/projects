@@ -29,14 +29,15 @@
  const chartHost=make('section');chartHost.id='pk-decay-view';chartHost.className='pk-research-extension';pk.closest('article').append(chartHost);
  const decay=typeof createPKDecayView==='function'?createPKDecayView(chartHost):null;
  const designs=make('section');designs.id='prodrug-candidate-designs';designs.className='pk-research-extension';
- designs.append(make('h3','Quick candidates — up to 25 designs'),make('p','Compatible methoxy/alkoxy ethers, alcohols, phenols, acids/carboxylates, amines, thiols and carbonyls share this batch. Ether redesigns release a different OH analogue; parent-recovery designs target the original input. All are unvalidated and separate from documented prodrugs above. A reversible graph edit does not establish enzymatic cleavage, parent release in the body, absorption, safety or efficacy.'));
+ designs.append(make('h3','Quick candidates — start with up to 25 designs'),make('p','Compatible methoxy/alkoxy ethers, alcohols, phenols, acids/carboxylates, amines, thiols and carbonyls share this batch. Ether redesigns release a different OH analogue; parent-recovery designs target the original input. All are unvalidated and separate from documented prodrugs above. A reversible graph edit does not establish enzymatic cleavage, parent release in the body, absorption, safety or efficacy.'));
  const candidateStatus=make('p');candidateStatus.setAttribute('role','status');const cards=make('div');cards.className='quick-candidate-groups';
  const infoControls=make('div');infoControls.className='candidate-info-controls';const orderLabel=make('label','Metabolite order '),metaboliteOrder=make('select');metaboliteOrder.id='candidate-metabolite-order';
  for(const [value,label] of [['priority','Highest rule priority'],['mass','Largest molecular weight']]){const option=make('option',label);option.value=value;metaboliteOrder.append(option);}orderLabel.append(metaboliteOrder);
  const infoStatus=make('p');infoStatus.id='candidate-info-status';infoStatus.setAttribute('role','status');infoControls.append(orderLabel,infoStatus);
  const methods=make('details');methods.className='candidate-info-methods';methods.append(make('summary','About names, BBB estimates and metabolite ranking'),make('p','Names are exact-graph reference-library labels where available; otherwise they are descriptive design labels, not generated IUPAC names. Formula describes the candidate as drawn; isotope labels remain in SMILES.'),make('p','BBB is a local BOILED-Egg-style passive-permeation screen from WLOGP and TPSA, including sulfur and phosphorus contributions. Charged structures are not assessed. It does not predict transporters, efflux, dose or measured brain exposure, and is not a SwissADME result.'),make('p','Top 3 means highest uncalibrated rule priority by default, not measured abundance or the dominant human metabolites. The mass option selects the largest products in the bounded generated pool. Predictions cover up to two generations and 40 total nodes. Fewer than three products are shown when rules or graph checks do not support three; cap and rule failures are reported. Small coproducts may be omitted by the underlying engine. Formal prodrug release targets remain separate.'));
  const bbbSource=make('a','BOILED-Egg model publication');bbbSource.href='https://doi.org/10.1002/cmdc.201600182';bbbSource.target='_blank';bbbSource.rel='noopener noreferrer';methods.append(bbbSource);
- designs.append(candidateStatus,infoControls,methods,cards);panel.append(designs);
+ const more=make('button','Generate another 5');more.id='quick-candidates-more';more.type='button';const moreStatus=make('p');moreStatus.id='quick-candidates-more-status';moreStatus.setAttribute('role','status');
+ designs.append(candidateStatus,more,moreStatus,infoControls,methods,cards);panel.append(designs);
  let informationToken=0,predictionTimer=null,informationJobs=[],informationResult=null,informationSnapshot=null;
  function cancelInformation(){informationToken++;if(predictionTimer!==null)root.clearTimeout(predictionTimer);predictionTimer=null;}
  function renderMetabolites(host,report){
@@ -59,7 +60,20 @@
   };predictionTimer=root.setTimeout(next,0);
  }
  metaboliteOrder.addEventListener('change',scheduleInformation);
- let current=null;
+ let current=null,moreBusy=false,moreEpoch=0;
+ function moreState(){const result=root.PharmacologyUI.getSnapshot()?.prodrugCandidates,count=result?.rows?.length||0;return {busy:moreBusy,count,canGenerate:!!current&&!moreBusy&&count<100&&!!result?.sampling&&!result.sampling.shortfall};}
+ function syncMore(){more.disabled=!moreState().canGenerate;doc.dispatchEvent(new CustomEvent('molecule-profiler:candidate-generation',{detail:moreState()}));}
+ function generateMore(){
+  if(!moreState().canGenerate)return;const record=current,snapshot=root.PharmacologyUI.getSnapshot(),previous=snapshot.prodrugCandidates,token=moreEpoch;moreBusy=true;moreStatus.textContent='Checking up to five additional unique designs…';syncMore();
+  root.setTimeout(()=>{if(token!==moreEpoch||record!==current||snapshot!==root.PharmacologyUI.getSnapshot())return;
+   try{const generated=root.ProdrugCandidates.generateQuick(record.mol,{limit:Math.min(100,previous.rows.length+5)}),old=new Map(previous.rows.map(r=>[r.smiles,r])),newRows=generated.rows.filter(r=>!old.has(r.smiles));
+    const rows=previous.rows.concat(newRows.slice(0,5)),result={...generated,rows,candidates:rows};if(rows.length===previous.rows.length)result.sampling={...(generated.sampling||previous.sampling),shortfall:5};
+    updateCandidates(record,result);moreStatus.textContent=(rows.length-previous.rows.length)+' additional unique design(s); '+rows.length+' total. '+(result.sampling?.shortfall?'No more designs passed within the supported sampling bounds.':rows.length>=100?'Session limit of 100 designs reached.':'Existing designs and checks retained.');
+    doc.dispatchEvent(new CustomEvent('molecule-profiler:candidates',{detail:{smiles:record.smiles,added:rows.length-previous.rows.length,total:rows.length}}));
+   }catch(e){moreStatus.textContent='Additional generation unavailable: '+e.message+'. Existing designs retained.';}finally{moreBusy=false;syncMore();}
+  },0);
+ }
+ more.addEventListener('click',generateMore);root.QuickCandidatesUI={generateMore,getState:moreState};
  function updateCurve(){
   if(!decay)return;
   const snapshot=root.PharmacologyUI.getSnapshot(),input=halfLifePlotInput(snapshot);
@@ -68,11 +82,11 @@
   snapshot.decayPlot=decay.getData();
  }
  chartHost.addEventListener('change',()=>{const s=root.PharmacologyUI.getSnapshot();if(s&&decay)s.decayPlot=decay.getData();});
- function updateCandidates(record){
+ function updateCandidates(record,providedResult=null){
   cancelInformation();informationJobs=[];informationResult=null;informationSnapshot=null;infoStatus.textContent='';cards.replaceChildren();const snapshot=root.PharmacologyUI.getSnapshot();
   if(!root.ProdrugCandidates){candidateStatus.textContent='Candidate enumeration is unavailable.';return;}
   try{
-   const result=root.ProdrugCandidates.generateQuick(record.mol);if(snapshot)snapshot.prodrugCandidates=result;
+   const result=providedResult||root.ProdrugCandidates.generateQuick(record.mol);if(snapshot)snapshot.prodrugCandidates=result;
    const rows=result.rows||result.candidates||[];
    candidateStatus.textContent=(result.reasons||[]).join(' ')||(rows.length+' unvalidated structural candidates generated.');
    if(result.sampling){const sampling=result.sampling;candidateStatus.textContent+=' Target: '+sampling.target+' designs across up to five positions; '+sampling.positionCounts.map(s=>s.element+(s.atom+1)+(s.kind?.includes('ether redesign')?' ('+s.kind+')':'')+': '+s.count).join(' · ')+'.';}
@@ -98,13 +112,13 @@
     sources.forEach(source=>{const url=source.url||source.sourceUrl;if(!/^https:\/\//.test(url||''))return;const a=make('a',source.title||source.label||'Class reference');a.href=url;a.target='_blank';a.rel='noopener noreferrer';const p=make('p');p.append(a);card.append(p);});
     const button=make('button','Analyze candidate structure');button.type='button';button.dataset.pharmSmiles=row.smiles;button.dataset.pharmName='Unvalidated candidate '+(index+1);card.append(button);groups.get(row.site.atom).append(card);
    });
-   informationResult=result;informationSnapshot=snapshot;scheduleInformation();
+   informationResult=result;informationSnapshot=snapshot;scheduleInformation();syncMore();
   }catch(error){candidateStatus.textContent='No candidate design inferred: '+error.message;if(snapshot)snapshot.prodrugCandidates={status:'unavailable',rows:[],reason:error.message};}
  }
  const originalRender=root.PharmacologyUI.render;
  root.PharmacologyUI.render=function(record,ranks){
-  const changed=!current||current.smiles!==record.smiles;current=null;if(decay&&changed)decay.clear('Updating selected structure…');cards.replaceChildren();candidateStatus.textContent='';
-  originalRender(record,ranks);current=record;updateCurve();updateCandidates(record);
+  moreEpoch++;moreBusy=false;moreStatus.textContent='';const changed=!current||current.smiles!==record.smiles;current=null;if(decay&&changed)decay.clear('Updating selected structure…');cards.replaceChildren();candidateStatus.textContent='';
+  originalRender(record,ranks);current=record;updateCurve();updateCandidates(record);syncMore();
   const examples=$('prodrug-examples');if(examples&&/No hypothetical derivative/.test(examples.textContent))examples.textContent='No documented prodrug for this exact active graph in the curated set. Generated designs below have a different evidence level.';
   panel.querySelectorAll('.hint').forEach(e=>{if(e.textContent.includes('No novel prodrug structures are generated.'))e.textContent=e.textContent.replace('No novel prodrug structures are generated.','Generated candidates below are hypotheses, not documented prodrugs.');});
  };

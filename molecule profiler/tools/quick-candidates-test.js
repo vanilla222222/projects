@@ -13,7 +13,8 @@ const two=ProdrugCandidates.generateQuick(parse('NCCO'));ok(two.sampling.positio
 const one=ProdrugCandidates.generateQuick(parse('CCO'));ok(one.sampling.positionCounts.length===1&&one.sampling.positionCounts[0].count===25,'One position fills all 25 slots');
 const scarce=ProdrugCandidates.generateQuick(parse('CN(C)CCO'));ok(scarce.rows.length===25&&scarce.sampling.positionCounts.find(p=>p.element==='N').count===1&&scarce.sampling.positionCounts.find(p=>p.element==='O').count===24,'Sparse nitrogen library reallocates to oxygen');
 const oxide=ProdrugCandidates.generateQuick(parse('CCN(C)C'));ok(oxide.rows.length===1&&oxide.sampling.shortfall===24&&oxide.reasons.some(s=>s.includes('not padded')),'Limited supported chemistry reports a truthful shortfall');
-ok(ProdrugCandidates.generateQuick(parse('CCO'),{limit:100}).rows.length===25,'Quick hard cap 25');
+const extended=ProdrugCandidates.generateQuick(parse(six),{limit:999});ok(extended.rows.length<=100&&extended.sampling.target===100,'Extended quick session capped at 100');
+const initial=ProdrugCandidates.generateQuick(parse('NCCc1ccc(OC)c(OC)c1OC')),next=ProdrugCandidates.generateQuick(parse('NCCc1ccc(OC)c(OC)c1OC'),{limit:30});ok(next.rows.length===30,'Five additional designs are available across mixed positions');ok(initial.rows.every((r,i)=>r.smiles===next.rows[i].smiles),'Extending limit retains the original 25 in order');ok(new Set(next.rows.map(r=>r.smiles)).size===30,'Extended designs have unique SMILES');
 ok(ProdrugCandidates.generateQuick(parse('CCO'),{limit:7}).rows.length===7,'Smaller quick requests honored');
 ok(ProdrugCandidates.generateQuick(parse('CCO'),{limit:0}).rows.length===0,'Zero request honored');
 ok(ProdrugCandidates.generate(parse('CCO')).rows.length===5&&ProdrugCandidates.sites(parse('CCO'))[0].designs.length===5,'Compact builder default remains five');

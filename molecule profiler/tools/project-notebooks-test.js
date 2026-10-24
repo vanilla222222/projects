@@ -7,5 +7,6 @@ const assert=require('node:assert/strict');global.indexedDB=require(process.env.
  await b.archive(p.id);assert.ok((await b.list()).find(x=>x.id===p.id).archived);await b.archive(p.id,false);assert.equal((await b.list()).find(x=>x.id===p.id).archived,false);
  await assert.rejects(b.importProject('{"format":"wrong","revisions":[]}'));assert.throws(()=>b.capture({smiles:'CC'},null));assert.throws(()=>b.capture({smiles:'CC'},{x:'x'.repeat(6*1024*1024)}),/5 MB/);
  for(let i=0;i<7;i++)await b.save(r,p.id);await assert.rejects(b.save(r,p.id),/Ten revisions/);saved=(await b.list()).find(x=>x.id===p.id);assert.equal(saved.revisions.length,10,'A full notebook is retained, never silently truncated');
+ assert.equal(b.capture({smiles:'CC'}, {}, {selected:Array.from({length:100},()=>({smiles:'CCO'}))}).selectedDesigns.length,100);assert.throws(()=>b.capture({smiles:'CC'}, {}, {selected:Array.from({length:101},()=>({smiles:'CCO'}))}),/at most 100/);
  await b.close();console.log('Project notebooks: snapshot copies, atomic revisions, safe import, archive/restore, quotas and retained history passed.');
 })().catch(e=>{console.error(e);process.exitCode=1;});
