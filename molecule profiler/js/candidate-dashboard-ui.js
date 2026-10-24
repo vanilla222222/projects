@@ -1,0 +1,64 @@
+'use strict';
+(function(root){
+ const doc=root.document,$=id=>doc.getElementById(id),grid=doc.querySelector('#results > .grid');if(!grid||!root.CandidateDashboard)return;
+ const make=(tag,text)=>Object.assign(doc.createElement(tag),text===undefined?{}:{textContent:text}),panel=make('article');panel.id='candidate-dashboard';panel.className='panel candidate-dashboard';
+ const head=make('div');head.className='panel-head';head.append(make('h2','Candidate comparison'),make('span','all quick designs · one view'));panel.append(head,make('p','Compare every generated design with the input. All designs are unvalidated. Inspect a design to check its formal release sequence; use “Check all release paths” to assess the entire table. Values and differences are not benefit scores.'));
+ const baseline=make('div');baseline.className='candidate-baseline';panel.append(baseline);
+ const controls=make('div');controls.className='candidate-controls';
+ function select(label,id,choices){const l=make('label',label),s=make('select');s.id=id;for(const [value,name] of choices){const o=make('option',name);o.value=value;s.append(o);}l.append(s);controls.append(l);return s;}
+ const searchLabel=make('label','Find designs'),search=make('input');search.type='search';search.id='candidate-dashboard-search';search.placeholder='Name, formula, site or SMILES';searchLabel.append(search);controls.append(searchLabel);
+ const sort=select('Sort by','candidate-dashboard-sort',[['index','Design number'],['mw','Molecular weight'],['logp','WLOGP'],['tpsa','TPSA'],['logS','ESOL log S'],['steps','Checked release steps']]),direction=select('Order','candidate-dashboard-direction',[['asc','Ascending'],['desc','Descending']]),kind=select('Release target','candidate-dashboard-kind',[['','All targets'],['original-input','Original input'],['organic-component','Organic input component'],['different-analogue','Different OH analogue']]),bbb=select('BBB screen','candidate-dashboard-bbb',[['','All / unavailable'],['true','Likely · passive screen'],['false','Unlikely · passive screen']]);panel.append(controls,make('p','BBB is a rough passive screen: the external BBBP comparison has lower overall accuracy than its majority-class baseline. See Validation for class-specific performance, coverage and overlap limits. No measured brain exposure is predicted.'));
+ const actions=make('div');actions.className='candidate-actions';const checkAll=make('button','Check all release paths');checkAll.id='candidate-dashboard-check-all';const stop=make('button','Stop checks');stop.id='candidate-dashboard-stop';stop.hidden=true;const csv=make('button','Download all designs CSV'),json=make('button','Download comparison JSON');csv.id='candidate-dashboard-csv';json.id='candidate-dashboard-json';for(const b of [checkAll,stop,csv,json]){b.type='button';actions.append(b);}panel.append(actions);
+ const status=make('p');status.id='candidate-dashboard-status';status.setAttribute('role','status');panel.append(status);const region=make('div');region.className='table-wrap candidate-table';region.tabIndex=0;region.setAttribute('aria-label','All quick candidate properties');panel.append(region);
+ const detail=make('section');detail.id='candidate-release-detail';detail.className='candidate-release-detail';detail.setAttribute('aria-label','Selected candidate release details');panel.append(detail);grid.prepend(panel);
+ let report=null,input=null,selected=0,epoch=0,running=false,timer=null;
+ const number=(n,delta=false)=>Number.isFinite(n)?(delta&&n>0?'+':'')+n.toFixed(2):'Unavailable';
+ const targetLabel=r=>({'original-input':'Original input','organic-component':'Organic input component','different-analogue':'Different OH analogue'}[r.releaseKind]||'Unknown');
+ function sync(){const s=root.PharmacologyUI?.getSnapshot();if(s)s.candidateComparison=report?{...report,rows:report.rows.map(({candidate,...r})=>r)}:null;}
+ function draw(){
+  region.replaceChildren();if(!report)return;const rows=root.CandidateDashboard.filterSort(report.rows,{search:search.value,sort:sort.value,direction:direction.value,kind:kind.value,bbb:bbb.value});
+  const table=make('table'),thead=make('thead'),tr=make('tr');for(const h of ['Design / site','Formula','MW g/mol / Δ','WLOGP / Δ','TPSA Å² / Δ','ESOL log S (mol/L) / Δ','BBB screen','Release target','Formal route','Inspect']){const th=make('th',h);th.scope='col';tr.append(th);}thead.append(tr);const body=make('tbody');
+  for(const r of rows){const line=make('tr');if(r.index===selected)line.className='is-selected';const identity=make('td');identity.append(make('strong',(r.index+1)+'. '+r.name),make('small',r.site?String(r.site.label)+' · input atom '+(r.site.atom+1):'Site unavailable'));line.append(identity,make('td',r.properties?.formula||'Unavailable'));
+   for(const k of ['mw','logp','tpsa','logS']){const cell=make('td',number(r.properties?.[k]));cell.append(make('small','Δ '+number(r.delta?.[k],true)));line.append(cell);}line.append(make('td',r.properties?.bbb.label||'Not assessed'),make('td',targetLabel(r)),make('td',r.release?.status==='formal-route-found'?r.release.steps.length+' step(s) · formal':r.release?r.release.status.replace(/-/g,' '):'Not checked'));
+   const cell=make('td'),button=make('button','Inspect '+(r.index+1));button.type='button';button.dataset.candidateIndex=String(r.index);button.setAttribute('aria-pressed',String(r.index===selected));cell.append(button);line.append(cell);body.append(line);
+  }table.append(thead,body);region.append(table);if(!rows.length)region.append(make('p','No designs match these filters.'));
+ }
+ function structure(host,smiles,title,highlight=[]){const figure=make('figure');figure.append(make('figcaption',title));try{const m=buildMolecule(parseSmiles(smiles)),view=make('div');view.className='release-structure';view.innerHTML=depictSvg(m,{title,highlight,atomNumbers:highlight});figure.append(view,make('code',smiles));}catch(_){figure.append(make('code',smiles));}host.append(figure);}
+ function drawDetail(){
+  detail.replaceChildren();const r=report?.rows.find(r=>r.index===selected);if(!r)return;
+  detail.append(make('h3',(r.index+1)+'. '+r.name),make('p','Declared release target: '+targetLabel(r)+'. '+(r.releaseKind==='different-analogue'?'This design releases a different OH analogue. It does not regenerate your original methoxy / alkoxy molecule.':r.releaseKind==='organic-component'?'Recognized counterions are omitted; the full input salt is not regenerated.':'Exact recovery includes the supplied charge, isotopes and supported stereochemistry.')));
+  if(r.properties?.bbb)detail.append(make('p','BBB: '+r.properties.bbb.label+'. '+(r.properties.bbb.reason||r.properties.bbb.scope)));
+  const summary=make('div');summary.className='release-summary';structure(summary,r.smiles,'Generated design');if(r.declaredTargetSmiles)structure(summary,r.declaredTargetSmiles,'Declared target · '+targetLabel(r));detail.append(summary);
+  const inspect=make('button',r.release?'Recheck this release path':'Check this release path');inspect.id='candidate-release-check';inspect.type='button';inspect.disabled=running;inspect.addEventListener('click',()=>checkOne(r,epoch,true));detail.append(inspect);
+  const use=make('button','Analyze this design');use.type='button';use.id='candidate-dashboard-analyze';use.addEventListener('click',()=>{$('smiles-input').value=r.name+', '+r.smiles;$('run').click();});detail.append(use);
+  if(!r.release){detail.append(make('p','The declared target has not yet been independently checked in this dashboard.'));return;}
+  const release=r.release;detail.append(make('p',release.reason));
+  if(release.releaseTarget.status==='verified')detail.append(make('p','Target identity verified by structural checks. Physiological cleavage remains unvalidated.'));
+  for(const step of release.steps){const section=make('section');section.className='release-step';section.append(make('h4','Step '+step.number+' · '+step.label),make('p',step.formalInput));
+   const bonds=step.cutBonds.map(b=>b.elements[0]+b.atoms[0]+'–'+b.elements[1]+b.atoms[1]).join(', ');section.append(make('p','Bond(s) broken: '+bonds+'. Atom numbers refer to this step’s reactant SMILES.'));
+   structure(section,step.reactantSmiles,'Reactant · highlighted cut-bond atoms',step.cutBonds.flatMap(b=>b.atoms.map(i=>i-1)));
+   const products=make('div');products.className='release-products';for(const product of step.products)structure(products,product.smiles,(product.isReleaseTarget?'Declared release target':'Formal product / intermediate')+' · '+product.formula);section.append(products,make('p',step.remainingSteps+' remaining formal step(s) in this supported sequence.'));
+   if(step.stereoChanges.length)section.append(make('p','Stereo changes: '+step.stereoChanges.map(s=>s.change).join(' ')));
+   if(step.source?.url){const a=make('a','Reaction-class source');a.href=step.source.url;a.target='_blank';a.rel='noopener';section.append(a);}detail.append(section);
+  }
+  if(release.byproducts){detail.append(make('h4','Remaining formal coproducts'));for(const p of release.byproducts)detail.append(make('code',p.formula+' · '+p.smiles));detail.append(make('p','Every final fragment is retained. Their exposure and toxicology are not assessed.'));}
+  detail.append(make('p',release.scope));
+ }
+ function busy(value){running=value;checkAll.disabled=value||!report?.rows.length;stop.hidden=!value;const b=$('candidate-release-check');if(b)b.disabled=value;}
+ function checkOne(row,token=epoch,force=false){if(token!==epoch||row.release&&!force)return;try{row.release=root.CandidateRelease.inspect(input.mol,row.candidate,{maxStates:24});}catch(e){row.release={status:'unavailable',reason:e.message,steps:[],byproducts:null,releaseTarget:{status:'unverified'},scope:'No supported route was established.'};}if(token===epoch){draw();drawDetail();sync();}}
+ function batch(){if(!report?.rows.length||running)return;const token=++epoch;busy(true);let cursor=0;
+  const next=()=>{if(token!==epoch)return;if(cursor>=report.rows.length){busy(false);status.textContent='Release checks complete: '+report.rows.filter(r=>r.release?.status==='formal-route-found').length+' / '+report.rows.length+' supported formal routes. No experimental conversion is established.';drawDetail();return;}const row=report.rows[cursor++];checkOne(row,token);status.textContent='Checking release paths · '+cursor+' / '+report.rows.length;timer=root.setTimeout(next,0);};timer=root.setTimeout(next,0);
+ }
+ function cancel(){epoch++;root.clearTimeout(timer);busy(false);status.textContent='Checks stopped. Completed results are retained.';drawDetail();}
+ checkAll.addEventListener('click',batch);stop.addEventListener('click',cancel);
+ region.addEventListener('click',event=>{const b=event.target.closest('[data-candidate-index]');if(!b)return;selected=Number(b.dataset.candidateIndex);draw();drawDetail();if(!running){const row=report.rows.find(r=>r.index===selected);const token=epoch;root.setTimeout(()=>checkOne(row,token),0);}});
+ for(const e of [search,sort,direction,kind,bbb])e.addEventListener(e===search?'input':'change',()=>{const visible=root.CandidateDashboard.filterSort(report?.rows||[],{search:search.value,sort:sort.value,direction:direction.value,kind:kind.value,bbb:bbb.value});if(!visible.some(r=>r.index===selected))selected=visible[0]?.index??-1;draw();drawDetail();});
+ function download(name,text,type){const url=root.URL.createObjectURL(new root.Blob([text],{type})),a=make('a');a.href=url;a.download=name;a.click();root.setTimeout(()=>root.URL.revokeObjectURL(url),1000);}
+ csv.addEventListener('click',()=>{if(report)download('candidate-comparison.csv',root.CandidateDashboard.csv(report),'text/csv');});json.addEventListener('click',()=>{if(report)download('candidate-comparison.json',JSON.stringify(root.PharmacologyUI.getSnapshot().candidateComparison,null,2),'application/json');});
+ function refresh(record){epoch++;root.clearTimeout(timer);input=record;selected=0;search.value='';kind.value='';bbb.value='';sort.value='index';direction.value='asc';
+  try{report=root.CandidateDashboard.build(record,root.PharmacologyUI.getSnapshot()?.prodrugCandidates?.rows||[]);baseline.textContent='INPUT · '+report.input.name+' · '+report.input.properties.formula+' · MW '+number(report.input.properties.mw)+' g/mol · TPSA '+number(report.input.properties.tpsa)+' Å² · ESOL '+number(report.input.properties.logS)+' log(mol/L)';status.textContent=report.rows.length+' designs. Δ values compare with the supplied input, including any salt counterions; they are not improvement scores.';}catch(e){report=null;baseline.textContent='';status.textContent=e.message;}
+  busy(false);csv.disabled=json.disabled=!report?.rows.length;draw();drawDetail();sync();
+ }
+ const original=root.PharmacologyUI.render;root.PharmacologyUI.render=function(record,ranks){original(record,ranks);refresh(record);};
+ root.CandidateDashboardUI={refresh,cancel};
+})(globalThis);

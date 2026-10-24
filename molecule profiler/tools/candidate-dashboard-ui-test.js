@@ -1,0 +1,39 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
+const {JSDOM}=require(process.env.PROFILER_JSDOM_PATH||'jsdom'),root=path.join(__dirname,'..'),dom=new JSDOM(fs.readFileSync(path.join(root,'index.html'),'utf8'),{runScripts:'outside-only',url:'https://example.test/'}),w=dom.window,ctx=dom.getInternalVMContext();
+for(const n of ['smiles','mol','smarts','stereo','transform','descriptors','rules','pharmacology','prodrug-candidates','cleavable-groups','prodrug-explorer','prodrug-priority','candidate-info','depict','candidate-release','candidate-dashboard','input-workflow','prediction-benchmarks'])vm.runInContext(fs.readFileSync(path.join(root,'js',n+'.js'),'utf8'),ctx);
+vm.runInContext(fs.readFileSync(path.join(root,'data/independent-benchmarks.js'),'utf8'),ctx);
+let snapshot;w.PharmacologyUI={render(r){snapshot={inputSmiles:r.smiles,prodrugCandidates:w.ProdrugCandidates.generateQuick(r.mol)};},getSnapshot(){return snapshot;}};
+w.URL.createObjectURL=()=> 'blob:test';w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=function(){};
+for(const n of ['candidate-dashboard-ui','validation-workbench-ui','workspace-ui'])vm.runInContext(fs.readFileSync(path.join(root,'js',n+'.js'),'utf8'),ctx);
+const $=id=>w.document.getElementById(id),tick=()=>new Promise(r=>setTimeout(r,5));let checks=0;const ok=(v,m)=>{assert.ok(v,m);checks++;};
+function render(smiles){w.inputSmiles=smiles;w.PharmacologyUI.render({name:'Input molecule',smiles,mol:vm.runInContext('buildMolecule(parseSmiles(inputSmiles))',ctx)});}
+async function settled(){for(let i=0;i<200;i++){if($('candidate-dashboard-stop').hidden)return;await tick();}throw Error('Batch checks did not finish.');}
+(async()=>{
+ render('NCCc1ccc(OC)c(OC)c1OC');$('results').hidden=false;w.WorkspaceUI.select('candidates');
+ ok(!$('candidate-dashboard').hidden&&$('prodrug-panel').hidden,'Candidate comparison is a dedicated workspace');
+ ok($('candidate-dashboard').querySelectorAll('tbody tr').length===25&&snapshot.candidateComparison.rows.length===25,'All 25 designs displayed and exported');
+ ok($('candidate-dashboard').textContent.includes('majority-class baseline'),'BBB limitations are visible where designs are compared');
+ $('candidate-dashboard-kind').value='different-analogue';$('candidate-dashboard-kind').dispatchEvent(new w.Event('change'));
+ ok($('candidate-dashboard').querySelectorAll('tbody tr').length===snapshot.candidateComparison.rows.filter(r=>r.releaseKind==='different-analogue').length&&snapshot.candidateComparison.rows.length===25,'Filtering preserves the entire exported report');
+ $('candidate-dashboard').querySelector('[data-candidate-index="0"]').click();await tick();
+ ok($('candidate-release-detail').textContent.includes('different OH analogue')&&$('candidate-release-detail').querySelectorAll('.release-step').length===2,'Methoxy designs show the correct different target and two-step cascade');
+ ok($('candidate-release-detail').textContent.includes('remaining formal step')&&$('candidate-release-detail').textContent.includes('Bond(s) broken:'),'Remaining steps and explicitly numbered cleavage bonds displayed');
+ ok($('candidate-release-detail').querySelectorAll('.atom-index').length===4,'Each broken-bond endpoint is numbered on its reactant drawing');
+ ok(snapshot.candidateComparison.rows[0].release.steps.length===2,'Checked route and products exported');
+ $('candidate-dashboard-check-all').click();await tick();const old=snapshot;render('CCO');await tick();
+ ok(snapshot!==old&&snapshot.candidateComparison.input.smiles==='CCO'&&snapshot.candidateComparison.rows.every(r=>r.release===null),'Changing input cancels stale all-candidate work');
+ $('candidate-dashboard-check-all').click();await settled();
+ ok(snapshot.candidateComparison.rows.every(r=>r.release),'All-candidate checks finish and retain each result');
+ render('CCCC');ok(!$('candidate-dashboard-check-all').isConnected||$('candidate-dashboard-check-all').disabled,'Unsupported input disables empty batch work');
+ ok($('candidate-release-detail').children.length===0&&snapshot.candidateComparison.rows.length===0,'Empty designs clear old detail and snapshot rows');
+ w.WorkspaceUI.select('validation');ok(!$('validation-workbench').hidden&&$('candidate-dashboard').hidden,'Validation has its own workspace');
+ ok($('validation-workbench').querySelectorAll('.benchmark-card').length===2,'Both experimental benchmark reports displayed');
+ $('validation-csv').value='smiles,observed,name\nCCO,0,Ethanol\nOCC,0,Duplicate\nC[NH3+],1,Charged';$('validation-run').click();await tick();
+ ok($('validation-status').textContent.includes('1 / 3 scored')&&!$('validation-result-download').disabled,'Measurement evaluation reports scoring and explicit exclusions');
+ $('validation-endpoint').value='bbb';$('validation-endpoint').dispatchEvent(new w.Event('change'));ok($('validation-result-download').disabled&&!$('validation-results').children.length,'Changing endpoint clears old metrics');
+ $('validation-csv').value='smiles,observed\nCCO,not-a-number';$('validation-run').click();await tick();ok($('validation-status').textContent.includes('0 / 1 scored'),'Invalid observations are never converted to zero');
+ $('candidate-dashboard-search').value='no such molecule';$('candidate-dashboard-search').dispatchEvent(new w.Event('input'));ok(!$('candidate-release-detail').children.length,'Empty filtered views do not retain an unrelated selected design');
+ const ids=[...w.document.querySelectorAll('[id]')].map(e=>e.id);ok(new Set(ids).size===ids.length,'All dynamic panel and control IDs remain unique');
+ console.log('Candidate dashboard / validation UI: '+checks+' checks passed.');w.close();
+})().catch(e=>{console.error(e);w.close();process.exitCode=1;});

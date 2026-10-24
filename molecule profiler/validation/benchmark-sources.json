@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "datasets": [
+    {
+      "id": "dls56",
+      "endpoint": "logS",
+      "title": "DLS-100 non-Delaney subset",
+      "url": "https://raw.githubusercontent.com/PatWalters/solubility/cec65c9258cbecee42e9da1c840d75523d5dd86f/dls_100_unique.csv",
+      "source": "https://github.com/PatWalters/solubility",
+      "doi": "https://doi.org/10.17630/3a3a5abc-8458-4924-8e6c-b804347605e8",
+      "smilesColumn": "SMILES",
+      "observedColumn": "LogS exp (mol/L)",
+      "independence": "Curator removes 44 structures shared with the ESOL fit data; 56 remain. Exact development-overlap removal was not independently repeated here.",
+      "sha256": "7f6ba392c6208c716adb5083b095d431890eb8b805d95ed88ec0f7b0b9a67fb9"
+    },
+    {
+      "id": "bbbp",
+      "endpoint": "bbb",
+      "title": "MoleculeNet BBBP",
+      "url": "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/BBBP.csv",
+      "source": "https://github.com/deepchem/deepchem/blob/master/deepchem/molnet/load_function/bbbp_datasets.py",
+      "doi": "https://doi.org/10.1039/C7SC02664A",
+      "smilesColumn": "smiles",
+      "observedColumn": "p_np",
+      "independence": "External binary-label comparison; overlap with the published passive-screen development set is unknown. Labels include mechanisms beyond passive permeability.",
+      "sha256": "d07a38487aeac5cee5508413e468043ef3097451d2a112701c2d60be9ec6b662"
+    }
+  ]
+}

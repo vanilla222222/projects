@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Serve the complete standalone application and bounded local compute API."""
-import argparse,json,subprocess,sys,threading
+import argparse,json,subprocess,sys,threading,webbrowser
+import urllib.request
 from functools import partial
 from http.server import ThreadingHTTPServer,SimpleHTTPRequestHandler
 from pathlib import Path
@@ -44,8 +45,19 @@ class Handler(SimpleHTTPRequestHandler):
   except subprocess.TimeoutExpired:return self.respond(408,{'error':'Job exceeded the 120-second compute limit.'})
   finally:SLOTS.release()
 if __name__=='__main__':
- parser=argparse.ArgumentParser();parser.add_argument('--port',type=int,default=8765);args=parser.parse_args()
- server=ThreadingHTTPServer(('127.0.0.1',args.port),partial(Handler,directory=str(ROOT)))
+ parser=argparse.ArgumentParser();parser.add_argument('--port',type=int,default=8765);parser.add_argument('--open-browser',action='store_true');args=parser.parse_args()
+ try:server=ThreadingHTTPServer(('127.0.0.1',args.port),partial(Handler,directory=str(ROOT)))
+ except OSError:
+  if not args.open_browser:raise
+  # Reuse this project's server if it already runs on the preferred port.
+  try:
+   with urllib.request.urlopen(f'http://127.0.0.1:{args.port}/api/status',timeout=2) as response:status=json.load(response)
+   if status.get('project')=='Molecule Profiler' and status.get('engine')=='independent-local-v1':
+    webbrowser.open(f'http://127.0.0.1:{args.port}');sys.exit(0)
+  except Exception:pass
+  server=ThreadingHTTPServer(('127.0.0.1',0),partial(Handler,directory=str(ROOT)))
+ args.port=server.server_port
+ if args.open_browser:threading.Timer(.3,lambda:webbrowser.open(f'http://127.0.0.1:{args.port}')).start()
  print(f'Molecule Profiler: http://127.0.0.1:{args.port} (local application and compute)',flush=True)
  try:server.serve_forever()
  except KeyboardInterrupt:server.server_close()

@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-23T23:51:32.554931+00:00",
+  "sourceHashes": {
+    "js/smiles.js": "ae7063246faee39707c62003a038fd8ce825e5c247f85ab9b6191e4383caca66",
+    "js/mol.js": "64af3686d28cf3772cf1159a502ca5f406870ff9d42fa56fc4d84da4ebdc3b08",
+    "js/smarts.js": "daab3275c06a4d8c9052a428d77a789e017f35bdd4578f100d09f906c1005685",
+    "js/stereo.js": "6b65f4af103715c9814ec1bd56871b27280e9c8e3278475ce62726f38d3f2aaa",
+    "js/descriptors.js": "2612d387dbe7a7d0d789984c8c062c5a3c6ae43781021e4f225659bc7a98ee4e",
+    "js/rules.js": "be94dad6930e28436e87f6afbf46ee3f6b5da034f8cb78094bc5ce7f71d80118",
+    "js/pharmacology.js": "3cd49fd39120f943fe939fd25c49252d733a3b953965dcfb8de268d83b876b86",
+    "js/prediction-benchmarks.js": "d166517cd3c6caf63d28974c2cb2857c7fa1e54b6b1c4a49bab672a3aeb0df6a"
+  },
+  "datasets": [
+    {
+      "id": "dls56",
+      "endpoint": "logS",
+      "title": "DLS-100 non-Delaney subset",
+      "url": "https://raw.githubusercontent.com/PatWalters/solubility/cec65c9258cbecee42e9da1c840d75523d5dd86f/dls_100_unique.csv",
+      "source": "https://github.com/PatWalters/solubility",
+      "doi": "https://doi.org/10.17630/3a3a5abc-8458-4924-8e6c-b804347605e8",
+      "smilesColumn": "SMILES",
+      "observedColumn": "LogS exp (mol/L)",
+      "independence": "Curator removes 44 structures shared with the ESOL fit data; 56 remain. Exact development-overlap removal was not independently repeated here.",
+      "sha256": "7f6ba392c6208c716adb5083b095d431890eb8b805d95ed88ec0f7b0b9a67fb9",
+      "result": {
+        "schemaVersion": 1,
+        "endpoint": "logS",
+        "name": "Aqueous solubility",
+        "units": "log10(mol/L)",
+        "kind": "regression",
+        "model": "Local Delaney ESOL equation",
+        "inputRows": 56,
+        "scored": 56,
+        "abstained": 0,
+        "excluded": 0,
+        "coverage": 1,
+        "metrics": {
+          "n": 56,
+          "mae": 0.8301632491556798,
+          "rmse": 1.0306714078848243,
+          "bias": 0.2598938154870441,
+          "r2": 0.614151156710536
+        },
+        "reasons": {},
+        "scope": "Fixed existing model; no fitting or threshold selection. Metrics apply only to scored structures in this dataset. Coverage and exclusions must be read alongside performance. External data can overlap a published model’s development set; independence is not assumed."
+      }
+    },
+    {
+      "id": "bbbp",
+      "endpoint": "bbb",
+      "title": "MoleculeNet BBBP",
+      "url": "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/BBBP.csv",
+      "source": "https://github.com/deepchem/deepchem/blob/master/deepchem/molnet/load_function/bbbp_datasets.py",
+      "doi": "https://doi.org/10.1039/C7SC02664A",
+      "smilesColumn": "smiles",
+      "observedColumn": "p_np",
+      "independence": "External binary-label comparison; overlap with the published passive-screen development set is unknown. Labels include mechanisms beyond passive permeability.",
+      "sha256": "d07a38487aeac5cee5508413e468043ef3097451d2a112701c2d60be9ec6b662",
+      "result": {
+        "schemaVersion": 1,
+        "endpoint": "bbb",
+        "name": "BBB binary labels",
+        "units": "0 = nonpenetrant, 1 = penetrant",
+        "kind": "classification",
+        "model": "Local passive WLOGP/TPSA screen",
+        "inputRows": 2050,
+        "scored": 1815,
+        "abstained": 158,
+        "excluded": 77,
+        "coverage": 0.8853658536585366,
+        "metrics": {
+          "n": 1815,
+          "tp": 906,
+          "tn": 338,
+          "fp": 76,
+          "fn": 495,
+          "accuracy": 0.6853994490358126,
+          "balancedAccuracy": 0.7315530314785506,
+          "sensitivity": 0.6466809421841542,
+          "specificity": 0.8164251207729468,
+          "mcc": 0.3899612558964799,
+          "majorityBaseline": 0.771900826446281,
+          "accuracy95CI": [
+            0.6636634940832877,
+            0.7063522346090843
+          ],
+          "sensitivity95CI": [
+            0.6212805935417655,
+            0.6712790800897671
+          ],
+          "specificity95CI": [
+            0.7762815072022112,
+            0.8507503632482177
+          ]
+        },
+        "reasons": {
+          "Disconnected structure.": 104,
+          "Conflicting labels for the same exact graph.": 20,
+          "Unsupported descriptor chemistry.": 3,
+          "Charged input; neutral-property/passive screen withheld.": 51,
+          "Duplicate exact graph and measurement; counted once.": 55,
+          "Structure could not be parsed.": 2
+        },
+        "scope": "Fixed existing model; no fitting or threshold selection. Metrics apply only to scored structures in this dataset. Coverage and exclusions must be read alongside performance. External data can overlap a published model’s development set; independence is not assumed."
+      }
+    }
+  ],
+  "scope": "External experimental-data comparisons without model tuning. The DLS subset excludes the original ESOL fit compounds according to its curator; BBBP overlap with the passive screen development set has not been audited. Not a clinical or prodrug-specific validation."
+}

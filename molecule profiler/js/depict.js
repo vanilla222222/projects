@@ -728,6 +728,16 @@ function depictSvg(mol, options) {
       + ' font-size="' + (scale * 0.62).toFixed(1) + '">' + depictEscape(text) + '</text>');
   });
 
+  if (Array.isArray(settings.atomNumbers)) {
+    for (const id of new Set(settings.atomNumbers)) {
+      if (!mol.atoms[id]) continue;
+      const point = at(id);
+      parts.push('<text class="atom-index" x="' + (point.x + scale * 0.22).toFixed(1)
+        + '" y="' + (point.y - scale * 0.32).toFixed(1)
+        + '" fill="var(--accent)" font-size="' + Math.max(7.5, scale * 0.3).toFixed(1)
+        + '">' + (id + 1) + '</text>');
+    }
+  }
   const title = settings.title ? '<title>' + depictEscape(settings.title) + '</title>' : '';
   return '<svg class="depiction" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '
     + width.toFixed(1) + ' ' + height.toFixed(1) + '" width="' + width.toFixed(1)

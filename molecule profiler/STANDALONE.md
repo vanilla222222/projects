@@ -2,7 +2,19 @@
 
 This directory is a runnable project. It needs no other projects in this repository, account, API key or SwissDrugDesign service. Its interface, candidate-design rules and local compute API live here. Open-source chemistry dependencies are installed separately; this is not a claim that every algorithm was invented for this app.
 
-## Run the complete application
+## Start without terminal commands
+
+Install **Python 3.12** from python.org first (on Windows, include the Python launcher), then keep this project directory intact and open its launcher:
+
+- Windows: **Start Molecule Profiler.bat**
+- macOS: **Start-Molecule-Profiler.command**
+- Linux: run **start.sh** as a program in your file manager
+
+The launcher creates `.venv` inside this project, installs the pinned packages on first launch and opens your browser when the local server starts. The first launch needs internet and can take several minutes. Later launches check the environment and reuse it. Keep the launcher window open while working; close it or press Ctrl+C to stop the server. Local write access and a platform supported by the dependency wheels are required. Python 3.12 is the tested runtime; the launcher is source code, not a bundled desktop installer. File-manager execution permissions may need to be enabled for shell launchers.
+
+If the default port is occupied by this project, the launcher opens that running instance. If another application occupies it, the launcher selects an available localhost port. None of this exposes a network-facing server.
+
+## Manual setup
 
 Use Python 3.12 on a platform supported by the pinned dependency wheels. From this directory:
 
@@ -33,6 +45,32 @@ The GitHub Pages copy runs the browser features and shows native compute as unav
 
 P-gp substrate prediction, trained CYP inhibition models, calibrated target probabilities, measured metabolite abundance, protein parameterization and rotamer libraries are **not supplied**. The app does not manufacture values for these endpoints. This release is not full parity with any external suite.
 
+## Compare every quick candidate
+
+After analyzing a structure, choose **Candidate comparison**. All generated designs (up to 25) appear in one sortable table with formula, molecular weight, WLOGP, TPSA, ESOL solubility, passive BBB screening and differences from the supplied input. Filter by release-target type, site/name/SMILES or the passive BBB screen. Filters do not remove records from CSV/JSON exports. Salt-normalized designs are labelled; their input-relative differences include counterion removal.
+
+Select **Inspect** to check a design's declared target and supported formal activation sequence. Ester-triggered carbamates and ether redesigns retain their specified ester-trigger / fragmentation sequence instead of replacing it with a shorter generic graph route. The inspector shows the broken bond numbers **in each step's reactant SMILES**, all products/intermediates, remaining steps and final coproducts. Ether redesigns are labelled as releasing a different OH analogue; full-salt recovery is never inferred from an organic-component match. Charge-state or rule gaps remain unresolved.
+
+**Check all release paths** runs bounded checks across the table; **Stop checks** retains completed results. Changing input cancels pending work. These checks are not physiological rate, enzyme-recognition or dominant-metabolite predictions.
+
+## Evaluate predictions against measurements
+
+Choose **Validation** for aggregate external-data benchmarks and endpoint evidence coverage. The release includes a pinned 56-compound non-Delaney DLS solubility subset and the 2,050-row MoleculeNet BBBP dataset. No model fitting or threshold tuning is performed. Exact-graph duplicates count once; conflicting observations are excluded, charged/disconnected or unsupported structures abstain, and every count is reported.
+
+The passive BBB screen's overall accuracy on scored BBBP rows is **below the majority-class baseline**. It remains a rough research screen. Development-set overlap has not been audited, and BBBP labels cover mechanisms beyond passive membrane permeability. The report does not establish a clinically validated BBB predictor or prodrug performance.
+
+You can import a CSV with `smiles,observed` and optional `name` (500 rows / 1 MB maximum). Select log S in log10(mol/L), experimental octanol/water log P, or binary BBB labels (0/1). Log D is not accepted as log P. Results stay in the browser, include exclusions and can be downloaded as JSON. Comparing measurements does not train the model. Blank labels are invalid rather than zero; conflicting exact-graph measurements are not averaged silently.
+
+For reproducible aggregate results:
+
+```sh
+python tools/run-independent-benchmarks.py --write
+```
+
+This downloads the source datasets into ignored `.benchmark-cache`, checks their SHA-256 digests and runs the existing browser calculations through Node.js. **Node.js is needed for this developer benchmark command, not for the app launcher.** Source URLs/checksums are in `validation/benchmark-sources.json`; model-file hashes and generated metrics are in `validation/independent-benchmarks.json`. Upstream raw datasets are not redistributed here. Their attribution and reuse terms remain with their original providers. No Swiss datasets or models are used.
+
+Coverage explicitly distinguishes measured benchmarks from implementation conformance. Skin permeability, docking affinity, QED/SA outcomes and experimental prodrug cleavage do not acquire validation from these two datasets. No additional trained predictive model is introduced by this update.
+
 ## Working with the tools
 
 Analyze a molecule, then choose **Research tools** in the workspace navigation. Select the input or one of its quick candidate designs. Native results retain that molecule's identity in JSON exports. Changing molecules clears the previous result and prevents an older job from overwriting the new context.
@@ -53,7 +91,11 @@ With the environment activated, run from this directory:
 
 ```sh
 python tools/standalone-test.py
+python tools/launcher-test.py
 node tools/ui-integration-test.js
+node tools/candidate-dashboard-test.js
+python tools/candidate-release-rdkit-test.py
+node tools/prediction-benchmarks-test.js
 ```
 
 The optional real docking smoke test accepts a prepared receptor fixture and search box; see the test's command-line help. It checks execution and pose output, not biological validity.
