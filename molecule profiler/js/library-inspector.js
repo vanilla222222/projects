@@ -24,7 +24,7 @@
   for(const section of sections){let n=0;for(const b of section.querySelectorAll('button')){b.hidden=(!b.dataset.search.includes(term))||(receptorDefs.has(b.dataset.tag)&&!Number(b.dataset.total)&&!$('catalog-empty-receptors').checked)||(category!=='all'&&(category==='new'?!expansion.has(b.dataset.tag):category!==section.dataset.category));if(!b.hidden){n++;visible++;}}section.hidden=!n;if((term||category!=='all')&&n)section.open=true;}
   $('catalog-family-count').textContent=visible+' filters · counts show matches / whole library';
  }
- const newOption=make('option','New tags in this update');newOption.value='new';$('catalog-facet-kind').append(newOption);
+ const newOption=make('option','50-tag expansion');newOption.value='new';$('catalog-facet-kind').append(newOption);
  for(const [title]of categories){const o=make('option',title);o.value=title;$('catalog-facet-kind').append(o);}
  $('catalog-empty-receptors').addEventListener('change',findFamilies);
  $('catalog-family-search').addEventListener('input',findFamilies);$('catalog-facet-kind').addEventListener('change',findFamilies);

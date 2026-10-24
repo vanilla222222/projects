@@ -4,7 +4,7 @@ The reference explorer provides tags for every one of the **146 receptors or rec
 
 Use **Receptor action: DRD2 · Antagonist** when a receptor and action must belong to the same source association. Combining the independent **Receptor: DRD2** and **Action: Antagonist** filters can also include a compound with DRD2 evidence and antagonism at another receptor. Existing AND/OR/exclusion controls apply to all tags.
 
-The current snapshot annotates **1,705 library entries**, including **509 with action classifications across 115 receptor groups**. It includes 1,878 exact-graph IUPHAR-linked library/source associations and 1,820 existing ChEMBL binding associations; these counts overlap and are not independent experiments. See the [per-receptor coverage report](validation/library-receptor-tags.json).
+The current snapshot annotates **1,753 library entries**, including **557 with action classifications across 120 receptor groups**. It includes 2,029 exact-graph IUPHAR-linked library/source associations and 1,820 existing ChEMBL binding associations; these counts overlap and are not independent experiments. See the [per-receptor coverage report](validation/library-receptor-tags.json).
 
 ## Action vocabulary
 

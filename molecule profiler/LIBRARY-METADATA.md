@@ -89,3 +89,5 @@ direct source links in the metadata and provenance report.
 ## Receptor action filters
 
 The additional graph-guarded `data/library-receptor-tags.js` dataset adds source-classified receptor/action pairs without altering structural tags. Separate categories expose receptor targets, binding observations, general actions and exact receptor/action pairs across the 146-receptor catalogue. See [receptor tag methods, attribution and limitations](RECEPTOR-TAGS.md). Source classifications and assay measurements are distinct; binding affinity never establishes an action by itself.
+
+The [second 5,000-compound batch](NAMED-LIBRARY-BATCH-002.md) brings the library to 21,037 entries. Source names, original identities and import checks are pinned independently of inferred structural tags.
