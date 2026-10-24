@@ -1,7 +1,7 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const root=path.join(__dirname,'..');
-for(const name of ['smiles','mol','smarts','stereo','transform','pharmacology','analogue-candidates','pk-applicability'])vm.runInThisContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'));
+for(const name of ['smiles','mol','smarts','stereo','transform','pharmacology','analogue-edit-extensions','analogue-candidates','pk-applicability'])vm.runInThisContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'));
 const fixtures=['C/C=C/CO','C/C=C\\CO','OC/C=C/C=C/C','OC/C=C\\C=C/C','F/C(Cl)=C(/Br)CO','F/C(Cl)=C(\\Br)CO','OC[C@H](F)/C=C/C','[Na+].C/C=C/C(=O)[O-]','OCC1CC/C=C/CC1','OCC1/C=C/CCCCCC1','C/1=C/CCCCCC1','C/C=N/CC'];
 const reports=[];
 for(const smiles of fixtures){

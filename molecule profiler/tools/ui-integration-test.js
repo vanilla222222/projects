@@ -132,3 +132,5 @@ assert.ok(scripts.indexOf('js/layout-ui.js') > scripts.indexOf('js/prodrug-explo
 
 assert.ok(scripts.indexOf('data/library-receptor-tags.js') < scripts.indexOf('js/library-catalog.js'),'Receptor metadata must precede catalogue queries');
 assert.ok(inspector.includes('data/library-receptor-tags.js'),'Reference explorer must load receptor evidence');
+
+assert.ok(scripts.indexOf('js/analogue-edit-extensions.js') > scripts.indexOf('js/mol.js') && scripts.indexOf('js/analogue-edit-extensions.js') < scripts.indexOf('js/analogue-candidates.js'),'Generic edit extensions must load before the analogue generator');
