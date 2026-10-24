@@ -50,3 +50,6 @@ for(const term of [compound.name,compound.source.cas,compound.source.inchiKey,'D
 assert.equal(groupFor({...compound,smiles:'CC'}),'other','Stale source metadata cannot label a changed graph');
 assert.ok(catalogCsv([compound],{}).includes(compound.source.url));
 console.log('Library catalogue and provenance-grouping checks passed:', all.total, 'entries');
+const aliasEntry={name:'Alias fixture',smiles:'c1ccncc1',cls:'Test'};
+const aliasContext={tags:{entries:{'Alias fixture':{librarySmiles:aliasEntry.smiles,tags:['Family motif: Pyridines']}}}};
+assert.equal(catalogQuery([aliasEntry],{tag:'Pyridine motif'},aliasContext).total,1);

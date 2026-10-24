@@ -25,13 +25,33 @@
     opt.label = entry.name + ' (' + entry.count + ')';
     $('catalog-tag-options').appendChild(opt);
   }
-  const familyButtons=stats.tags.filter(entry=>entry.name.startsWith('Family motif: ')||entry.name.startsWith('Study collection: ')).map(entry=>{
-    const button=document.createElement('button');button.type='button';button.className='catalog-tag';
-    button.textContent=entry.name.replace(/^(Family motif: |Study collection: )/,'')+' ('+entry.count+')';
-    button.setAttribute('aria-label','Filter by '+entry.name);button.dataset.tag=entry.name;
-    button.addEventListener('click',()=>{tagFilter.value=entry.name;page=1;render();tagFilter.focus();});
-    $('catalog-families').appendChild(button);return button;
-  });
+  const registry=new Map(stats.tags.map(t=>[t.name,t.count]));
+  const definitions=globalThis.LIBRARY_TAG_METADATA?.familyDefinitions||[];
+  const familyNames=[...new Set([...definitions.map(d=>d.tag),...stats.tags.filter(t=>t.name.startsWith('Family motif: ')).map(t=>t.name)])].sort();
+  const sections=[['Structural families',familyNames],['Functional groups',stats.tags.filter(t=>t.name.endsWith(' motif')).map(t=>t.name)],['Reference class labels',stats.tags.filter(t=>t.name.startsWith('Label: ')).map(t=>t.name)],['Study collections',stats.tags.filter(t=>t.name.startsWith('Study collection: ')).map(t=>t.name)],['Binding reference families',stats.tags.filter(t=>t.name.startsWith('Binding family: ')).map(t=>t.name)]];
+  const familyButtons=[],familySections=[];
+  for(const [title,names] of sections){
+    const section=document.createElement('details');section.className='catalog-family-section';section.open=title==='Structural families';
+    const heading=document.createElement('summary');heading.textContent=title+' · '+names.length;section.append(heading);
+    const list=document.createElement('div');list.className='catalog-family-list';section.append(list);
+    for(const name of names){const count=registry.get(name)||0,button=document.createElement('button');button.type='button';button.className='catalog-tag';
+      button.textContent=name.replace(/^(Family motif: |Study collection: |Label: |Binding family: )/,'')+' ('+count+')';button.dataset.tag=name;
+      button.setAttribute('aria-label','Filter by '+name);button.disabled=!count;
+      button.title=name.startsWith('Label: ')?'Original reference classification; not independently inferred activity.':definitions.find(d=>d.tag===name)?.smarts||name;
+      button.addEventListener('click',()=>{tagFilter.value=name;page=1;render();tagFilter.focus();});
+      list.append(button);familyButtons.push(button);
+    }
+    $('catalog-families').append(section);familySections.push(section);
+  }
+  function findFamilies(){
+    const term=$('catalog-family-search').value.trim().toLowerCase();let visible=0;
+    for(const section of familySections){let count=0;for(const button of section.querySelectorAll('button')){button.hidden=!button.dataset.tag.toLowerCase().includes(term);if(!button.hidden){count++;visible++;}}
+      section.hidden=!count;if(term&&count)section.open=true;
+    }
+    $('catalog-family-count').textContent=visible+' of '+familyButtons.length+' selectors'+(term?' match your search':' · counts use the complete library');
+  }
+  $('catalog-family-search').addEventListener('input',findFamilies);findFamilies();
+
   function cell(tr, text, type) {
     const td = document.createElement(type || 'td');
     td.textContent = String(text == null ? '' : text);
@@ -58,7 +78,7 @@
       const tagCell=cell(tr,'');tagCell.className='catalog-tags-cell';
       const tags=document.createElement('div');tags.className='catalog-tags';
       let extraTags;
-      item.tags.forEach((label,index)=>{let target=tags;
+      item.tags.slice().sort((a,b)=>{const rank=t=>t.startsWith('Family motif: ')?0:t.endsWith(' motif')?1:t.startsWith('Study collection: ')?2:3;return rank(a)-rank(b)||a.localeCompare(b);}).forEach((label,index)=>{let target=tags;
         if(index===10){const more=document.createElement('details'),head=document.createElement('summary');head.textContent='+'+(item.tags.length-10)+' tags';more.appendChild(head);extraTags=document.createElement('div');extraTags.className='catalog-tags';more.appendChild(extraTags);tags.appendChild(more);}
         if(index>=10)target=extraTags;
         const button=document.createElement('button');button.type='button';button.className='catalog-tag';button.textContent=label;button.setAttribute('aria-label','Filter by tag '+label);
@@ -94,6 +114,7 @@
     control.addEventListener(control === query || control===tagFilter ? 'input' : 'change', () => { page = 1; render(); });
   }
   $('catalog-clear-tags').addEventListener('click',()=>{tagFilter.value='';page=1;render();tagFilter.focus();});
+  $('catalog-reset').addEventListener('click',()=>{query.value='';group.value='all';tagFilter.value='';sort.value='name';size.value='50';$('catalog-family-search').value='';findFamilies();page=1;render();query.focus();});
   prev.addEventListener('click', () => { page--; render(); });
   next.addEventListener('click', () => { page++; render(); });
   $('catalog-export').addEventListener('click', () => {

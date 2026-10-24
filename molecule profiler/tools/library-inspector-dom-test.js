@@ -16,6 +16,13 @@ const {LIBRARY_NAME_METADATA:n}=require('../data/library-names');
   assert.equal(d.getElementById('catalog-class'),null,'Class filter must be replaced');
   assert.ok(d.querySelectorAll('#catalog-tag-options option').length>20);
   assert.ok(d.querySelector('#catalog-table thead').textContent.includes('Tags'));
+  const definitions=w.LIBRARY_TAG_METADATA.familyDefinitions;
+  for(const def of definitions){const button=[...d.querySelectorAll('#catalog-families button')].find(b=>b.dataset.tag===def.tag);assert.ok(button,'Missing family '+def.tag);const count=w.LibraryCatalog.catalogQuery(w.eval('LIBRARY'),{tag:def.tag}).total;assert.equal(button.disabled,count===0);}
+  const allStats=w.LibraryCatalog.catalogSummary(w.eval('LIBRARY'));
+  for(const tag of allStats.tags.filter(t=>t.name.startsWith('Label: ')||t.name.endsWith(' motif')||t.name.startsWith('Binding family: ')))assert.ok([...d.querySelectorAll('#catalog-families button')].some(b=>b.dataset.tag===tag.name));
+  const familySearch=d.getElementById('catalog-family-search');familySearch.value='piperazine';familySearch.dispatchEvent(new w.Event('input'));
+  assert.ok([...d.querySelectorAll('#catalog-families button:not([hidden])')].every(b=>b.dataset.tag.toLowerCase().includes('piperazine')));
+  familySearch.value='';familySearch.dispatchEvent(new w.Event('input'));
   const initial=d.querySelector('#catalog-table tbody').textContent;
   const input=(id,value)=>{const el=d.getElementById(id);el.value=value;el.dispatchEvent(new w.Event('input',{bubbles:true}));};
   const sourced=require('../data/library').LIBRARY.filter(e=>e.source?.provider==='DrugCentral');
@@ -48,6 +55,7 @@ const {LIBRARY_NAME_METADATA:n}=require('../data/library-names');
   d.getElementById('catalog-export').click();assert.equal(downloads.length,1);
   const csv=await downloads[0].text();assert.ok(csv.includes('Reference ID'));assert.ok(csv.includes(id));assert.ok(csv.includes('Name form'));
   input('catalog-search','');input('catalog-tag','nonexistent tag for test');assert.ok(d.querySelector('#catalog-table tbody').textContent.includes('No matching'));
+  d.getElementById('catalog-reset').click();assert.equal(d.getElementById('catalog-search').value,'');assert.equal(d.getElementById('catalog-tag').value,'');assert.equal(d.getElementById('catalog-group').value,'all');assert.equal(d.querySelector('#catalog-table tbody').textContent,initial);
   assert.deepEqual(errors,[]);
   process.stdout.write('Library DOM: names, stable identifiers, tag search/chips, clearing, focus, sorting, empty results and filtered CSV passed\n');
  }finally{dom.window.close();}

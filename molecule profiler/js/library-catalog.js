@@ -82,7 +82,8 @@
     const group = GROUPS.some(g => g.key === o.group) ? o.group : 'all';
     const cls = String(o.cls || '');
     const sort = ['name', 'cls', 'formula', 'group','tag','tagCount'].includes(o.sort) ? o.sort : 'name';
-    const tagQuery=norm(o.tag);
+    const tagAliases={'indole motif':'family motif: indoles','pyridine motif':'family motif: pyridines'};
+    const tagQuery=tagAliases[norm(o.tag)]||norm(o.tag);
     const exactTag=tagQuery && rows.some(entry=>tagsFor(entry,context).some(tag=>norm(tag)===tagQuery));
     const perPage = [25, 50, 100].includes(Number(o.perPage)) ? Number(o.perPage) : 50;
     const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
