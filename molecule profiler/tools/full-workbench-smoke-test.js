@@ -1,6 +1,7 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');const {JSDOM}=require(process.env.PROFILER_JSDOM_PATH||'jsdom'),root=path.join(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8'),dom=new JSDOM(html,{runScripts:'outside-only',pretendToBeVisual:true,url:'https://example.test/'}),w=dom.window,ctx=dom.getInternalVMContext();
+w.indexedDB=require(process.env.PROFILER_FAKE_IDB_PATH||'fake-indexeddb').indexedDB;w.TextEncoder=TextEncoder;
 w.fetch=async()=>({ok:false,status:404,json:async()=>({error:'Browser mode'})});w.URL.createObjectURL=()=> 'blob:test';w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=function(){};w.HTMLElement.prototype.scrollIntoView=function(){};
 (async()=>{
  for(const match of html.matchAll(/<script src="([^"?]+)(?:\?[^"]*)?"><\/script>/g))vm.runInContext(fs.readFileSync(path.join(root,match[1]),'utf8'),ctx,{filename:match[1]});
@@ -12,5 +13,11 @@ w.fetch=async()=>({ok:false,status:404,json:async()=>({error:'Browser mode'})});
  assert.equal(s.candidateComparison.rows.length,25);assert.ok(s.candidateComparison.rows.every(r=>r.synthesis?.routeEstablished===false),'Every design has preparation review with no invented route');assert.ok(s.candidateComparison.rows.some(r=>r.releaseKind==='different-analogue'));
  const box=w.document.querySelector('#ion-multi-sites fieldset');box.querySelector('[type=checkbox]').checked=true;for(const [key,value] of [['pka','9'],['low','8.5'],['high','9.5'],['source','Explicit smoke-test assumption']])box.querySelector('[id$="-'+key+'"]').value=value;w.document.getElementById('ion-multi-run').click();assert.equal(w.PharmacologyUI.getSnapshot().multiSiteIonization.states.length,2,'Ionization form exports both charge states');
  w.WorkspaceUI.select('candidates');assert.equal(w.document.getElementById('candidate-dashboard').hidden,false);w.WorkspaceUI.select('validation');assert.equal(w.document.getElementById('validation-workbench').hidden,false);
- console.log('Full application smoke: all scripts, startup, mixed-site input, snapshots and navigation passed.');w.close();
+ w.WorkspaceUI.select('notebooks');w.document.getElementById('notebook-title').value='Notebook smoke';w.document.getElementById('notebook-notes').value='<script>plain notes</script>';w.document.querySelector('#notebook-candidates input').checked=true;w.document.getElementById('notebook-save').click();
+ for(let i=0;i<200;i++){if(w.document.getElementById('notebook-status').textContent.startsWith('Saved '))break;await new Promise(r=>setTimeout(r,10));}
+ assert.ok(w.document.getElementById('notebook-status').textContent.startsWith('Saved '),'Notebook saved through real UI');
+ [...w.document.querySelectorAll('#project-notebooks button')].find(b=>b.textContent==='View saved revision').click();assert.ok(w.document.getElementById('notebook-view').textContent.includes('<script>plain notes</script>'));assert.equal(w.document.querySelectorAll('#notebook-view script').length,0,'Imported/stored notes never execute HTML');
+ w.document.getElementById('smiles-input').value='Other, CCO';w.document.getElementById('run').click();for(let i=0;i<200;i++){if(w.PharmacologyUI.getSnapshot()?.inputSmiles==='CCO')break;await new Promise(r=>setTimeout(r,10));}
+ w.document.getElementById('notebook-restore').click();for(let i=0;i<200;i++){if(w.PharmacologyUI.getSnapshot()?.multiSiteIonization)break;await new Promise(r=>setTimeout(r,10));}assert.equal(w.PharmacologyUI.getSnapshot().inputSmiles,'NCCc1ccc(OC)c(OC)c1OC');assert.equal(w.PharmacologyUI.getSnapshot().multiSiteIonization.parameters[0].pka,9,'Saved pKa inputs restored and recalculated');assert.equal((await w.ProjectNotebooks.list())[0].revisions.length,1,'Reanalysis never changes historical saved revision');
+ await w.ProjectNotebooks.close();console.log('Full application smoke: all modules, ionization, synthesis review, notebook save/restore and historical snapshots passed.');w.close();
 })().catch(e=>{console.error(e);w.close();process.exitCode=1;});

@@ -4,3 +4,5 @@ __pycache__/
 .benchmark-cache/
 
 .bbb-cache/
+
+node_modules/

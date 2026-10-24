@@ -15,6 +15,7 @@
     { id: 'research', label: 'Research tools', description: 'Independent native chemistry, conformers, force fields, reference shapes, fragment edits and docking.' },
     { id: 'bbb', label: 'BBB research', description: 'Independent scaffold-tested BBBP-label model with calibration, applicability checks and abstention.' },
     { id: 'validation', label: 'Validation', description: 'Fixed-model experimental benchmarks, applicability coverage and your own measurement evaluation.' },
+    { id: 'notebooks', label: 'Project notebooks', description: 'Local versioned research projects, notes, selected designs and reproducible evidence snapshots.' },
     { id: 'data', label: 'Data & export', description: 'Batch results and per-atom descriptors.' },
     { id: 'compare', label: 'Compare', description: 'Compare two to four analyzed molecules side by side, with a reference column and export.' },
     { id: 'all', label: 'All sections', description: 'Browse every analysis module on one page.' }
@@ -45,6 +46,7 @@
     'Ionization scenarios': ['exposure'],
     'Charge states & pH': ['exposure'],
     'BBB research model': ['bbb'],
+    'Project notebooks': ['notebooks'],
     'Functional effect context': ['discovery'],
     'Dependence-related structural similarity': ['discovery'],
     'Similarity search': ['discovery'],

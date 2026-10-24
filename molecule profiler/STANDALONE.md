@@ -123,3 +123,13 @@ Inference runs entirely on the standalone server with RDKit; no scikit-learn is 
 Each candidate comparison now includes a preparation review. It records competing recognized input handles, possible route-dependent protection/selectivity needs, ether-redesign precursor gaps, multistep linker compatibility, unspecified stereochemistry and a bounded set of reactive motifs. The inspector explains what additional information is needed. Counts are review items, not a feasibility, hazard or clinical-priority score.
 
 Every generated design retains an unestablished-route flag: graph construction and SA scores do not establish selective preparation, isolated yield, identity/purity or storage stability. The program does not invent protecting-group requirements or complete synthetic routes without reagents, conditions and molecule-specific evidence.
+
+## Project notebooks
+
+Project notebooks stores analysis revisions in browser IndexedDB, with structures, selected designs, notes, evidence snapshots, asset versions and model/dataset provenance. Nothing is uploaded by the notebook feature. Browser storage is origin-specific: GitHub Pages and localhost keep separate databases. Export/import JSON to move projects or keep a backup; clearing site storage removes local notebooks.
+
+Each save appends a revision atomically; prior saved results are not overwritten when a molecule is reanalyzed. Up to 10 revisions are retained per project (5 MB per revision, 25 MB per project). If a limit or browser quota is reached, saving fails explicitly without deleting history. Import always creates a new project. Archiving is reversible through “Show archived projects”; there is no purge button.
+
+“Reanalyze saved structure” runs current code, restores matching candidate selections, and reapplies saved multi-site pKa inputs as conditional inputs for recalculation. Saved historical result values are not silently promoted to current predictions. Other saved scenario details remain inspectable in the evidence snapshot. Notes and imported data are displayed as text, never executed. This is local research record keeping, not cloud sync or an encrypted record system.
+
+Notebook storage regression tests require the developer-only `fake-indexeddb` package; interface tests also require `jsdom`. These are test dependencies, not app runtime dependencies. Run `node tools/project-notebooks-test.js` and `node tools/full-workbench-smoke-test.js` in a development environment containing both.

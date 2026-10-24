@@ -3,7 +3,7 @@
  const doc=root.document,$=id=>doc.getElementById(id),nav=$('workspace-nav');if(!nav)return;
  nav.classList.add('workbench-sidebar');const label=doc.createElement('p');label.className='sidebar-label';label.textContent='WORKSPACES';nav.prepend(label);
  nav.addEventListener('click',event=>{if(!event.target.closest('button[data-view]'))return;const target=root.WorkspaceUI?.getActive()==='compare'?$('comparison-panel'):doc.querySelector('#results > .grid > article.panel:not([hidden])');target?.scrollIntoView?.({block:'start',behavior:'auto'});});
- const groups={overview:'Explore',design:'Design',discovery:'Research',data:'Manage'};
+ const groups={overview:'Explore',design:'Design',discovery:'Research',notebooks:'Manage'};
  for(const button of nav.querySelectorAll('button[data-view]')){const id=button.dataset.view;button.dataset.navSection=['overview','properties','screening'].includes(id)?'explore':['design','candidates','analogues','exposure','metabolism'].includes(id)?'design':['discovery','research','bbb','validation'].includes(id)?'research':'manage';if(groups[id]){const name=doc.createElement('span');name.className='sidebar-group';name.textContent=groups[id];button.before(name);}}
  const footer=doc.createElement('div');footer.className='sidebar-footer';footer.append(Object.assign(doc.createElement('strong'),{textContent:'Molecule Profiler'}),Object.assign(doc.createElement('span'),{textContent:'Independent · local by design'}));nav.append(footer);
  const context=doc.createElement('section');context.id='workbench-context';context.className='workbench-context';context.setAttribute('aria-label','Current molecular context');$('results').querySelector('.result-toolbar').after(context);
