@@ -19,3 +19,15 @@ Choose an edit family and original-input atom, then **Generate set**. Draft gene
 Search and property bounds filter the generated result set; sorting and table/structure-grid pagination operate on the entire filtered set. **Clear result filters** restores an unfiltered result view. Inspect a design to compare its properties and structures with the input; only the original-input edited atom is highlighted because candidate SMILES atom numbering may differ. The Analyze button starts a separate current analysis. The all-SMILES download exports the generated set, independent of result-view filters.
 
 `tools/analogue-workbench-test.js` and `tools/analogue-ui-test.js` cover calculated deltas, similarity, missing values, property filters, family/site controls, pagination, extension, exhaustion and stale-job clearing. The full app smoke checks compatibility with the prodrug, notebook and Python modules.
+
+## Shortlists, research exports and saved projects
+
+Use the per-design shortlist checkbox or **Shortlist all filtered** (all matching designs, not just the visible page). **Show shortlist only** provides a focused view. Extensions preserve matching selections; changing the input clears them. Regenerating a different family/site retains only selections still present in the newly generated set.
+
+The export-set selector chooses **All generated**, **All filtered** or **Shortlist** for SMILES, CSV and research JSON. Empty sets disable downloads. CSV records properties, deltas, edit family, original input atom, similarity, passive BBB status and explicit unvalidated status; spreadsheet formula prefixes in text are escaped. Research JSON includes input, generation settings, result filters, export/generation counts, selected structures, coverage and method descriptions. It does not claim novelty, biological equivalence or an established preparation.
+
+Project notebooks automatically capture the entire analogue snapshot, generation settings and shortlist. The notebook panel lists the current analogue selections separately from prodrug selections. Reanalyzing a saved project regenerates the saved bounded settings with current code and reselects exact matching structures; missing matches are reported rather than relabelled as current results. Historical revisions remain unchanged.
+
+Python workspace exposes independent copies as `analogues` and `analogue_shortlist`. **Compare analogues with input** uses the shortlist when populated and otherwise all generated analogues. It returns property comparisons and edit provenance to the structured viewer. Analogue reports show edit details, not invented prodrug release paths. The viewer's five-more button extends analogues for an analogue report and prodrugs for a prodrug report. Completed runs remain snapshots; changing the selected analogue set requires a rerun.
+
+Tests include shortlist/export scope, notebook regeneration/selection restoration, and a full application test with the actual shipped Python worker/WASM runtime. No server or additional browser chemistry package is required for this workflow.

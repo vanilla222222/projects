@@ -9,6 +9,7 @@ Each run supplies independent JSON copies:
 - `molecule`: name, SMILES and scalar descriptors calculated by the existing app.
 - `query_smiles`: input SMILES string.
 - `candidates`: initially up to 25 candidate-comparison records, with optional five-design extensions up to 100, properties and available evidence.
+- `analogues`: the current generated analogue records; `analogue_shortlist`: the selected subset.
 - `evidence`: analysis snapshot, excluding previous Python experiments.
 - `analysis`: dictionary containing molecule, candidates and evidence.
 
@@ -26,11 +27,13 @@ In Python workspace, choose an **Analysis template**, click **Load template**, t
 - **Formula, properties and BBB summary** prints full descriptive names, formula, MW, TPSA, WLOGP, SMILES and any available passive BBB screen for the input and every design. It does not present passive screens as measured penetration or trained-model probabilities. Unavailable estimates remain unavailable.
 - **Cleavage products and release targets** reads the current snapshot's release checks. For more results, first run **Check all release paths** in Candidate comparison. It distinguishes original-input, organic-component and different-OH-analogue targets, then lists available formal steps, products and coproducts. Unchecked paths stay unchecked; no biological metabolism is inferred.
 
-All three use only the included Python standard library. Their source is in `js/python-analysis-templates.js`. Successful unmodified template runs retain the template ID and version alongside their exact code, inputs and output in the run JSON and notebook snapshot. Edited scripts retain their code with no built-in-template attribution.
+All templates use only the included Python standard library. Their source is in `js/python-analysis-templates.js`. Successful unmodified template runs retain the template ID and version alongside their exact code, inputs and output in the run JSON and notebook snapshot. Edited scripts retain their code with no built-in-template attribution.
+
+The **Compare analogues with input** template uses the analogue shortlist when nonempty, otherwise all generated analogues. Its structured report shows edit provenance instead of prodrug cleavage paths. The viewer's five-more button targets the kind of designs in that report. Analogue generation settings and shortlists are included in notebook snapshots; reanalysis regenerates current results rather than loading historical values as predictions.
 
 ## Structured results and five more designs
 
-The three analysis templates now return a `profiler_result` dictionary as well as text. On success, the worker serializes it as JSON (maximum 2 MB) and the workspace presents a sortable, searchable comparison table. The input baseline stays first when sorting. Missing numeric values and unavailable BBB estimates remain explicit; every generated design is labelled unvalidated. Expand a design, then a formal step, to see available reactants, cut bonds, products, target identity and coproducts. Raw output is collapsed after a structured run and remains available. Text-only custom scripts continue to work; they clear any previous structured table when they complete.
+The analysis templates now return a `profiler_result` dictionary as well as text. On success, the worker serializes it as JSON (maximum 2 MB) and the workspace presents a sortable, searchable comparison table. The input baseline stays first when sorting. Missing numeric values and unavailable BBB estimates remain explicit; every generated design is labelled unvalidated. Expand a design, then a formal step, to see available reactants, cut bonds, products, target identity and coproducts. Raw output is collapsed after a structured run and remains available. Text-only custom scripts continue to work; they clear any previous structured table when they complete.
 
 **Download visible CSV** includes the input and currently filtered/sorted designs. **Download results JSON** includes all captured result rows, source code, template identity and runtime versions. The existing **Download run JSON** also retains the full input snapshot and raw structured response. The worker resets `profiler_result` before every run, so a text-only script cannot inherit an earlier table. Non-JSON numeric values and oversized structured responses receive explicit errors.
 

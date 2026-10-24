@@ -35,13 +35,13 @@ def _clean_properties(props):
     result["bbb"] = {"available": screen.get("available") is True, "label": screen.get("label"), "reason": screen.get("reason"), "scope": screen.get("scope"), "model": screen.get("model")}
     return result
 
-def _structured(kind):
-    parent = _clean_properties(_parent_properties())
+def _structured(kind, source=None, baseline=None):
+    parent = _clean_properties(_parent_properties() if baseline is None else baseline)
     rows = []
-    for index, candidate in enumerate(candidates):
+    for index, candidate in enumerate(candidates if source is None else source):
         props = _clean_properties(candidate.get("properties"))
         delta = {key: props[key] - parent[key] if _number(props.get(key)) and _number(parent.get(key)) else None for key in ["mw", "logp", "tpsa", "logS"]}
-        rows.append({"index": index, "name": candidate.get("name"), "smiles": candidate.get("smiles"), "properties": props, "delta": delta, "releaseKind": candidate.get("releaseKind"), "declaredTargetSmiles": candidate.get("declaredTargetSmiles"), "release": candidate.get("release"), "error": candidate.get("error"), "experimentalValidation": False})
+        rows.append({"index": index, "familyLabel": candidate.get("familyLabel"), "edit": candidate.get("edit"), "site": candidate.get("site"), "similarity": candidate.get("similarity"), "name": candidate.get("name"), "smiles": candidate.get("smiles"), "properties": props, "delta": delta, "releaseKind": candidate.get("releaseKind"), "declaredTargetSmiles": candidate.get("declaredTargetSmiles"), "release": candidate.get("release"), "error": candidate.get("error"), "experimentalValidation": False})
     return {"schemaVersion": 1, "kind": kind, "input": {"name": molecule.get("name"), "smiles": molecule.get("smiles"), "properties": parent}, "rows": rows, "scope": "App descriptors and unvalidated formal release checks. Property differences and passive BBB screens do not establish clinical benefit, biological conversion or measured exposure."}
 
 def _heading(title):
@@ -53,8 +53,37 @@ def _heading(title):
 
 `;
  const templates = {
+  'Compare analogues with input': {
+   id:'analogue-comparison',version:1,
+   description:'Compare the analogue shortlist with its input, or all generated analogues when the shortlist is empty. Includes property changes, edit provenance and structural resemblance, without predicting activity.',
+   code:common+`print("ANALOGUE COMPARISON")
+print("Input:", _text(molecule.get("name")))
+print("SMILES:", query_smiles)
+chosen = analogue_shortlist if analogue_shortlist else analogues
+selection_scope = "shortlist" if analogue_shortlist else "all"
+print("Selection:", selection_scope, "|", len(chosen), "unvalidated analogues")
+print("Structural resemblance and property changes do not establish potency, biological equivalence or improved ADME.")
+base = ((evidence.get("analogueCandidates") or {}).get("input") or {}).get("properties") or molecule.get("descriptors") or {}
+for position, row in enumerate(chosen, 1):
+    props = row.get("properties") or {}
+    print()
+    print(str(position) + ". " + _text(row.get("name")))
+    print("  Edit:", _text(row.get("familyLabel")), "|", _text(row.get("edit")))
+    print("  Formula:", _text(props.get("formula")), "| similarity:", _fmt(row.get("similarity")))
+    for key, label in [("mw", "MW g/mol"), ("logp", "WLOGP"), ("tpsa", "TPSA A^2"), ("logS", "ESOL log S mol/L")]:
+        value, reference = props.get(key), base.get(key)
+        delta = value - reference if _number(value) and _number(reference) else None
+        print("  " + label + ": " + _fmt(value) + " | difference " + _fmt(delta, signed=True))
+    print("  SMILES:", _text(row.get("smiles")))
+if not chosen:
+    print("No analogue designs are available. Generate a set in Analogues, then rerun this template.")
+profiler_result = _structured("analogue-comparison", source=chosen, baseline=base)
+profiler_result["selectionScope"] = selection_scope
+profiler_result["scope"] = "Single-site analogue edits and existing app descriptors; no biological equivalence, potency or improved ADME inferred."
+`
+  },
   'Compare all designs with parent': {
-   id:'candidate-parent-comparison',version:2,
+   id:'candidate-parent-comparison',version:3,
    description:'Compare all copied quick candidates with the input: molecular weight, WLOGP, TPSA and ESOL log S, with differences where both values are available. Original design order is retained.',
    code:common+`_heading("CANDIDATES COMPARED WITH INPUT")
 parent = _parent_properties()
@@ -80,7 +109,7 @@ profiler_result = _structured("candidate-comparison")
 `
   },
   'Formula, properties and BBB summary': {
-   id:'candidate-basic-summary',version:2,
+   id:'candidate-basic-summary',version:3,
    description:'Show the input and every design with full descriptive names, formula, molecular weight, TPSA, WLOGP and any available passive BBB screen. Missing estimates remain unavailable.',
    code:common+`_heading("MOLECULE AND CANDIDATE SUMMARIES")
 print("Names are app/reference labels; generated design names are not verified IUPAC names.")
@@ -106,7 +135,7 @@ profiler_result = _structured("candidate-summary")
 `
   },
   'Cleavage products and release targets': {
-   id:'candidate-release-review',version:2,
+   id:'candidate-release-review',version:3,
    description:'Review declared targets and any release checks already performed in Candidate comparison. Lists formal products, intermediates and coproducts without predicting biological conversion. Run “Check all release paths” there first to populate more results.',
    code:common+`_heading("FORMAL RELEASE REVIEW")
 print("This script reads existing checks; it does not perform new cleavage searches.")

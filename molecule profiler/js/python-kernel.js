@@ -1,6 +1,6 @@
 'use strict';
 (function(root){
- const workerURL=new URL('python-worker.js?v=2026-10-24-results',document.currentScript?.src||new URL('js/python-kernel.js',document.baseURI).href);
+ const workerURL=new URL('python-worker.js?v=2026-10-24-analogue-research',document.currentScript?.src||new URL('js/python-kernel.js',document.baseURI).href);
  function create(onOutput=()=>{}){
   let worker=null,pending=null,sequence=0,ready=false,versions=null;
   function stop(reason='Python stopped. Variables cleared; code retained.'){
