@@ -1,0 +1,18 @@
+'use strict';
+const assert=require('node:assert/strict'),a=require('../js/library-catalog');
+const rows=[{name:'Alpha amine',smiles:'CCN',formula:'C2H7N',cls:'Test'},{name:'Beta amide',smiles:'CC(=O)N',formula:'C2H5NO',cls:'Test'},{name:'Gamma amine alcohol',smiles:'NCCO',formula:'C2H7NO',cls:'Test'},{name:'CHEMBL99999999',smiles:'CCCl',formula:'C2H5Cl',cls:'Test'}];
+const ctx={tags:{entries:Object.fromEntries(rows.map((r,i)=>[r.name,{librarySmiles:r.smiles,tags:[['Amine motif','Primary amine motif'],['Amide motif'],['Amine motif','Primary amine motif','Alcohol motif'],['Halogenated']][i]}]))}};
+const names=o=>a.catalogQuery(rows,o,ctx).rows.map(r=>r.entry.name);
+assert.deepEqual(names({tags:['Amine motif','Alcohol motif']}),['Gamma amine alcohol']);
+assert.deepEqual(names({tags:['Amine motif','Alcohol motif'],tagMode:'any'}),['Alpha amine','Gamma amine alcohol']);
+assert.deepEqual(names({tags:['Amine motif','Amide motif'],tagMode:'any',excludeTags:['Alcohol motif']}),['Alpha amine','Beta amide']);
+assert.deepEqual(names({tags:['Amine motif'],excludeTags:['Amine motif']}),[]);
+assert.deepEqual(names({query:'"amine alcohol"'}),['Gamma amine alcohol']);
+assert.deepEqual(names({query:'amine -alcohol',field:'name'}),['Alpha amine']);
+assert.deepEqual(names({query:'C2H7NO',field:'formula'}),['Gamma amine alcohol']);assert.equal(names({query:'c2h7no',field:'formula'}).length,0);
+assert.deepEqual(names({query:'CCCl',field:'smiles'}),['CHEMBL99999999']);assert.equal(names({query:'CCCL',field:'smiles'}).length,0);
+assert.equal(names({namedOnly:true}).length,3);
+const result=a.catalogQuery(rows,{tags:['Amine motif'],withFacets:true},ctx);assert.equal(result.facets['Alcohol motif'],1);assert.equal(result.facets['Amine motif'],2);
+const csv=a.catalogCsv(rows,{tags:['Amine motif'],excludeTags:['Alcohol motif']},ctx);assert.ok(csv.includes('Alpha amine'));assert.ok(!csv.includes('Gamma amine alcohol'));assert.ok(!csv.includes('Beta amide'));
+for(const tag of ['2C','2x','2C-x','Label: 2C phenethylamine','Family motif: 2Cs (2,5-dimethoxyphenethylamines)'])assert.equal(a.canonicalTag(tag),'Series: 2C / 2C-x phenethylamines');
+console.log('Multi-tag all/any/exclude, quoted/negative search, exact formula, case-sensitive SMILES, unresolved-name filtering, facet counts, aliases and scoped CSV passed.');

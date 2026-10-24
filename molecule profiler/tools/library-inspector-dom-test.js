@@ -1,62 +1,24 @@
 'use strict';
-// Executes the real catalogue page; does not establish Chromium visual layout.
-const assert=require('node:assert/strict'),path=require('node:path');
-const {JSDOM,VirtualConsole}=require('jsdom');
-const {LIBRARY_NAME_METADATA:n}=require('../data/library-names');
-(async()=>{
- const errors=[],downloads=[],console=new VirtualConsole();console.on('jsdomError',e=>errors.push(String(e)));
- const dom=await JSDOM.fromFile(path.join(__dirname,'../library-inspector.html'),{
-  resources:'usable',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:console,
-  beforeParse(w){w.Blob=Blob;w.URL.createObjectURL=blob=>{downloads.push(blob);return 'blob:fixture';};w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=function(){};}
- });
- try{
-  const w=dom.window,d=w.document;
-  await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Page load timeout')),30000);w.addEventListener('load',()=>{clearTimeout(timer);resolve();},{once:true});});
-  assert.deepEqual(errors,[]);
-  assert.equal(d.getElementById('catalog-class'),null,'Class filter must be replaced');
-  assert.ok(d.querySelectorAll('#catalog-tag-options option').length>20);
-  assert.ok(d.querySelector('#catalog-table thead').textContent.includes('Tags'));
-  const definitions=w.LIBRARY_TAG_METADATA.familyDefinitions;
-  for(const def of definitions){const button=[...d.querySelectorAll('#catalog-families button')].find(b=>b.dataset.tag===def.tag);assert.ok(button,'Missing family '+def.tag);const count=w.LibraryCatalog.catalogQuery(w.eval('LIBRARY'),{tag:def.tag}).total;assert.equal(button.disabled,count===0);}
-  const allStats=w.LibraryCatalog.catalogSummary(w.eval('LIBRARY'));
-  for(const tag of allStats.tags.filter(t=>t.name.startsWith('Label: ')||t.name.endsWith(' motif')||t.name.startsWith('Binding family: ')))assert.ok([...d.querySelectorAll('#catalog-families button')].some(b=>b.dataset.tag===tag.name));
-  const familySearch=d.getElementById('catalog-family-search');familySearch.value='piperazine';familySearch.dispatchEvent(new w.Event('input'));
-  assert.ok([...d.querySelectorAll('#catalog-families button:not([hidden])')].every(b=>b.dataset.tag.toLowerCase().includes('piperazine')));
-  familySearch.value='';familySearch.dispatchEvent(new w.Event('input'));
-  const initial=d.querySelector('#catalog-table tbody').textContent;
-  const input=(id,value)=>{const el=d.getElementById(id);el.value=value;el.dispatchEvent(new w.Event('input',{bubbles:true}));};
-  const sourced=require('../data/library').LIBRARY.filter(e=>e.source?.provider==='DrugCentral');
-  assert.equal(Number(d.getElementById('catalog-sourced').textContent.replaceAll(',','')),sourced.length);
-  const group=d.getElementById('catalog-group');group.value='sourced';group.dispatchEvent(new w.Event('change'));
-  input('catalog-search','capmatinib');
-  assert.ok(d.querySelector('#catalog-table tbody').textContent.includes('capmatinib'));
-  assert.equal(d.querySelector('#catalog-table tbody a').href,sourced.find(e=>e.name==='capmatinib').source.url);
-  input('catalog-search','1029712-80-8');
-  assert.ok(d.querySelector('#catalog-table tbody').textContent.includes('capmatinib'));
-  input('catalog-search','');group.value='all';group.dispatchEvent(new w.Event('change'));
-  const family=[...d.querySelectorAll('#catalog-families button')].find(b=>b.textContent.startsWith('Amphetamines'));
-  assert.ok(family);family.click();assert.equal(family.getAttribute('aria-pressed'),'true');
-  assert.equal(d.getElementById('catalog-tag').value,family.dataset.tag);
-  assert.ok(!d.querySelector('#catalog-table tbody').textContent.includes('No matching'));
-  d.getElementById('catalog-clear-tags').click();assert.equal(family.getAttribute('aria-pressed'),'false');
-  assert.equal(d.querySelector('#catalog-table tbody').textContent,initial);
-  input('catalog-tag','Amide motif');
-  assert.ok(d.querySelectorAll('#catalog-table tbody tr').length>1);
-  for(const row of d.querySelectorAll('#catalog-table tbody tr'))assert.ok([...row.querySelectorAll('button.catalog-tag')].some(x=>x.textContent==='Amide motif'));
-  const chip=d.querySelector('#catalog-table button.catalog-tag');const chosen=chip.textContent;chip.click();
-  assert.equal(d.getElementById('catalog-tag').value,chosen);assert.equal(d.activeElement.id,'catalog-tag');
-  d.getElementById('catalog-clear-tags').click();assert.equal(d.getElementById('catalog-tag').value,'');
-  assert.equal(d.querySelector('#catalog-table tbody').textContent,initial);
-  const [id,record]=Object.entries(n.entries)[0];input('catalog-search',id);
-  assert.ok(d.querySelector('#catalog-table tbody').textContent.includes(record.preferredName));
-  assert.ok(d.querySelector('#catalog-table tbody').textContent.includes(id));
-  input('catalog-search',record.preferredName);assert.ok(d.querySelector('#catalog-table tbody').textContent.includes(id));
-  d.getElementById('catalog-sort').value='tagCount';d.getElementById('catalog-sort').dispatchEvent(new w.Event('change'));
-  d.getElementById('catalog-export').click();assert.equal(downloads.length,1);
-  const csv=await downloads[0].text();assert.ok(csv.includes('Reference ID'));assert.ok(csv.includes(id));assert.ok(csv.includes('Name form'));
-  input('catalog-search','');input('catalog-tag','nonexistent tag for test');assert.ok(d.querySelector('#catalog-table tbody').textContent.includes('No matching'));
-  d.getElementById('catalog-reset').click();assert.equal(d.getElementById('catalog-search').value,'');assert.equal(d.getElementById('catalog-tag').value,'');assert.equal(d.getElementById('catalog-group').value,'all');assert.equal(d.querySelector('#catalog-table tbody').textContent,initial);
-  assert.deepEqual(errors,[]);
-  process.stdout.write('Library DOM: names, stable identifiers, tag search/chips, clearing, focus, sorting, empty results and filtered CSV passed\n');
- }finally{dom.window.close();}
-})().catch(error=>{process.stderr.write(String(error.stack||error)+'\n');process.exitCode=1;});
+const assert=require('node:assert/strict'),path=require('node:path');const {JSDOM,VirtualConsole}=require(process.env.PROFILER_JSDOM_PATH||'jsdom');
+(async()=>{const errors=[],downloads=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(String(e)));
+ const dom=await JSDOM.fromFile(path.join(__dirname,'../library-inspector.html'),{resources:'usable',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:vc,beforeParse(w){w.Blob=Blob;w.URL.createObjectURL=b=>{downloads.push(b);return 'blob:fixture';};w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=function(){};}});
+ try{const w=dom.window,d=w.document;await new Promise((res,rej)=>{const t=setTimeout(()=>rej(Error('Page timeout')),30000);w.addEventListener('load',()=>{clearTimeout(t);res();},{once:true});});assert.deepEqual(errors,[]);
+ const input=(id,value)=>{const e=d.getElementById(id);e.value=value;e.dispatchEvent(new w.Event(e.tagName==='SELECT'?'change':'input',{bubbles:true}));};const reset=()=>d.getElementById('catalog-reset').click();const count=()=>Number(d.getElementById('catalog-result-total').textContent.replaceAll(',',''));const button=t=>[...d.querySelectorAll('#catalog-families button')].find(b=>b.dataset.tag===t);
+ const initial=d.querySelector('#catalog-table tbody').textContent,total=count();assert.equal(total,13537);
+ for(const def of w.LIBRARY_TAG_METADATA.familyDefinitions)assert.ok(button(def.tag),'Missing '+def.tag);
+ const stats=w.LibraryCatalog.catalogSummary(w.eval('LIBRARY'));for(const t of stats.tags.filter(t=>/^(Label: |Series: |Binding family: |Study collection: )/.test(t.name)||t.name.endsWith(' motif')))assert.ok(button(t.name));
+ input('catalog-family-search','piperazine');assert.ok([...d.querySelectorAll('#catalog-families button:not([hidden])')].every(b=>b.dataset.tag.toLowerCase().includes('piperazine')));input('catalog-family-search','');
+ const amine=button('Primary amine motif'),alcohol=button('Alcohol motif');amine.click();const amineCount=count();alcohol.click();const both=count();assert.ok(both>0&&both<amineCount);assert.equal(d.querySelectorAll('.selected-tag').length,2);assert.equal(amine.getAttribute('aria-pressed'),'true');
+ input('catalog-tag-mode','any');assert.ok(count()>amineCount);input('catalog-tag-mode','all');assert.equal(count(),both);
+ d.querySelector('[aria-label="Exclude Alcohol motif"]').click();assert.ok(count()>0);assert.ok(d.querySelector('.selected-tag.excluded'));assert.equal(alcohol.getAttribute('aria-pressed'),'false');
+ const state={tags:['Primary amine motif'],excludeTags:['Alcohol motif']};const expected=w.LibraryCatalog.catalogQuery(w.eval('LIBRARY'),state).total;assert.equal(count(),expected);
+ d.getElementById('catalog-export').click();assert.equal(downloads.length,1);const csv=await downloads[0].text();assert.equal(csv.split('\r\n').filter(Boolean).length,expected+1);
+ d.querySelector('[aria-label="Remove Alcohol motif"]').click();assert.equal(count(),amineCount);d.getElementById('catalog-clear-tags').click();assert.equal(count(),total);
+ input('catalog-tag','2x');d.getElementById('catalog-add-tag').click();assert.ok(d.querySelector('#catalog-selected').textContent.includes('2C / 2C-x'));assert.ok(count()>=94);reset();
+ input('catalog-tag','not-a-real-tag');d.getElementById('catalog-add-tag').click();assert.ok(d.getElementById('catalog-filter-status').textContent.includes('exact tag'));assert.equal(count(),total);reset();
+ input('catalog-group','sourced');input('catalog-search-field','identifier');input('catalog-search','1029712-80-8');assert.ok(d.querySelector('#catalog-table tbody').textContent.includes('capmatinib'));reset();
+ input('catalog-search-field','formula');input('catalog-search','C8H11NO2');assert.ok(count()>0);input('catalog-search','c8h11no2');assert.equal(count(),0);reset();
+ input('catalog-search-field','name');input('catalog-search','"dopamine" -quinone');assert.ok(count()>0);assert.ok([...d.querySelectorAll('#catalog-table tbody td:nth-child(2)>strong')].every(e=>!e.textContent.toLowerCase().includes('quinone')));reset();
+ input('catalog-family-search','not a filter');assert.equal(d.querySelectorAll('#catalog-families button:not([hidden])').length,0);reset();assert.equal(d.querySelector('#catalog-table tbody').textContent,initial);assert.deepEqual(errors,[]);
+ process.stdout.write('Inspector DOM: all filters, multiple selections, all/any/exclusions, removable chips, 2C aliases, scoped exports, field search, empty states and reset passed.\n');
+ }finally{dom.window.close();}})().catch(e=>{process.stderr.write(String(e.stack||e)+'\n');process.exitCode=1;});

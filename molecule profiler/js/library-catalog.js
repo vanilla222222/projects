@@ -47,7 +47,7 @@
     const tags=matchedRecord(metadata(context).tags,entry)?.tags;
     return Array.isArray(tags) ? tags.filter(t=>typeof t==='string'&&t.trim()) : (entry.cls?['Label: '+entry.cls]:[]);
   }
-  function searchText(entry, context) { return norm([entry.name,displayName(entry,context),...aliasesFor(entry,context),entry.cls,entry.formula,...tagsFor(entry,context)].join(' ')); }
+  function searchText(entry, context) {const r=nameRecord(entry,context),s=sourceRecord(entry);return norm([entry.name,displayName(entry,context),...aliasesFor(entry,context),r?.pubchemCid,r?.chemblId,s?.id,s?.cas,s?.inchiKey,entry.cls,entry.formula,...tagsFor(entry,context),tagsFor(entry,context).includes('Series: 2C / 2C-x phenethylamines')?'2x phenethylamine 2c-x phenethylamine':''].filter(v=>v!=null).join(' ')); }
   function catalogSummary(entries, context) {
     const rows = Array.isArray(entries) ? entries : [];
     const groups = { sourced: 0, chebi: 0, other: 0, esol: 0, series: 0, fragment: 0 };
@@ -75,15 +75,28 @@
         .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
     };
   }
+  const TAG_ALIASES={
+    'indole motif':'Family motif: Indoles','pyridine motif':'Family motif: Pyridines',
+    'label: 2c phenethylamine':'Series: 2C / 2C-x phenethylamines','label: 2x phenethylamine':'Series: 2C / 2C-x phenethylamines',
+    'family motif: 2cs (2,5-dimethoxyphenethylamines)':'Series: 2C / 2C-x phenethylamines',
+    '2c':'Series: 2C / 2C-x phenethylamines','2x':'Series: 2C / 2C-x phenethylamines','2c-x':'Series: 2C / 2C-x phenethylamines'
+  };
+  function canonicalTag(value){return TAG_ALIASES[norm(value)]||String(value||'').trim();}
+  function queryTerms(value){
+    const terms=[];for(const m of String(value||'').matchAll(/(-?)"([^"]+)"|(-?)([^\s"]+)/g))terms.push({exclude:(m[1]||m[3])==='-',value:norm(m[2]||m[4])});return terms;
+  }
   function catalogQuery(entries, options, context) {
     const rows = Array.isArray(entries) ? entries : [];
     const o = options || {};
-    const tokens = norm(o.query).split(/\s+/).filter(Boolean);
+    const tokens = queryTerms(o.query);
+    const selected=[...new Set((Array.isArray(o.tags)?o.tags:[]).map(t=>norm(canonicalTag(t))))];
+    const excluded=[...new Set((Array.isArray(o.excludeTags)?o.excludeTags:[]).map(t=>norm(canonicalTag(t))))];
+    const tagMode=o.tagMode==='any'?'any':'all';
+    const fields=['all','name','formula','smiles','identifier','tags'];const field=fields.includes(o.field)?o.field:'all';
     const group = GROUPS.some(g => g.key === o.group) ? o.group : 'all';
     const cls = String(o.cls || '');
     const sort = ['name', 'cls', 'formula', 'group','tag','tagCount'].includes(o.sort) ? o.sort : 'name';
-    const tagAliases={'indole motif':'family motif: indoles','pyridine motif':'family motif: pyridines'};
-    const tagQuery=tagAliases[norm(o.tag)]||norm(o.tag);
+    const tagQuery=norm(canonicalTag(o.tag));
     const exactTag=tagQuery && rows.some(entry=>tagsFor(entry,context).some(tag=>norm(tag)===tagQuery));
     const perPage = [25, 50, 100].includes(Number(o.perPage)) ? Number(o.perPage) : 50;
     const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
@@ -94,9 +107,15 @@
       if (cls && String(entry.cls || '') !== cls) return;
       const tags=tagsFor(entry,context),label=displayName(entry,context);
       if(tagQuery && !tags.some(tag=>exactTag?norm(tag)===tagQuery:norm(tag).includes(tagQuery)))return;
-      if(Array.isArray(o.tags) && !o.tags.every(wanted=>tags.some(tag=>norm(tag)===norm(wanted))))return;
-      const haystack = searchText(entry,context);
-      if (!tokens.every(token => haystack.includes(token))) return;
+      const normalized=new Set(tags.map(norm));
+      if(selected.length && !(tagMode==='any'?selected.some(t=>normalized.has(t)):selected.every(t=>normalized.has(t))))return;
+      if(excluded.some(t=>normalized.has(t)))return;
+      if(o.namedOnly && /^(?:CHEMBL|SCHEMBL|CID|ZINC|DTXSID|AKOS)[: _-]*\d/i.test(label))return;
+      const record=nameRecord(entry,context),source=sourceRecord(entry);
+      const text=field==='name'?[entry.name,label,...aliasesFor(entry,context)].join(' '):field==='smiles'?entry.smiles:field==='tags'?tags.join(' '):field==='identifier'?[entry.name,...aliasesFor(entry,context),record?.pubchemCid,record?.chemblId,source?.id,source?.cas,source?.inchiKey].filter(Boolean).join(' '):searchText(entry,context);
+      if(field==='formula'){if(String(o.query||'').trim()&&String(entry.formula)!==String(o.query).trim())return;}
+      else if(field==='smiles'){const raw=String(o.query||'').trim();if(raw&&!String(text).includes(raw))return;}
+      else {const haystack=norm(text);if(!tokens.every(t=>t.exclude?!haystack.includes(t.value):haystack.includes(t.value)))return;}
       matches.push({ entry, index, group: kind, label, tags });
     });
     matches.sort((a, b) => {
@@ -108,8 +127,9 @@
     const pages = Math.max(1, Math.ceil(matches.length / perPage));
     const requested = Number(o.page);
     const page = Number.isFinite(requested) ? Math.min(pages, Math.max(1, Math.floor(requested))) : 1;
-    return { total: matches.length, pages, page, perPage,
-      rows: matches.slice((page - 1) * perPage, page * perPage) };
+    const facets={};if(o.withFacets)for(const row of matches)for(const tag of new Set(row.tags))facets[tag]=(facets[tag]||0)+1;
+    return { total: matches.length, pages, page, perPage,facets,
+      rows: o.allRows===true?matches:matches.slice((page - 1) * perPage, page * perPage) };
   }
   function csvCell(value) {
     let s = String(value == null ? '' : value);
@@ -118,18 +138,14 @@
   }
   function catalogCsv(entries, options, context) {
     // Exports index metadata, not unverified measured properties.
-    const result = catalogQuery(entries, { ...(options || {}), perPage: 100, page: 1 },context);
-    const all = [];
-    for (let page = 1; page <= result.pages; page++) {
-      all.push(...catalogQuery(entries, { ...(options || {}), perPage: 100, page },context).rows);
-    }
+    const all=catalogQuery(entries,{...(options||{}),perPage:100,page:1,allRows:true,withFacets:false},context).rows;
     const lines = [['Name','Reference ID','Tags','Collection','Formula','SMILES','Name form','Name source'].map(csvCell).join(',')];
     for (const item of all) {
       lines.push([item.label,item.entry.name,item.tags.join('; '),item.group,item.entry.formula,item.entry.smiles,nameRecord(item.entry,context)?.nameKind||'Library label',nameRecord(item.entry,context)?.sourceUrl||''].map(csvCell).join(','));
     }
     return lines.join('\r\n') + '\r\n';
   }
-  const api = { GROUPS, groupFor, sourceRecord, nameRecord, displayName, aliasesFor, tagsFor, searchText, catalogSummary, catalogQuery, catalogCsv };
+  const api = { canonicalTag,queryTerms,GROUPS, groupFor, sourceRecord, nameRecord, displayName, aliasesFor, tagsFor, searchText, catalogSummary, catalogQuery, catalogCsv };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.LibraryCatalog = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

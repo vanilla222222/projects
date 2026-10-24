@@ -1,133 +1,48 @@
 'use strict';
-(function () {
-  const rows = typeof LIBRARY !== 'undefined' && Array.isArray(LIBRARY) ? LIBRARY : [];
-  const engine = typeof LibraryCatalog !== 'undefined' ? LibraryCatalog : null;
-  if (!engine) return;
-  const $ = id => document.getElementById(id);
-  const query = $('catalog-search'), group = $('catalog-group'), tagFilter = $('catalog-tag');
-  const sort = $('catalog-sort'), size = $('catalog-size');
-  const tbody = $('catalog-table').querySelector('tbody'), summary = $('catalog-summary');
-  const pageLabel = $('catalog-page'), prev = $('catalog-previous'), next = $('catalog-next');
-  const stats = engine.catalogSummary(rows);
-  const categoryLabels = new Map(engine.GROUPS.map(item => [item.key, item.label]));
-  let page = 1;
-  for (const key of ['sourced', 'chebi', 'other', 'series', 'esol', 'fragment']) {
-    $('catalog-' + key).textContent = stats.groups[key].toLocaleString();
+(function(){
+ const rows=typeof LIBRARY!=='undefined'?LIBRARY:[],engine=globalThis.LibraryCatalog;if(!engine)return;
+ const $=id=>document.getElementById(id),make=(tag,text)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e;};
+ const query=$('catalog-search'),group=$('catalog-group'),tagInput=$('catalog-tag'),sort=$('catalog-sort'),size=$('catalog-size'),body=$('catalog-table').querySelector('tbody');
+ const stats=engine.catalogSummary(rows),registry=new Map(stats.tags.map(t=>[t.name,t.count])),definitions=globalThis.LIBRARY_TAG_METADATA?.familyDefinitions||[],selected=new Set(),excluded=new Set();let page=1;
+ const label=t=>t.replace(/^(Family motif: |Study collection: |Label: |Binding family: |Series: )/,'').replace(/ motif$/,'');
+ for(const key of ['sourced','chebi','other','series','esol','fragment'])$('catalog-'+key).textContent=stats.groups[key].toLocaleString();$('catalog-total').textContent=stats.total.toLocaleString();
+ $('catalog-quality').textContent=stats.missingNames+' missing names · '+stats.missingFormulas+' blank formulas · '+stats.missingSmiles+' blank SMILES · '+stats.duplicateNames+' duplicate names · '+stats.duplicateExactSmiles+' duplicate SMILES text. These checks do not establish chemical identity.';
+ for(const entry of stats.tags){const o=make('option');o.value=entry.name;o.label=label(entry.name)+' · '+entry.count;$('catalog-tag-options').append(o);}
+ const structural=[...new Set([...definitions.map(d=>d.tag),...stats.tags.filter(t=>t.name.startsWith('Family motif: ')).map(t=>t.name)])].sort();
+ const categories=[['Structural families',structural],['Compound series',stats.tags.filter(t=>t.name.startsWith('Series: ')).map(t=>t.name)],['Functional groups',stats.tags.filter(t=>t.name.endsWith(' motif')).map(t=>t.name)],['Study collections',stats.tags.filter(t=>t.name.startsWith('Study collection: ')).map(t=>t.name)],['Properties and topology',stats.tags.filter(t=>!t.name.endsWith(' motif')&&!/^(Family motif: |Series: |Study collection: |Label: |Binding|Collection: |Source snapshot: )/.test(t.name)).map(t=>t.name)],['Binding reference families',stats.tags.filter(t=>t.name.startsWith('Binding family: ')).map(t=>t.name)],['Legacy reference labels',stats.tags.filter(t=>t.name.startsWith('Label: ')).map(t=>t.name)]];
+ const buttons=[],sections=[];
+ function toggle(tag){tag=engine.canonicalTag(tag);if(selected.has(tag))selected.delete(tag);else{selected.add(tag);excluded.delete(tag);}page=1;render();}
+ for(const [title,names]of categories){const section=make('details');section.className='catalog-family-section';section.dataset.category=title;section.open=['Structural families','Compound series'].includes(title);const summary=make('summary',title+' · '+names.length),list=make('div');list.className='catalog-family-list';section.append(summary,list);
+  if(title==='Legacy reference labels'){const note=make('p','Historical classifications with uneven coverage. Missing labels do not mean absence of activity.');note.className='filter-help';section.append(note);}
+  for(const name of names){const b=make('button');b.type='button';b.className='catalog-tag';b.dataset.tag=name;b.dataset.total=String(registry.get(name)||0);b.disabled=!Number(b.dataset.total);b.setAttribute('aria-label','Select tag '+label(name));b.title=definitions.find(d=>d.tag===name)?.smarts||name;b.addEventListener('click',()=>toggle(name));list.append(b);buttons.push(b);}
+  $('catalog-families').append(section);sections.push(section);
+ }
+ function findFamilies(){const raw=$('catalog-family-search').value.trim(),term=engine.canonicalTag(raw).toLowerCase(),category=$('catalog-facet-kind').value;let visible=0;
+  for(const section of sections){let n=0;for(const b of section.querySelectorAll('button')){b.hidden=(!b.dataset.tag.toLowerCase().includes(term))||(category!=='all'&&category!==section.dataset.category);if(!b.hidden){n++;visible++;}}section.hidden=!n;if((term||category!=='all')&&n)section.open=true;}
+  $('catalog-family-count').textContent=visible+' filters · counts show matches / whole library';
+ }
+ for(const [title]of categories){const o=make('option',title);o.value=title;$('catalog-facet-kind').append(o);}
+ $('catalog-family-search').addEventListener('input',findFamilies);$('catalog-facet-kind').addEventListener('change',findFamilies);
+ function settings(){return {query:query.value,field:$('catalog-search-field').value,group:group.value,tags:[...selected],excludeTags:[...excluded],tagMode:$('catalog-tag-mode').value,namedOnly:$('catalog-named-only').checked,sort:sort.value,perPage:Number(size.value),page,withFacets:true};}
+ function addTag(){const raw=tagInput.value.trim(),canonical=engine.canonicalTag(raw);const found=[...registry.keys()].find(t=>t.toLowerCase()===canonical.toLowerCase()||label(t).toLowerCase()===raw.toLowerCase());if(!found){$('catalog-filter-status').textContent='Choose an exact tag from the suggestions or use the filter browser below.';return;}selected.add(found);excluded.delete(found);tagInput.value='';page=1;render();tagInput.focus();}
+ $('catalog-add-tag').addEventListener('click',addTag);tagInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addTag();}});
+ function renderSelections(){const host=$('catalog-selected');host.replaceChildren();for(const [set,isExcluded]of [[selected,false],[excluded,true]])for(const tag of set){const chip=make('span');chip.className='selected-tag'+(isExcluded?' excluded':'');chip.append(make('span',(isExcluded?'Exclude: ':'')+label(tag)));const mode=make('button',isExcluded?'Include':'Exclude');mode.type='button';mode.setAttribute('aria-label',(isExcluded?'Include ':'Exclude ')+tag);mode.addEventListener('click',()=>{set.delete(tag);(isExcluded?selected:excluded).add(tag);page=1;render();});const remove=make('button','×');remove.type='button';remove.setAttribute('aria-label','Remove '+tag);remove.addEventListener('click',()=>{set.delete(tag);page=1;render();});chip.append(mode,remove);host.append(chip);}host.hidden=!(selected.size+excluded.size);$('catalog-clear-tags').disabled=!(selected.size+excluded.size);}
+ function cell(tr,text){const td=make('td',text);tr.append(td);return td;}
+ function render(){const view=engine.catalogQuery(rows,settings());page=view.page;renderSelections();
+  for(const b of buttons){const tag=b.dataset.tag,total=Number(b.dataset.total),count=view.facets[tag]||0;b.textContent=label(tag)+' · '+count.toLocaleString()+' / '+total.toLocaleString();b.setAttribute('aria-pressed',String(selected.has(tag)));b.classList.toggle('is-excluded',excluded.has(tag));}
+  const fragment=document.createDocumentFragment();for(const item of view.rows){const tr=make('tr');cell(tr,item.index+1);const name=cell(tr,'');name.append(make('strong',item.label));const record=engine.nameRecord(item.entry);if(record){const small=make('small',record.nameKind);small.className='catalog-id';if(item.entry.name!==item.label)small.prepend(document.createTextNode(item.entry.name+' · '));name.append(small);const source=make('a','Source ↗');source.href=record.sourceUrl;source.target='_blank';source.rel='noopener noreferrer';name.append(source);}else if(/^CHEMBL\d+$/.test(item.entry.name))name.append(make('small','Name not verified; identifier retained'));
+   const tagCell=cell(tr,''),tags=make('div');tags.className='catalog-tags';const ordered=item.tags.slice().sort((a,b)=>{const rank=t=>t.startsWith('Series: ')?0:t.startsWith('Family motif: ')?1:t.endsWith(' motif')?2:3;return rank(a)-rank(b)||a.localeCompare(b);});let more;
+   ordered.forEach((tag,i)=>{if(i===6){const d=make('details');d.append(make('summary','Show '+(ordered.length-6)+' more tags'));more=make('div');more.className='catalog-tags';d.append(more);tags.append(d);}const b=make('button',label(tag));b.type='button';b.className='catalog-tag';b.dataset.tag=tag;b.setAttribute('aria-label','Select tag '+label(tag));b.setAttribute('aria-pressed',String(selected.has(tag)));b.classList.toggle('is-excluded',excluded.has(tag));b.addEventListener('click',()=>toggle(tag));(i<6?tags:more).append(b);});tagCell.append(tags);
+   const collection=cell(tr,'');collection.append(make('span',engine.GROUPS.find(g=>g.key===item.group)?.label||item.group));const structure=cell(tr,'');structure.append(make('strong',item.entry.formula));const d=make('details');d.append(make('summary','SMILES'));d.append(make('code',item.entry.smiles));structure.append(d);fragment.append(tr);
   }
-  $('catalog-total').textContent = stats.total.toLocaleString();
-  $('catalog-quality').textContent = stats.missingNames + ' missing names; ' +
-    stats.missingFormulas + ' blank formulas; ' + stats.missingSmiles + ' blank SMILES; ' +
-    stats.duplicateNames + ' case-insensitive duplicate names; ' +
-    stats.duplicateExactSmiles + ' duplicate exact SMILES. These are text-level checks, not chemical verification.';
-  for (const entry of stats.tags) {
-    const opt = document.createElement('option');
-    opt.value = entry.name;
-    opt.label = entry.name + ' (' + entry.count + ')';
-    $('catalog-tag-options').appendChild(opt);
-  }
-  const registry=new Map(stats.tags.map(t=>[t.name,t.count]));
-  const definitions=globalThis.LIBRARY_TAG_METADATA?.familyDefinitions||[];
-  const familyNames=[...new Set([...definitions.map(d=>d.tag),...stats.tags.filter(t=>t.name.startsWith('Family motif: ')).map(t=>t.name)])].sort();
-  const sections=[['Structural families',familyNames],['Functional groups',stats.tags.filter(t=>t.name.endsWith(' motif')).map(t=>t.name)],['Reference class labels',stats.tags.filter(t=>t.name.startsWith('Label: ')).map(t=>t.name)],['Study collections',stats.tags.filter(t=>t.name.startsWith('Study collection: ')).map(t=>t.name)],['Binding reference families',stats.tags.filter(t=>t.name.startsWith('Binding family: ')).map(t=>t.name)]];
-  const familyButtons=[],familySections=[];
-  for(const [title,names] of sections){
-    const section=document.createElement('details');section.className='catalog-family-section';section.open=title==='Structural families';
-    const heading=document.createElement('summary');heading.textContent=title+' · '+names.length;section.append(heading);
-    const list=document.createElement('div');list.className='catalog-family-list';section.append(list);
-    for(const name of names){const count=registry.get(name)||0,button=document.createElement('button');button.type='button';button.className='catalog-tag';
-      button.textContent=name.replace(/^(Family motif: |Study collection: |Label: |Binding family: )/,'')+' ('+count+')';button.dataset.tag=name;
-      button.setAttribute('aria-label','Filter by '+name);button.disabled=!count;
-      button.title=name.startsWith('Label: ')?'Original reference classification; not independently inferred activity.':definitions.find(d=>d.tag===name)?.smarts||name;
-      button.addEventListener('click',()=>{tagFilter.value=name;page=1;render();tagFilter.focus();});
-      list.append(button);familyButtons.push(button);
-    }
-    $('catalog-families').append(section);familySections.push(section);
-  }
-  function findFamilies(){
-    const term=$('catalog-family-search').value.trim().toLowerCase();let visible=0;
-    for(const section of familySections){let count=0;for(const button of section.querySelectorAll('button')){button.hidden=!button.dataset.tag.toLowerCase().includes(term);if(!button.hidden){count++;visible++;}}
-      section.hidden=!count;if(term&&count)section.open=true;
-    }
-    $('catalog-family-count').textContent=visible+' of '+familyButtons.length+' selectors'+(term?' match your search':' · counts use the complete library');
-  }
-  $('catalog-family-search').addEventListener('input',findFamilies);findFamilies();
-
-  function cell(tr, text, type) {
-    const td = document.createElement(type || 'td');
-    td.textContent = String(text == null ? '' : text);
-    tr.appendChild(td);
-    return td;
-  }
-  function settings() {
-    return { query: query.value, group: group.value, tag: tagFilter.value,
-      sort: sort.value, perPage: Number(size.value), page };
-  }
-  function render() {
-    familyButtons.forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.tag===tagFilter.value)));
-    const view = engine.catalogQuery(rows, settings());
-    page = view.page;
-    const fragment = document.createDocumentFragment();
-    for (const item of view.rows) {
-      const tr = document.createElement('tr');
-      cell(tr, item.index + 1);
-      const name=cell(tr,item.label);
-      const record=engine.nameRecord(item.entry);
-      if(record){const small=document.createElement('small');small.className='catalog-id';small.textContent=item.entry.name+' · '+record.nameKind;name.appendChild(small);
-        const source=document.createElement('a');source.href=record.sourceUrl;source.textContent='Name source';source.target='_blank';source.rel='noopener noreferrer';name.appendChild(source);}
-      else if(/^CHEMBL\d+$/.test(item.entry.name)){const note=document.createElement('small');note.className='catalog-id';note.textContent='Name not verified; identifier retained';name.appendChild(note);}
-      const tagCell=cell(tr,'');tagCell.className='catalog-tags-cell';
-      const tags=document.createElement('div');tags.className='catalog-tags';
-      let extraTags;
-      item.tags.slice().sort((a,b)=>{const rank=t=>t.startsWith('Family motif: ')?0:t.endsWith(' motif')?1:t.startsWith('Study collection: ')?2:3;return rank(a)-rank(b)||a.localeCompare(b);}).forEach((label,index)=>{let target=tags;
-        if(index===10){const more=document.createElement('details'),head=document.createElement('summary');head.textContent='+'+(item.tags.length-10)+' tags';more.appendChild(head);extraTags=document.createElement('div');extraTags.className='catalog-tags';more.appendChild(extraTags);tags.appendChild(more);}
-        if(index>=10)target=extraTags;
-        const button=document.createElement('button');button.type='button';button.className='catalog-tag';button.textContent=label;button.setAttribute('aria-label','Filter by tag '+label);
-        button.addEventListener('click',()=>{tagFilter.value=label;page=1;render();tagFilter.focus();});target.appendChild(button);
-      });tagCell.appendChild(tags);
-      const collection = cell(tr, '');
-      const tag = document.createElement('span');
-      tag.className = 'catalog-tag';
-      tag.textContent = categoryLabels.get(item.group);
-      collection.appendChild(tag);
-      const structure = cell(tr, item.entry.formula);
-      const smiles = document.createElement('code');
-      smiles.textContent = item.entry.smiles || 'Missing structure';
-      structure.appendChild(smiles);
-      fragment.appendChild(tr);
-    }
-    if (!view.rows.length) {
-      const tr = document.createElement('tr');
-      const td = cell(tr, 'No matching entries. Try clearing a filter.');
-      td.colSpan = 5;
-      fragment.appendChild(tr);
-    }
-    tbody.replaceChildren(fragment);
-    const from = view.total ? (view.page - 1) * view.perPage + 1 : 0;
-    const to = view.total ? from + view.rows.length - 1 : 0;
-    summary.textContent = 'Showing ' + from + '–' + to + ' of ' +
-      view.total.toLocaleString() + ' matching entries (' + stats.total.toLocaleString() + ' in library).';
-    pageLabel.textContent = 'Page ' + view.page + ' of ' + view.pages;
-    prev.disabled = view.page <= 1;
-    next.disabled = view.page >= view.pages;
-  }
-  for (const control of [query, group, tagFilter, sort, size]) {
-    control.addEventListener(control === query || control===tagFilter ? 'input' : 'change', () => { page = 1; render(); });
-  }
-  $('catalog-clear-tags').addEventListener('click',()=>{tagFilter.value='';page=1;render();tagFilter.focus();});
-  $('catalog-reset').addEventListener('click',()=>{query.value='';group.value='all';tagFilter.value='';sort.value='name';size.value='50';$('catalog-family-search').value='';findFamilies();page=1;render();query.focus();});
-  prev.addEventListener('click', () => { page--; render(); });
-  next.addEventListener('click', () => { page++; render(); });
-  $('catalog-export').addEventListener('click', () => {
-    const csv = engine.catalogCsv(rows, settings());
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'molecule-reference-index.csv';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  });
-  render();
+  if(!view.rows.length){const tr=make('tr'),td=cell(tr,'No matches. Remove a tag, switch to “Match any”, or reset the filters.');td.colSpan=5;fragment.append(tr);}body.replaceChildren(fragment);
+  const from=view.total?(page-1)*view.perPage+1:0,to=view.total?from+view.rows.length-1:0;$('catalog-summary').textContent=from.toLocaleString()+'–'+to.toLocaleString()+' of '+view.total.toLocaleString()+' matches';$('catalog-result-total').textContent=view.total.toLocaleString();$('catalog-page').textContent='Page '+page+' of '+view.pages;$('catalog-previous').disabled=page<=1;$('catalog-next').disabled=page>=view.pages;
+  $('catalog-filter-status').textContent=selected.size+' included · '+excluded.size+' excluded · '+($('catalog-tag-mode').value==='any'?'match any included tag':'match all included tags');
+ }
+ for(const el of [query,group,sort,size,$('catalog-search-field'),$('catalog-tag-mode'),$('catalog-named-only')])el.addEventListener(el===query?'input':'change',()=>{page=1;render();});
+ $('catalog-clear-tags').addEventListener('click',()=>{selected.clear();excluded.clear();tagInput.value='';page=1;render();});
+ $('catalog-reset').addEventListener('click',()=>{selected.clear();excluded.clear();query.value='';tagInput.value='';group.value='all';sort.value='name';size.value='50';$('catalog-search-field').value='all';$('catalog-tag-mode').value='all';$('catalog-named-only').checked=false;$('catalog-family-search').value='';$('catalog-facet-kind').value='all';for(const s of sections)s.open=['Structural families','Compound series'].includes(s.dataset.category);page=1;findFamilies();render();query.focus();});
+ $('catalog-previous').addEventListener('click',()=>{page--;render();});$('catalog-next').addEventListener('click',()=>{page++;render();});
+ $('catalog-export').addEventListener('click',()=>{const csv=engine.catalogCsv(rows,{...settings(),withFacets:false}),url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=make('a');a.href=url;a.download='molecule-reference-index.csv';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+ findFamilies();render();
 })();

@@ -118,9 +118,9 @@ for (const id of ['dep-gate-note', 'dep-ranking', 'dep-ranking-summary']) {
   assert.ok(ids.includes(id), 'Missing dependence gate element: ' + id);
 }
 assert.ok(app.includes("pair('dependence', 'gate'"), 'CSV export does not record the dependence gate state');
-const sharedSheet = /css\/style\.css\?v=([^"]+)"/;
-assert.strictEqual(html.match(sharedSheet)[1], inspector.match(sharedSheet)[1],
-  'index.html and library-inspector.html disagree on the style.css cache version');
+const inspectorSheet=inspector.match(/css\/library-inspector\.css\?v=([^"]+)"/);
+assert.ok(inspectorSheet,'Inspector must load its dedicated responsive stylesheet');
+assert.ok(fs.existsSync(path.join(root,'css/library-inspector.css')),'Inspector stylesheet is missing');
 
 assert.ok(scripts.indexOf('js/candidate-info.js') > scripts.indexOf('js/metabolism.js') && scripts.indexOf('js/candidate-info.js') < scripts.indexOf('js/pharmacology-upgrade.js'), 'Candidate summaries must load after metabolism and before Quick UI');
 assert.ok(scripts.indexOf('js/prodrug-explorer.js') > scripts.indexOf('js/cleavable-groups.js'), 'Explorer must load after pathway engine');
