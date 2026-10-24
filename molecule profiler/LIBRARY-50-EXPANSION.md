@@ -1,0 +1,15 @@
+# Fifty-tag reference expansion
+
+This update adds 50 explicitly defined structural tags and 2,500 distinct source-named compounds. The new-tag browser shows each tag's current/whole-library count and **+N new** additions. Choose **New tags in this update** to focus the filter list. A molecule can match several tags; distinct additions are counted once.
+
+The target is 50 newly added molecules per tag. **26 tags meet or exceed 50 new matches; 24 remain below target in the checked sources. NBOMe has 9 newly added matches.** Quotas are reported individually in `validation/library-50-import.json`. Several narrow families have fewer than 50 eligible new named records in the checked sources. Their shortfalls are retained, rather than generating molecules, inventing names, adding aliases as separate compounds or padding with salts, isotope labels or charge forms. Names include source preferred/systematic names as well as common names; they are not all widely recognized drug names.
+
+New tags include NBOMe, NBOH, NBF and NBMD-related phenethylamine scaffolds, DOx scaffolds, ring systems, flavonoid subclasses, steroid carbon-ring scaffolds, glycosylated structures, lipid-related motifs, guanidines, amidines, oximes, hydroxamic acids, beta-lactams and sulfonylureas. Definitions are in `tools/library-expansion-50.py`. These are substructure matches, not exhaustive taxonomy, activity assignments, potency rankings or recommendations. NBOMe and NBOH differ by the ortho substituent on the N-benzyl ring; positional isomers or protected derivatives are not assigned to a narrow motif merely because a source name contains NBOMe.
+
+Sources: ChEBI/EMBL-EBI curated three-star SDF snapshot 2026-10-06 (CC BY 4.0, https://creativecommons.org/licenses/by/4.0/), https://ftp.ebi.ac.uk/pub/databases/chebi/SDF/chebi_3_stars.sdf.gz ; and PubChem NBOMe text-search records retrieved 2026-10-24, https://pubchem.ncbi.nlm.nih.gov/ . ChEBI selections and adaptations are attributed to ChEBI, EMBL-EBI; no endorsement is implied. PubChem record links retain individual provenance; this document makes no blanket license claim about underlying third-party annotations.
+
+Both supplied InChI and full InChIKey/formula agreement are required. Source SMILES discrepancies are handled by using the supplied InChI explicitly, with original source SMILES retained where available. Native RDKit checks are followed by independent browser-parser serialization, graph/stereo and formula checks. Original library entries are preserved exactly. These checks establish consistency with source representations, not experimental identity, clinical efficacy or safety.
+
+Reproduction: `python tools/prepare-library-50.py --sdf PATH_TO_DOWNLOADED_SDF_GZ`, `python tools/import-library-50.py`, then rebuild library tags and reference motifs. Native QA: `python tools/library-50-test.py`. RDKit is a validation dependency; these scripts do not add a new runtime dependency to Pages.
+
+The C8+ path tags count a connected carbon path and may include branches or ring paths; they are not an exclusive classification of straight-chain fatty acids or lipids.

@@ -4,7 +4,7 @@ from rdkit import Chem
 from rdkit.Chem import rdMolDescriptors
 root=Path(__file__).resolve().parents[1];r=json.loads((root/'validation/amine-study-import.json').read_text());source=root/r['sourceFile'];assert hashlib.sha256(source.read_bytes()).hexdigest()==r['sourceSha256']
 s={x['id'].removeprefix('CHEBI:'):x for x in json.loads(source.read_text())['rows']}
-a=json.loads(subprocess.check_output(['node','-e',"console.log(JSON.stringify(require('./data/library').LIBRARY))"],cwd=root));assert len(a)==r['total'] and r['added']==61
+a=json.loads(subprocess.check_output(['node','-e',"console.log(JSON.stringify(require('./data/library').LIBRARY))"],cwd=root));assert len(a)>=r['total'] and r['added']==61
 seen={Chem.MolToSmiles(Chem.MolFromSmiles(x['smiles']),True)for x in a[:r['baseEntries']]}
 for x in r['records']:
  t=s[x['id']];m=Chem.MolFromSmiles(x['librarySmiles']);key=Chem.MolToSmiles(m,True)

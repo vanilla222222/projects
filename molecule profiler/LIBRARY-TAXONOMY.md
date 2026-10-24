@@ -1,6 +1,6 @@
 # Reference library taxonomy
 
-The inspector exposes all 56 defined structural families and the unified 2C series, every represented reference-class label, all functional-group motifs, study collections and binding-reference families. Search within the selector to find an option; zero-match structural families remain visible but disabled. Counts refer to the complete library, while the results still respect the selected collection and molecule search.
+The inspector exposes all 106 defined structural families and the unified 2C series, every represented reference-class label, all functional-group motifs, study collections and binding-reference families. Search within the selector to find an option; zero-match structural families remain visible but disabled. Counts refer to the complete library, while the results still respect the selected collection and molecule search.
 
 Structural families use explicit RDKit SMARTS against the stored graph. Reference-class labels are historical dataset classifications and may describe pharmacology, use, chemistry or provenance; they are displayed separately and do not establish verified activity. Study collections are curated name-based discovery groups. Binding families refer only to the existing qualified source associations. These categories are not interchangeable.
 

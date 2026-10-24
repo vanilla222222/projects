@@ -13,7 +13,7 @@
     { key: 'fragment', label: 'Fragment examples', description: 'Fragment-sized structural entries; not experimentally verified reference annotations.' }
   ]);
   function groupFor(entry) {
-    if (sourceRecord(entry)) return entry.source.provider==='ChEBI'?'chebi':'sourced';
+    if (sourceRecord(entry)) return entry.source.provider==='ChEBI'?'chebi':entry.source.provider==='DrugCentral'?'sourced':'other';
     const cls = String(entry && entry.cls || '').trim();
     if (cls === 'ESOL reference') return 'esol';
     if (cls === 'Ester reference' || cls === 'Ether reference' || cls === 'Ketone reference') return 'series';
@@ -31,7 +31,7 @@
     const source=entry?.source;
     if(!source || !/^\d+$/.test(source.id) || source.librarySmiles!==entry.smiles)return null;
     const expected=source.provider==='DrugCentral'?'https://drugcentral.org/drugcard/'+source.id
-      :source.provider==='ChEBI'?'https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:'+source.id:null;
+      :source.provider==='ChEBI'?'https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:'+source.id:source.provider==='PubChem'?'https://pubchem.ncbi.nlm.nih.gov/compound/'+source.id:null;
     return expected && source.url===expected ? source : null;
   }
   function nameRecord(entry, context) {

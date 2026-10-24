@@ -38,6 +38,9 @@ if any(pattern is None for _,pattern in FAMILY_MOTIFS):
 _spec=importlib.util.spec_from_file_location('library_taxonomy',Path(__file__).with_name('library-taxonomy.py'))
 _tax=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(_tax)
 FAMILY_MOTIFS += _tax.compile_patterns(_tax.RINGS+_tax.SERIES)
+_spec50=importlib.util.spec_from_file_location('library_expansion_50',Path(__file__).with_name('library-expansion-50.py'))
+_exp50=importlib.util.module_from_spec(_spec50);_spec50.loader.exec_module(_exp50)
+FAMILY_MOTIFS += _tax.compile_patterns(_exp50.DEFINITIONS)
 MOTIFS = [(n,p)for n,p in MOTIFS if n not in {'Indole','Pyridine'}] + _tax.compile_patterns(_tax.EXTRA_MOTIFS)
 
 
@@ -45,6 +48,8 @@ SERIES_2C=Chem.MolFromSmarts('[NX3,NX4+;!$(N-C=O)]-[CH2]-[CH2]-c1c([OX2][CH3])cc
 MERGED_LABELS={'Tryptamine':'Family motif: Tryptamines','Amphetamine':'Family motif: Amphetamines (alpha-methylphenethylamines)','Cathinone':'Family motif: Cathinones','Benzofuran':'Family motif: Benzofurans','Benzothiophene':'Family motif: Benzothiophenes','Carbamate':'Carbamate motif','Sulfonamide':'Sulfonamide motif','Phenol':'Phenol motif','Epoxide':'Epoxide motif','Aldehyde':'Aldehyde motif','Thioamide':'Thioamide motif'}
 
 def group(entry):
+    if entry.get('source',{}).get('provider')=='PubChem':
+        return 'PubChem named compounds'
     if entry.get('source',{}).get('provider')=='DrugCentral':
         return 'DrugCentral named compounds'
     if entry.get('source',{}).get('provider')=='ChEBI':
@@ -97,13 +102,13 @@ def tags_for(entry, bindings=()):
     elif all(c=='?'for _,c in centers):motifs.append('Tetrahedral stereo: unspecified')
     else:motifs.append('Tetrahedral stereo: partially specified')
     source=entry.get('source',{})
-    if source.get('provider')in {'DrugCentral','ChEBI'} or entry.get('cls')in {'2C phenethylamine','2x phenethylamine','2X phenethylamine'} or MERGED_LABELS.get(entry.get('cls'))in motifs or entry.get('cls')in {'Fragment','ESOL reference','Ester reference','Ether reference','Ketone reference'}:base=base[1:]
-    provenance=['Source snapshot: '+source['snapshot']] if source.get('provider') in {'DrugCentral','ChEBI'} else []
+    if source.get('provider')in {'DrugCentral','ChEBI','PubChem'} or entry.get('cls')in {'2C phenethylamine','2x phenethylamine','2X phenethylamine'} or MERGED_LABELS.get(entry.get('cls'))in motifs or entry.get('cls')in {'Fragment','ESOL reference','Ester reference','Ether reference','Ketone reference'}:base=base[1:]
+    provenance=['Source snapshot: '+source['snapshot']] if source.get('provider') in {'DrugCentral','ChEBI','PubChem'} else []
     return list(dict.fromkeys(base[:2]+provenance+motifs+base[2:]+sorted(bindings)))
 
 
 def main():
-    paths=['data/library.js','data/library-names.js','data/targets.js','data/receptor-catalog.js','data/receptor-ligand-annotations.js','js/receptor-catalog.js','tools/build-library-tags.py','tools/library-taxonomy.py']
+    paths=['data/library.js','data/library-names.js','data/targets.js','data/receptor-catalog.js','data/receptor-ligand-annotations.js','js/receptor-catalog.js','tools/build-library-tags.py','tools/library-taxonomy.py','tools/library-expansion-50.py','validation/library-50-import.json']
     hashes={p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in paths}
     code=r"""
 const {LIBRARY:l}=require('./data/library'),{TARGETS:t}=require('./data/targets'),
@@ -122,6 +127,8 @@ console.log(JSON.stringify({library:l,bindings,names:require('./data/library-nam
     if any(hashlib.sha256((ROOT/p).read_bytes()).hexdigest()!=h for p,h in hashes.items()):
         raise ValueError('Source changed while generating tags')
     metadata={'schemaVersion':2,'seriesDefinitions':[{'tag':'Series: 2C / 2C-x phenethylamines','rule':'Historical 2C/2x classification OR supported N-substituted 2,5-dimethoxyphenethylamine core. Includes related derivatives; not a strict primary-amine class.','smarts':Chem.MolToSmarts(SERIES_2C)}],'familyDefinitions':[{'tag':'Family motif: '+name,'smarts':Chem.MolToSmarts(pattern)}for name,pattern in FAMILY_MOTIFS],'entries':entries}
+    expansion=json.loads((ROOT/'validation/library-50-import.json').read_text())
+    metadata['expansion']={'batch':expansion['batch'],'added':expansion['added'],'targetPerTag':50,'coverage':[{k:c[k]for k in ['tag','newCount','shortfall']}for c in expansion['coverage']]}
     text="'use strict';\n// Descriptive graph tags and qualified reference labels. See LIBRARY-METADATA.md.\nconst LIBRARY_TAG_METADATA = "+json.dumps(metadata,ensure_ascii=False,separators=(',',':'))+";\nif(typeof module!=='undefined'&&module.exports)module.exports={LIBRARY_TAG_METADATA};\nif(typeof globalThis!=='undefined')globalThis.LIBRARY_TAG_METADATA=LIBRARY_TAG_METADATA;\n"
     (ROOT/'data/library-tags.js').write_text(text)
     report={'schemaVersion':1,'rdkitVersion':rdBase.rdkitVersion,'sourceSha256':hashes,'entries':len(entries),
