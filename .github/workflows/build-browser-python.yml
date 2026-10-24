@@ -1,0 +1,51 @@
+name: Build browser Python chemistry
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/build-browser-python.yml'
+      - 'molecule profiler/tools/browser-python-build.sh'
+permissions:
+  contents: read
+jobs:
+  build-rdkit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+      - name: Fetch pinned browser build recipes
+        run: |
+          git clone --no-checkout https://github.com/stefdoerr/pyodide-recipes.git "$RUNNER_TEMP/rdkit-wasm"
+          git -C "$RUNNER_TEMP/rdkit-wasm" checkout aedd1440c9a1d79ea320b839f900368e9f2c802f
+          git -C "$RUNNER_TEMP/rdkit-wasm" submodule update --init --recursive
+      - uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167
+        with:
+          miniforge-variant: Miniforge3
+          miniforge-version: latest
+          activate-environment: pyodide-env
+          environment-file: ${{ runner.temp }}/rdkit-wasm/environment.yml
+          conda-remove-defaults: true
+          channels: conda-forge
+      - name: Compile RDKit and Python runtime packages
+        env:
+          PYODIDE_JOBS: '4'
+        run: bash "molecule profiler/tools/browser-python-build.sh" "$RUNNER_TEMP/rdkit-wasm"
+      - name: Upload runtime and chemistry packages
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        with:
+          name: molecule-profiler-browser-python
+          path: ${{ runner.temp }}/rdkit-wasm/repodata/
+          retention-days: 30
+      - name: Upload compilation logs
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        with:
+          name: browser-python-build-logs
+          path: ${{ runner.temp }}/rdkit-wasm/build-logs/
+          retention-days: 7
