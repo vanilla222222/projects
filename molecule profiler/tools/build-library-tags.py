@@ -2,6 +2,7 @@
 """Build descriptive tags from stored graphs and qualified source associations."""
 import hashlib
 import json
+import re
 from pathlib import Path
 import subprocess
 from rdkit import Chem, rdBase
@@ -21,6 +22,9 @@ MOTIFS = [(name,Chem.MolFromSmarts(smarts)) for name,smarts in [
 FAMILY_MOTIFS = [(name,Chem.MolFromSmarts(smarts)) for name,smarts in [
     ('Phenethylamines','[N]-[CX4]-[CX4]-c1ccccc1'),
     ('Amphetamines (alpha-methylphenethylamines)','[N]-[CX4]([CH3])-[CH2]-c1ccccc1'),
+    ('N-acyltryptamines (side-chain amides)','[CX3](=[OX1])-[N]-[CH2]-[CH2]-c1c[nH,nH0]c2ccccc12'),
+    ('Indole-3-carboxamides','[N]-[CX3](=[OX1])-c1c[nH,nH0]c2ccccc12'),
+    ('Tryptophanamides','[N]-[CX3](=[OX1])-[CX4]([N])-[CH2]-c1c[nH,nH0]c2ccccc12'),
     ('Tryptamines','[N]-[CX4]-[CX4]-c1c[nH,nH0]c2ccccc12'),
     ('Cathinones','[N]-[CX4]-[CX3](=[OX1])-c1ccccc1'),
     ('2Cs (2,5-dimethoxyphenethylamines)','[$([NX3H2]),$([NX4H3+])]-[CH2]-[CH2]-c1c([OX2][CH3])ccc([OX2][CH3])c1'),
@@ -51,6 +55,11 @@ def tags_for(entry, bindings=()):
     hbd=Lipinski.NumHDonors(mol);hba=Lipinski.NumHAcceptors(mol);rot=Lipinski.NumRotatableBonds(mol);tpsa=Descriptors.TPSA(mol)
     motifs=[name+' motif' for name,pattern in MOTIFS if mol.HasSubstructMatch(pattern)]
     motifs += ['Family motif: '+name for name,pattern in FAMILY_MOTIFS if mol.HasSubstructMatch(pattern)]
+    label=entry.get('studyName',entry['name']).casefold()
+    if re.search(r'tryptam|tryptophanamide|serotonin|melatonin|bufoten|psiloc|aeruginascin|baeocystin',label):
+        motifs.append('Study collection: Named tryptamine-related compounds')
+    if re.search(r'phenethylamine|tyramine|dopamine|epinephrine|adrenaline|octopamine|synephrine|hordenine|ephedrine|mescaline|amphetamine|cathinone|cathine',label):
+        motifs.append('Study collection: Named phenethylamine-related compounds')
     elements={a.GetSymbol() for a in mol.GetAtoms()}
     motifs += [name for element,name in [('F','Fluorinated'),('Cl','Chlorinated'),('Br','Brominated'),('I','Iodinated'),('S','Sulfur-containing'),('P','Phosphorus-containing')] if element in elements]
     if elements & {'F','Cl','Br','I'}:
@@ -87,10 +96,10 @@ for(const r of c.receptors){const linked=new Set(api.links(r,t).flatMap(x=>x.tar
  for(const x of a){if(x.receptorId!==r.id||!linked.has(x.ligandName)||x.evidenceType!=='binding'||x.librarySmiles!==byName.get(x.ligandName)?.smiles)continue;
   (bindings[x.ligandName]??=[]).push('Binding: '+r.id,'Binding family: '+r.family);
  }}
-console.log(JSON.stringify({library:l,bindings}));
+console.log(JSON.stringify({library:l,bindings,names:require('./data/library-names').LIBRARY_NAME_METADATA.entries}));
 """
     data=json.loads(subprocess.check_output(['node','-e',code],cwd=ROOT,text=True))
-    entries={e['name']:{'librarySmiles':e['smiles'],'tags':tags_for(e,data['bindings'].get(e['name'],[]))} for e in data['library']}
+    entries={e['name']:{'librarySmiles':e['smiles'],'tags':tags_for({**e,'studyName':data['names'].get(e['name'],{}).get('preferredName',e['name'])},data['bindings'].get(e['name'],[]))} for e in data['library']}
     if any(hashlib.sha256((ROOT/p).read_bytes()).hexdigest()!=h for p,h in hashes.items()):
         raise ValueError('Source changed while generating tags')
     metadata={'schemaVersion':1,'entries':entries}

@@ -25,9 +25,9 @@
     opt.label = entry.name + ' (' + entry.count + ')';
     $('catalog-tag-options').appendChild(opt);
   }
-  const familyButtons=stats.tags.filter(entry=>entry.name.startsWith('Family motif: ')).map(entry=>{
+  const familyButtons=stats.tags.filter(entry=>entry.name.startsWith('Family motif: ')||entry.name.startsWith('Study collection: ')).map(entry=>{
     const button=document.createElement('button');button.type='button';button.className='catalog-tag';
-    button.textContent=entry.name.slice('Family motif: '.length)+' ('+entry.count+')';
+    button.textContent=entry.name.replace(/^(Family motif: |Study collection: )/,'')+' ('+entry.count+')';
     button.setAttribute('aria-label','Filter by '+entry.name);button.dataset.tag=entry.name;
     button.addEventListener('click',()=>{tagFilter.value=entry.name;page=1;render();tagFilter.focus();});
     $('catalog-families').appendChild(button);return button;

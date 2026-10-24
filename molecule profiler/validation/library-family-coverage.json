@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "sourceSha256": {
-    "data/library.js": "8f3cbd9f667f42065faeb6f12df1967674fde19c2193dcc4716833c05d4210fd",
+    "data/library.js": "4f9c212c4168a706c8535b636b2ad55b44a3f6e3c9c6c3cf33a5aa38776063b8",
     "data/targets.js": "facc465ef72687224df3577fbf7a600102e7c3b07cc033a4de21ba76191192fa",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
     "data/receptor-ligand-annotations.js": "28bcfc10324b17fc8a30d2e4b3cf3c589e55fe9af76cd61dfb8986d9a3b30d01",
     "js/receptor-catalog.js": "c89696b0ea6e22873929f2e3c777774b13579c917a541cf7820de253e19305e1",
-    "tools/build-library-tags.py": "683de86997ded2c01100015306c0c47e3c4bdf69d71b85ae6e566fa8d7c04cd6"
+    "tools/build-library-tags.py": "2c64e874617d9fa7e57b1cb90d93cd9edec43cf9a41eef3f18a983ee87739bd8"
   },
-  "dataSha256": "0cc7bd5cdb1d2fa7877a08f6bf1bba763ac63fdd9d4811080f2bc010548d4cb0",
+  "dataSha256": "50bc22f51125e2b9e38db9abf1abf23123fd994657d349e12fbbdb48a518ca64",
   "interpretation": "Overlapping structural motifs in stored graphs; not evidence of pharmacological function, exhaustive family membership or independently verified molecular identities.",
   "families": [
     {
@@ -1373,9 +1373,42 @@
         "tyrosinate(1-)",
         "tyrosinate(2-)",
         "tyrosinium",
-        "L-synephrine"
+        "L-synephrine",
+        "N-oleoyldopamine",
+        "(S)-noradrenaline",
+        "dopamine 4-O-sulfate",
+        "dopamine 3-O-sulfate",
+        "(S)-adrenaline",
+        "(R)-octopamine",
+        "(S)-octopamine",
+        "(S)-(+)-4-(5-carboxypentyl)methamphetamine",
+        "(R)-N-trans-feruloyloctopamine",
+        "N-trans-feruloyl-4'-O-methyldopamine",
+        "N-trans-sinapoyltyramine",
+        "3-nitrotyramine",
+        "N,O-dimethyltyramine",
+        "4-hydroxymethamphetamine",
+        "oxidopamine",
+        "(-)-norephedrine",
+        "gamma-glutamyltyramine",
+        "m-tyramine",
+        "4-methoxytyramine",
+        "N-acetyloctopamine",
+        "N-acetyltyramine",
+        "N\u2010beta\u2010alanyldopamine",
+        "N-acetyldopamine",
+        "tyramine sulfate",
+        "3-methoxytyramine sulfate",
+        "N-palmitoyl dopamine",
+        "tyramine phosphate",
+        "N-trans-cinnamoyltyramine",
+        "N-cis-sinapoyltyramine",
+        "N-sinapoyltyramine",
+        "N-(4-aminobutyl)-D-methamphetamine",
+        "N-(4-aminobutyl)-L-methamphetamine",
+        "N-(4-aminobutyl)methamphetamine"
       ],
-      "count": 1360
+      "count": 1393
     },
     {
       "tag": "Family motif: Amphetamines (alpha-methylphenethylamines)",
@@ -1584,9 +1617,70 @@
         "(-)-selegiline",
         "dioncopeltine A",
         "dioncophylline A",
-        "dioncophylline C"
+        "dioncophylline C",
+        "(S)-(+)-4-(5-carboxypentyl)methamphetamine",
+        "4-hydroxymethamphetamine",
+        "N-(4-aminobutyl)-D-methamphetamine",
+        "N-(4-aminobutyl)-L-methamphetamine",
+        "N-(4-aminobutyl)methamphetamine"
       ],
-      "count": 205
+      "count": 210
+    },
+    {
+      "tag": "Family motif: N-acyltryptamines (side-chain amides)",
+      "entries": [
+        "Melatonin",
+        "Rucaparib",
+        "CHEMBL289233",
+        "CHEMBL55084",
+        "CHEMBL300729",
+        "CHEMBL300056",
+        "CHEMBL52755",
+        "CHEMBL298335",
+        "CHEMBL33700",
+        "CHEMBL52559",
+        "N-Acetylserotonin"
+      ],
+      "count": 11
+    },
+    {
+      "tag": "Family motif: Indole-3-carboxamides",
+      "entries": [
+        "CHEMBL356359",
+        "alosetron"
+      ],
+      "count": 2
+    },
+    {
+      "tag": "Family motif: Tryptophanamides",
+      "entries": [
+        "Tadalafil",
+        "Daptomycin core fragment",
+        "Leuprorelin fragment",
+        "ENDOMORPHIN-1",
+        "afamelanotide",
+        "bremelanotide",
+        "buserelin",
+        "ceruletide",
+        "daptomycin",
+        "depreotide",
+        "eptifibatide",
+        "gonadorelin",
+        "goserelin",
+        "histrelin",
+        "lanreotide",
+        "leuprorelin",
+        "nafarelin",
+        "octreotide",
+        "pasireotide",
+        "pentagastrin",
+        "pralmorelin",
+        "setmelanotide",
+        "sincalide",
+        "somatostatin",
+        "triptorelin"
+      ],
+      "count": 25
     },
     {
       "tag": "Family motif: Tryptamines",
@@ -1897,9 +1991,26 @@
         "vindesine",
         "vinpocetine",
         "voacamine",
-        "zolmitriptan"
+        "zolmitriptan",
+        "6-hydroxymelatonin",
+        "L-tryptophanamide",
+        "2-methylserotonin",
+        "N-methylserotonin",
+        "(S)-alpha-methylserotonin",
+        "(R)-alpha-methylserotonin",
+        "N-acetyltryptamine",
+        "N,alpha-dimethyltryptamine",
+        "5-nonyloxytryptamine",
+        "N-feruloylserotonin",
+        "5-methyltryptamine",
+        "N-arachidonoylserotonin",
+        "N-palmitoylserotonin",
+        "N-oleoylserotonin",
+        "N-stearoylserotonin",
+        "N-butanoylserotonin",
+        "2-hydroxymelatonin"
       ],
-      "count": 307
+      "count": 324
     },
     {
       "tag": "Family motif: Cathinones",
@@ -1964,9 +2075,11 @@
         "2-(methylamino)-1-(4-methylphenyl)hexan-1-one",
         "2-(ethylamino)-1-phenylhexan-1-one",
         "adrenalone",
-        "fentonium"
+        "fentonium",
+        "(S)-methcathinone",
+        "(R)-methcathinone"
       ],
-      "count": 61
+      "count": 63
     },
     {
       "tag": "Family motif: 2Cs (2,5-dimethoxyphenethylamines)",
