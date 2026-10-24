@@ -34,6 +34,8 @@ if any(pattern is None for _,pattern in FAMILY_MOTIFS):
 def group(entry):
     if entry.get('source',{}).get('provider')=='DrugCentral':
         return 'DrugCentral named compounds'
+    if entry.get('source',{}).get('provider')=='ChEBI':
+        return 'ChEBI curated compounds'
     cls=entry.get('cls','')
     return 'ESOL-labelled' if cls=='ESOL reference' else 'Illustrative series' if cls in ('Ester reference','Ether reference','Ketone reference') else 'Fragment examples' if cls=='Fragment' else 'Reference library'
 
@@ -68,7 +70,7 @@ def tags_for(entry, bindings=()):
           'Rotatable bonds: '+('0' if rot==0 else '1-3' if rot<4 else '4+'),
           'TPSA: '+('<40 A^2' if tpsa<40 else '40-90 A^2' if tpsa<=90 else '>90 A^2')]
     source=entry.get('source',{})
-    provenance=['Source: DrugCentral','Source snapshot: '+source['snapshot']] if source.get('provider')=='DrugCentral' else []
+    provenance=['Source: '+source['provider'],'Source snapshot: '+source['snapshot']] if source.get('provider') in {'DrugCentral','ChEBI'} else []
     return list(dict.fromkeys(base[:2]+provenance+motifs+base[2:]+sorted(bindings)))
 
 

@@ -6,13 +6,14 @@
   const GROUPS = Object.freeze([
     { key: 'all', label: 'All collections', description: 'Every listed structure, regardless of provenance.' },
     { key: 'sourced', label: 'DrugCentral named compounds', description: 'Named source records with checked structures; historical snapshot, not a current approval list.' },
+    { key: 'chebi', label: 'ChEBI curated compounds', description: 'Named compounds from a curated ChEBI snapshot; source identity is not biological validation.' },
     { key: 'other', label: 'Other named/reference entries', description: 'No externally verified identity or provenance is implied.' },
     { key: 'esol', label: 'ESOL-labelled references', description: 'Labelled as belonging to the ESOL reference subset; experimental measurements are not verified here.' },
     { key: 'series', label: 'Ester / ether / ketone series', description: 'Class-labelled homolog series useful as illustrative structural examples.' },
     { key: 'fragment', label: 'Fragment examples', description: 'Fragment-sized structural entries; not experimentally verified reference annotations.' }
   ]);
   function groupFor(entry) {
-    if (sourceRecord(entry)) return 'sourced';
+    if (sourceRecord(entry)) return entry.source.provider==='ChEBI'?'chebi':'sourced';
     const cls = String(entry && entry.cls || '').trim();
     if (cls === 'ESOL reference') return 'esol';
     if (cls === 'Ester reference' || cls === 'Ether reference' || cls === 'Ketone reference') return 'series';
@@ -28,16 +29,17 @@
   }
   function sourceRecord(entry) {
     const source=entry?.source;
-    return source?.provider==='DrugCentral' && /^\d+$/.test(source.id)
-      && source.url==='https://drugcentral.org/drugcard/'+source.id
-      && source.librarySmiles===entry.smiles ? source : null;
+    if(!source || !/^\d+$/.test(source.id) || source.librarySmiles!==entry.smiles)return null;
+    const expected=source.provider==='DrugCentral'?'https://drugcentral.org/drugcard/'+source.id
+      :source.provider==='ChEBI'?'https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:'+source.id:null;
+    return expected && source.url===expected ? source : null;
   }
   function nameRecord(entry, context) {
     const recorded=matchedRecord(metadata(context).names, entry);
     if(recorded)return recorded;
     const source=sourceRecord(entry);
     return source?{librarySmiles:entry.smiles,preferredName:entry.name,nameKind:source.nameKind,
-      sourceUrl:source.url,aliases:['DrugCentral '+source.id,source.cas,source.inchiKey].filter(Boolean)}:null;
+      sourceUrl:source.url,aliases:[source.provider+' '+source.id,source.provider==='ChEBI'?'CHEBI:'+source.id:null,source.cas,source.inchiKey].filter(Boolean)}:null;
   }
   function displayName(entry, context) { return nameRecord(entry,context)?.preferredName || entry.name; }
   function aliasesFor(entry, context) { return nameRecord(entry,context)?.aliases || []; }
@@ -48,7 +50,7 @@
   function searchText(entry, context) { return norm([entry.name,displayName(entry,context),...aliasesFor(entry,context),entry.cls,entry.formula,...tagsFor(entry,context)].join(' ')); }
   function catalogSummary(entries, context) {
     const rows = Array.isArray(entries) ? entries : [];
-    const groups = { sourced: 0, other: 0, esol: 0, series: 0, fragment: 0 };
+    const groups = { sourced: 0, chebi: 0, other: 0, esol: 0, series: 0, fragment: 0 };
     const classes = new Map();
     const tags = new Map();
     const names = new Set(), smiles = new Set();

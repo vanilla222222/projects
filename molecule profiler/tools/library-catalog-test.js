@@ -8,7 +8,7 @@ const sample = [
   { name: '=formula injection', cls: 'Other', formula: 'CO2', smiles: 'O=C=O' },
   { name: 'Gamma', cls: 'ESOL reference', formula: 'H2O', smiles: 'O' }
 ];
-assert.equal(GROUPS.length, 6);
+assert.equal(GROUPS.length, 7);
 assert.equal(groupFor(sample[0]), 'series');
 assert.equal(groupFor(sample[1]), 'fragment');
 assert.equal(groupFor(sample[2]), 'other');

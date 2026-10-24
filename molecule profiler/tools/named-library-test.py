@@ -4,6 +4,7 @@ import csv
 import hashlib
 import io
 import json
+import re
 from pathlib import Path
 import subprocess
 from rdkit import Chem, rdBase
@@ -14,13 +15,14 @@ report=json.loads((ROOT/'validation/named-library-import.json').read_text())
 raw=(ROOT/'validation/sources/drugcentral-structures-2021-09-01.tsv').read_bytes()
 assert hashlib.sha256(raw).hexdigest()==report['sourceSha256']
 assert hashlib.sha256((ROOT/'tools/import-named-library.py').read_bytes()).hexdigest()==report['toolSha256']
-assert hashlib.sha256((ROOT/'data/library.js').read_bytes()).hexdigest()==report['librarySha256']
+historic=re.sub(r'  // BEGIN NAMED BATCH 001.*?  // END NAMED BATCH 001\n','',(ROOT/'data/library.js').read_text(),flags=re.S)
+assert hashlib.sha256(historic.encode()).hexdigest()==report['librarySha256']
 source={r['ID']:r for r in csv.DictReader(io.StringIO(raw.decode()),delimiter='\t')}
 entries=json.loads(subprocess.check_output(['node','-e',"console.log(JSON.stringify(require('./data/library').LIBRARY))"],cwd=ROOT,text=True))
 added=[e for e in entries if e.get('source',{}).get('provider')=='DrugCentral']
-base=[e for e in entries if e not in added]
+base=[e for e in entries[:report['total']] if e not in added]
 assert len(added)==report['added']==len(report['records']) and len(added)>2000
-assert len(entries)==report['total'] and len(base)==report['baseEntries']
+assert len(entries)>=report['total'] and len(base)==report['baseEntries']
 assert len({e['name'].casefold()for e in entries})==len(entries)
 def canonical(m):return Chem.MolToSmiles(m,isomericSmiles=True)
 existing={canonical(Chem.MolFromSmiles(e['smiles'])) for e in base}

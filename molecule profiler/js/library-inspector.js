@@ -11,7 +11,7 @@
   const stats = engine.catalogSummary(rows);
   const categoryLabels = new Map(engine.GROUPS.map(item => [item.key, item.label]));
   let page = 1;
-  for (const key of ['sourced', 'other', 'series', 'esol', 'fragment']) {
+  for (const key of ['sourced', 'chebi', 'other', 'series', 'esol', 'fragment']) {
     $('catalog-' + key).textContent = stats.groups[key].toLocaleString();
   }
   $('catalog-total').textContent = stats.total.toLocaleString();
