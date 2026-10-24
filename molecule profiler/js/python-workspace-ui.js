@@ -31,5 +31,9 @@
  function stop(text){++epoch;kernel.stop();state(false);status.textContent=text+' Interpreter variables cleared; code retained.';}
  function download(name,text,type){const u=URL.createObjectURL(new Blob([text],{type})),a=make('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);}
  buttons.load.onclick=()=>execute(true);buttons.run.onclick=()=>execute(false);buttons.stop.onclick=()=>stop('Stopped.');buttons.reset.onclick=()=>stop('Reset.');buttons.clear.onclick=()=>{output.textContent='';};buttons.download.onclick=()=>download('molecule-experiment.py',editor.value,'text/x-python');buttons.export.onclick=()=>{if(lastRun)download('python-experiment.json',JSON.stringify(lastRun,null,2),'application/json');};insert.onclick=()=>{editor.value=examples[example.value];persist();editor.focus();};editor.addEventListener('input',persist);editor.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();e.stopImmediatePropagation();execute(false);}if(e.key==='Tab'&&!e.ctrlKey&&!e.metaKey){e.preventDefault();editor.setRangeText('    ',editor.selectionStart,editor.selectionEnd,'end');persist();}});
- const original=root.PharmacologyUI.render;root.PharmacologyUI.render=function(r,ranks){original(r,ranks);record=r;contextLabel.textContent='CURRENT INPUT · '+r.name+' · '+r.smiles+' · Candidate records are copied at Run.';};state(false);root.PythonWorkspaceUI={getLastRun:()=>lastRun,stop:()=>stop('Stopped.')};
+ function refresh(r){if(!r)return;record=r;contextLabel.textContent='CURRENT INPUT · '+r.name+' · '+r.smiles+' · Candidate records are copied at Run.';}
+ const original=root.PharmacologyUI.render;root.PharmacologyUI.render=function(r,ranks){original(r,ranks);refresh(r);};
+ // The default structure can finish analysis before this optional panel loads.
+ if(typeof records!=='undefined')refresh(records[typeof current!=='undefined'?current:0]);
+ state(false);root.PythonWorkspaceUI={getLastRun:()=>lastRun,stop:()=>stop('Stopped.')};
 })(globalThis);

@@ -6,6 +6,7 @@ w.fetch=async()=>({ok:false,status:404,json:async()=>({error:'Browser mode'})});
 (async()=>{
  for(const match of html.matchAll(/<script src="([^"?]+)(?:\?[^"]*)?"><\/script>/g))vm.runInContext(fs.readFileSync(path.join(root,match[1]),'utf8'),ctx,{filename:match[1]});
  for(let i=0;i<500;i++){if(w.PharmacologyUI.getSnapshot()?.candidateComparison)break;await new Promise(r=>setTimeout(r,10));}
+ assert.ok(w.document.getElementById('python-context').textContent.includes('aspirin'),'Python receives the already-analyzed default molecule');
  let s=w.PharmacologyUI.getSnapshot();assert.ok(s.candidateComparison?.rows.length===25,'Full app startup populates dashboard');assert.ok(s.independentResearch,'Native tool snapshot survives all render wrappers');
  const ids=[...w.document.querySelectorAll('[id]')].map(e=>e.id);assert.equal(new Set(ids).size,ids.length,'All dynamic IDs are unique with every module loaded');
  w.document.getElementById('smiles-input').value='Methoxy example, NCCc1ccc(OC)c(OC)c1OC';w.document.getElementById('run').click();
