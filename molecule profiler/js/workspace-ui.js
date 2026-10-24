@@ -42,6 +42,7 @@
     'Prodrugs & bioactivation': ['design'],
     'Generated analogues': ['analogues'],
     'Ionization scenarios': ['exposure'],
+    'Charge states & pH': ['exposure'],
     'Functional effect context': ['discovery'],
     'Dependence-related structural similarity': ['discovery'],
     'Similarity search': ['discovery'],

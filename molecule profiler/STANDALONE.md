@@ -99,3 +99,9 @@ node tools/prediction-benchmarks-test.js
 ```
 
 The optional real docking smoke test accepts a prepared receptor fixture and search box; see the test's command-line help. It checks execution and pose output, not biological validity.
+
+## Multi-site ionization scenarios
+
+Exposure → Charge states & pH supports up to six recognized acid/base sites and 64 explicitly generated charge-state structures. Supply a pKa, low/high range and source or explicit assumption for each included site. This is an independent-site scenario, not a pKa predictor: macroscopic polyprotic pKa values cannot be assigned to individual atoms without justification. Supported motif coverage is bounded; omitted chemistry is not assumed inert.
+
+A fully uncharged fraction is distinguished from a net-zero-charge fraction (which can include zwitterions). Conditional log D uses the WLOGP of the all-uncharged reference and assumes negligible partitioning of charged species; it is withheld if that reference is unavailable. Ionic partitioning, ion pairs, tautomer equilibria, site coupling, activity coefficients and concentration effects are outside this calculation. pKa envelopes show parameter sensitivity, not statistical confidence. No permeability/BBB or solubility benefit is inferred. All states and pH profiles can be exported to JSON.
