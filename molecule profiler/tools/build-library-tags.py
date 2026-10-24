@@ -28,7 +28,6 @@ FAMILY_MOTIFS = [(name,Chem.MolFromSmarts(smarts)) for name,smarts in [
     ('Tryptophanamides','[N]-[CX3](=[OX1])-[CX4]([N])-[CH2]-c1c[nH,nH0]c2ccccc12'),
     ('Tryptamines','[N]-[CX4]-[CX4]-c1c[nH,nH0]c2ccccc12'),
     ('Cathinones','[N]-[CX4]-[CX3](=[OX1])-c1ccccc1'),
-    ('2Cs (2,5-dimethoxyphenethylamines)','[$([NX3H2]),$([NX4H3+])]-[CH2]-[CH2]-c1c([OX2][CH3])ccc([OX2][CH3])c1'),
     ('Nitazene-related benzimidazoles','[N]-[CX4]-[CX4]-n1c([CX4]-c2ccccc2)nc2ccccc21'),
     ('Nitazenes','[N]-[CX4]-[CX4]-n1c([CX4]-c2ccccc2)nc2cc([N+](=O)[O-])ccc21'),
     ('N-benzylphenethylamines','[NX3,NX4+](Cc1ccccc1)CCc1ccccc1')]]
@@ -41,6 +40,9 @@ _tax=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(_tax)
 FAMILY_MOTIFS += _tax.compile_patterns(_tax.RINGS+_tax.SERIES)
 MOTIFS = [(n,p)for n,p in MOTIFS if n not in {'Indole','Pyridine'}] + _tax.compile_patterns(_tax.EXTRA_MOTIFS)
 
+
+SERIES_2C=Chem.MolFromSmarts('[NX3,NX4+;!$(N-C=O)]-[CH2]-[CH2]-c1c([OX2][CH3])ccc([OX2][CH3])c1')
+MERGED_LABELS={'Tryptamine':'Family motif: Tryptamines','Amphetamine':'Family motif: Amphetamines (alpha-methylphenethylamines)','Cathinone':'Family motif: Cathinones','Benzofuran':'Family motif: Benzofurans','Benzothiophene':'Family motif: Benzothiophenes','Carbamate':'Carbamate motif','Sulfonamide':'Sulfonamide motif','Phenol':'Phenol motif','Epoxide':'Epoxide motif','Aldehyde':'Aldehyde motif','Thioamide':'Thioamide motif'}
 
 def group(entry):
     if entry.get('source',{}).get('provider')=='DrugCentral':
@@ -62,6 +64,7 @@ def tags_for(entry, bindings=()):
     hbd=Lipinski.NumHDonors(mol);hba=Lipinski.NumHAcceptors(mol);rot=Lipinski.NumRotatableBonds(mol);tpsa=Descriptors.TPSA(mol)
     motifs=[name+' motif' for name,pattern in MOTIFS if mol.HasSubstructMatch(pattern)]
     motifs += ['Family motif: '+name for name,pattern in FAMILY_MOTIFS if mol.HasSubstructMatch(pattern)]
+    if entry.get('cls')in {'2C phenethylamine','2x phenethylamine','2X phenethylamine'} or mol.HasSubstructMatch(SERIES_2C):motifs.append('Series: 2C / 2C-x phenethylamines')
     label=entry.get('studyName',entry['name']).casefold()
     if re.search(r'tryptam|tryptophanamide|serotonin|melatonin|bufoten|psiloc|aeruginascin|baeocystin',label):
         motifs.append('Study collection: Named tryptamine-related compounds')
@@ -94,7 +97,7 @@ def tags_for(entry, bindings=()):
     elif all(c=='?'for _,c in centers):motifs.append('Tetrahedral stereo: unspecified')
     else:motifs.append('Tetrahedral stereo: partially specified')
     source=entry.get('source',{})
-    if source.get('provider')in {'DrugCentral','ChEBI'}:base=base[1:]
+    if source.get('provider')in {'DrugCentral','ChEBI'} or entry.get('cls')in {'2C phenethylamine','2x phenethylamine','2X phenethylamine'} or MERGED_LABELS.get(entry.get('cls'))in motifs or entry.get('cls')in {'Fragment','ESOL reference','Ester reference','Ether reference','Ketone reference'}:base=base[1:]
     provenance=['Source snapshot: '+source['snapshot']] if source.get('provider') in {'DrugCentral','ChEBI'} else []
     return list(dict.fromkeys(base[:2]+provenance+motifs+base[2:]+sorted(bindings)))
 
@@ -118,7 +121,7 @@ console.log(JSON.stringify({library:l,bindings,names:require('./data/library-nam
     entries={e['name']:{'librarySmiles':e['smiles'],'tags':tags_for({**e,'studyName':data['names'].get(e['name'],{}).get('preferredName',e['name'])},data['bindings'].get(e['name'],[]))} for e in data['library']}
     if any(hashlib.sha256((ROOT/p).read_bytes()).hexdigest()!=h for p,h in hashes.items()):
         raise ValueError('Source changed while generating tags')
-    metadata={'schemaVersion':2,'familyDefinitions':[{'tag':'Family motif: '+name,'smarts':Chem.MolToSmarts(pattern)}for name,pattern in FAMILY_MOTIFS],'entries':entries}
+    metadata={'schemaVersion':2,'seriesDefinitions':[{'tag':'Series: 2C / 2C-x phenethylamines','rule':'Historical 2C/2x classification OR supported N-substituted 2,5-dimethoxyphenethylamine core. Includes related derivatives; not a strict primary-amine class.','smarts':Chem.MolToSmarts(SERIES_2C)}],'familyDefinitions':[{'tag':'Family motif: '+name,'smarts':Chem.MolToSmarts(pattern)}for name,pattern in FAMILY_MOTIFS],'entries':entries}
     text="'use strict';\n// Descriptive graph tags and qualified reference labels. See LIBRARY-METADATA.md.\nconst LIBRARY_TAG_METADATA = "+json.dumps(metadata,ensure_ascii=False,separators=(',',':'))+";\nif(typeof module!=='undefined'&&module.exports)module.exports={LIBRARY_TAG_METADATA};\nif(typeof globalThis!=='undefined')globalThis.LIBRARY_TAG_METADATA=LIBRARY_TAG_METADATA;\n"
     (ROOT/'data/library-tags.js').write_text(text)
     report={'schemaVersion':1,'rdkitVersion':rdBase.rdkitVersion,'sourceSha256':hashes,'entries':len(entries),

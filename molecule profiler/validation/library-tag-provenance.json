@@ -8,12 +8,12 @@
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
     "data/receptor-ligand-annotations.js": "28bcfc10324b17fc8a30d2e4b3cf3c589e55fe9af76cd61dfb8986d9a3b30d01",
     "js/receptor-catalog.js": "c89696b0ea6e22873929f2e3c777774b13579c917a541cf7820de253e19305e1",
-    "tools/build-library-tags.py": "7a7d6d0c3cd65a7407d1f5c5e837bb1fea064c5b4ea565edea7127df94180ca9",
+    "tools/build-library-tags.py": "85b9ea409eb1c26d7462e55322a9e9184c29ac6158ac3284d88141e70205b9fa",
     "tools/library-taxonomy.py": "a577bed4d107158eb152cd0b7a3d05d0df53584f370ad07be393147a477ab8b7"
   },
   "entries": 13537,
-  "minTags": 11,
+  "minTags": 10,
   "maxTags": 36,
   "method": "Explicit graph families and functional groups, source collections, property bins and qualified binding labels. Ring synonyms and duplicate source labels are consolidated. Family definitions are serialized with SMARTS. Stored graph charges and calculated bins are not physiological protonation or clinical claims. Original class labels remain explicitly labelled, not experimentally validated.",
-  "dataSha256": "ce132f34b737ff6eac61a5b0fe1a4238e5f6d6e37e1ebac9b6ce1e417085f120"
+  "dataSha256": "4396c9bd90757248597fb4ccf3bf37c5bef991e598df5cd5520c91df094141d5"
 }
