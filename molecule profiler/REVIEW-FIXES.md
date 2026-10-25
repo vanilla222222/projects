@@ -100,6 +100,6 @@ complete elimination of other main-thread analysis costs is claimed.
 ## Display-label consistency
 
 Source-provided lowercase names receive an initial capital in display labels,
-including Ulotaront and Rimonabant. Mixed-case identifiers such as mCPP remain
-unchanged. Stable keys, original preferred names, aliases, source rows, structure
+including Ulotaront and Rimonabant. Mixed-case identifiers such as mCPP and lowercase chemical descriptors or
+positional prefixes (including cis-, trans-, tert-, sec- and sn-) remain unchanged. Stable keys, original preferred names, aliases, source rows, structure
 identifiers and exported source witnesses retain their original values.
