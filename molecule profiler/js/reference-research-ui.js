@@ -7,6 +7,7 @@
  function detail(label,value,host){if(value==null||value==='')return;const p=el('p');p.append(el('strong',label+': '),el('span',typeof value==='object'?JSON.stringify(value):String(value)));host.append(p);}
  function observation(o){const d=el('details');d.className='research-evidence';d.dataset.target=o.target;d.append(el('summary',[o.targetLabel||o.kind,o.action.replace(/_/g,' '),o.kind.replace(/_/g,' ')].filter(Boolean).join(' · ')));
   for(const [label,value]of [['Endpoint',o.endpoint],['Receptor / target species',o.species],['Host-cell species',o.hostSpecies],['Assay',o.assay],['Tested form',o.testedForm],['Conditions',o.conditions],['Uncertainty',o.uncertaintyKind],['Source location',o.sourceLocation],['Context',o.context]])detail(label,value,d);
+  if(typeof o.value==='number')detail('Participant result',valueLabel(o),d);
   d.append(link('Evidence source ↗',o.sourceUrl));const raw=el('details');raw.append(el('summary','Source record and provenance'));detail('Record',o.recordId||'Imported receptor row',raw);detail('Snapshot SHA-256',o.sourceSha256,raw);raw.append(el('pre',JSON.stringify(o.raw,null,2)));d.append(raw);return d;
  }
  function openDossier(name,{focus=true}={}){const d=model.dossier(name);if(!d)return false;const host=$('reference-dossier');host.replaceChildren();

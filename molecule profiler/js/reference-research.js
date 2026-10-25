@@ -2,7 +2,7 @@
 (function(root){
  const text=v=>v==null?'':String(v);
  const species=v=>/^(human|homo sapiens)$/i.test(text(v))?'Homo sapiens':text(v)||'Not reported';
- const metric=e=>e.metric||(/^(EC50|IC50|Ki|Kd)\b/.exec(e.endpoint||'')||[])[1]||'';
+ const metric=e=>{if(e.metric)return e.metric;const found=[...new Set((e.endpoint||'').match(/\b(?:EC50|IC50|Ki|Kd)\b/g)||[])];return found.length===1?found[0]:'';};
  function createModel({entries,catalog,curated,data,reviewData={decisions:[]}}){
   const byName=new Map(entries.map(e=>[e.name,e])),cache=new WeakMap();
   function observations(entry){

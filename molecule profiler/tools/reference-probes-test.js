@@ -1,0 +1,6 @@
+'use strict';
+const assert=require('node:assert/strict'),{model,data}=require('./reference-research-test'),api=require('../js/reference-probes'),probes=api.create(model,data);
+assert.equal(probes.candidates().length,2);const g=probes.find({target:'KDM6B',assay:'AlphaScreen',species:'Homo sapiens',requireMatchedControl:true});assert.equal(g.length,1);assert.equal(g[0].controls[0].matched,true);assert.equal(g[0].controls[0].evidence[0].value,100);assert.equal(g[0].controls[0].evidence[0].relation,'>');
+const jq=probes.find({target:'BRD4'});assert.equal(jq.length,1);assert.ok(jq[0].controls.some(c=>c.label==='(-)-JQ1'&&!c.matched));assert.equal(probes.find({target:'BRD4',requireMatchedControl:true}).length,0);assert.equal(probes.find({target:'BRD4',species:'Homo sapiens'}).length,0,'Unreported species is not assumed human');
+assert.equal(probes.find({target:'HTR2A'}).length,0,'A curated agonist must not automatically become a chemical probe');assert.ok(probes.candidates().every(p=>p.counterScreens.length===0));assert.ok(g[0].caveats.some(c=>c.text.includes('KDM5')));
+console.log('Probe finder: explicit source roles, graph identity, assay-scoped controls, censored values, species and missing counter-screen evidence passed');
