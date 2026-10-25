@@ -1,13 +1,14 @@
 {
   "schemaVersion": 1,
-  "records": 1,
-  "extraStructures": 1,
+  "records": 2,
+  "extraStructures": 2,
   "rdkitVersion": "2026.09.1",
   "inputSha256": {
+    "data/curated-reference-entries/control-gsk-j2.json": "7f03a2300162a92b1f1f1ff26f4072893600dd54ac4730e2f25f37792145b8c8",
     "data/curated-reference-entries/probe-jq1.json": "24bb4c09e01aa9f4d483908f3ea4d833c288028fc17a42dd88e9f2cf646cc104"
   },
   "librarySha256": "1de0c3fc593a6f8dd60f27309a6a2c501a699ccf781b3db8fad989752c05a2bd",
   "toolSha256": "18065110668ad5b1b2d6ba218b26e2f354551765fcbb8796e5ec342b64b78b29",
-  "dataSha256": "c5dde38009ad9f0c75775b7ddb843b827475473b3709d32aaf8a72a139cfb144",
-  "browserGraphsChecked": 1
+  "dataSha256": "959c57f0a179bf9680370191fc0ca877ade4d0f25fe766fed32c4f9e84e0efe3",
+  "browserGraphsChecked": 3
 }
