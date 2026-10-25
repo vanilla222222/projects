@@ -1,0 +1,12 @@
+'use strict';
+const assert=require('node:assert/strict'),path=require('node:path'),{pathToFileURL}=require('node:url'),{JSDOM,VirtualConsole}=require('jsdom');
+(async()=>{
+ const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(String(e)));const file=path.resolve(__dirname,'../library-inspector.html');
+ const dom=await JSDOM.fromFile(file,{url:pathToFileURL(file).href+'?reference=2C-B',resources:'usable',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:vc,beforeParse(w){w.HTMLElement.prototype.scrollIntoView=()=>{};w.URL.createObjectURL=()=> 'blob:fixture';w.URL.revokeObjectURL=()=>{};}});
+ try{if(dom.window.document.readyState!=='complete')await new Promise(r=>dom.window.addEventListener('load',r,{once:true}));const w=dom.window,d=w.document,ui=w.ReferenceResearchUI;assert.ok(ui,errors.join('\n'));
+  const original=ui.model.entries;ui.model.entries=[ui.model.byName.get('2C-B'),ui.model.byName.get('2C-C')];d.getElementById('structure-query').value=ui.model.entries[0].smiles;await w.ReferenceStructureUI.run();assert.equal(d.querySelectorAll('#structure-results .structure-hit').length,1);assert.ok(d.querySelector('#structure-results svg'));assert.ok(d.getElementById('structure-status').textContent.includes('2 scanned'));ui.model.entries=original;
+  w.ReferenceStructureUI.addAtom(50,100);w.ReferenceStructureUI.addAtom(100,100);d.getElementById('sketch-element').value='O';w.ReferenceStructureUI.addAtom(150,100);d.getElementById('sketch-use').click();assert.equal(w.ReferenceStructure.match(w.ReferenceStructure.prepare('CCO'),d.getElementById('structure-query').value).status,'match');
+  d.getElementById('structure-mode').value='substructure';d.getElementById('structure-mode').dispatchEvent(new w.Event('change'));assert.ok(d.getElementById('structure-stereo').disabled);assert.ok(!d.getElementById('structure-stereo').checked);
+  assert.deepEqual(errors,[]);console.log('Discovery DOM: structural search, atom highlights, connectivity sketch and explicit stereo controls passed');
+ }finally{dom.window.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

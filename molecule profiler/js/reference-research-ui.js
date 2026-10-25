@@ -11,7 +11,7 @@
  }
  function openDossier(name,{focus=true}={}){const d=model.dossier(name);if(!d)return false;const host=$('reference-dossier');host.replaceChildren();
   const title=el('h2',d.label);title.tabIndex=-1;host.append(el('span','COMPOUND DOSSIER'),title);detail('Stable library key',d.entry.name,host);
-  const picture=el('div');picture.className='research-structure';try{picture.innerHTML=depictSvg(buildMolecule(parseSmiles(d.entry.smiles)),{title:d.label+' — supplied structure'});}catch(_){picture.append(el('p','Depiction unavailable. Stored SMILES remains available below.'));}host.append(picture);
+  const picture=el('div');picture.className='research-structure';try{picture.innerHTML=depictSvg(buildMolecule(parseSmiles(d.entry.smiles)),{title:d.label+' — supplied structure'});}catch(_){picture.append(el('p','Depiction unavailable. Stored SMILES remains available below.'));}host.append(picture);const structureSearch=el('button','Search this structure');structureSearch.type='button';structureSearch.addEventListener('click',()=>document.dispatchEvent(new CustomEvent('reference:structure',{detail:{smiles:d.entry.smiles}})));host.append(structureSearch);
   for(const [label,value]of [['Formula',d.entry.formula],['Aliases',d.aliases.join('; ')]])detail(label,value,host);
   const graph=el('details');graph.append(el('summary','Stored structure (SMILES)'),el('code',d.entry.smiles));host.append(graph);
   const sourceLinks=new Map();if(d.identity?.sourceUrl)sourceLinks.set(d.identity.sourceUrl,'Identity source');

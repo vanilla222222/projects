@@ -1,0 +1,11 @@
+'use strict';
+const assert=require('node:assert/strict');for(const f of ['smiles','mol','stereo','fingerprints'])Object.assign(global,require('../js/'+f));global.Pharmacology=require('../js/pharmacology');const chem=require('../js/reference-structure');
+assert.equal(chem.match(chem.prepare('CCO'),'OCC').status,'match');assert.equal(chem.match(chem.prepare('CCO'),'CC[O-]').status,'no-match');assert.equal(chem.match(chem.prepare('[13CH3]CO'),'CCO').status,'no-match');
+const a='N[C@@H](C)C(=O)O',b='N[C@H](C)C(=O)O';assert.equal(chem.match(chem.prepare(a),b).status,'no-match');assert.equal(chem.match(chem.prepare(a,{stereo:false}),b).status,'match');
+assert.equal(chem.match(chem.prepare('C(=O)N',{mode:'substructure',stereo:false}),'CC(=O)NCC').status,'match');assert.equal(chem.match(chem.prepare('C(=O)N',{mode:'substructure',stereo:false}),'CC(=O)OCC').status,'no-match');
+assert.equal(chem.match(chem.prepare('c1ccccc1',{mode:'substructure',stereo:false}),'Cc1ccccc1').mapping.length,6);
+assert.equal(chem.mapping(chem.parse('CC'),chem.parse('CCC'),{budget:0}).status,'unresolved');assert.throws(()=>chem.prepare('C1CC'));assert.throws(()=>chem.prepare('CC',{mode:'substructure',stereo:true}));
+assert.equal(chem.match(chem.prepare('CCO',{mode:'similarity'}),'OCC').score,1);
+const sketch=chem.sketchSmiles([{element:'C'},{element:'C'},{element:'O'}],[{a:0,b:1,order:1},{a:1,b:2,order:1}]);assert.equal(chem.match(chem.prepare('CCO'),sketch).status,'match');
+const ring=chem.sketchSmiles(Array.from({length:6},()=>({element:'C'})),Array.from({length:6},(_,i)=>({a:i,b:(i+1)%6,order:1})));assert.equal(chem.match(chem.prepare('C1CCCCC1'),ring).status,'match');
+(async()=>{const result=await chem.search([{name:'a',smiles:'CCO'},{name:'b',smiles:'OCC'},{name:'bad',smiles:'C1'}],'CCO');assert.equal(result.total,2);assert.equal(result.unresolved,1);const cancelled=await chem.search([{name:'a',smiles:'CCO'}],'CCO',{}, {cancelled:()=>true});assert.ok(cancelled.cancelled);console.log('Structure search: charge/isotope/stereo identity, atom mappings, aromatic substructure, similarity, sketches, unresolved budgets and cancellation passed');})().catch(e=>{console.error(e);process.exitCode=1;});
