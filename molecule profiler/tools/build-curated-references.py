@@ -56,6 +56,11 @@ def build():
                     src=source(e['sourceFile'],e['sourceSha256'])
                     assert e['sourceRecord'] in src.get('interactions',src.get('rows',[])),'Evidence row absent from pinned source'
                     if e['kind']=='source_classification':assert e['sourceRecord']['Target Species']=='Human'
+                if e['kind']=='source_classification' and e.get('action'):
+                    raw=e['sourceRecord'];actions={'Agonist':'agonist','Full agonist':'agonist','Partial agonist':'partial_agonist','Antagonist':'antagonist'}
+                    assert e['sourceProvider']=='IUPHAR/BPS Guide to PHARMACOLOGY' and e['species']=='Homo sapiens'
+                    assert e['action']==actions[raw['Action']] and e['receptorId']==raw['Target Gene Symbol']
+                    assert c['identitySource']['sourceLigand']['Ligand ID']==raw['Ligand ID']
                 if e['kind']=='functional_assay':
                     assert e['receptorId'] and e['action'] in {'agonist','partial_agonist'} and e['assay'] and e['species']
                     if 'value' in e:assert e['value']>0 and e['unit']=='nM' and e['relation']=='='
@@ -98,11 +103,21 @@ def build():
                 out['tags'].update('Curated collection: '+x for x in r['collections'])
                 if r.get('panel'):out['tags'].add('Curated panel: '+r['panel']['gene'])
                 for evidence in r['evidence']:
+                    if evidence['kind']=='source_classification' and evidence.get('action'):
+                        action=evidence['action'].replace('_',' ').capitalize()
+                        out['tags'].update(['Evidence: Curated action classification','Action: '+action,'Receptor: '+evidence['receptorId'],'Receptor action: '+evidence['receptorId']+' · '+action])
                     if evidence['kind']=='functional_assay':
                         action=evidence['action'].replace('_',' ').capitalize()
                         if evidence['species']=='Homo sapiens':out['tags'].update(['Evidence: Functional assay','Action: '+action,'Receptor: '+evidence['receptorId'],'Receptor action: '+evidence['receptorId']+' · '+action])
                         else:out['tags'].add('Evidence: Functional assay (species unresolved)')
                 if all(e['kind']=='identity_reference' for e in r['evidence']):out['tags'].add('Evidence: Identity only')
+    for r in records:
+        for c in r['compounds']:
+            for name in c.get('legacyNamesakeGraphConflicts',[]):
+                legacy=next(e for e in library if e['name']==name)
+                assert graph(legacy['smiles'])!=graph(c['smiles']),'Resolved namesake conflict requires review'
+                out=entries[name];out['librarySmiles']=legacy['smiles'];out['tags'].add('Evidence: Identity conflict')
+                out.setdefault('identityConflicts',[]).append({'curatedReferenceId':r['id'],'sourceName':c['sourceName'],'sourceUrl':c['sourceUrl']})
     # New structural families apply to the entire composed library, not just
     # newly curated records. Existing historical tag snapshots remain intact.
     taxonomy=runpy.run_path(str(ROOT/'tools/build-library-tags.py'))

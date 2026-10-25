@@ -123,6 +123,76 @@
         "Mescaline",
         "Methamphetamine"
       ]
+    },
+    {
+      "name": "Aryloxypropanolamines",
+      "tag": "Family motif: Aryloxypropanolamines",
+      "smarts": "a[OX2][CH2][CX4]([OX2H1])[CH2][NX3,NX4+;!$(N-C=O)]",
+      "description": "Aromatic ether linked to a three-carbon amino-alcohol chain; attachment and alcohol position are explicit.",
+      "positiveNames": [
+        "Atenolol",
+        "Propranolol"
+      ],
+      "negativeNames": [
+        "Salbutamol",
+        "Diphenhydramine"
+      ]
+    },
+    {
+      "name": "Imidazolines",
+      "tag": "Family motif: Imidazolines",
+      "smarts": "[NX3]1[CX4][CX4][NX2]=[CX3]1",
+      "description": "A 4,5-dihydroimidazole ring; aromatic imidazoles are excluded.",
+      "positiveNames": [
+        "Clonidine",
+        "naphazoline"
+      ],
+      "negativeNames": [
+        "Histamine",
+        "Pilocarpine"
+      ]
+    },
+    {
+      "name": "Tetrahydrobenzazepines",
+      "tag": "Family motif: Tetrahydrobenzazepines",
+      "smarts": "[NX3,NX4+]1[CX4][CX4]c2ccccc2[CX4][CX4]1",
+      "description": "A saturated seven-membered nitrogen ring fused to benzene, with the nitrogen separated from the fusion atoms by two carbons on each side.",
+      "positiveNames": [
+        "Lorcaserin",
+        "SCH 23390"
+      ],
+      "negativeNames": [
+        "Dopamine",
+        "Diazepam"
+      ]
+    },
+    {
+      "name": "Phenothiazines",
+      "tag": "Family motif: Phenothiazines",
+      "smarts": "c1ccc2c(c1)[SX2]c1ccccc1[NX3]2",
+      "description": "Dibenzofused six-membered thiazine core; excludes the seven-membered dibenzothiazepine core.",
+      "positiveNames": [
+        "Chlorpromazine",
+        "Promethazine"
+      ],
+      "negativeNames": [
+        "Quetiapine",
+        "Haloperidol"
+      ]
+    },
+    {
+      "name": "Aminobutyrophenones",
+      "tag": "Family motif: Aminobutyrophenones",
+      "smarts": "c1ccccc1[CX3](=O)[CH2][CH2][CH2][NX3,NX4+;!$(N-C=O)]",
+      "description": "A phenyl ketone joined through three methylenes to a non-amide amine; a structural subset of butyrophenones.",
+      "positiveNames": [
+        "Haloperidol",
+        "Benperidol"
+      ],
+      "negativeNames": [
+        "Fluoxetine",
+        "Diazepam"
+      ]
     }
   ]
 }

@@ -71,14 +71,14 @@
     if(!curated.length)detail.append(node('p','No source-backed ligand evidence has been curated here yet. Listed ligand names are not automatically agonists or antagonists.','muted'));
     else {
       const disclosure=node('details');disclosure.append(node('summary','View '+curated.length+' source-backed ligand entries'));
-      const ul=node('ul');curated.forEach(a=>{const li=node('li');li.append(node('strong',referenceLabel(a.ligandName)+' — '+(a.action==='binding_only'?'binding evidence; functional action unassigned':a.action.replace(/_/g,' '))),
+      const ul=node('ul');curated.forEach(a=>{const li=node('li');li.append(node('strong',referenceLabel(a.ligandName)+' — '+(a.action==='binding_only'?'binding evidence; functional action unassigned':a.action.replace(/_/g,' '))+(a.evidenceType==='source_classification'?' · curated action classification':'')),
         node('p',a.species+' · '+a.assay+' · '+a.endpoint+(a.note?' · '+a.note:'')),external('Evidence source',a.sourceUrl));if(a.documentUrl)li.append(node('span',' · '),external('Source document',a.documentUrl));ul.append(li);});disclosure.append(ul);detail.append(disclosure);
     }
     detail.append(node('h3','Sources and evidence scope'));
     const sources=node('ul');r.sources.forEach(s=>{const li=node('li');li.append(external(s.label,s.url),node('p',s.scope,'muted'));sources.append(li);});
-    detail.append(sources,node('p','Educational summaries have not undergone a systematic clinical evidence review. No potency, dose, compound-specific activity or safety conclusion is assigned.','muted'));
+    detail.append(sources,node('p','Receptor summaries describe general biology. Compound-specific actions above retain the scope of their cited evidence.','muted'));
     const exportButton=node('button','Export this receptor scaffold');exportButton.type='button';exportButton.addEventListener('click',()=>download('receptor-'+r.id+'-scaffold.json',ReceptorCatalog.createHandoff([r],targets)));detail.append(exportButton);
-    if(curated.length){const evidenceButton=node('button','Export source-linked ligand evidence');evidenceButton.type='button';evidenceButton.addEventListener('click',()=>download('receptor-'+r.id+'-ligand-evidence.json',{schemaVersion:1,receptorId:r.id,source:typeof RECEPTOR_BINDING_SOURCE!=='undefined'?RECEPTOR_BINDING_SOURCE:null,scope:'Source-linked assay observations; functional actions remain unassigned for binding-only records.',ligands:curated}));detail.append(evidenceButton);}
+    if(curated.length){const evidenceButton=node('button','Export source-linked ligand evidence');evidenceButton.type='button';evidenceButton.addEventListener('click',()=>download('receptor-'+r.id+'-ligand-evidence.json',{schemaVersion:1,receptorId:r.id,source:typeof RECEPTOR_BINDING_SOURCE!=='undefined'?RECEPTOR_BINDING_SOURCE:null,scope:'Source-linked assay observations and explicitly labeled curated action classifications; functional actions remain unassigned for binding-only records.',ligands:curated}));detail.append(evidenceButton);}
     if(focus)detail.focus();
     renderList();
   }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "records": 59,
+  "records": 78,
   "extraStructures": 27,
   "rdkitVersion": "2026.09.1",
   "inputSha256": {
@@ -42,6 +42,25 @@
     "data/curated-reference-entries/family-001-29642.json": "b96e468e78a4d8fd0c6de102bfba197a2b677764521a2d96bbb85f61393b92c2",
     "data/curated-reference-entries/family-001-32512.json": "1a2435c9a18c44850c2dde6c0311fbd8e6fbe1a7f861c3b26538fbe690d8e9e0",
     "data/curated-reference-entries/family-001-37456.json": "6a64f7a20bba391a22ee59c3dc99455b03f8f4577ac86414d1bade8144a2268d",
+    "data/curated-reference-entries/family-002-124-adra2a.json": "8cd7e3db1c0b87fe4ac7a52d724089fcd6dbc25eb9fd6582f8f90f9f19b54e49",
+    "data/curated-reference-entries/family-002-204-drd2.json": "26bcdabe8a5a00cbd927b3c55261e490d98991c3e63e40feda89152bebb64617",
+    "data/curated-reference-entries/family-002-209-drd2.json": "95a2a816bf21960caf55ec3eda47b366bf02d663b685e942dd6ee78bfc5b4dde",
+    "data/curated-reference-entries/family-002-516-adra2a.json": "993d859d8e1a98d50b3e1ab02db3ea51db5eaeee37471899bb7f33a453f7fec6",
+    "data/curated-reference-entries/family-002-520-adra2a.json": "8845363f395be9e13c6c2098eae7a60d2711da4bab6ff5e50dc58eeb8666d8e5",
+    "data/curated-reference-entries/family-002-548-adrb1.json": "1fcddf979c65b1e4fff4be8926770466407c4b0bf653b6083eb7a95fa366c62f",
+    "data/curated-reference-entries/family-002-549-adrb1.json": "7f31cef1b2dc9113a989e3c045e78aab9ec5b229f873021068fac34243714edd",
+    "data/curated-reference-entries/family-002-5509-adra2a.json": "9a61880898d3229b6d003a5c0bad4e223c36c00b65cd82844e20e3e2a9148bf0",
+    "data/curated-reference-entries/family-002-553-adrb1.json": "36c41c7e54c9fbc417025718e0f06fa27c0d5e603964ee45b9ab1a52f5b15fd2",
+    "data/curated-reference-entries/family-002-564-adrb2.json": "fa0aaa5f1d3e0003d1a1f52868c4ecfbfb3e2f4305dd30ae8a35469f58277f22",
+    "data/curated-reference-entries/family-002-7282-hrh1.json": "55254f1c932114fdd4aa78a531ab4a27d23d4c0f7e5294d59bab4ce28f353ab9",
+    "data/curated-reference-entries/family-002-83-drd2.json": "eb651a67708e920ac35a23636747ae87ac73290b542dcc58a425400ad2788dcc",
+    "data/curated-reference-entries/family-002-86-drd2.json": "bfb4c7acf6bbc82baf9b37de8661419c7e1eb75595009a4a1983a8d35574e055",
+    "data/curated-reference-entries/family-002-92-htr2a.json": "b655390867cd443a7a1128f1fbb71d7444ccfccbbe75e1e329fabc24e63edd0b",
+    "data/curated-reference-entries/family-002-9215-drd2.json": "e3a437400741cc5133f041f0a1deebb75e6d0da0c3d7809c47bcbb14ea3fc3ff",
+    "data/curated-reference-entries/family-002-935-drd1.json": "c3e814da7b9810896ed530c8a6d300ba98e64dd4637962d15d8e781f274c6389",
+    "data/curated-reference-entries/family-002-939-drd1.json": "532b8e856234a597ede5b63d3da66242e99237d047fb8760d29e880b6e392d22",
+    "data/curated-reference-entries/family-002-943-drd1.json": "3a30389fdbc649cf08b547e9e0431d39f378598ed5607f0e4b52da0d0541161d",
+    "data/curated-reference-entries/family-002-99-drd4.json": "ac97cb710181ebdbf52005925ddeb63211291f63c881d38703c3831e468202ef",
     "data/curated-reference-entries/iuphar-10454-taar1.json": "3dd20850b3599327fcdc0a91c78cce10e51b31829427c9fcc69bbcb314c7f872",
     "data/curated-reference-entries/iuphar-1369-grm5.json": "af55b194b6c52eddce8dbdcf10ca623349c12f57811c232d66396eb9f5fce90f",
     "data/curated-reference-entries/iuphar-1394-grm2.json": "6d1146cd8ae7241aa698af5bf5342aea71fd4e15680aa3ff90f5b42448700a15",
@@ -96,7 +115,7 @@
     }
   ],
   "familySourceSha256": {
-    "data/family-definitions.json": "6f8f62982c1c6875256dbc215a6d489d51a763754357fec1f50a61bc89f783bb",
+    "data/family-definitions.json": "5578a9c848b605f3add888196db244c9e4c9d1d2a8587ae240720cde285b15c7",
     "tools/build-library-tags.py": "4942f6ce2cf182f50606611014375edae102f2a50623a1b3e62be9e7857e4534",
     "tools/library-taxonomy.py": "a577bed4d107158eb152cd0b7a3d05d0df53584f370ad07be393147a477ab8b7",
     "tools/library-expansion-50.py": "1c7e05d9267af49bcf25ff3fc90f114b394a295ab3dee561954252e26bc0d60a"
@@ -189,10 +208,50 @@
       "currentEntries": 207,
       "newStructures": 0,
       "distinctIsomericGraphs": 207
+    },
+    {
+      "name": "Aryloxypropanolamines",
+      "tag": "Family motif: Aryloxypropanolamines",
+      "baseEntries": 101,
+      "currentEntries": 101,
+      "newStructures": 0,
+      "distinctIsomericGraphs": 101
+    },
+    {
+      "name": "Imidazolines",
+      "tag": "Family motif: Imidazolines",
+      "baseEntries": 82,
+      "currentEntries": 82,
+      "newStructures": 0,
+      "distinctIsomericGraphs": 82
+    },
+    {
+      "name": "Tetrahydrobenzazepines",
+      "tag": "Family motif: Tetrahydrobenzazepines",
+      "baseEntries": 17,
+      "currentEntries": 18,
+      "newStructures": 1,
+      "distinctIsomericGraphs": 18
+    },
+    {
+      "name": "Phenothiazines",
+      "tag": "Family motif: Phenothiazines",
+      "baseEntries": 93,
+      "currentEntries": 93,
+      "newStructures": 0,
+      "distinctIsomericGraphs": 93
+    },
+    {
+      "name": "Aminobutyrophenones",
+      "tag": "Family motif: Aminobutyrophenones",
+      "baseEntries": 59,
+      "currentEntries": 59,
+      "newStructures": 0,
+      "distinctIsomericGraphs": 59
     }
   ],
   "librarySha256": "1de0c3fc593a6f8dd60f27309a6a2c501a699ccf781b3db8fad989752c05a2bd",
-  "toolSha256": "8fc48c42cd7f240d63b3b29c8d8b57bd7b623618cc800837dec2f6415a8920a0",
-  "dataSha256": "567954f549d16f7be549c361e85ed0258a3ec091d53e65bcce108ed285da1dc3",
-  "browserGraphsChecked": 64
+  "toolSha256": "36b74ef6382a0823b26e6f1479c9ce18bb55093372d95e2bbdbc3ac0d326d0d8",
+  "dataSha256": "90b0084bb7b305b6dea8de3faf4dc9485105757645e50afe6fbd89bfe5a0d319",
+  "browserGraphsChecked": 83
 }

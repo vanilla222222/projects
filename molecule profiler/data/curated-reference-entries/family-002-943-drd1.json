@@ -1,0 +1,131 @@
+{
+  "id": "family-002-943-drd1",
+  "title": "SCH-23390 — DRD1 curated action",
+  "collections": [
+    "Named family pharmacology",
+    "Tetrahydrobenzazepines references"
+  ],
+  "compounds": [
+    {
+      "name": "SCH-23390",
+      "sourceName": "SCH-23390",
+      "smiles": "CN1CCc2cc(Cl)c(O)cc2C(c2ccccc2)C1",
+      "formula": "C17H18ClNO",
+      "inchiKey": "GOTMKOSCLKVOGG-UHFFFAOYSA-N",
+      "sourceUrl": "https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId=943",
+      "aliases": [
+        "SCH 23388",
+        "SCH23390"
+      ],
+      "role": "Human DRD1 antagonist (curated source classification)",
+      "identitySource": {
+        "provider": "IUPHAR/BPS Guide to PHARMACOLOGY",
+        "license": "CC BY-SA 4.0",
+        "sourceFile": "validation/sources/receptor-actions-iuphar.json",
+        "sourceSha256": "ae233a073c2159c5c62b3e8a77c26a8f28f5ba94d9127b456112270f368f31f4",
+        "sourceLigand": {
+          "Ligand ID": "943",
+          "Name": "SCH-23390",
+          "Species": "",
+          "Type": "Synthetic organic",
+          "Approved": "",
+          "Withdrawn": "",
+          "Labelled": "",
+          "Radioactive": "",
+          "PubChem SID": "135651025",
+          "PubChem CID": "5018",
+          "UniProt ID": "",
+          "Ensembl ID": "",
+          "ChEMBL ID": "CHEMBL13668",
+          "Ligand Subunit IDs": "",
+          "Ligand Subunit Name": "",
+          "Ligand Subunit UniProt IDs": "",
+          "Ligand Subunit Ensembl IDs": "",
+          "IUPAC name": "7-chloro-3-methyl-1-phenyl-1,2,4,5-tetrahydro-3-benzazepin-8-ol",
+          "INN": "",
+          "Synonyms": "SCH 23388|SCH23390",
+          "SMILES": "CN1CCc2c(C(C1)c1ccccc1)cc(c(c2)Cl)O",
+          "InChIKey": "GOTMKOSCLKVOGG-UHFFFAOYSA-N",
+          "InChI": "InChI=1S/C17H18ClNO/c1-19-8-7-13-9-16(18)17(20)10-14(13)15(11-19)12-5-3-2-4-6-12/h2-6,9-10,15,20H,7-8,11H2,1H3",
+          "GtoImmuPdb": "",
+          "GtoMPdb": "",
+          "Antibacterial": ""
+        }
+      },
+      "legacyNamesakeGraphConflicts": [
+        "SCH-23390"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "source_classification",
+      "receptorId": "DRD1",
+      "target": "D1 receptor",
+      "action": "antagonist",
+      "species": "Homo sapiens",
+      "sourceClassification": "Antagonist / Antagonist",
+      "sourceProvider": "IUPHAR/BPS Guide to PHARMACOLOGY",
+      "sourceUrl": "https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId=943",
+      "sourceFile": "validation/sources/receptor-actions-iuphar.json",
+      "sourceSha256": "ae233a073c2159c5c62b3e8a77c26a8f28f5ba94d9127b456112270f368f31f4",
+      "sourceRecord": {
+        "Target": "D<sub>1</sub> receptor",
+        "Target ID": "214",
+        "Target Subunit IDs": "",
+        "Target Gene Symbol": "DRD1",
+        "Target UniProt ID": "P21728",
+        "Target Ensembl Gene ID": "ENSG00000184845",
+        "Target Ligand": "",
+        "Target Ligand ID": "",
+        "Target Ligand Subunit IDs": "",
+        "Target Ligand Gene Symbol": "",
+        "Target Ligand UniProt ID": "",
+        "Target Ligand Ensembl Gene ID": "",
+        "Target Ligand PubChem SID": "",
+        "Target Species": "Human",
+        "Ligand ID": "943",
+        "Ligand": "SCH-23390",
+        "Ligand Type": "Synthetic organic",
+        "Ligand Subunit IDs": "",
+        "Ligand Gene Symbol": "",
+        "Ligand Species": "",
+        "Ligand PubChem SID": "135651025",
+        "Approved": "false",
+        "Type": "Antagonist",
+        "Action": "Antagonist",
+        "Action comment": "",
+        "Selectivity": "Family selective",
+        "Endogenous": "false",
+        "Primary Target": "false",
+        "concentration Range": "",
+        "Affinity Units": "pKi",
+        "Affinity High": "9.5",
+        "Affinity Median": "",
+        "Affinity Low": "7.4",
+        "Original Affinity Units": "-",
+        "Original Affinity Low nm": "",
+        "Original Affinity Median nm": "",
+        "Original Affinity High nm": "",
+        "Original Affinity Relation": "=",
+        "Assay Description": "",
+        "Receptor Site": "",
+        "Ligand Context": "",
+        "PubMed ID": "1826762|7525564",
+        "Webpage URLs": "",
+        "Patent Numbers": ""
+      },
+      "assay": "Curated IUPHAR action classification; selected row does not establish a new functional assay measurement",
+      "endpoint": "Source action: Antagonist",
+      "context": "Action is the published database classification for this exact ligand, human target and source row. Raw affinity fields do not establish functional potency or efficacy."
+    }
+  ],
+  "panel": {
+    "gene": "DRD1",
+    "name": "D1 receptor",
+    "family": "GPCR"
+  },
+  "reviewedDate": "2026-10-25",
+  "familyDefinition": "Tetrahydrobenzazepines",
+  "note": "IUPHAR/BPS Guide to PHARMACOLOGY \"# GtoPdb Version: 2026.3.1 - published: 2026-10-12\" (CC BY-SA 4.0), adapted selection. Structure and full InChIKey are source-provided. Human target action is a curated database classification, separate from a directly measured functional observation. Family membership alone never transfers action, selectivity or efficacy. Source stereo is retained, including unspecified stereo. Legacy namesakes with different graphs (SCH-23390) do not receive this record or action assignment."
+}

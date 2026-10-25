@@ -22,6 +22,10 @@ async function page(file,query=''){
   assert.ok(d.getElementById('catalog-study-coverage').textContent.includes('7/7'));
   button.click();const twoC=[...d.querySelectorAll('#catalog-families button')].find(b=>b.dataset.tag==='Curated collection: 2C measured pharmacology');assert.ok(twoC);twoC.click();
   assert.equal(Number(d.getElementById('catalog-result-total').textContent),30);
+  twoC.click();const classified=[...d.querySelectorAll('#catalog-families button')].find(b=>b.dataset.tag==='Evidence: Curated action classification');assert.ok(classified);classified.click();
+  assert.equal(Number(d.getElementById('catalog-result-total').textContent),19);
+  const family=[...d.querySelectorAll('#catalog-families button')].find(b=>b.dataset.tag==='Family motif: Aminobutyrophenones');assert.ok(family);family.click();
+  assert.equal(Number(d.getElementById('catalog-result-total').textContent),4);
   assert.deepEqual(p.errors,[]);
  }finally{p.dom.window.close();}
  p=await page('index.html','?curated=prodrug-fosphenytoin&compound=0');
@@ -40,6 +44,9 @@ async function page(file,query=''){
   d.getElementById('smiles-input').value='2C source, '+twoC.compounds[0].smiles;d.getElementById('run').click();await until(()=>w.PharmacologyUI.getSnapshot()?.inputSmiles===twoC.compounds[0].smiles);
   s=w.PharmacologyUI.getSnapshot();const evidence=s.curatedReferences.find(r=>r.id===twoC.id).evidence[0];assert.equal(evidence.action,'partial_agonist');assert.equal(evidence.value,460);assert.equal(evidence.efficacy.value,35);
   assert.ok(d.getElementById('curated-reference-evidence').textContent.includes('partial agonist'));
+  const classified=w.CURATED_REFERENCES.records.find(r=>r.id.startsWith('family-002-')&&r.compounds[0].sourceName==='promethazine');
+  d.getElementById('smiles-input').value='source action, '+classified.compounds[0].smiles;d.getElementById('run').click();await until(()=>w.PharmacologyUI.getSnapshot()?.inputSmiles===classified.compounds[0].smiles);
+  s=w.PharmacologyUI.getSnapshot();const action=s.curatedReferences.find(r=>r.id===classified.id).evidence[0];assert.equal(action.kind,'source_classification');assert.equal(action.receptorId,'HRH1');assert.equal(action.action,'antagonist');assert.equal(action.value,undefined);
   assert.deepEqual(p.errors,[]);
  }finally{p.dom.window.close();}
  console.log('Curated DOM: collection filters, working known-reference links, diversity summary, exact prodrug display/export and enantiomer evidence separation passed');

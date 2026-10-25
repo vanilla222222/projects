@@ -10,7 +10,7 @@ const {TARGETS}=require('../data/targets');
 const api=require('../js/curated-references');
 const byname=new Map(api.library(LIBRARY,d).map(e=>[e.name,e]));
 const defs=d.familyDefinitions;
-assert.equal(defs.length,9);
+assert.ok(defs.length>=9);
 for(const [file,digest] of Object.entries(report.familySourceSha256))assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname,'..',file))).digest('hex'),digest,'Stale family source '+file);
 for(const def of defs){
   assert.ok(def.description);

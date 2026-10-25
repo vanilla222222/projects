@@ -56,6 +56,13 @@
       interpretation:'Sourced profiles count non-stale, linked evidence with audited graph-group keys. Legacy names alone do not establish sourced coverage. Profiles are not independent scaffolds or predictive validation.',
       rows:rows.sort((a,b)=>b.remaining-a.remaining||a.id.localeCompare(b.id))};
   }
+  function validSourceClassification(a) {
+    const c=a.classification,raw=c?.sourceRecord,actions={'Agonist':'agonist','Full agonist':'agonist','Partial agonist':'partial_agonist','Antagonist':'antagonist'};
+    if(a.evidenceType!=='source_classification'||c?.provider!=='IUPHAR/BPS Guide to PHARMACOLOGY'||!/^[a-f0-9]{64}$/.test(c.sourceSnapshotSha256||'')||!raw)return false;
+    if(a.species!=='Homo sapiens'||raw['Target Species']!=='Human'||raw['Target Gene Symbol']!==a.receptorId||!actions[raw.Action]||actions[raw.Action]!==a.action)return false;
+    if(!/^\d+$/.test(c.ligandId||'')||!/^\d+$/.test(c.targetId||'')||raw['Ligand ID']!==c.ligandId||raw['Target ID']!==c.targetId)return false;
+    try {const u=new URL(a.sourceUrl);return u.protocol==='https:'&&u.hostname==='www.guidetopharmacology.org'&&u.pathname==='/GRAC/LigandDisplayForward'&&u.searchParams.get('ligandId')===c.ligandId;}catch(_){return false;}
+  }
   function validateAnnotations(annotations, receptors, library) {
     const ids=new Set(receptors.map(r=>r.id)), names=new Set((library||[]).map(r=>r.name));
     const errors=[];
@@ -73,7 +80,9 @@
       if(['pam','nam'].includes(a.action) && !a.probeLigand)add('Allosteric modulation requires the probe ligand');
       if(a.action==='biased' && (!a.referenceLigand || !Array.isArray(a.pathways) || a.pathways.length<2))add('Biased signalling requires a reference ligand and compared pathways');
       if(a.action==='binding_only' && a.evidenceType!=='binding')add('binding_only requires binding evidence');
-      if(a.action!=='binding_only' && a.evidenceType!=='functional')add('An action requires functional evidence; affinity alone is insufficient');
+      const classified=validSourceClassification(a);
+      if(a.evidenceType==='source_classification'&&!classified)add('Curated classification must match the source action, human target, ligand IDs, snapshot and source URL');
+      if(a.action!=='binding_only' && a.evidenceType!=='functional'&&!classified)add('An action requires functional evidence or a verified curated classification; affinity alone is insufficient');
     });
     return errors;
   }
@@ -90,11 +99,11 @@
         'Extend an existing target row when linked; do not create a duplicate for a legacy alias.',
         'Existing target ligand names do not establish agonism, antagonism, potency or selectivity.',
         'Keep empty scaffolds out of target ranking until independently sourced ligands are curated.',
-        'Action annotations require a direct source URL, species, assay and endpoint; affinity alone supports binding_only.',
+        'Action annotations require functional evidence or an explicitly labeled, source-matched curated action classification; affinity alone supports binding_only.',
         'Gene symbols, legacy subunit mappings and receptor assemblies are different levels of identity.'
       ],actionVocabulary:ACTIONS.slice(),
       optionalAnnotationFields:['probeLigand','referenceLigand','pathways','note'],
-      annotationFields:['receptorId','ligandName','action','evidenceType','sourceUrl','species','assay','endpoint','note'],
+      annotationFields:['receptorId','ligandName','action','evidenceType','sourceUrl','species','assay','endpoint','note','classification'],
       receptors:receptors.map(r=>({id:r.id,name:r.name,genes:r.genes,kind:r.kind,family:r.family,
         sources:r.sources,caution:r.caution,legacyTargetAliases:r.legacyTargetAliases||[],
         existingTargets:links(r,targets).map(x=>({gene:x.target.gene,mapping:x.mapping})),

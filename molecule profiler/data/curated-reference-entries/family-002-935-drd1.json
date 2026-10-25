@@ -1,0 +1,133 @@
+{
+  "id": "family-002-935-drd1",
+  "title": "SKF-38393 — DRD1 curated action",
+  "collections": [
+    "Named family pharmacology",
+    "Tetrahydrobenzazepines references"
+  ],
+  "compounds": [
+    {
+      "name": "SKF-38393",
+      "sourceName": "SKF-38393",
+      "smiles": "Oc1cc2c(cc1O)C(c1ccccc1)CNCC2",
+      "formula": "C16H17NO2",
+      "inchiKey": "JUDKOGFHZYMDMF-UHFFFAOYSA-N",
+      "sourceUrl": "https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId=935",
+      "aliases": [
+        "R(+)SKF38393",
+        "SKF 38393",
+        "SKF-38,393",
+        "SKF38393"
+      ],
+      "role": "Human DRD1 partial agonist (curated source classification)",
+      "identitySource": {
+        "provider": "IUPHAR/BPS Guide to PHARMACOLOGY",
+        "license": "CC BY-SA 4.0",
+        "sourceFile": "validation/sources/receptor-actions-iuphar.json",
+        "sourceSha256": "ae233a073c2159c5c62b3e8a77c26a8f28f5ba94d9127b456112270f368f31f4",
+        "sourceLigand": {
+          "Ligand ID": "935",
+          "Name": "SKF-38393",
+          "Species": "",
+          "Type": "Synthetic organic",
+          "Approved": "",
+          "Withdrawn": "",
+          "Labelled": "",
+          "Radioactive": "",
+          "PubChem SID": "135651048",
+          "PubChem CID": "1242",
+          "UniProt ID": "",
+          "Ensembl ID": "",
+          "ChEMBL ID": "CHEMBL286080",
+          "Ligand Subunit IDs": "",
+          "Ligand Subunit Name": "",
+          "Ligand Subunit UniProt IDs": "",
+          "Ligand Subunit Ensembl IDs": "",
+          "IUPAC name": "1-phenyl-2,3,4,5-tetrahydro-1H-3-benzazepine-7,8-diol",
+          "INN": "",
+          "Synonyms": "R(+)SKF38393|SKF 38393|SKF-38,393|SKF38393",
+          "SMILES": "Oc1cc2CCNCC(c2cc1O)c1ccccc1",
+          "InChIKey": "JUDKOGFHZYMDMF-UHFFFAOYSA-N",
+          "InChI": "InChI=1S/C16H17NO2/c18-15-8-12-6-7-17-10-14(13(12)9-16(15)19)11-4-2-1-3-5-11/h1-5,8-9,14,17-19H,6-7,10H2",
+          "GtoImmuPdb": "",
+          "GtoMPdb": "",
+          "Antibacterial": ""
+        }
+      },
+      "legacyNamesakeGraphConflicts": [
+        "SKF-38393"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "source_classification",
+      "receptorId": "DRD1",
+      "target": "D1 receptor",
+      "action": "partial_agonist",
+      "species": "Homo sapiens",
+      "sourceClassification": "Agonist / Partial agonist",
+      "sourceProvider": "IUPHAR/BPS Guide to PHARMACOLOGY",
+      "sourceUrl": "https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId=935",
+      "sourceFile": "validation/sources/receptor-actions-iuphar.json",
+      "sourceSha256": "ae233a073c2159c5c62b3e8a77c26a8f28f5ba94d9127b456112270f368f31f4",
+      "sourceRecord": {
+        "Target": "D<sub>1</sub> receptor",
+        "Target ID": "214",
+        "Target Subunit IDs": "",
+        "Target Gene Symbol": "DRD1",
+        "Target UniProt ID": "P21728",
+        "Target Ensembl Gene ID": "ENSG00000184845",
+        "Target Ligand": "",
+        "Target Ligand ID": "",
+        "Target Ligand Subunit IDs": "",
+        "Target Ligand Gene Symbol": "",
+        "Target Ligand UniProt ID": "",
+        "Target Ligand Ensembl Gene ID": "",
+        "Target Ligand PubChem SID": "",
+        "Target Species": "Human",
+        "Ligand ID": "935",
+        "Ligand": "SKF-38393",
+        "Ligand Type": "Synthetic organic",
+        "Ligand Subunit IDs": "",
+        "Ligand Gene Symbol": "",
+        "Ligand Species": "",
+        "Ligand PubChem SID": "135651048",
+        "Approved": "false",
+        "Type": "Agonist",
+        "Action": "Partial agonist",
+        "Action comment": "",
+        "Selectivity": "Family selective",
+        "Endogenous": "false",
+        "Primary Target": "false",
+        "concentration Range": "",
+        "Affinity Units": "pKi",
+        "Affinity High": "6.800000190734863",
+        "Affinity Median": "",
+        "Affinity Low": "6.199999809265137",
+        "Original Affinity Units": "Ki",
+        "Original Affinity Low nm": "631.0",
+        "Original Affinity Median nm": "",
+        "Original Affinity High nm": "158.0",
+        "Original Affinity Relation": "=",
+        "Assay Description": "",
+        "Receptor Site": "",
+        "Ligand Context": "",
+        "PubMed ID": "1826762|7525564",
+        "Webpage URLs": "",
+        "Patent Numbers": ""
+      },
+      "assay": "Curated IUPHAR action classification; selected row does not establish a new functional assay measurement",
+      "endpoint": "Source action: Partial agonist",
+      "context": "Action is the published database classification for this exact ligand, human target and source row. Raw affinity fields do not establish functional potency or efficacy."
+    }
+  ],
+  "panel": {
+    "gene": "DRD1",
+    "name": "D1 receptor",
+    "family": "GPCR"
+  },
+  "reviewedDate": "2026-10-25",
+  "familyDefinition": "Tetrahydrobenzazepines",
+  "note": "IUPHAR/BPS Guide to PHARMACOLOGY \"# GtoPdb Version: 2026.3.1 - published: 2026-10-12\" (CC BY-SA 4.0), adapted selection. Structure and full InChIKey are source-provided. Human target action is a curated database classification, separate from a directly measured functional observation. Family membership alone never transfers action, selectivity or efficacy. Source stereo is retained, including unspecified stereo. Legacy namesakes with different graphs (SKF-38393) do not receive this record or action assignment."
+}

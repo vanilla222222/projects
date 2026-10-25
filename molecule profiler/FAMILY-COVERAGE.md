@@ -1,5 +1,9 @@
 # Named chemical families and identity review
 
+The latest [named-family pharmacology batch](NAMED-FAMILY-PHARMACOLOGY.md)
+adds aryloxypropanolamine, imidazoline, tetrahydrobenzazepine, phenothiazine and
+aminobutyrophenone filters with 19 cited human receptor action assignments.
+
 The initial family-catalog milestone covered 4,072 stored structures and offered
 direct buttons for eight overlapping **structural motifs**, with counts and
 searchable tags. The reference library has since grown; these historical counts

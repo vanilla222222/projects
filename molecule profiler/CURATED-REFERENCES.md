@@ -27,6 +27,14 @@ Missing conditions and source-assigned default uncertainties remain explicit.
 
 ## Pharmacology assignment and family labels
 
+[Additional named families](NAMED-FAMILY-PHARMACOLOGY.md) supply five new
+structural filters and 19 human receptor action assignments from the pinned
+IUPHAR snapshot. These are explicitly labeled curated action classifications,
+with raw source witnesses in the receptor explorer and exports. They are
+separate from the measured functional assay records and do not inflate the
+strict binding-profile quota. Three legacy benzazepine namesake graph conflicts
+are flagged; only exact source graphs receive the action assignment.
+
 New named ligand entries are admitted to the pharmacology reference set only
 when a linked source reports a target/action or assay observation. Structural
 family membership alone never creates an action, affinity, selectivity or
