@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
  "rdkitVersion": "2026.09.1",
- "librarySha256": "30d60a5681dd5c7111b316b7d922fbedd13e42e3dc2db1ab03c2194a0f688688",
+ "librarySha256": "4b99145cd5c57919d1bbee26f2525c5b6dbae5f3386ecce22b96e49759e1aaa9",
  "toolSha256": "5474a832b1cd427e4246f1c4b12ec2c47a2b3a12586201f388f5cf52f1bfcd16",
  "dataSha256": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
  "protocol": "Prefer exact isomeric graph matches to PubChem titles/IUPAC names or ChEMBL preferred names. Otherwise require the full InChIKey plus completed RDKit tautomer-family agreement, no neutralization and tetrahedral stereo retained; explicitly label these as PubChem standardized-form names, not exact stored-graph names. Never change reference keys or graphs.",
@@ -13626,8 +13626,8 @@
   }
  ],
  "libraryRepin": {
-  "previousLibrarySha256": "3d85b04c86e14e10bd2d68b7a172825631acccb6fe5a87857606bdbef46e782c",
-  "reason": "Added 34 derived cephalosporin scaffold references; no curated name record changed.",
+  "previousLibrarySha256": "30d60a5681dd5c7111b316b7d922fbedd13e42e3dc2db1ab03c2194a0f688688",
+  "reason": "Added 33 derived estrogen scaffold references; no curated name record changed.",
   "verified": "Every source InChIKey skeleton in records is still present in data/library.js."
  }
 }

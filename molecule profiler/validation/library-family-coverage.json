@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "sourceSha256": {
-    "data/library.js": "30d60a5681dd5c7111b316b7d922fbedd13e42e3dc2db1ab03c2194a0f688688",
+    "data/library.js": "4b99145cd5c57919d1bbee26f2525c5b6dbae5f3386ecce22b96e49759e1aaa9",
     "data/library-names.js": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
     "data/targets.js": "facc465ef72687224df3577fbf7a600102e7c3b07cc033a4de21ba76191192fa",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
@@ -12,7 +12,7 @@
     "tools/library-expansion-50.py": "1c7e05d9267af49bcf25ff3fc90f114b394a295ab3dee561954252e26bc0d60a",
     "validation/library-50-import.json": "89abe62271fff06dd9c8591ea3823ae56cd62a7396eb1412bd93834a2c1b10e0"
   },
-  "dataSha256": "9109cb3a42e0ea963a1ca3fe50def5d1d72f510ec01e69e26c6f60997696f14d",
+  "dataSha256": "dd770f367b28209f7c40793abc6aebb94bc693280c54bf214ee22d386a77e531",
   "interpretation": "Overlapping structural motifs in stored graphs; not evidence of pharmacological function, exhaustive family membership or independently verified molecular identities.",
   "families": [
     {
@@ -21164,9 +21164,20 @@
         "nataloe-emodin",
         "quercetin 3,7-di-O-beta-D-glucoside",
         "tricholignan A",
-        "quercetin 3-O-beta-D-glucopyranoside"
+        "quercetin 3-O-beta-D-glucopyranoside",
+        "3,4-dihydroxyestra-1,3,5(10)-trien-17-one",
+        "2,3-dihydroxyestra-1,3,5(10)-trien-17-one",
+        "2,3,4-trihydroxyestra-1,3,5(10)-trien-17-one",
+        "3,4,16-trihydroxyestra-1,3,5(10)-trien-17-one",
+        "2,3,16-trihydroxyestra-1,3,5(10)-trien-17-one",
+        "17-ethynylestra-1,3,5(10)-triene-3,4,17-triol",
+        "17-ethynylestra-1,3,5(10)-triene-2,3,17-triol",
+        "estra-1,3,5(10)-triene-2,3,4,17-tetraol",
+        "17-methylestra-1,3,5(10)-triene-3,4,17-triol",
+        "17-methylestra-1,3,5(10)-triene-2,3,17-triol",
+        "17-ethynylestra-1,3,5(10)-triene-2,3,4,17-tetraol"
       ],
-      "count": 636
+      "count": 647
     },
     {
       "tag": "Family motif: Resorcinols",
@@ -21975,9 +21986,12 @@
         "dihydrogeodin",
         "semilicoisoflavone B",
         "rhapontigenin",
-        "quercetin 3-O-beta-D-glucopyranoside"
+        "quercetin 3-O-beta-D-glucopyranoside",
+        "2,3,4-trihydroxyestra-1,3,5(10)-trien-17-one",
+        "estra-1,3,5(10)-triene-2,3,4,17-tetraol",
+        "17-ethynylestra-1,3,5(10)-triene-2,3,4,17-tetraol"
       ],
-      "count": 805
+      "count": 808
     },
     {
       "tag": "Family motif: Hydroquinones",
@@ -30689,9 +30703,37 @@
         "4,16-dihydroxyandrost-4-ene-3,17-dione",
         "16-methylandrost-4-ene-3,17-dione",
         "7,15-dimethylandrost-4-ene-3,17-dione",
-        "15-methyl-6-methylideneandrost-4-ene-3,17-dione"
+        "15-methyl-6-methylideneandrost-4-ene-3,17-dione",
+        "17-methylestra-1,3,5(10)-triene-3,17-diol",
+        "3-acetyloxyestra-1,3,5(10)-trien-17-ol",
+        "17-ethynyl-17-pentanoyloxyestra-1,3,5(10)-trien-3-ol",
+        "3-methoxy-17-pentanoyloxyestra-1,3,5(10)-triene",
+        "17-ethylestra-1,3,5(10)-triene-3,17-diol",
+        "3-methoxy-17-methylestra-1,3,5(10)-trien-17-ol",
+        "3-acetyloxy-17-ethynylestra-1,3,5(10)-trien-17-ol",
+        "3-cyclopentyloxyestra-1,3,5(10)-trien-17-ol",
+        "17-methyl-17-pentanoyloxyestra-1,3,5(10)-trien-3-ol",
+        "17-ethynyl-3-methoxy-17-pentanoyloxyestra-1,3,5(10)-triene",
+        "3-acetyloxy-17-pentanoyloxyestra-1,3,5(10)-triene",
+        "17-acetyloxy-17-ethynylestra-1,3,5(10)-trien-3-ol",
+        "3,4-dihydroxyestra-1,3,5(10)-trien-17-one",
+        "2,3-dihydroxyestra-1,3,5(10)-trien-17-one",
+        "3-methoxyestra-1,3,5(10)-trien-17-one",
+        "3-hydroxy-4-methoxyestra-1,3,5(10)-trien-17-one",
+        "2,3,4-trihydroxyestra-1,3,5(10)-trien-17-one",
+        "3,4,16-trihydroxyestra-1,3,5(10)-trien-17-one",
+        "2,3,16-trihydroxyestra-1,3,5(10)-trien-17-one",
+        "3-hydroxy-16-methylestra-1,3,5(10)-trien-17-one",
+        "17-ethynylestra-1,3,5(10)-triene-3,4,17-triol",
+        "17-ethynylestra-1,3,5(10)-triene-2,3,17-triol",
+        "estra-1,3,5(10)-triene-2,3,4,17-tetraol",
+        "17-methylestra-1,3,5(10)-triene-3,4,17-triol",
+        "17-ethynyl-4-methoxyestra-1,3,5(10)-triene-3,17-diol",
+        "4-methylestra-1,3,5(10)-triene-3,17-diol",
+        "17-methylestra-1,3,5(10)-triene-2,3,17-triol",
+        "17-ethynylestra-1,3,5(10)-triene-2,3,4,17-tetraol"
       ],
-      "count": 947
+      "count": 975
     },
     {
       "tag": "Family motif: Long-chain carboxylic acids (C8+ path)",
