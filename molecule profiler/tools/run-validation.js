@@ -43,6 +43,7 @@ const scripts = [
   'reference-sar-test.js',
   'reference-pairs-test.js',
   'reference-probes-test.js',
+  'reference-claims-test.js',
   'pharmacology-test.js',
   'pk-applicability-test.js',
   'prodrug-candidates-test.js',

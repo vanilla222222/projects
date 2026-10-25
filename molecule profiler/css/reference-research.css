@@ -16,3 +16,5 @@
 .sar-results>details>svg{display:block;width:100%;max-width:900px;height:auto;background:var(--raised);border-radius:10px;margin:16px 0;color:var(--text)}.sar-results svg text{fill:var(--text);font:11px sans-serif}.sar-results svg g[role=button]{cursor:pointer}.sar-results svg g[role=button]:focus circle{stroke:var(--text);stroke-width:3}
 
 .pair-transformation{display:grid;grid-template-columns:2fr 1fr 1fr;gap:16px;margin:16px 0}.pair-transformation>div{min-width:0;border:1px solid var(--line);padding:12px;border-radius:8px}.pair-transformation svg{width:100%;height:auto;max-height:200px}#pairs-results>details>div>button{margin:10px 12px 10px 0}@media(max-width:650px){.pair-transformation{grid-template-columns:1fr}}
+
+.claim-chain{padding-left:24px;display:grid;gap:16px}.claim-chain>li{padding:12px;border-left:2px solid var(--accent);background:var(--raised);border-radius:6px}.claim-chain strong{font-size:13px}.claim-card .research-warning{margin:14px 0}.claim-card button{margin-left:12px}#claims-results pre{white-space:pre-wrap;max-height:320px;overflow:auto;font-size:11px}
