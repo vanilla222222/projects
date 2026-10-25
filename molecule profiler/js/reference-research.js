@@ -13,7 +13,7 @@
     for(const [i,e]of r.evidence.entries()){
      // Multi-compound records retain participant-specific values, never their partner's.
      const values=Array.isArray(e.values)?e.values.filter(v=>v.compound===ci):[null];
-     for(const v of values)out.push({id:r.id+':'+i+':'+ci,recordId:r.id,compoundIndex:ci,kind:e.kind,target:e.receptorId||e.target||'',targetLabel:e.target||e.receptorId||'',species:species(e.species),hostSpecies:e.hostSpecies||'Not reported',action:e.action||'',assay:e.assay||'Not reported',metric:metric(e),value:v?v.value:e.value,relation:v?v.relation:e.relation,unit:v?v.unit:e.unit,sd:e.sd,lower:e.lower,upper:e.upper,uncertaintyKind:e.uncertaintyKind,efficacy:e.efficacy,conditions:e.conditions,testedForm:e.testedForm||'Not reported',endpoint:e.endpoint||'',sourceUrl:e.sourceUrl,sourceSha256:e.sourceSha256||'',sourceLocation:e.sourceLocation||'',context:e.context||r.note||'',role:r.compounds[ci].role,raw:e});
+     for(const v of values)out.push({id:r.id+':'+i+':'+ci,recordId:r.id,compoundIndex:ci,kind:e.kind,target:e.receptorId||e.target||'',targetLabel:e.target||e.receptorId||'',species:species(e.species),hostSpecies:e.hostSpecies||'Not reported',action:e.action||'',assay:e.assay||'Not reported',metric:metric(e),value:v?v.value:e.value,relation:v?v.relation:e.relation,unit:v?v.unit:e.unit,sd:e.sd,lower:e.lower,upper:e.upper,uncertaintyKind:e.uncertaintyKind,efficacy:e.efficacy,conditions:e.conditions,testedForm:e.testedForm||'Not reported',endpoint:e.endpoint||'',sourceUrl:e.sourceUrl,sourceSha256:e.sourceSha256||'',sourceLocation:e.sourceLocation||'',context:e.context||r.note||'',role:r.compounds[ci].role,negativeControl:(r.relationships||[]).some(l=>l.kind==='negative_control'&&l.to===ci),raw:e});
     }
    }
    for(const [i,e]of catalog.receptorEvidence(entry).entries())out.push({id:'import:'+i,kind:e.bindingEvidence?'imported_binding':'imported_classification',target:e.receptorId,targetLabel:e.sourceTarget||e.receptorId,species:species(e.species),hostSpecies:'Not reported',action:e.sourceAction||'',assay:e.assay||'Not reported',metric:e.bindingEvidence?e.affinityUnits||'':'',value:e.bindingEvidence&&e.affinityMedian!==''&&Number.isFinite(Number(e.affinityMedian))?Number(e.affinityMedian):undefined,unit:e.bindingEvidence?'source scale':'',relation:'=',testedForm:'Not reported',endpoint:[e.affinityUnits,e.affinityMedian,e.comment].filter(Boolean).join(' · '),sourceUrl:e.sourceUrl,context:'Imported source row; target action and affinity fields retain their original scope.',raw:e});
@@ -36,7 +36,32 @@
    }
    return {compounds,groups:[...groups.values()]};
   }
-  return {entries,byName,observations,dossier,comparison};
+  const isTarget=o=>o.target&&!['identity_reference','documented_relationship','measured_property'].includes(o.kind);
+  let familyIndex=null;
+  function families(){if(!familyIndex){familyIndex=new Map();for(const entry of entries)for(const tag of catalog.tagsFor(entry)){if(!/^(Family motif: |Series: )/.test(tag))continue;if(!familyIndex.has(tag))familyIndex.set(tag,[]);familyIndex.get(tag).push(entry);}}
+   return [...familyIndex].map(([tag,items])=>({tag,count:items.length})).sort((a,b)=>a.tag.localeCompare(b.tag));
+  }
+  function members(family){families();return familyIndex.get(family)||[];}
+  function cell(name,target,selectedSpecies='all'){
+   const d=dossier(name),evidence=d?d.observations.filter(o=>isTarget(o)&&o.target===target&&(selectedSpecies==='all'||o.species===selectedSpecies)):[],states=new Set();
+   for(const o of evidence){
+    if(o.kind==='functional_assay')states.add('Measured functional');
+    else if(o.kind==='imported_binding')states.add('Binding measurement');
+    else if(o.kind==='control_comparison'&&typeof o.value==='number')states.add(o.negativeControl&&['>','>='].includes(o.relation)?'Low activity bound':'Assay measurement');
+    else if(o.kind==='stereo_comparison'&&o.negativeControl)states.add('Control designation');
+    else if(['source_classification','imported_classification'].includes(o.kind)&&o.action)states.add('Curated action');
+    else states.add('Source context');
+   }
+   if(d?.identityWarnings.length&&evidence.length)states.add('Identity review');
+   return {name,target,evidence,states:states.size?[...states]:['No imported evidence']};
+  }
+  function matrix({family,target='',selectedSpecies='all',page=1,perPage=20,targetPage=1,targetsPerPage=6,onlyEvidence=false}={}){
+   let matching=members(family);const targets=[...new Set(matching.flatMap(e=>observations(e).filter(o=>isTarget(o)&&(selectedSpecies==='all'||o.species===selectedSpecies)).map(o=>o.target)))].sort();
+   if(onlyEvidence)matching=matching.filter(e=>observations(e).some(o=>isTarget(o)&&(selectedSpecies==='all'||o.species===selectedSpecies)&&(!target||o.target===target)));
+   const pages=Math.max(1,Math.ceil(matching.length/perPage)),current=Math.min(Math.max(1,page),pages),targetPages=Math.max(1,Math.ceil(targets.length/targetsPerPage)),tp=Math.min(Math.max(1,targetPage),targetPages),columns=target?[target]:targets.slice((tp-1)*targetsPerPage,tp*targetsPerPage);
+   return {total:matching.length,familyTotal:members(family).length,page:current,pages,targetPage:tp,targetPages,targets,columns,rows:matching.slice((current-1)*perPage,current*perPage).map(e=>({name:e.name,label:catalog.displayName(e),cells:columns.map(t=>cell(e.name,t,selectedSpecies))}))};
+  }
+  return {entries,byName,observations,dossier,comparison,families,members,cell,matrix,isTarget};
  }
  const api={createModel,species,metric};root.ReferenceResearch=api;if(typeof module!=='undefined')module.exports=api;
 })(globalThis);

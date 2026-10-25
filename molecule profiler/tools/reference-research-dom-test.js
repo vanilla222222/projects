@@ -16,6 +16,10 @@ const assert=require('node:assert/strict'),path=require('node:path'),{pathToFile
   assert.equal(d.querySelectorAll('#research-compare-selected button').length,1);assert.ok(d.getElementById('research-tools').open);assert.ok(d.getElementById('research-compare-results').textContent.includes('Emax 45'));
   const input=d.getElementById('research-compare-input');input.value='2C-C';d.getElementById('research-compare-add').click();assert.equal(d.querySelectorAll('#research-compare-selected button').length,2);
   assert.ok(d.querySelector('#research-compare-results table'));d.getElementById('research-compare-clear').click();assert.equal(d.querySelectorAll('#research-compare-selected button').length,0);
+  ui.loadFamilies();const family=d.getElementById('research-matrix-family');family.value='Family motif: Ortho-biphenyltetrazoles';d.getElementById('research-matrix-load').click();
+  assert.ok(d.querySelector('#research-matrix-results table'));assert.ok(d.getElementById('research-matrix-status').textContent.includes('21 in family'));
+  const cell=d.querySelector('#research-matrix-results button.matrix-evidence');assert.ok(cell);cell.click();assert.equal(d.querySelector('#reference-dossier h2').textContent,ui.model.dossier(cell.dataset.reference).label);
+  assert.ok([...d.querySelectorAll('#reference-dossier .research-evidence')].some(n=>n.dataset.target===cell.dataset.target&&n.open));
   assert.deepEqual(errors,[]);console.log('Research DOM: dossier navigation, source structures, deep links and identity warnings passed');
  }finally{dom.window.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -27,3 +27,13 @@ assert.ok(model.comparison(['2C-T-7']).groups.filter(g=>g.kind==='functional_ass
 const classified= data.records.find(r=>r.id==='family-004-36-htr1a').compounds[0].libraryNames[0];
 assert.ok(model.comparison([classified]).groups.find(g=>g.kind==='source_classification').observations.every(o=>o.observation.value===undefined));
 console.log('Assay-aware comparison: endpoint, source, pathway, censored values and curated-classification boundaries passed');
+const f='Family motif: Ortho-biphenyltetrazoles';assert.ok(model.families().some(x=>x.tag===f));
+const matrix=model.matrix({family:f,target:'AGTR1',selectedSpecies:'Homo sapiens',perPage:100});assert.equal(matrix.columns[0],'AGTR1');assert.equal(matrix.familyTotal,21);
+assert.ok(matrix.rows.some(r=>r.cells[0].states.includes('Curated action')));
+assert.ok(model.cell('2C-B','HTR2A').states.includes('Measured functional'));assert.deepEqual(model.cell('2C-B','UNKNOWN').states,['No imported evidence']);
+assert.ok(model.cell(less,'Human JMJD3 / KDM6B').states.includes('Low activity bound'));
+assert.ok(!model.cell(active,'Human JMJD3 / KDM6B').states.includes('Low activity bound'));
+assert.equal(model.matrix({family:f,perPage:1,page:999}).page,21);
+const human=model.matrix({family:f,target:'AGTR1',selectedSpecies:'Homo sapiens',onlyEvidence:true,perPage:100});assert.ok(human.rows.every(r=>r.cells[0].evidence.length));
+assert.deepEqual(model.matrix({family:'missing'}).rows,[]);
+console.log('Family matrices: distinct evidence states, explicit unknowns, human filtering, compound/target pagination and assay-scoped low activity passed');
