@@ -1,6 +1,7 @@
 'use strict';
-const ANALYSIS_REFERENCE_LIBRARY=typeof CuratedReferences!=='undefined'?CuratedReferences.library(LIBRARY):LIBRARY;
-const ANALYSIS_REFERENCE_TARGETS=typeof CuratedReferences!=='undefined'?CuratedReferences.targets(TARGETS):TARGETS;
+const ANALYSIS_REFERENCE_CONTEXT=ReferenceContext.create(LIBRARY,TARGETS,typeof CuratedReferences==='undefined'?null:CuratedReferences);
+const ANALYSIS_REFERENCE_LIBRARY=ANALYSIS_REFERENCE_CONTEXT.library;
+const ANALYSIS_REFERENCE_TARGETS=ANALYSIS_REFERENCE_CONTEXT.targets;
 
 // Display labels are separate from stable reference keys used in scientific exports.
 function referenceDisplayName(entry) {
@@ -894,8 +895,10 @@ function tgtTier(value) {
   return TGT_TIERS.findIndex(([floor]) => value >= floor);
 }
 
+function benchmarkMatches(){return typeof RETRIEVAL_BENCHMARK!=='undefined'&&RETRIEVAL_BENCHMARK.composition?.key===ANALYSIS_REFERENCE_CONTEXT.manifest.key;}
+
 function benchmarkRow(target) {
-  if (typeof RETRIEVAL_BENCHMARK === 'undefined') return null;
+  if (!benchmarkMatches()) return null;
   return RETRIEVAL_BENCHMARK.perTarget[target.gene + '::' + target.name] || null;
 }
 
@@ -920,7 +923,7 @@ function casesLine() {
 }
 
 function benchmarkLine() {
-  if (typeof RETRIEVAL_BENCHMARK === 'undefined') return '';
+  if (!benchmarkMatches()) return 'Benchmark withheld: the loaded reference composition differs from the measured snapshot. Regenerate the retrieval benchmark.';
   const b = RETRIEVAL_BENCHMARK;
   const share = (value) => (value * 100).toFixed(0) + '%';
   return 'Measured by leave-one-out over the ' + b.trials + ' ligand slots that can be tested: the true target came '
@@ -930,7 +933,7 @@ function benchmarkLine() {
     + ' and ' + share(b.popularity.r5) + '; ranking at random gets ' + share(b.random.r1) + ' and '
     + share(b.random.r5) + '. ' + b.unmeasurable + ' of the ' + b.targets
     + ' targets have fewer than two known ligands and cannot be tested at all.'
-    + infoButton('tgtBenchmark');
+    + ' Name holdout can leave structural aliases in the pool; these are not independent scaffold-held-out results.' + infoButton('tgtBenchmark');
 }
 
 let targetRankingIndex = null;
@@ -975,7 +978,7 @@ function renderTargets(record) {
     ? 'Legacy nearest-neighbour ranking: '+method.label+' / '+metricKey+'.'
     : 'Multi-fingerprint ranking: geometric mean of stereo-aware ECFP4, FCFP4 and atom-pair Tanimoto per ligand; rank = 70% nearest + 30% mean top three distinct fingerprint profiles. These are heuristic weights, not trained probabilities.';
   document.getElementById('tgt-bench').innerHTML = legacy && methodKey==='ecfp4' && metricKey==='tanimoto'
-    ? benchmarkLine() : 'The historical ECFP4/Tanimoto benchmark does not validate this selected method.';
+    && organism==='all' && document.getElementById('tgt-scope').value!=='receptors' ? benchmarkLine() : 'The historical ECFP4/Tanimoto benchmark does not validate this selected method.';
   document.getElementById('tgt-evidence').textContent = ranked.length
     ? 'Top result: '+ranked[0].applicability+'; '+ranked[0].support+' distinct supporting fingerprint profiles at ensemble similarity ≥0.35 (each component ≥0.20). The three fingerprint views are correlated, not independent experiments. '+targetRankingIndex.issues.length+' reference-index issue(s). Unlisted targets remain unassessed; no agonist/antagonist action is inferred.'
     : 'No usable references in this target scope. Unlisted targets are unassessed.';
@@ -1012,7 +1015,7 @@ function renderTargets(record) {
         + '<br>'+row.distinctCount+' distinct fingerprint profiles from '+row.count+' listed references.'
         + (row.motifEvidence.length?'<br><strong>Shared motifs across the reference panel:</strong><br>'+row.motifEvidence.slice(0,5).map(m=>escapeHtml(StructuralEvidence.label(m.id))+': '+m.support+'/'+m.total+' distinct target-reference profiles; background '+m.background+'/'+m.backgroundTotal+' indexed profiles').join('<br>'):'<br>No shared motif in the current vocabulary.')+'</details></td>'
       + '<td>' + row.count + '</td>'
-      + '<td>' + (legacy?recoveredCell(row.target):row.support+' / '+row.distinctCount) + '</td>'
+      + '<td>' + (legacy?(methodKey==='ecfp4'&&metricKey==='tanimoto'&&organism==='all'&&document.getElementById('tgt-scope').value!=='receptors'?recoveredCell(row.target):'—'):row.support+' / '+row.distinctCount) + '</td>'
       + '<td class="note">' + escapeHtml(row.target.note) + '</td>'
       + '</tr>';
   }).join('') : '<tr><td colspan="11">No target has a known ligand this similar to the query.</td></tr>';

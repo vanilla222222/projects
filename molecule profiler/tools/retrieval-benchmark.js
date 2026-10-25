@@ -20,8 +20,10 @@ const molmod = require(path.join(base, 'js/mol.js'));
 global.parseSmiles = sm.parseSmiles;
 Object.assign(global, molmod);
 const fp = require(path.join(base, 'js/fingerprints.js'));
-const { LIBRARY } = require(path.join(base, 'data/library.js'));
-const { TARGETS } = require(path.join(base, 'data/targets.js'));
+const context=require('./load-reference-context');
+const LIBRARY=context.library,TARGETS=context.targets;
+const crypto=require('node:crypto');
+const sources=['data/library.js','data/targets.js','data/curated-references.js','js/curated-references.js','js/reference-context.js','js/target-ranking.js','js/smiles.js','js/mol.js','js/stereo.js','js/fingerprints.js','tools/retrieval-evaluate.js','tools/retrieval-benchmark.js'];
 const {evaluate} = require('./retrieval-evaluate.js');
 
 function median(list) {
@@ -39,7 +41,8 @@ function recall(rows, k) {
 function run(methodKey, metricKey) {
   const score = metricKey === 'dice' ? fp.dice : fp.tanimoto;
   const byName = new Map();
-  LIBRARY.forEach((entry) => {
+  const wanted=new Set(TARGETS.flatMap(t=>t.ligands));
+  LIBRARY.filter(e=>wanted.has(e.name)&&e.propertyOnly!==true).forEach((entry) => {
     try {
       byName.set(entry.name, fp.fingerprint(molmod.moleculeFromSmiles(entry.smiles), methodKey));
     } catch (error) { /* an entry the parser rejects is left out, as the page leaves it out */ }
@@ -56,7 +59,7 @@ function run(methodKey, metricKey) {
 
   // These two bit-set metrics are exactly symmetric. Reuse reverse comparisons
   // without changing fingerprint generation, holdout rules, or target-order ties.
-  const {trials}=evaluate(sets,byName,score,{symmetric:true});
+  const {trials}=evaluate(sets,byName,score,{symmetric:true,tieBreak:'meanTop3'});
   const perTarget=new Map();
   for(const trial of trials){
     if(!perTarget.has(trial.key))perTarget.set(trial.key,[]);
@@ -158,6 +161,9 @@ console.log('  ' + primary.unmeasurable.join(' '));
 
 if (process.argv.includes('--write')) {
   const payload = {
+    composition:context.manifest,
+    protocol:'Name holdout across all targets; aliases can remain. Nearest similarity, mean of top three, then original target order. All organisms and target families. Not independent scaffold or external validation.',
+    sourceSha256:Object.fromEntries(sources.map(p=>[p,crypto.createHash('sha256').update(fs.readFileSync(path.join(base,p))).digest('hex')])),
     generated: new Date().toISOString().slice(0, 10),
     library: LIBRARY.length,
     method: 'ECFP4',

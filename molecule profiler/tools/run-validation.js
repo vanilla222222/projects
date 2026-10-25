@@ -25,6 +25,7 @@ const scripts = [
   'metabolism-cases.js',
   'retrieval-benchmark.js',
   'retrieval-evaluate-test.js',
+  'reference-context-test.js',
   'ui-integration-test.js',
   'interaction-test.js',
   'cooperative-batch-test.js',
