@@ -263,6 +263,60 @@
         "Ketamine",
         "Phenytoin"
       ]
+    },
+    {
+      "name": "Benzisothiazoles",
+      "tag": "Family motif: Benzisothiazoles",
+      "smarts": "c1ccc2sncc2c1",
+      "description": "A benzene fused to an isothiazole with adjacent sulfur and nitrogen; benzothiazoles with separated sulfur and nitrogen are excluded.",
+      "positiveNames": [
+        "Ziprasidone",
+        "Perospirone"
+      ],
+      "negativeNames": [
+        "Riluzole",
+        "Clozapine"
+      ]
+    },
+    {
+      "name": "Dibenzodiazepines",
+      "tag": "Family motif: Dibenzodiazepines",
+      "smarts": "c1ccc2c(c1)[#7]~[#6]~c1ccccc1[#7]2",
+      "description": "Two benzene rings fused to a seven-membered ring containing two nitrogen atoms in the dibenzo-1,4-diazepine connectivity. Bond order and substituents do not establish a shared action.",
+      "positiveNames": [
+        "Clozapine"
+      ],
+      "negativeNames": [
+        "Quetiapine",
+        "Diazepam"
+      ]
+    },
+    {
+      "name": "Dibenzothiazepines",
+      "tag": "Family motif: Dibenzothiazepines",
+      "smarts": "c1ccc2c(c1)[#16]~c1ccccc1[#6]~[#7]2",
+      "description": "Two benzene rings fused to a seven-membered ring containing sulfur and nitrogen in the dibenzo-1,4-thiazepine connectivity. Ring bond order is not a membership criterion.",
+      "positiveNames": [
+        "Quetiapine"
+      ],
+      "negativeNames": [
+        "Clozapine",
+        "Chlorpromazine"
+      ]
+    },
+    {
+      "name": "Pyrimidinylpiperazines",
+      "tag": "Family motif: Pyrimidinylpiperazines",
+      "smarts": "n1[c;!R2][c;!R2][c;!R2]nc1[NX3,NX4+]1CC[NX3,NX4+]CC1",
+      "description": "A non-fused pyrimidin-2-yl ring directly linked to a piperazine nitrogen; fused quinazoline analogues and phenylpiperazines are excluded.",
+      "positiveNames": [
+        "Buspirone",
+        "Tandospirone"
+      ],
+      "negativeNames": [
+        "Prazosin",
+        "Cetirizine"
+      ]
     }
   ]
 }

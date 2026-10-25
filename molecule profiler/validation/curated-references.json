@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "records": 96,
+  "records": 110,
   "extraStructures": 27,
   "rdkitVersion": "2026.09.1",
   "inputSha256": {
@@ -79,6 +79,20 @@
     "data/curated-reference-entries/family-003-590-agtr1.json": "9e38505ff0f21f977546010495ccf8cbc770b4ec8f4da7fbb573d81ccdfa104a",
     "data/curated-reference-entries/family-003-7151-hrh1.json": "444df173f1fc5d230ed64fbd4250600751341b55c342074b2e234e3e4532865c",
     "data/curated-reference-entries/family-003-7199-hrh1.json": "1e164f84a0beac1ed0ac26e6cb66d8fcdc72af0f4ef113e21716d1b255816981",
+    "data/curated-reference-entries/family-004-36-htr1a.json": "811e1857959cc4154b4817881fd3326c02b57329019865e7cdeac3eed70d4aa7",
+    "data/curated-reference-entries/family-004-38-drd2.json": "010469bbafbda05e2ca3236a373e53c56e21e25b4cfd636307a52c7258510dd4",
+    "data/curated-reference-entries/family-004-38-drd4.json": "bb33e895182ce2a44380fec62b6b7908aa610c6e0292029a0d89bf6bf78d2588",
+    "data/curated-reference-entries/family-004-38-hrh1.json": "435af576cf140a236249a2bb9210a3834d8a08ec408ce8af5e3ddb3f85c22b2d",
+    "data/curated-reference-entries/family-004-38-htr2a.json": "177b9d2d310d1824288326672405c465abfcb694c79b4d9ca4f8fa96838f3baa",
+    "data/curated-reference-entries/family-004-50-drd2.json": "66b5bdd51225f4f6209636ab834cf46b79c20c47fdde0e59a129a8e88604e18f",
+    "data/curated-reference-entries/family-004-50-hrh1.json": "13956cf482dd0fa09245eb8303c277bfb30e662ac3c7647e1babc592a889f687",
+    "data/curated-reference-entries/family-004-55-htr1a.json": "7d5bc96963d9cfc906c347943f12e5ed4e8e95a4f6409b4564620778ae6d45a0",
+    "data/curated-reference-entries/family-004-59-drd2.json": "4a7fe526e5cb7aa9634e4e46690c6a229d32c9a164c954c082be7ae5bcd19222",
+    "data/curated-reference-entries/family-004-59-htr1a.json": "d1d3d577e3c9b78d691927f959533c30d114f3e718a5405963e2fcb6cbc3b840",
+    "data/curated-reference-entries/family-004-59-htr2a.json": "e614bec0ddb5e8d9c26cb7cb104afae12f102e54ee4f2c99ea13878f37e8a4c2",
+    "data/curated-reference-entries/family-004-7556-drd2.json": "5e96cbde922db4ff7720271bdbfc66d893958ac10611bf98e721f4f8ef384a69",
+    "data/curated-reference-entries/family-004-7556-drd3.json": "3d441d8015575984517e68264a624f520e08da083ff55ae54bfcb6e43b238cda",
+    "data/curated-reference-entries/family-004-7556-drd4.json": "e9595d646e8f4e9a3ef09068bb45b931ff3cd4b7750622301aea8c93efa6912e",
     "data/curated-reference-entries/iuphar-10454-taar1.json": "3dd20850b3599327fcdc0a91c78cce10e51b31829427c9fcc69bbcb314c7f872",
     "data/curated-reference-entries/iuphar-1369-grm5.json": "af55b194b6c52eddce8dbdcf10ca623349c12f57811c232d66396eb9f5fce90f",
     "data/curated-reference-entries/iuphar-1394-grm2.json": "6d1146cd8ae7241aa698af5bf5342aea71fd4e15680aa3ff90f5b42448700a15",
@@ -133,7 +147,7 @@
     }
   ],
   "familySourceSha256": {
-    "data/family-definitions.json": "bfbee57bab9f48afcca8de378f9f243c1e4e406586cf7e92052c2c9e1551af9f",
+    "data/family-definitions.json": "0a50277d6331e72aaf817e84bb67f3cab8cff3e3b390d50224c5e72c7f8be732",
     "tools/build-library-tags.py": "4942f6ce2cf182f50606611014375edae102f2a50623a1b3e62be9e7857e4534",
     "tools/library-taxonomy.py": "a577bed4d107158eb152cd0b7a3d05d0df53584f370ad07be393147a477ab8b7",
     "tools/library-expansion-50.py": "1c7e05d9267af49bcf25ff3fc90f114b394a295ab3dee561954252e26bc0d60a"
@@ -306,10 +320,42 @@
       "currentEntries": 21,
       "newStructures": 0,
       "distinctIsomericGraphs": 21
+    },
+    {
+      "name": "Benzisothiazoles",
+      "tag": "Family motif: Benzisothiazoles",
+      "baseEntries": 6,
+      "currentEntries": 6,
+      "newStructures": 0,
+      "distinctIsomericGraphs": 6
+    },
+    {
+      "name": "Dibenzodiazepines",
+      "tag": "Family motif: Dibenzodiazepines",
+      "baseEntries": 31,
+      "currentEntries": 31,
+      "newStructures": 0,
+      "distinctIsomericGraphs": 31
+    },
+    {
+      "name": "Dibenzothiazepines",
+      "tag": "Family motif: Dibenzothiazepines",
+      "baseEntries": 14,
+      "currentEntries": 14,
+      "newStructures": 0,
+      "distinctIsomericGraphs": 14
+    },
+    {
+      "name": "Pyrimidinylpiperazines",
+      "tag": "Family motif: Pyrimidinylpiperazines",
+      "baseEntries": 5,
+      "currentEntries": 5,
+      "newStructures": 0,
+      "distinctIsomericGraphs": 5
     }
   ],
   "librarySha256": "1de0c3fc593a6f8dd60f27309a6a2c501a699ccf781b3db8fad989752c05a2bd",
   "toolSha256": "042c9961d731cf5a482748236cc93769c467015680af564db773a183f9312856",
-  "dataSha256": "90a27a8232576858fb4c65d9e1c0d02f37438f9196c1c31fb6863365e2127312",
-  "browserGraphsChecked": 101
+  "dataSha256": "50dd842efbab77e5aa257023266e80671ae7b672a6d54eacacfed029226a8e9b",
+  "browserGraphsChecked": 107
 }

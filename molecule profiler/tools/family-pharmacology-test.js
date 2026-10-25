@@ -1,6 +1,6 @@
 'use strict';
-// Family labels describe graphs; only source-backed functional observations
-// may contribute receptor action or human target ranking.
+// Family labels describe graphs. Exact-source classifications and measured
+// functional observations retain their separate evidence scopes.
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const {CURATED_REFERENCES:d}=require('../data/curated-references');
@@ -9,13 +9,20 @@ const {LIBRARY}=require('../data/library');
 const {TARGETS}=require('../data/targets');
 const api=require('../js/curated-references');
 const byname=new Map(api.library(LIBRARY,d).map(e=>[e.name,e]));
+// Source-preferred names can resolve to existing stable code keys. The compiled
+// libraryNames mapping is graph-guarded; a display-name match alone is insufficient.
+function fixture(name){
+  if(byname.has(name))return byname.get(name);
+  const c=d.records.flatMap(r=>r.compounds).find(c=>(c.sourceName||c.name).toLowerCase()===name.toLowerCase());
+  return c&&byname.get(c.libraryNames[0]);
+}
 const defs=d.familyDefinitions;
 assert.ok(defs.length>=9);
 for(const [file,digest] of Object.entries(report.familySourceSha256))assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname,'..',file))).digest('hex'),digest,'Stale family source '+file);
 for(const def of defs){
   assert.ok(def.description);
-  for(const name of def.positiveNames){const e=byname.get(name);assert.ok(e,'Missing positive fixture '+name);assert.ok(api.tags(e,d).includes(def.tag),name+' should match '+def.name);}
-  for(const name of def.negativeNames){const e=byname.get(name);assert.ok(e,'Missing negative fixture '+name);assert.ok(!api.tags(e,d).includes(def.tag),name+' should not match '+def.name);}
+  for(const name of def.positiveNames){const e=fixture(name);assert.ok(e,'Missing positive fixture '+name);assert.ok(api.tags(e,d).includes(def.tag),name+' should match '+def.name);}
+  for(const name of def.negativeNames){const e=fixture(name);assert.ok(e,'Missing negative fixture '+name);assert.ok(!api.tags(e,d).includes(def.tag),name+' should not match '+def.name);}
 }
 const records=d.records.filter(r=>r.id.startsWith('family-001-'));
 assert.equal(records.length,6,'New named references must each have published pharmacology');

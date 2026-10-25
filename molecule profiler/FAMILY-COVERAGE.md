@@ -144,3 +144,5 @@ Nitazene-related and nitro-substituted tags remain separate. In particular,
 5-aminoisotonitazene can match the broader nitazene-related scaffold without
 being tagged as a nitro-substituted nitazene. Family matching never transfers
 agonism or potency to a related structure.
+
+See [named family batch 004](NAMED-FAMILY-004.md) for four additional filters and 14 human action classifications across six exact-source identities.

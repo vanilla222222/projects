@@ -106,3 +106,5 @@ formula, reviewed source graph matching,
 browser parser/serializer stereo round trips, and input/output hashes. It never
 strips salts, invents stereochemistry, enumerates analogues or infers activity.
 Raw source fields remain available in the per-entry JSON for review.
+
+See [named family batch 004](NAMED-FAMILY-004.md) for four additional filters and 14 human action classifications across six exact-source identities.
