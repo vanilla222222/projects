@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const {CURATED_REFERENCES:d}=require('../data/curated-references'),{LIBRARY}=require('../data/library'),{TARGETS}=require('../data/targets');
 const api=require('../js/curated-references'),receptors=require('../js/receptor-catalog'),{RECEPTOR_REFERENCE_CATALOG:catalog}=require('../data/receptor-catalog');
 const rows=api.library(LIBRARY,d),records=d.records.filter(r=>r.id.startsWith('family-002-')),byname=new Map(rows.map(e=>[e.name,e]));
-assert.equal(records.length,19);assert.equal(d.familyDefinitions.length,14);
+assert.equal(records.length,19);assert.ok(d.familyDefinitions.length>=14);
 const expected={'Aryloxypropanolamines':4,'Imidazolines':4,'Tetrahydrobenzazepines':3,'Phenothiazines':4,'Aminobutyrophenones':4};
 const targets=api.targets(TARGETS,d);
 for(const [family,count] of Object.entries(expected)){

@@ -27,6 +27,12 @@ Missing conditions and source-assigned default uncertainties remain explicit.
 
 ## Pharmacology assignment and family labels
 
+[Family batch 003](NAMED-FAMILY-003.md) adds adenine ribonucleosides,
+thiazolidinediones, benzhydrylpiperazines, dibenzocycloheptene-related cores and
+ortho-biphenyltetrazoles, with 18 human source action classifications. Inverse
+agonism remains distinct from antagonism, and nuclear receptor identity is
+retained. Source stereo/tautomer differences are flagged for identity review.
+
 [Additional named families](NAMED-FAMILY-PHARMACOLOGY.md) supply five new
 structural filters and 19 human receptor action assignments from the pinned
 IUPHAR snapshot. These are explicitly labeled curated action classifications,

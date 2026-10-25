@@ -57,7 +57,7 @@ def build():
                     assert e['sourceRecord'] in src.get('interactions',src.get('rows',[])),'Evidence row absent from pinned source'
                     if e['kind']=='source_classification':assert e['sourceRecord']['Target Species']=='Human'
                 if e['kind']=='source_classification' and e.get('action'):
-                    raw=e['sourceRecord'];actions={'Agonist':'agonist','Full agonist':'agonist','Partial agonist':'partial_agonist','Antagonist':'antagonist'}
+                    raw=e['sourceRecord'];actions={'Agonist':'agonist','Full agonist':'agonist','Partial agonist':'partial_agonist','Antagonist':'antagonist','Inverse agonist':'inverse_agonist'}
                     assert e['sourceProvider']=='IUPHAR/BPS Guide to PHARMACOLOGY' and e['species']=='Homo sapiens'
                     assert e['action']==actions[raw['Action']] and e['receptorId']==raw['Target Gene Symbol']
                     assert c['identitySource']['sourceLigand']['Ligand ID']==raw['Ligand ID']

@@ -6,7 +6,7 @@
     "data/targets.js": "facc465ef72687224df3577fbf7a600102e7c3b07cc033a4de21ba76191192fa",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
     "data/receptor-ligand-annotations.js": "28bcfc10324b17fc8a30d2e4b3cf3c589e55fe9af76cd61dfb8986d9a3b30d01",
-    "js/receptor-catalog.js": "bd88f8d576f85422360250539abc921ab3b345e8855e72a8feeff15054103df1",
+    "js/receptor-catalog.js": "eaed72df5e3c0ab62aaccba3ff82928e23da6849a14571a6a42ae745522ab798",
     "tools/receptor-diversity-audit.py": "c507a5086e772e7b5f052feac394a3637c8e986e61ee57d11b3771491c29bd71"
   },
   "method": "RDKit Bemis-Murcko ring/linker scaffolds after audited uncharging and tautomer grouping; scaffold stereochemistry and isotopic labels omitted, atom and bond types retained.",

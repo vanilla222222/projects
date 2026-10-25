@@ -1,5 +1,10 @@
 # Named chemical families and identity review
 
+[Family batch 003](NAMED-FAMILY-003.md) adds five further structural families
+with 18 cited human receptor action records, including adenosine receptors,
+PPAR gamma, H1 and AT1. Family matching and exact pharmacology evidence retain
+separate identity requirements.
+
 The latest [named-family pharmacology batch](NAMED-FAMILY-PHARMACOLOGY.md)
 adds aryloxypropanolamine, imidazoline, tetrahydrobenzazepine, phenothiazine and
 aminobutyrophenone filters with 19 cited human receptor action assignments.

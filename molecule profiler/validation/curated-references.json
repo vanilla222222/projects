@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "records": 78,
+  "records": 96,
   "extraStructures": 27,
   "rdkitVersion": "2026.09.1",
   "inputSha256": {
@@ -61,6 +61,24 @@
     "data/curated-reference-entries/family-002-939-drd1.json": "532b8e856234a597ede5b63d3da66242e99237d047fb8760d29e880b6e392d22",
     "data/curated-reference-entries/family-002-943-drd1.json": "3a30389fdbc649cf08b547e9e0431d39f378598ed5607f0e4b52da0d0541161d",
     "data/curated-reference-entries/family-002-99-drd4.json": "ac97cb710181ebdbf52005925ddeb63211291f63c881d38703c3831e468202ef",
+    "data/curated-reference-entries/family-003-1056-pparg.json": "f23e51b9dba3a5fe6896c4f85da97e1900ff2e8f476859b9af6d923068b60269",
+    "data/curated-reference-entries/family-003-1222-hrh1.json": "bdfbf7bd3c462748f4327e68591f2767a8f40f5c2935eff51f468a996f93d755",
+    "data/curated-reference-entries/family-003-200-chrm1.json": "6768f4a123aeb3a0f8f8c793e9d30abec67f0a70af9f392694fe4d86685e912a",
+    "data/curated-reference-entries/family-003-2404-adra1a.json": "055c26f47cbdd02e7d1dc62147121008077bef3ff364c3f19cadd8e2eacd2964",
+    "data/curated-reference-entries/family-003-2693-pparg.json": "be8bf9fbc613527b54af5dc0917990dd2ba9467b768f29730bee5a94d21bfd2d",
+    "data/curated-reference-entries/family-003-2694-pparg.json": "310821815797847907b978e5e82c6466314d5360552c5e65f4da5531097691b7",
+    "data/curated-reference-entries/family-003-277-hrh1.json": "812e609d822348bc647821b1e1aa2c5c9b4187184bec9b2fa901ce8a0f475f41",
+    "data/curated-reference-entries/family-003-374-adora1.json": "32b0a8b299549a930cc636ab3a50703222a60ccdf0d380ec90e2c47d40efd8f5",
+    "data/curated-reference-entries/family-003-375-adora2a.json": "d488450572d3f49a3bef7c9169259639fc54c893471b0d6a622db48e6fa36d1a",
+    "data/curated-reference-entries/family-003-377-adora2b.json": "f2d6c66b26e0b09ffa78f54f9f33448f3a97a71979f28b40d5d5a9e9018fbbe2",
+    "data/curated-reference-entries/family-003-3937-agtr1.json": "9d943ead12494a56f7ee14dda9fd48b2273b832e678338da2e11793fbf45ec8f",
+    "data/curated-reference-entries/family-003-422-adora3.json": "1d370aa6bd91a33ea761575e6cea1ee4c8d6e9970c0c62d0cec501f4f20fbfe6",
+    "data/curated-reference-entries/family-003-457-adora3.json": "0632ae2ce9429f6d224231fa695d9d94b9fc006160705f323c3127cf3e6648d7",
+    "data/curated-reference-entries/family-003-5596-adora2a.json": "4cd6b20ccdbd22464e256419bedcfdd9c1d2241c3b9f3885080fa3a207dd3124",
+    "data/curated-reference-entries/family-003-586-agtr1.json": "1f4c320d67e70650c52aba38a01c7595bb55c98b0dcad37454fbac53f4d9e27e",
+    "data/curated-reference-entries/family-003-590-agtr1.json": "9e38505ff0f21f977546010495ccf8cbc770b4ec8f4da7fbb573d81ccdfa104a",
+    "data/curated-reference-entries/family-003-7151-hrh1.json": "444df173f1fc5d230ed64fbd4250600751341b55c342074b2e234e3e4532865c",
+    "data/curated-reference-entries/family-003-7199-hrh1.json": "1e164f84a0beac1ed0ac26e6cb66d8fcdc72af0f4ef113e21716d1b255816981",
     "data/curated-reference-entries/iuphar-10454-taar1.json": "3dd20850b3599327fcdc0a91c78cce10e51b31829427c9fcc69bbcb314c7f872",
     "data/curated-reference-entries/iuphar-1369-grm5.json": "af55b194b6c52eddce8dbdcf10ca623349c12f57811c232d66396eb9f5fce90f",
     "data/curated-reference-entries/iuphar-1394-grm2.json": "6d1146cd8ae7241aa698af5bf5342aea71fd4e15680aa3ff90f5b42448700a15",
@@ -115,7 +133,7 @@
     }
   ],
   "familySourceSha256": {
-    "data/family-definitions.json": "5578a9c848b605f3add888196db244c9e4c9d1d2a8587ae240720cde285b15c7",
+    "data/family-definitions.json": "bfbee57bab9f48afcca8de378f9f243c1e4e406586cf7e92052c2c9e1551af9f",
     "tools/build-library-tags.py": "4942f6ce2cf182f50606611014375edae102f2a50623a1b3e62be9e7857e4534",
     "tools/library-taxonomy.py": "a577bed4d107158eb152cd0b7a3d05d0df53584f370ad07be393147a477ab8b7",
     "tools/library-expansion-50.py": "1c7e05d9267af49bcf25ff3fc90f114b394a295ab3dee561954252e26bc0d60a"
@@ -248,10 +266,50 @@
       "currentEntries": 59,
       "newStructures": 0,
       "distinctIsomericGraphs": 59
+    },
+    {
+      "name": "Adenine ribonucleosides",
+      "tag": "Family motif: Adenine ribonucleosides",
+      "baseEntries": 138,
+      "currentEntries": 138,
+      "newStructures": 0,
+      "distinctIsomericGraphs": 138
+    },
+    {
+      "name": "Thiazolidinediones",
+      "tag": "Family motif: Thiazolidinediones",
+      "baseEntries": 7,
+      "currentEntries": 7,
+      "newStructures": 0,
+      "distinctIsomericGraphs": 7
+    },
+    {
+      "name": "Benzhydrylpiperazines",
+      "tag": "Family motif: Benzhydrylpiperazines",
+      "baseEntries": 26,
+      "currentEntries": 26,
+      "newStructures": 0,
+      "distinctIsomericGraphs": 26
+    },
+    {
+      "name": "Dibenzocycloheptene-related cores",
+      "tag": "Family motif: Dibenzocycloheptene-related cores",
+      "baseEntries": 39,
+      "currentEntries": 39,
+      "newStructures": 0,
+      "distinctIsomericGraphs": 39
+    },
+    {
+      "name": "Ortho-biphenyltetrazoles",
+      "tag": "Family motif: Ortho-biphenyltetrazoles",
+      "baseEntries": 21,
+      "currentEntries": 21,
+      "newStructures": 0,
+      "distinctIsomericGraphs": 21
     }
   ],
   "librarySha256": "1de0c3fc593a6f8dd60f27309a6a2c501a699ccf781b3db8fad989752c05a2bd",
-  "toolSha256": "36b74ef6382a0823b26e6f1479c9ce18bb55093372d95e2bbdbc3ac0d326d0d8",
-  "dataSha256": "90b0084bb7b305b6dea8de3faf4dc9485105757645e50afe6fbd89bfe5a0d319",
-  "browserGraphsChecked": 83
+  "toolSha256": "042c9961d731cf5a482748236cc93769c467015680af564db773a183f9312856",
+  "dataSha256": "90a27a8232576858fb4c65d9e1c0d02f37438f9196c1c31fb6863365e2127312",
+  "browserGraphsChecked": 101
 }

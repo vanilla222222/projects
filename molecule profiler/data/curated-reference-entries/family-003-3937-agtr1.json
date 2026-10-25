@@ -1,0 +1,132 @@
+{
+  "id": "family-003-3937-agtr1",
+  "title": "valsartan — AGTR1 curated action",
+  "collections": [
+    "Named family pharmacology",
+    "Ortho-biphenyltetrazoles references"
+  ],
+  "compounds": [
+    {
+      "name": "valsartan",
+      "sourceName": "valsartan",
+      "smiles": "CCCCC(=O)N(Cc1ccc(-c2ccccc2-c2nnn[nH]2)cc1)[C@H](C(=O)O)C(C)C",
+      "formula": "C24H29N5O3",
+      "inchiKey": "ACWBQPMHZXGDFX-QFIPXVFZSA-N",
+      "sourceUrl": "https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId=3937",
+      "aliases": [
+        "CGP-48933",
+        "Diovan®",
+        "Prexxartan® (oral solution)"
+      ],
+      "role": "Human AGTR1 antagonist (curated source classification)",
+      "identitySource": {
+        "provider": "IUPHAR/BPS Guide to PHARMACOLOGY",
+        "license": "CC BY-SA 4.0",
+        "sourceFile": "validation/sources/receptor-actions-iuphar.json",
+        "sourceSha256": "ae233a073c2159c5c62b3e8a77c26a8f28f5ba94d9127b456112270f368f31f4",
+        "sourceLigand": {
+          "Ligand ID": "3937",
+          "Name": "valsartan",
+          "Species": "",
+          "Type": "Synthetic organic",
+          "Approved": "yes",
+          "Withdrawn": "",
+          "Labelled": "",
+          "Radioactive": "",
+          "PubChem SID": "178100765",
+          "PubChem CID": "60846",
+          "UniProt ID": "",
+          "Ensembl ID": "",
+          "ChEMBL ID": "CHEMBL1069",
+          "Ligand Subunit IDs": "",
+          "Ligand Subunit Name": "",
+          "Ligand Subunit UniProt IDs": "",
+          "Ligand Subunit Ensembl IDs": "",
+          "IUPAC name": "(2S)-3-methyl-2-[pentanoyl-[[4-[2-(2H-tetrazol-5-yl)phenyl]phenyl]methyl]amino]butanoic acid",
+          "INN": "valsartan",
+          "Synonyms": "CGP-48933|Diovan&reg;|Prexxartan&reg; (oral solution)",
+          "SMILES": "CCCCC(=O)N([C@H](C(=O)O)C(C)C)Cc1ccc(cc1)c1ccccc1c1nnn[nH]1",
+          "InChIKey": "ACWBQPMHZXGDFX-QFIPXVFZSA-N",
+          "InChI": "InChI=1S/C24H29N5O3/c1-4-5-10-21(30)29(22(16(2)3)24(31)32)15-17-11-13-18(14-12-17)19-8-6-7-9-20(19)23-25-27-28-26-23/h6-9,11-14,16,22H,4-5,10,15H2,1-3H3,(H,31,32)(H,25,26,27,28)/t22-/m0/s1",
+          "GtoImmuPdb": "",
+          "GtoMPdb": "",
+          "Antibacterial": ""
+        }
+      },
+      "legacyNamesakeGraphConflicts": [
+        "Valsartan"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "source_classification",
+      "receptorId": "AGTR1",
+      "target": "AT1 receptor",
+      "action": "antagonist",
+      "species": "Homo sapiens",
+      "sourceClassification": "Antagonist / Antagonist",
+      "sourceProvider": "IUPHAR/BPS Guide to PHARMACOLOGY",
+      "sourceUrl": "https://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId=3937",
+      "sourceFile": "validation/sources/receptor-actions-iuphar.json",
+      "sourceSha256": "ae233a073c2159c5c62b3e8a77c26a8f28f5ba94d9127b456112270f368f31f4",
+      "sourceRecord": {
+        "Target": "AT<sub>1</sub> receptor",
+        "Target ID": "34",
+        "Target Subunit IDs": "",
+        "Target Gene Symbol": "AGTR1",
+        "Target UniProt ID": "P30556",
+        "Target Ensembl Gene ID": "ENSG00000144891",
+        "Target Ligand": "",
+        "Target Ligand ID": "",
+        "Target Ligand Subunit IDs": "",
+        "Target Ligand Gene Symbol": "",
+        "Target Ligand UniProt ID": "",
+        "Target Ligand Ensembl Gene ID": "",
+        "Target Ligand PubChem SID": "",
+        "Target Species": "Human",
+        "Ligand ID": "3937",
+        "Ligand": "valsartan",
+        "Ligand Type": "Synthetic organic",
+        "Ligand Subunit IDs": "",
+        "Ligand Gene Symbol": "",
+        "Ligand Species": "",
+        "Ligand PubChem SID": "178100765",
+        "Approved": "true",
+        "Type": "Antagonist",
+        "Action": "Antagonist",
+        "Action comment": "",
+        "Selectivity": "Selective",
+        "Endogenous": "false",
+        "Primary Target": "true",
+        "concentration Range": "",
+        "Affinity Units": "pIC50",
+        "Affinity High": "",
+        "Affinity Median": "8.609999656677246",
+        "Affinity Low": "",
+        "Original Affinity Units": "IC50",
+        "Original Affinity Low nm": "",
+        "Original Affinity Median nm": "2.430000066757202",
+        "Original Affinity High nm": "",
+        "Original Affinity Relation": "=",
+        "Assay Description": "",
+        "Receptor Site": "",
+        "Ligand Context": "",
+        "PubMed ID": "8577935",
+        "Webpage URLs": "",
+        "Patent Numbers": ""
+      },
+      "assay": "Curated IUPHAR action classification; selected row does not establish a new functional assay measurement",
+      "endpoint": "Source action: Antagonist",
+      "context": "Action is the published database classification for this exact ligand, human target and source row. Raw affinity fields do not establish functional potency or efficacy."
+    }
+  ],
+  "panel": {
+    "gene": "AGTR1",
+    "name": "AT1 receptor",
+    "family": "GPCR"
+  },
+  "reviewedDate": "2026-10-25",
+  "familyDefinition": "Ortho-biphenyltetrazoles",
+  "note": "IUPHAR/BPS Guide to PHARMACOLOGY \"# GtoPdb Version: 2026.3.1 - published: 2026-10-12\" (CC BY-SA 4.0), adapted selection. Structure and full InChIKey are source-provided. Human target action is a curated database classification, separate from a directly measured functional observation. Family membership alone never transfers action, selectivity or efficacy. Source stereo is retained, including unspecified stereo. Legacy namesakes with different graphs (Valsartan) do not receive this record or action assignment. The legacy namesake differs in stereo/tautomer representation; unspecified stereo is not automatically assigned the source enantiomer."
+}

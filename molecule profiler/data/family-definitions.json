@@ -193,6 +193,76 @@
         "Fluoxetine",
         "Diazepam"
       ]
+    },
+    {
+      "name": "Adenine ribonucleosides",
+      "tag": "Family motif: Adenine ribonucleosides",
+      "smarts": "[CX4]1(n2cnc3c2ncnc3[NX3])[OX2][CX4][CX4]([OX2H1])[CX4]1[OX2H1]",
+      "description": "An adenine-type purine attached at N9 to a ribofuranose ring with two ring hydroxyls; 5-prime substitutions are permitted. Family matching ignores stereo, while reference identities retain source stereo.",
+      "positiveNames": [
+        "Adenosine",
+        "regadenoson"
+      ],
+      "negativeNames": [
+        "Caffeine",
+        "Uridine"
+      ]
+    },
+    {
+      "name": "Thiazolidinediones",
+      "tag": "Family motif: Thiazolidinediones",
+      "smarts": "O=C1[NX3]C(=O)[CX4][SX2]1",
+      "description": "The 1,3-thiazolidine-2,4-dione ring; carbonyl placement distinguishes this motif from saturated thiazolidines.",
+      "positiveNames": [
+        "Rosiglitazone",
+        "Pioglitazone"
+      ],
+      "negativeNames": [
+        "Diazepam",
+        "Phenobarbital"
+      ]
+    },
+    {
+      "name": "Benzhydrylpiperazines",
+      "tag": "Family motif: Benzhydrylpiperazines",
+      "smarts": "c1ccccc1[CX4H](-c1ccccc1)[NX3,NX4+]1CC[NX3,NX4+]CC1",
+      "description": "A diphenylmethyl group directly bonded to piperazine nitrogen; benzhydryl ethers and directly aryl-linked piperazines are excluded.",
+      "positiveNames": [
+        "Cetirizine",
+        "Hydroxyzine"
+      ],
+      "negativeNames": [
+        "Buspirone",
+        "Diphenhydramine"
+      ]
+    },
+    {
+      "name": "Dibenzocycloheptene-related cores",
+      "tag": "Family motif: Dibenzocycloheptene-related cores",
+      "smarts": "c1ccc2c(c1)[#6]~[#6]c1ccccc1[#6]2",
+      "description": "Two benzene rings fused to a seven-membered all-carbon ring. The bond between its two adjacent non-fusion carbons may be single or double; nitrogen and oxygen ring replacements are excluded.",
+      "positiveNames": [
+        "Amitriptyline",
+        "Cyproheptadine"
+      ],
+      "negativeNames": [
+        "Imipramine",
+        "Doxepin"
+      ]
+    },
+    {
+      "name": "Ortho-biphenyltetrazoles",
+      "tag": "Family motif: Ortho-biphenyltetrazoles",
+      "smarts": "c1ccccc1-c1ccccc1-c1[nH,nH0][nH,nH0][nH,nH0][nH,nH0]1",
+      "description": "A biphenyl bearing a carbon-linked tetrazole ortho to the biaryl bond; tetrazole proton-position tautomers are permitted for motif membership.",
+      "positiveNames": [
+        "Losartan",
+        "Valsartan"
+      ],
+      "negativeNames": [
+        "Ketamine",
+        "Phenytoin"
+      ]
     }
   ]
 }

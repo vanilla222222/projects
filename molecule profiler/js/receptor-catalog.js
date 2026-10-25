@@ -57,7 +57,7 @@
       rows:rows.sort((a,b)=>b.remaining-a.remaining||a.id.localeCompare(b.id))};
   }
   function validSourceClassification(a) {
-    const c=a.classification,raw=c?.sourceRecord,actions={'Agonist':'agonist','Full agonist':'agonist','Partial agonist':'partial_agonist','Antagonist':'antagonist'};
+    const c=a.classification,raw=c?.sourceRecord,actions={'Agonist':'agonist','Full agonist':'agonist','Partial agonist':'partial_agonist','Antagonist':'antagonist','Inverse agonist':'inverse_agonist'};
     if(a.evidenceType!=='source_classification'||c?.provider!=='IUPHAR/BPS Guide to PHARMACOLOGY'||!/^[a-f0-9]{64}$/.test(c.sourceSnapshotSha256||'')||!raw)return false;
     if(a.species!=='Homo sapiens'||raw['Target Species']!=='Human'||raw['Target Gene Symbol']!==a.receptorId||!actions[raw.Action]||actions[raw.Action]!==a.action)return false;
     if(!/^\d+$/.test(c.ligandId||'')||!/^\d+$/.test(c.targetId||'')||raw['Ligand ID']!==c.ligandId||raw['Target ID']!==c.targetId)return false;

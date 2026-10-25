@@ -23,7 +23,8 @@ async function page(file,query=''){
   button.click();const twoC=[...d.querySelectorAll('#catalog-families button')].find(b=>b.dataset.tag==='Curated collection: 2C measured pharmacology');assert.ok(twoC);twoC.click();
   assert.equal(Number(d.getElementById('catalog-result-total').textContent),30);
   twoC.click();const classified=[...d.querySelectorAll('#catalog-families button')].find(b=>b.dataset.tag==='Evidence: Curated action classification');assert.ok(classified);classified.click();
-  assert.equal(Number(d.getElementById('catalog-result-total').textContent),19);
+  const classifiedNames=new Set(w.CURATED_REFERENCES.records.filter(r=>r.evidence.some(e=>e.kind==='source_classification'&&e.action&&e.species==='Homo sapiens')).flatMap(r=>r.compounds.flatMap(c=>c.libraryNames)));
+  assert.equal(Number(d.getElementById('catalog-result-total').textContent),classifiedNames.size);
   const family=[...d.querySelectorAll('#catalog-families button')].find(b=>b.dataset.tag==='Family motif: Aminobutyrophenones');assert.ok(family);family.click();
   assert.equal(Number(d.getElementById('catalog-result-total').textContent),4);
   assert.deepEqual(p.errors,[]);
