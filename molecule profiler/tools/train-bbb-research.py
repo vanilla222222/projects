@@ -61,6 +61,18 @@ job={'endpoint':'bbb','rows':[{'smiles':rows[i]['key'],'observed':int(y[i])} for
 comparison=json.loads(subprocess.check_output(['node',str(ROOT/'tools/benchmark-worker.js')],input=json.dumps(job),text=True,cwd=ROOT));passive=[r for r in comparison['rows'] if r['status']=='scored'];full=metrics(y[test],p>=threshold,p);subset=metrics(y[np.asarray(test)[gate]],(p>=threshold)[gate],p[gate]) if len(set(y[np.asarray(test)[gate]]))==2 else None
 baseline=float(brier_score_loss(y[test],np.full(len(test),y[train].mean())))
 report={'schemaVersion':1,'modelId':'bbb-scaffold-rf-v1','source':source,'seed':SEED,'rdkit':rdBase.rdkitVersion,'sklearn':sklearn.__version__,'sourceRows':2050,'curatedRows':len(rows),'exclusions':dict(excluded),'split':{k:{'n':len(v),'positive':int(y[v].sum()),'scaffolds':len({rows[i]['scaffold'] for i in v}),'identitySha256':hashlib.sha256('\n'.join(sorted(rows[i]['key'] for i in v)).encode()).hexdigest()} for k,v in splits.items()},'scaffoldOverlap':0,'threshold':float(threshold),'thresholdSelection':'Calibration split only; maximum balanced accuracy on a fixed 0.10–0.90 grid.','fullTest':full,'applicableTest':subset,'testCoverage':float(gate.mean()),'passiveSameTest':comparison['metrics'],'passiveScored':len(passive),'passiveMatchedApplicableTest':metrics(y[np.asarray(test)[gate]],np.asarray([r['predicted'] for r in comparison['rows']])[gate]),'brierConstantTrainingPrevalence':baseline,'calibration':'Platt sigmoid fitted only to held-out calibration scaffold groups; test probabilities never fitted.','applicability':'Neutral connected supported structures, Morgan-2/2048 maximum training similarity >=0.35, and MW/WLOGP/TPSA within training ranges. Fixed before test evaluation.','scope':'Internal scaffold-held-out BBBP validation only. No external prospective validation, measured brain exposure, efflux/P-gp prediction or clinical validation. Labels include mechanisms beyond passive permeability. Stereochemistry is not modeled; stereochemistry-agnostic duplicate/conflicting graphs were curated together.'}
+# Preserve row pairing and whole-scaffold dependence in evaluation uncertainty.
+from importlib.util import spec_from_file_location,module_from_spec
+spec=spec_from_file_location('bbb_statistics',ROOT/'tools/bbb-statistics.py');stats=module_from_spec(spec);spec.loader.exec_module(stats)
+paired=[]
+for k,i in enumerate(test):
+ c=comparison['rows'][k];assert c['smiles']==rows[i]['key'] and c['observed']==int(y[i])
+ paired.append(dict(smiles=rows[i]['key'],scaffold=rows[i]['scaffold'],observed=int(y[i]),modelProbability=float(p[k]),modelPrediction=int(p[k]>=threshold),passivePrediction=c['predicted'] if c['status']=='scored' else None,passiveStatus=c['status'],applicable=bool(gate[k])))
+matched=[r for r in paired if r['passiveStatus']=='scored'];applicable=[r for r in matched if r['applicable']]
+report['uncertainty']={'fullMatched':stats.paired_scaffold_intervals(matched),'applicableMatched':stats.paired_scaffold_intervals(applicable),'scope':'Paired comparisons use only the identical structures scored by both methods. Compound-wise McNemar does not settle balanced-accuracy differences or shared-scaffold dependence.'}
+report['statisticsCodeSha256']=hashlib.sha256((ROOT/'tools/bbb-statistics.py').read_bytes()).hexdigest()
+paired_bytes=(json.dumps({'schemaVersion':1,'modelId':report['modelId'],'threshold':float(threshold),'sourceSha256':source['sha256'],'rows':paired},indent=2)+'\n').encode()
+(ROOT/'validation/bbb-heldout-predictions.json').write_bytes(paired_bytes);report['pairedPredictionsSha256']=hashlib.sha256(paired_bytes).hexdigest()
 # Export only numerical trees/domain fingerprints, never an executable pickle.
 trees=[]
 for estimator in forest.estimators_:

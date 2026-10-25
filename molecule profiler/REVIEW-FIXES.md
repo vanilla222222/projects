@@ -33,3 +33,25 @@ entries. Manually named structural references retain their existing scope;
 no class label becomes proof of pharmacology. The optional checkbox restores the
 complete structural pool. Nothing is deleted or relabeled as inactive, and the
 inspector/structure search still covers the entire collection.
+
+## BBB comparison uncertainty
+
+The report now retains the exact held-out row pairing, probabilities, fixed
+predictions, scaffold IDs, passive-screen status and applicability decisions.
+Both methods receive 95% intervals from 2,000 paired scaffold-cluster percentile
+bootstrap resamples: whole scaffold groups move together, and each resample uses
+the same multiplicities for both methods. The report includes a paired interval
+for their balanced-accuracy difference, plus model ROC AUC and Brier intervals.
+Single-class bootstrap draws are counted and excluded explicitly.
+
+An exact two-sided binomial McNemar comparison is also reported, with all four
+correct/incorrect pair counts. It tests marginal correctness, not balanced
+accuracy, and treats compound pairs as independent; shared scaffolds limit that
+p-value's interpretation. It does not settle the balanced-accuracy gain. The
+cluster interval is conditional on the fixed split and fitted model, and does
+not cover retraining, split selection or external-population uncertainty. No test
+result changes calibration, threshold, domain gate or model weights.
+
+The independent binomial and bootstrap fixtures run with
+`python tools/bbb-statistics-test.py`. Reproduction also runs native/exported
+prediction parity and checks the numerical model payload against its prior hash.
