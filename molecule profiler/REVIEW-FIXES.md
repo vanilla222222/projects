@@ -22,3 +22,14 @@ the UI labels this limitation. It is not scaffold-held-out or external validatio
 Regenerate with `node tools/retrieval-benchmark.js --write` after relevant data or
 ranking changes. Run `node tools/reference-context-test.js` and
 `node tools/retrieval-evaluate-test.js` to check the source and parity contracts.
+
+## Similarity pool eligibility
+
+Unassigned bulk ChEBI/DrugCentral imports no longer enter the default similarity
+pool solely because they have a source-provided name. Graph-matched imported
+receptor evidence, reviewed pharmacology/control records, or explicit named
+target membership retains eligibility. Property/illustrative flags still exclude
+entries. Manually named structural references retain their existing scope;
+no class label becomes proof of pharmacology. The optional checkbox restores the
+complete structural pool. Nothing is deleted or relabeled as inactive, and the
+inspector/structure search still covers the entire collection.

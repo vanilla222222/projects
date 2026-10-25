@@ -2,6 +2,7 @@
 const ANALYSIS_REFERENCE_CONTEXT=ReferenceContext.create(LIBRARY,TARGETS,typeof CuratedReferences==='undefined'?null:CuratedReferences);
 const ANALYSIS_REFERENCE_LIBRARY=ANALYSIS_REFERENCE_CONTEXT.library;
 const ANALYSIS_REFERENCE_TARGETS=ANALYSIS_REFERENCE_CONTEXT.targets;
+const SIMILARITY_ELIGIBILITY=ReferenceEligibility.create(ANALYSIS_REFERENCE_LIBRARY,ANALYSIS_REFERENCE_TARGETS,{recordsFor:e=>CuratedReferences.forEntry(e),evidenceFor:e=>LibraryCatalog.receptorEvidence(e)});
 
 // Display labels are separate from stable reference keys used in scientific exports.
 function referenceDisplayName(entry) {
@@ -827,7 +828,7 @@ function renderSimilar(record) {
   const query = fingerprint(record.mol, method.key);
   const library = libraryFingerprints(method.key);
   const includeProperty = document.getElementById('sim-include-property-only').checked;
-  const isPropertyReference = (entry) => entry.propertyOnly === true;
+  const isPropertyReference = (entry) => entry.propertyOnly === true || !SIMILARITY_ELIGIBILITY.eligible(entry);
   const rankedPool = includeProperty ? library : library.filter(item => !isPropertyReference(item.entry));
   const hits = rankedPool.map((item) => ({
     entry: item.entry,
@@ -850,7 +851,7 @@ function renderSimilar(record) {
     + query.bits.size + ' query bits' + infoButton('simBits');
   document.getElementById('sim-scope-count').textContent =
     rankedPool.length + ' of ' + library.length + ' parseable structures ranked; '
-    + (library.length - rankedPool.length) + ' property-reference/illustrative entries excluded'
+    + (library.length - rankedPool.length) + ' unassigned bulk structures or property/illustrative references excluded'
     + (includeProperty ? ' (included by request)' : ' by default') + '. Collection labels are not verified provenance.';
   document.getElementById('sim-blurb').textContent = method.blurb;
 
