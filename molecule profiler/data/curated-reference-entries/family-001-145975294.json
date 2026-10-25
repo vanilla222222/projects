@@ -1,0 +1,80 @@
+{
+  "id": "family-001-145975294",
+  "title": "Brorphine — sourced identity",
+  "collections": [
+    "Named benzimidazolone references"
+  ],
+  "compounds": [
+    {
+      "name": "Brorphine",
+      "sourceName": "Brorphine",
+      "smiles": "CC(c1ccc(Br)cc1)N1CCC(n2c(=O)[nH]c3ccccc32)CC1",
+      "formula": "C20H22BrN3O",
+      "inchiKey": "CNOFBGYRMCBVLO-UHFFFAOYSA-N",
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/145975294",
+      "aliases": [],
+      "role": "Published MOR agonist reference",
+      "identitySource": {
+        "provider": "PubChem",
+        "sourceFile": "validation/sources/named-family-batch-001.json",
+        "sourceSha256": "56dbd73a1dd950d5474bd60bf44c359e58d945cade1c7c4532bc086678d56027",
+        "sourceRecord": {
+          "name": "Brorphine",
+          "smiles": "CC(C1=CC=C(C=C1)Br)N2CCC(CC2)N3C4=CC=CC=C4NC3=O",
+          "inchiKey": "CNOFBGYRMCBVLO-UHFFFAOYSA-N",
+          "formula": "C20H22BrN3O",
+          "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/145975294",
+          "aliases": [],
+          "id": "145975294",
+          "provider": "PubChem",
+          "accessed": "2026-10-25"
+        }
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "identity_reference",
+      "endpoint": "Source SMILES, full InChIKey and molecular formula",
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/145975294",
+      "context": "Identity metadata only; any pharmacology is documented in separate assay evidence."
+    },
+    {
+      "kind": "functional_assay",
+      "id": "brorphine-2020",
+      "entry": "family-001-145975294",
+      "receptorId": "OPRM1",
+      "target": "Mu-opioid receptor (MOR)",
+      "action": "agonist",
+      "species": "Not specified in accessible abstract",
+      "assayedName": "brorphine",
+      "sourceUrl": "https://doi.org/10.1007/s00204-020-02855-7",
+      "sourceLocation": "Abstract, named panel and activity results",
+      "assay": "MOR beta-arrestin2 and mini-Gi recruitment",
+      "endpoint": "Agonist activation reported; no numeric value imported",
+      "testedForm": "Not specified in accessible abstract",
+      "rankEligible": false,
+      "sourceFile": "validation/sources/named-family-pharmacology-001.json",
+      "sourceSha256": "6c07fcc95ad84a0f993e8bc280d935c3f7fc05bbafdc951a4c6fa9438d0da216",
+      "sourceRecord": {
+        "kind": "functional_assay",
+        "id": "brorphine-2020",
+        "entry": "family-001-145975294",
+        "receptorId": "OPRM1",
+        "target": "Mu-opioid receptor (MOR)",
+        "action": "agonist",
+        "species": "Not specified in accessible abstract",
+        "assayedName": "brorphine",
+        "sourceUrl": "https://doi.org/10.1007/s00204-020-02855-7",
+        "sourceLocation": "Abstract, named panel and activity results",
+        "assay": "MOR beta-arrestin2 and mini-Gi recruitment",
+        "endpoint": "Agonist activation reported; no numeric value imported",
+        "testedForm": "Not specified in accessible abstract",
+        "rankEligible": false
+      },
+      "context": "Assay-specific evidence; no activity is transferred to a different query structure."
+    }
+  ],
+  "reviewedDate": "2026-10-25",
+  "note": "Identity and pharmacology have separate sources. This record includes published MOR agonist evidence with the reported assay and uncertainty. Functional potency is not binding affinity; source salt/form context is retained. Family matches do not transfer activity to other structures. Species is not resolved in the accessible source; this observation is displayed but does not add a human target-ranking association."
+}

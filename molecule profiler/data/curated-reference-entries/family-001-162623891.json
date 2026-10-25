@@ -1,0 +1,97 @@
+{
+  "id": "family-001-162623891",
+  "title": "5-Aminoisotonitazene — sourced identity",
+  "collections": [
+    "Named nitazene references"
+  ],
+  "compounds": [
+    {
+      "name": "5-Aminoisotonitazene",
+      "sourceName": "5-Aminoisotonitazene",
+      "smiles": "CCN(CC)CCn1c(Cc2ccc(OC(C)C)cc2)nc2cc(N)ccc21",
+      "formula": "C23H32N4O",
+      "inchiKey": "DVCBBZBNZSSXMS-UHFFFAOYSA-N",
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/162623891",
+      "aliases": [
+        "5-Amino isotonitazene"
+      ],
+      "role": "Published MOR agonist reference",
+      "identitySource": {
+        "provider": "PubChem",
+        "sourceFile": "validation/sources/named-family-batch-001.json",
+        "sourceSha256": "56dbd73a1dd950d5474bd60bf44c359e58d945cade1c7c4532bc086678d56027",
+        "sourceRecord": {
+          "name": "5-Aminoisotonitazene",
+          "smiles": "CCN(CC)CCN1C2=C(C=C(C=C2)N)N=C1CC3=CC=C(C=C3)OC(C)C",
+          "inchiKey": "DVCBBZBNZSSXMS-UHFFFAOYSA-N",
+          "formula": "C23H32N4O",
+          "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/162623891",
+          "aliases": [
+            "5-Amino isotonitazene"
+          ],
+          "id": "162623891",
+          "provider": "PubChem",
+          "accessed": "2026-10-25"
+        }
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "identity_reference",
+      "endpoint": "Source SMILES, full InChIKey and molecular formula",
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/162623891",
+      "context": "Identity metadata only; any pharmacology is documented in separate assay evidence."
+    },
+    {
+      "kind": "functional_assay",
+      "receptorId": "OPRM1",
+      "target": "Mu-opioid receptor (MOR)",
+      "action": "agonist",
+      "species": "Homo sapiens",
+      "id": "5-amino-isotonitazene-2025",
+      "entry": "family-001-162623891",
+      "assayedName": "5-aminoisotonitazene",
+      "sourceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12147671/",
+      "sourceLocation": "Table 2, MOR column; sections 2.1–2.4",
+      "assay": "CHO human MOR membrane [35S]GTPgammaS activation",
+      "endpoint": "EC50 = 144 ± 35 nM (SEM)",
+      "relation": "=",
+      "value": 144,
+      "sem": 35,
+      "unit": "nM",
+      "sourceClassification": "Full agonist in this assay",
+      "testedForm": "Free base",
+      "sourceFile": "validation/sources/named-family-pharmacology-001.json",
+      "sourceSha256": "6c07fcc95ad84a0f993e8bc280d935c3f7fc05bbafdc951a4c6fa9438d0da216",
+      "sourceRecord": {
+        "kind": "functional_assay",
+        "receptorId": "OPRM1",
+        "target": "Mu-opioid receptor (MOR)",
+        "action": "agonist",
+        "species": "Homo sapiens",
+        "id": "5-amino-isotonitazene-2025",
+        "entry": "family-001-162623891",
+        "assayedName": "5-aminoisotonitazene",
+        "sourceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12147671/",
+        "sourceLocation": "Table 2, MOR column; sections 2.1–2.4",
+        "assay": "CHO human MOR membrane [35S]GTPgammaS activation",
+        "endpoint": "EC50 = 144 ± 35 nM (SEM)",
+        "relation": "=",
+        "value": 144,
+        "sem": 35,
+        "unit": "nM",
+        "sourceClassification": "Full agonist in this assay",
+        "testedForm": "Free base"
+      },
+      "context": "Assay-specific evidence; no activity is transferred to a different query structure."
+    }
+  ],
+  "reviewedDate": "2026-10-25",
+  "note": "Identity and pharmacology have separate sources. This record includes published MOR agonist evidence with the reported assay and uncertainty. Functional potency is not binding affinity; source salt/form context is retained. Family matches do not transfer activity to other structures.",
+  "panel": {
+    "gene": "OPRM1",
+    "name": "Mu opioid receptor",
+    "family": "GPCR"
+  }
+}

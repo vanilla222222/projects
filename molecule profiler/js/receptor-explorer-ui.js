@@ -8,7 +8,8 @@
   const byReference=new Map(library.map(e=>[e.name,e]));
   function referenceLabel(id){const entry=byReference.get(id);if(!entry||typeof LibraryCatalog==='undefined')return id;
     const record=LibraryCatalog.nameRecord(entry);return LibraryCatalog.displayName(entry)+(record?.matchType==='tautomer-standardized'?' [standardized-form name]':'')+(record?' ('+id+')':'');}
-  const proposed=typeof RECEPTOR_LIGAND_ANNOTATIONS!=='undefined'?RECEPTOR_LIGAND_ANNOTATIONS:[];
+  const originalAnnotations=typeof RECEPTOR_LIGAND_ANNOTATIONS!=='undefined'?RECEPTOR_LIGAND_ANNOTATIONS:[];
+  const proposed=globalThis.CuratedReferences?.annotations(originalAnnotations,library)||originalAnnotations;
   const errors=ReceptorCatalog.validateAnnotations(proposed,receptors,library);
   const invalid=new Set(errors.map(x=>x.index));
   const annotations=proposed.filter((a,index)=>!invalid.has(index));

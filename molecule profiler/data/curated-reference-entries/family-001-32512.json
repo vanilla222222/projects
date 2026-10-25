@@ -1,0 +1,93 @@
+{
+  "id": "family-001-32512",
+  "title": "N-desethyl etonitazene — sourced identity",
+  "collections": [
+    "Named nitazene references"
+  ],
+  "compounds": [
+    {
+      "name": "N-desethyl etonitazene",
+      "sourceName": "N-desethyl etonitazene",
+      "smiles": "CCNCCn1c(Cc2ccc(OCC)cc2)nc2cc([N+](=O)[O-])ccc21",
+      "formula": "C20H24N4O3",
+      "inchiKey": "RESPFUMJVJRUMB-UHFFFAOYSA-N",
+      "sourceUrl": "https://www.caymanchem.com/product/32512/n-desethyl-etonitazene",
+      "aliases": [],
+      "role": "Published MOR agonist reference",
+      "identitySource": {
+        "provider": "Cayman Chemical",
+        "sourceFile": "validation/sources/named-family-batch-001.json",
+        "sourceSha256": "56dbd73a1dd950d5474bd60bf44c359e58d945cade1c7c4532bc086678d56027",
+        "sourceRecord": {
+          "name": "N-desethyl etonitazene",
+          "smiles": "CCNCCN1C2=CC=C([N+]([O-])=O)C=C2N=C1CC3=CC=C(OCC)C=C3",
+          "inchiKey": "RESPFUMJVJRUMB-UHFFFAOYSA-N",
+          "formula": "C20H24N4O3",
+          "sourceUrl": "https://www.caymanchem.com/product/32512/n-desethyl-etonitazene",
+          "aliases": [],
+          "id": "32512",
+          "provider": "Cayman Chemical",
+          "accessed": "2026-10-25"
+        }
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "identity_reference",
+      "endpoint": "Source SMILES, full InChIKey and molecular formula",
+      "sourceUrl": "https://www.caymanchem.com/product/32512/n-desethyl-etonitazene",
+      "context": "Identity metadata only; any pharmacology is documented in separate assay evidence."
+    },
+    {
+      "kind": "functional_assay",
+      "receptorId": "OPRM1",
+      "target": "Mu-opioid receptor (MOR)",
+      "action": "agonist",
+      "species": "Homo sapiens",
+      "id": "n-desethyl-etonitazene-2025",
+      "entry": "family-001-32512",
+      "assayedName": "N-desethyl etonitazene",
+      "sourceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12147671/",
+      "sourceLocation": "Table 2, MOR column; sections 2.1–2.4",
+      "assay": "CHO human MOR membrane [35S]GTPgammaS activation",
+      "endpoint": "EC50 = 1.60 ± 0.10 nM (SEM)",
+      "relation": "=",
+      "value": 1.6,
+      "sem": 0.1,
+      "unit": "nM",
+      "sourceClassification": "Full agonist in this assay",
+      "testedForm": "Free base",
+      "sourceFile": "validation/sources/named-family-pharmacology-001.json",
+      "sourceSha256": "6c07fcc95ad84a0f993e8bc280d935c3f7fc05bbafdc951a4c6fa9438d0da216",
+      "sourceRecord": {
+        "kind": "functional_assay",
+        "receptorId": "OPRM1",
+        "target": "Mu-opioid receptor (MOR)",
+        "action": "agonist",
+        "species": "Homo sapiens",
+        "id": "n-desethyl-etonitazene-2025",
+        "entry": "family-001-32512",
+        "assayedName": "N-desethyl etonitazene",
+        "sourceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12147671/",
+        "sourceLocation": "Table 2, MOR column; sections 2.1–2.4",
+        "assay": "CHO human MOR membrane [35S]GTPgammaS activation",
+        "endpoint": "EC50 = 1.60 ± 0.10 nM (SEM)",
+        "relation": "=",
+        "value": 1.6,
+        "sem": 0.1,
+        "unit": "nM",
+        "sourceClassification": "Full agonist in this assay",
+        "testedForm": "Free base"
+      },
+      "context": "Assay-specific evidence; no activity is transferred to a different query structure."
+    }
+  ],
+  "reviewedDate": "2026-10-25",
+  "note": "Identity and pharmacology have separate sources. This record includes published MOR agonist evidence with the reported assay and uncertainty. Functional potency is not binding affinity; source salt/form context is retained. Family matches do not transfer activity to other structures.",
+  "panel": {
+    "gene": "OPRM1",
+    "name": "Mu opioid receptor",
+    "family": "GPCR"
+  }
+}

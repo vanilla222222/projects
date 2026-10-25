@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "scope": "Explicit structural queries, not exhaustive chemical taxonomy or pharmacology classifications. Core queries ignore bond order and stereo only where explicitly documented.",
+  "definitions": [
+    {
+      "name": "Arylcyclohexylamines",
+      "tag": "Family motif: Arylcyclohexylamines",
+      "smarts": "[NX3,NX4+]-[CX4]1(-a)~[#6]~[#6]~[#6]~[#6]~[#6]~1",
+      "description": "Six-carbon ring with an amine and an aromatic or heteroaromatic attachment on the same saturated carbon; ring carbonyls permitted.",
+      "positiveNames": [
+        "Ketamine",
+        "Phencyclidine"
+      ],
+      "negativeNames": [
+        "Diphenhydramine",
+        "Memantine"
+      ]
+    },
+    {
+      "name": "Ergoline cores",
+      "tag": "Family motif: Ergoline cores",
+      "smarts": "[#6]1~[#6]~[#7]~[#6]2~[#6]~[#6]3~[#6]~[#7]~[#6]4~[#6]~[#6]~[#6]~[#6](~[#6]~3~4)~[#6]~2~[#6]~1",
+      "description": "Ergoline fused-ring connectivity; bond order and stereochemistry are not membership criteria.",
+      "positiveNames": [
+        "Lysergide",
+        "Ergine"
+      ],
+      "negativeNames": [
+        "Tryptamine",
+        "Serotonin"
+      ]
+    },
+    {
+      "name": "Dibenzopyran cores",
+      "tag": "Family motif: Dibenzopyran cores",
+      "smarts": "[#6]1~[#6]~[#6]~[#6]2~[#6](~[#6]~1)~[#8]~[#6]~[#6]1~[#6]~[#6]~[#6]~[#6]~[#6]~2~1",
+      "description": "Dibenzopyran ring connectivity, including partially hydrogenated forms; no cannabinoid activity inferred.",
+      "positiveNames": [
+        "Tetrahydrocannabinol",
+        "Nabilone"
+      ],
+      "negativeNames": [
+        "Cannabidiol",
+        "Anandamide"
+      ]
+    },
+    {
+      "name": "Tropane cores",
+      "tag": "Family motif: Tropane cores",
+      "smarts": "[#7]1~[#6]2~[#6]~[#6]~[#6]1~[#6]~[#6]~[#6]2",
+      "description": "8-Azabicyclo[3.2.1]octane connectivity; stereo and substituents do not establish a shared action.",
+      "positiveNames": [
+        "Atropine",
+        "Cocaine"
+      ],
+      "negativeNames": [
+        "Nicotine"
+      ]
+    },
+    {
+      "name": "Morphinan cores",
+      "tag": "Family motif: Morphinan cores",
+      "smarts": "[#6]1~[#6]~[#6]~[#6]2~[#6]~[#6]3~[#7]~[#6]~[#6]~[#6]4(~[#6]~[#6]~[#6]~[#6]~[#6]~3~4)~[#6]~2~[#6]~1",
+      "description": "Morphinan ring connectivity, including bridged and oxygen-substituted relatives; no opioid action inferred.",
+      "positiveNames": [
+        "Dextromethorphan",
+        "Morphine"
+      ],
+      "negativeNames": [
+        "Fentanyl"
+      ]
+    },
+    {
+      "name": "Benzimidazolones",
+      "tag": "Family motif: Benzimidazolones",
+      "smarts": "O=c1[nH,nH0]c2ccccc2[nH,nH0]1",
+      "description": "Benzimidazol-2-one motif, including substituted ring nitrogens; distinct from nitazene benzimidazoles.",
+      "positiveNames": [
+        "Benperidol"
+      ],
+      "negativeNames": [
+        "Etonitazene",
+        "Metonitazene"
+      ]
+    },
+    {
+      "name": "Barbiturates",
+      "tag": "Family motif: Barbiturates",
+      "smarts": "O=C1[NX3]C(=O)[NX3]C(=O)[CX4]1",
+      "description": "Pyrimidine-2,4,6-trione ring; this query excludes thiobarbiturates.",
+      "positiveNames": [
+        "Phenobarbital",
+        "Barbital"
+      ],
+      "negativeNames": [
+        "Diazepam",
+        "Phenytoin"
+      ]
+    },
+    {
+      "name": "1,4-Benzodiazepin-2-ones",
+      "tag": "Family motif: 1,4-Benzodiazepin-2-ones",
+      "smarts": "[NX3]1[CX3](=[OX1])[CX4][NX2]=[CX3]c2ccccc21",
+      "description": "A defined 1,4-benzodiazepin-2-one subset; fused triazolo and other benzodiazepine subtypes can be absent.",
+      "positiveNames": [
+        "Diazepam",
+        "Clonazepam"
+      ],
+      "negativeNames": [
+        "Phenobarbital",
+        "Alprazolam"
+      ]
+    },
+    {
+      "name": "1,3-Benzodioxoles",
+      "tag": "Family motif: 1,3-Benzodioxoles",
+      "smarts": "c1ccc2c(c1)O[CX4]O2",
+      "description": "A benzene-fused 1,3-dioxole ring; structural membership only.",
+      "positiveNames": [
+        "Safrole"
+      ],
+      "negativeNames": [
+        "Mescaline",
+        "Methamphetamine"
+      ]
+    }
+  ]
+}

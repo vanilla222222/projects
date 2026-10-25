@@ -1,7 +1,7 @@
 # Curated reference collections
 
 Each JSON in `data/curated-reference-entries/` is one reviewed reference entry,
-committed separately with its compiled index and validation report. Entries can
+committed with its feature batch, compiled index and validation report. Entries can
 be a named ligand, a documented molecular pair, or a measured property record.
 Existing exact isomeric graphs are reused. Additional sourced graphs are merged
 into the browser library without rewriting historical identities. The existing scaffold audit is refreshed
@@ -25,6 +25,23 @@ retained as a bound, never an exact measurement or universal inactivity.
 Hydration free energies are not solubilities, pKa, logP, logD or permeability.
 Missing conditions and source-assigned default uncertainties remain explicit.
 
+## Pharmacology assignment and family labels
+
+New named ligand entries are admitted to the pharmacology reference set only
+when a linked source reports a target/action or assay observation. Structural
+family membership alone never creates an action, affinity, selectivity or
+ranking association. The 2026 family batch adds six references with published
+mu-opioid receptor agonist observations. Five are explicitly human assays and
+can support human MOR retrieval; the Brorphine abstract reports agonism without
+specifying species, so that observation is displayed but excluded from human
+ranking. Reported EC50 values remain assay-specific functional endpoints and
+are not treated as Ki or Kd. Salt form, assay, species and uncertainty are
+retained where reported.
+
+Identity fields and functional pharmacology have separate source snapshots.
+No identity-only metabolites were added to this batch. This avoids presenting a
+name/structure record as pharmacological evidence.
+
 ## Sources and attribution
 
 - IUPHAR/BPS Guide to PHARMACOLOGY, pinned 2026.3.1 snapshot already in
@@ -37,6 +54,14 @@ Missing conditions and source-assigned default uncertainties remain explicit.
 - SGC chemical-probe pages and linked primary studies: manually transcribed
   factual structure identifiers and limited assay observations, with direct
   source links. No general inactivity or complete selectivity is inferred.
+- Named nitazene and Brorphine identity fields: exact supplier or PubChem
+  records are linked per compound, with canonical identifier and formula
+  checks; these database identity fields are not treated as pharmacology.
+  Functional assay observations are separately attributed to the cited primary
+  studies, with selected rows and snapshot hashes in
+  `validation/sources/named-family-pharmacology-001.json`. Only the limited
+  identity and assay fields used by the reference are retained; no synthesis,
+  dose or clinical-effect claims are imported.
 - NCI Drug Dictionary and product labels: relationship-specific sources.
   Product salts and formulations are distinguished from stored parent graphs.
 - FreeSolv, Mobley laboratory: selected experimental hydration free-energy

@@ -4,7 +4,7 @@
 Run offline after adding one JSON entry in data/curated-reference-entries/.
 Full isomeric graphs, source keys, formula and browser round trips must agree.
 """
-import argparse, csv, hashlib, json, subprocess
+import argparse, csv, hashlib, json, subprocess, runpy
 from pathlib import Path
 from collections import defaultdict
 from rdkit import Chem, rdBase
@@ -32,7 +32,7 @@ def build():
         raw=p.read_bytes();r=json.loads(raw);inputs[str(p.relative_to(ROOT))]=sha(raw)
         assert r['id']==p.stem and r['id'] not in ids, 'Duplicate/mismatched ID'
         ids.add(r['id']);assert r['collections'] and r['evidence'] and r['note']
-        assert all(e['sourceUrl'].startswith('https://') and e['kind'] in {'source_classification','documented_relationship','measured_property','control_comparison','stereo_comparison'} for e in r['evidence'])
+        assert all(e['sourceUrl'].startswith('https://') and e['kind'] in {'source_classification','documented_relationship','measured_property','control_comparison','stereo_comparison','identity_reference','functional_assay'} for e in r['evidence'])
         for c in r['compounds']:
             m=Chem.MolFromSmiles(c['smiles']);g=graph(c['smiles'])
             assert len(Chem.GetMolFrags(m))==1 and m.GetNumAtoms()<=120
@@ -53,8 +53,13 @@ def build():
             for e in r['evidence']:
                 if e.get('sourceFile'):
                     src=source(e['sourceFile'],e['sourceSha256'])
-                    assert e['sourceRecord'] in src['interactions'],'Evidence row absent from pinned source'
-                    assert e['sourceRecord']['Target Species']=='Human'
+                    assert e['sourceRecord'] in src.get('interactions',src.get('rows',[])),'Evidence row absent from pinned source'
+                    if e['kind']=='source_classification':assert e['sourceRecord']['Target Species']=='Human'
+                if e['kind']=='functional_assay':
+                    assert e['receptorId'] and e['action']=='agonist' and e['assay'] and e['species']
+                    if 'value' in e:assert e['value']>0 and e['unit']=='nM' and e['relation']=='='
+            if r.get('panel'):
+                assert any(e['kind']=='source_classification' or (e['kind']=='functional_assay' and e['species']=='Homo sapiens' and e.get('rankEligible',True) and e['receptorId']==r['panel']['gene']) for e in r['evidence']),'Panel requires qualified pharmacology evidence'
             if not bygraph[g]:
                 name=c['name'];assert name.casefold() not in names, 'Name belongs to a different graph: '+name
                 extra={'name':name,'cls':'Curated named reference','formula':c['formula'],'smiles':c['smiles'],'curatedReferenceId':r['id']}
@@ -85,6 +90,33 @@ def build():
                 out=entries[name];out['librarySmiles']=e['smiles'];out['recordIds'].append(r['id'])
                 out['tags'].update('Curated collection: '+x for x in r['collections'])
                 if r.get('panel'):out['tags'].add('Curated panel: '+r['panel']['gene'])
+                for evidence in r['evidence']:
+                    if evidence['kind']=='functional_assay':
+                        if evidence['species']=='Homo sapiens':out['tags'].update(['Evidence: Functional assay','Action: Agonist','Receptor: '+evidence['receptorId'],'Receptor action: '+evidence['receptorId']+' · Agonist'])
+                        else:out['tags'].add('Evidence: Functional assay (species unresolved)')
+                if all(e['kind']=='identity_reference' for e in r['evidence']):out['tags'].add('Evidence: Identity only')
+    # New structural families apply to the entire composed library, not just
+    # newly curated records. Existing historical tag snapshots remain intact.
+    taxonomy=runpy.run_path(str(ROOT/'tools/build-library-tags.py'))
+    definitions=json.loads((ROOT/'data/family-definitions.json').read_text())['definitions']
+    patterns=[(d,Chem.MolFromSmarts(d['smarts'])) for d in definitions]
+    assert all(p is not None for _,p in patterns),'Invalid family SMARTS'
+    for e in extras:
+        out=entries[e['name']];out['tags'].update(taxonomy['tags_for'](e))
+    measured=[{'name':name,'tag':'Family motif: '+name,'pattern':p} for name,p in taxonomy['FAMILY_MOTIFS'] if name in {'Nitazenes','Nitazene-related benzimidazoles'}]
+    measured += [{'name':d['name'],'tag':d['tag'],'pattern':p} for d,p in patterns]
+    counts={d['tag']:{'name':d['name'],'tag':d['tag'],'baseEntries':0,'currentEntries':0,'newStructures':0,'graphs':set()} for d in measured}
+    for i,e in enumerate(library+extras):
+        m=Chem.MolFromSmiles(e['smiles'])
+        for d,p in patterns:
+            if m.HasSubstructMatch(p):
+                out=entries[e['name']];out['librarySmiles']=e['smiles'];out['tags'].add(d['tag'])
+        for d in measured:
+            if not m.HasSubstructMatch(d['pattern']):continue
+            count=counts[d['tag']];count['currentEntries']+=1;count['graphs'].add(graph(e['smiles']))
+            if i<len(library):count['baseEntries']+=1
+            else:count['newStructures']+=1
+    familyCoverage=[{**{k:v for k,v in c.items() if k!='graphs'},'distinctIsomericGraphs':len(c['graphs'])} for c in counts.values()]
     panels={}
     for r in records:
         if not r.get('panel'):continue
@@ -94,11 +126,12 @@ def build():
             scaffold=MurckoScaffold.MurckoScaffoldSmilesFromSmiles(c['smiles'])
             if scaffold:p['scaffolds'].add(scaffold)
             else:p['acyclic'].add(g)
-        p['classifications'].update(e['sourceClassification'] for e in r['evidence'] if e.get('sourceClassification'))
+        p['classifications'].update(e.get('sourceClassification') or 'Agonist (functional assay)' for e in r['evidence'] if e.get('sourceClassification') or e['kind']=='functional_assay')
     coverage=[{'gene':gene,'distinctIsomericGraphs':len(p['graphs']),'ringScaffolds':len(p['scaffolds']),'acyclicProfiles':len(p['acyclic']),'sourceClassifications':sorted(p['classifications'])} for gene,p in sorted(panels.items())]
-    data={'schemaVersion':1,'records':records,'extraLibrary':extras,'panelCoverage':coverage,'entries':{k:{**v,'recordIds':sorted(set(v['recordIds'])),'tags':sorted(v['tags'])} for k,v in sorted(entries.items())}}
+    data={'schemaVersion':1,'records':records,'extraLibrary':extras,'panelCoverage':coverage,'familyDefinitions':definitions,'familyCoverage':familyCoverage,'entries':{k:{**v,'recordIds':sorted(set(v['recordIds'])),'tags':sorted(v['tags'])} for k,v in sorted(entries.items())}}
     text="'use strict';\n// Individually sourced reference records. See CURATED-REFERENCES.md for attribution.\nconst CURATED_REFERENCES = "+json.dumps(data,ensure_ascii=False,separators=(',',':'))+";\nif(typeof module!=='undefined')module.exports={CURATED_REFERENCES};\nif(typeof globalThis!=='undefined')globalThis.CURATED_REFERENCES=CURATED_REFERENCES;\n"
-    report={'schemaVersion':1,'records':len(records),'extraStructures':len(extras),'rdkitVersion':rdBase.rdkitVersion,'inputSha256':inputs,'librarySha256':sha((ROOT/'data/library.js').read_bytes()),'toolSha256':sha(Path(__file__).read_bytes()),'dataSha256':sha(text.encode()),'browserGraphsChecked':len(checks)}
+    familyInputs=['data/family-definitions.json','tools/build-library-tags.py','tools/library-taxonomy.py','tools/library-expansion-50.py']
+    report={'schemaVersion':1,'records':len(records),'extraStructures':len(extras),'rdkitVersion':rdBase.rdkitVersion,'inputSha256':inputs,'familySourceSha256':{p:sha((ROOT/p).read_bytes()) for p in familyInputs},'familyCoverage':familyCoverage,'librarySha256':sha((ROOT/'data/library.js').read_bytes()),'toolSha256':sha(Path(__file__).read_bytes()),'dataSha256':sha(text.encode()),'browserGraphsChecked':len(checks)}
     return text,json.dumps(report,indent=2)+'\n'
 if __name__=='__main__':
     ap=argparse.ArgumentParser();ap.add_argument('--check',action='store_true');a=ap.parse_args()

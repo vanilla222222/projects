@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "scope": "Manually transcribed factual identity fields for compounds with separately cited functional pharmacology; no assay, potency or synthesis data imported. No counterion removal or generated structures.",
+  "rows": [
+    {
+      "name": "Clonitazene",
+      "smiles": "ClC(C=C1)=CC=C1CC2=NC3=CC([N+]([O-])=O)=CC=C3N2CCN(CC)CC",
+      "inchiKey": "GPZLDQAEBHTMPG-UHFFFAOYSA-N",
+      "formula": "C20H23ClN4O2",
+      "sourceUrl": "https://www.caymanchem.com/product/29642/clonitazene",
+      "aliases": [],
+      "id": "29642",
+      "provider": "Cayman Chemical",
+      "accessed": "2026-10-25"
+    },
+    {
+      "name": "N-desethyl etonitazene",
+      "smiles": "CCNCCN1C2=CC=C([N+]([O-])=O)C=C2N=C1CC3=CC=C(OCC)C=C3",
+      "inchiKey": "RESPFUMJVJRUMB-UHFFFAOYSA-N",
+      "formula": "C20H24N4O3",
+      "sourceUrl": "https://www.caymanchem.com/product/32512/n-desethyl-etonitazene",
+      "aliases": [],
+      "id": "32512",
+      "provider": "Cayman Chemical",
+      "accessed": "2026-10-25"
+    },
+    {
+      "name": "N-Pyrrolidino protonitazene",
+      "smiles": "CCCOC(C=C1)=CC=C1CC2=NC3=CC([N+]([O-])=O)=CC=C3N2CCN4CCCC4",
+      "inchiKey": "KCRWXNIIXGBPID-UHFFFAOYSA-N",
+      "formula": "C23H28N4O3",
+      "sourceUrl": "https://www.caymanchem.com/product/37456/n-pyrrolidino-protonitazene",
+      "aliases": [
+        "Protonitazepyne",
+        "Protonitazepine"
+      ],
+      "id": "37456",
+      "provider": "Cayman Chemical",
+      "accessed": "2026-10-25"
+    },
+    {
+      "name": "5-Aminoisotonitazene",
+      "smiles": "CCN(CC)CCN1C2=C(C=C(C=C2)N)N=C1CC3=CC=C(C=C3)OC(C)C",
+      "inchiKey": "DVCBBZBNZSSXMS-UHFFFAOYSA-N",
+      "formula": "C23H32N4O",
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/162623891",
+      "aliases": [
+        "5-Amino isotonitazene"
+      ],
+      "id": "162623891",
+      "provider": "PubChem",
+      "accessed": "2026-10-25"
+    },
+    {
+      "name": "Methylnitazene",
+      "smiles": "CCN(CC)CCN1C2=C(C=C(C=C2)[N+](=O)[O-])N=C1CC3=CC=C(C=C3)C",
+      "inchiKey": "XGHTZJUKJYZDSW-UHFFFAOYSA-N",
+      "formula": "C21H26N4O2",
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/162623683",
+      "aliases": [
+        "Menitazene"
+      ],
+      "id": "162623683",
+      "provider": "PubChem",
+      "accessed": "2026-10-25"
+    },
+    {
+      "name": "Brorphine",
+      "smiles": "CC(C1=CC=C(C=C1)Br)N2CCC(CC2)N3C4=CC=CC=C4NC3=O",
+      "inchiKey": "CNOFBGYRMCBVLO-UHFFFAOYSA-N",
+      "formula": "C20H22BrN3O",
+      "sourceUrl": "https://pubchem.ncbi.nlm.nih.gov/compound/145975294",
+      "aliases": [],
+      "id": "145975294",
+      "provider": "PubChem",
+      "accessed": "2026-10-25"
+    }
+  ]
+}

@@ -35,6 +35,7 @@
     return expected && source.url===expected ? source : null;
   }
   function nameRecord(entry, context) {
+    const curated=root.CuratedReferences?.nameRecord(entry);if(curated)return curated;
     const recorded=matchedRecord(metadata(context).names, entry);
     if(recorded)return recorded;
     const source=sourceRecord(entry);

@@ -1,8 +1,9 @@
 # Named chemical families and identity review
 
-The library contains 4,072 stored structures. The catalogue now offers direct
-buttons for eight overlapping **structural motifs**, with counts and searchable
-tags. These are explicit graph queries, not an exhaustive chemical taxonomy or
+The initial family-catalog milestone covered 4,072 stored structures and offered
+direct buttons for eight overlapping **structural motifs**, with counts and
+searchable tags. The reference library has since grown; these historical counts
+are retained as that milestone's snapshot. These are explicit graph queries, not an exhaustive chemical taxonomy or
 a statement that every matching compound shares a pharmacological action.
 Large fused molecules can contain a smaller family motif without usually being
 classified in that family. Names, old class labels and motif matches alone are
@@ -103,3 +104,30 @@ curation snapshot. Additional identity context:
 [PubChem MDPV](https://pubchem.ncbi.nlm.nih.gov/compound/20111961),
 [PubChem 4-MePPP](https://pubchem.ncbi.nlm.nih.gov/compound/6430745),
 [EUDA alpha-PVP structure](https://www.euda.europa.eu/media-library/molecular-structure-%CE%B1-pvp_en).
+
+## Structural filters and pharmacology-linked nitazene references (2026 batch)
+
+Nine additional graph filters are now available: arylcyclohexylamines,
+ergoline cores, dibenzopyran cores, tropane cores, morphinan cores,
+benzimidazolones, barbiturates, a defined 1,4-benzodiazepin-2-one subset, and
+1,3-benzodioxoles. The filters classify the existing library as well as the
+newly added compounds. Their counts are generated in
+`validation/curated-references.json`; exact queries and positive/negative named
+fixtures are pinned in `data/family-definitions.json`. These structural tags do
+not carry pharmacology.
+
+The nitazene expansion adds six named references, each with a cited functional
+observation at the mu-opioid receptor: Clonitazene, N-desethyl etonitazene,
+5-aminoisotonitazene, Methylnitazene, N-pyrrolidino protonitazene, and
+Brorphine. Five observations explicitly test human MOR and can contribute to
+human target ranking. Brorphine is identified as a MOR agonist in the cited
+abstract, but the accessible source does not specify species, so it is shown as
+pharmacology evidence without entering the human ranking. Reported endpoints,
+assay formats, uncertainty and tested salt form are retained as published;
+values are not converted to binding affinities. Identity-only additions were
+excluded from this batch.
+
+Nitazene-related and nitro-substituted tags remain separate. In particular,
+5-aminoisotonitazene can match the broader nitazene-related scaffold without
+being tagged as a nitro-substituted nitazene. Family matching never transfers
+agonism or potency to a related structure.

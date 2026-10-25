@@ -1,0 +1,97 @@
+{
+  "id": "family-001-29642",
+  "title": "Clonitazene — sourced identity",
+  "collections": [
+    "Named nitazene references"
+  ],
+  "compounds": [
+    {
+      "name": "Clonitazene",
+      "sourceName": "Clonitazene",
+      "smiles": "CCN(CC)CCn1c(Cc2ccc(Cl)cc2)nc2cc([N+](=O)[O-])ccc21",
+      "formula": "C20H23ClN4O2",
+      "inchiKey": "GPZLDQAEBHTMPG-UHFFFAOYSA-N",
+      "sourceUrl": "https://www.caymanchem.com/product/29642/clonitazene",
+      "aliases": [],
+      "role": "Published MOR agonist reference",
+      "identitySource": {
+        "provider": "Cayman Chemical",
+        "sourceFile": "validation/sources/named-family-batch-001.json",
+        "sourceSha256": "56dbd73a1dd950d5474bd60bf44c359e58d945cade1c7c4532bc086678d56027",
+        "sourceRecord": {
+          "name": "Clonitazene",
+          "smiles": "ClC(C=C1)=CC=C1CC2=NC3=CC([N+]([O-])=O)=CC=C3N2CCN(CC)CC",
+          "inchiKey": "GPZLDQAEBHTMPG-UHFFFAOYSA-N",
+          "formula": "C20H23ClN4O2",
+          "sourceUrl": "https://www.caymanchem.com/product/29642/clonitazene",
+          "aliases": [],
+          "id": "29642",
+          "provider": "Cayman Chemical",
+          "accessed": "2026-10-25"
+        }
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "identity_reference",
+      "endpoint": "Source SMILES, full InChIKey and molecular formula",
+      "sourceUrl": "https://www.caymanchem.com/product/29642/clonitazene",
+      "context": "Identity metadata only; any pharmacology is documented in separate assay evidence."
+    },
+    {
+      "kind": "functional_assay",
+      "receptorId": "OPRM1",
+      "target": "Mu-opioid receptor (MOR)",
+      "action": "agonist",
+      "species": "Homo sapiens",
+      "id": "clonitazene-2021",
+      "entry": "family-001-29642",
+      "assayedName": "Clonitazene",
+      "sourceUrl": "https://doi.org/10.1021/acschemneuro.1c00064",
+      "accessUrl": "https://backoffice.biblio.ugent.be/download/8714061/8737316",
+      "sourceLocation": "Table 2, compound 10; methods, human MOR",
+      "assay": "HEK293T NanoBiT beta-arrestin2 recruitment",
+      "endpoint": "EC50 = 140 nM; 95% CI 93.6–210 nM",
+      "relation": "=",
+      "value": 140,
+      "lower": 93.6,
+      "upper": 210,
+      "unit": "nM",
+      "uncertaintyKind": "95% confidence interval",
+      "testedForm": "Free base; concentrations reported as free-base equivalents",
+      "sourceFile": "validation/sources/named-family-pharmacology-001.json",
+      "sourceSha256": "6c07fcc95ad84a0f993e8bc280d935c3f7fc05bbafdc951a4c6fa9438d0da216",
+      "sourceRecord": {
+        "kind": "functional_assay",
+        "receptorId": "OPRM1",
+        "target": "Mu-opioid receptor (MOR)",
+        "action": "agonist",
+        "species": "Homo sapiens",
+        "id": "clonitazene-2021",
+        "entry": "family-001-29642",
+        "assayedName": "Clonitazene",
+        "sourceUrl": "https://doi.org/10.1021/acschemneuro.1c00064",
+        "accessUrl": "https://backoffice.biblio.ugent.be/download/8714061/8737316",
+        "sourceLocation": "Table 2, compound 10; methods, human MOR",
+        "assay": "HEK293T NanoBiT beta-arrestin2 recruitment",
+        "endpoint": "EC50 = 140 nM; 95% CI 93.6–210 nM",
+        "relation": "=",
+        "value": 140,
+        "lower": 93.6,
+        "upper": 210,
+        "unit": "nM",
+        "uncertaintyKind": "95% confidence interval",
+        "testedForm": "Free base; concentrations reported as free-base equivalents"
+      },
+      "context": "Assay-specific evidence; no activity is transferred to a different query structure."
+    }
+  ],
+  "reviewedDate": "2026-10-25",
+  "note": "Identity and pharmacology have separate sources. This record includes published MOR agonist evidence with the reported assay and uncertainty. Functional potency is not binding affinity; source salt/form context is retained. Family matches do not transfer activity to other structures.",
+  "panel": {
+    "gene": "OPRM1",
+    "name": "Mu opioid receptor",
+    "family": "GPCR"
+  }
+}

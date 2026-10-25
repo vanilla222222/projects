@@ -1,0 +1,89 @@
+{
+  "id": "family-001-37456",
+  "title": "N-Pyrrolidino protonitazene — sourced identity",
+  "collections": [
+    "Named nitazene references"
+  ],
+  "compounds": [
+    {
+      "name": "N-Pyrrolidino protonitazene",
+      "sourceName": "N-Pyrrolidino protonitazene",
+      "smiles": "CCCOc1ccc(Cc2nc3cc([N+](=O)[O-])ccc3n2CCN2CCCC2)cc1",
+      "formula": "C23H28N4O3",
+      "inchiKey": "KCRWXNIIXGBPID-UHFFFAOYSA-N",
+      "sourceUrl": "https://www.caymanchem.com/product/37456/n-pyrrolidino-protonitazene",
+      "aliases": [
+        "Protonitazepyne",
+        "Protonitazepine"
+      ],
+      "role": "Published MOR agonist reference",
+      "identitySource": {
+        "provider": "Cayman Chemical",
+        "sourceFile": "validation/sources/named-family-batch-001.json",
+        "sourceSha256": "56dbd73a1dd950d5474bd60bf44c359e58d945cade1c7c4532bc086678d56027",
+        "sourceRecord": {
+          "name": "N-Pyrrolidino protonitazene",
+          "smiles": "CCCOC(C=C1)=CC=C1CC2=NC3=CC([N+]([O-])=O)=CC=C3N2CCN4CCCC4",
+          "inchiKey": "KCRWXNIIXGBPID-UHFFFAOYSA-N",
+          "formula": "C23H28N4O3",
+          "sourceUrl": "https://www.caymanchem.com/product/37456/n-pyrrolidino-protonitazene",
+          "aliases": [
+            "Protonitazepyne",
+            "Protonitazepine"
+          ],
+          "id": "37456",
+          "provider": "Cayman Chemical",
+          "accessed": "2026-10-25"
+        }
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "identity_reference",
+      "endpoint": "Source SMILES, full InChIKey and molecular formula",
+      "sourceUrl": "https://www.caymanchem.com/product/37456/n-pyrrolidino-protonitazene",
+      "context": "Identity metadata only; any pharmacology is documented in separate assay evidence."
+    },
+    {
+      "kind": "functional_assay",
+      "receptorId": "OPRM1",
+      "target": "Mu-opioid receptor (MOR)",
+      "action": "agonist",
+      "species": "Homo sapiens",
+      "id": "protonitazepyne-2024",
+      "entry": "family-001-37456",
+      "assayedName": "N-pyrrolidino protonitazene",
+      "sourceUrl": "https://doi.org/10.1007/s00204-024-03774-7",
+      "sourceLocation": "Table 1, compound 14; methods and results",
+      "assay": "HEK293T human MOR beta-arrestin2 and cAMP readouts",
+      "endpoint": "Agonist activation measured; numerical result not transcribed",
+      "testedForm": "Free base",
+      "sourceFile": "validation/sources/named-family-pharmacology-001.json",
+      "sourceSha256": "6c07fcc95ad84a0f993e8bc280d935c3f7fc05bbafdc951a4c6fa9438d0da216",
+      "sourceRecord": {
+        "kind": "functional_assay",
+        "receptorId": "OPRM1",
+        "target": "Mu-opioid receptor (MOR)",
+        "action": "agonist",
+        "species": "Homo sapiens",
+        "id": "protonitazepyne-2024",
+        "entry": "family-001-37456",
+        "assayedName": "N-pyrrolidino protonitazene",
+        "sourceUrl": "https://doi.org/10.1007/s00204-024-03774-7",
+        "sourceLocation": "Table 1, compound 14; methods and results",
+        "assay": "HEK293T human MOR beta-arrestin2 and cAMP readouts",
+        "endpoint": "Agonist activation measured; numerical result not transcribed",
+        "testedForm": "Free base"
+      },
+      "context": "Assay-specific evidence; no activity is transferred to a different query structure."
+    }
+  ],
+  "reviewedDate": "2026-10-25",
+  "note": "Identity and pharmacology have separate sources. This record includes published MOR agonist evidence with the reported assay and uncertainty. Functional potency is not binding affinity; source salt/form context is retained. Family matches do not transfer activity to other structures.",
+  "panel": {
+    "gene": "OPRM1",
+    "name": "Mu opioid receptor",
+    "family": "GPCR"
+  }
+}
