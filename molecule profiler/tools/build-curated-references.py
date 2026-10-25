@@ -50,14 +50,21 @@ def build():
                 else:assert any(e.get('source')==raw and graph(e['smiles'])==g for e in library)
                 key=raw.get('InChIKey') or raw.get('inchiKey')
                 assert key==c['inchiKey'],'Compound key differs from source'
+                if raw.get('smiles'):assert graph(raw['smiles'])==g,'Compound graph differs from reviewed source transcription'
             for e in r['evidence']:
                 if e.get('sourceFile'):
                     src=source(e['sourceFile'],e['sourceSha256'])
                     assert e['sourceRecord'] in src.get('interactions',src.get('rows',[])),'Evidence row absent from pinned source'
                     if e['kind']=='source_classification':assert e['sourceRecord']['Target Species']=='Human'
                 if e['kind']=='functional_assay':
-                    assert e['receptorId'] and e['action']=='agonist' and e['assay'] and e['species']
+                    assert e['receptorId'] and e['action'] in {'agonist','partial_agonist'} and e['assay'] and e['species']
                     if 'value' in e:assert e['value']>0 and e['unit']=='nM' and e['relation']=='='
+                    if 'originalUnit' in e:
+                        scale={'nM':1,'µM':1000}[e['originalUnit']]
+                        assert abs(e['value']-e['originalValue']*scale)<1e-8
+                        assert abs(e['sd']-e['originalSd']*scale)<1e-8
+                    if 'efficacy' in e:
+                        assert e['efficacy']['reference']=='5-HT = 100%' and 0<=e['efficacy']['value']<=100
             if r.get('panel'):
                 assert any(e['kind']=='source_classification' or (e['kind']=='functional_assay' and e['species']=='Homo sapiens' and e.get('rankEligible',True) and e['receptorId']==r['panel']['gene']) for e in r['evidence']),'Panel requires qualified pharmacology evidence'
             if not bygraph[g]:
@@ -92,7 +99,8 @@ def build():
                 if r.get('panel'):out['tags'].add('Curated panel: '+r['panel']['gene'])
                 for evidence in r['evidence']:
                     if evidence['kind']=='functional_assay':
-                        if evidence['species']=='Homo sapiens':out['tags'].update(['Evidence: Functional assay','Action: Agonist','Receptor: '+evidence['receptorId'],'Receptor action: '+evidence['receptorId']+' · Agonist'])
+                        action=evidence['action'].replace('_',' ').capitalize()
+                        if evidence['species']=='Homo sapiens':out['tags'].update(['Evidence: Functional assay','Action: '+action,'Receptor: '+evidence['receptorId'],'Receptor action: '+evidence['receptorId']+' · '+action])
                         else:out['tags'].add('Evidence: Functional assay (species unresolved)')
                 if all(e['kind']=='identity_reference' for e in r['evidence']):out['tags'].add('Evidence: Identity only')
     # New structural families apply to the entire composed library, not just
@@ -128,10 +136,15 @@ def build():
             else:p['acyclic'].add(g)
         p['classifications'].update(e.get('sourceClassification') or 'Agonist (functional assay)' for e in r['evidence'] if e.get('sourceClassification') or e['kind']=='functional_assay')
     coverage=[{'gene':gene,'distinctIsomericGraphs':len(p['graphs']),'ringScaffolds':len(p['scaffolds']),'acyclicProfiles':len(p['acyclic']),'sourceClassifications':sorted(p['classifications'])} for gene,p in sorted(panels.items())]
-    data={'schemaVersion':1,'records':records,'extraLibrary':extras,'panelCoverage':coverage,'familyDefinitions':definitions,'familyCoverage':familyCoverage,'entries':{k:{**v,'recordIds':sorted(set(v['recordIds'])),'tags':sorted(v['tags'])} for k,v in sorted(entries.items())}}
+    studyCoverage=[];studyInputs={}
+    for path in sorted((ROOT/'validation/sources').glob('2c-*-functional.json')):
+        snapshot=json.loads(path.read_text());relative=str(path.relative_to(ROOT));studyInputs[relative]=sha(path.read_bytes())
+        reviewed=[row['name'] for row in snapshot['rows'] if any(e.get('sourceFile')==relative and e.get('sourceRecord')==row for r in records for e in r['evidence'])]
+        studyCoverage.append({'cohort':snapshot['cohort'],'sourceUrl':snapshot['sourceUrl'],'scope':'Selected human 5-HT2A functional observations','expected':len(snapshot['rows']),'reviewed':len(reviewed),'missing':[row['name'] for row in snapshot['rows'] if row['name'] not in reviewed]})
+    data={'schemaVersion':1,'records':records,'extraLibrary':extras,'panelCoverage':coverage,'familyDefinitions':definitions,'familyCoverage':familyCoverage,'studyCoverage':studyCoverage,'entries':{k:{**v,'recordIds':sorted(set(v['recordIds'])),'tags':sorted(v['tags'])} for k,v in sorted(entries.items())}}
     text="'use strict';\n// Individually sourced reference records. See CURATED-REFERENCES.md for attribution.\nconst CURATED_REFERENCES = "+json.dumps(data,ensure_ascii=False,separators=(',',':'))+";\nif(typeof module!=='undefined')module.exports={CURATED_REFERENCES};\nif(typeof globalThis!=='undefined')globalThis.CURATED_REFERENCES=CURATED_REFERENCES;\n"
     familyInputs=['data/family-definitions.json','tools/build-library-tags.py','tools/library-taxonomy.py','tools/library-expansion-50.py']
-    report={'schemaVersion':1,'records':len(records),'extraStructures':len(extras),'rdkitVersion':rdBase.rdkitVersion,'inputSha256':inputs,'familySourceSha256':{p:sha((ROOT/p).read_bytes()) for p in familyInputs},'familyCoverage':familyCoverage,'librarySha256':sha((ROOT/'data/library.js').read_bytes()),'toolSha256':sha(Path(__file__).read_bytes()),'dataSha256':sha(text.encode()),'browserGraphsChecked':len(checks)}
+    report={'schemaVersion':1,'records':len(records),'extraStructures':len(extras),'rdkitVersion':rdBase.rdkitVersion,'inputSha256':inputs,'studySourceSha256':studyInputs,'studyCoverage':studyCoverage,'familySourceSha256':{p:sha((ROOT/p).read_bytes()) for p in familyInputs},'familyCoverage':familyCoverage,'librarySha256':sha((ROOT/'data/library.js').read_bytes()),'toolSha256':sha(Path(__file__).read_bytes()),'dataSha256':sha(text.encode()),'browserGraphsChecked':len(checks)}
     return text,json.dumps(report,indent=2)+'\n'
 if __name__=='__main__':
     ap=argparse.ArgumentParser();ap.add_argument('--check',action='store_true');a=ap.parse_args()

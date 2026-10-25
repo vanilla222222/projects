@@ -44,6 +44,13 @@ name/structure record as pharmacological evidence.
 
 ## Sources and attribution
 
+The [2C study collection](TWO-C-REFERENCES.md) adds 30 named references and 32
+human 5-HT2A functional observations across three complete selected study
+cohorts. It preserves partial agonism, EC50, Emax, SD, original units and the
+distinction between human receptor and mouse host cells. Its primary-figure
+identity transcriptions explicitly label RDKit-derived identifiers; they do not
+claim an independent registry confirmation.
+
 - IUPHAR/BPS Guide to PHARMACOLOGY, pinned 2026.3.1 snapshot already in
   `validation/sources/receptor-actions-iuphar.json`, CC BY-SA 4.0.
   Selected raw ligand/interaction rows and snapshot hash accompany each entry.
@@ -80,7 +87,8 @@ node tools/curated-references-test.js
 node tools/run-validation.js
 ```
 
-The compiler checks full source InChIKeys, formula, exact graph matching,
+The compiler checks full stored InChIKeys, source-provided keys when available,
+formula, reviewed source graph matching,
 browser parser/serializer stereo round trips, and input/output hashes. It never
 strips salts, invents stereochemistry, enumerates analogues or infers activity.
 Raw source fields remain available in the per-entry JSON for review.

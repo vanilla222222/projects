@@ -1,0 +1,94 @@
+{
+  "id": "2c-study-2c-o-21-5",
+  "title": "2C-O-21.5 — measured human 5-HT2A pharmacology",
+  "collections": [
+    "2C measured pharmacology",
+    "2C-O study"
+  ],
+  "compounds": [
+    {
+      "name": "2C-O-21.5",
+      "sourceName": "2C-O-21.5",
+      "smiles": "COc1cc(OCC(F)F)c(OC)cc1CCN",
+      "formula": "C12H17F2NO3",
+      "inchiKey": "USTOBZVLZKAMKI-UHFFFAOYSA-N",
+      "sourceUrl": "https://doi.org/10.3389/fphar.2019.01423",
+      "aliases": [],
+      "role": "Measured human 5-HT2A reference",
+      "identitySource": {
+        "provider": "Primary figure transcription",
+        "sourceFile": "validation/sources/2c-alkoxy-functional.json",
+        "sourceSha256": "5743b9e6ca9d898cbf7e84b6d0661bb13af61d37dbcfde3175350983794ff923",
+        "sourceRecord": {
+          "name": "2C-O-21.5",
+          "smiles": "COc1cc(OCC(F)F)c(OC)cc1CCN",
+          "inchiKey": "USTOBZVLZKAMKI-UHFFFAOYSA-N",
+          "formula": "C12H17F2NO3",
+          "identifierOrigin": "RDKit-derived from reviewed primary figure",
+          "ring4SubstituentSmiles": "OCC(F)F",
+          "ec50": 2600,
+          "ec50Sd": 1600,
+          "ec50Unit": "nM",
+          "emaxPercent": 30,
+          "emaxSd": 8
+        },
+        "identifierOrigin": "RDKit-derived from reviewed primary figure"
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "functional_assay",
+      "receptorId": "HTR2A",
+      "target": "Serotonin 5-HT2A receptor",
+      "action": "partial_agonist",
+      "species": "Homo sapiens",
+      "hostSpecies": "Mus musculus",
+      "assay": "NIH-3T3 mouse host cells expressing human 5-HT2A; FLIPR calcium response",
+      "metric": "EC50",
+      "relation": "=",
+      "value": 2600,
+      "sd": 1600,
+      "unit": "nM",
+      "originalValue": 2600,
+      "originalSd": 1600,
+      "originalUnit": "nM",
+      "efficacy": {
+        "value": 30,
+        "sd": 8,
+        "unit": "%",
+        "reference": "5-HT = 100%"
+      },
+      "uncertaintyKind": "SD",
+      "endpoint": "EC50 = 2600 ± 1600 nM (SD); Emax = 30 ± 8% of 5-HT (SD)",
+      "testedForm": "Hydrochloride; structure index represents the neutral parent depicted by the source",
+      "sourceClassification": "Partial agonist in source calcium assay",
+      "sourceUrl": "https://doi.org/10.3389/fphar.2019.01423",
+      "accessUrl": "https://www.frontiersin.org/journals/pharmacology/articles/10.3389/fphar.2019.01423/full",
+      "sourceLocation": "Table 1, 2C-O-21.5; methods Activity At the Serotonin 5-HT2A Receptor",
+      "sourceFile": "validation/sources/2c-alkoxy-functional.json",
+      "sourceSha256": "5743b9e6ca9d898cbf7e84b6d0661bb13af61d37dbcfde3175350983794ff923",
+      "sourceRecord": {
+        "name": "2C-O-21.5",
+        "smiles": "COc1cc(OCC(F)F)c(OC)cc1CCN",
+        "inchiKey": "USTOBZVLZKAMKI-UHFFFAOYSA-N",
+        "formula": "C12H17F2NO3",
+        "identifierOrigin": "RDKit-derived from reviewed primary figure",
+        "ring4SubstituentSmiles": "OCC(F)F",
+        "ec50": 2600,
+        "ec50Sd": 1600,
+        "ec50Unit": "nM",
+        "emaxPercent": 30,
+        "emaxSd": 8
+      },
+      "context": "Functional potency and efficacy are assay-specific; EC50 is not Ki, and host-cell species is not receptor species."
+    }
+  ],
+  "panel": {
+    "gene": "HTR2A",
+    "name": "5-HT2A receptor",
+    "family": "GPCR"
+  },
+  "reviewedDate": "2026-10-25",
+  "note": "Measured partial agonism in the cited human receptor calcium assay. Parent graph reviewed against the named primary figure; formula and InChIKey are RDKit-derived identifiers, not an independent registry confirmation. Hydrochloride assay material and neutral parent identity remain distinct. Evidence is assay-specific and does not transfer activity to related structures."
+}

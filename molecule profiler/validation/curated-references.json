@@ -1,9 +1,39 @@
 {
   "schemaVersion": 1,
-  "records": 29,
-  "extraStructures": 10,
+  "records": 59,
+  "extraStructures": 27,
   "rdkitVersion": "2026.09.1",
   "inputSha256": {
+    "data/curated-reference-entries/2c-study-2c-b.json": "3c702bbaf5c1fdbf8fde5f6b1c3b23315e48a69e5dc3a5bf95f28bd817b7bf8c",
+    "data/curated-reference-entries/2c-study-2c-c.json": "edc093de57e2c1da751836c4807f168012d7805726b64690da10a8affed0e885",
+    "data/curated-reference-entries/2c-study-2c-d.json": "1b2b6164a6b956c761720a576739a1cbcb991fd158a432e4f8511b663234b9ee",
+    "data/curated-reference-entries/2c-study-2c-e.json": "a31f2a9418cf1fca2c5d5d6ff1da864536e87f1b8ff8860f3d38b63715b291cd",
+    "data/curated-reference-entries/2c-study-2c-h.json": "9f050693b658ccddd217b77bfd9e1f746f7ef631400134cbed38b009877cc151",
+    "data/curated-reference-entries/2c-study-2c-i.json": "30671d27e8a68202433931e5c9bd13133f37938c620c32c30781b36826f3e2fc",
+    "data/curated-reference-entries/2c-study-2c-n.json": "3fdcbcee41c2cb450c6c810418fb52c0ff7f9706451419dfdc98abcb3f204f37",
+    "data/curated-reference-entries/2c-study-2c-o-16.json": "b228962c1d2b304a76f3a622b1c82e614a1cb48101514ce450cd2020d6f4855c",
+    "data/curated-reference-entries/2c-study-2c-o-2.json": "68e26a312b34395eaef8e73f08afa0a342e043574b064e897de7277d478139a3",
+    "data/curated-reference-entries/2c-study-2c-o-21-5.json": "c1246fd5a501a6eb43f0b62d5489020c8589d37a8063ad842fc708dc2b4d0a87",
+    "data/curated-reference-entries/2c-study-2c-o-21.json": "2e8d4359b5cfdf3764d98d9d5b470c82cca24a232707a6c09dab437af73d5b11",
+    "data/curated-reference-entries/2c-study-2c-o-22.json": "e59d71147ad15d7509ef4f0f0ecd1755bb01356534ecf9f250cbaafe79bdabf2",
+    "data/curated-reference-entries/2c-study-2c-o-27.json": "8ee48df03b935cfdb20cdd46c058aaef16ef84e0dfb7158c0057920c58bd9d28",
+    "data/curated-reference-entries/2c-study-2c-o-3.json": "5a49d3a4a3076d96ca66ef8941c1138645a784cdb366d92f9ffeb3062db9b4b1",
+    "data/curated-reference-entries/2c-study-2c-p.json": "ac6bab95a30b41f713e7d079457ab4213b5cfb6ee2c1e0122317ee0678e13504",
+    "data/curated-reference-entries/2c-study-2c-t-1.json": "936010dbd35fa91867a6fae74271b863281b21935cd205cfa0aee4e9592ad8e2",
+    "data/curated-reference-entries/2c-study-2c-t-16.json": "17ba1d13c553ca983ecd0fe656579212e2d3400df56ea268538f8022412440f4",
+    "data/curated-reference-entries/2c-study-2c-t-19.json": "7e9ac3dc508d93abe70524dd1e7adc653afdb20556474c5694385047e3c4f82b",
+    "data/curated-reference-entries/2c-study-2c-t-2.json": "e310d25506a1d2b49f42f07b159dc6bca606fd15a6800277573a830df35b24b4",
+    "data/curated-reference-entries/2c-study-2c-t-21-5.json": "c4eb91bbfcbd74d5187eb2fd576e9adea1a1f4aff355a45f881ba6883927a7ed",
+    "data/curated-reference-entries/2c-study-2c-t-22.json": "f7be9ac9bd4dbb3c46c71540f5a5241767a47a679adfde95eb6b6a9641a94a07",
+    "data/curated-reference-entries/2c-study-2c-t-25.json": "4d17aa7c235fbcd930648fc10b4ac030ea2f7fe840506c5fbc7767e3e67295b6",
+    "data/curated-reference-entries/2c-study-2c-t-27.json": "938ff78ef1882907b9e20e5b6a35010e0b768a2e56d1f04fd5a7f868e23fb2e8",
+    "data/curated-reference-entries/2c-study-2c-t-28.json": "97870ebf21e2cf17814dfecb9d44863b2fd8d7bcd1fb93cdf9217c06db825493",
+    "data/curated-reference-entries/2c-study-2c-t-3.json": "eb7613c34b1c9f0e3a28a968c36bcec273430c0b12a5b6f477e5181a9d5e2f23",
+    "data/curated-reference-entries/2c-study-2c-t-30.json": "ab221052de27b8fbea882985267c14951884215082d820f046d1dc2a4b59b973",
+    "data/curated-reference-entries/2c-study-2c-t-31.json": "7de4eca8ccc678bb232e2e41b70e4a3f222d9d3a8010082b00656e8b98423284",
+    "data/curated-reference-entries/2c-study-2c-t-33.json": "607e7fcf1f3fbff74edfe4f6a7cc2c83d042d158e20ce3e0d9e85ecea87dbce9",
+    "data/curated-reference-entries/2c-study-2c-t-4.json": "4ef5cfa0fc3ae2e19d46c277c982a1470bd2a7461238dad8e100a32ee24b505c",
+    "data/curated-reference-entries/2c-study-2c-t-7.json": "4b91e014224dc5b98504a9cf3edf2b79e07e5ae54cc3ec1204e2550f25b2b06b",
     "data/curated-reference-entries/control-gsk-j2.json": "7f03a2300162a92b1f1f1ff26f4072893600dd54ac4730e2f25f37792145b8c8",
     "data/curated-reference-entries/control-jq1.json": "fff6cffd7dbe023676e2c1419a514f4be839b3c16bf2cf9bbf0ca7ad1591c234",
     "data/curated-reference-entries/family-001-145975294.json": "386741a83162825f3ce1691edd274354e8262b1c9fe830af56665650e7ddea65",
@@ -34,6 +64,37 @@
     "data/curated-reference-entries/property-methanol.json": "0a6fa8d8fa4b88c3effefb9ca5081c3fa6fd5d47f1dfe6933e71a5d007d328c0",
     "data/curated-reference-entries/property-phenol.json": "ed0c83307666a4eba8be2f34d6ef42b8605e3563bb7c3ec58c0218c4a2d50f81"
   },
+  "studySourceSha256": {
+    "validation/sources/2c-alkoxy-functional.json": "5743b9e6ca9d898cbf7e84b6d0661bb13af61d37dbcfde3175350983794ff923",
+    "validation/sources/2c-core-functional.json": "eaad8e113bf84fe660a33c0702f4914060a45a03a7556964e7ebd36094022bb8",
+    "validation/sources/2c-thio-functional.json": "fcea596e6f24b5a0bd1fe88cb0f6b7e98d4693f898cdb26c95473669c10015ba"
+  },
+  "studyCoverage": [
+    {
+      "cohort": "2c-alkoxy",
+      "sourceUrl": "https://doi.org/10.3389/fphar.2019.01423",
+      "scope": "Selected human 5-HT2A functional observations",
+      "expected": 7,
+      "reviewed": 7,
+      "missing": []
+    },
+    {
+      "cohort": "2c-core",
+      "sourceUrl": "https://doi.org/10.1016/j.neuropharm.2015.08.034",
+      "scope": "Selected human 5-HT2A functional observations",
+      "expected": 11,
+      "reviewed": 11,
+      "missing": []
+    },
+    {
+      "cohort": "2c-thio",
+      "sourceUrl": "https://doi.org/10.1016/j.neuropharm.2017.07.012",
+      "scope": "Selected human 5-HT2A functional observations",
+      "expected": 14,
+      "reviewed": 14,
+      "missing": []
+    }
+  ],
   "familySourceSha256": {
     "data/family-definitions.json": "6f8f62982c1c6875256dbc215a6d489d51a763754357fec1f50a61bc89f783bb",
     "tools/build-library-tags.py": "4942f6ce2cf182f50606611014375edae102f2a50623a1b3e62be9e7857e4534",
@@ -131,7 +192,7 @@
     }
   ],
   "librarySha256": "1de0c3fc593a6f8dd60f27309a6a2c501a699ccf781b3db8fad989752c05a2bd",
-  "toolSha256": "8bf0c42955788cd6f76f2ffda14645ae2565f58d7e50b281a8f4dbdb8c2954c9",
-  "dataSha256": "6933799405783f633bcb81b9d86f3e40f94ac681cbc2f1485a07b3ef90109ac5",
-  "browserGraphsChecked": 34
+  "toolSha256": "8fc48c42cd7f240d63b3b29c8d8b57bd7b623618cc800837dec2f6415a8920a0",
+  "dataSha256": "567954f549d16f7be549c361e85ed0258a3ec091d53e65bcce108ed285da1dc3",
+  "browserGraphsChecked": 64
 }

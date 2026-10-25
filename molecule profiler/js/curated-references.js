@@ -47,7 +47,8 @@
   for(const r of d.records)for(const e of r.evidence||[]){
    if(e.kind!=='functional_assay'||e.species!=='Homo sapiens'||e.rankEligible===false)continue;
    for(const c of r.compounds)for(const name of c.libraryNames||[]){const entry=byname.get(name);if(!entry||!forEntry(entry,d).includes(r))continue;
-    out.push({receptorId:e.receptorId,ligandName:name,librarySmiles:entry.smiles,action:e.action,evidenceType:'functional',species:e.species,assay:e.assay,endpoint:e.endpoint,sourceUrl:e.sourceUrl,note:'Assay-specific functional evidence. '+(e.testedForm||'')+' Separate from the strict binding-profile quota.',curatedReferenceId:r.id});
+    const measured=Object.fromEntries(['metric','value','sd','unit','uncertaintyKind','efficacy','originalValue','originalSd','originalUnit','hostSpecies','testedForm'].filter(k=>e[k]!==undefined).map(k=>[k,e[k]]));
+    out.push({...measured,receptorId:e.receptorId,ligandName:name,librarySmiles:entry.smiles,action:e.action,evidenceType:'functional',species:e.species,assay:e.assay,endpoint:e.endpoint,sourceUrl:e.sourceUrl,note:'Assay-specific functional evidence. '+(e.testedForm||'')+' Separate from the strict binding-profile quota.',curatedReferenceId:r.id});
    }
   }return out;
  }
@@ -55,7 +56,7 @@
   const doc=host.ownerDocument,el=(tag,text)=>{const e=doc.createElement(tag);if(text!==undefined)e.textContent=text;return e;};host.replaceChildren();
   for(const r of records){const card=el('details');card.append(el('summary',r.title));card.append(el('p',r.note));
    r.compounds.forEach((c,i)=>{const p=el('p',c.role+': '+c.name+' · '+c.formula+' '),b=el('a','Analyze '+c.name);b.href='index.html?curated='+encodeURIComponent(r.id)+'&compound='+i;p.append(b);const source=el('a','Structure source');source.href=c.sourceUrl;source.target='_blank';source.rel='noopener noreferrer';p.append(doc.createTextNode(' · '),source);card.append(p);});
-   for(const e of r.evidence){const p=el('p',[e.kind,e.target,e.action,e.sourceClassification,e.endpoint,e.species,e.assay,e.testedForm,e.context].filter(Boolean).join(' · '));const a=el('a','Evidence source');a.href=e.sourceUrl;a.target='_blank';a.rel='noopener noreferrer';p.append(doc.createTextNode(' '),a);card.append(p);}
+   for(const e of r.evidence){const p=el('p',[e.kind,e.target,e.action?.replace(/_/g,' '),e.sourceClassification,e.endpoint,e.species,e.assay,e.testedForm,e.context].filter(Boolean).join(' · '));const a=el('a','Evidence source');a.href=e.sourceUrl;a.target='_blank';a.rel='noopener noreferrer';p.append(doc.createTextNode(' '),a);card.append(p);}
    host.append(card);
   }
   if(!records.length)host.append(el('p','No curated exact-graph record in this collection. Missing evidence means unknown.'));

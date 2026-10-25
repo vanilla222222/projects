@@ -38,6 +38,11 @@ and nitro-containing motifs have separate tags, so desnitazenes are not silently
 reported as nitro-containing compounds. Unsupported variants can be missed;
 these definitions are documented subsets, not complete family boundaries.
 
+For current measured 2C coverage, see [2C references](TWO-C-REFERENCES.md):
+30 named compounds, 17 additional parent structures, and 32 human 5-HT2A
+functional observations. The inspector reports coverage of the selected core,
+thio and alkoxy study cohorts separately.
+
 ## Six named amphetamine-related additions
 
 The first expansion prioritizes named pharmacology references rather than

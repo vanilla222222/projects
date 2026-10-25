@@ -40,7 +40,7 @@ assert.ok(api.tags(aminoEntry,d).includes('Family motif: Nitazene-related benzim
 assert.ok(!api.tags(aminoEntry,d).includes('Family motif: Nitazenes'),'Amino metabolite must not be mislabeled as nitro-substituted');
 assert.equal(api.rankingEvidence({panel:{gene:'OPRM1'},evidence:[{kind:'identity_reference'}]}).length,0);
 const {PHARMACOLOGY_EVIDENCE:base}=require('../data/pharmacology-evidence');
-const annotations=api.annotations([],Array.from(byname.values()),d);
+const annotations=api.annotations([],Array.from(byname.values()),d).filter(a=>a.curatedReferenceId.startsWith('family-001-'));
 assert.ok(annotations.length>=7);
 assert.ok(annotations.every(a=>a.receptorId==='OPRM1'&&a.evidenceType==='functional'));
 assert.equal(annotations.filter(a=>a.ligandName==='Brorphine').length,2);

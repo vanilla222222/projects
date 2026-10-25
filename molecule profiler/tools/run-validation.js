@@ -34,6 +34,7 @@ const scripts = [
   'library-metadata-report-test.js',
   'family-reference-test.js',
   'family-pharmacology-test.js',
+  'two-c-reference-test.js',
   'pharmacology-test.js',
   'pk-applicability-test.js',
   'prodrug-candidates-test.js',
