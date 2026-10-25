@@ -41,8 +41,14 @@
       "id": "identity-corrections-001",
       "label": "Reviewed named-reference identity corrections",
       "date": "2026-10-25",
+      "commit": "7a05f9ffe2124529669584df329c6a6303671455"
+    },
+    {
+      "id": "sparse-panel-evidence-001",
+      "label": "Sparse-panel binding evidence and pinned identity witness",
+      "date": "2026-10-25",
       "workingTree": true,
-      "baseCommit": "8acdd6d0d3c93f5f357caaeca9fcf4add1f21052"
+      "baseCommit": "7a05f9ffe2124529669584df329c6a6303671455"
     }
   ]
 }

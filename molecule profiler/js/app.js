@@ -969,7 +969,7 @@ function renderTargets(record) {
   document.getElementById('tgt-summary').innerHTML = pool + ' targets'
     + (organism === 'all' ? '' : ' in ' + organism.toLowerCase() + ' scope')
     + ', ' + kept.length + ' above the score cut, '
-    + (strong ? strong + ' of them above 0.30' : 'none of them above 0.30')+'; '+ranked.filter(r=>r.distinctCount<5).length+' panels have fewer than five distinct reference profiles.';
+    + (strong ? strong + ' of them above 0.30' : 'none of them above 0.30')+'; '+ranked.filter(r=>r.distinctCount<5).length+' panels have fewer than five distinct reference profiles. '+ANALYSIS_REFERENCE_TARGETS.filter(t=>t.lookupOnly===true).length+' additional panels are lookup-only and withheld from ranking pending the 50-profile source-coverage goal; inspect their evidence in the receptor explorer.';
   document.getElementById('tgt-blurb').textContent = legacy
     ? 'Legacy nearest-neighbour ranking: '+method.label+' / '+metricKey+'.'
     : 'Multi-fingerprint ranking: geometric mean of stereo-aware ECFP4, FCFP4 and atom-pair Tanimoto per ligand; rank = 70% nearest + 30% mean top three distinct fingerprint profiles. These are heuristic weights, not trained probabilities.';

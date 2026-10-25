@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "rdkitVersion": "2026.09.1",
   "sourceSha256": {
-    "data/library.js": "1de0c3fc593a6f8dd60f27309a6a2c501a699ccf781b3db8fad989752c05a2bd",
-    "data/targets.js": "912b5413cb0e99dcf573dcdb04f0452e35588212c9ab9bdf16c8a2939e62e9cb",
+    "data/library.js": "0644e4f50e822130a42c9daf45aafe390d53e10e99081943551ba15ad7d10c4e",
+    "data/targets.js": "c994111b869a78b68fe873c92f218ae1791b9b3e3fbf390f0b3a837221b4aacd",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
-    "data/receptor-ligand-annotations.js": "28bcfc10324b17fc8a30d2e4b3cf3c589e55fe9af76cd61dfb8986d9a3b30d01",
+    "data/receptor-ligand-annotations.js": "5baaf3e92817424997666eff1422ec70312af28413a4712a16f047828c01c98a",
     "js/receptor-catalog.js": "eaed72df5e3c0ab62aaccba3ff82928e23da6849a14571a6a42ae745522ab798",
     "tools/receptor-diversity-audit.py": "c507a5086e772e7b5f052feac394a3637c8e986e61ee57d11b3771491c29bd71"
   },
@@ -4392,24 +4392,170 @@
     {
       "id": "CNR1",
       "name": "Cannabinoid CB1 receptor",
-      "sourcedProfiles": 0,
-      "ringProfiles": 0,
-      "acyclicProfiles": 0,
-      "distinctRingScaffolds": 0,
-      "largestRingScaffoldProfiles": 0,
-      "largestRingScaffoldFractionOfRingProfiles": null,
-      "ringScaffolds": []
+      "sourcedProfiles": 26,
+      "ringProfiles": 24,
+      "acyclicProfiles": 2,
+      "distinctRingScaffolds": 17,
+      "largestRingScaffoldProfiles": 3,
+      "largestRingScaffoldFractionOfRingProfiles": 0.125,
+      "ringScaffolds": [
+        {
+          "smiles": "C1=CC2c3ccccc3OCC2CC1",
+          "profiles": 3
+        },
+        {
+          "smiles": "C1=CCC2c3ccccc3OCC2C1",
+          "profiles": 3
+        },
+        {
+          "smiles": "O=C(NN1CCCCC1)c1cc(-c2ccccc2)n(-c2ccccc2)n1",
+          "profiles": 3
+        },
+        {
+          "smiles": "c1ccccc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "C1=Cc2ccccc2OC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(COc1ccccn1)NCC(Cc1ccccc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NC1CC2CCC1C2)c1cc(-c2ccccc2)n(Cc2ccccc2)n1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NN1CCCCC1)c1cn(-c2ccccc2)c(-c2ccccc2)n1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(c1cccc2ccccc12)c1cn2c3c(cccc13)OCC2CN1CCOCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1C2CC3c4ccccc4NC3N2C(=O)C2CC3c4ccccc4NC3N12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CC(c2ccccc2)C2CC1C2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CCC2COc3ccccc3C2C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=S(=O)(N=CN1CC(c2ccccc2)C(c2ccccc2)=N1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-c2nc3c(N4CCCCC4)ncnc3n2-c2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-n2ncc3c2C2CCC3C2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C2CCCCC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)COc1ccccc1-2",
+          "profiles": 1
+        }
+      ]
     },
     {
       "id": "CNR2",
       "name": "Cannabinoid CB2 receptor",
-      "sourcedProfiles": 0,
-      "ringProfiles": 0,
-      "acyclicProfiles": 0,
-      "distinctRingScaffolds": 0,
-      "largestRingScaffoldProfiles": 0,
-      "largestRingScaffoldFractionOfRingProfiles": null,
-      "ringScaffolds": []
+      "sourcedProfiles": 28,
+      "ringProfiles": 26,
+      "acyclicProfiles": 2,
+      "distinctRingScaffolds": 19,
+      "largestRingScaffoldProfiles": 3,
+      "largestRingScaffoldFractionOfRingProfiles": 0.11538461538461539,
+      "ringScaffolds": [
+        {
+          "smiles": "C1=CC2c3ccccc3OCC2CC1",
+          "profiles": 3
+        },
+        {
+          "smiles": "C1=CCC2c3ccccc3OCC2C1",
+          "profiles": 3
+        },
+        {
+          "smiles": "C1=CC(c2ccccc2)CCC1",
+          "profiles": 2
+        },
+        {
+          "smiles": "O=C(NN1CCCCC1)c1cc(-c2ccccc2)n(-c2ccccc2)n1",
+          "profiles": 2
+        },
+        {
+          "smiles": "c1ccccc1",
+          "profiles": 2
+        },
+        {
+          "smiles": "C1=CC(c2ccccc2)C2CC1C2",
+          "profiles": 1
+        },
+        {
+          "smiles": "C1=Cc2ccccc2OC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C=C1CCC=CCCC2CCC12",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(COc1ccccn1)NCC(Cc1ccccc1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NC1CC2CCC1C2)c1cc(-c2ccccc2)n(Cc2ccccc2)n1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(NC1CCCCC1)c1cccn(Cc2ccccc2)c1=O",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(c1cccc2ccccc12)c1cn2c3c(cccc13)OCC2CN1CCOCC1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CC(c2ccccc2)C2CC1C2",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1CCC2COc3ccccc3C2C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-c2ccccc2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-c2nc3c(N4CCNCC4)ncnc3n2C2CCOCC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(-n2ncc3c2C2CCC3C2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc(C2CCCCC2)cc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "c1ccc2c(c1)COc1ccccc1-2",
+          "profiles": 1
+        }
+      ]
     },
     {
       "id": "TAAR1",
@@ -4833,24 +4979,50 @@
     {
       "id": "GRM5",
       "name": "Metabotropic glutamate mGlu5 receptor",
-      "sourcedProfiles": 0,
-      "ringProfiles": 0,
-      "acyclicProfiles": 0,
-      "distinctRingScaffolds": 0,
-      "largestRingScaffoldProfiles": 0,
-      "largestRingScaffoldFractionOfRingProfiles": null,
-      "ringScaffolds": []
+      "sourcedProfiles": 5,
+      "ringProfiles": 4,
+      "acyclicProfiles": 1,
+      "distinctRingScaffolds": 4,
+      "largestRingScaffoldProfiles": 1,
+      "largestRingScaffoldFractionOfRingProfiles": 0.25,
+      "ringScaffolds": [
+        {
+          "smiles": "C(#CC1CCCC2NCCC12)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "C(#Cc1ccccn1)c1ccccc1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C(Nc1ccccc1)Nc1ncc[nH]1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=C1NC(c2cncc(C#Cc3ccccc3)c2)C(c2ccccc2)O1",
+          "profiles": 1
+        }
+      ]
     },
     {
       "id": "GRM2",
       "name": "Metabotropic glutamate mGlu2 receptor",
-      "sourcedProfiles": 0,
-      "ringProfiles": 0,
+      "sourcedProfiles": 2,
+      "ringProfiles": 2,
       "acyclicProfiles": 0,
-      "distinctRingScaffolds": 0,
-      "largestRingScaffoldProfiles": 0,
-      "largestRingScaffoldFractionOfRingProfiles": null,
-      "ringScaffolds": []
+      "distinctRingScaffolds": 2,
+      "largestRingScaffoldProfiles": 1,
+      "largestRingScaffoldFractionOfRingProfiles": 0.5,
+      "ringScaffolds": [
+        {
+          "smiles": "C1CC2CC2C1",
+          "profiles": 1
+        },
+        {
+          "smiles": "O=S1(=O)CCC2CC21",
+          "profiles": 1
+        }
+      ]
     },
     {
       "id": "GRM3",

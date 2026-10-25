@@ -471,6 +471,22 @@ const TARGETS = [
   { name: 'Nociceptin/orphanin FQ receptor', gene: 'OPRL1', family: 'GPCR', organism: 'Human',
     note: 'ChEMBL assay-linked human binding references. Functional action and selectivity unassigned.',
     ligands: ['ORGANON', 'Fluspirilene', 'BUPRENORPHINE [CHEMBL511142]', 'NOP-1A', 'J-113,397', 'CEBRANOPADOL'] },
+  { name: 'Metabotropic glutamate mGlu2 receptor', gene: 'GRM2', family: 'GPCR', organism: 'Human',
+    note: 'ChEMBL assay-linked human binding references. Functional action and selectivity unassigned.',
+    lookupOnly: true,
+    ligands: ['EGLUMETAD', 'LY404039'] },
+  { name: 'Metabotropic glutamate mGlu5 receptor', gene: 'GRM5', family: 'GPCR', organism: 'Human',
+    note: 'ChEMBL assay-linked human binding references. Functional action and selectivity unassigned.',
+    lookupOnly: true,
+    ligands: ['M-MPEP', 'L-glutamic acid', 'FENOBAM ANHYDROUS', 'MAVOGLURANT', 'BMS-984923'] },
+  { name: 'Cannabinoid CB1 receptor', gene: 'CNR1', family: 'GPCR', organism: 'Human',
+    note: 'ChEMBL assay-linked human binding references. Functional action and selectivity unassigned.',
+    lookupOnly: true,
+    ligands: ['Anandamide', 'SURINABANT', 'CP-55940', 'rimonabant', 'WIN 55212-2', 'DEXANABINOL', 'dronabinol', 'IBIPINABANT', 'OTENABANT', 'JHU-75528', 'DELTA-8-TETRAHYDROCANNABINOL', 'SR-144528', 'TARANABANT', '1-(4-CHLOROPHENYL)-2-(2,4-DICHLOROPHENYL)-5-(METHYLSULFINYL)-N-(PIPERIDIN-1-YL)-1H-IMIDAZOLE-4-CARBOXAMIDE (ENANTIOMERIC MIX)', 'NABILONE [CHEMBL2218896]', '2-ARACHIDONOYLGLYCEROL [CHEMBL122972]', 'Cannabigerol', 'SESQUICANNABIGEROL', 'AMAUROMINE', 'LENABASUM', 'PRS-211375', 'TETRAHYDROCANNABIVARIN', 'Cannabinol', 'CANNABICHROMENE', 'Delta(9)-tetrahydrocannabinolic acid', 'TEDALINAB'] },
+  { name: 'Cannabinoid CB2 receptor', gene: 'CNR2', family: 'GPCR', organism: 'Human',
+    note: 'ChEMBL assay-linked human binding references. Functional action and selectivity unassigned.',
+    lookupOnly: true,
+    ligands: ['SURINABANT', 'CP-55940', 'WIN 55212-2', 'Anandamide', 'SR-144528', 'DEXANABINOL', 'dronabinol', 'rimonabant', 'DELTA-8-TETRAHYDROCANNABINOL', 'TARANABANT', 'NABILONE [CHEMBL2218896]', 'Cannabigerol', 'SESQUICANNABIGEROL', 'S-777469', 'METHYLHONOKIOL', 'PRS-211375', 'LY2828360', 'LENABASUM', 'ONTERNABEZ', 'METHANANDAMIDE', '(-)-beta-caryophyllene', 'TETRAHYDROCANNABIVARIN', 'Cannabinol', 'CANNABICHROMENE', 'CANNABIDIVARIN', 'CANNABIDIOL [CHEMBL190461]', 'Delta(9)-tetrahydrocannabinolic acid', 'TEDALINAB'] },
 ];
 
 if (typeof module !== 'undefined' && module.exports) {

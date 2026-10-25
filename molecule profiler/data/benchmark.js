@@ -4,60 +4,61 @@
 const RETRIEVAL_BENCHMARK = {
   "composition": {
     "version": "composed-reference-v1",
-    "key": "a8971ac581e08e81",
-    "library": 21064,
+    "key": "e5f0e6d27089305e",
+    "library": 21096,
     "targets": 155,
-    "ligandSlots": 5423
+    "ligandSlots": 5480
   },
-  "protocol": "Name holdout across all targets; aliases can remain. Nearest similarity, mean of top three, then original target order. All organisms and target families. Not independent scaffold or external validation.",
+  "protocol": "Name holdout across ranking-eligible targets; lookup-only panels excluded; aliases can remain. Nearest similarity, mean of top three, then original target order. All organisms and target families. Not independent scaffold or external validation.",
+  "lookupOnlyTargets": 5,
   "sourceSha256": {
-    "data/library.js": "1de0c3fc593a6f8dd60f27309a6a2c501a699ccf781b3db8fad989752c05a2bd",
-    "data/targets.js": "912b5413cb0e99dcf573dcdb04f0452e35588212c9ab9bdf16c8a2939e62e9cb",
-    "data/curated-references.js": "1cb965a4ece0a4a89584aa10ab496a8bea82b1e33434381dd399503202938eb2",
-    "js/curated-references.js": "e738614788dc0fb174079d300187408add5cdf61bb161c8dc30daadee2d98ea6",
-    "js/reference-context.js": "5645ba030dc0448bee5205d159c4e9271e271e62a679c1af398e29b49ef3105a",
-    "js/target-ranking.js": "8e0711b819823913fd58cb5788d1b3a66a8006dfeb17abcdc016f77b0bb2c79a",
+    "data/library.js": "0644e4f50e822130a42c9daf45aafe390d53e10e99081943551ba15ad7d10c4e",
+    "data/targets.js": "c994111b869a78b68fe873c92f218ae1791b9b3e3fbf390f0b3a837221b4aacd",
+    "data/curated-references.js": "ca9f06c46c91983c42e510379439a930ffc939d96e67480a61ceb157bbc4afd2",
+    "js/curated-references.js": "240d0bd4f4cf076c70a1891578a48f3fb19e421bb685a5c6c2bd3af011c9c24e",
+    "js/reference-context.js": "f5b2abf4ad945ae2f1e531d1276d75ab1525882d3e27e4b10f84592d0c921a07",
+    "js/target-ranking.js": "fbea8f6bac7812eed3f7212869468dd3242398ec652655c19c256240e0d4d243",
     "js/smiles.js": "ae7063246faee39707c62003a038fd8ce825e5c247f85ab9b6191e4383caca66",
     "js/mol.js": "ff9a643a4e25986903d897e962ff97a4db3453b8ac12685ffed14e16521cb96d",
     "js/stereo.js": "6b65f4af103715c9814ec1bd56871b27280e9c8e3278475ce62726f38d3f2aaa",
     "js/fingerprints.js": "274e1daec20d05d7daf0d28ca35a41ef65905ae5a2cde2f5ceeb34013722149f",
     "tools/retrieval-evaluate.js": "075eacd3a4640c1e549f1891605da4ae31fece844d4a37a778d826be1048d8d9",
-    "tools/retrieval-benchmark.js": "15f75249e39c2b14455cd34dc002a9a798d1a0dbf20c632d444b1a97a2da95f9"
+    "tools/retrieval-benchmark.js": "734411ae4c6631febaa04f8b705ce15bcabfe86dc70ee7aa7ef36fcc3ff08f6e"
   },
   "generated": "2026-10-25",
-  "library": 21064,
+  "library": 21096,
   "method": "ECFP4",
   "metric": "Tanimoto",
-  "targets": 155,
-  "measurable": 131,
-  "unmeasurable": 24,
-  "trials": 5399,
-  "scoredTargets": 155,
+  "targets": 150,
+  "measurable": 129,
+  "unmeasurable": 21,
+  "trials": 5393,
+  "scoredTargets": 150,
   "overall": {
-    "r1": 0.49323948879422114,
-    "r5": 0.8794221152065197,
-    "r10": 0.9323948879422115,
+    "r1": 0.49360281846838494,
+    "r5": 0.8804005191915446,
+    "r10": 0.9330613758575932,
     "median": 2,
-    "mean": 4.492683830338952
+    "mean": 4.391618765065826
   },
   "thick": {
     "trials": 5291,
     "r1": 0.49555849555849557,
-    "r5": 0.8865998865998866,
+    "r5": 0.8867888867888868,
     "r10": 0.9398979398979399,
     "median": 2
   },
   "popularity": {
-    "r1": 0.04556399333209854,
-    "r5": 0.15836265975180588,
-    "r10": 0.2720874235969624,
+    "r1": 0.04561468570368997,
+    "r5": 0.1585388466530688,
+    "r10": 0.2723901353606527,
     "median": 23
   },
   "random": {
-    "r1": 0.0064516129032258064,
-    "r5": 0.03225806451612903,
-    "r10": 0.06451612903225806,
-    "median": 77.5
+    "r1": 0.006666666666666667,
+    "r5": 0.03333333333333333,
+    "r10": 0.06666666666666667,
+    "median": 75
   },
   "perTarget": {
     "HTR2A::Serotonin 5-HT2A receptor": {
@@ -273,7 +274,7 @@ const RETRIEVAL_BENCHMARK = {
     "HTR1B::Serotonin 5-HT1B receptor": {
       "n": 56,
       "r1": 0.8036,
-      "r5": 0.9643,
+      "r5": 0.9821,
       "median": 1
     },
     "HTR1D::Serotonin 5-HT1D receptor": {
@@ -544,13 +545,13 @@ const RETRIEVAL_BENCHMARK = {
       "n": 6,
       "r1": 0,
       "r5": 0.3333,
-      "median": 70
+      "median": 69.5
     },
     "CYP3A4::Cytochrome P450 3A4": {
       "n": 6,
       "r1": 0,
       "r5": 0,
-      "median": 84.5
+      "median": 83.5
     },
     "OPRL1::Nociceptin/orphanin FQ receptor": {
       "n": 6,
@@ -574,13 +575,13 @@ const RETRIEVAL_BENCHMARK = {
       "n": 5,
       "r1": 0,
       "r5": 0,
-      "median": 76
+      "median": 75
     },
     "CYP2C9::Cytochrome P450 2C9": {
       "n": 5,
       "r1": 0,
       "r5": 0,
-      "median": 77
+      "median": 76
     },
     "GRIN1::NMDA receptor": {
       "n": 5,
@@ -610,7 +611,7 @@ const RETRIEVAL_BENCHMARK = {
       "n": 4,
       "r1": 0.5,
       "r5": 0.5,
-      "median": 54
+      "median": 53.5
     },
     "KIT::KIT kinase": {
       "n": 4,
@@ -622,7 +623,7 @@ const RETRIEVAL_BENCHMARK = {
       "n": 4,
       "r1": 0,
       "r5": 0,
-      "median": 96.5
+      "median": 94.5
     },
     "pbp::Penicillin-binding proteins": {
       "n": 4,
@@ -648,12 +649,6 @@ const RETRIEVAL_BENCHMARK = {
       "r5": 0.6667,
       "median": 1
     },
-    "CNR1::CB1 receptor": {
-      "n": 3,
-      "r1": 0,
-      "r5": 0,
-      "median": 115
-    },
     "gyrA::DNA gyrase": {
       "n": 3,
       "r1": 1,
@@ -676,13 +671,13 @@ const RETRIEVAL_BENCHMARK = {
       "n": 3,
       "r1": 0,
       "r5": 0,
-      "median": 100
+      "median": 99
     },
     "MAOB::Monoamine oxidase B": {
       "n": 3,
       "r1": 0,
       "r5": 0,
-      "median": 35
+      "median": 34
     },
     "n/a::Genomic DNA (N7-guanine)": {
       "n": 3,
@@ -701,12 +696,6 @@ const RETRIEVAL_BENCHMARK = {
       "r1": 0,
       "r5": 1,
       "median": 2
-    },
-    "TAAR1::TA1 receptor": {
-      "n": 3,
-      "r1": 0.3333,
-      "r5": 0.3333,
-      "median": 6
     },
     "XDH::Xanthine oxidase": {
       "n": 3,
@@ -736,13 +725,13 @@ const RETRIEVAL_BENCHMARK = {
       "n": 2,
       "r1": 0,
       "r5": 0,
-      "median": 69.5
+      "median": 68.5
     },
     "CACNA2D1::Calcium channel alpha-2-delta subunit": {
       "n": 2,
       "r1": 0.5,
       "r5": 0.5,
-      "median": 4.5
+      "median": 4
     },
     "CRBN::Cereblon": {
       "n": 2,
@@ -754,7 +743,7 @@ const RETRIEVAL_BENCHMARK = {
       "n": 2,
       "r1": 0,
       "r5": 0,
-      "median": 81.5
+      "median": 80
     },
     "DDC::Aromatic L-amino acid decarboxylase": {
       "n": 2,
@@ -772,13 +761,13 @@ const RETRIEVAL_BENCHMARK = {
       "n": 2,
       "r1": 0,
       "r5": 0,
-      "median": 22
+      "median": 21.5
     },
     "FLT3::FLT3 kinase": {
       "n": 2,
       "r1": 0,
       "r5": 0,
-      "median": 97.5
+      "median": 96.5
     },
     "JAK1::JAK1 kinase": {
       "n": 2,
@@ -820,7 +809,7 @@ const RETRIEVAL_BENCHMARK = {
       "n": 2,
       "r1": 0,
       "r5": 0,
-      "median": 78
+      "median": 77.5
     },
     "PDE4D::Phosphodiesterase 4D": {
       "n": 2,
@@ -832,19 +821,19 @@ const RETRIEVAL_BENCHMARK = {
       "n": 2,
       "r1": 0,
       "r5": 0,
-      "median": 94
+      "median": 93.5
     },
     "rplC::50S ribosomal subunit": {
       "n": 2,
       "r1": 0,
       "r5": 0,
-      "median": 126
+      "median": 123.5
     },
     "SLC22A1::Organic cation transporter 1": {
       "n": 2,
       "r1": 0,
       "r5": 0,
-      "median": 125.5
+      "median": 123
     }
   }
 };

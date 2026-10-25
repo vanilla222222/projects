@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Offline evidence-selection checks; no network or repository mutation."""
 import importlib.util
+import json
 from pathlib import Path
 import unittest
 
@@ -8,6 +9,25 @@ spec=importlib.util.spec_from_file_location('curation',Path(__file__).with_name(
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 
 class EvidenceTests(unittest.TestCase):
+    def test_sparse_panel_pinned_source_identities_and_graphs(self):
+        root=Path(__file__).resolve().parents[1]
+        identities=json.loads((root/'validation/sources/sparse-panel-target-identities.json').read_text())
+        batch=json.loads((root/'validation/chembl-receptor-binding-batch-6.json').read_text())
+        for panel in batch['panels']:
+            source=identities[panel['gene']]
+            self.assertEqual(source['accession'],m.ACCESSIONS[panel['gene']])
+            self.assertEqual(source['organism']['scientificName'],'Homo sapiens')
+            self.assertIn(panel['gene'],[g['geneName']['value'] for g in source['genes']])
+            self.assertFalse(panel['activityCapReached'],'All rows of this endpoint query were examined')
+            for record in panel['selected']:
+                activity=record['activity']
+                self.assertTrue(m.accepted_activity(activity,panel['chemblTargetId']))
+                self.assertTrue(m.accepted_assay(record['assay'],panel['chemblTargetId']))
+                self.assertIsNotNone(m.pharmacology_name(activity))
+                graph=m.compound(activity['canonical_smiles'])
+                self.assertEqual(graph['identityKey'],record['identityKey'])
+                self.assertEqual(graph['smiles'],m.Chem.MolToSmiles(m.Chem.MolFromSmiles(record['entry']['smiles']),isomericSmiles=True))
+                self.assertEqual(graph['formula'],record['entry']['formula'])
     def activity(self,**changes):
         a={'standard_value':'10','standard_type':'Ki','standard_relation':'=','standard_units':'nM',
            'assay_type':'B','target_chembl_id':'CHEMBL1','target_organism':'Homo sapiens','potential_duplicate':0,
@@ -40,6 +60,7 @@ class EvidenceTests(unittest.TestCase):
     def test_catalog_target_gates(self):
         record={'id':'HRH3','genes':['HRH3'],'name':'Histamine H3','kind':'GPCR'}
         self.assertEqual(m.target_from_catalog('HRH3',[record])['family'],'GPCR')
+        self.assertTrue(m.target_from_catalog('HRH3',[record])['lookupOnly'])
         for bad in [{**record,'genes':['HRH3','OTHER']},{**record,'kind':'Ligand-gated channel'},
                     {**record,'id':'OTHER'}]:
             with self.assertRaises(ValueError):m.target_from_catalog('HRH3',[bad])
@@ -50,6 +71,7 @@ class EvidenceTests(unittest.TestCase):
         self.assertIn("ligands: [] },\n  { name: 'New receptor'",result)
         self.assertIn("gene: 'NEW'",result)
         self.assertEqual(result.count("name: 'New receptor'"),1)
+        self.assertIn('lookupOnly: true',m.append_target_rows(text,[{**row,'lookupOnly':True}]))
         with self.assertRaises(ValueError):m.append_target_rows('invalid file',[row])
     def test_import_preserves_manual_evidence_and_release_history(self):
         manual={'receptorId':'HRH3','action':'agonist','sourceUrl':'https://example.org/experiment'}

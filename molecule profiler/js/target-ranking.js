@@ -41,6 +41,7 @@
     }
     const ranked=[];
     for(const [order,target] of index.targets.entries()){
+      if(target.lookupOnly===true)continue;
       if(o.organism && o.organism!=='all' && target.organism!==o.organism)continue;
       if(o.receptorsOnly && !['GPCR','Nuclear receptor'].includes(target.family) && !/receptor/i.test(target.name))continue;
       const distinct=new Map();let listed=0;

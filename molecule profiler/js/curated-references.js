@@ -48,7 +48,7 @@
   const out=base.map(t=>({...t,ligands:t.ligands.slice()}));
   for(const r of d.records){if(!r.panel||!rankingEvidence(r).length)continue;
    let t=out.find(t=>t.gene===r.panel.gene);
-   if(!t){t={...r.panel,organism:'Human',ligands:[],note:'Source-linked human pharmacology observations. Similarity does not transfer source action or potency.'};out.push(t);}
+   if(!t){t={...r.panel,organism:'Human',lookupOnly:true,ligands:[],note:'Source-linked human pharmacology lookup. Withheld from target ranking until 50 source-linked profiles are qualified. Similarity does not transfer source action or potency.'};out.push(t);}
    t.ligands=[...new Set(t.ligands.concat(r.compounds.flatMap(c=>c.libraryNames)))];
   }return out;
  }

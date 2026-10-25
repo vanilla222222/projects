@@ -11,7 +11,7 @@ const REFERENCE_AUDIT_BASELINE={
   duplicateExactSmiles:0,
   profiles:27,
   unmatchedProfiles:0,
-  targets:150,
+  targets:154,
   sparseTargets:65,
   unresolvedLigands:0
 };

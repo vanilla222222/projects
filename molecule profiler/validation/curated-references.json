@@ -109,7 +109,7 @@
     "data/curated-reference-entries/metabolite-loratadine.json": "d2bd987b7666fee74f225cfbcc9907afb9f8480acdb32d2625c85dfa8747182f",
     "data/curated-reference-entries/probe-jq1.json": "24bb4c09e01aa9f4d483908f3ea4d833c288028fc17a42dd88e9f2cf646cc104",
     "data/curated-reference-entries/prodrug-fosphenytoin.json": "ecb651374cb5a0551bb69b804819790b5203684a52fa35f1aae0d1f47afe2e0d",
-    "data/curated-reference-entries/prodrug-gsk-j4.json": "5d28b6dddc80f01c00bb41e0e71993cb817c057c3844c60e5dae06b93f9da94a",
+    "data/curated-reference-entries/prodrug-gsk-j4.json": "e2a7851cdac24c579c076e0e76b870f4a14ae3ad0011e56de90a602ac02467cc",
     "data/curated-reference-entries/prodrug-irinotecan.json": "f07dc7e8d90637ffcff9640e68f4eca596e364d819d27c3bc56478c563b53884",
     "data/curated-reference-entries/prodrug-mycophenolate.json": "6b084dec2bff2a80dfe6291dc4e052e36e12de43758b9349ee14958494bc55a7",
     "data/curated-reference-entries/property-benzene.json": "c1db55f2f183b4f1ce2eb523015ed576509cdd6e1c1ab9064d457430fea0d862",
@@ -190,10 +190,10 @@
     {
       "name": "Dibenzopyran cores",
       "tag": "Family motif: Dibenzopyran cores",
-      "baseEntries": 29,
-      "currentEntries": 29,
+      "baseEntries": 34,
+      "currentEntries": 34,
       "newStructures": 0,
-      "distinctIsomericGraphs": 29
+      "distinctIsomericGraphs": 34
     },
     {
       "name": "Tropane cores",
@@ -356,8 +356,8 @@
       "distinctIsomericGraphs": 5
     }
   ],
-  "librarySha256": "1de0c3fc593a6f8dd60f27309a6a2c501a699ccf781b3db8fad989752c05a2bd",
+  "librarySha256": "0644e4f50e822130a42c9daf45aafe390d53e10e99081943551ba15ad7d10c4e",
   "toolSha256": "24be66d6d19e9dcf3f65ed4fd599fd804ccda1cf71dbe9025c540120a24efbdc",
-  "dataSha256": "1cb965a4ece0a4a89584aa10ab496a8bea82b1e33434381dd399503202938eb2",
+  "dataSha256": "ca9f06c46c91983c42e510379439a930ffc939d96e67480a61ceb157bbc4afd2",
   "browserGraphsChecked": 107
 }

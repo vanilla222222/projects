@@ -103,3 +103,20 @@ Source-provided lowercase names receive an initial capital in display labels,
 including Ulotaront and Rimonabant. Mixed-case identifiers such as mCPP and lowercase chemical descriptors or
 positional prefixes (including cis-, trans-, tert-, sec- and sn-) remain unchanged. Stable keys, original preferred names, aliases, source rows, structure
 identifiers and exported source witnesses retain their original values.
+
+## Sparse-panel admission follow-up
+
+TAAR1, GRM2, GRM5, CNR1 and CNR2 now remain lookup-only instead of competing
+in general target ranking before the 50-profile coverage goal. This policy is
+applied in both ranking modes and the regenerated benchmark, with lookup-only
+status included in the reference-composition witness. Their evidence remains
+available in the receptor explorer. New curated panels default to lookup-only.
+
+The sixth ChEMBL batch adds 61 verified named human binding associations and
+32 source graphs. Exhausting the current strict queries yields 0, 2, 5, 26 and
+28 named profiles, respectively, so none is claimed complete. See
+`RECEPTOR-COVERAGE.md` for the exact endpoint, name and species limits. Finding 3
+is addressed as an admission defect; the evidence acquisition shortfall remains
+open. The BBB panel now explicitly says its balanced-accuracy advantage is
+unresolved when the paired interval includes zero; no fitted model, held-out
+prediction, interval, p-value or threshold is changed.

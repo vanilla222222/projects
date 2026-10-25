@@ -54,8 +54,9 @@ function run(methodKey, metricKey) {
     index: index,
     gene: target.gene,
     key: target.gene + '::' + target.name,
-    ligands: target.ligands.filter((name) => byName.has(name))
-  }));
+    ligands: target.ligands.filter((name) => byName.has(name)),
+    lookupOnly: target.lookupOnly===true
+  })).filter(set=>!set.lookupOnly);
 
   // These two bit-set metrics are exactly symmetric. Reuse reverse comparisons
   // without changing fingerprint generation, holdout rules, or target-order ties.
@@ -162,7 +163,8 @@ console.log('  ' + primary.unmeasurable.join(' '));
 if (process.argv.includes('--write')) {
   const payload = {
     composition:context.manifest,
-    protocol:'Name holdout across all targets; aliases can remain. Nearest similarity, mean of top three, then original target order. All organisms and target families. Not independent scaffold or external validation.',
+    protocol:'Name holdout across ranking-eligible targets; lookup-only panels excluded; aliases can remain. Nearest similarity, mean of top three, then original target order. All organisms and target families. Not independent scaffold or external validation.',
+    lookupOnlyTargets:TARGETS.filter(t=>t.lookupOnly===true).length,
     sourceSha256:Object.fromEntries(sources.map(p=>[p,crypto.createHash('sha256').update(fs.readFileSync(path.join(base,p))).digest('hex')])),
     generated: new Date().toISOString().slice(0, 10),
     library: LIBRARY.length,

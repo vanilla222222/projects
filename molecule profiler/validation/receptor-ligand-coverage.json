@@ -162,28 +162,6 @@
       "hasTarget": false
     },
     {
-      "id": "CNR1",
-      "name": "Cannabinoid CB1 receptor",
-      "family": "Cannabinoid",
-      "goal": 50,
-      "listedNames": 0,
-      "resolvedNames": 0,
-      "sourcedProfiles": 0,
-      "remaining": 50,
-      "hasTarget": false
-    },
-    {
-      "id": "CNR2",
-      "name": "Cannabinoid CB2 receptor",
-      "family": "Cannabinoid",
-      "goal": 50,
-      "listedNames": 0,
-      "resolvedNames": 0,
-      "sourcedProfiles": 0,
-      "remaining": 50,
-      "hasTarget": false
-    },
-    {
       "id": "CRHR1",
       "name": "Corticotropin-releasing factor CRF1 receptor",
       "family": "Peptide gut and stress",
@@ -320,8 +298,8 @@
       "name": "GABA-A receptors",
       "family": "GABA",
       "goal": 50,
-      "listedNames": 79,
-      "resolvedNames": 79,
+      "listedNames": 121,
+      "resolvedNames": 121,
       "sourcedProfiles": 0,
       "remaining": 50,
       "hasTarget": true
@@ -404,17 +382,6 @@
       "hasTarget": false
     },
     {
-      "id": "GRM2",
-      "name": "Metabotropic glutamate mGlu2 receptor",
-      "family": "Metabotropic glutamate group II/III",
-      "goal": 50,
-      "listedNames": 0,
-      "resolvedNames": 0,
-      "sourcedProfiles": 0,
-      "remaining": 50,
-      "hasTarget": false
-    },
-    {
       "id": "GRM3",
       "name": "Metabotropic glutamate mGlu3 receptor",
       "family": "Metabotropic glutamate group II/III",
@@ -429,17 +396,6 @@
       "id": "GRM4",
       "name": "Metabotropic glutamate mGlu4 receptor",
       "family": "Metabotropic glutamate group II/III",
-      "goal": 50,
-      "listedNames": 0,
-      "resolvedNames": 0,
-      "sourcedProfiles": 0,
-      "remaining": 50,
-      "hasTarget": false
-    },
-    {
-      "id": "GRM5",
-      "name": "Metabotropic glutamate mGlu5 receptor",
-      "family": "Metabotropic glutamate group I",
       "goal": 50,
       "listedNames": 0,
       "resolvedNames": 0,
@@ -507,8 +463,8 @@
       "name": "Histamine H1 receptor",
       "family": "Histamine",
       "goal": 50,
-      "listedNames": 56,
-      "resolvedNames": 56,
+      "listedNames": 92,
+      "resolvedNames": 92,
       "sourcedProfiles": 0,
       "remaining": 50,
       "hasTarget": true
@@ -518,8 +474,8 @@
       "name": "5-HT1A receptor",
       "family": "Serotonin",
       "goal": 50,
-      "listedNames": 56,
-      "resolvedNames": 56,
+      "listedNames": 66,
+      "resolvedNames": 66,
       "sourcedProfiles": 0,
       "remaining": 50,
       "hasTarget": true
@@ -551,8 +507,8 @@
       "name": "5-HT2A receptor",
       "family": "Serotonin",
       "goal": 50,
-      "listedNames": 56,
-      "resolvedNames": 56,
+      "listedNames": 229,
+      "resolvedNames": 229,
       "sourcedProfiles": 0,
       "remaining": 50,
       "hasTarget": true
@@ -562,8 +518,8 @@
       "name": "5-HT2B receptor",
       "family": "Serotonin",
       "goal": 50,
-      "listedNames": 56,
-      "resolvedNames": 56,
+      "listedNames": 71,
+      "resolvedNames": 71,
       "sourcedProfiles": 0,
       "remaining": 50,
       "hasTarget": true
@@ -573,8 +529,8 @@
       "name": "5-HT2C receptor",
       "family": "Serotonin",
       "goal": 50,
-      "listedNames": 56,
-      "resolvedNames": 56,
+      "listedNames": 210,
+      "resolvedNames": 210,
       "sourcedProfiles": 0,
       "remaining": 50,
       "hasTarget": true
@@ -584,8 +540,8 @@
       "name": "5-HT3 receptors",
       "family": "Serotonin",
       "goal": 50,
-      "listedNames": 5,
-      "resolvedNames": 5,
+      "listedNames": 11,
+      "resolvedNames": 11,
       "sourcedProfiles": 0,
       "remaining": 50,
       "hasTarget": true
@@ -595,8 +551,8 @@
       "name": "5-HT6 receptor",
       "family": "Serotonin",
       "goal": 50,
-      "listedNames": 56,
-      "resolvedNames": 56,
+      "listedNames": 66,
+      "resolvedNames": 66,
       "sourcedProfiles": 0,
       "remaining": 50,
       "hasTarget": true
@@ -606,8 +562,8 @@
       "name": "5-HT7 receptor",
       "family": "Serotonin",
       "goal": 50,
-      "listedNames": 56,
-      "resolvedNames": 56,
+      "listedNames": 68,
+      "resolvedNames": 68,
       "sourcedProfiles": 0,
       "remaining": 50,
       "hasTarget": true
@@ -694,8 +650,8 @@
       "name": "Nicotinic alpha4beta2-containing receptors",
       "family": "Nicotinic acetylcholine",
       "goal": 50,
-      "listedNames": 4,
-      "resolvedNames": 4,
+      "listedNames": 24,
+      "resolvedNames": 24,
       "sourcedProfiles": 0,
       "remaining": 50,
       "hasTarget": true
@@ -1174,6 +1130,17 @@
       "hasTarget": true
     },
     {
+      "id": "GRM2",
+      "name": "Metabotropic glutamate mGlu2 receptor",
+      "family": "Metabotropic glutamate group II/III",
+      "goal": 50,
+      "listedNames": 2,
+      "resolvedNames": 2,
+      "sourcedProfiles": 2,
+      "remaining": 48,
+      "hasTarget": true
+    },
+    {
       "id": "HTR1E",
       "name": "5-HT1E receptor",
       "family": "Serotonin",
@@ -1182,6 +1149,17 @@
       "resolvedNames": 4,
       "sourcedProfiles": 4,
       "remaining": 46,
+      "hasTarget": true
+    },
+    {
+      "id": "GRM5",
+      "name": "Metabotropic glutamate mGlu5 receptor",
+      "family": "Metabotropic glutamate group I",
+      "goal": 50,
+      "listedNames": 5,
+      "resolvedNames": 5,
+      "sourcedProfiles": 5,
+      "remaining": 45,
       "hasTarget": true
     },
     {
@@ -1207,6 +1185,17 @@
       "hasTarget": true
     },
     {
+      "id": "CNR1",
+      "name": "Cannabinoid CB1 receptor",
+      "family": "Cannabinoid",
+      "goal": 50,
+      "listedNames": 26,
+      "resolvedNames": 26,
+      "sourcedProfiles": 26,
+      "remaining": 24,
+      "hasTarget": true
+    },
+    {
       "id": "HTR1F",
       "name": "5-HT1F receptor",
       "family": "Serotonin",
@@ -1215,6 +1204,17 @@
       "resolvedNames": 26,
       "sourcedProfiles": 26,
       "remaining": 24,
+      "hasTarget": true
+    },
+    {
+      "id": "CNR2",
+      "name": "Cannabinoid CB2 receptor",
+      "family": "Cannabinoid",
+      "goal": 50,
+      "listedNames": 28,
+      "resolvedNames": 28,
+      "sourcedProfiles": 28,
+      "remaining": 22,
       "hasTarget": true
     },
     {
@@ -1299,8 +1299,8 @@
       "name": "Alpha-1A adrenoceptor",
       "family": "Adrenergic alpha-1",
       "goal": 50,
-      "listedNames": 97,
-      "resolvedNames": 97,
+      "listedNames": 124,
+      "resolvedNames": 124,
       "sourcedProfiles": 50,
       "remaining": 0,
       "hasTarget": true
@@ -1365,8 +1365,8 @@
       "name": "Beta-1 adrenoceptor",
       "family": "Adrenergic beta",
       "goal": 50,
-      "listedNames": 54,
-      "resolvedNames": 54,
+      "listedNames": 96,
+      "resolvedNames": 96,
       "sourcedProfiles": 50,
       "remaining": 0,
       "hasTarget": true
@@ -1376,8 +1376,8 @@
       "name": "Beta-2 adrenoceptor",
       "family": "Adrenergic beta",
       "goal": 50,
-      "listedNames": 55,
-      "resolvedNames": 55,
+      "listedNames": 84,
+      "resolvedNames": 84,
       "sourcedProfiles": 50,
       "remaining": 0,
       "hasTarget": true
@@ -1398,8 +1398,8 @@
       "name": "Angiotensin AT1 receptor",
       "family": "Angiotensin",
       "goal": 50,
-      "listedNames": 52,
-      "resolvedNames": 52,
+      "listedNames": 57,
+      "resolvedNames": 57,
       "sourcedProfiles": 50,
       "remaining": 0,
       "hasTarget": true
@@ -1409,8 +1409,8 @@
       "name": "Muscarinic M1 receptor",
       "family": "Muscarinic",
       "goal": 50,
-      "listedNames": 57,
-      "resolvedNames": 57,
+      "listedNames": 132,
+      "resolvedNames": 132,
       "sourcedProfiles": 50,
       "remaining": 0,
       "hasTarget": true
@@ -1420,8 +1420,8 @@
       "name": "Muscarinic M2 receptor",
       "family": "Muscarinic",
       "goal": 50,
-      "listedNames": 52,
-      "resolvedNames": 52,
+      "listedNames": 120,
+      "resolvedNames": 120,
       "sourcedProfiles": 50,
       "remaining": 0,
       "hasTarget": true
@@ -1431,8 +1431,8 @@
       "name": "Muscarinic M3 receptor",
       "family": "Muscarinic",
       "goal": 50,
-      "listedNames": 54,
-      "resolvedNames": 54,
+      "listedNames": 124,
+      "resolvedNames": 124,
       "sourcedProfiles": 50,
       "remaining": 0,
       "hasTarget": true
@@ -1464,8 +1464,8 @@
       "name": "Dopamine D1 receptor",
       "family": "Dopamine",
       "goal": 50,
-      "listedNames": 101,
-      "resolvedNames": 101,
+      "listedNames": 118,
+      "resolvedNames": 118,
       "sourcedProfiles": 50,
       "remaining": 0,
       "hasTarget": true
@@ -1475,8 +1475,8 @@
       "name": "Dopamine D2 receptor",
       "family": "Dopamine",
       "goal": 50,
-      "listedNames": 106,
-      "resolvedNames": 106,
+      "listedNames": 132,
+      "resolvedNames": 132,
       "sourcedProfiles": 50,
       "remaining": 0,
       "hasTarget": true
@@ -1486,8 +1486,8 @@
       "name": "Dopamine D3 receptor",
       "family": "Dopamine",
       "goal": 50,
-      "listedNames": 104,
-      "resolvedNames": 104,
+      "listedNames": 124,
+      "resolvedNames": 124,
       "sourcedProfiles": 50,
       "remaining": 0,
       "hasTarget": true
@@ -1497,8 +1497,8 @@
       "name": "Dopamine D4 receptor",
       "family": "Dopamine",
       "goal": 50,
-      "listedNames": 101,
-      "resolvedNames": 101,
+      "listedNames": 118,
+      "resolvedNames": 118,
       "sourcedProfiles": 50,
       "remaining": 0,
       "hasTarget": true
