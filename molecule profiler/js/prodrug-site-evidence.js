@@ -60,7 +60,7 @@
  if(typeof module!=='undefined'&&module.exports)module.exports=api;
  if(!root.document||!root.PharmacologyUI)return;
  const doc=root.document,panel=doc.getElementById('prodrug-panel');if(!panel)return;
- const data=typeof PHARMACOLOGY_EVIDENCE!=='undefined'?PHARMACOLOGY_EVIDENCE:null;
+ const base=typeof PHARMACOLOGY_EVIDENCE!=='undefined'?PHARMACOLOGY_EVIDENCE:null,data=root.CuratedReferences?.pharmacology(base)||base;
  const cases=references(data),make=(tag,text)=>{const e=doc.createElement(tag);if(text!==undefined)e.textContent=String(text);return e;};
  const host=make('section');host.id='prodrug-site-evidence';host.className='pk-research-extension';
  host.append(make('h3','Molecule sites and prodrug evidence'),make('p','Inspect any analyzed input molecule, or choose a documented reference. Select an atom to check evidence or attach a compatible cleavable group as an unvalidated design. Compatible attachment sites and existing-group pathways are labelled below. Atom numbers follow the displayed SMILES, not IUPAC ring locants.'));

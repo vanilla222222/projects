@@ -5,7 +5,9 @@
 const assert=require('node:assert/strict');
 const path=require('node:path');
 const {JSDOM,VirtualConsole}=require('jsdom');
-const expectedCoverage=require('../validation/receptor-ligand-coverage.json');
+const {CURATED_REFERENCES}=require('../data/curated-references');
+const curated=require('../js/curated-references'),{TARGETS}=require('../data/targets'),{LIBRARY}=require('../data/library'),{RECEPTOR_REFERENCE_CATALOG}=require('../data/receptor-catalog');
+const expectedCoverage=require('../js/receptor-catalog').coverageReport(RECEPTOR_REFERENCE_CATALOG.receptors,curated.targets(TARGETS,CURATED_REFERENCES),curated.library(LIBRARY,CURATED_REFERENCES),require('../data/receptor-ligand-annotations').RECEPTOR_LIGAND_ANNOTATIONS);
 const {RECEPTOR_LIGAND_ANNOTATIONS:expectedAnnotations}=require('../data/receptor-ligand-annotations.js');
 const annotatedReceptors=new Set(expectedAnnotations.map(a=>a.receptorId)).size;
 const awaiting=expectedCoverage.rows.filter(r=>!r.hasTarget);

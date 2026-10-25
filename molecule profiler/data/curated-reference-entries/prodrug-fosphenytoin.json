@@ -1,0 +1,73 @@
+{
+  "id": "prodrug-fosphenytoin",
+  "title": "Fosphenytoin → phenytoin",
+  "collections": [
+    "Prodrugs"
+  ],
+  "compounds": [
+    {
+      "name": "Fosphenytoin",
+      "smiles": "O=C1NC(c2ccccc2)(c2ccccc2)C(=O)N1COP(=O)(O)O",
+      "formula": "C16H15N2O6P",
+      "inchiKey": "XWLUWCNOOVRFPX-UHFFFAOYSA-N",
+      "sourceUrl": "https://drugcentral.org/drugcard/1247",
+      "role": "prodrug",
+      "identitySource": {
+        "provider": "DrugCentral",
+        "license": "CC BY-SA 4.0",
+        "snapshot": "2021-09-01",
+        "sourceFile": "validation/sources/drugcentral-structures-2021-09-01.tsv",
+        "sourceSha256": "5b81423a2ec1e2766e9666ec4a172d5a5b47045ea2cc032d1ba06085956bc1fc",
+        "sourceRecord": {
+          "SMILES": "OP(O)(=O)OCN1C(=O)NC(C1=O)(C1=CC=CC=C1)C1=CC=CC=C1",
+          "InChI": "InChI=1S/C16H15N2O6P/c19-14-16(12-7-3-1-4-8-12,13-9-5-2-6-10-13)17-15(20)18(14)11-24-25(21,22)23/h1-10H,11H2,(H,17,20)(H2,21,22,23)",
+          "InChIKey": "XWLUWCNOOVRFPX-UHFFFAOYSA-N",
+          "ID": "1247",
+          "INN": "fosphenytoin",
+          "CAS_RN": "93390-81-9"
+        }
+      }
+    },
+    {
+      "name": "Phenytoin",
+      "smiles": "O=C1NC(=O)C(c2ccccc2)(c2ccccc2)N1",
+      "formula": "C15H12N2O2",
+      "inchiKey": "CXOFVDLJLONNDW-UHFFFAOYSA-N",
+      "sourceUrl": "https://drugcentral.org/drugcard/2152",
+      "role": "active product",
+      "identitySource": {
+        "provider": "DrugCentral",
+        "license": "CC BY-SA 4.0",
+        "snapshot": "2021-09-01",
+        "sourceFile": "validation/sources/drugcentral-structures-2021-09-01.tsv",
+        "sourceSha256": "5b81423a2ec1e2766e9666ec4a172d5a5b47045ea2cc032d1ba06085956bc1fc",
+        "sourceRecord": {
+          "SMILES": "O=C1NC(=O)C(N1)(C1=CC=CC=C1)C1=CC=CC=C1",
+          "InChI": "InChI=1S/C15H12N2O2/c18-13-15(17-14(19)16-13,11-7-3-1-4-8-11)12-9-5-2-6-10-12/h1-10H,(H2,16,17,18,19)",
+          "InChIKey": "CXOFVDLJLONNDW-UHFFFAOYSA-N",
+          "ID": "2152",
+          "INN": "phenytoin",
+          "CAS_RN": "57-41-0"
+        }
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "from": 0,
+      "to": 1,
+      "kind": "prodrug",
+      "mechanism": "Phosphate prodrug conversion by phosphatases; subsequent breakdown releases phenytoin"
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "documented_relationship",
+      "sourceUrl": "https://dailymed.nlm.nih.gov/dailymed/fda/fdaDrugXsl.cfm?setid=c92df63b-5140-4213-8d43-8327ff6230b7&type=display",
+      "endpoint": "Phosphate prodrug conversion by phosphatases; subsequent breakdown releases phenytoin",
+      "context": "Documented parent-to-product relationship; no conversion rate or exposure inferred."
+    }
+  ],
+  "note": "The label describes the sodium product; these graphs are the source parent structures. Counterions, formulation and coproducts are not represented. No conversion half-life is assigned.",
+  "reviewedDate": "2026-10-25"
+}

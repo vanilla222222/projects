@@ -1,0 +1,65 @@
+{
+  "id": "prodrug-gsk-j4",
+  "title": "GSK-J4 → GSK-J1",
+  "collections": [
+    "Prodrugs"
+  ],
+  "compounds": [
+    {
+      "name": "GSK-J4",
+      "smiles": "CCOC(=O)CCNc1cc(N2CCc3ccccc3CC2)nc(-c2ccccn2)n1",
+      "formula": "C24H27N5O2",
+      "inchiKey": "WBKCKEHGXNWYMO-UHFFFAOYSA-N",
+      "sourceUrl": "https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:95077",
+      "role": "cellular prodrug",
+      "identitySource": {
+        "provider": "ChEBI",
+        "license": "CC BY 4.0",
+        "sourceRecord": {
+          "provider": "ChEBI",
+          "id": "95077",
+          "url": "https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:95077",
+          "snapshot": "2026-10-06",
+          "inchiKey": "WBKCKEHGXNWYMO-UHFFFAOYSA-N",
+          "license": "CC BY 4.0",
+          "nameKind": "ChEBI curated name",
+          "librarySmiles": "CCOC(=O)CCNc1cc(N2CCc3ccccc3CC2)nc(-c2ccccn2)n1",
+          "batch": "002"
+        },
+        "sourceFile": "data/library.js",
+        "sourceSha256": "1de0c3fc593a6f8dd60f27309a6a2c501a699ccf781b3db8fad989752c05a2bd"
+      }
+    },
+    {
+      "name": "GSK-J1",
+      "smiles": "O=C(O)CCNc1cc(N2CCc3ccccc3CC2)nc(-c2ccccn2)n1",
+      "formula": "C22H23N5O2",
+      "inchiKey": "AVZCPICCWKMZDT-UHFFFAOYSA-N",
+      "sourceUrl": "https://www.thesgc.org/chemical-probes/gsk-j1",
+      "role": "probe",
+      "identitySource": {
+        "provider": "SGC",
+        "accessed": "2026-10-25",
+        "sourceFields": "SMILES, InChIKey and formula in properties section"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "from": 0,
+      "to": 1,
+      "kind": "prodrug",
+      "mechanism": "Ethyl ester prodrug for cellular delivery of GSK-J1"
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "documented_relationship",
+      "sourceUrl": "https://www.thesgc.org/chemical-probes/gsk-j1",
+      "endpoint": "Ethyl ester prodrug for cellular delivery of GSK-J1",
+      "context": "Documented parent-to-product relationship; no conversion rate or exposure inferred."
+    }
+  ],
+  "note": "SGC distinguishes the ester used in cells from the acid probe. This relationship does not establish cleavage kinetics or selectivity across all demethylases.",
+  "reviewedDate": "2026-10-25"
+}

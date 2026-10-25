@@ -51,7 +51,7 @@
  function assess(input,candidates,options={}){
   const prepared=root.ProdrugCandidates.prepareParent(input),rows=[],excluded=[];
   if(!prepared)return {version:1,rows,excluded,reason:'A supported input structure is required.'};
-  const relationships=options.relationships||(typeof PHARMACOLOGY_EVIDENCE!=='undefined'?PHARMACOLOGY_EVIDENCE.relationships:[]),parent=prepared.mol;
+  const source=typeof PHARMACOLOGY_EVIDENCE!=='undefined'?PHARMACOLOGY_EVIDENCE:null,relationships=options.relationships||(root.CuratedReferences?.pharmacology(source)||source)?.relationships||[],parent=prepared.mol;
   const handles=root.ProdrugCandidates.sites(input),compared=root.ProdrugExplorer.comparison(input,candidates);
   const seen=[];
   for(const row of candidates.slice(0,12)){

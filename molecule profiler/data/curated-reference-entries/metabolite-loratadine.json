@@ -1,0 +1,73 @@
+{
+  "id": "metabolite-loratadine",
+  "title": "Loratadine → desloratadine",
+  "collections": [
+    "Metabolites"
+  ],
+  "compounds": [
+    {
+      "name": "Loratadine",
+      "smiles": "CCOC(=O)N1CCC(=C2c3ccc(Cl)cc3CCc3cccnc32)CC1",
+      "formula": "C22H23ClN2O2",
+      "inchiKey": "JCCNYMKQOSZNPW-UHFFFAOYSA-N",
+      "sourceUrl": "https://drugcentral.org/drugcard/1605",
+      "role": "parent drug",
+      "identitySource": {
+        "provider": "DrugCentral",
+        "license": "CC BY-SA 4.0",
+        "snapshot": "2021-09-01",
+        "sourceFile": "validation/sources/drugcentral-structures-2021-09-01.tsv",
+        "sourceSha256": "5b81423a2ec1e2766e9666ec4a172d5a5b47045ea2cc032d1ba06085956bc1fc",
+        "sourceRecord": {
+          "SMILES": "CCOC(=O)N1CCC(CC1)=C1C2=CC=C(Cl)C=C2CCC2=C1N=CC=C2",
+          "InChI": "InChI=1S/C22H23ClN2O2/c1-2-27-22(26)25-12-9-15(10-13-25)20-19-8-7-18(23)14-17(19)6-5-16-4-3-11-24-21(16)20/h3-4,7-8,11,14H,2,5-6,9-10,12-13H2,1H3",
+          "InChIKey": "JCCNYMKQOSZNPW-UHFFFAOYSA-N",
+          "ID": "1605",
+          "INN": "loratadine",
+          "CAS_RN": "79794-75-5"
+        }
+      }
+    },
+    {
+      "name": "desloratadine [DrugCentral source form]",
+      "smiles": "Clc1ccc2c(c1)CCc1cccnc1C2=C1CCNCC1",
+      "formula": "C19H19ClN2",
+      "inchiKey": "JAUOIFJMECXRGI-UHFFFAOYSA-N",
+      "sourceUrl": "https://drugcentral.org/drugcard/814",
+      "role": "active metabolite",
+      "identitySource": {
+        "provider": "DrugCentral",
+        "license": "CC BY-SA 4.0",
+        "snapshot": "2021-09-01",
+        "sourceFile": "validation/sources/drugcentral-structures-2021-09-01.tsv",
+        "sourceSha256": "5b81423a2ec1e2766e9666ec4a172d5a5b47045ea2cc032d1ba06085956bc1fc",
+        "sourceRecord": {
+          "SMILES": "ClC1=CC=C2C(CCC3=C(N=CC=C3)C2=C2CCNCC2)=C1",
+          "InChI": "InChI=1S/C19H19ClN2/c20-16-5-6-17-15(12-16)4-3-14-2-1-9-22-19(14)18(17)13-7-10-21-11-8-13/h1-2,5-6,9,12,21H,3-4,7-8,10-11H2",
+          "InChIKey": "JAUOIFJMECXRGI-UHFFFAOYSA-N",
+          "ID": "814",
+          "INN": "desloratadine",
+          "CAS_RN": "100643-71-8"
+        }
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "from": 0,
+      "to": 1,
+      "kind": "metabolite",
+      "mechanism": "Documented major active metabolite"
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "documented_relationship",
+      "sourceUrl": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=58ba2dc8-10c2-4532-92e2-40ec2fee3378",
+      "endpoint": "Documented major active metabolite",
+      "context": "Documented parent-to-product relationship; no conversion rate or exposure inferred."
+    }
+  ],
+  "note": "Parent and active metabolite remain distinct references. No fraction metabolized, formation rate or exposure is inferred from the graph transformation.",
+  "reviewedDate": "2026-10-25"
+}

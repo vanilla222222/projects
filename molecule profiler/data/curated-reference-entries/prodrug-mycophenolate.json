@@ -1,0 +1,73 @@
+{
+  "id": "prodrug-mycophenolate",
+  "title": "Mycophenolate mofetil → mycophenolic acid",
+  "collections": [
+    "Prodrugs"
+  ],
+  "compounds": [
+    {
+      "name": "mycophenolate mofetil",
+      "smiles": "COc1c(C)c2c(c(O)c1C/C=C(\\C)CCC(=O)OCCN1CCOCC1)C(=O)OC2",
+      "formula": "C23H31NO7",
+      "inchiKey": "RTGDFNSFWBGLEC-SYZQJQIISA-N",
+      "sourceUrl": "https://drugcentral.org/drugcard/1859",
+      "role": "prodrug",
+      "identitySource": {
+        "provider": "DrugCentral",
+        "license": "CC BY-SA 4.0",
+        "snapshot": "2021-09-01",
+        "sourceFile": "validation/sources/drugcentral-structures-2021-09-01.tsv",
+        "sourceSha256": "5b81423a2ec1e2766e9666ec4a172d5a5b47045ea2cc032d1ba06085956bc1fc",
+        "sourceRecord": {
+          "SMILES": "COC1=C(C)C2=C(C(=O)OC2)C(O)=C1C\\C=C(/C)CCC(=O)OCCN1CCOCC1",
+          "InChI": "InChI=1S/C23H31NO7/c1-15(5-7-19(25)30-13-10-24-8-11-29-12-9-24)4-6-17-21(26)20-18(14-31-23(20)27)16(2)22(17)28-3/h4,26H,5-14H2,1-3H3/b15-4+",
+          "InChIKey": "RTGDFNSFWBGLEC-SYZQJQIISA-N",
+          "ID": "1859",
+          "INN": "mycophenolate mofetil",
+          "CAS_RN": "128794-94-5"
+        }
+      }
+    },
+    {
+      "name": "mycophenolic acid [DrugCentral source form]",
+      "smiles": "COc1c(C)c2c(c(O)c1C/C=C(\\C)CCC(=O)O)C(=O)OC2",
+      "formula": "C17H20O6",
+      "inchiKey": "HPNSFSBZBAHARI-RUDMXATFSA-N",
+      "sourceUrl": "https://drugcentral.org/drugcard/1860",
+      "role": "active metabolite",
+      "identitySource": {
+        "provider": "DrugCentral",
+        "license": "CC BY-SA 4.0",
+        "snapshot": "2021-09-01",
+        "sourceFile": "validation/sources/drugcentral-structures-2021-09-01.tsv",
+        "sourceSha256": "5b81423a2ec1e2766e9666ec4a172d5a5b47045ea2cc032d1ba06085956bc1fc",
+        "sourceRecord": {
+          "SMILES": "COC1=C(C\\C=C(/C)CCC(O)=O)C(O)=C2C(=O)OCC2=C1C",
+          "InChI": "InChI=1S/C17H20O6/c1-9(5-7-13(18)19)4-6-11-15(20)14-12(8-23-17(14)21)10(2)16(11)22-3/h4,20H,5-8H2,1-3H3,(H,18,19)/b9-4+",
+          "InChIKey": "HPNSFSBZBAHARI-RUDMXATFSA-N",
+          "ID": "1860",
+          "INN": "mycophenolic acid",
+          "CAS_RN": "37415-62-6"
+        }
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "from": 0,
+      "to": 1,
+      "kind": "prodrug",
+      "mechanism": "Ester prodrug conversion to mycophenolic acid"
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "documented_relationship",
+      "sourceUrl": "https://www.cancer.gov/publications/dictionaries/cancer-drug/def/mycophenolate-mofetil",
+      "endpoint": "Ester prodrug conversion to mycophenolic acid",
+      "context": "Documented parent-to-product relationship; no conversion rate or exposure inferred."
+    }
+  ],
+  "note": "The active metabolite is recorded separately from the parent ester. The source supports their relationship; it does not supply an assay-specific conversion rate.",
+  "reviewedDate": "2026-10-25"
+}

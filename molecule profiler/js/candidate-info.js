@@ -8,7 +8,7 @@
  const nameIndices=new WeakMap(),metabolismCache=new Map();
  const SOURCE={title:'Daina and Zoete: A BOILED-Egg to predict absorption and brain penetration',url:'https://doi.org/10.1002/cmdc.201600182'};
  function libraryName(mol,formula,catalog){
-  const entries=catalog||(typeof LIBRARY!=='undefined'?LIBRARY:[]);
+  const entries=catalog||(typeof LIBRARY!=='undefined'?(root.CuratedReferences?.library(LIBRARY)||LIBRARY):[]);
   let index=nameIndices.get(entries);if(!index){index=new Map();for(const entry of entries){if(!entry.formula||!entry.smiles)continue;if(!index.has(entry.formula))index.set(entry.formula,[]);index.get(entry.formula).push({entry,mol:null});}nameIndices.set(entries,index);}
   for(const item of index.get(formula)||[]){try{item.mol=item.mol||parse(item.entry.smiles);if(exact(mol,item.mol))return {value:item.entry.name,kind:'Exact-graph reference-library label'};}catch(_){}}
   return null;

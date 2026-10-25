@@ -2282,5 +2282,6 @@ setupStructure();
 setupAlerts();
 setupTox();
 setupMetabolism();
-document.getElementById('smiles-input').value = 'aspirin, CC(=O)Oc1ccccc1C(=O)O';
+const curatedSelection=globalThis.CuratedReferences?.selection(globalThis.location?.search||'');
+document.getElementById('smiles-input').value = curatedSelection?curatedSelection.name+', '+curatedSelection.smiles:'aspirin, CC(=O)Oc1ccccc1C(=O)O';
 analyse();

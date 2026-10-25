@@ -3,8 +3,8 @@
   const $=id=>document.getElementById(id);
   const node=(tag,text,cls)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;return el;};
   const data=RECEPTOR_REFERENCE_CATALOG, receptors=data.receptors;
-  const targets=typeof TARGETS!=='undefined'?TARGETS:[];
-  const library=typeof LIBRARY!=='undefined'?LIBRARY:[];
+  const targets=typeof TARGETS!=='undefined'?(globalThis.CuratedReferences?.targets(TARGETS)||TARGETS):[];
+  const library=typeof LIBRARY!=='undefined'?(globalThis.CuratedReferences?.library(LIBRARY)||LIBRARY):[];
   const byReference=new Map(library.map(e=>[e.name,e]));
   function referenceLabel(id){const entry=byReference.get(id);if(!entry||typeof LibraryCatalog==='undefined')return id;
     const record=LibraryCatalog.nameRecord(entry);return LibraryCatalog.displayName(entry)+(record?.matchType==='tautomer-standardized'?' [standardized-form name]':'')+(record?' ('+id+')':'');}

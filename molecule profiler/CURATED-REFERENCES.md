@@ -4,7 +4,10 @@ Each JSON in `data/curated-reference-entries/` is one reviewed reference entry,
 committed separately with its compiled index and validation report. Entries can
 be a named ligand, a documented molecular pair, or a measured property record.
 Existing exact isomeric graphs are reused. Additional sourced graphs are merged
-into the browser library without rewriting historical identities or snapshots.
+into the browser library without rewriting historical identities. The existing scaffold audit is refreshed
+against its original assay policy; curated panel diversity is reported separately.
+When a source graph differs from a legacy namesake, a bracketed source-form label
+keeps the two identities visibly distinct.
 
 The inspector exposes collection and target-panel tags and the evidence cards.
 The analyzer shows exact-graph records and includes them in its pharmacology
@@ -14,7 +17,7 @@ Broad receptor assemblies retain source subunit context and do not become
 single-gene ranking panels. Existing 50-profile reports describe their original
 assay policy; these new classifications do not silently count toward that quota.
 
-The six collections cover named pharmacology, endogenous signalling, prodrugs,
+The seven collections cover named pharmacology, endogenous signalling, prodrugs,
 metabolites, chemical probes and controls, stereochemical comparisons, and
 measured properties (overlapping memberships). Controls remain restricted to
 their reported target and assay. A censored result such as IC50 >100 µM is
@@ -38,7 +41,9 @@ Missing conditions and source-assigned default uncertainties remain explicit.
   Product salts and formulations are distinguished from stored parent graphs.
 - FreeSolv, Mobley laboratory: selected experimental hydration free-energy
   records, source Git blob pinned per entry; experimental and calculated columns
-  remain separate. See https://github.com/MobleyLab/FreeSolv and its license.
+  remain separate. https://github.com/MobleyLab/FreeSolv,
+  [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Selected records are
+  adapted into structured fields; no experimental values are recalculated.
 
 ## Offline validation
 

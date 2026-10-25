@@ -25,7 +25,8 @@
   if(!record.pkPredictions){const feature=PKFeatures.features(record.mol,record.d,fingerprint(record.mol,'ecfp4s'));
    record.pkPredictions=Object.fromEntries(Object.entries(PK_MODELS.models).map(([id,m])=>[id,PKApplicability.predict(m,feature,record.mol)]));}
   const predictions=record.pkPredictions;
-  const observed=PHARMACOLOGY_EVIDENCE.halfLifeObservations.filter(r=>Pharmacology.exactGraph(record.mol,buildMolecule(parseSmiles(r.compound.smiles))));
+  const referenceEvidence=root.CuratedReferences?.pharmacology(PHARMACOLOGY_EVIDENCE)||PHARMACOLOGY_EVIDENCE;
+  const observed=referenceEvidence.halfLifeObservations.filter(r=>Pharmacology.exactGraph(record.mol,buildMolecule(parseSmiles(r.compound.smiles))));
   $('pk-predictions').innerHTML=Object.entries(PK_MODELS.models).map(([id,model])=>{
    const p=predictions[id],metric=model.metrics;
    if(id==='halfLife'&&observed.length)return '<div class="filter"><div class="name">Reported half-life — source context</div><div class="verdict">'+esc(observed[0].reported)+'</div><div class="why">'+esc(observed[0].population)+'. '+link(observed[0].sourceUrl,'Source')+'. A generic model is not substituted for this sourced observation.</div></div>';
@@ -37,13 +38,13 @@
     +'Not a patient-specific prediction.</div></div>';
   }).join('');
   $('pk-observations').innerHTML=observed.length?'<strong>Reported observations (separate from the model):</strong><ul>'+observed.map(r=>'<li>'+esc(r.reported)+' — '+esc(r.population)+'; '+link(r.sourceUrl,'label source')+'</li>').join('')+'</ul>':'No exact-graph clinical half-life observation in the small curated set.';
-  const relationships=Pharmacology.prodrugs(record.mol,PHARMACOLOGY_EVIDENCE);
+  const relationships=Pharmacology.prodrugs(record.mol,referenceEvidence);
   function relationship(r){return '<li><strong>'+esc(r.prodrug.name)+' → '+esc(r.active.name)+'</strong>: '+esc(r.activation)+'. '+esc(r.note)+' '+link(r.sourceUrl,'Relationship source')+' · '+link(r.prodrug.sourceUrl,'Prodrug structure')+' · '+link(r.active.sourceUrl,'Active structure')+' <button type="button" data-pharm-smiles="'+esc(r.prodrug.smiles)+'" data-pharm-name="'+esc(r.prodrug.name)+'">Analyze prodrug</button> <button type="button" data-pharm-smiles="'+esc(r.active.smiles)+'" data-pharm-name="'+esc(r.active.name)+'">Analyze active</button></li>';}
   $('prodrug-status').textContent=relationships.asProdrug.length?'Documented prodrug relationship matched to the supplied graph.':'No curated exact-graph prodrug match. Status unknown; this is not a negative prodrug prediction.';
   $('prodrug-matches').innerHTML=relationships.asProdrug.length?'<ul>'+relationships.asProdrug.map(relationship).join('')+'</ul>':'';
   $('prodrug-related').textContent=relationships.relatedProdrugForms.length?'Related heavy-atom connectivity: '+relationships.relatedProdrugForms.map(r=>r.prodrug.name).join(', ')+'. Charge, hydrogen counts or stereochemistry differs. These are not confirmed matches and their observations/actions are not transferred to the query.':'';
   $('prodrug-examples').innerHTML=relationships.examplesForActive.length?'<ul>'+relationships.examplesForActive.map(relationship).join('')+'</ul>':'No documented prodrug for this exact active graph in the current set. No hypothetical derivative is invented.';
-  $('prodrug-all').innerHTML='<ul>'+PHARMACOLOGY_EVIDENCE.relationships.map(relationship).join('')+'</ul>';
+  $('prodrug-all').innerHTML='<ul>'+referenceEvidence.relationships.map(relationship).join('')+'</ul>';
   const curatedReferences=root.CuratedReferences?.matches(record.mol)||[];
   if(root.CuratedReferences){let host=$('curated-reference-evidence');if(!host){const section=document.createElement('section'),heading=document.createElement('h3');heading.textContent='Curated reference evidence';host=document.createElement('div');host.id='curated-reference-evidence';section.append(heading,host);$('prodrug-panel').append(section);}root.CuratedReferences.render(host,curatedReferences);}
   const motifs=StructuralEvidence.detect(record.mol);

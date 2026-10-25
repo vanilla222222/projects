@@ -1,0 +1,47 @@
+{
+  "id": "property-ethanol",
+  "title": "Ethanol — experimental hydration free energy",
+  "collections": [
+    "Measured properties"
+  ],
+  "compounds": [
+    {
+      "name": "Ethanol",
+      "smiles": "CCO",
+      "formula": "C2H6O",
+      "inchiKey": "LFQSCWFLJHTTHZ-UHFFFAOYSA-N",
+      "sourceUrl": "https://github.com/MobleyLab/FreeSolv/blob/134cd763f95d54d818fc0618095aa01cbe470fc3/database.txt",
+      "role": "measured-property reference",
+      "identitySource": {
+        "provider": "FreeSolv / Mobley laboratory",
+        "license": "CC BY 4.0",
+        "keyOrigin": "Calculated from the source SMILES, not an independently supplied source key",
+        "sourceGitBlob": "6c6dbf5d27e646db5a540288ece636f9c915f363",
+        "sourceRecord": "mobley_2310185; CCO; ethanol; -5.00; 0.60; -3.39; 0.02; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  "
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "measured_property",
+      "target": "Hydration free energy",
+      "endpoint": "-5.00 kcal/mol; source-listed uncertainty 0.60 kcal/mol",
+      "relation": "=",
+      "value": -5.0,
+      "unit": "kcal/mol",
+      "uncertainty": 0.6,
+      "uncertaintyKind": "source-assigned default",
+      "sourceUrl": "https://github.com/MobleyLab/FreeSolv/blob/134cd763f95d54d818fc0618095aa01cbe470fc3/database.txt",
+      "originalReference": "https://doi.org/10.1021/ct050097l",
+      "sourceRecord": "mobley_2310185; CCO; ethanol; -5.00; 0.60; -3.39; 0.02; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  ",
+      "conditions": {
+        "temperature": "Not specified on this database row",
+        "pH": "Not specified on this database row",
+        "phaseTransfer": "Gas to water; retain FreeSolv standard-state convention"
+      },
+      "context": "Experimental uncertainty not presently available, so assigned a default value."
+    }
+  ],
+  "note": "Experimental FreeSolv column only; GAFF calculations are excluded. Hydration free energy is not aqueous solubility, pKa, logP or logD. Source-listed uncertainty may be assigned rather than measured; row-level missing conditions remain explicit.",
+  "reviewedDate": "2026-10-25"
+}

@@ -1,0 +1,47 @@
+{
+  "id": "property-phenol",
+  "title": "Phenol — experimental hydration free energy",
+  "collections": [
+    "Measured properties"
+  ],
+  "compounds": [
+    {
+      "name": "Phenol",
+      "smiles": "Oc1ccccc1",
+      "formula": "C6H6O",
+      "inchiKey": "ISWSIDIOOBJBQZ-UHFFFAOYSA-N",
+      "sourceUrl": "https://github.com/MobleyLab/FreeSolv/blob/134cd763f95d54d818fc0618095aa01cbe470fc3/database.txt",
+      "role": "measured-property reference",
+      "identitySource": {
+        "provider": "FreeSolv / Mobley laboratory",
+        "license": "CC BY 4.0",
+        "keyOrigin": "Calculated from the source SMILES, not an independently supplied source key",
+        "sourceGitBlob": "6c6dbf5d27e646db5a540288ece636f9c915f363",
+        "sourceRecord": "mobley_20524; c1ccc(cc1)O; phenol; -6.60; 0.20; -5.71; 0.03; 10.1039/P29900000291; 10.1021/acs.jced.7b00104; Experimental uncertainty as suggested by 10.1039/P29900000291 -- 0.2 kcal/mol.  "
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "measured_property",
+      "target": "Hydration free energy",
+      "endpoint": "-6.60 kcal/mol; source-listed uncertainty 0.20 kcal/mol",
+      "relation": "=",
+      "value": -6.6,
+      "unit": "kcal/mol",
+      "uncertainty": 0.2,
+      "uncertaintyKind": "source-reported estimate",
+      "sourceUrl": "https://github.com/MobleyLab/FreeSolv/blob/134cd763f95d54d818fc0618095aa01cbe470fc3/database.txt",
+      "originalReference": "https://doi.org/10.1039/P29900000291",
+      "sourceRecord": "mobley_20524; c1ccc(cc1)O; phenol; -6.60; 0.20; -5.71; 0.03; 10.1039/P29900000291; 10.1021/acs.jced.7b00104; Experimental uncertainty as suggested by 10.1039/P29900000291 -- 0.2 kcal/mol.  ",
+      "conditions": {
+        "temperature": "Not specified on this database row",
+        "pH": "Not specified on this database row",
+        "phaseTransfer": "Gas to water; retain FreeSolv standard-state convention"
+      },
+      "context": "Experimental uncertainty as suggested by 10.1039/P29900000291 -- 0.2 kcal/mol."
+    }
+  ],
+  "note": "Experimental FreeSolv column only; GAFF calculations are excluded. Hydration free energy is not aqueous solubility, pKa, logP or logD. Source-listed uncertainty may be assigned rather than measured; row-level missing conditions remain explicit.",
+  "reviewedDate": "2026-10-25"
+}

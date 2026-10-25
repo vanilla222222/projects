@@ -23,13 +23,30 @@ for(const r of data.records){
   for(const name of c.libraryNames){const entry=byname.get(name);assert.ok(entry);assert.ok(api.forEntry(entry).some(x=>x.id===r.id));assert.ok(api.tags(entry).length);assert.deepEqual(api.forEntry({...entry,smiles:'stale'}),[]);}
  }
  for(const e of r.evidence){assert.ok(e.sourceUrl.startsWith('https://'));assert.ok(e.endpoint||e.context);if(e.sourceFile)assert.equal(hash(e.sourceFile),e.sourceSha256);}
+ for(const c of r.compounds){const s=c.identitySource;if(s.sourceFile)assert.equal(hash(s.sourceFile),s.sourceSha256);}
 }
-const changed=api.targets(TARGETS);assert.equal(JSON.stringify(TARGETS),JSON.stringify(require('../data/targets').TARGETS));
+const originalTargets=JSON.stringify(TARGETS),changed=api.targets(TARGETS);assert.equal(JSON.stringify(TARGETS),originalTargets);
 for(const r of data.records.filter(r=>r.panel)){const t=changed.find(t=>t.gene===r.panel.gene);for(const c of r.compounds)for(const n of c.libraryNames)assert.ok(t.ligands.includes(n));}
 // Exact stereo/isotope/charge boundaries: a close neighbour gets no evidence.
 const fixture={records:[{id:'stereo',compounds:[{smiles:'N[C@H](C)C(=O)O'}]}]};
 assert.equal(api.matches(buildMolecule(parseSmiles('N[C@@H](C)C(=O)O')),fixture).length,0);
 assert.equal(api.matches(buildMolecule(parseSmiles('NC(C)C(=O)O')),fixture).length,0);
+assert.equal(api.selection('?curated=unknown&compound=0'),null);
+assert.equal(api.selection('?curated=probe-jq1&compound=-1'),null);
+assert.equal(api.selection('?curated=probe-jq1&compound=1.5'),null);
+for(const r of data.records)assert.equal(api.selection('?curated='+r.id+'&compound=0'),r.compounds[0]);
+const {PHARMACOLOGY_EVIDENCE:base}=require('../data/pharmacology-evidence'),baseBefore=JSON.stringify(base),composed=api.pharmacology(base);
+assert.equal(api.pharmacology(base),composed,'Cache identity must remain stable for release-evidence caches');
+assert.equal(JSON.stringify(base),baseBefore,'Historical evidence must not be mutated');
+assert.equal(composed.relationships.length,base.relationships.length+data.records.flatMap(r=>r.relationships||[]).filter(l=>l.kind==='prodrug').length);
+for(const r of composed.relationships.filter(r=>r.curatedReferenceId)){
+ assert.ok(Pharmacology.prodrugs(buildMolecule(parseSmiles(r.prodrug.smiles)),composed).asProdrug.includes(r));
+ assert.ok(Pharmacology.prodrugs(buildMolecule(parseSmiles(r.active.smiles)),composed).examplesForActive.includes(r));
+}
+for(const r of data.records)for(const e of r.evidence){
+ if(e.kind==='measured_property'){const fields=e.sourceRecord.split(';').map(s=>s.trim());assert.equal(e.value,+fields[3]);assert.equal(e.uncertainty,+fields[4]);assert.notEqual(e.value,+fields[5],'Calculated column must not replace experimental value');}
+ if(r.id==='control-gsk-j2'){assert.equal(e.values[1].relation,'>');assert.equal(e.values[1].value,100);}
+}
 const tags= require('../js/library-catalog').tagsFor;
 for(const r of data.records)for(const c of r.compounds)for(const name of c.libraryNames)assert.ok(tags(byname.get(name)).includes('Curated collection: '+r.collections[0]));
 console.log('Curated references:',data.records.length,'entries;',data.extraLibrary.length,'additional structures; source hashes, graph guards, browser formulas and target integration passed');

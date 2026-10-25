@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "records": 14,
-  "extraStructures": 3,
+  "records": 23,
+  "extraStructures": 6,
   "rdkitVersion": "2026.09.1",
   "inputSha256": {
     "data/curated-reference-entries/control-gsk-j2.json": "7f03a2300162a92b1f1f1ff26f4072893600dd54ac4730e2f25f37792145b8c8",
@@ -17,10 +17,19 @@
     "data/curated-reference-entries/iuphar-733-cnr1.json": "3ad4f594d2eee19eec5f147816576419a078e727e6bb588757ba6a7edb284eec",
     "data/curated-reference-entries/iuphar-743-cnr1.json": "ebae030e9bdc8bc87ff265def0a89586788b6a7ba354982fada40f46cb5c6ac9",
     "data/curated-reference-entries/iuphar-747-cnr2.json": "ea1168b27f4f99abaf3df95126ed503d28aae9cf01a76e1dda8df5e89ba8785c",
-    "data/curated-reference-entries/probe-jq1.json": "24bb4c09e01aa9f4d483908f3ea4d833c288028fc17a42dd88e9f2cf646cc104"
+    "data/curated-reference-entries/metabolite-loratadine.json": "d2bd987b7666fee74f225cfbcc9907afb9f8480acdb32d2625c85dfa8747182f",
+    "data/curated-reference-entries/probe-jq1.json": "24bb4c09e01aa9f4d483908f3ea4d833c288028fc17a42dd88e9f2cf646cc104",
+    "data/curated-reference-entries/prodrug-fosphenytoin.json": "ecb651374cb5a0551bb69b804819790b5203684a52fa35f1aae0d1f47afe2e0d",
+    "data/curated-reference-entries/prodrug-gsk-j4.json": "5d28b6dddc80f01c00bb41e0e71993cb817c057c3844c60e5dae06b93f9da94a",
+    "data/curated-reference-entries/prodrug-irinotecan.json": "f07dc7e8d90637ffcff9640e68f4eca596e364d819d27c3bc56478c563b53884",
+    "data/curated-reference-entries/prodrug-mycophenolate.json": "6b084dec2bff2a80dfe6291dc4e052e36e12de43758b9349ee14958494bc55a7",
+    "data/curated-reference-entries/property-benzene.json": "c1db55f2f183b4f1ce2eb523015ed576509cdd6e1c1ab9064d457430fea0d862",
+    "data/curated-reference-entries/property-ethanol.json": "c170780b490502d4af2097fb438d03bec264bdef99325d01dc037ca36fa4c5df",
+    "data/curated-reference-entries/property-methanol.json": "0a6fa8d8fa4b88c3effefb9ca5081c3fa6fd5d47f1dfe6933e71a5d007d328c0",
+    "data/curated-reference-entries/property-phenol.json": "ed0c83307666a4eba8be2f34d6ef42b8605e3563bb7c3ec58c0218c4a2d50f81"
   },
   "librarySha256": "1de0c3fc593a6f8dd60f27309a6a2c501a699ccf781b3db8fad989752c05a2bd",
-  "toolSha256": "18065110668ad5b1b2d6ba218b26e2f354551765fcbb8796e5ec342b64b78b29",
-  "dataSha256": "13ebdf900a9935d0669f8d90da2b285ef46baacbab162e6f8dce9a2d31cad434",
-  "browserGraphsChecked": 15
+  "toolSha256": "13d3bb9ba06773ca774696f50efe9a14cd2d946619900bb0def9151e10911e9b",
+  "dataSha256": "78c52add7ca0e3e176055b3fe12b782965b418aeb5090eba72fa1b55596a017c",
+  "browserGraphsChecked": 28
 }
