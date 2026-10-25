@@ -23,7 +23,20 @@
    const meta=data.entries[name],guarded=meta?.librarySmiles===entry.smiles;
    return {entry,label:catalog.displayName(entry),aliases:catalog.aliasesFor(entry),identity:catalog.nameRecord(entry),records:curated.forEntry(entry,data),observations:observations(entry),tags:catalog.tagsFor(entry),identityWarnings:guarded?meta.identityConflicts||[]:[]};
   }
-  return {entries,byName,observations,dossier};
+  function comparison(names){
+   const compounds=[...new Set(names)].map(name=>dossier(name)).filter(Boolean),groups=new Map();
+   for(const d of compounds)for(const o of d.observations){
+    if(!o.target||['identity_reference','documented_relationship'].includes(o.kind))continue;
+    // No conversion, averaging, ranking or cross-study pooling. Unknown context
+    // stays in a separate observation group rather than implying comparability.
+    const missing=o.assay==='Not reported'||o.species==='Not reported';
+    const key=JSON.stringify([o.target,o.species,o.hostSpecies,o.assay,o.testedForm,o.metric,o.unit,o.kind,o.conditions||null,o.sourceUrl,missing?[d.entry.name,o.id]:null]);
+    if(!groups.has(key))groups.set(key,{key,target:o.target,species:o.species,hostSpecies:o.hostSpecies,assay:o.assay,testedForm:o.testedForm,metric:o.metric,unit:o.unit,kind:o.kind,conditions:o.conditions,sourceUrl:o.sourceUrl,incomplete:missing,observations:[]});
+    groups.get(key).observations.push({name:d.entry.name,observation:o});
+   }
+   return {compounds,groups:[...groups.values()]};
+  }
+  return {entries,byName,observations,dossier,comparison};
  }
  const api={createModel,species,metric};root.ReferenceResearch=api;if(typeof module!=='undefined')module.exports=api;
 })(globalThis);

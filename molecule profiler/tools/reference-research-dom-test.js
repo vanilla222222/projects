@@ -12,6 +12,10 @@ const assert=require('node:assert/strict'),path=require('node:path'),{pathToFile
   const b=d.querySelector('button.dossier-button');assert.ok(b);b.click();assert.deepEqual(errors,[]);assert.equal(d.querySelector('#reference-dossier h2').textContent,ui.model.dossier(b.dataset.reference).label);
   assert.equal(new URL(d.querySelector('[data-permalink]').href).searchParams.get('reference'),b.dataset.reference);
   ui.openDossier('Valsartan');assert.ok(d.querySelector('#reference-dossier .research-warning'));assert.ok(!d.getElementById('reference-dossier').textContent.includes('family-003-3937-agtr1:'));
+  ui.openDossier('2C-B');[...d.querySelectorAll('#reference-dossier button')].find(b=>b.textContent==='Compare this compound').click();
+  assert.equal(d.querySelectorAll('#research-compare-selected button').length,1);assert.ok(d.getElementById('research-tools').open);assert.ok(d.getElementById('research-compare-results').textContent.includes('Emax 45'));
+  const input=d.getElementById('research-compare-input');input.value='2C-C';d.getElementById('research-compare-add').click();assert.equal(d.querySelectorAll('#research-compare-selected button').length,2);
+  assert.ok(d.querySelector('#research-compare-results table'));d.getElementById('research-compare-clear').click();assert.equal(d.querySelectorAll('#research-compare-selected button').length,0);
   assert.deepEqual(errors,[]);console.log('Research DOM: dossier navigation, source structures, deep links and identity warnings passed');
  }finally{dom.window.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
