@@ -78,7 +78,29 @@
    reviewCache=result.sort((a,b)=>(a.kind==='identity'?0:1)-(b.kind==='identity'?0:1)||a.label.localeCompare(b.label)||a.target.localeCompare(b.target));return reviewCache;
   }
   function reviews({kind='all',query='',page=1,perPage=12}={}){const term=query.trim().toLowerCase(),items=reviewItems().filter(r=>(kind==='all'||r.kind===kind)&&[r.name,r.label,r.target,r.status].join(' ').toLowerCase().includes(term)),pages=Math.max(1,Math.ceil(items.length/perPage)),current=Math.min(Math.max(page,1),pages);return {total:items.length,page:current,pages,items:items.slice((current-1)*perPage,current*perPage)};}
-  return {entries,byName,observations,dossier,comparison,families,members,cell,matrix,isTarget,reviews,reviewItems};
+  let queueBase=null;
+  function curationBase(){if(queueBase)return queueBase;const tasks=[];
+   for(const r of reviewItems())tasks.push({id:'review:'+r.id,category:'review',priority:r.kind==='identity'?0:1,title:(r.kind==='identity'?'Resolve identity: ':'Review action differences: ')+r.label+' · '+r.target,reason:r.reason,count:1,names:[r.name],reviewId:r.id,reviewKind:r.kind,target:r.target,sourceUrls:[...new Set([r.sourceUrl,...r.evidence.map(o=>o.sourceUrl)].filter(Boolean))]});
+   for(const f of families()){const candidates=members(f.tag).filter(e=>{const obs=observations(e).filter(isTarget);return obs.some(o=>['source_classification','imported_classification','imported_binding'].includes(o.kind))&&!obs.some(o=>o.kind==='functional_assay');});
+    if(candidates.length)tasks.push({id:'functional:'+f.tag,category:'functional',priority:2,title:'Add functional evidence: '+f.tag.replace(/^(Family motif: |Series: )/,''),reason:candidates.length+' entries have imported classifications or binding evidence but no directly measured functional observation in this index. Prioritize named, identity-checked references and primary assay sources; do not infer action from affinity or family.',count:candidates.length,names:candidates.map(e=>e.name),family:f.tag,sourceUrls:[...new Set(candidates.flatMap(e=>observations(e).filter(isTarget).map(o=>o.sourceUrl)).filter(Boolean))]});
+   }
+   const assays=new Map();for(const e of entries)for(const o of observations(e).filter(isTarget)){
+    if(!['functional_assay','control_comparison','stereo_comparison'].includes(o.kind))continue;
+    if(o.kind==='functional_assay'&&o.value===undefined)tasks.push({id:'quantitative:'+e.name+':'+o.id,category:'functional',priority:2,title:'Recover quantitative result: '+catalog.displayName(e),reason:'A functional observation is documented, but no numerical result is transcribed. Review the cited primary result before adding a value.',count:1,names:[e.name],target:o.target,sourceUrls:[o.sourceUrl].filter(Boolean)});
+    const key=JSON.stringify([o.target,o.species,o.hostSpecies,o.assay,o.sourceUrl]);if(!assays.has(key))assays.set(key,[]);assays.get(key).push({name:e.name,o});
+   }
+   let assayIndex=0;for(const group of assays.values()){const measured=group.filter(({o})=>o.kind==='functional_assay'||(o.kind==='control_comparison'&&typeof o.value==='number'));if(!measured.length||group.some(({o})=>o.negativeControl))continue;const first=measured[0].o,names=[...new Set(measured.map(x=>x.name))];
+    tasks.push({id:'control:'+assayIndex++,category:'controls',priority:3,title:'Link assay-matched controls: '+first.target,reason:'No negative-control relationship is imported for this reported target/species/host/assay/source group. This does not establish that the original study lacked controls. Verify the source and detection limits before importing a control.',count:names.length,names,target:first.target,assay:first.assay,species:first.species,sourceUrls:[first.sourceUrl].filter(Boolean)});
+   }
+   queueBase=tasks;return tasks;
+  }
+  function curationQueue({category='all',query='',minimumScaffolds=3,page=1,perPage=12}={}){
+   const threshold=[2,3,5].includes(Number(minimumScaffolds))?Number(minimumScaffolds):3;
+   const diversity=(data.panelCoverage||[]).filter(p=>p.ringScaffolds<threshold).map(p=>({id:'diversity:'+p.gene,category:'diversity',priority:4,title:'Broaden curated scaffold coverage: '+p.gene,reason:p.ringScaffolds+' ring scaffolds across '+p.distinctIsomericGraphs+' curated isomeric graphs; '+p.acyclicProfiles+' acyclic profiles. Below the selected planning threshold of '+threshold+' ring scaffolds. This is curated-panel coverage, not whole-library coverage or predictive accuracy. Seek source-backed references with distinct scaffolds and appropriate assays.',count:p.ringScaffolds,target:p.gene,names:[...new Set(data.records.filter(r=>r.panel?.gene===p.gene).flatMap(r=>r.compounds.flatMap(c=>c.libraryNames)))],sourceUrls:[...new Set(data.records.filter(r=>r.panel?.gene===p.gene).flatMap(r=>r.evidence.map(e=>e.sourceUrl)).filter(Boolean))]}));
+   const term=query.trim().toLowerCase(),all=curationBase().concat(diversity).sort((a,b)=>a.priority-b.priority||a.title.localeCompare(b.title)),filtered=all.filter(t=>(category==='all'||t.category===category)&&[t.title,t.reason,...t.names].join(' ').toLowerCase().includes(term)),pages=Math.max(1,Math.ceil(filtered.length/perPage)),current=Math.min(Math.max(page,1),pages);
+   return {total:filtered.length,page:current,pages,minimumScaffolds:threshold,items:filtered.slice((current-1)*perPage,current*perPage),categoryCounts:Object.fromEntries(['review','functional','controls','diversity'].map(c=>[c,all.filter(t=>t.category===c).length]))};
+  }
+  return {entries,byName,observations,dossier,comparison,families,members,cell,matrix,isTarget,reviews,reviewItems,curationQueue};
  }
  const api={createModel,species,metric};root.ReferenceResearch=api;if(typeof module!=='undefined')module.exports=api;
 })(globalThis);

@@ -23,6 +23,11 @@ const assert=require('node:assert/strict'),path=require('node:path'),{pathToFile
   d.getElementById('research-review-kind').value='identity';d.getElementById('research-review-load').click();assert.equal(d.querySelectorAll('#research-review-results>details').length,4);
   const reviewSearch=d.getElementById('research-review-search');reviewSearch.value='Valsartan';reviewSearch.dispatchEvent(new w.Event('input'));assert.equal(d.querySelectorAll('#research-review-results>details').length,1);assert.ok(d.getElementById('research-review-results').textContent.includes('guarded unresolved'));assert.ok(d.querySelector('#research-review-results a[href="NAMED-FAMILY-003.md"]'));
   d.getElementById('research-review-kind').value='action';reviewSearch.value='Quetiapine';d.getElementById('research-review-load').click();assert.ok(d.getElementById('research-review-results').textContent.includes('No adjudication'));
-  assert.deepEqual(errors,[]);console.log('Research DOM: dossier navigation, source structures, deep links and identity warnings passed');
+  d.getElementById('research-curation-category').value='diversity';d.getElementById('research-curation-load').click();assert.ok(d.querySelectorAll('#research-curation-results>details').length);assert.ok(d.getElementById('research-curation-results').textContent.includes('planning threshold'));
+  assert.ok(d.querySelector('#research-curation-results a[href*="reference-explorer.html?receptor="]'));const csv=ui.queueCsv();assert.ok(csv.includes('Source URLs'));assert.ok(csv.includes('https://'));assert.ok(csv.includes('diversity:'));
+  let downloaded=false;d.addEventListener('click',e=>{if(e.target.download==='reference-curation-queue.csv'){downloaded=true;e.preventDefault();}});d.getElementById('research-curation-export').click();assert.ok(downloaded);
+  d.getElementById('research-curation-category').value='review';d.getElementById('research-curation-load').click();[...d.querySelectorAll('#research-curation-results button')].find(b=>b.textContent==='Open review').click();assert.ok(d.querySelector('#research-review-results>details'));
+  const ids=[...d.querySelectorAll('[id]')].map(n=>n.id);assert.equal(new Set(ids).size,ids.length,'Unique inspector IDs');
+  assert.deepEqual(errors,[]);console.log('Research DOM: dossiers, comparisons, matrix drill-down, source reviews, curation navigation and CSV download passed');
  }finally{dom.window.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

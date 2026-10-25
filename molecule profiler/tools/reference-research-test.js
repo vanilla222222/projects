@@ -45,3 +45,11 @@ const quet=reviews.find(r=>r.id==='action:Quetiapine:HTR2A:Homo sapiens');assert
 assert.equal(model.reviews({kind:'identity',query:'valsartan'}).total,1);assert.equal(model.reviews({query:'no-such-compound'}).total,0);
 for(const decision of reviewData.decisions)assert.ok(reviews.some(r=>r.id===decision.id),'Decision must refer to an existing review candidate: '+decision.id);
 console.log('Review centre: four guarded identity cases, species-specific action differences, raw witnesses and unresolved decision history passed');
+const queue=model.curationQueue({perPage:10000});assert.ok(queue.items.length>31);assert.equal(queue.items[0].priority,0);assert.equal(queue.categoryCounts.review,reviews.length);
+const quantitativeName=data.records.find(r=>r.id==='family-001-37456').compounds[0].libraryNames[0];assert.ok(queue.items.some(t=>t.id.startsWith('quantitative:')&&t.names.includes(quantitativeName)));
+const div2=model.curationQueue({category:'diversity',minimumScaffolds:2,perPage:10000}),div5=model.curationQueue({category:'diversity',minimumScaffolds:5,perPage:10000});assert.ok(div5.total>=div2.total);assert.ok(div2.items.every(t=>t.category==='diversity'&&t.count<2));
+assert.ok(queue.items.some(t=>t.category==='functional'&&t.family==='Family motif: Benzisothiazoles'));
+const controlsQueue=queue.items.filter(t=>t.category==='controls');assert.ok(controlsQueue.length);assert.ok(!controlsQueue.some(t=>t.names.includes(active)&&t.names.includes(less)),'An imported matched control relation must not become a missing-control task for its own assay');
+for(const t of queue.items){assert.ok(t.reason&&t.sourceUrls.length,'Task must expose its reason and source');assert.ok(t.names.every(n=>model.byName.has(n)));}
+assert.equal(model.curationQueue({query:'no-such-compound'}).total,0);
+console.log('Curation queue: source-linked priorities, functional gaps, assay-specific controls and explicit scaffold planning thresholds passed');

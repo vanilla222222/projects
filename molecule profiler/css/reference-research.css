@@ -8,3 +8,5 @@
 .research-tools section+section{border-top:1px solid var(--line);padding-top:24px;margin-top:24px}.research-legend{font-size:11px;color:var(--muted);padding:12px;border:1px solid var(--line);border-radius:8px;line-height:1.8}.research-tools .matrix-evidence{border-color:#55927a;color:#c2f2dc;background:#193f34}.research-tools .matrix-unknown{color:var(--muted);background:transparent;border-style:dashed}.research-tools th{white-space:nowrap}.research-tools td button{max-width:260px;text-align:left}
 
 #research-review-results>details{padding:16px 0}#research-review-results button{font-size:12px;margin:8px 10px 8px 0}#research-review-results a{display:inline-block;margin:8px 10px 8px 0;font-size:12px}#research-review-results pre{white-space:pre-wrap;max-height:300px;overflow:auto;font-size:11px}
+
+.research-nav{display:flex;flex-wrap:wrap;gap:10px 22px;margin:18px 0;font-size:12px}.research-tools section{scroll-margin-top:16px}#research-curation-results>details{padding:16px 0}#research-curation-results button,#research-curation-results a{display:inline-block;font-size:12px;margin:8px 10px 8px 0}
