@@ -48,7 +48,7 @@
    const classified=e.kind==='source_classification'&&e.action&&e.receptorId&&e.sourceProvider==='IUPHAR/BPS Guide to PHARMACOLOGY'&&e.sourceRecord;
    if((e.kind!=='functional_assay'&&!classified)||e.species!=='Homo sapiens'||e.rankEligible===false)continue;
    for(const c of r.compounds)for(const name of c.libraryNames||[]){const entry=byname.get(name);if(!entry||!forEntry(entry,d).includes(r))continue;
-    const measured=Object.fromEntries(['metric','value','sd','unit','uncertaintyKind','efficacy','originalValue','originalSd','originalUnit','hostSpecies','testedForm'].filter(k=>e[k]!==undefined).map(k=>[k,e[k]]));
+    const measured=Object.fromEntries(['metric','value','relation','sd','lower','upper','conditions','sourceLocation','sourceSha256','sourceRecord','unit','uncertaintyKind','efficacy','originalValue','originalSd','originalUnit','hostSpecies','testedForm'].filter(k=>e[k]!==undefined).map(k=>[k,e[k]]));
     const provenance=classified?{classification:{provider:e.sourceProvider,license:'CC BY-SA 4.0',sourceSnapshotSha256:e.sourceSha256,ligandId:e.sourceRecord['Ligand ID'],targetId:e.sourceRecord['Target ID'],sourceRecord:e.sourceRecord}}:{};
     out.push({...measured,...provenance,receptorId:e.receptorId,ligandName:name,librarySmiles:entry.smiles,action:e.action,evidenceType:classified?'source_classification':'functional',species:e.species,assay:e.assay,endpoint:e.endpoint,sourceUrl:e.sourceUrl,note:(classified?'Curated database action classification; no functional potency or efficacy measurement assigned. ':'Assay-specific functional evidence. ')+(e.testedForm||'')+' Separate from the strict binding-profile quota.',curatedReferenceId:r.id});
    }

@@ -69,7 +69,9 @@ def build():
                         assert abs(e['value']-e['originalValue']*scale)<1e-8
                         assert abs(e['sd']-e['originalSd']*scale)<1e-8
                     if 'efficacy' in e:
-                        assert e['efficacy']['reference']=='5-HT = 100%' and 0<=e['efficacy']['value']<=100
+                        f=e['efficacy'];assert f['reference'] and f['unit']=='%' and f['value']>=0
+                        if 'lower' in f:assert 0<=f['lower']<=f['value']<=f['upper'] and f['uncertaintyKind']
+                    if 'lower' in e:assert 0<e['lower']<=e['value']<=e['upper'] and e['uncertaintyKind']
             if r.get('panel'):
                 assert any(e['kind']=='source_classification' or (e['kind']=='functional_assay' and e['species']=='Homo sapiens' and e.get('rankEligible',True) and e['receptorId']==r['panel']['gene']) for e in r['evidence']),'Panel requires qualified pharmacology evidence'
             if not bygraph[g]:

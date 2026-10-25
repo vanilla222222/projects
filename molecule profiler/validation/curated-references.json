@@ -41,7 +41,7 @@
     "data/curated-reference-entries/family-001-162623891.json": "6c1172f2dc260fb234fd505d157994210a89fb71f27f4a4813994d1ed82fa036",
     "data/curated-reference-entries/family-001-29642.json": "b96e468e78a4d8fd0c6de102bfba197a2b677764521a2d96bbb85f61393b92c2",
     "data/curated-reference-entries/family-001-32512.json": "1a2435c9a18c44850c2dde6c0311fbd8e6fbe1a7f861c3b26538fbe690d8e9e0",
-    "data/curated-reference-entries/family-001-37456.json": "6a64f7a20bba391a22ee59c3dc99455b03f8f4577ac86414d1bade8144a2268d",
+    "data/curated-reference-entries/family-001-37456.json": "42714ecfc80167729b59b9c1ead845e02c6556636946062f5c4912ff23807a0b",
     "data/curated-reference-entries/family-002-124-adra2a.json": "8cd7e3db1c0b87fe4ac7a52d724089fcd6dbc25eb9fd6582f8f90f9f19b54e49",
     "data/curated-reference-entries/family-002-204-drd2.json": "26bcdabe8a5a00cbd927b3c55261e490d98991c3e63e40feda89152bebb64617",
     "data/curated-reference-entries/family-002-209-drd2.json": "95a2a816bf21960caf55ec3eda47b366bf02d663b685e942dd6ee78bfc5b4dde",
@@ -355,7 +355,7 @@
     }
   ],
   "librarySha256": "1de0c3fc593a6f8dd60f27309a6a2c501a699ccf781b3db8fad989752c05a2bd",
-  "toolSha256": "042c9961d731cf5a482748236cc93769c467015680af564db773a183f9312856",
-  "dataSha256": "50dd842efbab77e5aa257023266e80671ae7b672a6d54eacacfed029226a8e9b",
+  "toolSha256": "ca218def3f707e86da0ff765dd4135d818971f3a650d8b174d9378734e9752ac",
+  "dataSha256": "afaad4c89b48c5f4381ad63ed37b9a06fa8e597d931069ad7017902340059282",
   "browserGraphsChecked": 107
 }

@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "reviewedDate": "2026-10-25",
+  "sourceUrl": "https://doi.org/10.1007/s00204-024-03774-7",
+  "license": "CC BY 4.0",
+  "scope": "Selected Table 1 compound 14 functional observations only. Separate pathways; relative efficacy is not binding affinity, clinical potency or a between-study bias estimate.",
+  "rows": [
+    {
+      "kind": "functional_assay",
+      "id": "protonitazepyne-2024-beta-arrestin2",
+      "entry": "family-001-37456",
+      "receptorId": "OPRM1",
+      "target": "Mu-opioid receptor (MOR)",
+      "action": "agonist",
+      "species": "Homo sapiens",
+      "hostSpecies": "Homo sapiens",
+      "assayedName": "N-pyrrolidino protonitazene",
+      "sourceUrl": "https://doi.org/10.1007/s00204-024-03774-7",
+      "accessUrl": "https://link.springer.com/content/pdf/10.1007/s00204-024-03774-7.pdf",
+      "sourceLocation": "Table 1, compound 14, p. 3007; Materials and methods",
+      "assay": "HEK293T human MOR NanoBiT beta-arrestin2 recruitment",
+      "metric": "EC50",
+      "endpoint": "EC50 = 0.942 nM; 95% CI 0.811–1.09 nM; Emax = 198% hydromorphone (95% CI 194–202%)",
+      "relation": "=",
+      "value": 0.942,
+      "lower": 0.811,
+      "upper": 1.09,
+      "unit": "nM",
+      "uncertaintyKind": "95% confidence interval",
+      "efficacy": {
+        "value": 198,
+        "lower": 194,
+        "upper": 202,
+        "unit": "%",
+        "reference": "Hydromorphone = 100%",
+        "uncertaintyKind": "95% confidence interval"
+      },
+      "testedForm": "Free base; concentrations expressed as free base",
+      "conditions": {
+        "analysis": "Combined normalized data; three-parameter logistic regression",
+        "experiments": "At least 3 independent experiments, duplicate concentrations",
+        "normalization": "Hydromorphone maximum response = 100%",
+        "readout": "Area under the time-luminescence curve"
+      }
+    },
+    {
+      "kind": "functional_assay",
+      "id": "protonitazepyne-2024-camp",
+      "entry": "family-001-37456",
+      "receptorId": "OPRM1",
+      "target": "Mu-opioid receptor (MOR)",
+      "action": "agonist",
+      "species": "Homo sapiens",
+      "hostSpecies": "Homo sapiens",
+      "assayedName": "N-pyrrolidino protonitazene",
+      "sourceUrl": "https://doi.org/10.1007/s00204-024-03774-7",
+      "accessUrl": "https://link.springer.com/content/pdf/10.1007/s00204-024-03774-7.pdf",
+      "sourceLocation": "Table 1, compound 14, p. 3007; Materials and methods",
+      "assay": "HEK293T human MOR GloSensor cAMP accumulation inhibition",
+      "metric": "EC50",
+      "endpoint": "EC50 = 0.0939 nM; 95% CI 0.0531–0.167 nM; Emax = 109% hydromorphone (95% CI 99.8–118%)",
+      "relation": "=",
+      "value": 0.0939,
+      "lower": 0.0531,
+      "upper": 0.167,
+      "unit": "nM",
+      "uncertaintyKind": "95% confidence interval",
+      "efficacy": {
+        "value": 109,
+        "lower": 99.8,
+        "upper": 118,
+        "unit": "%",
+        "reference": "Hydromorphone = 100%",
+        "uncertaintyKind": "95% confidence interval"
+      },
+      "testedForm": "Free base; concentrations expressed as free base",
+      "conditions": {
+        "analysis": "Combined normalized data; three-parameter logistic regression",
+        "experiments": "At least 3 independent experiments, duplicate concentrations",
+        "normalization": "Hydromorphone maximum response = 100%",
+        "readout": "Area under the time-luminescence curve"
+      }
+    }
+  ]
+}

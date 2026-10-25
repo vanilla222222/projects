@@ -30,7 +30,7 @@
  const selected=new Set(),input=$('research-compare-input'),options=$('research-compare-options');
  function valueLabel(o){
   if(typeof o.value!=='number')return o.action?o.action.replace(/_/g,' ')+' (source classification)':o.endpoint||'No numeric measurement';
-  return [o.metric||'Reported value',o.relation||'=',o.value,o.sd!==undefined?'± '+o.sd:'',o.unit,o.lower!==undefined?'['+o.lower+'–'+o.upper+'; '+o.uncertaintyKind+']':'',o.efficacy?' · Emax '+o.efficacy.value+(o.efficacy.sd!==undefined?' ± '+o.efficacy.sd:'')+o.efficacy.unit+' relative to '+o.efficacy.reference:''].filter(v=>v!==''&&v!==undefined).join(' ');
+  return [o.metric||'Reported value',o.relation||'=',o.value,o.sd!==undefined?'± '+o.sd:'',o.unit,o.lower!==undefined?'['+o.lower+'–'+o.upper+'; '+o.uncertaintyKind+']':'',o.efficacy?' · Emax '+o.efficacy.value+(o.efficacy.sd!==undefined?' ± '+o.efficacy.sd:'')+o.efficacy.unit+' relative to '+o.efficacy.reference+(o.efficacy.lower!==undefined?' ['+o.efficacy.lower+'–'+o.efficacy.upper+'; '+o.efficacy.uncertaintyKind+']':''):''].filter(v=>v!==''&&v!==undefined).join(' ');
  }
  function renderComparison(){$('research-compare-status').textContent=selected.size+' compounds selected';const host=$('research-compare-results'),chips=$('research-compare-selected');host.replaceChildren();chips.replaceChildren();
   const result=model.comparison([...selected]);for(const d of result.compounds){const b=el('button',d.label+' ×');b.type='button';b.setAttribute('aria-label','Remove '+d.label+' from comparison');b.addEventListener('click',()=>{selected.delete(d.entry.name);renderComparison();});chips.append(b);}
