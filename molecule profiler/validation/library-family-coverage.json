@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "sourceSha256": {
-    "data/library.js": "3d85b04c86e14e10bd2d68b7a172825631acccb6fe5a87857606bdbef46e782c",
+    "data/library.js": "30d60a5681dd5c7111b316b7d922fbedd13e42e3dc2db1ab03c2194a0f688688",
     "data/library-names.js": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
     "data/targets.js": "facc465ef72687224df3577fbf7a600102e7c3b07cc033a4de21ba76191192fa",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
@@ -12,7 +12,7 @@
     "tools/library-expansion-50.py": "1c7e05d9267af49bcf25ff3fc90f114b394a295ab3dee561954252e26bc0d60a",
     "validation/library-50-import.json": "89abe62271fff06dd9c8591ea3823ae56cd62a7396eb1412bd93834a2c1b10e0"
   },
-  "dataSha256": "4f0ef375928e3a796b8f2b6fb58beaf6dc65c739b1c347dfec2017aaa61b0910",
+  "dataSha256": "9109cb3a42e0ea963a1ca3fe50def5d1d72f510ec01e69e26c6f60997696f14d",
   "interpretation": "Overlapping structural motifs in stored graphs; not evidence of pharmacological function, exhaustive family membership or independently verified molecular identities.",
   "families": [
     {
@@ -5265,9 +5265,14 @@
         "enitociclib",
         "suzetrigine",
         "pyriproxyfen",
-        "sexipyridine"
+        "sexipyridine",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-methoxyiminoacetyl]amino]-3-(pyridin-1-ium-1-ylmethyl)-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylate",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-(2-carboxypropan-2-yl)oxyiminoacetyl]amino]-3-[(4-methylpyridin-1-ium-1-yl)methyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylate",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-hydroxyiminoacetyl]amino]-3-(pyridin-1-ium-1-ylmethyl)-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylate",
+        "3-[(4-aminopyridin-1-ium-1-yl)methyl]-7-[[2-(2-amino-1,3-thiazol-4-yl)-2-(2-carboxypropan-2-yl)oxyiminoacetyl]amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylate",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-methoxyiminoacetyl]amino]-3-[(4-methylpyridin-1-ium-1-yl)methyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylate"
       ],
-      "count": 1224
+      "count": 1229
     },
     {
       "tag": "Family motif: Pyrroles",
@@ -6904,9 +6909,12 @@
         "1-methyl-N-[2-(4-methylpentan-2-yl)-3-thienyl]-3-(trifluoromethyl)pyrazole-4-carboxamide",
         "[2-bromo-4-(2-chlorophenyl)-6H-thieno[3,2-f][1,2,4]triazolo[4,3-a][1,4]diazepin-9-yl]methanol",
         "5-[2-cyclopropyl-1-(2-fluorophenyl)-2-oxoethyl]-4,5,6,7-tetrahydrothieno[3,2-c]pyridin-2-yl acetate",
-        "3-[4-(2-chlorophenyl)-9-methyl-6H-thieno[3,2-f][1,2,4]triazolo[4,3-a][1,4]diazepin-2-yl]propanoic acid"
+        "3-[4-(2-chlorophenyl)-9-methyl-6H-thieno[3,2-f][1,2,4]triazolo[4,3-a][1,4]diazepin-2-yl]propanoic acid",
+        "3-methyl-7-[[2-(thiophen-2-yl)acetyl]amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "3-[(1-methyltetrazol-5-yl)sulfanylmethyl]-7-[[2-(thiophen-2-yl)acetyl]amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "3-ethenyl-7-[[2-(thiophen-2-yl)acetyl]amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid"
       ],
-      "count": 275
+      "count": 278
     },
     {
       "tag": "Family motif: Imidazoles",
@@ -8997,9 +9005,23 @@
         "N-{[3-(2-benzamido-4-methyl-1,3-thiazol-5-yl)-pyrazol-5-yl]carbonyl}-G-dR-G-dD-dD-dD-NH2",
         "2-(2-imino-4,5,6,7-tetrahydro-1,3-benzothiazol-3-yl)-1-(4-methylphenyl)ethanone",
         "4-hydroxy-1-isopentyl-N-(5-methyl-1,3-thiazol-2-yl)-2-oxoquinoline-3-carboxamide",
-        "Gly-Ile-Ala-Gly-Ala(thiazol-4-yl)-Lys(5-GalO)-Gly-Glu-Gln-Gly-Pro-Lys-Gly-Glu-Thr"
+        "Gly-Ile-Ala-Gly-Ala(thiazol-4-yl)-Lys(5-GalO)-Gly-Glu-Gln-Gly-Pro-Lys-Gly-Glu-Thr",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-methoxyiminoacetyl]amino]-3-methyl-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-hydroxyiminoacetyl]amino]-3-methyl-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-methoxyiminoacetyl]amino]-3-ethenyl-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "3-[(acetyloxy)methyl]-7-[[2-(2-amino-1,3-thiazol-4-yl)-2-hydroxyiminoacetyl]amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)acetyl]amino]-3-methyl-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-methoxyiminoacetyl]amino]-3-chloro-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-hydroxyiminoacetyl]amino]-3-[(1-methyltetrazol-5-yl)sulfanylmethyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "3-[(acetyloxy)methyl]-7-[[2-(2-amino-1,3-thiazol-4-yl)acetyl]amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-(2-carboxypropan-2-yl)oxyiminoacetyl]amino]-3-[(1-methylpyrrolidin-1-ium-1-yl)methyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylate",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-methoxyiminoacetyl]amino]-3-(pyridin-1-ium-1-ylmethyl)-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylate",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-(2-carboxypropan-2-yl)oxyiminoacetyl]amino]-3-[(4-methylpyridin-1-ium-1-yl)methyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylate",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-hydroxyiminoacetyl]amino]-3-(pyridin-1-ium-1-ylmethyl)-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylate",
+        "3-[(4-aminopyridin-1-ium-1-yl)methyl]-7-[[2-(2-amino-1,3-thiazol-4-yl)-2-(2-carboxypropan-2-yl)oxyiminoacetyl]amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylate",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-methoxyiminoacetyl]amino]-3-[(4-methylpyridin-1-ium-1-yl)methyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylate"
       ],
-      "count": 269
+      "count": 283
     },
     {
       "tag": "Family motif: Isothiazoles",
@@ -9378,9 +9400,14 @@
         "metyltetraprole",
         "1,5-diaminotetrazole",
         "O-desethyl candesartan",
-        "5-biphenyl-2-yl-1H-tetrazole"
+        "5-biphenyl-2-yl-1H-tetrazole",
+        "7-[(2-amino-2-phenylacetyl)amino]-3-[(1-methyltetrazol-5-yl)sulfanylmethyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-amino-2-(4-hydroxyphenyl)acetyl]amino]-3-[(1-methyltetrazol-5-yl)sulfanylmethyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-amino-2-(cyclohexa-1,4-dien-1-yl)acetyl]amino]-3-[(1-methyltetrazol-5-yl)sulfanylmethyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "3-[(1-methyltetrazol-5-yl)sulfanylmethyl]-7-[[2-(thiophen-2-yl)acetyl]amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-hydroxyiminoacetyl]amino]-3-[(1-methyltetrazol-5-yl)sulfanylmethyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid"
       ],
-      "count": 62
+      "count": 67
     },
     {
       "tag": "Family motif: Pyrimidines",
@@ -15555,9 +15582,10 @@
         "(+)-3'-AmNic",
         "Gly-Ile-Ala-Gly-Ala(thiazol-4-yl)-Lys(5-GalO)-Gly-Glu-Gln-Gly-Pro-Lys-Gly-Glu-Thr",
         "(-)-3'-AmNic",
-        "longicalycinin A"
+        "longicalycinin A",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-(2-carboxypropan-2-yl)oxyiminoacetyl]amino]-3-[(1-methylpyrrolidin-1-ium-1-yl)methyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylate"
       ],
-      "count": 875
+      "count": 876
     },
     {
       "tag": "Family motif: Morpholines",
@@ -33550,9 +33578,26 @@
         "tetflupyrolimet",
         "virginiamycin S1",
         "(+)-aplysinillin",
-        "longicalycinin A"
+        "longicalycinin A",
+        "3-[(acetyloxy)methyl]-7-[(2-amino-2-phenylacetyl)amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[(2-amino-2-phenylacetyl)amino]-3-[(1-methyltetrazol-5-yl)sulfanylmethyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "3-[(acetyloxy)methyl]-7-[[2-amino-2-(4-hydroxyphenyl)acetyl]amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[(2-amino-2-phenylacetyl)amino]-3-ethenyl-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-amino-2-(4-hydroxyphenyl)acetyl]amino]-3-[(1-methyltetrazol-5-yl)sulfanylmethyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "3-[(acetyloxy)methyl]-7-[[2-amino-2-(cyclohexa-1,4-dien-1-yl)acetyl]amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-amino-2-(4-hydroxyphenyl)acetyl]amino]-3-ethenyl-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-amino-2-(cyclohexa-1,4-dien-1-yl)acetyl]amino]-3-[(1-methyltetrazol-5-yl)sulfanylmethyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[(2-amino-2-phenylacetyl)amino]-3-methoxy-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-amino-2-(4-hydroxyphenyl)acetyl]amino]-3-chloro-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-amino-2-(cyclohexa-1,4-dien-1-yl)acetyl]amino]-3-ethenyl-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[(2-amino-2-phenylacetyl)amino]-3-(methoxymethyl)-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-amino-2-(4-hydroxyphenyl)acetyl]amino]-3-methoxy-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-amino-2-(cyclohexa-1,4-dien-1-yl)acetyl]amino]-3-chloro-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[(2-amino-2-phenylacetyl)amino]-3-[(5-methyl-1,3,4-thiadiazol-2-yl)sulfanylmethyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-amino-2-(4-hydroxyphenyl)acetyl]amino]-3-(methoxymethyl)-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[(2-hydroxy-2-phenylacetyl)amino]-3-methyl-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid"
       ],
-      "count": 1119
+      "count": 1136
     },
     {
       "tag": "Family motif: N-acylethanolamines",
@@ -37306,9 +37351,13 @@
         "S-[(E)-N-hydroxy-2-(indol-3-yl)ethanimidoyl]-L-cysteinylglycine",
         "N(2)-([biphenyl]-4-ylsulfonyl)-N-hydroxy-N(2)-isopropoxy-D-valinamide",
         "(2R)-N-hydroxy-2-[(3S)-3-methyl-3-{4-[(2-methylquinolin-4-yl)methoxy]phenyl}-2-oxopyrrolidin-1-yl]propanamide",
-        "N-{5-[2-{4-[2-(dimethylamino)ethoxy]phenyl}-4-(pyridin-4-yl)-1H-imidazol-5-yl]-2,3-dihydro-1H-inden-1-ylidene}hydroxylamine"
+        "N-{5-[2-{4-[2-(dimethylamino)ethoxy]phenyl}-4-(pyridin-4-yl)-1H-imidazol-5-yl]-2,3-dihydro-1H-inden-1-ylidene}hydroxylamine",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-hydroxyiminoacetyl]amino]-3-methyl-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "3-[(acetyloxy)methyl]-7-[[2-(2-amino-1,3-thiazol-4-yl)-2-hydroxyiminoacetyl]amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-hydroxyiminoacetyl]amino]-3-[(1-methyltetrazol-5-yl)sulfanylmethyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-hydroxyiminoacetyl]amino]-3-(pyridin-1-ium-1-ylmethyl)-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylate"
       ],
-      "count": 138
+      "count": 142
     },
     {
       "tag": "Family motif: Hydroxamic acids",
@@ -37565,9 +37614,43 @@
         "3-[(2-aminoethyl)sulfanyl]-7-oxo-1-azabicyclo[3.2.0]heptane-2-carboxylic acid",
         "6beta-[(S)-1-hydroxyethyl]-2-[(R)-tetrahydrofuran-2-yl]pen-2-em-3-carboxylic acid",
         "3-[(2-aminoethyl)sulfanyl]-6-ethyl-7-oxo-1-azabicyclo[3.2.0]heptane-2-carboxylic acid",
-        "3-[(2-aminoethyl)sulfanyl]-6-methyl-7-oxo-1-azabicyclo[3.2.0]heptane-2-carboxylic acid"
+        "3-[(2-aminoethyl)sulfanyl]-6-methyl-7-oxo-1-azabicyclo[3.2.0]heptane-2-carboxylic acid",
+        "3-[(acetyloxy)methyl]-7-[(2-amino-2-phenylacetyl)amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[(2-amino-2-phenylacetyl)amino]-3-[(1-methyltetrazol-5-yl)sulfanylmethyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "3-[(acetyloxy)methyl]-7-[[2-amino-2-(4-hydroxyphenyl)acetyl]amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[(2-amino-2-phenylacetyl)amino]-3-ethenyl-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-amino-2-(4-hydroxyphenyl)acetyl]amino]-3-[(1-methyltetrazol-5-yl)sulfanylmethyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "3-[(acetyloxy)methyl]-7-[[2-amino-2-(cyclohexa-1,4-dien-1-yl)acetyl]amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-methoxyiminoacetyl]amino]-3-methyl-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-amino-2-(4-hydroxyphenyl)acetyl]amino]-3-ethenyl-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-amino-2-(cyclohexa-1,4-dien-1-yl)acetyl]amino]-3-[(1-methyltetrazol-5-yl)sulfanylmethyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "3-methyl-7-[[2-(thiophen-2-yl)acetyl]amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[(2-amino-2-phenylacetyl)amino]-3-methoxy-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-amino-2-(4-hydroxyphenyl)acetyl]amino]-3-chloro-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-amino-2-(cyclohexa-1,4-dien-1-yl)acetyl]amino]-3-ethenyl-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-hydroxyiminoacetyl]amino]-3-methyl-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[(2-amino-2-phenylacetyl)amino]-3-(methoxymethyl)-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-amino-2-(4-hydroxyphenyl)acetyl]amino]-3-methoxy-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-amino-2-(cyclohexa-1,4-dien-1-yl)acetyl]amino]-3-chloro-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-methoxyiminoacetyl]amino]-3-ethenyl-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "3-[(1-methyltetrazol-5-yl)sulfanylmethyl]-7-[[2-(thiophen-2-yl)acetyl]amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "3-[(acetyloxy)methyl]-7-[[2-(2-amino-1,3-thiazol-4-yl)-2-hydroxyiminoacetyl]amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)acetyl]amino]-3-methyl-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[(2-amino-2-phenylacetyl)amino]-3-[(5-methyl-1,3,4-thiadiazol-2-yl)sulfanylmethyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-amino-2-(4-hydroxyphenyl)acetyl]amino]-3-(methoxymethyl)-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-methoxyiminoacetyl]amino]-3-chloro-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "3-ethenyl-7-[[2-(thiophen-2-yl)acetyl]amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-hydroxyiminoacetyl]amino]-3-[(1-methyltetrazol-5-yl)sulfanylmethyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "3-[(acetyloxy)methyl]-7-[[2-(2-amino-1,3-thiazol-4-yl)acetyl]amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[(2-hydroxy-2-phenylacetyl)amino]-3-methyl-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-(2-carboxypropan-2-yl)oxyiminoacetyl]amino]-3-[(1-methylpyrrolidin-1-ium-1-yl)methyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylate",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-methoxyiminoacetyl]amino]-3-(pyridin-1-ium-1-ylmethyl)-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylate",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-(2-carboxypropan-2-yl)oxyiminoacetyl]amino]-3-[(4-methylpyridin-1-ium-1-yl)methyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylate",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-hydroxyiminoacetyl]amino]-3-(pyridin-1-ium-1-ylmethyl)-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylate",
+        "3-[(4-aminopyridin-1-ium-1-yl)methyl]-7-[[2-(2-amino-1,3-thiazol-4-yl)-2-(2-carboxypropan-2-yl)oxyiminoacetyl]amino]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylate",
+        "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-methoxyiminoacetyl]amino]-3-[(4-methylpyridin-1-ium-1-yl)methyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylate"
       ],
-      "count": 184
+      "count": 218
     },
     {
       "tag": "Family motif: Sulfonylureas",
