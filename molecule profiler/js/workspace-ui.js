@@ -3,7 +3,7 @@
 // The core chemistry calculations and all export APIs remain unchanged.
 (function (root) {
   const views = [
-    { id: 'overview', label: 'Overview', description: 'Structure, identity, key properties and major screening summaries.' },
+    { id: 'overview', label: 'Overview', description: 'Structure and key properties, with shortcuts to focused research tools.' },
     { id: 'properties', label: 'Properties', description: 'Physical descriptors, stereochemistry, topology and supporting evidence.' },
     { id: 'screening', label: 'Screening', description: 'Rule-based filters and structural alerts. These do not establish safety.' },
     { id: 'design', label: 'Prodrug studio', description: 'Build at a molecular site, compare designs, inspect release steps or check curated references.' },

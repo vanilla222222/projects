@@ -3,6 +3,7 @@
 (function(root){
  const d=root.document,$=id=>d.getElementById(id),make=(tag,text)=>{const e=d.createElement(tag);if(text)e.textContent=text;return e;};
  if(!$('results'))return;
+ const editLink=make('a','Edit / import molecules');editLink.href='#smiles-input';editLink.className='sidebar-compose';d.querySelector('.sidebar-footer')?.append(editLink);
  function disclose(node,title,className){if(!node)return null;const box=make('details');box.className='calm-disclosure '+(className||'');box.append(make('summary',title));node.before(box);box.append(node);return box;}
  disclose(d.querySelector('#molecule-report .report-bottom'),'Benchmarks & interpretation','report-methods');
  disclose(d.querySelector('#molecule-report .report-smiles'),'SMILES identifier','report-identifier');
@@ -17,7 +18,7 @@
   const intro=analogue.querySelector(':scope > p'),methods=[...analogue.querySelectorAll(':scope > details')].find(e=>e.querySelector('summary')?.textContent==='Methods, coverage and limitations');if(intro&&methods){const brief=make('p','Choose an edit family and position. Generated structures are unvalidated.');brief.className='analogue-intro-brief';intro.before(brief);methods.append(intro);}
   const explore=$('analogue-search')?.closest('section');disclose(explore,'Filters & display','analogue-filter-drawer');
   const actions=$('analogue-csv')?.closest('.analogue-actions');if(actions){const exports=make('details');exports.className='calm-disclosure analogue-export-drawer';exports.append(make('summary','Export designs'));const list=make('div');list.className='calm-export-options';exports.append(list);for(const id of ['analogue-export-scope','analogue-download','analogue-csv','analogue-json']){const e=$(id);if(e)list.append(e.tagName==='SELECT'?e.closest('label'):e);}actions.append(exports);for(const id of ['analogue-shortlist-filtered','analogue-shortlist-clear'])if($(id)&&explore)explore.append($(id));}
-  const inspector=disclose($('analogue-detail'),'Inspect selected design','analogue-inspector');if(inspector){inspector.id='analogue-inspector';analogue.addEventListener('click',e=>{if(e.target.closest('[data-analogue-index]'))inspector.open=true;});}
+  const inspector=disclose($('analogue-detail'),'Inspect selected design','analogue-inspector');if(inspector){inspector.id='analogue-inspector';analogue.addEventListener('click',e=>{if(e.target.closest('[data-analogue-index]')){inspector.open=true;inspector.scrollIntoView?.({block:'start',behavior:'auto'});}});}
  }
  // Print the full report context, then restore the user's disclosure state.
  let printState=[];root.addEventListener('beforeprint',()=>{printState=[...d.querySelectorAll('#molecule-report details')].map(e=>[e,e.open]);for(const [e]of printState)e.open=true;});root.addEventListener('afterprint',()=>{for(const [e,open]of printState)e.open=open;printState=[];});
