@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "rdkitVersion": "2026.09.1",
   "sourceSha256": {
-    "data/library.js": "1de0c3fc593a6f8dd60f27309a6a2c501a699ccf781b3db8fad989752c05a2bd",
+    "data/library.js": "3d85b04c86e14e10bd2d68b7a172825631acccb6fe5a87857606bdbef46e782c",
     "data/library-names.js": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
     "data/targets.js": "facc465ef72687224df3577fbf7a600102e7c3b07cc033a4de21ba76191192fa",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
@@ -13,9 +13,9 @@
     "tools/library-expansion-50.py": "1c7e05d9267af49bcf25ff3fc90f114b394a295ab3dee561954252e26bc0d60a",
     "validation/library-50-import.json": "89abe62271fff06dd9c8591ea3823ae56cd62a7396eb1412bd93834a2c1b10e0"
   },
-  "entries": 21037,
+  "entries": 21065,
   "minTags": 10,
   "maxTags": 37,
   "method": "Explicit graph families and functional groups, source collections, property bins and qualified binding labels. Ring synonyms and duplicate source labels are consolidated. Family definitions are serialized with SMARTS. Stored graph charges and calculated bins are not physiological protonation or clinical claims. Original class labels remain explicitly labelled, not experimentally validated.",
-  "dataSha256": "f1a412a11e6e8fcc81fbcb42e260612db5340f6de60f9fdeed07601a3d163b93"
+  "dataSha256": "4f0ef375928e3a796b8f2b6fb58beaf6dc65c739b1c347dfec2017aaa61b0910"
 }
