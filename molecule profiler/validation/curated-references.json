@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "records": 5,
+  "records": 6,
   "extraStructures": 3,
   "rdkitVersion": "2026.09.1",
   "inputSha256": {
@@ -8,10 +8,11 @@
     "data/curated-reference-entries/control-jq1.json": "fff6cffd7dbe023676e2c1419a514f4be839b3c16bf2cf9bbf0ca7ad1591c234",
     "data/curated-reference-entries/iuphar-10454-taar1.json": "3dd20850b3599327fcdc0a91c78cce10e51b31829427c9fcc69bbcb314c7f872",
     "data/curated-reference-entries/iuphar-1369-grm5.json": "af55b194b6c52eddce8dbdcf10ca623349c12f57811c232d66396eb9f5fce90f",
+    "data/curated-reference-entries/iuphar-1394-grm2.json": "6d1146cd8ae7241aa698af5bf5342aea71fd4e15680aa3ff90f5b42448700a15",
     "data/curated-reference-entries/probe-jq1.json": "24bb4c09e01aa9f4d483908f3ea4d833c288028fc17a42dd88e9f2cf646cc104"
   },
   "librarySha256": "1de0c3fc593a6f8dd60f27309a6a2c501a699ccf781b3db8fad989752c05a2bd",
   "toolSha256": "18065110668ad5b1b2d6ba218b26e2f354551765fcbb8796e5ec342b64b78b29",
-  "dataSha256": "95666b5c02a2c5a3c39de2a79b0531f987d3ecdda11c2c8eea9ef189f46c0549",
-  "browserGraphsChecked": 6
+  "dataSha256": "b9f7ec4e77ee40e5914891d6690c2b702da41f3b7724bd5f449e13d3c0167d81",
+  "browserGraphsChecked": 7
 }
