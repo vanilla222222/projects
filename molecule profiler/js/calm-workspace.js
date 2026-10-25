@@ -1,0 +1,23 @@
+'use strict';
+// Presentation-only disclosure and shortcuts. Scientific modules retain their nodes and state.
+(function(root){
+ const d=root.document,$=id=>d.getElementById(id),make=(tag,text)=>{const e=d.createElement(tag);if(text)e.textContent=text;return e;};
+ if(!$('results'))return;
+ function disclose(node,title,className){if(!node)return null;const box=make('details');box.className='calm-disclosure '+(className||'');box.append(make('summary',title));node.before(box);box.append(node);return box;}
+ disclose(d.querySelector('#molecule-report .report-bottom'),'Benchmarks & interpretation','report-methods');
+ disclose(d.querySelector('#molecule-report .report-smiles'),'SMILES identifier','report-identifier');
+ const caption=make('p','Calculated descriptors and estimates. Open benchmarks for measurement context.');caption.className='scope-caption';$('report-metrics')?.after(caption);
+ const structure=$('structure')?.closest('article.panel');if(structure)structure.dataset.overviewPrimary='true';
+ // Ranking settings belong with target-reference results, not the structure drawing.
+ const targetControls=$('targets')?.closest('article')?.querySelector('.tgt-controls');for(const id of ['tgt-mode','tgt-scope']){const label=$(id)?.closest('label');if(label&&targetControls)targetControls.prepend(label);}
+ const actions=make('section');actions.id='overview-actions';actions.setAttribute('aria-label','Continue your research');actions.append(make('h2','What would you like to do next?'));const cards=make('div');cards.className='overview-action-grid';for(const [id,title,description]of [['properties','Explore properties','Descriptors, solubility and screening context'],['analogues','Create analogues','Choose compatible edits and compare designs'],['design','Open prodrug studio','Explore sites, designs and release evidence']]){const b=make('button');b.type='button';b.dataset.openWorkspace=id;b.append(make('strong',title),make('span',description),make('span','Open workspace →'));b.addEventListener('click',()=>{root.WorkspaceUI?.select(id);d.querySelector('#results > .grid > article:not([hidden])')?.scrollIntoView?.({block:'start',behavior:'auto'});});cards.append(b);}actions.append(cards);$('results').append(actions);
+ const quality=$('quality-summary'),drawer=disclose(quality,'Input checks','quality-drawer');if(drawer){drawer.id='quality-drawer';const brief=make('span');brief.id='quality-brief';drawer.querySelector('summary').append(brief);let previous='';const refresh=()=>{drawer.hidden=quality.hidden;brief.textContent=$('quality-status')?.textContent||'';const issues=$('quality-issues')?.children.length||0;drawer.classList.toggle('has-flags',issues>0);const key=(root.PharmacologyUI?.getSnapshot()?.inputSmiles||'')+'|'+brief.textContent;if(issues&&key!==previous)drawer.open=true;previous=key;};new MutationObserver(refresh).observe(quality,{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:['hidden']});refresh();}
+ // Detailed filters and exports stay in the same form; handlers and IDs are retained.
+ const analogue=$('analogue-panel');if(analogue){
+  const explore=$('analogue-search')?.closest('section');disclose(explore,'Filters & display','analogue-filter-drawer');
+  const actions=$('analogue-csv')?.closest('.analogue-actions');if(actions){const exports=make('details');exports.className='calm-disclosure analogue-export-drawer';exports.append(make('summary','Export designs'));const list=make('div');list.className='calm-export-options';exports.append(list);for(const id of ['analogue-export-scope','analogue-download','analogue-csv','analogue-json']){const e=$(id);if(e)list.append(e.tagName==='SELECT'?e.closest('label'):e);}actions.append(exports);for(const id of ['analogue-shortlist-filtered','analogue-shortlist-clear'])if($(id)&&explore)explore.append($(id));}
+  const inspector=disclose($('analogue-detail'),'Inspect selected design','analogue-inspector');if(inspector){inspector.id='analogue-inspector';analogue.addEventListener('click',e=>{if(e.target.closest('[data-analogue-index]'))inspector.open=true;});}
+ }
+ // Print the full report context, then restore the user's disclosure state.
+ let printState=[];root.addEventListener('beforeprint',()=>{printState=[...d.querySelectorAll('#molecule-report details')].map(e=>[e,e.open]);for(const [e]of printState)e.open=true;});root.addEventListener('afterprint',()=>{for(const [e,open]of printState)e.open=open;printState=[];});
+})(globalThis);

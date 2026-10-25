@@ -26,16 +26,16 @@
     'Python workspace': ['python'],
     'Candidate comparison': ['candidates'],
     'Prediction validation': ['validation'],
-    'Identity': ['overview', 'properties'],
+    'Identity': ['properties'],
     'Structure': ['overview', 'properties'],
-    'Physicochemical': ['overview', 'properties'],
+    'Physicochemical': ['properties'],
     'Rings & substructure counts': ['properties'],
     'Stereochemistry': ['properties'],
     'Topological indices': ['properties'],
-    'Lipophilicity & solubility': ['overview', 'properties'],
+    'Lipophilicity & solubility': ['properties'],
     'Descriptor evidence & applicability': ['properties'],
-    'Drug-likeness': ['overview', 'screening'],
-    'Bioavailability radar': ['overview', 'screening'],
+    'Drug-likeness': ['screening'],
+    'Bioavailability radar': ['screening'],
     'Absorption plot': ['screening'],
     'Descriptor distributions': ['data'],
     'Batch table': ['data'],
@@ -109,6 +109,16 @@
     nav.appendChild(btn);
     return btn;
   });
+  const groups=[
+    {name:'Explore',ids:['properties','screening','exposure','metabolism','bbb']},
+    {name:'Design',ids:['analogues','design','candidates']},
+    {name:'Research',ids:['discovery','research','python','validation']},
+    {name:'Projects & data',ids:['notebooks','compare','data','all']}
+  ];
+  const sections=groups.map(group=>{const section=document.createElement('details');section.className='workspace-group';const title=document.createElement('summary');title.textContent=group.name;section.append(title);for(const id of group.ids)section.append(buttons.find(b=>b.dataset.view===id));nav.append(section);return section;});
+  const mobileLabel=document.createElement('label');mobileLabel.className='workspace-picker-label';mobileLabel.textContent='Workspace';const picker=document.createElement('select');picker.id='workspace-picker';picker.setAttribute('aria-label','Choose workspace');mobileLabel.append(picker);
+  const home=document.createElement('option');home.value='overview';home.textContent='Overview';picker.append(home);for(const group of groups){const opt=document.createElement('optgroup');opt.label=group.name;for(const id of group.ids){const o=document.createElement('option');o.value=id;o.textContent=views.find(v=>v.id===id).label;opt.append(o);}picker.append(opt);}document.querySelector('.result-toolbar')?.append(mobileLabel);
+  picker.addEventListener('change',()=>{active=picker.value;search.value='';apply();try{localStorage.setItem('mp-workspace',active);}catch(_){}});
   function apply() {
     const term = search.value.trim().toLowerCase();
     document.getElementById('results').dataset.workspace = term ? 'search' : active;
@@ -123,6 +133,8 @@
     grid.hidden = active === 'compare' && !term;
     for (const btn of buttons) btn.setAttribute('aria-pressed', String(btn.dataset.view === active && !term));
     const selected = views.find(view => view.id === active);
+    picker.value=active;for(const section of sections){section.open=!!section.querySelector('button[aria-pressed="true"]');}
+    const heading=document.querySelector('.result-toolbar-heading h2');if(heading)heading.textContent=term?'Find a tool':selected.label;
     description.textContent = term
       ? visible + (visible === 1 ? ' section matches ' : ' sections match ') + '“' + search.value.trim() + '”. Clear search to return to your selected workspace.'
       : selected.description + ' · ' + visible + (visible === 1 ? ' section' : ' sections');
@@ -155,10 +167,10 @@
   for (const item of panels) {
     const notes = item.panel.querySelectorAll('p.caveat');
     notes.forEach(note => {
-      if (note.id || note.querySelector('[id]')) return;
+      if(note.matches('[role="status"],.warn'))return;
       const details = document.createElement('details');
       details.className = 'method-details';
-      details.open = true; // Scientific caveats should be visible on first load.
+      details.open = false; // Full methods remain accessible without dominating the default view.
       const summary = document.createElement('summary');
       summary.textContent = 'Read methods and limitations';
       details.appendChild(summary);

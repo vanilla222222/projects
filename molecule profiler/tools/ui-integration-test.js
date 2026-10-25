@@ -72,7 +72,7 @@ assert.ok(fs.existsSync(path.join(root, 'js/library-catalog.js')), 'Library cata
 assert.ok(fs.existsSync(path.join(root, 'js/library-inspector.js')), 'Library catalogue UI missing');
 assert.ok(html.includes('id="sim-include-property-only"'), 'Reference filter missing');
 assert.ok(app.includes('rankedPool = includeProperty'), 'Filtered similarity pool missing');
-assert.ok(workspace.includes('details.open = true'), 'Safety caveats not visible by default');
+assert.ok(workspace.includes('details.open = false'), 'Detailed methods should use progressive disclosure');
 assert.ok(app.includes('entry.propertyOnly === true'), 'Similarity filtering must use explicit dataset-role flags');
 assert.ok(html.includes('earlier set of 596 compounds'), 'Historical validation cohort not disclosed');
 assert.ok(scripts.indexOf('js/sim-pagination.js') < scripts.indexOf('js/app.js') && scripts.includes('js/sim-pagination.js'),
