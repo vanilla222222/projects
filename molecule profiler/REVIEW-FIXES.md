@@ -72,3 +72,27 @@ present in the current evidence index. The original 50 assay-linked references
 remain. This is a correction to imported panel scope, not evidence that the
 removed compounds are inactive. Metadata source witnesses, diversity audit and
 the composed retrieval benchmark were regenerated.
+
+## Fingerprint preparation and caching
+
+Similarity reference fingerprints are calculated in a classic worker. The UI
+shows preparation progress and ignores results from an older query/view. Worker
+construction/loading failures fall back to cooperative batches with an
+approximately six-millisecond work budget between event-loop yields. Target
+ranking and other analysis work retain their separate implementation.
+
+An IndexedDB cache stores reference fingerprints only, preserving Sets and Maps.
+Keys include a SHA-256 engine version, the reference-composition change key and
+fingerprint method. The engine version pins parser, molecule builder, stereo and
+fingerprint source bytes; regenerate it with `node tools/build-fingerprint-version.js`
+after changing those files. Invalid/incompatible cached values are ignored;
+unavailable storage and quota failures do not prevent computation. In-memory
+caches also invalidate when an entry's stored graph changes.
+
+Worker imports, five-method native parity, structured-clone persistence,
+version/graph invalidation, blocked-worker fallback and a complete composed
+library scan are exercised by `tools/reference-fingerprints-test.js`. DOM checks
+exercise the app's blocked-worker fallback and default eligibility pool. Full
+CSV exports await the same pool as the similarity table and abort if selection
+settings change while preparing fingerprints. No measured browser timing or
+complete elimination of other main-thread analysis costs is claimed.

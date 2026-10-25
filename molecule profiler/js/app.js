@@ -214,20 +214,10 @@ let latestInputIssues = [];
 let activeAnalysis = null;
 let fileReadSequence = 0;
 
-const libraryCache = new Map();
-
-function libraryFingerprints(methodKey) {
-  if (libraryCache.has(methodKey)) return libraryCache.get(methodKey);
-  const built = [];
-  ANALYSIS_REFERENCE_LIBRARY.forEach((entry) => {
-    try {
-      const mol = buildMolecule(parseSmiles(entry.smiles));
-      built.push({ entry, fp: fingerprint(mol, methodKey) });
-    } catch (error) { /* a reference entry that will not parse is simply left out */ }
-  });
-  libraryCache.set(methodKey, built);
-  return built;
-}
+const SIMILARITY_REFERENCE_POOL=ANALYSIS_REFERENCE_LIBRARY.filter(e=>SIMILARITY_ELIGIBILITY.eligible(e));
+const referenceFingerprintCache=ReferenceFingerprints.create({engine:{parse:s=>buildMolecule(parseSmiles(s)),fingerprint},version:FINGERPRINT_ENGINE.sha256,manifest:ReferenceContext.manifest});
+function libraryFingerprints(methodKey,includeAll=false,progress){return referenceFingerprintCache.get(includeAll?ANALYSIS_REFERENCE_LIBRARY:SIMILARITY_REFERENCE_POOL,methodKey,{progress});}
+let similaritySequence=0;
 
 function infoButton(key) {
   if (!GLOSSARY[key]) return '';
@@ -818,7 +808,8 @@ const SIM_COLUMNS = [
   ['simShared', 'Shared']
 ];
 
-function renderSimilar(record) {
+async function renderSimilar(record) {
+  const sequence=++similaritySequence;
   const methodKey = document.getElementById('sim-method').value;
   const metricKey = document.getElementById('sim-metric').value;
   const limit = Number(document.getElementById('sim-count').value);
@@ -826,8 +817,11 @@ function renderSimilar(record) {
   const score = metricKey === 'dice' ? dice : tanimoto;
 
   const query = fingerprint(record.mol, method.key);
-  const library = libraryFingerprints(method.key);
   const includeProperty = document.getElementById('sim-include-property-only').checked;
+  document.getElementById('sim-summary').textContent='Preparing reference fingerprints…';
+  document.querySelector('#similar tbody').replaceChildren();
+  let library;try{library=await libraryFingerprints(method.key,includeProperty,(done,total)=>{if(sequence===similaritySequence)document.getElementById('sim-summary').textContent='Preparing reference fingerprints '+done+' / '+total+'…';});}catch(e){if(sequence===similaritySequence)document.getElementById('sim-summary').textContent='Reference search unavailable: '+e.message;return;}
+  if(sequence!==similaritySequence||record!==records[current])return;
   const isPropertyReference = (entry) => entry.propertyOnly === true || !SIMILARITY_ELIGIBILITY.eligible(entry);
   const rankedPool = includeProperty ? library : library.filter(item => !isPropertyReference(item.entry));
   const hits = rankedPool.map((item) => ({
@@ -850,8 +844,8 @@ function renderSimilar(record) {
   document.getElementById('sim-summary').innerHTML = rankedPool.length + ' reference structures ranked, '
     + query.bits.size + ' query bits' + infoButton('simBits');
   document.getElementById('sim-scope-count').textContent =
-    rankedPool.length + ' of ' + library.length + ' parseable structures ranked; '
-    + (library.length - rankedPool.length) + ' unassigned bulk structures or property/illustrative references excluded'
+    rankedPool.length + ' of ' + ANALYSIS_REFERENCE_LIBRARY.length + ' stored structures ranked; '
+    + (ANALYSIS_REFERENCE_LIBRARY.length - rankedPool.length) + ' unassigned bulk structures or property/illustrative references excluded'
     + (includeProperty ? ' (included by request)' : ' by default') + '. Collection labels are not verified provenance.';
   document.getElementById('sim-blurb').textContent = method.blurb;
 
@@ -1757,7 +1751,11 @@ function csvCell(value) {
   return '"' + String(value === null || value === undefined ? '' : value).replace(/"/g, '""') + '"';
 }
 
-function fullExportRows(record) {
+async function fullExportRows(record) {
+  const methodAtStart=document.getElementById('sim-method').value,includeAll=document.getElementById('sim-include-property-only').checked;
+  const exportScope=()=>['sim-method','sim-metric','tgt-mode','tgt-organism','tgt-scope'].map(id=>document.getElementById(id).value).join('|')+'|'+document.getElementById('sim-include-property-only').checked;
+  const scopeAtStart=exportScope(),fingerprints=await libraryFingerprints(methodAtStart,includeAll);
+  if(exportScope()!==scopeAtStart||records[current]!==record)throw Error('Export selection changed while fingerprints were prepared. Export again.');
   const d = record.d;
   const v = record.v;
   const out = [];
@@ -1932,8 +1930,9 @@ function fullExportRows(record) {
   pair('similarity', 'fingerprint', method.label);
   pair('similarity', 'metric', metricKey === 'dice' ? 'Dice' : 'Tanimoto');
   pair('similarity', 'queryBits', query.bits.size);
+  pair('similarity', 'referenceScope',includeAll?'Full structural library':'Default eligible reference pool');
   pair('similarity', 'rankedExportLimit', FullCsvExport.MAX_RANKED_RESULTS);
-  const similarityRanked = libraryFingerprints(method.key).map((item) => ({
+  const similarityRanked = fingerprints.map((item) => ({
     entry: item.entry,
     bits: item.fp.bits.size,
     shared: sharedCount(query, item.fp),
@@ -2102,10 +2101,11 @@ function fullExportRows(record) {
   return out;
 }
 
-function exportMoleculeCsv() {
+async function exportMoleculeCsv() {
   const record = records[current];
   if (!record) return;
-  const csv = FullCsvExport.createCsv(record,fullExportRows(record));
+  let exported;try{exported=await fullExportRows(record);}catch(e){document.getElementById('sim-summary').textContent=e.message;return;}
+  const csv = FullCsvExport.createCsv(record,exported);
   const slug = record.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'molecule';
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const link = document.createElement('a');

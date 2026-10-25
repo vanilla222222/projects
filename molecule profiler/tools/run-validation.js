@@ -26,6 +26,7 @@ const scripts = [
   'retrieval-benchmark.js',
   'retrieval-evaluate-test.js',
   'reference-context-test.js',
+  'reference-fingerprints-test.js',
   'reference-eligibility-test.js',
   'ui-integration-test.js',
   'interaction-test.js',
