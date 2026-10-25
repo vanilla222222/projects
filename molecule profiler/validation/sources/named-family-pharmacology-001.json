@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "scope": "Selected compound-specific primary-study observations. Functional EC50 values are not Ki/Kd values; no clinical dose or selectivity extrapolation. Unspecified species is not promoted into the human ranking panel.",
+  "scope": "Selected compound-specific primary-study observations. Functional EC50 values are not Ki/Kd values; no clinical dose or selectivity extrapolation. Brorphine assay values are from human MOR expressed in HEK293T cells.",
   "rows": [
     {
       "kind": "functional_assay",
@@ -101,19 +101,47 @@
     },
     {
       "kind": "functional_assay",
-      "id": "brorphine-2020",
       "entry": "family-001-145975294",
       "receptorId": "OPRM1",
       "target": "Mu-opioid receptor (MOR)",
       "action": "agonist",
-      "species": "Not specified in accessible abstract",
+      "species": "Homo sapiens",
       "assayedName": "brorphine",
       "sourceUrl": "https://doi.org/10.1007/s00204-020-02855-7",
-      "sourceLocation": "Abstract, named panel and activity results",
-      "assay": "MOR beta-arrestin2 and mini-Gi recruitment",
-      "endpoint": "Agonist activation reported; no numeric value imported",
-      "testedForm": "Not specified in accessible abstract",
-      "rankEligible": false
+      "accessUrl": "https://biblio.ugent.be/publication/8687070/file/8690680.pdf",
+      "sourceLocation": "Table 1, compound 4; methods, human MOR in HEK293T cells",
+      "testedForm": "Brorphine hydrochloride",
+      "id": "brorphine-2020-beta-arrestin2",
+      "assay": "HEK293T human MOR beta-arrestin2 recruitment",
+      "endpoint": "EC50 = 31.1 nM; 95% CI 20.7–47.0 nM",
+      "relation": "=",
+      "value": 31.1,
+      "lower": 20.7,
+      "upper": 47.0,
+      "unit": "nM",
+      "uncertaintyKind": "95% confidence interval"
+    },
+    {
+      "kind": "functional_assay",
+      "entry": "family-001-145975294",
+      "receptorId": "OPRM1",
+      "target": "Mu-opioid receptor (MOR)",
+      "action": "agonist",
+      "species": "Homo sapiens",
+      "assayedName": "brorphine",
+      "sourceUrl": "https://doi.org/10.1007/s00204-020-02855-7",
+      "accessUrl": "https://biblio.ugent.be/publication/8687070/file/8690680.pdf",
+      "sourceLocation": "Table 1, compound 4; methods, human MOR in HEK293T cells",
+      "testedForm": "Brorphine hydrochloride",
+      "id": "brorphine-2020-mini-gi",
+      "assay": "HEK293T human MOR mini-Gi recruitment",
+      "endpoint": "EC50 = 106 nM; 95% CI 84.1–134 nM",
+      "relation": "=",
+      "value": 106,
+      "lower": 84.1,
+      "upper": 134,
+      "unit": "nM",
+      "uncertaintyKind": "95% confidence interval"
     }
   ]
 }

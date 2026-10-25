@@ -25,8 +25,8 @@ for(const id of ['family-001-29642','family-001-32512','family-001-162623891','f
   for(const c of r.compounds)for(const name of c.libraryNames)assert.ok(target.ligands.includes(name));
 }
 const brorphine=records.find(r=>r.id==='family-001-145975294');
-assert.equal(api.rankingEvidence(brorphine).length,0,'Unspecified species must not enter human ranking');
-assert.ok(brorphine.evidence.some(e=>e.kind==='functional_assay'&&e.receptorId==='OPRM1'&&e.action==='agonist'));
+assert.equal(api.rankingEvidence(brorphine).length,2,'Both human MOR assay pathways must be eligible for ranking');
+assert.ok(target.ligands.includes('Brorphine'));
 assert.ok(records.every(r=>r.evidence.some(e=>e.kind==='functional_assay')),'No identity-only additions');
 for(const r of records)for(const e of r.evidence.filter(x=>x.kind==='functional_assay')){
   assert.equal(e.receptorId,'OPRM1');assert.equal(e.action,'agonist');assert.ok(e.assay&&e.endpoint&&e.sourceUrl.startsWith('https://'));
@@ -41,8 +41,8 @@ assert.ok(!api.tags(aminoEntry,d).includes('Family motif: Nitazenes'),'Amino met
 assert.equal(api.rankingEvidence({panel:{gene:'OPRM1'},evidence:[{kind:'identity_reference'}]}).length,0);
 const {PHARMACOLOGY_EVIDENCE:base}=require('../data/pharmacology-evidence');
 const annotations=api.annotations([],Array.from(byname.values()),d);
-assert.ok(annotations.length>=5);
+assert.ok(annotations.length>=7);
 assert.ok(annotations.every(a=>a.receptorId==='OPRM1'&&a.evidenceType==='functional'));
-assert.ok(!annotations.some(a=>a.ligandName==='Brorphine'));
+assert.equal(annotations.filter(a=>a.ligandName==='Brorphine').length,2);
 assert.ok(records.some(r=>r.id==='family-001-162623683'&&r.evidence.some(e=>/[Cc]itrate/.test(e.testedForm||''))));
 console.log('Family and pharmacology references: nine guarded structural filters, six pharmacology-backed additions, species-aware human ranking and assay-specific values passed');

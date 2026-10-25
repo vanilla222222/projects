@@ -60,7 +60,7 @@
       "endpoint": "Agonist activation measured; numerical result not transcribed",
       "testedForm": "Free base",
       "sourceFile": "validation/sources/named-family-pharmacology-001.json",
-      "sourceSha256": "6c07fcc95ad84a0f993e8bc280d935c3f7fc05bbafdc951a4c6fa9438d0da216",
+      "sourceSha256": "5e50f55e7e04bafd0bbefb8e59e7189d79542c48cdbdb0dcccb81c801e9a2191",
       "sourceRecord": {
         "kind": "functional_assay",
         "receptorId": "OPRM1",

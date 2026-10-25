@@ -6,12 +6,12 @@
   "inputSha256": {
     "data/curated-reference-entries/control-gsk-j2.json": "7f03a2300162a92b1f1f1ff26f4072893600dd54ac4730e2f25f37792145b8c8",
     "data/curated-reference-entries/control-jq1.json": "fff6cffd7dbe023676e2c1419a514f4be839b3c16bf2cf9bbf0ca7ad1591c234",
-    "data/curated-reference-entries/family-001-145975294.json": "4b14c7b2daa6108807e49e7718a48537f54a06c8a22f9c1d8d79baa5bd4ce3b6",
-    "data/curated-reference-entries/family-001-162623683.json": "f8e842ec2b60c57e24a64934ce84560b8d13c0ae3f386098541bcfb157135278",
-    "data/curated-reference-entries/family-001-162623891.json": "c2c33925334ac3cdb16ed97f65d78ddb1cdf304770213a995e52420506e987b1",
-    "data/curated-reference-entries/family-001-29642.json": "81402654401654d3672dc9b84099363aef5b376d99345c60be4ba7f5d7678fff",
-    "data/curated-reference-entries/family-001-32512.json": "c34e2e4b9d87112c3993e57f8cb90c087b439db80ea0e37afdaf8a70169a1033",
-    "data/curated-reference-entries/family-001-37456.json": "4082545085d15ef9acac3a468043fe236bf9d287ea41c5a460415803cbb95187",
+    "data/curated-reference-entries/family-001-145975294.json": "386741a83162825f3ce1691edd274354e8262b1c9fe830af56665650e7ddea65",
+    "data/curated-reference-entries/family-001-162623683.json": "b60dfa58d714ff4f20b5c8ec06d6e3a7043f830fce03c31c7242110f87101f51",
+    "data/curated-reference-entries/family-001-162623891.json": "6c1172f2dc260fb234fd505d157994210a89fb71f27f4a4813994d1ed82fa036",
+    "data/curated-reference-entries/family-001-29642.json": "b96e468e78a4d8fd0c6de102bfba197a2b677764521a2d96bbb85f61393b92c2",
+    "data/curated-reference-entries/family-001-32512.json": "1a2435c9a18c44850c2dde6c0311fbd8e6fbe1a7f861c3b26538fbe690d8e9e0",
+    "data/curated-reference-entries/family-001-37456.json": "6a64f7a20bba391a22ee59c3dc99455b03f8f4577ac86414d1bade8144a2268d",
     "data/curated-reference-entries/iuphar-10454-taar1.json": "3dd20850b3599327fcdc0a91c78cce10e51b31829427c9fcc69bbcb314c7f872",
     "data/curated-reference-entries/iuphar-1369-grm5.json": "af55b194b6c52eddce8dbdcf10ca623349c12f57811c232d66396eb9f5fce90f",
     "data/curated-reference-entries/iuphar-1394-grm2.json": "6d1146cd8ae7241aa698af5bf5342aea71fd4e15680aa3ff90f5b42448700a15",
@@ -132,6 +132,6 @@
   ],
   "librarySha256": "1de0c3fc593a6f8dd60f27309a6a2c501a699ccf781b3db8fad989752c05a2bd",
   "toolSha256": "8bf0c42955788cd6f76f2ffda14645ae2565f58d7e50b281a8f4dbdb8c2954c9",
-  "dataSha256": "a09322d99b7095f2447a15016655715f72f75ae767dac91cadf19512d4253c45",
+  "dataSha256": "6933799405783f633bcb81b9d86f3e40f94ac681cbc2f1485a07b3ef90109ac5",
   "browserGraphsChecked": 34
 }

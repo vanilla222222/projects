@@ -119,13 +119,12 @@ not carry pharmacology.
 The nitazene expansion adds six named references, each with a cited functional
 observation at the mu-opioid receptor: Clonitazene, N-desethyl etonitazene,
 5-aminoisotonitazene, Methylnitazene, N-pyrrolidino protonitazene, and
-Brorphine. Five observations explicitly test human MOR and can contribute to
-human target ranking. Brorphine is identified as a MOR agonist in the cited
-abstract, but the accessible source does not specify species, so it is shown as
-pharmacology evidence without entering the human ranking. Reported endpoints,
-assay formats, uncertainty and tested salt form are retained as published;
-values are not converted to binding affinities. Identity-only additions were
-excluded from this batch.
+Brorphine. All six have human MOR evidence and can contribute to human target
+retrieval. Brorphine's full paper specifies human MOR in HEK293T cells and
+reports separate beta-arrestin2 and mini-Gi assays. Reported endpoints, assay
+formats, uncertainty and tested salt form are retained as published; values are
+not converted to binding affinities. Identity-only additions were excluded from
+this batch.
 
 Nitazene-related and nitro-substituted tags remain separate. In particular,
 5-aminoisotonitazene can match the broader nitazene-related scaffold without

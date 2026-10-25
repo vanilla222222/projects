@@ -31,10 +31,10 @@ New named ligand entries are admitted to the pharmacology reference set only
 when a linked source reports a target/action or assay observation. Structural
 family membership alone never creates an action, affinity, selectivity or
 ranking association. The 2026 family batch adds six references with published
-mu-opioid receptor agonist observations. Five are explicitly human assays and
-can support human MOR retrieval; the Brorphine abstract reports agonism without
-specifying species, so that observation is displayed but excluded from human
-ranking. Reported EC50 values remain assay-specific functional endpoints and
+mu-opioid receptor agonist observations. All six have explicit human MOR assay
+evidence and can support human target retrieval. The Brorphine full paper
+specifies human MOR in HEK293T cells; its beta-arrestin2 and mini-Gi EC50 values
+are retained separately with confidence intervals. Reported EC50 values remain assay-specific functional endpoints and
 are not treated as Ki or Kd. Salt form, assay, species and uncertainty are
 retained where reported.
 
