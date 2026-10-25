@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "records": 0,
+  "extraStructures": 0,
+  "rdkitVersion": "2026.09.1",
+  "inputSha256": {},
+  "librarySha256": "1de0c3fc593a6f8dd60f27309a6a2c501a699ccf781b3db8fad989752c05a2bd",
+  "toolSha256": "18065110668ad5b1b2d6ba218b26e2f354551765fcbb8796e5ec342b64b78b29",
+  "dataSha256": "ec0608793550ff07c4f774417dfa043d7f87cdcf532b314d8ca913b163ec7650",
+  "browserGraphsChecked": 0
+}

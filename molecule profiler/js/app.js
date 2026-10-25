@@ -1,4 +1,6 @@
 'use strict';
+const ANALYSIS_REFERENCE_LIBRARY=typeof CuratedReferences!=='undefined'?CuratedReferences.library(LIBRARY):LIBRARY;
+const ANALYSIS_REFERENCE_TARGETS=typeof CuratedReferences!=='undefined'?CuratedReferences.targets(TARGETS):TARGETS;
 
 // Display labels are separate from stable reference keys used in scientific exports.
 function referenceDisplayName(entry) {
@@ -215,7 +217,7 @@ const libraryCache = new Map();
 function libraryFingerprints(methodKey) {
   if (libraryCache.has(methodKey)) return libraryCache.get(methodKey);
   const built = [];
-  LIBRARY.forEach((entry) => {
+  ANALYSIS_REFERENCE_LIBRARY.forEach((entry) => {
     try {
       const mol = buildMolecule(parseSmiles(entry.smiles));
       built.push({ entry, fp: fingerprint(mol, methodKey) });
@@ -933,7 +935,7 @@ function benchmarkLine() {
 
 let targetRankingIndex = null;
 function targetRankingFor(record) {
-  if (!targetRankingIndex) targetRankingIndex=TargetRanking.createIndex(LIBRARY,TARGETS,{
+  if (!targetRankingIndex) targetRankingIndex=TargetRanking.createIndex(ANALYSIS_REFERENCE_LIBRARY,ANALYSIS_REFERENCE_TARGETS,{
     parse:smiles=>buildMolecule(parseSmiles(smiles)),fingerprint,tanimoto,dice,
     referenceMotifs:entry=>typeof StructuralEvidence==='undefined'?[]:StructuralEvidence.reference(entry),queryMotifs:mol=>typeof StructuralEvidence==='undefined'?[]:StructuralEvidence.detect(mol)
   });
@@ -2122,7 +2124,7 @@ function exportResearch() {
   const val=typeof PROPERTY_VALIDATION==='undefined'?{}:PROPERTY_VALIDATION.datasets;
   const pkg=ResearchPackage.createPackage(records,val,latestInputIssues,{
     assetToken:(document.querySelector('script[src*="js/app.js?"]')?.getAttribute('src')||null),
-    referenceLibraryCount:typeof LIBRARY!=='undefined'?LIBRARY.length:null,
+    referenceLibraryCount:ANALYSIS_REFERENCE_LIBRARY.length,
     analysisSettings:{modelFamily:'WLOGP and ESOL'}
   });
   const zip=ResearchZip.makeZip(pkg.files);

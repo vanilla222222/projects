@@ -46,7 +46,7 @@
   function tagsFor(entry, context) {
     const tags=matchedRecord(metadata(context).tags,entry)?.tags;
     const base=Array.isArray(tags) ? tags.filter(t=>typeof t==='string'&&t.trim()) : (entry.cls?['Label: '+entry.cls]:[]);
-    return [...new Set([...base,...(matchedRecord(metadata(context).receptors,entry)?.tags||[])])];
+    return [...new Set([...base,...(matchedRecord(metadata(context).receptors,entry)?.tags||[]),...(root.CuratedReferences?.tags(entry)||[])])];
   }
   function receptorEvidence(entry,context) { return matchedRecord(metadata(context).receptors,entry)?.evidence || []; }
   function receptorTerms(entry,context) { const m=metadata(context).receptors;return [...new Set(receptorEvidence(entry,context).map(e=>e.receptorId))].flatMap(id=>{const r=m?.receptors?.[id];return r?[id,r.name,r.family,...r.aliases,...r.genes]:[id];}); }

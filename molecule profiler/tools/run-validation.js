@@ -9,6 +9,7 @@ const provenance = require('./validation-provenance.js');
 const sourceBefore = provenance.capture(root);
 const scripts = [
   'reference-audit-test.js',
+  'curated-references-test.js',
   'receptor-catalog-test.js',
   'receptor-coverage-test.js',
   'receptor-diversity-report-test.js',
