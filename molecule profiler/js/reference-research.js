@@ -21,7 +21,7 @@
   }
   function dossier(name){const entry=byName.get(name);if(!entry)return null;
    const meta=data.entries[name],guarded=meta?.librarySmiles===entry.smiles;
-   return {entry,label:catalog.displayName(entry),aliases:catalog.aliasesFor(entry),identity:catalog.nameRecord(entry),records:curated.forEntry(entry,data),observations:observations(entry),tags:catalog.tagsFor(entry),identityWarnings:guarded?meta.identityConflicts||[]:[]};
+   return {entry,label:catalog.displayName(entry),aliases:catalog.aliasesFor(entry),identity:catalog.nameRecord(entry),identityCorrection:entry.identityCorrection,records:curated.forEntry(entry,data),observations:observations(entry),tags:catalog.tagsFor(entry),identityWarnings:guarded?meta.identityConflicts||[]:[]};
   }
   function comparison(names){
    const compounds=[...new Set(names)].map(name=>dossier(name)).filter(Boolean),groups=new Map();
@@ -75,12 +75,15 @@
      result.push({id,kind:'action',name:entry.name,label:catalog.displayName(entry),target:first.target,species:first.species,actions,status:decision?.status||'unresolved',reason:'Different action classifications occur for this stored graph and target species. This is a review candidate: pathway, assay conditions and efficacy definitions may explain the difference. It is not an automatic finding that either source is wrong.',history:decision?.history||[],evidence,relatedNames:[]});
     }
    }
+   for(const entry of entries){const f=entry.identityCorrection;if(!f)continue;const id='identity:'+entry.name,decision=decisions.get(id);
+    result.push({id,kind:'identity',name:entry.name,label:catalog.displayName(entry),target:'Identity',status:decision?.status||'unresolved',reason:f.reason,history:decision?.history||[],evidence:[],sourceUrl:f.sourceUrl,relatedNames:data.records.find(r=>r.id===f.sourceReferenceId)?.compounds[f.compoundIndex].libraryNames||[],correction:f});
+   }
    reviewCache=result.sort((a,b)=>(a.kind==='identity'?0:1)-(b.kind==='identity'?0:1)||a.label.localeCompare(b.label)||a.target.localeCompare(b.target));return reviewCache;
   }
   function reviews({kind='all',query='',page=1,perPage=12}={}){const term=query.trim().toLowerCase(),items=reviewItems().filter(r=>(kind==='all'||r.kind===kind)&&[r.name,r.label,r.target,r.status].join(' ').toLowerCase().includes(term)),pages=Math.max(1,Math.ceil(items.length/perPage)),current=Math.min(Math.max(page,1),pages);return {total:items.length,page:current,pages,items:items.slice((current-1)*perPage,current*perPage)};}
   let queueBase=null;
   function curationBase(){if(queueBase)return queueBase;const tasks=[];
-   for(const r of reviewItems())tasks.push({id:'review:'+r.id,category:'review',priority:r.kind==='identity'?0:1,title:(r.kind==='identity'?'Resolve identity: ':'Review action differences: ')+r.label+' · '+r.target,reason:r.reason,count:1,names:[r.name],reviewId:r.id,reviewKind:r.kind,target:r.target,sourceUrls:[...new Set([r.sourceUrl,...r.evidence.map(o=>o.sourceUrl)].filter(Boolean))]});
+   for(const r of reviewItems().filter(r=>!r.status.startsWith('resolved_')))tasks.push({id:'review:'+r.id,category:'review',priority:r.kind==='identity'?0:1,title:(r.kind==='identity'?'Resolve identity: ':'Review action differences: ')+r.label+' · '+r.target,reason:r.reason,count:1,names:[r.name],reviewId:r.id,reviewKind:r.kind,target:r.target,sourceUrls:[...new Set([r.sourceUrl,...r.evidence.map(o=>o.sourceUrl)].filter(Boolean))]});
    for(const f of families()){const candidates=members(f.tag).filter(e=>{const obs=observations(e).filter(isTarget);return obs.some(o=>['source_classification','imported_classification','imported_binding'].includes(o.kind))&&!obs.some(o=>o.kind==='functional_assay');});
     if(candidates.length)tasks.push({id:'functional:'+f.tag,category:'functional',priority:2,title:'Add functional evidence: '+f.tag.replace(/^(Family motif: |Series: )/,''),reason:candidates.length+' entries have imported classifications or binding evidence but no directly measured functional observation in this index. Prioritize named, identity-checked references and primary assay sources; do not infer action from affinity or family.',count:candidates.length,names:candidates.map(e=>e.name),family:f.tag,sourceUrls:[...new Set(candidates.flatMap(e=>observations(e).filter(isTarget).map(o=>o.sourceUrl)).filter(Boolean))]});
    }

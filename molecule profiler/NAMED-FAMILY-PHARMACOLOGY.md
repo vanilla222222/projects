@@ -58,3 +58,10 @@ python tools/build-curated-references.py --check
 node tools/named-family-actions-test.js
 node tools/family-pharmacology-test.js
 ```
+
+## Subsequent correction
+
+The three named benzazepine keys now use the reviewed source graphs through an
+exact-before guarded overlay. The original representations remain available in
+correction provenance. See [IDENTITY-CORRECTIONS.md](IDENTITY-CORRECTIONS.md).
+Historical counts above describe this batch at its original publication.

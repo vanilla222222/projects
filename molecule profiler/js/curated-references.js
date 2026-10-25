@@ -2,7 +2,17 @@
 (function(root){
  const data=()=>root.CURATED_REFERENCES||{records:[],entries:{},extraLibrary:[]};
  const libraryCache=new WeakMap();
- function library(base,d=data()){const cached=libraryCache.get(base);if(cached?.data===d)return cached.entries;const names=new Set(base.map(e=>e.name)),entries=base.concat(d.extraLibrary.filter(e=>!names.has(e.name)));libraryCache.set(base,{data:d,entries});return entries;}
+ function library(base,d=data()){
+  const cached=libraryCache.get(base);if(cached?.data===d)return cached.entries;
+  const fixes=new Map((d.identityCorrections||[]).map(f=>[f.name,f]));
+  const effective=base.map(entry=>{const f=fixes.get(entry.name);if(!f)return entry;
+   const c=d.records.find(r=>r.id===f.sourceReferenceId)?.compounds[f.compoundIndex];
+   // Both the historical input and the reviewed replacement must match exactly.
+   if(!c||entry.smiles!==f.before.smiles||entry.formula!==f.before.formula||f.after.name!==entry.name||f.after.smiles!==c.smiles||f.after.formula!==c.formula||f.inchiKey!==c.inchiKey)return entry;
+   return {...entry,smiles:f.after.smiles,formula:f.after.formula,identityCorrection:f};
+  });
+  const names=new Set(effective.map(e=>e.name)),entries=effective.concat(d.extraLibrary.filter(e=>!names.has(e.name)));libraryCache.set(base,{data:d,entries});return entries;
+ }
  function forEntry(entry,d=data()){
   const m=d.entries[entry.name];if(!m||m.librarySmiles!==entry.smiles)return [];
   const ids=new Set(m.recordIds);return d.records.filter(r=>ids.has(r.id));

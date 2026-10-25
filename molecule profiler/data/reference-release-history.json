@@ -35,8 +35,14 @@
       "id": "mor-measurements-001",
       "label": "MOR missing measurement completion",
       "date": "2026-10-25",
+      "commit": "8acdd6d0d3c93f5f357caaeca9fcf4add1f21052"
+    },
+    {
+      "id": "identity-corrections-001",
+      "label": "Reviewed named-reference identity corrections",
+      "date": "2026-10-25",
       "workingTree": true,
-      "baseCommit": "5b0a9270570e0f8049b77a9a5bcc483da690c640"
+      "baseCommit": "8acdd6d0d3c93f5f357caaeca9fcf4add1f21052"
     }
   ]
 }

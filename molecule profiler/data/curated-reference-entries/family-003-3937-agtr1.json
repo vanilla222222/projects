@@ -53,7 +53,7 @@
           "Antibacterial": ""
         }
       },
-      "legacyNamesakeGraphConflicts": [
+      "correctedLegacyNames": [
         "Valsartan"
       ]
     }
@@ -128,5 +128,5 @@
   },
   "reviewedDate": "2026-10-25",
   "familyDefinition": "Ortho-biphenyltetrazoles",
-  "note": "IUPHAR/BPS Guide to PHARMACOLOGY \"# GtoPdb Version: 2026.3.1 - published: 2026-10-12\" (CC BY-SA 4.0), adapted selection. Structure and full InChIKey are source-provided. Human target action is a curated database classification, separate from a directly measured functional observation. Family membership alone never transfers action, selectivity or efficacy. Source stereo is retained, including unspecified stereo. Legacy namesakes with different graphs (Valsartan) do not receive this record or action assignment. The legacy namesake differs in stereo/tautomer representation; unspecified stereo is not automatically assigned the source enantiomer."
+  "note": "IUPHAR/BPS Guide to PHARMACOLOGY \"# GtoPdb Version: 2026.3.1 - published: 2026-10-12\" (CC BY-SA 4.0), adapted selection. Structure and full InChIKey are source-provided. Human target action is a curated database classification, separate from a directly measured functional observation. Family membership alone never transfers action, selectivity or efficacy. Source stereo is retained, including unspecified stereo. Legacy namesakes with different graphs (Valsartan) do not receive this record or action assignment. The legacy namesake differs in stereo/tautomer representation; unspecified stereo is not automatically assigned the source enantiomer. Named-key correction and the preserved historical graph are documented in IDENTITY-CORRECTIONS.md."
 }

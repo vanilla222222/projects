@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "scope": "Editorial corrections of named references to exact reviewed source graphs. Historical base data remains unchanged. No correction is inferred from an unverified name match.",
+  "corrections": [
+    {
+      "id": "identity:Fenoldopam",
+      "name": "Fenoldopam",
+      "sourceReferenceId": "family-002-939-drd1",
+      "compoundIndex": 0,
+      "before": {
+        "name": "Fenoldopam",
+        "cls": "Benzazepine",
+        "formula": "C16H16ClNO3",
+        "smiles": "OC1=CC=C2C(O)=C(Cl)C3=C(C=C(O)C=C1)C2CNCC3"
+      },
+      "category": "connectivity_correction",
+      "reason": "The historical graph has different connectivity from the reviewed source structure despite matching its stated formula. The named reference now uses the exact source graph; the historical representation is retained in correction provenance.",
+      "reviewedDate": "2026-10-25"
+    },
+    {
+      "id": "identity:SKF-38393",
+      "name": "SKF-38393",
+      "sourceReferenceId": "family-002-935-drd1",
+      "compoundIndex": 0,
+      "before": {
+        "name": "SKF-38393",
+        "cls": "Benzazepine",
+        "formula": "C16H17NO2",
+        "smiles": "OC1=CC2=C3C=C(O)C(=CC=CC=C1)C2CNCC3"
+      },
+      "category": "connectivity_correction",
+      "reason": "The historical graph has different connectivity from the reviewed source structure despite matching its stated formula. The named reference now uses the exact source graph; the historical representation is retained in correction provenance.",
+      "reviewedDate": "2026-10-25"
+    },
+    {
+      "id": "identity:SCH-23390",
+      "name": "SCH-23390",
+      "sourceReferenceId": "family-002-943-drd1",
+      "compoundIndex": 0,
+      "before": {
+        "name": "SCH-23390",
+        "cls": "Benzazepine",
+        "formula": "C17H18ClNO",
+        "smiles": "CN1CCC2=C3C=C(O)C=CC=CC=C(C(Cl)=C2)C3C1"
+      },
+      "category": "connectivity_correction",
+      "reason": "The historical graph has different connectivity from the reviewed source structure despite matching its stated formula. The named reference now uses the exact source graph; the historical representation is retained in correction provenance.",
+      "reviewedDate": "2026-10-25"
+    },
+    {
+      "id": "identity:Valsartan",
+      "name": "Valsartan",
+      "sourceReferenceId": "family-003-3937-agtr1",
+      "compoundIndex": 0,
+      "before": {
+        "name": "Valsartan",
+        "cls": "Angiotensin receptor blocker",
+        "formula": "C24H29N5O3",
+        "smiles": "CCCCC(=O)N(Cc1ccc(cc1)-c1ccccc1-c1nn[nH]n1)C(C(C)C)C(=O)O"
+      },
+      "category": "source_form_selection",
+      "reason": "The named reference now uses the source-reported stereochemistry and tetrazole representation. The historical graph had unspecified stereochemistry. Tautomer-equivalent connectivity does not establish stereochemical identity; this editorial source-form selection does not identify an unknown sample.",
+      "reviewedDate": "2026-10-25"
+    }
+  ]
+}

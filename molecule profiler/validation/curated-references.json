@@ -1,5 +1,7 @@
 {
   "schemaVersion": 1,
+  "identityCorrectionSha256": "9591b653609e8e98d6cfcc06c3e7041c1ce554ed3d0fd2c0b82e5420730e8b18",
+  "identityCorrections": 4,
   "records": 110,
   "extraStructures": 27,
   "rdkitVersion": "2026.09.1",
@@ -57,9 +59,9 @@
     "data/curated-reference-entries/family-002-86-drd2.json": "bfb4c7acf6bbc82baf9b37de8661419c7e1eb75595009a4a1983a8d35574e055",
     "data/curated-reference-entries/family-002-92-htr2a.json": "b655390867cd443a7a1128f1fbb71d7444ccfccbbe75e1e329fabc24e63edd0b",
     "data/curated-reference-entries/family-002-9215-drd2.json": "e3a437400741cc5133f041f0a1deebb75e6d0da0c3d7809c47bcbb14ea3fc3ff",
-    "data/curated-reference-entries/family-002-935-drd1.json": "c3e814da7b9810896ed530c8a6d300ba98e64dd4637962d15d8e781f274c6389",
-    "data/curated-reference-entries/family-002-939-drd1.json": "532b8e856234a597ede5b63d3da66242e99237d047fb8760d29e880b6e392d22",
-    "data/curated-reference-entries/family-002-943-drd1.json": "3a30389fdbc649cf08b547e9e0431d39f378598ed5607f0e4b52da0d0541161d",
+    "data/curated-reference-entries/family-002-935-drd1.json": "9514961bceac9ded7c0d9de78c6a1cd2e90c2891063a0384c8d45fc1bae16b59",
+    "data/curated-reference-entries/family-002-939-drd1.json": "bda12b0569b45c505d482a7cbe84a3348fb42c105f0bd82bfaeaa5c05ce399bb",
+    "data/curated-reference-entries/family-002-943-drd1.json": "9d9dc6e31411dba096567b0f4ca3f5bd5047e90e135f0d975e9a0f40c1186ba2",
     "data/curated-reference-entries/family-002-99-drd4.json": "ac97cb710181ebdbf52005925ddeb63211291f63c881d38703c3831e468202ef",
     "data/curated-reference-entries/family-003-1056-pparg.json": "f23e51b9dba3a5fe6896c4f85da97e1900ff2e8f476859b9af6d923068b60269",
     "data/curated-reference-entries/family-003-1222-hrh1.json": "bdfbf7bd3c462748f4327e68591f2767a8f40f5c2935eff51f468a996f93d755",
@@ -71,7 +73,7 @@
     "data/curated-reference-entries/family-003-374-adora1.json": "32b0a8b299549a930cc636ab3a50703222a60ccdf0d380ec90e2c47d40efd8f5",
     "data/curated-reference-entries/family-003-375-adora2a.json": "d488450572d3f49a3bef7c9169259639fc54c893471b0d6a622db48e6fa36d1a",
     "data/curated-reference-entries/family-003-377-adora2b.json": "f2d6c66b26e0b09ffa78f54f9f33448f3a97a71979f28b40d5d5a9e9018fbbe2",
-    "data/curated-reference-entries/family-003-3937-agtr1.json": "9d943ead12494a56f7ee14dda9fd48b2273b832e678338da2e11793fbf45ec8f",
+    "data/curated-reference-entries/family-003-3937-agtr1.json": "326f777558edf34ecc2e8fe0da8ddba2c52e8fd81178ee040a20828a181480b3",
     "data/curated-reference-entries/family-003-422-adora3.json": "1d370aa6bd91a33ea761575e6cea1ee4c8d6e9970c0c62d0cec501f4f20fbfe6",
     "data/curated-reference-entries/family-003-457-adora3.json": "0632ae2ce9429f6d224231fa695d9d94b9fc006160705f323c3127cf3e6648d7",
     "data/curated-reference-entries/family-003-5596-adora2a.json": "4cd6b20ccdbd22464e256419bedcfdd9c1d2241c3b9f3885080fa3a207dd3124",
@@ -260,8 +262,8 @@
     {
       "name": "Tetrahydrobenzazepines",
       "tag": "Family motif: Tetrahydrobenzazepines",
-      "baseEntries": 17,
-      "currentEntries": 18,
+      "baseEntries": 20,
+      "currentEntries": 21,
       "newStructures": 1,
       "distinctIsomericGraphs": 18
     },
@@ -319,7 +321,7 @@
       "baseEntries": 21,
       "currentEntries": 21,
       "newStructures": 0,
-      "distinctIsomericGraphs": 21
+      "distinctIsomericGraphs": 20
     },
     {
       "name": "Benzisothiazoles",
@@ -355,7 +357,7 @@
     }
   ],
   "librarySha256": "1de0c3fc593a6f8dd60f27309a6a2c501a699ccf781b3db8fad989752c05a2bd",
-  "toolSha256": "ca218def3f707e86da0ff765dd4135d818971f3a650d8b174d9378734e9752ac",
-  "dataSha256": "afaad4c89b48c5f4381ad63ed37b9a06fa8e597d931069ad7017902340059282",
+  "toolSha256": "24be66d6d19e9dcf3f65ed4fd599fd804ccda1cf71dbe9025c540120a24efbdc",
+  "dataSha256": "1cb965a4ece0a4a89584aa10ab496a8bea82b1e33434381dd399503202938eb2",
   "browserGraphsChecked": 107
 }

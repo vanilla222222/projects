@@ -1,0 +1,18 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),crypto=require('node:crypto');
+const {LIBRARY}=require('../data/library'),{CURATED_REFERENCES:data}=require('../data/curated-references'),api=require('../js/curated-references'),report=require('../validation/curated-references.json');
+const original=JSON.stringify(LIBRARY),entries=api.library(LIBRARY,data),byname=new Map(entries.map(e=>[e.name,e]));
+assert.equal(data.identityCorrections.length,4);assert.equal(report.identityCorrections,4);assert.equal(report.identityCorrectionSha256,crypto.createHash('sha256').update(fs.readFileSync(require('path').join(__dirname,'../data/reference-identity-corrections.json'))).digest('hex'));
+assert.equal(entries.length,21064);assert.equal(new Set(entries.map(e=>e.name)).size,entries.length);
+for(const f of data.identityCorrections){const e=byname.get(f.name),raw=LIBRARY.find(e=>e.name===f.name),record=data.records.find(r=>r.id===f.sourceReferenceId),c=record.compounds[f.compoundIndex];
+ assert.deepEqual(raw,f.before);assert.equal(e.smiles,c.smiles);assert.equal(e.formula,c.formula);assert.equal(e.identityCorrection,f);assert.equal(f.inchiKey,c.inchiKey);assert.equal(f.inchiKey,c.identitySource.sourceLigand.InChIKey);assert.notEqual(f.beforeInchiKey,f.inchiKey);assert.equal(f.sourceUrl,c.sourceUrl);
+ assert.ok(api.forEntry(e,data).includes(record));assert.ok(!api.forEntry(raw,data).includes(record));assert.ok(api.tags(e,data).includes('Evidence: Reviewed identity correction'));
+ const staleBase=LIBRARY.map(x=>x.name===f.name?{...x,smiles:'C'}:x),stale=api.library(staleBase,data).find(x=>x.name===f.name);assert.equal(stale.smiles,'C');assert.ok(!stale.identityCorrection);assert.ok(!api.forEntry(stale,data).includes(record));
+ const forged=JSON.parse(JSON.stringify(data));forged.identityCorrections.find(x=>x.name===f.name).after.smiles='C';assert.equal(api.library(LIBRARY,forged).find(x=>x.name===f.name).smiles,raw.smiles,'Replacement must agree with its reviewed source witness');
+ const wrongKey=JSON.parse(JSON.stringify(data));wrongKey.identityCorrections.find(x=>x.name===f.name).inchiKey='INVALID';assert.equal(api.library(LIBRARY,wrongKey).find(x=>x.name===f.name).smiles,raw.smiles);
+}
+assert.equal(JSON.stringify(LIBRARY),original,'Historical data must remain immutable');const cached=api.library(LIBRARY,data);assert.ok(api.library(LIBRARY,data)===cached,'Composition cache remains stable for repeated identical inputs');assert.equal(api.library(entries,data).length,entries.length,'Repeated composition does not duplicate entries');
+const vals=data.identityCorrections.find(f=>f.name==='Valsartan');assert.equal(vals.category,'source_form_selection');assert.ok(!vals.before.smiles.includes('@'));assert.ok(vals.after.smiles.includes('@'));assert.ok(vals.reason.includes('does not identify an unknown sample'));
+assert.equal(data.identityCorrections.filter(f=>f.category==='connectivity_correction').length,3);
+const releases=require('../data/reference-releases').REFERENCE_RELEASES,diff=require('../js/reference-releases').diff;const current=releases.releases.find(r=>r.id==='identity-corrections-001');if(current){const changes=diff(releases.releases.find(r=>r.id==='mor-measurements-001'),current);assert.equal(changes.afterStats.numericObservations,changes.beforeStats.numericObservations);assert.equal(changes.changes.filter(c=>c.category==='identity').length,4);assert.equal(changes.changes.filter(c=>c.category==='review').length,4);}
+console.log('Identity corrections: four exact-before/source-guarded replacements, immutable historical graphs, stale-input rejection, stereo scope and explicit release history passed');
