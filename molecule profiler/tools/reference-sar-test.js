@@ -6,3 +6,5 @@ assert.equal(sar.groups('Family motif: Benzisothiazoles','c1ccccc1').observation
 const fitted=api.fitCoordinates([{x:0,y:0},{x:1,y:0},{x:0,y:1}],[{x:4,y:5},{x:4,y:6},{x:3,y:5}],[0,1,2]);for(let i=0;i<3;i++){const expected=[{x:0,y:0},{x:1,y:0},{x:0,y:1}][i];assert.ok(Math.hypot(fitted[i].x-expected.x,fitted[i].y-expected.y)<1e-9);}assert.ok((fitted[1].x-fitted[0].x)*(fitted[2].y-fitted[0].y)-(fitted[1].y-fitted[0].y)*(fitted[2].x-fitted[0].x)>0,'No reflection');
 assert.throws(()=>sar.groups('Series: 2C / 2C-x phenethylamines','not a structure'));
 console.log('Family SAR: complete 11/14/7 measured cohorts, source/assay separation, source-classification exclusion and reflection-free core alignment passed');
+
+const bounds=api.plotBounds([{observation:{value:1,sd:2}}]);assert.ok(10**bounds.max>3&&Number.isFinite(bounds.min));assert.equal(api.interval({value:1,lower:0.5,upper:2,uncertaintyKind:'95% confidence interval'}).kind,'95% confidence interval');

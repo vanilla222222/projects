@@ -4,7 +4,7 @@ assert.equal(chem.match(chem.prepare('CCO'),'OCC').status,'match');assert.equal(
 const a='N[C@@H](C)C(=O)O',b='N[C@H](C)C(=O)O';assert.equal(chem.match(chem.prepare(a),b).status,'no-match');assert.equal(chem.match(chem.prepare(a,{stereo:false}),b).status,'match');
 assert.equal(chem.match(chem.prepare('C(=O)N',{mode:'substructure',stereo:false}),'CC(=O)NCC').status,'match');assert.equal(chem.match(chem.prepare('C(=O)N',{mode:'substructure',stereo:false}),'CC(=O)OCC').status,'no-match');
 assert.equal(chem.match(chem.prepare('c1ccccc1',{mode:'substructure',stereo:false}),'Cc1ccccc1').mapping.length,6);
-assert.equal(chem.mapping(chem.parse('CC'),chem.parse('CCC'),{budget:0}).status,'unresolved');assert.throws(()=>chem.prepare('C1CC'));assert.throws(()=>chem.prepare('CC',{mode:'substructure',stereo:true}));
+assert.equal(chem.mapping(chem.parse('CC'),chem.parse('CCC'),{budget:0}).status,'unresolved');assert.throws(()=>chem.prepare('C1CC'));assert.throws(()=>chem.prepare('[*]CC'));assert.equal(chem.match(chem.prepare('CC'), 'CC',{budget:0}).status,'unresolved');assert.equal(chem.match(chem.prepare('C/C=C/C'),'C/C=C\\C').status,'no-match');assert.throws(()=>chem.prepare('CC',{mode:'substructure',stereo:true}));
 assert.equal(chem.match(chem.prepare('CCO',{mode:'similarity'}),'OCC').score,1);
 const sketch=chem.sketchSmiles([{element:'C'},{element:'C'},{element:'O'}],[{a:0,b:1,order:1},{a:1,b:2,order:1}]);assert.equal(chem.match(chem.prepare('CCO'),sketch).status,'match');
 const ring=chem.sketchSmiles(Array.from({length:6},()=>({element:'C'})),Array.from({length:6},(_,i)=>({a:i,b:(i+1)%6,order:1})));assert.equal(chem.match(chem.prepare('C1CCCCC1'),ring).status,'match');

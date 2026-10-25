@@ -17,5 +17,7 @@
  function fitCoordinates(reference,target,mapping){const a=mapping.reduce((s,_,i)=>({x:s.x+reference[i].x/mapping.length,y:s.y+reference[i].y/mapping.length}),{x:0,y:0}),b=mapping.reduce((s,j)=>({x:s.x+target[j].x/mapping.length,y:s.y+target[j].y/mapping.length}),{x:0,y:0});let dot=0,cross=0;
   mapping.forEach((j,i)=>{const x=target[j].x-b.x,y=target[j].y-b.y,u=reference[i].x-a.x,v=reference[i].y-a.y;dot+=x*u+y*v;cross+=x*v-y*u;});const angle=Math.atan2(cross,dot),c=Math.cos(angle),s=Math.sin(angle);return target.map(p=>({x:a.x+(p.x-b.x)*c-(p.y-b.y)*s,y:a.y+(p.x-b.x)*s+(p.y-b.y)*c}));
  }
- const api={create,endpoint,fitCoordinates};root.ReferenceSAR=api;if(typeof module!=='undefined')module.exports=api;
+ function interval(o){if(finite(o.lower)&&finite(o.upper)&&o.lower>0&&o.upper>=o.lower)return {low:o.lower,high:o.upper,kind:o.uncertaintyKind||'Reported interval'};if(finite(o.sd)&&o.sd>=0)return {low:o.value-o.sd,high:o.value+o.sd,kind:'SD'};return null;}
+ function plotBounds(rows){const values=rows.flatMap(r=>{const o=r.observation,i=interval(o);return [o.value,...(i?[i.low,i.high].filter(v=>v>0):[])];});return {min:Math.log10(Math.min(...values))-0.2,max:Math.log10(Math.max(...values))+0.2};}
+ const api={create,endpoint,fitCoordinates,interval,plotBounds};root.ReferenceSAR=api;if(typeof module!=='undefined')module.exports=api;
 })(globalThis);

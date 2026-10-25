@@ -2,11 +2,14 @@
 (function(root){
  const parse=s=>buildMolecule(parseSmiles(s));
  const bondLabel=b=>b.aromatic?1.5:b.order;
- function mapping(query,target,{exact=false,budget=30000}={}){
+ const stereoCache=new WeakMap();
+ function stereoLabels(mol){if(stereoCache.has(mol))return stereoCache.get(mol);const s=stereoAnalyse(mol),result={unresolved:!!s.undetermined,atoms:new Map(s.centers.filter(c=>c.stereogenic).map(c=>[c.atom,c.specified?c.label:'?'])),bonds:new Map(s.bonds.filter(c=>c.stereogenic).map(c=>[[c.a,c.b].sort((a,b)=>a-b).join('/'),c.specified?c.label:'?']))};stereoCache.set(mol,result);return result;}
+ function mapping(query,target,{exact=false,stereo=false,budget=30000}={}){
   if(query.atoms.length>target.atoms.length||(exact&&(query.atoms.length!==target.atoms.length||query.bonds.length!==target.bonds.length)))return {status:'no-match'};
   const edges=m=>{const out=new Map();for(const b of m.bonds)out.set([b.a,b.b].sort((a,b)=>a-b).join('/'),bondLabel(b));return out;},qe=edges(query),te=edges(target);
   const fit=(a,b)=>a.element===b.element&&!!a.aromatic===!!b.aromatic&&(a.charge||0)===(b.charge||0)&&(exact?(a.isotope||0)===(b.isotope||0)&&a.totalH===b.totalH&&a.degree===b.degree:(!a.isotope||a.isotope===b.isotope)&&a.degree<=b.degree&&(!a.bracket||!a.explicitH||a.totalH===b.totalH));
   const choices=query.atoms.map(a=>target.atoms.flatMap((b,i)=>fit(a,b)?[i]:[]));if(choices.some(c=>!c.length))return {status:'no-match'};
+  if(exact&&stereo){const a=stereoLabels(query),b=stereoLabels(target);if(a.unresolved||b.unresolved)return {status:'unresolved'};for(let i=0;i<choices.length;i++)choices[i]=choices[i].filter(j=>(a.atoms.get(i)||'')===(b.atoms.get(j)||''));if(choices.some(c=>!c.length))return {status:'no-match'};for(const [key,value]of qe)qe.set(key,value+'|'+(a.bonds.get(key)||''));for(const [key,value]of te)te.set(key,value+'|'+(b.bonds.get(key)||''));}
   const order=query.atoms.map((_,i)=>i).sort((a,b)=>choices[a].length-choices[b].length||query.atoms[b].degree-query.atoms[a].degree),map=new Array(query.atoms.length).fill(-1),used=new Set();let steps=0,exhausted=false;
   function visit(depth){if(++steps>budget){exhausted=true;return false;}if(depth===order.length)return true;const a=order[depth];for(const b of choices[a]){if(used.has(b))continue;let good=true;for(let x=0;x<map.length;x++){if(map[x]<0)continue;const q=qe.get([a,x].sort((a,b)=>a-b).join('/')),t=te.get([b,map[x]].sort((a,b)=>a-b).join('/'));if((q!==undefined&&q!==t)||(exact&&q!==t)){good=false;break;}}if(!good)continue;map[a]=b;used.add(b);if(visit(depth+1))return true;map[a]=-1;used.delete(b);if(exhausted)return false;}return false;}
   return visit(0)?{status:'match',mapping:map.slice()}:{status:exhausted?'unresolved':'no-match'};
@@ -14,7 +17,7 @@
  function prepare(smiles,{mode='identity',stereo=true,threshold=0.5}={}){
   if(!['identity','substructure','similarity'].includes(mode))throw Error('Choose identity, substructure or similarity search.');
   if(typeof smiles!=='string'||!smiles.trim()||smiles.length>2000)throw Error('Enter a SMILES structure (up to 2,000 characters).');
-  const mol=parse(smiles.trim());if(!mol.atoms.length||mol.atoms.length>80)throw Error('Search queries support 1–80 explicit atoms.');
+  const mol=parse(smiles.trim());if(mol.atoms.some(a=>a.element==='*'))throw Error('Use a concrete SMILES query; wildcard/SMARTS queries are not supported.');if(!mol.atoms.length||mol.atoms.length>80)throw Error('Search queries support 1–80 explicit atoms.');
   if(mode==='substructure'&&stereo)throw Error('Substructure search is topological. Choose ignore stereochemistry; explicit charge and isotope constraints are retained.');
   if(mode==='identity'&&stereo&&stereoAnalyse(mol).undetermined)throw Error('The query contains stereochemistry the current parser cannot resolve.');
   if(!Number.isFinite(Number(threshold))||threshold<0||threshold>1)throw Error('Similarity threshold must be between zero and one.');
@@ -23,8 +26,7 @@
  function match(prepared,smiles,{budget=30000}={}){
   let mol;try{mol=parse(smiles);}catch(_){return {status:'unresolved'};}
   if(prepared.mode==='similarity'){const score=tanimoto(prepared.fp,fingerprint(mol,prepared.stereo?'ecfp4s':'ecfp4'));return {status:score>=prepared.threshold?'match':'no-match',score};}
-  const result=mapping(prepared.mol,mol,{exact:prepared.mode==='identity',budget});
-  if(result.status==='match'&&prepared.mode==='identity'&&prepared.stereo){if(stereoAnalyse(mol).undetermined)return {status:'unresolved'};if(!root.Pharmacology.exactGraph(prepared.mol,mol))return {status:'no-match'};}
+  const result=mapping(prepared.mol,mol,{exact:prepared.mode==='identity',stereo:prepared.mode==='identity'&&prepared.stereo,budget});
   return result;
  }
  async function search(entries,smiles,options={},hooks={}){
