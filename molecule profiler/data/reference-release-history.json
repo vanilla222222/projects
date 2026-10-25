@@ -8,6 +8,7 @@
     {"id":"research-tools","label":"Research tools · curated decision history","date":"2026-10-25","commit":"f34865b7beaed7b886325915c06edb901fbd0b75"},
     {"id":"aromatase-references","label":"Derived aromatase inhibitor references","date":"2026-10-25","commit":"a37d995df4e4374395acecd65ddbf7f348f23aa6"},
     {"id":"cephalosporin-references","label":"Derived cephalosporin references","date":"2026-10-25","commit":"4f0c824d6607c9922ca2e32cabbaaae837c607b5"},
-    {"id":"estrogen-references","label":"Derived estrogen references","date":"2026-10-25","commit":"fc584dc47a4dae956047fc0ac9f14f917268022b"}
+    {"id":"estrogen-references","label":"Derived estrogen references","date":"2026-10-25","commit":"fc584dc47a4dae956047fc0ac9f14f917268022b"},
+    {"id":"fluoroquinolone-references","label":"Derived fluoroquinolone references","date":"2026-10-25","commit":"695dca6b41a57913ec00fd4f63af7583ac006bb6"}
   ]
 }
