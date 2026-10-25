@@ -40,6 +40,7 @@ const scripts = [
   'named-family-004-test.js',
   'reference-research-test.js',
   'reference-structure-test.js',
+  'reference-sar-test.js',
   'pharmacology-test.js',
   'pk-applicability-test.js',
   'prodrug-candidates-test.js',
