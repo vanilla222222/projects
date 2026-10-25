@@ -1,0 +1,61 @@
+{
+  "id": "control-jq1",
+  "title": "(-)-JQ1 — enantiomer control for (+)-JQ1",
+  "collections": [
+    "Chemical probes and controls",
+    "Stereochemical comparisons"
+  ],
+  "compounds": [
+    {
+      "name": "(+)-JQ1",
+      "smiles": "Cc1sc2c(c1C)C(c1ccc(Cl)cc1)=N[C@@H](CC(=O)OC(C)(C)C)c1nnc(C)n1-2",
+      "formula": "C23H25ClN4O2S",
+      "inchiKey": "DNVXATUJJDPFDM-KRWDZBQOSA-N",
+      "sourceUrl": "https://www.thesgc.org/chemical-probes/jq1",
+      "role": "probe",
+      "identitySource": {
+        "provider": "SGC",
+        "accessed": "2026-10-25",
+        "sourceFields": "SMILES, full InChIKey and formula in properties section"
+      }
+    },
+    {
+      "name": "(-)-JQ1",
+      "smiles": "Cc1sc2c(c1C)C(c1ccc(Cl)cc1)=N[C@H](CC(=O)OC(C)(C)C)c1nnc(C)n1-2",
+      "formula": "C23H25ClN4O2S",
+      "inchiKey": "DNVXATUJJDPFDM-QGZVFWFLSA-N",
+      "sourceUrl": "https://www.rndsystems.com/products/minus-jq1_5603",
+      "role": "negative control",
+      "identitySource": {
+        "provider": "Tocris / Bio-Techne",
+        "catalog": "5603",
+        "accessed": "2026-10-25",
+        "sourceFields": "SMILES, full InChIKey and formula in product specifications"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "from": 0,
+      "to": 1,
+      "kind": "negative_control"
+    },
+    {
+      "from": 0,
+      "to": 1,
+      "kind": "enantiomer"
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "stereo_comparison",
+      "target": "BET bromodomains",
+      "endpoint": "Source-designated inactive enantiomer control; no numeric detection limit assigned",
+      "assay": "SGC ITC comparison and bromodomain profiling",
+      "sourceUrl": "https://www.thesgc.org/chemical-probes/jq1",
+      "pubmedIds": "20871596"
+    }
+  ],
+  "note": "Opposite, source-specified enantiomers retain separate full InChIKeys. The control designation applies to reported bromodomain experiments; absence of a numeric bound is not converted to zero affinity or universal inactivity.",
+  "reviewedDate": "2026-10-25"
+}
