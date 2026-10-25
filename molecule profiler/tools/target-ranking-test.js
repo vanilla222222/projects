@@ -35,3 +35,5 @@ const mirrorIndex=api.createIndex([{name:'R',smiles:'N[C@@H](C)C(=O)O'},{name:'S
 const mirror=api.rank(api.query(engine.parse('N[C@@H](C)C(=O)O'),mirrorIndex),mirrorIndex,{});
 assert.equal(mirror[0].target.gene,'R');assert.ok(mirror[1].score<1,'stereochemical disagreement must affect the ensemble');
 console.log('Target ranking: multi-view scoring, grouped references, self-profile holdout, stereochemistry, scopes and exclusions passed');
+assert.match(rows.find(r=>r.target.gene==='B').coverage,/Single-profile/);assert.equal(rows.find(r=>r.target.gene==='B').belowCoverageGoal,true);assert.match(row.coverage,/Sparse/);assert.match(api.coverageLabel(10),/Below/);assert.match(api.coverageLabel(50),/source qualification/);
+const baseTargets=require('../data/targets').TARGETS,adr=baseTargets.find(t=>t.gene==='ADRA1B');assert.equal(adr.ligands.length,50);for(const n of ['Promazine','Nortriptyline','Lofepramine'])assert.ok(!adr.ligands.includes(n),'Do not restore source-unqualified class labels to the binding-only panel');

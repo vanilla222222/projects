@@ -887,7 +887,7 @@ const TGT_COLUMNS = [
 ];
 
 const TGT_TIERS = [
-  [0.5, 'Confident neighbours', 'The query shares most of its fingerprint with a compound already recorded as active at this target, so the row is worth treating as a real hypothesis to check against the literature.'],
+  [0.5, 'Close structural neighbours', 'Close reference resemblance. Read panel coverage and the source evidence; a single reference profile supplies lookup-level support, not an independently validated prediction.'],
   [0.3, 'Worth a look', 'Enough shared substructure to be suggestive and nothing more. These are leads to verify, not binding.'],
   [0, 'Weak tail \u2014 not a binding claim', 'Below about 0.30 a nearest-neighbour similarity says nothing about whether the query binds: these are simply the next-closest ligand sets in the catalogue, and a list like this comes back for almost any query. Shown for completeness, and greyed because the numbers should not be read as scores.']
 ];
@@ -903,7 +903,8 @@ function benchmarkRow(target) {
   return RETRIEVAL_BENCHMARK.perTarget[target.gene + '::' + target.name] || null;
 }
 
-function recoveredCell(target) {
+function recoveredCell(target,profiles) {
+  if(profiles<2)return '<span class="quiet">— · single profile</span>';
   const row = benchmarkRow(target);
   if (!row) return '<span class="quiet">\u2014</span>';
   return (row.r1 * 100).toFixed(0) + '% <span class="quiet">(' + row.n + ')</span>';
@@ -974,7 +975,7 @@ function renderTargets(record) {
   document.getElementById('tgt-summary').innerHTML = pool + ' targets'
     + (organism === 'all' ? '' : ' in ' + organism.toLowerCase() + ' scope')
     + ', ' + kept.length + ' above the score cut, '
-    + (strong ? strong + ' of them above 0.30' : 'none of them above 0.30');
+    + (strong ? strong + ' of them above 0.30' : 'none of them above 0.30')+'; '+ranked.filter(r=>r.distinctCount<5).length+' panels have fewer than five distinct reference profiles.';
   document.getElementById('tgt-blurb').textContent = legacy
     ? 'Legacy nearest-neighbour ranking: '+method.label+' / '+metricKey+'.'
     : 'Multi-fingerprint ranking: geometric mean of stereo-aware ECFP4, FCFP4 and atom-pair Tanimoto per ligand; rank = 70% nearest + 30% mean top three distinct fingerprint profiles. These are heuristic weights, not trained probabilities.';
@@ -1015,8 +1016,8 @@ function renderTargets(record) {
           +' (stereo / features / pairs: '+e.components.map(v=>v.toFixed(3)).join(' / ')+')').join('<br>')
         + '<br>'+row.distinctCount+' distinct fingerprint profiles from '+row.count+' listed references.'
         + (row.motifEvidence.length?'<br><strong>Shared motifs across the reference panel:</strong><br>'+row.motifEvidence.slice(0,5).map(m=>escapeHtml(StructuralEvidence.label(m.id))+': '+m.support+'/'+m.total+' distinct target-reference profiles; background '+m.background+'/'+m.backgroundTotal+' indexed profiles').join('<br>'):'<br>No shared motif in the current vocabulary.')+'</details></td>'
-      + '<td>' + row.count + '</td>'
-      + '<td>' + (legacy?(methodKey==='ecfp4'&&metricKey==='tanimoto'&&organism==='all'&&document.getElementById('tgt-scope').value!=='receptors'?recoveredCell(row.target):'—'):row.support+' / '+row.distinctCount) + '</td>'
+      + '<td>' + row.distinctCount+' profiles / '+row.count+' names<br><span class="quiet">'+escapeHtml(row.coverage)+'</span></td>'
+      + '<td>' + (legacy?(methodKey==='ecfp4'&&metricKey==='tanimoto'&&organism==='all'&&document.getElementById('tgt-scope').value!=='receptors'?recoveredCell(row.target,row.distinctCount):'—'):row.support+' / '+row.distinctCount) + '</td>'
       + '<td class="note">' + escapeHtml(row.target.note) + '</td>'
       + '</tr>';
   }).join('') : '<tr><td colspan="11">No target has a known ligand this similar to the query.</td></tr>';
@@ -1218,7 +1219,7 @@ function renderAlerts(record) {
     '<tr' + (row.count ? '' : ' class="quiet"') + '>'
       + '<td>' + escapeHtml(row.alert.name) + '</td>'
       + '<td>' + sourceCell(row.alert.source, row.alert.ref) + '</td>'
-      + '<td>' + row.count + '</td>'
+      + '<td>' + row.distinctCount+' profiles / '+row.count+' names<br><span class="quiet">'+escapeHtml(row.coverage)+'</span></td>'
       + '<td class="atoms">' + (row.atoms.length ? row.atoms.map((index) => index + 1).join(', ') : '—') + '</td>'
       + '<td><code>' + escapeHtml(row.alert.smarts) + '</code></td>'
       + '<td class="note">' + escapeHtml(row.alert.note) + citeSpan(row.alert.cite) + '</td>'
@@ -1292,7 +1293,7 @@ function renderTox(record) {
       + '<td>' + escapeHtml(row.name) + '</td>'
       + '<td>' + escapeHtml(row.endpoint) + '</td>'
       + '<td>' + sourceCell(row.source, row.ref) + '</td>'
-      + '<td>' + row.count + '</td>'
+      + '<td>' + row.distinctCount+' profiles / '+row.count+' names<br><span class="quiet">'+escapeHtml(row.coverage)+'</span></td>'
       + '<td class="atoms">' + (row.atoms.length ? row.atoms.map((index) => index + 1).join(', ') : '\u2014') + '</td>'
       + '<td><code>' + escapeHtml(row.pattern) + '</code></td>'
       + '<td class="note">' + escapeHtml(row.note) + citeSpan(row.cite) + '</td>'

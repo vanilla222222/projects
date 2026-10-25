@@ -55,3 +55,20 @@ result changes calibration, threshold, domain gate or model weights.
 The independent binomial and bootstrap fixtures run with
 `python tools/bbb-statistics-test.py`. Reproduction also runs native/exported
 prediction parity and checks the numerical model payload against its prior hash.
+
+## Sparse panels and binding-only associations
+
+Target rows now report distinct fingerprint profiles separately from name
+counts. One-profile panels are labeled lookup-only and do not display a recovery
+percentage even when aliases would permit a name-holdout trial. Panels below
+five profiles are marked sparse; panels below the 50-profile goal remain visibly
+below goal. Having 50 structural profiles does not itself establish source
+qualification, assay coverage, selectivity or predictive validity. These changes
+do not manufacture new references or claim all target panels meet the goal.
+
+Fourteen class-derived ADRA1B associations were removed from its binding-only
+panel because no graph-matched ADRA1B source evidence for those named entries was
+present in the current evidence index. The original 50 assay-linked references
+remain. This is a correction to imported panel scope, not evidence that the
+removed compounds are inactive. Metadata source witnesses, diversity audit and
+the composed retrieval benchmark were regenerated.

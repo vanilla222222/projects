@@ -4,19 +4,19 @@
 const RETRIEVAL_BENCHMARK = {
   "composition": {
     "version": "composed-reference-v1",
-    "key": "59e7fd601cbc5e1c",
+    "key": "a8971ac581e08e81",
     "library": 21064,
     "targets": 155,
-    "ligandSlots": 5437
+    "ligandSlots": 5423
   },
   "protocol": "Name holdout across all targets; aliases can remain. Nearest similarity, mean of top three, then original target order. All organisms and target families. Not independent scaffold or external validation.",
   "sourceSha256": {
     "data/library.js": "1de0c3fc593a6f8dd60f27309a6a2c501a699ccf781b3db8fad989752c05a2bd",
-    "data/targets.js": "facc465ef72687224df3577fbf7a600102e7c3b07cc033a4de21ba76191192fa",
+    "data/targets.js": "912b5413cb0e99dcf573dcdb04f0452e35588212c9ab9bdf16c8a2939e62e9cb",
     "data/curated-references.js": "1cb965a4ece0a4a89584aa10ab496a8bea82b1e33434381dd399503202938eb2",
     "js/curated-references.js": "e738614788dc0fb174079d300187408add5cdf61bb161c8dc30daadee2d98ea6",
     "js/reference-context.js": "5645ba030dc0448bee5205d159c4e9271e271e62a679c1af398e29b49ef3105a",
-    "js/target-ranking.js": "dbd10ad677a3e33a034fe09d2198a16a5a5bb5f604ceaf97a76d950a26a72cd8",
+    "js/target-ranking.js": "8e0711b819823913fd58cb5788d1b3a66a8006dfeb17abcdc016f77b0bb2c79a",
     "js/smiles.js": "ae7063246faee39707c62003a038fd8ce825e5c247f85ab9b6191e4383caca66",
     "js/mol.js": "ff9a643a4e25986903d897e962ff97a4db3453b8ac12685ffed14e16521cb96d",
     "js/stereo.js": "6b65f4af103715c9814ec1bd56871b27280e9c8e3278475ce62726f38d3f2aaa",
@@ -31,26 +31,26 @@ const RETRIEVAL_BENCHMARK = {
   "targets": 155,
   "measurable": 131,
   "unmeasurable": 24,
-  "trials": 5413,
+  "trials": 5399,
   "scoredTargets": 155,
   "overall": {
-    "r1": 0.4919637908738223,
-    "r5": 0.8771476076113062,
-    "r10": 0.9296138924810641,
+    "r1": 0.49323948879422114,
+    "r5": 0.8794221152065197,
+    "r10": 0.9323948879422115,
     "median": 2,
-    "mean": 4.535932015518197
+    "mean": 4.492683830338952
   },
   "thick": {
-    "trials": 5305,
-    "r1": 0.4942507068803016,
-    "r5": 0.8842601319509896,
-    "r10": 0.9370405278039585,
+    "trials": 5291,
+    "r1": 0.49555849555849557,
+    "r5": 0.8865998865998866,
+    "r10": 0.9398979398979399,
     "median": 2
   },
   "popularity": {
-    "r1": 0.04544614816183262,
-    "r5": 0.1579530759283207,
-    "r10": 0.27138370589322003,
+    "r1": 0.04556399333209854,
+    "r5": 0.15836265975180588,
+    "r10": 0.2720874235969624,
     "median": 23
   },
   "random": {
@@ -240,12 +240,6 @@ const RETRIEVAL_BENCHMARK = {
       "r5": 0.7879,
       "median": 4
     },
-    "ADRA1B::Alpha-1B adrenoceptor": {
-      "n": 64,
-      "r1": 0.1563,
-      "r5": 0.75,
-      "median": 2
-    },
     "SCN9A::Neuronal sodium channel Nav1.7": {
       "n": 60,
       "r1": 0.1167,
@@ -359,6 +353,12 @@ const RETRIEVAL_BENCHMARK = {
       "r1": 0.66,
       "r5": 0.98,
       "median": 1
+    },
+    "ADRA1B::Alpha-1B adrenoceptor": {
+      "n": 50,
+      "r1": 0.2,
+      "r5": 0.96,
+      "median": 2
     },
     "ADRA1D::Alpha-1D adrenoceptor": {
       "n": 50,
@@ -490,7 +490,7 @@ const RETRIEVAL_BENCHMARK = {
       "n": 15,
       "r1": 0,
       "r5": 0.2,
-      "median": 15
+      "median": 14
     },
     "ACE::Angiotensin-converting enzyme": {
       "n": 14,
@@ -544,7 +544,7 @@ const RETRIEVAL_BENCHMARK = {
       "n": 6,
       "r1": 0,
       "r5": 0.3333,
-      "median": 70.5
+      "median": 70
     },
     "CYP3A4::Cytochrome P450 3A4": {
       "n": 6,
@@ -568,7 +568,7 @@ const RETRIEVAL_BENCHMARK = {
       "n": 6,
       "r1": 0,
       "r5": 0,
-      "median": 52
+      "median": 51.5
     },
     "ABCB1::P-glycoprotein": {
       "n": 5,
@@ -580,7 +580,7 @@ const RETRIEVAL_BENCHMARK = {
       "n": 5,
       "r1": 0,
       "r5": 0,
-      "median": 78
+      "median": 77
     },
     "GRIN1::NMDA receptor": {
       "n": 5,
@@ -616,13 +616,13 @@ const RETRIEVAL_BENCHMARK = {
       "n": 4,
       "r1": 0,
       "r5": 0.5,
-      "median": 10.5
+      "median": 10
     },
     "MAOA::Monoamine oxidase A": {
       "n": 4,
       "r1": 0,
       "r5": 0,
-      "median": 97
+      "median": 96.5
     },
     "pbp::Penicillin-binding proteins": {
       "n": 4,

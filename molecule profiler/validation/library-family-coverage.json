@@ -3,7 +3,7 @@
   "sourceSha256": {
     "data/library.js": "1de0c3fc593a6f8dd60f27309a6a2c501a699ccf781b3db8fad989752c05a2bd",
     "data/library-names.js": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
-    "data/targets.js": "facc465ef72687224df3577fbf7a600102e7c3b07cc033a4de21ba76191192fa",
+    "data/targets.js": "912b5413cb0e99dcf573dcdb04f0452e35588212c9ab9bdf16c8a2939e62e9cb",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
     "data/receptor-ligand-annotations.js": "28bcfc10324b17fc8a30d2e4b3cf3c589e55fe9af76cd61dfb8986d9a3b30d01",
     "js/receptor-catalog.js": "eaed72df5e3c0ab62aaccba3ff82928e23da6849a14571a6a42ae745522ab798",
