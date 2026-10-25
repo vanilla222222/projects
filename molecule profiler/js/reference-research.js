@@ -3,7 +3,7 @@
  const text=v=>v==null?'':String(v);
  const species=v=>/^(human|homo sapiens)$/i.test(text(v))?'Homo sapiens':text(v)||'Not reported';
  const metric=e=>e.metric||(/^(EC50|IC50|Ki|Kd)\b/.exec(e.endpoint||'')||[])[1]||'';
- function createModel({entries,catalog,curated,data}){
+ function createModel({entries,catalog,curated,data,reviewData={decisions:[]}}){
   const byName=new Map(entries.map(e=>[e.name,e])),cache=new WeakMap();
   function observations(entry){
    if(cache.has(entry))return cache.get(entry);
@@ -61,7 +61,24 @@
    const pages=Math.max(1,Math.ceil(matching.length/perPage)),current=Math.min(Math.max(1,page),pages),targetPages=Math.max(1,Math.ceil(targets.length/targetsPerPage)),tp=Math.min(Math.max(1,targetPage),targetPages),columns=target?[target]:targets.slice((tp-1)*targetsPerPage,tp*targetsPerPage);
    return {total:matching.length,familyTotal:members(family).length,page:current,pages,targetPage:tp,targetPages,targets,columns,rows:matching.slice((current-1)*perPage,current*perPage).map(e=>({name:e.name,label:catalog.displayName(e),cells:columns.map(t=>cell(e.name,t,selectedSpecies))}))};
   }
-  return {entries,byName,observations,dossier,comparison,families,members,cell,matrix,isTarget};
+  let reviewCache=null;
+  const normalizeAction=a=>text(a).toLowerCase().replace(/ /g,'_').replace(/^full_agonist$/,'agonist');
+  function reviewItems(){if(reviewCache)return reviewCache;const result=[],decisions=new Map(reviewData.decisions.map(d=>[d.id,d]));
+   for(const entry of entries){const meta=data.entries[entry.name];
+    if(meta?.librarySmiles===entry.smiles)for(const conflict of meta.identityConflicts||[]){
+     const r=data.records.find(r=>r.id===conflict.curatedReferenceId),id='identity:'+entry.name,decision=decisions.get(id);
+     result.push({id,kind:'identity',name:entry.name,label:catalog.displayName(entry),target:'Identity',status:decision?.status||'unresolved',reason:r?.note||'The legacy graph disagrees with the reviewed source identity. Source pharmacology is not transferred.',history:decision?.history||[],evidence:[],sourceUrl:conflict.sourceUrl,relatedNames:r?.compounds.flatMap(c=>c.libraryNames)||[]});
+    }
+    const groups=new Map();for(const o of observations(entry)){const a=normalizeAction(o.action);if(!['agonist','partial_agonist','antagonist','inverse_agonist'].includes(a)||!isTarget(o))continue;const key=JSON.stringify([o.target,o.species]);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(o);}
+    for(const evidence of groups.values()){const actions=[...new Set(evidence.map(o=>normalizeAction(o.action)))];if(actions.length<2)continue;
+     const first=evidence[0],id='action:'+entry.name+':'+first.target+':'+first.species,decision=decisions.get(id);
+     result.push({id,kind:'action',name:entry.name,label:catalog.displayName(entry),target:first.target,species:first.species,actions,status:decision?.status||'unresolved',reason:'Different action classifications occur for this stored graph and target species. This is a review candidate: pathway, assay conditions and efficacy definitions may explain the difference. It is not an automatic finding that either source is wrong.',history:decision?.history||[],evidence,relatedNames:[]});
+    }
+   }
+   reviewCache=result.sort((a,b)=>(a.kind==='identity'?0:1)-(b.kind==='identity'?0:1)||a.label.localeCompare(b.label)||a.target.localeCompare(b.target));return reviewCache;
+  }
+  function reviews({kind='all',query='',page=1,perPage=12}={}){const term=query.trim().toLowerCase(),items=reviewItems().filter(r=>(kind==='all'||r.kind===kind)&&[r.name,r.label,r.target,r.status].join(' ').toLowerCase().includes(term)),pages=Math.max(1,Math.ceil(items.length/perPage)),current=Math.min(Math.max(page,1),pages);return {total:items.length,page:current,pages,items:items.slice((current-1)*perPage,current*perPage)};}
+  return {entries,byName,observations,dossier,comparison,families,members,cell,matrix,isTarget,reviews,reviewItems};
  }
  const api={createModel,species,metric};root.ReferenceResearch=api;if(typeof module!=='undefined')module.exports=api;
 })(globalThis);

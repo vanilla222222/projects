@@ -7,7 +7,8 @@ global.LIBRARY_TAG_METADATA=require('../data/library-tags').LIBRARY_TAG_METADATA
 global.LIBRARY_RECEPTOR_METADATA=require('../data/library-receptor-tags').LIBRARY_RECEPTOR_METADATA;
 const catalog=require('../js/library-catalog'),curated=global.CuratedReferences,data=global.CURATED_REFERENCES;
 const entries=curated.library(require('../data/library').LIBRARY),api=require('../js/reference-research');
-const model=api.createModel({entries,catalog,curated,data});
+const reviewData=require('../data/reference-reviews').REFERENCE_REVIEWS;
+const model=api.createModel({entries,catalog,curated,data,reviewData});
 const control=data.records.find(r=>r.id==='control-gsk-j2'),less=control.compounds[1].libraryNames[0],active=control.compounds[0].libraryNames[0];
 assert.equal(model.dossier(less).observations.find(o=>o.recordId==='control-gsk-j2').value,100);
 assert.equal(model.dossier(less).observations.find(o=>o.recordId==='control-gsk-j2').relation,'>');
@@ -37,3 +38,10 @@ assert.equal(model.matrix({family:f,perPage:1,page:999}).page,21);
 const human=model.matrix({family:f,target:'AGTR1',selectedSpecies:'Homo sapiens',onlyEvidence:true,perPage:100});assert.ok(human.rows.every(r=>r.cells[0].evidence.length));
 assert.deepEqual(model.matrix({family:'missing'}).rows,[]);
 console.log('Family matrices: distinct evidence states, explicit unknowns, human filtering, compound/target pagination and assay-scoped low activity passed');
+
+const reviews=model.reviewItems();assert.equal(reviews.filter(r=>r.kind==='identity').length,4);
+const valsReview=reviews.find(r=>r.id==='identity:Valsartan');assert.equal(valsReview.status,'guarded_unresolved');assert.match(valsReview.history[0].event,/tautomer/);assert.ok(valsReview.relatedNames.includes('CHEMBL1069'));
+const quet=reviews.find(r=>r.id==='action:Quetiapine:HTR2A:Homo sapiens');assert.ok(quet);assert.deepEqual(quet.actions.slice().sort(),['agonist','antagonist']);assert.equal(quet.status,'scoped_unresolved');assert.ok(quet.evidence.every(o=>o.species==='Homo sapiens'));assert.ok(quet.history[0].event.includes('No adjudication'));
+assert.equal(model.reviews({kind:'identity',query:'valsartan'}).total,1);assert.equal(model.reviews({query:'no-such-compound'}).total,0);
+for(const decision of reviewData.decisions)assert.ok(reviews.some(r=>r.id===decision.id),'Decision must refer to an existing review candidate: '+decision.id);
+console.log('Review centre: four guarded identity cases, species-specific action differences, raw witnesses and unresolved decision history passed');

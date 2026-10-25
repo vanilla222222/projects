@@ -20,6 +20,9 @@ const assert=require('node:assert/strict'),path=require('node:path'),{pathToFile
   assert.ok(d.querySelector('#research-matrix-results table'));assert.ok(d.getElementById('research-matrix-status').textContent.includes('21 in family'));
   const cell=d.querySelector('#research-matrix-results button.matrix-evidence');assert.ok(cell);cell.click();assert.equal(d.querySelector('#reference-dossier h2').textContent,ui.model.dossier(cell.dataset.reference).label);
   assert.ok([...d.querySelectorAll('#reference-dossier .research-evidence')].some(n=>n.dataset.target===cell.dataset.target&&n.open));
+  d.getElementById('research-review-kind').value='identity';d.getElementById('research-review-load').click();assert.equal(d.querySelectorAll('#research-review-results>details').length,4);
+  const reviewSearch=d.getElementById('research-review-search');reviewSearch.value='Valsartan';reviewSearch.dispatchEvent(new w.Event('input'));assert.equal(d.querySelectorAll('#research-review-results>details').length,1);assert.ok(d.getElementById('research-review-results').textContent.includes('guarded unresolved'));assert.ok(d.querySelector('#research-review-results a[href="NAMED-FAMILY-003.md"]'));
+  d.getElementById('research-review-kind').value='action';reviewSearch.value='Quetiapine';d.getElementById('research-review-load').click();assert.ok(d.getElementById('research-review-results').textContent.includes('No adjudication'));
   assert.deepEqual(errors,[]);console.log('Research DOM: dossier navigation, source structures, deep links and identity warnings passed');
  }finally{dom.window.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

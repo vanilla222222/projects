@@ -1,7 +1,7 @@
 'use strict';
 (function(root){
  const api=root.ReferenceResearch,catalog=root.LibraryCatalog,curated=root.CuratedReferences;if(!api||!catalog||!curated)return;
- const model=api.createModel({entries:curated.library(LIBRARY),catalog,curated,data:root.CURATED_REFERENCES});
+ const model=api.createModel({entries:curated.library(LIBRARY),catalog,curated,data:root.CURATED_REFERENCES,reviewData:root.REFERENCE_REVIEWS});
  const $=id=>document.getElementById(id),el=(tag,t)=>{const n=document.createElement(tag);if(t!==undefined)n.textContent=t;return n;};
  function link(label,url){const a=el('a',label);if(/^https?:\/\//.test(url||'')){a.href=url;a.target='_blank';a.rel='noopener noreferrer';}return a;}
  function detail(label,value,host){if(value==null||value==='')return;const p=el('p');p.append(el('strong',label+': '),el('span',typeof value==='object'?JSON.stringify(value):String(value)));host.append(p);}
@@ -59,7 +59,17 @@
  }
  $('research-matrix-load').addEventListener('click',()=>{matrixPage=1;matrixTargetPage=1;renderMatrix();});familySelect.addEventListener('change',()=>{targetSelect.value='';matrixPage=1;matrixTargetPage=1;if(matrixLoaded)renderMatrix();});for(const id of ['research-matrix-target','research-matrix-species','research-matrix-evidence'])$(id).addEventListener('change',()=>{matrixPage=1;matrixTargetPage=1;if(matrixLoaded)renderMatrix();});
  for(const [id,dp,dt]of [['research-matrix-prev',-1,0],['research-matrix-next',1,0],['research-matrix-target-prev',0,-1],['research-matrix-target-next',0,1]])$(id).addEventListener('click',()=>{matrixPage+=dp;matrixTargetPage+=dt;renderMatrix();});
+ let reviewPage=1;
+ function renderReviews(){const result=model.reviews({kind:$('research-review-kind').value,query:$('research-review-search').value,page:reviewPage});reviewPage=result.page;const host=$('research-review-results');host.replaceChildren();$('research-review-status').textContent=result.total+' review candidates · page '+result.page+' / '+result.pages+'. Guarded and scoped records remain unresolved.';
+  for(const r of result.items){const card=el('details');card.append(el('summary',r.label+' · '+r.target+' · '+(r.kind==='identity'?'Identity disagreement':'Action differences')));detail('Review state',r.status.replace(/_/g,' '),card);detail('Explanation',r.reason,card);
+   if(r.actions)detail('Reported actions',r.actions.map(a=>a.replace(/_/g,' ')).join(' / '),card);if(r.species)detail('Target species',r.species,card);
+   const b=el('button','Inspect '+r.label);b.type='button';b.addEventListener('click',()=>openDossier(r.name));card.append(b);for(const name of r.relatedNames){const b=el('button','Inspect source graph: '+catalog.displayName(model.byName.get(name)));b.type='button';b.addEventListener('click',()=>openDossier(name));card.append(b);}if(r.sourceUrl)card.append(link('Identity source ↗',r.sourceUrl));
+   for(const o of r.evidence)card.append(observation(o));const history=el('details');history.append(el('summary','Curation decision history'));if(!r.history.length)history.append(el('p','No adjudication recorded. Sources require review before any correction.'));for(const event of r.history){const p=el('p',event.date+' · '+event.event);if(/^[A-Z0-9-]+\.md$/.test(event.reference||'')){const a=el('a','Decision context');a.href=event.reference;p.append(a);}history.append(p);}card.append(history);host.append(card);
+  }
+  if(!result.total)host.append(el('p','No matching review candidates. This is not a guarantee that every imported record is conflict-free.'));$('research-review-prev').disabled=result.page<=1;$('research-review-next').disabled=result.page>=result.pages;
+ }
+ $('research-review-load').addEventListener('click',()=>{reviewPage=1;renderReviews();});for(const id of ['research-review-kind','research-review-search'])$(id).addEventListener(id.endsWith('search')?'input':'change',()=>{reviewPage=1;renderReviews();});$('research-review-prev').addEventListener('click',()=>{reviewPage--;renderReviews();});$('research-review-next').addEventListener('click',()=>{reviewPage++;renderReviews();});
  document.addEventListener('reference:open',e=>openDossier(e.detail.name));
- root.ReferenceResearchUI={model,openDossier,observation,el,detail,link,addComparison,renderComparison,valueLabel,loadFamilies,renderMatrix};
+ root.ReferenceResearchUI={model,openDossier,observation,el,detail,link,addComparison,renderComparison,valueLabel,loadFamilies,renderMatrix,renderReviews};
  const requested=new URLSearchParams(root.location.search).get('reference');if(requested&&!openDossier(requested,{focus:false}))$('reference-dossier').append(el('p','Requested reference was not found. Choose a result to inspect.'));
 })(globalThis);

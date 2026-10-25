@@ -15,3 +15,9 @@ Add up to six compounds from a dossier or by exact name/key. This is a transient
 ## Family evidence matrix
 
 The matrix includes structural families and compound series from existing graph tags. Compound rows and target columns paginate separately; filters select human targets or all reported species and optionally hide entries without evidence. Each cell links to the dossier and opens that target's evidence. Multiple evidence states may coexist. Measured functional evidence, imported binding, curated classifications, assay measurements, source-designated controls and bounded low activity remain distinct. Missing evidence never becomes a negative result. Identity warnings remain visible on affected cells. Counts describe indexed entries, not independent substances or complete experimental coverage. Broad source target names are retained rather than silently mapped to a single gene. Family indexing and evidence matrices are generated only when requested.
+
+## Conflict review centre
+
+Identity candidates come from graph-guarded curated identity flags. Action candidates collect differing explicit action classifications for the same stored graph, target and receptor species. Full agonist is normalized to agonist for this comparison; partial and inverse agonism remain distinct. This detector does not adjudicate differences: assay conditions, pathway and reference efficacy can explain them. Binding affinity is never used to infer an action conflict.
+
+The centre retains all source witnesses and links both legacy and source graphs. `data/reference-reviews.js` records dated curation decisions and their context. Guarded/scoped unresolved states document that new assignments were withheld or limited; they do not claim identity repair or source adjudication. Unreviewed candidates explicitly show no decision history. New decisions are made through reviewed version-controlled data changes, not by dismissing a warning in the browser.
