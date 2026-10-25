@@ -53,3 +53,6 @@ console.log('Library catalogue and provenance-grouping checks passed:', all.tota
 const aliasEntry={name:'Alias fixture',smiles:'c1ccncc1',cls:'Test'};
 const aliasContext={tags:{entries:{'Alias fixture':{librarySmiles:aliasEntry.smiles,tags:['Family motif: Pyridines']}}}};
 assert.equal(catalogQuery([aliasEntry],{tag:'Pyridine motif'},aliasContext).total,1);
+// Display capitalization does not rewrite stable keys, aliases or source witnesses.
+const labels=require('../js/library-catalog'),rawNames={entries:{ulotaront:{librarySmiles:'CCO',preferredName:'ulotaront',sourceUrl:'https://example.org/source'},rimonabant:{librarySmiles:'CCC',preferredName:'rimonabant',sourceUrl:'https://example.org/source'},mCPP:{librarySmiles:'CCN',preferredName:'mCPP',sourceUrl:'https://example.org/source'}}};
+for(const [name,smiles,label]of [['ulotaront','CCO','Ulotaront'],['rimonabant','CCC','Rimonabant'],['mCPP','CCN','mCPP']]){const e={name,smiles};assert.equal(labels.displayName(e,{names:rawNames}),label);assert.equal(labels.nameRecord(e,{names:rawNames}).preferredName,name);assert.equal(e.name,name);}

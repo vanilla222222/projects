@@ -96,3 +96,10 @@ exercise the app's blocked-worker fallback and default eligibility pool. Full
 CSV exports await the same pool as the similarity table and abort if selection
 settings change while preparing fingerprints. No measured browser timing or
 complete elimination of other main-thread analysis costs is claimed.
+
+## Display-label consistency
+
+Source-provided lowercase names receive an initial capital in display labels,
+including Ulotaront and Rimonabant. Mixed-case identifiers such as mCPP remain
+unchanged. Stable keys, original preferred names, aliases, source rows, structure
+identifiers and exported source witnesses retain their original values.
