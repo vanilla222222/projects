@@ -113,8 +113,7 @@
       "id": "property-enrichment-001",
       "label": "Experimental hydration properties · existing reference graphs",
       "date": "2026-10-26",
-      "workingTree": true,
-      "baseCommit": "9b87414befc0e87ce7843e905d2cd5be0e2b7a5b"
+      "commit": "51b944ef5c3fd5d20955ca5797a812ffb3ea811c"
     }
   ]
 }
