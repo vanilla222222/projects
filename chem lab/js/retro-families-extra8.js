@@ -15,3 +15,66 @@ for(const kind of ['negishi','kumada','stille'])RETRO_TRANSFORMS.push({id:kind,n
   return retroSpec(retroReactants(pieces),[],conditions);
  }).filter(Boolean));
 }});
+
+// Additional carbon-carbon and heterocycle disconnections. These graph edits
+// only propose inputs; the corresponding forward rule must reproduce the exact
+// target before a route candidate is exposed.
+function retro8One(t,edit,conditions,reagents){
+ const piece=retroSinglePiece(t,edit);
+ return piece&&retroSpec([{smiles:piece.smiles,role:'reactant'}].concat(reagents||[]),[],conditions||{});
+}
+RETRO_TRANSFORMS.push(
+ {id:'tishchenko',name:'Aromatic ester from Tishchenko disproportionation',rule:'tishchenko',group:'Ester formation',match(t){
+  return t.info.carbonyls.filter(c=>c.kind==='ester').slice(0,RETRO_LIMITS.maxPerTransform).map(c=>retro8One(t,g=>{
+   rxRemoveBranch(g,c.hetero,c.c);
+  },{solvents:['none'],additives:['na-obn'],temperature:25})).filter(Boolean);
+ }},
+ {id:'perkin-condensation',name:'Unsaturated acid from Perkin condensation',rule:'perkin-condensation',group:'Carbon–carbon formation',match(t){
+  return t.info.carbonyls.filter(c=>c.kind==='acid').slice(0,RETRO_LIMITS.maxPerTransform).flatMap(c=>rxCarbonNeighbors(t.graph,c.c).flatMap(a=>
+   rxCarbonNeighbors(t.graph,a.atom.id).filter(b=>b.atom.id!==c.c&&b.bond.order===2).map(b=>retro8One(t,g=>{
+    rxRemoveBranch(g,a.atom.id,b.atom.id);rxAttach(g,'O',b.atom.id,2);rxsDrop(g,b.atom.id);
+   },{solvents:['none'],additives:['naoac'],temperature:160},[{smiles:'CC(=O)OC(C)=O',role:'reactant',label:'Acetic anhydride'}]))).filter(Boolean));
+ }},
+ {id:'benzilic-rearrangement',name:'Alpha-hydroxy acid from benzilic rearrangement',rule:'benzilic-rearrangement',group:'Rearrangement',match(t){
+  return t.info.carbonyls.filter(c=>c.kind==='acid').slice(0,RETRO_LIMITS.maxPerTransform).flatMap(c=>t.info.alcohols.filter(a=>t.graph.getBond(c.c,a.c)&&rxCarbonNeighbors(t.graph,a.c).filter(n=>n.atom.id!==c.c).length===2).map(a=>retro8One(t,g=>{
+   const migrating=rxCarbonNeighbors(g,a.c).find(n=>n.atom.id!==c.c&&t.aromatic.has(n.atom.id));if(!migrating)return false;rxSetOrder(g,a.c,migrating.atom.id,0);g.addBond(c.c,migrating.atom.id);g.removeAtom(c.hetero);g.removeAtom(a.o);rxAttach(g,'O',a.c,2);
+  },{solvents:['water'],additives:['naoh'],temperature:80}))).filter(Boolean);
+ }},
+ {id:'mcmurry',name:'Alkene from McMurry carbonyl self-coupling',rule:'mcmurry',group:'Coupling',match(t){
+  return t.info.alkenes.slice(0,RETRO_LIMITS.maxPerTransform).flatMap(e=>[e.a,e.b].map(keep=>retro8One(t,g=>{
+   const remove=keep===e.a?e.b:e.a;rxRemoveBranch(g,remove,keep);rxAttach(g,'O',keep,2);rxsDrop(g,keep);
+  },{solvents:['thf'],additives:['mcmurry'],temperature:60,atmosphere:'n2'}))).filter(Boolean);
+ }},
+ {id:'acyloin-cyclization',name:'Cyclic acyloin from intramolecular diester condensation',rule:'acyloin-cyclization',group:'Cyclization',match(t){
+  return t.info.carbonyls.filter(c=>c.kind==='ketone').slice(0,RETRO_LIMITS.maxPerTransform).flatMap(c=>t.info.alcohols.filter(a=>t.graph.getBond(c.c,a.c)).map(a=>retro8One(t,g=>{
+   if(!retroBreak(g,c.c,a.c))return false;rxSetOrder(g,a.c,a.o,2);
+   [c.c,a.c].forEach(id=>{const o=rxAttach(g,'O',id);rxAttach(g,'C',o.id);});
+  },{solvents:['ether'],additives:['acyloin'],temperature:25,atmosphere:'n2'}))).filter(Boolean);
+ }},
+ {id:'paal-knorr-thiophene',name:'Thiophene from Paal–Knorr dicarbonyl cyclization',rule:'paal-knorr-thiophene',group:'Heterocycle formation',match(t){
+  return rxAromaticRings(t.graph).rings.filter(ring=>ring.length===5&&ring.filter(id=>t.graph.getAtom(id).element==='S').length===1&&ring.every(id=>['C','S'].includes(t.graph.getAtom(id).element))).slice(0,RETRO_LIMITS.maxPerTransform).map(ring=>{
+   const s=ring.find(id=>t.graph.getAtom(id).element==='S'),ends=rxNeighbors(t.graph,s).filter(n=>ring.includes(n.atom.id));
+   if(ends.length!==2)return null;
+   return retro8One(t,g=>{
+    if(!retroBreak(g,s,ends[0].atom.id)||!retroBreak(g,s,ends[1].atom.id))return false;
+    g.removeAtom(s);ring.filter(id=>id!==s).forEach(id=>rxNeighbors(g,id).filter(n=>ring.includes(n.atom.id)).forEach(n=>rxSetOrder(g,id,n.atom.id,1)));
+    ends.forEach(n=>rxAttach(g,'O',n.atom.id,2));
+   },{solvents:['toluene'],additives:['p2s5'],temperature:110});
+  }).filter(Boolean);
+ }},
+ {id:'hantzsch-thiazole',name:'Thiazole from Hantzsch thioamide and alpha-haloketone',rule:'hantzsch-thiazole',group:'Heterocycle formation',match(t){
+  return rxAromaticRings(t.graph).rings.filter(ring=>ring.length===5&&['N','S'].every(x=>ring.filter(id=>t.graph.getAtom(id).element===x).length===1)&&ring.every(id=>['C','N','S'].includes(t.graph.getAtom(id).element))).slice(0,RETRO_LIMITS.maxPerTransform).map(ring=>{
+   const s=ring.find(id=>t.graph.getAtom(id).element==='S'),n=ring.find(id=>t.graph.getAtom(id).element==='N');
+   const central=ring.find(id=>t.graph.getAtom(id).element==='C'&&t.graph.getBond(id,s)&&t.graph.getBond(id,n));
+   if(central===undefined)return null;
+   const alpha=rxNeighbors(t.graph,s).find(x=>ring.includes(x.atom.id)&&x.atom.id!==central),carbonyl=rxNeighbors(t.graph,n).find(x=>ring.includes(x.atom.id)&&x.atom.id!==central);
+   if(!alpha||!carbonyl)return null;
+   const pieces=retroEdit(t,g=>{
+    if(!retroBreak(g,s,alpha.atom.id)||!retroBreak(g,n,carbonyl.atom.id))return false;
+    rxSetOrder(g,central,n,1);rxSetOrder(g,central,s,2);rxSetOrder(g,alpha.atom.id,carbonyl.atom.id,1);
+    rxAttach(g,'O',carbonyl.atom.id,2);rxAttach(g,'Cl',alpha.atom.id);
+   });
+   return pieces&&pieces.length===2?retroSpec(retroReactants(pieces),[],{solvents:['ethanol'],temperature:60}):null;
+  }).filter(Boolean);
+ }}
+);
