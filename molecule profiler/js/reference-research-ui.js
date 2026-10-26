@@ -8,7 +8,12 @@
  function observation(o){const d=el('details');d.className='research-evidence';d.dataset.target=o.target;d.dataset.kind=o.kind;d.append(el('summary',[o.targetLabel||o.kind,o.action.replace(/_/g,' '),o.kind.replace(/_/g,' ')].filter(Boolean).join(' · ')));
   const property=o.kind==='measured_property',context=property?[['Source endpoint',o.endpoint],['Conditions',o.conditions||'Not separately reported'],['Measured form',o.testedForm],['Uncertainty type',o.uncertaintyKind],['Source location',o.sourceLocation],['Context',o.context]]:[['Endpoint',o.endpoint],['Receptor / target species',o.species],['Host-cell species',o.hostSpecies],['Assay',o.assay],['Tested form',o.testedForm],['Conditions',o.conditions],['Uncertainty',o.uncertaintyKind],['Source location',o.sourceLocation],['Context',o.context]];
   for(const [label,value]of context)detail(label,value,d);
-  if(typeof o.value==='number')detail(property?'Measured property result':'Participant result',valueLabel(o),d);
+  if(typeof o.value==='number')detail(property?'Measured property result':o.provider==='ChEMBL'?'ChEMBL standardized binding result':'Participant result',valueLabel(o),d);
+  if(o.provider==='ChEMBL'){
+   detail('Original reported result',[o.originalMetric,o.originalRelation,o.originalValue,o.originalUnit].filter(v=>v!=null&&v!=='').join(' '),d);
+   for(const [label,value]of [['Source database release',o.sourceRelease],['ChEMBL molecule',o.chemblMoleculeId],['ChEMBL target',o.chemblTargetId],['Activity ID',o.activityId],['Assay ID',o.assayId],['Document ID',o.documentId],['Assay organism',o.assayOrganism],['Assay type',o.assayType],['Target-assignment confidence score',o.assayConfidence],['Assay tissue',o.assayTissue],['Assay cell type',o.assayCellType],['Source snapshot',o.sourceFile],['Source location',o.sourceLocation],['Snapshot SHA-256',o.sourceSha256]])detail(label,value,d);
+   for(const [label,url]of [['ChEMBL document',o.documentUrl],['ChEMBL molecule',o.moleculeUrl],['ChEMBL target',o.targetUrl],['ChEMBL activity',o.activityUrl]])if(url)d.append(link(label+' ↗',url));
+  }
   if(o.originalReference)d.append(link('Primary reference ↗',o.originalReference));
   d.append(link('Evidence source ↗',o.sourceUrl));const raw=el('details');raw.append(el('summary','Source record and provenance'));detail('Record',o.recordId||'Imported receptor row',raw);detail('Snapshot SHA-256',o.sourceSha256,raw);raw.append(el('pre',JSON.stringify(o.raw,null,2)));d.append(raw);return d;
  }
@@ -17,10 +22,12 @@
   const picture=el('div');root.ReferenceStructureViewer.mount(picture,{smiles:d.entry.smiles,label:d.label});host.append(picture);const structureSearch=el('button','Search this structure');structureSearch.type='button';structureSearch.addEventListener('click',()=>document.dispatchEvent(new CustomEvent('reference:structure',{detail:{smiles:d.entry.smiles}})));host.append(structureSearch);
   for(const [label,value]of [['Formula',d.entry.formula],['Aliases',d.aliases.join('; ')]])detail(label,value,host);
   const graph=el('details');graph.append(el('summary','Stored structure (SMILES)'),el('code',d.entry.smiles));host.append(graph);
+  root.ChemblPropertiesUI?.render(host,d.entry);
   const sourceLinks=new Map();if(d.identity?.sourceUrl)sourceLinks.set(d.identity.sourceUrl,'Identity source');
   const seenIdentities=new Set();for(const r of d.records)for(const c of r.compounds.filter(c=>c.libraryNames.includes(name))){if(seenIdentities.has(c.inchiKey))continue;seenIdentities.add(c.inchiKey);detail('Full InChIKey',c.inchiKey,host);detail('Identifier origin',c.identitySource?.identifierOrigin||c.identitySource?.keyOrigin||c.identitySource?.provider,host);sourceLinks.set(c.sourceUrl,'Structure source');}
   for(const [url,label]of sourceLinks)host.append(link(label+' ↗',url));
   if(d.identityCorrection){const f=d.identityCorrection,history=el('details');history.className='identity-correction';history.append(el('summary','Reviewed identity correction · '+f.reviewedDate));detail('Correction',f.reason,history);detail('Historical SMILES',f.before.smiles,history);detail('Historical InChIKey',f.beforeInchiKey,history);detail('Current source SMILES',f.after.smiles,history);detail('Current source InChIKey',f.inchiKey,history);history.append(link('Reviewed identity source ↗',f.sourceUrl));host.append(history);}
+  for(const w of d.bindingIdentityWarnings||[]){const p=el('p','ChEMBL source graph disagreement: activity '+w.activityId+' at '+w.target+' is excluded from this stored graph. Source binding values are not transferred.');p.className='research-warning';p.append(link('Review source assay ↗',w.sourceUrl));host.append(p);}
   for(const w of d.identityWarnings){const p=el('p','Identity review: this legacy graph differs from the source identity '+w.sourceName+'. Evidence on the corrected source graph is not transferred.');p.className='research-warning';p.append(link('Review source ↗',w.sourceUrl));host.append(p);}
   const r=d.records[0],analyze=el('a',r?'Analyze source reference ↗':'Open analyzer ↗'),ci=r?.compounds.findIndex(c=>c.libraryNames.includes(name));if(r)analyze.href='index.html?curated='+encodeURIComponent(r.id)+'&compound='+ci;else analyze.href='index.html';host.append(analyze);const compare=el('button','Compare this compound');compare.type='button';compare.addEventListener('click',()=>{addComparison(name);$('research-tools').open=true;$('research-comparison-title').scrollIntoView({block:'start'});});host.append(compare);const trace=el('button','Trace claims');trace.type='button';trace.addEventListener('click',()=>document.dispatchEvent(new CustomEvent('reference:trace',{detail:{name}})));host.append(trace);const permalink=el('a','Link to this dossier');permalink.href='library-inspector.html?reference='+encodeURIComponent(name);permalink.dataset.permalink='true';host.append(permalink);
   host.append(el('h3','Evidence · '+d.observations.length));if(!d.observations.length)host.append(el('p','No imported evidence for this stored graph. This does not establish inactivity.'));
@@ -32,6 +39,7 @@
  }
  const selected=new Set(),input=$('research-compare-input'),options=$('research-compare-options');
  function valueLabel(o){
+  if(o.provider==='ChEMBL')return Number.isFinite(o.value)?[o.metric,o.relation,o.value,o.unit].join(' ')+' (ChEMBL standardized binding)':o.endpoint||'No numeric binding measurement transferred';
   if(o.kind==='measured_property'){
    if(!Number.isFinite(o.value))return o.endpoint||'No numeric measurement';
    const result=[o.metric||o.targetLabel||o.target||'Measured property',o.relation||'=',o.value,o.unit].filter(v=>v!==undefined&&v!=='').join(' '),uncertainty=[];

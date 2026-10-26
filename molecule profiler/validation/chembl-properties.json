@@ -1,0 +1,63 @@
+{
+  "annotationCount": 1881,
+  "dataSha256": "3f7f96087c9ea8bcc194a9a7db844687797a46edd4f07ba609be0383e0243b5e",
+  "entryCount": 1355,
+  "generator": "tools/build-chembl-properties.py",
+  "kind": "locally_calculated_descriptors",
+  "label": "Calculated locally with RDKit; not ChEMBL-reported or experimentally measured properties.",
+  "limitations": [
+    "cLogP is a model estimate, not measured logP or pH-dependent logD.",
+    "Descriptors describe the complete stored graph; salt or multicomponent descriptors may have limited physical interpretation.",
+    "No pKa, solubility, receptor action, selectivity or clinical inference is made."
+  ],
+  "methods": {
+    "cLogP": {
+      "method": "rdkit.Chem.Crippen.MolLogP (Wildman-Crippen)",
+      "unit": "dimensionless"
+    },
+    "exactMass": {
+      "method": "rdkit.Chem.Descriptors.ExactMolWt",
+      "unit": "Da"
+    },
+    "formalCharge": {
+      "method": "rdkit.Chem.GetFormalCharge",
+      "unit": "elementary charge"
+    },
+    "hba": {
+      "method": "rdkit.Chem.Lipinski.NumHAcceptors",
+      "unit": "count"
+    },
+    "hbd": {
+      "method": "rdkit.Chem.Lipinski.NumHDonors",
+      "unit": "count"
+    },
+    "heavyAtoms": {
+      "method": "rdkit.Chem.rdMolDescriptors.CalcNumHeavyAtoms",
+      "unit": "count"
+    },
+    "molecularWeight": {
+      "method": "rdkit.Chem.Descriptors.MolWt",
+      "unit": "g/mol"
+    },
+    "rotatableBonds": {
+      "method": "rdkit.Chem.rdMolDescriptors.CalcNumRotatableBonds (Strict)",
+      "unit": "count"
+    },
+    "tpsa": {
+      "method": "rdkit.Chem.rdMolDescriptors.CalcTPSA (includeSandP=False)",
+      "unit": "angstrom^2"
+    }
+  },
+  "rdkitVersion": "2026.09.1",
+  "schemaVersion": 1,
+  "scope": "Exact stored library graph, including disconnected fragments and formal charge; no parent selection, neutralization, salt stripping or tautomer standardization.",
+  "sourceHashes": {
+    "data/library.js": "ae52a616ccb4972f5a5ea25065738716d88d647e23bc88e786454fac581a146e",
+    "data/receptor-ligand-annotations.js": "5baaf3e92817424997666eff1422ec70312af28413a4712a16f047828c01c98a"
+  },
+  "sourceSha256": {
+    "data/library.js": "ae52a616ccb4972f5a5ea25065738716d88d647e23bc88e786454fac581a146e",
+    "data/receptor-ligand-annotations.js": "5baaf3e92817424997666eff1422ec70312af28413a4712a16f047828c01c98a"
+  },
+  "toolSha256": "4dcdb85fcad65bd881ad3e1383b9fc63ce2a065bd4a375fec4875ef0ab3bef42"
+}

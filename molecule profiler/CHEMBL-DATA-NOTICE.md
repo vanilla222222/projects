@@ -5,8 +5,9 @@ Imported binding-reference data are from **ChEMBL_37** (EMBL-EBI), released
 are retained in `validation/chembl-receptor-binding-batch.json`,
 `validation/chembl-receptor-binding-batch-2.json`,
 `validation/chembl-receptor-binding-batch-3.json`,
-`validation/chembl-receptor-binding-batch-4.json`, and
-`validation/chembl-receptor-binding-batch-5.json`. Per-record release provenance
+`validation/chembl-receptor-binding-batch-4.json`,
+`validation/chembl-receptor-binding-batch-5.json`, and
+`validation/chembl-receptor-binding-batch-6.json`. Per-record release provenance
 is retained in the published ligand annotations.
 
 The imported subset and adaptations of it are redistributed under the
@@ -35,3 +36,18 @@ Additional ChEMBL preferred-name labels in `data/library-names.js` retain direct
 source links and the same ChEMBL attribution. `validation/library-name-provenance.json`
 records the naming lookups separately, including retrieval timestamps and
 source graph checks. PubChem-derived name labels are identified separately.
+
+The dossier projection retains standardized and original reported binding fields
+separately, with activity, assay, target, molecule and document identifiers and
+the retained snapshot's SHA-256 and record location. A standardized result is a
+ChEMBL curation output; it is not a new experimental measurement. Source graphs
+that disagree with the complete stored graph cannot transfer numerical binding
+observations to that graph.
+
+`data/chembl-properties.js` contains **locally calculated RDKit descriptors** of
+existing ChEMBL-annotated library graphs. These are not ChEMBL-reported properties
+or experimental measurements. The generated dataset records the RDKit version,
+descriptor methods and current input hashes. Calculations retain the entire
+stored graph, formal charge and disconnected fragments; they do not substitute
+a neutralized or salt-stripped parent. These descriptors establish no pKa,
+solubility, functional action, selectivity or clinical effect.

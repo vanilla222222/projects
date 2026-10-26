@@ -17,6 +17,8 @@ const scripts = [
   'receptor-coverage-test.js',
   'receptor-diversity-report-test.js',
   'chembl-binding-test.js',
+  'chembl-evidence-test.js',
+  'chembl-properties-test.js',
   'target-ranking-test.js',
   'target-ranking-metrics-test.js',
   'metabolism-engine-test.js',

@@ -6,8 +6,14 @@
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
     "data/receptor-ligand-annotations.js": "5baaf3e92817424997666eff1422ec70312af28413a4712a16f047828c01c98a",
     "data/targets.js": "c994111b869a78b68fe873c92f218ae1791b9b3e3fbf390f0b3a837221b4aacd",
-    "tools/build-receptor-tags.py": "158e00b34c85db738c51f2b6e911cbe35e92466927a408051bcbd6c647b55535",
-    "validation/sources/receptor-actions-iuphar.json": "ae233a073c2159c5c62b3e8a77c26a8f28f5ba94d9127b456112270f368f31f4"
+    "tools/build-receptor-tags.py": "3de1a9d6996047232402a99dd9298a099ac59e624aa87ec1c7d88f0d2e73e587",
+    "validation/sources/receptor-actions-iuphar.json": "ae233a073c2159c5c62b3e8a77c26a8f28f5ba94d9127b456112270f368f31f4",
+    "validation/chembl-receptor-binding-batch-2.json": "ba6e2aa3aa3b99d294ea211a2443e2514746cbfc07ccaf9372fe75653d1c8475",
+    "validation/chembl-receptor-binding-batch-3.json": "f0342758fa351087cf6191bb46d3b69c9cd866bafcea4021bd8c0556a6f2a930",
+    "validation/chembl-receptor-binding-batch-4.json": "a5c467086e5d027f298878a7c959a74f05d5b34a534a85b7089ba2ca5beed9a9",
+    "validation/chembl-receptor-binding-batch-5.json": "5f1a5647a5098321a2c3527dee7e0fe55850255e7f91ba9a92af0e717490f0bd",
+    "validation/chembl-receptor-binding-batch-6.json": "52c8ba6042c9684d4ff866235b01f9b24cbd4a2425f0700a2f7712a807e5ac22",
+    "validation/chembl-receptor-binding-batch.json": "c80b978380f368acd93df7a4641e94197c861628f0555c0b8fe5b3821c9dff68"
   },
   "sourceVersion": "\"# GtoPdb Version: 2026.3.1 - published: 2026-10-12\"",
   "receptors": 146,
@@ -2939,5 +2945,5 @@
       }
     }
   ],
-  "dataSha256": "45bd4290deb0cc48e63908d0a63e2ed562e2233f997c8c8a97049e38130cfa66"
+  "dataSha256": "3b70e284a4333735bc55410c60aba86591d95c40ba2265f4abdae0842c0629c6"
 }

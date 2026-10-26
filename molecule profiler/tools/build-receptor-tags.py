@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Exact-graph, human-receptor source classifications; never infer actions from affinity."""
-import argparse,csv,hashlib,html,json,re,subprocess
+import argparse,csv,hashlib,html,json,re,subprocess,math
 from pathlib import Path
 from collections import defaultdict,Counter
 from rdkit import Chem,rdBase
@@ -12,6 +12,60 @@ def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def graph(s):
  m=Chem.MolFromSmiles(s or '')
  return Chem.MolToSmiles(m,isomericSmiles=True) if m else None
+
+def chembl_snapshot_index(root=ROOT):
+ """Index retained observations by target and activity, never by a name/group key."""
+ rows={};paths=[]
+ for path in sorted((root/'validation').glob('chembl-receptor-binding-batch*.json')):
+  batch=json.loads(path.read_text());relative=str(path.relative_to(root));paths.append(relative)
+  for pi,panel in enumerate(batch['panels']):
+   for si,selected in enumerate(panel['selected']):
+    activity=selected['activity'];key=(panel['gene'],activity['activity_id'])
+    assert key not in rows,'Duplicate retained ChEMBL target/activity witness: '+str(key)
+    rows[key]=(selected,panel,{'sourceFile':relative,'sourceSha256':digest(path),'sourceLocation':f'panels[{pi}].selected[{si}]','sourceRelease':batch['sourceDatabase']['chembl_db_version']})
+ return rows,paths
+
+def chembl_evidence(annotation,entry,index,source_row):
+ key=(annotation['receptorId'],annotation['activityId'])
+ assert key in index,'Missing retained ChEMBL observation: '+str(key)
+ selected,panel,provenance=index[key];activity=selected['activity'];assay=selected['assay']
+ assert annotation['ligandName']==entry['name'] and annotation['librarySmiles']==entry['smiles'],'Stale ChEMBL library witness'
+ assert all(selected['entry'][field]==entry[field] for field in ['name','smiles','formula']),'Retained ChEMBL identity differs from current library witness'
+ assert annotation['sourceRelease']==provenance['sourceRelease'],'ChEMBL release mismatch'
+ assert annotation['identityKey']==selected['identityKey'],'ChEMBL grouping witness differs'
+ for field,source in [('assayId','assay_chembl_id'),('documentId','document_chembl_id'),('chemblMoleculeId','molecule_chembl_id'),('chemblTargetId','target_chembl_id')]:
+  assert annotation[field]==activity[source],'ChEMBL source identifier mismatch: '+field
+ assert panel['chemblTargetId']==activity['target_chembl_id']==assay['target_chembl_id']
+ assert assay['assay_chembl_id']==activity['assay_chembl_id'] and assay['document_chembl_id']==activity['document_chembl_id']
+ assert annotation['species']==activity['target_organism']=='Homo sapiens' and assay['assay_organism']=='Homo sapiens'
+ assert activity['assay_type']==assay['assay_type']=='B' and assay['confidence_score']==9 and assay['relationship_type']=='D'
+ assert not activity.get('data_validity_comment') and activity.get('potential_duplicate')==0 and activity['src_id']==1
+ assert not activity.get('assay_variant_accession') and not activity.get('assay_variant_mutation') and not assay.get('variant_sequence')
+ assert activity['standard_type'] in {'Ki','Kd'} and activity['standard_relation']=='=' and activity['standard_units']=='nM'
+ value=float(activity['standard_value']);assert math.isfinite(value) and 0<value<=1000
+ expected=f"{activity['standard_type']} = {activity['standard_value']} nM (ChEMBL standardized)"
+ assert annotation['endpoint']==expected,'ChEMBL endpoint differs from retained value'
+ assert annotation['assay']==activity['assay_description']==assay['description'],'ChEMBL assay description differs'
+ urls={'assayUrl':'https://www.ebi.ac.uk/chembl/explore/assay/'+annotation['assayId'],
+       'documentUrl':'https://www.ebi.ac.uk/chembl/explore/document/'+annotation['documentId'],
+       'moleculeUrl':'https://www.ebi.ac.uk/chembl/explore/compound/'+annotation['chemblMoleculeId'],
+       'targetUrl':'https://www.ebi.ac.uk/chembl/explore/target/'+annotation['chemblTargetId'],
+       'activityUrl':'https://www.ebi.ac.uk/chembl/api/data/activity/'+str(annotation['activityId'])+'.json'}
+ assert annotation['sourceUrl']==urls['assayUrl'] and annotation['documentUrl']==urls['documentUrl'],'ChEMBL source URL mismatch'
+ result={'provider':'ChEMBL','sourceRow':source_row,'receptorId':annotation['receptorId'],'actions':[],'bindingEvidence':True,
+         'species':annotation['species'],'assay':annotation['assay'],'sourceUrl':annotation['sourceUrl'],'endpoint':annotation['endpoint'],
+         'librarySmiles':entry['smiles'],**provenance,**urls,
+         **{k:annotation[k] for k in ['activityId','assayId','documentId','chemblMoleculeId','chemblTargetId']},
+         'originalMetric':activity.get('type'),'originalValue':activity.get('value'),'originalUnit':activity.get('units'),'originalRelation':activity.get('relation'),
+         'assayOrganism':assay.get('assay_organism'),'assayType':assay['assay_type'],'assayConfidence':assay['confidence_score'],
+         'assayDescription':assay.get('description'),'assayTissue':assay.get('assay_tissue'),'assayCellType':assay.get('assay_cell_type')}
+ source_graph=graph(activity.get('canonical_smiles'));stored_graph=graph(entry['smiles'])
+ assert source_graph and stored_graph,'Invalid retained ChEMBL graph'
+ if source_graph!=stored_graph:
+  result.update(numericalTransferStatus='excluded_graph_mismatch',context='Retained activity graph differs from the exact stored isomeric graph; no numerical result transferred. Grouped protonation or tautomer identity is insufficient.')
+ else:
+  result.update(numericalTransferStatus='exact_source_graph',metric=activity['standard_type'],relation=activity['standard_relation'],value=value,unit=activity['standard_units'],context='ChEMBL standardized binding result; original reported fields retained separately. No functional action or selectivity inferred.')
+ return result
 
 def classify(row):
  """Prefer explicit Action over broad Type; preserve ambiguous classifications as unknown."""
@@ -70,12 +124,16 @@ def main():
     add(e,tags,evidence);counts['iuphar']+=1
  # Existing assay-linked records stay binding-only and graph guarded.
  byname={e['name']:e for e in library};byreceptor={r['id']:r for r in catalog}
+ chembl_index,chembl_paths=chembl_snapshot_index();seen_chembl=set()
  for i,a in enumerate(data['annotations']):
   e=byname.get(a['ligandName']);r=byreceptor.get(a['receptorId'])
   if not e or not r or a.get('evidenceType')!='binding' or a.get('action')!='binding_only' or a.get('librarySmiles')!=e['smiles']:continue
   aliases=set(r.get('targetAliases',[r['id']])+r.get('legacyTargetAliases',[]))
   if not any(t['gene'] in aliases and e['name'] in t.get('ligands',[]) for t in data['targets']):continue
-  add(e,['Receptor: '+r['id'],'Binding: '+r['id']],{'provider':'ChEMBL','sourceRow':i,'receptorId':r['id'],'actions':[],'bindingEvidence':True,'species':a['species'],'assay':a['assay'],'sourceUrl':a['sourceUrl'],'endpoint':a['endpoint']});counts['chembl']+=1
+  key=(a['receptorId'],a['activityId']);assert key not in seen_chembl,'Duplicate ChEMBL annotation';seen_chembl.add(key)
+  evidence=chembl_evidence(a,e,chembl_index,i)
+  if evidence['numericalTransferStatus']!='exact_source_graph':counts['chemblNumericalExclusions']+=1
+  add(e,['Receptor: '+r['id'],'Binding: '+r['id']],evidence);counts['chembl']+=1
  definitions=[]
  for r in catalog:
   common={'receptorId':r['id'],'receptorName':r['name'],'family':r['family'],'aliases':r.get('aliases',[]),'genes':r['genes']}
@@ -83,7 +141,7 @@ def main():
   for a,label in ACTIONS.items():definitions.append({**common,'tag':'Receptor action: '+r['id']+' · '+label,'action':a,'category':'Receptor-specific actions'})
  definitions += [{'tag':'Action: '+label,'action':a,'category':'Receptor actions'}for a,label in ACTIONS.items()]
  entries={k:{**v,'tags':sorted(v['tags'])}for k,v in sorted(records.items())}
- paths=['data/library.js','data/receptor-catalog.js','data/receptor-ligand-annotations.js','data/targets.js','tools/build-receptor-tags.py',str(SOURCE.relative_to(ROOT))]
+ paths=['data/library.js','data/receptor-catalog.js','data/receptor-ligand-annotations.js','data/targets.js','tools/build-receptor-tags.py',str(SOURCE.relative_to(ROOT))]+chembl_paths
  report={'schemaVersion':1,'rdkitVersion':rdBase.rdkitVersion,'sourceSha256':{p:digest(ROOT/p) for p in paths},'sourceVersion':src['version'],'receptors':len(catalog),'annotatedEntries':len(entries),'evidenceRecords':dict(counts),'definitions':len(definitions),'coverage':[{'receptorId':r['id'],'binding':sum('Binding: '+r['id'] in e['tags'] for e in entries.values()),'actions':{a:sum('Receptor action: '+r['id']+' · '+label in e['tags'] for e in entries.values())for a,label in ACTIONS.items()}}for r in catalog]}
  payload={'schemaVersion':1,'source':{k:src[k] for k in ['provider','version','retrieved','license','licenseUrl']},'receptors':{r['id']:{k:r.get(k,[]) for k in ['name','family','aliases','genes']} for r in catalog},'definitions':definitions,'entries':entries,'interpretation':'Exact stored-graph matches to human source classifications. Source action labels may accompany binding assays; they are curated classifications, not newly demonstrated functional effects. Missing tags mean unannotated, not inactive. Complex and pathway context are retained. No affinity-based inference.'}
  text="'use strict';\n// IUPHAR/BPS Guide to PHARMACOLOGY classifications, CC BY-SA 4.0; ChEMBL binding evidence, CC BY-SA 3.0.\n// See RECEPTOR-TAGS.md. No action inferred from affinity or structural similarity.\nconst LIBRARY_RECEPTOR_METADATA = "+json.dumps(payload,ensure_ascii=False,separators=(',',':'))+";\nif(typeof module!=='undefined'&&module.exports)module.exports={LIBRARY_RECEPTOR_METADATA};\nif(typeof globalThis!=='undefined')globalThis.LIBRARY_RECEPTOR_METADATA=LIBRARY_RECEPTOR_METADATA;\n"
