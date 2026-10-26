@@ -77,8 +77,14 @@
       "id": "benzazepine-references",
       "label": "Derived benzazepine references",
       "date": "2026-10-26",
+      "commit": "74bbb0b88f3e9237a67082190b0b31ff59b1a60e"
+    },
+    {
+      "id": "sulfonamide-references",
+      "label": "Derived benzenesulfonamide library structures",
+      "date": "2026-10-26",
       "workingTree": true,
-      "baseCommit": "a77c4f0688a9064a0d1a3acf54841b3c67f4a01d"
+      "baseCommit": "74bbb0b88f3e9237a67082190b0b31ff59b1a60e"
     }
   ]
 }
