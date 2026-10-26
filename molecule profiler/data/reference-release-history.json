@@ -83,8 +83,14 @@
       "id": "sulfonamide-references",
       "label": "Derived benzenesulfonamide library structures",
       "date": "2026-10-26",
+      "commit": "ce6288a205a6a71e6a8340e94e822878de3ff93d"
+    },
+    {
+      "id": "benzamide-references",
+      "label": "Derived substituted benzamide library structures",
+      "date": "2026-10-26",
       "workingTree": true,
-      "baseCommit": "74bbb0b88f3e9237a67082190b0b31ff59b1a60e"
+      "baseCommit": "ce6288a205a6a71e6a8340e94e822878de3ff93d"
     }
   ]
 }
