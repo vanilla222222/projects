@@ -119,3 +119,47 @@ RETRO_TRANSFORMS.push(
   }).filter(Boolean);
  }}
 );
+
+// Keep the original dialkyl ether disconnections, but also allow the aryl
+// phenol side supported by the forward Williamson rule. The previous filter
+// required both oxygen neighbours to be non-aromatic sp3 carbons, making every
+// anisole/phenolic-ether reverse candidate impossible.
+const retro8WilliamsonTransform=RETRO_TRANSFORMS.find(x=>x.id==='williamson');
+if(retro8WilliamsonTransform)retro8WilliamsonTransform.match=function(t){
+ const out=[],seen=new Set();
+ t.graph.atoms.filter(o=>o.element==='O'&&!o.charge).forEach(o=>{
+  const ns=rxNeighbors(t.graph,o.id);
+  if(ns.length!==2||!ns.every(x=>x.atom.element==='C'&&x.bond.order===1))return;
+  const aryl=ns.filter(x=>t.aromatic.has(x.atom.id));if(aryl.length>1)return;
+  ns.filter(x=>!t.aromatic.has(x.atom.id)&&rxIsSp3(t.graph,x.atom.id)&&rxCarbonNeighbors(t.graph,x.atom.id).length<=1).forEach(x=>{
+   const pieces=retroEdit(t,g=>{if(!retroCut(g,o.id,x.atom.id))return false;rxAttach(g,'Br',x.atom.id);});
+   if(!pieces||pieces.length!==2)return;const key=pieces.map(p=>p.smiles).sort().join('.');if(seen.has(key))return;seen.add(key);
+   out.push(retroSpec(retroReactants(pieces),[],{additives:['nah'],solvents:['thf']}));
+  });
+ });
+ return out.slice(0,RETRO_LIMITS.maxPerTransform);
+};
+
+// Product verification accepts the two equivalent nitro depictions used by the
+// nitration and nitro-reduction rules. Exact identity remains the fast path and
+// strict stock/stereochemical matching is deliberately unchanged.
+function retroProductIdentity(input) {
+ const g=moleculeIdentityGraph(input);
+ g.atoms.filter(a=>a.element==='N').forEach(n=>{
+  const neighbors=rxNeighbors(g,n.id),os=neighbors.filter(x=>x.atom.element==='O'&&rxNeighbors(g,x.atom.id).length===1);
+  if(neighbors.length!==3||os.length!==2||!neighbors.some(x=>x.atom.element==='C'))return;
+  n.charge=0;os.forEach(x=>{x.atom.charge=0;g.getBond(n.id,x.atom.id).order=2;});
+ });
+ return moleculeIdentity(g).connectivityKey;
+}
+const retro8FindProductExact=retroFindProduct;
+retroFindProduct=function(list,smiles){
+ const direct=retro8FindProductExact(list,smiles);if(direct)return direct;
+ if(typeof moleculeIdentity!=='function')return null;
+ try{
+  const target=retroProductIdentity(smiles);
+  return (list||[]).find(p=>{
+   try{return !!p&&retroProductIdentity(p.fragment||p.isomericSmiles||p.smiles)===target;}catch(error){return false;}
+  })||null;
+ }catch(error){return null;}
+};
