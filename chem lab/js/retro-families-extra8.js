@@ -78,3 +78,44 @@ RETRO_TRANSFORMS.push(
   }).filter(Boolean);
  }}
 );
+
+// Anhydride disconnections. Alcoholysis and aminolysis duplicate the acyl half
+// of the target to recover the symmetric anhydride required by the forward
+// rules; the released alcohol or amine remains a separate precursor.
+function retro8AnhydrideAcyl(t,c,nucleophile,conditions){
+ if(t.graph.atoms.length*2>RETRO_LIMITS.maxHeavy)return null;
+ const pieces=retroEdit(t,g=>{
+  if(!retroCut(g,c.c,nucleophile))return false;
+  const copy=rxMerge(g,t.graph,retroIds(t.graph));
+  rxRemoveBranch(g,copy.get(nucleophile),copy.get(c.c));
+  const bridge=rxAttach(g,'O',c.c);
+  g.addBond(copy.get(c.c),bridge.id);
+ });
+ return pieces&&pieces.length===2?retroSpec(retroReactants(pieces),[],conditions):null;
+}
+RETRO_TRANSFORMS.push(
+ {id:'anhydride-hydrolysis',name:'Diacid from cyclic anhydride hydrolysis',rule:'anhydride-hydrolysis',group:'Hydrolysis',match(t){
+  if(t.components!==1||t.graph.atoms.filter(a=>a.element==='O').length!==4)return [];
+  const acids=t.info.carbonyls.filter(c=>c.kind==='acid');if(acids.length!==2)return [];
+  return acids.slice(0,RETRO_LIMITS.maxPerTransform).flatMap(left=>acids.filter(right=>right.c!==left.c).map(right=>retro8One(t,g=>{
+   g.removeAtom(right.hetero);g.addBond(left.hetero,right.c);
+  },{solvents:['water'],temperature:25}))).filter(Boolean);
+ }},
+ {id:'anhydride-alcoholysis',name:'Ester from symmetric anhydride alcoholysis',rule:'anhydride-alcoholysis',group:'Ester formation',match(t){
+  return t.info.carbonyls.filter(c=>c.kind==='ester').slice(0,RETRO_LIMITS.maxPerTransform).map(c=>retro8AnhydrideAcyl(t,c,c.hetero,{solvents:['none'],additives:['et3n'],temperature:25})).filter(Boolean);
+ }},
+ {id:'anhydride-aminolysis',name:'Amide from symmetric anhydride aminolysis',rule:'anhydride-aminolysis',group:'Amide formation',match(t){
+  return t.info.carbonyls.filter(c=>c.kind==='amide').slice(0,RETRO_LIMITS.maxPerTransform).map(c=>retro8AnhydrideAcyl(t,c,c.hetero,{solvents:['none'],temperature:25})).filter(Boolean);
+ }},
+ {id:'anhydride-reduction',name:'Diol from cyclic anhydride reduction',rule:'anhydride-reduction',group:'Reduction',match(t){
+  if(t.components!==1||t.graph.atoms.filter(a=>a.element==='O').length!==2)return [];
+  const alcohols=t.info.alcohols.filter(a=>a.degree<=2&&rxHydrogens(t.graph,a.c)>=2);if(alcohols.length!==2)return [];
+  return [alcohols].slice(0,RETRO_LIMITS.maxPerTransform).map(([left,right])=>{
+   const piece=retroSinglePiece(t,g=>{
+    rxSetOrder(g,left.c,left.o,2);rxSetOrder(g,right.c,right.o,2);
+    const bridge=rxAttach(g,'O',left.c);g.addBond(right.c,bridge.id);
+   });
+   return piece&&retroSpec([{smiles:piece.smiles,role:'reactant'}],[{smiles:'[Li+].[AlH4-]',role:'reagent',label:'LiAlH4'}],{solvents:['thf'],temperature:0,atmosphere:'n2'});
+  }).filter(Boolean);
+ }}
+);
