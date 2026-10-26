@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "started": "2026-10-26T23:20:27.962Z",
-  "finished": "2026-10-26T23:24:50.676Z",
+  "started": "2026-10-26T23:34:06.247Z",
+  "finished": "2026-10-26T23:38:31.645Z",
   "node": "v22.22.0",
   "platform": "linux",
   "cwd": "/home/user/projects/molecule profiler",
@@ -10,54 +10,230 @@
       "algorithm": "SHA-256",
       "scope": "Project root HTML/JS/Python/CSS plus js/, data/, tools/ and css/ source files; excludes generated JSON, logs and browser artifacts.",
       "git": {
-        "commit": "9b87414befc0e87ce7843e905d2cd5be0e2b7a5b",
+        "commit": "851349ecdd3fb90e0dd0c426536fe1bc32952b39",
         "available": true,
         "sourceDirty": true,
         "changes": [
           {
-            "status": " M",
+            "status": "M ",
+            "path": "molecule profiler/css/reference-research.css"
+          },
+          {
+            "status": "MM",
             "path": "molecule profiler/data/benchmark.js"
           },
           {
-            "status": " M",
+            "status": "AM",
+            "path": "molecule profiler/data/chembl-properties.js"
+          },
+          {
+            "status": "MM",
             "path": "molecule profiler/data/curated-references.js"
           },
           {
-            "status": " M",
+            "status": "M ",
+            "path": "molecule profiler/data/library-receptor-tags.js"
+          },
+          {
+            "status": "MM",
             "path": "molecule profiler/data/library-tags.js"
           },
           {
-            "status": " M",
-            "path": "molecule profiler/data/library.js"
-          },
-          {
-            "status": " M",
-            "path": "molecule profiler/data/reference-audit-baseline.js"
-          },
-          {
-            "status": " M",
+            "status": "MM",
             "path": "molecule profiler/data/reference-matched-pairs.js"
           },
           {
-            "status": " M",
-            "path": "molecule profiler/data/reference-motifs.js"
-          },
-          {
-            "status": " M",
+            "status": "MM",
             "path": "molecule profiler/data/reference-releases.js"
           },
           {
-            "status": "??",
-            "path": "molecule profiler/tools/derive-beta-blocker-references.py"
+            "status": "M ",
+            "path": "molecule profiler/index.html"
           },
           {
-            "status": "??",
-            "path": "molecule profiler/tools/derive-penicillin-references.py"
+            "status": "A ",
+            "path": "molecule profiler/js/chembl-properties-ui.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/js/chembl-properties.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/js/library-inspector.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/js/reference-actions.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/js/reference-claims-ui.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/js/reference-claims.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/js/reference-evidence.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/js/reference-releases.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/js/reference-research-ui.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/js/reference-research.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/library-inspector.html"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/reference-explorer.html"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/build-chembl-properties.py"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/tools/build-receptor-tags.py"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/tools/build-reference-releases.py"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/chembl-evidence-builder-test.py"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/chembl-evidence-dom-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/chembl-evidence-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/chembl-properties-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/chembl-properties-test.py"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/chemical-class-tags-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/chemical-class-tags-test.py"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/tools/curated-references-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/freesolv-properties-002-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/freesolv-properties-002-test.py"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/freesolv-properties-test.py"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/freesolv-property-source-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/import-freesolv-properties-002.py"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/import-freesolv-properties.py"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/iuphar-endpoint-dom-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/iuphar-endpoint-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/iuphar-endpoint-test.py"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/tools/library-taxonomy.py"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/property-evidence-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/reference-actions-test.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/tools/reference-claims-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/reference-evidence-dom-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/reference-evidence-test.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/tools/reference-pairs-test.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/tools/reference-releases-test.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/tools/reference-research-dom-test.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/tools/repin.py"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/tools/run-validation.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/source-action-tags-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/source-action-tags-test.py"
           }
         ]
       },
-      "fileCount": 389,
-      "digest": "3befe51753b1d0dc41e6b144ff6dc6dbd1149c1e72041a345b0f5cf62e4e2bfe",
+      "fileCount": 417,
+      "digest": "043c400260239168f6ad12e57828e2c8cc2ced73a180eb174ac75037419bcf7d",
       "files": [
         {
           "path": "css/analogue-studio.css",
@@ -101,8 +277,8 @@
         },
         {
           "path": "css/reference-research.css",
-          "bytes": 8443,
-          "sha256": "a00d22de14dd1daf3f88eef35c78f391ad70a75a1d6b399759972b6cac5ad4a4"
+          "bytes": 9277,
+          "sha256": "148b495e98b81b5e5a348d88325335780658ff78ece51fdcf7e1547bf0169718"
         },
         {
           "path": "css/research-upgrades.css",
@@ -137,7 +313,12 @@
         {
           "path": "data/benchmark.js",
           "bytes": 17218,
-          "sha256": "3f0cffae36033f8df9717b31d4293265ef95befcaf2f8dd928090e9ff87a8527"
+          "sha256": "fe7937b76dcdca24582906ea05c8c9292ff509c3e29916b51945eb7ef24b4608"
+        },
+        {
+          "path": "data/chembl-properties.js",
+          "bytes": 456150,
+          "sha256": "3e0a0def35fe5c076bed85e47626e5c0e4a55b486039d53996b9f3b2923c2b15"
         },
         {
           "path": "data/citations.js",
@@ -151,8 +332,8 @@
         },
         {
           "path": "data/curated-references.js",
-          "bytes": 697095,
-          "sha256": "20040c29de692d77a9e98758d079de5d61d7fe4429c420b282743c6de3b0ec96"
+          "bytes": 995781,
+          "sha256": "3fa87129a8f6e748c14c6cc56dcd168fa17eb0828e5f34b8fa99ddd1ec3450e7"
         },
         {
           "path": "data/dependence.js",
@@ -176,13 +357,13 @@
         },
         {
           "path": "data/library-receptor-tags.js",
-          "bytes": 2867738,
-          "sha256": "45bd4290deb0cc48e63908d0a63e2ed562e2233f997c8c8a97049e38130cfa66"
+          "bytes": 10768688,
+          "sha256": "45ce4a988c9073e7fe49a75dc93bbb812ad9b4442cb35124e445cbf1fdc2699f"
         },
         {
           "path": "data/library-tags.js",
-          "bytes": 11422693,
-          "sha256": "4e89f6a17d7f90a0152db24610fc1dedae1ed9d8e28fc73fb69d2fe11db35058"
+          "bytes": 11494098,
+          "sha256": "880057736b956ae16bc5c1cdc5494d83e269f0454c2b2bda6115a2dfa9c61799"
         },
         {
           "path": "data/library.js",
@@ -241,8 +422,8 @@
         },
         {
           "path": "data/reference-matched-pairs.js",
-          "bytes": 86962,
-          "sha256": "175f11d000f9e2bf37f443548b52527345acf893641465fbe85881b3a9b078ee"
+          "bytes": 108462,
+          "sha256": "924550f7431a718cad99ed4d7a681c6ebd75fd7c0cd946756474be812470f34d"
         },
         {
           "path": "data/reference-motifs.js",
@@ -251,8 +432,8 @@
         },
         {
           "path": "data/reference-releases.js",
-          "bytes": 4421229,
-          "sha256": "91a55ba2144a3048bfb1e04b0fee910627f7702a087aa67004a97905b2b5fd8e"
+          "bytes": 5819824,
+          "sha256": "65f20723a50440a86ab0a052fe890a6bf50a4c6811b28d1885c3cbf1a20ecb3f"
         },
         {
           "path": "data/reference-reviews.js",
@@ -286,8 +467,8 @@
         },
         {
           "path": "index.html",
-          "bytes": 63234,
-          "sha256": "876b9b2acc47d641a29ca5ab18f3455520c41b0ae7dcea658d6f07bcdc1afe02"
+          "bytes": 62464,
+          "sha256": "d66ca9e4a1002883746e98f272363aa07aa8ac730bc398c927efbcfc7ee21430"
         },
         {
           "path": "js/analogue-candidates.js",
@@ -348,6 +529,16 @@
           "path": "js/candidate-release.js",
           "bytes": 5876,
           "sha256": "54cbf3da120082e1e902ef7c8b2183f6f9f75e2b1726f706551a7327cd56c58d"
+        },
+        {
+          "path": "js/chembl-properties-ui.js",
+          "bytes": 2455,
+          "sha256": "64bf6d1985f78820eff7a7994091305c04d8bea4c922849833c6251256a8fe00"
+        },
+        {
+          "path": "js/chembl-properties.js",
+          "bytes": 803,
+          "sha256": "58b744ebe88a989ca20833e43011a60d7fad6e7e9c01b8d567381b57ff6a1ea1"
         },
         {
           "path": "js/cleavable-groups.js",
@@ -436,8 +627,8 @@
         },
         {
           "path": "js/library-inspector.js",
-          "bytes": 15949,
-          "sha256": "2ecf2929ee4609fb2f173a9422a0066f604ac838663e83820711ab06b361a95c"
+          "bytes": 16535,
+          "sha256": "b147c3f73d6fd85eddf7a334f7fde5d59aa6867493a60cda9328269503bbd9e1"
         },
         {
           "path": "js/metabolism.js",
@@ -565,14 +756,19 @@
           "sha256": "94960114831335ff13ece8c91c083a1c21b38393b78528219e3bbf63b8a579f6"
         },
         {
+          "path": "js/reference-actions.js",
+          "bytes": 2155,
+          "sha256": "6dfa0d0f18633022ff76673b2afc43de03f3d810171a7b0104dab4693e2e4ca7"
+        },
+        {
           "path": "js/reference-claims-ui.js",
-          "bytes": 4600,
-          "sha256": "37a2fc58dd0b021488108eeee6e06ee50276fab848f2eaaff71b3fad5faefc5b"
+          "bytes": 4624,
+          "sha256": "c5451c4fc224201940037313ef519d3f56cc65b7293029fb6da5650f5fee39b4"
         },
         {
           "path": "js/reference-claims.js",
-          "bytes": 3154,
-          "sha256": "e6a14dda7899f2894cac586b73416e44386fe8ad96686d13852c01ed28f32db3"
+          "bytes": 3126,
+          "sha256": "836931d459166e3c4a21f3885a9a41f91a817aa84bda5dabfeace8966a4018d7"
         },
         {
           "path": "js/reference-context.js",
@@ -583,6 +779,11 @@
           "path": "js/reference-eligibility.js",
           "bytes": 1223,
           "sha256": "80d8dd663dbcca4781e188eaa24646d04f64a446b851f053f4b2c24e9c35986b"
+        },
+        {
+          "path": "js/reference-evidence.js",
+          "bytes": 1766,
+          "sha256": "2630a8c154f7d0c35931b9461c338f8ffef507f2557720900abc73560d62a30b"
         },
         {
           "path": "js/reference-fingerprint-worker.js",
@@ -621,18 +822,18 @@
         },
         {
           "path": "js/reference-releases.js",
-          "bytes": 4180,
-          "sha256": "54353f546cf77ae74cce2998e88d4b3820009095798cf4fe5cdb50c1a2b9805d"
+          "bytes": 4304,
+          "sha256": "6fc3933e7b664ddf5cad9ce365d190c3b1bed6cfc132d647694ceeed4770b17f"
         },
         {
           "path": "js/reference-research-ui.js",
-          "bytes": 20883,
-          "sha256": "9e522bdb5b1d19f89bdb78b00bf07dcdaa3080c262174636594ac25562784c44"
+          "bytes": 26096,
+          "sha256": "c138b7a0cdeab30bae878076ae419bd5270fe22f8cfc51407e9b9eea46a9d88b"
         },
         {
           "path": "js/reference-research.js",
-          "bytes": 15021,
-          "sha256": "6022c38618629cce160f0b1fdb303fe45bbb43645508593365663ba036d1f66c"
+          "bytes": 19047,
+          "sha256": "ebcb781d65eecf6939ea5ead6d5768110023d1e47ade4d9745571404573be8b8"
         },
         {
           "path": "js/reference-sar-ui.js",
@@ -781,8 +982,8 @@
         },
         {
           "path": "library-inspector.html",
-          "bytes": 28109,
-          "sha256": "f7748c4b9073683fa9ef2c46ae63f10f25957989934616967497a647bb6bb93b"
+          "bytes": 28187,
+          "sha256": "4fca9a3c05946fa069aa5b2beab521d26c8bcc4dd28fe6c8d87509b0675fc46b"
         },
         {
           "path": "reference-audit.js",
@@ -791,8 +992,8 @@
         },
         {
           "path": "reference-explorer.html",
-          "bytes": 9463,
-          "sha256": "e00cecaffb2de98459438266dc73ee789ddb5fd049da87473399a4c746c144fd"
+          "bytes": 9372,
+          "sha256": "ba003eccacfd2d1a35281dfda784443bce30ecbaf8a2bf5f7de952e2b7503667"
         },
         {
           "path": "reference-explorer.js",
@@ -860,6 +1061,11 @@
           "sha256": "cd657cd558ad57aa5c668900c16e852e75e7b923743bb882ab849d1e6da49fb1"
         },
         {
+          "path": "tools/build-chembl-properties.py",
+          "bytes": 6366,
+          "sha256": "4dcdb85fcad65bd881ad3e1383b9fc63ce2a065bd4a375fec4875ef0ab3bef42"
+        },
+        {
           "path": "tools/build-curated-references.py",
           "bytes": 17076,
           "sha256": "24be66d6d19e9dcf3f65ed4fd599fd804ccda1cf71dbe9025c540120a24efbdc"
@@ -881,8 +1087,8 @@
         },
         {
           "path": "tools/build-receptor-tags.py",
-          "bytes": 10381,
-          "sha256": "158e00b34c85db738c51f2b6e911cbe35e92466927a408051bcbd6c647b55535"
+          "bytes": 19394,
+          "sha256": "fc486609d93137dde02c59ea74edafc0702ce6a85572e22f39517ce43c361aa8"
         },
         {
           "path": "tools/build-reference-motifs.py",
@@ -896,8 +1102,8 @@
         },
         {
           "path": "tools/build-reference-releases.py",
-          "bytes": 5018,
-          "sha256": "43f25605b0c8211a8bf066cd6e8514ed4f73bbd6942a5d696f861e90e2b11eea"
+          "bytes": 5128,
+          "sha256": "9fafffa3d146f19ce9f40dd76b4fa7aeb12273d392b95473d585d35b9b3f0c36"
         },
         {
           "path": "tools/calm-workspace-test.js",
@@ -938,6 +1144,41 @@
           "path": "tools/chembl-binding-test.js",
           "bytes": 4330,
           "sha256": "7c208bc12128726ad9bedb5391487bc13aa6da0f632040b95ae5e133f09f7513"
+        },
+        {
+          "path": "tools/chembl-evidence-builder-test.py",
+          "bytes": 3644,
+          "sha256": "4dcd626b4946ef3aca123da8c84580456f8fc74c3002a52c0c381df56ee4fc98"
+        },
+        {
+          "path": "tools/chembl-evidence-dom-test.js",
+          "bytes": 3619,
+          "sha256": "8fd29db55ec9430eb33f8b2cbc47be9e9875b9715318aa5c46abbdea3e9c02e9"
+        },
+        {
+          "path": "tools/chembl-evidence-test.js",
+          "bytes": 7791,
+          "sha256": "833fc00f54b02049289a10ae2e47d3e09f70e71e0cac5a9c30f98706b7d0a0c3"
+        },
+        {
+          "path": "tools/chembl-properties-test.js",
+          "bytes": 2398,
+          "sha256": "17aa9dc19520f18ea8de195928f9995960a64bbd867144e038a91b2852b9f4bd"
+        },
+        {
+          "path": "tools/chembl-properties-test.py",
+          "bytes": 5168,
+          "sha256": "56f26bddf4bb8d78bbbc5735d07dd2f657f6cd3f3ce24f86b37aba25245b94d9"
+        },
+        {
+          "path": "tools/chemical-class-tags-test.js",
+          "bytes": 3364,
+          "sha256": "4aeeac3047c10044d259360b052a9c399b6493b6725c5eb159c98a885c4ef297"
+        },
+        {
+          "path": "tools/chemical-class-tags-test.py",
+          "bytes": 3021,
+          "sha256": "e880870064d2ceb5e5b9dbc1ae1450d271e3e062833acbd534fc5f27f7aa7556"
         },
         {
           "path": "tools/cleavable-groups-rdkit-test.py",
@@ -1001,8 +1242,8 @@
         },
         {
           "path": "tools/curated-references-test.js",
-          "bytes": 4847,
-          "sha256": "0da1ff9953a29a1914f4b911ff8f9fe97060582d7e999f10ee125da3e7b8f591"
+          "bytes": 4845,
+          "sha256": "262bd90446dbbfc6563b22268ed972c2275b1cf57e90db425db053eb4d084808"
         },
         {
           "path": "tools/derive-ace-inhibitor-references.py",
@@ -1310,6 +1551,26 @@
           "sha256": "ab31ea58e5b9518ab8ac29f9e6be9a369f1f5282f460207b5b1d148915d0b096"
         },
         {
+          "path": "tools/freesolv-properties-002-test.js",
+          "bytes": 6553,
+          "sha256": "4081fc08296eb10ee41817906a548d7675110e61b6a9aca7b79565f0bc283c08"
+        },
+        {
+          "path": "tools/freesolv-properties-002-test.py",
+          "bytes": 7829,
+          "sha256": "cc3b072ed687f0e62a1d538b367760026efb838a90a9e2e7273cc0715daf7ae4"
+        },
+        {
+          "path": "tools/freesolv-properties-test.py",
+          "bytes": 9311,
+          "sha256": "71f55f633fd35a4f7ea18ef33ec517f80a52d1c1c2ce2d8b9b8b5f9f93858285"
+        },
+        {
+          "path": "tools/freesolv-property-source-test.js",
+          "bytes": 4076,
+          "sha256": "91e99cc9e2fbc8a85d3e312ff35b433d4c31ded4f12e38913e44b14a596b6e4f"
+        },
+        {
           "path": "tools/full-csv-export-test.js",
           "bytes": 2175,
           "sha256": "064680f7cb25022878fae7cbc0d55294982b63fb3deb866c3ef208cf1ea90655"
@@ -1333,6 +1594,16 @@
           "path": "tools/import-amine-study.py",
           "bytes": 6554,
           "sha256": "7c8d319fdc836e1edb93e2750a92e3a5e6d33b01c538f9cb0c0dc30a6a8fcd2a"
+        },
+        {
+          "path": "tools/import-freesolv-properties-002.py",
+          "bytes": 14202,
+          "sha256": "4da290f9c53cc3d20f6660cacbdfff64940cd0c014a0df208906feed37920375"
+        },
+        {
+          "path": "tools/import-freesolv-properties.py",
+          "bytes": 10635,
+          "sha256": "6e11f03e3c5f40ce4570c10441bf20b2df9aeba9d7fc29c817ffe7e1484d9200"
         },
         {
           "path": "tools/import-library-50.py",
@@ -1373,6 +1644,21 @@
           "path": "tools/ionization-workbench-test.js",
           "bytes": 2121,
           "sha256": "4dce8c73a53a69e47074a3b0ec2514927a1527d395e9f2772de9d070ee2aab95"
+        },
+        {
+          "path": "tools/iuphar-endpoint-dom-test.js",
+          "bytes": 3354,
+          "sha256": "bd1e511188f1b63c5d436650082646cec8542ef66ad0e588ddcd5fadf92d5304"
+        },
+        {
+          "path": "tools/iuphar-endpoint-test.js",
+          "bytes": 4522,
+          "sha256": "554023cf8278214e250003954e03d3c71d2ea8a800e8a1bbc518d4238a751eb8"
+        },
+        {
+          "path": "tools/iuphar-endpoint-test.py",
+          "bytes": 3424,
+          "sha256": "ac698b52a56606cc2bd8aff0bc59e7f0b960aa5ddb56cf71d6fefc6919795866"
         },
         {
           "path": "tools/label-targets.py",
@@ -1446,8 +1732,8 @@
         },
         {
           "path": "tools/library-taxonomy.py",
-          "bytes": 3414,
-          "sha256": "a577bed4d107158eb152cd0b7a3d05d0df53584f370ad07be393147a477ab8b7"
+          "bytes": 3913,
+          "sha256": "1470f1545d3d698aee667ba0c38573f9b29046f365b0726e517bdb4dca8b3aaa"
         },
         {
           "path": "tools/load-reference-context.js",
@@ -1635,6 +1921,11 @@
           "sha256": "549f36ac5e8cc25b833a8b4243896d760118c2aa5f5c1f113d67d6f6e84f4104"
         },
         {
+          "path": "tools/property-evidence-test.js",
+          "bytes": 4152,
+          "sha256": "197781e01e6aa77a3233ef01ad018e4ce5983c4011c1b284deaa293be0db8ee0"
+        },
+        {
           "path": "tools/property-validation.js",
           "bytes": 9029,
           "sha256": "8ae9f19c93a10754a7d995d7dc9ebf7678f7aa0f9200bd45182c8d7eaa187930"
@@ -1735,14 +2026,19 @@
           "sha256": "348e18b33239d823cdeb34b810357c405006bcfbe52c3e5a3f52f560f1473497"
         },
         {
+          "path": "tools/reference-actions-test.js",
+          "bytes": 4375,
+          "sha256": "b513f109f52176848a97176a65d8b25968e2d6fdfc0659f85a45d084d9a8ee6d"
+        },
+        {
           "path": "tools/reference-audit-test.js",
           "bytes": 1834,
           "sha256": "25b8b7310b16bf3ee8b939cfe6ce501e1d92c61b1d1ddde345212795995b980b"
         },
         {
           "path": "tools/reference-claims-test.js",
-          "bytes": 2010,
-          "sha256": "96246cea5d7882b7982e71caa5f6c6c19ff404a9572af485226afada48287038"
+          "bytes": 2446,
+          "sha256": "8161f2d79540df907d66de1dc7a9d707ef1380c86f2a22d617fde46943517df3"
         },
         {
           "path": "tools/reference-context-test.js",
@@ -1770,14 +2066,24 @@
           "sha256": "a81528f2e1d0da195d52352907041e4ca6b63187dc97cf1f97fee459ad46ade6"
         },
         {
+          "path": "tools/reference-evidence-dom-test.js",
+          "bytes": 2764,
+          "sha256": "aa37bfdfda07aff1e3c17b305162867b47343e2fceb3393e6e3005102b07a79e"
+        },
+        {
+          "path": "tools/reference-evidence-test.js",
+          "bytes": 3060,
+          "sha256": "36f1900ffc8345c21cf401ce425359169a748487f69144a87a5c8be4b48fc1a8"
+        },
+        {
           "path": "tools/reference-fingerprints-test.js",
           "bytes": 3909,
           "sha256": "85e4454eee28b89a35204aa951b90d8a72d7b41b2ce72cbe901d859a477cbc1d"
         },
         {
           "path": "tools/reference-pairs-test.js",
-          "bytes": 2289,
-          "sha256": "8519f5c000825deaffe3d0c91f66d5a68b5ee23b32400ff5b4be8f465004cc32"
+          "bytes": 6963,
+          "sha256": "485bb5f9483c3af591bf1eefb5360619ff32784e5bee013892df05411509a601"
         },
         {
           "path": "tools/reference-probes-test.js",
@@ -1791,13 +2097,13 @@
         },
         {
           "path": "tools/reference-releases-test.js",
-          "bytes": 2894,
-          "sha256": "8d98e6a41aa2dceaf8241a65d373b45210392a10514667b5e4c1db6340ab43f9"
+          "bytes": 3385,
+          "sha256": "6025d3b97f41f1b57b81a888c01452277ec5a0f07e28d0981d04cda7af565c12"
         },
         {
           "path": "tools/reference-research-dom-test.js",
-          "bytes": 7426,
-          "sha256": "ea3ceba8c21bada46da9e2db51840e145003ef8ac4e7ab3aadd2160c26e2cbd2"
+          "bytes": 9324,
+          "sha256": "fd47247d9111ae71336a7d2462d239ee5dc5d290dcf23cabde7fc76b6343910c"
         },
         {
           "path": "tools/reference-research-test.js",
@@ -1841,8 +2147,8 @@
         },
         {
           "path": "tools/repin.py",
-          "bytes": 8911,
-          "sha256": "65371b1f137d05fb02bb4ade4bc217dbe4350e51003b7b548deb9609b31f2c79"
+          "bytes": 9123,
+          "sha256": "6c343a8c3a2a2060921648652f857fc7b800b405373508f7314d36e23b014597"
         },
         {
           "path": "tools/report-model-test.js",
@@ -1886,8 +2192,8 @@
         },
         {
           "path": "tools/run-validation.js",
-          "bytes": 5161,
-          "sha256": "4cf02148273c11d2eeae243c54fdc7a32ebbe601b84031d5ac02cf53e84ae9c9"
+          "bytes": 5484,
+          "sha256": "34c9b9f653e1d5ec87f6da9df6e4ac38e72fcf2e651c094b809ce498ba0e0530"
         },
         {
           "path": "tools/screen-coverage-test.js",
@@ -1908,6 +2214,16 @@
           "path": "tools/soft-ethers-test.js",
           "bytes": 3554,
           "sha256": "4ededdee8f44e1a83d914f4f90e0ce3b32d373294aa1d6964497f8ee7807a3c7"
+        },
+        {
+          "path": "tools/source-action-tags-test.js",
+          "bytes": 5529,
+          "sha256": "446a6219ce4a9a58c8e3afbb7ff0f5be2f38de4f7b09a1c6dfad8d707809bd4a"
+        },
+        {
+          "path": "tools/source-action-tags-test.py",
+          "bytes": 3840,
+          "sha256": "5dc9fd8f4b60c3eb7fa52ac7e196cddeb41d7b789276c78be8864be74922296c"
         },
         {
           "path": "tools/sparse-panel-dom-test.js",
@@ -2010,54 +2326,230 @@
       "algorithm": "SHA-256",
       "scope": "Project root HTML/JS/Python/CSS plus js/, data/, tools/ and css/ source files; excludes generated JSON, logs and browser artifacts.",
       "git": {
-        "commit": "9b87414befc0e87ce7843e905d2cd5be0e2b7a5b",
+        "commit": "851349ecdd3fb90e0dd0c426536fe1bc32952b39",
         "available": true,
         "sourceDirty": true,
         "changes": [
           {
-            "status": " M",
+            "status": "M ",
+            "path": "molecule profiler/css/reference-research.css"
+          },
+          {
+            "status": "MM",
             "path": "molecule profiler/data/benchmark.js"
           },
           {
-            "status": " M",
+            "status": "AM",
+            "path": "molecule profiler/data/chembl-properties.js"
+          },
+          {
+            "status": "MM",
             "path": "molecule profiler/data/curated-references.js"
           },
           {
-            "status": " M",
+            "status": "M ",
+            "path": "molecule profiler/data/library-receptor-tags.js"
+          },
+          {
+            "status": "MM",
             "path": "molecule profiler/data/library-tags.js"
           },
           {
-            "status": " M",
-            "path": "molecule profiler/data/library.js"
-          },
-          {
-            "status": " M",
-            "path": "molecule profiler/data/reference-audit-baseline.js"
-          },
-          {
-            "status": " M",
+            "status": "MM",
             "path": "molecule profiler/data/reference-matched-pairs.js"
           },
           {
-            "status": " M",
-            "path": "molecule profiler/data/reference-motifs.js"
-          },
-          {
-            "status": " M",
+            "status": "MM",
             "path": "molecule profiler/data/reference-releases.js"
           },
           {
-            "status": "??",
-            "path": "molecule profiler/tools/derive-beta-blocker-references.py"
+            "status": "M ",
+            "path": "molecule profiler/index.html"
           },
           {
-            "status": "??",
-            "path": "molecule profiler/tools/derive-penicillin-references.py"
+            "status": "A ",
+            "path": "molecule profiler/js/chembl-properties-ui.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/js/chembl-properties.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/js/library-inspector.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/js/reference-actions.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/js/reference-claims-ui.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/js/reference-claims.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/js/reference-evidence.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/js/reference-releases.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/js/reference-research-ui.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/js/reference-research.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/library-inspector.html"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/reference-explorer.html"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/build-chembl-properties.py"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/tools/build-receptor-tags.py"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/tools/build-reference-releases.py"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/chembl-evidence-builder-test.py"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/chembl-evidence-dom-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/chembl-evidence-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/chembl-properties-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/chembl-properties-test.py"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/chemical-class-tags-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/chemical-class-tags-test.py"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/tools/curated-references-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/freesolv-properties-002-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/freesolv-properties-002-test.py"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/freesolv-properties-test.py"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/freesolv-property-source-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/import-freesolv-properties-002.py"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/import-freesolv-properties.py"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/iuphar-endpoint-dom-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/iuphar-endpoint-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/iuphar-endpoint-test.py"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/tools/library-taxonomy.py"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/property-evidence-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/reference-actions-test.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/tools/reference-claims-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/reference-evidence-dom-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/reference-evidence-test.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/tools/reference-pairs-test.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/tools/reference-releases-test.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/tools/reference-research-dom-test.js"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/tools/repin.py"
+          },
+          {
+            "status": "M ",
+            "path": "molecule profiler/tools/run-validation.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/source-action-tags-test.js"
+          },
+          {
+            "status": "A ",
+            "path": "molecule profiler/tools/source-action-tags-test.py"
           }
         ]
       },
-      "fileCount": 389,
-      "digest": "3befe51753b1d0dc41e6b144ff6dc6dbd1149c1e72041a345b0f5cf62e4e2bfe",
+      "fileCount": 417,
+      "digest": "043c400260239168f6ad12e57828e2c8cc2ced73a180eb174ac75037419bcf7d",
       "files": [
         {
           "path": "css/analogue-studio.css",
@@ -2101,8 +2593,8 @@
         },
         {
           "path": "css/reference-research.css",
-          "bytes": 8443,
-          "sha256": "a00d22de14dd1daf3f88eef35c78f391ad70a75a1d6b399759972b6cac5ad4a4"
+          "bytes": 9277,
+          "sha256": "148b495e98b81b5e5a348d88325335780658ff78ece51fdcf7e1547bf0169718"
         },
         {
           "path": "css/research-upgrades.css",
@@ -2137,7 +2629,12 @@
         {
           "path": "data/benchmark.js",
           "bytes": 17218,
-          "sha256": "3f0cffae36033f8df9717b31d4293265ef95befcaf2f8dd928090e9ff87a8527"
+          "sha256": "fe7937b76dcdca24582906ea05c8c9292ff509c3e29916b51945eb7ef24b4608"
+        },
+        {
+          "path": "data/chembl-properties.js",
+          "bytes": 456150,
+          "sha256": "3e0a0def35fe5c076bed85e47626e5c0e4a55b486039d53996b9f3b2923c2b15"
         },
         {
           "path": "data/citations.js",
@@ -2151,8 +2648,8 @@
         },
         {
           "path": "data/curated-references.js",
-          "bytes": 697095,
-          "sha256": "20040c29de692d77a9e98758d079de5d61d7fe4429c420b282743c6de3b0ec96"
+          "bytes": 995781,
+          "sha256": "3fa87129a8f6e748c14c6cc56dcd168fa17eb0828e5f34b8fa99ddd1ec3450e7"
         },
         {
           "path": "data/dependence.js",
@@ -2176,13 +2673,13 @@
         },
         {
           "path": "data/library-receptor-tags.js",
-          "bytes": 2867738,
-          "sha256": "45bd4290deb0cc48e63908d0a63e2ed562e2233f997c8c8a97049e38130cfa66"
+          "bytes": 10768688,
+          "sha256": "45ce4a988c9073e7fe49a75dc93bbb812ad9b4442cb35124e445cbf1fdc2699f"
         },
         {
           "path": "data/library-tags.js",
-          "bytes": 11422693,
-          "sha256": "4e89f6a17d7f90a0152db24610fc1dedae1ed9d8e28fc73fb69d2fe11db35058"
+          "bytes": 11494098,
+          "sha256": "880057736b956ae16bc5c1cdc5494d83e269f0454c2b2bda6115a2dfa9c61799"
         },
         {
           "path": "data/library.js",
@@ -2241,8 +2738,8 @@
         },
         {
           "path": "data/reference-matched-pairs.js",
-          "bytes": 86962,
-          "sha256": "175f11d000f9e2bf37f443548b52527345acf893641465fbe85881b3a9b078ee"
+          "bytes": 108462,
+          "sha256": "924550f7431a718cad99ed4d7a681c6ebd75fd7c0cd946756474be812470f34d"
         },
         {
           "path": "data/reference-motifs.js",
@@ -2251,8 +2748,8 @@
         },
         {
           "path": "data/reference-releases.js",
-          "bytes": 4421229,
-          "sha256": "91a55ba2144a3048bfb1e04b0fee910627f7702a087aa67004a97905b2b5fd8e"
+          "bytes": 5819824,
+          "sha256": "65f20723a50440a86ab0a052fe890a6bf50a4c6811b28d1885c3cbf1a20ecb3f"
         },
         {
           "path": "data/reference-reviews.js",
@@ -2286,8 +2783,8 @@
         },
         {
           "path": "index.html",
-          "bytes": 63234,
-          "sha256": "876b9b2acc47d641a29ca5ab18f3455520c41b0ae7dcea658d6f07bcdc1afe02"
+          "bytes": 62464,
+          "sha256": "d66ca9e4a1002883746e98f272363aa07aa8ac730bc398c927efbcfc7ee21430"
         },
         {
           "path": "js/analogue-candidates.js",
@@ -2348,6 +2845,16 @@
           "path": "js/candidate-release.js",
           "bytes": 5876,
           "sha256": "54cbf3da120082e1e902ef7c8b2183f6f9f75e2b1726f706551a7327cd56c58d"
+        },
+        {
+          "path": "js/chembl-properties-ui.js",
+          "bytes": 2455,
+          "sha256": "64bf6d1985f78820eff7a7994091305c04d8bea4c922849833c6251256a8fe00"
+        },
+        {
+          "path": "js/chembl-properties.js",
+          "bytes": 803,
+          "sha256": "58b744ebe88a989ca20833e43011a60d7fad6e7e9c01b8d567381b57ff6a1ea1"
         },
         {
           "path": "js/cleavable-groups.js",
@@ -2436,8 +2943,8 @@
         },
         {
           "path": "js/library-inspector.js",
-          "bytes": 15949,
-          "sha256": "2ecf2929ee4609fb2f173a9422a0066f604ac838663e83820711ab06b361a95c"
+          "bytes": 16535,
+          "sha256": "b147c3f73d6fd85eddf7a334f7fde5d59aa6867493a60cda9328269503bbd9e1"
         },
         {
           "path": "js/metabolism.js",
@@ -2565,14 +3072,19 @@
           "sha256": "94960114831335ff13ece8c91c083a1c21b38393b78528219e3bbf63b8a579f6"
         },
         {
+          "path": "js/reference-actions.js",
+          "bytes": 2155,
+          "sha256": "6dfa0d0f18633022ff76673b2afc43de03f3d810171a7b0104dab4693e2e4ca7"
+        },
+        {
           "path": "js/reference-claims-ui.js",
-          "bytes": 4600,
-          "sha256": "37a2fc58dd0b021488108eeee6e06ee50276fab848f2eaaff71b3fad5faefc5b"
+          "bytes": 4624,
+          "sha256": "c5451c4fc224201940037313ef519d3f56cc65b7293029fb6da5650f5fee39b4"
         },
         {
           "path": "js/reference-claims.js",
-          "bytes": 3154,
-          "sha256": "e6a14dda7899f2894cac586b73416e44386fe8ad96686d13852c01ed28f32db3"
+          "bytes": 3126,
+          "sha256": "836931d459166e3c4a21f3885a9a41f91a817aa84bda5dabfeace8966a4018d7"
         },
         {
           "path": "js/reference-context.js",
@@ -2583,6 +3095,11 @@
           "path": "js/reference-eligibility.js",
           "bytes": 1223,
           "sha256": "80d8dd663dbcca4781e188eaa24646d04f64a446b851f053f4b2c24e9c35986b"
+        },
+        {
+          "path": "js/reference-evidence.js",
+          "bytes": 1766,
+          "sha256": "2630a8c154f7d0c35931b9461c338f8ffef507f2557720900abc73560d62a30b"
         },
         {
           "path": "js/reference-fingerprint-worker.js",
@@ -2621,18 +3138,18 @@
         },
         {
           "path": "js/reference-releases.js",
-          "bytes": 4180,
-          "sha256": "54353f546cf77ae74cce2998e88d4b3820009095798cf4fe5cdb50c1a2b9805d"
+          "bytes": 4304,
+          "sha256": "6fc3933e7b664ddf5cad9ce365d190c3b1bed6cfc132d647694ceeed4770b17f"
         },
         {
           "path": "js/reference-research-ui.js",
-          "bytes": 20883,
-          "sha256": "9e522bdb5b1d19f89bdb78b00bf07dcdaa3080c262174636594ac25562784c44"
+          "bytes": 26096,
+          "sha256": "c138b7a0cdeab30bae878076ae419bd5270fe22f8cfc51407e9b9eea46a9d88b"
         },
         {
           "path": "js/reference-research.js",
-          "bytes": 15021,
-          "sha256": "6022c38618629cce160f0b1fdb303fe45bbb43645508593365663ba036d1f66c"
+          "bytes": 19047,
+          "sha256": "ebcb781d65eecf6939ea5ead6d5768110023d1e47ade4d9745571404573be8b8"
         },
         {
           "path": "js/reference-sar-ui.js",
@@ -2781,8 +3298,8 @@
         },
         {
           "path": "library-inspector.html",
-          "bytes": 28109,
-          "sha256": "f7748c4b9073683fa9ef2c46ae63f10f25957989934616967497a647bb6bb93b"
+          "bytes": 28187,
+          "sha256": "4fca9a3c05946fa069aa5b2beab521d26c8bcc4dd28fe6c8d87509b0675fc46b"
         },
         {
           "path": "reference-audit.js",
@@ -2791,8 +3308,8 @@
         },
         {
           "path": "reference-explorer.html",
-          "bytes": 9463,
-          "sha256": "e00cecaffb2de98459438266dc73ee789ddb5fd049da87473399a4c746c144fd"
+          "bytes": 9372,
+          "sha256": "ba003eccacfd2d1a35281dfda784443bce30ecbaf8a2bf5f7de952e2b7503667"
         },
         {
           "path": "reference-explorer.js",
@@ -2860,6 +3377,11 @@
           "sha256": "cd657cd558ad57aa5c668900c16e852e75e7b923743bb882ab849d1e6da49fb1"
         },
         {
+          "path": "tools/build-chembl-properties.py",
+          "bytes": 6366,
+          "sha256": "4dcdb85fcad65bd881ad3e1383b9fc63ce2a065bd4a375fec4875ef0ab3bef42"
+        },
+        {
           "path": "tools/build-curated-references.py",
           "bytes": 17076,
           "sha256": "24be66d6d19e9dcf3f65ed4fd599fd804ccda1cf71dbe9025c540120a24efbdc"
@@ -2881,8 +3403,8 @@
         },
         {
           "path": "tools/build-receptor-tags.py",
-          "bytes": 10381,
-          "sha256": "158e00b34c85db738c51f2b6e911cbe35e92466927a408051bcbd6c647b55535"
+          "bytes": 19394,
+          "sha256": "fc486609d93137dde02c59ea74edafc0702ce6a85572e22f39517ce43c361aa8"
         },
         {
           "path": "tools/build-reference-motifs.py",
@@ -2896,8 +3418,8 @@
         },
         {
           "path": "tools/build-reference-releases.py",
-          "bytes": 5018,
-          "sha256": "43f25605b0c8211a8bf066cd6e8514ed4f73bbd6942a5d696f861e90e2b11eea"
+          "bytes": 5128,
+          "sha256": "9fafffa3d146f19ce9f40dd76b4fa7aeb12273d392b95473d585d35b9b3f0c36"
         },
         {
           "path": "tools/calm-workspace-test.js",
@@ -2938,6 +3460,41 @@
           "path": "tools/chembl-binding-test.js",
           "bytes": 4330,
           "sha256": "7c208bc12128726ad9bedb5391487bc13aa6da0f632040b95ae5e133f09f7513"
+        },
+        {
+          "path": "tools/chembl-evidence-builder-test.py",
+          "bytes": 3644,
+          "sha256": "4dcd626b4946ef3aca123da8c84580456f8fc74c3002a52c0c381df56ee4fc98"
+        },
+        {
+          "path": "tools/chembl-evidence-dom-test.js",
+          "bytes": 3619,
+          "sha256": "8fd29db55ec9430eb33f8b2cbc47be9e9875b9715318aa5c46abbdea3e9c02e9"
+        },
+        {
+          "path": "tools/chembl-evidence-test.js",
+          "bytes": 7791,
+          "sha256": "833fc00f54b02049289a10ae2e47d3e09f70e71e0cac5a9c30f98706b7d0a0c3"
+        },
+        {
+          "path": "tools/chembl-properties-test.js",
+          "bytes": 2398,
+          "sha256": "17aa9dc19520f18ea8de195928f9995960a64bbd867144e038a91b2852b9f4bd"
+        },
+        {
+          "path": "tools/chembl-properties-test.py",
+          "bytes": 5168,
+          "sha256": "56f26bddf4bb8d78bbbc5735d07dd2f657f6cd3f3ce24f86b37aba25245b94d9"
+        },
+        {
+          "path": "tools/chemical-class-tags-test.js",
+          "bytes": 3364,
+          "sha256": "4aeeac3047c10044d259360b052a9c399b6493b6725c5eb159c98a885c4ef297"
+        },
+        {
+          "path": "tools/chemical-class-tags-test.py",
+          "bytes": 3021,
+          "sha256": "e880870064d2ceb5e5b9dbc1ae1450d271e3e062833acbd534fc5f27f7aa7556"
         },
         {
           "path": "tools/cleavable-groups-rdkit-test.py",
@@ -3001,8 +3558,8 @@
         },
         {
           "path": "tools/curated-references-test.js",
-          "bytes": 4847,
-          "sha256": "0da1ff9953a29a1914f4b911ff8f9fe97060582d7e999f10ee125da3e7b8f591"
+          "bytes": 4845,
+          "sha256": "262bd90446dbbfc6563b22268ed972c2275b1cf57e90db425db053eb4d084808"
         },
         {
           "path": "tools/derive-ace-inhibitor-references.py",
@@ -3310,6 +3867,26 @@
           "sha256": "ab31ea58e5b9518ab8ac29f9e6be9a369f1f5282f460207b5b1d148915d0b096"
         },
         {
+          "path": "tools/freesolv-properties-002-test.js",
+          "bytes": 6553,
+          "sha256": "4081fc08296eb10ee41817906a548d7675110e61b6a9aca7b79565f0bc283c08"
+        },
+        {
+          "path": "tools/freesolv-properties-002-test.py",
+          "bytes": 7829,
+          "sha256": "cc3b072ed687f0e62a1d538b367760026efb838a90a9e2e7273cc0715daf7ae4"
+        },
+        {
+          "path": "tools/freesolv-properties-test.py",
+          "bytes": 9311,
+          "sha256": "71f55f633fd35a4f7ea18ef33ec517f80a52d1c1c2ce2d8b9b8b5f9f93858285"
+        },
+        {
+          "path": "tools/freesolv-property-source-test.js",
+          "bytes": 4076,
+          "sha256": "91e99cc9e2fbc8a85d3e312ff35b433d4c31ded4f12e38913e44b14a596b6e4f"
+        },
+        {
           "path": "tools/full-csv-export-test.js",
           "bytes": 2175,
           "sha256": "064680f7cb25022878fae7cbc0d55294982b63fb3deb866c3ef208cf1ea90655"
@@ -3333,6 +3910,16 @@
           "path": "tools/import-amine-study.py",
           "bytes": 6554,
           "sha256": "7c8d319fdc836e1edb93e2750a92e3a5e6d33b01c538f9cb0c0dc30a6a8fcd2a"
+        },
+        {
+          "path": "tools/import-freesolv-properties-002.py",
+          "bytes": 14202,
+          "sha256": "4da290f9c53cc3d20f6660cacbdfff64940cd0c014a0df208906feed37920375"
+        },
+        {
+          "path": "tools/import-freesolv-properties.py",
+          "bytes": 10635,
+          "sha256": "6e11f03e3c5f40ce4570c10441bf20b2df9aeba9d7fc29c817ffe7e1484d9200"
         },
         {
           "path": "tools/import-library-50.py",
@@ -3373,6 +3960,21 @@
           "path": "tools/ionization-workbench-test.js",
           "bytes": 2121,
           "sha256": "4dce8c73a53a69e47074a3b0ec2514927a1527d395e9f2772de9d070ee2aab95"
+        },
+        {
+          "path": "tools/iuphar-endpoint-dom-test.js",
+          "bytes": 3354,
+          "sha256": "bd1e511188f1b63c5d436650082646cec8542ef66ad0e588ddcd5fadf92d5304"
+        },
+        {
+          "path": "tools/iuphar-endpoint-test.js",
+          "bytes": 4522,
+          "sha256": "554023cf8278214e250003954e03d3c71d2ea8a800e8a1bbc518d4238a751eb8"
+        },
+        {
+          "path": "tools/iuphar-endpoint-test.py",
+          "bytes": 3424,
+          "sha256": "ac698b52a56606cc2bd8aff0bc59e7f0b960aa5ddb56cf71d6fefc6919795866"
         },
         {
           "path": "tools/label-targets.py",
@@ -3446,8 +4048,8 @@
         },
         {
           "path": "tools/library-taxonomy.py",
-          "bytes": 3414,
-          "sha256": "a577bed4d107158eb152cd0b7a3d05d0df53584f370ad07be393147a477ab8b7"
+          "bytes": 3913,
+          "sha256": "1470f1545d3d698aee667ba0c38573f9b29046f365b0726e517bdb4dca8b3aaa"
         },
         {
           "path": "tools/load-reference-context.js",
@@ -3635,6 +4237,11 @@
           "sha256": "549f36ac5e8cc25b833a8b4243896d760118c2aa5f5c1f113d67d6f6e84f4104"
         },
         {
+          "path": "tools/property-evidence-test.js",
+          "bytes": 4152,
+          "sha256": "197781e01e6aa77a3233ef01ad018e4ce5983c4011c1b284deaa293be0db8ee0"
+        },
+        {
           "path": "tools/property-validation.js",
           "bytes": 9029,
           "sha256": "8ae9f19c93a10754a7d995d7dc9ebf7678f7aa0f9200bd45182c8d7eaa187930"
@@ -3735,14 +4342,19 @@
           "sha256": "348e18b33239d823cdeb34b810357c405006bcfbe52c3e5a3f52f560f1473497"
         },
         {
+          "path": "tools/reference-actions-test.js",
+          "bytes": 4375,
+          "sha256": "b513f109f52176848a97176a65d8b25968e2d6fdfc0659f85a45d084d9a8ee6d"
+        },
+        {
           "path": "tools/reference-audit-test.js",
           "bytes": 1834,
           "sha256": "25b8b7310b16bf3ee8b939cfe6ce501e1d92c61b1d1ddde345212795995b980b"
         },
         {
           "path": "tools/reference-claims-test.js",
-          "bytes": 2010,
-          "sha256": "96246cea5d7882b7982e71caa5f6c6c19ff404a9572af485226afada48287038"
+          "bytes": 2446,
+          "sha256": "8161f2d79540df907d66de1dc7a9d707ef1380c86f2a22d617fde46943517df3"
         },
         {
           "path": "tools/reference-context-test.js",
@@ -3770,14 +4382,24 @@
           "sha256": "a81528f2e1d0da195d52352907041e4ca6b63187dc97cf1f97fee459ad46ade6"
         },
         {
+          "path": "tools/reference-evidence-dom-test.js",
+          "bytes": 2764,
+          "sha256": "aa37bfdfda07aff1e3c17b305162867b47343e2fceb3393e6e3005102b07a79e"
+        },
+        {
+          "path": "tools/reference-evidence-test.js",
+          "bytes": 3060,
+          "sha256": "36f1900ffc8345c21cf401ce425359169a748487f69144a87a5c8be4b48fc1a8"
+        },
+        {
           "path": "tools/reference-fingerprints-test.js",
           "bytes": 3909,
           "sha256": "85e4454eee28b89a35204aa951b90d8a72d7b41b2ce72cbe901d859a477cbc1d"
         },
         {
           "path": "tools/reference-pairs-test.js",
-          "bytes": 2289,
-          "sha256": "8519f5c000825deaffe3d0c91f66d5a68b5ee23b32400ff5b4be8f465004cc32"
+          "bytes": 6963,
+          "sha256": "485bb5f9483c3af591bf1eefb5360619ff32784e5bee013892df05411509a601"
         },
         {
           "path": "tools/reference-probes-test.js",
@@ -3791,13 +4413,13 @@
         },
         {
           "path": "tools/reference-releases-test.js",
-          "bytes": 2894,
-          "sha256": "8d98e6a41aa2dceaf8241a65d373b45210392a10514667b5e4c1db6340ab43f9"
+          "bytes": 3385,
+          "sha256": "6025d3b97f41f1b57b81a888c01452277ec5a0f07e28d0981d04cda7af565c12"
         },
         {
           "path": "tools/reference-research-dom-test.js",
-          "bytes": 7426,
-          "sha256": "ea3ceba8c21bada46da9e2db51840e145003ef8ac4e7ab3aadd2160c26e2cbd2"
+          "bytes": 9324,
+          "sha256": "fd47247d9111ae71336a7d2462d239ee5dc5d290dcf23cabde7fc76b6343910c"
         },
         {
           "path": "tools/reference-research-test.js",
@@ -3841,8 +4463,8 @@
         },
         {
           "path": "tools/repin.py",
-          "bytes": 8911,
-          "sha256": "65371b1f137d05fb02bb4ade4bc217dbe4350e51003b7b548deb9609b31f2c79"
+          "bytes": 9123,
+          "sha256": "6c343a8c3a2a2060921648652f857fc7b800b405373508f7314d36e23b014597"
         },
         {
           "path": "tools/report-model-test.js",
@@ -3886,8 +4508,8 @@
         },
         {
           "path": "tools/run-validation.js",
-          "bytes": 5161,
-          "sha256": "4cf02148273c11d2eeae243c54fdc7a32ebbe601b84031d5ac02cf53e84ae9c9"
+          "bytes": 5484,
+          "sha256": "34c9b9f653e1d5ec87f6da9df6e4ac38e72fcf2e651c094b809ce498ba0e0530"
         },
         {
           "path": "tools/screen-coverage-test.js",
@@ -3908,6 +4530,16 @@
           "path": "tools/soft-ethers-test.js",
           "bytes": 3554,
           "sha256": "4ededdee8f44e1a83d914f4f90e0ce3b32d373294aa1d6964497f8ee7807a3c7"
+        },
+        {
+          "path": "tools/source-action-tags-test.js",
+          "bytes": 5529,
+          "sha256": "446a6219ce4a9a58c8e3afbb7ff0f5be2f38de4f7b09a1c6dfad8d707809bd4a"
+        },
+        {
+          "path": "tools/source-action-tags-test.py",
+          "bytes": 3840,
+          "sha256": "5dc9fd8f4b60c3eb7fa52ac7e196cddeb41d7b789276c78be8864be74922296c"
         },
         {
           "path": "tools/sparse-panel-dom-test.js",
@@ -4012,14 +4644,14 @@
       "changedFiles": []
     }
   },
-  "total": 65,
-  "passed": 65,
+  "total": 75,
+  "passed": 75,
   "failed": 0,
   "results": [
     {
       "script": "reference-audit-test.js",
       "passed": true,
-      "durationMs": 304,
+      "durationMs": 277,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4030,29 +4662,29 @@
     {
       "script": "reference-counts-test.js",
       "passed": true,
-      "durationMs": 561,
+      "durationMs": 496,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
       "error": null,
       "stdout": "Rebuilding tags\nRebuilding overlay\nShared counts and repinning: stale-source detection, invalid-data rejection, read-only plans and fail-closed rebuild order passed\n",
-      "stderr": "........\n----------------------------------------------------------------------\nRan 8 tests in 0.048s\n\nOK\n"
+      "stderr": "........\n----------------------------------------------------------------------\nRan 8 tests in 0.049s\n\nOK\n"
     },
     {
       "script": "curated-references-test.js",
       "passed": true,
-      "durationMs": 3048,
+      "durationMs": 4801,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
       "error": null,
-      "stdout": "Curated references: 111 entries; 27 additional structures; source hashes, graph guards, browser formulas and target integration passed\n",
+      "stdout": "Curated references: 183 entries; 27 additional structures; source hashes, graph guards, browser formulas and target integration passed\n",
       "stderr": ""
     },
     {
       "script": "identity-corrections-test.js",
       "passed": true,
-      "durationMs": 672,
+      "durationMs": 650,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4063,7 +4695,7 @@
     {
       "script": "receptor-catalog-test.js",
       "passed": true,
-      "durationMs": 379,
+      "durationMs": 350,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4074,7 +4706,7 @@
     {
       "script": "receptor-coverage-test.js",
       "passed": true,
-      "durationMs": 2901,
+      "durationMs": 2356,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4085,7 +4717,7 @@
     {
       "script": "receptor-diversity-report-test.js",
       "passed": true,
-      "durationMs": 1515,
+      "durationMs": 1312,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4096,7 +4728,7 @@
     {
       "script": "chembl-binding-test.js",
       "passed": true,
-      "durationMs": 8047,
+      "durationMs": 6770,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4105,9 +4737,97 @@
       "stderr": ""
     },
     {
+      "script": "chembl-evidence-test.js",
+      "passed": true,
+      "durationMs": 5684,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "ChEMBL evidence: typed binding vs original scale, source provenance, stable IDs, graph guards and no inferred action or uncertainty passed\nChEMBL source parity: 1881 retained associations, 0 graph exclusions, exact source columns and current snapshot hashes passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "chembl-properties-test.js",
+      "passed": true,
+      "durationMs": 339,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Local ChEMBL-linked calculated descriptors: 1355 exact graph keys, stale graph guards and browser/CommonJS API verified\n",
+      "stderr": ""
+    },
+    {
+      "script": "chemical-class-tags-test.js",
+      "passed": true,
+      "durationMs": 523,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Diphenylmethane scaffolds: 675 library / 117 ChEMBL-linked keys (current graphs)\nTetralin scaffolds: 442 library / 75 ChEMBL-linked keys (current graphs)\n2,3-Dihydrobenzofuran scaffolds: 233 library / 32 ChEMBL-linked keys (current graphs)\nTetrahydroisoquinoline scaffolds: 195 library / 17 ChEMBL-linked keys (current graphs)\nChromane scaffolds: 182 library / 10 ChEMBL-linked keys (current graphs)\nFive structural motifs: generated consumers, exact graphs, named boundaries and source freshness verified\n",
+      "stderr": ""
+    },
+    {
+      "script": "source-action-tags-test.js",
+      "passed": true,
+      "durationMs": 647,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Source action tags: 31 separately witnessed ChEMBL classifications, unchanged binding evidence, exact graph guards and literal IUPHAR source classes passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "reference-evidence-test.js",
+      "passed": true,
+      "durationMs": 597,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Reference evidence disclosure: 39 curated target gaps covered; classifications, functional context, stale graphs, duplicate records and property separation passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "freesolv-properties-002-test.js",
+      "passed": true,
+      "durationMs": 320,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "FreeSolv batch two: 60 primary-row measurements, exact source witnesses, varied uncertainty and generated evidence guards verified\n",
+      "stderr": ""
+    },
+    {
+      "script": "iuphar-endpoint-test.js",
+      "passed": true,
+      "durationMs": 652,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "IUPHAR endpoints: 2029 source associations, literal medians/ranges/relations, publication links, graph guards and no inferred uncertainty or functional measurement passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "reference-actions-test.js",
+      "passed": true,
+      "durationMs": 970,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Research dossiers: graph guards, participant-specific censored control values, receptor/host species and identity warnings passed\nAssay-aware comparison: endpoint, source, pathway, censored values and curated-classification boundaries passed\nFamily matrices: distinct evidence states, explicit unknowns, human filtering, compound/target pagination and assay-scoped low activity passed\nReview centre: five resolved identity corrections with preserved history, species-specific action differences, raw witnesses and unresolved decision history passed\nCuration queue: source-linked priorities, functional gaps, assay-specific controls and explicit scaffold planning thresholds passed\nCanonical actions: live PAM/NAM/inhibitor/blocker/neutral claims, literal provenance, scoped conflicts, alias deduplication, partial/full differences and binding/bound separation passed\n",
+      "stderr": ""
+    },
+    {
       "script": "target-ranking-test.js",
       "passed": true,
-      "durationMs": 357,
+      "durationMs": 338,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4118,7 +4838,7 @@
     {
       "script": "target-ranking-metrics-test.js",
       "passed": true,
-      "durationMs": 51,
+      "durationMs": 35,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4129,7 +4849,7 @@
     {
       "script": "metabolism-engine-test.js",
       "passed": true,
-      "durationMs": 257,
+      "durationMs": 325,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4140,7 +4860,7 @@
     {
       "script": "evidence-report-test.js",
       "passed": true,
-      "durationMs": 52,
+      "durationMs": 51,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4162,7 +4882,7 @@
     {
       "script": "property-validation.js",
       "passed": true,
-      "durationMs": 44,
+      "durationMs": 40,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4173,7 +4893,7 @@
     {
       "script": "descriptor-conformance-test.js",
       "passed": true,
-      "durationMs": 87,
+      "durationMs": 58,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4184,7 +4904,7 @@
     {
       "script": "metabolism-cases.js",
       "passed": true,
-      "durationMs": 2029,
+      "durationMs": 1876,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4195,7 +4915,7 @@
     {
       "script": "retrieval-benchmark.js",
       "passed": true,
-      "durationMs": 81348,
+      "durationMs": 79317,
       "timeoutMs": 300000,
       "signal": null,
       "status": 0,
@@ -4206,7 +4926,7 @@
     {
       "script": "retrieval-evaluate-test.js",
       "passed": true,
-      "durationMs": 120,
+      "durationMs": 107,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4217,7 +4937,7 @@
     {
       "script": "reference-context-test.js",
       "passed": true,
-      "durationMs": 311,
+      "durationMs": 305,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4228,7 +4948,7 @@
     {
       "script": "reference-fingerprints-test.js",
       "passed": true,
-      "durationMs": 6679,
+      "durationMs": 6756,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4239,7 +4959,7 @@
     {
       "script": "reference-eligibility-test.js",
       "passed": true,
-      "durationMs": 379,
+      "durationMs": 508,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4250,7 +4970,7 @@
     {
       "script": "ui-integration-test.js",
       "passed": true,
-      "durationMs": 48,
+      "durationMs": 44,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4261,7 +4981,7 @@
     {
       "script": "interaction-test.js",
       "passed": true,
-      "durationMs": 50,
+      "durationMs": 40,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4272,7 +4992,7 @@
     {
       "script": "cooperative-batch-test.js",
       "passed": true,
-      "durationMs": 83,
+      "durationMs": 62,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4283,7 +5003,7 @@
     {
       "script": "analysis-lifecycle-test.js",
       "passed": true,
-      "durationMs": 66,
+      "durationMs": 62,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4294,7 +5014,7 @@
     {
       "script": "validation-provenance-test.js",
       "passed": true,
-      "durationMs": 336,
+      "durationMs": 240,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4305,7 +5025,7 @@
     {
       "script": "comparison-test.js",
       "passed": true,
-      "durationMs": 48,
+      "durationMs": 39,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4316,7 +5036,7 @@
     {
       "script": "library-catalog-test.js",
       "passed": true,
-      "durationMs": 426,
+      "durationMs": 435,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4327,7 +5047,7 @@
     {
       "script": "library-metadata-report-test.js",
       "passed": true,
-      "durationMs": 1579,
+      "durationMs": 1476,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4338,7 +5058,7 @@
     {
       "script": "family-reference-test.js",
       "passed": true,
-      "durationMs": 253,
+      "durationMs": 260,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4349,7 +5069,7 @@
     {
       "script": "family-pharmacology-test.js",
       "passed": true,
-      "durationMs": 319,
+      "durationMs": 329,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4360,7 +5080,7 @@
     {
       "script": "two-c-reference-test.js",
       "passed": true,
-      "durationMs": 361,
+      "durationMs": 369,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4371,7 +5091,7 @@
     {
       "script": "named-family-actions-test.js",
       "passed": true,
-      "durationMs": 2669,
+      "durationMs": 2520,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4382,7 +5102,7 @@
     {
       "script": "named-family-003-test.js",
       "passed": true,
-      "durationMs": 317,
+      "durationMs": 292,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4393,7 +5113,7 @@
     {
       "script": "named-family-004-test.js",
       "passed": true,
-      "durationMs": 272,
+      "durationMs": 310,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4404,7 +5124,7 @@
     {
       "script": "reference-research-test.js",
       "passed": true,
-      "durationMs": 715,
+      "durationMs": 869,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4413,9 +5133,31 @@
       "stderr": ""
     },
     {
+      "script": "property-evidence-test.js",
+      "passed": true,
+      "durationMs": 39,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "Property evidence: signed values, numerical uncertainty vs SD, primary references, physical context, graph guards and pharmacology separation passed\n",
+      "stderr": ""
+    },
+    {
+      "script": "freesolv-property-source-test.js",
+      "passed": true,
+      "durationMs": 292,
+      "timeoutMs": 120000,
+      "signal": null,
+      "status": 0,
+      "error": null,
+      "stdout": "FreeSolv sources: 12 upstream rows / 13 existing keys, exact source columns, pinned bytes, explicit uncertainty, missing conditions and no inferred pharmacology passed\n",
+      "stderr": ""
+    },
+    {
       "script": "reference-structure-test.js",
       "passed": true,
-      "durationMs": 57,
+      "durationMs": 59,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4426,7 +5168,7 @@
     {
       "script": "reference-structure-worker-test.js",
       "passed": true,
-      "durationMs": 3518,
+      "durationMs": 3391,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4437,7 +5179,7 @@
     {
       "script": "library-depiction-test.js",
       "passed": true,
-      "durationMs": 115540,
+      "durationMs": 111371,
       "timeoutMs": 300000,
       "signal": null,
       "status": 0,
@@ -4448,7 +5190,7 @@
     {
       "script": "reference-sar-test.js",
       "passed": true,
-      "durationMs": 766,
+      "durationMs": 941,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4459,18 +5201,18 @@
     {
       "script": "reference-pairs-test.js",
       "passed": true,
-      "durationMs": 839,
+      "durationMs": 901,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
       "error": null,
-      "stdout": "Research dossiers: graph guards, participant-specific censored control values, receptor/host species and identity warnings passed\nAssay-aware comparison: endpoint, source, pathway, censored values and curated-classification boundaries passed\nFamily matrices: distinct evidence states, explicit unknowns, human filtering, compound/target pagination and assay-scoped low activity passed\nReview centre: five resolved identity corrections with preserved history, species-specific action differences, raw witnesses and unresolved decision history passed\nCuration queue: source-linked priorities, functional gaps, assay-specific controls and explicit scaffold planning thresholds passed\nMatched pairs: 647 reconstruction-guarded relations, H substitutions, compatible exact assay comparisons, bound exclusion and explicit cliff thresholds passed\n",
+      "stdout": "Research dossiers: graph guards, participant-specific censored control values, receptor/host species and identity warnings passed\nAssay-aware comparison: endpoint, source, pathway, censored values and curated-classification boundaries passed\nFamily matrices: distinct evidence states, explicit unknowns, human filtering, compound/target pagination and assay-scoped low activity passed\nReview centre: five resolved identity corrections with preserved history, species-specific action differences, raw witnesses and unresolved decision history passed\nCuration queue: source-linked priorities, functional gaps, assay-specific controls and explicit scaffold planning thresholds passed\nMatched pairs: 107 historical graphs / 647 historical relations preserved within 179 current graphs / 772 relations; property/assay separation, H substitutions, compatible exact assays, bounds and cliff thresholds passed\n",
       "stderr": ""
     },
     {
       "script": "reference-probes-test.js",
       "passed": true,
-      "durationMs": 750,
+      "durationMs": 917,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4481,7 +5223,7 @@
     {
       "script": "reference-claims-test.js",
       "passed": true,
-      "durationMs": 771,
+      "durationMs": 908,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4492,7 +5234,7 @@
     {
       "script": "reference-releases-test.js",
       "passed": true,
-      "durationMs": 361,
+      "durationMs": 432,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4503,7 +5245,7 @@
     {
       "script": "pharmacology-test.js",
       "passed": true,
-      "durationMs": 404,
+      "durationMs": 434,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4514,7 +5256,7 @@
     {
       "script": "pk-applicability-test.js",
       "passed": true,
-      "durationMs": 162,
+      "durationMs": 141,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4525,7 +5267,7 @@
     {
       "script": "prodrug-candidates-test.js",
       "passed": true,
-      "durationMs": 551,
+      "durationMs": 501,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4536,7 +5278,7 @@
     {
       "script": "quick-candidates-test.js",
       "passed": true,
-      "durationMs": 5777,
+      "durationMs": 5759,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4547,7 +5289,7 @@
     {
       "script": "candidate-info-test.js",
       "passed": true,
-      "durationMs": 4215,
+      "durationMs": 4143,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4558,7 +5300,7 @@
     {
       "script": "cleavable-groups-test.js",
       "passed": true,
-      "durationMs": 154,
+      "durationMs": 133,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4569,7 +5311,7 @@
     {
       "script": "soft-ethers-test.js",
       "passed": true,
-      "durationMs": 1477,
+      "durationMs": 1359,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4580,7 +5322,7 @@
     {
       "script": "analogue-candidates-test.js",
       "passed": true,
-      "durationMs": 9153,
+      "durationMs": 8391,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4591,7 +5333,7 @@
     {
       "script": "directional-smiles-test.js",
       "passed": true,
-      "durationMs": 162,
+      "durationMs": 167,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4602,7 +5344,7 @@
     {
       "script": "prodrug-explorer-test.js",
       "passed": true,
-      "durationMs": 178,
+      "durationMs": 188,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4613,7 +5355,7 @@
     {
       "script": "prodrug-priority-test.js",
       "passed": true,
-      "durationMs": 457,
+      "durationMs": 437,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4624,7 +5366,7 @@
     {
       "script": "sim-pagination-test.js",
       "passed": true,
-      "durationMs": 44,
+      "durationMs": 39,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4635,18 +5377,18 @@
     {
       "script": "batch-browser-test.js",
       "passed": true,
-      "durationMs": 86,
+      "durationMs": 62,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
       "error": null,
-      "stdout": "Batch browsing regression tests passed; 10,000-row benchmark: 15.0 ms for two queries (informational only)\n",
+      "stdout": "Batch browsing regression tests passed; 10,000-row benchmark: 10.1 ms for two queries (informational only)\n",
       "stderr": ""
     },
     {
       "script": "input-workflow-test.js",
       "passed": true,
-      "durationMs": 56,
+      "durationMs": 40,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4657,7 +5399,7 @@
     {
       "script": "file-import-test.js",
       "passed": true,
-      "durationMs": 43,
+      "durationMs": 41,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4668,7 +5410,7 @@
     {
       "script": "report-model-test.js",
       "passed": true,
-      "durationMs": 41,
+      "durationMs": 42,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4679,7 +5421,7 @@
     {
       "script": "full-csv-export-test.js",
       "passed": true,
-      "durationMs": 43,
+      "durationMs": 47,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4690,7 +5432,7 @@
     {
       "script": "research-package-test.js",
       "passed": true,
-      "durationMs": 69,
+      "durationMs": 44,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4701,7 +5443,7 @@
     {
       "script": "descriptor-stats-test.js",
       "passed": true,
-      "durationMs": 53,
+      "durationMs": 35,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4723,7 +5465,7 @@
     {
       "script": "research-zip-external-test.js",
       "passed": true,
-      "durationMs": 127,
+      "durationMs": 128,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,

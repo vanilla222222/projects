@@ -21,7 +21,7 @@ def snapshot(meta):
  else:
   raw=read(meta['commit'],'data/curated-references.js');reviewraw=read(meta['commit'],'data/reference-reviews.js',True)
  d=export(raw,'CURATED_REFERENCES')
- evidence_fields='kind receptorId target action species hostSpecies metric relation value sd lower upper unit uncertainty uncertaintyKind efficacy originalValue originalSd originalUnit testedForm assay conditions endpoint context sourceClassification sourceProvider sourceUrl sourceFile sourceSha256 sourceLocation pubmedIds values rankEligible counterScreen'.split()
+ evidence_fields='kind receptorId target action species hostSpecies metric relation value sd lower upper unit uncertainty uncertaintyKind efficacy originalValue originalSd originalUnit testedForm assay conditions endpoint context sourceClassification sourceProvider sourceUrl sourceFile sourceSha256 sourceLocation pubmedIds originalReference originalReferences experimentalReference sourceGitBlob sourceTableSha256 sourceRow sourceId values rankEligible counterScreen'.split()
  compounds_fields='name sourceName smiles formula inchiKey sourceUrl aliases role libraryNames'.split()
  records=[]
  for r in d['records']:

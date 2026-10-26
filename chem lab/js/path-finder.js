@@ -25,7 +25,11 @@ function pathFinderMaterialKey(smiles) {
 function pathFinderFingerprint(smiles) {
   const g = reactionFragmentGraph(smilesToFragment(smiles)), counts = {};
   const add = key => { counts[key] = (counts[key] || 0) + 1; };
-  g.atoms.forEach(a => add('atom:' + a.element + ':' + (a.isotope || 0)));
+  g.atoms.forEach(a => {
+    add('atom:' + a.element + ':' + (a.isotope || 0));
+    const environment = rxNeighbors(g, a.id).map(n => n.atom.element + ':' + n.bond.order).sort().join(',');
+    add('env:' + a.element + ':' + (a.isotope || 0) + ':' + environment);
+  });
   g.bonds.forEach(b => add('bond:' + [g.getAtom(b.atomA).element,g.getAtom(b.atomB).element].sort().join('-') + ':' + b.order));
   return counts;
 }
@@ -115,7 +119,11 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
   const priority = smiles => {
     if (!priorities.has(smiles)) {
       const features = pathFinderFingerprint(smiles), keys = new Set([...Object.keys(startFeatures),...Object.keys(features)]);
-      priorities.set(smiles,[...keys].reduce((n,k)=>n+Math.abs((features[k]||0)-(startFeatures[k]||0)),0));
+      // Temporary disconnections are cheaper than losing the starting skeleton.
+      priorities.set(smiles, [...keys].reduce((n, k) => {
+        const have = features[k] || 0, want = startFeatures[k] || 0;
+        return n + (have < want ? 6 * (want - have) : have - want);
+      }, 0));
     }
     return priorities.get(smiles);
   };
@@ -208,7 +216,9 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
         continue;
       }
       const product = candidate.product && structure(candidate.product.isomericSmiles || candidate.product.smiles);
-      if (!product || product.key !== node.key) { diagnostics.stereo++; continue; }
+      const sameProduct = product && (product.key === node.key || typeof retroProductIdentity === 'function' &&
+        retroProductIdentity(candidate.product.isomericSmiles || candidate.product.smiles) === retroProductIdentity(node.smiles));
+      if (!sameProduct) { diagnostics.stereo++; continue; }
       if (ruleBlocked(candidate)) { diagnostics.rules++; continue; }
       if (reagentBlocked(candidate)) { diagnostics.reagents++; continue; }
       const precursors = candidate.precursors || [];
@@ -261,10 +271,16 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
     while (job.status === 'running' && retroNow() < until) {
       if (job.elapsedMs + retroNow() - began >= opts.budgetMs) { finish('time-limit'); break; }
       if (!current) {
-        // Preserve breadth-first depth ordering, then favor intermediates with
-        // graph counts closer to the requested starting material.
+        // Short searches retain breadth-first route discovery. Extended searches
+        // use the graph-count distance as the primary guide so a deep, productive
+        // branch is not trapped behind every shallow dead end.
         let nextIndex = 0;
-        for (let i = 1; i < queue.length; i++) if (queue[i].chain.length < queue[nextIndex].chain.length || queue[i].chain.length === queue[nextIndex].chain.length && (queue[i].priority || 0) < (queue[nextIndex].priority || 0)) nextIndex = i;
+        for (let i = 1; i < queue.length; i++) {
+          const a = queue[i], b = queue[nextIndex];
+          const closer = (a.priority || 0) < (b.priority || 0);
+          if (extended ? closer || a.priority === b.priority && a.chain.length < b.chain.length
+            : a.chain.length < b.chain.length || a.chain.length === b.chain.length && closer) nextIndex = i;
+        }
         const node = queue.splice(nextIndex, 1)[0];
         if (!node) { finish('exhausted'); break; }
         if (expanded.has(node.key)) { attach(node, expanded.get(node.key)); continue; }

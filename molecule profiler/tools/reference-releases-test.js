@@ -10,3 +10,5 @@ const resolved=JSON.parse(JSON.stringify(data.releases.at(-1)));resolved.decisio
 console.log('Evidence releases: pinned public snapshots, 14 new classifications vs zero measurements/structures, unresolved review decisions, semantic change types and order invariance passed');
 
 const built=require('node:child_process').spawnSync(process.env.PYTHON||'python3',[path.join(__dirname,'reference-releases-builder-test.py')],{encoding:'utf8'});assert.equal(built.status,0,built.stderr);console.log(built.stdout.trim());
+
+const changedPrimary=JSON.parse(JSON.stringify(after));changedPrimary.records.find(r=>r.evidence.length).evidence[0].originalReference='https://doi.org/10.1234/corrected-source';const primaryChanges=api.diff(after,changedPrimary).changes;assert.ok(primaryChanges.some(c=>c.category==='provenance'),'Primary-study references must be tracked as source provenance');assert.ok(!primaryChanges.some(c=>c.category==='measurement'),'A citation-only correction must not become a new measurement');

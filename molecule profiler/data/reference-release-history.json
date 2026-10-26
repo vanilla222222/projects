@@ -110,11 +110,35 @@
    "commit": "9b87414befc0e87ce7843e905d2cd5be0e2b7a5b"
   },
   {
+   "id": "property-enrichment-001",
+   "label": "Experimental hydration properties \u00b7 existing reference graphs",
+   "date": "2026-10-26",
+   "commit": "51b944ef5c3fd5d20955ca5797a812ffb3ea811c"
+  },
+  {
+   "id": "structural-taxonomy-003",
+   "label": "Structural classification tag refresh",
+   "date": "2026-10-26",
+   "commit": "8c035b4a21e4ef65bf56d833d379ccf2695b2af4"
+  },
+  {
+   "id": "property-evidence-004",
+   "label": "Experimental hydration properties \u00b7 batch 002",
+   "date": "2026-10-26",
+   "commit": "eb4676474bd0338e62b27176ca95df81bbd870c8"
+  },
+  {
    "id": "saturated-family-closures",
    "label": "Penicillin and beta blocker family ceilings recorded",
    "date": "2026-10-26",
+   "commit": "851349ecdd3fb90e0dd0c426536fe1bc32952b39"
+  },
+  {
+   "id": "property-batch-merge",
+   "label": "Experimental property batches merged with the family closures",
+   "date": "2026-10-26",
    "workingTree": true,
-   "baseCommit": "9b87414befc0e87ce7843e905d2cd5be0e2b7a5b"
+   "baseCommit": "860cd8d797c575594f40c1f378efb3bdaf96e046"
   }
  ]
 }
