@@ -1,5 +1,11 @@
 # Chem Lab upgrades
 
+## Retrosynthesis search quality — 2026-10-27
+
+- **Stereochemistry-safe stock endpoints:** bounded retrosynthesis search now compares full molecular identity before treating a stock record or a Grignard reagent's parent halide as an available precursor. Connectivity-only, name-only and opposite-enantiomer matches cannot silently terminate a route; the policy now matches Path Finder inventory handling.
+- **Convergent-route scoring:** linear routes still multiply encoded step yields. Independent branches now use their weakest cumulative branch as a conservative planning bottleneck instead of multiplying all branches as if they were serial operations. This removes an artificial penalty on convergent routes; it remains a ranking heuristic, not an experimental yield prediction or a stoichiometric material-flow model.
+- **Regression coverage:** eight focused checks cover linear and convergent yields, yield filtering, invalid connectivity and enantiomer stock matches, exact stereochemical stock, and Grignard fallback identity.
+
 ## Staged predictions, protected routes and reference comparisons — 2026-10-23
 
 - **Explicit reaction stages:** the Path Finder now has a staged-reaction editor. Up to six declared stages carry one explicitly selected product into a fresh mixture and retain the other product/minor/byproduct branches as records. Ambiguous choices stop for selection; unresolved partial conversion and compatibility conflicts block continuation. Every selected edge is independently forward replayed and complete staged routes can be saved. This is not a kinetic cascade, a balanced material-flow model or a one-pot compatibility prediction.
