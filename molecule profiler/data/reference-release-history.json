@@ -137,8 +137,14 @@
    "id": "property-batch-merge",
    "label": "Experimental property batches merged with the family closures",
    "date": "2026-10-26",
+   "commit": "6f2de140d0a8d1a871f80441945a28de7530c5dd"
+  },
+  {
+   "id": "imidazopyridine-references",
+   "label": "Imidazo[1,2-a]pyridine class brought to fifty references",
+   "date": "2026-10-26",
    "workingTree": true,
-   "baseCommit": "860cd8d797c575594f40c1f378efb3bdaf96e046"
+   "baseCommit": "6f2de140d0a8d1a871f80441945a28de7530c5dd"
   }
  ]
 }
