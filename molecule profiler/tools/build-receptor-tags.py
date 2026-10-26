@@ -67,6 +67,21 @@ def chembl_evidence(annotation,entry,index,source_row):
   result.update(numericalTransferStatus='exact_source_graph',metric=activity['standard_type'],relation=activity['standard_relation'],value=value,unit=activity['standard_units'],context='ChEMBL standardized binding result; original reported fields retained separately. No functional action or selectivity inferred.')
  return result
 
+def chembl_action_evidence(binding,index):
+ """A literal curated action is separate from the binding observation."""
+ if binding.get('numericalTransferStatus')!='exact_source_graph':return None
+ selected,panel,_=index[(binding['receptorId'],binding['activityId'])]
+ literal=selected['activity'].get('action_type')
+ action={'AGONIST':'agonist','ANTAGONIST':'antagonist'}.get(literal.get('action_type')) if isinstance(literal,dict) else None
+ if not action:return None
+ # These fields identify the source classification, not a functional assay or
+ # a potency measurement. Binding values stay solely on the original record.
+ keys=['sourceRow','receptorId','species','assay','librarySmiles','sourceFile','sourceSha256','sourceLocation','sourceRelease','activityId','assayId','documentId','chemblMoleculeId','chemblTargetId','sourceUrl','assayUrl','documentUrl','moleculeUrl','targetUrl','activityUrl']
+ return {**{k:binding[k] for k in keys},'provider':'ChEMBL curated action classification','bindingEvidence':False,
+         'actions':[action],'sourceAction':literal['action_type'],'sourceActionRecord':literal,
+         'classificationTransferStatus':'exact_source_graph',
+         'context':'Explicit ChEMBL source action classification attached to this human target and exact stored graph. Not a newly measured functional result; binding potency does not establish the action.'}
+
 def classify(row):
  """Prefer explicit Action over broad Type; preserve ambiguous classifications as unknown."""
  t,a=row['Type'],row['Action']
@@ -109,7 +124,7 @@ def main():
   ids={r['Ligand ID'] for r in rows};tids={r['Target ID'] for r in rows}
   snapshot={'provider':'IUPHAR/BPS Guide to PHARMACOLOGY','version':versions['interactions.csv'],'retrieved':'2026-10-24','license':'CC BY-SA 4.0','licenseUrl':'https://creativecommons.org/licenses/by-sa/4.0/','sourceUrls':{k:'https://www.guidetopharmacology.org/DATA/'+k for k in raw},'rawSha256':hashes,'rawCounts':{k:len(v) for k,v in raw.items()},'mappingScope':'Exact human HGNC gene mapping for single targets and explicit complex IDs. GABAA/NMDA/AMPA/KAINATE/GLYR/HTR3A are broad catalog groups: source subunit records remain restricted to their reported subunit and assay composition; no claim across all subtypes.', 'targetMapping':{k:sorted(targetmap[k]) for k in sorted(tids)},'targetRows':[r for r in raw['targets_and_families.csv'] if r['Target id'] in tids],'ligands':[matched[k] for k in sorted(ids)],'interactions':rows}
   SOURCE.write_text(json.dumps(snapshot,ensure_ascii=False,indent=2)+'\n')
- src=json.loads(SOURCE.read_text());ligands={r['Ligand ID']:r for r in src['ligands']};records=defaultdict(lambda:{'tags':set(),'evidence':[]});counts=Counter()
+ src=json.loads(SOURCE.read_text());source_digest=digest(SOURCE);ligands={r['Ligand ID']:r for r in src['ligands']};records=defaultdict(lambda:{'tags':set(),'evidence':[]});counts=Counter()
  def add(e,tags,evidence):
   rec=records[e['name']];rec['librarySmiles']=e['smiles'];rec['tags'].update(tags);rec['evidence'].append(evidence)
  for i,row in enumerate(src['interactions']):
@@ -118,9 +133,10 @@ def main():
   for rid in src['targetMapping'][row['Target ID']]:
    tags=['Receptor: '+rid]+['Action: '+ACTIONS[a] for a in actions]+['Receptor action: '+rid+' · '+ACTIONS[a] for a in actions]
    if binding:tags+=['Binding: '+rid]
+   if ligand.get('Type'):tags+=['Source ligand class: '+ligand['Type']]
    for e in bygraph.get(g,[]):
     if not actions and not binding:continue
-    evidence={'provider':src['provider'],'sourceRow':i,'receptorId':rid,'ligandId':row['Ligand ID'],'sourceTargetId':row['Target ID'],'sourceTarget':clean(row['Target']),'sourceType':row['Type'],'sourceAction':row['Action'],'actions':actions,'bindingEvidence':binding,'species':row['Target Species'],'assay':clean(row['Assay Description']),'affinityUnits':row['Affinity Units'],'affinityHigh':row['Affinity High'],'affinityMedian':row['Affinity Median'],'affinityLow':row['Affinity Low'],'comment':clean(row['Action comment']),'ligandContext':clean(row['Ligand Context']),'receptorSite':clean(row['Receptor Site']),'pubmedIds':row['PubMed ID'],'sourceUrl':'https://www.guidetopharmacology.org/GRAC/LigandActivityRangeVisForward?ligandId='+row['Ligand ID']+'&targetId='+row['Target ID']}
+    evidence={'provider':src['provider'],'sourceRow':i,'receptorId':rid,'ligandId':row['Ligand ID'],'sourceTargetId':row['Target ID'],'sourceTarget':clean(row['Target']),'sourceLigandType':ligand.get('Type',''),'sourceLigandRecord':ligand,'sourceFile':str(SOURCE.relative_to(ROOT)),'sourceSha256':source_digest,'sourceLocation':f'interactions[{i}]','librarySmiles':e['smiles'],'sourceType':row['Type'],'sourceAction':row['Action'],'actions':actions,'bindingEvidence':binding,'species':row['Target Species'],'assay':clean(row['Assay Description']),'affinityUnits':row['Affinity Units'],'affinityHigh':row['Affinity High'],'affinityMedian':row['Affinity Median'],'affinityLow':row['Affinity Low'],'comment':clean(row['Action comment']),'ligandContext':clean(row['Ligand Context']),'receptorSite':clean(row['Receptor Site']),'pubmedIds':row['PubMed ID'],'sourceUrl':'https://www.guidetopharmacology.org/GRAC/LigandActivityRangeVisForward?ligandId='+row['Ligand ID']+'&targetId='+row['Target ID']}
     add(e,tags,evidence);counts['iuphar']+=1
  # Existing assay-linked records stay binding-only and graph guarded.
  byname={e['name']:e for e in library};byreceptor={r['id']:r for r in catalog}
@@ -134,12 +150,18 @@ def main():
   evidence=chembl_evidence(a,e,chembl_index,i)
   if evidence['numericalTransferStatus']!='exact_source_graph':counts['chemblNumericalExclusions']+=1
   add(e,['Receptor: '+r['id'],'Binding: '+r['id']],evidence);counts['chembl']+=1
+  classified=chembl_action_evidence(evidence,chembl_index)
+  if classified:
+   action=classified['actions'][0]
+   add(e,['Receptor: '+r['id'],'Action: '+ACTIONS[action],'Receptor action: '+r['id']+' · '+ACTIONS[action],'Evidence: ChEMBL action classification'],classified);counts['chemblActionClassifications']+=1
  definitions=[]
  for r in catalog:
   common={'receptorId':r['id'],'receptorName':r['name'],'family':r['family'],'aliases':r.get('aliases',[]),'genes':r['genes']}
   definitions.extend([{**common,'tag':'Receptor: '+r['id'],'category':'Receptor targets'},{**common,'tag':'Binding: '+r['id'],'category':'Receptor binding'}])
   for a,label in ACTIONS.items():definitions.append({**common,'tag':'Receptor action: '+r['id']+' · '+label,'action':a,'category':'Receptor-specific actions'})
  definitions += [{'tag':'Action: '+label,'action':a,'category':'Receptor actions'}for a,label in ACTIONS.items()]
+ definitions += [{'tag':'Source ligand class: '+kind,'category':'Source ligand classes'}for kind in sorted({l['Type'] for l in ligands.values() if l.get('Type')})]
+ definitions.append({'tag':'Evidence: ChEMBL action classification','category':'Evidence provenance'})
  entries={k:{**v,'tags':sorted(v['tags'])}for k,v in sorted(records.items())}
  paths=['data/library.js','data/receptor-catalog.js','data/receptor-ligand-annotations.js','data/targets.js','tools/build-receptor-tags.py',str(SOURCE.relative_to(ROOT))]+chembl_paths
  report={'schemaVersion':1,'rdkitVersion':rdBase.rdkitVersion,'sourceSha256':{p:digest(ROOT/p) for p in paths},'sourceVersion':src['version'],'receptors':len(catalog),'annotatedEntries':len(entries),'evidenceRecords':dict(counts),'definitions':len(definitions),'coverage':[{'receptorId':r['id'],'binding':sum('Binding: '+r['id'] in e['tags'] for e in entries.values()),'actions':{a:sum('Receptor action: '+r['id']+' · '+label in e['tags'] for e in entries.values())for a,label in ACTIONS.items()}}for r in catalog]}

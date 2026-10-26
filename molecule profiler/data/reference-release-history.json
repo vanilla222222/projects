@@ -114,6 +114,13 @@
       "label": "Experimental hydration properties · existing reference graphs",
       "date": "2026-10-26",
       "commit": "51b944ef5c3fd5d20955ca5797a812ffb3ea811c"
+    },
+    {
+      "id": "structural-taxonomy-003",
+      "label": "Structural classification tag refresh",
+      "date": "2026-10-26",
+      "workingTree": true,
+      "baseCommit": "50a8dad7a2f8a8db7437f71b1c8b57c3f5e98ad9"
     }
   ]
 }

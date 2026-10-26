@@ -51,3 +51,9 @@ descriptor methods and current input hashes. Calculations retain the entire
 stored graph, formal charge and disconnected fragments; they do not substitute
 a neutralized or salt-stripped parent. These descriptors establish no pKa,
 solubility, functional action, selectivity or clinical effect.
+
+Explicit retained ChEMBL `action_type` values may additionally appear as
+separately labeled source classifications. They are not inferred from Ki/Kd,
+and the binding observations remain action-free. Source classifications retain
+their snapshot witnesses and establish no newly measured functional response.
+See `CLASS-ACTION-TAGS-003.md`.

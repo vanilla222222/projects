@@ -9,8 +9,12 @@
   const property=o.kind==='measured_property',context=property?[['Source endpoint',o.endpoint],['Conditions',o.conditions||'Not separately reported'],['Measured form',o.testedForm],['Uncertainty type',o.uncertaintyKind],['Source location',o.sourceLocation],['Context',o.context]]:[['Endpoint',o.endpoint],['Receptor / target species',o.species],['Host-cell species',o.hostSpecies],['Assay',o.assay],['Tested form',o.testedForm],['Conditions',o.conditions],['Uncertainty',o.uncertaintyKind],['Source location',o.sourceLocation],['Context',o.context]];
   for(const [label,value]of context)detail(label,value,d);
   if(typeof o.value==='number')detail(property?'Measured property result':o.provider==='ChEMBL'?'ChEMBL standardized binding result':'Participant result',valueLabel(o),d);
-  if(o.provider==='ChEMBL'){
-   detail('Original reported result',[o.originalMetric,o.originalRelation,o.originalValue,o.originalUnit].filter(v=>v!=null&&v!=='').join(' '),d);
+  detail('Source provider',o.provider,d);
+  detail('Literal source action',o.sourceAction,d);
+  detail('Canonical source classifications',(o.actions||[]).map(a=>a.replace(/_/g,' ')).join('; '),d);
+  detail('Source ligand class',o.sourceLigandType,d);
+  if(o.provider==='ChEMBL'||o.provider==='ChEMBL curated action classification'){
+   if(o.provider==='ChEMBL')detail('Original reported result',[o.originalMetric,o.originalRelation,o.originalValue,o.originalUnit].filter(v=>v!=null&&v!=='').join(' '),d);
    for(const [label,value]of [['Source database release',o.sourceRelease],['ChEMBL molecule',o.chemblMoleculeId],['ChEMBL target',o.chemblTargetId],['Activity ID',o.activityId],['Assay ID',o.assayId],['Document ID',o.documentId],['Assay organism',o.assayOrganism],['Assay type',o.assayType],['Target-assignment confidence score',o.assayConfidence],['Assay tissue',o.assayTissue],['Assay cell type',o.assayCellType],['Source snapshot',o.sourceFile],['Source location',o.sourceLocation],['Snapshot SHA-256',o.sourceSha256]])detail(label,value,d);
    for(const [label,url]of [['ChEMBL document',o.documentUrl],['ChEMBL molecule',o.moleculeUrl],['ChEMBL target',o.targetUrl],['ChEMBL activity',o.activityUrl]])if(url)d.append(link(label+' ↗',url));
   }

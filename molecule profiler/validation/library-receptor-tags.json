@@ -6,7 +6,7 @@
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
     "data/receptor-ligand-annotations.js": "5baaf3e92817424997666eff1422ec70312af28413a4712a16f047828c01c98a",
     "data/targets.js": "c994111b869a78b68fe873c92f218ae1791b9b3e3fbf390f0b3a837221b4aacd",
-    "tools/build-receptor-tags.py": "3de1a9d6996047232402a99dd9298a099ac59e624aa87ec1c7d88f0d2e73e587",
+    "tools/build-receptor-tags.py": "413377fad5de8a9714dc59c91f658526720d62b61191f0f1b31ad579e3b21f02",
     "validation/sources/receptor-actions-iuphar.json": "ae233a073c2159c5c62b3e8a77c26a8f28f5ba94d9127b456112270f368f31f4",
     "validation/chembl-receptor-binding-batch-2.json": "ba6e2aa3aa3b99d294ea211a2443e2514746cbfc07ccaf9372fe75653d1c8475",
     "validation/chembl-receptor-binding-batch-3.json": "f0342758fa351087cf6191bb46d3b69c9cd866bafcea4021bd8c0556a6f2a930",
@@ -20,9 +20,10 @@
   "annotatedEntries": 1787,
   "evidenceRecords": {
     "iuphar": 2029,
-    "chembl": 1881
+    "chembl": 1881,
+    "chemblActionClassifications": 31
   },
-  "definitions": 2350,
+  "definitions": 2355,
   "coverage": [
     {
       "receptorId": "HTR1A",
@@ -108,7 +109,7 @@
       "receptorId": "HTR1F",
       "binding": 26,
       "actions": {
-        "agonist": 24,
+        "agonist": 25,
         "full_agonist": 21,
         "partial_agonist": 3,
         "antagonist": 5,
@@ -591,7 +592,7 @@
         "agonist": 8,
         "full_agonist": 2,
         "partial_agonist": 3,
-        "antagonist": 13,
+        "antagonist": 20,
         "inverse_agonist": 0,
         "modulator": 3,
         "pam": 2,
@@ -668,7 +669,7 @@
       "receptorId": "HRH2",
       "binding": 50,
       "actions": {
-        "agonist": 0,
+        "agonist": 19,
         "full_agonist": 0,
         "partial_agonist": 0,
         "antagonist": 3,
@@ -931,7 +932,7 @@
         "agonist": 4,
         "full_agonist": 1,
         "partial_agonist": 3,
-        "antagonist": 1,
+        "antagonist": 2,
         "inverse_agonist": 0,
         "modulator": 0,
         "pam": 0,
@@ -2428,7 +2429,7 @@
       "receptorId": "RARA",
       "binding": 29,
       "actions": {
-        "agonist": 4,
+        "agonist": 6,
         "full_agonist": 0,
         "partial_agonist": 0,
         "antagonist": 2,
@@ -2945,5 +2946,5 @@
       }
     }
   ],
-  "dataSha256": "3b70e284a4333735bc55410c60aba86591d95c40ba2265f4abdae0842c0629c6"
+  "dataSha256": "baddfe3fde753c32445f0356da332a6764ba420cdc6dd928483ed2bf6935a1bd"
 }
