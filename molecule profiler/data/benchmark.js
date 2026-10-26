@@ -4,7 +4,7 @@
 const RETRIEVAL_BENCHMARK = {
   "composition": {
     "version": "composed-reference-v1",
-    "key": "a967e7621741c4ee",
+    "key": "6c07b8cbd6cf8b8f",
     "library": 21662,
     "targets": 155,
     "ligandSlots": 5480
@@ -14,7 +14,7 @@ const RETRIEVAL_BENCHMARK = {
   "sourceSha256": {
     "data/library.js": "7b39c0a3ebf77d553aa89e18dcd2f4964db095ee163f8987d56398e5f22a77a4",
     "data/targets.js": "c994111b869a78b68fe873c92f218ae1791b9b3e3fbf390f0b3a837221b4aacd",
-    "data/curated-references.js": "460c859a9a20a0805d19005fa27942d2a2777a4c0528c6305621117af9d9141d",
+    "data/curated-references.js": "4b0378cd66cbac8f9fafab387743326cb69d05ce0ef4e81893b2bead79179a3e",
     "js/curated-references.js": "240d0bd4f4cf076c70a1891578a48f3fb19e421bb685a5c6c2bd3af011c9c24e",
     "js/reference-context.js": "f5b2abf4ad945ae2f1e531d1276d75ab1525882d3e27e4b10f84592d0c921a07",
     "js/target-ranking.js": "fbea8f6bac7812eed3f7212869468dd3242398ec652655c19c256240e0d4d243",

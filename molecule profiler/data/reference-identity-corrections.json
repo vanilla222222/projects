@@ -61,6 +61,21 @@
       "category": "source_form_selection",
       "reason": "The named reference now uses the source-reported stereochemistry and tetrazole representation. The historical graph had unspecified stereochemistry. Tautomer-equivalent connectivity does not establish stereochemical identity; this editorial source-form selection does not identify an unknown sample.",
       "reviewedDate": "2026-10-25"
+    },
+    {
+      "id": "identity:GBR-12909",
+      "name": "GBR-12909",
+      "sourceReferenceId": "identity-gbr-12909",
+      "compoundIndex": 0,
+      "before": {
+        "name": "GBR-12909",
+        "cls": "Dopamine transporter ligand",
+        "formula": "C28H33FN2O",
+        "smiles": "Fc1cccc(CCCN2CCN(CCOC(c3ccccc3)c3ccccc3)CC2)c1"
+      },
+      "category": "connectivity_correction",
+      "reason": "The historical graph is neither GBR-12909 nor GBR-12935: it carries one meta fluorine on the phenylpropyl ring and an unsubstituted benzhydryl, and its stated formula C28H33FN2O differs from the reviewed source. The named reference now uses the exact source graph of vanoxerine, the same compound under its ChEBI curated name; the historical representation is retained in correction provenance.",
+      "reviewedDate": "2026-10-26"
     }
   ]
 }

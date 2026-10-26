@@ -95,8 +95,14 @@
       "id": "ergoline-references",
       "label": "Derived ergoline library structures",
       "date": "2026-10-26",
+      "commit": "b3e1040a63a575749d7fc54f8ecfede4b8d8728c"
+    },
+    {
+      "id": "gbr-12909-identity",
+      "label": "GBR-12909 connectivity correction from in-library ChEBI witness",
+      "date": "2026-10-26",
       "workingTree": true,
-      "baseCommit": "11470843ba8245f4698a7dc263e1530860aed597"
+      "baseCommit": "b3e1040a63a575749d7fc54f8ecfede4b8d8728c"
     }
   ]
 }

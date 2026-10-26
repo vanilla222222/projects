@@ -1,0 +1,52 @@
+{
+ "id": "identity-gbr-12909",
+ "title": "GBR-12909 \u2014 reviewed identity",
+ "collections": [
+  "Dopamine transporter references"
+ ],
+ "compounds": [
+  {
+   "name": "vanoxerine",
+   "sourceName": "vanoxerine",
+   "smiles": "Fc1ccc(C(OCCN2CCN(CCCc3ccccc3)CC2)c2ccc(F)cc2)cc1",
+   "formula": "C28H32F2N2O",
+   "inchiKey": "NAUWTFJOPJWYOT-UHFFFAOYSA-N",
+   "sourceUrl": "https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:64089",
+   "aliases": [
+    "GBR-12909",
+    "1-[2-[di(4-fluorophenyl)methoxy]ethyl]-4-(3-phenylpropyl)piperazine"
+   ],
+   "role": "Dopamine transporter inhibitor (reviewed source identity)",
+   "identitySource": {
+    "provider": "ChEBI",
+    "license": "CC BY 4.0",
+    "sourceRecord": {
+     "provider": "ChEBI",
+     "id": "64089",
+     "url": "https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:64089",
+     "snapshot": "2026-10-06",
+     "inchiKey": "NAUWTFJOPJWYOT-UHFFFAOYSA-N",
+     "license": "CC BY 4.0",
+     "nameKind": "ChEBI curated name",
+     "librarySmiles": "Fc1ccc(C(OCCN2CCN(CCCc3ccccc3)CC2)c2ccc(F)cc2)cc1",
+     "batch": "002"
+    },
+    "sourceFile": "validation/sources/gbr-12909-chebi-identity.json",
+    "sourceSha256": "70304156d1dd748662e36b246a42fb590a756fbed699a30c5a48945d0a720af0"
+   },
+   "correctedLegacyNames": [
+    "GBR-12909"
+   ]
+  }
+ ],
+ "evidence": [
+  {
+   "kind": "identity_reference",
+   "sourceUrl": "https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:64089",
+   "endpoint": "ChEBI curated structure for vanoxerine (CHEBI:64089)",
+   "context": "Identity only. The reviewed source fixes the structure of the named reference; it establishes no transporter affinity, selectivity or potency."
+  }
+ ],
+ "note": "GBR-12909 and vanoxerine are the same compound. The historical GBR-12909 row carried C28H33FN2O with a single meta fluorine on the phenylpropyl ring and an unsubstituted benzhydryl, which is neither GBR-12909 nor GBR-12935; the reviewed ChEBI structure is C28H32F2N2O with two para fluorines on the benzhydryl. The witness is the library's own ChEBI-sourced vanoxerine row, pinned by origin commit and file digest, so no claim rests on an unpinned fetch.",
+ "reviewedDate": "2026-10-26"
+}

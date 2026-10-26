@@ -1,0 +1,18 @@
+{
+ "originCommit": "b3e1040a63a575749d7fc54f8ecfede4b8d8728c",
+ "originPath": "data/library.js",
+ "originSha256": "7b39c0a3ebf77d553aa89e18dcd2f4964db095ee163f8987d56398e5f22a77a4",
+ "rows": [
+  {
+   "provider": "ChEBI",
+   "id": "64089",
+   "url": "https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:64089",
+   "snapshot": "2026-10-06",
+   "inchiKey": "NAUWTFJOPJWYOT-UHFFFAOYSA-N",
+   "license": "CC BY 4.0",
+   "nameKind": "ChEBI curated name",
+   "librarySmiles": "Fc1ccc(C(OCCN2CCN(CCCc3ccccc3)CC2)c2ccc(F)cc2)cc1",
+   "batch": "002"
+  }
+ ]
+}

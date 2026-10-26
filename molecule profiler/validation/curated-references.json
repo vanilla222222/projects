@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "identityCorrectionSha256": "9591b653609e8e98d6cfcc06c3e7041c1ce554ed3d0fd2c0b82e5420730e8b18",
-  "identityCorrections": 4,
-  "records": 110,
+  "identityCorrectionSha256": "daa50751e11a3a71eb2bea23d7a838e3463dd6c43b5e0b7983238bba21cc915a",
+  "identityCorrections": 5,
+  "records": 111,
   "extraStructures": 27,
   "rdkitVersion": "2026.09.1",
   "inputSha256": {
@@ -95,6 +95,7 @@
     "data/curated-reference-entries/family-004-7556-drd2.json": "5e96cbde922db4ff7720271bdbfc66d893958ac10611bf98e721f4f8ef384a69",
     "data/curated-reference-entries/family-004-7556-drd3.json": "3d441d8015575984517e68264a624f520e08da083ff55ae54bfcb6e43b238cda",
     "data/curated-reference-entries/family-004-7556-drd4.json": "e9595d646e8f4e9a3ef09068bb45b931ff3cd4b7750622301aea8c93efa6912e",
+    "data/curated-reference-entries/identity-gbr-12909.json": "d30d4665120a3a0ece91e462fd641696591589f046405d8fc745c64c171411d1",
     "data/curated-reference-entries/iuphar-10454-taar1.json": "3dd20850b3599327fcdc0a91c78cce10e51b31829427c9fcc69bbcb314c7f872",
     "data/curated-reference-entries/iuphar-1369-grm5.json": "af55b194b6c52eddce8dbdcf10ca623349c12f57811c232d66396eb9f5fce90f",
     "data/curated-reference-entries/iuphar-1394-grm2.json": "6d1146cd8ae7241aa698af5bf5342aea71fd4e15680aa3ff90f5b42448700a15",
@@ -358,6 +359,6 @@
   ],
   "librarySha256": "7b39c0a3ebf77d553aa89e18dcd2f4964db095ee163f8987d56398e5f22a77a4",
   "toolSha256": "24be66d6d19e9dcf3f65ed4fd599fd804ccda1cf71dbe9025c540120a24efbdc",
-  "dataSha256": "460c859a9a20a0805d19005fa27942d2a2777a4c0528c6305621117af9d9141d",
-  "browserGraphsChecked": 107
+  "dataSha256": "4b0378cd66cbac8f9fafab387743326cb69d05ce0ef4e81893b2bead79179a3e",
+  "browserGraphsChecked": 108
 }
