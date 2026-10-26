@@ -36,7 +36,7 @@ RETRO_TRANSFORMS.push(
    },{solvents:['none'],additives:['naoac'],temperature:160},[{smiles:'CC(=O)OC(C)=O',role:'reactant',label:'Acetic anhydride'}]))).filter(Boolean));
  }},
  {id:'benzilic-rearrangement',name:'Alpha-hydroxy acid from benzilic rearrangement',rule:'benzilic-rearrangement',group:'Rearrangement',match(t){
-  return t.info.carbonyls.filter(c=>c.kind==='acid').slice(0,RETRO_LIMITS.maxPerTransform).flatMap(c=>t.info.alcohols.filter(a=>t.graph.getBond(c.c,a.c)&&rxCarbonNeighbors(t.graph,a.c).filter(n=>n.atom.id!==c.c&&rxCarbonNeighbors(t.graph,a.c).filter(n=>n.atom.id!==c.c).length===2).map(a=>retro8One(t,g=>{
+  return t.info.carbonyls.filter(c=>c.kind==='acid').slice(0,RETRO_LIMITS.maxPerTransform).flatMap(c=>t.info.alcohols.filter(a=>t.graph.getBond(c.c,a.c)&&rxCarbonNeighbors(t.graph,a.c).filter(n=>n.atom.id!==c.c).length===2).map(a=>retro8One(t,g=>{
    const migrating=rxCarbonNeighbors(g,a.c).find(n=>n.atom.id!==c.c&&t.aromatic.has(n.atom.id));if(!migrating)return false;rxSetOrder(g,a.c,migrating.atom.id,0);g.addBond(c.c,migrating.atom.id);g.removeAtom(c.hetero);g.removeAtom(a.o);rxAttach(g,'O',a.c,2);
   },{solvents:['water'],additives:['naoh'],temperature:80}))).filter(Boolean);
  }},
