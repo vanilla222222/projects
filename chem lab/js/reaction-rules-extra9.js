@@ -121,3 +121,19 @@ const RX9_RULE_DATA = [
  ['curtius-hydrolysis','Curtius rearrangement/hydrolysis',rx9RuleCurtius,'Rearrangement','One simple R–C(O)–N=N+=N− acyl azide; heat 60–120 °C then aqueous work-up; no other N/O functionality or C=C/C≡C.',RX9_SOURCES.gabriel],
 ];
 RX9_RULE_DATA.forEach(([id,name,run,family,scope,source])=>RX_RULES.push({id,name,run,catalog:{family,scope,assumptions:['The stated sequential stages and isolated-product convention apply; no rate or conversion is measured.'],limitations:['Only the encoded single-site subset is supported; no general chemoselectivity, yield, concentration or experimental feasibility is established.'],references:[source]}}));
+
+// Hydrazine and base alone do not justify full Wolff–Kishner deoxygenation.
+// Below the activation threshold, preserve the original hydrazone prediction
+// instead of returning a hot-reaction product with only a warning attached.
+const rx9HydrazineTemperatureRule=RX_RULES.find(rule=>rule.id==='hydrazine');
+if(rx9HydrazineTemperatureRule){
+ const rx9HydrazineTemperatureRun=rx9HydrazineTemperatureRule.run;
+ rx9HydrazineTemperatureRule.run=function(ctx){
+  if(ctx.temperature<150&&ctx.get('hydrazine')&&(ctx.has('hydroxide')||ctx.has('alkoxide'))){
+   const cool=Object.create(ctx),has=ctx.has;
+   cool.has=tag=>tag==='hydroxide'||tag==='alkoxide'?false:has(tag);
+   return rx9HydrazineTemperatureRun(cool);
+  }
+  return rx9HydrazineTemperatureRun(ctx);
+ };
+}
