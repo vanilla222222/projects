@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "identityCorrectionSha256": "daa50751e11a3a71eb2bea23d7a838e3463dd6c43b5e0b7983238bba21cc915a",
   "identityCorrections": 5,
-  "records": 111,
+  "records": 123,
   "extraStructures": 27,
   "rdkitVersion": "2026.09.1",
   "inputSha256": {
@@ -115,6 +115,18 @@
     "data/curated-reference-entries/prodrug-mycophenolate.json": "6b084dec2bff2a80dfe6291dc4e052e36e12de43758b9349ee14958494bc55a7",
     "data/curated-reference-entries/property-benzene.json": "c1db55f2f183b4f1ce2eb523015ed576509cdd6e1c1ab9064d457430fea0d862",
     "data/curated-reference-entries/property-ethanol.json": "c170780b490502d4af2097fb438d03bec264bdef99325d01dc037ca36fa4c5df",
+    "data/curated-reference-entries/property-freesolv-1-propanol.json": "8e21cac041165487f9985731b9d4b8743fb4c43882b42e05a9c836b340ac118e",
+    "data/curated-reference-entries/property-freesolv-2-propanol.json": "dd7fb4c1950c069b10977484acee47f9e8f3af60b74db0bdb2fa40a25a0d52d8",
+    "data/curated-reference-entries/property-freesolv-acetone.json": "6ac1cb9938ee0a997d32e3e8eceeaf2225698350634a459b36cb48434a8686b5",
+    "data/curated-reference-entries/property-freesolv-acetonitrile.json": "c48730e42f34975c7667565d64b0eadf5530eb1d77db6047d8c7ff78e240976b",
+    "data/curated-reference-entries/property-freesolv-aniline.json": "b063afd3a35db31753f72ff98d43ed6cac2f1034b418163970f7e7b5ed775225",
+    "data/curated-reference-entries/property-freesolv-anisole.json": "a46a96b0f987833b7c230555ad821e1f6845c97466d5c3ad5cea8236e8c68c27",
+    "data/curated-reference-entries/property-freesolv-benzonitrile.json": "d132b8a6199ad2d305b811587fc2472cedc6d3709fbbc2a40b5acc1af6fe8cc7",
+    "data/curated-reference-entries/property-freesolv-chloroform.json": "1dca265cd47c4e8225f352ce7abb3fbfb4efcf9501f1632ffa78f17305af22aa",
+    "data/curated-reference-entries/property-freesolv-cyclohexane.json": "421b2f6d49e934de5562d65db9ba712fd71f7cefaeb1a7c27db2d1730cb46546",
+    "data/curated-reference-entries/property-freesolv-ethyl-acetate.json": "628552bf75133438a2d5532a17054a8b7d6438cf3f72b762dfe241ac78845282",
+    "data/curated-reference-entries/property-freesolv-pyridine.json": "d13c5eeb3ad27a3cca064e7712ad7b4f751e14a8b1b9bc98f9efb12c019c2a0e",
+    "data/curated-reference-entries/property-freesolv-toluene.json": "8ecaa527c209d94485807703fa3b759fa84fa3b428490fd44714639a5534b6a4",
     "data/curated-reference-entries/property-methanol.json": "0a6fa8d8fa4b88c3effefb9ca5081c3fa6fd5d47f1dfe6933e71a5d007d328c0",
     "data/curated-reference-entries/property-phenol.json": "ed0c83307666a4eba8be2f34d6ef42b8605e3563bb7c3ec58c0218c4a2d50f81"
   },
@@ -359,6 +371,6 @@
   ],
   "librarySha256": "ae52a616ccb4972f5a5ea25065738716d88d647e23bc88e786454fac581a146e",
   "toolSha256": "24be66d6d19e9dcf3f65ed4fd599fd804ccda1cf71dbe9025c540120a24efbdc",
-  "dataSha256": "4b0378cd66cbac8f9fafab387743326cb69d05ce0ef4e81893b2bead79179a3e",
-  "browserGraphsChecked": 108
+  "dataSha256": "25468e2cd26d0573005bfc29736a225dcd236138b59927f03b1fe4a886f21462",
+  "browserGraphsChecked": 120
 }

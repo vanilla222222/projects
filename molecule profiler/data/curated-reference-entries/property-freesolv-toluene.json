@@ -1,0 +1,80 @@
+{
+  "id": "property-freesolv-toluene",
+  "title": "Toluene — experimental hydration free energy",
+  "collections": [
+    "Measured properties"
+  ],
+  "compounds": [
+    {
+      "name": "Toluene",
+      "sourceName": "toluene",
+      "smiles": "Cc1ccccc1",
+      "formula": "C7H8",
+      "inchiKey": "YXFVVABEGXRONW-UHFFFAOYSA-N",
+      "sourceUrl": "https://github.com/MobleyLab/FreeSolv/blob/134cd763f95d54d818fc0618095aa01cbe470fc3/database.txt#L70",
+      "role": "measured-property reference",
+      "identitySource": {
+        "provider": "FreeSolv / Mobley laboratory",
+        "identifierOrigin": "RDKit-derived from the exact source SMILES; not a source-supplied registry identifier",
+        "formulaOrigin": "RDKit-derived from the exact source SMILES",
+        "license": "CC BY 4.0",
+        "licenseMetadata": {
+          "license": "CC BY 4.0",
+          "observedAtRevision": "6c7d19b4b565537365ffd22006aa2cd4643200c6",
+          "sourceUrl": "https://github.com/MobleyLab/FreeSolv/blob/6c7d19b4b565537365ffd22006aa2cd4643200c6/LICENSE",
+          "statementUrl": "https://github.com/MobleyLab/FreeSolv/blob/6c7d19b4b565537365ffd22006aa2cd4643200c6/README.md#license",
+          "scope": "Official 2026 licensing statement, recorded separately from the 2017 data revision. Maintainers license the data to the extent it is theirs to license; original source restrictions may remain."
+        },
+        "sourceFile": "validation/sources/freesolv-properties-001.json",
+        "sourceSha256": "25b98041bd4c102240eb59c5bb167d77f4fcb9cf7186e2898ca836d43256c52e",
+        "sourceGitBlob": "6c6dbf5d27e646db5a540288ece636f9c915f363",
+        "sourceTableSha256": "2d13f095713bc39b85f85dd7b4e5483fbb12fc694bf253bb1d92a4c4d484f260",
+        "sourceRecord": {
+          "sourceId": "mobley_1873346",
+          "sourceName": "toluene",
+          "sourceSMILES": "Cc1ccccc1",
+          "smiles": "Cc1ccccc1",
+          "formula": "C7H8",
+          "inchiKey": "YXFVVABEGXRONW-UHFFFAOYSA-N",
+          "identifierOrigin": "RDKit-derived from the exact source SMILES; not a source-supplied registry identifier",
+          "formulaOrigin": "RDKit-derived from the exact source SMILES",
+          "rawRow": "mobley_1873346; Cc1ccccc1; toluene; -0.90; 0.20; -0.79; 0.03; 10.1039/P29900000291; 10.1021/acs.jced.7b00104; Experimental uncertainty as suggested by 10.1039/P29900000291 -- 0.2 kcal/mol.  "
+        }
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "measured_property",
+      "target": "Hydration free energy",
+      "endpoint": "-0.90 kcal/mol; source-reported estimate 0.20 kcal/mol",
+      "relation": "=",
+      "value": -0.9,
+      "unit": "kcal/mol",
+      "uncertainty": 0.2,
+      "uncertaintyKind": "source-reported estimate",
+      "sourceUrl": "https://github.com/MobleyLab/FreeSolv/blob/134cd763f95d54d818fc0618095aa01cbe470fc3/database.txt#L70",
+      "originalReference": "https://doi.org/10.1039/P29900000291",
+      "originalReferences": [
+        "https://doi.org/10.1039/P29900000291"
+      ],
+      "experimentalReference": "10.1039/P29900000291",
+      "sourceFile": "validation/sources/freesolv-properties-001.json",
+      "sourceSha256": "25b98041bd4c102240eb59c5bb167d77f4fcb9cf7186e2898ca836d43256c52e",
+      "sourceRecord": "mobley_1873346; Cc1ccccc1; toluene; -0.90; 0.20; -0.79; 0.03; 10.1039/P29900000291; 10.1021/acs.jced.7b00104; Experimental uncertainty as suggested by 10.1039/P29900000291 -- 0.2 kcal/mol.  ",
+      "sourceRow": 70,
+      "sourceId": "mobley_1873346",
+      "sourceLocation": "database.txt line 70, experimental value/uncertainty columns 4 and 5",
+      "sourceGitBlob": "6c6dbf5d27e646db5a540288ece636f9c915f363",
+      "sourceTableSha256": "2d13f095713bc39b85f85dd7b4e5483fbb12fc694bf253bb1d92a4c4d484f260",
+      "conditions": {
+        "temperature": "Not specified on this database row",
+        "pH": "Not specified on this database row",
+        "phaseTransfer": "Gas to water; retain the FreeSolv dataset standard-state convention"
+      },
+      "context": "Experimental uncertainty as suggested by 10.1039/P29900000291 -- 0.2 kcal/mol."
+    }
+  ],
+  "note": "Experimental FreeSolv hydration free energy, not aqueous solubility, pKa, logP, logD or receptor evidence. Calculated GAFF columns are excluded. Source-listed uncertainty is an estimate or assigned default, never a transcribed SD. No experimental temperature or pH is inferred from simulation conditions. Stored library names and graphs are unchanged.",
+  "reviewedDate": "2026-10-26"
+}

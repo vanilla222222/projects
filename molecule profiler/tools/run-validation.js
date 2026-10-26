@@ -45,6 +45,8 @@ const scripts = [
   'named-family-003-test.js',
   'named-family-004-test.js',
   'reference-research-test.js',
+  'property-evidence-test.js',
+  'freesolv-property-source-test.js',
   'reference-structure-test.js',
   'reference-structure-worker-test.js',
   'library-depiction-test.js',

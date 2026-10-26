@@ -14,7 +14,7 @@ const RETRIEVAL_BENCHMARK = {
   "sourceSha256": {
     "data/library.js": "ae52a616ccb4972f5a5ea25065738716d88d647e23bc88e786454fac581a146e",
     "data/targets.js": "c994111b869a78b68fe873c92f218ae1791b9b3e3fbf390f0b3a837221b4aacd",
-    "data/curated-references.js": "4b0378cd66cbac8f9fafab387743326cb69d05ce0ef4e81893b2bead79179a3e",
+    "data/curated-references.js": "25468e2cd26d0573005bfc29736a225dcd236138b59927f03b1fe4a886f21462",
     "js/curated-references.js": "240d0bd4f4cf076c70a1891578a48f3fb19e421bb685a5c6c2bd3af011c9c24e",
     "js/reference-context.js": "f5b2abf4ad945ae2f1e531d1276d75ab1525882d3e27e4b10f84592d0c921a07",
     "js/target-ranking.js": "fbea8f6bac7812eed3f7212869468dd3242398ec652655c19c256240e0d4d243",

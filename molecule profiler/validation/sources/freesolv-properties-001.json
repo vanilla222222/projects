@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 1,
+  "provider": "FreeSolv / Mobley laboratory",
+  "sourceRevision": "134cd763f95d54d818fc0618095aa01cbe470fc3",
+  "sourceGitBlob": "6c6dbf5d27e646db5a540288ece636f9c915f363",
+  "sourceUrl": "https://github.com/MobleyLab/FreeSolv/blob/134cd763f95d54d818fc0618095aa01cbe470fc3/database.txt",
+  "sourceFile": "validation/sources/freesolv-database-134cd763.txt",
+  "sourceSha256": "2d13f095713bc39b85f85dd7b4e5483fbb12fc694bf253bb1d92a4c4d484f260",
+  "sourceFileSha256": {
+    "validation/sources/freesolv-database-134cd763.txt": "2d13f095713bc39b85f85dd7b4e5483fbb12fc694bf253bb1d92a4c4d484f260",
+    "validation/sources/freesolv-README-134cd763.md": "3e1ab0f4d957b8da55f9270419aa0f85ed4d668ed4061c30d2c519fa3b293773",
+    "validation/sources/freesolv-LICENSE-6c7d19b4.txt": "cce5d01fa4a83b794271bd2c28cffdf99afd43c803e6ddefddae39b591ea7448",
+    "validation/sources/freesolv-README-6c7d19b4.md": "ec5c1cb5f47391ac9ddfc81f0e981d526992ed2e20937e9cfdab7394b80bc1b2"
+  },
+  "sourceFileGitBlobs": {
+    "validation/sources/freesolv-database-134cd763.txt": "6c6dbf5d27e646db5a540288ece636f9c915f363",
+    "validation/sources/freesolv-README-134cd763.md": "b374bba5195d7b662f5342086af744b6735ec7f7",
+    "validation/sources/freesolv-LICENSE-6c7d19b4.txt": "53883b1c7add1f76201c2ba4c1d1d17e5cb7ed18",
+    "validation/sources/freesolv-README-6c7d19b4.md": "0a6b4a320ebf653e5d40d8b6bffdd51acc72db82"
+  },
+  "licenseMetadata": {
+    "license": "CC BY 4.0",
+    "observedAtRevision": "6c7d19b4b565537365ffd22006aa2cd4643200c6",
+    "sourceUrl": "https://github.com/MobleyLab/FreeSolv/blob/6c7d19b4b565537365ffd22006aa2cd4643200c6/LICENSE",
+    "statementUrl": "https://github.com/MobleyLab/FreeSolv/blob/6c7d19b4b565537365ffd22006aa2cd4643200c6/README.md#license",
+    "scope": "Official 2026 licensing statement, recorded separately from the 2017 data revision. Maintainers license the data to the extent it is theirs to license; original source restrictions may remain."
+  },
+  "rdkitVersion": "2026.09.1",
+  "selection": [
+    {
+      "sourceId": "mobley_1873346",
+      "stableLibraryKey": "Toluene"
+    },
+    {
+      "sourceId": "mobley_2451097",
+      "stableLibraryKey": "benzonitrile"
+    },
+    {
+      "sourceId": "mobley_2689721",
+      "stableLibraryKey": "Cyclohexane"
+    },
+    {
+      "sourceId": "mobley_296847",
+      "stableLibraryKey": "Pyridine"
+    },
+    {
+      "sourceId": "mobley_2996632",
+      "stableLibraryKey": "Chloroform"
+    },
+    {
+      "sourceId": "mobley_313406",
+      "stableLibraryKey": "1-Propanol"
+    },
+    {
+      "sourceId": "mobley_3867265",
+      "stableLibraryKey": "Acetone"
+    },
+    {
+      "sourceId": "mobley_4883284",
+      "stableLibraryKey": "Aniline"
+    },
+    {
+      "sourceId": "mobley_6973347",
+      "stableLibraryKey": "Ethyl acetate"
+    },
+    {
+      "sourceId": "mobley_7295828",
+      "stableLibraryKey": "Anisole"
+    },
+    {
+      "sourceId": "mobley_7326982",
+      "stableLibraryKey": "2-Propanol"
+    },
+    {
+      "sourceId": "mobley_7532833",
+      "stableLibraryKey": "acetonitrile"
+    }
+  ],
+  "rows": [
+    "mobley_1873346; Cc1ccccc1; toluene; -0.90; 0.20; -0.79; 0.03; 10.1039/P29900000291; 10.1021/acs.jced.7b00104; Experimental uncertainty as suggested by 10.1039/P29900000291 -- 0.2 kcal/mol.  ",
+    "mobley_2451097; c1ccc(cc1)C#N; benzonitrile; -4.10; 0.60; -3.24; 0.03; 10.1039/P29940001777; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  ",
+    "mobley_2689721; C1CCCCC1; cyclohexane; 1.23; 0.60; 1.50; 0.02; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  ",
+    "mobley_296847; c1ccncc1; pyridine; -4.69; 0.60; -3.51; 0.02; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  ",
+    "mobley_2996632; C(Cl)(Cl)Cl; chloroform; -1.08; 0.60; 0.28; 0.02; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  ",
+    "mobley_313406; CCCO; propan-1-ol; -4.85; 0.60; -3.33; 0.02; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  ",
+    "mobley_3867265; CC(=O)C; acetone; -3.80; 0.60; -3.51; 0.02; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  ",
+    "mobley_4883284; c1ccc(cc1)N; aniline; -5.49; 0.60; -5.54; 0.03; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  ",
+    "mobley_6973347; CCOC(=O)C; ethyl acetate; -2.94; 0.60; -3.75; 0.03; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  ",
+    "mobley_7295828; COc1ccccc1; anisole; -2.45; 0.60; -2.32; 0.03; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  ",
+    "mobley_7326982; CC(C)O; propan-2-ol; -4.74; 0.60; -3.43; 0.02; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  ",
+    "mobley_7532833; CC#N; acetonitrile; -3.88; 0.60; -2.79; 0.02; 10.1021/jp0264477; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  "
+  ],
+  "ligands": [
+    {
+      "sourceId": "mobley_1873346",
+      "sourceName": "toluene",
+      "sourceSMILES": "Cc1ccccc1",
+      "smiles": "Cc1ccccc1",
+      "formula": "C7H8",
+      "inchiKey": "YXFVVABEGXRONW-UHFFFAOYSA-N",
+      "identifierOrigin": "RDKit-derived from the exact source SMILES; not a source-supplied registry identifier",
+      "formulaOrigin": "RDKit-derived from the exact source SMILES",
+      "rawRow": "mobley_1873346; Cc1ccccc1; toluene; -0.90; 0.20; -0.79; 0.03; 10.1039/P29900000291; 10.1021/acs.jced.7b00104; Experimental uncertainty as suggested by 10.1039/P29900000291 -- 0.2 kcal/mol.  "
+    },
+    {
+      "sourceId": "mobley_2451097",
+      "sourceName": "benzonitrile",
+      "sourceSMILES": "c1ccc(cc1)C#N",
+      "smiles": "c1ccc(cc1)C#N",
+      "formula": "C7H5N",
+      "inchiKey": "JFDZBHWFFUWGJE-UHFFFAOYSA-N",
+      "identifierOrigin": "RDKit-derived from the exact source SMILES; not a source-supplied registry identifier",
+      "formulaOrigin": "RDKit-derived from the exact source SMILES",
+      "rawRow": "mobley_2451097; c1ccc(cc1)C#N; benzonitrile; -4.10; 0.60; -3.24; 0.03; 10.1039/P29940001777; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  "
+    },
+    {
+      "sourceId": "mobley_2689721",
+      "sourceName": "cyclohexane",
+      "sourceSMILES": "C1CCCCC1",
+      "smiles": "C1CCCCC1",
+      "formula": "C6H12",
+      "inchiKey": "XDTMQSROBMDMFD-UHFFFAOYSA-N",
+      "identifierOrigin": "RDKit-derived from the exact source SMILES; not a source-supplied registry identifier",
+      "formulaOrigin": "RDKit-derived from the exact source SMILES",
+      "rawRow": "mobley_2689721; C1CCCCC1; cyclohexane; 1.23; 0.60; 1.50; 0.02; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  "
+    },
+    {
+      "sourceId": "mobley_296847",
+      "sourceName": "pyridine",
+      "sourceSMILES": "c1ccncc1",
+      "smiles": "c1ccncc1",
+      "formula": "C5H5N",
+      "inchiKey": "JUJWROOIHBZHMG-UHFFFAOYSA-N",
+      "identifierOrigin": "RDKit-derived from the exact source SMILES; not a source-supplied registry identifier",
+      "formulaOrigin": "RDKit-derived from the exact source SMILES",
+      "rawRow": "mobley_296847; c1ccncc1; pyridine; -4.69; 0.60; -3.51; 0.02; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  "
+    },
+    {
+      "sourceId": "mobley_2996632",
+      "sourceName": "chloroform",
+      "sourceSMILES": "C(Cl)(Cl)Cl",
+      "smiles": "C(Cl)(Cl)Cl",
+      "formula": "CHCl3",
+      "inchiKey": "HEDRZPFGACZZDS-UHFFFAOYSA-N",
+      "identifierOrigin": "RDKit-derived from the exact source SMILES; not a source-supplied registry identifier",
+      "formulaOrigin": "RDKit-derived from the exact source SMILES",
+      "rawRow": "mobley_2996632; C(Cl)(Cl)Cl; chloroform; -1.08; 0.60; 0.28; 0.02; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  "
+    },
+    {
+      "sourceId": "mobley_313406",
+      "sourceName": "propan-1-ol",
+      "sourceSMILES": "CCCO",
+      "smiles": "CCCO",
+      "formula": "C3H8O",
+      "inchiKey": "BDERNNFJNOPAEC-UHFFFAOYSA-N",
+      "identifierOrigin": "RDKit-derived from the exact source SMILES; not a source-supplied registry identifier",
+      "formulaOrigin": "RDKit-derived from the exact source SMILES",
+      "rawRow": "mobley_313406; CCCO; propan-1-ol; -4.85; 0.60; -3.33; 0.02; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  "
+    },
+    {
+      "sourceId": "mobley_3867265",
+      "sourceName": "acetone",
+      "sourceSMILES": "CC(=O)C",
+      "smiles": "CC(=O)C",
+      "formula": "C3H6O",
+      "inchiKey": "CSCPPACGZOOCGX-UHFFFAOYSA-N",
+      "identifierOrigin": "RDKit-derived from the exact source SMILES; not a source-supplied registry identifier",
+      "formulaOrigin": "RDKit-derived from the exact source SMILES",
+      "rawRow": "mobley_3867265; CC(=O)C; acetone; -3.80; 0.60; -3.51; 0.02; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  "
+    },
+    {
+      "sourceId": "mobley_4883284",
+      "sourceName": "aniline",
+      "sourceSMILES": "c1ccc(cc1)N",
+      "smiles": "c1ccc(cc1)N",
+      "formula": "C6H7N",
+      "inchiKey": "PAYRUJLWNCNPSJ-UHFFFAOYSA-N",
+      "identifierOrigin": "RDKit-derived from the exact source SMILES; not a source-supplied registry identifier",
+      "formulaOrigin": "RDKit-derived from the exact source SMILES",
+      "rawRow": "mobley_4883284; c1ccc(cc1)N; aniline; -5.49; 0.60; -5.54; 0.03; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  "
+    },
+    {
+      "sourceId": "mobley_6973347",
+      "sourceName": "ethyl acetate",
+      "sourceSMILES": "CCOC(=O)C",
+      "smiles": "CCOC(=O)C",
+      "formula": "C4H8O2",
+      "inchiKey": "XEKOWRVHYACXOJ-UHFFFAOYSA-N",
+      "identifierOrigin": "RDKit-derived from the exact source SMILES; not a source-supplied registry identifier",
+      "formulaOrigin": "RDKit-derived from the exact source SMILES",
+      "rawRow": "mobley_6973347; CCOC(=O)C; ethyl acetate; -2.94; 0.60; -3.75; 0.03; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  "
+    },
+    {
+      "sourceId": "mobley_7295828",
+      "sourceName": "anisole",
+      "sourceSMILES": "COc1ccccc1",
+      "smiles": "COc1ccccc1",
+      "formula": "C7H8O",
+      "inchiKey": "RDOXTESZEPMUJZ-UHFFFAOYSA-N",
+      "identifierOrigin": "RDKit-derived from the exact source SMILES; not a source-supplied registry identifier",
+      "formulaOrigin": "RDKit-derived from the exact source SMILES",
+      "rawRow": "mobley_7295828; COc1ccccc1; anisole; -2.45; 0.60; -2.32; 0.03; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  "
+    },
+    {
+      "sourceId": "mobley_7326982",
+      "sourceName": "propan-2-ol",
+      "sourceSMILES": "CC(C)O",
+      "smiles": "CC(C)O",
+      "formula": "C3H8O",
+      "inchiKey": "KFZMGEQAYNKOFK-UHFFFAOYSA-N",
+      "identifierOrigin": "RDKit-derived from the exact source SMILES; not a source-supplied registry identifier",
+      "formulaOrigin": "RDKit-derived from the exact source SMILES",
+      "rawRow": "mobley_7326982; CC(C)O; propan-2-ol; -4.74; 0.60; -3.43; 0.02; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  "
+    },
+    {
+      "sourceId": "mobley_7532833",
+      "sourceName": "acetonitrile",
+      "sourceSMILES": "CC#N",
+      "smiles": "CC#N",
+      "formula": "C2H3N",
+      "inchiKey": "WEVYAHXRMPXWCK-UHFFFAOYSA-N",
+      "identifierOrigin": "RDKit-derived from the exact source SMILES; not a source-supplied registry identifier",
+      "formulaOrigin": "RDKit-derived from the exact source SMILES",
+      "rawRow": "mobley_7532833; CC#N; acetonitrile; -3.88; 0.60; -2.79; 0.02; 10.1021/jp0264477; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  "
+    }
+  ],
+  "scope": "Experimental hydration free-energy columns only; calculated GAFF values are not imported as measurements. Twelve source compounds enrich existing library graphs only. Missing experimental temperature and pH remain unknown."
+}
