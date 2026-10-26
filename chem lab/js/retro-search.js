@@ -15,15 +15,28 @@ function rsearchCacheSet(smiles, result) {
   rsearchCache.set(smiles, result);
 }
 
+function rsearchStockIdentity(smiles, info) {
+  if (!info || !info.smiles) return null;
+  try {
+    const requested = typeof pathFinderMaterialKey === 'function' ? pathFinderMaterialKey(smiles) : moleculeIdentity(smiles).key;
+    const supplied = typeof pathFinderMaterialKey === 'function' ? pathFinderMaterialKey(info.smiles) : moleculeIdentity(info.smiles).key;
+    // Connectivity or name matches are not enough to supply a specified
+    // stereoisomer. Keep this policy aligned with Path Finder inventory.
+    return requested === supplied ? info : null;
+  } catch (error) {
+    return null;
+  }
+}
+
 function rsearchStock(smiles, maxTier) {
   const info = typeof stockTier === 'function' ? stockTier(smiles) : null;
-  if (info && info.tier <= maxTier) {
-    return info;
-  }
+  const matched = info && info.tier <= maxTier ? rsearchStockIdentity(smiles, info) : null;
+  if (matched) return matched;
   if (smiles.startsWith('Br[Mg]') || smiles.startsWith('Cl[Mg]') || smiles.startsWith('I[Mg]')) {
-    const halide = typeof stockTier === 'function' ? stockTier(smiles.replace('[Mg]', '')) : null;
-    if (halide && halide.tier <= maxTier) {
-      return { tier: halide.tier, source: 'grignard', name: halide.name };
+    const halideSmiles = smiles.replace('[Mg]', '');
+    const halide = typeof stockTier === 'function' ? stockTier(halideSmiles) : null;
+    if (halide && halide.tier <= maxTier && rsearchStockIdentity(halideSmiles, halide)) {
+      return { tier: halide.tier, source: 'grignard', name: halide.name, smiles: halide.smiles };
     }
   }
   return null;
@@ -331,14 +344,14 @@ function rsearchCandidateSteps(candidate) {
 }
 
 function rsearchScore(route) {
-  const metrics = { steps: 0, longest: 0, convergent: false, yield: 100, complexity: [], stock: 0, pg: 0, score: 0 };
-  let fraction = 1;
+  const metrics = { steps: 0, longest: 0, convergent: false, yield: 100, yieldModel: 'linear-product-or-convergent-bottleneck', complexity: [], stock: 0, pg: 0, score: 0 };
   const walk = (node) => {
     if (!node.candidate) {
       metrics.stock = Math.max(metrics.stock, node.stock ? node.stock.tier : 99);
-      return 0;
+      return { longest: 0, fraction: 1 };
     }
     const steps = rsearchCandidateSteps(node.candidate);
+    let fraction = 1;
     steps.forEach((s) => {
       fraction *= rsearchStepYield(s.outcome, s.minor) / 100;
       metrics.pg += s.pg ? 1 : 0;
@@ -351,10 +364,16 @@ function rsearchScore(route) {
     if (node.children.filter((c) => c.candidate).length >= 2) {
       metrics.convergent = true;
     }
-    return steps.length + Math.max.apply(null, branches.concat([0]));
+    // Multiplying independent branches invents a serial yield penalty and
+    // systematically undervalues convergence. Without stoichiometry and
+    // isolation data, use the weakest cumulative branch as a conservative
+    // planning bottleneck; linear routes retain ordinary step-yield products.
+    if (branches.length) fraction *= Math.min.apply(null, branches.map((b) => b.fraction));
+    return { longest: steps.length + Math.max.apply(null, branches.map((b) => b.longest).concat([0])), fraction };
   };
-  metrics.longest = walk(route);
-  metrics.yield = Math.round(fraction * 1000) / 10;
+  const result = walk(route);
+  metrics.longest = result.longest;
+  metrics.yield = Math.round(result.fraction * 1000) / 10;
   const simplification = metrics.complexity.length ? metrics.complexity.reduce((s, x) => s + x, 0) / metrics.complexity.length : 0;
   const w = RSEARCH_WEIGHTS;
   metrics.score = Math.round((w.steps * metrics.steps + w.longest * metrics.longest + w.yieldLoss * (100 - metrics.yield) +
