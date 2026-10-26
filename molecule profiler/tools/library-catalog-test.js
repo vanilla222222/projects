@@ -53,3 +53,13 @@ console.log('Library catalogue and provenance-grouping checks passed:', all.tota
 const aliasEntry={name:'Alias fixture',smiles:'c1ccncc1',cls:'Test'};
 const aliasContext={tags:{entries:{'Alias fixture':{librarySmiles:aliasEntry.smiles,tags:['Family motif: Pyridines']}}}};
 assert.equal(catalogQuery([aliasEntry],{tag:'Pyridine motif'},aliasContext).total,1);
+// Display capitalization does not rewrite stable keys, aliases or source witnesses.
+const labels=require('../js/library-catalog'),rawNames={entries:{ulotaront:{librarySmiles:'CCO',preferredName:'ulotaront',sourceUrl:'https://example.org/source'},rimonabant:{librarySmiles:'CCC',preferredName:'rimonabant',sourceUrl:'https://example.org/source'},mCPP:{librarySmiles:'CCN',preferredName:'mCPP',sourceUrl:'https://example.org/source'}}};
+for(const [name,smiles,label]of [['ulotaront','CCO','Ulotaront'],['rimonabant','CCC','Rimonabant'],['mCPP','CCN','mCPP']]){const e={name,smiles};assert.equal(labels.displayName(e,{names:rawNames}),label);assert.equal(labels.nameRecord(e,{names:rawNames}).preferredName,name);assert.equal(e.name,name);}
+const prefixes=['cis','trans','tert','sec','exo','endo','syn','anti','alpha','beta','gamma','delta','threo','erythro','rac','epi','sn','o','p','n','d'];
+for(const prefix of prefixes){const name=prefix+'-compound',e={name:'Prefix '+prefix,smiles:'CCO'},record={librarySmiles:e.smiles,preferredName:name,aliases:['unchanged alias'],sourceUrl:'https://example.org/prefix'},ctx={names:{entries:{[e.name]:record}}},before=JSON.stringify({e,record});assert.equal(labels.displayName(e,ctx),name,prefix+'- must retain its source case');assert.equal(JSON.stringify({e,record}),before,'Display must not mutate identity or provenance');}
+for(const name of ['cisplatin','transporter','benzyl ester','methyl ester','spiro[3.4]octane']){const e={name:'Ordinary '+name,smiles:'CCC'},ctx={names:{entries:{[e.name]:{librarySmiles:e.smiles,preferredName:name}}}};assert.equal(labels.displayName(e,ctx),name[0].toUpperCase()+name.slice(1),'Descriptor exclusions require the hyphen boundary');}
+const liveNames=require('../data/library-names').LIBRARY_NAME_METADATA;
+const cis=Object.entries(liveNames.entries).find(([,r])=>r.preferredName.startsWith('cis-4-(4-(4-Phenylbenzoylamino)butyl)'));
+assert.ok(cis,'Keep the observed live cis- regression fixture');const liveEntry=LIBRARY.find(e=>e.name===cis[0]);assert.ok(liveEntry);assert.equal(labels.displayName(liveEntry,{names:liveNames}),cis[1].preferredName);
+console.log('Display-prefix regression: chemical descriptors, single-letter prefixes, hyphen boundaries, live cis- record and source non-mutation passed');

@@ -34,7 +34,7 @@ def snapshot(meta):
    if 'sourceRecord' in e:row['sourceWitnessSha256']=sha(canonical(e['sourceRecord']))
    evidence.append(row)
   records.append({'id':r['id'],'title':r['title'],'compounds':compounds,'evidence':evidence,'relationships':r.get('relationships',[]),'note':r['note'],'reviewedDate':r.get('reviewedDate','')})
- return {**meta,'commit':None if meta.get('workingTree') else meta['commit'],'snapshotOrigin':'working-tree-content-hash' if meta.get('workingTree') else 'public-commit','sourceSha256':sha(raw),'reviewSourceSha256':sha(reviewraw) if reviewraw else None,'records':records,'families':d.get('familyDefinitions',[]),'extraStructures':d.get('extraLibrary',[]),'decisions':export(reviewraw,'REFERENCE_REVIEWS')['decisions'] if reviewraw else []}
+ return {**meta,'commit':None if meta.get('workingTree') else meta['commit'],'snapshotOrigin':'working-tree-content-hash' if meta.get('workingTree') else 'public-commit','sourceSha256':sha(raw),'reviewSourceSha256':sha(reviewraw) if reviewraw else None,'identityCorrections':d.get('identityCorrections',[]),'records':records,'families':d.get('familyDefinitions',[]),'extraStructures':d.get('extraLibrary',[]),'decisions':export(reviewraw,'REFERENCE_REVIEWS')['decisions'] if reviewraw else []}
 def build():
  config=ROOT/'data/reference-release-history.json';history=json.loads(config.read_text());assert not any(r.get('workingTree') for r in history['releases'][:-1]),'Only the newest snapshot can use the working tree; pin older snapshots to their published commit';snapshots=[snapshot(meta) for meta in history['releases']]
  assert len({r['id'] for r in snapshots})==len(snapshots),'Duplicate release ID'

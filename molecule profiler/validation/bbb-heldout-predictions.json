@@ -1,0 +1,2708 @@
+{
+  "schemaVersion": 1,
+  "modelId": "bbb-scaffold-rf-v1",
+  "threshold": 0.83,
+  "sourceSha256": "d07a38487aeac5cee5508413e468043ef3097451d2a112701c2d60be9ec6b662",
+  "rows": [
+    {
+      "smiles": "CN1CCC(OC2c3ccccc3CCc3ccccc32)CC1",
+      "scaffold": "c1ccc2c(c1)CCc1ccccc1C2OC1CCNCC1",
+      "observed": 1,
+      "modelProbability": 0.9218874400818198,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C(O)C1=CC(=NNc2ccc(S(=O)(=O)Nc3ccccn3)cc2)C=CC1=O",
+      "scaffold": "O=C1C=CC(=NNc2ccc(S(=O)(=O)Nc3ccccn3)cc2)C=C1",
+      "observed": 0,
+      "modelProbability": 0.6729701888150006,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CON=C(C(=O)NC1C(=O)N2C(C(=O)O)=C(CSc3cnns3)CSC12)c1csc(N)n1",
+      "scaffold": "N=C(C(=O)NC1C(=O)N2C=C(CSc3cnns3)CSC12)c1cscn1",
+      "observed": 0,
+      "modelProbability": 0.0019241056238333391,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC1(C)CN(CCN2CCN(c3cccc(Cl)c3)C2=O)C1",
+      "scaffold": "O=C1N(CCN2CCC2)CCN1c1ccccc1",
+      "observed": 1,
+      "modelProbability": 0.8905786210235831,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC1(C)SC2C(NC(=O)C(C(=O)Oc3ccc4c(c3)CCC4)c3ccccc3)C(=O)N2C1C(=O)O",
+      "scaffold": "O=C(NC1C(=O)N2CCSC12)C(C(=O)Oc1ccc2c(c1)CCC2)c1ccccc1",
+      "observed": 0,
+      "modelProbability": 0.008079888471382126,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "NS(=O)(=O)c1ccc(N2C(=O)CC(c3ccccc3)C2=O)c(Cl)c1",
+      "scaffold": "O=C1CC(c2ccccc2)C(=O)N1c1ccccc1",
+      "observed": 1,
+      "modelProbability": 0.7811338255307603,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "Cc1oc(=O)oc1COC(=O)C1N2C(=O)C(NC(=O)C(N)c3ccccc3)C2SC1(C)C",
+      "scaffold": "O=C(Cc1ccccc1)NC1C(=O)N2C(C(=O)OCc3coc(=O)o3)CSC12",
+      "observed": 0,
+      "modelProbability": 0.0060039674575099134,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "NC(=O)c1cn(Cc2c(F)cccc2F)nn1",
+      "scaffold": "c1ccc(Cn2ccnn2)cc1",
+      "observed": 1,
+      "modelProbability": 0.8551586963641861,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "O=C1CCC(=O)N1CC1CCC2CN(c3ncccn3)CCN2C1",
+      "scaffold": "O=C1CCC(=O)N1CC1CCC2CN(c3ncccn3)CCN2C1",
+      "observed": 1,
+      "modelProbability": 0.9192072076067436,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "O=C1CCC(C(=O)NC2CC2c2ccccc2)N1",
+      "scaffold": "O=C1CCC(C(=O)NC2CC2c2ccccc2)N1",
+      "observed": 1,
+      "modelProbability": 0.7074104846858174,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN(N=O)C(=O)NC1C(O)OC(CO)C(O)C1O",
+      "scaffold": "C1CCOCC1",
+      "observed": 0,
+      "modelProbability": 0.5503878226476823,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "NC(=O)C1CCCCO1",
+      "scaffold": "C1CCOCC1",
+      "observed": 1,
+      "modelProbability": 0.841496561215613,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "Clc1ccccc1C(c1ccccc1)(c1ccccc1)n1ccnc1",
+      "scaffold": "c1ccc(C(c2ccccc2)(c2ccccc2)n2ccnc2)cc1",
+      "observed": 0,
+      "modelProbability": 0.9067653276548043,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "Clc1cccc(Cl)c1NC1=NCCO1",
+      "scaffold": "c1ccc(NC2=NCCO2)cc1",
+      "observed": 1,
+      "modelProbability": 0.910897009065277,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CNCCCC1(C)C(=O)N(c2ccccc2)c2ccccc21",
+      "scaffold": "O=C1Cc2ccccc2N1c1ccccc1",
+      "observed": 1,
+      "modelProbability": 0.9488413815924371,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCC1C(=O)NC(=O)C1(C)c1ccccc1",
+      "scaffold": "O=C1CC(c2ccccc2)C(=O)N1",
+      "observed": 1,
+      "modelProbability": 0.8535632328064104,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN1C(=O)CC(C)(c2ccccc2)C1=O",
+      "scaffold": "O=C1CC(c2ccccc2)C(=O)N1",
+      "observed": 1,
+      "modelProbability": 0.9289575994685965,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN1C(=O)CC(c2ccccc2)C1=O",
+      "scaffold": "O=C1CC(c2ccccc2)C(=O)N1",
+      "observed": 1,
+      "modelProbability": 0.8824168313527241,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C1CC(c2cccc(Br)c2)C(=O)N1",
+      "scaffold": "O=C1CC(c2ccccc2)C(=O)N1",
+      "observed": 1,
+      "modelProbability": 0.864570685314199,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CC1(C)SC2C(NC(=O)C3(N)CCCCC3)C(=O)N2C1C(=O)O",
+      "scaffold": "O=C(NC1C(=O)N2CCSC12)C1CCCCC1",
+      "observed": 0,
+      "modelProbability": 0.01714895538931099,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC1=CC(O)CC(=O)Cc2nc(co2)C(=O)N2CCC=C2C(=O)OC(C(C)C)C(C)C=CC(=O)NCC=C1",
+      "scaffold": "O=C1CCC=CC=CCNC(=O)C=CCCOC(=O)C2=CCCN2C(=O)c2coc(n2)C1",
+      "observed": 0,
+      "modelProbability": 0.7487074018764781,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "Nc1ccc(-c2nc3ccc(O)cc3s2)cc1I",
+      "scaffold": "c1ccc(-c2nc3ccccc3s2)cc1",
+      "observed": 1,
+      "modelProbability": 0.7433827542228143,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CC(=O)OCC(=O)C1(OC(=O)c2ccco2)C(C)CC2C3CCC4=CC(=O)C=CC4(C)C3(F)C(O)CC21C",
+      "scaffold": "O=C1C=CC2C(=C1)CCC1C2CCC2C(OC(=O)c3ccco3)CCC21",
+      "observed": 1,
+      "modelProbability": 0.9829268457960951,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C(c1ccc(F)cc1)C1CCN(CCCn2c(=O)[nH]c3cc(Cl)ccc32)CC1",
+      "scaffold": "O=C(c1ccccc1)C1CCN(CCCn2c(=O)[nH]c3ccccc32)CC1",
+      "observed": 1,
+      "modelProbability": 0.9025233456575213,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C(c1ccc(F)cc1)C1CCN(CCCn2c(=O)[nH]c3ccccc32)CC1",
+      "scaffold": "O=C(c1ccccc1)C1CCN(CCCn2c(=O)[nH]c3ccccc32)CC1",
+      "observed": 1,
+      "modelProbability": 0.9154002773677111,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "Nc1[nH]c(=O)ncc1F",
+      "scaffold": "O=c1nccc[nH]1",
+      "observed": 1,
+      "modelProbability": 0.8384601834130957,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CC(C)c1ccccc1OCC1=NCCN1",
+      "scaffold": "c1ccc(OCC2=NCCN2)cc1",
+      "observed": 0,
+      "modelProbability": 0.9022631867733785,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "Cc1ccc(C(C)C)c(OCC2=NCCN2)c1",
+      "scaffold": "c1ccc(OCC2=NCCN2)cc1",
+      "observed": 0,
+      "modelProbability": 0.865109369832742,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "Clc1ccc(OCC2=NCCN2)cc1Cl",
+      "scaffold": "c1ccc(OCC2=NCCN2)cc1",
+      "observed": 1,
+      "modelProbability": 0.8857771858185006,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CC=CCC(C)C(O)C1C(=O)NC(CC)C(=O)N(C)CC(=O)N(C)C(CC(C)C)C(=O)NC(C(C)C)C(=O)N(C)C(CC(C)C)C(=O)NC(C)C(=O)NC(C)C(=O)N(C)C(CC(C)C)C(=O)N(C)C(CC(C)C)C(=O)N(C)C(C(C)C)C(=O)N1C",
+      "scaffold": "O=C1CNC(=O)CNC(=O)CNC(=O)CNC(=O)CNC(=O)CNC(=O)CNC(=O)CNC(=O)CNC(=O)CNC(=O)CN1",
+      "observed": 0,
+      "modelProbability": 0.717491614115443,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CCC(=C(c1ccccc1)c1ccc(OCCN(C)C)cc1)c1ccccc1",
+      "scaffold": "C(=C(c1ccccc1)c1ccccc1)c1ccccc1",
+      "observed": 1,
+      "modelProbability": 0.8973361659929632,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCC(=O)N(c1ccccc1)C1(COC)CCN(CCc2cccs2)CC1",
+      "scaffold": "c1ccc(NC2CCN(CCc3cccs3)CC2)cc1",
+      "observed": 1,
+      "modelProbability": 0.9074370942299309,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C(CCCN1CCN2Cc3[nH]c4ccccc4c3CC2C1)c1ccc(F)cc1",
+      "scaffold": "O=C(CCCN1CCN2Cc3[nH]c4ccccc4c3CC2C1)c1ccccc1",
+      "observed": 1,
+      "modelProbability": 0.8976147069004374,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCOC(=O)C(CCc1ccccc1)NC(C)C(=O)N1CCCC1C(=O)O",
+      "scaffold": "O=C(CNCCCc1ccccc1)N1CCCC1",
+      "observed": 0,
+      "modelProbability": 0.7726611574078223,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CCc1nc(N)nc(N)c1-c1ccc(Cl)cc1",
+      "scaffold": "c1ccc(-c2cncnc2)cc1",
+      "observed": 1,
+      "modelProbability": 0.8822940216718557,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "Nc1ccc(S(=O)(=O)c2ccc(N)cc2)cc1",
+      "scaffold": "O=S(=O)(c1ccccc1)c1ccccc1",
+      "observed": 0,
+      "modelProbability": 0.8712219309945411,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN(C)CCC1(c2ccccc2)CCc2ccccc2C1=O",
+      "scaffold": "O=C1c2ccccc2CCC1c1ccccc1",
+      "observed": 1,
+      "modelProbability": 0.9288095585467823,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCC1(C2=CCCCC2)C(=O)NC(=O)NC1=O",
+      "scaffold": "O=C1NC(=O)C(C2=CCCCC2)C(=O)N1",
+      "observed": 1,
+      "modelProbability": 0.8698924190026607,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN1C(=O)NC(=O)C(C)(C2=CCCCC2)C1=O",
+      "scaffold": "O=C1NC(=O)C(C2=CCCCC2)C(=O)N1",
+      "observed": 1,
+      "modelProbability": 0.8848700057721411,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "Cc1ccc2c(c1)C1CN(C)CCC1N2",
+      "scaffold": "c1ccc2c(c1)NC1CCNCC21",
+      "observed": 1,
+      "modelProbability": 0.9287192018938506,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CN1CCN(C2=Nc3ccccc3Oc3ccc(Cl)cc32)CC1",
+      "scaffold": "c1ccc2c(c1)N=C(N1CCNCC1)c1ccccc1O2",
+      "observed": 1,
+      "modelProbability": 0.9493804555679599,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "Clc1ccc2c(c1)C(N1CCNCC1)=Nc1ccccc1O2",
+      "scaffold": "c1ccc2c(c1)N=C(N1CCNCC1)c1ccccc1O2",
+      "observed": 1,
+      "modelProbability": 0.9431422934602242,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN(C)CCCn1cc(-c2ccccc2)c(-c2ccccc2)n1",
+      "scaffold": "c1ccc(-c2c[nH]nc2-c2ccccc2)cc1",
+      "observed": 1,
+      "modelProbability": 0.9265497064495867,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC1(C)CCN(C(=O)Cc2ccc(Cl)c(Cl)c2)C(CN2CCCC2)C1",
+      "scaffold": "O=C(Cc1ccccc1)N1CCCCC1CN1CCCC1",
+      "observed": 1,
+      "modelProbability": 0.7429281971797125,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C(Cc1ccc(C(F)(F)F)cc1)N1CCCCC1CN1CCCC1",
+      "scaffold": "O=C(Cc1ccccc1)N1CCCCC1CN1CCCC1",
+      "observed": 1,
+      "modelProbability": 0.7783528227840163,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C(Cc1ccc(Cl)c(Cl)c1)N1CCCCC1CN1CCCC1",
+      "scaffold": "O=C(Cc1ccccc1)N1CCCCC1CN1CCCC1",
+      "observed": 1,
+      "modelProbability": 0.7911536883035183,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCCN(CCC)CCc1ccc(O)c2c1CC(=O)N2",
+      "scaffold": "O=C1Cc2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.789759072782271,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCCN(CCC)CCc1cccc2c1CC(=O)N2",
+      "scaffold": "O=C1Cc2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.8636347064262543,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC(=O)C1CCC2C3CC=C4CC(OC(=O)CCC(=O)O)CCC4(C)C3CCC12C",
+      "scaffold": "C1=C2CCCCC2C2CCC3CCCC3C2C1",
+      "observed": 1,
+      "modelProbability": 0.8041275969469288,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN1CCC23c4c5ccc(O)c4OC2C(O)CCC3(O)C1C5",
+      "scaffold": "c1cc2c3c(c1)OC1CCCC4C(C2)NCCC314",
+      "observed": 1,
+      "modelProbability": 0.8519375670243893,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN1CCC23c4c5ccc(O)c4OC2C(O)CCC3C1C5",
+      "scaffold": "c1cc2c3c(c1)OC1CCCC4C(C2)NCCC314",
+      "observed": 1,
+      "modelProbability": 0.8906514546636901,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN1CCC23c4c5ccc(O)c4OC2CCCC3C1C5",
+      "scaffold": "c1cc2c3c(c1)OC1CCCC4C(C2)NCCC314",
+      "observed": 1,
+      "modelProbability": 0.9422884747370724,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "COC1CCC2C3Cc4ccc(O)c5c4C2(CCN3C)C1O5",
+      "scaffold": "c1cc2c3c(c1)OC1CCCC4C(C2)NCCC314",
+      "observed": 1,
+      "modelProbability": 0.9384323427119998,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "COc1ccc2c3c1OC1C(O)CCC4C(C2)N(C)CCC341",
+      "scaffold": "c1cc2c3c(c1)OC1CCCC4C(C2)NCCC314",
+      "observed": 1,
+      "modelProbability": 0.8870837041335404,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C(OC1CN2CCC1CC2)c1ccccc1",
+      "scaffold": "O=C(OC1CN2CCC1CC2)c1ccccc1",
+      "observed": 1,
+      "modelProbability": 0.9106294318925564,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C1CCC(N2C(=O)c3ccccc3C2=O)C(=O)N1",
+      "scaffold": "O=C1CCC(N2C(=O)c3ccccc3C2=O)C(=O)N1",
+      "observed": 1,
+      "modelProbability": 0.8917852992515379,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C1OCCC1C1(O)CCN(CCCN2c3ccccc3Sc3ccc(Cl)cc32)CC1",
+      "scaffold": "O=C1OCCC1C1CCN(CCCN2c3ccccc3Sc3ccccc32)CC1",
+      "observed": 1,
+      "modelProbability": 0.955651669780405,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "OCc1ccccc1OC1OC(CO)C(O)C(O)C1O",
+      "scaffold": "c1ccc(OC2CCCCO2)cc1",
+      "observed": 1,
+      "modelProbability": 0.6752971454834538,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CCCN1CC=C(c2c[nH]c3ccc(Cl)cc23)CC1",
+      "scaffold": "C1=C(c2c[nH]c3ccccc23)CCNC1",
+      "observed": 1,
+      "modelProbability": 0.9359954167092696,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CN1C(=O)CCS(=O)(=O)C1c1ccc(Cl)c(Cl)c1",
+      "scaffold": "O=C1CCS(=O)(=O)C(c2ccccc2)N1",
+      "observed": 1,
+      "modelProbability": 0.8863284931872226,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CN1C(=O)CCS(=O)(=O)C1c1ccc(Cl)cc1",
+      "scaffold": "O=C1CCS(=O)(=O)C(c2ccccc2)N1",
+      "observed": 1,
+      "modelProbability": 0.887779083574802,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "O=C(O)c1cc(=O)c2ccccc2[nH]1",
+      "scaffold": "O=c1cc[nH]c2ccccc12",
+      "observed": 1,
+      "modelProbability": 0.6732878781055235,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC12CCC(=O)C=C1CCC1C2C(O)CC2(C)C1CCC2(O)C(=O)COC(=O)CCC1CCCC1",
+      "scaffold": "O=C1C=C2CCC3C(CCC4C(C(=O)COC(=O)CCC5CCCC5)CCC43)C2CC1",
+      "observed": 1,
+      "modelProbability": 0.8626614076454661,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC(=O)SC1CC2=CC(=O)CCC2(C)C2CCC3(C)C(CCC34CCC(=O)O4)C12",
+      "scaffold": "O=C1C=C2CCC3C(CCC4C3CCC43CCC(=O)O3)C2CC1",
+      "observed": 0,
+      "modelProbability": 0.8394597556438433,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "C=CCN1CCC23c4c5ccc(O)c4OC2C(=O)CCC3(O)C1C5",
+      "scaffold": "O=C1CCC2C3Cc4cccc5c4C2(CCN3)C1O5",
+      "observed": 1,
+      "modelProbability": 0.8599516184155088,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC(C)=CCN1CCC23c4c5ccc(O)c4OC2C(=O)CCC3(O)C1C5",
+      "scaffold": "O=C1CCC2C3Cc4cccc5c4C2(CCN3)C1O5",
+      "observed": 1,
+      "modelProbability": 0.8436899671126656,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN1CCC23c4c5ccc(O)c4OC2(C)C(=O)CCC3C1C5",
+      "scaffold": "O=C1CCC2C3Cc4cccc5c4C2(CCN3)C1O5",
+      "observed": 1,
+      "modelProbability": 0.8967484154179586,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN1CCC23c4c5ccc(O)c4OC2C(=O)CCC3(O)C1C5",
+      "scaffold": "O=C1CCC2C3Cc4cccc5c4C2(CCN3)C1O5",
+      "observed": 1,
+      "modelProbability": 0.8756160351527369,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN1CCC23c4c5ccc(O)c4OC2C(=O)CCC3C1C5",
+      "scaffold": "O=C1CCC2C3Cc4cccc5c4C2(CCN3)C1O5",
+      "observed": 1,
+      "modelProbability": 0.9081583317172552,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "COCCN1CCC23c4c5ccc(O)c4OC2C(=O)CCC3(O)C1C5",
+      "scaffold": "O=C1CCC2C3Cc4cccc5c4C2(CCN3)C1O5",
+      "observed": 1,
+      "modelProbability": 0.8625089824128304,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "COc1ccc2c3c1OC1C(=O)CCC4(O)C(C2)N(C)CCC314",
+      "scaffold": "O=C1CCC2C3Cc4cccc5c4C2(CCN3)C1O5",
+      "observed": 1,
+      "modelProbability": 0.8716799638150998,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "COc1ccc2c3c1OC1C(=O)CCC4C(C2)N(C)CCC314",
+      "scaffold": "O=C1CCC2C3Cc4cccc5c4C2(CCN3)C1O5",
+      "observed": 1,
+      "modelProbability": 0.9233211003307793,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCC(=O)N(c1ccccc1)C1(COC)CCN(CCn2nnn(CC)c2=O)CC1",
+      "scaffold": "O=c1[nH]nnn1CCN1CCC(Nc2ccccc2)CC1",
+      "observed": 1,
+      "modelProbability": 0.9012022269492714,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCn1nnn(CCN2CCC(N(C(=O)COC)c3ccccc3F)C(C)C2)c1=O",
+      "scaffold": "O=c1[nH]nnn1CCN1CCC(Nc2ccccc2)CC1",
+      "observed": 1,
+      "modelProbability": 0.8246697493010663,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCCCCCOc1nsnc1C1=CCCN(C)C1",
+      "scaffold": "C1=C(c2cnsn2)CNCC1",
+      "observed": 1,
+      "modelProbability": 0.91033441343622,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CCCCCCSc1nsnc1C1=CCCN(C)C1",
+      "scaffold": "C1=C(c2cnsn2)CNCC1",
+      "observed": 1,
+      "modelProbability": 0.9207039067555612,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CCC(C)C(=O)OC1CC(O)C=C2C=CC(C)C(CCC(O)CC(O)CC(=O)O)C21",
+      "scaffold": "C1=CC2=CCCCC2CC1",
+      "observed": 0,
+      "modelProbability": 0.7655482609303973,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN1CCCC(CN2c3ccccc3Sc3ccccc32)C1",
+      "scaffold": "c1ccc2c(c1)Sc1ccccc1N2CC1CCCNC1",
+      "observed": 1,
+      "modelProbability": 0.9917130497363994,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C1CN=C(c2ccccc2)c2cc(Cl)ccc2N1CCOCC1CC1",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1CCOCC1CC1",
+      "observed": 1,
+      "modelProbability": 0.9204457843767739,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCC1(c2ccccc2)C(=O)NC(=O)N1C",
+      "scaffold": "O=C1NC(=O)C(c2ccccc2)N1",
+      "observed": 1,
+      "modelProbability": 0.9164231709434989,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCC1(c2ccccc2)NC(=O)N(C)C1=O",
+      "scaffold": "O=C1NC(=O)C(c2ccccc2)N1",
+      "observed": 1,
+      "modelProbability": 0.9216631905424155,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCN1C(=O)NC(c2ccccc2)C1=O",
+      "scaffold": "O=C1NC(=O)C(c2ccccc2)N1",
+      "observed": 1,
+      "modelProbability": 0.8484687649986171,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC1=C(C(=O)O)N2C(=O)C(NC(=O)C(N)C3=CCC=CC3)C2SC1",
+      "scaffold": "O=C(CC1=CCC=CC1)NC1C(=O)N2C=CCSC12",
+      "observed": 0,
+      "modelProbability": 0.01241794137232465,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN(CC=Cc1ccccc1)CCOC(c1ccccc1)c1ccccc1",
+      "scaffold": "C(=Cc1ccccc1)CNCCOC(c1ccccc1)c1ccccc1",
+      "observed": 1,
+      "modelProbability": 0.903338114000666,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "C#CC1(O)CCC2C3CCC4=Cc5c(cnn5-c5ccc(F)cc5)CC4(C)C3CCC21C",
+      "scaffold": "C1=C2CCC3C4CCCC4CCC3C2Cc2cnn(-c3ccccc3)c21",
+      "observed": 1,
+      "modelProbability": 0.8099610713313196,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C1CC2(CCCC2)CC(=O)N1CCNCC1COc2ccccc2O1",
+      "scaffold": "O=C1CC2(CCCC2)CC(=O)N1CCNCC1COc2ccccc2O1",
+      "observed": 1,
+      "modelProbability": 0.947601579463153,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "COc1cc(Cc2cnc(N)nc2N)cc(OC)c1OC",
+      "scaffold": "c1ccc(Cc2cncnc2)cc1",
+      "observed": 1,
+      "modelProbability": 0.8571538873555311,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC(C)(C)C(O)C=Cc1ccc2c(c1)OCO2",
+      "scaffold": "c1ccc2c(c1)OCO2",
+      "observed": 1,
+      "modelProbability": 0.8615090472876014,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CCC1OC(=O)C(C)C(OC2CC(C)(OC)C(O)C(C)O2)C(C)C(OC2OC(C)CC(N(C)C)C2O)C(C)(O)CC(C)C(=NOC)C(C)C(O)C1(C)O",
+      "scaffold": "N=C1CCCCOC(=O)CC(OC2CCCCO2)CC(OC2CCCCO2)CCC1",
+      "observed": 0,
+      "modelProbability": 0.013491173388682075,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCC1OC(=O)C(C)C(OC2CC(C)(OC)C(O)C(C)O2)C(C)C(OC2OC(C)CC(N(C)C)C2O)C(C)(O)CC(C)C(=NOCOCCOC)C(C)C(O)C1(C)O",
+      "scaffold": "N=C1CCCCOC(=O)CC(OC2CCCCO2)CC(OC2CCCCO2)CCC1",
+      "observed": 0,
+      "modelProbability": 0.018767592845020883,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCCC(=O)OC1(C(C)=O)CCCC2C3CCC4=CC(=O)C=CC4(C)C3C(O)CC21C",
+      "scaffold": "O=C1C=CC2C(=C1)CCC1C3CCCCC3CCC21",
+      "observed": 1,
+      "modelProbability": 0.9425255313532979,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "OCCN1C=CN(CCCN2c3ccccc3C=Cc3ccccc32)C=CC1",
+      "scaffold": "C1=CN(CCCN2c3ccccc3C=Cc3ccccc32)C=CNC1",
+      "observed": 1,
+      "modelProbability": 0.9653172142804516,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "C=CCC1(C2C=CCCC2)C(=O)NC(=S)NC1=O",
+      "scaffold": "O=C1NC(=S)NC(=O)C1C1C=CCCC1",
+      "observed": 1,
+      "modelProbability": 0.8216786478992465,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CCC(NC(=O)c1c(C)c(-c2ccccc2)nc2ccccc12)c1ccccc1",
+      "scaffold": "O=C(NCc1ccccc1)c1cc(-c2ccccc2)nc2ccccc12",
+      "observed": 1,
+      "modelProbability": 0.47197145575656224,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCC(NC(=O)c1c(O)c(-c2ccccc2)nc2ccccc12)c1ccccc1",
+      "scaffold": "O=C(NCc1ccccc1)c1cc(-c2ccccc2)nc2ccccc12",
+      "observed": 1,
+      "modelProbability": 0.42766678170328326,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCC(NC(=O)c1c(OCC(=O)O)c(-c2ccccc2)nc2ccccc12)c1ccccc1",
+      "scaffold": "O=C(NCc1ccccc1)c1cc(-c2ccccc2)nc2ccccc12",
+      "observed": 0,
+      "modelProbability": 0.5035379544504728,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCC(NC(=O)c1c(OCCCC(=O)O)c(-c2ccccc2)nc2ccccc12)c1ccccc1",
+      "scaffold": "O=C(NCc1ccccc1)c1cc(-c2ccccc2)nc2ccccc12",
+      "observed": 0,
+      "modelProbability": 0.4742042480789515,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCC(NC(=O)c1c(OCCCN(C)C)c(-c2ccccc2)nc2ccccc12)c1ccccc1",
+      "scaffold": "O=C(NCc1ccccc1)c1cc(-c2ccccc2)nc2ccccc12",
+      "observed": 1,
+      "modelProbability": 0.5070472271558045,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "NS(=O)(=O)c1cc(C(=O)O)c(NCc2ccco2)cc1Cl",
+      "scaffold": "c1ccc(NCc2ccco2)cc1",
+      "observed": 0,
+      "modelProbability": 0.5086486025814038,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CC#CC1(O)CCC2C3CCC4=CC(=O)CCC4=C3C(c3ccc(N(C)C)cc3)CC21C",
+      "scaffold": "O=C1C=C2CCC3C(=C2CC1)C(c1ccccc1)CC1CCCC13",
+      "observed": 0,
+      "modelProbability": 0.8415346914551672,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "Cc1ncc2n1-c1ccc(Cl)cc1C(c1ccccc1Cl)=NC2",
+      "scaffold": "c1ccc(C2=NCc3cncn3-c3ccccc32)cc1",
+      "observed": 1,
+      "modelProbability": 0.9394594450960356,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "Cc1ncc2n1-c1ccc(Cl)cc1C(c1ccccc1F)=NC2",
+      "scaffold": "c1ccc(C2=NCc3cncn3-c3ccccc32)cc1",
+      "observed": 1,
+      "modelProbability": 0.9449667224424538,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "Cc1ncc2n1-c1ccc(Cl)cc1C(c1ccccc1F)=NC2O",
+      "scaffold": "c1ccc(C2=NCc3cncn3-c3ccccc32)cc1",
+      "observed": 1,
+      "modelProbability": 0.8747422023746476,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "OCc1ncc2n1-c1ccc(Cl)cc1C(c1ccccc1F)=NC2",
+      "scaffold": "c1ccc(C2=NCc3cncn3-c3ccccc32)cc1",
+      "observed": 1,
+      "modelProbability": 0.9242928893940232,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "c1cc(CN2CCCCC2)cc(OCCCNc2nccs2)c1",
+      "scaffold": "c1cc(CN2CCCCC2)cc(OCCCNc2nccs2)c1",
+      "observed": 1,
+      "modelProbability": 0.9282782226694762,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCN1CCN(C(=O)NC(C(=O)NC2C(=O)N3C(C(=O)O)=C(CSc4nnnn4C)CSC23)c2ccc(O)cc2)C(=O)C1=O",
+      "scaffold": "O=C1NCCN(C(=O)NC(C(=O)NC2C(=O)N3C=C(CSc4nnn[nH]4)CSC23)c2ccccc2)C1=O",
+      "observed": 1,
+      "modelProbability": 0.020586069512308226,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC(C)(C)NC(=O)C1CN(Cc2cccnc2)CCN1CC(O)CC(Cc1ccccc1)C(=O)NC1c2ccccc2CC1O",
+      "scaffold": "O=C(NC1CCc2ccccc21)C(CCCN1CCN(Cc2cccnc2)CC1)Cc1ccccc1",
+      "observed": 1,
+      "modelProbability": 0.5977726036267151,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "C=CC1=C(C(=O)O)N2C(=O)C(NC(=O)C(=NO)c3csc(N)n3)C2SC1",
+      "scaffold": "N=C(C(=O)NC1C(=O)N2C=CCSC12)c1cscn1",
+      "observed": 0,
+      "modelProbability": 0.008397792903023353,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "C=CC1=C(C(=O)O)N2C(=O)C(NC(=O)C(=NOCC(=O)O)c3csc(N)n3)C2SC1",
+      "scaffold": "N=C(C(=O)NC1C(=O)N2C=CCSC12)c1cscn1",
+      "observed": 0,
+      "modelProbability": 0.007503537655992162,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "COCC1=C(C(=O)O)N2C(=O)C(NC(=O)C(=NO)c3csc(N)n3)C2SC1",
+      "scaffold": "N=C(C(=O)NC1C(=O)N2C=CCSC12)c1cscn1",
+      "observed": 0,
+      "modelProbability": 0.002634331464099435,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CON=C(C(=O)NC1C(=O)N2C(C(=O)O)=C(C)CSC12)c1csc(N)n1",
+      "scaffold": "N=C(C(=O)NC1C(=O)N2C=CCSC12)c1cscn1",
+      "observed": 0,
+      "modelProbability": 0.004015909162837963,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CON=C(C(=O)NC1C(=O)N2C(C(=O)O)=CCSC12)c1csc(N)n1",
+      "scaffold": "N=C(C(=O)NC1C(=O)N2C=CCSC12)c1cscn1",
+      "observed": 0,
+      "modelProbability": 0.05995903235401703,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC(=O)C1=C(O)C2(O)C(=O)c3c(c(C)c4ccc(C)c(O)c4c3O)CC2C(N)C1=O",
+      "scaffold": "O=C1C=CC2C(=O)c3cc4ccccc4cc3CC2C1",
+      "observed": 0,
+      "modelProbability": 0.4968169497385907,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "O=C(NCCN1CCN(c2ncccn2)CC1)C12CC3CC(CC(C3)C1)C2",
+      "scaffold": "O=C(NCCN1CCN(c2ncccn2)CC1)C12CC3CC(CC(C3)C1)C2",
+      "observed": 1,
+      "modelProbability": 0.8756911573662409,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN(C)C1C(=O)C(=C(N)O)C(=O)C2(O)C(=O)C3=C(O)c4c(O)ccc(Cl)c4C(C)(O)C3CC12",
+      "scaffold": "C=C1C(=O)CC2CC3Cc4ccccc4C=C3C(=O)C2C1=O",
+      "observed": 0,
+      "modelProbability": 0.20015773526555047,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN(C)C1C(=O)C(=C(N)O)C(=O)C2(O)C(=O)C3=C(O)c4c(O)ccc(Cl)c4C(O)C3CC12",
+      "scaffold": "C=C1C(=O)CC2CC3Cc4ccccc4C=C3C(=O)C2C1=O",
+      "observed": 0,
+      "modelProbability": 0.3513377023520913,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN(C)C1C(=O)C(=C(N)O)C(=O)C2(O)C(=O)C3=C(O)c4c(O)cccc4C(C)(O)C3CC12",
+      "scaffold": "C=C1C(=O)CC2CC3Cc4ccccc4C=C3C(=O)C2C1=O",
+      "observed": 0,
+      "modelProbability": 0.2132443291369334,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN(C)C1C(=O)C(=C(N)O)C(=O)C2(O)C(=O)C3=C(O)c4c(O)cccc4C(O)C3CC12",
+      "scaffold": "C=C1C(=O)CC2CC3Cc4ccccc4C=C3C(=O)C2C1=O",
+      "observed": 0,
+      "modelProbability": 0.34602789723262384,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN(C)C1C(=O)C(=C(N)O)C(=O)C2(O)C(=O)C3=C(O)c4c(ccc(N)c4O)CC3CC12",
+      "scaffold": "C=C1C(=O)CC2CC3Cc4ccccc4C=C3C(=O)C2C1=O",
+      "observed": 0,
+      "modelProbability": 0.4545826142705593,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN(C)C1C(=O)C(=C(O)NCO)C(=O)C2(O)C(=O)C3=C(O)c4c(O)ccc(Cl)c4C(C)(O)C3CC12",
+      "scaffold": "C=C1C(=O)CC2CC3Cc4ccccc4C=C3C(=O)C2C1=O",
+      "observed": 0,
+      "modelProbability": 0.18717171796477383,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "N#Cc1ccc2c(c1)C1=C(CCN(CC3CCCC3)CC1)c1ccccc1O2",
+      "scaffold": "c1ccc2c(c1)Oc1ccccc1C1=C2CCN(CC2CCCC2)CC1",
+      "observed": 1,
+      "modelProbability": 0.9544850100100631,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCCNC(=O)N1CC(c2ccccc2)OC1=O",
+      "scaffold": "O=C1NCC(c2ccccc2)O1",
+      "observed": 1,
+      "modelProbability": 0.817596355849005,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "COc1cccc2c1C(=O)c1c(O)c3c(c(O)c1C2=O)CC(O)(C(=O)CO)CC3OC1CC(N)C(OC2CCCCO2)C(C)O1",
+      "scaffold": "O=C1c2ccccc2C(=O)c2cc3c(cc21)CCCC3OC1CCC(OC2CCCCO2)CO1",
+      "observed": 0,
+      "modelProbability": 0.03808598012817591,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC1(C)SC2C(NC(=O)C(N=Cc3ccco3)c3ccc(O)cc3)C(=O)N2C1C(=O)O",
+      "scaffold": "O=C(NC1C(=O)N2CCSC12)C(N=Cc1ccco1)c1ccccc1",
+      "observed": 0,
+      "modelProbability": 0.009233402669145439,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCc1c(C)[nH]c2c1C(=O)C1CN(C)CCC1C2",
+      "scaffold": "O=C1c2cc[nH]c2CC2CCNCC12",
+      "observed": 1,
+      "modelProbability": 0.8840393705378848,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C1OC(c2ccc(O)cc2)(c2ccc(O)cc2)c2ccccc21",
+      "scaffold": "O=C1OC(c2ccccc2)(c2ccccc2)c2ccccc21",
+      "observed": 0,
+      "modelProbability": 0.7623847225051843,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CC(=O)Nc1cccc(-c2csc(N=C(N)N)n2)c1",
+      "scaffold": "c1ccc(-c2cscn2)cc1",
+      "observed": 0,
+      "modelProbability": 0.7896935209866167,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CNC(=NC#N)Nc1cccc(-c2csc(N=C(N)N)n2)c1",
+      "scaffold": "c1ccc(-c2cscn2)cc1",
+      "observed": 0,
+      "modelProbability": 0.7753999606460611,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "NC(N)=Nc1nc(-c2cccc(N)c2)cs1",
+      "scaffold": "c1ccc(-c2cscn2)cc1",
+      "observed": 1,
+      "modelProbability": 0.7942442266564275,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "NC(N)=Nc1nc(-c2ccccc2)cs1",
+      "scaffold": "c1ccc(-c2cscn2)cc1",
+      "observed": 1,
+      "modelProbability": 0.7514995940264797,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "NCCc1nc(-c2ccccc2)cs1",
+      "scaffold": "c1ccc(-c2cscn2)cc1",
+      "observed": 0,
+      "modelProbability": 0.8457985710104469,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCC1OC(=O)C(C)C(OC2CC(C)(OC)C(O)C(C)O2)C(C)C(OC2OC(C)CC(N(C)C)C2O)C(C)(O)CC(C)CN(C)C(C)C(O)C1(C)O",
+      "scaffold": "O=C1CC(OC2CCCCO2)CC(OC2CCCCO2)CCCCNCCCCO1",
+      "observed": 0,
+      "modelProbability": 0.04567734365409442,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "C=C1CCC2(O)C3Cc4ccc(O)c5c4C2(CCN3CC2CC2)C1O5",
+      "scaffold": "C=C1CCC2C3Cc4cccc5c4C2(CCN3CC2CC2)C1O5",
+      "observed": 1,
+      "modelProbability": 0.9193645950021553,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "Nn1cnc2cc3ccccc3cc2c1=O",
+      "scaffold": "O=c1[nH]cnc2cc3ccccc3cc12",
+      "observed": 1,
+      "modelProbability": 0.7780113637132712,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CC12CC3CC(C)(C1)CC(N)(C3)C2",
+      "scaffold": "C1C2CC3CC1CC(C2)C3",
+      "observed": 1,
+      "modelProbability": 0.9309211148562075,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CCNC(=O)N1CCN(CCCC(c2ccc(F)cc2)c2ccc(F)cc2)CC1",
+      "scaffold": "c1ccc(C(CCCN2CCNCC2)c2ccccc2)cc1",
+      "observed": 1,
+      "modelProbability": 0.8994471548809497,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC(=O)C12OC(C)(C)OC1CC1C3CCC4=CC(=O)CCC4(C)C3CCC12C",
+      "scaffold": "O=C1C=C2CCC3C(CCC4C3CC3OCOC34)C2CC1",
+      "observed": 1,
+      "modelProbability": 0.855874191563745,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC1(C)OC2CC3C4CC(F)C5=CC(=O)CCC5(C)C4C(O)CC3(C)C2(C(=O)CO)O1",
+      "scaffold": "O=C1C=C2CCC3C(CCC4C3CC3OCOC34)C2CC1",
+      "observed": 1,
+      "modelProbability": 0.8929285656232434,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC1(C)OC2CC3C4CCC5=CC(=O)CCC5(C)C4(F)C(O)CC3(C)C2(C(=O)CCl)O1",
+      "scaffold": "O=C1C=C2CCC3C(CCC4C3CC3OCOC34)C2CC1",
+      "observed": 1,
+      "modelProbability": 0.9204569866840082,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCCC1OC2CC3C4CC(F)C5=CC(=O)CCC5(C)C4(F)C(O)CC3(C)C2(C(=O)CO)O1",
+      "scaffold": "O=C1C=C2CCC3C(CCC4C3CC3OCOC34)C2CC1",
+      "observed": 1,
+      "modelProbability": 0.8908591081251629,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "NC(=O)CN1Cc2ccccc2OC1=O",
+      "scaffold": "O=C1NCc2ccccc2O1",
+      "observed": 1,
+      "modelProbability": 0.8603130704194826,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C1CC2(CCCC2)CC(=O)N1CCCCN1CCN(c2ncccn2)CC1",
+      "scaffold": "O=C1CC2(CCCC2)CC(=O)N1CCCCN1CCN(c2ncccn2)CC1",
+      "observed": 1,
+      "modelProbability": 0.9469612311016576,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCCC1CC(C(=O)NC(C(C)Cl)C2OC(SC)C(O)C(O)C2O)N(C)C1",
+      "scaffold": "O=C(NCC1CCCCO1)C1CCCN1",
+      "observed": 0,
+      "modelProbability": 0.71659131029634,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CCCC1CC(C(=O)NC(C(C)Cl)C2OC(SC)C(OP(=O)(O)O)C(O)C2O)N(C)C1",
+      "scaffold": "O=C(NCC1CCCCO1)C1CCCN1",
+      "observed": 0,
+      "modelProbability": 0.5973870110348618,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CCCC1CC(C(=O)NC(C(C)O)C2OC(SC)C(O)C(O)C2O)N(C)C1",
+      "scaffold": "O=C(NCC1CCCCO1)C1CCCN1",
+      "observed": 0,
+      "modelProbability": 0.6852597453115473,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CCCCCC1CNC(C(=O)NC(C(C)Cl)C2OC(SC)C(O)C(O)C2O)C1",
+      "scaffold": "O=C(NCC1CCCCO1)C1CCCN1",
+      "observed": 0,
+      "modelProbability": 0.662058616899612,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CN(C)CCCn1c2c(c3ccccc31)CCCCCC2",
+      "scaffold": "c1ccc2c3c([nH]c2c1)CCCCCC3",
+      "observed": 1,
+      "modelProbability": 0.9157402110577445,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN1CC=C(c2ccccc2)CC1",
+      "scaffold": "C1=C(c2ccccc2)CCNC1",
+      "observed": 1,
+      "modelProbability": 0.9566901764598535,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCN(CC)C(=O)N1CCN(CCCc2nc3c(c(=O)n(C)c(=O)n3C)n2C)CC1",
+      "scaffold": "O=c1[nH]c(=O)c2[nH]c(CCCN3CCNCC3)nc2[nH]1",
+      "observed": 1,
+      "modelProbability": 0.8908148673958364,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CCNC1=NC(=O)C(c2ccccc2)O1",
+      "scaffold": "O=C1N=COC1c1ccccc1",
+      "observed": 1,
+      "modelProbability": 0.8609794744744035,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN(C)C1=NC(=O)C(c2ccccc2)O1",
+      "scaffold": "O=C1N=COC1c1ccccc1",
+      "observed": 1,
+      "modelProbability": 0.8972061351251888,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "NC1=NC(=O)C(c2ccccc2)O1",
+      "scaffold": "O=C1N=COC1c1ccccc1",
+      "observed": 1,
+      "modelProbability": 0.8607408674881554,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN1CCN(C2Cc3ccccc3Sc3ccc(Cl)cc32)CC1",
+      "scaffold": "c1ccc2c(c1)CC(N1CCNCC1)c1ccccc1S2",
+      "observed": 1,
+      "modelProbability": 0.9753701377574614,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CSc1ccc2c(c1)C(N1CCN(C)CC1)Cc1ccccc1S2",
+      "scaffold": "c1ccc2c(c1)CC(N1CCNCC1)c1ccccc1S2",
+      "observed": 1,
+      "modelProbability": 0.9737134140468122,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "COc1ccccc1N1CCN(CCCC(O)c2ccc(F)cc2)CC1",
+      "scaffold": "c1ccc(CCCCN2CCN(c3ccccc3)CC2)cc1",
+      "observed": 1,
+      "modelProbability": 0.9302264768215956,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCOC(=O)CC(O)CC(O)C=CC1=C(c2ccc(F)cc2)c2ccccc2OC12CCCC2",
+      "scaffold": "C1=C(c2ccccc2)c2ccccc2OC12CCCC2",
+      "observed": 1,
+      "modelProbability": 0.8865243336823804,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "C#CCNC1CCc2ccccc21",
+      "scaffold": "c1ccc2c(c1)CCC2",
+      "observed": 1,
+      "modelProbability": 0.9301360972513527,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CN1C2CCCC1CC(NC(=O)c1nn(C)c3ccccc13)C2",
+      "scaffold": "O=C(NC1CC2CCCC(C1)N2)c1n[nH]c2ccccc12",
+      "observed": 1,
+      "modelProbability": 0.8621670455581515,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCCCc1nc(Cl)c(CO)n1Cc1ccc(-c2ccccc2-c2nn[nH]n2)cc1",
+      "scaffold": "c1ccc(-c2nn[nH]n2)c(-c2ccc(Cn3ccnc3)cc2)c1",
+      "observed": 0,
+      "modelProbability": 0.8631762186709552,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "C=CCN1C(=O)OC(C)C1=O",
+      "scaffold": "O=C1COC(=O)N1",
+      "observed": 1,
+      "modelProbability": 0.8362447948493863,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC1(C)OC(=O)NC1=O",
+      "scaffold": "O=C1COC(=O)N1",
+      "observed": 1,
+      "modelProbability": 0.8630274764637543,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CCC1(C)OC(=O)N(C)C1=O",
+      "scaffold": "O=C1COC(=O)N1",
+      "observed": 1,
+      "modelProbability": 0.9025000302946745,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CN1C(=O)OC(C)(C)C1=O",
+      "scaffold": "O=C1COC(=O)N1",
+      "observed": 1,
+      "modelProbability": 0.9110601565339276,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "COc1ccc2c(c1)C(=CCCN(C)C)c1ccccc1O2",
+      "scaffold": "C=C1c2ccccc2Oc2ccccc21",
+      "observed": 1,
+      "modelProbability": 0.9225841414749134,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC1(C)OC2COC3(COS(N)(=O)=O)OC(C)(C)OC3C2O1",
+      "scaffold": "C1OC2COC3OCOC3C2O1",
+      "observed": 1,
+      "modelProbability": 0.8306155754234634,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "FC(F)(F)c1cccc(C2=CCN(CCc3ccc4ccccc4c3)CC2)c1",
+      "scaffold": "C1=C(c2ccccc2)CCN(CCc2ccc3ccccc3c2)C1",
+      "observed": 1,
+      "modelProbability": 0.9430320890185888,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "O=C1N(C(O)C(Cl)(Cl)Cl)CNC1(c1ccccc1)c1ccccc1",
+      "scaffold": "O=C1NCNC1(c1ccccc1)c1ccccc1",
+      "observed": 1,
+      "modelProbability": 0.8441201426871295,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "O=C1NCNC1(c1ccccc1)c1ccccc1",
+      "scaffold": "O=C1NCNC1(c1ccccc1)c1ccccc1",
+      "observed": 1,
+      "modelProbability": 0.9110434693450273,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "OC(CN1CCCCC1)c1cc(-c2ccccc2)on1",
+      "scaffold": "c1ccc(-c2cc(CCN3CCCCC3)no2)cc1",
+      "observed": 1,
+      "modelProbability": 0.8356536262600353,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "COC12C(COC(N)=O)C3=C(C(=O)C(C)=C(N)C3=O)N1CC1NC12",
+      "scaffold": "O=C1C=CC(=O)C2=C1CC1C3NC3CN21",
+      "observed": 0,
+      "modelProbability": 0.7573856177987669,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CC12NC(Cc3ccccc31)c1ccccc12",
+      "scaffold": "c1ccc2c(c1)CC1NC2c2ccccc21",
+      "observed": 1,
+      "modelProbability": 0.9358416990698928,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CN1CCC2=C(CC1)c1cc(C#N)ccc1Sc1ccccc12",
+      "scaffold": "c1ccc2c(c1)Sc1ccccc1C1=C2CCNCC1",
+      "observed": 1,
+      "modelProbability": 0.9765205639275344,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC(C)(C(=O)O)c1ccc(C(O)CCCN2CCC(C(O)(c3ccccc3)c3ccccc3)CC2)cc1",
+      "scaffold": "c1ccc(CCCCN2CCC(C(c3ccccc3)c3ccccc3)CC2)cc1",
+      "observed": 0,
+      "modelProbability": 0.7401512237208242,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC(C)(C)c1ccc(C(O)CCCN2CCC(C(O)(c3ccccc3)c3ccccc3)CC2)cc1",
+      "scaffold": "c1ccc(CCCCN2CCC(C(c3ccccc3)c3ccccc3)CC2)cc1",
+      "observed": 0,
+      "modelProbability": 0.8158074783167555,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCC1C(C)=NN=C(c2ccc(OC)c(OC)c2)c2cc(OC)c(OC)cc21",
+      "scaffold": "C1=NN=C(c2ccccc2)c2ccccc2C1",
+      "observed": 1,
+      "modelProbability": 0.8809214170483058,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "COc1cc2c(cc1OC)C(c1ccc(N)cc1)=NN=C(C)C2",
+      "scaffold": "C1=NN=C(c2ccccc2)c2ccccc2C1",
+      "observed": 1,
+      "modelProbability": 0.9088582063616559,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "COc1cc2c(cc1OC)C(c1cccc(Cl)c1)=NN=C(C)C2",
+      "scaffold": "C1=NN=C(c2ccccc2)c2ccccc2C1",
+      "observed": 1,
+      "modelProbability": 0.9307382203268036,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "c1ccc2c(c1)CCc1ccccc1N2C1CN2CCC1CC2",
+      "scaffold": "c1ccc2c(c1)CCc1ccccc1N2C1CN2CCC1CC2",
+      "observed": 1,
+      "modelProbability": 0.9670825386111584,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CNC(C)C1CCC(N)C(OC2C(N)CC(N)C(OC3OCC(C)(O)C(NC)C3O)C2O)O1",
+      "scaffold": "C1CCC(OC2CCCC(OC3CCCCO3)C2)OC1",
+      "observed": 0,
+      "modelProbability": 0.22639107412205692,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CNC1C(O)C(OC2C(NC(=O)C(O)CN)CC(N)C(OC3OC(CN)C(O)C(O)C3O)C2O)OCC1(C)O",
+      "scaffold": "C1CCC(OC2CCCC(OC3CCCCO3)C2)OC1",
+      "observed": 0,
+      "modelProbability": 0.16039418712317283,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "NCC1CCC(N)C(OC2C(N)CC(N)C(OC3OC(CO)C(O)C(N)C3O)C2O)O1",
+      "scaffold": "C1CCC(OC2CCCC(OC3CCCCO3)C2)OC1",
+      "observed": 0,
+      "modelProbability": 0.3203823763395108,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "NCC1OC(OC2C(N)CC(N)C(OC3OC(CO)C(O)C(N)C3O)C2O)C(N)C(O)C1O",
+      "scaffold": "C1CCC(OC2CCCC(OC3CCCCO3)C2)OC1",
+      "observed": 0,
+      "modelProbability": 0.2890096095783462,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "NCC1OC(OC2C(N)CC(N)C(OC3OC(CO)C(O)C(N)C3O)C2O)C(N)CC1O",
+      "scaffold": "C1CCC(OC2CCCC(OC3CCCCO3)C2)OC1",
+      "observed": 0,
+      "modelProbability": 0.29369961022669394,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "NCC1OC(OC2C(N)CC(N)C(OC3OC(CO)C(O)C(N)C3O)C2O)C(O)C(O)C1O",
+      "scaffold": "C1CCC(OC2CCCC(OC3CCCCO3)C2)OC1",
+      "observed": 0,
+      "modelProbability": 0.2815350298006957,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "NCC1OC(OC2C(N)CC(NC(CO)CO)C(OC3OC(CO)C(O)C(N)C3O)C2O)C(N)C(O)C1O",
+      "scaffold": "C1CCC(OC2CCCC(OC3CCCCO3)C2)OC1",
+      "observed": 0,
+      "modelProbability": 0.2717808881563626,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "NCCC(O)C(=O)NC1CC(N)C(OC2OC(CN)C(O)C(O)C2O)C(O)C1OC1OC(CO)C(O)C(N)C1O",
+      "scaffold": "C1CCC(OC2CCCC(OC3CCCCO3)C2)OC1",
+      "observed": 1,
+      "modelProbability": 0.22398428226895614,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "NCCC(O)C(=O)NC1CC(N)C(OC2OC(CN)CCC2N)C(O)C1OC1OC(CO)C(O)C(N)C1O",
+      "scaffold": "C1CCC(OC2CCCC(OC3CCCCO3)C2)OC1",
+      "observed": 0,
+      "modelProbability": 0.25736274342456084,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "NCCC(O)CNC1CC(N)C(OC2OC(CN)C(O)C(O)C2O)C(O)C1OC1OC(CO)C(O)C(N)C1O",
+      "scaffold": "C1CCC(OC2CCCC(OC3CCCCO3)C2)OC1",
+      "observed": 0,
+      "modelProbability": 0.2811330695816182,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCOC(=O)c1ncn2c1CN(C)C(=O)c1cc(F)ccc1-2",
+      "scaffold": "O=C1NCc2cncn2-c2ccccc21",
+      "observed": 1,
+      "modelProbability": 0.8529560834755978,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C1NC(=O)C2(c3ccc(Cl)cc3)CC12",
+      "scaffold": "O=C1NC(=O)C2(c3ccccc3)CC12",
+      "observed": 1,
+      "modelProbability": 0.7738236966307824,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "Cc1cnc(NC(O)=C2C(=O)c3ccccc3S(=O)(=O)N2C)s1",
+      "scaffold": "O=C1C(=CNc2nccs2)NS(=O)(=O)c2ccccc21",
+      "observed": 0,
+      "modelProbability": 0.686983206667086,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCC1(c2ccccc2)C(=O)N(COC)C(=O)N(COC)C1=O",
+      "scaffold": "O=C1NC(=O)C(c2ccccc2)C(=O)N1",
+      "observed": 1,
+      "modelProbability": 0.9039194588589033,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCC1(c2ccccc2)C(=O)NC(=O)N(C)C1=O",
+      "scaffold": "O=C1NC(=O)C(c2ccccc2)C(=O)N1",
+      "observed": 1,
+      "modelProbability": 0.9057180848450689,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCC1(c2ccccc2)C(=O)NC(=O)NC1=O",
+      "scaffold": "O=C1NC(=O)C(c2ccccc2)C(=O)N1",
+      "observed": 1,
+      "modelProbability": 0.8936481172225976,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCCCOCC(CN1C(=O)N(CC(COCCCC)OC(N)=O)C(=O)C(CC)(c2ccccc2)C1=O)OC(N)=O",
+      "scaffold": "O=C1NC(=O)C(c2ccccc2)C(=O)N1",
+      "observed": 1,
+      "modelProbability": 0.8511249625274504,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCCCOCC(CN1C(=O)NC(=O)C(CC)(c2ccccc2)C1=O)OC(N)=O",
+      "scaffold": "O=C1NC(=O)C(c2ccccc2)C(=O)N1",
+      "observed": 1,
+      "modelProbability": 0.8396142446014014,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C1C2CCCCC2C(=O)N1CCCCN1CCN(c2nsc3ccccc23)CC1",
+      "scaffold": "O=C1C2CCCCC2C(=O)N1CCCCN1CCN(c2nsc3ccccc23)CC1",
+      "observed": 1,
+      "modelProbability": 0.9127857688677196,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CNc1nc(Cl)c(SC)c(N2CCN(C)CC2)n1",
+      "scaffold": "c1cc(N2CCNCC2)ncn1",
+      "observed": 1,
+      "modelProbability": 0.9103626442314079,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CSc1c(Cl)nc(NC(C)C)nc1N1CCN(C)CC1",
+      "scaffold": "c1cc(N2CCNCC2)ncn1",
+      "observed": 1,
+      "modelProbability": 0.8892769414156735,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CC1(C)SC2C(N(C(=N)c3ccncc3)C(C(=O)NC(=O)CN)c3ccccc3)C(=O)N2C1C(=O)O",
+      "scaffold": "N=C(c1ccncc1)N(Cc1ccccc1)C1C(=O)N2CCSC12",
+      "observed": 0,
+      "modelProbability": 0.03936318251184659,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCOC(=O)C1=C(C)NC(C)=C(C(=O)OC)C1c1cccc(Cl)c1Cl",
+      "scaffold": "C1=CC(c2ccccc2)C=CN1",
+      "observed": 0,
+      "modelProbability": 0.8119933746251571,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CN(C)CCC=C1c2ccccc2Sc2ccc(Cl)cc21",
+      "scaffold": "C=C1c2ccccc2Sc2ccccc21",
+      "observed": 1,
+      "modelProbability": 0.9683436515582183,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN(C)CCC=C1c2ccccc2Sc2ccccc21",
+      "scaffold": "C=C1c2ccccc2Sc2ccccc21",
+      "observed": 1,
+      "modelProbability": 0.9622265641788832,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "COc1nc2nc(-c3noc(C)n3)cn2c2c1CCCC2",
+      "scaffold": "c1nc(-c2cn3c4c(cnc3n2)CCCC4)no1",
+      "observed": 1,
+      "modelProbability": 0.895032860360952,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "Cc1cccc(Cc2cnc[nH]2)c1C",
+      "scaffold": "c1ccc(Cc2cnc[nH]2)cc1",
+      "observed": 1,
+      "modelProbability": 0.7953278894117631,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "O=c1[nH]c2cc(Cl)ccc2o1",
+      "scaffold": "O=c1[nH]c2ccccc2o1",
+      "observed": 1,
+      "modelProbability": 0.8383028284536576,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CN1CCC2=C(CC1)c1ccccc1N(C)c1ccccc12",
+      "scaffold": "c1ccc2c(c1)Nc1ccccc1C1=C2CCNCC1",
+      "observed": 1,
+      "modelProbability": 0.976456572991694,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC(=O)C1CCC2C3CCC4CC(O)CCC4(C)C3C(=O)CC12C",
+      "scaffold": "O=C1CC2CCCC2C2CCC3CCCCC3C12",
+      "observed": 1,
+      "modelProbability": 0.7691173469246447,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC12CC(=O)C3C(CCC4CC(O)CCC43C)C1CCC2C(=O)CO",
+      "scaffold": "O=C1CC2CCCC2C2CCC3CCCCC3C12",
+      "observed": 1,
+      "modelProbability": 0.7522335723906882,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN1CC2Cc3ccc(Cl)cc3C(c3ccccc3)C2C1",
+      "scaffold": "c1ccc(C2c3ccccc3CC3CNCC32)cc1",
+      "observed": 1,
+      "modelProbability": 0.9616098886183365,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C(Cn1cnnn1)NC1C(=O)N2C(C(=O)O)=C(CSc3nncs3)CSC12",
+      "scaffold": "O=C(Cn1cnnn1)NC1C(=O)N2C=C(CSc3nncs3)CSC12",
+      "observed": 0,
+      "modelProbability": 0.011574447856775518,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN1CCc2cc(Cl)c(O)cc2C(c2cc(Br)cc3c2OCC3)C1",
+      "scaffold": "c1ccc2c(c1)CCNCC2c1cccc2c1OCC2",
+      "observed": 1,
+      "modelProbability": 0.8788257145065449,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CCN(CC)CCCC(C)Nc1ccnc2cc(Cl)ccc12",
+      "scaffold": "c1ccc2ncccc2c1",
+      "observed": 1,
+      "modelProbability": 0.7776470408926793,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CCc1c(OC)nc2nc(-c3noc(C)n3)cn2c1C",
+      "scaffold": "c1cnc2nc(-c3ncon3)cn2c1",
+      "observed": 1,
+      "modelProbability": 0.9072334152844149,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CN(C(=O)C(c1ccccc1)c1ccccc1)C(CN1CCC(O)C1)c1ccccc1",
+      "scaffold": "O=C(NC(CN1CCCC1)c1ccccc1)C(c1ccccc1)c1ccccc1",
+      "observed": 1,
+      "modelProbability": 0.6240985094521331,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN(C)C1C(=O)C(=C(O)NCNC(C(=O)NC2C(=O)N3C2SC(C)(C)C3C(=O)O)c2ccccc2)C(=O)C2(O)C(=O)C3=C(O)c4c(O)cccc4C(C)(O)C3CC12",
+      "scaffold": "O=C1CC2CC3Cc4ccccc4C=C3C(=O)C2C(=O)C1=CNCNC(C(=O)NC1C(=O)N2CCSC12)c1ccccc1",
+      "observed": 0,
+      "modelProbability": 0.007483167542809034,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN(C)C(=O)c1nc(CNC(=O)CN)n(-c2ccc(Cl)cc2C(=O)c2ccccc2Cl)n1",
+      "scaffold": "O=C(c1ccccc1)c1ccccc1-n1cncn1",
+      "observed": 1,
+      "modelProbability": 0.8658022077680227,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN(C)CCCN1c2ccccc2C=Cc2sccc21",
+      "scaffold": "C1=Cc2sccc2Nc2ccccc21",
+      "observed": 1,
+      "modelProbability": 0.9657807269988693,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C(c1cccnc1)N1CCOCC1",
+      "scaffold": "O=C(c1cccnc1)N1CCOCC1",
+      "observed": 1,
+      "modelProbability": 0.8968712010182904,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN(C)CCCN1c2ccccc2CC(=O)c2ccccc21",
+      "scaffold": "O=C1Cc2ccccc2Nc2ccccc21",
+      "observed": 1,
+      "modelProbability": 0.967177135633858,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "NC(=O)N1c2ccccc2CC(=O)c2ccccc21",
+      "scaffold": "O=C1Cc2ccccc2Nc2ccccc21",
+      "observed": 1,
+      "modelProbability": 0.911294296018413,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN(C)c1cc(-c2nc(N)n[nH]2)ccn1",
+      "scaffold": "c1cc(-c2ncn[nH]2)ccn1",
+      "observed": 0,
+      "modelProbability": 0.8749216568337522,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC1(C)SC2C(NC(=O)CCCC(N)C(=O)O)C(=O)N2C1C(=O)O",
+      "scaffold": "O=C1CC2SCCN12",
+      "observed": 0,
+      "modelProbability": 0.019673491608888174,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C(c1ccccn1)N1CCN(Cc2ccccc2)CC1",
+      "scaffold": "O=C(c1ccccn1)N1CCN(Cc2ccccc2)CC1",
+      "observed": 1,
+      "modelProbability": 0.8659583662978073,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "FC(F)(F)c1ccc2c(c1)N(CCCN1CCN(C3CC3)CC1)c1ccccc1S2",
+      "scaffold": "c1ccc2c(c1)Sc1ccccc1N2CCCN1CCN(C2CC2)CC1",
+      "observed": 1,
+      "modelProbability": 0.9954675370298636,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "COC1C=COC2(C)Oc3c(C)c(O)c4c(O)c(c5c(nc6cc(C)ccn65)c4c3C2=O)NC(=O)C(C)=CC=CC(C)C(O)C(C)C(O)C(C)C(OC(C)=O)C1C",
+      "scaffold": "O=C1C=CC=CCCCCCCCCC=COC2Oc3ccc4cc(c5c(nc6ccccn65)c4c3C2=O)N1",
+      "observed": 0,
+      "modelProbability": 0.07495954934239057,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C1CCc2ccc(OCCCCN3CCN(c4cccc(Cl)c4Cl)CC3)cc2N1",
+      "scaffold": "O=C1CCc2ccc(OCCCCN3CCN(c4ccccc4)CC3)cc2N1",
+      "observed": 1,
+      "modelProbability": 0.9423170028169044,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "OC1OC(COCCOC(O)C(Cl)(Cl)Cl)C(OC2OC(COCCOCCOC(O)C(Cl)(Cl)Cl)CC(OC(O)C(Cl)(Cl)Cl)C2O)C(OCCOCCOC(O)C(Cl)(Cl)Cl)C1O",
+      "scaffold": "C1CCC(OC2CCCOC2)OC1",
+      "observed": 1,
+      "modelProbability": 0.43076076127922586,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CN1C2CCC1CC(OC(=O)C(C)(CO)c1ccccc1)C2",
+      "scaffold": "O=C(Cc1ccccc1)OC1CC2CCC(C1)N2",
+      "observed": 1,
+      "modelProbability": 0.8452132072749003,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN1C2CCC1CC(OC(=O)C(O)c1ccccc1)C2",
+      "scaffold": "O=C(Cc1ccccc1)OC1CC2CCC(C1)N2",
+      "observed": 0,
+      "modelProbability": 0.794577738965758,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C(CCNNC(=O)c1ccncc1)NCc1ccccc1",
+      "scaffold": "O=C(CCNNC(=O)c1ccncc1)NCc1ccccc1",
+      "observed": 1,
+      "modelProbability": 0.8008621435191703,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC(=O)OC1C(=O)C2(C)C(O)CC3OCC3(OC(C)=O)C2C(OC(=O)c2ccccc2)C2(O)CC(OC(=O)C(O)C(NC(=O)c3ccccc3)c3ccccc3)C(C)=C1C2(C)C",
+      "scaffold": "O=C(CC(NC(=O)c1ccccc1)c1ccccc1)OC1C=C2CC(=O)C3CCC4OCC4C3C(OC(=O)c3ccccc3)C(C2)C1",
+      "observed": 0,
+      "modelProbability": 0.6987087817406384,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "c1ccc2c(c1)cc1n2CCCNC1",
+      "scaffold": "c1ccc2c(c1)cc1n2CCCNC1",
+      "observed": 1,
+      "modelProbability": 0.9044549550271253,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CCc1ccccc1-n1c(C)nc2ccccc2c1=O",
+      "scaffold": "O=c1c2ccccc2ncn1-c1ccccc1",
+      "observed": 1,
+      "modelProbability": 0.8419582427303373,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "Cc1ccccc1-n1c(C)nc2ccccc2c1=O",
+      "scaffold": "O=c1c2ccccc2ncn1-c1ccccc1",
+      "observed": 1,
+      "modelProbability": 0.86511557460978,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "Cc1nc2ccccc2c(=O)n1-c1ccccc1Cl",
+      "scaffold": "O=c1c2ccccc2ncn1-c1ccccc1",
+      "observed": 1,
+      "modelProbability": 0.8465734981840374,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C1NCCN1CCN1CCC(c2cn(-c3ccc(F)cc3)c3ccc(Cl)cc23)CC1",
+      "scaffold": "O=C1NCCN1CCN1CCC(c2cn(-c3ccccc3)c3ccccc23)CC1",
+      "observed": 1,
+      "modelProbability": 0.8541215993673437,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C1CN=C(c2ccccc2)c2cc(Cl)ccc2N1CC1CC1",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1CC1CC1",
+      "observed": 1,
+      "modelProbability": 0.9127382589581975,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C1CN=C(c2ccccc2F)c2cc(Cl)ccc2N1CC1CC1",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1CC1CC1",
+      "observed": 1,
+      "modelProbability": 0.9051396759002822,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "COc1ccc2c3c1OC1CC(O)C=CC31CCN(C)C2",
+      "scaffold": "C1=CC23CCNCc4cccc(c42)OC3CC1",
+      "observed": 1,
+      "modelProbability": 0.8935958606884788,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "c1ccc(C2CN3CCSC3=N2)cc1",
+      "scaffold": "c1ccc(C2CN3CCSC3=N2)cc1",
+      "observed": 1,
+      "modelProbability": 0.9326483632819692,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CN1CCC(=C2c3ccccc3Sc3ccccc32)CC1",
+      "scaffold": "c1ccc2c(c1)Sc1ccccc1C2=C1CCNCC1",
+      "observed": 1,
+      "modelProbability": 0.9737408487831308,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "COc1ccc2c(c1)C(N1CCN(C)CC1)=Cc1ccccc1O2",
+      "scaffold": "C1=C(N2CCNCC2)c2ccccc2Oc2ccccc21",
+      "observed": 1,
+      "modelProbability": 0.9367910734324602,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC(CN1C(=O)c2cccnc2Nc2ccccc21)N(C)C",
+      "scaffold": "O=C1Nc2ccccc2Nc2ncccc21",
+      "observed": 1,
+      "modelProbability": 0.9301375120129658,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCn1nc(C)c2c1C(c1ccccc1)=NCC(=O)N2",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2[nH]ncc2N1",
+      "observed": 1,
+      "modelProbability": 0.8894453120561618,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC(=O)OCCC(SC(C)=O)=C(C)N(C=O)Cc1cnc(C)nc1N",
+      "scaffold": "c1cncnc1",
+      "observed": 1,
+      "modelProbability": 0.8679588285224198,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCOC(=O)OCCC(SC(=O)OCC)=C(C)N(C=O)Cc1cnc(C)nc1N",
+      "scaffold": "c1cncnc1",
+      "observed": 1,
+      "modelProbability": 0.8559124313206313,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "OCCN(CCO)c1nc(N2CCCCC2)c2nc(N(CCO)CCO)nc(N3CCCCC3)c2n1",
+      "scaffold": "c1nc(N2CCCCC2)c2ncnc(N3CCCCC3)c2n1",
+      "observed": 0,
+      "modelProbability": 0.852305128529881,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CC(C)(C)N1CCC(c2ccccc2)(c2ccccc2)CC1",
+      "scaffold": "c1ccc(C2(c3ccccc3)CCNCC2)cc1",
+      "observed": 1,
+      "modelProbability": 0.9458310485737897,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C(CN1CCC(c2ccc(F)cc2)C(COc2ccc3c(c2)OCO3)C1)c1ccc(F)cc1",
+      "scaffold": "O=C(CN1CCC(c2ccccc2)C(COc2ccc3c(c2)OCO3)C1)c1ccccc1",
+      "observed": 1,
+      "modelProbability": 0.9176585777409819,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "C#CCN1C(=O)CN=C(c2ccccc2)c2cc(Cl)ccc21",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.9176436663587845,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CC(C)(C)C(=O)OC1N=C(c2ccccc2)c2cc(Cl)ccc2NC1=O",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.7916838801180539,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CCN(CC)CCN1C(=O)CN=C(c2ccccc2F)c2cc(Cl)ccc21",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.929374935089073,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CCOC(=O)C1N=C(c2ccccc2F)c2cc(Cl)ccc2NC1=O",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.8012735723625262,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CCS(=O)(=O)CCN1C(=O)CN=C(c2ccccc2F)c2cc(Cl)ccc21",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.9110596755929303,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN(C)C(=O)OC1N=C(c2ccccc2)c2cc(Cl)ccc2N(C)C1=O",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.7698938178201217,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN1C(=O)C(O)N=C(c2ccccc2)c2cc(Cl)ccc21",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.7518495872545347,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN1C(=O)C(O)N=C(c2ccccc2Cl)c2cc(Cl)ccc21",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.7455873813761221,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN1C(=O)C(O)N=C(c2ccccc2F)c2cc(Cl)ccc21",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.7541000695051001,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "CN1C(=O)CN=C(c2ccccc2)c2cc(Cl)ccc21",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.9363092547548552,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CN1C(=O)CN=C(c2ccccc2F)c2cc(Cl)ccc21",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.9282395345679185,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "CP(C)(=O)CN1C(=O)CN=C(c2ccccc2)c2cc(Cl)ccc21",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.9159106154001769,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "N#CCCN1C(=O)C(O)N=C(c2ccccc2F)c2cc(Cl)ccc21",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.7862187153626277,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "O=C1C(O)N=C(c2ccccc2F)c2cc(Cl)ccc2N1CCO",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.7830131362687139,
+      "modelPrediction": 0,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "O=C1CN=C(c2ccccc2)c2cc(Cl)ccc2N1",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.8988889831361174,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C1CN=C(c2ccccc2)c2cc(Cl)ccc2N1CC(F)(F)F",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.91732562159666,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C1CN=C(c2ccccc2Cl)c2cc(Cl)ccc2N1",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.8924293721513095,
+      "modelPrediction": 1,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C1CN=C(c2ccccc2F)c2cc(Cl)ccc2N1CC(O)CO",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.8649278541732883,
+      "modelPrediction": 1,
+      "passivePrediction": 0,
+      "passiveStatus": "scored",
+      "applicable": true
+    },
+    {
+      "smiles": "O=C1Nc2ccc(Cl)cc2C(c2ccccc2)=NC1O",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.7823877962972123,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    },
+    {
+      "smiles": "O=C1Nc2ccc(Cl)cc2C(c2ccccc2Cl)=NC1O",
+      "scaffold": "O=C1CN=C(c2ccccc2)c2ccccc2N1",
+      "observed": 1,
+      "modelProbability": 0.7954079970578299,
+      "modelPrediction": 0,
+      "passivePrediction": 1,
+      "passiveStatus": "scored",
+      "applicable": false
+    }
+  ]
+}

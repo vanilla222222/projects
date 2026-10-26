@@ -14,7 +14,7 @@ assert.equal(model.dossier(less).observations.find(o=>o.recordId==='control-gsk-
 assert.equal(model.dossier(less).observations.find(o=>o.recordId==='control-gsk-j2').relation,'>');
 assert.equal(model.dossier(active).observations.find(o=>o.recordId==='control-gsk-j2').value,0.06);
 const two=model.dossier('2C-B').observations.find(o=>o.kind==='functional_assay');assert.equal(two.species,'Homo sapiens');assert.equal(two.hostSpecies,'Mus musculus');assert.equal(two.value,80);assert.equal(two.efficacy.value,45);
-assert.equal(model.dossier('Valsartan').identityWarnings.length,1);assert.ok(!model.dossier('Valsartan').records.some(r=>r.id==='family-003-3937-agtr1'));
+assert.equal(model.dossier('Valsartan').identityWarnings.length,0);assert.ok(model.dossier('Valsartan').identityCorrection);assert.ok(model.dossier('Valsartan').records.some(r=>r.id==='family-003-3937-agtr1'));
 assert.equal(model.dossier('missing'),null);
 const original=entries.find(e=>e.name===less),mutated={...original,smiles:'C'};assert.ok(!model.observations(mutated).some(o=>o.recordId==='control-gsk-j2'),'Do not transfer evidence on a name-only match');
 console.log('Research dossiers: graph guards, participant-specific censored control values, receptor/host species and identity warnings passed');
@@ -40,13 +40,13 @@ assert.deepEqual(model.matrix({family:'missing'}).rows,[]);
 console.log('Family matrices: distinct evidence states, explicit unknowns, human filtering, compound/target pagination and assay-scoped low activity passed');
 
 const reviews=model.reviewItems();assert.equal(reviews.filter(r=>r.kind==='identity').length,4);
-const valsReview=reviews.find(r=>r.id==='identity:Valsartan');assert.equal(valsReview.status,'guarded_unresolved');assert.match(valsReview.history[0].event,/tautomer/);assert.ok(valsReview.relatedNames.includes('CHEMBL1069'));
+const valsReview=reviews.find(r=>r.id==='identity:Valsartan');assert.equal(valsReview.status,'resolved_source_correction');assert.match(valsReview.history[0].event,/tautomer/);assert.ok(valsReview.relatedNames.includes('CHEMBL1069'));
 const quet=reviews.find(r=>r.id==='action:Quetiapine:HTR2A:Homo sapiens');assert.ok(quet);assert.deepEqual(quet.actions.slice().sort(),['agonist','antagonist']);assert.equal(quet.status,'scoped_unresolved');assert.ok(quet.evidence.every(o=>o.species==='Homo sapiens'));assert.ok(quet.history[0].event.includes('No adjudication'));
 assert.equal(model.reviews({kind:'identity',query:'valsartan'}).total,1);assert.equal(model.reviews({query:'no-such-compound'}).total,0);
 for(const decision of reviewData.decisions)assert.ok(reviews.some(r=>r.id===decision.id),'Decision must refer to an existing review candidate: '+decision.id);
-console.log('Review centre: four guarded identity cases, species-specific action differences, raw witnesses and unresolved decision history passed');
-const queue=model.curationQueue({perPage:10000});assert.ok(queue.items.length>31);assert.equal(queue.items[0].priority,0);assert.equal(queue.categoryCounts.review,reviews.length);
-const quantitativeName=data.records.find(r=>r.id==='family-001-37456').compounds[0].libraryNames[0];assert.ok(queue.items.some(t=>t.id.startsWith('quantitative:')&&t.names.includes(quantitativeName)));
+console.log('Review centre: four resolved identity corrections with preserved history, species-specific action differences, raw witnesses and unresolved decision history passed');
+const queue=model.curationQueue({perPage:10000});assert.ok(queue.items.length>31);assert.equal(queue.items[0].priority,1);assert.equal(queue.categoryCounts.review,reviews.filter(r=>!r.status.startsWith('resolved_')).length);
+const quantitativeName=data.records.find(r=>r.id==='family-001-37456').compounds[0].libraryNames[0];assert.ok(!queue.items.some(t=>t.id.startsWith('quantitative:')&&t.names.includes(quantitativeName)),'Completed measurements leave the transcription queue');
 const div2=model.curationQueue({category:'diversity',minimumScaffolds:2,perPage:10000}),div5=model.curationQueue({category:'diversity',minimumScaffolds:5,perPage:10000});assert.ok(div5.total>=div2.total);assert.ok(div2.items.every(t=>t.category==='diversity'&&t.count<2));
 assert.ok(queue.items.some(t=>t.category==='functional'&&t.family==='Family motif: Benzisothiazoles'));
 const controlsQueue=queue.items.filter(t=>t.category==='controls');assert.ok(controlsQueue.length);assert.ok(!controlsQueue.some(t=>t.names.includes(active)&&t.names.includes(less)),'An imported matched control relation must not become a missing-control task for its own assay');

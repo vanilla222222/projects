@@ -263,3 +263,56 @@ are descriptive reference-set properties, not predictive validation.
 `validation/receptor-batch-4-regression.json` stores the local regression run
 and its tested source digest; the Git revision identifies the parent commit
 when the tested working source is dirty.
+
+## Sixth batch: incomplete curated panels remain lookup-only
+
+`validation/chembl-receptor-binding-batch-6.json` examines TAAR1, GRM2, GRM5,
+CNR1 and CNR2 with the unchanged named-only, human single-protein Ki/Kd protocol.
+The 10,000-row cap is not reached by any of these queries: all 41, 205, 429,
+2,682 and 3,745 returned activity rows, respectively, were examined. This is
+complete for that bounded endpoint query, not all pharmacological literature.
+Human UniProt gene/accession witnesses are retained in
+`validation/sources/sparse-panel-target-identities.json`; ChEMBL independently
+confirms each accession, primary gene symbol and single-protein target.
+
+| Panel | Qualifying named binding profiles | Gap to 50 |
+| --- | ---: | ---: |
+| TAAR1 | 0 | 50 |
+| GRM2 | 2 | 48 |
+| GRM5 | 5 | 45 |
+| CNR1 | 26 | 24 |
+| CNR2 | 28 | 22 |
+
+The import adds 61 binding associations and 32 source structures. Existing
+curated functional/classification records and legacy identities remain intact.
+Zero qualifying TAAR1 binding profiles does not invalidate its separately
+sourced human functional observations or imply inactivity.
+
+These five panels are **lookup-only**, excluded from both target-ranking modes
+and the retrieval benchmark. Their compounds, source annotations and explorer
+records remain inspectable. New curated panels default to lookup-only; the
+binding importer admits a new panel to ranking only at the full 50-profile goal.
+Reapplying an incomplete imported panel can lift that restriction once its
+qualifying profile count meets the goal. Registration and display labels alone
+cannot satisfy this admission rule. Earlier legacy ranking panels retain their
+existing behavior and visible coverage limitations.
+
+This resolves premature admission of the five panels to general ranking; it
+does **not** claim their evidence shortfalls have been filled. Functional EC50,
+binding IC50, non-human assays and unnamed structures have not been substituted
+to inflate the strict named-binding counts. Neither meeting a coverage goal nor
+an internal retrieval benchmark establishes predictive validity.
+
+Reproduce acquisition with:
+
+```sh
+python -B tools/curate-receptor-bindings.py --named-only --add-targets \
+  --genes TAAR1,GRM2,GRM5,CNR1,CNR2 --max-activities 10000 \
+  --output candidate-batch-6.json
+```
+
+Review before applying. The name-witness refresh tool accepts an earlier commit
+only when every prior library entry is unchanged and additions introduce no new
+CHEMBL-ID naming candidates. The GSK-J4 identity source row is now pinned in a
+small standalone snapshot with its original library commit and hash, so library
+extensions cannot invalidate that unchanged source observation.

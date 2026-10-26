@@ -14,9 +14,9 @@ for(const [family,count] of Object.entries(expected)){
  }
 }
 const annotations=api.annotations([],rows,d).filter(a=>a.curatedReferenceId.startsWith('family-002-'));
-assert.equal(annotations.length,19);assert.deepEqual(receptors.validateAnnotations(annotations,catalog.receptors,rows),[]);
+assert.equal(annotations.length,22);assert.deepEqual(receptors.validateAnnotations(annotations,catalog.receptors,rows),[]);
 assert.ok(annotations.every(a=>a.evidenceType==='source_classification'&&!a.value&&!a.metric),'Database action classifications must not become new assay measurements');
-assert.deepEqual(annotations.reduce((n,a)=>(n[a.action]=(n[a.action]||0)+1,n),{}),{partial_agonist:3,antagonist:13,agonist:3});
+assert.deepEqual(annotations.reduce((n,a)=>(n[a.action]=(n[a.action]||0)+1,n),{}),{partial_agonist:4,antagonist:14,agonist:4});
 const fixture=annotations.find(a=>a.action==='partial_agonist');
 for(const bad of [
  {...fixture,action:'antagonist'},
@@ -33,6 +33,5 @@ const stale=rows.map(e=>e.name===fixture.ligandName?{...e,smiles:'stale'}:e);ass
 const {RECEPTOR_LIGAND_ANNOTATIONS:base}=require('../data/receptor-ligand-annotations');
 const before=receptors.coverageReport(catalog.receptors,targets,rows,base),after=receptors.coverageReport(catalog.receptors,targets,rows,base.concat(annotations));
 assert.deepEqual(after.rows.map(r=>[r.id,r.sourcedProfiles]),before.rows.map(r=>[r.id,r.sourcedProfiles]),'Curated classifications must not inflate the historical binding-profile quota');
-const conflicts=records.filter(r=>r.compounds[0].legacyNamesakeGraphConflicts?.length);assert.equal(conflicts.length,3);
-for(const r of conflicts)for(const name of r.compounds[0].legacyNamesakeGraphConflicts){assert.ok(!api.forEntry(byname.get(name),d).includes(r),'Legacy namesake must not inherit source pharmacology');assert.ok(api.tags(byname.get(name),d).includes('Evidence: Identity conflict'),'Namesake conflict must be visible in the inspector');}
+const corrections=d.identityCorrections.filter(f=>f.sourceReferenceId.startsWith('family-002-'));assert.equal(corrections.length,3);for(const f of corrections){assert.ok(api.forEntry(byname.get(f.name),d).some(r=>r.id===f.sourceReferenceId));assert.ok(!api.forEntry(f.before,d).some(r=>r.id===f.sourceReferenceId),'Historical graph must not inherit corrected pharmacology');}
 console.log('New named families: five graph-defined families, 19 exact-source human action classifications, provenance guards, conflicting-action/species rejection and no inferred assay values passed');

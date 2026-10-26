@@ -8,6 +8,7 @@
   function signature(fps){
     return ['ecfp4s','ecfp6','pairs'].map(key=>key+':'+[...fps[key].counts].sort((a,b)=>a[0]-b[0]).map(x=>x.join('=')).join(',')).join('|');
   }
+  function coverageLabel(profiles){return profiles<2?'Single-profile lookup; independent holdout unavailable':profiles<5?'Sparse panel; fewer than five distinct profiles':profiles<50?'Below the 50-profile coverage goal':'50+ structural profiles; source qualification must be checked separately';}
   function createIndex(library,targets,engine){
     const entries=new Map(),issues=[];
     const wanted=new Set(targets.flatMap(t=>t.ligands||[]));
@@ -40,6 +41,7 @@
     }
     const ranked=[];
     for(const [order,target] of index.targets.entries()){
+      if(target.lookupOnly===true)continue;
       if(o.organism && o.organism!=='all' && target.organism!==o.organism)continue;
       if(o.receptorsOnly && !['GPCR','Nuclear receptor'].includes(target.family) && !/receptor/i.test(target.name))continue;
       const distinct=new Map();let listed=0;
@@ -61,11 +63,12 @@
       ranked.push({target,order,score,rankScore,mean,nearest:scored[0].entry,count:listed,distinctCount:profileCount,matchingProfiles,motifEvidence,
         support,agreement:scored[0].components.filter(v=>v>=SUPPORT_CUT).length,
         components:scored[0].components,evidence:top,mode,
+        coverage:coverageLabel(profileCount),belowCoverageGoal:profileCount<50,
         applicability:matchingProfiles?'matching reference fingerprint profile (not independent prediction)':score<0.3?'remote resemblance':support<2?'single-profile support':'multiple-profile support'});
     }
     return ranked.sort((a,b)=>b.rankScore-a.rankScore||b.mean-a.mean||a.order-b.order);
   }
-  const api={VERSION,METHODS,ENSEMBLE,SUPPORT_CUT,signature,createIndex,query,rank};
+  const api={VERSION,METHODS,ENSEMBLE,SUPPORT_CUT,signature,coverageLabel,createIndex,query,rank};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   root.TargetRanking=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

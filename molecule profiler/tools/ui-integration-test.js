@@ -93,7 +93,7 @@ assert.ok(app.includes("molecule-profiler:selected"),'Selected-molecule reportin
 assert.ok(scripts.indexOf('js/full-csv-export.js') > -1 && scripts.indexOf('js/full-csv-export.js') < scripts.indexOf('js/app.js'),
   'Full CSV schema must load before app');
 assert.ok(ids.includes('export-full-dictionary'),'Full CSV dictionary button missing');
-assert.ok(app.includes('FullCsvExport.createCsv(record,fullExportRows(record))'),'Full CSV export schema not wired');
+assert.ok(app.includes('exported=await fullExportRows(record)')&&app.includes('FullCsvExport.createCsv(record,exported)'),'Full CSV export schema not wired');
 assert.ok(app.includes('FullCsvExport.topRanked(similarityRanked)'), 'Full CSV similarity ranking limit missing');
 assert.ok(app.includes('FullCsvExport.topRanked(ranked)'), 'Full CSV target ranking limit missing');
 assert.ok(ids.includes('export-research'),'Research package button missing');

@@ -4,7 +4,7 @@ const {JSDOM,VirtualConsole}=require('jsdom');
 const root=path.resolve(__dirname,'..');
 async function page(file,query=''){
  const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(String(e)));
- const dom=await JSDOM.fromFile(path.join(root,file),{url:pathToFileURL(path.join(root,file)).href+query,resources:'usable',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:vc,beforeParse(w){w.HTMLElement.prototype.scrollIntoView=()=>{};w.URL.createObjectURL=()=> 'blob:fixture';w.URL.revokeObjectURL=()=>{};}});
+ const dom=await JSDOM.fromFile(path.join(root,file),{url:pathToFileURL(path.join(root,file)).href+query,resources:'usable',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:vc,beforeParse(w){w.HTMLElement.prototype.scrollIntoView=()=>{};w.Worker=class{constructor(){throw Error('Blocked worker fixture');}};w.URL.createObjectURL=()=> 'blob:fixture';w.URL.revokeObjectURL=()=>{};}});
  if(dom.window.document.readyState!=='complete')await new Promise(r=>dom.window.addEventListener('load',r,{once:true}));
  return {dom,w:dom.window,d:dom.window.document,errors};
 }
@@ -33,6 +33,9 @@ async function page(file,query=''){
  try{
   const {w,d}=p;const until=async fn=>{const end=Date.now()+60000;while(!fn()&&Date.now()<end)await new Promise(r=>setTimeout(r,25));assert.ok(fn(),p.errors.join('\n'));};
   await until(()=>w.PharmacologyUI?.getSnapshot()?.curatedReferences?.some(r=>r.id==='prodrug-fosphenytoin'));
+  await until(()=>d.getElementById('sim-summary').textContent.includes('reference structures ranked'));
+  assert.ok(d.querySelector('#similar tbody tr[data-smiles]'));assert.ok(d.getElementById('sim-scope-count').textContent.includes('unassigned bulk structures'));
+  const count=Number(d.getElementById('sim-summary').textContent.split(' ')[0]);assert.ok(count>5000&&count<6000,'Default eligibility pool should exclude unassigned bulk imports');
   let s=w.PharmacologyUI.getSnapshot();assert.ok(s.prodrugs.asProdrug.some(r=>r.curatedReferenceId==='prodrug-fosphenytoin'));
   assert.ok(d.getElementById('prodrug-matches').textContent.toLowerCase().includes('phenytoin'));
   assert.ok(d.getElementById('curated-reference-evidence').querySelector('a[href*="compound=1"]'));

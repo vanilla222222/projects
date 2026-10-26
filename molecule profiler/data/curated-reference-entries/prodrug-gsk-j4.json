@@ -26,8 +26,8 @@
           "librarySmiles": "CCOC(=O)CCNc1cc(N2CCc3ccccc3CC2)nc(-c2ccccn2)n1",
           "batch": "002"
         },
-        "sourceFile": "data/library.js",
-        "sourceSha256": "dd1825a00b32820eb1bf68f00e163d273f640ff37419b2ecd08da1b226f387d9"
+        "sourceFile": "validation/sources/gsk-j4-chebi-identity.json",
+        "sourceSha256": "2e1f23c71a54802999e8089466698e017a7de1417b8023becfc29269f45a0e75"
       }
     },
     {

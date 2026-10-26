@@ -115,5 +115,154 @@
   "brierConstantTrainingPrevalence": 0.1909049396373762,
   "calibration": "Platt sigmoid fitted only to held-out calibration scaffold groups; test probabilities never fitted.",
   "applicability": "Neutral connected supported structures, Morgan-2/2048 maximum training similarity >=0.35, and MW/WLOGP/TPSA within training ranges. Fixed before test evaluation.",
-  "scope": "Internal scaffold-held-out BBBP validation only. No external prospective validation, measured brain exposure, efflux/P-gp prediction or clinical validation. Labels include mechanisms beyond passive permeability. Stereochemistry is not modeled; stereochemistry-agnostic duplicate/conflicting graphs were curated together."
+  "scope": "Internal scaffold-held-out BBBP validation only. No external prospective validation, measured brain exposure, efflux/P-gp prediction or clinical validation. Labels include mechanisms beyond passive permeability. Stereochemistry is not modeled; stereochemistry-agnostic duplicate/conflicting graphs were curated together.",
+  "uncertainty": {
+    "fullMatched": {
+      "n": 270,
+      "scaffolds": 164,
+      "bootstrap": {
+        "method": "Paired scaffold-cluster percentile bootstrap",
+        "confidenceLevel": 0.95,
+        "seed": 20261041,
+        "resamples": 2000,
+        "validResamples": 2000,
+        "discardedSingleClassResamples": 0,
+        "scope": "Conditional on the fixed split, fitted model, calibration, threshold and applicability rule. Does not include retraining, split-selection or external-population uncertainty."
+      },
+      "model": {
+        "balancedAccuracy": {
+          "lower": 0.7521532714300613,
+          "upper": 0.8851772897284407
+        },
+        "accuracy": {
+          "lower": 0.7391304347826086,
+          "upper": 0.8774006983849847
+        },
+        "sensitivity": {
+          "lower": 0.7136553535604228,
+          "upper": 0.8775537342596613
+        },
+        "specificity": {
+          "lower": 0.7321428571428571,
+          "upper": 0.9411764705882353
+        },
+        "brier": {
+          "lower": 0.06905406507105556,
+          "upper": 0.1321154152972522
+        },
+        "rocAuc": {
+          "lower": 0.8630228543617517,
+          "upper": 0.9561311917538529
+        }
+      },
+      "passive": {
+        "balancedAccuracy": {
+          "lower": 0.720985986569146,
+          "upper": 0.8421976894113137
+        },
+        "accuracy": {
+          "lower": 0.672925569318981,
+          "upper": 0.7972987855697107
+        },
+        "sensitivity": {
+          "lower": 0.6018772429663315,
+          "upper": 0.7614272375792325
+        },
+        "specificity": {
+          "lower": 0.7749646226415094,
+          "upper": 0.9622901159771506
+        }
+      },
+      "deltaBalancedAccuracy": {
+        "estimate": 0.040233614536015594,
+        "lower": -0.03799537780205379,
+        "upper": 0.11614433775582966
+      },
+      "mcnemar": {
+        "bothCorrect": 172,
+        "modelOnlyCorrect": 47,
+        "passiveOnlyCorrect": 27,
+        "bothWrong": 24,
+        "discordant": 74,
+        "pValue": 0.026516832550684835,
+        "method": "Exact two-sided binomial McNemar",
+        "scope": "Marginal correctness comparison; not a test of balanced accuracy. Compound pairs are treated as independent, so shared scaffolds limit inferential interpretation. Read the paired scaffold bootstrap delta interval."
+      }
+    },
+    "applicableMatched": {
+      "n": 190,
+      "scaffolds": 109,
+      "bootstrap": {
+        "method": "Paired scaffold-cluster percentile bootstrap",
+        "confidenceLevel": 0.95,
+        "seed": 20261041,
+        "resamples": 2000,
+        "validResamples": 2000,
+        "discardedSingleClassResamples": 0,
+        "scope": "Conditional on the fixed split, fitted model, calibration, threshold and applicability rule. Does not include retraining, split-selection or external-population uncertainty."
+      },
+      "model": {
+        "balancedAccuracy": {
+          "lower": 0.8139190292502839,
+          "upper": 0.9358037695281227
+        },
+        "accuracy": {
+          "lower": 0.7978723404255319,
+          "upper": 0.9226526456683943
+        },
+        "sensitivity": {
+          "lower": 0.7697829893979553,
+          "upper": 0.9183769132653061
+        },
+        "specificity": {
+          "lower": 0.8076612903225807,
+          "upper": 1.0
+        },
+        "brier": {
+          "lower": 0.038659284391050285,
+          "upper": 0.10141360447711538
+        },
+        "rocAuc": {
+          "lower": 0.9106130035309987,
+          "upper": 0.9865778471876514
+        }
+      },
+      "passive": {
+        "balancedAccuracy": {
+          "lower": 0.7780888030888031,
+          "upper": 0.8982611287758346
+        },
+        "accuracy": {
+          "lower": 0.6994219653179191,
+          "upper": 0.8601706305813742
+        },
+        "sensitivity": {
+          "lower": 0.6204333364131941,
+          "upper": 0.8261078595317725
+        },
+        "specificity": {
+          "lower": 0.8888364779874214,
+          "upper": 1.0
+        }
+      },
+      "deltaBalancedAccuracy": {
+        "estimate": 0.0381639636958786,
+        "lower": -0.03846153846153855,
+        "upper": 0.11488518084829558
+      },
+      "mcnemar": {
+        "bothCorrect": 134,
+        "modelOnlyCorrect": 30,
+        "passiveOnlyCorrect": 15,
+        "bothWrong": 11,
+        "discordant": 45,
+        "pValue": 0.035697803555194696,
+        "method": "Exact two-sided binomial McNemar",
+        "scope": "Marginal correctness comparison; not a test of balanced accuracy. Compound pairs are treated as independent, so shared scaffolds limit inferential interpretation. Read the paired scaffold bootstrap delta interval."
+      }
+    },
+    "scope": "Paired comparisons use only the identical structures scored by both methods. Compound-wise McNemar does not settle balanced-accuracy differences or shared-scaffold dependence."
+  },
+  "statisticsCodeSha256": "7497d07ba0ab6b452e18bde97b43e62ddcafbfe1c7ca8934d516404f6ac8cb9c",
+  "pairedPredictionsSha256": "8d28677398352ca2693483cec632b166990f84d753d302bd262b32dcb6788880"
 }

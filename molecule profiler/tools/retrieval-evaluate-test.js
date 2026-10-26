@@ -37,3 +37,15 @@ assert.deepEqual(evaluate(sets,values,asymmetric).trials,reference(sets,values,a
 assert.deepEqual(evaluate([],new Map(),tanimoto).trials,[]);
 assert.throws(()=>evaluate([],new Map(),tanimoto,{maxCacheBytes:-1}),RangeError);
 console.log('Cached retrieval: exact uncached trial/rank/score agreement across 5 fingerprints × 2 metrics, ties, aliases, shared ligands, empty/singleton sets; fewer than half the similarity calls');
+// The measured protocol now follows the app's nearest / mean-top-three / order ties.
+const ranking=require('../js/target-ranking'),library=Object.entries(structures).map(([name,smiles])=>({name,smiles}));
+const targetRows=sets.map(s=>({gene:s.gene,name:s.key,ligands:s.ligands}));
+const engine={parse:s=>buildMolecule(parseSmiles(s)),fingerprint,tanimoto,dice},index=ranking.createIndex(library,targetRows,engine);
+for(const method of ['ecfp4','ecfp6','fcfp4','ecfp4s','pairs'])for(const metric of ['tanimoto','dice']){
+ const fps=new Map([...index.entries].map(([n,e])=>[n,e.fps[method]]));
+ for(const trial of evaluate(sets,fps,engine[metric],{symmetric:true,tieBreak:'meanTop3'}).trials){
+  const q=ranking.query(engine.parse(structures[trial.held]),index),actual=ranking.rank(q,index,{mode:'legacy',method,metric,excludeNames:[trial.held]});
+  assert.equal(trial.rank,actual.findIndex(r=>r.order===trial.index)+1,'App/evaluator rank parity including shared names and aliases');assert.equal(trial.topScore,actual[0].score);assert.equal(trial.topGene,actual[0].target.gene);
+ }
+}
+console.log('App/evaluator parity: every toy holdout and tie across five fingerprints and both metrics passed');

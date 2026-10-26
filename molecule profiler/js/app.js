@@ -1,6 +1,8 @@
 'use strict';
-const ANALYSIS_REFERENCE_LIBRARY=typeof CuratedReferences!=='undefined'?CuratedReferences.library(LIBRARY):LIBRARY;
-const ANALYSIS_REFERENCE_TARGETS=typeof CuratedReferences!=='undefined'?CuratedReferences.targets(TARGETS):TARGETS;
+const ANALYSIS_REFERENCE_CONTEXT=ReferenceContext.create(LIBRARY,TARGETS,typeof CuratedReferences==='undefined'?null:CuratedReferences);
+const ANALYSIS_REFERENCE_LIBRARY=ANALYSIS_REFERENCE_CONTEXT.library;
+const ANALYSIS_REFERENCE_TARGETS=ANALYSIS_REFERENCE_CONTEXT.targets;
+const SIMILARITY_ELIGIBILITY=ReferenceEligibility.create(ANALYSIS_REFERENCE_LIBRARY,ANALYSIS_REFERENCE_TARGETS,{recordsFor:e=>CuratedReferences.forEntry(e),evidenceFor:e=>LibraryCatalog.receptorEvidence(e)});
 
 // Display labels are separate from stable reference keys used in scientific exports.
 function referenceDisplayName(entry) {
@@ -212,20 +214,10 @@ let latestInputIssues = [];
 let activeAnalysis = null;
 let fileReadSequence = 0;
 
-const libraryCache = new Map();
-
-function libraryFingerprints(methodKey) {
-  if (libraryCache.has(methodKey)) return libraryCache.get(methodKey);
-  const built = [];
-  ANALYSIS_REFERENCE_LIBRARY.forEach((entry) => {
-    try {
-      const mol = buildMolecule(parseSmiles(entry.smiles));
-      built.push({ entry, fp: fingerprint(mol, methodKey) });
-    } catch (error) { /* a reference entry that will not parse is simply left out */ }
-  });
-  libraryCache.set(methodKey, built);
-  return built;
-}
+const SIMILARITY_REFERENCE_POOL=ANALYSIS_REFERENCE_LIBRARY.filter(e=>SIMILARITY_ELIGIBILITY.eligible(e));
+const referenceFingerprintCache=ReferenceFingerprints.create({engine:{parse:s=>buildMolecule(parseSmiles(s)),fingerprint},version:FINGERPRINT_ENGINE.sha256,manifest:ReferenceContext.manifest});
+function libraryFingerprints(methodKey,includeAll=false,progress){return referenceFingerprintCache.get(includeAll?ANALYSIS_REFERENCE_LIBRARY:SIMILARITY_REFERENCE_POOL,methodKey,{progress});}
+let similaritySequence=0;
 
 function infoButton(key) {
   if (!GLOSSARY[key]) return '';
@@ -816,7 +808,8 @@ const SIM_COLUMNS = [
   ['simShared', 'Shared']
 ];
 
-function renderSimilar(record) {
+async function renderSimilar(record) {
+  const sequence=++similaritySequence;
   const methodKey = document.getElementById('sim-method').value;
   const metricKey = document.getElementById('sim-metric').value;
   const limit = Number(document.getElementById('sim-count').value);
@@ -824,9 +817,12 @@ function renderSimilar(record) {
   const score = metricKey === 'dice' ? dice : tanimoto;
 
   const query = fingerprint(record.mol, method.key);
-  const library = libraryFingerprints(method.key);
   const includeProperty = document.getElementById('sim-include-property-only').checked;
-  const isPropertyReference = (entry) => entry.propertyOnly === true;
+  document.getElementById('sim-summary').textContent='Preparing reference fingerprints…';
+  document.querySelector('#similar tbody').replaceChildren();
+  let library;try{library=await libraryFingerprints(method.key,includeProperty,(done,total)=>{if(sequence===similaritySequence)document.getElementById('sim-summary').textContent='Preparing reference fingerprints '+done+' / '+total+'…';});}catch(e){if(sequence===similaritySequence)document.getElementById('sim-summary').textContent='Reference search unavailable: '+e.message;return;}
+  if(sequence!==similaritySequence||record!==records[current])return;
+  const isPropertyReference = (entry) => entry.propertyOnly === true || !SIMILARITY_ELIGIBILITY.eligible(entry);
   const rankedPool = includeProperty ? library : library.filter(item => !isPropertyReference(item.entry));
   const hits = rankedPool.map((item) => ({
     entry: item.entry,
@@ -848,8 +844,8 @@ function renderSimilar(record) {
   document.getElementById('sim-summary').innerHTML = rankedPool.length + ' reference structures ranked, '
     + query.bits.size + ' query bits' + infoButton('simBits');
   document.getElementById('sim-scope-count').textContent =
-    rankedPool.length + ' of ' + library.length + ' parseable structures ranked; '
-    + (library.length - rankedPool.length) + ' property-reference/illustrative entries excluded'
+    rankedPool.length + ' of ' + ANALYSIS_REFERENCE_LIBRARY.length + ' stored structures ranked; '
+    + (ANALYSIS_REFERENCE_LIBRARY.length - rankedPool.length) + ' unassigned bulk structures or property/illustrative references excluded'
     + (includeProperty ? ' (included by request)' : ' by default') + '. Collection labels are not verified provenance.';
   document.getElementById('sim-blurb').textContent = method.blurb;
 
@@ -885,7 +881,7 @@ const TGT_COLUMNS = [
 ];
 
 const TGT_TIERS = [
-  [0.5, 'Confident neighbours', 'The query shares most of its fingerprint with a compound already recorded as active at this target, so the row is worth treating as a real hypothesis to check against the literature.'],
+  [0.5, 'Close structural neighbours', 'Close reference resemblance. Read panel coverage and the source evidence; a single reference profile supplies lookup-level support, not an independently validated prediction.'],
   [0.3, 'Worth a look', 'Enough shared substructure to be suggestive and nothing more. These are leads to verify, not binding.'],
   [0, 'Weak tail \u2014 not a binding claim', 'Below about 0.30 a nearest-neighbour similarity says nothing about whether the query binds: these are simply the next-closest ligand sets in the catalogue, and a list like this comes back for almost any query. Shown for completeness, and greyed because the numbers should not be read as scores.']
 ];
@@ -894,12 +890,15 @@ function tgtTier(value) {
   return TGT_TIERS.findIndex(([floor]) => value >= floor);
 }
 
+function benchmarkMatches(){return typeof RETRIEVAL_BENCHMARK!=='undefined'&&RETRIEVAL_BENCHMARK.composition?.key===ANALYSIS_REFERENCE_CONTEXT.manifest.key;}
+
 function benchmarkRow(target) {
-  if (typeof RETRIEVAL_BENCHMARK === 'undefined') return null;
+  if (!benchmarkMatches()) return null;
   return RETRIEVAL_BENCHMARK.perTarget[target.gene + '::' + target.name] || null;
 }
 
-function recoveredCell(target) {
+function recoveredCell(target,profiles) {
+  if(profiles<2)return '<span class="quiet">— · single profile</span>';
   const row = benchmarkRow(target);
   if (!row) return '<span class="quiet">\u2014</span>';
   return (row.r1 * 100).toFixed(0) + '% <span class="quiet">(' + row.n + ')</span>';
@@ -920,7 +919,7 @@ function casesLine() {
 }
 
 function benchmarkLine() {
-  if (typeof RETRIEVAL_BENCHMARK === 'undefined') return '';
+  if (!benchmarkMatches()) return 'Benchmark withheld: the loaded reference composition differs from the measured snapshot. Regenerate the retrieval benchmark.';
   const b = RETRIEVAL_BENCHMARK;
   const share = (value) => (value * 100).toFixed(0) + '%';
   return 'Measured by leave-one-out over the ' + b.trials + ' ligand slots that can be tested: the true target came '
@@ -930,7 +929,7 @@ function benchmarkLine() {
     + ' and ' + share(b.popularity.r5) + '; ranking at random gets ' + share(b.random.r1) + ' and '
     + share(b.random.r5) + '. ' + b.unmeasurable + ' of the ' + b.targets
     + ' targets have fewer than two known ligands and cannot be tested at all.'
-    + infoButton('tgtBenchmark');
+    + ' Name holdout can leave structural aliases in the pool; these are not independent scaffold-held-out results.' + infoButton('tgtBenchmark');
 }
 
 let targetRankingIndex = null;
@@ -970,12 +969,12 @@ function renderTargets(record) {
   document.getElementById('tgt-summary').innerHTML = pool + ' targets'
     + (organism === 'all' ? '' : ' in ' + organism.toLowerCase() + ' scope')
     + ', ' + kept.length + ' above the score cut, '
-    + (strong ? strong + ' of them above 0.30' : 'none of them above 0.30');
+    + (strong ? strong + ' of them above 0.30' : 'none of them above 0.30')+'; '+ranked.filter(r=>r.distinctCount<5).length+' panels have fewer than five distinct reference profiles. '+ANALYSIS_REFERENCE_TARGETS.filter(t=>t.lookupOnly===true).length+' additional panels are lookup-only and withheld from ranking pending the 50-profile source-coverage goal; inspect their evidence in the receptor explorer.';
   document.getElementById('tgt-blurb').textContent = legacy
     ? 'Legacy nearest-neighbour ranking: '+method.label+' / '+metricKey+'.'
     : 'Multi-fingerprint ranking: geometric mean of stereo-aware ECFP4, FCFP4 and atom-pair Tanimoto per ligand; rank = 70% nearest + 30% mean top three distinct fingerprint profiles. These are heuristic weights, not trained probabilities.';
   document.getElementById('tgt-bench').innerHTML = legacy && methodKey==='ecfp4' && metricKey==='tanimoto'
-    ? benchmarkLine() : 'The historical ECFP4/Tanimoto benchmark does not validate this selected method.';
+    && organism==='all' && document.getElementById('tgt-scope').value!=='receptors' ? benchmarkLine() : 'The historical ECFP4/Tanimoto benchmark does not validate this selected method.';
   document.getElementById('tgt-evidence').textContent = ranked.length
     ? 'Top result: '+ranked[0].applicability+'; '+ranked[0].support+' distinct supporting fingerprint profiles at ensemble similarity ≥0.35 (each component ≥0.20). The three fingerprint views are correlated, not independent experiments. '+targetRankingIndex.issues.length+' reference-index issue(s). Unlisted targets remain unassessed; no agonist/antagonist action is inferred.'
     : 'No usable references in this target scope. Unlisted targets are unassessed.';
@@ -1011,8 +1010,8 @@ function renderTargets(record) {
           +' (stereo / features / pairs: '+e.components.map(v=>v.toFixed(3)).join(' / ')+')').join('<br>')
         + '<br>'+row.distinctCount+' distinct fingerprint profiles from '+row.count+' listed references.'
         + (row.motifEvidence.length?'<br><strong>Shared motifs across the reference panel:</strong><br>'+row.motifEvidence.slice(0,5).map(m=>escapeHtml(StructuralEvidence.label(m.id))+': '+m.support+'/'+m.total+' distinct target-reference profiles; background '+m.background+'/'+m.backgroundTotal+' indexed profiles').join('<br>'):'<br>No shared motif in the current vocabulary.')+'</details></td>'
-      + '<td>' + row.count + '</td>'
-      + '<td>' + (legacy?recoveredCell(row.target):row.support+' / '+row.distinctCount) + '</td>'
+      + '<td>' + row.distinctCount+' profiles / '+row.count+' names<br><span class="quiet">'+escapeHtml(row.coverage)+'</span></td>'
+      + '<td>' + (legacy?(methodKey==='ecfp4'&&metricKey==='tanimoto'&&organism==='all'&&document.getElementById('tgt-scope').value!=='receptors'?recoveredCell(row.target,row.distinctCount):'—'):row.support+' / '+row.distinctCount) + '</td>'
       + '<td class="note">' + escapeHtml(row.target.note) + '</td>'
       + '</tr>';
   }).join('') : '<tr><td colspan="11">No target has a known ligand this similar to the query.</td></tr>';
@@ -1214,7 +1213,7 @@ function renderAlerts(record) {
     '<tr' + (row.count ? '' : ' class="quiet"') + '>'
       + '<td>' + escapeHtml(row.alert.name) + '</td>'
       + '<td>' + sourceCell(row.alert.source, row.alert.ref) + '</td>'
-      + '<td>' + row.count + '</td>'
+      + '<td>' + row.distinctCount+' profiles / '+row.count+' names<br><span class="quiet">'+escapeHtml(row.coverage)+'</span></td>'
       + '<td class="atoms">' + (row.atoms.length ? row.atoms.map((index) => index + 1).join(', ') : '—') + '</td>'
       + '<td><code>' + escapeHtml(row.alert.smarts) + '</code></td>'
       + '<td class="note">' + escapeHtml(row.alert.note) + citeSpan(row.alert.cite) + '</td>'
@@ -1288,7 +1287,7 @@ function renderTox(record) {
       + '<td>' + escapeHtml(row.name) + '</td>'
       + '<td>' + escapeHtml(row.endpoint) + '</td>'
       + '<td>' + sourceCell(row.source, row.ref) + '</td>'
-      + '<td>' + row.count + '</td>'
+      + '<td>' + row.distinctCount+' profiles / '+row.count+' names<br><span class="quiet">'+escapeHtml(row.coverage)+'</span></td>'
       + '<td class="atoms">' + (row.atoms.length ? row.atoms.map((index) => index + 1).join(', ') : '\u2014') + '</td>'
       + '<td><code>' + escapeHtml(row.pattern) + '</code></td>'
       + '<td class="note">' + escapeHtml(row.note) + citeSpan(row.cite) + '</td>'
@@ -1752,7 +1751,11 @@ function csvCell(value) {
   return '"' + String(value === null || value === undefined ? '' : value).replace(/"/g, '""') + '"';
 }
 
-function fullExportRows(record) {
+async function fullExportRows(record) {
+  const methodAtStart=document.getElementById('sim-method').value,includeAll=document.getElementById('sim-include-property-only').checked;
+  const exportScope=()=>['sim-method','sim-metric','tgt-mode','tgt-organism','tgt-scope'].map(id=>document.getElementById(id).value).join('|')+'|'+document.getElementById('sim-include-property-only').checked;
+  const scopeAtStart=exportScope(),fingerprints=await libraryFingerprints(methodAtStart,includeAll);
+  if(exportScope()!==scopeAtStart||records[current]!==record)throw Error('Export selection changed while fingerprints were prepared. Export again.');
   const d = record.d;
   const v = record.v;
   const out = [];
@@ -1927,8 +1930,9 @@ function fullExportRows(record) {
   pair('similarity', 'fingerprint', method.label);
   pair('similarity', 'metric', metricKey === 'dice' ? 'Dice' : 'Tanimoto');
   pair('similarity', 'queryBits', query.bits.size);
+  pair('similarity', 'referenceScope',includeAll?'Full structural library':'Default eligible reference pool');
   pair('similarity', 'rankedExportLimit', FullCsvExport.MAX_RANKED_RESULTS);
-  const similarityRanked = libraryFingerprints(method.key).map((item) => ({
+  const similarityRanked = fingerprints.map((item) => ({
     entry: item.entry,
     bits: item.fp.bits.size,
     shared: sharedCount(query, item.fp),
@@ -2097,10 +2101,11 @@ function fullExportRows(record) {
   return out;
 }
 
-function exportMoleculeCsv() {
+async function exportMoleculeCsv() {
   const record = records[current];
   if (!record) return;
-  const csv = FullCsvExport.createCsv(record,fullExportRows(record));
+  let exported;try{exported=await fullExportRows(record);}catch(e){document.getElementById('sim-summary').textContent=e.message;return;}
+  const csv = FullCsvExport.createCsv(record,exported);
   const slug = record.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'molecule';
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const link = document.createElement('a');

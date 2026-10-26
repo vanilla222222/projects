@@ -53,3 +53,11 @@ assert.ok(annotations.every(a=>a.receptorId==='OPRM1'&&a.evidenceType==='functio
 assert.equal(annotations.filter(a=>a.ligandName==='Brorphine').length,2);
 assert.ok(records.some(r=>r.id==='family-001-162623683'&&r.evidence.some(e=>/[Cc]itrate/.test(e.testedForm||''))));
 console.log('Family and pharmacology references: nine guarded structural filters, six pharmacology-backed additions, species-aware human ranking and assay-specific values passed');
+// Transcribed from the primary Table 1 compound 14, with independent pathway intervals.
+const completed=records.find(r=>r.id==='family-001-37456'),measures=completed.evidence.filter(e=>e.kind==='functional_assay');
+assert.equal(measures.length,2);assert.deepEqual(measures.map(e=>[e.value,e.lower,e.upper,e.efficacy.value,e.efficacy.lower,e.efficacy.upper]),[[0.942,0.811,1.09,198,194,202],[0.0939,0.0531,0.167,109,99.8,118]]);
+assert.ok(measures.every(e=>e.hostSpecies==='Homo sapiens'&&e.sourceLocation.includes('compound 14')&&e.efficacy.reference==='Hydromorphone = 100%'&&e.sourceRecord.value===e.value));
+assert.notEqual(measures[0].assay,measures[1].assay);assert.ok(!measures.some(e=>/not transcribed/.test(e.endpoint)));
+const completedAnnotations=annotations.filter(a=>a.curatedReferenceId===completed.id);
+assert.equal(completedAnnotations.length,2);for(const a of completedAnnotations){const e=measures.find(e=>e.assay===a.assay);assert.equal(a.lower,e.lower);assert.equal(a.upper,e.upper);assert.equal(a.relation,'=');assert.equal(a.sourceRecord.value,e.value);assert.equal(a.efficacy.upper,e.efficacy.upper);assert.equal(a.sourceSha256,e.sourceSha256);}
+console.log('MOR measurement completion: two source-pinned pathways, EC50 and relative Emax confidence intervals retained in annotation exports');

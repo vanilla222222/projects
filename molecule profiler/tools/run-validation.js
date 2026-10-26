@@ -10,6 +10,7 @@ const sourceBefore = provenance.capture(root);
 const scripts = [
   'reference-audit-test.js',
   'curated-references-test.js',
+  'identity-corrections-test.js',
   'receptor-catalog-test.js',
   'receptor-coverage-test.js',
   'receptor-diversity-report-test.js',
@@ -24,6 +25,9 @@ const scripts = [
   'metabolism-cases.js',
   'retrieval-benchmark.js',
   'retrieval-evaluate-test.js',
+  'reference-context-test.js',
+  'reference-fingerprints-test.js',
+  'reference-eligibility-test.js',
   'ui-integration-test.js',
   'interaction-test.js',
   'cooperative-batch-test.js',

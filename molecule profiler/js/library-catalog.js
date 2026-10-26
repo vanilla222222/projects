@@ -42,7 +42,7 @@
     return source?{librarySmiles:entry.smiles,preferredName:entry.name,nameKind:source.nameKind,
       sourceUrl:source.url,aliases:[source.provider+' '+source.id,source.provider==='ChEBI'?'CHEBI:'+source.id:null,source.cas,source.inchiKey].filter(Boolean)}:null;
   }
-  function displayName(entry, context) { return nameRecord(entry,context)?.preferredName || entry.name; }
+  function displayName(entry, context) { const preferred=nameRecord(entry,context)?.preferredName;return preferred?preferred.replace(/^(?!(?:cis|trans|tert|sec|exo|endo|syn|anti|alpha|beta|gamma|delta|threo|erythro|rac|epi|sn)-)[a-z](?=[a-z])/,c=>c.toUpperCase()):entry.name; }
   function aliasesFor(entry, context) { return nameRecord(entry,context)?.aliases || []; }
   function tagsFor(entry, context) {
     const tags=matchedRecord(metadata(context).tags,entry)?.tags;

@@ -52,7 +52,7 @@
           "Antibacterial": ""
         }
       },
-      "legacyNamesakeGraphConflicts": [
+      "correctedLegacyNames": [
         "SCH-23390"
       ]
     }
@@ -127,5 +127,5 @@
   },
   "reviewedDate": "2026-10-25",
   "familyDefinition": "Tetrahydrobenzazepines",
-  "note": "IUPHAR/BPS Guide to PHARMACOLOGY \"# GtoPdb Version: 2026.3.1 - published: 2026-10-12\" (CC BY-SA 4.0), adapted selection. Structure and full InChIKey are source-provided. Human target action is a curated database classification, separate from a directly measured functional observation. Family membership alone never transfers action, selectivity or efficacy. Source stereo is retained, including unspecified stereo. Legacy namesakes with different graphs (SCH-23390) do not receive this record or action assignment."
+  "note": "IUPHAR/BPS Guide to PHARMACOLOGY \"# GtoPdb Version: 2026.3.1 - published: 2026-10-12\" (CC BY-SA 4.0), adapted selection. Structure and full InChIKey are source-provided. Human target action is a curated database classification, separate from a directly measured functional observation. Family membership alone never transfers action, selectivity or efficacy. Source stereo is retained, including unspecified stereo. Legacy namesakes with different graphs (SCH-23390) do not receive this record or action assignment. Named-key correction and the preserved historical graph are documented in IDENTITY-CORRECTIONS.md."
 }

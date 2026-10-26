@@ -73,3 +73,11 @@ The dashboard compares additions/removals, identity fields, numeric measurements
 Validation: `python tools/build-reference-releases.py --check`, `node tools/reference-releases-test.js`, and the comprehensive discovery DOM integration test. Future evidence changes also require rebuilding the matched-pair index when its input source hash changes.
 
 Additional independent checks: `node tools/reference-structure-worker-test.js` scans the full composed library through the worker import/message boundary; `python tools/reference-structure-rdkit-test.py` checks randomized serialization, charge, isotope and specified stereo against RDKit. Wildcard queries are rejected as unsupported rather than silently treated as concrete atoms. Stereo-aware identity matching uses the same explicit bounded matcher, so an exhausted search is unresolved.
+
+### Recorded identity corrections
+
+Four reviewed named-reference corrections are applied to the composed library
+with exact original-entry and replacement-source guards. Dossiers and claim
+tracing retain before/after graphs; resolved decisions remain in review history
+and leave the curation queue. See [IDENTITY-CORRECTIONS.md](IDENTITY-CORRECTIONS.md).
+The original base library and published historical snapshots are preserved.

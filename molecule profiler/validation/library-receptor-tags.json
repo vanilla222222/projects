@@ -2,19 +2,19 @@
   "schemaVersion": 1,
   "rdkitVersion": "2026.09.1",
   "sourceSha256": {
-    "data/library.js": "1de0c3fc593a6f8dd60f27309a6a2c501a699ccf781b3db8fad989752c05a2bd",
+    "data/library.js": "1e038c7acbdc331264dafd70881482c8f6557b751ab0ad1ba549cea2c790024d",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
-    "data/receptor-ligand-annotations.js": "28bcfc10324b17fc8a30d2e4b3cf3c589e55fe9af76cd61dfb8986d9a3b30d01",
-    "data/targets.js": "facc465ef72687224df3577fbf7a600102e7c3b07cc033a4de21ba76191192fa",
+    "data/receptor-ligand-annotations.js": "5baaf3e92817424997666eff1422ec70312af28413a4712a16f047828c01c98a",
+    "data/targets.js": "c994111b869a78b68fe873c92f218ae1791b9b3e3fbf390f0b3a837221b4aacd",
     "tools/build-receptor-tags.py": "158e00b34c85db738c51f2b6e911cbe35e92466927a408051bcbd6c647b55535",
     "validation/sources/receptor-actions-iuphar.json": "ae233a073c2159c5c62b3e8a77c26a8f28f5ba94d9127b456112270f368f31f4"
   },
   "sourceVersion": "\"# GtoPdb Version: 2026.3.1 - published: 2026-10-12\"",
   "receptors": 146,
-  "annotatedEntries": 1753,
+  "annotatedEntries": 1787,
   "evidenceRecords": {
     "iuphar": 2029,
-    "chembl": 1820
+    "chembl": 1881
   },
   "definitions": 2350,
   "coverage": [
@@ -920,7 +920,7 @@
     },
     {
       "receptorId": "CNR1",
-      "binding": 0,
+      "binding": 26,
       "actions": {
         "agonist": 4,
         "full_agonist": 1,
@@ -940,7 +940,7 @@
     },
     {
       "receptorId": "CNR2",
-      "binding": 0,
+      "binding": 28,
       "actions": {
         "agonist": 5,
         "full_agonist": 2,
@@ -1560,7 +1560,7 @@
     },
     {
       "receptorId": "GRM5",
-      "binding": 0,
+      "binding": 5,
       "actions": {
         "agonist": 1,
         "full_agonist": 0,
@@ -1580,7 +1580,7 @@
     },
     {
       "receptorId": "GRM2",
-      "binding": 0,
+      "binding": 2,
       "actions": {
         "agonist": 2,
         "full_agonist": 2,
@@ -2939,5 +2939,5 @@
       }
     }
   ],
-  "dataSha256": "80b38e5924627048955b8ab839e4e58ad8f4fafcea9c01ec6ec5408fc1f31395"
+  "dataSha256": "45bd4290deb0cc48e63908d0a63e2ed562e2233f997c8c8a97049e38130cfa66"
 }

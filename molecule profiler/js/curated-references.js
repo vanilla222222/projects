@@ -2,7 +2,17 @@
 (function(root){
  const data=()=>root.CURATED_REFERENCES||{records:[],entries:{},extraLibrary:[]};
  const libraryCache=new WeakMap();
- function library(base,d=data()){const cached=libraryCache.get(base);if(cached?.data===d)return cached.entries;const names=new Set(base.map(e=>e.name)),entries=base.concat(d.extraLibrary.filter(e=>!names.has(e.name)));libraryCache.set(base,{data:d,entries});return entries;}
+ function library(base,d=data()){
+  const cached=libraryCache.get(base);if(cached?.data===d)return cached.entries;
+  const fixes=new Map((d.identityCorrections||[]).map(f=>[f.name,f]));
+  const effective=base.map(entry=>{const f=fixes.get(entry.name);if(!f)return entry;
+   const c=d.records.find(r=>r.id===f.sourceReferenceId)?.compounds[f.compoundIndex];
+   // Both the historical input and the reviewed replacement must match exactly.
+   if(!c||entry.smiles!==f.before.smiles||entry.formula!==f.before.formula||f.after.name!==entry.name||f.after.smiles!==c.smiles||f.after.formula!==c.formula||f.inchiKey!==c.inchiKey)return entry;
+   return {...entry,smiles:f.after.smiles,formula:f.after.formula,identityCorrection:f};
+  });
+  const names=new Set(effective.map(e=>e.name)),entries=effective.concat(d.extraLibrary.filter(e=>!names.has(e.name)));libraryCache.set(base,{data:d,entries});return entries;
+ }
  function forEntry(entry,d=data()){
   const m=d.entries[entry.name];if(!m||m.librarySmiles!==entry.smiles)return [];
   const ids=new Set(m.recordIds);return d.records.filter(r=>ids.has(r.id));
@@ -38,7 +48,7 @@
   const out=base.map(t=>({...t,ligands:t.ligands.slice()}));
   for(const r of d.records){if(!r.panel||!rankingEvidence(r).length)continue;
    let t=out.find(t=>t.gene===r.panel.gene);
-   if(!t){t={...r.panel,organism:'Human',ligands:[],note:'Source-linked human pharmacology observations. Similarity does not transfer source action or potency.'};out.push(t);}
+   if(!t){t={...r.panel,organism:'Human',lookupOnly:true,ligands:[],note:'Source-linked human pharmacology lookup. Withheld from target ranking until 50 source-linked profiles are qualified. Similarity does not transfer source action or potency.'};out.push(t);}
    t.ligands=[...new Set(t.ligands.concat(r.compounds.flatMap(c=>c.libraryNames)))];
   }return out;
  }
@@ -48,7 +58,7 @@
    const classified=e.kind==='source_classification'&&e.action&&e.receptorId&&e.sourceProvider==='IUPHAR/BPS Guide to PHARMACOLOGY'&&e.sourceRecord;
    if((e.kind!=='functional_assay'&&!classified)||e.species!=='Homo sapiens'||e.rankEligible===false)continue;
    for(const c of r.compounds)for(const name of c.libraryNames||[]){const entry=byname.get(name);if(!entry||!forEntry(entry,d).includes(r))continue;
-    const measured=Object.fromEntries(['metric','value','sd','unit','uncertaintyKind','efficacy','originalValue','originalSd','originalUnit','hostSpecies','testedForm'].filter(k=>e[k]!==undefined).map(k=>[k,e[k]]));
+    const measured=Object.fromEntries(['metric','value','relation','sd','lower','upper','conditions','sourceLocation','sourceSha256','sourceRecord','unit','uncertaintyKind','efficacy','originalValue','originalSd','originalUnit','hostSpecies','testedForm'].filter(k=>e[k]!==undefined).map(k=>[k,e[k]]));
     const provenance=classified?{classification:{provider:e.sourceProvider,license:'CC BY-SA 4.0',sourceSnapshotSha256:e.sourceSha256,ligandId:e.sourceRecord['Ligand ID'],targetId:e.sourceRecord['Target ID'],sourceRecord:e.sourceRecord}}:{};
     out.push({...measured,...provenance,receptorId:e.receptorId,ligandName:name,librarySmiles:entry.smiles,action:e.action,evidenceType:classified?'source_classification':'functional',species:e.species,assay:e.assay,endpoint:e.endpoint,sourceUrl:e.sourceUrl,note:(classified?'Curated database action classification; no functional potency or efficacy measurement assigned. ':'Assay-specific functional evidence. ')+(e.testedForm||'')+' Separate from the strict binding-profile quota.',curatedReferenceId:r.id});
    }

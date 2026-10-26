@@ -74,7 +74,7 @@ const awaiting=expectedCoverage.rows.filter(r=>!r.hasTarget);
     assert.ok($('receptor-detail').textContent.includes('curated action classification'));
     [...$('receptor-detail').querySelectorAll('button')].find(b=>b.textContent==='Export source-linked ligand evidence').click();
     const classified=JSON.parse(await downloads.at(-1).blob.text()).ligands.filter(a=>a.curatedReferenceId?.startsWith('family-002-'));
-    assert.equal(classified.length,3);assert.deepEqual(classified.map(a=>a.action).sort(),['agonist','antagonist','partial_agonist']);assert.ok(classified.every(a=>a.evidenceType==='source_classification'&&a.classification.sourceRecord['Target Species']==='Human'));
+    assert.equal(classified.length,6);assert.equal(new Set(classified.map(a=>a.curatedReferenceId)).size,3,'Corrected aliases still represent three source classifications');assert.deepEqual([...new Set(classified.map(a=>a.action))].sort(),['agonist','antagonist','partial_agonist']);assert.ok(['Fenoldopam','SKF-38393','SCH-23390'].every(name=>classified.some(a=>a.ligandName===name)));assert.ok(classified.every(a=>a.evidenceType==='source_classification'&&a.classification.sourceRecord['Target Species']==='Human'));
     $('receptor-reset').click();
     change('receptor-search','PPARG');$('receptor-results').querySelector('[data-receptor-id="PPARG"]').click();
     [...$('receptor-detail').querySelectorAll('button')].find(b=>b.textContent==='Export source-linked ligand evidence').click();

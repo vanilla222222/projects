@@ -35,7 +35,9 @@ ACCESSIONS = {'HRH2':'P25021','CHRM1':'P11229','CHRM2':'P08172','CHRM3':'P20309'
  'ADRA2A':'P08913','ADRA2B':'P18089','ADRA2C':'P18825',
  'DRD1':'P21728','DRD2':'P14416','DRD3':'P35462','DRD4':'P21917',
  'HTR1E':'P28566','HTR1F':'P30939',
- 'OPRM1':'P35372','OPRD1':'P41143','OPRK1':'P41145','OPRL1':'P41146'}
+ 'OPRM1':'P35372','OPRD1':'P41143','OPRK1':'P41145','OPRL1':'P41146',
+ # Human gene/accession witnesses: validation/sources/sparse-panel-target-identities.json.
+ 'TAAR1':'Q96RJ0','GRM2':'Q14416','GRM5':'P41594','CNR1':'P21554','CNR2':'P34972'}
 DEFAULT_GENES=('HRH2','CHRM1','CHRM2','CHRM3','ADRB1','ADRB2','ADORA1','ADORA2A','AGTR1','CYSLTR1')
 
 
@@ -119,7 +121,7 @@ def target_from_catalog(gene, catalog):
     family={'GPCR':'GPCR','Nuclear receptor':'Nuclear receptor','Catalytic receptor':'Kinase'}[r['kind']]
     return {'name':r['name'],'gene':gene,'family':family,'organism':'Human',
             'note':'ChEMBL assay-linked human binding references. Functional action and selectivity unassigned.',
-            'ligands':[]}
+            'lookupOnly':True,'ligands':[]}
 
 
 def append_target_rows(text, rows):
@@ -133,7 +135,10 @@ def append_target_rows(text, rows):
     added=''
     for t in rows:
         added+='  { name: '+js_string(t['name'])+', gene: '+js_string(t['gene'])+', family: '+js_string(t['family'])+', organism: '+js_string(t['organism'])+',\n'
-        added+='    note: '+js_string(t['note'])+',\n    ligands: ['+', '.join(js_string(n) for n in t['ligands'])+'] },\n'
+        added+='    note: '+js_string(t['note'])+',\n'
+        if t.get('lookupOnly'):
+            added+='    lookupOnly: true,\n'
+        added+='    ligands: ['+', '.join(js_string(n) for n in t['ligands'])+'] },\n'
     return prefix+'\n'+added+marker+suffix
 
 
@@ -293,6 +298,8 @@ def main():
                'unnamedActivityRowsExcluded':sum(pharmacology_name(a) is None for a in eligible) if args.named_only else 0,
                'browserFormulaRejected':structure_failures,'selected':chosen,'count':len(chosen),'remaining':max(0,args.goal-len(chosen))}
         panels.append(panel)
+        if gene in new_genes or targets[gene].get('lookupOnly'):
+            targets[gene]['lookupOnly'] = len(chosen) < 50
         print(gene+': '+str(len(chosen))+'/'+str(args.goal)+' sourced distinct binding profiles; '+str(len(raw))+' activity rows examined',flush=True)
     merged_annotations=merge_annotations(current['annotations'],annotations,genes,current.get('source',{}).get('release','unrecorded'))
     report={'schemaVersion':1,'rdkitVersion':rdBase.rdkitVersion,'goal':args.goal,
@@ -321,6 +328,8 @@ def main():
         for i,line in enumerate(lines):
             match=re.search(r"gene: '([^']*)'",line)
             if match:gene=match[1]
+            if gene in genes and line.lstrip().startswith('lookupOnly:'):
+                lines[i]='    lookupOnly: '+str(targets[gene].get('lookupOnly', False)).lower()+',\n'
             if gene in genes and line.lstrip().startswith('ligands: ['):
                 head,_,tail=re.match(r'(\s*ligands: \[)(.*)(\] \},?\n?)',line).groups()
                 lines[i]=head+', '.join(js_string(n) for n in targets[gene]['ligands'])+tail

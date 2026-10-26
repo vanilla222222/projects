@@ -58,3 +58,11 @@ python tools/build-curated-references.py --check
 node tools/named-family-003-test.js
 node tools/family-pharmacology-test.js
 ```
+
+## Subsequent source-form selection
+
+The active named Valsartan key now explicitly uses the source-reported
+stereoisomer and tetrazole representation. The historical unspecified graph is
+preserved in correction provenance, with no claim that its tautomer is a
+different substance or that unspecified stereo identifies an enantiomer.
+See [IDENTITY-CORRECTIONS.md](IDENTITY-CORRECTIONS.md).

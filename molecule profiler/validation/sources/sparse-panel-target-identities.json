@@ -1,0 +1,235 @@
+{
+  "TAAR1": {
+    "accession": "Q96RJ0",
+    "organism": {
+      "scientificName": "Homo sapiens",
+      "commonName": "Human",
+      "taxonId": 9606,
+      "lineage": [
+        "Eukaryota",
+        "Metazoa",
+        "Chordata",
+        "Craniata",
+        "Vertebrata",
+        "Euteleostomi",
+        "Mammalia",
+        "Eutheria",
+        "Euarchontoglires",
+        "Primates",
+        "Haplorrhini",
+        "Catarrhini",
+        "Hominidae",
+        "Homo"
+      ]
+    },
+    "genes": [
+      {
+        "geneName": {
+          "evidences": [
+            {
+              "evidenceCode": "ECO:0000303",
+              "source": "PubMed",
+              "id": "15718104"
+            },
+            {
+              "evidenceCode": "ECO:0000312",
+              "source": "HGNC",
+              "id": "HGNC:17734"
+            }
+          ],
+          "value": "TAAR1"
+        },
+        "synonyms": [
+          {
+            "evidences": [
+              {
+                "evidenceCode": "ECO:0000303",
+                "source": "PubMed",
+                "id": "11459929"
+              }
+            ],
+            "value": "TA1"
+          },
+          {
+            "evidences": [
+              {
+                "evidenceCode": "ECO:0000303",
+                "source": "PubMed",
+                "id": "11723224"
+              }
+            ],
+            "value": "TAR1"
+          },
+          {
+            "value": "TRAR1"
+          }
+        ]
+      }
+    ],
+    "sourceUrl": "https://rest.uniprot.org/uniprotkb/Q96RJ0.json"
+  },
+  "GRM2": {
+    "accession": "Q14416",
+    "organism": {
+      "scientificName": "Homo sapiens",
+      "commonName": "Human",
+      "taxonId": 9606,
+      "lineage": [
+        "Eukaryota",
+        "Metazoa",
+        "Chordata",
+        "Craniata",
+        "Vertebrata",
+        "Euteleostomi",
+        "Mammalia",
+        "Eutheria",
+        "Euarchontoglires",
+        "Primates",
+        "Haplorrhini",
+        "Catarrhini",
+        "Hominidae",
+        "Homo"
+      ]
+    },
+    "genes": [
+      {
+        "geneName": {
+          "evidences": [
+            {
+              "evidenceCode": "ECO:0000312",
+              "source": "HGNC",
+              "id": "HGNC:4594"
+            }
+          ],
+          "value": "GRM2"
+        },
+        "synonyms": [
+          {
+            "value": "GPRC1B"
+          },
+          {
+            "value": "MGLUR2"
+          }
+        ]
+      }
+    ],
+    "sourceUrl": "https://rest.uniprot.org/uniprotkb/Q14416.json"
+  },
+  "GRM5": {
+    "accession": "P41594",
+    "organism": {
+      "scientificName": "Homo sapiens",
+      "commonName": "Human",
+      "taxonId": 9606,
+      "lineage": [
+        "Eukaryota",
+        "Metazoa",
+        "Chordata",
+        "Craniata",
+        "Vertebrata",
+        "Euteleostomi",
+        "Mammalia",
+        "Eutheria",
+        "Euarchontoglires",
+        "Primates",
+        "Haplorrhini",
+        "Catarrhini",
+        "Hominidae",
+        "Homo"
+      ]
+    },
+    "genes": [
+      {
+        "geneName": {
+          "value": "GRM5"
+        },
+        "synonyms": [
+          {
+            "value": "GPRC1E"
+          },
+          {
+            "value": "MGLUR5"
+          }
+        ]
+      }
+    ],
+    "sourceUrl": "https://rest.uniprot.org/uniprotkb/P41594.json"
+  },
+  "CNR1": {
+    "accession": "P21554",
+    "organism": {
+      "scientificName": "Homo sapiens",
+      "commonName": "Human",
+      "taxonId": 9606,
+      "lineage": [
+        "Eukaryota",
+        "Metazoa",
+        "Chordata",
+        "Craniata",
+        "Vertebrata",
+        "Euteleostomi",
+        "Mammalia",
+        "Eutheria",
+        "Euarchontoglires",
+        "Primates",
+        "Haplorrhini",
+        "Catarrhini",
+        "Hominidae",
+        "Homo"
+      ]
+    },
+    "genes": [
+      {
+        "geneName": {
+          "value": "CNR1"
+        },
+        "synonyms": [
+          {
+            "value": "CNR"
+          }
+        ]
+      }
+    ],
+    "sourceUrl": "https://rest.uniprot.org/uniprotkb/P21554.json"
+  },
+  "CNR2": {
+    "accession": "P34972",
+    "organism": {
+      "scientificName": "Homo sapiens",
+      "commonName": "Human",
+      "taxonId": 9606,
+      "lineage": [
+        "Eukaryota",
+        "Metazoa",
+        "Chordata",
+        "Craniata",
+        "Vertebrata",
+        "Euteleostomi",
+        "Mammalia",
+        "Eutheria",
+        "Euarchontoglires",
+        "Primates",
+        "Haplorrhini",
+        "Catarrhini",
+        "Hominidae",
+        "Homo"
+      ]
+    },
+    "genes": [
+      {
+        "geneName": {
+          "value": "CNR2"
+        },
+        "synonyms": [
+          {
+            "value": "CB2A"
+          },
+          {
+            "value": "CB2B"
+          }
+        ]
+      }
+    ],
+    "sourceUrl": "https://rest.uniprot.org/uniprotkb/P34972.json"
+  }
+}

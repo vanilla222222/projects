@@ -23,11 +23,11 @@ function evaluate(sets,byName,score,options={}){
   const scored=[],values=new Map();
   function similarity(name){if(!values.has(name))values.set(name,compare(held,name));return values.get(name);}
   for(const other of sets){
-   let best=-1;
-   for(const name of other.ligands){if(name===held)continue;const value=similarity(name);if(value>best)best=value;}
-   if(best>=0)scored.push({index:other.index,gene:other.gene,value:best});
+   let best=-1;const scores=[];
+   for(const name of other.ligands){if(name===held)continue;const value=similarity(name);if(value>best)best=value;scores.push(value);}
+   if(best>=0)scored.push({index:other.index,gene:other.gene,value:best,mean:scores.sort((a,b)=>b-a).slice(0,3).reduce((a,b)=>a+b,0)/Math.min(3,scores.length)});
   }
-  scored.sort((a,b)=>b.value-a.value||a.index-b.index);
+  scored.sort((a,b)=>b.value-a.value||(options.tieBreak==='meanTop3'?b.mean-a.mean:0)||a.index-b.index);
   const result={ranks:new Map(scored.map((row,i)=>[row.index,i+1])),scoredTargets:scored.length,
    topGene:scored[0]?.gene,topScore:scored[0]?.value};
   rankings.set(held,result);return result;

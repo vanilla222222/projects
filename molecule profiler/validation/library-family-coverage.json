@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
   "sourceSha256": {
-    "data/library.js": "dd1825a00b32820eb1bf68f00e163d273f640ff37419b2ecd08da1b226f387d9",
+    "data/library.js": "1e038c7acbdc331264dafd70881482c8f6557b751ab0ad1ba549cea2c790024d",
     "data/library-names.js": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
-    "data/targets.js": "facc465ef72687224df3577fbf7a600102e7c3b07cc033a4de21ba76191192fa",
+    "data/targets.js": "c994111b869a78b68fe873c92f218ae1791b9b3e3fbf390f0b3a837221b4aacd",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
-    "data/receptor-ligand-annotations.js": "28bcfc10324b17fc8a30d2e4b3cf3c589e55fe9af76cd61dfb8986d9a3b30d01",
+    "data/receptor-ligand-annotations.js": "5baaf3e92817424997666eff1422ec70312af28413a4712a16f047828c01c98a",
     "js/receptor-catalog.js": "eaed72df5e3c0ab62aaccba3ff82928e23da6849a14571a6a42ae745522ab798",
     "tools/build-library-tags.py": "4942f6ce2cf182f50606611014375edae102f2a50623a1b3e62be9e7857e4534",
     "tools/library-taxonomy.py": "a577bed4d107158eb152cd0b7a3d05d0df53584f370ad07be393147a477ab8b7",
     "tools/library-expansion-50.py": "1c7e05d9267af49bcf25ff3fc90f114b394a295ab3dee561954252e26bc0d60a",
     "validation/library-50-import.json": "89abe62271fff06dd9c8591ea3823ae56cd62a7396eb1412bd93834a2c1b10e0"
   },
-  "dataSha256": "815f38a3dc72a88b9001bdda0b4aef9ef9fcacc9af0069a40f42449395bed8ef",
+  "dataSha256": "2adbc65d2526f663a0a6e1d657ebe383306c77a5d559069d053e3c1ddd8601b0",
   "interpretation": "Overlapping structural motifs in stored graphs; not evidence of pharmacological function, exhaustive family membership or independently verified molecular identities.",
   "families": [
     {
@@ -2004,9 +2004,13 @@
         "bacitracin A",
         "(-)-rolipram",
         "polymyxin B2",
-        "(+)-rolipram"
+        "(+)-rolipram",
+        "BMS-984923",
+        "IBIPINABANT",
+        "TARANABANT",
+        "AMAUROMINE"
       ],
-      "count": 1987
+      "count": 1991
     },
     {
       "tag": "Family motif: Amphetamines (alpha-methylphenethylamines)",
@@ -5305,9 +5309,13 @@
         "7-(3-aminopyrrolidin-1-yl)-1-ethyl-6-fluoro-4-oxo-1,8-naphthyridine-3-carboxylic acid",
         "6-fluoro-1-(4-fluorophenyl)-4-oxo-7-(piperazin-1-yl)-1,8-naphthyridine-3-carboxylic acid",
         "6-fluoro-1-(2-fluoroethyl)-7-(4-methylpiperazin-1-yl)-4-oxo-1,8-naphthyridine-3-carboxylic acid",
-        "1-(2,4-difluorophenyl)-6-fluoro-7-(3-methylpiperazin-1-yl)-4-oxo-1,8-naphthyridine-3-carboxylic acid"
+        "1-(2,4-difluorophenyl)-6-fluoro-7-(3-methylpiperazin-1-yl)-4-oxo-1,8-naphthyridine-3-carboxylic acid",
+        "M-MPEP",
+        "BMS-984923",
+        "TARANABANT",
+        "S-777469"
       ],
-      "count": 1264
+      "count": 1268
     },
     {
       "tag": "Family motif: Pyrroles",
@@ -8188,9 +8196,12 @@
         "1-[(4-cyanophenyl)-(4-fluorophenyl)methyl]-1H-imidazole",
         "1-[bis(4-chlorophenyl)methyl]-1H-imidazole",
         "1-[(4-cyanophenyl)-phenylmethyl]-1H-imidazole",
-        "1-[(4-chlorophenyl)-(4-fluorophenyl)methyl]-1H-imidazole"
+        "1-[(4-chlorophenyl)-(4-fluorophenyl)methyl]-1H-imidazole",
+        "OTENABANT",
+        "1-(4-CHLOROPHENYL)-2-(2,4-DICHLOROPHENYL)-5-(METHYLSULFINYL)-N-(PIPERIDIN-1-YL)-1H-IMIDAZOLE-4-CARBOXAMIDE (ENANTIOMERIC MIX)",
+        "LY2828360"
       ],
-      "count": 1235
+      "count": 1238
     },
     {
       "tag": "Family motif: Pyrazoles",
@@ -8509,9 +8520,13 @@
         "(S)-furametpyr",
         "(R)-furametpyr",
         "N(2)-carbamimidoyl-N-{2-[4-(3-{4-[(5-carboxyfuran-2-yl)methoxy]-2,3-dichlorophenyl}-1-methyl-1H-pyrazol-5-yl)piperidin-1-yl]-2-oxoethyl}-D-leucinamide",
-        "pyraoxystrobin"
+        "pyraoxystrobin",
+        "SURINABANT",
+        "JHU-75528",
+        "SR-144528",
+        "TEDALINAB"
       ],
-      "count": 315
+      "count": 319
     },
     {
       "tag": "Family motif: Oxazoles",
@@ -10871,9 +10886,11 @@
         "dyspropterin",
         "fluacrypyrim",
         "tebupirimfos",
-        "azoxystrobin"
+        "azoxystrobin",
+        "OTENABANT",
+        "LY2828360"
       ],
-      "count": 1425
+      "count": 1427
     },
     {
       "tag": "Family motif: Pyrazines",
@@ -12757,9 +12774,11 @@
         "3'-L-valyl-AMP",
         "11-oxo-ETE-CoA",
         "15-oxo-ETE-CoA",
-        "GDP-L-galactose"
+        "GDP-L-galactose",
+        "OTENABANT",
+        "LY2828360"
       ],
-      "count": 612
+      "count": 614
     },
     {
       "tag": "Family motif: Piperidines",
@@ -14152,9 +14171,13 @@
         "capivasertib",
         "ritlecitinib",
         "N(2)-carbamimidoyl-N-{2-[4-(3-{4-[(5-carboxyfuran-2-yl)methoxy]-2,3-dichlorophenyl}-1-methyl-1H-pyrazol-5-yl)piperidin-1-yl]-2-oxoethyl}-D-leucinamide",
-        "esculeogenin A"
+        "esculeogenin A",
+        "SURINABANT",
+        "OTENABANT",
+        "JHU-75528",
+        "1-(4-CHLOROPHENYL)-2-(2,4-DICHLOROPHENYL)-5-(METHYLSULFINYL)-N-(PIPERIDIN-1-YL)-1H-IMIDAZOLE-4-CARBOXAMIDE (ENANTIOMERIC MIX)"
       ],
-      "count": 1389
+      "count": 1393
     },
     {
       "tag": "Family motif: Piperazines",
@@ -14792,9 +14815,10 @@
         "1-cyclopropyl-6-fluoro-7-(3-methylpiperazin-1-yl)-4-oxo-1,8-naphthyridine-3-carboxylic acid",
         "6-fluoro-1-(4-fluorophenyl)-4-oxo-7-(piperazin-1-yl)-1,8-naphthyridine-3-carboxylic acid",
         "6-fluoro-1-(2-fluoroethyl)-7-(4-methylpiperazin-1-yl)-4-oxo-1,8-naphthyridine-3-carboxylic acid",
-        "1-(2,4-difluorophenyl)-6-fluoro-7-(3-methylpiperazin-1-yl)-4-oxo-1,8-naphthyridine-3-carboxylic acid"
+        "1-(2,4-difluorophenyl)-6-fluoro-7-(3-methylpiperazin-1-yl)-4-oxo-1,8-naphthyridine-3-carboxylic acid",
+        "LY2828360"
       ],
-      "count": 634
+      "count": 635
     },
     {
       "tag": "Family motif: Pyrrolidines",
@@ -15676,9 +15700,11 @@
         "longicalycinin A",
         "7-[[2-(2-amino-1,3-thiazol-4-yl)-2-(2-carboxypropan-2-yl)oxyiminoacetyl]amino]-3-[(1-methylpyrrolidin-1-ium-1-yl)methyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylate",
         "7-(3-aminopyrrolidin-1-yl)-1-ethyl-6-fluoro-4-oxoquinoline-3-carboxylic acid",
-        "7-(3-aminopyrrolidin-1-yl)-1-ethyl-6-fluoro-4-oxo-1,8-naphthyridine-3-carboxylic acid"
+        "7-(3-aminopyrrolidin-1-yl)-1-ethyl-6-fluoro-4-oxo-1,8-naphthyridine-3-carboxylic acid",
+        "MAVOGLURANT",
+        "AMAUROMINE"
       ],
-      "count": 878
+      "count": 880
     },
     {
       "tag": "Family motif: Morpholines",
@@ -18691,9 +18717,10 @@
         "D-cellohexaose",
         "indanomycin",
         "okadaic acid",
-        "olivomycin A"
+        "olivomycin A",
+        "LY2828360"
       ],
-      "count": 1639
+      "count": 1640
     },
     {
       "tag": "Family motif: Unacylated phenethylamines",
@@ -20218,9 +20245,10 @@
         "(-)-FR901483",
         "(S,S)-pavine",
         "dexverapamil",
-        "(S)-codamine"
+        "(S)-codamine",
+        "AMAUROMINE"
       ],
-      "count": 1521
+      "count": 1522
     },
     {
       "tag": "Family motif: Unacylated tryptamines",
@@ -22082,9 +22110,12 @@
         "quercetin 3-O-beta-D-glucopyranoside",
         "2,3,4-trihydroxyestra-1,3,5(10)-trien-17-one",
         "estra-1,3,5(10)-triene-2,3,4,17-tetraol",
-        "17-ethynylestra-1,3,5(10)-triene-2,3,4,17-tetraol"
+        "17-ethynylestra-1,3,5(10)-triene-2,3,4,17-tetraol",
+        "SESQUICANNABIGEROL",
+        "CANNABIDIVARIN",
+        "CANNABIDIOL [CHEMBL190461]"
       ],
-      "count": 808
+      "count": 811
     },
     {
       "tag": "Family motif: Hydroquinones",
@@ -23977,9 +24008,10 @@
         "dioxoaminopyrine",
         "(R)-chlozolinate",
         "(S)-chlozolinate",
-        "(E)-flucycloxuron"
+        "(E)-flucycloxuron",
+        "FENOBAM ANHYDROUS"
       ],
-      "count": 771
+      "count": 772
     },
     {
       "tag": "Family motif: Salicylic acids",
@@ -25354,9 +25386,12 @@
         "7-chloro-L-tryptophan",
         "L-thiocystine",
         "1-oleoyl-2-{6-[(7-nitro-2-1,3-benzoxadiazol-4-yl)amino]hexanoyl}-sn-glycero-3-phospho-L-serine",
-        "5-methyl-D-tryptophan"
+        "5-methyl-D-tryptophan",
+        "EGLUMETAD",
+        "LY404039",
+        "S-777469"
       ],
-      "count": 1245
+      "count": 1248
     },
     {
       "tag": "Family motif: NBOMe phenethylamines",
@@ -26619,9 +26654,10 @@
         "5,6-dihydroxyindoline-2-carboxylic acid",
         "(2S,3R)-3-geranyl-2,3-dihydro-2,N(alpha)-cyclo-L-tryptophan",
         "(2S,3R)-3-farnesyl-2,3-dihydro-2,N(alpha)-cyclo-L-tryptophan",
-        "5-O-[8-(cis-2,6-dimethylmorpholino)octylcarbamoyl]eseroline"
+        "5-O-[8-(cis-2,6-dimethylmorpholino)octylcarbamoyl]eseroline",
+        "AMAUROMINE"
       ],
-      "count": 130
+      "count": 131
     },
     {
       "tag": "Family motif: Oxindoles",
@@ -32633,9 +32669,11 @@
         "6-fluoro-1-(2-fluoroethyl)-7-(4-methylpiperazin-1-yl)-4-oxoquinoline-3-carboxylic acid",
         "1-(2,4-difluorophenyl)-6,8-difluoro-7-(4-methylpiperazin-1-yl)-4-oxoquinoline-3-carboxylic acid",
         "8-chloro-1-cyclopropyl-6-fluoro-7-(4-methylpiperazin-1-yl)-4-oxoquinoline-3-carboxylic acid",
-        "1-ethyl-6-fluoro-8-methoxy-7-(4-methylpiperazin-1-yl)-4-oxoquinoline-3-carboxylic acid"
+        "1-ethyl-6-fluoro-8-methoxy-7-(4-methylpiperazin-1-yl)-4-oxoquinoline-3-carboxylic acid",
+        "EGLUMETAD",
+        "LENABASUM"
       ],
-      "count": 1781
+      "count": 1783
     },
     {
       "tag": "Family motif: Long-chain carboxamides (C8+ path)",
@@ -33775,9 +33813,15 @@
         "7-[[2-amino-2-(cyclohexa-1,4-dien-1-yl)acetyl]amino]-3-chloro-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
         "7-[(2-amino-2-phenylacetyl)amino]-3-[(5-methyl-1,3,4-thiadiazol-2-yl)sulfanylmethyl]-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
         "7-[[2-amino-2-(4-hydroxyphenyl)acetyl]amino]-3-(methoxymethyl)-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
-        "7-[(2-hydroxy-2-phenylacetyl)amino]-3-methyl-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid"
+        "7-[(2-hydroxy-2-phenylacetyl)amino]-3-methyl-8-oxo-5-thia-1-azabicyclo[4.2.0]oct-2-ene-2-carboxylic acid",
+        "SURINABANT",
+        "JHU-75528",
+        "SR-144528",
+        "AMAUROMINE",
+        "TEDALINAB",
+        "METHANANDAMIDE"
       ],
-      "count": 1136
+      "count": 1142
     },
     {
       "tag": "Family motif: N-acylethanolamines",
@@ -34245,9 +34289,10 @@
         "[des-Phe(8), des-Arg(9)]-bradykinin",
         "N-[4-(D-prolinosulfonyl)benzoyl]-L-glutamic acid",
         "(2S,3R)-2-[(3S,6R)-3-amino-6-hydroxy-2-oxopiperidinyl]-3-hydroxybutanoic acid",
-        "5-[[3-(1-phenylethoxy)-4-(2-phenylethoxy)phenyl]methylene]-4-oxo-2-thioxo-3-thiazolidineacetic acid"
+        "5-[[3-(1-phenylethoxy)-4-(2-phenylethoxy)phenyl]methylene]-4-oxo-2-thioxo-3-thiazolidineacetic acid",
+        "S-777469"
       ],
-      "count": 442
+      "count": 443
     },
     {
       "tag": "Family motif: Glycerol ester scaffolds",
@@ -37060,9 +37105,11 @@
         "N-{5-carbamimidamido-1-[(naphthalen-2-yl)amino]-1-oxopentan-2-yl}benzamide",
         "N-{[3-(2-benzamido-4-methyl-1,3-thiazol-5-yl)-pyrazol-5-yl]carbonyl}-G-dR-G-dD-dD-dD-NH2",
         "N(2)-{[2-(2-{[4-(indol-3-yl)butanoyl]amino}ethoxy)ethoxy]acetyl}arginyl-N(1)-{2-[(5-sulfo-1-naphthyl)amino]ethyl}aspartamide",
-        "N(2)-carbamimidoyl-N-{2-[4-(3-{4-[(5-carboxyfuran-2-yl)methoxy]-2,3-dichlorophenyl}-1-methyl-1H-pyrazol-5-yl)piperidin-1-yl]-2-oxoethyl}-D-leucinamide"
+        "N(2)-carbamimidoyl-N-{2-[4-(3-{4-[(5-carboxyfuran-2-yl)methoxy]-2,3-dichlorophenyl}-1-methyl-1H-pyrazol-5-yl)piperidin-1-yl]-2-oxoethyl}-D-leucinamide",
+        "FENOBAM ANHYDROUS",
+        "IBIPINABANT"
       ],
-      "count": 482
+      "count": 484
     },
     {
       "tag": "Family motif: Biguanides",
@@ -37387,9 +37434,10 @@
         "4-[1-(benzylamino)ethylidene]-2-(2,4-dibromophenyl)-5-methyl-2,4-dihydropyrazol-3-one",
         "3-(4-methyl-1,2,3-thiadiazolyl)-6-trichloromethyl[1,2,4]triazolo[3,4-b][1,3,4]thiadizole",
         "[5-hydroxy-3-methyl-5-(trifluoromethyl)-4,5-dihydropyrazol-1-yl]-[5-phenyl-7-(trifluoromethyl)pyrazolo[1,5-a]pyrimidin-2-yl]methanone",
-        "3-[(2E)-4-methyl-5-[(Z)-(4-methyl-5-oxo-3-vinyl-1,5-dihydro-2H-pyrrol-2-ylidene)methyl]-2-(phenylhydrazono)-2H-pyrrol-3-yl]propanoic acid"
+        "3-[(2E)-4-methyl-5-[(Z)-(4-methyl-5-oxo-3-vinyl-1,5-dihydro-2H-pyrrol-2-ylidene)methyl]-2-(phenylhydrazono)-2H-pyrrol-3-yl]propanoic acid",
+        "IBIPINABANT"
       ],
-      "count": 95
+      "count": 96
     },
     {
       "tag": "Family motif: Oximes",

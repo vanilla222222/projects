@@ -10,6 +10,7 @@ from collections import defaultdict
 from rdkit import Chem, rdBase
 from rdkit.Chem import rdMolDescriptors
 from rdkit.Chem.Scaffolds import MurckoScaffold
+from rdkit.Chem.MolStandardize import rdMolStandardize
 
 ROOT = Path(__file__).resolve().parents[1]
 sha = lambda b: hashlib.sha256(b).hexdigest()
@@ -20,6 +21,30 @@ def graph(s):
 
 def build():
     library = json.loads(subprocess.check_output(['node','-e',"console.log(JSON.stringify(require('./data/library').LIBRARY))"],cwd=ROOT,text=True))
+    # Apply only explicitly reviewed, exact-before corrections to the effective
+    # library. Keep data/library.js and its hash as immutable historical input.
+    correctionPath=ROOT/'data/reference-identity-corrections.json'
+    corrections=[]
+    if correctionPath.exists():
+        specs=json.loads(correctionPath.read_text())['corrections']
+        assert len({f['name'] for f in specs})==len(specs),'Duplicate correction key'
+        for f in specs:
+            matches=[(i,e) for i,e in enumerate(library) if e['name']==f['name']]
+            assert len(matches)==1 and matches[0][1]==f['before'],'Stale original identity correction witness'
+            r=json.loads((ROOT/'data/curated-reference-entries'/(f['sourceReferenceId']+'.json')).read_text())
+            c=r['compounds'][f['compoundIndex']];assert f['name'] in c['correctedLegacyNames']
+            old=Chem.MolFromSmiles(f['before']['smiles']);new=Chem.MolFromSmiles(c['smiles'])
+            assert old is not None and new is not None and graph(f['before']['smiles'])!=graph(c['smiles'])
+            a,b=Chem.Mol(old),Chem.Mol(new);Chem.RemoveStereochemistry(a);Chem.RemoveStereochemistry(b)
+            te=rdMolStandardize.TautomerEnumerator()
+            equivalent=Chem.MolToSmiles(te.Canonicalize(a))==Chem.MolToSmiles(te.Canonicalize(b))
+            if f['category']=='connectivity_correction':assert not equivalent
+            elif f['category']=='source_form_selection':
+                assert equivalent and not any(a.HasProp('_CIPCode') for a in old.GetAtoms()) and any(a.HasProp('_CIPCode') for a in new.GetAtoms())
+            else:raise AssertionError('Unknown identity correction category')
+            after={**f['before'],'smiles':c['smiles'],'formula':c['formula']}
+            fix={**f,'after':after,'sourceUrl':c['sourceUrl'],'inchiKey':c['inchiKey'],'beforeInchiKey':Chem.MolToInchiKey(old)}
+            corrections.append(fix);library[matches[0][0]]=after
     bygraph=defaultdict(list)
     for e in library: bygraph[graph(e['smiles'])].append(e)
     records=[]; extras=[]; names={e['name'].casefold() for e in library}; ids=set(); inputs={};sources={}
@@ -69,7 +94,9 @@ def build():
                         assert abs(e['value']-e['originalValue']*scale)<1e-8
                         assert abs(e['sd']-e['originalSd']*scale)<1e-8
                     if 'efficacy' in e:
-                        assert e['efficacy']['reference']=='5-HT = 100%' and 0<=e['efficacy']['value']<=100
+                        f=e['efficacy'];assert f['reference'] and f['unit']=='%' and f['value']>=0
+                        if 'lower' in f:assert 0<=f['lower']<=f['value']<=f['upper'] and f['uncertaintyKind']
+                    if 'lower' in e:assert 0<e['lower']<=e['value']<=e['upper'] and e['uncertaintyKind']
             if r.get('panel'):
                 assert any(e['kind']=='source_classification' or (e['kind']=='functional_assay' and e['species']=='Homo sapiens' and e.get('rankEligible',True) and e['receptorId']==r['panel']['gene']) for e in r['evidence']),'Panel requires qualified pharmacology evidence'
             if not bygraph[g]:
@@ -126,6 +153,8 @@ def build():
     assert all(p is not None for _,p in patterns),'Invalid family SMARTS'
     for e in extras:
         out=entries[e['name']];out['tags'].update(taxonomy['tags_for'](e))
+    for f in corrections:
+        out=entries[f['name']];out['tags'].update(taxonomy['tags_for'](f['after']));out['tags'].add('Evidence: Reviewed identity correction')
     measured=[{'name':name,'tag':'Family motif: '+name,'pattern':p} for name,p in taxonomy['FAMILY_MOTIFS'] if name in {'Nitazenes','Nitazene-related benzimidazoles'}]
     measured += [{'name':d['name'],'tag':d['tag'],'pattern':p} for d,p in patterns]
     counts={d['tag']:{'name':d['name'],'tag':d['tag'],'baseEntries':0,'currentEntries':0,'newStructures':0,'graphs':set()} for d in measured}
@@ -156,10 +185,10 @@ def build():
         snapshot=json.loads(path.read_text());relative=str(path.relative_to(ROOT));studyInputs[relative]=sha(path.read_bytes())
         reviewed=[row['name'] for row in snapshot['rows'] if any(e.get('sourceFile')==relative and e.get('sourceRecord')==row for r in records for e in r['evidence'])]
         studyCoverage.append({'cohort':snapshot['cohort'],'sourceUrl':snapshot['sourceUrl'],'scope':'Selected human 5-HT2A functional observations','expected':len(snapshot['rows']),'reviewed':len(reviewed),'missing':[row['name'] for row in snapshot['rows'] if row['name'] not in reviewed]})
-    data={'schemaVersion':1,'records':records,'extraLibrary':extras,'panelCoverage':coverage,'familyDefinitions':definitions,'familyCoverage':familyCoverage,'studyCoverage':studyCoverage,'entries':{k:{**v,'recordIds':sorted(set(v['recordIds'])),'tags':sorted(v['tags'])} for k,v in sorted(entries.items())}}
+    data={'schemaVersion':1,'identityCorrections':corrections,'records':records,'extraLibrary':extras,'panelCoverage':coverage,'familyDefinitions':definitions,'familyCoverage':familyCoverage,'studyCoverage':studyCoverage,'entries':{k:{**v,'recordIds':sorted(set(v['recordIds'])),'tags':sorted(v['tags'])} for k,v in sorted(entries.items())}}
     text="'use strict';\n// Individually sourced reference records. See CURATED-REFERENCES.md for attribution.\nconst CURATED_REFERENCES = "+json.dumps(data,ensure_ascii=False,separators=(',',':'))+";\nif(typeof module!=='undefined')module.exports={CURATED_REFERENCES};\nif(typeof globalThis!=='undefined')globalThis.CURATED_REFERENCES=CURATED_REFERENCES;\n"
     familyInputs=['data/family-definitions.json','tools/build-library-tags.py','tools/library-taxonomy.py','tools/library-expansion-50.py']
-    report={'schemaVersion':1,'records':len(records),'extraStructures':len(extras),'rdkitVersion':rdBase.rdkitVersion,'inputSha256':inputs,'studySourceSha256':studyInputs,'studyCoverage':studyCoverage,'familySourceSha256':{p:sha((ROOT/p).read_bytes()) for p in familyInputs},'familyCoverage':familyCoverage,'librarySha256':sha((ROOT/'data/library.js').read_bytes()),'toolSha256':sha(Path(__file__).read_bytes()),'dataSha256':sha(text.encode()),'browserGraphsChecked':len(checks)}
+    report={'schemaVersion':1,'identityCorrectionSha256':sha(correctionPath.read_bytes()) if correctionPath.exists() else None,'identityCorrections':len(corrections),'records':len(records),'extraStructures':len(extras),'rdkitVersion':rdBase.rdkitVersion,'inputSha256':inputs,'studySourceSha256':studyInputs,'studyCoverage':studyCoverage,'familySourceSha256':{p:sha((ROOT/p).read_bytes()) for p in familyInputs},'familyCoverage':familyCoverage,'librarySha256':sha((ROOT/'data/library.js').read_bytes()),'toolSha256':sha(Path(__file__).read_bytes()),'dataSha256':sha(text.encode()),'browserGraphsChecked':len(checks)}
     return text,json.dumps(report,indent=2)+'\n'
 if __name__=='__main__':
     ap=argparse.ArgumentParser();ap.add_argument('--check',action='store_true');a=ap.parse_args()

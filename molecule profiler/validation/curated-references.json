@@ -1,5 +1,7 @@
 {
   "schemaVersion": 1,
+  "identityCorrectionSha256": "9591b653609e8e98d6cfcc06c3e7041c1ce554ed3d0fd2c0b82e5420730e8b18",
+  "identityCorrections": 4,
   "records": 110,
   "extraStructures": 27,
   "rdkitVersion": "2026.09.1",
@@ -41,7 +43,7 @@
     "data/curated-reference-entries/family-001-162623891.json": "6c1172f2dc260fb234fd505d157994210a89fb71f27f4a4813994d1ed82fa036",
     "data/curated-reference-entries/family-001-29642.json": "b96e468e78a4d8fd0c6de102bfba197a2b677764521a2d96bbb85f61393b92c2",
     "data/curated-reference-entries/family-001-32512.json": "1a2435c9a18c44850c2dde6c0311fbd8e6fbe1a7f861c3b26538fbe690d8e9e0",
-    "data/curated-reference-entries/family-001-37456.json": "6a64f7a20bba391a22ee59c3dc99455b03f8f4577ac86414d1bade8144a2268d",
+    "data/curated-reference-entries/family-001-37456.json": "42714ecfc80167729b59b9c1ead845e02c6556636946062f5c4912ff23807a0b",
     "data/curated-reference-entries/family-002-124-adra2a.json": "8cd7e3db1c0b87fe4ac7a52d724089fcd6dbc25eb9fd6582f8f90f9f19b54e49",
     "data/curated-reference-entries/family-002-204-drd2.json": "26bcdabe8a5a00cbd927b3c55261e490d98991c3e63e40feda89152bebb64617",
     "data/curated-reference-entries/family-002-209-drd2.json": "95a2a816bf21960caf55ec3eda47b366bf02d663b685e942dd6ee78bfc5b4dde",
@@ -57,9 +59,9 @@
     "data/curated-reference-entries/family-002-86-drd2.json": "bfb4c7acf6bbc82baf9b37de8661419c7e1eb75595009a4a1983a8d35574e055",
     "data/curated-reference-entries/family-002-92-htr2a.json": "b655390867cd443a7a1128f1fbb71d7444ccfccbbe75e1e329fabc24e63edd0b",
     "data/curated-reference-entries/family-002-9215-drd2.json": "e3a437400741cc5133f041f0a1deebb75e6d0da0c3d7809c47bcbb14ea3fc3ff",
-    "data/curated-reference-entries/family-002-935-drd1.json": "c3e814da7b9810896ed530c8a6d300ba98e64dd4637962d15d8e781f274c6389",
-    "data/curated-reference-entries/family-002-939-drd1.json": "532b8e856234a597ede5b63d3da66242e99237d047fb8760d29e880b6e392d22",
-    "data/curated-reference-entries/family-002-943-drd1.json": "3a30389fdbc649cf08b547e9e0431d39f378598ed5607f0e4b52da0d0541161d",
+    "data/curated-reference-entries/family-002-935-drd1.json": "9514961bceac9ded7c0d9de78c6a1cd2e90c2891063a0384c8d45fc1bae16b59",
+    "data/curated-reference-entries/family-002-939-drd1.json": "bda12b0569b45c505d482a7cbe84a3348fb42c105f0bd82bfaeaa5c05ce399bb",
+    "data/curated-reference-entries/family-002-943-drd1.json": "9d9dc6e31411dba096567b0f4ca3f5bd5047e90e135f0d975e9a0f40c1186ba2",
     "data/curated-reference-entries/family-002-99-drd4.json": "ac97cb710181ebdbf52005925ddeb63211291f63c881d38703c3831e468202ef",
     "data/curated-reference-entries/family-003-1056-pparg.json": "f23e51b9dba3a5fe6896c4f85da97e1900ff2e8f476859b9af6d923068b60269",
     "data/curated-reference-entries/family-003-1222-hrh1.json": "bdfbf7bd3c462748f4327e68591f2767a8f40f5c2935eff51f468a996f93d755",
@@ -71,7 +73,7 @@
     "data/curated-reference-entries/family-003-374-adora1.json": "32b0a8b299549a930cc636ab3a50703222a60ccdf0d380ec90e2c47d40efd8f5",
     "data/curated-reference-entries/family-003-375-adora2a.json": "d488450572d3f49a3bef7c9169259639fc54c893471b0d6a622db48e6fa36d1a",
     "data/curated-reference-entries/family-003-377-adora2b.json": "f2d6c66b26e0b09ffa78f54f9f33448f3a97a71979f28b40d5d5a9e9018fbbe2",
-    "data/curated-reference-entries/family-003-3937-agtr1.json": "9d943ead12494a56f7ee14dda9fd48b2273b832e678338da2e11793fbf45ec8f",
+    "data/curated-reference-entries/family-003-3937-agtr1.json": "326f777558edf34ecc2e8fe0da8ddba2c52e8fd81178ee040a20828a181480b3",
     "data/curated-reference-entries/family-003-422-adora3.json": "1d370aa6bd91a33ea761575e6cea1ee4c8d6e9970c0c62d0cec501f4f20fbfe6",
     "data/curated-reference-entries/family-003-457-adora3.json": "0632ae2ce9429f6d224231fa695d9d94b9fc006160705f323c3127cf3e6648d7",
     "data/curated-reference-entries/family-003-5596-adora2a.json": "4cd6b20ccdbd22464e256419bedcfdd9c1d2241c3b9f3885080fa3a207dd3124",
@@ -107,7 +109,7 @@
     "data/curated-reference-entries/metabolite-loratadine.json": "d2bd987b7666fee74f225cfbcc9907afb9f8480acdb32d2625c85dfa8747182f",
     "data/curated-reference-entries/probe-jq1.json": "24bb4c09e01aa9f4d483908f3ea4d833c288028fc17a42dd88e9f2cf646cc104",
     "data/curated-reference-entries/prodrug-fosphenytoin.json": "ecb651374cb5a0551bb69b804819790b5203684a52fa35f1aae0d1f47afe2e0d",
-    "data/curated-reference-entries/prodrug-gsk-j4.json": "04bfd623a9127fd84648240f34b2cc5d2bd822e7a06b3e7b3390e37082352835",
+    "data/curated-reference-entries/prodrug-gsk-j4.json": "e2a7851cdac24c579c076e0e76b870f4a14ae3ad0011e56de90a602ac02467cc",
     "data/curated-reference-entries/prodrug-irinotecan.json": "f07dc7e8d90637ffcff9640e68f4eca596e364d819d27c3bc56478c563b53884",
     "data/curated-reference-entries/prodrug-mycophenolate.json": "6b084dec2bff2a80dfe6291dc4e052e36e12de43758b9349ee14958494bc55a7",
     "data/curated-reference-entries/property-benzene.json": "c1db55f2f183b4f1ce2eb523015ed576509cdd6e1c1ab9064d457430fea0d862",
@@ -188,10 +190,10 @@
     {
       "name": "Dibenzopyran cores",
       "tag": "Family motif: Dibenzopyran cores",
-      "baseEntries": 29,
-      "currentEntries": 29,
+      "baseEntries": 34,
+      "currentEntries": 34,
       "newStructures": 0,
-      "distinctIsomericGraphs": 29
+      "distinctIsomericGraphs": 34
     },
     {
       "name": "Tropane cores",
@@ -260,8 +262,8 @@
     {
       "name": "Tetrahydrobenzazepines",
       "tag": "Family motif: Tetrahydrobenzazepines",
-      "baseEntries": 17,
-      "currentEntries": 18,
+      "baseEntries": 20,
+      "currentEntries": 21,
       "newStructures": 1,
       "distinctIsomericGraphs": 18
     },
@@ -319,7 +321,7 @@
       "baseEntries": 21,
       "currentEntries": 21,
       "newStructures": 0,
-      "distinctIsomericGraphs": 21
+      "distinctIsomericGraphs": 20
     },
     {
       "name": "Benzisothiazoles",
@@ -354,8 +356,8 @@
       "distinctIsomericGraphs": 5
     }
   ],
-  "librarySha256": "dd1825a00b32820eb1bf68f00e163d273f640ff37419b2ecd08da1b226f387d9",
-  "toolSha256": "042c9961d731cf5a482748236cc93769c467015680af564db773a183f9312856",
-  "dataSha256": "e02feaad9a205b0a380295b26723f37f0069647f5ce770098dc128ad99e2ece5",
+  "librarySha256": "1e038c7acbdc331264dafd70881482c8f6557b751ab0ad1ba549cea2c790024d",
+  "toolSha256": "24be66d6d19e9dcf3f65ed4fd599fd804ccda1cf71dbe9025c540120a24efbdc",
+  "dataSha256": "ca9f06c46c91983c42e510379439a930ffc939d96e67480a61ceb157bbc4afd2",
   "browserGraphsChecked": 107
 }
