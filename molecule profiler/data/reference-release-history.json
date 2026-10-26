@@ -89,8 +89,14 @@
       "id": "benzamide-references",
       "label": "Derived substituted benzamide library structures",
       "date": "2026-10-26",
+      "commit": "11470843ba8245f4698a7dc263e1530860aed597"
+    },
+    {
+      "id": "ergoline-references",
+      "label": "Derived ergoline library structures",
+      "date": "2026-10-26",
       "workingTree": true,
-      "baseCommit": "ce6288a205a6a71e6a8340e94e822878de3ff93d"
+      "baseCommit": "11470843ba8245f4698a7dc263e1530860aed597"
     }
   ]
 }

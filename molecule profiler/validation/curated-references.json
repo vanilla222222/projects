@@ -182,10 +182,10 @@
     {
       "name": "Ergoline cores",
       "tag": "Family motif: Ergoline cores",
-      "baseEntries": 92,
-      "currentEntries": 92,
+      "baseEntries": 139,
+      "currentEntries": 139,
       "newStructures": 0,
-      "distinctIsomericGraphs": 92
+      "distinctIsomericGraphs": 139
     },
     {
       "name": "Dibenzopyran cores",
@@ -356,8 +356,8 @@
       "distinctIsomericGraphs": 5
     }
   ],
-  "librarySha256": "764c8dc321fe5c446dce33be42a3c479a7b3dfb987bc01aa90d2fc2e1dc8ba38",
+  "librarySha256": "7b39c0a3ebf77d553aa89e18dcd2f4964db095ee163f8987d56398e5f22a77a4",
   "toolSha256": "24be66d6d19e9dcf3f65ed4fd599fd804ccda1cf71dbe9025c540120a24efbdc",
-  "dataSha256": "46dbe6f0c496c669ebf4f1d59b046c6a53220cd15fb665bc4554a50d861a65ac",
+  "dataSha256": "460c859a9a20a0805d19005fa27942d2a2777a4c0528c6305621117af9d9141d",
   "browserGraphsChecked": 107
 }
