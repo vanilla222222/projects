@@ -1,114 +1,120 @@
 {
-  "schemaVersion": 1,
-  "releases": [
-    {
-      "id": "2c-cohorts",
-      "label": "2C measured study cohorts",
-      "date": "2026-10-25",
-      "commit": "64a697a031922e829e2f98c885a5fb245dea4b8e"
-    },
-    {
-      "id": "families-002",
-      "label": "Named families \u00b7 batch 002",
-      "date": "2026-10-25",
-      "commit": "7f4c54703ed051e06d810ab06e2540b61b588d05"
-    },
-    {
-      "id": "families-003",
-      "label": "Named families \u00b7 batch 003",
-      "date": "2026-10-25",
-      "commit": "8bbbd8060d9ef14f85e754ba75666b49a7d1e949"
-    },
-    {
-      "id": "families-004",
-      "label": "Named families \u00b7 batch 004",
-      "date": "2026-10-25",
-      "commit": "1ed5f8c32955234ce089e4e341057aa0f8e245c4"
-    },
-    {
-      "id": "research-tools",
-      "label": "Research tools \u00b7 curated decision history",
-      "date": "2026-10-25",
-      "commit": "f34865b7beaed7b886325915c06edb901fbd0b75"
-    },
-    {
-      "id": "mor-measurements-001",
-      "label": "MOR missing measurement completion",
-      "date": "2026-10-25",
-      "commit": "8acdd6d0d3c93f5f357caaeca9fcf4add1f21052"
-    },
-    {
-      "id": "identity-corrections-001",
-      "label": "Reviewed named-reference identity corrections",
-      "date": "2026-10-25",
-      "commit": "7a05f9ffe2124529669584df329c6a6303671455"
-    },
-    {
-      "id": "aromatase-references",
-      "label": "Derived aromatase inhibitor references",
-      "date": "2026-10-25",
-      "commit": "a37d995df4e4374395acecd65ddbf7f348f23aa6"
-    },
-    {
-      "id": "cephalosporin-references",
-      "label": "Derived cephalosporin references",
-      "date": "2026-10-25",
-      "commit": "4f0c824d6607c9922ca2e32cabbaaae837c607b5"
-    },
-    {
-      "id": "estrogen-references",
-      "label": "Derived estrogen references",
-      "date": "2026-10-25",
-      "commit": "fc584dc47a4dae956047fc0ac9f14f917268022b"
-    },
-    {
-      "id": "fluoroquinolone-references",
-      "label": "Derived fluoroquinolone references",
-      "date": "2026-10-25",
-      "commit": "695dca6b41a57913ec00fd4f63af7583ac006bb6"
-    },
-    {
-      "id": "sparse-panel-evidence-001",
-      "label": "Sparse-panel binding evidence and pinned identity witness",
-      "date": "2026-10-25",
-      "commit": "29070c1c3ba698fb00968149d03ed4200ff49a83"
-    },
-    {
-      "id": "benzazepine-references",
-      "label": "Derived benzazepine references",
-      "date": "2026-10-26",
-      "commit": "74bbb0b88f3e9237a67082190b0b31ff59b1a60e"
-    },
-    {
-      "id": "sulfonamide-references",
-      "label": "Derived benzenesulfonamide library structures",
-      "date": "2026-10-26",
-      "commit": "ce6288a205a6a71e6a8340e94e822878de3ff93d"
-    },
-    {
-      "id": "benzamide-references",
-      "label": "Derived substituted benzamide library structures",
-      "date": "2026-10-26",
-      "commit": "11470843ba8245f4698a7dc263e1530860aed597"
-    },
-    {
-      "id": "ergoline-references",
-      "label": "Derived ergoline library structures",
-      "date": "2026-10-26",
-      "commit": "b3e1040a63a575749d7fc54f8ecfede4b8d8728c"
-    },
-    {
-      "id": "gbr-12909-identity",
-      "label": "GBR-12909 connectivity correction from in-library ChEBI witness",
-      "date": "2026-10-26",
-      "commit": "b4902ccde3647d337759136d45b6ca096a39af4c"
-    },
-    {
-      "id": "methylxanthine-references",
-      "label": "Derived methylxanthine library structures",
-      "date": "2026-10-26",
-      "workingTree": true,
-      "baseCommit": "b4902ccde3647d337759136d45b6ca096a39af4c"
-    }
-  ]
+ "schemaVersion": 1,
+ "releases": [
+  {
+   "id": "2c-cohorts",
+   "label": "2C measured study cohorts",
+   "date": "2026-10-25",
+   "commit": "64a697a031922e829e2f98c885a5fb245dea4b8e"
+  },
+  {
+   "id": "families-002",
+   "label": "Named families \u00b7 batch 002",
+   "date": "2026-10-25",
+   "commit": "7f4c54703ed051e06d810ab06e2540b61b588d05"
+  },
+  {
+   "id": "families-003",
+   "label": "Named families \u00b7 batch 003",
+   "date": "2026-10-25",
+   "commit": "8bbbd8060d9ef14f85e754ba75666b49a7d1e949"
+  },
+  {
+   "id": "families-004",
+   "label": "Named families \u00b7 batch 004",
+   "date": "2026-10-25",
+   "commit": "1ed5f8c32955234ce089e4e341057aa0f8e245c4"
+  },
+  {
+   "id": "research-tools",
+   "label": "Research tools \u00b7 curated decision history",
+   "date": "2026-10-25",
+   "commit": "f34865b7beaed7b886325915c06edb901fbd0b75"
+  },
+  {
+   "id": "mor-measurements-001",
+   "label": "MOR missing measurement completion",
+   "date": "2026-10-25",
+   "commit": "8acdd6d0d3c93f5f357caaeca9fcf4add1f21052"
+  },
+  {
+   "id": "identity-corrections-001",
+   "label": "Reviewed named-reference identity corrections",
+   "date": "2026-10-25",
+   "commit": "7a05f9ffe2124529669584df329c6a6303671455"
+  },
+  {
+   "id": "aromatase-references",
+   "label": "Derived aromatase inhibitor references",
+   "date": "2026-10-25",
+   "commit": "a37d995df4e4374395acecd65ddbf7f348f23aa6"
+  },
+  {
+   "id": "cephalosporin-references",
+   "label": "Derived cephalosporin references",
+   "date": "2026-10-25",
+   "commit": "4f0c824d6607c9922ca2e32cabbaaae837c607b5"
+  },
+  {
+   "id": "estrogen-references",
+   "label": "Derived estrogen references",
+   "date": "2026-10-25",
+   "commit": "fc584dc47a4dae956047fc0ac9f14f917268022b"
+  },
+  {
+   "id": "fluoroquinolone-references",
+   "label": "Derived fluoroquinolone references",
+   "date": "2026-10-25",
+   "commit": "695dca6b41a57913ec00fd4f63af7583ac006bb6"
+  },
+  {
+   "id": "sparse-panel-evidence-001",
+   "label": "Sparse-panel binding evidence and pinned identity witness",
+   "date": "2026-10-25",
+   "commit": "29070c1c3ba698fb00968149d03ed4200ff49a83"
+  },
+  {
+   "id": "benzazepine-references",
+   "label": "Derived benzazepine references",
+   "date": "2026-10-26",
+   "commit": "74bbb0b88f3e9237a67082190b0b31ff59b1a60e"
+  },
+  {
+   "id": "sulfonamide-references",
+   "label": "Derived benzenesulfonamide library structures",
+   "date": "2026-10-26",
+   "commit": "ce6288a205a6a71e6a8340e94e822878de3ff93d"
+  },
+  {
+   "id": "benzamide-references",
+   "label": "Derived substituted benzamide library structures",
+   "date": "2026-10-26",
+   "commit": "11470843ba8245f4698a7dc263e1530860aed597"
+  },
+  {
+   "id": "ergoline-references",
+   "label": "Derived ergoline library structures",
+   "date": "2026-10-26",
+   "commit": "b3e1040a63a575749d7fc54f8ecfede4b8d8728c"
+  },
+  {
+   "id": "gbr-12909-identity",
+   "label": "GBR-12909 connectivity correction from in-library ChEBI witness",
+   "date": "2026-10-26",
+   "commit": "b4902ccde3647d337759136d45b6ca096a39af4c"
+  },
+  {
+   "id": "methylxanthine-references",
+   "label": "Derived methylxanthine library structures",
+   "date": "2026-10-26",
+   "commit": "9b87414befc0e87ce7843e905d2cd5be0e2b7a5b"
+  },
+  {
+   "id": "saturated-family-closures",
+   "label": "Penicillin and beta blocker family ceilings recorded",
+   "date": "2026-10-26",
+   "workingTree": true,
+   "baseCommit": "9b87414befc0e87ce7843e905d2cd5be0e2b7a5b"
+  }
+ ]
 }

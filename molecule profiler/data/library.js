@@ -21711,6 +21711,13 @@ const LIBRARY = [
   { name: '1,3-dimethyl-8-(piperazin-1-yl)-7-propylpurine-2,6-dione', cls: 'Methylxanthine', formula: 'C14H22N6O2', smiles: 'CCCn1c(N2CCNCC2)nc2c1c(=O)n(C)c(=O)n2C' },
   { name: '8-benzyl-7-(2-hydroxyethyl)-1,3-dimethylpurine-2,6-dione', cls: 'Methylxanthine', formula: 'C16H18N4O3', smiles: 'Cn1c(=O)c2c(nc(Cc3ccccc3)n2CCO)n(C)c1=O' },
   { name: '8-bromo-7-(2-hydroxypropyl)-1,3-dimethylpurine-2,6-dione', cls: 'Methylxanthine', formula: 'C10H13BrN4O3', smiles: 'CC(O)Cn1c(Br)nc2c1c(=O)n(C)c(=O)n2C' },
+  { name: 'Heptylpenicillin', cls: 'Penicillin', formula: 'C16H26N2O4S', smiles: 'CCCCCCCC(=O)N[C@@H]1C(=O)N2[C@@H]1SC(C)(C)[C@@H]2C(=O)O' },
+  { name: 'Pentylpenicillin', cls: 'Penicillin', formula: 'C14H22N2O4S', smiles: 'CCCCCC(=O)N[C@@H]1C(=O)N2[C@@H]1SC(C)(C)[C@@H]2C(=O)O' },
+  { name: 'Pent-2-enylpenicillin', cls: 'Penicillin', formula: 'C14H20N2O4S', smiles: 'CCC=CCC(=O)N[C@@H]1C(=O)N2[C@@H]1SC(C)(C)[C@@H]2C(=O)O' },
+  { name: '(4-Hydroxybenzyl)penicillin', cls: 'Penicillin', formula: 'C16H18N2O5S', smiles: 'CC1(C)S[C@@H]2[C@H](NC(=O)Cc3ccc(O)cc3)C(=O)N2[C@H]1C(=O)O' },
+  { name: '6-Benzamidopenicillanic acid', cls: 'Penicillin', formula: 'C15H16N2O4S', smiles: 'CC1(C)S[C@@H]2[C@H](NC(=O)c3ccccc3)C(=O)N2[C@H]1C(=O)O' },
+  { name: '2-(Diethylamino)ethyl benzylpenicillinate', cls: 'Penicillin', formula: 'C22H31N3O4S', smiles: 'CCN(CC)CCOC(=O)[C@@H]1N2C(=O)[C@@H](NC(=O)Cc3ccccc3)[C@H]2SC1(C)C' },
+  { name: 'Desacetylmetipranolol', cls: 'Beta blocker', formula: 'C15H25NO3', smiles: 'Oc1c(C)cc(OCC(O)CNC(C)C)c(C)c1C' },
 ];
 
 if (typeof module !== 'undefined' && module.exports) {
