@@ -16,7 +16,7 @@ for(const correction of identityCorrections.changes){
   assert.equal(entry.formula,correction.sourceFormula);
 }
 const a=auditLibrary(LIBRARY,TARGETS,SIGNAL_REFERENCE_PROFILES);
-assert.ok(a.entries>=REFERENCE_AUDIT_BASELINE.entries,'Unexpected reduction in library entries');
+assert.equal(a.entries,REFERENCE_AUDIT_BASELINE.entries,'Library size changed; run tools/repin.py');
 assert.equal(a.missingSmiles,0,'Library entries missing SMILES');
 assert.equal(a.missingFormula,0,'Library entries missing molecular formulas');
 assert.equal(a.duplicateNames.length,0,'Duplicate reference names');

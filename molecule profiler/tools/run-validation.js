@@ -1,6 +1,7 @@
 'use strict';
 // Run locally with: node tools/run-validation.js
-// Requires Node.js 18+. This is not a substitute for RDKit or browser tests.
+// Requires Node.js 18+ and Python 3 (stdlib orchestration checks only).
+// This is not a substitute for RDKit or browser tests.
 const { spawnSync } = require('node:child_process');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -9,6 +10,7 @@ const provenance = require('./validation-provenance.js');
 const sourceBefore = provenance.capture(root);
 const scripts = [
   'reference-audit-test.js',
+  'reference-counts-test.js',
   'curated-references-test.js',
   'identity-corrections-test.js',
   'receptor-catalog-test.js',

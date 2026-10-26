@@ -1,0 +1,11 @@
+'use strict';
+const assert=require('node:assert/strict'),path=require('node:path'),{spawnSync}=require('node:child_process'),{snapshot,current}=require('./reference-counts'),{REFERENCE_AUDIT_BASELINE:counts}=require('../data/reference-audit-baseline');
+assert.deepEqual(current(),counts,'All consumers must use the current shared snapshot');
+const library=[{name:'A',smiles:'CCO',formula:'C2H6O'},{name:'B',smiles:'CCC',formula:'C3H8'}],target={gene:'ONE',name:'One',ligands:['A']},context={library:[...library,{name:'Overlay',smiles:'CCN',formula:'C2H7N'}],targets:[target,{gene:'LOOKUP',ligands:['B'],lookupOnly:true}]};
+const result=snapshot(library,[target],[],context);assert.equal(result.entries,2);assert.equal(result.overlayEntries,3);assert.equal(result.targets,1);assert.equal(result.composedTargets,2);assert.equal(result.lookupOnlyTargets,1);
+assert.throws(()=>snapshot([...library,library[0]],[target],[],context),/invalid library/,'Repinning must not bless duplicate source entries');
+assert.throws(()=>snapshot(library,[{...target,ligands:['Missing']}],[],context),/unresolvedLigands/);
+assert.throws(()=>snapshot(library,[target],[],{...context,library:[...context.library,library[0]]}),/duplicate overlay/);
+const python=process.env.MOLECULE_PROFILER_PYTHON||(process.platform==='win32'?'python':'python3'),test=spawnSync(python,['-B',path.join(__dirname,'repin-test.py')],{encoding:'utf8',cwd:path.join(__dirname,'..')});
+if(test.stdout)process.stdout.write(test.stdout);if(test.stderr)process.stderr.write(test.stderr);assert.equal(test.error,undefined,'Python 3 is required for repinning tests');assert.equal(test.status,0,'Repinning source guards and dependency order must pass');
+console.log('Shared counts and repinning: stale-source detection, invalid-data rejection, read-only plans and fail-closed rebuild order passed');

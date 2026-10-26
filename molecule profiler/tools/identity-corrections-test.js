@@ -1,9 +1,10 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),crypto=require('node:crypto');
 const {LIBRARY}=require('../data/library'),{CURATED_REFERENCES:data}=require('../data/curated-references'),api=require('../js/curated-references'),report=require('../validation/curated-references.json');
+const {REFERENCE_AUDIT_BASELINE:counts}=require('../data/reference-audit-baseline');
 const original=JSON.stringify(LIBRARY),entries=api.library(LIBRARY,data),byname=new Map(entries.map(e=>[e.name,e]));
 assert.equal(data.identityCorrections.length,4);assert.equal(report.identityCorrections,4);assert.equal(report.identityCorrectionSha256,crypto.createHash('sha256').update(fs.readFileSync(require('path').join(__dirname,'../data/reference-identity-corrections.json'))).digest('hex'));
-assert.equal(entries.length,21226);assert.equal(new Set(entries.map(e=>e.name)).size,entries.length);
+assert.equal(entries.length,counts.overlayEntries);assert.equal(new Set(entries.map(e=>e.name)).size,entries.length);
 for(const f of data.identityCorrections){const e=byname.get(f.name),raw=LIBRARY.find(e=>e.name===f.name),record=data.records.find(r=>r.id===f.sourceReferenceId),c=record.compounds[f.compoundIndex];
  assert.deepEqual(raw,f.before);assert.equal(e.smiles,c.smiles);assert.equal(e.formula,c.formula);assert.equal(e.identityCorrection,f);assert.equal(f.inchiKey,c.inchiKey);assert.equal(f.inchiKey,c.identitySource.sourceLigand.InChIKey);assert.notEqual(f.beforeInchiKey,f.inchiKey);assert.equal(f.sourceUrl,c.sourceUrl);
  assert.ok(api.forEntry(e,data).includes(record));assert.ok(!api.forEntry(raw,data).includes(record));assert.ok(api.tags(e,data).includes('Evidence: Reviewed identity correction'));
