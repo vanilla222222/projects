@@ -47,11 +47,16 @@ function rx9RuleCope(ctx) {
     return [rxOutcome('cope-elimination','Cope elimination of dimethylalkylamine N-oxide','Elimination',g,'Thermal syn elimination removes the single supported alkyl arm as a terminal alkene and retains N-oxide oxygen in N,N-dimethylhydroxylamine.',{score:15,consumes:[rxUse(s,1)],warnings:['Only an acyclic N,N-dimethyl-N-primary-alkyl N-oxide with one eliminable arm is encoded. The accessible syn conformer is assumed; no rate or stereoselectivity is predicted.','Cyclic, internally substituted alpha-carbon, multiple-arm and isotope-explicit beta-H cases are excluded. Both alkene and hydroxylamine are retained as products.']})];});
 }
 function rx9Phthalimide(g) {
-  const ns=g.atoms.filter(a=>a.element==='N'&&!a.charge),ar=rxAromaticRings(g).atoms;if(ns.length!==1||ar.size!==6||g.atoms.filter(a=>a.element==='O').length!==2)return null;
+  const ns=g.atoms.filter(a=>a.element==='N'&&!a.charge),aromatic=rxAromaticRings(g),ar=aromatic.atoms;if(ns.length!==1||!ar.size||g.atoms.filter(a=>a.element==='O').length!==2)return null;
   const n=ns[0],cs=rxNeighbors(g,n.id).filter(a=>a.atom.element==='C'&&a.bond.order===1&&rxNeighbors(g,a.atom.id).some(q=>q.atom.element==='O'&&q.bond.order===2));
   if(cs.length!==2)return null;
   const ringEnds=cs.map(c=>rxCarbonNeighbors(g,c.atom.id).find(q=>ar.has(q.atom.id)));
   if(ringEnds.some(x=>!x)||!g.getBond(ringEnds[0].atom.id,ringEnds[1].atom.id))return null;
+  // Aryl substituents on the N-alkyl arm add aromatic atoms elsewhere in the
+  // molecule. Validate the phthalimide benzene ring, not a whole-molecule
+  // aromatic-atom count, so N-benzyl and similar supported substrates survive.
+  const phthalimideRing=aromatic.rings.some(ring=>ring.length===6&&ring.every(id=>g.getAtom(id).element==='C')&&ringEnds.every(q=>ring.includes(q.atom.id)));
+  if(!phthalimideRing)return null;
   const other=rxNeighbors(g,n.id).filter(q=>!cs.some(c=>c.atom.id===q.atom.id));
   return {n:n.id,cs:cs.map(c=>c.atom.id),other};
 }
@@ -90,6 +95,21 @@ function rx9RuleCurtius(ctx) {
   return ctx.substrates.flatMap(s=>{const x=rx9AcylAzide(s.graph);if(!x||s.info.alkenes.length||s.info.alkynes.length)return [];const g=rxCloneGraph(s.graph);rxsReplace(g,x.r,x.c,x.n,false);g.addBond(x.r,x.n);[x.c,x.o,x.mid,x.end].forEach(id=>g.removeAtom(id));g.getAtom(x.n).charge=0;
     return [rxOutcome('curtius-hydrolysis','Curtius rearrangement with aqueous work-up','Rearrangement',g,'Thermal migration of the carbon substituent to the acyl-bound nitrogen gives an isocyanate. Aqueous hydrolysis and decarboxylation leave a primary amine with one fewer carbon.',{score:15,consumes:[rxUse(s,1)],byproducts:['N2','CO2'],warnings:['A thermal rearrangement followed by a separate aqueous work-up is assumed. Only one simple acyl azide without competing functionality is encoded.','The neutral amine is shown after work-up, not as an acidic-mixture speciation prediction. Acyl azide handling, thermal behavior and practical feasibility require specialist review; this structural rule supplies no preparation or operating procedure.']})];});
 }
+// Extend the core imine descriptor with the ammonia case used by the
+// primary-amine reverse transform. Ordinary imine formation and substrate
+// amines continue through the original implementation unchanged.
+function rx9AmmoniaReductive(ctx) {
+ if(!ctx.has('mildHydride')||!ctx.has('ammonia'))return [];
+ const carbonyls=ctx.substrates.flatMap(s=>s.info.carbonyls.filter(c=>['aldehyde','ketone'].includes(c.kind)).map(c=>({s,c})));
+ const amines=ctx.substrates.flatMap(s=>s.info.amines.map(a=>({s,a}))).filter(x=>!carbonyls.some(c=>c.s===x.s));
+ if(!carbonyls.length||amines.length)return [];
+ const {s,c}=carbonyls[0],nh3=ctx.get('ammonia'),g=rxCloneGraph(s.graph),map=rxMerge(g,nh3.graph,nh3.ids);
+ g.removeAtom(c.o);g.addBond(map.get(nh3.ids[0]),c.c);
+ return [rxOutcome('reductive-amination','Reductive amination with ammonia','Imine formation + reduction',g,'Ammonia and the carbonyl compound form a primary imine, which the mild hydride reduces as it forms to give the primary amine.',{score:13,byproducts:['H₂O','borate salts (after work-up)'],consumes:[rxUse(s,1),rxUse(nh3,1),rxUse(ctx.get('mildHydride'),1)],warnings:['Mildly acidic conditions can accelerate imine formation; this structural rule does not predict speciation, selectivity or yield.']})];
+}
+const rx9CoreImineRule=RX_RULES.find(rule=>rule.id==='imine'),rx9CoreImineRun=rx9CoreImineRule&&rx9CoreImineRule.run;
+if(rx9CoreImineRule)rx9CoreImineRule.run=function(ctx){return rx9CoreImineRun(ctx).concat(rx9AmmoniaReductive(ctx));};
+
 const RX9_RULE_DATA = [
  ['pyridine-n-oxidation','Pyridine N-oxidation',rx9RulePyrOx,'Oxidation','One pyridine ring on a carbon/halocarbon skeleton; peracetic acid in acetic acid at 60–90 °C; free N-oxide after work-up.',RX9_SOURCES.pyrOx],
  ['pyridine-oxide-deoxygenation','Pyridine N-oxide deoxygenation',rx9RulePyrRed,'Reduction','One pyridine N-oxide and PCl3 in dry chloroform/ethyl acetate at 0–30 °C.',RX9_SOURCES.pyrRed],
