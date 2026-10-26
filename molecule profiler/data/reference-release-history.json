@@ -101,8 +101,14 @@
       "id": "gbr-12909-identity",
       "label": "GBR-12909 connectivity correction from in-library ChEBI witness",
       "date": "2026-10-26",
+      "commit": "b4902ccde3647d337759136d45b6ca096a39af4c"
+    },
+    {
+      "id": "methylxanthine-references",
+      "label": "Derived methylxanthine library structures",
+      "date": "2026-10-26",
       "workingTree": true,
-      "baseCommit": "b3e1040a63a575749d7fc54f8ecfede4b8d8728c"
+      "baseCommit": "b4902ccde3647d337759136d45b6ca096a39af4c"
     }
   ]
 }
