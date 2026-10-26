@@ -163,3 +163,28 @@ retroFindProduct=function(list,smiles){
   })||null;
  }catch(error){return null;}
 };
+
+// Carbonyl deoxygenation disconnections. Only methyl and methylene positions
+// that map uniquely to an aldehyde or ketone are proposed; forward verification
+// remains responsible for accepting the complete substrate and conditions.
+function retro9Deoxygenation(t,reagents,conditions){
+ if(t.info.carbonyls.some(c=>c.kind==='aldehyde'||c.kind==='ketone'))return [];
+ const out=[],seen=new Set();
+ t.graph.atoms.filter(a=>a.element==='C'&&!a.charge&&!t.aromatic.has(a.id)&&rxIsSp3(t.graph,a.id)).forEach(a=>{
+  const h=rxHydrogens(t.graph,a.id),carbons=rxCarbonNeighbors(t.graph,a.id);
+  const aldehyde=h===3&&carbons.length===1,ketone=h===2&&carbons.length===2;
+  if((!aldehyde&&!ketone)||!carbons.every(n=>n.bond.order===1))return;
+  const piece=retroSinglePiece(t,g=>{rxAttach(g,'O',a.id,2);});
+  if(!piece||seen.has(piece.smiles))return;seen.add(piece.smiles);
+  out.push(retroSpec([{smiles:piece.smiles,role:'reactant'}],reagents,conditions));
+ });
+ return out.slice(0,RETRO_LIMITS.maxPerTransform);
+}
+RETRO_TRANSFORMS.push(
+ {id:'wolff-kishner',name:'Alkane from aldehyde or ketone by Wolff–Kishner reduction',rule:'wolff-kishner',group:'Reduction',match(t){
+  return retro9Deoxygenation(t,[{smiles:'NN',role:'reagent',label:'Hydrazine'},{smiles:'[K+].[OH-]',role:'reagent',label:'Potassium hydroxide'}],{solvents:['none'],temperature:180});
+ }},
+ {id:'clemmensen',name:'Alkane from aldehyde or ketone by Clemmensen reduction',rule:'clemmensen',group:'Reduction',match(t){
+  return retro9Deoxygenation(t,[{smiles:'Cl',role:'reagent',label:'Concentrated hydrochloric acid'}],{solvents:['water'],additives:['znhg'],temperature:100});
+ }}
+);
