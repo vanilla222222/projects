@@ -18,6 +18,23 @@
    for(const [label,value]of [['Source database release',o.sourceRelease],['ChEMBL molecule',o.chemblMoleculeId],['ChEMBL target',o.chemblTargetId],['Activity ID',o.activityId],['Assay ID',o.assayId],['Document ID',o.documentId],['Assay organism',o.assayOrganism],['Assay type',o.assayType],['Target-assignment confidence score',o.assayConfidence],['Assay tissue',o.assayTissue],['Assay cell type',o.assayCellType],['Source snapshot',o.sourceFile],['Source location',o.sourceLocation],['Snapshot SHA-256',o.sourceSha256]])detail(label,value,d);
    for(const [label,url]of [['ChEMBL document',o.documentUrl],['ChEMBL molecule',o.moleculeUrl],['ChEMBL target',o.targetUrl],['ChEMBL activity',o.activityUrl]])if(url)d.append(link(label+' ↗',url));
   }
+  if(o.sourceEndpoint){
+   const endpoint=o.sourceEndpoint,original=o.originalEndpoint||{},available=v=>v!=null&&v!==''&&v!=='-';
+   const section=el('section');section.className='iuphar-source-endpoints';section.append(el('h4','Reported source endpoints'));
+   detail('Source scale',available(endpoint.scale)?endpoint.scale:'Not reported',section);
+   for(const field of ['median','high','low'])if(available(endpoint[field]))detail('Source '+field,endpoint[field],section);
+   if(['medianNm','highNm','lowNm'].some(field=>available(original[field]))){
+    detail('Original endpoint metric',available(original.metric)?original.metric:'Not reported',section);
+    detail('Original concentration relation',available(original.relation)?original.relation:'Not reported',section);
+    for(const field of ['median','high','low'])if(available(original[field+'Nm']))detail('Original '+field+' (nM)',original[field+'Nm'],section);
+   }
+   section.append(el('p','Source medians and high/low ranges are retained on their reported scales. They are not SD or confidence intervals. Original concentration relations apply only to the original nM fields; no scale conversion or functional action is inferred.'));d.append(section);
+   for(let i=0;i<(o.publicationIds||[]).length;i++)if(o.publicationUrls?.[i])d.append(link('PubMed '+o.publicationIds[i]+' ↗',o.publicationUrls[i]));
+   for(const url of o.externalUrls||[])d.append(link('Source external reference ↗',url));
+   detail('Source patent identifiers',(o.patentIds||[]).join('; '),d);
+   detail('Source snapshot',o.sourceFile,d);
+  }
+  detail('Source reference as supplied',o.originalReferenceLabel,d);
   if(o.originalReference)d.append(link('Primary reference ↗',o.originalReference));
   d.append(link('Evidence source ↗',o.sourceUrl));const raw=el('details');raw.append(el('summary','Source record and provenance'));detail('Record',o.recordId||'Imported receptor row',raw);detail('Snapshot SHA-256',o.sourceSha256,raw);raw.append(el('pre',JSON.stringify(o.raw,null,2)));d.append(raw);return d;
  }

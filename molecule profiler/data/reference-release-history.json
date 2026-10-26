@@ -120,6 +120,13 @@
       "label": "Structural classification tag refresh",
       "date": "2026-10-26",
       "commit": "8c035b4a21e4ef65bf56d833d379ccf2695b2af4"
+    },
+    {
+      "id": "property-evidence-004",
+      "label": "Experimental hydration properties · batch 002",
+      "date": "2026-10-26",
+      "workingTree": true,
+      "baseCommit": "1c36b8906ecd940423e8cc1c90e92e9dd69c1560"
     }
   ]
 }

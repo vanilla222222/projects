@@ -37,3 +37,8 @@ The subsequent class/action enrichment retains explicit ChEMBL action labels
 as separate source classifications, preserves binding-only observations, and
 adds literal IUPHAR source ligand-class tags. Structural motifs remain separate
 from receptor actions. See `CLASS-ACTION-TAGS-003.md` for scope and validation.
+
+The subsequent endpoint enrichment preserves literal source-scale and original
+concentration fields, relations and publication links. Claim labels use audited
+canonical actions while retaining raw source wording. No scale conversion,
+uncertainty interval or functional measurement is inferred. See `EVIDENCE-004.md`.

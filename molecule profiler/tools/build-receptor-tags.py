@@ -3,6 +3,7 @@
 import argparse,csv,hashlib,html,json,re,subprocess,math
 from pathlib import Path
 from collections import defaultdict,Counter
+from urllib.parse import urlsplit
 from rdkit import Chem,rdBase
 ROOT=Path(__file__).resolve().parents[1]
 SOURCE=ROOT/'validation/sources/receptor-actions-iuphar.json'
@@ -12,6 +13,21 @@ def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def graph(s):
  m=Chem.MolFromSmiles(s or '')
  return Chem.MolToSmiles(m,isomericSmiles=True) if m else None
+
+def iuphar_endpoints(row):
+ """Retain source scales and ranges literally; these are not uncertainty bounds."""
+ publications=list(dict.fromkeys(p for p in row.get('PubMed ID','').split('|') if re.fullmatch(r'[0-9]+',p)))
+ external=[]
+ for url in row.get('Webpage URLs','').split('|'):
+  try:
+   parsed=urlsplit(url)
+   if parsed.scheme in {'https','http'} and parsed.hostname and not parsed.username and not parsed.password:external.append(url)
+  except ValueError:pass
+ return {'sourceEndpoint':{k:row.get(field,'') for k,field in [('scale','Affinity Units'),('high','Affinity High'),('median','Affinity Median'),('low','Affinity Low')]},
+         'originalEndpoint':{k:row.get(field,'') for k,field in [('metric','Original Affinity Units'),('highNm','Original Affinity High nm'),('medianNm','Original Affinity Median nm'),('lowNm','Original Affinity Low nm'),('relation','Original Affinity Relation')]},
+         'publicationIds':publications,'publicationUrls':['https://pubmed.ncbi.nlm.nih.gov/'+p+'/' for p in publications],
+         'externalUrls':list(dict.fromkeys(external)),'patentIds':list(dict.fromkeys(p for p in row.get('Patent Numbers','').split('|') if p)),
+         'sourceRecord':row}
 
 def chembl_snapshot_index(root=ROOT):
  """Index retained observations by target and activity, never by a name/group key."""
@@ -136,7 +152,7 @@ def main():
    if ligand.get('Type'):tags+=['Source ligand class: '+ligand['Type']]
    for e in bygraph.get(g,[]):
     if not actions and not binding:continue
-    evidence={'provider':src['provider'],'sourceRow':i,'receptorId':rid,'ligandId':row['Ligand ID'],'sourceTargetId':row['Target ID'],'sourceTarget':clean(row['Target']),'sourceLigandType':ligand.get('Type',''),'sourceLigandRecord':ligand,'sourceFile':str(SOURCE.relative_to(ROOT)),'sourceSha256':source_digest,'sourceLocation':f'interactions[{i}]','librarySmiles':e['smiles'],'sourceType':row['Type'],'sourceAction':row['Action'],'actions':actions,'bindingEvidence':binding,'species':row['Target Species'],'assay':clean(row['Assay Description']),'affinityUnits':row['Affinity Units'],'affinityHigh':row['Affinity High'],'affinityMedian':row['Affinity Median'],'affinityLow':row['Affinity Low'],'comment':clean(row['Action comment']),'ligandContext':clean(row['Ligand Context']),'receptorSite':clean(row['Receptor Site']),'pubmedIds':row['PubMed ID'],'sourceUrl':'https://www.guidetopharmacology.org/GRAC/LigandActivityRangeVisForward?ligandId='+row['Ligand ID']+'&targetId='+row['Target ID']}
+    evidence={'provider':src['provider'],'sourceRow':i,'receptorId':rid,'ligandId':row['Ligand ID'],'sourceTargetId':row['Target ID'],'sourceTarget':clean(row['Target']),'sourceLigandType':ligand.get('Type',''),'sourceLigandRecord':ligand,'sourceFile':str(SOURCE.relative_to(ROOT)),'sourceSha256':source_digest,'sourceLocation':f'interactions[{i}]','librarySmiles':e['smiles'],'sourceType':row['Type'],'sourceAction':row['Action'],'actions':actions,'bindingEvidence':binding,'species':row['Target Species'],'assay':clean(row['Assay Description']),'affinityUnits':row['Affinity Units'],'affinityHigh':row['Affinity High'],'affinityMedian':row['Affinity Median'],'affinityLow':row['Affinity Low'],'comment':clean(row['Action comment']),'ligandContext':clean(row['Ligand Context']),'receptorSite':clean(row['Receptor Site']),'pubmedIds':row['PubMed ID'],'sourceUrl':'https://www.guidetopharmacology.org/GRAC/LigandActivityRangeVisForward?ligandId='+row['Ligand ID']+'&targetId='+row['Target ID'],**iuphar_endpoints(row)}
     add(e,tags,evidence);counts['iuphar']+=1
  # Existing assay-linked records stay binding-only and graph guarded.
  byname={e['name']:e for e in library};byreceptor={r['id']:r for r in catalog}
