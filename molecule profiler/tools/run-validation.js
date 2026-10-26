@@ -47,6 +47,7 @@ const scripts = [
   'reference-research-test.js',
   'reference-structure-test.js',
   'reference-structure-worker-test.js',
+  'library-depiction-test.js',
   'reference-sar-test.js',
   'reference-pairs-test.js',
   'reference-probes-test.js',
@@ -78,9 +79,10 @@ const started = new Date().toISOString();
 const outcomes = [];
 let failed = 0;
 for (const script of scripts) {
-  // Exhaustive retrieval grows with the reference dataset; keep a separate,
-  // bounded budget rather than applying its cost to every regression script.
-  const timeoutMs = script === 'retrieval-benchmark.js' ? 300000 : 120000;
+  // Exhaustive retrieval and the full-library depiction audit both grow with the
+  // reference dataset; keep separate, bounded budgets rather than applying their
+  // cost to every regression script.
+  const timeoutMs = script === 'retrieval-benchmark.js' || script === 'library-depiction-test.js' ? 300000 : 120000;
   const testStarted = process.hrtime.bigint();
   process.stdout.write('RUN ' + script + ' (timeout ' + timeoutMs / 1000 + 's)\n');
   const result = spawnSync(process.execPath, [path.join(__dirname, script)], {

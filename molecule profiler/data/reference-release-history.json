@@ -9,25 +9,25 @@
     },
     {
       "id": "families-002",
-      "label": "Named families \u00b7 batch 002",
+      "label": "Named families · batch 002",
       "date": "2026-10-25",
       "commit": "7f4c54703ed051e06d810ab06e2540b61b588d05"
     },
     {
       "id": "families-003",
-      "label": "Named families \u00b7 batch 003",
+      "label": "Named families · batch 003",
       "date": "2026-10-25",
       "commit": "8bbbd8060d9ef14f85e754ba75666b49a7d1e949"
     },
     {
       "id": "families-004",
-      "label": "Named families \u00b7 batch 004",
+      "label": "Named families · batch 004",
       "date": "2026-10-25",
       "commit": "1ed5f8c32955234ce089e4e341057aa0f8e245c4"
     },
     {
       "id": "research-tools",
-      "label": "Research tools \u00b7 curated decision history",
+      "label": "Research tools · curated decision history",
       "date": "2026-10-25",
       "commit": "f34865b7beaed7b886325915c06edb901fbd0b75"
     },
@@ -71,8 +71,7 @@
       "id": "sparse-panel-evidence-001",
       "label": "Sparse-panel binding evidence and pinned identity witness",
       "date": "2026-10-25",
-      "workingTree": true,
-      "baseCommit": "7a05f9ffe2124529669584df329c6a6303671455"
+      "commit": "29070c1c3ba698fb00968149d03ed4200ff49a83"
     }
   ]
 }
