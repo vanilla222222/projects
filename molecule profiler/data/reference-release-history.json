@@ -119,8 +119,7 @@
       "id": "structural-taxonomy-003",
       "label": "Structural classification tag refresh",
       "date": "2026-10-26",
-      "workingTree": true,
-      "baseCommit": "50a8dad7a2f8a8db7437f71b1c8b57c3f5e98ad9"
+      "commit": "8c035b4a21e4ef65bf56d833d379ccf2695b2af4"
     }
   ]
 }
