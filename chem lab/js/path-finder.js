@@ -374,10 +374,18 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
         if (expanded.has(node.key)) { attach(node, expanded.get(node.key)); continue; }
         if (job.expanded >= opts.maxNodes) { finish('node-limit'); break; }
         const graph = retroFromSmiles(node.smiles);
-        current = { node, iterator: retroDisconnectSteps(graph, retroIds(graph), { protect: !opts.allowedProtectingGroups || opts.allowedProtectingGroups.length > 0 }) };
+        current = { node, iterator: retroDisconnectSteps(graph, retroIds(graph), { protect: !opts.allowedProtectingGroups || opts.allowedProtectingGroups.length > 0, emitCandidates: !!opts.streamCandidates }), streamed: new Set() };
         job.expanded++;
       }
       const next = current.iterator.next();
+      if (!next.done && next.value && next.value.phase === 'candidate') {
+        // Managed one-step searches can accept a verified direct route before
+        // unrelated disconnections finish. Every candidate still uses attach's
+        // ordinary compatibility, inventory and forward-identity checks.
+        current.streamed.add(next.value.candidate);
+        attach(current.node, [next.value.candidate]);
+        continue;
+      }
       if (next.done) {
         const result = next.value || {};
         job.truncated = job.truncated || !!result.truncated;
@@ -396,7 +404,7 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
           if (diagnostics.protectionMessages.length < 4 && !diagnostics.protectionMessages.includes(need.reason)) diagnostics.protectionMessages.push(need.reason);
         });
         expanded.set(current.node.key, result.candidates || []);
-        attach(current.node, result.candidates || []);
+        attach(current.node, (result.candidates || []).filter(candidate => !current.streamed.has(candidate)));
         current = null;
       }
     }
