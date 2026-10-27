@@ -8,6 +8,21 @@ function routeWorkspaceKey(smiles) {
   return props.isomericSmiles || props.smiles;
 }
 
+function routeWorkspaceProductKey(smiles) {
+  if (typeof moleculeIdentityGraph !== 'function' || typeof rxNeighbors !== 'function') return routeWorkspaceKey(smiles);
+  const g = moleculeIdentityGraph(smiles);
+  // Nitration emits neutral N(=O)=O while saved targets may use the equivalent
+  // charge-separated nitro depiction. Normalize only that group and retain the
+  // full stereochemical key; stock and route-continuity identity stay strict.
+  g.atoms.filter((a) => a.element === 'N').forEach((n) => {
+    const neighbors = rxNeighbors(g, n.id), oxygens = neighbors.filter((x) => x.atom.element === 'O' && rxNeighbors(g, x.atom.id).length === 1);
+    if (neighbors.length !== 3 || oxygens.length !== 2 || !neighbors.some((x) => x.atom.element === 'C')) return;
+    n.charge = 0;
+    oxygens.forEach((x) => { x.atom.charge = 0; g.getBond(n.id, x.atom.id).order = 2; });
+  });
+  return moleculeIdentity(g).key;
+}
+
 function routeWorkspaceSmiles(value) {
   if (typeof value !== 'string' || value.length > 5000 || !value.trim()) throw new Error('Every structure needs a valid name or SMILES.');
   const parsed = reactionParseCompound(value.trim());
@@ -50,13 +65,13 @@ function routeWorkspaceNormalize(raw) {
 function routeWorkspaceValidateStep(step) {
   try {
     const from = routeWorkspaceKey(step.from);
-    const target = routeWorkspaceKey(step.to);
+    const target = routeWorkspaceProductKey(step.to);
     const compounds = step.compounds.map((c) => Object.assign({}, c, { fragment: smilesToFragment(c.smiles) }));
     if (!compounds.some((c) => c.role === 'reactant' && routeWorkspaceKey(c.smiles) === from)) return { status: 'invalid', message: 'The starting intermediate is missing from this step’s reactants.' };
     const prediction = predictReaction(compounds, normalizeReactionConditions(step.conditions));
     const outcomes = [prediction.best].concat(prediction.alternatives || []).filter(Boolean);
     const outcome = outcomes.find((o) => (!step.ruleId || o.id === step.ruleId) && (o.products || []).concat(o.minor || []).some((p) => {
-      try { return routeWorkspaceKey(p.isomericSmiles || p.smiles) === target; } catch (error) { return false; }
+      try { return routeWorkspaceProductKey(p.isomericSmiles || p.smiles) === target; } catch (error) { return false; }
     }));
     if (outcome && outcome.partialConversion) return {status:'unverified',message:'This is a one-site partial-conversion alternative; selective preparation is not established by the current rules.',ruleId:outcome.id,outcome};
     if (outcome && typeof routeStepAssessment === 'function') {
