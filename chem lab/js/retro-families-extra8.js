@@ -181,6 +181,24 @@ function retro9Deoxygenation(t,reagents,conditions){
  return out.slice(0,RETRO_LIMITS.maxPerTransform);
 }
 RETRO_TRANSFORMS.push(
+ // The amide nitrogen becomes the oxime nitrogen: its migrating carbon returns
+ // to the oxime carbon, C=O becomes N–OH, and C–N becomes C=N. Forward verification is
+ // still required because unsymmetrical ketoximes have a preferred migrant.
+ {id:'beckmann',name:'Amide or lactam from ketoxime by Beckmann rearrangement',rule:'beckmann',group:'Rearrangement',match(t){
+  const carbonyls=t.info.carbonyls;
+  if(carbonyls.length!==1||carbonyls[0].kind!=='amide'||t.info.alkenes.length||t.info.alkynes.length)return [];
+  if(t.graph.atoms.some(a=>a.charge||!['C','N','O','H','D','F','Cl','Br','I'].includes(a.element))||t.graph.atoms.filter(a=>a.element==='O').length!==1||t.graph.atoms.filter(a=>a.element==='N').length!==1)return [];
+  const c=carbonyls[0],n=t.graph.getAtom(c.hetero),o=t.graph.getAtom(c.o);
+  if(!n||!o||n.element!=='N'||o.element!=='O'||n.charge||o.charge||rxHydrogens(t.graph,n.id)!==1)return [];
+  const carbonNeighbors=rxCarbonNeighbors(t.graph,c.c);
+  if(carbonNeighbors.length!==1||carbonNeighbors[0].bond.order!==1)return [];
+  const nitrogenNeighbors=rxNeighbors(t.graph,n.id);
+  if(nitrogenNeighbors.length!==2||nitrogenNeighbors.some(x=>x.bond.order!==1||x.atom.element!=='C'))return [];
+  const migrated=nitrogenNeighbors.find(x=>x.atom.id!==c.c);
+  if(!migrated)return [];
+  const piece=retroSinglePiece(t,g=>{rxSetOrder(g,c.hetero,migrated.atom.id,0);g.addBond(c.c,migrated.atom.id,1);rxSetOrder(g,c.c,c.o,0);rxSetOrder(g,c.c,c.hetero,2);g.addBond(c.hetero,c.o,1);});
+  return piece?[retroSpec([{smiles:piece.smiles,role:'reactant'}],[],{solvents:['none'],additives:['h2so4'],temperature:110})]:[];
+ }},
  // Ester/lactone oxygen removal reconnects the two carbon fragments as the
  // ketone precursor. The forward verifier enforces migratory aptitude, so a
  // shape match cannot promote the wrong regioisomer of an unsymmetrical ester.
@@ -204,3 +222,4 @@ RETRO_TRANSFORMS.push(
   return retro9Deoxygenation(t,[{smiles:'Cl',role:'reagent',label:'Concentrated hydrochloric acid'}],{solvents:['water'],additives:['znhg'],temperature:100});
  }}
 );
+
