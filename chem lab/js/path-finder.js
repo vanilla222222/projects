@@ -235,6 +235,19 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
     job.route = job.routes[0] || [];
   };
   const finish = (reason) => { job.termination = reason; job.status = job.routes.length ? 'found' : reason === 'exhausted' ? 'exhausted' : 'budget'; rankRoutes(); };
+  // Expanded structures are reused by multiple chains. These assessments depend
+  // only on the candidate, so repeat them once per candidate rather than once
+  // per chain; per-job weak caches cannot leak results between planner settings.
+  const assessmentCache = new WeakMap(), preservationCache = new WeakMap();
+  const candidateAssessment = (candidate) => {
+    if (typeof routeStepAssessment !== 'function') return null;
+    if (!assessmentCache.has(candidate)) assessmentCache.set(candidate, routeStepAssessment(candidate));
+    return assessmentCache.get(candidate);
+  };
+  const candidatePreservationConflict = (candidate) => {
+    if (!preservationCache.has(candidate)) preservationCache.set(candidate, pathFinderProtectionConflict(candidate));
+    return preservationCache.get(candidate);
+  };
   const attach = (node, candidates) => {
     if (!candidates.length) diagnostics.noDisconnections++;
     // Discovery order matters under branch/route limits. Prefer a disconnection
@@ -252,8 +265,8 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
     for (const item of ordered.slice(0, opts.maxBranch)) {
       const candidate = item.candidate;
       diagnostics.candidates++;
-      if (typeof routeStepAssessment === 'function') {
-        const assessment = routeStepAssessment(candidate);
+      const assessment = candidateAssessment(candidate);
+      if (assessment) {
         if (assessment.blockers.length) {
           diagnostics.compatibility++;
           assessment.blockers.forEach(b => {
@@ -270,7 +283,7 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
         continue;
       }
       if (candidate.stereo === 'mismatch' || candidate.stereo === 'racemic') { diagnostics.stereo++; continue; }
-      const preservationConflict = candidate.pgSteps ? null : pathFinderProtectionConflict(candidate);
+      const preservationConflict = candidate.pgSteps ? null : candidatePreservationConflict(candidate);
       if (preservationConflict) {
         diagnostics.protection++;
         if (diagnostics.protectionMessages.length < 4 && !diagnostics.protectionMessages.includes(preservationConflict)) diagnostics.protectionMessages.push(preservationConflict);
@@ -310,8 +323,8 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
         const links = candidate.pgSteps ? pathFinderProtectionLinks(candidate, carried, node)
           : [{ candidate, precursor: i, from: carried.smiles, to: node.smiles, fromKey: carried.key, toKey: node.key }];
         if (!links) { diagnostics.protection++; continue; }
-        if (typeof routeStepAssessment === 'function' && links.some(link => routeStepAssessment(link.candidate).blockers.length)) { diagnostics.compatibility++; continue; }
-        if (links.some((link) => pathFinderProtectionConflict(link.candidate))) { diagnostics.protection++; continue; }
+        if (links.some((link) => { const report = candidateAssessment(link.candidate); return report && report.blockers.length; })) { diagnostics.compatibility++; continue; }
+        if (links.some((link) => candidatePreservationConflict(link.candidate))) { diagnostics.protection++; continue; }
         if (links.some((link) => ruleBlocked(link.candidate))) { diagnostics.rules++; continue; }
         if (links.some((link) => reagentBlocked(link.candidate))) { diagnostics.reagents++; continue; }
         if (links.some((link) => link.candidate.precursors.some((p, j) => j !== link.precursor && !stocked(p.isomericSmiles || p.smiles)))) { diagnostics.inventory++; continue; }
