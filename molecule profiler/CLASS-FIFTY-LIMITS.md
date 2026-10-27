@@ -10,11 +10,17 @@ These are genuine families, but the family is smaller than fifty once collisions
 
 | class | rows | why it stops |
 |---|---|---|
+| beta-Carboline | 33 | 101 skeleton hits library-wide, of which 83 are ring-fused onto the core and so unreachable by substitution; 16 sourced anchors across three oxidation states attested 14 site-value pairs, of which 15 of 47 candidates collided |
 | Penicillin | 18 | family is 54 library-wide; the remaining variants collide on name or on stereo-stripped structure |
 | Sulfonylurea | 14 | 20 combinations are attested at both sites by sourced anchors, of which 8 collide |
+| Thiazolidinedione | 2 | two strict anchors, whose substituent arms are entire library rows, so every generable candidate rebuilds an anchor |
 | Benzodifuran | 12 | family is 12 library-wide |
 | Bisphosphonate | 8 | family is 8 library-wide |
 | Oxicam | 8 | family is 8 library-wide |
+
+Thiazolidinedione is the opposite case to Bisphosphonate: the family is not too small, the proof is. Eight library rows carry a saturated C5 on the 2,4-dione core, three of them externally sourced, but one of those three is stored as its 4-hydroxy-2-oxo enol tautomer and so fails canonical identity against the name it is filed under, leaving two anchors. Both anchors' C5 arms are indivisible whole fragments rather than decomposable substituents, so the attested slot table has exactly two values and both candidates it generates reconstruct the anchors they came from. The N3 site was refused outright at zero anchors: the only N3-substituted sourced rows sit on the 2-thioxo rhodanine core, and moving a substituent from one core to another is the cross-site reuse an earlier audit of nine Beta blocker rows recorded as a defect. The honest growth path for this class is not derivation but reclassification of the real thiazolidinediones already held under catch-all provenance classes, which would take the class to five and requires the identity-correction overlay rather than an edit to the library.
+
+The enol-tautomer storage form is worth recording beyond this one class. A strict SMARTS census of a carbonyl-bearing core silently misses rows stored as the corresponding enol or iminol, so a family can measure smaller than it is for reasons that have nothing to do with the family. Censuses behind the numbers above were run with tautomer-tolerant queries for that reason.
 
 Bisphosphonate is worth singling out. An earlier survey ranked it fourth of forty-four candidate classes at a score of 7.00, and that score was read as a queue position. It measured anchor availability, not family size, and the census found the family has eight members in total. A class cannot be grown past the size of its own family, so the survey was answering a different question than the one it was being used to answer.
 
