@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "sourceSha256": {
-    "data/library.js": "fe8dca2d24c80295077e179905541d1d49b3acff02de2a59dc7767d1d5e55e7f",
+    "data/library.js": "2d5e25354f6e0de14c2eeff61cf59c67de8d6719289debf0b69229c3f7771870",
     "data/library-names.js": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
     "data/targets.js": "c994111b869a78b68fe873c92f218ae1791b9b3e3fbf390f0b3a837221b4aacd",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
@@ -12,7 +12,7 @@
     "tools/library-expansion-50.py": "1c7e05d9267af49bcf25ff3fc90f114b394a295ab3dee561954252e26bc0d60a",
     "validation/library-50-import.json": "89abe62271fff06dd9c8591ea3823ae56cd62a7396eb1412bd93834a2c1b10e0"
   },
-  "dataSha256": "eda443e9200968d7248ee284626b12a83d4da8de3f9065abf5c570f733661dbc",
+  "dataSha256": "6919e430bde08ccbd0c1f1df162a09070f72c2c8b2d32d8a8c5df4758f82e4ed",
   "interpretation": "Overlapping structural motifs in stored graphs; not evidence of pharmacological function, exhaustive family membership or independently verified molecular identities.",
   "families": [
     {
@@ -20655,9 +20655,18 @@
         "7-(ethylamino)-5,6,7,8-tetrahydronaphthalen-2-ol",
         "7-methoxy-1-methyl-N,N-dipropyl-1,2,3,4-tetrahydronaphthalen-2-amine",
         "8-methoxy-N,N-dipropyl-1,2,3,4-tetrahydronaphthalen-2-amine",
-        "6-(dimethylamino)-5-methyl-5,6,7,8-tetrahydronaphthalene-2,3-diol"
+        "6-(dimethylamino)-5-methyl-5,6,7,8-tetrahydronaphthalene-2,3-diol",
+        "17beta-methoxyestra-1,3,5(10)-trien-3-ol",
+        "3-propoxyestra-1,3,5(10)-trien-17-one",
+        "3-cyclopentyloxyestra-1,3,5(10)-trien-17-one",
+        "3-propoxyestra-1,3,5(10)-trien-17beta-ol",
+        "17alpha-ethynyl-2-methoxyestra-1,3,5(10)-triene-3,17beta-diol",
+        "17alpha-ethynylestra-1,3,5(10)-triene-3,16alpha,17beta-triol",
+        "17alpha-ethynyl-3-propoxyestra-1,3,5(10)-trien-17beta-ol",
+        "17beta-methoxyestra-1,3,5(10)-triene-2,3-diol",
+        "2,17beta-dimethoxyestra-1,3,5(10)-trien-3-ol"
       ],
-      "count": 442
+      "count": 451
     },
     {
       "tag": "Family motif: Diphenylmethane scaffolds",
@@ -24224,9 +24233,10 @@
         "4-[2-(butylamino)-1-hydroxyethyl]benzene-1,2-diol",
         "4-{1-hydroxy-2-[(1-hydroxy-2-methylpropan-2-yl)amino]ethyl}benzene-1,2-diol",
         "4-{1-hydroxy-2-[2-(2-methoxyphenoxy)ethylamino]ethyl}benzene-1,2-diol",
-        "4-(1-hydroxy-2-{[1-(4-hydroxyphenyl)propan-2-yl]amino}ethyl)benzene-1,2-diol"
+        "4-(1-hydroxy-2-{[1-(4-hydroxyphenyl)propan-2-yl]amino}ethyl)benzene-1,2-diol",
+        "17beta-methoxyestra-1,3,5(10)-triene-2,3-diol"
       ],
-      "count": 688
+      "count": 689
     },
     {
       "tag": "Family motif: Resorcinols",
@@ -34223,9 +34233,53 @@
         "17-ethynyl-4-methoxyestra-1,3,5(10)-triene-3,17-diol",
         "4-methylestra-1,3,5(10)-triene-3,17-diol",
         "17-methylestra-1,3,5(10)-triene-2,3,17-triol",
-        "17-ethynylestra-1,3,5(10)-triene-2,3,4,17-tetraol"
+        "17-ethynylestra-1,3,5(10)-triene-2,3,4,17-tetraol",
+        "5alpha-androstan-11-one",
+        "2alpha-methyl-5alpha-androstane",
+        "5alpha-androstan-3-one",
+        "5alpha-androstan-3beta-ol",
+        "17beta-methoxyestra-1,3,5(10)-trien-3-ol",
+        "5alpha-androstan-17-one",
+        "5alpha-androstan-17beta-ol",
+        "17alpha-methyl-5alpha-androstan-17beta-ol",
+        "5alpha-pregnan-20-one",
+        "17alpha,21-dihydroxy-5alpha-pregnan-20-one",
+        "6alpha-(trifluoromethyl)androst-4-ene-3,17-dione",
+        "2alpha-methyl-5alpha-androstan-11-one",
+        "5alpha-androstane-3,11-dione",
+        "4-chloroandrost-4-ene-3,17-dione",
+        "2alpha-methyl-5alpha-androstan-3-one",
+        "3beta-hydroxy-5alpha-androstan-11-one",
+        "3-propoxyestra-1,3,5(10)-trien-17-one",
+        "2alpha-methyl-5alpha-androstan-3beta-ol",
+        "3-cyclopentyloxyestra-1,3,5(10)-trien-17-one",
+        "5alpha-androstane-11,17-dione",
+        "2alpha-methyl-5alpha-androstan-17-one",
+        "17beta-hydroxy-6alpha-(trifluoromethyl)androst-4-en-3-one",
+        "4,17beta-dihydroxyandrost-4-en-3-one",
+        "3-propoxyestra-1,3,5(10)-trien-17beta-ol",
+        "17beta-hydroxy-5alpha-androstan-11-one",
+        "16alpha,17beta-dihydroxyandrost-4-en-3-one",
+        "2alpha-methyl-5alpha-androstan-17beta-ol",
+        "17beta-hydroxy-17alpha-methyl-5alpha-androstan-11-one",
+        "17beta-hydroxy-17alpha-methyl-6alpha-(trifluoromethyl)androst-4-en-3-one",
+        "2alpha,17alpha-dimethyl-5alpha-androstan-17beta-ol",
+        "17alpha-ethynyl-2-methoxyestra-1,3,5(10)-triene-3,17beta-diol",
+        "17alpha-ethynylestra-1,3,5(10)-triene-3,16alpha,17beta-triol",
+        "17alpha-methyl-5alpha-androstane-3beta,17beta-diol",
+        "17beta,19-dihydroxy-17alpha-methylandrost-4-en-3-one",
+        "16alpha,17beta-dihydroxy-17alpha-methylandrost-4-en-3-one",
+        "17alpha-ethynyl-3-propoxyestra-1,3,5(10)-trien-17beta-ol",
+        "5alpha-pregnan-11-one",
+        "7alpha,17beta-dihydroxy-17alpha-methylandrost-4-en-3-one",
+        "2alpha-methyl-5alpha-pregnane",
+        "17beta-methoxyestra-1,3,5(10)-triene-2,3-diol",
+        "5alpha-pregnan-3-one",
+        "11beta,17beta-dihydroxy-17alpha-methylandrost-4-en-3-one",
+        "2,17beta-dimethoxyestra-1,3,5(10)-trien-3-ol",
+        "5alpha-pregnan-3beta-ol"
       ],
-      "count": 975
+      "count": 1019
     },
     {
       "tag": "Family motif: Long-chain carboxylic acids (C8+ path)",
