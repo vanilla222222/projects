@@ -203,8 +203,14 @@
       "id": "cholinergic-ester-twenty",
       "label": "Cholinergic ester class measured at a ceiling of twenty references",
       "date": "2026-10-27",
+      "commit": "d95dc4cb63a0fa0326b56995f7881b29f4de7658"
+    },
+    {
+      "id": "retinoid-seven",
+      "label": "Retinoid class measured at a ceiling of seven references",
+      "date": "2026-10-27",
       "workingTree": true,
-      "baseCommit": "dabbb9ac4ff2bb8b6186bbf4841779d4d7495c23"
+      "baseCommit": "bb96690a6522c8caca317599b7974e349048527b"
     }
   ]
 }

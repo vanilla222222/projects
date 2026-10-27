@@ -22045,7 +22045,8 @@ const LIBRARY = [
   { name: '2-(piperidin-1-yl)ethyl 2-phenylbutanoate', cls: 'Cholinergic ester', formula: 'C17H25NO2', smiles: 'CCC(C(=O)OCCN1CCCCC1)c1ccccc1' },
   { name: '2-(morpholin-4-yl)ethyl acetate', cls: 'Cholinergic ester', formula: 'C8H15NO3', smiles: 'CC(=O)OCCN1CCOCC1' },
   { name: '2-(morpholin-4-yl)ethyl 2-phenyl-2-(piperidin-1-yl)acetate', cls: 'Cholinergic ester', formula: 'C19H28N2O3', smiles: 'O=C(OCCN1CCOCC1)C(c1ccccc1)N1CCCCC1' },
-  { name: '2-(morpholin-4-yl)ethyl 2-phenylbutanoate', cls: 'Cholinergic ester', formula: 'C16H23NO3', smiles: 'CCC(C(=O)OCCN1CCOCC1)c1ccccc1' }
+  { name: '2-(morpholin-4-yl)ethyl 2-phenylbutanoate', cls: 'Cholinergic ester', formula: 'C16H23NO3', smiles: 'CCC(C(=O)OCCN1CCOCC1)c1ccccc1' },
+  { name: 'Acitretinal', cls: 'Retinoid', formula: 'C21H26O2', smiles: 'COc1cc(C)c(/C=C/C(C)=C/C=C/C(C)=C/C=O)c(C)c1C' },
 ];
 
 if (typeof module !== 'undefined' && module.exports) {
