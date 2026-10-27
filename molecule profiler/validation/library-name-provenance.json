@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
  "rdkitVersion": "2026.09.1",
- "librarySha256": "2d5e25354f6e0de14c2eeff61cf59c67de8d6719289debf0b69229c3f7771870",
+ "librarySha256": "e4396b74295f1d68cf75f71bd474b694f6b97ae77457ffce55d71fdf6a74fe80",
  "toolSha256": "5474a832b1cd427e4246f1c4b12ec2c47a2b3a12586201f388f5cf52f1bfcd16",
  "dataSha256": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
  "protocol": "Prefer exact isomeric graph matches to PubChem titles/IUPAC names or ChEMBL preferred names. Otherwise require the full InChIKey plus completed RDKit tautomer-family agreement, no neutralization and tetrahedral stereo retained; explicitly label these as PubChem standardized-form names, not exact stored-graph names. Never change reference keys or graphs.",
@@ -14516,7 +14516,9 @@
    "5alpha-pregnan-3-one",
    "11beta,17beta-dihydroxy-17alpha-methylandrost-4-en-3-one",
    "2,17beta-dimethoxyestra-1,3,5(10)-trien-3-ol",
-   "5alpha-pregnan-3beta-ol"
+   "5alpha-pregnan-3beta-ol",
+   "N-(4-methoxyphenyl)formamide",
+   "N-(4-hydroxyphenyl)formamide"
   ],
   "refreshToolSha256": "579b60eba814e6389261f3a103ce0b0fa46cc584d116af0c2b94c4aabafcf4e3"
  }

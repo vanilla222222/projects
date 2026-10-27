@@ -21947,6 +21947,8 @@ const LIBRARY = [
   { name: '11beta,17beta-dihydroxy-17alpha-methylandrost-4-en-3-one', cls: 'Steroid', formula: 'C20H30O3', smiles: 'C[C@]12CCC(=O)C=C1CC[C@@H]1[C@@H]2[C@@H](O)C[C@@]2(C)[C@H]1CC[C@]2(C)O' },
   { name: '2,17beta-dimethoxyestra-1,3,5(10)-trien-3-ol', cls: 'Steroid', formula: 'C20H28O3', smiles: 'COc1cc2c(cc1O)CC[C@@H]1[C@@H]2CC[C@]2(C)[C@@H](OC)CC[C@@H]12' },
   { name: '5alpha-pregnan-3beta-ol', cls: 'Steroid', formula: 'C21H36O', smiles: 'CC[C@H]1CC[C@H]2[C@@H]3CC[C@H]4C[C@@H](O)CC[C@]4(C)[C@H]3CC[C@]12C' },
+  { name: 'N-(4-methoxyphenyl)formamide', cls: 'Aniline analgesic', formula: 'C8H9NO2', smiles: 'COc1ccc(NC=O)cc1' },
+  { name: 'N-(4-hydroxyphenyl)formamide', cls: 'Aniline analgesic', formula: 'C7H7NO2', smiles: 'O=CNc1ccc(O)cc1' },
 ];
 
 if (typeof module !== 'undefined' && module.exports) {
