@@ -179,8 +179,14 @@
    "id": "aniline-analgesic-ceiling",
    "label": "Aniline analgesic and methylenedioxy ceilings measured",
    "date": "2026-10-27",
+   "commit": "a59a1625734724aeb54ab2fdf4d7f61b39b92f66"
+  },
+  {
+   "id": "nitroarene-fifty",
+   "label": "Nitroarene class brought to fifty references",
+   "date": "2026-10-27",
    "workingTree": true,
-   "baseCommit": "46bfd66304c2f07e3e01d3eb41e7353bc97c55a9"
+   "baseCommit": "a59a1625734724aeb54ab2fdf4d7f61b39b92f66"
   }
  ]
 }
