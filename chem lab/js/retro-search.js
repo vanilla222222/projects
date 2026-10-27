@@ -60,7 +60,15 @@ function rsearchMolecule(job, smiles, depth, path) {
   } catch (error) {
     heavy = 0;
   }
-  node = { smiles, heavy, skeleton, depth, path, stock: depth > 0 ? rsearchStock(smiles, job.options.stockMaxTier) : null, ands: [], parents: [], state: 'open', solved: false, dead: false, order: job.nodes.size };
+  let stock = null;
+  if (depth > 0) {
+    try {
+      stock = typeof job.options.stockOverride === 'function'
+        ? job.options.stockOverride(smiles, rsearchStock(smiles, job.options.stockMaxTier))
+        : rsearchStock(smiles, job.options.stockMaxTier);
+    } catch (error) { stock = null; }
+  }
+  node = { smiles, heavy, skeleton, depth, path, stock, ands: [], parents: [], state: 'open', solved: false, dead: false, order: job.nodes.size };
   job.nodes.set(smiles, node);
   if (!node.stock) {
     job.frontier.push(node);
@@ -71,7 +79,11 @@ function rsearchMolecule(job, smiles, depth, path) {
 function rsearchAttach(job, node, candidates) {
   const path = new Set(node.path);
   path.add(node.smiles);
-  candidates.filter((c) => c.precursors.every((p) => !path.has(p.smiles))).slice(0, job.options.maxBranch).forEach((candidate) => {
+  const accept = typeof job.options.candidateFilter === 'function' ? job.options.candidateFilter : () => true;
+  candidates.filter((c) => {
+    if (!c.precursors.every((p) => !path.has(p.smiles))) return false;
+    try { return accept(c, node) !== false; } catch (error) { return false; }
+  }).slice(0, job.options.maxBranch).forEach((candidate) => {
     const and = { candidate, parent: node, children: [], solved: false, dead: false };
     and.children = candidate.precursors.map((p) => {
       const child = rsearchMolecule(job, p.smiles, node.depth + 1, path);
@@ -176,6 +188,7 @@ function rsearchAdvance(job, until) {
     return;
   }
   const result = cur.next.value || { candidates: [], truncated: true };
+  job.truncated = job.truncated || !!result.truncated;
   if (!result.truncated && !result.reason) {
     rsearchCacheSet(cur.node.smiles, { candidates: result.candidates });
   }
@@ -303,7 +316,7 @@ function rsearchCreate(targetSmiles, options) {
   const opts = Object.assign({}, RSEARCH_LIMITS, options || {});
   opts.maxDepth = Math.max(1, Math.min(8, opts.maxDepth));
   const smiles = retroCanonicalSmiles(targetSmiles) || String(targetSmiles || '');
-  const job = { target: smiles, options: opts, status: 'running', routes: [], nodes: new Map(), frontier: [], current: null, expanded: 0, cacheHits: 0, elapsedMs: 0, solvedAt: null, root: null };
+  const job = { target: smiles, options: opts, status: 'running', routes: [], nodes: new Map(), frontier: [], current: null, expanded: 0, cacheHits: 0, elapsedMs: 0, solvedAt: null, root: null, truncated: false };
   job.root = rsearchMolecule(job, smiles, 0, new Set());
   if (!job.root.smiles || !job.root.heavy) {
     job.status = 'done';
