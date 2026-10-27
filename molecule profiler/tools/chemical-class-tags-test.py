@@ -15,6 +15,12 @@ def load(name,path):
 tax=load('structural_taxonomy','tools/library-taxonomy.py')
 builder=load('structural_tag_builder','tools/build-library-tags.py')
 CASES={
+ 'Quinuclidine scaffolds': {
+  'yes':['N12CCC(CC1)CC2','[NH+]12CCC(CC1)CC2','C[N+]12CCC(CC1)CC2','CC(=O)[N+]12CCC(CC1)CC2','O[C@H]1CN2CCC1CC2','O[C@@H]1CN2CCC1CC2'],
+  'no':['CN1C2CCC1CC2','N1CCCC1','N1CCCCC1','N12CCCCC1CC2','O=C1CN2CCC1CC2','C1CCNCC1']},
+ '1,4-Dihydropyridine scaffolds': {
+  'yes':['N1C=CCC=C1','CN1C=CCC=C1','[NH2+]1C=CCC=C1','C[N+]1(C)C=CCC=C1','CC(=O)N1C=CCC=C1','N1C(C)=C[C@H](C)C=C1','N1C(C)=C[C@@H](C)C=C1'],
+  'no':['n1ccccc1','N1CCCCC1','N1CC=CC=C1','N1C=CC(=O)C=C1','N1C=CCCC=C1','N1C=CC=C1']},
  'Diphenylmethane scaffolds': {
   'yes':['c1ccccc1Cc1ccccc1','CN(C)C(c1ccccc1)c1ccccc1','Cl[C@H](c1ccccc1)c1ccc(F)cc1','C[N+](C)(C)C(c1ccccc1)c1ccccc1'],
   'no':['c1ccccc1-c1ccccc1','c1ccccc1CCc1ccccc1','O=C(c1ccccc1)c1ccccc1']},

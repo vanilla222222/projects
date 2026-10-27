@@ -192,6 +192,13 @@
       "label": "Experimental hydration properties · batch 003",
       "date": "2026-10-27",
       "commit": "84d740543c451649a1fd3a78e3e32828270a6a96"
+    },
+    {
+      "id": "property-evidence-006",
+      "label": "Experimental hydration properties · batch 004 and assay context",
+      "date": "2026-10-27",
+      "workingTree": true,
+      "baseCommit": "b319d4894a1a7c9c3cfd957deccc65b52ee9c4bd"
     }
   ]
 }
