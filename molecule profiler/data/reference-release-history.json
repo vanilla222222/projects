@@ -191,8 +191,7 @@
       "id": "property-evidence-005",
       "label": "Experimental hydration properties · batch 003",
       "date": "2026-10-27",
-      "workingTree": true,
-      "baseCommit": "85a8325282697a17800d50cc5b5d8a2d71b9aa77"
+      "commit": "84d740543c451649a1fd3a78e3e32828270a6a96"
     }
   ]
 }
