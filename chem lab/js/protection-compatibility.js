@@ -178,7 +178,7 @@ function protectionAssess(value,compounds,conditions) {
   return {version:1,status,sites,threats,references:[...new Map(sites.flatMap(s=>s.references).map(r=>[r.url,r])).values()],scope:'Group-level structural compatibility only. Unknown regimes are not compatible by default; full-substrate selectivity and feasibility require separate checks.'};
 }
 function protectionOrthogonality(value,removalId) {
-  const group=PROTECTION_GROUPS.find(g=>g.id===removalId||g.label.toLowerCase()===String(id).toLowerCase());
+  const group=PROTECTION_GROUPS.find(g=>g.id===removalId||g.label.toLowerCase()===String(removalId).toLowerCase());
   if(!group)return {status:'unknown',sites:[],reason:'Unknown removal group.'};
   const report=protectionAssess(value,[group.removal]);
   report.removing=group.id;report.collateral=report.sites.filter(s=>s.id!==group.id&&s.status!=='compatible');
