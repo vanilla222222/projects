@@ -4,15 +4,15 @@
 const RETRIEVAL_BENCHMARK = {
   "composition": {
     "version": "composed-reference-v1",
-    "key": "cba4bf0b41c9945f",
-    "library": 22051,
+    "key": "6ed2b804703bf260",
+    "library": 22052,
     "targets": 155,
     "ligandSlots": 5480
   },
   "protocol": "Name holdout across ranking-eligible targets; lookup-only panels excluded; aliases can remain. Nearest similarity, mean of top three, then original target order. All organisms and target families. Not independent scaffold or external validation.",
   "lookupOnlyTargets": 5,
   "sourceSha256": {
-    "data/library.js": "e03c32d7e9819d7143c3924e7bcfb2624c649d1431fc54cf4c70485f8a6e95a5",
+    "data/library.js": "004a76ebea5634e946dd3860a966f362949e467fbe792ba58561d28a099873e6",
     "data/targets.js": "c994111b869a78b68fe873c92f218ae1791b9b3e3fbf390f0b3a837221b4aacd",
     "data/curated-references.js": "63309901d3b87ecb64b082332a032e71acd9218eb98a748d6e94ff50a5017953",
     "js/curated-references.js": "240d0bd4f4cf076c70a1891578a48f3fb19e421bb685a5c6c2bd3af011c9c24e",
@@ -26,7 +26,7 @@ const RETRIEVAL_BENCHMARK = {
     "tools/retrieval-benchmark.js": "734411ae4c6631febaa04f8b705ce15bcabfe86dc70ee7aa7ef36fcc3ff08f6e"
   },
   "generated": "2026-10-27",
-  "library": 22051,
+  "library": 22052,
   "method": "ECFP4",
   "metric": "Tanimoto",
   "targets": 150,

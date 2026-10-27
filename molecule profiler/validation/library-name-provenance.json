@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
  "rdkitVersion": "2026.09.1",
- "librarySha256": "e03c32d7e9819d7143c3924e7bcfb2624c649d1431fc54cf4c70485f8a6e95a5",
+ "librarySha256": "004a76ebea5634e946dd3860a966f362949e467fbe792ba58561d28a099873e6",
  "toolSha256": "5474a832b1cd427e4246f1c4b12ec2c47a2b3a12586201f388f5cf52f1bfcd16",
  "dataSha256": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
  "protocol": "Prefer exact isomeric graph matches to PubChem titles/IUPAC names or ChEMBL preferred names. Otherwise require the full InChIKey plus completed RDKit tautomer-family agreement, no neutralization and tetrahedral stereo retained; explicitly label these as PubChem standardized-form names, not exact stored-graph names. Never change reference keys or graphs.",
@@ -14621,7 +14621,8 @@
    "2'-deoxy-5-methylcytidine",
    "2'-deoxyuridine",
    "5-hydroxymethylcytidine",
-   "4-[3-(difluoromethyl)-5-(4-fluorophenyl)pyrazol-1-yl]benzenesulfonamide"
+   "4-[3-(difluoromethyl)-5-(4-fluorophenyl)pyrazol-1-yl]benzenesulfonamide",
+   "4-[(4-chlorophenyl)methyl]phthalazin-1(2H)-one"
   ],
   "refreshToolSha256": "579b60eba814e6389261f3a103ce0b0fa46cc584d116af0c2b94c4aabafcf4e3"
  }
