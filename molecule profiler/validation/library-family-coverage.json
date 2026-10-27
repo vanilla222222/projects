@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "sourceSha256": {
-    "data/library.js": "6a053307ef10f288c539647fd95073c96623ff36d0b16bb1661a2bbde7c5bead",
+    "data/library.js": "9f5e7d54d57160130800bd3106798da8bc00a383820ed338b06ee2954b7f1e3e",
     "data/library-names.js": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
     "data/targets.js": "c994111b869a78b68fe873c92f218ae1791b9b3e3fbf390f0b3a837221b4aacd",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
@@ -12,7 +12,7 @@
     "tools/library-expansion-50.py": "1c7e05d9267af49bcf25ff3fc90f114b394a295ab3dee561954252e26bc0d60a",
     "validation/library-50-import.json": "89abe62271fff06dd9c8591ea3823ae56cd62a7396eb1412bd93834a2c1b10e0"
   },
-  "dataSha256": "4fe8b5fd8ccc34c477fb9969af2309c600cc58a4a1d8ad95a72b57d71189e2b8",
+  "dataSha256": "bb6179de25e1db247d8c5cc03b7761b893c3c2cd8d3d09e57c21ddbbec720c03",
   "interpretation": "Overlapping structural motifs in stored graphs; not evidence of pharmacological function, exhaustive family membership or independently verified molecular identities.",
   "families": [
     {
@@ -3071,9 +3071,23 @@
         "1,8beta-dimethyl-6-(prop-2-en-1-yl)ergoline",
         "9,10-didehydro-8beta-methyl-6-(prop-2-en-1-yl)ergoline",
         "9,10-didehydro-1,8beta-dimethyl-6-propylergoline",
-        "8beta-ethyl-6-(prop-2-en-1-yl)ergoline"
+        "8beta-ethyl-6-(prop-2-en-1-yl)ergoline",
+        "7-hydroxy-4,9-dihydro-3H-pyrido[3,4-b]indole",
+        "7-methoxy-4,9-dihydro-3H-pyrido[3,4-b]indole",
+        "1-methyl-4,9-dihydro-3H-pyrido[3,4-b]indole",
+        "6-chloro-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "6-hydroxy-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-chloro-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-hydroxy-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "6-chloro-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "6-hydroxy-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-chloro-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-hydroxy-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole"
       ],
-      "count": 579
+      "count": 593
     },
     {
       "tag": "Family motif: Cathinones",
@@ -4300,9 +4314,41 @@
         "1,8beta-dimethyl-6-(prop-2-en-1-yl)ergoline",
         "9,10-didehydro-8beta-methyl-6-(prop-2-en-1-yl)ergoline",
         "9,10-didehydro-1,8beta-dimethyl-6-propylergoline",
-        "8beta-ethyl-6-(prop-2-en-1-yl)ergoline"
+        "8beta-ethyl-6-(prop-2-en-1-yl)ergoline",
+        "8-hydroxy-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-8-hydroxy-9H-pyrido[3,4-b]indole",
+        "3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole",
+        "8-hydroxy-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole",
+        "8-hydroxy-1-methyl-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-1-methyl-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-8-hydroxy-1-methyl-9H-pyrido[3,4-b]indole",
+        "3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-1-methyl-9H-pyrido[3,4-b]indole",
+        "8-hydroxy-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-1-methyl-9H-pyrido[3,4-b]indole",
+        "1-acetyl-9H-pyrido[3,4-b]indole",
+        "1-acetyl-8-hydroxy-9H-pyrido[3,4-b]indole",
+        "1-acetyl-3-carbamoyl-9H-pyrido[3,4-b]indole",
+        "8-hydroxy-1-(2-imino-2,3-dihydropyrimidin-4-yl)-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-1-(2-imino-2,3-dihydropyrimidin-4-yl)-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-8-hydroxy-1-(2-imino-2,3-dihydropyrimidin-4-yl)-9H-pyrido[3,4-b]indole",
+        "1-(2-imino-2,3-dihydropyrimidin-4-yl)-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole",
+        "8-hydroxy-1-(2-imino-2,3-dihydropyrimidin-4-yl)-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole",
+        "7-hydroxy-4,9-dihydro-3H-pyrido[3,4-b]indole",
+        "7-methoxy-4,9-dihydro-3H-pyrido[3,4-b]indole",
+        "1-methyl-4,9-dihydro-3H-pyrido[3,4-b]indole",
+        "6-chloro-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "6-hydroxy-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-chloro-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-hydroxy-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "6-chloro-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "6-hydroxy-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-chloro-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-hydroxy-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole"
       ],
-      "count": 864
+      "count": 896
     },
     {
       "tag": "Family motif: Pyridines",
@@ -5623,9 +5669,27 @@
         "3-methyl-2-(propan-2-yl)imidazo[1,2-a]pyridine",
         "2-phenylimidazo[1,2-a]pyridine",
         "3,6-diphenylimidazo[1,2-a]pyridine",
-        "3-ethyl-2-methyl-6-phenylimidazo[1,2-a]pyridine"
+        "3-ethyl-2-methyl-6-phenylimidazo[1,2-a]pyridine",
+        "8-hydroxy-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-8-hydroxy-9H-pyrido[3,4-b]indole",
+        "3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole",
+        "8-hydroxy-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole",
+        "8-hydroxy-1-methyl-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-1-methyl-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-8-hydroxy-1-methyl-9H-pyrido[3,4-b]indole",
+        "3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-1-methyl-9H-pyrido[3,4-b]indole",
+        "8-hydroxy-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-1-methyl-9H-pyrido[3,4-b]indole",
+        "1-acetyl-9H-pyrido[3,4-b]indole",
+        "1-acetyl-8-hydroxy-9H-pyrido[3,4-b]indole",
+        "1-acetyl-3-carbamoyl-9H-pyrido[3,4-b]indole",
+        "8-hydroxy-1-(2-imino-2,3-dihydropyrimidin-4-yl)-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-1-(2-imino-2,3-dihydropyrimidin-4-yl)-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-8-hydroxy-1-(2-imino-2,3-dihydropyrimidin-4-yl)-9H-pyrido[3,4-b]indole",
+        "1-(2-imino-2,3-dihydropyrimidin-4-yl)-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole",
+        "8-hydroxy-1-(2-imino-2,3-dihydropyrimidin-4-yl)-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole"
       ],
-      "count": 1317
+      "count": 1335
     },
     {
       "tag": "Family motif: Pyrroles",
@@ -6652,9 +6716,41 @@
         "1,8beta-dimethyl-6-(prop-2-en-1-yl)ergoline",
         "9,10-didehydro-8beta-methyl-6-(prop-2-en-1-yl)ergoline",
         "9,10-didehydro-1,8beta-dimethyl-6-propylergoline",
-        "8beta-ethyl-6-(prop-2-en-1-yl)ergoline"
+        "8beta-ethyl-6-(prop-2-en-1-yl)ergoline",
+        "8-hydroxy-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-8-hydroxy-9H-pyrido[3,4-b]indole",
+        "3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole",
+        "8-hydroxy-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole",
+        "8-hydroxy-1-methyl-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-1-methyl-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-8-hydroxy-1-methyl-9H-pyrido[3,4-b]indole",
+        "3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-1-methyl-9H-pyrido[3,4-b]indole",
+        "8-hydroxy-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-1-methyl-9H-pyrido[3,4-b]indole",
+        "1-acetyl-9H-pyrido[3,4-b]indole",
+        "1-acetyl-8-hydroxy-9H-pyrido[3,4-b]indole",
+        "1-acetyl-3-carbamoyl-9H-pyrido[3,4-b]indole",
+        "8-hydroxy-1-(2-imino-2,3-dihydropyrimidin-4-yl)-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-1-(2-imino-2,3-dihydropyrimidin-4-yl)-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-8-hydroxy-1-(2-imino-2,3-dihydropyrimidin-4-yl)-9H-pyrido[3,4-b]indole",
+        "1-(2-imino-2,3-dihydropyrimidin-4-yl)-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole",
+        "8-hydroxy-1-(2-imino-2,3-dihydropyrimidin-4-yl)-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole",
+        "7-hydroxy-4,9-dihydro-3H-pyrido[3,4-b]indole",
+        "7-methoxy-4,9-dihydro-3H-pyrido[3,4-b]indole",
+        "1-methyl-4,9-dihydro-3H-pyrido[3,4-b]indole",
+        "6-chloro-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "6-hydroxy-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-chloro-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-hydroxy-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "6-chloro-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "6-hydroxy-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-chloro-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-hydroxy-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole"
       ],
-      "count": 1023
+      "count": 1055
     },
     {
       "tag": "Family motif: Furans",
@@ -11390,9 +11486,14 @@
         "3-ethyl-1-hexyl-7-methylpurine-2,6-dione",
         "1,3-dimethyl-8-(piperazin-1-yl)-7-propylpurine-2,6-dione",
         "8-benzyl-7-(2-hydroxyethyl)-1,3-dimethylpurine-2,6-dione",
-        "8-bromo-7-(2-hydroxypropyl)-1,3-dimethylpurine-2,6-dione"
+        "8-bromo-7-(2-hydroxypropyl)-1,3-dimethylpurine-2,6-dione",
+        "8-hydroxy-1-(2-imino-2,3-dihydropyrimidin-4-yl)-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-1-(2-imino-2,3-dihydropyrimidin-4-yl)-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-8-hydroxy-1-(2-imino-2,3-dihydropyrimidin-4-yl)-9H-pyrido[3,4-b]indole",
+        "1-(2-imino-2,3-dihydropyrimidin-4-yl)-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole",
+        "8-hydroxy-1-(2-imino-2,3-dihydropyrimidin-4-yl)-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole"
       ],
-      "count": 1475
+      "count": 1480
     },
     {
       "tag": "Family motif: Pyrazines",
@@ -23322,9 +23423,20 @@
         "1,8beta-dimethyl-6-(prop-2-en-1-yl)ergoline",
         "9,10-didehydro-8beta-methyl-6-(prop-2-en-1-yl)ergoline",
         "9,10-didehydro-1,8beta-dimethyl-6-propylergoline",
-        "8beta-ethyl-6-(prop-2-en-1-yl)ergoline"
+        "8beta-ethyl-6-(prop-2-en-1-yl)ergoline",
+        "6-chloro-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "6-hydroxy-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-chloro-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-hydroxy-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "6-chloro-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "6-hydroxy-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-chloro-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-hydroxy-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole"
       ],
-      "count": 438
+      "count": 449
     },
     {
       "tag": "Family motif: Catechols",
@@ -28229,9 +28341,15 @@
         "Pentylpenicillin",
         "Pent-2-enylpenicillin",
         "(4-Hydroxybenzyl)penicillin",
-        "6-Benzamidopenicillanic acid"
+        "6-Benzamidopenicillanic acid",
+        "3-carboxy-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-chloro-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-hydroxy-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-chloro-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-hydroxy-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole"
       ],
-      "count": 1253
+      "count": 1259
     },
     {
       "tag": "Family motif: NBOMe phenethylamines",
@@ -35661,9 +35779,15 @@
         "8-chloro-1-cyclopropyl-6-fluoro-7-(4-methylpiperazin-1-yl)-4-oxoquinoline-3-carboxylic acid",
         "1-ethyl-6-fluoro-8-methoxy-7-(4-methylpiperazin-1-yl)-4-oxoquinoline-3-carboxylic acid",
         "EGLUMETAD",
-        "LENABASUM"
+        "LENABASUM",
+        "3-carboxy-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-chloro-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-hydroxy-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-chloro-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole",
+        "3-carboxy-6-hydroxy-1-methyl-2,3,4,9-tetrahydro-1H-pyrido[3,4-b]indole"
       ],
-      "count": 1783
+      "count": 1789
     },
     {
       "tag": "Family motif: Long-chain carboxamides (C8+ path)",
@@ -36812,9 +36936,22 @@
         "METHANANDAMIDE",
         "Heptylpenicillin",
         "(4-Hydroxybenzyl)penicillin",
-        "2-(Diethylamino)ethyl benzylpenicillinate"
+        "2-(Diethylamino)ethyl benzylpenicillinate",
+        "3-carbamoyl-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-8-hydroxy-9H-pyrido[3,4-b]indole",
+        "3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole",
+        "8-hydroxy-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-1-methyl-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-8-hydroxy-1-methyl-9H-pyrido[3,4-b]indole",
+        "3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-1-methyl-9H-pyrido[3,4-b]indole",
+        "8-hydroxy-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-1-methyl-9H-pyrido[3,4-b]indole",
+        "1-acetyl-3-carbamoyl-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-1-(2-imino-2,3-dihydropyrimidin-4-yl)-9H-pyrido[3,4-b]indole",
+        "3-carbamoyl-8-hydroxy-1-(2-imino-2,3-dihydropyrimidin-4-yl)-9H-pyrido[3,4-b]indole",
+        "1-(2-imino-2,3-dihydropyrimidin-4-yl)-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole",
+        "8-hydroxy-1-(2-imino-2,3-dihydropyrimidin-4-yl)-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole"
       ],
-      "count": 1145
+      "count": 1158
     },
     {
       "tag": "Family motif: N-acylethanolamines",
