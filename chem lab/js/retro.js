@@ -2144,6 +2144,7 @@ function* retroDisconnectSteps(graph, ids, options) {
       const candidate = retroCandidate(t, spec, verified);
       if (candidate) {
         out.candidates.push(candidate);
+        if (options && options.emitCandidates) yield { phase: 'candidate', candidate };
       }
     }
     if (planning && (!verified || verified.outcome.chemoselectivity)) {
@@ -2208,8 +2209,8 @@ function retroNode(smiles, depth) {
 function retroTree(smiles, depth, budget) {
   const tree = {
     maxDepth: Math.max(1, Math.min(RETRO_LIMITS.maxDepth, depth || RETRO_LIMITS.maxDepth)),
-    budgetMs: budget || RETRO_LIMITS.budgetMs,
-    root: retroNode(smiles, 0),
+    budgetMs: Math.max(1, Math.min(30000, budget || RETRO_LIMITS.budgetMs)),
+    root: retroNode(smiles, depth),
   };
   retroExpand(tree, tree.root);
   return tree;
