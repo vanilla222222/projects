@@ -22036,7 +22036,16 @@ const LIBRARY = [
   { name: '2-(1,3-benzodioxol-5-yl)-6-methoxy-1-benzofuran', cls: 'Benzofuran', formula: 'C16H12O4', smiles: 'COc1ccc2cc(-c3ccc4c(c3)OCO4)oc2c1' },
   { name: '2-(1,3-benzodioxol-5-yl)-7-methoxy-1-benzofuran', cls: 'Benzofuran', formula: 'C16H12O4', smiles: 'COc1cccc2cc(-c3ccc4c(c3)OCO4)oc12' },
   { name: '3-(4-hydroxybenzoyl)-4-methoxy-1-benzofuran', cls: 'Benzofuran', formula: 'C16H12O4', smiles: 'COc1cccc2occ(C(=O)c3ccc(O)cc3)c12' },
-  { name: '3-(4-hydroxybenzoyl)-6-methoxy-1-benzofuran', cls: 'Benzofuran', formula: 'C16H12O4', smiles: 'COc1ccc2c(C(=O)c3ccc(O)cc3)coc2c1' }
+  { name: '3-(4-hydroxybenzoyl)-6-methoxy-1-benzofuran', cls: 'Benzofuran', formula: 'C16H12O4', smiles: 'COc1ccc2c(C(=O)c3ccc(O)cc3)coc2c1' },
+  { name: '2-(diethylamino)ethyl acetate', cls: 'Cholinergic ester', formula: 'C8H17NO2', smiles: 'CCN(CC)CCOC(C)=O' },
+  { name: '2-(dimethylamino)ethyl acetate', cls: 'Cholinergic ester', formula: 'C6H13NO2', smiles: 'CC(=O)OCCN(C)C' },
+  { name: '2-(dimethylamino)ethyl 2-phenyl-2-(piperidin-1-yl)acetate', cls: 'Cholinergic ester', formula: 'C17H26N2O2', smiles: 'CN(C)CCOC(=O)C(c1ccccc1)N1CCCCC1' },
+  { name: '2-(dimethylamino)ethyl 2-phenylbutanoate', cls: 'Cholinergic ester', formula: 'C14H21NO2', smiles: 'CCC(C(=O)OCCN(C)C)c1ccccc1' },
+  { name: '2-(piperidin-1-yl)ethyl acetate', cls: 'Cholinergic ester', formula: 'C9H17NO2', smiles: 'CC(=O)OCCN1CCCCC1' },
+  { name: '2-(piperidin-1-yl)ethyl 2-phenylbutanoate', cls: 'Cholinergic ester', formula: 'C17H25NO2', smiles: 'CCC(C(=O)OCCN1CCCCC1)c1ccccc1' },
+  { name: '2-(morpholin-4-yl)ethyl acetate', cls: 'Cholinergic ester', formula: 'C8H15NO3', smiles: 'CC(=O)OCCN1CCOCC1' },
+  { name: '2-(morpholin-4-yl)ethyl 2-phenyl-2-(piperidin-1-yl)acetate', cls: 'Cholinergic ester', formula: 'C19H28N2O3', smiles: 'O=C(OCCN1CCOCC1)C(c1ccccc1)N1CCCCC1' },
+  { name: '2-(morpholin-4-yl)ethyl 2-phenylbutanoate', cls: 'Cholinergic ester', formula: 'C16H23NO3', smiles: 'CCC(C(=O)OCCN1CCOCC1)c1ccccc1' }
 ];
 
 if (typeof module !== 'undefined' && module.exports) {

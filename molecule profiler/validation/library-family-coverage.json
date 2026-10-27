@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "sourceSha256": {
-    "data/library.js": "a4e31b72fb6abdafd0b00efa8632a175ea0b94490356676ed563721e3898d600",
+    "data/library.js": "7e0b04ae77f367f29e648230f6380f565a72c6e12d44818ebc36744bb000c094",
     "data/library-names.js": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
     "data/targets.js": "c994111b869a78b68fe873c92f218ae1791b9b3e3fbf390f0b3a837221b4aacd",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
@@ -12,7 +12,7 @@
     "tools/library-expansion-50.py": "1c7e05d9267af49bcf25ff3fc90f114b394a295ab3dee561954252e26bc0d60a",
     "validation/library-50-import.json": "89abe62271fff06dd9c8591ea3823ae56cd62a7396eb1412bd93834a2c1b10e0"
   },
-  "dataSha256": "763597fd352803a2081fcd31f4ea79a7887470cb229fa5f95feafdeaae9118a9",
+  "dataSha256": "80b9482af98e4191af80a1bb35cf4d09c0610f0a76e95a001103e10ba54ae107",
   "interpretation": "Overlapping structural motifs in stored graphs; not evidence of pharmacological function, exhaustive family membership or independently verified molecular identities.",
   "families": [
     {
@@ -15044,9 +15044,13 @@
         "6-(cyclopropylmethyl)-1-methylergoline",
         "6-(cyclopropylmethyl)-8beta-methylergoline",
         "1,8beta-dimethyl-6-(prop-2-en-1-yl)ergoline",
-        "8beta-ethyl-6-(prop-2-en-1-yl)ergoline"
+        "8beta-ethyl-6-(prop-2-en-1-yl)ergoline",
+        "2-(dimethylamino)ethyl 2-phenyl-2-(piperidin-1-yl)acetate",
+        "2-(piperidin-1-yl)ethyl acetate",
+        "2-(piperidin-1-yl)ethyl 2-phenylbutanoate",
+        "2-(morpholin-4-yl)ethyl 2-phenyl-2-(piperidin-1-yl)acetate"
       ],
-      "count": 1474
+      "count": 1478
     },
     {
       "tag": "Family motif: Piperazines",
@@ -16845,9 +16849,12 @@
         "N(2)-[3-methoxy-4-(morpholin-4-yl)phenyl]-N(4)-(quinolin-3-yl)pyrimidine-2,4-diamine",
         "(4Z)-7-{5-[([1,1'-biphenyl]-4-yl)methoxy]-2-(morpholin-4-yl)-3-oxocyclopentyl}hept-4-enoic acid",
         "7-{2-hydroxy-3-[(naphthalen-1-yl)oxy]propyl}-3-methyl-8-(morpholin-4-yl)-3,7-dihydropurine-2,6-dione",
-        "N-[4-(morpholin-4-ylcarbonyl)benzoyl]-L-valyl-N-[(3S)-5,5,6,6,6-pentafluoro-2-methyl-4-oxohexan-3-yl]-L-prolinamide"
+        "N-[4-(morpholin-4-ylcarbonyl)benzoyl]-L-valyl-N-[(3S)-5,5,6,6,6-pentafluoro-2-methyl-4-oxohexan-3-yl]-L-prolinamide",
+        "2-(morpholin-4-yl)ethyl acetate",
+        "2-(morpholin-4-yl)ethyl 2-phenyl-2-(piperidin-1-yl)acetate",
+        "2-(morpholin-4-yl)ethyl 2-phenylbutanoate"
       ],
-      "count": 190
+      "count": 193
     },
     {
       "tag": "Family motif: Thiomorpholines",

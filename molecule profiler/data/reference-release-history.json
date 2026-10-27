@@ -197,8 +197,14 @@
       "id": "benzofuran-fifty",
       "label": "Benzofuran class brought to fifty references and the statin ceiling measured",
       "date": "2026-10-27",
+      "commit": "189ac4ada12ceaa0a16170df0c5aadda01466208"
+    },
+    {
+      "id": "cholinergic-ester-twenty",
+      "label": "Cholinergic ester class measured at a ceiling of twenty references",
+      "date": "2026-10-27",
       "workingTree": true,
-      "baseCommit": "b319d4894a1a7c9c3cfd957deccc65b52ee9c4bd"
+      "baseCommit": "dabbb9ac4ff2bb8b6186bbf4841779d4d7495c23"
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
  "rdkitVersion": "2026.09.1",
- "librarySha256": "a4e31b72fb6abdafd0b00efa8632a175ea0b94490356676ed563721e3898d600",
+ "librarySha256": "7e0b04ae77f367f29e648230f6380f565a72c6e12d44818ebc36744bb000c094",
  "toolSha256": "5474a832b1cd427e4246f1c4b12ec2c47a2b3a12586201f388f5cf52f1bfcd16",
  "dataSha256": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
  "protocol": "Prefer exact isomeric graph matches to PubChem titles/IUPAC names or ChEMBL preferred names. Otherwise require the full InChIKey plus completed RDKit tautomer-family agreement, no neutralization and tetrahedral stereo retained; explicitly label these as PubChem standardized-form names, not exact stored-graph names. Never change reference keys or graphs.",
@@ -14606,7 +14606,16 @@
    "2-(1,3-benzodioxol-5-yl)-6-methoxy-1-benzofuran",
    "2-(1,3-benzodioxol-5-yl)-7-methoxy-1-benzofuran",
    "3-(4-hydroxybenzoyl)-4-methoxy-1-benzofuran",
-   "3-(4-hydroxybenzoyl)-6-methoxy-1-benzofuran"
+   "3-(4-hydroxybenzoyl)-6-methoxy-1-benzofuran",
+   "2-(diethylamino)ethyl acetate",
+   "2-(dimethylamino)ethyl acetate",
+   "2-(dimethylamino)ethyl 2-phenyl-2-(piperidin-1-yl)acetate",
+   "2-(dimethylamino)ethyl 2-phenylbutanoate",
+   "2-(piperidin-1-yl)ethyl acetate",
+   "2-(piperidin-1-yl)ethyl 2-phenylbutanoate",
+   "2-(morpholin-4-yl)ethyl acetate",
+   "2-(morpholin-4-yl)ethyl 2-phenyl-2-(piperidin-1-yl)acetate",
+   "2-(morpholin-4-yl)ethyl 2-phenylbutanoate"
   ],
   "refreshToolSha256": "579b60eba814e6389261f3a103ce0b0fa46cc584d116af0c2b94c4aabafcf4e3"
  }
