@@ -45,7 +45,9 @@ that disagree with the complete stored graph cannot transfer numerical binding
 observations to that graph.
 
 `data/chembl-properties.js` contains **locally calculated RDKit descriptors** of
-existing ChEMBL-annotated library graphs. These are not ChEMBL-reported properties
+the complete effective reference library; its historical filename is retained
+for compatibility. Associated ChEMBL identifiers remain metadata and do not
+make other library entries ChEMBL-sourced compounds. These are not ChEMBL-reported properties
 or experimental measurements. The generated dataset records the RDKit version,
 descriptor methods and current input hashes. Calculations retain the entire
 stored graph, formal charge and disconnected fragments; they do not substitute
@@ -57,3 +59,7 @@ separately labeled source classifications. They are not inferred from Ki/Kd,
 and the binding observations remain action-free. Source classifications retain
 their snapshot witnesses and establish no newly measured functional response.
 See `CLASS-ACTION-TAGS-003.md`.
+
+Source-listed ChEMBL journal/year fields and all supplied property reference
+links are exposed in dossiers without inventing missing bibliographic IDs.
+`EVIDENCE-005.md` documents full calculated-property coverage and source filters.

@@ -17,22 +17,47 @@ spec.loader.exec_module(builder)
 class PropertiesTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        code = "console.log(JSON.stringify({data:require('./data/chembl-properties.js').CHEMBL_CALCULATED_PROPERTIES,library:require('./data/library.js').LIBRARY,annotations:require('./data/receptor-ligand-annotations.js').RECEPTOR_LIGAND_ANNOTATIONS}));"
+        code = "const raw=require('./data/library.js').LIBRARY,curated=require('./js/curated-references.js'),references=require('./data/curated-references.js').CURATED_REFERENCES;console.log(JSON.stringify({data:require('./data/chembl-properties.js').CHEMBL_CALCULATED_PROPERTIES,library:curated.library(raw,references),rawLibrary:raw,references,annotations:require('./data/receptor-ligand-annotations.js').RECEPTOR_LIGAND_ANNOTATIONS}));"
         cls.current = json.loads(subprocess.check_output(['node','-e',code], cwd=ROOT, text=True))
         cls.data = cls.current['data']
 
-    def test_all_existing_annotated_keys_and_graphs(self):
+    def test_all_effective_keys_and_associated_chembl_graphs(self):
         by_name = {e['name']:e for e in self.current['library']}
         annotations = [a for a in self.current['annotations'] if a.get('chemblMoleculeId')]
-        self.assertEqual(set(self.data['entries']), {a['ligandName'] for a in annotations})
-        self.assertGreater(self.data['entryCount'], 30)
+        self.assertEqual(set(self.data['entries']), set(by_name))
+        self.assertEqual(self.data['chemblEntryCount'],len({a['ligandName'] for a in annotations}))
         self.assertEqual(self.data['entryCount'], len(self.data['entries']))
         self.assertEqual(self.data['annotationCount'],len(annotations))
         for name,record in self.data['entries'].items():
             self.assertEqual(record['librarySmiles'],by_name[name]['smiles'])
             matched = [a for a in annotations if a['ligandName']==name]
             self.assertEqual(record['chemblMoleculeIds'],sorted({a['chemblMoleculeId'] for a in matched}))
+            self.assertEqual(record['sourceReleases'],sorted({a['sourceRelease'] for a in matched if a.get('sourceRelease')}))
+            self.assertEqual(record['annotationCount'],len(matched))
             self.assertTrue(all(a['librarySmiles']==record['librarySmiles'] for a in matched))
+
+    def test_reviewed_replacements_and_overlay_entries(self):
+        raw={e['name']:e for e in self.current['rawLibrary']}
+        for fix in self.current['references']['identityCorrections']:
+            stored=self.data['entries'][fix['name']]['librarySmiles']
+            self.assertEqual(stored,fix['after']['smiles'])
+            self.assertNotEqual(stored,raw[fix['name']]['smiles'])
+        for entry in self.current['references']['extraLibrary']:
+            self.assertEqual(self.data['entries'][entry['name']]['librarySmiles'],entry['smiles'])
+
+    def test_unannotated_entries_get_only_calculated_descriptors(self):
+        ordinary={'name':'Unannotated reference','smiles':'CCO'}
+        data=builder.build([ordinary],[],{})
+        self.assertEqual(data['entryCount'],1)
+        self.assertEqual(data['chemblEntryCount'],0)
+        self.assertEqual(data['annotationCount'],0)
+        record=data['entries'][ordinary['name']]
+        self.assertEqual(record['calculated'],builder.descriptors('CCO'))
+        self.assertEqual(record['chemblMoleculeIds'],[])
+        self.assertEqual(record['sourceReleases'],[])
+        self.assertEqual(record['annotationCount'],0)
+        for key in ['evidence','tags','actions','measured_property']:
+            self.assertNotIn(key,record)
 
     def test_independent_numerical_recalculation(self):
         self.assertEqual(self.data['rdkitVersion'], rdBase.rdkitVersion)

@@ -121,7 +121,17 @@ def source_rows(text):
     return rows
 
 
-def build(root=ROOT, library=None, effective=None):
+def build(root=ROOT, library=None, effective=None, *, selection=None, snapshot_path=SNAPSHOT,
+          record_prefix='property-freesolv2-', scope_count_word='Sixty'):
+    # Default configuration preserves the published batch002 bytes. Later batches
+    # reuse scientific/source guards without mutating module-level configuration.
+    selection = SELECTION if selection is None else selection
+    if not re.fullmatch(r'property-freesolv\d+-', record_prefix):
+        raise ValueError('Invalid generated record prefix')
+    if not re.fullmatch(r'validation/sources/freesolv-properties-\d+\.json', snapshot_path):
+        raise ValueError('Invalid generated source snapshot path')
+    if any(len({row[index] for row in selection}) != len(selection) for index in range(3)):
+        raise ValueError('Duplicate source ID, stable key or record slug in batch selection')
     source_hashes = {}
     for path, expected in SOURCE_BLOBS.items():
         raw = (root / path).read_bytes()
@@ -144,14 +154,14 @@ def build(root=ROOT, library=None, effective=None):
             index[entry['name']] = entry
     prior_ids, prior_graphs = set(), set()
     for path in (root/'data/curated-reference-entries').glob('*.json'):
-        if path.name.startswith('property-freesolv2-'):
+        if path.name.startswith(record_prefix):
             continue
         record = json.loads(path.read_text())
         if any(e['kind']=='measured_property' for e in record['evidence']):
             prior_ids.update(re.findall(r'mobley_\d+', path.read_text()))
             prior_graphs.update(graph(c['smiles']) for c in record['compounds'])
     selected, ligands = [], []
-    for row_id, name, slug in SELECTION:
+    for row_id, name, slug in selection:
         line_number, line, fields = rows[row_id]
         if row_id in prior_ids or graph(fields[1]) in prior_graphs:
             raise ValueError('Duplicate existing measured-property source or graph: ' + row_id)
@@ -186,13 +196,13 @@ def build(root=ROOT, library=None, effective=None):
         'sourceFile': TABLE, 'sourceSha256': source_hashes[TABLE],
         'sourceFileSha256': source_hashes, 'sourceFileGitBlobs': SOURCE_BLOBS,
         'licenseMetadata': license_metadata, 'rdkitVersion': rdBase.rdkitVersion,
-        'selection': [{'sourceId': row_id, 'stableLibraryKey': name} for row_id, name, _ in SELECTION],
+        'selection': [{'sourceId': row_id, 'stableLibraryKey': name} for row_id, name, _ in selection],
         'rows': [s[4] for s in selected], 'ligands': ligands,
-        'scope': 'Experimental hydration free-energy columns only; calculated GAFF values are not imported as measurements. Sixty source compounds enrich existing library graphs only. Missing experimental temperature and pH remain unknown.',
+        'scope': f'Experimental hydration free-energy columns only; calculated GAFF values are not imported as measurements. {scope_count_word} source compounds enrich existing library graphs only. Missing experimental temperature and pH remain unknown.',
     }
     snapshot_text = encode(snapshot)
     snapshot_sha = sha(snapshot_text.encode())
-    output = {SNAPSHOT: snapshot_text}
+    output = {snapshot_path: snapshot_text}
     for row_id, name, slug, line_number, line, fields, identity in selected:
         value, uncertainty = float(fields[3]), float(fields[4])
         if not all(math.isfinite(n) for n in [value, uncertainty]) or uncertainty < 0:
@@ -209,7 +219,7 @@ def build(root=ROOT, library=None, effective=None):
             'uncertainty': uncertainty, 'uncertaintyKind': uncertainty_kind,
             'sourceUrl': url,
             'originalReferences': reference_urls, 'experimentalReference': fields[7],
-            'sourceFile': SNAPSHOT, 'sourceSha256': snapshot_sha,
+            'sourceFile': snapshot_path, 'sourceSha256': snapshot_sha,
             'sourceRecord': line, 'sourceRow': line_number, 'sourceId': row_id,
             'sourceLocation': 'database.txt line ' + str(line_number) + ', experimental value/uncertainty columns 4 and 5',
             'sourceGitBlob': SOURCE_BLOBS[TABLE], 'sourceTableSha256': source_hashes[TABLE],
@@ -220,12 +230,14 @@ def build(root=ROOT, library=None, effective=None):
             },
             'context': fields[9],
         }
+        if re.search(r'\bunpublished\b', fields[7], re.IGNORECASE):
+            evidence['referenceStatus'] = 'Source identifies unpublished data; the supplied DOI is retained as a cited reference'
         if reference_urls:
             evidence['originalReference'] = reference_urls[0]
         else:
             evidence['referenceStatus'] = 'Unresolved source reference label retained verbatim; no DOI inferred'
         record = {
-            'id': 'property-freesolv2-' + slug,
+            'id': record_prefix + slug,
             'title': name + ' — experimental hydration free energy',
             'collections': ['Measured properties'],
             'compounds': [{
@@ -237,7 +249,7 @@ def build(root=ROOT, library=None, effective=None):
                     'identifierOrigin': identity['identifierOrigin'],
                     'formulaOrigin': identity['formulaOrigin'],
                     'license': 'CC BY 4.0', 'licenseMetadata': license_metadata,
-                    'sourceFile': SNAPSHOT, 'sourceSha256': snapshot_sha,
+                    'sourceFile': snapshot_path, 'sourceSha256': snapshot_sha,
                     'sourceGitBlob': SOURCE_BLOBS[TABLE],
                     'sourceTableSha256': source_hashes[TABLE], 'sourceRecord': identity,
                 },

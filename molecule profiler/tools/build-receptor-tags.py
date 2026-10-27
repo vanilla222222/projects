@@ -73,6 +73,7 @@ def chembl_evidence(annotation,entry,index,source_row):
          'librarySmiles':entry['smiles'],**provenance,**urls,
          **{k:annotation[k] for k in ['activityId','assayId','documentId','chemblMoleculeId','chemblTargetId']},
          'originalMetric':activity.get('type'),'originalValue':activity.get('value'),'originalUnit':activity.get('units'),'originalRelation':activity.get('relation'),
+         'documentJournal':activity.get('document_journal'),'documentYear':activity.get('document_year'),
          'assayOrganism':assay.get('assay_organism'),'assayType':assay['assay_type'],'assayConfidence':assay['confidence_score'],
          'assayDescription':assay.get('description'),'assayTissue':assay.get('assay_tissue'),'assayCellType':assay.get('assay_cell_type')}
  source_graph=graph(activity.get('canonical_smiles'));stored_graph=graph(entry['smiles'])
@@ -92,7 +93,7 @@ def chembl_action_evidence(binding,index):
  if not action:return None
  # These fields identify the source classification, not a functional assay or
  # a potency measurement. Binding values stay solely on the original record.
- keys=['sourceRow','receptorId','species','assay','librarySmiles','sourceFile','sourceSha256','sourceLocation','sourceRelease','activityId','assayId','documentId','chemblMoleculeId','chemblTargetId','sourceUrl','assayUrl','documentUrl','moleculeUrl','targetUrl','activityUrl']
+ keys=['sourceRow','receptorId','species','assay','librarySmiles','sourceFile','sourceSha256','sourceLocation','sourceRelease','activityId','assayId','documentId','chemblMoleculeId','chemblTargetId','sourceUrl','assayUrl','documentUrl','moleculeUrl','targetUrl','activityUrl','documentJournal','documentYear']
  return {**{k:binding[k] for k in keys},'provider':'ChEMBL curated action classification','bindingEvidence':False,
          'actions':[action],'sourceAction':literal['action_type'],'sourceActionRecord':literal,
          'classificationTransferStatus':'exact_source_graph',

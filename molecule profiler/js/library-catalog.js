@@ -50,6 +50,10 @@
     return [...new Set([...base,...(matchedRecord(metadata(context).receptors,entry)?.tags||[]),...(root.CuratedReferences?.tags(entry)||[])])];
   }
   function receptorEvidence(entry,context) { return matchedRecord(metadata(context).receptors,entry)?.evidence || []; }
+  const supportAPI=root.ReferenceSupport||(typeof module!=='undefined'&&module.exports?require('./reference-support'):null);
+  const EVIDENCE_DEFINITIONS=supportAPI?.DEFINITIONS||[];
+  function supportIndex(context){return context?.support||supportAPI?.forDatasets(context?context.curated:root.CURATED_REFERENCES,metadata(context).receptors);}
+  function evidenceFor(entry,context){return supportIndex(context)?.get(entry)||{noImportedObservations:true,observationCount:0};}
   function receptorTerms(entry,context) { const m=metadata(context).receptors;return [...new Set(receptorEvidence(entry,context).map(e=>e.receptorId))].flatMap(id=>{const r=m?.receptors?.[id];return r?[id,r.name,r.family,...r.aliases,...r.genes]:[id];}); }
   function searchText(entry, context) {const r=nameRecord(entry,context),s=sourceRecord(entry);return norm([entry.name,displayName(entry,context),...aliasesFor(entry,context),r?.pubchemCid,r?.chemblId,s?.id,s?.cas,s?.inchiKey,entry.cls,entry.formula,...receptorTerms(entry,context),...tagsFor(entry,context),tagsFor(entry,context).includes('Series: 2C / 2C-x phenethylamines')?'2x phenethylamine 2c-x phenethylamine':''].filter(v=>v!=null).join(' ')); }
   function catalogSummary(entries, context) {
@@ -72,7 +76,7 @@
       if (!structure) missingSmiles++; else if (smiles.has(structure)) duplicateExactSmiles++; else smiles.add(structure);
     }
     return {
-      total: rows.length, groups, missingNames, missingFormulas, missingSmiles,
+      total: rows.length, evidenceCounts:supportIndex(context)?.summary(rows)||{}, groups, missingNames, missingFormulas, missingSmiles,
       duplicateNames, duplicateExactSmiles,
       tags:[...tags].map(([name,count])=>({name,count})).sort((a,b)=>a.name.localeCompare(b.name)),
       classes: [...classes].map(([name, count]) => ({ name, count }))
@@ -96,6 +100,7 @@
     const rows = Array.isArray(entries) ? entries : [];
     const o = options || {};
     const tokens = queryTerms(o.query);
+    const evidenceFilter=EVIDENCE_DEFINITIONS.some(d=>d.key===o.evidence)?o.evidence:'all';
     const selected=[...new Set((Array.isArray(o.tags)?o.tags:[]).map(t=>norm(canonicalTag(t))))];
     const excluded=[...new Set((Array.isArray(o.excludeTags)?o.excludeTags:[]).map(t=>norm(canonicalTag(t))))];
     const tagMode=o.tagMode==='any'?'any':'all';
@@ -109,6 +114,8 @@
     const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
     const matches = [];
     rows.forEach((entry, index) => {
+      const support=evidenceFor(entry,context);
+      if(evidenceFilter!=='all'&&!support[evidenceFilter])return;
       const kind = groupFor(entry);
       if (group !== 'all' && kind !== group) return;
       if (cls && String(entry.cls || '') !== cls) return;
@@ -123,7 +130,7 @@
       if(field==='formula'){if(String(o.query||'').trim()&&String(entry.formula)!==String(o.query).trim())return;}
       else if(field==='smiles'){const raw=String(o.query||'').trim();if(raw&&!String(text).includes(raw))return;}
       else {const haystack=norm(text);if(!tokens.every(t=>t.exclude?!haystack.includes(t.value):haystack.includes(t.value)))return;}
-      matches.push({ entry, index, group: kind, label, tags });
+      matches.push({ entry, index, group: kind, label, tags, support });
     });
     matches.sort((a, b) => {
       if(sort==='tagCount')return b.tags.length-a.tags.length || collator.compare(a.label,b.label) || a.index-b.index;
@@ -135,7 +142,7 @@
     const requested = Number(o.page);
     const page = Number.isFinite(requested) ? Math.min(pages, Math.max(1, Math.floor(requested))) : 1;
     const facets={};if(o.withFacets)for(const row of matches)for(const tag of new Set(row.tags))facets[tag]=(facets[tag]||0)+1;
-    return { total: matches.length, pages, page, perPage,facets,
+    return { total: matches.length, pages, page, perPage,facets,evidenceCounts:supportIndex(context)?.summary(matches.map(row=>row.entry))||{},
       rows: o.allRows===true?matches:matches.slice((page - 1) * perPage, page * perPage) };
   }
   function csvCell(value) {
@@ -146,13 +153,13 @@
   function catalogCsv(entries, options, context) {
     // Exports index metadata, not unverified measured properties.
     const all=catalogQuery(entries,{...(options||{}),perPage:100,page:1,allRows:true,withFacets:false},context).rows;
-    const lines = [['Name','Reference ID','Tags','Collection','Formula','SMILES','Name form','Name source'].map(csvCell).join(',')];
+    const lines = [['Name','Reference ID','Tags','Collection','Formula','SMILES','Name form','Name source',...EVIDENCE_DEFINITIONS.map(d=>d.label),'Imported observation count'].map(csvCell).join(',')];
     for (const item of all) {
-      lines.push([item.label,item.entry.name,item.tags.join('; '),item.group,item.entry.formula,item.entry.smiles,nameRecord(item.entry,context)?.nameKind||'Library label',nameRecord(item.entry,context)?.sourceUrl||''].map(csvCell).join(','));
+      lines.push([item.label,item.entry.name,item.tags.join('; '),item.group,item.entry.formula,item.entry.smiles,nameRecord(item.entry,context)?.nameKind||'Library label',nameRecord(item.entry,context)?.sourceUrl||'',...EVIDENCE_DEFINITIONS.map(d=>item.support[d.key]?'Yes':'No'),item.support.observationCount||0].map(csvCell).join(','));
     }
     return lines.join('\r\n') + '\r\n';
   }
-  const api = { receptorEvidence, canonicalTag,queryTerms,GROUPS, groupFor, sourceRecord, nameRecord, displayName, aliasesFor, tagsFor, searchText, catalogSummary, catalogQuery, catalogCsv };
+  const api = { evidenceFor,EVIDENCE_DEFINITIONS,receptorEvidence, canonicalTag,queryTerms,GROUPS, groupFor, sourceRecord, nameRecord, displayName, aliasesFor, tagsFor, searchText, catalogSummary, catalogQuery, catalogCsv };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.LibraryCatalog = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

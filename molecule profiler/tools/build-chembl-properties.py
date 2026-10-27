@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Build local RDKit descriptors for existing ChEMBL-annotated graphs, offline."""
+"""Build local RDKit descriptors for every effective reference graph, offline.
+
+Historical ChEMBL module/export names are retained for consumer compatibility.
+Associated ChEMBL identifiers remain metadata, not a calculation eligibility gate.
+"""
 import argparse
 import hashlib
 import json
@@ -10,7 +14,8 @@ from rdkit import Chem, rdBase
 from rdkit.Chem import Crippen, Descriptors, Lipinski, rdMolDescriptors
 
 ROOT = Path(__file__).resolve().parents[1]
-INPUTS = ('data/library.js', 'data/receptor-ligand-annotations.js')
+INPUTS = ('data/library.js', 'data/curated-references.js',
+          'js/curated-references.js', 'data/receptor-ligand-annotations.js')
 SCOPE = 'Exact stored library graph, including disconnected fragments and formal charge; no parent selection, neutralization, salt stripping or tautomer standardization.'
 METHODS = {
     'molecularWeight': {'method': 'rdkit.Chem.Descriptors.MolWt', 'unit': 'g/mol'},
@@ -53,9 +58,9 @@ def build(library, annotations, source_hashes):
             raise ValueError('Missing or stale ChEMBL-annotated library graph: ' + name)
         grouped.setdefault(name, []).append(annotation)
     entries = {}
-    for name in sorted(grouped):
+    for name in sorted(by_name):
         entry = by_name[name]
-        records = grouped[name]
+        records = grouped.get(name, [])
         entries[name] = {'librarySmiles': entry['smiles'], 'calculated': descriptors(entry['smiles']),
             'chemblMoleculeIds': sorted({a['chemblMoleculeId'] for a in records}),
             'sourceReleases': sorted({a['sourceRelease'] for a in records if a.get('sourceRelease')}),
@@ -66,16 +71,17 @@ def build(library, annotations, source_hashes):
         'limitations': ['cLogP is a model estimate, not measured logP or pH-dependent logD.',
             'Descriptors describe the complete stored graph; salt or multicomponent descriptors may have limited physical interpretation.',
             'No pKa, solubility, receptor action, selectivity or clinical inference is made.'],
-        'sourceHashes': source_hashes, 'entryCount': len(entries), 'annotationCount': sum(len(v) for v in grouped.values()),
+        'sourceHashes': source_hashes, 'entryCount': len(entries),
+        'chemblEntryCount': len(grouped), 'annotationCount': sum(len(v) for v in grouped.values()),
         'entries': entries}
 
 def outputs(root=ROOT):
     before = {name: hashlib.sha256((root/name).read_bytes()).hexdigest() for name in INPUTS}
-    code = "console.log(JSON.stringify({library:require('./data/library.js').LIBRARY,annotations:require('./data/receptor-ligand-annotations.js').RECEPTOR_LIGAND_ANNOTATIONS}));"
+    code = "const raw=require('./data/library.js').LIBRARY,curated=require('./js/curated-references.js'),data=require('./data/curated-references.js').CURATED_REFERENCES;console.log(JSON.stringify({library:curated.library(raw,data),annotations:require('./data/receptor-ligand-annotations.js').RECEPTOR_LIGAND_ANNOTATIONS}));"
     current = json.loads(subprocess.check_output(['node', '-e', code], cwd=root, text=True))
     after = {name: hashlib.sha256((root/name).read_bytes()).hexdigest() for name in INPUTS}
     if before != after:
-        raise ValueError('Inputs changed while reading ChEMBL descriptor sources')
+        raise ValueError('Inputs changed while reading reference descriptor sources')
     data = build(current['library'], current['annotations'], before)
     serialized = json.dumps(data, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
     js = "'use strict';\n// Generated local RDKit descriptors; not ChEMBL-reported or measured properties.\nconst CHEMBL_CALCULATED_PROPERTIES = " + serialized + ";\nif(typeof module!=='undefined'&&module.exports)module.exports={CHEMBL_CALCULATED_PROPERTIES};\nif(typeof globalThis!=='undefined')globalThis.CHEMBL_CALCULATED_PROPERTIES=CHEMBL_CALCULATED_PROPERTIES;\n"
@@ -97,7 +103,7 @@ def main():
                 raise SystemExit('Stale calculated properties; run tools/build-chembl-properties.py: ' + name)
         else:
             path.write_bytes(content)
-    print('ChEMBL-linked local RDKit descriptors ' + ('checked' if args.check else 'generated'))
+    print('Effective-reference local RDKit descriptors ' + ('checked' if args.check else 'generated'))
 
 if __name__ == '__main__':
     main()

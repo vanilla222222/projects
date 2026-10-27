@@ -6,7 +6,7 @@
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
     "data/receptor-ligand-annotations.js": "5baaf3e92817424997666eff1422ec70312af28413a4712a16f047828c01c98a",
     "data/targets.js": "c994111b869a78b68fe873c92f218ae1791b9b3e3fbf390f0b3a837221b4aacd",
-    "tools/build-receptor-tags.py": "fc486609d93137dde02c59ea74edafc0702ce6a85572e22f39517ce43c361aa8",
+    "tools/build-receptor-tags.py": "89f0acf71ae41931df3f225b74e4c4b02babafb4bafd6e1e0a7f4cabb5c6de6d",
     "validation/sources/receptor-actions-iuphar.json": "ae233a073c2159c5c62b3e8a77c26a8f28f5ba94d9127b456112270f368f31f4",
     "validation/chembl-receptor-binding-batch-2.json": "ba6e2aa3aa3b99d294ea211a2443e2514746cbfc07ccaf9372fe75653d1c8475",
     "validation/chembl-receptor-binding-batch-3.json": "f0342758fa351087cf6191bb46d3b69c9cd866bafcea4021bd8c0556a6f2a930",
@@ -2946,5 +2946,5 @@
       }
     }
   ],
-  "dataSha256": "45ce4a988c9073e7fe49a75dc93bbb812ad9b4442cb35124e445cbf1fdc2699f"
+  "dataSha256": "207414ce9c563dcc0be205d5d6ae63f78b3153c9c47e4032077ee2e234c6cc80"
 }

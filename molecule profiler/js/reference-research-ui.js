@@ -15,7 +15,8 @@
   detail('Source ligand class',o.sourceLigandType,d);
   if(o.provider==='ChEMBL'||o.provider==='ChEMBL curated action classification'){
    if(o.provider==='ChEMBL')detail('Original reported result',[o.originalMetric,o.originalRelation,o.originalValue,o.originalUnit].filter(v=>v!=null&&v!=='').join(' '),d);
-   for(const [label,value]of [['Source database release',o.sourceRelease],['ChEMBL molecule',o.chemblMoleculeId],['ChEMBL target',o.chemblTargetId],['Activity ID',o.activityId],['Assay ID',o.assayId],['Document ID',o.documentId],['Assay organism',o.assayOrganism],['Assay type',o.assayType],['Target-assignment confidence score',o.assayConfidence],['Assay tissue',o.assayTissue],['Assay cell type',o.assayCellType],['Source snapshot',o.sourceFile],['Source location',o.sourceLocation],['Snapshot SHA-256',o.sourceSha256]])detail(label,value,d);
+   for(const [label,value]of [['Source database release',o.sourceRelease],['ChEMBL molecule',o.chemblMoleculeId],['ChEMBL target',o.chemblTargetId],['Activity ID',o.activityId],['Assay ID',o.assayId],['Document ID',o.documentId],['Source-listed journal',o.documentJournal],['Source-listed publication year',o.documentYear],['Assay organism',o.assayOrganism],['Assay type',o.assayType],['Target-assignment confidence score',o.assayConfidence],['Assay tissue',o.assayTissue],['Assay cell type',o.assayCellType],['Source snapshot',o.sourceFile],['Source location',o.sourceLocation],['Snapshot SHA-256',o.sourceSha256]])detail(label,value,d);
+   if(o.documentJournal||o.documentYear)d.append(el('p','Journal and year are retained from the ChEMBL activity record; the primary paper identity has not been independently verified.'));
    for(const [label,url]of [['ChEMBL document',o.documentUrl],['ChEMBL molecule',o.moleculeUrl],['ChEMBL target',o.targetUrl],['ChEMBL activity',o.activityUrl]])if(url)d.append(link(label+' ↗',url));
   }
   if(o.sourceEndpoint){
@@ -34,8 +35,8 @@
    detail('Source patent identifiers',(o.patentIds||[]).join('; '),d);
    detail('Source snapshot',o.sourceFile,d);
   }
-  detail('Source reference as supplied',o.originalReferenceLabel,d);
-  if(o.originalReference)d.append(link('Primary reference ↗',o.originalReference));
+  detail('Source reference as supplied',o.originalReferenceLabel,d);detail('Source reference status',o.referenceStatus,d);
+  const references=api.primaryReferences(o),referenceLabel=/unpublished/i.test(o.referenceStatus||'')?'Cited reference':'Primary reference';references.forEach((url,index)=>d.append(link(referenceLabel+(references.length>1?' '+(index+1):'')+' ↗',url)));
   d.append(link('Evidence source ↗',o.sourceUrl));const raw=el('details');raw.append(el('summary','Source record and provenance'));detail('Record',o.recordId||'Imported receptor row',raw);detail('Snapshot SHA-256',o.sourceSha256,raw);raw.append(el('pre',JSON.stringify(o.raw,null,2)));d.append(raw);return d;
  }
  function openDossier(name,{focus=true}={}){const d=model.dossier(name);if(!d)return false;const host=$('reference-dossier');host.replaceChildren();
