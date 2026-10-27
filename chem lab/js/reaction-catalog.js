@@ -60,7 +60,7 @@ const REACTION_CATALOG_CURATED = {
   },
   'baeyer-villiger': {
     family: 'Oxidation', scope: 'Oxygen insertion beside supported ketones with the locally encoded migration preference.',
-    limitations: ['Migration preference is a simplified ranking; substrate-specific selectivity is not established.'],
+    limitations: ['Migration preference is a simplified ranking; substrate-specific selectivity is not established. Alkene-containing substrates are deferred to the separate epoxidation rule.'],
     references: [{ title: 'Hunt and Spinney, University of Calgary: Baeyer–Villiger reaction', url: 'https://www3.chem.ucalgary.ca/courses/351/Carey5th/Ch17/ch17-3-5-2.html', kind: 'teaching' }],
   },
   'thiolate-alkylation': {

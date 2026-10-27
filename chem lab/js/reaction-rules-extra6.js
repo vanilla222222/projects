@@ -103,3 +103,16 @@ const RX6_DEFINITIONS = [
  ['peracid-aldehyde-oxidation','Peracid oxidation of aldehyde',rx6RulePeracidAldehyde,'Oxidation','Single aldehyde with implicit aldehydic H and no other oxygen, C=C/C≡C, N/S or charged group; mCPBA.',RX6_SOURCES.peracid],
 ];
 RX6_DEFINITIONS.forEach(([id,name,run,family,scope,source])=>RX_RULES.push({id,name,run,catalog:{family,scope,assumptions:['Net isolated product structure is represented; reagent loading, equilibrium and conversion are not measured.'],limitations:['Only the stated functional-group subset is encoded; ambiguous regioselectivity, unsupported competitors and substrate-specific feasibility require review.'],references:[source]}}));
+// Peracid epoxidation is favored over Baeyer–Villiger oxidation when the same
+// substrate contains C=C. Leave those substrates to the dedicated epoxidation
+// rule instead of also returning a contradictory ketone-insertion product.
+const rx6BaeyerVilligerRule=RX_RULES.find(rule=>rule.id==='baeyer-villiger');
+if(rx6BaeyerVilligerRule){
+ const rx6BaeyerVilligerRun=rx6BaeyerVilligerRule.run;
+ rx6BaeyerVilligerRule.run=function(ctx){
+  if(!ctx.substrates.some(s=>s.info.alkenes.length))return rx6BaeyerVilligerRun(ctx);
+  const selective=Object.create(ctx);
+  selective.substrates=ctx.substrates.filter(s=>!s.info.alkenes.length);
+  return rx6BaeyerVilligerRun(selective);
+ };
+}
