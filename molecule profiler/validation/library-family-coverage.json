@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "sourceSha256": {
-    "data/library.js": "9f5e7d54d57160130800bd3106798da8bc00a383820ed338b06ee2954b7f1e3e",
+    "data/library.js": "20ee188867d24651bfa139cb0b6893a0a833ed9ac7166c7b24d8dffe38f8fe86",
     "data/library-names.js": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
     "data/targets.js": "c994111b869a78b68fe873c92f218ae1791b9b3e3fbf390f0b3a837221b4aacd",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
@@ -12,7 +12,7 @@
     "tools/library-expansion-50.py": "1c7e05d9267af49bcf25ff3fc90f114b394a295ab3dee561954252e26bc0d60a",
     "validation/library-50-import.json": "89abe62271fff06dd9c8591ea3823ae56cd62a7396eb1412bd93834a2c1b10e0"
   },
-  "dataSha256": "bb6179de25e1db247d8c5cc03b7761b893c3c2cd8d3d09e57c21ddbbec720c03",
+  "dataSha256": "85eca164469b45bed6f8efac19f758c4835196aecc8092586d96a470ca9e59ee",
   "interpretation": "Overlapping structural motifs in stored graphs; not evidence of pharmacological function, exhaustive family membership or independently verified molecular identities.",
   "families": [
     {
@@ -24118,9 +24118,14 @@
         "1-(3-methylphenyl)-3-(prop-2-en-1-yl)-2,3,4,5-tetrahydro-1H-3-benzazepine-7,8-diol",
         "6-chloro-3-ethyl-1-(3-methylphenyl)-2,3,4,5-tetrahydro-1H-3-benzazepine-7,8-diol",
         "1-(4-chlorophenyl)-3-ethyl-2,3,4,5-tetrahydro-1H-3-benzazepine-7,8-diol",
-        "6-chloro-1-(4-chlorophenyl)-3-methyl-2,3,4,5-tetrahydro-1H-3-benzazepine-7,8-diol"
+        "6-chloro-1-(4-chlorophenyl)-3-methyl-2,3,4,5-tetrahydro-1H-3-benzazepine-7,8-diol",
+        "5,6-dihydroxyflavone",
+        "3,5,6-trihydroxyflavone",
+        "(E)-2,3-dihydroxychalcone",
+        "6,7-dihydroxyflavone",
+        "3,6,7-trihydroxyflavone"
       ],
-      "count": 678
+      "count": 683
     },
     {
       "tag": "Family motif: Resorcinols",
@@ -24935,9 +24940,13 @@
         "17-ethynylestra-1,3,5(10)-triene-2,3,4,17-tetraol",
         "SESQUICANNABIGEROL",
         "CANNABIDIVARIN",
-        "CANNABIDIOL [CHEMBL190461]"
+        "CANNABIDIOL [CHEMBL190461]",
+        "5,7-dihydroxyisoflavone",
+        "4,6-dihydroxyaurone",
+        "(E)-2,4-dihydroxychalcone",
+        "6,8-dihydroxyflavone"
       ],
-      "count": 811
+      "count": 815
     },
     {
       "tag": "Family motif: Hydroquinones",
@@ -25125,9 +25134,10 @@
         "2-(glutathion-S-yl)-1,4-hydroquinone",
         "(R,R)-2,3-dimethyl-6-phytylhydroquinone",
         "2,5-dihydroxycinnamic acid methyl ester",
-        "2-methyl-6-geranylgeranyl-1,4-benzoquinol"
+        "2-methyl-6-geranylgeranyl-1,4-benzoquinol",
+        "3,5,8-trihydroxyflavone"
       ],
-      "count": 184
+      "count": 185
     },
     {
       "tag": "Family motif: Catecholamines",
@@ -30796,9 +30806,37 @@
         "4',6-dihydroxy-5,7-dimethoxyflavone",
         "semilicoisoflavone B",
         "quercetin 3,7-di-O-beta-D-glucoside",
-        "quercetin 3-O-beta-D-glucopyranoside"
+        "quercetin 3-O-beta-D-glucopyranoside",
+        "5,6-dihydroxyflavone",
+        "3,5,6-trihydroxyflavone",
+        "5,7-dihydroxyisoflavone",
+        "5,2'-dihydroxyflavone",
+        "3,5,8-trihydroxyflavone",
+        "5,2'-dihydroxyisoflavone",
+        "5,3'-dihydroxyflavone",
+        "3,5,3'-trihydroxyflavone",
+        "5,3'-dihydroxyisoflavone",
+        "6,7-dihydroxyflavone",
+        "3,5,4'-trihydroxyflavone",
+        "5,4'-dihydroxyisoflavone",
+        "6,8-dihydroxyflavone",
+        "3,6,7-trihydroxyflavone",
+        "7,2'-dihydroxyisoflavone",
+        "5-hydroxy-3-methoxyflavone",
+        "3,5-dihydroxy-6-methoxyflavone",
+        "5-hydroxy-6-methoxyisoflavone",
+        "6-hydroxy-3-methoxyflavone",
+        "3,5-dihydroxy-7-methoxyflavone",
+        "5-hydroxy-7-methoxyisoflavone",
+        "7-hydroxy-3-methoxyflavone",
+        "3,5-dihydroxy-8-methoxyflavone",
+        "5-hydroxy-2'-methoxyisoflavone",
+        "8-hydroxy-3-methoxyflavone",
+        "3,5-dihydroxy-3'-methoxyflavone",
+        "5-hydroxy-3'-methoxyisoflavone",
+        "2'-hydroxy-3-methoxyflavone"
       ],
-      "count": 607
+      "count": 635
     },
     {
       "tag": "Family motif: Flavones",
@@ -31160,9 +31198,28 @@
         "quercetin 3-O-beta-D-fucopyranoside",
         "4',6-dihydroxy-5,7-dimethoxyflavone",
         "quercetin 3,7-di-O-beta-D-glucoside",
-        "quercetin 3-O-beta-D-glucopyranoside"
+        "quercetin 3-O-beta-D-glucopyranoside",
+        "5,6-dihydroxyflavone",
+        "3,5,6-trihydroxyflavone",
+        "5,2'-dihydroxyflavone",
+        "3,5,8-trihydroxyflavone",
+        "5,3'-dihydroxyflavone",
+        "3,5,3'-trihydroxyflavone",
+        "6,7-dihydroxyflavone",
+        "3,5,4'-trihydroxyflavone",
+        "6,8-dihydroxyflavone",
+        "3,6,7-trihydroxyflavone",
+        "5-hydroxy-3-methoxyflavone",
+        "3,5-dihydroxy-6-methoxyflavone",
+        "6-hydroxy-3-methoxyflavone",
+        "3,5-dihydroxy-7-methoxyflavone",
+        "7-hydroxy-3-methoxyflavone",
+        "3,5-dihydroxy-8-methoxyflavone",
+        "8-hydroxy-3-methoxyflavone",
+        "3,5-dihydroxy-3'-methoxyflavone",
+        "2'-hydroxy-3-methoxyflavone"
       ],
-      "count": 358
+      "count": 377
     },
     {
       "tag": "Family motif: Flavanones",
@@ -31417,9 +31474,18 @@
         "2,3-dihydro-6-hydroxy-2-(4-methoxyphenyl)-5,7-dimethoxy-4H-1-benzopyran-4-one",
         "(2S)-5,7-dimethoxy-8-(2S-hydroxy-3-methyl-3-butenyl)-3',4'-methylenedioxyflavanone",
         "7-hydroxyflavanone 7-O-[beta-L-rhamnosyl-(1->2)-beta-D-glucoside]",
-        "(2S)-5,7,3',5'-tetrahydroxy-8-[3'',8''-dimethylocta-2''(E),7''-dienyl]flavonone"
+        "(2S)-5,7,3',5'-tetrahydroxy-8-[3'',8''-dimethylocta-2''(E),7''-dienyl]flavonone",
+        "3,5-dihydroxyflavanone",
+        "3,6-dihydroxyflavanone",
+        "3,7-dihydroxyflavanone",
+        "3,8-dihydroxyflavanone",
+        "3,2'-dihydroxyflavanone",
+        "3-hydroxy-5-methoxyflavanone",
+        "3-hydroxy-6-methoxyflavanone",
+        "3-hydroxy-7-methoxyflavanone",
+        "3-hydroxy-8-methoxyflavanone"
       ],
-      "count": 251
+      "count": 260
     },
     {
       "tag": "Family motif: Chalcones",
@@ -31513,9 +31579,19 @@
         "2',4'-dihydroxy-3'-(2-hydroxy benzyl)-6'-methoxy chalcone",
         "furano[2'',3'':6,7]aurone",
         "1-(2-hydroxy-3,4,5,6-tetramethoxyphenyl)-3-(2,3,4,6-tetramethoxyphenyl)-2-propen-1-one",
-        "N-{4-[(1E)-3-oxo-3-phenylprop-1-en-1-yl]phenyl}-2,2-diphenylacetamide"
+        "N-{4-[(1E)-3-oxo-3-phenylprop-1-en-1-yl]phenyl}-2,2-diphenylacetamide",
+        "4,6-dihydroxyaurone",
+        "(E)-2,3-dihydroxychalcone",
+        "4,3'-dihydroxyaurone",
+        "(E)-2,4-dihydroxychalcone",
+        "4,4'-dihydroxyaurone",
+        "(E)-2,2'-dihydroxychalcone",
+        "(E)-2,3'-dihydroxychalcone",
+        "(E)-2,4'-dihydroxychalcone",
+        "(E)-2-hydroxy-4-methoxychalcone",
+        "(E)-2-hydroxy-5-methoxychalcone"
       ],
-      "count": 90
+      "count": 100
     },
     {
       "tag": "Family motif: Xanthines",

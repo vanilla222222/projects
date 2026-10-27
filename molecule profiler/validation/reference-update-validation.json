@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "started": "2026-10-27T00:06:17.059Z",
-  "finished": "2026-10-27T00:10:45.582Z",
+  "started": "2026-10-27T00:24:23.507Z",
+  "finished": "2026-10-27T00:28:51.240Z",
   "node": "v22.22.0",
   "platform": "linux",
   "cwd": "/home/user/projects/molecule profiler",
@@ -10,7 +10,7 @@
       "algorithm": "SHA-256",
       "scope": "Project root HTML/JS/Python/CSS plus js/, data/, tools/ and css/ source files; excludes generated JSON, logs and browser artifacts.",
       "git": {
-        "commit": "c79524f984c8e913b6d5059a1650d83525cf732f",
+        "commit": "0f83acf3b6f379ef9a946e8ce708ce465cda7dc1",
         "available": true,
         "sourceDirty": true,
         "changes": [
@@ -44,12 +44,12 @@
           },
           {
             "status": "??",
-            "path": "molecule profiler/tools/derive-beta-carboline-references.py"
+            "path": "molecule profiler/tools/derive-flavonoid-references.py"
           }
         ]
       },
-      "fileCount": 420,
-      "digest": "8399fb3a4e8edd05c317c5241ed43a8fc31b467544f11ae2d16fe8124aa4923a",
+      "fileCount": 421,
+      "digest": "6a490e25402b85ebd595e2f958c909d5e4d3a19768f4a47468bb3ed99f361ce0",
       "files": [
         {
           "path": "css/analogue-studio.css",
@@ -129,12 +129,12 @@
         {
           "path": "data/benchmark.js",
           "bytes": 17218,
-          "sha256": "0cb261ef704e3b41f6e8e08878f5195b06671c95657d5c2e6985d90f097188ab"
+          "sha256": "67e43e212d2276af969f867104edd79bd4f35b674497bec3ce4bec10e4093f16"
         },
         {
           "path": "data/chembl-properties.js",
           "bytes": 456150,
-          "sha256": "2d2cc4bdfc0fc8a367849a19f2c83e5e3589f38cc78b4aff30b057ad2fc27a26"
+          "sha256": "21bf87c80574f54d79abf3ddeb6bfeba039d50583b6fd17b72712ba08c9c4245"
         },
         {
           "path": "data/citations.js",
@@ -178,13 +178,13 @@
         },
         {
           "path": "data/library-tags.js",
-          "bytes": 11536824,
-          "sha256": "bb6179de25e1db247d8c5cc03b7761b893c3c2cd8d3d09e57c21ddbbec720c03"
+          "bytes": 11557647,
+          "sha256": "85eca164469b45bed6f8efac19f758c4835196aecc8092586d96a470ca9e59ee"
         },
         {
           "path": "data/library.js",
-          "bytes": 8113798,
-          "sha256": "9f5e7d54d57160130800bd3106798da8bc00a383820ed338b06ee2954b7f1e3e"
+          "bytes": 8119672,
+          "sha256": "20ee188867d24651bfa139cb0b6893a0a833ed9ac7166c7b24d8dffe38f8fe86"
         },
         {
           "path": "data/metabolism.js",
@@ -229,7 +229,7 @@
         {
           "path": "data/reference-audit-baseline.js",
           "bytes": 585,
-          "sha256": "a14030a5d2a090ad633b6523f946f6aa4b95d7e2b041961de99c152e609ccd63"
+          "sha256": "2a9493ee4e58050b97c6d900a1f3c90337b23e36ceeac53f3ec23624e53e8bba"
         },
         {
           "path": "data/reference-evidence.js",
@@ -243,13 +243,13 @@
         },
         {
           "path": "data/reference-motifs.js",
-          "bytes": 2585443,
-          "sha256": "c4235cb00d20ebd5015c0cfdcf862c6f125331e564a7000a6a9df0894521da6a"
+          "bytes": 2590186,
+          "sha256": "f0e8fa48835d6f70a4b77cda2a32fe2fc6282e52e0f79c5cebf948aa2e94ebb2"
         },
         {
           "path": "data/reference-releases.js",
-          "bytes": 7073699,
-          "sha256": "65a90a6e9cec0af3d6c0d61d084ba272eadc62ce672b8a347144ac0cee67b9f8"
+          "bytes": 7491640,
+          "sha256": "b562253cc1b30057cab9b14a8da7d179bd565b3b50439a3b76852a1d2f2764b5"
         },
         {
           "path": "data/reference-reviews.js",
@@ -1215,6 +1215,11 @@
           "path": "tools/derive-estrogen-references.py",
           "bytes": 13981,
           "sha256": "bbf3d68bef01a69543850df36562a7886ca83095c75c0f390262088562537daf"
+        },
+        {
+          "path": "tools/derive-flavonoid-references.py",
+          "bytes": 30805,
+          "sha256": "e16489b948f37f0517fcd3e09c68093e72536a29624393ed9da00393471c53ae"
         },
         {
           "path": "tools/derive-fluoroquinolone-references.py",
@@ -2157,7 +2162,7 @@
       "algorithm": "SHA-256",
       "scope": "Project root HTML/JS/Python/CSS plus js/, data/, tools/ and css/ source files; excludes generated JSON, logs and browser artifacts.",
       "git": {
-        "commit": "c79524f984c8e913b6d5059a1650d83525cf732f",
+        "commit": "0f83acf3b6f379ef9a946e8ce708ce465cda7dc1",
         "available": true,
         "sourceDirty": true,
         "changes": [
@@ -2191,12 +2196,12 @@
           },
           {
             "status": "??",
-            "path": "molecule profiler/tools/derive-beta-carboline-references.py"
+            "path": "molecule profiler/tools/derive-flavonoid-references.py"
           }
         ]
       },
-      "fileCount": 420,
-      "digest": "8399fb3a4e8edd05c317c5241ed43a8fc31b467544f11ae2d16fe8124aa4923a",
+      "fileCount": 421,
+      "digest": "6a490e25402b85ebd595e2f958c909d5e4d3a19768f4a47468bb3ed99f361ce0",
       "files": [
         {
           "path": "css/analogue-studio.css",
@@ -2276,12 +2281,12 @@
         {
           "path": "data/benchmark.js",
           "bytes": 17218,
-          "sha256": "0cb261ef704e3b41f6e8e08878f5195b06671c95657d5c2e6985d90f097188ab"
+          "sha256": "67e43e212d2276af969f867104edd79bd4f35b674497bec3ce4bec10e4093f16"
         },
         {
           "path": "data/chembl-properties.js",
           "bytes": 456150,
-          "sha256": "2d2cc4bdfc0fc8a367849a19f2c83e5e3589f38cc78b4aff30b057ad2fc27a26"
+          "sha256": "21bf87c80574f54d79abf3ddeb6bfeba039d50583b6fd17b72712ba08c9c4245"
         },
         {
           "path": "data/citations.js",
@@ -2325,13 +2330,13 @@
         },
         {
           "path": "data/library-tags.js",
-          "bytes": 11536824,
-          "sha256": "bb6179de25e1db247d8c5cc03b7761b893c3c2cd8d3d09e57c21ddbbec720c03"
+          "bytes": 11557647,
+          "sha256": "85eca164469b45bed6f8efac19f758c4835196aecc8092586d96a470ca9e59ee"
         },
         {
           "path": "data/library.js",
-          "bytes": 8113798,
-          "sha256": "9f5e7d54d57160130800bd3106798da8bc00a383820ed338b06ee2954b7f1e3e"
+          "bytes": 8119672,
+          "sha256": "20ee188867d24651bfa139cb0b6893a0a833ed9ac7166c7b24d8dffe38f8fe86"
         },
         {
           "path": "data/metabolism.js",
@@ -2376,7 +2381,7 @@
         {
           "path": "data/reference-audit-baseline.js",
           "bytes": 585,
-          "sha256": "a14030a5d2a090ad633b6523f946f6aa4b95d7e2b041961de99c152e609ccd63"
+          "sha256": "2a9493ee4e58050b97c6d900a1f3c90337b23e36ceeac53f3ec23624e53e8bba"
         },
         {
           "path": "data/reference-evidence.js",
@@ -2390,13 +2395,13 @@
         },
         {
           "path": "data/reference-motifs.js",
-          "bytes": 2585443,
-          "sha256": "c4235cb00d20ebd5015c0cfdcf862c6f125331e564a7000a6a9df0894521da6a"
+          "bytes": 2590186,
+          "sha256": "f0e8fa48835d6f70a4b77cda2a32fe2fc6282e52e0f79c5cebf948aa2e94ebb2"
         },
         {
           "path": "data/reference-releases.js",
-          "bytes": 7073699,
-          "sha256": "65a90a6e9cec0af3d6c0d61d084ba272eadc62ce672b8a347144ac0cee67b9f8"
+          "bytes": 7491640,
+          "sha256": "b562253cc1b30057cab9b14a8da7d179bd565b3b50439a3b76852a1d2f2764b5"
         },
         {
           "path": "data/reference-reviews.js",
@@ -3362,6 +3367,11 @@
           "path": "tools/derive-estrogen-references.py",
           "bytes": 13981,
           "sha256": "bbf3d68bef01a69543850df36562a7886ca83095c75c0f390262088562537daf"
+        },
+        {
+          "path": "tools/derive-flavonoid-references.py",
+          "bytes": 30805,
+          "sha256": "e16489b948f37f0517fcd3e09c68093e72536a29624393ed9da00393471c53ae"
         },
         {
           "path": "tools/derive-fluoroquinolone-references.py",
@@ -4313,29 +4323,29 @@
     {
       "script": "reference-audit-test.js",
       "passed": true,
-      "durationMs": 292,
+      "durationMs": 285,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
       "error": null,
-      "stdout": "{\n  \"passed\": true,\n  \"entries\": 21783,\n  \"missingFormula\": 0,\n  \"targets\": 154,\n  \"sparseTargets\": 44,\n  \"profiles\": 27\n}\n",
+      "stdout": "{\n  \"passed\": true,\n  \"entries\": 21830,\n  \"missingFormula\": 0,\n  \"targets\": 154,\n  \"sparseTargets\": 44,\n  \"profiles\": 27\n}\n",
       "stderr": ""
     },
     {
       "script": "reference-counts-test.js",
       "passed": true,
-      "durationMs": 483,
+      "durationMs": 490,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
       "error": null,
       "stdout": "Rebuilding tags\nRebuilding overlay\nShared counts and repinning: stale-source detection, invalid-data rejection, read-only plans and fail-closed rebuild order passed\n",
-      "stderr": "........\n----------------------------------------------------------------------\nRan 8 tests in 0.047s\n\nOK\n"
+      "stderr": "........\n----------------------------------------------------------------------\nRan 8 tests in 0.045s\n\nOK\n"
     },
     {
       "script": "curated-references-test.js",
       "passed": true,
-      "durationMs": 4413,
+      "durationMs": 4583,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4346,7 +4356,7 @@
     {
       "script": "identity-corrections-test.js",
       "passed": true,
-      "durationMs": 650,
+      "durationMs": 680,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4357,7 +4367,7 @@
     {
       "script": "receptor-catalog-test.js",
       "passed": true,
-      "durationMs": 314,
+      "durationMs": 344,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4368,7 +4378,7 @@
     {
       "script": "receptor-coverage-test.js",
       "passed": true,
-      "durationMs": 2278,
+      "durationMs": 2250,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4379,7 +4389,7 @@
     {
       "script": "receptor-diversity-report-test.js",
       "passed": true,
-      "durationMs": 1307,
+      "durationMs": 1402,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4390,7 +4400,7 @@
     {
       "script": "chembl-binding-test.js",
       "passed": true,
-      "durationMs": 7017,
+      "durationMs": 6910,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4401,7 +4411,7 @@
     {
       "script": "chembl-evidence-test.js",
       "passed": true,
-      "durationMs": 5792,
+      "durationMs": 5769,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4412,7 +4422,7 @@
     {
       "script": "chembl-properties-test.js",
       "passed": true,
-      "durationMs": 289,
+      "durationMs": 324,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4423,7 +4433,7 @@
     {
       "script": "chemical-class-tags-test.js",
       "passed": true,
-      "durationMs": 516,
+      "durationMs": 466,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4434,7 +4444,7 @@
     {
       "script": "source-action-tags-test.js",
       "passed": true,
-      "durationMs": 655,
+      "durationMs": 566,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4445,7 +4455,7 @@
     {
       "script": "reference-evidence-test.js",
       "passed": true,
-      "durationMs": 511,
+      "durationMs": 508,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4456,7 +4466,7 @@
     {
       "script": "freesolv-properties-002-test.js",
       "passed": true,
-      "durationMs": 286,
+      "durationMs": 329,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4467,7 +4477,7 @@
     {
       "script": "iuphar-endpoint-test.js",
       "passed": true,
-      "durationMs": 659,
+      "durationMs": 601,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4478,7 +4488,7 @@
     {
       "script": "reference-actions-test.js",
       "passed": true,
-      "durationMs": 1008,
+      "durationMs": 956,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4489,7 +4499,7 @@
     {
       "script": "target-ranking-test.js",
       "passed": true,
-      "durationMs": 336,
+      "durationMs": 333,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4500,7 +4510,7 @@
     {
       "script": "target-ranking-metrics-test.js",
       "passed": true,
-      "durationMs": 33,
+      "durationMs": 42,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4511,7 +4521,7 @@
     {
       "script": "metabolism-engine-test.js",
       "passed": true,
-      "durationMs": 291,
+      "durationMs": 257,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4522,7 +4532,7 @@
     {
       "script": "evidence-report-test.js",
       "passed": true,
-      "durationMs": 45,
+      "durationMs": 53,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4533,7 +4543,7 @@
     {
       "script": "screen-coverage-test.js",
       "passed": true,
-      "durationMs": 53,
+      "durationMs": 37,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4544,7 +4554,7 @@
     {
       "script": "property-validation.js",
       "passed": true,
-      "durationMs": 43,
+      "durationMs": 39,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4555,7 +4565,7 @@
     {
       "script": "descriptor-conformance-test.js",
       "passed": true,
-      "durationMs": 67,
+      "durationMs": 70,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4566,7 +4576,7 @@
     {
       "script": "metabolism-cases.js",
       "passed": true,
-      "durationMs": 2054,
+      "durationMs": 1807,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4577,18 +4587,18 @@
     {
       "script": "retrieval-benchmark.js",
       "passed": true,
-      "durationMs": 76675,
+      "durationMs": 79674,
       "timeoutMs": 300000,
       "signal": null,
       "status": 0,
       "error": null,
-      "stdout": "leave-one-out target retrieval, ecfp4 / tanimoto\n  library 21810 compounds, 150 targets, 129 measurable, 21 with fewer than two ligands\n  5393 held-out trials over a median of 150 scored targets\n  recall@1 49.4%  recall@5 88.0%  recall@10 93.3%  median rank 2  mean rank 4.4\n  targets with >=5 ligands (5291 trials): recall@1 49.6%  recall@5 88.7%  median rank 2\n  popularity baseline: recall@1 4.6%  recall@5 15.9%  median rank 23\n  uniform random baseline: recall@1 0.7%  recall@5 3.3%  median rank 75\n\nother fingerprints\n  ecfp6  recall@1 49.3%  recall@5 87.9%  median rank 2\n  fcfp4  recall@1 48.5%  recall@5 87.3%  median rank 2\n  pairs  recall@1 48.3%  recall@5 86.8%  median rank 2\n  ecfp4 with Dice: recall@1 49.4%  recall@5 88.0%  median rank 2\n\nper target: gene, trials, recall@1, recall@5, median rank\n  HTR2A     246   76.4%   86.6%  1\n  HTR2C     210    0.0%   84.8%  2\n  OPRM1     134   80.6%   95.5%  1\n  DRD2      133   47.4%   94.7%  2\n  CHRM1     132   60.6%   81.8%  1\n  DRD3      125   20.0%   92.0%  2\n  ADRA1A    124   36.3%   63.7%  3\n  CHRM3     124   26.6%   80.6%  3\n  GABRA1    121   90.1%   94.2%  1\n  CHRM2     120   15.8%   82.5%  2\n  DRD1      120   55.8%   88.3%  1\n  DRD4      119   31.1%   85.7%  3\n  ADRA2A    106   38.7%   60.4%  3\n  OPRK1     104   52.9%   96.2%  1\n  SLC6A2    102   50.0%   84.3%  1.5\n  ADRB1      96   76.0%   97.9%  1\n  SLC6A4     94   39.4%   81.9%  2\n  HRH1       93   43.0%   74.2%  2\n  SLC18A2    90    3.3%   92.2%  3\n  SLC6A3     89   11.2%   93.3%  2\n  ADRB2      84   48.8%   97.6%  2\n  OPRD1      80    5.0%   90.0%  3\n  BCHE       75    1.3%   92.0%  2\n  ACHE       73   87.7%   91.8%  1\n  HTR2B      71   12.7%   90.1%  3\n  PTGS2      69    0.0%   95.7%  2\n  HTR7       68    0.0%   72.1%  5\n  PTGS1      68   95.6%  100.0%  1\n  HTR1A      67   70.1%   76.1%  1\n  HTR6       66    0.0%   78.8%  4\n  SCN9A      60   11.7%   85.0%  2\n  SCN5A      59   72.9%   83.1%  1\n  AGTR1      57   98.2%   98.2%  1\n  ESR1       56   71.4%  100.0%  1\n  ESR2       56    0.0%  100.0%  2\n  HTR1B      56   80.4%   98.2%  1\n  HTR1D      56   14.3%   98.2%  2\n  CA2        55   67.3%  100.0%  1\n  CYP19A1    55   70.9%   98.2%  1\n  NR3C1      55   85.5%  100.0%  1\n  ADORA2A    53   22.6%  100.0%  2\n  HRH2       53   84.9%   88.7%  1\n  ADORA1     52   36.5%   96.2%  2\n  AR         52   65.4%   98.1%  1\n  PPARG      52   98.1%   98.1%  1\n  ADORA2B    51   68.6%   98.0%  1\n  P2RY12     51   98.0%   98.0%  1\n  PGR        51   70.6%  100.0%  1\n  ADORA3     50   66.0%   98.0%  1\n  ADRA1B     50   20.0%   96.0%  2\n  ADRA1D     50   18.0%   96.0%  3\n  ADRA2B     50   40.0%   80.0%  2\n  ADRA2C     50   36.0%   78.0%  2\n  ADRB3      50   82.0%  100.0%  1\n  CHRM4      50   38.0%   88.0%  2\n  CHRM5      50   56.0%   86.0%  1\n  DRD5       50   64.0%   96.0%  1\n  HRH3       50   98.0%  100.0%  1\n  HRH4       50   90.0%  100.0%  1\n  HTR4       50   96.0%   96.0%  1\n  HTR5A      50   88.0%   88.0%  1\n  MTNR1A     50  100.0%  100.0%  1\n  MTNR1B     50   76.0%  100.0%  1\n  ERG11      33   97.0%  100.0%  1\n  folP       32   90.6%  100.0%  1\n  RARA       30  100.0%  100.0%  1\n  HTR1F      26  100.0%  100.0%  1\n  CHRNA4     24   66.7%   75.0%  1\n  CACNA1C    22   86.4%   90.9%  1\n  SLC12A3    20   75.0%  100.0%  1\n  SCN8A      18    0.0%   61.1%  3.5\n  KCNH2      15    0.0%   20.0%  14\n  ACE        14  100.0%  100.0%  1\n  HTR3A      11    0.0%    9.1%  19\n  pol        11   54.5%   72.7%  1\n  HMGCR      10  100.0%  100.0%  1\n  UL23       10   20.0%  100.0%  2\n  UL30       10   60.0%  100.0%  1\n  TYMS        9   55.6%   88.9%  1\n  DHFR        8   37.5%  100.0%  2\n  CYP2D6      6    0.0%   33.3%  69.5\n  CYP3A4      6    0.0%    0.0%  83.5\n  OPRL1       6    0.0%   16.7%  25.5\n  POLA1       6   83.3%  100.0%  1\n  SLC22A12    6    0.0%    0.0%  51.5\n  ABCB1       5    0.0%    0.0%  75\n  CYP2C9      5    0.0%    0.0%  76\n  GRIN1       5   20.0%   80.0%  2\n  RRM1        5    0.0%   80.0%  4\n  SLC12A1     5    0.0%   60.0%  3\n  EGFR        4   75.0%  100.0%  1\n  HTR1E       4   50.0%   50.0%  53.5\n  KIT         4    0.0%   50.0%  10\n  MAOA        4    0.0%    0.0%  94.5\n  pbp         4  100.0%  100.0%  1\n  PDGFRB      4    0.0%   50.0%  10\n  TUBB        4    0.0%   75.0%  2.5\n  ABL1        3   66.7%   66.7%  1\n  gyrA        3  100.0%  100.0%  1\n  HPRT1       3  100.0%  100.0%  1\n  IMPDH2      3   33.3%   66.7%  2\n  KDR         3    0.0%    0.0%  99\n  MAOB        3    0.0%    0.0%  34\n  n/a         3  100.0%  100.0%  1\n  n/a         3   66.7%   66.7%  1\n  parC        3    0.0%  100.0%  2\n  XDH         3    0.0%    0.0%  9\n  ABCC8       2  100.0%  100.0%  1\n  ATP4A       2  100.0%  100.0%  1\n  ben-1       2  100.0%  100.0%  1\n  BRAF        2    0.0%    0.0%  68.5\n  CACNA2D1    2   50.0%   50.0%  4\n  CRBN        2  100.0%  100.0%  1\n  CYSLTR1     2    0.0%    0.0%  80\n  DDC         2    0.0%  100.0%  2.5\n  ERBB2       2    0.0%    0.0%  38.5\n  F10         2    0.0%    0.0%  21.5\n  FLT3        2    0.0%    0.0%  96.5\n  JAK1        2  100.0%  100.0%  1\n  JAK2        2    0.0%  100.0%  2\n  M2          2  100.0%  100.0%  1\n  NA          2  100.0%  100.0%  1\n  nfsA        2    0.0%    0.0%  29\n  NS5B        2    0.0%    0.0%  62\n  PARP1       2    0.0%    0.0%  77.5\n  PDE4D       2  100.0%  100.0%  1\n  PDE5A       2    0.0%    0.0%  93.5\n  rplC        2    0.0%    0.0%  123.5\n  SLC22A1     2    0.0%    0.0%  123\n\nworst trials\n  XDH      Febuxostat                  rank  145, top was ADRB1 at 0.284\n  SLC22A1  Cimetidine                  rank  140, top was HRH2 at 0.654\n  MAOA     Moclobemide                 rank  140, top was DRD4 at 0.361\n  HTR1E    CHEMBL4163428               rank  137, top was HRH2 at 0.644\n  rplC     Linezolid                   rank  131, top was F10 at 0.438\n  HTR3A    Serotonin                   rank  126, top was HTR5A at 0.590\n  RRM1     Hydroxyurea                 rank  122, top was folP at 0.250\n  KDR      BMS-690514                  rank  121, top was OPRM1 at 0.244\n  HTR4     CHEMBL371300                rank  121, top was SLC6A2 at 0.350\n  MAOA     Brofaromine                 rank  118, top was CHRM1 at 0.239\n  CYP2C9   Losartan                    rank  116, top was AGTR1 at 0.738\n  rplC     Chloramphenicol             rank  116, top was ADRB1 at 0.408\n  HTR4     CHEMBL210288                rank  112, top was DRD5 at 0.639\n  KIT      Sunitinib                   rank  110, top was SCN5A at 0.333\n  CYSLTR1  Montelukast                 rank  109, top was PTGS1 at 0.222\n\nnot measurable (fewer than two resolved ligands)\n  ALOX5 GABBR1 SV2A NPC1L1 VKORC1 NDUFS1 COMT ABAT ADH1B DPP4 SRC ALK MET BTK CDK4 CDK6 JAK3 folA inhA embB pncA\n",
+      "stdout": "leave-one-out target retrieval, ecfp4 / tanimoto\n  library 21857 compounds, 150 targets, 129 measurable, 21 with fewer than two ligands\n  5393 held-out trials over a median of 150 scored targets\n  recall@1 49.4%  recall@5 88.0%  recall@10 93.3%  median rank 2  mean rank 4.4\n  targets with >=5 ligands (5291 trials): recall@1 49.6%  recall@5 88.7%  median rank 2\n  popularity baseline: recall@1 4.6%  recall@5 15.9%  median rank 23\n  uniform random baseline: recall@1 0.7%  recall@5 3.3%  median rank 75\n\nother fingerprints\n  ecfp6  recall@1 49.3%  recall@5 87.9%  median rank 2\n  fcfp4  recall@1 48.5%  recall@5 87.3%  median rank 2\n  pairs  recall@1 48.3%  recall@5 86.8%  median rank 2\n  ecfp4 with Dice: recall@1 49.4%  recall@5 88.0%  median rank 2\n\nper target: gene, trials, recall@1, recall@5, median rank\n  HTR2A     246   76.4%   86.6%  1\n  HTR2C     210    0.0%   84.8%  2\n  OPRM1     134   80.6%   95.5%  1\n  DRD2      133   47.4%   94.7%  2\n  CHRM1     132   60.6%   81.8%  1\n  DRD3      125   20.0%   92.0%  2\n  ADRA1A    124   36.3%   63.7%  3\n  CHRM3     124   26.6%   80.6%  3\n  GABRA1    121   90.1%   94.2%  1\n  CHRM2     120   15.8%   82.5%  2\n  DRD1      120   55.8%   88.3%  1\n  DRD4      119   31.1%   85.7%  3\n  ADRA2A    106   38.7%   60.4%  3\n  OPRK1     104   52.9%   96.2%  1\n  SLC6A2    102   50.0%   84.3%  1.5\n  ADRB1      96   76.0%   97.9%  1\n  SLC6A4     94   39.4%   81.9%  2\n  HRH1       93   43.0%   74.2%  2\n  SLC18A2    90    3.3%   92.2%  3\n  SLC6A3     89   11.2%   93.3%  2\n  ADRB2      84   48.8%   97.6%  2\n  OPRD1      80    5.0%   90.0%  3\n  BCHE       75    1.3%   92.0%  2\n  ACHE       73   87.7%   91.8%  1\n  HTR2B      71   12.7%   90.1%  3\n  PTGS2      69    0.0%   95.7%  2\n  HTR7       68    0.0%   72.1%  5\n  PTGS1      68   95.6%  100.0%  1\n  HTR1A      67   70.1%   76.1%  1\n  HTR6       66    0.0%   78.8%  4\n  SCN9A      60   11.7%   85.0%  2\n  SCN5A      59   72.9%   83.1%  1\n  AGTR1      57   98.2%   98.2%  1\n  ESR1       56   71.4%  100.0%  1\n  ESR2       56    0.0%  100.0%  2\n  HTR1B      56   80.4%   98.2%  1\n  HTR1D      56   14.3%   98.2%  2\n  CA2        55   67.3%  100.0%  1\n  CYP19A1    55   70.9%   98.2%  1\n  NR3C1      55   85.5%  100.0%  1\n  ADORA2A    53   22.6%  100.0%  2\n  HRH2       53   84.9%   88.7%  1\n  ADORA1     52   36.5%   96.2%  2\n  AR         52   65.4%   98.1%  1\n  PPARG      52   98.1%   98.1%  1\n  ADORA2B    51   68.6%   98.0%  1\n  P2RY12     51   98.0%   98.0%  1\n  PGR        51   70.6%  100.0%  1\n  ADORA3     50   66.0%   98.0%  1\n  ADRA1B     50   20.0%   96.0%  2\n  ADRA1D     50   18.0%   96.0%  3\n  ADRA2B     50   40.0%   80.0%  2\n  ADRA2C     50   36.0%   78.0%  2\n  ADRB3      50   82.0%  100.0%  1\n  CHRM4      50   38.0%   88.0%  2\n  CHRM5      50   56.0%   86.0%  1\n  DRD5       50   64.0%   96.0%  1\n  HRH3       50   98.0%  100.0%  1\n  HRH4       50   90.0%  100.0%  1\n  HTR4       50   96.0%   96.0%  1\n  HTR5A      50   88.0%   88.0%  1\n  MTNR1A     50  100.0%  100.0%  1\n  MTNR1B     50   76.0%  100.0%  1\n  ERG11      33   97.0%  100.0%  1\n  folP       32   90.6%  100.0%  1\n  RARA       30  100.0%  100.0%  1\n  HTR1F      26  100.0%  100.0%  1\n  CHRNA4     24   66.7%   75.0%  1\n  CACNA1C    22   86.4%   90.9%  1\n  SLC12A3    20   75.0%  100.0%  1\n  SCN8A      18    0.0%   61.1%  3.5\n  KCNH2      15    0.0%   20.0%  14\n  ACE        14  100.0%  100.0%  1\n  HTR3A      11    0.0%    9.1%  19\n  pol        11   54.5%   72.7%  1\n  HMGCR      10  100.0%  100.0%  1\n  UL23       10   20.0%  100.0%  2\n  UL30       10   60.0%  100.0%  1\n  TYMS        9   55.6%   88.9%  1\n  DHFR        8   37.5%  100.0%  2\n  CYP2D6      6    0.0%   33.3%  69.5\n  CYP3A4      6    0.0%    0.0%  83.5\n  OPRL1       6    0.0%   16.7%  25.5\n  POLA1       6   83.3%  100.0%  1\n  SLC22A12    6    0.0%    0.0%  51.5\n  ABCB1       5    0.0%    0.0%  75\n  CYP2C9      5    0.0%    0.0%  76\n  GRIN1       5   20.0%   80.0%  2\n  RRM1        5    0.0%   80.0%  4\n  SLC12A1     5    0.0%   60.0%  3\n  EGFR        4   75.0%  100.0%  1\n  HTR1E       4   50.0%   50.0%  53.5\n  KIT         4    0.0%   50.0%  10\n  MAOA        4    0.0%    0.0%  94.5\n  pbp         4  100.0%  100.0%  1\n  PDGFRB      4    0.0%   50.0%  10\n  TUBB        4    0.0%   75.0%  2.5\n  ABL1        3   66.7%   66.7%  1\n  gyrA        3  100.0%  100.0%  1\n  HPRT1       3  100.0%  100.0%  1\n  IMPDH2      3   33.3%   66.7%  2\n  KDR         3    0.0%    0.0%  99\n  MAOB        3    0.0%    0.0%  34\n  n/a         3  100.0%  100.0%  1\n  n/a         3   66.7%   66.7%  1\n  parC        3    0.0%  100.0%  2\n  XDH         3    0.0%    0.0%  9\n  ABCC8       2  100.0%  100.0%  1\n  ATP4A       2  100.0%  100.0%  1\n  ben-1       2  100.0%  100.0%  1\n  BRAF        2    0.0%    0.0%  68.5\n  CACNA2D1    2   50.0%   50.0%  4\n  CRBN        2  100.0%  100.0%  1\n  CYSLTR1     2    0.0%    0.0%  80\n  DDC         2    0.0%  100.0%  2.5\n  ERBB2       2    0.0%    0.0%  38.5\n  F10         2    0.0%    0.0%  21.5\n  FLT3        2    0.0%    0.0%  96.5\n  JAK1        2  100.0%  100.0%  1\n  JAK2        2    0.0%  100.0%  2\n  M2          2  100.0%  100.0%  1\n  NA          2  100.0%  100.0%  1\n  nfsA        2    0.0%    0.0%  29\n  NS5B        2    0.0%    0.0%  62\n  PARP1       2    0.0%    0.0%  77.5\n  PDE4D       2  100.0%  100.0%  1\n  PDE5A       2    0.0%    0.0%  93.5\n  rplC        2    0.0%    0.0%  123.5\n  SLC22A1     2    0.0%    0.0%  123\n\nworst trials\n  XDH      Febuxostat                  rank  145, top was ADRB1 at 0.284\n  SLC22A1  Cimetidine                  rank  140, top was HRH2 at 0.654\n  MAOA     Moclobemide                 rank  140, top was DRD4 at 0.361\n  HTR1E    CHEMBL4163428               rank  137, top was HRH2 at 0.644\n  rplC     Linezolid                   rank  131, top was F10 at 0.438\n  HTR3A    Serotonin                   rank  126, top was HTR5A at 0.590\n  RRM1     Hydroxyurea                 rank  122, top was folP at 0.250\n  KDR      BMS-690514                  rank  121, top was OPRM1 at 0.244\n  HTR4     CHEMBL371300                rank  121, top was SLC6A2 at 0.350\n  MAOA     Brofaromine                 rank  118, top was CHRM1 at 0.239\n  CYP2C9   Losartan                    rank  116, top was AGTR1 at 0.738\n  rplC     Chloramphenicol             rank  116, top was ADRB1 at 0.408\n  HTR4     CHEMBL210288                rank  112, top was DRD5 at 0.639\n  KIT      Sunitinib                   rank  110, top was SCN5A at 0.333\n  CYSLTR1  Montelukast                 rank  109, top was PTGS1 at 0.222\n\nnot measurable (fewer than two resolved ligands)\n  ALOX5 GABBR1 SV2A NPC1L1 VKORC1 NDUFS1 COMT ABAT ADH1B DPP4 SRC ALK MET BTK CDK4 CDK6 JAK3 folA inhA embB pncA\n",
       "stderr": ""
     },
     {
       "script": "retrieval-evaluate-test.js",
       "passed": true,
-      "durationMs": 117,
+      "durationMs": 121,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4599,7 +4609,7 @@
     {
       "script": "reference-context-test.js",
       "passed": true,
-      "durationMs": 329,
+      "durationMs": 339,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4610,7 +4620,7 @@
     {
       "script": "reference-fingerprints-test.js",
       "passed": true,
-      "durationMs": 6889,
+      "durationMs": 6700,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4621,18 +4631,18 @@
     {
       "script": "reference-eligibility-test.js",
       "passed": true,
-      "durationMs": 553,
+      "durationMs": 580,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
       "error": null,
-      "stdout": "{\"eligible\":6171,\"unassignedBulkExcluded\":14797,\"scope\":\"Structural neighbours only; eligibility does not validate class pharmacology\"}\n",
+      "stdout": "{\"eligible\":6218,\"unassignedBulkExcluded\":14797,\"scope\":\"Structural neighbours only; eligibility does not validate class pharmacology\"}\n",
       "stderr": ""
     },
     {
       "script": "ui-integration-test.js",
       "passed": true,
-      "durationMs": 46,
+      "durationMs": 66,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4643,7 +4653,7 @@
     {
       "script": "interaction-test.js",
       "passed": true,
-      "durationMs": 40,
+      "durationMs": 42,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4654,7 +4664,7 @@
     {
       "script": "cooperative-batch-test.js",
       "passed": true,
-      "durationMs": 54,
+      "durationMs": 52,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4665,7 +4675,7 @@
     {
       "script": "analysis-lifecycle-test.js",
       "passed": true,
-      "durationMs": 56,
+      "durationMs": 55,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4676,7 +4686,7 @@
     {
       "script": "validation-provenance-test.js",
       "passed": true,
-      "durationMs": 210,
+      "durationMs": 230,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4687,7 +4697,7 @@
     {
       "script": "comparison-test.js",
       "passed": true,
-      "durationMs": 40,
+      "durationMs": 57,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4698,18 +4708,18 @@
     {
       "script": "library-catalog-test.js",
       "passed": true,
-      "durationMs": 428,
+      "durationMs": 481,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
       "error": null,
-      "stdout": "Library catalogue and provenance-grouping checks passed: 21783 entries\nDisplay-prefix regression: chemical descriptors, single-letter prefixes, hyphen boundaries, live cis- record and source non-mutation passed\n",
+      "stdout": "Library catalogue and provenance-grouping checks passed: 21830 entries\nDisplay-prefix regression: chemical descriptors, single-letter prefixes, hyphen boundaries, live cis- record and source non-mutation passed\n",
       "stderr": ""
     },
     {
       "script": "library-metadata-report-test.js",
       "passed": true,
-      "durationMs": 1449,
+      "durationMs": 1521,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4720,7 +4730,7 @@
     {
       "script": "family-reference-test.js",
       "passed": true,
-      "durationMs": 254,
+      "durationMs": 268,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4731,7 +4741,7 @@
     {
       "script": "family-pharmacology-test.js",
       "passed": true,
-      "durationMs": 320,
+      "durationMs": 294,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4742,7 +4752,7 @@
     {
       "script": "two-c-reference-test.js",
       "passed": true,
-      "durationMs": 308,
+      "durationMs": 312,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4753,7 +4763,7 @@
     {
       "script": "named-family-actions-test.js",
       "passed": true,
-      "durationMs": 2599,
+      "durationMs": 2210,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4775,7 +4785,7 @@
     {
       "script": "named-family-004-test.js",
       "passed": true,
-      "durationMs": 329,
+      "durationMs": 302,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4786,7 +4796,7 @@
     {
       "script": "reference-research-test.js",
       "passed": true,
-      "durationMs": 842,
+      "durationMs": 805,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4797,7 +4807,7 @@
     {
       "script": "property-evidence-test.js",
       "passed": true,
-      "durationMs": 43,
+      "durationMs": 39,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4808,7 +4818,7 @@
     {
       "script": "freesolv-property-source-test.js",
       "passed": true,
-      "durationMs": 346,
+      "durationMs": 286,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4819,7 +4829,7 @@
     {
       "script": "reference-structure-test.js",
       "passed": true,
-      "durationMs": 58,
+      "durationMs": 63,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4830,29 +4840,29 @@
     {
       "script": "reference-structure-worker-test.js",
       "passed": true,
-      "durationMs": 3734,
+      "durationMs": 3366,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
       "error": null,
-      "stdout": "Structure worker: versioned classic imports, recoverable query error, progress, and exact full-library 21810-entry scan passed\n",
+      "stdout": "Structure worker: versioned classic imports, recoverable query error, progress, and exact full-library 21857-entry scan passed\n",
       "stderr": ""
     },
     {
       "script": "library-depiction-test.js",
       "passed": true,
-      "durationMs": 116836,
+      "durationMs": 115077,
       "timeoutMs": 300000,
       "signal": null,
       "status": 0,
       "error": null,
-      "stdout": "Library depiction audit: 21810 stored and overlay references depicted across 4 shards, 934712 bond and atom marks drawn, 0 fallback renders\n",
+      "stdout": "Library depiction audit: 21857 stored and overlay references depicted across 4 shards, 936270 bond and atom marks drawn, 0 fallback renders\n",
       "stderr": ""
     },
     {
       "script": "reference-sar-test.js",
       "passed": true,
-      "durationMs": 845,
+      "durationMs": 957,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4863,7 +4873,7 @@
     {
       "script": "reference-pairs-test.js",
       "passed": true,
-      "durationMs": 972,
+      "durationMs": 1077,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4874,7 +4884,7 @@
     {
       "script": "reference-probes-test.js",
       "passed": true,
-      "durationMs": 855,
+      "durationMs": 895,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4885,7 +4895,7 @@
     {
       "script": "reference-claims-test.js",
       "passed": true,
-      "durationMs": 878,
+      "durationMs": 766,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4896,7 +4906,7 @@
     {
       "script": "reference-releases-test.js",
       "passed": true,
-      "durationMs": 465,
+      "durationMs": 447,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4907,7 +4917,7 @@
     {
       "script": "pharmacology-test.js",
       "passed": true,
-      "durationMs": 408,
+      "durationMs": 393,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4918,7 +4928,7 @@
     {
       "script": "pk-applicability-test.js",
       "passed": true,
-      "durationMs": 179,
+      "durationMs": 158,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4929,7 +4939,7 @@
     {
       "script": "prodrug-candidates-test.js",
       "passed": true,
-      "durationMs": 485,
+      "durationMs": 456,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4940,7 +4950,7 @@
     {
       "script": "quick-candidates-test.js",
       "passed": true,
-      "durationMs": 5693,
+      "durationMs": 5419,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4951,7 +4961,7 @@
     {
       "script": "candidate-info-test.js",
       "passed": true,
-      "durationMs": 4268,
+      "durationMs": 3992,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4962,7 +4972,7 @@
     {
       "script": "cleavable-groups-test.js",
       "passed": true,
-      "durationMs": 158,
+      "durationMs": 167,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4973,7 +4983,7 @@
     {
       "script": "soft-ethers-test.js",
       "passed": true,
-      "durationMs": 1343,
+      "durationMs": 1268,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4984,7 +4994,7 @@
     {
       "script": "analogue-candidates-test.js",
       "passed": true,
-      "durationMs": 8327,
+      "durationMs": 8075,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -4995,7 +5005,7 @@
     {
       "script": "directional-smiles-test.js",
       "passed": true,
-      "durationMs": 168,
+      "durationMs": 196,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -5006,7 +5016,7 @@
     {
       "script": "prodrug-explorer-test.js",
       "passed": true,
-      "durationMs": 206,
+      "durationMs": 163,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -5017,7 +5027,7 @@
     {
       "script": "prodrug-priority-test.js",
       "passed": true,
-      "durationMs": 368,
+      "durationMs": 343,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -5039,18 +5049,18 @@
     {
       "script": "batch-browser-test.js",
       "passed": true,
-      "durationMs": 71,
+      "durationMs": 57,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
       "error": null,
-      "stdout": "Batch browsing regression tests passed; 10,000-row benchmark: 9.3 ms for two queries (informational only)\n",
+      "stdout": "Batch browsing regression tests passed; 10,000-row benchmark: 10.8 ms for two queries (informational only)\n",
       "stderr": ""
     },
     {
       "script": "input-workflow-test.js",
       "passed": true,
-      "durationMs": 36,
+      "durationMs": 41,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -5061,7 +5071,7 @@
     {
       "script": "file-import-test.js",
       "passed": true,
-      "durationMs": 42,
+      "durationMs": 38,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -5072,7 +5082,7 @@
     {
       "script": "report-model-test.js",
       "passed": true,
-      "durationMs": 41,
+      "durationMs": 38,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -5083,7 +5093,7 @@
     {
       "script": "full-csv-export-test.js",
       "passed": true,
-      "durationMs": 45,
+      "durationMs": 39,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -5094,7 +5104,7 @@
     {
       "script": "research-package-test.js",
       "passed": true,
-      "durationMs": 52,
+      "durationMs": 53,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -5105,7 +5115,7 @@
     {
       "script": "descriptor-stats-test.js",
       "passed": true,
-      "durationMs": 34,
+      "durationMs": 38,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -5116,7 +5126,7 @@
     {
       "script": "molecule-quality-test.js",
       "passed": true,
-      "durationMs": 40,
+      "durationMs": 37,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
@@ -5127,7 +5137,7 @@
     {
       "script": "research-zip-external-test.js",
       "passed": true,
-      "durationMs": 118,
+      "durationMs": 110,
       "timeoutMs": 120000,
       "signal": null,
       "status": 0,
