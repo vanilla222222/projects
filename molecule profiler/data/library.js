@@ -22051,6 +22051,7 @@ const LIBRARY = [
   { name: '2\'-deoxy-5-methylcytidine', cls: 'Nucleoside', formula: 'C10H15N3O4', smiles: 'Cc1cn([C@H]2C[C@H](O)[C@@H](CO)O2)c(=O)nc1N' },
   { name: '2\'-deoxyuridine', cls: 'Nucleoside', formula: 'C9H12N2O5', smiles: 'O=c1ccn([C@H]2C[C@H](O)[C@@H](CO)O2)c(=O)[nH]1' },
   { name: '5-hydroxymethylcytidine', cls: 'Nucleoside', formula: 'C10H15N3O6', smiles: 'Nc1nc(=O)n([C@@H]2O[C@H](CO)[C@@H](O)[C@H]2O)cc1CO' },
+  { name: '4-[3-(difluoromethyl)-5-(4-fluorophenyl)pyrazol-1-yl]benzenesulfonamide', cls: 'COX-2 inhibitor', formula: 'C16H12F3N3O2S', smiles: 'NS(=O)(=O)c1ccc(-n2nc(C(F)F)cc2-c2ccc(F)cc2)cc1' },
 ];
 
 if (typeof module !== 'undefined' && module.exports) {

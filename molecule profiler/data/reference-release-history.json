@@ -215,8 +215,14 @@
       "id": "nucleoside-nine",
       "label": "Nucleoside and nucleobase classes measured at ceilings of nine and five references",
       "date": "2026-10-27",
+      "commit": "2fb7fd6777acf5f5ddfcd6c3250e5d962b1d0f91"
+    },
+    {
+      "id": "cox2-eight",
+      "label": "COX-2 inhibitor class measured at a ceiling of eight references",
+      "date": "2026-10-27",
       "workingTree": true,
-      "baseCommit": "b0aab01023b9ad71d4fb3d875b27c8ee66ea8803"
+      "baseCommit": "2fb7fd6777acf5f5ddfcd6c3250e5d962b1d0f91"
     }
   ]
 }
