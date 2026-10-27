@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "sourceSha256": {
-    "data/library.js": "d1b4be63550bbb8a793372c16516e3d94fc7c9e99408dc94feed6ba920f488d7",
+    "data/library.js": "1f43b22c64e561af80baf6ac6bf4a1f270095fd34d9c47533579a737d1993e2b",
     "data/library-names.js": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
     "data/targets.js": "c994111b869a78b68fe873c92f218ae1791b9b3e3fbf390f0b3a837221b4aacd",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
@@ -12,7 +12,7 @@
     "tools/library-expansion-50.py": "1c7e05d9267af49bcf25ff3fc90f114b394a295ab3dee561954252e26bc0d60a",
     "validation/library-50-import.json": "89abe62271fff06dd9c8591ea3823ae56cd62a7396eb1412bd93834a2c1b10e0"
   },
-  "dataSha256": "4bc358d2bac23c3dbf87b7790242f0e9e48adb6141b16b63c4fa026d7014ce58",
+  "dataSha256": "c20550b300a7ec7a3d72b6a4c79b2e1bd2e30875c17b5db07f44471b9d359365",
   "interpretation": "Overlapping structural motifs in stored graphs; not evidence of pharmacological function, exhaustive family membership or independently verified molecular identities.",
   "families": [
     {
@@ -11585,9 +11585,13 @@
         "3-carbamoyl-1-(2-imino-2,3-dihydropyrimidin-4-yl)-9H-pyrido[3,4-b]indole",
         "3-carbamoyl-8-hydroxy-1-(2-imino-2,3-dihydropyrimidin-4-yl)-9H-pyrido[3,4-b]indole",
         "1-(2-imino-2,3-dihydropyrimidin-4-yl)-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole",
-        "8-hydroxy-1-(2-imino-2,3-dihydropyrimidin-4-yl)-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole"
+        "8-hydroxy-1-(2-imino-2,3-dihydropyrimidin-4-yl)-3-[(E)-3-methoxy-3-oxoprop-1-en-1-yl]carbamoyl-9H-pyrido[3,4-b]indole",
+        "2'-deoxy-5-hydroxymethylcytidine",
+        "2'-deoxy-5-methylcytidine",
+        "2'-deoxyuridine",
+        "5-hydroxymethylcytidine"
       ],
-      "count": 1480
+      "count": 1484
     },
     {
       "tag": "Family motif: Pyrazines",
@@ -18026,9 +18030,13 @@
         "xyloketal D",
         "xyloketal E",
         "suzetrigine",
-        "okadaic acid"
+        "okadaic acid",
+        "2'-deoxy-5-hydroxymethylcytidine",
+        "2'-deoxy-5-methylcytidine",
+        "2'-deoxyuridine",
+        "5-hydroxymethylcytidine"
       ],
-      "count": 1082
+      "count": 1086
     },
     {
       "tag": "Family motif: Tetrahydropyrans",
@@ -32662,9 +32670,13 @@
         "11-oxo-ETE-CoA",
         "tunicamycin D2",
         "15-oxo-ETE-CoA",
-        "GDP-L-galactose"
+        "GDP-L-galactose",
+        "2'-deoxy-5-hydroxymethylcytidine",
+        "2'-deoxy-5-methylcytidine",
+        "2'-deoxyuridine",
+        "5-hydroxymethylcytidine"
       ],
-      "count": 680
+      "count": 684
     },
     {
       "tag": "Family motif: O-glycosidic cyclic acetals",

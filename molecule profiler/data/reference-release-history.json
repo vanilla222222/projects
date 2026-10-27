@@ -209,8 +209,14 @@
       "id": "retinoid-seven",
       "label": "Retinoid class measured at a ceiling of seven references",
       "date": "2026-10-27",
+      "commit": "b0aab01023b9ad71d4fb3d875b27c8ee66ea8803"
+    },
+    {
+      "id": "nucleoside-nine",
+      "label": "Nucleoside and nucleobase classes measured at ceilings of nine and five references",
+      "date": "2026-10-27",
       "workingTree": true,
-      "baseCommit": "bb96690a6522c8caca317599b7974e349048527b"
+      "baseCommit": "b0aab01023b9ad71d4fb3d875b27c8ee66ea8803"
     }
   ]
 }

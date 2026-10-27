@@ -1,8 +1,8 @@
 {
   "annotationCount": 1881,
   "chemblEntryCount": 1355,
-  "dataSha256": "1851bf370cf42d68a07353010b726db476de996236a48aee1b321546db24554e",
-  "entryCount": 22046,
+  "dataSha256": "08f2d28d0ed0d618f3d8b274ded002b9da9d5667fa0526572b5159c3ab8dd64d",
+  "entryCount": 22050,
   "generator": "tools/build-chembl-properties.py",
   "kind": "locally_calculated_descriptors",
   "label": "Calculated locally with RDKit; not ChEMBL-reported or experimentally measured properties.",
@@ -54,13 +54,13 @@
   "scope": "Exact stored library graph, including disconnected fragments and formal charge; no parent selection, neutralization, salt stripping or tautomer standardization.",
   "sourceHashes": {
     "data/curated-references.js": "63309901d3b87ecb64b082332a032e71acd9218eb98a748d6e94ff50a5017953",
-    "data/library.js": "d1b4be63550bbb8a793372c16516e3d94fc7c9e99408dc94feed6ba920f488d7",
+    "data/library.js": "1f43b22c64e561af80baf6ac6bf4a1f270095fd34d9c47533579a737d1993e2b",
     "data/receptor-ligand-annotations.js": "5baaf3e92817424997666eff1422ec70312af28413a4712a16f047828c01c98a",
     "js/curated-references.js": "240d0bd4f4cf076c70a1891578a48f3fb19e421bb685a5c6c2bd3af011c9c24e"
   },
   "sourceSha256": {
     "data/curated-references.js": "63309901d3b87ecb64b082332a032e71acd9218eb98a748d6e94ff50a5017953",
-    "data/library.js": "d1b4be63550bbb8a793372c16516e3d94fc7c9e99408dc94feed6ba920f488d7",
+    "data/library.js": "1f43b22c64e561af80baf6ac6bf4a1f270095fd34d9c47533579a737d1993e2b",
     "data/receptor-ligand-annotations.js": "5baaf3e92817424997666eff1422ec70312af28413a4712a16f047828c01c98a",
     "js/curated-references.js": "240d0bd4f4cf076c70a1891578a48f3fb19e421bb685a5c6c2bd3af011c9c24e"
   },

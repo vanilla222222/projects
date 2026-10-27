@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
  "rdkitVersion": "2026.09.1",
- "librarySha256": "d1b4be63550bbb8a793372c16516e3d94fc7c9e99408dc94feed6ba920f488d7",
+ "librarySha256": "1f43b22c64e561af80baf6ac6bf4a1f270095fd34d9c47533579a737d1993e2b",
  "toolSha256": "5474a832b1cd427e4246f1c4b12ec2c47a2b3a12586201f388f5cf52f1bfcd16",
  "dataSha256": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
  "protocol": "Prefer exact isomeric graph matches to PubChem titles/IUPAC names or ChEMBL preferred names. Otherwise require the full InChIKey plus completed RDKit tautomer-family agreement, no neutralization and tetrahedral stereo retained; explicitly label these as PubChem standardized-form names, not exact stored-graph names. Never change reference keys or graphs.",
@@ -14616,7 +14616,11 @@
    "2-(morpholin-4-yl)ethyl acetate",
    "2-(morpholin-4-yl)ethyl 2-phenyl-2-(piperidin-1-yl)acetate",
    "2-(morpholin-4-yl)ethyl 2-phenylbutanoate",
-   "Acitretinal"
+   "Acitretinal",
+   "2'-deoxy-5-hydroxymethylcytidine",
+   "2'-deoxy-5-methylcytidine",
+   "2'-deoxyuridine",
+   "5-hydroxymethylcytidine"
   ],
   "refreshToolSha256": "579b60eba814e6389261f3a103ce0b0fa46cc584d116af0c2b94c4aabafcf4e3"
  }

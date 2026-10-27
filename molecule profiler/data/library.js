@@ -22047,6 +22047,10 @@ const LIBRARY = [
   { name: '2-(morpholin-4-yl)ethyl 2-phenyl-2-(piperidin-1-yl)acetate', cls: 'Cholinergic ester', formula: 'C19H28N2O3', smiles: 'O=C(OCCN1CCOCC1)C(c1ccccc1)N1CCCCC1' },
   { name: '2-(morpholin-4-yl)ethyl 2-phenylbutanoate', cls: 'Cholinergic ester', formula: 'C16H23NO3', smiles: 'CCC(C(=O)OCCN1CCOCC1)c1ccccc1' },
   { name: 'Acitretinal', cls: 'Retinoid', formula: 'C21H26O2', smiles: 'COc1cc(C)c(/C=C/C(C)=C/C=C/C(C)=C/C=O)c(C)c1C' },
+  { name: '2\'-deoxy-5-hydroxymethylcytidine', cls: 'Nucleoside', formula: 'C10H15N3O5', smiles: 'Nc1nc(=O)n([C@H]2C[C@H](O)[C@@H](CO)O2)cc1CO' },
+  { name: '2\'-deoxy-5-methylcytidine', cls: 'Nucleoside', formula: 'C10H15N3O4', smiles: 'Cc1cn([C@H]2C[C@H](O)[C@@H](CO)O2)c(=O)nc1N' },
+  { name: '2\'-deoxyuridine', cls: 'Nucleoside', formula: 'C9H12N2O5', smiles: 'O=c1ccn([C@H]2C[C@H](O)[C@@H](CO)O2)c(=O)[nH]1' },
+  { name: '5-hydroxymethylcytidine', cls: 'Nucleoside', formula: 'C10H15N3O6', smiles: 'Nc1nc(=O)n([C@@H]2O[C@H](CO)[C@@H](O)[C@H]2O)cc1CO' },
 ];
 
 if (typeof module !== 'undefined' && module.exports) {
