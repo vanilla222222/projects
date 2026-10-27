@@ -18,7 +18,7 @@ for(const[id,threat,status]of [
  ['fmoc','fmocBase','conflict'],['fmoc','strongBase','conflict'],['fmoc','acid','compatible'],['fmoc','weakBase','compatible'],['fmoc','organometallic','conflict'],
  ['tbs','fluoride','conflict'],['tbs','acid','conflict'],['tbs','organometallic','compatible'],['tbs','strongBase','unknown'],['tms','organometallic','compatible'],['tips','organometallic','unknown'],['tbdps','fluoride','conflict'],
  ['benzyl','hydrogenolysis','conflict'],['benzyl','oxidative','unknown'],['pmb','oxidative','conflict'],['pmb','hydrogenolysis','conflict'],
- ['acetal','aqueousAcid','conflict'],['acetal','acid','unknown'],['acetal','organometallic','compatible'],['acetal','alanate','compatible'],['acetal','aqueousBase','compatible'],
+ ['acetal','aqueousAcid','conflict'],['acetal','acid','unknown'],['acetal','organometallic','compatible'],['acetal','alanate','compatible'],['acetal','aqueousBase','compatible'],['acetal','mildOxidative','compatible'],['acetal','extremeTemperature','compatible'],['acetal','otherReactive','unknown'],
  ['tbu-ester','acid','conflict'],['methyl-ester','aqueousBase','conflict'],['methyl-ester','organometallic','conflict'],['benzyl-ester','hydrogenolysis','conflict']
 ]){
  check(`protectionAssess(${JSON.stringify(molecules[id])},[${JSON.stringify(threat)}]).sites[0].status`,status,id+' / '+threat);
@@ -39,6 +39,11 @@ check(`protectionAssess('${molecules.tbs}',['C[Mg]Br'],{solvents:['thf','water']
 check(`protectionAssess('${molecules.fmoc}',[],{additives:['hbr']}).status`,'unknown','Harsh halogen acid not a universal Fmoc survival guarantee');
 check(`protectionAssess('${molecules.tbs}',['[F-]'],{solvents:['thf']}).status`,'conflict','Real fluoride cleavage');
 check(`protectionAssess('${molecules.acetal}',[],{solvents:['water'],additives:['hcl']}).status`,'conflict','Actual aqueous acid cleavage');
+check(`protectionAssess('OCC1OCCO1',['[O-][Cr](=O)(=O)Cl.c1cc[nH+]cc1'],{solvents:['dcm']}).status`,'compatible','Acetal survives the characterized PCC oxidation regime');
+check(`protectionAssess('O=CCC1OCCO1',['NN','[K+].[OH-]'],{solvents:['none'],temperature:180}).status`,'compatible','Acetal survives the characterized Wolff–Kishner regime');
+check(`protectionAssess('O=CCC1OCCO1',['NN','[K+].[OH-]'],{solvents:['none'],temperature:180}).threats.includes('otherReactive')`,false,'Recognized hydrazine no longer creates a spurious unknown regime');
+check(`protectionAssess('O=CCC1OCCO1',['Cl'],{solvents:['water'],additives:['znhg'],temperature:100}).status`,'conflict','Clemmensen aqueous acid still cleaves the acetal');
+check(`protectionAssess('${molecules.acetal}',['O=[Cr](=O)=O'],{solvents:['water'],additives:['h2so4']}).status`,'conflict','Jones conditions retain aqueous-acid conflict rather than borrowing PCC compatibility');
 check(`protectionAssess('${molecules.fmoc}',[],{additives:['piperidine']}).status`,'conflict','Actual piperidine cleavage');
 check(`protectionAssess('${molecules.cbz}',[],{atmosphere:'h2',additives:['pdc']}).status`,'conflict','Actual Cbz hydrogenolysis');
 check(`protectionAssess('CO[Si](C)(C)c1ccccc1',['strongBase']).status`,'unknown','Unknown silyl substitution not universally base stable');
