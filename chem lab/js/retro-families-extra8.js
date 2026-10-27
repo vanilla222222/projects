@@ -181,6 +181,22 @@ function retro9Deoxygenation(t,reagents,conditions){
  return out.slice(0,RETRO_LIMITS.maxPerTransform);
 }
 RETRO_TRANSFORMS.push(
+ // Ester/lactone oxygen removal reconnects the two carbon fragments as the
+ // ketone precursor. The forward verifier enforces migratory aptitude, so a
+ // shape match cannot promote the wrong regioisomer of an unsymmetrical ester.
+ {id:'baeyer-villiger',name:'Ester or lactone from ketone by Baeyer–Villiger oxidation',rule:'baeyer-villiger',group:'Oxidation',match(t){
+  const carbonyls=t.info.carbonyls;
+  if(carbonyls.length!==1||carbonyls[0].kind!=='ester'||t.info.alkenes.length||t.info.alkynes.length)return [];
+  if(t.graph.atoms.some(a=>a.charge||!['C','O','H','D','F','Cl','Br','I'].includes(a.element))||t.graph.atoms.filter(a=>a.element==='O').length!==2)return [];
+  const c=carbonyls[0],oxygen=t.graph.getAtom(c.hetero);
+  if(!oxygen||oxygen.element!=='O'||oxygen.charge)return [];
+  const neighbors=rxNeighbors(t.graph,oxygen.id);
+  if(neighbors.length!==2||neighbors.some(n=>n.bond.order!==1||n.atom.element!=='C'))return [];
+  const migrated=neighbors.find(n=>n.atom.id!==c.c);
+  if(!migrated)return [];
+  const piece=retroSinglePiece(t,g=>{g.removeAtom(c.hetero);g.addBond(c.c,migrated.atom.id,1);});
+  return piece?[retroSpec([{smiles:piece.smiles,role:'reactant'}],[RETRO_REAGENTS.mcpba],{solvents:['dcm'],temperature:20})]:[];
+ }},
  {id:'wolff-kishner',name:'Alkane from aldehyde or ketone by Wolff–Kishner reduction',rule:'wolff-kishner',group:'Reduction',match(t){
   return retro9Deoxygenation(t,[{smiles:'NN',role:'reagent',label:'Hydrazine'},{smiles:'[K+].[OH-]',role:'reagent',label:'Potassium hydroxide'}],{solvents:['none'],temperature:180});
  }},
