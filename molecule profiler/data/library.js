@@ -21767,6 +21767,18 @@ const LIBRARY = [
   { name: '2-phenylimidazo[1,2-a]pyridine', cls: 'Imidazopyridine', formula: 'C13H10N2', smiles: 'c1ccc(-c2cn3ccccc3n2)cc1' },
   { name: '3,6-diphenylimidazo[1,2-a]pyridine', cls: 'Imidazopyridine', formula: 'C19H14N2', smiles: 'c1ccc(-c2ccc3ncc(-c4ccccc4)n3c2)cc1' },
   { name: '3-ethyl-2-methyl-6-phenylimidazo[1,2-a]pyridine', cls: 'Imidazopyridine', formula: 'C16H16N2', smiles: 'CCc1c(C)nc2ccc(-c3ccccc3)cn12' },
+{ name: '1-benzenesulfonyl-3-propylurea', cls: 'Sulfonylurea', formula: 'C10H14N2O3S', smiles: 'CCCNC(=O)NS(=O)(=O)c1ccccc1' },
+  { name: '1-(4-methylbenzenesulfonyl)-3-propylurea', cls: 'Sulfonylurea', formula: 'C11H16N2O3S', smiles: 'CCCNC(=O)NS(=O)(=O)c1ccc(C)cc1' },
+  { name: '1-benzenesulfonyl-3-cyclohexylurea', cls: 'Sulfonylurea', formula: 'C13H18N2O3S', smiles: 'O=C(NC1CCCCC1)NS(=O)(=O)c1ccccc1' },
+  { name: '1-(4-aminobenzenesulfonyl)-3-propylurea', cls: 'Sulfonylurea', formula: 'C10H15N3O3S', smiles: 'CCCNC(=O)NS(=O)(=O)c1ccc(N)cc1' },
+  { name: '1-butyl-3-(4-chlorobenzenesulfonyl)urea', cls: 'Sulfonylurea', formula: 'C11H15ClN2O3S', smiles: 'CCCCNC(=O)NS(=O)(=O)c1ccc(Cl)cc1' },
+  { name: '1-(azepan-1-yl)-3-benzenesulfonylurea', cls: 'Sulfonylurea', formula: 'C13H19N3O3S', smiles: 'O=C(NN1CCCCCC1)NS(=O)(=O)c1ccccc1' },
+  { name: '1-(4-acetylbenzenesulfonyl)-3-propylurea', cls: 'Sulfonylurea', formula: 'C12H16N2O4S', smiles: 'CCCNC(=O)NS(=O)(=O)c1ccc(C(C)=O)cc1' },
+  { name: '1-(4-chlorobenzenesulfonyl)-3-cyclohexylurea', cls: 'Sulfonylurea', formula: 'C13H17ClN2O3S', smiles: 'O=C(NC1CCCCC1)NS(=O)(=O)c1ccc(Cl)cc1' },
+  { name: '1-(4-acetylbenzenesulfonyl)-3-butylurea', cls: 'Sulfonylurea', formula: 'C13H18N2O4S', smiles: 'CCCCNC(=O)NS(=O)(=O)c1ccc(C(C)=O)cc1' },
+  { name: '1-(4-aminobenzenesulfonyl)-3-cyclohexylurea', cls: 'Sulfonylurea', formula: 'C13H19N3O3S', smiles: 'Nc1ccc(S(=O)(=O)NC(=O)NC2CCCCC2)cc1' },
+  { name: '1-(4-aminobenzenesulfonyl)-3-(azepan-1-yl)urea', cls: 'Sulfonylurea', formula: 'C13H20N4O3S', smiles: 'Nc1ccc(S(=O)(=O)NC(=O)NN2CCCCCC2)cc1' },
+  { name: '1-(4-acetylbenzenesulfonyl)-3-(azepan-1-yl)urea', cls: 'Sulfonylurea', formula: 'C15H21N3O4S', smiles: 'CC(=O)c1ccc(S(=O)(=O)NC(=O)NN2CCCCCC2)cc1' },
 ];
 
 if (typeof module !== 'undefined' && module.exports) {

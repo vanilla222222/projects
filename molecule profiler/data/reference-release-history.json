@@ -143,8 +143,14 @@
    "id": "imidazopyridine-references",
    "label": "Imidazo[1,2-a]pyridine class brought to fifty references",
    "date": "2026-10-26",
+   "commit": "dfb05dd7a17dd2e5f80086a572bcc801ffa58c57"
+  },
+  {
+   "id": "sulfonylurea-closure",
+   "label": "Sulfonylurea class closed at fourteen references",
+   "date": "2026-10-26",
    "workingTree": true,
-   "baseCommit": "6f2de140d0a8d1a871f80441945a28de7530c5dd"
+   "baseCommit": "e7b812e9c463c0dbe440c4b9e8646cc006b12b76"
   }
  ]
 }

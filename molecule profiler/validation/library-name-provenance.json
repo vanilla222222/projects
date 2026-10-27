@@ -1,7 +1,7 @@
 {
  "schemaVersion": 1,
  "rdkitVersion": "2026.09.1",
- "librarySha256": "ccdbb60f7ea1eec99c61a2240472f5c67b5b2c974d29561804f565fc30d90985",
+ "librarySha256": "6a053307ef10f288c539647fd95073c96623ff36d0b16bb1661a2bbde7c5bead",
  "toolSha256": "5474a832b1cd427e4246f1c4b12ec2c47a2b3a12586201f388f5cf52f1bfcd16",
  "dataSha256": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
  "protocol": "Prefer exact isomeric graph matches to PubChem titles/IUPAC names or ChEMBL preferred names. Otherwise require the full InChIKey plus completed RDKit tautomer-family agreement, no neutralization and tetrahedral stereo retained; explicitly label these as PubChem standardized-form names, not exact stored-graph names. Never change reference keys or graphs.",
@@ -14336,7 +14336,19 @@
    "3-methyl-2-(propan-2-yl)imidazo[1,2-a]pyridine",
    "2-phenylimidazo[1,2-a]pyridine",
    "3,6-diphenylimidazo[1,2-a]pyridine",
-   "3-ethyl-2-methyl-6-phenylimidazo[1,2-a]pyridine"
+   "3-ethyl-2-methyl-6-phenylimidazo[1,2-a]pyridine",
+   "1-benzenesulfonyl-3-propylurea",
+   "1-(4-methylbenzenesulfonyl)-3-propylurea",
+   "1-benzenesulfonyl-3-cyclohexylurea",
+   "1-(4-aminobenzenesulfonyl)-3-propylurea",
+   "1-butyl-3-(4-chlorobenzenesulfonyl)urea",
+   "1-(azepan-1-yl)-3-benzenesulfonylurea",
+   "1-(4-acetylbenzenesulfonyl)-3-propylurea",
+   "1-(4-chlorobenzenesulfonyl)-3-cyclohexylurea",
+   "1-(4-acetylbenzenesulfonyl)-3-butylurea",
+   "1-(4-aminobenzenesulfonyl)-3-cyclohexylurea",
+   "1-(4-aminobenzenesulfonyl)-3-(azepan-1-yl)urea",
+   "1-(4-acetylbenzenesulfonyl)-3-(azepan-1-yl)urea"
   ],
   "refreshToolSha256": "579b60eba814e6389261f3a103ce0b0fa46cc584d116af0c2b94c4aabafcf4e3"
  }

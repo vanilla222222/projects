@@ -1,6 +1,6 @@
 {
   "annotationCount": 1881,
-  "dataSha256": "1712978d565f4a3e68eb44e1168082aa0bc19ef1895f3c30e0c645770481425c",
+  "dataSha256": "5fbae3e311b8da9945350c21b9d5536767a31d3cb4eb4f1d602aed2d1ce3dfc9",
   "entryCount": 1355,
   "generator": "tools/build-chembl-properties.py",
   "kind": "locally_calculated_descriptors",
@@ -52,11 +52,11 @@
   "schemaVersion": 1,
   "scope": "Exact stored library graph, including disconnected fragments and formal charge; no parent selection, neutralization, salt stripping or tautomer standardization.",
   "sourceHashes": {
-    "data/library.js": "ccdbb60f7ea1eec99c61a2240472f5c67b5b2c974d29561804f565fc30d90985",
+    "data/library.js": "6a053307ef10f288c539647fd95073c96623ff36d0b16bb1661a2bbde7c5bead",
     "data/receptor-ligand-annotations.js": "5baaf3e92817424997666eff1422ec70312af28413a4712a16f047828c01c98a"
   },
   "sourceSha256": {
-    "data/library.js": "ccdbb60f7ea1eec99c61a2240472f5c67b5b2c974d29561804f565fc30d90985",
+    "data/library.js": "6a053307ef10f288c539647fd95073c96623ff36d0b16bb1661a2bbde7c5bead",
     "data/receptor-ligand-annotations.js": "5baaf3e92817424997666eff1422ec70312af28413a4712a16f047828c01c98a"
   },
   "toolSha256": "4dcdb85fcad65bd881ad3e1383b9fc63ce2a065bd4a375fec4875ef0ab3bef42"
