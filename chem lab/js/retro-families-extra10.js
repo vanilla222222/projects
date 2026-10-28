@@ -63,3 +63,55 @@ RETRO_TRANSFORMS.push(
       })).filter(Boolean);
   } }
 );
+
+// Additional acyl-chloride, alkene-addition and cold-DIBAL coverage. These
+// proposals use the same mandatory exact-forward-replay gate as the transforms above.
+const RETRO16_REAGENTS = {
+  mercuricAcetate: { smiles: 'CC(=O)O[Hg]OC(C)=O', role: 'reagent', label: 'Hg(OAc)2' },
+  dibal: { smiles: 'CC(C)C[AlH]CC(C)C', role: 'reagent', label: 'DIBAL-H' },
+};
+
+RETRO_TRANSFORMS.push(
+  { id: 'acid-chloride', name: 'Acyl chloride from carboxylic acid and thionyl chloride', rule: 'acid-chloride', group: 'Nucleophilic acyl substitution', match(t) {
+    return t.info.carbonyls.filter((c) => c.kind === 'acylChloride').slice(0, RETRO_LIMITS.maxPerTransform).map((c) => {
+      const piece = retroSinglePiece(t, (g) => {
+        g.getAtom(c.hetero).element = 'O';
+        rxsReplace(g, c.c, c.hetero, c.hetero, true);
+      });
+      return piece && retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO_REAGENTS.socl2],
+        { solvents: ['dcm'], temperature: 25 });
+    }).filter(Boolean);
+  } },
+  { id: 'oxymercuration', name: 'Markovnikov alcohol from alkene by oxymercuration–demercuration', rule: 'oxymercuration', group: 'Electrophilic addition', match(t) {
+    const list = t.info.alcohols.slice(0, RETRO_LIMITS.maxPerTransform).flatMap((a) =>
+      rxCarbonNeighbors(t.graph, a.c).map((n) => retroSinglePiece(t, (g) => {
+        g.removeAtom(a.o);
+        rxSetOrder(g, a.c, n.atom.id, 2);
+        g.alkeneSpecs = [];
+      })));
+    return retroUniquePieces(list).map((piece) => retroSpec([{ smiles: piece.smiles, role: 'reactant' }],
+      [RETRO16_REAGENTS.mercuricAcetate, RETRO_REAGENTS.nabh4], { solvents: ['water'], temperature: 25 }));
+  } },
+  { id: 'dibal-ester', name: 'Aldehyde from methyl or ethyl ester by cold DIBAL reduction', rule: 'dibal', group: 'Reduction', match(t) {
+    return t.info.carbonyls.filter((c) => c.kind === 'aldehyde').slice(0, RETRO_LIMITS.maxPerTransform).flatMap((c) =>
+      [1, 2].map((carbons) => {
+        const piece = retroSinglePiece(t, (g) => {
+          const o = rxAttach(g, 'O', c.c);
+          let end = o.id;
+          for (let i = 0; i < carbons; i++) end = rxAttach(g, 'C', end).id;
+        });
+        return piece && retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO16_REAGENTS.dibal],
+          { solvents: ['toluene'], temperature: -78, atmosphere: 'n2' });
+      })).filter(Boolean);
+  } },
+  { id: 'dibal-nitrile', name: 'Aldehyde from nitrile by cold DIBAL reduction and hydrolysis', rule: 'dibal', group: 'Reduction', match(t) {
+    return t.info.carbonyls.filter((c) => c.kind === 'aldehyde').slice(0, RETRO_LIMITS.maxPerTransform).map((c) => {
+      const piece = retroSinglePiece(t, (g) => {
+        g.removeAtom(c.o);
+        rxAttach(g, 'N', c.c, 3);
+      });
+      return piece && retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO16_REAGENTS.dibal],
+        { solvents: ['toluene'], temperature: -78, atmosphere: 'n2' });
+    }).filter(Boolean);
+  } }
+);
