@@ -76,7 +76,7 @@ function protectionGroups(value) {
     const bn=ns.find(n=>benzylic(n.atom.id));if(!bn)return;
     const aryl=rxNeighbors(g,bn.atom.id).find(n=>aro.has(n.atom.id)),ring=aryl&&info.aromatic.rings.find(r=>r.length===6&&r.includes(aryl.atom.id));
     let pmb=false;
-    if(ring){const ri=ring.indexOf(aryl.atom.id),opposite=ring[(ri+3)%6];pmb=rxNeighbors(g,opposite).some(n=>n.atom.id!==opposite&&methyl(n.atom.id));}
+    if(ring){const ri=ring.indexOf(aryl.atom.id),opposite=ring[(ri+3)%6];pmb=rxNeighbors(g,opposite).some(n=>n.atom.element==='O'&&!n.atom.charge&&n.bond.order===1&&rxNeighbors(g,n.atom.id).some(x=>x.atom.id!==opposite&&methyl(x.atom.id)));}
     add(pmb?'pmb':'benzyl',o.id,[o.id,bn.atom.id,aryl.atom.id]);
   });
   g.atoms.filter(a=>a.element==='C'&&!a.charge&&rxIsSp3(g,a.id)).forEach(c=>{
