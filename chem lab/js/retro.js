@@ -463,6 +463,7 @@ function retroArylBonds(t, partner) {
 }
 
 function retroVinylCarbon(t, id) {
+  const g = t.graph;
   return g.getAtom(id).element === 'C' && !t.aromatic.has(id) && rxNeighbors(g, id).some((n) => n.bond.order === 2 && n.atom.element === 'C');
 }
 
@@ -557,6 +558,7 @@ function retroCarbamates(t) {
 }
 
 function retroConjugating(t, id, partner) {
+  const g = t.graph;
   return rxNeighbors(g, id).some((n) => n.atom.id !== partner && (t.aromatic.has(n.atom.id) ||
     rxNeighbors(g, n.atom.id).some((m) => (m.bond.order === 2 && m.atom.element === 'O') || (m.bond.order === 3 && m.atom.element === 'N'))));
 }
