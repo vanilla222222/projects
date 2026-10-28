@@ -189,3 +189,57 @@ RETRO_TRANSFORMS.push(
     }).filter(Boolean);
   } }
 );
+
+// Epoxide, amide-dehydration, Pinnick and ester-hydrolysis reverse coverage.
+// Ring openings and carbonyl edits are proposals only until exact forward replay.
+RETRO_TRANSFORMS.push(
+  { id: 'epoxide-closure', name: 'Epoxide from vicinal bromohydrin by intramolecular Williamson closure', rule: 'epoxide-closure', group: 'Ring formation', match(t) {
+    const g = t.graph, out = [], seen = new Set();
+    rxRings(g, 3).filter((ring) => ring.length === 3 && ring.filter((id) => g.getAtom(id).element === 'C').length === 2 && ring.filter((id) => g.getAtom(id).element === 'O').length === 1).forEach((ring) => {
+      const oxygen = ring.find((id) => g.getAtom(id).element === 'O');
+      ring.filter((id) => g.getAtom(id).element === 'C').forEach((carbon) => {
+        const piece = retroSinglePiece(t, (h) => {
+          const bond = h.getBond(carbon, oxygen);
+          if (!bond) return false;
+          h.removeBond(bond.id);
+          rxAttach(h, 'Br', carbon);
+          rxsDrop(h, carbon);
+          rxsDrop(h, oxygen);
+        });
+        if (!piece || seen.has(piece.smiles)) return;
+        seen.add(piece.smiles);
+        out.push(retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO_REAGENTS.hydroxide], { solvents: ['water'], temperature: 25 }));
+      });
+    });
+    return out.slice(0, RETRO_LIMITS.maxPerTransform);
+  } },
+  { id: 'amide-dehydration', name: 'Nitrile from primary amide by dehydration', rule: 'amide-dehydration', group: 'Dehydration', match(t) {
+    return t.info.nitriles.slice(0, RETRO_LIMITS.maxPerTransform).map((n) => {
+      const piece = retroSinglePiece(t, (g) => {
+        rxSetOrder(g, n.c, n.n, 1);
+        rxAttach(g, 'O', n.c, 2);
+        rxsDrop(g, n.n);
+      });
+      return piece && retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO_REAGENTS.socl2],
+        { solvents: ['dcm'], temperature: 25 });
+    }).filter(Boolean);
+  } },
+  { id: 'pinnick', name: 'Carboxylic acid from aldehyde by Pinnick oxidation', rule: 'pinnick', group: 'Oxidation', match(t) {
+    return t.info.carbonyls.filter((c) => c.kind === 'acid').slice(0, RETRO_LIMITS.maxPerTransform).map((c) => {
+      const piece = retroSinglePiece(t, (g) => { g.removeAtom(c.hetero); rxsDrop(g, c.c); });
+      return piece && retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [],
+        { additives: ['naclo2'], solvents: ['water'], temperature: 25 });
+    }).filter(Boolean);
+  } },
+  { id: 'ester-hydrolysis', name: 'Carboxylic acid from methyl or ethyl ester by acidic hydrolysis', rule: 'ester-hydrolysis', group: 'Nucleophilic acyl substitution', match(t) {
+    return t.info.carbonyls.filter((c) => c.kind === 'acid').slice(0, RETRO_LIMITS.maxPerTransform).flatMap((c) =>
+      [1, 2].map((carbons) => {
+        const piece = retroSinglePiece(t, (g) => {
+          let end = c.hetero;
+          for (let i = 0; i < carbons; i++) end = rxAttach(g, 'C', end).id;
+        });
+        return piece && retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO_REAGENTS.Cl],
+          { solvents: ['water'], temperature: 100 });
+      })).filter(Boolean);
+  } }
+);
