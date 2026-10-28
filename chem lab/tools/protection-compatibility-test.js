@@ -19,7 +19,7 @@ for(const[id,threat,status]of [
  ['tbs','fluoride','conflict'],['tbs','acid','conflict'],['tbs','organometallic','compatible'],['tbs','strongBase','unknown'],['tms','organometallic','compatible'],['tips','organometallic','unknown'],['tbdps','fluoride','conflict'],
  ['benzyl','hydrogenolysis','conflict'],['benzyl','oxidative','unknown'],['pmb','oxidative','conflict'],['pmb','hydrogenolysis','conflict'],
  ['acetal','aqueousAcid','conflict'],['acetal','acid','unknown'],['acetal','organometallic','compatible'],['acetal','alanate','compatible'],['acetal','aqueousBase','compatible'],['acetal','mildOxidative','compatible'],['acetal','extremeTemperature','compatible'],['acetal','otherReactive','unknown'],
- ['tbu-ester','acid','conflict'],['methyl-ester','aqueousBase','conflict'],['methyl-ester','organometallic','conflict'],['benzyl-ester','hydrogenolysis','conflict']
+ ['tbu-ester','acid','conflict'],['methyl-ester','aqueousBase','conflict'],['methyl-ester','organometallic','conflict'],['methyl-ester','organozinc','compatible'],['benzyl-ester','hydrogenolysis','conflict']
 ]){
  check(`protectionAssess(${JSON.stringify(molecules[id])},[${JSON.stringify(threat)}]).sites[0].status`,status,id+' / '+threat);
  check(`protectionAssess(${JSON.stringify(molecules[id])},[${JSON.stringify(threat)}]).sites[0].reasons.length>0`,true,'Reason for '+id+' / '+threat);
@@ -36,6 +36,9 @@ check(`protectionAssess('${molecules.boc}',[],{additives:['et3n','dmp']}).status
 check(`protectionAssess('${molecules.boc}',['CC(=O)Cl'],{additives:['et3n']}).status`,'compatible','Known acylation regime remains available');
 check(`protectionAssess('${molecules.tbs}',['C[Mg]Br'],{solvents:['thf']}).status`,'compatible','Real dry Grignard plus TBS');
 check(`protectionAssess('${molecules.tbs}',['C[Mg]Br'],{solvents:['thf','water']}).status`,'unknown','Wet Grignard is outside dry compatibility regime');
+check(`protectionAssess('${molecules['methyl-ester']}',['[Zn]'],{solvents:['ether']}).status`,'compatible','Elemental zinc is a characterized Reformatsky regime for a retained ester');
+check(`protectionAssess('${molecules['methyl-ester']}',['[Zn]'],{solvents:['ether']}).threats.includes('otherReactive')`,false,'Zinc no longer creates a spurious unknown reactive regime');
+check(`protectionAssess('${molecules['methyl-ester']}',['C[Mg]Br'],{solvents:['ether']}).status`,'conflict','Real Grignard reagent still attacks an ester');
 check(`protectionAssess('${molecules.fmoc}',[],{additives:['hbr']}).status`,'unknown','Harsh halogen acid not a universal Fmoc survival guarantee');
 check(`protectionAssess('${molecules.tbs}',['[F-]'],{solvents:['thf']}).status`,'conflict','Real fluoride cleavage');
 check(`protectionAssess('${molecules.acetal}',[],{solvents:['water'],additives:['hcl']}).status`,'conflict','Actual aqueous acid cleavage');
