@@ -75,7 +75,11 @@ def chembl_evidence(annotation,entry,index,source_row):
          'originalMetric':activity.get('type'),'originalValue':activity.get('value'),'originalUnit':activity.get('units'),'originalRelation':activity.get('relation'),
          'documentJournal':activity.get('document_journal'),'documentYear':activity.get('document_year'),
          'assayOrganism':assay.get('assay_organism'),'assayType':assay['assay_type'],'assayConfidence':assay['confidence_score'],
-         'assayDescription':assay.get('description'),'assayTissue':assay.get('assay_tissue'),'assayCellType':assay.get('assay_cell_type')}
+         'assayDescription':assay.get('description'),'assayTissue':assay.get('assay_tissue'),'assayCellType':assay.get('assay_cell_type'),
+         'assayFormatId':assay.get('bao_format'),'assayFormat':assay.get('bao_label'),
+         'assayTypeDescription':assay.get('assay_type_description'),'assayConfidenceDescription':assay.get('confidence_description'),
+         'assayRelationshipType':assay.get('relationship_type'),'assayRelationshipDescription':assay.get('relationship_description'),
+         'assaySubcellularFraction':assay.get('assay_subcellular_fraction'),'assayTestType':assay.get('assay_test_type'),'sourceActivityProperties':activity.get('activity_properties',[])}
  source_graph=graph(activity.get('canonical_smiles'));stored_graph=graph(entry['smiles'])
  assert source_graph and stored_graph,'Invalid retained ChEMBL graph'
  if source_graph!=stored_graph:
@@ -93,7 +97,7 @@ def chembl_action_evidence(binding,index):
  if not action:return None
  # These fields identify the source classification, not a functional assay or
  # a potency measurement. Binding values stay solely on the original record.
- keys=['sourceRow','receptorId','species','assay','librarySmiles','sourceFile','sourceSha256','sourceLocation','sourceRelease','activityId','assayId','documentId','chemblMoleculeId','chemblTargetId','sourceUrl','assayUrl','documentUrl','moleculeUrl','targetUrl','activityUrl','documentJournal','documentYear']
+ keys=['sourceRow','receptorId','species','assay','librarySmiles','sourceFile','sourceSha256','sourceLocation','sourceRelease','activityId','assayId','documentId','chemblMoleculeId','chemblTargetId','sourceUrl','assayUrl','documentUrl','moleculeUrl','targetUrl','activityUrl','documentJournal','documentYear','assayFormatId','assayFormat','assayTypeDescription','assayConfidenceDescription','assayRelationshipType','assayRelationshipDescription','assaySubcellularFraction','assayTestType','sourceActivityProperties']
  return {**{k:binding[k] for k in keys},'provider':'ChEMBL curated action classification','bindingEvidence':False,
          'actions':[action],'sourceAction':literal['action_type'],'sourceActionRecord':literal,
          'classificationTransferStatus':'exact_source_graph',

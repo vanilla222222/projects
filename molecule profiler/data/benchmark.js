@@ -14,7 +14,7 @@ const RETRIEVAL_BENCHMARK = {
   "sourceSha256": {
     "data/library.js": "004a76ebea5634e946dd3860a966f362949e467fbe792ba58561d28a099873e6",
     "data/targets.js": "c994111b869a78b68fe873c92f218ae1791b9b3e3fbf390f0b3a837221b4aacd",
-    "data/curated-references.js": "63309901d3b87ecb64b082332a032e71acd9218eb98a748d6e94ff50a5017953",
+    "data/curated-references.js": "6ff485c2f080e83194206ba8b70971af0391a26be67142ca692a3a359dfda279",
     "js/curated-references.js": "240d0bd4f4cf076c70a1891578a48f3fb19e421bb685a5c6c2bd3af011c9c24e",
     "js/reference-context.js": "f5b2abf4ad945ae2f1e531d1276d75ab1525882d3e27e4b10f84592d0c921a07",
     "js/target-ranking.js": "fbea8f6bac7812eed3f7212869468dd3242398ec652655c19c256240e0d4d243",
@@ -25,7 +25,7 @@ const RETRIEVAL_BENCHMARK = {
     "tools/retrieval-evaluate.js": "075eacd3a4640c1e549f1891605da4ae31fece844d4a37a778d826be1048d8d9",
     "tools/retrieval-benchmark.js": "734411ae4c6631febaa04f8b705ce15bcabfe86dc70ee7aa7ef36fcc3ff08f6e"
   },
-  "generated": "2026-10-27",
+  "generated": "2026-10-28",
   "library": 22052,
   "method": "ECFP4",
   "metric": "Tanimoto",

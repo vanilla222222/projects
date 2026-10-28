@@ -24,7 +24,13 @@ RINGS += [
 ('Tetrahydroisoquinoline scaffolds','c1ccc2c(c1)[CX4][NX3,NX4+][CX4][CX4]2'),
 ('Chromane scaffolds','c1ccc2c(c1)[CX4][CX4][CX4][OX2]2'),
 ('2,3-Dihydrobenzofuran scaffolds','c1ccc2c(c1)[CX4][CX4][OX2]2'),
-('Tetralin scaffolds','c1ccc2c(c1)[CX4][CX4][CX4][CX4]2')]
+('Tetralin scaffolds','c1ccc2c(c1)[CX4][CX4][CX4][CX4]2'),
+# Three fully saturated two-carbon bridges join N and C bridgeheads. Neutral,
+# protonated and quaternized bridgehead N are included; ring carbonyls excluded.
+('Quinuclidine scaffolds','[NX3,NX4+]12[CX4][CX4][CX4]([CX4][CX4]1)[CX4][CX4]2'),
+# Explicit 1,4-dihydropyridine bond positions and saturated C4. N-substitution,
+# N-acylation and charged N are allowed; this is a ring motif, not a drug class.
+('1,4-Dihydropyridine scaffolds','[NX3,NX4+]1[CX3]=[CX3][CX4][CX3]=[CX3]1')]
 SERIES=[('Diphenylmethane scaffolds','c1ccccc1[CX4]c1ccccc1')]
 SERIES += [('Unacylated phenethylamines','[NX3,NX4+;!$(N-[C,S,P]=[O,S,N])]-[CX4]-[CX4]-c1ccccc1'),
 ('Unacylated tryptamines','[NX3,NX4+;!$(N-[C,S,P]=[O,S,N])]-[CX4]-[CX4]-c1c[nH,nH0]c2ccccc12'),

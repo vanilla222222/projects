@@ -26,6 +26,8 @@ const scripts = [
   'iuphar-endpoint-test.js',
   'reference-actions-test.js',
   'freesolv-properties-003-test.js',
+  'freesolv-properties-004-test.js',
+  'reference-assay-context-test.js',
   'reference-support-test.js',
   'reference-citations-test.js',
   'target-ranking-test.js',
