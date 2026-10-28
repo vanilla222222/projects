@@ -20,7 +20,7 @@ check(`routeStepAssessment({outcome:{chemoselectivity:{label:'test reagent',comp
 check(`routeStepAssessment({outcome:{chemoselectivity:{changed:['aldehyde','ketone'],competing:[]}}}).blockers.length`,0,'Intentional bulk conversion is not rejected merely for multiple edits');
 check(`(()=>{const j=searchAudit('CCO','CC=O');return j.status==='found'&&j.route.every(l=>retroForwardCheck(l.candidate,l.to)&&!routeStepAssessment(l.candidate).blockers.length);})()`,true,'Ordinary route still passes independent forward and compatibility checks');
 check(`(()=>{const j=searchAudit('CCO','CCOC(C)=O',{stockPolicy:'custom',availableMaterials:['acetic acid']});return j.status==='found'&&j.route.length===1;})()`,true,'Inventory-aware two-input route remains supported');
-check(`(()=>{const j=searchAudit('CCO','CC=O',{forbiddenReagents:['PCC']});return j.status!=='found'&&j.diagnostics.reagents>0;})()`,true,'Existing reagent filter still applies');
+check(`(()=>{const j=searchAudit('CCO','CC=O',{forbiddenReagents:['PCC','DIBAL']});return j.status!=='found'&&j.diagnostics.reagents>0;})()`,true,'Existing reagent filter still applies across alternative reaction families');
 check(`(()=>{const a=pathFinderFingerprint('CCO'),b=pathFinderFingerprint('OCC');return Object.keys(a).every(k=>a[k]===b[k]);})()`,true,'Queue priority is independent of SMILES atom order');
 // Exercise the real rendering helper without a browser dependency.
 class El {constructor(tag){this.tagName=tag;this.children=[];}append(...x){this.children.push(...x);}}

@@ -1,0 +1,191 @@
+// Reverse coverage for established forward additions and oxidations. Every
+// proposed precursor set still has to reproduce the exact target in retroTryVerify.
+const RETRO15_REAGENTS = {
+  co2: { smiles: 'O=C=O', role: 'reactant', label: 'Carbon dioxide' },
+  sodamide: { smiles: '[Na+].[NH2-]', role: 'reagent', label: 'NaNH2' },
+};
+
+RETRO_TRANSFORMS.push(
+  { id: 'grignard-carboxylation', name: 'Carboxylic acid from Grignard reagent and carbon dioxide', rule: 'grignard-carboxylation', group: 'Carbon–carbon formation', match(t) {
+    const g = t.graph;
+    return t.info.carbonyls.filter((c) => c.kind === 'acid').slice(0, RETRO_LIMITS.maxPerTransform).map((c) => {
+      const neighbors = rxCarbonNeighbors(g, c.c);
+      if (neighbors.length !== 1) return null;
+      const r = neighbors[0].atom.id;
+      const piece = retroSinglePiece(t, (h) => {
+        h.removeAtom(c.o);
+        h.removeAtom(c.hetero);
+        h.removeAtom(c.c);
+        const mg = rxAttach(h, 'Mg', r);
+        rxAttach(h, 'Br', mg.id);
+      });
+      return piece && retroSpec([RETRO15_REAGENTS.co2,
+        { smiles: piece.smiles, role: 'reagent', label: retroGrignardLabel(piece.smiles) }], [], { solvents: ['ether'] });
+    }).filter(Boolean);
+  } },
+  { id: 'acetylide-addition', name: 'Propargylic alcohol from carbonyl and terminal alkyne', rule: 'acetylide-addition', group: 'Carbon–carbon formation', match(t) {
+    const g = t.graph, alkyneCarbons = new Set(t.info.alkynes.flatMap((e) => [e.a, e.b]));
+    return t.info.alcohols.slice(0, RETRO_LIMITS.maxPerTransform).flatMap((a) =>
+      rxCarbonNeighbors(g, a.c).filter((n) => alkyneCarbons.has(n.atom.id)).map((n) => {
+        const pieces = retroEdit(t, (h) => {
+          if (!retroCut(h, a.c, n.atom.id)) return false;
+          rxSetOrder(h, a.c, a.o, 2);
+          rxsDrop(h, a.c);
+        });
+        return pieces && pieces.length === 2 ? retroSpec(retroReactants(pieces), [RETRO15_REAGENTS.sodamide], { solvents: ['thf'] }) : null;
+      })).filter(Boolean);
+  } },
+  { id: 'alkyne-hydration', name: 'Ketone from alkyne by Markovnikov hydration', rule: 'alkyne-hydration', group: 'Electrophilic addition', match(t) {
+    const g = t.graph;
+    return t.info.carbonyls.filter((c) => c.kind === 'ketone').slice(0, RETRO_LIMITS.maxPerTransform).flatMap((c) =>
+      rxCarbonNeighbors(g, c.c).map((n) => {
+        const piece = retroSinglePiece(t, (h) => {
+          h.removeAtom(c.o);
+          rxSetOrder(h, c.c, n.atom.id, 3);
+        });
+        return piece && retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO_REAGENTS.water],
+          { additives: ['h2so4', 'hgso4'], solvents: ['water'] });
+      })).filter(Boolean);
+  } },
+  { id: 'halohydrin', name: 'Halohydrin from alkene, halogen and water', rule: 'halohydrin', group: 'Electrophilic addition', match(t) {
+    const g = t.graph;
+    return t.info.alcohols.slice(0, RETRO_LIMITS.maxPerTransform).flatMap((a) =>
+      t.info.halides.filter((h) => ['Cl', 'Br'].includes(h.halogen) && g.getBond(a.c, h.c) && g.getBond(a.c, h.c).order === 1).map((h) => {
+        const piece = retroSinglePiece(t, (clone) => {
+          clone.removeAtom(a.o);
+          clone.removeAtom(h.x);
+          rxSetOrder(clone, a.c, h.c, 2);
+          clone.alkeneSpecs = [];
+        });
+        if (!piece) return null;
+        const halogen = h.halogen === 'Br' ? RETRO_REAGENTS.bromine : RETRO_REAGENTS.chlorine;
+        return retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [halogen, RETRO_REAGENTS.water], { solvents: ['water'] });
+      })).filter(Boolean);
+  } }
+);
+
+// Additional acyl-chloride, alkene-addition and cold-DIBAL coverage. These
+// proposals use the same mandatory exact-forward-replay gate as the transforms above.
+const RETRO16_REAGENTS = {
+  mercuricAcetate: { smiles: 'CC(=O)O[Hg]OC(C)=O', role: 'reagent', label: 'Hg(OAc)2' },
+  dibal: { smiles: 'CC(C)C[AlH]CC(C)C', role: 'reagent', label: 'DIBAL-H' },
+};
+
+RETRO_TRANSFORMS.push(
+  { id: 'acid-chloride', name: 'Acyl chloride from carboxylic acid and thionyl chloride', rule: 'acid-chloride', group: 'Nucleophilic acyl substitution', match(t) {
+    return t.info.carbonyls.filter((c) => c.kind === 'acylChloride').slice(0, RETRO_LIMITS.maxPerTransform).map((c) => {
+      const piece = retroSinglePiece(t, (g) => {
+        g.getAtom(c.hetero).element = 'O';
+        rxsReplace(g, c.c, c.hetero, c.hetero, true);
+      });
+      return piece && retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO_REAGENTS.socl2],
+        { solvents: ['dcm'], temperature: 25 });
+    }).filter(Boolean);
+  } },
+  { id: 'oxymercuration', name: 'Markovnikov alcohol from alkene by oxymercuration–demercuration', rule: 'oxymercuration', group: 'Electrophilic addition', match(t) {
+    const list = t.info.alcohols.slice(0, RETRO_LIMITS.maxPerTransform).flatMap((a) =>
+      rxCarbonNeighbors(t.graph, a.c).map((n) => retroSinglePiece(t, (g) => {
+        g.removeAtom(a.o);
+        rxSetOrder(g, a.c, n.atom.id, 2);
+        g.alkeneSpecs = [];
+      })));
+    return retroUniquePieces(list).map((piece) => retroSpec([{ smiles: piece.smiles, role: 'reactant' }],
+      [RETRO16_REAGENTS.mercuricAcetate, RETRO_REAGENTS.nabh4], { solvents: ['water'], temperature: 25 }));
+  } },
+  { id: 'dibal-ester', name: 'Aldehyde from methyl or ethyl ester by cold DIBAL reduction', rule: 'dibal', group: 'Reduction', match(t) {
+    return t.info.carbonyls.filter((c) => c.kind === 'aldehyde').slice(0, RETRO_LIMITS.maxPerTransform).flatMap((c) =>
+      [1, 2].map((carbons) => {
+        const piece = retroSinglePiece(t, (g) => {
+          const o = rxAttach(g, 'O', c.c);
+          let end = o.id;
+          for (let i = 0; i < carbons; i++) end = rxAttach(g, 'C', end).id;
+        });
+        return piece && retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO16_REAGENTS.dibal],
+          { solvents: ['toluene'], temperature: -78, atmosphere: 'n2' });
+      })).filter(Boolean);
+  } },
+  { id: 'dibal-nitrile', name: 'Aldehyde from nitrile by cold DIBAL reduction and hydrolysis', rule: 'dibal', group: 'Reduction', match(t) {
+    return t.info.carbonyls.filter((c) => c.kind === 'aldehyde').slice(0, RETRO_LIMITS.maxPerTransform).map((c) => {
+      const piece = retroSinglePiece(t, (g) => {
+        g.removeAtom(c.o);
+        rxAttach(g, 'N', c.c, 3);
+      });
+      return piece && retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO16_REAGENTS.dibal],
+        { solvents: ['toluene'], temperature: -78, atmosphere: 'n2' });
+    }).filter(Boolean);
+  } }
+);
+
+// Nitrile/Grignard, acetylide, condensation and hydrolysis coverage. Reverse
+// edits remain bounded and are exposed only after the established forward rule
+// reproduces the requested target.
+const RETRO17_REAGENTS = {
+  triethylamine: { smiles: 'CCN(CC)CC', role: 'reagent', label: 'Triethylamine' },
+};
+
+RETRO_TRANSFORMS.push(
+  { id: 'grignard-nitrile', name: 'Ketone from nitrile and Grignard reagent', rule: 'grignard-nitrile', group: 'Carbon–carbon formation', match(t) {
+    const g = t.graph;
+    return t.info.carbonyls.filter((c) => c.kind === 'ketone').slice(0, RETRO_LIMITS.maxPerTransform).flatMap((c) =>
+      rxCarbonNeighbors(g, c.c).map((n) => {
+        const r = n.atom.id;
+        const pieces = retroEdit(t, (h) => {
+          h.removeAtom(c.o);
+          rxAttach(h, 'N', c.c, 3);
+          if (!retroCut(h, c.c, r)) return false;
+          const mg = rxAttach(h, 'Mg', r);
+          rxAttach(h, 'Br', mg.id);
+        });
+        if (!pieces || pieces.length !== 2) return null;
+        const nitrile = pieces.find((p) => p.elements.has('N'));
+        const grignard = pieces.find((p) => p.elements.has('Mg'));
+        return nitrile && grignard ? retroSpec([{ smiles: nitrile.smiles, role: 'reactant' },
+          { smiles: grignard.smiles, role: 'reagent', label: retroGrignardLabel(grignard.smiles) }], [], { solvents: ['ether'], atmosphere: 'n2' }) : null;
+      })).filter(Boolean);
+  } },
+  { id: 'acetylide-alkylation', name: 'Internal alkyne from terminal alkyne and methyl/primary alkyl bromide', rule: 'acetylide-alkylation', group: 'Carbon–carbon formation', match(t) {
+    const g = t.graph, out = [], seen = new Set();
+    t.info.alkynes.forEach((e) => [[e.a, e.b], [e.b, e.a]].forEach(([terminal, other]) => {
+      const neighbor = rxCarbonNeighbors(g, terminal).find((n) => n.atom.id !== other);
+      if (!neighbor) return;
+      const r = neighbor.atom.id, bond = g.getBond(terminal, r);
+      if (!bond || bond.order !== 1 || !rxIsSp3(g, r) || t.aromatic.has(r) || rxCarbonNeighbors(g, r).filter((n) => n.atom.id !== terminal).length > 1) return;
+      const pieces = retroEdit(t, (h) => {
+        if (!retroCut(h, terminal, r)) return false;
+        rxAttach(h, 'Br', r);
+      });
+      if (!pieces || pieces.length !== 2) return;
+      const signature = pieces.map((p) => p.smiles).sort().join('|');
+      if (seen.has(signature)) return;
+      seen.add(signature);
+      out.push(retroSpec(retroReactants(pieces), [RETRO15_REAGENTS.sodamide], { solvents: ['thf'], atmosphere: 'n2' }));
+    }));
+    return out.slice(0, RETRO_LIMITS.maxPerTransform);
+  } },
+  { id: 'knoevenagel', name: 'Activated alkene from carbonyl and active methylene donor', rule: 'knoevenagel', group: 'Condensation', match(t) {
+    const g = t.graph;
+    const acceptors = new Set(t.info.carbonyls.filter((c) => ['ketone', 'aldehyde', 'ester', 'acid'].includes(c.kind)).map((c) => c.c).concat(t.info.nitriles.map((n) => n.c)));
+    return t.info.alkenes.slice(0, RETRO_LIMITS.maxPerTransform).flatMap((e) => [[e.a, e.b], [e.b, e.a]].map(([active, carbonyl]) => {
+      if (rxNeighbors(g, active).filter((n) => acceptors.has(n.atom.id)).length < 2) return null;
+      const pieces = retroEdit(t, (h) => {
+        if (!retroCut(h, active, carbonyl)) return false;
+        rxAttach(h, 'O', carbonyl, 2);
+        rxsDrop(h, active);
+        rxsDrop(h, carbonyl);
+        h.alkeneSpecs = [];
+      });
+      return pieces && pieces.length === 2 ? retroSpec(retroReactants(pieces), [RETRO17_REAGENTS.triethylamine],
+        { solvents: ['ethanol'], temperature: 25 }) : null;
+    })).filter(Boolean);
+  } },
+  { id: 'amide-hydrolysis', name: 'Carboxylic acid from primary amide by acidic hydrolysis', rule: 'amide-hydrolysis', group: 'Nucleophilic acyl substitution', match(t) {
+    return t.info.carbonyls.filter((c) => c.kind === 'acid').slice(0, RETRO_LIMITS.maxPerTransform).map((c) => {
+      const piece = retroSinglePiece(t, (g) => {
+        g.getAtom(c.hetero).element = 'N';
+        rxsReplace(g, c.c, c.hetero, c.hetero, true);
+      });
+      return piece && retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO_REAGENTS.Cl],
+        { solvents: ['water'], temperature: 100 });
+    }).filter(Boolean);
+  } }
+);

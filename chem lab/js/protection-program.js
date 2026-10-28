@@ -18,6 +18,18 @@ function protectionProgramMasks(smiles, choice, requireUnique) {
   }))];
 }
 
+function protectionProgramTargetOrder(from, targets) {
+  const startFeatures=pathFinderFingerprint(from);
+  const distance=smiles=>{
+    const features=pathFinderFingerprint(smiles),keys=new Set([...Object.keys(startFeatures),...Object.keys(features)]);
+    return [...keys].reduce((n,key)=>{
+      const have=features[key]||0,want=startFeatures[key]||0;
+      return n+(have<want?6*(want-have):have-want);
+    },0);
+  };
+  return targets.map((smiles,index)=>({smiles,index,distance:distance(smiles)})).sort((a,b)=>a.distance-b.distance||(a.smiles<b.smiles?-1:a.smiles>b.smiles?1:a.index-b.index)).map(x=>x.smiles);
+}
+
 function protectionProgramBlocked(candidate, options) {
   const split = value => (Array.isArray(value)?value:String(value||'').split(/[\n,]+/)).map(s=>String(s).trim().toLowerCase()).filter(Boolean);
   const ruleText = [candidate.rule,candidate.outcomeRule,candidate.outcomeId,candidate.name,candidate.transform].filter(Boolean).join(' ').toLowerCase();
@@ -80,15 +92,17 @@ function protectionProgramCreate(startSmiles,targetSmiles,options) {
           if(!pending.length){
             const order=orders[orderIndex++],installs=[];let from=start.smiles,targets=[target.smiles];
             for(const choice of order){const link=protectionProgramInstall(from,choice,opts);installs.push(link);from=link.to;targets=[...new Set(targets.flatMap(t=>protectionProgramMasks(t,choice,false)))];if(targets.length>4)throw new Error('Protected target proposals exceed the four-candidate bound.');}
-            for(const protectedTarget of targets){
-              const removals=protectionSequencePlan(protectedTarget,target.smiles,{maxDepth:choices.length,maxRoutes:2,maxNodes:16,budgetMs:250,forbiddenRules:opts.forbiddenRules,forbiddenReagents:opts.forbiddenReagents,removeGroups:requested});
-              if(removals.routes.length)pending.push({from,protectedTarget,installs,removals});
-              else fail('No compatible final removal order: '+removals.diagnostics.blocked.join(' '));
-            }
+            targets=protectionProgramTargetOrder(from,targets);
+            for(const protectedTarget of targets)pending.push({from,protectedTarget,installs,removals:null});
           }
           if(!pending.length)return job;
-          const proposal=pending.shift(),mainDepth=opts.maxDepth-proposal.installs.length-Math.min(...proposal.removals.routes.map(r=>r.steps.length));
-          const search=pathFinderCreate(proposal.from,proposal.protectedTarget,Object.assign({},opts,{maxDepth:mainDepth,maxNodes:nodeLimit-job.expanded,allowedProtectingGroups:[],managedProtectingGroups:[],budgetMs:Math.max(1,budget-job.elapsedMs)}));
+          const proposal=pending.shift();
+          if(!proposal.removals){
+            proposal.removals=protectionSequencePlan(proposal.protectedTarget,target.smiles,{maxDepth:choices.length,maxRoutes:2,maxNodes:16,budgetMs:Math.min(250,Math.max(1,budget-job.elapsedMs)),forbiddenRules:opts.forbiddenRules,forbiddenReagents:opts.forbiddenReagents,removeGroups:requested});
+            if(!proposal.removals.routes.length){fail('No compatible final removal order: '+proposal.removals.diagnostics.blocked.join(' '));return job;}
+          }
+          const mainDepth=opts.maxDepth-proposal.installs.length-Math.min(...proposal.removals.routes.map(r=>r.steps.length));
+          const search=pathFinderCreate(proposal.from,proposal.protectedTarget,Object.assign({},opts,{maxDepth:mainDepth,maxNodes:nodeLimit-job.expanded,allowedProtectingGroups:[],managedProtectingGroups:[],streamCandidates:true,budgetMs:Math.max(1,budget-job.elapsedMs)}));
           active={search,installs:proposal.installs,removals:proposal.removals};
         }catch(error){fail(error.message);return job;}
       }

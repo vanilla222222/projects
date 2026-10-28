@@ -2,6 +2,7 @@ const STOCK_LIMITS = { maxUser: 5000, storageKey: 'stock', defaultUserTier: 1, n
 
 const STOCK_BUILTIN = [
   { smiles: 'O', tier: 1, name: 'water' },
+  { smiles: 'O=C=O', tier: 1, name: 'carbon dioxide' },
   { smiles: 'CO', tier: 1, name: 'methanol' },
   { smiles: 'CCO', tier: 1, name: 'ethanol' },
   { smiles: 'CCCO', tier: 1, name: '1-propanol' },

@@ -2144,6 +2144,7 @@ function* retroDisconnectSteps(graph, ids, options) {
       const candidate = retroCandidate(t, spec, verified);
       if (candidate) {
         out.candidates.push(candidate);
+        if (options && options.emitCandidates) yield { phase: 'candidate', candidate };
       }
     }
     if (planning && (!verified || verified.outcome.chemoselectivity)) {
