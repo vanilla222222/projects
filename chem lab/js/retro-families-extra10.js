@@ -243,3 +243,78 @@ RETRO_TRANSFORMS.push(
       })).filter(Boolean);
   } }
 );
+
+// Alpha-halogenation, organozinc addition, ylide epoxidation and alkyne
+// elimination. Every disconnection remains subject to exact forward replay.
+const RETRO19_REAGENTS = {
+  iodine: { smiles: 'II', role: 'reagent', label: 'I2' },
+  zinc: { smiles: '[Zn]', role: 'reagent', label: 'Zn' },
+  sulfonium: { smiles: 'C[S+](C)C.[I-]', role: 'reagent', label: 'Trimethylsulfonium iodide' },
+  hydride: { smiles: '[H-].[Na+]', role: 'reagent', label: 'NaH' },
+};
+
+RETRO_TRANSFORMS.push(
+  { id: 'alpha-halogenation', name: 'Alpha-halogenated aldehyde or ketone from the parent carbonyl', rule: 'alpha-halogenation', group: 'Alpha substitution', match(t) {
+    const g = t.graph, oxo = new Set(t.info.carbonyls.filter((c) => c.kind === 'aldehyde' || c.kind === 'ketone').map((c) => c.c));
+    return t.info.halides.filter((h) => ['Cl', 'Br', 'I'].includes(h.halogen) && rxCarbonNeighbors(g, h.c).some((n) => oxo.has(n.atom.id)))
+      .slice(0, RETRO_LIMITS.maxPerTransform).map((h) => {
+        const piece = retroSinglePiece(t, (clone) => { clone.removeAtom(h.x); rxsDrop(clone, h.c); });
+        const halogen = h.halogen === 'Br' ? RETRO_REAGENTS.bromine : h.halogen === 'Cl' ? RETRO_REAGENTS.chlorine : RETRO19_REAGENTS.iodine;
+        return piece && retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [halogen, RETRO_REAGENTS.Cl],
+          { solvents: ['water'], temperature: 25 });
+      }).filter(Boolean);
+  } },
+  { id: 'reformatsky', name: 'Beta-hydroxy ester from an alpha-bromo ester and an aldehyde or ketone', rule: 'reformatsky', group: 'Carbon–carbon formation', match(t) {
+    const g = t.graph, out = [], seen = new Set();
+    t.info.carbonyls.filter((c) => c.kind === 'ester').forEach((ester) => {
+      rxCarbonNeighbors(g, ester.c).filter((n) => rxIsSp3(g, n.atom.id)).forEach((alpha) => {
+        t.info.alcohols.filter((a) => g.getBond(alpha.atom.id, a.c) && g.getBond(alpha.atom.id, a.c).order === 1).forEach((a) => {
+          const pieces = retroEdit(t, (h) => {
+            if (!retroCut(h, alpha.atom.id, a.c)) return false;
+            rxAttach(h, 'Br', alpha.atom.id);
+            rxSetOrder(h, a.c, a.o, 2);
+            rxsDrop(h, a.c);
+          });
+          if (!pieces || pieces.length !== 2) return;
+          const signature = pieces.map((p) => p.smiles).sort().join('|');
+          if (seen.has(signature)) return;
+          seen.add(signature);
+          out.push(retroSpec(retroReactants(pieces), [RETRO19_REAGENTS.zinc], { solvents: ['ether'], temperature: 25, atmosphere: 'n2' }));
+        });
+      });
+    });
+    return out.slice(0, RETRO_LIMITS.maxPerTransform);
+  } },
+  { id: 'corey-chaykovsky', name: 'Epoxide from an aldehyde or ketone by Corey–Chaykovsky methylenation', rule: 'corey-chaykovsky', group: 'Ring formation', match(t) {
+    const g = t.graph, out = [], seen = new Set();
+    rxRings(g, 3).filter((ring) => ring.length === 3 && ring.filter((id) => g.getAtom(id).element === 'C').length === 2 && ring.filter((id) => g.getAtom(id).element === 'O').length === 1).forEach((ring) => {
+      const oxygen = ring.find((id) => g.getAtom(id).element === 'O');
+      ring.filter((id) => g.getAtom(id).element === 'C' && rxHydrogens(g, id) === 2 && rxCarbonNeighbors(g, id).length === 1).forEach((methylene) => {
+        const carbonyl = ring.find((id) => id !== methylene && g.getAtom(id).element === 'C');
+        const piece = retroSinglePiece(t, (h) => {
+          h.removeAtom(methylene);
+          rxSetOrder(h, carbonyl, oxygen, 2);
+          rxsDrop(h, carbonyl);
+        });
+        if (!piece || seen.has(piece.smiles)) return;
+        seen.add(piece.smiles);
+        out.push(retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO19_REAGENTS.sulfonium, RETRO19_REAGENTS.hydride],
+          { solvents: ['dmso'], temperature: 25, atmosphere: 'n2' }));
+      });
+    });
+    return out.slice(0, RETRO_LIMITS.maxPerTransform);
+  } },
+  { id: 'double-elimination', name: 'Alkyne from a vicinal dibromide by double dehydrobromination', rule: 'double-elimination', group: 'Elimination', match(t) {
+    return t.info.alkynes.slice(0, RETRO_LIMITS.maxPerTransform).map((e) => {
+      const piece = retroSinglePiece(t, (g) => {
+        rxSetOrder(g, e.a, e.b, 1);
+        rxAttach(g, 'Br', e.a);
+        rxAttach(g, 'Br', e.b);
+        rxsDrop(g, e.a);
+        rxsDrop(g, e.b);
+      });
+      return piece && retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO15_REAGENTS.sodamide],
+        { solvents: ['thf'], temperature: 25 });
+    }).filter(Boolean);
+  } }
+);

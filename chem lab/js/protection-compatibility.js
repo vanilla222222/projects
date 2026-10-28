@@ -105,21 +105,22 @@ function protectionThreats(compounds,conditions) {
   if(ctx.substrates.some(s=>s.compound&&s.compound.role==='reagent'&&s.info.amines.some(a=>a.h===1)))add('fmocBase');
   if(ctx.has('amineBase')||ctx.has('weakBase')||(ctx.conditions.additives||[]).includes('imidazole'))add('weakBase');
   if(ctx.has('grignard'))add('organometallic');
+  if(ctx.has('zinc'))add('organozinc');
   if(ctx.has('alanate'))add('alanate');if(ctx.has('dibal'))add('dibal');if(ctx.has('borohydride')||ctx.has('mildHydride'))add('borohydride');
   if(ctx.has('ddq')||ctx.has('can'))add('oxidative');
   if(ctx.has('pcc'))add('mildOxidative');
   if(['mcpba','ozone','permanganate','jones','hydrogenPeroxide','bbr3','lewis','dissolvingMetal','rosenmundCatalyst'].some(t=>ctx.has(t)))add('otherReactive');
   if(ctx.substrates.some(s=>s.info.carbonyls.some(c=>['acylChloride','anhydride'].includes(c.kind)))||ctx.has('boc2o')||ctx.has('cbzReagent')||ctx.has('fmocReagent'))add('acylation');
-  const handled=new Set(['strongAcid','sulfuricAcid','HCl','HBr','HI','H2O','fluoride','H2','hydrogenationCatalyst','hydroxide','hydride','amideBase','sodamide','alkoxide','amineBase','weakBase','grignard','alanate','dibal','borohydride','mildHydride','ddq','can','boc2o','cbzReagent','fmocReagent','silylChloride','cation','quaternaryAmmonium','dmso','light','dmap','pcc','hydrazine']);
+  const handled=new Set(['strongAcid','sulfuricAcid','HCl','HBr','HI','H2O','fluoride','H2','hydrogenationCatalyst','hydroxide','hydride','amideBase','sodamide','alkoxide','amineBase','weakBase','grignard','zinc','alanate','dibal','borohydride','mildHydride','ddq','can','boc2o','cbzReagent','fmocReagent','silylChloride','cation','quaternaryAmmonium','dmso','light','dmap','pcc','hydrazine']);
   if([...ctx.species.keys()].some(tag=>!handled.has(tag)))add('otherReactive');
   const supportedAdditives=new Set(['h2so4','hcl','hbr','tsoh','h3po4','naoh','koh','naoet','kotbu','nah','lda','k2co3','et3n','pyr','cs2co3','k3po4','nanh2','imidazole','dmap','piperidine','dbu','pdc','pt','ni','ddq','can']);
   if((ctx.conditions.additives||[]).some(id=>!supportedAdditives.has(id)))add('otherReactive');
-  if(ctx.substrates.some(s=>s.compound&&s.compound.role==='reagent'&&!s.info.carbonyls.some(c=>['acylChloride','anhydride'].includes(c.kind))&&!s.info.amines.some(a=>a.h===1)))add('otherReactive');
+  if(ctx.substrates.some(s=>s.compound&&s.compound.role==='reagent'&&!s.info.carbonyls.some(c=>['acylChloride','anhydride'].includes(c.kind))&&!s.info.amines.some(a=>a.h===1)&&!s.graph.atoms.every(a=>a.element==='Zn')))add('otherReactive');
   if(ctx.temperature>60||ctx.temperature< -80)add('extremeTemperature');
   if(ctx.light||ctx.conditions.energy==='light')add('photochemical');
   return ts;
 }
-const PROTECTION_THREAT_IDS=['acid','aqueousAcid','fluoride','hydrogenolysis','strongBase','aqueousBase','fmocBase','weakBase','organometallic','alanate','dibal','borohydride','oxidative','mildOxidative','acylation','otherReactive','extremeTemperature','photochemical'];
+const PROTECTION_THREAT_IDS=['acid','aqueousAcid','fluoride','hydrogenolysis','strongBase','aqueousBase','fmocBase','weakBase','organometallic','organozinc','alanate','dibal','borohydride','oxidative','mildOxidative','acylation','otherReactive','extremeTemperature','photochemical'];
 function protectionGroupCompatibility(id,conditionsOrThreats,site) {
   const entry=PROTECTION_GROUPS.find(x=>x.id===id||x.label.toLowerCase()===String(id).toLowerCase());
   if(!entry)return {status:'unknown',reasons:['This protecting group is not in the bounded compatibility registry.']};
@@ -147,6 +148,9 @@ function protectionGroupCompatibility(id,conditionsOrThreats,site) {
       else if(silyl&&(site&&site.phenolic))conflict('Phenolic silyl ethers can be base-labile; do not use alkyl-silyl stability as a guarantee.');
       else if(silyl&&t!=='fmocBase')unknown('Silyl survival under strong base depends on substituents and medium; not universally established.');
       else reasons.push(entry.label+' has no encoded cleavage in this bounded base regime.');
+    }else if(t==='organozinc'){
+      if(ester)reasons.push(entry.label+' is retained in the bounded Reformatsky organozinc regime; the zinc enolate reacts at the partner aldehyde or ketone rather than its own ester.');
+      else unknown(entry.label+' compatibility with this organozinc regime is not independently encoded.');
     }else if(t==='organometallic'){
       if(carbamate&&(site&&site.hasNH))conflict('The protected amine still has N–H and consumes organometallic reagent; a carbamate is not a universal amine solution.');
       else if(carbamate)unknown('Even without N–H, the carbamate carbonyl can react with organometallics; survival is not established.');
