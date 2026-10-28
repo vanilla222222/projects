@@ -115,3 +115,77 @@ RETRO_TRANSFORMS.push(
     }).filter(Boolean);
   } }
 );
+
+// Nitrile/Grignard, acetylide, condensation and hydrolysis coverage. Reverse
+// edits remain bounded and are exposed only after the established forward rule
+// reproduces the requested target.
+const RETRO17_REAGENTS = {
+  triethylamine: { smiles: 'CCN(CC)CC', role: 'reagent', label: 'Triethylamine' },
+};
+
+RETRO_TRANSFORMS.push(
+  { id: 'grignard-nitrile', name: 'Ketone from nitrile and Grignard reagent', rule: 'grignard-nitrile', group: 'Carbon–carbon formation', match(t) {
+    const g = t.graph;
+    return t.info.carbonyls.filter((c) => c.kind === 'ketone').slice(0, RETRO_LIMITS.maxPerTransform).flatMap((c) =>
+      rxCarbonNeighbors(g, c.c).map((n) => {
+        const r = n.atom.id;
+        const pieces = retroEdit(t, (h) => {
+          h.removeAtom(c.o);
+          rxAttach(h, 'N', c.c, 3);
+          if (!retroCut(h, c.c, r)) return false;
+          const mg = rxAttach(h, 'Mg', r);
+          rxAttach(h, 'Br', mg.id);
+        });
+        if (!pieces || pieces.length !== 2) return null;
+        const nitrile = pieces.find((p) => p.elements.has('N'));
+        const grignard = pieces.find((p) => p.elements.has('Mg'));
+        return nitrile && grignard ? retroSpec([{ smiles: nitrile.smiles, role: 'reactant' },
+          { smiles: grignard.smiles, role: 'reagent', label: retroGrignardLabel(grignard.smiles) }], [], { solvents: ['ether'], atmosphere: 'n2' }) : null;
+      })).filter(Boolean);
+  } },
+  { id: 'acetylide-alkylation', name: 'Internal alkyne from terminal alkyne and methyl/primary alkyl bromide', rule: 'acetylide-alkylation', group: 'Carbon–carbon formation', match(t) {
+    const g = t.graph, out = [], seen = new Set();
+    t.info.alkynes.forEach((e) => [[e.a, e.b], [e.b, e.a]].forEach(([terminal, other]) => {
+      const neighbor = rxCarbonNeighbors(g, terminal).find((n) => n.atom.id !== other);
+      if (!neighbor) return;
+      const r = neighbor.atom.id, bond = g.getBond(terminal, r);
+      if (!bond || bond.order !== 1 || !rxIsSp3(g, r) || t.aromatic.has(r) || rxCarbonNeighbors(g, r).filter((n) => n.atom.id !== terminal).length > 1) return;
+      const pieces = retroEdit(t, (h) => {
+        if (!retroCut(h, terminal, r)) return false;
+        rxAttach(h, 'Br', r);
+      });
+      if (!pieces || pieces.length !== 2) return;
+      const signature = pieces.map((p) => p.smiles).sort().join('|');
+      if (seen.has(signature)) return;
+      seen.add(signature);
+      out.push(retroSpec(retroReactants(pieces), [RETRO15_REAGENTS.sodamide], { solvents: ['thf'], atmosphere: 'n2' }));
+    }));
+    return out.slice(0, RETRO_LIMITS.maxPerTransform);
+  } },
+  { id: 'knoevenagel', name: 'Activated alkene from carbonyl and active methylene donor', rule: 'knoevenagel', group: 'Condensation', match(t) {
+    const g = t.graph;
+    const acceptors = new Set(t.info.carbonyls.filter((c) => ['ketone', 'aldehyde', 'ester', 'acid'].includes(c.kind)).map((c) => c.c).concat(t.info.nitriles.map((n) => n.c)));
+    return t.info.alkenes.slice(0, RETRO_LIMITS.maxPerTransform).flatMap((e) => [[e.a, e.b], [e.b, e.a]].map(([active, carbonyl]) => {
+      if (rxNeighbors(g, active).filter((n) => acceptors.has(n.atom.id)).length < 2) return null;
+      const pieces = retroEdit(t, (h) => {
+        if (!retroCut(h, active, carbonyl)) return false;
+        rxAttach(h, 'O', carbonyl, 2);
+        rxsDrop(h, active);
+        rxsDrop(h, carbonyl);
+        h.alkeneSpecs = [];
+      });
+      return pieces && pieces.length === 2 ? retroSpec(retroReactants(pieces), [RETRO17_REAGENTS.triethylamine],
+        { solvents: ['ethanol'], temperature: 25 }) : null;
+    })).filter(Boolean);
+  } },
+  { id: 'amide-hydrolysis', name: 'Carboxylic acid from primary amide by acidic hydrolysis', rule: 'amide-hydrolysis', group: 'Nucleophilic acyl substitution', match(t) {
+    return t.info.carbonyls.filter((c) => c.kind === 'acid').slice(0, RETRO_LIMITS.maxPerTransform).map((c) => {
+      const piece = retroSinglePiece(t, (g) => {
+        g.getAtom(c.hetero).element = 'N';
+        rxsReplace(g, c.c, c.hetero, c.hetero, true);
+      });
+      return piece && retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO_REAGENTS.Cl],
+        { solvents: ['water'], temperature: 100 });
+    }).filter(Boolean);
+  } }
+);
