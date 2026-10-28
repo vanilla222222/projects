@@ -463,7 +463,6 @@ function retroArylBonds(t, partner) {
 }
 
 function retroVinylCarbon(t, id) {
-  const g = t.graph;
   return g.getAtom(id).element === 'C' && !t.aromatic.has(id) && rxNeighbors(g, id).some((n) => n.bond.order === 2 && n.atom.element === 'C');
 }
 
@@ -558,7 +557,6 @@ function retroCarbamates(t) {
 }
 
 function retroConjugating(t, id, partner) {
-  const g = t.graph;
   return rxNeighbors(g, id).some((n) => n.atom.id !== partner && (t.aromatic.has(n.atom.id) ||
     rxNeighbors(g, n.atom.id).some((m) => (m.bond.order === 2 && m.atom.element === 'O') || (m.bond.order === 3 && m.atom.element === 'N'))));
 }
@@ -2209,8 +2207,8 @@ function retroNode(smiles, depth) {
 function retroTree(smiles, depth, budget) {
   const tree = {
     maxDepth: Math.max(1, Math.min(RETRO_LIMITS.maxDepth, depth || RETRO_LIMITS.maxDepth)),
-    budgetMs: Math.max(1, Math.min(30000, budget || RETRO_LIMITS.budgetMs)),
-    root: retroNode(smiles, depth),
+    budgetMs: budget || RETRO_LIMITS.budgetMs,
+    root: retroNode(smiles, 0),
   };
   retroExpand(tree, tree.root);
   return tree;
