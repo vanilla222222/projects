@@ -38,15 +38,20 @@ function routeWorkspaceNormalize(raw) {
     const source = link.candidate || link;
     const compounds = source.compounds;
     if (!Array.isArray(compounds) || !compounds.length || compounds.length > REACTION_LIMITS.maxCompounds) throw new Error('Step ' + (index + 1) + ' needs 1–' + REACTION_LIMITS.maxCompounds + ' compounds.');
+    const rawYield = link.yield !== undefined ? link.yield : source.yield;
+    if (rawYield !== undefined && rawYield !== null && rawYield !== '' && (!Number.isFinite(Number(rawYield)) || Number(rawYield) < 0 || Number(rawYield) > 100)) throw new Error('Step ' + (index + 1) + ' yield must be between 0 and 100%.');
     return {
       from: routeWorkspaceSmiles(link.from),
       to: routeWorkspaceSmiles(link.to),
       name: String(source.outcomeName || source.name || 'Reaction step').slice(0, 120),
       ruleId: String(source.outcomeId || source.ruleId || source.id || '').slice(0, 100),
+      yield: rawYield === undefined || rawYield === null || rawYield === '' ? null : Number(rawYield),
       planning: source.planning && ['protect', 'reaction', 'deprotect'].includes(source.planning.kind) ? { kind: source.planning.kind, group: String(source.planning.group || '').slice(0, 80), groupId: String(source.planning.groupId || '').slice(0, 80), reason: String(source.planning.reason || '').slice(0, 800) } : null,
       compounds: compounds.map((c) => {
         if (!c || !roles.includes(c.role)) throw new Error('Step ' + (index + 1) + ' has an invalid compound role.');
-        return { smiles: routeWorkspaceSmiles(c.isomericSmiles || c.smiles), role: c.role, label: String(c.label || '').slice(0, 80) };
+        const equiv = c.equiv === undefined || c.equiv === null || String(c.equiv).trim() === '' ? '1' : String(c.equiv).slice(0, 20);
+        if (!reactionParseAmount(equiv)) throw new Error('Step ' + (index + 1) + ' has an invalid compound amount or equivalents value.');
+        return { smiles: routeWorkspaceSmiles(c.isomericSmiles || c.smiles), role: c.role, equiv, label: String(c.label || '').slice(0, 80) };
       }),
       conditions: normalizeReactionConditions(source.conditions || {}),
     };
@@ -62,11 +67,19 @@ function routeWorkspaceNormalize(raw) {
   };
 }
 
+function routeWorkspaceCompounds(step) {
+  return step.compounds.map((c) => {
+    const fragment = smilesToFragment(c.smiles);
+    const info = reactionDescribeFragment(fragment);
+    return Object.assign({}, c, { input: c.smiles, fragment, name: info.name, formula: info.formula, mass: info.mass });
+  });
+}
+
 function routeWorkspaceValidateStep(step) {
   try {
     const from = routeWorkspaceKey(step.from);
     const target = routeWorkspaceProductKey(step.to);
-    const compounds = step.compounds.map((c) => Object.assign({}, c, { fragment: smilesToFragment(c.smiles) }));
+    const compounds = routeWorkspaceCompounds(step);
     if (!compounds.some((c) => c.role === 'reactant' && routeWorkspaceKey(c.smiles) === from)) return { status: 'invalid', message: 'The starting intermediate is missing from this step’s reactants.' };
     const prediction = predictReaction(compounds, normalizeReactionConditions(step.conditions));
     const outcomes = [prediction.best].concat(prediction.alternatives || []).filter(Boolean);
@@ -82,7 +95,7 @@ function routeWorkspaceValidateStep(step) {
       const scope = reactionScopeAssess(compounds,step.conditions,outcome);
       if (scope.status === 'conflict') return {status:'unverified',message:scope.reasons.filter(r=>r.level==='conflict').map(r=>r.message).join(' ')||'Condition/substrate scope conflict.',ruleId:outcome.id,outcome,scope};
     }
-    return outcome ? { status: 'verified', message: 'Target reproduced by ' + outcome.name + ' in the current rule model.', ruleId: outcome.id, outcome }
+    return outcome ? { status: 'verified', message: 'Target reproduced by ' + outcome.name + ' in the current rule model.', ruleId: outcome.id, outcome, compounds }
       : { status: 'unverified', message: 'The current rules did not reproduce the selected target with these inputs and conditions.' };
   } catch (error) { return { status: 'invalid', message: error.message }; }
 }
@@ -101,6 +114,136 @@ function routeWorkspaceValidate(route) {
   return { status: issues.length || steps.some((s) => s.status === 'invalid') ? 'invalid' : steps.some((s) => s.status !== 'verified') ? 'unverified' : 'verified', issues, steps };
 }
 
+function routeWorkspaceOutcomeProduct(step, outcome) {
+  if (!outcome) return null;
+  const target = routeWorkspaceProductKey(step.to);
+  const match = (p) => {
+    try { return routeWorkspaceProductKey(p.isomericSmiles || p.smiles) === target; }
+    catch (error) { return false; }
+  };
+  const major = (outcome.products || []).find(match);
+  if (major) return { product: major, minor: false };
+  const minor = (outcome.minor || []).find(match);
+  return minor ? { product: minor, minor: true } : null;
+}
+
+function routeWorkspaceStepYield(step, checked) {
+  if (Number.isFinite(step.yield)) return Math.max(0, Math.min(100, step.yield));
+  const outcome = checked && checked.outcome;
+  const selected = routeWorkspaceOutcomeProduct(step, outcome);
+  if (!selected) return null;
+  const ratio = outcome.ratio && outcome.minor && outcome.minor.length === 1 ? outcome.ratio : null;
+  const selectivity = ratio ? ratio[selected.minor ? 1 : 0] : 100;
+  const conversion = outcome.stoichiometry && Number.isFinite(outcome.stoichiometry.conversion) ? Math.min(1, outcome.stoichiometry.conversion) : 1;
+  return Math.max(0, Math.min(100, Math.round(selectivity * conversion)));
+}
+
+function routeWorkspaceYield(route, report) {
+  const checked = report || routeWorkspaceValidate(route);
+  if (checked.status !== 'verified' || !route.steps.length) return null;
+  const yields = route.steps.map((step, i) => routeWorkspaceStepYield(step, checked.steps[i]));
+  return yields.some((value) => !Number.isFinite(value)) ? null : reactionRouteYield(yields.map((value) => ({ yield: value })));
+}
+
+function routeWorkspaceAmountMg(amount, unit) {
+  if ((typeof amount === 'string' && !amount.trim()) || !Number.isFinite(Number(amount)) || Number(amount) <= 0) throw new Error('Enter a positive scale amount.');
+  const normalized = String(unit || '').toLowerCase().replace('μ', 'µ');
+  if (!['g', 'mg', 'µg', 'ug'].includes(normalized)) throw new Error('Choose g, mg, or µg.');
+  const factor = normalized === 'g' ? 1000 : normalized === 'mg' ? 1 : 0.001;
+  const mg = Number(amount) * factor;
+  if (!Number.isFinite(mg) || mg <= 0) throw new Error('The scale amount is outside the supported numeric range.');
+  return mg;
+}
+
+function routeWorkspaceScaleBases(route) {
+  const bases = [{ id: 'product', kind: 'product', label: 'Final product: ' + route.target }];
+  route.steps.forEach((step, stepIndex) => step.compounds.forEach((compound, compoundIndex) => {
+    if (compound.role === 'reactant') bases.push({ id: 'reactant:' + stepIndex + ':' + compoundIndex, kind: 'reactant', stepIndex, compoundIndex, label: 'Step ' + (stepIndex + 1) + ' reactant: ' + (compound.label || compound.smiles) });
+  }));
+  return bases;
+}
+
+function routeWorkspaceStepCalculation(route, index, scaleMmol, report) {
+  const step = route.steps[index], checked = report.steps[index];
+  if (!checked || checked.status !== 'verified' || !checked.compounds) throw new Error('Scale planning requires every route step to be verified.');
+  if (!Number.isFinite(scaleMmol) || scaleMmol <= 0) throw new Error('The calculated route scale is not positive and finite.');
+  const yieldPct = routeWorkspaceStepYield(step, checked);
+  const selected = routeWorkspaceOutcomeProduct(step, checked.outcome);
+  if (!Number.isFinite(yieldPct) || !selected) throw new Error('Step ' + (index + 1) + ' has no usable yield estimate.');
+  const rows = reactionMaterialRows(checked.compounds, step.conditions, scaleMmol);
+  const outcome = checked.outcome;
+  const needs = outcome.stoichiometry ? outcome.stoichiometry.rows : (outcome.consumes || []).filter((x) => x && x.compound && x.need > 0 && x.compound.role !== 'solvent' && x.compound.role !== 'catalyst');
+  const carriedRow = rows.find((row) => row.role === 'reactant' && routeWorkspaceKey(row.compound.smiles) === routeWorkspaceKey(step.from));
+  const base = needs[0];
+  const baseRow = base ? rows.find((row) => row.compound === base.compound) : carriedRow;
+  const baseNeed = base ? base.need : 1;
+  const productMmol = baseRow && baseNeed > 0 && baseRow.mmol !== null ? baseRow.mmol * (selected.product.count || 1) / baseNeed * yieldPct / 100 : null;
+  const productMw = reactionProductMass(step.to);
+  if (!Number.isFinite(productMmol) || !carriedRow || !Number.isFinite(carriedRow.mmol) || carriedRow.mmol <= 0 || !Number.isFinite(productMw) || productMw <= 0) throw new Error('Step ' + (index + 1) + ' does not have enough stoichiometry or molecular-mass data for route scaling.');
+  return { scaleMmol, yield: yieldPct, productMmol, productMg: productMmol * productMw, carriedMmol: carriedRow.mmol, rows };
+}
+
+function routeWorkspaceScalePlan(route, basisId, amount, unit, report) {
+  const checked = report || routeWorkspaceValidate(route);
+  if (checked.status !== 'verified' || !route.steps.length) throw new Error('Scale planning requires a non-empty route with every step verified.');
+  const basis = routeWorkspaceScaleBases(route).find((item) => item.id === basisId);
+  if (!basis) throw new Error('Choose a final product or step reactant as the scale basis.');
+  const amountMg = routeWorkspaceAmountMg(amount, unit);
+  const calculations = new Array(route.steps.length);
+  const close = (actual, expected) => Math.abs(actual - expected) <= Math.max(1e-12, Math.abs(expected) * 1e-7);
+  const calculate = (index, scale) => routeWorkspaceStepCalculation(route, index, scale, checked);
+  const setProductDriven = (index, requiredProductMmol) => {
+    const unitStep = calculate(index, 1);
+    if (unitStep.productMmol <= 0) throw new Error('A zero-yield step cannot produce a positive product target.');
+    const scaled = calculate(index, requiredProductMmol / unitStep.productMmol);
+    if (!close(scaled.productMmol, requiredProductMmol)) throw new Error('Fixed-amount inputs in step ' + (index + 1) + ' prevent proportional route scaling; use equivalents instead.');
+    calculations[index] = scaled;
+  };
+  if (basis.kind === 'product') {
+    const productMw = reactionProductMass(route.target);
+    if (!Number.isFinite(productMw) || productMw <= 0) throw new Error('The final product has no usable molecular mass.');
+    let required = amountMg / productMw;
+    for (let i = route.steps.length - 1; i >= 0; i -= 1) {
+      setProductDriven(i, required);
+      required = calculations[i].carriedMmol;
+    }
+  } else {
+    const compound = route.steps[basis.stepIndex].compounds[basis.compoundIndex];
+    const basisMw = reactionProductMass(compound.smiles);
+    if (!Number.isFinite(basisMw) || basisMw <= 0) throw new Error('The selected reactant has no usable molecular mass.');
+    const basisMmol = amountMg / basisMw;
+    const unitBasis = calculate(basis.stepIndex, 1);
+    const basisRow = unitBasis.rows[basis.compoundIndex];
+    if (!basisRow || !Number.isFinite(basisRow.mmol) || basisRow.mmol <= 0) throw new Error('The selected reactant has no scalable amount.');
+    calculations[basis.stepIndex] = calculate(basis.stepIndex, basisMmol / basisRow.mmol);
+    if (!close(calculations[basis.stepIndex].rows[basis.compoundIndex].mmol, basisMmol)) throw new Error('This reactant uses a fixed amount rather than equivalents and cannot be used as a proportional scale basis.');
+    for (let i = basis.stepIndex - 1; i >= 0; i -= 1) setProductDriven(i, calculations[i + 1].carriedMmol);
+    for (let i = basis.stepIndex + 1; i < route.steps.length; i += 1) {
+      const requiredCarried = calculations[i - 1].productMmol;
+      const unitStep = calculate(i, 1);
+      const scaled = calculate(i, requiredCarried / unitStep.carriedMmol);
+      if (!close(scaled.carriedMmol, requiredCarried)) throw new Error('Fixed-amount inputs in step ' + (i + 1) + ' prevent proportional route scaling; use equivalents instead.');
+      calculations[i] = scaled;
+    }
+  }
+  const finalStep = calculations[calculations.length - 1];
+  return { basis, amountMg, overallYield: routeWorkspaceYield(route, checked), startingMmol: calculations[0].carriedMmol, finalProductMmol: finalStep.productMmol, finalProductMg: finalStep.productMg, steps: calculations };
+}
+
+function routeWorkspaceQuantityText(value, unit) {
+  if (!Number.isFinite(value)) return '—';
+  const abs = Math.abs(value);
+  const text = abs >= 100 ? String(Number(value.toFixed(1))) : abs >= 1 ? value.toFixed(2) : String(Number(value.toPrecision(3)));
+  return text + (unit ? ' ' + unit : '');
+}
+
+function routeWorkspaceMassText(mg) {
+  if (!Number.isFinite(mg)) return '—';
+  if (Math.abs(mg) >= 1000) return routeWorkspaceQuantityText(mg / 1000, 'g');
+  if (Math.abs(mg) >= 1) return routeWorkspaceQuantityText(mg, 'mg');
+  return routeWorkspaceQuantityText(mg * 1000, 'µg');
+}
+
 function routeWorkspaceCsvEscape(value) {
   let text = String(value === null || value === undefined ? '' : value);
   if (/^[\s]*[=+@-]/.test(text) && !/^\s*-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?\s*$/.test(text)) text = "'" + text;
@@ -109,8 +252,9 @@ function routeWorkspaceCsvEscape(value) {
 
 function routeWorkspaceCsv(route) {
   const report = routeWorkspaceValidate(route);
-  const rows = [['Route', route.name], ['Starting material', route.start], ['Target', route.target], ['Route status', report.status], ['Continuity issues', report.issues.join('; ')], [], ['Step', 'Reaction', 'Rule', 'From SMILES', 'Target SMILES', 'Compounds (role: SMILES)', 'Temperature (°C)', 'Solvents', 'Additives', 'Atmosphere', 'Energy', 'Pressure (atm)', 'Reflux', 'Time', 'Concentration', 'Notes', 'Verification', 'Explanation', 'Step role', 'Protecting group', 'Planning rationale', 'Group preservation', 'Group preservation notes']];
-  route.steps.forEach((s, i) => rows.push([i + 1, s.name, s.ruleId, s.from, s.to, s.compounds.map((c) => c.role + ': ' + c.smiles).join('\n'), s.conditions.temperature, s.conditions.solvents.join('; '), s.conditions.additives.join('; '), s.conditions.atmosphere, s.conditions.energy, s.conditions.pressure, s.conditions.reflux, s.conditions.time, s.conditions.concentration, s.conditions.notes, report.steps[i].status, report.steps[i].message, s.planning ? s.planning.kind : '', s.planning ? s.planning.group : '', s.planning ? s.planning.reason : '', report.steps[i].outcome && report.steps[i].outcome.protectionAssessment ? report.steps[i].outcome.protectionAssessment.status : '', report.steps[i].outcome && report.steps[i].outcome.protectionAssessment ? report.steps[i].outcome.protectionAssessment.sites.map(site => (site.label || site.id) + ': ' + site.status + '. ' + (site.reasons || []).join(' ')).join('\n') : '']));
+  const overallYield = routeWorkspaceYield(route, report);
+  const rows = [['Route', route.name], ['Starting material', route.start], ['Target', route.target], ['Route status', report.status], ['Estimated overall yield (%)', overallYield === null ? '' : overallYield], ['Continuity issues', report.issues.join('; ')], [], ['Step', 'Reaction', 'Rule', 'From SMILES', 'Target SMILES', 'Compounds (role: SMILES)', 'Temperature (°C)', 'Solvents', 'Additives', 'Atmosphere', 'Energy', 'Pressure (atm)', 'Reflux', 'Time', 'Concentration', 'Notes', 'Verification', 'Explanation', 'Step role', 'Protecting group', 'Planning rationale', 'Group preservation', 'Group preservation notes', 'Estimated yield (%)']];
+  route.steps.forEach((s, i) => rows.push([i + 1, s.name, s.ruleId, s.from, s.to, s.compounds.map((c) => c.role + ': ' + c.smiles).join('\n'), s.conditions.temperature, s.conditions.solvents.join('; '), s.conditions.additives.join('; '), s.conditions.atmosphere, s.conditions.energy, s.conditions.pressure, s.conditions.reflux, s.conditions.time, s.conditions.concentration, s.conditions.notes, report.steps[i].status, report.steps[i].message, s.planning ? s.planning.kind : '', s.planning ? s.planning.group : '', s.planning ? s.planning.reason : '', report.steps[i].outcome && report.steps[i].outcome.protectionAssessment ? report.steps[i].outcome.protectionAssessment.status : '', report.steps[i].outcome && report.steps[i].outcome.protectionAssessment ? report.steps[i].outcome.protectionAssessment.sites.map(site => (site.label || site.id) + ': ' + site.status + '. ' + (site.reasons || []).join(' ')).join('\n') : '', routeWorkspaceStepYield(s, report.steps[i])]));
   return rows.map((row) => row.map(routeWorkspaceCsvEscape).join(',')).join('\r\n');
 }
 
@@ -130,6 +274,7 @@ function createRouteWorkspace(deps) {
   const storage = deps.storage || (typeof localStorage !== 'undefined' ? localStorage : null);
   let routes = [];
   let selected = '';
+  let scalePrefs = { routeId: '', basis: 'product', amount: '1', unit: 'g' };
   let loadError = '';
   try { const saved = storage && storage.getItem(ROUTE_WORKSPACE_STORAGE); if (saved) routes = routeWorkspaceImport(saved); } catch (error) { loadError = 'Saved routes could not be loaded: ' + error.message; }
   const heading = element('div', undefined, 'workspace-heading');
@@ -169,11 +314,65 @@ function createRouteWorkspace(deps) {
       try { const a = routeWorkspaceSmiles(start.input.value), b = routeWorkspaceSmiles(target.input.value); route.start = a; route.target = b; if (persist()) message.textContent = 'Endpoints updated. Continuity was rechecked.'; redraw(); } catch (error) { message.textContent = error.message; }
     }));
     content.append(meta, element('p', simpleName(route.start) + ' → ' + simpleName(route.target), 'workspace-equation'), element('p', 'Route status: ' + report.status + '. ' + (report.issues.join(' ') || 'Intermediates connect in the current order.'), 'workspace-status ' + report.status));
+    const overallYield = routeWorkspaceYield(route, report);
+    content.append(element('p', overallYield === null ? 'Estimated overall yield: unavailable until every step is verified.' : 'Estimated overall yield: ' + overallYield + '% (product of the step-yield estimates).', 'workspace-yield'));
+    if (scalePrefs.routeId !== route.id) scalePrefs = { routeId: route.id, basis: 'product', amount: '1', unit: 'g' };
+    const planner = element('section', undefined, 'workspace-scale');
+    planner.append(element('h3', 'Route scale planner'), element('p', 'Target a final product amount or enter the amount of any step reactant. The planner scales upstream and downstream materials using route stoichiometry and estimated step yields.'));
+    const scaleControls = element('div', undefined, 'workspace-scale-controls');
+    const basisLabel = element('label', 'Scale basis');
+    const basisSelect = element('select'); basisSelect.setAttribute('aria-label', 'Scale basis');
+    const bases = routeWorkspaceScaleBases(route);
+    if (!bases.some((item) => item.id === scalePrefs.basis)) scalePrefs.basis = 'product';
+    bases.forEach((item) => { const option = element('option', item.label); option.value = item.id; basisSelect.append(option); });
+    basisSelect.value = scalePrefs.basis; basisLabel.append(basisSelect);
+    const amount = labelInput('Amount', scalePrefs.amount, 'number'); amount.input.min = '0'; amount.input.step = 'any'; amount.input.setAttribute('aria-label', 'Scale amount');
+    const unitLabel = element('label', 'Unit');
+    const unitSelect = element('select'); unitSelect.setAttribute('aria-label', 'Scale unit');
+    [['g', 'g'], ['mg', 'mg'], ['µg', 'µg']].forEach(([value, text]) => { const option = element('option', text); option.value = value; unitSelect.append(option); });
+    unitSelect.value = scalePrefs.unit; unitLabel.append(unitSelect);
+    const scaleResults = element('div', undefined, 'workspace-scale-results');
+    const clearScale = () => { scalePrefs.basis = basisSelect.value; scalePrefs.amount = amount.input.value; scalePrefs.unit = unitSelect.value; scaleResults.replaceChildren(); };
+    basisSelect.addEventListener('change', clearScale); amount.input.addEventListener('input', clearScale); unitSelect.addEventListener('change', clearScale);
+    scaleControls.append(basisLabel, amount.wrap, unitLabel, button('Calculate materials', () => {
+      clearScale();
+      try {
+        const plan = routeWorkspaceScalePlan(route, basisSelect.value, amount.input.value, unitSelect.value, report);
+        scaleResults.append(element('p', 'Expected final product: ' + routeWorkspaceMassText(plan.finalProductMg) + ' (' + routeWorkspaceQuantityText(plan.finalProductMmol, 'mmol') + '). Starting intermediate required: ' + routeWorkspaceQuantityText(plan.startingMmol, 'mmol') + '.', 'workspace-scale-summary'));
+        plan.steps.forEach((stepPlan, index) => {
+          const block = element('section', undefined, 'workspace-scale-step');
+          block.append(element('h4', 'Step ' + (index + 1) + ': ' + route.steps[index].name), element('p', 'Reaction scale ' + routeWorkspaceQuantityText(stepPlan.scaleMmol, 'mmol') + ' · estimated yield ' + stepPlan.yield + '% · expected step product ' + routeWorkspaceMassText(stepPlan.productMg) + '.'));
+          const table = element('table', undefined, 'workspace-materials');
+          const head = element('tr'); ['Material', 'Role', 'equiv', 'mmol', 'Mass', 'Volume'].forEach((text) => head.append(element('th', text)));
+          const thead = element('thead'); thead.append(head); table.append(thead);
+          const body = element('tbody');
+          stepPlan.rows.forEach((row) => {
+            const line = element('tr');
+            [row.name || (row.compound && row.compound.smiles) || 'Material', row.role, row.equiv === null ? '—' : routeWorkspaceQuantityText(row.equiv, ''), routeWorkspaceQuantityText(row.mmol, ''), routeWorkspaceMassText(row.mg), routeWorkspaceQuantityText(row.mL, 'mL')].forEach((text) => line.append(element('td', text)));
+            body.append(line);
+          });
+          table.append(body); block.append(table); scaleResults.append(block);
+        });
+      } catch (error) { scaleResults.append(element('p', error.message, 'workspace-status invalid')); }
+    }));
+    planner.append(scaleControls, scaleResults); content.append(planner);
     if (typeof protectionRouteAudit === 'function' && typeof protectionRouteElement === 'function') content.append(protectionRouteElement(protectionRouteAudit(route.steps)));
     route.steps.forEach((step, index) => {
       const card = element('article', undefined, 'workspace-step');
       card.append(element('h3', (index + 1) + '. ' + step.name), element('p', report.steps[index].status + ': ' + report.steps[index].message, 'workspace-status ' + report.steps[index].status));
       if (step.planning) card.append(element('p', (step.planning.kind === 'protect' ? 'Install protecting group' : step.planning.kind === 'deprotect' ? 'Remove protecting group' : 'Protected reaction') + (step.planning.group ? ' · ' + step.planning.group : '') + ': ' + step.planning.reason, 'workspace-planning'));
+      const estimatedYield = routeWorkspaceStepYield(step, report.steps[index]);
+      const yieldField = labelInput('Step yield estimate (%)', estimatedYield === null ? '' : String(estimatedYield), 'number');
+      yieldField.input.min = '0'; yieldField.input.max = '100'; yieldField.input.step = '1'; yieldField.input.disabled = estimatedYield === null;
+      yieldField.input.setAttribute('aria-label', 'Step ' + (index + 1) + ' yield (%)');
+      yieldField.input.title = 'Default: model selectivity times maximum conversion. You can replace it with an isolated-yield estimate.';
+      yieldField.wrap.className = 'workspace-yield-control';
+      yieldField.input.addEventListener('change', () => {
+        const value = Number(yieldField.input.value);
+        if (!Number.isFinite(value) || value < 0 || value > 100 || yieldField.input.value.trim() === '') { message.textContent = 'Step yield must be between 0 and 100%.'; return; }
+        step.yield = Math.round(value); persist(); redraw();
+      });
+      card.append(yieldField.wrap);
       const verifiedOutcome = report.steps[index].outcome;
       if (verifiedOutcome && verifiedOutcome.protectionAssessment && typeof protectionAssessmentElement === 'function') card.append(protectionAssessmentElement(verifiedOutcome.protectionAssessment));
       if (typeof reactionEvidenceElement === 'function' && verifiedOutcome && verifiedOutcome.evidence) card.append(reactionEvidenceElement(verifiedOutcome.evidence, true));
@@ -201,7 +400,7 @@ function createRouteWorkspace(deps) {
       const fields = element('div', undefined, 'workspace-fields');
       const from = labelInput('Starting intermediate (name or SMILES)', step.from);
       const to = labelInput('Target intermediate (name or SMILES)', step.to);
-      const compounds = labelInput('Compounds: one role | name or SMILES per line', step.compounds.map((c) => c.role + ' | ' + c.smiles).join('\n'), 'textarea');
+      const compounds = labelInput('Compounds: one role | equivalents | name or SMILES per line', step.compounds.map((c) => c.role + ' | ' + c.equiv + ' | ' + c.smiles).join('\n'), 'textarea');
       const temperature = labelInput('Temperature (°C)', step.conditions.temperature, 'number');
       const solvents = labelInput('Solvents (IDs separated by commas, e.g. water, ethanol)', step.conditions.solvents.join(', '));
       const additives = labelInput('Additives (IDs separated by commas, e.g. h2so4)', step.conditions.additives.join(', '));
@@ -210,8 +409,10 @@ function createRouteWorkspace(deps) {
       editor.append(fields, button('Apply edits and recheck', () => {
         try {
           const next = Object.assign({}, step, { from: routeWorkspaceSmiles(from.input.value), to: routeWorkspaceSmiles(to.input.value), ruleId: '', compounds: compounds.input.value.split(/\r?\n/).filter((line) => line.trim()).map((line) => {
-            const split = line.indexOf('|'); if (split < 0) throw new Error('Use role | name or SMILES for each compound.');
-            return { role: line.slice(0, split).trim(), smiles: line.slice(split + 1).trim() };
+            const parts = line.split('|');
+            if (parts.length === 2) return { role: parts[0].trim(), equiv: '1', smiles: parts[1].trim() };
+            if (parts.length < 3) throw new Error('Use role | equivalents | name or SMILES for each compound.');
+            return { role: parts[0].trim(), equiv: parts[1].trim(), smiles: parts.slice(2).join('|').trim() };
           }), conditions: Object.assign({}, step.conditions, { temperature: Number(temperature.input.value), solvents: solvents.input.value.split(',').map((s) => s.trim()).filter(Boolean), additives: additives.input.value.split(',').map((s) => s.trim()).filter(Boolean), notes: notes.input.value }) });
           route.steps[index] = routeWorkspaceNormalize(Object.assign({}, route, { steps: [next] })).steps[0];
           const result = routeWorkspaceValidateStep(route.steps[index]);
@@ -222,7 +423,7 @@ function createRouteWorkspace(deps) {
       }));
       card.append(editor); content.append(card);
     });
-    content.append(element('p', 'Verified means reproduced by the supported rule model. Experimental feasibility and yield are not established.', 'workspace-caveat'));
+    content.append(element('p', 'Verified means reproduced by the supported rule model. Overall yield multiplies the step estimates; each default step estimate is model selectivity times maximum conversion. Material amounts use that yield model, the entered stoichiometry, and molecular masses. These are planning estimates, not guaranteed experimental yields or validated laboratory procedures.', 'workspace-caveat'));
   };
   picker.addEventListener('change', () => { selected = picker.value; redraw(); });
   controls.append(picker, button('Recheck route', () => { redraw(); message.textContent = 'Route rechecked against the current rules.'; }), button('Export JSON', () => { const route = current(); if (route) download('chem-lab-route.json', 'application/json', JSON.stringify(route, null, 2)); }), button('Export CSV', () => { const route = current(); if (route) download('chem-lab-route.csv', 'text/csv;charset=utf-8', routeWorkspaceCsv(route)); }), button('Import JSON', () => file.click()), button('Delete route', () => {
