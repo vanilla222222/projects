@@ -2,6 +2,7 @@ const STOCK_LIMITS = { maxUser: 5000, storageKey: 'stock', defaultUserTier: 1, n
 
 const STOCK_BUILTIN = [
   { smiles: 'O', tier: 1, name: 'water' },
+  { smiles: 'O=C=O', tier: 1, name: 'carbon dioxide' },
   { smiles: 'CO', tier: 1, name: 'methanol' },
   { smiles: 'CCO', tier: 1, name: 'ethanol' },
   { smiles: 'CCCO', tier: 1, name: '1-propanol' },
@@ -226,7 +227,7 @@ const STOCK_BUILTIN = [
   { smiles: 'CCOC(CC(=O)OCC)=O', tier: 2, name: 'diethyl malonate' },
   { smiles: 'COC(CC(=O)OC)=O', tier: 2, name: 'dimethyl malonate' },
   { smiles: 'CCOC(CC(C)=O)=O', tier: 2, name: 'ethyl acetoacetate' },
-  { smiles: 'CC(CC(=O)OC)=O', tier: 2, name: 'methyl acetoacetate' },
+  { smiles: 'CC(CC(C)=O)=O', tier: 2, name: 'methyl acetoacetate' },
   { smiles: 'CCOC(C(=O)OCC)=O', tier: 2, name: 'diethyl oxalate' },
   { smiles: 'COC(=O)OC', tier: 2, name: 'dimethyl carbonate' },
   { smiles: 'CCOC(=O)OCC', tier: 2, name: 'diethyl carbonate' },
