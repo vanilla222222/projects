@@ -194,6 +194,42 @@
       "commit": "84d740543c451649a1fd3a78e3e32828270a6a96"
     },
     {
+      "id": "benzofuran-fifty",
+      "label": "Benzofuran class brought to fifty references and the statin ceiling measured",
+      "date": "2026-10-27",
+      "commit": "189ac4ada12ceaa0a16170df0c5aadda01466208"
+    },
+    {
+      "id": "cholinergic-ester-twenty",
+      "label": "Cholinergic ester class measured at a ceiling of twenty references",
+      "date": "2026-10-27",
+      "commit": "d95dc4cb63a0fa0326b56995f7881b29f4de7658"
+    },
+    {
+      "id": "retinoid-seven",
+      "label": "Retinoid class measured at a ceiling of seven references",
+      "date": "2026-10-27",
+      "commit": "b0aab01023b9ad71d4fb3d875b27c8ee66ea8803"
+    },
+    {
+      "id": "nucleoside-nine",
+      "label": "Nucleoside and nucleobase classes measured at ceilings of nine and five references",
+      "date": "2026-10-27",
+      "commit": "2fb7fd6777acf5f5ddfcd6c3250e5d962b1d0f91"
+    },
+    {
+      "id": "cox2-eight",
+      "label": "COX-2 inhibitor class measured at a ceiling of eight references",
+      "date": "2026-10-27",
+      "commit": "0debcdc28ea8dbc84aa9f54e4ca0020e3d3b87f2"
+    },
+    {
+      "id": "parp-six",
+      "label": "PARP inhibitor class measured at a ceiling of six references",
+      "date": "2026-10-27",
+      "commit": "2ebbb7be9d8bb2ad8cb42f4f9174c4af31139ebd"
+    },
+    {
       "id": "property-evidence-006",
       "label": "Experimental hydration properties · batch 004 and assay context",
       "date": "2026-10-27",

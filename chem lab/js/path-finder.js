@@ -34,9 +34,38 @@ function pathFinderFingerprint(smiles) {
   return counts;
 }
 
-function pathFinderRouteRank(route) {
-  return [route.length, route.filter((link) => link.candidate.minor).length,
-    route.reduce((n, link) => n + Math.max(0, link.candidate.precursors.length - 1), 0)];
+function pathFinderHeavyCount(smiles) {
+  try { return reactionFragmentGraph(smilesToFragment(smiles)).atoms.filter((a) => a.element !== 'H').length; }
+  catch (error) { return 1000; }
+}
+
+function pathFinderDefaultMaterial(smiles) {
+  let stock = null;
+  try { stock = typeof stockTier === 'function' ? stockTier(smiles) : null; } catch (error) { /* An unavailable entry only affects ordering. */ }
+  return { tier: stock && stock.tier <= 2 ? stock.tier : 4, heavy: pathFinderHeavyCount(smiles) };
+}
+
+function pathFinderMaterialSummary(precursors, describe) {
+  const material = describe || pathFinderDefaultMaterial, seen = new Set(), out = { stock: 0, heavy: 0, count: 0 };
+  (precursors || []).forEach((p) => {
+    const smiles = p.isomericSmiles || p.smiles || String(p);
+    let key = smiles;
+    try { key = pathFinderMaterialKey(smiles); } catch (error) { /* Keep a stable textual fallback for ranking only. */ }
+    if (seen.has(key)) return;
+    seen.add(key);
+    const info = material(smiles);
+    out.stock += info.tier;
+    out.heavy += info.heavy;
+    out.count++;
+  });
+  return out;
+}
+
+function pathFinderRouteRank(route, describe) {
+  const extras = route.flatMap((link) => link.candidate.precursors.filter((p, i) => i !== link.precursor));
+  const materials = pathFinderMaterialSummary(extras, describe);
+  return [route.length, materials.stock, materials.heavy,
+    route.filter((link) => link.candidate.minor).length, materials.count];
 }
 
 function pathFinderProtectionLinks(candidate, carried, destination) {
@@ -146,13 +175,36 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
   const queue = [{ smiles: target.smiles, key: target.key, chain: [], ancestors: new Set([target.key]) }];
   const queued = new Set(), expanded = new Map(), routeKeys = new Set();
   let current = null;
-  const stocked = (smiles) => {
-    const s = structure(smiles);
-    if (s && available.has(s.key)) return true;
-    const stock = opts.stockPolicy === 'builtin' && typeof stockTier === 'function' ? stockTier(smiles) : null;
-    if (!stock || stock.tier > 2 || !s) return false;
-    // A connectivity-only stock hit must not supply a specified stereoisomer.
-    try { return !!stock.smiles && pathFinderMaterialKey(stock.smiles) === s.key; } catch (error) { return false; }
+  const materials = new Map();
+  const material = (smiles) => {
+    if (!materials.has(smiles)) {
+      const s = structure(smiles);
+      let tier = 4, inStock = false;
+      if (s && available.has(s.key)) { tier = 0; inStock = true; }
+      else {
+        const stock = opts.stockPolicy === 'builtin' && typeof stockTier === 'function' ? stockTier(smiles) : null;
+        if (stock && stock.tier <= 2 && s) {
+          // A connectivity-only stock hit must not supply a specified stereoisomer.
+          try { inStock = !!stock.smiles && pathFinderMaterialKey(stock.smiles) === s.key; } catch (error) { inStock = false; }
+          if (inStock) tier = stock.tier;
+        }
+      }
+      materials.set(smiles, { available: inStock, tier, heavy: pathFinderHeavyCount(smiles) });
+    }
+    return materials.get(smiles);
+  };
+  const stocked = (smiles) => material(smiles).available;
+  const compareRanks = (a, b) => {
+    for (let i = 0; i < Math.max(a.length, b.length); i++) if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) - (b[i] || 0);
+    return 0;
+  };
+  const choiceRank = (candidate, carried) => {
+    const precursor = candidate.precursors[carried], carriedStructure = precursor && structure(precursor.isomericSmiles || precursor.smiles);
+    const direct = carriedStructure && carriedStructure.key === start.key ? 0 : 1;
+    const extras = candidate.precursors.filter((p, i) => i !== carried);
+    const missing = extras.filter((p) => !stocked(p.isomericSmiles || p.smiles)).length;
+    const summary = pathFinderMaterialSummary(extras, material);
+    return [direct, missing, summary.stock, summary.heavy, summary.count];
   };
   const ruleBlocked = (c) => {
     const labels = [c.rule, c.transform, c.outcomeRule, c.outcomeId, c.name, c.outcomeName].filter(Boolean).map((x) => String(x).toLowerCase());
@@ -170,23 +222,51 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
       return same || labels.some((label) => label.includes(filter.text));
     }));
   };
+  if (opts.recipeTree && start.key !== target.key) {
+    return pathFinderRecipeCreate(start, target, opts, { available, material, ruleBlocked, reagentBlocked, structure });
+  }
   const signature = (link) => [link.candidate.transform, link.candidate.rule, link.candidate.outcomeId, link.fromKey, link.toKey, JSON.stringify(link.candidate.conditions || {}), (link.candidate.compounds || []).map((p) => p.smiles + ':' + p.role).sort().join('|')].join('~');
   const rankRoutes = () => {
     job.routes.sort((a, b) => {
-      const ra = pathFinderRouteRank(a), rb = pathFinderRouteRank(b);
+      const ra = pathFinderRouteRank(a, material), rb = pathFinderRouteRank(b, material);
       for (let i = 0; i < ra.length; i++) if (ra[i] !== rb[i]) return ra[i] - rb[i];
       return a.map(signature).join('/').localeCompare(b.map(signature).join('/'));
     });
     job.route = job.routes[0] || [];
   };
   const finish = (reason) => { job.termination = reason; job.status = job.routes.length ? 'found' : reason === 'exhausted' ? 'exhausted' : 'budget'; rankRoutes(); };
+  // Expanded structures are reused by multiple chains. These assessments depend
+  // only on the candidate, so repeat them once per candidate rather than once
+  // per chain; per-job weak caches cannot leak results between planner settings.
+  const assessmentCache = new WeakMap(), preservationCache = new WeakMap();
+  const candidateAssessment = (candidate) => {
+    if (typeof routeStepAssessment !== 'function') return null;
+    if (!assessmentCache.has(candidate)) assessmentCache.set(candidate, routeStepAssessment(candidate));
+    return assessmentCache.get(candidate);
+  };
+  const candidatePreservationConflict = (candidate) => {
+    if (!preservationCache.has(candidate)) preservationCache.set(candidate, pathFinderProtectionConflict(candidate));
+    return preservationCache.get(candidate);
+  };
   const attach = (node, candidates) => {
     if (!candidates.length) diagnostics.noDisconnections++;
-    if (candidates.length > opts.maxBranch) { diagnostics.branch += candidates.length - opts.maxBranch; job.truncated = true; }
-    for (const candidate of candidates.slice(0, opts.maxBranch)) {
+    // Discovery order matters under branch/route limits. Prefer a disconnection
+    // whose other precursors are available, common and structurally simple;
+    // forward verification and every rejection filter remain unchanged.
+    const ordered = candidates.map((candidate, index) => {
+      let best = null;
+      candidate.precursors.forEach((p, i) => {
+        const rank = choiceRank(candidate, i);
+        if (!best || compareRanks(rank, best) < 0) best = rank;
+      });
+      return { candidate, index, rank: best || [0, 0, 0, 0] };
+    }).sort((a, b) => compareRanks(a.rank, b.rank) || a.index - b.index);
+    if (ordered.length > opts.maxBranch) { diagnostics.branch += ordered.length - opts.maxBranch; job.truncated = true; }
+    for (const item of ordered.slice(0, opts.maxBranch)) {
+      const candidate = item.candidate;
       diagnostics.candidates++;
-      if (typeof routeStepAssessment === 'function') {
-        const assessment = routeStepAssessment(candidate);
+      const assessment = candidateAssessment(candidate);
+      if (assessment) {
         if (assessment.blockers.length) {
           diagnostics.compatibility++;
           assessment.blockers.forEach(b => {
@@ -203,7 +283,7 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
         continue;
       }
       if (candidate.stereo === 'mismatch' || candidate.stereo === 'racemic') { diagnostics.stereo++; continue; }
-      const preservationConflict = candidate.pgSteps ? null : pathFinderProtectionConflict(candidate);
+      const preservationConflict = candidate.pgSteps ? null : candidatePreservationConflict(candidate);
       if (preservationConflict) {
         diagnostics.protection++;
         if (diagnostics.protectionMessages.length < 4 && !diagnostics.protectionMessages.includes(preservationConflict)) diagnostics.protectionMessages.push(preservationConflict);
@@ -223,20 +303,28 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
       if (reagentBlocked(candidate)) { diagnostics.reagents++; continue; }
       const precursors = candidate.precursors || [];
       const parts = precursors.map((p) => structure(p.isomericSmiles || p.smiles));
-      for (let i = 0; i < precursors.length; i++) {
+      const precursorOrder = precursors.map((p, i) => ({ i, direct: parts[i] && parts[i].key === start.key ? 0 : 1, rank: choiceRank(candidate, i) }))
+        .sort((a, b) => a.direct - b.direct || compareRanks(a.rank, b.rank) || a.i - b.i);
+      for (const choice of precursorOrder) {
+        const i = choice.i;
         const carried = parts[i];
         if (!carried || node.ancestors.has(carried.key)) continue;
         const missing = precursors.filter((p, j) => j !== i && !stocked(p.isomericSmiles || p.smiles));
         if (missing.length) {
           diagnostics.inventory++;
-          missing.forEach((p) => { if (diagnostics.missingMaterials.length < 8 && !diagnostics.missingMaterials.includes(p.smiles)) diagnostics.missingMaterials.push(p.smiles); });
+          missing.forEach((p) => { if (!diagnostics.missingMaterials.includes(p.smiles)) diagnostics.missingMaterials.push(p.smiles); });
+          // These are examples from rejected branches, not required ingredients.
+          // Keep the simplest examples instead of letting exotic early dead ends
+          // fill the diagnostic list.
+          diagnostics.missingMaterials.sort((a, b) => material(a).heavy - material(b).heavy || a.localeCompare(b));
+          if (diagnostics.missingMaterials.length > 8) diagnostics.missingMaterials.length = 8;
           continue;
         }
         const links = candidate.pgSteps ? pathFinderProtectionLinks(candidate, carried, node)
           : [{ candidate, precursor: i, from: carried.smiles, to: node.smiles, fromKey: carried.key, toKey: node.key }];
         if (!links) { diagnostics.protection++; continue; }
-        if (typeof routeStepAssessment === 'function' && links.some(link => routeStepAssessment(link.candidate).blockers.length)) { diagnostics.compatibility++; continue; }
-        if (links.some((link) => pathFinderProtectionConflict(link.candidate))) { diagnostics.protection++; continue; }
+        if (links.some((link) => { const report = candidateAssessment(link.candidate); return report && report.blockers.length; })) { diagnostics.compatibility++; continue; }
+        if (links.some((link) => candidatePreservationConflict(link.candidate))) { diagnostics.protection++; continue; }
         if (links.some((link) => ruleBlocked(link.candidate))) { diagnostics.rules++; continue; }
         if (links.some((link) => reagentBlocked(link.candidate))) { diagnostics.reagents++; continue; }
         if (links.some((link) => link.candidate.precursors.some((p, j) => j !== link.precursor && !stocked(p.isomericSmiles || p.smiles)))) { diagnostics.inventory++; continue; }
@@ -319,6 +407,130 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
   return job;
 }
 
+// Opt-in convergent search. Unlike the linear planner, an unavailable precursor
+// is not an automatic rejection: it must become a solved child or remain a dead
+// branch. A returned tree therefore has available leaves and verified reactions.
+function pathFinderRecipeCreate(start, target, options, helpers) {
+  const opts = Object.assign({}, options, { recipeTree: true, maxDepth: Math.min(8, options.maxDepth) });
+  const diagnostics = { candidates: 0, inventory: 0, reagents: 0, rules: 0, stereo: 0, compatibility: 0, rejected: [], protection: 0, protectionMessages: opts.allowedProtectingGroups && !opts.allowedProtectingGroups.length ? ['Automatic protection planning is disabled.'] : [], noDisconnections: 0, depth: 0, branch: 0, missingMaterials: [] };
+  const reject = (candidate, node, code, reason, kind) => {
+    if (kind && Object.prototype.hasOwnProperty.call(diagnostics, kind)) diagnostics[kind]++;
+    if (reason && diagnostics.rejected.length < 12 && !diagnostics.rejected.some(r => r.reaction === candidate.name && r.target === node.smiles && r.code === code)) {
+      diagnostics.rejected.push({ reaction: candidate.name, target: node.smiles, code, reason });
+    }
+    return false;
+  };
+  const candidateFilter = (candidate, node) => {
+    diagnostics.candidates++;
+    if (helpers.ruleBlocked(candidate)) return reject(candidate, node, 'rule-filter', 'Excluded by the reaction filter.', 'rules');
+    if (helpers.reagentBlocked(candidate)) return reject(candidate, node, 'reagent-filter', 'Excluded by the reagent or solvent filter.', 'reagents');
+    if (candidate.pgSteps && opts.allowedProtectingGroups && !opts.allowedProtectingGroups.includes(candidate.protection && candidate.protection.id)) {
+      const reason = opts.allowedProtectingGroups.length ? 'The required protecting group is excluded by the allowed protecting groups setting.' : 'Automatic protection planning is disabled.';
+      if (!diagnostics.protectionMessages.includes(reason)) diagnostics.protectionMessages.push(reason);
+      return reject(candidate, node, 'protection-filter', reason, 'protection');
+    }
+    if (candidate.stereo === 'mismatch' || candidate.stereo === 'racemic') return reject(candidate, node, 'stereo', 'The required stereochemistry is not preserved.', 'stereo');
+    const product = candidate.product && helpers.structure(candidate.product.isomericSmiles || candidate.product.smiles);
+    const sameProduct = product && (product.key === pathFinderKey(node.smiles) || typeof retroProductIdentity === 'function' &&
+      retroProductIdentity(candidate.product.isomericSmiles || candidate.product.smiles) === retroProductIdentity(node.smiles));
+    if (!sameProduct || !retroForwardCheck(candidate, node.smiles)) return reject(candidate, node, 'forward-verification', 'The generated inputs and conditions did not reproduce this tree node.', 'stereo');
+    if (typeof routeStepAssessment === 'function') {
+      const assessment = routeStepAssessment(candidate);
+      if (assessment.blockers.length) {
+        diagnostics.compatibility++;
+        assessment.blockers.forEach(b => reject(candidate, node, b.code, b.message));
+        return false;
+      }
+    }
+    const preservationConflict = candidate.pgSteps ? null : pathFinderProtectionConflict(candidate);
+    if (preservationConflict) {
+      if (diagnostics.protectionMessages.length < 4 && !diagnostics.protectionMessages.includes(preservationConflict)) diagnostics.protectionMessages.push(preservationConflict);
+      return reject(candidate, node, 'protection-survival', preservationConflict, 'protection');
+    }
+    const amineConflict = pathFinderAmineConflict(candidate);
+    if (amineConflict) {
+      if (diagnostics.protectionMessages.length < 4 && !diagnostics.protectionMessages.includes(amineConflict)) diagnostics.protectionMessages.push(amineConflict);
+      return reject(candidate, node, 'amine-compatibility', amineConflict, 'protection');
+    }
+    return true;
+  };
+  const search = rsearchCreate(target.smiles, {
+    maxDepth: opts.maxDepth, maxNodes: opts.maxNodes, maxBranch: Math.min(8, opts.maxBranch), maxRoutes: opts.maxRoutes,
+    budgetMs: opts.budgetMs, sliceMs: opts.sliceMs, stockOverride: (smiles) => {
+      const info = helpers.material(smiles);
+      return info.available ? { tier: info.tier, source: info.tier === 0 ? 'inventory' : 'local-stock', smiles } : null;
+    }, candidateFilter,
+  });
+  const job = { start: start.smiles, target: target.smiles, options: opts, status: 'running', route: [], routes: [], recipeTrees: [], expanded: 0, truncated: false, elapsedMs: 0, diagnostics, termination: '' };
+  const sync = () => {
+    job.expanded = search.expanded;
+    job.elapsedMs = search.elapsedMs;
+    job.truncated = !!search.truncated;
+    job.recipeTrees = search.routes || [];
+    job.routes = job.recipeTrees;
+    if (search.status === 'running') job.status = 'running';
+    else if (job.recipeTrees.length) job.status = 'found';
+    else if (search.status === 'cancelled') job.status = 'cancelled';
+    else if (search.status === 'budget') job.status = 'budget';
+    else job.status = 'exhausted';
+    if (search.status !== 'running') job.termination = search.status === 'done' ? 'exhausted' : search.status === 'budget' ? 'time-limit' : search.status;
+    return job;
+  };
+  job.step = (sliceMs) => { if (search.status === 'running') search.step(sliceMs); return sync(); };
+  job.cancel = () => { if (search.status === 'running') search.cancel(); return sync(); };
+  return sync();
+}
+
+function pathFinderRecipeRender(container, job, deps) {
+  const make = (tag, text, cls) => { const el = document.createElement(tag); if (text !== undefined) el.textContent = String(text); if (cls) el.className = cls; return el; };
+  const name = (smiles) => { try { return retroViewName(smiles); } catch (error) { return smiles; } };
+  const startKey = pathFinderKey(job.start);
+  const renderNode = (node, isRoot) => {
+    const item = make('li', undefined, isRoot ? 'path-recipe-target' : 'path-recipe-node');
+    if (!node.candidate) {
+      let starting = false;
+      try { starting = pathFinderKey(node.target) === startKey; } catch (error) { /* Keep the generic available label. */ }
+      item.append(make('span', (starting ? 'Starting material: ' : 'Available building block: ') + name(node.target), 'path-recipe-leaf'));
+      item.append(make('code', node.target, 'path-smiles'));
+      return item;
+    }
+    const c = node.candidate;
+    item.append(make('h4', (isRoot ? 'Target: ' : 'Prepare intermediate: ') + name(node.target)));
+    item.append(make('p', c.outcomeName || c.name, 'path-recipe-reaction'));
+    item.append(make('code', node.target, 'path-smiles'));
+    const labels = c.labels || {};
+    item.append(make('p', 'Reagents and conditions: ' + ([labels.above, labels.below].filter(Boolean).join(' · ') || 'Not recorded.')));
+    if (c.minor) item.append(make('p', 'The selected node is a minor predicted product.'));
+    if (deps.openInLab) {
+      const open = make('button', 'Open this reaction in Reactions', 'text-button'); open.type = 'button';
+      open.addEventListener('click', () => deps.openInLab(c.compounds || [], c.conditions || {})); item.append(open);
+    }
+    if (node.children.length) {
+      item.append(make('p', 'Required precursors — each is either available or prepared by its own verified branch:'));
+      const children = make('ol', undefined, 'path-recipe-children');
+      node.children.forEach(child => children.append(renderNode(child, false)));
+      item.append(children);
+    }
+    return item;
+  };
+  container.replaceChildren();
+  job.recipeTrees.forEach((tree, index) => {
+    const leaves = new Map();
+    const collect = (node) => {
+      if (!node.candidate) {
+        try { leaves.set(pathFinderMaterialKey(node.target), node.target); } catch (error) { leaves.set(node.target, node.target); }
+      }
+      (node.children || []).forEach(collect);
+    };
+    collect(tree);
+    const metrics = tree.metrics || rsearchScore(tree), wrapper = make('section', undefined, 'path-route path-recipe');
+    wrapper.append(make('h3', 'Recipe ' + (index + 1) + ' · ' + metrics.steps + ' reaction step' + (metrics.steps === 1 ? '' : 's') + ' · ' + leaves.size + ' available feedstock' + (leaves.size === 1 ? '' : 's')));
+    wrapper.append(make('p', 'Read from the available leaves toward the target. Every reaction node is forward verified; intermediates are recipes, not assumed inventory.'));
+    const root = make('ol', undefined, 'path-recipe-root'); root.append(renderNode(tree, true)); wrapper.append(root);
+    container.append(wrapper);
+  });
+}
+
 function pathFinderExplanation(job) {
   const d = job.diagnostics;
   const reasons = [];
@@ -343,12 +555,23 @@ function createPathFinder(deps) {
   let job = null, token = 0;
   const element = (tag, text, cls) => { const el = document.createElement(tag); if (text !== undefined) el.textContent = text; if (cls) el.className = cls; return el; };
   const name = (smiles) => { try { return retroViewName(smiles); } catch (error) { return smiles; } };
+  // Older saved pages may not contain the selector yet; install it beside the
+  // inventory policy without replacing the rest of the Path Finder markup.
+  if (!get('path-recipe-tree') && get('path-stock-policy') && get('path-stock-policy').parentElement) {
+    const label = element('label', 'Recipe tree'), select = element('select');
+    label.htmlFor = 'path-recipe-tree'; select.id = 'path-recipe-tree';
+    [['off', 'Off — linear routes only'], ['on', 'On — synthesize unavailable intermediates']].forEach(([id, text]) => {
+      const option = element('option', text); option.value = id; select.append(option);
+    });
+    select.value = 'off'; label.append(select); get('path-stock-policy').parentElement.append(label);
+  }
   const value = (id, fallback) => get(id) ? get(id).value : fallback;
   const updateLimits = () => {
-    const limits = get('path-search-limits');
-    if (limits) limits.textContent = Number(value('path-depth', 3)) > 5 ? 'Search is limited to 200 structures and 30 seconds.' : 'Search is limited to 60 structures and 12 seconds.';
+    const limits = get('path-search-limits'), recipe = value('path-recipe-tree', 'off') === 'on';
+    if (limits) limits.textContent = (Number(value('path-depth', 3)) > 5 ? 'Search is limited to 200 structures and 30 seconds.' : 'Search is limited to 60 structures and 12 seconds.') + (recipe ? ' Recipe depth is capped at 8 and applies to the longest branch.' : '');
   };
   get('path-depth').addEventListener('change', updateLimits);
+  if (get('path-recipe-tree')) get('path-recipe-tree').addEventListener('change', updateLimits);
   updateLimits();
   const finish = () => {
     run.disabled = false; cancel.disabled = true;
@@ -364,17 +587,22 @@ function createPathFinder(deps) {
     };
     if (job.status === 'identical') { status.textContent = 'The endpoints describe the same structure; no reaction is needed.'; return; }
     if (!job.routes.length) {
-      status.textContent = (job.status === 'cancelled' ? 'Search cancelled.' : 'No route found within these rules and limits.') + stats + ' ' + pathFinderExplanation(job) + ' This does not establish that synthesis is impossible.';
-      if (job.diagnostics.missingMaterials.length) results.append(element('p', 'Missing building blocks: ' + job.diagnostics.missingMaterials.map(name).join(', ')));
+      const empty = job.options.recipeTree ? 'No complete recipe tree found within these rules and limits.' : 'No route found within these rules and limits.';
+      status.textContent = (job.status === 'cancelled' ? 'Search cancelled.' : empty) + stats + ' ' + pathFinderExplanation(job) + ' This does not establish that synthesis is impossible.';
+      if (job.diagnostics.missingMaterials.length) results.append(element('p', 'Examples of unavailable building blocks in rejected branches (not required ingredients): ' + job.diagnostics.missingMaterials.map(name).join(', ')));
       rejectionDetails();
       return;
     }
-    status.textContent = job.routes.length + ' rule-verified candidate route' + (job.routes.length === 1 ? '' : 's') + ' found.' + stats + ' Ranked by fewer steps, fewer minor products, then fewer extra building blocks.' + (job.status === 'cancelled' ? ' Search cancelled; partial results retained.' : '');
+    if (job.options.recipeTree) {
+      status.textContent = job.recipeTrees.length + ' rule-verified recipe tree' + (job.recipeTrees.length === 1 ? '' : 's') + ' found.' + stats + ' Every leaf is available under the selected inventory policy; every intermediate has a forward-verified preparation.' + (job.status === 'cancelled' ? ' Search cancelled; partial results retained.' : '');
+      pathFinderRecipeRender(results, job, deps); rejectionDetails(); return;
+    }
+    status.textContent = job.routes.length + ' rule-verified candidate route' + (job.routes.length === 1 ? '' : 's') + ' found.' + stats + ' Ranked by fewer steps, more common and simpler building blocks, fewer minor products, then fewer extra building blocks.' + (job.status === 'cancelled' ? ' Search cancelled; partial results retained.' : '');
     if (typeof routeComparisonRender === 'function') { routeComparisonRender(results, job, deps); rejectionDetails(); return; }
     job.routes.forEach((route, index) => {
       const wrapper = element('section', undefined, 'path-route');
       const rank = pathFinderRouteRank(route);
-      wrapper.append(element('h3', 'Route ' + (index + 1) + ' · ' + rank[0] + ' step' + (rank[0] === 1 ? '' : 's') + ' · ' + rank[2] + ' additional building block' + (rank[2] === 1 ? '' : 's')));
+      wrapper.append(element('h3', 'Route ' + (index + 1) + ' · ' + rank[0] + ' step' + (rank[0] === 1 ? '' : 's') + ' · ' + rank[4] + ' additional building block' + (rank[4] === 1 ? '' : 's')));
       if (deps.saveRoute) {
         const save = element('button', 'Save route to workspace', 'text-button'); save.type = 'button';
         save.addEventListener('click', () => deps.saveRoute({ version: 1, start: job.start, target: job.target, steps: route, options: job.options, createdAt: new Date().toISOString() }));
@@ -408,6 +636,7 @@ function createPathFinder(deps) {
       const create = managedProtectingGroups && typeof protectionProgramCreate === 'function' ? protectionProgramCreate : pathFinderCreate;
       job = create(a.isomericSmiles || a.smiles, b.isomericSmiles || b.smiles, {
         managedProtectingGroups,
+        recipeTree: value('path-recipe-tree', 'off') === 'on',
         maxDepth: Number(value('path-depth', 3)), maxRoutes: Number(value('path-route-count', 3)), stockPolicy: value('path-stock-policy', 'builtin'),
         availableMaterials: String(value('path-inventory', '')).split(/\n/).map((s) => s.trim()).filter(Boolean),
         forbiddenReagents: value('path-forbidden-reagents', ''), forbiddenRules: value('path-forbidden-rules', ''),
@@ -419,7 +648,7 @@ function createPathFinder(deps) {
       if (id !== token) return;
       try { job.step(); } catch (error) { job.cancel(); status.textContent = 'Search failed: ' + error.message; run.disabled = false; cancel.disabled = true; return; }
       if (job.status !== 'running') { finish(); return; }
-      status.textContent = 'Searching supported transformations… ' + job.expanded + ' structures checked, ' + job.routes.length + ' candidate routes found. You can cancel at any time.';
+      status.textContent = 'Searching supported transformations… ' + job.expanded + ' structures checked, ' + job.routes.length + (job.options.recipeTree ? ' candidate recipe trees' : ' candidate routes') + ' found. You can cancel at any time.';
       setTimeout(tick, 0);
     };
     setTimeout(tick, 0);

@@ -35,7 +35,11 @@ async function page(file,query=''){
   await until(()=>w.PharmacologyUI?.getSnapshot()?.curatedReferences?.some(r=>r.id==='prodrug-fosphenytoin'));
   await until(()=>d.getElementById('sim-summary').textContent.includes('reference structures ranked'));
   assert.ok(d.querySelector('#similar tbody tr[data-smiles]'));assert.ok(d.getElementById('sim-scope-count').textContent.includes('unassigned bulk structures'));
-  const count=Number(d.getElementById('sim-summary').textContent.split(' ')[0]);assert.ok(count>5000&&count<6000,'Default eligibility pool should exclude unassigned bulk imports');
+  const count=Number(d.getElementById('sim-summary').textContent.split(' ')[0]);
+  const context=w.ReferenceContext.create(w.eval('LIBRARY'),w.eval('TARGETS'),w.CuratedReferences);
+  const policy=w.ReferenceEligibility.create(context.library,context.targets,{recordsFor:e=>w.CuratedReferences.forEntry(e),evidenceFor:e=>w.LibraryCatalog.receptorEvidence(e)});
+  assert.equal(count,context.library.filter(e=>policy.eligible(e)).length,'Rendered pool must follow current reference eligibility');
+  assert.ok(context.library.filter(e=>/^(ChEBI|DrugCentral) named compound$/.test(e.cls)&&!policy.eligible(e)).length>14000,'Default eligibility pool should exclude unassigned bulk imports');
   let s=w.PharmacologyUI.getSnapshot();assert.ok(s.prodrugs.asProdrug.some(r=>r.curatedReferenceId==='prodrug-fosphenytoin'));
   assert.ok(d.getElementById('prodrug-matches').textContent.toLowerCase().includes('phenytoin'));
   assert.ok(d.getElementById('curated-reference-evidence').querySelector('a[href*="compound=1"]'));

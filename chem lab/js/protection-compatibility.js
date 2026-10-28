@@ -107,9 +107,10 @@ function protectionThreats(compounds,conditions) {
   if(ctx.has('grignard'))add('organometallic');
   if(ctx.has('alanate'))add('alanate');if(ctx.has('dibal'))add('dibal');if(ctx.has('borohydride')||ctx.has('mildHydride'))add('borohydride');
   if(ctx.has('ddq')||ctx.has('can'))add('oxidative');
-  if(['mcpba','ozone','permanganate','jones','pcc','hydrogenPeroxide','bbr3','lewis','dissolvingMetal','rosenmundCatalyst'].some(t=>ctx.has(t)))add('otherReactive');
+  if(ctx.has('pcc'))add('mildOxidative');
+  if(['mcpba','ozone','permanganate','jones','hydrogenPeroxide','bbr3','lewis','dissolvingMetal','rosenmundCatalyst'].some(t=>ctx.has(t)))add('otherReactive');
   if(ctx.substrates.some(s=>s.info.carbonyls.some(c=>['acylChloride','anhydride'].includes(c.kind)))||ctx.has('boc2o')||ctx.has('cbzReagent')||ctx.has('fmocReagent'))add('acylation');
-  const handled=new Set(['strongAcid','sulfuricAcid','HCl','HBr','HI','H2O','fluoride','H2','hydrogenationCatalyst','hydroxide','hydride','amideBase','sodamide','alkoxide','amineBase','weakBase','grignard','alanate','dibal','borohydride','mildHydride','ddq','can','boc2o','cbzReagent','fmocReagent','silylChloride','cation','quaternaryAmmonium','dmso','light','dmap']);
+  const handled=new Set(['strongAcid','sulfuricAcid','HCl','HBr','HI','H2O','fluoride','H2','hydrogenationCatalyst','hydroxide','hydride','amideBase','sodamide','alkoxide','amineBase','weakBase','grignard','alanate','dibal','borohydride','mildHydride','ddq','can','boc2o','cbzReagent','fmocReagent','silylChloride','cation','quaternaryAmmonium','dmso','light','dmap','pcc','hydrazine']);
   if([...ctx.species.keys()].some(tag=>!handled.has(tag)))add('otherReactive');
   const supportedAdditives=new Set(['h2so4','hcl','hbr','tsoh','h3po4','naoh','koh','naoet','kotbu','nah','lda','k2co3','et3n','pyr','cs2co3','k3po4','nanh2','imidazole','dmap','piperidine','dbu','pdc','pt','ni','ddq','can']);
   if((ctx.conditions.additives||[]).some(id=>!supportedAdditives.has(id)))add('otherReactive');
@@ -118,7 +119,7 @@ function protectionThreats(compounds,conditions) {
   if(ctx.light||ctx.conditions.energy==='light')add('photochemical');
   return ts;
 }
-const PROTECTION_THREAT_IDS=['acid','aqueousAcid','fluoride','hydrogenolysis','strongBase','aqueousBase','fmocBase','weakBase','organometallic','alanate','dibal','borohydride','oxidative','acylation','otherReactive','extremeTemperature','photochemical'];
+const PROTECTION_THREAT_IDS=['acid','aqueousAcid','fluoride','hydrogenolysis','strongBase','aqueousBase','fmocBase','weakBase','organometallic','alanate','dibal','borohydride','oxidative','mildOxidative','acylation','otherReactive','extremeTemperature','photochemical'];
 function protectionGroupCompatibility(id,conditionsOrThreats,site) {
   const entry=PROTECTION_GROUPS.find(x=>x.id===id||x.label.toLowerCase()===String(id).toLowerCase());
   if(!entry)return {status:'unknown',reasons:['This protecting group is not in the bounded compatibility registry.']};
@@ -157,6 +158,11 @@ function protectionGroupCompatibility(id,conditionsOrThreats,site) {
       if(carbamate||ester)conflict('Strong hydride can reduce the '+(carbamate?'carbamate':'ester')+' protecting functionality.');
       else if(pg==='acetal')reasons.push('The acetal masks the original carbonyl during the encoded hydride step.');
       else unknown('Hydride-specific cleavage of '+entry.label+' is not excluded.');
+    }else if(t==='mildOxidative'){
+      if(pg==='acetal')reasons.push('The acetal has no encoded cleavage in the bounded PCC oxidation regime; full-substrate selectivity remains separate.');
+      else unknown('The mild-oxidant compatibility of '+entry.label+' is not independently encoded.');
+    }else if(t==='extremeTemperature'&&pg==='acetal'){
+      reasons.push('Temperature alone is not an encoded acetal-cleavage mechanism; acid, base, solvent and substrate effects are assessed separately.');
     }else if(t==='oxidative'){
       if(pg==='pmb')conflict('DDQ/CAN are encoded PMB removal reagents.');
       else if(pg==='benzyl'||pg==='cbz')unknown('Oxidative debenzylation can compete under some DDQ conditions; selective PMB removal is not a blanket guarantee.');

@@ -104,8 +104,8 @@
       <div id="stamp-buttons-fused" class="stamp-grid">
         <button type="button" class="stamp-button" data-stamp="naphthalene">&#11041; Naphthalene</button>
         <button type="button" class="stamp-button" data-stamp="tetralin">&#11041; Tetralin</button>
-        <button type="button" class="stamp-button" data-stamp="indole">&#11040; Indole</button>
-        <button type="button" class="stamp-button" data-stamp="benzofuran">&#11040; Benzofuran</button>
+        <button type="button" class="stamp-button" data-stamp="indole">&#11041; Indole</button>
+        <button type="button" class="stamp-button" data-stamp="benzofuran">&#11041; Benzofuran</button>
         <button type="button" class="stamp-button" data-stamp="quinoline">&#11041; Quinoline</button>
         <button type="button" class="stamp-button" data-stamp="isoquinoline">&#11041; Isoquinoline</button>
         <button type="button" class="stamp-button" data-stamp="tryptoline">&#11040; Tetrahydro-&beta;-carboline</button>
@@ -350,7 +350,7 @@
       <label>Target compound<input id="path-target" type="text" placeholder="Name or SMILES, e.g. ethanal" autocomplete="off" spellcheck="false"></label>
     </div>
     <div class="path-controls"><label for="path-depth">Maximum steps</label><select id="path-depth"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select><button id="path-run" type="button" class="text-button primary">Find a path</button><button id="path-cancel" type="button" class="text-button" disabled>Cancel</button><button id="path-example" type="button" class="text-button">Load example</button></div>
-    <div class="path-controls"><label for="path-route-count">Alternative routes</label><select id="path-route-count"><option value="1">1</option><option value="3" selected>Up to 3</option><option value="5">Up to 5</option></select><label for="path-stock-policy">Available building blocks</label><select id="path-stock-policy"><option value="builtin" selected>Local stock + my list</option><option value="custom">Only my list + starting material</option></select></div>
+    <div class="path-controls"><label for="path-route-count">Alternative routes</label><select id="path-route-count"><option value="1">1</option><option value="3" selected>Up to 3</option><option value="5">Up to 5</option></select><label for="path-stock-policy">Available building blocks</label><select id="path-stock-policy"><option value="builtin" selected>Local stock + my list</option><option value="custom">Only my list + starting material</option></select><label for="path-recipe-tree">Recipe tree</label><select id="path-recipe-tree"><option value="off" selected>Off — linear routes only</option><option value="on">On — synthesize unavailable intermediates</option></select></div>
     <details class="path-options"><summary>Inventory and reaction filters</summary>
       <div class="path-inputs"><label>My available building blocks<textarea id="path-inventory" rows="4" placeholder="One name or SMILES per line, e.g. methanol"></textarea></label><label>Forbidden reagents or solvents<textarea id="path-forbidden-reagents" rows="4" placeholder="One name, SMILES or label per line, e.g. PCC"></textarea></label><label>Forbidden reaction IDs or names<textarea id="path-forbidden-rules" rows="4" placeholder="One ID or name fragment per line, e.g. oxidation"></textarea></label></div>
       <div class="path-controls"><label for="path-protection-policy">Protection planning</label><select id="path-protection-policy"><option value="auto">Allow verified protection sequences</option><option value="off">No new protection steps</option></select><label for="path-allowed-protecting-groups">Allowed protecting groups</label><input id="path-allowed-protecting-groups" type="text" placeholder="All supported; or boc, cbz, fmoc, tbs, acetal, tbu-ester" autocomplete="off" spellcheck="false"></div>
@@ -359,7 +359,7 @@
       <p>Explicit masks request one amine group and/or one alcohol group across the main route. The planner checks installation order, preservation and removal; it does not infer that these masks are necessary. Two masks need at least five steps. Repeated competing installation sites are unsupported.</p>
       <p>The starting material is always available. Inventory restricts additional building blocks; reagents and solvents remain allowed unless excluded above. Local stock includes built-in and user stock entries in tiers 1–2. Filters match structures when names resolve, plus case-insensitive label text.</p>
     </details>
-    <p class="path-caveat">Candidate routes use textbook reaction rules, not experimental validation. Additional building blocks follow your inventory policy; reagents may also be required. <span id="path-search-limits">Search is limited to 60 structures and 12 seconds.</span> Protection and deprotection count as separate steps. It does not search the literature or establish feasibility, selectivity, yield or safety.</p>
+    <p class="path-caveat">Candidate routes use textbook reaction rules, not experimental validation. Additional building blocks follow your inventory policy; reagents may also be required. Recipe Tree mode recursively retrosynthesizes unavailable intermediates and returns only trees whose leaves are available. Its depth limit applies to the longest branch, so a convergent tree may contain more total reaction steps. <span id="path-search-limits">Search is limited to 60 structures and 12 seconds.</span> Protection and deprotection count as separate steps. It does not search the literature or establish feasibility, selectivity, yield or safety.</p>
     <p id="path-status" role="status" aria-live="polite">Enter two compounds to begin. Names resolve locally; SMILES gives the most precise input.</p>
     <div id="path-results"></div>
     <div id="path-cascade"></div>
@@ -824,6 +824,7 @@
 <script src="js/reaction-rules-extra11.js"></script>
 <script src="js/reaction-rules-extra12.js"></script>
 <script src="js/reaction-rules-extra13.js"></script>
+<script src="js/reaction-rules-extra14.js"></script>
 <script src="js/reaction-sites.js"></script>
 <script src="js/reaction-catalog.js"></script>
 <script src="js/protection-compatibility.js"></script>
@@ -841,6 +842,7 @@
 <script src="js/retro-families-extra6.js"></script>
 <script src="js/retro-families-extra7.js"></script>
 <script src="js/retro-families-extra8.js"></script>
+<script src="js/retro-families-extra9.js"></script>
 <script src="js/retro-search.js"></script>
 <script src="js/reaction-lab.js"></script>
 <script src="js/spectra-view.js"></script>
