@@ -12,7 +12,7 @@ assert.equal(run('route.steps.length'), 2);
 assert.equal(run('routeWorkspaceValidate(route).status'), 'verified');
 assert.equal(run('routeWorkspaceValidate(route).issues.length'), 0);
 assert.equal(run('route.steps[0].ruleId'), run('job.route[0].candidate.outcomeId'));
-assert.equal(run('routeWorkspaceValidate(routeWorkspaceImport(JSON.stringify(route))[0]).status'), 'verified');
+assert.equal(run(`routeWorkspaceValidate(routeWorkspaceImport(JSON.stringify(route))[0]).status`), 'verified');
 assert.equal(run(`routeWorkspaceImport(JSON.stringify({format:'chem-lab-route-workspace',version:1,routes:[route]})).length`), 1);
 assert.equal(run(`routeWorkspaceValidate({...route,steps:route.steps.slice().reverse()}).status`), 'invalid');
 assert.equal(run(`routeWorkspaceValidate({...route,steps:route.steps.slice(1)}).status`), 'invalid');
@@ -88,6 +88,28 @@ assert.equal(run(`routeWorkspaceCsv(route).includes('Estimated overall yield (%)
 assert.equal(run(`routeWorkspaceMassText(1000)`), '1.00 g');
 assert.equal(run(`routeWorkspaceMassText(0.5)`), '500 µg');
 console.log('Route workspace yield and scale model: 41 checks passed.');
+
+run(`var nitrationCompounds=routeWorkspaceCompounds({compounds:[{smiles:'NCCc1ccccc1',role:'reactant',equiv:'1',label:'Phenethylamine'}]}); var nitrationConditions=normalizeReactionConditions({temperature:0,additives:['hno3','h2so4']}); var nitrationPrediction=predictReaction(nitrationCompounds,nitrationConditions); var nitrationRows=reactionMaterialRows(nitrationCompounds,nitrationConditions,10);`);
+assert.equal(run(`nitrationPrediction.best.id`), 'nitration');
+assert.equal(run(`nitrationRows.length`), 3);
+assert.equal(run(`nitrationRows.map(r=>r.name).join(',')`), 'Phenethylamine,HNO₃,H₂SO₄');
+near(run(`nitrationRows.find(r=>r.name==='HNO₃').mmol`), 11);
+near(run(`nitrationRows.find(r=>r.name==='H₂SO₄').mmol`), 1);
+near(run(`nitrationRows.find(r=>r.name==='HNO₃').mg`), 693.11);
+near(run(`nitrationRows.find(r=>r.name==='HNO₃').mL`), 693.11 / 1510);
+near(run(`nitrationRows.find(r=>r.name==='H₂SO₄').mg`), 98.08);
+assert.equal(run(`nitrationRows.find(r=>r.name==='HNO₃').hazard.join(',')`), 'GHS03,GHS05');
+run(`var nitrationRoute=routeWorkspaceNormalize({start:'NCCc1ccccc1',target:nitrationPrediction.best.products[0].smiles,steps:[{from:'NCCc1ccccc1',to:nitrationPrediction.best.products[0].smiles,candidate:{outcomeId:'nitration',outcomeName:'Aromatic nitration',compounds:[{smiles:'NCCc1ccccc1',role:'reactant',equiv:'1'}],conditions:nitrationConditions}}]}); var nitrationReport=routeWorkspaceValidate(nitrationRoute); var nitrationPlan=routeWorkspaceScalePlan(nitrationRoute,'product',1,'g',nitrationReport); var nitrationMaterials=routeWorkspaceAggregateMaterials(nitrationRoute,nitrationPlan.steps.map(s=>s.rows));`);
+assert.equal(run(`nitrationReport.status`), 'verified');
+assert.equal(run(`nitrationPlan.steps[0].rows.length`), 3);
+assert.equal(run(`nitrationMaterials.length===3&&['HNO₃','H₂SO₄','phenethylamine'].every(name=>nitrationMaterials.some(e=>e.name===name))`), true);
+assert.equal(run(`routeWorkspaceMaterialsCsv(nitrationMaterials).includes('HNO₃')&&routeWorkspaceMaterialsCsv(nitrationMaterials).includes('H₂SO₄')`), true);
+run(`var explicitNitric=nitrationCompounds.concat(routeWorkspaceCompounds({compounds:[{smiles:'O[N+](=O)[O-]',role:'reagent',equiv:'2',label:'Nitric acid'}]})); var deduplicatedNitrationRows=reactionMaterialRows(explicitNitric,nitrationConditions,10);`);
+assert.equal(run(`deduplicatedNitrationRows.length`), 3);
+near(run(`deduplicatedNitrationRows.find(r=>r.name==='Nitric acid').mmol`), 20);
+run(`var conditionCatalystRows=reactionMaterialRows([],normalizeReactionConditions({additives:['pdc']}),2);`);
+assert.equal(run(`conditionCatalystRows.length===1&&conditionCatalystRows[0].role==='catalyst'&&conditionCatalystRows[0].name==='Pd/C'`), true);
+console.log('Condition-additive material model: 16 checks passed.');
 
 run(`var consolidated=routeWorkspaceAggregateMaterials(route,productPlan.steps.map(s=>s.rows));`);
 assert.equal(run(`consolidated.some(e=>e.smiles&&routeWorkspaceKey(e.smiles)===routeWorkspaceKey('CCO'))`), false);
