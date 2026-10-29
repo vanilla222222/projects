@@ -501,6 +501,7 @@ const REACTION_REAGENT_LABELS = [
   ['Cl3P', null, 'phosphorus trichloride (PCl₃)'],
   ['Cl5P', null, 'phosphorus pentachloride (PCl₅)'],
   ['Cl3OP', null, 'phosphoryl chloride (POCl₃)'],
+  ['Cl2OS', null, 'thionyl chloride (SOCl₂)'],
   ['Cl2O2S', null, 'sulfuryl chloride (SO₂Cl₂)'],
   ['C5H6ClCrNO3', null, 'pyridinium chlorochromate (PCC)'],
   ['H2NNa', null, 'sodium amide (NaNH₂)'],
