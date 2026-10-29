@@ -501,7 +501,6 @@ const REACTION_REAGENT_LABELS = [
   ['Cl3P', null, 'phosphorus trichloride (PCl₃)'],
   ['Cl5P', null, 'phosphorus pentachloride (PCl₅)'],
   ['Cl3OP', null, 'phosphoryl chloride (POCl₃)'],
-  ['Cl2OS', null, 'thionyl chloride (SOCl₂)'],
   ['Cl2O2S', null, 'sulfuryl chloride (SO₂Cl₂)'],
   ['C5H6ClCrNO3', null, 'pyridinium chlorochromate (PCC)'],
   ['H2NNa', null, 'sodium amide (NaNH₂)'],
@@ -695,8 +694,32 @@ function reactionIsomericSmiles(fragment, fallback) {
   }
 }
 
+function reactionConditionAdditiveCompounds(compounds, conditions) {
+  const identities = new Set((compounds || []).map((c) => reactionProductIdentity({ fragment: c.fragment, smiles: c.smiles })).filter(Boolean));
+  const seen = new Set();
+  return ((conditions && conditions.additives) || []).map(reactionAdditive).filter((additive) => {
+    if (!additive || seen.has(additive.id)) return false;
+    seen.add(additive.id);
+    const identity = additive.smiles ? reactionProductIdentity({ smiles: additive.smiles }) : null;
+    if (identity && identities.has(identity)) return false;
+    if (identity) identities.add(identity);
+    return true;
+  }).map((additive) => {
+    const info = typeof rglLookup === 'function' ? rglLookup(additive.id) : null;
+    return {
+      input: additive.id,
+      reagentId: additive.id,
+      label: additive.name,
+      role: additive.group === 'Catalyst' ? 'catalyst' : 'reagent',
+      equiv: info && Number.isFinite(info.equiv) ? String(info.equiv) : null,
+      smiles: additive.smiles || '',
+      conditionAdditive: true,
+    };
+  });
+}
+
 function reactionMaterialRows(compounds, conditions, scaleMmol) {
-  const rows = reactionStoichiometry(compounds, scaleMmol, conditions);
+  const rows = reactionStoichiometry((compounds || []).concat(reactionConditionAdditiveCompounds(compounds, conditions)), scaleMmol, conditions);
   reactionSolventUsage(compounds, conditions, scaleMmol).filter((x) => !x.compound).forEach((x) => {
     rows.push({ name: x.name, role: 'solvent', mw: null, equiv: null, mmol: null, mg: x.mg, mL: x.mL, compound: null, hazard: x.hazard });
   });
@@ -979,7 +1002,7 @@ function reactionParseConcentration(text) {
 }
 
 function reactionReagentInfo(compound) {
-  return typeof rglLookup === 'function' && compound ? rglLookup(compound.smiles) : null;
+  return typeof rglLookup === 'function' && compound ? rglLookup(compound.smiles || compound.reagentId) : null;
 }
 
 function reactionScaleMmol(compounds, fallback) {
