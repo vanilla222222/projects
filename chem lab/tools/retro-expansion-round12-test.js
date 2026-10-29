@@ -60,7 +60,7 @@ run(`function hweStereo12(target){
   return candidate&&candidate.stereo;
 }`);
 check(`hweStereo12('CCOC(=O)/C=C/c1ccccc1')`, 'set', 'The E-target HWE candidate has established alkene geometry');
-check(`hweStereo12('CCOC(=O)/C=C\\c1ccccc1')`, 'racemic', 'A Z request is explicitly labelled as stereochemical uncertainty rather than an exact E match');
+check(`hweStereo12('CCOC(=O)/C=C' + String.fromCharCode(92) + 'c1ccccc1')`, 'racemic', 'A Z request is explicitly labelled as stereochemical uncertainty rather than an exact E match');
 check(`rt12('BrCC1CCC(=O)O1','halolactonization').verified.every(v=>v.precursors.length===1&&moleculeSame(v.precursors[0].smiles,'O=C(O)CCC=C')&&v.reagents.some(r=>r.label==='Br2')&&v.reagents.some(r=>r.label==='Na2CO3'))`, true, 'Bromolactonization recovers pent-4-enoic acid and its cyclization conditions');
 run(`var haloComp=['O=C(O)CCC=C','BrBr','[Na+].[Na+].[O-]C([O-])=O'].map((smiles,i)=>({smiles,fragment:smilesToFragment(smiles),role:i?'reagent':'reactant',equiv:1}));var haloPrediction=predictReaction(haloComp,{...defaultReactionConditions(),solvents:['water'],temperature:25});`);
 check(`haloPrediction.best.id==='bromolactonization'&&haloPrediction.best.products.some(p=>moleculeSame(p.smiles,'BrCC1CCC(=O)O1'))`, true, 'Specific intramolecular bromolactonization outranks generic alkene bromination');
