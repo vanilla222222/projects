@@ -89,6 +89,36 @@ assert.equal(run(`routeWorkspaceMassText(1000)`), '1.00 g');
 assert.equal(run(`routeWorkspaceMassText(0.5)`), '500 µg');
 console.log('Route workspace yield and scale model: 41 checks passed.');
 
+run(`var consolidated=routeWorkspaceAggregateMaterials(route,productPlan.steps.map(s=>s.rows));`);
+assert.equal(run(`consolidated.some(e=>e.smiles&&routeWorkspaceKey(e.smiles)===routeWorkspaceKey('CCO'))`), false);
+assert.equal(run(`consolidated.some(e=>e.smiles&&routeWorkspaceKey(e.smiles)===routeWorkspaceKey('C=C'))`), true);
+assert.equal(run(`consolidated.some(e=>e.smiles&&routeWorkspaceKey(e.smiles)===routeWorkspaceKey('[K+].[O-][Mn](=O)(=O)=O'))`), true);
+run(`var duplicateRows=[[{name:'Ethylene',role:'reactant',mmol:2,mg:56.06,mL:null,compound:{smiles:'C=C'},hazard:['GHS04']},{name:'Oxygen',role:'reagent',mmol:1,mg:32,mL:null,compound:{smiles:'O=O'},hazard:['GHS03']}],[{name:'Ethanol',role:'reactant',mmol:1.5,mg:69.1,mL:null,compound:{smiles:'CCO'},hazard:[]},{name:'Oxygen',role:'reagent',mmol:3,mg:96,mL:2,compound:{smiles:'O=O'},hazard:['GHS03']}]]; var aggregated=routeWorkspaceAggregateMaterials(route,duplicateRows);`);
+assert.equal(run(`aggregated.length`), 2);
+assert.equal(run(`aggregated.find(e=>e.smiles==='O=O').mmol`), 4);
+assert.equal(run(`aggregated.find(e=>e.smiles==='O=O').mg`), 128);
+assert.equal(run(`aggregated.find(e=>e.smiles==='O=O').mL`), 2);
+assert.equal(run(`aggregated.find(e=>e.smiles==='O=O').steps.join(',')`), '1,2');
+assert.equal(run(`aggregated.find(e=>e.smiles==='O=O').hazards.join(',')`), 'GHS03');
+assert.equal(run(`routeWorkspaceAggregateAmount(aggregated.find(e=>e.smiles==='O=O'),'mg')`), '128 mg');
+run(`var partial=routeWorkspaceAggregateMaterials(route,[[duplicateRows[0][1]],[{...duplicateRows[1][1],mg:null}]])[0];`);
+assert.equal(run(`partial.mgIncomplete`), true);
+assert.equal(run(`partial.mg`), 32);
+assert.equal(run(`routeWorkspaceAggregateAmount(partial,'mg')`), '≥ 32.00 mg (partial)');
+run(`var other=routeWorkspaceNormalize({...route,name:'Half yield',steps:route.steps.map(s=>({...s,yield:50}))}); var comparisons=routeWorkspaceComparison([route,other],route.target);`);
+assert.equal(run(`comparisons.length`), 2);
+assert.equal(run(`comparisons.map(c=>c.overallYield).join(',')`), '75,25');
+assert.equal(run(`comparisons.map(c=>c.stepCount).join(',')`), '2,2');
+assert.equal(run(`comparisons.every(c=>c.protectionSteps===0)`), true);
+assert.equal(run(`comparisons[0].stockRecognized>=2`), true);
+assert.equal(run(`comparisons[0].hazardMaterials>=1`), true);
+assert.equal(run(`routeWorkspaceComparison([route],'CC=O').length`), 0);
+assert.equal(run(`routeWorkspaceMaterialsCsv(consolidated).includes('Mass (mg),Mass partial,Volume (mL)')`), true);
+assert.equal(run(`/price|cost/i.test(routeWorkspaceMaterialsCsv(consolidated))`), false);
+assert.equal(run(`routeWorkspaceStockInfo('C=C').tier`), 1);
+assert.equal(run(`routeWorkspaceStockInfo('[K+].[O-][Mn](=O)(=O)=O').tier`), 2);
+console.log('Route comparison and materials model: 24 checks passed.');
+
 class Element {
   constructor(tag) { this.tagName = tag; this.children = []; this.events = {}; this.disabled = false; this.value = ''; this.textContent = ''; this.attributes = {}; }
   addEventListener(type, fn) { this.events[type] = fn; }
@@ -111,14 +141,20 @@ run(`var controller=createRouteWorkspace({container,storage,download,openInLab:o
 const all = (el) => [el, ...el.children.flatMap(all)];
 const named = (text) => all(root).find((el) => el.tagName === 'button' && el.textContent === text);
 const labeled = (label) => all(root).find((el) => el.attributes['aria-label'] === label);
+const textOf = (el) => [el.textContent, ...el.children.map(textOf)].join(' ');
 assert.equal(storage.size, 1);
 assert.equal(JSON.parse([...storage.values()][0]).routes.length, 1);
 assert.equal(all(root).some((el) => el.textContent.includes('Route status: verified')), true);
 assert.equal(all(root).some((el) => el.textContent.includes('Estimated overall yield: 75%')), true);
+assert.equal(all(root).filter((el) => el.className === 'workspace-comparison-table').length, 1);
 assert.equal(labeled('Scale basis').children.length, 3);
 labeled('Scale amount').value = '1'; labeled('Scale unit').value = 'g'; named('Calculate materials').click();
 assert.equal(all(root).some((el) => el.textContent.includes('Expected final product: 1.00 g')), true);
 assert.equal(all(root).filter((el) => el.className === 'workspace-materials').length, 2);
+assert.equal(all(root).filter((el) => el.className === 'workspace-materials workspace-consolidated-table').length, 1);
+const consolidatedTable = all(root).find((el) => el.className === 'workspace-materials workspace-consolidated-table');
+assert.equal(consolidatedTable.children[1].children.length, run(`consolidated.length`));
+assert.equal(/ethanol/i.test(textOf(consolidatedTable)), false);
 assert.equal(all(root).some((el) => el.textContent.includes('22.20 mmol')), true);
 labeled('Scale amount').value = '500'; labeled('Scale unit').value = 'µg'; named('Calculate materials').click();
 assert.equal(all(root).some((el) => el.textContent.includes('Expected final product: 500 µg')), true);
@@ -133,13 +169,16 @@ labeled('Step 1 yield (%)').value = '101'; labeled('Step 1 yield (%)').events.ch
 assert.equal(JSON.parse([...storage.values()][0]).routes[0].steps[0].yield, 50);
 assert.equal(all(root).some((el) => el.textContent.includes('Step yield must be between 0 and 100%.')), true);
 assert.equal(JSON.parse([...storage.values()][0]).routes[0].steps.every((step) => step.compounds.every((compound) => compound.equiv)), true);
-console.log('Route workspace scale DOM and persistence: 13 checks passed.');
+console.log('Route workspace scale DOM and persistence: 18 checks passed.');
 named('Open in Reactions').click();
 assert.equal(opened, 1);
 named('Export JSON').click();
 assert.equal(JSON.parse(downloads[0].text).steps.length, 2);
 named('Export CSV').click();
 assert.match(downloads[1].text, /Verification,Explanation/);
+labeled('Scale basis').value = 'product'; labeled('Scale amount').value = '1'; labeled('Scale unit').value = 'g'; named('Calculate materials').click();
+named('Export materials CSV').click();
+assert.match(downloads[2].text, /Mass \(mg\),Mass partial/);
 named('Move down').click();
 assert.equal(all(root).some((el) => el.textContent.includes('Route status: invalid')), true);
 named('Delete step').click();
