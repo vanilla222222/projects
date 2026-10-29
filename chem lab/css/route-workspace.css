@@ -24,6 +24,16 @@ body[data-view="workspace"] #sidebar, body[data-view="workspace"] #toolbar, body
 .workspace-status.invalid { color: var(--danger); }
 .workspace-status.unverified { color: var(--warn); }
 .workspace-yield { margin: 14px 0; color: var(--accent); font-size: 18px; font-weight: 600; }
+.workspace-comparison { margin: 20px 0; padding: 18px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-elevated); }
+.workspace-comparison > h3 { margin: 0 0 8px; }
+.workspace-comparison > p, .workspace-consolidated > p { color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+.workspace-comparison-table { display: block; width: 100%; overflow-x: auto; border-collapse: collapse; font-size: 12px; }
+.workspace-comparison-table th, .workspace-comparison-table td { padding: 8px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+.workspace-comparison-table tr.is-selected td { background: var(--bg-control); }
+.workspace-consolidated { margin: 18px 0; padding: 14px; border: 1px solid var(--border); border-radius: 7px; background: var(--bg-control); }
+.workspace-consolidated > h4 { margin: 0 0 8px; }
+.workspace-consolidated > button { margin-top: 12px; }
+.workspace-stock-review { color: var(--warn); }
 .workspace-yield-control { max-width: 190px; margin: 12px 0; display: flex; flex-direction: column; gap: 7px; font-size: 13px; }
 .workspace-yield-control input, .workspace-scale-controls input, .workspace-scale-controls select { width: 100%; min-width: 0; box-sizing: border-box; padding: 9px; color: inherit; background: var(--bg-control); border: 1px solid var(--border); border-radius: 5px; font: inherit; }
 .workspace-scale { margin: 20px 0; padding: 18px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-elevated); }
