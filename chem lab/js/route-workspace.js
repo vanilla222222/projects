@@ -244,6 +244,88 @@ function routeWorkspaceMassText(mg) {
   return routeWorkspaceQuantityText(mg * 1000, 'µg');
 }
 
+function routeWorkspaceStockInfo(smiles) {
+  if (!smiles || typeof stockTier !== 'function') return { tier: null, source: '', label: 'Availability not checked', review: true };
+  try {
+    const info = stockTier(smiles);
+    if (!info) return { tier: null, source: '', label: 'Not listed; verify availability', review: true };
+    const source = info.source === 'user' ? 'User stock' : info.source === 'builtin' ? 'Built-in stock' : 'Name-only match';
+    return { tier: info.tier, source: info.source, name: info.name || '', label: source + ' · tier ' + info.tier + (info.tier > 2 ? '; verify availability' : ''), review: info.tier > 2 };
+  } catch (error) {
+    return { tier: null, source: '', label: 'Availability could not be checked', review: true };
+  }
+}
+
+function routeWorkspaceRowSmiles(row, step) {
+  if (row.compound && row.compound.smiles) return row.compound.smiles;
+  if (row.role === 'solvent' && typeof REACTION_SOLVENTS !== 'undefined') {
+    const ids = step && step.conditions ? step.conditions.solvents : [];
+    const match = REACTION_SOLVENTS.find((item) => item.smiles && item.name === row.name && ids.includes(item.id));
+    return match ? match.smiles : '';
+  }
+  return '';
+}
+
+function routeWorkspaceAggregateMaterials(route, stepRows) {
+  const intermediates = new Set(route.steps.slice(0, -1).map((step) => routeWorkspaceKey(step.to)));
+  const groups = new Map();
+  (stepRows || []).forEach((rows, stepIndex) => (rows || []).forEach((row) => {
+    const smiles = routeWorkspaceRowSmiles(row, route.steps[stepIndex]);
+    let structureKey = '';
+    try { structureKey = smiles ? routeWorkspaceKey(smiles) : ''; } catch (error) { /* Keep an unresolved material separate by its displayed label. */ }
+    if (structureKey && intermediates.has(structureKey)) return;
+    const name = String(row.name || (row.compound && row.compound.smiles) || 'Unspecified material');
+    const key = structureKey ? 'structure:' + structureKey : 'label:' + row.role + ':' + name;
+    if (!groups.has(key)) {
+      const stock = routeWorkspaceStockInfo(smiles);
+      groups.set(key, { name, smiles, stockTier: stock.tier, stockSource: stock.source, stockLabel: stock.label, stockReview: stock.review, roles: new Set(), steps: new Set(), hazards: new Set(), mmol: 0, mg: 0, mL: 0, mmolKnown: false, mgKnown: false, mLKnown: false, mmolIncomplete: false, mgIncomplete: false, mLIncomplete: false });
+    }
+    const entry = groups.get(key);
+    entry.roles.add(row.role || 'material');
+    entry.steps.add(stepIndex + 1);
+    (row.hazard || []).forEach((code) => entry.hazards.add(String(code)));
+    ['mmol', 'mg', 'mL'].forEach((field) => {
+      if (Number.isFinite(row[field])) { entry[field] += row[field]; entry[field + 'Known'] = true; }
+      else entry[field + 'Incomplete'] = true;
+    });
+  }));
+  return [...groups.values()].map((entry) => Object.assign(entry, {
+    roles: [...entry.roles], steps: [...entry.steps], hazards: [...entry.hazards].sort(),
+    mmol: entry.mmolKnown ? entry.mmol : null, mg: entry.mgKnown ? entry.mg : null, mL: entry.mLKnown ? entry.mL : null,
+  })).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function routeWorkspaceComparison(routes, targetSmiles) {
+  const target = routeWorkspaceProductKey(targetSmiles);
+  return (routes || []).filter((route) => {
+    try { return routeWorkspaceProductKey(route.target) === target; } catch (error) { return false; }
+  }).map((route) => {
+    const report = routeWorkspaceValidate(route);
+    const materials = report.status === 'verified' ? routeWorkspaceAggregateMaterials(route, report.steps.map((checked, index) => reactionMaterialRows(checked.compounds, route.steps[index].conditions, 1))) : [];
+    return {
+      id: route.id, name: route.name, start: route.start, target: route.target, status: report.status,
+      overallYield: routeWorkspaceYield(route, report), stepCount: route.steps.length,
+      protectionSteps: route.steps.filter((step) => step.planning && ['protect', 'deprotect'].includes(step.planning.kind)).length,
+      materialCount: materials.length,
+      stockRecognized: materials.filter((entry) => Number.isFinite(entry.stockTier) && entry.stockTier <= 2).length,
+      stockReview: materials.filter((entry) => entry.stockReview).length,
+      hazardMaterials: materials.filter((entry) => entry.hazards.length).length,
+    };
+  });
+}
+
+function routeWorkspaceAggregateAmount(entry, field, unit) {
+  if (!entry[field + 'Known']) return '—';
+  const text = field === 'mg' ? routeWorkspaceMassText(entry[field]) : routeWorkspaceQuantityText(entry[field], unit);
+  return entry[field + 'Incomplete'] ? '≥ ' + text + ' (partial)' : text;
+}
+
+function routeWorkspaceMaterialsCsv(materials) {
+  const rows = [['Material', 'SMILES', 'Roles', 'Steps', 'Stock', 'Stock source', 'mmol', 'mmol partial', 'Mass (mg)', 'Mass partial', 'Volume (mL)', 'Volume partial', 'Hazard codes']];
+  (materials || []).forEach((entry) => rows.push([entry.name, entry.smiles, entry.roles.join('; '), entry.steps.join('; '), entry.stockLabel, entry.stockSource, entry.mmol === null ? '' : entry.mmol, entry.mmolIncomplete ? 'yes' : 'no', entry.mg === null ? '' : entry.mg, entry.mgIncomplete ? 'yes' : 'no', entry.mL === null ? '' : entry.mL, entry.mLIncomplete ? 'yes' : 'no', entry.hazards.join('; ')]));
+  return rows.map((row) => row.map(routeWorkspaceCsvEscape).join(',')).join('\r\n');
+}
+
 function routeWorkspaceCsvEscape(value) {
   let text = String(value === null || value === undefined ? '' : value);
   if (/^[\s]*[=+@-]/.test(text) && !/^\s*-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?\s*$/.test(text)) text = "'" + text;
@@ -316,6 +398,21 @@ function createRouteWorkspace(deps) {
     content.append(meta, element('p', simpleName(route.start) + ' → ' + simpleName(route.target), 'workspace-equation'), element('p', 'Route status: ' + report.status + '. ' + (report.issues.join(' ') || 'Intermediates connect in the current order.'), 'workspace-status ' + report.status));
     const overallYield = routeWorkspaceYield(route, report);
     content.append(element('p', overallYield === null ? 'Estimated overall yield: unavailable until every step is verified.' : 'Estimated overall yield: ' + overallYield + '% (product of the step-yield estimates).', 'workspace-yield'));
+    const comparisons = routeWorkspaceComparison(routes, route.target);
+    if (comparisons.length) {
+      const comparison = element('section', undefined, 'workspace-comparison');
+      comparison.append(element('h3', 'Saved-route comparison'), element('p', 'Routes to this target are compared descriptively, without prices or an overall feasibility score. Stock recognition uses the local stock list; hazard counts cover only notes encoded in the reagent library.'));
+      const table = element('table', undefined, 'workspace-comparison-table');
+      const head = element('tr'); ['Route', 'Starting material', 'Steps', 'Estimated yield', 'Stock recognized', 'Hazard-noted materials', 'Protection steps', 'Status', ''].forEach((text) => head.append(element('th', text)));
+      const thead = element('thead'); thead.append(head); table.append(thead);
+      const body = element('tbody');
+      comparisons.forEach((summary) => {
+        const line = element('tr'); if (summary.id === route.id) line.className = 'is-selected';
+        [summary.name, simpleName(summary.start), summary.stepCount, summary.overallYield === null ? '—' : summary.overallYield + '%', summary.stockRecognized + ' / ' + summary.materialCount + (summary.stockReview ? ' · ' + summary.stockReview + ' review' : ''), summary.hazardMaterials, summary.protectionSteps, summary.status].forEach((text) => line.append(element('td', String(text))));
+        const action = element('td'); action.append(button('Open', () => { selected = summary.id; redraw(); })); line.append(action); body.append(line);
+      });
+      table.append(body); comparison.append(table); content.append(comparison);
+    }
     if (scalePrefs.routeId !== route.id) scalePrefs = { routeId: route.id, basis: 'product', amount: '1', unit: 'g' };
     const planner = element('section', undefined, 'workspace-scale');
     planner.append(element('h3', 'Route scale planner'), element('p', 'Target a final product amount or enter the amount of any step reactant. The planner scales upstream and downstream materials using route stoichiometry and estimated step yields.'));
@@ -339,6 +436,22 @@ function createRouteWorkspace(deps) {
       try {
         const plan = routeWorkspaceScalePlan(route, basisSelect.value, amount.input.value, unitSelect.value, report);
         scaleResults.append(element('p', 'Expected final product: ' + routeWorkspaceMassText(plan.finalProductMg) + ' (' + routeWorkspaceQuantityText(plan.finalProductMmol, 'mmol') + '). Starting intermediate required: ' + routeWorkspaceQuantityText(plan.startingMmol, 'mmol') + '.', 'workspace-scale-summary'));
+        const consolidated = routeWorkspaceAggregateMaterials(route, plan.steps.map((stepPlan) => stepPlan.rows));
+        const materials = element('section', undefined, 'workspace-consolidated');
+        materials.append(element('h4', 'Consolidated external materials'), element('p', 'Identical materials are combined across steps; intermediates produced earlier in the route are excluded. A partial total means at least one occurrence lacks quantity data. Stock and hazard notes require review and are not a complete availability or safety assessment.'));
+        const materialTable = element('table', undefined, 'workspace-materials workspace-consolidated-table');
+        const materialHead = element('tr'); ['Material', 'Roles', 'Steps', 'Stock', 'mmol', 'Mass', 'Volume', 'Hazard codes'].forEach((text) => materialHead.append(element('th', text)));
+        const materialThead = element('thead'); materialThead.append(materialHead); materialTable.append(materialThead);
+        const materialBody = element('tbody');
+        consolidated.forEach((entry) => {
+          const line = element('tr');
+          const values = [entry.name, entry.roles.join(', '), entry.steps.join(', '), entry.stockLabel, routeWorkspaceAggregateAmount(entry, 'mmol', 'mmol'), routeWorkspaceAggregateAmount(entry, 'mg'), routeWorkspaceAggregateAmount(entry, 'mL', 'mL'), entry.hazards.join(', ') || '—'];
+          values.forEach((text, index) => { const cell = element('td', text); if (index === 3 && entry.stockReview) cell.className = 'workspace-stock-review'; line.append(cell); });
+          materialBody.append(line);
+        });
+        materialTable.append(materialBody);
+        materials.append(materialTable, button('Export materials CSV', () => download('chem-lab-materials.csv', 'text/csv;charset=utf-8', routeWorkspaceMaterialsCsv(consolidated))));
+        scaleResults.append(materials);
         plan.steps.forEach((stepPlan, index) => {
           const block = element('section', undefined, 'workspace-scale-step');
           block.append(element('h4', 'Step ' + (index + 1) + ': ' + route.steps[index].name), element('p', 'Reaction scale ' + routeWorkspaceQuantityText(stepPlan.scaleMmol, 'mmol') + ' · estimated yield ' + stepPlan.yield + '% · expected step product ' + routeWorkspaceMassText(stepPlan.productMg) + '.'));
