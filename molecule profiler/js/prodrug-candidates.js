@@ -12,7 +12,8 @@
   ester:{title:'In vitro dermal transport and bioconversion of aliphatic metronidazole esters',url:'https://www.sciencedirect.com/science/article/pii/0378517386901791',kind:'primary'},
   phosphate:{title:'Metronidazole phosphate: a water-soluble prodrug; chemical and human-serum hydrolysis study',url:'https://pubmed.ncbi.nlm.nih.gov/7086647/',kind:'primary'},
   phenolPhosphate:{title:'Phenolic KSP inhibitors and employment of a phosphate prodrug strategy',url:'https://pubmed.ncbi.nlm.nih.gov/16439122/',kind:'primary'},
-  acid:{title:'FDA Vasotec label: enalapril ethyl-ester hydrolysis to enalaprilat',url:'https://www.accessdata.fda.gov/drugsatfda_docs/label/2014/018998s079lbl.pdf',kind:'primary'}
+  acid:{title:'FDA Vasotec label: enalapril ethyl-ester hydrolysis to enalaprilat',url:'https://www.accessdata.fda.gov/drugsatfda_docs/label/2014/018998s079lbl.pdf',kind:'primary'},
+  bbb:{title:'Lillethorup et al.: Prodrugs and their activation mechanisms for brain drug delivery',url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC11740913/',kind:'review'}
  };
  const COMMON_LIMITS=[
   'Unvalidated structural design, not an established prodrug of this parent.',
@@ -27,6 +28,18 @@
   {id:'butyryl',name:'O-butyryl ester',fragment:'C(=O)CCC',cleavage:'o-acyl',hypothesis:'Ester hydrolysis could release the parent alcohol/phenol plus butyric acid; recognition by relevant human esterases is not established.',sources:[SOURCES.ester]},
   {id:'hemisuccinyl',name:'O-hemisuccinate ester',fragment:'C(=O)CCC(=O)O',cleavage:'o-acyl',hypothesis:'Cleavage of the parent-linked ester could release the parent alcohol/phenol and succinic acid. Ionization and any formulation benefit remain untested.',sources:[SOURCES.ester]},
   {id:'phosphate',name:'O-phosphate monoester',fragment:'P(=O)(O)O',cleavage:'o-phosphate',hypothesis:'Phosphatase-mediated cleavage could release the parent alcohol/phenol. Substrate recognition and conversion are not established; no rate is inferred.',sources:[SOURCES.phosphate,SOURCES.phenolPhosphate]}
+ ];
+ const BBB_OH_DESIGNS=[
+  {id:'bbb-dihydrotrigonellinyl',name:'O-(1-methyl-1,4-dihydronicotinoyl) ester',fragment:'C(=O)C1=CN(C)C=CC1',cleavage:'o-acyl',hypothesis:'Ester hydrolysis could regenerate the parent OH group. The redox delivery hypothesis additionally requires oxidation of the dihydropyridine carrier before release; neither oxidation, brain retention nor timely parent release is established for this candidate.',sources:[SOURCES.bbb],bbb:{strategy:'Redox carrier / lock-in hypothesis',rationale:'A neutral 1,4-dihydropyridine carrier is a literature design class intended to cross passively and then oxidize to a membrane-impermeable pyridinium form.',requirements:['Carrier oxidation must outcompete peripheral ester cleavage and elimination.','The oxidized conjugate must subsequently release the parent in brain tissue.'],scope:'Reaction-class rationale only. Oxidation, retention, hydrolysis and brain exposure are not simulated.'},limitations:['The direct reverse check covers ester removal only; it does not model oxidation to a pyridinium intermediate or the required multistep activation sequence.','Dihydropyridine stability, oxidation rates, tissue selectivity and carrier-derived toxicity are unassessed.']},
+  ...[
+   ['bbb-acetyl','O-acetyl ester','C(=O)C','Small ester / OH masking','Masks the hydroxyl donor with a small acetyl group; the calculated property changes still require review.'],
+   ['bbb-propionyl','O-propionyl ester','C(=O)CC','Small ester / OH masking','Masks the hydroxyl donor with a small propionyl group; the calculated property changes still require review.'],
+   ['bbb-butyryl','O-butyryl ester','C(=O)CCC','Small ester / OH masking','Masks the hydroxyl donor with a small butyryl group; added lipophilicity is not automatically beneficial.'],
+   ['bbb-pivaloyl','O-pivaloyl ester','C(=O)C(C)(C)C','Hindered ester / OH masking','A branched acyl group masks the hydroxyl donor and may alter ester stability; premature or incomplete cleavage remains unresolved.'],
+   ['bbb-cyclopropanecarbonyl','O-cyclopropanecarbonyl ester','C(=O)C1CC1','Compact cyclic ester / OH masking','A compact cyclic acyl group masks the hydroxyl donor without assuming that added lipophilicity improves delivery.'],
+   ['bbb-methoxyacetyl','O-methoxyacetyl ester','C(=O)COC','Polarity-tuned ester / OH masking','Masks the parent hydroxyl donor while adding an ether acceptor, providing a polarity-tuned comparator to the hydrocarbon esters.'],
+   ['bbb-hydroxyacetyl','O-hydroxyacetyl ester','C(=O)CO','Polarity-tuned ester / OH masking','Masks the parent hydroxyl donor while adding a terminal hydroxyl group, providing a more polar comparator rather than a lipophilicity-only design.']
+  ].map(([id,name,fragment,strategy,rationale])=>({id,name,fragment,cleavage:'o-acyl',hypothesis:'Ester hydrolysis could regenerate the parent OH group and the corresponding carboxylic acid. Peripheral stability, brain conversion and complete release are unvalidated.',sources:[SOURCES.bbb,SOURCES.ester],bbb:{strategy,rationale,requirements:['The candidate must survive peripheral handling long enough to reach the target tissue.','Ester cleavage must regenerate the parent at a useful rate and extent.'],scope:'Structural design rationale and local descriptor review only; no permeability or brain exposure prediction.'},limitations:['Esterase recognition, peripheral hydrolysis, brain hydrolysis and promoiety toxicity are unassessed.']}))
  ];
  const ACID_DESIGNS=[['methyl','Methyl','C','methanol'],['ethyl','Ethyl','CC','ethanol'],['n-propyl','n-Propyl','CCC','1-propanol'],['isopropyl','Isopropyl','C(C)C','2-propanol'],['n-butyl','n-Butyl','CCCC','1-butanol']].map(([id,name,fragment,alcohol])=>({id,name:name+' carboxylate ester',fragment,cleavage:'acid-ester',hypothesis:'Ester hydrolysis could restore the parent carboxylic acid and release '+alcohol+'. Human enzyme recognition, competing metabolism and complete conversion remain untested.',sources:[SOURCES.acid]}));
  // A terminal ester trigger plus a self-immolative carbamate, rather than
@@ -213,8 +226,8 @@
  }
  function generateSingle(parent,options){
   const rows=[],reasons=[],skipped=[];
-  const quick=options?.profile==='quick';
-  const report={version:8,status:'unavailable',rows,candidates:rows,reasons,skipped,evidenceLevel:'Unvalidated structural designs',scope:'Bounded single-site designs. Quick sampling includes parent-recovery designs and ether redesigns with a different OH release target. Structural edits and formal release checks do not establish biological conversion or prodrug status.'};
+  const quick=options?.profile==='quick',bbb=options?.profile==='bbb';
+  const report={version:9,status:'unavailable',rows,candidates:rows,reasons,skipped,evidenceLevel:'Unvalidated structural designs',objective:bbb?'BBB-oriented structural design':'general',scope:bbb?'Bounded alcohol/phenol designs selected for BBB-oriented research review. Structural edits, descriptor screens and formal release checks do not establish BBB transport, brain-selective activation, biological conversion or prodrug status.':'Bounded single-site designs. Quick sampling includes parent-recovery designs and ether redesigns with a different OH release target. Structural edits and formal release checks do not establish biological conversion or prodrug status.'};
   const fail=message=>{reasons.push(message);return report;};
   try{
    if(!parent||!Array.isArray(parent.atoms)||!Array.isArray(parent.bonds))return fail('A parsed molecular graph is required.');
@@ -223,7 +236,9 @@
    if(parent.atoms.some(a=>!['C','H','N','O','F','P','S','Cl','Br','I'].includes(a.element)))return fail('Unsupported element in this bounded design subset.');
    if(!supportedValences(parent))return fail('Radical or unsupported valence states are outside this design subset.');
    if(!exact(parent,parse(serialized(parent))))return fail('The complete parent isotope/stereochemical identity could not be verified after serialization.');
-   let sites=freeSites(parent);if(quick){
+   let sites=freeSites(parent);if(bbb){
+    sites=sites.filter(site=>site.designs===OH_DESIGNS).map(site=>({...site,designs:BBB_OH_DESIGNS}));
+   }else if(quick){
     sites=sites.map(site=>({...site,designs:expandedDesigns(site.designs)}));
     if(root.CleavableGroups){const groups=root.CleavableGroups.redesignGroups(parent);sites.push(...root.CleavableGroups.redesignSites(parent,{profile:'quick'}).filter(s=>s.element==='C').map(s=>{const group=groups.find(g=>g.atom===s.atom);return {...s,kind:group.kind+' ether redesign',label:group.kind+' carbon '+(s.atom+1),etherOxygen:group.oxygenAtom,designs:s.designs.map(d=>({...d,operation:'ether-redesign',cleavage:'ether-redesign'}))};}));}
    }report.eligibleSites=sites.map(({designs,...site})=>({...site,designs:designs.map(({id,name,cleavage})=>({id,name,cleavage}))}));
@@ -234,9 +249,9 @@
    if(options&&options.designId!==undefined){
     sites=sites.map(s=>({...s,designs:s.designs.filter(d=>d.id===options.designId)})).filter(s=>s.designs.length);
    }
-   if(!sites.length){report.status='no-compatible-site';return fail('No compatible site for the current ester, phosphate, amine-carbamate, N-oxide, thioester, N–H linker, aldehyde/ketone or ether-redesign classes at the selected site(s). This is a coverage limit, not evidence that no prodrug is possible.');}
-   const requested=options&&options.limit!==undefined?Number(options.limit):5;
-   const limit=Number.isFinite(requested)?Math.max(0,Math.min(quick?100:5,Math.floor(requested))):(quick?25:5);
+   if(!sites.length){report.status='no-compatible-site';return fail(bbb?'No compatible free alcohol or phenol handle is available for the BBB-oriented ester and redox-carrier classes at the selected site(s). This is a coverage limit, not evidence that no prodrug is possible.':'No compatible site for the current ester, phosphate, amine-carbamate, N-oxide, thioester, N–H linker, aldehyde/ketone or ether-redesign classes at the selected site(s). This is a coverage limit, not evidence that no prodrug is possible.');}
+   const requested=options&&options.limit!==undefined?Number(options.limit):(bbb?8:5);
+   const limit=Number.isFinite(requested)?Math.max(0,Math.min(quick?100:bbb?12:5,Math.floor(requested))):(quick?25:bbb?8:5);
    if(!limit)return fail('Candidate limit is zero.');
    const structures=[];let attempts=0;
    const attempt=(site,design)=>{
@@ -256,7 +271,7 @@
      rows.push({id:design.id+'-'+site.element.toLowerCase()+(site.atom+1),name:design.name+' candidate at '+site.element+(site.atom+1),smiles,promoiety:design.name,site:{atom:site.atom,index:site.atom,kind:site.kind,label:site.label},cleavage:design.cleavage,activationHypothesis:design.hypothesis,
       parentRecoveryScope:'Reverse graph edit restores the supplied isotope, stereo and charge state; it does not predict biological release or solution protonation.',
       limitations:COMMON_LIMITS.concat(design.limitations||[],parent.atoms[site.atom].charge!==site.charge?['The design changes the handle charge; reverse checking restores the input charge state by bookkeeping, not a pKa or physiological protonation model.']:[],report.eligibleSites.length>1?['This is a single-site design on a molecule with several eligible handles; selective preparation and competing activation are not established.']:[]),
-      evidenceLevel:'Unvalidated structural design',designStatus:'hypothesis',sourceUrl:design.sources[0].url,sources:design.sources.map(s=>Object.assign({},s)),referenceScope:'Reaction-class precedents only; no molecule-specific experimental evidence.',designMode:'parent-recovery',parentRecoveryVerified:true,recoveredParentSmiles:recovery.smiles,attachment:recovery.attachment,experimentalValidation:false});
+      evidenceLevel:'Unvalidated structural design',designStatus:'hypothesis',sourceUrl:design.sources[0].url,sources:design.sources.map(s=>Object.assign({},s)),referenceScope:'Reaction-class precedents only; no molecule-specific experimental evidence.',designMode:'parent-recovery',designObjective:bbb?'BBB-oriented structural design':'general',bbbDesign:design.bbb?JSON.parse(JSON.stringify(design.bbb)):null,parentRecoveryVerified:true,recoveredParentSmiles:recovery.smiles,attachment:recovery.attachment,experimentalValidation:false});
     }catch(error){skipped.push({site:site.label,promoiety:design.name,reason:'The proposed structure could not be validated.'});}
     return rows.length>before;
    };
@@ -275,12 +290,12 @@
     report.sampling={target:limit,maxPositions:5,basePerPosition:5,attempts,attemptLimit:300,positionCounts:chosen.map(s=>({atom:s.site.atom,element:s.site.element,kind:s.site.kind,count:s.count})),shortfall:limit-rows.length};
     if(rows.length<limit)reasons.push('Only '+rows.length+' distinct designs passed the supported structure and declared release-target checks within the sampling bounds; the remaining slots are not padded with duplicate or unsupported structures.');
    }else{
-    for(let d=0;d<5&&rows.length<limit;d++)for(const site of sites){if(rows.length>=limit)break;const design=site.designs[d];if(design)attempt(site,design);}
+    for(let d=0;d<(bbb?BBB_OH_DESIGNS.length:5)&&rows.length<limit;d++)for(const site of sites){if(rows.length>=limit)break;const design=site.designs[d];if(design)attempt(site,design);}
    }
    if(rows.length){report.status='generated';reasons.push(rows.length+' unique unvalidated candidate'+(rows.length===1?'':'s')+' generated. No ranking of clinical benefit is made.');}
    else reasons.push('No candidate passed the bounded structure and exact-parent recovery checks.');
   }catch(error){reasons.push('Candidate generation unavailable for this structure: '+error.message);}
   return report;
  }
- const api={generate,quickAcylTails:()=>QUICK_TAILS.map(t=>t.slice()),generateQuick:(parent,options={})=>generate(parent,{...options,limit:options.limit??25,profile:'quick'}),recoverParent,prepareParent,validGraph:supportedValences,sites:parent=>generate(parent,{limit:0}).eligibleSites||[],sources:SOURCES};root.ProdrugCandidates=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
+ const api={generate,quickAcylTails:()=>QUICK_TAILS.map(t=>t.slice()),generateQuick:(parent,options={})=>generate(parent,{...options,limit:options.limit??25,profile:'quick'}),generateBBB:(parent,options={})=>generate(parent,{...options,limit:options.limit??8,profile:'bbb'}),recoverParent,prepareParent,validGraph:supportedValences,sites:parent=>generate(parent,{limit:0}).eligibleSites||[],sources:SOURCES};root.ProdrugCandidates=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
