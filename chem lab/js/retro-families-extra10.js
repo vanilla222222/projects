@@ -866,3 +866,56 @@ RETRO_TRANSFORMS.push(
       }).filter(Boolean);
   }}
 );
+// Condensation and substitution/elimination alternatives using existing rules.
+RETRO_TRANSFORMS.push(
+  {id:'imine-formation',name:'Imine from carbonyl and primary amine',rule:'imine',group:'Nitrogen',match(t) {
+    const g=t.graph;
+    return g.atoms.filter(a=>a.element==='N'&&!a.charge).flatMap(n=> {
+      const ns=rxNeighbors(g,n.id);
+      if(ns.length!==2||ns.filter(x=>x.atom.element==='C'&&x.bond.order===1).length!==1)return [];
+      return ns.filter(x=>x.atom.element==='C'&&x.bond.order===2).map(x=> {
+        const pieces=retroEdit(t,h=>{if(!retroCut(h,x.atom.id,n.id))return false;rxAttach(h,'O',x.atom.id,2);rxsDrop(h,x.atom.id);});
+        return pieces&&pieces.length===2?retroSpec(retroReactants(pieces),[],{solvents:['toluene'],temperature:25}):null;
+      });
+    }).filter(Boolean).slice(0,RETRO_LIMITS.maxPerTransform);
+  }},
+  {id:'enamine-formation',name:'Enamine from carbonyl and secondary amine',rule:'enamine',group:'Nitrogen',match(t) {
+    const g=t.graph;
+    return g.atoms.filter(a=>a.element==='N'&&!a.charge&&rxNeighbors(g,a.id).length===3&&rxHydrogens(g,a.id)===0&&rxNeighbors(g,a.id).every(n=>n.atom.element==='C'&&n.bond.order===1)).flatMap(n=>
+      rxCarbonNeighbors(g,n.id).filter(x=>x.bond.order===1).flatMap(x=>
+        rxCarbonNeighbors(g,x.atom.id).filter(y=>y.bond.order===2&&!t.aromatic.has(y.atom.id)).map(y=> {
+          const pieces=retroEdit(t,h=> {
+            if(!retroCut(h,x.atom.id,n.id))return false;
+            rxSetOrder(h,x.atom.id,y.atom.id,1);rxAttach(h,'O',x.atom.id,2);
+            rxsDrop(h,x.atom.id);rxsDrop(h,y.atom.id);
+          });
+          return pieces&&pieces.length===2?retroSpec(retroReactants(pieces),[],{solvents:['toluene'],temperature:25}):null;
+        }))).filter(Boolean).slice(0,RETRO_LIMITS.maxPerTransform);
+  }},
+  {id:'mitsunobu-ether',name:'Aryl alkyl ether from alcohol and phenol by Mitsunobu reaction',rule:'mitsunobu',group:'Ethers',match(t) {
+    const g=t.graph;
+    return g.atoms.filter(a=>a.element==='O'&&!a.charge).flatMap(o=> {
+      const ns=rxNeighbors(g,o.id);
+      if(ns.length!==2||ns.some(n=>n.atom.element!=='C'||n.bond.order!==1))return [];
+      const aryl=ns.find(n=>t.aromatic.has(n.atom.id));
+      const alkyl=ns.find(n=>!t.aromatic.has(n.atom.id)&&rxIsSp3(g,n.atom.id)&&rxCarbonNeighbors(g,n.atom.id).length<=2);
+      if(!aryl||!alkyl)return [];
+      const pieces=retroEdit(t,h=> {
+        if(!retroCut(h,alkyl.atom.id,o.id))return false;
+        rxAttach(h,'O',alkyl.atom.id);rxsDrop(h,alkyl.atom.id);
+      });
+      return pieces&&pieces.length===2?[retroSpec(retroReactants(pieces),[RETRO21_REAGENTS.pph3,RETRO21_REAGENTS.dead],{solvents:['thf'],temperature:25})]:[];
+    }).slice(0,RETRO_LIMITS.maxPerTransform);
+  }},
+  {id:'hofmann-elimination',name:'Terminal alkene from alkyltrimethylammonium by Hofmann elimination',rule:'hofmann-elimination',group:'Elimination',match(t) {
+    const pieces=t.info.alkenes.flatMap(e=>[e.a,e.b].filter(id=>rxHydrogens(t.graph,id)===2&&rxNeighbors(t.graph,id).length===1).map(end=>
+      retroSinglePiece(t,g=> {
+        const other=end===e.a?e.b:e.a;rxSetOrder(g,end,other,1);
+        const nitrogen=rxAttach(g,'N',end,1,1);
+        for(let i=0;i<3;i++)rxAttach(g,'C',nitrogen.id);
+        rxsDrop(g,end);rxsDrop(g,other);
+      }))).filter(Boolean);
+    return retroUniquePieces(pieces).slice(0,RETRO_LIMITS.maxPerTransform).map(p=>
+      retroSpec([{smiles:p.smiles,role:'reactant'}],[RETRO_REAGENTS.hydroxide],{solvents:['none'],temperature:140}));
+  }}
+);

@@ -33,7 +33,9 @@ run(`var aromaticJob=pathFinderCreate(start,target,{maxDepth:10,budgetMs:30000})
 check('aromaticJob.status', 'found', 'Exact requested Path Finder search succeeds');
 check('aromaticJob.routes.length', 3, 'The requested route count is returned');
 check('aromaticJob.route.length', 9, 'The best route fits depth ten');
-check(`aromaticJob.route.map(link=>link.candidate.transform).join(',')`, 'eas-nitration,nitro-reduction,diazonium-phenol,eas-nitration,nitro-reduction,diazonium-phenol,williamson,williamson,eas-halogenation', 'The intended aromatic sequence is found');
+// Expanded ether coverage permits either supported method. Exact endpoint,
+// depth and independent replay of every edge remain checked below.
+check(`aromaticJob.route.map(link=>['williamson','mitsunobu-ether'].includes(link.candidate.transform)?'ether-formation':link.candidate.transform).join(',')`, 'eas-nitration,nitro-reduction,diazonium-phenol,eas-nitration,nitro-reduction,diazonium-phenol,ether-formation,ether-formation,eas-halogenation', 'The aromatic sequence accepts either independently verified ether method');
 check('aromaticJob.route[0].fromKey===pathFinderKey(start)&&aromaticJob.route.at(-1).toKey===pathFinderKey(target)', true, 'Route endpoints match the requested structures');
 check('aromaticJob.route.every((link,i,a)=>retroForwardCheck(link.candidate,link.to)&&(!i||a[i-1].toKey===link.fromKey))', true, 'Every route edge is continuous and forward verified');
 check('aromaticJob.routes.every(route=>route.length===9&&route.every(link=>retroForwardCheck(link.candidate,link.to)))', true, 'All returned alternatives are forward verified');
