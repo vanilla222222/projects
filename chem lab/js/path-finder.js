@@ -149,6 +149,12 @@ function pathFinderAmineConflict(candidate) {
   return null;
 }
 
+function pathFinderQueuePush(job, queue, queued, limit, id, node) {
+  if(queued.has(id))return false;
+  if(queue.length>=limit){job.truncated=true;job.diagnostics.queue=(job.diagnostics.queue||0)+1;return false;}
+  queued.add(id);queue.push(typeof node==='function'?node():node);return true;
+}
+
 function pathFinderCreate(startSmiles, targetSmiles, options) {
   const opts = Object.assign({}, PATH_FINDER_LIMITS, options || {});
   opts.maxDepth = Math.max(1, Math.min(10, Math.floor(Number(opts.maxDepth) || 3)));
@@ -190,7 +196,7 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
     try { key = pathFinderMaterialKey(reactionParseCompound(text).smiles); } catch (error) { /* Named catalyst labels need no structure. */ }
     return { text: text.toLowerCase(), key };
   });
-  const diagnostics = { candidates: 0, inventory: 0, reagents: 0, rules: 0, stereo: 0, compatibility: 0, rejected: [], protection: 0, protectionMessages: opts.allowedProtectingGroups && !opts.allowedProtectingGroups.length ? ['Automatic protection planning is disabled.'] : [], noDisconnections: 0, depth: 0, branch: 0, missingMaterials: [] };
+  const diagnostics = { candidates: 0, inventory: 0, reagents: 0, rules: 0, stereo: 0, compatibility: 0, rejected: [], protection: 0, protectionMessages: opts.allowedProtectingGroups && !opts.allowedProtectingGroups.length ? ['Automatic protection planning is disabled.'] : [], noDisconnections: 0, depth: 0, branch: 0, queue: 0, missingMaterials: [] };
   const job = { start: start.smiles, target: target.smiles, options: opts, status: start.key === target.key ? 'identical' : 'running', route: [], routes: [], expanded: 0, truncated: false, elapsedMs: 0, diagnostics, termination: '' };
   const queue = [{ smiles: target.smiles, key: target.key, chain: [], ancestors: new Set([target.key]) }];
   const queued = new Set(), expanded = new Map(), routeKeys = new Set();
@@ -362,10 +368,8 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
         }
         if (chain.length >= opts.maxDepth) { diagnostics.depth++; continue; }
         const id = chain.map(signature).join('/');
-        if (!queued.has(id) && queue.length < opts.maxNodes * opts.maxBranch) {
-          queued.add(id);
-          queue.push({ smiles: carried.smiles, key: carried.key, chain, priority: priority(carried.smiles), ancestors: new Set([...node.ancestors, carried.key]) });
-        }
+        pathFinderQueuePush(job,queue,queued,opts.maxNodes*opts.maxBranch,id,
+          ()=>({ smiles: carried.smiles, key: carried.key, chain, priority: priority(carried.smiles), ancestors: new Set([...node.ancestors, carried.key]) }));
       }
     }
   };
@@ -448,7 +452,7 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
 // branch. A returned tree therefore has available leaves and verified reactions.
 function pathFinderRecipeCreate(start, target, options, helpers) {
   const opts = Object.assign({}, options, { recipeTree: true, maxDepth: Math.min(8, options.maxDepth) });
-  const diagnostics = { candidates: 0, inventory: 0, reagents: 0, rules: 0, stereo: 0, compatibility: 0, rejected: [], protection: 0, protectionMessages: opts.allowedProtectingGroups && !opts.allowedProtectingGroups.length ? ['Automatic protection planning is disabled.'] : [], noDisconnections: 0, depth: 0, branch: 0, missingMaterials: [] };
+  const diagnostics = { candidates: 0, inventory: 0, reagents: 0, rules: 0, stereo: 0, compatibility: 0, rejected: [], protection: 0, protectionMessages: opts.allowedProtectingGroups && !opts.allowedProtectingGroups.length ? ['Automatic protection planning is disabled.'] : [], noDisconnections: 0, depth: 0, branch: 0, queue: 0, missingMaterials: [] };
   const reject = (candidate, node, code, reason, kind) => {
     if (kind && Object.prototype.hasOwnProperty.call(diagnostics, kind)) diagnostics[kind]++;
     if (reason && diagnostics.rejected.length < 12 && !diagnostics.rejected.some(r => r.reaction === candidate.name && r.target === node.smiles && r.code === code)) {
@@ -579,6 +583,7 @@ function pathFinderExplanation(job) {
   (d.rejected || []).slice(0, 4).forEach(r => reasons.push(r.reaction + ': ' + r.reason));
   if (d.protection) reasons.push(d.protection + ' candidate branches need an unsupported or incompatible protection plan');
   (d.protectionMessages || []).forEach((message) => reasons.push(message));
+  if (d.queue) reasons.push(d.queue + ' branches were omitted because the pending-search queue was full');
   if (job.truncated) reasons.push('some candidates were omitted by search limits');
   if (job.termination === 'time-limit' || job.termination === 'node-limit') reasons.push('the ' + job.termination.replace('-', ' ') + ' was reached');
   if (!reasons.length) reasons.push('the supported transformations did not connect these endpoints');
