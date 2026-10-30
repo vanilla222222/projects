@@ -1,5 +1,13 @@
 # Chem Lab upgrades
 
+## Alpha-bromination, sulfur substitution and decarboxylation — 2026-10-30
+
+- **Four additional reverse transforms:** HVZ alpha-bromination of carboxylic acids, alcohol sulfonate formation, amine sulfonamide formation, and ketone formation by beta-keto-acid decarboxylation. They reuse the existing sourced forward rules; shape matches remain proposals until forward replay reproduces the target. Sulfonyl precursors outside the forward engine's recognized reagent scope remain unavailable through these transforms.
+- **Path Finder integration:** all four methods connect supported one-step endpoints. Sulfonylation includes an explicit sulfonyl-chloride building block and triethylamine conditions. A chiral alcohol route retains its specified stereocentre, and an isotope-labelled sulfonate keeps its label.
+- **Sulfur reagent accuracy:** mesyl/tosyl chloride recognition now requires the actual sulfonyl-chloride bond pattern. A same-formula sulfinyl-chloride isomer previously triggered an incorrect mesylation product; that false positive is rejected. The leaving chloride is selected from its bond to the matched sulfur.
+- **Focused validation:** 63 reverse/planner checks and 18 forward/scope checks cover the new methods, exact molecular identities, intended forward outcomes, negative controls, unchanged target graphs, stereo/isotope preservation and the reagent-isomer regression. These are bounded structural-model checks, not experimental feasibility or selectivity estimates.
+
+
 ## Route depth and reaction multiplicity — 2026-10-30
 
 - Retrosynthesis enumeration now enforces the remaining operation budget separately on each branch. Shared intermediates expanded at a shallower graph depth cannot expose longer recipes beyond the requested depth. Explicit protection/reaction/deprotection operations each consume a step; independent convergent branches retain their own remaining budget.

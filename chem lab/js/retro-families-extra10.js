@@ -593,3 +593,60 @@ if (!STOCK_BUILTIN.some((entry) => entry.smiles === 'CCOC(CP(=O)(OCC)OCC)=O')) {
   STOCK_BUILTIN.push({ smiles: 'CCOC(CP(=O)(OCC)OCC)=O', tier: 2, name: 'triethyl phosphonoacetate' });
 }
 
+// Reverse coverage for the existing alpha-bromination, sulfur substitution and
+// beta-keto-acid rules. Exact forward replay remains mandatory for each proposal.
+function retro22Sulfonyl(t, element) {
+  const g = t.graph, out = [];
+  g.atoms.filter((a) => a.element === 'S' && !a.charge).forEach((s) => {
+    const ns = rxNeighbors(g, s.id);
+    if (ns.length !== 4 || ns.filter((n) => n.atom.element === 'O' && n.bond.order === 2).length !== 2 ||
+        ns.filter((n) => n.atom.element === 'C' && n.bond.order === 1).length !== 1) return;
+    ns.filter((n) => n.atom.element === element && !n.atom.charge && n.bond.order === 1).forEach((n) => {
+      // Alcohol sulfonates must retain an organic O substituent; a sulfonic
+      // acid is hydrolysis chemistry rather than an alcohol sulfonylation.
+      if (element === 'O' && !rxCarbonNeighbors(g, n.atom.id).length) return;
+      const pieces = retroEdit(t, (h) => {
+        if (!retroCut(h, s.id, n.atom.id)) return false;
+        rxAttach(h, 'Cl', s.id);
+      });
+      if (!pieces || pieces.length !== 2) return;
+      const chloride = pieces.find((p) => p.ids.has(s.id));
+      const nucleophile = pieces.find((p) => p !== chloride);
+      if (!chloride || !nucleophile) return;
+      out.push(retroSpec([{smiles: nucleophile.smiles, role: 'reactant'},
+        {smiles: chloride.smiles, role: 'reagent'}], [],
+        {solvents: ['dcm'], additives: ['et3n'], temperature: 25}));
+    });
+  });
+  return out.slice(0, RETRO_LIMITS.maxPerTransform);
+}
+
+RETRO_TRANSFORMS.push(
+  { id: 'hvz', name: 'Alpha-bromo acid from carboxylic acid (HVZ)', rule: 'hvz', group: 'Alpha substitution', match(t) {
+    const g = t.graph;
+    return t.info.carbonyls.filter((c) => c.kind === 'acid').slice(0, RETRO_LIMITS.maxPerTransform).flatMap((c) =>
+      rxCarbonNeighbors(g, c.c).filter((n) => rxIsSp3(g, n.atom.id)).flatMap((n) =>
+        rxNeighbors(g, n.atom.id).filter((x) => x.atom.element === 'Br' && x.bond.order === 1).map((x) => {
+          const piece = retroSinglePiece(t, (h) => { h.removeAtom(x.atom.id); rxsDrop(h, n.atom.id); });
+          return piece && retroSpec([{smiles: piece.smiles, role: 'reactant'}],
+            [RETRO_REAGENTS.bromine, RETRO_REAGENTS.pbr3], {temperature: 60});
+        }))).filter(Boolean).slice(0, RETRO_LIMITS.maxPerTransform);
+  } },
+  { id: 'sulfonate', name: 'Sulfonate ester from alcohol and sulfonyl chloride', rule: 'sulfonate', group: 'Sulfur',
+    match(t) { return retro22Sulfonyl(t, 'O'); } },
+  { id: 'sulfonamide', name: 'Sulfonamide from amine and sulfonyl chloride', rule: 'sulfonamide', group: 'Sulfur',
+    match(t) { return retro22Sulfonyl(t, 'N'); } },
+  { id: 'beta-keto-decarboxylation', name: 'Ketone from beta-keto acid by decarboxylation', rule: 'decarboxylation', group: 'Carbon–carbon cleavage', match(t) {
+    const g = t.graph;
+    return t.info.carbonyls.filter((c) => c.kind === 'ketone').slice(0, RETRO_LIMITS.maxPerTransform).flatMap((c) =>
+      rxCarbonNeighbors(g, c.c).filter((n) => rxIsSp3(g, n.atom.id) && rxHydrogens(g, n.atom.id) > 0).map((n) => {
+        const piece = retroSinglePiece(t, (h) => {
+          const acid = rxAttach(h, 'C', n.atom.id);
+          rxAttach(h, 'O', acid.id, 2);
+          rxAttach(h, 'O', acid.id);
+          rxsDrop(h, n.atom.id);
+        });
+        return piece && retroSpec([{smiles: piece.smiles, role: 'reactant'}], [], {temperature: 140});
+      })).filter(Boolean).slice(0, RETRO_LIMITS.maxPerTransform);
+  } }
+);

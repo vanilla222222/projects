@@ -307,7 +307,7 @@ const CORE_REACTION_EVIDENCE_ROWS = [
   [
     "sulfonylation",
     "Acyl substitution",
-    "A recognized sulfonyl chloride reacts with one selected alcohol or amine site to form a sulfonate ester or sulfonamide.",
+    "A recognized sulfonyl chloride with two S=O bonds, one S–C bond and one S–Cl bond reacts with one selected alcohol or neutral N–H amine site to form a sulfonate ester or sulfonamide.",
     "The matched neutral nucleophile and sulfonyl chloride are available in the assigned roles.",
     "The alcohol source documents tosylation; the amine branch is supported by the amine text. Site competition and protecting-group compatibility remain local heuristics.",
     [

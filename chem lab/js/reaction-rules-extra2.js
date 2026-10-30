@@ -8,8 +8,8 @@ Object.assign(RX_FORMULA_TAGS, {
 Object.assign(RX_FORMULA_GUARDS, {
   C6H10N2O4: (g) => g.bonds.some((b) => b.order === 2 && g.getAtom(b.atomA).element === 'N' && g.getAtom(b.atomB).element === 'N'),
   C8H14N2O4: (g) => g.bonds.some((b) => b.order === 2 && g.getAtom(b.atomA).element === 'N' && g.getAtom(b.atomB).element === 'N'),
-  C7H7ClO2S: (g, ids) => ids.some((id) => g.getAtom(id).element === 'S' && rxNeighbors(g, id).some((n) => n.atom.element === 'Cl')),
-  CH3ClO2S: (g, ids) => ids.some((id) => g.getAtom(id).element === 'S' && rxNeighbors(g, id).some((n) => n.atom.element === 'Cl')),
+  C7H7ClO2S: (g, ids) => !!rxySulfonylChlorideSite(g, ids),
+  CH3ClO2S: (g, ids) => !!rxySulfonylChlorideSite(g, ids),
 });
 
 Object.assign(RX_ADDITIVE_TAGS, {
@@ -598,18 +598,29 @@ function rxyRuleMitsunobu(ctx) {
     { score: 16, byproducts: ['Ph₃P=O', 'the hydrazine dicarboxylate'], consumes: [rxUse(alc.s, 1), rxUse(nuc.s, 1.2), rxUse(ctx.get('triphenylphosphine'), 1.2), rxUse(ctx.get('azodicarboxylate'), 1.2)] })];
 }
 
+function rxySulfonylChlorideSite(g, ids) {
+  return ids.filter((id) => g.getAtom(id).element === 'S' && !g.getAtom(id).charge).map((s) => {
+    const ns = rxNeighbors(g, s);
+    if (ns.length !== 4 || ns.filter((n) => n.atom.element === 'O' && !n.atom.charge && n.bond.order === 2).length !== 2 ||
+        ns.filter((n) => n.atom.element === 'C' && n.bond.order === 1).length !== 1) return null;
+    const chloride = ns.find((n) => n.atom.element === 'Cl' && !n.atom.charge && n.bond.order === 1);
+    return chloride ? {s, cl: chloride.atom.id} : null;
+  }).find(Boolean) || null;
+}
+
 function rxyRuleSulfonylation(ctx) {
   const reagent = ctx.get('sulfonylChloride');
   if (!reagent) {
     return [];
   }
-  const s0 = reagent.ids.find((id) => reagent.graph.getAtom(id).element === 'S');
-  const cl = reagent.ids.find((id) => reagent.graph.getAtom(id).element === 'Cl');
+  const site = rxySulfonylChlorideSite(reagent.graph, reagent.ids);
+  if (!site) return [];
+  const {s: s0, cl} = site;
   const tosyl = reagent.ids.some((id) => reagent.graph.getAtom(id).element === 'C' && rxNeighbors(reagent.graph, id).some((n) => n.bond.order === 2 && n.atom.element === 'C'));
   const label = tosyl ? 'Ts' : 'Ms';
   return ctx.substrates.flatMap((s) => {
     const alc = s.info.alcohols.slice().sort((p, q) => p.degree - q.degree)[0];
-    const amine = s.info.amines[0];
+    const amine = s.info.amines.find((a) => a.h > 0 && !s.graph.getAtom(a.n).charge);
     const site = alc ? alc.o : amine ? amine.n : null;
     if (!site) {
       return [];
