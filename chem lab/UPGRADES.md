@@ -1,5 +1,12 @@
 # Chem Lab upgrades
 
+## Route depth and reaction multiplicity — 2026-10-30
+
+- Retrosynthesis enumeration now enforces the remaining operation budget separately on each branch. Shared intermediates expanded at a shallower graph depth cannot expose longer recipes beyond the requested depth. Explicit protection/reaction/deprotection operations each consume a step; independent convergent branches retain their own remaining budget.
+- Reaction outcome deduplication now includes product multiplicity. Different product amounts remain distinct, while repeated entries and explicit counts for the same molecular identity normalize to one multiset regardless of product order. Existing stereochemical identity handling is retained.
+- Regression checks cover shared intermediates, exact depth boundaries, protection triplets, convergence, multiplicity and product order. The recipe-tree integration check now requires depth three for the three-operation acyl-chloride route rather than accepting it under depth two.
+
+
 ## Retrosynthesis search quality — 2026-10-27
 
 - **Stereochemistry-safe stock endpoints:** bounded retrosynthesis search now compares full molecular identity before treating a stock record or a Grignard reagent's parent halide as an available precursor. Connectivity-only, name-only and opposite-enantiomer matches cannot silently terminate a route; the policy now matches Path Finder inventory handling.

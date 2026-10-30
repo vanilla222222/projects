@@ -40,4 +40,16 @@ check(`(() => { const r = predictReaction([testCompound('CSC'), testCompound('P(
 check(`(() => { const g = testGraph('C[C@H](O)C[NH3+]'); g.stereoSpecs = rxsCapture(g); const product = rxProductList(g)[0]; return /@/.test(product.isomericSmiles) && /\\+/.test(product.isomericSmiles); })()`, true, 'charged chiral product keeps real stereochemical serialization');
 check(`(() => { const g = testGraph('C[C@H](O)CC.C[C@@H](O)CC'); g.stereoSpecs = rxsCapture(g); const products = rxProductList(g); return products.length === 2 && products.every(p => p.count === 1 && /@/.test(p.isomericSmiles)) && products[0].isomericSmiles !== products[1].isomericSmiles; })()`, true, 'actual enantiomer components stay separate');
 check(`(() => { const g = testGraph('C[C@H](O)C[NH3+].[Cl-]'); g.stereoSpecs = rxsCapture(g); const product = rxProductList(g)[0]; const roundTrip = reactionFragmentGraph(reactionProductFragment(product)); const properties = reactionGraphProperties(roundTrip); return /@/.test(properties.isomericSmiles) && roundTrip.atoms.some(a => a.element === 'Cl' && a.charge === -1); })()`, true, 'real charged ion-pair stereo survives product-fragment round trip');
+run(`function multiplicityOutcomes(products) {
+  const rule = {id: 'multiplicity-regression', name: 'Multiplicity regression', run: () => products.map(p => rxOutcome('multiplicity-regression', 'Multiplicity regression', 'test', testGraph('CCO'), '', {products: p}))};
+  RX_RULES.push(rule);
+  try {
+    const result = predictReaction([testCompound('CCO')], defaultReactionConditions());
+    return [result.best, ...result.alternatives].filter(o => o && o.id === rule.id);
+  } finally { RX_RULES.pop(); }
+}`);
+check(`multiplicityOutcomes([[{smiles:'CCO',count:1}],[{smiles:'CCO',count:2}]]).length`, 2, 'Outcome deduplication preserves different product amounts');
+check(`multiplicityOutcomes([[{smiles:'CCO',count:2}],[{smiles:'CCO'},{smiles:'CCO'}]]).length`, 1, 'Repeated entries and explicit counts describe the same product multiset');
+check(`multiplicityOutcomes([[{smiles:'CCO'},{smiles:'O'}],[{smiles:'O'},{smiles:'CCO'}]]).length`, 1, 'Product order does not create duplicate outcomes');
+check(`multiplicityOutcomes([[{smiles:'N[C@H](C)O'}],[{smiles:'N[C@@H](C)O'}]]).length`, 2, 'Outcome deduplication keeps opposite stereoisomers separate');
 console.log('Reaction regression checks passed: ' + checks);
