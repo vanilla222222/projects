@@ -785,7 +785,11 @@ function rxyRulePaalKnorr(ctx) {
     const g = joined.g;
     const { p, q, ca, cb } = found;
     if (amine || ammonia) {
-      const n = amine ? joined.map.get(amine.a.n) : g.addAtom('N', (g.getAtom(p.c).x + g.getAtom(q.c).x) / 2, g.getAtom(p.c).y - 40).id;
+      // Ammonia supplies the ring nitrogen just as a primary amine does.
+      // Copy its actual atom so a labelled donor does not become unlabelled.
+      const ammoniaN = !amine && ammonia.ids.find((id) => ammonia.graph.getAtom(id).element === 'N');
+      const ammoniaMap = !amine && rxMerge(g, ammonia.graph, [ammoniaN]);
+      const n = amine ? joined.map.get(amine.a.n) : ammoniaMap.get(ammoniaN);
       g.removeAtom(p.o);
       g.removeAtom(q.o);
       g.addBond(p.c, n);

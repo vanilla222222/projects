@@ -702,3 +702,68 @@ RETRO_TRANSFORMS.push(
     }).filter(Boolean);
   }}
 );
+// Nitrogen condensations preserve the donor atoms (and their isotope labels).
+function retro24Condensation(t, terminal) {
+  const g = t.graph;
+  const sites = g.atoms.filter((a) => a.element === 'N' && !a.charge).map((n) => {
+    const ns = rxNeighbors(g, n.id);
+    if (ns.length !== 2) return null;
+    const carbon = ns.find((x) => x.atom.element === 'C' && x.bond.order === 2);
+    const end = ns.find((x) => x.atom.element === terminal && !x.atom.charge && x.bond.order === 1 &&
+      rxNeighbors(g, x.atom.id).length === 1 && rxHydrogens(g, x.atom.id) === (terminal === 'O' ? 1 : 2));
+    return carbon && end ? {n: n.id, c: carbon.atom.id} : null;
+  }).filter(Boolean);
+  if (!sites.length || sites.length > RETRO_LIMITS.maxPerTransform) return [];
+  const pieces = retroEdit(t, (h) => {
+    for (const site of sites) {
+      if (!retroCut(h, site.c, site.n)) return false;
+      rxAttach(h, 'O', site.c, 2);
+      rxsDrop(h, site.c);
+    }
+  });
+  if (!pieces || pieces.length !== sites.length + 1) return [];
+  const carbonyl = pieces.find((p) => sites.every((s) => p.ids.has(s.c)));
+  if (!carbonyl) return [];
+  return [retroSpec([{smiles: carbonyl.smiles, role: 'reactant'},
+    ...pieces.filter((p) => p !== carbonyl).map((p) => ({smiles: p.smiles, role: 'reagent'}))], [],
+    {solvents: ['ethanol'], temperature: 25})];
+}
+
+function retro24PaalKnorr(t, element) {
+  const g = t.graph, out = [];
+  const rings = rxAromaticRings(g).rings.filter((r) => r.length === 5 &&
+    r.filter((id) => g.getAtom(id).element === element).length === 1 &&
+    r.every((id) => ['C', element].includes(g.getAtom(id).element)));
+  rings.slice(0, RETRO_LIMITS.maxPerTransform).forEach((ring) => {
+    const hetero = ring.find((id) => g.getAtom(id).element === element);
+    if (g.getAtom(hetero).charge) return;
+    const ends = rxNeighbors(g, hetero).filter((n) => ring.includes(n.atom.id)).map((n) => n.atom.id);
+    if (ends.length !== 2) return;
+    // Both oxygen orientations can matter for labelled furans. Pyrrole keeps
+    // its nitrogen in the explicit amine/ammonia precursor instead.
+    const orientations = element === 'O' ? [ends, ends.slice().reverse()] : [ends];
+    orientations.forEach(([a, b]) => {
+      const pieces = retroEdit(t, (h) => {
+        if (!retroBreak(h, hetero, b)) return false;
+        if (element === 'N' && !retroCut(h, hetero, a)) return false;
+        ring.filter((id) => id !== hetero).forEach((id) => rxNeighbors(h, id)
+          .filter((n) => ring.includes(n.atom.id) && n.atom.id !== hetero)
+          .forEach((n) => rxSetOrder(h, id, n.atom.id, 1)));
+        if (element === 'O') rxSetOrder(h, hetero, a, 2);
+        else rxAttach(h, 'O', a, 2);
+        rxAttach(h, 'O', b, 2);
+      });
+      if (!pieces || pieces.length !== (element === 'O' ? 1 : 2)) return;
+      out.push(retroSpec(retroReactants(pieces), [],
+        {solvents: ['ethanol'], additives: element === 'O' ? ['h2so4'] : [], temperature: 80}));
+    });
+  });
+  return out.slice(0, RETRO_LIMITS.maxPerTransform);
+}
+
+RETRO_TRANSFORMS.push(
+  {id: 'oxime-formation', name: 'Oxime from carbonyl and hydroxylamine', rule: 'oxime', group: 'Nitrogen', match(t) { return retro24Condensation(t, 'O'); }},
+  {id: 'hydrazone-formation', name: 'Hydrazone from carbonyl and hydrazine', rule: 'hydrazone', group: 'Nitrogen', match(t) { return retro24Condensation(t, 'N'); }},
+  {id: 'paal-knorr-furan', name: 'Furan from 1,4-dicarbonyl by Paal–Knorr cyclization', rule: 'paal-knorr-furan', group: 'Heterocycle formation', match(t) { return retro24PaalKnorr(t, 'O'); }},
+  {id: 'paal-knorr-pyrrole', name: 'Pyrrole from 1,4-dicarbonyl and primary amine or ammonia', rule: 'paal-knorr-pyrrole', group: 'Heterocycle formation', match(t) { return retro24PaalKnorr(t, 'N'); }}
+);
