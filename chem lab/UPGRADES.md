@@ -1,5 +1,12 @@
 # Chem Lab upgrades
 
+## Chemoselectivity audit consistency — 2026-10-30
+
+- Tert-butyl esters retain their protection-group label while entering the LiAlH4/organometallic susceptible-site models as esters. NaBH4 retains its narrower aldehyde/ketone scope. This aligns auditing with the existing forward edits; it adds no claim of measured rates or selectivity.
+- Predictor warnings and the query audit share the same PCC alcohol-site filter: tertiary alcohols without a carbon-bound hydrogen no longer count as oxidizable competing sites.
+- Susceptible groups are counted across all product components, so a secondary component cannot hide an unchanged competing group. Acid-to-ester masking advice is suppressed for reagent classes that also attack esters; applicable acetal advice remains available.
+- Added 15 focused regressions covering mixed ketone/ester substrates, exact bulk and mild-reduction products, polyol susceptibility, protection advice and secondary-product accounting. Reaction-class reference: [OpenStax 21.6, Chemistry of Esters](https://openstax.org/books/organic-chemistry/pages/21-6-chemistry-of-esters).
+
 ## Claisen rearrangement routes — 2026-10-30
 
 - Added vinyl and aromatic Claisen reverse methods using the existing six-atom bond exchange. Proposals require forward replay; existing ortho-selection and substituted-allyl heuristics remain authoritative.
