@@ -95,7 +95,7 @@ function pathFinderProtectionLinks(candidate, carried, destination) {
     // Keep each visible substep independently checkable; the combined candidate
     // must not hide a failed or discontinuous protecting-group operation.
     if (!retroForwardCheck(c, product.smiles)) return null;
-    links.push({ candidate: c, precursor, from: from.smiles, to: product.smiles, fromKey: carried.key, toKey: product.key });
+    links.push({ candidate: c, precursor, from: from.smiles, to: product.smiles, fromKey: from.key, toKey: product.key });
     from = product;
   }
   return from.key === destination.key ? links : null;
@@ -676,4 +676,5 @@ function createPathFinder(deps) {
   if (get('path-benchmarks') && typeof createRouteBenchmarks === 'function') createRouteBenchmarks(get('path-benchmarks'),deps);
   return { show() { updateLimits(); start.focus(); } };
 }
+
 
