@@ -1,5 +1,13 @@
 # Chem Lab upgrades
 
+## Imine, enamine, ether and ammonium-elimination routes — 2026-10-30
+
+- **Four additional reverse methods:** imines from carbonyls and primary amines, enamines from carbonyls and secondary amines, aryl alkyl ethers from alcohols/phenols by Mitsunobu substitution, and terminal alkenes from alkyltrimethylammonium precursors by Hofmann elimination. Each proposal requires the existing forward engine to reproduce its target, and all four methods work through Path Finder.
+- **Explicit partners and limits:** amines and phenols remain separate precursors subject to inventory policy. Oximes/hydrazones are excluded from the imine matcher; aromatic amine-like motifs and unsupported substitution patterns are not proposed as enamines. Mitsunobu ether proposals exclude tertiary alcohols and diaryl/dialkyl ethers. Hofmann proposals are bounded to terminal alkenes, with trimethylammonium leaving groups and heated hydroxide conditions.
+- **Atom/stereo regression coverage:** forward fixtures verify nitrogen-isotope retention in imines/enamines, carbonyl-oxygen loss in condensation, phenol oxygen retention/alcohol oxygen loss in Mitsunobu ethers, the encoded inversion of a specified secondary alcohol, and nitrogen-label retention in the Hofmann amine coproduct. These checks exercise existing forward behavior; no new experimental isotope-origin or stereopurity claim is inferred.
+- **Focused checks:** 79 reverse/planner checks and 23 forward/scope/isotope/stereo checks cover exact replay, target immutability, custom amine inventory, reagent exclusions, unsupported targets and labelled coproducts. Existing pH, equilibrium, water-removal and substrate-selectivity warnings remain applicable.
+
+
 ## Pinacol, Birch, magnesium insertion and haloform routes — 2026-10-30
 
 - **Four additional reverse methods:** ketones from supported Pinacol vicinal-diol rearrangements, isolated nonconjugated cyclohexadienes from Birch arene reduction, Grignard reagents from organic halides and magnesium, and carboxylate anions from methyl-ketone haloform cleavage. Every proposal still requires exact forward replay; the existing migration/regioselection heuristics and reagent compatibility limits remain authoritative.
