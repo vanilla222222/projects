@@ -107,3 +107,4 @@ assert.equal(nodes['path-recipe-tree'].value, 'off'); checks++;
 assert.equal(legacyControls.children.length, 1); checks++;
 console.log('Recipe Tree mode: ' + checks + ' checks passed.');
 
+
