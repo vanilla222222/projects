@@ -7,7 +7,8 @@
     "carbonylReduction": "https://openstax.org/books/organic-chemistry/pages/19-7-nucleophilic-addition-of-hydride-and-grignard-reagents-alcohol-formation",
     "alkeneReactions": "https://openstax.org/books/organic-chemistry/pages/8-summary-of-reactions",
     "hydrogenation": "https://openstax.org/books/organic-chemistry/pages/8-6-reduction-of-alkenes-hydrogenation",
-    "esterification": "https://openstax.org/books/organic-chemistry/pages/21-3-reactions-of-carboxylic-acids"
+    "esterification": "https://openstax.org/books/organic-chemistry/pages/21-3-reactions-of-carboxylic-acids",
+    "esterReduction": "https://openstax.org/books/organic-chemistry/pages/21-6-chemistry-of-esters"
   },
   "naming": [
     {
@@ -394,6 +395,99 @@
       ],
       "source": "esterification",
       "conditions": {}
+    },
+    {
+      "label": "Mild hydride retains tert-butyl ester",
+      "compounds": [
+        {
+          "smiles": "O=CCCC(=O)OC(C)(C)C",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[Na+].[BH4-]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "reduction-nabh4",
+      "products": [
+        "OCCCC(=O)OC(C)(C)C"
+      ],
+      "source": "carbonylReduction",
+      "conditions": {
+        "solvents": [
+          "ethanol"
+        ]
+      }
+    },
+    {
+      "label": "Strong hydride reduces aldehyde and tert-butyl ester",
+      "compounds": [
+        {
+          "smiles": "O=CCCC(=O)OC(C)(C)C",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[Li+].[AlH4-]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "reduction-lialh4",
+      "products": [
+        "OCCCCO",
+        "CC(C)(C)O"
+      ],
+      "source": "esterReduction",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "PCC retains tertiary alcohol during primary oxidation",
+      "compounds": [
+        {
+          "smiles": "OCCC(C)(C)O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[O-][Cr](=O)(=O)Cl.c1cc[nH+]cc1",
+          "role": "reagent"
+        }
+      ],
+      "rule": "oxidation-pcc",
+      "products": [
+        "O=CCC(C)(C)O"
+      ],
+      "source": "alcoholOxidation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ]
+      }
+    },
+    {
+      "label": "Carbonyl reduction retains labelled oxygen",
+      "compounds": [
+        {
+          "smiles": "CC=[18O]",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[Na+].[BH4-]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "reduction-nabh4",
+      "products": [
+        "CC[18OH]"
+      ],
+      "source": "carbonylReduction",
+      "conditions": {
+        "solvents": [
+          "ethanol"
+        ]
+      }
     }
   ],
   "negativeReactions": [

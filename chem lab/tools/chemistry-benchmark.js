@@ -8,12 +8,11 @@ const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const root = path.join(__dirname, '..');
 const fixtures = JSON.parse(fs.readFileSync(path.join(__dirname, 'chemistry-fixtures.json'), 'utf8'));
-const context = vm.createContext({ console, setTimeout, clearTimeout });
-const scripts = ['elements', 'graph', 'valence', 'stereo', 'naming-core', 'naming-chain', 'naming-ring', 'naming-scaffolds', 'naming-general', 'common-names-extra', 'naming-elements', 'properties', 'layout', 'smiles', 'molfile', 'reactions', 'molecular-identity', 'reagent-library', 'reaction-io', 'reaction-stereo', 'reaction-evidence', 'reaction-registry', 'reaction-rules', 'reaction-rules-extra', 'reaction-rules-extra2', 'reaction-aromatic', 'reaction-rules-extra3', 'reaction-rules-extra4', 'reaction-catalog'];
-scripts.forEach((name) => {
-  const filename = path.join(root, 'js', name + '.js');
-  if (fs.existsSync(filename)) vm.runInContext(fs.readFileSync(filename, 'utf8'), context, { filename: name + '.js' });
-});
+const context = vm.createContext({ console, performance, setTimeout, clearTimeout });
+// Exercise the same engine modules and load order as the current application.
+const scripts = [...fs.readFileSync(path.join(root,'index.html'),'utf8').matchAll(/<script src="([^"]+)"/g)]
+  .map(match=>match[1]).filter(file=>file!=='js/app.js');
+scripts.forEach(file=>vm.runInContext(fs.readFileSync(path.join(root,file.split('?')[0]),'utf8'),context,{filename:file}));
 const run = (code) => vm.runInContext(code, context);
 const plain = (value) => JSON.parse(JSON.stringify(value));
 run(`
