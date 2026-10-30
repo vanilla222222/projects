@@ -1,5 +1,10 @@
 # Chem Lab upgrades
 
+## Recorded reduction-medium conflicts — 2026-10-30
+
+- Scope assessment now reports a conflict for LiAlH4 with recorded water/protic reaction medium, distinguishing reaction conditions from subsequent work-up. This reuses the existing reagent/protic-solvent model and does not infer rates, loading or work-up ordering from free text.
+- Seven checks cover water/alcohol solvents, mixed solvent, dry ether/THF and the distinct NaBH4 branch.
+
 ## Stereochemical scope reporting — 2026-10-30
 
 - Scope reports now expose stereo metadata for principal and minor products, warning about racemic/diastereomeric mixtures and relative-only configurations. Encoded product ratios are explicitly marked as heuristics rather than measured selectivity.
