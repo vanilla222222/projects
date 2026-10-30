@@ -62,6 +62,18 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
       }));
     });
   } catch(error) {note('audit-incomplete','The scope audit could not complete: '+error.message);}
+  const stereochemistry={products:[],ratio:null,ratioStatus:'not-assigned'};
+  if(outcome){
+    ['products','minor'].forEach(role=>(outcome[role]||[]).forEach((product,index)=>{
+      if(product.stereo)stereochemistry.products.push({role,index,kind:product.stereo.kind,text:product.stereo.text||''});
+    }));
+    if(stereochemistry.products.some(p=>['racemic','diastereomers'].includes(p.kind)))note('stereochemical-mixture','The encoded outcome reports a racemic or diastereomeric mixture; a single drawn structure does not establish stereopure preparation.');
+    if(stereochemistry.products.some(p=>p.kind==='relative'))note('relative-stereochemistry','Only relative stereochemistry is recorded; absolute configuration is not established.');
+    if(Array.isArray(outcome.ratio)){
+      stereochemistry.ratio=outcome.ratio.slice();stereochemistry.ratioStatus='heuristic';
+      note('heuristic-stereoratio','The displayed product ratio is an encoded heuristic, not a substrate-specific measured or calculated selectivity.');
+    }
+  }
   const competing=outcome&&outcome.chemoselectivity&&outcome.chemoselectivity.competing||[];
   const partial=!!(outcome&&outcome.partialConversion),susceptible=sites.filter(s=>s.susceptible);
   let selectivityStatus='not-assessed';
@@ -71,7 +83,7 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
   else if(entry&&susceptible.length===1)selectivityStatus='single-recognized-site';
   else note('selectivity-unassessed','No applicable susceptible-site model is encoded for this branch; absence of flagged competition is not established selectivity.');
   const status=reasons.some(r=>r.level==='conflict')?'conflict':reasons.length?'uncertain':'supported';
-  return {status,reasons,conditions,normalizedConditions:normalized,rule:descriptor,modelReproduced:reproduced,sites,
+  return {status,reasons,conditions,normalizedConditions:normalized,rule:descriptor,modelReproduced:reproduced,sites,stereochemistry,
     selectivity:{status:selectivityStatus,selected:outcome&&outcome.site?Object.assign({},outcome.site):null,susceptibleCount:susceptible.length,competing},limitations};
 }
 
