@@ -966,3 +966,19 @@ RETRO_TRANSFORMS.push(
     return retroUniquePieces(out).slice(0,RETRO_LIMITS.maxPerTransform).map(p=>retroSpec([{smiles:p.smiles,role:'reactant'}],[],{solvents:['none'],temperature:200}));
   }}
 );
+// The acyclic Cope bond exchange is its own inverse after relabelling the chain.
+RETRO_TRANSFORMS.push({id:'cope-rearrangement',name:'Acyclic diene from Cope rearrangement',rule:'cope',group:'Rearrangements',match(t){
+  const g=t.graph;
+  if(g.atoms.some(a=>a.charge||!['C','H','D'].includes(a.element)))return [];
+  const d=rxyDienes15({graph:g,info:t.info});if(!d)return [];
+  const [c1,c2,c3,c4,c5,c6]=d;
+  if(new Set(d).size!==6)return [];
+  const p=retroSinglePiece(t,h=>{
+    if(!retroCut(h,c3,c4))return false;
+    h.addBond(c1,c6);rxSetOrder(h,c1,c2,1);rxSetOrder(h,c5,c6,1);
+    rxSetOrder(h,c2,c3,2);rxSetOrder(h,c4,c5,2);
+    d.forEach(id=>rxsDrop(h,id));
+  });
+  if(!p||moleculeSame(p.smiles,t.smiles))return [];
+  return [retroSpec([{smiles:p.smiles,role:'reactant'}],[],{solvents:['none'],temperature:200})];
+}});

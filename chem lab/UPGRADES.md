@@ -1,5 +1,10 @@
 # Chem Lab upgrades
 
+## Acyclic Cope reverse coverage — 2026-10-30
+
+- Added a reverse Cope bond exchange for supported carbon-only acyclic diene chains. The existing forward rule must reproduce the exact target; degenerate exchanges, heteroatom-containing substrates and unsupported chain topology are excluded. Existing direction-selection and equilibrium heuristics remain limitations.
+- Twenty-five checks cover substituted dienes, carbon isotope retention, unchanged input graphs, unsupported/degenerate cases, heat gating and an independently replayed one-step Path Finder route. No quantitative equilibrium or yield model is added.
+
 ## Search queue omission diagnostics — 2026-10-30
 
 - Pending-queue overflow now sets the existing truncated flag and counts omitted branches rather than silently dropping them. The user explanation identifies queue capacity as a limit. Duplicate branches do not create false omissions; omitted entries are not marked visited. Search budgets are unchanged.
