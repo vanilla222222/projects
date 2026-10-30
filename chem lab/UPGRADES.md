@@ -1,5 +1,11 @@
 # Chem Lab upgrades
 
+## Claisen rearrangement routes — 2026-10-30
+
+- Added vinyl and aromatic Claisen reverse methods using the existing six-atom bond exchange. Proposals require forward replay; existing ortho-selection and substituted-allyl heuristics remain authoritative.
+- Vinyl routes reconstruct allyl vinyl ethers from supported unsaturated aldehydes/ketones. Aromatic routes reconstruct allyl aryl ethers from ortho-allyl phenols. Both use explicit heated conditions and work through Path Finder.
+- Added 49 checks for exact product identity, unchanged input graphs, isotope retention, heat gating, unsupported substitution/distance patterns and independently replayed planner edges.
+
 ## Imine, enamine, ether and ammonium-elimination routes — 2026-10-30
 
 - **Four additional reverse methods:** imines from carbonyls and primary amines, enamines from carbonyls and secondary amines, aryl alkyl ethers from alcohols/phenols by Mitsunobu substitution, and terminal alkenes from alkyltrimethylammonium precursors by Hofmann elimination. Each proposal requires the existing forward engine to reproduce its target, and all four methods work through Path Finder.
