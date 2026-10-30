@@ -441,6 +441,89 @@ RETRO_TRANSFORMS.push(
   } }
 );
 
+// Reverse nitroaldol, selective enone-reduction, rearrangement and
+// alcohol-coupling coverage. Exact forward replay remains the acceptance gate.
+const RETRO21_REAGENTS = {
+  cerium: { smiles: 'Cl[Ce](Cl)Cl', role: 'reagent', label: 'CeCl3' },
+  pph3: { smiles: 'P(c1ccccc1)(c1ccccc1)c1ccccc1', role: 'reagent', label: 'PPh3' },
+  dead: { smiles: 'CCOC(=O)N=NC(=O)OCC', role: 'reagent', label: 'DEAD' },
+};
+
+RETRO_TRANSFORMS.push(
+  { id: 'henry', name: 'Beta-nitro alcohol from a carbonyl and a nitroalkane', rule: 'henry', group: 'Carbon–carbon formation', match(t) {
+    const g = t.graph, out = [], seen = new Set();
+    rxyNitro(t).forEach((nitro) => {
+      t.info.alcohols.filter((a) => g.getBond(nitro.c, a.c) && g.getBond(nitro.c, a.c).order === 1).forEach((a) => {
+        const pieces = retroEdit(t, (h) => {
+          if (!retroCut(h, nitro.c, a.c)) return false;
+          rxSetOrder(h, a.c, a.o, 2);
+          rxsDrop(h, nitro.c);
+          rxsDrop(h, a.c);
+        });
+        if (!pieces || pieces.length !== 2) return;
+        const signature = retroKey(pieces);
+        if (seen.has(signature)) return;
+        seen.add(signature);
+        out.push(retroSpec(retroReactants(pieces), [RETRO17_REAGENTS.triethylamine], { solvents: ['ethanol'], temperature: 25 }));
+      });
+    });
+    return out.slice(0, RETRO_LIMITS.maxPerTransform);
+  } },
+  { id: 'luche', name: 'Allylic alcohol from an enone by Luche reduction', rule: 'luche', group: 'Reduction', match(t) {
+    const g = t.graph, out = [], seen = new Set();
+    t.info.alcohols.filter((a) => rxHydrogens(g, a.c) >= 1).forEach((a) => {
+      rxCarbonNeighbors(g, a.c).filter((n) => t.info.alkenes.some((e) => e.a === n.atom.id || e.b === n.atom.id)).forEach(() => {
+        const piece = retroSinglePiece(t, (h) => {
+          rxSetOrder(h, a.c, a.o, 2);
+          rxsDrop(h, a.c);
+        });
+        if (!piece || seen.has(piece.smiles)) return;
+        seen.add(piece.smiles);
+        out.push(retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO_REAGENTS.nabh4, RETRO21_REAGENTS.cerium], { solvents: ['methanol'], temperature: 25 }));
+      });
+    });
+    return out.slice(0, RETRO_LIMITS.maxPerTransform);
+  } },
+  { id: 'hofmann-rearrangement', name: 'Primary amine from a primary amide with one fewer carbon', rule: 'hofmann-rearrangement', group: 'Rearrangement', match(t) {
+    const g = t.graph, out = [], seen = new Set();
+    t.info.amines.filter((a) => a.h === 2).forEach((a) => {
+      const neighbors = rxCarbonNeighbors(g, a.n);
+      if (neighbors.length !== 1) return;
+      const r = neighbors[0].atom.id;
+      const piece = retroSinglePiece(t, (h) => {
+        rxSetOrder(h, r, a.n, 0);
+        const c = rxAttach(h, 'C', a.n);
+        rxAttach(h, 'O', c.id, 2);
+        h.addBond(c.id, r);
+        rxsDrop(h, a.n);
+        rxsDrop(h, r);
+      });
+      if (!piece || seen.has(piece.smiles)) return;
+      seen.add(piece.smiles);
+      out.push(retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO_REAGENTS.bromine, RETRO_REAGENTS.hydroxide], { solvents: ['water'], temperature: 25 }));
+    });
+    return out.slice(0, RETRO_LIMITS.maxPerTransform);
+  } },
+  { id: 'mitsunobu', name: 'Ester from a primary or secondary alcohol and a carboxylic acid', rule: 'mitsunobu', group: 'Esters', match(t) {
+    const g = t.graph, out = [], seen = new Set();
+    t.info.carbonyls.filter((c) => c.kind === 'ester').forEach((ester) => {
+      rxCarbonNeighbors(g, ester.hetero).filter((n) => n.atom.id !== ester.c && rxIsSp3(g, n.atom.id) && rxCarbonNeighbors(g, n.atom.id).length <= 2).forEach((n) => {
+        const pieces = retroEdit(t, (h) => {
+          if (!retroCut(h, ester.c, ester.hetero)) return false;
+          rxAttach(h, 'O', ester.c);
+          rxsDrop(h, n.atom.id);
+        });
+        if (!pieces || pieces.length !== 2) return;
+        const signature = retroKey(pieces);
+        if (seen.has(signature)) return;
+        seen.add(signature);
+        out.push(retroSpec(retroReactants(pieces), [RETRO21_REAGENTS.pph3, RETRO21_REAGENTS.dead], { solvents: ['thf'], temperature: 25 }));
+      });
+    });
+    return out.slice(0, RETRO_LIMITS.maxPerTransform);
+  } }
+);
+
 // Classify alkene geometry as well as tetrahedral stereochemistry. Strict
 // molecular identity avoids treating equivalent slash spellings as different.
 function retroTarget(graph, ids) {
