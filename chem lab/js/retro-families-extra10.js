@@ -813,3 +813,56 @@ RETRO_TRANSFORMS.push(
     }).filter(Boolean);
   }}
 );
+// Rearrangement, arene reduction, metal insertion and haloform alternatives.
+RETRO_TRANSFORMS.push(
+  {id:'pinacol',name:'Ketone from a vicinal diol by Pinacol rearrangement',rule:'pinacol',group:'Rearrangement',match(t) {
+    const g=t.graph,out=[];
+    t.info.carbonyls.filter(c=>c.kind==='ketone').slice(0,RETRO_LIMITS.maxPerTransform).forEach(c=>
+      rxCarbonNeighbors(g,c.c).filter(n=>rxIsSp3(g,n.atom.id)).forEach(n=> {
+        const adjacent=n.atom.id,degree=rxCarbonNeighbors(g,adjacent).length;
+        if(degree===3&&rxHydrogens(g,adjacent)===1) {
+          const piece=retroSinglePiece(t,h=>{rxSetOrder(h,c.c,c.o,1);rxAttach(h,'O',adjacent);rxsDrop(h,c.c);rxsDrop(h,adjacent);});
+          if(piece)out.push(retroSpec([{smiles:piece.smiles,role:'reactant'}],[],{solvents:['water'],additives:['h2so4'],temperature:25}));
+        }
+        if(degree!==4)return;
+        rxCarbonNeighbors(g,adjacent).filter(m=>m.atom.id!==c.c&&!g.getBond(c.c,m.atom.id)).forEach(m=> {
+          const piece=retroSinglePiece(t,h=> {
+            if(!retroBreak(h,adjacent,m.atom.id))return false;
+            h.addBond(c.c,m.atom.id);rxSetOrder(h,c.c,c.o,1);rxAttach(h,'O',adjacent);
+            rxsDrop(h,c.c);rxsDrop(h,adjacent);
+          });
+          if(piece)out.push(retroSpec([{smiles:piece.smiles,role:'reactant'}],[],{solvents:['water'],additives:['h2so4'],temperature:25}));
+        });
+      }));
+    return out.slice(0,RETRO_LIMITS.maxPerTransform);
+  }},
+  {id:'birch',name:'Nonconjugated cyclohexadiene from arene by Birch reduction',rule:'birch',group:'Reduction',match(t) {
+    const g=t.graph,rings=rxRings(g,8);
+    return rings.filter(r=>r.length===6&&r.every(id=>g.getAtom(id).element==='C'&&!g.getAtom(id).charge&&
+      rings.filter(other=>other.includes(id)).length===1)).filter(r=> {
+      const doubles=r.map((id,i)=>g.getBond(id,r[(i+1)%6]).order===2?i:-1).filter(i=>i>=0);
+      return doubles.length===2&&(doubles[1]-doubles[0])===3;
+    }).slice(0,RETRO_LIMITS.maxPerTransform).map(r=> {
+      const piece=retroSinglePiece(t,h=>{r.forEach((id,i)=>{rxSetOrder(h,id,r[(i+1)%6],i%2?1:2);rxsDrop(h,id);});});
+      return piece&&retroSpec([{smiles:piece.smiles,role:'reactant'}],[],{solvents:['ethanol'],additives:['nanh3'],temperature:-33});
+    }).filter(Boolean);
+  }},
+  {id:'grignard-formation',name:'Grignard reagent from organic halide and magnesium',rule:'grignard-formation',group:'Organometallic preparation',match(t) {
+    const g=t.graph;
+    return g.atoms.filter(a=>a.element==='Mg'&&!a.charge).slice(0,RETRO_LIMITS.maxPerTransform).map(m=> {
+      const ns=rxNeighbors(g,m.id);
+      const carbon=ns.find(n=>n.atom.element==='C'&&n.bond.order===1);
+      const halogen=ns.find(n=>['Cl','Br','I'].includes(n.atom.element)&&n.bond.order===1&&rxNeighbors(g,n.atom.id).length===1);
+      if(ns.length!==2||!carbon||!halogen)return null;
+      const piece=retroSinglePiece(t,h=>{h.removeAtom(m.id);h.addBond(carbon.atom.id,halogen.atom.id);rxsDrop(h,carbon.atom.id);});
+      return piece&&retroSpec([{smiles:piece.smiles,role:'reactant'}],[],{solvents:['ether'],additives:['mg'],atmosphere:'n2',temperature:25});
+    }).filter(Boolean);
+  }},
+  {id:'haloform-carboxylate',name:'Carboxylate from methyl ketone by haloform cleavage',rule:'haloform',group:'Carbon–carbon cleavage',match(t) {
+    return t.info.carbonyls.filter(c=>c.hetero!==null&&t.graph.getAtom(c.hetero).element==='O'&&t.graph.getAtom(c.hetero).charge===-1)
+      .slice(0,RETRO_LIMITS.maxPerTransform).map(c=> {
+        const piece=retroSinglePiece(t,g=>{g.removeAtom(c.hetero);rxAttach(g,'C',c.c);});
+        return piece&&retroSpec([{smiles:piece.smiles,role:'reactant'}],[{smiles:'II',role:'reagent',label:'I2'},{smiles:'[OH-]',role:'reagent',label:'Hydroxide'}],{solvents:['water'],temperature:25});
+      }).filter(Boolean);
+  }}
+);
