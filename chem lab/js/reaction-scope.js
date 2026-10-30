@@ -57,8 +57,7 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
       const compoundIndex=prepared.indexOf(s.compound),groups=rxChemoGroups(s.graph);
       const original=reactionFragmentGraph(s.compound.fragment),index=new Map(original.atoms.map((a,i)=>[a.id,i+1]));
       Object.keys(groups).forEach(group=>groups[group].forEach(atomIds=>{
-        let susceptible=!!entry&&entry.attacks.includes(group);
-        if(susceptible&&group==='alcohol'&&['dmp','pcc'].includes(entry.id))susceptible=s.info.alcohols.some(a=>atomIds.includes(a.o)&&a.degree<3&&rxHydrogens(s.graph,a.c)>0);
+        const susceptible=rxChemoSiteSusceptible(s.graph,entry,group,atomIds,s.info);
         sites.push({compoundIndex,substrateSmiles:s.compound.isomericSmiles||s.compound.smiles,group,label:typeof RX_CHEMO_GROUP_LABELS!=='undefined'&&RX_CHEMO_GROUP_LABELS[group]||group,atomIds:atomIds.slice(),atomIndices:atomIds.map(id=>index.get(id)),susceptible});
       }));
     });

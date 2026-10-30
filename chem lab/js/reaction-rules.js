@@ -2404,9 +2404,9 @@ function rxFormatEquiv(value) {
 
 const RX_CHEMOSELECTIVITY = [
   { id: 'borohydride', label: 'NaBH₄', tags: ['borohydride'], attacks: ['aldehyde', 'ketone'] },
-  { id: 'alanate', label: 'LiAlH₄', tags: ['alanate'], attacks: ['aldehyde', 'ketone', 'acylChloride', 'ester', 'acid', 'epoxide', 'amide', 'nitrile'] },
+  { id: 'alanate', label: 'LiAlH₄', tags: ['alanate'], attacks: ['aldehyde', 'ketone', 'acylChloride', 'ester', 'tBuEster', 'acid', 'epoxide', 'amide', 'nitrile'] },
   { id: 'hydrogenation', label: 'H₂ with a metal catalyst', tags: ['H2', 'hydrogenationCatalyst'], attacks: ['alkyne', 'alkene', 'nitro', 'benzylEther', 'cbz'], advice: 'if the alkene must be reduced, protect the alcohol as a TBS ether instead of a benzyl ether, since TBS survives H₂/Pd' },
-  { id: 'organometallic', label: 'the organometallic reagent', tags: ['grignard'], attacks: ['aldehyde', 'ketone', 'acylChloride', 'ester', 'epoxide', 'nitrile'] },
+  { id: 'organometallic', label: 'the organometallic reagent', tags: ['grignard'], attacks: ['aldehyde', 'ketone', 'acylChloride', 'ester', 'tBuEster', 'epoxide', 'nitrile'] },
   { id: 'peracid', label: 'mCPBA', tags: ['mcpba'], attacks: ['alkene', 'ketone'] },
   { id: 'permanganate', label: 'KMnO₄', tags: ['permanganate'], attacks: ['aldehyde', 'alkene', 'alcohol'] },
   { id: 'chromium', label: 'the chromium(VI) oxidant', tags: ['jones'], attacks: ['aldehyde', 'alcohol'] },
@@ -2503,6 +2503,27 @@ function rxChemoGroups(g) {
   return groups;
 }
 
+// Keep the predictor and query audit on the same susceptible-site definition.
+function rxChemoSiteSusceptible(g, entry, group, atoms, info) {
+  if (!entry || !entry.attacks.includes(group)) return false;
+  if (group === 'alcohol' && ['pcc', 'dmp'].includes(entry.id)) {
+    return (info || rxAnalyze(g)).alcohols.some(a => atoms.includes(a.o) && a.degree < 3 && rxHydrogens(g,a.c) > 0);
+  }
+  return true;
+}
+
+function rxChemoSusceptibleGroups(g, entry) {
+  const groups=rxChemoGroups(g),info=rxAnalyze(g);
+  Object.keys(groups).forEach(group=>{groups[group]=groups[group].filter(atoms=>rxChemoSiteSusceptible(g,entry,group,atoms,info));});
+  return groups;
+}
+
+function rxChemoProtectionSuggestion(group, entry) {
+  // An acid ester mask remains an electrophile for these reagent classes.
+  if (group === 'acid' && ['alanate','organometallic'].includes(entry.id)) return '';
+  return RX_PROTECTION_SUGGESTIONS[group] || '';
+}
+
 function rxChemoEntry(ctx, outcome) {
   const consumed = (compound) => compound && outcome.consumes.some((u) => u && u.compound === compound);
   const acylating = ctx.substrates.filter((s) => consumed(s.compound) && s.info.carbonyls.some((c) => c.kind === 'acylChloride' || c.kind === 'anhydride'));
@@ -2532,14 +2553,17 @@ function rxChemoselectivity(ctx, outcome) {
   }
   const before = {};
   consumed.forEach((s) => {
-    const groups = rxChemoGroups(s.graph);
+    const groups = rxChemoSusceptibleGroups(s.graph, entry);
     Object.keys(groups).forEach((group) => {
       before[group] = (before[group] || []).concat(groups[group]);
     });
   });
   let after = {};
   try {
-    after = rxChemoGroups(reactionFragmentGraph(smilesToFragment(main.smiles)));
+    outcome.products.forEach(product => {
+      const groups=rxChemoSusceptibleGroups(reactionFragmentGraph(product.fragment || smilesToFragment(product.smiles)),entry);
+      Object.keys(groups).forEach(group=>{after[group]=(after[group]||[]).concat(groups[group]);});
+    });
   } catch (error) {
     return null;
   }
@@ -2555,14 +2579,14 @@ function rxChemoselectivity(ctx, outcome) {
   }
   const name = (group) => RX_CHEMO_GROUP_LABELS[group] || group;
   const target = competing.length ? competing[0].group : changed[changed.length - 1];
-  const guard = changed.find((group) => group !== target && RX_PROTECTION_SUGGESTIONS[group]);
+  const guard = changed.find((group) => group !== target && rxChemoProtectionSuggestion(group, entry));
   let suggestion = '';
   if (guard) {
-    suggestion = 'To react only at the ' + name(target) + ', first ' + RX_PROTECTION_SUGGESTIONS[guard] + '.';
+    suggestion = 'To react only at the ' + name(target) + ', first ' + rxChemoProtectionSuggestion(guard, entry) + '.';
   } else if (entry.advice) {
     suggestion = 'To keep the ' + name(changed[0]) + ', ' + entry.advice + '.';
-  } else if (RX_PROTECTION_SUGGESTIONS[target]) {
-    suggestion = 'To keep the ' + name(target) + ' untouched, first ' + RX_PROTECTION_SUGGESTIONS[target] + '.';
+  } else if (rxChemoProtectionSuggestion(target, entry)) {
+    suggestion = 'To keep the ' + name(target) + ' untouched, first ' + rxChemoProtectionSuggestion(target, entry) + '.';
   }
   const text = competing.length
     ? 'Chemoselectivity: ' + entry.label + ' reacted at the ' + changed.map(name).join(' and ') + ' but can also attack the ' + competing.map((c) => name(c.group)).join(' and ') + ' in this molecule, so expect a mixture unless one site is protected.'
