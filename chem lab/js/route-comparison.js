@@ -107,7 +107,7 @@ function routeComparisonRender(container, job, deps) {
   const root = make('section', undefined, 'route-comparison');
   root.setAttribute('aria-label', 'Candidate route comparison');
   root.append(make('h3', 'Compare candidate routes'));
-  root.append(make('p', 'Counts below are calculated from these route records; materials are counted once per role. Sources document reaction classes; they do not establish that a route works experimentally. No yield, feasibility or safety score is assigned.', 'route-comparison-note'));
+  root.append(make('p', 'Counts below are calculated from these route records; materials are counted once per role. Sources document reaction classes; they do not establish that a route works experimentally. No yield, feasibility or safety score is assigned. Otherwise equal Path Finder routes use fewer distinct reagent, solvent and additive entries as a final tie-breaker; this count does not estimate cost.', 'route-comparison-note'));
   const grid = make('div', undefined, 'route-comparison-grid');
   const addList = (parent, label, entries) => {
     parent.append(make('h5', label));
