@@ -62,5 +62,3 @@ for (const [start, target, id, forbiddenRules] of routes) {
   check(`routeJob.routes.some(route=>route.length===1&&route[0].candidate.transform===id&&retroForwardCheck(route[0].candidate,route[0].to))`, true, 'Path Finder route is independently forward-verified: ' + id);
 }
 console.log('Retro expansion round 13: ' + checks + ' checks passed.');
-
-
