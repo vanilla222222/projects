@@ -1,5 +1,13 @@
 # Chem Lab upgrades
 
+## Acyl-substitution route alternatives — 2026-10-30
+
+- **Four additional reverse methods:** carbodiimide amide coupling, Steglich esterification, methyl-ester aminolysis, and methyl/ethyl transesterification. Every proposal requires the existing forward engine to reproduce its target; cyclic acyl cuts and unsupported coupling partners remain excluded. The Steglich proposal includes DCC and DMAP; ester aminolysis supports explicit ammonia for primary amides.
+- **Explicit incoming alcohol:** transesterification retains methanol or ethanol as a solvent-role precursor, so custom inventory cannot invent the carbon-containing alcohol. The donor is the opposite methyl/ethyl ester rather than a no-change exchange. Broader incoming alcohols are outside this reverse proposal's bounds.
+- **Reagent recognition:** DCC/EDC formula matches now require neutral N=C=N connectivity. Same-formula diimine controls previously triggered false amide/ester coupling predictions; they are rejected. Supported DCC and EDC reactions retain their existing product and evidence behavior.
+- **Regression coverage:** 66 reverse/planner checks and 20 forward/reagent checks cover all four methods, exact products, intended forward outcomes, negative targets, isotope/stereo preservation and custom inventory. Recipe Tree now includes the independently verified Steglich alternative with its complete acid-preparation branch, while enforcing the existing depth limit.
+
+
 ## Alpha-bromination, sulfur substitution and decarboxylation — 2026-10-30
 
 - **Four additional reverse transforms:** HVZ alpha-bromination of carboxylic acids, alcohol sulfonate formation, amine sulfonamide formation, and ketone formation by beta-keto-acid decarboxylation. They reuse the existing sourced forward rules; shape matches remain proposals until forward replay reproduces the target. Sulfonyl precursors outside the forward engine's recognized reagent scope remain unavailable through these transforms.
