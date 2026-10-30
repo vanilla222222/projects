@@ -1,5 +1,10 @@
 # Chem Lab upgrades
 
+## Stereochemical scope reporting — 2026-10-30
+
+- Scope reports now expose stereo metadata for principal and minor products, warning about racemic/diastereomeric mixtures and relative-only configurations. Encoded product ratios are explicitly marked as heuristics rather than measured selectivity.
+- Eight checks cover a real achiral ketone reduction, mixture and relative metadata, minor products, absent ratios and outcome immutability. This improves uncertainty reporting; it does not add an asymmetric catalyst model.
+
 ## Chemoselectivity audit consistency — 2026-10-30
 
 - Tert-butyl esters retain their protection-group label while entering the LiAlH4/organometallic susceptible-site models as esters. NaBH4 retains its narrower aldehyde/ketone scope. This aligns auditing with the existing forward edits; it adds no claim of measured rates or selectivity.
