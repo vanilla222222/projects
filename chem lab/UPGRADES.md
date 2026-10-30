@@ -1,5 +1,10 @@
 # Chem Lab upgrades
 
+## Search queue omission diagnostics — 2026-10-30
+
+- Pending-queue overflow now sets the existing truncated flag and counts omitted branches rather than silently dropping them. The user explanation identifies queue capacity as a limit. Duplicate branches do not create false omissions; omitted entries are not marked visited. Search budgets are unchanged.
+- Seven queue regressions cover capacity, duplicate handling, reporting and subsequent admission after space becomes available.
+
 ## Transparent route-material tie-breaker — 2026-10-30
 
 - Path Finder retains its existing step count, inventory, size and minor-product priorities, then breaks otherwise equal ties by distinct reagent/solvent/additive entries. Equivalent reagent SMILES and repeats across steps are deduplicated; this is a materials-list heuristic, not cost or feasibility prediction.
