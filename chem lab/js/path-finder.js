@@ -61,11 +61,31 @@ function pathFinderMaterialSummary(precursors, describe) {
   return out;
 }
 
+function pathFinderProcessBurden(route) {
+  const entries=new Set();
+  const add=(role,smiles,id)=>{
+    let key=id||smiles;
+    if(smiles){try{key=pathFinderMaterialKey(smiles);}catch(error){key=smiles;}}
+    if(key)entries.add(role+':'+key);
+  };
+  route.forEach(link=>{
+    const c=link.candidate||{};
+    (c.compounds||[]).filter(p=>p.role!=='reactant').forEach(p=>add(p.role||'reagent',p.isomericSmiles||p.smiles,p.label));
+    // Legacy records may carry explicit reagents without prepared compounds.
+    (c.reagents||[]).forEach(p=>add(p.role||'reagent',p.isomericSmiles||p.smiles,p.label));
+    ['solvents','additives'].forEach(field=>(c.conditions&&c.conditions[field]||[]).filter(id=>id!=='none').forEach(id=>{
+      const item=field==='solvents'?reactionSolvent(id):reactionAdditive(id);
+      add(field==='solvents'?'solvent':'additive',item&&item.smiles,id);
+    }));
+  });
+  return entries.size;
+}
+
 function pathFinderRouteRank(route, describe) {
   const extras = route.flatMap((link) => link.candidate.precursors.filter((p, i) => i !== link.precursor));
   const materials = pathFinderMaterialSummary(extras, describe);
   return [route.length, materials.stock, materials.heavy,
-    route.filter((link) => link.candidate.minor).length, materials.count];
+    route.filter((link) => link.candidate.minor).length, materials.count, pathFinderProcessBurden(route)];
 }
 
 function pathFinderProtectionLinks(candidate, carried, destination) {

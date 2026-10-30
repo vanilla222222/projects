@@ -1,5 +1,10 @@
 # Chem Lab upgrades
 
+## Transparent route-material tie-breaker — 2026-10-30
+
+- Path Finder retains its existing step count, inventory, size and minor-product priorities, then breaks otherwise equal ties by distinct reagent/solvent/additive entries. Equivalent reagent SMILES and repeats across steps are deduplicated; this is a materials-list heuristic, not cost or feasibility prediction.
+- Seven ranking regressions cover duplicate/equivalent identities, conditions, legacy reagent records, repeated steps and unchanged preceding priorities.
+
 ## Recorded reduction-medium conflicts — 2026-10-30
 
 - Scope assessment now reports a conflict for LiAlH4 with recorded water/protic reaction medium, distinguishing reaction conditions from subsequent work-up. This reuses the existing reagent/protic-solvent model and does not infer rates, loading or work-up ordering from free text.
