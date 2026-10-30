@@ -1,5 +1,14 @@
 # Chem Lab upgrades
 
+## Nitrogen condensations and Paal–Knorr routes — 2026-10-30
+
+- **Four forward-verified reverse methods:** oxime and hydrazone formation, Paal–Knorr furan synthesis, and Paal–Knorr pyrrole synthesis with ammonia or a primary amine. Hydroxylamine, hydrazine and pyrrole nitrogen donors are explicit precursors subject to inventory checks. Unsupported substituted donors and non-reproduced selective carbonyl conversions remain excluded.
+- **Multiple condensation sites:** supported complete dioxime formation can reverse all matched sites together. Target structures are preserved during matching; each proposal still requires the existing forward engine to reproduce the complete target.
+- **Condensation atom identity:** the carbonyl oxygen is removed and the actual nitrogen reagent atoms are copied into the product. This fixes an oxygen-isotope label incorrectly becoming a nitrogen-isotope label and preserves donor nitrogen/oxygen isotope labels. Explicit hydrogens on the attacking nitrogen are removed when forming C=N. This is net atom handling, not a balanced water/isotope-exchange model.
+- **Pyrrole donor identity:** the ammonia nitrogen is copied instead of replaced with an unlabelled new atom; labelled-ammonia pyrrole products now retain their nitrogen label.
+- **Focused checks:** 82 reverse/planner checks and 34 forward/isotope/scope checks cover the four methods, full target replay, unchanged target graphs, inventory requirements, labelled donors, carbonyl-oxygen loss, multiple carbonyls and negative controls. Existing E/Z-mixture and reaction-scope limitations remain visible.
+
+
 ## Acyl-substitution route alternatives — 2026-10-30
 
 - **Four additional reverse methods:** carbodiimide amide coupling, Steglich esterification, methyl-ester aminolysis, and methyl/ethyl transesterification. Every proposal requires the existing forward engine to reproduce its target; cyclic acyl cuts and unsupported coupling partners remain excluded. The Steglich proposal includes DCC and DMAP; ester aminolysis supports explicit ammonia for primary amides.

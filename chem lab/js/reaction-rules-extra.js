@@ -459,9 +459,19 @@ function rxxRuleHydrazine(ctx) {
       return [out];
     }
     const hydro = Boolean(hydrazine);
+    // The carbonyl oxygen leaves during condensation. Both atoms of the
+    // nitrogen reagent enter the product; never relabel oxygen (or its isotope)
+    // as nitrogen. Explicit H/D on the attacking nitrogen leave in the water.
+    const donor = hydro ? hydrazine : hydroxylamine;
+    const nitrogen = donor.ids.find((id) => donor.graph.getAtom(id).element === 'N');
+    const leavingHydrogens = new Set(rxNeighbors(donor.graph, nitrogen)
+      .filter((n) => ['H', 'D'].includes(n.atom.element)).map((n) => n.atom.id));
+    const donorIds = donor.ids.filter((id) => !leavingHydrogens.has(id));
     targets.forEach((c) => {
-      g.getAtom(c.o).element = 'N';
-      rxAttach(g, hydro ? 'N' : 'O', c.o);
+      g.removeAtom(c.o);
+      const map = rxMerge(g, donor.graph, donorIds);
+      g.addBond(c.c, map.get(nitrogen));
+      rxSetOrder(g, c.c, map.get(nitrogen), 2);
     });
     const out = rxOutcome(hydro ? 'hydrazone' : 'oxime', hydro ? 'Hydrazone formation' : 'Oxime formation', 'Nucleophilic addition–elimination', g,
       (hydro ? 'Hydrazine' : 'Hydroxylamine') + ' adds to the C=O and water is lost from the carbinolamine, giving the C=N–' + (hydro ? 'NH₂ hydrazone.' : 'OH oxime.') +
