@@ -34,6 +34,7 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
   try {
     const prepared=input.map(c=>c.fragment?c:Object.assign({},c,{fragment:smilesToFragment(c.isomericSmiles||c.smiles)}));
     context=reactionContext(prepared,normalized);
+    if(context.has('alanate')&&context.protic)note('alanate-protic-medium','LiAlH4 is incompatible with the recorded water or protic solvent during the reaction. A later aqueous work-up must be recorded separately from the reaction medium.','conflict');
     if(!outcome)note('missing-outcome','No selected outcome is available for a scope audit.');
     else {
       const rule=RX_RULES.find(r=>r.id===outcome.rule)||RX_RULES.find(r=>r.id===outcome.id);
