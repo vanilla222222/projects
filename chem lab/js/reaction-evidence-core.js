@@ -3,6 +3,11 @@
 // References support reaction classes; no entry establishes experimental
 // validation, conversion, selectivity or safety for an arbitrary query.
 const CORE_REACTION_EVIDENCE_SOURCES = {
+  "borohydrideAcyl": [
+    "Chaikin and Brown: Reduction of Aldehydes, Ketones and Acid Chlorides by Sodium Borohydride (1949)",
+    "https://doi.org/10.1021/ja01169a033",
+    "primary"
+  ],
   "alkene": [
     "John McMurry, Organic Chemistry: alkene reaction summary",
     "https://openstax.org/books/organic-chemistry/pages/8-summary-of-reactions",
@@ -214,13 +219,14 @@ const CORE_REACTION_EVIDENCE_ROWS = [
   [
     "reduction",
     "Reduction",
-    "NaBH4 targets recognized aldehyde/ketone groups; LiAlH4 additionally handles the explicitly encoded acid derivative, nitrile and epoxide branches.",
+    "NaBH4 edits recognized aldehyde/ketone groups; acyl chloride competition is flagged rather than modeled as selective carbonyl reduction. LiAlH4 additionally handles the explicitly encoded acid derivative, nitrile and epoxide branches.",
     "Alcohol/amine products assume the stated or conventional protonating work-up.",
     "Hydride identity is simplified; individual substrate selectivity and every potentially reducible functional group are not covered.",
     [
       "carbonyl",
       "derivatives",
-      "nitrile"
+      "nitrile",
+      "borohydrideAcyl"
     ]
   ],
   [
