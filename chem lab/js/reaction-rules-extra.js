@@ -736,7 +736,11 @@ function rxxRuleCannizzaro(ctx) {
   const { s, c } = target;
   const { g, map } = rxxJoin(s, s);
   rxSetOrder(g, c.c, c.o, 1);
-  rxAttach(g, 'O', map.get(c.c), 1, -1);
+  // Hydroxide supplies the second carboxylate oxygen. Preserve its actual
+  // element/isotope metadata instead of inserting a new unlabelled atom.
+  const hydroxideO = hydroxide.ids.find((id) => hydroxide.graph.getAtom(id).element === 'O');
+  const hydroxideMap = rxMerge(g, hydroxide.graph, [hydroxideO]);
+  g.addBond(map.get(c.c), hydroxideMap.get(hydroxideO));
   rxxAddCation(ctx, g);
   const out = rxOutcome('cannizzaro', 'Cannizzaro reaction', 'Disproportionation (redox)', g,
     'With no α-H, the aldehyde cannot form an enolate. Hydroxide adds to one molecule, and the tetrahedral anion transfers a hydride to a second aldehyde: one molecule is oxidised to the carboxylate and the other reduced to the primary alcohol.',

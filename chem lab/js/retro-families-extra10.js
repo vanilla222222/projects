@@ -767,3 +767,49 @@ RETRO_TRANSFORMS.push(
   {id: 'paal-knorr-furan', name: 'Furan from 1,4-dicarbonyl by Paal–Knorr cyclization', rule: 'paal-knorr-furan', group: 'Heterocycle formation', match(t) { return retro24PaalKnorr(t, 'O'); }},
   {id: 'paal-knorr-pyrrole', name: 'Pyrrole from 1,4-dicarbonyl and primary amine or ammonia', rule: 'paal-knorr-pyrrole', group: 'Heterocycle formation', match(t) { return retro24PaalKnorr(t, 'N'); }}
 );
+// Metathesis, trans-alkene reduction and self-disproportionation proposals.
+// Product geometry and competing products remain those of the forward model.
+RETRO_TRANSFORMS.push(
+  {id: 'ring-closing-metathesis', name: 'Cycloalkene from terminal diene by ring-closing metathesis', rule: 'rcm', group: 'Ring formation', match(t) {
+    const g = t.graph;
+    return t.info.alkenes.filter((e) => [e.a,e.b].every((id) => rxHydrogens(g,id) === 1) &&
+      rxRings(g,8).some((ring) => ring.length >= 5 && ring.length <= 8 && ring.includes(e.a) && ring.includes(e.b)))
+      .slice(0,RETRO_LIMITS.maxPerTransform).map((e) => {
+        const piece = retroSinglePiece(t,(h) => {
+          if (!retroBreak(h,e.a,e.b)) return false;
+          rxAttach(h,'C',e.a,2); rxAttach(h,'C',e.b,2);
+          h.alkeneSpecs = (h.alkeneSpecs || []).filter((s) => ![e.a,e.b].includes(s.a) && ![e.a,e.b].includes(s.b));
+        });
+        return piece && retroSpec([{smiles:piece.smiles,role:'reactant'}],[],{solvents:['dcm'],additives:['grubbs'],temperature:25});
+      }).filter(Boolean);
+  }},
+  {id: 'cross-metathesis', name: 'Internal alkene from two terminal alkenes by cross-metathesis', rule: 'cross-metathesis', group: 'Carbon–carbon formation', match(t) {
+    const g = t.graph;
+    return t.info.alkenes.filter((e) => [e.a,e.b].every((id) => rxHydrogens(g,id) === 1))
+      .slice(0,RETRO_LIMITS.maxPerTransform).map((e) => {
+        const pieces = retroEdit(t,(h) => {
+          if (!retroCut(h,e.a,e.b)) return false;
+          rxAttach(h,'C',e.a,2); rxAttach(h,'C',e.b,2);
+          h.alkeneSpecs = (h.alkeneSpecs || []).filter((s) => ![e.a,e.b].includes(s.a) && ![e.a,e.b].includes(s.b));
+        });
+        return pieces && pieces.length === 2 ? retroSpec(retroReactants(pieces),[],{solvents:['dcm'],additives:['grubbs'],temperature:25}) : null;
+      }).filter(Boolean);
+  }},
+  {id: 'dissolving-metal', name: 'Trans alkene from internal alkyne by dissolving-metal reduction', rule: 'dissolving-metal', group: 'Reduction', match(t) {
+    const g = t.graph;
+    return t.info.alkenes.filter((e) => [e.a,e.b].every((id) => rxHydrogens(g,id) === 1) && !!retroSide(g,e.a,e.b))
+      .slice(0,RETRO_LIMITS.maxPerTransform).map((e) => {
+        const piece = retroSinglePiece(t,(h) => {
+          rxSetOrder(h,e.a,e.b,3);
+          h.alkeneSpecs = (h.alkeneSpecs || []).filter((s) => ![e.a,e.b].includes(s.a) && ![e.a,e.b].includes(s.b));
+        });
+        return piece && retroSpec([{smiles:piece.smiles,role:'reactant'}],[],{solvents:['none'],additives:['nanh3'],temperature:-33});
+      }).filter(Boolean);
+  }},
+  {id: 'cannizzaro-alcohol', name: 'Primary alcohol from non-enolizable aldehyde by Cannizzaro reaction', rule: 'cannizzaro', group: 'Disproportionation', match(t) {
+    return t.info.alcohols.filter((a) => a.degree <= 1).slice(0,RETRO_LIMITS.maxPerTransform).map((a) => {
+      const piece = retroSinglePiece(t,(g) => {rxSetOrder(g,a.c,a.o,2);rxsDrop(g,a.c);});
+      return piece && retroSpec([{smiles:piece.smiles,role:'reactant'}],[RETRO_REAGENTS.hydroxide],{solvents:['water'],temperature:25});
+    }).filter(Boolean);
+  }}
+);

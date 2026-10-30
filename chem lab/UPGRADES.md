@@ -1,5 +1,13 @@
 # Chem Lab upgrades
 
+## Metathesis, trans-alkene and Cannizzaro alternatives — 2026-10-30
+
+- **Four additional reverse methods:** five- to eight-membered ring-closing metathesis, cross-metathesis of two terminal alkenes, dissolving-metal reduction of an acyclic internal alkyne to a trans alkene, and a primary alcohol from a non-enolizable aldehyde by Cannizzaro self-disproportionation. Each proposal requires the existing forward model to reproduce the target.
+- **Planner constraints:** all four methods work through Path Finder. Both cross-metathesis partners remain explicit; custom inventory must supply the second building block. Cis requests are rejected under the encoded trans-only cross-metathesis/reduction branches. Ring-size, substitution and substrate exclusions remain bounded; metathesis geometry is the existing model heuristic, not an experimental selectivity claim.
+- **Cannizzaro atom identity:** the hydroxide oxygen is copied into the carboxylate coproduct rather than replaced by an unlabelled new atom. This preserves oxygen-isotope labels alongside both aldehyde oxygen atoms. The two-aldehyde-equivalent requirement and separate alcohol/carboxylate products are retained. Isotope exchange, proton-transfer trajectories and experimental product ratios are not simulated.
+- **Focused checks:** 76 reverse/planner checks and 22 forward/scope/stoichiometry/isotope checks cover the new methods, target immutability, exact replay, partner inventory, rejected cis requests, ring bounds and labelled coproduct oxygen.
+
+
 ## Nitrogen condensations and Paal–Knorr routes — 2026-10-30
 
 - **Four forward-verified reverse methods:** oxime and hydrazone formation, Paal–Knorr furan synthesis, and Paal–Knorr pyrrole synthesis with ammonia or a primary amine. Hydroxylamine, hydrazine and pyrrole nitrogen donors are explicit precursors subject to inventory checks. Unsupported substituted donors and non-reproduced selective carbonyl conversions remain excluded.
