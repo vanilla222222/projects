@@ -9,6 +9,8 @@ Object.assign(RX_FORMULA_TAGS, {
 });
 
 Object.assign(RX_FORMULA_GUARDS, {
+  C13H22N2: (g, ids) => rxxCarbodiimide(g, ids),
+  C8H17N3: (g, ids) => rxxCarbodiimide(g, ids),
   C5H11NO2: (g, ids) => ids.some((id) => g.getAtom(id).element === 'N' && rxNeighbors(g, id).some((n) => n.atom.element === 'O' && rxHydrogens(g, n.atom.id) === 0 && (n.bond.order === 2 || n.atom.charge === -1))),
   C7H10N2: (g, ids) => ids.some((id) => g.getAtom(id).element === 'N' && rxCarbonNeighbors(g, id).length === 3 && rxNeighbors(g, id).every((n) => n.bond.order === 1)),
   C3H4N2: (g) => !g.bonds.some((b) => g.getAtom(b.atomA).element === 'N' && g.getAtom(b.atomB).element === 'N'),
@@ -251,6 +253,15 @@ function rxxRuleBuchwald(ctx) {
   out.warnings.push('A bulky phosphine ligand (BINAP, XPhos, BrettPhos) is normally added with the Pd source.');
   rxxInertWarning(ctx, out);
   return [out];
+}
+
+function rxxCarbodiimide(g, ids) {
+  return ids.some((id) => {
+    const atom = g.getAtom(id), ns = rxNeighbors(g, id);
+    return atom.element === 'C' && !atom.charge && ns.length === 2 && ns.every((n) =>
+      n.atom.element === 'N' && !n.atom.charge && n.bond.order === 2 &&
+      rxNeighbors(g, n.atom.id).length === 2 && rxCarbonNeighbors(g, n.atom.id).length === 2);
+  });
 }
 
 function rxxRuleCarbodiimide(ctx) {

@@ -650,3 +650,55 @@ RETRO_TRANSFORMS.push(
       })).filter(Boolean).slice(0, RETRO_LIMITS.maxPerTransform);
   } }
 );
+// Acyl-substitution alternatives backed by the existing forward rules. Carbon
+// donors remain explicit precursors, including a transesterification alcohol.
+const RETRO23_REAGENTS = {
+  dcc: {smiles: 'C1CCC(CC1)N=C=NC1CCCCC1', role: 'reagent', label: 'DCC'},
+};
+
+function retro23AcylPartners(t, kind, esterDonor) {
+  return t.info.carbonyls.filter((c) => c.kind === kind).slice(0, RETRO_LIMITS.maxPerTransform).map((c) => {
+    const pieces = retroEdit(t, (g) => {
+      if (!retroCut(g, c.c, c.hetero)) return false;
+      const oxygen = rxAttach(g, 'O', c.c);
+      if (esterDonor) rxAttach(g, 'C', oxygen.id);
+    });
+    return pieces && pieces.length === 2 ? pieces : null;
+  }).filter(Boolean);
+}
+
+RETRO_TRANSFORMS.push(
+  {id: 'amide-coupling', name: 'Amide from acid and amine by carbodiimide coupling', rule: 'amide-coupling', group: 'Amides', match(t) {
+    return retro23AcylPartners(t, 'amide', false).map((pieces) =>
+      retroSpec(retroReactants(pieces), [RETRO23_REAGENTS.dcc], {solvents: ['dcm'], temperature: 25}));
+  }},
+  {id: 'steglich', name: 'Ester from acid and alcohol by Steglich coupling', rule: 'steglich', group: 'Esters', match(t) {
+    return retro23AcylPartners(t, 'ester', false).map((pieces) =>
+      retroSpec(retroReactants(pieces), [RETRO23_REAGENTS.dcc], {solvents: ['dcm'], additives: ['dmap'], temperature: 25}));
+  }},
+  {id: 'ester-aminolysis', name: 'Amide from methyl ester and amine or ammonia', rule: 'aminolysis', group: 'Amides', match(t) {
+    return retro23AcylPartners(t, 'amide', true).map((pieces) =>
+      retroSpec(retroReactants(pieces), [], {solvents: ['ethanol'], temperature: 80}));
+  }},
+  {id: 'transesterification', name: 'Methyl or ethyl ester by alcohol exchange', rule: 'transesterification', group: 'Esters', match(t) {
+    return t.info.carbonyls.filter((c) => c.kind === 'ester').slice(0, RETRO_LIMITS.maxPerTransform).map((c) => {
+      const pieces = retroEdit(t, (g) => {
+        if (!retroCut(g, c.c, c.hetero)) return false;
+        const alcoholIds = g.connectedComponents().find((component) => component.atomIds.includes(c.hetero)).atomIds;
+        const alcohol = retroCanonical(g, alcoholIds);
+        // Limit this proposal to the two encoded bulk alcohol solvents. Use
+        // the opposite ester so a no-change exchange cannot become a route.
+        const methyl = moleculeSame(alcohol, 'CO'), ethyl = moleculeSame(alcohol, 'CCO');
+        if (!methyl && !ethyl) return false;
+        const oxygen = rxAttach(g, 'O', c.c), carbon = rxAttach(g, 'C', oxygen.id);
+        if (methyl) rxAttach(g, 'C', carbon.id);
+      });
+      if (!pieces || pieces.length !== 2) return null;
+      const alcohol = pieces.find((p) => p.ids.has(c.hetero));
+      const ester = pieces.find((p) => p !== alcohol);
+      if (!alcohol || !ester) return null;
+      return retroSpec([{smiles: ester.smiles, role: 'reactant'}, {smiles: alcohol.smiles, role: 'solvent'}], [],
+        {solvents: ['none'], additives: ['h2so4'], temperature: 60});
+    }).filter(Boolean);
+  }}
+);
