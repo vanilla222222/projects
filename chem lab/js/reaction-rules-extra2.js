@@ -227,10 +227,13 @@ function rxyRuleHaloform(ctx) {
   const x = tag ? tag.slice(0, -1) : 'Cl';
   return ctx.substrates.flatMap((s) => rxyMethylKetones(s).slice(0, 1).map((k) => {
     const g = rxCloneGraph(s.graph);
-    g.removeAtom(k.me);
+    // The ketone's methyl carbon becomes haloform; retain the actual atom
+    // and its isotope label when separating it from the acyl fragment.
+    rxSetOrder(g, k.c, k.me, 0);
     rxAttach(g, 'O', k.c, 1, -1);
     rxxAddCation(ctx, g);
-    const cx = g.addAtom('C', g.getAtom(k.c).x + 120, g.getAtom(k.c).y);
+    const cx = g.getAtom(k.me);
+    cx.x = g.getAtom(k.c).x + 120;
     [0, 1, 2].forEach(() => rxAttach(g, x, cx.id));
     const out = rxOutcome('haloform', x === 'I' ? 'Haloform reaction (iodoform)' : 'Haloform reaction', 'α-Halogenation / C–C cleavage', g,
       'Base forms the enolate of the methyl group, which is halogenated; each halogen makes the remaining H more acidic, so the CH₃ becomes CX₃. Hydroxide then adds to the C=O and expels ⁻CX₃ (a good leaving group), giving the carboxylate and CH' + x + '₃.',

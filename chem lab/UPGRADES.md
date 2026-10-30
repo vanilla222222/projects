@@ -1,5 +1,14 @@
 # Chem Lab upgrades
 
+## Pinacol, Birch, magnesium insertion and haloform routes — 2026-10-30
+
+- **Four additional reverse methods:** ketones from supported Pinacol vicinal-diol rearrangements, isolated nonconjugated cyclohexadienes from Birch arene reduction, Grignard reagents from organic halides and magnesium, and carboxylate anions from methyl-ketone haloform cleavage. Every proposal still requires exact forward replay; the existing migration/regioselection heuristics and reagent compatibility limits remain authoritative.
+- **Planner integration:** all four methods connect supported one-step endpoints. Pinacol proposals include selected hydride and carbon-group shifts. Birch proposals exclude fused/shared-ring systems and require the encoded alcoholic solvent/reductant combination. Magnesium insertion includes ether, Mg and inert-atmosphere conditions; Mg exclusions and encoded protic conflicts apply.
+- **Explicit carboxylate endpoint:** haloform retrosynthesis targets the encoded carboxylate anion, without inventing neutralizing work-up or a counterion. The corresponding methyl ketone, iodine and hydroxide are shown explicitly. Neutral acids and disconnected salts are outside this reverse proposal's verified endpoint scope.
+- **Haloform carbon identity:** cleavage now detaches and reuses the original methyl carbon instead of deleting it and creating an unlabelled replacement. A methyl-carbon isotope label therefore remains in haloform; a carbonyl-carbon label remains in the carboxylate. Hydrogen/isotope exchange and experimental selectivity are not simulated.
+- **Focused checks:** 68 reverse/planner checks and 25 forward/scope/isotope checks cover exact replay, target immutability, rearrangement variants, arene/diene bounds, reagent exclusions, protic conflicts and carbon-label fate across both cleavage products.
+
+
 ## Metathesis, trans-alkene and Cannizzaro alternatives — 2026-10-30
 
 - **Four additional reverse methods:** five- to eight-membered ring-closing metathesis, cross-metathesis of two terminal alkenes, dissolving-metal reduction of an acyclic internal alkyne to a trans alkene, and a primary alcohol from a non-enolizable aldehyde by Cannizzaro self-disproportionation. Each proposal requires the existing forward model to reproduce the target.
