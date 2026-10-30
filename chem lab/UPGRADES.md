@@ -1,5 +1,10 @@
 # Chem Lab upgrades
 
+## Current-engine benchmark and independent oracle refresh — 2026-10-30
+
+- Chemistry benchmarks now load the current application script list/order instead of an outdated engine subset. Four fixed, source-linked cases cover mild/strong hydride behavior with an aldehyde/tert-butyl ester, primary-versus-tertiary alcohol oxidation and labelled carbonyl oxygen retention. Expectations are written independently of app output.
+- Benchmark coverage rises from 209 to 221 assertions. The RDKit oracle independently checks exported products/structures and records hashes for both fixture files plus loaded app scripts; source links from both fixture sets are retained. Toolkit agreement is structural validation, not evidence that a reaction works experimentally.
+
 ## Acyclic Cope reverse coverage — 2026-10-30
 
 - Added a reverse Cope bond exchange for supported carbon-only acyclic diene chains. The existing forward rule must reproduce the exact target; degenerate exchanges, heteroatom-containing substrates and unsupported chain topology are excluded. Existing direction-selection and equilibrium heuristics remain limitations.

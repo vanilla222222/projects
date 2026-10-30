@@ -69,6 +69,8 @@ def main():
     options = args.parse_args()
     fixture_bytes = (HERE / "rdkit-fixtures.json").read_bytes()
     fixtures = json.loads(fixture_bytes)
+    legacy_fixture_bytes = (HERE / "chemistry-fixtures.json").read_bytes()
+    legacy_fixtures = json.loads(legacy_fixture_bytes)
     bridge = subprocess.run(["node", str(HERE / "export-rdkit-cases.js")], capture_output=True, text=True, check=True)
     exported = json.loads(bridge.stdout)
     records = []
@@ -157,9 +159,11 @@ def main():
         "generatedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "rdkitVersion": rdBase.rdkitVersion,
         "fixtureSha256": hashlib.sha256(fixture_bytes).hexdigest(),
+        "fixtureFilesSha256": {"rdkit-fixtures.json": hashlib.sha256(fixture_bytes).hexdigest(),
+                               "chemistry-fixtures.json": hashlib.sha256(legacy_fixture_bytes).hexdigest()},
         "exportSha256": hashlib.sha256(bridge.stdout.encode()).hexdigest(),
         "appScriptSha256": exported["scriptSha256"],
-        "sources": fixtures["sources"],
+        "sources": {**legacy_fixtures["sources"], **fixtures["sources"]},
         "massConvention": "RDKit CalcExactMolWt, including electron-mass correction for net charge; tolerance 0.00002 Da.",
         "scope": "Finite structure-export, descriptor, reaction-product and encoded route-continuity regression against an independently implemented toolkit; not experimental reaction/route validation, nomenclature validation or a chemical-space accuracy estimate.",
         "structures": len(exported["structures"]), "identityPairs": len(exported["pairs"]), "reactions": len(exported["reactions"]),
