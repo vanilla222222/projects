@@ -919,3 +919,50 @@ RETRO_TRANSFORMS.push(
       retroSpec([{smiles:p.smiles,role:'reactant'}],[RETRO_REAGENTS.hydroxide],{solvents:['none'],temperature:140}));
   }}
 );
+// Reverse the encoded six-atom Claisen bond exchange; forward replay remains
+// authoritative for ortho selection and substituted allyl orientation.
+RETRO_TRANSFORMS.push(
+  {id:'claisen-vinyl',name:'Unsaturated carbonyl from allyl vinyl ether',rule:'claisen-rearrangement',group:'Rearrangements',match(t) {
+    const g=t.graph,out=[];
+    t.info.carbonyls.filter(c=>c.hetero===null).forEach(c=>{
+      rxCarbonNeighbors(g,c.c).filter(n=>n.bond.order===1&&rxIsSp3(g,n.atom.id)).forEach(v=>{
+        rxCarbonNeighbors(g,v.atom.id,c.c).filter(n=>n.bond.order===1&&rxIsSp3(g,n.atom.id)).forEach(end=>{
+          rxCarbonNeighbors(g,end.atom.id,v.atom.id).filter(n=>n.bond.order===1).forEach(mid=>{
+            rxCarbonNeighbors(g,mid.atom.id,end.atom.id).filter(n=>n.bond.order===2&&!t.aromatic.has(n.atom.id)).forEach(tip=>{
+              if(new Set([c.c,v.atom.id,end.atom.id,mid.atom.id,tip.atom.id]).size!==5)return;
+              const p=retroSinglePiece(t,h=>{
+                if(!retroCut(h,v.atom.id,end.atom.id))return false;
+                rxSetOrder(h,c.c,c.o,1);rxSetOrder(h,c.c,v.atom.id,2);
+                h.addBond(c.o,tip.atom.id);rxSetOrder(h,tip.atom.id,mid.atom.id,1);rxSetOrder(h,mid.atom.id,end.atom.id,2);
+                [c.c,v.atom.id,end.atom.id,mid.atom.id,tip.atom.id].forEach(id=>rxsDrop(h,id));
+              });
+              if(p)out.push(p);
+            });
+          });
+        });
+      });
+    });
+    return retroUniquePieces(out).slice(0,RETRO_LIMITS.maxPerTransform).map(p=>retroSpec([{smiles:p.smiles,role:'reactant'}],[],{solvents:['none'],temperature:200}));
+  }},
+  {id:'claisen-aromatic',name:'Ortho allyl phenol from allyl aryl ether',rule:'claisen-rearrangement',group:'Rearrangements',match(t) {
+    const g=t.graph,out=[];
+    g.atoms.filter(o=>o.element==='O'&&!o.charge&&rxHydrogens(g,o.id)===1&&rxNeighbors(g,o.id).length===1).forEach(o=>{
+      const cv=rxNeighbors(g,o.id)[0];if(!t.aromatic.has(cv.atom.id))return;
+      rxCarbonNeighbors(g,cv.atom.id).filter(n=>t.aromatic.has(n.atom.id)).forEach(v=>{
+        rxCarbonNeighbors(g,v.atom.id,cv.atom.id).filter(n=>n.bond.order===1&&!t.aromatic.has(n.atom.id)&&rxIsSp3(g,n.atom.id)).forEach(end=>{
+          rxCarbonNeighbors(g,end.atom.id,v.atom.id).filter(n=>n.bond.order===1).forEach(mid=>{
+            rxCarbonNeighbors(g,mid.atom.id,end.atom.id).filter(n=>n.bond.order===2&&!t.aromatic.has(n.atom.id)).forEach(tip=>{
+              if(new Set([cv.atom.id,v.atom.id,end.atom.id,mid.atom.id,tip.atom.id]).size!==5)return;
+              const p=retroSinglePiece(t,h=>{
+                if(!retroCut(h,v.atom.id,end.atom.id))return false;
+                h.addBond(o.id,tip.atom.id);rxSetOrder(h,tip.atom.id,mid.atom.id,1);rxSetOrder(h,mid.atom.id,end.atom.id,2);
+                [end.atom.id,mid.atom.id,tip.atom.id].forEach(id=>rxsDrop(h,id));
+              });if(p)out.push(p);
+            });
+          });
+        });
+      });
+    });
+    return retroUniquePieces(out).slice(0,RETRO_LIMITS.maxPerTransform).map(p=>retroSpec([{smiles:p.smiles,role:'reactant'}],[],{solvents:['none'],temperature:200}));
+  }}
+);
