@@ -95,7 +95,7 @@ function pathFinderProtectionLinks(candidate, carried, destination) {
     // Keep each visible substep independently checkable; the combined candidate
     // must not hide a failed or discontinuous protecting-group operation.
     if (!retroForwardCheck(c, product.smiles)) return null;
-    links.push({ candidate: c, precursor, from: from.smiles, to: product.smiles, fromKey: from.key, toKey: product.key });
+    links.push({ candidate: c, precursor, from: from.smiles, to: product.smiles, fromKey: carried.key, toKey: product.key });
     from = product;
   }
   return from.key === destination.key ? links : null;
@@ -204,7 +204,11 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
     const extras = candidate.precursors.filter((p, i) => i !== carried);
     const missing = extras.filter((p) => !stocked(p.isomericSmiles || p.smiles)).length;
     const summary = pathFinderMaterialSummary(extras, material);
-    return [direct, missing, summary.stock, summary.heavy, summary.count];
+    // Inventory and material simplicity remain the primary criteria. When those
+    // tie, follow the precursor closest to the requested start before exploring
+    // valid but needlessly growing branches such as reverse rearrangements.
+    const startDistance = carriedStructure ? priority(carriedStructure.smiles) : 0;
+    return [direct, missing, summary.stock, summary.heavy, summary.count, startDistance];
   };
   const ruleBlocked = (c) => {
     const labels = [c.rule, c.transform, c.outcomeRule, c.outcomeId, c.name, c.outcomeName].filter(Boolean).map((x) => String(x).toLowerCase());
@@ -366,7 +370,11 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
         for (let i = 1; i < queue.length; i++) {
           const a = queue[i], b = queue[nextIndex];
           const closer = (a.priority || 0) < (b.priority || 0);
-          if (extended ? closer || a.priority === b.priority && a.chain.length < b.chain.length
+          // A small depth penalty keeps valid chain-lengthening transforms from
+          // flooding an extended best-first search with increasingly deep branches.
+          const aScore = (a.priority || 0) + a.chain.length;
+          const bScore = (b.priority || 0) + b.chain.length;
+          if (extended ? aScore < bScore || aScore === bScore && a.chain.length < b.chain.length
             : a.chain.length < b.chain.length || a.chain.length === b.chain.length && closer) nextIndex = i;
         }
         const node = queue.splice(nextIndex, 1)[0];
@@ -668,3 +676,4 @@ function createPathFinder(deps) {
   if (get('path-benchmarks') && typeof createRouteBenchmarks === 'function') createRouteBenchmarks(get('path-benchmarks'),deps);
   return { show() { updateLimits(); start.focus(); } };
 }
+
