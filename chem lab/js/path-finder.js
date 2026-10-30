@@ -676,5 +676,3 @@ function createPathFinder(deps) {
   if (get('path-benchmarks') && typeof createRouteBenchmarks === 'function') createRouteBenchmarks(get('path-benchmarks'),deps);
   return { show() { updateLimits(); start.focus(); } };
 }
-
-
