@@ -1,5 +1,12 @@
 # Chem Lab upgrades
 
+## Borohydride competition on multifunctional substrates — 2026-10-30
+
+- The NaBH4 susceptibility model now includes acyl chlorides. A drawn aldehyde/ketone-only reduction that leaves an acyl chloride is labelled unresolved competition and rejected by the existing route/retrosynthesis compatibility gates. No clean acyl chloride reduction product is invented; the standalone unsupported case now gives an accurate reactivity hint rather than claiming NaBH4 is simply too mild.
+- Competition warnings describe encoded susceptibility without inventing a mixture composition or quantitative kinetic preference. Ester/amide/acid spectator wording applies only when those groups are actually present.
+- Forty-three checks cover mixed aldehyde/ketone-acyl chlorides, isotope-labelled input, solvent variants, benign ester/nitrile/amide controls, input immutability, primary-source attribution and rejection through retrosynthesis and Path Finder. The source supports acyl chloride reactivity, not selective outcomes for the invented mixed-function fixtures.
+- Added two fixed reference selectivity patterns from Chaikin and Brown (JACS 1949, DOI 10.1021/ja01169a033): carbonyl reduction while retaining a nitro group or alpha bromide. No substrate-specific yield or stereopurity is asserted.
+
 ## Current-engine benchmark and independent oracle refresh — 2026-10-30
 
 - Chemistry benchmarks now load the current application script list/order instead of an outdated engine subset. Four fixed, source-linked cases cover mild/strong hydride behavior with an aldehyde/tert-butyl ester, primary-versus-tertiary alcohol oxidation and labelled carbonyl oxygen retention. Expectations are written independently of app output.

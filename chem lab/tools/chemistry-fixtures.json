@@ -8,7 +8,8 @@
     "alkeneReactions": "https://openstax.org/books/organic-chemistry/pages/8-summary-of-reactions",
     "hydrogenation": "https://openstax.org/books/organic-chemistry/pages/8-6-reduction-of-alkenes-hydrogenation",
     "esterification": "https://openstax.org/books/organic-chemistry/pages/21-3-reactions-of-carboxylic-acids",
-    "esterReduction": "https://openstax.org/books/organic-chemistry/pages/21-6-chemistry-of-esters"
+    "esterReduction": "https://openstax.org/books/organic-chemistry/pages/21-6-chemistry-of-esters",
+    "chaikinBrownBorohydride": "https://doi.org/10.1021/ja01169a033"
   },
   "naming": [
     {
@@ -486,6 +487,52 @@
       "conditions": {
         "solvents": [
           "ethanol"
+        ]
+      }
+    },
+    {
+      "label": "Literature selectivity pattern: meta-nitrobenzaldehyde reduction",
+      "compounds": [
+        {
+          "smiles": "O=Cc1cccc([N+](=O)[O-])c1",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[Na+].[BH4-]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "reduction-nabh4",
+      "products": [
+        "OCc1cccc([N+](=O)[O-])c1"
+      ],
+      "source": "chaikinBrownBorohydride",
+      "conditions": {
+        "solvents": [
+          "methanol"
+        ]
+      }
+    },
+    {
+      "label": "Literature selectivity pattern: alpha-bromoacetophenone reduction",
+      "compounds": [
+        {
+          "smiles": "O=C(CBr)c1ccccc1",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[Na+].[BH4-]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "reduction-nabh4",
+      "products": [
+        "OC(CBr)c1ccccc1"
+      ],
+      "source": "chaikinBrownBorohydride",
+      "conditions": {
+        "solvents": [
+          "methanol"
         ]
       }
     }

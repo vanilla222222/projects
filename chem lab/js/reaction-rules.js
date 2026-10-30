@@ -1261,7 +1261,9 @@ function rxRuleReduction(ctx) {
       });
     }
     if (!changed) {
-      return skipped.length ? [rxHint('NaBH₄ is too mild to reduce esters, acids or amides — use LiAlH₄.')] : [];
+      return skipped.includes('acylChloride')
+        ? [rxHint('Acyl chlorides can react with NaBH₄ or the reaction medium. This rule does not encode that competition or a clean product for this substrate.')]
+        : skipped.length ? [rxHint('NaBH₄ is too mild to reduce esters, acids or amides — use LiAlH₄.')] : [];
     }
     const felkin = rxFelkinPair(g, s.info.carbonyls.filter((c) => c.kind === 'ketone' || c.kind === 'aldehyde'), () => null);
     const simple = s.info.carbonyls.length === 1 && ['ketone', 'aldehyde'].includes(s.info.carbonyls[0].kind) && !(strong && s.info.nitriles.length) ? s.info.carbonyls[0] : null;
@@ -1278,8 +1280,11 @@ function rxRuleReduction(ctx) {
     rxFelkinApply(out, felkin, 'hydride');
     out.warnings.push('Each ' + (strong ? 'AlH₄⁻' : 'BH₄⁻') + ' can deliver four hydrides, so ' + (Math.round(hydride / 4 * 100) / 100) + ' equiv is the theoretical minimum; in practice ' +
       (strong ? '1–2 equiv of LiAlH₄ is' : '1–2 equiv of NaBH₄ is') + ' used, because some hydride is lost to the solvent or moisture.');
-    if (skipped.length) {
-      out.warnings.push('Ester, acid or amide groups are left untouched by NaBH₄.');
+    if (skipped.some(kind=>['ester','acid','amide'].includes(kind))) {
+      out.warnings.push('Ester, acid or amide groups are left untouched by NaBH₄ in this encoded branch.');
+    }
+    if (skipped.includes('acylChloride')) {
+      out.warnings.push('Acyl chlorides can also react with NaBH₄ or the reaction medium. That competition is not modeled here, so the drawn carbonyl-only reduction is not an established selective preparation.');
     }
     if (strong && ctx.protic) {
       out.warnings.push('LiAlH₄ reacts violently with water and alcohols — run it in dry ether or THF and add water only in the work-up.');
@@ -2403,7 +2408,7 @@ function rxFormatEquiv(value) {
 }
 
 const RX_CHEMOSELECTIVITY = [
-  { id: 'borohydride', label: 'NaBH₄', tags: ['borohydride'], attacks: ['aldehyde', 'ketone'] },
+  { id: 'borohydride', label: 'NaBH₄', tags: ['borohydride'], attacks: ['aldehyde', 'ketone', 'acylChloride'] },
   { id: 'alanate', label: 'LiAlH₄', tags: ['alanate'], attacks: ['aldehyde', 'ketone', 'acylChloride', 'ester', 'tBuEster', 'acid', 'epoxide', 'amide', 'nitrile'] },
   { id: 'hydrogenation', label: 'H₂ with a metal catalyst', tags: ['H2', 'hydrogenationCatalyst'], attacks: ['alkyne', 'alkene', 'nitro', 'benzylEther', 'cbz'], advice: 'if the alkene must be reduced, protect the alcohol as a TBS ether instead of a benzyl ether, since TBS survives H₂/Pd' },
   { id: 'organometallic', label: 'the organometallic reagent', tags: ['grignard'], attacks: ['aldehyde', 'ketone', 'acylChloride', 'ester', 'tBuEster', 'epoxide', 'nitrile'] },
@@ -2589,8 +2594,8 @@ function rxChemoselectivity(ctx, outcome) {
     suggestion = 'To keep the ' + name(target) + ' untouched, first ' + rxChemoProtectionSuggestion(target, entry) + '.';
   }
   const text = competing.length
-    ? 'Chemoselectivity: ' + entry.label + ' reacted at the ' + changed.map(name).join(' and ') + ' but can also attack the ' + competing.map((c) => name(c.group)).join(' and ') + ' in this molecule, so expect a mixture unless one site is protected.'
-    : 'Chemoselectivity: ' + entry.label + ' reacted at both the ' + changed.map(name).join(' and the ') + '; it cannot tell these groups apart.';
+    ? 'Chemoselectivity: the encoded ' + entry.label + ' outcome changes the ' + changed.map(name).join(' and ') + ', while the ' + competing.map((c) => name(c.group)).join(' and ') + ' remains susceptible in the reagent model. Selective preparation and the competing products are not established.'
+    : 'Chemoselectivity: the encoded ' + entry.label + ' outcome changes the ' + changed.map(name).join(' and the ') + '; the model assigns no kinetic site preference.';
   outcome.chemoselectivity = { reagent: entry.id, label: entry.label, changed, competing, suggestion };
   outcome.warnings.push(text);
   return outcome.chemoselectivity;
