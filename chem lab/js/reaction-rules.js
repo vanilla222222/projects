@@ -3190,7 +3190,17 @@ function predictReaction(compounds, conditions) {
   const unique = [];
   outcomes.forEach((o) => {
     const identities = o.products.map(reactionProductIdentity);
-    const key = o.id + '|' + (identities.every(Boolean) ? identities.sort().join('.') : 'unresolved:' + unique.length);
+    // Outcomes describe a multiset: two equivalents of one product must not
+    // collapse into a branch producing only one. Combine repeated entries so
+    // representation and product ordering do not create extra alternatives.
+    const counts = new Map();
+    identities.forEach((identity, i) => {
+      counts.set(identity, (counts.get(identity) || 0) + (o.products[i].count || 1));
+    });
+    const productKey = identities.every(Boolean)
+      ? JSON.stringify([...counts].sort((a, b) => a[0].localeCompare(b[0])))
+      : 'unresolved:' + unique.length;
+    const key = o.id + '|' + productKey;
     if (!unique.some((u) => u.key === key)) {
       unique.push(Object.assign(o, { key }));
     }

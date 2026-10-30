@@ -23,7 +23,8 @@ search({ stockPolicy: 'custom', maxDepth: 1, recipeTree: true, budgetMs: 10000 }
 check('recipeJob.status', 'exhausted', 'A one-level tree cannot hide the acid preparation');
 search({ stockPolicy: 'custom', maxDepth: 2, recipeTree: true, budgetMs: 10000 });
 check('recipeJob.status', 'found', 'Recipe mode recursively prepares the unavailable acid');
-check('recipeJob.recipeTrees.length', 3, 'Complete Fischer, Mitsunobu and acyl-chloride recipe trees are returned');
+check('recipeJob.recipeTrees.length', 2, 'Only the two complete recipes within depth two are returned');
+check('recipeJob.recipeTrees.every(tree => tree.metrics.longest <= 2)', true, 'No shared intermediate bypasses the selected recipe depth');
 check('recipeJob.options.recipeTree', true, 'The opt-in mode is recorded in job options');
 check('recipeJob.recipeTrees[0].metrics.steps', 2, 'The tree contains acid preparation and esterification');
 check('pathFinderKey(recipeJob.recipeTrees[0].target) === pathFinderKey("CCOC(C)=O")', true, 'The tree root is the requested target');
@@ -46,6 +47,8 @@ check(`(()=>{
   const names=[];const walk=node=>{if(node.candidate)names.push(node.candidate.transform);(node.children||[]).forEach(walk);};
   walk(tree);return names.join(',')==='mitsunobu,acid-oxidation'&&tree.metrics.steps===2;
 })()`, true, 'The Mitsunobu alternative recursively prepares acetic acid before esterification');
+search({ stockPolicy: 'custom', maxDepth: 3, forbiddenRules: ['fischer', 'mitsunobu'], recipeTree: true, budgetMs: 10000 });
+check('recipeJob.status', 'found', 'The deeper budget permits an acyl-chloride preparation');
 check(`(()=>{
   const tree=recipeJob.recipeTrees.find(node=>node.candidate&&node.candidate.transform==='ester-acyl-chloride');if(!tree)return false;
   const names=[];const walk=node=>{if(node.candidate)names.push(node.candidate.transform);(node.children||[]).forEach(walk);};

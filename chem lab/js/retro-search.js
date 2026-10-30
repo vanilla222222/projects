@@ -210,7 +210,7 @@ function rsearchRouteKey(route) {
   return keys.sort().join('\n');
 }
 
-function rsearchEnumerate(job, node, ancestors, limit) {
+function rsearchEnumerate(job, node, ancestors, limit, remaining = job.options.maxDepth) {
   if (node.stock && node !== job.root) {
     return [{ target: node.smiles, candidate: null, children: [], stock: node.stock, skeleton: node.skeleton }];
   }
@@ -221,9 +221,13 @@ function rsearchEnumerate(job, node, ancestors, limit) {
     if (!and.solved || and.children.some((c) => path.has(c.smiles))) {
       continue;
     }
+    // Node depths describe the shortest graph path, not this route branch.
+    // Charge every explicit protection/reaction operation on the current path.
+    const cost = rsearchCandidateSteps(and.candidate).length;
+    if (cost > remaining) continue;
     let combos = [[]];
     for (const child of and.children) {
-      const options = rsearchEnumerate(job, child, path, limit);
+      const options = rsearchEnumerate(job, child, path, limit, remaining - cost);
       const next = [];
       combos.forEach((combo) => options.forEach((option) => {
         if (next.length < limit) {
