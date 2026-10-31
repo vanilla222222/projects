@@ -108,9 +108,63 @@ function routeComparisonSummaries(job) {
   });
 }
 
+// Structural comparison against the first displayed pathway, not a feasibility score.
+function routeComparisonDiversity(job) {
+  const records = (job.routes || []).map(route => {
+    const intermediates = new Map(), feedstocks = new Map(), families = new Set();
+    let missingFamilies = false;
+    const add = (map, smiles) => { const key=routeComparisonKey(smiles); if(!map.has(key))map.set(key,{key,smiles,name:routeComparisonName(smiles)}); };
+    const family = candidate => {
+      if(candidate.group)families.add(String(candidate.group)); else missingFamilies=true;
+    };
+    let strategy;
+    if (Array.isArray(route)) {
+      route.forEach((link,i) => { if(i<route.length-1)add(intermediates,link.to); family(link.candidate||{}); });
+      strategy=pathFinderRouteStrategyKey(route);
+    } else {
+      const walk=(node,root)=>{
+        if(node.candidate){family(node.candidate);if(!root)add(intermediates,node.target);}
+        else add(feedstocks,node.target);
+        (node.children||[]).forEach(child=>walk(child,false));
+      };
+      walk(route,true); strategy=pathFinderRecipeStrategyKey(route);
+    }
+    return {strategy,intermediates:[...intermediates.values()],feedstocks:[...feedstocks.values()],families:[...families].sort(),missingFamilies};
+  });
+  const reference=records[0];
+  return records.map((record,i)=>{
+    const delta=(field,key)=>record[field].filter(item=>!reference[field].some(other=>key(item)===key(other)));
+    const omitted=(field,key)=>reference[field].filter(item=>!record[field].some(other=>key(item)===key(other)));
+    const key=item=>item.key, identity=item=>item;
+    return {...record,reference:i===0,samePath:record.strategy===reference.strategy,
+      addedIntermediates:delta('intermediates',key),omittedIntermediates:omitted('intermediates',key),
+      addedFeedstocks:delta('feedstocks',key),omittedFeedstocks:omitted('feedstocks',key),
+      addedFamilies:delta('families',identity),omittedFamilies:omitted('families',identity),
+      missingFamilies:record.missingFamilies||reference.missingFamilies};
+  });
+}
+
+function routeComparisonDiversityElement(record, kind) {
+  const make=(tag,text)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=String(text);return el;};
+  const detail=make('details');
+  detail.append(make('summary',record.reference?'Pathway reference': 'How this pathway differs from '+kind+' 1'));
+  const list=(label,items)=>{detail.append(make('h5',label));if(!items.length){detail.append(make('p','None.'));return;}const ul=make('ul');items.forEach(item=>ul.append(make('li',typeof item==='string'?item:item.name+' ('+item.smiles+')')));detail.append(ul);};
+  if(record.reference){list('Intermediates',record.intermediates);list('Reaction families',record.families);if(record.feedstocks.length)list('Feedstocks',record.feedstocks);}
+  else {
+    detail.append(make('p',record.samePath?'Same structural pathway; the recipe may differ.':'Different intermediate sequence or preparation tree.'));
+    list('Intermediates used here but absent from '+kind+' 1',record.addedIntermediates);
+    list('Intermediates from '+kind+' 1 omitted here',record.omittedIntermediates);
+    list('Reaction families added',record.addedFamilies);list('Reaction families omitted',record.omittedFamilies);
+    if(record.addedFeedstocks.length||record.omittedFeedstocks.length){list('Feedstocks added',record.addedFeedstocks);list('Feedstocks omitted',record.omittedFeedstocks);}
+  }
+  if(record.missingFamilies)detail.append(make('p','Some reaction-family labels are missing; family differences are incomplete.'));
+  return detail;
+}
+
 function routeComparisonRender(container, job, deps) {
   const make = (tag, text, cls) => { const el = document.createElement(tag); if (text !== undefined) el.textContent = String(text); if (cls) el.className = cls; return el; };
   const summaries = routeComparisonSummaries(job);
+  const diversity = routeComparisonDiversity(job);
   container.replaceChildren();
   const root = make('section', undefined, 'route-comparison');
   root.setAttribute('aria-label', 'Candidate route comparison');
@@ -125,6 +179,7 @@ function routeComparisonRender(container, job, deps) {
   summaries.forEach((summary) => {
     const card = make('article', undefined, 'route-comparison-card');
     card.append(make('h4', 'Route ' + summary.number));
+    card.append(routeComparisonDiversityElement(diversity[summary.number-1],'Route'));
     const metrics = make('table', undefined, 'route-comparison-metrics');
     const body = make('tbody');
     [['Operations counted for ranking', summary.ranking.steps], ['Protection operations', summary.ranking.protection], ['Recorded scope gaps', summary.ranking.scopeGaps], ['Steps', summary.stepCount], ['Distinct extra building blocks', summary.buildingBlocks.length], ['Distinct reagents / catalysts / solvents / additives', summary.reagents.length], ['Steps with reaction-class sources', summary.sourcedSteps + ' / ' + summary.stepCount], ['Minor-product steps', summary.minorSteps], ['Recorded stereo concerns used for ranking', summary.ranking.stereoConcerns]].forEach(([label, value]) => {

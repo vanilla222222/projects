@@ -1,5 +1,11 @@
 # Chem Lab upgrades
 
+## Visible pathway differences — 2026-10-31
+
+- Linear route cards and Recipe Tree results now provide an expandable comparison against the first displayed pathway, listing added/omitted intermediates and reaction families. Tree comparisons also list changed feedstocks. The reference result lists its own intermediates and families.
+- Comparisons use structural identity, retain specified stereoisomer differences, ignore equivalent SMILES spellings and disclose missing family metadata. Identical structural pathways are labeled as such even if the recipes differ. These are structural descriptions, not feasibility or diversity percentages. Search rankings and verification gates are unchanged.
+- Nineteen new model/presentation checks cover linear and tree differences, exact identity, stereo, missing labels, empty results, input immutability and rendered text. Existing 46 route-comparison model, DOM and responsive-style checks pass.
+
 ## Recipe Tree pathway diversity — 2026-10-31
 
 - Path Finder Recipe Tree now groups trees with the same stereo-aware intermediate/feedstock topology, regardless of reagent recipe or child ordering. It keeps the best scored representative and favors different intermediate, feedstock and reaction-family features when selecting alternatives. Exact recipe variants remain in the inspected recipe pool.
