@@ -54,6 +54,7 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
       // their own RX_CHEMOSELECTIVITY entry. Reuse their encoded attack class.
       if(!entry&&context.has('dmp')&&(outcome.id==='oxidation-dmp'||outcome.rule==='site-resolved-oxidation'))entry={id:'dmp',attacks:['alcohol']};
     }
+    entry=rxChemoConditionEntry(entry,context);
     context.substrates.forEach(s=>{
       const compoundIndex=prepared.indexOf(s.compound),groups=rxChemoGroups(s.graph);
       const original=reactionFragmentGraph(s.compound.fragment),index=new Map(original.atoms.map((a,i)=>[a.id,i+1]));

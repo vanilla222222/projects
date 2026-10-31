@@ -18,7 +18,7 @@ const RX_FORMULA_GUARDS = {};
 
 const RX_SPECIES_DETECTORS = [];
 
-const RX_TEMPERATURES = { dehydrationTertiary: 25, dehydrationSecondary: 80, dehydrationPrimary: 170, etherMin: 110, coldPermanganate: 10, e1: 50 };
+const RX_TEMPERATURES = { dehydrationTertiary: 25, dehydrationSecondary: 80, dehydrationPrimary: 170, etherMin: 110, coldPermanganate: 10, hotPermanganate: 60, e1: 50 };
 
 function rxNeighbors(g, id) {
   return g.bondsForAtom(id).map((b) => ({ bond: b, atom: g.getAtom(b.atomA === id ? b.atomB : b.atomA) }));
@@ -1135,8 +1135,26 @@ function rxOxidizeAlcohol(g, alcohol, strong) {
   }
 }
 
+// These are conservative encoded regimes, not universal kinetic boundaries.
+function rxPermanganateRegime(ctx) {
+  const solvents=ctx.conditions.solvents||[];
+  if(!solvents.includes('water')||solvents.some(id=>!['none','water'].includes(id)))return 'unresolved';
+  if(ctx.temperature<=RX_TEMPERATURES.coldPermanganate&&ctx.has('hydroxide')&&!ctx.has('strongAcid'))return 'cold-alkaline';
+  // The hot branch draws the neutral acid/work-up endpoint, not alkaline salts.
+  if(ctx.temperature>=RX_TEMPERATURES.hotPermanganate&&!ctx.has('hydroxide')&&!ctx.has('alkoxide'))return 'hot';
+  return 'unresolved';
+}
+
+function rxPermanganateBenzylicSites(g, info) {
+  const ring=info.aromatic.atoms;
+  return g.atoms.filter(a=>a.element==='C'&&!a.charge&&!ring.has(a.id)&&rxIsSp3(g,a.id)&&rxHydrogens(g,a.id)>0&&
+    rxNeighbors(g,a.id).filter(n=>n.atom.element==='C'&&ring.has(n.atom.id)).length===1&&
+    rxNeighbors(g,a.id).every(n=>['C','H','D'].includes(n.atom.element))).map(a=>a.id);
+}
+
 function rxRuleOxidation(ctx) {
   const permanganate = ctx.has('permanganate');
+  const permanganateRegime=permanganate?rxPermanganateRegime(ctx):null;
   if (!permanganate && !ctx.has('pcc')) {
     return [];
   }
@@ -1157,7 +1175,7 @@ function rxRuleOxidation(ctx) {
     }
     if (permanganate && s.info.alkenes.length && !oxidizable.length) {
       const g = rxCloneGraph(s.graph);
-      if (ctx.temperature <= RX_TEMPERATURES.coldPermanganate) {
+      if (permanganateRegime === 'cold-alkaline') {
         s.info.alkenes.forEach((e) => {
           rxSetOrder(g, e.a, e.b, 1);
           const oa = rxAttach(g, 'O', e.a);
@@ -1166,8 +1184,8 @@ function rxRuleOxidation(ctx) {
         });
         out.push(rxOutcome('dihydroxylation', 'Syn-dihydroxylation', 'Oxidation', g,
           'Cold, dilute KMnO₄ adds across the C=C through a cyclic manganate ester, so both OH groups add syn to give a 1,2-diol.',
-          { score: 12, byproducts: ['MnO₂'], consumes: [rxUse(s, 1), rxUse(ctx.get('permanganate'), 2 / 3 * s.info.alkenes.length)] }));
-      } else {
+          { score: 12, byproducts: ['MnO₂'], warnings:['This branch assumes dilute cold aqueous alkali; oxidant concentration and selective stopping are not calculated.'], consumes: [rxUse(s, 1), rxUse(ctx.get('permanganate'), 2 / 3 * s.info.alkenes.length)] }));
+      } else if (permanganateRegime === 'hot') {
         const removed = [];
         s.info.alkenes.forEach((e) => {
           const before = [e.a, e.b].map((id) => ({ id, h: rxHydrogens(g, id), terminal: rxNeighbors(g, id).length === 1 }));
@@ -1186,14 +1204,19 @@ function rxRuleOxidation(ctx) {
         removed.forEach((id) => g.removeAtom(id));
         out.push(rxOutcome('permanganate-cleavage', 'Oxidative cleavage (hot KMnO₄)', 'Oxidative cleavage', g,
           'Hot, concentrated KMnO₄ cuts the C=C completely. Carbons that carried H become carboxylic acids, fully substituted carbons become ketones and a terminal CH₂ is lost as CO₂.',
-          { score: 12, byproducts: ['MnO₂'].concat(removed.length ? ['CO₂'] : []) }));
+          { score: 12, byproducts: ['MnO₂'].concat(removed.length ? ['CO₂'] : []), consumes:[rxUse(s,1)], warnings:['Neutral acid products represent the work-up endpoint. Oxidant concentration, consumption and product ratios are not quantified.'] }));
+      } else {
+        out.push(rxHint('No single permanganate alkene endpoint is encoded for these conditions. Use an explicitly recorded cold aqueous alkaline regime for the assumed dilute diol branch; heated aqueous neutral/acidic conditions select the cleavage/work-up branch. Intermediate temperatures, other/mixed solvent media and hot alkaline salt endpoints require review.'));
       }
     }
     if (permanganate && !oxidizable.length && !s.info.alkenes.length) {
       const ring = s.info.aromatic.atoms;
-      const benzylic = s.graph.atoms.filter((a) => a.element === 'C' && !ring.has(a.id) && rxIsSp3(s.graph, a.id) &&
-        rxHydrogens(s.graph, a.id) > 0 && rxNeighbors(s.graph, a.id).some((n) => ring.has(n.atom.id)));
+      const benzylic = rxPermanganateBenzylicSites(s.graph,s.info).map(id=>s.graph.getAtom(id));
       if (benzylic.length) {
+        if(permanganateRegime!=='hot'){
+          out.push(rxHint('The encoded benzylic permanganate oxidation requires heated aqueous neutral/acidic conditions. Cold, intermediate-temperature, other/mixed solvent and hot alkaline endpoints are not established by this branch.'));
+          return out;
+        }
         const g = rxCloneGraph(s.graph);
         benzylic.forEach((a) => {
           rxCarbonNeighbors(g, a.id).filter((n) => !ring.has(n.atom.id)).forEach((n) => rxSetOrder(g, a.id, n.atom.id, 0));
@@ -1213,7 +1236,7 @@ function rxRuleOxidation(ctx) {
           rxAttach(g, 'O', a.id);
         });
         out.push(rxOutcome('side-chain-oxidation', 'Side-chain oxidation', 'Oxidation', g,
-          'Hot KMnO₄ attacks the benzylic C–H. Whatever the length of the alkyl chain, it is cut back to a carboxylic acid on the ring.', { score: 11, byproducts: ['MnO₂', 'CO₂ (from any extra chain carbons)'] }));
+          'Hot KMnO₄ attacks the benzylic C–H. Whatever the length of the alkyl chain, it is cut back to a carboxylic acid on the ring.', { score: 11, byproducts: ['MnO₂', 'CO₂ (from any extra chain carbons)'], consumes:[rxUse(s,1)], warnings:['Neutral acid products represent the work-up endpoint; oxidant consumption and substrate-specific kinetics are not quantified.'] }));
       }
     }
     return out;
@@ -2450,7 +2473,7 @@ const RX_CHEMO_GROUP_LABELS = {
   aldehyde: 'aldehyde', ketone: 'ketone', ester: 'ester', acid: 'carboxylic acid', amide: 'amide', acylChloride: 'acyl chloride',
   nitrile: 'nitrile', epoxide: 'epoxide', alkene: 'C=C', alkyne: 'C≡C', terminalAlkyne: 'terminal alkyne', nitro: 'nitro group',
   benzylEther: 'benzyl ether', cbz: 'Cbz group', amine: 'amine', alcohol: 'alcohol', thiol: 'thiol', boc: 'Boc group',
-  tBuEster: 'tert-butyl ester', silylEther: 'silyl ether',
+  tBuEster: 'tert-butyl ester', silylEther: 'silyl ether', benzylicAlkyl: 'alkyl benzylic C–H site',
 };
 
 function rxChemoGroups(g) {
@@ -2489,6 +2512,7 @@ function rxChemoGroups(g) {
       add(c.kind, [c.c, c.o]);
     }
   });
+  rxPermanganateBenzylicSites(g,info).forEach(id=>add('benzylicAlkyl',[id]));
   info.nitriles.forEach((n) => add('nitrile', [n.c, n.n]));
   info.epoxides.forEach((e) => add('epoxide', [e.o, e.a, e.b]));
   info.alkenes.forEach((e) => add('alkene', [e.a, e.b]));
@@ -2523,7 +2547,7 @@ function rxChemoGroups(g) {
 // Keep the predictor and query audit on the same susceptible-site definition.
 function rxChemoSiteSusceptible(g, entry, group, atoms, info) {
   if (!entry || !entry.attacks.includes(group)) return false;
-  if (group === 'alcohol' && ['pcc', 'dmp'].includes(entry.id)) {
+  if (group === 'alcohol' && ['pcc', 'dmp', 'permanganate'].includes(entry.id)) {
     return (info || rxAnalyze(g)).alcohols.some(a => atoms.includes(a.o) && a.degree < 3 && rxHydrogens(g,a.c) > 0);
   }
   return true;
@@ -2541,19 +2565,26 @@ function rxChemoProtectionSuggestion(group, entry) {
   return RX_PROTECTION_SUGGESTIONS[group] || '';
 }
 
+function rxChemoConditionEntry(entry,ctx) {
+  if(entry&&entry.id==='permanganate'&&rxPermanganateRegime(ctx)==='hot'&&!entry.attacks.includes('benzylicAlkyl'))return Object.assign({},entry,{attacks:entry.attacks.concat('benzylicAlkyl')});
+  return entry;
+}
+
 function rxChemoEntry(ctx, outcome) {
   const consumed = (compound) => compound && outcome.consumes.some((u) => u && u.compound === compound);
   const acylating = ctx.substrates.filter((s) => consumed(s.compound) && s.info.carbonyls.some((c) => c.kind === 'acylChloride' || c.kind === 'anhydride'));
-  return RX_CHEMOSELECTIVITY.find((entry) => {
+  const entry=RX_CHEMOSELECTIVITY.find((entry) => {
     if (entry.acylating) {
       return acylating.length > 0 && ctx.substrates.some((s) => consumed(s.compound) && !acylating.includes(s));
     }
     if (!entry.tags.every((tag) => ctx.has(tag))) {
       return false;
     }
+    if(entry.id==='permanganate'&&['permanganate-cleavage','side-chain-oxidation'].includes(outcome.id))return true;
     const carriers = entry.tags.map((tag) => ctx.get(tag).compound).filter(Boolean);
     return !carriers.length || carriers.some(consumed);
   }) || null;
+  return rxChemoConditionEntry(entry,ctx);
 }
 
 function rxChemoselectivity(ctx, outcome) {
