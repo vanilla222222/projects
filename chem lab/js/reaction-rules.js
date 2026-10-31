@@ -760,6 +760,7 @@ function reactionContext(compounds, conditions) {
   const c = normalizeReactionConditions(conditions);
   const ctx = {
     conditions: c,
+    inputs: compounds || [],
     temperature: reactionEffectiveTemperature(c),
     species: new Map(),
     substrates: [],
@@ -1479,16 +1480,22 @@ function rxHasProticNH(graph) {
   return graph.atoms.some((atom) => atom.element === 'N' && (rxHydrogens(graph, atom.id) > 0 || rxNeighbors(graph, atom.id).some((n) => ['H', 'D'].includes(n.atom.element))));
 }
 
-function rxGrignardElectrophiles(info) {
+function rxGrignardCO2Sites(graph) {
+  return graph.atoms.filter(a=>a.element==='C'&&!a.charge&&rxNeighbors(graph,a.id).length===2&&rxNeighbors(graph,a.id).every(n=>n.atom.element==='O'&&n.bond.order===2&&!n.atom.charge)).map(a=>a.id);
+}
+
+function rxGrignardElectrophiles(info,graph) {
   const groups=info.carbonyls.filter(c=>['aldehyde','ketone','ester','amide','acylChloride','anhydride'].includes(c.kind)).map(c=>c.kind);
   if(info.nitriles.length)groups.push('nitrile');
+  if(graph&&rxGrignardCO2Sites(graph).length)groups.push('carbonDioxide');
   return [...new Set(groups)];
 }
 
 function rxGrignardReactiveSolvents(ctx) {
   return (ctx.conditions.solvents||[]).flatMap(id=>{
     const solvent=reactionSolvent(id);if(!solvent||!solvent.smiles)return [];
-    const groups=rxGrignardElectrophiles(rxAnalyze(reactionFragmentGraph(smilesToFragment(solvent.smiles))));
+    const graph=reactionFragmentGraph(smilesToFragment(solvent.smiles));
+    const groups=rxGrignardElectrophiles(rxAnalyze(graph),graph);
     return groups.length?[{id,name:solvent.name,groups}]:[];
   });
 }
@@ -1497,9 +1504,38 @@ function rxGrignardSolventHint(conflicts) {
   return rxHint('Recorded solvent choices ('+conflicts.map(s=>s.name).join(', ')+') contain electrophilic carbonyl/nitrile groups that can react with the organometallic reagent. Solvent competition is not modeled, so no clean intended Grignard product is assigned.');
 }
 
+// Inspect complete recorded structures before species classification removes
+// recognized fragments. Roles do not make acidic donors chemically inert.
+function rxGrignardInputSites(ctx) {
+  if(ctx.grignardInputSites)return ctx.grignardInputSites;
+  ctx.grignardInputSites=(ctx.inputs||[]).filter(c=>c.fragment).map(compound=>{
+    const graph=reactionFragmentGraph(compound.fragment),donors=[];
+    graph.atoms.forEach(atom=>{
+      const hasH=rxHydrogens(graph,atom.id)>0||rxNeighbors(graph,atom.id).some(n=>['H','D'].includes(n.atom.element));
+      if(hasH&&['O','N','S'].includes(atom.element)&&!atom.charge)donors.push({kind:atom.element+'–H',atom:atom.id});
+      if(hasH&&atom.element==='C'){
+        const triple=rxNeighbors(graph,atom.id).find(n=>n.atom.element==='C'&&n.bond.order===3);
+        const metalated=triple&&[atom.id,triple.atom.id].some(id=>rxNeighbors(graph,id).some(n=>['Mg','Li'].includes(n.atom.element)));
+        if(triple&&!metalated)donors.push({kind:'terminal alkyne',atom:atom.id});
+      }
+    });
+    return {compound,donors,electrophiles:rxGrignardElectrophiles(rxAnalyze(graph),graph)};
+  });
+  return ctx.grignardInputSites;
+}
+
+function rxGrignardAuxiliaryConflict(ctx) {
+  const substrates=new Set(ctx.substrates.map(s=>s.compound));
+  return rxGrignardInputSites(ctx).filter(s=>!substrates.has(s.compound)&&s.electrophiles.length);
+}
+
+function rxGrignardAuxiliaryHint(conflicts) {
+  return rxHint('Another recorded input contains electrophilic carbonyl/nitrile groups ('+conflicts.map(s=>s.electrophiles.join('/')).join(', ')+'). Its reagent, catalyst or solvent role does not establish inertness toward the organometallic reagent. Competing products and a clean intended endpoint are not modeled.');
+}
+
 function rxGrignardProticConflict(ctx) {
   const graphs = ctx.substrates.concat(ctx.organicCatalysts || []).map((s) => s.graph).concat([...ctx.species.values()].map((s) => s.graph).filter(Boolean));
-  return ctx.protic || ctx.has('H2O') || ctx.has('strongAcid') || graphs.some(rxHasProticNH) || ctx.substrates.some((s) => s.info.alcohols.length || s.info.carbonyls.some((c) => c.kind === 'acid'));
+  return ctx.protic || ctx.has('H2O') || ctx.has('strongAcid') || rxGrignardInputSites(ctx).some(s=>s.donors.length) || graphs.some(rxHasProticNH) || ctx.substrates.some((s) => s.info.alcohols.length || s.info.carbonyls.some((c) => c.kind === 'acid'));
 }
 
 function rxRuleGrignard(ctx) {
@@ -1509,6 +1545,10 @@ function rxRuleGrignard(ctx) {
   }
   const solventConflicts=rxGrignardReactiveSolvents(ctx);
   if(solventConflicts.length)return [rxGrignardSolventHint(solventConflicts)];
+  const auxiliaryConflicts=rxGrignardAuxiliaryConflict(ctx);
+  if(auxiliaryConflicts.length)return [rxGrignardAuxiliaryHint(auxiliaryConflicts)];
+  const unmodeledDonors=rxGrignardInputSites(ctx).flatMap(s=>s.donors).filter(d=>['S–H','terminal alkyne'].includes(d.kind));
+  if(unmodeledDonors.length)return [rxHint('A recorded S–H/S–D or terminal-alkyne H/D donor can consume the organometallic reagent by acid–base reaction. Clean carbonyl addition, isotope transfer and subsequent acetylide chemistry are not modeled for this mixture.')];
   const quench = rxGrignardProticConflict(ctx);
   const rGraph = rxCloneGraph(reagent.graph);
   rxNeighbors(rGraph, reagent.metal).forEach((n) => {
@@ -2483,7 +2523,7 @@ const RX_CHEMOSELECTIVITY = [
   { id: 'borohydride', label: 'NaBH₄', tags: ['borohydride'], attacks: ['aldehyde', 'ketone', 'acylChloride'] },
   { id: 'alanate', label: 'LiAlH₄', tags: ['alanate'], attacks: ['aldehyde', 'ketone', 'acylChloride', 'ester', 'tBuEster', 'acid', 'epoxide', 'amide', 'nitrile'] },
   { id: 'hydrogenation', label: 'H₂ with a metal catalyst', tags: ['H2', 'hydrogenationCatalyst'], attacks: ['alkyne', 'alkene', 'nitro', 'benzylEther', 'cbz'], advice: 'if the alkene must be reduced, protect the alcohol as a TBS ether instead of a benzyl ether, since TBS survives H₂/Pd' },
-  { id: 'organometallic', label: 'the organometallic reagent', tags: ['grignard'], attacks: ['aldehyde', 'ketone', 'acylChloride', 'ester', 'tBuEster', 'epoxide', 'nitrile'] },
+  { id: 'organometallic', label: 'the organometallic reagent', tags: ['grignard'], attacks: ['aldehyde', 'ketone', 'acylChloride', 'ester', 'tBuEster', 'epoxide', 'nitrile', 'amide', 'carbonDioxide'] },
   { id: 'peracid', label: 'mCPBA', tags: ['mcpba'], attacks: ['alkene', 'ketone'] },
   { id: 'permanganate', label: 'KMnO₄', tags: ['permanganate'], attacks: ['aldehyde', 'alkene', 'alcohol'] },
   { id: 'chromium', label: 'the chromium(VI) oxidant', tags: ['jones'], attacks: ['aldehyde', 'alcohol'] },
@@ -2511,7 +2551,7 @@ const RX_CHEMO_GROUP_LABELS = {
   aldehyde: 'aldehyde', ketone: 'ketone', ester: 'ester', acid: 'carboxylic acid', amide: 'amide', acylChloride: 'acyl chloride',
   nitrile: 'nitrile', epoxide: 'epoxide', alkene: 'C=C', alkyne: 'C≡C', terminalAlkyne: 'terminal alkyne', nitro: 'nitro group',
   benzylEther: 'benzyl ether', cbz: 'Cbz group', amine: 'amine', alcohol: 'alcohol', thiol: 'thiol', boc: 'Boc group',
-  tBuEster: 'tert-butyl ester', silylEther: 'silyl ether', benzylicAlkyl: 'alkyl benzylic C–H site',
+  carbonDioxide: 'carbon dioxide', tBuEster: 'tert-butyl ester', silylEther: 'silyl ether', benzylicAlkyl: 'alkyl benzylic C–H site',
 };
 
 function rxChemoGroups(g) {
@@ -2550,6 +2590,7 @@ function rxChemoGroups(g) {
       add(c.kind, [c.c, c.o]);
     }
   });
+  rxGrignardCO2Sites(g).forEach(id=>add('carbonDioxide',[id]));
   rxPermanganateBenzylicSites(g,info).forEach(id=>add('benzylicAlkyl',[id]));
   info.nitriles.forEach((n) => add('nitrile', [n.c, n.n]));
   info.epoxides.forEach((e) => add('epoxide', [e.o, e.a, e.b]));
@@ -2661,10 +2702,11 @@ function rxChemoselectivity(ctx, outcome) {
   const competing = entry.attacks.filter((group) => count(before, group) > 0 && count(after, group) > 0)
     .map((group) => ({ group, count: count(after, group), atoms: before[group].reduce((all, atoms) => all.concat(atoms), []) }));
   // A selected branch consumes only its own inputs. Other explicitly recorded
-  // reactants remain in the mixture; do not infer their inertness from omission
+  // reactants (and organometallic reagent-role partners) remain in the mixture;
+  // do not infer their inertness from omission
   // in consumes. Reuse the same finite site model, without inventing products.
   const otherInputs = [];
-  ctx.substrates.filter(s => s.compound.role === 'reactant' &&
+  ctx.substrates.filter(s => (s.compound.role === 'reactant' || entry.id === 'organometallic') &&
     !outcome.consumes.some(u => u && u.compound === s.compound)).forEach(s => {
     const groups = rxChemoSusceptibleGroups(s.graph, entry);
     entry.attacks.forEach(group => {
@@ -2694,7 +2736,7 @@ function rxChemoselectivity(ctx, outcome) {
     ? 'Chemoselectivity: the encoded ' + entry.label + ' outcome changes the ' + changed.map(name).join(' and ') + ', while the ' + competing.map((c) => name(c.group)).join(' and ') + ' remains susceptible in the reagent model. Selective preparation and the competing products are not established.'
     : 'Chemoselectivity: the encoded ' + entry.label + ' outcome changes the ' + changed.map(name).join(' and the ') + '; the model assigns no kinetic site preference.';
   outcome.chemoselectivity = { reagent: entry.id, label: entry.label, changed, competing, otherInputs, suggestion };
-  if (otherInputs.length) outcome.warnings.push('Additional reactant compatibility: another recorded input contains sites susceptible to ' + entry.label + '. The selected branch does not consume that input; its survival and any competing products are not established.');
+  if (otherInputs.length) outcome.warnings.push('Additional input compatibility: another recorded input contains sites susceptible to ' + entry.label + '. The selected branch does not consume that input; its survival and any competing products are not established.');
   outcome.warnings.push(text);
   return outcome.chemoselectivity;
 }

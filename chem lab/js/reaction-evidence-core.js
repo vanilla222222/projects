@@ -8,6 +8,11 @@ const CORE_REACTION_EVIDENCE_SOURCES = {
     "https://openstax.org/books/organic-chemistry/pages/17-5-alcohols-from-carbonyl-compounds-grignard-reaction",
     "teaching"
   ],
+  "grignardAcidicHydrogens": [
+    "Susan Findlay, University of Lethbridge: Grignard reagents and acidic hydrogens",
+    "https://scholar.ulethbridge.ca/sites/default/files/susanfindlay/files/chem2500new_lecture07_pi_bonds_as_electrophiles.pdf?m=1582677275",
+    "teaching"
+  ],
   "coldPermanganate": [
     "Hunt and Spinney: hydroxylation of alkenes with cold alkaline permanganate",
     "https://chem.ucalgary.ca/courses/351/Carey5th/Ch15/ch15-3-3.html",
@@ -384,11 +389,12 @@ const CORE_REACTION_EVIDENCE_ROWS = [
     "Carbonyl C–C formation",
     "A recognized Grignard adds to CO2 or a nitrile when the guard finds no protic donor, competing aldehyde/ketone/ester substrate or recognized carbonyl/nitrile solvent.",
     "The acid or ketone product represents hydrolytic work-up of the organomagnesium adduct.",
-    "The guard is finite and does not guarantee compatibility with every acidic hydrogen or electrophilic group.",
+    "Complete recorded input structures are screened for neutral O–H/N–H/S–H and nonmetalated terminal-alkyne H/D donors. Auxiliary carbonyl/nitrile groups block clean endpoints. Other acidic hydrogens, competition ratios and general compatibility are not modeled.",
     [
       "carboxylation",
       "nitrile",
-      "grignardCompatibility"
+      "grignardCompatibility",
+      "grignardAcidicHydrogens"
     ]
   ],
   [
@@ -396,22 +402,24 @@ const CORE_REACTION_EVIDENCE_ROWS = [
     "Carbonyl C–C formation",
     "Recognized organomagnesium carbon donors add to the supported aldehyde, ketone or acid-derivative carbonyl patterns to give alcohol products.",
     "Dry conditions and protonating work-up are part of the represented sequence. Protic donors trigger quench; recognized carbonyl/nitrile solvents instead return unresolved solvent-competition hints.",
-    "Other acidic functions, steric effects and reagent-dependent 1,2/1,4 selectivity are incompletely represented.",
+    "Complete-input checks cover neutral O–H/N–H/S–H, nonmetalated terminal-alkyne H/D and auxiliary carbonyl/nitrile motifs. Unencoded acidic functions, steric effects and reagent-dependent 1,2/1,4 selectivity remain incomplete.",
     [
       "carbonyl",
       "derivatives",
-      "grignardCompatibility"
+      "grignardCompatibility",
+      "grignardAcidicHydrogens"
     ]
   ],
   [
     "grignard-formation",
     "Organometallic chemistry",
-    "A selected supported organic halide plus magnesium forms the encoded R-Mg-X fragment. Protic donors, recognized carbonyl/nitrile solvents and carbonyl/nitrile functions on listed substrates block isolated-formation assignment.",
+    "A selected supported organic halide plus magnesium forms the encoded R-Mg-X fragment. Protic donors, recognized carbonyl/nitrile solvents and carbonyl/nitrile functions on any recorded input block isolated-formation assignment. Neutral O–H/N–H/S–H and nonmetalated terminal-alkyne H/D donors are screened regardless of role.",
     "Ether or THF is the intended solvent; other solvent choices generate a warning.",
     "Metal activation, induction, coupling side products and all incompatible functional groups are not simulated.",
     [
       "grignard",
-      "grignardCompatibility"
+      "grignardCompatibility",
+      "grignardAcidicHydrogens"
     ]
   ],
   [

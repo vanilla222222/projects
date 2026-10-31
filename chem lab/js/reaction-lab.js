@@ -804,7 +804,7 @@ function createReactionLab(host) {
       }
       if (chemo.competing.length) {
         const list = element('ul', 'rx-chemo-sites');
-        chemo.competing.forEach((c) => list.appendChild(element('li', '', label(c.group) + (c.count > 1 ? ' ×' + c.count : '') + (c.source === 'unconsumed-input' ? ' in additional reactant · ' + c.substrateSmiles : ' still present'))));
+        chemo.competing.forEach((c) => list.appendChild(element('li', '', label(c.group) + (c.count > 1 ? ' ×' + c.count : '') + (c.source === 'unconsumed-input' ? ' in additional input · ' + c.substrateSmiles : ' still present'))));
         box.appendChild(list);
       }
       if (chemo.suggestion) {

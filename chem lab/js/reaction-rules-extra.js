@@ -915,7 +915,9 @@ function rxxRuleGrignardExtra(ctx) {
   if(!reagent)return [];
   const solventConflicts=rxGrignardReactiveSolvents(ctx);
   if(solventConflicts.length)return [rxGrignardSolventHint(solventConflicts)];
-  if (rxGrignardProticConflict(ctx) || ctx.substrates.some((s) => s.info.carbonyls.some((c) => ['aldehyde', 'ketone', 'ester'].includes(c.kind)))) {
+  const auxiliaryConflicts=rxGrignardAuxiliaryConflict(ctx);
+  if(auxiliaryConflicts.length)return [rxGrignardAuxiliaryHint(auxiliaryConflicts)];
+  if (rxGrignardProticConflict(ctx) || ctx.substrates.some((s) => s.info.carbonyls.some((c) => ['aldehyde', 'ketone', 'ester', 'amide', 'acylChloride', 'anhydride'].includes(c.kind)))) {
     return [];
   }
   const co2 = ctx.substrates.find((s) => s.graph.atoms.length === 3 && s.graph.atoms.filter((a) => a.element === 'O').length === 2 && s.graph.atoms.some((a) => a.element === 'C'));
