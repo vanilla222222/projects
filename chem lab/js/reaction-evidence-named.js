@@ -98,9 +98,9 @@
   add('ester-protection', 'Carboxylic-acid protection by isobutylene/strong acid, Boc2O/DMAP without amines, TMS-diazomethane, or methyl halide/weak base; acid removes recognized tert-butyl esters and any recognized Boc group together.', 'Esterification and neutral work-up are collapsed into graph edits; methanol for TMS-diazomethane can be a warning.', 'The teaching source documents ester chemistry rather than every specialized protection reagent; the methylation paper supports TMS-diazomethane, while Boc2O protection and orthogonality need separate substrate-specific review.', [S.acid, S.peptides, S.methylEster]);
   add('thiolate-alkylation', 'Preformed thiolate, or a single-thiol substrate with hydroxide/hydride/alkoxide, substitutes a separate methyl/primary alkyl halide; neopentyl and higher-degree sites are excluded.', 'One neutral thioether is displayed after proton transfer.', 'Competing electrophiles, polysite selectivity and further alkylation to sulfonium are not evaluated; no intramolecular branch is generated.', [S.thiolate]);
   add('disulfide-reduction', 'Recognized neutral carbon-substituted disulfide bonds are cleaved with structurally recognized TCEP and explicit water.', 'All matched S–S bonds are reduced and shown as neutral thiols after proton transfer.', 'Thiol ionization depends on pH, which is not calculated; the reference does not establish quantitative conversion for every substrate.', [S.tcep]);
-  // These four rules carry complete, more restrictive source/scope metadata
+  // These rules carry complete, more restrictive source/scope metadata
   // beside their implementation; copy it so this audit also enumerates them.
-  ['finkelstein', 'sulfide-sulfoxide', 'sulfoxide-sulfone', 'thiol-disulfide'].forEach((id) => {
+  ['finkelstein', 'sulfide-sulfoxide', 'sulfoxide-sulfone', 'thiol-disulfide', 'exhaustive-o-methylation'].forEach((id) => {
     const rule = RX_RULES.find((r) => r.id === id);
     if (rule && rule.catalog) records[id] = { ...rule.catalog };
   });

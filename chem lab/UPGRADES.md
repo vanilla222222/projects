@@ -1,5 +1,12 @@
 # Chem Lab upgrades
 
+## One-operation exhaustive O-methylation — 2026-10-31
+
+- Two compatible O–H groups can now be converted to two methoxy groups by one explicit exhaustive transformation, with two methyl-transfer equivalents and two encoded base-activation equivalents. It is a new whole-substrate forward rule and independently replayed disconnection, not post-hoc merging of unrelated route steps or an assumption of selective mono-methylation. Path Finder and Recipe Tree count the operation once.
+- The initial scope is one connected neutral C/O diol/diphenol with exactly two eligible OH sites, one methyl bromide/iodide partner and hydride base (or encoded carbonate/weak base for two phenols) in the supported aprotic medium. Competing N/S functions, organic catalysts/nucleophiles, extra partners, epoxides/peroxides, carbonyls, nonaromatic unsaturation and geminal/hemiacetal OH environments are excluded. This is not general polyol permethylation or experimental substrate-specific validation.
+- Recorded insufficient methyl or base loading blocks a complete route through the existing stoichiometric-ceiling gate. No singly methylated product distribution is inferred from underloading. The exhaustive ceiling is normalized to the diol/diphenol even if reagent rows are reordered. Existing carbon stereochemistry and forward methyl-carbon isotopes are retained; the initial reverse template uses unlabelled methyl bromide stock and does not silently erase labels.
+- Sixty-one focused checks cover five fixed endpoints, forward/reverse replay, one-step Path Finder and Recipe Tree routes, loading bounds, substrate/reagent exclusions, carbonate controls, isotope/stereo retention, saved-route verification and graph immutability. Three fixed benchmark cases check two endpoints and one theoretical underloading ceiling. Reaction-class references support the graph-edit family, not a universal preparative yield.
+
 ## Bounded cyclization topology — 2026-10-31
 
 - Ring-closing metathesis, intramolecular Williamson closure, amino-acid lactamization and halolactonization now expose tether connectivity and ring size separately from experimental feasibility. Multiple tether paths, eligible closures or recognized external reactive partners carry explicit unresolved conflicts through planner, saved-route and scope checks. Pendant rings outside the tether do not trigger the cyclic-tether guard.

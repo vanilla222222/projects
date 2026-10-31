@@ -982,3 +982,16 @@ RETRO_TRANSFORMS.push({id:'cope-rearrangement',name:'Acyclic diene from Cope rea
   if(!p||moleculeSame(p.smiles,t.smiles))return [];
   return [retroSpec([{smiles:p.smiles,role:'reactant'}],[],{solvents:['none'],temperature:200})];
 }});
+
+RETRO_TRANSFORMS.push({id:'exhaustive-o-methylation',name:'Two methoxy groups from one diol/diphenol operation',rule:'exhaustive-o-methylation',group:'Ethers',match(t){
+ const g=t.graph,sites=g.atoms.filter(a=>a.element==='O'&&!a.charge).flatMap(o=>{
+   const ns=rxNeighbors(g,o.id);if(ns.length!==2||ns.some(n=>n.atom.element!=='C'||n.bond.order!==1))return [];
+   const methyl=ns.find(n=>rxHydrogens(g,n.atom.id)===3&&rxNeighbors(g,n.atom.id).length===1&&!n.atom.isotope);
+   return methyl?[{o:o.id,c:methyl.atom.id}]:[];
+ });
+ if(sites.length!==2||new Set(sites.map(s=>s.c)).size!==2)return [];
+ const piece=retroSinglePiece(t,h=>{sites.forEach(s=>h.removeAtom(s.c));});
+ if(!piece)return [];
+ return [retroSpec([{smiles:piece.isomericSmiles||piece.smiles,role:'reactant'},{smiles:'CBr',role:'reactant',equiv:2}],
+   [{smiles:'[Na+].[H-]',role:'reagent',label:'NaH',equiv:2}],{solvents:['thf'],temperature:25})];
+}});
