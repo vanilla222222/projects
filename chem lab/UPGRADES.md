@@ -1,5 +1,11 @@
 # Chem Lab upgrades
 
+## Grignard nitrile hydrolysis atom identity — 2026-10-31
+
+- Nitrile addition followed by hydrolysis now removes the nitrile nitrogen and adds a fresh oxygen, rather than changing nitrogen into oxygen. Nitrile-carbon and Grignard-carbon isotope labels remain on carbon.
+- Work-up provenance records the departing nitrogen isotope and separately assumed unlabelled water as the oxygen source. Labelled work-up transfer, oxygen exchange and balanced salt/byproduct structures remain outside this endpoint model.
+- Ten focused regression checks and three fixed product fixtures cover isotope identity, input immutability, ether-containing substrates and the existing work-up boundary.
+
 ## DIBAL atom identity and mixture scope — 2026-10-31
 
 - Cold nitrile reduction/hydrolysis now removes nitrile nitrogen and introduces a new oxygen from separately assumed unlabelled work-up water. It no longer changes the nitrogen atom into oxygen, which incorrectly transferred nitrogen isotope labels. Carbon labels and existing ester oxygen identity stay on their original atoms in the graph model. Work-up provenance records departing nitrogen labels without inventing a balanced byproduct structure or predicting oxygen exchange.

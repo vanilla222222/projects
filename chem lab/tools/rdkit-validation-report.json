@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-31T08:23:31.784836+00:00",
+  "generatedAt": "2026-10-31T08:39:43.543920+00:00",
   "rdkitVersion": "2026.09.1",
   "fixtureSha256": "97fa85d1dff3acbe2f38e80e5d02998e00229bb52acb610a3d55448400278389",
   "fixtureFilesSha256": {
     "rdkit-fixtures.json": "97fa85d1dff3acbe2f38e80e5d02998e00229bb52acb610a3d55448400278389",
-    "chemistry-fixtures.json": "f5b97600456abcb188790014935ef4a1be2dc022db0fe0cfa39e7128f65edeb0"
+    "chemistry-fixtures.json": "42e34e8d3441b9c3e67d59e88549679e743f63cd11a03c317a6d04a6e06cb553"
   },
-  "exportSha256": "43e7e03c581364bca0cb9ae43dce999a5e929d46fb464a22116464f7bad88a28",
+  "exportSha256": "1f1b9dc6eafdeee126521b637ce3b48686e89649444955d80c3ae9b9a9d2aa1f",
   "appScriptSha256": {
     "js/elements.js": "aaecea7433871b650c7601ffb5bef597e38361934cb7c4cc7406edbdc897a7ca",
     "js/graph.js": "c8a8a2cca6b2f3d758e3f83b7901f78f9966c3a27b0189fa846ba28ce55be88f",
@@ -53,7 +53,7 @@
     "js/reaction-io.js": "9ff1dd5e5887dbb6bd7aafb7cc471e8c85fa09be7bc6ae98efd75e4d7ee91273",
     "js/reaction-stereo.js": "868fdc58af5b556c55d73a9e29c4b7107cf99491124de8875e3c1cf54d08d565",
     "js/reaction-rules.js": "a6e5950c6124e4c05ce109084bfe8efb886ab262d6881cc06f6d9f72117bc948",
-    "js/reaction-rules-extra.js": "98270154b417bdb5137d35bcb9b99b4a4688aec8c30fa44f63c3d0f0d843287a",
+    "js/reaction-rules-extra.js": "164da8d9c755318786fde4a8998690d49996e6de862772bbab0725e915855622",
     "js/reaction-rules-extra2.js": "e7db06e2e2e98008771f7c05f2adff4db7fdc38bf819b6713910adf7a1d1637e",
     "js/reaction-aromatic.js": "65b4b095c4857570eaac0b6e65f725d4da2a557aa8b82ee72ae1087bcd5f0e8a",
     "js/reaction-rules-extra3.js": "62fecc23d84464e6efa010579f16f9e6b163e03329f00843fd669d8b169781b9",
@@ -161,10 +161,10 @@
   "scope": "Finite structure-export, descriptor, reaction-product and encoded route-continuity regression against an independently implemented toolkit; not experimental reaction/route validation, nomenclature validation or a chemical-space accuracy estimate.",
   "structures": 42,
   "identityPairs": 18,
-  "reactions": 84,
+  "reactions": 87,
   "routePlans": 4,
-  "checks": 618,
-  "passed": 618,
+  "checks": 624,
+  "passed": 624,
   "failed": 0,
   "categories": {
     "MOL_identity": 42,
@@ -176,8 +176,8 @@
     "formula_composition": 42,
     "heavy_atoms": 42,
     "positional_products_vs_RDKit": 2,
-    "reaction_products_vs_RDKit": 84,
-    "reaction_rule_found": 84,
+    "reaction_products_vs_RDKit": 87,
+    "reaction_rule_found": 87,
     "route_carried_reactant": 12,
     "route_final_target_identity": 4,
     "route_forward_product_identity": 12,
