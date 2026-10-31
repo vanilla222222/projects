@@ -3,20 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chemical Graph Constructor</title>
+<title>Chem Lab — Molecular Workbench</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/route-workspace.css">
 <link rel="stylesheet" href="css/route-comparison.css">
 <link rel="stylesheet" href="css/planner-tools.css">
+<link rel="stylesheet" href="css/workbench.css">
 </head>
 <body data-theme="dark">
 <aside id="sidebar">
   <div class="sidebar-head">
     <div class="brand">
-      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 27 9.5v13L16 29 5 22.5v-13z" fill="none" stroke="url(#brand-grad)" stroke-width="2.4" stroke-linejoin="round"/><circle cx="16" cy="16" r="3.2" fill="url(#brand-grad)"/><defs><linearGradient id="brand-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c8cf8"/><stop offset="1" stop-color="#4fd1e0"/></linearGradient></defs></svg>
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 27 9.5v13L16 29 5 22.5v-13z" fill="none" stroke="url(#brand-grad)" stroke-width="2.4" stroke-linejoin="round"/><circle cx="16" cy="16" r="3.2" fill="url(#brand-grad)"/><defs><linearGradient id="brand-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#80d5b6"/><stop offset="1" stop-color="#b8c8a2"/></linearGradient></defs></svg>
       <div>
-        <h1 class="app-title">Chemical Graph Constructor</h1>
-        <p class="app-subtitle">Organic skeletal structure editor</p>
+        <h1 class="app-title">Chem Lab</h1>
+        <p class="app-subtitle">Structure &amp; synthesis studio</p>
       </div>
     </div>
     <label class="search-box">
@@ -208,7 +209,12 @@
     <button type="button" class="link-button" id="help-button-side">Keyboard shortcuts &amp; gestures <kbd>?</kbd></button>
   </div>
 </aside>
+<button type="button" id="palette-dismiss" class="palette-scrim" aria-label="Close structure palette" tabindex="-1"></button>
 <main id="workspace">
+  <header class="workbench-head">
+    <p class="workbench-title"><span class="workbench-kicker">Chem Lab</span>Molecular workbench</p>
+    <div class="workbench-actions"><span class="workbench-local">DRAW / EXPLORE / SYNTHESIZE</span><button type="button" class="text-button" id="palette-toggle" aria-controls="sidebar" aria-expanded="false">Palette</button><button type="button" class="text-button" id="appearance-open">Appearance</button><button type="button" class="icon-button" id="theme-button" title="Toggle light / dark theme" aria-label="Toggle light / dark theme"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16 12.5A6.5 6.5 0 0 1 7.5 4 6.5 6.5 0 1 0 16 12.5z"/></svg></button></div>
+  </header>
   <nav id="view-tabs" role="tablist" aria-label="View">
     <button type="button" role="tab" class="view-tab selected" data-view="editor" aria-selected="true">Editor</button>
     <button type="button" role="tab" class="view-tab" data-view="reactions" aria-selected="false">Reactions</button>
@@ -285,13 +291,12 @@
       <button type="button" class="icon-button" id="retro-button" title="Retrosynthesis: disconnections verified by the reaction rules (Alt+T)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 7.5h10M2.5 12.5h10M10.5 4l6 6-6 6"/></svg></button>
       <button type="button" class="icon-button" id="spectra-button" title="Predicted spectra: ¹H/¹³C NMR, IR, MS (Alt+N)" aria-pressed="false"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 16.5h15"/><path d="M3 16c2 0 2.4-.4 3-3.5.5-2.5.8-9 1.5-9s1 6.5 1.5 9c.4 2 .8 1.5 1.3-1 .4-2 .6-3 1-3s.6 1 1 3c.5 2.6 1 3.5 3.7 4.5"/></svg></button>
       <button type="button" class="icon-button" id="locants-button" title="Show IUPAC locant numbers (#)" aria-pressed="false"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M8 3 6 17M14 3l-2 14M3.5 7.5h13M3 12.5h13"/></svg></button>
-      <button type="button" class="icon-button" id="theme-button" title="Toggle light / dark theme"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16 12.5A6.5 6.5 0 0 1 7.5 4 6.5 6.5 0 1 0 16 12.5z"/></svg></button>
       <button type="button" class="icon-button" id="help-button" title="Shortcuts (?)"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M7.8 7.8a2.3 2.3 0 1 1 3.2 2.1c-.6.3-1 .8-1 1.5v.4"/><circle cx="10" cy="14.4" r=".6"/></svg></button>
       <button type="button" class="icon-button danger" id="clear-button" title="Clear canvas (undoable)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M8 6V4h4v2M6 6l.8 10h6.4L14 6"/></svg></button>
     </div>
   </header>
   <div id="canvas-wrapper">
-    <canvas id="editor-canvas"></canvas>
+    <canvas id="editor-canvas" aria-label="Molecular structure drawing canvas"></canvas>
     <textarea id="annotation-editor" rows="1" spellcheck="false" aria-label="Label text" hidden></textarea>
     <div id="toast-stack" aria-live="polite"></div>
   </div>
@@ -766,6 +771,19 @@
   </div>
 </div>
 <div id="print-root" aria-hidden="true"></div>
+<dialog id="appearance-dialog" class="appearance-dialog" aria-labelledby="appearance-title">
+  <form method="dialog" class="appearance-head"><div><span class="workbench-kicker">Your workspace</span><h2 id="appearance-title">Make it feel like yours.</h2></div><button type="submit" class="icon-button" aria-label="Close appearance settings">×</button></form>
+  <p class="appearance-intro">Changes preview immediately and stay on this browser.</p>
+  <div class="appearance-fields">
+    <label>Color theme<select id="appearance-theme"><option value="dark">Dark · forest</option><option value="light">Light · paper</option></select></label>
+    <label>Accent color<select id="appearance-accent"><option value="green">Botanical green</option><option value="blue">Ocean blue</option><option value="amber">Amber</option></select></label>
+    <label>Interface density<select id="appearance-density"><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></label>
+    <label>Canvas grid<select id="appearance-grid"><option value="dots">Dots</option><option value="lines">Lines</option><option value="off">No grid</option></select></label>
+    <label class="appearance-wide">Grid spacing <output id="appearance-spacing-value">28 px</output><input id="appearance-spacing" type="range" min="16" max="48" step="2" value="28"></label>
+  </div>
+  <p id="appearance-status" class="appearance-intro" role="status" aria-live="polite"></p>
+  <div class="appearance-footer"><button type="button" class="text-button" id="appearance-reset">Reset appearance</button><form method="dialog"><button type="submit" class="text-button primary">Done</button></form></div>
+</dialog>
 <script src="js/elements.js"></script>
 <script src="js/graph.js"></script>
 <script src="js/valence.js"></script>
@@ -859,6 +877,7 @@
 <script src="js/route-workspace.js"></script>
 <script src="js/reaction-cascade.js"></script>
 <script src="js/route-benchmarks.js"></script>
+<script src="js/workbench-ui.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

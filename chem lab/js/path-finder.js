@@ -61,11 +61,110 @@ function pathFinderMaterialSummary(precursors, describe) {
   return out;
 }
 
+function pathFinderProcessBurden(route) {
+  if(typeof routePlanningProcessBurden==='function')return routePlanningProcessBurden(route);
+  const entries=new Set();
+  const add=(role,smiles,id)=>{
+    let key=id||smiles;
+    if(smiles){try{key=pathFinderMaterialKey(smiles);}catch(error){key=smiles;}}
+    if(key)entries.add(role+':'+key);
+  };
+  route.forEach(link=>{
+    const c=link.candidate||{};
+    (c.compounds||[]).filter(p=>p.role!=='reactant').forEach(p=>add(p.role||'reagent',p.isomericSmiles||p.smiles,p.label));
+    // Legacy records may carry explicit reagents without prepared compounds.
+    (c.reagents||[]).forEach(p=>add(p.role||'reagent',p.isomericSmiles||p.smiles,p.label));
+    ['solvents','additives'].forEach(field=>(c.conditions&&c.conditions[field]||[]).filter(id=>id!=='none').forEach(id=>{
+      const item=field==='solvents'?reactionSolvent(id):reactionAdditive(id);
+      add(field==='solvents'?'solvent':'additive',item&&item.smiles,id);
+    }));
+  });
+  return entries.size;
+}
+
+function pathFinderRouteMetrics(route, describe) {
+  const extras=route.flatMap(link=>(link.candidate.precursors||[]).filter((p,i)=>i!==link.precursor));
+  const materials=pathFinderMaterialSummary(extras,describe);
+  const metrics={steps:0,protection:0,scopeGaps:0,stereoConcerns:0,minor:0,buildingBlocks:materials.count,stock:materials.stock,heavy:materials.heavy,processMaterials:pathFinderProcessBurden(route)};
+  route.forEach(link=>routePlanningOperations(link.candidate).forEach(c=>{
+    const facts=routePlanningStepFacts(c);metrics.steps++;metrics.protection+=facts.protection?1:0;
+    metrics.scopeGaps+=facts.gaps.length;metrics.stereoConcerns+=facts.stereoConcern?1:0;metrics.minor+=facts.minor?1:0;
+  }));
+  return metrics;
+}
+
+// Routes through the same stereo-aware intermediates are recipe variants,
+// not additional pathways. Reagent/condition changes do not consume route slots.
+function pathFinderRouteStrategyKey(route) {
+  return JSON.stringify(route.map(link => [link.fromKey || pathFinderKey(link.from), link.toKey || pathFinderKey(link.to)]));
+}
+
+function pathFinderRouteFeatures(route) {
+  const features = new Set();
+  route.forEach((link, i) => {
+    if (i < route.length - 1) features.add('intermediate:' + (link.toKey || pathFinderKey(link.to)));
+    const c = link.candidate || {};
+    features.add('family:' + (c.group || c.transform || c.outcomeId || c.rule || 'unknown'));
+  });
+  return features;
+}
+
+// Keep the best-cost route, then choose the least overlapping pathways.
+// Cost ranking breaks diversity ties and orders the final displayed selection.
+function pathFinderSelectDiverseRoutes(routes, limit, compare, describe = pathFinderRouteFeatures) {
+  const remaining = routes.slice().sort(compare), selected = [], features = new Map();
+  remaining.forEach(route => features.set(route, describe(route)));
+  const overlap = (a, b) => {
+    const x = features.get(a), y = features.get(b);
+    const shared = [...x].filter(f => y.has(f)).length;
+    return shared / Math.max(1, x.size + y.size - shared);
+  };
+  while (remaining.length && selected.length < limit) {
+    let best = 0, score = Infinity;
+    remaining.forEach((route, i) => {
+      const similarity = selected.length ? Math.max(...selected.map(other => overlap(route, other))) : 0;
+      if (similarity < score) { best = i; score = similarity; }
+    });
+    selected.push(remaining.splice(best, 1)[0]);
+  }
+  return selected.sort(compare);
+}
+
+function pathFinderRecipeStrategyKey(tree) {
+  return JSON.stringify([pathFinderKey(tree.target), (tree.children || []).map(pathFinderRecipeStrategyKey).sort()]);
+}
+
+function pathFinderRecipeFeatures(tree) {
+  const features = new Set();
+  const walk = (node, root) => {
+    if (!root) features.add((node.candidate ? 'intermediate:' : 'feedstock:') + pathFinderKey(node.target));
+    if (node.candidate) features.add('family:' + (node.candidate.group || node.candidate.transform || node.candidate.rule || 'unknown'));
+    (node.children || []).forEach(child => walk(child, false));
+  };
+  walk(tree, true);
+  return features;
+}
+
+function pathFinderCandidateStrategyKey(candidate) {
+  return JSON.stringify(candidate.precursors.map(p => pathFinderKey(p.isomericSmiles || p.smiles)).sort());
+}
+
+function pathFinderDiverseCandidates(candidates) {
+  const groups = new Map(), result = [];
+  candidates.forEach(candidate => {
+    const key = pathFinderCandidateStrategyKey(candidate);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(candidate);
+  });
+  for (let round = 0; result.length < candidates.length; round++) {
+    groups.forEach(items => { if (items[round]) result.push(items[round]); });
+  }
+  return result;
+}
+
 function pathFinderRouteRank(route, describe) {
-  const extras = route.flatMap((link) => link.candidate.precursors.filter((p, i) => i !== link.precursor));
-  const materials = pathFinderMaterialSummary(extras, describe);
-  return [route.length, materials.stock, materials.heavy,
-    route.filter((link) => link.candidate.minor).length, materials.count];
+  const m=pathFinderRouteMetrics(route,describe);
+  return [m.steps,m.protection,m.scopeGaps,m.stereoConcerns,m.minor,m.buildingBlocks,m.stock,m.processMaterials,m.heavy];
 }
 
 function pathFinderProtectionLinks(candidate, carried, destination) {
@@ -129,6 +228,12 @@ function pathFinderAmineConflict(candidate) {
   return null;
 }
 
+function pathFinderQueuePush(job, queue, queued, limit, id, node) {
+  if(queued.has(id))return false;
+  if(queue.length>=limit){job.truncated=true;job.diagnostics.queue=(job.diagnostics.queue||0)+1;return false;}
+  queued.add(id);queue.push(typeof node==='function'?node():node);return true;
+}
+
 function pathFinderCreate(startSmiles, targetSmiles, options) {
   const opts = Object.assign({}, PATH_FINDER_LIMITS, options || {});
   opts.maxDepth = Math.max(1, Math.min(10, Math.floor(Number(opts.maxDepth) || 3)));
@@ -170,10 +275,11 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
     try { key = pathFinderMaterialKey(reactionParseCompound(text).smiles); } catch (error) { /* Named catalyst labels need no structure. */ }
     return { text: text.toLowerCase(), key };
   });
-  const diagnostics = { candidates: 0, inventory: 0, reagents: 0, rules: 0, stereo: 0, compatibility: 0, rejected: [], protection: 0, protectionMessages: opts.allowedProtectingGroups && !opts.allowedProtectingGroups.length ? ['Automatic protection planning is disabled.'] : [], noDisconnections: 0, depth: 0, branch: 0, missingMaterials: [] };
-  const job = { start: start.smiles, target: target.smiles, options: opts, status: start.key === target.key ? 'identical' : 'running', route: [], routes: [], expanded: 0, truncated: false, elapsedMs: 0, diagnostics, termination: '' };
+  const diagnostics = { candidates: 0, inventory: 0, reagents: 0, rules: 0, stereo: 0, compatibility: 0, rejected: [], protection: 0, protectionMessages: opts.allowedProtectingGroups && !opts.allowedProtectingGroups.length ? ['Automatic protection planning is disabled.'] : [], noDisconnections: 0, depth: 0, branch: 0, queue: 0, missingMaterials: [] };
+  const job = { start: start.smiles, target: target.smiles, options: opts, status: start.key === target.key ? 'identical' : 'running', route: [], routes: [], routeRecipes: [], expanded: 0, truncated: false, elapsedMs: 0, diagnostics, termination: '' };
   const queue = [{ smiles: target.smiles, key: target.key, chain: [], ancestors: new Set([target.key]) }];
-  const queued = new Set(), expanded = new Map(), routeKeys = new Set();
+  const queued = new Set(), expanded = new Map(), routeKeys = new Set(), routeStrategies = new Map();
+  diagnostics.routeVariants = 0;
   let current = null;
   const materials = new Map();
   const material = (smiles) => {
@@ -204,7 +310,11 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
     const extras = candidate.precursors.filter((p, i) => i !== carried);
     const missing = extras.filter((p) => !stocked(p.isomericSmiles || p.smiles)).length;
     const summary = pathFinderMaterialSummary(extras, material);
-    return [direct, missing, summary.stock, summary.heavy, summary.count];
+    // Inventory and material simplicity remain the primary criteria. When those
+    // tie, follow the precursor closest to the requested start before exploring
+    // valid but needlessly growing branches such as reverse rearrangements.
+    const startDistance = carriedStructure ? priority(carriedStructure.smiles) : 0;
+    return [direct, missing, summary.stock, summary.heavy, summary.count, startDistance];
   };
   const ruleBlocked = (c) => {
     const labels = [c.rule, c.transform, c.outcomeRule, c.outcomeId, c.name, c.outcomeName].filter(Boolean).map((x) => String(x).toLowerCase());
@@ -227,12 +337,28 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
   }
   const signature = (link) => [link.candidate.transform, link.candidate.rule, link.candidate.outcomeId, link.fromKey, link.toKey, JSON.stringify(link.candidate.conditions || {}), (link.candidate.compounds || []).map((p) => p.smiles + ':' + p.role).sort().join('|')].join('~');
   const rankRoutes = () => {
-    job.routes.sort((a, b) => {
-      const ra = pathFinderRouteRank(a, material), rb = pathFinderRouteRank(b, material);
-      for (let i = 0; i < ra.length; i++) if (ra[i] !== rb[i]) return ra[i] - rb[i];
-      return a.map(signature).join('/').localeCompare(b.map(signature).join('/'));
-    });
+    const routes = Array.from(routeStrategies.values());
+    const ranks = new Map(routes.map(route => [route, pathFinderRouteRank(route, material)]));
+    const compare = (a,b) => compareRanks(ranks.get(a), ranks.get(b)) || a.map(signature).join('/').localeCompare(b.map(signature).join('/'));
+    job.routes = pathFinderSelectDiverseRoutes(routes, opts.maxRoutes, compare);
     job.route = job.routes[0] || [];
+    diagnostics.distinctPathways = routeStrategies.size;
+  };
+  const enoughRoutes = () => routeStrategies.size >= (opts.maxRoutes === 1 ? 1 : opts.maxRoutes * 4);
+  const addRoute = (route) => {
+    const recipeKey = route.map(signature).join('/');
+    if (routeKeys.has(recipeKey)) return;
+    routeKeys.add(recipeKey);
+    job.routeRecipes.push(route);
+    const key = pathFinderRouteStrategyKey(route), previous = routeStrategies.get(key);
+    if (previous) {
+      diagnostics.routeVariants++;
+      const cost = compareRanks(pathFinderRouteRank(route, material), pathFinderRouteRank(previous, material));
+      if (cost > 0 || cost === 0 && recipeKey.localeCompare(previous.map(signature).join('/')) >= 0) return;
+    }
+    routeStrategies.set(key, route);
+    job.routes = Array.from(routeStrategies.values());
+    rankRoutes();
   };
   const finish = (reason) => { job.termination = reason; job.status = job.routes.length ? 'found' : reason === 'exhausted' ? 'exhausted' : 'budget'; rankRoutes(); };
   // Expanded structures are reused by multiple chains. These assessments depend
@@ -261,8 +387,18 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
       });
       return { candidate, index, rank: best || [0, 0, 0, 0] };
     }).sort((a, b) => compareRanks(a.rank, b.rank) || a.index - b.index);
+    const groups = new Map();
+    ordered.forEach(item => {
+      const key = JSON.stringify(item.candidate.precursors.map(p => pathFinderKey(p.isomericSmiles || p.smiles)).sort());
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(item);
+    });
+    const diversified = [];
+    for (let round = 0; diversified.length < ordered.length; round++) {
+      groups.forEach(items => { if (items[round]) diversified.push(items[round]); });
+    }
     if (ordered.length > opts.maxBranch) { diagnostics.branch += ordered.length - opts.maxBranch; job.truncated = true; }
-    for (const item of ordered.slice(0, opts.maxBranch)) {
+    for (const item of diversified.slice(0, opts.maxBranch)) {
       const candidate = item.candidate;
       diagnostics.candidates++;
       const assessment = candidateAssessment(candidate);
@@ -331,17 +467,14 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
         const chain = node.chain.concat(links.slice().reverse());
         if (chain.length > opts.maxDepth) { diagnostics.depth++; continue; }
         if (carried.key === start.key) {
-          const route = chain.slice().reverse(), id = route.map(signature).join('/');
-          if (!routeKeys.has(id)) { routeKeys.add(id); job.routes.push(route); rankRoutes(); }
-          if (job.routes.length >= opts.maxRoutes) { finish('route-limit'); return; }
+          addRoute(chain.slice().reverse());
+          if (enoughRoutes()) { finish('route-limit'); return; }
           continue;
         }
         if (chain.length >= opts.maxDepth) { diagnostics.depth++; continue; }
         const id = chain.map(signature).join('/');
-        if (!queued.has(id) && queue.length < opts.maxNodes * opts.maxBranch) {
-          queued.add(id);
-          queue.push({ smiles: carried.smiles, key: carried.key, chain, priority: priority(carried.smiles), ancestors: new Set([...node.ancestors, carried.key]) });
-        }
+        pathFinderQueuePush(job,queue,queued,opts.maxNodes*opts.maxBranch,id,
+          ()=>({ smiles: carried.smiles, key: carried.key, chain, priority: priority(carried.smiles), ancestors: new Set([...node.ancestors, carried.key]) }));
       }
     }
   };
@@ -352,11 +485,12 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
     if (!sequenceTried && typeof pathFinderSequenceRoutes === 'function') {
       sequenceTried = true;
       const sequenceRoutes = pathFinderSequenceRoutes(start,target,opts,{ruleBlocked,reagentBlocked,stocked});
-      sequenceRoutes.forEach(route => {const id=route.map(signature).join('/');if(!routeKeys.has(id)){routeKeys.add(id);job.routes.push(route);}});
+      sequenceRoutes.forEach(addRoute);
       rankRoutes();
-      if (job.routes.length >= opts.maxRoutes) {finish('route-limit');job.elapsedMs+=retroNow()-began;return job;}
+      if (enoughRoutes()) {finish('route-limit');job.elapsedMs+=retroNow()-began;return job;}
     }
     while (job.status === 'running' && retroNow() < until) {
+      if (opts.maxRoutes > 1 && job.routes.length && job.elapsedMs + retroNow() - began >= opts.budgetMs * 0.9) { finish('diversity-budget'); break; }
       if (job.elapsedMs + retroNow() - began >= opts.budgetMs) { finish('time-limit'); break; }
       if (!current) {
         // Short searches retain breadth-first route discovery. Extended searches
@@ -366,7 +500,11 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
         for (let i = 1; i < queue.length; i++) {
           const a = queue[i], b = queue[nextIndex];
           const closer = (a.priority || 0) < (b.priority || 0);
-          if (extended ? closer || a.priority === b.priority && a.chain.length < b.chain.length
+          // A small depth penalty keeps valid chain-lengthening transforms from
+          // flooding an extended best-first search with increasingly deep branches.
+          const aScore = (a.priority || 0) + a.chain.length;
+          const bScore = (b.priority || 0) + b.chain.length;
+          if (extended ? aScore < bScore || aScore === bScore && a.chain.length < b.chain.length
             : a.chain.length < b.chain.length || a.chain.length === b.chain.length && closer) nextIndex = i;
         }
         const node = queue.splice(nextIndex, 1)[0];
@@ -420,7 +558,7 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
 // branch. A returned tree therefore has available leaves and verified reactions.
 function pathFinderRecipeCreate(start, target, options, helpers) {
   const opts = Object.assign({}, options, { recipeTree: true, maxDepth: Math.min(8, options.maxDepth) });
-  const diagnostics = { candidates: 0, inventory: 0, reagents: 0, rules: 0, stereo: 0, compatibility: 0, rejected: [], protection: 0, protectionMessages: opts.allowedProtectingGroups && !opts.allowedProtectingGroups.length ? ['Automatic protection planning is disabled.'] : [], noDisconnections: 0, depth: 0, branch: 0, missingMaterials: [] };
+  const diagnostics = { candidates: 0, inventory: 0, reagents: 0, rules: 0, stereo: 0, compatibility: 0, rejected: [], protection: 0, protectionMessages: opts.allowedProtectingGroups && !opts.allowedProtectingGroups.length ? ['Automatic protection planning is disabled.'] : [], noDisconnections: 0, depth: 0, branch: 0, queue: 0, missingMaterials: [] };
   const reject = (candidate, node, code, reason, kind) => {
     if (kind && Object.prototype.hasOwnProperty.call(diagnostics, kind)) diagnostics[kind]++;
     if (reason && diagnostics.rejected.length < 12 && !diagnostics.rejected.some(r => r.reaction === candidate.name && r.target === node.smiles && r.code === code)) {
@@ -467,7 +605,15 @@ function pathFinderRecipeCreate(start, target, options, helpers) {
     budgetMs: opts.budgetMs, sliceMs: opts.sliceMs, stockOverride: (smiles) => {
       const info = helpers.material(smiles);
       return info.available ? { tier: info.tier, source: info.tier === 0 ? 'inventory' : 'local-stock', smiles } : null;
-    }, candidateFilter,
+    }, candidateFilter, candidateOrder: pathFinderDiverseCandidates, candidateBranchKey: pathFinderCandidateStrategyKey, diverseRootEnumeration: true,
+    routeSelector: routes => {
+      const strategies = new Map();
+      routes.forEach(tree => { const key = pathFinderRecipeStrategyKey(tree); if (!strategies.has(key)) strategies.set(key, tree); });
+      diagnostics.routeVariants = routes.length - strategies.size;
+      diagnostics.distinctPathways = strategies.size;
+      const rank = new Map(routes.map((tree, i) => [tree, i]));
+      return pathFinderSelectDiverseRoutes([...strategies.values()], opts.maxRoutes, (a,b) => rank.get(a)-rank.get(b), pathFinderRecipeFeatures);
+    },
   });
   const job = { start: start.smiles, target: target.smiles, options: opts, status: 'running', route: [], routes: [], recipeTrees: [], expanded: 0, truncated: false, elapsedMs: 0, diagnostics, termination: '' };
   const sync = () => {
@@ -475,6 +621,7 @@ function pathFinderRecipeCreate(start, target, options, helpers) {
     job.elapsedMs = search.elapsedMs;
     job.truncated = !!search.truncated;
     job.recipeTrees = search.routes || [];
+    job.routeRecipes = search.routeRecipes || [];
     job.routes = job.recipeTrees;
     if (search.status === 'running') job.status = 'running';
     else if (job.recipeTrees.length) job.status = 'found';
@@ -508,6 +655,10 @@ function pathFinderRecipeRender(container, job, deps) {
     item.append(make('code', node.target, 'path-smiles'));
     const labels = c.labels || {};
     item.append(make('p', 'Reagents and conditions: ' + ([labels.above, labels.below].filter(Boolean).join(' · ') || 'Not recorded.')));
+    if(typeof routeWorkupAssess==='function'){const workup=routeWorkupAssess(c);if(workup.required)item.append(make('p','Endpoint work-up: '+workup.record.status+'. '+workup.message));}
+    if(c.outcome&&c.outcome.productSurvival&&c.outcome.productSurvival.status!=='no-encoded-alert')item.append(make('p','Product survival: '+rxProductSurvivalLabel(c.outcome.productSurvival.status)+'. '+c.outcome.productSurvival.message));
+    if(c.outcome&&c.outcome.cyclization)item.append(make('p','Cyclization topology: '+c.outcome.cyclization.status+'. '+c.outcome.cyclization.message));
+    if(c.outcome&&c.outcome.regioselectivity)item.append(make('p','Positional selectivity: '+c.outcome.regioselectivity.status+'. '+c.outcome.regioselectivity.message));
     if (c.minor) item.append(make('p', 'The selected node is a minor predicted product.'));
     if (deps.openInLab) {
       const open = make('button', 'Open this reaction in Reactions', 'text-button'); open.type = 'button';
@@ -522,6 +673,7 @@ function pathFinderRecipeRender(container, job, deps) {
     return item;
   };
   container.replaceChildren();
+  const diversity = typeof routeComparisonDiversity === 'function' ? routeComparisonDiversity(job) : [];
   job.recipeTrees.forEach((tree, index) => {
     const leaves = new Map();
     const collect = (node) => {
@@ -533,7 +685,14 @@ function pathFinderRecipeRender(container, job, deps) {
     collect(tree);
     const metrics = tree.metrics || rsearchScore(tree), wrapper = make('section', undefined, 'path-route path-recipe');
     wrapper.append(make('h3', 'Recipe ' + (index + 1) + ' · ' + metrics.steps + ' reaction step' + (metrics.steps === 1 ? '' : 's') + ' · ' + leaves.size + ' available feedstock' + (leaves.size === 1 ? '' : 's')));
-    wrapper.append(make('p', 'Read from the available leaves toward the target. Every reaction node is forward verified; intermediates are recipes, not assumed inventory.'));
+    if(diversity[index] && typeof routeComparisonDiversityElement === 'function')wrapper.append(routeComparisonDiversityElement(diversity[index],'Recipe'));
+    wrapper.append(make('p', 'Read from the available leaves toward the target. Every reaction node is forward verified; intermediates are recipes, not assumed inventory. Each prepared branch assumes a separately prepared mixture and any required endpoint work-up. Isolation, purity and one-pot compatibility are not established.'));
+    if(metrics.scoreContributions){
+      const detail=make('details'),list=make('ul');detail.append(make('summary','Recipe ranking breakdown (heuristic)'));
+      const names={operations:'Reaction operations',longestSequence:'Longest sequence',materials:'Process-material entries',feedstocks:'Distinct feedstocks',stereoConcerns:'Recorded stereo concerns',scopeGaps:'Recorded scope gaps',minorProducts:'Minor-product steps',stock:'Stock tiers',protection:'Protection operations',convergence:'Convergence preference',simplification:'Structural simplification'};
+      Object.entries(metrics.scoreContributions).forEach(([key,value])=>list.append(make('li',names[key]+': '+(Math.round(value*10)/10)+' points')));
+      detail.append(list,make('p','Lower totals rank first. Contributions are transparent planning heuristics; conversion ceilings and illustrative ratios are not experimental yields and do not enter the default score.'));wrapper.append(detail);
+    }
     const root = make('ol', undefined, 'path-recipe-root'); root.append(renderNode(tree, true)); wrapper.append(root);
     container.append(wrapper);
   });
@@ -551,6 +710,7 @@ function pathFinderExplanation(job) {
   (d.rejected || []).slice(0, 4).forEach(r => reasons.push(r.reaction + ': ' + r.reason));
   if (d.protection) reasons.push(d.protection + ' candidate branches need an unsupported or incompatible protection plan');
   (d.protectionMessages || []).forEach((message) => reasons.push(message));
+  if (d.queue) reasons.push(d.queue + ' branches were omitted because the pending-search queue was full');
   if (job.truncated) reasons.push('some candidates were omitted by search limits');
   if (job.termination === 'time-limit' || job.termination === 'node-limit') reasons.push('the ' + job.termination.replace('-', ' ') + ' was reached');
   if (!reasons.length) reasons.push('the supported transformations did not connect these endpoints');
@@ -602,10 +762,10 @@ function createPathFinder(deps) {
       return;
     }
     if (job.options.recipeTree) {
-      status.textContent = job.recipeTrees.length + ' rule-verified recipe tree' + (job.recipeTrees.length === 1 ? '' : 's') + ' found.' + stats + ' Every leaf is available under the selected inventory policy; every intermediate has a forward-verified preparation.' + (job.status === 'cancelled' ? ' Search cancelled; partial results retained.' : '');
+      status.textContent = job.recipeTrees.length + ' rule-verified recipe tree' + (job.recipeTrees.length === 1 ? '' : 's') + ' found.' + stats + ' Selected for different intermediates, feedstocks and reaction families; recipe variants share one slot. Every leaf is available under the selected inventory policy; every intermediate has a forward-verified preparation.' + (job.status === 'cancelled' ? ' Search cancelled; partial results retained.' : '');
       pathFinderRecipeRender(results, job, deps); rejectionDetails(); return;
     }
-    status.textContent = job.routes.length + ' rule-verified candidate route' + (job.routes.length === 1 ? '' : 's') + ' found.' + stats + ' Ranked by fewer steps, more common and simpler building blocks, fewer minor products, then fewer extra building blocks.' + (job.status === 'cancelled' ? ' Search cancelled; partial results retained.' : '');
+    status.textContent = job.routes.length + ' rule-verified candidate route' + (job.routes.length === 1 ? '' : 's') + ' found.' + stats + ' Selected for different intermediates and reaction families from ' + (job.diagnostics.distinctPathways || job.routes.length) + ' pathways found. Reagent and condition variants share one slot. Displayed by route cost; the first route retains the best cost ranking.' + (job.diagnostics.routeVariants ? ' ' + job.diagnostics.routeVariants + ' recipe variants grouped.' : '') + (job.status === 'cancelled' ? ' Search cancelled; partial results retained.' : '');
     if (typeof routeComparisonRender === 'function') { routeComparisonRender(results, job, deps); rejectionDetails(); return; }
     job.routes.forEach((route, index) => {
       const wrapper = element('section', undefined, 'path-route');

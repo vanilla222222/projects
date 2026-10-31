@@ -1,6 +1,6 @@
 const RSEARCH_LIMITS = { maxDepth: 5, budgetMs: 20000, maxBranch: 6, maxRoutes: 20, stockMaxTier: 2, nodeBudgetMs: 1500, maxNodes: 400, afterSolved: 12, cacheSize: 400, sliceMs: 40 };
 
-const RSEARCH_WEIGHTS = { steps: 10, longest: 5, yieldLoss: 0.3, stock: 4, pg: 6, convergent: -3, simplification: -1 };
+const RSEARCH_WEIGHTS = { steps: 10, longest: 5, yieldLoss: 0, stock: 4, pg: 6, convergent: -3, simplification: -1, materials: 1, feedstocks: 1, stereo: 4, scope: 2, minor: 2 };
 
 const rsearchCache = new Map();
 
@@ -80,10 +80,22 @@ function rsearchAttach(job, node, candidates) {
   const path = new Set(node.path);
   path.add(node.smiles);
   const accept = typeof job.options.candidateFilter === 'function' ? job.options.candidateFilter : () => true;
-  candidates.filter((c) => {
+  const accepted = candidates.filter((c) => {
     if (!c.precursors.every((p) => !path.has(p.smiles))) return false;
     try { return accept(c, node) !== false; } catch (error) { return false; }
-  }).slice(0, job.options.maxBranch).forEach((candidate) => {
+  });
+  const ordered = typeof job.options.candidateOrder === 'function' ? job.options.candidateOrder(accepted) : accepted;
+  let selected = ordered.slice(0, job.options.maxBranch);
+  if (typeof job.options.candidateBranchKey === 'function') {
+    const keys = new Set();
+    selected = ordered.filter(candidate => {
+      const key = job.options.candidateBranchKey(candidate);
+      if (keys.has(key)) return true;
+      if (keys.size >= job.options.maxBranch) return false;
+      keys.add(key); return true;
+    });
+  }
+  selected.forEach((candidate) => {
     const and = { candidate, parent: node, children: [], solved: false, dead: false };
     and.children = candidate.precursors.map((p) => {
       const child = rsearchMolecule(job, p.smiles, node.depth + 1, path);
@@ -210,20 +222,25 @@ function rsearchRouteKey(route) {
   return keys.sort().join('\n');
 }
 
-function rsearchEnumerate(job, node, ancestors, limit) {
+function rsearchEnumerate(job, node, ancestors, limit, remaining = job.options.maxDepth) {
   if (node.stock && node !== job.root) {
     return [{ target: node.smiles, candidate: null, children: [], stock: node.stock, skeleton: node.skeleton }];
   }
-  const out = [];
+  const out = [], buckets = [];
+  const diverseRoot = job.options.diverseRootEnumeration && node === job.root;
   const path = new Set(ancestors);
   path.add(node.smiles);
   for (const and of node.ands) {
     if (!and.solved || and.children.some((c) => path.has(c.smiles))) {
       continue;
     }
+    // Node depths describe the shortest graph path, not this route branch.
+    // Charge every explicit protection/reaction operation on the current path.
+    const cost = rsearchCandidateSteps(and.candidate).length;
+    if (cost > remaining) continue;
     let combos = [[]];
     for (const child of and.children) {
-      const options = rsearchEnumerate(job, child, path, limit);
+      const options = rsearchEnumerate(job, child, path, limit, remaining - cost);
       const next = [];
       combos.forEach((combo) => options.forEach((option) => {
         if (next.length < limit) {
@@ -235,13 +252,21 @@ function rsearchEnumerate(job, node, ancestors, limit) {
         break;
       }
     }
+    const branch = [];
     combos.forEach((children) => {
-      if (out.length < limit) {
+      if (diverseRoot) branch.push({ target: node.smiles, candidate: and.candidate, children, stock: null, skeleton: node.skeleton });
+      else if (out.length < limit) {
         out.push({ target: node.smiles, candidate: and.candidate, children, stock: null, skeleton: node.skeleton });
       }
     });
-    if (out.length >= limit) {
+    if (diverseRoot) buckets.push(branch);
+    if (!diverseRoot && out.length >= limit) {
       break;
+    }
+  }
+  if (diverseRoot) {
+    for (let round=0; out.length<limit && buckets.some(bucket=>bucket[round]); round++) {
+      buckets.forEach(bucket=>{if(bucket[round]&&out.length<limit)out.push(bucket[round]);});
     }
   }
   return out;
@@ -264,7 +289,9 @@ function rsearchFinish(job, status) {
       routes.push(route);
     }
   });
-  job.routes = rsearchSort(routes, 'score').slice(0, job.options.maxRoutes);
+  const ranked = rsearchSort(routes, 'score');
+  job.routeRecipes = ranked;
+  job.routes = typeof job.options.routeSelector === 'function' ? job.options.routeSelector(ranked).slice(0, job.options.maxRoutes) : ranked.slice(0, job.options.maxRoutes);
 }
 
 function rsearchProgress(job) {
@@ -350,24 +377,30 @@ function rsearchStepYield(outcome, minor) {
 }
 
 function rsearchCandidateSteps(candidate) {
-  if (candidate.pgSteps) {
+  if (Array.isArray(candidate.pgSteps)&&candidate.pgSteps.length) {
     return candidate.pgSteps.map((s) => ({ outcome: s.outcome, minor: s.minor, pg: s.role !== 'step' }));
   }
   return [{ outcome: candidate.outcome, minor: candidate.minor, pg: candidate.group === 'Protecting groups' }];
 }
 
 function rsearchScore(route) {
-  const metrics = { steps: 0, longest: 0, convergent: false, yield: 100, yieldModel: 'linear-product-or-convergent-bottleneck', complexity: [], stock: 0, pg: 0, score: 0 };
+  const metrics = { steps: 0, longest: 0, convergent: false, yield: 100, yieldModel: 'linear-product-or-convergent-bottleneck', complexity: [], stock: 0, pg: 0, materials: 0, feedstocks: 0, stereoConcerns: 0, scopeGaps: 0, minor: 0, scoreBasis:'structural-and-recorded-scope', score: 0 };
+  const materialRecords=[],feedstocks=new Set();
   const walk = (node) => {
     if (!node.candidate) {
+      feedstocks.add(routePlanningMaterialKey(node.target||node.smiles||''));
       metrics.stock = Math.max(metrics.stock, node.stock ? node.stock.tier : 99);
       return { longest: 0, fraction: 1 };
     }
+    materialRecords.push({candidate:node.candidate});
+    routePlanningOperations(node.candidate).forEach(c=>{
+      const facts=routePlanningStepFacts(c);
+      metrics.pg+=facts.protection?1:0;metrics.stereoConcerns+=facts.stereoConcern?1:0;metrics.scopeGaps+=facts.gaps.length;metrics.minor+=facts.minor?1:0;
+    });
     const steps = rsearchCandidateSteps(node.candidate);
     let fraction = 1;
     steps.forEach((s) => {
       fraction *= rsearchStepYield(s.outcome, s.minor) / 100;
-      metrics.pg += s.pg ? 1 : 0;
     });
     metrics.steps += steps.length;
     const largest = Math.max.apply(null, node.candidate.precursors.map((p) => p.skeleton).concat([0]));
@@ -385,12 +418,18 @@ function rsearchScore(route) {
     return { longest: steps.length + Math.max.apply(null, branches.map((b) => b.longest).concat([0])), fraction };
   };
   const result = walk(route);
+  metrics.materials=routePlanningProcessBurden(materialRecords);
+  metrics.feedstocks=feedstocks.size;
   metrics.longest = result.longest;
   metrics.yield = Math.round(result.fraction * 1000) / 10;
   const simplification = metrics.complexity.length ? metrics.complexity.reduce((s, x) => s + x, 0) / metrics.complexity.length : 0;
   const w = RSEARCH_WEIGHTS;
-  metrics.score = Math.round((w.steps * metrics.steps + w.longest * metrics.longest + w.yieldLoss * (100 - metrics.yield) +
-    w.stock * Math.max(0, metrics.stock - 1) + w.pg * metrics.pg + (metrics.convergent ? w.convergent : 0) + w.simplification * simplification) * 10) / 10;
+  metrics.scoreContributions={operations:w.steps*metrics.steps,longestSequence:w.longest*metrics.longest,
+    materials:w.materials*metrics.materials,feedstocks:w.feedstocks*metrics.feedstocks,
+    stereoConcerns:w.stereo*metrics.stereoConcerns,scopeGaps:w.scope*metrics.scopeGaps,minorProducts:w.minor*metrics.minor,
+    stock:w.stock*Math.max(0,metrics.stock-1),protection:w.pg*metrics.pg,
+    convergence:metrics.convergent?w.convergent:0,simplification:w.simplification*simplification};
+  metrics.score=Math.round(Object.values(metrics.scoreContributions).reduce((sum,value)=>sum+value,0)*10)/10;
   return metrics;
 }
 

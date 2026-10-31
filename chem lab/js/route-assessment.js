@@ -10,6 +10,15 @@ function routeStepAssessment(candidate) {
     });
     return {status:blockers.length?'blocked':'no-encoded-conflict',blockers,warnings:[...new Set(warnings)]};
   }
+  (o.compatibilityWarnings||[]).forEach(c=>warnings.push(c.message));
+  (o.compatibilityConflicts||[]).forEach(c=>blockers.push({code:c.code,message:c.message}));
+  if(o.cyclization){(o.cyclization.blockers||[]).forEach(b=>blockers.push({...b}));warnings.push(o.cyclization.message);}
+  if(o.productSurvival){(o.productSurvival.blockers||[]).forEach(b=>blockers.push({...b}));if(['review','incomplete','workup-boundary'].includes(o.productSurvival.status))warnings.push(o.productSurvival.message);}
+  const regioConflict=rxRegioConflict(o);
+  if(regioConflict)blockers.push({code:'regioselectivity',message:regioConflict});
+  else if(o.regioselectivity&&o.regioselectivity.status==='heuristic')warnings.push(o.regioselectivity.message);
+  const loadingConflict=rxLoadingConflict(o);
+  if(loadingConflict)blockers.push({code:'reagent-loading',message:loadingConflict});
   if(o.partialConversion)blockers.push({code:'partial-conversion',message:'A partial-conversion site alternative has no established selective preparation.'});
   const chemo=o.chemoselectivity;
   if(chemo&&(chemo.competing||[]).length)blockers.push({code:'competing-sites',message:'The current rule leaves other susceptible sites available to '+(chemo.label||'the reagent')+'. A compatible protection or selectivity model is required.'});

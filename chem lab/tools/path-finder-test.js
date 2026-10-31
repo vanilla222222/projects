@@ -35,9 +35,10 @@ assert.equal(run('pathFinderKey("CCO")'), run('pathFinderKey("OCC")'));
 assert.equal(run('pathFinderKey("CC(=O)O")'), run('pathFinderKey("OC(C)=O")'));
 assert.equal(run('pathFinderKey("Cc1ccccc1")'), run('pathFinderKey("c1ccc(C)cc1")'));
 // Alternatives are independently forward verified and sorted by concrete costs.
-assert.equal(search('C=C','CC(=O)O', {maxRoutes:3}).routes.length, 3);
+assert.equal(search('C=C','CC(=O)O', {maxRoutes:3}).routes.length, 2);
+assert.equal(run('new Set(job.routes.map(pathFinderRouteStrategyKey)).size === job.routes.length'), true);
 assert.equal(run('job.routes.every(route => route.every(link => retroForwardCheck(link.candidate, link.to)))'), true);
-assert.equal(run('job.routes[0].length <= job.routes[2].length'), true);
+assert.equal(run('job.routes[0].length <= job.routes.at(-1).length'), true);
 assert.equal(run('job.routes.every(route => route[0].fromKey === pathFinderKey(job.start) && route.at(-1).toKey === pathFinderKey(job.target))'), true);
 assert.equal(search('CCO','CC=O', {forbiddenReagents:['PCC']}).status, 'exhausted');
 assert.equal(run('job.diagnostics.reagents > 0'), true);
@@ -62,15 +63,16 @@ assert.equal(search('CCO','CCOC(C)=O', {maxDepth:1,maxRoutes:1,maxBranch:1}).sta
 assert.equal(run('job.route[0].candidate.name !== "Ester from symmetric anhydride alcoholysis"'), true);
 assert.equal(run('pathFinderHeavyCount(job.route[0].candidate.precursors.find((p,i)=>i!==job.route[0].precursor).smiles) <= 4'), true);
 assert.equal(run('job.route.every(link => retroForwardCheck(link.candidate, link.to))'), true);
-assert.equal(search('CCO','CCOC(C)=O', {maxDepth:1,maxRoutes:3}).routes.some(route=>route[0].candidate.name==='Fischer esterification'), true);
-assert.equal(run('job.routes.every((route,i,routes)=>!i||pathFinderRouteRank(routes[i-1])[2]<=pathFinderRouteRank(route)[2])'), true);
+assert.equal(search('CCO','CCOC(C)=O', {maxDepth:1,maxRoutes:3}).routes.length, 1);
+assert.equal(run('job.diagnostics.routeVariants > 0'), true);
+assert.equal(run('job.routes.every((route,i,routes)=>{if(!i)return true;const a=pathFinderRouteRank(routes[i-1]),b=pathFinderRouteRank(route);const first=a.findIndex((v,k)=>v!==b[k]);return first<0||a[first]<b[first];})'), true);
 for (const smiles of ['COC1=CC=CC=C1O','COC1=CC(C=O)=CC=C1O','C1=CC2=C(C=C1)OCO2','O=CC1=CC2=C(C=C1)OCO2','C=CCC1=CC=CC=C1']) {
   context.feedstock = smiles;
   assert.equal(run('stockTier(feedstock).tier'), 2);
 }
 assert.equal(search('CCO','CCOC(C)=O', {stockPolicy:'custom',maxDepth:1}).status, 'exhausted');
 assert.equal(run('job.diagnostics.missingMaterials.every((s,i,a)=>!i||pathFinderHeavyCount(a[i-1])<=pathFinderHeavyCount(s))'), true);
-console.log('Path Finder engine: 57 checks passed.');
+console.log('Path Finder engine: 59 checks passed.');
 
 // Exercise the actual DOM controller with a minimal DOM, without browser packages.
 class Element {

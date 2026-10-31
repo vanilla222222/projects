@@ -18,7 +18,7 @@ const RX_FORMULA_GUARDS = {};
 
 const RX_SPECIES_DETECTORS = [];
 
-const RX_TEMPERATURES = { dehydrationTertiary: 25, dehydrationSecondary: 80, dehydrationPrimary: 170, etherMin: 110, coldPermanganate: 10, e1: 50 };
+const RX_TEMPERATURES = { dehydrationTertiary: 25, dehydrationSecondary: 80, dehydrationPrimary: 170, etherMin: 110, coldPermanganate: 10, hotPermanganate: 60, e1: 50 };
 
 function rxNeighbors(g, id) {
   return g.bondsForAtom(id).map((b) => ({ bond: b, atom: g.getAtom(b.atomA === id ? b.atomB : b.atomA) }));
@@ -55,6 +55,15 @@ function rxAttach(g, element, toId, order, charge) {
   }
   g.addBond(toId, atom.id).order = order || 1;
   return atom;
+}
+
+// Substitution replaces hydroxyl oxygen; isotope and explicit O-H atoms leave with it.
+function rxReplaceHydroxyl(g, center, oxygen, element, invert) {
+  const incoming = rxAttach(g, element, center);
+  rxsReplace(g, center, oxygen, incoming.id, !!invert);
+  rxNeighbors(g, oxygen).filter(n => n.atom.element === 'H').forEach(n => g.removeAtom(n.atom.id));
+  g.removeAtom(oxygen);
+  return incoming.id;
 }
 
 function rxSetOrder(g, a, b, order) {
@@ -291,6 +300,41 @@ function rxAnalyze(graph) {
 
 function rxSubstitution(g, id, other) {
   return rxCarbonNeighbors(g, id, other).length;
+}
+
+// Positional alternatives are compared by connectivity, independently of
+// stereochemical mixtures. A graph ordering is never a measured site ratio.
+function rxRegioKey(product) {
+  try{return typeof moleculeIdentity==='function'?moleculeIdentity(product.isomericSmiles||product.smiles).connectivityKey:null;}catch(error){return null;}
+}
+
+function rxRegioAlkene(out,s,target,m,attached,element,options) {
+  const opts=options||{},sites=s.info.alkenes.length,keys=new Set(out.products.map(rxRegioKey).filter(Boolean));
+  let unresolved=sites>1,represented=1,status='heuristic';
+  if(m.tie&&!opts.rearranged){
+    const g=rxCloneGraph(s.graph),other=attached===target.a?target.b:target.a;
+    rxSetOrder(g,target.a,target.b,1);const added=rxAttach(g,element,other);
+    if(opts.syn)rxsFaceAdd(g,[[other,added.id,1]],new Map([[attached,1]]));
+    const alternatives=rxProductList(g),key=alternatives.length===1?rxRegioKey(alternatives[0]):null;
+    if(key&&!keys.has(key)){out.minor=(out.minor||[]).concat(alternatives);represented=2;unresolved=true;}
+    else if(key)status='equivalent';
+    else unresolved=true;
+  }else if(m.tie)unresolved=true;
+  if(unresolved)status='unresolved';
+  const message=status==='unresolved'?'Positional selectivity is unresolved: equally ranked orientations or multiple alkene sites are present. Display ordering does not establish a dominant isomer or selective preparation.':status==='equivalent'?'The two addition orientations give the same constitutional product; stereochemical outcomes are assessed separately.':'The addition orientation follows the encoded reaction-class heuristic; no substrate-specific regioisomer ratio or exclusive preparation is established.';
+  out.regioselectivity={status,basis:m.tie?'equal-substitution':'reaction-class heuristic',recognizedAlkeneSites:sites,representedIsomers:represented,alternativesRole:represented>1?'unranked positional alternatives':null,coverage:'Selected alkene only; not exhaustive rearrangement or reaction-site enumeration.',message};
+  out.warnings.push(message);return out;
+}
+
+function rxRegioAromatic(out) {
+  const products=[...(out.products||[]),...(out.minor||[])],represented=products.length===1?1:new Set(products.map(rxRegioKey).filter(Boolean)).size;
+  out.regioselectivity={status:'heuristic',basis:'encoded aromatic site ranking',representedIsomers:represented,coverage:'Existing selected branches only; other positions are not exhaustively enumerated.',ratioBasis:out.ratio?'heuristic, not measured':null,message:'Aromatic site ordering and any displayed ratio are encoded heuristics. The represented positional alternatives do not establish selective isolation or a substrate-specific product distribution.'};
+  out.warnings.push(out.regioselectivity.message);return out;
+}
+
+function rxRegioConflict(outcome) {
+  const r=outcome&&outcome.regioselectivity;
+  return r&&r.status==='unresolved'?r.message:null;
 }
 
 function rxMarkovnikov(g, a, b) {
@@ -760,6 +804,7 @@ function reactionContext(compounds, conditions) {
   const c = normalizeReactionConditions(conditions);
   const ctx = {
     conditions: c,
+    inputs: compounds || [],
     temperature: reactionEffectiveTemperature(c),
     species: new Map(),
     substrates: [],
@@ -1014,9 +1059,7 @@ function rxRuleHydrohalogenation(ctx) {
       out.name += ' of an alkyne';
       out.reason += ' With one equivalent the product stops at the vinyl halide.';
     }
-    if (m.tie && !radical) {
-      out.warnings.push('Both alkene carbons are equally substituted, so a mixture of regioisomers is expected.');
-    }
+    if(alkenes.length)rxRegioAlkene(out,s,target,m,radical?m.less:m.more,x,{rearranged:!!shift});
     if (!radical && acid !== 'HBr' && (ctx.has('radicalInitiator') || ctx.has('light'))) {
       out.warnings.push('The peroxide effect only works with HBr; ' + acid + ' still adds Markovnikov.');
     }
@@ -1050,6 +1093,7 @@ function rxRuleHydration(ctx) {
       if (ctx.temperature >= 100) {
         out.warnings.push('At high temperature the equilibrium shifts back towards the alkene (dehydration).');
       }
+      rxRegioAlkene(out,s,e,m,m.more,'O');
       return [out];
     }
     if (!ctx.has('mercury')) {
@@ -1081,6 +1125,7 @@ function rxRuleHydroboration(ctx) {
     const out = rxOutcome('hydroboration', 'Hydroboration–oxidation', 'Addition', g,
       'BH₃ adds H and B syn in one step, with boron going to the less hindered carbon. Oxidation replaces B with OH, which gives the anti-Markovnikov alcohol.',
       { score: 12, byproducts: ['B(OH)₃ (from the oxidation)'], consumes: [rxUse(s, 1), rxUse(ctx.get('borane'), 1 / 3)] });
+    rxRegioAlkene(out,s,e,m,m.less,'O',{syn:true});
     if (!ctx.has('hydroxide') || !ctx.has('hydrogenPeroxide')) {
       out.warnings.push('Assumes the usual oxidative work-up (H₂O₂, NaOH) after the borane step.');
     }
@@ -1135,8 +1180,26 @@ function rxOxidizeAlcohol(g, alcohol, strong) {
   }
 }
 
+// These are conservative encoded regimes, not universal kinetic boundaries.
+function rxPermanganateRegime(ctx) {
+  const solvents=ctx.conditions.solvents||[];
+  if(!solvents.includes('water')||solvents.some(id=>!['none','water'].includes(id)))return 'unresolved';
+  if(ctx.temperature<=RX_TEMPERATURES.coldPermanganate&&ctx.has('hydroxide')&&!ctx.has('strongAcid'))return 'cold-alkaline';
+  // The hot branch draws the neutral acid/work-up endpoint, not alkaline salts.
+  if(ctx.temperature>=RX_TEMPERATURES.hotPermanganate&&!ctx.has('hydroxide')&&!ctx.has('alkoxide'))return 'hot';
+  return 'unresolved';
+}
+
+function rxPermanganateBenzylicSites(g, info) {
+  const ring=info.aromatic.atoms;
+  return g.atoms.filter(a=>a.element==='C'&&!a.charge&&!ring.has(a.id)&&rxIsSp3(g,a.id)&&rxHydrogens(g,a.id)>0&&
+    rxNeighbors(g,a.id).filter(n=>n.atom.element==='C'&&ring.has(n.atom.id)).length===1&&
+    rxNeighbors(g,a.id).every(n=>['C','H','D'].includes(n.atom.element))).map(a=>a.id);
+}
+
 function rxRuleOxidation(ctx) {
   const permanganate = ctx.has('permanganate');
+  const permanganateRegime=permanganate?rxPermanganateRegime(ctx):null;
   if (!permanganate && !ctx.has('pcc')) {
     return [];
   }
@@ -1157,7 +1220,7 @@ function rxRuleOxidation(ctx) {
     }
     if (permanganate && s.info.alkenes.length && !oxidizable.length) {
       const g = rxCloneGraph(s.graph);
-      if (ctx.temperature <= RX_TEMPERATURES.coldPermanganate) {
+      if (permanganateRegime === 'cold-alkaline') {
         s.info.alkenes.forEach((e) => {
           rxSetOrder(g, e.a, e.b, 1);
           const oa = rxAttach(g, 'O', e.a);
@@ -1166,8 +1229,8 @@ function rxRuleOxidation(ctx) {
         });
         out.push(rxOutcome('dihydroxylation', 'Syn-dihydroxylation', 'Oxidation', g,
           'Cold, dilute KMnO₄ adds across the C=C through a cyclic manganate ester, so both OH groups add syn to give a 1,2-diol.',
-          { score: 12, byproducts: ['MnO₂'], consumes: [rxUse(s, 1), rxUse(ctx.get('permanganate'), 2 / 3 * s.info.alkenes.length)] }));
-      } else {
+          { score: 12, byproducts: ['MnO₂'], warnings:['This branch assumes dilute cold aqueous alkali; oxidant concentration and selective stopping are not calculated.'], consumes: [rxUse(s, 1), rxUse(ctx.get('permanganate'), 2 / 3 * s.info.alkenes.length)] }));
+      } else if (permanganateRegime === 'hot') {
         const removed = [];
         s.info.alkenes.forEach((e) => {
           const before = [e.a, e.b].map((id) => ({ id, h: rxHydrogens(g, id), terminal: rxNeighbors(g, id).length === 1 }));
@@ -1186,14 +1249,19 @@ function rxRuleOxidation(ctx) {
         removed.forEach((id) => g.removeAtom(id));
         out.push(rxOutcome('permanganate-cleavage', 'Oxidative cleavage (hot KMnO₄)', 'Oxidative cleavage', g,
           'Hot, concentrated KMnO₄ cuts the C=C completely. Carbons that carried H become carboxylic acids, fully substituted carbons become ketones and a terminal CH₂ is lost as CO₂.',
-          { score: 12, byproducts: ['MnO₂'].concat(removed.length ? ['CO₂'] : []) }));
+          { score: 12, byproducts: ['MnO₂'].concat(removed.length ? ['CO₂'] : []), consumes:[rxUse(s,1)], warnings:['Neutral acid products represent the work-up endpoint. Oxidant concentration, consumption and product ratios are not quantified.'] }));
+      } else {
+        out.push(rxHint('No single permanganate alkene endpoint is encoded for these conditions. Use an explicitly recorded cold aqueous alkaline regime for the assumed dilute diol branch; heated aqueous neutral/acidic conditions select the cleavage/work-up branch. Intermediate temperatures, other/mixed solvent media and hot alkaline salt endpoints require review.'));
       }
     }
     if (permanganate && !oxidizable.length && !s.info.alkenes.length) {
       const ring = s.info.aromatic.atoms;
-      const benzylic = s.graph.atoms.filter((a) => a.element === 'C' && !ring.has(a.id) && rxIsSp3(s.graph, a.id) &&
-        rxHydrogens(s.graph, a.id) > 0 && rxNeighbors(s.graph, a.id).some((n) => ring.has(n.atom.id)));
+      const benzylic = rxPermanganateBenzylicSites(s.graph,s.info).map(id=>s.graph.getAtom(id));
       if (benzylic.length) {
+        if(permanganateRegime!=='hot'){
+          out.push(rxHint('The encoded benzylic permanganate oxidation requires heated aqueous neutral/acidic conditions. Cold, intermediate-temperature, other/mixed solvent and hot alkaline endpoints are not established by this branch.'));
+          return out;
+        }
         const g = rxCloneGraph(s.graph);
         benzylic.forEach((a) => {
           rxCarbonNeighbors(g, a.id).filter((n) => !ring.has(n.atom.id)).forEach((n) => rxSetOrder(g, a.id, n.atom.id, 0));
@@ -1213,7 +1281,7 @@ function rxRuleOxidation(ctx) {
           rxAttach(g, 'O', a.id);
         });
         out.push(rxOutcome('side-chain-oxidation', 'Side-chain oxidation', 'Oxidation', g,
-          'Hot KMnO₄ attacks the benzylic C–H. Whatever the length of the alkyl chain, it is cut back to a carboxylic acid on the ring.', { score: 11, byproducts: ['MnO₂', 'CO₂ (from any extra chain carbons)'] }));
+          'Hot KMnO₄ attacks the benzylic C–H. Whatever the length of the alkyl chain, it is cut back to a carboxylic acid on the ring.', { score: 11, byproducts: ['MnO₂', 'CO₂ (from any extra chain carbons)'], consumes:[rxUse(s,1)], warnings:['Neutral acid products represent the work-up endpoint; oxidant consumption and substrate-specific kinetics are not quantified.'] }));
       }
     }
     return out;
@@ -1261,7 +1329,9 @@ function rxRuleReduction(ctx) {
       });
     }
     if (!changed) {
-      return skipped.length ? [rxHint('NaBH₄ is too mild to reduce esters, acids or amides — use LiAlH₄.')] : [];
+      return skipped.includes('acylChloride')
+        ? [rxHint('Acyl chlorides can react with NaBH₄ or the reaction medium. This rule does not encode that competition or a clean product for this substrate.')]
+        : skipped.length ? [rxHint('NaBH₄ is too mild to reduce esters, acids or amides — use LiAlH₄.')] : [];
     }
     const felkin = rxFelkinPair(g, s.info.carbonyls.filter((c) => c.kind === 'ketone' || c.kind === 'aldehyde'), () => null);
     const simple = s.info.carbonyls.length === 1 && ['ketone', 'aldehyde'].includes(s.info.carbonyls[0].kind) && !(strong && s.info.nitriles.length) ? s.info.carbonyls[0] : null;
@@ -1278,8 +1348,11 @@ function rxRuleReduction(ctx) {
     rxFelkinApply(out, felkin, 'hydride');
     out.warnings.push('Each ' + (strong ? 'AlH₄⁻' : 'BH₄⁻') + ' can deliver four hydrides, so ' + (Math.round(hydride / 4 * 100) / 100) + ' equiv is the theoretical minimum; in practice ' +
       (strong ? '1–2 equiv of LiAlH₄ is' : '1–2 equiv of NaBH₄ is') + ' used, because some hydride is lost to the solvent or moisture.');
-    if (skipped.length) {
-      out.warnings.push('Ester, acid or amide groups are left untouched by NaBH₄.');
+    if (skipped.some(kind=>['ester','acid','amide'].includes(kind))) {
+      out.warnings.push('Ester, acid or amide groups are left untouched by NaBH₄ in this encoded branch.');
+    }
+    if (skipped.includes('acylChloride')) {
+      out.warnings.push('Acyl chlorides can also react with NaBH₄ or the reaction medium. That competition is not modeled here, so the drawn carbonyl-only reduction is not an established selective preparation.');
     }
     if (strong && ctx.protic) {
       out.warnings.push('LiAlH₄ reacts violently with water and alcohols — run it in dry ether or THF and add water only in the work-up.');
@@ -1313,6 +1386,18 @@ function rxFelkinApply(out, felkin, nucleophile) {
     return;
   }
   out.minor = rxProductList(felkin.minor);
+  // Keep both component drawings, but do not label either as a pure outcome.
+  const differs=(product,others)=>others.some(other=>{
+    if(typeof moleculeIdentity==='function'&&typeof moleculeSame==='function') {
+      return moleculeIdentity(product.isomericSmiles||product.smiles).connectivityKey===moleculeIdentity(other.isomericSmiles||other.smiles).connectivityKey&&
+        !moleculeSame(product.fragment||product.isomericSmiles||product.smiles,other.fragment||other.isomericSmiles||other.smiles);
+    }
+    return product.smiles===other.smiles&&product.isomericSmiles!==other.isomericSmiles;
+  });
+  const mixed=out.products.filter(p=>differs(p,out.minor)).concat(out.minor.filter(p=>differs(p,out.products)));
+  mixed.forEach(product=>{
+    product.stereo={kind:'diastereomers',text:'component of a diastereomeric mixture (qualitative Felkin model)'};
+  });
   out.ratio = [75, 25];
   out.reason += ' The neighbouring stereocentre makes the two faces of the C=O different (Felkin–Anh): the largest group' + (felkin.polar ? ' (here the electronegative one)' : '') +
     ' sits perpendicular to the C=O, and ' + nucleophile + ' comes in anti to it, past the smallest group. That gives the Felkin diastereomer as the major product.';
@@ -1439,9 +1524,62 @@ function rxHasProticNH(graph) {
   return graph.atoms.some((atom) => atom.element === 'N' && (rxHydrogens(graph, atom.id) > 0 || rxNeighbors(graph, atom.id).some((n) => ['H', 'D'].includes(n.atom.element))));
 }
 
+function rxGrignardCO2Sites(graph) {
+  return graph.atoms.filter(a=>a.element==='C'&&!a.charge&&rxNeighbors(graph,a.id).length===2&&rxNeighbors(graph,a.id).every(n=>n.atom.element==='O'&&n.bond.order===2&&!n.atom.charge)).map(a=>a.id);
+}
+
+function rxGrignardElectrophiles(info,graph) {
+  const groups=info.carbonyls.filter(c=>['aldehyde','ketone','ester','amide','acylChloride','anhydride'].includes(c.kind)).map(c=>c.kind);
+  if(info.nitriles.length)groups.push('nitrile');
+  if(graph&&rxGrignardCO2Sites(graph).length)groups.push('carbonDioxide');
+  return [...new Set(groups)];
+}
+
+function rxGrignardReactiveSolvents(ctx) {
+  return (ctx.conditions.solvents||[]).flatMap(id=>{
+    const solvent=reactionSolvent(id);if(!solvent||!solvent.smiles)return [];
+    const graph=reactionFragmentGraph(smilesToFragment(solvent.smiles));
+    const groups=rxGrignardElectrophiles(rxAnalyze(graph),graph);
+    return groups.length?[{id,name:solvent.name,groups}]:[];
+  });
+}
+
+function rxGrignardSolventHint(conflicts) {
+  return rxHint('Recorded solvent choices ('+conflicts.map(s=>s.name).join(', ')+') contain electrophilic carbonyl/nitrile groups that can react with the organometallic reagent. Solvent competition is not modeled, so no clean intended Grignard product is assigned.');
+}
+
+// Inspect complete recorded structures before species classification removes
+// recognized fragments. Roles do not make acidic donors chemically inert.
+function rxGrignardInputSites(ctx) {
+  if(ctx.grignardInputSites)return ctx.grignardInputSites;
+  ctx.grignardInputSites=(ctx.inputs||[]).filter(c=>c.fragment).map(compound=>{
+    const graph=reactionFragmentGraph(compound.fragment),donors=[];
+    graph.atoms.forEach(atom=>{
+      const hasH=rxHydrogens(graph,atom.id)>0||rxNeighbors(graph,atom.id).some(n=>['H','D'].includes(n.atom.element));
+      if(hasH&&['O','N','S'].includes(atom.element)&&!atom.charge)donors.push({kind:atom.element+'–H',atom:atom.id});
+      if(hasH&&atom.element==='C'){
+        const triple=rxNeighbors(graph,atom.id).find(n=>n.atom.element==='C'&&n.bond.order===3);
+        const metalated=triple&&[atom.id,triple.atom.id].some(id=>rxNeighbors(graph,id).some(n=>['Mg','Li'].includes(n.atom.element)));
+        if(triple&&!metalated)donors.push({kind:'terminal alkyne',atom:atom.id});
+      }
+    });
+    return {compound,donors,electrophiles:rxGrignardElectrophiles(rxAnalyze(graph),graph)};
+  });
+  return ctx.grignardInputSites;
+}
+
+function rxGrignardAuxiliaryConflict(ctx) {
+  const substrates=new Set(ctx.substrates.map(s=>s.compound));
+  return rxGrignardInputSites(ctx).filter(s=>!substrates.has(s.compound)&&s.electrophiles.length);
+}
+
+function rxGrignardAuxiliaryHint(conflicts) {
+  return rxHint('Another recorded input contains electrophilic carbonyl/nitrile groups ('+conflicts.map(s=>s.electrophiles.join('/')).join(', ')+'). Its reagent, catalyst or solvent role does not establish inertness toward the organometallic reagent. Competing products and a clean intended endpoint are not modeled.');
+}
+
 function rxGrignardProticConflict(ctx) {
   const graphs = ctx.substrates.concat(ctx.organicCatalysts || []).map((s) => s.graph).concat([...ctx.species.values()].map((s) => s.graph).filter(Boolean));
-  return ctx.protic || ctx.has('H2O') || ctx.has('strongAcid') || graphs.some(rxHasProticNH) || ctx.substrates.some((s) => s.info.alcohols.length || s.info.carbonyls.some((c) => c.kind === 'acid'));
+  return ctx.protic || ctx.has('H2O') || ctx.has('strongAcid') || rxGrignardInputSites(ctx).some(s=>s.donors.length) || graphs.some(rxHasProticNH) || ctx.substrates.some((s) => s.info.alcohols.length || s.info.carbonyls.some((c) => c.kind === 'acid'));
 }
 
 function rxRuleGrignard(ctx) {
@@ -1449,6 +1587,12 @@ function rxRuleGrignard(ctx) {
   if (!reagent) {
     return [];
   }
+  const solventConflicts=rxGrignardReactiveSolvents(ctx);
+  if(solventConflicts.length)return [rxGrignardSolventHint(solventConflicts)];
+  const auxiliaryConflicts=rxGrignardAuxiliaryConflict(ctx);
+  if(auxiliaryConflicts.length)return [rxGrignardAuxiliaryHint(auxiliaryConflicts)];
+  const unmodeledDonors=rxGrignardInputSites(ctx).flatMap(s=>s.donors).filter(d=>['S–H','terminal alkyne'].includes(d.kind));
+  if(unmodeledDonors.length)return [rxHint('A recorded S–H/S–D or terminal-alkyne H/D donor can consume the organometallic reagent by acid–base reaction. Clean carbonyl addition, isotope transfer and subsequent acetylide chemistry are not modeled for this mixture.')];
   const quench = rxGrignardProticConflict(ctx);
   const rGraph = rxCloneGraph(reagent.graph);
   rxNeighbors(rGraph, reagent.metal).forEach((n) => {
@@ -1514,13 +1658,14 @@ function rxRuleAlcoholToHalide(ctx) {
     }
     const g = rxCloneGraph(s.graph);
     const inversion = reagent === 'pbr3' || (reagent === 'socl2' && ctx.has('amineBase'));
+    const incoming = new Map();
     s.info.alcohols.forEach((a) => {
-      g.getAtom(a.o).element = x;
+      incoming.set(a.o, rxReplaceHydroxyl(g, a.c, a.o, x, inversion));
       const acid = reagent !== 'socl2' && reagent !== 'pbr3';
       if (acid && a.degree >= 2) {
         rxsDrop(g, a.c);
-      } else if (acid || inversion) {
-        rxsReplace(g, a.c, a.o, a.o, true);
+      } else if (acid) {
+        rxsReplace(g, a.c, incoming.get(a.o), incoming.get(a.o), true);
       }
     });
     const tertiary = s.info.alcohols.some((a) => a.degree === 3);
@@ -1530,7 +1675,7 @@ function rxRuleAlcoholToHalide(ctx) {
     const shift = single && alcohol.degree === 2 ? rxCationShift(s.graph, alcohol.c) : null;
     const plain = shift ? rxCloneGraph(g) : null;
     if (shift) {
-      rxApplyShift(g, alcohol.c, shift, alcohol.o);
+      rxApplyShift(g, alcohol.c, shift, incoming.get(alcohol.o));
     }
     const reason = reagent === 'socl2'
       ? 'SOCl₂ turns OH into a chlorosulfite leaving group, which chloride displaces; SO₂ and HCl bubble off.' +
@@ -2087,6 +2232,7 @@ function rxRuleAromatic(ctx) {
         res.minor = rxProductList(other);
         res.ratio = pos.ratio;
       }
+      rxRegioAromatic(res);
       out.push(res);
       return;
     }
@@ -2130,6 +2276,7 @@ function rxRuleAromatic(ctx) {
         (shifted ? 'The primary cation rearranges by a 1,2-hydride shift first, so the ring ends up bonded to the more substituted carbon. ' : '') + pos.note,
         { score: 12, byproducts: ['HCl'], consumes: [rxUse(s, 1), rxUse(partner, 1)], warnings: ['The alkylated product is more reactive than the starting arene, so polyalkylation is common; use excess arene.'] });
     }
+    rxRegioAromatic(res);
     if (pos.excessive && rxaRingClass(s.graph, s.info.aromatic, pos.atom).rings.some((r) => r.some((id) => ['N', 'O'].includes(s.graph.getAtom(id).element)))) {
       res.warnings.push('Pyrroles and furans polymerise with AlCl₃; milder Lewis acids (BF₃·OEt₂, SnCl₄, ZnCl₂) are used in practice.');
     }
@@ -2367,11 +2514,22 @@ function rxStoichiometry(outcome, compounds) {
       return;
     }
     const line = sheet.find((r) => r.compound === x.compound);
-    const have = line && line.equiv > 0 ? line.equiv : parseFloat(x.compound.equiv);
-    rows.push({ compound: x.compound, label: rxCompoundLabel(x.compound), need: x.need, have: have > 0 ? have : 1 });
+    const have = line && line.equiv > 0 ? line.equiv : x.compound.equiv === undefined ? 1 : null;
+    rows.push({ compound: x.compound, label: rxCompoundLabel(x.compound), need: x.need, have, assumed: x.compound.equiv === undefined });
   });
   if (!rows.length) {
     return null;
+  }
+  // A rule may declare its whole-substrate basis (e.g. exhaustive conversion).
+  // Otherwise use the first listed consumed reactant, not consumption-array order.
+  const explicitBasis=outcome.stoichiometryBasis;
+  const firstReactant=rows.some(r=>r.compound===explicitBasis)?explicitBasis:(compounds||[]).find(c=>c.role==='reactant'&&rows.some(r=>r.compound===c));
+  const baseIndex=rows.findIndex(r=>r.compound===firstReactant);
+  if(baseIndex>0)rows.unshift(rows.splice(baseIndex,1)[0]);
+  if(rows.some(r=>!Number.isFinite(r.have)||r.have<=0)){
+    rows.forEach(r=>{r.ratio=null;r.status='unknown';r.leftover=null;});
+    outcome.warnings.push('Recorded amounts cannot be converted to equivalents for every consumed input. The stoichiometric ceiling is unresolved; no conversion or product distribution is inferred.');
+    return {rows,extent:null,conversion:null,limiting:null,multiplier:1,basis:'stoichiometric-upper-bound',completion:'unknown'};
   }
   const extent = Math.min.apply(null, rows.map((r) => r.have / r.need));
   rows.forEach((r) => {
@@ -2387,15 +2545,22 @@ function rxStoichiometry(outcome, compounds) {
   const base = rows[0];
   const conversion = Math.min(1, extent / base.ratio);
   const limiting = rows.find((r) => r.status === 'limiting') || null;
-  if (limiting && limiting !== base && conversion < 0.999) {
+  if (limiting && limiting !== base && conversion < 1-1e-9) {
     outcome.warnings.push(rxFormatEquiv(limiting.have) + ' equiv of ' + limiting.label + ' is not enough: the reaction needs ' + rxFormatEquiv(limiting.need) +
-      ' per ' + base.label + ', so at most ' + Math.round(conversion * 100) + '% of the ' + base.label + ' can react. Use at least ' + rxFormatEquiv(limiting.need * base.have) + ' equiv.');
+      ' per modeled net transformation, so the stoichiometric ceiling for ' + base.label + ' is ' + rxFormatEquiv(conversion * 100) + '%. This is an upper bound, not a predicted conversion, yield or product distribution.');
   }
   let multiplier = 1;
   while (multiplier < 12 && !rows.every((r) => Math.abs(r.need * multiplier - Math.round(r.need * multiplier)) < 1e-6)) {
     multiplier += 1;
   }
-  return { rows, extent, conversion, limiting, multiplier };
+  return { rows, extent, conversion, limiting, multiplier, basis:'stoichiometric-upper-bound', completion:conversion<1-1e-9?'limited':'sufficient' };
+}
+
+function rxLoadingConflict(outcome) {
+  const s=outcome&&outcome.stoichiometry;if(!s)return null;
+  if(s.completion==='unknown')return 'The recorded amounts do not establish a stoichiometric conversion ceiling; complete conversion cannot be verified.';
+  if(Number.isFinite(s.conversion)&&s.conversion<1-1e-9)return 'Recorded loading accounts for at most '+rxFormatEquiv(s.conversion*100)+'% of the modeled net transformation. Complete conversion is not established; no partial-product distribution is inferred.';
+  return null;
 }
 
 function rxFormatEquiv(value) {
@@ -2403,14 +2568,15 @@ function rxFormatEquiv(value) {
 }
 
 const RX_CHEMOSELECTIVITY = [
-  { id: 'borohydride', label: 'NaBH₄', tags: ['borohydride'], attacks: ['aldehyde', 'ketone'] },
-  { id: 'alanate', label: 'LiAlH₄', tags: ['alanate'], attacks: ['aldehyde', 'ketone', 'acylChloride', 'ester', 'acid', 'epoxide', 'amide', 'nitrile'] },
+  { id: 'borohydride', label: 'NaBH₄', tags: ['borohydride'], attacks: ['aldehyde', 'ketone', 'acylChloride'] },
+  { id: 'alanate', label: 'LiAlH₄', tags: ['alanate'], attacks: ['aldehyde', 'ketone', 'acylChloride', 'ester', 'tBuEster', 'acid', 'epoxide', 'amide', 'nitrile'] },
   { id: 'hydrogenation', label: 'H₂ with a metal catalyst', tags: ['H2', 'hydrogenationCatalyst'], attacks: ['alkyne', 'alkene', 'nitro', 'benzylEther', 'cbz'], advice: 'if the alkene must be reduced, protect the alcohol as a TBS ether instead of a benzyl ether, since TBS survives H₂/Pd' },
-  { id: 'organometallic', label: 'the organometallic reagent', tags: ['grignard'], attacks: ['aldehyde', 'ketone', 'acylChloride', 'ester', 'epoxide', 'nitrile'] },
+  { id: 'organometallic', label: 'the organometallic reagent', tags: ['grignard'], attacks: ['aldehyde', 'ketone', 'acylChloride', 'ester', 'tBuEster', 'epoxide', 'nitrile', 'amide', 'carbonDioxide'] },
   { id: 'peracid', label: 'mCPBA', tags: ['mcpba'], attacks: ['alkene', 'ketone'] },
   { id: 'permanganate', label: 'KMnO₄', tags: ['permanganate'], attacks: ['aldehyde', 'alkene', 'alcohol'] },
   { id: 'chromium', label: 'the chromium(VI) oxidant', tags: ['jones'], attacks: ['aldehyde', 'alcohol'] },
   { id: 'pcc', label: 'PCC', tags: ['pcc'], attacks: ['alcohol'] },
+  { id: 'dmp', label: 'Dess–Martin periodinane', tags: ['dmp'], attacks: ['alcohol'] },
   { id: 'ozone', label: 'O₃', tags: ['ozone'], attacks: ['alkene', 'alkyne'] },
   { id: 'borane', label: 'BH₃', tags: ['borane'], attacks: ['alkene', 'alkyne', 'aldehyde', 'acid', 'ketone'] },
   { id: 'fluoride', label: 'fluoride', tags: ['fluoride'], attacks: ['silylEther'] },
@@ -2433,7 +2599,7 @@ const RX_CHEMO_GROUP_LABELS = {
   aldehyde: 'aldehyde', ketone: 'ketone', ester: 'ester', acid: 'carboxylic acid', amide: 'amide', acylChloride: 'acyl chloride',
   nitrile: 'nitrile', epoxide: 'epoxide', alkene: 'C=C', alkyne: 'C≡C', terminalAlkyne: 'terminal alkyne', nitro: 'nitro group',
   benzylEther: 'benzyl ether', cbz: 'Cbz group', amine: 'amine', alcohol: 'alcohol', thiol: 'thiol', boc: 'Boc group',
-  tBuEster: 'tert-butyl ester', silylEther: 'silyl ether',
+  carbonDioxide: 'carbon dioxide', tBuEster: 'tert-butyl ester', silylEther: 'silyl ether', benzylicAlkyl: 'alkyl benzylic C–H site',
 };
 
 function rxChemoGroups(g) {
@@ -2472,6 +2638,8 @@ function rxChemoGroups(g) {
       add(c.kind, [c.c, c.o]);
     }
   });
+  rxGrignardCO2Sites(g).forEach(id=>add('carbonDioxide',[id]));
+  rxPermanganateBenzylicSites(g,info).forEach(id=>add('benzylicAlkyl',[id]));
   info.nitriles.forEach((n) => add('nitrile', [n.c, n.n]));
   info.epoxides.forEach((e) => add('epoxide', [e.o, e.a, e.b]));
   info.alkenes.forEach((e) => add('alkene', [e.a, e.b]));
@@ -2503,19 +2671,95 @@ function rxChemoGroups(g) {
   return groups;
 }
 
+// Keep the predictor and query audit on the same susceptible-site definition.
+function rxChemoSiteSusceptible(g, entry, group, atoms, info) {
+  if (!entry || !entry.attacks.includes(group)) return false;
+  if (group === 'alcohol' && ['pcc', 'dmp', 'permanganate', 'chromium'].includes(entry.id)) {
+    return (info || rxAnalyze(g)).alcohols.some(a => atoms.includes(a.o) && a.degree < 3 && rxHydrogens(g,a.c) > 0);
+  }
+  return true;
+}
+
+function rxChemoSusceptibleGroups(g, entry) {
+  const groups=rxChemoGroups(g),info=rxAnalyze(g);
+  Object.keys(groups).forEach(group=>{groups[group]=groups[group].filter(atoms=>rxChemoSiteSusceptible(g,entry,group,atoms,info));});
+  return groups;
+}
+
+function rxChemoProtectionSuggestion(group, entry) {
+  // An acid ester mask remains an electrophile for these reagent classes.
+  if (group === 'acid' && ['alanate','organometallic'].includes(entry.id)) return '';
+  return RX_PROTECTION_SUGGESTIONS[group] || '';
+}
+
+function rxChemoConditionEntry(entry,ctx) {
+  if(entry&&entry.id==='permanganate'&&rxPermanganateRegime(ctx)==='hot'&&!entry.attacks.includes('benzylicAlkyl'))return Object.assign({},entry,{attacks:entry.attacks.concat('benzylicAlkyl')});
+  return entry;
+}
+
 function rxChemoEntry(ctx, outcome) {
   const consumed = (compound) => compound && outcome.consumes.some((u) => u && u.compound === compound);
   const acylating = ctx.substrates.filter((s) => consumed(s.compound) && s.info.carbonyls.some((c) => c.kind === 'acylChloride' || c.kind === 'anhydride'));
-  return RX_CHEMOSELECTIVITY.find((entry) => {
+  const entry=RX_CHEMOSELECTIVITY.find((entry) => {
     if (entry.acylating) {
       return acylating.length > 0 && ctx.substrates.some((s) => consumed(s.compound) && !acylating.includes(s));
     }
     if (!entry.tags.every((tag) => ctx.has(tag))) {
       return false;
     }
+    if(entry.id==='permanganate'&&['permanganate-cleavage','side-chain-oxidation'].includes(outcome.id))return true;
     const carriers = entry.tags.map((tag) => ctx.get(tag).compound).filter(Boolean);
     return !carriers.length || carriers.some(consumed);
   }) || null;
+  return rxChemoConditionEntry(entry,ctx);
+}
+
+// Cache recognized product motifs within this prediction only. The input and
+// output audits share the inventory; no cross-query chemistry cache is used.
+function rxProductInventory(ctx,product) {
+  if(!ctx.productSiteInventory)ctx.productSiteInventory=new WeakMap();
+  if(ctx.productSiteInventory.has(product))return ctx.productSiteInventory.get(product);
+  const graph=reactionFragmentGraph(product.fragment||smilesToFragment(product.isomericSmiles||product.smiles));
+  const inventory={graph,info:rxAnalyze(graph),groups:rxChemoGroups(graph)};
+  ctx.productSiteInventory.set(product,inventory);return inventory;
+}
+
+function rxProductSusceptibleGroups(ctx,product,entry) {
+  const x=rxProductInventory(ctx,product);
+  return Object.fromEntries(Object.entries(x.groups).map(([group,sites])=>[group,sites.filter(atoms=>rxChemoSiteSusceptible(x.graph,entry,group,atoms,x.info))]));
+}
+
+function rxProductSurvivalLabel(status) {
+  return ({review:'Needs review',conflict:'Further reaction possible','no-encoded-alert':'No recognized alert (limited model)','not-assessed':'Not assessed','workup-boundary':'Separate work-up assumed',incomplete:'Audit incomplete'})[status]||'Not assessed';
+}
+
+function rxProductSurvival(ctx,outcome) {
+  const workup=['grignard','grignard-carboxylation','grignard-nitrile','reduction-lialh4','dibal','hydroboration','borane-acid-reduction'].includes(outcome.id);
+  const phase=workup?'post-workup':['hydrohalogenation','hbr-radical'].includes(outcome.id)?'reaction-medium':'unspecified';
+  const report={status:'not-assessed',phase,issues:[],blockers:[],coverage:'Recognized product motifs and finite active-reagent susceptibility entries only; no kinetics, actual residual analysis or exhaustive stability proof.',message:''};
+  if(workup){report.status='workup-boundary';report.message='This neutral endpoint includes a separate work-up. Coexistence with the original reaction reagents and stability after that work-up are not established by this audit.';return report;}
+  const hx=['HBr','HCl','HI'].filter(tag=>ctx.has(tag)).map(tag=>({id:'product-'+tag,label:tag,tags:[tag],attacks:['alkene','alkyne'],followupHX:true}));
+  const entries=RX_CHEMOSELECTIVITY.filter(e=>!e.acylating&&e.tags.every(tag=>ctx.has(tag))).map(e=>rxChemoConditionEntry(e,ctx)).concat(hx);
+  const selected=rxChemoEntry(ctx,outcome);if(selected&&selected.acylating)entries.push(selected);
+  if(!entries.length){report.message='No active product-susceptibility model matched these conditions; product stability is not assessed.';return report;}
+  try{
+    entries.forEach(entry=>{
+      const carrier=entry.tags&&ctx.get(entry.tags[0]),compound=carrier&&carrier.compound;
+      const row=outcome.stoichiometry&&(outcome.stoichiometry.rows||[]).find(r=>r.compound===compound);
+      const availability=row&&Number.isFinite(row.leftover)?row.leftover>1e-9?'recorded-excess-upper-bound':'modeled-exhaustion':'not-quantified';
+      [...(outcome.products||[]).map((product,index)=>({product,index,role:'product'})),...(outcome.minor||[]).map((product,index)=>({product,index,role:'alternative'}))].forEach(({product,index,role})=>{
+        const groups=rxProductSusceptibleGroups(ctx,product,entry);
+        Object.entries(groups).filter(([,sites])=>sites.length).forEach(([group,sites])=>{
+          const issue={product:index+1,productRole:role,smiles:product.isomericSmiles||product.smiles,reagent:entry.id,label:entry.label,group,count:sites.length,availability};
+          report.issues.push(issue);
+          if(entry.followupHX&&phase==='reaction-medium'&&availability==='recorded-excess-upper-bound')report.blockers.push({code:'product-further-addition',message:'The unsaturated product remains susceptible to '+entry.label+' under the recorded excess. A clean partial-addition endpoint is not established; further-product identities and ratios are not predicted.'});
+        });
+      });
+    });
+    report.status=report.blockers.length?'conflict':report.issues.length?'review':'no-encoded-alert';
+    report.message=report.issues.length?'Recognized product sites remain susceptible under active recorded reagent models. Modeled exhaustion is a stoichiometric convention, not proof of no residual reagent; product persistence and side-product distributions require review.':'No susceptible product sites were recognized by the active finite models. This is not a product-stability guarantee.';
+  }catch(error){report.status='incomplete';report.message='The product-survival audit could not complete; stability remains unassessed.';}
+  return report;
 }
 
 function rxChemoselectivity(ctx, outcome) {
@@ -2532,14 +2776,17 @@ function rxChemoselectivity(ctx, outcome) {
   }
   const before = {};
   consumed.forEach((s) => {
-    const groups = rxChemoGroups(s.graph);
+    const groups = rxChemoSusceptibleGroups(s.graph, entry);
     Object.keys(groups).forEach((group) => {
       before[group] = (before[group] || []).concat(groups[group]);
     });
   });
   let after = {};
   try {
-    after = rxChemoGroups(reactionFragmentGraph(smilesToFragment(main.smiles)));
+    outcome.products.forEach(product => {
+      const groups=rxProductSusceptibleGroups(ctx,product,entry);
+      Object.keys(groups).forEach(group=>{after[group]=(after[group]||[]).concat(groups[group]);});
+    });
   } catch (error) {
     return null;
   }
@@ -2550,24 +2797,42 @@ function rxChemoselectivity(ctx, outcome) {
   }
   const competing = entry.attacks.filter((group) => count(before, group) > 0 && count(after, group) > 0)
     .map((group) => ({ group, count: count(after, group), atoms: before[group].reduce((all, atoms) => all.concat(atoms), []) }));
+  // A selected branch consumes only its own inputs. Other explicitly recorded
+  // reactants (and organometallic reagent-role partners) remain in the mixture;
+  // do not infer their inertness from omission
+  // in consumes. Reuse the same finite site model, without inventing products.
+  const otherInputs = [];
+  ctx.substrates.filter(s => (s.compound.role === 'reactant' || entry.id === 'organometallic') &&
+    !outcome.consumes.some(u => u && u.compound === s.compound)).forEach(s => {
+    const groups = rxChemoSusceptibleGroups(s.graph, entry);
+    entry.attacks.forEach(group => {
+      if (!(groups[group] || []).length) return;
+      const site = {group, count: groups[group].length,
+        atoms: groups[group].flat(), source: 'unconsumed-input',
+        substrateSmiles: s.compound.isomericSmiles || s.compound.smiles};
+      otherInputs.push(site);
+      competing.push(site);
+    });
+  });
   if (!competing.length && changed.length < 2) {
     return null;
   }
   const name = (group) => RX_CHEMO_GROUP_LABELS[group] || group;
   const target = competing.length ? competing[0].group : changed[changed.length - 1];
-  const guard = changed.find((group) => group !== target && RX_PROTECTION_SUGGESTIONS[group]);
+  const guard = changed.find((group) => group !== target && rxChemoProtectionSuggestion(group, entry));
   let suggestion = '';
   if (guard) {
-    suggestion = 'To react only at the ' + name(target) + ', first ' + RX_PROTECTION_SUGGESTIONS[guard] + '.';
+    suggestion = 'To react only at the ' + name(target) + ', first ' + rxChemoProtectionSuggestion(guard, entry) + '.';
   } else if (entry.advice) {
     suggestion = 'To keep the ' + name(changed[0]) + ', ' + entry.advice + '.';
-  } else if (RX_PROTECTION_SUGGESTIONS[target]) {
-    suggestion = 'To keep the ' + name(target) + ' untouched, first ' + RX_PROTECTION_SUGGESTIONS[target] + '.';
+  } else if (rxChemoProtectionSuggestion(target, entry)) {
+    suggestion = 'To keep the ' + name(target) + ' untouched, first ' + rxChemoProtectionSuggestion(target, entry) + '.';
   }
   const text = competing.length
-    ? 'Chemoselectivity: ' + entry.label + ' reacted at the ' + changed.map(name).join(' and ') + ' but can also attack the ' + competing.map((c) => name(c.group)).join(' and ') + ' in this molecule, so expect a mixture unless one site is protected.'
-    : 'Chemoselectivity: ' + entry.label + ' reacted at both the ' + changed.map(name).join(' and the ') + '; it cannot tell these groups apart.';
-  outcome.chemoselectivity = { reagent: entry.id, label: entry.label, changed, competing, suggestion };
+    ? 'Chemoselectivity: the encoded ' + entry.label + ' outcome changes the ' + changed.map(name).join(' and ') + ', while the ' + competing.map((c) => name(c.group)).join(' and ') + ' remains susceptible in the reagent model. Selective preparation and the competing products are not established.'
+    : 'Chemoselectivity: the encoded ' + entry.label + ' outcome changes the ' + changed.map(name).join(' and the ') + '; the model assigns no kinetic site preference.';
+  outcome.chemoselectivity = { reagent: entry.id, label: entry.label, changed, competing, otherInputs, suggestion };
+  if (otherInputs.length) outcome.warnings.push('Additional input compatibility: another recorded input contains sites susceptible to ' + entry.label + '. The selected branch does not consume that input; its survival and any competing products are not established.');
   outcome.warnings.push(text);
   return outcome.chemoselectivity;
 }
@@ -2592,6 +2857,33 @@ function rxEnolateBase(ctx) {
     return { kind: 'hydroxide', entry: ctx.get('hydroxide') };
   }
   return null;
+}
+
+// A bounded topological screen, not a prediction of cyclization kinetics,
+// conformation, concentration effects or preparative success.
+function rxClosureTether(g,start,end) {
+  const path=(skipA,skipB)=>{
+    const queue=[[start]],seen=new Set([start]);
+    while(queue.length){const route=queue.shift(),last=route.at(-1);if(last===end)return route;
+      rxNeighbors(g,last).forEach(n=>{const id=n.atom.id;if((last===skipA&&id===skipB)||(last===skipB&&id===skipA)||seen.has(id))return;seen.add(id);queue.push(route.concat(id));});}
+    return null;
+  };
+  const atoms=path(),connected=!!atoms;
+  const unique=connected&&atoms.slice(1).every((id,i)=>!path(atoms[i],id));
+  return {connected,unique,ringSize:connected?atoms.length:null,atoms:atoms||[]};
+}
+
+function rxCyclizationRecord(out,s,start,end,options) {
+  const opts=options||{},tether=rxClosureTether(s.graph,start,end),blockers=[];
+  const add=(code,message)=>blockers.push({code,message});
+  if(s.graph.connectedComponents().length!==1||!tether.connected)add('disconnected-cyclization','A single connected tethered substrate is required; disconnected fragments do not establish an intramolecular closure.');
+  if(tether.connected&&!tether.unique)add('cyclic-tether','The reacting sites have multiple tether paths. Fused/bridged ring feasibility is outside this closure model.');
+  if(opts.allowedSizes&&!opts.allowedSizes.includes(tether.ringSize))add('closure-size','This proposed ring size is outside the encoded closure range.');
+  if(opts.eligibleClosures>1)add('closure-site-choice','Multiple eligible closures are present. Smallest-ring or first-site ordering does not establish selective cyclization.');
+  if(opts.externalPartners>0)add('intermolecular-competition','Other recognized reactive partners are present. Selective intramolecular closure over intermolecular reaction is not established.');
+  const message='Tether connectivity and ring size are structural checks only. Conditions favoring intramolecular reaction are assumed; conformation, actual concentration, oligomerization and product distribution are not calculated.';
+  out.cyclization={status:blockers.length?'unresolved':'within-encoded-topology',...tether,eligibleClosures:opts.eligibleClosures||1,externalPartners:opts.externalPartners||0,blockers,message};
+  out.warnings.push(message,...blockers.map(b=>b.message));return out;
 }
 
 function rxPathLength(g, from, to) {
@@ -3174,6 +3466,13 @@ function predictReaction(compounds, conditions) {
   outcomes.forEach((o) => {
     o.stoichiometry = rxStoichiometry(o, compounds);
     rxChemoselectivity(ctx, o);
+    o.productSurvival=rxProductSurvival(ctx,o);
+    if(['review','conflict','incomplete'].includes(o.productSurvival.status))o.warnings.push(o.productSurvival.message,...o.productSurvival.blockers.map(b=>b.message));
+    if(typeof rxxCompatibilityAssess==='function'){
+      o.compatibilityConflicts=rxxCompatibilityAssess(ctx,o);
+      o.compatibilityWarnings=rxxCompatibilityWarnings(ctx,o);
+      o.compatibilityConflicts.forEach(c=>o.warnings.push(c.message));
+    }
     const used = assumed.filter((s) => o.consumes.some((u) => u && u.compound === s.compound));
     if (used.length && o.products.concat(o.minor).some((p) => p.stereo || p.fragment)) {
       const form = used[0].graph.alkeneSpecs[0].cis ? 'Z' : 'E';
@@ -3190,7 +3489,17 @@ function predictReaction(compounds, conditions) {
   const unique = [];
   outcomes.forEach((o) => {
     const identities = o.products.map(reactionProductIdentity);
-    const key = o.id + '|' + (identities.every(Boolean) ? identities.sort().join('.') : 'unresolved:' + unique.length);
+    // Outcomes describe a multiset: two equivalents of one product must not
+    // collapse into a branch producing only one. Combine repeated entries so
+    // representation and product ordering do not create extra alternatives.
+    const counts = new Map();
+    identities.forEach((identity, i) => {
+      counts.set(identity, (counts.get(identity) || 0) + (o.products[i].count || 1));
+    });
+    const productKey = identities.every(Boolean)
+      ? JSON.stringify([...counts].sort((a, b) => a[0].localeCompare(b[0])))
+      : 'unresolved:' + unique.length;
+    const key = o.id + '|' + productKey;
     if (!unique.some((u) => u.key === key)) {
       unique.push(Object.assign(o, { key }));
     }

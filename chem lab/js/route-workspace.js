@@ -1,6 +1,50 @@
 const ROUTE_WORKSPACE_LIMITS = { routes: 30, steps: 20, importBytes: 1000000 };
 const ROUTE_WORKSPACE_STORAGE = 'chemgraph.route-workspace.v1';
 
+// Boundary records describe planning assumptions, not isolation or purity proof.
+function routeHandoffNormalize(raw,flags) {
+  const f=flags||{},carry=f.onePot===true||f.freshMixture===false;
+  if(raw!==undefined&&raw!==null&&(typeof raw!=='object'||Array.isArray(raw)))throw new Error('Handoff must be an object.');
+  const r=raw||{},mode=r.mode===undefined?(carry?'carryover':'isolated'):r.mode;
+  if(!['isolated','carryover'].includes(mode))throw new Error('Unknown handoff mode.');
+  if((mode==='isolated'&&carry)||(mode==='carryover'&&f.freshMixture===true))throw new Error('Conflicting fresh-mixture and carryover records.');
+  return {mode,basis:r.basis==='model-assumption'||(!raw&&f.freshMixture!==true&&!carry)?'model-assumption':'recorded-plan'};
+}
+
+function routeWorkupNormalize(raw) {
+  if(raw!==undefined&&raw!==null&&(typeof raw!=='object'||Array.isArray(raw)))throw new Error('Work-up must be an object.');
+  const r=raw||{},status=r.status===undefined?'assumed':r.status;
+  if(r.notes!==undefined&&typeof r.notes!=='string')throw new Error('Work-up notes must be text.');
+  if(!['assumed','recorded','none'].includes(status))throw new Error('Unknown work-up status.');
+  const notes=typeof r.notes==='string'?r.notes.slice(0,800):'';
+  if(status==='recorded'&&!notes.trim())throw new Error('A recorded work-up needs a description; the model does not validate its procedure.');
+  return {status,notes};
+}
+
+function routeWorkupAssess(step,checked) {
+  const s=step.candidate||step,id=(checked&&checked.outcome&&checked.outcome.id)||(s.outcome&&s.outcome.id)||s.outcomeId||s.ruleId;
+  const record=routeWorkupNormalize(step.workup||s.workup),required=['grignard','grignard-carboxylation','grignard-nitrile','reduction-lialh4','dibal'].includes(id);
+  const blockers=required&&record.status==='none'?[{code:'endpoint-workup',message:'The '+id+' neutral endpoint includes a separate protonating/hydrolytic work-up assumption. Recording no work-up does not establish that endpoint.'}]:[];
+  return {record,required,blockers,message:required?'The neutral endpoint includes a separate work-up assumption; a note is not experimental validation.':'No additional work-up requirement is encoded for this reaction class; absence of a flag does not establish that work-up is unnecessary.'};
+}
+
+function routeHandoffAssess(previous,next) {
+  const a=previous.candidate||previous,b=next.candidate||next;
+  const record=routeHandoffNormalize(next.handoff||b.handoff,{freshMixture:next.freshMixture===undefined?b.freshMixture:next.freshMixture,onePot:next.onePot||b.onePot});
+  const blockers=record.mode==='carryover'?[{code:'unsupported-carryover',message:'Only the selected product is represented at the next step. Carry-over mixture composition, work-up and one-pot compatibility are not modeled.'}]:[];
+  const potentials=[],warnings=[];
+  try{
+    const context=s=>reactionContext((s.compounds||[...(s.precursors||[]),...(s.reagents||[])]).map(c=>({...c,fragment:c.fragment||smilesToFragment(c.isomericSmiles||c.smiles)})),s.conditions||{});
+    const before=context(a),after=context(b),any=(c,tags)=>tags.some(t=>c.has(t));
+    const sensitive=['grignard','alanate','hydride','amideBase'],oxidants=['permanganate','jones','pcc','dmp','mcpba','ozone'],reducers=['alanate','borohydride','H2','grignard'];
+    if(any(before,sensitive)&&(after.protic||any(after,['H2O','strongAcid'])))potentials.push({code:'reactive-reagent-to-protic-stage',message:'Prior moisture/proton-sensitive reagents could meet a protic or acidic next stage if retained.'});
+    if((before.protic||any(before,['H2O','strongAcid']))&&any(after,sensitive))potentials.push({code:'protic-carryover',message:'Prior protic medium or acid could consume sensitive reagents in the next stage if retained.'});
+    if((any(before,oxidants)&&any(after,reducers))||(any(before,reducers)&&any(after,oxidants)))potentials.push({code:'oxidant-reductant-carryover',message:'Recorded oxidizing and reducing inputs could conflict across this boundary if retained.'});
+  }catch(error){warnings.push('Potential carry-over chemistry could not be assessed from these records.');}
+  return {record,status:blockers.length?'blocked':'assumed-separated',blockers,potentials,warnings,
+    message:record.mode==='isolated'?'Separate preparation of a fresh mixture is assumed. Isolation, purity and removal of prior inputs are not established.':'A one-pot/carry-over sequence cannot be verified by independent step replay.'};
+}
+
 function routeWorkspaceKey(smiles) {
   if (typeof moleculeIdentity === 'function') return moleculeIdentity(smiles).key;
   const graph = reactionFragmentGraph(smilesToFragment(smiles));
@@ -41,6 +85,8 @@ function routeWorkspaceNormalize(raw) {
     const rawYield = link.yield !== undefined ? link.yield : source.yield;
     if (rawYield !== undefined && rawYield !== null && rawYield !== '' && (!Number.isFinite(Number(rawYield)) || Number(rawYield) < 0 || Number(rawYield) > 100)) throw new Error('Step ' + (index + 1) + ' yield must be between 0 and 100%.');
     return {
+      handoff: index?routeHandoffNormalize(link.handoff||source.handoff,{freshMixture:link.freshMixture===undefined?source.freshMixture:link.freshMixture,onePot:raw.onePot||link.onePot||source.onePot}):null,
+      workup:routeWorkupNormalize(link.workup||source.workup),
       from: routeWorkspaceSmiles(link.from),
       to: routeWorkspaceSmiles(link.to),
       name: String(source.outcomeName || source.name || 'Reaction step').slice(0, 120),
@@ -86,6 +132,11 @@ function routeWorkspaceValidateStep(step) {
     const outcome = outcomes.find((o) => (!step.ruleId || o.id === step.ruleId) && (o.products || []).concat(o.minor || []).some((p) => {
       try { return routeWorkspaceProductKey(p.isomericSmiles || p.smiles) === target; } catch (error) { return false; }
     }));
+    if(outcome&&typeof rxsStereoTargetConflict==='function'){
+      const selected=(outcome.products||[]).concat(outcome.minor||[]).find(p=>routeWorkspaceProductKey(p.isomericSmiles||p.smiles)===target);
+      const conflict=rxsStereoTargetConflict(selected,step.to);
+      if(conflict)return {status:'unverified',message:conflict,ruleId:outcome.id,outcome};
+    }
     if (outcome && outcome.partialConversion) return {status:'unverified',message:'This is a one-site partial-conversion alternative; selective preparation is not established by the current rules.',ruleId:outcome.id,outcome};
     if (outcome && typeof routeStepAssessment === 'function') {
       const assessment = routeStepAssessment({outcome,compounds,conditions:step.conditions});
@@ -95,13 +146,25 @@ function routeWorkspaceValidateStep(step) {
       const scope = reactionScopeAssess(compounds,step.conditions,outcome);
       if (scope.status === 'conflict') return {status:'unverified',message:scope.reasons.filter(r=>r.level==='conflict').map(r=>r.message).join(' ')||'Condition/substrate scope conflict.',ruleId:outcome.id,outcome,scope};
     }
+    if(outcome){const workup=routeWorkupAssess(step,{outcome});if(workup.blockers.length)return {status:'unverified',message:workup.blockers.map(b=>b.message).join(' '),outcome,workup};}
     return outcome ? { status: 'verified', message: 'Target reproduced by ' + outcome.name + ' in the current rule model.', ruleId: outcome.id, outcome, compounds }
       : { status: 'unverified', message: 'The current rules did not reproduce the selected target with these inputs and conditions.' };
   } catch (error) { return { status: 'invalid', message: error.message }; }
 }
 
 function routeWorkspaceValidate(route) {
-  const steps = route.steps.map(routeWorkspaceValidateStep);
+  const steps = route.steps.map(step=>{
+    const checked=routeWorkspaceValidateStep(step);
+    try{
+      checked.workup=routeWorkupAssess(step,checked);
+      if(checked.workup.blockers.length&&checked.status==='verified'){checked.status='unverified';checked.message=checked.workup.blockers.map(b=>b.message).join(' ');}
+    }catch(error){checked.status='invalid';checked.message=error.message;}
+    return checked;
+  });
+  const handoffs=route.steps.slice(1).map((step,i)=>{
+    try{return {...routeHandoffAssess(route.steps[i],{...step,onePot:route.onePot||step.onePot}),beforeStep:i+2};}
+    catch(error){return {status:'blocked',beforeStep:i+2,blockers:[{code:'invalid-handoff',message:error.message}],potentials:[],warnings:[],message:error.message};}
+  });
   const issues = [];
   const same = (a, b) => { try { return routeWorkspaceKey(a) === routeWorkspaceKey(b); } catch (error) { return false; } };
   if (!route.steps.length) {
@@ -111,7 +174,7 @@ function routeWorkspaceValidate(route) {
     route.steps.slice(1).forEach((step, i) => { if (!same(route.steps[i].to, step.from)) issues.push('Steps ' + (i + 1) + ' and ' + (i + 2) + ' are disconnected.'); });
     if (!same(route.target, route.steps[route.steps.length - 1].to)) issues.push('The last step does not reach the route’s target.');
   }
-  return { status: issues.length || steps.some((s) => s.status === 'invalid') ? 'invalid' : steps.some((s) => s.status !== 'verified') ? 'unverified' : 'verified', issues, steps };
+  return { status: issues.length || steps.some((s) => s.status === 'invalid') ? 'invalid' : steps.some((s) => s.status !== 'verified')||handoffs.some(h=>h.status==='blocked') ? 'unverified' : 'verified', issues, steps, handoffs };
 }
 
 function routeWorkspaceOutcomeProduct(step, outcome) {
@@ -129,6 +192,7 @@ function routeWorkspaceOutcomeProduct(step, outcome) {
 
 function routeWorkspaceStepYield(step, checked) {
   if (Number.isFinite(step.yield)) return Math.max(0, Math.min(100, step.yield));
+  if(checked&&checked.status!=='verified')return null;
   const outcome = checked && checked.outcome;
   const selected = routeWorkspaceOutcomeProduct(step, outcome);
   if (!selected) return null;
@@ -335,8 +399,8 @@ function routeWorkspaceCsvEscape(value) {
 function routeWorkspaceCsv(route) {
   const report = routeWorkspaceValidate(route);
   const overallYield = routeWorkspaceYield(route, report);
-  const rows = [['Route', route.name], ['Starting material', route.start], ['Target', route.target], ['Route status', report.status], ['Estimated overall yield (%)', overallYield === null ? '' : overallYield], ['Continuity issues', report.issues.join('; ')], [], ['Step', 'Reaction', 'Rule', 'From SMILES', 'Target SMILES', 'Compounds (role: SMILES)', 'Temperature (°C)', 'Solvents', 'Additives', 'Atmosphere', 'Energy', 'Pressure (atm)', 'Reflux', 'Time', 'Concentration', 'Notes', 'Verification', 'Explanation', 'Step role', 'Protecting group', 'Planning rationale', 'Group preservation', 'Group preservation notes', 'Estimated yield (%)']];
-  route.steps.forEach((s, i) => rows.push([i + 1, s.name, s.ruleId, s.from, s.to, s.compounds.map((c) => c.role + ': ' + c.smiles).join('\n'), s.conditions.temperature, s.conditions.solvents.join('; '), s.conditions.additives.join('; '), s.conditions.atmosphere, s.conditions.energy, s.conditions.pressure, s.conditions.reflux, s.conditions.time, s.conditions.concentration, s.conditions.notes, report.steps[i].status, report.steps[i].message, s.planning ? s.planning.kind : '', s.planning ? s.planning.group : '', s.planning ? s.planning.reason : '', report.steps[i].outcome && report.steps[i].outcome.protectionAssessment ? report.steps[i].outcome.protectionAssessment.status : '', report.steps[i].outcome && report.steps[i].outcome.protectionAssessment ? report.steps[i].outcome.protectionAssessment.sites.map(site => (site.label || site.id) + ': ' + site.status + '. ' + (site.reasons || []).join(' ')).join('\n') : '', routeWorkspaceStepYield(s, report.steps[i])]));
+  const rows = [['Route', route.name], ['Starting material', route.start], ['Target', route.target], ['Route status', report.status], ['Estimated overall yield (%)', overallYield === null ? '' : overallYield], ['Continuity issues', report.issues.join('; ')], [], ['Step', 'Reaction', 'Rule', 'From SMILES', 'Target SMILES', 'Compounds (role: SMILES)', 'Temperature (°C)', 'Solvents', 'Additives', 'Atmosphere', 'Energy', 'Pressure (atm)', 'Reflux', 'Time', 'Concentration', 'Notes', 'Verification', 'Explanation', 'Step role', 'Protecting group', 'Planning rationale', 'Group preservation', 'Group preservation notes', 'Estimated yield (%)','Boundary before step','Boundary basis','Work-up status','Work-up notes','Boundary assessment','Boundary explanation']];
+  route.steps.forEach((s, i) => rows.push([i + 1, s.name, s.ruleId, s.from, s.to, s.compounds.map((c) => c.role + ': ' + c.smiles).join('\n'), s.conditions.temperature, s.conditions.solvents.join('; '), s.conditions.additives.join('; '), s.conditions.atmosphere, s.conditions.energy, s.conditions.pressure, s.conditions.reflux, s.conditions.time, s.conditions.concentration, s.conditions.notes, report.steps[i].status, report.steps[i].message, s.planning ? s.planning.kind : '', s.planning ? s.planning.group : '', s.planning ? s.planning.reason : '', report.steps[i].outcome && report.steps[i].outcome.protectionAssessment ? report.steps[i].outcome.protectionAssessment.status : '', report.steps[i].outcome && report.steps[i].outcome.protectionAssessment ? report.steps[i].outcome.protectionAssessment.sites.map(site => (site.label || site.id) + ': ' + site.status + '. ' + (site.reasons || []).join(' ')).join('\n') : '', routeWorkspaceStepYield(s, report.steps[i]),i?(s.handoff||routeHandoffNormalize()).mode:'initial mixture',i?(s.handoff||routeHandoffNormalize()).basis:'',routeWorkupNormalize(s.workup).status,routeWorkupNormalize(s.workup).notes,i?report.handoffs[i-1].status:'',i?report.handoffs[i-1].message+' '+report.handoffs[i-1].blockers.map(b=>b.message).join(' '):'']));
   return rows.map((row) => row.map(routeWorkspaceCsvEscape).join(',')).join('\r\n');
 }
 
@@ -396,6 +460,8 @@ function createRouteWorkspace(deps) {
       try { const a = routeWorkspaceSmiles(start.input.value), b = routeWorkspaceSmiles(target.input.value); route.start = a; route.target = b; if (persist()) message.textContent = 'Endpoints updated. Continuity was rechecked.'; redraw(); } catch (error) { message.textContent = error.message; }
     }));
     content.append(meta, element('p', simpleName(route.start) + ' → ' + simpleName(route.target), 'workspace-equation'), element('p', 'Route status: ' + report.status + '. ' + (report.issues.join(' ') || 'Intermediates connect in the current order.'), 'workspace-status ' + report.status));
+    content.append(element('p','Step verification assumes separately prepared mixtures and any recorded endpoint work-up. It does not verify isolation, purity or one-pot compatibility.'));
+    report.handoffs.forEach(h=>content.append(element('p','Before step '+h.beforeStep+': '+h.message+' '+h.blockers.map(b=>b.message).join(' ')+' '+h.potentials.map(p=>'If carried over: '+p.message).join(' '))));
     const overallYield = routeWorkspaceYield(route, report);
     content.append(element('p', overallYield === null ? 'Estimated overall yield: unavailable until every step is verified.' : 'Estimated overall yield: ' + overallYield + '% (product of the step-yield estimates).', 'workspace-yield'));
     const comparisons = routeWorkspaceComparison(routes, route.target);
@@ -509,6 +575,18 @@ function createRouteWorkspace(deps) {
       const down = button('Move down', () => { [route.steps[index + 1], route.steps[index]] = [route.steps[index], route.steps[index + 1]]; persist(); redraw(); }); down.disabled = index === route.steps.length - 1;
       actions.append(up, down, button('Delete step', () => { route.steps.splice(index, 1); persist(); redraw(); }), button('Open in Reactions', () => { if (deps.openInLab) deps.openInLab(step.compounds, step.conditions); }));
       card.append(actions);
+      const boundaryEditor=element('details');boundaryEditor.append(element('summary','Isolation and work-up assumptions'));
+      const modeLabel=element('label','Boundary before this step '),mode=element('select');mode.setAttribute('aria-label','Boundary before step '+(index+1));
+      [['isolated','Separate fresh mixture (assumed isolation)'],['carryover','Carry-over / one pot (unsupported)']].forEach(([value,text])=>{const option=element('option',text);option.value=value;mode.append(option);});
+      mode.value=(step.handoff||routeHandoffNormalize()).mode;mode.disabled=index===0;modeLabel.append(mode);
+      const workLabel=element('label','Endpoint work-up '),work=element('select');work.setAttribute('aria-label','Work-up status step '+(index+1));
+      [['assumed','Assumed by model'],['recorded','Described in record (procedure unvalidated)'],['none','No work-up recorded']].forEach(([value,text])=>{const option=element('option',text);option.value=value;work.append(option);});
+      work.value=routeWorkupNormalize(step.workup).status;workLabel.append(work);
+      const workNotes=labelInput('Work-up description',routeWorkupNormalize(step.workup).notes,'textarea');
+      boundaryEditor.append(modeLabel,workLabel,workNotes.wrap,element('p',report.steps[index].workup?report.steps[index].workup.message:''),button('Save boundary assumptions',()=>{
+        try{const nextWorkup=routeWorkupNormalize({status:work.value,notes:workNotes.input.value});const nextHandoff=index?routeHandoffNormalize({mode:mode.value}):null;step.workup=nextWorkup;step.handoff=nextHandoff;persist();redraw();}
+        catch(error){message.textContent=error.message;}
+      }));card.append(boundaryEditor);
       const editor = element('details'); editor.append(element('summary', 'Edit inputs and conditions'));
       const fields = element('div', undefined, 'workspace-fields');
       const from = labelInput('Starting intermediate (name or SMILES)', step.from);
@@ -527,7 +605,7 @@ function createRouteWorkspace(deps) {
             if (parts.length < 3) throw new Error('Use role | equivalents | name or SMILES for each compound.');
             return { role: parts[0].trim(), equiv: parts[1].trim(), smiles: parts.slice(2).join('|').trim() };
           }), conditions: Object.assign({}, step.conditions, { temperature: Number(temperature.input.value), solvents: solvents.input.value.split(',').map((s) => s.trim()).filter(Boolean), additives: additives.input.value.split(',').map((s) => s.trim()).filter(Boolean), notes: notes.input.value }) });
-          route.steps[index] = routeWorkspaceNormalize(Object.assign({}, route, { steps: [next] })).steps[0];
+          route.steps[index] = routeWorkspaceNormalize(Object.assign({}, route, { steps: route.steps.map((s,i)=>i===index?next:s) })).steps[index];
           const result = routeWorkspaceValidateStep(route.steps[index]);
           if (result.status === 'verified') { route.steps[index].name = result.outcome.name; route.steps[index].ruleId = result.ruleId; }
           if (persist()) message.textContent = 'Edits saved; step is ' + result.status + '.';

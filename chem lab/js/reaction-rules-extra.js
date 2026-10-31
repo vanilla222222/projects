@@ -9,6 +9,8 @@ Object.assign(RX_FORMULA_TAGS, {
 });
 
 Object.assign(RX_FORMULA_GUARDS, {
+  C13H22N2: (g, ids) => rxxCarbodiimide(g, ids),
+  C8H17N3: (g, ids) => rxxCarbodiimide(g, ids),
   C5H11NO2: (g, ids) => ids.some((id) => g.getAtom(id).element === 'N' && rxNeighbors(g, id).some((n) => n.atom.element === 'O' && rxHydrogens(g, n.atom.id) === 0 && (n.bond.order === 2 || n.atom.charge === -1))),
   C7H10N2: (g, ids) => ids.some((id) => g.getAtom(id).element === 'N' && rxCarbonNeighbors(g, id).length === 3 && rxNeighbors(g, id).every((n) => n.bond.order === 1)),
   C3H4N2: (g) => !g.bonds.some((b) => g.getAtom(b.atomA).element === 'N' && g.getAtom(b.atomB).element === 'N'),
@@ -253,6 +255,15 @@ function rxxRuleBuchwald(ctx) {
   return [out];
 }
 
+function rxxCarbodiimide(g, ids) {
+  return ids.some((id) => {
+    const atom = g.getAtom(id), ns = rxNeighbors(g, id);
+    return atom.element === 'C' && !atom.charge && ns.length === 2 && ns.every((n) =>
+      n.atom.element === 'N' && !n.atom.charge && n.bond.order === 2 &&
+      rxNeighbors(g, n.atom.id).length === 2 && rxCarbonNeighbors(g, n.atom.id).length === 2);
+  });
+}
+
 function rxxRuleCarbodiimide(ctx) {
   const acid = ctx.substrates.flatMap((s) => s.info.carbonyls.filter((c) => c.kind === 'acid').map((c) => ({ s, c })))[0];
   if (!acid) {
@@ -300,7 +311,7 @@ function rxxRuleAcidChloride(ctx) {
     }
     const g = rxCloneGraph(s.graph);
     acids.forEach((c) => {
-      g.getAtom(c.hetero).element = 'Cl';
+      rxReplaceHydroxyl(g, c.c, c.hetero, 'Cl', false);
     });
     const out = rxOutcome('acid-chloride', 'Acid → acyl chloride', 'Nucleophilic acyl substitution', g,
       reagent === 'socl2'
@@ -448,9 +459,19 @@ function rxxRuleHydrazine(ctx) {
       return [out];
     }
     const hydro = Boolean(hydrazine);
+    // The carbonyl oxygen leaves during condensation. Both atoms of the
+    // nitrogen reagent enter the product; never relabel oxygen (or its isotope)
+    // as nitrogen. Explicit H/D on the attacking nitrogen leave in the water.
+    const donor = hydro ? hydrazine : hydroxylamine;
+    const nitrogen = donor.ids.find((id) => donor.graph.getAtom(id).element === 'N');
+    const leavingHydrogens = new Set(rxNeighbors(donor.graph, nitrogen)
+      .filter((n) => ['H', 'D'].includes(n.atom.element)).map((n) => n.atom.id));
+    const donorIds = donor.ids.filter((id) => !leavingHydrogens.has(id));
     targets.forEach((c) => {
-      g.getAtom(c.o).element = 'N';
-      rxAttach(g, hydro ? 'N' : 'O', c.o);
+      g.removeAtom(c.o);
+      const map = rxMerge(g, donor.graph, donorIds);
+      g.addBond(c.c, map.get(nitrogen));
+      rxSetOrder(g, c.c, map.get(nitrogen), 2);
     });
     const out = rxOutcome(hydro ? 'hydrazone' : 'oxime', hydro ? 'Hydrazone formation' : 'Oxime formation', 'Nucleophilic addition–elimination', g,
       (hydro ? 'Hydrazine' : 'Hydroxylamine') + ' adds to the C=O and water is lost from the carbinolamine, giving the C=N–' + (hydro ? 'NH₂ hydrazone.' : 'OH oxime.') +
@@ -715,7 +736,11 @@ function rxxRuleCannizzaro(ctx) {
   const { s, c } = target;
   const { g, map } = rxxJoin(s, s);
   rxSetOrder(g, c.c, c.o, 1);
-  rxAttach(g, 'O', map.get(c.c), 1, -1);
+  // Hydroxide supplies the second carboxylate oxygen. Preserve its actual
+  // element/isotope metadata instead of inserting a new unlabelled atom.
+  const hydroxideO = hydroxide.ids.find((id) => hydroxide.graph.getAtom(id).element === 'O');
+  const hydroxideMap = rxMerge(g, hydroxide.graph, [hydroxideO]);
+  g.addBond(map.get(c.c), hydroxideMap.get(hydroxideO));
   rxxAddCation(ctx, g);
   const out = rxOutcome('cannizzaro', 'Cannizzaro reaction', 'Disproportionation (redox)', g,
     'With no α-H, the aldehyde cannot form an enolate. Hydroxide adds to one molecule, and the tetrahedral anion transfers a hydride to a second aldehyde: one molecule is oxidised to the carboxylate and the other reduced to the primary alcohol.',
@@ -846,10 +871,23 @@ function rxxRuleOxidationExtra(ctx) {
   });
 }
 
+function rxxDibalConflicts(ctx) {
+  const conflicts=[];
+  // Reuse structural donor detection only, not the Grignard reactivity model.
+  const donors=rxGrignardInputSites(ctx).flatMap(s=>s.donors).filter(d=>d.kind!=='terminal alkyne');
+  if(ctx.protic||ctx.has('H2O')||ctx.has('strongAcid')||donors.length)conflicts.push('Recorded water, protic medium, acid or O–H/N–H/S–H donor can consume DIBAL-H. No clean reduction or donor-loading correction is modeled for this mixture. A subsequent aqueous work-up must be separate.');
+  if(ctx.temperature>-40&&rxGrignardInputSites(ctx).some(s=>s.electrophiles.includes('nitrile')))conflicts.push('Warm DIBAL-H mixtures containing nitriles are outside the encoded cold reduction/hydrolysis branch; selective aldehyde formation and further products are not modeled.');
+  if(rxGrignardInputSites(ctx).some(s=>s.electrophiles.some(g=>['amide','acylChloride','anhydride','carbonDioxide'].includes(g))))conflicts.push('A recorded acyl-derivative or CO2 electrophile is outside this DIBAL endpoint model. Selective reduction while retaining that site is not established.');
+  const solvents=rxGrignardReactiveSolvents(ctx);
+  if(solvents.length)conflicts.push('Recorded carbonyl/nitrile solvent groups ('+solvents.map(s=>s.name).join(', ')+') can react with DIBAL-H. Solvent-independent reduction is not established.');
+  return conflicts;
+}
+
 function rxxRuleDibal(ctx) {
   if (!ctx.has('dibal')) {
     return [];
   }
+  const conflicts=rxxDibalConflicts(ctx);if(conflicts.length)return conflicts.map(rxHint);
   const cold = ctx.temperature <= -40;
   return ctx.substrates.flatMap((s) => {
     const esters = s.info.carbonyls.filter((c) => c.kind === 'ester');
@@ -865,8 +903,9 @@ function rxxRuleDibal(ctx) {
       }
     });
     s.info.nitriles.forEach((n) => {
-      rxSetOrder(g, n.c, n.n, 2);
-      g.getAtom(n.n).element = 'O';
+      // Hydrolysis introduces a new oxygen; the nitrile nitrogen leaves.
+      // In particular, an isotope on nitrogen must never become an O isotope.
+      g.removeAtom(n.n);rxAttach(g,'O',n.c,2);
     });
     oxo.forEach((c) => rxSetOrder(g, c.c, c.o, 1));
     const lactone = esters.some((c) => rxRings(s.graph, 8).some((r) => r.includes(c.c) && r.includes(c.hetero)));
@@ -875,6 +914,11 @@ function rxxRuleDibal(ctx) {
         (cold ? 'At −78 °C the tetrahedral intermediate from an ester is stable until work-up, so the reduction stops at the aldehyde; nitriles give an imine that hydrolyses to the aldehyde.'
           : 'Above about −40 °C the intermediate collapses and the aldehyde formed is reduced again, so esters go on to primary alcohols.'),
       { score: cold ? 14 : 12, byproducts: ['aluminium salts (Rochelle’s salt work-up)'], consumes: [rxUse(s, 1), rxUse(ctx.get('dibal'), esters.length * (cold ? 1 : 2) + s.info.nitriles.length + oxo.length)] });
+    if(s.info.nitriles.length){
+      out.workupAtoms={introducedOxygens:s.info.nitriles.length,removedNitrogens:s.info.nitriles.length,nitrogenIsotopes:s.info.nitriles.map(n=>s.graph.getAtom(n.n).isotope||0),oxygenSource:'Unlabelled water assumed in a separate hydrolytic work-up; no explicit isotope-transfer prediction.'};
+      out.byproducts.push('nitrogen-containing hydrolysis products (not structurally balanced)');
+      out.warnings.push('The nitrile nitrogen is removed into undrawn hydrolysis products. Aldehyde oxygen is newly introduced from the separately assumed aqueous work-up; labelled work-up water and oxygen exchange are not modeled.');
+    }
     if (!cold && esters.length) {
       out.warnings.push('Run at −78 °C with one equivalent of DIBAL-H to stop at the aldehyde.');
     }
@@ -887,7 +931,12 @@ function rxxRuleDibal(ctx) {
 
 function rxxRuleGrignardExtra(ctx) {
   const reagent = ctx.get('grignard');
-  if (!reagent || rxGrignardProticConflict(ctx) || ctx.substrates.some((s) => s.info.carbonyls.some((c) => ['aldehyde', 'ketone', 'ester'].includes(c.kind)))) {
+  if(!reagent)return [];
+  const solventConflicts=rxGrignardReactiveSolvents(ctx);
+  if(solventConflicts.length)return [rxGrignardSolventHint(solventConflicts)];
+  const auxiliaryConflicts=rxGrignardAuxiliaryConflict(ctx);
+  if(auxiliaryConflicts.length)return [rxGrignardAuxiliaryHint(auxiliaryConflicts)];
+  if (rxGrignardProticConflict(ctx) || ctx.substrates.some((s) => s.info.carbonyls.some((c) => ['aldehyde', 'ketone', 'ester', 'amide', 'acylChloride', 'anhydride'].includes(c.kind)))) {
     return [];
   }
   const co2 = ctx.substrates.find((s) => s.graph.atoms.length === 3 && s.graph.atoms.filter((a) => a.element === 'O').length === 2 && s.graph.atoms.some((a) => a.element === 'C'));
@@ -916,11 +965,15 @@ function rxxRuleGrignardExtra(ctx) {
   const g = rxCloneGraph(nitrile.s.graph);
   const map = rxMerge(g, rGraph, rIds);
   g.addBond(map.get(reagent.carbon), nitrile.n.c);
-  rxSetOrder(g, nitrile.n.c, nitrile.n.n, 2);
-  g.getAtom(nitrile.n.n).element = 'O';
-  return [rxOutcome('grignard-nitrile', 'Grignard addition to a nitrile', 'Nucleophilic addition', g,
+  // Hydrolysis removes nitrogen; oxygen comes from the separate aqueous work-up.
+  g.removeAtom(nitrile.n.n);
+  rxAttach(g, 'O', nitrile.n.c, 2);
+  const out = rxOutcome('grignard-nitrile', 'Grignard addition to a nitrile', 'Nucleophilic addition', g,
     'The Grignard reagent adds once to the C≡N carbon, giving an imine anion that cannot react further. Aqueous acid in the work-up hydrolyses the imine to a ketone.',
-    { score: 13, byproducts: ['NH₄⁺ and Mg salts (after work-up)'], consumes: [rxUse(nitrile.s, 1), rxUse(reagent, 1)] })];
+    { score: 13, byproducts: ['NH₄⁺ and Mg salts (after work-up)'], consumes: [rxUse(nitrile.s, 1), rxUse(reagent, 1)] });
+  out.workupAtoms = {introducedOxygens:1, removedNitrogens:1, nitrogenIsotopes:[nitrile.s.graph.getAtom(nitrile.n.n).isotope || 0], oxygenSource:'Unlabelled water assumed in a separate hydrolytic work-up; no explicit isotope-transfer prediction.'};
+  out.warnings.push('The nitrile nitrogen leaves in undrawn hydrolysis products. Ketone oxygen is newly introduced from the separately assumed aqueous work-up; labelled work-up water and oxygen exchange are not modeled.');
+  return [out];
 }
 
 function rxxBocCarbonyl(s) {
@@ -1071,9 +1124,11 @@ function rxxRuleMetathesis(ctx) {
       g.removeAtom(p.t);
       g.removeAtom(q.t);
       g.addBond(p.i, q.i).order = 2;
-      return [rxOutcome('rcm', 'Ring-closing metathesis', 'Olefin metathesis', g,
+      const out=rxOutcome('rcm', 'Ring-closing metathesis', 'Olefin metathesis', g,
         'The ruthenium carbene (Grubbs catalyst) swaps alkene partners through metallacyclobutane intermediates. Joining the two terminal alkenes closes a ' + ring + '-membered ring, and the release of ethylene gas drives the reaction.',
-        { score: 14, byproducts: ['ethylene'], consumes: [rxUse(s, 1)], warnings: ['Run dilute (≈ 0.01–0.05 M) so ring closure beats intermolecular oligomerisation.'] })];
+        { score: 14, byproducts: ['ethylene'], consumes: [rxUse(s, 1)] });
+      rxCyclizationRecord(out,s,p.i,q.i,{allowedSizes:[5,6,7,8],eligibleClosures:pairs.length,externalPartners:ctx.substrates.filter(other=>other!==s&&vinyl(other).length).length});
+      return [out];
     }
   }
   const partners = ctx.substrates.map((s) => ({ s, e: vinyl(s)[0] })).filter((x) => x.e);
@@ -1135,8 +1190,7 @@ function rxxRulePhosphorus(ctx) {
       }
       const g = rxCloneGraph(s.graph);
       alcohols.forEach((a) => {
-        g.getAtom(a.o).element = x;
-        rxsReplace(g, a.c, a.o, a.o, true);
+        rxReplaceHydroxyl(g, a.c, a.o, x, true);
       });
       out.push(rxOutcome('appel', 'Appel reaction', 'Substitution (Sₙ2)', g,
         'PPh₃ and C' + x + '₄ form a halophosphonium salt that turns the OH into an alkoxyphosphonium leaving group; ' + x + '⁻ displaces it by Sₙ2 with inversion, driven by forming Ph₃P=O. The conditions are neutral, so there are no rearrangements.',
@@ -1233,3 +1287,99 @@ RX_RULES.push(
   { id: 'epoxide-closure', name: 'Halohydrin → epoxide', run: rxxRuleEpoxideClosure },
   { id: 'hwe', name: 'Horner–Wadsworth–Emmons', run: rxxRuleHwe },
 );
+
+// Structural ambiguity audit, not a kinetic preference or catalyst model.
+// Keep competing branches inspectable; planners require a resolved recipe.
+function rxxCompatibilityAssess(ctx,outcome) {
+  const id=outcome.id,couplings=['suzuki','heck','sonogashira'];
+  if(id==='dibal'){const used=new Set((outcome.consumes||[]).filter(Boolean).map(u=>u.compound));return rxGrignardInputSites(ctx).filter(s=>!used.has(s.compound)&&s.electrophiles.length).map(s=>({code:'dibal-other-input',message:'Another recorded input contains carbonyl/nitrile electrophiles that can compete for DIBAL-H. A clean selected-input reduction is not established; competing products are unmodeled.'}));}
+  if(['grignard','grignard-nitrile','grignard-carboxylation'].includes(id)){
+    const counts={carbonylSites:0,nitrileSites:0,carbonDioxideSites:0};
+    ctx.substrates.forEach(s=>{
+      counts.carbonylSites+=s.info.carbonyls.filter(c=>['aldehyde','ketone','ester','amide','acylChloride','anhydride'].includes(c.kind)).length;
+      counts.nitrileSites+=s.info.nitriles.length;
+      counts.carbonDioxideSites+=rxGrignardCO2Sites(s.graph).length;
+    });
+    if(Object.values(counts).reduce((n,v)=>n+v,0)>1)return [{code:'grignard-competing-sites',counts,message:'Several recognized electrophilic sites are present. The first-site Grignard graph edit does not establish selective mono-addition or survival of the remaining carbonyl/nitrile sites. Exhaustive addition, relative rates and products at the other sites are not modeled.'}];
+    return [];
+  }
+  if(!couplings.includes(id)&&!['mitsunobu','williamson'].includes(id))return [];
+  const conflicts=[],add=(code,message,counts)=>conflicts.push({code,message,counts});
+  const enabled=run=>{
+    try{return (run(ctx)||[]).filter(o=>!o.hint).map(o=>o.id);}
+    catch(error){add('compatibility-incomplete','A competing-branch check could not complete; pathway selectivity is unresolved.');return [];}
+  };
+  if(couplings.includes(id)){
+    const counts={halideSites:rxxArylHalides(ctx).length};
+    if(id==='suzuki')counts.boronSites=ctx.substrates.reduce((n,s)=>n+s.graph.atoms.filter(a=>a.element==='B'&&rxNeighbors(s.graph,a.id).filter(x=>x.atom.element==='O').length>=2&&rxCarbonNeighbors(s.graph,a.id).length===1).length,0);
+    if(id==='heck')counts.alkeneSites=ctx.substrates.reduce((n,s)=>n+new Set(rxxTerminalAlkenes(s).map(e=>[e.t,e.i].sort((a,b)=>a-b).join(':'))).size,0);
+    if(id==='sonogashira')counts.alkyneSites=ctx.substrates.reduce((n,s)=>n+s.info.alkynes.filter(e=>[e.a,e.b].some(a=>rxHydrogens(s.graph,a)===1)).length,0);
+    if(Object.values(counts).some(n=>n>1))add('coupling-sites','Several recognized coupling sites are present. The first-site graph edit does not establish selective mono-coupling or survival of the remaining sites.',counts);
+    const branches=[...new Set([rxxRuleSuzuki,rxxRuleHeck,rxxRuleSonogashira].flatMap(enabled))];
+    if(branches.length>1)add('coupling-pathway-overlap','The recorded mixture enables multiple coupling families ('+branches.join(', ')+'). Relative rates and a dominant pathway are not established.');
+  }else{
+    const strong=!!rxxBase(ctx,['hydride']);
+    const counts=id==='mitsunobu'?{
+      alcoholSites:ctx.substrates.reduce((n,s)=>n+s.info.alcohols.filter(a=>a.degree<3).length,0),
+      acidicPartnerSites:ctx.substrates.reduce((n,s)=>n+s.info.carbonyls.filter(c=>c.kind==='acid').length+rxxPhenols(s).length,0)
+    }:{
+      halideSites:rxxHalides(ctx).filter(h=>h.degree<3).length,
+      oxygenDonorSites:ctx.substrates.reduce((n,s)=>n+rxxPhenols(s).length+(strong?s.info.alcohols.length:0),0)
+    };
+    if(Object.values(counts).some(n=>n>1))add('ether-sites','Several recognized substitution sites or acidic partners are present. First-site selection does not establish selective preparation.',counts);
+    if(typeof rxyRuleMitsunobu==='function'&&ctx.has('triphenylphosphine')&&ctx.has('azodicarboxylate')&&
+      (enabled(rxxRuleWilliamson).includes('williamson')||enabled(rxRuleHalide).includes('williamson'))&&enabled(rxyRuleMitsunobu).includes('mitsunobu'))add('ether-activation-overlap','This mixture enables both Mitsunobu alcohol activation and Williamson displacement of an alkyl halide. The model establishes no dominant pathway; use independently specified recipes when comparing alternatives.');
+  }
+  return conflicts;
+}
+
+// Surface existing condition caveats as inspectable warnings, not universal
+// exclusion rules or numerical rate estimates.
+function rxxCompatibilityWarnings(ctx,outcome) {
+  const warnings=[];
+  if(outcome.id==='heck'&&ctx.temperature<60)warnings.push({code:'coupling-temperature-review',message:'The recorded Heck temperature is below the existing 60 C review threshold. The model does not establish a rate or productive conversion at this temperature.'});
+  if(outcome.id==='sonogashira'){
+    if(!ctx.has('copper'))warnings.push({code:'coupling-catalyst-review',message:'The copper-free Sonogashira branch is a model extension. Suitability of this catalyst/ligand recipe is not established.'});
+    else if(['air','o2'].includes(ctx.conditions.atmosphere))warnings.push({code:'coupling-oxidative-competition',message:'The recorded Cu/oxygen combination carries the existing oxidative alkyne-coupling caveat. The model does not establish suppression of that pathway.'});
+  }
+  return warnings;
+}
+
+// Exhaustive conversion is distinct from choosing one of several O-H sites.
+function rxxRuleExhaustiveOMethylation(ctx) {
+  if(ctx.protic||ctx.has('H2O')||ctx.has('strongAcid')||ctx.has('azodicarboxylate')||(ctx.organicCatalysts||[]).length||
+    ['amineBase','ammonia','thiolate','cyanide','azide','grignard','alanate'].some(tag=>ctx.has(tag))||
+    !ctx.conditions.solvents.some(id=>['thf','dmf'].includes(id)))return [];
+  const base=rxxBase(ctx,['hydride','weakBase']);if(!base)return [];
+  const methyls=rxxHalides(ctx).filter(h=>h.degree===0&&rxHydrogens(h.s.graph,h.c)===3&&
+    ['Br','I'].includes(h.s.graph.getAtom(h.x).element)&&h.s.graph.atoms.filter(a=>a.element==='C').length===1&&
+    h.s.graph.atoms.every(a=>!a.charge&&['C','H','D','Br','I'].includes(a.element)));
+  if(methyls.length!==1)return [];
+  const methyl=methyls[0];
+  const substrates=ctx.substrates.filter(s=>s!==methyl.s);if(substrates.length!==1)return [];
+  const s=substrates[0],g=s.graph,phenols=rxxPhenols(s),alcohols=s.info.alcohols;
+  const sites=[...new Set(phenols.map(p=>p.o).concat(alcohols.map(a=>a.o)))];
+  if(sites.length<2||sites.length>4||new Set(sites.map(o=>rxCarbonNeighbors(g,o)[0]?.atom.id)).size!==sites.length||s.info.epoxides.length||
+    g.atoms.filter(a=>a.element==='O'&&!sites.includes(a.id)).some(o=>{const ns=rxNeighbors(g,o.id);return ns.length!==2||ns.some(n=>n.atom.element!=='C'||n.bond.order!==1);})||
+    sites.some(o=>rxCarbonNeighbors(g,o).some(n=>rxNeighbors(g,n.atom.id).filter(x=>x.atom.element==='O').length>1))||g.connectedComponents().length!==1||s.info.carbonyls.length||s.info.alkenes.length||s.info.alkynes.length||
+    g.atoms.some(a=>a.charge||!['C','O','H','D'].includes(a.element))||
+    sites.some(o=>rxNeighbors(g,o).some(n=>['H','D'].includes(n.atom.element)))||
+    (base.tag!=='hydride'&&phenols.length!==sites.length))return [];
+  const product=rxCloneGraph(g),ids=methyl.s.graph.atoms.filter(a=>a.id!==methyl.x).map(a=>a.id);
+  sites.forEach(o=>{const map=rxMerge(product,methyl.s.graph,ids);product.addBond(o,map.get(methyl.c));});
+  const out=rxOutcome('exhaustive-o-methylation','Exhaustive O-methylation ('+sites.length+' sites)','Ether formation',product,
+    'All '+sites.length+' eligible O–H sites are activated by the encoded base and methylated with '+sites.length+' methyl-transfer equivalents. This is one exhaustive operation; selective isolation of a partially methylated intermediate is not assumed.',
+    {score:16,consumes:[rxUse(s,1),rxUse(methyl.s,sites.length),rxUse(base.entry,sites.length)],byproducts:[base.tag==='hydride'?'H2 from O–H activation':'base-derived protonation products','halide salts from '+sites.length+' methyl transfers'],warnings:[
+      'Only a connected neutral C/O substrate with two to four eligible O–H sites is modeled. Competing N/S groups, carbonyls, nonaromatic unsaturation, extra partners and explicit O–H/D atoms, geminal/hemiacetal OH environments and epoxides are excluded.',
+      'One encoded base equivalent per O–H activation is the loading convention, not an experimentally optimized stoichiometry. Complete net methylation is an endpoint model, not a conversion or yield prediction.'
+    ]});
+  out.stoichiometryBasis=s.compound;
+  out.bulkTransformation={kind:'exhaustive-o-methylation',sites:sites.length,operations:1,scope:'All eligible O–H sites; no selective mono-methylation or one-pot chaining of different reaction classes.'};
+  return [out];
+}
+RX_RULES.push({id:'exhaustive-o-methylation',name:'Exhaustive O-methylation (two to four sites)',run:rxxRuleExhaustiveOMethylation,catalog:{
+ family:'Ether formation',scope:'Two to four eligible O–H sites on one connected neutral C/O substrate, one methyl bromide/iodide partner, hydride base for alcohols or encoded weak base when every OH is phenolic, THF/DMF; no geminal/hemiacetal OH, epoxide/peroxide, carbonyl, nonaromatic unsaturation, organic catalyst, competing nucleophile or other organic partner.',
+ assumptions:['Every eligible OH is targeted; methyl-transfer and base-activation demands each equal the number of sites in the net model. The base-activation/alkylation sequence is represented as one preparation operation.'],
+ limitations:['No N/S chemoselectivity, selective mono-methylation, partial-product distribution, rates, measured yield or unbounded polyol permethylation. Reaction-class support does not experimentally validate the exhaustive endpoint for every substrate.'],
+ references:[{title:'McMurry, OpenStax Organic Chemistry 18.2: Preparing Ethers',url:'https://openstax.org/books/organic-chemistry/pages/18-2-preparing-ethers',kind:'teaching'}]
+}});

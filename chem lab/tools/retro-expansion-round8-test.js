@@ -57,6 +57,6 @@ for (const [start, target, id] of routes) {
   ctx.start = start; ctx.target = target; ctx.id = id;
   run(`var routeJob=pathFinderCreate(start,target,{maxDepth:1,maxRoutes:20,budgetMs:10000});while(routeJob.status==='running')routeJob.step(100);`);
   check('routeJob.status', 'found', 'Path Finder connects the endpoints: ' + id);
-  check(`routeJob.routes.some(route=>route.length===1&&route[0].candidate.transform===id&&retroForwardCheck(route[0].candidate,route[0].to))`, true, 'Path Finder route is independently forward-verified: ' + id);
+  check(`routeJob.routeRecipes.some(route=>route.length===1&&route[0].candidate.transform===id&&retroForwardCheck(route[0].candidate,route[0].to))`, true, 'Path Finder route is independently forward-verified: ' + id);
 }
 console.log('Retro expansion round 8: ' + checks + ' checks passed.');

@@ -318,3 +318,702 @@ RETRO_TRANSFORMS.push(
     }).filter(Boolean);
   } }
 );
+
+// Reverse cleavage, olefination and lactonization coverage. Every proposal is
+// gated by exact forward replay before it can enter a route.
+const RETRO20_REAGENTS = {
+  ozone: { smiles: '[O-][O+]=O', role: 'reagent', label: 'O3' },
+  dms: { smiles: 'CSC', role: 'reagent', label: 'Me2S' },
+  periodate: { smiles: '[Na+].[O-][I+3]([O-])([O-])[O-]', role: 'reagent', label: 'NaIO4' },
+  hydride: { smiles: '[Na+].[H-]', role: 'reagent', label: 'NaH' },
+  carbonate: { smiles: '[Na+].[Na+].[O-]C([O-])=O', role: 'reagent', label: 'Na2CO3' },
+  iodine: { smiles: 'II', role: 'reagent', label: 'I2' },
+};
+
+function retro20OxoPairs(t) {
+  const carbonyls = t.info.carbonyls.filter((c) => c.kind === 'aldehyde' || c.kind === 'ketone');
+  const pairs = [];
+  carbonyls.forEach((a, i) => carbonyls.slice(i + 1).forEach((b) => {
+    if (!t.graph.getBond(a.c, b.c)) pairs.push([a, b]);
+  }));
+  return pairs;
+}
+
+function retro20ClearAlkene(g, a, b) {
+  g.alkeneSpecs = (g.alkeneSpecs || []).filter((s) => !((s.a === a && s.b === b) || (s.a === b && s.b === a)));
+}
+
+RETRO_TRANSFORMS.push(
+  { id: 'ozonolysis', name: 'Two carbonyls from an alkene by oxidative cleavage', rule: 'ozonolysis', group: 'Oxidative cleavage', match(t) {
+    const out = [], seen = new Set();
+    retro20OxoPairs(t).forEach(([a, b]) => {
+      const piece = retroSinglePiece(t, (g) => {
+        g.removeAtom(a.o);
+        g.removeAtom(b.o);
+        const bond = g.addBond(a.c, b.c);
+        if (!bond) return false;
+        bond.order = 2;
+      });
+      if (!piece || seen.has(piece.smiles)) return;
+      seen.add(piece.smiles);
+      out.push(retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO20_REAGENTS.ozone, RETRO20_REAGENTS.dms],
+        { solvents: ['dcm'], temperature: -78 }));
+    });
+    return out.slice(0, RETRO_LIMITS.maxPerTransform);
+  } },
+  { id: 'periodate', name: 'Two carbonyls from a vicinal diol by periodate cleavage', rule: 'periodate', group: 'Oxidative cleavage', match(t) {
+    const out = [], seen = new Set();
+    retro20OxoPairs(t).forEach(([a, b]) => {
+      const piece = retroSinglePiece(t, (g) => {
+        const bond = g.addBond(a.c, b.c);
+        if (!bond) return false;
+        bond.order = 1;
+        rxSetOrder(g, a.c, a.o, 1);
+        rxSetOrder(g, b.c, b.o, 1);
+        rxsDrop(g, a.c);
+        rxsDrop(g, b.c);
+      });
+      if (!piece || seen.has(piece.smiles)) return;
+      seen.add(piece.smiles);
+      out.push(retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO20_REAGENTS.periodate],
+        { solvents: ['water'], temperature: 25 }));
+    });
+    return out.slice(0, RETRO_LIMITS.maxPerTransform);
+  } },
+  { id: 'hwe', name: 'E-alkene from a carbonyl and an activated phosphonate', rule: 'hwe', group: 'Carbon–carbon formation', match(t) {
+    const g = t.graph, out = [], seen = new Set();
+    const acceptors = new Set(t.info.carbonyls.filter((c) => ['ester', 'ketone', 'aldehyde', 'acid'].includes(c.kind)).map((c) => c.c).concat(t.info.nitriles.map((n) => n.c)));
+    t.info.alkenes.forEach((e) => [[e.a, e.b], [e.b, e.a]].forEach(([active, carbonyl]) => {
+      if (rxNeighbors(g, active).filter((n) => n.atom.id !== carbonyl).length !== 1 || rxNeighbors(g, carbonyl).filter((n) => n.atom.id !== active).length !== 1) return;
+      if (!rxCarbonNeighbors(g, active).some((n) => acceptors.has(n.atom.id))) return;
+      const pieces = retroEdit(t, (h) => {
+        if (!retroCut(h, active, carbonyl)) return false;
+        rxAttach(h, 'O', carbonyl, 2);
+        const p = rxAttach(h, 'P', active);
+        rxAttach(h, 'O', p.id, 2);
+        for (let i = 0; i < 2; i++) {
+          const o = rxAttach(h, 'O', p.id);
+          const c = rxAttach(h, 'C', o.id);
+          rxAttach(h, 'C', c.id);
+        }
+        retro20ClearAlkene(h, active, carbonyl);
+      });
+      if (!pieces || pieces.length !== 2) return;
+      const phosphonate = pieces.find((p) => p.elements.has('P'));
+      const oxo = pieces.find((p) => !p.elements.has('P'));
+      if (!phosphonate || !oxo) return;
+      const signature = [oxo.smiles, phosphonate.smiles].sort().join('|');
+      if (seen.has(signature)) return;
+      seen.add(signature);
+      out.push(retroSpec([{ smiles: oxo.smiles, role: 'reactant' }, { smiles: phosphonate.smiles, role: 'reactant', label: 'Triethyl phosphonate donor' }],
+        [RETRO20_REAGENTS.hydride], { solvents: ['thf'], temperature: 25, atmosphere: 'n2' }));
+    }));
+    return out.slice(0, RETRO_LIMITS.maxPerTransform);
+  } },
+  { id: 'halolactonization', name: 'Halomethyl lactone from an unsaturated carboxylic acid', rule: 'halolactonization', group: 'Ring formation', match(t) {
+    const g = t.graph, out = [], seen = new Set();
+    const rings = rxRings(g, 6).filter((ring) => ring.length === 5 || ring.length === 6);
+    t.info.carbonyls.filter((c) => c.kind === 'ester').forEach((ester) => {
+      rings.filter((ring) => ring.includes(ester.c) && ring.includes(ester.hetero)).forEach((ring) => {
+        const near = rxCarbonNeighbors(g, ester.hetero).map((n) => n.atom.id).find((id) => id !== ester.c && ring.includes(id));
+        if (!near) return;
+        t.info.halides.filter((h) => ['Br', 'I'].includes(h.halogen) && !ring.includes(h.c) && g.getBond(near, h.c)).forEach((h) => {
+          const piece = retroSinglePiece(t, (clone) => {
+            const oxygenBond = clone.getBond(ester.hetero, near);
+            if (!oxygenBond) return false;
+            clone.removeBond(oxygenBond.id);
+            clone.removeAtom(h.x);
+            rxSetOrder(clone, near, h.c, 2);
+            rxsDrop(clone, near);
+            rxsDrop(clone, h.c);
+            rxsDrop(clone, ester.hetero);
+            retro20ClearAlkene(clone, near, h.c);
+          });
+          if (!piece || seen.has(piece.smiles)) return;
+          seen.add(piece.smiles);
+          const halogen = h.halogen === 'Br' ? RETRO_REAGENTS.bromine : RETRO20_REAGENTS.iodine;
+          out.push(retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [halogen, RETRO20_REAGENTS.carbonate],
+            { solvents: ['water'], temperature: 25 }));
+        });
+      });
+    });
+    return out.slice(0, RETRO_LIMITS.maxPerTransform);
+  } }
+);
+
+// Reverse nitroaldol, selective enone-reduction, rearrangement and
+// alcohol-coupling coverage. Exact forward replay remains the acceptance gate.
+const RETRO21_REAGENTS = {
+  cerium: { smiles: 'Cl[Ce](Cl)Cl', role: 'reagent', label: 'CeCl3' },
+  pph3: { smiles: 'P(c1ccccc1)(c1ccccc1)c1ccccc1', role: 'reagent', label: 'PPh3' },
+  dead: { smiles: 'CCOC(=O)N=NC(=O)OCC', role: 'reagent', label: 'DEAD' },
+};
+
+RETRO_TRANSFORMS.push(
+  { id: 'henry', name: 'Beta-nitro alcohol from a carbonyl and a nitroalkane', rule: 'henry', group: 'Carbon–carbon formation', match(t) {
+    const g = t.graph, out = [], seen = new Set();
+    rxyNitro(t).forEach((nitro) => {
+      t.info.alcohols.filter((a) => g.getBond(nitro.c, a.c) && g.getBond(nitro.c, a.c).order === 1).forEach((a) => {
+        const pieces = retroEdit(t, (h) => {
+          if (!retroCut(h, nitro.c, a.c)) return false;
+          rxSetOrder(h, a.c, a.o, 2);
+          rxsDrop(h, nitro.c);
+          rxsDrop(h, a.c);
+        });
+        if (!pieces || pieces.length !== 2) return;
+        const signature = retroKey(pieces);
+        if (seen.has(signature)) return;
+        seen.add(signature);
+        out.push(retroSpec(retroReactants(pieces), [RETRO17_REAGENTS.triethylamine], { solvents: ['ethanol'], temperature: 25 }));
+      });
+    });
+    return out.slice(0, RETRO_LIMITS.maxPerTransform);
+  } },
+  { id: 'luche', name: 'Allylic alcohol from an enone by Luche reduction', rule: 'luche', group: 'Reduction', match(t) {
+    const g = t.graph, out = [], seen = new Set();
+    t.info.alcohols.filter((a) => rxHydrogens(g, a.c) >= 1).forEach((a) => {
+      rxCarbonNeighbors(g, a.c).filter((n) => t.info.alkenes.some((e) => e.a === n.atom.id || e.b === n.atom.id)).forEach(() => {
+        const piece = retroSinglePiece(t, (h) => {
+          rxSetOrder(h, a.c, a.o, 2);
+          rxsDrop(h, a.c);
+        });
+        if (!piece || seen.has(piece.smiles)) return;
+        seen.add(piece.smiles);
+        out.push(retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO_REAGENTS.nabh4, RETRO21_REAGENTS.cerium], { solvents: ['methanol'], temperature: 25 }));
+      });
+    });
+    return out.slice(0, RETRO_LIMITS.maxPerTransform);
+  } },
+  { id: 'hofmann-rearrangement', name: 'Primary amine from a primary amide with one fewer carbon', rule: 'hofmann-rearrangement', group: 'Rearrangement', match(t) {
+    const g = t.graph, out = [], seen = new Set();
+    t.info.amines.filter((a) => a.h === 2).forEach((a) => {
+      const neighbors = rxCarbonNeighbors(g, a.n);
+      if (neighbors.length !== 1) return;
+      const r = neighbors[0].atom.id;
+      const piece = retroSinglePiece(t, (h) => {
+        rxSetOrder(h, r, a.n, 0);
+        const c = rxAttach(h, 'C', a.n);
+        rxAttach(h, 'O', c.id, 2);
+        h.addBond(c.id, r);
+        rxsDrop(h, a.n);
+        rxsDrop(h, r);
+      });
+      if (!piece || seen.has(piece.smiles)) return;
+      seen.add(piece.smiles);
+      out.push(retroSpec([{ smiles: piece.smiles, role: 'reactant' }], [RETRO_REAGENTS.bromine, RETRO_REAGENTS.hydroxide], { solvents: ['water'], temperature: 25 }));
+    });
+    return out.slice(0, RETRO_LIMITS.maxPerTransform);
+  } },
+  { id: 'mitsunobu', name: 'Ester from a primary or secondary alcohol and a carboxylic acid', rule: 'mitsunobu', group: 'Esters', match(t) {
+    const g = t.graph, out = [], seen = new Set();
+    t.info.carbonyls.filter((c) => c.kind === 'ester').forEach((ester) => {
+      rxCarbonNeighbors(g, ester.hetero).filter((n) => n.atom.id !== ester.c && rxIsSp3(g, n.atom.id) && rxCarbonNeighbors(g, n.atom.id).length <= 2).forEach((n) => {
+        const pieces = retroEdit(t, (h) => {
+          if (!retroCut(h, ester.c, ester.hetero)) return false;
+          rxAttach(h, 'O', ester.c);
+          rxsDrop(h, n.atom.id);
+        });
+        if (!pieces || pieces.length !== 2) return;
+        const signature = retroKey(pieces);
+        if (seen.has(signature)) return;
+        seen.add(signature);
+        out.push(retroSpec(retroReactants(pieces), [RETRO21_REAGENTS.pph3, RETRO21_REAGENTS.dead], { solvents: ['thf'], temperature: 25 }));
+      });
+    });
+    return out.slice(0, RETRO_LIMITS.maxPerTransform);
+  } }
+);
+
+// Classify alkene geometry as well as tetrahedral stereochemistry. Strict
+// molecular identity avoids treating equivalent slash spellings as different.
+function retroTarget(graph, ids) {
+  const out = {};
+  const g = retroClone(graph, ids, out);
+  const allIds = retroIds(g);
+  const map = new Map();
+  out.map.forEach((to, from) => map.set(to, from));
+  const props = retroProps(g, allIds);
+  let stereocentres = [];
+  try {
+    stereocentres = findStereocenters(g, allIds).map((c) => ({ atomId: map.get(c.atomId), type: c.type }));
+  } catch (error) {
+    stereocentres = [];
+  }
+  return {
+    graph: g,
+    map,
+    info: rxAnalyze(g),
+    aromatic: rxAromaticRings(g).atoms,
+    smiles: props.smiles,
+    isomericSmiles: props.isomericSmiles,
+    stereocentres,
+    stereo: /[@/\\]/.test(props.isomericSmiles),
+    skeleton: retroSkeleton(g, allIds),
+    heavy: retroHeavyKey(g, allIds),
+    components: g.connectedComponents().length,
+  };
+}
+
+function retroStereoSame(product, target) {
+  const left = product && (product.fragment || product.isomericSmiles || product.smiles);
+  const right = target && (target.fragment || target.isomericSmiles || target.smiles || target);
+  if (!left || !right) return false;
+  if (typeof moleculeSame === 'function') {
+    try { return moleculeSame(left, right); } catch (error) { return false; }
+  }
+  return left === right;
+}
+
+function retroStereoClass(t, spec, verified) {
+  if (!t.stereo) {
+    return { stereo: null, precursors: null };
+  }
+  const iso = spec.precursors.map((p) => Object.assign({}, p, { smiles: retroPieceIsomeric(t, spec.record, p.smiles) }));
+  const run = (list) => retroTryVerify({ precursors: list, reagents: spec.reagents, conditions: spec.conditions }, t.smiles);
+  const kind = (v) => (v && v.product && v.product.stereo && v.product.stereo.kind) || '';
+  if (iso.some((p) => p.smiles.includes('@'))) {
+    const direct = run(iso);
+    if (direct && !rxsStereoTargetConflict(direct.product,t.isomericSmiles) && retroStereoSame(direct.product, t.isomericSmiles)) {
+      return { stereo: 'retained', precursors: iso };
+    }
+    const mirror = iso.map((p) => Object.assign({}, p, { smiles: retroMirror(p.smiles) }));
+    const flipped = run(mirror);
+    if (flipped && !rxsStereoTargetConflict(flipped.product,t.isomericSmiles) && retroStereoSame(flipped.product, t.isomericSmiles)) {
+      return { stereo: 'retained', precursors: mirror };
+    }
+    return ['racemic', 'diastereomers'].includes(kind(direct)) ? { stereo: 'racemic', precursors: iso } : { stereo: 'mismatch', precursors: iso };
+  }
+  const set = retroStereoSame(verified.product, t.isomericSmiles) && kind(verified) !== 'racemic' && !rxsStereoTargetConflict(verified.product,t.isomericSmiles);
+  return { stereo: set ? 'set' : 'racemic', precursors: iso };
+}
+
+// The HWE donor is common stock. Register it before stockBuiltinMap's lazy
+// initialization so inventory-aware Path Finder routes can use this transform.
+if (!STOCK_BUILTIN.some((entry) => entry.smiles === 'CCOC(CP(=O)(OCC)OCC)=O')) {
+  STOCK_BUILTIN.push({ smiles: 'CCOC(CP(=O)(OCC)OCC)=O', tier: 2, name: 'triethyl phosphonoacetate' });
+}
+
+// Reverse coverage for the existing alpha-bromination, sulfur substitution and
+// beta-keto-acid rules. Exact forward replay remains mandatory for each proposal.
+function retro22Sulfonyl(t, element) {
+  const g = t.graph, out = [];
+  g.atoms.filter((a) => a.element === 'S' && !a.charge).forEach((s) => {
+    const ns = rxNeighbors(g, s.id);
+    if (ns.length !== 4 || ns.filter((n) => n.atom.element === 'O' && n.bond.order === 2).length !== 2 ||
+        ns.filter((n) => n.atom.element === 'C' && n.bond.order === 1).length !== 1) return;
+    ns.filter((n) => n.atom.element === element && !n.atom.charge && n.bond.order === 1).forEach((n) => {
+      // Alcohol sulfonates must retain an organic O substituent; a sulfonic
+      // acid is hydrolysis chemistry rather than an alcohol sulfonylation.
+      if (element === 'O' && !rxCarbonNeighbors(g, n.atom.id).length) return;
+      const pieces = retroEdit(t, (h) => {
+        if (!retroCut(h, s.id, n.atom.id)) return false;
+        rxAttach(h, 'Cl', s.id);
+      });
+      if (!pieces || pieces.length !== 2) return;
+      const chloride = pieces.find((p) => p.ids.has(s.id));
+      const nucleophile = pieces.find((p) => p !== chloride);
+      if (!chloride || !nucleophile) return;
+      out.push(retroSpec([{smiles: nucleophile.smiles, role: 'reactant'},
+        {smiles: chloride.smiles, role: 'reagent'}], [],
+        {solvents: ['dcm'], additives: ['et3n'], temperature: 25}));
+    });
+  });
+  return out.slice(0, RETRO_LIMITS.maxPerTransform);
+}
+
+RETRO_TRANSFORMS.push(
+  { id: 'hvz', name: 'Alpha-bromo acid from carboxylic acid (HVZ)', rule: 'hvz', group: 'Alpha substitution', match(t) {
+    const g = t.graph;
+    return t.info.carbonyls.filter((c) => c.kind === 'acid').slice(0, RETRO_LIMITS.maxPerTransform).flatMap((c) =>
+      rxCarbonNeighbors(g, c.c).filter((n) => rxIsSp3(g, n.atom.id)).flatMap((n) =>
+        rxNeighbors(g, n.atom.id).filter((x) => x.atom.element === 'Br' && x.bond.order === 1).map((x) => {
+          const piece = retroSinglePiece(t, (h) => { h.removeAtom(x.atom.id); rxsDrop(h, n.atom.id); });
+          return piece && retroSpec([{smiles: piece.smiles, role: 'reactant'}],
+            [RETRO_REAGENTS.bromine, RETRO_REAGENTS.pbr3], {temperature: 60});
+        }))).filter(Boolean).slice(0, RETRO_LIMITS.maxPerTransform);
+  } },
+  { id: 'sulfonate', name: 'Sulfonate ester from alcohol and sulfonyl chloride', rule: 'sulfonate', group: 'Sulfur',
+    match(t) { return retro22Sulfonyl(t, 'O'); } },
+  { id: 'sulfonamide', name: 'Sulfonamide from amine and sulfonyl chloride', rule: 'sulfonamide', group: 'Sulfur',
+    match(t) { return retro22Sulfonyl(t, 'N'); } },
+  { id: 'beta-keto-decarboxylation', name: 'Ketone from beta-keto acid by decarboxylation', rule: 'decarboxylation', group: 'Carbon–carbon cleavage', match(t) {
+    const g = t.graph;
+    return t.info.carbonyls.filter((c) => c.kind === 'ketone').slice(0, RETRO_LIMITS.maxPerTransform).flatMap((c) =>
+      rxCarbonNeighbors(g, c.c).filter((n) => rxIsSp3(g, n.atom.id) && rxHydrogens(g, n.atom.id) > 0).map((n) => {
+        const piece = retroSinglePiece(t, (h) => {
+          const acid = rxAttach(h, 'C', n.atom.id);
+          rxAttach(h, 'O', acid.id, 2);
+          rxAttach(h, 'O', acid.id);
+          rxsDrop(h, n.atom.id);
+        });
+        return piece && retroSpec([{smiles: piece.smiles, role: 'reactant'}], [], {temperature: 140});
+      })).filter(Boolean).slice(0, RETRO_LIMITS.maxPerTransform);
+  } }
+);
+// Acyl-substitution alternatives backed by the existing forward rules. Carbon
+// donors remain explicit precursors, including a transesterification alcohol.
+const RETRO23_REAGENTS = {
+  dcc: {smiles: 'C1CCC(CC1)N=C=NC1CCCCC1', role: 'reagent', label: 'DCC'},
+};
+
+function retro23AcylPartners(t, kind, esterDonor) {
+  return t.info.carbonyls.filter((c) => c.kind === kind).slice(0, RETRO_LIMITS.maxPerTransform).map((c) => {
+    const pieces = retroEdit(t, (g) => {
+      if (!retroCut(g, c.c, c.hetero)) return false;
+      const oxygen = rxAttach(g, 'O', c.c);
+      if (esterDonor) rxAttach(g, 'C', oxygen.id);
+    });
+    return pieces && pieces.length === 2 ? pieces : null;
+  }).filter(Boolean);
+}
+
+RETRO_TRANSFORMS.push(
+  {id: 'amide-coupling', name: 'Amide from acid and amine by carbodiimide coupling', rule: 'amide-coupling', group: 'Amides', match(t) {
+    return retro23AcylPartners(t, 'amide', false).map((pieces) =>
+      retroSpec(retroReactants(pieces), [RETRO23_REAGENTS.dcc], {solvents: ['dcm'], temperature: 25}));
+  }},
+  {id: 'steglich', name: 'Ester from acid and alcohol by Steglich coupling', rule: 'steglich', group: 'Esters', match(t) {
+    return retro23AcylPartners(t, 'ester', false).map((pieces) =>
+      retroSpec(retroReactants(pieces), [RETRO23_REAGENTS.dcc], {solvents: ['dcm'], additives: ['dmap'], temperature: 25}));
+  }},
+  {id: 'ester-aminolysis', name: 'Amide from methyl ester and amine or ammonia', rule: 'aminolysis', group: 'Amides', match(t) {
+    return retro23AcylPartners(t, 'amide', true).map((pieces) =>
+      retroSpec(retroReactants(pieces), [], {solvents: ['ethanol'], temperature: 80}));
+  }},
+  {id: 'transesterification', name: 'Methyl or ethyl ester by alcohol exchange', rule: 'transesterification', group: 'Esters', match(t) {
+    return t.info.carbonyls.filter((c) => c.kind === 'ester').slice(0, RETRO_LIMITS.maxPerTransform).map((c) => {
+      const pieces = retroEdit(t, (g) => {
+        if (!retroCut(g, c.c, c.hetero)) return false;
+        const alcoholIds = g.connectedComponents().find((component) => component.atomIds.includes(c.hetero)).atomIds;
+        const alcohol = retroCanonical(g, alcoholIds);
+        // Limit this proposal to the two encoded bulk alcohol solvents. Use
+        // the opposite ester so a no-change exchange cannot become a route.
+        const methyl = moleculeSame(alcohol, 'CO'), ethyl = moleculeSame(alcohol, 'CCO');
+        if (!methyl && !ethyl) return false;
+        const oxygen = rxAttach(g, 'O', c.c), carbon = rxAttach(g, 'C', oxygen.id);
+        if (methyl) rxAttach(g, 'C', carbon.id);
+      });
+      if (!pieces || pieces.length !== 2) return null;
+      const alcohol = pieces.find((p) => p.ids.has(c.hetero));
+      const ester = pieces.find((p) => p !== alcohol);
+      if (!alcohol || !ester) return null;
+      return retroSpec([{smiles: ester.smiles, role: 'reactant'}, {smiles: alcohol.smiles, role: 'solvent'}], [],
+        {solvents: ['none'], additives: ['h2so4'], temperature: 60});
+    }).filter(Boolean);
+  }}
+);
+// Nitrogen condensations preserve the donor atoms (and their isotope labels).
+function retro24Condensation(t, terminal) {
+  const g = t.graph;
+  const sites = g.atoms.filter((a) => a.element === 'N' && !a.charge).map((n) => {
+    const ns = rxNeighbors(g, n.id);
+    if (ns.length !== 2) return null;
+    const carbon = ns.find((x) => x.atom.element === 'C' && x.bond.order === 2);
+    const end = ns.find((x) => x.atom.element === terminal && !x.atom.charge && x.bond.order === 1 &&
+      rxNeighbors(g, x.atom.id).length === 1 && rxHydrogens(g, x.atom.id) === (terminal === 'O' ? 1 : 2));
+    return carbon && end ? {n: n.id, c: carbon.atom.id} : null;
+  }).filter(Boolean);
+  if (!sites.length || sites.length > RETRO_LIMITS.maxPerTransform) return [];
+  const pieces = retroEdit(t, (h) => {
+    for (const site of sites) {
+      if (!retroCut(h, site.c, site.n)) return false;
+      rxAttach(h, 'O', site.c, 2);
+      rxsDrop(h, site.c);
+    }
+  });
+  if (!pieces || pieces.length !== sites.length + 1) return [];
+  const carbonyl = pieces.find((p) => sites.every((s) => p.ids.has(s.c)));
+  if (!carbonyl) return [];
+  return [retroSpec([{smiles: carbonyl.smiles, role: 'reactant'},
+    ...pieces.filter((p) => p !== carbonyl).map((p) => ({smiles: p.smiles, role: 'reagent'}))], [],
+    {solvents: ['ethanol'], temperature: 25})];
+}
+
+function retro24PaalKnorr(t, element) {
+  const g = t.graph, out = [];
+  const rings = rxAromaticRings(g).rings.filter((r) => r.length === 5 &&
+    r.filter((id) => g.getAtom(id).element === element).length === 1 &&
+    r.every((id) => ['C', element].includes(g.getAtom(id).element)));
+  rings.slice(0, RETRO_LIMITS.maxPerTransform).forEach((ring) => {
+    const hetero = ring.find((id) => g.getAtom(id).element === element);
+    if (g.getAtom(hetero).charge) return;
+    const ends = rxNeighbors(g, hetero).filter((n) => ring.includes(n.atom.id)).map((n) => n.atom.id);
+    if (ends.length !== 2) return;
+    // Both oxygen orientations can matter for labelled furans. Pyrrole keeps
+    // its nitrogen in the explicit amine/ammonia precursor instead.
+    const orientations = element === 'O' ? [ends, ends.slice().reverse()] : [ends];
+    orientations.forEach(([a, b]) => {
+      const pieces = retroEdit(t, (h) => {
+        if (!retroBreak(h, hetero, b)) return false;
+        if (element === 'N' && !retroCut(h, hetero, a)) return false;
+        ring.filter((id) => id !== hetero).forEach((id) => rxNeighbors(h, id)
+          .filter((n) => ring.includes(n.atom.id) && n.atom.id !== hetero)
+          .forEach((n) => rxSetOrder(h, id, n.atom.id, 1)));
+        if (element === 'O') rxSetOrder(h, hetero, a, 2);
+        else rxAttach(h, 'O', a, 2);
+        rxAttach(h, 'O', b, 2);
+      });
+      if (!pieces || pieces.length !== (element === 'O' ? 1 : 2)) return;
+      out.push(retroSpec(retroReactants(pieces), [],
+        {solvents: ['ethanol'], additives: element === 'O' ? ['h2so4'] : [], temperature: 80}));
+    });
+  });
+  return out.slice(0, RETRO_LIMITS.maxPerTransform);
+}
+
+RETRO_TRANSFORMS.push(
+  {id: 'oxime-formation', name: 'Oxime from carbonyl and hydroxylamine', rule: 'oxime', group: 'Nitrogen', match(t) { return retro24Condensation(t, 'O'); }},
+  {id: 'hydrazone-formation', name: 'Hydrazone from carbonyl and hydrazine', rule: 'hydrazone', group: 'Nitrogen', match(t) { return retro24Condensation(t, 'N'); }},
+  {id: 'paal-knorr-furan', name: 'Furan from 1,4-dicarbonyl by Paal–Knorr cyclization', rule: 'paal-knorr-furan', group: 'Heterocycle formation', match(t) { return retro24PaalKnorr(t, 'O'); }},
+  {id: 'paal-knorr-pyrrole', name: 'Pyrrole from 1,4-dicarbonyl and primary amine or ammonia', rule: 'paal-knorr-pyrrole', group: 'Heterocycle formation', match(t) { return retro24PaalKnorr(t, 'N'); }}
+);
+// Metathesis, trans-alkene reduction and self-disproportionation proposals.
+// Product geometry and competing products remain those of the forward model.
+RETRO_TRANSFORMS.push(
+  {id: 'ring-closing-metathesis', name: 'Cycloalkene from terminal diene by ring-closing metathesis', rule: 'rcm', group: 'Ring formation', match(t) {
+    const g = t.graph;
+    return t.info.alkenes.filter((e) => [e.a,e.b].every((id) => rxHydrogens(g,id) === 1) &&
+      rxRings(g,8).some((ring) => ring.length >= 5 && ring.length <= 8 && ring.includes(e.a) && ring.includes(e.b)))
+      .slice(0,RETRO_LIMITS.maxPerTransform).map((e) => {
+        const piece = retroSinglePiece(t,(h) => {
+          if (!retroBreak(h,e.a,e.b)) return false;
+          rxAttach(h,'C',e.a,2); rxAttach(h,'C',e.b,2);
+          h.alkeneSpecs = (h.alkeneSpecs || []).filter((s) => ![e.a,e.b].includes(s.a) && ![e.a,e.b].includes(s.b));
+        });
+        return piece && retroSpec([{smiles:piece.smiles,role:'reactant'}],[],{solvents:['dcm'],additives:['grubbs'],temperature:25});
+      }).filter(Boolean);
+  }},
+  {id: 'cross-metathesis', name: 'Internal alkene from two terminal alkenes by cross-metathesis', rule: 'cross-metathesis', group: 'Carbon–carbon formation', match(t) {
+    const g = t.graph;
+    return t.info.alkenes.filter((e) => [e.a,e.b].every((id) => rxHydrogens(g,id) === 1))
+      .slice(0,RETRO_LIMITS.maxPerTransform).map((e) => {
+        const pieces = retroEdit(t,(h) => {
+          if (!retroCut(h,e.a,e.b)) return false;
+          rxAttach(h,'C',e.a,2); rxAttach(h,'C',e.b,2);
+          h.alkeneSpecs = (h.alkeneSpecs || []).filter((s) => ![e.a,e.b].includes(s.a) && ![e.a,e.b].includes(s.b));
+        });
+        return pieces && pieces.length === 2 ? retroSpec(retroReactants(pieces),[],{solvents:['dcm'],additives:['grubbs'],temperature:25}) : null;
+      }).filter(Boolean);
+  }},
+  {id: 'dissolving-metal', name: 'Trans alkene from internal alkyne by dissolving-metal reduction', rule: 'dissolving-metal', group: 'Reduction', match(t) {
+    const g = t.graph;
+    return t.info.alkenes.filter((e) => [e.a,e.b].every((id) => rxHydrogens(g,id) === 1) && !!retroSide(g,e.a,e.b))
+      .slice(0,RETRO_LIMITS.maxPerTransform).map((e) => {
+        const piece = retroSinglePiece(t,(h) => {
+          rxSetOrder(h,e.a,e.b,3);
+          h.alkeneSpecs = (h.alkeneSpecs || []).filter((s) => ![e.a,e.b].includes(s.a) && ![e.a,e.b].includes(s.b));
+        });
+        return piece && retroSpec([{smiles:piece.smiles,role:'reactant'}],[],{solvents:['none'],additives:['nanh3'],temperature:-33});
+      }).filter(Boolean);
+  }},
+  {id: 'cannizzaro-alcohol', name: 'Primary alcohol from non-enolizable aldehyde by Cannizzaro reaction', rule: 'cannizzaro', group: 'Disproportionation', match(t) {
+    return t.info.alcohols.filter((a) => a.degree <= 1).slice(0,RETRO_LIMITS.maxPerTransform).map((a) => {
+      const piece = retroSinglePiece(t,(g) => {rxSetOrder(g,a.c,a.o,2);rxsDrop(g,a.c);});
+      return piece && retroSpec([{smiles:piece.smiles,role:'reactant'}],[RETRO_REAGENTS.hydroxide],{solvents:['water'],temperature:25});
+    }).filter(Boolean);
+  }}
+);
+// Rearrangement, arene reduction, metal insertion and haloform alternatives.
+RETRO_TRANSFORMS.push(
+  {id:'pinacol',name:'Ketone from a vicinal diol by Pinacol rearrangement',rule:'pinacol',group:'Rearrangement',match(t) {
+    const g=t.graph,out=[];
+    t.info.carbonyls.filter(c=>c.kind==='ketone').slice(0,RETRO_LIMITS.maxPerTransform).forEach(c=>
+      rxCarbonNeighbors(g,c.c).filter(n=>rxIsSp3(g,n.atom.id)).forEach(n=> {
+        const adjacent=n.atom.id,degree=rxCarbonNeighbors(g,adjacent).length;
+        if(degree===3&&rxHydrogens(g,adjacent)===1) {
+          const piece=retroSinglePiece(t,h=>{rxSetOrder(h,c.c,c.o,1);rxAttach(h,'O',adjacent);rxsDrop(h,c.c);rxsDrop(h,adjacent);});
+          if(piece)out.push(retroSpec([{smiles:piece.smiles,role:'reactant'}],[],{solvents:['water'],additives:['h2so4'],temperature:25}));
+        }
+        if(degree!==4)return;
+        rxCarbonNeighbors(g,adjacent).filter(m=>m.atom.id!==c.c&&!g.getBond(c.c,m.atom.id)).forEach(m=> {
+          const piece=retroSinglePiece(t,h=> {
+            if(!retroBreak(h,adjacent,m.atom.id))return false;
+            h.addBond(c.c,m.atom.id);rxSetOrder(h,c.c,c.o,1);rxAttach(h,'O',adjacent);
+            rxsDrop(h,c.c);rxsDrop(h,adjacent);
+          });
+          if(piece)out.push(retroSpec([{smiles:piece.smiles,role:'reactant'}],[],{solvents:['water'],additives:['h2so4'],temperature:25}));
+        });
+      }));
+    return out.slice(0,RETRO_LIMITS.maxPerTransform);
+  }},
+  {id:'birch',name:'Nonconjugated cyclohexadiene from arene by Birch reduction',rule:'birch',group:'Reduction',match(t) {
+    const g=t.graph,rings=rxRings(g,8);
+    return rings.filter(r=>r.length===6&&r.every(id=>g.getAtom(id).element==='C'&&!g.getAtom(id).charge&&
+      rings.filter(other=>other.includes(id)).length===1)).filter(r=> {
+      const doubles=r.map((id,i)=>g.getBond(id,r[(i+1)%6]).order===2?i:-1).filter(i=>i>=0);
+      return doubles.length===2&&(doubles[1]-doubles[0])===3;
+    }).slice(0,RETRO_LIMITS.maxPerTransform).map(r=> {
+      const piece=retroSinglePiece(t,h=>{r.forEach((id,i)=>{rxSetOrder(h,id,r[(i+1)%6],i%2?1:2);rxsDrop(h,id);});});
+      return piece&&retroSpec([{smiles:piece.smiles,role:'reactant'}],[],{solvents:['ethanol'],additives:['nanh3'],temperature:-33});
+    }).filter(Boolean);
+  }},
+  {id:'grignard-formation',name:'Grignard reagent from organic halide and magnesium',rule:'grignard-formation',group:'Organometallic preparation',match(t) {
+    const g=t.graph;
+    return g.atoms.filter(a=>a.element==='Mg'&&!a.charge).slice(0,RETRO_LIMITS.maxPerTransform).map(m=> {
+      const ns=rxNeighbors(g,m.id);
+      const carbon=ns.find(n=>n.atom.element==='C'&&n.bond.order===1);
+      const halogen=ns.find(n=>['Cl','Br','I'].includes(n.atom.element)&&n.bond.order===1&&rxNeighbors(g,n.atom.id).length===1);
+      if(ns.length!==2||!carbon||!halogen)return null;
+      const piece=retroSinglePiece(t,h=>{h.removeAtom(m.id);h.addBond(carbon.atom.id,halogen.atom.id);rxsDrop(h,carbon.atom.id);});
+      return piece&&retroSpec([{smiles:piece.smiles,role:'reactant'}],[],{solvents:['ether'],additives:['mg'],atmosphere:'n2',temperature:25});
+    }).filter(Boolean);
+  }},
+  {id:'haloform-carboxylate',name:'Carboxylate from methyl ketone by haloform cleavage',rule:'haloform',group:'Carbon–carbon cleavage',match(t) {
+    return t.info.carbonyls.filter(c=>c.hetero!==null&&t.graph.getAtom(c.hetero).element==='O'&&t.graph.getAtom(c.hetero).charge===-1)
+      .slice(0,RETRO_LIMITS.maxPerTransform).map(c=> {
+        const piece=retroSinglePiece(t,g=>{g.removeAtom(c.hetero);rxAttach(g,'C',c.c);});
+        return piece&&retroSpec([{smiles:piece.smiles,role:'reactant'}],[{smiles:'II',role:'reagent',label:'I2'},{smiles:'[OH-]',role:'reagent',label:'Hydroxide'}],{solvents:['water'],temperature:25});
+      }).filter(Boolean);
+  }}
+);
+// Condensation and substitution/elimination alternatives using existing rules.
+RETRO_TRANSFORMS.push(
+  {id:'imine-formation',name:'Imine from carbonyl and primary amine',rule:'imine',group:'Nitrogen',match(t) {
+    const g=t.graph;
+    return g.atoms.filter(a=>a.element==='N'&&!a.charge).flatMap(n=> {
+      const ns=rxNeighbors(g,n.id);
+      if(ns.length!==2||ns.filter(x=>x.atom.element==='C'&&x.bond.order===1).length!==1)return [];
+      return ns.filter(x=>x.atom.element==='C'&&x.bond.order===2).map(x=> {
+        const pieces=retroEdit(t,h=>{if(!retroCut(h,x.atom.id,n.id))return false;rxAttach(h,'O',x.atom.id,2);rxsDrop(h,x.atom.id);});
+        return pieces&&pieces.length===2?retroSpec(retroReactants(pieces),[],{solvents:['toluene'],temperature:25}):null;
+      });
+    }).filter(Boolean).slice(0,RETRO_LIMITS.maxPerTransform);
+  }},
+  {id:'enamine-formation',name:'Enamine from carbonyl and secondary amine',rule:'enamine',group:'Nitrogen',match(t) {
+    const g=t.graph;
+    return g.atoms.filter(a=>a.element==='N'&&!a.charge&&rxNeighbors(g,a.id).length===3&&rxHydrogens(g,a.id)===0&&rxNeighbors(g,a.id).every(n=>n.atom.element==='C'&&n.bond.order===1)).flatMap(n=>
+      rxCarbonNeighbors(g,n.id).filter(x=>x.bond.order===1).flatMap(x=>
+        rxCarbonNeighbors(g,x.atom.id).filter(y=>y.bond.order===2&&!t.aromatic.has(y.atom.id)).map(y=> {
+          const pieces=retroEdit(t,h=> {
+            if(!retroCut(h,x.atom.id,n.id))return false;
+            rxSetOrder(h,x.atom.id,y.atom.id,1);rxAttach(h,'O',x.atom.id,2);
+            rxsDrop(h,x.atom.id);rxsDrop(h,y.atom.id);
+          });
+          return pieces&&pieces.length===2?retroSpec(retroReactants(pieces),[],{solvents:['toluene'],temperature:25}):null;
+        }))).filter(Boolean).slice(0,RETRO_LIMITS.maxPerTransform);
+  }},
+  {id:'mitsunobu-ether',name:'Aryl alkyl ether from alcohol and phenol by Mitsunobu reaction',rule:'mitsunobu',group:'Ethers',match(t) {
+    const g=t.graph;
+    return g.atoms.filter(a=>a.element==='O'&&!a.charge).flatMap(o=> {
+      const ns=rxNeighbors(g,o.id);
+      if(ns.length!==2||ns.some(n=>n.atom.element!=='C'||n.bond.order!==1))return [];
+      const aryl=ns.find(n=>t.aromatic.has(n.atom.id));
+      const alkyl=ns.find(n=>!t.aromatic.has(n.atom.id)&&rxIsSp3(g,n.atom.id)&&rxCarbonNeighbors(g,n.atom.id).length<=2);
+      if(!aryl||!alkyl)return [];
+      const pieces=retroEdit(t,h=> {
+        if(!retroCut(h,alkyl.atom.id,o.id))return false;
+        rxAttach(h,'O',alkyl.atom.id);rxsDrop(h,alkyl.atom.id);
+      });
+      return pieces&&pieces.length===2?[retroSpec(retroReactants(pieces),[RETRO21_REAGENTS.pph3,RETRO21_REAGENTS.dead],{solvents:['thf'],temperature:25})]:[];
+    }).slice(0,RETRO_LIMITS.maxPerTransform);
+  }},
+  {id:'hofmann-elimination',name:'Terminal alkene from alkyltrimethylammonium by Hofmann elimination',rule:'hofmann-elimination',group:'Elimination',match(t) {
+    const pieces=t.info.alkenes.flatMap(e=>[e.a,e.b].filter(id=>rxHydrogens(t.graph,id)===2&&rxNeighbors(t.graph,id).length===1).map(end=>
+      retroSinglePiece(t,g=> {
+        const other=end===e.a?e.b:e.a;rxSetOrder(g,end,other,1);
+        const nitrogen=rxAttach(g,'N',end,1,1);
+        for(let i=0;i<3;i++)rxAttach(g,'C',nitrogen.id);
+        rxsDrop(g,end);rxsDrop(g,other);
+      }))).filter(Boolean);
+    return retroUniquePieces(pieces).slice(0,RETRO_LIMITS.maxPerTransform).map(p=>
+      retroSpec([{smiles:p.smiles,role:'reactant'}],[RETRO_REAGENTS.hydroxide],{solvents:['none'],temperature:140}));
+  }}
+);
+// Reverse the encoded six-atom Claisen bond exchange; forward replay remains
+// authoritative for ortho selection and substituted allyl orientation.
+RETRO_TRANSFORMS.push(
+  {id:'claisen-vinyl',name:'Unsaturated carbonyl from allyl vinyl ether',rule:'claisen-rearrangement',group:'Rearrangements',match(t) {
+    const g=t.graph,out=[];
+    t.info.carbonyls.filter(c=>c.hetero===null).forEach(c=>{
+      rxCarbonNeighbors(g,c.c).filter(n=>n.bond.order===1&&rxIsSp3(g,n.atom.id)).forEach(v=>{
+        rxCarbonNeighbors(g,v.atom.id,c.c).filter(n=>n.bond.order===1&&rxIsSp3(g,n.atom.id)).forEach(end=>{
+          rxCarbonNeighbors(g,end.atom.id,v.atom.id).filter(n=>n.bond.order===1).forEach(mid=>{
+            rxCarbonNeighbors(g,mid.atom.id,end.atom.id).filter(n=>n.bond.order===2&&!t.aromatic.has(n.atom.id)).forEach(tip=>{
+              if(new Set([c.c,v.atom.id,end.atom.id,mid.atom.id,tip.atom.id]).size!==5)return;
+              const p=retroSinglePiece(t,h=>{
+                if(!retroCut(h,v.atom.id,end.atom.id))return false;
+                rxSetOrder(h,c.c,c.o,1);rxSetOrder(h,c.c,v.atom.id,2);
+                h.addBond(c.o,tip.atom.id);rxSetOrder(h,tip.atom.id,mid.atom.id,1);rxSetOrder(h,mid.atom.id,end.atom.id,2);
+                [c.c,v.atom.id,end.atom.id,mid.atom.id,tip.atom.id].forEach(id=>rxsDrop(h,id));
+              });
+              if(p)out.push(p);
+            });
+          });
+        });
+      });
+    });
+    return retroUniquePieces(out).slice(0,RETRO_LIMITS.maxPerTransform).map(p=>retroSpec([{smiles:p.smiles,role:'reactant'}],[],{solvents:['none'],temperature:200}));
+  }},
+  {id:'claisen-aromatic',name:'Ortho allyl phenol from allyl aryl ether',rule:'claisen-rearrangement',group:'Rearrangements',match(t) {
+    const g=t.graph,out=[];
+    g.atoms.filter(o=>o.element==='O'&&!o.charge&&rxHydrogens(g,o.id)===1&&rxNeighbors(g,o.id).length===1).forEach(o=>{
+      const cv=rxNeighbors(g,o.id)[0];if(!t.aromatic.has(cv.atom.id))return;
+      rxCarbonNeighbors(g,cv.atom.id).filter(n=>t.aromatic.has(n.atom.id)).forEach(v=>{
+        rxCarbonNeighbors(g,v.atom.id,cv.atom.id).filter(n=>n.bond.order===1&&!t.aromatic.has(n.atom.id)&&rxIsSp3(g,n.atom.id)).forEach(end=>{
+          rxCarbonNeighbors(g,end.atom.id,v.atom.id).filter(n=>n.bond.order===1).forEach(mid=>{
+            rxCarbonNeighbors(g,mid.atom.id,end.atom.id).filter(n=>n.bond.order===2&&!t.aromatic.has(n.atom.id)).forEach(tip=>{
+              if(new Set([cv.atom.id,v.atom.id,end.atom.id,mid.atom.id,tip.atom.id]).size!==5)return;
+              const p=retroSinglePiece(t,h=>{
+                if(!retroCut(h,v.atom.id,end.atom.id))return false;
+                h.addBond(o.id,tip.atom.id);rxSetOrder(h,tip.atom.id,mid.atom.id,1);rxSetOrder(h,mid.atom.id,end.atom.id,2);
+                [end.atom.id,mid.atom.id,tip.atom.id].forEach(id=>rxsDrop(h,id));
+              });if(p)out.push(p);
+            });
+          });
+        });
+      });
+    });
+    return retroUniquePieces(out).slice(0,RETRO_LIMITS.maxPerTransform).map(p=>retroSpec([{smiles:p.smiles,role:'reactant'}],[],{solvents:['none'],temperature:200}));
+  }}
+);
+// The acyclic Cope bond exchange is its own inverse after relabelling the chain.
+RETRO_TRANSFORMS.push({id:'cope-rearrangement',name:'Acyclic diene from Cope rearrangement',rule:'cope',group:'Rearrangements',match(t){
+  const g=t.graph;
+  if(g.atoms.some(a=>a.charge||!['C','H','D'].includes(a.element)))return [];
+  const d=rxyDienes15({graph:g,info:t.info});if(!d)return [];
+  const [c1,c2,c3,c4,c5,c6]=d;
+  if(new Set(d).size!==6)return [];
+  const p=retroSinglePiece(t,h=>{
+    if(!retroCut(h,c3,c4))return false;
+    h.addBond(c1,c6);rxSetOrder(h,c1,c2,1);rxSetOrder(h,c5,c6,1);
+    rxSetOrder(h,c2,c3,2);rxSetOrder(h,c4,c5,2);
+    d.forEach(id=>rxsDrop(h,id));
+  });
+  if(!p||moleculeSame(p.smiles,t.smiles))return [];
+  return [retroSpec([{smiles:p.smiles,role:'reactant'}],[],{solvents:['none'],temperature:200})];
+}});
+
+RETRO_TRANSFORMS.push({id:'exhaustive-o-methylation',name:'Multiple methoxy groups from one exhaustive operation',rule:'exhaustive-o-methylation',group:'Ethers',match(t){
+ const g=t.graph;
+ // Match the declared C/O-only forward scope before spending replay budgets.
+ if(g.connectedComponents().length!==1||t.info.alkenes.length||t.info.alkynes.length||t.info.epoxides.length||g.atoms.some(a=>a.charge||!['C','O','H','D'].includes(a.element))||g.atoms.filter(a=>a.element==='O').some(o=>{const ns=rxNeighbors(g,o.id);return ns.length!==2||ns.some(n=>n.atom.element!=='C'||n.bond.order!==1);}))return [];
+ const sites=g.atoms.filter(a=>a.element==='O'&&!a.charge).flatMap(o=>{
+   const ns=rxNeighbors(g,o.id);if(ns.length!==2||ns.some(n=>n.atom.element!=='C'||n.bond.order!==1))return [];
+   const methyl=ns.find(n=>rxHydrogens(g,n.atom.id)===3&&rxNeighbors(g,n.atom.id).length===1&&!n.atom.isotope);
+   return methyl?[{o:o.id,c:methyl.atom.id}]:[];
+ });
+ if(sites.length<2||sites.length>6||new Set(sites.map(s=>s.c)).size!==sites.length)return [];
+ const out=[],seen=new Set(),buckets=[];let attempts=0,bucket=[];
+ const emit=subset=>{
+   attempts++;
+   const anchors=subset.map(s=>rxNeighbors(g,s.o).find(n=>n.atom.id!==s.c).atom.id);
+   if(new Set(anchors).size!==subset.length||anchors.some(id=>rxNeighbors(g,id).filter(n=>n.atom.element==='O').length!==1))return;
+   const piece=retroSinglePiece(t,h=>{subset.forEach(s=>h.removeAtom(s.c));});if(!piece)return;
+   const smiles=piece.isomericSmiles||piece.smiles,key=moleculeIdentity(smiles).key;
+   if(seen.has(key))return;seen.add(key);
+   bucket.push(retroSpec([{smiles,role:'reactant'},{smiles:'CBr',role:'reactant',equiv:subset.length}],
+     [{smiles:'[Na+].[H-]',role:'reagent',label:'NaH',equiv:subset.length}],{solvents:['thf'],temperature:25}));
+ };
+ const choose=(size,at,chosen)=>{
+   if(bucket.length>=RETRO_LIMITS.maxPerTransform||attempts>=8)return;
+   if(chosen.length===size){emit(chosen);return;}
+   for(let i=at;i<=sites.length-(size-chosen.length);i++){
+     choose(size,i+1,chosen.concat(sites[i]));
+     if(bucket.length>=RETRO_LIMITS.maxPerTransform||attempts>=8)break;
+   }
+ };
+ for(let size=Math.min(4,sites.length);size>=2;size--){bucket=[];attempts=0;choose(size,0,[]);buckets.push(bucket);}
+ // Preserve batch-size diversity under the unchanged proposal limit.
+ for(let i=0;i<RETRO_LIMITS.maxPerTransform;i++)for(const choices of buckets){if(choices[i]&&out.length<RETRO_LIMITS.maxPerTransform)out.push(choices[i]);}
+ return out;
+}});

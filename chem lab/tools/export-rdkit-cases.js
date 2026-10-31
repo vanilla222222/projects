@@ -33,7 +33,7 @@ const reactions = legacy.reactions.concat(fixtures.reactions || []).map((item) =
       const compounds=item.compounds.map(c=>({...c,fragment:smilesToFragment(c.smiles)}));
       const result=predictReaction(compounds,{...defaultReactionConditions(),...item.conditions});
       const outcome=[result.best,...result.alternatives].filter(Boolean).find(o=>o.id===item.rule);
-      return { found:!!outcome,actual:outcome?outcome.products.flatMap(p=>Array(p.count||1).fill(p.isomericSmiles||p.smiles)):[] };
+      return { found:!!outcome,actualPositional:outcome?[...outcome.products,...outcome.minor].map(p=>p.isomericSmiles||p.smiles):[],actual:outcome?outcome.products.flatMap(p=>Array(p.count||1).fill(p.isomericSmiles||p.smiles)):[] };
     })()`, item));
   } catch (error) { return Object.assign({}, item, { error: error.message }); }
 });

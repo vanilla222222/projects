@@ -618,9 +618,10 @@ function createReactionLab(host) {
 
   function currentScheme() {
     const outcome = chosenOutcome();
+    if(outcome&&outcome.regioselectivity&&outcome.regioselectivity.alternativesRole)return buildReactionScheme(state.compounds,state.conditions,outcome.products.concat(outcome.minor||[]).map(reactionProductFragment),outcome.products.concat(outcome.minor||[]).map(()=> 'Unranked positional alternative'));
     if (outcome && outcome.ratio && outcome.products.length === 1 && (outcome.minor || []).length === 1) {
       return buildReactionScheme(state.compounds, state.conditions, outcome.products.concat(outcome.minor).map(reactionProductFragment),
-        ['~' + outcome.ratio[0] + '% (major)', '~' + outcome.ratio[1] + '% (minor)']);
+        [(outcome.regioselectivity?'Heuristic ~':'~') + outcome.ratio[0] + '% (major)', (outcome.regioselectivity?'Heuristic ~':'~') + outcome.ratio[1] + '% (minor)']);
     }
     return buildReactionScheme(state.compounds, state.conditions, outcome ? outcome.products.map(reactionProductFragment) : []);
   }
@@ -660,15 +661,16 @@ function createReactionLab(host) {
     table.appendChild(head);
     stoich.rows.forEach((r) => {
       const row = element('tr');
-      const status = r.status === 'limiting' ? 'limiting' : r.status === 'excess' ? 'excess (+' + (Math.round(r.leftover * 100) / 100) + ')' : 'exact';
+      const status = r.status === 'unknown' ? 'unresolved' : r.status === 'limiting' ? 'limiting' : r.status === 'excess' ? 'excess (+' + (Math.round(r.leftover * 100) / 100) + ')' : 'exact';
       row.append(element('td', '', r.label), element('td', '', (Math.round(r.need * 100) / 100) + ' equiv'),
-        element('td', '', r.have + ' equiv'), element('td', 'rx-stoich-status ' + r.status, status));
+        element('td', '', Number.isFinite(r.have)?r.have+' equiv':'Unknown'), element('td', 'rx-stoich-status ' + r.status, status));
       table.appendChild(row);
     });
     box.appendChild(table);
-    box.appendChild(element('div', 'rx-stoich-yield' + (stoich.conversion < 0.999 ? ' short' : ''),
-      'Max. conversion of ' + stoich.rows[0].label + ': ' + Math.round(stoich.conversion * 100) + '%' +
-      (stoich.limiting && stoich.limiting !== stoich.rows[0] ? ' (limited by ' + stoich.limiting.label + ')' : '')));
+    const knownCeiling=Number.isFinite(stoich.conversion);
+    box.appendChild(element('div', 'rx-stoich-yield' + (!knownCeiling || stoich.conversion < 1-1e-9 ? ' short' : ''),
+      'Stoichiometric ceiling for ' + stoich.rows[0].label + ': ' + (knownCeiling?rxFormatEquiv(stoich.conversion*100)+'%':'unresolved') +
+      '. This is an amount-based upper bound, not a predicted conversion or isolated yield.'));
     return box;
   }
 
@@ -694,12 +696,12 @@ function createReactionLab(host) {
     const addCard = (product, minor, index) => {
       const fragment = reactionProductFragment(product);
       const info = reactionDescribeFragment(fragment);
-      const card = element('div', 'rx-product' + (minor ? ' minor' : ''));
+      const card = element('div', 'rx-product' + (minor&&!(outcome.regioselectivity&&outcome.regioselectivity.alternativesRole) ? ' minor' : ''));
       const canvas = element('canvas', 'rx-product-thumb');
       const shown = productDisplayName(product);
       const label = element('div', 'rx-product-name', (product.count > 1 ? product.count + ' × ' : '') + (shown || info.formula));
       const formulaLine = element('div', 'rx-product-formula', '');
-      formulaLine.innerHTML = '<span>' + (minor ? 'minor · ' : '') + (ratio && index === 0 ? '~' + ratio[minor ? 1 : 0] + '% · ' : '') + formulaHtml(info.formula) + ' · ' + info.mass.toFixed(2) + ' g/mol</span>';
+      formulaLine.innerHTML = '<span>' + (outcome.regioselectivity&&outcome.regioselectivity.alternativesRole?'unranked positional alternative · ':(minor ? 'minor · ' : '')) + (ratio && index === 0 ? (outcome.regioselectivity?'heuristic ~':'~') + ratio[minor ? 1 : 0] + '% · ' : '') + formulaHtml(info.formula) + ' · ' + info.mass.toFixed(2) + ' g/mol</span>';
       card.append(canvas, label, formulaLine);
       if (product.stereo) {
         card.appendChild(element('div', 'rx-product-stereo ' + product.stereo.kind, product.stereo.text));
@@ -786,6 +788,11 @@ function createReactionLab(host) {
       });
       predictionBox.appendChild(inspect);
     }
+    if(outcome.productSurvival){
+      const audit=outcome.productSurvival,box=element('details','rx-evidence');box.append(element('summary','','Product survival · '+rxProductSurvivalLabel(audit.status)),element('p','',audit.message),element('p','',audit.coverage));
+      const availability={'recorded-excess-upper-bound':'recorded amounts leave a theoretical excess','modeled-exhaustion':'no excess in net stoichiometry; actual residue unknown','not-quantified':'remaining amount is not quantified'};
+      const list=element('ul');audit.issues.forEach(i=>list.append(element('li','',(i.productRole==='alternative'?'Alternative':'Product')+' '+i.product+': '+(RX_CHEMO_GROUP_LABELS[i.group]||i.group)+' may react with '+i.label+'; '+availability[i.availability]+'.')));box.append(list);predictionBox.append(box);
+    }
     const chemo = outcome.chemoselectivity;
     const warnings = chemo ? outcome.warnings.filter((w) => w.indexOf('Chemoselectivity: ') !== 0) : outcome.warnings;
     if (warnings.length) {
@@ -803,7 +810,7 @@ function createReactionLab(host) {
       }
       if (chemo.competing.length) {
         const list = element('ul', 'rx-chemo-sites');
-        chemo.competing.forEach((c) => list.appendChild(element('li', '', label(c.group) + (c.count > 1 ? ' ×' + c.count : '') + ' still present')));
+        chemo.competing.forEach((c) => list.appendChild(element('li', '', label(c.group) + (c.count > 1 ? ' ×' + c.count : '') + (c.source === 'unconsumed-input' ? ' in additional input · ' + c.substrateSmiles : ' still present'))));
         box.appendChild(list);
       }
       if (chemo.suggestion) {
@@ -1029,7 +1036,7 @@ function createReactionLab(host) {
       ['Over the arrow', labels.above || '—'],
       ['Under the arrow', labels.below || '—'],
       ['Products', outcome ? outcome.products.map((pr) => (pr.count > 1 ? pr.count + ' × ' : '') + (productDisplayName(pr) || pr.smiles)).join(' + ') +
-        (outcome.minor.length ? ' (minor' + (outcomeRatio(outcome) ? ' ~' + outcome.ratio[1] + '%' : '') + ': ' + outcome.minor.map((pr) => productDisplayName(pr) || pr.smiles).join(', ') + ')' : '') : '—'],
+        (outcome.minor.length ? (outcome.regioselectivity&&outcome.regioselectivity.alternativesRole?' (unranked positional alternatives':' (minor') + (outcomeRatio(outcome) ? (outcome.regioselectivity?' heuristic ~':' ~') + outcome.ratio[1] + '%' : '') + ': ' + outcome.minor.map((pr) => productDisplayName(pr) || pr.smiles).join(', ') + ')' : '') : '—'],
     ];
     if (state.conditions.notes.trim()) {
       lines.push(['Notes', state.conditions.notes.trim()]);
