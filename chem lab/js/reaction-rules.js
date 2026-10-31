@@ -1479,6 +1479,24 @@ function rxHasProticNH(graph) {
   return graph.atoms.some((atom) => atom.element === 'N' && (rxHydrogens(graph, atom.id) > 0 || rxNeighbors(graph, atom.id).some((n) => ['H', 'D'].includes(n.atom.element))));
 }
 
+function rxGrignardElectrophiles(info) {
+  const groups=info.carbonyls.filter(c=>['aldehyde','ketone','ester','amide','acylChloride','anhydride'].includes(c.kind)).map(c=>c.kind);
+  if(info.nitriles.length)groups.push('nitrile');
+  return [...new Set(groups)];
+}
+
+function rxGrignardReactiveSolvents(ctx) {
+  return (ctx.conditions.solvents||[]).flatMap(id=>{
+    const solvent=reactionSolvent(id);if(!solvent||!solvent.smiles)return [];
+    const groups=rxGrignardElectrophiles(rxAnalyze(reactionFragmentGraph(smilesToFragment(solvent.smiles))));
+    return groups.length?[{id,name:solvent.name,groups}]:[];
+  });
+}
+
+function rxGrignardSolventHint(conflicts) {
+  return rxHint('Recorded solvent choices ('+conflicts.map(s=>s.name).join(', ')+') contain electrophilic carbonyl/nitrile groups that can react with the organometallic reagent. Solvent competition is not modeled, so no clean intended Grignard product is assigned.');
+}
+
 function rxGrignardProticConflict(ctx) {
   const graphs = ctx.substrates.concat(ctx.organicCatalysts || []).map((s) => s.graph).concat([...ctx.species.values()].map((s) => s.graph).filter(Boolean));
   return ctx.protic || ctx.has('H2O') || ctx.has('strongAcid') || graphs.some(rxHasProticNH) || ctx.substrates.some((s) => s.info.alcohols.length || s.info.carbonyls.some((c) => c.kind === 'acid'));
@@ -1489,6 +1507,8 @@ function rxRuleGrignard(ctx) {
   if (!reagent) {
     return [];
   }
+  const solventConflicts=rxGrignardReactiveSolvents(ctx);
+  if(solventConflicts.length)return [rxGrignardSolventHint(solventConflicts)];
   const quench = rxGrignardProticConflict(ctx);
   const rGraph = rxCloneGraph(reagent.graph);
   rxNeighbors(rGraph, reagent.metal).forEach((n) => {

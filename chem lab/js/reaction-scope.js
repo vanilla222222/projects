@@ -35,6 +35,10 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
     const prepared=input.map(c=>c.fragment?c:Object.assign({},c,{fragment:smilesToFragment(c.isomericSmiles||c.smiles)}));
     context=reactionContext(prepared,normalized);
     if(context.has('alanate')&&context.protic)note('alanate-protic-medium','LiAlH4 is incompatible with the recorded water or protic solvent during the reaction. A later aqueous work-up must be recorded separately from the reaction medium.','conflict');
+    if(context.has('grignard')||(outcome&&outcome.id==='grignard-formation')){
+      const solventConflicts=rxGrignardReactiveSolvents(context);
+      if(solventConflicts.length)note('grignard-reactive-medium','Recorded solvent electrophiles ('+solventConflicts.map(s=>s.name).join(', ')+') can react with the organometallic reagent. The intended solvent-independent product is not established.','conflict');
+    }
     if(!outcome)note('missing-outcome','No selected outcome is available for a scope audit.');
     else {
       const rule=RX_RULES.find(r=>r.id===outcome.rule)||RX_RULES.find(r=>r.id===outcome.id);
