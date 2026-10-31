@@ -80,10 +80,22 @@ function rsearchAttach(job, node, candidates) {
   const path = new Set(node.path);
   path.add(node.smiles);
   const accept = typeof job.options.candidateFilter === 'function' ? job.options.candidateFilter : () => true;
-  candidates.filter((c) => {
+  const accepted = candidates.filter((c) => {
     if (!c.precursors.every((p) => !path.has(p.smiles))) return false;
     try { return accept(c, node) !== false; } catch (error) { return false; }
-  }).slice(0, job.options.maxBranch).forEach((candidate) => {
+  });
+  const ordered = typeof job.options.candidateOrder === 'function' ? job.options.candidateOrder(accepted) : accepted;
+  let selected = ordered.slice(0, job.options.maxBranch);
+  if (typeof job.options.candidateBranchKey === 'function') {
+    const keys = new Set();
+    selected = ordered.filter(candidate => {
+      const key = job.options.candidateBranchKey(candidate);
+      if (keys.has(key)) return true;
+      if (keys.size >= job.options.maxBranch) return false;
+      keys.add(key); return true;
+    });
+  }
+  selected.forEach((candidate) => {
     const and = { candidate, parent: node, children: [], solved: false, dead: false };
     and.children = candidate.precursors.map((p) => {
       const child = rsearchMolecule(job, p.smiles, node.depth + 1, path);
@@ -214,7 +226,8 @@ function rsearchEnumerate(job, node, ancestors, limit, remaining = job.options.m
   if (node.stock && node !== job.root) {
     return [{ target: node.smiles, candidate: null, children: [], stock: node.stock, skeleton: node.skeleton }];
   }
-  const out = [];
+  const out = [], buckets = [];
+  const diverseRoot = job.options.diverseRootEnumeration && node === job.root;
   const path = new Set(ancestors);
   path.add(node.smiles);
   for (const and of node.ands) {
@@ -239,13 +252,21 @@ function rsearchEnumerate(job, node, ancestors, limit, remaining = job.options.m
         break;
       }
     }
+    const branch = [];
     combos.forEach((children) => {
-      if (out.length < limit) {
+      if (diverseRoot) branch.push({ target: node.smiles, candidate: and.candidate, children, stock: null, skeleton: node.skeleton });
+      else if (out.length < limit) {
         out.push({ target: node.smiles, candidate: and.candidate, children, stock: null, skeleton: node.skeleton });
       }
     });
-    if (out.length >= limit) {
+    if (diverseRoot) buckets.push(branch);
+    if (!diverseRoot && out.length >= limit) {
       break;
+    }
+  }
+  if (diverseRoot) {
+    for (let round=0; out.length<limit && buckets.some(bucket=>bucket[round]); round++) {
+      buckets.forEach(bucket=>{if(bucket[round]&&out.length<limit)out.push(bucket[round]);});
     }
   }
   return out;
@@ -268,7 +289,9 @@ function rsearchFinish(job, status) {
       routes.push(route);
     }
   });
-  job.routes = rsearchSort(routes, 'score').slice(0, job.options.maxRoutes);
+  const ranked = rsearchSort(routes, 'score');
+  job.routeRecipes = ranked;
+  job.routes = typeof job.options.routeSelector === 'function' ? job.options.routeSelector(ranked).slice(0, job.options.maxRoutes) : ranked.slice(0, job.options.maxRoutes);
 }
 
 function rsearchProgress(job) {
