@@ -64,7 +64,7 @@ for (const [start,target,id] of [
   ctx.start=start;ctx.target=target;ctx.id=id;
   run(`var routeJob=pathFinderCreate(start,target,{maxDepth:1,maxRoutes:5,budgetMs:10000});while(routeJob.status==='running')routeJob.step(100);`);
   check('routeJob.status','found','Path Finder connects the endpoints: '+id);
-  check(`routeJob.routes.some(r=>r.length===1&&r[0].candidate.transform===id&&retroForwardCheck(r[0].candidate,r[0].to))`,true,'New Path Finder edge is independently reproduced: '+id);
+  check(`routeJob.routeRecipes.some(r=>r.length===1&&r[0].candidate.transform===id&&retroForwardCheck(r[0].candidate,r[0].to))`,true,'New Path Finder edge is independently reproduced: '+id);
 }
 run(`var inventoryJob=pathFinderCreate('CCO','CCOS(C)(=O)=O',{maxDepth:1,stockPolicy:'custom',availableMaterials:[],budgetMs:10000});while(inventoryJob.status==='running')inventoryJob.step(100);`);
 check('inventoryJob.status','exhausted','Sulfonyl chloride cannot be invented when the custom inventory is empty');

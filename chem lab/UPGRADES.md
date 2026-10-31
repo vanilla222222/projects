@@ -1,5 +1,12 @@
 # Chem Lab upgrades
 
+## Linear Path Finder pathway diversity — 2026-10-31
+
+- Requests for multiple routes now explore a bounded pool of up to four times the requested count, within the existing time/node/depth/branch budgets, instead of stopping after the first few recipe variants. Single-route searches retain their early exit. Multi-route follow-up exploration reserves the final ten percent of the wall-clock budget once a route has been found.
+- Identical stereo-aware intermediate sequences occupy one slot, keeping their best cost-ranked recipe. Distinct disconnections are interleaved before branch truncation so reagent variants cannot monopolize the branch limit.
+- The final selection keeps the best-cost route and then favors the least overlap in intermediates and reaction families. Cost breaks diversity ties and orders the displayed results. Fewer than the requested number may be returned when distinct pathways are unavailable within the limits. This heuristic encourages structural diversity; it does not guarantee globally disjoint or experimentally feasible synthesis routes.
+- Eleven new checks cover a nine-route selection pool, deterministic behavior, best-cost retention, recipe grouping, stereo separation and an actual forward-verified five-route request. Existing engine and DOM-controller checks were updated to expect grouped pathways. Discovered recipe variants remain in the inspected recipe pool, and named-reaction regressions still require the exact method to be forward verified there. Convergent Recipe Tree selection is unchanged.
+
 ## Grignard competing electrophilic sites — 2026-10-31
 
 - Grignard carbonyl, nitrile and CO2 endpoints now count recognized electrophilic sites across substrate inputs. Multiple carbonyl/nitrile/CO2 sites produce an explicit compatibility conflict, including repeated groups of the same kind that group-presence checks could miss.

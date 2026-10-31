@@ -60,7 +60,7 @@ for(const [start,target,id,forbiddenRules] of [
   ctx.start=start;ctx.target=target;ctx.id=id;ctx.forbiddenRules=forbiddenRules;
   run(`var routeJob=pathFinderCreate(start,target,{maxDepth:1,maxRoutes:5,budgetMs:10000,forbiddenRules});while(routeJob.status==='running')routeJob.step(100);`);
   check('routeJob.status','found','Path Finder uses the new method: '+id);
-  check(`routeJob.routes.some(r=>r.length===1&&r[0].candidate.transform===id&&retroForwardCheck(r[0].candidate,r[0].to))`,true,'New planner edge independently replays: '+id);
+  check(`routeJob.routeRecipes.some(r=>r.length===1&&r[0].candidate.transform===id&&retroForwardCheck(r[0].candidate,r[0].to))`,true,'New planner edge independently replays: '+id);
 }
 for(const [materials,expected] of [[[], 'exhausted'],[['CCO'],'found']]) {
   ctx.materials=materials;

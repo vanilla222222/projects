@@ -63,7 +63,7 @@ for(const [start,target,id,rule] of [
   ctx.start=start;ctx.target=target;ctx.id=id;ctx.rule=rule;
   run(`var forbiddenRules=RX_RULES.filter(r=>r.id!==rule&&!(rule==='dissolving-metal'&&r.id==='reduction')).map(r=>r.id);var routeJob=pathFinderCreate(start,target,{maxDepth:1,maxRoutes:5,budgetMs:10000,forbiddenRules});while(routeJob.status==='running')routeJob.step(100);`);
   check('routeJob.status','found','Path Finder uses the new method: '+id);
-  check(`routeJob.routes.some(r=>r.length===1&&r[0].candidate.transform===id&&retroForwardCheck(r[0].candidate,r[0].to))`,true,'New planner edge independently replays: '+id);
+  check(`routeJob.routeRecipes.some(r=>r.length===1&&r[0].candidate.transform===id&&retroForwardCheck(r[0].candidate,r[0].to))`,true,'New planner edge independently replays: '+id);
 }
 for(const [start,rule] of [['CC=C','metathesis'],['CC#CC','dissolving-metal']]) {
   ctx.start=start;ctx.rule=rule;ctx.target='C/C=C'+String.fromCharCode(92)+'C';

@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-31T11:16:43.121223+00:00",
+  "generatedAt": "2026-10-31T11:28:11.312556+00:00",
   "rdkitVersion": "2026.09.1",
   "fixtureSha256": "97fa85d1dff3acbe2f38e80e5d02998e00229bb52acb610a3d55448400278389",
   "fixtureFilesSha256": {
     "rdkit-fixtures.json": "97fa85d1dff3acbe2f38e80e5d02998e00229bb52acb610a3d55448400278389",
     "chemistry-fixtures.json": "c04233c90e7ec559a79a5063e6f4f4b12e111ff07823d3545bcd520482c4d837"
   },
-  "exportSha256": "838b9d01beffbfb689403b87fbc32556cb90b70e473441abcd79f50c1fc6140d",
+  "exportSha256": "2d51bfc9cecb212bee88ee600b2e842e2aff9c570f9a21b1c2a89575dcbc9a00",
   "appScriptSha256": {
     "js/elements.js": "aaecea7433871b650c7601ffb5bef597e38361934cb7c4cc7406edbdc897a7ca",
     "js/graph.js": "c8a8a2cca6b2f3d758e3f83b7901f78f9966c3a27b0189fa846ba28ce55be88f",
@@ -93,7 +93,7 @@
     "js/viewer3d.js": "728dbc6dfc6336fb73702c57188d4df848dbbb9d91396bb929de10a3dcdd37d4",
     "js/retro-view.js": "ff7cebfff9e6ad73fcd413fcd1562ae66af541dca4756b4ae128997219ab5203",
     "js/route-comparison.js": "754ab666b24ca1152d19e6c8d4570cc617695e7c3e148286e3aadd075209d4ee",
-    "js/path-finder.js": "ac9c84d9045d9c914812e6b765ea1b04e872d10b5525f6f608f37990f5bb8ad1",
+    "js/path-finder.js": "e74be8ff04beb43ca1d97db1d0e3db5c1d1b19fde9110615f507367362039551",
     "js/path-protection-sequences.js": "963476ef0d72efd09debcf9524e777f4abd87c71f1da087891445936e0d67146",
     "js/reaction-mapping.js": "1f01d83e16bba73d65a8438138f00378c6ddf277b84b3009c2b1e28f9b8ff881",
     "js/route-assessment.js": "21b96ed25938b1aca75bf520f8b1ebabe87a74f86799b2d7f015193116e4bb37",
