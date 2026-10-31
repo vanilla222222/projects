@@ -1,5 +1,11 @@
 # Chem Lab upgrades
 
+## Ordinary-reagent competing sites — 2026-10-31
+
+- Reduction, PCC/KMnO4 oxidation, alcohol-halide, acyl-chloride and Appel branches now audit susceptible groups in all original compound inputs. Other inputs labeled reagent, catalyst or reactant are not assumed inert; their unmodeled consumption blocks a clean selected-input preparation while leaving graph predictions inspectable. This finite group inventory is not an exhaustive compatibility model.
+- LiAlH4 carbonyl/nitrile endpoints explicitly flag nitro and anhydride sites left unchanged on the same molecule, including both common nitro representations. SOCl2 branches flag unedited alcohol/acid competition on multifunctional substrates. Relative rates, simultaneous products and experimental selectivity are not invented.
+- Ninety-four focused checks cover partner roles, oxidation/substitution/reduction families, unchanged inputs, same-molecule conflicts, saved-route rejection and changed-input scope replay. Controls retain modeled exhaustive dialdehyde, ester/nitrile and diol conversions. Reaction-class references: OpenStax Organic Chemistry sections 21.3 and 21.5 (carboxylic acids and acid anhydrides).
+
 ## Workbench design and appearance controls — 2026-10-31
 
 - Reworked the shell, navigation, palette, editor, reaction surfaces, route cards and planner forms around forest/paper themes, botanical accents, clearer spacing and responsive layouts. Theme controls now remain available outside the editor. The drawing canvas has a coordinated palette, quieter grid, responsive empty guidance and an accessible label.

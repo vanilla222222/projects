@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-31T13:38:28.060173+00:00",
+  "generatedAt": "2026-10-31T22:31:33.483757+00:00",
   "rdkitVersion": "2026.09.1",
   "fixtureSha256": "97fa85d1dff3acbe2f38e80e5d02998e00229bb52acb610a3d55448400278389",
   "fixtureFilesSha256": {
     "rdkit-fixtures.json": "97fa85d1dff3acbe2f38e80e5d02998e00229bb52acb610a3d55448400278389",
     "chemistry-fixtures.json": "c04233c90e7ec559a79a5063e6f4f4b12e111ff07823d3545bcd520482c4d837"
   },
-  "exportSha256": "2738734c06753be00730a82b2f9399467ef09d8331067b8ed269b085f646b132",
+  "exportSha256": "c12ed59950561a4640c525eaf05f35fc0204eed78d3796e4dd16879e2f8e063b",
   "appScriptSha256": {
     "js/elements.js": "aaecea7433871b650c7601ffb5bef597e38361934cb7c4cc7406edbdc897a7ca",
     "js/graph.js": "c8a8a2cca6b2f3d758e3f83b7901f78f9966c3a27b0189fa846ba28ce55be88f",
@@ -53,7 +53,7 @@
     "js/reaction-io.js": "9ff1dd5e5887dbb6bd7aafb7cc471e8c85fa09be7bc6ae98efd75e4d7ee91273",
     "js/reaction-stereo.js": "868fdc58af5b556c55d73a9e29c4b7107cf99491124de8875e3c1cf54d08d565",
     "js/reaction-rules.js": "41a384187a2702b71f655dead1545026be107ea638e3cef36646f7b569a69d8f",
-    "js/reaction-rules-extra.js": "ea6ee3d3eb9a5c8de16e318f13e0127e34aa17cc6fa1061088011f7bead75d40",
+    "js/reaction-rules-extra.js": "992961a54c4299bf87959dd81ed89c2e5434ae76679fb4370ff6c8e418ee2812",
     "js/reaction-rules-extra2.js": "e7db06e2e2e98008771f7c05f2adff4db7fdc38bf819b6713910adf7a1d1637e",
     "js/reaction-aromatic.js": "65b4b095c4857570eaac0b6e65f725d4da2a557aa8b82ee72ae1087bcd5f0e8a",
     "js/reaction-rules-extra3.js": "62fecc23d84464e6efa010579f16f9e6b163e03329f00843fd669d8b169781b9",
