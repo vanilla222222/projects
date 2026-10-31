@@ -1424,3 +1424,42 @@ RX_RULES.push({id:'exhaustive-o-methylation',name:'Exhaustive O-methylation (two
  limitations:['No N/S chemoselectivity, selective mono-methylation, partial-product distribution, rates, measured yield or unbounded polyol permethylation. Reaction-class support does not experimentally validate the exhaustive endpoint for every substrate.'],
  references:[{title:'McMurry, OpenStax Organic Chemistry 18.2: Preparing Ethers',url:'https://openstax.org/books/organic-chemistry/pages/18-2-preparing-ethers',kind:'teaching'}]
 }});
+
+// Bounded phenolic ethylation; do not generalize methyl SN2 scope to arbitrary alkyl halides.
+function rxxRuleExhaustiveOEthylation(ctx) {
+  if(ctx.protic||ctx.has('H2O')||ctx.has('strongAcid')||(ctx.organicCatalysts||[]).length||(ctx.conditions.additives||[]).length||
+    !ctx.conditions.solvents.length||ctx.conditions.solvents.some(id=>!['thf','dmf'].includes(id)))return [];
+  const base=rxxBase(ctx,['weakBase']);if(!base)return [];
+  const donors=rxxHalides(ctx).filter(h=>h.degree===1&&['Br','I'].includes(h.s.graph.getAtom(h.x).element)&&
+    h.s.graph.atoms.filter(a=>a.element==='C').length===2&&rxHydrogens(h.s.graph,h.c)===2&&
+    h.s.graph.atoms.every(a=>!a.charge&&['C','H','D','Br','I'].includes(a.element))&&
+    rxCarbonNeighbors(h.s.graph,h.c).some(n=>rxHydrogens(h.s.graph,n.atom.id)===3));
+  if(donors.length!==1)return [];
+  const donor=donors[0];
+  if([donor.s.compound,base.entry.compound].some(c=>['catalyst','solvent'].includes(c.role)))return [];
+  const substrates=ctx.substrates.filter(s=>s!==donor.s);if(substrates.length!==1)return [];
+  const s=substrates[0],g=s.graph,sites=rxxPhenols(s).map(p=>p.o);
+  const allowed=new Set([s.compound,donor.s.compound,base.entry.compound]);
+  if(allowed.size!==3||(ctx.inputs||[]).some(c=>!allowed.has(c))||sites.length<2||sites.length>4||s.info.alcohols.length||
+    g.connectedComponents().length!==1||s.info.carbonyls.length||s.info.alkenes.length||s.info.alkynes.length||s.info.epoxides.length||
+    g.atoms.some(a=>a.charge||!['C','O','H','D'].includes(a.element))||
+    g.atoms.filter(a=>a.element==='O'&&!sites.includes(a.id)).some(o=>{const ns=rxNeighbors(g,o.id);return ns.length!==2||ns.some(n=>n.atom.element!=='C'||n.bond.order!==1);})||
+    sites.some(o=>rxNeighbors(g,o).some(n=>['H','D'].includes(n.atom.element))||rxCarbonNeighbors(g,o).some(n=>rxNeighbors(g,n.atom.id).filter(x=>x.atom.element==='O').length!==1)))return [];
+  const product=rxCloneGraph(g),ids=donor.s.graph.atoms.filter(a=>a.id!==donor.x).map(a=>a.id);
+  sites.forEach(o=>{const map=rxMerge(product,donor.s.graph,ids);product.addBond(o,map.get(donor.c));});
+  const out=rxOutcome('exhaustive-o-ethylation','Exhaustive phenolic O-ethylation ('+sites.length+' sites)','Ether formation',product,
+    'All '+sites.length+' eligible phenolic O–H sites undergo the modeled phenoxide/primary-ethyl-halide substitution. This is one exhaustive operation, not a selective mono-ethylation claim.',
+    {score:16,consumes:[rxUse(s,1),rxUse(donor.s,sites.length),rxUse(base.entry,sites.length)],byproducts:['halide salts','base-derived protonation products'],warnings:[
+      'Scope is two to four phenolic OH groups on a neutral connected C/O substrate, ethyl bromide/iodide and the encoded carbonate base in THF/DMF. Other organic partners, aliphatic OH, nonaromatic unsaturation and carbonyls are excluded.',
+      'One encoded base equivalent per OH is the loading convention. Rates, yields, elimination competition and partial-product distributions are not predicted.'
+    ]});
+  out.stoichiometryBasis=s.compound;
+  out.bulkTransformation={kind:'exhaustive-o-ethylation',sites:sites.length,operations:1,scope:'All eligible phenolic OH sites; no selective partial ethylation.'};
+  return [out];
+}
+RX_RULES.push({id:'exhaustive-o-ethylation',name:'Exhaustive phenolic O-ethylation',run:rxxRuleExhaustiveOEthylation,catalog:{
+ family:'Ether formation',scope:'Two to four phenolic OH sites on one connected neutral C/O substrate, one ethyl bromide/iodide input and encoded carbonate base in THF/DMF. No extra compound inputs/additives, aliphatic OH, carbonyls, nonaromatic unsaturation, epoxides or explicit OH/D atoms.',
+ assumptions:['Every eligible phenolic OH is converted; ethyl-transfer and encoded base demands each equal the number of sites. Activation and substitution form one preparation operation.'],
+ limitations:['No selective partial ethylation, arbitrary alkyl-halide generalization, rates, measured yields or elimination/partial-product distributions. Class support does not experimentally validate every polyphenol endpoint.'],
+ references:[{title:'McMurry, OpenStax Organic Chemistry 18.2: Preparing Ethers',url:'https://openstax.org/books/organic-chemistry/pages/18-2-preparing-ethers',kind:'teaching'}]
+}});

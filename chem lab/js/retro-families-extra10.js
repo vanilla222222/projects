@@ -1017,3 +1017,34 @@ RETRO_TRANSFORMS.push({id:'exhaustive-o-methylation',name:'Multiple methoxy grou
  for(let i=0;i<RETRO_LIMITS.maxPerTransform;i++)for(const choices of buckets){if(choices[i]&&out.length<RETRO_LIMITS.maxPerTransform)out.push(choices[i]);}
  return out;
 }});
+
+RETRO_TRANSFORMS.push({id:'exhaustive-o-ethylation',name:'Multiple phenolic ethoxy groups from one exhaustive operation',rule:'exhaustive-o-ethylation',group:'Ethers',match(t){
+ const g=t.graph;
+ if(g.connectedComponents().length!==1||t.info.alkenes.length||t.info.alkynes.length||t.info.carbonyls.length||t.info.epoxides.length||
+   g.atoms.some(a=>a.charge||!['C','O','H','D'].includes(a.element))||g.atoms.filter(a=>a.element==='O').some(o=>{const ns=rxNeighbors(g,o.id);return ns.length!==2||ns.some(n=>n.atom.element!=='C'||n.bond.order!==1);}))return [];
+ const sites=g.atoms.filter(a=>a.element==='O').flatMap(o=>{
+   const ns=rxNeighbors(g,o.id),aryl=ns.find(n=>t.info.aromatic.atoms.has(n.atom.id)),ethyl=ns.find(n=>!t.info.aromatic.atoms.has(n.atom.id)&&rxHydrogens(g,n.atom.id)===2);
+   if(!aryl||!ethyl||ethyl.atom.isotope||rxNeighbors(g,aryl.atom.id).filter(n=>n.atom.element==='O').length!==1)return [];
+   const tail=rxCarbonNeighbors(g,ethyl.atom.id).find(n=>n.atom.id!==o.id);
+   return tail&&!tail.atom.isotope&&rxHydrogens(g,tail.atom.id)===3&&rxNeighbors(g,tail.atom.id).length===1&&rxNeighbors(g,ethyl.atom.id).length===2?[{o:o.id,c:ethyl.atom.id,tail:tail.atom.id}]:[];
+ });
+ if(sites.length<2||sites.length>6)return [];
+ const out=[],seen=new Set(),buckets=[];
+ for(let size=Math.min(4,sites.length);size>=2;size--){
+   const bucket=[];let attempts=0;
+   const choose=(at,chosen)=>{
+     if(bucket.length>=RETRO_LIMITS.maxPerTransform||attempts>=8)return;
+     if(chosen.length===size){
+       attempts++;
+       const piece=retroSinglePiece(t,h=>chosen.forEach(s=>{h.removeAtom(s.c);h.removeAtom(s.tail);}));if(!piece)return;
+       const smiles=piece.isomericSmiles||piece.smiles,key=moleculeIdentity(smiles).key;if(seen.has(key))return;seen.add(key);
+       bucket.push(retroSpec([{smiles,role:'reactant'},{smiles:'CCBr',role:'reactant',equiv:size}],
+         [{smiles:'[K+].[K+].[O-]C([O-])=O',role:'reagent',label:'K2CO3',equiv:size}],{solvents:['dmf'],temperature:25}));return;
+     }
+     for(let i=at;i<=sites.length-(size-chosen.length);i++){choose(i+1,chosen.concat(sites[i]));if(bucket.length>=RETRO_LIMITS.maxPerTransform||attempts>=8)break;}
+   };
+   choose(0,[]);buckets.push(bucket);
+ }
+ for(let i=0;i<RETRO_LIMITS.maxPerTransform;i++)for(const bucket of buckets)if(bucket[i]&&out.length<RETRO_LIMITS.maxPerTransform)out.push(bucket[i]);
+ return out;
+}});
