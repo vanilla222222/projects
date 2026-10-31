@@ -29,7 +29,9 @@
     "cope": "https://www.chem.ucla.edu/~harding/IGOC/C/cope_elimination.html",
     "gabriel": "https://openstax.org/books/organic-chemistry/pages/24-6-synthesis-of-amines",
     "gabrielHydrazine": "https://doi.org/10.1002/anie.196809191",
-    "imineHydrolysis": "https://openstax.org/books/organic-chemistry/pages/19-8-nucleophilic-addition-of-amines-imine-and-enamine-formation"
+    "imineHydrolysis": "https://openstax.org/books/organic-chemistry/pages/19-8-nucleophilic-addition-of-amines-imine-and-enamine-formation",
+    "sn2Inversion": "https://openstax.org/books/organic-chemistry/pages/11-2-the-sn2-reaction",
+    "mitsunobuInversion": "https://doi.org/10.1021/jo001590m"
   },
   "tolerances": {
     "exactMassDa": 2e-05
@@ -1271,6 +1273,171 @@
         "Nc1ccc(N)cc1"
       ],
       "source": "gabriel"
+    },
+    {
+      "label": "SN2 inverted center",
+      "compounds": [
+        {
+          "smiles": "C[C@H](Br)CC",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[C-]#N",
+          "role": "reagent"
+        }
+      ],
+      "rule": "sn2",
+      "products": [
+        "C[C@@H](C#N)CC"
+      ],
+      "source": "sn2Inversion",
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ],
+        "temperature": 0
+      }
+    },
+    {
+      "label": "SN2 inverted mirror",
+      "compounds": [
+        {
+          "smiles": "C[C@@H](Br)CC",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[C-]#N",
+          "role": "reagent"
+        }
+      ],
+      "rule": "sn2",
+      "products": [
+        "C[C@H](C#N)CC"
+      ],
+      "source": "sn2Inversion",
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ],
+        "temperature": 0
+      }
+    },
+    {
+      "label": "SN2 preserves remote center",
+      "compounds": [
+        {
+          "smiles": "C[C@H](Br)C[C@H](F)C",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[C-]#N",
+          "role": "reagent"
+        }
+      ],
+      "rule": "sn2",
+      "products": [
+        "C[C@@H](C#N)C[C@H](F)C"
+      ],
+      "source": "sn2Inversion",
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ],
+        "temperature": 0
+      }
+    },
+    {
+      "label": "Mitsunobu inverted center",
+      "compounds": [
+        {
+          "smiles": "C[C@H](O)CC",
+          "role": "reactant"
+        },
+        {
+          "smiles": "Oc1ccccc1",
+          "role": "reagent"
+        },
+        {
+          "smiles": "P(c1ccccc1)(c1ccccc1)c1ccccc1",
+          "role": "reagent"
+        },
+        {
+          "smiles": "CCOC(=O)N=NC(=O)OCC",
+          "role": "reagent"
+        }
+      ],
+      "rule": "mitsunobu",
+      "products": [
+        "C[C@@H](Oc1ccccc1)CC"
+      ],
+      "source": "mitsunobuInversion",
+      "conditions": {
+        "solvents": [
+          "thf"
+        ]
+      }
+    },
+    {
+      "label": "Mitsunobu inverted mirror",
+      "compounds": [
+        {
+          "smiles": "C[C@@H](O)CC",
+          "role": "reactant"
+        },
+        {
+          "smiles": "Oc1ccccc1",
+          "role": "reagent"
+        },
+        {
+          "smiles": "P(c1ccccc1)(c1ccccc1)c1ccccc1",
+          "role": "reagent"
+        },
+        {
+          "smiles": "CCOC(=O)N=NC(=O)OCC",
+          "role": "reagent"
+        }
+      ],
+      "rule": "mitsunobu",
+      "products": [
+        "C[C@H](Oc1ccccc1)CC"
+      ],
+      "source": "mitsunobuInversion",
+      "conditions": {
+        "solvents": [
+          "thf"
+        ]
+      }
+    },
+    {
+      "label": "Mitsunobu preserves remote center",
+      "compounds": [
+        {
+          "smiles": "C[C@H](O)C[C@H](F)C",
+          "role": "reactant"
+        },
+        {
+          "smiles": "Oc1ccccc1",
+          "role": "reagent"
+        },
+        {
+          "smiles": "P(c1ccccc1)(c1ccccc1)c1ccccc1",
+          "role": "reagent"
+        },
+        {
+          "smiles": "CCOC(=O)N=NC(=O)OCC",
+          "role": "reagent"
+        }
+      ],
+      "rule": "mitsunobu",
+      "products": [
+        "C[C@@H](Oc1ccccc1)C[C@H](F)C"
+      ],
+      "source": "mitsunobuInversion",
+      "conditions": {
+        "solvents": [
+          "thf"
+        ]
+      }
     }
   ]
 }

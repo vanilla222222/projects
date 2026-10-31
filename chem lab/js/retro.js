@@ -1603,17 +1603,18 @@ function retroVerify(spec, targetSmiles, sink) {
   if (!result.best) {
     return null;
   }
-  const main = !result.best.partialConversion && retroFindProduct(result.best.products, targetSmiles);
+  const find=list=>retroFindProduct((list||[]).filter(product=>!rxsStereoTargetConflict(product,targetSmiles)),targetSmiles);
+  const main = !result.best.partialConversion && find(result.best.products);
   if (main) {
     return { compounds, conditions, outcome: result.best, product: main, minor: false };
   }
-  const minorOfBest = !result.best.partialConversion && retroFindProduct(result.best.minor, targetSmiles);
+  const minorOfBest = !result.best.partialConversion && find(result.best.minor);
   if (minorOfBest) {
     return { compounds, conditions, outcome: result.best, product: minorOfBest, minor: true };
   }
   for (const alt of result.alternatives) {
     if (alt.partialConversion) continue;
-    const hit = retroFindProduct(alt.products, targetSmiles) || retroFindProduct(alt.minor, targetSmiles);
+    const hit = find(alt.products) || find(alt.minor);
     if (hit) {
       return { compounds, conditions, outcome: alt, product: hit, minor: true };
     }
@@ -1740,17 +1741,17 @@ function retroStereoClass(t, spec, verified) {
   const kind = (v) => (v && v.product && v.product.stereo && v.product.stereo.kind) || '';
   if (iso.some((p) => p.smiles.includes('@'))) {
     const direct = run(iso);
-    if (direct && direct.product.isomericSmiles === t.isomericSmiles) {
+    if (direct && !rxsStereoTargetConflict(direct.product,t.isomericSmiles) && direct.product.isomericSmiles === t.isomericSmiles) {
       return { stereo: 'retained', precursors: iso };
     }
     const mirror = iso.map((p) => Object.assign({}, p, { smiles: retroMirror(p.smiles) }));
     const flipped = run(mirror);
-    if (flipped && flipped.product.isomericSmiles === t.isomericSmiles) {
+    if (flipped && !rxsStereoTargetConflict(flipped.product,t.isomericSmiles) && flipped.product.isomericSmiles === t.isomericSmiles) {
       return { stereo: 'retained', precursors: mirror };
     }
     return ['racemic', 'diastereomers'].includes(kind(direct)) ? { stereo: 'racemic', precursors: iso } : { stereo: 'mismatch', precursors: iso };
   }
-  const set = verified.product.isomericSmiles === t.isomericSmiles && kind(verified) !== 'racemic';
+  const set = verified.product.isomericSmiles === t.isomericSmiles && kind(verified) !== 'racemic' && !rxsStereoTargetConflict(verified.product,t.isomericSmiles);
   return { stereo: set ? 'set' : 'racemic', precursors: iso };
 }
 
@@ -1783,7 +1784,20 @@ function retroCandidate(t, spec, verified) {
   if (stereo.stereo === 'mismatch') {
     return null;
   }
-  const precursors = spec.precursors.map((p, i) => retroPrecursorInfo(Object.assign({}, p, { isomericSmiles: stereo.precursors ? stereo.precursors[i].smiles : p.smiles })));
+  // Classification may recover stereo-bearing precursors from target atoms.
+  // Replay those actual inputs, rather than retaining the connectivity-only
+  // verification's compounds and product while displaying chiral precursors.
+  if (stereo.precursors && ['retained','set'].includes(stereo.stereo)) {
+    const replay=retroTryVerify({precursors:stereo.precursors,reagents:spec.reagents,conditions:spec.conditions},t.isomericSmiles);
+    if(!replay)return null;
+    const same=typeof moleculeSame==='function'
+      ? moleculeSame(replay.product.fragment||replay.product.isomericSmiles||replay.product.smiles,t.isomericSmiles)
+      : replay.product.isomericSmiles===t.isomericSmiles;
+    if(!same)return null;
+    verified=replay;
+  }
+  const actualPrecursors=stereo.precursors&&['retained','set'].includes(stereo.stereo)?stereo.precursors:spec.precursors;
+  const precursors = actualPrecursors.map((p, i) => retroPrecursorInfo(Object.assign({}, p, { isomericSmiles: stereo.precursors ? stereo.precursors[i].smiles : p.smiles })));
   const edit = retroEditAtoms(t, spec.record);
   return {
     transform: spec.transform.id,
@@ -2278,7 +2292,7 @@ function retroForwardCheck(candidate, targetSmiles) {
       return !!verified && verified.minor === s.minor;
     });
   }
-  const spec = { precursors: candidate.precursors.map((p) => ({ smiles: p.smiles, role: p.role, label: p.label })), reagents: candidate.reagents, conditions: candidate.conditions };
+  const spec = { precursors: candidate.precursors.map((p) => ({ smiles: p.isomericSmiles || p.smiles, role: p.role, label: p.label })), reagents: candidate.reagents, conditions: candidate.conditions };
   const verified = retroVerify(spec, targetSmiles);
   return !!verified && verified.minor === candidate.minor;
 }

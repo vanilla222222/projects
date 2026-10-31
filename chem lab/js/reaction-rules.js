@@ -1318,6 +1318,18 @@ function rxFelkinApply(out, felkin, nucleophile) {
     return;
   }
   out.minor = rxProductList(felkin.minor);
+  // Keep both component drawings, but do not label either as a pure outcome.
+  const differs=(product,others)=>others.some(other=>{
+    if(typeof moleculeIdentity==='function'&&typeof moleculeSame==='function') {
+      return moleculeIdentity(product.isomericSmiles||product.smiles).connectivityKey===moleculeIdentity(other.isomericSmiles||other.smiles).connectivityKey&&
+        !moleculeSame(product.fragment||product.isomericSmiles||product.smiles,other.fragment||other.isomericSmiles||other.smiles);
+    }
+    return product.smiles===other.smiles&&product.isomericSmiles!==other.isomericSmiles;
+  });
+  const mixed=out.products.filter(p=>differs(p,out.minor)).concat(out.minor.filter(p=>differs(p,out.products)));
+  mixed.forEach(product=>{
+    product.stereo={kind:'diastereomers',text:'component of a diastereomeric mixture (qualitative Felkin model)'};
+  });
   out.ratio = [75, 25];
   out.reason += ' The neighbouring stereocentre makes the two faces of the C=O different (Felkin–Anh): the largest group' + (felkin.polar ? ' (here the electronegative one)' : '') +
     ' sits perpendicular to the C=O, and ' + nucleophile + ' comes in anti to it, past the smallest group. That gives the Felkin diastereomer as the major product.';
