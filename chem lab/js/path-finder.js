@@ -93,6 +93,43 @@ function pathFinderRouteMetrics(route, describe) {
   return metrics;
 }
 
+// Routes through the same stereo-aware intermediates are recipe variants,
+// not additional pathways. Reagent/condition changes do not consume route slots.
+function pathFinderRouteStrategyKey(route) {
+  return JSON.stringify(route.map(link => [link.fromKey || pathFinderKey(link.from), link.toKey || pathFinderKey(link.to)]));
+}
+
+function pathFinderRouteFeatures(route) {
+  const features = new Set();
+  route.forEach((link, i) => {
+    if (i < route.length - 1) features.add('intermediate:' + (link.toKey || pathFinderKey(link.to)));
+    const c = link.candidate || {};
+    features.add('family:' + (c.group || c.transform || c.outcomeId || c.rule || 'unknown'));
+  });
+  return features;
+}
+
+// Keep the best-cost route, then choose the least overlapping pathways.
+// Cost ranking breaks diversity ties and orders the final displayed selection.
+function pathFinderSelectDiverseRoutes(routes, limit, compare) {
+  const remaining = routes.slice().sort(compare), selected = [], features = new Map();
+  remaining.forEach(route => features.set(route, pathFinderRouteFeatures(route)));
+  const overlap = (a, b) => {
+    const x = features.get(a), y = features.get(b);
+    const shared = [...x].filter(f => y.has(f)).length;
+    return shared / Math.max(1, x.size + y.size - shared);
+  };
+  while (remaining.length && selected.length < limit) {
+    let best = 0, score = Infinity;
+    remaining.forEach((route, i) => {
+      const similarity = selected.length ? Math.max(...selected.map(other => overlap(route, other))) : 0;
+      if (similarity < score) { best = i; score = similarity; }
+    });
+    selected.push(remaining.splice(best, 1)[0]);
+  }
+  return selected.sort(compare);
+}
+
 function pathFinderRouteRank(route, describe) {
   const m=pathFinderRouteMetrics(route,describe);
   return [m.steps,m.protection,m.scopeGaps,m.stereoConcerns,m.minor,m.buildingBlocks,m.stock,m.processMaterials,m.heavy];
@@ -209,7 +246,8 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
   const diagnostics = { candidates: 0, inventory: 0, reagents: 0, rules: 0, stereo: 0, compatibility: 0, rejected: [], protection: 0, protectionMessages: opts.allowedProtectingGroups && !opts.allowedProtectingGroups.length ? ['Automatic protection planning is disabled.'] : [], noDisconnections: 0, depth: 0, branch: 0, queue: 0, missingMaterials: [] };
   const job = { start: start.smiles, target: target.smiles, options: opts, status: start.key === target.key ? 'identical' : 'running', route: [], routes: [], expanded: 0, truncated: false, elapsedMs: 0, diagnostics, termination: '' };
   const queue = [{ smiles: target.smiles, key: target.key, chain: [], ancestors: new Set([target.key]) }];
-  const queued = new Set(), expanded = new Map(), routeKeys = new Set();
+  const queued = new Set(), expanded = new Map(), routeKeys = new Set(), routeStrategies = new Map();
+  diagnostics.routeVariants = 0;
   let current = null;
   const materials = new Map();
   const material = (smiles) => {
@@ -267,13 +305,27 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
   }
   const signature = (link) => [link.candidate.transform, link.candidate.rule, link.candidate.outcomeId, link.fromKey, link.toKey, JSON.stringify(link.candidate.conditions || {}), (link.candidate.compounds || []).map((p) => p.smiles + ':' + p.role).sort().join('|')].join('~');
   const rankRoutes = () => {
-    const ranks=new Map(job.routes.map(route=>[route,pathFinderRouteRank(route,material)]));
-    job.routes.sort((a, b) => {
-      const ra = ranks.get(a), rb = ranks.get(b);
-      for (let i = 0; i < ra.length; i++) if (ra[i] !== rb[i]) return ra[i] - rb[i];
-      return a.map(signature).join('/').localeCompare(b.map(signature).join('/'));
-    });
+    const routes = Array.from(routeStrategies.values());
+    const ranks = new Map(routes.map(route => [route, pathFinderRouteRank(route, material)]));
+    const compare = (a,b) => compareRanks(ranks.get(a), ranks.get(b)) || a.map(signature).join('/').localeCompare(b.map(signature).join('/'));
+    job.routes = pathFinderSelectDiverseRoutes(routes, opts.maxRoutes, compare);
     job.route = job.routes[0] || [];
+    diagnostics.distinctPathways = routeStrategies.size;
+  };
+  const enoughRoutes = () => routeStrategies.size >= (opts.maxRoutes === 1 ? 1 : opts.maxRoutes * 4);
+  const addRoute = (route) => {
+    const recipeKey = route.map(signature).join('/');
+    if (routeKeys.has(recipeKey)) return;
+    routeKeys.add(recipeKey);
+    const key = pathFinderRouteStrategyKey(route), previous = routeStrategies.get(key);
+    if (previous) {
+      diagnostics.routeVariants++;
+      const cost = compareRanks(pathFinderRouteRank(route, material), pathFinderRouteRank(previous, material));
+      if (cost > 0 || cost === 0 && recipeKey.localeCompare(previous.map(signature).join('/')) >= 0) return;
+    }
+    routeStrategies.set(key, route);
+    job.routes = Array.from(routeStrategies.values());
+    rankRoutes();
   };
   const finish = (reason) => { job.termination = reason; job.status = job.routes.length ? 'found' : reason === 'exhausted' ? 'exhausted' : 'budget'; rankRoutes(); };
   // Expanded structures are reused by multiple chains. These assessments depend
@@ -302,8 +354,18 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
       });
       return { candidate, index, rank: best || [0, 0, 0, 0] };
     }).sort((a, b) => compareRanks(a.rank, b.rank) || a.index - b.index);
+    const groups = new Map();
+    ordered.forEach(item => {
+      const key = JSON.stringify(item.candidate.precursors.map(p => pathFinderKey(p.isomericSmiles || p.smiles)).sort());
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(item);
+    });
+    const diversified = [];
+    for (let round = 0; diversified.length < ordered.length; round++) {
+      groups.forEach(items => { if (items[round]) diversified.push(items[round]); });
+    }
     if (ordered.length > opts.maxBranch) { diagnostics.branch += ordered.length - opts.maxBranch; job.truncated = true; }
-    for (const item of ordered.slice(0, opts.maxBranch)) {
+    for (const item of diversified.slice(0, opts.maxBranch)) {
       const candidate = item.candidate;
       diagnostics.candidates++;
       const assessment = candidateAssessment(candidate);
@@ -372,9 +434,8 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
         const chain = node.chain.concat(links.slice().reverse());
         if (chain.length > opts.maxDepth) { diagnostics.depth++; continue; }
         if (carried.key === start.key) {
-          const route = chain.slice().reverse(), id = route.map(signature).join('/');
-          if (!routeKeys.has(id)) { routeKeys.add(id); job.routes.push(route); rankRoutes(); }
-          if (job.routes.length >= opts.maxRoutes) { finish('route-limit'); return; }
+          addRoute(chain.slice().reverse());
+          if (enoughRoutes()) { finish('route-limit'); return; }
           continue;
         }
         if (chain.length >= opts.maxDepth) { diagnostics.depth++; continue; }
@@ -391,9 +452,9 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
     if (!sequenceTried && typeof pathFinderSequenceRoutes === 'function') {
       sequenceTried = true;
       const sequenceRoutes = pathFinderSequenceRoutes(start,target,opts,{ruleBlocked,reagentBlocked,stocked});
-      sequenceRoutes.forEach(route => {const id=route.map(signature).join('/');if(!routeKeys.has(id)){routeKeys.add(id);job.routes.push(route);}});
+      sequenceRoutes.forEach(addRoute);
       rankRoutes();
-      if (job.routes.length >= opts.maxRoutes) {finish('route-limit');job.elapsedMs+=retroNow()-began;return job;}
+      if (enoughRoutes()) {finish('route-limit');job.elapsedMs+=retroNow()-began;return job;}
     }
     while (job.status === 'running' && retroNow() < until) {
       if (job.elapsedMs + retroNow() - began >= opts.budgetMs) { finish('time-limit'); break; }
@@ -659,7 +720,7 @@ function createPathFinder(deps) {
       status.textContent = job.recipeTrees.length + ' rule-verified recipe tree' + (job.recipeTrees.length === 1 ? '' : 's') + ' found.' + stats + ' Every leaf is available under the selected inventory policy; every intermediate has a forward-verified preparation.' + (job.status === 'cancelled' ? ' Search cancelled; partial results retained.' : '');
       pathFinderRecipeRender(results, job, deps); rejectionDetails(); return;
     }
-    status.textContent = job.routes.length + ' rule-verified candidate route' + (job.routes.length === 1 ? '' : 's') + ' found.' + stats + ' Ranked by fewer steps, more common and simpler building blocks, fewer minor products, then fewer extra building blocks.' + (job.status === 'cancelled' ? ' Search cancelled; partial results retained.' : '');
+    status.textContent = job.routes.length + ' rule-verified candidate route' + (job.routes.length === 1 ? '' : 's') + ' found.' + stats + ' Selected for different intermediates and reaction families from ' + (job.diagnostics.distinctPathways || job.routes.length) + ' pathways found. Reagent and condition variants share one slot. Displayed by route cost; the first route retains the best cost ranking.' + (job.diagnostics.routeVariants ? ' ' + job.diagnostics.routeVariants + ' recipe variants grouped.' : '') + (job.status === 'cancelled' ? ' Search cancelled; partial results retained.' : '');
     if (typeof routeComparisonRender === 'function') { routeComparisonRender(results, job, deps); rejectionDetails(); return; }
     job.routes.forEach((route, index) => {
       const wrapper = element('section', undefined, 'path-route');
