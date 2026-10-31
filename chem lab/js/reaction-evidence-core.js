@@ -211,7 +211,7 @@ const CORE_REACTION_EVIDENCE_ROWS = [
     "Addition",
     "A recognized borane reagent adds to the selected alkene, placing OH on the locally less-substituted carbon after oxidative work-up.",
     "Peroxide/base work-up is assumed if not supplied and is reported as a warning.",
-    "This rule edits one selected alkene and does not implement general alkyne hydroboration or borane competition with every reducible group.",
+    "Distinct equal-substitution alkene orientations are represented without a ratio; equivalent products are deduplicated. Multiple alkene sites remain unresolved. General alkyne hydroboration and borane competition with every reducible group are not implemented.",
     [
       "alkene"
     ]
@@ -357,7 +357,7 @@ const CORE_REACTION_EVIDENCE_ROWS = [
     "Addition",
     "Water plus recognized strong acid hydrates the selected alkene; a matched alkyne additionally requires the mercury tag and gives the encoded carbonyl.",
     "Alkyne hydration includes enol-to-carbonyl tautomerization.",
-    "Regiochemistry is locally ranked; exhaustive carbocation rearrangements and mixtures from unsymmetrical internal alkynes are not enumerated.",
+    "Alkene regiochemistry is a class heuristic; distinct equal-substitution orientations and multiple sites are unresolved. Exhaustive carbocation rearrangements and mixtures from unsymmetrical internal alkynes are not enumerated.",
     [
       "alkene",
       "hydration"
@@ -459,7 +459,7 @@ const CORE_REACTION_EVIDENCE_ROWS = [
     "Aromatic substitution",
     "Nitric acid plus the encoded sulfuric-acid condition nitrates a ranked aromatic hydrogen using local directing and activation rules.",
     "The aromaticity and substituent classifiers determine candidate sites.",
-    "Strongly deficient unactivated rings are excluded; directing ratios, aniline protonation and polysubstitution remain simplified.",
+    "Strongly deficient unactivated rings are excluded; directing ratios, aniline protonation and polysubstitution remain simplified. Existing positional branches and ratios are explicitly heuristic, not established selective isolation or a measured distribution.",
     [
       "aromatic"
     ]
@@ -469,7 +469,7 @@ const CORE_REACTION_EVIDENCE_ROWS = [
     "Aromatic substitution",
     "Recognized SO3 installs a sulfonic acid group at a ranked aromatic site; aqueous strong acid enables the encoded reverse desulfonation branch.",
     "The chosen branch represents the forward or reverse net substitution.",
-    "Temperature warnings do not calculate reversibility or equilibrium; directing effects and multiple sulfonation are not exhaustive.",
+    "Temperature warnings do not calculate reversibility or equilibrium; directing effects and multiple sulfonation are not exhaustive. Existing positional branches and ratios are explicitly heuristic, not established selective isolation or a measured distribution.",
     [
       "aromatic"
     ]
@@ -479,7 +479,7 @@ const CORE_REACTION_EVIDENCE_ROWS = [
     "Aromatic substitution",
     "Supported arenes undergo recognized Lewis-acid halogenation or Friedel-Crafts alkylation/acylation branches at locally ranked positions.",
     "The encoded arene, electrophile and catalyst patterns determine whether a branch is offered.",
-    "Deactivation, rearrangement and ortho/para distributions are simplified; a match does not establish compatibility for heteroarenes.",
+    "Deactivation, rearrangement and ortho/para distributions are simplified; a match does not establish compatibility for heteroarenes. Existing positional branches and ratios are explicitly heuristic, not established selective isolation or a measured distribution.",
     [
       "aromatic",
       "friedel"
@@ -619,7 +619,7 @@ const CORE_REACTION_EVIDENCE_ROWS = [
     "Addition",
     "Recognized HX adds to the selected alkene/alkyne using local Markovnikov ranking; the HBr peroxide/light branch gives the encoded radical alternative.",
     "The radical alternative is limited to the HBr-specific reagent pattern.",
-    "Carbocation rearrangement, partial alkyne addition and real product ratios are simplified.",
+    "Distinct equal-substitution alkene orientations are unranked alternatives; symmetric products are not duplicated and multiple alkene sites remain unresolved. Carbocation rearrangement, partial alkyne addition and real product ratios are simplified.",
     [
       "alkene",
       "alkyne"

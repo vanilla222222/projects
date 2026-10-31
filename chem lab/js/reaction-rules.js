@@ -293,6 +293,41 @@ function rxSubstitution(g, id, other) {
   return rxCarbonNeighbors(g, id, other).length;
 }
 
+// Positional alternatives are compared by connectivity, independently of
+// stereochemical mixtures. A graph ordering is never a measured site ratio.
+function rxRegioKey(product) {
+  try{return typeof moleculeIdentity==='function'?moleculeIdentity(product.isomericSmiles||product.smiles).connectivityKey:null;}catch(error){return null;}
+}
+
+function rxRegioAlkene(out,s,target,m,attached,element,options) {
+  const opts=options||{},sites=s.info.alkenes.length,keys=new Set(out.products.map(rxRegioKey).filter(Boolean));
+  let unresolved=sites>1,represented=1,status='heuristic';
+  if(m.tie&&!opts.rearranged){
+    const g=rxCloneGraph(s.graph),other=attached===target.a?target.b:target.a;
+    rxSetOrder(g,target.a,target.b,1);const added=rxAttach(g,element,other);
+    if(opts.syn)rxsFaceAdd(g,[[other,added.id,1]],new Map([[attached,1]]));
+    const alternatives=rxProductList(g),key=alternatives.length===1?rxRegioKey(alternatives[0]):null;
+    if(key&&!keys.has(key)){out.minor=(out.minor||[]).concat(alternatives);represented=2;unresolved=true;}
+    else if(key)status='equivalent';
+    else unresolved=true;
+  }else if(m.tie)unresolved=true;
+  if(unresolved)status='unresolved';
+  const message=status==='unresolved'?'Positional selectivity is unresolved: equally ranked orientations or multiple alkene sites are present. Display ordering does not establish a dominant isomer or selective preparation.':status==='equivalent'?'The two addition orientations give the same constitutional product; stereochemical outcomes are assessed separately.':'The addition orientation follows the encoded reaction-class heuristic; no substrate-specific regioisomer ratio or exclusive preparation is established.';
+  out.regioselectivity={status,basis:m.tie?'equal-substitution':'reaction-class heuristic',recognizedAlkeneSites:sites,representedIsomers:represented,alternativesRole:represented>1?'unranked positional alternatives':null,coverage:'Selected alkene only; not exhaustive rearrangement or reaction-site enumeration.',message};
+  out.warnings.push(message);return out;
+}
+
+function rxRegioAromatic(out) {
+  const products=[...(out.products||[]),...(out.minor||[])],represented=products.length===1?1:new Set(products.map(rxRegioKey).filter(Boolean)).size;
+  out.regioselectivity={status:'heuristic',basis:'encoded aromatic site ranking',representedIsomers:represented,coverage:'Existing selected branches only; other positions are not exhaustively enumerated.',ratioBasis:out.ratio?'heuristic, not measured':null,message:'Aromatic site ordering and any displayed ratio are encoded heuristics. The represented positional alternatives do not establish selective isolation or a substrate-specific product distribution.'};
+  out.warnings.push(out.regioselectivity.message);return out;
+}
+
+function rxRegioConflict(outcome) {
+  const r=outcome&&outcome.regioselectivity;
+  return r&&r.status==='unresolved'?r.message:null;
+}
+
 function rxMarkovnikov(g, a, b) {
   const sa = rxSubstitution(g, a, b);
   const sb = rxSubstitution(g, b, a);
@@ -1015,9 +1050,7 @@ function rxRuleHydrohalogenation(ctx) {
       out.name += ' of an alkyne';
       out.reason += ' With one equivalent the product stops at the vinyl halide.';
     }
-    if (m.tie && !radical) {
-      out.warnings.push('Both alkene carbons are equally substituted, so a mixture of regioisomers is expected.');
-    }
+    if(alkenes.length)rxRegioAlkene(out,s,target,m,radical?m.less:m.more,x,{rearranged:!!shift});
     if (!radical && acid !== 'HBr' && (ctx.has('radicalInitiator') || ctx.has('light'))) {
       out.warnings.push('The peroxide effect only works with HBr; ' + acid + ' still adds Markovnikov.');
     }
@@ -1051,6 +1084,7 @@ function rxRuleHydration(ctx) {
       if (ctx.temperature >= 100) {
         out.warnings.push('At high temperature the equilibrium shifts back towards the alkene (dehydration).');
       }
+      rxRegioAlkene(out,s,e,m,m.more,'O');
       return [out];
     }
     if (!ctx.has('mercury')) {
@@ -1082,6 +1116,7 @@ function rxRuleHydroboration(ctx) {
     const out = rxOutcome('hydroboration', 'Hydroboration–oxidation', 'Addition', g,
       'BH₃ adds H and B syn in one step, with boron going to the less hindered carbon. Oxidation replaces B with OH, which gives the anti-Markovnikov alcohol.',
       { score: 12, byproducts: ['B(OH)₃ (from the oxidation)'], consumes: [rxUse(s, 1), rxUse(ctx.get('borane'), 1 / 3)] });
+    rxRegioAlkene(out,s,e,m,m.less,'O',{syn:true});
     if (!ctx.has('hydroxide') || !ctx.has('hydrogenPeroxide')) {
       out.warnings.push('Assumes the usual oxidative work-up (H₂O₂, NaOH) after the borane step.');
     }
@@ -2187,6 +2222,7 @@ function rxRuleAromatic(ctx) {
         res.minor = rxProductList(other);
         res.ratio = pos.ratio;
       }
+      rxRegioAromatic(res);
       out.push(res);
       return;
     }
@@ -2230,6 +2266,7 @@ function rxRuleAromatic(ctx) {
         (shifted ? 'The primary cation rearranges by a 1,2-hydride shift first, so the ring ends up bonded to the more substituted carbon. ' : '') + pos.note,
         { score: 12, byproducts: ['HCl'], consumes: [rxUse(s, 1), rxUse(partner, 1)], warnings: ['The alkylated product is more reactive than the starting arene, so polyalkylation is common; use excess arene.'] });
     }
+    rxRegioAromatic(res);
     if (pos.excessive && rxaRingClass(s.graph, s.info.aromatic, pos.atom).rings.some((r) => r.some((id) => ['N', 'O'].includes(s.graph.getAtom(id).element)))) {
       res.warnings.push('Pyrroles and furans polymerise with AlCl₃; milder Lewis acids (BF₃·OEt₂, SnCl₄, ZnCl₂) are used in practice.');
     }
