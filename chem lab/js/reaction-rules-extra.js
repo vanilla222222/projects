@@ -871,10 +871,22 @@ function rxxRuleOxidationExtra(ctx) {
   });
 }
 
+function rxxDibalConflicts(ctx) {
+  const conflicts=[];
+  // Reuse structural donor detection only, not the Grignard reactivity model.
+  const donors=rxGrignardInputSites(ctx).flatMap(s=>s.donors).filter(d=>d.kind!=='terminal alkyne');
+  if(ctx.protic||ctx.has('H2O')||ctx.has('strongAcid')||donors.length)conflicts.push('Recorded water, protic medium, acid or O–H/N–H/S–H donor can consume DIBAL-H. No clean reduction or donor-loading correction is modeled for this mixture. A subsequent aqueous work-up must be separate.');
+  if(ctx.temperature>-40&&rxGrignardInputSites(ctx).some(s=>s.electrophiles.includes('nitrile')))conflicts.push('Warm DIBAL-H mixtures containing nitriles are outside the encoded cold reduction/hydrolysis branch; selective aldehyde formation and further products are not modeled.');
+  const solvents=rxGrignardReactiveSolvents(ctx);
+  if(solvents.length)conflicts.push('Recorded carbonyl/nitrile solvent groups ('+solvents.map(s=>s.name).join(', ')+') can react with DIBAL-H. Solvent-independent reduction is not established.');
+  return conflicts;
+}
+
 function rxxRuleDibal(ctx) {
   if (!ctx.has('dibal')) {
     return [];
   }
+  const conflicts=rxxDibalConflicts(ctx);if(conflicts.length)return conflicts.map(rxHint);
   const cold = ctx.temperature <= -40;
   return ctx.substrates.flatMap((s) => {
     const esters = s.info.carbonyls.filter((c) => c.kind === 'ester');
@@ -890,8 +902,9 @@ function rxxRuleDibal(ctx) {
       }
     });
     s.info.nitriles.forEach((n) => {
-      rxSetOrder(g, n.c, n.n, 2);
-      g.getAtom(n.n).element = 'O';
+      // Hydrolysis introduces a new oxygen; the nitrile nitrogen leaves.
+      // In particular, an isotope on nitrogen must never become an O isotope.
+      g.removeAtom(n.n);rxAttach(g,'O',n.c,2);
     });
     oxo.forEach((c) => rxSetOrder(g, c.c, c.o, 1));
     const lactone = esters.some((c) => rxRings(s.graph, 8).some((r) => r.includes(c.c) && r.includes(c.hetero)));
@@ -900,6 +913,11 @@ function rxxRuleDibal(ctx) {
         (cold ? 'At −78 °C the tetrahedral intermediate from an ester is stable until work-up, so the reduction stops at the aldehyde; nitriles give an imine that hydrolyses to the aldehyde.'
           : 'Above about −40 °C the intermediate collapses and the aldehyde formed is reduced again, so esters go on to primary alcohols.'),
       { score: cold ? 14 : 12, byproducts: ['aluminium salts (Rochelle’s salt work-up)'], consumes: [rxUse(s, 1), rxUse(ctx.get('dibal'), esters.length * (cold ? 1 : 2) + s.info.nitriles.length + oxo.length)] });
+    if(s.info.nitriles.length){
+      out.workupAtoms={introducedOxygens:s.info.nitriles.length,removedNitrogens:s.info.nitriles.length,nitrogenIsotopes:s.info.nitriles.map(n=>s.graph.getAtom(n.n).isotope||0),oxygenSource:'Unlabelled water assumed in a separate hydrolytic work-up; no explicit isotope-transfer prediction.'};
+      out.byproducts.push('nitrogen-containing hydrolysis products (not structurally balanced)');
+      out.warnings.push('The nitrile nitrogen is removed into undrawn hydrolysis products. Aldehyde oxygen is newly introduced from the separately assumed aqueous work-up; labelled work-up water and oxygen exchange are not modeled.');
+    }
     if (!cold && esters.length) {
       out.warnings.push('Run at −78 °C with one equivalent of DIBAL-H to stop at the aldehyde.');
     }
@@ -1270,6 +1288,7 @@ RX_RULES.push(
 // Keep competing branches inspectable; planners require a resolved recipe.
 function rxxCompatibilityAssess(ctx,outcome) {
   const id=outcome.id,couplings=['suzuki','heck','sonogashira'];
+  if(id==='dibal'){const used=new Set((outcome.consumes||[]).filter(Boolean).map(u=>u.compound));return rxGrignardInputSites(ctx).filter(s=>!used.has(s.compound)&&s.electrophiles.length).map(s=>({code:'dibal-other-input',message:'Another recorded input contains carbonyl/nitrile electrophiles that can compete for DIBAL-H. A clean selected-input reduction is not established; competing products are unmodeled.'}));}
   if(!couplings.includes(id)&&!['mitsunobu','williamson'].includes(id))return [];
   const conflicts=[],add=(code,message,counts)=>conflicts.push({code,message,counts});
   const enabled=run=>{
