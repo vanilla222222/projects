@@ -67,11 +67,13 @@ function routeComparisonSummaries(job) {
       });
       const stepReagents = new Map();
       const addReagent = (item, role) => { const entry = material(item, role); stepReagents.set(entry.key, entry); reagents.set(entry.key, entry); };
-      (candidate.compounds || []).filter((p) => p.role !== 'reactant').forEach((p) => addReagent(p, p.role || 'reagent'));
-      (candidate.reagents || []).forEach((p) => addReagent(p, p.role || 'reagent'));
-      const conditions = candidate.conditions || {};
-      (conditions.additives || []).forEach((id) => addReagent(typeof reactionAdditive === 'function' && reactionAdditive(id) || { id }, 'additive'));
-      (conditions.solvents || []).forEach((id) => addReagent(typeof reactionSolvent === 'function' && reactionSolvent(id) || { id }, 'solvent'));
+      routePlanningOperations(candidate).forEach(operation=>{
+        (operation.compounds||[]).filter(p=>p.role!=='reactant').forEach(p=>addReagent(p,p.role||'reagent'));
+        (operation.reagents||[]).forEach(p=>addReagent(p,p.role||'reagent'));
+        const conditions=operation.conditions||{};
+        (conditions.additives||[]).forEach(id=>addReagent(typeof reactionAdditive==='function'&&reactionAdditive(id)||{id},'additive'));
+        (conditions.solvents||[]).filter(id=>id!=='none').forEach(id=>addReagent(typeof reactionSolvent==='function'&&reactionSolvent(id)||{id},'solvent'));
+      });
       const warnings = [...new Set([...(candidate.outcome && candidate.outcome.warnings || []), ...(candidate.warnings || [])].map(String))];
       const stereoKind = candidate.product && candidate.product.stereo && candidate.product.stereo.kind;
       const stereoConcern = ['racemic', 'mismatch'].includes(candidate.stereo) || ['racemic', 'diastereomers'].includes(stereoKind);
@@ -79,7 +81,9 @@ function routeComparisonSummaries(job) {
       (evidence && evidence.assumptions || []).forEach((text) => assumptions.add(String(text)));
       (evidence && evidence.limitations || []).forEach((text) => limitations.add(String(text)));
       const references = evidence && Array.isArray(evidence.references) ? evidence.references.filter((r) => r && /^https:\/\//.test(r.url || '')) : [];
+      const planningFacts={gaps:routePlanningOperations(candidate).flatMap((operation,i)=>routePlanningStepFacts(operation).gaps.map(g=>({...g,operation:i+1})))};
       return {
+        planningFacts,
         number: index + 1, link, candidate, name: candidate.outcomeName || candidate.name || 'Reaction step',
         from: link.from, to: link.to, extraBlocks, reagents: [...stepReagents.values()],
         inventoryRecorded: carried >= 0 && precursors.length > 0, evidence, references,
@@ -90,6 +94,8 @@ function routeComparisonSummaries(job) {
     });
     return {
       number: routeIndex + 1, route, steps, stepCount: steps.length,
+      ranking:pathFinderRouteMetrics(route),
+      scopeGaps:steps.flatMap(s=>s.planningFacts.gaps.map(g=>({step:s.number,...g}))),
       buildingBlocks: [...blocks.values()], reagents: [...reagents.values()],
       sourcedSteps: steps.filter((s) => s.references.length > 0).length,
       minorSteps: steps.filter((s) => s.minor).length,
@@ -107,7 +113,7 @@ function routeComparisonRender(container, job, deps) {
   const root = make('section', undefined, 'route-comparison');
   root.setAttribute('aria-label', 'Candidate route comparison');
   root.append(make('h3', 'Compare candidate routes'));
-  root.append(make('p', 'Counts below are calculated from these route records; materials are counted once per role. Sources document reaction classes; they do not establish that a route works experimentally. No yield, feasibility or safety score is assigned. Otherwise equal Path Finder routes use fewer distinct reagent, solvent and additive entries as a final tie-breaker; this count does not estimate cost.', 'route-comparison-note'));
+  root.append(make('p', 'Counts below are calculated from these route records; materials are counted once per role. Sources document reaction classes; they do not establish that a route works experimentally. No yield, feasibility or safety score is assigned. Path Finder orders routes by operations, protection operations, recorded scope gaps, stereo concerns, minor-product steps, extra building blocks, stock tiers, process-material entries and building-block size. Missing metadata counts as a gap; documentation length does not. These are planning criteria, not cost or experimental success predictions.', 'route-comparison-note'));
   const grid = make('div', undefined, 'route-comparison-grid');
   const addList = (parent, label, entries) => {
     parent.append(make('h5', label));
@@ -119,7 +125,7 @@ function routeComparisonRender(container, job, deps) {
     card.append(make('h4', 'Route ' + summary.number));
     const metrics = make('table', undefined, 'route-comparison-metrics');
     const body = make('tbody');
-    [['Steps', summary.stepCount], ['Distinct extra building blocks', summary.buildingBlocks.length], ['Distinct reagents / catalysts / solvents / additives', summary.reagents.length], ['Steps with reaction-class sources', summary.sourcedSteps + ' / ' + summary.stepCount], ['Minor-product steps', summary.minorSteps], ['Steps with stereo concerns reported', summary.stereoConcernSteps]].forEach(([label, value]) => {
+    [['Operations counted for ranking', summary.ranking.steps], ['Protection operations', summary.ranking.protection], ['Recorded scope gaps', summary.ranking.scopeGaps], ['Steps', summary.stepCount], ['Distinct extra building blocks', summary.buildingBlocks.length], ['Distinct reagents / catalysts / solvents / additives', summary.reagents.length], ['Steps with reaction-class sources', summary.sourcedSteps + ' / ' + summary.stepCount], ['Minor-product steps', summary.minorSteps], ['Recorded stereo concerns used for ranking', summary.ranking.stereoConcerns]].forEach(([label, value]) => {
       const row = make('tr'), header = make('th', label); header.setAttribute('scope', 'row'); row.append(header, make('td', value)); body.append(row);
     });
     metrics.append(body); card.append(metrics);
@@ -127,6 +133,7 @@ function routeComparisonRender(container, job, deps) {
     addList(card, 'Additional building blocks', summary.buildingBlocks.map((p) => p.name + ' — ' + p.availability));
     addList(card, 'Other required materials', summary.reagents.map((p) => p.name + ' (' + p.role + ')'));
     if (typeof protectionRouteAudit === 'function' && typeof protectionRouteElement === 'function') card.append(protectionRouteElement(protectionRouteAudit(summary.route)));
+    addList(card, 'Recorded ranking gaps', summary.scopeGaps.map(g=>'Step '+g.step+(g.operation>1?', operation '+g.operation:'')+': '+g.message));
     const assumptions = make('details', undefined, 'route-comparison-assumptions');
     assumptions.append(make('summary', 'Assumptions and limitations requiring review'));
     addList(assumptions, 'Assumptions', summary.assumptions);

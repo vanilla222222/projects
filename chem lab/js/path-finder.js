@@ -62,6 +62,7 @@ function pathFinderMaterialSummary(precursors, describe) {
 }
 
 function pathFinderProcessBurden(route) {
+  if(typeof routePlanningProcessBurden==='function')return routePlanningProcessBurden(route);
   const entries=new Set();
   const add=(role,smiles,id)=>{
     let key=id||smiles;
@@ -81,11 +82,20 @@ function pathFinderProcessBurden(route) {
   return entries.size;
 }
 
+function pathFinderRouteMetrics(route, describe) {
+  const extras=route.flatMap(link=>(link.candidate.precursors||[]).filter((p,i)=>i!==link.precursor));
+  const materials=pathFinderMaterialSummary(extras,describe);
+  const metrics={steps:0,protection:0,scopeGaps:0,stereoConcerns:0,minor:0,buildingBlocks:materials.count,stock:materials.stock,heavy:materials.heavy,processMaterials:pathFinderProcessBurden(route)};
+  route.forEach(link=>routePlanningOperations(link.candidate).forEach(c=>{
+    const facts=routePlanningStepFacts(c);metrics.steps++;metrics.protection+=facts.protection?1:0;
+    metrics.scopeGaps+=facts.gaps.length;metrics.stereoConcerns+=facts.stereoConcern?1:0;metrics.minor+=facts.minor?1:0;
+  }));
+  return metrics;
+}
+
 function pathFinderRouteRank(route, describe) {
-  const extras = route.flatMap((link) => link.candidate.precursors.filter((p, i) => i !== link.precursor));
-  const materials = pathFinderMaterialSummary(extras, describe);
-  return [route.length, materials.stock, materials.heavy,
-    route.filter((link) => link.candidate.minor).length, materials.count, pathFinderProcessBurden(route)];
+  const m=pathFinderRouteMetrics(route,describe);
+  return [m.steps,m.protection,m.scopeGaps,m.stereoConcerns,m.minor,m.buildingBlocks,m.stock,m.processMaterials,m.heavy];
 }
 
 function pathFinderProtectionLinks(candidate, carried, destination) {
@@ -257,8 +267,9 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
   }
   const signature = (link) => [link.candidate.transform, link.candidate.rule, link.candidate.outcomeId, link.fromKey, link.toKey, JSON.stringify(link.candidate.conditions || {}), (link.candidate.compounds || []).map((p) => p.smiles + ':' + p.role).sort().join('|')].join('~');
   const rankRoutes = () => {
+    const ranks=new Map(job.routes.map(route=>[route,pathFinderRouteRank(route,material)]));
     job.routes.sort((a, b) => {
-      const ra = pathFinderRouteRank(a, material), rb = pathFinderRouteRank(b, material);
+      const ra = ranks.get(a), rb = ranks.get(b);
       for (let i = 0; i < ra.length; i++) if (ra[i] !== rb[i]) return ra[i] - rb[i];
       return a.map(signature).join('/').localeCompare(b.map(signature).join('/'));
     });
@@ -566,6 +577,12 @@ function pathFinderRecipeRender(container, job, deps) {
     const metrics = tree.metrics || rsearchScore(tree), wrapper = make('section', undefined, 'path-route path-recipe');
     wrapper.append(make('h3', 'Recipe ' + (index + 1) + ' · ' + metrics.steps + ' reaction step' + (metrics.steps === 1 ? '' : 's') + ' · ' + leaves.size + ' available feedstock' + (leaves.size === 1 ? '' : 's')));
     wrapper.append(make('p', 'Read from the available leaves toward the target. Every reaction node is forward verified; intermediates are recipes, not assumed inventory.'));
+    if(metrics.scoreContributions){
+      const detail=make('details'),list=make('ul');detail.append(make('summary','Recipe ranking breakdown (heuristic)'));
+      const names={operations:'Reaction operations',longestSequence:'Longest sequence',materials:'Process-material entries',feedstocks:'Distinct feedstocks',stereoConcerns:'Recorded stereo concerns',scopeGaps:'Recorded scope gaps',minorProducts:'Minor-product steps',stock:'Stock tiers',protection:'Protection operations',convergence:'Convergence preference',simplification:'Structural simplification'};
+      Object.entries(metrics.scoreContributions).forEach(([key,value])=>list.append(make('li',names[key]+': '+(Math.round(value*10)/10)+' points')));
+      detail.append(list,make('p','Lower totals rank first. Contributions are transparent planning heuristics; conversion ceilings and illustrative ratios are not experimental yields and do not enter the default score.'));wrapper.append(detail);
+    }
     const root = make('ol', undefined, 'path-recipe-root'); root.append(renderNode(tree, true)); wrapper.append(root);
     container.append(wrapper);
   });

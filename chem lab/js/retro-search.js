@@ -1,6 +1,6 @@
 const RSEARCH_LIMITS = { maxDepth: 5, budgetMs: 20000, maxBranch: 6, maxRoutes: 20, stockMaxTier: 2, nodeBudgetMs: 1500, maxNodes: 400, afterSolved: 12, cacheSize: 400, sliceMs: 40 };
 
-const RSEARCH_WEIGHTS = { steps: 10, longest: 5, yieldLoss: 0.3, stock: 4, pg: 6, convergent: -3, simplification: -1 };
+const RSEARCH_WEIGHTS = { steps: 10, longest: 5, yieldLoss: 0, stock: 4, pg: 6, convergent: -3, simplification: -1, materials: 1, feedstocks: 1, stereo: 4, scope: 2, minor: 2 };
 
 const rsearchCache = new Map();
 
@@ -354,24 +354,30 @@ function rsearchStepYield(outcome, minor) {
 }
 
 function rsearchCandidateSteps(candidate) {
-  if (candidate.pgSteps) {
+  if (Array.isArray(candidate.pgSteps)&&candidate.pgSteps.length) {
     return candidate.pgSteps.map((s) => ({ outcome: s.outcome, minor: s.minor, pg: s.role !== 'step' }));
   }
   return [{ outcome: candidate.outcome, minor: candidate.minor, pg: candidate.group === 'Protecting groups' }];
 }
 
 function rsearchScore(route) {
-  const metrics = { steps: 0, longest: 0, convergent: false, yield: 100, yieldModel: 'linear-product-or-convergent-bottleneck', complexity: [], stock: 0, pg: 0, score: 0 };
+  const metrics = { steps: 0, longest: 0, convergent: false, yield: 100, yieldModel: 'linear-product-or-convergent-bottleneck', complexity: [], stock: 0, pg: 0, materials: 0, feedstocks: 0, stereoConcerns: 0, scopeGaps: 0, minor: 0, scoreBasis:'structural-and-recorded-scope', score: 0 };
+  const materialRecords=[],feedstocks=new Set();
   const walk = (node) => {
     if (!node.candidate) {
+      feedstocks.add(routePlanningMaterialKey(node.target||node.smiles||''));
       metrics.stock = Math.max(metrics.stock, node.stock ? node.stock.tier : 99);
       return { longest: 0, fraction: 1 };
     }
+    materialRecords.push({candidate:node.candidate});
+    routePlanningOperations(node.candidate).forEach(c=>{
+      const facts=routePlanningStepFacts(c);
+      metrics.pg+=facts.protection?1:0;metrics.stereoConcerns+=facts.stereoConcern?1:0;metrics.scopeGaps+=facts.gaps.length;metrics.minor+=facts.minor?1:0;
+    });
     const steps = rsearchCandidateSteps(node.candidate);
     let fraction = 1;
     steps.forEach((s) => {
       fraction *= rsearchStepYield(s.outcome, s.minor) / 100;
-      metrics.pg += s.pg ? 1 : 0;
     });
     metrics.steps += steps.length;
     const largest = Math.max.apply(null, node.candidate.precursors.map((p) => p.skeleton).concat([0]));
@@ -389,12 +395,18 @@ function rsearchScore(route) {
     return { longest: steps.length + Math.max.apply(null, branches.map((b) => b.longest).concat([0])), fraction };
   };
   const result = walk(route);
+  metrics.materials=routePlanningProcessBurden(materialRecords);
+  metrics.feedstocks=feedstocks.size;
   metrics.longest = result.longest;
   metrics.yield = Math.round(result.fraction * 1000) / 10;
   const simplification = metrics.complexity.length ? metrics.complexity.reduce((s, x) => s + x, 0) / metrics.complexity.length : 0;
   const w = RSEARCH_WEIGHTS;
-  metrics.score = Math.round((w.steps * metrics.steps + w.longest * metrics.longest + w.yieldLoss * (100 - metrics.yield) +
-    w.stock * Math.max(0, metrics.stock - 1) + w.pg * metrics.pg + (metrics.convergent ? w.convergent : 0) + w.simplification * simplification) * 10) / 10;
+  metrics.scoreContributions={operations:w.steps*metrics.steps,longestSequence:w.longest*metrics.longest,
+    materials:w.materials*metrics.materials,feedstocks:w.feedstocks*metrics.feedstocks,
+    stereoConcerns:w.stereo*metrics.stereoConcerns,scopeGaps:w.scope*metrics.scopeGaps,minorProducts:w.minor*metrics.minor,
+    stock:w.stock*Math.max(0,metrics.stock-1),protection:w.pg*metrics.pg,
+    convergence:metrics.convergent?w.convergent:0,simplification:w.simplification*simplification};
+  metrics.score=Math.round(Object.values(metrics.scoreContributions).reduce((sum,value)=>sum+value,0)*10)/10;
   return metrics;
 }
 

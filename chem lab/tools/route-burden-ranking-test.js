@@ -16,7 +16,7 @@ check("pathFinderProcessBurden(rankFixture(['O','O'],{solvents:['none']}))",1,'D
 check("pathFinderProcessBurden(rankFixture(['CCO','OCC'],{}))",1,'Equivalent SMILES count once');
 check("pathFinderProcessBurden(rankFixture([],{solvents:['ether'],additives:['dmp']}))",2,'Solvent and additive entries counted');
 check("pathFinderProcessBurden(rankFixture([],{}))",0,'Absent records do not invent materials');
-check("JSON.stringify(pathFinderRouteRank(rankFixture([],{})).slice(0,5))===JSON.stringify(pathFinderRouteRank(rankFixture(['O'],{})).slice(0,5))",true,'Existing ranking priorities retained');
-check("pathFinderRouteRank(rankFixture([],{}))[5]<pathFinderRouteRank(rankFixture(['O'],{}))[5]",true,'Material burden breaks an otherwise equal tie');
+check("JSON.stringify(pathFinderRouteRank(rankFixture([],{})).slice(0,7))===JSON.stringify(pathFinderRouteRank(rankFixture(['O'],{})).slice(0,7))",true,'Existing ranking priorities retained');
+check("pathFinderRouteMetrics(rankFixture([],{})).processMaterials<pathFinderRouteMetrics(rankFixture(['O'],{})).processMaterials",true,'Material burden breaks an otherwise equal tie');
 check("pathFinderProcessBurden([...rankFixture(['O'],{}),...rankFixture(['O'],{})])",1,'Repeated entries across steps are deduplicated');
 console.log('Route burden ranking: '+checks+' checks passed');
