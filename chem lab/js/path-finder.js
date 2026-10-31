@@ -673,6 +673,7 @@ function pathFinderRecipeRender(container, job, deps) {
     return item;
   };
   container.replaceChildren();
+  const diversity = typeof routeComparisonDiversity === 'function' ? routeComparisonDiversity(job) : [];
   job.recipeTrees.forEach((tree, index) => {
     const leaves = new Map();
     const collect = (node) => {
@@ -684,6 +685,7 @@ function pathFinderRecipeRender(container, job, deps) {
     collect(tree);
     const metrics = tree.metrics || rsearchScore(tree), wrapper = make('section', undefined, 'path-route path-recipe');
     wrapper.append(make('h3', 'Recipe ' + (index + 1) + ' · ' + metrics.steps + ' reaction step' + (metrics.steps === 1 ? '' : 's') + ' · ' + leaves.size + ' available feedstock' + (leaves.size === 1 ? '' : 's')));
+    if(diversity[index] && typeof routeComparisonDiversityElement === 'function')wrapper.append(routeComparisonDiversityElement(diversity[index],'Recipe'));
     wrapper.append(make('p', 'Read from the available leaves toward the target. Every reaction node is forward verified; intermediates are recipes, not assumed inventory. Each prepared branch assumes a separately prepared mixture and any required endpoint work-up. Isolation, purity and one-pot compatibility are not established.'));
     if(metrics.scoreContributions){
       const detail=make('details'),list=make('ul');detail.append(make('summary','Recipe ranking breakdown (heuristic)'));
