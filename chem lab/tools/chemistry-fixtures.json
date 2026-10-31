@@ -23,7 +23,8 @@
     "productHX": "https://openstax.org/books/organic-chemistry/pages/9-3-reactions-of-alkynes-addition-of-hx-and-x2",
     "dibalNitrile": "https://www.chem.ucla.edu/~harding/IGOC/D/dibal.html",
     "dibalEster": "https://openstax.org/books/organic-chemistry/pages/21-6-chemistry-of-esters",
-    "alcoholHalide": "https://openstax.org/books/organic-chemistry/pages/10-5-preparing-alkyl-halides-from-alcohols"
+    "alcoholHalide": "https://openstax.org/books/organic-chemistry/pages/10-5-preparing-alkyl-halides-from-alcohols",
+    "alkyneHalogenation": "https://openstax.org/books/organic-chemistry/pages/9-3-reactions-of-alkynes-addition-of-hx-and-x2"
   },
   "naming": [
     {
@@ -1331,6 +1332,110 @@
         "CC(=[18O])Cl"
       ],
       "source": "esterification"
+    },
+    {
+      "label": "BrBr partial alkyne addition with 1 equivalent(s): review",
+      "compounds": [
+        {
+          "smiles": "CC#CC",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "BrBr",
+          "role": "reagent",
+          "equiv": 1
+        }
+      ],
+      "rule": "halogenation-alkyne",
+      "products": [
+        "C/C(Br)=C(Br)/C"
+      ],
+      "source": "alkyneHalogenation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ]
+      },
+      "productSurvivalStatus": "review"
+    },
+    {
+      "label": "BrBr partial alkyne addition with 2 equivalent(s): conflict",
+      "compounds": [
+        {
+          "smiles": "CC#CC",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "BrBr",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "halogenation-alkyne",
+      "products": [
+        "C/C(Br)=C(Br)/C"
+      ],
+      "source": "alkyneHalogenation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ]
+      },
+      "productSurvivalStatus": "conflict"
+    },
+    {
+      "label": "ClCl partial alkyne addition with 1 equivalent(s): review",
+      "compounds": [
+        {
+          "smiles": "CC#CC",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "ClCl",
+          "role": "reagent",
+          "equiv": 1
+        }
+      ],
+      "rule": "halogenation-alkyne",
+      "products": [
+        "C/C(Cl)=C(Cl)/C"
+      ],
+      "source": "alkyneHalogenation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ]
+      },
+      "productSurvivalStatus": "review"
+    },
+    {
+      "label": "ClCl partial alkyne addition with 2 equivalent(s): conflict",
+      "compounds": [
+        {
+          "smiles": "CC#CC",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "ClCl",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "halogenation-alkyne",
+      "products": [
+        "C/C(Cl)=C(Cl)/C"
+      ],
+      "source": "alkyneHalogenation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ]
+      },
+      "productSurvivalStatus": "conflict"
     }
   ],
   "negativeReactions": [
