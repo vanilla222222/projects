@@ -1293,6 +1293,16 @@ RX_RULES.push(
 function rxxCompatibilityAssess(ctx,outcome) {
   const id=outcome.id,couplings=['suzuki','heck','sonogashira'];
   if(id==='dibal'){const used=new Set((outcome.consumes||[]).filter(Boolean).map(u=>u.compound));return rxGrignardInputSites(ctx).filter(s=>!used.has(s.compound)&&s.electrophiles.length).map(s=>({code:'dibal-other-input',message:'Another recorded input contains carbonyl/nitrile electrophiles that can compete for DIBAL-H. A clean selected-input reduction is not established; competing products are unmodeled.'}));}
+  if(['grignard','grignard-nitrile','grignard-carboxylation'].includes(id)){
+    const counts={carbonylSites:0,nitrileSites:0,carbonDioxideSites:0};
+    ctx.substrates.forEach(s=>{
+      counts.carbonylSites+=s.info.carbonyls.filter(c=>['aldehyde','ketone','ester','amide','acylChloride','anhydride'].includes(c.kind)).length;
+      counts.nitrileSites+=s.info.nitriles.length;
+      counts.carbonDioxideSites+=rxGrignardCO2Sites(s.graph).length;
+    });
+    if(Object.values(counts).reduce((n,v)=>n+v,0)>1)return [{code:'grignard-competing-sites',counts,message:'Several recognized electrophilic sites are present. The first-site Grignard graph edit does not establish selective mono-addition or survival of the remaining carbonyl/nitrile sites. Exhaustive addition, relative rates and products at the other sites are not modeled.'}];
+    return [];
+  }
   if(!couplings.includes(id)&&!['mitsunobu','williamson'].includes(id))return [];
   const conflicts=[],add=(code,message,counts)=>conflicts.push({code,message,counts});
   const enabled=run=>{
