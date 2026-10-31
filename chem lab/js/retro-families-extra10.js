@@ -573,17 +573,17 @@ function retroStereoClass(t, spec, verified) {
   const kind = (v) => (v && v.product && v.product.stereo && v.product.stereo.kind) || '';
   if (iso.some((p) => p.smiles.includes('@'))) {
     const direct = run(iso);
-    if (direct && retroStereoSame(direct.product, t.isomericSmiles)) {
+    if (direct && !rxsStereoTargetConflict(direct.product,t.isomericSmiles) && retroStereoSame(direct.product, t.isomericSmiles)) {
       return { stereo: 'retained', precursors: iso };
     }
     const mirror = iso.map((p) => Object.assign({}, p, { smiles: retroMirror(p.smiles) }));
     const flipped = run(mirror);
-    if (flipped && retroStereoSame(flipped.product, t.isomericSmiles)) {
+    if (flipped && !rxsStereoTargetConflict(flipped.product,t.isomericSmiles) && retroStereoSame(flipped.product, t.isomericSmiles)) {
       return { stereo: 'retained', precursors: mirror };
     }
     return ['racemic', 'diastereomers'].includes(kind(direct)) ? { stereo: 'racemic', precursors: iso } : { stereo: 'mismatch', precursors: iso };
   }
-  const set = retroStereoSame(verified.product, t.isomericSmiles) && kind(verified) !== 'racemic';
+  const set = retroStereoSame(verified.product, t.isomericSmiles) && kind(verified) !== 'racemic' && !rxsStereoTargetConflict(verified.product,t.isomericSmiles);
   return { stereo: set ? 'set' : 'racemic', precursors: iso };
 }
 

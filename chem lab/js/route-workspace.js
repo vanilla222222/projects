@@ -86,6 +86,11 @@ function routeWorkspaceValidateStep(step) {
     const outcome = outcomes.find((o) => (!step.ruleId || o.id === step.ruleId) && (o.products || []).concat(o.minor || []).some((p) => {
       try { return routeWorkspaceProductKey(p.isomericSmiles || p.smiles) === target; } catch (error) { return false; }
     }));
+    if(outcome&&typeof rxsStereoTargetConflict==='function'){
+      const selected=(outcome.products||[]).concat(outcome.minor||[]).find(p=>routeWorkspaceProductKey(p.isomericSmiles||p.smiles)===target);
+      const conflict=rxsStereoTargetConflict(selected,step.to);
+      if(conflict)return {status:'unverified',message:conflict,ruleId:outcome.id,outcome};
+    }
     if (outcome && outcome.partialConversion) return {status:'unverified',message:'This is a one-site partial-conversion alternative; selective preparation is not established by the current rules.',ruleId:outcome.id,outcome};
     if (outcome && typeof routeStepAssessment === 'function') {
       const assessment = routeStepAssessment({outcome,compounds,conditions:step.conditions});

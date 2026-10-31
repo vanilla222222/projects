@@ -1,5 +1,12 @@
 # Chem Lab upgrades
 
+## Stereochemical outcome and precursor fidelity — 2026-10-30
+
+- Qualitative Felkin component drawings are now labelled as parts of a diastereomeric mixture rather than single-enantiomer preparations. Only components that differ stereochemically across the drawn pair receive the label; unchanged achiral coproducts are excluded. The existing illustrative ratio remains a heuristic, not measured selectivity.
+- Specified tetrahedral targets cannot pass raw forward verification, retrosynthesis classification or saved-route verification using a product labelled racemic/diastereomeric. Fully unspecified targets are not interpreted as requests for stereopurity. This adds no resolution or separation step.
+- Stereo-classified precursors are now replayed and stored as the actual verified inputs/products, rather than retaining an earlier connectivity-only replay. Independent forward checking uses the recorded isomeric precursor structure. Existing chiral sulfonylation and esterification routes remain valid.
+- Thirty-two focused checks cover SN2/Mitsunobu inversion for both enantiomers, retention of remote centers, unchanged inputs, unspecified starting configuration, Felkin mixture rejection through route layers and faithful recorded chiral inputs. Six fixed stereochemical product cases are independently canonicalized by RDKit; these are reaction-class deductions, not substrate-specific experimental or stereopurity claims.
+
 ## Borohydride competition on multifunctional substrates — 2026-10-30
 
 - The NaBH4 susceptibility model now includes acyl chlorides. A drawn aldehyde/ketone-only reduction that leaves an acyl chloride is labelled unresolved competition and rejected by the existing route/retrosynthesis compatibility gates. No clean acyl chloride reduction product is invented; the standalone unsupported case now gives an accurate reactivity hint rather than claiming NaBH4 is simply too mild.

@@ -6,6 +6,13 @@ const RXS_STEREO_TEXT = {
   relative: 'relative configuration shown (achiral)',
 };
 
+// A drawn component of a mixture is not evidence of a stereopure endpoint.
+function rxsStereoTargetConflict(product, targetSmiles) {
+  const kind=product&&product.stereo&&product.stereo.kind;
+  return typeof targetSmiles==='string'&&targetSmiles.includes('@')&&['racemic','diastereomers'].includes(kind)
+    ? 'The selected product belongs to a stereochemical mixture; the specified stereopure target is not established.' : null;
+}
+
 function rxsHeavy(g, id) {
   return g.bondsForAtom(id).map((b) => (b.atomA === id ? b.atomB : b.atomA));
 }
