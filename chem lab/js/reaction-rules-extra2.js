@@ -537,11 +537,11 @@ function rxyRuleGrignardFormation(ctx) {
       return [];
     }
     if (rxGrignardProticConflict(ctx)) {
-      return [rxHint('An O–H/N–H donor, acid or protic solvent prevents the supported Grignard formation. A compatible protection plan is required; no generic protecting group is assumed.')];
+      return [rxHint('An O–H/N–H/S–H or terminal-alkyne H/D donor, acid or protic solvent prevents the supported Grignard formation. A compatible protection plan is required; no generic protecting group is assumed.')];
     }
     const solventConflicts=rxGrignardReactiveSolvents(ctx);
     if(solventConflicts.length)return [rxGrignardSolventHint(solventConflicts)];
-    if(ctx.substrates.some(partner=>rxGrignardElectrophiles(partner.info).length))return [rxHint('A carbonyl/nitrile electrophile is present on the halide precursor or another listed input. Isolated Grignard formation is not established; self-reaction, trapping and one-pot product distributions are not modeled.')];
+    if(rxGrignardInputSites(ctx).some(partner=>partner.electrophiles.length))return [rxHint('A carbonyl/nitrile electrophile is present on the halide precursor or another listed input. Isolated Grignard formation is not established; self-reaction, trapping and one-pot product distributions are not modeled.')];
     const g = rxCloneGraph(s.graph);
     rxSetOrder(g, pick.c, pick.x, 0);
     const mg = g.addAtom('Mg', g.getAtom(pick.c).x + 30, g.getAtom(pick.c).y);

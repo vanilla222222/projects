@@ -1,5 +1,12 @@
 # Chem Lab upgrades
 
+## Complete-input Grignard compatibility — 2026-10-30
+
+- The four supported Grignard families now screen complete recorded structures before species classification strips components. Neutral O–H/N–H/S–H and nonmetalated terminal-alkyne H/D donors are checked regardless of reactant, reagent, catalyst or explicit solvent role. Existing metalated alkynyl donors are excluded from the free-terminal-alkyne guard.
+- Newly recognized S–H/terminal-alkyne conflicts return bounded hints without inventing isotope transfer, acetylide follow-up chemistry or clean addition products. Formation and CO2/nitrile branches share the donor guard. This is a conservative finite model, not a calculation of loading-dependent competition.
+- Carbonyl/nitrile groups on auxiliary inputs block unopposed addition/formation claims. Organic reagent-role electrophiles enter the existing chemoselectivity/planner gate; amides and explicit CO2 join the encoded organometallic susceptibility list. CO2 endpoints now participate in the same competing-site audit; nitrile branches exclude competing amide/acyl-derivative inputs. Saved-outcome scope checks explicitly report donor and reactive-auxiliary conflicts. No generic protection compatibility is assumed.
+- Seventy-eight focused checks cover four families, isotope-labelled donors, complete-input roles, same-molecule sites, inert controls, a metalated alkynyl control, graph immutability and saved-outcome audits. Four fixed negative benchmark cases assert unsupported clean endpoints, not chemical inertness. Reaction-class references are recorded in the evidence catalogue.
+
 ## Additional-input redox compatibility — 2026-10-30
 
 - Selected forward branches now audit other explicitly recorded reactants against the existing susceptible-site model. An input omitted from consumption is no longer silently treated as inert. Records retain its structure, group and site multiplicity; no competing products, rates or survival guarantees are invented. Solvent and catalyst roles remain outside this additional-reactant check.

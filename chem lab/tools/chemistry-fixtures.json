@@ -16,7 +16,8 @@
     "grignardCompatibility": "https://openstax.org/books/organic-chemistry/pages/17-5-alcohols-from-carbonyl-compounds-grignard-reaction",
     "grignardNitrile": "https://openstax.org/books/organic-chemistry/pages/20-7-chemistry-of-nitriles",
     "grignardFormation": "https://openstax.org/books/organic-chemistry/pages/10-6-reactions-of-alkyl-halides-grignard-reagents",
-    "esterGrignardLoading": "https://openstax.org/books/organic-chemistry/pages/21-6-chemistry-of-esters"
+    "esterGrignardLoading": "https://openstax.org/books/organic-chemistry/pages/21-6-chemistry-of-esters",
+    "grignardAcidicHydrogens": "https://scholar.ulethbridge.ca/sites/default/files/susanfindlay/files/chem2500new_lecture07_pi_bonds_as_electrophiles.pdf?m=1582677275"
   },
   "naming": [
     {
@@ -999,6 +1000,112 @@
           "mg"
         ],
         "atmosphere": "n2"
+      }
+    },
+    {
+      "label": "No clean carbonyl addition assigned with a separate thiol donor",
+      "compounds": [
+        {
+          "smiles": "CC=O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "C[Mg]Br",
+          "role": "reagent"
+        },
+        {
+          "smiles": "CS",
+          "role": "reagent"
+        }
+      ],
+      "rule": "grignard",
+      "products": [],
+      "source": "grignardAcidicHydrogens",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ],
+        "atmosphere": "n2",
+        "additives": []
+      }
+    },
+    {
+      "label": "No clean nitrile addition assigned with a free terminal alkyne",
+      "compounds": [
+        {
+          "smiles": "CC#N",
+          "role": "reactant"
+        },
+        {
+          "smiles": "C[Mg]Br",
+          "role": "reagent"
+        },
+        {
+          "smiles": "C#CC",
+          "role": "reactant"
+        }
+      ],
+      "rule": "grignard-nitrile",
+      "products": [],
+      "source": "grignardAcidicHydrogens",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ],
+        "atmosphere": "n2",
+        "additives": []
+      }
+    },
+    {
+      "label": "Catalyst ketone is not inert during Grignard carboxylation",
+      "compounds": [
+        {
+          "smiles": "O=C=O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "C[Mg]Br",
+          "role": "reagent"
+        },
+        {
+          "smiles": "CC(=O)C",
+          "role": "catalyst"
+        }
+      ],
+      "rule": "grignard-carboxylation",
+      "products": [],
+      "source": "grignardCompatibility",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ],
+        "atmosphere": "n2",
+        "additives": []
+      }
+    },
+    {
+      "label": "No isolated Grignard assigned with a terminal alkyne donor",
+      "compounds": [
+        {
+          "smiles": "CCBr",
+          "role": "reactant"
+        },
+        {
+          "smiles": "C#CC",
+          "role": "reagent"
+        }
+      ],
+      "rule": "grignard-formation",
+      "products": [],
+      "source": "grignardAcidicHydrogens",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ],
+        "atmosphere": "n2",
+        "additives": [
+          "mg"
+        ]
       }
     }
   ],
