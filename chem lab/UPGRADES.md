@@ -1,5 +1,11 @@
 # Chem Lab upgrades
 
+## Workbench design and appearance controls — 2026-10-31
+
+- Reworked the shell, navigation, palette, editor, reaction surfaces, route cards and planner forms around forest/paper themes, botanical accents, clearer spacing and responsive layouts. Theme controls now remain available outside the editor. The drawing canvas has a coordinated palette, quieter grid, responsive empty guidance and an accessible label.
+- Added a live Appearance dialog for theme, three accent palettes, interface density, dots/lines/no grid and grid spacing. Preferences persist locally, reset is available and blocked browser storage is reported while live previews still work. Canvas accents and grid settings follow the controls. Exporters retain their existing no-grid setting.
+- Mobile now uses an explicit palette drawer with Escape/dismiss handling and expansion state. Existing editor tool IDs and chemical workflows remain. Twenty-eight focused checks cover preference bounds, previews, persistence failures, reset, palette controls and accessible identity. Browser binaries could not be downloaded in this environment; real-browser visual review remains outstanding.
+
 ## Visible pathway differences — 2026-10-31
 
 - Linear route cards and Recipe Tree results now provide an expandable comparison against the first displayed pathway, listing added/omitted intermediates and reaction families. Tree comparisons also list changed feedstocks. The reference result lists its own intermediates and families.

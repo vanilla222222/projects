@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-31T12:52:30.679759+00:00",
+  "generatedAt": "2026-10-31T13:38:28.060173+00:00",
   "rdkitVersion": "2026.09.1",
   "fixtureSha256": "97fa85d1dff3acbe2f38e80e5d02998e00229bb52acb610a3d55448400278389",
   "fixtureFilesSha256": {
     "rdkit-fixtures.json": "97fa85d1dff3acbe2f38e80e5d02998e00229bb52acb610a3d55448400278389",
     "chemistry-fixtures.json": "c04233c90e7ec559a79a5063e6f4f4b12e111ff07823d3545bcd520482c4d837"
   },
-  "exportSha256": "df5a8dc17bec87a0941e9763742160a74418382c0aef1b1b23c5edfa18b89f3d",
+  "exportSha256": "2738734c06753be00730a82b2f9399467ef09d8331067b8ed269b085f646b132",
   "appScriptSha256": {
     "js/elements.js": "aaecea7433871b650c7601ffb5bef597e38361934cb7c4cc7406edbdc897a7ca",
     "js/graph.js": "c8a8a2cca6b2f3d758e3f83b7901f78f9966c3a27b0189fa846ba28ce55be88f",
@@ -42,7 +42,7 @@
     "js/scheme.js": "ebf8d1fbe01db21eeef41fc5c0f5784b110bb6815a3fbf0ea78968f776cef3bd",
     "js/history.js": "1c4e47695b395bb6cff29ff6ec191e67c77a162aef1d74eb0109ca3a869ee26d",
     "js/svg-context.js": "1b1cd58a6ed48a6d35dfe8f65353d3f8bde5ec4e1f96b1ae597240067ea12fac",
-    "js/renderer.js": "1c19756c32b8c40b59dfe253394d405925c99050a6f4e15315d82fd0adf72b00",
+    "js/renderer.js": "d50070b9155a14d1d66d6ea14f62e8a89a3c4e5c68aa76e424ff89154f597a50",
     "js/interactions.js": "3c966862f40fc90e07584ad01c3a69e5bbb88c8c497aba402ac3da3ba9aab530",
     "js/stamps.js": "a1679a68e151b373bd6b9cb258388a9d176d4c5626867a25cc729b80694052af",
     "js/abbreviations.js": "d388b5c96e92daa0b1c3c40f0597ed8c7004c8e023a6188f9c32e9ef14355644",
@@ -101,7 +101,8 @@
     "js/protection-program.js": "58726494499e3fe757c5944c8f55e07a87ed17fb5f6e7870d89a0be835559bad",
     "js/route-workspace.js": "3cbe88230d3cf8d0e59e16422599f0fec5aaca9c6506a3985f02a369b289d91b",
     "js/reaction-cascade.js": "1b0dba5ee0985f0917c72771330ee384abcc7fdce447a4398d4250936c208c8a",
-    "js/route-benchmarks.js": "2c24974a787a91c52909728c75ef412d2b9468194a65c7ba44a56c333a80a768"
+    "js/route-benchmarks.js": "2c24974a787a91c52909728c75ef412d2b9468194a65c7ba44a56c333a80a768",
+    "js/workbench-ui.js": "4cab10675704cd143ff98fe43308eee1c145ecd307129092a8c0b8350a417b92"
   },
   "sources": {
     "nomenclature": "https://iupac.qmul.ac.uk/BlueBook/P3.html",

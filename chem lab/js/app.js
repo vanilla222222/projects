@@ -2466,8 +2466,14 @@
   document.getElementById('export-button').addEventListener('click', exportPng);
   document.getElementById('export-svg-button').addEventListener('click', exportSvg);
 
+  function applyWorkbenchAppearance() {
+    const prefs=workbenchPreferences();
+    renderer.gridSpacing=prefs.spacing;renderer.gridStyle=prefs.grid;renderer.showGrid=prefs.grid!=='off';
+    renderer.paletteOverride=workbenchPalette(renderer.theme,prefs);
+  }
   function applyTheme(theme) {
     renderer.theme = theme;
+    applyWorkbenchAppearance();
     document.body.dataset.theme = theme;
     storageSet('theme', theme);
     paintElementAccents();
@@ -3649,6 +3655,7 @@
   }
 
   document.addEventListener('keydown', (event) => {
+    if (document.getElementById('appearance-dialog')?.open) return;
     if (!ptableOverlay.hidden || ['reactions', 'pathfinder', 'workspace'].includes(document.body.dataset.view)) {
       return;
     }
@@ -3924,6 +3931,7 @@
 
   const storedTheme = storageGet('theme');
   renderer.theme = storedTheme === 'light' ? 'light' : 'dark';
+  applyWorkbenchAppearance();
   document.body.dataset.theme = renderer.theme;
   paintElementAccents();
   updateCurrentChip();
@@ -4109,6 +4117,7 @@
     document.body.dataset.view = 'editor';
   }
 
+  document.addEventListener('chem-appearance-change',event=>{applyTheme(event.detail.theme==='light'?'light':'dark');resizeCanvas();});
   syncHistoryButtons();
   if (startupShare) {
     loadShareHash();
