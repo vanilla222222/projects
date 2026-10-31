@@ -57,7 +57,7 @@ function protectionProgramInstall(from, choice, options) {
   const candidate={transform:'managed-install-'+pg.id,name:'Install '+pg.label,outcomeName:'Install '+pg.label,group:'Protecting groups',
     rule:verified.outcome.rule,outcomeRule:verified.outcome.rule,outcomeId:verified.outcome.id,
     compounds:verified.compounds,conditions:verified.conditions,outcome:verified.outcome,product:verified.product,minor:false,
-    precursors:[retroPrecursorInfo({smiles:from,role:'reactant'})],reagents:pg.protect,
+    precursors:(verified.precursors||[{smiles:from,role:'reactant'}]).map(retroPrecursorInfo),reagents:verified.reagents||pg.protect,
     labels:reactionConditionLabels(verified.conditions,verified.compounds),
     planning:{kind:'protect',group:pg.label,groupId:pg.id,reason:'Explicitly requested '+pg.label+' mask; installation, main-step survival and final removal are checked separately. Necessity is not inferred.'}};
   const blocked=protectionProgramBlocked(candidate,options);if(blocked)throw new Error(blocked);

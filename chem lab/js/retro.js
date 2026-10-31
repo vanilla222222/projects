@@ -1568,7 +1568,7 @@ function retroCommonName(smiles) {
 }
 
 function retroCompound(item) {
-  const compound = { input: item.smiles, smiles: item.smiles, fragment: smilesToFragment(item.smiles), role: item.role || 'reactant', equiv: '1' };
+  const compound = { input: item.smiles, smiles: item.smiles, fragment: smilesToFragment(item.smiles), role: item.role || 'reactant', equiv: item.equiv === undefined ? '1' : String(item.equiv) };
   if (item.label) {
     compound.label = item.label;
   }
@@ -1589,35 +1589,40 @@ function retroFindProduct(list, smiles) {
 }
 
 function retroVerify(spec, targetSmiles, sink) {
-  let compounds = null;
-  try {
-    compounds = spec.precursors.concat(spec.reagents).map(retroCompound);
-  } catch (error) {
-    return null;
-  }
-  const conditions = normalizeReactionConditions(spec.conditions);
-  const result = predictReaction(compounds, conditions);
-  if (sink) {
-    sink.result = result;
-  }
-  if (!result.best) {
-    return null;
-  }
-  const find=list=>retroFindProduct((list||[]).filter(product=>!rxsStereoTargetConflict(product,targetSmiles)),targetSmiles);
-  const main = !result.best.partialConversion && find(result.best.products);
-  if (main) {
-    return { compounds, conditions, outcome: result.best, product: main, minor: false };
-  }
-  const minorOfBest = !result.best.partialConversion && find(result.best.minor);
-  if (minorOfBest) {
-    return { compounds, conditions, outcome: result.best, product: minorOfBest, minor: true };
-  }
-  for (const alt of result.alternatives) {
-    if (alt.partialConversion) continue;
-    const hit = find(alt.products) || find(alt.minor);
-    if (hit) {
-      return { compounds, conditions, outcome: alt, product: hit, minor: true };
+  const items=spec.precursors.concat(spec.reagents);let compounds;
+  try{compounds=items.map(retroCompound);}catch(error){return null;}
+  const conditions=normalizeReactionConditions(spec.conditions);
+  // Missing amounts in a generated recipe may be planned from the rule's
+  // consumption model. Explicit recorded amounts are never increased.
+  for(let attempt=0;attempt<2;attempt++){
+    const result=predictReaction(compounds,conditions);if(sink)sink.result=result;
+    const find=list=>retroFindProduct((list||[]).filter(p=>!rxsStereoTargetConflict(p,targetSmiles)),targetSmiles);
+    const matches=[];
+    if(result.best&&!result.best.partialConversion){
+      const main=find(result.best.products),minor=find(result.best.minor);
+      if(main)matches.push({outcome:result.best,product:main,minor:false});
+      else if(minor)matches.push({outcome:result.best,product:minor,minor:true});
     }
+    (result.alternatives||[]).filter(o=>!o.partialConversion).forEach(outcome=>{
+      const product=find(outcome.products)||find(outcome.minor);
+      if(product)matches.push({outcome,product,minor:true});
+    });
+    const verified=matches.find(v=>!rxLoadingConflict(v.outcome));
+    if(verified){
+      const quantities=items.map((item,i)=>Object.assign({},item,{equiv:compounds[i].equiv}));
+      return Object.assign({compounds,conditions,precursors:quantities.slice(0,spec.precursors.length),reagents:quantities.slice(spec.precursors.length)},verified);
+    }
+    let changed=false;
+    for(const v of matches){
+      const s=v.outcome.stoichiometry;if(!s||s.completion==='unknown'||!s.rows.length)continue;
+      const base=s.rows[0];
+      s.rows.slice(1).forEach(row=>{
+        const index=compounds.indexOf(row.compound),required=row.need*base.have/base.need;
+        if(index>=0&&items[index].equiv===undefined&&Number.isFinite(required)&&row.have<required-1e-9){compounds[index].equiv=String(required);changed=true;}
+      });
+      if(changed)break;
+    }
+    if(!changed)return null;
   }
   return null;
 }
@@ -1641,6 +1646,7 @@ function retroPrecursorInfo(item) {
     smiles: item.smiles,
     isomericSmiles: item.isomericSmiles || item.smiles,
     role: item.role,
+    ...(item.equiv!==undefined?{equiv:String(item.equiv)}:{}),
     label: item.label || '',
     skeleton: retroSkeleton(g, ids),
     stereocentres: retroStereocentres(g, ids),
@@ -1796,7 +1802,7 @@ function retroCandidate(t, spec, verified) {
     if(!same)return null;
     verified=replay;
   }
-  const actualPrecursors=stereo.precursors&&['retained','set'].includes(stereo.stereo)?stereo.precursors:spec.precursors;
+  const actualPrecursors=verified.precursors||spec.precursors;
   const precursors = actualPrecursors.map((p, i) => retroPrecursorInfo(Object.assign({}, p, { isomericSmiles: stereo.precursors ? stereo.precursors[i].smiles : p.smiles })));
   const edit = retroEditAtoms(t, spec.record);
   return {
@@ -1808,7 +1814,7 @@ function retroCandidate(t, spec, verified) {
     outcomeId: verified.outcome.id,
     outcomeName: verified.outcome.name,
     precursors,
-    reagents: spec.reagents.slice(),
+    reagents: verified.reagents||spec.reagents.slice(),
     conditions: verified.conditions,
     compounds: verified.compounds,
     outcome: verified.outcome,
@@ -2021,8 +2027,8 @@ function retroProtectTry(t, spec, option) {
   if (Object.values(compatibility).some((report) => report && report.status !== 'compatible')) return null;
   const pgSteps = [['protect', protectSpec, protect], ['step', stepSpec, step], ['deprotect', deprotectSpec, deprotect]].map(([role, s, v]) => ({
     role,
-    precursors: s.precursors,
-    reagents: s.reagents,
+    precursors: v.precursors||s.precursors,
+    reagents: v.reagents||s.reagents,
     target: v.product.isomericSmiles || v.product.smiles,
     compounds: v.compounds,
     conditions: v.conditions,
@@ -2292,7 +2298,7 @@ function retroForwardCheck(candidate, targetSmiles) {
       return !!verified && verified.minor === s.minor;
     });
   }
-  const spec = { precursors: candidate.precursors.map((p) => ({ smiles: p.isomericSmiles || p.smiles, role: p.role, label: p.label })), reagents: candidate.reagents, conditions: candidate.conditions };
+  const spec = { precursors: candidate.precursors.map((p) => ({ smiles: p.isomericSmiles || p.smiles, role: p.role, label: p.label, ...(p.equiv!==undefined?{equiv:p.equiv}:{}) })), reagents: candidate.reagents, conditions: candidate.conditions };
   const verified = retroVerify(spec, targetSmiles);
   return !!verified && verified.minor === candidate.minor;
 }

@@ -134,6 +134,7 @@ function routeWorkspaceOutcomeProduct(step, outcome) {
 
 function routeWorkspaceStepYield(step, checked) {
   if (Number.isFinite(step.yield)) return Math.max(0, Math.min(100, step.yield));
+  if(checked&&checked.status!=='verified')return null;
   const outcome = checked && checked.outcome;
   const selected = routeWorkspaceOutcomeProduct(step, outcome);
   if (!selected) return null;

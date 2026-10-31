@@ -15,7 +15,8 @@
     "benzylicOxidation": "https://openstax.org/books/organic-chemistry/pages/16-8-oxidation-of-aromatic-compounds",
     "grignardCompatibility": "https://openstax.org/books/organic-chemistry/pages/17-5-alcohols-from-carbonyl-compounds-grignard-reaction",
     "grignardNitrile": "https://openstax.org/books/organic-chemistry/pages/20-7-chemistry-of-nitriles",
-    "grignardFormation": "https://openstax.org/books/organic-chemistry/pages/10-6-reactions-of-alkyl-halides-grignard-reagents"
+    "grignardFormation": "https://openstax.org/books/organic-chemistry/pages/10-6-reactions-of-alkyl-halides-grignard-reagents",
+    "esterGrignardLoading": "https://openstax.org/books/organic-chemistry/pages/21-6-chemistry-of-esters"
   },
   "naming": [
     {
@@ -711,6 +712,112 @@
       "conditions": {
         "solvents": [
           "ether"
+        ]
+      }
+    },
+    {
+      "label": "Ester Grignard net endpoint at half stoichiometric ceiling",
+      "compounds": [
+        {
+          "smiles": "CCOC(C)=O",
+          "role": "reactant",
+          "equiv": "1"
+        },
+        {
+          "smiles": "C[Mg]Br",
+          "role": "reagent",
+          "equiv": "1"
+        }
+      ],
+      "rule": "grignard",
+      "products": [
+        "CC(C)(C)O",
+        "CCO"
+      ],
+      "loadingCeiling": 0.5,
+      "source": "esterGrignardLoading",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "Ester Grignard net endpoint with sufficient recorded loading",
+      "compounds": [
+        {
+          "smiles": "CCOC(C)=O",
+          "role": "reactant",
+          "equiv": "1"
+        },
+        {
+          "smiles": "C[Mg]Br",
+          "role": "reagent",
+          "equiv": "2"
+        }
+      ],
+      "rule": "grignard",
+      "products": [
+        "CC(C)(C)O",
+        "CCO"
+      ],
+      "loadingCeiling": 1,
+      "source": "esterGrignardLoading",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "Hydride net endpoint at half ideal stoichiometric ceiling",
+      "compounds": [
+        {
+          "smiles": "CC(C)=O",
+          "role": "reactant",
+          "equiv": "1"
+        },
+        {
+          "smiles": "[Na+].[BH4-]",
+          "role": "reagent",
+          "equiv": "0.125"
+        }
+      ],
+      "rule": "reduction-nabh4",
+      "products": [
+        "CC(O)C"
+      ],
+      "loadingCeiling": 0.5,
+      "source": "chaikinBrownBorohydride",
+      "conditions": {
+        "solvents": [
+          "ethanol"
+        ]
+      }
+    },
+    {
+      "label": "Hydride net endpoint with sufficient ideal recorded loading",
+      "compounds": [
+        {
+          "smiles": "CC(C)=O",
+          "role": "reactant",
+          "equiv": "1"
+        },
+        {
+          "smiles": "[Na+].[BH4-]",
+          "role": "reagent",
+          "equiv": "0.25"
+        }
+      ],
+      "rule": "reduction-nabh4",
+      "products": [
+        "CC(O)C"
+      ],
+      "loadingCeiling": 1,
+      "source": "chaikinBrownBorohydride",
+      "conditions": {
+        "solvents": [
+          "ethanol"
         ]
       }
     }
