@@ -63,7 +63,7 @@ assert.equal(run('job.route[0].candidate.name !== "Ester from symmetric anhydrid
 assert.equal(run('pathFinderHeavyCount(job.route[0].candidate.precursors.find((p,i)=>i!==job.route[0].precursor).smiles) <= 4'), true);
 assert.equal(run('job.route.every(link => retroForwardCheck(link.candidate, link.to))'), true);
 assert.equal(search('CCO','CCOC(C)=O', {maxDepth:1,maxRoutes:3}).routes.some(route=>route[0].candidate.name==='Fischer esterification'), true);
-assert.equal(run('job.routes.every((route,i,routes)=>!i||pathFinderRouteRank(routes[i-1])[2]<=pathFinderRouteRank(route)[2])'), true);
+assert.equal(run('job.routes.every((route,i,routes)=>{if(!i)return true;const a=pathFinderRouteRank(routes[i-1]),b=pathFinderRouteRank(route);const first=a.findIndex((v,k)=>v!==b[k]);return first<0||a[first]<b[first];})'), true);
 for (const smiles of ['COC1=CC=CC=C1O','COC1=CC(C=O)=CC=C1O','C1=CC2=C(C=C1)OCO2','O=CC1=CC2=C(C=C1)OCO2','C=CCC1=CC=CC=C1']) {
   context.feedstock = smiles;
   assert.equal(run('stockTier(feedstock).tier'), 2);

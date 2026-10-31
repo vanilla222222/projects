@@ -1,5 +1,13 @@
 # Chem Lab upgrades
 
+## Transparent route-ranking criteria — 2026-10-30
+
+- Path Finder now orders discovered routes lexicographically by actual operations, protection operations, recorded scope gaps, structured stereo concerns, minor-product selections, distinct extra building blocks, stock tiers, process-material entries and building-block size. Collapsed protection sequences count every operation. Search budgets, route acceptance and chemical verification remain unchanged; ranking applies to the routes found within those limits. Per-sort rank computation is cached without stale cross-job state.
+- Recorded scope gaps mean absent/uncurated scope, missing reaction-class references, missing outcome or loading-model records and encoded heuristic ratios. Assumption/limitation text length is not scored. These flags do not assess unencoded chemistry or establish experimental confidence.
+- Recipe Tree default scoring now uses exposed contributions for operations, sequence length, protection, feedstocks/materials, stock, structured stereo concerns, scope gaps, minor products and the existing convergence/simplification preferences. The historical modeled yield/factor field remains available for compatibility but is excluded from the default score. It is not an experimental yield.
+- Comparison cards display the same ranking counts and gap explanations, including materials from collapsed protection sequences. Recipe Tree shows a heuristic points breakdown. No-solvent entries add no material burden.
+- Twenty-eight focused policy checks cover protection expansion, metadata gaps, stereo/minor selection, building-block identity and counts, material burden, documentation-verbosity invariance, score decomposition, conversion-factor independence and nonmutation. Existing Path Finder ordering assertions now check the full declared order rather than an obsolete single-field position.
+
 ## Recorded loading and stoichiometric ceilings — 2026-10-30
 
 - Consumed-input amounts now expose an explicit stoichiometric-upper-bound basis and sufficient/limited/unknown completion status. Unconvertible or invalid recorded units no longer fall through parseFloat to one equivalent. The ceiling is normalized to the first listed consumed reactant, so excess partners do not create a false limit. The legacy conversion field retains the numerical ceiling, not a predicted yield or product distribution.

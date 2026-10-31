@@ -2302,3 +2302,47 @@ function retroForwardCheck(candidate, targetSmiles) {
   const verified = retroVerify(spec, targetSmiles);
   return !!verified && verified.minor === candidate.minor;
 }
+
+// Ranking inspects recorded model metadata; it does not replay chemistry or
+// estimate experimental feasibility. Missing records are explicit gaps.
+function routePlanningOperations(candidate) {
+  const c=candidate||{};
+  return Array.isArray(c.pgSteps)&&c.pgSteps.length?c.pgSteps.map(s=>Object.assign({},s,{group:s.role==='step'?'Reaction':'Protecting groups',planning:{kind:s.role==='step'?'reaction':s.role}})):[c];
+}
+
+function routePlanningStepFacts(candidate) {
+  const c=candidate||{},o=c.outcome||{},gaps=[];
+  const evidence=o.evidence||(typeof reactionRuleDescriptor==='function'?reactionRuleDescriptor(c.outcomeRule||c.rule||c.transform):null);
+  const gap=(code,message)=>gaps.push({code,message});
+  if(!evidence||typeof evidence.scope!=='string'||!evidence.scope.trim()||/Detailed scope has not yet been curated/.test(evidence.scope))gap('scope','Rule-specific scope is missing or uncurated.');
+  if(!evidence||!(Array.isArray(evidence.references)?evidence.references:[]).some(r=>r&&/^https:\/\//.test(r.url||'')))gap('references','No reaction-class reference is recorded.');
+  if(!c.outcome||!o.id||!Array.isArray(o.products))gap('outcome','No forward outcome is recorded.');
+  if(!o.stoichiometry||!Number.isFinite(o.stoichiometry.conversion)||o.stoichiometry.completion==='unknown')gap('loading-model','A resolved consumed-input loading model is not recorded.');
+  if(Array.isArray(o.ratio)&&o.ratio.length)gap('ratio','The product ratio is an encoded heuristic.');
+  const product=c.product||(o.products||[])[0],kind=product&&product.stereo&&product.stereo.kind;
+  const stereoConcern=['racemic','mismatch'].includes(c.stereo)||['racemic','diastereomers'].includes(kind);
+  const planning=c.planning&&c.planning.kind;
+  return {protection:planning?['protect','deprotect'].includes(planning):c.group==='Protecting groups',stereoConcern,minor:!!c.minor,gaps};
+}
+
+function routePlanningMaterialKey(smiles) {
+  try{
+    if(typeof moleculeIdentity==='function')return moleculeIdentity(smiles).key;
+    if(typeof pathFinderMaterialKey==='function')return pathFinderMaterialKey(smiles);
+  }catch(error){/* Unresolved legacy identities retain a textual key. */}
+  return smiles;
+}
+
+function routePlanningProcessBurden(route) {
+  const entries=new Set();
+  const add=(role,smiles,id)=>{const key=smiles?routePlanningMaterialKey(smiles):id;if(key)entries.add(role+':'+key);};
+  route.forEach(link=>routePlanningOperations(link.candidate).forEach(c=>{
+    (c.compounds||[]).filter(p=>p.role!=='reactant').forEach(p=>add(p.role||'reagent',p.isomericSmiles||p.smiles,p.label));
+    (c.reagents||[]).forEach(p=>add(p.role||'reagent',p.isomericSmiles||p.smiles,p.label));
+    ['solvents','additives'].forEach(field=>(c.conditions&&c.conditions[field]||[]).filter(id=>id!=='none').forEach(id=>{
+      const item=field==='solvents'?reactionSolvent(id):reactionAdditive(id);
+      add(field==='solvents'?'solvent':'additive',item&&item.smiles,id);
+    }));
+  }));
+  return entries.size;
+}
