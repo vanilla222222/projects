@@ -1,5 +1,12 @@
 # Chem Lab upgrades
 
+## Bounded Passerini three-component assembly — 2026-10-31
+
+- Added forward/reverse Passerini coupling of one simple achiral monoaldehyde, monocarboxylic acid and charge-separated isocyanide to an alpha-acyloxy amide. The encoded branch is exactly three inputs in DCM at 10–40 C, without additives; ketones, arylacetic acids, extra functionality/partners, isotope labels, explicit H atoms and pre-existing stereocentres are excluded. These bounds do not establish kinetics or general experimental compatibility.
+- All three skeletons and the atom inventory are retained, with one equivalent of each component per modeled operation. New alpha stereochemistry is an uncontrolled mixture; specified pure targets are rejected. Oxygen-isotope transfer/exchange is not predicted. The implementation does not chain a separate reaction/work-up into this operation.
+- Seventy focused checks cover fixed endpoints, net mass, isocyanide/nitrile distinction, scope exclusions, loading, ordering, saved routes, both planners and rejection of stereopure claims. Five positive and five negative fixtures plus an independent one-step route plan expand oracle coverage. tert-Butyl isocyanide is added as tier-two model stock.
+- A fixed one-step search succeeds with Passerini and finds no one-step route when it is disabled under the same limits. This demonstrates new one-operation coverage, not a globally minimal route or measured experimental step saving. Primary reference: DOI 10.1021/acs.joc.5c00236.
+
 ## One-operation exhaustive phenolic O-ethylation — 2026-10-31
 
 - Added a bounded forward/reverse transformation converting two to four phenolic OH sites in one operation with ethyl bromide/iodide and the encoded carbonate base in THF/DMF. All eligible OH sites are targeted; this does not claim selective partial ethylation. Aliphatic diols, arbitrary alkyl donors, competing N/S groups, carbonyls, nonaromatic unsaturation, extra inputs and additives are outside scope.

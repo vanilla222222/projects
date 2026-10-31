@@ -1463,3 +1463,57 @@ RX_RULES.push({id:'exhaustive-o-ethylation',name:'Exhaustive phenolic O-ethylati
  limitations:['No selective partial ethylation, arbitrary alkyl-halide generalization, rates, measured yields or elimination/partial-product distributions. Class support does not experimentally validate every polyphenol endpoint.'],
  references:[{title:'McMurry, OpenStax Organic Chemistry 18.2: Preparing Ethers',url:'https://openstax.org/books/organic-chemistry/pages/18-2-preparing-ethers',kind:'teaching'}]
 }});
+
+// Initial Passerini scope: simple achiral aldehyde/acid/isocyanide inputs only.
+// Primary source: https://doi.org/10.1021/acs.joc.5c00236
+function rxxPasseriniInput(compound) {
+  if(!compound.fragment||['catalyst','solvent'].includes(compound.role))return null;
+  const graph=reactionFragmentGraph(compound.fragment),ids=graph.atoms.map(a=>a.id),info=rxAnalyze(graph);
+  if(graph.connectedComponents().length!==1||graph.atoms.length>24||graph.atoms.some(a=>a.isotope||!['C','N','O'].includes(a.element))||
+    info.alkenes.length||info.alkynes.length||info.epoxides.length||findStereocenters(graph,ids).length)return null;
+  const entry={compound,graph,info};
+  const iso=graph.atoms.filter(a=>a.element==='C'&&a.charge===-1).flatMap(c=>{
+    const ns=rxNeighbors(graph,c.id);if(ns.length!==1||ns[0].atom.element!=='N'||ns[0].atom.charge!==1||ns[0].bond.order!==3)return [];
+    const n=ns[0].atom,other=rxNeighbors(graph,n.id).filter(x=>x.atom.id!==c.id);
+    return other.length===1&&other[0].atom.element==='C'&&other[0].bond.order===1?[{c:c.id,n:n.id}]:[];
+  });
+  if(iso.length===1&&graph.atoms.filter(a=>a.element==='N').length===1&&graph.atoms.every(a=>a.element!=='O'&&(!a.charge||[iso[0].c,iso[0].n].includes(a.id))))return {...entry,kind:'isocyanide',site:iso[0]};
+  if(graph.atoms.some(a=>a.charge||a.element==='N')||info.carbonyls.length!==1)return null;
+  const site=info.carbonyls[0],oxygen=graph.atoms.filter(a=>a.element==='O').length;
+  if(site.kind==='aldehyde'&&oxygen===1&&rxCarbonNeighbors(graph,site.c).length===1)return {...entry,kind:'aldehyde',site};
+  if(site.kind==='acid'&&oxygen===2){
+    const alpha=rxCarbonNeighbors(graph,site.c).find(n=>!info.aromatic.atoms.has(n.atom.id));
+    if(alpha&&rxCarbonNeighbors(graph,alpha.atom.id).some(n=>info.aromatic.atoms.has(n.atom.id)))return null;
+    return {...entry,kind:'acid',site};
+  }
+  return null;
+}
+function rxxRulePasserini(ctx) {
+  if((ctx.inputs||[]).length!==3||(ctx.conditions.additives||[]).length||ctx.temperature<10||ctx.temperature>40||
+    ctx.conditions.solvents.length!==1||ctx.conditions.solvents[0]!=='dcm')return [];
+  const entries=ctx.inputs.map(rxxPasseriniInput);if(entries.some(e=>!e))return [];
+  const aldehydes=entries.filter(e=>e.kind==='aldehyde'),acids=entries.filter(e=>e.kind==='acid'),isos=entries.filter(e=>e.kind==='isocyanide');
+  if(aldehydes.length!==1||acids.length!==1||isos.length!==1)return [];
+  const aldehyde=aldehydes[0],acid=acids[0],iso=isos[0],g=rxCloneGraph(aldehyde.graph);
+  const am=rxMerge(g,acid.graph,acid.graph.atoms.map(a=>a.id)),im=rxMerge(g,iso.graph,iso.graph.atoms.map(a=>a.id));
+  const alpha=aldehyde.site.c,linkO=aldehyde.site.o,acyl=am.get(acid.site.c),acidO=am.get(acid.site.o),acidOH=am.get(acid.site.hetero),amide=im.get(iso.site.c),nitrogen=im.get(iso.site.n);
+  rxSetOrder(g,alpha,linkO,1);g.addBond(alpha,amide);
+  rxSetOrder(g,amide,nitrogen,1);g.getAtom(amide).charge=0;g.getAtom(nitrogen).charge=0;
+  // One unlabelled net oxygen arrangement; isotope transfer/exchange is not predicted.
+  rxSetOrder(g,acyl,acidO,0);rxSetOrder(g,acyl,acidOH,2);g.addBond(amide,acidO).order=2;g.addBond(linkO,acyl);
+  const out=rxOutcome('passerini','Passerini three-component coupling','Multicomponent reaction',g,
+    'An aldehyde, carboxylic acid and isocyanide combine to form an alpha-acyloxy amide. Carbonyl addition and acyl transfer are represented as one net preparation operation, not an automatically chained one-pot sequence.',
+    {score:18,consumes:[rxUse(aldehyde,1),rxUse(acid,1),rxUse(iso,1)],warnings:[
+      'The new alpha stereocentre is not controlled; the unspecified product represents its stereochemical mixture, not a pure enantiomer.',
+      'Only the bounded simple aldehyde/acid/isocyanide branch in DCM at the encoded ambient-temperature range is modeled. Ketones, extra partners, arylacetic acids, isotope-labelled/explicit-H inputs and pre-existing stereocentres are excluded. No conversion, yield or oxygen-isotope transfer is predicted.'
+    ]});
+  out.stoichiometryBasis=aldehyde.compound;
+  out.multicomponent={components:3,operations:1,atomConserving:true};
+  return [out];
+}
+RX_RULES.push({id:'passerini',name:'Passerini three-component coupling',run:rxxRulePasserini,catalog:{
+ family:'Multicomponent reactions',scope:'Exactly three separate simple achiral inputs: one monoaldehyde, one monocarboxylic acid excluding arylacetic acids, and one charge-separated carbon-substituted isocyanide. DCM only, encoded 10–40 C range, no additives, extra groups/partners, ketones, isotope labels or explicit H atoms.',
+ assumptions:['One equivalent of each component gives one atom-conserving alpha-acyloxy amide operation. An unspecified new stereocentre represents an uncontrolled mixture. The temperature interval is a finite implementation scope, not a kinetic boundary.'],
+ limitations:['No stereopure preparation, ketone extension, measured yield, rate law, competing multicomponent pathways or oxygen-isotope assignment. Reference-class support does not validate every generated substrate combination experimentally.'],
+ references:[{title:'Strong Hydrogen Bond Donating Solvents Accelerate the Passerini Three-Component Reaction (2025)',url:'https://doi.org/10.1021/acs.joc.5c00236',kind:'primary'}]
+}});

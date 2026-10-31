@@ -24,7 +24,8 @@
     "dibalNitrile": "https://www.chem.ucla.edu/~harding/IGOC/D/dibal.html",
     "dibalEster": "https://openstax.org/books/organic-chemistry/pages/21-6-chemistry-of-esters",
     "alcoholHalide": "https://openstax.org/books/organic-chemistry/pages/10-5-preparing-alkyl-halides-from-alcohols",
-    "alkyneHalogenation": "https://openstax.org/books/organic-chemistry/pages/9-3-reactions-of-alkynes-addition-of-hx-and-x2"
+    "alkyneHalogenation": "https://openstax.org/books/organic-chemistry/pages/9-3-reactions-of-alkynes-addition-of-hx-and-x2",
+    "passerini": "https://doi.org/10.1021/acs.joc.5c00236"
   },
   "naming": [
     {
@@ -1560,6 +1561,166 @@
         ]
       },
       "loadingCeiling": 1
+    },
+    {
+      "label": "Passerini three-component endpoint CC=O / [C-]#[N+]C",
+      "compounds": [
+        {
+          "smiles": "CC=O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[C-]#[N+]C",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "passerini",
+      "products": [
+        "CC(OC(C)=O)C(=O)NC"
+      ],
+      "source": "passerini",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Passerini three-component endpoint CC=O / [C-]#[N+]C(C)(C)C",
+      "compounds": [
+        {
+          "smiles": "CC=O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[C-]#[N+]C(C)(C)C",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "passerini",
+      "products": [
+        "CC(OC(C)=O)C(=O)NC(C)(C)C"
+      ],
+      "source": "passerini",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Passerini three-component endpoint O=Cc1ccccc1 / [C-]#[N+]C1CCCCC1",
+      "compounds": [
+        {
+          "smiles": "O=Cc1ccccc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CCC(=O)O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[C-]#[N+]C1CCCCC1",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "passerini",
+      "products": [
+        "CCC(=O)OC(c1ccccc1)C(=O)NC1CCCCC1"
+      ],
+      "source": "passerini",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Passerini three-component endpoint CCC=O / [C-]#[N+]CC",
+      "compounds": [
+        {
+          "smiles": "CCC=O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "O=C(O)c1ccccc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[C-]#[N+]CC",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "passerini",
+      "products": [
+        "CCC(OC(=O)c1ccccc1)C(=O)NCC"
+      ],
+      "source": "passerini",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Passerini three-component endpoint O=CCc1ccccc1 / [C-]#[N+]C(C)(C)C",
+      "compounds": [
+        {
+          "smiles": "O=CCc1ccccc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[C-]#[N+]C(C)(C)C",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "passerini",
+      "products": [
+        "CC(=O)OC(Cc1ccccc1)C(=O)NC(C)(C)C"
+      ],
+      "source": "passerini",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
     }
   ],
   "negativeReactions": [
@@ -2039,6 +2200,156 @@
         "solvents": [
           "dmf"
         ]
+      }
+    },
+    {
+      "label": "Outside bounded Passerini CC(=O)C / CC(=O)O / [C-]#[N+]C",
+      "compounds": [
+        {
+          "smiles": "CC(=O)C",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[C-]#[N+]C",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "passerini",
+      "products": [],
+      "source": "passerini",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "temperature": 25
+      }
+    },
+    {
+      "label": "Outside bounded Passerini CC=O / CC(=O)O / CC#N",
+      "compounds": [
+        {
+          "smiles": "CC=O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC#N",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "passerini",
+      "products": [],
+      "source": "passerini",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "temperature": 25
+      }
+    },
+    {
+      "label": "Outside bounded Passerini NCCC=O / CC(=O)O / [C-]#[N+]C",
+      "compounds": [
+        {
+          "smiles": "NCCC=O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[C-]#[N+]C",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "passerini",
+      "products": [],
+      "source": "passerini",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "temperature": 25
+      }
+    },
+    {
+      "label": "Outside bounded Passerini CC=O / CC(=[18O])O / [C-]#[N+]C",
+      "compounds": [
+        {
+          "smiles": "CC=O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=[18O])O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[C-]#[N+]C",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "passerini",
+      "products": [],
+      "source": "passerini",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "temperature": 25
+      }
+    },
+    {
+      "label": "Outside bounded Passerini CC=O / CC(=O)O / [C-]#[N+]C / CN",
+      "compounds": [
+        {
+          "smiles": "CC=O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[C-]#[N+]C",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CN",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "passerini",
+      "products": [],
+      "source": "passerini",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "temperature": 25
       }
     }
   ],

@@ -6,14 +6,14 @@ This is an implementation-gap review, not an experimental synthesis recommendati
 
 `exhaustive-o-methylation` treats two to four compatible O–H sites as one exhaustive preparation operation. It has a dedicated forward rule and reverse template, with methyl-transfer and base-activation demand scaled to the number of sites in the model. Reverse search also considers substrates retaining pre-existing methoxy groups, within its unchanged proposal cap. It does not merge arbitrary saved steps. Fixed glycol and catechol examples now have one-step Path Finder / Recipe Tree controls. Competing N/S functions and unsupported substrate classes remain excluded.
 
-## Next complex-reaction candidates
+## Current complex-reaction coverage
 
 | Candidate | Current repository coverage | Opportunity | Required work before enabling |
 | --- | --- | --- | --- |
 | Broader Robinson annulation coverage | Forward `rxyRuleRobinson` and reverse `robinson` already exist. | Improve coverage of the existing Michael-addition / aldol / dehydration preparation instead of adding a duplicate named rule or forcing separate operations. | Audit donor/acceptor site choices, tether/ring topology, temperature assumptions, competing carbonyls and new stereochemical mixtures. Add fixed route comparisons at unchanged budgets. |
-| Bounded Passerini three-component reaction | No forward or reverse Passerini template found in the reaction and retrosynthesis modules. | Add a dedicated multicomponent endpoint forming an alpha-acyloxy amide from a carbonyl compound, carboxylic acid and isocyanide. | Confirm isocyanide parsing and distinguish it from nitrile; preserve all three input skeletons and oxygen identities; define a small source-backed substrate/condition subset; flag new stereochemical mixtures and competing sites; implement a bounded reverse decomposition and independent fixed-product checks. |
+| Bounded Passerini three-component reaction | Implemented forward/reverse for simple achiral monoaldehyde, monocarboxylic acid and charge-separated isocyanide inputs in the encoded DCM/ambient branch. Ketones, arylacetic acids, labels and extra functionality/partners are excluded. | Both planners can use one atom-conserving preparation with three required inputs. A fixed one-step panel succeeds with this rule and has no one-step route when this rule is disabled, at unchanged budgets. | Broader substrate/medium scope, experimental selectivity and isotope assignment remain unvalidated. The new alpha centre is an uncontrolled stereochemical mixture; no pure enantiomer is claimed. |
 
-The Passerini opportunity is an inference from missing repository coverage and published reaction classes, not a demonstrated numerical step saving in the present planner. Measure actual savings only after adding the forward/reverse pair, using fixed target panels, unchanged stock policies and identical search budgets.
+The fixed Passerini panel demonstrates a newly available one-operation route within the encoded model, not a global minimum-step proof or a numerical saving against a fully validated longer experimental route. Primary class/condition reference: [DOI: 10.1021/acs.joc.5c00236](https://doi.org/10.1021/acs.joc.5c00236).
 
 ## Source and boundary caution
 

@@ -417,6 +417,23 @@
         "CC(CCO[Si](C)(C)C(C)(C)C)O",
         "OCCC(O)C"
       ]
+    },
+    {
+      "id": "passerini-one-step-three-component-assembly",
+      "scope": "Encoded graph, loading and route-continuity check only. The unspecified alpha centre is a stereochemical mixture; no experimental yield, rate or enantiopurity is validated.",
+      "start": "CC=O",
+      "target": "CC(OC(C)=O)C(=O)NC(C)(C)C",
+      "options": {
+        "maxDepth": 1,
+        "maxRoutes": 1,
+        "budgetMs": 5000
+      },
+      "expectedKinds": [
+        null
+      ],
+      "expectedProducts": [
+        "CC(OC(C)=O)C(=O)NC(C)(C)C"
+      ]
     }
   ],
   "reactions": [
