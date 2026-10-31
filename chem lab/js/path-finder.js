@@ -244,7 +244,7 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
     return { text: text.toLowerCase(), key };
   });
   const diagnostics = { candidates: 0, inventory: 0, reagents: 0, rules: 0, stereo: 0, compatibility: 0, rejected: [], protection: 0, protectionMessages: opts.allowedProtectingGroups && !opts.allowedProtectingGroups.length ? ['Automatic protection planning is disabled.'] : [], noDisconnections: 0, depth: 0, branch: 0, queue: 0, missingMaterials: [] };
-  const job = { start: start.smiles, target: target.smiles, options: opts, status: start.key === target.key ? 'identical' : 'running', route: [], routes: [], expanded: 0, truncated: false, elapsedMs: 0, diagnostics, termination: '' };
+  const job = { start: start.smiles, target: target.smiles, options: opts, status: start.key === target.key ? 'identical' : 'running', route: [], routes: [], routeRecipes: [], expanded: 0, truncated: false, elapsedMs: 0, diagnostics, termination: '' };
   const queue = [{ smiles: target.smiles, key: target.key, chain: [], ancestors: new Set([target.key]) }];
   const queued = new Set(), expanded = new Map(), routeKeys = new Set(), routeStrategies = new Map();
   diagnostics.routeVariants = 0;
@@ -317,6 +317,7 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
     const recipeKey = route.map(signature).join('/');
     if (routeKeys.has(recipeKey)) return;
     routeKeys.add(recipeKey);
+    job.routeRecipes.push(route);
     const key = pathFinderRouteStrategyKey(route), previous = routeStrategies.get(key);
     if (previous) {
       diagnostics.routeVariants++;
@@ -457,6 +458,7 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
       if (enoughRoutes()) {finish('route-limit');job.elapsedMs+=retroNow()-began;return job;}
     }
     while (job.status === 'running' && retroNow() < until) {
+      if (opts.maxRoutes > 1 && job.routes.length && job.elapsedMs + retroNow() - began >= opts.budgetMs * 0.9) { finish('diversity-budget'); break; }
       if (job.elapsedMs + retroNow() - began >= opts.budgetMs) { finish('time-limit'); break; }
       if (!current) {
         // Short searches retain breadth-first route discovery. Extended searches

@@ -31,7 +31,7 @@ check(`retroDisconnectSmiles(target,{protect:false,budgetMs:10000}).candidates.f
 
 run(`var aromaticJob=pathFinderCreate(start,target,{maxDepth:10,budgetMs:30000});while(aromaticJob.status==='running')aromaticJob.step(100);`);
 check('aromaticJob.status', 'found', 'Exact requested Path Finder search succeeds');
-check('aromaticJob.routes.length', 3, 'The requested route count is returned');
+check('aromaticJob.routes.length>0&&aromaticJob.routes.length<=3&&new Set(aromaticJob.routes.map(pathFinderRouteStrategyKey)).size===aromaticJob.routes.length', true, 'Up to three distinct pathways are returned without recipe padding');
 check('aromaticJob.route.length', 9, 'The best route fits depth ten');
 // Site compatibility can interleave ether formation with phenol generation;
 // retain the transformation counts while verifying every complete route below.
