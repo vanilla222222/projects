@@ -111,9 +111,9 @@ function pathFinderRouteFeatures(route) {
 
 // Keep the best-cost route, then choose the least overlapping pathways.
 // Cost ranking breaks diversity ties and orders the final displayed selection.
-function pathFinderSelectDiverseRoutes(routes, limit, compare) {
+function pathFinderSelectDiverseRoutes(routes, limit, compare, describe = pathFinderRouteFeatures) {
   const remaining = routes.slice().sort(compare), selected = [], features = new Map();
-  remaining.forEach(route => features.set(route, pathFinderRouteFeatures(route)));
+  remaining.forEach(route => features.set(route, describe(route)));
   const overlap = (a, b) => {
     const x = features.get(a), y = features.get(b);
     const shared = [...x].filter(f => y.has(f)).length;
@@ -128,6 +128,38 @@ function pathFinderSelectDiverseRoutes(routes, limit, compare) {
     selected.push(remaining.splice(best, 1)[0]);
   }
   return selected.sort(compare);
+}
+
+function pathFinderRecipeStrategyKey(tree) {
+  return JSON.stringify([pathFinderKey(tree.target), (tree.children || []).map(pathFinderRecipeStrategyKey).sort()]);
+}
+
+function pathFinderRecipeFeatures(tree) {
+  const features = new Set();
+  const walk = (node, root) => {
+    if (!root) features.add((node.candidate ? 'intermediate:' : 'feedstock:') + pathFinderKey(node.target));
+    if (node.candidate) features.add('family:' + (node.candidate.group || node.candidate.transform || node.candidate.rule || 'unknown'));
+    (node.children || []).forEach(child => walk(child, false));
+  };
+  walk(tree, true);
+  return features;
+}
+
+function pathFinderCandidateStrategyKey(candidate) {
+  return JSON.stringify(candidate.precursors.map(p => pathFinderKey(p.isomericSmiles || p.smiles)).sort());
+}
+
+function pathFinderDiverseCandidates(candidates) {
+  const groups = new Map(), result = [];
+  candidates.forEach(candidate => {
+    const key = pathFinderCandidateStrategyKey(candidate);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(candidate);
+  });
+  for (let round = 0; result.length < candidates.length; round++) {
+    groups.forEach(items => { if (items[round]) result.push(items[round]); });
+  }
+  return result;
 }
 
 function pathFinderRouteRank(route, describe) {
@@ -573,7 +605,15 @@ function pathFinderRecipeCreate(start, target, options, helpers) {
     budgetMs: opts.budgetMs, sliceMs: opts.sliceMs, stockOverride: (smiles) => {
       const info = helpers.material(smiles);
       return info.available ? { tier: info.tier, source: info.tier === 0 ? 'inventory' : 'local-stock', smiles } : null;
-    }, candidateFilter,
+    }, candidateFilter, candidateOrder: pathFinderDiverseCandidates, candidateBranchKey: pathFinderCandidateStrategyKey, diverseRootEnumeration: true,
+    routeSelector: routes => {
+      const strategies = new Map();
+      routes.forEach(tree => { const key = pathFinderRecipeStrategyKey(tree); if (!strategies.has(key)) strategies.set(key, tree); });
+      diagnostics.routeVariants = routes.length - strategies.size;
+      diagnostics.distinctPathways = strategies.size;
+      const rank = new Map(routes.map((tree, i) => [tree, i]));
+      return pathFinderSelectDiverseRoutes([...strategies.values()], opts.maxRoutes, (a,b) => rank.get(a)-rank.get(b), pathFinderRecipeFeatures);
+    },
   });
   const job = { start: start.smiles, target: target.smiles, options: opts, status: 'running', route: [], routes: [], recipeTrees: [], expanded: 0, truncated: false, elapsedMs: 0, diagnostics, termination: '' };
   const sync = () => {
@@ -581,6 +621,7 @@ function pathFinderRecipeCreate(start, target, options, helpers) {
     job.elapsedMs = search.elapsedMs;
     job.truncated = !!search.truncated;
     job.recipeTrees = search.routes || [];
+    job.routeRecipes = search.routeRecipes || [];
     job.routes = job.recipeTrees;
     if (search.status === 'running') job.status = 'running';
     else if (job.recipeTrees.length) job.status = 'found';
@@ -719,7 +760,7 @@ function createPathFinder(deps) {
       return;
     }
     if (job.options.recipeTree) {
-      status.textContent = job.recipeTrees.length + ' rule-verified recipe tree' + (job.recipeTrees.length === 1 ? '' : 's') + ' found.' + stats + ' Every leaf is available under the selected inventory policy; every intermediate has a forward-verified preparation.' + (job.status === 'cancelled' ? ' Search cancelled; partial results retained.' : '');
+      status.textContent = job.recipeTrees.length + ' rule-verified recipe tree' + (job.recipeTrees.length === 1 ? '' : 's') + ' found.' + stats + ' Selected for different intermediates, feedstocks and reaction families; recipe variants share one slot. Every leaf is available under the selected inventory policy; every intermediate has a forward-verified preparation.' + (job.status === 'cancelled' ? ' Search cancelled; partial results retained.' : '');
       pathFinderRecipeRender(results, job, deps); rejectionDetails(); return;
     }
     status.textContent = job.routes.length + ' rule-verified candidate route' + (job.routes.length === 1 ? '' : 's') + ' found.' + stats + ' Selected for different intermediates and reaction families from ' + (job.diagnostics.distinctPathways || job.routes.length) + ' pathways found. Reagent and condition variants share one slot. Displayed by route cost; the first route retains the best cost ranking.' + (job.diagnostics.routeVariants ? ' ' + job.diagnostics.routeVariants + ' recipe variants grouped.' : '') + (job.status === 'cancelled' ? ' Search cancelled; partial results retained.' : '');

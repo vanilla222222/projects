@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-31T11:28:11.312556+00:00",
+  "generatedAt": "2026-10-31T11:35:32.512282+00:00",
   "rdkitVersion": "2026.09.1",
   "fixtureSha256": "97fa85d1dff3acbe2f38e80e5d02998e00229bb52acb610a3d55448400278389",
   "fixtureFilesSha256": {
     "rdkit-fixtures.json": "97fa85d1dff3acbe2f38e80e5d02998e00229bb52acb610a3d55448400278389",
     "chemistry-fixtures.json": "c04233c90e7ec559a79a5063e6f4f4b12e111ff07823d3545bcd520482c4d837"
   },
-  "exportSha256": "2d51bfc9cecb212bee88ee600b2e842e2aff9c570f9a21b1c2a89575dcbc9a00",
+  "exportSha256": "67db040d6307cf99a7f873b17bd4b679dd4e3f209cb8a5bec12013d447576237",
   "appScriptSha256": {
     "js/elements.js": "aaecea7433871b650c7601ffb5bef597e38361934cb7c4cc7406edbdc897a7ca",
     "js/graph.js": "c8a8a2cca6b2f3d758e3f83b7901f78f9966c3a27b0189fa846ba28ce55be88f",
@@ -87,13 +87,13 @@
     "js/retro-families-extra8.js": "61af9d9b9bbedf2a7f02c9bcc361e339260cec08bdabe9eeb6c18bdeea9838c7",
     "js/retro-families-extra9.js": "a6cb99e001cae6eb385a2199ac9acae2dcd6c6f981495d1bd85ceaee2a547d3e",
     "js/retro-families-extra10.js": "9f04f4efe12793d71ce9f00be0b4c93e6d3a1749458863e4527dd21b8c31b224",
-    "js/retro-search.js": "e7606f1fedd7f8e22de72334cb8e2786e29ef69734538b62f239b6a9c81dd885",
+    "js/retro-search.js": "1c4db907eea1b74c1c70a13b7349e802cd0fe9fac0430888e6dc7aff76e00368",
     "js/reaction-lab.js": "da4787b3f98d62ba0bf630d7d571e82835273d590d08e6de1ff3652f3b8257ac",
     "js/spectra-view.js": "86eca7b697a949d9539dd87071a5fec9ba39e601f9351c436b5693c10c331532",
     "js/viewer3d.js": "728dbc6dfc6336fb73702c57188d4df848dbbb9d91396bb929de10a3dcdd37d4",
     "js/retro-view.js": "ff7cebfff9e6ad73fcd413fcd1562ae66af541dca4756b4ae128997219ab5203",
     "js/route-comparison.js": "754ab666b24ca1152d19e6c8d4570cc617695e7c3e148286e3aadd075209d4ee",
-    "js/path-finder.js": "e74be8ff04beb43ca1d97db1d0e3db5c1d1b19fde9110615f507367362039551",
+    "js/path-finder.js": "e8e2b84de24f0b8919af77ec3826f701512df10578b6ba4924bf72755dc616ce",
     "js/path-protection-sequences.js": "963476ef0d72efd09debcf9524e777f4abd87c71f1da087891445936e0d67146",
     "js/reaction-mapping.js": "1f01d83e16bba73d65a8438138f00378c6ddf277b84b3009c2b1e28f9b8ff881",
     "js/route-assessment.js": "21b96ed25938b1aca75bf520f8b1ebabe87a74f86799b2d7f015193116e4bb37",

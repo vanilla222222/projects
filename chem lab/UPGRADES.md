@@ -1,5 +1,11 @@
 # Chem Lab upgrades
 
+## Recipe Tree pathway diversity — 2026-10-31
+
+- Path Finder Recipe Tree now groups trees with the same stereo-aware intermediate/feedstock topology, regardless of reagent recipe or child ordering. It keeps the best scored representative and favors different intermediate, feedstock and reaction-family features when selecting alternatives. Exact recipe variants remain in the inspected recipe pool.
+- The existing branch cap counts distinct precursor sets in this mode; recipe variants of an admitted set reuse its molecular branches rather than crowding out other disconnections. Root tree enumeration takes turns across solved disconnections before combination variants can fill its bounded pool. Existing node, time and depth budgets remain.
+- Nine new topology, enumeration and real-search checks cover five-tree requests, child-order equivalence, stereo separation, distinct-family preference, best-score retention and complete forward-verified branches. The existing 33 Recipe Tree checks retain exact Steglich/Mitsunobu coverage in the recipe pool. Generic retrosynthesis keeps its existing default enumeration and selection. Diversity remains a bounded structural heuristic, not a guarantee of disjoint or experimentally feasible routes.
+
 ## Linear Path Finder pathway diversity — 2026-10-31
 
 - Requests for multiple routes now explore a bounded pool of up to four times the requested count, within the existing time/node/depth/branch budgets, instead of stopping after the first few recipe variants. Single-route searches retain their early exit. Multi-route follow-up exploration reserves the final ten percent of the wall-clock budget once a route has been found.
