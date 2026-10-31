@@ -1101,9 +1101,11 @@ function rxxRuleMetathesis(ctx) {
       g.removeAtom(p.t);
       g.removeAtom(q.t);
       g.addBond(p.i, q.i).order = 2;
-      return [rxOutcome('rcm', 'Ring-closing metathesis', 'Olefin metathesis', g,
+      const out=rxOutcome('rcm', 'Ring-closing metathesis', 'Olefin metathesis', g,
         'The ruthenium carbene (Grubbs catalyst) swaps alkene partners through metallacyclobutane intermediates. Joining the two terminal alkenes closes a ' + ring + '-membered ring, and the release of ethylene gas drives the reaction.',
-        { score: 14, byproducts: ['ethylene'], consumes: [rxUse(s, 1)], warnings: ['Run dilute (≈ 0.01–0.05 M) so ring closure beats intermolecular oligomerisation.'] })];
+        { score: 14, byproducts: ['ethylene'], consumes: [rxUse(s, 1)] });
+      rxCyclizationRecord(out,s,p.i,q.i,{allowedSizes:[5,6,7,8],eligibleClosures:pairs.length,externalPartners:ctx.substrates.filter(other=>other!==s&&vinyl(other).length).length});
+      return [out];
     }
   }
   const partners = ctx.substrates.map((s) => ({ s, e: vinyl(s)[0] })).filter((x) => x.e);

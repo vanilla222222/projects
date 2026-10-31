@@ -839,9 +839,11 @@ function rxyRuleHalolactonization(ctx) {
     const xa = rxAttach(g, x, o.b);
     rxsFaceAdd(g, [[o.a, acid.hetero, 1], [o.b, xa.id, -1]]);
     rxyCleanAlkenes(g);
-    return [rxOutcome(x === 'I' ? 'iodolactonization' : 'bromolactonization', x === 'I' ? 'Iodolactonisation' : 'Bromolactonisation', 'Electrophilic cyclisation', g,
+    const out=rxOutcome(x === 'I' ? 'iodolactonization' : 'bromolactonization', x === 'I' ? 'Iodolactonisation' : 'Bromolactonisation', 'Electrophilic cyclisation', g,
       'The base makes the carboxylate. ' + tag + ' forms a halonium ion on the alkene, and the carboxylate opens it intramolecularly from the opposite face (' + o.size + '-exo, anti addition), giving a ' + (o.size === 5 ? 'γ' : 'δ') + '-lactone with ' + x + ' on the exocyclic carbon.',
-      { score: 15, byproducts: ['H' + x + ' (as salt)'], consumes: [rxUse(s, 1), rxUse(ctx.get(tag), 1)] })];
+      { score: 15, byproducts: ['H' + x + ' (as salt)'], consumes: [rxUse(s, 1), rxUse(ctx.get(tag), 1)] });
+    rxCyclizationRecord(out,s,acid.hetero,o.a,{allowedSizes:[5,6],eligibleClosures:options.length,externalPartners:ctx.substrates.filter(other=>other!==s&&(other.info.alkenes.length||other.info.carbonyls.some(c=>c.kind==='acid'))).length});
+    return [out];
   }));
 }
 
