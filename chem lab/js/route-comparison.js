@@ -94,6 +94,8 @@ function routeComparisonSummaries(job) {
     });
     return {
       number: routeIndex + 1, route, steps, stepCount: steps.length,
+      handoffs:typeof routeHandoffAssess==='function'?route.slice(1).map((link,i)=>routeHandoffAssess(route[i],link)):[],
+      workups:typeof routeWorkupAssess==='function'?route.flatMap((link,i)=>{const ops=routePlanningOperations(link.candidate);return ops.map((op,j)=>({...routeWorkupAssess(ops.length===1?link:op),step:i+1,operation:j+1}));}):[],
       ranking:pathFinderRouteMetrics(route),
       scopeGaps:steps.flatMap(s=>s.planningFacts.gaps.map(g=>({step:s.number,...g}))),
       buildingBlocks: [...blocks.values()], reagents: [...reagents.values()],
@@ -130,6 +132,8 @@ function routeComparisonRender(container, job, deps) {
     });
     metrics.append(body); card.append(metrics);
     card.append(make('p', summary.inventoryComplete ? 'Additional building blocks match the search inventory policy.' : 'Additional building-block availability needs review.', 'route-comparison-inventory'));
+    addList(card,'Endpoint work-up assumptions',summary.workups.filter(w=>w.required).map(w=>'Step '+w.step+(w.operation>1?', operation '+w.operation:'')+': '+w.record.status+'. '+w.message));
+    addList(card,'Step boundaries (planning assumptions)',summary.handoffs.map((h,i)=>'Before step '+(i+2)+': '+h.message+' '+h.potentials.map(p=>'If carried over: '+p.message).join(' ')));
     addList(card, 'Additional building blocks', summary.buildingBlocks.map((p) => p.name + ' — ' + p.availability));
     addList(card, 'Other required materials', summary.reagents.map((p) => p.name + ' (' + p.role + ')'));
     if (typeof protectionRouteAudit === 'function' && typeof protectionRouteElement === 'function') card.append(protectionRouteElement(protectionRouteAudit(summary.route)));

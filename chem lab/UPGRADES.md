@@ -1,5 +1,13 @@
 # Chem Lab upgrades
 
+## Route boundaries and endpoint work-up records — 2026-10-30
+
+- Saved routes persist isolated/fresh-mixture versus carry-over boundaries, with legacy/generated defaults explicitly labelled model assumptions. Import and direct validation preserve one-pot intent instead of dropping it. Unsupported carry-over makes the route unverified even when every individual graph edit replays; overall yield and scale planning remain unavailable for that route.
+- Potential carry-over notes reuse recorded input classes: sensitive reagent to protic/acidic next stage, protic/acidic medium to sensitive reagent, and oxidant/reductant combinations. They do not calculate residual amounts, identify the actual post-reaction mixture or establish experimental safety. Isolated-mode boundaries remain assumptions about separate preparation, not proof of isolation or purity.
+- Endpoint work-up records are assumed, described in a record, or none. Explicitly recording no work-up blocks the neutral endpoints of the finite Grignard/LAH/DIBAL set whose encoded models include separate work-up, including final products. Descriptions are retained as unvalidated records and never interpreted as procedures. Other classes are explicitly outside this work-up requirement list.
+- Workspace controls edit and persist the assumptions; JSON/CSV, route comparison and Recipe Tree display them and their verification consequences. Explicit cascades retain structured boundary reports and keep carry-over unsupported. Existing independent-step chemistry checks and search budgets are unchanged.
+- Forty-two focused model checks and four DOM/persistence checks cover legacy defaults, one-pot import/direct-validation bypasses, work-up omission, potential conflicts, JSON/CSV, scaling gates, stale/invalid records, input immutability, cascade handoffs and final endpoints.
+
 ## Coupling selectivity and ether-route overlap — 2026-10-30
 
 - Suzuki, Heck and Sonogashira branches record ambiguity when recognized substrates contain several eligible halide/partner sites, or the same mixture enables multiple coupling families. Counts include every matching boron group and terminal unsaturated bond, without double-counting the two orientations of ethene/acetylene. First-site ordering is not treated as validated selective mono-coupling.

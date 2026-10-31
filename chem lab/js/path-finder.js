@@ -551,6 +551,7 @@ function pathFinderRecipeRender(container, job, deps) {
     item.append(make('code', node.target, 'path-smiles'));
     const labels = c.labels || {};
     item.append(make('p', 'Reagents and conditions: ' + ([labels.above, labels.below].filter(Boolean).join(' · ') || 'Not recorded.')));
+    if(typeof routeWorkupAssess==='function'){const workup=routeWorkupAssess(c);if(workup.required)item.append(make('p','Endpoint work-up: '+workup.record.status+'. '+workup.message));}
     if (c.minor) item.append(make('p', 'The selected node is a minor predicted product.'));
     if (deps.openInLab) {
       const open = make('button', 'Open this reaction in Reactions', 'text-button'); open.type = 'button';
@@ -576,7 +577,7 @@ function pathFinderRecipeRender(container, job, deps) {
     collect(tree);
     const metrics = tree.metrics || rsearchScore(tree), wrapper = make('section', undefined, 'path-route path-recipe');
     wrapper.append(make('h3', 'Recipe ' + (index + 1) + ' · ' + metrics.steps + ' reaction step' + (metrics.steps === 1 ? '' : 's') + ' · ' + leaves.size + ' available feedstock' + (leaves.size === 1 ? '' : 's')));
-    wrapper.append(make('p', 'Read from the available leaves toward the target. Every reaction node is forward verified; intermediates are recipes, not assumed inventory.'));
+    wrapper.append(make('p', 'Read from the available leaves toward the target. Every reaction node is forward verified; intermediates are recipes, not assumed inventory. Each prepared branch assumes a separately prepared mixture and any required endpoint work-up. Isolation, purity and one-pot compatibility are not established.'));
     if(metrics.scoreContributions){
       const detail=make('details'),list=make('ul');detail.append(make('summary','Recipe ranking breakdown (heuristic)'));
       const names={operations:'Reaction operations',longestSequence:'Longest sequence',materials:'Process-material entries',feedstocks:'Distinct feedstocks',stereoConcerns:'Recorded stereo concerns',scopeGaps:'Recorded scope gaps',minorProducts:'Minor-product steps',stock:'Stock tiers',protection:'Protection operations',convergence:'Convergence preference',simplification:'Structural simplification'};
