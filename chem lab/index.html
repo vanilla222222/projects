@@ -774,13 +774,20 @@
 <dialog id="appearance-dialog" class="appearance-dialog" aria-labelledby="appearance-title">
   <form method="dialog" class="appearance-head"><div><span class="workbench-kicker">Your workspace</span><h2 id="appearance-title">Make it feel like yours.</h2></div><button type="submit" class="icon-button" aria-label="Close appearance settings">×</button></form>
   <p class="appearance-intro">Changes preview immediately and stay on this browser.</p>
+  <div class="appearance-presets" role="group" aria-label="Appearance presets"><button type="button" class="text-button" id="appearance-preset-focus">Focus</button><button type="button" class="text-button" id="appearance-preset-comfort">Comfort</button><button type="button" class="text-button" id="appearance-preset-presentation">Presentation</button></div>
   <div class="appearance-fields">
     <label>Color theme<select id="appearance-theme"><option value="dark">Dark · forest</option><option value="light">Light · paper</option></select></label>
     <label>Accent color<select id="appearance-accent"><option value="green">Botanical green</option><option value="blue">Ocean blue</option><option value="amber">Amber</option></select></label>
     <label>Interface density<select id="appearance-density"><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></label>
     <label>Canvas grid<select id="appearance-grid"><option value="dots">Dots</option><option value="lines">Lines</option><option value="off">No grid</option></select></label>
+    <label>Reading size<select id="appearance-reading"><option value="normal">Standard</option><option value="large">Large</option><option value="larger">Extra large</option></select></label>
+    <label>Canvas surface<select id="appearance-canvas"><option value="theme">Match theme</option><option value="neutral">Neutral</option><option value="warm">Warm</option></select></label>
+    <label>Grid contrast<select id="appearance-grid-contrast"><option value="subtle">Subtle</option><option value="normal">Standard</option><option value="strong">Strong</option></select></label>
+    <label>Interface motion<select id="appearance-motion"><option value="system">Follow system preference</option><option value="reduced">Reduce motion</option></select></label>
+    <label class="appearance-wide">Desktop palette width <output id="appearance-palette-width-value">252 px</output><input id="appearance-palette-width" type="range" min="200" max="320" step="4" value="252"></label>
     <label class="appearance-wide">Grid spacing <output id="appearance-spacing-value">28 px</output><input id="appearance-spacing" type="range" min="16" max="48" step="2" value="28"></label>
   </div>
+  <details class="appearance-transfer"><summary>Copy or restore a design profile</summary><label for="appearance-profile">Appearance profile JSON</label><textarea id="appearance-profile" rows="5" maxlength="20000" spellcheck="false" placeholder="Export to copy settings, or paste an exported profile here."></textarea><div><button type="button" class="text-button" id="appearance-export">Export settings</button><button type="button" class="text-button" id="appearance-import">Import settings</button></div></details>
   <p id="appearance-status" class="appearance-intro" role="status" aria-live="polite"></p>
   <div class="appearance-footer"><button type="button" class="text-button" id="appearance-reset">Reset appearance</button><form method="dialog"><button type="submit" class="text-button primary">Done</button></form></div>
 </dialog>

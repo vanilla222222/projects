@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-31T22:31:33.483757+00:00",
+  "generatedAt": "2026-10-31T22:57:51.658086+00:00",
   "rdkitVersion": "2026.09.1",
   "fixtureSha256": "97fa85d1dff3acbe2f38e80e5d02998e00229bb52acb610a3d55448400278389",
   "fixtureFilesSha256": {
     "rdkit-fixtures.json": "97fa85d1dff3acbe2f38e80e5d02998e00229bb52acb610a3d55448400278389",
     "chemistry-fixtures.json": "c04233c90e7ec559a79a5063e6f4f4b12e111ff07823d3545bcd520482c4d837"
   },
-  "exportSha256": "c12ed59950561a4640c525eaf05f35fc0204eed78d3796e4dd16879e2f8e063b",
+  "exportSha256": "631fefcbf321f39949045d3e30820c853e0e27f0b0fd0674f57a8ce52fd73934",
   "appScriptSha256": {
     "js/elements.js": "aaecea7433871b650c7601ffb5bef597e38361934cb7c4cc7406edbdc897a7ca",
     "js/graph.js": "c8a8a2cca6b2f3d758e3f83b7901f78f9966c3a27b0189fa846ba28ce55be88f",
@@ -102,7 +102,7 @@
     "js/route-workspace.js": "3cbe88230d3cf8d0e59e16422599f0fec5aaca9c6506a3985f02a369b289d91b",
     "js/reaction-cascade.js": "1b0dba5ee0985f0917c72771330ee384abcc7fdce447a4398d4250936c208c8a",
     "js/route-benchmarks.js": "2c24974a787a91c52909728c75ef412d2b9468194a65c7ba44a56c333a80a768",
-    "js/workbench-ui.js": "4cab10675704cd143ff98fe43308eee1c145ecd307129092a8c0b8350a417b92"
+    "js/workbench-ui.js": "372e26a82e8fe821529b844115be1c2e1fcdb32291e5aa40e09a613cb85253d0"
   },
   "sources": {
     "nomenclature": "https://iupac.qmul.ac.uk/BlueBook/P3.html",

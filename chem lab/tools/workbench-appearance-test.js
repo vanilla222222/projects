@@ -2,8 +2,8 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.join(__dirname,'..'),nodes={},events={},stored=new Map();let blocked=false,checks=0;
 class El{constructor(){this.value='';this.attrs={};this.events={};this.open=false;this.textContent='';}addEventListener(k,f){this.events[k]=f;}setAttribute(k,v){this.attrs[k]=v;}getAttribute(k){return this.attrs[k];}focus(){this.focused=true;}showModal(){this.open=true;}close(){this.open=false;}getBoundingClientRect(){return {left:0,right:100,top:0,bottom:100};}fire(type,e={}){this.events[type]?.({...e,target:e.target||this});}}
-for(const id of ['palette-toggle','palette-dismiss','appearance-dialog','appearance-status','appearance-theme','appearance-accent','appearance-density','appearance-grid','appearance-spacing','appearance-spacing-value','appearance-open','appearance-reset'])nodes[id]=new El();
-const tabs=[new El()],classes=new Set(),body={dataset:{theme:'dark'},classList:{toggle(k,on){on?classes.add(k):classes.delete(k);}}};
+for(const id of ['palette-toggle','palette-dismiss','appearance-dialog','appearance-status','appearance-theme','appearance-accent','appearance-density','appearance-grid','appearance-spacing','appearance-spacing-value','appearance-open','appearance-reset','appearance-reading','appearance-palette-width','appearance-palette-width-value','appearance-canvas','appearance-grid-contrast','appearance-motion','appearance-preset-focus','appearance-preset-comfort','appearance-preset-presentation','appearance-profile','appearance-export','appearance-import'])nodes[id]=new El();
+const tabs=[new El()],classes=new Set(),body={dataset:{theme:'dark'},style:{setProperty(k,v){this[k]=v;}},classList:{toggle(k,on){on?classes.add(k):classes.delete(k);}}};
 const doc={body,getElementById:id=>nodes[id],querySelectorAll:()=>tabs,addEventListener:(k,f)=>events[k]=f,dispatchEvent:e=>{doc.lastEvent=e;}};
 const ctx=vm.createContext({document:doc,localStorage:{getItem:k=>{if(blocked)throw Error('blocked');return stored.get(k)||null;},setItem:(k,v)=>{if(blocked)throw Error('blocked');stored.set(k,v);}},CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},console});
 for(const file of ['js/elements.js','js/renderer.js','js/workbench-ui.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),ctx,{filename:file});
@@ -36,4 +36,23 @@ run("gridOps=[];gridView.gridSpacing=48;Renderer.prototype.drawGrid.call(gridVie
 check(run("gridOps.filter(x=>x==='line').length"),6,'Spacing changes canvas grid density');
 run("gridOps=[];gridView.gridStyle='dots';Renderer.prototype.drawGrid.call(gridView,100,100);");
 check(run("gridOps.includes('dot')&&!gridOps.includes('stroke')"),true,'Dots remain distinct from line grid');
+check(run('workbenchNormalize({paletteWidth:999}).paletteWidth'),320,'Palette width bounded');
+check(run('workbenchNormalize({paletteWidth:null}).paletteWidth'),252,'Null preference migrates to default');
+check(run("workbenchNormalize({canvas:'url(x)',reading:'huge'}).canvas"),'theme','Canvas choice is whitelisted');
+check(run("workbenchNormalize({motion:'reduced'}).motion"),'reduced','Reduced motion accepted');
+check(run("workbenchPreset('focus').appearance.grid"),'off','Focus preset simplifies canvas');
+check(run("workbenchPreset('presentation').appearance.reading"),'larger','Presentation preset enlarges reading size');
+check(run("workbenchParseProfile(workbenchProfile('light',{accent:'blue',paletteWidth:280})).appearance.paletteWidth"),280,'Profile round-trip preserves layout');
+check(run("workbenchParseProfile(workbenchProfile('light',{accent:'blue'})).theme"),'light','Profile includes theme');
+assert.throws(()=>run("workbenchParseProfile('{bad')"));checks++;
+assert.throws(()=>run("workbenchParseProfile(JSON.stringify({schema:99,theme:'dark',appearance:{}}))"));checks++;
+assert.throws(()=>run("workbenchParseProfile('x'.repeat(20001))"));checks++;
+nodes['appearance-preset-presentation'].fire('click');check(body.dataset.reading,'larger','Preset previews reading size');check(body.style['--palette-width'],'280px','Preset previews palette width');check(nodes['appearance-theme'].value,'light','Preset selects theme');
+nodes['appearance-motion'].value='reduced';nodes['appearance-motion'].fire('input');check(body.dataset.motion,'reduced','Motion control previews');
+nodes['appearance-export'].fire('click');check(JSON.parse(nodes['appearance-profile'].value).schema,1,'Export contains supported schema');check(nodes['appearance-profile'].value.includes('smiles'),false,'Profile contains no molecular records');
+nodes['appearance-profile'].value='{bad';const prior=run('JSON.stringify(workbenchPreferences())');nodes['appearance-import'].fire('click');check(run('JSON.stringify(workbenchPreferences())'),prior,'Malformed import leaves preferences unchanged');check(nodes['appearance-status'].textContent.startsWith('Could not import:'),true,'Import failure explained');
+nodes['appearance-profile'].value=run("workbenchProfile('dark',{canvas:'warm',gridContrast:'strong',reading:'large'})");nodes['appearance-import'].fire('click');check(run('workbenchPreferences().canvas'),'warm','Import applies canvas choice');check(body.dataset.reading,'large','Import previews reading preference');
+nodes['appearance-reset'].fire('click');check(body.dataset.reading,'normal','Reset clears expanded reading preference');check(body.style['--palette-width'],'252px','Reset restores width');
+check(run("workbenchPalette('light',{accent:'green',canvas:'warm',gridContrast:'strong'}).background"),'#fff8e8','Warm light canvas keeps light surface');
+check(run("workbenchPalette('dark',{accent:'green',canvas:'neutral',gridContrast:'subtle'}).grid.includes('0.07')"),true,'Grid contrast controls canvas opacity');
 console.log('Workbench appearance: '+checks+' checks passed.');
