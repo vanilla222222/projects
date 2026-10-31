@@ -965,11 +965,15 @@ function rxxRuleGrignardExtra(ctx) {
   const g = rxCloneGraph(nitrile.s.graph);
   const map = rxMerge(g, rGraph, rIds);
   g.addBond(map.get(reagent.carbon), nitrile.n.c);
-  rxSetOrder(g, nitrile.n.c, nitrile.n.n, 2);
-  g.getAtom(nitrile.n.n).element = 'O';
-  return [rxOutcome('grignard-nitrile', 'Grignard addition to a nitrile', 'Nucleophilic addition', g,
+  // Hydrolysis removes nitrogen; oxygen comes from the separate aqueous work-up.
+  g.removeAtom(nitrile.n.n);
+  rxAttach(g, 'O', nitrile.n.c, 2);
+  const out = rxOutcome('grignard-nitrile', 'Grignard addition to a nitrile', 'Nucleophilic addition', g,
     'The Grignard reagent adds once to the C≡N carbon, giving an imine anion that cannot react further. Aqueous acid in the work-up hydrolyses the imine to a ketone.',
-    { score: 13, byproducts: ['NH₄⁺ and Mg salts (after work-up)'], consumes: [rxUse(nitrile.s, 1), rxUse(reagent, 1)] })];
+    { score: 13, byproducts: ['NH₄⁺ and Mg salts (after work-up)'], consumes: [rxUse(nitrile.s, 1), rxUse(reagent, 1)] });
+  out.workupAtoms = {introducedOxygens:1, removedNitrogens:1, nitrogenIsotopes:[nitrile.s.graph.getAtom(nitrile.n.n).isotope || 0], oxygenSource:'Unlabelled water assumed in a separate hydrolytic work-up; no explicit isotope-transfer prediction.'};
+  out.warnings.push('The nitrile nitrogen leaves in undrawn hydrolysis products. Ketone oxygen is newly introduced from the separately assumed aqueous work-up; labelled work-up water and oxygen exchange are not modeled.');
+  return [out];
 }
 
 function rxxBocCarbonyl(s) {

@@ -1207,6 +1207,75 @@
         "temperature": -78,
         "atmosphere": "n2"
       }
+    },
+    {
+      "label": "Grignard nitrile hydrolysis atom identity C[13C]#[15N] / C[Mg]Br",
+      "compounds": [
+        {
+          "smiles": "C[13C]#[15N]",
+          "role": "reactant"
+        },
+        {
+          "smiles": "C[Mg]Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "grignard-nitrile",
+      "products": [
+        "C[13C](=O)C"
+      ],
+      "source": "grignardNitrile",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "Grignard nitrile hydrolysis atom identity CC#N / [13CH3][Mg]Br",
+      "compounds": [
+        {
+          "smiles": "CC#N",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[13CH3][Mg]Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "grignard-nitrile",
+      "products": [
+        "CC(=O)[13CH3]"
+      ],
+      "source": "grignardNitrile",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "Grignard nitrile hydrolysis atom identity COCC#[15N] / C[Mg]Br",
+      "compounds": [
+        {
+          "smiles": "COCC#[15N]",
+          "role": "reactant"
+        },
+        {
+          "smiles": "C[Mg]Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "grignard-nitrile",
+      "products": [
+        "COCC(=O)C"
+      ],
+      "source": "grignardNitrile",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
     }
   ],
   "negativeReactions": [
