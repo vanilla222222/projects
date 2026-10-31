@@ -1559,6 +1559,50 @@
         ],
         "temperature": 25
       }
+    },
+    {
+      "label": "No clean aldehyde-only reduction claimed with an unmodeled amide site",
+      "compounds": [
+        {
+          "smiles": "CN(C)C(=O)CCC=O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "CC(C)C[AlH]CC(C)C",
+          "role": "reagent"
+        }
+      ],
+      "rule": "dibal",
+      "products": [],
+      "source": "dibalNitrile",
+      "conditions": {
+        "solvents": [
+          "toluene"
+        ],
+        "temperature": -78
+      }
+    },
+    {
+      "label": "No clean ester-only reduction claimed while retaining an acyl chloride",
+      "compounds": [
+        {
+          "smiles": "COC(=O)CCC(=O)Cl",
+          "role": "reactant"
+        },
+        {
+          "smiles": "CC(C)C[AlH]CC(C)C",
+          "role": "reagent"
+        }
+      ],
+      "rule": "dibal",
+      "products": [],
+      "source": "dibalNitrile",
+      "conditions": {
+        "solvents": [
+          "toluene"
+        ],
+        "temperature": -78
+      }
     }
   ],
   "roundTrips": [

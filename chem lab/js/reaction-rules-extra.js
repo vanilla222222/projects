@@ -877,6 +877,7 @@ function rxxDibalConflicts(ctx) {
   const donors=rxGrignardInputSites(ctx).flatMap(s=>s.donors).filter(d=>d.kind!=='terminal alkyne');
   if(ctx.protic||ctx.has('H2O')||ctx.has('strongAcid')||donors.length)conflicts.push('Recorded water, protic medium, acid or O–H/N–H/S–H donor can consume DIBAL-H. No clean reduction or donor-loading correction is modeled for this mixture. A subsequent aqueous work-up must be separate.');
   if(ctx.temperature>-40&&rxGrignardInputSites(ctx).some(s=>s.electrophiles.includes('nitrile')))conflicts.push('Warm DIBAL-H mixtures containing nitriles are outside the encoded cold reduction/hydrolysis branch; selective aldehyde formation and further products are not modeled.');
+  if(rxGrignardInputSites(ctx).some(s=>s.electrophiles.some(g=>['amide','acylChloride','anhydride','carbonDioxide'].includes(g))))conflicts.push('A recorded acyl-derivative or CO2 electrophile is outside this DIBAL endpoint model. Selective reduction while retaining that site is not established.');
   const solvents=rxGrignardReactiveSolvents(ctx);
   if(solvents.length)conflicts.push('Recorded carbonyl/nitrile solvent groups ('+solvents.map(s=>s.name).join(', ')+') can react with DIBAL-H. Solvent-independent reduction is not established.');
   return conflicts;

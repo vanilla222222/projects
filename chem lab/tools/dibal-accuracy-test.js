@@ -33,4 +33,6 @@ check("(()=>{const f=dibalFixture('C[13C]#[15N]');return routeWorkspaceValidateS
 check("(()=>{const j=pathFinderCreate('CC#N','CC=O',{maxDepth:1,maxRoutes:1,budgetMs:5000});while(j.status==='running')j.step(100);return j.status==='found'&&j.route.length===1&&j.route.every(l=>retroForwardCheck(l.candidate,l.to));})()",true,'Native cold-nitrile route stays forward verified');
 check("(()=>{const f=dibalFixture('CC(=O)OC',{temperature:25},['CC#N'],2);return !f.outcome;})()",true,'Separate nitrile input cannot be ignored in a warm ester reduction');
 check("(()=>{const f=dibalFixture('CC#N',{},['CC(=O)OC']);return f.outcome.compatibilityConflicts.some(b=>b.code==='dibal-other-input')&&routeStepAssessment({outcome:f.outcome}).status==='blocked';})()",true,'Cold extra electrophile remains inspectable but blocks clean single-input preparation');
+check("!!dibalFixture('CN(C)C(=O)CCC=O').outcome",false,'Unmodeled amide on the same aldehyde substrate is not declared inert');
+check("!!dibalFixture('COC(=O)CCC(=O)Cl').outcome",false,'Acyl chloride on the same ester substrate cannot be ignored');
 console.log('DIBAL accuracy: '+checks+' checks passed.');
