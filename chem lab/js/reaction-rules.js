@@ -2735,11 +2735,14 @@ function rxProductSurvivalLabel(status) {
 
 function rxProductSurvival(ctx,outcome) {
   const workup=['grignard','grignard-carboxylation','grignard-nitrile','reduction-lialh4','dibal','hydroboration','borane-acid-reduction'].includes(outcome.id);
-  const phase=workup?'post-workup':['hydrohalogenation','hbr-radical'].includes(outcome.id)?'reaction-medium':'unspecified';
+  const phase=workup?'post-workup':['hydrohalogenation','hbr-radical','halogenation-alkyne','halogenation','halohydrin'].includes(outcome.id)?'reaction-medium':'unspecified';
   const report={status:'not-assessed',phase,issues:[],blockers:[],coverage:'Recognized product motifs and finite active-reagent susceptibility entries only; no kinetics, actual residual analysis or exhaustive stability proof.',message:''};
   if(workup){report.status='workup-boundary';report.message='This neutral endpoint includes a separate work-up. Coexistence with the original reaction reagents and stability after that work-up are not established by this audit.';return report;}
   const hx=['HBr','HCl','HI'].filter(tag=>ctx.has(tag)).map(tag=>({id:'product-'+tag,label:tag,tags:[tag],attacks:['alkene','alkyne'],followupHX:true}));
-  const entries=RX_CHEMOSELECTIVITY.filter(e=>!e.acylating&&e.tags.every(tag=>ctx.has(tag))).map(e=>rxChemoConditionEntry(e,ctx)).concat(hx);
+  // OpenStax Organic Chemistry 9.3: the dihaloalkene can add a second X2.
+  // https://openstax.org/books/organic-chemistry/pages/9-3-reactions-of-alkynes-addition-of-hx-and-x2
+  const halogens=['Br2','Cl2'].filter(tag=>ctx.has(tag)).map(tag=>({id:'product-'+tag,label:tag,tags:[tag],attacks:['alkene','alkyne'],followupHalogen:true}));
+  const entries=RX_CHEMOSELECTIVITY.filter(e=>!e.acylating&&e.tags.every(tag=>ctx.has(tag))).map(e=>rxChemoConditionEntry(e,ctx)).concat(hx,halogens);
   const selected=rxChemoEntry(ctx,outcome);if(selected&&selected.acylating)entries.push(selected);
   if(!entries.length){report.message='No active product-susceptibility model matched these conditions; product stability is not assessed.';return report;}
   try{
@@ -2752,7 +2755,7 @@ function rxProductSurvival(ctx,outcome) {
         Object.entries(groups).filter(([,sites])=>sites.length).forEach(([group,sites])=>{
           const issue={product:index+1,productRole:role,smiles:product.isomericSmiles||product.smiles,reagent:entry.id,label:entry.label,group,count:sites.length,availability};
           report.issues.push(issue);
-          if(entry.followupHX&&phase==='reaction-medium'&&availability==='recorded-excess-upper-bound')report.blockers.push({code:'product-further-addition',message:'The unsaturated product remains susceptible to '+entry.label+' under the recorded excess. A clean partial-addition endpoint is not established; further-product identities and ratios are not predicted.'});
+          if((entry.followupHX||entry.followupHalogen)&&phase==='reaction-medium'&&availability==='recorded-excess-upper-bound')report.blockers.push({code:'product-further-addition',message:'The unsaturated product remains susceptible to '+entry.label+' under the recorded excess. A clean partial-addition endpoint is not established; further-product identities and ratios are not predicted.'});
         });
       });
     });

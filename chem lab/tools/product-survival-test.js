@@ -23,4 +23,22 @@ check("(()=>{const c=['CC=O','C[Mg]Br'].map((smiles,i)=>({smiles,role:i?'reagent
 check("(()=>{const f=hxProduct('Br',1);return f.outcome.productSurvival.coverage.includes('no kinetics');})()",true,'Audit states its finite non-kinetic scope');
 check("(()=>{const compounds=['CC=O','CN'].map(smiles=>({smiles,role:'reactant',fragment:smilesToFragment(smiles)})),p=predictReaction(compounds,defaultReactionConditions());const o=[p.best,...p.alternatives].find(o=>o&&o.id==='imine');return !!o&&o.productSurvival.status==='not-assessed';})()",true,'Missing susceptibility coverage is not called stable');
 check("(()=>{const f=hxProduct('Br',0.5),fixed=f.compounds.map(c=>({...c,equiv:1}));return !reactionScopeAssess(fixed,f.conditions,f.outcome).reasons.some(r=>r.code==='reagent-loading');})()",true,'Corrected current quantities clear stale recorded underloading');
+run(`function x2Product(halogen='BrBr',amount=1,smiles='CC#CC'){
+ const compounds=[{smiles,role:'reactant',equiv:1},{smiles:halogen,role:'reagent',equiv:amount}].map(c=>({...c,fragment:smilesToFragment(c.smiles)}));
+ const conditions={...defaultReactionConditions(),solvents:['dcm']},p=predictReaction(compounds,conditions);
+ return {compounds,conditions,outcome:[p.best,...p.alternatives].find(o=>o&&o.id===(smiles.includes('#')?'halogenation-alkyne':'halogenation'))};
+}`);
+for(const halogen of ['BrBr','ClCl']){ctx.halogen=halogen;
+ check('x2Product(halogen,1).outcome.productSurvival.status','review','One-equivalent dihaloalkene is reviewed, not declared stable '+halogen);
+ check('x2Product(halogen,1).outcome.productSurvival.phase','reaction-medium','Halogen addition endpoint is in reaction medium '+halogen);
+ check('x2Product(halogen,1).outcome.productSurvival.issues[0].availability','modeled-exhaustion','One-equivalent exhaustion is only stoichiometric '+halogen);
+ check('x2Product(halogen,2).outcome.productSurvival.status','conflict','Excess halogen rejects a clean partial-addition endpoint '+halogen);
+ check("routeStepAssessment({outcome:x2Product(halogen,2).outcome}).blockers.some(b=>b.code==='product-further-addition')",true,'Planner blocks overaddition exposure '+halogen);
+ check("x2Product(halogen,2,'CC=C').outcome.productSurvival.status",'no-encoded-alert','Saturated alkene-addition product is a control '+halogen);
+ check("(()=>{const f=x2Product(halogen,2);return routeWorkspaceValidateStep({from:'CC#CC',to:f.outcome.products[0].isomericSmiles,ruleId:'halogenation',compounds:f.compounds,conditions:f.conditions}).status;})()",'unverified','Saved partial product cannot certify excess mixture '+halogen);
+ check("(()=>{const f=x2Product(halogen,1),changed=f.compounds.map(c=>({...c,equiv:c.role==='reagent'?2:1}));return reactionScopeAssess(changed,f.conditions,f.outcome).reasons.some(r=>r.code==='product-further-addition'&&r.level==='conflict');})()",true,'Scope replay catches later excess '+halogen);
+ check("(()=>{const f=x2Product(halogen,1),changed=f.compounds.map(c=>({...c,equiv:c.role==='reagent'?'':1})),p=predictReaction(changed,f.conditions),o=[p.best,...p.alternatives].find(o=>o&&o.id==='halogenation-alkyne');return o.productSurvival.issues.every(i=>i.availability==='not-quantified')&&!o.productSurvival.blockers.length;})()",true,'Unknown loading does not invent quantified excess '+halogen);
+ check("(()=>{const f=x2Product(halogen,2),before=JSON.stringify(f);reactionScopeAssess(f.compounds,f.conditions,f.outcome);return JSON.stringify(f)===before;})()",true,'Audit does not mutate recorded structures/loading '+halogen);
+}
+check("(()=>{const f=x2Product('BrBr',2,'CC=C');f.outcome.minor=[{smiles:'C=C',fragment:smilesToFragment('C=C')}];const r=rxProductSurvival(reactionContext(f.compounds,f.conditions),f.outcome);return r.status==='conflict'&&r.issues.some(i=>i.productRole==='alternative');})()",true,'Represented unsaturated alternative is also audited');
 console.log('Product survival: '+checks+' checks passed.');

@@ -1,5 +1,11 @@
 # Chem Lab upgrades
 
+## Halogen product-survival accuracy — 2026-10-31
+
+- Added Br2/Cl2 product-susceptibility entries and reaction-medium classification for the existing halogen-addition branches. Unsaturated products and represented alternatives are audited for further addition under the recorded mixture.
+- Recorded excess halogen blocks clean partial-addition preparation in planners and saved routes; one-equivalent theoretical exhaustion remains a review, not a stability guarantee. Unknown amounts do not invent a quantified excess. No second-addition structures, rates or product ratios are inferred. Existing separate-work-up boundaries and HX checks remain.
+- Product-survival coverage now has 44 focused checks, including both halogens, saturated controls, quantity changes, unknown loading, unchanged records, saved routes and represented alternatives. Four fixed E-dihaloalkene fixtures record their expected review/conflict status. Reaction-class reference: OpenStax Organic Chemistry 9.3.
+
 ## Expanded appearance configuration — 2026-10-31
 
 - Added Focus, Comfort and Presentation presets; reading size, desktop palette width, theme/neutral/warm canvas surfaces, grid contrast and interface motion controls. System reduced-motion preferences are honored, and layout controls retain responsive mobile bounds. Existing stored settings migrate through validated defaults.
