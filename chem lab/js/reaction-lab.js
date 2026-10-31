@@ -618,9 +618,10 @@ function createReactionLab(host) {
 
   function currentScheme() {
     const outcome = chosenOutcome();
+    if(outcome&&outcome.regioselectivity&&outcome.regioselectivity.alternativesRole)return buildReactionScheme(state.compounds,state.conditions,outcome.products.concat(outcome.minor||[]).map(reactionProductFragment),outcome.products.concat(outcome.minor||[]).map(()=> 'Unranked positional alternative'));
     if (outcome && outcome.ratio && outcome.products.length === 1 && (outcome.minor || []).length === 1) {
       return buildReactionScheme(state.compounds, state.conditions, outcome.products.concat(outcome.minor).map(reactionProductFragment),
-        ['~' + outcome.ratio[0] + '% (major)', '~' + outcome.ratio[1] + '% (minor)']);
+        [(outcome.regioselectivity?'Heuristic ~':'~') + outcome.ratio[0] + '% (major)', (outcome.regioselectivity?'Heuristic ~':'~') + outcome.ratio[1] + '% (minor)']);
     }
     return buildReactionScheme(state.compounds, state.conditions, outcome ? outcome.products.map(reactionProductFragment) : []);
   }
@@ -695,12 +696,12 @@ function createReactionLab(host) {
     const addCard = (product, minor, index) => {
       const fragment = reactionProductFragment(product);
       const info = reactionDescribeFragment(fragment);
-      const card = element('div', 'rx-product' + (minor ? ' minor' : ''));
+      const card = element('div', 'rx-product' + (minor&&!(outcome.regioselectivity&&outcome.regioselectivity.alternativesRole) ? ' minor' : ''));
       const canvas = element('canvas', 'rx-product-thumb');
       const shown = productDisplayName(product);
       const label = element('div', 'rx-product-name', (product.count > 1 ? product.count + ' × ' : '') + (shown || info.formula));
       const formulaLine = element('div', 'rx-product-formula', '');
-      formulaLine.innerHTML = '<span>' + (minor ? 'minor · ' : '') + (ratio && index === 0 ? '~' + ratio[minor ? 1 : 0] + '% · ' : '') + formulaHtml(info.formula) + ' · ' + info.mass.toFixed(2) + ' g/mol</span>';
+      formulaLine.innerHTML = '<span>' + (outcome.regioselectivity&&outcome.regioselectivity.alternativesRole?'unranked positional alternative · ':(minor ? 'minor · ' : '')) + (ratio && index === 0 ? (outcome.regioselectivity?'heuristic ~':'~') + ratio[minor ? 1 : 0] + '% · ' : '') + formulaHtml(info.formula) + ' · ' + info.mass.toFixed(2) + ' g/mol</span>';
       card.append(canvas, label, formulaLine);
       if (product.stereo) {
         card.appendChild(element('div', 'rx-product-stereo ' + product.stereo.kind, product.stereo.text));
@@ -1030,7 +1031,7 @@ function createReactionLab(host) {
       ['Over the arrow', labels.above || '—'],
       ['Under the arrow', labels.below || '—'],
       ['Products', outcome ? outcome.products.map((pr) => (pr.count > 1 ? pr.count + ' × ' : '') + (productDisplayName(pr) || pr.smiles)).join(' + ') +
-        (outcome.minor.length ? ' (minor' + (outcomeRatio(outcome) ? ' ~' + outcome.ratio[1] + '%' : '') + ': ' + outcome.minor.map((pr) => productDisplayName(pr) || pr.smiles).join(', ') + ')' : '') : '—'],
+        (outcome.minor.length ? (outcome.regioselectivity&&outcome.regioselectivity.alternativesRole?' (unranked positional alternatives':' (minor') + (outcomeRatio(outcome) ? (outcome.regioselectivity?' heuristic ~':' ~') + outcome.ratio[1] + '%' : '') + ': ' + outcome.minor.map((pr) => productDisplayName(pr) || pr.smiles).join(', ') + ')' : '') : '—'],
     ];
     if (state.conditions.notes.trim()) {
       lines.push(['Notes', state.conditions.notes.trim()]);

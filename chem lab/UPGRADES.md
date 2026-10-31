@@ -1,5 +1,12 @@
 # Chem Lab upgrades
 
+## Positional-isomer alternatives and provenance — 2026-10-30
+
+- Alkene HX addition (including radical HBr), hydration and hydroboration now distinguish equal-substitution orientations by isotope-preserving constitutional identity. Distinct orientations remain visible as unranked positional alternatives without an assigned ratio; symmetry-equivalent products are not duplicated. Multiple alkene sites and tied rearrangement cases remain unresolved instead of acquiring first-site selectivity. Enumeration is bounded to the selected alkene and is not a comprehensive rearrangement model.
+- The shared planner gate, workspace and scope replay reject clean selective preparation for unresolved cases. Ordinary class-directed additions remain available with explicit heuristic warnings. Recipe Tree displays positional-selectivity provenance. Stereochemical mixtures remain a separate assessment.
+- Existing aromatic halogenation, Friedel–Crafts, nitration and sulfonation branches retain their alternatives while explicitly identifying site ranking and legacy ratios as heuristics. Scope assigns positional ratios to regioselectivity instead of incorrectly calling them stereo ratios. Reaction cards label these ratios as heuristic and tied addition drawings as unranked. Aromatic alternatives remain nonexhaustive; this batch does not establish experimental isolation or product distributions.
+- Forty-five focused checks cover asymmetric/symmetric and isotope-labelled inputs, reversed atom order, fixed product pairs, three addition families, multiple sites, aromatic provenance, scope nonmutation, saved-route gates and Path Finder conflict/control cases. Two source-linked positional reference cases and an ethene status check extend the benchmark; RDKit independently compares the fixed positional product sets with stereochemistry removed only for these explicitly connectivity-scoped fixtures, retaining isotopes. Existing stereochemical fixtures keep their original identity checks.
+
 ## Route boundaries and endpoint work-up records — 2026-10-30
 
 - Saved routes persist isolated/fresh-mixture versus carry-over boundaries, with legacy/generated defaults explicitly labelled model assumptions. Import and direct validation preserve one-pot intent instead of dropping it. Unsupported carry-over makes the route unverified even when every individual graph edit replays; overall yield and scale planning remain unavailable for that route.

@@ -17,7 +17,8 @@
     "grignardNitrile": "https://openstax.org/books/organic-chemistry/pages/20-7-chemistry-of-nitriles",
     "grignardFormation": "https://openstax.org/books/organic-chemistry/pages/10-6-reactions-of-alkyl-halides-grignard-reagents",
     "esterGrignardLoading": "https://openstax.org/books/organic-chemistry/pages/21-6-chemistry-of-esters",
-    "grignardAcidicHydrogens": "https://scholar.ulethbridge.ca/sites/default/files/susanfindlay/files/chem2500new_lecture07_pi_bonds_as_electrophiles.pdf?m=1582677275"
+    "grignardAcidicHydrogens": "https://scholar.ulethbridge.ca/sites/default/files/susanfindlay/files/chem2500new_lecture07_pi_bonds_as_electrophiles.pdf?m=1582677275",
+    "regioAddition": "https://openstax.org/books/organic-chemistry/pages/7-8-orientation-of-electrophilic-additions-markovnikovs-rule"
   },
   "naming": [
     {
@@ -336,7 +337,8 @@
         "CCBr"
       ],
       "source": "alkeneReactions",
-      "conditions": {}
+      "conditions": {},
+      "regioStatus": "equivalent"
     },
     {
       "label": "Acid hydration",
@@ -819,6 +821,63 @@
       "conditions": {
         "solvents": [
           "ethanol"
+        ]
+      }
+    },
+    {
+      "label": "2-Pentene HBr gives two represented positional alternatives without an assigned ratio",
+      "compounds": [
+        {
+          "smiles": "CC=CCC",
+          "role": "reactant"
+        },
+        {
+          "smiles": "Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "hydrohalogenation",
+      "products": [
+        "CC(Br)CCC"
+      ],
+      "positionalProducts": [
+        "CC(Br)CCC",
+        "CCC(Br)CC"
+      ],
+      "regioStatus": "unresolved",
+      "comparison": "connectivity",
+      "source": "regioAddition",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "Symmetric 2-butene HBr orientations are constitutionally equivalent",
+      "compounds": [
+        {
+          "smiles": "CC=CC",
+          "role": "reactant"
+        },
+        {
+          "smiles": "Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "hydrohalogenation",
+      "products": [
+        "CC(Br)CC"
+      ],
+      "positionalProducts": [
+        "CC(Br)CC"
+      ],
+      "regioStatus": "equivalent",
+      "comparison": "connectivity",
+      "source": "regioAddition",
+      "conditions": {
+        "solvents": [
+          "ether"
         ]
       }
     }

@@ -37,6 +37,12 @@ def canonical(mol):
     return Chem.MolToSmiles(mol, canonical=True, isomericSmiles=True)
 
 
+def canonical_connectivity(mol):
+    copy = Chem.Mol(mol)
+    Chem.RemoveStereochemistry(copy)
+    return canonical(copy)
+
+
 def parse_smiles(text):
     mol = Chem.MolFromSmiles(text, sanitize=True)
     if mol is None:
@@ -124,9 +130,14 @@ def main():
             if row.get("error"):
                 raise ValueError(row["error"])
             check("reaction_rule_found", row["label"], row["found"], True)
-            actual = sorted(canonical(parse_smiles(s)) for s in row["actual"])
-            expected = sorted(canonical(parse_smiles(s)) for s in row["products"])
+            key = canonical_connectivity if row.get("comparison") == "connectivity" else canonical
+            actual = sorted(key(parse_smiles(s)) for s in row["actual"])
+            expected = sorted(key(parse_smiles(s)) for s in row["products"])
             check("reaction_products_vs_RDKit", row["label"], actual, expected)
+            if "positionalProducts" in row:
+                actual_positions = sorted(set(canonical_connectivity(parse_smiles(s)) for s in row["actualPositional"]))
+                expected_positions = sorted(set(canonical_connectivity(parse_smiles(s)) for s in row["positionalProducts"]))
+                check("positional_products_vs_RDKit", row["label"], actual_positions, expected_positions)
         except Exception as error:
             check("reaction_error", row["label"], str(error), "No product parse or sanitization error")
 
