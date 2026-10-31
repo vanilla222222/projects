@@ -1,5 +1,11 @@
 # Chem Lab upgrades
 
+## Hydroxyl substitution atom identity — 2026-10-31
+
+- Alcohol-to-halide, Appel and acid-to-acyl-chloride rules replace the departing oxygen with a new halogen atom. Oxygen isotope labels no longer become halogen isotope labels. Carbon labels and the nondeparting carbonyl oxygen stay on their original atoms.
+- Shared replacement updates tetrahedral neighbor identity before applying inversion or retention. Acid-mediated rearrangement moves the new halogen and preserves the unrearranged alternative.
+- Fifty-three focused checks cover both alcohol enantiomers, inversion/retention, a spectator stereocentre, polyol substitution, acyl oxygen identity and rearrangement. Three independent product fixtures extend the benchmark. This does not predict isotope transfer from labelled reagents or balanced byproducts, or broaden the rules’ substrate/condition scope.
+
 ## Grignard nitrile hydrolysis atom identity — 2026-10-31
 
 - Nitrile addition followed by hydrolysis now removes the nitrile nitrogen and adds a fresh oxygen, rather than changing nitrogen into oxygen. Nitrile-carbon and Grignard-carbon isotope labels remain on carbon.

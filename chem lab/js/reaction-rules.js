@@ -57,6 +57,15 @@ function rxAttach(g, element, toId, order, charge) {
   return atom;
 }
 
+// Substitution replaces hydroxyl oxygen; isotope and explicit O-H atoms leave with it.
+function rxReplaceHydroxyl(g, center, oxygen, element, invert) {
+  const incoming = rxAttach(g, element, center);
+  rxsReplace(g, center, oxygen, incoming.id, !!invert);
+  rxNeighbors(g, oxygen).filter(n => n.atom.element === 'H').forEach(n => g.removeAtom(n.atom.id));
+  g.removeAtom(oxygen);
+  return incoming.id;
+}
+
 function rxSetOrder(g, a, b, order) {
   const bond = g.getBond(a, b);
   if (order === 0) {
@@ -1649,13 +1658,14 @@ function rxRuleAlcoholToHalide(ctx) {
     }
     const g = rxCloneGraph(s.graph);
     const inversion = reagent === 'pbr3' || (reagent === 'socl2' && ctx.has('amineBase'));
+    const incoming = new Map();
     s.info.alcohols.forEach((a) => {
-      g.getAtom(a.o).element = x;
+      incoming.set(a.o, rxReplaceHydroxyl(g, a.c, a.o, x, inversion));
       const acid = reagent !== 'socl2' && reagent !== 'pbr3';
       if (acid && a.degree >= 2) {
         rxsDrop(g, a.c);
-      } else if (acid || inversion) {
-        rxsReplace(g, a.c, a.o, a.o, true);
+      } else if (acid) {
+        rxsReplace(g, a.c, incoming.get(a.o), incoming.get(a.o), true);
       }
     });
     const tertiary = s.info.alcohols.some((a) => a.degree === 3);
@@ -1665,7 +1675,7 @@ function rxRuleAlcoholToHalide(ctx) {
     const shift = single && alcohol.degree === 2 ? rxCationShift(s.graph, alcohol.c) : null;
     const plain = shift ? rxCloneGraph(g) : null;
     if (shift) {
-      rxApplyShift(g, alcohol.c, shift, alcohol.o);
+      rxApplyShift(g, alcohol.c, shift, incoming.get(alcohol.o));
     }
     const reason = reagent === 'socl2'
       ? 'SOCl₂ turns OH into a chlorosulfite leaving group, which chloride displaces; SO₂ and HCl bubble off.' +

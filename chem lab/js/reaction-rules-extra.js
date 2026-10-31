@@ -311,7 +311,7 @@ function rxxRuleAcidChloride(ctx) {
     }
     const g = rxCloneGraph(s.graph);
     acids.forEach((c) => {
-      g.getAtom(c.hetero).element = 'Cl';
+      rxReplaceHydroxyl(g, c.c, c.hetero, 'Cl', false);
     });
     const out = rxOutcome('acid-chloride', 'Acid → acyl chloride', 'Nucleophilic acyl substitution', g,
       reagent === 'socl2'
@@ -1190,8 +1190,7 @@ function rxxRulePhosphorus(ctx) {
       }
       const g = rxCloneGraph(s.graph);
       alcohols.forEach((a) => {
-        g.getAtom(a.o).element = x;
-        rxsReplace(g, a.c, a.o, a.o, true);
+        rxReplaceHydroxyl(g, a.c, a.o, x, true);
       });
       out.push(rxOutcome('appel', 'Appel reaction', 'Substitution (Sₙ2)', g,
         'PPh₃ and C' + x + '₄ form a halophosphonium salt that turns the OH into an alkoxyphosphonium leaving group; ' + x + '⁻ displaces it by Sₙ2 with inversion, driven by forming Ph₃P=O. The conditions are neutral, so there are no rearrangements.',
