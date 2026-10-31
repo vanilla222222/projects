@@ -63,6 +63,7 @@ for (const item of fixtures.reactions.concat(fixtures.negativeReactions)) {
     const outcome = predictReaction(compounds, Object.assign({}, defaultReactionConditions(), item.conditions));
     const selected = [outcome.best, ...outcome.alternatives].filter(Boolean).find(o => o.id === item.rule);
     return { found: !!selected, unchanged: before === JSON.stringify(compounds),
+      loadingCeiling:selected&&selected.stoichiometry?selected.stoichiometry.conversion:null,
       actual: selected ? selected.products.map(p => benchmarkKey(p.isomericSmiles || p.smiles)).sort() : [],
       expected: item.products.map(benchmarkKey).sort() };
   })()`));
@@ -70,6 +71,7 @@ for (const item of fixtures.reactions.concat(fixtures.negativeReactions)) {
     check('reaction-positive', () => assert.equal(result.found, true, item.label));
     check('reaction-products', () => assert.deepEqual(result.actual, result.expected, item.label));
   } else check('reaction-negative', () => assert.equal(result.found, false, item.label));
+  if(item.loadingCeiling!==undefined)check('loading-ceiling',()=>assert.equal(result.loadingCeiling,item.loadingCeiling,item.label));
   check('immutability', () => assert.equal(result.unchanged, true, item.label));
 }
 for (const smiles of fixtures.roundTrips) {

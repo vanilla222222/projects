@@ -1,5 +1,13 @@
 # Chem Lab upgrades
 
+## Recorded loading and stoichiometric ceilings — 2026-10-30
+
+- Consumed-input amounts now expose an explicit stoichiometric-upper-bound basis and sufficient/limited/unknown completion status. Unconvertible or invalid recorded units no longer fall through parseFloat to one equivalent. The ceiling is normalized to the first listed consumed reactant, so excess partners do not create a false limit. The legacy conversion field retains the numerical ceiling, not a predicted yield or product distribution.
+- Raw, saved-route, scope and staged checks reject recorded underloading or unresolved quantities as evidence of complete conversion. One equivalent of Grignard in an ester double-addition does not invent selective ketone isolation; hydride ceilings retain the existing ideal four-hydride consumption model and its practical-loading caveats.
+- Generated recipes may raise unspecified amounts to at least the encoded net demand, then must replay those recorded quantities. Explicit supplied amounts are preserved. Protection sequences, stereochemical replays and independent forward checks carry the planned equivalents. This is a theoretical recipe assumption, not a reagent-loading recommendation.
+- Staged reactions preserve explicit reagent equivalents instead of replacing every amount with one. Absolute stage quantities are rejected without a carried-material scale. The reaction display calls the result a stoichiometric ceiling and shows unknown amounts as unresolved.
+- Sixty-one focused checks cover ester–Grignard and hydride bounds, multiple sites, absolute-unit normalization, invalid/unconvertible units, explicit-versus-planned amounts, stage records and saved-route completion. Four fixed benchmark cases assert theoretical loading ceilings independently of product identity. Prior staged/scaling fixtures now use sufficient reagent; the 75% scaling example is an explicit yield assumption rather than an underloading ceiling.
+
 ## Reactive solvents and Grignard preparation limits — 2026-10-30
 
 - The carbonyl, CO2 and nitrile Grignard branches now identify electrophilic carbonyl/nitrile motifs in recorded solvent structures. Acetone, ethyl acetate, acetonitrile and DMF no longer silently act as inert media; these branches return an unresolved solvent-competition hint rather than inventing products or calling the competition proton quench. Ether/THF cosolvents do not hide a reactive component.

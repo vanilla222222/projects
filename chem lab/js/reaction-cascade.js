@@ -23,7 +23,11 @@ function reactionCascadeRun(startSmiles, stages, options) {
         if(!['reactant','reagent','catalyst','solvent'].includes(role))return fail('invalid','Unknown reagent role in stage '+(index+1)+'.');
         const fragment=smilesToFragment(input.smiles);
         if(reactionFragmentGraph(fragment).atoms.length>120)return fail('invalid','Each stage reagent is limited to 120 atoms.');
-        compounds.push({smiles:input.smiles,fragment,role,label:String(input.label||'').slice(0,120),equiv:1});
+        const equiv=input.equiv===undefined?'1':String(input.equiv);
+        const amount=reactionParseAmount(equiv);
+        if(!amount)return fail('invalid','Stage '+(index+1)+' has an invalid reagent amount.');
+        if(amount.kind!=='equiv')return fail('invalid','Stage '+(index+1)+' requires reagent equivalents because no carried-material scale is recorded.');
+        compounds.push({smiles:input.smiles,fragment,role,label:String(input.label||'').slice(0,120),equiv});
       }
       const conditions=normalizeReactionConditions(stage.conditions||{}),prediction=predictReaction(compounds,conditions);
       const outcomes=[prediction.best,...(prediction.alternatives||[])].filter(Boolean);

@@ -660,15 +660,16 @@ function createReactionLab(host) {
     table.appendChild(head);
     stoich.rows.forEach((r) => {
       const row = element('tr');
-      const status = r.status === 'limiting' ? 'limiting' : r.status === 'excess' ? 'excess (+' + (Math.round(r.leftover * 100) / 100) + ')' : 'exact';
+      const status = r.status === 'unknown' ? 'unresolved' : r.status === 'limiting' ? 'limiting' : r.status === 'excess' ? 'excess (+' + (Math.round(r.leftover * 100) / 100) + ')' : 'exact';
       row.append(element('td', '', r.label), element('td', '', (Math.round(r.need * 100) / 100) + ' equiv'),
-        element('td', '', r.have + ' equiv'), element('td', 'rx-stoich-status ' + r.status, status));
+        element('td', '', Number.isFinite(r.have)?r.have+' equiv':'Unknown'), element('td', 'rx-stoich-status ' + r.status, status));
       table.appendChild(row);
     });
     box.appendChild(table);
-    box.appendChild(element('div', 'rx-stoich-yield' + (stoich.conversion < 0.999 ? ' short' : ''),
-      'Max. conversion of ' + stoich.rows[0].label + ': ' + Math.round(stoich.conversion * 100) + '%' +
-      (stoich.limiting && stoich.limiting !== stoich.rows[0] ? ' (limited by ' + stoich.limiting.label + ')' : '')));
+    const knownCeiling=Number.isFinite(stoich.conversion);
+    box.appendChild(element('div', 'rx-stoich-yield' + (!knownCeiling || stoich.conversion < 1-1e-9 ? ' short' : ''),
+      'Stoichiometric ceiling for ' + stoich.rows[0].label + ': ' + (knownCeiling?rxFormatEquiv(stoich.conversion*100)+'%':'unresolved') +
+      '. This is an amount-based upper bound, not a predicted conversion or isolated yield.'));
     return box;
   }
 

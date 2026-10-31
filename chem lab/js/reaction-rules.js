@@ -2427,11 +2427,21 @@ function rxStoichiometry(outcome, compounds) {
       return;
     }
     const line = sheet.find((r) => r.compound === x.compound);
-    const have = line && line.equiv > 0 ? line.equiv : parseFloat(x.compound.equiv);
-    rows.push({ compound: x.compound, label: rxCompoundLabel(x.compound), need: x.need, have: have > 0 ? have : 1 });
+    const have = line && line.equiv > 0 ? line.equiv : x.compound.equiv === undefined ? 1 : null;
+    rows.push({ compound: x.compound, label: rxCompoundLabel(x.compound), need: x.need, have, assumed: x.compound.equiv === undefined });
   });
   if (!rows.length) {
     return null;
+  }
+  // Report the ceiling for the first listed consumed reactant, not whichever
+  // reagent/partner a rule happened to list first in its consumption array.
+  const firstReactant=(compounds||[]).find(c=>c.role==='reactant'&&rows.some(r=>r.compound===c));
+  const baseIndex=rows.findIndex(r=>r.compound===firstReactant);
+  if(baseIndex>0)rows.unshift(rows.splice(baseIndex,1)[0]);
+  if(rows.some(r=>!Number.isFinite(r.have)||r.have<=0)){
+    rows.forEach(r=>{r.ratio=null;r.status='unknown';r.leftover=null;});
+    outcome.warnings.push('Recorded amounts cannot be converted to equivalents for every consumed input. The stoichiometric ceiling is unresolved; no conversion or product distribution is inferred.');
+    return {rows,extent:null,conversion:null,limiting:null,multiplier:1,basis:'stoichiometric-upper-bound',completion:'unknown'};
   }
   const extent = Math.min.apply(null, rows.map((r) => r.have / r.need));
   rows.forEach((r) => {
@@ -2447,15 +2457,22 @@ function rxStoichiometry(outcome, compounds) {
   const base = rows[0];
   const conversion = Math.min(1, extent / base.ratio);
   const limiting = rows.find((r) => r.status === 'limiting') || null;
-  if (limiting && limiting !== base && conversion < 0.999) {
+  if (limiting && limiting !== base && conversion < 1-1e-9) {
     outcome.warnings.push(rxFormatEquiv(limiting.have) + ' equiv of ' + limiting.label + ' is not enough: the reaction needs ' + rxFormatEquiv(limiting.need) +
-      ' per ' + base.label + ', so at most ' + Math.round(conversion * 100) + '% of the ' + base.label + ' can react. Use at least ' + rxFormatEquiv(limiting.need * base.have) + ' equiv.');
+      ' per modeled net transformation, so the stoichiometric ceiling for ' + base.label + ' is ' + rxFormatEquiv(conversion * 100) + '%. This is an upper bound, not a predicted conversion, yield or product distribution.');
   }
   let multiplier = 1;
   while (multiplier < 12 && !rows.every((r) => Math.abs(r.need * multiplier - Math.round(r.need * multiplier)) < 1e-6)) {
     multiplier += 1;
   }
-  return { rows, extent, conversion, limiting, multiplier };
+  return { rows, extent, conversion, limiting, multiplier, basis:'stoichiometric-upper-bound', completion:conversion<1-1e-9?'limited':'sufficient' };
+}
+
+function rxLoadingConflict(outcome) {
+  const s=outcome&&outcome.stoichiometry;if(!s)return null;
+  if(s.completion==='unknown')return 'The recorded amounts do not establish a stoichiometric conversion ceiling; complete conversion cannot be verified.';
+  if(Number.isFinite(s.conversion)&&s.conversion<1-1e-9)return 'Recorded loading accounts for at most '+rxFormatEquiv(s.conversion*100)+'% of the modeled net transformation. Complete conversion is not established; no partial-product distribution is inferred.';
+  return null;
 }
 
 function rxFormatEquiv(value) {

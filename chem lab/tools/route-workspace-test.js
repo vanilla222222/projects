@@ -41,8 +41,10 @@ assert.equal(run(`routeWorkspaceCsv({...route,name:'=1+1'}).includes("'=1+1")`),
 console.log('Route workspace model: 30 checks passed.');
 
 const near = (actual, expected, tolerance = 1e-7) => assert.ok(Math.abs(actual - expected) <= Math.max(1e-9, Math.abs(expected) * tolerance), actual + ' ≠ ' + expected);
-assert.equal(run(`route.steps.every(s=>s.compounds.every(c=>c.equiv==='1'))`), true);
+assert.equal(run(`route.steps.every(s=>routeWorkspaceValidateStep(s).outcome.stoichiometry.conversion===1)`), true);
 assert.equal(run(`route.steps.every(s=>s.yield===null)`), true);
+// Scaling uses an explicit user-supplied yield, not an underloading ceiling.
+run(`route.steps[1].yield=75;`);
 assert.equal(run(`routeWorkspaceNormalize({...route,steps:[{...route.steps[0],yield:62.5,compounds:route.steps[0].compounds.map((c,i)=>({...c,equiv:i?'1':'2.5'}))},route.steps[1]]}).steps[0].yield`), 62.5);
 assert.equal(run(`routeWorkspaceNormalize({...route,steps:[{...route.steps[0],compounds:route.steps[0].compounds.map((c,i)=>({...c,equiv:i?'1':'2.5'}))},route.steps[1]]}).steps[0].compounds[0].equiv`), '2.5');
 assert.throws(() => run(`routeWorkspaceNormalize({...route,steps:[{...route.steps[0],yield:101},route.steps[1]]})`), /between 0 and 100/);
@@ -65,7 +67,7 @@ near(run(`productPlan.finalProductMg`), 1000);
 assert.equal(run(`productPlan.overallYield`), 75);
 near(run(`productPlan.startingMmol`), 22.202979639867667);
 near(run(`productPlan.steps[0].rows[0].mg`), 622.8823908168475);
-near(run(`productPlan.steps[1].rows[1].mg`), 3508.781278447567);
+near(run(`productPlan.steps[1].rows[1].mg`), 3508.781278447567*4/3);
 near(run(`productPlan.steps[0].productMmol`), run(`productPlan.steps[1].carriedMmol`));
 near(run(`reactantPlan.steps[0].rows[0].mg`), 100);
 near(run(`reactantPlan.finalProductMg`), 160.54395095173598);
@@ -159,7 +161,7 @@ context.container = root;
 context.storage = { getItem(key) { return storage.get(key) || null; }, setItem(key, value) { storage.set(key, value); } };
 context.download = (name, type, text) => downloads.push({ name, type, text });
 context.open = () => opened++;
-run(`var controller=createRouteWorkspace({container,storage,download,openInLab:open}); controller.addRoute(fixture);`);
+run(`var controller=createRouteWorkspace({container,storage,download,openInLab:open}); controller.addRoute(route);`);
 const all = (el) => [el, ...el.children.flatMap(all)];
 const named = (text) => all(root).find((el) => el.tagName === 'button' && el.textContent === text);
 const labeled = (label) => all(root).find((el) => el.attributes['aria-label'] === label);

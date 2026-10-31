@@ -10,6 +10,8 @@ function routeStepAssessment(candidate) {
     });
     return {status:blockers.length?'blocked':'no-encoded-conflict',blockers,warnings:[...new Set(warnings)]};
   }
+  const loadingConflict=rxLoadingConflict(o);
+  if(loadingConflict)blockers.push({code:'reagent-loading',message:loadingConflict});
   if(o.partialConversion)blockers.push({code:'partial-conversion',message:'A partial-conversion site alternative has no established selective preparation.'});
   const chemo=o.chemoselectivity;
   if(chemo&&(chemo.competing||[]).length)blockers.push({code:'competing-sites',message:'The current rule leaves other susceptible sites available to '+(chemo.label||'the reagent')+'. A compatible protection or selectivity model is required.'});
