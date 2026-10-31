@@ -1,5 +1,11 @@
 # Chem Lab upgrades
 
+## Expanded appearance configuration — 2026-10-31
+
+- Added Focus, Comfort and Presentation presets; reading size, desktop palette width, theme/neutral/warm canvas surfaces, grid contrast and interface motion controls. System reduced-motion preferences are honored, and layout controls retain responsive mobile bounds. Existing stored settings migrate through validated defaults.
+- Appearance profiles can be exported to copyable JSON and imported through the panel. Profiles contain only display preferences and theme, with version/size/shape checks and bounded, whitelisted values. Invalid imports leave the current settings intact. Reset and storage-failure preview behavior cover the expanded settings.
+- The appearance suite now has 53 checks covering migration/defaults, bounds, profile round-trips and failures, presets, live layout and canvas controls. No search or chemistry behavior changes in this batch. Browser visual inspection remains unavailable because of the previously reported browser-download failure.
+
 ## Ordinary-reagent competing sites — 2026-10-31
 
 - Reduction, PCC/KMnO4 oxidation, alcohol-halide, acyl-chloride and Appel branches now audit susceptible groups in all original compound inputs. Other inputs labeled reagent, catalyst or reactant are not assumed inert; their unmodeled consumption blocks a clean selected-input preparation while leaving graph predictions inspectable. This finite group inventory is not an exhaustive compatibility model.
