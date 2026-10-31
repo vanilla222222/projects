@@ -1,5 +1,11 @@
 # Chem Lab upgrades
 
+## Grignard competing electrophilic sites — 2026-10-31
+
+- Grignard carbonyl, nitrile and CO2 endpoints now count recognized electrophilic sites across substrate inputs. Multiple carbonyl/nitrile/CO2 sites produce an explicit compatibility conflict, including repeated groups of the same kind that group-presence checks could miss.
+- First-site graph predictions remain inspectable, but route assessment, saved-step validation and scope replays cannot certify selective mono-addition. This is a conservative structural ambiguity audit, not a prediction of relative rates, exhaustive addition products or a claim that selective experimental methods do not exist.
+- Thirty-two checks cover dialdehydes, diketones, diesters, dinitriles, carbonyl/nitrile combinations, separate electrophile inputs, changed-input scope replay and five single-site controls. Existing reaction-stage medium, donor and work-up checks remain in force.
+
 ## Hydroxyl substitution atom identity — 2026-10-31
 
 - Alcohol-to-halide, Appel and acid-to-acyl-chloride rules replace the departing oxygen with a new halogen atom. Oxygen isotope labels no longer become halogen isotope labels. Carbon labels and the nondeparting carbonyl oxygen stay on their original atoms.
