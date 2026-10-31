@@ -13,6 +13,11 @@ const CORE_REACTION_EVIDENCE_SOURCES = {
     "https://scholar.ulethbridge.ca/sites/default/files/susanfindlay/files/chem2500new_lecture07_pi_bonds_as_electrophiles.pdf?m=1582677275",
     "teaching"
   ],
+  "productHX": [
+    "McMurry, OpenStax: alkyne HX addition and reaction of vinyl products with excess HX",
+    "https://openstax.org/books/organic-chemistry/pages/9-3-reactions-of-alkynes-addition-of-hx-and-x2",
+    "teaching"
+  ],
   "coldPermanganate": [
     "Hunt and Spinney: hydroxylation of alkenes with cold alkaline permanganate",
     "https://chem.ucalgary.ca/courses/351/Carey5th/Ch15/ch15-3-3.html",
@@ -619,10 +624,11 @@ const CORE_REACTION_EVIDENCE_ROWS = [
     "Addition",
     "Recognized HX adds to the selected alkene/alkyne using local Markovnikov ranking; the HBr peroxide/light branch gives the encoded radical alternative.",
     "The radical alternative is limited to the HBr-specific reagent pattern.",
-    "Distinct equal-substitution alkene orientations are unranked alternatives; symmetric products are not duplicated and multiple alkene sites remain unresolved. Carbocation rearrangement, partial alkyne addition and real product ratios are simplified.",
+    "Distinct equal-substitution alkene orientations are unranked alternatives; symmetric products are not duplicated and multiple alkene sites remain unresolved. Carbocation rearrangement, partial alkyne addition and real product ratios are simplified. The product audit flags an unsaturated endpoint under recorded excess HX without predicting its subsequent product distribution.",
     [
       "alkene",
-      "alkyne"
+      "alkyne",
+      "productHX"
     ]
   ],
   [

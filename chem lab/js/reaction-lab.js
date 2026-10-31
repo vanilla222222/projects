@@ -788,6 +788,11 @@ function createReactionLab(host) {
       });
       predictionBox.appendChild(inspect);
     }
+    if(outcome.productSurvival){
+      const audit=outcome.productSurvival,box=element('details','rx-evidence');box.append(element('summary','','Product survival · '+rxProductSurvivalLabel(audit.status)),element('p','',audit.message),element('p','',audit.coverage));
+      const availability={'recorded-excess-upper-bound':'recorded amounts leave a theoretical excess','modeled-exhaustion':'no excess in net stoichiometry; actual residue unknown','not-quantified':'remaining amount is not quantified'};
+      const list=element('ul');audit.issues.forEach(i=>list.append(element('li','',(i.productRole==='alternative'?'Alternative':'Product')+' '+i.product+': '+(RX_CHEMO_GROUP_LABELS[i.group]||i.group)+' may react with '+i.label+'; '+availability[i.availability]+'.')));box.append(list);predictionBox.append(box);
+    }
     const chemo = outcome.chemoselectivity;
     const warnings = chemo ? outcome.warnings.filter((w) => w.indexOf('Chemoselectivity: ') !== 0) : outcome.warnings;
     if (warnings.length) {

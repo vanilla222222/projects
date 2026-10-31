@@ -1326,27 +1326,27 @@ function rxxRuleExhaustiveOMethylation(ctx) {
   const substrates=ctx.substrates.filter(s=>s!==methyl.s);if(substrates.length!==1)return [];
   const s=substrates[0],g=s.graph,phenols=rxxPhenols(s),alcohols=s.info.alcohols;
   const sites=[...new Set(phenols.map(p=>p.o).concat(alcohols.map(a=>a.o)))];
-  if(sites.length!==2||new Set(sites.map(o=>rxCarbonNeighbors(g,o)[0]?.atom.id)).size!==2||s.info.epoxides.length||
+  if(sites.length<2||sites.length>4||new Set(sites.map(o=>rxCarbonNeighbors(g,o)[0]?.atom.id)).size!==sites.length||s.info.epoxides.length||
     g.atoms.filter(a=>a.element==='O'&&!sites.includes(a.id)).some(o=>{const ns=rxNeighbors(g,o.id);return ns.length!==2||ns.some(n=>n.atom.element!=='C'||n.bond.order!==1);})||
     sites.some(o=>rxCarbonNeighbors(g,o).some(n=>rxNeighbors(g,n.atom.id).filter(x=>x.atom.element==='O').length>1))||g.connectedComponents().length!==1||s.info.carbonyls.length||s.info.alkenes.length||s.info.alkynes.length||
     g.atoms.some(a=>a.charge||!['C','O','H','D'].includes(a.element))||
     sites.some(o=>rxNeighbors(g,o).some(n=>['H','D'].includes(n.atom.element)))||
-    (base.tag!=='hydride'&&phenols.length!==2))return [];
+    (base.tag!=='hydride'&&phenols.length!==sites.length))return [];
   const product=rxCloneGraph(g),ids=methyl.s.graph.atoms.filter(a=>a.id!==methyl.x).map(a=>a.id);
   sites.forEach(o=>{const map=rxMerge(product,methyl.s.graph,ids);product.addBond(o,map.get(methyl.c));});
-  const out=rxOutcome('exhaustive-o-methylation','Exhaustive two-site O-methylation','Ether formation',product,
-    'Both eligible O–H sites are activated by the encoded base and methylated by two methyl-halide equivalents. This is one exhaustive operation; selective isolation of a singly methylated intermediate is not assumed.',
-    {score:16,consumes:[rxUse(s,1),rxUse(methyl.s,2),rxUse(base.entry,2)],byproducts:[base.tag==='hydride'?'H2 from O–H activation':'base-derived protonation products','halide salts from two methyl transfers'],warnings:[
-      'Only a connected neutral C/O substrate with exactly two eligible O–H sites is modeled. Competing N/S groups, carbonyls, nonaromatic unsaturation, extra partners and explicit O–H/D atoms, geminal/hemiacetal OH environments and epoxides are excluded.',
+  const out=rxOutcome('exhaustive-o-methylation','Exhaustive O-methylation ('+sites.length+' sites)','Ether formation',product,
+    'All '+sites.length+' eligible O–H sites are activated by the encoded base and methylated with '+sites.length+' methyl-transfer equivalents. This is one exhaustive operation; selective isolation of a partially methylated intermediate is not assumed.',
+    {score:16,consumes:[rxUse(s,1),rxUse(methyl.s,sites.length),rxUse(base.entry,sites.length)],byproducts:[base.tag==='hydride'?'H2 from O–H activation':'base-derived protonation products','halide salts from '+sites.length+' methyl transfers'],warnings:[
+      'Only a connected neutral C/O substrate with two to four eligible O–H sites is modeled. Competing N/S groups, carbonyls, nonaromatic unsaturation, extra partners and explicit O–H/D atoms, geminal/hemiacetal OH environments and epoxides are excluded.',
       'One encoded base equivalent per O–H activation is the loading convention, not an experimentally optimized stoichiometry. Complete net methylation is an endpoint model, not a conversion or yield prediction.'
     ]});
   out.stoichiometryBasis=s.compound;
-  out.bulkTransformation={kind:'exhaustive-o-methylation',sites:2,operations:1,scope:'Both eligible O–H sites; no selective mono-methylation or one-pot chaining of different reaction classes.'};
+  out.bulkTransformation={kind:'exhaustive-o-methylation',sites:sites.length,operations:1,scope:'All eligible O–H sites; no selective mono-methylation or one-pot chaining of different reaction classes.'};
   return [out];
 }
-RX_RULES.push({id:'exhaustive-o-methylation',name:'Exhaustive two-site O-methylation',run:rxxRuleExhaustiveOMethylation,catalog:{
- family:'Ether formation',scope:'Exactly two eligible O–H sites on one connected neutral C/O substrate, one methyl bromide/iodide partner, hydride base for alcohols or encoded weak base for two phenols, THF/DMF; no geminal/hemiacetal OH, epoxide/peroxide, carbonyl, nonaromatic unsaturation, organic catalyst, competing nucleophile or other organic partner.',
- assumptions:['Both sites are targeted; methyl transfer and base demand are each two equivalents in the net model. The base-activation/alkylation sequence is represented as one preparation operation.'],
- limitations:['No N/S chemoselectivity, selective mono-methylation, partial-product distribution, rates, measured yield or general polyol permethylation. Reaction-class support does not experimentally validate the exhaustive endpoint for every substrate.'],
+RX_RULES.push({id:'exhaustive-o-methylation',name:'Exhaustive O-methylation (two to four sites)',run:rxxRuleExhaustiveOMethylation,catalog:{
+ family:'Ether formation',scope:'Two to four eligible O–H sites on one connected neutral C/O substrate, one methyl bromide/iodide partner, hydride base for alcohols or encoded weak base when every OH is phenolic, THF/DMF; no geminal/hemiacetal OH, epoxide/peroxide, carbonyl, nonaromatic unsaturation, organic catalyst, competing nucleophile or other organic partner.',
+ assumptions:['Every eligible OH is targeted; methyl-transfer and base-activation demands each equal the number of sites in the net model. The base-activation/alkylation sequence is represented as one preparation operation.'],
+ limitations:['No N/S chemoselectivity, selective mono-methylation, partial-product distribution, rates, measured yield or unbounded polyol permethylation. Reaction-class support does not experimentally validate the exhaustive endpoint for every substrate.'],
  references:[{title:'McMurry, OpenStax Organic Chemistry 18.2: Preparing Ethers',url:'https://openstax.org/books/organic-chemistry/pages/18-2-preparing-ethers',kind:'teaching'}]
 }});

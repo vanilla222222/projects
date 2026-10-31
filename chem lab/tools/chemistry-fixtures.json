@@ -19,7 +19,8 @@
     "esterGrignardLoading": "https://openstax.org/books/organic-chemistry/pages/21-6-chemistry-of-esters",
     "grignardAcidicHydrogens": "https://scholar.ulethbridge.ca/sites/default/files/susanfindlay/files/chem2500new_lecture07_pi_bonds_as_electrophiles.pdf?m=1582677275",
     "regioAddition": "https://openstax.org/books/organic-chemistry/pages/7-8-orientation-of-electrophilic-additions-markovnikovs-rule",
-    "williamsonEther": "https://openstax.org/books/organic-chemistry/pages/18-2-preparing-ethers"
+    "williamsonEther": "https://openstax.org/books/organic-chemistry/pages/18-2-preparing-ethers",
+    "productHX": "https://openstax.org/books/organic-chemistry/pages/9-3-reactions-of-alkynes-addition-of-hx-and-x2"
   },
   "naming": [
     {
@@ -976,6 +977,151 @@
           "thf"
         ],
         "atmosphere": "n2"
+      }
+    },
+    {
+      "label": "Three-site exhaustive glycerol methylation",
+      "compounds": [
+        {
+          "smiles": "OCC(O)CO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CBr",
+          "role": "reactant",
+          "equiv": 3
+        },
+        {
+          "smiles": "[Na+].[H-]",
+          "role": "reagent",
+          "equiv": 3
+        }
+      ],
+      "rule": "exhaustive-o-methylation",
+      "products": [
+        "COCC(OC)COC"
+      ],
+      "loadingCeiling": 1.0,
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "thf"
+        ]
+      }
+    },
+    {
+      "label": "Four-site exhaustive polyphenol methylation",
+      "compounds": [
+        {
+          "smiles": "Oc1c(O)c(O)c(O)cc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CBr",
+          "role": "reactant",
+          "equiv": 4
+        },
+        {
+          "smiles": "[Na+].[H-]",
+          "role": "reagent",
+          "equiv": 4
+        }
+      ],
+      "rule": "exhaustive-o-methylation",
+      "products": [
+        "COc1c(OC)c(OC)c(OC)cc1"
+      ],
+      "loadingCeiling": 1.0,
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "thf"
+        ]
+      }
+    },
+    {
+      "label": "Three-site endpoint with two methyl equivalents has a two-thirds upper bound",
+      "compounds": [
+        {
+          "smiles": "OCC(O)CO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CBr",
+          "role": "reactant",
+          "equiv": 2
+        },
+        {
+          "smiles": "[Na+].[H-]",
+          "role": "reagent",
+          "equiv": 3
+        }
+      ],
+      "rule": "exhaustive-o-methylation",
+      "products": [
+        "COCC(OC)COC"
+      ],
+      "loadingCeiling": 0.6666666666666666,
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "thf"
+        ]
+      }
+    },
+    {
+      "label": "Vinyl endpoint product-survival assessment with 1 HX equivalents",
+      "compounds": [
+        {
+          "smiles": "CC#C",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "Br",
+          "role": "reagent",
+          "equiv": 1
+        }
+      ],
+      "rule": "hydrohalogenation",
+      "products": [
+        "CC(Br)=C"
+      ],
+      "productSurvivalStatus": "review",
+      "source": "productHX",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "Vinyl endpoint product-survival assessment with 2 HX equivalents",
+      "compounds": [
+        {
+          "smiles": "CC#C",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "Br",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "hydrohalogenation",
+      "products": [
+        "CC(Br)=C"
+      ],
+      "productSurvivalStatus": "conflict",
+      "source": "productHX",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
       }
     }
   ],

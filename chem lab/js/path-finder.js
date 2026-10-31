@@ -552,6 +552,7 @@ function pathFinderRecipeRender(container, job, deps) {
     const labels = c.labels || {};
     item.append(make('p', 'Reagents and conditions: ' + ([labels.above, labels.below].filter(Boolean).join(' · ') || 'Not recorded.')));
     if(typeof routeWorkupAssess==='function'){const workup=routeWorkupAssess(c);if(workup.required)item.append(make('p','Endpoint work-up: '+workup.record.status+'. '+workup.message));}
+    if(c.outcome&&c.outcome.productSurvival&&c.outcome.productSurvival.status!=='no-encoded-alert')item.append(make('p','Product survival: '+rxProductSurvivalLabel(c.outcome.productSurvival.status)+'. '+c.outcome.productSurvival.message));
     if(c.outcome&&c.outcome.cyclization)item.append(make('p','Cyclization topology: '+c.outcome.cyclization.status+'. '+c.outcome.cyclization.message));
     if(c.outcome&&c.outcome.regioselectivity)item.append(make('p','Positional selectivity: '+c.outcome.regioselectivity.status+'. '+c.outcome.regioselectivity.message));
     if (c.minor) item.append(make('p', 'The selected node is a minor predicted product.'));

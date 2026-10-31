@@ -43,7 +43,6 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
       const solventConflicts=rxGrignardReactiveSolvents(context);
       if(solventConflicts.length)note('grignard-reactive-medium','Recorded solvent electrophiles ('+solventConflicts.map(s=>s.name).join(', ')+') can react with the organometallic reagent. The intended solvent-independent product is not established.','conflict');
     }
-    if(outcome&&rxLoadingConflict(outcome))note('reagent-loading',rxLoadingConflict(outcome),'conflict');
     if(!outcome)note('missing-outcome','No selected outcome is available for a scope audit.');
     else {
       const rule=RX_RULES.find(r=>r.id===outcome.rule)||RX_RULES.find(r=>r.id===outcome.id);
@@ -58,6 +57,8 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
           // Audit the current mixture, not chemoselectivity cached in a saved
           // outcome from a different collection of inputs.
           rxChemoselectivity(context,replay);
+          replay.stoichiometry=rxStoichiometry(replay,prepared);
+          replay.productSurvival=rxProductSurvival(context,replay);
           if(typeof rxxCompatibilityAssess==='function'){
             replay.compatibilityConflicts=rxxCompatibilityAssess(context,replay);
             replay.compatibilityWarnings=rxxCompatibilityWarnings(context,replay);
@@ -83,6 +84,9 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
   } catch(error) {note('audit-incomplete','The scope audit could not complete: '+error.message);}
   ((auditedOutcome&&auditedOutcome.compatibilityConflicts)||[]).forEach(c=>note(c.code,c.message,'conflict'));
   ((auditedOutcome&&auditedOutcome.compatibilityWarnings)||[]).forEach(c=>note(c.code,c.message));
+  if(rxLoadingConflict(auditedOutcome))note('reagent-loading',rxLoadingConflict(auditedOutcome),'conflict');
+  const productSurvival=auditedOutcome&&auditedOutcome.productSurvival||null;
+  if(productSurvival){productSurvival.blockers.forEach(b=>note(b.code,b.message,'conflict'));if(['review','incomplete','workup-boundary'].includes(productSurvival.status))note('product-survival',productSurvival.message);}
   const cyclization=auditedOutcome&&auditedOutcome.cyclization||null;
   if(cyclization){(cyclization.blockers||[]).forEach(b=>note(b.code,b.message,'conflict'));note('cyclization-assumptions',cyclization.message);}
   const rawRegio=auditedOutcome&&auditedOutcome.regioselectivity;
@@ -110,7 +114,7 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
   else if(entry&&susceptible.length===1)selectivityStatus='single-recognized-site';
   else note('selectivity-unassessed','No applicable susceptible-site model is encoded for this branch; absence of flagged competition is not established selectivity.');
   const status=reasons.some(r=>r.level==='conflict')?'conflict':reasons.length?'uncertain':'supported';
-  return {status,reasons,conditions,normalizedConditions:normalized,rule:descriptor,modelReproduced:reproduced,sites,stereochemistry,regioselectivity,cyclization,
+  return {status,reasons,conditions,normalizedConditions:normalized,rule:descriptor,modelReproduced:reproduced,sites,stereochemistry,regioselectivity,cyclization,productSurvival,
     selectivity:{status:selectivityStatus,selected:outcome&&outcome.site?Object.assign({},outcome.site):null,susceptibleCount:susceptible.length,competing},limitations};
 }
 
@@ -120,6 +124,7 @@ function reactionScopeElement(report) {
   const labels={supported:'Reproduced encoded scope',uncertain:'Scope needs review',conflict:'Encoded conflict'};
   box.append(make('summary','Substrate and condition scope · '+(labels[report.status]||labels.uncertain)));
   box.append(make('p','Selected forward branch reproduced: '+(report.modelReproduced?'yes':'no')+'. Site assessment: '+report.selectivity.status+'.'));
+  if(report.productSurvival){const a=report.productSurvival;box.append(make('p','Product survival: '+rxProductSurvivalLabel(a.status)+'. '+a.message));const items=make('ul');a.issues.forEach(i=>items.append(make('li','Product '+i.product+' · '+i.group+' · susceptible to '+i.label+' in the encoded model.')));box.append(items);}
   const list=make('ul');report.reasons.forEach(r=>list.append(make('li',r.message)));box.append(list);
   const conditionList=make('ul');report.conditions.forEach(c=>conditionList.append(make('li',c.field+': '+c.status+'. '+c.message)));box.append(make('strong','Recorded conditions'),conditionList);
   if(report.selectivity.selected)box.append(make('p','Selected inspection site: '+report.selectivity.selected.label+' in '+report.selectivity.selected.substrateSmiles+'.'));

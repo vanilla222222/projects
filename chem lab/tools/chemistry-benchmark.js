@@ -63,6 +63,7 @@ for (const item of fixtures.reactions.concat(fixtures.negativeReactions)) {
     const outcome = predictReaction(compounds, Object.assign({}, defaultReactionConditions(), item.conditions));
     const selected = [outcome.best, ...outcome.alternatives].filter(Boolean).find(o => o.id === item.rule);
     return { found: !!selected, unchanged: before === JSON.stringify(compounds),
+      survivalStatus:selected&&selected.productSurvival?selected.productSurvival.status:null,
       regioStatus:selected&&selected.regioselectivity?selected.regioselectivity.status:null,
       positional:selected?[...new Set([...selected.products,...selected.minor].map(p=>benchmarkKey(p.isomericSmiles||p.smiles)))].sort():[],
       loadingCeiling:selected&&selected.stoichiometry?selected.stoichiometry.conversion:null,
@@ -73,6 +74,7 @@ for (const item of fixtures.reactions.concat(fixtures.negativeReactions)) {
     check('reaction-positive', () => assert.equal(result.found, true, item.label));
     check('reaction-products', () => assert.deepEqual(result.actual, result.expected, item.label));
   } else check('reaction-negative', () => assert.equal(result.found, false, item.label));
+  if(item.productSurvivalStatus)check('product-survival',()=>assert.equal(result.survivalStatus,item.productSurvivalStatus,item.label));
   if(item.regioStatus)check('regio-status',()=>assert.equal(result.regioStatus,item.regioStatus,item.label));
   if(item.positionalProducts){const expected=[...new Set(item.positionalProducts.map(s=>plain(run('benchmarkKey('+JSON.stringify(s)+')'))))].sort();check('positional-products',()=>assert.deepEqual(result.positional,expected,item.label));}
   if(item.loadingCeiling!==undefined)check('loading-ceiling',()=>assert.equal(result.loadingCeiling,item.loadingCeiling,item.label));

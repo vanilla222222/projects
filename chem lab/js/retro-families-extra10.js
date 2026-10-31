@@ -983,15 +983,37 @@ RETRO_TRANSFORMS.push({id:'cope-rearrangement',name:'Acyclic diene from Cope rea
   return [retroSpec([{smiles:p.smiles,role:'reactant'}],[],{solvents:['none'],temperature:200})];
 }});
 
-RETRO_TRANSFORMS.push({id:'exhaustive-o-methylation',name:'Two methoxy groups from one diol/diphenol operation',rule:'exhaustive-o-methylation',group:'Ethers',match(t){
- const g=t.graph,sites=g.atoms.filter(a=>a.element==='O'&&!a.charge).flatMap(o=>{
+RETRO_TRANSFORMS.push({id:'exhaustive-o-methylation',name:'Multiple methoxy groups from one exhaustive operation',rule:'exhaustive-o-methylation',group:'Ethers',match(t){
+ const g=t.graph;
+ // Match the declared C/O-only forward scope before spending replay budgets.
+ if(g.connectedComponents().length!==1||t.info.alkenes.length||t.info.alkynes.length||t.info.epoxides.length||g.atoms.some(a=>a.charge||!['C','O','H','D'].includes(a.element))||g.atoms.filter(a=>a.element==='O').some(o=>{const ns=rxNeighbors(g,o.id);return ns.length!==2||ns.some(n=>n.atom.element!=='C'||n.bond.order!==1);}))return [];
+ const sites=g.atoms.filter(a=>a.element==='O'&&!a.charge).flatMap(o=>{
    const ns=rxNeighbors(g,o.id);if(ns.length!==2||ns.some(n=>n.atom.element!=='C'||n.bond.order!==1))return [];
    const methyl=ns.find(n=>rxHydrogens(g,n.atom.id)===3&&rxNeighbors(g,n.atom.id).length===1&&!n.atom.isotope);
    return methyl?[{o:o.id,c:methyl.atom.id}]:[];
  });
- if(sites.length!==2||new Set(sites.map(s=>s.c)).size!==2)return [];
- const piece=retroSinglePiece(t,h=>{sites.forEach(s=>h.removeAtom(s.c));});
- if(!piece)return [];
- return [retroSpec([{smiles:piece.isomericSmiles||piece.smiles,role:'reactant'},{smiles:'CBr',role:'reactant',equiv:2}],
-   [{smiles:'[Na+].[H-]',role:'reagent',label:'NaH',equiv:2}],{solvents:['thf'],temperature:25})];
+ if(sites.length<2||sites.length>6||new Set(sites.map(s=>s.c)).size!==sites.length)return [];
+ const out=[],seen=new Set(),buckets=[];let attempts=0,bucket=[];
+ const emit=subset=>{
+   attempts++;
+   const anchors=subset.map(s=>rxNeighbors(g,s.o).find(n=>n.atom.id!==s.c).atom.id);
+   if(new Set(anchors).size!==subset.length||anchors.some(id=>rxNeighbors(g,id).filter(n=>n.atom.element==='O').length!==1))return;
+   const piece=retroSinglePiece(t,h=>{subset.forEach(s=>h.removeAtom(s.c));});if(!piece)return;
+   const smiles=piece.isomericSmiles||piece.smiles,key=moleculeIdentity(smiles).key;
+   if(seen.has(key))return;seen.add(key);
+   bucket.push(retroSpec([{smiles,role:'reactant'},{smiles:'CBr',role:'reactant',equiv:subset.length}],
+     [{smiles:'[Na+].[H-]',role:'reagent',label:'NaH',equiv:subset.length}],{solvents:['thf'],temperature:25}));
+ };
+ const choose=(size,at,chosen)=>{
+   if(bucket.length>=RETRO_LIMITS.maxPerTransform||attempts>=8)return;
+   if(chosen.length===size){emit(chosen);return;}
+   for(let i=at;i<=sites.length-(size-chosen.length);i++){
+     choose(size,i+1,chosen.concat(sites[i]));
+     if(bucket.length>=RETRO_LIMITS.maxPerTransform||attempts>=8)break;
+   }
+ };
+ for(let size=Math.min(4,sites.length);size>=2;size--){bucket=[];attempts=0;choose(size,0,[]);buckets.push(bucket);}
+ // Preserve batch-size diversity under the unchanged proposal limit.
+ for(let i=0;i<RETRO_LIMITS.maxPerTransform;i++)for(const choices of buckets){if(choices[i]&&out.length<RETRO_LIMITS.maxPerTransform)out.push(choices[i]);}
+ return out;
 }});
