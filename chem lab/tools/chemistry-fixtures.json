@@ -22,7 +22,8 @@
     "williamsonEther": "https://openstax.org/books/organic-chemistry/pages/18-2-preparing-ethers",
     "productHX": "https://openstax.org/books/organic-chemistry/pages/9-3-reactions-of-alkynes-addition-of-hx-and-x2",
     "dibalNitrile": "https://www.chem.ucla.edu/~harding/IGOC/D/dibal.html",
-    "dibalEster": "https://openstax.org/books/organic-chemistry/pages/21-6-chemistry-of-esters"
+    "dibalEster": "https://openstax.org/books/organic-chemistry/pages/21-6-chemistry-of-esters",
+    "alcoholHalide": "https://openstax.org/books/organic-chemistry/pages/10-5-preparing-alkyl-halides-from-alcohols"
   },
   "naming": [
     {
@@ -1276,6 +1277,60 @@
           "ether"
         ]
       }
+    },
+    {
+      "label": "Hydroxyl substitution atom identity C[13CH2][18OH]",
+      "compounds": [
+        {
+          "smiles": "C[13CH2][18OH]",
+          "role": "reactant"
+        },
+        {
+          "smiles": "P(Br)(Br)Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "alcohol-halide",
+      "products": [
+        "C[13CH2]Br"
+      ],
+      "source": "alcoholHalide"
+    },
+    {
+      "label": "Hydroxyl substitution atom identity C[C@H]([18OH])CC",
+      "compounds": [
+        {
+          "smiles": "C[C@H]([18OH])CC",
+          "role": "reactant"
+        },
+        {
+          "smiles": "P(Br)(Br)Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "alcohol-halide",
+      "products": [
+        "C[C@@H](Br)CC"
+      ],
+      "source": "alcoholHalide"
+    },
+    {
+      "label": "Hydroxyl substitution atom identity CC(=[18O])[17OH]",
+      "compounds": [
+        {
+          "smiles": "CC(=[18O])[17OH]",
+          "role": "reactant"
+        },
+        {
+          "smiles": "O=S(Cl)Cl",
+          "role": "reagent"
+        }
+      ],
+      "rule": "acid-chloride",
+      "products": [
+        "CC(=[18O])Cl"
+      ],
+      "source": "esterification"
     }
   ],
   "negativeReactions": [
