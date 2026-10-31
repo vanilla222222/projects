@@ -2,9 +2,9 @@
 
 This is an implementation-gap review, not an experimental synthesis recommendation. A shorter encoded route must still pass the same forward identity, loading, selectivity, inventory and boundary checks.
 
-## Completed first shortcut
+## Current exhaustive shortcut
 
-`exhaustive-o-methylation` treats two compatible O–H sites as one exhaustive preparation operation. It has a dedicated forward rule and reverse template, with two methyl-transfer and base-activation equivalents in the model. It does not merge arbitrary saved steps. Fixed glycol and catechol examples now have one-step Path Finder / Recipe Tree controls. Competing N/S functions and unsupported substrate classes remain excluded.
+`exhaustive-o-methylation` treats two to four compatible O–H sites as one exhaustive preparation operation. It has a dedicated forward rule and reverse template, with methyl-transfer and base-activation demand scaled to the number of sites in the model. Reverse search also considers substrates retaining pre-existing methoxy groups, within its unchanged proposal cap. It does not merge arbitrary saved steps. Fixed glycol and catechol examples now have one-step Path Finder / Recipe Tree controls. Competing N/S functions and unsupported substrate classes remain excluded.
 
 ## Next complex-reaction candidates
 

@@ -22,7 +22,7 @@ check("methylFixture('OCCO','CBr',1).outcome.stoichiometry.conversion",0.5,'One 
 check("routeStepAssessment({outcome:methylFixture('OCCO','CBr',1).outcome}).status",'blocked','Methyl underloading blocks complete route');
 check("methylFixture('OCCO','CBr',2,1).outcome.stoichiometry.conversion",0.5,'Encoded base activation demand covers both OH sites');
 check("routeStepAssessment({outcome:methylFixture('OCCO','CBr',2,1).outcome}).status",'blocked','Base underloading blocks complete route');
-for(const s of ['NCC(O)CO','SCC(O)CO','OCC(O)C=O','OCC(O)C=C','OCC(O)CO','OCO','OCC(O)C1CO1','OCC(O)COO']){ctx.s=s;check('!!methylFixture(s).outcome',false,'Unsupported competing/geminal/extra sites rejected '+s);}
+for(const s of ['NCC(O)CO','SCC(O)CO','OCC(O)C=O','OCC(O)C=C','OCC(O)C(O)C(O)CO','OCO','OCC(O)C1CO1','OCC(O)COO']){ctx.s=s;check('!!methylFixture(s).outcome',false,'Unsupported competing/geminal/extra sites rejected '+s);}
 check("!!methylFixture('OCCO','CCBr').outcome",false,'Not generalized to arbitrary alkylation');
 check("!!methylFixture('OCCO','CBr',2,2,{solvents:['water']}).outcome",false,'Protic reaction medium excluded');
 check("!!methylFixture('OCCO','CBr',2,2,{additives:['h2so4']}).outcome",false,'Added strong acid excluded');

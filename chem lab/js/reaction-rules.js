@@ -2704,6 +2704,54 @@ function rxChemoEntry(ctx, outcome) {
   return rxChemoConditionEntry(entry,ctx);
 }
 
+// Cache recognized product motifs within this prediction only. The input and
+// output audits share the inventory; no cross-query chemistry cache is used.
+function rxProductInventory(ctx,product) {
+  if(!ctx.productSiteInventory)ctx.productSiteInventory=new WeakMap();
+  if(ctx.productSiteInventory.has(product))return ctx.productSiteInventory.get(product);
+  const graph=reactionFragmentGraph(product.fragment||smilesToFragment(product.isomericSmiles||product.smiles));
+  const inventory={graph,info:rxAnalyze(graph),groups:rxChemoGroups(graph)};
+  ctx.productSiteInventory.set(product,inventory);return inventory;
+}
+
+function rxProductSusceptibleGroups(ctx,product,entry) {
+  const x=rxProductInventory(ctx,product);
+  return Object.fromEntries(Object.entries(x.groups).map(([group,sites])=>[group,sites.filter(atoms=>rxChemoSiteSusceptible(x.graph,entry,group,atoms,x.info))]));
+}
+
+function rxProductSurvivalLabel(status) {
+  return ({review:'Needs review',conflict:'Further reaction possible','no-encoded-alert':'No recognized alert (limited model)','not-assessed':'Not assessed','workup-boundary':'Separate work-up assumed',incomplete:'Audit incomplete'})[status]||'Not assessed';
+}
+
+function rxProductSurvival(ctx,outcome) {
+  const workup=['grignard','grignard-carboxylation','grignard-nitrile','reduction-lialh4','dibal','hydroboration','borane-acid-reduction'].includes(outcome.id);
+  const phase=workup?'post-workup':['hydrohalogenation','hbr-radical'].includes(outcome.id)?'reaction-medium':'unspecified';
+  const report={status:'not-assessed',phase,issues:[],blockers:[],coverage:'Recognized product motifs and finite active-reagent susceptibility entries only; no kinetics, actual residual analysis or exhaustive stability proof.',message:''};
+  if(workup){report.status='workup-boundary';report.message='This neutral endpoint includes a separate work-up. Coexistence with the original reaction reagents and stability after that work-up are not established by this audit.';return report;}
+  const hx=['HBr','HCl','HI'].filter(tag=>ctx.has(tag)).map(tag=>({id:'product-'+tag,label:tag,tags:[tag],attacks:['alkene','alkyne'],followupHX:true}));
+  const entries=RX_CHEMOSELECTIVITY.filter(e=>!e.acylating&&e.tags.every(tag=>ctx.has(tag))).map(e=>rxChemoConditionEntry(e,ctx)).concat(hx);
+  const selected=rxChemoEntry(ctx,outcome);if(selected&&selected.acylating)entries.push(selected);
+  if(!entries.length){report.message='No active product-susceptibility model matched these conditions; product stability is not assessed.';return report;}
+  try{
+    entries.forEach(entry=>{
+      const carrier=entry.tags&&ctx.get(entry.tags[0]),compound=carrier&&carrier.compound;
+      const row=outcome.stoichiometry&&(outcome.stoichiometry.rows||[]).find(r=>r.compound===compound);
+      const availability=row&&Number.isFinite(row.leftover)?row.leftover>1e-9?'recorded-excess-upper-bound':'modeled-exhaustion':'not-quantified';
+      [...(outcome.products||[]).map((product,index)=>({product,index,role:'product'})),...(outcome.minor||[]).map((product,index)=>({product,index,role:'alternative'}))].forEach(({product,index,role})=>{
+        const groups=rxProductSusceptibleGroups(ctx,product,entry);
+        Object.entries(groups).filter(([,sites])=>sites.length).forEach(([group,sites])=>{
+          const issue={product:index+1,productRole:role,smiles:product.isomericSmiles||product.smiles,reagent:entry.id,label:entry.label,group,count:sites.length,availability};
+          report.issues.push(issue);
+          if(entry.followupHX&&phase==='reaction-medium'&&availability==='recorded-excess-upper-bound')report.blockers.push({code:'product-further-addition',message:'The unsaturated product remains susceptible to '+entry.label+' under the recorded excess. A clean partial-addition endpoint is not established; further-product identities and ratios are not predicted.'});
+        });
+      });
+    });
+    report.status=report.blockers.length?'conflict':report.issues.length?'review':'no-encoded-alert';
+    report.message=report.issues.length?'Recognized product sites remain susceptible under active recorded reagent models. Modeled exhaustion is a stoichiometric convention, not proof of no residual reagent; product persistence and side-product distributions require review.':'No susceptible product sites were recognized by the active finite models. This is not a product-stability guarantee.';
+  }catch(error){report.status='incomplete';report.message='The product-survival audit could not complete; stability remains unassessed.';}
+  return report;
+}
+
 function rxChemoselectivity(ctx, outcome) {
   outcome.chemoselectivity = null;
   const entry = rxChemoEntry(ctx, outcome);
@@ -2726,7 +2774,7 @@ function rxChemoselectivity(ctx, outcome) {
   let after = {};
   try {
     outcome.products.forEach(product => {
-      const groups=rxChemoSusceptibleGroups(reactionFragmentGraph(product.fragment || smilesToFragment(product.smiles)),entry);
+      const groups=rxProductSusceptibleGroups(ctx,product,entry);
       Object.keys(groups).forEach(group=>{after[group]=(after[group]||[]).concat(groups[group]);});
     });
   } catch (error) {
@@ -3408,6 +3456,8 @@ function predictReaction(compounds, conditions) {
   outcomes.forEach((o) => {
     o.stoichiometry = rxStoichiometry(o, compounds);
     rxChemoselectivity(ctx, o);
+    o.productSurvival=rxProductSurvival(ctx,o);
+    if(['review','conflict','incomplete'].includes(o.productSurvival.status))o.warnings.push(o.productSurvival.message,...o.productSurvival.blockers.map(b=>b.message));
     if(typeof rxxCompatibilityAssess==='function'){
       o.compatibilityConflicts=rxxCompatibilityAssess(ctx,o);
       o.compatibilityWarnings=rxxCompatibilityWarnings(ctx,o);
