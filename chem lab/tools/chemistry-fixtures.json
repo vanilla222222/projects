@@ -18,7 +18,8 @@
     "grignardFormation": "https://openstax.org/books/organic-chemistry/pages/10-6-reactions-of-alkyl-halides-grignard-reagents",
     "esterGrignardLoading": "https://openstax.org/books/organic-chemistry/pages/21-6-chemistry-of-esters",
     "grignardAcidicHydrogens": "https://scholar.ulethbridge.ca/sites/default/files/susanfindlay/files/chem2500new_lecture07_pi_bonds_as_electrophiles.pdf?m=1582677275",
-    "regioAddition": "https://openstax.org/books/organic-chemistry/pages/7-8-orientation-of-electrophilic-additions-markovnikovs-rule"
+    "regioAddition": "https://openstax.org/books/organic-chemistry/pages/7-8-orientation-of-electrophilic-additions-markovnikovs-rule",
+    "williamsonEther": "https://openstax.org/books/organic-chemistry/pages/18-2-preparing-ethers"
   },
   "naming": [
     {
@@ -879,6 +880,102 @@
         "solvents": [
           "ether"
         ]
+      }
+    },
+    {
+      "label": "Exhaustive ethylene glycol O-methylation is one net operation",
+      "compounds": [
+        {
+          "smiles": "OCCO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CBr",
+          "role": "reactant",
+          "equiv": 2
+        },
+        {
+          "smiles": "[Na+].[H-]",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "exhaustive-o-methylation",
+      "products": [
+        "COCCOC"
+      ],
+      "loadingCeiling": 1,
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "thf"
+        ],
+        "atmosphere": "n2"
+      }
+    },
+    {
+      "label": "Exhaustive catechol O-methylation is one net operation",
+      "compounds": [
+        {
+          "smiles": "Oc1ccccc1O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CBr",
+          "role": "reactant",
+          "equiv": 2
+        },
+        {
+          "smiles": "[Na+].[H-]",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "exhaustive-o-methylation",
+      "products": [
+        "COc1ccccc1OC"
+      ],
+      "loadingCeiling": 1,
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "thf"
+        ],
+        "atmosphere": "n2"
+      }
+    },
+    {
+      "label": "One methyl equivalent bounds the exhaustive endpoint at 50 percent; no partial-isomer distribution inferred",
+      "compounds": [
+        {
+          "smiles": "OCCO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CBr",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[Na+].[H-]",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "exhaustive-o-methylation",
+      "products": [
+        "COCCOC"
+      ],
+      "loadingCeiling": 0.5,
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "thf"
+        ],
+        "atmosphere": "n2"
       }
     }
   ],
