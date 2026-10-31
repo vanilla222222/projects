@@ -35,6 +35,7 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
   try {
     const prepared=input.map(c=>c.fragment?c:Object.assign({},c,{fragment:smilesToFragment(c.isomericSmiles||c.smiles)}));
     context=reactionContext(prepared,normalized);
+    if(context.has('dibal')&&typeof rxxDibalConflicts==='function')rxxDibalConflicts(context).forEach(message=>note('dibal-mixture-conflict',message,'conflict'));
     if(context.has('alanate')&&context.protic)note('alanate-protic-medium','LiAlH4 is incompatible with the recorded water or protic solvent during the reaction. A later aqueous work-up must be recorded separately from the reaction medium.','conflict');
     if(context.has('grignard')||(outcome&&outcome.id==='grignard-formation')){
       if(rxGrignardProticConflict(context))note('grignard-proton-donor','A recorded proton donor or protic medium can consume the organometallic reagent. A clean addition or isolated formation is not established.','conflict');

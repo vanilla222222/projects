@@ -20,7 +20,9 @@
     "grignardAcidicHydrogens": "https://scholar.ulethbridge.ca/sites/default/files/susanfindlay/files/chem2500new_lecture07_pi_bonds_as_electrophiles.pdf?m=1582677275",
     "regioAddition": "https://openstax.org/books/organic-chemistry/pages/7-8-orientation-of-electrophilic-additions-markovnikovs-rule",
     "williamsonEther": "https://openstax.org/books/organic-chemistry/pages/18-2-preparing-ethers",
-    "productHX": "https://openstax.org/books/organic-chemistry/pages/9-3-reactions-of-alkynes-addition-of-hx-and-x2"
+    "productHX": "https://openstax.org/books/organic-chemistry/pages/9-3-reactions-of-alkynes-addition-of-hx-and-x2",
+    "dibalNitrile": "https://www.chem.ucla.edu/~harding/IGOC/D/dibal.html",
+    "dibalEster": "https://openstax.org/books/organic-chemistry/pages/21-6-chemistry-of-esters"
   },
   "naming": [
     {
@@ -1123,6 +1125,88 @@
           "ether"
         ]
       }
+    },
+    {
+      "label": "Cold DIBAL nitrile hydrolysis endpoint",
+      "compounds": [
+        {
+          "smiles": "CC#N",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(C)C[AlH]CC(C)C",
+          "role": "reagent",
+          "equiv": 1
+        }
+      ],
+      "rule": "dibal",
+      "products": [
+        "CC=O"
+      ],
+      "source": "dibalNitrile",
+      "conditions": {
+        "solvents": [
+          "toluene"
+        ],
+        "temperature": -78,
+        "atmosphere": "n2"
+      }
+    },
+    {
+      "label": "Nitrogen-15 is removed rather than transmuted into oxygen; carbon-13 stays",
+      "compounds": [
+        {
+          "smiles": "C[13C]#[15N]",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(C)C[AlH]CC(C)C",
+          "role": "reagent",
+          "equiv": 1
+        }
+      ],
+      "rule": "dibal",
+      "products": [
+        "C[13CH]=O"
+      ],
+      "source": "dibalNitrile",
+      "conditions": {
+        "solvents": [
+          "toluene"
+        ],
+        "temperature": -78,
+        "atmosphere": "n2"
+      }
+    },
+    {
+      "label": "Ester carbonyl oxygen-18 is preserved in the graph endpoint; exchange unmodeled",
+      "compounds": [
+        {
+          "smiles": "CC(=[18O])OC",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(C)C[AlH]CC(C)C",
+          "role": "reagent",
+          "equiv": 1
+        }
+      ],
+      "rule": "dibal",
+      "products": [
+        "CC=[18O]",
+        "CO"
+      ],
+      "source": "dibalEster",
+      "conditions": {
+        "solvents": [
+          "toluene"
+        ],
+        "temperature": -78,
+        "atmosphere": "n2"
+      }
     }
   ],
   "negativeReactions": [
@@ -1408,6 +1492,116 @@
         "additives": [
           "mg"
         ]
+      }
+    },
+    {
+      "label": "No clean DIBAL reduction in reaction-stage water",
+      "compounds": [
+        {
+          "smiles": "CC#N",
+          "role": "reactant"
+        },
+        {
+          "smiles": "CC(C)C[AlH]CC(C)C",
+          "role": "reagent"
+        }
+      ],
+      "rule": "dibal",
+      "products": [],
+      "source": "dibalNitrile",
+      "conditions": {
+        "solvents": [
+          "water"
+        ],
+        "temperature": -78
+      }
+    },
+    {
+      "label": "No solvent-independent DIBAL endpoint in acetone",
+      "compounds": [
+        {
+          "smiles": "CC#N",
+          "role": "reactant"
+        },
+        {
+          "smiles": "CC(C)C[AlH]CC(C)C",
+          "role": "reagent"
+        }
+      ],
+      "rule": "dibal",
+      "products": [],
+      "source": "dibalNitrile",
+      "conditions": {
+        "solvents": [
+          "acetone"
+        ],
+        "temperature": -78
+      }
+    },
+    {
+      "label": "Warm DIBAL nitrile endpoint remains outside modeled scope",
+      "compounds": [
+        {
+          "smiles": "CC#N",
+          "role": "reactant"
+        },
+        {
+          "smiles": "CC(C)C[AlH]CC(C)C",
+          "role": "reagent"
+        }
+      ],
+      "rule": "dibal",
+      "products": [],
+      "source": "dibalNitrile",
+      "conditions": {
+        "solvents": [
+          "toluene"
+        ],
+        "temperature": 25
+      }
+    },
+    {
+      "label": "No clean aldehyde-only reduction claimed with an unmodeled amide site",
+      "compounds": [
+        {
+          "smiles": "CN(C)C(=O)CCC=O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "CC(C)C[AlH]CC(C)C",
+          "role": "reagent"
+        }
+      ],
+      "rule": "dibal",
+      "products": [],
+      "source": "dibalNitrile",
+      "conditions": {
+        "solvents": [
+          "toluene"
+        ],
+        "temperature": -78
+      }
+    },
+    {
+      "label": "No clean ester-only reduction claimed while retaining an acyl chloride",
+      "compounds": [
+        {
+          "smiles": "COC(=O)CCC(=O)Cl",
+          "role": "reactant"
+        },
+        {
+          "smiles": "CC(C)C[AlH]CC(C)C",
+          "role": "reagent"
+        }
+      ],
+      "rule": "dibal",
+      "products": [],
+      "source": "dibalNitrile",
+      "conditions": {
+        "solvents": [
+          "toluene"
+        ],
+        "temperature": -78
       }
     }
   ],

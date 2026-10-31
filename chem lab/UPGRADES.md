@@ -1,5 +1,13 @@
 # Chem Lab upgrades
 
+## DIBAL atom identity and mixture scope — 2026-10-31
+
+- Cold nitrile reduction/hydrolysis now removes nitrile nitrogen and introduces a new oxygen from separately assumed unlabelled work-up water. It no longer changes the nitrogen atom into oxygen, which incorrectly transferred nitrogen isotope labels. Carbon labels and existing ester oxygen identity stay on their original atoms in the graph model. Work-up provenance records departing nitrogen labels without inventing a balanced byproduct structure or predicting oxygen exchange.
+- Recorded water, protic solvent, acid and neutral O–H/N–H/S–H inputs block clean DIBAL endpoints because their reagent consumption is outside this rule. Recognized carbonyl/nitrile solvents also block solvent-independent outcomes. Water listed in the reaction mixture is not silently moved to a later work-up.
+- Nitrile-to-aldehyde prediction is now limited to the existing cold branch followed by hydrolysis. Warm nitrile mixtures return an unsupported-scope hint rather than retaining an unvalidated aldehyde endpoint. Warm ester/alcohol and ordinary carbonyl controls remain. The existing minus-40 C branch threshold is an implementation bound, not a universal experimental transition.
+- Unmodeled amide, acyl chloride, anhydride and CO2 sites are excluded, including on the same substrate. Other recorded electrophilic inputs remain inspectable as competing branches but cannot establish clean selected-input DIBAL preparation. Scope replays and saved routes apply the same compatibility records.
+- Forty-six focused checks cover fixed/isotope-labelled endpoints, donor and reactive-solvent conflicts, changed-medium saved routes, warm/cold controls, competing partners and retained native retrosynthesis. Three positive isotope/product fixtures and five unsupported-endpoint fixtures extend the independent benchmark. Chemical class references do not establish an experimental yield or full substrate compatibility.
+
 ## Product survival and broader exhaustive methylation — 2026-10-31
 
 - A product-survival audit checks recognized sites in products and represented alternatives against every active supported reagent model, including additional recorded reagent classes. Product motifs share a per-prediction inventory with the existing input chemoselectivity audit. No cross-query chemistry cache, reaction recursion or unbounded follow-up search is introduced.
