@@ -2510,9 +2510,10 @@ function rxStoichiometry(outcome, compounds) {
   if (!rows.length) {
     return null;
   }
-  // Report the ceiling for the first listed consumed reactant, not whichever
-  // reagent/partner a rule happened to list first in its consumption array.
-  const firstReactant=(compounds||[]).find(c=>c.role==='reactant'&&rows.some(r=>r.compound===c));
+  // A rule may declare its whole-substrate basis (e.g. exhaustive conversion).
+  // Otherwise use the first listed consumed reactant, not consumption-array order.
+  const explicitBasis=outcome.stoichiometryBasis;
+  const firstReactant=rows.some(r=>r.compound===explicitBasis)?explicitBasis:(compounds||[]).find(c=>c.role==='reactant'&&rows.some(r=>r.compound===c));
   const baseIndex=rows.findIndex(r=>r.compound===firstReactant);
   if(baseIndex>0)rows.unshift(rows.splice(baseIndex,1)[0]);
   if(rows.some(r=>!Number.isFinite(r.have)||r.have<=0)){

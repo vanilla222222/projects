@@ -1340,6 +1340,7 @@ function rxxRuleExhaustiveOMethylation(ctx) {
       'Only a connected neutral C/O substrate with exactly two eligible O–H sites is modeled. Competing N/S groups, carbonyls, nonaromatic unsaturation, extra partners and explicit O–H/D atoms, geminal/hemiacetal OH environments and epoxides are excluded.',
       'One encoded base equivalent per O–H activation is the loading convention, not an experimentally optimized stoichiometry. Complete net methylation is an endpoint model, not a conversion or yield prediction.'
     ]});
+  out.stoichiometryBasis=s.compound;
   out.bulkTransformation={kind:'exhaustive-o-methylation',sites:2,operations:1,scope:'Both eligible O–H sites; no selective mono-methylation or one-pot chaining of different reaction classes.'};
   return [out];
 }

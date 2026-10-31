@@ -40,4 +40,6 @@ check("methylFixture('C[C@H](O)CO').outcome.products.some(p=>moleculeSame(p.isom
 check("!!methylFixture('CCO').outcome",false,'One-OH substrate keeps ordinary ether rules');
 check("!!methylFixture('OCCO','CBr',2,2,{additives:['et3n']}).outcome",false,'Competing amine additive is excluded');
 check("(()=>{const f=methylFixture('OCCO');f.compounds.push({smiles:'CN(C)C',role:'catalyst',fragment:smilesToFragment('CN(C)C')});const p=predictReaction(f.compounds,f.conditions);return [p.best,...p.alternatives].some(o=>o&&o.id==='exhaustive-o-methylation');})()",false,'Catalyst role cannot hide competing organic input');
+check("(()=>{const f=methylFixture('OCCO','CBr',1),p=predictReaction([...f.compounds].reverse(),f.conditions),o=[p.best,...p.alternatives].find(o=>o&&o.id==='exhaustive-o-methylation');return o.stoichiometry.conversion;})()",0.5,'Reordering methyl reagent before substrate cannot hide half loading');
+check("(()=>{const f=methylFixture('OCCO','CBr',1);return routeWorkspaceValidateStep({from:'OCCO',to:'COCCOC',ruleId:'exhaustive-o-methylation',compounds:[...f.compounds].reverse(),conditions:f.conditions}).status;})()",'unverified','Saved-route input ordering cannot bypass exhaustive loading gate');
 console.log('Exhaustive O-methylation: '+checks+' checks passed.');

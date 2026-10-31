@@ -15,7 +15,7 @@ vm.runInContext(fs.readFileSync(path.join(root, 'js/reaction-evidence-named.js')
 const descriptors = JSON.parse(vm.runInContext('JSON.stringify(reactionCatalog())', context));
 const coreIds = new Set('hydrogenation,hydroboration,halide,fischer,reduction,acid-chloride,acyl,amide-dehydration,amide-hydrolysis,enolate-alkylation,ester-exchange,saponification,nitrile-hydrolysis,sulfonylation,acetylide,hydration,alpha-halogenation,dehydration,grignard-extra,grignard,grignard-formation,radical,wittig,halogenation,nitration,sulfonation,aromatic,snar,aldol,claisen,cyanide-carbonyl,knoevenagel,mannich,michael,robinson,oxidation,oxidation-extra,epoxide,epoxide-closure,hydrohalogenation,epoxidation,osmium,ozonolysis,periodate,mild-oxidants,wacker,alcohol-halide,double-elimination,hofmann-elimination,williamson'.split(','));
 const owned = descriptors.filter((d) => !coreIds.has(d.id));
-assert.equal(owned.length, 52, 'baseline named-rule partition remains complete');
+assert.equal(owned.length, 53, 'named-rule partition includes exhaustive O-methylation and remains complete');
 const after = JSON.parse(vm.runInContext('JSON.stringify(REACTION_CATALOG_CURATED)', context));
 let checks = 1;
 for (const d of owned) {
