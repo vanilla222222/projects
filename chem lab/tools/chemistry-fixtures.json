@@ -9,7 +9,10 @@
     "hydrogenation": "https://openstax.org/books/organic-chemistry/pages/8-6-reduction-of-alkenes-hydrogenation",
     "esterification": "https://openstax.org/books/organic-chemistry/pages/21-3-reactions-of-carboxylic-acids",
     "esterReduction": "https://openstax.org/books/organic-chemistry/pages/21-6-chemistry-of-esters",
-    "chaikinBrownBorohydride": "https://doi.org/10.1021/ja01169a033"
+    "chaikinBrownBorohydride": "https://doi.org/10.1021/ja01169a033",
+    "coldPermanganate": "https://chem.ucalgary.ca/courses/351/Carey5th/Ch15/ch15-3-3.html",
+    "permanganateCleavage": "https://openstax.org/books/organic-chemistry/pages/8-8-oxidation-of-alkenes-cleavage-to-carbonyl-compounds",
+    "benzylicOxidation": "https://openstax.org/books/organic-chemistry/pages/16-8-oxidation-of-aromatic-compounds"
   },
   "naming": [
     {
@@ -534,6 +537,84 @@
         "solvents": [
           "methanol"
         ]
+      }
+    },
+    {
+      "label": "Cold alkaline permanganate hydroxylation",
+      "compounds": [
+        {
+          "smiles": "C=C",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[O-][Mn](=O)(=O)=O.[K+]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "dihydroxylation",
+      "products": [
+        "OCCO"
+      ],
+      "source": "coldPermanganate",
+      "conditions": {
+        "temperature": 0,
+        "solvents": [
+          "water"
+        ],
+        "additives": [
+          "naoh"
+        ]
+      }
+    },
+    {
+      "label": "Heated permanganate cleavage endpoints",
+      "compounds": [
+        {
+          "smiles": "CCC=CC",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[O-][Mn](=O)(=O)=O.[K+]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "permanganate-cleavage",
+      "products": [
+        "CCC(=O)O",
+        "CC(=O)O"
+      ],
+      "source": "permanganateCleavage",
+      "conditions": {
+        "temperature": 80,
+        "solvents": [
+          "water"
+        ],
+        "additives": []
+      }
+    },
+    {
+      "label": "Heated benzylic oxidation endpoint",
+      "compounds": [
+        {
+          "smiles": "CCc1ccccc1",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[O-][Mn](=O)(=O)=O.[K+]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "side-chain-oxidation",
+      "products": [
+        "O=C(O)c1ccccc1"
+      ],
+      "source": "benzylicOxidation",
+      "conditions": {
+        "temperature": 80,
+        "solvents": [
+          "water"
+        ],
+        "additives": []
       }
     }
   ],

@@ -3,6 +3,16 @@
 // References support reaction classes; no entry establishes experimental
 // validation, conversion, selectivity or safety for an arbitrary query.
 const CORE_REACTION_EVIDENCE_SOURCES = {
+  "coldPermanganate": [
+    "Hunt and Spinney: hydroxylation of alkenes with cold alkaline permanganate",
+    "https://chem.ucalgary.ca/courses/351/Carey5th/Ch15/ch15-3-3.html",
+    "teaching"
+  ],
+  "benzylicOxidation": [
+    "John McMurry: oxidation of aromatic side chains",
+    "https://openstax.org/books/organic-chemistry/pages/16-8-oxidation-of-aromatic-compounds",
+    "teaching"
+  ],
   "borohydrideAcyl": [
     "Chaikin and Brown: Reduction of Aldehydes, Ketones and Acid Chlorides by Sodium Borohydride (1949)",
     "https://doi.org/10.1021/ja01169a033",
@@ -545,14 +555,16 @@ const CORE_REACTION_EVIDENCE_ROWS = [
   [
     "oxidation",
     "Oxidation",
-    "PCC or permanganate oxidizes recognized primary/secondary alcohols; separate permanganate branches handle encoded alkene and aldehyde patterns.",
-    "Oxidant tags and local temperature thresholds select the represented net oxidation.",
-    "The source supports reaction classes; reagent concentration, overoxidation, site competition and measured product distributions are not supplied by the model.",
+    "PCC or permanganate oxidizes recognized primary/secondary alcohols. Separate permanganate alkene and alkyl-benzylic branches require recorded water medium and a supported cold-alkaline or heated neutral/acidic regime.",
+    "Cold <=10 C and heated >=60 C are conservative implementation scope bounds, not measured kinetic transitions. The cold branch assumes dilute oxidant; neutral acids represent the work-up endpoint.",
+    "Other/mixed media, intermediate temperatures and hot alkaline salt endpoints are unresolved. Oxidant concentration, loading and kinetics are not quantitatively modeled; hot benzylic competition is flagged.",
     [
       "oxidation",
       "pcc",
       "cleavage",
-      "epoxide"
+      "epoxide",
+      "coldPermanganate",
+      "benzylicOxidation"
     ]
   ],
   [

@@ -1,5 +1,12 @@
 # Chem Lab upgrades
 
+## Bounded permanganate condition regimes — 2026-10-30
+
+- Alkene hydroxylation now requires recorded water medium, hydroxide, no strong acid and the cold model range (<=10 C). Alkene cleavage and alkyl-benzylic oxidation use the separate heated aqueous neutral/acidic range (>=60 C). These are conservative implementation bounds, not universal experimental transition temperatures. Intermediate temperatures, other/mixed media, unspecified pH for the cold branch and hot alkaline salt endpoints return unresolved-regime hints.
+- Cold dilution remains an explicit assumption, not a calculation from generic concentration text. Neutral hot-branch acids represent work-up endpoints; oxidant consumption and kinetics remain unquantified. Existing standalone alcohol oxidation is a separate branch.
+- Recognized alkyl benzylic C–H sites are susceptible only in the supported hot regime. Alkene/alcohol-only drawings that leave those sites unchanged now trigger the existing compatibility gates; cold branches do not inherit this competition. Tertiary alcohols are excluded from ordinary permanganate alcohol susceptibility. Net cleavage/side-chain outcomes record their substrate participation so auditing no longer silently skips them.
+- Forty-two focused checks cover regime boundaries, aqueous/acid/base/solvent requirements, unresolved cases, exact products, isotope retention, condition-specific competition, stale-condition audits and unchanged inputs. Three fixed source-linked product cases exercise cold hydroxylation, hot cleavage and benzylic oxidation.
+
 ## Stereochemical outcome and precursor fidelity — 2026-10-30
 
 - Qualitative Felkin component drawings are now labelled as parts of a diastereomeric mixture rather than single-enantiomer preparations. Only components that differ stereochemically across the drawn pair receive the label; unchanged achiral coproducts are excluded. The existing illustrative ratio remains a heuristic, not measured selectivity.
