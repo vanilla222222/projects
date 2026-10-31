@@ -1,5 +1,12 @@
 # Chem Lab upgrades
 
+## Reactive solvents and Grignard preparation limits — 2026-10-30
+
+- The carbonyl, CO2 and nitrile Grignard branches now identify electrophilic carbonyl/nitrile motifs in recorded solvent structures. Acetone, ethyl acetate, acetonitrile and DMF no longer silently act as inert media; these branches return an unresolved solvent-competition hint rather than inventing products or calling the competition proton quench. Ether/THF cosolvents do not hide a reactive component.
+- Isolated Grignard formation uses the same solvent check and rejects listed carbonyl/nitrile electrophiles on the halide precursor or other inputs. This is a bounded compatibility guard, not a model of intramolecular trapping, Barbier chemistry or all incompatible functional groups.
+- Scope assessment identifies reactive recorded solvents and invalidates stale ether-based outcomes after the medium changes. Existing protic quench behavior remains separate. Acetone, esters and nitriles remain supported explicit substrates in the appropriate existing ether-based branches. Other solvent chemistry and competition ratios remain unmodeled.
+- Seventy-three focused checks cover four reaction families, reactive/mixed solvents, dry-ether controls, incompatible formation precursors, explicit substrate roles, unchanged input graphs and raw/saved-route verification. Four fixed positive reference cases and two unsupported-clean-endpoint cases document the intended scope; the negative cases do not claim chemical inertness.
+
 ## Bounded permanganate condition regimes — 2026-10-30
 
 - Alkene hydroxylation now requires recorded water medium, hydroxide, no strong acid and the cold model range (<=10 C). Alkene cleavage and alkyl-benzylic oxidation use the separate heated aqueous neutral/acidic range (>=60 C). These are conservative implementation bounds, not universal experimental transition temperatures. Intermediate temperatures, other/mixed media, unspecified pH for the cold branch and hot alkaline salt endpoints return unresolved-regime hints.

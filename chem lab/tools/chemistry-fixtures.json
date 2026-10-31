@@ -12,7 +12,10 @@
     "chaikinBrownBorohydride": "https://doi.org/10.1021/ja01169a033",
     "coldPermanganate": "https://chem.ucalgary.ca/courses/351/Carey5th/Ch15/ch15-3-3.html",
     "permanganateCleavage": "https://openstax.org/books/organic-chemistry/pages/8-8-oxidation-of-alkenes-cleavage-to-carbonyl-compounds",
-    "benzylicOxidation": "https://openstax.org/books/organic-chemistry/pages/16-8-oxidation-of-aromatic-compounds"
+    "benzylicOxidation": "https://openstax.org/books/organic-chemistry/pages/16-8-oxidation-of-aromatic-compounds",
+    "grignardCompatibility": "https://openstax.org/books/organic-chemistry/pages/17-5-alcohols-from-carbonyl-compounds-grignard-reaction",
+    "grignardNitrile": "https://openstax.org/books/organic-chemistry/pages/20-7-chemistry-of-nitriles",
+    "grignardFormation": "https://openstax.org/books/organic-chemistry/pages/10-6-reactions-of-alkyl-halides-grignard-reagents"
   },
   "naming": [
     {
@@ -616,6 +619,100 @@
         ],
         "additives": []
       }
+    },
+    {
+      "label": "Formaldehyde Grignard addition in ether",
+      "compounds": [
+        {
+          "smiles": "C=O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "CC[Mg]Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "grignard",
+      "products": [
+        "CCCO"
+      ],
+      "source": "grignardCompatibility",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "Nitrile as explicit Grignard substrate in ether",
+      "compounds": [
+        {
+          "smiles": "N#Cc1ccccc1",
+          "role": "reactant"
+        },
+        {
+          "smiles": "CC[Mg]Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "grignard-nitrile",
+      "products": [
+        "CCC(=O)c1ccccc1"
+      ],
+      "source": "grignardNitrile",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "Grignard formation in THF",
+      "compounds": [
+        {
+          "smiles": "CCBr",
+          "role": "reactant"
+        }
+      ],
+      "rule": "grignard-formation",
+      "products": [
+        "CC[Mg]Br"
+      ],
+      "source": "grignardFormation",
+      "conditions": {
+        "solvents": [
+          "thf"
+        ],
+        "additives": [
+          "mg"
+        ],
+        "atmosphere": "n2"
+      }
+    },
+    {
+      "label": "Ester as explicit Grignard substrate in ether",
+      "compounds": [
+        {
+          "smiles": "CCOC(C)=O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "C[Mg]Br",
+          "role": "reagent",
+          "equiv": "2"
+        }
+      ],
+      "rule": "grignard",
+      "products": [
+        "CC(C)(C)O",
+        "CCO"
+      ],
+      "source": "grignardCompatibility",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
     }
   ],
   "negativeReactions": [
@@ -754,6 +851,48 @@
       "products": [],
       "source": "alkeneReactions",
       "conditions": {}
+    },
+    {
+      "label": "No clean intended addition assigned with competing acetone solvent",
+      "compounds": [
+        {
+          "smiles": "CC=O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "C[Mg]Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "grignard",
+      "products": [],
+      "source": "grignardCompatibility",
+      "conditions": {
+        "solvents": [
+          "acetone"
+        ]
+      }
+    },
+    {
+      "label": "No isolated Grignard assigned with competing nitrile solvent",
+      "compounds": [
+        {
+          "smiles": "CCBr",
+          "role": "reactant"
+        }
+      ],
+      "rule": "grignard-formation",
+      "products": [],
+      "source": "grignardCompatibility",
+      "conditions": {
+        "solvents": [
+          "mecn"
+        ],
+        "additives": [
+          "mg"
+        ],
+        "atmosphere": "n2"
+      }
     }
   ],
   "roundTrips": [
