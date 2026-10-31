@@ -3343,6 +3343,11 @@ function predictReaction(compounds, conditions) {
   outcomes.forEach((o) => {
     o.stoichiometry = rxStoichiometry(o, compounds);
     rxChemoselectivity(ctx, o);
+    if(typeof rxxCompatibilityAssess==='function'){
+      o.compatibilityConflicts=rxxCompatibilityAssess(ctx,o);
+      o.compatibilityWarnings=rxxCompatibilityWarnings(ctx,o);
+      o.compatibilityConflicts.forEach(c=>o.warnings.push(c.message));
+    }
     const used = assumed.filter((s) => o.consumes.some((u) => u && u.compound === s.compound));
     if (used.length && o.products.concat(o.minor).some((p) => p.stereo || p.fragment)) {
       const form = used[0].graph.alkeneSpecs[0].cis ? 'Z' : 'E';

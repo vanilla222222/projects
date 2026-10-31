@@ -724,7 +724,7 @@ const CORE_REACTION_EVIDENCE_ROWS = [
     "Substitution and elimination",
     "Recognized strong base activates an alcohol, or encoded weaker base activates a phenol, for ether formation with a selected alkyl halide.",
     "The local donor/base combination stands in for alkoxide or phenoxide preparation.",
-    "Tertiary halides are excluded and secondary substrates warn of elimination; solvent and site ranking are simplified.",
+    "Tertiary halides are excluded and secondary substrates warn of elimination. Multiple recognized sites and simultaneously enabled Mitsunobu activation are flagged without assigning pathway dominance; solvent and site ranking remain simplified.",
     [
       "ether",
       "halide"

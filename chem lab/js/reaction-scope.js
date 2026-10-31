@@ -58,6 +58,10 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
           // Audit the current mixture, not chemoselectivity cached in a saved
           // outcome from a different collection of inputs.
           rxChemoselectivity(context,replay);
+          if(typeof rxxCompatibilityAssess==='function'){
+            replay.compatibilityConflicts=rxxCompatibilityAssess(context,replay);
+            replay.compatibilityWarnings=rxxCompatibilityWarnings(context,replay);
+          }
           auditedOutcome=replay;
         }
         if(!reproduced)note('branch-mismatch','The selected forward-rule branch does not reproduce these product identities under the recorded conditions.','conflict');
@@ -77,6 +81,8 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
       }));
     });
   } catch(error) {note('audit-incomplete','The scope audit could not complete: '+error.message);}
+  ((auditedOutcome&&auditedOutcome.compatibilityConflicts)||[]).forEach(c=>note(c.code,c.message,'conflict'));
+  ((auditedOutcome&&auditedOutcome.compatibilityWarnings)||[]).forEach(c=>note(c.code,c.message));
   const stereochemistry={products:[],ratio:null,ratioStatus:'not-assigned'};
   if(outcome){
     ['products','minor'].forEach(role=>(outcome[role]||[]).forEach((product,index)=>{

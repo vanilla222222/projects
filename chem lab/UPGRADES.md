@@ -1,5 +1,12 @@
 # Chem Lab upgrades
 
+## Coupling selectivity and ether-route overlap — 2026-10-30
+
+- Suzuki, Heck and Sonogashira branches record ambiguity when recognized substrates contain several eligible halide/partner sites, or the same mixture enables multiple coupling families. Counts include every matching boron group and terminal unsaturated bond, without double-counting the two orientations of ethene/acetylene. First-site ordering is not treated as validated selective mono-coupling.
+- Mitsunobu and Williamson remain distinct, forward-verified alternatives for suitable ethers under separately specified recipes. A mixture enabling both alcohol activation and halide displacement now carries an explicit activation-overlap conflict. Multiple alcohol, acidic partner, oxygen donor or halide sites are flagged; preformed-alkoxide Williamson branches are included. No dominant pathway or product ratio is inferred from display scores.
+- Structured conflicts pass through the shared Path Finder/Recipe Tree/protection assessment and saved-route validation. Scope replays recompute the metadata for the current inputs. Existing low-temperature Heck, copper-free Sonogashira and Cu/oxygen caveats are surfaced as structured review warnings, preserving the difference between uncertainty and an encoded conflict.
+- Fifty-two focused checks cover single/multiple sites, alternative coupling pathways, ethene/acetylene controls, mixed versus separate ether recipes, retained inversion, independent saved-route checks, stale metadata, required bases and condition review. Browser interaction and experimental substrate-specific compatibility remain outside this regression set.
+
 ## Complete-input Grignard compatibility — 2026-10-30
 
 - The four supported Grignard families now screen complete recorded structures before species classification strips components. Neutral O–H/N–H/S–H and nonmetalated terminal-alkyne H/D donors are checked regardless of reactant, reagent, catalyst or explicit solvent role. Existing metalated alkynyl donors are excluded from the free-terminal-alkyne guard.
