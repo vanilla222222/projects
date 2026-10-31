@@ -1,5 +1,11 @@
 # Chem Lab upgrades
 
+## One-operation exhaustive phenolic O-ethylation — 2026-10-31
+
+- Added a bounded forward/reverse transformation converting two to four phenolic OH sites in one operation with ethyl bromide/iodide and the encoded carbonate base in THF/DMF. All eligible OH sites are targeted; this does not claim selective partial ethylation. Aliphatic diols, arbitrary alkyl donors, competing N/S groups, carbonyls, nonaromatic unsaturation, extra inputs and additives are outside scope.
+- Transfer and base demands equal the site count under the declared loading convention. Underloading, input reordering and catalyst/solvent roles cannot certify the full endpoint. Both linear Path Finder and Recipe Tree use the complete operation when forward verified. Carbon labels and spectator stereochemistry are retained; reverse proposals do not invent isotope-labelled stock.
+- Reverse subset enumeration is bounded and can preserve existing ether groups. Sixty-five focused checks cover fixed products, two-to-four-site loading, unsupported scope, saved routes, both planners and stereo/isotope identity. Four positive fixtures and three outside-scope fixtures extend the benchmark; teaching reference: OpenStax Organic Chemistry 18.2. No kinetic, yield, elimination or partial-product distribution model is added.
+
 ## Halogen product-survival accuracy — 2026-10-31
 
 - Added Br2/Cl2 product-susceptibility entries and reaction-medium classification for the existing halogen-addition branches. Unsaturated products and represented alternatives are audited for further addition under the recorded mixture.

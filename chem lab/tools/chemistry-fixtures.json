@@ -1436,6 +1436,130 @@
         ]
       },
       "productSurvivalStatus": "conflict"
+    },
+    {
+      "label": "One-operation phenolic ethylation Oc1ccccc1O",
+      "compounds": [
+        {
+          "smiles": "Oc1ccccc1O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CCBr",
+          "role": "reactant",
+          "equiv": 2
+        },
+        {
+          "smiles": "[K+].[K+].[O-]C([O-])=O",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "exhaustive-o-ethylation",
+      "products": [
+        "CCOc1ccccc1OCC"
+      ],
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ]
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "One-operation phenolic ethylation Oc1cc(O)cc(O)c1",
+      "compounds": [
+        {
+          "smiles": "Oc1cc(O)cc(O)c1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CCBr",
+          "role": "reactant",
+          "equiv": 3
+        },
+        {
+          "smiles": "[K+].[K+].[O-]C([O-])=O",
+          "role": "reagent",
+          "equiv": 3
+        }
+      ],
+      "rule": "exhaustive-o-ethylation",
+      "products": [
+        "CCOc1cc(OCC)cc(OCC)c1"
+      ],
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ]
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "One-operation phenolic ethylation Oc1c(O)c(O)c(O)cc1",
+      "compounds": [
+        {
+          "smiles": "Oc1c(O)c(O)c(O)cc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CCBr",
+          "role": "reactant",
+          "equiv": 4
+        },
+        {
+          "smiles": "[K+].[K+].[O-]C([O-])=O",
+          "role": "reagent",
+          "equiv": 4
+        }
+      ],
+      "rule": "exhaustive-o-ethylation",
+      "products": [
+        "CCOc1c(OCC)c(OCC)c(OCC)cc1"
+      ],
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ]
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "One-operation phenolic ethylation C[C@H](OC)c1cc(O)ccc1O",
+      "compounds": [
+        {
+          "smiles": "C[C@H](OC)c1cc(O)ccc1O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CCBr",
+          "role": "reactant",
+          "equiv": 2
+        },
+        {
+          "smiles": "[K+].[K+].[O-]C([O-])=O",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "exhaustive-o-ethylation",
+      "products": [
+        "C[C@H](OC)c1cc(OCC)ccc1OCC"
+      ],
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ]
+      },
+      "loadingCeiling": 1
     }
   ],
   "negativeReactions": [
@@ -1831,6 +1955,90 @@
           "toluene"
         ],
         "temperature": -78
+      }
+    },
+    {
+      "label": "Outside bounded exhaustive ethylation OCCO / CCBr",
+      "compounds": [
+        {
+          "smiles": "OCCO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CCBr",
+          "role": "reactant",
+          "equiv": 2
+        },
+        {
+          "smiles": "[K+].[K+].[O-]C([O-])=O",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "exhaustive-o-ethylation",
+      "products": [],
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ]
+      }
+    },
+    {
+      "label": "Outside bounded exhaustive ethylation Oc1ccccc1O / CC(C)Br",
+      "compounds": [
+        {
+          "smiles": "Oc1ccccc1O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(C)Br",
+          "role": "reactant",
+          "equiv": 2
+        },
+        {
+          "smiles": "[K+].[K+].[O-]C([O-])=O",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "exhaustive-o-ethylation",
+      "products": [],
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ]
+      }
+    },
+    {
+      "label": "Outside bounded exhaustive ethylation Nc1cc(O)ccc1O / CCBr",
+      "compounds": [
+        {
+          "smiles": "Nc1cc(O)ccc1O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CCBr",
+          "role": "reactant",
+          "equiv": 2
+        },
+        {
+          "smiles": "[K+].[K+].[O-]C([O-])=O",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "exhaustive-o-ethylation",
+      "products": [],
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ]
       }
     }
   ],
