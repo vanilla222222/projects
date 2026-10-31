@@ -1288,10 +1288,51 @@ RX_RULES.push(
   { id: 'hwe', name: 'Horner–Wadsworth–Emmons', run: rxxRuleHwe },
 );
 
+// Reaction-class references (structural conflicts, not rate predictions):
+// https://openstax.org/books/organic-chemistry/pages/21-3-reactions-of-carboxylic-acids
+// https://openstax.org/books/organic-chemistry/pages/21-5-chemistry-of-acid-anhydrides
+// Inspect original inputs, including compounds classified out of substrates.
+// A role label is not evidence that a reactive partner is inert.
+function rxxOrdinaryReagentSiteConflicts(ctx,outcome) {
+  const id=outcome.id;
+  if(!['reduction-nabh4','reduction-lialh4','oxidation-pcc','oxidation-kmno4','alcohol-halide','acid-chloride','appel'].includes(id))return null;
+  if(!ctx.ordinaryReagentInputs)ctx.ordinaryReagentInputs=(ctx.inputs||[]).filter(c=>c.fragment).map(compound=>{
+    const graph=reactionFragmentGraph(compound.fragment);return {compound,graph,info:rxAnalyze(graph)};
+  });
+  const used=new Set((outcome.consumes||[]).filter(Boolean).map(u=>u.compound)),conflicts=[];
+  const carbonylKinds=id==='reduction-nabh4'?['aldehyde','ketone','acylChloride']:['aldehyde','ketone','ester','acid','amide','acylChloride','anhydride'];
+  ctx.ordinaryReagentInputs.forEach(input=>{
+    const info=input.info,counts={};
+    if(id.startsWith('reduction-')){
+      info.carbonyls.filter(c=>carbonylKinds.includes(c.kind)).forEach(c=>counts[c.kind]=(counts[c.kind]||0)+1);
+      if(id==='reduction-lialh4'){
+        if(info.nitriles.length)counts.nitrile=info.nitriles.length;
+        if(info.epoxides.length)counts.epoxide=info.epoxides.length;
+        const nitro=typeof rxyNitro==='function'?rxyNitro({graph:input.graph}).length:(rxChemoGroups(input.graph).nitro||[]).length;if(nitro)counts.nitro=nitro;
+      }
+    } else if(id.startsWith('oxidation-')){
+      const alcohols=info.alcohols.filter(a=>a.degree<3).length;if(alcohols)counts.alcohol=alcohols;
+      if(id==='oxidation-kmno4'){
+        if(info.alkenes.length)counts.alkene=info.alkenes.length;
+        const aldehydes=info.carbonyls.filter(c=>c.kind==='aldehyde').length;if(aldehydes)counts.aldehyde=aldehydes;
+      }
+    } else {
+      const alcohols=info.alcohols.filter(a=>id!=='appel'||a.degree<3).length;
+      if(alcohols)counts.alcohol=alcohols;
+      if(id==='acid-chloride'||ctx.has('socl2')){const acids=info.carbonyls.filter(c=>c.kind==='acid').length;if(acids)counts.acid=acids;}
+    }
+    if(!used.has(input.compound)&&Object.keys(counts).length)conflicts.push({code:'reagent-other-input',counts,message:'Another recorded input contains '+Object.keys(counts).join('/')+' sites susceptible to this reagent. Their consumption and competing products are not modeled; a clean selected-input preparation is not established.'});
+    if(used.has(input.compound)&&id==='reduction-lialh4'&&(counts.nitro||counts.anhydride))conflicts.push({code:'hydride-unmodeled-site',counts:{nitro:counts.nitro||0,anhydride:counts.anhydride||0},message:'LiAlH₄ can also reduce the nitro/anhydride sites left unchanged by this graph edit. The carbonyl/nitrile-only endpoint is not an established selective preparation.'});
+    if(used.has(input.compound)&&ctx.has('socl2')&&((id==='acid-chloride'&&counts.alcohol)||(id==='alcohol-halide'&&counts.acid)))conflicts.push({code:'chlorination-other-site',counts,message:'SOCl₂ can react with both alcohol and carboxylic-acid sites. This branch edits only one class; survival of the other class is not established.'});
+  });
+  return conflicts;
+}
+
 // Structural ambiguity audit, not a kinetic preference or catalyst model.
 // Keep competing branches inspectable; planners require a resolved recipe.
 function rxxCompatibilityAssess(ctx,outcome) {
   const id=outcome.id,couplings=['suzuki','heck','sonogashira'];
+  const ordinary=rxxOrdinaryReagentSiteConflicts(ctx,outcome);if(ordinary)return ordinary;
   if(id==='dibal'){const used=new Set((outcome.consumes||[]).filter(Boolean).map(u=>u.compound));return rxGrignardInputSites(ctx).filter(s=>!used.has(s.compound)&&s.electrophiles.length).map(s=>({code:'dibal-other-input',message:'Another recorded input contains carbonyl/nitrile electrophiles that can compete for DIBAL-H. A clean selected-input reduction is not established; competing products are unmodeled.'}));}
   if(['grignard','grignard-nitrile','grignard-carboxylation'].includes(id)){
     const counts={carbonylSites:0,nitrileSites:0,carbonDioxideSites:0};
