@@ -1263,3 +1263,49 @@ RX_RULES.push(
   { id: 'epoxide-closure', name: 'Halohydrin → epoxide', run: rxxRuleEpoxideClosure },
   { id: 'hwe', name: 'Horner–Wadsworth–Emmons', run: rxxRuleHwe },
 );
+
+// Structural ambiguity audit, not a kinetic preference or catalyst model.
+// Keep competing branches inspectable; planners require a resolved recipe.
+function rxxCompatibilityAssess(ctx,outcome) {
+  const id=outcome.id,couplings=['suzuki','heck','sonogashira'];
+  if(!couplings.includes(id)&&!['mitsunobu','williamson'].includes(id))return [];
+  const conflicts=[],add=(code,message,counts)=>conflicts.push({code,message,counts});
+  const enabled=run=>{
+    try{return (run(ctx)||[]).filter(o=>!o.hint).map(o=>o.id);}
+    catch(error){add('compatibility-incomplete','A competing-branch check could not complete; pathway selectivity is unresolved.');return [];}
+  };
+  if(couplings.includes(id)){
+    const counts={halideSites:rxxArylHalides(ctx).length};
+    if(id==='suzuki')counts.boronSites=ctx.substrates.reduce((n,s)=>n+s.graph.atoms.filter(a=>a.element==='B'&&rxNeighbors(s.graph,a.id).filter(x=>x.atom.element==='O').length>=2&&rxCarbonNeighbors(s.graph,a.id).length===1).length,0);
+    if(id==='heck')counts.alkeneSites=ctx.substrates.reduce((n,s)=>n+new Set(rxxTerminalAlkenes(s).map(e=>[e.t,e.i].sort((a,b)=>a-b).join(':'))).size,0);
+    if(id==='sonogashira')counts.alkyneSites=ctx.substrates.reduce((n,s)=>n+s.info.alkynes.filter(e=>[e.a,e.b].some(a=>rxHydrogens(s.graph,a)===1)).length,0);
+    if(Object.values(counts).some(n=>n>1))add('coupling-sites','Several recognized coupling sites are present. The first-site graph edit does not establish selective mono-coupling or survival of the remaining sites.',counts);
+    const branches=[...new Set([rxxRuleSuzuki,rxxRuleHeck,rxxRuleSonogashira].flatMap(enabled))];
+    if(branches.length>1)add('coupling-pathway-overlap','The recorded mixture enables multiple coupling families ('+branches.join(', ')+'). Relative rates and a dominant pathway are not established.');
+  }else{
+    const strong=!!rxxBase(ctx,['hydride']);
+    const counts=id==='mitsunobu'?{
+      alcoholSites:ctx.substrates.reduce((n,s)=>n+s.info.alcohols.filter(a=>a.degree<3).length,0),
+      acidicPartnerSites:ctx.substrates.reduce((n,s)=>n+s.info.carbonyls.filter(c=>c.kind==='acid').length+rxxPhenols(s).length,0)
+    }:{
+      halideSites:rxxHalides(ctx).filter(h=>h.degree<3).length,
+      oxygenDonorSites:ctx.substrates.reduce((n,s)=>n+rxxPhenols(s).length+(strong?s.info.alcohols.length:0),0)
+    };
+    if(Object.values(counts).some(n=>n>1))add('ether-sites','Several recognized substitution sites or acidic partners are present. First-site selection does not establish selective preparation.',counts);
+    if(typeof rxyRuleMitsunobu==='function'&&ctx.has('triphenylphosphine')&&ctx.has('azodicarboxylate')&&
+      (enabled(rxxRuleWilliamson).includes('williamson')||enabled(rxRuleHalide).includes('williamson'))&&enabled(rxyRuleMitsunobu).includes('mitsunobu'))add('ether-activation-overlap','This mixture enables both Mitsunobu alcohol activation and Williamson displacement of an alkyl halide. The model establishes no dominant pathway; use independently specified recipes when comparing alternatives.');
+  }
+  return conflicts;
+}
+
+// Surface existing condition caveats as inspectable warnings, not universal
+// exclusion rules or numerical rate estimates.
+function rxxCompatibilityWarnings(ctx,outcome) {
+  const warnings=[];
+  if(outcome.id==='heck'&&ctx.temperature<60)warnings.push({code:'coupling-temperature-review',message:'The recorded Heck temperature is below the existing 60 C review threshold. The model does not establish a rate or productive conversion at this temperature.'});
+  if(outcome.id==='sonogashira'){
+    if(!ctx.has('copper'))warnings.push({code:'coupling-catalyst-review',message:'The copper-free Sonogashira branch is a model extension. Suitability of this catalyst/ligand recipe is not established.'});
+    else if(['air','o2'].includes(ctx.conditions.atmosphere))warnings.push({code:'coupling-oxidative-competition',message:'The recorded Cu/oxygen combination carries the existing oxidative alkyne-coupling caveat. The model does not establish suppression of that pathway.'});
+  }
+  return warnings;
+}

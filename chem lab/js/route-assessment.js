@@ -10,6 +10,8 @@ function routeStepAssessment(candidate) {
     });
     return {status:blockers.length?'blocked':'no-encoded-conflict',blockers,warnings:[...new Set(warnings)]};
   }
+  (o.compatibilityWarnings||[]).forEach(c=>warnings.push(c.message));
+  (o.compatibilityConflicts||[]).forEach(c=>blockers.push({code:c.code,message:c.message}));
   const loadingConflict=rxLoadingConflict(o);
   if(loadingConflict)blockers.push({code:'reagent-loading',message:loadingConflict});
   if(o.partialConversion)blockers.push({code:'partial-conversion',message:'A partial-conversion site alternative has no established selective preparation.'});
