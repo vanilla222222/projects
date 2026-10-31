@@ -2488,6 +2488,7 @@ const RX_CHEMOSELECTIVITY = [
   { id: 'permanganate', label: 'KMnO₄', tags: ['permanganate'], attacks: ['aldehyde', 'alkene', 'alcohol'] },
   { id: 'chromium', label: 'the chromium(VI) oxidant', tags: ['jones'], attacks: ['aldehyde', 'alcohol'] },
   { id: 'pcc', label: 'PCC', tags: ['pcc'], attacks: ['alcohol'] },
+  { id: 'dmp', label: 'Dess–Martin periodinane', tags: ['dmp'], attacks: ['alcohol'] },
   { id: 'ozone', label: 'O₃', tags: ['ozone'], attacks: ['alkene', 'alkyne'] },
   { id: 'borane', label: 'BH₃', tags: ['borane'], attacks: ['alkene', 'alkyne', 'aldehyde', 'acid', 'ketone'] },
   { id: 'fluoride', label: 'fluoride', tags: ['fluoride'], attacks: ['silylEther'] },
@@ -2584,7 +2585,7 @@ function rxChemoGroups(g) {
 // Keep the predictor and query audit on the same susceptible-site definition.
 function rxChemoSiteSusceptible(g, entry, group, atoms, info) {
   if (!entry || !entry.attacks.includes(group)) return false;
-  if (group === 'alcohol' && ['pcc', 'dmp', 'permanganate'].includes(entry.id)) {
+  if (group === 'alcohol' && ['pcc', 'dmp', 'permanganate', 'chromium'].includes(entry.id)) {
     return (info || rxAnalyze(g)).alcohols.some(a => atoms.includes(a.o) && a.degree < 3 && rxHydrogens(g,a.c) > 0);
   }
   return true;
@@ -2659,6 +2660,22 @@ function rxChemoselectivity(ctx, outcome) {
   }
   const competing = entry.attacks.filter((group) => count(before, group) > 0 && count(after, group) > 0)
     .map((group) => ({ group, count: count(after, group), atoms: before[group].reduce((all, atoms) => all.concat(atoms), []) }));
+  // A selected branch consumes only its own inputs. Other explicitly recorded
+  // reactants remain in the mixture; do not infer their inertness from omission
+  // in consumes. Reuse the same finite site model, without inventing products.
+  const otherInputs = [];
+  ctx.substrates.filter(s => s.compound.role === 'reactant' &&
+    !outcome.consumes.some(u => u && u.compound === s.compound)).forEach(s => {
+    const groups = rxChemoSusceptibleGroups(s.graph, entry);
+    entry.attacks.forEach(group => {
+      if (!(groups[group] || []).length) return;
+      const site = {group, count: groups[group].length,
+        atoms: groups[group].flat(), source: 'unconsumed-input',
+        substrateSmiles: s.compound.isomericSmiles || s.compound.smiles};
+      otherInputs.push(site);
+      competing.push(site);
+    });
+  });
   if (!competing.length && changed.length < 2) {
     return null;
   }
@@ -2676,7 +2693,8 @@ function rxChemoselectivity(ctx, outcome) {
   const text = competing.length
     ? 'Chemoselectivity: the encoded ' + entry.label + ' outcome changes the ' + changed.map(name).join(' and ') + ', while the ' + competing.map((c) => name(c.group)).join(' and ') + ' remains susceptible in the reagent model. Selective preparation and the competing products are not established.'
     : 'Chemoselectivity: the encoded ' + entry.label + ' outcome changes the ' + changed.map(name).join(' and the ') + '; the model assigns no kinetic site preference.';
-  outcome.chemoselectivity = { reagent: entry.id, label: entry.label, changed, competing, suggestion };
+  outcome.chemoselectivity = { reagent: entry.id, label: entry.label, changed, competing, otherInputs, suggestion };
+  if (otherInputs.length) outcome.warnings.push('Additional reactant compatibility: another recorded input contains sites susceptible to ' + entry.label + '. The selected branch does not consume that input; its survival and any competing products are not established.');
   outcome.warnings.push(text);
   return outcome.chemoselectivity;
 }

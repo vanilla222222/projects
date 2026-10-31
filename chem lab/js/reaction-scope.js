@@ -30,6 +30,7 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
   const knownKeys=new Set(Object.keys(defaultReactionConditions()));
   Object.keys(raw).filter(key=>!knownKeys.has(key)).forEach(key=>note('unknown-condition','The condition field '+key+' is not interpreted by this model.'));
   let context=null,entry=null,reproduced=false,descriptor=null;
+  let auditedOutcome=outcome;
   const input=Array.isArray(compounds)?compounds:[];
   try {
     const prepared=input.map(c=>c.fragment?c:Object.assign({},c,{fragment:smilesToFragment(c.isomericSmiles||c.smiles)}));
@@ -48,16 +49,20 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
       else {
         const productKeys=o=>(o.products||[]).map(p=>moleculeIdentity(p.isomericSmiles||p.smiles).key).sort().join('|');
         const expected=productKeys(outcome);
-        reproduced=!!expected&&(rule.run(context)||[]).some(o=>o.id===outcome.id&&productKeys(o)===expected);
+        const replay=expected&&(rule.run(context)||[]).find(o=>o.id===outcome.id&&productKeys(o)===expected);
+        reproduced=!!replay;
+        if(replay){
+          // Audit the current mixture, not chemoselectivity cached in a saved
+          // outcome from a different collection of inputs.
+          rxChemoselectivity(context,replay);
+          auditedOutcome=replay;
+        }
         if(!reproduced)note('branch-mismatch','The selected forward-rule branch does not reproduce these product identities under the recorded conditions.','conflict');
       }
       if(!descriptor||!descriptor.references.length)note('missing-evidence','No linked reaction-class source is recorded for this rule.');
       if(!descriptor||/Detailed scope has not yet been curated/.test(descriptor.scope))note('uncurated-scope','Detailed rule scope is not curated; a matched pattern is insufficient for a broader substrate claim.');
-      if(typeof rxChemoEntry==='function'&&Array.isArray(outcome.consumes))entry=rxChemoEntry(context,outcome);
+      if(typeof rxChemoEntry==='function'&&Array.isArray(auditedOutcome.consumes))entry=rxChemoEntry(context,auditedOutcome);
       if(!entry&&typeof RX_CHEMOSELECTIVITY!=='undefined')entry=RX_CHEMOSELECTIVITY.find(e=>!e.acylating&&e.tags&&e.tags.every(tag=>context.has(tag)))||null;
-      // These exact existing branches enumerate alcohol sites but do not have
-      // their own RX_CHEMOSELECTIVITY entry. Reuse their encoded attack class.
-      if(!entry&&context.has('dmp')&&(outcome.id==='oxidation-dmp'||outcome.rule==='site-resolved-oxidation'))entry={id:'dmp',attacks:['alcohol']};
     }
     entry=rxChemoConditionEntry(entry,context);
     context.substrates.forEach(s=>{
@@ -81,7 +86,7 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
       note('heuristic-stereoratio','The displayed product ratio is an encoded heuristic, not a substrate-specific measured or calculated selectivity.');
     }
   }
-  const competing=outcome&&outcome.chemoselectivity&&outcome.chemoselectivity.competing||[];
+  const competing=auditedOutcome&&auditedOutcome.chemoselectivity&&auditedOutcome.chemoselectivity.competing||[];
   const partial=!!(outcome&&outcome.partialConversion),susceptible=sites.filter(s=>s.susceptible);
   let selectivityStatus='not-assessed';
   if(partial){selectivityStatus='unestablished';note('partial-selectivity','The selected site is a partial-conversion alternative. No kinetic preference or selective preparation is established.');}

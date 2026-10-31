@@ -1,5 +1,12 @@
 # Chem Lab upgrades
 
+## Additional-input redox compatibility — 2026-10-30
+
+- Selected forward branches now audit other explicitly recorded reactants against the existing susceptible-site model. An input omitted from consumption is no longer silently treated as inert. Records retain its structure, group and site multiplicity; no competing products, rates or survival guarantees are invented. Solvent and catalyst roles remain outside this additional-reactant check.
+- These conflicts use the existing route-assessment gate shared by Path Finder, Recipe Tree candidate generation and collapsed protection sequences. Reaction and query-scope displays retain the warning while leaving the modeled branch inspectable.
+- DMP now uses the shared alcohol susceptibility entry instead of a query-only fallback. Ordinary Jones alcohol susceptibility excludes tertiary alcohols, matching the existing oxidizable-alcohol definition.
+- Twenty-six focused checks cover multiple alcohol/carbonyl inputs, inert and tertiary-alcohol controls, NaBH4 ester retention, DMP bulk oxidation, PCC, Jones site classification, input roles/order, all alternate branches, scope propagation, fresh-mixture reauditing of saved outcomes, protection-sequence assessment and input immutability. This is a finite encoded compatibility screen, not general experimental validation.
+
 ## Transparent route-ranking criteria — 2026-10-30
 
 - Path Finder now orders discovered routes lexicographically by actual operations, protection operations, recorded scope gaps, structured stereo concerns, minor-product selections, distinct extra building blocks, stock tiers, process-material entries and building-block size. Collapsed protection sequences count every operation. Search budgets, route acceptance and chemical verification remain unchanged; ranking applies to the routes found within those limits. Per-sort rank computation is cached without stale cross-job state.
