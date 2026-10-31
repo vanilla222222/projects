@@ -12,6 +12,7 @@ function routeStepAssessment(candidate) {
   }
   (o.compatibilityWarnings||[]).forEach(c=>warnings.push(c.message));
   (o.compatibilityConflicts||[]).forEach(c=>blockers.push({code:c.code,message:c.message}));
+  if(o.cyclization){(o.cyclization.blockers||[]).forEach(b=>blockers.push({...b}));warnings.push(o.cyclization.message);}
   const regioConflict=rxRegioConflict(o);
   if(regioConflict)blockers.push({code:'regioselectivity',message:regioConflict});
   else if(o.regioselectivity&&o.regioselectivity.status==='heuristic')warnings.push(o.regioselectivity.message);

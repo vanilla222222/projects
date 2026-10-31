@@ -83,6 +83,8 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
   } catch(error) {note('audit-incomplete','The scope audit could not complete: '+error.message);}
   ((auditedOutcome&&auditedOutcome.compatibilityConflicts)||[]).forEach(c=>note(c.code,c.message,'conflict'));
   ((auditedOutcome&&auditedOutcome.compatibilityWarnings)||[]).forEach(c=>note(c.code,c.message));
+  const cyclization=auditedOutcome&&auditedOutcome.cyclization||null;
+  if(cyclization){(cyclization.blockers||[]).forEach(b=>note(b.code,b.message,'conflict'));note('cyclization-assumptions',cyclization.message);}
   const rawRegio=auditedOutcome&&auditedOutcome.regioselectivity;
   const regioselectivity=rawRegio?{...rawRegio,ratio:Array.isArray(auditedOutcome.ratio)?auditedOutcome.ratio.slice():null}:null;
   if(regioselectivity&&regioselectivity.status!=='equivalent')note('regioselectivity',regioselectivity.message,regioselectivity.status==='unresolved'?'conflict':'uncertain');
@@ -108,7 +110,7 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
   else if(entry&&susceptible.length===1)selectivityStatus='single-recognized-site';
   else note('selectivity-unassessed','No applicable susceptible-site model is encoded for this branch; absence of flagged competition is not established selectivity.');
   const status=reasons.some(r=>r.level==='conflict')?'conflict':reasons.length?'uncertain':'supported';
-  return {status,reasons,conditions,normalizedConditions:normalized,rule:descriptor,modelReproduced:reproduced,sites,stereochemistry,regioselectivity,
+  return {status,reasons,conditions,normalizedConditions:normalized,rule:descriptor,modelReproduced:reproduced,sites,stereochemistry,regioselectivity,cyclization,
     selectivity:{status:selectivityStatus,selected:outcome&&outcome.site?Object.assign({},outcome.site):null,susceptibleCount:susceptible.length,competing},limitations};
 }
 

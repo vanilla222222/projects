@@ -2800,6 +2800,33 @@ function rxEnolateBase(ctx) {
   return null;
 }
 
+// A bounded topological screen, not a prediction of cyclization kinetics,
+// conformation, concentration effects or preparative success.
+function rxClosureTether(g,start,end) {
+  const path=(skipA,skipB)=>{
+    const queue=[[start]],seen=new Set([start]);
+    while(queue.length){const route=queue.shift(),last=route.at(-1);if(last===end)return route;
+      rxNeighbors(g,last).forEach(n=>{const id=n.atom.id;if((last===skipA&&id===skipB)||(last===skipB&&id===skipA)||seen.has(id))return;seen.add(id);queue.push(route.concat(id));});}
+    return null;
+  };
+  const atoms=path(),connected=!!atoms;
+  const unique=connected&&atoms.slice(1).every((id,i)=>!path(atoms[i],id));
+  return {connected,unique,ringSize:connected?atoms.length:null,atoms:atoms||[]};
+}
+
+function rxCyclizationRecord(out,s,start,end,options) {
+  const opts=options||{},tether=rxClosureTether(s.graph,start,end),blockers=[];
+  const add=(code,message)=>blockers.push({code,message});
+  if(s.graph.connectedComponents().length!==1||!tether.connected)add('disconnected-cyclization','A single connected tethered substrate is required; disconnected fragments do not establish an intramolecular closure.');
+  if(tether.connected&&!tether.unique)add('cyclic-tether','The reacting sites have multiple tether paths. Fused/bridged ring feasibility is outside this closure model.');
+  if(opts.allowedSizes&&!opts.allowedSizes.includes(tether.ringSize))add('closure-size','This proposed ring size is outside the encoded closure range.');
+  if(opts.eligibleClosures>1)add('closure-site-choice','Multiple eligible closures are present. Smallest-ring or first-site ordering does not establish selective cyclization.');
+  if(opts.externalPartners>0)add('intermolecular-competition','Other recognized reactive partners are present. Selective intramolecular closure over intermolecular reaction is not established.');
+  const message='Tether connectivity and ring size are structural checks only. Conditions favoring intramolecular reaction are assumed; conformation, actual concentration, oligomerization and product distribution are not calculated.';
+  out.cyclization={status:blockers.length?'unresolved':'within-encoded-topology',...tether,eligibleClosures:opts.eligibleClosures||1,externalPartners:opts.externalPartners||0,blockers,message};
+  out.warnings.push(message,...blockers.map(b=>b.message));return out;
+}
+
 function rxPathLength(g, from, to) {
   const seen = new Map([[from, 0]]);
   const queue = [from];

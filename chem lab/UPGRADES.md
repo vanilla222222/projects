@@ -1,5 +1,12 @@
 # Chem Lab upgrades
 
+## Bounded cyclization topology — 2026-10-31
+
+- Ring-closing metathesis, intramolecular Williamson closure, amino-acid lactamization and halolactonization now expose tether connectivity and ring size separately from experimental feasibility. Multiple tether paths, eligible closures or recognized external reactive partners carry explicit unresolved conflicts through planner, saved-route and scope checks. Pendant rings outside the tether do not trigger the cyclic-tether guard.
+- Five/eight-membered RCM range and five/six-membered ether/lactam/halolactone ranges remain unchanged. No conformation, actual concentration, strain energy, oligomer distribution or preparative yield is inferred. RCM no longer gives a generic numerical dilution instruction as if it established selectivity; closure-favoring conditions remain an explicit assumption.
+- Strict acyclic ether, lactam and acyloin rules now require a single connected input graph. A disconnected cyclic spectator can no longer make the aggregate bond count mimic an acyclic tree. Supported simple closures remain available; ring topology warnings are displayed in Recipe Tree.
+- Twenty-eight focused checks cover supported/out-of-range ring sizes, cyclic versus pendant tethers, competing closures and external partners, disconnected-input bypasses, input/outcome immutability, saved-route gates and independently replayed controls.
+
 ## Positional-isomer alternatives and provenance — 2026-10-30
 
 - Alkene HX addition (including radical HBr), hydration and hydroboration now distinguish equal-substitution orientations by isotope-preserving constitutional identity. Distinct orientations remain visible as unranked positional alternatives without an assigned ratio; symmetry-equivalent products are not duplicated. Multiple alkene sites and tied rearrangement cases remain unresolved instead of acquiring first-site selectivity. Enumeration is bounded to the selected alkene and is not a comprehensive rearrangement model.
