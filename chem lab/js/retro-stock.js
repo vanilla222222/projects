@@ -653,6 +653,7 @@ const STOCK_BUILTIN = [
   { smiles: 'ClCC#N', tier: 2, name: 'chloroacetonitrile' },
   { smiles: 'BrCC#N', tier: 2, name: 'bromoacetonitrile' },
   { smiles: 'ICC(=O)O', tier: 2, name: 'iodoacetic acid' },
+  { smiles: '[C-]#[N+]C(C)(C)C', tier: 2, name: 'tert-butyl isocyanide' },
 ];
 
 const stockState = { user: new Map(), builtin: null, names: null, canonical: new Map(), load: null, save: null };

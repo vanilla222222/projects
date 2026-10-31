@@ -102,7 +102,7 @@
   add('disulfide-reduction', 'Recognized neutral carbon-substituted disulfide bonds are cleaved with structurally recognized TCEP and explicit water.', 'All matched S–S bonds are reduced and shown as neutral thiols after proton transfer.', 'Thiol ionization depends on pH, which is not calculated; the reference does not establish quantitative conversion for every substrate.', [S.tcep]);
   // These rules carry complete, more restrictive source/scope metadata
   // beside their implementation; copy it so this audit also enumerates them.
-  ['finkelstein', 'sulfide-sulfoxide', 'sulfoxide-sulfone', 'thiol-disulfide', 'exhaustive-o-methylation', 'exhaustive-o-ethylation'].forEach((id) => {
+  ['finkelstein', 'sulfide-sulfoxide', 'sulfoxide-sulfone', 'thiol-disulfide', 'exhaustive-o-methylation', 'exhaustive-o-ethylation', 'passerini'].forEach((id) => {
     const rule = RX_RULES.find((r) => r.id === id);
     if (rule && rule.catalog) records[id] = { ...rule.catalog };
   });

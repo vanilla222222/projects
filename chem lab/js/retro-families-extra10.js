@@ -1048,3 +1048,28 @@ RETRO_TRANSFORMS.push({id:'exhaustive-o-ethylation',name:'Multiple phenolic etho
  for(let i=0;i<RETRO_LIMITS.maxPerTransform;i++)for(const bucket of buckets)if(bucket[i]&&out.length<RETRO_LIMITS.maxPerTransform)out.push(bucket[i]);
  return out;
 }});
+
+RETRO_TRANSFORMS.push({id:'passerini',name:'Alpha-acyloxy amide from a Passerini three-component coupling',rule:'passerini',group:'Multicomponent reactions',match(t){
+ const g=t.graph;if(g.atoms.some(a=>a.isotope||!['C','N','O'].includes(a.element)))return [];
+ const specs=[];
+ for(const amide of t.info.carbonyls.filter(c=>c.kind==='amide')){
+   const nitrogen=amide.hetero;if(!nitrogen||rxHydrogens(g,nitrogen)!==1||rxNeighbors(g,nitrogen).length!==2)continue;
+   for(const alpha of rxCarbonNeighbors(g,amide.c)){
+     if(rxHydrogens(g,alpha.atom.id)!==1)continue;
+     for(const link of rxNeighbors(g,alpha.atom.id).filter(n=>n.atom.element==='O'&&n.bond.order===1)){
+       const ester=t.info.carbonyls.find(c=>c.kind==='ester'&&c.hetero===link.atom.id);if(!ester)continue;
+       const pieces=retroEdit(t,h=>{
+         retroBreak(h,alpha.atom.id,amide.c);retroBreak(h,link.atom.id,ester.c);retroBreak(h,amide.c,amide.o);
+         retroOrder(h,alpha.atom.id,link.atom.id,2);retroOrder(h,ester.c,ester.o,1);h.addBond(ester.c,amide.o).order=2;
+         retroOrder(h,amide.c,nitrogen,3);h.getAtom(amide.c).charge=-1;h.getAtom(nitrogen).charge=1;rxsDrop(h,alpha.atom.id);
+       });
+       if(!pieces||pieces.length!==3)continue;
+       const precursors=pieces.map(p=>({smiles:p.smiles,role:'reactant',equiv:1}));
+       if(precursors.some(p=>!rxxPasseriniInput({fragment:smilesToFragment(p.smiles),role:'reactant'})))continue;
+       specs.push(retroSpec(precursors,[],{solvents:['dcm'],temperature:25}));
+       if(specs.length>=RETRO_LIMITS.maxPerTransform)return specs;
+     }
+   }
+ }
+ return specs;
+}});
