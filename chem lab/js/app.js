@@ -4078,7 +4078,7 @@
       reactionLab.state.selected = '';
       reactionLab.state.conditions = normalizeReactionConditions(JSON.parse(JSON.stringify(conditions)));
       compounds.forEach((c) => {
-        const added = reactionLab.addSmiles(c.smiles, c.role);
+        const added = reactionLab.addSmiles(c.smiles, c.role, c.materialState);
         if (added && c.label) {
           added.label = c.label;
         }
@@ -4092,7 +4092,7 @@
     reactionLab.state.selected = '';
     reactionLab.state.conditions = normalizeReactionConditions(JSON.parse(JSON.stringify(conditions)));
     compounds.forEach((c) => {
-      const added = reactionLab.addSmiles(c.isomericSmiles || c.smiles, c.role);
+      const added = reactionLab.addSmiles(c.isomericSmiles || c.smiles, c.role, c.materialState);
       if (added && c.label) added.label = c.label;
     });
     setView('reactions');

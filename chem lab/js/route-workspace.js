@@ -87,6 +87,8 @@ function routeWorkspaceNormalize(raw) {
     return {
       handoff: index?routeHandoffNormalize(link.handoff||source.handoff,{freshMixture:link.freshMixture===undefined?source.freshMixture:link.freshMixture,onePot:raw.onePot||link.onePot||source.onePot}):null,
       workup:routeWorkupNormalize(link.workup||source.workup),
+      fromState:reactionMaterialStateNormalize(link.fromState||source.fromState),
+      toState:reactionMaterialStateNormalize(link.toState||source.toState),
       from: routeWorkspaceSmiles(link.from),
       to: routeWorkspaceSmiles(link.to),
       name: String(source.outcomeName || source.name || 'Reaction step').slice(0, 120),
@@ -97,7 +99,7 @@ function routeWorkspaceNormalize(raw) {
         if (!c || !roles.includes(c.role)) throw new Error('Step ' + (index + 1) + ' has an invalid compound role.');
         const equiv = c.equiv === undefined || c.equiv === null || String(c.equiv).trim() === '' ? '1' : String(c.equiv).slice(0, 20);
         if (!reactionParseAmount(equiv)) throw new Error('Step ' + (index + 1) + ' has an invalid compound amount or equivalents value.');
-        return { smiles: routeWorkspaceSmiles(c.isomericSmiles || c.smiles), role: c.role, equiv, label: String(c.label || '').slice(0, 80) };
+        return { smiles: routeWorkspaceSmiles(c.isomericSmiles || c.smiles), role: c.role, equiv, label: String(c.label || '').slice(0, 80), materialState:reactionMaterialStateNormalize(c.materialState) };
       }),
       conditions: normalizeReactionConditions(source.conditions || {}),
     };
@@ -567,7 +569,7 @@ function createRouteWorkspace(deps) {
         if (i) structures.append(element('span', '→'));
         const block = element('div');
         if (deps.thumbnail) { try { block.append(deps.thumbnail(retroFromSmiles(smiles))); } catch (error) { block.append(element('span', 'Structure preview unavailable')); } }
-        block.append(element('p', simpleName(smiles)), element('code', smiles)); structures.append(block);
+        block.append(element('p', simpleName(smiles)), element('code', smiles),reactionMaterialStateControl(i?step.toState:step.fromState,value=>{if(i)step.toState=value;else{step.fromState=value;step.compounds.filter(c=>routeWorkspaceKey(c.smiles)===routeWorkspaceKey(step.from)).forEach(c=>c.materialState=value);}persist();})); structures.append(block);
       });
       card.append(structures);
       const actions = element('div', undefined, 'workspace-actions');
