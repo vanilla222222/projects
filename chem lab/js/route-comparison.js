@@ -169,8 +169,11 @@ function routeComparisonRender(container, job, deps) {
   const root = make('section', undefined, 'route-comparison');
   root.setAttribute('aria-label', 'Candidate route comparison');
   root.append(make('h3', 'Compare candidate routes'));
+  if(job.options?.research&&typeof planningResearchSummary==='function')root.append(make('p',planningResearchSummary(job.options.research),'research-search-snapshot'));
+  if(job.options?.research){const protocol=make('details');protocol.append(make('summary','Inspect recorded search protocol'),make('pre',JSON.stringify(job.options.research,null,2)));root.append(protocol);}
+  const find=make('input');find.type='search';find.placeholder='Find an intermediate, reagent or reaction in results';find.setAttribute('aria-label','Filter displayed routes');find.addEventListener('input',()=>{const query=find.value.toLowerCase().trim();Array.from(root.querySelectorAll('.route-comparison-card')).forEach(card=>card.hidden=!!query&&!card.textContent.toLowerCase().includes(query));});root.append(find);
   root.append(reactionPurificationControl(()=>routeComparisonRender(container,job,deps)));
-  root.append(make('p', 'Counts below are calculated from these route records; materials are counted once per role. Sources document reaction classes; they do not establish that a route works experimentally. No yield, feasibility or safety score is assigned. Path Finder orders routes by operations, protection operations, recorded scope gaps, stereo concerns, minor-product steps, extra building blocks, stock tiers, process-material entries and building-block size. Missing metadata counts as a gap; documentation length does not. These are planning criteria, not cost or experimental success predictions.', 'route-comparison-note'));
+  root.append(make('p', 'Counts below are calculated from these route records; materials are counted once per role. Sources document reaction classes; they do not establish that a route works experimentally. No yield, feasibility or safety score is assigned. The default ranking orders routes by operations, protection operations, recorded scope gaps, stereo concerns, minor-product steps, extra building blocks, stock tiers, process-material entries and building-block size. Missing metadata counts as a gap; documentation length does not. These are planning criteria, not cost or experimental success predictions.', 'route-comparison-note'));
   const grid = make('div', undefined, 'route-comparison-grid');
   const addList = (parent, label, entries) => {
     parent.append(make('h5', label));

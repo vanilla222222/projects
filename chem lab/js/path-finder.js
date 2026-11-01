@@ -111,7 +111,8 @@ function pathFinderRouteFeatures(route) {
 
 // Keep the best-cost route, then choose the least overlapping pathways.
 // Cost ranking breaks diversity ties and orders the final displayed selection.
-function pathFinderSelectDiverseRoutes(routes, limit, compare, describe = pathFinderRouteFeatures) {
+function pathFinderSelectDiverseRoutes(routes, limit, compare, describe = pathFinderRouteFeatures, policy = 'balanced') {
+  if(policy==='cost')return routes.slice().sort(compare).slice(0,limit);
   const remaining = routes.slice().sort(compare), selected = [], features = new Map();
   remaining.forEach(route => features.set(route, describe(route)));
   const overlap = (a, b) => {
@@ -125,6 +126,7 @@ function pathFinderSelectDiverseRoutes(routes, limit, compare, describe = pathFi
       const similarity = selected.length ? Math.max(...selected.map(other => overlap(route, other))) : 0;
       if (similarity < score) { best = i; score = similarity; }
     });
+    if(policy==='maximum'&&selected.length&&score>.5)break;
     selected.push(remaining.splice(best, 1)[0]);
   }
   return selected.sort(compare);
@@ -243,6 +245,8 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
   opts.maxRoutes = Math.max(1, Math.min(5, Number(opts.maxRoutes) || 3));
   opts.budgetMs = Math.max(1, Math.min(30000, Number(options && options.budgetMs) || (extended ? 30000 : 12000)));
   opts.stockPolicy = opts.stockPolicy === 'custom' ? 'custom' : 'builtin';
+  const research=options&&options.research&&typeof planningPolicyCreate==='function'?planningPolicyCreate(options.research,{start:startSmiles,target:targetSmiles}):null;
+  if(research){opts.research=research.settings;['budgetMs','maxNodes','maxBranch'].forEach(k=>{if(research.settings[k]!==null)opts[k]=research.settings[k];});}
   const cache = new Map();
   const structure = (smiles) => {
     if (!cache.has(smiles)) { try { cache.set(smiles, pathFinderStructure(smiles)); } catch (error) { cache.set(smiles, null); } }
@@ -333,19 +337,20 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
     }));
   };
   if (opts.recipeTree && start.key !== target.key) {
-    return pathFinderRecipeCreate(start, target, opts, { available, material, ruleBlocked, reagentBlocked, structure });
+    return pathFinderRecipeCreate(start, target, opts, { available, material, ruleBlocked, reagentBlocked, structure, research });
   }
   const signature = (link) => [link.candidate.transform, link.candidate.rule, link.candidate.outcomeId, link.fromKey, link.toKey, JSON.stringify(link.candidate.conditions || {}), (link.candidate.compounds || []).map((p) => p.smiles + ':' + p.role).sort().join('|')].join('~');
   const rankRoutes = () => {
     const routes = Array.from(routeStrategies.values());
-    const ranks = new Map(routes.map(route => [route, pathFinderRouteRank(route, material)]));
+    const ranks = new Map(routes.map(route => [route, (research?planningRouteRank(route,pathFinderRouteRank(route,material),research.settings):pathFinderRouteRank(route,material))]));
     const compare = (a,b) => compareRanks(ranks.get(a), ranks.get(b)) || a.map(signature).join('/').localeCompare(b.map(signature).join('/'));
-    job.routes = pathFinderSelectDiverseRoutes(routes, opts.maxRoutes, compare);
+    job.routes = pathFinderSelectDiverseRoutes(routes, opts.maxRoutes, compare, pathFinderRouteFeatures, research?.settings.diversity);
     job.route = job.routes[0] || [];
     diagnostics.distinctPathways = routeStrategies.size;
   };
-  const enoughRoutes = () => routeStrategies.size >= (opts.maxRoutes === 1 ? 1 : opts.maxRoutes * 4);
+  const enoughRoutes = () => routeStrategies.size >= (opts.maxRoutes === 1 && (!research||research.settings.priority==='balanced'&&research.settings.purificationPreference==='any') ? 1 : opts.maxRoutes * 4);
   const addRoute = (route) => {
+    if(research){const reasons=research.routeCheck(route);if(reasons.length){diagnostics.rules++;reasons.forEach(r=>{if(diagnostics.rejected.length<12)diagnostics.rejected.push({reaction:'Route policy',target:job.target,code:r.code,reason:r.message});});return;}}
     const recipeKey = route.map(signature).join('/');
     if (routeKeys.has(recipeKey)) return;
     routeKeys.add(recipeKey);
@@ -353,7 +358,7 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
     const key = pathFinderRouteStrategyKey(route), previous = routeStrategies.get(key);
     if (previous) {
       diagnostics.routeVariants++;
-      const cost = compareRanks(pathFinderRouteRank(route, material), pathFinderRouteRank(previous, material));
+      const cost = compareRanks((research?planningRouteRank(route,pathFinderRouteRank(route,material),research.settings):pathFinderRouteRank(route,material)), (research?planningRouteRank(previous,pathFinderRouteRank(previous,material),research.settings):pathFinderRouteRank(previous,material)));
       if (cost > 0 || cost === 0 && recipeKey.localeCompare(previous.map(signature).join('/')) >= 0) return;
     }
     routeStrategies.set(key, route);
@@ -401,6 +406,7 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
     for (const item of diversified.slice(0, opts.maxBranch)) {
       const candidate = item.candidate;
       diagnostics.candidates++;
+      if(research){const blocked=research.check(candidate,node.smiles);if(blocked.length){diagnostics.rules++;blocked.forEach(b=>{if(diagnostics.rejected.length<12)diagnostics.rejected.push({reaction:candidate.name,target:node.smiles,code:b.code,reason:b.message});});continue;}}
       const assessment = candidateAssessment(candidate);
       if (assessment) {
         if (assessment.blockers.length) {
@@ -418,7 +424,7 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
         if (!diagnostics.protectionMessages.includes(reason)) diagnostics.protectionMessages.push(reason);
         continue;
       }
-      if (candidate.stereo === 'mismatch' || candidate.stereo === 'racemic') { diagnostics.stereo++; continue; }
+      if (research?!planningStereoAllowed(candidate,node.smiles,research.settings):(candidate.stereo === 'mismatch' || candidate.stereo === 'racemic')) { diagnostics.stereo++; continue; }
       const preservationConflict = candidate.pgSteps ? null : candidatePreservationConflict(candidate);
       if (preservationConflict) {
         diagnostics.protection++;
@@ -569,6 +575,7 @@ function pathFinderRecipeCreate(start, target, options, helpers) {
   };
   const candidateFilter = (candidate, node) => {
     diagnostics.candidates++;
+    if(helpers.research){const blocked=helpers.research.check(candidate,node.smiles);if(blocked.length){blocked.forEach(b=>reject(candidate,node,b.code,b.message,'rules'));return false;}}
     if (helpers.ruleBlocked(candidate)) return reject(candidate, node, 'rule-filter', 'Excluded by the reaction filter.', 'rules');
     if (helpers.reagentBlocked(candidate)) return reject(candidate, node, 'reagent-filter', 'Excluded by the reagent or solvent filter.', 'reagents');
     if (candidate.pgSteps && opts.allowedProtectingGroups && !opts.allowedProtectingGroups.includes(candidate.protection && candidate.protection.id)) {
@@ -576,7 +583,7 @@ function pathFinderRecipeCreate(start, target, options, helpers) {
       if (!diagnostics.protectionMessages.includes(reason)) diagnostics.protectionMessages.push(reason);
       return reject(candidate, node, 'protection-filter', reason, 'protection');
     }
-    if (candidate.stereo === 'mismatch' || candidate.stereo === 'racemic') return reject(candidate, node, 'stereo', 'The required stereochemistry is not preserved.', 'stereo');
+    if (helpers.research?!planningStereoAllowed(candidate,node.smiles,helpers.research.settings):(candidate.stereo === 'mismatch' || candidate.stereo === 'racemic')) return reject(candidate, node, 'stereo', 'The required stereochemistry is not preserved.', 'stereo');
     const product = candidate.product && helpers.structure(candidate.product.isomericSmiles || candidate.product.smiles);
     const sameProduct = product && (product.key === pathFinderKey(node.smiles) || typeof retroProductIdentity === 'function' &&
       retroProductIdentity(candidate.product.isomericSmiles || candidate.product.smiles) === retroProductIdentity(node.smiles));
@@ -609,11 +616,14 @@ function pathFinderRecipeCreate(start, target, options, helpers) {
     }, candidateFilter, candidateOrder: pathFinderDiverseCandidates, candidateBranchKey: pathFinderCandidateStrategyKey, diverseRootEnumeration: true,
     routeSelector: routes => {
       const strategies = new Map();
+      const links=tree=>[{candidate:tree.candidate},...(tree.children||[]).flatMap(links)].filter(l=>l.candidate);
+      routes=routes.filter(tree=>{const reasons=helpers.research?helpers.research.routeCheck(links(tree)):[];if(reasons.length){diagnostics.rules++;reasons.forEach(r=>reject(tree.candidate,{smiles:tree.target},r.code,r.message));}return !reasons.length;});
       routes.forEach(tree => { const key = pathFinderRecipeStrategyKey(tree); if (!strategies.has(key)) strategies.set(key, tree); });
       diagnostics.routeVariants = routes.length - strategies.size;
       diagnostics.distinctPathways = strategies.size;
-      const rank = new Map(routes.map((tree, i) => [tree, i]));
-      return pathFinderSelectDiverseRoutes([...strategies.values()], opts.maxRoutes, (a,b) => rank.get(a)-rank.get(b), pathFinderRecipeFeatures);
+      const rank = new Map(routes.map((tree, i) => [tree, helpers.research?planningRouteRank(links(tree),[i],helpers.research.settings):[i]]));
+      const compare=(a,b)=>{const x=rank.get(a),y=rank.get(b);for(let i=0;i<Math.max(x.length,y.length);i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)-(y[i]||0);}return 0;};
+      return pathFinderSelectDiverseRoutes([...strategies.values()], opts.maxRoutes, compare, pathFinderRecipeFeatures, helpers.research?.settings.diversity);
     },
   });
   const job = { start: start.smiles, target: target.smiles, options: opts, status: 'running', route: [], routes: [], recipeTrees: [], expanded: 0, truncated: false, elapsedMs: 0, diagnostics, termination: '' };
@@ -676,6 +686,7 @@ function pathFinderRecipeRender(container, job, deps) {
   };
   container.replaceChildren();
   container.append(reactionPurificationControl(()=>pathFinderRecipeRender(container,job,deps)));
+  if(job.options?.research&&typeof planningResearchSummary==='function')container.append(make('p',planningResearchSummary(job.options.research),'research-search-snapshot'));
   const diversity = typeof routeComparisonDiversity === 'function' ? routeComparisonDiversity(job) : [];
   job.recipeTrees.forEach((tree, index) => {
     const leaves = new Map();
@@ -739,10 +750,13 @@ function createPathFinder(deps) {
   const value = (id, fallback) => get(id) ? get(id).value : fallback;
   const updateLimits = () => {
     const limits = get('path-search-limits'), recipe = value('path-recipe-tree', 'off') === 'on';
+    if(limits&&researchControl?.read){try{const s=researchControl.read();if(s.budgetMs!==null||s.maxNodes!==null){limits.textContent='Search: '+(s.maxNodes??(Number(value('path-depth',3))>5?200:60))+' structures / '+((s.budgetMs??(Number(value('path-depth',3))>5?30000:12000))/1000)+' seconds.'+(recipe?' Recipe depth cap: 8.':'');return;}}catch(error){limits.textContent=error.message;return;}}
     if (limits) limits.textContent = (Number(value('path-depth', 3)) > 5 ? 'Search is limited to 200 structures and 30 seconds.' : 'Search is limited to 60 structures and 12 seconds.') + (recipe ? ' Recipe depth is capped at 8 and applies to the longest branch.' : '');
   };
   get('path-depth').addEventListener('change', updateLimits);
   if (get('path-recipe-tree')) get('path-recipe-tree').addEventListener('change', updateLimits);
+  const researchControl=get('path-research-settings')&&typeof planningSettingsCreate==='function'?planningSettingsCreate(get('path-research-settings'),()=>{updateLimits();if(job)status.textContent='Research settings changed. Rerun the search; existing results retain their recorded settings.';}):null;
+  if(get('path-swap'))get('path-swap').addEventListener('click',()=>{[start.value,target.value]=[target.value,start.value];status.textContent='Endpoints swapped. Run a new search to update results.';});
   updateLimits();
   const finish = () => {
     run.disabled = false; cancel.disabled = true;
@@ -807,6 +821,7 @@ function createPathFinder(deps) {
       const create = managedProtectingGroups && typeof protectionProgramCreate === 'function' ? protectionProgramCreate : pathFinderCreate;
       job = create(a.isomericSmiles || a.smiles, b.isomericSmiles || b.smiles, {
         managedProtectingGroups,
+        research:researchControl?researchControl.read():undefined,
         recipeTree: value('path-recipe-tree', 'off') === 'on',
         maxDepth: Number(value('path-depth', 3)), maxRoutes: Number(value('path-route-count', 3)), stockPolicy: value('path-stock-policy', 'builtin'),
         availableMaterials: String(value('path-inventory', '')).split(/\n/).map((s) => s.trim()).filter(Boolean),
@@ -829,5 +844,5 @@ function createPathFinder(deps) {
   get('path-example').addEventListener('click', () => { start.value = 'ethanol'; target.value = 'ethanal'; });
   if (get('path-cascade') && typeof createReactionCascade === 'function') createReactionCascade(get('path-cascade'),deps);
   if (get('path-benchmarks') && typeof createRouteBenchmarks === 'function') createRouteBenchmarks(get('path-benchmarks'),deps);
-  return { show() { updateLimits(); start.focus(); } };
+  return { show() { if(researchControl)researchControl.refresh();updateLimits(); start.focus(); } };
 }

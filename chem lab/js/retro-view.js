@@ -32,6 +32,8 @@ function createRetroView(deps) {
   const hint = document.getElementById('retro-hint');
   const sendButton = document.getElementById('retro-send');
   const labButton = document.getElementById('retro-lab');
+  const researchHost=document.getElementById('retro-research-settings');
+  const researchControl=researchHost&&typeof planningSettingsCreate==='function'?planningSettingsCreate(researchHost,()=>{state.selected=null;render();}):null;
   const state = { open: false, tree: null, chain: [], selected: null, names: new Map(), job: 0 };
 
   function nameFor(smiles) {
@@ -194,7 +196,11 @@ function createRetroView(deps) {
     target.appendChild(thumbnail(node.smiles));
     const text = retroViewElement('div', 'retro-target-text');
     text.appendChild(retroViewElement('strong', '', nameFor(node.smiles)));
-    const count = result ? result.candidates.length : 0;
+    let policy=null;try{policy=researchControl?planningPolicyCreate(researchControl.read(),{target:state.tree.root.smiles}):null;}catch(error){summary.textContent='Invalid research settings: '+error.message;sendButton.disabled=true;labButton.disabled=true;return;}
+    const excluded=[];
+    const candidates=(result?.candidates||[]).map((candidate,index)=>({candidate,index})).filter(({candidate})=>{const reasons=policy?[...policy.check(candidate,node.smiles),...policy.routeCheck([{candidate}])]:[];if(policy&&!planningStereoAllowed(candidate,node.smiles,policy.settings))reasons.push({code:'stereo-policy',message:'Excluded by the stereochemistry policy.'});if(reasons.length)excluded.push({candidate,reasons});return !reasons.length;});
+    if(policy)candidates.sort((a,b)=>{const x=planningRouteRank([{candidate:a.candidate}],[a.index],policy.settings),y=planningRouteRank([{candidate:b.candidate}],[b.index],policy.settings);for(let i=0;i<Math.max(x.length,y.length);i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)-(y[i]||0);}return 0;});
+    const count = candidates.length;
     const detail = result
       ? (count === 1 ? '1 verified disconnection' : count + ' verified disconnections') + ' · ' + result.ms + ' ms' + (result.truncated ? ' · time limit reached' : '')
       : 'Depth limit reached';
@@ -206,10 +212,11 @@ function createRetroView(deps) {
     summary.appendChild(reactionPurificationControl(render));
     summary.appendChild(reactionPlanningMaterialElement(node.smiles,'Target output state',true));
     if (!result || !count) {
-      list.appendChild(retroViewElement('p', 'retro-empty', result ? emptyMessage(result) : 'Maximum depth reached.'));
+      list.appendChild(retroViewElement('p','retro-empty',excluded.length?'No disconnections meet this research protocol. Inspect the exclusions below or relax a constraint.':result?emptyMessage(result):'Maximum depth reached.'));
     } else {
-      result.candidates.forEach((candidate, index) => list.appendChild(candidateCard(state.tree, node, candidate, index)));
+      candidates.forEach(({candidate,index})=>list.appendChild(candidateCard(state.tree,node,candidate,index)));
     }
+    if(excluded.length){const box=retroViewElement('details','research-policy-rejections');box.append(retroViewElement('summary','',excluded.length+' disconnections excluded by research settings'));excluded.forEach(({candidate,reasons})=>box.append(retroViewElement('p','',candidate.name+': '+reasons.map(r=>r.message).join(' '))));list.append(box);}
     if (result && (result.compatibilityRejected || []).length) {
       const rejected = retroViewElement('details', 'retro-rejected');
       rejected.appendChild(retroViewElement('summary', '', 'Substrate conflicts excluded from these candidates'));
@@ -251,6 +258,7 @@ function createRetroView(deps) {
       deps.toast('Could not read this structure', { kind: 'warn' });
       return;
     }
+    if(researchControl)researchControl.refresh();
     state.open = true;
     overlay.hidden = false;
     state.chain = [];
@@ -260,7 +268,7 @@ function createRetroView(deps) {
     summary.textContent = '';
     renderButtons();
     busy(() => {
-      state.tree = retroTree(target.smiles);
+      state.tree = retroTree(target.isomericSmiles||target.smiles);
       render();
     });
   }
@@ -271,6 +279,7 @@ function createRetroView(deps) {
     overlay.hidden = true;
   }
 
+  const fullPlanner=document.getElementById('retro-plan-full');if(fullPlanner)fullPlanner.addEventListener('click',()=>{const node=currentNode();if(node&&deps.openPlanner){close();deps.openPlanner(node.smiles);}});
   document.getElementById('retro-close').addEventListener('click', close);
   document.getElementById('retro-cancel').addEventListener('click', close);
   overlay.addEventListener('click', (event) => {

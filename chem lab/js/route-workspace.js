@@ -110,6 +110,7 @@ function routeWorkspaceNormalize(raw) {
     name: String(raw.name || 'Untitled route').slice(0, 120),
     start: routeWorkspaceSmiles(raw.start || (steps[0] && steps[0].from)),
     target: routeWorkspaceSmiles(raw.target || (steps.length && steps[steps.length - 1].to)),
+    researchProtocol:(raw.researchProtocol||raw.options?.research)&&typeof planningSettingsNormalize==='function'?planningSettingsNormalize(raw.researchProtocol||raw.options.research):null,
     createdAt: typeof raw.createdAt === 'string' ? raw.createdAt.slice(0, 40) : new Date().toISOString(),
     steps,
   };
@@ -462,6 +463,7 @@ function createRouteWorkspace(deps) {
     meta.append(name.wrap, start.wrap, target.wrap, button('Update endpoints', () => {
       try { const a = routeWorkspaceSmiles(start.input.value), b = routeWorkspaceSmiles(target.input.value); route.start = a; route.target = b; if (persist()) message.textContent = 'Endpoints updated. Continuity was rechecked.'; redraw(); } catch (error) { message.textContent = error.message; }
     }));
+    if(route.researchProtocol){const protocol=element('details');protocol.append(element('summary','Recorded search protocol'),element('p','Historical search settings; edits to this saved route are checked chemically but do not rerun the search constraints.'),element('pre',JSON.stringify(route.researchProtocol,null,2)));content.append(protocol);}
     content.append(meta, element('p', simpleName(route.start) + ' → ' + simpleName(route.target), 'workspace-equation'), element('p', 'Route status: ' + report.status + '. ' + (report.issues.join(' ') || 'Intermediates connect in the current order.'), 'workspace-status ' + report.status));
     content.append(element('p','Step verification assumes separately prepared mixtures and any recorded endpoint work-up. It does not verify isolation, purity or one-pot compatibility.'));
     report.handoffs.forEach(h=>content.append(element('p','Before step '+h.beforeStep+': '+h.message+' '+h.blockers.map(b=>b.message).join(' ')+' '+h.potentials.map(p=>'If carried over: '+p.message).join(' '))));

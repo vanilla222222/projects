@@ -2248,7 +2248,7 @@ function retroExpand(tree, node) {
   if (!node.result) {
     node.result = retroDisconnectSmiles(node.smiles, { budgetMs: tree.budgetMs });
     node.result.candidates.forEach((c) => {
-      c.children = c.precursors.map((p) => retroNode(p.smiles, node.depth + 1));
+      c.children = c.precursors.map((p) => retroNode(p.isomericSmiles||p.smiles, node.depth + 1));
     });
   }
   return node.result;
