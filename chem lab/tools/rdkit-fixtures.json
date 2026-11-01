@@ -451,6 +451,27 @@
       "expectedProducts": [
         "C/C=C\\C"
       ]
+    },
+    {
+      "id": "weinreb-amide-from-complex-acid",
+      "scope": "Finite N-acyl connectivity and route continuity regression; no prediction of experimental yield or stereochemical purity.",
+      "start": "CONC",
+      "target": "CON(C)C(=O)c1ccc(OC)cc1",
+      "options": {
+        "maxDepth": 1,
+        "maxRoutes": 1,
+        "budgetMs": 5000,
+        "stockPolicy": "custom",
+        "availableMaterials": [
+          "COc1ccc(C(=O)O)cc1"
+        ]
+      },
+      "expectedKinds": [
+        null
+      ],
+      "expectedProducts": [
+        "CON(C)C(=O)c1ccc(OC)cc1"
+      ]
     }
   ],
   "reactions": [

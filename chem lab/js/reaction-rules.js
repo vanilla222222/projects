@@ -1801,6 +1801,25 @@ function rxRuleEsterification(ctx) {
   return [out];
 }
 
+// Neutral O-alkylhydroxylamines acylate at N. Keep this separate from
+// ordinary amines so imine, alkylation and protection scope is not widened.
+// N-acylated, protonated, O-H and O-acyl hydroxylamines are outside this set.
+function rxAcylAmineSites(graph, info) {
+  const sites=(info || rxAnalyze(graph)).amines.slice();
+  graph.atoms.forEach(n=>{
+    if(n.element!=='N'||n.charge||![1,2].includes(rxHydrogens(graph,n.id)))return;
+    const neighbors=rxNeighbors(graph,n.id);
+    const oxygens=neighbors.filter(x=>x.atom.element==='O');
+    if(oxygens.length!==1||neighbors.some(x=>x.bond.order!==1||!['C','O'].includes(x.atom.element)))return;
+    if(neighbors.some(x=>x.atom.element==='C'&&rxNeighbors(graph,x.atom.id).some(y=>y.bond.order>1&&['O','N','S'].includes(y.atom.element))))return;
+    const oxygen=oxygens[0].atom;
+    const other=rxNeighbors(graph,oxygen.id).filter(x=>x.atom.id!==n.id);
+    if(oxygen.charge||rxHydrogens(graph,oxygen.id)!==0||other.length!==1||other[0].bond.order!==1||other[0].atom.element!=='C'||!rxIsSp3(graph,other[0].atom.id))return;
+    sites.push({n:n.id,h:rxHydrogens(graph,n.id),alkoxyamine:true});
+  });
+  return sites;
+}
+
 function rxRuleAcylation(ctx) {
   const chlorides = ctx.substrates.flatMap((s) => s.info.carbonyls.filter((c) => c.kind === 'acylChloride').map((c) => ({ s, c })));
   if (!chlorides.length || ctx.has('lewis')) {
@@ -1808,7 +1827,7 @@ function rxRuleAcylation(ctx) {
   }
   const acyl = chlorides[0];
   const partners = ctx.substrates.filter((s) => s !== acyl.s).flatMap((s) =>
-    s.info.amines.map((n) => ({ graph: s.graph, atom: n.n, kind: 'amine' })).concat(s.info.alcohols.map((a) => ({ graph: s.graph, atom: a.o, kind: 'alcohol' }))));
+    rxAcylAmineSites(s.graph,s.info).map((n) => ({ graph: s.graph, atom: n.n, kind: 'amine', alkoxyamine:!!n.alkoxyamine })).concat(s.info.alcohols.map((a) => ({ graph: s.graph, atom: a.o, kind: 'alcohol' }))));
   if (ctx.has('ammonia')) {
     const nh3 = ctx.get('ammonia');
     partners.unshift({ graph: nh3.graph, atom: nh3.ids[0], kind: 'amine' });
@@ -1818,6 +1837,8 @@ function rxRuleAcylation(ctx) {
     const w = ctx.get('H2O');
     partners.push({ graph: w.graph, atom: w.ids[0], kind: 'water' });
   }
+  // Input order must not make an alcohol outrank an available N nucleophile.
+  partners.sort((a,b)=>(a.kind==='amine'?0:1)-(b.kind==='amine'?0:1));
   const partner = partners[0];
   if (!partner) {
     return [];
@@ -1831,6 +1852,7 @@ function rxRuleAcylation(ctx) {
   const out = rxOutcome('acyl-substitution', 'Acyl chloride + ' + (partner.kind === 'water' ? 'water' : partner.kind === 'amine' ? 'amine' : 'alcohol'), 'Nucleophilic acyl substitution', g,
     'The nucleophile adds to the very electrophilic acyl chloride carbon, and chloride, an excellent leaving group, is expelled to give ' + product + '.',
     { score: 13, byproducts: [ctx.has('amineBase') ? 'HCl (trapped by the added base as its ammonium salt)' : 'HCl'] });
+  if(partner.alkoxyamine)out.warnings.push('The O-alkylhydroxylamine is acylated at nitrogen, giving an N-alkoxyamide rather than an ordinary ester.');
   const baseMissing = partner.kind === 'amine' && !ctx.has('amineBase') && !ctx.has('hydroxide');
   out.consumes = [rxUse(acyl.s, 1), partnerSub ? rxUse(partnerSub, baseMissing ? 2 : 1) : null];
   if (baseMissing) {
@@ -2649,7 +2671,7 @@ function rxChemoGroups(g) {
       add('terminalAlkyne', [e.a, e.b]);
     }
   });
-  info.amines.forEach((a) => add('amine', [a.n]));
+  rxAcylAmineSites(g,info).forEach((a) => add('amine', [a.n]));
   info.alcohols.forEach((a) => add('alcohol', [a.o]));
   g.atoms.forEach((atom) => {
     const n = rxNeighbors(g, atom.id);

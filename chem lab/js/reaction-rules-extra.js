@@ -270,7 +270,7 @@ function rxxRuleCarbodiimide(ctx) {
     return [];
   }
   const others = ctx.substrates.filter((s) => s !== acid.s);
-  const amines = others.flatMap((s) => s.info.amines.map((a) => ({ s, atom: a.n, kind: 'amine' })));
+  const amines = others.flatMap((s) => rxAcylAmineSites(s.graph,s.info).map((a) => ({ s, atom: a.n, kind: 'amine', alkoxyamine:!!a.alkoxyamine })));
   const alcohols = others.flatMap((s) => s.info.alcohols.map((a) => ({ s, atom: a.o, kind: 'alcohol' })).concat(rxxPhenols(s).map((p) => ({ s, atom: p.o, kind: 'alcohol' }))));
   const agent = ctx.get('carbodiimide');
   if (!agent) {
@@ -293,6 +293,7 @@ function rxxRuleCarbodiimide(ctx) {
   if (!amide && !ctx.has('dmap')) {
     out.warnings.push('Without DMAP (5–10 mol%) the O-acylisourea slowly rearranges to an unreactive N-acylurea; DMAP is what makes the Steglich esterification work.');
   }
+  if(partner.alkoxyamine)out.warnings.push('N-acylation of the O-alkylhydroxylamine gives an N-alkoxyamide; the N,O-dimethyl case is a Weinreb amide. The ether oxygen does not form an ordinary ester.');
   if (amide) {
     out.warnings.push('HOBt or HOAt is often added to suppress racemisation of α-stereocentres (e.g. in peptide couplings).');
   }

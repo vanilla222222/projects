@@ -27,7 +27,9 @@
     "alkyneHalogenation": "https://openstax.org/books/organic-chemistry/pages/9-3-reactions-of-alkynes-addition-of-hx-and-x2",
     "passerini": "https://doi.org/10.1021/acs.joc.5c00236",
     "alkyneReduction": "https://openstax.org/books/organic-chemistry/pages/9-5-reduction-of-alkynes",
-    "complexEsterCoupling": "https://doi.org/10.1002/anie.197805221"
+    "complexEsterCoupling": "https://doi.org/10.1002/anie.197805221",
+    "alkoxyamineAcylation": "https://doi.org/10.3762/bjoc.10.35",
+    "methoxyamineAcylation": "https://doi.org/10.1021/acs.jmedchem.3c00415"
   },
   "naming": [
     {
@@ -1936,6 +1938,141 @@
         "temperature": 25
       },
       "loadingCeiling": 1
+    },
+    {
+      "label": "Methoxyamine N acylation",
+      "compounds": [
+        {
+          "smiles": "COc1ccc(C(=O)O)cc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CON",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "C1CCC(CC1)N=C=NC1CCCCC1",
+          "role": "reagent",
+          "equiv": 1.1
+        }
+      ],
+      "rule": "amide-coupling",
+      "products": [
+        "CONC(=O)c1ccc(OC)cc1"
+      ],
+      "source": "methoxyamineAcylation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "dmap"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Weinreb amide coupling",
+      "compounds": [
+        {
+          "smiles": "COc1ccc(C(=O)O)cc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CONC",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "C1CCC(CC1)N=C=NC1CCCCC1",
+          "role": "reagent",
+          "equiv": 1.1
+        }
+      ],
+      "rule": "amide-coupling",
+      "products": [
+        "CON(C)C(=O)c1ccc(OC)cc1"
+      ],
+      "source": "alkoxyamineAcylation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "dmap"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Weinreb amide from acid chloride",
+      "compounds": [
+        {
+          "smiles": "COc1ccc(C(=O)Cl)cc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CONC",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "acyl-substitution",
+      "products": [
+        "CON(C)C(=O)c1ccc(OC)cc1"
+      ],
+      "source": "alkoxyamineAcylation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "pyr"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Isotope labelled Weinreb coupling",
+      "compounds": [
+        {
+          "smiles": "COc1ccc(C(=O)O)cc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[13CH3]O[15NH]C",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "C1CCC(CC1)N=C=NC1CCCCC1",
+          "role": "reagent",
+          "equiv": 1.1
+        }
+      ],
+      "rule": "amide-coupling",
+      "products": [
+        "[13CH3]O[15N](C)C(=O)c1ccc(OC)cc1"
+      ],
+      "source": "alkoxyamineAcylation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "dmap"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
     }
   ],
   "negativeReactions": [
@@ -2563,6 +2700,65 @@
       "conditions": {
         "solvents": [
           "dcm"
+        ],
+        "temperature": 25
+      }
+    },
+    {
+      "label": "No ester branch through alkoxyamino alcohol",
+      "compounds": [
+        {
+          "smiles": "CC(=O)O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CONCCO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "C1CCC(CC1)N=C=NC1CCCCC1",
+          "role": "reagent",
+          "equiv": 1.1
+        }
+      ],
+      "rule": "steglich",
+      "products": [],
+      "source": "alkoxyamineAcylation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "dmap"
+        ],
+        "temperature": 25
+      }
+    },
+    {
+      "label": "No unactivated Weinreb coupling",
+      "compounds": [
+        {
+          "smiles": "CC(=O)O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CONC",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "amide-coupling",
+      "products": [],
+      "source": "alkoxyamineAcylation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "dmap"
         ],
         "temperature": 25
       }
