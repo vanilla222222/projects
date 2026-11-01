@@ -472,6 +472,27 @@
       "expectedProducts": [
         "CON(C)C(=O)c1ccc(OC)cc1"
       ]
+    },
+    {
+      "id": "ethylene-glycol-one-step-diacetylation",
+      "scope": "One encoded exhaustive acetylation with balanced coproduct counts; no conversion/yield guarantee.",
+      "start": "OCCO",
+      "target": "CC(=O)OCCOC(C)=O",
+      "options": {
+        "maxDepth": 1,
+        "maxRoutes": 1,
+        "budgetMs": 5000,
+        "stockPolicy": "custom",
+        "availableMaterials": [
+          "CC(=O)OC(C)=O"
+        ]
+      },
+      "expectedKinds": [
+        null
+      ],
+      "expectedProducts": [
+        "CC(=O)OCCOC(C)=O"
+      ]
     }
   ],
   "reactions": [

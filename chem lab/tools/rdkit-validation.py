@@ -132,7 +132,7 @@ def main():
             check("reaction_rule_found", row["label"], row["found"], True)
             key = canonical_connectivity if row.get("comparison") == "connectivity" else canonical
             actual = sorted(key(parse_smiles(s)) for s in row["actual"])
-            expected = sorted(key(parse_smiles(s)) for s in row["products"])
+            expected = sorted(key(parse_smiles(s)) for s in row.get("countedProducts", row["products"]))
             check("reaction_products_vs_RDKit", row["label"], actual, expected)
             if "positionalProducts" in row:
                 actual_positions = sorted(set(canonical_connectivity(parse_smiles(s)) for s in row["actualPositional"]))
