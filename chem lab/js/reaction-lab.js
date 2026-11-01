@@ -1231,6 +1231,7 @@ function createReactionLab(host) {
     addSmiles(smiles, role, materialState) {
       return addCompound({ input: smiles, smiles, fragment: smilesToFragment(smiles), materialState, source: 'api' }, role);
     },
+    setProductState(smiles,value){state.productStates[smiles]=reactionMaterialStateNormalize(value);save();},
     importReaction,
   };
 }

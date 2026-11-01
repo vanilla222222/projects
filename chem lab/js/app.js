@@ -4073,7 +4073,7 @@
       placeSchemeBelow(fragment);
       toast('Route added to the canvas (' + plural(steps, 'step') + ')', { kind: 'ok', duration: 2200 });
     },
-    openInLab(compounds, conditions) {
+    openInLab(compounds, conditions, output) {
       reactionLab.state.compounds = [];
       reactionLab.state.selected = '';
       reactionLab.state.conditions = normalizeReactionConditions(JSON.parse(JSON.stringify(conditions)));
@@ -4083,11 +4083,12 @@
           added.label = c.label;
         }
       });
+      if(output?.smiles)reactionLab.setProductState(output.smiles,output.materialState);
       setView('reactions');
     },
   });
   document.getElementById('retro-button').addEventListener('click', () => openRetro(null));
-  function openRouteStepInLab(compounds, conditions) {
+  function openRouteStepInLab(compounds, conditions, output) {
     reactionLab.state.compounds = [];
     reactionLab.state.selected = '';
     reactionLab.state.conditions = normalizeReactionConditions(JSON.parse(JSON.stringify(conditions)));
@@ -4095,6 +4096,7 @@
       const added = reactionLab.addSmiles(c.isomericSmiles || c.smiles, c.role, c.materialState);
       if (added && c.label) added.label = c.label;
     });
+    if(output?.smiles)reactionLab.setProductState(output.smiles,output.materialState);
     setView('reactions');
   }
   const routeWorkspace = createRouteWorkspace({

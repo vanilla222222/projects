@@ -169,6 +169,7 @@ function routeComparisonRender(container, job, deps) {
   const root = make('section', undefined, 'route-comparison');
   root.setAttribute('aria-label', 'Candidate route comparison');
   root.append(make('h3', 'Compare candidate routes'));
+  root.append(reactionPurificationControl(()=>routeComparisonRender(container,job,deps)));
   root.append(make('p', 'Counts below are calculated from these route records; materials are counted once per role. Sources document reaction classes; they do not establish that a route works experimentally. No yield, feasibility or safety score is assigned. Path Finder orders routes by operations, protection operations, recorded scope gaps, stereo concerns, minor-product steps, extra building blocks, stock tiers, process-material entries and building-block size. Missing metadata counts as a gap; documentation length does not. These are planning criteria, not cost or experimental success predictions.', 'route-comparison-note'));
   const grid = make('div', undefined, 'route-comparison-grid');
   const addList = (parent, label, entries) => {
@@ -201,9 +202,11 @@ function routeComparisonRender(container, job, deps) {
     card.append(assumptions);
     if (deps.saveRoute) {
       const save = make('button', 'Save route ' + summary.number + ' to workspace', 'text-button'); save.type = 'button';
-      save.addEventListener('click', () => deps.saveRoute({ version: 1, start: job.start, target: job.target, steps: summary.route, options: job.options, createdAt: new Date().toISOString() })); card.append(save);
+      save.addEventListener('click', () => deps.saveRoute({ version: 1, start: job.start, target: job.target, steps: summary.route.map(reactionPlanningRouteLink), options: job.options, createdAt: new Date().toISOString() })); card.append(save);
     }
     summary.steps.forEach((step) => {
+      const states=make('section',undefined,'route-comparison-state-row');
+      states.append(make('h4','Step '+step.number+' · material states'),reactionPlanningMaterialElement(step.from,'Starting material state',false),reactionPlanningMaterialElement(step.to,'Product output state',true));card.append(states);
       const detail = make('details', undefined, 'route-comparison-step');
       detail.append(make('summary', step.number + '. ' + step.name + (step.minor ? ' · minor predicted product' : '')));
       detail.append(make('p', routeComparisonName(step.from) + ' → ' + routeComparisonName(step.to)));
@@ -241,7 +244,7 @@ function routeComparisonRender(container, job, deps) {
       else detail.append(make('p', 'Evidence details are unavailable for this step.'));
       if (deps.openInLab) {
         const open = make('button', 'Open step ' + step.number + ' in Reactions', 'text-button'); open.type = 'button';
-        open.addEventListener('click', () => deps.openInLab(step.candidate.compounds || [], step.candidate.conditions || {})); detail.append(open);
+        open.addEventListener('click', () => deps.openInLab(reactionPlanningCompounds(step.candidate.compounds), step.candidate.conditions || {},{smiles:step.candidate.product?.isomericSmiles||step.to,materialState:reactionPlanningMaterialState(step.to)})); detail.append(open);
       }
       card.append(detail);
     });

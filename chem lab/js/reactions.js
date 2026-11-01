@@ -1160,3 +1160,25 @@ function reactionPurificationControl(onChange) {
 function reactionPurificationElement(plan) {
   const box=document.createElement('section'),title=document.createElement('strong'),note=document.createElement('p');box.className='rx-purification';title.textContent=plan.label;note.textContent=plan.note||'Assign S, L, G, or Aq with a solvent to specify the isolated output.';box.append(title,note);return box;
 }
+
+// Shared planning-view phase records. Keep these outside search candidates:
+// changing a display state must not mutate chemistry caches or route ranking.
+function reactionPlanningMaterialState(smiles,value) {
+  const key=reactionIsomericSmiles(smilesToFragment(smiles),smiles);
+  if(!reactionPlanningMaterialState.states){try{reactionPlanningMaterialState.states=reactionProductStatesNormalize(JSON.parse(localStorage.getItem('chem-lab-planning-states')||'{}'));}catch(error){reactionPlanningMaterialState.states={};}}
+  if(value!==undefined){delete reactionPlanningMaterialState.states[key];reactionPlanningMaterialState.states[key]=reactionMaterialStateNormalize(value);reactionPlanningMaterialState.states=reactionProductStatesNormalize(Object.fromEntries(Object.entries(reactionPlanningMaterialState.states).slice(-48)));try{localStorage.setItem('chem-lab-planning-states',JSON.stringify(reactionPlanningMaterialState.states));}catch(error){}}
+  return reactionMaterialStateNormalize(reactionPlanningMaterialState.states[key]);
+}
+function reactionPlanningMaterialElement(smiles,label,product) {
+  const box=document.createElement('section'),heading=document.createElement('strong'),badge=document.createElement('span'),isolation=document.createElement('div');box.className='rx-planning-material';heading.textContent=label;badge.className='rx-planning-state';
+  const refresh=()=>{const state=reactionPlanningMaterialState(smiles);badge.textContent=reactionMaterialStateLabel(state);isolation.replaceChildren();if(product&&reactionPurificationEnabled())isolation.append(reactionPurificationElement(reactionPurificationPlan({smiles},state)));};
+  const controls=reactionMaterialStateControl(reactionPlanningMaterialState(smiles),value=>{reactionPlanningMaterialState(smiles,value);refresh();});
+  box.append(heading,badge,controls,isolation);box.addEventListener('click',event=>event.stopPropagation());box.addEventListener('keydown',event=>event.stopPropagation());refresh();return box;
+}
+function reactionPlanningCompounds(compounds) {
+  return (compounds||[]).map(c=>{const state=reactionPlanningMaterialState(c.isomericSmiles||c.smiles);return {...c,materialState:state.phase==='unknown'?reactionMaterialStateNormalize(c.materialState):state};});
+}
+function reactionPlanningRouteLink(link) {
+  const candidate=link.candidate||{};
+  return {...link,fromState:reactionPlanningMaterialState(link.from),toState:reactionPlanningMaterialState(link.to),candidate:{...candidate,compounds:reactionPlanningCompounds(candidate.compounds)}};
+}
