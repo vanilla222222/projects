@@ -1073,3 +1073,13 @@ RETRO_TRANSFORMS.push({id:'passerini',name:'Alpha-acyloxy amide from a Passerini
  }
  return specs;
 }});
+
+// OpenStax Organic Chemistry 9.5: Lindlar gives the complementary cis alkene.
+RETRO_TRANSFORMS.push({id:'lindlar',name:'Cis alkene from internal alkyne by Lindlar reduction',rule:'hydrogenation',group:'Reduction',match(t){
+ const g=t.graph;
+ return t.info.alkenes.filter(e=>[e.a,e.b].every(id=>rxHydrogens(g,id)===1)&&rxCarbonNeighbors(g,e.a,e.b).length===1&&rxCarbonNeighbors(g,e.b,e.a).length===1&&!!retroSide(g,e.a,e.b))
+   .slice(0,RETRO_LIMITS.maxPerTransform).map(e=>{
+     const piece=retroSinglePiece(t,h=>{rxSetOrder(h,e.a,e.b,3);h.alkeneSpecs=(h.alkeneSpecs||[]).filter(s=>![e.a,e.b].includes(s.a)&&![e.a,e.b].includes(s.b));});
+     return piece&&retroSpec([{smiles:piece.smiles,role:'reactant'}],[RETRO_REAGENTS.h2],{solvents:['ethanol'],additives:['lindlar'],temperature:25});
+   }).filter(Boolean);
+}});

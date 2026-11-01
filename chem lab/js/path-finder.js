@@ -431,6 +431,7 @@ function pathFinderCreate(startSmiles, targetSmiles, options) {
         if (!diagnostics.protectionMessages.includes(amineConflict) && diagnostics.protectionMessages.length < 4) diagnostics.protectionMessages.push(amineConflict);
         continue;
       }
+      if(candidate.product&&typeof rxsStereoTargetConflict==='function'&&rxsStereoTargetConflict(candidate.product,node.smiles)){diagnostics.stereo++;continue;}
       const product = candidate.product && structure(candidate.product.isomericSmiles || candidate.product.smiles);
       const sameProduct = product && (product.key === node.key || typeof retroProductIdentity === 'function' &&
         retroProductIdentity(candidate.product.isomericSmiles || candidate.product.smiles) === retroProductIdentity(node.smiles));

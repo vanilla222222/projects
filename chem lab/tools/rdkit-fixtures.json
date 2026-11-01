@@ -434,6 +434,23 @@
       "expectedProducts": [
         "CC(OC(C)=O)C(=O)NC(C)(C)C"
       ]
+    },
+    {
+      "id": "lindlar-one-step-specified-z-endpoint",
+      "scope": "Finite encoded E/Z endpoint and forward route-continuity regression, not experimental selectivity or yield validation.",
+      "start": "CC#CC",
+      "target": "C/C=C\\C",
+      "options": {
+        "maxDepth": 1,
+        "maxRoutes": 1,
+        "budgetMs": 5000
+      },
+      "expectedKinds": [
+        null
+      ],
+      "expectedProducts": [
+        "C/C=C\\C"
+      ]
     }
   ],
   "reactions": [
