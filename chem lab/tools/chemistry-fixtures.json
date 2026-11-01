@@ -25,7 +25,8 @@
     "dibalEster": "https://openstax.org/books/organic-chemistry/pages/21-6-chemistry-of-esters",
     "alcoholHalide": "https://openstax.org/books/organic-chemistry/pages/10-5-preparing-alkyl-halides-from-alcohols",
     "alkyneHalogenation": "https://openstax.org/books/organic-chemistry/pages/9-3-reactions-of-alkynes-addition-of-hx-and-x2",
-    "passerini": "https://doi.org/10.1021/acs.joc.5c00236"
+    "passerini": "https://doi.org/10.1021/acs.joc.5c00236",
+    "alkyneReduction": "https://openstax.org/books/organic-chemistry/pages/9-5-reduction-of-alkynes"
   },
   "naming": [
     {
@@ -1719,6 +1720,114 @@
           "dcm"
         ],
         "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Lindlar geometric endpoint CC#CC",
+      "compounds": [
+        {
+          "smiles": "CC#CC",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[H][H]",
+          "role": "reagent",
+          "equiv": 1
+        }
+      ],
+      "rule": "lindlar",
+      "products": [
+        "C/C=C\\C"
+      ],
+      "source": "alkyneReduction",
+      "conditions": {
+        "solvents": [
+          "ethanol"
+        ],
+        "additives": [
+          "lindlar"
+        ]
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Dissolving-metal geometric endpoint CC#CC",
+      "compounds": [
+        {
+          "smiles": "CC#CC",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "dissolving-metal",
+      "products": [
+        "C/C=C/C"
+      ],
+      "source": "alkyneReduction",
+      "conditions": {
+        "solvents": [
+          "none"
+        ],
+        "additives": [
+          "nanh3"
+        ],
+        "temperature": -33
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Lindlar geometric endpoint CCC#CCC",
+      "compounds": [
+        {
+          "smiles": "CCC#CCC",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[H][H]",
+          "role": "reagent",
+          "equiv": 1
+        }
+      ],
+      "rule": "lindlar",
+      "products": [
+        "CC/C=C\\CC"
+      ],
+      "source": "alkyneReduction",
+      "conditions": {
+        "solvents": [
+          "ethanol"
+        ],
+        "additives": [
+          "lindlar"
+        ]
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Dissolving-metal geometric endpoint CCC#CCC",
+      "compounds": [
+        {
+          "smiles": "CCC#CCC",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "dissolving-metal",
+      "products": [
+        "CC/C=C/CC"
+      ],
+      "source": "alkyneReduction",
+      "conditions": {
+        "solvents": [
+          "none"
+        ],
+        "additives": [
+          "nanh3"
+        ],
+        "temperature": -33
       },
       "loadingCeiling": 1
     }

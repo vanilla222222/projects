@@ -7,10 +7,35 @@ const RXS_STEREO_TEXT = {
 };
 
 // A drawn component of a mixture is not evidence of a stereopure endpoint.
-function rxsStereoTargetConflict(product, targetSmiles) {
+function rxsSpecifiedStereoKey(input,geometryOnly=false) {
+  const g=typeof retroProductGraph==='function'?retroProductGraph(input):moleculeIdentityGraph(input);
+  // Geometry-only checks leave tetrahedral recovery to its own audit.
+  if(geometryOnly)g.bonds.forEach(b=>{b.stereo=null;});
+  return moleculeIdentity(g).key;
+}
+function rxsGeometricKey(input) { return rxsSpecifiedStereoKey(input,true); }
+function rxsStereoTargetConflict(product,targetSmiles) {
   const kind=product&&product.stereo&&product.stereo.kind;
-  return typeof targetSmiles==='string'&&targetSmiles.includes('@')&&['racemic','diastereomers'].includes(kind)
-    ? 'The selected product belongs to a stereochemical mixture; the specified stereopure target is not established.' : null;
+  if(typeof targetSmiles==='string'&&targetSmiles.includes('@')&&['racemic','diastereomers'].includes(kind))
+    return 'The selected product belongs to a stereochemical mixture; the specified stereopure target is not established.';
+  if(typeof targetSmiles==='string'&&targetSmiles.includes('@')&&typeof moleculeIdentity==='function'){
+    try{
+      if(rxsSpecifiedStereoKey(product.fragment||product.isomericSmiles||product.smiles)!==rxsSpecifiedStereoKey(targetSmiles))
+        return 'The specified tetrahedral configuration is not established by the predicted product; opposite or unspecified stereochemistry cannot certify this target.';
+    }catch(error){return 'The specified tetrahedral stereochemistry could not be verified.';}
+  }
+  return rxsGeometricTargetConflict(product,targetSmiles);
+}
+function rxsGeometricTargetConflict(product,targetSmiles) {
+  if(typeof targetSmiles==='string'&&/[\/\\]/.test(targetSmiles)&&typeof moleculeIdentity==='function'){
+    try{
+      const target=moleculeIdentityGraph(targetSmiles),ids=target.atoms.map(a=>a.id);
+      const specified=findStereoDoubleBonds(target,ids).filter(s=>target.getBondById(s.bondId).stereoSpecified!==false);
+      if(specified.length&&rxsGeometricKey(product.fragment||product.isomericSmiles||product.smiles)!==rxsGeometricKey(target))
+        return 'The specified alkene E/Z geometry is not established by the predicted product; opposite or unspecified geometry cannot certify this target.';
+    }catch(error){return 'The specified alkene E/Z geometry could not be verified.';}
+  }
+  return null;
 }
 
 function rxsHeavy(g, id) {

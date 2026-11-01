@@ -342,7 +342,9 @@ function rsearchStep(job, sliceMs) {
 function rsearchCreate(targetSmiles, options) {
   const opts = Object.assign({}, RSEARCH_LIMITS, options || {});
   opts.maxDepth = Math.max(1, Math.min(8, opts.maxDepth));
-  const smiles = retroCanonicalSmiles(targetSmiles) || String(targetSmiles || '');
+  let smiles;
+  try { const props=retroProps(retroFromSmiles(targetSmiles));smiles=props.isomericSmiles||props.smiles; }
+  catch(error) { smiles=String(targetSmiles||''); }
   const job = { target: smiles, options: opts, status: 'running', routes: [], nodes: new Map(), frontier: [], current: null, expanded: 0, cacheHits: 0, elapsedMs: 0, solvedAt: null, root: null, truncated: false };
   job.root = rsearchMolecule(job, smiles, 0, new Set());
   if (!job.root.smiles || !job.root.heavy) {

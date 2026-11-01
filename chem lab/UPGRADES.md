@@ -1,5 +1,12 @@
 # Chem Lab upgrades
 
+## Geometric stereochemistry in route verification — 2026-11-01
+
+- Fixed raw forward verification accepting opposite E/Z alkenes or a wrong SN2 enantiomer through a connectivity-only match. Exact specified tetrahedral targets now reject opposite or missing configuration, while mixture checks remain in force. Shared geometric checks now reject opposite or unassigned geometry for specified targets, while keeping unspecified targets available. Retrosynthesis and linear Path Finder apply the check before connectivity/resonance fallbacks can bypass it. Tetrahedral precursor-stereo recovery remains separate.
+- Recipe search now preserves isomeric target SMILES instead of stripping all stereochemistry before search/cache lookup. E and Z queries remain distinct in either query order; tetrahedral root specifications are also retained. Existing nitro-resonance equivalence is preserved.
+- Added a bounded reverse Lindlar template for carbon-substituted internal alkenes, complementary to the existing dissolving-metal template. Both planners select the geometry-matching reduction. Existing methods with unassigned E/Z preference cannot certify a specified E or Z target.
+- Forty-two focused checks cover raw verification, public retrosynthesis, both planners, saved routes, query/cache ordering, equivalent SMILES, spectator tetrahedral stereo and unassigned McMurry geometry. Existing 32 stereochemical-fidelity checks pass. Four fixed E/Z product fixtures and one independent one-step Z route extend benchmark/oracle coverage. Teaching reference: OpenStax Organic Chemistry 9.5.
+
 ## Bounded Passerini three-component assembly — 2026-10-31
 
 - Added forward/reverse Passerini coupling of one simple achiral monoaldehyde, monocarboxylic acid and charge-separated isocyanide to an alpha-acyloxy amide. The encoded branch is exactly three inputs in DCM at 10–40 C, without additives; ketones, arylacetic acids, extra functionality/partners, isotope labels, explicit H atoms and pre-existing stereocentres are excluded. These bounds do not establish kinetics or general experimental compatibility.

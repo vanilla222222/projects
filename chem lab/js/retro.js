@@ -1786,6 +1786,7 @@ function retroEditAtoms(t, record) {
 }
 
 function retroCandidate(t, spec, verified) {
+  if(typeof rxsGeometricTargetConflict==='function'&&rxsGeometricTargetConflict(verified.product,t.isomericSmiles))return null;
   const stereo = retroStereoClass(t, spec, verified);
   if (stereo.stereo === 'mismatch') {
     return null;

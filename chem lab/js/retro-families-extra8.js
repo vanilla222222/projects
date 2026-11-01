@@ -143,15 +143,16 @@ if(retro8WilliamsonTransform)retro8WilliamsonTransform.match=function(t){
 // Product verification accepts the two equivalent nitro depictions used by the
 // nitration and nitro-reduction rules. Exact identity remains the fast path and
 // strict stock/stereochemical matching is deliberately unchanged.
-function retroProductIdentity(input) {
+function retroProductGraph(input) {
  const g=moleculeIdentityGraph(input);
  g.atoms.filter(a=>a.element==='N').forEach(n=>{
   const neighbors=rxNeighbors(g,n.id),os=neighbors.filter(x=>x.atom.element==='O'&&rxNeighbors(g,x.atom.id).length===1);
   if(neighbors.length!==3||os.length!==2||!neighbors.some(x=>x.atom.element==='C'))return;
   n.charge=0;os.forEach(x=>{x.atom.charge=0;g.getBond(n.id,x.atom.id).order=2;});
  });
- return moleculeIdentity(g).connectivityKey;
+ return g;
 }
+function retroProductIdentity(input) { return moleculeIdentity(retroProductGraph(input)).connectivityKey; }
 const retro8FindProductExact=retroFindProduct;
 retroFindProduct=function(list,smiles){
  const direct=retro8FindProductExact(list,smiles);if(direct)return direct;
