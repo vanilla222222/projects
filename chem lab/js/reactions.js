@@ -664,8 +664,8 @@ function reactionRouteStep(compounds, conditions, outcome, product, minor, previ
     metrics.carriedMg = carriedRow && carriedRow.mg !== null ? carriedRow.mg : 0;
   }
   return {
-    from: { smiles: carried.smiles, isomericSmiles: reactionIsomericSmiles(carried.fragment, carried.smiles), name: carried.label || carried.name || carried.formula, fragment: carried.fragment },
-    to: { smiles: product.smiles, isomericSmiles: product.isomericSmiles || reactionIsomericSmiles(fragment, product.smiles), name: info.name || info.formula, fragment },
+    from: { smiles: carried.smiles, isomericSmiles: reactionIsomericSmiles(carried.fragment, carried.smiles), name: carried.label || carried.name || carried.formula, fragment: carried.fragment, materialState:reactionMaterialStateNormalize(carried.materialState) },
+    to: { smiles: product.smiles, isomericSmiles: product.isomericSmiles || reactionIsomericSmiles(fragment, product.smiles), name: info.name || info.formula, fragment, materialState:reactionMaterialStateNormalize(product.materialState) },
     reaction: outcome.name,
     above: above.slice(0, REACTION_ROUTE_LIMITS.labelLength),
     below: labels.below.slice(0, REACTION_ROUTE_LIMITS.labelLength),
@@ -813,7 +813,7 @@ function buildRouteScheme(steps) {
   let cursor = 0;
   let lowest = 0;
   const places = [];
-  const place = (fragment, number) => {
+  const place = (fragment, number, materialState) => {
     const box = reactionFragmentBox(fragment);
     const shiftX = cursor - box.minX;
     const shiftY = -(box.minY + box.maxY) / 2;
@@ -831,11 +831,11 @@ function buildRouteScheme(steps) {
       out.bonds.push({ atomA: map.get(b.atomA), atomB: map.get(b.atomB), order: b.order, stereo: b.stereo || null, ...(typeof b.stereoSpecified === 'boolean' ? { stereoSpecified: b.stereoSpecified } : {}) });
     });
     lowest = Math.max(lowest, (box.maxY - box.minY) / 2);
-    places.push({ x: cursor + (box.maxX - box.minX) / 2, number });
+    places.push({ x: cursor + (box.maxX - box.minX) / 2, number, materialState });
     cursor += box.maxX - box.minX;
   };
   const fragmentOf = (end) => end.fragment || smilesToFragment(end.isomericSmiles || end.smiles);
-  place(fragmentOf(steps[0].from), 1);
+  place(fragmentOf(steps[0].from), 1, steps[0].from.materialState);
   steps.forEach((step, i) => {
     cursor += REACTION_SCHEME_SETTINGS.gap;
     const below = [step.below, step.yield + '%'].filter(Boolean).join(', ');
@@ -846,9 +846,9 @@ function buildRouteScheme(steps) {
     }
     out.annotations.push(arrow);
     cursor = arrow.x2 + REACTION_SCHEME_SETTINGS.gap;
-    place(fragmentOf(step.to), i + 2);
+    place(fragmentOf(step.to), i + 2, step.to.materialState);
   });
-  places.forEach((p) => out.annotations.push({ kind: 'text', x: p.x, y: lowest + 30, text: String(p.number) }));
+  places.forEach((p) => out.annotations.push({ kind: 'text', x: p.x, y: lowest + 30, text: String(p.number)+(reactionMaterialStateNormalize(p.materialState).phase==='unknown'?'':' · '+reactionMaterialStateLabel(p.materialState)) }));
   out.annotations.push({ kind: 'text', x: cursor / 2, y: lowest + 70, text: 'Overall yield: ' + reactionRouteYield(steps) + '% over ' + steps.length + ' step' + (steps.length === 1 ? '' : 's') });
   const metrics = reactionRouteMetrics(steps);
   if (metrics && metrics.pmi !== null) {
@@ -859,8 +859,8 @@ function buildRouteScheme(steps) {
 
 function reactionRouteSerialize(steps) {
   return (steps || []).map((s) => Object.assign({
-    from: { smiles: s.from.smiles, isomericSmiles: s.from.isomericSmiles || s.from.smiles, name: s.from.name },
-    to: { smiles: s.to.smiles, isomericSmiles: s.to.isomericSmiles || s.to.smiles, name: s.to.name },
+    from: { smiles: s.from.smiles, isomericSmiles: s.from.isomericSmiles || s.from.smiles, name: s.from.name, materialState:reactionMaterialStateNormalize(s.from.materialState) },
+    to: { smiles: s.to.smiles, isomericSmiles: s.to.isomericSmiles || s.to.smiles, name: s.to.name, materialState:reactionMaterialStateNormalize(s.to.materialState) },
     reaction: s.reaction, above: s.above, below: s.below, yield: s.yield,
   }, s.metrics ? { metrics: s.metrics } : {}));
 }
@@ -898,7 +898,7 @@ function reactionRestoreEnd(end, text) {
       fragment = null;
     }
   }
-  return { smiles: end.smiles, isomericSmiles: fragment ? iso : end.smiles, name: text(end.name), fragment: fragment || smilesToFragment(end.smiles) };
+  return { smiles: end.smiles, isomericSmiles: fragment ? iso : end.smiles, name: text(end.name), materialState:reactionMaterialStateNormalize(end.materialState), fragment: fragment || smilesToFragment(end.smiles) };
 }
 
 function reactionRestoreMetrics(raw) {
@@ -916,9 +916,10 @@ function serializeReactionState(state) {
   return JSON.stringify({
     format: 'chemical-graph-reaction',
     version: 1,
-    compounds: (state.compounds || []).map((c) => ({ input: c.input, smiles: c.smiles, role: c.role, equiv: c.equiv, label: c.label || '' })),
+    compounds: (state.compounds || []).map((c) => ({ input: c.input, smiles: c.smiles, role: c.role, equiv: c.equiv, label: c.label || '', materialState:reactionMaterialStateNormalize(c.materialState) })),
     conditions: normalizeReactionConditions(state.conditions),
     route: reactionRouteSerialize(state.route),
+    productStates:reactionProductStatesNormalize(state.productStates),
   });
 }
 
@@ -950,13 +951,14 @@ function restoreReactionState(text) {
         mass: info.mass,
         role: REACTION_ROLES.includes(c.role) ? c.role : 'reactant',
         equiv: typeof c.equiv === 'string' ? c.equiv.slice(0, 20) : '1',
+        materialState:reactionMaterialStateNormalize(c.materialState),
         label: typeof c.label === 'string' ? c.label.slice(0, 40) : '',
       });
     } catch (error) {
       return;
     }
   });
-  return { compounds, conditions: normalizeReactionConditions(data.conditions), route: reactionRouteRestore(data.route) };
+  return { compounds, conditions: normalizeReactionConditions(data.conditions), route: reactionRouteRestore(data.route), productStates:reactionProductStatesNormalize(data.productStates) };
 }
 
 function reactionParseAmount(text) {
@@ -1092,4 +1094,29 @@ function reactionStoichiometry(compounds, scaleMmol, conditions) {
     }
     return row;
   });
+}
+
+// Recorded physical form is metadata, independent of structure identity and
+// chemistry verification. No phase equilibrium or solubility is inferred.
+function reactionMaterialStateNormalize(raw) {
+  const r=raw&&typeof raw==='object'?raw:{};
+  const phase=['S','L','G','Aq'].includes(r.phase)?r.phase:'unknown';
+  const solvent=typeof r.solvent==='string'?r.solvent.replace(/[\u0000-\u001f\u007f]/g,' ').trim().slice(0,80):'';
+  return {phase:phase==='Aq'&&!solvent?'unknown':phase,solvent:phase==='Aq'?solvent:''};
+}
+function reactionMaterialStateLabel(raw) {
+  const s=reactionMaterialStateNormalize(raw);
+  return s.phase==='Aq'?'Aq('+s.solvent+')':s.phase==='unknown'?'State unassigned':s.phase;
+}
+function reactionProductStatesNormalize(raw) {
+  if(!raw||typeof raw!=='object'||Array.isArray(raw))return {};
+  return Object.fromEntries(Object.entries(raw).filter(([key])=>key.length<=5000&&!['__proto__','constructor','prototype'].includes(key)).slice(0,48).map(([key,value])=>[key,reactionMaterialStateNormalize(value)]));
+}
+function reactionMaterialStateControl(raw,onChange) {
+  const state=reactionMaterialStateNormalize(raw),box=document.createElement('div'),select=document.createElement('select'),solvent=document.createElement('input');
+  box.className='rx-material-state';select.setAttribute('aria-label','Physical state');
+  [['unknown','State unassigned'],['S','S — solid'],['L','L — liquid'],['G','G — gas'],['Aq','Aq(solvent) — solution']].forEach(([value,text])=>{const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);});
+  select.value=state.phase;solvent.value=state.solvent;solvent.maxLength=80;solvent.placeholder='Solvent, e.g. water or ethanol';solvent.setAttribute('aria-label','State solvent');solvent.hidden=state.phase!=='Aq';
+  const change=()=>{solvent.hidden=select.value!=='Aq';onChange(reactionMaterialStateNormalize({phase:select.value,solvent:solvent.value}));};
+  select.addEventListener('change',change);solvent.addEventListener('input',change);box.append(select,solvent);return box;
 }

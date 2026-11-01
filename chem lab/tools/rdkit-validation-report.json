@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-01T19:26:52.989923+00:00",
+  "generatedAt": "2026-11-01T19:33:06.615525+00:00",
   "rdkitVersion": "2026.09.1",
   "fixtureSha256": "ff7273b9ad04d95d1c2da9c46fbded261e81508826dcecc607cf0e0b08eb8285",
   "fixtureFilesSha256": {
     "rdkit-fixtures.json": "ff7273b9ad04d95d1c2da9c46fbded261e81508826dcecc607cf0e0b08eb8285",
     "chemistry-fixtures.json": "b6b0c164e9d2fc528c93d4b85e0ee120cdd4874428e0d4cbc173c863ded76937"
   },
-  "exportSha256": "3453f5fadac05dd39bc5054b0ab59eab35e589433c44abc89c69f201d5079f96",
+  "exportSha256": "b8254935cf6b0ab55db8f2532c061c8527317e0e5ef898c2ec279ade58e5e9c4",
   "appScriptSha256": {
     "js/elements.js": "aaecea7433871b650c7601ffb5bef597e38361934cb7c4cc7406edbdc897a7ca",
     "js/graph.js": "c8a8a2cca6b2f3d758e3f83b7901f78f9966c3a27b0189fa846ba28ce55be88f",
@@ -47,7 +47,7 @@
     "js/stamps.js": "a1679a68e151b373bd6b9cb258388a9d176d4c5626867a25cc729b80694052af",
     "js/abbreviations.js": "d388b5c96e92daa0b1c3c40f0597ed8c7004c8e023a6188f9c32e9ef14355644",
     "js/recent.js": "8a4a83b97898c785e598f511199e3366cd6d184b372b2f2429c831b3519294ff",
-    "js/reactions.js": "07b1a5c24043ae54508a0a56a9c23021dfc11827690a11b8be26909af5f57065",
+    "js/reactions.js": "2268acf6c406a7c1090b8ca71be84f4d925540edcfc31a21a6874d625bbba394",
     "js/molecular-identity.js": "11511a3fb50a1d580cf270143cb0de511457f004382bdf6c7836fedecf02de83",
     "js/reagent-library.js": "34a915083813565851911519bd097a686ef67181b35efdf19a9925d398d934eb",
     "js/reaction-io.js": "9ff1dd5e5887dbb6bd7aafb7cc471e8c85fa09be7bc6ae98efd75e4d7ee91273",
@@ -88,7 +88,7 @@
     "js/retro-families-extra9.js": "a6cb99e001cae6eb385a2199ac9acae2dcd6c6f981495d1bd85ceaee2a547d3e",
     "js/retro-families-extra10.js": "dc2d4fc3f26dd5d3ec32f2c5d9af1d698112b1ec645c700f9797288cb2757315",
     "js/retro-search.js": "ae3528a8172d3e8b7a723eb98905a48824d575becc401a4d74416fea807683b7",
-    "js/reaction-lab.js": "da4787b3f98d62ba0bf630d7d571e82835273d590d08e6de1ff3652f3b8257ac",
+    "js/reaction-lab.js": "56c9745337439ebeb096ee3de83c617720b59d643e9f25053c79f33c5264415a",
     "js/spectra-view.js": "86eca7b697a949d9539dd87071a5fec9ba39e601f9351c436b5693c10c331532",
     "js/viewer3d.js": "728dbc6dfc6336fb73702c57188d4df848dbbb9d91396bb929de10a3dcdd37d4",
     "js/retro-view.js": "ff7cebfff9e6ad73fcd413fcd1562ae66af541dca4756b4ae128997219ab5203",
@@ -99,7 +99,7 @@
     "js/route-assessment.js": "21b96ed25938b1aca75bf520f8b1ebabe87a74f86799b2d7f015193116e4bb37",
     "js/reaction-scope.js": "b91af85bcd710a6e59a4977316efdb315364dcba8ba2de95e5b2c386509a61fe",
     "js/protection-program.js": "58726494499e3fe757c5944c8f55e07a87ed17fb5f6e7870d89a0be835559bad",
-    "js/route-workspace.js": "3cbe88230d3cf8d0e59e16422599f0fec5aaca9c6506a3985f02a369b289d91b",
+    "js/route-workspace.js": "98c3784af3241b9d69e680d8ee99c0a85ca9181e6bea2b50a0156b0b010add00",
     "js/reaction-cascade.js": "1b0dba5ee0985f0917c72771330ee384abcc7fdce447a4398d4250936c208c8a",
     "js/route-benchmarks.js": "2c24974a787a91c52909728c75ef412d2b9468194a65c7ba44a56c333a80a768",
     "js/workbench-ui.js": "372e26a82e8fe821529b844115be1c2e1fcdb32291e5aa40e09a613cb85253d0"

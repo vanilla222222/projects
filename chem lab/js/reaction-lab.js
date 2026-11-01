@@ -35,7 +35,7 @@ function createReactionLab(host) {
   const rxnButton = document.getElementById('rx-download-rxn');
 
   const saved = restoreReactionState(host.storageGet('reaction') || '');
-  const state = { compounds: saved.compounds, conditions: saved.conditions, route: saved.route, prediction: null, branches: null, selected: '' };
+  const state = { compounds: saved.compounds, conditions: saved.conditions, route: saved.route, prediction: null, branches: null, selected: '', productStates:reactionProductStatesNormalize(saved.productStates) };
 
   let scale = Number(host.storageGet('reactionScale')) || 1;
   scaleInput.value = String(scale);
@@ -178,6 +178,7 @@ function createReactionLab(host) {
     }
     const info = reactionDescribeFragment(parsed.fragment);
     const compound = {
+      materialState:reactionMaterialStateNormalize(parsed.materialState),
       input: parsed.input,
       smiles: parsed.smiles,
       fragment: parsed.fragment,
@@ -393,7 +394,7 @@ function createReactionLab(host) {
         renderSummary();
       });
       controls.append(role, equiv, equivLabel);
-      body.append(title, meta, controls);
+      body.append(title, meta, controls, reactionMaterialStateControl(compound.materialState,value=>{compound.materialState=value;save();}));
       card.append(thumb, body, remove);
       cards.appendChild(card);
       drawFragment(thumb, compound.fragment, 10, 0.5);
@@ -702,7 +703,9 @@ function createReactionLab(host) {
       const label = element('div', 'rx-product-name', (product.count > 1 ? product.count + ' × ' : '') + (shown || info.formula));
       const formulaLine = element('div', 'rx-product-formula', '');
       formulaLine.innerHTML = '<span>' + (outcome.regioselectivity&&outcome.regioselectivity.alternativesRole?'unranked positional alternative · ':(minor ? 'minor · ' : '')) + (ratio && index === 0 ? (outcome.regioselectivity?'heuristic ~':'~') + ratio[minor ? 1 : 0] + '% · ' : '') + formulaHtml(info.formula) + ' · ' + info.mass.toFixed(2) + ' g/mol</span>';
-      card.append(canvas, label, formulaLine);
+      const stateKey=product.isomericSmiles||product.smiles;
+      product.materialState=reactionMaterialStateNormalize(state.productStates[stateKey]);
+      card.append(canvas, label, formulaLine, reactionMaterialStateControl(product.materialState,value=>{product.materialState=value;state.productStates[stateKey]=value;save();}));
       if (product.stereo) {
         card.appendChild(element('div', 'rx-product-stereo ' + product.stereo.kind, product.stereo.text));
       }
@@ -870,7 +873,7 @@ function createReactionLab(host) {
     state.compounds = [];
     state.conditions = defaultReactionConditions();
     state.selected = '';
-    addCompound({ input: step.to.smiles, smiles: step.to.smiles, fragment: step.to.fragment, source: 'route' }, 'reactant');
+    addCompound({ input: step.to.smiles, smiles: step.to.smiles, fragment: step.to.fragment, materialState:step.to.materialState, source: 'route' }, 'reactant');
     save();
     renderAll();
     setMessage('Step ' + state.route.length + ' added to the route \u2014 choose reagents and conditions for the next step', 'ok');
@@ -969,7 +972,7 @@ function createReactionLab(host) {
     };
     state.route.forEach((step) => {
       const li = element('li', 'rx-route-step');
-      const text = element('span', 'rx-route-text', step.from.name + ' \u2192 ' + step.to.name);
+      const text = element('span', 'rx-route-text', step.from.name + ' ['+reactionMaterialStateLabel(step.from.materialState)+'] \u2192 ' + step.to.name+' ['+reactionMaterialStateLabel(step.to.materialState)+']');
       text.title = [step.reaction, step.above, step.below].filter(Boolean).join(' \u00b7 ');
       const yieldInput = element('input', 'rx-route-yield');
       yieldInput.type = 'number';
@@ -1001,7 +1004,7 @@ function createReactionLab(host) {
       state.compounds = [];
       state.conditions = defaultReactionConditions();
       state.selected = '';
-      addCompound({ input: step.from.smiles, smiles: step.from.smiles, fragment: step.from.fragment || smilesToFragment(step.from.smiles), source: 'route' }, 'reactant');
+      addCompound({ input: step.from.smiles, smiles: step.from.smiles, fragment: step.from.fragment || smilesToFragment(step.from.smiles), materialState:step.from.materialState, source: 'route' }, 'reactant');
       save();
       renderAll();
       setMessage('Removed the last step', '');
@@ -1215,8 +1218,8 @@ function createReactionLab(host) {
         renderSummary();
       }
     },
-    addSmiles(smiles, role) {
-      return addCompound({ input: smiles, smiles, fragment: smilesToFragment(smiles), source: 'api' }, role);
+    addSmiles(smiles, role, materialState) {
+      return addCompound({ input: smiles, smiles, fragment: smilesToFragment(smiles), materialState, source: 'api' }, role);
     },
     importReaction,
   };
