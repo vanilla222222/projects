@@ -846,13 +846,16 @@ function buildRouteScheme(steps) {
     }
     out.annotations.push(arrow);
     cursor = arrow.x2 + REACTION_SCHEME_SETTINGS.gap;
-    place(fragmentOf(step.to), i + 2, step.to.materialState);
+    const isolation=reactionPurificationEnabled()?reactionPurificationRestore(step.purification,step.to):null;
+    place(fragmentOf(step.to), isolation?String(i+2)+' crude':i + 2, isolation?null:step.to.materialState);
+    if(isolation){cursor+=REACTION_SCHEME_SETTINGS.gap;const width=Math.max(REACTION_SCHEME_SETTINGS.arrowLength,isolation.label.length*7.5+30);out.annotations.push({kind:'arrow',x1:cursor,y1:0,x2:cursor+width,y2:0,style:'forward',above:'Purification (idealized)',below:'Recovery not modeled'});cursor+=width+REACTION_SCHEME_SETTINGS.gap;place(fragmentOf(step.to),String(i+2)+' pure',isolation.output.materialState);}
   });
   places.forEach((p) => out.annotations.push({ kind: 'text', x: p.x, y: lowest + 30, text: String(p.number)+(reactionMaterialStateNormalize(p.materialState).phase==='unknown'?'':' · '+reactionMaterialStateLabel(p.materialState)) }));
-  out.annotations.push({ kind: 'text', x: cursor / 2, y: lowest + 70, text: 'Overall yield: ' + reactionRouteYield(steps) + '% over ' + steps.length + ' step' + (steps.length === 1 ? '' : 's') });
+  const purifications=reactionPurificationEnabled()?steps.filter(step=>reactionPurificationRestore(step.purification,step.to)).length:0;
+  out.annotations.push({ kind: 'text', x: cursor / 2, y: lowest + 70, text: (purifications?'Reaction-only yield: ':'Overall yield: ') + reactionRouteYield(steps) + '% over ' + steps.length + ' step' + (steps.length === 1 ? '' : 's')+(purifications?' + '+purifications+' idealized purification(s); recovery not modeled':'') });
   const metrics = reactionRouteMetrics(steps);
   if (metrics && metrics.pmi !== null) {
-    out.annotations.push({ kind: 'text', x: cursor / 2, y: lowest + 100, text: 'Route PMI ' + metrics.pmi.toFixed(1) + ', E-factor ' + metrics.eFactor.toFixed(1) });
+    out.annotations.push({ kind: 'text', x: cursor / 2, y: lowest + 100, text: (purifications?'Reaction-only PMI ':'Route PMI ') + metrics.pmi.toFixed(1) + ', E-factor ' + metrics.eFactor.toFixed(1) });
   }
   return out;
 }
@@ -862,6 +865,7 @@ function reactionRouteSerialize(steps) {
     from: { smiles: s.from.smiles, isomericSmiles: s.from.isomericSmiles || s.from.smiles, name: s.from.name, materialState:reactionMaterialStateNormalize(s.from.materialState) },
     to: { smiles: s.to.smiles, isomericSmiles: s.to.isomericSmiles || s.to.smiles, name: s.to.name, materialState:reactionMaterialStateNormalize(s.to.materialState) },
     reaction: s.reaction, above: s.above, below: s.below, yield: s.yield,
+    purification:reactionPurificationRestore(s.purification,s.to),
   }, s.metrics ? { metrics: s.metrics } : {}));
 }
 
@@ -878,6 +882,7 @@ function reactionRouteRestore(raw) {
       steps.push(Object.assign({
         from: reactionRestoreEnd(s.from, text),
         to: reactionRestoreEnd(s.to, text),
+        purification:reactionPurificationRestore(s.purification,s.to),
         reaction: text(s.reaction), above: text(s.above), below: text(s.below),
         yield: Number.isFinite(y) ? Math.max(0, Math.min(100, Math.round(y))) : 100,
       }, metrics ? { metrics } : {}));
@@ -1119,4 +1124,39 @@ function reactionMaterialStateControl(raw,onChange) {
   select.value=state.phase;solvent.value=state.solvent;solvent.maxLength=80;solvent.placeholder='Solvent, e.g. water or ethanol';solvent.setAttribute('aria-label','State solvent');solvent.hidden=state.phase!=='Aq';
   const change=()=>{solvent.hidden=select.value!=='Aq';onChange(reactionMaterialStateNormalize({phase:select.value,solvent:solvent.value}));};
   select.addEventListener('change',change);solvent.addEventListener('input',change);box.append(select,solvent);return box;
+}
+
+// Optional idealized separation display. It never edits a predicted reaction,
+// removes a chemistry blocker or assigns an experimental recovery/purity.
+function reactionPurificationEnabled(value) {
+  if(typeof value==='boolean'){
+    reactionPurificationEnabled.current=value;
+    try{localStorage.setItem('chem-lab-show-purification',JSON.stringify(value));}catch(error){}
+  }
+  if(typeof reactionPurificationEnabled.current!=='boolean'){
+    try{reactionPurificationEnabled.current=localStorage.getItem('chem-lab-show-purification')==='true';}catch(error){reactionPurificationEnabled.current=false;}
+  }
+  return reactionPurificationEnabled.current;
+}
+function reactionPurificationPlan(product,rawState) {
+  const materialState=reactionMaterialStateNormalize(rawState||product.materialState);
+  if(materialState.phase==='unknown')return {kind:'purification',status:'needs-state',label:'Choose the purified product state',output:null};
+  const smiles=product.isomericSmiles||product.smiles;
+  if(typeof smiles!=='string'||!smiles)return {kind:'purification',status:'needs-product',label:'No product selected',output:null};
+  try{smilesToFragment(smiles);}catch(error){return {kind:'purification',status:'needs-product',label:'No valid product selected',output:null};}
+  return {kind:'purification',status:'modeled',basis:'idealized-separation',label:'Purification → Pure '+reactionMaterialStateLabel(materialState),recovery:null,
+    output:{materialState,components:[{smiles,count:Math.max(1,Math.min(100,Math.floor(Number(product.count)||1)))}],impurities:[],purity:'idealized-pure'},
+    note:'Selected product only; impurities are omitted in this idealized output. Achievable purity, recovery and stereoisomer separation are not predicted.'};
+}
+function reactionPurificationRestore(raw,product) {
+  if(!raw||raw.kind!=='purification'||raw.status!=='modeled'||!raw.output||!Array.isArray(raw.output.components)||raw.output.components.length!==1)return null;
+  try{if(!moleculeSame(raw.output.components[0].smiles,product.isomericSmiles||product.smiles))return null;}catch(error){return null;}
+  const plan=reactionPurificationPlan({...product,count:raw.output.components[0].count},raw.output.materialState);return plan.status==='modeled'?plan:null;
+}
+function reactionPurificationControl(onChange) {
+  const box=document.createElement('label'),toggle=document.createElement('input'),text=document.createElement('span');box.className='rx-purification-toggle';toggle.type='checkbox';toggle.checked=reactionPurificationEnabled();text.textContent='Show purification steps';
+  toggle.addEventListener('change',()=>{reactionPurificationEnabled(toggle.checked);onChange();});box.append(toggle,text);return box;
+}
+function reactionPurificationElement(plan) {
+  const box=document.createElement('section'),title=document.createElement('strong'),note=document.createElement('p');box.className='rx-purification';title.textContent=plan.label;note.textContent=plan.note||'Assign S, L, G, or Aq with a solvent to specify the isolated output.';box.append(title,note);return box;
 }

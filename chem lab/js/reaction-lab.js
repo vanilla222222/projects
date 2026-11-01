@@ -677,6 +677,7 @@ function createReactionLab(host) {
 
   function renderPrediction() {
     predictionBox.innerHTML = '';
+    predictionBox.appendChild(reactionPurificationControl(renderPrediction));
     const p = state.prediction;
     const outcome = chosenOutcome();
     if (!outcome) {
@@ -705,17 +706,21 @@ function createReactionLab(host) {
       formulaLine.innerHTML = '<span>' + (outcome.regioselectivity&&outcome.regioselectivity.alternativesRole?'unranked positional alternative · ':(minor ? 'minor · ' : '')) + (ratio && index === 0 ? (outcome.regioselectivity?'heuristic ~':'~') + ratio[minor ? 1 : 0] + '% · ' : '') + formulaHtml(info.formula) + ' · ' + info.mass.toFixed(2) + ' g/mol</span>';
       const stateKey=product.isomericSmiles||product.smiles;
       product.materialState=reactionMaterialStateNormalize(state.productStates[stateKey]);
-      card.append(canvas, label, formulaLine, reactionMaterialStateControl(product.materialState,value=>{product.materialState=value;state.productStates[stateKey]=value;save();}));
+      let use=null;
+      const purification=element('div');
+      const refreshPurification=()=>{purification.replaceChildren();if(reactionPurificationEnabled()){const plan=reactionPurificationPlan(product);purification.append(reactionPurificationElement(plan));if(use){use.disabled=plan.status!=='modeled';use.textContent='Use purified product →';}}else if(use){use.disabled=false;use.textContent='Use as reactant →';}};
+      card.append(canvas, label, formulaLine, reactionMaterialStateControl(product.materialState,value=>{product.materialState=value;state.productStates[stateKey]=value;save();refreshPurification();}),purification);
       if (product.stereo) {
         card.appendChild(element('div', 'rx-product-stereo ' + product.stereo.kind, product.stereo.text));
       }
       if (product.smiles && product.smiles.indexOf('.') < 0) {
-        const use = element('button', 'text-button rx-use-product', 'Use as reactant \u2192');
+        use = element('button', 'text-button rx-use-product', 'Use as reactant \u2192');
         use.type = 'button';
         use.title = 'Add this step to the route and start the next step from this product';
         use.addEventListener('click', () => useAsReactant(outcome, product, minor));
         card.appendChild(use);
       }
+      refreshPurification();
       products.appendChild(card);
       thumbs.push([canvas, fragment]);
       if (!minor) {
@@ -860,6 +865,8 @@ function createReactionLab(host) {
       setMessage('A route can have at most ' + REACTION_ROUTE_LIMITS.maxSteps + ' steps', 'error');
       return;
     }
+    const purification=reactionPurificationEnabled()?reactionPurificationPlan(product):null;
+    if(purification&&purification.status!=='modeled'){setMessage('Assign the purified output state and solvent before carrying it forward.','error');return;}
     const last = state.route[state.route.length - 1];
     const step = reactionRouteStep(state.compounds, state.conditions, outcome, product, minor, last ? last.to.smiles : null);
     if (!step) {
@@ -869,6 +876,7 @@ function createReactionLab(host) {
     if (last && last.to.smiles !== step.from.smiles) {
       state.route = [];
     }
+    if(purification)step.purification=purification;
     state.route.push(step);
     state.compounds = [];
     state.conditions = defaultReactionConditions();
@@ -968,10 +976,12 @@ function createReactionLab(host) {
       const metrics = reactionRouteMetrics(state.route);
       total.textContent = state.route.length + ' step' + (state.route.length === 1 ? '' : 's') + ' \u00b7 overall ' + reactionRouteYield(state.route) + '%' +
         (metrics && metrics.pmi !== null ? ' \u00b7 PMI ' + metrics.pmi.toFixed(1) : '');
+      if(reactionPurificationEnabled()){const count=state.route.filter(step=>step.purification).length;if(count)total.textContent+=' + '+count+' purification(s), recovery unmodeled';}
       drawFragment(canvas, buildRouteScheme(state.route), 14);
     };
     state.route.forEach((step) => {
       const li = element('li', 'rx-route-step');
+      if(reactionPurificationEnabled()&&step.purification)li.appendChild(reactionPurificationElement(step.purification));
       const text = element('span', 'rx-route-text', step.from.name + ' ['+reactionMaterialStateLabel(step.from.materialState)+'] \u2192 ' + step.to.name+' ['+reactionMaterialStateLabel(step.to.materialState)+']');
       text.title = [step.reaction, step.above, step.below].filter(Boolean).join(' \u00b7 ');
       const yieldInput = element('input', 'rx-route-yield');
