@@ -452,6 +452,7 @@ function createRouteWorkspace(deps) {
     content.replaceChildren();
     const route = current();
     if (!route) { content.append(element('p', 'No route selected. Path Finder has a Save route button for each candidate route.')); return; }
+    content.append(reactionPurificationControl(redraw));
     const report = routeWorkspaceValidate(route);
     const meta = element('div', undefined, 'workspace-meta');
     const name = labelInput('Route name', route.name);
@@ -569,9 +570,12 @@ function createRouteWorkspace(deps) {
         if (i) structures.append(element('span', '→'));
         const block = element('div');
         if (deps.thumbnail) { try { block.append(deps.thumbnail(retroFromSmiles(smiles))); } catch (error) { block.append(element('span', 'Structure preview unavailable')); } }
-        block.append(element('p', simpleName(smiles)), element('code', smiles),reactionMaterialStateControl(i?step.toState:step.fromState,value=>{if(i)step.toState=value;else{step.fromState=value;step.compounds.filter(c=>routeWorkspaceKey(c.smiles)===routeWorkspaceKey(step.from)).forEach(c=>c.materialState=value);}persist();})); structures.append(block);
+        block.append(element('p', simpleName(smiles)), element('code', smiles),reactionMaterialStateControl(i?step.toState:step.fromState,value=>{if(i)step.toState=value;else{step.fromState=value;step.compounds.filter(c=>routeWorkspaceKey(c.smiles)===routeWorkspaceKey(step.from)).forEach(c=>c.materialState=value);}persist();refreshPurification();})); structures.append(block);
       });
       card.append(structures);
+      const purificationBox=element('div');
+      const refreshPurification=()=>{purificationBox.replaceChildren();if(reactionPurificationEnabled())purificationBox.append(reactionPurificationElement(reactionPurificationPlan({smiles:step.to},step.toState)));};
+      refreshPurification();card.append(purificationBox);
       const actions = element('div', undefined, 'workspace-actions');
       const up = button('Move up', () => { [route.steps[index - 1], route.steps[index]] = [route.steps[index], route.steps[index - 1]]; persist(); redraw(); }); up.disabled = index === 0;
       const down = button('Move down', () => { [route.steps[index + 1], route.steps[index]] = [route.steps[index], route.steps[index + 1]]; persist(); redraw(); }); down.disabled = index === route.steps.length - 1;
