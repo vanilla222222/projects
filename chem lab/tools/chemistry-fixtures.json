@@ -26,7 +26,8 @@
     "alcoholHalide": "https://openstax.org/books/organic-chemistry/pages/10-5-preparing-alkyl-halides-from-alcohols",
     "alkyneHalogenation": "https://openstax.org/books/organic-chemistry/pages/9-3-reactions-of-alkynes-addition-of-hx-and-x2",
     "passerini": "https://doi.org/10.1021/acs.joc.5c00236",
-    "alkyneReduction": "https://openstax.org/books/organic-chemistry/pages/9-5-reduction-of-alkynes"
+    "alkyneReduction": "https://openstax.org/books/organic-chemistry/pages/9-5-reduction-of-alkynes",
+    "complexEsterCoupling": "https://doi.org/10.1002/anie.197805221"
   },
   "naming": [
     {
@@ -1828,6 +1829,111 @@
           "nanh3"
         ],
         "temperature": -33
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Methoxyethyl anisate",
+      "compounds": [
+        {
+          "smiles": "COc1ccc(C(=O)O)cc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "COCCO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "C1CCC(CC1)N=C=NC1CCCCC1",
+          "role": "reagent",
+          "equiv": 1.1
+        }
+      ],
+      "rule": "steglich",
+      "products": [
+        "COc1ccc(C(=O)OCCOC)cc1"
+      ],
+      "source": "complexEsterCoupling",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "dmap"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Dimethylaminoethyl anisate",
+      "compounds": [
+        {
+          "smiles": "COc1ccc(C(=O)O)cc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CN(C)CCO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "C1CCC(CC1)N=C=NC1CCCCC1",
+          "role": "reagent",
+          "equiv": 1.1
+        }
+      ],
+      "rule": "steglich",
+      "products": [
+        "COc1ccc(C(=O)OCCN(C)C)cc1"
+      ],
+      "source": "complexEsterCoupling",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "dmap"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Boc aminoethyl anisate",
+      "compounds": [
+        {
+          "smiles": "COc1ccc(C(=O)O)cc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(C)(C)OC(=O)NCCO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "C1CCC(CC1)N=C=NC1CCCCC1",
+          "role": "reagent",
+          "equiv": 1.1
+        }
+      ],
+      "rule": "steglich",
+      "products": [
+        "COc1ccc(C(=O)OCCNC(=O)OC(C)(C)C)cc1"
+      ],
+      "source": "complexEsterCoupling",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "dmap"
+        ],
+        "temperature": 25
       },
       "loadingCeiling": 1
     }

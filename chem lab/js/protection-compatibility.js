@@ -111,7 +111,12 @@ function protectionThreats(compounds,conditions) {
   if(ctx.has('pcc'))add('mildOxidative');
   if(['mcpba','ozone','permanganate','jones','hydrogenPeroxide','bbr3','lewis','dissolvingMetal','rosenmundCatalyst'].some(t=>ctx.has(t)))add('otherReactive');
   if(ctx.substrates.some(s=>s.info.carbonyls.some(c=>['acylChloride','anhydride'].includes(c.kind)))||ctx.has('boc2o')||ctx.has('cbzReagent')||ctx.has('fmocReagent'))add('acylation');
+  // DCC/DMAP esterification under mild, nonaqueous conditions.
+  // https://doi.org/10.1002/anie.197805221
+  const mildCoupling=ctx.has('carbodiimide')&&ctx.temperature>=0&&ctx.temperature<=40&&!ctx.protic&&ctx.conditions.solvents.some(id=>['dcm','thf'].includes(id));
+  if(mildCoupling)add('carbodiimide');
   const handled=new Set(['strongAcid','sulfuricAcid','HCl','HBr','HI','H2O','fluoride','H2','hydrogenationCatalyst','hydroxide','hydride','amideBase','sodamide','alkoxide','amineBase','weakBase','grignard','zinc','alanate','dibal','borohydride','mildHydride','ddq','can','boc2o','cbzReagent','fmocReagent','silylChloride','cation','quaternaryAmmonium','dmso','light','dmap','pcc','hydrazine']);
+  if(mildCoupling)handled.add('carbodiimide');
   if([...ctx.species.keys()].some(tag=>!handled.has(tag)))add('otherReactive');
   const supportedAdditives=new Set(['h2so4','hcl','hbr','tsoh','h3po4','naoh','koh','naoet','kotbu','nah','lda','k2co3','et3n','pyr','cs2co3','k3po4','nanh2','imidazole','dmap','piperidine','dbu','pdc','pt','ni','ddq','can']);
   if((ctx.conditions.additives||[]).some(id=>!supportedAdditives.has(id)))add('otherReactive');
@@ -120,7 +125,7 @@ function protectionThreats(compounds,conditions) {
   if(ctx.light||ctx.conditions.energy==='light')add('photochemical');
   return ts;
 }
-const PROTECTION_THREAT_IDS=['acid','aqueousAcid','fluoride','hydrogenolysis','strongBase','aqueousBase','fmocBase','weakBase','organometallic','organozinc','alanate','dibal','borohydride','oxidative','mildOxidative','acylation','otherReactive','extremeTemperature','photochemical'];
+const PROTECTION_THREAT_IDS=['acid','aqueousAcid','fluoride','hydrogenolysis','strongBase','aqueousBase','fmocBase','weakBase','organometallic','organozinc','alanate','dibal','borohydride','oxidative','mildOxidative','acylation','otherReactive','extremeTemperature','photochemical','carbodiimide'];
 function protectionGroupCompatibility(id,conditionsOrThreats,site) {
   const entry=PROTECTION_GROUPS.find(x=>x.id===id||x.label.toLowerCase()===String(id).toLowerCase());
   if(!entry)return {status:'unknown',reasons:['This protecting group is not in the bounded compatibility registry.']};
@@ -171,6 +176,9 @@ function protectionGroupCompatibility(id,conditionsOrThreats,site) {
       if(pg==='pmb')conflict('DDQ/CAN are encoded PMB removal reagents.');
       else if(pg==='benzyl'||pg==='cbz')unknown('Oxidative debenzylation can compete under some DDQ conditions; selective PMB removal is not a blanket guarantee.');
       else unknown('The oxidant compatibility of '+entry.label+' is not independently encoded.');
+    }else if(t==='carbodiimide'){
+      if(carbamate)reasons.push(entry.label+' is retained in the bounded mild DCC/DMAP coupling regime; full-substrate selectivity remains separate.');
+      else unknown('Carbodiimide compatibility for '+entry.label+' is not independently encoded.');
     }else if(['weakBase','acylation','borohydride'].includes(t))reasons.push(entry.label+' has no encoded cleavage in the bounded '+t+' regime.');
     else unknown('The '+t+' regime is outside the encoded survival scope for '+entry.label+'.');
   });

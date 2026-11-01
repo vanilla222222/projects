@@ -1956,10 +1956,10 @@ function retroProtectOptions(t, spec, chemo) {
 function retroProtectTry(t, spec, option) {
   const pg = option.pg || RETRO_PROTECTION[option.kind];
   // Automatic carbamate planning is restricted to suppressing N-acylation
-  // while an alcohol undergoes acyl substitution. A carbamate is not a generic
+  // while an alcohol undergoes acyl substitution or carbodiimide coupling. A carbamate is not a generic
   // organometallic solution: primary-amine protection still retains N-H, and
   // each installation/main/removal regime must pass compatibility checks.
-  if (option.kind === 'amine' && spec.transform.rule !== 'acyl') return null;
+  if (option.kind === 'amine' && !['acyl', 'steglich'].includes(spec.transform.rule)) return null;
   const record = spec.record;
   const hAtoms = option.atoms.map((id) => record.map.get(id));
   const pOut = {};
