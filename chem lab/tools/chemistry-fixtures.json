@@ -29,7 +29,8 @@
     "alkyneReduction": "https://openstax.org/books/organic-chemistry/pages/9-5-reduction-of-alkynes",
     "complexEsterCoupling": "https://doi.org/10.1002/anie.197805221",
     "alkoxyamineAcylation": "https://doi.org/10.3762/bjoc.10.35",
-    "methoxyamineAcylation": "https://doi.org/10.1021/acs.jmedchem.3c00415"
+    "methoxyamineAcylation": "https://doi.org/10.1021/acs.jmedchem.3c00415",
+    "exhaustiveAcetylation": "https://www.ncbi.nlm.nih.gov/books/NBK593851/"
   },
   "naming": [
     {
@@ -2073,6 +2074,79 @@
         "temperature": 25
       },
       "loadingCeiling": 1
+    },
+    {
+      "label": "Exhaustive acetylation OCCO",
+      "compounds": [
+        {
+          "smiles": "OCCO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)OC(C)=O",
+          "role": "reagent",
+          "equiv": 3.0
+        }
+      ],
+      "rule": "exhaustive-o-acetylation",
+      "products": [
+        "CC(=O)OCCOC(C)=O",
+        "CC(=O)O"
+      ],
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "pyr"
+        ],
+        "temperature": 25
+      },
+      "source": "exhaustiveAcetylation",
+      "loadingCeiling": 1,
+      "countedProducts": [
+        "CC(=O)OCCOC(C)=O",
+        "CC(=O)O",
+        "CC(=O)O"
+      ]
+    },
+    {
+      "label": "Exhaustive acetylation OCC(O)CO",
+      "compounds": [
+        {
+          "smiles": "OCC(O)CO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)OC(C)=O",
+          "role": "reagent",
+          "equiv": 4.5
+        }
+      ],
+      "rule": "exhaustive-o-acetylation",
+      "products": [
+        "CC(=O)OCC(OC(C)=O)COC(C)=O",
+        "CC(=O)O"
+      ],
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "pyr"
+        ],
+        "temperature": 25
+      },
+      "source": "exhaustiveAcetylation",
+      "loadingCeiling": 1,
+      "countedProducts": [
+        "CC(=O)OCC(OC(C)=O)COC(C)=O",
+        "CC(=O)O",
+        "CC(=O)O",
+        "CC(=O)O"
+      ]
     }
   ],
   "negativeReactions": [
@@ -2762,6 +2836,60 @@
         ],
         "temperature": 25
       }
+    },
+    {
+      "label": "Excluded exhaustive acetylation NCC(O)CO",
+      "compounds": [
+        {
+          "smiles": "NCC(O)CO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)OC(C)=O",
+          "role": "reagent",
+          "equiv": 6
+        }
+      ],
+      "rule": "exhaustive-o-acetylation",
+      "products": [],
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "pyr"
+        ],
+        "temperature": 25
+      },
+      "source": "exhaustiveAcetylation"
+    },
+    {
+      "label": "Excluded exhaustive acetylation OCC(O)C=O",
+      "compounds": [
+        {
+          "smiles": "OCC(O)C=O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)OC(C)=O",
+          "role": "reagent",
+          "equiv": 6
+        }
+      ],
+      "rule": "exhaustive-o-acetylation",
+      "products": [],
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "pyr"
+        ],
+        "temperature": 25
+      },
+      "source": "exhaustiveAcetylation"
     }
   ],
   "roundTrips": [
