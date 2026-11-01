@@ -16,6 +16,7 @@ class Element{
  constructor(tag){this.tagName=tag;this.children=[];this.events={};this.dataset={};this.attributes={};this._text='';this.classList={toggle(){}};}
  append(...nodes){this.children.push(...nodes)}appendChild(n){this.children.push(n);return n}replaceChildren(...nodes){this.children=nodes}setAttribute(k,v){this.attributes[k]=v}addEventListener(k,fn){this.events[k]=fn}
  set innerHTML(v){this.children=[]}get innerHTML(){return ''}set textContent(v){this._text=String(v);this.children=[]}get textContent(){return this._text}
+ get options(){return this.children}
  querySelectorAll(selector){return walk(this).filter(n=>(n.className||'').split(' ').includes(selector.slice(1)))}
 }
 const walk=n=>[n,...n.children.flatMap(walk)];
@@ -45,4 +46,5 @@ assert.ok(walk(context.container).some(n=>n.textContent==='Prepared product stat
 run(`delete reactionPlanningMaterialState.states;`);check(`reactionPlanningMaterialState('CCO').phase`,'G','Planning phases persist across reload');
 run(`reactionPlanningMaterialState('NC[C@H](O)C',{phase:'S'});`);check(`reactionPlanningMaterialState('NC[C@@H](O)C').phase`,'unknown','Opposite stereoisomer does not inherit phase');
 run(`var original=JSON.stringify(job.route);reactionPlanningRouteLink(job.route[0]);`);check('JSON.stringify(job.route)===original',true,'Annotations do not mutate chemistry/search records');
+run(`var chiralGraph=retroFromSmiles('N[C@H](O)C');var chiralView=createRetroView({graph:chiralGraph,targetAtomIds:()=>chiralGraph.atoms.map(a=>a.id),structureThumbnail:thumb,toast});chiralView.open();`);check(`chiralView.state.tree.root.smiles.includes('@')`,true,'Popup preserves drawn target stereochemistry');
 console.log('Retrosynthesis material UI: '+checks+' checks passed.');

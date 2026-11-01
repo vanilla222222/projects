@@ -4069,6 +4069,7 @@
         : largestComponent();
       return component ? component.atomIds : [];
     },
+    openPlanner(smiles){document.getElementById('path-target').value=smiles;setView('pathfinder');},
     sendScheme(fragment, steps) {
       placeSchemeBelow(fragment);
       toast('Route added to the canvas (' + plural(steps, 'step') + ')', { kind: 'ok', duration: 2200 });

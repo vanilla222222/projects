@@ -218,7 +218,7 @@
   <nav id="view-tabs" role="tablist" aria-label="View">
     <button type="button" role="tab" class="view-tab selected" data-view="editor" aria-selected="true">Editor</button>
     <button type="button" role="tab" class="view-tab" data-view="reactions" aria-selected="false">Reactions</button>
-    <button type="button" role="tab" class="view-tab" data-view="pathfinder" aria-selected="false">Path Finder</button>
+    <button type="button" role="tab" class="view-tab" data-view="pathfinder" aria-selected="false">Retrosynthesis</button>
     <button type="button" role="tab" class="view-tab" data-view="workspace" aria-selected="false">Route Workspace</button>
   </nav>
   <header id="toolbar">
@@ -347,15 +347,9 @@
     <span id="status-hover" class="status-grow"></span>
     <span id="status-tool"></span>
   </footer>
-  <section id="path-view" hidden aria-labelledby="path-title">
-    <div class="path-heading"><h2 id="path-title">Synthesis Path Finder</h2><p>Choose a starting material and target. Search for a chain of supported transformations between them.</p></div>
-    <div class="path-inputs">
-      <label>Starting material<input id="path-start" type="text" placeholder="Name or SMILES, e.g. ethanol" autocomplete="off" spellcheck="false"></label>
-      <span class="path-input-arrow" aria-hidden="true">→</span>
-      <label>Target compound<input id="path-target" type="text" placeholder="Name or SMILES, e.g. ethanal" autocomplete="off" spellcheck="false"></label>
-    </div>
-    <div class="path-controls"><label for="path-depth">Maximum steps</label><select id="path-depth"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select><button id="path-run" type="button" class="text-button primary">Find a path</button><button id="path-cancel" type="button" class="text-button" disabled>Cancel</button><button id="path-example" type="button" class="text-button">Load example</button></div>
-    <div class="path-controls"><label for="path-route-count">Alternative routes</label><select id="path-route-count"><option value="1">1</option><option value="3" selected>Up to 3</option><option value="5">Up to 5</option></select><label for="path-stock-policy">Available building blocks</label><select id="path-stock-policy"><option value="builtin" selected>Local stock + my list</option><option value="custom">Only my list + starting material</option></select><label for="path-recipe-tree">Recipe tree</label><select id="path-recipe-tree"><option value="off" selected>Off — linear routes only</option><option value="on">On — synthesize unavailable intermediates</option></select></div>
+  <section id="path-view" class="research-workbench" hidden aria-labelledby="path-title">
+    <header class="research-hero"><div><span class="research-eyebrow">CHEM LAB / SYNTHESIS PLANNING</span><h2 id="path-title">Retrosynthesis workbench</h2><p>Define your endpoints, constrain the chemistry, then compare traceable candidate routes.</p></div><span class="research-mode-badge">Forward-verified structural model</span></header>
+    <div class="research-layout"><aside class="research-sidebar" aria-label="Research planning settings"><h3>Research protocol</h3><a class="research-jump" href="#path-title">Back to endpoints ↑</a><p class="research-muted">Hard constraints exclude routes. Preferences order the remaining candidates.</p>
     <details class="path-options"><summary>Inventory and reaction filters</summary>
       <div class="path-inputs"><label>My available building blocks<textarea id="path-inventory" rows="4" placeholder="One name or SMILES per line, e.g. methanol"></textarea></label><label>Forbidden reagents or solvents<textarea id="path-forbidden-reagents" rows="4" placeholder="One name, SMILES or label per line, e.g. PCC"></textarea></label><label>Forbidden reaction IDs or names<textarea id="path-forbidden-rules" rows="4" placeholder="One ID or name fragment per line, e.g. oxidation"></textarea></label></div>
       <div class="path-controls"><label for="path-protection-policy">Protection planning</label><select id="path-protection-policy"><option value="auto">Allow verified protection sequences</option><option value="off">No new protection steps</option></select><label for="path-allowed-protecting-groups">Allowed protecting groups</label><input id="path-allowed-protecting-groups" type="text" placeholder="All supported; or boc, cbz, fmoc, tbs, acetal, tbu-ester" autocomplete="off" spellcheck="false"></div>
@@ -364,11 +358,23 @@
       <p>Explicit masks request one amine group and/or one alcohol group across the main route. The planner checks installation order, preservation and removal; it does not infer that these masks are necessary. Two masks need at least five steps. Repeated competing installation sites are unsupported.</p>
       <p>The starting material is always available. Inventory restricts additional building blocks; reagents and solvents remain allowed unless excluded above. Local stock includes built-in and user stock entries in tiers 1–2. Filters match structures when names resolve, plus case-insensitive label text.</p>
     </details>
-    <p class="path-caveat">Candidate routes use textbook reaction rules, not experimental validation. Additional building blocks follow your inventory policy; reagents may also be required. Recipe Tree mode recursively retrosynthesizes unavailable intermediates and returns only trees whose leaves are available. Its depth limit applies to the longest branch, so a convergent tree may contain more total reaction steps. <span id="path-search-limits">Search is limited to 60 structures and 12 seconds.</span> Protection and deprotection count as separate steps. It does not search the literature or establish feasibility, selectivity, yield or safety.</p>
+      <div id="path-research-settings"></div>
+    </aside><main class="research-main"><section class="research-endpoints" aria-label="Search endpoints"><div class="research-section-head"><h3>1 · Define the synthesis</h3><a class="research-jump" href="#path-research-settings">Research settings ↓</a><button id="path-swap" type="button" class="text-button">Swap endpoints</button></div>
+    <div class="path-inputs">
+      <label>Starting material<input id="path-start" type="text" placeholder="Name or SMILES, e.g. ethanol" autocomplete="off" spellcheck="false"></label>
+      <span class="path-input-arrow" aria-hidden="true">→</span>
+      <label>Target compound<input id="path-target" type="text" placeholder="Name or SMILES, e.g. ethanal" autocomplete="off" spellcheck="false"></label>
+    </div>
+    <div class="path-controls"><label for="path-depth">Maximum steps</label><select id="path-depth"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select><button id="path-run" type="button" class="text-button primary">Find a path</button><button id="path-cancel" type="button" class="text-button" disabled>Cancel</button><button id="path-example" type="button" class="text-button">Load example</button></div>
+    <div class="path-controls"><label for="path-route-count">Alternative routes</label><select id="path-route-count"><option value="1">1</option><option value="3" selected>Up to 3</option><option value="5">Up to 5</option></select><label for="path-stock-policy">Available building blocks</label><select id="path-stock-policy"><option value="builtin" selected>Local stock + my list</option><option value="custom">Only my list + starting material</option></select><label for="path-recipe-tree">Recipe tree</label><select id="path-recipe-tree"><option value="off" selected>Off — linear routes only</option><option value="on">On — synthesize unavailable intermediates</option></select></div>
+    </section><section class="research-results" aria-label="Candidate routes"><h3>2 · Review candidate routes</h3>
     <p id="path-status" role="status" aria-live="polite">Enter two compounds to begin. Names resolve locally; SMILES gives the most precise input.</p>
     <div id="path-results"></div>
     <div id="path-cascade"></div>
     <div id="path-benchmarks"></div>
+    </section><details class="research-model-notes"><summary>Model coverage and search limits</summary>
+    <p class="path-caveat">Candidate routes use textbook reaction rules, not experimental validation. Additional building blocks follow your inventory policy; reagents may also be required. Recipe Tree mode recursively retrosynthesizes unavailable intermediates and returns only trees whose leaves are available. Its depth limit applies to the longest branch, so a convergent tree may contain more total reaction steps. <span id="path-search-limits">Search is limited to 60 structures and 12 seconds.</span> Protection and deprotection count as separate steps. It does not search the literature or establish feasibility, selectivity, yield or safety.</p>
+    </details></main></div>
   </section>
   <section id="workspace-view" hidden aria-label="Route workspace"><div id="route-workspace"></div></section>
   <section id="reaction-view" hidden>
@@ -547,12 +553,11 @@
 <div id="retro-overlay" class="modal-overlay" hidden>
   <div class="modal-dialog retro-dialog" role="dialog" aria-modal="true" aria-labelledby="retro-title">
     <div class="help-head">
-      <h2 id="retro-title">Retrosynthesis</h2>
-      <button type="button" id="retro-close" aria-label="Close" title="Close (Esc)">&times;</button>
+      <div><span class="research-eyebrow">CHEM LAB / DISCONNECTION EXPLORER</span><h2 id="retro-title">Retrosynthesis workbench</h2></div>
+      <a class="research-jump" href="#retro-research-settings">Research settings</a><button type="button" id="retro-close" aria-label="Close" title="Close (Esc)">&times;</button>
     </div>
     <nav id="retro-trail" aria-label="Disconnection path"></nav>
-    <div id="retro-summary"></div>
-    <div id="retro-list"></div>
+    <div class="retro-research-layout"><aside class="retro-research-sidebar"><h3>Research protocol</h3><p>Filter forward-verified disconnections. Use the full-route planner for bounded multistep searches.</p><button id="retro-plan-full" type="button" class="text-button primary">Plan a full route →</button><div id="retro-research-settings"></div></aside><div class="retro-research-results"><div id="retro-summary"></div><div id="retro-list"></div></div></div>
     <div class="import-actions">
       <span id="retro-hint"></span>
       <button type="button" class="text-button" id="retro-cancel">Close</button>
@@ -874,6 +879,7 @@
 <script src="js/reaction-lab.js"></script>
 <script src="js/spectra-view.js"></script>
 <script src="js/viewer3d.js"></script>
+<script src="js/planning-settings.js"></script>
 <script src="js/retro-view.js"></script>
 <script src="js/route-comparison.js"></script>
 <script src="js/path-finder.js"></script>
