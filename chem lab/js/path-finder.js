@@ -647,10 +647,11 @@ function pathFinderRecipeRender(container, job, deps) {
       let starting = false;
       try { starting = pathFinderKey(node.target) === startKey; } catch (error) { /* Keep the generic available label. */ }
       item.append(make('span', (starting ? 'Starting material: ' : 'Available building block: ') + name(node.target), 'path-recipe-leaf'));
-      item.append(make('code', node.target, 'path-smiles'));
+      item.append(make('code', node.target, 'path-smiles'),reactionPlanningMaterialElement(node.target,'Feedstock state',false));
       return item;
     }
     const c = node.candidate;
+    item.append(reactionPlanningMaterialElement(node.target,'Prepared product state',true));
     item.append(make('h4', (isRoot ? 'Target: ' : 'Prepare intermediate: ') + name(node.target)));
     item.append(make('p', c.outcomeName || c.name, 'path-recipe-reaction'));
     item.append(make('code', node.target, 'path-smiles'));
@@ -663,7 +664,7 @@ function pathFinderRecipeRender(container, job, deps) {
     if (c.minor) item.append(make('p', 'The selected node is a minor predicted product.'));
     if (deps.openInLab) {
       const open = make('button', 'Open this reaction in Reactions', 'text-button'); open.type = 'button';
-      open.addEventListener('click', () => deps.openInLab(c.compounds || [], c.conditions || {})); item.append(open);
+      open.addEventListener('click', () => deps.openInLab(reactionPlanningCompounds(c.compounds), c.conditions || {},{smiles:c.product?.isomericSmiles||node.target,materialState:reactionPlanningMaterialState(node.target)})); item.append(open);
     }
     if (node.children.length) {
       item.append(make('p', 'Required precursors — each is either available or prepared by its own verified branch:'));
@@ -674,6 +675,7 @@ function pathFinderRecipeRender(container, job, deps) {
     return item;
   };
   container.replaceChildren();
+  container.append(reactionPurificationControl(()=>pathFinderRecipeRender(container,job,deps)));
   const diversity = typeof routeComparisonDiversity === 'function' ? routeComparisonDiversity(job) : [];
   job.recipeTrees.forEach((tree, index) => {
     const leaves = new Map();

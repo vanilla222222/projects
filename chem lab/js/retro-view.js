@@ -108,6 +108,7 @@ function createRetroView(deps) {
     const figure = retroViewElement('div', 'retro-precursor');
     figure.appendChild(thumbnail(precursor.smiles));
     figure.appendChild(retroViewElement('div', 'retro-caption', precursor.label || nameFor(precursor.smiles)));
+    figure.appendChild(reactionPlanningMaterialElement(precursor.isomericSmiles||precursor.smiles,'Precursor state',false));
     if (precursor.stock) {
       figure.appendChild(retroViewElement('span', 'retro-badge common', 'stock · tier ' + precursor.stock.tier));
     } else if (precursor.common) {
@@ -202,6 +203,8 @@ function createRetroView(deps) {
     target.appendChild(text);
     summary.innerHTML = '';
     summary.appendChild(target);
+    summary.appendChild(reactionPurificationControl(render));
+    summary.appendChild(reactionPlanningMaterialElement(node.smiles,'Target output state',true));
     if (!result || !count) {
       list.appendChild(retroViewElement('p', 'retro-empty', result ? emptyMessage(result) : 'Maximum depth reached.'));
     } else {
@@ -285,6 +288,7 @@ function createRetroView(deps) {
       deps.toast('Could not build this route', { kind: 'warn' });
       return;
     }
+    steps.forEach(step=>{step.from.materialState=reactionPlanningMaterialState(step.from.isomericSmiles||step.from.smiles);step.to.materialState=reactionPlanningMaterialState(step.to.isomericSmiles||step.to.smiles);if(reactionPurificationEnabled()){const plan=reactionPurificationPlan(step.to);if(plan.status==='modeled')step.purification=plan;}});
     close();
     deps.sendScheme(buildRouteScheme(steps), steps.length);
   });
@@ -294,7 +298,7 @@ function createRetroView(deps) {
       return;
     }
     close();
-    deps.openInLab(candidate.compounds.map((c) => ({ smiles: c.smiles, role: c.role, label: c.label || '' })), candidate.conditions);
+    deps.openInLab(reactionPlanningCompounds(candidate.compounds), candidate.conditions,{smiles:candidate.product.isomericSmiles||candidate.product.smiles,materialState:reactionPlanningMaterialState(currentNode().smiles)});
   });
 
   return {

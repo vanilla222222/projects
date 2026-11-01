@@ -120,3 +120,5 @@ body[data-motion="reduced"] *,body[data-motion="reduced"] *::before,body[data-mo
 
 .rx-purification-toggle{display:flex;align-items:center;gap:.5rem;margin:.6rem 0;color:var(--text-primary)}.rx-purification{border:1px solid var(--border);border-left:3px solid var(--lab-cyan);border-radius:6px;padding:.65rem;margin:.6rem 0;background:var(--bg-elevated);color:var(--text-primary)}.rx-purification p{font-size:.85em;color:var(--text-secondary);margin:.35rem 0 0}
 .rx-route-step{flex-wrap:wrap}.rx-route-step>.rx-purification{flex:1 0 100%;order:2;box-sizing:border-box}
+
+.rx-planning-material{border:1px solid var(--border);border-radius:8px;background:var(--bg-control);padding:.65rem;margin:.5rem 0;min-width:0}.rx-planning-state{display:inline-block;margin-left:.6rem;color:var(--lab-cyan);font-weight:600}.route-comparison-state-row{margin:.8rem 0}.retro-precursor .rx-planning-material{max-width:260px;text-align:left}.retro-precursor{min-width:170px}.retro-card-body{flex-wrap:wrap}
