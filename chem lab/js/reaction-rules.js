@@ -2699,7 +2699,8 @@ function rxChemoConditionEntry(entry,ctx) {
 
 function rxChemoEntry(ctx, outcome) {
   const consumed = (compound) => compound && outcome.consumes.some((u) => u && u.compound === compound);
-  const acylating = ctx.substrates.filter((s) => consumed(s.compound) && s.info.carbonyls.some((c) => c.kind === 'acylChloride' || c.kind === 'anhydride'));
+  const acylating = ctx.substrates.filter((s) => consumed(s.compound) && s.info.carbonyls.some((c) => c.kind === 'acylChloride' || c.kind === 'anhydride' ||
+    (c.kind === 'acid' && ctx.has('carbodiimide') && ['steglich', 'amide-coupling'].includes(outcome.id))));
   const entry=RX_CHEMOSELECTIVITY.find((entry) => {
     if (entry.acylating) {
       return acylating.length > 0 && ctx.substrates.some((s) => consumed(s.compound) && !acylating.includes(s));
@@ -2772,8 +2773,9 @@ function rxChemoselectivity(ctx, outcome) {
   if (!entry || !main) {
     return null;
   }
-  const consumed = ctx.substrates.filter((s) => outcome.consumes.some((u) => u && u.compound === s.compound) &&
-    !(entry.acylating && s.info.carbonyls.some((c) => c.kind === 'acylChloride' || c.kind === 'anhydride')));
+  // Include functional groups on the acyl donor too: activation does not
+  // make a pendant amine or alcohol inert. The acid OH is not an alcohol.
+  const consumed = ctx.substrates.filter((s) => outcome.consumes.some((u) => u && u.compound === s.compound));
   if (!consumed.length) {
     return null;
   }
