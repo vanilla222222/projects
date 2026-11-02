@@ -7,7 +7,7 @@ The full-route planner and the canvas disconnection explorer share research sett
 1. Set a starting material and target in the full-route workbench. Names resolve locally; SMILES is more precise.
 2. Set inventory and reaction exclusions, then choose a research protocol in the sidebar.
 3. Run a bounded search and compare the routes. Inspect policy rejection reasons when fewer routes are returned.
-4. Assign recorded S/L/G/Aq(solvent) states beside intermediates. The optional purification view remains an idealized selected-product-only display.
+4. States fill automatically from the local catalog; manual S/L/G/Aq(solvent) overrides remain available beside intermediates. The optional purification view remains an idealized selected-product-only display.
 5. Save a candidate to Route Workspace or open a step in Reactions. Saved routes retain their research settings as historical provenance; editing a route rechecks chemistry but does not rerun the original search constraints.
 
 In the canvas popup, **Plan a full route** transfers the current target to the full-route workbench. Popup settings filter and rank cached, forward-verified disconnections. Full-route time/node controls apply to Path Finder, not the popup's internal proposal generation.
@@ -42,3 +42,15 @@ A running search uses an immutable settings snapshot. Changing controls does not
 ## Validation
 
 Focused tests exercise actual linear/tree searches, protected operations, stereochemical restrictions, condition/equipment exclusions, route ranking, profiles, invalid imports and the settings DOM. The standard validation runner discovers these suites automatically. The independent RDKit oracle remains separate from UI tests.
+
+## Automatic states and optional PubChem data
+
+Automatic mode uses supported PubChem temperature intervals when cached, then the local reagent catalog's ambient/supplied form. Otherwise, a recorded solvent may produce a clearly labeled assumed solution. Unknown neat compounds remain unresolved rather than being arbitrarily classified. Manual overrides always take precedence; choosing Automatic restores inference. A saved inferred form is recalculated for the current recipe instead of being mistaken for a manual override.
+
+Each structure exposes a melting/boiling data panel. Its lookup button sends that structure to PubChem. The optional **Auto-fetch PubChem MP/BP** toggle does this for up to 20 distinct structures per session; it is off by default. Requests are serialized with at least 500 ms between starts, deduplicated by canonical isomeric structure, timed out after 15 seconds, and cached locally for up to seven days (40 records / 200 KB). An unsuccessful refresh retains previously fetched data with a visible message. No API key is required.
+
+The PUG-REST response must return one exact matching structure before its CID is used for PUG-View annotations. Structure standardization mismatches do not apply data silently. Raw values, ranges, sources, qualifiers and retrieval dates are shown. Kelvin/Fahrenheit values are converted for phase reasoning; decomposition, estimated, form-specific or unsupported uncertainty values are not used for assignment. Boiling-point data need an explicit near-one-atmosphere condition.
+
+Temperature-based phase inference is for **25 °C and approximately 1 atm**, not an operating-temperature phase-equilibrium simulation. Below all supported melting intervals can indicate S; supported normal boiling intervals can establish G; L requires being above the supported melting intervals and below the normal boiling intervals. Boundary/conflicting intervals do not resolve one phase, and melting information alone cannot distinguish L from G above the melting range. Contradictory fetched intervals cannot silently fall back to a conflicting catalog phase. Solvent fallback remains an explicit assumption, not a solubility prediction.
+
+API references: [PubChem PUG-View](https://pubchem.ncbi.nlm.nih.gov/pug_view/) and [PUG-REST](https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest). Integration tests use synthetic contract responses; they do not substitute for live-service or experimental validation.
