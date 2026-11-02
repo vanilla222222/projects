@@ -181,6 +181,12 @@ count against specified stereo element count per row (337 = 337, 0 rows differin
 `(6R,7R)` core in every name. Both scripts are byte-identical on stdout and stderr across
 separate cold caches, and neither contains a hard-coded temporary path.
 
+One defect escaped all of this and is recorded in `LIBRARY-ESCAPING.md`: 78 of the 112 rows
+carry a double-bond direction marker, the splice wrote it into the module as a single backslash,
+and the JavaScript parser ate it. Every check above ran against the generator's text, which was
+correct, so none of them could see it. It is repaired, and a validation gate now asserts no
+single backslash survives in `data/library.js`.
+
 The validation gate added for the tautomer artefact stays green across the splice: the 112 new
 rows contribute 0 artefact rows, because the generator normalises the tautomer before attesting a
 slot value and therefore never emits an iminol.

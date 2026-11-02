@@ -4,7 +4,7 @@
 const RETRIEVAL_BENCHMARK = {
   "composition": {
     "version": "composed-reference-v1",
-    "key": "d44588158bb02491",
+    "key": "2e398fbdf656b439",
     "library": 22164,
     "targets": 155,
     "ligandSlots": 5480
@@ -12,7 +12,7 @@ const RETRIEVAL_BENCHMARK = {
   "protocol": "Name holdout across ranking-eligible targets; lookup-only panels excluded; aliases can remain. Nearest similarity, mean of top three, then original target order. All organisms and target families. Not independent scaffold or external validation.",
   "lookupOnlyTargets": 5,
   "sourceSha256": {
-    "data/library.js": "d59e0c2391cd767e042381ef3f33e021923e71f298c6f873c8b48b24cfef53f9",
+    "data/library.js": "23ca2c14c386242e2b397e789243d34c4e93594beb64672d924a9cc465e9041a",
     "data/targets.js": "c994111b869a78b68fe873c92f218ae1791b9b3e3fbf390f0b3a837221b4aacd",
     "data/curated-references.js": "6ff485c2f080e83194206ba8b70971af0391a26be67142ca692a3a359dfda279",
     "js/curated-references.js": "240d0bd4f4cf076c70a1891578a48f3fb19e421bb685a5c6c2bd3af011c9c24e",
