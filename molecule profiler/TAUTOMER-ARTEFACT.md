@@ -97,4 +97,30 @@ Over the whole corpus, of the 9,735 rows that specify any stereochemistry:
 3. **Run the stereo-aware duplicate rule on the original molecule**, never on a tautomer-canonical form, and make any tautomer gate fire last and only when the matched row is also stereochemically compatible.
 4. **Add a validation gate counting the rows still presenting the artefact**, so the number is measured on every run rather than rediscovered.
 
+## The validation gate (recommendation 4, implemented)
+
+`tools/tautomer-artefact-test.js` now runs on every validation pass. It measures the
+partition over the whole library and asserts it, so any change to the number has to be
+noticed and agreed rather than discovered later:
+
+```
+Tautomer artefact: 2020 of 22025 rows present a stored amide as its iminol
+(1689 acyclic imidic acid, 299 aromatic lactim, 32 both; 2008 externally sourced, 12 hand-written)
+```
+
+The two queries run in the project's own SMARTS engine, not RDKit, and reproduce the RDKit
+partition exactly — 1,689 / 299 / 32, union 2,020, and the same six-class breakdown
+(`ChEBI named compound` 2,007, `ChEMBL binding reference` 9, one each of `Antiviral`,
+`DrugCentral named compound`, `Fragment`, `Immunosuppressant`). Seven controls are asserted
+first, so a regression in the engine fails before the counts do: `CC(=N)O` and
+`OC(=N)c1ccccc1` match the acyclic query; `Oc1nncc2ccccc12` matches the aromatic one;
+`CC(N)=O`, `O=c1[nH]nc(C)c2ccccc12`, `CCOc1ncccn1` and `Oc1ccccc1` match neither — the last
+two because a bare `O` in `Oc1n...` would match ethers and phenols as well as lactims, which
+is why the query is `[OX2H1]` and the ring carbon is constrained by `[$(c:n)]`. The gate also
+asserts the descriptor consequence in the project's own code, `CC(=N)O` scoring 44.08 against
+acetamide's 43.09.
+
+Recommendations 1 to 3 remain open. The gate makes the artefact a standing measurement; it
+does not change any descriptor.
+
 The library itself is immutable by design, so none of the 2,020 rows is rewritten. Where a stored structure contradicts its own name, the correction belongs in the identity-correction overlay described in `IDENTITY-CORRECTIONS.md`, with a reviewed witness per correction.

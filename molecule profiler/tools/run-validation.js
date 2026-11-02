@@ -88,6 +88,7 @@ const scripts = [
   'research-package-test.js',
   'descriptor-stats-test.js',
   'molecule-quality-test.js',
+  'tautomer-artefact-test.js',
   'research-zip-external-test.js'
 ];
 const started = new Date().toISOString();

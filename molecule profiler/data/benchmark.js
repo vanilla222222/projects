@@ -25,7 +25,7 @@ const RETRIEVAL_BENCHMARK = {
     "tools/retrieval-evaluate.js": "075eacd3a4640c1e549f1891605da4ae31fece844d4a37a778d826be1048d8d9",
     "tools/retrieval-benchmark.js": "734411ae4c6631febaa04f8b705ce15bcabfe86dc70ee7aa7ef36fcc3ff08f6e"
   },
-  "generated": "2026-10-28",
+  "generated": "2026-11-02",
   "library": 22052,
   "method": "ECFP4",
   "metric": "Tanimoto",
