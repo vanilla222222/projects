@@ -449,6 +449,18 @@ def main():
             key = flat(smiles)
             if key in seen:
                 continue
+            Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
+            Chem.FindPotentialStereoBonds(mol)
+            why = None
+            if any(label == '?' for _, label in Chem.FindMolChiralCenters(
+                    mol, includeUnassigned=True, useLegacyImplementation=False)):
+                why = 'unassigned stereocentre'
+            elif any(bond.GetStereo() == Chem.BondStereo.STEREOANY
+                     for bond in mol.GetBonds()):
+                why = 'undefined double-bond geometry'
+            if why:
+                sys.stderr.write("gate refused %s: %s\n" % (name, why))
+                continue
             seen[key] = name
             rows.append((name, fam["cls"], stated, smiles))
             kept += 1

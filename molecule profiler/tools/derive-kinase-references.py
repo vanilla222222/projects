@@ -333,6 +333,20 @@ def main():
             if key in seen:
                 skipped += 1
                 continue
+            Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
+            Chem.FindPotentialStereoBonds(mol)
+            why = None
+            if any(label == '?' for _, label in Chem.FindMolChiralCenters(
+                    mol, includeUnassigned=True, useLegacyImplementation=False)):
+                why = 'unassigned stereocentre'
+            elif any(bond.GetStereo() == Chem.BondStereo.STEREOANY
+                     for bond in mol.GetBonds()):
+                why = 'undefined double-bond geometry'
+            if why:
+                print("gate refused %s %s: %s" % (fam["cls"], smiles, why),
+                      file=sys.stderr)
+                skipped += 1
+                continue
             seen[key] = "new"
             out.append("  { name: '%s', cls: '%s', formula: '%s', smiles: '%s' },\n"
                        % (fam["name"](vals), fam["cls"], stated, smiles))
